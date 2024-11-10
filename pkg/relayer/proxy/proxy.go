@@ -2,6 +2,7 @@ package proxy
 
 import (
 	"context"
+	"errors"
 
 	"cosmossdk.io/depinject"
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
@@ -195,19 +196,19 @@ func (rp *relayerProxy) validateConfig() error {
 }
 
 // PingAll tests the connectivity between all the managed relay servers and their respective backend URLs.
-func (rp *relayerProxy) PingAll(ctx context.Context) []error {
-	var errs []error
+func (rp *relayerProxy) PingAll(ctx context.Context) error {
+	var err error
 
 	for _, srv := range rp.servers {
 		if err := srv.Ping(ctx); err != nil {
-			rp.logger.Error().Err(err).
-				Msg("an unexpected error occured while pinging backend URL")
-			errs = append(errs, err)
+			err = errors.Join(err, err)
 		}
 	}
 
-	if len(errs) > 0 {
-		return errs
+	if err != nil {
+		rp.logger.Error().Err(err).
+			Msg("an unexpected error occured while pinging backend URL")
+		return err
 	}
 
 	return nil
