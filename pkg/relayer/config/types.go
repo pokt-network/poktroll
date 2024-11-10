@@ -29,8 +29,9 @@ type YAMLRelayMinerConfig struct {
 
 // YAMLRelayMinerPingConfig represents the configuration to expose a ping server.
 type YAMLRelayMinerPingConfig struct {
-	Enabled bool   `yaml:"enabled"`
-	Addr    string `yaml:"addr"`
+	Enabled bool `yaml:"enabled"`
+	// Addr is the address to bind to (format: 'hostname:port')
+	Addr string `yaml:"addr"`
 }
 
 // YAMLRelayMinerPocketNodeConfig is the structure used to unmarshal the pocket
@@ -97,7 +98,8 @@ type RelayMinerConfig struct {
 // server configuration.
 type RelayMinerPingConfig struct {
 	Enabled bool
-	Addr    string
+	// Addr is the address to bind to (format: hostname:port)
+	Addr string
 }
 
 // RelayMinerPocketNodeConfig is the structure resulting from parsing the pocket
