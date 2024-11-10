@@ -106,8 +106,7 @@ func TestRelayMiner_Ping(t *testing.T) {
 	require.NoError(t, err)
 	defer os.Remove(filename)
 
-	err = relayminer.ServePing(ctx, ln)
-	require.NoError(t, err)
+	relayminer.ServePing(ctx, ln)
 
 	time.Sleep(time.Millisecond)
 
