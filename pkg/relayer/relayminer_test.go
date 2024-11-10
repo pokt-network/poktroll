@@ -121,8 +121,10 @@ func TestRelayMiner_Ping(t *testing.T) {
 	}
 	require.NoError(t, err)
 
-	_, err = c.Get("http://unix")
+	resp, err := c.Get("http://unix")
 	require.NoError(t, err)
+
+	require.Equal(t, http.StatusNoContent, resp.StatusCode)
 
 	err = relayminer.Stop(ctx)
 	require.NoError(t, err)
