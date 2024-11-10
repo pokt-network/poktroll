@@ -46,20 +46,7 @@ func NewMockOneTimeRelayerProxyWithPing(
 	t *testing.T,
 	returnedRelaysObs relayer.RelaysObservable,
 ) *mockrelayer.MockRelayerProxy {
-	t.Helper()
-
-	ctrl := gomock.NewController(t)
-	relayerProxyMock := mockrelayer.NewMockRelayerProxy(ctrl)
-	relayerProxyMock.EXPECT().
-		Start(gomock.Eq(ctx)).
-		Times(1)
-	relayerProxyMock.EXPECT().
-		Stop(gomock.Eq(ctx)).
-		Times(1)
-	relayerProxyMock.EXPECT().
-		ServedRelays().
-		Return(returnedRelaysObs).
-		Times(1)
+	relayerProxyMock := NewMockOneTimeRelayerProxy(ctx, t, returnedRelaysObs)
 	relayerProxyMock.EXPECT().
 		PingAll(gomock.Eq(ctx)).
 		Times(1)
