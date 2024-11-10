@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"crypto/tls"
-	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -104,7 +103,7 @@ func (sync *synchronousRPCServer) Ping(ctx context.Context) error {
 		_ = resp.Body.Close()
 
 		if resp.StatusCode >= http.StatusInternalServerError {
-			return errors.New("ping failed")
+			return ErrRelayerProxySupplierNotReachable
 		}
 	}
 
