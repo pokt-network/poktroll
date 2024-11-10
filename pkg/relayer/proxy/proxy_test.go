@@ -152,10 +152,8 @@ func TestRelayerProxy_StartAndStop(t *testing.T) {
 	// Block so relayerProxy has sufficient time to start
 	time.Sleep(100 * time.Millisecond)
 
-	errs := rp.PingAll(ctx)
-	for _, err := range errs {
-		require.NoError(t, err)
-	}
+	err = rp.PingAll(ctx)
+	require.NoError(t, err)
 
 	// Test that RelayerProxy is handling requests (ignoring the actual response content)
 	res, err := http.DefaultClient.Get(fmt.Sprintf("http://%s/", servicesConfigMap[defaultRelayMinerServer].ListenAddress))
