@@ -95,9 +95,9 @@ func (sync *synchronousRPCServer) Stop(ctx context.Context) error {
 // Ping tries to dial the suppliers backend URLs to test the connection.
 func (sync *synchronousRPCServer) Ping(ctx context.Context) error {
 	for _, supplierCfg := range sync.serverConfig.SupplierConfigsMap {
-		c := &http.Client{Timeout: 2 * time.Second}
+		httpClient := &http.Client{Timeout: 2 * time.Second}
 
-		resp, err := c.Head(supplierCfg.ServiceConfig.BackendUrl.String())
+		resp, err := httpClient.Head(supplierCfg.ServiceConfig.BackendUrl.String())
 		if err != nil {
 			return err
 		}
