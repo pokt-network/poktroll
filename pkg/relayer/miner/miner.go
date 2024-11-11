@@ -89,9 +89,8 @@ func (mnr *miner) mapMineRelay(
 ) (_ either.Either[*relayer.MinedRelay], skip bool) {
 	relayBz, err := relay.Marshal()
 	if err != nil {
-		meteringError := mnr.relayMeter.SetNonApplicableRelayReward(ctx, relay.GetReq().GetMeta())
-		if meteringError != nil {
-			return either.Error[*relayer.MinedRelay](fmt.Errorf("failed to unclaim relay price: %w", meteringError)), false
+		if relayMeteringResult := mnr.unclaimRelayUPOKT(ctx, *relay); relayMeteringResult.IsError() {
+			return relayMeteringResult, false
 		}
 		return either.Error[*relayer.MinedRelay](err), false
 	}
@@ -100,18 +99,16 @@ func (mnr *miner) mapMineRelay(
 
 	relayDifficultyTargetHash, err := mnr.getServiceRelayDifficultyTargetHash(ctx, relay.Req)
 	if err != nil {
-		meteringError := mnr.relayMeter.SetNonApplicableRelayReward(ctx, relay.GetReq().GetMeta())
-		if meteringError != nil {
-			return either.Error[*relayer.MinedRelay](fmt.Errorf("failed to unclaim relay price: %w", meteringError)), false
+		if relayMeteringResult := mnr.unclaimRelayUPOKT(ctx, *relay); relayMeteringResult.IsError() {
+			return relayMeteringResult, true
 		}
-		return either.Error[*relayer.MinedRelay](err), false
+		return either.Error[*relayer.MinedRelay](err), true
 	}
 
 	// The relay IS NOT volume / reward applicable
 	if !protocol.IsRelayVolumeApplicable(relayHash, relayDifficultyTargetHash) {
-		meteringError := mnr.relayMeter.SetNonApplicableRelayReward(ctx, relay.GetReq().GetMeta())
-		if meteringError != nil {
-			return either.Error[*relayer.MinedRelay](fmt.Errorf("failed to unclaim relay price: %w", meteringError)), false
+		if eitherMeteringResult := mnr.unclaimRelayUPOKT(ctx, *relay); eitherMeteringResult.IsError() {
+			return eitherMeteringResult, true
 		}
 		return either.Success[*relayer.MinedRelay](nil), true
 	}
@@ -147,4 +144,14 @@ func (mnr *miner) getServiceRelayDifficultyTargetHash(ctx context.Context, req *
 	}
 
 	return serviceRelayDifficulty.GetTargetHash(), nil
+}
+
+// unclaimRelayUPOKT unclaims the relay UPOKT reward for the relay.
+// It returns an either.Error if the relay UPOKT reward could not be unclaimed.
+func (mnr *miner) unclaimRelayUPOKT(ctx context.Context, relay servicetypes.Relay) either.Either[*relayer.MinedRelay] {
+	if err := mnr.relayMeter.SetNonApplicableRelayReward(ctx, relay.GetReq().GetMeta()); err != nil {
+		return either.Error[*relayer.MinedRelay](err)
+	}
+
+	return either.Success[*relayer.MinedRelay](nil)
 }

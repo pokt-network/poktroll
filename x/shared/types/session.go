@@ -176,3 +176,13 @@ func GetSettlementSessionEndHeight(sharedParams *Params, queryHeight int64) int6
 	return GetSessionEndToProofWindowCloseBlocks(sharedParams) +
 		GetSessionEndHeight(sharedParams, queryHeight) + 1
 }
+
+// GetNumPendingSessions returns the number of pending sessions (i.e. that have not
+// yet been settled) at the time of queryHeight.
+func GetNumPendingSessions(sharedParams *Params) int64 {
+	numBlocksPerSession := int64(sharedParams.GetNumBlocksPerSession())
+	pendingBlocks := GetSessionEndToProofWindowCloseBlocks(sharedParams)
+	// numBlocksPerSession - 1 is added to round up the integer division so that pending
+	// sessions are all the sessions that have their end height at least `pendingBlocks` old
+	return (pendingBlocks + numBlocksPerSession - 1) / numBlocksPerSession
+}

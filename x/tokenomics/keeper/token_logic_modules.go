@@ -292,6 +292,8 @@ func (k Keeper) ProcessTokenLogicModules(
 
 	// Ensure the claim amount is within the limits set by Relay Mining.
 	// If not, update the settlement amount and emit relevant events.
+	// TODO_MAINNET(@red-0ne): Consider pulling this out of Keeper#ProcessTokenLogicModules
+	// and ensure claim amount limits are enforced before TLM processing.
 	actualSettlementCoin, err := k.ensureClaimAmountLimits(ctx, logger, &sharedParams, &application, &supplier, claimSettlementCoin, applicationInitialStake)
 	if err != nil {
 		return err
@@ -299,6 +301,8 @@ func (k Keeper) ProcessTokenLogicModules(
 	logger = logger.With("actual_settlement_upokt", actualSettlementCoin)
 	logger.Info(fmt.Sprintf("About to start processing TLMs for (%d) compute units, equal to (%s) claimed", numClaimComputeUnits, actualSettlementCoin))
 
+	// TODO_MAINNET(@red-0ne): Add tests to ensure that a zero settlement coin
+	// due to integer division rounding is handled correctly.
 	if actualSettlementCoin.Amount.IsZero() {
 		logger.Warn(fmt.Sprintf(
 			"actual settlement coin is zero, skipping TLM processing, application %q stake %s",
@@ -724,22 +728,19 @@ func (k Keeper) ensureClaimAmountLimits(
 	minRequiredAppStakeAmt := claimSettlementCoin.Amount.Add(globalInflationAmt)
 	totalClaimedCoin := sdk.NewCoin(volatile.DenomuPOKT, minRequiredAppStakeAmt)
 
-	numBlocksPerSession := int64(sharedParams.GetNumBlocksPerSession())
-	pendingBlocks := sharedtypes.GetSessionEndToProofWindowCloseBlocks(sharedParams)
-	// We are addding numBlocksPerSession - 1 to round up the integer division
-	// so that pending sessions are all the sessions that have their end height at least
-	// `pendingBlocks` old
-	pendingSessions := (pendingBlocks + numBlocksPerSession - 1) / numBlocksPerSession
+	// get the number of pending sessions that share the application stake at claim time
+	// This is used to calculate the maximum claimable amount for the supplier within a session.
+	numPendingSessions := sharedtypes.GetNumPendingSessions(sharedParams)
 
 	// The maximum any single supplier can claim is a fraction of the app's total stake
 	// divided by the number of suppliers per session.
 	// Re decentralization - This ensures the app biases towards using all suppliers in a session.
 	// Re costs - This is an easy way to split the stake evenly.
-	// TODO_FUTURE: See if there's a way to let the application to pick a single (the best) supplier
-	// in a session while maintaining a simple solution to implement this.
+	// TODO_FUTURE: See if there's a way to let the application prefer (the best)
+	// supplier(s) in a session while maintaining a simple solution to implement this.
 	maxClaimableAmt := appStake.Amount.
 		Quo(math.NewInt(sessionkeeper.NumSupplierPerSession)).
-		Quo(math.NewInt(pendingSessions))
+		Quo(math.NewInt(numPendingSessions))
 	maxClaimSettlementAmt := supplierAppStakeToMaxSettlementAmount(maxClaimableAmt)
 
 	// Check if the claimable amount is capped by the max claimable amount.
