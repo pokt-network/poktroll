@@ -26,12 +26,13 @@ func ParamKeyTable() paramtypes.KeyTable {
 // NewParams creates a new Params instance
 func NewParams(
 	mintAllocationDao,
-	mintAllocationProposer float64,
+	mintAllocationProposer,
+  mintAllocationSupplier float64,
 ) Params {
 	return Params{
 		MintAllocationDao:      mintAllocationDao,
-		MintAllocationProposer: DefaultMintAllocationProposer,
-		MintAllocationSupplier: DefaultMintAllocationSupplier,
+		MintAllocationProposer: mintAllocationProposer,
+    MintAllocationSupplier: mintAllocationSupplier,
 	}
 }
 
