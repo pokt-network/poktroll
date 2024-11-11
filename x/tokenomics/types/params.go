@@ -110,6 +110,10 @@ func (params *Params) ValidateBasic() error {
 		return err
 	}
 
+	if err := ValidateMintAllocationSum(params); err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -178,6 +182,21 @@ func ValidateMintAllocationApplication(mintAllocationApplication any) error {
 
 	if mintAllocationApplicationFloat < 0 {
 		return ErrTokenomicsParamInvalid.Wrapf("mint allocation to application must be greater than or equal to 0: got %f", mintAllocationApplicationFloat)
+	}
+
+	return nil
+}
+
+// TODO_IN_THIS_COMMIT: godoc...
+func ValidateMintAllocationSum(params *Params) error {
+	sum := params.MintAllocationDao +
+		params.MintAllocationProposer +
+		params.MintAllocationSupplier +
+		params.MintAllocationSourceOwner +
+		params.MintAllocationApplication
+
+	if sum != 1 {
+		return ErrTokenomicsParamInvalid.Wrapf("mint allocation percentages do not add to 1.0: got %f", sum)
 	}
 
 	return nil

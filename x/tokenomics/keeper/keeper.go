@@ -93,10 +93,11 @@ func (k Keeper) MintAllocationsSum(ctx context.Context) float64 {
 	mintAllocationProposer := params.GetMintAllocationProposer()
 	mintAllocationSupplier := params.GetMintAllocationSupplier()
 	mintAllocationSourceOwner := params.GetMintAllocationSourceOwner()
+	mintAllocationApplication := params.GetMintAllocationApplication()
 
 	return mintAllocationDAO +
 		mintAllocationProposer +
 		mintAllocationSupplier +
 		mintAllocationSourceOwner +
-		MintAllocationApplication
+		mintAllocationApplication
 }

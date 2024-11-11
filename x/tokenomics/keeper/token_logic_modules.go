@@ -449,7 +449,8 @@ func (k Keeper) TokenLogicModuleGlobalMint(
 	logger.Info(fmt.Sprintf("minted (%s) to the tokenomics module account", newMintCoin))
 
 	// Send a portion of the rewards to the application
-	appCoin, err := k.sendRewardsToAccount(ctx, tokenomicstypes.ModuleName, application.GetAddress(), &newMintAmtFloat, MintAllocationApplication)
+	mintAllocationApplication := k.GetParams(ctx).MintAllocationApplication
+	appCoin, err := k.sendRewardsToAccount(ctx, tokenomicstypes.ModuleName, application.GetAddress(), &newMintAmtFloat, mintAllocationApplication)
 	if err != nil {
 		return tokenomicstypes.ErrTokenomicsSendingMintRewards.Wrapf("sending rewards to application: %v", err)
 	}
