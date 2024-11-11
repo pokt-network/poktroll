@@ -236,6 +236,7 @@ var (
 			MintAllocationProposer:    tokenomicstypes.DefaultMintAllocationProposer,
 			MintAllocationSupplier:    tokenomicstypes.DefaultMintAllocationSupplier,
 			MintAllocationSourceOwner: tokenomicstypes.DefaultMintAllocationSourceOwner,
+			MintAllocationApplication: tokenomicstypes.DefaultMintAllocationApplication,
 		},
 		ParamTypes: map[ParamType]any{
 			ParamTypeDouble: tokenomicstypes.MsgUpdateParam_AsDouble{},
