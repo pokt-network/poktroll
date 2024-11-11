@@ -1,7 +1,6 @@
 package tokenomics
 
 import (
-	"context"
 	"fmt"
 
 	cosmostelemetry "github.com/cosmos/cosmos-sdk/telemetry"
@@ -12,19 +11,6 @@ import (
 	"github.com/pokt-network/poktroll/x/tokenomics/keeper"
 	"github.com/pokt-network/poktroll/x/tokenomics/types"
 )
-
-// BeginBlocker called at the start of every block.
-//
-// TODO_UPNEXT(@bryanchriswhite): Revert the addition of this and move this check into the
-// tokenomics module ParamsValidateBasic() method once all allocation params are available.
-func BeginBlocker(ctx context.Context, k keeper.Keeper) error {
-	// Ensure 100% of minted rewards are allocated
-	if 1.0 != k.MintAllocationsSum(ctx) {
-		return fmt.Errorf("mint allocation percentages do not add to 1.0")
-	}
-
-	return nil
-}
 
 // EndBlocker called at every block and settles all pending claims.
 func EndBlocker(ctx sdk.Context, k keeper.Keeper) (err error) {
