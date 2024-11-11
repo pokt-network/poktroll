@@ -34,7 +34,6 @@ var (
 
 const (
 	// TODO_BETA(@bryanchriswhite): Make all of these governance params
-	MintAllocationSourceOwner = 0.15
 	MintAllocationApplication = 0.0
 
 	// MintDistributionAllowableTolerancePercent is the percent difference that is allowable
@@ -487,7 +486,8 @@ func (k Keeper) TokenLogicModuleGlobalMint(
 	logger.Debug(fmt.Sprintf("sent (%v) newley minted coins from the tokenomics module to the DAO with address %q", daoCoin, k.GetAuthority()))
 
 	// Send a portion of the rewards to the source owner
-	serviceCoin, err := k.sendRewardsToAccount(ctx, tokenomicstypes.ModuleName, service.OwnerAddress, &newMintAmtFloat, MintAllocationSourceOwner)
+	mintAllocationSourceOwner := k.GetParams(ctx).MintAllocationSourceOwner
+	serviceCoin, err := k.sendRewardsToAccount(ctx, tokenomicstypes.ModuleName, service.OwnerAddress, &newMintAmtFloat, mintAllocationSourceOwner)
 	if err != nil {
 		return tokenomicstypes.ErrTokenomicsSendingMintRewards.Wrapf("sending rewards to source owner: %v", err)
 	}
