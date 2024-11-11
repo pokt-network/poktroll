@@ -27,7 +27,7 @@ func NewParams(
 ) Params {
 	return Params{
 		MintAllocationDao:      mintAllocationDao,
-		MintAllocationProposer: DefaultMintAllocationProposer,
+		MintAllocationProposer: mintAllocationProposer,
 	}
 }
 
