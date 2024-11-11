@@ -265,7 +265,7 @@ actor_number = 0
 for x in range(localnet_config["relayminers"]["count"]):
     actor_number = actor_number + 1
 
-    flags = [
+    flags=[
             "--values=./localnet/kubernetes/values-common.yaml",
             "--values=./localnet/kubernetes/values-relayminer-common.yaml",
             "--values=./localnet/kubernetes/values-relayminer-" + str(actor_number) + ".yaml",
@@ -273,15 +273,12 @@ for x in range(localnet_config["relayminers"]["count"]):
             "--set=development.delve.enabled=" + str(localnet_config["relayminers"]["delve"]["enabled"]),
             "--set=logLevel=" + str(localnet_config["relayminers"]["logs"]["level"]),
             "--set=image.repository=poktrolld",
-        ],
     ]
 
     if localnet_config["rest"]["enabled"]:
        flags.append("--values=./localnet/kubernetes/values-relayminer-" + str(actor_number) + "-rest" + ".yaml")
-
     if localnet_config["ollama"]["enabled"]:
        flags.append("--values=./localnet/kubernetes/values-relayminer-" + str(actor_number) + "-ollama" + ".yaml")
-
     if localnet_config["rest"]["enabled"] and localnet_config["ollama"]["enabled"]:
        flags.append("--values=./localnet/kubernetes/values-relayminer-" + str(actor_number) + "-all" + ".yaml")
 
@@ -292,6 +289,7 @@ for x in range(localnet_config["relayminers"]["count"]):
         image_deps=["poktrolld"],
         image_keys=[("image.repository", "image.tag")],
     )
+
     k8s_resource(
         "relayminer" + str(actor_number),
         labels=["suppliers"],
