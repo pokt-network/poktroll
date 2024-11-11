@@ -51,8 +51,14 @@ func (s *msgUpdateParamTestSuite) TestUnauthorizedMsgUpdateParamFails() {
 		// to that field's value.
 		validParamsValue := reflect.ValueOf(moduleCfg.ValidParams)
 		for fieldIdx := 0; fieldIdx < validParamsValue.NumField(); fieldIdx++ {
-			fieldValue := validParamsValue.Field(fieldIdx)
-			fieldName := validParamsValue.Type().Field(fieldIdx).Name
+			validParamsFieldValue := validParamsValue.Field(fieldIdx)
+			fieldValue := validParamsValue.Type().Field(fieldIdx)
+			fieldName := fieldValue.Name
+
+			// Skip fields which are tagged with "disable_individual_update".
+			if fieldValue.Tag.Get("disable_individual_update") == "true" {
+				continue
+			}
 
 			testName := fmt.Sprintf("%s_%s", moduleName, fieldName)
 			s.T().Run(testName, func(t *testing.T) {
@@ -66,7 +72,7 @@ func (s *msgUpdateParamTestSuite) TestUnauthorizedMsgUpdateParamFails() {
 				updateResBz, err := s.RunUpdateParamAsSigner(t,
 					moduleName,
 					fieldName,
-					fieldValue.Interface(),
+					validParamsFieldValue.Interface(),
 					s.unauthorizedAddr,
 				)
 				require.ErrorContains(t, err, authz.ErrNoAuthorizationFound.Error())
