@@ -41,6 +41,9 @@ func (k msgServer) UpdateParam(
 	case tokenomicstypes.ParamMintAllocationSupplier:
 		logger = logger.With("param_value", msg.GetAsDouble())
 		params.MintAllocationSupplier = msg.GetAsDouble()
+	case tokenomicstypes.ParamMintAllocationSourceOwner:
+		logger = logger.With("param_value", msg.GetAsDouble())
+		params.MintAllocationSourceOwner = msg.GetAsDouble()
 	default:
 		return nil, status.Error(
 			codes.InvalidArgument,

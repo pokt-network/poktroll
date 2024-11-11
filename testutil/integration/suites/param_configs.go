@@ -232,9 +232,10 @@ var (
 			QueryParamsResponse:     tokenomicstypes.QueryParamsResponse{},
 		},
 		ValidParams: tokenomicstypes.Params{
-			MintAllocationDao:      tokenomicstypes.DefaultMintAllocationDao,
-			MintAllocationProposer: tokenomicstypes.DefaultMintAllocationProposer,
-			MintAllocationSupplier: tokenomicstypes.DefaultMintAllocationSupplier,
+			MintAllocationDao:         tokenomicstypes.DefaultMintAllocationDao,
+			MintAllocationProposer:    tokenomicstypes.DefaultMintAllocationProposer,
+			MintAllocationSupplier:    tokenomicstypes.DefaultMintAllocationSupplier,
+			MintAllocationSourceOwner: tokenomicstypes.DefaultMintAllocationSourceOwner,
 		},
 		ParamTypes: map[ParamType]any{
 			ParamTypeDouble: tokenomicstypes.MsgUpdateParam_AsDouble{},

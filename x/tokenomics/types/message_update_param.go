@@ -56,6 +56,11 @@ func (msg *MsgUpdateParam) ValidateBasic() error {
 			return err
 		}
 		return ValidateMintAllocationSupplier(msg.GetAsDouble())
+	case ParamMintAllocationSourceOwner:
+		if err := msg.paramTypeIsDouble(); err != nil {
+			return err
+		}
+		return ValidateMintAllocationSourceOwner(msg.GetAsDouble())
 	default:
 		return ErrTokenomicsParamNameInvalid.Wrapf("unsupported param %q", msg.Name)
 	}
