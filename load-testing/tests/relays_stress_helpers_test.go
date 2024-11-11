@@ -9,6 +9,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"sync"
 	"testing"
@@ -25,14 +26,17 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/authz"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
+	"github.com/cosmos/gogoproto/proto"
 	"github.com/regen-network/gocuke"
 	"github.com/stretchr/testify/require"
 
 	"github.com/pokt-network/poktroll/load-testing/config"
 	"github.com/pokt-network/poktroll/pkg/client"
+	"github.com/pokt-network/poktroll/pkg/client/block"
 	"github.com/pokt-network/poktroll/pkg/client/events"
 	"github.com/pokt-network/poktroll/pkg/client/query"
 	"github.com/pokt-network/poktroll/pkg/client/tx"
+	"github.com/pokt-network/poktroll/pkg/observable"
 	"github.com/pokt-network/poktroll/pkg/observable/channel"
 	"github.com/pokt-network/poktroll/pkg/sync2"
 	testsession "github.com/pokt-network/poktroll/testutil/session"
@@ -40,8 +44,10 @@ import (
 	"github.com/pokt-network/poktroll/testutil/testclient/testeventsquery"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	gatewaytypes "github.com/pokt-network/poktroll/x/gateway/types"
+	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
+	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
 )
 
 // actorLoadTestIncrementPlans is a struct that holds the parameters for incrementing
@@ -81,7 +87,7 @@ func (s *relaysSuite) setupTxEventListeners() {
 	eventsQueryClient := testeventsquery.NewLocalnetClient(s.TestingT.(*testing.T))
 
 	deps := depinject.Supply(eventsQueryClient)
-	eventsReplayClient, err := events.NewEventsReplayClient(
+	txEventsReplayClient, err := events.NewEventsReplayClient(
 		s.ctx,
 		deps,
 		newTxEventSubscriptionQuery,
@@ -90,13 +96,35 @@ func (s *relaysSuite) setupTxEventListeners() {
 	)
 	require.NoError(s, err)
 
+	eventsObs, eventsObsCh := channel.NewObservable[[]types.Event]()
+	s.eventsObs = eventsObs
+
 	// Map the eventsReplayClient.EventsSequence which is a replay observable
 	// to a regular observable to avoid replaying txResults from old blocks.
-	s.newTxEventsObs = channel.Map(
+	channel.ForEach(
 		s.ctx,
-		eventsReplayClient.EventsSequence(s.ctx),
-		func(ctx context.Context, txResult *types.TxResult) (*types.TxResult, bool) {
-			return txResult, false
+		txEventsReplayClient.EventsSequence(s.ctx),
+		func(ctx context.Context, txResult *types.TxResult) {
+			eventsObsCh <- txResult.Result.Events
+		},
+	)
+
+	blockEventsReplayClient, err := events.NewEventsReplayClient(
+		s.ctx,
+		deps,
+		newBlockEventSubscriptionQuery,
+		block.UnmarshalNewBlockEvent,
+		eventsReplayClientBufferSize,
+	)
+	require.NoError(s, err)
+
+	// Map the eventsReplayClient.EventsSequence which is a replay observable
+	// to a regular observable to avoid replaying txResults from old blocks.
+	channel.ForEach(
+		s.ctx,
+		blockEventsReplayClient.EventsSequence(s.ctx),
+		func(ctx context.Context, block *block.CometNewBlockEvent) {
+			eventsObsCh <- block.Data.Value.ResultFinalizeBlock.Events
 		},
 	)
 }
@@ -457,16 +485,15 @@ func (s *relaysSuite) mapSessionInfoWhenStakingNewSuppliersAndGatewaysFn() chann
 // For each notification received, it waits for the new actors' staking/funding
 // txs to be committed before sending staking & delegation txs for new applications.
 func (s *relaysSuite) mapStakingInfoWhenStakingAndDelegatingNewApps(
-	_ context.Context,
+	ctx context.Context,
 	notif *stakingInfoNotif,
 ) (*stakingInfoNotif, bool) {
 	// Ensure that new gateways and suppliers are staked.
 	// Ensure that new applications are funded and have an account entry on-chain
 	// so that they can stake and delegate in the next block.
-	txResults := s.waitForTxsToBeCommitted()
-	s.ensureFundedActors(txResults, notif.newApps)
-	s.ensureStakedActors(txResults, EventActionMsgStakeGateway, notif.newGateways)
-	s.ensureStakedActors(txResults, EventActionMsgStakeSupplier, notif.newSuppliers)
+	fundedActors := append(notif.newGateways, notif.newSuppliers...)
+	fundedActors = append(fundedActors, notif.newApps...)
+	s.ensureFundedActors(ctx, fundedActors)
 
 	// Update the list of staked suppliers.
 	s.activeSuppliers = append(s.activeSuppliers, notif.newSuppliers...)
@@ -632,6 +659,7 @@ func (s *relaysSuite) getAppFundingAmount(currentBlockHeight int64) sdk.Coin {
 	// be enough, but probabilistic and time based mechanisms make it hard
 	// to predict exactly.
 	appFundingAmount := s.relayRatePerApp * s.relayCoinAmountCost * currentTestDuration * blockDuration * 2
+	appFundingAmount = math.Max(appFundingAmount, s.appParams.MinStake.Amount.Int64()*2)
 	return sdk.NewCoin("upokt", math.NewInt(appFundingAmount))
 }
 
@@ -796,6 +824,12 @@ func (s *relaysSuite) addPendingStakeSupplierMsg(supplier *accountInfo) {
 					{
 						Url:     s.suppliersUrls[supplier.address],
 						RpcType: sharedtypes.RPCType_JSON_RPC,
+					},
+				},
+				RevShare: []*sharedtypes.ServiceRevenueShare{
+					{
+						RevSharePercentage: 100,
+						Address:            supplier.address,
 					},
 				},
 			},
@@ -973,33 +1007,6 @@ func (s *relaysSuite) sendPendingMsgsTx(actor *accountInfo) {
 	}()
 }
 
-// waitForTxsToBeCommitted waits for transactions to be observed on-chain.
-// It is used to ensure that the transactions are committed before taking
-// dependent actions.
-func (s *relaysSuite) waitForTxsToBeCommitted() (txResults []*types.TxResult) {
-	ctx, cancel := context.WithCancel(s.ctx)
-	defer cancel()
-
-	ch := s.newTxEventsObs.Subscribe(ctx).Ch()
-	for {
-		txResult := <-ch
-		txResults = append(txResults, txResult)
-
-		// The number of transactions to be observed is not available in the TxResult
-		// event, so this number is taken from the last block event.
-		// The block received from s.latestBlock may be the previous one, it is
-		// necessary to wait until the block matching the txResult height is received
-		// in order to get the right number of transaction events to collect.
-		numTxs := s.waitUntilLatestBlockHeightEquals(txResult.Height)
-
-		// If all transactions are observed, break the loop.
-		if len(txResults) == numTxs {
-			break
-		}
-	}
-	return txResults
-}
-
 // waitUntilLatestBlockHeightEquals blocks until s.latestBlock.Height() equals the targetHeight.
 // NB: s.latestBlock is updated asynchronously via a subscription to the block client observable.
 func (s *relaysSuite) waitUntilLatestBlockHeightEquals(targetHeight int64) int {
@@ -1064,118 +1071,142 @@ func (s *relaysSuite) sendRelay(iteration uint64, relayPayload string) (appAddre
 // ensureFundedActors checks if the actors are funded by observing the transfer events
 // in the transactions results.
 func (s *relaysSuite) ensureFundedActors(
-	txResults []*types.TxResult,
+	ctx context.Context,
 	actors []*accountInfo,
 ) {
-	for _, actor := range actors {
-		actorFunded := false
-		for _, txResult := range txResults {
-			for _, event := range txResult.Result.Events {
-				// Skip non-relevant events.
-				if event.Type != "transfer" {
-					continue
-				}
+	fundedActors := make(map[string]struct{})
 
-				attrs := event.Attributes
-				// Check if the actor is the recipient of the transfer event.
-				if actorFunded = hasEventAttr(attrs, "recipient", actor.address); actorFunded {
-					break
-				}
+	ctx, cancel := context.WithCancel(ctx)
+	abciEventsObs := eventsObsWithNumBlocksTimeout(ctx, s.eventsObs, 3, cancel)
+	channel.ForEach(ctx, abciEventsObs, func(ctx context.Context, events []types.Event) {
+		for _, event := range events {
+			// Skip non-relevant events.
+			if event.GetType() != "transfer" {
+				continue
 			}
 
-			// If the actor is funded, no need to check the other transactions.
-			if actorFunded {
-				break
+			attrs := event.GetAttributes()
+			// Check if the actor is the recipient of the transfer event.
+			if fundedActorAddr, ok := getEventAttr(attrs, "recipient"); ok {
+				fundedActors[fundedActorAddr] = struct{}{}
 			}
 		}
 
-		// If no transfer event is found for the actor, the test is canceled.
-		if !actorFunded {
-			s.logAndAbortTest(txResults, "actor not funded")
-			return
+		if allActorsFunded(actors, fundedActors) {
+			cancel()
+		}
+	})
+
+	<-ctx.Done()
+	if !allActorsFunded(actors, fundedActors) {
+		s.logAndAbortTest("actor not funded")
+	}
+}
+
+func allActorsFunded(expectedActors []*accountInfo, fundedActors map[string]struct{}) bool {
+	for _, actor := range expectedActors {
+		if _, ok := fundedActors[actor.address]; !ok {
+			return false
 		}
 	}
+
+	return true
 }
 
 // ensureStakedActors checks if the actors are staked by observing the message events
 // in the transactions results.
 func (s *relaysSuite) ensureStakedActors(
-	txResults []*types.TxResult,
-	msg string,
+	ctx context.Context,
 	actors []*accountInfo,
 ) {
-	for _, actor := range actors {
-		actorStaked := false
-		for _, txResult := range txResults {
-			for _, event := range txResult.Result.Events {
-				// Skip non-relevant events.
-				if event.Type != "message" {
-					continue
-				}
+	stakedActors := make(map[string]struct{})
 
-				attrs := event.Attributes
-				// Check if the actor is the sender of the message event.
-				if hasEventAttr(attrs, "action", msg) && hasEventAttr(attrs, "sender", actor.address) {
-					actorStaked = true
-					break
-				}
-			}
-
-			// If the actor is staked, no need to check the other transactions.
-			if actorStaked {
-				break
+	ctx, cancel := context.WithCancel(ctx)
+	abciEventsObs := eventsObsWithNumBlocksTimeout(ctx, s.eventsObs, 3, cancel)
+	typedEventsObs := abciEventsToTypedEvents(ctx, abciEventsObs)
+	channel.ForEach(ctx, typedEventsObs, func(ctx context.Context, blockEvents []proto.Message) {
+		for _, event := range blockEvents {
+			switch e := event.(type) {
+			case *suppliertypes.EventSupplierStaked:
+				stakedActors[e.Supplier.GetOperatorAddress()] = struct{}{}
+			case *gatewaytypes.EventGatewayStaked:
+				stakedActors[e.Gateway.GetAddress()] = struct{}{}
+			case *apptypes.EventApplicationStaked:
+				stakedActors[e.Application.GetAddress()] = struct{}{}
 			}
 		}
 
-		// If no message event is found for the actor, log the transaction results
-		// and cancel the test.
-		if !actorStaked {
-			s.logAndAbortTest(txResults, fmt.Sprintf("actor not staked: %s", actor.address))
-			return
+		if allActorsStaked(actors, stakedActors) {
+			cancel()
+		}
+	})
+
+	<-ctx.Done()
+	if !allActorsStaked(actors, stakedActors) {
+		s.logAndAbortTest("actor not staked")
+		return
+	}
+}
+
+func allActorsStaked(expectedActors []*accountInfo, stakedActors map[string]struct{}) bool {
+	for _, actor := range expectedActors {
+		if _, ok := stakedActors[actor.address]; !ok {
+			return false
 		}
 	}
+
+	return true
 }
 
 // ensureDelegatedActors checks if the actors are delegated by observing the
 // delegation events in the transactions results.
 func (s *relaysSuite) ensureDelegatedApps(
-	txResults []*types.TxResult,
+	ctx context.Context,
 	applications, gateways []*accountInfo,
 ) {
-	for _, application := range applications {
-		numDelegatees := 0
-		for _, txResult := range txResults {
-			for _, event := range txResult.Result.Events {
-				// Skip non-EventDelegation events.
-				if event.Type != EventTypeRedelegation {
-					continue
-				}
+	appsToGateways := make(map[string][]string)
 
-				attrs := event.Attributes
-				appAddr := fmt.Sprintf("%q", application.address)
-				// Skip the event if the application is not the delegator.
-				if !hasEventAttr(attrs, "app_address", appAddr) {
-					break
-				}
-
-				// Check if the application is delegated to each of the gateways.
-				for _, gateway := range gateways {
-					gwAddr := fmt.Sprintf("%q", gateway.address)
-					if hasEventAttr(attrs, "gateway_address", gwAddr) {
-						numDelegatees++
-						break
-					}
-				}
+	ctx, cancel := context.WithCancel(ctx)
+	abciEventsObs := eventsObsWithNumBlocksTimeout(ctx, s.eventsObs, 3, cancel)
+	typedEventsObs := abciEventsToTypedEvents(ctx, abciEventsObs)
+	channel.ForEach(ctx, typedEventsObs, func(ctx context.Context, blockEvents []proto.Message) {
+		for _, event := range blockEvents {
+			redelegationEvent, ok := event.(*apptypes.EventRedelegation)
+			if ok {
+				app := redelegationEvent.GetApplication()
+				appsToGateways[app.GetAddress()] = app.GetDelegateeGatewayAddresses()
 			}
 		}
 
-		// If the number of delegatees is not equal to the number of gateways,
-		// the test is canceled.
-		if numDelegatees != len(gateways) {
-			s.logAndAbortTest(txResults, "applications not delegated to all gateways")
-			return
+		if allAppsDelegatedToAllGateways(applications, gateways, appsToGateways) {
+			cancel()
+		}
+	})
+
+	<-ctx.Done()
+	if !allAppsDelegatedToAllGateways(applications, gateways, appsToGateways) {
+		s.logAndAbortTest("applications not delegated to all gateways")
+		return
+	}
+}
+
+func allAppsDelegatedToAllGateways(
+	applications, gateways []*accountInfo,
+	appsToGateways map[string][]string,
+) bool {
+	for _, app := range applications {
+		if _, ok := appsToGateways[app.address]; !ok {
+			return false
+		}
+
+		for _, gateway := range gateways {
+			if !slices.Contains(appsToGateways[app.address], gateway.address) {
+				return false
+			}
 		}
 	}
+
+	return true
 }
 
 // getRelayCost fetches the relay cost from the tokenomics module.
@@ -1188,6 +1219,7 @@ func (s *relaysSuite) getRelayCost() int64 {
 	res, err := sharedClient.Params(s.ctx, &sharedtypes.QueryParamsRequest{})
 	require.NoError(s, err)
 
+	// multiply by the CUPR
 	return int64(res.Params.ComputeUnitsToTokensMultiplier)
 }
 
@@ -1242,15 +1274,15 @@ func (s *relaysSuite) activatePreparedActors(notif *sessionInfoNotif) {
 	}
 }
 
-// hasEventAttr checks if the event attributes contain a given key-value pair.
-func hasEventAttr(attributes []types.EventAttribute, key, value string) bool {
+// getEventAttr returns the event attribute value corresponding to the provided key.
+func getEventAttr(attributes []types.EventAttribute, key string) (value string, found bool) {
 	for _, attribute := range attributes {
-		if attribute.Key == key && attribute.Value == value {
-			return true
+		if attribute.Key == key {
+			return value, true
 		}
 	}
 
-	return false
+	return "", false
 }
 
 // sendAdjustMaxDelegationsParamTx sends a transaction to adjust the max_delegated_gateways
@@ -1258,20 +1290,17 @@ func hasEventAttr(attributes []types.EventAttribute, key, value string) bool {
 func (s *relaysSuite) sendAdjustMaxDelegationsParamTx(maxGateways int64) {
 	authority := authtypes.NewModuleAddress(govtypes.ModuleName).String()
 
-	appMsgUpdateParams := &apptypes.MsgUpdateParams{
+	appMsgUpdateMaxDelegatedGatewaysParam := &apptypes.MsgUpdateParam{
 		Authority: authority,
-		Params: apptypes.Params{
-			// Set the max_delegated_gateways parameter to the number of gateways
-			// that are currently used in the test.
-			MaxDelegatedGateways: uint64(maxGateways),
-		},
+		Name:      "max_delegated_gateways",
+		AsType:    &apptypes.MsgUpdateParam_AsUint64{AsUint64: uint64(maxGateways)},
 	}
-	appMsgUpdateParamsAny, err := codectypes.NewAnyWithValue(appMsgUpdateParams)
+	appMsgUpdateParamAny, err := codectypes.NewAnyWithValue(appMsgUpdateMaxDelegatedGatewaysParam)
 	require.NoError(s, err)
 
 	authzExecMsg := &authz.MsgExec{
 		Grantee: s.fundingAccountInfo.address,
-		Msgs:    []*codectypes.Any{appMsgUpdateParamsAny},
+		Msgs:    []*codectypes.Any{appMsgUpdateParamAny},
 	}
 
 	s.fundingAccountInfo.addPendingMsg(authzExecMsg)
@@ -1290,7 +1319,7 @@ func (s *relaysSuite) ensureUpdatedMaxDelegations(maxGateways int64) {
 	res, err := appClient.Params(s.ctx, &apptypes.QueryParamsRequest{})
 	require.NoError(s, err)
 
-	if res.Params.MaxDelegatedGateways != uint64(maxGateways) {
+	if res.Params.MaxDelegatedGateways < uint64(maxGateways) {
 		s.cancelCtx()
 		s.Fatal("Failed to update max delegated gateways parameter")
 	}
@@ -1336,24 +1365,29 @@ func (s *relaysSuite) parseActorLoadTestIncrementPlans(
 
 // countClaimAndProofs asynchronously counts the number of claim and proof messages
 // in the observed transaction events.
-func (s *relaysSuite) countClaimAndProofs() {
+func (s *relaysSuite) forEachSettlement(ctx context.Context) {
+	typedEventsObs := abciEventsToTypedEvents(ctx, s.eventsObs)
 	channel.ForEach(
 		s.ctx,
-		s.newTxEventsObs,
-		func(ctx context.Context, txEvent *types.TxResult) {
-			for _, event := range txEvent.Result.Events {
-				if event.Type != "message" {
-					continue
+		typedEventsObs,
+		func(ctx context.Context, events []proto.Message) {
+			for _, event := range events {
+				switch e := event.(type) {
+				case *tokenomicstypes.EventApplicationOverserviced:
+					s.tokenomics.OverservicedApplications = append(s.tokenomics.OverservicedApplications, e)
+				case *tokenomicstypes.EventApplicationReimbursementRequest:
+					s.tokenomics.ReimbursementRequests = append(s.tokenomics.ReimbursementRequests, e)
+				case *tokenomicstypes.EventClaimExpired:
+					s.tokenomics.ExpiredClaims = append(s.tokenomics.ExpiredClaims, e)
+				case *tokenomicstypes.EventClaimSettled:
+					s.tokenomics.ClaimsSettled = append(s.tokenomics.ClaimsSettled, e)
+				case *tokenomicstypes.EventSupplierSlashed:
+					s.tokenomics.SuppliersSlashed = append(s.tokenomics.SuppliersSlashed, e)
+				case *prooftypes.EventClaimCreated:
+					s.tokenomics.ClaimsSubmitted = append(s.tokenomics.ClaimsSubmitted, e)
+				case *prooftypes.EventProofSubmitted:
+					s.tokenomics.ProofsSubmitted = append(s.tokenomics.ProofsSubmitted, e)
 				}
-
-				if hasEventAttr(event.Attributes, "action", EventActionMsgCreateClaim) {
-					s.currentClaimCount++
-				}
-
-				if hasEventAttr(event.Attributes, "action", EventActionMsgSubmitProof) {
-					s.currentProofCount++
-				}
-
 			}
 		},
 	)
@@ -1379,19 +1413,38 @@ func (s *relaysSuite) querySharedParams(queryNodeRPCURL string) {
 	s.sharedParams = sharedParams
 }
 
+// queryAppParams queries the current on-chain application module parameters for use
+// over the duration of the test.
+func (s *relaysSuite) queryAppParams(queryNodeRPCURL string) {
+	s.Helper()
+
+	deps := depinject.Supply(s.txContext.GetClientCtx())
+
+	blockQueryClient, err := sdkclient.NewClientFromNode(queryNodeRPCURL)
+	require.NoError(s, err)
+	deps = depinject.Configs(deps, depinject.Supply(blockQueryClient))
+
+	appQueryclient, err := query.NewApplicationQuerier(deps)
+	require.NoError(s, err)
+
+	appParams, err := appQueryclient.GetParams(s.ctx)
+	require.NoError(s, err)
+
+	s.appParams = appParams
+}
+
 // forEachStakedAndDelegatedAppPrepareApp is a ForEachFn that waits for txs which
 // were broadcast in previous pipeline stages have been committed. It ensures that
 // new applications were successfully staked and all application actors are delegated
 // to all gateways. Then it adds the new application actors to the prepared set, to
 // be activated & used in the next session.
-func (s *relaysSuite) forEachStakedAndDelegatedAppPrepareApp(_ context.Context, notif *stakingInfoNotif) {
-	// Wait for the next block to commit staking and delegation transactions
-	// and be able to send relay requests evenly distributed across all gateways.
-	txResults := s.waitForTxsToBeCommitted()
-	s.ensureStakedActors(txResults, EventActionMsgStakeApplication, notif.newApps)
-	s.ensureDelegatedApps(txResults, s.activeApplications, notif.newGateways)
-	s.ensureDelegatedApps(txResults, notif.newApps, notif.newGateways)
-	s.ensureDelegatedApps(txResults, notif.newApps, s.activeGateways)
+func (s *relaysSuite) forEachStakedAndDelegatedAppPrepareApp(ctx context.Context, notif *stakingInfoNotif) {
+	s.WaitAll(
+		func() { s.ensureStakedActors(ctx, notif.newApps) },
+		func() { s.ensureDelegatedApps(ctx, s.activeApplications, notif.newGateways) },
+		func() { s.ensureDelegatedApps(ctx, notif.newApps, notif.newGateways) },
+		func() { s.ensureDelegatedApps(ctx, notif.newApps, s.activeGateways) },
+	)
 
 	// Add the new applications to the list of prepared applications to be activated in
 	// the next session.
@@ -1453,12 +1506,7 @@ func (s *relaysSuite) forEachRelayBatchSendBatch(_ context.Context, relayBatchIn
 	batchWaitGroup.Wait()
 }
 
-func (s *relaysSuite) logAndAbortTest(txResults []*types.TxResult, errorMsg string) {
-	for _, txResult := range txResults {
-		if txResult.Result.Log != "" {
-			logger.Error().Msgf("tx result log: %s", txResult.Result.Log)
-		}
-	}
+func (s *relaysSuite) logAndAbortTest(errorMsg string) {
 	s.cancelCtx()
 	s.Fatal(errorMsg)
 }
@@ -1478,4 +1526,65 @@ func (s *relaysSuite) populateWithKnownGateways() (gateways []*accountInfo) {
 	}
 
 	return gateways
+}
+
+func (s *relaysSuite) WaitAll(waitFunc ...func()) {
+	wg := sync.WaitGroup{}
+	wg.Add(len(waitFunc))
+
+	for _, f := range waitFunc {
+		go func(f func()) {
+			f()
+			wg.Done()
+		}(f)
+	}
+
+	wg.Wait()
+}
+
+func eventsObsWithNumBlocksTimeout(
+	ctx context.Context,
+	eventsObs observable.Observable[[]types.Event],
+	numBlocksTimeout int,
+	cancel func(),
+) observable.Observable[[]types.Event] {
+	return channel.Map(ctx, eventsObs, func(ctx context.Context, blockEvents []types.Event) ([]types.Event, bool) {
+		if numBlocksTimeout < 0 {
+			cancel()
+		}
+
+		numBlocksTimeout--
+		return blockEvents, false
+	})
+}
+
+func forEachTypedEventFn(fn func(ctx context.Context, blockEvents []proto.Message)) func(ctx context.Context, blockEvents []*types.Event) {
+	return func(ctx context.Context, blockEvents []*types.Event) {
+		var typedEvents []proto.Message
+		for _, event := range blockEvents {
+			typedEvent, err := sdk.ParseTypedEvent(*event)
+			if err != nil {
+				continue
+			}
+
+			typedEvents = append(typedEvents, typedEvent)
+		}
+		fn(ctx, typedEvents)
+	}
+}
+
+func abciEventsToTypedEvents(ctx context.Context, abciEventObs observable.Observable[[]types.Event]) observable.Observable[[]proto.Message] {
+	return channel.Map(ctx, abciEventObs, func(ctx context.Context, blockEvents []types.Event) ([]proto.Message, bool) {
+		var typedEvents []proto.Message
+		for _, event := range blockEvents {
+			typedEvent, err := sdk.ParseTypedEvent(event)
+			if err != nil {
+				continue
+			}
+
+			typedEvents = append(typedEvents, typedEvent)
+		}
+
+		return typedEvents, false
+	})
 }

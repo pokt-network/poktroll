@@ -161,6 +161,7 @@ type EventClaimSettled struct {
 	// The uPOKT coin claimed to be rewarded for the work done as a function of
 	// the number of estimated compute units and the compute uints to token multiplier.
 	ClaimedUpokt *types1.Coin `protobuf:"bytes,6,opt,name=claimed_upokt,json=claimedUpokt,proto3" json:"claimed_upokt"`
+	SettledUpokt *types1.Coin `protobuf:"bytes,6,opt,name=settled_upokt,json=claimedUpokt,proto3" json:"claimed_upokt"`
 }
 
 func (m *EventClaimSettled) Reset()         { *m = EventClaimSettled{} }

@@ -62,3 +62,13 @@ func (aq *appQuerier) GetAllApplications(ctx context.Context) ([]apptypes.Applic
 	}
 	return res.Applications, nil
 }
+
+// GetParams returns all staked applications
+func (aq *appQuerier) GetParams(ctx context.Context) (*apptypes.Params, error) {
+	req := apptypes.QueryParamsRequest{}
+	res, err := aq.applicationQuerier.Params(ctx, &req)
+	if err != nil {
+		return &apptypes.Params{}, err
+	}
+	return &res.Params, nil
+}
