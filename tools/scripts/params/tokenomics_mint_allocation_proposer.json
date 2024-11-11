@@ -5,7 +5,7 @@
         "@type": "/poktroll.tokenomics.MsgUpdateParam",
         "authority": "pokt10d07y265gmmuvt4z0w9aw880jnsr700j8yv32t",
         "name": "mint_allocation_proposer",
-        "as_double": 0.5
+        "as_double": 0.05
       }
     ]
   }
