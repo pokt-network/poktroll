@@ -5,7 +5,9 @@
         "@type": "/poktroll.tokenomics.MsgUpdateParams",
         "authority": "pokt10d07y265gmmuvt4z0w9aw880jnsr700j8yv32t",
         "params": {
-          "mint_allocation_dao": 0.1
+          "mint_allocation_dao": 0.1,
+          "mint_allocation_proposer": 0.05,
+          "mint_allocation_supplier": 0.7
         }
       }
     ]
