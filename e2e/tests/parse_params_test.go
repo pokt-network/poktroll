@@ -59,10 +59,10 @@ func (s *suite) parseParam(table gocuke.DataTable, rowIdx int) paramAny {
 	case "bytes":
 		paramValue = []byte(table.Cell(rowIdx, paramValueColIdx).String())
 	case "float":
-		floatValue, err := strconv.ParseFloat(table.Cell(rowIdx, paramValueColIdx).String(), 32)
+		floatValue, err := strconv.ParseFloat(table.Cell(rowIdx, paramValueColIdx).String(), 64)
 		require.NoError(s, err)
 
-		paramValue = float32(floatValue)
+		paramValue = floatValue
 	case "coin":
 		coinAmount := table.Cell(rowIdx, paramValueColIdx).Int64()
 		coinValue := cosmostypes.NewCoin(volatile.DenomuPOKT, math.NewInt(coinAmount))
