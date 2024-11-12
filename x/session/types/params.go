@@ -55,7 +55,7 @@ func ValidateNumSuppliersPerSession(numSuppliersPerSessionAny any) error {
 	}
 
 	if numSuppliersPerSession < 1 {
-		return ErrSessionParamInvalid.Wrapf("number of suppliers per session (%d) MUST be greater than 1", numSuppliersPerSession)
+		return ErrSessionParamInvalid.Wrapf("number of suppliers per session (%d) MUST be greater than or equal to 1", numSuppliersPerSession)
 	}
 
 	return nil

@@ -248,10 +248,8 @@ func (s *ParamsSuite) RunUpdateParamAsSigner(
 		msgAsTypeValue.Elem().FieldByName("AsUint64").Set(paramReflectValue)
 	case ParamTypeInt64:
 		msgAsTypeValue.Elem().FieldByName("AsInt64").Set(paramReflectValue)
-	case ParamTypeFloat32:
+	case ParamTypeFloat64:
 		msgAsTypeValue.Elem().FieldByName("AsFloat").Set(paramReflectValue)
-	case ParamTypeDouble:
-		msgAsTypeValue.Elem().FieldByName("AsDouble").Set(paramReflectValue)
 	case ParamTypeString:
 		msgAsTypeValue.Elem().FieldByName("AsString").Set(paramReflectValue)
 	case ParamTypeBytes:

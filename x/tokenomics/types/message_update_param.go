@@ -13,7 +13,7 @@ func NewMsgUpdateParam(authority string, name string, asTypeAny any) (*MsgUpdate
 
 	switch asType := asTypeAny.(type) {
 	case float64:
-		asTypeIface = &MsgUpdateParam_AsDouble{AsDouble: asType}
+		asTypeIface = &MsgUpdateParam_AsFloat{AsFloat: asType}
 	default:
 		return nil, fmt.Errorf("unexpected param value type: %T", asTypeAny)
 	}
@@ -42,25 +42,25 @@ func (msg *MsgUpdateParam) ValidateBasic() error {
 	// Parameter name must be supported by this module.
 	switch msg.Name {
 	case ParamMintAllocationDao:
-		if err := msg.paramTypeIsDouble(); err != nil {
+		if err := msg.paramTypeIsFloat(); err != nil {
 			return err
 		}
-		return ValidateMintAllocationDao(msg.GetAsDouble())
+		return ValidateMintAllocationDao(msg.GetAsFloat())
 	case ParamMintAllocationProposer:
-		if err := msg.paramTypeIsDouble(); err != nil {
+		if err := msg.paramTypeIsFloat(); err != nil {
 			return err
 		}
-		return ValidateMintAllocationProposer(msg.GetAsDouble())
+		return ValidateMintAllocationProposer(msg.GetAsFloat())
 	default:
 		return ErrTokenomicsParamNameInvalid.Wrapf("unsupported param %q", msg.Name)
 	}
 }
 
-func (msg *MsgUpdateParam) paramTypeIsDouble() error {
-	if _, ok := msg.AsType.(*MsgUpdateParam_AsDouble); !ok {
+func (msg *MsgUpdateParam) paramTypeIsFloat() error {
+	if _, ok := msg.AsType.(*MsgUpdateParam_AsFloat); !ok {
 		return ErrTokenomicsParamInvalid.Wrapf(
 			"invalid type for param %q; expected %T, got %T",
-			msg.Name, &MsgUpdateParam_AsDouble{}, msg.AsType,
+			msg.Name, &MsgUpdateParam_AsFloat{}, msg.AsType,
 		)
 	}
 
