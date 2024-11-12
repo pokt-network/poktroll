@@ -11,28 +11,41 @@ import (
 
 func TestMsgUpdateParam_ValidateBasic(t *testing.T) {
 	tests := []struct {
-		name string
-		msg  MsgUpdateParam
-		err  error
+		desc        string
+		msg         MsgUpdateParam
+		expectedErr error
 	}{
 		{
-			name: "invalid address",
+			desc: "invalid: authority address invalid",
 			msg: MsgUpdateParam{
 				Authority: "invalid_address",
+				Name:      "", // Doesn't matter for this test
+				AsType:    &MsgUpdateParam_AsUint64{AsUint64: 0},
 			},
-			err: sdkerrors.ErrInvalidAddress,
+			expectedErr: sdkerrors.ErrInvalidAddress,
 		}, {
-			name: "valid address",
+			desc: "invalid: param name incorrect (non-existent)",
 			msg: MsgUpdateParam{
 				Authority: sample.AccAddress(),
+				Name:      "non_existent",
+				AsType:    &MsgUpdateParam_AsUint64{AsUint64: DefaultNumSuppliersPerSession},
+			},
+			expectedErr: ErrSessionParamInvalid,
+		}, {
+			desc: "valid: correct address, param name, and type",
+			msg: MsgUpdateParam{
+				Authority: sample.AccAddress(),
+				Name:      ParamNumSuppliersPerSession,
+				AsType:    &MsgUpdateParam_AsUint64{AsUint64: DefaultNumSuppliersPerSession},
 			},
 		},
 	}
+
 	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+		t.Run(tt.desc, func(t *testing.T) {
 			err := tt.msg.ValidateBasic()
-			if tt.err != nil {
-				require.ErrorIs(t, err, tt.err)
+			if tt.expectedErr != nil {
+				require.ErrorIs(t, err, tt.expectedErr)
 				return
 			}
 			require.NoError(t, err)
