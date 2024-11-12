@@ -51,7 +51,7 @@ func TestMsgUpdateParam_UpdateMintAllocationProposerOnly(t *testing.T) {
 	updateParamMsg := &tokenomicstypes.MsgUpdateParam{
 		Authority: authtypes.NewModuleAddress(govtypes.ModuleName).String(),
 		Name:      tokenomicstypes.ParamMintAllocationProposer,
-		AsType:    &tokenomicstypes.MsgUpdateParam_AsDouble{AsDouble: expectedMintAllocationProposer},
+		AsType:    &tokenomicstypes.MsgUpdateParam_AsFloat{AsFloat: expectedMintAllocationProposer},
 	}
 	res, err := msgSrv.UpdateParam(ctx, updateParamMsg)
 	require.NoError(t, err)
