@@ -28,7 +28,7 @@ func TestMsgUpdateParam_UpdateMaxDelegatedGatewaysOnly(t *testing.T) {
 	updateParamMsg := &apptypes.MsgUpdateParam{
 		Authority: authtypes.NewModuleAddress(govtypes.ModuleName).String(),
 		Name:      apptypes.ParamMaxDelegatedGateways,
-		AsType:    &apptypes.MsgUpdateParam_AsInt64{AsInt64: int64(expectedMaxDelegatedGateways)},
+		AsType:    &apptypes.MsgUpdateParam_AsUint64{AsUint64: expectedMaxDelegatedGateways},
 	}
 	res, err := msgSrv.UpdateParam(ctx, updateParamMsg)
 	require.NoError(t, err)

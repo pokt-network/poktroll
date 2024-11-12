@@ -1,0 +1,24 @@
+enable_graphiql_playground: true
+indexer_endpoint: "http://indexer-service:3000"
+port: 3000
+env:
+  NODE_ENV: development
+  # LocalNet
+  ENDPOINT: "http://validator-poktroll-validator:26657"
+  CHAIN_ID: "poktroll"
+  # db schema name
+  DB_SCHEMA: "localnet"
+
+  START_BLOCK: 1
+  # Check docs to see what else you can set here:
+  # Ref: https://academy.subquery.network/indexer/run_publish/references.html#subql-cli
+  SUBQUERY_NODE_EXTRA_PARAMS: "--unfinalized-blocks=true"
+  # Check docs to see what else you can set here:
+  # Ref: https://academy.subquery.network/indexer/run_publish/references.html#subql-query
+  SUBQUERY_GRAPHQL_EXTRA_PARAMS: ""
+
+  DB_HOST: postgres-service
+  DB_PORT: 5432
+  DB_USER: postgres
+  DB_PASS: postgres
+  DB_DATABASE: postgres

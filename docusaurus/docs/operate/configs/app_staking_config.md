@@ -70,6 +70,18 @@ service_ids:
   - <string>
 ```
 
+:::warning
+
+The `service_ids` list must contain a unique entry.
+
+The current protocol requires the `service_ids` list to contain **EXACTLY ONE** entry
+to prevent `Application`s from over-servicing.
+
+A detailed explanation of why this is the case can be found in
+[Tokenomis/TLM](protocol/tokenomics/token_logic_modules.md#tlm-pre-processing).
+
+:::
+
 Defines the list of services the `Application` is willing to consume on the
 Pocket network. Each entry in the list is a `service_id` that identifies a service
 that is available on Pocket network.

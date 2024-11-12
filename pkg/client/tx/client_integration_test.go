@@ -58,7 +58,7 @@ func TestTxClient_SignAndBroadcast_Integration(t *testing.T) {
 	appStakeMsg := &apptypes.MsgStakeApplication{
 		Address:  signingKeyAddr.String(),
 		Stake:    &appStake,
-		Services: client.NewTestApplicationServiceConfig(testServiceIdPrefix, 2),
+		Services: client.NewTestApplicationServiceConfig(testServiceIdPrefix, 1),
 	}
 
 	// Sign and broadcast the message.

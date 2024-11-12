@@ -2,10 +2,11 @@ package keeper
 
 import (
 	"context"
+	"math"
 	"testing"
 
 	"cosmossdk.io/log"
-	"cosmossdk.io/math"
+	cosmosmath "cosmossdk.io/math"
 	"cosmossdk.io/store"
 	"cosmossdk.io/store/metrics"
 	storetypes "cosmossdk.io/store/types"
@@ -29,6 +30,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/pokt-network/poktroll/app"
+	"github.com/pokt-network/poktroll/app/volatile"
 	"github.com/pokt-network/poktroll/testutil/sample"
 	"github.com/pokt-network/poktroll/testutil/tokenomics/mocks"
 	appkeeper "github.com/pokt-network/poktroll/x/application/keeper"
@@ -117,7 +119,7 @@ func TokenomicsKeeperWithActorAddrs(t testing.TB) (
 	// Prepare the test application.
 	application := apptypes.Application{
 		Address:        sample.AccAddress(),
-		Stake:          &sdk.Coin{Denom: "upokt", Amount: math.NewInt(100000)},
+		Stake:          &sdk.Coin{Denom: "upokt", Amount: cosmosmath.NewInt(100000)},
 		ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{{ServiceId: service.Id}},
 	}
 
@@ -126,7 +128,7 @@ func TokenomicsKeeperWithActorAddrs(t testing.TB) (
 	supplier := sharedtypes.Supplier{
 		OwnerAddress:    supplierOwnerAddr,
 		OperatorAddress: supplierOwnerAddr,
-		Stake:           &sdk.Coin{Denom: "upokt", Amount: math.NewInt(100000)},
+		Stake:           &sdk.Coin{Denom: "upokt", Amount: cosmosmath.NewInt(100000)},
 		Services: []*sharedtypes.SupplierServiceConfig{
 			{
 				ServiceId: service.Id,
@@ -139,6 +141,8 @@ func TokenomicsKeeperWithActorAddrs(t testing.TB) (
 			},
 		},
 	}
+
+	sdkCtx := sdk.NewContext(stateStore, cmtproto.Header{}, false, log.NewNopLogger())
 
 	ctrl := gomock.NewController(t)
 
@@ -157,6 +161,14 @@ func TokenomicsKeeperWithActorAddrs(t testing.TB) (
 	// Mock SetApplication.
 	mockApplicationKeeper.EXPECT().
 		SetApplication(gomock.Any(), gomock.Any()).
+		AnyTimes()
+	mockApplicationKeeper.EXPECT().
+		UnbondApplication(gomock.Any(), gomock.Any()).
+		Return(nil).
+		AnyTimes()
+	mockApplicationKeeper.EXPECT().
+		EndBlockerUnbondApplications(gomock.Any()).
+		Return(nil).
 		AnyTimes()
 
 	// Mock the supplier keeper.
@@ -189,6 +201,9 @@ func TokenomicsKeeperWithActorAddrs(t testing.TB) (
 	mockBankKeeper.EXPECT().
 		SendCoinsFromModuleToModule(gomock.Any(), tokenomicstypes.ModuleName, suppliertypes.ModuleName, gomock.Any()).
 		AnyTimes()
+	mockBankKeeper.EXPECT().
+		SendCoinsFromModuleToModule(gomock.Any(), apptypes.ModuleName, tokenomicstypes.ModuleName, gomock.Any()).
+		AnyTimes()
 
 	// Mock the account keeper
 	mockAccountKeeper := mocks.NewMockAccountKeeper(ctrl)
@@ -208,6 +223,10 @@ func TokenomicsKeeperWithActorAddrs(t testing.TB) (
 
 	// Mock the session keeper
 	mockSessionKeeper := mocks.NewMockSessionKeeper(ctrl)
+	mockSessionKeeper.EXPECT().
+		GetParams(gomock.Any()).
+		Return(sessiontypes.DefaultParams()).
+		AnyTimes()
 
 	// Mock the service keeper
 	mockServiceKeeper := mocks.NewMockServiceKeeper(ctrl)
@@ -219,6 +238,12 @@ func TokenomicsKeeperWithActorAddrs(t testing.TB) (
 	mockServiceKeeper.EXPECT().
 		GetService(gomock.Any(), gomock.Any()).
 		Return(sharedtypes.Service{}, false).
+		AnyTimes()
+
+	relayMiningDifficulty := servicekeeper.NewDefaultRelayMiningDifficulty(sdkCtx, log.NewNopLogger(), service.Id, servicekeeper.TargetNumRelays)
+	mockServiceKeeper.EXPECT().
+		GetRelayMiningDifficulty(gomock.Any(), gomock.Any()).
+		Return(relayMiningDifficulty, true).
 		AnyTimes()
 
 	k := tokenomicskeeper.NewKeeper(
@@ -235,8 +260,6 @@ func TokenomicsKeeperWithActorAddrs(t testing.TB) (
 		mockSessionKeeper,
 		mockServiceKeeper,
 	)
-
-	sdkCtx := sdk.NewContext(stateStore, cmtproto.Header{}, false, log.NewNopLogger())
 
 	// Add a block proposer address to the context
 	valAddr, err := cosmostypes.ValAddressFromBech32(sample.ValAddress())
@@ -332,9 +355,9 @@ func NewTokenomicsModuleKeepers(
 	require.NoError(t, bankKeeper.SetParams(sdkCtx, banktypes.DefaultParams()))
 
 	// Provide some initial funds to the suppliers & applications module accounts.
-	err = bankKeeper.MintCoins(sdkCtx, suppliertypes.ModuleName, sdk.NewCoins(sdk.NewCoin("upokt", math.NewInt(1000000000000))))
+	err = bankKeeper.MintCoins(sdkCtx, suppliertypes.ModuleName, sdk.NewCoins(sdk.NewCoin("upokt", cosmosmath.NewInt(1000000000000))))
 	require.NoError(t, err)
-	err = bankKeeper.MintCoins(sdkCtx, apptypes.ModuleName, sdk.NewCoins(sdk.NewCoin("upokt", math.NewInt(1000000000000))))
+	err = bankKeeper.MintCoins(sdkCtx, apptypes.ModuleName, sdk.NewCoins(sdk.NewCoin("upokt", cosmosmath.NewInt(1000000000000))))
 	require.NoError(t, err)
 
 	// Construct a real shared keeper.
@@ -353,6 +376,7 @@ func NewTokenomicsModuleKeepers(
 		logger,
 		authority.String(),
 		bankKeeper,
+		sharedKeeper,
 	)
 	require.NoError(t, gatewayKeeper.SetParams(sdkCtx, gatewaytypes.DefaultParams()))
 
@@ -460,6 +484,7 @@ func NewTokenomicsModuleKeepers(
 	return keepers, ctx
 }
 
+// WithService is an option to set the service in the tokenomics module keepers.
 func WithService(service sharedtypes.Service) TokenomicsModuleKeepersOpt {
 	return func(ctx context.Context, keepers *TokenomicsModuleKeepers) context.Context {
 		keepers.SetService(ctx, service)
@@ -467,6 +492,24 @@ func WithService(service sharedtypes.Service) TokenomicsModuleKeepersOpt {
 	}
 }
 
+// WithApplication is an option to set the application in the tokenomics module keepers.
+func WithApplication(applicaion apptypes.Application) TokenomicsModuleKeepersOpt {
+	return func(ctx context.Context, keepers *TokenomicsModuleKeepers) context.Context {
+		keepers.SetApplication(ctx, applicaion)
+		return ctx
+	}
+}
+
+// WithSupplier is an option to set the supplier in the tokenomics module keepers.
+func WithSupplier(supplier sharedtypes.Supplier) TokenomicsModuleKeepersOpt {
+	return func(ctx context.Context, keepers *TokenomicsModuleKeepers) context.Context {
+		keepers.SetSupplier(ctx, supplier)
+		return ctx
+	}
+}
+
+// WithProposerAddr is an option to set the proposer address in the context used
+// by the tokenomics module keepers.
 func WithProposerAddr(addr string) TokenomicsModuleKeepersOpt {
 	return func(ctx context.Context, keepers *TokenomicsModuleKeepers) context.Context {
 		valAddr, err := cosmostypes.ValAddressFromBech32(addr)
@@ -477,5 +520,35 @@ func WithProposerAddr(addr string) TokenomicsModuleKeepersOpt {
 		sdkCtx := sdk.UnwrapSDKContext(ctx)
 		sdkCtx = sdkCtx.WithProposer(consensusAddr)
 		return sdkCtx
+	}
+}
+
+// WithProofRequirement is an option to enable or disable the proof requirement
+// in the tokenomics module keepers by setting the proof request probability to
+// 1 or 0, respectively whie setting the proof requirement threshold to 0 or
+// MaxInt64, respectively.
+func WithProofRequirement(proofRequired bool) TokenomicsModuleKeepersOpt {
+	return func(ctx context.Context, keepers *TokenomicsModuleKeepers) context.Context {
+
+		proofParams := keepers.ProofKeeper.GetParams(ctx)
+		if proofRequired {
+			// Require a proof 100% of the time probabilistically speaking.
+			proofParams.ProofRequestProbability = 1
+			// Require a proof of any claim amount (i.e. anything greater than 0).
+			proofRequirementThreshold := cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 0)
+			proofParams.ProofRequirementThreshold = &proofRequirementThreshold
+		} else {
+			// Never require a proof probabilistically speaking.
+			proofParams.ProofRequestProbability = 0
+			// Require a proof for MaxInt64 claim amount (i.e. should never trigger).
+			proofRequirementThreshold := cosmostypes.NewInt64Coin(volatile.DenomuPOKT, math.MaxInt64)
+			proofParams.ProofRequirementThreshold = &proofRequirementThreshold
+		}
+
+		if err := keepers.ProofKeeper.SetParams(ctx, proofParams); err != nil {
+			panic(err)
+		}
+
+		return ctx
 	}
 }

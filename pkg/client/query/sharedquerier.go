@@ -7,7 +7,6 @@ import (
 	"github.com/cosmos/gogoproto/grpc"
 
 	"github.com/pokt-network/poktroll/pkg/client"
-	"github.com/pokt-network/poktroll/x/shared"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
@@ -61,33 +60,33 @@ func (sq *sharedQuerier) GetParams(ctx context.Context) (*sharedtypes.Params, er
 // GetClaimWindowOpenHeight returns the block height at which the claim window of
 // the session that includes queryHeight opens.
 //
-// TODO_TECHDEBT(#543): We don't really want to have to query the params for every method call.
+// TODO_MAINNET(#543): We don't really want to have to query the params for every method call.
 // Once `ModuleParamsClient` is implemented, use its replay observable's `#Last()` method
 // to get the most recently (asynchronously) observed (and cached) value.
-// TODO_BLOCKER(@bryanchriswhite,#543): We also don't really want to use the current value of the params. Instead,
+// TODO_MAINNET(@bryanchriswhite,#543): We also don't really want to use the current value of the params. Instead,
 // we should be using the value that the params had for the session which includes queryHeight.
 func (sq *sharedQuerier) GetClaimWindowOpenHeight(ctx context.Context, queryHeight int64) (int64, error) {
 	sharedParams, err := sq.GetParams(ctx)
 	if err != nil {
 		return 0, err
 	}
-	return shared.GetClaimWindowOpenHeight(sharedParams, queryHeight), nil
+	return sharedtypes.GetClaimWindowOpenHeight(sharedParams, queryHeight), nil
 }
 
 // GetProofWindowOpenHeight returns the block height at which the proof window of
 // the session that includes queryHeight opens.
 //
-// TODO_TECHDEBT(#543): We don't really want to have to query the params for every method call.
+// TODO_MAINNET(#543): We don't really want to have to query the params for every method call.
 // Once `ModuleParamsClient` is implemented, use its replay observable's `#Last()` method
 // to get the most recently (asynchronously) observed (and cached) value.
-// TODO_BLOCKER(@bryanchriswhite,#543): We also don't really want to use the current value of the params. Instead,
+// TODO_MAINNET(@bryanchriswhite,#543): We also don't really want to use the current value of the params. Instead,
 // we should be using the value that the params had for the session which includes queryHeight.
 func (sq *sharedQuerier) GetProofWindowOpenHeight(ctx context.Context, queryHeight int64) (int64, error) {
 	sharedParams, err := sq.GetParams(ctx)
 	if err != nil {
 		return 0, err
 	}
-	return shared.GetProofWindowOpenHeight(sharedParams, queryHeight), nil
+	return sharedtypes.GetProofWindowOpenHeight(sharedParams, queryHeight), nil
 }
 
 // GetSessionGracePeriodEndHeight returns the block height at which the grace period
@@ -95,10 +94,10 @@ func (sq *sharedQuerier) GetProofWindowOpenHeight(ctx context.Context, queryHeig
 // The grace period is the number of blocks after the session ends during which relays
 // SHOULD be included in the session which most recently ended.
 //
-// TODO_TECHDEBT(#543): We don't really want to have to query the params for every method call.
+// TODO_MAINNET(#543): We don't really want to have to query the params for every method call.
 // Once `ModuleParamsClient` is implemented, use its replay observable's `#Last()` method
 // to get the most recently (asynchronously) observed (and cached) value.
-// TODO_BLOCKER(@bryanchriswhite, #543): We also don't really want to use the current value of the params.
+// TODO_MAINNET(@bryanchriswhite, #543): We also don't really want to use the current value of the params.
 // Instead, we should be using the value that the params had for the session which includes queryHeight.
 func (sq *sharedQuerier) GetSessionGracePeriodEndHeight(
 	ctx context.Context,
@@ -108,16 +107,16 @@ func (sq *sharedQuerier) GetSessionGracePeriodEndHeight(
 	if err != nil {
 		return 0, err
 	}
-	return shared.GetSessionGracePeriodEndHeight(sharedParams, queryHeight), nil
+	return sharedtypes.GetSessionGracePeriodEndHeight(sharedParams, queryHeight), nil
 }
 
 // GetEarliestSupplierClaimCommitHeight returns the earliest block height at which a claim
 // for the session that includes queryHeight can be committed for a given supplier.
 //
-// TODO_TECHDEBT(#543): We don't really want to have to query the params for every method call.
+// TODO_MAINNET(#543): We don't really want to have to query the params for every method call.
 // Once `ModuleParamsClient` is implemented, use its replay observable's `#Last()` method
 // to get the most recently (asynchronously) observed (and cached) value.
-// TODO_BLOCKER(@bryanchriswhite, #543): We also don't really want to use the current value of the params.
+// TODO_MAINNET(@bryanchriswhite, #543): We also don't really want to use the current value of the params.
 // Instead, we should be using the value that the params had for the session which includes queryHeight.
 func (sq *sharedQuerier) GetEarliestSupplierClaimCommitHeight(ctx context.Context, queryHeight int64, supplierOperatorAddr string) (int64, error) {
 	sharedParams, err := sq.GetParams(ctx)
@@ -127,7 +126,7 @@ func (sq *sharedQuerier) GetEarliestSupplierClaimCommitHeight(ctx context.Contex
 
 	// Fetch the block at the proof window open height. Its hash is used as part
 	// of the seed to the pseudo-random number generator.
-	claimWindowOpenHeight := shared.GetClaimWindowOpenHeight(sharedParams, queryHeight)
+	claimWindowOpenHeight := sharedtypes.GetClaimWindowOpenHeight(sharedParams, queryHeight)
 	claimWindowOpenBlock, err := sq.blockQuerier.Block(ctx, &claimWindowOpenHeight)
 	if err != nil {
 		return 0, err
@@ -136,7 +135,7 @@ func (sq *sharedQuerier) GetEarliestSupplierClaimCommitHeight(ctx context.Contex
 	// NB: Byte slice representation of block hashes don't need to be normalized.
 	claimWindowOpenBlockHash := claimWindowOpenBlock.BlockID.Hash.Bytes()
 
-	return shared.GetEarliestSupplierClaimCommitHeight(
+	return sharedtypes.GetEarliestSupplierClaimCommitHeight(
 		sharedParams,
 		queryHeight,
 		claimWindowOpenBlockHash,
@@ -147,10 +146,10 @@ func (sq *sharedQuerier) GetEarliestSupplierClaimCommitHeight(ctx context.Contex
 // GetEarliestSupplierProofCommitHeight returns the earliest block height at which a proof
 // for the session that includes queryHeight can be committed for a given supplier.
 //
-// TODO_TECHDEBT(#543): We don't really want to have to query the params for every method call.
+// TODO_MAINNET(#543): We don't really want to have to query the params for every method call.
 // Once `ModuleParamsClient` is implemented, use its replay observable's `#Last()` method
 // to get the most recently (asynchronously) observed (and cached) value.
-// TODO_BLOCKER(@bryanchriswhite, #543): We also don't really want to use the current value of the params.
+// TODO_MAINNET(@bryanchriswhite, #543): We also don't really want to use the current value of the params.
 // Instead, we should be using the value that the params had for the session which includes queryHeight.
 func (sq *sharedQuerier) GetEarliestSupplierProofCommitHeight(ctx context.Context, queryHeight int64, supplierOperatorAddr string) (int64, error) {
 	sharedParams, err := sq.GetParams(ctx)
@@ -160,13 +159,13 @@ func (sq *sharedQuerier) GetEarliestSupplierProofCommitHeight(ctx context.Contex
 
 	// Fetch the block at the proof window open height. Its hash is used as part
 	// of the seed to the pseudo-random number generator.
-	proofWindowOpenHeight := shared.GetProofWindowOpenHeight(sharedParams, queryHeight)
+	proofWindowOpenHeight := sharedtypes.GetProofWindowOpenHeight(sharedParams, queryHeight)
 	proofWindowOpenBlock, err := sq.blockQuerier.Block(ctx, &proofWindowOpenHeight)
 	if err != nil {
 		return 0, err
 	}
 
-	return shared.GetEarliestSupplierProofCommitHeight(
+	return sharedtypes.GetEarliestSupplierProofCommitHeight(
 		sharedParams,
 		queryHeight,
 		proofWindowOpenBlock.BlockID.Hash,
@@ -176,10 +175,10 @@ func (sq *sharedQuerier) GetEarliestSupplierProofCommitHeight(ctx context.Contex
 
 // GetComputeUnitsToTokensMultiplier returns the multiplier used to convert compute units to tokens.
 //
-// TODO_TECHDEBT(#543): We don't really want to have to query the params for every method call.
+// TODO_MAINNET(#543): We don't really want to have to query the params for every method call.
 // Once `ModuleParamsClient` is implemented, use its replay observable's `#Last()` method
 // to get the most recently (asynchronously) observed (and cached) value.
-// TODO_BLOCKER(@bryanchriswhite, #543): We also don't really want to use the current value of the params.
+// TODO_MAINNET(@bryanchriswhite, #543): We also don't really want to use the current value of the params.
 // Instead, we should be using the value that the params had for the session which includes queryHeight.
 func (sq *sharedQuerier) GetComputeUnitsToTokensMultiplier(ctx context.Context) (uint64, error) {
 	sharedParams, err := sq.GetParams(ctx)
