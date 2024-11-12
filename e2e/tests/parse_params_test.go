@@ -132,7 +132,7 @@ func (s *suite) newProofMsgUpdateParams(params paramsAnyMap) cosmostypes.Msg {
 	for paramName, paramValue := range params {
 		switch paramName {
 		case prooftypes.ParamProofRequestProbability:
-			msgUpdateParams.Params.ProofRequestProbability = paramValue.value.(float32)
+			msgUpdateParams.Params.ProofRequestProbability = paramValue.value.(float64)
 		case prooftypes.ParamProofRequirementThreshold:
 			msgUpdateParams.Params.ProofRequirementThreshold = paramValue.value.(*cosmostypes.Coin)
 		case prooftypes.ParamProofMissingPenalty:
@@ -261,8 +261,8 @@ func (s *suite) newTokenomicsMsgUpdateParam(authority string, param paramAny) (m
 		msg = proto.Message(&tokenomicstypes.MsgUpdateParam{
 			Authority: authority,
 			Name:      param.name,
-			AsType: &tokenomicstypes.MsgUpdateParam_AsDouble{
-				AsDouble: param.value.(float64),
+			AsType: &tokenomicstypes.MsgUpdateParam_AsFloat{
+				AsFloat: param.value.(float64),
 			},
 		})
 	default:
@@ -287,7 +287,7 @@ func (s *suite) newProofMsgUpdateParam(authority string, param paramAny) (msg pr
 			Authority: authority,
 			Name:      param.name,
 			AsType: &prooftypes.MsgUpdateParam_AsFloat{
-				AsFloat: param.value.(float32),
+				AsFloat: param.value.(float64),
 			},
 		})
 	case "coin":
