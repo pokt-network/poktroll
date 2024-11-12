@@ -99,8 +99,8 @@ func (x *fastReflection_Params) Interface() protoreflect.ProtoMessage {
 // While iterating, mutating operations may only be performed
 // on the current field descriptor.
 func (x *fastReflection_Params) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
-	if x.ProofRequestProbability != float32(0) || math.Signbit(float64(x.ProofRequestProbability)) {
-		value := protoreflect.ValueOfFloat32(x.ProofRequestProbability)
+	if x.ProofRequestProbability != float64(0) || math.Signbit(x.ProofRequestProbability) {
+		value := protoreflect.ValueOfFloat64(x.ProofRequestProbability)
 		if !f(fd_Params_proof_request_probability, value) {
 			return
 		}
@@ -139,7 +139,7 @@ func (x *fastReflection_Params) Range(f func(protoreflect.FieldDescriptor, proto
 func (x *fastReflection_Params) Has(fd protoreflect.FieldDescriptor) bool {
 	switch fd.FullName() {
 	case "poktroll.proof.Params.proof_request_probability":
-		return x.ProofRequestProbability != float32(0) || math.Signbit(float64(x.ProofRequestProbability))
+		return x.ProofRequestProbability != float64(0) || math.Signbit(x.ProofRequestProbability)
 	case "poktroll.proof.Params.proof_requirement_threshold":
 		return x.ProofRequirementThreshold != nil
 	case "poktroll.proof.Params.proof_missing_penalty":
@@ -163,7 +163,7 @@ func (x *fastReflection_Params) Has(fd protoreflect.FieldDescriptor) bool {
 func (x *fastReflection_Params) Clear(fd protoreflect.FieldDescriptor) {
 	switch fd.FullName() {
 	case "poktroll.proof.Params.proof_request_probability":
-		x.ProofRequestProbability = float32(0)
+		x.ProofRequestProbability = float64(0)
 	case "poktroll.proof.Params.proof_requirement_threshold":
 		x.ProofRequirementThreshold = nil
 	case "poktroll.proof.Params.proof_missing_penalty":
@@ -188,7 +188,7 @@ func (x *fastReflection_Params) Get(descriptor protoreflect.FieldDescriptor) pro
 	switch descriptor.FullName() {
 	case "poktroll.proof.Params.proof_request_probability":
 		value := x.ProofRequestProbability
-		return protoreflect.ValueOfFloat32(value)
+		return protoreflect.ValueOfFloat64(value)
 	case "poktroll.proof.Params.proof_requirement_threshold":
 		value := x.ProofRequirementThreshold
 		return protoreflect.ValueOfMessage(value.ProtoReflect())
@@ -219,7 +219,7 @@ func (x *fastReflection_Params) Get(descriptor protoreflect.FieldDescriptor) pro
 func (x *fastReflection_Params) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
 	switch fd.FullName() {
 	case "poktroll.proof.Params.proof_request_probability":
-		x.ProofRequestProbability = float32(value.Float())
+		x.ProofRequestProbability = value.Float()
 	case "poktroll.proof.Params.proof_requirement_threshold":
 		x.ProofRequirementThreshold = value.Message().Interface().(*v1beta1.Coin)
 	case "poktroll.proof.Params.proof_missing_penalty":
@@ -277,7 +277,7 @@ func (x *fastReflection_Params) Mutable(fd protoreflect.FieldDescriptor) protore
 func (x *fastReflection_Params) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
 	case "poktroll.proof.Params.proof_request_probability":
-		return protoreflect.ValueOfFloat32(float32(0))
+		return protoreflect.ValueOfFloat64(float64(0))
 	case "poktroll.proof.Params.proof_requirement_threshold":
 		m := new(v1beta1.Coin)
 		return protoreflect.ValueOfMessage(m.ProtoReflect())
@@ -356,8 +356,8 @@ func (x *fastReflection_Params) ProtoMethods() *protoiface.Methods {
 		var n int
 		var l int
 		_ = l
-		if x.ProofRequestProbability != 0 || math.Signbit(float64(x.ProofRequestProbability)) {
-			n += 5
+		if x.ProofRequestProbability != 0 || math.Signbit(x.ProofRequestProbability) {
+			n += 9
 		}
 		if x.ProofRequirementThreshold != nil {
 			l = options.Size(x.ProofRequirementThreshold)
@@ -442,11 +442,11 @@ func (x *fastReflection_Params) ProtoMethods() *protoiface.Methods {
 			i--
 			dAtA[i] = 0x1a
 		}
-		if x.ProofRequestProbability != 0 || math.Signbit(float64(x.ProofRequestProbability)) {
-			i -= 4
-			binary.LittleEndian.PutUint32(dAtA[i:], uint32(math.Float32bits(float32(x.ProofRequestProbability))))
+		if x.ProofRequestProbability != 0 || math.Signbit(x.ProofRequestProbability) {
+			i -= 8
+			binary.LittleEndian.PutUint64(dAtA[i:], uint64(math.Float64bits(float64(x.ProofRequestProbability))))
 			i--
-			dAtA[i] = 0x15
+			dAtA[i] = 0x11
 		}
 		if input.Buf != nil {
 			input.Buf = append(input.Buf, dAtA...)
@@ -498,16 +498,16 @@ func (x *fastReflection_Params) ProtoMethods() *protoiface.Methods {
 			}
 			switch fieldNum {
 			case 2:
-				if wireType != 5 {
+				if wireType != 1 {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field ProofRequestProbability", wireType)
 				}
-				var v uint32
-				if (iNdEx + 4) > l {
+				var v uint64
+				if (iNdEx + 8) > l {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
 				}
-				v = uint32(binary.LittleEndian.Uint32(dAtA[iNdEx:]))
-				iNdEx += 4
-				x.ProofRequestProbability = float32(math.Float32frombits(v))
+				v = uint64(binary.LittleEndian.Uint64(dAtA[iNdEx:]))
+				iNdEx += 8
+				x.ProofRequestProbability = float64(math.Float64frombits(v))
 			case 3:
 				if wireType != 2 {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field ProofRequirementThreshold", wireType)
@@ -672,7 +672,7 @@ type Params struct {
 
 	// proof_request_probability is the probability of a session requiring a proof
 	// if it's cost (i.e. compute unit consumption) is below the ProofRequirementThreshold.
-	ProofRequestProbability float32 `protobuf:"fixed32,2,opt,name=proof_request_probability,json=proofRequestProbability,proto3" json:"proof_request_probability,omitempty"`
+	ProofRequestProbability float64 `protobuf:"fixed64,2,opt,name=proof_request_probability,json=proofRequestProbability,proto3" json:"proof_request_probability,omitempty"`
 	// proof_requirement_threshold is the session cost (i.e. compute unit consumption)
 	// threshold which asserts that a session MUST have a corresponding proof when its cost
 	// is equal to or above the threshold. This is in contrast to the this requirement
@@ -713,7 +713,7 @@ func (*Params) Descriptor() ([]byte, []int) {
 	return file_poktroll_proof_params_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *Params) GetProofRequestProbability() float32 {
+func (x *Params) GetProofRequestProbability() float64 {
 	if x != nil {
 		return x.ProofRequestProbability
 	}
@@ -754,7 +754,7 @@ var file_poktroll_proof_params_proto_rawDesc = []byte{
 	0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x22, 0xd2, 0x03, 0x0a, 0x06, 0x50, 0x61, 0x72, 0x61, 0x6d,
 	0x73, 0x12, 0x59, 0x0a, 0x19, 0x70, 0x72, 0x6f, 0x6f, 0x66, 0x5f, 0x72, 0x65, 0x71, 0x75, 0x65,
 	0x73, 0x74, 0x5f, 0x70, 0x72, 0x6f, 0x62, 0x61, 0x62, 0x69, 0x6c, 0x69, 0x74, 0x79, 0x18, 0x02,
-	0x20, 0x01, 0x28, 0x02, 0x42, 0x1d, 0xea, 0xde, 0x1f, 0x19, 0x70, 0x72, 0x6f, 0x6f, 0x66, 0x5f,
+	0x20, 0x01, 0x28, 0x01, 0x42, 0x1d, 0xea, 0xde, 0x1f, 0x19, 0x70, 0x72, 0x6f, 0x6f, 0x66, 0x5f,
 	0x72, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x5f, 0x70, 0x72, 0x6f, 0x62, 0x61, 0x62, 0x69, 0x6c,
 	0x69, 0x74, 0x79, 0x52, 0x17, 0x70, 0x72, 0x6f, 0x6f, 0x66, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73,
 	0x74, 0x50, 0x72, 0x6f, 0x62, 0x61, 0x62, 0x69, 0x6c, 0x69, 0x74, 0x79, 0x12, 0x7a, 0x0a, 0x1b,

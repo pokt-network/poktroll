@@ -26,7 +26,7 @@ func TestMsgUpdateParam_UpdateMintAllocationDaoOnly(t *testing.T) {
 	updateParamMsg := &tokenomicstypes.MsgUpdateParam{
 		Authority: authtypes.NewModuleAddress(govtypes.ModuleName).String(),
 		Name:      tokenomicstypes.ParamMintAllocationDao,
-		AsType:    &tokenomicstypes.MsgUpdateParam_AsDouble{AsDouble: expectedMintAllocationDao},
+		AsType:    &tokenomicstypes.MsgUpdateParam_AsFloat{AsFloat: expectedMintAllocationDao},
 	}
 	res, err := msgSrv.UpdateParam(ctx, updateParamMsg)
 	require.NoError(t, err)
@@ -51,7 +51,7 @@ func TestMsgUpdateParam_UpdateMintAllocationProposerOnly(t *testing.T) {
 	updateParamMsg := &tokenomicstypes.MsgUpdateParam{
 		Authority: authtypes.NewModuleAddress(govtypes.ModuleName).String(),
 		Name:      tokenomicstypes.ParamMintAllocationProposer,
-		AsType:    &tokenomicstypes.MsgUpdateParam_AsDouble{AsDouble: expectedMintAllocationProposer},
+		AsType:    &tokenomicstypes.MsgUpdateParam_AsFloat{AsFloat: expectedMintAllocationProposer},
 	}
 	res, err := msgSrv.UpdateParam(ctx, updateParamMsg)
 	require.NoError(t, err)
@@ -76,7 +76,7 @@ func TestMsgUpdateParam_UpdateMintAllocationSupplierOnly(t *testing.T) {
 	updateParamMsg := &tokenomicstypes.MsgUpdateParam{
 		Authority: authtypes.NewModuleAddress(govtypes.ModuleName).String(),
 		Name:      tokenomicstypes.ParamMintAllocationSupplier,
-		AsType:    &tokenomicstypes.MsgUpdateParam_AsDouble{AsDouble: expectedMintAllocationSupplier},
+		AsType:    &tokenomicstypes.MsgUpdateParam_AsFloat{AsFloat: expectedMintAllocationSupplier},
 	}
 	res, err := msgSrv.UpdateParam(ctx, updateParamMsg)
 	require.NoError(t, err)
@@ -101,7 +101,7 @@ func TestMsgUpdateParam_UpdateMintAllocationSourceOwnerOnly(t *testing.T) {
 	updateParamMsg := &tokenomicstypes.MsgUpdateParam{
 		Authority: authtypes.NewModuleAddress(govtypes.ModuleName).String(),
 		Name:      tokenomicstypes.ParamMintAllocationSourceOwner,
-		AsType:    &tokenomicstypes.MsgUpdateParam_AsDouble{AsDouble: expectedMintAllocationSourceOwner},
+		AsType:    &tokenomicstypes.MsgUpdateParam_AsFloat{AsFloat: expectedMintAllocationSourceOwner},
 	}
 	res, err := msgSrv.UpdateParam(ctx, updateParamMsg)
 	require.NoError(t, err)
