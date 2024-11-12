@@ -33,14 +33,14 @@ func (k msgServer) UpdateParam(
 
 	switch msg.Name {
 	case tokenomicstypes.ParamMintAllocationDao:
-		logger = logger.With("param_value", msg.GetAsDouble())
-		params.MintAllocationDao = msg.GetAsDouble()
+		logger = logger.With("param_value", msg.GetAsFloat())
+		params.MintAllocationDao = msg.GetAsFloat()
 	case tokenomicstypes.ParamMintAllocationProposer:
-		logger = logger.With("param_value", msg.GetAsDouble())
-		params.MintAllocationProposer = msg.GetAsDouble()
+		logger = logger.With("param_value", msg.GetAsFloat())
+		params.MintAllocationProposer = msg.GetAsFloat()
 	case tokenomicstypes.ParamMintAllocationSupplier:
-		logger = logger.With("param_value", msg.GetAsDouble())
-		params.MintAllocationSupplier = msg.GetAsDouble()
+		logger = logger.With("param_value", msg.GetAsFloat())
+		params.MintAllocationSupplier = msg.GetAsFloat()
 	default:
 		return nil, status.Error(
 			codes.InvalidArgument,
