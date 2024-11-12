@@ -126,7 +126,7 @@ func TestMsgUpdateParam_UpdateMintAllocationApplicationOnly(t *testing.T) {
 	updateParamMsg := &tokenomicstypes.MsgUpdateParam{
 		Authority: authtypes.NewModuleAddress(govtypes.ModuleName).String(),
 		Name:      tokenomicstypes.ParamMintAllocationApplication,
-		AsType:    &tokenomicstypes.MsgUpdateParam_AsDouble{AsDouble: expectedMintAllocationApplication},
+		AsType:    &tokenomicstypes.MsgUpdateParam_AsFloat{AsFloat: expectedMintAllocationApplication},
 	}
 	res, err := msgSrv.UpdateParam(ctx, updateParamMsg)
 	require.NoError(t, err)
