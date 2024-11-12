@@ -261,8 +261,8 @@ func (s *suite) newTokenomicsMsgUpdateParam(authority string, param paramAny) (m
 		msg = proto.Message(&tokenomicstypes.MsgUpdateParam{
 			Authority: authority,
 			Name:      param.name,
-			AsType: &tokenomicstypes.MsgUpdateParam_AsDouble{
-				AsDouble: param.value.(float64),
+			AsType: &tokenomicstypes.MsgUpdateParam_AsFloat{
+				AsFloat: param.value.(float64),
 			},
 		})
 	default:
