@@ -22,7 +22,7 @@ func TestGetParams(t *testing.T) {
 		{
 			desc:                   "invalid NumSuppliersPerSession (<1)",
 			numSuppliersPerSession: uint64(0),
-			expectedErr:            sessiontypes.ErrSessionParamInvalid.Wrapf("number of suppliers per session (%d) MUST be greater than 1", 0),
+			expectedErr:            sessiontypes.ErrSessionParamInvalid.Wrapf("number of suppliers per session (%d) MUST be greater than or equal to 1", 0),
 		},
 		{
 			desc:                   "valid NumSuppliersPerSession",
