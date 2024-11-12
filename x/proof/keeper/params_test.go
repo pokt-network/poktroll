@@ -33,17 +33,17 @@ func TestParams_ValidateProofRequestProbability(t *testing.T) {
 		},
 		{
 			desc:                    "ProofRequestProbability less than zero",
-			proofRequestProbability: float32(-0.25),
-			expectedErr:             prooftypes.ErrProofParamInvalid.Wrapf("invalid ProofRequestProbability: (%v)", float32(-0.25)),
+			proofRequestProbability: float64(-0.25),
+			expectedErr:             prooftypes.ErrProofParamInvalid.Wrapf("invalid ProofRequestProbability: (%v)", float64(-0.25)),
 		},
 		{
 			desc:                    "ProofRequestProbability greater than one",
-			proofRequestProbability: float32(1.1),
-			expectedErr:             prooftypes.ErrProofParamInvalid.Wrapf("invalid ProofRequestProbability: (%v)", float32(1.1)),
+			proofRequestProbability: float64(1.1),
+			expectedErr:             prooftypes.ErrProofParamInvalid.Wrapf("invalid ProofRequestProbability: (%v)", float64(1.1)),
 		},
 		{
 			desc:                    "valid ProofRequestProbability",
-			proofRequestProbability: float32(0.25),
+			proofRequestProbability: float64(0.25),
 		},
 	}
 
