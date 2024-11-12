@@ -1,7 +1,6 @@
 package keeper_test
 
 import (
-	"encoding/hex"
 	"testing"
 
 	"cosmossdk.io/math"
@@ -15,33 +14,6 @@ import (
 	testkeeper "github.com/pokt-network/poktroll/testutil/keeper"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 )
-
-func TestMsgUpdateParam_UpdateMinRelayDifficultyBitsOnly(t *testing.T) {
-	expectedRelayDifficultyTargetHash, _ := hex.DecodeString("0000000000000000ffffffffffffffffffffffffffffffffffffffffffffffff")
-
-	// Set the parameters to their default values
-	k, msgSrv, ctx := setupMsgServer(t)
-	defaultParams := prooftypes.DefaultParams()
-	require.NoError(t, k.SetParams(ctx, defaultParams))
-
-	// Ensure the default values are different from the new values we want to set
-	require.NotEqual(t, expectedRelayDifficultyTargetHash, defaultParams.RelayDifficultyTargetHash)
-
-	// Update the min stake.
-	updateParamMsg := &prooftypes.MsgUpdateParam{
-		Authority: authtypes.NewModuleAddress(govtypes.ModuleName).String(),
-		Name:      prooftypes.ParamRelayDifficultyTargetHash,
-		AsType:    &prooftypes.MsgUpdateParam_AsBytes{AsBytes: expectedRelayDifficultyTargetHash},
-	}
-	res, err := msgSrv.UpdateParam(ctx, updateParamMsg)
-	require.NoError(t, err)
-
-	require.NotEqual(t, defaultParams.RelayDifficultyTargetHash, res.Params.RelayDifficultyTargetHash)
-	require.Equal(t, expectedRelayDifficultyTargetHash, res.Params.RelayDifficultyTargetHash)
-
-	// Ensure the other parameters are unchanged
-	testkeeper.AssertDefaultParamsEqualExceptFields(t, &defaultParams, res.Params, "RelayDifficultyTargetHash")
-}
 
 func TestMsgUpdateParam_UpdateProofRequestProbabilityOnly(t *testing.T) {
 	var expectedProofRequestProbability float32 = 0.1
@@ -67,7 +39,7 @@ func TestMsgUpdateParam_UpdateProofRequestProbabilityOnly(t *testing.T) {
 	require.Equal(t, expectedProofRequestProbability, res.Params.ProofRequestProbability)
 
 	// Ensure the other parameters are unchanged
-	testkeeper.AssertDefaultParamsEqualExceptFields(t, &defaultParams, res.Params, "ProofRequestProbability")
+	testkeeper.AssertDefaultParamsEqualExceptFields(t, &defaultParams, res.Params, string(prooftypes.KeyProofRequestProbability))
 }
 
 func TestMsgUpdateParam_UpdateProofRequirementThresholdOnly(t *testing.T) {
@@ -94,7 +66,7 @@ func TestMsgUpdateParam_UpdateProofRequirementThresholdOnly(t *testing.T) {
 	require.Equal(t, &expectedProofRequirementThreshold, res.Params.ProofRequirementThreshold)
 
 	// Ensure the other parameters are unchanged
-	testkeeper.AssertDefaultParamsEqualExceptFields(t, &defaultParams, res.Params, "ProofRequirementThreshold")
+	testkeeper.AssertDefaultParamsEqualExceptFields(t, &defaultParams, res.Params, string(prooftypes.KeyProofRequirementThreshold))
 }
 
 func TestMsgUpdateParam_UpdateProofMissingPenaltyOnly(t *testing.T) {
@@ -121,7 +93,7 @@ func TestMsgUpdateParam_UpdateProofMissingPenaltyOnly(t *testing.T) {
 	require.Equal(t, &expectedProofMissingPenalty, res.Params.ProofMissingPenalty)
 
 	// Ensure the other parameters are unchanged
-	testkeeper.AssertDefaultParamsEqualExceptFields(t, &defaultParams, res.Params, "ProofMissingPenalty")
+	testkeeper.AssertDefaultParamsEqualExceptFields(t, &defaultParams, res.Params, string(prooftypes.KeyProofMissingPenalty))
 }
 
 func TestMsgUpdateParam_UpdateProofSubmissionFeeOnly(t *testing.T) {
@@ -148,5 +120,5 @@ func TestMsgUpdateParam_UpdateProofSubmissionFeeOnly(t *testing.T) {
 	require.Equal(t, &expectedProofSubmissionFee, res.Params.ProofSubmissionFee)
 
 	// Ensure the other parameters are unchanged
-	testkeeper.AssertDefaultParamsEqualExceptFields(t, &defaultParams, res.Params, "ProofSubmissionFee")
+	testkeeper.AssertDefaultParamsEqualExceptFields(t, &defaultParams, res.Params, string(prooftypes.KeyProofSubmissionFee))
 }

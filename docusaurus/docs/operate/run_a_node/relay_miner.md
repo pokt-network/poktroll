@@ -38,8 +38,8 @@ Please see the [Hardware Requirements](./hardware_requirements.md#relayminer) pa
 Please refer to the `Deploying a RelayMiner` section in [poktroll-docker-compose-example](https://github.com/pokt-network/poktroll-docker-compose-example#deploying-a-relay-miner)
 GitHub repository on how to deploy an AppGate Server using `docker-compose`.
 
-_TODO: Move over the relevant information from the `poktroll-docker-compose-example` repository into the docs_
+_TODO_DOCUMENT: Move over the relevant information from the `poktroll-docker-compose-example` repository into the docs_
 
 ## Kubernetes Example
 
-_TODO: Provide an example using [strangelove-ventures/cosmos-operator](https://github.com/strangelove-ventures/cosmos-operator)._
+_TODO_DOCUMENT: Provide an example using [strangelove-ventures/cosmos-operator](https://github.com/strangelove-ventures/cosmos-operator)._

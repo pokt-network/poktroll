@@ -1,0 +1,68 @@
+load("./git.tilt",
+     "clone_repo",
+     "fetch_repo_main",
+     "repo_remote_name",
+     "repo_changes",
+     "repo_is_outdated")
+
+
+# pocketdex_disabled_resource creates a tilt resource that prints a message indicating
+# that the indexer is disabled and how to enable it.
+def pocketdex_disabled_resource(reason):
+    local_resource("⚠️ Indexer Disabled",
+                   "echo '{}'".format(reason),
+                   labels=["Pocketdex"])
+
+
+# pocketdex_outdated_resource creates a tilt resource that prints a message indicating
+# that the indexer is outdated and how many commits behind it is.
+def pocketdex_outdated_resource(pocketdex_root_path):
+    _, num_remote_changes = repo_changes(pocketdex_root_path)
+    local_resource("🔄 Updates Available",
+                   """
+                   echo 'Pocketdex main branch is outdated; {} commits behind. Please `git pull --ff-only` to update pocketdex.'
+                   """.format(num_remote_changes),
+                   labels=["Pocketdex"])
+
+
+# load_pocketdex loads the pocketdex.tilt file from the pocketdex repo at pocketdex_root_path.
+# It also checks if the pocketdex repo has updates and, if so, creates a resource which prints instructions to update.
+def load_pocketdex(pocketdex_root_path):
+    if repo_is_outdated(pocketdex_root_path):
+        pocketdex_outdated_resource(pocketdex_root_path)
+
+    pocketdex_tilt_path = os.path.join(pocketdex_root_path, "tiltfiles", "pocketdex.tilt")
+    pocketdex_tilt = load_dynamic(pocketdex_tilt_path)
+
+    postgres_values_path = os.path.join(".", "localnet", "kubernetes", "values-pocketdex-postgres.yaml")
+    pgadmin_values_path = os.path.join(".", "localnet", "kubernetes", "values-pocketdex-pgadmin.yaml")
+    indexer_values_path = os.path.join(".", "localnet", "kubernetes", "values-pocketdex-indexer.yaml")
+    gql_engine_values_path = os.path.join(".", "localnet", "kubernetes", "values-pocketdex-gql-engine.yaml")
+    pocketdex_tilt["pocketdex"](pocketdex_root_path,
+                                genesis_file_name="localnet.json",
+                                postgres_values_path=postgres_values_path,
+                                pgadmin_values_path=pgadmin_values_path,
+                                indexer_values_path=indexer_values_path,
+                                gql_engine_values_path=gql_engine_values_path)
+
+
+# check_and_load_pocketdex checks if sibling pocketdex repo exists.
+# If it does, load the pocketdex.tilt file from the sibling repo.
+# Otherwise, check the `indexer.clone_if_not_present` flag in `localnet_config.yaml` and EITHER:
+#   1. clone pocketdex to ../pocketdex
+#   -- OR --
+#   2. Prints a message if true or false
+def check_and_load_pocketdex(indexer_config):
+    if indexer_config["enabled"]:
+        pocketdex_root_path = indexer_config["repo_path"]
+        if not os.path.exists(pocketdex_root_path):
+            if indexer_config["clone_if_not_present"]:
+                clone_repo("https://github.com/pokt-network/pocketdex", pocketdex_root_path)
+                load_pocketdex(pocketdex_root_path)
+            else:
+                pocketdex_disabled_resource("Pocketdex repo not found at {}. Set `clone_if_not_present` to `true` in `localnet_config.yaml`.".format(pocketdex_root_path))
+        else:
+            print("Using existing pocketdex repo")
+            load_pocketdex(pocketdex_root_path)
+    else:
+        pocketdex_disabled_resource("Pocketdex indexer disabled. Set `indexer.enabled` to `true` in `localnet_config.yaml` to enable it.")

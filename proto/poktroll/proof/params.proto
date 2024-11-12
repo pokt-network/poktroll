@@ -13,10 +13,6 @@ message Params {
   option (amino.name) = "poktroll/x/proof/Params";
   option (gogoproto.equal) = true;
 
-  // TODO_FOLLOWUP(@olshansk, #690): Either delete this or change it to be named "minimum"
-  // relay_difficulty_target_hash is the maximum value a relay hash must be less than to be volume/reward applicable.
-  bytes relay_difficulty_target_hash = 1 [(gogoproto.jsontag) = "relay_difficulty_target_hash"];
-
   // proof_request_probability is the probability of a session requiring a proof
   // if it's cost (i.e. compute unit consumption) is below the ProofRequirementThreshold.
   float proof_request_probability = 2 [(gogoproto.jsontag) = "proof_request_probability"];

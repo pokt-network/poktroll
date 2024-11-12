@@ -23,7 +23,7 @@ func SimulateMsgUnstakeApplication(
 			Address: simAccount.Address.String(),
 		}
 
-		// TODO: Handling the UnstakeApplication simulation
+		// TODO_TECHDEBT: Handling the UnstakeApplication simulation
 
 		return simtypes.NoOpMsg(types.ModuleName, sdk.MsgTypeURL(msg), "UnstakeApplication simulation not implemented"), nil, nil
 	}

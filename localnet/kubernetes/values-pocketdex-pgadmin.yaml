@@ -1,0 +1,14 @@
+env:
+  # Pgadmin4
+  # DEV_NOTE: if you modify POSTGRES_USER/PASSWORD/DB then auto-imported server will not match and you need to setup
+  # your own with the modified values on the pgadmin website after first login.
+  PGADMIN_VERSION: 8.11
+  PGADMIN_DEFAULT_EMAIL: admin@local.dev
+  PGADMIN_DEFAULT_PASSWORD: admin
+  PGADMIN_LISTEN_PORT: 5050
+
+  DB_HOST: postgres-service
+  DB_PORT: 5432
+  DB_USER: postgres
+  DB_PASS: postgres
+  DB_DATABASE: postgres

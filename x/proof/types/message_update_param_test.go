@@ -20,7 +20,7 @@ func TestMsgUpdateParam_ValidateBasic(t *testing.T) {
 			msg: MsgUpdateParam{
 				Authority: "invalid_address",
 				Name:      "", // Doesn't matter for this test
-				AsType:    &MsgUpdateParam_AsInt64{AsInt64: 1},
+				AsType:    &MsgUpdateParam_AsFloat{AsFloat: 0},
 			},
 
 			expectedErr: ErrProofInvalidAddress,
@@ -28,8 +28,8 @@ func TestMsgUpdateParam_ValidateBasic(t *testing.T) {
 			name: "invalid: param name incorrect (non-existent)",
 			msg: MsgUpdateParam{
 				Authority: sample.AccAddress(),
-				Name:      "WRONG_relay_difficulty_target_hash",
-				AsType:    &MsgUpdateParam_AsInt64{AsInt64: 1},
+				Name:      "non_existent",
+				AsType:    &MsgUpdateParam_AsFloat{AsFloat: 0},
 			},
 
 			expectedErr: ErrProofParamNameInvalid,
@@ -37,16 +37,16 @@ func TestMsgUpdateParam_ValidateBasic(t *testing.T) {
 			name: "invalid: incorrect param type",
 			msg: MsgUpdateParam{
 				Authority: sample.AccAddress(),
-				Name:      ParamRelayDifficultyTargetHash,
-				AsType:    &MsgUpdateParam_AsString{AsString: "invalid"},
+				Name:      ParamProofMissingPenalty,
+				AsType:    &MsgUpdateParam_AsFloat{AsFloat: 0},
 			},
 			expectedErr: ErrProofParamInvalid,
 		}, {
 			name: "valid: correct authority, param name, and type",
 			msg: MsgUpdateParam{
 				Authority: sample.AccAddress(),
-				Name:      ParamRelayDifficultyTargetHash,
-				AsType:    &MsgUpdateParam_AsBytes{AsBytes: DefaultRelayDifficultyTargetHash},
+				Name:      ParamProofMissingPenalty,
+				AsType:    &MsgUpdateParam_AsCoin{AsCoin: &DefaultProofMissingPenalty},
 			},
 
 			expectedErr: nil,

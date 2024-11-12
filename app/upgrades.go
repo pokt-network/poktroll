@@ -2,6 +2,7 @@ package app
 
 import (
 	upgradetypes "cosmossdk.io/x/upgrade/types"
+
 	"github.com/pokt-network/poktroll/app/upgrades"
 )
 

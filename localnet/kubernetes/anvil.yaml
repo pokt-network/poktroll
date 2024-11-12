@@ -13,7 +13,7 @@ spec:
       labels:
         app: anvil
     spec:
-      # TODO: Add resource limits
+      # TODO_IMPROVE: Add resource limits
       containers:
         - name: anvil
           image: ghcr.io/foundry-rs/foundry:nightly-3fa02706ca732c994715ba42d923605692062375
