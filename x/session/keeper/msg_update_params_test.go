@@ -5,24 +5,24 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/pokt-network/poktroll/x/session/types"
+	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 )
 
 func TestMsgUpdateParams(t *testing.T) {
 	k, ms, ctx := setupMsgServer(t)
-	params := types.DefaultParams()
+	params := sessiontypes.DefaultParams()
 	require.NoError(t, k.SetParams(ctx, params))
 
 	// default params
 	tests := []struct {
 		desc           string
-		params         *types.MsgUpdateParams
+		params         *sessiontypes.MsgUpdateParams
 		shouldError    bool
 		expectedErrMsg string
 	}{
 		{
 			desc: "invalid: authority address invalid",
-			params: &types.MsgUpdateParams{
+			params: &sessiontypes.MsgUpdateParams{
 				Authority: "invalid",
 				Params:    params,
 			},
@@ -30,16 +30,26 @@ func TestMsgUpdateParams(t *testing.T) {
 			expectedErrMsg: "invalid authority",
 		},
 		{
-			desc: "send empty params",
-			params: &types.MsgUpdateParams{
+			desc: "invalid: send empty params",
+			params: &sessiontypes.MsgUpdateParams{
 				Authority: k.GetAuthority(),
-				Params:    types.Params{},
+				Params:    sessiontypes.Params{},
+			},
+			shouldError: true,
+		},
+		{
+			desc: "valid: send minimal params",
+			params: &sessiontypes.MsgUpdateParams{
+				Authority: k.GetAuthority(),
+				Params: sessiontypes.Params{
+					NumSuppliersPerSession: 42,
+				},
 			},
 			shouldError: false,
 		},
 		{
 			desc: "valid: send default params",
-			params: &types.MsgUpdateParams{
+			params: &sessiontypes.MsgUpdateParams{
 				Authority: k.GetAuthority(),
 				Params:    params,
 			},

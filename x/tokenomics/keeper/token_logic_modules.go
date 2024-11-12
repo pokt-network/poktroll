@@ -18,7 +18,6 @@ import (
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 	servicekeeper "github.com/pokt-network/poktroll/x/service/keeper"
 	servicetypes "github.com/pokt-network/poktroll/x/service/types"
-	sessionkeeper "github.com/pokt-network/poktroll/x/session/keeper"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
@@ -738,8 +737,9 @@ func (k Keeper) ensureClaimAmountLimits(
 	// Re costs - This is an easy way to split the stake evenly.
 	// TODO_FUTURE: See if there's a way to let the application prefer (the best)
 	// supplier(s) in a session while maintaining a simple solution to implement this.
+	numSuppliersPerSession := int64(k.sessionKeeper.GetParams(ctx).NumSuppliersPerSession)
 	maxClaimableAmt := appStake.Amount.
-		Quo(math.NewInt(sessionkeeper.NumSupplierPerSession)).
+		Quo(math.NewInt(numSuppliersPerSession)).
 		Quo(math.NewInt(numPendingSessions))
 	maxClaimSettlementAmt := supplierAppStakeToMaxSettlementAmount(maxClaimableAmt)
 
