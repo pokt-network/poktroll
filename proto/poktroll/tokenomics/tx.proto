@@ -53,7 +53,7 @@ message MsgUpdateParam {
   // specified in the `Params` message in `proof/params.proto.`
   string name = 2;
   oneof as_type {
-    double as_double = 3 [(gogoproto.jsontag) = "as_double"];
+    double as_float = 3 [(gogoproto.jsontag) = "as_float"];
   }
 }
 
