@@ -18,7 +18,6 @@ import (
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 	servicekeeper "github.com/pokt-network/poktroll/x/service/keeper"
 	servicetypes "github.com/pokt-network/poktroll/x/service/types"
-	sessionkeeper "github.com/pokt-network/poktroll/x/session/keeper"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
@@ -735,7 +734,8 @@ func (k Keeper) ensureClaimAmountLimits(
 	// - Off-chain actors could use this formula during the servicing of session num 3
 	//   and assume maxClaimableAmt will be settled in session 2.
 	// - Guarantee no over-servicing at the cost of higher application stake requirements.
-	maxClaimableAmt := appStake.Amount.Quo(math.NewInt(sessionkeeper.NumSupplierPerSession))
+	numSuppliersPerSession := int64(k.sessionKeeper.GetParams(ctx).NumSuppliersPerSession)
+	maxClaimableAmt := appStake.Amount.Quo(math.NewInt(numSuppliersPerSession))
 	maxClaimSettlementAmt := supplierAppStakeToMaxSettlementAmount(maxClaimableAmt)
 
 	// Check if the claimable amount is capped by the max claimable amount.

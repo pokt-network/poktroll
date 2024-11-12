@@ -78,6 +78,7 @@ type SessionKeeper interface {
 	GetSession(context.Context, *sessiontypes.QueryGetSessionRequest) (*sessiontypes.QueryGetSessionResponse, error)
 	GetBlockHash(ctx context.Context, height int64) []byte
 	StoreBlockHash(ctx context.Context)
+	GetParams(ctx context.Context) sessiontypes.Params
 }
 
 type SupplierKeeper interface {
