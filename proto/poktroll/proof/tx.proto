@@ -60,7 +60,7 @@ message MsgUpdateParam {
   string name = 2;
   oneof as_type {
     bytes as_bytes = 7 [(gogoproto.jsontag) = "as_bytes"];
-    float as_float = 8 [(gogoproto.jsontag) = "as_float"];
+    double as_float = 8 [(gogoproto.jsontag) = "as_float"];
     cosmos.base.v1beta1.Coin as_coin = 9 [(gogoproto.jsontag) = "as_coin"];
   }
 }
