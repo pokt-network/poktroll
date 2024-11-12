@@ -187,7 +187,7 @@ func ValidateMintAllocationApplication(mintAllocationApplication any) error {
 	return nil
 }
 
-// TODO_IN_THIS_COMMIT: godoc...
+// ValidateMintAllocationSum validates that the sum of all actor mint allocations is exactly 1.
 func ValidateMintAllocationSum(params *Params) error {
 	sum := params.MintAllocationDao +
 		params.MintAllocationProposer +
