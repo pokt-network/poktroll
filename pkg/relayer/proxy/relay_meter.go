@@ -22,7 +22,6 @@ import (
 	"github.com/pokt-network/poktroll/pkg/relayer"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	servicetypes "github.com/pokt-network/poktroll/x/service/types"
-	sessionkeeper "github.com/pokt-network/poktroll/x/session/keeper"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
@@ -56,6 +55,7 @@ type sessionRelayMeter struct {
 	sharedParams           *sharedtypes.Params
 	service                *sharedtypes.Service
 	serviceRelayDifficulty servicetypes.RelayMiningDifficulty
+	numSuppliersPerSession uint64
 }
 
 // ProxyRelayMeter is the offchain Supplier's rate limiter.
@@ -83,6 +83,7 @@ type ProxyRelayMeter struct {
 	applicationQuerier client.ApplicationQueryClient
 	serviceQuerier     client.ServiceQueryClient
 	sharedQuerier      client.SharedQueryClient
+	sessionQuerier     client.SessionQueryClient
 	eventsQueryClient  client.EventsQueryClient
 	blockQuerier       client.BlockClient
 
@@ -282,7 +283,11 @@ func (rmtr *ProxyRelayMeter) forEachEventApplicationStakedFn(ctx context.Context
 			continue
 		}
 		sessionRelayMeter.app.Stake = app.GetStake()
-		appStakeShare := getAppStakePortionPayableToSessionSupplier(app.GetStake(), sessionRelayMeter.sharedParams)
+		appStakeShare := getAppStakePortionPayableToSessionSupplier(
+			app.GetStake(),
+			sessionRelayMeter.sharedParams,
+			sessionRelayMeter.numSuppliersPerSession,
+		)
 		sessionRelayMeter.maxCoin = appStakeShare
 	}
 }
@@ -328,8 +333,17 @@ func (rmtr *ProxyRelayMeter) ensureRequestSessionRelayMeter(ctx context.Context,
 			return nil, err
 		}
 
+		sessionParams, err := rmtr.sessionQuerier.GetParams(ctx)
+		if err != nil {
+			return nil, err
+		}
+
 		// calculate the max amount of stake the application can consume in the current session.
-		supplierAppStake := getAppStakePortionPayableToSessionSupplier(app.Stake, sharedParams)
+		supplierAppStake := getAppStakePortionPayableToSessionSupplier(
+			app.GetStake(),
+			sharedParams,
+			sessionParams.GetNumSuppliersPerSession(),
+		)
 		relayMeter = &sessionRelayMeter{
 			app:                    app,
 			consumedCoin:           cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 0),
@@ -338,6 +352,7 @@ func (rmtr *ProxyRelayMeter) ensureRequestSessionRelayMeter(ctx context.Context,
 			sharedParams:           sharedParams,
 			service:                &service,
 			serviceRelayDifficulty: serviceRelayDifficulty,
+			numSuppliersPerSession: sessionParams.GetNumSuppliersPerSession(),
 		}
 
 		rmtr.sessionToRelayMeterMap[sessionId] = relayMeter
@@ -420,9 +435,9 @@ func getSingleMinedRelayCostCoin(
 func getAppStakePortionPayableToSessionSupplier(
 	stake *cosmostypes.Coin,
 	sharedParams *sharedtypes.Params,
+	numSuppliersPerSession uint64,
 ) cosmostypes.Coin {
-	maxSuppliers := int64(sessionkeeper.NumSupplierPerSession)
-	appStakePerSupplier := stake.Amount.Quo(math.NewInt(maxSuppliers))
+	appStakePerSupplier := stake.Amount.Quo(math.NewInt(int64(numSuppliersPerSession)))
 
 	// Calculate the number of pending sessions that might consume the application's stake.
 	numBlocksPerSession := int64(sharedParams.GetNumBlocksPerSession())
