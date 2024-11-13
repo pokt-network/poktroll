@@ -11,6 +11,9 @@ var (
 	KeyMintAllocationProposer             = []byte("MintAllocationProposer")
 	ParamMintAllocationProposer           = "mint_allocation_proposer"
 	DefaultMintAllocationProposer float64 = 0.05
+	KeyMintAllocationSupplier             = []byte("MintAllocationSupplier")
+	ParamMintAllocationSupplier           = "mint_allocation_supplier"
+	DefaultMintAllocationSupplier float64 = 0.7
 
 	_ paramtypes.ParamSet = (*Params)(nil)
 )
@@ -23,11 +26,13 @@ func ParamKeyTable() paramtypes.KeyTable {
 // NewParams creates a new Params instance
 func NewParams(
 	mintAllocationDao,
-	mintAllocationProposer float64,
+	mintAllocationProposer,
+	mintAllocationSupplier float64,
 ) Params {
 	return Params{
 		MintAllocationDao:      mintAllocationDao,
 		MintAllocationProposer: mintAllocationProposer,
+		MintAllocationSupplier: mintAllocationSupplier,
 	}
 }
 
@@ -36,6 +41,7 @@ func DefaultParams() Params {
 	return NewParams(
 		DefaultMintAllocationDao,
 		DefaultMintAllocationProposer,
+		DefaultMintAllocationSupplier,
 	)
 }
 
@@ -52,6 +58,11 @@ func (p *Params) ParamSetPairs() paramtypes.ParamSetPairs {
 			&p.MintAllocationProposer,
 			ValidateMintAllocationProposer,
 		),
+		paramtypes.NewParamSetPair(
+			KeyMintAllocationSupplier,
+			&p.MintAllocationSupplier,
+			ValidateMintAllocationSupplier,
+		),
 	}
 }
 
@@ -62,6 +73,10 @@ func (params *Params) ValidateBasic() error {
 	}
 
 	if err := ValidateMintAllocationProposer(params.MintAllocationProposer); err != nil {
+		return err
+	}
+
+	if err := ValidateMintAllocationSupplier(params.MintAllocationSupplier); err != nil {
 		return err
 	}
 
@@ -91,6 +106,20 @@ func ValidateMintAllocationProposer(mintAllocationProposer any) error {
 
 	if mintAllocationProposerFloat < 0 {
 		return ErrTokenomicsParamInvalid.Wrapf("mint allocation to proposer must be greater than or equal to 0: got %f", mintAllocationProposerFloat)
+	}
+
+	return nil
+}
+
+// ValidateMintAllocationSupplier validates the MintAllocationSupplier param.
+func ValidateMintAllocationSupplier(mintAllocationSupplier any) error {
+	mintAllocationSupplierFloat, ok := mintAllocationSupplier.(float64)
+	if !ok {
+		return ErrTokenomicsParamInvalid.Wrapf("invalid parameter type: %T", mintAllocationSupplier)
+	}
+
+	if mintAllocationSupplierFloat < 0 {
+		return ErrTokenomicsParamInvalid.Wrapf("mint allocation to supplier must be greater than or equal to 0: got %f", mintAllocationSupplierFloat)
 	}
 
 	return nil

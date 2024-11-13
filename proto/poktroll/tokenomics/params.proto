@@ -18,6 +18,9 @@ message Params {
   // mint_allocation_proposer is the percentage of the minted tokens which are sent
   // to the block proposer account address during claim settlement.
   double mint_allocation_proposer = 2 [(gogoproto.jsontag) = "mint_allocation_proposer", (gogoproto.moretags) = "yaml:\"mint_allocation_proposer\""];
+  // mint_allocation_supplier is the percentage of the minted tokens which are sent
+  // to the block supplier account address during claim settlement.
+  double mint_allocation_supplier = 3 [(gogoproto.jsontag) = "mint_allocation_supplier", (gogoproto.moretags) = "yaml:\"mint_allocation_supplier\""];
 
   // IMPORTANT: Make sure to update all related files if you're modifying or adding a new parameter.
   // Try the following grep to find all related places: `grep -r compute_units_to_tokens_multiplier`

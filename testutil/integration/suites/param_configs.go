@@ -233,6 +233,7 @@ var (
 		ValidParams: tokenomicstypes.Params{
 			MintAllocationDao:      tokenomicstypes.DefaultMintAllocationDao,
 			MintAllocationProposer: tokenomicstypes.DefaultMintAllocationProposer,
+			MintAllocationSupplier: tokenomicstypes.DefaultMintAllocationSupplier,
 		},
 		ParamTypes: map[ParamType]any{
 			ParamTypeFloat64: tokenomicstypes.MsgUpdateParam_AsFloat{},
