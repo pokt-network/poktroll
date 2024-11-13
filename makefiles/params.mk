@@ -14,9 +14,9 @@ params_get_tokenomics: ## Get the tokenomics module params
 params_update_tokenomics_all: ## Update the tokenomics module params
 	poktrolld tx authz exec ./tools/scripts/params/tokenomics_all.json $(PARAM_FLAGS)
 
-.PHONY: params_update_tokenomics_compute_units_to_tokens_multiplier
-params_update_tokenomics_compute_units_to_tokens_multiplier: ## Update the tokenomics module compute_units_to_tokens_multiplier param
-	poktrolld tx authz exec ./tools/scripts/params/tokenomics_compute_units_to_tokens_multiplier.json $(PARAM_FLAGS)
+.PHONY: params_update_tokenomics_mint_allocation_dao
+params_update_tokenomics_mint_allocation_dao: ## Update the tokenomics module mint_allocation_dao param
+	poktrolld tx authz exec ./tools/scripts/params/tokenomics_mint_allocation_dao.json $(PARAM_FLAGS)
 
 ### Service Module Params ###
 .PHONY: params_get_service

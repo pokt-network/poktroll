@@ -23,7 +23,7 @@ type ParamType = string
 const (
 	ParamTypeInt64   ParamType = "int64"
 	ParamTypeUint64  ParamType = "uint64"
-	ParamTypeFloat32 ParamType = "float32"
+	ParamTypeFloat64 ParamType = "float64"
 	ParamTypeString  ParamType = "string"
 	ParamTypeBytes   ParamType = "uint8"
 	ParamTypeCoin    ParamType = "Coin"
@@ -214,7 +214,7 @@ var (
 		},
 		ParamTypes: map[ParamType]any{
 			ParamTypeBytes:   prooftypes.MsgUpdateParam_AsBytes{},
-			ParamTypeFloat32: prooftypes.MsgUpdateParam_AsFloat{},
+			ParamTypeFloat64: prooftypes.MsgUpdateParam_AsFloat{},
 			ParamTypeCoin:    prooftypes.MsgUpdateParam_AsCoin{},
 		},
 		DefaultParams:    prooftypes.DefaultParams(),
@@ -225,10 +225,17 @@ var (
 		ParamsMsgs: ModuleParamsMessages{
 			MsgUpdateParams:         tokenomicstypes.MsgUpdateParams{},
 			MsgUpdateParamsResponse: tokenomicstypes.MsgUpdateParamsResponse{},
+			MsgUpdateParam:          tokenomicstypes.MsgUpdateParam{},
+			MsgUpdateParamResponse:  tokenomicstypes.MsgUpdateParamResponse{},
 			QueryParamsRequest:      tokenomicstypes.QueryParamsRequest{},
 			QueryParamsResponse:     tokenomicstypes.QueryParamsResponse{},
 		},
-		ValidParams:      tokenomicstypes.Params{},
+		ValidParams: tokenomicstypes.Params{
+			MintAllocationDao: tokenomicstypes.DefaultMintAllocationDao,
+		},
+		ParamTypes: map[ParamType]any{
+			ParamTypeFloat64: tokenomicstypes.MsgUpdateParam_AsFloat{},
+		},
 		DefaultParams:    tokenomicstypes.DefaultParams(),
 		NewParamClientFn: tokenomicstypes.NewQueryClient,
 	}
