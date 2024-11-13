@@ -279,6 +279,11 @@ genesis:
     session:
       params:
         num_suppliers_per_session: 15
+    tokenomics:
+      params:
+        mint_allocation_dao: 0.1
+        mint_allocation_proposer: 0.05
+        mint_allocation_supplier: 0.7
     shared:
       params:
         num_blocks_per_session: 10
