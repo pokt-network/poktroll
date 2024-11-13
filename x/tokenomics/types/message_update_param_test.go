@@ -20,7 +20,7 @@ func TestMsgUpdateParam_ValidateBasic(t *testing.T) {
 			msg: MsgUpdateParam{
 				Authority: "invalid_address",
 				Name:      "", // Doesn't matter for this test
-				AsType:    &MsgUpdateParam_AsInt64{AsInt64: 1},
+				AsType:    &MsgUpdateParam_AsFloat{AsFloat: 1},
 			},
 
 			expectedErr: ErrTokenomicsAddressInvalid,
@@ -29,9 +29,17 @@ func TestMsgUpdateParam_ValidateBasic(t *testing.T) {
 			msg: MsgUpdateParam{
 				Authority: sample.AccAddress(),
 				Name:      "invalid",
-				AsType:    &MsgUpdateParam_AsInt64{AsInt64: 1},
+				AsType:    &MsgUpdateParam_AsFloat{AsFloat: 1},
 			},
 			expectedErr: ErrTokenomicsParamNameInvalid,
+		},
+		{
+			name: "valid: correct address, param name, and type",
+			msg: MsgUpdateParam{
+				Authority: sample.AccAddress(),
+				Name:      ParamMintAllocationDao,
+				AsType:    &MsgUpdateParam_AsFloat{AsFloat: DefaultMintAllocationDao},
+			},
 		},
 	}
 	for _, tt := range tests {

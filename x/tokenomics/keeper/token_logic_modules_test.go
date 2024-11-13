@@ -26,7 +26,6 @@ import (
 	testsession "github.com/pokt-network/poktroll/testutil/session"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
-	sessionkeeper "github.com/pokt-network/poktroll/x/session/keeper"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
@@ -56,8 +55,9 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_Valid(t *testing.T) {
 	keepers.SetService(ctx, *service)
 
 	// Ensure the claim is within relay mining bounds
+	numSuppliersPerSession := int64(keepers.SessionKeeper.GetParams(ctx).NumSuppliersPerSession)
 	numTokensClaimed := int64(numRelays * serviceComputeUnitsPerRelay * globalComputeUnitsToTokensMultiplier)
-	maxClaimableAmountPerSupplier := appInitialStake.Quo(cosmosmath.NewInt(sessionkeeper.NumSupplierPerSession))
+	maxClaimableAmountPerSupplier := appInitialStake.Quo(cosmosmath.NewInt(numSuppliersPerSession))
 	require.GreaterOrEqual(t, maxClaimableAmountPerSupplier.Int64(), numTokensClaimed)
 
 	// Retrieve the app and supplier module addresses
@@ -184,7 +184,8 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_Valid_SupplierExceedsMaxClai
 	// Determine the max a supplier can claim
 	maxClaimableAmountPerSupplier := int64(numRelays * serviceComputeUnitsPerRelay * globalComputeUnitsToTokensMultiplier)
 	// Figure out what the app's initial stake should be to cover the max claimable amount
-	appInitialStake := cosmosmath.NewInt(maxClaimableAmountPerSupplier*sessionkeeper.NumSupplierPerSession + 1)
+	numSuppliersPerSession := int64(keepers.SessionKeeper.GetParams(ctx).NumSuppliersPerSession)
+	appInitialStake := cosmosmath.NewInt(maxClaimableAmountPerSupplier*numSuppliersPerSession + 1)
 	// Increase the number of relay such that the supplier did "free work" and would
 	// be able to claim more than the max claimable amount.
 	numRelays *= 5
@@ -399,13 +400,16 @@ func TestProcessTokenLogicModules_TLMGlobalMint_Valid_MintDistributionCorrect(t 
 	}
 
 	// Compute mint per actor
+	mintAllocationDao := keepers.Keeper.GetParams(ctx).MintAllocationDao
+	mintAllocationProposer := keepers.Keeper.GetParams(ctx).MintAllocationProposer
+	mintAllocationSupplier := keepers.Keeper.GetParams(ctx).MintAllocationSupplier
 	numTokensMinted := numTokensClaimed * tokenomicskeeper.GlobalInflationPerClaim
 	numTokensMintedInt := cosmosmath.NewIntFromUint64(uint64(numTokensMinted))
-	daoMint := cosmosmath.NewInt(int64(numTokensMinted * tokenomicskeeper.MintAllocationDAO))
-	propMint := cosmosmath.NewInt(int64(numTokensMinted * tokenomicskeeper.MintAllocationProposer))
+	daoMint := cosmosmath.NewInt(int64(numTokensMinted * mintAllocationDao))
+	propMint := cosmosmath.NewInt(int64(numTokensMinted * mintAllocationProposer))
 	serviceOwnerMint := cosmosmath.NewInt(int64(numTokensMinted * tokenomicskeeper.MintAllocationSourceOwner))
 	appMint := cosmosmath.NewInt(int64(numTokensMinted * tokenomicskeeper.MintAllocationApplication))
-	supplierMint := float32(numTokensMinted * tokenomicskeeper.MintAllocationSupplier)
+	supplierMint := float32(numTokensMinted * mintAllocationSupplier)
 
 	// Ensure the balance was increase be the appropriate amount
 	require.Equal(t, daoBalanceBefore.Amount.Add(daoMint).Add(numTokensMintedInt), daoBalanceAfter.Amount)

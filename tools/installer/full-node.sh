@@ -35,7 +35,7 @@ get_user_input() {
     CHAIN_ID=${CHAIN_ID:-"poktroll"}
 
     # Fetch seeds from the provided URL
-    SEEDS_URL="https://raw.githubusercontent.com/pokt-network/pocket-network-genesis/master/poktrolld/testnet-validated.seeds"
+    SEEDS_URL="https://raw.githubusercontent.com/pokt-network/pocket-network-genesis/master/shannon/alpha/testnet-validated.seeds"
     SEEDS=$(curl -s "$SEEDS_URL")
     if [ -z "$SEEDS" ]; then
         print_color $RED "Failed to fetch seeds from $SEEDS_URL. Please check your internet connection and try again."
@@ -94,7 +94,7 @@ setup_env_vars() {
     echo "export DAEMON_HOME=\$HOME/.poktroll" >> \$HOME/.profile
     echo "export DAEMON_RESTART_AFTER_UPGRADE=true" >> \$HOME/.profile
     echo "export DAEMON_ALLOW_DOWNLOAD_BINARIES=true" >> \$HOME/.profile
-    echo "export UNSAFE_SKIP_BACKUP=true" >> \$HOME/.profile
+    echo "export UNSAFE_SKIP_BACKUP=false" >> \$HOME/.profile
     source \$HOME/.profile
 EOF
     print_color $GREEN "Environment variables set up successfully."
@@ -138,12 +138,16 @@ setup_poktrolld() {
         exit 1
     fi
 
-    # Use the direct download link for the latest release
-    LATEST_RELEASE_URL="https://github.com/pokt-network/poktroll/releases/latest/download/poktroll_linux_${ARCH}.tar.gz"
+    # Get the version genesis started from. We can't just use `latest` as the new binary won't sync from genesis.
+    # We need to start syncing from scratch using the version that was used when the network started.
+    POKTROLLD_VERSION=$(curl -s https://raw.githubusercontent.com/pokt-network/pocket-network-genesis/master/shannon/alpha/testnet-validated.init-version)
+
+    # Use the direct download link for the correct release
+    RELEASE_URL="https://github.com/pokt-network/poktroll/releases/download/${POKTROLLD_VERSION}/poktroll_linux_${ARCH}.tar.gz"
 
     sudo -u "$POKTROLL_USER" bash << EOF
     mkdir -p \$HOME/.poktroll/cosmovisor/genesis/bin
-    curl -L "$LATEST_RELEASE_URL" | tar -zxvf - -C \$HOME/.poktroll/cosmovisor/genesis/bin
+    curl -L "$RELEASE_URL" | tar -zxvf - -C \$HOME/.poktroll/cosmovisor/genesis/bin
     chmod +x \$HOME/.poktroll/cosmovisor/genesis/bin/poktrolld
     ln -sf \$HOME/.poktroll/cosmovisor/genesis/bin/poktrolld \$HOME/bin/poktrolld
     source \$HOME/.profile
@@ -156,7 +160,7 @@ configure_poktrolld() {
     print_color $YELLOW "Configuring Poktrolld..."
     
     # Ask for confirmation to download the genesis file
-    GENESIS_URL="https://raw.githubusercontent.com/pokt-network/pocket-network-genesis/master/poktrolld/testnet-validated.json"
+    GENESIS_URL="https://raw.githubusercontent.com/pokt-network/pocket-network-genesis/master/shannon/alpha/testnet-validated.json"
     print_color $YELLOW "The script will download the genesis file from:"
     print_color $YELLOW "$GENESIS_URL"
     read -p "Are you OK with downloading and using this genesis file? (y/N): " confirm_genesis

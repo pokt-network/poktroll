@@ -115,10 +115,9 @@ func (claim *Claim) GetHash() ([]byte, error) {
 // IMPORTANT: It is assumed that the caller has ensured the hash of the block seed
 func (claim *Claim) GetProofRequirementSampleValue(
 	proofRequirementSeedBlockHash []byte,
-) (proofRequirementSampleValue float32, err error) {
+) (float64, error) {
 	// Get the hash of the claim to seed the random number generator.
-	var claimHash []byte
-	claimHash, err = claim.GetHash()
+	claimHash, err := claim.GetHash()
 	if err != nil {
 		return 0, err
 	}
@@ -128,12 +127,7 @@ func (claim *Claim) GetProofRequirementSampleValue(
 	// is unknown until the proofRequirementSeedBlockHash is observed.
 	proofRequirementSeed := append(claimHash, proofRequirementSeedBlockHash...)
 
-	// Sample a pseudo-random value between 0 and 1 to determine if a proof is
+	// Sample a pseudo-random value between [0,1) to determine if a proof is
 	// required probabilistically.
-	proofRequirementSampleValue, err = poktrand.SeededFloat32(proofRequirementSeed)
-	if err != nil {
-		return 0, err
-	}
-
-	return proofRequirementSampleValue, nil
+	return poktrand.SeededFloat64(proofRequirementSeed), nil
 }
