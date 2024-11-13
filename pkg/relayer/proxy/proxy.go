@@ -81,7 +81,7 @@ type relayerProxy struct {
 
 	// relayMeter keeps track of the total amount of stake an onchhain Application
 	// will owe an onchain Supplier (backed by this RelayMiner) once the session settles.
-	// It also configures over servicing allowance.
+	// It also configures application over-servicing allowance.
 	relayMeter relayer.RelayMeter
 }
 

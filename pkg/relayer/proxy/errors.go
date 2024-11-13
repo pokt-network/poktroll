@@ -19,4 +19,5 @@ var (
 	ErrRelayerProxyMissingSupplierOperatorAddress = sdkerrors.Register(codespace, 11, "supplier operator address is missing")
 	ErrRelayerProxyUnknownSession                 = sdkerrors.Register(codespace, 12, "relayer proxy encountered unknown session")
 	ErrRelayerProxyRateLimited                    = sdkerrors.Register(codespace, 13, "offchain rate limit hit by relayer proxy")
+	ErrRelayerProxyUnclaimRelayPrice              = sdkerrors.Register(codespace, 14, "failed to unclaim relay price")
 )

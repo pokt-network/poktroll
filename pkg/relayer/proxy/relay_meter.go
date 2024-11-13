@@ -44,7 +44,10 @@ type sessionRelayMeter struct {
 	sessionHeader *sessiontypes.SessionHeader
 	// numOverServicedRelays is the number of relays that have been over-serviced
 	// by the relayer for the application.
-	numOverServicedRelays int
+	numOverServicedRelays uint64
+	// numOverservicedComputeUnits is the number of compute units that have been
+	// over-serviced by the relayer for the application.
+	numOverServicedComputeUnits uint64
 
 	// sharedParams, service and serviceRelayDifficulty are used to calculate the relay cost
 	// that increments the consumedAmount.
@@ -59,6 +62,8 @@ type sessionRelayMeter struct {
 // It ensures that no Application is over-serviced by the Supplier per session.
 // This is done by maintaining the max amount of stake the supplier can consume
 // per session and the amount of stake consumed by mined relays.
+// TODO_POST_MAINNET(@red-0ne): Consider making the relay meter a light client,
+// since it's already receiving all committed blocks and events.
 type ProxyRelayMeter struct {
 	// sessionToRelayMeterMap is a map of session IDs to their corresponding session relay meter.
 	// Only known applications (i.e. have sent at least one relay) have their stakes metered.
@@ -138,7 +143,7 @@ func (rmtr *ProxyRelayMeter) Start(ctx context.Context) error {
 // The relay reward is added optimistically, assuming that the relay will be volume / reward
 // applicable and the relay meter would remain up to date.
 func (rmtr *ProxyRelayMeter) AccumulateRelayReward(ctx context.Context, reqMeta servicetypes.RelayRequestMetadata) error {
-	// TODO_MAINNET: Locking the relay serving flow to ensure that the relay meter is updated
+	// TODO_MAINNET(@adshmh): Locking the relay serving flow to ensure that the relay meter is updated
 	// might be a bottleneck since ensureRequestAppMetrics is performing multiple
 	// sequential queries to the Pocket Network node.
 	// Re-evaluate when caching and invalidation is implemented.
@@ -166,7 +171,6 @@ func (rmtr *ProxyRelayMeter) AccumulateRelayReward(ctx context.Context, reqMeta 
 	newConsumedCoin := appRelayMeter.consumedCoin.Add(relayCostCoin)
 
 	isAppOverServiced := appRelayMeter.maxCoin.IsLT(newConsumedCoin)
-
 	if !isAppOverServiced {
 		appRelayMeter.consumedCoin = newConsumedCoin
 		return nil
@@ -180,12 +184,12 @@ func (rmtr *ProxyRelayMeter) AccumulateRelayReward(ctx context.Context, reqMeta 
 	// then return a rate limit error.
 	overServicingCoin := newConsumedCoin.Sub(appRelayMeter.maxCoin)
 
-	// In case Allowance is positive, add it to the maxCoin to allow no or limited over-servicing.
+	// In case Allowance is positive, add it to maxCoin to allow no or limited over-servicing.
 	if !allowUnlimitedOverServicing {
 		maxAllowedOverServicing := appRelayMeter.maxCoin.Add(rmtr.overServicingAllowanceCoins)
 		if maxAllowedOverServicing.IsLT(newConsumedCoin) {
 			return ErrRelayerProxyRateLimited.Wrapf(
-				"application has been rate limited, stake needed: %s, has: %s, ",
+				"application has been rate limited, stake needed: %s, has: %s",
 				newConsumedCoin.String(),
 				appRelayMeter.maxCoin.String(),
 			)
@@ -193,13 +197,10 @@ func (rmtr *ProxyRelayMeter) AccumulateRelayReward(ctx context.Context, reqMeta 
 	}
 
 	appRelayMeter.numOverServicedRelays++
-	numOverServicedRelays := appRelayMeter.numOverServicedRelays
+	appRelayMeter.numOverServicedComputeUnits += appRelayMeter.service.ComputeUnitsPerRelay
 
-	// Exponential backoff: log only when numOverServicedRelays is a power of 2
-	shouldLog := (numOverServicedRelays & (numOverServicedRelays - 1)) == 0
-
-	// Log the over-servicing warning.
-	if shouldLog {
+	// Exponential backoff, only log over-servicing when numOverServicedRelays is a power of 2
+	if shouldLogOverServicing(appRelayMeter.numOverServicedRelays) {
 		rmtr.logger.Warn().Msgf(
 			"overservicing enabled, application %q over-serviced %s",
 			appRelayMeter.app.GetAddress(),
@@ -230,11 +231,7 @@ func (rmtr *ProxyRelayMeter) SetNonApplicableRelayReward(ctx context.Context, re
 		sessionRelayMeter.serviceRelayDifficulty,
 	)
 	if err != nil {
-		return err
-	}
-
-	if sessionRelayMeter.numOverServicedRelays > 0 {
-		return nil
+		return ErrRelayerProxyUnclaimRelayPrice.Wrapf("%s", err)
 	}
 
 	// Decrease the consumed stake amount by relay cost.
@@ -436,4 +433,10 @@ func getAppStakePortionPayableToSessionSupplier(
 	appStakePerSessionSupplierCoin := cosmostypes.NewCoin(volatile.DenomuPOKT, appStakePerSessionSupplier)
 
 	return appStakePerSessionSupplierCoin
+}
+
+// shouldLogOverServicing returns true if the number of occurrences is a power of 2.
+// This is used to log the over-servicing warning with an exponential backoff.
+func shouldLogOverServicing(occurrence uint64) bool {
+	return (occurrence & (occurrence - 1)) == 0
 }

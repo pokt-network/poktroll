@@ -203,6 +203,8 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (
 		appAddress := claim.GetSessionHeader().GetApplicationAddress()
 		applicationInitialStake := applicationInitialStakeMap[appAddress]
 
+		// TODO_MAINNET(@red-0ne): Add tests to ensure that a zero application stake
+		// is handled correctly.
 		if applicationInitialStake.IsZero() {
 			logger.Error(fmt.Sprintf("application %q has a zero initial stake", appAddress))
 

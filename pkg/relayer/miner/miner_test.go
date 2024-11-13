@@ -50,9 +50,9 @@ func TestMiner_MinedRelays(t *testing.T) {
 
 	testqueryclients.SetServiceRelayDifficultyTargetHash(t, testSvcId, testRelayMiningTargetHash)
 	serviceQueryClientMock := testqueryclients.NewTestServiceQueryClient(t)
-	testRelayMeter := mockRelayMeter(t)
+	relayMeterMock := newMockRelayMeter(t)
 
-	deps := depinject.Supply(serviceQueryClientMock, testRelayMeter)
+	deps := depinject.Supply(serviceQueryClientMock, relayMeterMock)
 	mnr, err := miner.NewMiner(deps)
 	require.NoError(t, err)
 
@@ -158,8 +158,8 @@ func unmarshalHexMinedRelay(
 	}
 }
 
-// mockRelayMeter returns a mock RelayMeter that is used by the relay miner to claim and unclaim relays.
-func mockRelayMeter(t *testing.T) relayer.RelayMeter {
+// newMockRelayMeter returns a mock RelayMeter that is used by the relay miner to claim and unclaim relays.
+func newMockRelayMeter(t *testing.T) relayer.RelayMeter {
 	t.Helper()
 
 	ctrl := gomock.NewController(t)
