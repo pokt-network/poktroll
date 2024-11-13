@@ -284,6 +284,7 @@ genesis:
         mint_allocation_dao: 0.1
         mint_allocation_proposer: 0.05
         mint_allocation_supplier: 0.7
+        mint_allocation_source_owner: 0.15
     shared:
       params:
         num_blocks_per_session: 10
