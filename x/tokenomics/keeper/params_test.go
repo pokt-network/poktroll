@@ -143,3 +143,37 @@ func TestParams_ValidateMintAllocationSourceOwner(t *testing.T) {
 		})
 	}
 }
+
+func TestParams_ValidateMintAllocationApplication(t *testing.T) {
+	tests := []struct {
+		desc                     string
+		mintAllocatioApplication any
+		expectedErr              error
+	}{
+		{
+			desc:                     "invalid type",
+			mintAllocatioApplication: "0",
+			expectedErr:              tokenomicstypes.ErrTokenomicsParamInvalid.Wrap("invalid parameter type: string"),
+		},
+		{
+			desc:                     "invalid MintAllocationApplication (<0)",
+			mintAllocatioApplication: -0.1,
+			expectedErr:              tokenomicstypes.ErrTokenomicsParamInvalid.Wrapf("mint allocation to application must be greater than or equal to 0: got %f", -0.1),
+		},
+		{
+			desc:                     "valid MintAllocationApplication",
+			mintAllocatioApplication: tokenomicstypes.DefaultMintAllocationApplication,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.desc, func(t *testing.T) {
+			err := tokenomicstypes.ValidateMintAllocationApplication(test.mintAllocatioApplication)
+			if test.expectedErr != nil {
+				require.ErrorContains(t, err, test.expectedErr.Error())
+			} else {
+				require.NoError(t, err)
+			}
+		})
+	}
+}
