@@ -1,7 +1,6 @@
 package keeper
 
 import (
-	"context"
 	"fmt"
 
 	"cosmossdk.io/core/store"
@@ -84,19 +83,4 @@ func (k Keeper) Logger() log.Logger {
 // GetAuthority returns the x/tokenomics module's authority.
 func (k Keeper) GetAuthority() string {
 	return k.authority
-}
-
-// MintAllocationsSum returns the sum of all mint allocation percentages.
-func (k Keeper) MintAllocationsSum(ctx context.Context) float64 {
-	params := k.GetParams(ctx)
-	mintAllocationDAO := params.GetMintAllocationDao()
-	mintAllocationProposer := params.GetMintAllocationProposer()
-	mintAllocationSupplier := params.GetMintAllocationSupplier()
-	mintAllocationSourceOwner := params.GetMintAllocationSourceOwner()
-
-	return mintAllocationDAO +
-		mintAllocationProposer +
-		mintAllocationSupplier +
-		mintAllocationSourceOwner +
-		MintAllocationApplication
 }

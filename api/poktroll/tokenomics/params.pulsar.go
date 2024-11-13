@@ -609,7 +609,7 @@ type Params struct {
 	// to the service source owner account address during claim settlement.
 	MintAllocationSourceOwner float64 `protobuf:"fixed64,4,opt,name=mint_allocation_source_owner,json=mintAllocationSourceOwner,proto3" json:"mint_allocation_source_owner,omitempty"`
 	// mint_allocation_application is the percentage of the minted tokens which are sent
-	// to the service source owner account address during claim settlement.
+	// to the application account address during claim settlement.
 	MintAllocationApplication float64 `protobuf:"fixed64,5,opt,name=mint_allocation_application,json=mintAllocationApplication,proto3" json:"mint_allocation_application,omitempty"`
 }
 
