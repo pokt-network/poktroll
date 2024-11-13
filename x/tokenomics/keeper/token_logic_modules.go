@@ -34,7 +34,6 @@ var (
 
 const (
 	// TODO_BETA(@bryanchriswhite): Make all of these governance params
-	MintAllocationSupplier    = 0.7
 	MintAllocationSourceOwner = 0.15
 	MintAllocationApplication = 0.0
 
@@ -458,7 +457,8 @@ func (k Keeper) TokenLogicModuleGlobalMint(
 	logger.Debug(fmt.Sprintf("sent (%v) newley minted coins from the tokenomics module to the application with address %q", appCoin, application.Address))
 
 	// Send a portion of the rewards to the supplier shareholders.
-	supplierCoinsToShareAmt := calculateAllocationAmount(&newMintAmtFloat, MintAllocationSupplier)
+	mintAllocationSupplier := k.GetParams(ctx).MintAllocationSupplier
+	supplierCoinsToShareAmt := calculateAllocationAmount(&newMintAmtFloat, mintAllocationSupplier)
 	supplierCoin := cosmostypes.NewCoin(volatile.DenomuPOKT, math.NewInt(supplierCoinsToShareAmt))
 	// Send funds from the tokenomics module to the supplier module account
 	if err = k.bankKeeper.SendCoinsFromModuleToModule(ctx, tokenomicstypes.ModuleName, suppliertypes.ModuleName, sdk.NewCoins(supplierCoin)); err != nil {
