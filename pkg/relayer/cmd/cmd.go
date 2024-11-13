@@ -199,12 +199,12 @@ func setupRelayerDependencies(
 		config.NewSupplySharedQueryClientFn(),                             // leaf
 		config.NewSupplyServiceQueryClientFn(),
 		config.NewSupplyApplicationQuerierFn(),
+		config.NewSupplySessionQuerierFn(),
 		supplyRelayMeter,
 		supplyMiner,
 		config.NewSupplyAccountQuerierFn(),
 		config.NewSupplyBankQuerierFn(),
 		config.NewSupplySupplierQuerierFn(),
-		config.NewSupplySessionQuerierFn(),
 		config.NewSupplyProofQueryClientFn(),
 		config.NewSupplyRingCacheFn(),
 		supplyTxFactory,

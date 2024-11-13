@@ -26,6 +26,8 @@ import (
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
+const defaultOverServicingAllowanceCoins = 1000000
+
 var _ relayer.RelayMeter = (*ProxyRelayMeter)(nil)
 
 // sessionRelayMeter is the relay meter's internal representation of an onchain
@@ -91,7 +93,7 @@ type ProxyRelayMeter struct {
 }
 
 func NewRelayMeter(deps depinject.Config) (relayer.RelayMeter, error) {
-	overservicingAllowanceCoins := cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 1000000)
+	overservicingAllowanceCoins := cosmostypes.NewInt64Coin(volatile.DenomuPOKT, defaultOverServicingAllowanceCoins)
 	rm := &ProxyRelayMeter{
 		sessionToRelayMeterMap:      make(map[string]*sessionRelayMeter),
 		overServicingAllowanceCoins: overservicingAllowanceCoins,
@@ -104,6 +106,7 @@ func NewRelayMeter(deps depinject.Config) (relayer.RelayMeter, error) {
 		&rm.serviceQuerier,
 		&rm.blockQuerier,
 		&rm.eventsQueryClient,
+		&rm.sessionQuerier,
 		&rm.logger,
 	); err != nil {
 		return nil, err
