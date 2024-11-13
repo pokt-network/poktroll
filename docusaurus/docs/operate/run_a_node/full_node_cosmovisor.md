@@ -62,7 +62,7 @@ To install and set up a Poktroll Full Node using Cosmovisor, we provide a compre
 4. Follow the prompts to provide the necessary information:
    - Desired username to run poktrolld (`default: poktroll`)
    - Node moniker (`default: hostname`)
-   - Seeds (`default: fetched` [from the official source](https://github.com/pokt-network/pocket-network-genesis/tree/master/poktrolld))
+   - Seeds (`default: fetched` [from the official source](https://github.com/pokt-network/pocket-network-genesis/tree/master/shannon/alpha))
    - Chain ID (`default: poktroll-testnet`)
 
 The script will then proceed with the installation and setup process.
