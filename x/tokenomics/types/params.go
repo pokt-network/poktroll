@@ -17,6 +17,9 @@ var (
 	KeyMintAllocationSourceOwner             = []byte("MintAllocationSourceOwner")
 	ParamMintAllocationSourceOwner           = "mint_allocation_source_owner"
 	DefaultMintAllocationSourceOwner float64 = 0.15
+	KeyMintAllocationApplication             = []byte("MintAllocationApplication")
+	ParamMintAllocationApplication           = "mint_allocation_application"
+	DefaultMintAllocationApplication float64 = 0.0
 
 	_ paramtypes.ParamSet = (*Params)(nil)
 )
@@ -31,13 +34,15 @@ func NewParams(
 	mintAllocationDao,
 	mintAllocationProposer,
 	mintAllocationSupplier,
-	mintAllocationSourceOwner float64,
+	mintAllocationSourceOwner,
+	mintAllocationApplication float64,
 ) Params {
 	return Params{
 		MintAllocationDao:         mintAllocationDao,
 		MintAllocationProposer:    mintAllocationProposer,
 		MintAllocationSupplier:    mintAllocationSupplier,
 		MintAllocationSourceOwner: mintAllocationSourceOwner,
+		MintAllocationApplication: mintAllocationApplication,
 	}
 }
 
@@ -48,6 +53,7 @@ func DefaultParams() Params {
 		DefaultMintAllocationProposer,
 		DefaultMintAllocationSupplier,
 		DefaultMintAllocationSourceOwner,
+		DefaultMintAllocationApplication,
 	)
 }
 
@@ -74,6 +80,11 @@ func (p *Params) ParamSetPairs() paramtypes.ParamSetPairs {
 			&p.MintAllocationSourceOwner,
 			ValidateMintAllocationSourceOwner,
 		),
+		paramtypes.NewParamSetPair(
+			KeyMintAllocationApplication,
+			&p.MintAllocationApplication,
+			ValidateMintAllocationApplication,
+		),
 	}
 }
 
@@ -92,6 +103,10 @@ func (params *Params) ValidateBasic() error {
 	}
 
 	if err := ValidateMintAllocationSourceOwner(params.MintAllocationSourceOwner); err != nil {
+		return err
+	}
+
+	if err := ValidateMintAllocationApplication(params.MintAllocationApplication); err != nil {
 		return err
 	}
 
@@ -149,6 +164,20 @@ func ValidateMintAllocationSourceOwner(mintAllocationSourceOwner any) error {
 
 	if mintAllocationSourceOwnerFloat < 0 {
 		return ErrTokenomicsParamInvalid.Wrapf("mint allocation to source owner must be greater than or equal to 0: got %f", mintAllocationSourceOwnerFloat)
+	}
+
+	return nil
+}
+
+// ValidateMintAllocationApplication validates the MintAllocationApplication param.
+func ValidateMintAllocationApplication(mintAllocationApplication any) error {
+	mintAllocationApplicationFloat, ok := mintAllocationApplication.(float64)
+	if !ok {
+		return ErrTokenomicsParamInvalid.Wrapf("invalid parameter type: %T", mintAllocationApplication)
+	}
+
+	if mintAllocationApplicationFloat < 0 {
+		return ErrTokenomicsParamInvalid.Wrapf("mint allocation to application must be greater than or equal to 0: got %f", mintAllocationApplicationFloat)
 	}
 
 	return nil
