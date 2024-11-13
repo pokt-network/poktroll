@@ -403,11 +403,12 @@ func TestProcessTokenLogicModules_TLMGlobalMint_Valid_MintDistributionCorrect(t 
 	mintAllocationDao := keepers.Keeper.GetParams(ctx).MintAllocationDao
 	mintAllocationProposer := keepers.Keeper.GetParams(ctx).MintAllocationProposer
 	mintAllocationSupplier := keepers.Keeper.GetParams(ctx).MintAllocationSupplier
+	mintAllocationSourceOwner := keepers.Keeper.GetParams(ctx).MintAllocationSourceOwner
 	numTokensMinted := numTokensClaimed * tokenomicskeeper.GlobalInflationPerClaim
 	numTokensMintedInt := cosmosmath.NewIntFromUint64(uint64(numTokensMinted))
 	daoMint := cosmosmath.NewInt(int64(numTokensMinted * mintAllocationDao))
 	propMint := cosmosmath.NewInt(int64(numTokensMinted * mintAllocationProposer))
-	serviceOwnerMint := cosmosmath.NewInt(int64(numTokensMinted * tokenomicskeeper.MintAllocationSourceOwner))
+	serviceOwnerMint := cosmosmath.NewInt(int64(numTokensMinted * mintAllocationSourceOwner))
 	appMint := cosmosmath.NewInt(int64(numTokensMinted * tokenomicskeeper.MintAllocationApplication))
 	supplierMint := float32(numTokensMinted * mintAllocationSupplier)
 
