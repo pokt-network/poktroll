@@ -128,6 +128,7 @@ func (rp *relayerProxy) initializeProxyServers() (proxyServerMap map[string]rela
 				serverConfig,
 				rp.servedRelaysPublishCh,
 				rp,
+				rp.relayMeter,
 			)
 		default:
 			return nil, ErrRelayerProxyUnsupportedTransportType
