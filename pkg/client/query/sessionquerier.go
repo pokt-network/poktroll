@@ -62,3 +62,13 @@ func (sessq *sessionQuerier) GetSession(
 	}
 	return res.Session, nil
 }
+
+// GetParams queries & returns the session module on-chain parameters.
+func (sessq *sessionQuerier) GetParams(ctx context.Context) (*sessiontypes.Params, error) {
+	req := &sessiontypes.QueryParamsRequest{}
+	res, err := sessq.sessionQuerier.Params(ctx, req)
+	if err != nil {
+		return nil, ErrQuerySessionParams.Wrapf("[%v]", err)
+	}
+	return &res.Params, nil
+}
