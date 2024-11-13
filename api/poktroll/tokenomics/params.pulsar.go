@@ -676,7 +676,8 @@ type Params struct {
 	// mint_allocation_application is the percentage of the minted tokens which are sent
 	// to the application account address during claim settlement.
 	MintAllocationApplication float64 `protobuf:"fixed64,5,opt,name=mint_allocation_application,json=mintAllocationApplication,proto3" json:"mint_allocation_application,omitempty"`
-	// TODO_IN_THIS_COMMIT: comment...
+	// dao_reward_address is the address to which mint_allocation_dao percentage of the
+	// minted tokens are at the end of claim settlement.
 	DaoRewardAddress string `protobuf:"bytes,6,opt,name=dao_reward_address,json=daoRewardAddress,proto3" json:"dao_reward_address,omitempty"` // Bech32 cosmos address
 }
 

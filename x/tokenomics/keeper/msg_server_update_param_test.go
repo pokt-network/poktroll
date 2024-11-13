@@ -43,7 +43,7 @@ func TestMsgUpdateParam_UpdateDaoRewardAddressOnly(t *testing.T) {
 	// Ensure the default values are different from the new values we want to set
 	require.NotEqual(t, expectedDaoRewardAddress, defaultParams.DaoRewardAddress)
 
-	// Update the min relay difficulty bits
+	// Update the dao reward address.
 	updateParamMsg := &tokenomicstypes.MsgUpdateParam{
 		Authority: authtypes.NewModuleAddress(govtypes.ModuleName).String(),
 		Name:      tokenomicstypes.ParamDaoRewardAddress,

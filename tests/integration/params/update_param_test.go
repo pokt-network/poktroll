@@ -91,13 +91,7 @@ func (s *msgUpdateParamTestSuite) TestAuthorizedMsgUpdateParamSucceeds() {
 		validParamsValue := reflect.ValueOf(moduleCfg.ValidParams)
 		for fieldIdx := 0; fieldIdx < validParamsValue.NumField(); fieldIdx++ {
 			fieldExpectedValue := validParamsValue.Field(fieldIdx)
-			fieldValue := validParamsValue.Type().Field(fieldIdx)
-			fieldName := fieldValue.Name
-
-			// Skip fields which are tagged with "disable_individual_update".
-			if fieldValue.Tag.Get("disable_individual_update") == "true" {
-				continue
-			}
+			fieldName := validParamsValue.Type().Field(fieldIdx).Name
 
 			// Skip fields which in the excludedParams map.
 			if _, ok := suites.ExcludedParams[fieldName]; ok {

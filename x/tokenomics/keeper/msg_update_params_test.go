@@ -57,6 +57,7 @@ func TestMsgUpdateParams(t *testing.T) {
 					MintAllocationDao: 0.1,
 					DaoRewardAddress:  "",
 
+					// MintAllocationXXX params MUST sum to 1.
 					MintAllocationProposer:    0.1,
 					MintAllocationSupplier:    0.1,
 					MintAllocationSourceOwner: 0.1,
