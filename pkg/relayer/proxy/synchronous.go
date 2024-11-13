@@ -91,6 +91,25 @@ func (sync *synchronousRPCServer) Stop(ctx context.Context) error {
 	return sync.server.Shutdown(ctx)
 }
 
+// Ping tries to dial the suppliers backend URLs to test the connection.
+func (sync *synchronousRPCServer) Ping(ctx context.Context) error {
+	for _, supplierCfg := range sync.serverConfig.SupplierConfigsMap {
+		httpClient := &http.Client{Timeout: 2 * time.Second}
+
+		resp, err := httpClient.Head(supplierCfg.ServiceConfig.BackendUrl.String())
+		if err != nil {
+			return err
+		}
+		_ = resp.Body.Close()
+
+		if resp.StatusCode >= http.StatusInternalServerError {
+			return ErrRelayerProxySupplierNotReachable
+		}
+	}
+
+	return nil
+}
+
 // ServeHTTP listens for incoming relay requests. It implements the respective
 // method of the http.Handler interface. It is called by http.ListenAndServe()
 // when synchronousRPCServer is used as an http.Handler with an http.Server.
