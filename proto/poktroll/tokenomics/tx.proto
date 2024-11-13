@@ -54,6 +54,7 @@ message MsgUpdateParam {
   string name = 2;
   oneof as_type {
     double as_float = 3 [(gogoproto.jsontag) = "as_float"];
+    string as_string = 4 [(gogoproto.jsontag) = "as_string"];
   }
 }
 

@@ -284,6 +284,7 @@ genesis:
         mint_allocation_supplier: 0.7
         mint_allocation_source_owner: 0.15
         mint_allocation_application: 0.0
+        dao_reward_address: "pokt1eeeksh2tvkh7wzmfrljnhw4wrhs55lcuvmekkw"
     shared:
       params:
         num_blocks_per_session: 10
