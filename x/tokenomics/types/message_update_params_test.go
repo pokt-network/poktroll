@@ -1,47 +1,53 @@
-package types
+package types_test
 
 import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/pokt-network/poktroll/cmd/poktrolld/cmd"
 	"github.com/pokt-network/poktroll/testutil/sample"
+	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
 )
+
+func init() {
+	cmd.InitSDKConfig()
+}
 
 func TestMsgUpdateParams_ValidateBasic(t *testing.T) {
 	tests := []struct {
 		desc        string
-		msg         MsgUpdateParams
+		msg         tokenomicstypes.MsgUpdateParams
 		expectedErr error
 	}{
 		{
 			desc: "invalid: non-bech32 authority address",
-			msg: MsgUpdateParams{
+			msg: tokenomicstypes.MsgUpdateParams{
 				Authority: "invalid_address",
-				Params:    Params{},
+				Params:    tokenomicstypes.Params{},
 			},
-			expectedErr: ErrTokenomicsAddressInvalid,
+			expectedErr: tokenomicstypes.ErrTokenomicsAddressInvalid,
 		},
 		{
 			desc: "invalid: empty params",
-			msg: MsgUpdateParams{
+			msg: tokenomicstypes.MsgUpdateParams{
 				Authority: sample.AccAddress(),
-				Params:    Params{},
+				Params:    tokenomicstypes.Params{},
 			},
-			expectedErr: ErrTokenomicsParamInvalid,
+			expectedErr: tokenomicstypes.ErrTokenomicsParamInvalid,
 		},
 		{
 			desc: "valid: address and default params",
-			msg: MsgUpdateParams{
+			msg: tokenomicstypes.MsgUpdateParams{
 				Authority: sample.AccAddress(),
-				Params:    DefaultParams(),
+				Params:    tokenomicstypes.DefaultParams(),
 			},
 		},
 		{
 			desc: "invalid: mint allocation params don't sum to 1",
-			msg: MsgUpdateParams{
+			msg: tokenomicstypes.MsgUpdateParams{
 				Authority: sample.AccAddress(),
-				Params: Params{
+				Params: tokenomicstypes.Params{
 					MintAllocationDao:         0.1,
 					MintAllocationProposer:    0.1,
 					MintAllocationSupplier:    0.1,
@@ -49,7 +55,7 @@ func TestMsgUpdateParams_ValidateBasic(t *testing.T) {
 					MintAllocationApplication: 0.1,
 				},
 			},
-			expectedErr: ErrTokenomicsParamInvalid,
+			expectedErr: tokenomicstypes.ErrTokenomicsParamInvalid,
 		},
 	}
 

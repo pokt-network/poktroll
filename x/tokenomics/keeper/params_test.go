@@ -192,7 +192,7 @@ func TestParams_ValidateDaoRewardAddress(t *testing.T) {
 		{
 			desc:             "invalid bech32 DaoRewardAddress",
 			daoRewardAddress: "not_a_bech32",
-			expectedErr:      tokenomicstypes.ErrTokenomicsParamInvalid.Wrapf("invalid dao reward address %q; must be a bech32 encoded address", "not_a_bech32"),
+			expectedErr:      tokenomicstypes.ErrTokenomicsParamInvalid.Wrapf("invalid dao reward address %q: decoding bech32 failed: invalid separator index -1", "not_a_bech32"),
 		},
 		{
 			desc:             "valid DaoRewardAddress",

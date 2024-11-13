@@ -237,7 +237,7 @@ func ValidateDaoRewardAddress(daoRewardAddress any) error {
 	}
 
 	if _, err := sdk.AccAddressFromBech32(daoRewardAddressStr); err != nil {
-		return ErrTokenomicsParamInvalid.Wrapf("invalid dao reward address %q; must be a bech32 encoded address", daoRewardAddressStr)
+		return ErrTokenomicsParamInvalid.Wrapf("invalid dao reward address %q: %s", daoRewardAddressStr, err)
 	}
 
 	return nil
