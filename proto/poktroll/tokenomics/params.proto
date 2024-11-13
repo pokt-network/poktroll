@@ -25,7 +25,7 @@ message Params {
   // to the service source owner account address during claim settlement.
   double mint_allocation_source_owner = 4 [(gogoproto.jsontag) = "mint_allocation_source_owner", (gogoproto.moretags) = "yaml:\"mint_allocation_source_owner\""];
   // mint_allocation_application is the percentage of the minted tokens which are sent
-  // to the service source owner account address during claim settlement.
+  // to the application account address during claim settlement.
   double mint_allocation_application = 5 [(gogoproto.jsontag) = "mint_allocation_application", (gogoproto.moretags) = "yaml:\"mint_allocation_application\""];
 
   // IMPORTANT: Make sure to update all related files if you're modifying or adding a new parameter.
