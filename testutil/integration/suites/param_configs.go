@@ -29,6 +29,16 @@ const (
 	ParamTypeCoin    ParamType = "Coin"
 )
 
+// TODO_UPNEXT(@bryanchriswhite): Promote mint_allocation_XXX params to
+// a new mint_allocation message type. This map will no longer be needed
+var ExcludedParams = map[string]struct{}{
+	"MintAllocationDao":         {},
+	"MintAllocationProposer":    {},
+	"MintAllocationSupplier":    {},
+	"MintAllocationSourceOwner": {},
+	"MintAllocationApplication": {},
+}
+
 // ModuleParamConfig holds type information about a module's parameters update
 // message(s) along with default and valid non-default values and a query constructor
 // function for the module. It is used by ParamsSuite to construct and send
@@ -231,9 +241,11 @@ var (
 			QueryParamsResponse:     tokenomicstypes.QueryParamsResponse{},
 		},
 		ValidParams: tokenomicstypes.Params{
-			MintAllocationDao:      tokenomicstypes.DefaultMintAllocationDao,
-			MintAllocationProposer: tokenomicstypes.DefaultMintAllocationProposer,
-			MintAllocationSupplier: tokenomicstypes.DefaultMintAllocationSupplier,
+			MintAllocationDao:         tokenomicstypes.DefaultMintAllocationDao,
+			MintAllocationProposer:    tokenomicstypes.DefaultMintAllocationProposer,
+			MintAllocationSupplier:    tokenomicstypes.DefaultMintAllocationSupplier,
+			MintAllocationSourceOwner: tokenomicstypes.DefaultMintAllocationSourceOwner,
+			MintAllocationApplication: tokenomicstypes.DefaultMintAllocationApplication,
 		},
 		ParamTypes: map[ParamType]any{
 			ParamTypeFloat64: tokenomicstypes.MsgUpdateParam_AsFloat{},

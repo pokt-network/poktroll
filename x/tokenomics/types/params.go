@@ -5,15 +5,21 @@ import (
 )
 
 var (
-	KeyMintAllocationDao                  = []byte("MintAllocationDao")
-	ParamMintAllocationDao                = "mint_allocation_dao"
-	DefaultMintAllocationDao      float64 = 0.1
-	KeyMintAllocationProposer             = []byte("MintAllocationProposer")
-	ParamMintAllocationProposer           = "mint_allocation_proposer"
-	DefaultMintAllocationProposer float64 = 0.05
-	KeyMintAllocationSupplier             = []byte("MintAllocationSupplier")
-	ParamMintAllocationSupplier           = "mint_allocation_supplier"
-	DefaultMintAllocationSupplier float64 = 0.7
+	KeyMintAllocationDao                     = []byte("MintAllocationDao")
+	ParamMintAllocationDao                   = "mint_allocation_dao"
+	DefaultMintAllocationDao         float64 = 0.1
+	KeyMintAllocationProposer                = []byte("MintAllocationProposer")
+	ParamMintAllocationProposer              = "mint_allocation_proposer"
+	DefaultMintAllocationProposer    float64 = 0.05
+	KeyMintAllocationSupplier                = []byte("MintAllocationSupplier")
+	ParamMintAllocationSupplier              = "mint_allocation_supplier"
+	DefaultMintAllocationSupplier    float64 = 0.7
+	KeyMintAllocationSourceOwner             = []byte("MintAllocationSourceOwner")
+	ParamMintAllocationSourceOwner           = "mint_allocation_source_owner"
+	DefaultMintAllocationSourceOwner float64 = 0.15
+	KeyMintAllocationApplication             = []byte("MintAllocationApplication")
+	ParamMintAllocationApplication           = "mint_allocation_application"
+	DefaultMintAllocationApplication float64 = 0.0
 
 	_ paramtypes.ParamSet = (*Params)(nil)
 )
@@ -27,12 +33,16 @@ func ParamKeyTable() paramtypes.KeyTable {
 func NewParams(
 	mintAllocationDao,
 	mintAllocationProposer,
-	mintAllocationSupplier float64,
+	mintAllocationSupplier,
+	mintAllocationSourceOwner,
+	mintAllocationApplication float64,
 ) Params {
 	return Params{
-		MintAllocationDao:      mintAllocationDao,
-		MintAllocationProposer: mintAllocationProposer,
-		MintAllocationSupplier: mintAllocationSupplier,
+		MintAllocationDao:         mintAllocationDao,
+		MintAllocationProposer:    mintAllocationProposer,
+		MintAllocationSupplier:    mintAllocationSupplier,
+		MintAllocationSourceOwner: mintAllocationSourceOwner,
+		MintAllocationApplication: mintAllocationApplication,
 	}
 }
 
@@ -42,6 +52,8 @@ func DefaultParams() Params {
 		DefaultMintAllocationDao,
 		DefaultMintAllocationProposer,
 		DefaultMintAllocationSupplier,
+		DefaultMintAllocationSourceOwner,
+		DefaultMintAllocationApplication,
 	)
 }
 
@@ -63,6 +75,16 @@ func (p *Params) ParamSetPairs() paramtypes.ParamSetPairs {
 			&p.MintAllocationSupplier,
 			ValidateMintAllocationSupplier,
 		),
+		paramtypes.NewParamSetPair(
+			KeyMintAllocationSourceOwner,
+			&p.MintAllocationSourceOwner,
+			ValidateMintAllocationSourceOwner,
+		),
+		paramtypes.NewParamSetPair(
+			KeyMintAllocationApplication,
+			&p.MintAllocationApplication,
+			ValidateMintAllocationApplication,
+		),
 	}
 }
 
@@ -77,6 +99,18 @@ func (params *Params) ValidateBasic() error {
 	}
 
 	if err := ValidateMintAllocationSupplier(params.MintAllocationSupplier); err != nil {
+		return err
+	}
+
+	if err := ValidateMintAllocationSourceOwner(params.MintAllocationSourceOwner); err != nil {
+		return err
+	}
+
+	if err := ValidateMintAllocationApplication(params.MintAllocationApplication); err != nil {
+		return err
+	}
+
+	if err := ValidateMintAllocationSum(params); err != nil {
 		return err
 	}
 
@@ -120,6 +154,49 @@ func ValidateMintAllocationSupplier(mintAllocationSupplier any) error {
 
 	if mintAllocationSupplierFloat < 0 {
 		return ErrTokenomicsParamInvalid.Wrapf("mint allocation to supplier must be greater than or equal to 0: got %f", mintAllocationSupplierFloat)
+	}
+
+	return nil
+}
+
+// ValidateMintAllocationSourceOwner validates the MintAllocationSourceOwner param.
+func ValidateMintAllocationSourceOwner(mintAllocationSourceOwner any) error {
+	mintAllocationSourceOwnerFloat, ok := mintAllocationSourceOwner.(float64)
+	if !ok {
+		return ErrTokenomicsParamInvalid.Wrapf("invalid parameter type: %T", mintAllocationSourceOwner)
+	}
+
+	if mintAllocationSourceOwnerFloat < 0 {
+		return ErrTokenomicsParamInvalid.Wrapf("mint allocation to source owner must be greater than or equal to 0: got %f", mintAllocationSourceOwnerFloat)
+	}
+
+	return nil
+}
+
+// ValidateMintAllocationApplication validates the MintAllocationApplication param.
+func ValidateMintAllocationApplication(mintAllocationApplication any) error {
+	mintAllocationApplicationFloat, ok := mintAllocationApplication.(float64)
+	if !ok {
+		return ErrTokenomicsParamInvalid.Wrapf("invalid parameter type: %T", mintAllocationApplication)
+	}
+
+	if mintAllocationApplicationFloat < 0 {
+		return ErrTokenomicsParamInvalid.Wrapf("mint allocation to application must be greater than or equal to 0: got %f", mintAllocationApplicationFloat)
+	}
+
+	return nil
+}
+
+// ValidateMintAllocationSum validates that the sum of all actor mint allocations is exactly 1.
+func ValidateMintAllocationSum(params *Params) error {
+	sum := params.MintAllocationDao +
+		params.MintAllocationProposer +
+		params.MintAllocationSupplier +
+		params.MintAllocationSourceOwner +
+		params.MintAllocationApplication
+
+	if sum != 1 {
+		return ErrTokenomicsParamInvalid.Wrapf("mint allocation percentages do not add to 1.0: got %f", sum)
 	}
 
 	return nil

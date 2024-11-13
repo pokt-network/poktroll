@@ -400,16 +400,14 @@ func TestProcessTokenLogicModules_TLMGlobalMint_Valid_MintDistributionCorrect(t 
 	}
 
 	// Compute mint per actor
-	mintAllocationDao := keepers.Keeper.GetParams(ctx).MintAllocationDao
-	mintAllocationProposer := keepers.Keeper.GetParams(ctx).MintAllocationProposer
-	mintAllocationSupplier := keepers.Keeper.GetParams(ctx).MintAllocationSupplier
+	tokenomicsParams := keepers.Keeper.GetParams(ctx)
 	numTokensMinted := numTokensClaimed * tokenomicskeeper.GlobalInflationPerClaim
 	numTokensMintedInt := cosmosmath.NewIntFromUint64(uint64(numTokensMinted))
-	daoMint := cosmosmath.NewInt(int64(numTokensMinted * mintAllocationDao))
-	propMint := cosmosmath.NewInt(int64(numTokensMinted * mintAllocationProposer))
-	serviceOwnerMint := cosmosmath.NewInt(int64(numTokensMinted * tokenomicskeeper.MintAllocationSourceOwner))
-	appMint := cosmosmath.NewInt(int64(numTokensMinted * tokenomicskeeper.MintAllocationApplication))
-	supplierMint := float32(numTokensMinted * mintAllocationSupplier)
+	daoMint := cosmosmath.NewInt(int64(numTokensMinted * tokenomicsParams.MintAllocationDao))
+	propMint := cosmosmath.NewInt(int64(numTokensMinted * tokenomicsParams.MintAllocationProposer))
+	serviceOwnerMint := cosmosmath.NewInt(int64(numTokensMinted * tokenomicsParams.MintAllocationSourceOwner))
+	appMint := cosmosmath.NewInt(int64(numTokensMinted * tokenomicsParams.MintAllocationApplication))
+	supplierMint := float32(numTokensMinted * tokenomicsParams.MintAllocationSupplier)
 
 	// Ensure the balance was increase be the appropriate amount
 	require.Equal(t, daoBalanceBefore.Amount.Add(daoMint).Add(numTokensMintedInt), daoBalanceAfter.Amount)

@@ -26,6 +26,10 @@ params_update_tokenomics_mint_allocation_proposer: ## Update the tokenomics modu
 params_update_tokenomics_mint_allocation_supplier: ## Update the tokenomics module mint_allocation_supplier param
 	poktrolld tx authz exec ./tools/scripts/params/tokenomics_mint_allocation_supplier.json $(PARAM_FLAGS)
 
+.PHONY: params_update_tokenomics_mint_allocation_source_owner
+params_update_tokenomics_mint_allocation_source_owner: ## Update the tokenomics module mint_allocation_source_owner param
+	poktrolld tx authz exec ./tools/scripts/params/tokenomics_mint_allocation_source_owner.json $(PARAM_FLAGS)
+
 ### Service Module Params ###
 .PHONY: params_get_service
 params_get_service: ## Get the service module params

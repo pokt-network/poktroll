@@ -33,14 +33,16 @@ func (k msgServer) UpdateParam(
 
 	switch msg.Name {
 	case tokenomicstypes.ParamMintAllocationDao:
-		logger = logger.With("param_value", msg.GetAsFloat())
-		params.MintAllocationDao = msg.GetAsFloat()
 	case tokenomicstypes.ParamMintAllocationProposer:
-		logger = logger.With("param_value", msg.GetAsFloat())
-		params.MintAllocationProposer = msg.GetAsFloat()
 	case tokenomicstypes.ParamMintAllocationSupplier:
-		logger = logger.With("param_value", msg.GetAsFloat())
-		params.MintAllocationSupplier = msg.GetAsFloat()
+	case tokenomicstypes.ParamMintAllocationSourceOwner:
+	case tokenomicstypes.ParamMintAllocationApplication:
+		return nil, status.Error(
+			codes.InvalidArgument,
+			tokenomicstypes.ErrTokenomicsParamInvalid.Wrapf(
+				"%s cannot be updated individually as all mint allocation percentages MUST ALWAYS sum to 1", msg.Name,
+			).Error(),
+		)
 	default:
 		return nil, status.Error(
 			codes.InvalidArgument,
