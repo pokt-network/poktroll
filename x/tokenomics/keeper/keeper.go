@@ -90,9 +90,10 @@ func (k Keeper) GetAuthority() string {
 func (k Keeper) MintAllocationsSum(ctx context.Context) float64 {
 	params := k.GetParams(ctx)
 	mintAllocationDAO := params.GetMintAllocationDao()
+	mintAllocationProposer := params.GetMintAllocationProposer()
 
 	return mintAllocationDAO +
-		MintAllocationProposer +
+		mintAllocationProposer +
 		MintAllocationSupplier +
 		MintAllocationSourceOwner + MintAllocationApplication
 }
