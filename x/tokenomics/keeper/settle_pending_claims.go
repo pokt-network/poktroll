@@ -6,13 +6,11 @@ import (
 	"fmt"
 	"slices"
 
-	cosmoslog "cosmossdk.io/log"
 	"cosmossdk.io/math"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/query"
 
 	"github.com/pokt-network/poktroll/app/volatile"
-	"github.com/pokt-network/poktroll/pkg/pokterrors"
 	"github.com/pokt-network/poktroll/telemetry"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
@@ -310,7 +308,7 @@ func (k Keeper) SettlePendingClaims(ctx cosmostypes.Context) (
 }
 
 // ExecutePendingResults executes all pending mint, burn, and transfer operations.
-func (k Keeper) ExecutePendingResults(ctx cosmostypes.Context, results tlm.PendingSettlementResults) (errs error) {
+func (k Keeper) ExecutePendingResults(ctx cosmostypes.Context, results tlm.PendingSettlementResults) error {
 	logger := k.logger.With("method", "ExecutePendingResults")
 
 	for _, result := range results {
@@ -318,46 +316,33 @@ func (k Keeper) ExecutePendingResults(ctx cosmostypes.Context, results tlm.Pendi
 		logger.Info("begin executing pending results")
 
 		logger.Info("begin executing pending mints")
-		errs = k.executePendingMints(ctx, result.Mints)
-		logErrors(logger, errs)
+		if err := k.executePendingMints(ctx, result.Mints); err != nil {
+			return err
+		}
 
 		logger.Info("done executing pending mints")
 
 		logger.Info("begin executing pending burns")
 		if err := k.executePendingBurns(ctx, result.Burns); err != nil {
-			logErrors(logger, err)
-			errs = errors.Join(errs, err)
+			return err
 		}
 		logger.Info("done executing pending burns")
 
 		logger.Info("begin executing pending module to module transfers")
 		if err := k.executePendingModToModTransfers(ctx, result.ModToModTransfers); err != nil {
-			logErrors(logger, err)
-			errs = errors.Join(errs, err)
+			return err
 		}
 		logger.Info("done executing pending module to module transfers")
 
 		logger.Info("begin executing pending module to account transfers")
 		if err := k.executePendingModToAcctTransfers(ctx, result.ModToAcctTransfers); err != nil {
-			logErrors(logger, err)
-			errs = errors.Join(errs, err)
+			return err
 		}
 		logger.Info("done executing pending module to account transfers")
 
 		logger.Info("done executing pending results")
 	}
-	return errs
-}
-
-// logErrors recursively unwraps and sequentially log all joined errors in errs.
-func logErrors(logger cosmoslog.Logger, errs error) {
-	if pokterrors.Split(errs) == nil {
-		return
-	}
-
-	for _, err := range pokterrors.Split(errs) {
-		logger.Error(err.Error())
-	}
+	return nil
 }
 
 // executePendingMints executes all pending mint operations.
@@ -365,7 +350,7 @@ func (k Keeper) executePendingMints(ctx cosmostypes.Context, mints []tlm.MintBur
 	for _, mint := range mints {
 		if err := k.bankKeeper.MintCoins(ctx, mint.DestinationModule, cosmostypes.NewCoins(mint.Coin)); err != nil {
 			err = tokenomicstypes.ErrTokenomicsModuleMint.Wrapf(
-				"destination module %q minting %s: %+v", mint.DestinationModule, mint.Coin, err,
+				"destination module %q minting %s: %s", mint.DestinationModule, mint.Coin, err,
 			)
 			errs = errors.Join(errs, err)
 		}
@@ -379,7 +364,7 @@ func (k Keeper) executePendingBurns(ctx cosmostypes.Context, burns []tlm.MintBur
 	for _, burn := range burns {
 		if err := k.bankKeeper.BurnCoins(ctx, burn.DestinationModule, cosmostypes.NewCoins(burn.Coin)); err != nil {
 			err = tokenomicstypes.ErrTokenomicsModuleBurn.Wrapf(
-				"destination module %q burning %s: %+v", burn.DestinationModule, burn.Coin, err,
+				"destination module %q burning %s: %s", burn.DestinationModule, burn.Coin, err,
 			)
 			logger.Error(err.Error())
 			errs = errors.Join(errs, err)
@@ -399,7 +384,7 @@ func (k Keeper) executePendingModToModTransfers(ctx cosmostypes.Context, transfe
 			cosmostypes.NewCoins(transfer.Coin),
 		); err != nil {
 			err = tokenomicstypes.ErrTokenomicsTransfer.Wrapf(
-				"sender module %q to recipient module %q transferring %s: %+v",
+				"sender module %q to recipient module %q transferring %s: %s",
 				transfer.SenderModule, transfer.RecipientModule, transfer.Coin, err,
 			)
 			logger.Error(err.Error())
@@ -420,7 +405,7 @@ func (k Keeper) executePendingModToAcctTransfers(ctx cosmostypes.Context, transf
 			cosmostypes.NewCoins(transfer.Coin),
 		); err != nil {
 			err = tokenomicstypes.ErrTokenomicsTransfer.Wrapf(
-				"sender module %q to recipient address %q transferring %s: %+v",
+				"sender module %q to recipient address %q transferring %s: %s",
 				transfer.SenderModule, transfer.RecipientAddress, transfer.Coin, err,
 			)
 			logger.Error(err.Error())
@@ -434,7 +419,7 @@ func (k Keeper) executePendingModToAcctTransfers(ctx cosmostypes.Context, transf
 // This is the height at which the proof window closes.
 // If the proof window closes and a proof IS NOT required -> settle the claim.
 // If the proof window closes and a proof IS required -> only settle it if a proof is available.
-func (k Keeper) getExpiringClaims(ctx cosmostypes.Context) (expiringClaims []prooftypes.Claim, err error) {
+func (k Keeper) getExpiringClaims(ctx cosmostypes.Context) (expiringClaims []prooftypes.Claim, _ error) {
 	// TODO_IMPROVE(@bryanchriswhite):
 	//   1. Move height logic up to SettlePendingClaims.
 	//   2. Ensure that claims are only settled or expired on a session end height.
