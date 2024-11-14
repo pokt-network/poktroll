@@ -12,8 +12,8 @@ func NewMsgUpdateParam(authority string, name string, asTypeAny any) (*MsgUpdate
 	var asTypeIface isMsgUpdateParam_AsType
 
 	switch asType := asTypeAny.(type) {
-	case float64:
-		asTypeIface = &MsgUpdateParam_AsFloat{AsFloat: asType}
+	case MintAllocationPercentages:
+		asTypeIface = &MsgUpdateParam_AsMintAllocationPercentages{AsMintAllocationPercentages: &asType}
 	case string:
 		asTypeIface = &MsgUpdateParam_AsString{AsString: asType}
 	default:
@@ -43,31 +43,11 @@ func (msg *MsgUpdateParam) ValidateBasic() error {
 
 	// Parameter name must be supported by this module.
 	switch msg.Name {
-	case ParamMintAllocationDao:
-		if err := msg.paramTypeIsFloat(); err != nil {
+	case ParamMintAllocationPercentages:
+		if err := msg.paramTypeIsMintAllocationPercentages(); err != nil {
 			return err
 		}
-		return ValidateMintAllocationDao(msg.GetAsFloat())
-	case ParamMintAllocationProposer:
-		if err := msg.paramTypeIsFloat(); err != nil {
-			return err
-		}
-		return ValidateMintAllocationProposer(msg.GetAsFloat())
-	case ParamMintAllocationSupplier:
-		if err := msg.paramTypeIsFloat(); err != nil {
-			return err
-		}
-		return ValidateMintAllocationSupplier(msg.GetAsFloat())
-	case ParamMintAllocationSourceOwner:
-		if err := msg.paramTypeIsFloat(); err != nil {
-			return err
-		}
-		return ValidateMintAllocationSourceOwner(msg.GetAsFloat())
-	case ParamMintAllocationApplication:
-		if err := msg.paramTypeIsFloat(); err != nil {
-			return err
-		}
-		return ValidateMintAllocationApplication(msg.GetAsFloat())
+		return ValidateMintAllocationPercentages(*msg.GetAsMintAllocationPercentages())
 	case ParamDaoRewardAddress:
 		if err := msg.paramTypeIsString(); err != nil {
 			return err
@@ -78,8 +58,8 @@ func (msg *MsgUpdateParam) ValidateBasic() error {
 	}
 }
 
-func (msg *MsgUpdateParam) paramTypeIsFloat() error {
-	return genericParamTypeIs[*MsgUpdateParam_AsFloat](msg)
+func (msg *MsgUpdateParam) paramTypeIsMintAllocationPercentages() error {
+	return genericParamTypeIs[*MsgUpdateParam_AsMintAllocationPercentages](msg)
 }
 
 func (msg *MsgUpdateParam) paramTypeIsString() error {
