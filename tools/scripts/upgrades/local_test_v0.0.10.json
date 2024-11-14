@@ -7,7 +7,7 @@
                 "plan": {
                     "name": "v0.0.10",
                     "height": "20",
-                    "info": "NOT NEEDED FOR LOCAL TESTING"
+                    "info": "This field is not used for local testing"
                 }
             }
         ]
