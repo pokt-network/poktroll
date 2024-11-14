@@ -112,6 +112,7 @@ func TestRelayMiner_Ping(t *testing.T) {
 
 	time.Sleep(time.Millisecond)
 
+	// Override transport configuration to adapt the http client to the unix socket listener.
 	httpClient := http.Client{
 		Transport: &http.Transport{
 			DialContext: func(ctx context.Context, network, addr string) (net.Conn, error) {
