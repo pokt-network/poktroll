@@ -91,6 +91,10 @@ If you experience errors like these:
 go: github.com/pokt-network/poktroll/api/poktroll/examplemod imports                                                                                   
         cosmossdk.io/api/poktroll/shared: module cosmossdk.io/api@latest found (v0.7.6), but does not contain package cosmossdk.io/api/poktroll/shared
 ```
+```go
+✘ Error while running command /home/bwhite/go/bin/buf dep update /home/bwhite/Projects/pokt/poktroll/proto: Failure: decode proto/buf.lock: no digest specified for module buf.build/cosmos/ics23
+: exit status 1
+```
 Then try running `make proto_clean_pulsar`.
 :::
 
@@ -216,7 +220,7 @@ Prepare `x/examplemod/types/message_update_param.go` to handle message construct
 Prepare `x/examplemod/keeper/msg_server_update_param.go` to handle parameter updates by type:
 
 ```go
-- func (k msgServer) UpdateParam(goCtx context.Context, msg *types.MsgUpdateParam) (*types.MsgUpdateParamResponse, error) {
+- func (k msgServer) UpdateParam(goCtx context.Context, msg *examplemodtypes.MsgUpdateParam) (*examplemodtypes.MsgUpdateParamResponse, error) {
 -   ctx := sdk.UnwrapSDKContext(goCtx)
 -
 -   // TODO: Handling the message
@@ -224,7 +228,7 @@ Prepare `x/examplemod/keeper/msg_server_update_param.go` to handle parameter upd
 -
 + // UpdateParam updates a single parameter in the proof module and returns
 + // all active parameters.
-+ func (k msgServer) UpdateParam(ctx context.Context, msg *types.MsgUpdateParam) (*types.MsgUpdateParamResponse, error) {
++ func (k msgServer) UpdateParam(ctx context.Context, msg *examplemodtypes.MsgUpdateParam) (*examplemodtypes.MsgUpdateParamResponse, error) {
 +   logger := k.logger.With(
 +     "method", "UpdateParam",
 +     "param_name", msg.Name,
@@ -237,7 +241,7 @@ Prepare `x/examplemod/keeper/msg_server_update_param.go` to handle parameter upd
 +   if k.GetAuthority() != msg.Authority {
 +     return nil, status.Error(
 +       codes.InvalidArgument,
-+       suppliertypes.ErrSupplierInvalidSigner.Wrapf(
++       examplemodtypes.ErrExamplemodInvalidSigner.Wrapf(
 +         "invalid authority; expected %s, got %s",
 +         k.GetAuthority(), msg.Authority,
 +       ).Error(),
@@ -250,7 +254,7 @@ Prepare `x/examplemod/keeper/msg_server_update_param.go` to handle parameter upd
 +   default:
 +     return nil, status.Error(
 +       codes.InvalidArgument,
-+       suppliertypes.ErrSupplierParamInvalid.Wrapf("unsupported param %q", msg.Name).Error(),
++       examplemodtypes.ErrExamplemodParamInvalid.Wrapf("unsupported param %q", msg.Name).Error(),
 +     )
 +   }
 +
@@ -304,6 +308,10 @@ Define the new parameter in the module's `params.proto` file (e.g., `proto/poktr
 +   uint64 new_parameter = 3 [(gogoproto.jsontag) = "new_parameter", (gogoproto.moretags) = "yaml:\"new_parameter\""];
   }
 ```
+
+:::warning
+Be sure to update the `gogoproto.jsontag` and `gogoproto.moretags` option values to match the new parameter name!
+:::
 
 :::tip
 Don't forget to run `make proto_regen` to update generated protobuf go code.
@@ -436,7 +444,7 @@ Add the parameter type and name (e.g. `ParamNameNewParameter`) to new cases in t
     // ...
     switch msg.Name {
 +   case ParamNewParameter:
-+     if err := msg.paramTypeIsInt64(); err != nil {
++     if err = msg.paramTypeIsInt64(); err != nil {
 +       return err
 +     }
 +     return ValidateNewParameter(msg.GetAsInt64())
@@ -470,20 +478,20 @@ Every error return from `msgServer` methods (e.g. `#UpdateParams()`) **SHOULD** 
   // all active parameters.
   func (k msgServer) UpdateParam(
     ctx context.Context,
-    msg *types.MsgUpdateParam,
-  ) (*types.MsgUpdateParamResponse, error) {
+    msg *examplemodtypes.MsgUpdateParam,
+  ) (*examplemodtypes.MsgUpdateParamResponse, error) {
     if err := msg.ValidateBasic(); err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
     }
     // ...
     switch msg.Name {
-+   case types.ParamNewParameter:
++   case examplemodtypes.ParamNewParameter:
 +     logger = logger.with("param_value", msg.GetAsInt64())
 +     params.NewParameter = msg.GetAsInt64()
     default:
       return nil, status.Error(
         codes.InvalidArgument,
-        suppliertypes.ErrSupplierParamInvalid.Wrapf("unsupported param %q", msg.Name).Error(),
+        examplemodtypes.ErrExamplemodParamInvalid.Wrapf("unsupported param %q", msg.Name).Error(),
       )
     }
     // ...
@@ -515,7 +523,7 @@ Ensure there is a test function for each parameter which covers all cases of inv
 +     {
 +       desc: "invalid type",
 +       newParameter: "420",
-+       expectedErr: ErrExamplemodParamInvalid.Wrapf("invalid parameter type: string"),
++       expectedErr: examplemodtypes.ErrExamplemodParamInvalid.Wrapf("invalid parameter type: string"),
 +     },
 +     {
 +       desc: "valid NewParameterName",
@@ -525,7 +533,7 @@ Ensure there is a test function for each parameter which covers all cases of inv
 + 
 +   for _, test := range tests {
 +     t.Run(test.desc, func(t *testing.T) {
-+       err := ValidateNewParameter(test.newParameter)
++       err := examplemodtypes.ValidateNewParameter(test.newParameter)
 +       if test.expectedErr != nil {
 +         require.Error(t, err)
 +         require.Contains(t, err.Error(), test.expectedErr.Error())
@@ -561,11 +569,11 @@ This test asserts that updating was successful and that no other parameter was e
 
 ```go
 + func TestMsgUpdateParam_UpdateNewParameterOnly(t *testing.T) {
-+   var expectedNewParameter uint64 = 420
++   var expectedNewParameter int64 = 420
 + 
 +   // Set the parameters to their default values
 +   k, msgSrv, ctx := setupMsgServer(t)
-+   defaultParams := prooftypes.DefaultParams()
++   defaultParams := examplemodtypes.DefaultParams()
 +   require.NoError(t, k.SetParams(ctx, defaultParams))
 + 
 +   // Ensure the default values are different from the new values we want to set
@@ -575,7 +583,7 @@ This test asserts that updating was successful and that no other parameter was e
 +   updateParamMsg := &examplemodtypes.MsgUpdateParam{
 +     Authority: authtypes.NewModuleAddress(govtypes.ModuleName).String(),
 +     Name: examplemodtypes.ParamNewParameter,
-+     AsType: &examplemodtypes.MsgUpdateParam_AsInt64{AsInt64: int64(expectedNewParameter)},
++     AsType: &examplemodtypes.MsgUpdateParam_AsInt64{AsInt64: expectedNewParameter},
 +   }
 +   res, err := msgSrv.UpdateParam(ctx, updateParamMsg)
 +   require.NoError(t, err)
@@ -648,7 +656,7 @@ Update `ModuleParamConfig#ValidParams` to include a valid and non-default value 
 ```go
   ExamplemodModuleParamConfig = ModuleParamConfig{
       // ...
-      ValidParams: gatewaytypes.Params{
+      ValidParams: examplemodtypes.Params{
 +         NewParameter: 420,
       },
       // ...
@@ -676,11 +684,11 @@ Ensure that all available `as_<type>` types for the module are present on the mo
 ```go
   ExamplemodModuleParamConfig = ModuleParamConfig{
     // ...
-    ValidParams: suppliertypes.Params{},
+    ValidParams: examplemodtypes.Params{},
 +   ParamTypes: map[ParamType]any{
-+     ParamTypeInt64: suppliertypes.MsgUpdateParam_AsInt64{},
++     ParamTypeInt64: examplemodtypes.MsgUpdateParam_AsInt64{},
 +   },
-    DefaultParams:    suppliertypes.DefaultParams(),
+    DefaultParams:    examplemodtypes.DefaultParams(),
     // ...
   }
 
