@@ -235,6 +235,10 @@ func TokenomicsKeeperWithActorAddrs(t testing.TB) (
 
 	// Mock the session keeper
 	mockSessionKeeper := mocks.NewMockSessionKeeper(ctrl)
+	mockSessionKeeper.EXPECT().
+		GetParams(gomock.Any()).
+		Return(sessiontypes.DefaultParams()).
+		AnyTimes()
 
 	// Mock the service keeper
 	mockServiceKeeper := mocks.NewMockServiceKeeper(ctrl)

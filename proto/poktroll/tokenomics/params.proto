@@ -12,6 +12,22 @@ message Params {
   option (amino.name) = "poktroll/x/tokenomics/Params";
   option (gogoproto.equal) = true;
 
+  // mint_allocation_dao is the percentage of the minted tokens which are sent
+  // to the DAO reward address during claim settlement.
+  double mint_allocation_dao = 1 [(gogoproto.jsontag) = "mint_allocation_dao", (gogoproto.moretags) = "yaml:\"mint_allocation_dao\""];
+  // mint_allocation_proposer is the percentage of the minted tokens which are sent
+  // to the block proposer account address during claim settlement.
+  double mint_allocation_proposer = 2 [(gogoproto.jsontag) = "mint_allocation_proposer", (gogoproto.moretags) = "yaml:\"mint_allocation_proposer\""];
+  // mint_allocation_supplier is the percentage of the minted tokens which are sent
+  // to the block supplier account address during claim settlement.
+  double mint_allocation_supplier = 3 [(gogoproto.jsontag) = "mint_allocation_supplier", (gogoproto.moretags) = "yaml:\"mint_allocation_supplier\""];
+  // mint_allocation_source_owner is the percentage of the minted tokens which are sent
+  // to the service source owner account address during claim settlement.
+  double mint_allocation_source_owner = 4 [(gogoproto.jsontag) = "mint_allocation_source_owner", (gogoproto.moretags) = "yaml:\"mint_allocation_source_owner\""];
+  // mint_allocation_application is the percentage of the minted tokens which are sent
+  // to the application account address during claim settlement.
+  double mint_allocation_application = 5 [(gogoproto.jsontag) = "mint_allocation_application", (gogoproto.moretags) = "yaml:\"mint_allocation_application\""];
+
   // IMPORTANT: Make sure to update all related files if you're modifying or adding a new parameter.
   // Try the following grep to find all related places: `grep -r compute_units_to_tokens_multiplier`
   // TODO_IMPROVE: Look into an opportunity to use an enum to avoid using strings throughout the codebase.

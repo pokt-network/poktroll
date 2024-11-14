@@ -16,7 +16,7 @@ import (
 )
 
 func TestMsgUpdateParam_UpdateProofRequestProbabilityOnly(t *testing.T) {
-	var expectedProofRequestProbability float32 = 0.1
+	var expectedProofRequestProbability float64 = 0.1
 
 	// Set the parameters to their default values
 	k, msgSrv, ctx := setupMsgServer(t)

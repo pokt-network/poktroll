@@ -2197,7 +2197,7 @@ type Application struct {
 	//   - https://github.com/pokt-network/poktroll/pull/750#discussion_r1735025033
 	//   - https://www.notion.so/buildwithgrove/Off-chain-Application-Stake-Tracking-6a8bebb107db4f7f9dc62cbe7ba555f7
 	ServiceConfigs []*shared.ApplicationServiceConfig `protobuf:"bytes,3,rep,name=service_configs,json=serviceConfigs,proto3" json:"service_configs,omitempty"` // The list of services this appliccation is configured to request service for
-	// TODO_BETA: Rename `delegatee_gateway_addresses` to `gateway_addresses_delegated_to`.
+	// TODO_BETA(@bryanchriswhite): Rename `delegatee_gateway_addresses` to `gateway_addresses_delegated_to`.
 	// Ensure to rename all relevant configs, comments, variables, function names, etc as well.
 	DelegateeGatewayAddresses []string `protobuf:"bytes,4,rep,name=delegatee_gateway_addresses,json=delegateeGatewayAddresses,proto3" json:"delegatee_gateway_addresses,omitempty"` // The Bech32 encoded addresses for all delegatee Gateways, in a non-nullable slice
 	// A map from sessionEndHeights to a list of Gateways.
