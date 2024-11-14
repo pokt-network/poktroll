@@ -13,6 +13,9 @@ func TestMsgUpdateParams(t *testing.T) {
 	tokenomicsKeeper, srv, ctx := setupMsgServer(t)
 	require.NoError(t, tokenomicsKeeper.SetParams(ctx, tokenomicstypes.DefaultParams()))
 
+	validParams := tokenomicstypes.DefaultParams()
+	validParams.DaoRewardAddress = sample.AccAddress()
+
 	tests := []struct {
 		desc string
 
@@ -22,7 +25,7 @@ func TestMsgUpdateParams(t *testing.T) {
 		expectedErrMsg string
 	}{
 		{
-			desc: "invalid authority address",
+			desc: "invalid: malformed authority address",
 
 			req: &tokenomicstypes.MsgUpdateParams{
 				Authority: "invalid",
@@ -33,27 +36,77 @@ func TestMsgUpdateParams(t *testing.T) {
 			expectedErrMsg: "invalid authority",
 		},
 		{
-			desc: "incorrect authority address",
+			desc: "invalid: incorrect authority address",
 
 			req: &tokenomicstypes.MsgUpdateParams{
 				Authority: sample.AccAddress(),
-				Params:    tokenomicstypes.DefaultParams(),
+				Params:    validParams,
 			},
 
 			shouldError:    true,
 			expectedErrMsg: "the provided authority address does not match the on-chain governance address",
 		},
 		{
-			desc: "successful param update",
+			desc: "invalid: incompatible dao reward params",
+
+			req: &tokenomicstypes.MsgUpdateParams{
+				Authority: sample.AccAddress(),
+				Params: tokenomicstypes.Params{
+					// DaoRewardAddress MUST NOT be empty string
+					// when MintAllocationDao is greater than 0.
+					DaoRewardAddress: "",
+
+					// MintAllocationXXX params MUST sum to 1.
+					MintAllocationPercentages: tokenomicstypes.MintAllocationPercentages{
+						Dao:         0.1,
+						Proposer:    0.1,
+						Supplier:    0.1,
+						SourceOwner: 0.1,
+						Application: 0.6,
+					},
+				},
+			},
+
+			shouldError:    true,
+			expectedErrMsg: "dao reward address required when mint_allocation_dao is 0",
+		},
+		{
+			desc: "valid: no dao rewards",
 
 			req: &tokenomicstypes.MsgUpdateParams{
 				Authority: tokenomicsKeeper.GetAuthority(),
 				Params: tokenomicstypes.Params{
-					MintAllocationDao:         0.1,
-					MintAllocationProposer:    0.1,
-					MintAllocationSupplier:    0.1,
-					MintAllocationSourceOwner: 0.1,
-					MintAllocationApplication: 0.6,
+					// DaoRewardAddress MUST NOT be empty string
+					// when MintAllocationDao is greater than 0.
+					DaoRewardAddress: "",
+
+					// MintAllocationXXX params MUST sum to 1.
+					MintAllocationPercentages: tokenomicstypes.MintAllocationPercentages{
+						Dao:         0,
+						Proposer:    0.1,
+						Supplier:    0.1,
+						SourceOwner: 0.1,
+						Application: 0.7,
+					},
+				},
+			},
+
+			shouldError: false,
+		},
+		{
+			desc: "valid: successful param update",
+
+			req: &tokenomicstypes.MsgUpdateParams{
+				Authority: tokenomicsKeeper.GetAuthority(),
+				Params: tokenomicstypes.Params{
+					MintAllocationPercentages: tokenomicstypes.MintAllocationPercentages{
+						Dao:         0.1,
+						Proposer:    0.1,
+						Supplier:    0.1,
+						SourceOwner: 0.1,
+						Application: 0.6,
+					},
+					DaoRewardAddress: sample.AccAddress(),
 				},
 			},
 

@@ -12,8 +12,10 @@ func NewMsgUpdateParam(authority string, name string, asTypeAny any) (*MsgUpdate
 	var asTypeIface isMsgUpdateParam_AsType
 
 	switch asType := asTypeAny.(type) {
-	case float64:
-		asTypeIface = &MsgUpdateParam_AsFloat{AsFloat: asType}
+	case MintAllocationPercentages:
+		asTypeIface = &MsgUpdateParam_AsMintAllocationPercentages{AsMintAllocationPercentages: &asType}
+	case string:
+		asTypeIface = &MsgUpdateParam_AsString{AsString: asType}
 	default:
 		return nil, fmt.Errorf("unexpected param value type: %T", asTypeAny)
 	}
@@ -41,41 +43,38 @@ func (msg *MsgUpdateParam) ValidateBasic() error {
 
 	// Parameter name must be supported by this module.
 	switch msg.Name {
-	case ParamMintAllocationDao:
-		if err := msg.paramTypeIsFloat(); err != nil {
+	case ParamMintAllocationPercentages:
+		if err := msg.paramTypeIsMintAllocationPercentages(); err != nil {
 			return err
 		}
-		return ValidateMintAllocationDao(msg.GetAsFloat())
-	case ParamMintAllocationProposer:
-		if err := msg.paramTypeIsFloat(); err != nil {
+		return ValidateMintAllocationPercentages(*msg.GetAsMintAllocationPercentages())
+	case ParamDaoRewardAddress:
+		if err := msg.paramTypeIsString(); err != nil {
 			return err
 		}
-		return ValidateMintAllocationProposer(msg.GetAsFloat())
-	case ParamMintAllocationSupplier:
-		if err := msg.paramTypeIsFloat(); err != nil {
-			return err
-		}
-		return ValidateMintAllocationSupplier(msg.GetAsFloat())
-	case ParamMintAllocationSourceOwner:
-		if err := msg.paramTypeIsFloat(); err != nil {
-			return err
-		}
-		return ValidateMintAllocationSourceOwner(msg.GetAsFloat())
-	case ParamMintAllocationApplication:
-		if err := msg.paramTypeIsFloat(); err != nil {
-			return err
-		}
-		return ValidateMintAllocationApplication(msg.GetAsFloat())
+		return ValidateDaoRewardAddress(msg.GetAsString())
 	default:
 		return ErrTokenomicsParamNameInvalid.Wrapf("unsupported param %q", msg.Name)
 	}
 }
 
-func (msg *MsgUpdateParam) paramTypeIsFloat() error {
-	if _, ok := msg.AsType.(*MsgUpdateParam_AsFloat); !ok {
+func (msg *MsgUpdateParam) paramTypeIsMintAllocationPercentages() error {
+	return genericParamTypeIs[*MsgUpdateParam_AsMintAllocationPercentages](msg)
+}
+
+func (msg *MsgUpdateParam) paramTypeIsString() error {
+	return genericParamTypeIs[*MsgUpdateParam_AsString](msg)
+}
+
+// TODO_TECHDEBT:
+// 1. Move this to a shared package.
+// 2. Refactor other module mesagese_upddate_param.go files to use this.
+// 3. Update "adding on-chain module params" docs.
+func genericParamTypeIs[T any](msg *MsgUpdateParam) error {
+	if _, ok := msg.AsType.(T); !ok {
 		return ErrTokenomicsParamInvalid.Wrapf(
 			"invalid type for param %q; expected %T, got %T",
-			msg.Name, &MsgUpdateParam_AsFloat{}, msg.AsType,
+			msg.Name, *new(T), msg.AsType,
 		)
 	}
 

@@ -431,11 +431,11 @@ func TestProcessTokenLogicModules_TLMGlobalMint_Valid_MintDistributionCorrect(t 
 	tokenomicsParams := keepers.Keeper.GetParams(ctx)
 	numTokensMinted := numTokensClaimed * tlm.GlobalInflationPerClaim
 	numTokensMintedInt := cosmosmath.NewIntFromUint64(uint64(numTokensMinted))
-	daoMint := cosmosmath.NewInt(int64(numTokensMinted * tokenomicsParams.MintAllocationDao))
-	propMint := cosmosmath.NewInt(int64(numTokensMinted * tokenomicsParams.MintAllocationProposer))
-	serviceOwnerMint := cosmosmath.NewInt(int64(numTokensMinted * tokenomicsParams.MintAllocationSourceOwner))
-	appMint := cosmosmath.NewInt(int64(numTokensMinted * tokenomicsParams.MintAllocationApplication))
-	supplierMint := float32(numTokensMinted * tokenomicsParams.MintAllocationSupplier)
+	daoMint := cosmosmath.NewInt(int64(numTokensMinted * tokenomicsParams.MintAllocationPercentages.Dao))
+	propMint := cosmosmath.NewInt(int64(numTokensMinted * tokenomicsParams.MintAllocationPercentages.Proposer))
+	serviceOwnerMint := cosmosmath.NewInt(int64(numTokensMinted * tokenomicsParams.MintAllocationPercentages.SourceOwner))
+	appMint := cosmosmath.NewInt(int64(numTokensMinted * tokenomicsParams.MintAllocationPercentages.Application))
+	supplierMint := float32(numTokensMinted * tokenomicsParams.MintAllocationPercentages.Supplier)
 
 	// Ensure the balance was increased to the appropriate amount.
 	require.Equal(t, daoBalanceBefore.Amount.Add(daoMint).Add(numTokensMintedInt), daoBalanceAfter.Amount)

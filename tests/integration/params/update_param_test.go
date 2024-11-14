@@ -54,11 +54,6 @@ func (s *msgUpdateParamTestSuite) TestUnauthorizedMsgUpdateParamFails() {
 			validParamsFieldValue := validParamsValue.Field(fieldIdx)
 			fieldName := validParamsValue.Type().Field(fieldIdx).Name
 
-			// Skip fields which in the excludedParams map.
-			if _, ok := suites.ExcludedParams[fieldName]; ok {
-				continue
-			}
-
 			testName := fmt.Sprintf("%s_%s", moduleName, fieldName)
 			s.T().Run(testName, func(t *testing.T) {
 				// Reset the app state in order to assert that each module
@@ -92,11 +87,6 @@ func (s *msgUpdateParamTestSuite) TestAuthorizedMsgUpdateParamSucceeds() {
 		for fieldIdx := 0; fieldIdx < validParamsValue.NumField(); fieldIdx++ {
 			fieldExpectedValue := validParamsValue.Field(fieldIdx)
 			fieldName := validParamsValue.Type().Field(fieldIdx).Name
-
-			// Skip fields which in the excludedParams map.
-			if _, ok := suites.ExcludedParams[fieldName]; ok {
-				continue
-			}
 
 			testName := fmt.Sprintf("%s_%s", moduleName, fieldName)
 			s.T().Run(testName, func(t *testing.T) {
