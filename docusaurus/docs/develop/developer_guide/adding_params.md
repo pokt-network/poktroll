@@ -55,8 +55,8 @@ https://github.com/ignite/cli/issues/3684#issuecomment-2299796210
 :::warning
 The steps outlined below follow **the same example** where:
 - **Module name**: `examplemod`
-- **New parameter name**: `new_param`
-- **Default value**: `42`
+- **New parameter name**: `new_parameter`
+- **Default value**: `int64(42)`
 
 When following these steps, be sure to substitute these example values with your own!
 :::
@@ -134,7 +134,7 @@ Update the `MsgUpdateParamResponse` message field (`params`) in the same `tx.pro
 
 #### 0.3 Comment Out AutoCLI
 
-When scaffolding the `MsgUpdateParam` message, lines are added to `x/examplemod/module/autocli.go`.
+When scaffolding the `MsgUpdateParam` message, generated code is added to `x/examplemod/module/autocli.go`.
 Since governance parameters aren't updated via `poktrolld` CLI, comment out these new lines:
 
 ```go
@@ -305,7 +305,7 @@ Define the new parameter in the module's `params.proto` file (e.g., `proto/poktr
     // Other existing parameters...
   
 +   // Description of the new parameter.
-+   uint64 new_parameter = 3 [(gogoproto.jsontag) = "new_parameter", (gogoproto.moretags) = "yaml:\"new_parameter\""];
++   int64 new_parameter = 3 [(gogoproto.jsontag) = "new_parameter", (gogoproto.moretags) = "yaml:\"new_parameter\""];
   }
 ```
 
