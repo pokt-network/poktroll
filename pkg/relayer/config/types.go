@@ -6,7 +6,7 @@ type RelayMinerServerType int
 
 const (
 	RelayMinerServerTypeHTTP RelayMinerServerType = iota
-	// TODO: Support other RelayMinerServerType:
+	// TODO_FUTURE: Support other RelayMinerServerType:
 	// RelayMinerServerTypeHTTPS
 	// RelayMinerServerTypeTCP
 	// RelayMinerServerTypeUDP

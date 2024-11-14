@@ -5,6 +5,8 @@ import (
 	"fmt"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"github.com/pokt-network/poktroll/telemetry"
 	"github.com/pokt-network/poktroll/x/application/types"
@@ -23,12 +25,15 @@ func (k msgServer) StakeApplication(ctx context.Context, msg *types.MsgStakeAppl
 
 	if err := msg.ValidateBasic(); err != nil {
 		logger.Error(fmt.Sprintf("invalid MsgStakeApplication: %v", err))
-		return nil, err
+		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
 	// Check if the application already exists or not
-	var err error
-	var coinsToEscrow sdk.Coin
+	var (
+		err             error
+		coinsToEscrow   sdk.Coin
+		wasAppUnbonding bool
+	)
 	foundApp, isAppFound := k.GetApplication(ctx, msg.Address)
 	if !isAppFound {
 		logger.Info(fmt.Sprintf("Application not found. Creating new application for address %q", msg.Address))
@@ -38,38 +43,59 @@ func (k msgServer) StakeApplication(ctx context.Context, msg *types.MsgStakeAppl
 		logger.Info(fmt.Sprintf("Application found. About to try and update application for address %q", msg.Address))
 		currAppStake := *foundApp.Stake
 		if err = k.updateApplication(ctx, &foundApp, msg); err != nil {
-			logger.Error(fmt.Sprintf("could not update application for address %q due to error %v", msg.Address, err))
-			return nil, err
+			logger.Info(fmt.Sprintf("could not update application for address %q due to error %v", msg.Address, err))
+			return nil, status.Error(codes.InvalidArgument, err.Error())
 		}
 		coinsToEscrow, err = (*msg.Stake).SafeSub(currAppStake)
 		if err != nil {
-			logger.Error(fmt.Sprintf("could not calculate coins to escrow due to error %v", err))
-			return nil, err
+			logger.Info(fmt.Sprintf("could not calculate coins to escrow due to error %v", err))
+			return nil, status.Error(codes.InvalidArgument, err.Error())
 		}
 		logger.Info(fmt.Sprintf("Application is going to escrow an additional %+v coins", coinsToEscrow))
 
 		// If the application has initiated an unstake action, cancel it since it is staking again.
-		foundApp.UnstakeSessionEndHeight = types.ApplicationNotUnstaking
+		if foundApp.UnstakeSessionEndHeight != types.ApplicationNotUnstaking {
+			wasAppUnbonding = true
+			foundApp.UnstakeSessionEndHeight = types.ApplicationNotUnstaking
+		}
 	}
 
-	// Must always stake or upstake (> 0 delta)
+	// MUST ALWAYS stake or upstake (> 0 delta)
 	if coinsToEscrow.IsZero() {
 		logger.Warn(fmt.Sprintf("Application %q must escrow more than 0 additional coins", msg.Address))
-		return nil, types.ErrAppInvalidStake.Wrapf("application %q must escrow more than 0 additional coins", msg.Address)
+		return nil, status.Error(
+			codes.InvalidArgument,
+			types.ErrAppInvalidStake.Wrapf(
+				"application %q must escrow more than 0 additional coins",
+				msg.Address,
+			).Error())
+	}
+
+	// MUST ALWAYS have at least minimum stake.
+	minStake := k.GetParams(ctx).MinStake
+	// TODO_POST_MAINNET: If we support multiple native tokens, we will need to
+	// start checking the denom here.
+	if msg.Stake.Amount.LT(minStake.Amount) {
+		err = fmt.Errorf("application %q must stake at least %s", msg.GetAddress(), minStake)
+		logger.Info(err.Error())
+		return nil, status.Error(
+			codes.InvalidArgument,
+			types.ErrAppInvalidStake.Wrapf("%s", err).Error(),
+		)
 	}
 
 	// Retrieve the address of the application
 	appAddress, err := sdk.AccAddressFromBech32(msg.Address)
 	if err != nil {
-		logger.Error(fmt.Sprintf("could not parse address %q", msg.Address))
-		return nil, err
+		logger.Info(fmt.Sprintf("could not parse address %q", msg.Address))
+		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
 	// Send the coins from the application to the staked application pool
 	err = k.bankKeeper.SendCoinsFromAccountToModule(ctx, appAddress, types.ModuleName, []sdk.Coin{coinsToEscrow})
 	if err != nil {
 		logger.Error(fmt.Sprintf("could not send %v coins from %q to %q module account due to %v", coinsToEscrow, appAddress, types.ModuleName, err))
-		return nil, err
+		return nil, status.Error(codes.Internal, err.Error())
 	}
 	logger.Info(fmt.Sprintf("Successfully escrowed %v coins from %q to %q module account", coinsToEscrow, appAddress, types.ModuleName))
 
@@ -77,8 +103,36 @@ func (k msgServer) StakeApplication(ctx context.Context, msg *types.MsgStakeAppl
 	k.SetApplication(ctx, foundApp)
 	logger.Info(fmt.Sprintf("Successfully updated application stake for app: %+v", foundApp))
 
+	events := make([]sdk.Msg, 0)
+
+	// If application unbonding was canceled, emit the corresponding event.
+	if wasAppUnbonding {
+		sessionEndHeight := k.sharedKeeper.GetSessionEndHeight(ctx, sdk.UnwrapSDKContext(ctx).BlockHeight())
+		events = append(events, &types.EventApplicationUnbondingCanceled{
+			Application:      &foundApp,
+			SessionEndHeight: sessionEndHeight,
+		})
+	}
+
+	// ALWAYS emit an application staked event.
+	currentHeight := sdk.UnwrapSDKContext(ctx).BlockHeight()
+	events = append(events, &types.EventApplicationStaked{
+		Application:      &foundApp,
+		SessionEndHeight: k.sharedKeeper.GetSessionEndHeight(ctx, currentHeight),
+	})
+
+	sdkCtx := sdk.UnwrapSDKContext(ctx)
+	if err = sdkCtx.EventManager().EmitTypedEvents(events...); err != nil {
+		err = types.ErrAppEmitEvent.Wrapf("(%+v): %s", events, err)
+		logger.Error(err.Error())
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
 	isSuccessful = true
-	return &types.MsgStakeApplicationResponse{}, nil
+
+	return &types.MsgStakeApplicationResponse{
+		Application: &foundApp,
+	}, nil
 }
 
 func (k msgServer) createApplication(

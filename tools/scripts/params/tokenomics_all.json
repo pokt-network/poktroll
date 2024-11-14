@@ -5,7 +5,11 @@
         "@type": "/poktroll.tokenomics.MsgUpdateParams",
         "authority": "pokt10d07y265gmmuvt4z0w9aw880jnsr700j8yv32t",
         "params": {
-          "compute_units_to_tokens_multiplier": "42"
+          "mint_allocation_dao": 0.1,
+          "mint_allocation_proposer": 0.05,
+          "mint_allocation_supplier": 0.7,
+          "mint_allocation_source_owner": 0.15,
+          "mint_allocation_application": 0.0
         }
       }
     ]

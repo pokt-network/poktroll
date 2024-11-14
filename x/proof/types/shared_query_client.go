@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/pokt-network/poktroll/pkg/client"
-	"github.com/pokt-network/poktroll/x/shared"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
@@ -43,40 +42,40 @@ func (sqc *SharedKeeperQueryClient) GetParams(
 // The grace period is the number of blocks after the session ends during which relays
 // SHOULD be included in the session which most recently ended.
 //
-// TODO_BLOCKER(@bryanchriswhite, #543): We don't really want to use the current value of the params.
+// TODO_MAINNET(@bryanchriswhite, #543): We don't really want to use the current value of the params.
 // Instead, we should be using the value that the params had for the session given by blockHeight.
 func (sqc *SharedKeeperQueryClient) GetSessionGracePeriodEndHeight(
 	ctx context.Context,
 	queryHeight int64,
 ) (int64, error) {
 	sharedParams := sqc.sharedKeeper.GetParams(ctx)
-	return shared.GetSessionGracePeriodEndHeight(&sharedParams, queryHeight), nil
+	return sharedtypes.GetSessionGracePeriodEndHeight(&sharedParams, queryHeight), nil
 }
 
 // GetClaimWindowOpenHeight returns the block height at which the claim window of
 // the session that includes queryHeight opens.
 //
-// TODO_BLOCKER(@bryanchriswhite, #543): We don't really want to use the current value of the params.
+// TODO_MAINNET(@bryanchriswhite, #543): We don't really want to use the current value of the params.
 // Instead, we should be using the value that the params had for the session given by blockHeight.
 func (sqc *SharedKeeperQueryClient) GetClaimWindowOpenHeight(
 	ctx context.Context,
 	queryHeight int64,
 ) (int64, error) {
 	sharedParams := sqc.sharedKeeper.GetParams(ctx)
-	return shared.GetClaimWindowOpenHeight(&sharedParams, queryHeight), nil
+	return sharedtypes.GetClaimWindowOpenHeight(&sharedParams, queryHeight), nil
 }
 
 // GetProofWindowOpenHeight returns the block height at which the proof window of
 // the session that includes queryHeight opens.
 //
-// TODO_BLOCKER(@bryanchriswhite, #543): We don't really want to use the current value of the params.
+// TODO_MAINNET(@bryanchriswhite, #543): We don't really want to use the current value of the params.
 // Instead, we should be using the value that the params had for the session given by blockHeight.
 func (sqc *SharedKeeperQueryClient) GetProofWindowOpenHeight(
 	ctx context.Context,
 	queryHeight int64,
 ) (int64, error) {
 	sharedParams := sqc.sharedKeeper.GetParams(ctx)
-	return shared.GetProofWindowOpenHeight(&sharedParams, queryHeight), nil
+	return sharedtypes.GetProofWindowOpenHeight(&sharedParams, queryHeight), nil
 }
 
 // GetEarliestSupplierClaimCommitHeight returns the earliest block height at which a claim
@@ -87,7 +86,7 @@ func (sqc *SharedKeeperQueryClient) GetEarliestSupplierClaimCommitHeight(
 	supplierOperatorAddr string,
 ) (int64, error) {
 	sharedParams := sqc.sharedKeeper.GetParams(ctx)
-	claimWindowOpenHeight := shared.GetClaimWindowOpenHeight(&sharedParams, queryHeight)
+	claimWindowOpenHeight := sharedtypes.GetClaimWindowOpenHeight(&sharedParams, queryHeight)
 
 	// Fetch the claim window open block hash so that it can be used as part of the
 	// pseudo-random seed for generating the claim distribution offset.
@@ -95,7 +94,7 @@ func (sqc *SharedKeeperQueryClient) GetEarliestSupplierClaimCommitHeight(
 	claimWindowOpenBlockHashBz := sqc.sessionKeeper.GetBlockHash(ctx, claimWindowOpenHeight)
 
 	// Get the earliest claim commit height for the given supplier.
-	return shared.GetEarliestSupplierClaimCommitHeight(
+	return sharedtypes.GetEarliestSupplierClaimCommitHeight(
 		&sharedParams,
 		queryHeight,
 		claimWindowOpenBlockHashBz,
@@ -111,7 +110,7 @@ func (sqc *SharedKeeperQueryClient) GetEarliestSupplierProofCommitHeight(
 	supplierOperatorAddr string,
 ) (int64, error) {
 	sharedParams := sqc.sharedKeeper.GetParams(ctx)
-	proofWindowOpenHeight := shared.GetProofWindowOpenHeight(&sharedParams, queryHeight)
+	proofWindowOpenHeight := sharedtypes.GetProofWindowOpenHeight(&sharedParams, queryHeight)
 
 	// Fetch the proof window open block hash so that it can be used as part of the
 	// pseudo-random seed for generating the proof distribution offset.
@@ -119,7 +118,7 @@ func (sqc *SharedKeeperQueryClient) GetEarliestSupplierProofCommitHeight(
 	proofWindowOpenBlockHash := sqc.sessionKeeper.GetBlockHash(ctx, proofWindowOpenHeight)
 
 	// Get the earliest proof commit height for the given supplier.
-	return shared.GetEarliestSupplierProofCommitHeight(
+	return sharedtypes.GetEarliestSupplierProofCommitHeight(
 		&sharedParams,
 		queryHeight,
 		proofWindowOpenBlockHash,

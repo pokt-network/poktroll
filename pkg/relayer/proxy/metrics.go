@@ -29,7 +29,7 @@ var (
 		Subsystem: relayMinerProcess,
 		Name:      requestsTotal,
 		Help:      "Total number of requests processed, labeled by service ID.",
-	}, []string{"service_id"})
+	}, []string{"service_id", "supplier_operator_address"})
 
 	// relaysErrorsTotal is a Counter for total error events in the relay miner.
 	// It increments with each error, labeled by 'service_id',
@@ -45,7 +45,7 @@ var (
 	}, []string{"service_id"})
 
 	// relaysSuccessTotal is a Counter metric for successful requests in the relay miner.
-	// It increments with each successful request, labeled by ''service_id'.
+	// It increments with each successful request, labeled by 'service_id'.
 	relaysSuccessTotal = prometheus.NewCounterFrom(stdprometheus.CounterOpts{
 		Subsystem: relayMinerProcess,
 		Name:      requestsSuccessTotal,

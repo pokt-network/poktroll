@@ -19,35 +19,6 @@ func TestGetParams(t *testing.T) {
 	require.NoError(t, k.SetParams(ctx, params))
 	require.EqualValues(t, params, k.GetParams(ctx))
 }
-func TestParams_ValidateMinRelayDifficulty(t *testing.T) {
-	tests := []struct {
-		desc                      string
-		relayDifficultyTargetHash any
-		expectedErr               error
-	}{
-		{
-			desc:                      "invalid type",
-			relayDifficultyTargetHash: int64(-1),
-			expectedErr:               prooftypes.ErrProofParamInvalid.Wrapf("invalid parameter type: int64"),
-		},
-		{
-			desc:                      "valid RelayDifficultyTargetHash",
-			relayDifficultyTargetHash: prooftypes.DefaultRelayDifficultyTargetHash,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.desc, func(t *testing.T) {
-			err := prooftypes.ValidateRelayDifficultyTargetHash(tt.relayDifficultyTargetHash)
-			if tt.expectedErr != nil {
-				require.Error(t, err)
-				require.Contains(t, err.Error(), tt.expectedErr.Error())
-			} else {
-				require.NoError(t, err)
-			}
-		})
-	}
-}
 
 func TestParams_ValidateProofRequestProbability(t *testing.T) {
 	tests := []struct {
@@ -62,17 +33,17 @@ func TestParams_ValidateProofRequestProbability(t *testing.T) {
 		},
 		{
 			desc:                    "ProofRequestProbability less than zero",
-			proofRequestProbability: float32(-0.25),
-			expectedErr:             prooftypes.ErrProofParamInvalid.Wrapf("invalid ProofRequestProbability: (%v)", float32(-0.25)),
+			proofRequestProbability: float64(-0.25),
+			expectedErr:             prooftypes.ErrProofParamInvalid.Wrapf("invalid ProofRequestProbability: (%v)", float64(-0.25)),
 		},
 		{
 			desc:                    "ProofRequestProbability greater than one",
-			proofRequestProbability: float32(1.1),
-			expectedErr:             prooftypes.ErrProofParamInvalid.Wrapf("invalid ProofRequestProbability: (%v)", float32(1.1)),
+			proofRequestProbability: float64(1.1),
+			expectedErr:             prooftypes.ErrProofParamInvalid.Wrapf("invalid ProofRequestProbability: (%v)", float64(1.1)),
 		},
 		{
 			desc:                    "valid ProofRequestProbability",
-			proofRequestProbability: float32(0.25),
+			proofRequestProbability: float64(0.25),
 		},
 	}
 
@@ -135,7 +106,7 @@ func TestParams_ValidateProofMissingPenalty(t *testing.T) {
 		{
 			desc:                "invalid denomination",
 			proofMissingPenalty: &invalidDenomCoin,
-			expectedErr:         prooftypes.ErrProofParamInvalid.Wrap("invalid coin denom: invalid_denom"),
+			expectedErr:         prooftypes.ErrProofParamInvalid.Wrap("invalid proof_missing_penalty denom: invalid_denom"),
 		},
 		{
 			desc:                "missing",
@@ -153,12 +124,12 @@ func TestParams_ValidateProofMissingPenalty(t *testing.T) {
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.desc, func(t *testing.T) {
-			err := prooftypes.ValidateProofMissingPenalty(tt.proofMissingPenalty)
-			if tt.expectedErr != nil {
+	for _, test := range tests {
+		t.Run(test.desc, func(t *testing.T) {
+			err := prooftypes.ValidateProofMissingPenalty(test.proofMissingPenalty)
+			if test.expectedErr != nil {
 				require.Error(t, err)
-				require.Contains(t, err.Error(), tt.expectedErr.Error())
+				require.EqualError(t, err, test.expectedErr.Error())
 			} else {
 				require.NoError(t, err)
 			}
@@ -184,7 +155,7 @@ func TestParams_ValidateProofSubmissionFee(t *testing.T) {
 		{
 			desc:               "invalid denomination",
 			proofSubmissionFee: &invalidDenomCoin,
-			expectedErr:        prooftypes.ErrProofParamInvalid.Wrap("invalid coin denom: invalid_denom"),
+			expectedErr:        prooftypes.ErrProofParamInvalid.Wrap("invalid proof_submission_fee denom: invalid_denom"),
 		},
 		{
 			desc:               "missing",
@@ -200,7 +171,7 @@ func TestParams_ValidateProofSubmissionFee(t *testing.T) {
 			desc:               "below minimum",
 			proofSubmissionFee: &belowMinProofSubmissionFee,
 			expectedErr: prooftypes.ErrProofParamInvalid.Wrapf(
-				"ProofSubmissionFee param is below minimum value %s: got %s",
+				"proof_submission_fee is below minimum value %s: got %s",
 				prooftypes.MinProofSubmissionFee,
 				belowMinProofSubmissionFee,
 			),
@@ -211,12 +182,12 @@ func TestParams_ValidateProofSubmissionFee(t *testing.T) {
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.desc, func(t *testing.T) {
-			err := prooftypes.ValidateProofSubmissionFee(tt.proofSubmissionFee)
-			if tt.expectedErr != nil {
+	for _, test := range tests {
+		t.Run(test.desc, func(t *testing.T) {
+			err := prooftypes.ValidateProofSubmissionFee(test.proofSubmissionFee)
+			if test.expectedErr != nil {
 				require.Error(t, err)
-				require.Contains(t, err.Error(), tt.expectedErr.Error())
+				require.EqualError(t, err, test.expectedErr.Error())
 			} else {
 				require.NoError(t, err)
 			}

@@ -12,10 +12,8 @@ import (
 	"github.com/pokt-network/poktroll/pkg/observable/filter"
 	"github.com/pokt-network/poktroll/pkg/observable/logging"
 	"github.com/pokt-network/poktroll/pkg/relayer"
-	"github.com/pokt-network/poktroll/x/proof/types"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
-	"github.com/pokt-network/poktroll/x/shared"
-	tokenomics "github.com/pokt-network/poktroll/x/tokenomics"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 // submitProofs maps over the given claimedSessions observable.
@@ -54,7 +52,7 @@ func (rs *relayerSessionsManager) submitProofs(
 	// Delete expired session trees so they don't get proven again.
 	channel.ForEach(
 		ctx, failedSubmitProofsSessionsObs,
-		rs.deleteExpiredSessionTreesFn(shared.GetProofWindowCloseHeight),
+		rs.deleteExpiredSessionTreesFn(sharedtypes.GetProofWindowCloseHeight),
 	)
 }
 
@@ -91,10 +89,10 @@ func (rs *relayerSessionsManager) waitForEarliestSubmitProofsHeightAndGeneratePr
 
 	logger := rs.logger.With("session_end_height", sessionEndHeight)
 
-	// TODO_TECHDEBT(#543): We don't really want to have to query the params for every method call.
+	// TODO_MAINNET(#543): We don't really want to have to query the params for every method call.
 	// Once `ModuleParamsClient` is implemented, use its replay observable's `#Last()` method
 	// to get the most recently (asynchronously) observed (and cached) value.
-	// TODO_BLOCKER(@bryanchriswhite,#543): We also don't really want to use the current value of the params. Instead,
+	// TODO_MAINNET(@bryanchriswhite,#543): We also don't really want to use the current value of the params. Instead,
 	// we should be using the value that the params had for the session which includes queryHeight.
 	sharedParams, err := rs.sharedQueryClient.GetParams(ctx)
 	if err != nil {
@@ -103,7 +101,7 @@ func (rs *relayerSessionsManager) waitForEarliestSubmitProofsHeightAndGeneratePr
 		return nil
 	}
 
-	proofWindowOpenHeight := shared.GetProofWindowOpenHeight(sharedParams, sessionEndHeight)
+	proofWindowOpenHeight := sharedtypes.GetProofWindowOpenHeight(sharedParams, sessionEndHeight)
 
 	// we wait for proofWindowOpenHeight to be received before proceeding since we need
 	// its hash to seed the pseudo-random number generator for the proof submission
@@ -128,7 +126,7 @@ func (rs *relayerSessionsManager) waitForEarliestSubmitProofsHeightAndGeneratePr
 
 	// Get the earliest proof commit height for this supplier.
 	supplierOperatorAddr := sessionTrees[0].GetSupplierOperatorAddress().String()
-	earliestSupplierProofsCommitHeight := shared.GetEarliestSupplierProofCommitHeight(
+	earliestSupplierProofsCommitHeight := sharedtypes.GetEarliestSupplierProofCommitHeight(
 		sharedParams,
 		sessionEndHeight,
 		proofsWindowOpenBlock.Hash(),
@@ -171,7 +169,7 @@ func (rs *relayerSessionsManager) newMapProveSessionsFn(
 		// Map key is the supplier operator address.
 		proofMsgs := make([]client.MsgSubmitProof, len(sessionTrees))
 		for idx, session := range sessionTrees {
-			proofMsgs[idx] = &types.MsgSubmitProof{
+			proofMsgs[idx] = &prooftypes.MsgSubmitProof{
 				Proof:                   session.GetProofBz(),
 				SessionHeader:           session.GetSessionHeader(),
 				SupplierOperatorAddress: session.GetSupplierOperatorAddress().String(),
@@ -277,12 +275,6 @@ func (rs *relayerSessionsManager) isProofRequired(
 	// Create the claim object and use its methods to determine if a proof is required.
 	claim := claimFromSessionTree(sessionTree)
 
-	// Get the number of compute units accumulated through the given session.
-	numClaimComputeUnits, err := claim.GetNumComputeUnits()
-	if err != nil {
-		return false, err
-	}
-
 	proofParams, err := rs.proofQueryClient.GetParams(ctx)
 	if err != nil {
 		return false, err
@@ -293,8 +285,15 @@ func (rs *relayerSessionsManager) isProofRequired(
 		return false, err
 	}
 
+	// Retrieving the relay mining difficulty for the service at hand
+	serviceId := claim.GetSessionHeader().GetServiceId()
+	relayMiningDifficulty, err := rs.serviceQueryClient.GetServiceRelayDifficulty(ctx, serviceId)
+	if err != nil {
+		return false, err
+	}
+
 	// The amount of uPOKT being claimed.
-	claimedAmount, err := tokenomics.NumComputeUnitsToCoin(*sharedParams, numClaimComputeUnits)
+	claimedAmount, err := claim.GetClaimeduPOKT(*sharedParams, relayMiningDifficulty)
 	if err != nil {
 		return false, err
 	}

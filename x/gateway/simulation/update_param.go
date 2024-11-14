@@ -6,6 +6,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/baseapp"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	simtypes "github.com/cosmos/cosmos-sdk/types/simulation"
+
 	"github.com/pokt-network/poktroll/x/gateway/keeper"
 	"github.com/pokt-network/poktroll/x/gateway/types"
 )
@@ -22,7 +23,7 @@ func SimulateMsgUpdateParam(
 			Authority: simAccount.Address.String(),
 		}
 
-		// TODO: Handling the UpdateParam simulation
+		// TODO_TECHDEBT: Handling the UpdateParam simulation
 
 		return simtypes.NoOpMsg(types.ModuleName, sdk.MsgTypeURL(msg), "UpdateParam simulation not implemented"), nil, nil
 	}

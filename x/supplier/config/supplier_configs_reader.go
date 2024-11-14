@@ -10,7 +10,6 @@ import (
 
 	"github.com/pokt-network/poktroll/pkg/polylog"
 	_ "github.com/pokt-network/poktroll/pkg/polylog/polyzero"
-	"github.com/pokt-network/poktroll/x/shared/helpers"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
@@ -163,7 +162,7 @@ func ParseSupplierConfigs(ctx context.Context, configContent []byte) (*SupplierS
 			})
 		}
 
-		if err := helpers.ValidateServiceRevShare(service.RevShare); err != nil {
+		if err := sharedtypes.ValidateServiceRevShare(service.RevShare); err != nil {
 			return nil, err
 		}
 

@@ -1,6 +1,7 @@
 package keeper
 
 import (
+	"context"
 	"fmt"
 
 	"cosmossdk.io/math"
@@ -8,8 +9,10 @@ import (
 	"github.com/cosmos/cosmos-sdk/types/query"
 
 	"github.com/pokt-network/poktroll/app/volatile"
+	"github.com/pokt-network/poktroll/telemetry"
+	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
-	"github.com/pokt-network/poktroll/x/shared"
+	servicekeeper "github.com/pokt-network/poktroll/x/service/keeper"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
@@ -31,6 +34,15 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (
 	logger := k.Logger().With("method", "SettlePendingClaims")
 
 	expiringClaims, err := k.getExpiringClaims(ctx)
+	if err != nil {
+		return settledResult, expiredResult, err
+	}
+
+	// Capture the applications initial stake which will be used to calculate the
+	// max share any claim could burn from the application stake.
+	// This ensures that each supplier can calculate the maximum amount it can take
+	// from an application's stake.
+	applicationInitialStakeMap, err := k.getApplicationInitialStakeMap(ctx, expiringClaims)
 	if err != nil {
 		return settledResult, expiredResult, err
 	}
@@ -59,21 +71,41 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (
 
 		// NB: Not every (Req, Res) pair in the session is inserted into the tree due
 		// to the relay mining difficulty. This is the count of non-empty leaves that
-		// matched the necessary difficulty and is therefore an estimation of the total
-		// number of relays serviced and work done.
+		// matched the necessary difficulty.
 		numClaimRelays, err = claim.GetNumRelays()
 		if err != nil {
 			return settledResult, expiredResult, err
 		}
 
-		// DEV_NOTE: We are assuming that (numRelays := numComputeUnits * service.ComputeUnitsPerRelay)
+		// DEV_NOTE: We are assuming that (numClaimComputeUnits := numClaimRelays * service.ComputeUnitsPerRelay)
 		// because this code path is only reached if that has already been validated.
-		numClaimComputeUnits, err = claim.GetNumComputeUnits()
+		numClaimComputeUnits, err = claim.GetNumClaimedComputeUnits()
 		if err != nil {
 			return settledResult, expiredResult, err
 		}
 
-		// TODO(@red-0ne, #781): Convert numClaimedComputeUnits to numEstimatedComputeUnits to reflect reward/payment based on real usage.
+		// Get the relay mining difficulty for the service that this claim is for.
+		serviceId := claim.GetSessionHeader().GetServiceId()
+		relayMiningDifficulty, found := k.serviceKeeper.GetRelayMiningDifficulty(ctx, serviceId)
+		if !found {
+			relayMiningDifficulty = servicekeeper.NewDefaultRelayMiningDifficulty(ctx, logger, serviceId, servicekeeper.TargetNumRelays)
+		}
+		// numEstimatedComputeUnits is the probabilistic estimation of the off-chain
+		// work done by the relay miner in this session. It is derived from the claimed
+		// work and the relay mining difficulty.
+		numEstimatedComputeUnits, err := claim.GetNumEstimatedComputeUnits(relayMiningDifficulty)
+		if err != nil {
+			return settledResult, expiredResult, err
+		}
+
+		sharedParams := k.sharedKeeper.GetParams(ctx)
+		// claimeduPOKT is the amount of uPOKT that the supplier would receive if the
+		// claim is settled. It is derived from the claimed number of relays, the current
+		// service mining difficulty and the global network parameters.
+		claimeduPOKT, err := claim.GetClaimeduPOKT(sharedParams, relayMiningDifficulty)
+		if err != nil {
+			return settledResult, expiredResult, err
+		}
 
 		proof, isProofFound := k.proofKeeper.GetProof(ctx, sessionId, claim.SupplierOperatorAddress)
 		// Using the probabilistic proofs approach, determine if this expiring
@@ -88,6 +120,8 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (
 			"supplier_operator_address", claim.SupplierOperatorAddress,
 			"num_claim_compute_units", numClaimComputeUnits,
 			"num_relays_in_session_tree", numClaimRelays,
+			"num_estimated_compute_units", numEstimatedComputeUnits,
+			"claimed_upokt", claimeduPOKT,
 			"proof_requirement", proofRequirement,
 		)
 
@@ -106,17 +140,19 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (
 
 			// If the proof is missing or invalid -> expire it
 			if expirationReason != tokenomicstypes.ClaimExpirationReason_EXPIRATION_REASON_UNSPECIFIED {
-				// TODO_BETA(@red-0ne, @olshansk): Slash the supplier in proportion
-				// to their stake. Consider allowing suppliers to RemoveClaim via a new
+				// TODO_BETA(@red-0ne): Slash the supplier in proportion to their stake.
+				// TODO_POST_MAINNET: Consider allowing suppliers to RemoveClaim via a new
 				// message in case it was sent by accident
 
 				// Proof was required but is invalid or not found.
 				// Emit an event that a claim has expired and being removed without being settled.
 				claimExpiredEvent := tokenomicstypes.EventClaimExpired{
-					Claim:            &claim,
-					ExpirationReason: expirationReason,
-					NumRelays:        numClaimRelays,
-					NumComputeUnits:  numClaimComputeUnits,
+					Claim:                    &claim,
+					ExpirationReason:         expirationReason,
+					NumRelays:                numClaimRelays,
+					NumClaimedComputeUnits:   numClaimComputeUnits,
+					NumEstimatedComputeUnits: numEstimatedComputeUnits,
+					ClaimedUpokt:             &claimeduPOKT,
 				}
 				if err = ctx.EventManager().EmitTypedEvent(&claimExpiredEvent); err != nil {
 					return settledResult, expiredResult, err
@@ -144,6 +180,18 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (
 				expiredResult.NumClaims++
 				expiredResult.NumRelays += numClaimRelays
 				expiredResult.NumComputeUnits += numClaimComputeUnits
+
+				// Telemetry - defer telemetry calls so that they reference the final values the relevant variables.
+				defer k.finalizeTelemetry(
+					prooftypes.ClaimProofStage_EXPIRED,
+					claim.SessionHeader.ServiceId,
+					claim.SessionHeader.ApplicationAddress,
+					claim.SupplierOperatorAddress,
+					numClaimRelays,
+					numClaimComputeUnits,
+					err,
+				)
+
 				continue
 			}
 		}
@@ -152,17 +200,30 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (
 		// 1. The claim does not require a proof.
 		// 2. The claim requires a proof and a valid proof was found.
 
+		appAddress := claim.GetSessionHeader().GetApplicationAddress()
+		applicationInitialStake := applicationInitialStakeMap[appAddress]
+
+		// TODO_MAINNET(@red-0ne): Add tests to ensure that a zero application stake
+		// is handled correctly.
+		if applicationInitialStake.IsZero() {
+			logger.Error(fmt.Sprintf("application %q has a zero initial stake", appAddress))
+
+			continue
+		}
+
 		// Manage the mint & burn accounting for the claim.
-		if err = k.ProcessTokenLogicModules(ctx, &claim); err != nil {
+		if err = k.ProcessTokenLogicModules(ctx, &claim, applicationInitialStake); err != nil {
 			logger.Error(fmt.Sprintf("error processing token logic modules for claim %q: %v", claim.SessionHeader.SessionId, err))
 			return settledResult, expiredResult, err
 		}
 
 		claimSettledEvent := tokenomicstypes.EventClaimSettled{
-			Claim:            &claim,
-			NumRelays:        numClaimRelays,
-			NumComputeUnits:  numClaimComputeUnits,
-			ProofRequirement: proofRequirement,
+			Claim:                    &claim,
+			NumRelays:                numClaimRelays,
+			NumClaimedComputeUnits:   numClaimComputeUnits,
+			NumEstimatedComputeUnits: numEstimatedComputeUnits,
+			ClaimedUpokt:             &claimeduPOKT,
+			ProofRequirement:         proofRequirement,
 		}
 
 		if err = ctx.EventManager().EmitTypedEvent(&claimSettledEvent); err != nil {
@@ -170,10 +231,12 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (
 		}
 
 		if err = ctx.EventManager().EmitTypedEvent(&prooftypes.EventProofUpdated{
-			Claim:           &claim,
-			Proof:           nil,
-			NumRelays:       0,
-			NumComputeUnits: 0,
+			Claim:                    &claim,
+			Proof:                    nil,
+			NumRelays:                0,
+			NumClaimedComputeUnits:   0,
+			NumEstimatedComputeUnits: numEstimatedComputeUnits,
+			ClaimedUpokt:             &claimeduPOKT,
 		}); err != nil {
 			return settledResult, expiredResult, err
 		}
@@ -196,7 +259,18 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (
 		settledResult.NumComputeUnits += numClaimComputeUnits
 		settledResult.RelaysPerServiceMap[claim.SessionHeader.ServiceId] += numClaimRelays
 
-		logger.Info(fmt.Sprintf("Successfully settled claim for session ID %q at block height %d", claim.SessionHeader.SessionId, blockHeight))
+		logger.Debug(fmt.Sprintf("Successfully settled claim for session ID %q at block height %d", claim.SessionHeader.SessionId, blockHeight))
+
+		// Telemetry - defer telemetry calls so that they reference the final values the relevant variables.
+		defer k.finalizeTelemetry(
+			prooftypes.ClaimProofStage_SETTLED,
+			claim.SessionHeader.ServiceId,
+			claim.SessionHeader.ApplicationAddress,
+			claim.SupplierOperatorAddress,
+			numClaimRelays,
+			numClaimComputeUnits,
+			err,
+		)
 	}
 
 	// Slash all the suppliers that have been marked for slashing slashingCount times.
@@ -222,6 +296,11 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (
 // If the proof window closes and a proof IS NOT required -> settle the claim.
 // If the proof window closes and a proof IS required -> only settle it if a proof is available.
 func (k Keeper) getExpiringClaims(ctx sdk.Context) (expiringClaims []prooftypes.Claim, err error) {
+	// TODO_IMPROVE(@bryanchriswhite):
+	//   1. Move height logic up to SettlePendingClaims.
+	//   2. Ensure that claims are only settled or expired on a session end height.
+	//     2a. This likely also requires adding validation to the shared module params.
+
 	blockHeight := ctx.BlockHeight()
 
 	// NB: This error can be safely ignored as on-chain SharedQueryClient implementation cannot return an error.
@@ -230,7 +309,7 @@ func (k Keeper) getExpiringClaims(ctx sdk.Context) (expiringClaims []prooftypes.
 	// expiringSessionEndHeight is the session end height of the session whose proof
 	// window has most recently closed.
 	sessionEndToProofWindowCloseNumBlocks := sharedtypes.GetSessionEndToProofWindowCloseBlocks(sharedParams)
-	expiringSessionEndHeight := blockHeight - int64(sessionEndToProofWindowCloseNumBlocks+1)
+	expiringSessionEndHeight := blockHeight - (sessionEndToProofWindowCloseNumBlocks + 1)
 
 	var nextKey []byte
 	for {
@@ -311,6 +390,11 @@ func (k Keeper) slashSupplierStake(
 		return err
 	}
 
+	// Update telemetry information
+	if totalSlashingCoin.Amount.IsInt64() {
+		defer telemetry.SlashedTokensFromModule(suppliertypes.ModuleName, float32(totalSlashingCoin.Amount.Int64()))
+	}
+
 	supplierToSlash.Stake = &remainingStakeCoin
 
 	logger.Info(fmt.Sprintf(
@@ -334,7 +418,7 @@ func (k Keeper) slashSupplierStake(
 		sharedParams := k.sharedKeeper.GetParams(ctx)
 		sdkCtx := sdk.UnwrapSDKContext(ctx)
 		currentHeight := sdkCtx.BlockHeight()
-		unstakeSessionEndHeight := uint64(shared.GetSessionEndHeight(&sharedParams, currentHeight))
+		unstakeSessionEndHeight := uint64(sharedtypes.GetSessionEndHeight(&sharedParams, currentHeight))
 
 		logger.Warn(fmt.Sprintf(
 			"unstaking supplier %q owned by %q due to stake (%s) below the minimum (%s)",
@@ -368,4 +452,51 @@ func (k Keeper) slashSupplierStake(
 	// amount from the supplier's owner or operator balances.
 
 	return nil
+}
+
+// getApplicationInitialStakeMap returns a map from an application address to the
+// initial stake of the application. This is used to calculate the maximum share
+// any claim could burn from the application stake.
+func (k Keeper) getApplicationInitialStakeMap(
+	ctx context.Context,
+	expiringClaims []prooftypes.Claim,
+) (applicationInitialStakeMap map[string]sdk.Coin, err error) {
+	applicationInitialStakeMap = make(map[string]sdk.Coin)
+	for _, claim := range expiringClaims {
+		appAddress := claim.SessionHeader.ApplicationAddress
+		// The same application is participating in other claims being settled,
+		// so we already capture its initial stake.
+		if _, isAppFound := applicationInitialStakeMap[appAddress]; isAppFound {
+			continue
+		}
+
+		app, isAppFound := k.applicationKeeper.GetApplication(ctx, appAddress)
+		if !isAppFound {
+			err := apptypes.ErrAppNotFound.Wrapf(
+				"trying to settle a claim for an application that does not exist (which should never happen) with address: %q",
+				appAddress,
+			)
+			return nil, err
+		}
+
+		applicationInitialStakeMap[appAddress] = *app.GetStake()
+	}
+
+	return applicationInitialStakeMap, nil
+}
+
+// finalizeTelemetry logs telemetry metrics for a claim based on its stage (e.g., EXPIRED, SETTLED).
+// Meant to run deferred.
+func (k Keeper) finalizeTelemetry(
+	claimProofStage prooftypes.ClaimProofStage,
+	serviceId string,
+	applicationAddress string,
+	supplierOperatorAddress string,
+	numRelays uint64,
+	numClaimComputeUnits uint64,
+	err error,
+) {
+	telemetry.ClaimCounter(claimProofStage.String(), 1, serviceId, applicationAddress, supplierOperatorAddress, err)
+	telemetry.ClaimRelaysCounter(claimProofStage.String(), numRelays, serviceId, applicationAddress, supplierOperatorAddress, err)
+	telemetry.ClaimComputeUnitsCounter(claimProofStage.String(), numClaimComputeUnits, serviceId, applicationAddress, supplierOperatorAddress, err)
 }

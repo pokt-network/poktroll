@@ -6,8 +6,10 @@ package types
 import (
 	fmt "fmt"
 	_ "github.com/cosmos/cosmos-proto"
+	_ "github.com/cosmos/cosmos-sdk/types"
 	_ "github.com/cosmos/gogoproto/gogoproto"
 	proto "github.com/cosmos/gogoproto/proto"
+	_ "github.com/pokt-network/poktroll/x/shared/types"
 	io "io"
 	math "math"
 	math_bits "math/bits"
@@ -24,19 +26,96 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 
+type ApplicationUnbondingReason int32
+
+const (
+	ApplicationUnbondingReason_ELECTIVE        ApplicationUnbondingReason = 0
+	ApplicationUnbondingReason_BELOW_MIN_STAKE ApplicationUnbondingReason = 1
+)
+
+var ApplicationUnbondingReason_name = map[int32]string{
+	0: "ELECTIVE",
+	1: "BELOW_MIN_STAKE",
+}
+
+var ApplicationUnbondingReason_value = map[string]int32{
+	"ELECTIVE":        0,
+	"BELOW_MIN_STAKE": 1,
+}
+
+func (x ApplicationUnbondingReason) String() string {
+	return proto.EnumName(ApplicationUnbondingReason_name, int32(x))
+}
+
+func (ApplicationUnbondingReason) EnumDescriptor() ([]byte, []int) {
+	return fileDescriptor_d0d229437c622598, []int{0}
+}
+
+// EventApplicationStaked is emitted when an application is staked or up-staked.
+type EventApplicationStaked struct {
+	Application *Application `protobuf:"bytes,1,opt,name=application,proto3" json:"application"`
+	// The end height of the session in which the application was staked.
+	SessionEndHeight int64 `protobuf:"varint,2,opt,name=session_end_height,json=sessionEndHeight,proto3" json:"session_end_height"`
+}
+
+func (m *EventApplicationStaked) Reset()         { *m = EventApplicationStaked{} }
+func (m *EventApplicationStaked) String() string { return proto.CompactTextString(m) }
+func (*EventApplicationStaked) ProtoMessage()    {}
+func (*EventApplicationStaked) Descriptor() ([]byte, []int) {
+	return fileDescriptor_d0d229437c622598, []int{0}
+}
+func (m *EventApplicationStaked) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *EventApplicationStaked) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	b = b[:cap(b)]
+	n, err := m.MarshalToSizedBuffer(b)
+	if err != nil {
+		return nil, err
+	}
+	return b[:n], nil
+}
+func (m *EventApplicationStaked) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_EventApplicationStaked.Merge(m, src)
+}
+func (m *EventApplicationStaked) XXX_Size() int {
+	return m.Size()
+}
+func (m *EventApplicationStaked) XXX_DiscardUnknown() {
+	xxx_messageInfo_EventApplicationStaked.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_EventApplicationStaked proto.InternalMessageInfo
+
+func (m *EventApplicationStaked) GetApplication() *Application {
+	if m != nil {
+		return m.Application
+	}
+	return nil
+}
+
+func (m *EventApplicationStaked) GetSessionEndHeight() int64 {
+	if m != nil {
+		return m.SessionEndHeight
+	}
+	return 0
+}
+
 // EventRedelegation is an event emitted whenever an application changes its
 // delegatee gateways on chain. This is in response to both a DelegateToGateway
 // and UndelegateFromGateway message.
 type EventRedelegation struct {
-	AppAddress     string `protobuf:"bytes,1,opt,name=app_address,json=appAddress,proto3" json:"app_address,omitempty"`
-	GatewayAddress string `protobuf:"bytes,2,opt,name=gateway_address,json=gatewayAddress,proto3" json:"gateway_address,omitempty"`
+	// The application which was redelegated.
+	Application *Application `protobuf:"bytes,1,opt,name=application,proto3" json:"application"`
+	// The end height of the session in which the redelegation was committed.
+	SessionEndHeight int64 `protobuf:"varint,2,opt,name=session_end_height,json=sessionEndHeight,proto3" json:"session_end_height"`
 }
 
 func (m *EventRedelegation) Reset()         { *m = EventRedelegation{} }
 func (m *EventRedelegation) String() string { return proto.CompactTextString(m) }
 func (*EventRedelegation) ProtoMessage()    {}
 func (*EventRedelegation) Descriptor() ([]byte, []int) {
-	return fileDescriptor_d0d229437c622598, []int{0}
+	return fileDescriptor_d0d229437c622598, []int{1}
 }
 func (m *EventRedelegation) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -61,44 +140,541 @@ func (m *EventRedelegation) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_EventRedelegation proto.InternalMessageInfo
 
-func (m *EventRedelegation) GetAppAddress() string {
+func (m *EventRedelegation) GetApplication() *Application {
 	if m != nil {
-		return m.AppAddress
+		return m.Application
+	}
+	return nil
+}
+
+func (m *EventRedelegation) GetSessionEndHeight() int64 {
+	if m != nil {
+		return m.SessionEndHeight
+	}
+	return 0
+}
+
+// EventTransferBegin is emitted whenever an application begins a transfer. It
+// includes the source application state immediately after the transfer began.
+type EventTransferBegin struct {
+	SourceAddress      string       `protobuf:"bytes,1,opt,name=source_address,json=sourceAddress,proto3" json:"source_address,omitempty"`
+	DestinationAddress string       `protobuf:"bytes,2,opt,name=destination_address,json=destinationAddress,proto3" json:"destination_address,omitempty"`
+	SourceApplication  *Application `protobuf:"bytes,3,opt,name=source_application,json=sourceApplication,proto3" json:"source_application,omitempty"`
+	// The end height of the session in which the transfer began.
+	SessionEndHeight int64 `protobuf:"varint,4,opt,name=session_end_height,json=sessionEndHeight,proto3" json:"session_end_height"`
+	// The height at which the transfer will complete.
+	TransferEndHeight int64 `protobuf:"varint,5,opt,name=transfer_end_height,json=transferEndHeight,proto3" json:"transfer_end_height"`
+}
+
+func (m *EventTransferBegin) Reset()         { *m = EventTransferBegin{} }
+func (m *EventTransferBegin) String() string { return proto.CompactTextString(m) }
+func (*EventTransferBegin) ProtoMessage()    {}
+func (*EventTransferBegin) Descriptor() ([]byte, []int) {
+	return fileDescriptor_d0d229437c622598, []int{2}
+}
+func (m *EventTransferBegin) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *EventTransferBegin) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	b = b[:cap(b)]
+	n, err := m.MarshalToSizedBuffer(b)
+	if err != nil {
+		return nil, err
+	}
+	return b[:n], nil
+}
+func (m *EventTransferBegin) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_EventTransferBegin.Merge(m, src)
+}
+func (m *EventTransferBegin) XXX_Size() int {
+	return m.Size()
+}
+func (m *EventTransferBegin) XXX_DiscardUnknown() {
+	xxx_messageInfo_EventTransferBegin.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_EventTransferBegin proto.InternalMessageInfo
+
+func (m *EventTransferBegin) GetSourceAddress() string {
+	if m != nil {
+		return m.SourceAddress
 	}
 	return ""
 }
 
-func (m *EventRedelegation) GetGatewayAddress() string {
+func (m *EventTransferBegin) GetDestinationAddress() string {
 	if m != nil {
-		return m.GatewayAddress
+		return m.DestinationAddress
 	}
 	return ""
+}
+
+func (m *EventTransferBegin) GetSourceApplication() *Application {
+	if m != nil {
+		return m.SourceApplication
+	}
+	return nil
+}
+
+func (m *EventTransferBegin) GetSessionEndHeight() int64 {
+	if m != nil {
+		return m.SessionEndHeight
+	}
+	return 0
+}
+
+func (m *EventTransferBegin) GetTransferEndHeight() int64 {
+	if m != nil {
+		return m.TransferEndHeight
+	}
+	return 0
+}
+
+// EventTransferEnd is emitted whenever an application transfer is completed. It
+// includes the destination application state at the time the transfer completed.
+// Either EventTransferEnd or EventTransferError will be emitted corresponding to
+// any given EventTransferBegin event.
+type EventTransferEnd struct {
+	SourceAddress          string       `protobuf:"bytes,1,opt,name=source_address,json=sourceAddress,proto3" json:"source_address,omitempty"`
+	DestinationAddress     string       `protobuf:"bytes,2,opt,name=destination_address,json=destinationAddress,proto3" json:"destination_address,omitempty"`
+	DestinationApplication *Application `protobuf:"bytes,3,opt,name=destination_application,json=destinationApplication,proto3" json:"destination_application,omitempty"`
+	// The end height of the session in which the transfer ended.
+	SessionEndHeight int64 `protobuf:"varint,4,opt,name=session_end_height,json=sessionEndHeight,proto3" json:"session_end_height"`
+	// The height at which the transfer completed.
+	TransferEndHeight int64 `protobuf:"varint,5,opt,name=transfer_end_height,json=transferEndHeight,proto3" json:"transfer_end_height"`
+}
+
+func (m *EventTransferEnd) Reset()         { *m = EventTransferEnd{} }
+func (m *EventTransferEnd) String() string { return proto.CompactTextString(m) }
+func (*EventTransferEnd) ProtoMessage()    {}
+func (*EventTransferEnd) Descriptor() ([]byte, []int) {
+	return fileDescriptor_d0d229437c622598, []int{3}
+}
+func (m *EventTransferEnd) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *EventTransferEnd) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	b = b[:cap(b)]
+	n, err := m.MarshalToSizedBuffer(b)
+	if err != nil {
+		return nil, err
+	}
+	return b[:n], nil
+}
+func (m *EventTransferEnd) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_EventTransferEnd.Merge(m, src)
+}
+func (m *EventTransferEnd) XXX_Size() int {
+	return m.Size()
+}
+func (m *EventTransferEnd) XXX_DiscardUnknown() {
+	xxx_messageInfo_EventTransferEnd.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_EventTransferEnd proto.InternalMessageInfo
+
+func (m *EventTransferEnd) GetSourceAddress() string {
+	if m != nil {
+		return m.SourceAddress
+	}
+	return ""
+}
+
+func (m *EventTransferEnd) GetDestinationAddress() string {
+	if m != nil {
+		return m.DestinationAddress
+	}
+	return ""
+}
+
+func (m *EventTransferEnd) GetDestinationApplication() *Application {
+	if m != nil {
+		return m.DestinationApplication
+	}
+	return nil
+}
+
+func (m *EventTransferEnd) GetSessionEndHeight() int64 {
+	if m != nil {
+		return m.SessionEndHeight
+	}
+	return 0
+}
+
+func (m *EventTransferEnd) GetTransferEndHeight() int64 {
+	if m != nil {
+		return m.TransferEndHeight
+	}
+	return 0
+}
+
+// EventTransferError is emitted whenever an application transfer fails. It
+// includes the source application state at the time the transfer failed and
+// the error message.
+// Either EventTransferEnd or EventTransferError will be emitted corresponding to
+// any given EventTransferBegin event.
+type EventTransferError struct {
+	SourceAddress      string       `protobuf:"bytes,1,opt,name=source_address,json=sourceAddress,proto3" json:"source_address,omitempty"`
+	DestinationAddress string       `protobuf:"bytes,2,opt,name=destination_address,json=destinationAddress,proto3" json:"destination_address,omitempty"`
+	SourceApplication  *Application `protobuf:"bytes,3,opt,name=source_application,json=sourceApplication,proto3" json:"source_application,omitempty"`
+	// The end height of the session in which the transfer failed.
+	SessionEndHeight int64  `protobuf:"varint,4,opt,name=session_end_height,json=sessionEndHeight,proto3" json:"session_end_height"`
+	Error            string `protobuf:"bytes,5,opt,name=error,proto3" json:"error,omitempty"`
+}
+
+func (m *EventTransferError) Reset()         { *m = EventTransferError{} }
+func (m *EventTransferError) String() string { return proto.CompactTextString(m) }
+func (*EventTransferError) ProtoMessage()    {}
+func (*EventTransferError) Descriptor() ([]byte, []int) {
+	return fileDescriptor_d0d229437c622598, []int{4}
+}
+func (m *EventTransferError) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *EventTransferError) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	b = b[:cap(b)]
+	n, err := m.MarshalToSizedBuffer(b)
+	if err != nil {
+		return nil, err
+	}
+	return b[:n], nil
+}
+func (m *EventTransferError) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_EventTransferError.Merge(m, src)
+}
+func (m *EventTransferError) XXX_Size() int {
+	return m.Size()
+}
+func (m *EventTransferError) XXX_DiscardUnknown() {
+	xxx_messageInfo_EventTransferError.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_EventTransferError proto.InternalMessageInfo
+
+func (m *EventTransferError) GetSourceAddress() string {
+	if m != nil {
+		return m.SourceAddress
+	}
+	return ""
+}
+
+func (m *EventTransferError) GetDestinationAddress() string {
+	if m != nil {
+		return m.DestinationAddress
+	}
+	return ""
+}
+
+func (m *EventTransferError) GetSourceApplication() *Application {
+	if m != nil {
+		return m.SourceApplication
+	}
+	return nil
+}
+
+func (m *EventTransferError) GetSessionEndHeight() int64 {
+	if m != nil {
+		return m.SessionEndHeight
+	}
+	return 0
+}
+
+func (m *EventTransferError) GetError() string {
+	if m != nil {
+		return m.Error
+	}
+	return ""
+}
+
+// EventApplicationUnbondingBegin is emitted when an application begins unbonding.
+// This can be triggered by the commitment of an unstake message or by the applicaiton's
+// stake dropping below the minimum. This event signals that an application has begun
+// unbonding. The unbonding period is determined by the shared param,
+// application_unbonding_period_sessions.
+type EventApplicationUnbondingBegin struct {
+	Application *Application               `protobuf:"bytes,1,opt,name=application,proto3" json:"application"`
+	Reason      ApplicationUnbondingReason `protobuf:"varint,2,opt,name=reason,proto3,enum=poktroll.application.ApplicationUnbondingReason" json:"reason"`
+	// The end height of the session in which the unbonding began.
+	SessionEndHeight int64 `protobuf:"varint,3,opt,name=session_end_height,json=sessionEndHeight,proto3" json:"session_end_height"`
+	// The height at which application unbonding will end.
+	UnbondingEndHeight int64 `protobuf:"varint,4,opt,name=unbonding_end_height,json=unbondingEndHeight,proto3" json:"unbonding_height"`
+}
+
+func (m *EventApplicationUnbondingBegin) Reset()         { *m = EventApplicationUnbondingBegin{} }
+func (m *EventApplicationUnbondingBegin) String() string { return proto.CompactTextString(m) }
+func (*EventApplicationUnbondingBegin) ProtoMessage()    {}
+func (*EventApplicationUnbondingBegin) Descriptor() ([]byte, []int) {
+	return fileDescriptor_d0d229437c622598, []int{5}
+}
+func (m *EventApplicationUnbondingBegin) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *EventApplicationUnbondingBegin) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	b = b[:cap(b)]
+	n, err := m.MarshalToSizedBuffer(b)
+	if err != nil {
+		return nil, err
+	}
+	return b[:n], nil
+}
+func (m *EventApplicationUnbondingBegin) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_EventApplicationUnbondingBegin.Merge(m, src)
+}
+func (m *EventApplicationUnbondingBegin) XXX_Size() int {
+	return m.Size()
+}
+func (m *EventApplicationUnbondingBegin) XXX_DiscardUnknown() {
+	xxx_messageInfo_EventApplicationUnbondingBegin.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_EventApplicationUnbondingBegin proto.InternalMessageInfo
+
+func (m *EventApplicationUnbondingBegin) GetApplication() *Application {
+	if m != nil {
+		return m.Application
+	}
+	return nil
+}
+
+func (m *EventApplicationUnbondingBegin) GetReason() ApplicationUnbondingReason {
+	if m != nil {
+		return m.Reason
+	}
+	return ApplicationUnbondingReason_ELECTIVE
+}
+
+func (m *EventApplicationUnbondingBegin) GetSessionEndHeight() int64 {
+	if m != nil {
+		return m.SessionEndHeight
+	}
+	return 0
+}
+
+func (m *EventApplicationUnbondingBegin) GetUnbondingEndHeight() int64 {
+	if m != nil {
+		return m.UnbondingEndHeight
+	}
+	return 0
+}
+
+// EventApplicationUnbondingEnd is emitted when an application has completed
+// unbonding. The unbonding period is determined by the shared param,
+// application_unbonding_period_sessions.
+type EventApplicationUnbondingEnd struct {
+	Application *Application               `protobuf:"bytes,1,opt,name=application,proto3" json:"application"`
+	Reason      ApplicationUnbondingReason `protobuf:"varint,2,opt,name=reason,proto3,enum=poktroll.application.ApplicationUnbondingReason" json:"reason"`
+	// The end height of the session in which the unbonding ended.
+	SessionEndHeight int64 `protobuf:"varint,3,opt,name=session_end_height,json=sessionEndHeight,proto3" json:"session_end_height"`
+	// The height at which application unbonding ended.
+	UnbondingEndHeight int64 `protobuf:"varint,4,opt,name=unbonding_end_height,json=unbondingEndHeight,proto3" json:"unbonding_height"`
+}
+
+func (m *EventApplicationUnbondingEnd) Reset()         { *m = EventApplicationUnbondingEnd{} }
+func (m *EventApplicationUnbondingEnd) String() string { return proto.CompactTextString(m) }
+func (*EventApplicationUnbondingEnd) ProtoMessage()    {}
+func (*EventApplicationUnbondingEnd) Descriptor() ([]byte, []int) {
+	return fileDescriptor_d0d229437c622598, []int{6}
+}
+func (m *EventApplicationUnbondingEnd) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *EventApplicationUnbondingEnd) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	b = b[:cap(b)]
+	n, err := m.MarshalToSizedBuffer(b)
+	if err != nil {
+		return nil, err
+	}
+	return b[:n], nil
+}
+func (m *EventApplicationUnbondingEnd) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_EventApplicationUnbondingEnd.Merge(m, src)
+}
+func (m *EventApplicationUnbondingEnd) XXX_Size() int {
+	return m.Size()
+}
+func (m *EventApplicationUnbondingEnd) XXX_DiscardUnknown() {
+	xxx_messageInfo_EventApplicationUnbondingEnd.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_EventApplicationUnbondingEnd proto.InternalMessageInfo
+
+func (m *EventApplicationUnbondingEnd) GetApplication() *Application {
+	if m != nil {
+		return m.Application
+	}
+	return nil
+}
+
+func (m *EventApplicationUnbondingEnd) GetReason() ApplicationUnbondingReason {
+	if m != nil {
+		return m.Reason
+	}
+	return ApplicationUnbondingReason_ELECTIVE
+}
+
+func (m *EventApplicationUnbondingEnd) GetSessionEndHeight() int64 {
+	if m != nil {
+		return m.SessionEndHeight
+	}
+	return 0
+}
+
+func (m *EventApplicationUnbondingEnd) GetUnbondingEndHeight() int64 {
+	if m != nil {
+		return m.UnbondingEndHeight
+	}
+	return 0
+}
+
+// EventApplicationUnbondingCanceled is emitted when an application which was unbonding
+// successfully (re-)stakes before the unbonding period has elapsed. An EventApplicationStaked
+// event will also be emitted immediately after this event.
+type EventApplicationUnbondingCanceled struct {
+	Application *Application `protobuf:"bytes,1,opt,name=application,proto3" json:"application"`
+	// The end height of the session in which the unbonding was canceled.
+	SessionEndHeight int64 `protobuf:"varint,2,opt,name=session_end_height,json=sessionEndHeight,proto3" json:"session_end_height"`
+}
+
+func (m *EventApplicationUnbondingCanceled) Reset()         { *m = EventApplicationUnbondingCanceled{} }
+func (m *EventApplicationUnbondingCanceled) String() string { return proto.CompactTextString(m) }
+func (*EventApplicationUnbondingCanceled) ProtoMessage()    {}
+func (*EventApplicationUnbondingCanceled) Descriptor() ([]byte, []int) {
+	return fileDescriptor_d0d229437c622598, []int{7}
+}
+func (m *EventApplicationUnbondingCanceled) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *EventApplicationUnbondingCanceled) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	b = b[:cap(b)]
+	n, err := m.MarshalToSizedBuffer(b)
+	if err != nil {
+		return nil, err
+	}
+	return b[:n], nil
+}
+func (m *EventApplicationUnbondingCanceled) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_EventApplicationUnbondingCanceled.Merge(m, src)
+}
+func (m *EventApplicationUnbondingCanceled) XXX_Size() int {
+	return m.Size()
+}
+func (m *EventApplicationUnbondingCanceled) XXX_DiscardUnknown() {
+	xxx_messageInfo_EventApplicationUnbondingCanceled.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_EventApplicationUnbondingCanceled proto.InternalMessageInfo
+
+func (m *EventApplicationUnbondingCanceled) GetApplication() *Application {
+	if m != nil {
+		return m.Application
+	}
+	return nil
+}
+
+func (m *EventApplicationUnbondingCanceled) GetSessionEndHeight() int64 {
+	if m != nil {
+		return m.SessionEndHeight
+	}
+	return 0
 }
 
 func init() {
+	proto.RegisterEnum("poktroll.application.ApplicationUnbondingReason", ApplicationUnbondingReason_name, ApplicationUnbondingReason_value)
+	proto.RegisterType((*EventApplicationStaked)(nil), "poktroll.application.EventApplicationStaked")
 	proto.RegisterType((*EventRedelegation)(nil), "poktroll.application.EventRedelegation")
+	proto.RegisterType((*EventTransferBegin)(nil), "poktroll.application.EventTransferBegin")
+	proto.RegisterType((*EventTransferEnd)(nil), "poktroll.application.EventTransferEnd")
+	proto.RegisterType((*EventTransferError)(nil), "poktroll.application.EventTransferError")
+	proto.RegisterType((*EventApplicationUnbondingBegin)(nil), "poktroll.application.EventApplicationUnbondingBegin")
+	proto.RegisterType((*EventApplicationUnbondingEnd)(nil), "poktroll.application.EventApplicationUnbondingEnd")
+	proto.RegisterType((*EventApplicationUnbondingCanceled)(nil), "poktroll.application.EventApplicationUnbondingCanceled")
 }
 
 func init() { proto.RegisterFile("poktroll/application/event.proto", fileDescriptor_d0d229437c622598) }
 
 var fileDescriptor_d0d229437c622598 = []byte{
-	// 248 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xe2, 0x52, 0x28, 0xc8, 0xcf, 0x2e,
-	0x29, 0xca, 0xcf, 0xc9, 0xd1, 0x4f, 0x2c, 0x28, 0xc8, 0xc9, 0x4c, 0x4e, 0x2c, 0xc9, 0xcc, 0xcf,
-	0xd3, 0x4f, 0x2d, 0x4b, 0xcd, 0x2b, 0xd1, 0x2b, 0x28, 0xca, 0x2f, 0xc9, 0x17, 0x12, 0x81, 0xa9,
-	0xd0, 0x43, 0x52, 0x21, 0x25, 0x99, 0x9c, 0x5f, 0x9c, 0x9b, 0x5f, 0x1c, 0x0f, 0x56, 0xa3, 0x0f,
-	0xe1, 0x40, 0x34, 0x48, 0x89, 0xa4, 0xe7, 0xa7, 0xe7, 0x43, 0xc4, 0x41, 0x2c, 0x88, 0xa8, 0xd2,
-	0x44, 0x46, 0x2e, 0x41, 0x57, 0x90, 0xb1, 0x41, 0xa9, 0x29, 0xa9, 0x39, 0xa9, 0xe9, 0x60, 0x63,
-	0x84, 0x2c, 0xb9, 0xb8, 0x13, 0x0b, 0x0a, 0xe2, 0x13, 0x53, 0x52, 0x8a, 0x52, 0x8b, 0x8b, 0x25,
-	0x18, 0x15, 0x18, 0x35, 0x38, 0x9d, 0x24, 0x2e, 0x6d, 0xd1, 0x15, 0x81, 0x1a, 0xe9, 0x08, 0x91,
-	0x09, 0x2e, 0x29, 0xca, 0xcc, 0x4b, 0x0f, 0xe2, 0x4a, 0x2c, 0x28, 0x80, 0x8a, 0x08, 0x39, 0x72,
-	0xf1, 0xa7, 0x27, 0x96, 0xa4, 0x96, 0x27, 0x56, 0xc2, 0xb5, 0x33, 0x11, 0xd0, 0xce, 0x07, 0xd5,
-	0x00, 0x15, 0x75, 0x0a, 0x3a, 0xf1, 0x48, 0x8e, 0xf1, 0xc2, 0x23, 0x39, 0xc6, 0x1b, 0x8f, 0xe4,
-	0x18, 0x1f, 0x3c, 0x92, 0x63, 0x9c, 0xf0, 0x58, 0x8e, 0xe1, 0xc2, 0x63, 0x39, 0x86, 0x1b, 0x8f,
-	0xe5, 0x18, 0xa2, 0x4c, 0xd2, 0x33, 0x4b, 0x32, 0x4a, 0x93, 0xf4, 0x92, 0xf3, 0x73, 0xf5, 0x41,
-	0x61, 0xa0, 0x9b, 0x97, 0x5a, 0x52, 0x9e, 0x5f, 0x94, 0xad, 0x0f, 0x0f, 0xb2, 0x0a, 0x94, 0x40,
-	0x2b, 0xa9, 0x2c, 0x48, 0x2d, 0x4e, 0x62, 0x03, 0x7b, 0xd7, 0x18, 0x10, 0x00, 0x00, 0xff, 0xff,
-	0xca, 0xe7, 0xe9, 0xb0, 0x59, 0x01, 0x00, 0x00,
+	// 646 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xec, 0x56, 0xcf, 0x4f, 0x13, 0x4f,
+	0x14, 0xef, 0xb6, 0x5f, 0xc8, 0x97, 0x41, 0xa1, 0x0c, 0x1b, 0x40, 0xa2, 0x5b, 0xe0, 0x44, 0x4c,
+	0xe8, 0x0a, 0x7a, 0x27, 0x5d, 0x5c, 0xb5, 0x11, 0x7f, 0x64, 0x5b, 0x35, 0xe1, 0xb2, 0xd9, 0xee,
+	0x3e, 0xb7, 0x9b, 0x96, 0x99, 0x66, 0x66, 0x5a, 0xf5, 0xe8, 0xd1, 0x9b, 0xff, 0x89, 0x17, 0xee,
+	0x5e, 0x3d, 0x19, 0xe2, 0xa9, 0xf1, 0xd0, 0x98, 0xf6, 0xd6, 0xbf, 0xc2, 0x74, 0x77, 0xda, 0x2e,
+	0xd0, 0xa6, 0x40, 0x62, 0xd2, 0x03, 0xa7, 0xdd, 0x79, 0x3f, 0x3e, 0xf3, 0x99, 0xcf, 0x9b, 0x79,
+	0x79, 0x68, 0xa3, 0x46, 0x2b, 0x82, 0xd1, 0x6a, 0x55, 0x77, 0x6a, 0xb5, 0x6a, 0xe0, 0x3a, 0x22,
+	0xa0, 0x44, 0x87, 0x06, 0x10, 0x91, 0xad, 0x31, 0x2a, 0x28, 0x56, 0xfb, 0x11, 0xd9, 0x58, 0xc4,
+	0xfa, 0x1d, 0x97, 0xf2, 0x63, 0xca, 0xed, 0x30, 0x46, 0x8f, 0x16, 0x51, 0xc2, 0xba, 0xea, 0x53,
+	0x9f, 0x46, 0xf6, 0xde, 0x9f, 0xb4, 0x6a, 0x51, 0x8c, 0x5e, 0x72, 0x38, 0xe8, 0x8d, 0xdd, 0x12,
+	0x08, 0x67, 0x57, 0x77, 0x69, 0x40, 0xa4, 0xff, 0xde, 0x80, 0x08, 0x2f, 0x3b, 0x0c, 0x3c, 0x9d,
+	0x03, 0x6b, 0x04, 0x2e, 0x48, 0xf7, 0x68, 0x9e, 0xe2, 0x53, 0x0d, 0xe4, 0xb6, 0x5b, 0x27, 0x0a,
+	0x5a, 0x31, 0x7b, 0xbc, 0x73, 0xc3, 0x80, 0x82, 0x70, 0x2a, 0xe0, 0xe1, 0x22, 0x9a, 0x8f, 0x65,
+	0xad, 0x29, 0x1b, 0xca, 0xf6, 0xfc, 0xde, 0x66, 0x76, 0xd4, 0xc1, 0xb2, 0xb1, 0x6c, 0x63, 0xb1,
+	0xdb, 0xca, 0xc4, 0x33, 0xad, 0xf8, 0x02, 0x3f, 0x46, 0x98, 0x03, 0xe7, 0x01, 0x25, 0x36, 0x10,
+	0xcf, 0x2e, 0x43, 0xe0, 0x97, 0xc5, 0x5a, 0x72, 0x43, 0xd9, 0x4e, 0x19, 0x2b, 0xdd, 0x56, 0x66,
+	0x84, 0xd7, 0x4a, 0x4b, 0x9b, 0x49, 0xbc, 0x67, 0xa1, 0x65, 0xeb, 0x9b, 0x82, 0x96, 0x42, 0xda,
+	0x16, 0x78, 0x50, 0x05, 0x3f, 0xc2, 0x9e, 0x66, 0xc6, 0x9f, 0x53, 0x08, 0x87, 0x8c, 0x8b, 0xcc,
+	0x21, 0xfc, 0x3d, 0x30, 0x03, 0xfc, 0x80, 0xe0, 0x7d, 0xb4, 0xc0, 0x69, 0x9d, 0xb9, 0x60, 0x3b,
+	0x9e, 0xc7, 0x80, 0xf3, 0x90, 0xf5, 0x9c, 0xb1, 0xf6, 0xeb, 0x64, 0x47, 0x95, 0x17, 0x24, 0x17,
+	0x79, 0x0a, 0x82, 0x05, 0xc4, 0xb7, 0x6e, 0x47, 0xf1, 0xd2, 0x88, 0xf3, 0x68, 0xd9, 0x03, 0x2e,
+	0x02, 0x12, 0x92, 0x1d, 0xa0, 0x24, 0x27, 0xa0, 0xe0, 0x58, 0x52, 0x1f, 0xea, 0x35, 0xc2, 0x7d,
+	0x2e, 0x31, 0x15, 0x53, 0x97, 0x54, 0xd1, 0x5a, 0x92, 0xc4, 0x26, 0x4a, 0xf7, 0xdf, 0xd5, 0xa4,
+	0xc3, 0x4f, 0xd1, 0xb2, 0x90, 0xa2, 0xc5, 0x61, 0x66, 0x42, 0x98, 0xd5, 0x6e, 0x2b, 0x33, 0xca,
+	0x6d, 0x2d, 0xf5, 0x8d, 0xc3, 0x1a, 0x7c, 0x49, 0xa1, 0xf4, 0x99, 0x1a, 0x98, 0xc4, 0x9b, 0xaa,
+	0x0a, 0x1c, 0xa1, 0xd5, 0x33, 0x50, 0xd7, 0x29, 0xc3, 0x4a, 0x1c, 0x77, 0x7a, 0x6b, 0xf1, 0x33,
+	0x79, 0xee, 0x3d, 0x98, 0x8c, 0x51, 0x76, 0xf3, 0x1e, 0x2e, 0x51, 0x03, 0x15, 0xcd, 0x40, 0x4f,
+	0xac, 0x50, 0xf5, 0x39, 0x2b, 0x5a, 0x6c, 0xfd, 0x4e, 0x22, 0xed, 0x7c, 0x27, 0x7f, 0x43, 0x4a,
+	0x94, 0x78, 0x01, 0xf1, 0xa3, 0x66, 0xf3, 0x6f, 0xfa, 0x63, 0x11, 0xcd, 0x32, 0x70, 0x38, 0x25,
+	0xa1, 0xc8, 0x0b, 0x7b, 0x0f, 0x26, 0x02, 0x0e, 0x68, 0x59, 0x61, 0x9e, 0x81, 0xba, 0xad, 0x8c,
+	0xc4, 0xb0, 0xe4, 0x77, 0x8c, 0x54, 0xa9, 0x2b, 0x4a, 0xf5, 0x04, 0xa9, 0xf5, 0xfe, 0x66, 0x17,
+	0x25, 0x57, 0xbb, 0xad, 0x4c, 0x7a, 0xe8, 0x97, 0x28, 0x78, 0x60, 0x19, 0xde, 0xd6, 0x66, 0x12,
+	0xdd, 0x1d, 0x2b, 0x6e, 0xaf, 0x8b, 0xdc, 0x48, 0x7b, 0x5d, 0x69, 0xbf, 0x2b, 0x68, 0x73, 0xac,
+	0xb4, 0x07, 0x0e, 0x71, 0xa1, 0x3a, 0xdd, 0xc3, 0xc8, 0xfd, 0x7d, 0xb4, 0x3e, 0xbe, 0x02, 0xf8,
+	0x16, 0xfa, 0xdf, 0x3c, 0x34, 0x0f, 0x8a, 0xf9, 0xb7, 0x66, 0x3a, 0x81, 0x97, 0xd1, 0xa2, 0x61,
+	0x1e, 0xbe, 0x7a, 0x67, 0xbf, 0xc8, 0xbf, 0xb4, 0x0b, 0xc5, 0xdc, 0x73, 0x33, 0xad, 0x18, 0xd6,
+	0x8f, 0xb6, 0xa6, 0x9c, 0xb6, 0x35, 0xa5, 0xd9, 0xd6, 0x94, 0x3f, 0x6d, 0x4d, 0xf9, 0xda, 0xd1,
+	0x12, 0xa7, 0x1d, 0x2d, 0xd1, 0xec, 0x68, 0x89, 0xa3, 0x47, 0x7e, 0x20, 0xca, 0xf5, 0x52, 0xd6,
+	0xa5, 0xc7, 0x7a, 0xef, 0xbc, 0x3b, 0x04, 0xc4, 0x07, 0xca, 0x2a, 0xfa, 0x60, 0xb8, 0xfb, 0x78,
+	0x71, 0xbc, 0x2b, 0xcd, 0x86, 0xf3, 0xdd, 0xc3, 0xbf, 0x01, 0x00, 0x00, 0xff, 0xff, 0x32, 0xa1,
+	0x86, 0x14, 0xab, 0x0a, 0x00, 0x00,
+}
+
+func (m *EventApplicationStaked) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *EventApplicationStaked) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *EventApplicationStaked) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.SessionEndHeight != 0 {
+		i = encodeVarintEvent(dAtA, i, uint64(m.SessionEndHeight))
+		i--
+		dAtA[i] = 0x10
+	}
+	if m.Application != nil {
+		{
+			size, err := m.Application.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintEvent(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
 }
 
 func (m *EventRedelegation) Marshal() (dAtA []byte, err error) {
@@ -121,17 +697,339 @@ func (m *EventRedelegation) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	_ = i
 	var l int
 	_ = l
-	if len(m.GatewayAddress) > 0 {
-		i -= len(m.GatewayAddress)
-		copy(dAtA[i:], m.GatewayAddress)
-		i = encodeVarintEvent(dAtA, i, uint64(len(m.GatewayAddress)))
+	if m.SessionEndHeight != 0 {
+		i = encodeVarintEvent(dAtA, i, uint64(m.SessionEndHeight))
+		i--
+		dAtA[i] = 0x10
+	}
+	if m.Application != nil {
+		{
+			size, err := m.Application.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintEvent(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *EventTransferBegin) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *EventTransferBegin) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *EventTransferBegin) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.TransferEndHeight != 0 {
+		i = encodeVarintEvent(dAtA, i, uint64(m.TransferEndHeight))
+		i--
+		dAtA[i] = 0x28
+	}
+	if m.SessionEndHeight != 0 {
+		i = encodeVarintEvent(dAtA, i, uint64(m.SessionEndHeight))
+		i--
+		dAtA[i] = 0x20
+	}
+	if m.SourceApplication != nil {
+		{
+			size, err := m.SourceApplication.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintEvent(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0x1a
+	}
+	if len(m.DestinationAddress) > 0 {
+		i -= len(m.DestinationAddress)
+		copy(dAtA[i:], m.DestinationAddress)
+		i = encodeVarintEvent(dAtA, i, uint64(len(m.DestinationAddress)))
 		i--
 		dAtA[i] = 0x12
 	}
-	if len(m.AppAddress) > 0 {
-		i -= len(m.AppAddress)
-		copy(dAtA[i:], m.AppAddress)
-		i = encodeVarintEvent(dAtA, i, uint64(len(m.AppAddress)))
+	if len(m.SourceAddress) > 0 {
+		i -= len(m.SourceAddress)
+		copy(dAtA[i:], m.SourceAddress)
+		i = encodeVarintEvent(dAtA, i, uint64(len(m.SourceAddress)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *EventTransferEnd) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *EventTransferEnd) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *EventTransferEnd) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.TransferEndHeight != 0 {
+		i = encodeVarintEvent(dAtA, i, uint64(m.TransferEndHeight))
+		i--
+		dAtA[i] = 0x28
+	}
+	if m.SessionEndHeight != 0 {
+		i = encodeVarintEvent(dAtA, i, uint64(m.SessionEndHeight))
+		i--
+		dAtA[i] = 0x20
+	}
+	if m.DestinationApplication != nil {
+		{
+			size, err := m.DestinationApplication.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintEvent(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0x1a
+	}
+	if len(m.DestinationAddress) > 0 {
+		i -= len(m.DestinationAddress)
+		copy(dAtA[i:], m.DestinationAddress)
+		i = encodeVarintEvent(dAtA, i, uint64(len(m.DestinationAddress)))
+		i--
+		dAtA[i] = 0x12
+	}
+	if len(m.SourceAddress) > 0 {
+		i -= len(m.SourceAddress)
+		copy(dAtA[i:], m.SourceAddress)
+		i = encodeVarintEvent(dAtA, i, uint64(len(m.SourceAddress)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *EventTransferError) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *EventTransferError) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *EventTransferError) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if len(m.Error) > 0 {
+		i -= len(m.Error)
+		copy(dAtA[i:], m.Error)
+		i = encodeVarintEvent(dAtA, i, uint64(len(m.Error)))
+		i--
+		dAtA[i] = 0x2a
+	}
+	if m.SessionEndHeight != 0 {
+		i = encodeVarintEvent(dAtA, i, uint64(m.SessionEndHeight))
+		i--
+		dAtA[i] = 0x20
+	}
+	if m.SourceApplication != nil {
+		{
+			size, err := m.SourceApplication.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintEvent(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0x1a
+	}
+	if len(m.DestinationAddress) > 0 {
+		i -= len(m.DestinationAddress)
+		copy(dAtA[i:], m.DestinationAddress)
+		i = encodeVarintEvent(dAtA, i, uint64(len(m.DestinationAddress)))
+		i--
+		dAtA[i] = 0x12
+	}
+	if len(m.SourceAddress) > 0 {
+		i -= len(m.SourceAddress)
+		copy(dAtA[i:], m.SourceAddress)
+		i = encodeVarintEvent(dAtA, i, uint64(len(m.SourceAddress)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *EventApplicationUnbondingBegin) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *EventApplicationUnbondingBegin) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *EventApplicationUnbondingBegin) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.UnbondingEndHeight != 0 {
+		i = encodeVarintEvent(dAtA, i, uint64(m.UnbondingEndHeight))
+		i--
+		dAtA[i] = 0x20
+	}
+	if m.SessionEndHeight != 0 {
+		i = encodeVarintEvent(dAtA, i, uint64(m.SessionEndHeight))
+		i--
+		dAtA[i] = 0x18
+	}
+	if m.Reason != 0 {
+		i = encodeVarintEvent(dAtA, i, uint64(m.Reason))
+		i--
+		dAtA[i] = 0x10
+	}
+	if m.Application != nil {
+		{
+			size, err := m.Application.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintEvent(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *EventApplicationUnbondingEnd) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *EventApplicationUnbondingEnd) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *EventApplicationUnbondingEnd) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.UnbondingEndHeight != 0 {
+		i = encodeVarintEvent(dAtA, i, uint64(m.UnbondingEndHeight))
+		i--
+		dAtA[i] = 0x20
+	}
+	if m.SessionEndHeight != 0 {
+		i = encodeVarintEvent(dAtA, i, uint64(m.SessionEndHeight))
+		i--
+		dAtA[i] = 0x18
+	}
+	if m.Reason != 0 {
+		i = encodeVarintEvent(dAtA, i, uint64(m.Reason))
+		i--
+		dAtA[i] = 0x10
+	}
+	if m.Application != nil {
+		{
+			size, err := m.Application.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintEvent(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *EventApplicationUnbondingCanceled) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *EventApplicationUnbondingCanceled) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *EventApplicationUnbondingCanceled) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.SessionEndHeight != 0 {
+		i = encodeVarintEvent(dAtA, i, uint64(m.SessionEndHeight))
+		i--
+		dAtA[i] = 0x10
+	}
+	if m.Application != nil {
+		{
+			size, err := m.Application.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintEvent(dAtA, i, uint64(size))
+		}
 		i--
 		dAtA[i] = 0xa
 	}
@@ -149,19 +1047,176 @@ func encodeVarintEvent(dAtA []byte, offset int, v uint64) int {
 	dAtA[offset] = uint8(v)
 	return base
 }
+func (m *EventApplicationStaked) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.Application != nil {
+		l = m.Application.Size()
+		n += 1 + l + sovEvent(uint64(l))
+	}
+	if m.SessionEndHeight != 0 {
+		n += 1 + sovEvent(uint64(m.SessionEndHeight))
+	}
+	return n
+}
+
 func (m *EventRedelegation) Size() (n int) {
 	if m == nil {
 		return 0
 	}
 	var l int
 	_ = l
-	l = len(m.AppAddress)
+	if m.Application != nil {
+		l = m.Application.Size()
+		n += 1 + l + sovEvent(uint64(l))
+	}
+	if m.SessionEndHeight != 0 {
+		n += 1 + sovEvent(uint64(m.SessionEndHeight))
+	}
+	return n
+}
+
+func (m *EventTransferBegin) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.SourceAddress)
 	if l > 0 {
 		n += 1 + l + sovEvent(uint64(l))
 	}
-	l = len(m.GatewayAddress)
+	l = len(m.DestinationAddress)
 	if l > 0 {
 		n += 1 + l + sovEvent(uint64(l))
+	}
+	if m.SourceApplication != nil {
+		l = m.SourceApplication.Size()
+		n += 1 + l + sovEvent(uint64(l))
+	}
+	if m.SessionEndHeight != 0 {
+		n += 1 + sovEvent(uint64(m.SessionEndHeight))
+	}
+	if m.TransferEndHeight != 0 {
+		n += 1 + sovEvent(uint64(m.TransferEndHeight))
+	}
+	return n
+}
+
+func (m *EventTransferEnd) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.SourceAddress)
+	if l > 0 {
+		n += 1 + l + sovEvent(uint64(l))
+	}
+	l = len(m.DestinationAddress)
+	if l > 0 {
+		n += 1 + l + sovEvent(uint64(l))
+	}
+	if m.DestinationApplication != nil {
+		l = m.DestinationApplication.Size()
+		n += 1 + l + sovEvent(uint64(l))
+	}
+	if m.SessionEndHeight != 0 {
+		n += 1 + sovEvent(uint64(m.SessionEndHeight))
+	}
+	if m.TransferEndHeight != 0 {
+		n += 1 + sovEvent(uint64(m.TransferEndHeight))
+	}
+	return n
+}
+
+func (m *EventTransferError) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.SourceAddress)
+	if l > 0 {
+		n += 1 + l + sovEvent(uint64(l))
+	}
+	l = len(m.DestinationAddress)
+	if l > 0 {
+		n += 1 + l + sovEvent(uint64(l))
+	}
+	if m.SourceApplication != nil {
+		l = m.SourceApplication.Size()
+		n += 1 + l + sovEvent(uint64(l))
+	}
+	if m.SessionEndHeight != 0 {
+		n += 1 + sovEvent(uint64(m.SessionEndHeight))
+	}
+	l = len(m.Error)
+	if l > 0 {
+		n += 1 + l + sovEvent(uint64(l))
+	}
+	return n
+}
+
+func (m *EventApplicationUnbondingBegin) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.Application != nil {
+		l = m.Application.Size()
+		n += 1 + l + sovEvent(uint64(l))
+	}
+	if m.Reason != 0 {
+		n += 1 + sovEvent(uint64(m.Reason))
+	}
+	if m.SessionEndHeight != 0 {
+		n += 1 + sovEvent(uint64(m.SessionEndHeight))
+	}
+	if m.UnbondingEndHeight != 0 {
+		n += 1 + sovEvent(uint64(m.UnbondingEndHeight))
+	}
+	return n
+}
+
+func (m *EventApplicationUnbondingEnd) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.Application != nil {
+		l = m.Application.Size()
+		n += 1 + l + sovEvent(uint64(l))
+	}
+	if m.Reason != 0 {
+		n += 1 + sovEvent(uint64(m.Reason))
+	}
+	if m.SessionEndHeight != 0 {
+		n += 1 + sovEvent(uint64(m.SessionEndHeight))
+	}
+	if m.UnbondingEndHeight != 0 {
+		n += 1 + sovEvent(uint64(m.UnbondingEndHeight))
+	}
+	return n
+}
+
+func (m *EventApplicationUnbondingCanceled) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.Application != nil {
+		l = m.Application.Size()
+		n += 1 + l + sovEvent(uint64(l))
+	}
+	if m.SessionEndHeight != 0 {
+		n += 1 + sovEvent(uint64(m.SessionEndHeight))
 	}
 	return n
 }
@@ -171,6 +1226,111 @@ func sovEvent(x uint64) (n int) {
 }
 func sozEvent(x uint64) (n int) {
 	return sovEvent(uint64((x << 1) ^ uint64((int64(x) >> 63))))
+}
+func (m *EventApplicationStaked) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowEvent
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: EventApplicationStaked: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: EventApplicationStaked: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Application", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEvent
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthEvent
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthEvent
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Application == nil {
+				m.Application = &Application{}
+			}
+			if err := m.Application.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 2:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field SessionEndHeight", wireType)
+			}
+			m.SessionEndHeight = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEvent
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.SessionEndHeight |= int64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		default:
+			iNdEx = preIndex
+			skippy, err := skipEvent(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthEvent
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
 }
 func (m *EventRedelegation) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
@@ -203,7 +1363,112 @@ func (m *EventRedelegation) Unmarshal(dAtA []byte) error {
 		switch fieldNum {
 		case 1:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field AppAddress", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field Application", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEvent
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthEvent
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthEvent
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Application == nil {
+				m.Application = &Application{}
+			}
+			if err := m.Application.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 2:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field SessionEndHeight", wireType)
+			}
+			m.SessionEndHeight = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEvent
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.SessionEndHeight |= int64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		default:
+			iNdEx = preIndex
+			skippy, err := skipEvent(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthEvent
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *EventTransferBegin) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowEvent
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: EventTransferBegin: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: EventTransferBegin: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field SourceAddress", wireType)
 			}
 			var stringLen uint64
 			for shift := uint(0); ; shift += 7 {
@@ -231,11 +1496,11 @@ func (m *EventRedelegation) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.AppAddress = string(dAtA[iNdEx:postIndex])
+			m.SourceAddress = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		case 2:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field GatewayAddress", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field DestinationAddress", wireType)
 			}
 			var stringLen uint64
 			for shift := uint(0); ; shift += 7 {
@@ -263,8 +1528,862 @@ func (m *EventRedelegation) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.GatewayAddress = string(dAtA[iNdEx:postIndex])
+			m.DestinationAddress = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field SourceApplication", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEvent
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthEvent
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthEvent
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.SourceApplication == nil {
+				m.SourceApplication = &Application{}
+			}
+			if err := m.SourceApplication.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 4:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field SessionEndHeight", wireType)
+			}
+			m.SessionEndHeight = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEvent
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.SessionEndHeight |= int64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 5:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field TransferEndHeight", wireType)
+			}
+			m.TransferEndHeight = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEvent
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.TransferEndHeight |= int64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		default:
+			iNdEx = preIndex
+			skippy, err := skipEvent(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthEvent
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *EventTransferEnd) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowEvent
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: EventTransferEnd: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: EventTransferEnd: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field SourceAddress", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEvent
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthEvent
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthEvent
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.SourceAddress = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field DestinationAddress", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEvent
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthEvent
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthEvent
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.DestinationAddress = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field DestinationApplication", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEvent
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthEvent
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthEvent
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.DestinationApplication == nil {
+				m.DestinationApplication = &Application{}
+			}
+			if err := m.DestinationApplication.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 4:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field SessionEndHeight", wireType)
+			}
+			m.SessionEndHeight = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEvent
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.SessionEndHeight |= int64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 5:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field TransferEndHeight", wireType)
+			}
+			m.TransferEndHeight = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEvent
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.TransferEndHeight |= int64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		default:
+			iNdEx = preIndex
+			skippy, err := skipEvent(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthEvent
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *EventTransferError) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowEvent
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: EventTransferError: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: EventTransferError: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field SourceAddress", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEvent
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthEvent
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthEvent
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.SourceAddress = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field DestinationAddress", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEvent
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthEvent
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthEvent
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.DestinationAddress = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field SourceApplication", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEvent
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthEvent
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthEvent
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.SourceApplication == nil {
+				m.SourceApplication = &Application{}
+			}
+			if err := m.SourceApplication.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 4:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field SessionEndHeight", wireType)
+			}
+			m.SessionEndHeight = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEvent
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.SessionEndHeight |= int64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 5:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Error", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEvent
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthEvent
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthEvent
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Error = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipEvent(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthEvent
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *EventApplicationUnbondingBegin) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowEvent
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: EventApplicationUnbondingBegin: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: EventApplicationUnbondingBegin: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Application", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEvent
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthEvent
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthEvent
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Application == nil {
+				m.Application = &Application{}
+			}
+			if err := m.Application.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 2:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Reason", wireType)
+			}
+			m.Reason = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEvent
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Reason |= ApplicationUnbondingReason(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 3:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field SessionEndHeight", wireType)
+			}
+			m.SessionEndHeight = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEvent
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.SessionEndHeight |= int64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 4:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field UnbondingEndHeight", wireType)
+			}
+			m.UnbondingEndHeight = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEvent
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.UnbondingEndHeight |= int64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		default:
+			iNdEx = preIndex
+			skippy, err := skipEvent(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthEvent
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *EventApplicationUnbondingEnd) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowEvent
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: EventApplicationUnbondingEnd: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: EventApplicationUnbondingEnd: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Application", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEvent
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthEvent
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthEvent
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Application == nil {
+				m.Application = &Application{}
+			}
+			if err := m.Application.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 2:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Reason", wireType)
+			}
+			m.Reason = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEvent
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Reason |= ApplicationUnbondingReason(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 3:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field SessionEndHeight", wireType)
+			}
+			m.SessionEndHeight = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEvent
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.SessionEndHeight |= int64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 4:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field UnbondingEndHeight", wireType)
+			}
+			m.UnbondingEndHeight = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEvent
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.UnbondingEndHeight |= int64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		default:
+			iNdEx = preIndex
+			skippy, err := skipEvent(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthEvent
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *EventApplicationUnbondingCanceled) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowEvent
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: EventApplicationUnbondingCanceled: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: EventApplicationUnbondingCanceled: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Application", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEvent
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthEvent
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthEvent
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Application == nil {
+				m.Application = &Application{}
+			}
+			if err := m.Application.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 2:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field SessionEndHeight", wireType)
+			}
+			m.SessionEndHeight = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEvent
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.SessionEndHeight |= int64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
 		default:
 			iNdEx = preIndex
 			skippy, err := skipEvent(dAtA[iNdEx:])

@@ -24,24 +24,28 @@ var (
 
 const (
 	opWeightMsgStakeApplication = "op_weight_msg_stake_application"
-	// TODO: Determine the simulation weight value
+	// TODO_TECHDEBT: Determine the simulation weight value
 	defaultWeightMsgStakeApplication int = 100
 
 	opWeightMsgUnstakeApplication = "op_weight_msg_unstake_application"
-	// TODO: Determine the simulation weight value
+	// TODO_TECHDEBT: Determine the simulation weight value
 	defaultWeightMsgUnstakeApplication int = 100
 
 	opWeightMsgDelegateToGateway = "op_weight_msg_delegate_to_gateway"
-	// TODO: Determine the simulation weight value
+	// TODO_TECHDEBT: Determine the simulation weight value
 	defaultWeightMsgDelegateToGateway int = 100
 
 	opWeightMsgUndelegateFromGateway = "op_weight_msg_undelegate_from_gateway"
-	// TODO: Determine the simulation weight value
+	// TODO_TECHDEBT: Determine the simulation weight value
 	defaultWeightMsgUndelegateFromGateway int = 100
 
 	opWeightMsgTransferApplication = "op_weight_msg_transfer_application"
-	// TODO: Determine the simulation weight value
+	// TODO_TECHDEBT: Determine the simulation weight value
 	defaultWeightMsgTransferApplication int = 100
+
+	opWeightMsgUpdateParam = "op_weight_msg_update_param"
+	// TODO_TECHDEBT: Determine the simulation weight value
+	defaultWeightMsgUpdateParam int = 100
 
 	// this line is used by starport scaffolding # simapp/module/const
 )
@@ -126,6 +130,17 @@ func (am AppModule) WeightedOperations(simState module.SimulationState) []simtyp
 		applicationsimulation.SimulateMsgTransferApplication(am.accountKeeper, am.bankKeeper, am.applicationKeeper),
 	))
 
+	var weightMsgUpdateParam int
+	simState.AppParams.GetOrGenerate(opWeightMsgUpdateParam, &weightMsgUpdateParam, nil,
+		func(_ *rand.Rand) {
+			weightMsgUpdateParam = defaultWeightMsgUpdateParam
+		},
+	)
+	operations = append(operations, simulation.NewWeightedOperation(
+		weightMsgUpdateParam,
+		applicationsimulation.SimulateMsgUpdateParam(am.accountKeeper, am.bankKeeper, am.applicationKeeper),
+	))
+
 	// this line is used by starport scaffolding # simapp/module/operation
 
 	return operations
@@ -171,6 +186,14 @@ func (am AppModule) ProposalMsgs(simState module.SimulationState) []simtypes.Wei
 			defaultWeightMsgTransferApplication,
 			func(r *rand.Rand, ctx sdk.Context, accs []simtypes.Account) sdk.Msg {
 				applicationsimulation.SimulateMsgTransferApplication(am.accountKeeper, am.bankKeeper, am.applicationKeeper)
+				return nil
+			},
+		),
+		simulation.NewWeightedProposalMsg(
+			opWeightMsgUpdateParam,
+			defaultWeightMsgUpdateParam,
+			func(r *rand.Rand, ctx sdk.Context, accs []simtypes.Account) sdk.Msg {
+				applicationsimulation.SimulateMsgUpdateParam(am.accountKeeper, am.bankKeeper, am.applicationKeeper)
 				return nil
 			},
 		),

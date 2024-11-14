@@ -14,9 +14,21 @@ params_get_tokenomics: ## Get the tokenomics module params
 params_update_tokenomics_all: ## Update the tokenomics module params
 	poktrolld tx authz exec ./tools/scripts/params/tokenomics_all.json $(PARAM_FLAGS)
 
-.PHONY: params_update_tokenomics_compute_units_to_tokens_multiplier
-params_update_tokenomics_compute_units_to_tokens_multiplier: ## Update the tokenomics module compute_units_to_tokens_multiplier param
-	poktrolld tx authz exec ./tools/scripts/params/tokenomics_compute_units_to_tokens_multiplier.json $(PARAM_FLAGS)
+.PHONY: params_update_tokenomics_mint_allocation_dao
+params_update_tokenomics_mint_allocation_dao: ## Update the tokenomics module mint_allocation_dao param
+	poktrolld tx authz exec ./tools/scripts/params/tokenomics_mint_allocation_dao.json $(PARAM_FLAGS)
+
+.PHONY: params_update_tokenomics_mint_allocation_proposer
+params_update_tokenomics_mint_allocation_proposer: ## Update the tokenomics module mint_allocation_proposer param
+	poktrolld tx authz exec ./tools/scripts/params/tokenomics_mint_allocation_proposer.json $(PARAM_FLAGS)
+
+.PHONY: params_update_tokenomics_mint_allocation_supplier
+params_update_tokenomics_mint_allocation_supplier: ## Update the tokenomics module mint_allocation_supplier param
+	poktrolld tx authz exec ./tools/scripts/params/tokenomics_mint_allocation_supplier.json $(PARAM_FLAGS)
+
+.PHONY: params_update_tokenomics_mint_allocation_source_owner
+params_update_tokenomics_mint_allocation_source_owner: ## Update the tokenomics module mint_allocation_source_owner param
+	poktrolld tx authz exec ./tools/scripts/params/tokenomics_mint_allocation_source_owner.json $(PARAM_FLAGS)
 
 ### Service Module Params ###
 .PHONY: params_get_service
@@ -39,10 +51,6 @@ params_get_proof: ## Get the proof module params
 .PHONY: params_update_proof_all
 params_update_proof_all: ## Update the proof module params
 	poktrolld tx authz exec ./tools/scripts/params/proof_all.json $(PARAM_FLAGS)
-
-.PHONY: params_update_proof_min_relay_difficulty_bits
-params_update_proof_min_relay_difficulty_bits: ## Update the proof module min_relay_difficulty_bits param
-	poktrolld tx authz exec ./tools/scripts/params/proof_min_relay_difficulty_bits.json $(PARAM_FLAGS)
 
 .PHONY: params_update_proof_proof_request_probability
 params_update_proof_proof_request_probability: ## Update the proof module proof_request_probability param
@@ -93,10 +101,73 @@ params_update_shared_proof_window_open_offset_blocks: ## Update the shared modul
 params_update_shared_proof_window_close_offset_blocks: ## Update the shared module proof_window_close_offset_blocks param
 	poktrolld tx authz exec ./tools/scripts/params/shared_proof_window_close_offset_blocks.json $(PARAM_FLAGS)
 
+.PHONY: params_update_shared_supplier_unbonding_period_sessions
+params_update_shared_supplier_unbonding_period_sessions: ## Update the shared module supplier_unbonding_period_sessions param
+	poktrolld tx authz exec ./tools/scripts/params/shared_supplier_unbonding_period_sessions.json $(PARAM_FLAGS)
+
+.PHONY: params_update_shared_application_unbonding_period_sessions
+params_update_shared_application_unbonding_period_sessions: ## Update the shared module application_unbonding_period_sessions param
+	poktrolld tx authz exec ./tools/scripts/params/shared_application_unbonding_period_sessions.json $(PARAM_FLAGS)
+
 .PHONY: params_update_shared_compute_units_to_tokens_multiplier
 params_update_shared_compute_units_to_tokens_multiplier: ## Update the shared module compute_units_to_tokens_multiplier param
 	poktrolld tx authz exec ./tools/scripts/params/shared_compute_units_to_tokens_multiplier.json $(PARAM_FLAGS)
 
+### Gateway Module Params ###
+.PHONY: params_get_gateway
+params_get_gateway: ## Get the gateway module params
+	poktrolld query gateway params --node $(POCKET_NODE)
+
+.PHONY: params_update_gateway_all
+params_update_gateway_all: ## Update the gateway module params
+	poktrolld tx authz exec ./tools/scripts/params/gateway_all.json $(PARAM_FLAGS)
+
+.PHONY: params_update_gateway_min_stake
+params_update_gateway_min_stake: ## Update the gateway module min_stake param
+	poktrolld tx authz exec ./tools/scripts/params/gateway_min_stake.json $(PARAM_FLAGS)
+
+### Application Module Params ###
+.PHONY: params_get_application
+params_get_application: ## Get the application module params
+	poktrolld query application params --node $(POCKET_NODE)
+
+.PHONY: params_update_application_all
+params_update_application_all: ## Update the application module params
+	poktrolld tx authz exec ./tools/scripts/params/application_all.json $(PARAM_FLAGS)
+
+.PHONY: params_update_application_max_delegated_gateways
+params_update_application_max_delegated_gateways: ## Update the application module max_delegated_gateways param
+	poktrolld tx authz exec ./tools/scripts/params/application_max_delegated_gateways.json $(PARAM_FLAGS)
+
+.PHONY: params_update_application_min_stake
+params_update_application_min_stake: ## Update the application module min_stake param
+	poktrolld tx authz exec ./tools/scripts/params/application_min_stake.json $(PARAM_FLAGS)
+
+### Supplier Module Params ###
+.PHONY: params_get_supplier
+params_get_supplier: ## Get the supplier module params
+	poktrolld query supplier params --node $(POCKET_NODE)
+
+.PHONY: params_update_supplier_all
+params_update_supplier_all: ## Update the supplier module params
+	poktrolld tx authz exec ./tools/scripts/params/supplier_all.json $(PARAM_FLAGS)
+
+.PHONY: params_update_supplier_min_stake
+params_update_supplier_min_stake: ## Update the supplier module min_stake param
+	poktrolld tx authz exec ./tools/scripts/params/supplier_min_stake.json $(PARAM_FLAGS)
+
+### Session Module Params ###
+.PHONY: params_get_session
+params_get_session: ## Get the session module params
+	poktrolld query session params --node $(POCKET_NODE)
+
+.PHONY: params_update_session_all
+params_update_session_all: ## Update the session module params
+	poktrolld tx authz exec ./tools/scripts/params/session_all.json $(PARAM_FLAGS)
+
+.PHONY: params_update_session_num_suppliers_per_session
+params_update_session_num_suppliers_per_session: ## Update the session module num_suppliers_per_session param
+	poktrolld tx authz exec ./tools/scripts/params/session_num_suppliers_per_session.json $(PARAM_FLAGS)
 
 .PHONY: params_query_all
 params_query_all: check_jq ## Query the params from all available modules

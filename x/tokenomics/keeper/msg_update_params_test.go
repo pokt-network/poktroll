@@ -6,17 +6,17 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/pokt-network/poktroll/testutil/sample"
-	"github.com/pokt-network/poktroll/x/tokenomics/types"
+	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
 )
 
 func TestMsgUpdateParams(t *testing.T) {
 	tokenomicsKeeper, srv, ctx := setupMsgServer(t)
-	require.NoError(t, tokenomicsKeeper.SetParams(ctx, types.DefaultParams()))
+	require.NoError(t, tokenomicsKeeper.SetParams(ctx, tokenomicstypes.DefaultParams()))
 
 	tests := []struct {
 		desc string
 
-		req *types.MsgUpdateParams
+		req *tokenomicstypes.MsgUpdateParams
 
 		shouldError    bool
 		expectedErrMsg string
@@ -24,9 +24,9 @@ func TestMsgUpdateParams(t *testing.T) {
 		{
 			desc: "invalid authority address",
 
-			req: &types.MsgUpdateParams{
+			req: &tokenomicstypes.MsgUpdateParams{
 				Authority: "invalid",
-				Params:    types.Params{},
+				Params:    tokenomicstypes.DefaultParams(),
 			},
 
 			shouldError:    true,
@@ -35,9 +35,9 @@ func TestMsgUpdateParams(t *testing.T) {
 		{
 			desc: "incorrect authority address",
 
-			req: &types.MsgUpdateParams{
+			req: &tokenomicstypes.MsgUpdateParams{
 				Authority: sample.AccAddress(),
-				Params:    types.Params{},
+				Params:    tokenomicstypes.DefaultParams(),
 			},
 
 			shouldError:    true,
@@ -46,9 +46,15 @@ func TestMsgUpdateParams(t *testing.T) {
 		{
 			desc: "successful param update",
 
-			req: &types.MsgUpdateParams{
+			req: &tokenomicstypes.MsgUpdateParams{
 				Authority: tokenomicsKeeper.GetAuthority(),
-				Params:    types.Params{},
+				Params: tokenomicstypes.Params{
+					MintAllocationDao:         0.1,
+					MintAllocationProposer:    0.1,
+					MintAllocationSupplier:    0.1,
+					MintAllocationSourceOwner: 0.1,
+					MintAllocationApplication: 0.6,
+				},
 			},
 
 			shouldError: false,

@@ -7,7 +7,6 @@ import (
 
 	"github.com/pokt-network/poktroll/x/proof/types"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
-	"github.com/pokt-network/poktroll/x/shared"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
@@ -88,8 +87,8 @@ func (k Keeper) validateClaimWindow(
 	sessionEndHeight := sessionHeader.GetSessionEndBlockHeight()
 
 	// Get the claim window open and close heights for the given session header.
-	claimWindowOpenHeight := shared.GetClaimWindowOpenHeight(&sharedParams, sessionEndHeight)
-	claimWindowCloseHeight := shared.GetClaimWindowCloseHeight(&sharedParams, sessionEndHeight)
+	claimWindowOpenHeight := sharedtypes.GetClaimWindowOpenHeight(&sharedParams, sessionEndHeight)
+	claimWindowCloseHeight := sharedtypes.GetClaimWindowCloseHeight(&sharedParams, sessionEndHeight)
 
 	// Get the earliest claim commit height for the given supplier.
 	earliestClaimCommitHeight, err := k.sharedQuerier.GetEarliestSupplierClaimCommitHeight(
@@ -106,7 +105,7 @@ func (k Keeper) validateClaimWindow(
 	currentHeight := sdkCtx.BlockHeight()
 
 	// Ensure the current block height is ON or AFTER the supplier's earliest claim commit height.
-	// TODO_BLOCKER(@bryanchriswhite, @red-0ne): Enforce an additional "latest
+	// TODO_MAINNET(@bryanchriswhite, @red-0ne): Enforce an additional "latest
 	// supplier claim/proof commit offset" such that all suppliers have the same
 	// "supplier claim/proof commit window" size.
 	// See: https://github.com/pokt-network/poktroll/pull/620/files#r1656548473.
@@ -156,8 +155,8 @@ func (k Keeper) validateProofWindow(
 	sessionEndHeight := sessionHeader.GetSessionEndBlockHeight()
 
 	// Get the proof window open and close heights for the given session header.
-	proofWindowOpenHeight := shared.GetProofWindowOpenHeight(&sharedParams, sessionEndHeight)
-	proofWindowCloseHeight := shared.GetProofWindowCloseHeight(&sharedParams, sessionEndHeight)
+	proofWindowOpenHeight := sharedtypes.GetProofWindowOpenHeight(&sharedParams, sessionEndHeight)
+	proofWindowCloseHeight := sharedtypes.GetProofWindowCloseHeight(&sharedParams, sessionEndHeight)
 
 	// Get the earliest proof commit height for the given supplier.
 	earliestProofCommitHeight, err := k.sharedQuerier.GetEarliestSupplierProofCommitHeight(

@@ -3,7 +3,6 @@
 package e2e
 
 import (
-	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"reflect"
@@ -363,14 +362,9 @@ func (s *suite) assertExpectedModuleParamsUpdated(moduleName string) {
 		params := prooftypes.DefaultParams()
 		paramsMap := s.expectedModuleParams[moduleName]
 
-		relayDifficultyTargetHash, ok := paramsMap[prooftypes.ParamRelayDifficultyTargetHash]
-		if ok {
-			params.RelayDifficultyTargetHash, _ = hex.DecodeString(string(relayDifficultyTargetHash.value.([]byte)))
-		}
-
 		proofRequestProbability, ok := paramsMap[prooftypes.ParamProofRequestProbability]
 		if ok {
-			params.ProofRequestProbability = proofRequestProbability.value.(float32)
+			params.ProofRequestProbability = proofRequestProbability.value.(float64)
 		}
 
 		proofRequirementThreshold, ok := paramsMap[prooftypes.ParamProofRequirementThreshold]

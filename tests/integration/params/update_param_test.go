@@ -13,28 +13,28 @@ import (
 	"github.com/pokt-network/poktroll/testutil/integration/suites"
 )
 
-// msgUpdateParamSuite is a test suite which exercises the MsgUpdateParam message
+// msgUpdateParamTestSuite is a test suite which exercises the MsgUpdateParam message
 // for each poktroll module via authz, as would be done in a live network in order
 // to update **individual** parameter values for a given module.
 // NB: Not to be confused with MsgUpdateParams (plural), which updates all parameter
 // values for a module.
-type msgUpdateParamSuite struct {
+type msgUpdateParamTestSuite struct {
 	suites.ParamsSuite
 
 	unauthorizedAddr cosmostypes.AccAddress
 }
 
 func TestUpdateParamSuite(t *testing.T) {
-	suite.Run(t, new(msgUpdateParamSuite))
+	suite.Run(t, new(msgUpdateParamTestSuite))
 }
 
-func (s *msgUpdateParamSuite) SetupSubTest() {
+func (s *msgUpdateParamTestSuite) SetupSubTest() {
 	// Create a fresh integration app for each test.
 	s.NewApp(s.T())
 
 	// Initialize the test accounts and create authz grants.
-	s.SetupTestAuthzAccounts()
-	s.SetupTestAuthzGrants()
+	s.SetupTestAuthzAccounts(s.T())
+	s.SetupTestAuthzGrants(s.T())
 
 	// Allocate an address for unauthorized user.
 	nextAcct, ok := s.GetApp().GetPreGeneratedAccounts().Next()
@@ -42,7 +42,7 @@ func (s *msgUpdateParamSuite) SetupSubTest() {
 	s.unauthorizedAddr = nextAcct.Address
 }
 
-func (s *msgUpdateParamSuite) TestUnauthorizedMsgUpdateParamFails() {
+func (s *msgUpdateParamTestSuite) TestUnauthorizedMsgUpdateParamFails() {
 	for _, moduleName := range suites.MsgUpdateParamEnabledModuleNames {
 		moduleCfg := suites.ModuleParamConfigMap[moduleName]
 
@@ -51,8 +51,13 @@ func (s *msgUpdateParamSuite) TestUnauthorizedMsgUpdateParamFails() {
 		// to that field's value.
 		validParamsValue := reflect.ValueOf(moduleCfg.ValidParams)
 		for fieldIdx := 0; fieldIdx < validParamsValue.NumField(); fieldIdx++ {
-			fieldValue := validParamsValue.Field(fieldIdx)
+			validParamsFieldValue := validParamsValue.Field(fieldIdx)
 			fieldName := validParamsValue.Type().Field(fieldIdx).Name
+
+			// Skip fields which in the excludedParams map.
+			if _, ok := suites.ExcludedParams[fieldName]; ok {
+				continue
+			}
 
 			testName := fmt.Sprintf("%s_%s", moduleName, fieldName)
 			s.T().Run(testName, func(t *testing.T) {
@@ -66,7 +71,7 @@ func (s *msgUpdateParamSuite) TestUnauthorizedMsgUpdateParamFails() {
 				updateResBz, err := s.RunUpdateParamAsSigner(t,
 					moduleName,
 					fieldName,
-					fieldValue.Interface(),
+					validParamsFieldValue.Interface(),
 					s.unauthorizedAddr,
 				)
 				require.ErrorContains(t, err, authz.ErrNoAuthorizationFound.Error())
@@ -76,7 +81,7 @@ func (s *msgUpdateParamSuite) TestUnauthorizedMsgUpdateParamFails() {
 	}
 }
 
-func (s *msgUpdateParamSuite) TestAuthorizedMsgUpdateParamSucceeds() {
+func (s *msgUpdateParamTestSuite) TestAuthorizedMsgUpdateParamSucceeds() {
 	for _, moduleName := range suites.MsgUpdateParamEnabledModuleNames {
 		moduleCfg := suites.ModuleParamConfigMap[moduleName]
 
@@ -87,6 +92,11 @@ func (s *msgUpdateParamSuite) TestAuthorizedMsgUpdateParamSucceeds() {
 		for fieldIdx := 0; fieldIdx < validParamsValue.NumField(); fieldIdx++ {
 			fieldExpectedValue := validParamsValue.Field(fieldIdx)
 			fieldName := validParamsValue.Type().Field(fieldIdx).Name
+
+			// Skip fields which in the excludedParams map.
+			if _, ok := suites.ExcludedParams[fieldName]; ok {
+				continue
+			}
 
 			testName := fmt.Sprintf("%s_%s", moduleName, fieldName)
 			s.T().Run(testName, func(t *testing.T) {

@@ -1,6 +1,6 @@
 //go:generate mockgen -destination=../../testutil/mockclient/events_query_client_mock.go -package=mockclient . Dialer,Connection,EventsQueryClient
 //go:generate mockgen -destination=../../testutil/mockclient/block_client_mock.go -package=mockclient . Block,BlockClient
-//go:generate mockgen -destination=../../testutil/mockclient/delegation_client_mock.go -package=mockclient . Redelegation,DelegationClient
+//go:generate mockgen -destination=../../testutil/mockclient/delegation_client_mock.go -package=mockclient . DelegationClient
 //go:generate mockgen -destination=../../testutil/mockclient/tx_client_mock.go -package=mockclient . TxContext,TxClient
 //go:generate mockgen -destination=../../testutil/mockclient/supplier_client_mock.go -package=mockclient . SupplierClient
 //go:generate mockgen -destination=../../testutil/mockclient/account_query_client_mock.go -package=mockclient . AccountQueryClient
@@ -9,7 +9,6 @@
 //go:generate mockgen -destination=../../testutil/mockclient/session_query_client_mock.go -package=mockclient . SessionQueryClient
 //go:generate mockgen -destination=../../testutil/mockclient/shared_query_client_mock.go -package=mockclient . SharedQueryClient
 //go:generate mockgen -destination=../../testutil/mockclient/proof_query_client_mock.go -package=mockclient . ProofQueryClient
-//go:generate mockgen -destination=../../testutil/mockclient/tokenomics_query_client_mock.go -package=mockclient . TokenomicsQueryClient
 //go:generate mockgen -destination=../../testutil/mockclient/service_query_client_mock.go -package=mockclient . ServiceQueryClient
 //go:generate mockgen -destination=../../testutil/mockclient/bank_query_client_mock.go -package=mockclient . BankQueryClient
 //go:generate mockgen -destination=../../testutil/mockclient/cosmos_tx_builder_mock.go -package=mockclient github.com/cosmos/cosmos-sdk/client TxBuilder
@@ -32,6 +31,7 @@ import (
 	"github.com/pokt-network/poktroll/pkg/either"
 	"github.com/pokt-network/poktroll/pkg/observable"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
+	servicetypes "github.com/pokt-network/poktroll/x/service/types"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
@@ -136,14 +136,6 @@ type Block interface {
 	Txs() []comettypes.Tx
 }
 
-// Redelegation is an interface which wraps the EventRedelegation event
-// emitted by the application module.
-// See: proto/poktroll/application/types/event.proto#EventRedelegation
-type Redelegation interface {
-	GetAppAddress() string
-	GetGatewayAddress() string
-}
-
 // EventsObservable is a replay observable for events of some type T.
 // NB: This cannot be an alias due to gomock's lack of support for generic types.
 type EventsObservable[T any] observable.ReplayObservable[T]
@@ -180,7 +172,7 @@ type BlockClient interface {
 // RedelegationReplayObservable is a defined type which is a replay observable
 // of type Redelegation.
 // NB: This cannot be an alias due to gomock's lack of support for generic types.
-type RedelegationReplayObservable EventsObservable[Redelegation]
+type RedelegationReplayObservable EventsObservable[*apptypes.EventRedelegation]
 
 // DelegationClient is an interface that wraps the EventsReplayClient interface
 // specific for the EventsReplayClient[Redelegation] implementation
@@ -190,7 +182,7 @@ type DelegationClient interface {
 	RedelegationsSequence(context.Context) RedelegationReplayObservable
 	// LastNRedelegations returns the latest N redelegation events that have
 	// occurred on chain.
-	LastNRedelegations(context.Context, int) []Redelegation
+	LastNRedelegations(context.Context, int) []*apptypes.EventRedelegation
 	// Close unsubscribes all observers of the committed block sequence
 	// observable and closes the events query client.
 	Close()
@@ -299,6 +291,9 @@ type SessionQueryClient interface {
 		serviceId string,
 		blockHeight int64,
 	) (*sessiontypes.Session, error)
+
+	// GetParams queries the chain for the session module parameters.
+	GetParams(ctx context.Context) (*sessiontypes.Params, error)
 }
 
 // SharedQueryClient defines an interface that enables the querying of the
@@ -338,7 +333,7 @@ type BlockQueryClient interface {
 // protobuf message. Since the generated go types don't include interface types, this
 // is necessary to prevent dependency cycles.
 type ProofParams interface {
-	GetProofRequestProbability() float32
+	GetProofRequestProbability() float64
 	GetProofRequirementThreshold() *cosmostypes.Coin
 	GetProofMissingPenalty() *cosmostypes.Coin
 	GetProofSubmissionFee() *cosmostypes.Coin
@@ -351,24 +346,12 @@ type ProofQueryClient interface {
 	GetParams(ctx context.Context) (ProofParams, error)
 }
 
-// TokenomicsRelayMiningDifficulty is a go interface type which corresponding to the poktroll.tokenomics.RelayMiningDifficulty
-// protobuf message. This is necessary to prevent dependency cycles.
-type TokenomicsRelayMiningDifficulty interface {
-	GetTargetHash() []byte
-}
-
-// TokenomicsQueryClient defines an interface that enables the querying of the
-// on-chain tokenomics information
-type TokenomicsQueryClient interface {
-	GetServiceRelayDifficultyTargetHash(ctx context.Context, serviceId string) (TokenomicsRelayMiningDifficulty, error)
-	// GetParams queries the chain for the current tokenomics module parameters.
-}
-
 // ServiceQueryClient defines an interface that enables the querying of the
 // on-chain service information
 type ServiceQueryClient interface {
 	// GetService queries the chain for the details of the service provided
 	GetService(ctx context.Context, serviceId string) (sharedtypes.Service, error)
+	GetServiceRelayDifficulty(ctx context.Context, serviceId string) (servicetypes.RelayMiningDifficulty, error)
 }
 
 // BankQueryClient defines an interface that enables the querying of the

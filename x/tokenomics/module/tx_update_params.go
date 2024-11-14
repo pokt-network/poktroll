@@ -13,7 +13,9 @@ import (
 
 var _ = strconv.Itoa(0)
 
-// TODO_BLOCKER(@bryanchriswhite, #322): Update the CLI once we determine settle on how to maintain and update parameters.
+// TODO_UPNEXT(@bryanchriswhite): Remove this. It's not used nor useful.
+// Parameter updates currently happen via authz exec messages and in the
+// future will be committed via governance proposals.
 func CmdUpdateParams() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "update-params",

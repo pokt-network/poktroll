@@ -15,7 +15,6 @@ import (
 	"github.com/pokt-network/poktroll/pkg/observable/filter"
 	"github.com/pokt-network/poktroll/pkg/observable/logging"
 	"github.com/pokt-network/poktroll/pkg/relayer"
-	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 	servicetypes "github.com/pokt-network/poktroll/x/service/types"
 )
 
@@ -25,16 +24,17 @@ var _ relayer.Miner = (*miner)(nil)
 // difficulty of each, finally publishing those with sufficient difficulty to
 // minedRelayObs as they are applicable for relay volume.
 type miner struct {
-	// tokenomicsQueryClient is used to query for the relay difficulty target hash of a service.
+	// serviceQueryClient is used to query for the relay difficulty target hash of a service.
 	// relay_difficulty is the target hash which a relay hash must be less than to be volume/reward applicable.
-	tokenomicsQueryClient client.TokenomicsQueryClient
+	serviceQueryClient client.ServiceQueryClient
+	relayMeter         relayer.RelayMeter
 }
 
 // NewMiner creates a new miner from the given dependencies and options. It
 // returns an error if it has not been sufficiently configured or supplied.
 //
 // Required Dependencies:
-// - ProofQueryClient
+// - ServiceQueryClient
 //
 // Available options:
 //   - WithRelayDifficultyTargetHash
@@ -44,7 +44,7 @@ func NewMiner(
 ) (*miner, error) {
 	mnr := &miner{}
 
-	if err := depinject.Inject(deps, &mnr.tokenomicsQueryClient); err != nil {
+	if err := depinject.Inject(deps, &mnr.serviceQueryClient, &mnr.relayMeter); err != nil {
 		return nil, err
 	}
 
@@ -89,6 +89,9 @@ func (mnr *miner) mapMineRelay(
 ) (_ either.Either[*relayer.MinedRelay], skip bool) {
 	relayBz, err := relay.Marshal()
 	if err != nil {
+		if relayMeteringResult := mnr.unclaimRelayUPOKT(ctx, *relay); relayMeteringResult.IsError() {
+			return relayMeteringResult, false
+		}
 		return either.Error[*relayer.MinedRelay](err), false
 	}
 	relayHashArr := protocol.GetRelayHashFromBytes(relayBz)
@@ -96,11 +99,17 @@ func (mnr *miner) mapMineRelay(
 
 	relayDifficultyTargetHash, err := mnr.getServiceRelayDifficultyTargetHash(ctx, relay.Req)
 	if err != nil {
-		return either.Error[*relayer.MinedRelay](err), false
+		if relayMeteringResult := mnr.unclaimRelayUPOKT(ctx, *relay); relayMeteringResult.IsError() {
+			return relayMeteringResult, true
+		}
+		return either.Error[*relayer.MinedRelay](err), true
 	}
 
 	// The relay IS NOT volume / reward applicable
 	if !protocol.IsRelayVolumeApplicable(relayHash, relayDifficultyTargetHash) {
+		if eitherMeteringResult := mnr.unclaimRelayUPOKT(ctx, *relay); eitherMeteringResult.IsError() {
+			return eitherMeteringResult, true
+		}
 		return either.Success[*relayer.MinedRelay](nil), true
 	}
 
@@ -129,12 +138,20 @@ func (mnr *miner) getServiceRelayDifficultyTargetHash(ctx context.Context, req *
 		return nil, fmt.Errorf("invalid session header: %w", err)
 	}
 
-	serviceRelayDifficulty, err := mnr.tokenomicsQueryClient.GetServiceRelayDifficultyTargetHash(ctx, sessionHeader.ServiceId)
+	serviceRelayDifficulty, err := mnr.serviceQueryClient.GetServiceRelayDifficulty(ctx, sessionHeader.ServiceId)
 	if err != nil {
-		// TODO_IMPROVE: log the error and a message saying the default relay difficulty target hash
-		// is being used.
-		return prooftypes.DefaultRelayDifficultyTargetHash, nil
+		return nil, err
 	}
 
 	return serviceRelayDifficulty.GetTargetHash(), nil
+}
+
+// unclaimRelayUPOKT unclaims the relay UPOKT reward for the relay.
+// It returns an either.Error if the relay UPOKT reward could not be unclaimed.
+func (mnr *miner) unclaimRelayUPOKT(ctx context.Context, relay servicetypes.Relay) either.Either[*relayer.MinedRelay] {
+	if err := mnr.relayMeter.SetNonApplicableRelayReward(ctx, relay.GetReq().GetMeta()); err != nil {
+		return either.Error[*relayer.MinedRelay](err)
+	}
+
+	return either.Success[*relayer.MinedRelay](nil)
 }

@@ -394,6 +394,7 @@ func NewCompleteIntegrationApp(t *testing.T, opts ...IntegrationAppOptionFn) *Ap
 		authority.String(),
 
 		bankKeeper,
+		sharedKeeper,
 	)
 	gatewayModule := gateway.NewAppModule(
 		cdc,

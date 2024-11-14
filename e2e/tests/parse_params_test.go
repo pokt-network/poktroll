@@ -3,7 +3,6 @@
 package e2e
 
 import (
-	"encoding/hex"
 	"fmt"
 	"strconv"
 
@@ -16,6 +15,7 @@ import (
 
 	"github.com/pokt-network/poktroll/app/volatile"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
+	gatewaytypes "github.com/pokt-network/poktroll/x/gateway/types"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 	servicetypes "github.com/pokt-network/poktroll/x/service/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
@@ -59,10 +59,10 @@ func (s *suite) parseParam(table gocuke.DataTable, rowIdx int) paramAny {
 	case "bytes":
 		paramValue = []byte(table.Cell(rowIdx, paramValueColIdx).String())
 	case "float":
-		floatValue, err := strconv.ParseFloat(table.Cell(rowIdx, paramValueColIdx).String(), 32)
+		floatValue, err := strconv.ParseFloat(table.Cell(rowIdx, paramValueColIdx).String(), 64)
 		require.NoError(s, err)
 
-		paramValue = float32(floatValue)
+		paramValue = floatValue
 	case "coin":
 		coinAmount := table.Cell(rowIdx, paramValueColIdx).Int64()
 		coinValue := cosmostypes.NewCoin(volatile.DenomuPOKT, math.NewInt(coinAmount))
@@ -94,7 +94,7 @@ func (s *suite) paramsMapToMsgUpdateParams(moduleName string, paramsMap paramsAn
 		msgUpdateParams = s.newAppMsgUpdateParams(paramsMap)
 	case servicetypes.ModuleName:
 		msgUpdateParams = s.newServiceMsgUpdateParams(paramsMap)
-	// NB: gateway & supplier modules currently have no parameters
+	// NB: supplier module currently has no parameters
 	default:
 		err := fmt.Errorf("ERROR: unexpected module name %q", moduleName)
 		s.Fatal(err)
@@ -131,10 +131,8 @@ func (s *suite) newProofMsgUpdateParams(params paramsAnyMap) cosmostypes.Msg {
 
 	for paramName, paramValue := range params {
 		switch paramName {
-		case prooftypes.ParamRelayDifficultyTargetHash:
-			msgUpdateParams.Params.RelayDifficultyTargetHash, _ = hex.DecodeString(string(paramValue.value.([]byte)))
 		case prooftypes.ParamProofRequestProbability:
-			msgUpdateParams.Params.ProofRequestProbability = paramValue.value.(float32)
+			msgUpdateParams.Params.ProofRequestProbability = paramValue.value.(float64)
 		case prooftypes.ParamProofRequirementThreshold:
 			msgUpdateParams.Params.ProofRequirementThreshold = paramValue.value.(*cosmostypes.Coin)
 		case prooftypes.ParamProofMissingPenalty:
@@ -259,28 +257,12 @@ func (s *suite) newMsgUpdateParam(
 
 func (s *suite) newTokenomicsMsgUpdateParam(authority string, param paramAny) (msg proto.Message) {
 	switch param.typeStr {
-	case "string":
+	case "float64":
 		msg = proto.Message(&tokenomicstypes.MsgUpdateParam{
 			Authority: authority,
 			Name:      param.name,
-			AsType: &tokenomicstypes.MsgUpdateParam_AsString{
-				AsString: param.value.(string),
-			},
-		})
-	case "int64":
-		msg = proto.Message(&tokenomicstypes.MsgUpdateParam{
-			Authority: authority,
-			Name:      param.name,
-			AsType: &tokenomicstypes.MsgUpdateParam_AsInt64{
-				AsInt64: param.value.(int64),
-			},
-		})
-	case "bytes":
-		msg = proto.Message(&tokenomicstypes.MsgUpdateParam{
-			Authority: authority,
-			Name:      param.name,
-			AsType: &tokenomicstypes.MsgUpdateParam_AsBytes{
-				AsBytes: param.value.([]byte),
+			AsType: &tokenomicstypes.MsgUpdateParam_AsFloat{
+				AsFloat: param.value.(float64),
 			},
 		})
 	default:
@@ -292,22 +274,6 @@ func (s *suite) newTokenomicsMsgUpdateParam(authority string, param paramAny) (m
 
 func (s *suite) newProofMsgUpdateParam(authority string, param paramAny) (msg proto.Message) {
 	switch param.typeStr {
-	case "string":
-		msg = proto.Message(&prooftypes.MsgUpdateParam{
-			Authority: authority,
-			Name:      param.name,
-			AsType: &prooftypes.MsgUpdateParam_AsString{
-				AsString: param.value.(string),
-			},
-		})
-	case "int64":
-		msg = proto.Message(&prooftypes.MsgUpdateParam{
-			Authority: authority,
-			Name:      param.name,
-			AsType: &prooftypes.MsgUpdateParam_AsInt64{
-				AsInt64: param.value.(int64),
-			},
-		})
 	case "bytes":
 		msg = proto.Message(&prooftypes.MsgUpdateParam{
 			Authority: authority,
@@ -321,7 +287,7 @@ func (s *suite) newProofMsgUpdateParam(authority string, param paramAny) (msg pr
 			Authority: authority,
 			Name:      param.name,
 			AsType: &prooftypes.MsgUpdateParam_AsFloat{
-				AsFloat: param.value.(float32),
+				AsFloat: param.value.(float64),
 			},
 		})
 	case "coin":
@@ -349,12 +315,12 @@ func (s *suite) newSharedMsgUpdateParam(authority string, param paramAny) (msg p
 				AsString: param.value.(string),
 			},
 		})
-	case "int64":
+	case "uint64":
 		msg = proto.Message(&sharedtypes.MsgUpdateParam{
 			Authority: authority,
 			Name:      param.name,
-			AsType: &sharedtypes.MsgUpdateParam_AsInt64{
-				AsInt64: param.value.(int64),
+			AsType: &sharedtypes.MsgUpdateParam_AsUint64{
+				AsUint64: param.value.(uint64),
 			},
 		})
 	case "bytes":
@@ -379,6 +345,23 @@ func (s *suite) newServiceMsgUpdateParam(authority string, param paramAny) (msg 
 			Authority: authority,
 			Name:      param.name,
 			AsType: &servicetypes.MsgUpdateParam_AsCoin{
+				AsCoin: param.value.(*cosmostypes.Coin),
+			},
+		})
+	default:
+		s.Fatalf("unexpected param type %q for %s module", param.typeStr, tokenomicstypes.ModuleName)
+	}
+
+	return msg
+}
+
+func (s *suite) newGatewayMsgUpdateParam(authority string, param paramAny) (msg proto.Message) {
+	switch param.typeStr {
+	case "coin":
+		msg = proto.Message(&gatewaytypes.MsgUpdateParam{
+			Authority: authority,
+			Name:      param.name,
+			AsType: &gatewaytypes.MsgUpdateParam_AsCoin{
 				AsCoin: param.value.(*cosmostypes.Coin),
 			},
 		})

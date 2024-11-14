@@ -30,7 +30,7 @@ import (
 	relayercmd "github.com/pokt-network/poktroll/pkg/relayer/cmd"
 )
 
-// TODO_MAINNET: adjust chain ID for the mainnet if it's going to change
+// TODO_MAINNET: adjust chain ID to `pocket`, `pokt` or `shannon`
 const DefaultChainID = "poktroll"
 
 // NewRootCmd creates a new root command for poktrolld. It is called once in the main function.

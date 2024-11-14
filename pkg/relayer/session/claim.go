@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"slices"
 
+	"github.com/pokt-network/smt"
+
 	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/either"
 	"github.com/pokt-network/poktroll/pkg/observable"
@@ -13,8 +15,7 @@ import (
 	"github.com/pokt-network/poktroll/pkg/observable/logging"
 	"github.com/pokt-network/poktroll/pkg/relayer"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
-	"github.com/pokt-network/poktroll/x/shared"
-	"github.com/pokt-network/smt"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 // createClaims maps over the sessionsToClaimObs observable. For each claim batch, it:
@@ -56,7 +57,7 @@ func (rs *relayerSessionsManager) createClaims(
 	// Delete expired session trees so they don't get claimed again.
 	channel.ForEach(
 		ctx, failedCreateClaimSessionsObs,
-		rs.deleteExpiredSessionTreesFn(shared.GetClaimWindowCloseHeight),
+		rs.deleteExpiredSessionTreesFn(sharedtypes.GetClaimWindowCloseHeight),
 	)
 
 	// Map eitherClaimedSessions to a new observable of []relayer.SessionTree
@@ -103,10 +104,10 @@ func (rs *relayerSessionsManager) waitForEarliestCreateClaimsHeight(
 
 	logger := rs.logger.With("session_end_height", sessionEndHeight)
 
-	// TODO_TECHDEBT(#543): We don't really want to have to query the params for every method call.
+	// TODO_MAINNET(#543): We don't really want to have to query the params for every method call.
 	// Once `ModuleParamsClient` is implemented, use its replay observable's `#Last()` method
 	// to get the most recently (asynchronously) observed (and cached) value.
-	// TODO_BLOCKER(@bryanchriswhite,#543): We also don't really want to use the current value of the params. Instead,
+	// TODO_MAINNET(@bryanchriswhite,#543): We also don't really want to use the current value of the params. Instead,
 	// we should be using the value that the params had for the session which includes queryHeight.
 	sharedParams, err := rs.sharedQueryClient.GetParams(ctx)
 	if err != nil {
@@ -115,7 +116,7 @@ func (rs *relayerSessionsManager) waitForEarliestCreateClaimsHeight(
 		return nil
 	}
 
-	claimWindowOpenHeight := shared.GetClaimWindowOpenHeight(sharedParams, sessionEndHeight)
+	claimWindowOpenHeight := sharedtypes.GetClaimWindowOpenHeight(sharedParams, sessionEndHeight)
 
 	// we wait for claimWindowOpenHeight to be received before proceeding since we need its hash
 	// to know where this servicer's claim submission window opens.
@@ -149,7 +150,7 @@ func (rs *relayerSessionsManager) waitForEarliestCreateClaimsHeight(
 
 	// Get the earliest claim commit height for this supplier.
 	supplierOperatorAddr := sessionTrees[0].GetSupplierOperatorAddress().String()
-	earliestSupplierClaimsCommitHeight := shared.GetEarliestSupplierClaimCommitHeight(
+	earliestSupplierClaimsCommitHeight := sharedtypes.GetEarliestSupplierClaimCommitHeight(
 		sharedParams,
 		sessionEndHeight,
 		claimsWindowOpenBlock.Hash(),
@@ -315,10 +316,12 @@ func (rs *relayerSessionsManager) payableProofsSessionTrees(
 		).Warn().Msg("supplier operator cannot afford to submit proof for claim, skipping")
 	}
 
-	logger.Warn().Msgf(
-		"Supplier operator %q can only afford %d out of %d claims",
-		supplierOpeartorAddress, len(claimableSessionTrees), len(sessionTrees),
-	)
+	if len(claimableSessionTrees) < len(sessionTrees) {
+		logger.Warn().Msgf(
+			"Supplier operator %q can only afford %d out of %d claims",
+			supplierOpeartorAddress, len(claimableSessionTrees), len(sessionTrees),
+		)
+	}
 
 	return claimableSessionTrees, nil
 }

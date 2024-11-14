@@ -34,7 +34,7 @@ func TestKeeper_IsProofRequired(t *testing.T) {
 		numTrueSamples atomic.Int64
 	)
 
-	// TODO_BETA(@bryanchriswhite): This test is periodically flaky but theoretically shouldn't be.
+	// TODO_TECHDEBT(@bryanchriswhite): This test is periodically flaky but theoretically shouldn't be.
 	// What can we do to increase it's consistency without diving tolerance by 2?
 	sampleSize := poktrand.RequiredSampleSize(float64(probability), tolerance/2, confidence)
 
@@ -50,8 +50,8 @@ func TestKeeper_IsProofRequired(t *testing.T) {
 		}
 	}
 
-	expectedNumTrueSamples := float32(sampleSize) * probability
-	expectedNumFalseSamples := float32(sampleSize) * (1 - probability)
+	expectedNumTrueSamples := float64(sampleSize) * probability
+	expectedNumFalseSamples := float64(sampleSize) * (1 - probability)
 	toleranceSamples := tolerance * float64(sampleSize)
 	// Check that the number of samples for each outcome is within the expected range.
 	numFalseSamples := sampleSize - numTrueSamples.Load()

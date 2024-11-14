@@ -11,4 +11,6 @@ var (
 	ErrGatewayInvalidStake   = sdkerrors.Register(ModuleName, 1102, "invalid gateway stake")
 	ErrGatewayUnauthorized   = sdkerrors.Register(ModuleName, 1103, "unauthorized signer")
 	ErrGatewayNotFound       = sdkerrors.Register(ModuleName, 1104, "gateway not found")
+	ErrGatewayParamInvalid   = sdkerrors.Register(ModuleName, 1105, "the provided param is invalid")
+	ErrGatewayEmitEvent      = sdkerrors.Register(ModuleName, 1106, "unable to emit on-chain event")
 )

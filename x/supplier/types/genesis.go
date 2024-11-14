@@ -5,7 +5,6 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	servicehelpers "github.com/pokt-network/poktroll/x/shared/helpers"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
@@ -33,7 +32,7 @@ func (gs GenesisState) Validate() error {
 
 	// Check that the stake value for the suppliers is valid
 	for _, supplier := range gs.SupplierList {
-		// TODO_MAINNET: Consider creating shared helpers across the board for stake validation,
+		// TODO_TECHDEBT: Consider creating shared helpers across the board for stake validation,
 		// similar to how we have `ValidateAppServiceConfigs` below
 		if supplier.Stake == nil {
 			return ErrSupplierInvalidStake.Wrapf("nil stake amount for supplier")
@@ -53,7 +52,7 @@ func (gs GenesisState) Validate() error {
 		}
 
 		// Validate the application service configs
-		if err := servicehelpers.ValidateSupplierServiceConfigs(supplier.Services); err != nil {
+		if err := sharedtypes.ValidateSupplierServiceConfigs(supplier.Services); err != nil {
 			return ErrSupplierInvalidServiceConfig.Wrapf("%s", err.Error())
 		}
 

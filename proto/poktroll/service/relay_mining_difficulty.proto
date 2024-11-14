@@ -1,0 +1,34 @@
+syntax = "proto3";
+package poktroll.service;
+
+option go_package = "github.com/pokt-network/poktroll/x/service/types";
+option (gogoproto.stable_marshaler_all) = true;
+
+import "gogoproto/gogo.proto";
+
+// RelayMiningDifficulty is a message used to store the on-chain Relay Mining
+// difficulty associated with a specific service ID.
+// TODO_TECHDEBT: Embed this message in the Service message.
+message RelayMiningDifficulty {
+    // The service ID the relay mining difficulty is associated with.
+    string service_id = 1;
+
+    // The block height at which this relay mining difficulty was computed.
+    // This is needed to determine how much time has passed since the last time
+    // the exponential moving average was computed.
+    int64 block_height = 2;
+
+    // The exponential moving average of the number of relays for this service.
+    uint64 num_relays_ema = 3;
+
+    // The target hash determining the difficulty to mine relays for this service.
+    // For example, if we use sha256 to hash the (RelayRequest,ReqlayResponse) tuple,
+    // and the difficulty has 4 leading zero bits, then the target hash would be:
+    // 0b0000111... (until 32 bytes are filled up).
+    bytes target_hash = 4;
+
+    // TODO_MAINNET(@bryanchriswhite): Add a `hash_algorithm` field either in this
+    // structure or elsewhere so we can support changing it over time. There should
+    // be one source of truth, somewhere on chain, to stay in sync with the SMT
+    // configuration.
+}

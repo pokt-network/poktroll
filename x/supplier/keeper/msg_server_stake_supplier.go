@@ -5,11 +5,19 @@ import (
 	"fmt"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
+	"github.com/pokt-network/poktroll/app/volatile"
 	"github.com/pokt-network/poktroll/telemetry"
-	"github.com/pokt-network/poktroll/x/shared"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 	"github.com/pokt-network/poktroll/x/supplier/types"
+)
+
+var (
+	// TODO_BETA(@bryanchriswhite): Make supplier staking fee a governance parameter
+	// TODO_BETA(@red-0ne): Update supplier staking documentation to remove the upstaking requirement and introduce the staking fee.
+	SupplierStakingFee = sdk.NewInt64Coin(volatile.DenomuPOKT, 1)
 )
 
 func (k msgServer) StakeSupplier(ctx context.Context, msg *types.MsgStakeSupplier) (*types.MsgStakeSupplierResponse, error) {
@@ -25,15 +33,18 @@ func (k msgServer) StakeSupplier(ctx context.Context, msg *types.MsgStakeSupplie
 
 	// ValidateBasic also validates that the msg signer is the owner or operator of the supplier
 	if err := msg.ValidateBasic(); err != nil {
-		logger.Error(fmt.Sprintf("invalid MsgStakeSupplier: %v", msg))
-		return nil, err
+		logger.Info(fmt.Sprintf("invalid MsgStakeSupplier: %v", msg))
+		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
 	// Check if the services the supplier is staking for exist
 	for _, serviceConfig := range msg.Services {
 		if _, serviceFound := k.serviceKeeper.GetService(ctx, serviceConfig.ServiceId); !serviceFound {
-			logger.Error(fmt.Sprintf("service %q does not exist", serviceConfig.ServiceId))
-			return nil, types.ErrSupplierServiceNotFound.Wrapf("service %q does not exist", serviceConfig.ServiceId)
+			logger.Info(fmt.Sprintf("service %q does not exist", serviceConfig.ServiceId))
+			return nil, status.Error(
+				codes.InvalidArgument,
+				types.ErrSupplierServiceNotFound.Wrapf("service %q does not exist", serviceConfig.ServiceId).Error(),
+			)
 		}
 	}
 
@@ -52,44 +63,47 @@ func (k msgServer) StakeSupplier(ctx context.Context, msg *types.MsgStakeSupplie
 
 		// Ensure the signer is either the owner or the operator of the supplier.
 		if !msg.IsSigner(supplier.OwnerAddress) && !msg.IsSigner(supplier.OperatorAddress) {
-			return nil, sharedtypes.ErrSharedUnauthorizedSupplierUpdate.Wrapf(
-				"signer address %s does not match owner address %s or supplier operator address %s",
-				msg.Signer,
-				msg.OwnerAddress,
-				msg.OperatorAddress,
+			return nil, status.Error(
+				codes.InvalidArgument,
+				sharedtypes.ErrSharedUnauthorizedSupplierUpdate.Wrapf(
+					"signer address %s does not match owner address %s or supplier operator address %s",
+					msg.Signer, msg.OwnerAddress, msg.OperatorAddress,
+				).Error(),
 			)
 		}
 
 		// Ensure that only the owner can change the OwnerAddress.
 		// (i.e. fail if owner address changed and the owner is not the msg signer)
 		if !supplier.HasOwner(msg.OwnerAddress) && !msg.IsSigner(supplier.OwnerAddress) {
-			logger.Error("only the supplier owner is allowed to update the owner address")
-
-			return nil, sharedtypes.ErrSharedUnauthorizedSupplierUpdate.Wrapf(
+			err = sharedtypes.ErrSharedUnauthorizedSupplierUpdate.Wrapf(
 				"signer %q is not allowed to update the owner address %q",
-				msg.Signer,
-				supplier.OwnerAddress,
+				msg.Signer, supplier.OwnerAddress,
 			)
+			logger.Info(fmt.Sprintf("ERROR: %s", err))
+
+			return nil, status.Error(codes.InvalidArgument, err.Error())
 		}
 
 		// Ensure that the operator addresses cannot be changed. This is because changing
 		// it mid-session invalidates the current session.
 		if !supplier.HasOperator(msg.OperatorAddress) {
-			logger.Error("updating the supplier's operator address forbidden")
-
-			return nil, sharedtypes.ErrSharedUnauthorizedSupplierUpdate.Wrap(
+			err = sharedtypes.ErrSharedUnauthorizedSupplierUpdate.Wrap(
 				"updating the operator address is forbidden, unstake then re-stake with the updated operator address",
 			)
+			logger.Info(fmt.Sprintf("ERROR: %s", err))
+
+			return nil, status.Error(codes.InvalidArgument, err.Error())
 		}
 
 		currSupplierStake := *supplier.Stake
 		if err = k.updateSupplier(ctx, &supplier, msg); err != nil {
-			logger.Error(fmt.Sprintf("could not update supplier for address %q due to error %v", msg.OperatorAddress, err))
-			return nil, err
+			logger.Info(fmt.Sprintf("ERROR: could not update supplier for address %q due to error %v", msg.OperatorAddress, err))
+			return nil, status.Error(codes.InvalidArgument, err.Error())
 		}
 		coinsToEscrow, err = (*msg.Stake).SafeSub(currSupplierStake)
 		if err != nil {
-			return nil, err
+			logger.Info(fmt.Sprintf("ERROR: %s", err))
+			return nil, status.Error(codes.Internal, err.Error())
 		}
 		logger.Info(fmt.Sprintf("Supplier is going to escrow an additional %+v coins", coinsToEscrow))
 
@@ -97,24 +111,41 @@ func (k msgServer) StakeSupplier(ctx context.Context, msg *types.MsgStakeSupplie
 		supplier.UnstakeSessionEndHeight = sharedtypes.SupplierNotUnstaking
 	}
 
-	// Must always stake or upstake (> 0 delta)
-	if coinsToEscrow.IsZero() {
-		logger.Warn(fmt.Sprintf("Signer %q must escrow more than 0 additional coins", msg.Signer))
-		return nil, types.ErrSupplierInvalidStake.Wrapf("Signer %q must escrow more than 0 additional coins", msg.Signer)
+	// TODO_BETA(@red-0ne): Remove requirement of MUST ALWAYS stake or upstake (>= 0 delta)
+	// TODO_POST_MAINNET: Should we allow stake decrease down to min stake?
+	if coinsToEscrow.IsNegative() {
+		err = types.ErrSupplierInvalidStake.Wrapf(
+			"Supplier signer %q stake (%s) must be greater than or equal to the current stake (%s)",
+			msg.Signer, msg.GetStake(), supplier.Stake,
+		)
+		logger.Info(fmt.Sprintf("WARN: %s", err))
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
+
+	// MUST ALWAYS have at least minimum stake.
+	minStake := k.GetParams(ctx).MinStake
+	if msg.Stake.Amount.LT(minStake.Amount) {
+		err = types.ErrSupplierInvalidStake.Wrapf(
+			"supplier with owner %q must stake at least %s",
+			msg.GetOwnerAddress(), minStake,
+		)
+		logger.Info(fmt.Sprintf("ERROR: %s", err))
+		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
 	// Retrieve the account address of the message signer
 	msgSignerAddress, err := sdk.AccAddressFromBech32(msg.Signer)
 	if err != nil {
-		logger.Error(fmt.Sprintf("could not parse address %q", msg.Signer))
-		return nil, err
+		logger.Info(fmt.Sprintf("ERROR: could not parse address %q", msg.Signer))
+		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
 	// Send the coins from the message signer account to the staked supplier pool
-	err = k.bankKeeper.SendCoinsFromAccountToModule(ctx, msgSignerAddress, types.ModuleName, []sdk.Coin{coinsToEscrow})
+	stakeWithFee := sdk.NewCoins(coinsToEscrow.Add(SupplierStakingFee))
+	err = k.bankKeeper.SendCoinsFromAccountToModule(ctx, msgSignerAddress, types.ModuleName, stakeWithFee)
 	if err != nil {
-		logger.Error(fmt.Sprintf("could not send %v coins from %q to %q module account due to %v", coinsToEscrow, msgSignerAddress, types.ModuleName, err))
-		return nil, err
+		logger.Info(fmt.Sprintf("ERROR: could not send %v coins from %q to %q module account due to %v", coinsToEscrow, msgSignerAddress, types.ModuleName, err))
+		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 	logger.Info(fmt.Sprintf("Successfully escrowed %v coins from %q to %q module account", coinsToEscrow, msgSignerAddress, types.ModuleName))
 
@@ -143,7 +174,7 @@ func (k msgServer) createSupplier(
 	sharedParams := k.sharedKeeper.GetParams(ctx)
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 	currentHeight := sdkCtx.BlockHeight()
-	nextSessionStartHeight := shared.GetNextSessionStartHeight(&sharedParams, currentHeight)
+	nextSessionStartHeight := sharedtypes.GetNextSessionStartHeight(&sharedParams, currentHeight)
 
 	// Register activation height for each service. Since the supplier is new,
 	// all services are activated at the end of the current session.
@@ -172,8 +203,12 @@ func (k msgServer) updateSupplier(
 		return types.ErrSupplierInvalidStake.Wrapf("stake amount cannot be nil")
 	}
 
-	if msg.Stake.IsLTE(*supplier.Stake) {
-		return types.ErrSupplierInvalidStake.Wrapf("stake amount %v must be higher than previous stake amount %v", msg.Stake, supplier.Stake)
+	// TODO_BETA: No longer require upstaking. Remove this check.
+	if msg.Stake.IsLT(*supplier.Stake) {
+		return types.ErrSupplierInvalidStake.Wrapf(
+			"stake amount %v must be greater than or equal than previous stake amount %v",
+			msg.Stake, supplier.Stake,
+		)
 	}
 	supplier.Stake = msg.Stake
 
@@ -188,11 +223,11 @@ func (k msgServer) updateSupplier(
 	sharedParams := k.sharedKeeper.GetParams(ctx)
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 	currentHeight := sdkCtx.BlockHeight()
-	nextSessionStartHeight := shared.GetNextSessionStartHeight(&sharedParams, currentHeight)
+	nextSessionStartHeight := sharedtypes.GetNextSessionStartHeight(&sharedParams, currentHeight)
 
 	// Update activation height for services update. New services are activated at the
 	// end of the current session, while existing ones keep their activation height.
-	// TODO_CONSIDERAION: Service removal should take effect at the beginning of the
+	// TODO_MAINNET: Service removal should take effect at the beginning of the
 	// next session, otherwise sessions that are fetched at their start height may
 	// still include Suppliers that no longer provide the services they removed.
 	// For the same reason, any SupplierEndpoint change should take effect at the

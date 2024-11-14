@@ -5,49 +5,27 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/pokt-network/poktroll/x/tokenomics/types"
+	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
 )
 
 func TestGenesisState_Validate(t *testing.T) {
 	tests := []struct {
 		desc     string
-		genState *types.GenesisState
+		genState *tokenomicstypes.GenesisState
 		isValid  bool
 	}{
 		{
 			desc:     "default is valid",
-			genState: types.DefaultGenesis(),
+			genState: tokenomicstypes.DefaultGenesis(),
 			isValid:  true,
 		},
 		{
 			desc: "valid genesis state",
-			genState: &types.GenesisState{
-				Params: types.Params{},
-				RelayMiningDifficultyList: []types.RelayMiningDifficulty{
-					{
-						ServiceId: "0",
-					},
-					{
-						ServiceId: "1",
-					},
-				},
+			genState: &tokenomicstypes.GenesisState{
+				Params: tokenomicstypes.DefaultParams(),
 				// this line is used by starport scaffolding # types/genesis/validField
 			},
 			isValid: true,
-		},
-		{
-			desc: "duplicated relayMiningDifficulty",
-			genState: &types.GenesisState{
-				RelayMiningDifficultyList: []types.RelayMiningDifficulty{
-					{
-						ServiceId: "0",
-					},
-					{
-						ServiceId: "0",
-					},
-				},
-			},
-			isValid: false,
 		},
 		// this line is used by starport scaffolding # types/genesis/testcase
 	}

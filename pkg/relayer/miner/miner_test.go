@@ -13,12 +13,14 @@ import (
 	"time"
 
 	"cosmossdk.io/depinject"
+	gomock "github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"
 
 	"github.com/pokt-network/poktroll/pkg/crypto/protocol"
 	"github.com/pokt-network/poktroll/pkg/observable/channel"
 	"github.com/pokt-network/poktroll/pkg/relayer"
 	"github.com/pokt-network/poktroll/pkg/relayer/miner"
+	"github.com/pokt-network/poktroll/testutil/mockrelayer"
 	"github.com/pokt-network/poktroll/testutil/testclient/testqueryclients"
 	servicetypes "github.com/pokt-network/poktroll/x/service/types"
 )
@@ -46,12 +48,11 @@ func TestMiner_MinedRelays(t *testing.T) {
 		expectedMinedRelays                   = unmarshalHexMinedRelays(t, marshaledMinableRelaysHex)
 	)
 
-	proofQueryClientMock := testqueryclients.NewTestProofQueryClient(t)
-
 	testqueryclients.SetServiceRelayDifficultyTargetHash(t, testSvcId, testRelayMiningTargetHash)
-	tokenomicsQueryClientMock := testqueryclients.NewTestTokenomicsQueryClient(t)
+	serviceQueryClientMock := testqueryclients.NewTestServiceQueryClient(t)
+	relayMeterMock := newMockRelayMeter(t)
 
-	deps := depinject.Supply(proofQueryClientMock, tokenomicsQueryClientMock)
+	deps := depinject.Supply(serviceQueryClientMock, relayMeterMock)
 	mnr, err := miner.NewMiner(deps)
 	require.NoError(t, err)
 
@@ -155,4 +156,18 @@ func unmarshalHexMinedRelay(
 		Bytes: relayBz,
 		Hash:  relayHash,
 	}
+}
+
+// newMockRelayMeter returns a mock RelayMeter that is used by the relay miner to claim and unclaim relays.
+func newMockRelayMeter(t *testing.T) relayer.RelayMeter {
+	t.Helper()
+
+	ctrl := gomock.NewController(t)
+	relayMeter := mockrelayer.NewMockRelayMeter(ctrl)
+
+	relayMeter.EXPECT().Start(gomock.Any()).Return(nil).AnyTimes()
+	relayMeter.EXPECT().AccumulateRelayReward(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
+	relayMeter.EXPECT().SetNonApplicableRelayReward(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
+
+	return relayMeter
 }

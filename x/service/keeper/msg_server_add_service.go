@@ -47,7 +47,7 @@ func (k msgServer) AddService(
 			)
 		}
 		return nil, types.ErrServiceAlreadyExists.Wrapf(
-			"TODO(@adshmh): This is an ephemeral state of the code. Once we s/AddService/UpdateService/g, add the business logic here for updates here.",
+			"TODO_MAINNET(@red-0ne): This is an ephemeral state of the code. Once we s/AddService/UpdateService/g, add the business logic here for updates here.",
 		)
 	}
 

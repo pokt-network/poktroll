@@ -33,7 +33,6 @@ import (
 	"github.com/pokt-network/poktroll/testutil/testrelayer"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
-	"github.com/pokt-network/poktroll/x/shared"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
@@ -45,7 +44,7 @@ func TestRelayerSessionsManager_ColdStartRelayMinerWithUnclaimedRelays(t *testin
 // along with its dependencies before starting it.
 // It takes in the proofParams to configure the proof requirements and the proofCount
 // to assert the number of proofs to be requested.
-// TODO_BETA(@red-0ne): Add a test case which verifies that the service's compute units per relay is used as
+// TODO_MAINNET(@red-0ne): Add a test case which verifies that the service's compute units per relay is used as
 // the weight of a relay when updating a session's SMT.
 func requireProofCountEqualsExpectedValueFromProofParams(t *testing.T, proofParams prooftypes.Params, proofCount int) {
 	var (
@@ -60,6 +59,8 @@ func requireProofCountEqualsExpectedValueFromProofParams(t *testing.T, proofPara
 		Id:                   "svc",
 		ComputeUnitsPerRelay: 2,
 	}
+
+	testqueryclients.SetServiceRelayDifficultyTargetHash(t, service.Id, protocol.BaseRelayDifficultyHashBz)
 	// Add the service to the existing services.
 	testqueryclients.AddToExistingServices(t, service)
 
@@ -157,12 +158,14 @@ func TestRelayerSessionsManager_InsufficientBalanceForProofSubmission(t *testing
 		ComputeUnitsPerRelay: 1,
 	}
 	testqueryclients.AddToExistingServices(t, lowCUPRService)
+	testqueryclients.SetServiceRelayDifficultyTargetHash(t, lowCUPRService.Id, protocol.BaseRelayDifficultyHashBz)
 
 	highCUPRService := sharedtypes.Service{
 		Id:                   "highCUPRService",
 		ComputeUnitsPerRelay: 2,
 	}
 	testqueryclients.AddToExistingServices(t, highCUPRService)
+	testqueryclients.SetServiceRelayDifficultyTargetHash(t, highCUPRService.Id, protocol.BaseRelayDifficultyHashBz)
 
 	lowCUPRServiceActiveSession := &sessiontypes.Session{
 		Header: &sessiontypes.SessionHeader{
@@ -313,7 +316,6 @@ func setupDependencies(
 	sharedQueryClientMock := testqueryclients.NewTestSharedQueryClient(t)
 	serviceQueryClientMock := testqueryclients.NewTestServiceQueryClient(t)
 	proofQueryClientMock := testqueryclients.NewTestProofQueryClientWithParams(t, &proofParams)
-	tokenomicsQueryClient := testqueryclients.NewTestTokenomicsQueryClient(t)
 	bankQueryClient := testqueryclients.NewTestBankQueryClientWithBalance(t, supplierOperatorBalance)
 
 	deps := depinject.Supply(
@@ -323,7 +325,6 @@ func setupDependencies(
 		sharedQueryClientMock,
 		serviceQueryClientMock,
 		proofQueryClientMock,
-		tokenomicsQueryClient,
 		bankQueryClient,
 	)
 	storesDirectoryOpt := testrelayer.WithTempStoresDirectory(t)
@@ -368,8 +369,8 @@ func playClaimAndProofSubmissionBlocks(
 	// Calculate the session grace period end block height to emit that block height
 	// to the blockPublishCh to trigger session trees processing for the session number.
 	sharedParams := sharedtypes.DefaultParams()
-	claimWindowOpenHeight := shared.GetClaimWindowOpenHeight(&sharedParams, sessionEndHeight)
-	earliestSupplierClaimCommitHeight := shared.GetEarliestSupplierClaimCommitHeight(
+	claimWindowOpenHeight := sharedtypes.GetClaimWindowOpenHeight(&sharedParams, sessionEndHeight)
+	earliestSupplierClaimCommitHeight := sharedtypes.GetEarliestSupplierClaimCommitHeight(
 		&sharedParams,
 		sessionEndHeight,
 		blockHash,
@@ -387,14 +388,14 @@ func playClaimAndProofSubmissionBlocks(
 
 	waitSimulateIO()
 
-	proofWindowOpenHeight := shared.GetProofWindowOpenHeight(&sharedParams, sessionEndHeight)
+	proofWindowOpenHeight := sharedtypes.GetProofWindowOpenHeight(&sharedParams, sessionEndHeight)
 	proofPathSeedBlock := testblock.NewAnyTimesBlock(t, blockHash, proofWindowOpenHeight)
 	blockPublishCh <- proofPathSeedBlock
 
 	waitSimulateIO()
 
 	// Publish a block to the blockPublishCh to trigger proof submission for the session.
-	earliestSupplierProofCommitHeight := shared.GetEarliestSupplierProofCommitHeight(
+	earliestSupplierProofCommitHeight := sharedtypes.GetEarliestSupplierProofCommitHeight(
 		&sharedParams,
 		sessionEndHeight,
 		blockHash,
