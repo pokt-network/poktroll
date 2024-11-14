@@ -982,7 +982,7 @@ func (x *fastReflection_MsgUpdateParam) Range(f func(protoreflect.FieldDescripto
 			}
 		case *MsgUpdateParam_AsFloat:
 			v := o.AsFloat
-			value := protoreflect.ValueOfFloat32(v)
+			value := protoreflect.ValueOfFloat64(v)
 			if !f(fd_MsgUpdateParam_as_float, value) {
 				return
 			}
@@ -1095,11 +1095,11 @@ func (x *fastReflection_MsgUpdateParam) Get(descriptor protoreflect.FieldDescrip
 		}
 	case "poktroll.proof.MsgUpdateParam.as_float":
 		if x.AsType == nil {
-			return protoreflect.ValueOfFloat32(float32(0))
+			return protoreflect.ValueOfFloat64(float64(0))
 		} else if v, ok := x.AsType.(*MsgUpdateParam_AsFloat); ok {
-			return protoreflect.ValueOfFloat32(v.AsFloat)
+			return protoreflect.ValueOfFloat64(v.AsFloat)
 		} else {
-			return protoreflect.ValueOfFloat32(float32(0))
+			return protoreflect.ValueOfFloat64(float64(0))
 		}
 	case "poktroll.proof.MsgUpdateParam.as_coin":
 		if x.AsType == nil {
@@ -1137,7 +1137,7 @@ func (x *fastReflection_MsgUpdateParam) Set(fd protoreflect.FieldDescriptor, val
 		cv := value.Bytes()
 		x.AsType = &MsgUpdateParam_AsBytes{AsBytes: cv}
 	case "poktroll.proof.MsgUpdateParam.as_float":
-		cv := float32(value.Float())
+		cv := value.Float()
 		x.AsType = &MsgUpdateParam_AsFloat{AsFloat: cv}
 	case "poktroll.proof.MsgUpdateParam.as_coin":
 		cv := value.Message().Interface().(*v1beta1.Coin)
@@ -1206,7 +1206,7 @@ func (x *fastReflection_MsgUpdateParam) NewField(fd protoreflect.FieldDescriptor
 	case "poktroll.proof.MsgUpdateParam.as_bytes":
 		return protoreflect.ValueOfBytes(nil)
 	case "poktroll.proof.MsgUpdateParam.as_float":
-		return protoreflect.ValueOfFloat32(float32(0))
+		return protoreflect.ValueOfFloat64(float64(0))
 	case "poktroll.proof.MsgUpdateParam.as_coin":
 		value := &v1beta1.Coin{}
 		return protoreflect.ValueOfMessage(value.ProtoReflect())
@@ -1310,7 +1310,7 @@ func (x *fastReflection_MsgUpdateParam) ProtoMethods() *protoiface.Methods {
 			if x == nil {
 				break
 			}
-			n += 5
+			n += 9
 		case *MsgUpdateParam_AsCoin:
 			if x == nil {
 				break
@@ -1355,10 +1355,10 @@ func (x *fastReflection_MsgUpdateParam) ProtoMethods() *protoiface.Methods {
 			i--
 			dAtA[i] = 0x3a
 		case *MsgUpdateParam_AsFloat:
-			i -= 4
-			binary.LittleEndian.PutUint32(dAtA[i:], uint32(math.Float32bits(float32(x.AsFloat))))
+			i -= 8
+			binary.LittleEndian.PutUint64(dAtA[i:], uint64(math.Float64bits(float64(x.AsFloat))))
 			i--
-			dAtA[i] = 0x45
+			dAtA[i] = 0x41
 		case *MsgUpdateParam_AsCoin:
 			encoded, err := options.Marshal(x.AsCoin)
 			if err != nil {
@@ -1534,16 +1534,16 @@ func (x *fastReflection_MsgUpdateParam) ProtoMethods() *protoiface.Methods {
 				x.AsType = &MsgUpdateParam_AsBytes{v}
 				iNdEx = postIndex
 			case 8:
-				if wireType != 5 {
+				if wireType != 1 {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field AsFloat", wireType)
 				}
-				var v uint32
-				if (iNdEx + 4) > l {
+				var v uint64
+				if (iNdEx + 8) > l {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
 				}
-				v = uint32(binary.LittleEndian.Uint32(dAtA[iNdEx:]))
-				iNdEx += 4
-				x.AsType = &MsgUpdateParam_AsFloat{float32(math.Float32frombits(v))}
+				v = uint64(binary.LittleEndian.Uint64(dAtA[iNdEx:]))
+				iNdEx += 8
+				x.AsType = &MsgUpdateParam_AsFloat{float64(math.Float64frombits(v))}
 			case 9:
 				if wireType != 2 {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field AsCoin", wireType)
@@ -4204,7 +4204,7 @@ func (x *MsgUpdateParam) GetAsBytes() []byte {
 	return nil
 }
 
-func (x *MsgUpdateParam) GetAsFloat() float32 {
+func (x *MsgUpdateParam) GetAsFloat() float64 {
 	if x, ok := x.GetAsType().(*MsgUpdateParam_AsFloat); ok {
 		return x.AsFloat
 	}
@@ -4227,7 +4227,7 @@ type MsgUpdateParam_AsBytes struct {
 }
 
 type MsgUpdateParam_AsFloat struct {
-	AsFloat float32 `protobuf:"fixed32,8,opt,name=as_float,json=asFloat,proto3,oneof"`
+	AsFloat float64 `protobuf:"fixed64,8,opt,name=as_float,json=asFloat,proto3,oneof"`
 }
 
 type MsgUpdateParam_AsCoin struct {
@@ -4494,7 +4494,7 @@ var file_poktroll_proof_tx_proto_rawDesc = []byte{
 	0x6d, 0x65, 0x12, 0x29, 0x0a, 0x08, 0x61, 0x73, 0x5f, 0x62, 0x79, 0x74, 0x65, 0x73, 0x18, 0x07,
 	0x20, 0x01, 0x28, 0x0c, 0x42, 0x0c, 0xea, 0xde, 0x1f, 0x08, 0x61, 0x73, 0x5f, 0x62, 0x79, 0x74,
 	0x65, 0x73, 0x48, 0x00, 0x52, 0x07, 0x61, 0x73, 0x42, 0x79, 0x74, 0x65, 0x73, 0x12, 0x29, 0x0a,
-	0x08, 0x61, 0x73, 0x5f, 0x66, 0x6c, 0x6f, 0x61, 0x74, 0x18, 0x08, 0x20, 0x01, 0x28, 0x02, 0x42,
+	0x08, 0x61, 0x73, 0x5f, 0x66, 0x6c, 0x6f, 0x61, 0x74, 0x18, 0x08, 0x20, 0x01, 0x28, 0x01, 0x42,
 	0x0c, 0xea, 0xde, 0x1f, 0x08, 0x61, 0x73, 0x5f, 0x66, 0x6c, 0x6f, 0x61, 0x74, 0x48, 0x00, 0x52,
 	0x07, 0x61, 0x73, 0x46, 0x6c, 0x6f, 0x61, 0x74, 0x12, 0x41, 0x0a, 0x07, 0x61, 0x73, 0x5f, 0x63,
 	0x6f, 0x69, 0x6e, 0x18, 0x09, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x19, 0x2e, 0x63, 0x6f, 0x73, 0x6d,
