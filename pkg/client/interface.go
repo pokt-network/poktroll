@@ -9,6 +9,7 @@
 //go:generate mockgen -destination=../../testutil/mockclient/session_query_client_mock.go -package=mockclient . SessionQueryClient
 //go:generate mockgen -destination=../../testutil/mockclient/shared_query_client_mock.go -package=mockclient . SharedQueryClient
 //go:generate mockgen -destination=../../testutil/mockclient/proof_query_client_mock.go -package=mockclient . ProofQueryClient
+//go:generate mockgen -destination=../../testutil/mockclient/tokenomics_query_client_mock.go -package=mockclient . TokenomicsQueryClient
 //go:generate mockgen -destination=../../testutil/mockclient/service_query_client_mock.go -package=mockclient . ServiceQueryClient
 //go:generate mockgen -destination=../../testutil/mockclient/bank_query_client_mock.go -package=mockclient . BankQueryClient
 //go:generate mockgen -destination=../../testutil/mockclient/cosmos_tx_builder_mock.go -package=mockclient github.com/cosmos/cosmos-sdk/client TxBuilder
@@ -344,8 +345,26 @@ type ProofParams interface {
 // ProofQueryClient defines an interface that enables the querying of the
 // on-chain proof module params.
 type ProofQueryClient interface {
-	// GetParams queries the chain for the current shared module parameters.
+	// GetParams queries the chain for the current proof module parameters.
 	GetParams(ctx context.Context) (ProofParams, error)
+}
+
+// TokenomicsParams is a go interface type which corresponds to the poktroll.tokenomics.Params
+// protobuf message. Since the generated go types don't include interface types, this
+// is necessary to prevent dependency cycles.
+type TokenomicsParams interface {
+	GetMintAllocationDao() float64
+	GetMintAllocationProposer() float64
+	GetMintAllocationSupplier() float64
+	GetMintAllocationSourceOwner() float64
+	GetMintAllocationApplication() float64
+}
+
+// TokenomicsQueryClient defines an interface that enables the querying of the
+// on-chain tokenomics module params.
+type TokenomicsQueryClient interface {
+	// GetParams queries the chain for the current tokenomics module parameters.
+	GetParams(ctx context.Context) (TokenomicsParams, error)
 }
 
 // ServiceQueryClient defines an interface that enables the querying of the

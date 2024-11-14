@@ -144,6 +144,9 @@ type relaysSuite struct {
 	// It is queried at the beginning of the test.
 	appParams *apptypes.Params
 
+	proofParams      *prooftypes.Params
+	tokenomicsParams *tokenomicstypes.Params
+
 	// numRelaysSent is the number of relay requests sent during the test.
 	numRelaysSent atomic.Uint64
 	// relayRatePerApp is the rate of relay requests sent per application per second.
@@ -318,11 +321,30 @@ func TestLoadRelays(t *testing.T) {
 }
 
 func TestLoadRelaysSingleSupplier(t *testing.T) {
+
 	gocuke.NewRunner(t, &relaysSuite{}).Path(filepath.Join(".", "relays_stress_single_supplier.feature")).Run()
 }
 
 func (s *relaysSuite) LocalnetIsRunning() {
 	s.ctx, s.cancelCtx = context.WithCancel(context.Background())
+
+	s.tokenomics = &tokenomics{
+		OverservicedApplications: make([]*tokenomicstypes.EventApplicationOverserviced, 0),
+		SuppliersSlashed:         make([]*tokenomicstypes.EventSupplierSlashed, 0),
+		ExpiredClaims:            make([]*tokenomicstypes.EventClaimExpired, 0),
+		ReimbursementRequests:    make([]*tokenomicstypes.EventApplicationReimbursementRequest, 0),
+		ClaimsSettled:            make([]*tokenomicstypes.EventClaimSettled, 0),
+		ClaimsSubmitted:          make([]*prooftypes.EventClaimCreated, 0),
+		ProofsSubmitted:          make([]*prooftypes.EventProofSubmitted, 0),
+		ActorsBalances: actorsBalances{
+			ApplicationBalances: make(map[string]sdk.Coin),
+			ApplicationStakes:   make(map[string]sdk.Coin),
+			GatewaysBalances:    make(map[string]sdk.Coin),
+			GatewaysStakes:      make(map[string]sdk.Coin),
+			SupplierBalances:    make(map[string]sdk.Coin),
+			SupplierStakes:      make(map[string]sdk.Coin),
+		},
+	}
 
 	// Cancel the context if this process is interrupted or exits.
 	// Delete the keyring entries for the application accounts since they are
@@ -414,6 +436,9 @@ func (s *relaysSuite) LocalnetIsRunning() {
 	// Query for the current app on-chain params.
 	s.queryAppParams(loadTestParams.TestNetNode)
 
+	// Quer for the current proof on-chain params.
+	s.queryProofParams(loadTestParams.TestNetNode)
+
 	// Some suppliers may already be staked at genesis, ensure that staking during
 	// this test succeeds by increasing the sake amount.
 	minStakeAmount := s.getProvisionedActorsCurrentStakedAmount()
@@ -451,15 +476,6 @@ func (s *relaysSuite) MoreActorsAreStakedAsFollows(table gocuke.DataTable) {
 	// The duration of each actor is calculated as how many blocks it takes to
 	// increment the actor count to the maximum.
 	s.relayLoadDurationBlocks = s.plans.maxActorBlocksToFinalIncrementEnd()
-
-	if s.isEphemeralChain {
-		// Adjust the max delegations parameter to the max gateways to permit all
-		// applications to delegate to all gateways.
-		// This is to ensure that requests are distributed evenly across all gateways
-		// at any given time.
-		s.sendAdjustMaxDelegationsParamTx(s.plans.gateways.maxActorCount)
-		s.ensureUpdatedMaxDelegations(s.plans.gateways.maxActorCount)
-	}
 
 	// Fund all the provisioned suppliers and gateways since their addresses are
 	// known and they are not created on the fly, while funding only the initially
@@ -582,19 +598,19 @@ func (s *relaysSuite) TheCorrectCountOfClaimsAndProofsSubmittedOnChain() {
 	//)
 }
 
-func (s *relaysSuite) OverServicingEventsIsObserved(numEvents int64) {
-	require.Equal(s, s.tokenomics.OverservicedApplications, numEvents)
+func (s *relaysSuite) OverServicingEventsAreObserved(numEvents int64) {
+	require.Len(s, s.tokenomics.OverservicedApplications, int(numEvents))
 }
 
-func (s *relaysSuite) SlashingEventsIsObserved(numEvents int64) {
-	require.Equal(s, s.tokenomics.SuppliersSlashed, numEvents)
+func (s *relaysSuite) SlashingEventsAreObserved(numEvents int64) {
+	require.Len(s, s.tokenomics.SuppliersSlashed, int(numEvents))
 }
 
-func (s *relaysSuite) SlashingExpiredClaimEventIsObserved(numEvents int64) {
-	require.Equal(s, s.tokenomics.ExpiredClaims, numEvents)
+func (s *relaysSuite) ExpiredClaimEventAreObserved(numEvents int64) {
+	require.Len(s, s.tokenomics.ExpiredClaims, int(numEvents))
 }
 
-func (s *relaysSuite) ThereIsAsManyReimbursmentRequestAsTheNumberOfSettledClaims() {
+func (s *relaysSuite) ThereIsAsManyReimbursmentRequestsAsTheNumberOfSettledClaims() {
 	require.Equal(s, len(s.tokenomics.ReimbursementRequests), len(s.tokenomics.ClaimsSettled))
 }
 
@@ -613,7 +629,7 @@ func (s *relaysSuite) TheNumberOfProofsSubmittedAndProofsRequiredIsTheSame() {
 	require.Len(s, s.tokenomics.ProofsSubmitted, numProofRequiredObserved)
 }
 
-func (s *relaysSuite) TheActorsOnChainBalancesAreAsExpected() {
+func (s *relaysSuite) TheActorsOnchainBalancesAreAsExpected() {
 	balances := s.tokenomics.ActorsBalances
 
 	for _, claimSettlement := range s.tokenomics.ClaimsSettled {
@@ -632,12 +648,12 @@ func (s *relaysSuite) TheActorsOnChainBalancesAreAsExpected() {
 		mintUPOKT := s.getGlobalInflationMintedUPOKT(settledUPOKT)
 
 		// TODO_IN_THIS_PR: Should check with multiple supplier owners
-		supplierMintUPOKT := s.getGlobalInflationActorAllocation(mintUPOKT, tokenomicskeeper.MintAllocationSupplier)
+		supplierMintUPOKT := s.getGlobalInflationActorAllocation(mintUPOKT, s.tokenomicsParams.MintAllocationSupplier)
 		balances.SupplierBalances[claimSupplierAddr] = balances.SupplierBalances[claimSupplierAddr].
 			Add(*settledUPOKT).
 			Add(supplierMintUPOKT)
 
-		applicationMintUPOKT := s.getGlobalInflationActorAllocation(mintUPOKT, tokenomicskeeper.MintAllocationApplication)
+		applicationMintUPOKT := s.getGlobalInflationActorAllocation(mintUPOKT, s.tokenomicsParams.MintAllocationApplication)
 		balances.ApplicationBalances[claimAppAddr] = balances.ApplicationBalances[claimAppAddr].
 			Add(applicationMintUPOKT)
 
@@ -649,22 +665,24 @@ func (s *relaysSuite) TheActorsOnChainBalancesAreAsExpected() {
 			Sub(*settledUPOKT).
 			Sub(mintUPOKT)
 
-		daoMintUPOKT := s.getGlobalInflationActorAllocation(mintUPOKT, tokenomicskeeper.MintAllocationDAO)
+		daoMintUPOKT := s.getGlobalInflationActorAllocation(mintUPOKT, s.tokenomicsParams.MintAllocationDao)
 		balances.DAOAccountBalance = balances.DAOAccountBalance.
 			Add(daoMintUPOKT).
 			Add(mintUPOKT)
 
-		proposerMintUPOKT := s.getGlobalInflationActorAllocation(mintUPOKT, tokenomicskeeper.MintAllocationProposer)
+		proposerMintUPOKT := s.getGlobalInflationActorAllocation(mintUPOKT, s.tokenomicsParams.MintAllocationProposer)
 		balances.ProposerAccountBalance = balances.ProposerAccountBalance.
 			Add(proposerMintUPOKT)
 
-		sourceOwnerMintUPOKT := s.getGlobalInflationActorAllocation(mintUPOKT, tokenomicskeeper.MintAllocationSourceOwner)
+		sourceOwnerMintUPOKT := s.getGlobalInflationActorAllocation(mintUPOKT, s.tokenomicsParams.MintAllocationSourceOwner)
 		balances.SourceOwnerAccountBalance = balances.SourceOwnerAccountBalance.
 			Add(sourceOwnerMintUPOKT)
 	}
 
 	for _, proofSubmission := range s.tokenomics.ProofsSubmitted {
-		balances.SupplierBalances[proofSubmission.SupplierOperatorAddress] = balances.SupplierBalances[proofSubmission.SupplierOperatorAddress].
+		operatorAddr := proofSubmission.Claim.SupplierOperatorAddress
+		balances.SupplierBalances[operatorAddr] = balances.SupplierBalances[operatorAddr].
+			Sub(*s.proofParams.ProofSubmissionFee)
 	}
 }
 

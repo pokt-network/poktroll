@@ -101,11 +101,23 @@ func (s *relaysSuite) setupTxEventListeners() {
 
 	// Map the eventsReplayClient.EventsSequence which is a replay observable
 	// to a regular observable to avoid replaying txResults from old blocks.
+	blockHeightToEvents := make(map[int64][]types.Event, 0)
+	blockHeightToEventsMu := sync.Mutex{}
 	channel.ForEach(
 		s.ctx,
 		txEventsReplayClient.EventsSequence(s.ctx),
 		func(ctx context.Context, txResult *types.TxResult) {
-			eventsObsCh <- txResult.Result.Events
+			blockHeightToEventsMu.Lock()
+			defer blockHeightToEventsMu.Unlock()
+
+			blockHeight := txResult.Height
+			events := txResult.Result.Events
+
+			if _, ok := blockHeightToEvents[blockHeight]; !ok {
+				blockHeightToEvents[blockHeight] = make([]types.Event, 0)
+			}
+
+			blockHeightToEvents[blockHeight] = append(blockHeightToEvents[blockHeight], events...)
 		},
 	)
 
@@ -124,7 +136,35 @@ func (s *relaysSuite) setupTxEventListeners() {
 		s.ctx,
 		blockEventsReplayClient.EventsSequence(s.ctx),
 		func(ctx context.Context, block *block.CometNewBlockEvent) {
-			eventsObsCh <- block.Data.Value.ResultFinalizeBlock.Events
+			blockHeightToEventsMu.Lock()
+			defer blockHeightToEventsMu.Unlock()
+
+			blockHeight := block.Data.Value.Block.Height
+			events := block.Data.Value.ResultFinalizeBlock.Events
+
+			if _, ok := blockHeightToEvents[blockHeight]; !ok {
+				blockHeightToEvents[blockHeight] = make([]types.Event, 0)
+			}
+
+			blockHeightToEvents[blockHeight] = append(blockHeightToEvents[blockHeight], events...)
+		},
+	)
+
+	channel.ForEach(
+		s.ctx,
+		s.blockClient.CommittedBlocksSequence(s.ctx),
+		func(ctx context.Context, block client.Block) {
+			blockHeightToEventsMu.Lock()
+			defer blockHeightToEventsMu.Unlock()
+
+			if _, ok := blockHeightToEvents[block.Height()]; ok {
+				for eventsHeight, events := range blockHeightToEvents {
+					if eventsHeight < block.Height() {
+						eventsObsCh <- events
+						delete(blockHeightToEvents, eventsHeight)
+					}
+				}
+			}
 		},
 	)
 }
@@ -977,7 +1017,7 @@ func (s *relaysSuite) sendPendingMsgsTx(actor *accountInfo) {
 	err := txBuilder.SetMsgs(actor.pendingMsgs...)
 	require.NoError(s, err)
 
-	txBuilder.SetTimeoutHeight(uint64(s.latestBlock.Height() + 1))
+	txBuilder.SetTimeoutHeight(uint64(s.latestBlock.Height() + 2))
 	txBuilder.SetGasLimit(690000042)
 
 	accAddress := sdk.MustAccAddressFromBech32(actor.address)
@@ -1001,6 +1041,7 @@ func (s *relaysSuite) sendPendingMsgsTx(actor *accountInfo) {
 	// txContext.BroadcastTx uses the async mode, if this method changes in the future
 	// to be synchronous, make sure to keep this async to avoid blocking the test.
 	go func() {
+		time.Sleep(2 * time.Second)
 		r, err := s.txContext.BroadcastTx(txBz)
 		require.NoError(s, err)
 		require.NotNil(s, r)
@@ -1076,9 +1117,13 @@ func (s *relaysSuite) ensureFundedActors(
 ) {
 	fundedActors := make(map[string]struct{})
 
+	actorsAddrs := make([]string, len(actors))
+	for i, actor := range actors {
+		actorsAddrs[i] = actor.address
+	}
+
 	ctx, cancel := context.WithCancel(ctx)
-	abciEventsObs := eventsObsWithNumBlocksTimeout(ctx, s.eventsObs, 3, cancel)
-	channel.ForEach(ctx, abciEventsObs, func(ctx context.Context, events []types.Event) {
+	channel.ForEach(ctx, s.eventsObs, func(ctx context.Context, events []types.Event) {
 		for _, event := range events {
 			// Skip non-relevant events.
 			if event.GetType() != "transfer" {
@@ -1087,9 +1132,16 @@ func (s *relaysSuite) ensureFundedActors(
 
 			attrs := event.GetAttributes()
 			// Check if the actor is the recipient of the transfer event.
-			if fundedActorAddr, ok := getEventAttr(attrs, "recipient"); ok {
-				fundedActors[fundedActorAddr] = struct{}{}
+			fundedActorAddr, ok := getEventAttr(attrs, "recipient")
+			if !ok {
+				continue
 			}
+
+			if !slices.Contains(actorsAddrs, fundedActorAddr) {
+				continue
+			}
+
+			fundedActors[fundedActorAddr] = struct{}{}
 		}
 
 		if allActorsFunded(actors, fundedActors) {
@@ -1099,7 +1151,8 @@ func (s *relaysSuite) ensureFundedActors(
 
 	<-ctx.Done()
 	if !allActorsFunded(actors, fundedActors) {
-		s.logAndAbortTest("actor not funded")
+		fmt.Println(fundedActors)
+		s.logAndAbortTest("actors not funded")
 	}
 }
 
@@ -1122,8 +1175,7 @@ func (s *relaysSuite) ensureStakedActors(
 	stakedActors := make(map[string]struct{})
 
 	ctx, cancel := context.WithCancel(ctx)
-	abciEventsObs := eventsObsWithNumBlocksTimeout(ctx, s.eventsObs, 3, cancel)
-	typedEventsObs := abciEventsToTypedEvents(ctx, abciEventsObs)
+	typedEventsObs := abciEventsToTypedEvents(ctx, s.eventsObs)
 	channel.ForEach(ctx, typedEventsObs, func(ctx context.Context, blockEvents []proto.Message) {
 		for _, event := range blockEvents {
 			switch e := event.(type) {
@@ -1143,7 +1195,7 @@ func (s *relaysSuite) ensureStakedActors(
 
 	<-ctx.Done()
 	if !allActorsStaked(actors, stakedActors) {
-		s.logAndAbortTest("actor not staked")
+		s.logAndAbortTest("actors not staked")
 		return
 	}
 }
@@ -1167,8 +1219,7 @@ func (s *relaysSuite) ensureDelegatedApps(
 	appsToGateways := make(map[string][]string)
 
 	ctx, cancel := context.WithCancel(ctx)
-	abciEventsObs := eventsObsWithNumBlocksTimeout(ctx, s.eventsObs, 3, cancel)
-	typedEventsObs := abciEventsToTypedEvents(ctx, abciEventsObs)
+	typedEventsObs := abciEventsToTypedEvents(ctx, s.eventsObs)
 	channel.ForEach(ctx, typedEventsObs, func(ctx context.Context, blockEvents []proto.Message) {
 		for _, event := range blockEvents {
 			redelegationEvent, ok := event.(*apptypes.EventRedelegation)
@@ -1278,7 +1329,7 @@ func (s *relaysSuite) activatePreparedActors(notif *sessionInfoNotif) {
 func getEventAttr(attributes []types.EventAttribute, key string) (value string, found bool) {
 	for _, attribute := range attributes {
 		if attribute.Key == key {
-			return value, true
+			return attribute.Value, true
 		}
 	}
 
@@ -1433,6 +1484,52 @@ func (s *relaysSuite) queryAppParams(queryNodeRPCURL string) {
 	s.appParams = appParams
 }
 
+// queryProofParams queries the current on-chain proof module parameters for use
+// over the duration of the test.
+func (s *relaysSuite) queryProofParams(queryNodeRPCURL string) {
+	s.Helper()
+
+	deps := depinject.Supply(s.txContext.GetClientCtx())
+
+	blockQueryClient, err := sdkclient.NewClientFromNode(queryNodeRPCURL)
+	require.NoError(s, err)
+	deps = depinject.Configs(deps, depinject.Supply(blockQueryClient))
+
+	proofQueryclient, err := query.NewProofQuerier(deps)
+	require.NoError(s, err)
+
+	params, err := proofQueryclient.GetParams(s.ctx)
+	require.NoError(s, err)
+
+	proofParams, ok := params.(*prooftypes.Params)
+	require.True(s, ok)
+
+	s.proofParams = proofParams
+}
+
+// queryTokenomicsParams queries the current on-chain tokenomics module parameters for use
+// over the duration of the test.
+func (s *relaysSuite) queryTokenomicsParams(queryNodeRPCURL string) {
+	s.Helper()
+
+	deps := depinject.Supply(s.txContext.GetClientCtx())
+
+	blockQueryClient, err := sdkclient.NewClientFromNode(queryNodeRPCURL)
+	require.NoError(s, err)
+	deps = depinject.Configs(deps, depinject.Supply(blockQueryClient))
+
+	tokenomicsQueryclient, err := query.NewTokenomicsQuerier(deps)
+	require.NoError(s, err)
+
+	params, err := tokenomicsQueryclient.GetParams(s.ctx)
+	require.NoError(s, err)
+
+	tokenomicsParams, ok := params.(*tokenomicstypes.Params)
+	require.True(s, ok)
+
+	s.tokenomicsParams = tokenomicsParams
+}
+
 // forEachStakedAndDelegatedAppPrepareApp is a ForEachFn that waits for txs which
 // were broadcast in previous pipeline stages have been committed. It ensures that
 // new applications were successfully staked and all application actors are delegated
@@ -1540,22 +1637,6 @@ func (s *relaysSuite) WaitAll(waitFunc ...func()) {
 	}
 
 	wg.Wait()
-}
-
-func eventsObsWithNumBlocksTimeout(
-	ctx context.Context,
-	eventsObs observable.Observable[[]types.Event],
-	numBlocksTimeout int,
-	cancel func(),
-) observable.Observable[[]types.Event] {
-	return channel.Map(ctx, eventsObs, func(ctx context.Context, blockEvents []types.Event) ([]types.Event, bool) {
-		if numBlocksTimeout < 0 {
-			cancel()
-		}
-
-		numBlocksTimeout--
-		return blockEvents, false
-	})
 }
 
 func forEachTypedEventFn(fn func(ctx context.Context, blockEvents []proto.Message)) func(ctx context.Context, blockEvents []*types.Event) {

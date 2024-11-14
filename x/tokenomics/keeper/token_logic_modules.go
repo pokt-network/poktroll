@@ -133,7 +133,7 @@ func init() {
 func (k Keeper) ProcessTokenLogicModules(
 	ctx context.Context,
 	claim *prooftypes.Claim,
-	applicationInitialStake cosmostypes.Coin,
+	actualSettlementCoin cosmostypes.Coin,
 ) (err error) {
 	logger := k.Logger().With("method", "ProcessTokenLogicModules")
 
@@ -276,27 +276,6 @@ func (k Keeper) ProcessTokenLogicModules(
 		"supplier_operator", supplier.OperatorAddress,
 		"application", application.Address,
 	)
-
-	// Ensure the claim amount is within the limits set by Relay Mining.
-	// If not, update the settlement amount and emit relevant events.
-	// TODO_MAINNET(@red-0ne): Consider pulling this out of Keeper#ProcessTokenLogicModules
-	// and ensure claim amount limits are enforced before TLM processing.
-	actualSettlementCoin, err := k.ensureClaimAmountLimits(ctx, logger, &sharedParams, &application, &supplier, claimSettlementCoin, applicationInitialStake)
-	if err != nil {
-		return err
-	}
-	logger = logger.With("actual_settlement_upokt", actualSettlementCoin)
-	logger.Info(fmt.Sprintf("About to start processing TLMs for (%d) compute units, equal to (%s) claimed", numClaimComputeUnits, actualSettlementCoin))
-
-	// TODO_MAINNET(@red-0ne): Add tests to ensure that a zero settlement coin
-	// due to integer division rounding is handled correctly.
-	if actualSettlementCoin.Amount.IsZero() {
-		logger.Warn(fmt.Sprintf(
-			"actual settlement coin is zero, skipping TLM processing, application %q stake %s",
-			application.Address, application.Stake,
-		))
-		return nil
-	}
 
 	// Execute all the token logic modules processors
 	for tlm, tlmProcessor := range tokenLogicModuleProcessorMap {
@@ -687,14 +666,14 @@ func (k Keeper) sendRewardsToAccount(
 	return coinToAcc, nil
 }
 
-// ensureClaimAmountLimits checks if the application was overserviced and handles
+// EnsureClaimAmountLimits checks if the application was overserviced and handles
 // the case if it was.
 // Per Algorithm #1 in the Relay Mining paper, the maximum amount that a single supplier
 // can claim in a session is AppStake/NumSuppliersPerSession.
 // If this is not the case, then the supplier essentially did "free work" and the
 // actual claim amount is less than what was claimed.
 // Ref: https://arxiv.org/pdf/2305.10672
-func (k Keeper) ensureClaimAmountLimits(
+func (k Keeper) EnsureClaimAmountLimits(
 	ctx context.Context,
 	logger log.Logger,
 	sharedParams *sharedtypes.Params,
@@ -734,7 +713,7 @@ func (k Keeper) ensureClaimAmountLimits(
 	maxClaimableAmt := appStake.Amount.
 		Quo(math.NewInt(numSuppliersPerSession)).
 		Quo(math.NewInt(numPendingSessions))
-	maxClaimSettlementAmt := supplierAppStakeToMaxSettlementAmount(maxClaimableAmt)
+	maxClaimSettlementAmt := SupplierAppStakeToMaxSettlementAmount(maxClaimableAmt)
 
 	// Check if the claimable amount is capped by the max claimable amount.
 	// As per the Relay Mining paper, the Supplier claim MUST NOT exceed the application's
@@ -745,7 +724,7 @@ func (k Keeper) ensureClaimAmountLimits(
 			supplier.GetOperatorAddress(), application.GetAddress(), maxClaimableAmt, claimSettlementCoin.Amount))
 
 		minRequiredAppStakeAmt = maxClaimableAmt
-		maxClaimSettlementAmt = supplierAppStakeToMaxSettlementAmount(minRequiredAppStakeAmt)
+		maxClaimSettlementAmt = SupplierAppStakeToMaxSettlementAmount(minRequiredAppStakeAmt)
 	}
 
 	// Nominal case: The claimable amount is within the limits set by Relay Mining.
@@ -850,7 +829,7 @@ func CalculateGlobalPerClaimMintInflationFromSettlementAmount(settlementCoin sdk
 	return mintAmtCoin, *newMintAmtFloat
 }
 
-// supplierAppStakeToMaxSettlementAmount calculates the max amount of uPOKT the supplier
+// SupplierAppStakeToMaxSettlementAmount calculates the max amount of uPOKT the supplier
 // can claim based on the stake allocated to the supplier and the global inflation
 // allocation percentage.
 // This is the inverse of CalculateGlobalPerClaimMintInflationFromSettlementAmount:
@@ -858,7 +837,7 @@ func CalculateGlobalPerClaimMintInflationFromSettlementAmount(settlementCoin sdk
 // stake = maxSettlementAmt + (maxSettlementAmt * MintPerClaimedTokenGlobalInflation)
 // stake = maxSettlementAmt * (1 + MintPerClaimedTokenGlobalInflation)
 // maxSettlementAmt = stake / (1 + MintPerClaimedTokenGlobalInflation)
-func supplierAppStakeToMaxSettlementAmount(stakeAmount math.Int) math.Int {
+func SupplierAppStakeToMaxSettlementAmount(stakeAmount math.Int) math.Int {
 	stakeAmountFloat := big.NewFloat(0).SetInt(stakeAmount.BigInt())
 	maxSettlementAmountFloat := big.NewFloat(0).Quo(stakeAmountFloat, big.NewFloat(1+GlobalInflationPerClaim))
 

@@ -211,8 +211,41 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (
 			continue
 		}
 
+		// Retrieve the on-chain staked supplier record
+		operatorAddr := claim.GetSupplierOperatorAddress()
+		supplier, isSupplierFound := k.supplierKeeper.GetSupplier(ctx, operatorAddr)
+		if !isSupplierFound {
+			logger.Warn(fmt.Sprintf("supplier for claim with address %q not found", operatorAddr))
+			return settledResult, expiredResult, tokenomicstypes.ErrTokenomicsSupplierNotFound
+		}
+
+		// Retrieve the on-chain staked application record
+		application, isAppFound := k.applicationKeeper.GetApplication(ctx, appAddress)
+		if !isAppFound {
+			logger.Warn(fmt.Sprintf("application for claim with address %q not found", appAddress))
+			return settledResult, expiredResult, tokenomicstypes.ErrTokenomicsApplicationNotFound
+		}
+
+		claimSettlementCoin, err := claim.GetClaimeduPOKT(sharedParams, relayMiningDifficulty)
+		if err != nil {
+			return settledResult, expiredResult, err
+		}
+
+		actualSettlementCoin, err := k.EnsureClaimAmountLimits(ctx, logger, &sharedParams, &application, &supplier, claimSettlementCoin, applicationInitialStake)
+		if err != nil {
+			return settledResult, expiredResult, err
+		}
+
+		if actualSettlementCoin.Amount.IsZero() {
+			logger.Warn(fmt.Sprintf(
+				"actual settlement coin is zero, skipping TLM processing, application %q stake %s",
+				application.Address, application.Stake,
+			))
+			continue
+		}
+
 		// Manage the mint & burn accounting for the claim.
-		if err = k.ProcessTokenLogicModules(ctx, &claim, applicationInitialStake); err != nil {
+		if err = k.ProcessTokenLogicModules(ctx, &claim, actualSettlementCoin); err != nil {
 			logger.Error(fmt.Sprintf("error processing token logic modules for claim %q: %v", claim.SessionHeader.SessionId, err))
 			return settledResult, expiredResult, err
 		}
@@ -224,20 +257,10 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (
 			NumEstimatedComputeUnits: numEstimatedComputeUnits,
 			ClaimedUpokt:             &claimeduPOKT,
 			ProofRequirement:         proofRequirement,
+			SettledUpokt:             &actualSettlementCoin,
 		}
 
 		if err = ctx.EventManager().EmitTypedEvent(&claimSettledEvent); err != nil {
-			return settledResult, expiredResult, err
-		}
-
-		if err = ctx.EventManager().EmitTypedEvent(&prooftypes.EventProofUpdated{
-			Claim:                    &claim,
-			Proof:                    nil,
-			NumRelays:                0,
-			NumClaimedComputeUnits:   0,
-			NumEstimatedComputeUnits: numEstimatedComputeUnits,
-			ClaimedUpokt:             &claimeduPOKT,
-		}); err != nil {
 			return settledResult, expiredResult, err
 		}
 
