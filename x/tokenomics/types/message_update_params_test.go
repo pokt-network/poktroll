@@ -15,7 +15,7 @@ func TestMsgUpdateParams_ValidateBasic(t *testing.T) {
 		expectedErr error
 	}{
 		{
-			desc: "invalid authority address",
+			desc: "invalid: non-bech32 authority address",
 			msg: MsgUpdateParams{
 				Authority: "invalid_address",
 				Params:    Params{},
@@ -23,11 +23,33 @@ func TestMsgUpdateParams_ValidateBasic(t *testing.T) {
 			expectedErr: ErrTokenomicsAddressInvalid,
 		},
 		{
-			desc: "valid address",
+			desc: "invalid: empty params",
 			msg: MsgUpdateParams{
 				Authority: sample.AccAddress(),
 				Params:    Params{},
 			},
+			expectedErr: ErrTokenomicsParamInvalid,
+		},
+		{
+			desc: "valid: address and default params",
+			msg: MsgUpdateParams{
+				Authority: sample.AccAddress(),
+				Params:    DefaultParams(),
+			},
+		},
+		{
+			desc: "invalid: mint allocation params don't sum to 1",
+			msg: MsgUpdateParams{
+				Authority: sample.AccAddress(),
+				Params: Params{
+					MintAllocationDao:         0.1,
+					MintAllocationProposer:    0.1,
+					MintAllocationSupplier:    0.1,
+					MintAllocationSourceOwner: 0.1,
+					MintAllocationApplication: 0.1,
+				},
+			},
+			expectedErr: ErrTokenomicsParamInvalid,
 		},
 	}
 

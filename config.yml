@@ -141,13 +141,15 @@ genesis:
             denom: upokt
     bank:
       supply:
-        - amount: "1102000204"
+        - amount: "1202000272"
           denom: upokt
       balances:
         # Application module
         - address: pokt1rl3gjgzexmplmds3tq3r3yk84zlwdl6djzgsvm
           coins:
-            - amount: "100000068" # MUST BE equal to the total of all app stakes below
+            # TODO_MAINNET(@olshansk): Pass config.yml into ChatGPT to build a script
+            # that ensures the amounts line up
+            - amount: "200000136" # MUST BE equal to the total of all app stakes below
               denom: upokt
         # Supplier module
         - address: pokt1j40dzzmn6cn9kxku7a5tjnud6hv37vesr5ccaa
@@ -277,6 +279,13 @@ genesis:
     session:
       params:
         num_suppliers_per_session: 15
+    tokenomics:
+      params:
+        mint_allocation_dao: 0.1
+        mint_allocation_proposer: 0.05
+        mint_allocation_supplier: 0.7
+        mint_allocation_source_owner: 0.15
+        mint_allocation_application: 0.0
     shared:
       params:
         num_blocks_per_session: 10

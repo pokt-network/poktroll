@@ -18,7 +18,7 @@ var (
 
 	KeyProofRequestProbability             = []byte("ProofRequestProbability")
 	ParamProofRequestProbability           = "proof_request_probability"
-	DefaultProofRequestProbability float32 = 0.25 // See: https://github.com/pokt-network/pocket-core/blob/staging/docs/proposals/probabilistic_proofs.md
+	DefaultProofRequestProbability float64 = 0.25 // See: https://github.com/pokt-network/pocket-core/blob/staging/docs/proposals/probabilistic_proofs.md
 
 	// The probabilistic proofs paper specifies a threshold of 20 POKT.
 	// TODO_MAINNET(@Olshansk, @RawthiL): Figure out what this value should be.
@@ -46,7 +46,7 @@ func ParamKeyTable() paramtypes.KeyTable {
 
 // NewParams creates a new Params instance
 func NewParams(
-	proofRequestProbability float32,
+	proofRequestProbability float64,
 	proofRequirementThreshold *cosmostypes.Coin,
 	proofMissingPenalty *cosmostypes.Coin,
 	proofSubmissionFee *cosmostypes.Coin,
@@ -119,7 +119,7 @@ func (params *Params) ValidateBasic() error {
 // ValidateProofRequestProbability validates the ProofRequestProbability param.
 // NB: The argument is an interface type to satisfy the ParamSetPair function signature.
 func ValidateProofRequestProbability(proofRequestProbabilityAny any) error {
-	proofRequestProbability, ok := proofRequestProbabilityAny.(float32)
+	proofRequestProbability, ok := proofRequestProbabilityAny.(float64)
 	if !ok {
 		return ErrProofParamInvalid.Wrapf("invalid parameter type: %T", proofRequestProbabilityAny)
 	}

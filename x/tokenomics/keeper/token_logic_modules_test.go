@@ -65,9 +65,9 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_Valid(t *testing.T) {
 	supplierModuleAddress := authtypes.NewModuleAddress(suppliertypes.ModuleName).String()
 
 	// Set compute_units_to_tokens_multiplier to simplify expectation calculations.
-	err := keepers.SharedKeeper.SetParams(ctx, sharedtypes.Params{
-		ComputeUnitsToTokensMultiplier: globalComputeUnitsToTokensMultiplier,
-	})
+	sharedParams := keepers.SharedKeeper.GetParams(ctx)
+	sharedParams.ComputeUnitsToTokensMultiplier = globalComputeUnitsToTokensMultiplier
+	err := keepers.SharedKeeper.SetParams(ctx, sharedParams)
 	require.NoError(t, err)
 	// TODO_TECHDEBT: Setting inflation to zero so we are testing the BurnEqualsMint logic exclusively.
 	// Once it is a governance param, update it using the keeper above.
@@ -196,9 +196,9 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_Valid_SupplierExceedsMaxClai
 	supplierModuleAddress := authtypes.NewModuleAddress(suppliertypes.ModuleName).String()
 
 	// Set compute_units_to_tokens_multiplier to simplify expectation calculations.
-	err := keepers.SharedKeeper.SetParams(ctx, sharedtypes.Params{
-		ComputeUnitsToTokensMultiplier: globalComputeUnitsToTokensMultiplier,
-	})
+	sharedParams := keepers.SharedKeeper.GetParams(ctx)
+	sharedParams.ComputeUnitsToTokensMultiplier = globalComputeUnitsToTokensMultiplier
+	err := keepers.SharedKeeper.SetParams(ctx, sharedParams)
 	require.NoError(t, err)
 	// TODO_TECHDEBT: Setting inflation to zero so we are testing the BurnEqualsMint logic exclusively.
 	// Once it is a governance param, update it using the keeper above.
@@ -330,9 +330,9 @@ func TestProcessTokenLogicModules_TLMGlobalMint_Valid_MintDistributionCorrect(t 
 	keepers.SetService(ctx, *service)
 
 	// Set compute_units_to_tokens_multiplier to simplify expectation calculations.
-	err := keepers.SharedKeeper.SetParams(ctx, sharedtypes.Params{
-		ComputeUnitsToTokensMultiplier: globalComputeUnitsToTokensMultiplier,
-	})
+	sharedParams := keepers.SharedKeeper.GetParams(ctx)
+	sharedParams.ComputeUnitsToTokensMultiplier = globalComputeUnitsToTokensMultiplier
+	err := keepers.SharedKeeper.SetParams(ctx, sharedParams)
 	require.NoError(t, err)
 
 	// Add a new application with non-zero app stake end balance to assert against.
@@ -400,13 +400,14 @@ func TestProcessTokenLogicModules_TLMGlobalMint_Valid_MintDistributionCorrect(t 
 	}
 
 	// Compute mint per actor
+	tokenomicsParams := keepers.Keeper.GetParams(ctx)
 	numTokensMinted := numTokensClaimed * tokenomicskeeper.GlobalInflationPerClaim
 	numTokensMintedInt := cosmosmath.NewIntFromUint64(uint64(numTokensMinted))
-	daoMint := cosmosmath.NewInt(int64(numTokensMinted * tokenomicskeeper.MintAllocationDAO))
-	propMint := cosmosmath.NewInt(int64(numTokensMinted * tokenomicskeeper.MintAllocationProposer))
-	serviceOwnerMint := cosmosmath.NewInt(int64(numTokensMinted * tokenomicskeeper.MintAllocationSourceOwner))
-	appMint := cosmosmath.NewInt(int64(numTokensMinted * tokenomicskeeper.MintAllocationApplication))
-	supplierMint := float32(numTokensMinted * tokenomicskeeper.MintAllocationSupplier)
+	daoMint := cosmosmath.NewInt(int64(numTokensMinted * tokenomicsParams.MintAllocationDao))
+	propMint := cosmosmath.NewInt(int64(numTokensMinted * tokenomicsParams.MintAllocationProposer))
+	serviceOwnerMint := cosmosmath.NewInt(int64(numTokensMinted * tokenomicsParams.MintAllocationSourceOwner))
+	appMint := cosmosmath.NewInt(int64(numTokensMinted * tokenomicsParams.MintAllocationApplication))
+	supplierMint := float32(numTokensMinted * tokenomicsParams.MintAllocationSupplier)
 
 	// Ensure the balance was increase be the appropriate amount
 	require.Equal(t, daoBalanceBefore.Amount.Add(daoMint).Add(numTokensMintedInt), daoBalanceAfter.Amount)
