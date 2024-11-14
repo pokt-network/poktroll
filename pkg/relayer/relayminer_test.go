@@ -112,7 +112,7 @@ func TestRelayMiner_Ping(t *testing.T) {
 
 	time.Sleep(time.Millisecond)
 
-	c := http.Client{
+	httpClient := http.Client{
 		Transport: &http.Transport{
 			DialContext: func(ctx context.Context, network, addr string) (net.Conn, error) {
 				return net.Dial(ln.Addr().Network(), ln.Addr().String())
@@ -121,7 +121,7 @@ func TestRelayMiner_Ping(t *testing.T) {
 	}
 	require.NoError(t, err)
 
-	resp, err := c.Get("http://unix")
+	resp, err := httpClient.Get("http://unix")
 	require.NoError(t, err)
 
 	require.Equal(t, http.StatusNoContent, resp.StatusCode)
