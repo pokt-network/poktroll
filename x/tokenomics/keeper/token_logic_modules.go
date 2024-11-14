@@ -194,21 +194,24 @@ func (k Keeper) ProcessTokenLogicModules(
 		return nil
 	}
 
+	tlmUsedParams := tlm.TLMUsedParams{Tokenomics: k.GetParams(ctx)}
+	tlmCtx := tlm.TLMContext{
+		Params:                tlmUsedParams,
+		SettlementCoin:        actualSettlementCoin,
+		SessionHeader:         pendingResult.Claim.GetSessionHeader(),
+		Result:                pendingResult,
+		Service:               &service,
+		Application:           &application,
+		Supplier:              &supplier,
+		RelayMiningDifficulty: &relayMiningDifficulty,
+	}
+
 	// Execute all the token logic modules processors
 	for _, tokenLogicModule := range k.tokenLogicModules {
 		tlmName := tokenLogicModule.GetId().String()
 		logger.Info(fmt.Sprintf("Starting processing TLM: %q", tlmName))
 
-		if err = tokenLogicModule.Process(
-			ctx, logger,
-			pendingResult,
-			&service,
-			pendingResult.Claim.GetSessionHeader(),
-			&application,
-			&supplier,
-			actualSettlementCoin,
-			&relayMiningDifficulty,
-		); err != nil {
+		if err = tokenLogicModule.Process(ctx, logger, tlmCtx); err != nil {
 			return tokenomicstypes.ErrTokenomicsTLMError.Wrapf("TLM %q: %s", tlmName, err)
 		}
 

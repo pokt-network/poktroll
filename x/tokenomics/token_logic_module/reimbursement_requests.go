@@ -8,9 +8,6 @@ import (
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
-	servicetypes "github.com/pokt-network/poktroll/x/service/types"
-	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
-	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
 )
 
@@ -35,14 +32,15 @@ func (tlm tlmGlobalMintReimbursementRequest) GetId() TokenLogicModuleId {
 func (tlm tlmGlobalMintReimbursementRequest) Process(
 	ctx context.Context,
 	logger cosmoslog.Logger,
-	result *PendingSettlementResult,
-	service *sharedtypes.Service,
-	sessionHeader *sessiontypes.SessionHeader,
-	application *apptypes.Application,
-	supplier *sharedtypes.Supplier,
-	actualSettlementCoin cosmostypes.Coin,
-	_ *servicetypes.RelayMiningDifficulty,
+	tlmCtx TLMContext,
 ) error {
+	result := tlmCtx.Result
+	service := tlmCtx.Service
+	sessionHeader := tlmCtx.SessionHeader
+	application := tlmCtx.Application
+	supplier := tlmCtx.Supplier
+	actualSettlementCoin := tlmCtx.SettlementCoin
+
 	logger = logger.With("method", "TokenLogicModuleGlobalMintReimbursementRequest")
 
 	// Do not process the reimbursement request if there is no global inflation.

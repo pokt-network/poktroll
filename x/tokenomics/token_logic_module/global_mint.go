@@ -10,10 +10,6 @@ import (
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/pokt-network/poktroll/app/volatile"
-	apptypes "github.com/pokt-network/poktroll/x/application/types"
-	servicetypes "github.com/pokt-network/poktroll/x/service/types"
-	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
-	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
 )
@@ -67,17 +63,11 @@ func (tlm tlmGlobalMint) GetId() TokenLogicModuleId {
 func (tlm tlmGlobalMint) Process(
 	ctx context.Context,
 	logger cosmoslog.Logger,
-	result *PendingSettlementResult,
-	service *sharedtypes.Service,
-	_ *sessiontypes.SessionHeader,
-	application *apptypes.Application,
-	supplier *sharedtypes.Supplier,
-	settlementCoin cosmostypes.Coin,
-	_ *servicetypes.RelayMiningDifficulty,
+	tlmCtx TLMContext,
 ) error {
 	logger = logger.With(
 		"method", "tlmGlobalMint#Process",
-		"session_id", result.GetSessionId(),
+		"session_id", tlmCtx.Result.GetSessionId(),
 	)
 
 	if GlobalInflationPerClaim == 0 {
@@ -87,13 +77,13 @@ func (tlm tlmGlobalMint) Process(
 	}
 
 	// Determine how much new uPOKT to mint based on global inflation
-	newMintCoin, newMintAmtFloat := CalculateGlobalPerClaimMintInflationFromSettlementAmount(settlementCoin)
+	newMintCoin, newMintAmtFloat := CalculateGlobalPerClaimMintInflationFromSettlementAmount(tlmCtx.SettlementCoin)
 	if newMintCoin.Amount.Int64() == 0 {
 		return tokenomicstypes.ErrTokenomicsMintAmountZero
 	}
 
 	// Mint new uPOKT to the tokenomics module account
-	result.AppendMint(MintBurn{
+	tlmCtx.Result.AppendMint(MintBurn{
 		TLM:               TLMRelayBurnEqualsMint,
 		DestinationModule: tokenomicstypes.ModuleName,
 		Coin:              newMintCoin,
@@ -101,35 +91,35 @@ func (tlm tlmGlobalMint) Process(
 	logger.Info(fmt.Sprintf("operation queued: mint (%s) to the tokenomics module account", newMintCoin))
 
 	// Send a portion of the rewards to the application
-	appCoin, err := sendRewardsToAccount(logger, result, tokenomicstypes.ModuleName, application.GetAddress(), &newMintAmtFloat, MintAllocationApplication)
+	appCoin, err := sendRewardsToAccount(logger, tlmCtx.Result, tokenomicstypes.ModuleName, tlmCtx.Application.GetAddress(), &newMintAmtFloat, MintAllocationApplication)
 	if err != nil {
 		return tokenomicstypes.ErrTokenomicsSendingMintRewards.Wrapf("sending rewards to application: %v", err)
 	}
-	logMsg := fmt.Sprintf("send (%v) newley minted coins from the tokenomics module to the application with address %q", appCoin, application.GetAddress())
+	logMsg := fmt.Sprintf("send (%v) newley minted coins from the tokenomics module to the application with address %q", appCoin, tlmCtx.Application.GetAddress())
 	logRewardOperation(logger, logMsg, &appCoin)
 
 	// Send a portion of the rewards to the supplier shareholders.
 	supplierCoinsToShareAmt := calculateAllocationAmount(&newMintAmtFloat, MintAllocationSupplier)
 	supplierCoin := cosmostypes.NewCoin(volatile.DenomuPOKT, math.NewInt(supplierCoinsToShareAmt))
 	// Send funds from the tokenomics module to the supplier module account
-	result.AppendModToModTransfer(ModToModTransfer{
+	tlmCtx.Result.AppendModToModTransfer(ModToModTransfer{
 		TLMName:         TLMRelayBurnEqualsMint,
 		SenderModule:    tokenomicstypes.ModuleName,
 		RecipientModule: suppliertypes.ModuleName,
 		Coin:            supplierCoin,
 	})
 	// Distribute the rewards from within the supplier's module account.
-	if err = distributeSupplierRewardsToShareHolders(logger, result, TLMGlobalMint, supplier, service.Id, uint64(supplierCoinsToShareAmt)); err != nil {
+	if err = distributeSupplierRewardsToShareHolders(logger, tlmCtx.Result, TLMGlobalMint, tlmCtx.Supplier, tlmCtx.Service.Id, uint64(supplierCoinsToShareAmt)); err != nil {
 		return tokenomicstypes.ErrTokenomicsModuleMint.Wrapf(
 			"distributing rewards to supplier with operator address %s shareholders: %v",
-			supplier.OperatorAddress,
+			tlmCtx.Supplier.OperatorAddress,
 			err,
 		)
 	}
-	logger.Info(fmt.Sprintf("operation queued: send (%v) newley minted coins from the tokenomics module to the supplier with address %q", supplierCoin, supplier.OperatorAddress))
+	logger.Info(fmt.Sprintf("operation queued: send (%v) newley minted coins from the tokenomics module to the supplier with address %q", supplierCoin, tlmCtx.Supplier.OperatorAddress))
 
 	// Send a portion of the rewards to the DAO
-	daoCoin, err := sendRewardsToAccount(logger, result, tokenomicstypes.ModuleName, tlm.authorityRewardAddr, &newMintAmtFloat, MintAllocationDAO)
+	daoCoin, err := sendRewardsToAccount(logger, tlmCtx.Result, tokenomicstypes.ModuleName, tlm.authorityRewardAddr, &newMintAmtFloat, MintAllocationDAO)
 	if err != nil {
 		return tokenomicstypes.ErrTokenomicsSendingMintRewards.Wrapf("sending rewards to DAO: %v", err)
 	}
@@ -137,16 +127,16 @@ func (tlm tlmGlobalMint) Process(
 	logRewardOperation(logger, logMsg, &daoCoin)
 
 	// Send a portion of the rewards to the source owner
-	serviceCoin, err := sendRewardsToAccount(logger, result, tokenomicstypes.ModuleName, service.OwnerAddress, &newMintAmtFloat, MintAllocationSourceOwner)
+	serviceCoin, err := sendRewardsToAccount(logger, tlmCtx.Result, tokenomicstypes.ModuleName, tlmCtx.Service.OwnerAddress, &newMintAmtFloat, MintAllocationSourceOwner)
 	if err != nil {
 		return tokenomicstypes.ErrTokenomicsSendingMintRewards.Wrapf("sending rewards to source owner: %v", err)
 	}
-	logMsg = fmt.Sprintf("send (%v) newley minted coins from the tokenomics module to the source owner with address %q", serviceCoin, service.OwnerAddress)
+	logMsg = fmt.Sprintf("send (%v) newley minted coins from the tokenomics module to the source owner with address %q", serviceCoin, tlmCtx.Service.OwnerAddress)
 	logRewardOperation(logger, logMsg, &serviceCoin)
 
 	// Send a portion of the rewards to the block proposer
 	proposerAddr := cosmostypes.AccAddress(cosmostypes.UnwrapSDKContext(ctx).BlockHeader().ProposerAddress).String()
-	proposerCoin, err := sendRewardsToAccount(logger, result, tokenomicstypes.ModuleName, proposerAddr, &newMintAmtFloat, MintAllocationProposer)
+	proposerCoin, err := sendRewardsToAccount(logger, tlmCtx.Result, tokenomicstypes.ModuleName, proposerAddr, &newMintAmtFloat, MintAllocationProposer)
 	if err != nil {
 		return tokenomicstypes.ErrTokenomicsSendingMintRewards.Wrapf("sending rewards to proposer: %v", err)
 	}

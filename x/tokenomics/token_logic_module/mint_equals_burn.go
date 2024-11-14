@@ -5,13 +5,9 @@ import (
 	"fmt"
 
 	cosmoslog "cosmossdk.io/log"
-	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/pokt-network/poktroll/telemetry"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
-	servicetypes "github.com/pokt-network/poktroll/x/service/types"
-	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
-	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
 )
@@ -33,17 +29,11 @@ func (tlm tlmRelayBurnEqualsMint) GetId() TokenLogicModuleId {
 func (tlm tlmRelayBurnEqualsMint) Process(
 	_ context.Context,
 	logger cosmoslog.Logger,
-	result *PendingSettlementResult,
-	service *sharedtypes.Service,
-	_ *sessiontypes.SessionHeader,
-	application *apptypes.Application,
-	supplier *sharedtypes.Supplier,
-	settlementCoin cosmostypes.Coin,
-	_ *servicetypes.RelayMiningDifficulty,
+	tlmCtx TLMContext,
 ) error {
 	logger = logger.With(
 		"method", "TokenLogicModuleRelayBurnEqualsMint",
-		"session_id", result.GetSessionId(),
+		"session_id", tlmCtx.Result.GetSessionId(),
 	)
 
 	// DEV_NOTE: We are doing a mint & burn + transfer, instead of a simple transfer
@@ -54,57 +44,57 @@ func (tlm tlmRelayBurnEqualsMint) Process(
 	// Mint new uPOKT to the supplier module account.
 	// These funds will be transferred to the supplier's shareholders below.
 	// For reference, see operate/configs/supplier_staking_config.md.
-	result.AppendMint(MintBurn{
+	tlmCtx.Result.AppendMint(MintBurn{
 		TLM:               TLMRelayBurnEqualsMint,
 		DestinationModule: suppliertypes.ModuleName,
-		Coin:              settlementCoin,
+		Coin:              tlmCtx.SettlementCoin,
 	})
 
-	logger.Info(fmt.Sprintf("operation queued: mint (%v) coins in the supplier module", settlementCoin))
+	logger.Info(fmt.Sprintf("operation queued: mint (%v) coins in the supplier module", tlmCtx.SettlementCoin))
 
 	// Update telemetry information
-	if settlementCoin.Amount.IsInt64() {
-		defer telemetry.MintedTokensFromModule(suppliertypes.ModuleName, float32(settlementCoin.Amount.Int64()))
+	if tlmCtx.SettlementCoin.Amount.IsInt64() {
+		defer telemetry.MintedTokensFromModule(suppliertypes.ModuleName, float32(tlmCtx.SettlementCoin.Amount.Int64()))
 	}
 
 	// Distribute the rewards to the supplier's shareholders based on the rev share percentage.
 	if err := distributeSupplierRewardsToShareHolders(
 		logger,
-		result,
+		tlmCtx.Result,
 		TLMRelayBurnEqualsMint,
-		supplier,
-		service.Id,
-		settlementCoin.Amount.Uint64(),
+		tlmCtx.Supplier,
+		tlmCtx.Service.Id,
+		tlmCtx.SettlementCoin.Amount.Uint64(),
 	); err != nil {
 		return tokenomicstypes.ErrTokenomicsModuleMint.Wrapf(
 			"queuing operation: distributing rewards to supplier with operator address %s shareholders: %v",
-			supplier.OperatorAddress,
+			tlmCtx.Supplier.OperatorAddress,
 			err,
 		)
 	}
-	logger.Info(fmt.Sprintf("operation queued: sent (%v) from the supplier module to the supplier account with address %q", settlementCoin, supplier.OperatorAddress))
+	logger.Info(fmt.Sprintf("operation queued: sent (%v) from the supplier module to the supplier account with address %q", tlmCtx.SettlementCoin, tlmCtx.Supplier.OperatorAddress))
 
 	// Burn uPOKT from the application module account which was held in escrow
 	// on behalf of the application account.
-	result.AppendBurn(MintBurn{
+	tlmCtx.Result.AppendBurn(MintBurn{
 		TLM:               TLMRelayBurnEqualsMint,
 		DestinationModule: apptypes.ModuleName,
-		Coin:              settlementCoin,
+		Coin:              tlmCtx.SettlementCoin,
 	})
-	logger.Info(fmt.Sprintf("operation queued: burn (%v) from the application module account", settlementCoin))
+	logger.Info(fmt.Sprintf("operation queued: burn (%v) from the application module account", tlmCtx.SettlementCoin))
 
 	// Update telemetry information
-	if settlementCoin.Amount.IsInt64() {
-		defer telemetry.BurnedTokensFromModule(suppliertypes.ModuleName, float32(settlementCoin.Amount.Int64()))
+	if tlmCtx.SettlementCoin.Amount.IsInt64() {
+		defer telemetry.BurnedTokensFromModule(suppliertypes.ModuleName, float32(tlmCtx.SettlementCoin.Amount.Int64()))
 	}
 
 	// Update the application's on-chain stake
-	newAppStake, err := application.Stake.SafeSub(settlementCoin)
+	newAppStake, err := tlmCtx.Application.Stake.SafeSub(tlmCtx.SettlementCoin)
 	if err != nil {
-		return tokenomicstypes.ErrTokenomicsApplicationNewStakeInvalid.Wrapf("application %q stake cannot be reduced to a negative amount %v", application.Address, newAppStake)
+		return tokenomicstypes.ErrTokenomicsApplicationNewStakeInvalid.Wrapf("application %q stake cannot be reduced to a negative amount %v", tlmCtx.Application.Address, newAppStake)
 	}
-	application.Stake = &newAppStake
-	logger.Info(fmt.Sprintf("operation scheduled: update application %q stake to %v", application.Address, newAppStake))
+	tlmCtx.Application.Stake = &newAppStake
+	logger.Info(fmt.Sprintf("operation scheduled: update application %q stake to %v", tlmCtx.Application.Address, newAppStake))
 
 	return nil
 }

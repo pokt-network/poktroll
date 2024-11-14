@@ -10,6 +10,7 @@ import (
 	servicetypes "github.com/pokt-network/poktroll/x/service/types"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
+	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
 )
 
 type TokenLogicModuleId int
@@ -60,17 +61,26 @@ func (tlm TokenLogicModuleId) EnumIndex() int {
 // actors if their stake falls below a certain threshold.
 type TokenLogicModule interface {
 	GetId() TokenLogicModuleId
-	Process(
-		context.Context,
-		cosmoslog.Logger,
-		*PendingSettlementResult,
-		*sharedtypes.Service,
-		*sessiontypes.SessionHeader,
-		*apptypes.Application,
-		*sharedtypes.Supplier,
-		cosmostypes.Coin, // This is the "actualSettlementCoin" rather than just the "claimCoin" because of how settlement functions; see ensureClaimAmountLimits for details.
-		*servicetypes.RelayMiningDifficulty,
-	) error
+	Process(context.Context, cosmoslog.Logger, TLMContext) error
+}
+
+// TLMUsedParams provides a field for each module Params type upon which any TLM depends.
+type TLMUsedParams struct {
+	Tokenomics tokenomicstypes.Params
+}
+
+// TLMContext holds all inputs and outputs necessary for token logic module processing,
+// allowing TLMs to remain isolated from the tokenomics keeper and each other while still
+// permitting shared memory access (prior to an atomic state transition).
+type TLMContext struct {
+	Params                TLMUsedParams
+	SettlementCoin        cosmostypes.Coin // This is the "actualSettlementCoin" rather than just the "claimCoin" because of how settlement functions; see ensureClaimAmountLimits for details.
+	SessionHeader         *sessiontypes.SessionHeader
+	Result                *PendingSettlementResult
+	Service               *sharedtypes.Service
+	Application           *apptypes.Application
+	Supplier              *sharedtypes.Supplier
+	RelayMiningDifficulty *servicetypes.RelayMiningDifficulty
 }
 
 // NewDefaultTokenLogicModules returns the default token logic module processors:
