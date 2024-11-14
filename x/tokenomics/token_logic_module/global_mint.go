@@ -54,13 +54,6 @@ type tlmGlobalMint struct {
 	authorityRewardAddr string
 }
 
-func init() {
-	// Ensure 100% of minted rewards are allocated
-	if 1.0 != MintAllocationDAO+MintAllocationProposer+MintAllocationSupplier+MintAllocationSourceOwner+MintAllocationApplication {
-		panic("mint allocation percentages do not add to 1.0")
-	}
-}
-
 // NewGlobalMintTLM creates a new instance of the GlobalMint TLM.
 func NewGlobalMintTLM(authorityRewardAddr string) TokenLogicModule {
 	return &tlmGlobalMint{authorityRewardAddr: authorityRewardAddr}
