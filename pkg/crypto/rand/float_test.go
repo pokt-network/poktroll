@@ -13,7 +13,7 @@ import (
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 )
 
-func TestSeededFloat32(t *testing.T) {
+func TestSeededFloat64(t *testing.T) {
 	probability := prooftypes.DefaultProofRequestProbability
 	tolerance := 0.01
 	confidence := 0.99
@@ -30,8 +30,7 @@ func TestSeededFloat32(t *testing.T) {
 		go func(idx int64) {
 			idxBz := make([]byte, binary.MaxVarintLen64)
 			binary.PutVarint(idxBz, idx)
-			randFloat, err := poktrand.SeededFloat32(idxBz)
-			require.NoError(t, err)
+			randFloat := poktrand.SeededFloat64(idxBz)
 
 			if randFloat < 0 || randFloat > 1 {
 				errCh <- fmt.Errorf("secureRandFloat64() returned out of bounds value: %f", randFloat)
@@ -54,8 +53,8 @@ func TestSeededFloat32(t *testing.T) {
 	err := <-errCh
 	require.NoError(t, err)
 
-	expectedNumTrueSamples := float32(sampleSize) * probability
-	expectedNumFalseSamples := float32(sampleSize) * (1 - probability)
+	expectedNumTrueSamples := float64(sampleSize) * probability
+	expectedNumFalseSamples := float64(sampleSize) * (1 - probability)
 	toleranceSamples := tolerance * float64(sampleSize)
 
 	// Check that the number of samples for each outcome is within the expected range.

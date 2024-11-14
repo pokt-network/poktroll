@@ -364,7 +364,7 @@ func (s *suite) assertExpectedModuleParamsUpdated(moduleName string) {
 
 		proofRequestProbability, ok := paramsMap[prooftypes.ParamProofRequestProbability]
 		if ok {
-			params.ProofRequestProbability = proofRequestProbability.value.(float32)
+			params.ProofRequestProbability = proofRequestProbability.value.(float64)
 		}
 
 		proofRequirementThreshold, ok := paramsMap[prooftypes.ParamProofRequirementThreshold]
