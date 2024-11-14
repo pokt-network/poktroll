@@ -63,10 +63,10 @@ func NewInitChainerModuleGenesisStateOptionFn[T module.HasGenesis](genesisState 
 	}
 }
 
-// WithTLMProcessors returns an IntegrationAppOptionFn that sets the given
+// WithTokenLogicModules returns an IntegrationAppOptionFn that sets the given
 // TLM processors on the IntegrationAppConfig.
-func WithTLMProcessors(processors []tlm.TokenLogicModule) IntegrationAppOptionFn {
+func WithTokenLogicModules(tokenLogicModules []tlm.TokenLogicModule) IntegrationAppOptionFn {
 	return func(config *IntegrationAppConfig) {
-		config.TokenLogicModules = processors
+		config.TokenLogicModules = tokenLogicModules
 	}
 }

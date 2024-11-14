@@ -8,7 +8,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/pokt-network/poktroll/testutil/network"
-	"github.com/pokt-network/poktroll/testutil/sample"
 	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
 )
 
@@ -21,9 +20,6 @@ var _ = strconv.IntSize
 //lint:ignore U1000 Ignore unused function for testing purposes
 func networkWithDefaultConfig(t *testing.T) *network.Network {
 	t.Helper()
-
-	// TODO_TECHDEBT: Remove once dao reward address is promoted to a tokenomics param.
-	tokenomicstypes.DaoRewardAddress = sample.AccAddress()
 
 	cfg := network.DefaultConfig()
 	tokenomicsGenesisState := network.DefaultTokenomicsModuleGenesisState(t)

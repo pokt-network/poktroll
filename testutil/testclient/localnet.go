@@ -17,7 +17,6 @@ import (
 
 	"github.com/pokt-network/poktroll/app"
 	"github.com/pokt-network/poktroll/cmd/poktrolld/cmd"
-	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
 )
 
 var (
@@ -38,9 +37,6 @@ var (
 // init initializes the SDK configuration upon package import.
 func init() {
 	cmd.InitSDKConfig()
-
-	// TODO_TECHDEBT: Remove once the DAO reward address is promoted to a tokenomics module param.
-	tokenomicstypes.DaoRewardAddress = "pokt1eeeksh2tvkh7wzmfrljnhw4wrhs55lcuvmekkw"
 
 	deps := depinject.Configs(
 		app.AppConfig(),

@@ -25,10 +25,10 @@ import (
 
 // daoRewardBech32 is a random address intended for use in tests.
 // In the commutativity test, the dao_reward_address is set to this
-// address and MUST remain unchanged between TLM permutations.
+// address and MUST remain unchanged between permutations.
 var daoRewardBech32 = sample.AccAddress()
 
-type tlmProcessorTestSuite struct {
+type tokenLogicModuleTestSuite struct {
 	suite.Suite
 
 	ctx     context.Context
@@ -62,12 +62,12 @@ func init() {
 }
 
 func TestTLMProcessorTestSuite(t *testing.T) {
-	suite.Run(t, new(tlmProcessorTestSuite))
+	suite.Run(t, new(tokenLogicModuleTestSuite))
 }
 
 // SetupTest generates and sets all rewardee addresses on the suite, and
 // set a service, application, and supplier on the suite.
-func (s *tlmProcessorTestSuite) SetupTest() {
+func (s *tokenLogicModuleTestSuite) SetupTest() {
 	s.daoRewardBech32 = daoRewardBech32
 	s.sourceOwnerBech32 = sample.AccAddress()
 	s.proposerConsAddr = sample.ConsAddress()
@@ -111,7 +111,7 @@ func (s *tlmProcessorTestSuite) SetupTest() {
 
 // getProofParams returns the default proof params with a high proof requirement threshold
 // and no proof request probability such that no claims require a proof.
-func (s *tlmProcessorTestSuite) getProofParams() *prooftypes.Params {
+func (s *tokenLogicModuleTestSuite) getProofParams() *prooftypes.Params {
 	proofParams := prooftypes.DefaultParams()
 	highProofRequirementThreshold := cosmostypes.NewInt64Coin(volatile.DenomuPOKT, math.MaxInt64)
 	proofParams.ProofRequirementThreshold = &highProofRequirementThreshold
@@ -120,14 +120,14 @@ func (s *tlmProcessorTestSuite) getProofParams() *prooftypes.Params {
 }
 
 // getSharedParams returns the default shared params with the CUTTM set to 1.
-func (s *tlmProcessorTestSuite) getSharedParams() *sharedtypes.Params {
+func (s *tokenLogicModuleTestSuite) getSharedParams() *sharedtypes.Params {
 	sharedParams := sharedtypes.DefaultParams()
 	sharedParams.ComputeUnitsToTokensMultiplier = 1
 	return &sharedParams
 }
 
 // getTokenomicsParams returns the default tokenomics params with the dao_reward_address set to s.daoRewardBech32.
-func (s *tlmProcessorTestSuite) getTokenomicsParams() *tokenomicstypes.Params {
+func (s *tokenLogicModuleTestSuite) getTokenomicsParams() *tokenomicstypes.Params {
 	tokenomicsParams := tokenomicstypes.DefaultParams()
 	tokenomicsParams.DaoRewardAddress = s.daoRewardBech32
 	return &tokenomicsParams
@@ -137,7 +137,7 @@ func (s *tlmProcessorTestSuite) getTokenomicsParams() *tokenomicstypes.Params {
 // the suites service, application, and supplier.
 // DEV_NOTE: The sum/count must be large enough to avoid a proposer reward
 // (or other small proportion rewards) from being truncated to zero (> 1upokt).
-func (s *tlmProcessorTestSuite) createClaims(
+func (s *tokenLogicModuleTestSuite) createClaims(
 	keepers *testkeeper.TokenomicsModuleKeepers,
 	numClaims int,
 ) {
@@ -164,7 +164,7 @@ func (s *tlmProcessorTestSuite) createClaims(
 
 // settleClaims sets the block height to the settlement height for the current
 // session and triggers the settlement of all pending claims.
-func (s *tlmProcessorTestSuite) settleClaims(t *testing.T) (settledResults, expiredResults tlm.PendingSettlementResults) {
+func (s *tokenLogicModuleTestSuite) settleClaims(t *testing.T) (settledResults, expiredResults tlm.PendingSettlementResults) {
 	// Increment the block height to the settlement height.
 	settlementHeight := sharedtypes.GetSettlementSessionEndHeight(s.getSharedParams(), 1)
 	s.setBlockHeight(settlementHeight)
@@ -180,6 +180,6 @@ func (s *tlmProcessorTestSuite) settleClaims(t *testing.T) (settledResults, expi
 }
 
 // setBlockHeight sets the block height of the suite's context to height.
-func (s *tlmProcessorTestSuite) setBlockHeight(height int64) {
+func (s *tokenLogicModuleTestSuite) setBlockHeight(height int64) {
 	s.ctx = cosmostypes.UnwrapSDKContext(s.ctx).WithBlockHeight(height)
 }

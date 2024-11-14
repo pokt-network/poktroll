@@ -2,7 +2,6 @@ package keeper
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"slices"
 
@@ -346,73 +345,78 @@ func (k Keeper) ExecutePendingResults(ctx cosmostypes.Context, results tlm.Pendi
 }
 
 // executePendingMints executes all pending mint operations.
-func (k Keeper) executePendingMints(ctx cosmostypes.Context, mints []tlm.MintBurn) (errs error) {
+func (k Keeper) executePendingMints(ctx cosmostypes.Context, mints []tlm.MintBurnOperation) error {
 	for _, mint := range mints {
+		if err := mint.Validate(); err != nil {
+			return err
+		}
 		if err := k.bankKeeper.MintCoins(ctx, mint.DestinationModule, cosmostypes.NewCoins(mint.Coin)); err != nil {
-			err = tokenomicstypes.ErrTokenomicsModuleMint.Wrapf(
+			return tokenomicstypes.ErrTokenomicsModuleMint.Wrapf(
 				"destination module %q minting %s: %s", mint.DestinationModule, mint.Coin, err,
 			)
-			errs = errors.Join(errs, err)
 		}
 	}
-	return errs
+	return nil
 }
 
 // executePendingBurns executes all pending burn operations.
-func (k Keeper) executePendingBurns(ctx cosmostypes.Context, burns []tlm.MintBurn) (errs error) {
-	logger := k.Logger().With("method", "executePendingBurns")
+func (k Keeper) executePendingBurns(ctx cosmostypes.Context, burns []tlm.MintBurnOperation) error {
 	for _, burn := range burns {
+		if err := burn.Validate(); err != nil {
+			return err
+		}
+
 		if err := k.bankKeeper.BurnCoins(ctx, burn.DestinationModule, cosmostypes.NewCoins(burn.Coin)); err != nil {
-			err = tokenomicstypes.ErrTokenomicsModuleBurn.Wrapf(
+			return tokenomicstypes.ErrTokenomicsModuleBurn.Wrapf(
 				"destination module %q burning %s: %s", burn.DestinationModule, burn.Coin, err,
 			)
-			logger.Error(err.Error())
-			errs = errors.Join(errs, err)
 		}
 	}
-	return errs
+	return nil
 }
 
 // executePendingModToModTransfers executes all pending module to module transfer operations.
-func (k Keeper) executePendingModToModTransfers(ctx cosmostypes.Context, transfers []tlm.ModToModTransfer) (errs error) {
-	logger := k.Logger().With("method", "executePendingBurns")
+func (k Keeper) executePendingModToModTransfers(ctx cosmostypes.Context, transfers []tlm.ModToModTransfer) error {
 	for _, transfer := range transfers {
+		if err := transfer.Validate(); err != nil {
+			return err
+		}
+
 		if err := k.bankKeeper.SendCoinsFromModuleToModule(
 			ctx,
 			transfer.SenderModule,
 			transfer.RecipientModule,
 			cosmostypes.NewCoins(transfer.Coin),
 		); err != nil {
-			err = tokenomicstypes.ErrTokenomicsTransfer.Wrapf(
+			return tokenomicstypes.ErrTokenomicsTransfer.Wrapf(
 				"sender module %q to recipient module %q transferring %s: %s",
 				transfer.SenderModule, transfer.RecipientModule, transfer.Coin, err,
 			)
-			logger.Error(err.Error())
-			errs = errors.Join(errs, err)
 		}
 	}
-	return errs
+	return nil
 }
 
 // executePendingModToAcctTransfers executes all pending module to account transfer operations.
-func (k Keeper) executePendingModToAcctTransfers(ctx cosmostypes.Context, transfers []tlm.ModToAcctTransfer) (errs error) {
-	logger := k.Logger().With("method", "executePendingBurns")
+func (k Keeper) executePendingModToAcctTransfers(ctx cosmostypes.Context, transfers []tlm.ModToAcctTransfer) error {
 	for _, transfer := range transfers {
+		if err := transfer.Validate(); err != nil {
+			return err
+		}
+
 		if err := k.bankKeeper.SendCoinsFromModuleToAccount(
 			ctx,
 			transfer.SenderModule,
 			transfer.RecipientAddress,
 			cosmostypes.NewCoins(transfer.Coin),
 		); err != nil {
-			err = tokenomicstypes.ErrTokenomicsTransfer.Wrapf(
+			return tokenomicstypes.ErrTokenomicsTransfer.Wrapf(
 				"sender module %q to recipient address %q transferring %s: %s",
 				transfer.SenderModule, transfer.RecipientAddress, transfer.Coin, err,
 			)
-			logger.Error(err.Error())
-			errs = errors.Join(errs, err)
 		}
 	}
-	return errs
+	return nil
 }
 
 // getExpiringClaims returns all claims that are expiring at the current block height.
@@ -507,6 +511,11 @@ func (k Keeper) slashSupplierStake(
 		totalSlashingCoin = cosmostypes.NewCoin(volatile.DenomuPOKT, slashedSupplierInitialStakeCoin.Amount)
 	}
 
+	// TODO_IN_THIS_COMMIT: consolidate into settlement result.
+	// TODO_IN_THIS_COMMIT: consolidate into settlement result.
+	// TODO_IN_THIS_COMMIT: consolidate into settlement result.
+	// TODO_IN_THIS_COMMIT: consolidate into settlement result.
+	//
 	// Since staking mints tokens to the supplier module account, to have a correct
 	// accounting, the slashing amount needs to be sent from the supplier module
 	// account to the tokenomics module account.

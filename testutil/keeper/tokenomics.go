@@ -591,7 +591,9 @@ func WithProposerAddr(addr string) TokenomicsModuleKeepersOptFn {
 	}
 }
 
-func WithTLMProcessors(processors []tlm.TokenLogicModule) TokenomicsModuleKeepersOptFn {
+// WithTokenLogicModules returns a TokenomicsModuleKeepersOptFn that sets the given
+// TLM processors on the tokenomicsModuleKeepersConfig.
+func WithTokenLogicModules(processors []tlm.TokenLogicModule) TokenomicsModuleKeepersOptFn {
 	return func(cfg *tokenomicsModuleKeepersConfig) {
 		cfg.tokenLogicModules = processors
 	}

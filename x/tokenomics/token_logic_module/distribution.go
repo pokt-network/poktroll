@@ -21,6 +21,7 @@ func distributeSupplierRewardsToShareHolders(
 	logger cosmoslog.Logger,
 	result *PendingSettlementResult,
 	tokenLogicModule TokenLogicModuleId,
+	modToAcctTransferReason TokenLogicModuleReason,
 	supplier *sharedtypes.Supplier,
 	serviceId string,
 	amountToDistribute uint64,
@@ -72,7 +73,8 @@ func distributeSupplierRewardsToShareHolders(
 		// Send the newley minted uPOKT from the supplier module account
 		// to the supplier's shareholders.
 		result.AppendModToAcctTransfer(ModToAcctTransfer{
-			TLMName:          tokenLogicModule,
+			OriginTLM:        tokenLogicModule,
+			OriginReason:     modToAcctTransferReason,
 			SenderModule:     suppliertypes.ModuleName,
 			RecipientAddress: shareHolderAccAddr,
 			Coin:             shareAmountCoin,

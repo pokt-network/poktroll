@@ -8,6 +8,7 @@ import (
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
+	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
 )
 
 // PendingSettlementResults is a slice of PendingSettlementResult. It implements
@@ -17,35 +18,111 @@ type PendingSettlementResults []*PendingSettlementResult
 // resultOption is a function which receives a PendingSettlementResult for modification.
 type resultOption func(*PendingSettlementResult)
 
-// MintBurn holds the parameters of a mint or burn operation.
-type MintBurn struct {
-	TLM               TokenLogicModuleId
+// TODO_IN_THIS_COMMIT: promot to protobuf & godoc...
+type TokenLogicModuleReason string
+
+const (
+	// UnspecifiedTLMReason is the default value for TokenLogicModuleReason, it is used as a field
+	// type for objects which need to distinguish whether a TLMReason has been specified it or not.
+	UnspecifiedTLMReason TokenLogicModuleReason = ""
+
+	// Value transfer (credit/debit) - MintBurnOperation (mint/burn)
+	TLMRelayBurnEqualsMint_SupplierStakeMint    = "TLMRelayBurnEqualsMint_SupplierStakeMint"
+	TLMRelayBurnEqualsMint_ApplicationStakeBurn = "TLMGlobalMint_ApplicationBurn"
+
+	// Inflation - MintBurnOperation (mint)
+	TLMGlobalMint_Inflation = "TLMGlobalMint_Inflation"
+
+	// Reward distribution - ModToAcctTransfer
+	TLMRelayBurnEqualsMint_SupplierShareholderRewardDistribution = "TLMRelayBurnEqualsMint_SupplierShareholderRewardDistribution"
+	TLMGlobalMint_DaoRewardDistribution                          = "TLMRelayBurnEqualsMint_DaoRewardDistribution"
+	TLMGlobalMint_ProposerRewardDistribution                     = "TLMGlobalMint_ProposerRewardDistribution"
+	TLMGlobalMint_SupplierShareholderRewardDistribution          = "TLMGlobalMint_SupplierShareholderRewardDistribution"
+	TLMGlobalMint_SourceOwnerRewardDistribution                  = "TLMGlobalMint_SourceOwnerRewardDistribution"
+	TLMGlobalMint_ApplicationRewardDistribution                  = "TLMGlobalMint_ApplicationRewardDistribution"
+
+	// Self-servicing mitigation - MintBurnOperation (burn)
+	TLMGlobalMintReimbursementRequest_DaoReimbursementEscrow = "TLMGlobalMintReimbursementRequest_DaoReimbursementEscrow"
+
+	// Penalization - MintBurnOperation (burn)
+	TLMRelayBurnEqualsMint_SupplierSlash = "TLMRelayBurnEqualsMint_SupplierSlash"
+
+	// Module accounting - ModToModTransfer
+	TLMGlobalMint_SupplierShareholderRewardModuleTransfer               = "TLMGlobalMint_SupplierShareholderRewardModuleTransfer"
+	TLMGlobalMintReimbursementRequest_ReimbursementEscrowModuleTransfer = "TLMGlobalMintReimbursementRequest_ReimbursementEscrowModuleTransfer"
+)
+
+// MintBurnOperation holds the parameters of a mint or burn operation.
+type MintBurnOperation struct {
+	OriginTLM         TokenLogicModuleId
+	OriginReason      TokenLogicModuleReason
 	DestinationModule string
 	Coin              cosmostypes.Coin
 }
 
+// Validate returns an error if the MintBurnOperation has either an unspecified TLM or TLMReason.
+func (m *MintBurnOperation) Validate() error {
+	// TODO_IN_THIS_COMMIT: factor unspecified validation out (can build interface from proto getters) when refactoring to protobufs.
+	if m.OriginTLM == UnspecifiedTLM {
+		return tokenomicstypes.ErrTokenomicsModuleBurn.Wrapf("origin TLM is unspecified: %+v", m)
+	}
+
+	if m.OriginReason == UnspecifiedTLMReason {
+		return tokenomicstypes.ErrTokenomicsModuleBurn.Wrapf("origin reason is unspecified: %+v", m)
+	}
+	return nil
+}
+
 // ModToAcctTransfer holds the parameters of a module to account transfer operation.
 type ModToAcctTransfer struct {
-	TLMName          TokenLogicModuleId
+	OriginTLM        TokenLogicModuleId
+	OriginReason     TokenLogicModuleReason
 	SenderModule     string
 	RecipientAddress cosmostypes.AccAddress
 	Coin             cosmostypes.Coin
 }
 
+// Validate returns an error if the ModToAcctTransfer has either an unspecified TLM or TLMReason.
+func (m *ModToAcctTransfer) Validate() error {
+	// TODO_IN_THIS_COMMIT: factor unspecified validation out (can build interface from proto getters) when refactoring to protobufs.
+	if m.OriginTLM == UnspecifiedTLM {
+		return tokenomicstypes.ErrTokenomicsModuleBurn.Wrapf("origin TLM is unspecified: %+v", m)
+	}
+
+	if m.OriginReason == UnspecifiedTLMReason {
+		return tokenomicstypes.ErrTokenomicsModuleBurn.Wrapf("origin reason is unspecified: %+v", m)
+	}
+	return nil
+}
+
 // ModToModTransfer holds the parameters of a module to module transfer operation.
 type ModToModTransfer struct {
-	TLMName         TokenLogicModuleId
+	OriginTLM       TokenLogicModuleId
+	OriginReason    TokenLogicModuleReason
 	SenderModule    string
 	RecipientModule string
 	Coin            cosmostypes.Coin
+}
+
+// Validate returns an error if the ModToModTransfer has either an unspecified TLM or TLMReason.
+func (m *ModToModTransfer) Validate() error {
+	// TODO_IN_THIS_COMMIT: factor unspecified validation out (can build interface from proto getters) when refactoring to protobufs.
+	if m.OriginTLM == UnspecifiedTLM {
+		return tokenomicstypes.ErrTokenomicsModuleBurn.Wrapf("origin TLM is unspecified: %+v", m)
+	}
+
+	if m.OriginReason == UnspecifiedTLMReason {
+		return tokenomicstypes.ErrTokenomicsModuleBurn.Wrapf("origin reason is unspecified: %+v", m)
+	}
+	return nil
 }
 
 // PendingSettlementResult holds a claim and mints, burns, and transfers that
 // result from its settlement.
 type PendingSettlementResult struct {
 	Claim              prooftypes.Claim
-	Mints              []MintBurn
-	Burns              []MintBurn
+	Mints              []MintBurnOperation
+	Burns              []MintBurnOperation
 	ModToModTransfers  []ModToModTransfer
 	ModToAcctTransfers []ModToAcctTransfer
 }
@@ -98,12 +175,12 @@ func (r *PendingSettlementResult) GetServiceId() string {
 }
 
 // AppendMint appends a mint operation to the result.
-func (r *PendingSettlementResult) AppendMint(mint MintBurn) {
+func (r *PendingSettlementResult) AppendMint(mint MintBurnOperation) {
 	r.Mints = append(r.Mints, mint)
 }
 
 // AppendBurn appends a burn operation to the result.
-func (r *PendingSettlementResult) AppendBurn(burn MintBurn) {
+func (r *PendingSettlementResult) AppendBurn(burn MintBurnOperation) {
 	r.Burns = append(r.Burns, burn)
 }
 
@@ -202,14 +279,14 @@ func (rs *PendingSettlementResults) Append(result ...*PendingSettlementResult) {
 }
 
 // WithMints returns a resultOption which sets the Mints field of the PendingSettlementResult.
-func WithMints(mints []MintBurn) resultOption {
+func WithMints(mints []MintBurnOperation) resultOption {
 	return func(r *PendingSettlementResult) {
 		r.Mints = mints
 	}
 }
 
 // WithBurns returns a resultOption which sets the Burns field of the PendingSettlementResult.
-func WithBurns(burns []MintBurn) resultOption {
+func WithBurns(burns []MintBurnOperation) resultOption {
 	return func(r *PendingSettlementResult) {
 		r.Burns = burns
 	}

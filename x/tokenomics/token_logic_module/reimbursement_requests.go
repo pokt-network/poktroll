@@ -76,7 +76,8 @@ func (tlm tlmGlobalMintReimbursementRequest) Process(
 	// Send the global per claim mint inflation uPOKT from the application module
 	// account to the tokenomics module account as an intermediary step.
 	result.AppendModToModTransfer(ModToModTransfer{
-		TLMName:         TLMGlobalMintReimbursementRequest,
+		OriginTLM:       TLMGlobalMintReimbursementRequest,
+		OriginReason:    TLMGlobalMintReimbursementRequest_ReimbursementEscrowModuleTransfer,
 		SenderModule:    apptypes.ModuleName,
 		RecipientModule: tokenomicstypes.ModuleName,
 		Coin:            newMintCoin,
@@ -90,7 +91,8 @@ func (tlm tlmGlobalMintReimbursementRequest) Process(
 	// for second order economic effects.
 	// See: https://discord.com/channels/824324475256438814/997192534168182905/1299372745632649408
 	result.AppendModToAcctTransfer(ModToAcctTransfer{
-		TLMName:          TLMGlobalMintReimbursementRequest,
+		OriginTLM:        TLMGlobalMintReimbursementRequest,
+		OriginReason:     TLMGlobalMintReimbursementRequest_DaoReimbursementEscrow,
 		SenderModule:     tokenomicstypes.ModuleName,
 		RecipientAddress: daoAccountAddr,
 		Coin:             newMintCoin,

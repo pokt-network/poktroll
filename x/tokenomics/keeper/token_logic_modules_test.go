@@ -346,7 +346,7 @@ func TestProcessTokenLogicModules_TLMGlobalMint_Valid_MintDistributionCorrect(t 
 	opts := []testkeeper.TokenomicsModuleKeepersOptFn{
 		testkeeper.WithService(*service),
 		testkeeper.WithProposerAddr(proposerConsAddr),
-		testkeeper.WithTLMProcessors(tokenLogicModules),
+		testkeeper.WithTokenLogicModules(tokenLogicModules),
 	}
 	keepers, ctx := testkeeper.NewTokenomicsModuleKeepers(t, nil, opts...)
 	keepers.SetService(ctx, *service)

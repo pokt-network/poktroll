@@ -5,15 +5,6 @@ import (
 	paramtypes "github.com/cosmos/cosmos-sdk/x/params/types"
 )
 
-// DaoRewardAddress is the address that will receive the dao/foundation rewards
-// during claim settlement (global mint TLM). It is intended to be assigned via
-// -ldflags="-X github.com/pokt-network/poktroll/app.FoundationRewardAddress=<foundation_address>"
-// at built-time. This can be done via the config.yaml by adding the line as an element
-// to the build.ldflags list.
-//
-// TODO_TECHDEBT: Promote this value to a tokenomics module parameter.
-var DaoRewardAddress string
-
 var (
 	KeyMintAllocationPercentages     = []byte("MintAllocationPercentages")
 	ParamMintAllocationPercentages   = "mint_allocation_percentages"

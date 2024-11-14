@@ -16,6 +16,10 @@ import (
 type TokenLogicModuleId int
 
 const (
+	// UnspecifiedTLM is the default value for TokenLogicModuleId, it is used as a field
+	// type for objects which need to distinguish whether a TLM has handled it or not.
+	UnspecifiedTLM TokenLogicModuleId = iota
+
 	// TLMRelayBurnEqualsMint is the token logic module that burns the application's
 	// stake balance based on the amount of work done by the supplier.
 	// The same amount of tokens is minted and added to the supplier account balance.
@@ -38,6 +42,7 @@ const (
 )
 
 var tokenLogicModuleStrings = [...]string{
+	"UnspecifiedTLM",
 	"TLMRelayBurnEqualsMint",
 	"TLMGlobalMint",
 	"TLMGlobalMintReimbursementRequest",

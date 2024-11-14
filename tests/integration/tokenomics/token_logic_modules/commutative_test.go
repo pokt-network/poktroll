@@ -31,7 +31,7 @@ var zerouPOKT = types.NewInt64Coin(volatile.DenomuPOKT, 0)
 // 2. Create valid claims (which require no proofs).
 // 3. Advance the block height to the settlement height and settle the claims.
 // 5. Assert that the settlement states of all TLM order permutations match.
-func (s *tlmProcessorTestSuite) TestTLMProcessorsAreCommutative() {
+func (s *tokenLogicModuleTestSuite) TestTLMProcessorsAreCommutative() {
 	// Generate all permutations of TLM processor ordering.
 	tokenLogicModules := tlm.NewDefaultTokenLogicModules()
 	tlmOrderPermutations := permute(tokenLogicModules)
@@ -54,7 +54,7 @@ func (s *tlmProcessorTestSuite) TestTLMProcessorsAreCommutative() {
 		)
 
 		s.T().Run(testDesc, func(t *testing.T) {
-			s.setupKeepers(t, keeper.WithTLMProcessors(tlmPermutation))
+			s.setupKeepers(t, keeper.WithTokenLogicModules(tlmPermutation))
 
 			// Assert that no pre-existing claims are present.
 			numExistingClaims := len(s.keepers.GetAllClaims(s.ctx))
@@ -79,7 +79,7 @@ func (s *tlmProcessorTestSuite) TestTLMProcessorsAreCommutative() {
 // with the given options, and creates the suite's service, application, and supplier
 // from SetupTest(). It also sets the block height to 1 and the proposer address to
 // the proposer address from SetupTest().
-func (s *tlmProcessorTestSuite) setupKeepers(t *testing.T, opts ...keeper.TokenomicsModuleKeepersOptFn) {
+func (s *tokenLogicModuleTestSuite) setupKeepers(t *testing.T, opts ...keeper.TokenomicsModuleKeepersOptFn) {
 	defaultOpts := []keeper.TokenomicsModuleKeepersOptFn{
 		keeper.WithService(*s.service),
 		keeper.WithApplication(*s.app),
@@ -109,7 +109,7 @@ func (s *tlmProcessorTestSuite) setupKeepers(t *testing.T, opts ...keeper.Tokeno
 
 // setExpectedSettlementState sets the expected settlement state on the suite based
 // on the current network state and the given settledResults and expiredResults.
-func (s *tlmProcessorTestSuite) setExpectedSettlementState(
+func (s *tokenLogicModuleTestSuite) setExpectedSettlementState(
 	t *testing.T,
 	settledResults,
 	expiredResults tlm.PendingSettlementResults,
@@ -122,7 +122,7 @@ func (s *tlmProcessorTestSuite) setExpectedSettlementState(
 }
 
 // getSettlementState returns a settlement state based on the current network state.
-func (s *tlmProcessorTestSuite) getSettlementState(t *testing.T) *settlementState {
+func (s *tokenLogicModuleTestSuite) getSettlementState(t *testing.T) *settlementState {
 	t.Helper()
 
 	app, isAppFound := s.keepers.GetApplication(s.ctx, s.app.GetAddress())
@@ -140,7 +140,7 @@ func (s *tlmProcessorTestSuite) getSettlementState(t *testing.T) *settlementStat
 }
 
 // getBalance returns the current balance of the given bech32 address.
-func (s *tlmProcessorTestSuite) getBalance(t *testing.T, bech32 string) *types.Coin {
+func (s *tokenLogicModuleTestSuite) getBalance(t *testing.T, bech32 string) *types.Coin {
 	t.Helper()
 
 	res, err := s.keepers.Balance(s.ctx, &banktypes.QueryBalanceRequest{
@@ -156,7 +156,7 @@ func (s *tlmProcessorTestSuite) getBalance(t *testing.T, bech32 string) *types.C
 // assertExpectedSettlementState asserts that the current network state matches the
 // expected settlement state, and that actualSettledResults and actualExpiredResults
 // match their corresponding expectations.
-func (s *tlmProcessorTestSuite) assertExpectedSettlementState(
+func (s *tokenLogicModuleTestSuite) assertExpectedSettlementState(
 	t *testing.T,
 	actualSettledResults,
 	actualExpiredResults tlm.PendingSettlementResults,
