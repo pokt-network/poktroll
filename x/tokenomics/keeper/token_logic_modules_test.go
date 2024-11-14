@@ -340,7 +340,7 @@ func TestProcessTokenLogicModules_TLMGlobalMint_Valid_MintDistributionCorrect(t 
 	proposerConsAddr := sample.ConsAddressBech32()
 	daoAddress := authtypes.NewModuleAddress(govtypes.ModuleName)
 
-	tokenLogicModules := tlm.NewDefaultTokenLogicModules(daoAddress.String())
+	tokenLogicModules := tlm.NewDefaultTokenLogicModules()
 
 	// Prepare the keepers
 	opts := []testkeeper.TokenomicsModuleKeepersOptFn{
@@ -350,6 +350,11 @@ func TestProcessTokenLogicModules_TLMGlobalMint_Valid_MintDistributionCorrect(t 
 	}
 	keepers, ctx := testkeeper.NewTokenomicsModuleKeepers(t, nil, opts...)
 	keepers.SetService(ctx, *service)
+
+	// Set the dao_reward_address param on the tokenomics keeper.
+	tokenomicsParams := keepers.Keeper.GetParams(ctx)
+	tokenomicsParams.DaoRewardAddress = daoAddress.String()
+	keepers.Keeper.SetParams(ctx, tokenomicsParams)
 
 	// Set compute_units_to_tokens_multiplier to simplify expectation calculations.
 	sharedParams := keepers.SharedKeeper.GetParams(ctx)
@@ -428,7 +433,6 @@ func TestProcessTokenLogicModules_TLMGlobalMint_Valid_MintDistributionCorrect(t 
 	}
 
 	// Compute mint per actor
-	tokenomicsParams := keepers.Keeper.GetParams(ctx)
 	numTokensMinted := numTokensClaimed * tlm.GlobalInflationPerClaim
 	numTokensMintedInt := cosmosmath.NewIntFromUint64(uint64(numTokensMinted))
 	daoMint := cosmosmath.NewInt(int64(numTokensMinted * tokenomicsParams.MintAllocationPercentages.Dao))

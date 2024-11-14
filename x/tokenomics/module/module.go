@@ -208,14 +208,7 @@ func ProvideModule(in ModuleInputs) ModuleOutputs {
 	// DEV_NOTE: The token logic modules are provided as arguments to the keeper mainly
 	// to satisfy testing requirements (see: x/tokenomics/token_logic_modules_test.go).
 
-	// MintAllocationDAO proportion of minted tokens will be sent to this address
-	// as a result of global mint TLM processing.
-	// TODO_TECHDEBT: Promote this value to a tokenomics module parameter.
-	daoRewardBech32 := tokenomicstypes.DaoRewardAddress
-	if daoRewardBech32 == "" {
-		panic(`dao/foundation reward address MUST be set; add a "-X github.com/pokt-network/poktroll/x/tokenomics/types.DaoRewardAddress" element to build.ldglags in the config.yml`)
-	}
-	tokenLogicModules := tlm.NewDefaultTokenLogicModules(daoRewardBech32)
+	tokenLogicModules := tlm.NewDefaultTokenLogicModules()
 
 	k := keeper.NewKeeper(
 		in.Cdc,

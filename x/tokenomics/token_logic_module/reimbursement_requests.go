@@ -13,15 +13,11 @@ import (
 
 var _ TokenLogicModule = (*tlmGlobalMintReimbursementRequest)(nil)
 
-type tlmGlobalMintReimbursementRequest struct {
-	daoRewardBech32 string
-}
+type tlmGlobalMintReimbursementRequest struct{}
 
 // NewGlobalMintReimbursementRequestTLM returns a new GlobalMintReimbursementRequest TLM.
-func NewGlobalMintReimbursementRequestTLM(daoRewardBech32 string) TokenLogicModule {
-	return &tlmGlobalMintReimbursementRequest{
-		daoRewardBech32: daoRewardBech32,
-	}
+func NewGlobalMintReimbursementRequestTLM() TokenLogicModule {
+	return &tlmGlobalMintReimbursementRequest{}
 }
 
 func (tlm tlmGlobalMintReimbursementRequest) GetId() TokenLogicModuleId {
@@ -68,7 +64,8 @@ func (tlm tlmGlobalMintReimbursementRequest) Process(
 
 	// Send the global per claim mint inflation uPOKT from the tokenomics module
 	// account to PNF/DAO.
-	daoAccountAddr, err := cosmostypes.AccAddressFromBech32(tlm.daoRewardBech32)
+	daoRewardAddress := tlmCtx.Params.Tokenomics.GetDaoRewardAddress()
+	daoAccountAddr, err := cosmostypes.AccAddressFromBech32(daoRewardAddress)
 	if err != nil {
 		return tokenomicstypes.ErrTokenomicsApplicationReimbursementRequestFailed.Wrapf(
 			"getting PNF/DAO address: %v",

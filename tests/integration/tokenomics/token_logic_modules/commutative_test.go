@@ -17,6 +17,7 @@ import (
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 	tlm "github.com/pokt-network/poktroll/x/tokenomics/token_logic_module"
+	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
 )
 
 // zerouPOKT is a coin with the uPOKT denom and zero amount, intended for use in test assertions.
@@ -32,7 +33,7 @@ var zerouPOKT = types.NewInt64Coin(volatile.DenomuPOKT, 0)
 // 5. Assert that the settlement states of all TLM order permutations match.
 func (s *tlmProcessorTestSuite) TestTLMProcessorsAreCommutative() {
 	// Generate all permutations of TLM processor ordering.
-	tokenLogicModules := tlm.NewDefaultTokenLogicModules(s.foundationBech32)
+	tokenLogicModules := tlm.NewDefaultTokenLogicModules()
 	tlmOrderPermutations := permute(tokenLogicModules)
 
 	numTLMOrderPermutations := factorial(len(tokenLogicModules))
@@ -90,6 +91,8 @@ func (s *tlmProcessorTestSuite) setupKeepers(t *testing.T, opts ...keeper.Tokeno
 			prooftypes.ModuleName: s.getProofParams(),
 			// Set the CUTTM to simplify calculating settlement amount expectstions.
 			sharedtypes.ModuleName: s.getSharedParams(),
+			// Set the dao_reward_address for settlement rewards.
+			tokenomicstypes.ModuleName: s.getTokenomicsParams(),
 		}),
 	}
 
@@ -131,7 +134,7 @@ func (s *tlmProcessorTestSuite) getSettlementState(t *testing.T) *settlementStat
 		appStake:             app.GetStake(),
 		supplierOwnerBalance: s.getBalance(t, s.supplier.GetOwnerAddress()),
 		proposerBalance:      s.getBalance(t, proposerBech32),
-		foundationBalance:    s.getBalance(t, s.foundationBech32),
+		daoBalance:           s.getBalance(t, s.daoRewardBech32),
 		sourceOwnerBalance:   s.getBalance(t, s.sourceOwnerBech32),
 	}
 }
@@ -188,7 +191,7 @@ func (s *tlmProcessorTestSuite) assertExpectedSettlementState(
 		require.NotEqual(t, &zerouPOKT, actualSettlementState.appBalance)
 		require.NotEqual(t, &zerouPOKT, actualSettlementState.supplierOwnerBalance)
 		require.NotEqual(t, &zerouPOKT, actualSettlementState.proposerBalance)
-		require.NotEqual(t, &zerouPOKT, actualSettlementState.foundationBalance)
+		require.NotEqual(t, &zerouPOKT, actualSettlementState.daoBalance)
 		require.NotEqual(t, &zerouPOKT, actualSettlementState.sourceOwnerBalance)
 
 		// Assert that the expected and actual settlement states match.

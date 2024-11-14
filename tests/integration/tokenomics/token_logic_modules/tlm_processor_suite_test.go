@@ -20,7 +20,13 @@ import (
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 	tlm "github.com/pokt-network/poktroll/x/tokenomics/token_logic_module"
+	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
 )
+
+// daoRewardBech32 is a random address intended for use in tests.
+// In the commutativity test, the dao_reward_address is set to this
+// address and MUST remain unchanged between TLM permutations.
+var daoRewardBech32 = sample.AccAddress()
 
 type tlmProcessorTestSuite struct {
 	suite.Suite
@@ -34,7 +40,7 @@ type tlmProcessorTestSuite struct {
 
 	proposerConsAddr cosmostypes.ConsAddress
 	sourceOwnerBech32,
-	foundationBech32 string
+	daoRewardBech32 string
 
 	expectedSettledResults,
 	expectedExpiredResults tlm.PendingSettlementResults
@@ -47,7 +53,7 @@ type settlementState struct {
 	appBalance           *cosmostypes.Coin
 	supplierOwnerBalance *cosmostypes.Coin
 	proposerBalance      *cosmostypes.Coin
-	foundationBalance    *cosmostypes.Coin
+	daoBalance           *cosmostypes.Coin
 	sourceOwnerBalance   *cosmostypes.Coin
 }
 
@@ -62,7 +68,7 @@ func TestTLMProcessorTestSuite(t *testing.T) {
 // SetupTest generates and sets all rewardee addresses on the suite, and
 // set a service, application, and supplier on the suite.
 func (s *tlmProcessorTestSuite) SetupTest() {
-	s.foundationBech32 = sample.AccAddress()
+	s.daoRewardBech32 = daoRewardBech32
 	s.sourceOwnerBech32 = sample.AccAddress()
 	s.proposerConsAddr = sample.ConsAddress()
 
@@ -118,6 +124,13 @@ func (s *tlmProcessorTestSuite) getSharedParams() *sharedtypes.Params {
 	sharedParams := sharedtypes.DefaultParams()
 	sharedParams.ComputeUnitsToTokensMultiplier = 1
 	return &sharedParams
+}
+
+// getTokenomicsParams returns the default tokenomics params with the dao_reward_address set to s.daoRewardBech32.
+func (s *tlmProcessorTestSuite) getTokenomicsParams() *tokenomicstypes.Params {
+	tokenomicsParams := tokenomicstypes.DefaultParams()
+	tokenomicsParams.DaoRewardAddress = s.daoRewardBech32
+	return &tokenomicsParams
 }
 
 // createClaim creates numClaims number of claims for the current session given

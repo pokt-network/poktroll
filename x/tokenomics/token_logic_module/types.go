@@ -86,12 +86,10 @@ type TLMContext struct {
 // NewDefaultTokenLogicModules returns the default token logic module processors:
 // - TLMRelayBurnEqualsMint
 // - TLMGlobalMint
-func NewDefaultTokenLogicModules(daoRewardBech32 string) []TokenLogicModule {
+func NewDefaultTokenLogicModules() []TokenLogicModule {
 	return []TokenLogicModule{
 		NewRelayBurnEqualsMintTLM(),
-		// TODO_TECHDEBT: Replace daoRewardBech32 with the tokenomics module
-		// params once it's refactored as a param.
-		NewGlobalMintTLM(daoRewardBech32),
-		NewGlobalMintReimbursementRequestTLM(daoRewardBech32),
+		NewGlobalMintTLM(),
+		NewGlobalMintReimbursementRequestTLM(),
 	}
 }

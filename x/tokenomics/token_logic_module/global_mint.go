@@ -46,13 +46,11 @@ var (
 	_ TokenLogicModule = (*tlmGlobalMint)(nil)
 )
 
-type tlmGlobalMint struct {
-	authorityRewardAddr string
-}
+type tlmGlobalMint struct{}
 
 // NewGlobalMintTLM creates a new instance of the GlobalMint TLM.
-func NewGlobalMintTLM(authorityRewardAddr string) TokenLogicModule {
-	return &tlmGlobalMint{authorityRewardAddr: authorityRewardAddr}
+func NewGlobalMintTLM() TokenLogicModule {
+	return &tlmGlobalMint{}
 }
 
 func (tlm tlmGlobalMint) GetId() TokenLogicModuleId {
@@ -119,11 +117,12 @@ func (tlm tlmGlobalMint) Process(
 	logger.Info(fmt.Sprintf("operation queued: send (%v) newley minted coins from the tokenomics module to the supplier with address %q", supplierCoin, tlmCtx.Supplier.OperatorAddress))
 
 	// Send a portion of the rewards to the DAO
-	daoCoin, err := sendRewardsToAccount(logger, tlmCtx.Result, tokenomicstypes.ModuleName, tlm.authorityRewardAddr, &newMintAmtFloat, MintAllocationDAO)
+	daoRewardAddress := tlmCtx.Params.Tokenomics.GetDaoRewardAddress()
+	daoCoin, err := sendRewardsToAccount(logger, tlmCtx.Result, tokenomicstypes.ModuleName, daoRewardAddress, &newMintAmtFloat, MintAllocationDAO)
 	if err != nil {
 		return tokenomicstypes.ErrTokenomicsSendingMintRewards.Wrapf("sending rewards to DAO: %v", err)
 	}
-	logMsg = fmt.Sprintf("send (%v) newley minted coins from the tokenomics module to the DAO with address %q", daoCoin, tlm.authorityRewardAddr)
+	logMsg = fmt.Sprintf("send (%v) newley minted coins from the tokenomics module to the DAO with address %q", daoCoin, daoRewardAddress)
 	logRewardOperation(logger, logMsg, &daoCoin)
 
 	// Send a portion of the rewards to the source owner

@@ -236,7 +236,7 @@ func NewCompleteIntegrationApp(t *testing.T, opts ...IntegrationAppOptionFn) *Ap
 	t.Helper()
 
 	cfg := &IntegrationAppConfig{
-		TokenLogicModules: tlm.NewDefaultTokenLogicModules(sample.AccAddress()),
+		TokenLogicModules: tlm.NewDefaultTokenLogicModules(),
 	}
 	for _, opt := range opts {
 		opt(cfg)

@@ -258,7 +258,7 @@ func TokenomicsKeeperWithActorAddrs(t testing.TB) (
 		Return(relayMiningDifficulty, true).
 		AnyTimes()
 
-	tokenLogicModules := tlm.NewDefaultTokenLogicModules(sample.AccAddress())
+	tokenLogicModules := tlm.NewDefaultTokenLogicModules()
 
 	k := tokenomicskeeper.NewKeeper(
 		cdc,
@@ -295,7 +295,7 @@ func NewTokenomicsModuleKeepers(
 	t.Helper()
 
 	cfg := &tokenomicsModuleKeepersConfig{
-		tokenLogicModules: tlm.NewDefaultTokenLogicModules(sample.AccAddress()),
+		tokenLogicModules: tlm.NewDefaultTokenLogicModules(),
 	}
 	for _, opt := range opts {
 		opt(cfg)
@@ -511,12 +511,12 @@ func NewTokenomicsModuleKeepers(
 		cfg.tokenLogicModules,
 	)
 
+	require.NoError(t, tokenomicsKeeper.SetParams(sdkCtx, tokenomicstypes.DefaultParams()))
+
 	if params, ok := cfg.moduleParams[tokenomicstypes.ModuleName]; ok {
 		err = tokenomicsKeeper.SetParams(ctx, *params.(*tokenomicstypes.Params))
 		require.NoError(t, err)
 	}
-
-	require.NoError(t, tokenomicsKeeper.SetParams(sdkCtx, tokenomicstypes.DefaultParams()))
 
 	keepers := TokenomicsModuleKeepers{
 		Keeper:            &tokenomicsKeeper,
