@@ -257,12 +257,12 @@ func (s *suite) newMsgUpdateParam(
 
 func (s *suite) newTokenomicsMsgUpdateParam(authority string, param paramAny) (msg proto.Message) {
 	switch param.typeStr {
-	case "float64":
+	case "string":
 		msg = proto.Message(&tokenomicstypes.MsgUpdateParam{
 			Authority: authority,
 			Name:      param.name,
-			AsType: &tokenomicstypes.MsgUpdateParam_AsFloat{
-				AsFloat: param.value.(float64),
+			AsType: &tokenomicstypes.MsgUpdateParam_AsString{
+				AsString: param.value.(string),
 			},
 		})
 	default:
