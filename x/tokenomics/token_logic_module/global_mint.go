@@ -15,13 +15,6 @@ import (
 )
 
 const (
-	// TODO_BETA(@bryanchriswhite): Make all of these governance params
-	MintAllocationDAO         = 0.1
-	MintAllocationProposer    = 0.05
-	MintAllocationSupplier    = 0.7
-	MintAllocationSourceOwner = 0.15
-	MintAllocationApplication = 0.0
-
 	// MintDistributionAllowableTolerancePercent is the percent difference that is allowable
 	// between the number of minted/ tokens in the tokenomics module and what is distributed
 	// to pocket network participants.
@@ -87,6 +80,8 @@ func (tlm tlmGlobalMint) Process(
 	})
 	logger.Info(fmt.Sprintf("operation queued: mint (%s) to the tokenomics module account", newMintCoin))
 
+	mintAllocationPercentages := tlmCtx.Params.Tokenomics.GetMintAllocationPercentages()
+
 	// Send a portion of the rewards to the application
 	appCoin, err := sendRewardsToAccount(
 		logger,
@@ -95,7 +90,7 @@ func (tlm tlmGlobalMint) Process(
 		tokenomicstypes.ModuleName,
 		tlmCtx.Application.GetAddress(),
 		&newMintAmtFloat,
-		MintAllocationApplication,
+		mintAllocationPercentages.Application,
 	)
 	if err != nil {
 		return tokenomicstypes.ErrTokenomicsSendingMintRewards.Wrapf("sending rewards to application: %v", err)
@@ -104,7 +99,7 @@ func (tlm tlmGlobalMint) Process(
 	logRewardOperation(logger, logMsg, &appCoin)
 
 	// Send a portion of the rewards to the supplier shareholders.
-	supplierCoinsToShareAmt := calculateAllocationAmount(&newMintAmtFloat, MintAllocationSupplier)
+	supplierCoinsToShareAmt := calculateAllocationAmount(&newMintAmtFloat, mintAllocationPercentages.Supplier)
 	supplierCoin := cosmostypes.NewCoin(volatile.DenomuPOKT, math.NewInt(supplierCoinsToShareAmt))
 	// Send funds from the tokenomics module to the supplier module account
 	tlmCtx.Result.AppendModToModTransfer(tokenomicstypes.ModToModTransfer{
@@ -139,7 +134,7 @@ func (tlm tlmGlobalMint) Process(
 		tokenomicstypes.ModuleName,
 		daoRewardAddress,
 		&newMintAmtFloat,
-		MintAllocationDAO,
+		mintAllocationPercentages.Dao,
 	)
 	if err != nil {
 		return tokenomicstypes.ErrTokenomicsSendingMintRewards.Wrapf("sending rewards to DAO: %v", err)
@@ -155,7 +150,7 @@ func (tlm tlmGlobalMint) Process(
 		tokenomicstypes.ModuleName,
 		tlmCtx.Service.OwnerAddress,
 		&newMintAmtFloat,
-		MintAllocationSourceOwner,
+		mintAllocationPercentages.SourceOwner,
 	)
 	if err != nil {
 		return tokenomicstypes.ErrTokenomicsSendingMintRewards.Wrapf("sending rewards to source owner: %v", err)
@@ -172,7 +167,7 @@ func (tlm tlmGlobalMint) Process(
 		tokenomicstypes.ModuleName,
 		proposerAddr,
 		&newMintAmtFloat,
-		MintAllocationProposer,
+		mintAllocationPercentages.Proposer,
 	)
 	if err != nil {
 		return tokenomicstypes.ErrTokenomicsSendingMintRewards.Wrapf("sending rewards to proposer: %v", err)
