@@ -1,0 +1,75 @@
+syntax = "proto3";
+package poktroll.tokenomics;
+
+option go_package = "github.com/pokt-network/poktroll/x/tokenomics/types";
+option (gogoproto.stable_marshaler_all) = true;
+
+import "cosmos/base/v1beta1/coin.proto";
+import "cosmos_proto/cosmos.proto";
+import "gogoproto/gogo.proto";
+import "poktroll/proof/types.proto";
+
+// TODO_IN_THIS_COMMIT: update comment...
+// SettlementResult holds a claim and mints, burns, and transfers that result from its settlement.
+message SettlementResult {
+  poktroll.proof.Claim claim = 1 [(gogoproto.nullable) = false, (gogoproto.jsontag) = "claim"];
+  repeated MintBurnOp mints = 2 [(gogoproto.nullable) = false, (gogoproto.jsontag) = "mints"];
+  repeated MintBurnOp burns = 3 [(gogoproto.nullable) = false, (gogoproto.jsontag) = "burns"];
+  repeated ModToModTransfer mod_to_mod_transfers = 4 [(gogoproto.nullable) = false, (gogoproto.jsontag) = "mod_to_mod_transfers"];
+  repeated ModToAcctTransfer mod_to_acct_transfers = 5 [(gogoproto.nullable) = false, (gogoproto.jsontag) = "mod_to_acct_transfers"];
+}
+
+// MintBurnOperation holds the parameters of a mint or burn operation.
+message MintBurnOp {
+  SettlementOpReason op_reason = 1 [(gogoproto.jsontag) = "op_reason"];
+  string DestinationModule = 2 [(gogoproto.jsontag) = "destination_module"];
+  cosmos.base.v1beta1.Coin coin = 3 [(gogoproto.nullable) = false, (gogoproto.jsontag) = "coin"];
+}
+
+// ModToAcctTransfer holds the parameters of a module to account transfer operation.
+message ModToAcctTransfer {
+  SettlementOpReason op_reason = 1 [(gogoproto.jsontag) = "op_reason"];
+  string SenderModule = 2 [(gogoproto.jsontag) = "sender_module"];
+  string RecipientAddress = 3 [(cosmos_proto.scalar) = "cosmos.AddressString", (gogoproto.jsontag) = "recipient_address"];
+  cosmos.base.v1beta1.Coin coin = 4 [(gogoproto.nullable) = false, (gogoproto.jsontag) = "coin"];
+}
+
+// ModToModTransfer holds the parameters of a module to module transfer operation.
+message ModToModTransfer {
+  SettlementOpReason op_reason = 1 [(gogoproto.jsontag) = "op_reason"];
+  string SenderModule = 2 [(gogoproto.jsontag) = "sender_module"];
+  string RecipientModule = 3 [(gogoproto.jsontag) = "recipient_module"];
+  cosmos.base.v1beta1.Coin coin = 4 [(gogoproto.nullable) = false, (gogoproto.jsontag) = "coin"];
+}
+
+// TODO_IN_THIS_COMMIT: comment...
+enum SettlementOpReason {
+  // UNSPECIFIED is the default value for TokenLogicModuleReason, it is used as a field
+  // type for objects which need to distinguish whether a SettlementOpReason has been specified it or not.
+  UNSPECIFIED = 0;
+
+  // Value transfer (credit/debit) - MintBurnOperation (mint/burn)
+  TLM_RELAY_BURN_EQUALS_MINT_SUPPLIER_STAKE_MINT = 1;
+  TLM_RELAY_BURN_EQUALS_MINT_APPLICATION_STAKE_BURN = 2;
+
+  // Inflation - MintBurnOperation (mint)
+  TLM_GLOBAL_MINT_INFLATION = 3;
+
+  // Reward distribution - ModToAcctTransfer
+  TLM_RELAY_BURN_EQUALS_MINT_SUPPLIER_SHAREHOLDER_REWARD_DISTRIBUTION = 4;
+  TLM_GLOBAL_MINT_DAO_REWARD_DISTRIBUTION = 5;
+  TLM_GLOBAL_MINT_PROPOSER_REWARD_DISTRIBUTION = 6;
+  TLM_GLOBAL_MINT_SUPPLIER_SHAREHOLDER_REWARD_DISTRIBUTION = 7;
+  TLM_GLOBAL_MINT_SOURCE_OWNER_REWARD_DISTRIBUTION = 8;
+  TLM_GLOBAL_MINT_APPLICATION_REWARD_DISTRIBUTION = 9;
+
+  // Self-servicing mitigation - MintBurnOperation (burn)
+  TLM_GLOBAL_MINT_REIMBURSEMENT_REQUEST_APP_REIMBURSEMENT_ESCROW = 10;
+
+  // Penalization - MintBurnOperation (burn)
+  UNSPECIFIED_TLM_SUPPLIER_SLASH = 11;
+
+  // Module accounting - ModToModTransfer
+  TLM_GLOBAL_MINT_SUPPLIER_SHAREHOLDER_REWARD_MODULE_TRANSFER = 12;
+  TLM_GLOBAL_MINT_REIMBURSEMENT_REQUEST_ESCROW_MODULE_TRANSFER = 13;
+}

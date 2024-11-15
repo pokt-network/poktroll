@@ -360,14 +360,14 @@ func (k Keeper) ExecutePendingSettledResults(ctx cosmostypes.Context, results tl
 
 		logger.Info(fmt.Sprintf(
 			"done applying settled results for session %q",
-			result.GetClaim().GetSessionHeader().GetSessionId(),
+			result.Claim.GetSessionHeader().GetSessionId(),
 		))
 	}
 	return nil
 }
 
 // executePendingMints executes all pending mint operations.
-func (k Keeper) executePendingMints(ctx cosmostypes.Context, mints []tlm.MintBurnOperation) error {
+func (k Keeper) executePendingMints(ctx cosmostypes.Context, mints []tokenomicstypes.MintBurnOp) error {
 	for _, mint := range mints {
 		if err := mint.Validate(); err != nil {
 			return err
@@ -382,7 +382,7 @@ func (k Keeper) executePendingMints(ctx cosmostypes.Context, mints []tlm.MintBur
 }
 
 // executePendingBurns executes all pending burn operations.
-func (k Keeper) executePendingBurns(ctx cosmostypes.Context, burns []tlm.MintBurnOperation) error {
+func (k Keeper) executePendingBurns(ctx cosmostypes.Context, burns []tokenomicstypes.MintBurnOp) error {
 	for _, burn := range burns {
 		if err := burn.Validate(); err != nil {
 			return err
@@ -398,7 +398,7 @@ func (k Keeper) executePendingBurns(ctx cosmostypes.Context, burns []tlm.MintBur
 }
 
 // executePendingModToModTransfers executes all pending module to module transfer operations.
-func (k Keeper) executePendingModToModTransfers(ctx cosmostypes.Context, transfers []tlm.ModToModTransfer) error {
+func (k Keeper) executePendingModToModTransfers(ctx cosmostypes.Context, transfers []tokenomicstypes.ModToModTransfer) error {
 	for _, transfer := range transfers {
 		if err := transfer.Validate(); err != nil {
 			return err
@@ -420,16 +420,25 @@ func (k Keeper) executePendingModToModTransfers(ctx cosmostypes.Context, transfe
 }
 
 // executePendingModToAcctTransfers executes all pending module to account transfer operations.
-func (k Keeper) executePendingModToAcctTransfers(ctx cosmostypes.Context, transfers []tlm.ModToAcctTransfer) error {
+func (k Keeper) executePendingModToAcctTransfers(ctx cosmostypes.Context, transfers []tokenomicstypes.ModToAcctTransfer) error {
 	for _, transfer := range transfers {
 		if err := transfer.Validate(); err != nil {
 			return err
 		}
 
+		recepientAddr, err := cosmostypes.AccAddressFromBech32(transfer.RecipientAddress)
+		if err != nil {
+			// TODO_IN_THIS_COMMIT: find or create appropriate error type.
+			return fmt.Errorf(
+				"invalid recipient address %q: %s",
+				transfer.RecipientAddress, err,
+			)
+		}
+
 		if err := k.bankKeeper.SendCoinsFromModuleToAccount(
 			ctx,
 			transfer.SenderModule,
-			transfer.RecipientAddress,
+			recepientAddr,
 			cosmostypes.NewCoins(transfer.Coin),
 		); err != nil {
 			return tokenomicstypes.ErrTokenomicsTransfer.Wrapf(
@@ -494,7 +503,7 @@ func (k Keeper) getExpiringClaims(ctx cosmostypes.Context) (expiringClaims []pro
 // slashing amount from the supplier bank module to the tokenomics module account.
 func (k Keeper) slashSupplierStake(
 	ctx cosmostypes.Context,
-	settlementResult *tlm.SettlementResult,
+	settlementResult *tokenomicstypes.SettlementResult,
 	supplierOperatorAddress string,
 ) error {
 	logger := k.logger.With("method", "slashSupplierStake")
@@ -536,8 +545,8 @@ func (k Keeper) slashSupplierStake(
 	//if err := k.bankKeeper.SendCoinsFromModuleToModule(ctx, suppliertypes.ModuleName, tokenomicstypes.ModuleName, cosmostypes.NewCoins(slashingCoin)); err != nil {
 	//	return err
 	//}
-	settlementResult.AppendBurn(tlm.MintBurnOperation{
-		TLMReason:         tlm.UnspecifiedTLM_SupplierSlash,
+	settlementResult.AppendBurn(tokenomicstypes.MintBurnOp{
+		OpReason:          tokenomicstypes.SettlementOpReason_UNSPECIFIED_TLM_SUPPLIER_SLASH,
 		DestinationModule: tokenomicstypes.ModuleName,
 		Coin:              slashingCoin,
 	})
@@ -589,9 +598,11 @@ func (k Keeper) slashSupplierStake(
 
 	k.supplierKeeper.SetSupplier(ctx, supplierToSlash)
 
+	claim := settlementResult.GetClaim()
+
 	// Emit an event that a supplier has been slashed.
 	supplierSlashedEvent := tokenomicstypes.EventSupplierSlashed{
-		Claim: settlementResult.GetClaim(),
+		Claim: &claim,
 		//SupplierOperatorAddr: supplierOperatorAddress,
 		// TODO_IN_THIS_COMMIT: consider renaming to ProofMissingPenalty
 		ProofMissingPenalty: &slashingCoin,

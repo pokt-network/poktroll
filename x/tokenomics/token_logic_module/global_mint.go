@@ -81,8 +81,8 @@ func (tlm tlmGlobalMint) Process(
 	}
 
 	// Mint new uPOKT to the tokenomics module account
-	tlmCtx.Result.AppendMint(MintBurnOperation{
-		TLMReason:         TLMGlobalMint_Inflation,
+	tlmCtx.Result.AppendMint(tokenomicstypes.MintBurnOp{
+		OpReason:          tokenomicstypes.SettlementOpReason_TLM_GLOBAL_MINT_INFLATION,
 		DestinationModule: tokenomicstypes.ModuleName,
 		Coin:              newMintCoin,
 	})
@@ -92,9 +92,9 @@ func (tlm tlmGlobalMint) Process(
 	appCoin, err := sendRewardsToAccount(
 		logger,
 		tlmCtx.Result,
+		tokenomicstypes.SettlementOpReason_TLM_GLOBAL_MINT_APPLICATION_REWARD_DISTRIBUTION,
 		tokenomicstypes.ModuleName,
 		tlmCtx.Application.GetAddress(),
-		TLMGlobalMint_ApplicationRewardDistribution,
 		&newMintAmtFloat,
 		MintAllocationApplication,
 	)
@@ -108,8 +108,8 @@ func (tlm tlmGlobalMint) Process(
 	supplierCoinsToShareAmt := calculateAllocationAmount(&newMintAmtFloat, MintAllocationSupplier)
 	supplierCoin := cosmostypes.NewCoin(volatile.DenomuPOKT, math.NewInt(supplierCoinsToShareAmt))
 	// Send funds from the tokenomics module to the supplier module account
-	tlmCtx.Result.AppendModToModTransfer(ModToModTransfer{
-		TLMReason:       TLMGlobalMint_SupplierShareholderRewardModuleTransfer,
+	tlmCtx.Result.AppendModToModTransfer(tokenomicstypes.ModToModTransfer{
+		OpReason:        tokenomicstypes.SettlementOpReason_TLM_GLOBAL_MINT_REIMBURSEMENT_REQUEST_ESCROW_MODULE_TRANSFER,
 		SenderModule:    tokenomicstypes.ModuleName,
 		RecipientModule: suppliertypes.ModuleName,
 		Coin:            supplierCoin,
@@ -118,8 +118,7 @@ func (tlm tlmGlobalMint) Process(
 	if err = distributeSupplierRewardsToShareHolders(
 		logger,
 		tlmCtx.Result,
-		TLMGlobalMint,
-		TLMGlobalMint_SupplierShareholderRewardDistribution,
+		tokenomicstypes.SettlementOpReason_TLM_GLOBAL_MINT_SUPPLIER_SHAREHOLDER_REWARD_DISTRIBUTION,
 		tlmCtx.Supplier,
 		tlmCtx.Service.Id,
 		uint64(supplierCoinsToShareAmt),
@@ -137,9 +136,9 @@ func (tlm tlmGlobalMint) Process(
 	daoCoin, err := sendRewardsToAccount(
 		logger,
 		tlmCtx.Result,
+		tokenomicstypes.SettlementOpReason_TLM_GLOBAL_MINT_DAO_REWARD_DISTRIBUTION,
 		tokenomicstypes.ModuleName,
 		daoRewardAddress,
-		TLMGlobalMint_DaoRewardDistribution,
 		&newMintAmtFloat,
 		MintAllocationDAO,
 	)
@@ -153,9 +152,9 @@ func (tlm tlmGlobalMint) Process(
 	serviceCoin, err := sendRewardsToAccount(
 		logger,
 		tlmCtx.Result,
+		tokenomicstypes.SettlementOpReason_TLM_GLOBAL_MINT_SOURCE_OWNER_REWARD_DISTRIBUTION,
 		tokenomicstypes.ModuleName,
 		tlmCtx.Service.OwnerAddress,
-		TLMGlobalMint_SourceOwnerRewardDistribution,
 		&newMintAmtFloat,
 		MintAllocationSourceOwner,
 	)
@@ -170,9 +169,9 @@ func (tlm tlmGlobalMint) Process(
 	proposerCoin, err := sendRewardsToAccount(
 		logger,
 		tlmCtx.Result,
+		tokenomicstypes.SettlementOpReason_TLM_GLOBAL_MINT_PROPOSER_REWARD_DISTRIBUTION,
 		tokenomicstypes.ModuleName,
 		proposerAddr,
-		TLMGlobalMint_ProposerRewardDistribution,
 		&newMintAmtFloat,
 		MintAllocationProposer,
 	)
@@ -237,10 +236,10 @@ func ensureMintedCoinsAreDistributed(
 // tokenomics module account to the specified address.
 func sendRewardsToAccount(
 	logger cosmoslog.Logger,
-	result *SettlementResult,
+	result *tokenomicstypes.SettlementResult,
+	opReason tokenomicstypes.SettlementOpReason,
 	senderModule string,
 	recipientAddr string,
-	modToAcctTransferReason TokenLogicModuleReason,
 	settlementAmtFloat *big.Float,
 	allocation float64,
 ) (cosmostypes.Coin, error) {
@@ -256,15 +255,10 @@ func sendRewardsToAccount(
 		return cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 0), nil
 	}
 
-	recipientAccAddr, err := cosmostypes.AccAddressFromBech32(recipientAddr)
-	if err != nil {
-		return cosmostypes.Coin{}, err
-	}
-
-	result.AppendModToAcctTransfer(ModToAcctTransfer{
-		TLMReason:        modToAcctTransferReason,
+	result.AppendModToAcctTransfer(tokenomicstypes.ModToAcctTransfer{
+		OpReason:         opReason,
 		SenderModule:     senderModule,
-		RecipientAddress: recipientAccAddr,
+		RecipientAddress: recipientAddr,
 		Coin:             coinToAcc,
 	})
 

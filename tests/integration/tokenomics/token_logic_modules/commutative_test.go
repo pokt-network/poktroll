@@ -166,9 +166,9 @@ func (s *tokenLogicModuleTestSuite) assertExpectedSettlementState(
 
 	for _, expectedSettledResult := range s.expectedSettledResults {
 		// Find the corresponding actual settled result by matching on claim root hash.
-		foundActualResult := new(tlm.SettlementResult)
+		foundActualResult := new(tokenomicstypes.SettlementResult)
 		for _, actualSettledResult := range actualSettledResults {
-			if bytes.Equal(expectedSettledResult.GetClaim().GetRootHash(), actualSettledResult.GetClaim().GetRootHash()) {
+			if bytes.Equal(expectedSettledResult.Claim.GetRootHash(), actualSettledResult.Claim.GetRootHash()) {
 				foundActualResult = actualSettledResult
 				break
 			}

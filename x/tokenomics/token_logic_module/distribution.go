@@ -1,7 +1,6 @@
 package token_logic_module
 
 import (
-	"errors"
 	"fmt"
 	"math/big"
 
@@ -19,9 +18,10 @@ import (
 // shareholders based on the rev share percentage of the supplier service config.
 func distributeSupplierRewardsToShareHolders(
 	logger cosmoslog.Logger,
-	result *SettlementResult,
-	tokenLogicModule TokenLogicModuleId,
-	modToAcctTransferReason TokenLogicModuleReason,
+	result *tokenomicstypes.SettlementResult,
+	// TODO_IN_THIS_COMMIT: double-check that multiple reasons are used;
+	// otherwise, remove this argument.
+	settlementOpReason tokenomicstypes.SettlementOpReason,
 	supplier *sharedtypes.Supplier,
 	serviceId string,
 	amountToDistribute uint64,
@@ -65,17 +65,12 @@ func distributeSupplierRewardsToShareHolders(
 		// TODO_TECHDEBT(@red-0ne): Refactor to reuse the sendRewardsToAccount helper here.
 		shareAmountCoin := cosmostypes.NewCoin(volatile.DenomuPOKT, math.NewInt(int64(shareAmount)))
 
-		shareHolderAccAddr, err := cosmostypes.AccAddressFromBech32(revShare.GetAddress())
-		if err != nil {
-			errs = errors.Join(errs, err)
-		}
-
 		// Send the newley minted uPOKT from the supplier module account
 		// to the supplier's shareholders.
-		result.AppendModToAcctTransfer(ModToAcctTransfer{
-			TLMReason:        modToAcctTransferReason,
+		result.AppendModToAcctTransfer(tokenomicstypes.ModToAcctTransfer{
+			OpReason:         settlementOpReason,
 			SenderModule:     suppliertypes.ModuleName,
-			RecipientAddress: shareHolderAccAddr,
+			RecipientAddress: revShare.GetAddress(),
 			Coin:             shareAmountCoin,
 		})
 

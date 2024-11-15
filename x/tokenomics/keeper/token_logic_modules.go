@@ -32,7 +32,7 @@ import (
 // IMPORTANT: It is assumed that the proof for the claim has been validated BEFORE calling this function.
 func (k Keeper) ProcessTokenLogicModules(
 	ctx context.Context,
-	pendingResult *tlm.SettlementResult,
+	pendingResult *tokenomicstypes.SettlementResult,
 	applicationInitialStake cosmostypes.Coin,
 ) error {
 	logger := k.Logger().With("method", "ProcessTokenLogicModules")
@@ -57,7 +57,7 @@ func (k Keeper) ProcessTokenLogicModules(
 	)
 
 	// Retrieve & validate the session header
-	sessionHeader := pendingResult.GetClaim().GetSessionHeader()
+	sessionHeader := pendingResult.Claim.GetSessionHeader()
 	if sessionHeader == nil {
 		logger.Error("received a nil session header")
 		return tokenomicstypes.ErrTokenomicsSessionHeaderNil
@@ -68,7 +68,7 @@ func (k Keeper) ProcessTokenLogicModules(
 	}
 
 	// Retrieve and validate the root of the claim to determine the amount of work done
-	root := (smt.MerkleSumRoot)(pendingResult.GetClaim().GetRootHash())
+	root := (smt.MerkleSumRoot)(pendingResult.Claim.GetRootHash())
 	if !root.HasDigestSize(protocol.TrieHasherSize) {
 		return tokenomicstypes.ErrTokenomicsRootHashInvalid.Wrapf(
 			"root hash has invalid digest size (%d), expected (%d)",
@@ -77,7 +77,7 @@ func (k Keeper) ProcessTokenLogicModules(
 	}
 
 	// Retrieve the sum (i.e. number of compute units) to determine the amount of work done
-	numClaimComputeUnits, err := pendingResult.GetClaim().GetNumClaimedComputeUnits()
+	numClaimComputeUnits, err := pendingResult.Claim.GetNumClaimedComputeUnits()
 	if err != nil {
 		return tokenomicstypes.ErrTokenomicsRootHashInvalid.Wrapf("failed to retrieve numClaimComputeUnits: %s", err)
 	}
@@ -87,7 +87,7 @@ func (k Keeper) ProcessTokenLogicModules(
 		return tokenomicstypes.ErrTokenomicsRootHashInvalid.Wrap("root hash has zero relays")
 	}
 
-	numRelays, err := pendingResult.GetClaim().GetNumRelays()
+	numRelays, err := pendingResult.Claim.GetNumRelays()
 	if err != nil {
 		return tokenomicstypes.ErrTokenomicsRootHashInvalid.Wrapf("failed to retrieve numRelays: %s", err)
 	}
@@ -117,10 +117,10 @@ func (k Keeper) ProcessTokenLogicModules(
 	}
 
 	// Retrieve the supplier operator address that will be getting rewarded; providing services and earning tokens
-	supplierOperatorAddr, err := cosmostypes.AccAddressFromBech32(pendingResult.GetClaim().GetSupplierOperatorAddress())
+	supplierOperatorAddr, err := cosmostypes.AccAddressFromBech32(pendingResult.Claim.GetSupplierOperatorAddress())
 	if err != nil || supplierOperatorAddr == nil {
 		return tokenomicstypes.ErrTokenomicsSupplierOperatorAddressInvalid.Wrapf(
-			"address (%q)", pendingResult.GetClaim().GetSupplierOperatorAddress(),
+			"address (%q)", pendingResult.Claim.GetSupplierOperatorAddress(),
 		)
 	}
 
@@ -157,7 +157,7 @@ func (k Keeper) ProcessTokenLogicModules(
 	// Determine the total number of tokens being claimed (i.e. for the work completed)
 	// by the supplier for the amount of work they did to service the application
 	// in the session.
-	claimSettlementCoin, err = pendingResult.GetClaim().GetClaimeduPOKT(sharedParams, relayMiningDifficulty)
+	claimSettlementCoin, err = pendingResult.Claim.GetClaimeduPOKT(sharedParams, relayMiningDifficulty)
 	if err != nil {
 		return err
 	}
@@ -198,7 +198,7 @@ func (k Keeper) ProcessTokenLogicModules(
 	tlmCtx := tlm.TLMContext{
 		Params:                tlmUsedParams,
 		SettlementCoin:        actualSettlementCoin,
-		SessionHeader:         pendingResult.GetClaim().GetSessionHeader(),
+		SessionHeader:         pendingResult.Claim.GetSessionHeader(),
 		Result:                pendingResult,
 		Service:               &service,
 		Application:           &application,

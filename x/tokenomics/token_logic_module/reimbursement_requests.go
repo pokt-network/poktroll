@@ -65,18 +65,11 @@ func (tlm tlmGlobalMintReimbursementRequest) Process(
 	// Send the global per claim mint inflation uPOKT from the tokenomics module
 	// account to PNF/DAO.
 	daoRewardAddress := tlmCtx.Params.Tokenomics.GetDaoRewardAddress()
-	daoAccountAddr, err := cosmostypes.AccAddressFromBech32(daoRewardAddress)
-	if err != nil {
-		return tokenomicstypes.ErrTokenomicsApplicationReimbursementRequestFailed.Wrapf(
-			"getting PNF/DAO address: %v",
-			err,
-		)
-	}
 
 	// Send the global per claim mint inflation uPOKT from the application module
 	// account to the tokenomics module account as an intermediary step.
-	result.AppendModToModTransfer(ModToModTransfer{
-		TLMReason:       TLMGlobalMintReimbursementRequest_ReimbursementEscrowModuleTransfer,
+	result.AppendModToModTransfer(tokenomicstypes.ModToModTransfer{
+		OpReason:        tokenomicstypes.SettlementOpReason_TLM_GLOBAL_MINT_REIMBURSEMENT_REQUEST_ESCROW_MODULE_TRANSFER,
 		SenderModule:    apptypes.ModuleName,
 		RecipientModule: tokenomicstypes.ModuleName,
 		Coin:            newMintCoin,
@@ -89,15 +82,15 @@ func (tlm tlmGlobalMintReimbursementRequest) Process(
 	// Send the global per claim mint inflation uPOKT from the tokenomics module
 	// for second order economic effects.
 	// See: https://discord.com/channels/824324475256438814/997192534168182905/1299372745632649408
-	result.AppendModToAcctTransfer(ModToAcctTransfer{
-		TLMReason:        TLMGlobalMintReimbursementRequest_AppReimbursementEscrow,
+	result.AppendModToAcctTransfer(tokenomicstypes.ModToAcctTransfer{
+		OpReason:         tokenomicstypes.SettlementOpReason_TLM_GLOBAL_MINT_REIMBURSEMENT_REQUEST_ESCROW_MODULE_TRANSFER,
 		SenderModule:     tokenomicstypes.ModuleName,
-		RecipientAddress: daoAccountAddr,
+		RecipientAddress: daoRewardAddress,
 		Coin:             newMintCoin,
 	})
 	logger.Info(fmt.Sprintf(
 		"operation queued: send (%s) from the tokenomics module account to the PNF/DAO account (%s)",
-		newMintCoin, daoAccountAddr.String(),
+		newMintCoin, daoRewardAddress,
 	))
 
 	// Prepare and emit the event for the application that'll required reimbursement.
