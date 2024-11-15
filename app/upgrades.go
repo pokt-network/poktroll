@@ -12,6 +12,7 @@ import (
 // so `cosmovisor` can automatically pull the binary from GitHub.
 var allUpgrades = []upgrades.Upgrade{
 	upgrades.Upgrade_0_0_4,
+	upgrades.Upgrade_0_0_10,
 }
 
 // setUpgrades sets upgrade handlers for all upgrades and executes KVStore migration if an upgrade plan file exists.
