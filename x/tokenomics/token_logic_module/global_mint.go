@@ -69,7 +69,6 @@ func (tlm tlmGlobalMint) Process(
 	)
 
 	if GlobalInflationPerClaim == 0 {
-		// TODO_UPNEXT(@olshansk): Make sure to skip GMRR TLM in this case as well.
 		logger.Warn("global inflation is set to zero. Skipping Global Mint TLM.")
 		return nil
 	}

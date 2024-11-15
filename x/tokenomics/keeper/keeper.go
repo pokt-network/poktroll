@@ -60,7 +60,7 @@ func NewKeeper(
 	}
 
 	sharedQuerier := prooftypes.NewSharedKeeperQueryClient(sharedKeeper, sessionKeeper)
-	if err := tlm.ValidateTLMs(tokenLogicModules); err != nil {
+	if err := tlm.ValidateTLMConfig(tokenLogicModules); err != nil {
 		panic(err)
 	}
 

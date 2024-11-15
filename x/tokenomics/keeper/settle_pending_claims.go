@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	cosmoslog "cosmossdk.io/log"
 	"cosmossdk.io/math"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/query"
@@ -284,12 +285,13 @@ func (k Keeper) SettlePendingClaims(ctx cosmostypes.Context) (
 			err,
 		)
 	}
-
-	if err = k.ExecutePendingExpiredResults(ctx, expiredResults); err != nil {
+	// Execute all the pending mint, burn, and transfer operations.
+	if err = k.ExecutePendingSettledResults(ctx, settledResults); err != nil {
 		return settledResults, expiredResults, err
 	}
 
-	if err = k.ExecutePendingSettledResults(ctx, settledResults); err != nil {
+	// Slash all suppliers who failed to submit a required proof.
+	if err = k.ExecutePendingExpiredResults(ctx, expiredResults); err != nil {
 		return settledResults, expiredResults, err
 	}
 
@@ -303,7 +305,10 @@ func (k Keeper) SettlePendingClaims(ctx cosmostypes.Context) (
 	return settledResults, expiredResults, nil
 }
 
-// TODO_IN_THIS_COMMIT: godoc & move ...
+// ExecutePendingExpiredResults executes all pending supplier slashing operations.
+// IMPORTANT: If the execution of any such operation fails, the chain will halt.
+// In this case, the state is left how it was immediately prior to the execution of
+// the operation which failed.
 func (k Keeper) ExecutePendingExpiredResults(ctx cosmostypes.Context, expiredResults tlm.SettlementResults) error {
 	logger := k.logger.With("method", "ProcessSupplierSlashing")
 
@@ -324,50 +329,63 @@ func (k Keeper) ExecutePendingExpiredResults(ctx cosmostypes.Context, expiredRes
 }
 
 // ExecutePendingSettledResults executes all pending mint, burn, and transfer operations.
-func (k Keeper) ExecutePendingSettledResults(ctx cosmostypes.Context, results tlm.SettlementResults) error {
+// IMPORTANT: If the execution of any pending operation fails, the chain will halt.
+// In this case, the state is left how it was immediately prior to the execution of
+// the operation which failed.
+// TODO_MAINNER: Make this more "atomic", such that it reverts the state back to just prior
+// to settling the offending claim.
+func (k Keeper) ExecutePendingSettledResults(ctx cosmostypes.Context, settledResults tlm.SettlementResults) error {
 	logger := k.logger.With("method", "ExecutePendingSettledResults")
+	logger.Info(fmt.Sprintf("begin executing %d pending settlement results", len(settledResults)))
 
-	for _, result := range results {
-		logger = logger.With("session_id", result.GetSessionId())
-		logger.Info("begin executing pending results")
+	for _, settledResult := range settledResults {
+		logger = logger.With("session_id", settledResult.GetSessionId())
+		logger.Info("begin executing pending settlement result")
 
-		logger.Info("begin executing pending mints")
-		if err := k.executePendingMints(ctx, result.GetMints()); err != nil {
+		logger.Info(fmt.Sprintf("begin executing %d pending mints", len(settledResult.GetMints())))
+		if err := k.executePendingModuleMints(ctx, logger, settledResult.GetMints()); err != nil {
 			return err
 		}
-
 		logger.Info("done executing pending mints")
 
-		logger.Info("begin executing pending burns")
-		if err := k.executePendingBurns(ctx, result.GetBurns()); err != nil {
+		logger.Info(fmt.Sprintf("begin executing %d pending module to module transfers", len(settledResult.GetModToModTransfers())))
+		if err := k.executePendingModToModTransfers(ctx, logger, settledResult.GetModToModTransfers()); err != nil {
 			return err
 		}
-		logger.Info("done executing pending burns")
+		logger.Info("done executing pending module account to module account transfers")
 
-		logger.Info("begin executing pending module to module transfers")
-		if err := k.executePendingModToModTransfers(ctx, result.GetModToModTransfers()); err != nil {
-			return err
-		}
-		logger.Info("done executing pending module to module transfers")
-
-		logger.Info("begin executing pending module to account transfers")
-		if err := k.executePendingModToAcctTransfers(ctx, result.GetModToAcctTransfers()); err != nil {
+		logger.Info(fmt.Sprintf("begin executing %d pending module to account transfers", len(settledResult.GetModToAcctTransfers())))
+		if err := k.executePendingModToAcctTransfers(ctx, logger, settledResult.GetModToAcctTransfers()); err != nil {
 			return err
 		}
 		logger.Info("done executing pending module to account transfers")
 
-		logger.Info("done executing pending results")
+		logger.Info(fmt.Sprintf("begin executing %d pending burns", len(settledResult.GetBurns())))
+		if err := k.executePendingModuleBurns(ctx, logger, settledResult.GetBurns()); err != nil {
+			return err
+		}
+		logger.Info("done executing pending burns")
+
+		logger.Info("done executing pending settlement result")
 
 		logger.Info(fmt.Sprintf(
 			"done applying settled results for session %q",
-			result.Claim.GetSessionHeader().GetSessionId(),
+			settledResult.Claim.GetSessionHeader().GetSessionId(),
 		))
 	}
+
+	logger.Info("done executing pending settlement results")
+
 	return nil
 }
 
-// executePendingMints executes all pending mint operations.
-func (k Keeper) executePendingMints(ctx cosmostypes.Context, mints []tokenomicstypes.MintBurnOp) error {
+// executePendingModuleMints executes all pending mint operations.
+// DEV_NOTE: Mint and burn operations are ONLY applicable to module accounts.
+func (k Keeper) executePendingModuleMints(
+	ctx cosmostypes.Context,
+	logger cosmoslog.Logger,
+	mints []tokenomicstypes.MintBurnOp,
+) error {
 	for _, mint := range mints {
 		if err := mint.Validate(); err != nil {
 			return err
@@ -377,12 +395,22 @@ func (k Keeper) executePendingMints(ctx cosmostypes.Context, mints []tokenomicst
 				"destination module %q minting %s: %s", mint.DestinationModule, mint.Coin, err,
 			)
 		}
+
+		logger.Info(fmt.Sprintf(
+			"executing operation: minting %s coins to the %q module account, reason: %q",
+			mint.Coin, mint.DestinationModule, mint.OpReason.String(),
+		))
 	}
 	return nil
 }
 
-// executePendingBurns executes all pending burn operations.
-func (k Keeper) executePendingBurns(ctx cosmostypes.Context, burns []tokenomicstypes.MintBurnOp) error {
+// executePendingModuleBurns executes all pending burn operations.
+// DEV_NOTE: Mint and burn operations are ONLY applicable to module accounts.
+func (k Keeper) executePendingModuleBurns(
+	ctx cosmostypes.Context,
+	logger cosmoslog.Logger,
+	burns []tokenomicstypes.MintBurnOp,
+) error {
 	for _, burn := range burns {
 		if err := burn.Validate(); err != nil {
 			return err
@@ -393,12 +421,21 @@ func (k Keeper) executePendingBurns(ctx cosmostypes.Context, burns []tokenomicst
 				"destination module %q burning %s: %s", burn.DestinationModule, burn.Coin, err,
 			)
 		}
+
+		logger.Info(fmt.Sprintf(
+			"executing operation: burning %s coins from the %q module account, reason: %q",
+			burn.Coin, burn.DestinationModule, burn.OpReason.String(),
+		))
 	}
 	return nil
 }
 
 // executePendingModToModTransfers executes all pending module to module transfer operations.
-func (k Keeper) executePendingModToModTransfers(ctx cosmostypes.Context, transfers []tokenomicstypes.ModToModTransfer) error {
+func (k Keeper) executePendingModToModTransfers(
+	ctx cosmostypes.Context,
+	logger cosmoslog.Logger,
+	transfers []tokenomicstypes.ModToModTransfer,
+) error {
 	for _, transfer := range transfers {
 		if err := transfer.Validate(); err != nil {
 			return err
@@ -415,12 +452,21 @@ func (k Keeper) executePendingModToModTransfers(ctx cosmostypes.Context, transfe
 				transfer.SenderModule, transfer.RecipientModule, transfer.Coin, err,
 			)
 		}
+
+		logger.Info(fmt.Sprintf(
+			"executing operation: transfering %s coins from the %q module account to the %q module account, reason: %q",
+			transfer.Coin, transfer.SenderModule, transfer.RecipientModule, transfer.OpReason.String(),
+		))
 	}
 	return nil
 }
 
 // executePendingModToAcctTransfers executes all pending module to account transfer operations.
-func (k Keeper) executePendingModToAcctTransfers(ctx cosmostypes.Context, transfers []tokenomicstypes.ModToAcctTransfer) error {
+func (k Keeper) executePendingModToAcctTransfers(
+	ctx cosmostypes.Context,
+	logger cosmoslog.Logger,
+	transfers []tokenomicstypes.ModToAcctTransfer,
+) error {
 	for _, transfer := range transfers {
 		if err := transfer.Validate(); err != nil {
 			return err
@@ -435,7 +481,7 @@ func (k Keeper) executePendingModToAcctTransfers(ctx cosmostypes.Context, transf
 			)
 		}
 
-		if err := k.bankKeeper.SendCoinsFromModuleToAccount(
+		if err = k.bankKeeper.SendCoinsFromModuleToAccount(
 			ctx,
 			transfer.SenderModule,
 			recepientAddr,
@@ -446,6 +492,11 @@ func (k Keeper) executePendingModToAcctTransfers(ctx cosmostypes.Context, transf
 				transfer.SenderModule, transfer.RecipientAddress, transfer.Coin, err,
 			)
 		}
+
+		logger.Info(fmt.Sprintf(
+			"executing operation: transfering %s coins from the %q module account to account address %q, reason: %q",
+			transfer.Coin, transfer.SenderModule, transfer.RecipientAddress, transfer.OpReason.String(),
+		))
 	}
 	return nil
 }

@@ -72,7 +72,7 @@ func (tlm tlmRelayBurnEqualsMint) Process(
 			err,
 		)
 	}
-	logger.Info(fmt.Sprintf("operation queued: sent (%v) from the supplier module to the supplier account with address %q", tlmCtx.SettlementCoin, tlmCtx.Supplier.OperatorAddress))
+	logger.Info(fmt.Sprintf("operation queued: sending (%v) from the supplier module to the supplier account with address %q", tlmCtx.SettlementCoin, tlmCtx.Supplier.OperatorAddress))
 
 	// Burn uPOKT from the application module account which was held in escrow
 	// on behalf of the application account.

@@ -57,6 +57,8 @@ func TestPermute(t *testing.T) {
 }
 
 // permute generates all possible permutations of the input slice 'items'.
+// It is used to generate all possible permutations of token logic module
+// orderings such that we can test for commutativity.
 func permute[T any](items []T) [][]T {
 	var permutations [][]T
 	// Create a copy to avoid modifying the original slice.

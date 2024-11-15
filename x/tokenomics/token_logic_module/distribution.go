@@ -59,14 +59,16 @@ func distributeSupplierRewardsToShareHolders(
 
 		// Don't queue zero amount transfer operations.
 		if shareAmount == 0 {
+			// DEV_NOTE: This should never happen, but it mitigates a chain halt if it does.
+			logger.Warn(fmt.Sprintf("zero shareAmount for service rev share address %q", revShare.GetAddress()))
 			continue
 		}
 
 		// TODO_TECHDEBT(@red-0ne): Refactor to reuse the sendRewardsToAccount helper here.
 		shareAmountCoin := cosmostypes.NewCoin(volatile.DenomuPOKT, math.NewInt(int64(shareAmount)))
 
-		// Send the newley minted uPOKT from the supplier module account
-		// to the supplier's shareholders.
+		// Queue the sending of the newley minted uPOKT from the supplier module
+		// account to the supplier's shareholders.
 		result.AppendModToAcctTransfer(tokenomicstypes.ModToAcctTransfer{
 			OpReason:         settlementOpReason,
 			SenderModule:     suppliertypes.ModuleName,
@@ -94,7 +96,7 @@ func GetShareAmountMap(
 	totalDistributed := uint64(0)
 	shareAmountMap = make(map[string]uint64, len(serviceRevShare))
 	for _, revShare := range serviceRevShare {
-		// TODO_MAINNET: Consider using fixed point arithmetic for deterministic results.
+		// TODO_MAINNET(@red-0ne): Use big.Rat for deterministic results.
 		sharePercentageFloat := big.NewFloat(float64(revShare.RevSharePercentage) / 100)
 		amountToDistributeFloat := big.NewFloat(float64(amountToDistribute))
 		shareAmount, _ := big.NewFloat(0).Mul(amountToDistributeFloat, sharePercentageFloat).Uint64()

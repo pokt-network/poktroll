@@ -46,9 +46,9 @@ func (s *tokenLogicModuleTestSuite) TestTLMProcessorsAreCommutative() {
 		}
 
 		// The test description is a unique identifier for each permutation.
-		// E.g.: "permutaiton_1_of_2__TLMRelayBurnEqualsMint_TLMGlobalMint"
+		// E.g.: "permutaiton_1_of_2:TLMRelayBurnEqualsMint_TLMGlobalMint"
 		testDesc := fmt.Sprintf(
-			"permutaiton_%d_of_%d__%s",
+			"permutaiton_%d_of_%d:%s",
 			i+1, numTLMOrderPermutations,
 			strings.Join(tlmIds, "_"),
 		)
@@ -63,6 +63,7 @@ func (s *tokenLogicModuleTestSuite) TestTLMProcessorsAreCommutative() {
 			s.createClaims(&s.keepers, 1000)
 			settledResults, expiredResults := s.settleClaims(t)
 
+			// First iteration only.
 			// Set the expected state based on the effects of the first iteration;
 			// this decouples the assertions from any specific tlm effects.
 			if i == 0 {
@@ -85,7 +86,7 @@ func (s *tokenLogicModuleTestSuite) setupKeepers(t *testing.T, opts ...keeper.To
 		keeper.WithApplication(*s.app),
 		keeper.WithSupplier(*s.supplier),
 		keeper.WithModuleParams(map[string]types.Msg{
-			// TODO_TECHDEBT: Set tokenomics mint allocation params to maximize coverage, once available.
+			// TODO_MAINNET(@bryanchriswhite): Set tokenomics mint allocation params to maximize coverage, once available.
 
 			// Set the proof params such that proofs are NEVER required.
 			prooftypes.ModuleName: s.getProofParams(),
