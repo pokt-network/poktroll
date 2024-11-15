@@ -82,8 +82,7 @@ func (tlm tlmGlobalMint) Process(
 
 	// Mint new uPOKT to the tokenomics module account
 	tlmCtx.Result.AppendMint(MintBurnOperation{
-		OriginTLM:         TLMGlobalMint,
-		OriginReason:      TLMGlobalMint_Inflation,
+		TLMReason:         TLMGlobalMint_Inflation,
 		DestinationModule: tokenomicstypes.ModuleName,
 		Coin:              newMintCoin,
 	})
@@ -110,8 +109,7 @@ func (tlm tlmGlobalMint) Process(
 	supplierCoin := cosmostypes.NewCoin(volatile.DenomuPOKT, math.NewInt(supplierCoinsToShareAmt))
 	// Send funds from the tokenomics module to the supplier module account
 	tlmCtx.Result.AppendModToModTransfer(ModToModTransfer{
-		OriginTLM:       TLMRelayBurnEqualsMint,
-		OriginReason:    TLMGlobalMint_SupplierShareholderRewardModuleTransfer,
+		TLMReason:       TLMGlobalMint_SupplierShareholderRewardModuleTransfer,
 		SenderModule:    tokenomicstypes.ModuleName,
 		RecipientModule: suppliertypes.ModuleName,
 		Coin:            supplierCoin,
@@ -239,7 +237,7 @@ func ensureMintedCoinsAreDistributed(
 // tokenomics module account to the specified address.
 func sendRewardsToAccount(
 	logger cosmoslog.Logger,
-	result *PendingSettlementResult,
+	result *SettlementResult,
 	senderModule string,
 	recipientAddr string,
 	modToAcctTransferReason TokenLogicModuleReason,
@@ -264,8 +262,7 @@ func sendRewardsToAccount(
 	}
 
 	result.AppendModToAcctTransfer(ModToAcctTransfer{
-		OriginTLM:        TLMGlobalMint,
-		OriginReason:     modToAcctTransferReason,
+		TLMReason:        modToAcctTransferReason,
 		SenderModule:     senderModule,
 		RecipientAddress: recipientAccAddr,
 		Coin:             coinToAcc,

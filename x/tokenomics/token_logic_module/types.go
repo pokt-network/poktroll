@@ -25,7 +25,7 @@ const (
 	// The same amount of tokens is minted and added to the supplier account balance.
 	// When the network achieves maturity in the far future, this is theoretically
 	// the only TLM that will be necessary.
-	TLMRelayBurnEqualsMint TokenLogicModuleId = iota
+	TLMRelayBurnEqualsMint
 
 	// TLMGlobalMint is the token logic module that mints new tokens based on the
 	// global governance parameters in order to reward the participants providing
@@ -81,7 +81,7 @@ type TLMContext struct {
 	Params                TLMUsedParams
 	SettlementCoin        cosmostypes.Coin // This is the "actualSettlementCoin" rather than just the "claimCoin" because of how settlement functions; see ensureClaimAmountLimits for details.
 	SessionHeader         *sessiontypes.SessionHeader
-	Result                *PendingSettlementResult
+	Result                *SettlementResult
 	Service               *sharedtypes.Service
 	Application           *apptypes.Application
 	Supplier              *sharedtypes.Supplier

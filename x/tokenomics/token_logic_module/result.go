@@ -11,12 +11,12 @@ import (
 	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
 )
 
-// PendingSettlementResults is a slice of PendingSettlementResult. It implements
-// methods for convenience when working with PendingSettlementResult objects.
-type PendingSettlementResults []*PendingSettlementResult
+// SettlementResults is a slice of SettlementResult. It implements
+// methods for convenience when working with SettlementResult objects.
+type SettlementResults []*SettlementResult
 
-// resultOption is a function which receives a PendingSettlementResult for modification.
-type resultOption func(*PendingSettlementResult)
+// resultOption is a function which receives a SettlementResult for modification.
+type resultOption func(*SettlementResult)
 
 // TODO_IN_THIS_COMMIT: promot to protobuf & godoc...
 type TokenLogicModuleReason string
@@ -42,10 +42,10 @@ const (
 	TLMGlobalMint_ApplicationRewardDistribution                  = "TLMGlobalMint_ApplicationRewardDistribution"
 
 	// Self-servicing mitigation - MintBurnOperation (burn)
-	TLMGlobalMintReimbursementRequest_DaoReimbursementEscrow = "TLMGlobalMintReimbursementRequest_DaoReimbursementEscrow"
+	TLMGlobalMintReimbursementRequest_AppReimbursementEscrow = "TLMGlobalMintReimbursementRequest_AppReimbursementEscrow"
 
 	// Penalization - MintBurnOperation (burn)
-	TLMRelayBurnEqualsMint_SupplierSlash = "TLMRelayBurnEqualsMint_SupplierSlash"
+	UnspecifiedTLM_SupplierSlash = "TLMRelayBurnEqualsMint_SupplierSlash"
 
 	// Module accounting - ModToModTransfer
 	TLMGlobalMint_SupplierShareholderRewardModuleTransfer               = "TLMGlobalMint_SupplierShareholderRewardModuleTransfer"
@@ -54,20 +54,15 @@ const (
 
 // MintBurnOperation holds the parameters of a mint or burn operation.
 type MintBurnOperation struct {
-	OriginTLM         TokenLogicModuleId
-	OriginReason      TokenLogicModuleReason
+	TLMReason         TokenLogicModuleReason
 	DestinationModule string
 	Coin              cosmostypes.Coin
 }
 
 // Validate returns an error if the MintBurnOperation has either an unspecified TLM or TLMReason.
 func (m *MintBurnOperation) Validate() error {
-	// TODO_IN_THIS_COMMIT: factor unspecified validation out (can build interface from proto getters) when refactoring to protobufs.
-	if m.OriginTLM == UnspecifiedTLM {
-		return tokenomicstypes.ErrTokenomicsModuleBurn.Wrapf("origin TLM is unspecified: %+v", m)
-	}
-
-	if m.OriginReason == UnspecifiedTLMReason {
+	// TODO_IN_THIS_COMMIT: factor common unspecified validation out (can build interface from proto getters) when refactoring to protobufs.
+	if m.TLMReason == UnspecifiedTLMReason {
 		return tokenomicstypes.ErrTokenomicsModuleBurn.Wrapf("origin reason is unspecified: %+v", m)
 	}
 	return nil
@@ -75,8 +70,7 @@ func (m *MintBurnOperation) Validate() error {
 
 // ModToAcctTransfer holds the parameters of a module to account transfer operation.
 type ModToAcctTransfer struct {
-	OriginTLM        TokenLogicModuleId
-	OriginReason     TokenLogicModuleReason
+	TLMReason        TokenLogicModuleReason
 	SenderModule     string
 	RecipientAddress cosmostypes.AccAddress
 	Coin             cosmostypes.Coin
@@ -84,12 +78,8 @@ type ModToAcctTransfer struct {
 
 // Validate returns an error if the ModToAcctTransfer has either an unspecified TLM or TLMReason.
 func (m *ModToAcctTransfer) Validate() error {
-	// TODO_IN_THIS_COMMIT: factor unspecified validation out (can build interface from proto getters) when refactoring to protobufs.
-	if m.OriginTLM == UnspecifiedTLM {
-		return tokenomicstypes.ErrTokenomicsModuleBurn.Wrapf("origin TLM is unspecified: %+v", m)
-	}
-
-	if m.OriginReason == UnspecifiedTLMReason {
+	// TODO_IN_THIS_COMMIT: factor common unspecified validation out (can build interface from proto getters) when refactoring to protobufs.
+	if m.TLMReason == UnspecifiedTLMReason {
 		return tokenomicstypes.ErrTokenomicsModuleBurn.Wrapf("origin reason is unspecified: %+v", m)
 	}
 	return nil
@@ -97,8 +87,7 @@ func (m *ModToAcctTransfer) Validate() error {
 
 // ModToModTransfer holds the parameters of a module to module transfer operation.
 type ModToModTransfer struct {
-	OriginTLM       TokenLogicModuleId
-	OriginReason    TokenLogicModuleReason
+	TLMReason       TokenLogicModuleReason
 	SenderModule    string
 	RecipientModule string
 	Coin            cosmostypes.Coin
@@ -106,96 +95,125 @@ type ModToModTransfer struct {
 
 // Validate returns an error if the ModToModTransfer has either an unspecified TLM or TLMReason.
 func (m *ModToModTransfer) Validate() error {
-	// TODO_IN_THIS_COMMIT: factor unspecified validation out (can build interface from proto getters) when refactoring to protobufs.
-	if m.OriginTLM == UnspecifiedTLM {
-		return tokenomicstypes.ErrTokenomicsModuleBurn.Wrapf("origin TLM is unspecified: %+v", m)
-	}
-
-	if m.OriginReason == UnspecifiedTLMReason {
+	// TODO_IN_THIS_COMMIT: factor common unspecified validation out (can build interface from proto getters) when refactoring to protobufs.
+	if m.TLMReason == UnspecifiedTLMReason {
 		return tokenomicstypes.ErrTokenomicsModuleBurn.Wrapf("origin reason is unspecified: %+v", m)
 	}
 	return nil
 }
 
-// PendingSettlementResult holds a claim and mints, burns, and transfers that
-// result from its settlement.
-type PendingSettlementResult struct {
-	Claim              prooftypes.Claim
-	Mints              []MintBurnOperation
-	Burns              []MintBurnOperation
-	ModToModTransfers  []ModToModTransfer
-	ModToAcctTransfers []ModToAcctTransfer
+// SettlementResult holds a claim and mints, burns, and transfers that result from its settlement.
+type SettlementResult struct {
+	claim              prooftypes.Claim
+	mints              []MintBurnOperation
+	burns              []MintBurnOperation
+	modToModTransfers  []ModToModTransfer
+	modToAcctTransfers []ModToAcctTransfer
+	//supplierOperatorAddrToSlash string
 }
 
-// NewPendingSettlementResult returns a new PendingSettlementResult with the given claim and options applied.
-func NewPendingSettlementResult(
+// NewSettlementResult returns a new SettlementResult with the given claim and options applied.
+func NewSettlementResult(
 	claim prooftypes.Claim,
 	opts ...resultOption,
-) *PendingSettlementResult {
-	result := &PendingSettlementResult{Claim: claim}
+) *SettlementResult {
+	result := &SettlementResult{claim: claim}
 	for _, opt := range opts {
 		opt(result)
 	}
 	return result
 }
 
+// GetClaim returns the claim associated with the result.
+func (r *SettlementResult) GetClaim() *prooftypes.Claim {
+	// Copy claim to prevent callers from mutating the result's claim.
+	claimCopy := r.claim
+	return &claimCopy
+}
+
+// GetMints returns the mints associated with the result.
+func (r *SettlementResult) GetMints() []MintBurnOperation {
+	return r.mints
+}
+
+// GetBurns returns the burns associated with the result.
+func (r *SettlementResult) GetBurns() []MintBurnOperation {
+	return r.burns
+}
+
+// GetModToModTransfers returns the modToModTransfers associated with the result.
+func (r *SettlementResult) GetModToModTransfers() []ModToModTransfer {
+	return r.modToModTransfers
+}
+
+// GetModToAcctTransfers returns the modToAcctTransfers associated with the result.
+func (r *SettlementResult) GetModToAcctTransfers() []ModToAcctTransfer {
+	return r.modToAcctTransfers
+}
+
 // GetNumComputeUnits returns the number of claimed compute units in the result's claim.
-func (r *PendingSettlementResult) GetNumComputeUnits() (uint64, error) {
-	return r.Claim.GetNumClaimedComputeUnits()
+func (r *SettlementResult) GetNumComputeUnits() (uint64, error) {
+	return r.GetClaim().GetNumClaimedComputeUnits()
 }
 
 // GetNumRelays returns the number of relays in the result's claim.
-func (r *PendingSettlementResult) GetNumRelays() (uint64, error) {
-	return r.Claim.GetNumRelays()
+func (r *SettlementResult) GetNumRelays() (uint64, error) {
+	return r.GetClaim().GetNumRelays()
 }
 
 // GetApplicationAddr returns the application address of the result's claim.
-func (r *PendingSettlementResult) GetApplicationAddr() string {
-	return r.Claim.GetSessionHeader().GetApplicationAddress()
+func (r *SettlementResult) GetApplicationAddr() string {
+	return r.GetClaim().GetSessionHeader().GetApplicationAddress()
 }
 
 // GetSupplierOperatorAddr returns the supplier address of the result's claim.
-func (r *PendingSettlementResult) GetSupplierOperatorAddr() string {
-	return r.Claim.GetSupplierOperatorAddress()
+func (r *SettlementResult) GetSupplierOperatorAddr() string {
+	return r.GetClaim().GetSupplierOperatorAddress()
 }
 
 // GetSessionEndHeight returns the session end height of the result's claim.
-func (r *PendingSettlementResult) GetSessionEndHeight() int64 {
-	return r.Claim.GetSessionHeader().GetSessionEndBlockHeight()
+func (r *SettlementResult) GetSessionEndHeight() int64 {
+	return r.GetClaim().GetSessionHeader().GetSessionEndBlockHeight()
 }
 
 // GetSessionId returns the session ID of the result's claim.
-func (r *PendingSettlementResult) GetSessionId() string {
-	return r.Claim.GetSessionHeader().GetSessionId()
+func (r *SettlementResult) GetSessionId() string {
+	return r.GetClaim().GetSessionHeader().GetSessionId()
 }
 
 // GetServiceId returns the service ID of the result's claim.
-func (r *PendingSettlementResult) GetServiceId() string {
-	return r.Claim.GetSessionHeader().GetServiceId()
+func (r *SettlementResult) GetServiceId() string {
+	return r.GetClaim().GetSessionHeader().GetServiceId()
 }
 
 // AppendMint appends a mint operation to the result.
-func (r *PendingSettlementResult) AppendMint(mint MintBurnOperation) {
-	r.Mints = append(r.Mints, mint)
+func (r *SettlementResult) AppendMint(mint MintBurnOperation) {
+	r.mints = append(r.mints, mint)
 }
 
 // AppendBurn appends a burn operation to the result.
-func (r *PendingSettlementResult) AppendBurn(burn MintBurnOperation) {
-	r.Burns = append(r.Burns, burn)
+func (r *SettlementResult) AppendBurn(burn MintBurnOperation) {
+	r.burns = append(r.burns, burn)
 }
 
 // AppendModToModTransfer appends a module to module transfer operation to the result.
-func (r *PendingSettlementResult) AppendModToModTransfer(transfer ModToModTransfer) {
-	r.ModToModTransfers = append(r.ModToModTransfers, transfer)
+func (r *SettlementResult) AppendModToModTransfer(transfer ModToModTransfer) {
+	r.modToModTransfers = append(r.modToModTransfers, transfer)
 }
 
 // AppendModToAcctTransfer appends a module to account transfer operation to the result.
-func (r *PendingSettlementResult) AppendModToAcctTransfer(transfer ModToAcctTransfer) {
-	r.ModToAcctTransfers = append(r.ModToAcctTransfers, transfer)
+func (r *SettlementResult) AppendModToAcctTransfer(transfer ModToAcctTransfer) {
+	r.modToAcctTransfers = append(r.modToAcctTransfers, transfer)
 }
 
+//// TODO_IN_THIS_COMMIT: update godoc...
+//// WillSlashSupplier appends a supplier slash operation to the result.
+//func (r *SettlementResult) WillSlashSupplier() {
+//	r.supplierOperatorAddrToSlash = r.GetClaim().GetSupplierOperatorAddress()
+//}
+
 // GetNumComputeUnits returns the total number of claimed compute units in the results.
-func (rs PendingSettlementResults) GetNumComputeUnits() (numComputeUnits uint64, errs error) {
+func (rs SettlementResults) GetNumComputeUnits() (numComputeUnits uint64, errs error) {
 	for _, result := range rs {
 		claimNumComputeUnits, err := result.GetNumComputeUnits()
 		if err != nil {
@@ -209,9 +227,9 @@ func (rs PendingSettlementResults) GetNumComputeUnits() (numComputeUnits uint64,
 }
 
 // GetNumRelays returns the total number of relays in the combined results.
-func (rs PendingSettlementResults) GetNumRelays() (numRelays uint64, errs error) {
+func (rs SettlementResults) GetNumRelays() (numRelays uint64, errs error) {
 	for _, result := range rs {
-		claimNumRelays, err := result.Claim.GetNumRelays()
+		claimNumRelays, err := result.GetClaim().GetNumRelays()
 		if err != nil {
 			errs = errors.Join(errs, err)
 			continue
@@ -223,13 +241,13 @@ func (rs PendingSettlementResults) GetNumRelays() (numRelays uint64, errs error)
 }
 
 // GetNumClaims returns the number of claims in the combined results.
-func (rs PendingSettlementResults) GetNumClaims() uint64 {
+func (rs SettlementResults) GetNumClaims() uint64 {
 	// Each result holds a single claim.
 	return uint64(len(rs))
 }
 
 // GetApplicationAddrs returns a slice of application addresses from the combined results' claims.
-func (rs PendingSettlementResults) GetApplicationAddrs() (appAddrs []string) {
+func (rs SettlementResults) GetApplicationAddrs() (appAddrs []string) {
 	for _, result := range rs {
 		appAddrs = append(appAddrs, result.GetApplicationAddr())
 	}
@@ -237,7 +255,7 @@ func (rs PendingSettlementResults) GetApplicationAddrs() (appAddrs []string) {
 }
 
 // GetSupplierOperatorAddrs returns a slice of supplier addresses from the combined results' claims.
-func (rs PendingSettlementResults) GetSupplierOperatorAddrs() (supplierOperatorAddrs []string) {
+func (rs SettlementResults) GetSupplierOperatorAddrs() (supplierOperatorAddrs []string) {
 	for _, result := range rs {
 		supplierOperatorAddrs = append(supplierOperatorAddrs, result.GetSupplierOperatorAddr())
 	}
@@ -247,7 +265,7 @@ func (rs PendingSettlementResults) GetSupplierOperatorAddrs() (supplierOperatorA
 // GetServiceIds returns a slice of service IDs from the combined results' claims.
 // It is intended to be used for deterministic iterating over the map returned
 // from GetRelaysPerServiceMap via the serviceId key.
-func (rs PendingSettlementResults) GetServiceIds() (serviceIds []string) {
+func (rs SettlementResults) GetServiceIds() (serviceIds []string) {
 	for _, result := range rs {
 		serviceIds = append(serviceIds, result.GetServiceId())
 	}
@@ -257,11 +275,11 @@ func (rs PendingSettlementResults) GetServiceIds() (serviceIds []string) {
 // GetRelaysPerServiceMap returns a map of service IDs to the total number of relays
 // claimed for that service in the combined results.
 // IMPORTANT: **DO NOT** iterate over returned map in on-chain code.
-func (rs PendingSettlementResults) GetRelaysPerServiceMap() (_ map[string]uint64, errs error) {
+func (rs SettlementResults) GetRelaysPerServiceMap() (_ map[string]uint64, errs error) {
 	relaysPerServiceMap := make(map[string]uint64)
 
 	for _, result := range rs {
-		serviceId := result.Claim.GetSessionHeader().GetServiceId()
+		serviceId := result.GetClaim().GetSessionHeader().GetServiceId()
 		numRelays, err := result.GetNumRelays()
 		if err != nil {
 			errs = errors.Join(errs, err)
@@ -274,35 +292,35 @@ func (rs PendingSettlementResults) GetRelaysPerServiceMap() (_ map[string]uint64
 }
 
 // Append appends a result to the results.
-func (rs *PendingSettlementResults) Append(result ...*PendingSettlementResult) {
+func (rs *SettlementResults) Append(result ...*SettlementResult) {
 	*rs = append(*rs, result...)
 }
 
-// WithMints returns a resultOption which sets the Mints field of the PendingSettlementResult.
+// WithMints returns a resultOption which sets the mints field of the SettlementResult.
 func WithMints(mints []MintBurnOperation) resultOption {
-	return func(r *PendingSettlementResult) {
-		r.Mints = mints
+	return func(r *SettlementResult) {
+		r.mints = mints
 	}
 }
 
-// WithBurns returns a resultOption which sets the Burns field of the PendingSettlementResult.
+// WithBurns returns a resultOption which sets the burns field of the SettlementResult.
 func WithBurns(burns []MintBurnOperation) resultOption {
-	return func(r *PendingSettlementResult) {
-		r.Burns = burns
+	return func(r *SettlementResult) {
+		r.burns = burns
 	}
 }
 
-// WithModToModTransfers returns a resultOption which sets the ModToModTransfers field of the PendingSettlementResult.
+// WithModToModTransfers returns a resultOption which sets the modToModTransfers field of the SettlementResult.
 func WithModToModTransfers(transfers []ModToModTransfer) resultOption {
-	return func(r *PendingSettlementResult) {
-		r.ModToModTransfers = transfers
+	return func(r *SettlementResult) {
+		r.modToModTransfers = transfers
 	}
 }
 
-// WithModToAcctTransfers returns a resultOption which sets the ModToAcctTransfers field of the PendingSettlementResult.
+// WithModToAcctTransfers returns a resultOption which sets the modToAcctTransfers field of the SettlementResult.
 func WithModToAcctTransfers(transfers []ModToAcctTransfer) resultOption {
-	return func(r *PendingSettlementResult) {
-		r.ModToAcctTransfers = transfers
+	return func(r *SettlementResult) {
+		r.modToAcctTransfers = transfers
 	}
 }
 

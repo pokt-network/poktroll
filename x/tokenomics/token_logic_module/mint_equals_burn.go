@@ -45,8 +45,7 @@ func (tlm tlmRelayBurnEqualsMint) Process(
 	// These funds will be transferred to the supplier's shareholders below.
 	// For reference, see operate/configs/supplier_staking_config.md.
 	tlmCtx.Result.AppendMint(MintBurnOperation{
-		OriginTLM:         TLMRelayBurnEqualsMint,
-		OriginReason:      TLMRelayBurnEqualsMint_SupplierStakeMint,
+		TLMReason:         TLMRelayBurnEqualsMint_SupplierStakeMint,
 		DestinationModule: suppliertypes.ModuleName,
 		Coin:              tlmCtx.SettlementCoin,
 	})
@@ -79,8 +78,7 @@ func (tlm tlmRelayBurnEqualsMint) Process(
 	// Burn uPOKT from the application module account which was held in escrow
 	// on behalf of the application account.
 	tlmCtx.Result.AppendBurn(MintBurnOperation{
-		OriginTLM:         TLMRelayBurnEqualsMint,
-		OriginReason:      TLMRelayBurnEqualsMint_ApplicationStakeBurn,
+		TLMReason:         TLMRelayBurnEqualsMint_ApplicationStakeBurn,
 		DestinationModule: apptypes.ModuleName,
 		Coin:              tlmCtx.SettlementCoin,
 	})

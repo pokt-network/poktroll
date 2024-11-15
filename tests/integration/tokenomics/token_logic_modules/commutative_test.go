@@ -112,7 +112,7 @@ func (s *tokenLogicModuleTestSuite) setupKeepers(t *testing.T, opts ...keeper.To
 func (s *tokenLogicModuleTestSuite) setExpectedSettlementState(
 	t *testing.T,
 	settledResults,
-	expiredResults tlm.PendingSettlementResults,
+	expiredResults tlm.SettlementResults,
 ) {
 	t.Helper()
 
@@ -159,16 +159,16 @@ func (s *tokenLogicModuleTestSuite) getBalance(t *testing.T, bech32 string) *typ
 func (s *tokenLogicModuleTestSuite) assertExpectedSettlementState(
 	t *testing.T,
 	actualSettledResults,
-	actualExpiredResults tlm.PendingSettlementResults,
+	actualExpiredResults tlm.SettlementResults,
 ) {
 	require.Equal(t, len(s.expectedSettledResults), len(actualSettledResults))
 	require.Equal(t, len(s.expectedExpiredResults), len(actualExpiredResults))
 
 	for _, expectedSettledResult := range s.expectedSettledResults {
 		// Find the corresponding actual settled result by matching on claim root hash.
-		foundActualResult := new(tlm.PendingSettlementResult)
+		foundActualResult := new(tlm.SettlementResult)
 		for _, actualSettledResult := range actualSettledResults {
-			if bytes.Equal(expectedSettledResult.Claim.GetRootHash(), actualSettledResult.Claim.GetRootHash()) {
+			if bytes.Equal(expectedSettledResult.GetClaim().GetRootHash(), actualSettledResult.GetClaim().GetRootHash()) {
 				foundActualResult = actualSettledResult
 				break
 			}
@@ -179,10 +179,10 @@ func (s *tokenLogicModuleTestSuite) assertExpectedSettlementState(
 		// Assert that all mint, burn, and transfer operations match the expected settled result.
 		// Ordering of operations for a given type are not expected to be preserved between TLM
 		// processor permutations.
-		require.ElementsMatch(t, expectedSettledResult.Mints, foundActualResult.Mints)
-		require.ElementsMatch(t, expectedSettledResult.Burns, foundActualResult.Burns)
-		require.ElementsMatch(t, expectedSettledResult.ModToModTransfers, foundActualResult.ModToModTransfers)
-		require.ElementsMatch(t, expectedSettledResult.ModToAcctTransfers, foundActualResult.ModToAcctTransfers)
+		require.ElementsMatch(t, expectedSettledResult.GetMints(), foundActualResult.GetMints())
+		require.ElementsMatch(t, expectedSettledResult.GetBurns(), foundActualResult.GetBurns())
+		require.ElementsMatch(t, expectedSettledResult.GetModToModTransfers(), foundActualResult.GetModToModTransfers())
+		require.ElementsMatch(t, expectedSettledResult.GetModToAcctTransfers(), foundActualResult.GetModToAcctTransfers())
 
 		actualSettlementState := s.getSettlementState(t)
 

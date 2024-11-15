@@ -3,7 +3,6 @@ package keeper
 import (
 	"context"
 	"fmt"
-	"slices"
 
 	"cosmossdk.io/math"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
@@ -29,8 +28,8 @@ import (
 //
 // TODO_TECHDEBT: Refactor this function to return a struct instead of multiple return values.
 func (k Keeper) SettlePendingClaims(ctx cosmostypes.Context) (
-	settledResults tlm.PendingSettlementResults,
-	expiredResults tlm.PendingSettlementResults,
+	settledResults tlm.SettlementResults,
+	expiredResults tlm.SettlementResults,
 	err error,
 ) {
 	logger := k.Logger().With("method", "SettlePendingClaims")
@@ -54,17 +53,19 @@ func (k Keeper) SettlePendingClaims(ctx cosmostypes.Context) (
 	logger.Info(fmt.Sprintf("found %d expiring claims at block height %d", len(expiringClaims), blockHeight))
 
 	// Initialize results structs.
-	settledResults = make(tlm.PendingSettlementResults, 0)
-	expiredResults = make(tlm.PendingSettlementResults, 0)
+	settledResults = make(tlm.SettlementResults, 0)
+	expiredResults = make(tlm.SettlementResults, 0)
 
-	// expiredClaimSupplierOperatorAddresses is a slice of supplier operator addresses
-	// which are found in expiring claims. This slice is intended to be sorted once complete
-	// and used for deterministic iteration.
-	expiredClaimSupplierOperatorAddresses := make([]string, 0)
-	// A map from a supplier operator address to the number of expired claims that
-	// supplier has in this session.
-	// Expired claims due to reasons such as invalid or missing proofs when required.
-	supplierToExpiredClaimCount := make(map[string]uint64)
+	// TODO_IN_THIS_COMMIT: remove
+	//// expiredClaimSupplierOperatorAddresses is a slice of supplier operator addresses
+	//// which are found in expiring claims. This slice is intended to be sorted once complete
+	//// and used for deterministic iteration.
+	//expiredClaimSupplierOperatorAddresses := make([]string, 0)
+	//// A map from a supplier operator address to the number of expired claims that
+	//// supplier has in this session.
+	//// Expired claims due to reasons such as invalid or missing proofs when required.
+	//supplierToExpiredClaimCount := make(map[string]uint64)
+
 	logger.Debug("settling expiring claims")
 	for _, claim := range expiringClaims {
 		var (
@@ -133,6 +134,9 @@ func (k Keeper) SettlePendingClaims(ctx cosmostypes.Context) (
 			"proof_requirement", proofRequirement,
 		)
 
+		// Initialize a SettlementResult to accumulate the results prior to executing state transitions.
+		settlementResult := tlm.NewSettlementResult(claim)
+
 		proofIsRequired := proofRequirement != prooftypes.ProofRequirementReason_NOT_REQUIRED
 		if proofIsRequired {
 			expirationReason := tokenomicstypes.ClaimExpirationReason_EXPIRATION_REASON_UNSPECIFIED // EXPIRATION_REASON_UNSPECIFIED is the default
@@ -176,8 +180,9 @@ func (k Keeper) SettlePendingClaims(ctx cosmostypes.Context) (
 				// The unstaking check is not done here because the slashed supplier may
 				// have other valid claims and the protocol might want to touch the supplier
 				// owner or operator balances if the stake is negative.
-				expiredClaimSupplierOperatorAddresses = append(expiredClaimSupplierOperatorAddresses, claim.GetSupplierOperatorAddress())
-				supplierToExpiredClaimCount[claim.GetSupplierOperatorAddress()]++
+				//expiredClaimSupplierOperatorAddresses = append(expiredClaimSupplierOperatorAddresses, claim.GetSupplierOperatorAddress())
+				//supplierToExpiredClaimCount[claim.GetSupplierOperatorAddress()]++
+				//settlementResult.WillSlashSupplier()
 
 				// The claim & proof are no longer necessary, so there's no need for them
 				// to take up on-chain space.
@@ -186,7 +191,8 @@ func (k Keeper) SettlePendingClaims(ctx cosmostypes.Context) (
 					k.proofKeeper.RemoveProof(ctx, sessionId, claim.SupplierOperatorAddress)
 				}
 
-				expiredResults.Append(tlm.NewPendingSettlementResult(claim))
+				// Append the settlement result to the expired results.
+				expiredResults.Append(settlementResult)
 
 				// Telemetry - defer telemetry calls so that they reference the final values the relevant variables.
 				defer k.finalizeTelemetry(
@@ -207,9 +213,6 @@ func (k Keeper) SettlePendingClaims(ctx cosmostypes.Context) (
 		// 1. The claim does not require a proof.
 		// 2. The claim requires a proof and a valid proof was found.
 
-		// Initialize a PendingSettlementResult to accumulate the results of TLM processing.
-		result := tlm.NewPendingSettlementResult(claim)
-
 		appAddress := claim.GetSessionHeader().GetApplicationAddress()
 		applicationInitialStake := applicationInitialStakeMap[appAddress]
 
@@ -222,13 +225,13 @@ func (k Keeper) SettlePendingClaims(ctx cosmostypes.Context) (
 		}
 
 		// Manage the mint & burn accounting for the claim.
-		if err = k.ProcessTokenLogicModules(ctx, result, applicationInitialStake); err != nil {
+		if err = k.ProcessTokenLogicModules(ctx, settlementResult, applicationInitialStake); err != nil {
 			logger.Error(fmt.Sprintf("error processing token logic modules for claim %q: %v", claim.SessionHeader.SessionId, err))
 			return settledResults, expiredResults, err
 		}
 
-		// Append the token logic module processing result to the settled results.
-		settledResults.Append(result)
+		// Append the token logic module processing settlementResult to the settled results.
+		settledResults.Append(settlementResult)
 
 		claimSettledEvent := tokenomicstypes.EventClaimSettled{
 			Claim:                    &claim,
@@ -243,16 +246,17 @@ func (k Keeper) SettlePendingClaims(ctx cosmostypes.Context) (
 			return settledResults, expiredResults, err
 		}
 
-		if err = ctx.EventManager().EmitTypedEvent(&prooftypes.EventProofUpdated{
-			Claim:                    &claim,
-			Proof:                    nil,
-			NumRelays:                0,
-			NumClaimedComputeUnits:   0,
-			NumEstimatedComputeUnits: numEstimatedComputeUnits,
-			ClaimedUpokt:             &claimeduPOKT,
-		}); err != nil {
-			return settledResults, expiredResults, err
-		}
+		// TODO_IN_THIS_COMMIT: remove... not sure why this is here...
+		//if err = ctx.EventManager().EmitTypedEvent(&prooftypes.EventProofUpdated{
+		//	Claim:                    &claim,
+		//	Proof:                    nil,
+		//	NumRelays:                0,
+		//	NumClaimedComputeUnits:   0,
+		//	NumEstimatedComputeUnits: numEstimatedComputeUnits,
+		//	ClaimedUpokt:             &claimeduPOKT,
+		//}); err != nil {
+		//	return settledResults, expiredResults, err
+		//}
 
 		logger.Info("claim settled")
 
@@ -281,19 +285,12 @@ func (k Keeper) SettlePendingClaims(ctx cosmostypes.Context) (
 		)
 	}
 
-	if err = k.ExecutePendingResults(ctx, settledResults); err != nil {
+	if err = k.ExecutePendingExpiredResults(ctx, expiredResults); err != nil {
 		return settledResults, expiredResults, err
 	}
 
-	// Slash all the suppliers that have been marked for slashing slashingCount times.
-	// The suppliers are sorted to ensure deterministic iteration.
-	slices.Sort(expiredClaimSupplierOperatorAddresses)
-	for _, supplierOperatorAddress := range expiredClaimSupplierOperatorAddresses {
-		slashingCount := supplierToExpiredClaimCount[supplierOperatorAddress]
-		if err = k.slashSupplierStake(ctx, supplierOperatorAddress, slashingCount); err != nil {
-			logger.Error(fmt.Sprintf("error slashing supplier %s: %s", supplierOperatorAddress, err))
-			return settledResults, expiredResults, err
-		}
+	if err = k.ExecutePendingSettledResults(ctx, settledResults); err != nil {
+		return settledResults, expiredResults, err
 	}
 
 	logger.Info(fmt.Sprintf(
@@ -306,40 +303,65 @@ func (k Keeper) SettlePendingClaims(ctx cosmostypes.Context) (
 	return settledResults, expiredResults, nil
 }
 
-// ExecutePendingResults executes all pending mint, burn, and transfer operations.
-func (k Keeper) ExecutePendingResults(ctx cosmostypes.Context, results tlm.PendingSettlementResults) error {
-	logger := k.logger.With("method", "ExecutePendingResults")
+// TODO_IN_THIS_COMMIT: godoc & move ...
+func (k Keeper) ExecutePendingExpiredResults(ctx cosmostypes.Context, expiredResults tlm.SettlementResults) error {
+	logger := k.logger.With("method", "ProcessSupplierSlashing")
+
+	for _, expiredResult := range expiredResults {
+		// Slash all the suppliers that have been marked for slashing slashingCount times.
+		// The suppliers are sorted to ensure deterministic iteration.
+		//slices.Sort(expiredClaimSupplierOperatorAddresses)
+		//for _, supplierOperatorAddress := range expiredClaimSupplierOperatorAddresses {
+		//	slashingCount := supplierToExpiredClaimCount[supplierOperatorAddress]
+		if err := k.slashSupplierStake(ctx, expiredResult, expiredResult.GetSupplierOperatorAddr()); err != nil {
+			logger.Error(fmt.Sprintf("error slashing supplier %s: %s", expiredResult.GetSupplierOperatorAddr(), err))
+			return err
+		}
+		//}
+	}
+
+	return nil
+}
+
+// ExecutePendingSettledResults executes all pending mint, burn, and transfer operations.
+func (k Keeper) ExecutePendingSettledResults(ctx cosmostypes.Context, results tlm.SettlementResults) error {
+	logger := k.logger.With("method", "ExecutePendingSettledResults")
 
 	for _, result := range results {
 		logger = logger.With("session_id", result.GetSessionId())
 		logger.Info("begin executing pending results")
 
 		logger.Info("begin executing pending mints")
-		if err := k.executePendingMints(ctx, result.Mints); err != nil {
+		if err := k.executePendingMints(ctx, result.GetMints()); err != nil {
 			return err
 		}
 
 		logger.Info("done executing pending mints")
 
 		logger.Info("begin executing pending burns")
-		if err := k.executePendingBurns(ctx, result.Burns); err != nil {
+		if err := k.executePendingBurns(ctx, result.GetBurns()); err != nil {
 			return err
 		}
 		logger.Info("done executing pending burns")
 
 		logger.Info("begin executing pending module to module transfers")
-		if err := k.executePendingModToModTransfers(ctx, result.ModToModTransfers); err != nil {
+		if err := k.executePendingModToModTransfers(ctx, result.GetModToModTransfers()); err != nil {
 			return err
 		}
 		logger.Info("done executing pending module to module transfers")
 
 		logger.Info("begin executing pending module to account transfers")
-		if err := k.executePendingModToAcctTransfers(ctx, result.ModToAcctTransfers); err != nil {
+		if err := k.executePendingModToAcctTransfers(ctx, result.GetModToAcctTransfers()); err != nil {
 			return err
 		}
 		logger.Info("done executing pending module to account transfers")
 
 		logger.Info("done executing pending results")
+
+		logger.Info(fmt.Sprintf(
+			"done applying settled results for session %q",
+			result.GetClaim().GetSessionHeader().GetSessionId(),
+		))
 	}
 	return nil
 }
@@ -472,16 +494,13 @@ func (k Keeper) getExpiringClaims(ctx cosmostypes.Context) (expiringClaims []pro
 // slashing amount from the supplier bank module to the tokenomics module account.
 func (k Keeper) slashSupplierStake(
 	ctx cosmostypes.Context,
+	settlementResult *tlm.SettlementResult,
 	supplierOperatorAddress string,
-	slashingCount uint64,
 ) error {
 	logger := k.logger.With("method", "slashSupplierStake")
 
 	proofParams := k.proofKeeper.GetParams(ctx)
-	slashingPenaltyPerExpiredClaim := proofParams.GetProofMissingPenalty()
-
-	totalSlashingAmt := slashingPenaltyPerExpiredClaim.Amount.Mul(math.NewIntFromUint64(slashingCount))
-	totalSlashingCoin := cosmostypes.NewCoin(volatile.DenomuPOKT, totalSlashingAmt)
+	slashingCoin := *proofParams.GetProofMissingPenalty()
 
 	supplierToSlash, supplierFound := k.supplierKeeper.GetSupplier(ctx, supplierOperatorAddress)
 	if !supplierFound {
@@ -494,13 +513,13 @@ func (k Keeper) slashSupplierStake(
 	slashedSupplierInitialStakeCoin := supplierToSlash.GetStake()
 
 	var remainingStakeCoin cosmostypes.Coin
-	if slashedSupplierInitialStakeCoin.IsGTE(totalSlashingCoin) {
-		remainingStakeCoin = slashedSupplierInitialStakeCoin.Sub(totalSlashingCoin)
+	if slashedSupplierInitialStakeCoin.IsGTE(slashingCoin) {
+		remainingStakeCoin = slashedSupplierInitialStakeCoin.Sub(slashingCoin)
 	} else {
 		// TODO_MAINNET: Consider emitting an event for this case.
 		logger.Warn(fmt.Sprintf(
 			"total slashing amount (%s) is greater than supplier %q stake (%s)",
-			totalSlashingCoin,
+			slashingCoin,
 			supplierOperatorAddress,
 			supplierToSlash.GetStake(),
 		))
@@ -508,33 +527,33 @@ func (k Keeper) slashSupplierStake(
 		// Set the remaining stake to 0 if the slashing amount is greater than the stake.
 		remainingStakeCoin = cosmostypes.NewCoin(volatile.DenomuPOKT, math.NewInt(0))
 		// Total slashing amount is the whole supplier's stake.
-		totalSlashingCoin = cosmostypes.NewCoin(volatile.DenomuPOKT, slashedSupplierInitialStakeCoin.Amount)
+		slashingCoin = cosmostypes.NewCoin(volatile.DenomuPOKT, slashedSupplierInitialStakeCoin.Amount)
 	}
 
-	// TODO_IN_THIS_COMMIT: consolidate into settlement result.
-	// TODO_IN_THIS_COMMIT: consolidate into settlement result.
-	// TODO_IN_THIS_COMMIT: consolidate into settlement result.
-	// TODO_IN_THIS_COMMIT: consolidate into settlement result.
-	//
 	// Since staking mints tokens to the supplier module account, to have a correct
 	// accounting, the slashing amount needs to be sent from the supplier module
 	// account to the tokenomics module account.
-	if err := k.bankKeeper.SendCoinsFromModuleToModule(ctx, suppliertypes.ModuleName, tokenomicstypes.ModuleName, cosmostypes.NewCoins(totalSlashingCoin)); err != nil {
-		return err
-	}
+	//if err := k.bankKeeper.SendCoinsFromModuleToModule(ctx, suppliertypes.ModuleName, tokenomicstypes.ModuleName, cosmostypes.NewCoins(slashingCoin)); err != nil {
+	//	return err
+	//}
+	settlementResult.AppendBurn(tlm.MintBurnOperation{
+		TLMReason:         tlm.UnspecifiedTLM_SupplierSlash,
+		DestinationModule: tokenomicstypes.ModuleName,
+		Coin:              slashingCoin,
+	})
 
 	// Update telemetry information
-	if totalSlashingCoin.Amount.IsInt64() {
-		defer telemetry.SlashedTokensFromModule(suppliertypes.ModuleName, float32(totalSlashingCoin.Amount.Int64()))
+	if slashingCoin.Amount.IsInt64() {
+		defer telemetry.SlashedTokensFromModule(suppliertypes.ModuleName, float32(slashingCoin.Amount.Int64()))
 	}
 
 	supplierToSlash.Stake = &remainingStakeCoin
 
 	logger.Info(fmt.Sprintf(
-		"slashing supplier owner with address %q operated by %q by %s, remaining stake: %s",
+		"queueing operation: slash supplier owner with address %q operated by %q by %s, remaining stake: %s",
 		supplierToSlash.GetOwnerAddress(),
 		supplierToSlash.GetOperatorAddress(),
-		totalSlashingCoin,
+		slashingCoin,
 		supplierToSlash.GetStake(),
 	))
 
@@ -572,9 +591,10 @@ func (k Keeper) slashSupplierStake(
 
 	// Emit an event that a supplier has been slashed.
 	supplierSlashedEvent := tokenomicstypes.EventSupplierSlashed{
-		SupplierOperatorAddr: supplierOperatorAddress,
-		NumExpiredClaims:     slashingCount,
-		SlashingAmount:       &totalSlashingCoin,
+		Claim: settlementResult.GetClaim(),
+		//SupplierOperatorAddr: supplierOperatorAddress,
+		// TODO_IN_THIS_COMMIT: consider renaming to ProofMissingPenalty
+		ProofMissingPenalty: &slashingCoin,
 	}
 	if err := ctx.EventManager().EmitTypedEvent(&supplierSlashedEvent); err != nil {
 		return err

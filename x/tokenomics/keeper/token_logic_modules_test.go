@@ -117,16 +117,16 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_Valid(t *testing.T) {
 
 	// Prepare the claim for which the supplier did work for the application
 	claim := prepareTestClaim(numRelays, service, &app, &supplier)
-	pendingResult := tlm.NewPendingSettlementResult(claim)
+	pendingResult := tlm.NewSettlementResult(claim)
 
 	// Process the token logic modules
 	err = keepers.ProcessTokenLogicModules(ctx, pendingResult, appStake)
 	require.NoError(t, err)
 
 	// Execute the pending results
-	pendingResults := make(tlm.PendingSettlementResults, 0)
+	pendingResults := make(tlm.SettlementResults, 0)
 	pendingResults.Append(pendingResult)
-	err = keepers.ExecutePendingResults(cosmostypes.UnwrapSDKContext(ctx), pendingResults)
+	err = keepers.ExecutePendingSettledResults(cosmostypes.UnwrapSDKContext(ctx), pendingResults)
 	require.NoError(t, err)
 
 	// Assert that `applicationAddress` account balance is *unchanged*
@@ -255,16 +255,16 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_Valid_SupplierExceedsMaxClai
 
 	// Prepare the claim for which the supplier did work for the application
 	claim := prepareTestClaim(numRelays, service, &app, &supplier)
-	pendingResult := tlm.NewPendingSettlementResult(claim)
+	pendingResult := tlm.NewSettlementResult(claim)
 
 	// Process the token logic modules
 	err = keepers.ProcessTokenLogicModules(ctx, pendingResult, appStake)
 	require.NoError(t, err)
 
 	// Execute the pending results
-	pendingResults := make(tlm.PendingSettlementResults, 0)
+	pendingResults := make(tlm.SettlementResults, 0)
 	pendingResults.Append(pendingResult)
-	err = keepers.ExecutePendingResults(cosmostypes.UnwrapSDKContext(ctx), pendingResults)
+	err = keepers.ExecutePendingSettledResults(cosmostypes.UnwrapSDKContext(ctx), pendingResults)
 	require.NoError(t, err)
 
 	// Assert that `applicationAddress` account balance is *unchanged*
@@ -394,7 +394,7 @@ func TestProcessTokenLogicModules_TLMGlobalMint_Valid_MintDistributionCorrect(t 
 
 	// Prepare the claim for which the supplier did work for the application
 	claim := prepareTestClaim(numRelays, service, &app, &supplier)
-	pendingResult := tlm.NewPendingSettlementResult(claim)
+	pendingResult := tlm.NewSettlementResult(claim)
 
 	// Prepare addresses
 	appAddress := app.Address
@@ -416,9 +416,9 @@ func TestProcessTokenLogicModules_TLMGlobalMint_Valid_MintDistributionCorrect(t 
 	require.NoError(t, err)
 
 	// Execute the pending results
-	pendingResults := make(tlm.PendingSettlementResults, 0)
+	pendingResults := make(tlm.SettlementResults, 0)
 	pendingResults.Append(pendingResult)
-	err = keepers.ExecutePendingResults(cosmostypes.UnwrapSDKContext(ctx), pendingResults)
+	err = keepers.ExecutePendingSettledResults(cosmostypes.UnwrapSDKContext(ctx), pendingResults)
 	require.NoError(t, err)
 
 	// Determine balances after inflation
@@ -484,7 +484,7 @@ func TestProcessTokenLogicModules_AppNotFound(t *testing.T) {
 		},
 		RootHash: testproof.SmstRootWithSumAndCount(numComputeUnits, numRelays),
 	}
-	pendingResult := tlm.NewPendingSettlementResult(claim)
+	pendingResult := tlm.NewSettlementResult(claim)
 
 	// Process the token logic modules
 	err := keeper.ProcessTokenLogicModules(ctx, pendingResult, uPOKTCoin(math.MaxInt))
@@ -508,7 +508,7 @@ func TestProcessTokenLogicModules_ServiceNotFound(t *testing.T) {
 		},
 		RootHash: testproof.SmstRootWithSumAndCount(numComputeUnits, numRelays),
 	}
-	pendingResult := tlm.NewPendingSettlementResult(claim)
+	pendingResult := tlm.NewSettlementResult(claim)
 
 	// Execute test function
 	err := keeper.ProcessTokenLogicModules(ctx, pendingResult, uPOKTCoin(math.MaxInt))
@@ -579,7 +579,7 @@ func TestProcessTokenLogicModules_InvalidRoot(t *testing.T) {
 			// Setup claim by copying the testproof.BaseClaim and updating the root
 			claim := testproof.BaseClaim(service.Id, appAddr, supplierOperatorAddr, 0)
 			claim.RootHash = smt.MerkleRoot(test.root[:])
-			pendingResult := tlm.NewPendingSettlementResult(claim)
+			pendingResult := tlm.NewSettlementResult(claim)
 
 			// Execute test function
 			err := keeper.ProcessTokenLogicModules(ctx, pendingResult, uPOKTCoin(math.MaxInt))
@@ -607,7 +607,7 @@ func TestProcessTokenLogicModules_InvalidClaim(t *testing.T) {
 	}{
 
 		{
-			desc: "Valid Claim",
+			desc: "Valid claim",
 			claim: func() prooftypes.Claim {
 				claim := testproof.BaseClaim(service.Id, appAddr, supplierOperatorAddr, numRelays)
 				return claim
@@ -615,7 +615,7 @@ func TestProcessTokenLogicModules_InvalidClaim(t *testing.T) {
 			errExpected: false,
 		},
 		{
-			desc: "Claim with nil session header",
+			desc: "claim with nil session header",
 			claim: func() prooftypes.Claim {
 				claim := testproof.BaseClaim(service.Id, appAddr, supplierOperatorAddr, numRelays)
 				claim.SessionHeader = nil
@@ -625,7 +625,7 @@ func TestProcessTokenLogicModules_InvalidClaim(t *testing.T) {
 			expectErr:   tokenomicstypes.ErrTokenomicsSessionHeaderNil,
 		},
 		{
-			desc: "Claim with invalid session id",
+			desc: "claim with invalid session id",
 			claim: func() prooftypes.Claim {
 				claim := testproof.BaseClaim(service.Id, appAddr, supplierOperatorAddr, numRelays)
 				claim.SessionHeader.SessionId = ""
@@ -635,7 +635,7 @@ func TestProcessTokenLogicModules_InvalidClaim(t *testing.T) {
 			expectErr:   tokenomicstypes.ErrTokenomicsSessionHeaderInvalid,
 		},
 		{
-			desc: "Claim with invalid application address",
+			desc: "claim with invalid application address",
 			claim: func() prooftypes.Claim {
 				claim := testproof.BaseClaim(service.Id, appAddr, supplierOperatorAddr, numRelays)
 				claim.SessionHeader.ApplicationAddress = "invalid address"
@@ -645,7 +645,7 @@ func TestProcessTokenLogicModules_InvalidClaim(t *testing.T) {
 			expectErr:   tokenomicstypes.ErrTokenomicsSessionHeaderInvalid,
 		},
 		{
-			desc: "Claim with invalid supplier operator address",
+			desc: "claim with invalid supplier operator address",
 			claim: func() prooftypes.Claim {
 				claim := testproof.BaseClaim(service.Id, appAddr, supplierOperatorAddr, numRelays)
 				claim.SupplierOperatorAddress = "invalid address"
@@ -666,7 +666,7 @@ func TestProcessTokenLogicModules_InvalidClaim(t *testing.T) {
 						err = fmt.Errorf("panic occurred: %v", r)
 					}
 				}()
-				pendingResult := tlm.NewPendingSettlementResult(test.claim)
+				pendingResult := tlm.NewSettlementResult(test.claim)
 				return keeper.ProcessTokenLogicModules(ctx, pendingResult, uPOKTCoin(math.MaxInt))
 			}()
 
