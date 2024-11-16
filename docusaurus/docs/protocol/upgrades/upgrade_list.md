@@ -11,7 +11,7 @@ The tables below provide a list of past and upcoming protocol upgrades. For more
 - [MainNet](#mainnet)
 - [Beta TestNet](#beta-testnet)
 - [Alpha TestNet](#alpha-testnet)
-  - [Syncing from genesis](#syncing-from-genesis)
+  - [Syncing from genesis - manual steps](#syncing-from-genesis---manual-steps)
 
 ## Legend
 
@@ -39,7 +39,7 @@ Some manual steps are currently required to sync to the latest block. Please fol
 | [`v0.0.9-4`](https://github.com/pokt-network/poktroll/releases/tag/v0.0.9-4) |    ❌    |    ✅     |                    ⚠️ [follow manual upgrade instructions](https://github.com/pokt-network/poktroll/releases/tag/v0.0.9-4) ⚠️                    | `46329`        |
 | [`v0.0.9-3`](https://github.com/pokt-network/poktroll/releases/tag/v0.0.9-3) |    ❌    |    ✅     | ❌ Active Alpha TestNet Participants Only: [follow manual upgrade instructions](https://github.com/pokt-network/poktroll/releases/tag/v0.0.9-3) | `17102`        |
 | [`v0.0.9`](https://github.com/pokt-network/poktroll/releases/tag/v0.0.9)     |   N/A   |   N/A    |                                                               ❌ genesis version                                                                | N/A            |
-### Syncing from genesis
+### Syncing from genesis - manual steps
 <!-- TODO(@okdas): when the next cosmovisor version released with `https://github.com/cosmos/cosmos-sdk/pull/21790` included - provide automated solution (csv file + pre-downloaded binaries) that will add hot-fixes automatically, allowing to sync from block #1 without any intervention -->
 
 When syncing Alpha TestNet from the first block, the node will fail at height `46329`. Some manual steps are required in order for it to continue. Please [follow manual upgrade instructions](https://github.com/pokt-network/poktroll/releases/tag/v0.0.9-4).

@@ -156,6 +156,11 @@ sed -i -e s/NODE_HOSTNAME=/NODE_HOSTNAME=69.42.690.420/g .env
 
 ### Launch the Node <!-- omit in toc -->
 
+:::warn
+The Alpha TestNet currently requires manual steps to sync the node to the latest block. Please find the affected block(s)
+in [this document](../../protocol/upgrades/upgrade_list.md), which leads to the manual upgrade instructions.
+:::
+
 _Note: You may need to replace `docker-compose` with `docker compose` if you are
 running a newer version of Docker where `docker-compose` is integrated into `docker` itself._
 
