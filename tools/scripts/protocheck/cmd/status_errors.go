@@ -7,7 +7,6 @@ import (
 	"go/token"
 	"go/types"
 	"log"
-	"path/filepath"
 	"strings"
 
 	"github.com/spf13/cobra"
@@ -47,26 +46,28 @@ func init() {
 func runStatusErrorsCheck(cmd *cobra.Command, _ []string) error {
 	ctx := cmd.Context()
 
-	if flagModule != "*" {
-		if _, ok := poktrollModules[flagModule]; !ok {
-			return fmt.Errorf("unknown module %q", flagModule)
-		}
+	// TODO_IN_THIS_COMMIT: to support this, need to load all modules but only inspect target module.
+	//if flagModule != "*" {
+	//	if _, ok := poktrollModules[flagModule]; !ok {
+	//		return fmt.Errorf("unknown module %q", flagModule)
+	//	}
+	//
+	//	if err := checkModule(ctx, flagModule); err != nil {
+	//		return err
+	//	}
+	//}
 
-		if err := checkModule(ctx, flagModule); err != nil {
-			return err
-		}
+	//for module := range poktrollModules {
+	//	if err := checkModule(ctx, module); err != nil {
+	if err := checkModule(ctx); err != nil {
+		return err
 	}
-
-	for module := range poktrollModules {
-		if err := checkModule(ctx, module); err != nil {
-			return err
-		}
-	}
+	//}
 
 	return nil
 }
 
-func checkModule(_ context.Context, moduleName string) error {
+func checkModule(_ context.Context) error {
 
 	// 0. Get the package info for the given module's keeper package.
 	// 1. Find the message server struct for the given module.
@@ -77,8 +78,11 @@ func checkModule(_ context.Context, moduleName string) error {
 	// TODO: import polyzero for side effects.
 	//logger := polylog.Ctx(ctx)
 
-	moduleDir := filepath.Join(".", "x", moduleName)
-	keeperDir := filepath.Join(moduleDir, "keeper")
+	//xDir := filepath.Join(".", "x")
+	//xDir := filepath.Join(".", "x", "application")
+	//moduleDir := filepath.Join(".", "x", "application")
+	//moduleDir := filepath.Join(".", "x", moduleName)
+	//keeperDir := filepath.Join(moduleDir, "keeper")
 
 	// TODO_IN_THIS_COMMIT: extract --- BEGIN
 	// Set up the package configuration
@@ -89,15 +93,30 @@ func checkModule(_ context.Context, moduleName string) error {
 	}
 
 	// Load the package containing the target file or directory
-	poktrollPkgPathRoot := "github.com/pokt-network/poktroll"
-	moduleKeeperPkgPath := filepath.Join(poktrollPkgPathRoot, keeperDir)
-	pkgs, err := packages.Load(cfg, moduleKeeperPkgPath)
+	poktrollPkgPathPattern := "github.com/pokt-network/poktroll/x/..."
+	//moduleKeeperPkgPath := filepath.Join(poktrollPkgPathPattern, keeperDir)
+	//xPkgPath := filepath.Join(poktrollPkgPathPattern, xDir)
+	//fmt.Printf(">>> pkg path: %s\n", moduleKeeperPkgPath)
+	//pkgs, err := packages.Load(cfg, moduleKeeperPkgPath)
+	pkgs, err := packages.Load(cfg, poktrollPkgPathPattern)
+	//pkgs, err := packages.Load(cfg, "github.com/pokt-network/poktroll/x/application")
 	if err != nil {
 		log.Fatalf("Failed to load package: %v", err)
 	}
 
-	// Iterate over the packages
+	offendingPkgErrLines := make([]string, 0)
+
+	// Iterate over the keeper packages
+	// E.g.:
+	// - github.com/pokt-network/poktroll/x/application/keeper
+	// - github.com/pokt-network/poktroll/x/gateway/keeper
+	// - ...
 	for _, pkg := range pkgs {
+		fmt.Printf("pkg: %+v\n", pkg)
+		if pkg.Name != "keeper" {
+			continue
+		}
+
 		if len(pkg.Errors) > 0 {
 			for _, pkgErr := range pkg.Errors {
 				log.Printf("Package error: %v", pkgErr)
@@ -122,7 +141,8 @@ func checkModule(_ context.Context, moduleName string) error {
 		//	}
 		//}
 		// TODO_IN_THIS_COMMIT: assert only 1 pkg: module's keeper...
-		typeInfo := pkgs[0].TypesInfo
+		//typeInfo := pkgs[0].TypesInfo
+		typeInfo := pkg.TypesInfo
 		// --- END
 
 		//msgServerGlob := filepath.Join(keeperDir, "msg_server_*.go")
@@ -131,8 +151,6 @@ func checkModule(_ context.Context, moduleName string) error {
 		//if err != nil {
 		//	return err
 		//}
-
-		offendingPkgErrLines := make([]string, 0)
 
 		// TODO_IN_THIS_COMMIT: extract --- BEGIN
 		//for _, matchFilePath := range matches[:1] {
@@ -153,10 +171,11 @@ func checkModule(_ context.Context, moduleName string) error {
 			////typeInfo := types.Info{}
 			//fmt.Println("AFTER...")
 
-			//// Skip files which don't match the msg_server_*.go pattern.
-			//if !strings.HasPrefix(astFile.Name.Name, "msg_server_") {
+			// Skip files which don't match the msg_server_*.go pattern.
+			//if !strings.HasPrefix(pkg., "msg_server_") {
 			//	continue
 			//}
+			//fmt.Printf(">>> %s\n", pkg.PkgPath)
 
 			//ast.Walk
 			ast.Inspect(astFile, func(n ast.Node) bool {
@@ -183,18 +202,20 @@ func checkModule(_ context.Context, moduleName string) error {
 				//fmt.Printf("Found msgServer method %q in %s\n", fnNode.Name.Name, matchFilePath)
 				fmt.Printf("in %q in %s\n", fnNode.Name.Name, astFile.Name.Name)
 
-				condition := func(sel *ast.Ident, typeObj types.Object) bool {
-					isStatusError := sel.Name == "Error" && typeObj.Pkg().Path() == "google.golang.org/grpc/status"
-					pos := pkg.Fset.Position(sel.Pos())
-					if !isStatusError {
-						fmt.Printf("fnNode: %+v", fnNode)
-						fmt.Printf("typeIdentNode: %+v", typeIdentNode)
-						offendingPkgErrLines = append(offendingPkgErrLines, fmt.Sprintf("%s:%d:%d", pos.Filename, pos.Line, pos.Column))
-					}
+				condition := func(returnErrNode ast.Node) func(*ast.Ident, types.Object) bool {
+					return func(sel *ast.Ident, typeObj types.Object) bool {
+						isStatusError := sel.Name == "Error" && typeObj.Pkg().Path() == "google.golang.org/grpc/status"
+						pos := pkg.Fset.Position(returnErrNode.Pos())
+						if !isStatusError {
+							fmt.Printf("fnNode: %+v", fnNode)
+							fmt.Printf("typeIdentNode: %+v", typeIdentNode)
+							offendingPkgErrLines = append(offendingPkgErrLines, fmt.Sprintf("%s:%d:%d", pos.Filename, pos.Line, pos.Column))
+						}
 
-					return isStatusError
-					//return true
-					//return false
+						return isStatusError
+						//return true
+						//return false
+					}
 				}
 
 				// Recursively traverse the function body, looking for non-nil error returns.
@@ -224,9 +245,6 @@ func checkModule(_ context.Context, moduleName string) error {
 							// arg is an error type if we checked that the function returns
 							// an error as the last arg.
 							if lastReturnArgNode.Name == "err" {
-								def := typeInfo.Defs[lastReturnArgNode]
-								fmt.Printf("def: %+v\n", def)
-
 								if lastReturnArgNode.Obj == nil {
 									return true
 								}
@@ -262,7 +280,13 @@ func checkModule(_ context.Context, moduleName string) error {
 									//posNode := GetNodeAtPos(astFile, pkg.Fset, node.Rhs[0].(*ast.CallExpr).Fun.Pos())
 									//fmt.Printf("posNode: %+v\n", posNode)
 
-									traverseFunctionBody(selection.Obj().(*types.Func), pkg, 0, condition)
+									if selection == nil {
+										fmt.Printf("ERROR: selection is nil\n")
+										//return true
+										return false
+									}
+
+									traverseFunctionBody(selection.Obj().(*types.Func), pkgs, 0, condition(lastReturnArgNode))
 
 									return false
 									//default:
@@ -295,7 +319,7 @@ func checkModule(_ context.Context, moduleName string) error {
 						case *ast.CallExpr:
 							fmt.Printf("ast.CallExpr: %T: %+v\n", lastReturnArg, lastReturnArgNode)
 
-							TraverseCallStack(lastReturnArgNode, pkg, 0, condition)
+							TraverseCallStack(lastReturnArgNode, pkgs, 0, condition(lastReturnArgNode))
 
 							//// TODO_IN_THIS_COMMIT: handle other types of CallExprs
 							//switch sel := lastReturnArgNode.Fun.(type) {
@@ -445,40 +469,59 @@ func checkModule(_ context.Context, moduleName string) error {
 //}
 
 // TraverseCallStack recursively traverses the call stack starting from a *ast.CallExpr.
-func TraverseCallStack(call *ast.CallExpr, pkg *packages.Package, indent int, condition func(*ast.Ident, types.Object) bool) {
+func TraverseCallStack(call *ast.CallExpr, pkgs []*packages.Package, indent int, condition func(*ast.Ident, types.Object) bool) {
 	fun := call.Fun
 	switch fn := fun.(type) {
 	case *ast.Ident:
 		// Local or top-level function
-		obj := pkg.TypesInfo.Uses[fn]
-		if obj != nil {
-			fmt.Printf("%sFunction: %s\n", indentSpaces(indent), obj.Name())
-			if fnDecl, ok := obj.(*types.Func); ok {
-				traverseFunctionBody(fnDecl, pkg, indent+2, condition)
+
+		var useObj types.Object
+		for _, pkg := range pkgs {
+			useObj = pkg.TypesInfo.Uses[fn]
+			if useObj != nil {
+				break
+			}
+		}
+		if useObj != nil {
+			fmt.Printf("%sFunction: %s\n", indentSpaces(indent), useObj.Name())
+			if fnDecl, ok := useObj.(*types.Func); ok {
+				traverseFunctionBody(fnDecl, pkgs, indent+2, condition)
 			}
 		}
 	case *ast.SelectorExpr:
 		// Method call like obj.Method()
 		sel := fn.Sel
-		obj := pkg.TypesInfo.Selections[fn]
-		if obj != nil {
+		var selection *types.Selection
+		for _, pkg := range pkgs {
+			selection = pkg.TypesInfo.Selections[fn]
+			if selection != nil {
+				break
+			}
+		}
+		if selection != nil {
 			// Instance method
-			fmt.Printf("%sMethod: %s on %s\n", indentSpaces(indent), sel.Name, obj.Recv())
-			if method, ok := obj.Obj().(*types.Func); ok {
-				traverseFunctionBody(method, pkg, indent+2, condition)
+			fmt.Printf("%sMethod: %s on %s\n", indentSpaces(indent), sel.Name, selection.Recv())
+			if method, ok := selection.Obj().(*types.Func); ok {
+				traverseFunctionBody(method, pkgs, indent+2, condition)
 			}
 		} else {
 			// Static or package-level call
-			typeObj := pkg.TypesInfo.Uses[sel]
-			if typeObj != nil {
-				fmt.Printf("%sFunction: %s (package-level: %s)\n", indentSpaces(indent), sel.Name, typeObj.Pkg().Path())
-				if condition(sel, typeObj) {
+			var useObj types.Object
+			for _, pkg := range pkgs {
+				useObj = pkg.TypesInfo.Uses[sel]
+				if useObj != nil {
+					break
+				}
+			}
+			if useObj != nil {
+				fmt.Printf("%sFunction: %s (package-level: %s)\n", indentSpaces(indent), sel.Name, useObj.Pkg().Path())
+				if condition(sel, useObj) {
 					fmt.Println(">>> STATUS ERROR FOUND!")
 					return
 				}
 
-				if fnDecl, ok := typeObj.(*types.Func); ok {
-					traverseFunctionBody(fnDecl, pkg, indent+2, condition)
+				if fnDecl, ok := useObj.(*types.Func); ok {
+					traverseFunctionBody(fnDecl, pkgs, indent+2, condition)
 				}
 			}
 		}
@@ -489,32 +532,53 @@ func TraverseCallStack(call *ast.CallExpr, pkg *packages.Package, indent int, co
 	// Recursively inspect arguments for nested calls
 	for _, arg := range call.Args {
 		if nestedCall, ok := arg.(*ast.CallExpr); ok {
-			TraverseCallStack(nestedCall, pkg, indent+2, condition)
+			TraverseCallStack(nestedCall, pkgs, indent+2, condition)
 		}
 	}
 }
 
 // traverseFunctionBody analyzes the body of a function or method to find further calls.
-func traverseFunctionBody(fn *types.Func, pkg *packages.Package, indent int, condition func(*ast.Ident, types.Object) bool) {
-	// Find the declaration of the function in the AST
-	for _, file := range pkg.Syntax {
-		ast.Inspect(file, func(node ast.Node) bool {
-			funcDecl, ok := node.(*ast.FuncDecl)
-			if !ok || pkg.Fset.Position(funcDecl.Pos()).Filename != pkg.Fset.Position(fn.Pos()).Filename {
-				return true // Not the target function, continue
-			}
-			if funcDecl.Name.Name == fn.Name() {
-				// Found the function, inspect its body for calls
-				ast.Inspect(funcDecl.Body, func(n ast.Node) bool {
-					if call, ok := n.(*ast.CallExpr); ok {
-						TraverseCallStack(call, pkg, indent, condition)
-					}
-					return true
-				})
-				return false // Stop after finding the target function
-			}
-			return true
-		})
+func traverseFunctionBody(fn *types.Func, pkgs []*packages.Package, indent int, condition func(*ast.Ident, types.Object) bool) {
+	fmt.Printf("fn package path: %s\n", fn.Pkg().Path())
+	fmt.Printf("path has prefix: %v\n", strings.HasPrefix(fn.Pkg().Path(), "github.com/pokt-network/poktroll"))
+	// Don't traverse beyond poktroll module root (i.e. assume deps won't return status errors).
+	if !strings.HasPrefix(fn.Pkg().Path(), "github.com/pokt-network/poktroll") {
+		return
+	}
+
+	// TODO_IN_THIS_COMMIT: Implement & log when this happens.
+	// DEV_NOTE: If targetFileName is not present in any package,
+	// we assume that a status error will not be returned by the
+	// function; so we MUST mark it as offending.
+
+	for _, pkg := range pkgs {
+		// Find the declaration of the function in the AST
+		for _, file := range pkg.Syntax {
+			ast.Inspect(file, func(node ast.Node) bool {
+				funcDecl, ok := node.(*ast.FuncDecl)
+				if !ok {
+					return true // Not the target function, continue
+				}
+				targetFileName := pkg.Fset.Position(fn.Pos()).Filename
+				nodeFileName := pkg.Fset.Position(funcDecl.Pos()).Filename
+				//fmt.Printf("nodeFileName: %s\n", nodeFileName)
+				if nodeFileName != targetFileName {
+					return true // Not the target function, continue
+				}
+
+				if funcDecl.Name.Name == fn.Name() {
+					// Found the function, inspect its body for calls
+					ast.Inspect(funcDecl.Body, func(n ast.Node) bool {
+						if call, ok := n.(*ast.CallExpr); ok {
+							TraverseCallStack(call, pkgs, indent, condition)
+						}
+						return true
+					})
+					return false // Stop after finding the target function
+				}
+				return true
+			})
+		}
 	}
 }
 
