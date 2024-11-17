@@ -25,6 +25,7 @@ func (k msgServer) DelegateToGateway(ctx context.Context, msg *apptypes.MsgDeleg
 	if err := msg.ValidateBasic(); err != nil {
 		logger.Error(fmt.Sprintf("Delegation Message failed basic validation: %v", err))
 		return nil, err
+		//return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
 	// Retrieve the application from the store
