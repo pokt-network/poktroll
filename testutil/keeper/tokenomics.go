@@ -622,8 +622,13 @@ func WithTokenLogicModules(processors []tlm.TokenLogicModule) TokenomicsModuleKe
 }
 
 // TODO_IN_THIS_COMMIT: godoc...
-func WithDaoRewardBech32(daoRewardBech32 string) TokenomicsModuleKeepersOptFn {
-	return WithTLMProcessors(tlm.NewDefaultTokenLogicModules(daoRewardBech32))
+func WithDaoRewardBech32(daoRewardAddr string) TokenomicsModuleKeepersOptFn {
+	tokenomicsParams := tokenomicstypes.DefaultParams()
+	tokenomicsParams.DaoRewardAddress = daoRewardAddr
+
+	return WithModuleParams(map[string]cosmostypes.Msg{
+		tokenomicstypes.ModuleName: &tokenomicsParams,
+	})
 }
 
 // WithModuleParams returns a KeeperOptionFn that sets the moduleParams field

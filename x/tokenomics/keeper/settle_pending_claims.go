@@ -2,6 +2,7 @@ package keeper
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	cosmoslog "cosmossdk.io/log"
@@ -14,6 +15,7 @@ import (
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 	servicekeeper "github.com/pokt-network/poktroll/x/service/keeper"
+	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 	tlm "github.com/pokt-network/poktroll/x/tokenomics/token_logic_module"
@@ -136,6 +138,12 @@ func (k Keeper) SettlePendingClaims(ctx cosmostypes.Context) (
 				if err = k.proofKeeper.EnsureValidProof(ctx, &proof); err != nil {
 					logger.Warn(fmt.Sprintf("Proof was found but is invalid due to %v", err))
 					expirationReason = tokenomicstypes.ClaimExpirationReason_PROOF_INVALID
+
+					// SHOULD halt if supplier is not found on-chain.
+					switch {
+					case errors.Is(err, sessiontypes.ErrSessionSuppliersNotFound):
+						return nil, nil, err
+					}
 				}
 			} else {
 				expirationReason = tokenomicstypes.ClaimExpirationReason_PROOF_MISSING
@@ -367,7 +375,8 @@ func (k Keeper) executePendingModuleMints(
 		}
 		if err := k.bankKeeper.MintCoins(ctx, mint.DestinationModule, cosmostypes.NewCoins(mint.Coin)); err != nil {
 			return tokenomicstypes.ErrTokenomicsSettlementModuleMint.Wrapf(
-				"destination module %q minting %s: %s", mint.DestinationModule, mint.Coin, err,
+				"destination module %q minting %s (reason %q): %s",
+				mint.DestinationModule, mint.Coin, mint.GetOpReason(), err,
 			)
 		}
 
@@ -393,7 +402,8 @@ func (k Keeper) executePendingModuleBurns(
 
 		if err := k.bankKeeper.BurnCoins(ctx, burn.DestinationModule, cosmostypes.NewCoins(burn.Coin)); err != nil {
 			return tokenomicstypes.ErrTokenomicsSettlementModuleBurn.Wrapf(
-				"destination module %q burning %s: %s", burn.DestinationModule, burn.Coin, err,
+				"destination module %q burning %s (reason %q): %s",
+				burn.DestinationModule, burn.Coin, burn.GetOpReason(), err,
 			)
 		}
 
@@ -423,8 +433,12 @@ func (k Keeper) executePendingModToModTransfers(
 			cosmostypes.NewCoins(transfer.Coin),
 		); err != nil {
 			return tokenomicstypes.ErrTokenomicsSettlementTransfer.Wrapf(
-				"sender module %q to recipient module %q transferring %s: %s",
-				transfer.SenderModule, transfer.RecipientModule, transfer.Coin, err,
+				"sender module %q to recipient module %q transferring %s (reason %q): %s",
+				transfer.SenderModule,
+				transfer.RecipientModule,
+				transfer.Coin,
+				transfer.GetOpReason(),
+				err,
 			)
 		}
 
@@ -450,9 +464,13 @@ func (k Keeper) executePendingModToAcctTransfers(
 		recepientAddr, err := cosmostypes.AccAddressFromBech32(transfer.RecipientAddress)
 		if err != nil {
 			// TODO_IN_THIS_COMMIT: find or create appropriate error type.
-			return fmt.Errorf(
-				"invalid recipient address %q: %s",
-				transfer.RecipientAddress, err,
+			return tokenomicstypes.ErrTokenomicsSettlementTransfer.Wrapf(
+				"sender module %q to recipient address %q transferring %s (reason %q): %s",
+				transfer.SenderModule,
+				transfer.RecipientAddress,
+				transfer.Coin,
+				transfer.GetOpReason(),
+				err,
 			)
 		}
 
@@ -463,8 +481,12 @@ func (k Keeper) executePendingModToAcctTransfers(
 			cosmostypes.NewCoins(transfer.Coin),
 		); err != nil {
 			return tokenomicstypes.ErrTokenomicsSettlementTransfer.Wrapf(
-				"sender module %q to recipient address %q transferring %s: %s",
-				transfer.SenderModule, transfer.RecipientAddress, transfer.Coin, err,
+				"sender module %q to recipient address %q transferring %s (reason %q): %s",
+				transfer.SenderModule,
+				transfer.RecipientAddress,
+				transfer.Coin,
+				transfer.GetOpReason(),
+				err,
 			)
 		}
 

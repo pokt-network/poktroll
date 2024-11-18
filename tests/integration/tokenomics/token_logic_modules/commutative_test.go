@@ -6,7 +6,6 @@ import (
 	"strings"
 	"testing"
 
-	"cosmossdk.io/log"
 	"github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
@@ -17,7 +16,6 @@ import (
 	"github.com/pokt-network/poktroll/testutil/sample"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
-	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 	tlm "github.com/pokt-network/poktroll/x/tokenomics/token_logic_module"
 	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
@@ -43,6 +41,8 @@ func (s *tokenLogicModuleTestSuite) TestTLMProcessorsAreCommutative() {
 	numTLMOrderPermutations := factorial(len(tokenLogicModules))
 	require.Equal(s.T(), numTLMOrderPermutations, len(tlmOrderPermutations))
 
+	proofNeverRequiredOpt := keeper.WithProofRequirement(prooftypes.ProofRequirementReason_NOT_REQUIRED)
+
 	for i, tlmPermutation := range tlmOrderPermutations {
 		var tlmIds []string
 		for _, tokenLogicModule := range tlmPermutation {
@@ -58,13 +58,13 @@ func (s *tokenLogicModuleTestSuite) TestTLMProcessorsAreCommutative() {
 		)
 
 		s.T().Run(testDesc, func(t *testing.T) {
-			s.setupKeepers(t, keeper.WithTokenLogicModules(tlmPermutation))
+			s.setupKeepers(t, keeper.WithTokenLogicModules(tlmPermutation), proofNeverRequiredOpt)
 
 			// Assert that no pre-existing claims are present.
 			numExistingClaims := len(s.keepers.GetAllClaims(s.ctx))
 			require.Equal(t, 0, numExistingClaims)
 
-			s.createClaims(&s.keepers, 1000)
+			s.createClaims(1000)
 			settledResults, expiredResults := s.settleClaims(t)
 
 			// First iteration only.
@@ -79,38 +79,6 @@ func (s *tokenLogicModuleTestSuite) TestTLMProcessorsAreCommutative() {
 			s.assertNoPendingClaims(t)
 		})
 	}
-}
-
-// setupKeepers initializes a new instance of TokenomicsModuleKeepers and context
-// with the given options, and creates the suite's service, application, and supplier
-// from SetupTest(). It also sets the block height to 1 and the proposer address to
-// the proposer address from SetupTest().
-func (s *tokenLogicModuleTestSuite) setupKeepers(t *testing.T, opts ...keeper.TokenomicsModuleKeepersOptFn) {
-	defaultOpts := []keeper.TokenomicsModuleKeepersOptFn{
-		keeper.WithService(*s.service),
-		keeper.WithApplication(*s.app),
-		keeper.WithSupplier(*s.supplier),
-		keeper.WithModuleParams(map[string]types.Msg{
-			// TODO_MAINNET(@bryanchriswhite): Set tokenomics mint allocation params to maximize coverage, once available.
-
-			// Set the proof params such that proofs are NEVER required.
-			prooftypes.ModuleName: s.getProofParams(),
-			// Set the CUTTM to simplify calculating settlement amount expectstions.
-			sharedtypes.ModuleName: s.getSharedParams(),
-			// Set the dao_reward_address for settlement rewards.
-			tokenomicstypes.ModuleName: s.getTokenomicsParams(),
-		}),
-	}
-
-	s.keepers, s.ctx = keeper.NewTokenomicsModuleKeepers(
-		t, log.NewNopLogger(),
-		append(defaultOpts, opts...)...,
-	)
-
-	// Increment the block height to 1; valid session height and set the proposer address.
-	s.ctx = types.UnwrapSDKContext(s.ctx).
-		WithBlockHeight(1).
-		WithProposer(s.proposerConsAddr)
 }
 
 // setExpectedSettlementState sets the expected settlement state on the suite based
@@ -145,7 +113,7 @@ func (s *tokenLogicModuleTestSuite) getSettlementState(t *testing.T) *settlement
 		supplierOwnerBalance: s.getBalance(t, s.supplier.GetOwnerAddress()),
 		proposerBalance:      s.getBalance(t, proposerBech32),
 		daoBalance:           s.getBalance(t, s.daoRewardAddr),
-		sourceOwnerBalance:   s.getBalance(t, s.sourceOwnerBech32),
+		sourceOwnerBalance:   s.getBalance(t, s.sourceOwnerAddr),
 	}
 }
 
@@ -197,7 +165,7 @@ func (s *tokenLogicModuleTestSuite) assertExpectedSettlementState(
 		actualSettlementState := s.getSettlementState(t)
 
 		// Assert that app stake and rewardee balances are non-zero.
-		coinIsZeroMsg := "coin has zero amount"
+		coinIsZeroMsg := "Coin has zero amount"
 		require.NotEqual(t, &zerouPOKT, actualSettlementState.appStake, coinIsZeroMsg)
 		require.NotEqual(t, &zerouPOKT, actualSettlementState.supplierOwnerBalance, coinIsZeroMsg)
 		require.NotEqual(t, &zerouPOKT, actualSettlementState.proposerBalance, coinIsZeroMsg)

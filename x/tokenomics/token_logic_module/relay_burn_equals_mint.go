@@ -67,7 +67,7 @@ func (tlm tlmRelayBurnEqualsMint) Process(
 		tlmCtx.SettlementCoin.Amount.Uint64(),
 	); err != nil {
 		return tokenomicstypes.ErrTokenomicsTLMInternal.Wrapf(
-			"queueing operation: distributing rewards to supplier with operator address %s shareholders: %v",
+			"queueing operation: distributing rewards to supplier with operator address %q shareholders: %s",
 			tlmCtx.Supplier.OperatorAddress,
 			err,
 		)

@@ -17,7 +17,6 @@ import (
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 	servicekeeper "github.com/pokt-network/poktroll/x/service/keeper"
-	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 	tlm "github.com/pokt-network/poktroll/x/tokenomics/token_logic_module"
@@ -30,7 +29,7 @@ import (
 // - Does not block settling of other claims in the same session
 // - Does not block setting subsequent sessions
 
-func (s *tlmProcessorTestSuite) TestSettlePendingClaims_HaltingError() {
+func (s *tokenLogicModuleTestSuite) TestSettlePendingClaims_HaltingError() {
 	moduleBalanceuPOKTAmount := int64(1000000000)
 	moduleBalanceCoins := cosmostypes.NewCoins(cosmostypes.NewInt64Coin(volatile.DenomuPOKT, moduleBalanceuPOKTAmount))
 	moduleAccountBalanceCfgs := []keeper.ModuleBalanceConfig{
@@ -66,9 +65,9 @@ func (s *tlmProcessorTestSuite) TestSettlePendingClaims_HaltingError() {
 				require.NoError(t, err)
 			},
 			getExpectedErr: func() error {
-				return sessiontypes.ErrSessionSuppliersNotFound.Wrapf(
-					"could not find suppliers for service %s at height %d",
-					s.service.GetId(), 1,
+				return tokenomicstypes.ErrTokenomicsSupplierNotFound.Wrapf(
+					"could not find supplier with operator address %q for service %q at height %d",
+					s.supplier.GetOperatorAddress(), s.service.GetId(), 20,
 				)
 			},
 		},
@@ -109,18 +108,18 @@ func (s *tlmProcessorTestSuite) TestSettlePendingClaims_HaltingError() {
 				s.keepers.SetSupplier(s.ctx, *s.supplier)
 			},
 			getExpectedErr: func() error {
-				return tokenomicstypes.ErrTokenomicsTLMError.Wrapf(
-					"TLM %q: %v",
+				return tokenomicstypes.ErrTokenomicsProcessingTLM.Wrapf(
+					"TLM %q: %s",
 					tlm.TLMRelayBurnEqualsMint,
-					tokenomicstypes.ErrTokenomicsModuleMint.Wrapf(
-						"queuing operation: distributing rewards to supplier with operator address %s shareholders: %v",
+					tokenomicstypes.ErrTokenomicsTLMInternal.Wrapf(
+						"queueing operation: distributing rewards to supplier with operator address %q shareholders: %s",
 						s.supplier.GetOperatorAddress(),
-						tokenomicstypes.ErrTokenomicsSupplierRevShareFailed.Wrapf(
+						tokenomicstypes.ErrTokenomicsConstraint.Wrapf(
 							"service %q not found for supplier %v",
 							s.service.GetId(),
 							s.supplier,
-						),
-					),
+						).Error(),
+					).Error(),
 				)
 			},
 		},
@@ -135,14 +134,14 @@ func (s *tlmProcessorTestSuite) TestSettlePendingClaims_HaltingError() {
 				s.keepers.SetSupplier(s.ctx, *s.supplier)
 			},
 			getExpectedErr: func() error {
-				return tokenomicstypes.ErrTokenomicsTLMError.Wrapf(
+				return tokenomicstypes.ErrTokenomicsProcessingTLM.Wrapf(
 					"TLM %q: %v",
 					tlm.TLMRelayBurnEqualsMint,
-					tokenomicstypes.ErrTokenomicsModuleMint.Wrapf(
-						"queuing operation: distributing rewards to supplier with operator address %s shareholders: %v",
+					tokenomicstypes.ErrTokenomicsSettlementModuleMint.Wrapf(
+						"queuing operation: distributing rewards to supplier with operator address %q shareholders: %s",
 						s.supplier.GetOperatorAddress(),
 						"decoding bech32 failed: invalid separator index -1",
-					),
+					).Error(),
 				)
 			},
 		},
@@ -160,7 +159,7 @@ func (s *tlmProcessorTestSuite) TestSettlePendingClaims_HaltingError() {
 					zerouPOKT, settlementCoin,
 				)
 
-				return tokenomicstypes.ErrTokenomicsModuleBurn.Wrapf(
+				return tokenomicstypes.ErrTokenomicsSettlementModuleBurn.Wrapf(
 					"destination module %q burning %s: %s", apptypes.ModuleName, settlementCoin, err,
 				)
 			},
@@ -181,7 +180,7 @@ func (s *tlmProcessorTestSuite) TestSettlePendingClaims_HaltingError() {
 
 	opts := []keeper.TokenomicsModuleKeepersOptFn{
 		keeper.WithDaoRewardBech32(daoRewardAcct.Address.String()),
-		keeper.WithProofRequirement(prooftypes.ProofRequirementReason_THRESHOLD),
+		keeper.WithProofRequirement(prooftypes.ProofRequirementReason_NOT_REQUIRED),
 		keeper.WithModuleBalances(moduleAccountBalanceCfgs),
 	}
 
@@ -198,32 +197,15 @@ func (s *tlmProcessorTestSuite) TestSettlePendingClaims_HaltingError() {
 			session, err := s.getSession()
 			require.NoError(t, err)
 
-			// TODO_IN_THIS_COMMIT: extract to a method...
-			earliestSupplierProofsCommitHeight := sharedtypes.GetEarliestSupplierProofCommitHeight(
-				&sharedParams,
-				session.GetHeader().GetSessionEndBlockHeight(),
-				s.merkleProofPathSeed,
-				s.supplierAcct.Address.String(),
-			)
-			proofPathSeedBlockHashHeight := earliestSupplierProofsCommitHeight - 1
-			s.setBlockHeight(proofPathSeedBlockHashHeight)
-			// ---
+			// TODO_IN_THIS_COMMIT: factor out.
+			s.storeProofPathSeed(t)
 
 			claim := s.newClaim(session)
 			proof := s.newProof(t, claim)
 			s.keepers.UpsertClaim(s.ctx, *claim)
 			s.keepers.UpsertProof(s.ctx, *proof)
 
-			relayMiningDifficulty := servicekeeper.NewDefaultRelayMiningDifficulty(s.ctx,
-				s.keepers.Logger(),
-				claim.GetSessionHeader().GetServiceId(),
-				// TODO_IN_THIS_COMMIT: fix...
-				5,
-			)
-
-			sharedParams := s.keepers.SharedKeeper.GetParams(s.ctx)
-			*settlementCoin, err = claim.GetClaimeduPOKT(sharedParams, relayMiningDifficulty)
-			require.NoError(t, err)
+			s.setSettlementCoin(t, claim, settlementCoin)
 
 			if test.asyncStateChange != nil {
 				test.asyncStateChange(t)
@@ -235,8 +217,45 @@ func (s *tlmProcessorTestSuite) TestSettlePendingClaims_HaltingError() {
 	}
 }
 
+// TODO_IN_THIS_COMMIT: godoc...
+func (s *tokenLogicModuleTestSuite) storeProofPathSeed(t *testing.T) {
+	t.Helper()
+
+	sharedParams := s.keepers.SharedKeeper.GetParams(s.ctx)
+	session, err := s.getSession()
+	require.NoError(t, err)
+
+	earliestSupplierProofsCommitHeight := sharedtypes.GetEarliestSupplierProofCommitHeight(
+		&sharedParams,
+		session.GetHeader().GetSessionEndBlockHeight(),
+		s.merkleProofPathSeed,
+		s.supplierAcct.Address.String(),
+	)
+	proofPathSeedBlockHashHeight := earliestSupplierProofsCommitHeight - 1
+	s.setBlockHeight(proofPathSeedBlockHashHeight)
+}
+
+// TODO_IN_THIS_COMMIT: godoc...
+func (s *tokenLogicModuleTestSuite) setSettlementCoin(
+	t *testing.T,
+	claim *prooftypes.Claim,
+	settlementCoin *cosmostypes.Coin,
+) {
+	sharedParams := s.keepers.SharedKeeper.GetParams(s.ctx)
+	relayMiningDifficulty := servicekeeper.NewDefaultRelayMiningDifficulty(s.ctx,
+		s.keepers.Logger(),
+		claim.GetSessionHeader().GetServiceId(),
+		// TODO_IN_THIS_COMMIT: fix...
+		5,
+	)
+
+	var err error
+	*settlementCoin, err = claim.GetClaimeduPOKT(sharedParams, relayMiningDifficulty)
+	require.NoError(t, err)
+}
+
 // TODO_IN_THIS_COMMIT: app oveserviced test case...
-func (s *tlmProcessorTestSuite) TestSettlePendingClaims_NonHaltingError() {
+func (s *tokenLogicModuleTestSuite) TestSettlePendingClaims_NonHaltingError() {
 	tests := []struct {
 		desc  string
 		setup func(*testing.T)
