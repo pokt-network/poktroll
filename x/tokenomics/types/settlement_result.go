@@ -72,7 +72,7 @@ func (m *ModToModTransfer) Validate() error {
 
 func validateOpReason(opReason SettlementOpReason, op any) error {
 	if opReason == SettlementOpReason_UNSPECIFIED {
-		return ErrTokenomicsSettlementModuleBurn.Wrapf("origin reason is unspecified: %+v", op)
+		return ErrTokenomicsSettlementModuleBurn.Wrapf("Settlement operation reason is unspecified: %+v", op)
 	}
 	return nil
 }

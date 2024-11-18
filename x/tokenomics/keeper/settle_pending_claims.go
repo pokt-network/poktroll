@@ -285,7 +285,7 @@ func (k Keeper) SettlePendingClaims(ctx cosmostypes.Context) (
 // In this case, the state is left how it was immediately prior to the execution of
 // the operation which failed.
 func (k Keeper) ExecutePendingExpiredResults(ctx cosmostypes.Context, expiredResults tlm.SettlementResults) error {
-	logger := k.logger.With("method", "ProcessSupplierSlashing")
+	logger := k.logger.With("method", "ExecutePendingExpiredResults")
 
 	for _, expiredResult := range expiredResults {
 		// Slash all the suppliers that have been marked for slashing slashingCount times.
@@ -307,7 +307,7 @@ func (k Keeper) ExecutePendingExpiredResults(ctx cosmostypes.Context, expiredRes
 // IMPORTANT: If the execution of any pending operation fails, the chain will halt.
 // In this case, the state is left how it was immediately prior to the execution of
 // the operation which failed.
-// TODO_MAINNER: Make this more "atomic", such that it reverts the state back to just prior
+// TODO_MAINNET(@bryanchriswhite): Make this more "atomic", such that it reverts the state back to just prior
 // to settling the offending claim.
 func (k Keeper) ExecutePendingSettledResults(ctx cosmostypes.Context, settledResults tlm.SettlementResults) error {
 	logger := k.logger.With("method", "ExecutePendingSettledResults")

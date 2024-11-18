@@ -27,7 +27,7 @@ func (s *tokenLogicModuleTestSuite) TestSettlePendingClaims_HaltingError() {
 
 	for _, test := range tests {
 		s.T().Run(test.desc, func(t *testing.T) {
-			// TODO_TEST:
+			// TODO_MAINNET(@bryanchriswhite):
 			// set up keepers
 			// assert 0 claims exist
 			// get the session
