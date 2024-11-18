@@ -38,7 +38,7 @@ func TestPermute(t *testing.T) {
 		"4321": {"4", "3", "2", "1"},
 	}
 
-	actual := permute(input)
+	actual := permute(t, input)
 	require.Equal(t, factorial(len(input)), len(actual))
 
 	// Assert that each actual result matches exactly one expected permutation.
@@ -59,18 +59,22 @@ func TestPermute(t *testing.T) {
 // permute generates all possible permutations of the input slice 'items'.
 // It is used to generate all possible permutations of token logic module
 // orderings such that we can test for commutativity.
-func permute[T any](items []T) [][]T {
+func permute[T any](t *testing.T, items []T) [][]T {
+	t.Helper()
+
 	var permutations [][]T
 	// Create a copy to avoid modifying the original slice.
 	itemsCopy := make([]T, len(items))
 	copy(itemsCopy, items)
 	// Start the recursive permutation generation with swap index 0.
-	recursivePermute(itemsCopy, &permutations, 0)
+	recursivePermute(t, itemsCopy, &permutations, 0)
 	return permutations
 }
 
 // recursivePermute recursively generates permutations by swapping elements.
-func recursivePermute[T any](items []T, permutations *[][]T, swapIdx int) {
+func recursivePermute[T any](t *testing.T, items []T, permutations *[][]T, swapIdx int) {
+	t.Helper()
+
 	if swapIdx == len(items) {
 		// Append a copy of the current permutation to the result.
 		permutation := make([]T, len(items))
@@ -82,12 +86,14 @@ func recursivePermute[T any](items []T, permutations *[][]T, swapIdx int) {
 		// Swap the current element with the element at the swap index.
 		items[swapIdx], items[i] = items[i], items[swapIdx]
 		// Recurse with the next swap index.
-		recursivePermute[T](items, permutations, swapIdx+1)
+		recursivePermute[T](t, items, permutations, swapIdx+1)
 		// Swap back to restore the original state (backtrack).
 		items[swapIdx], items[i] = items[i], items[swapIdx]
 	}
 }
 
+// factorial calculates the factorial of n (i.e. n! = 1 * 2 * 3 * ... * n).
+// It is used to calculate the number of permutations for a given set of items in permute().
 func factorial(n int) int {
 	if n < 0 {
 		return 0 // Handle negative input as an invalid case

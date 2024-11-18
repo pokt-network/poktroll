@@ -8,14 +8,17 @@ import (
 
 	"cosmossdk.io/log"
 	"github.com/cosmos/cosmos-sdk/types"
+	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	"github.com/stretchr/testify/require"
 
 	"github.com/pokt-network/poktroll/app/volatile"
 	"github.com/pokt-network/poktroll/testutil/keeper"
 	"github.com/pokt-network/poktroll/testutil/sample"
+	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
+	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 	tlm "github.com/pokt-network/poktroll/x/tokenomics/token_logic_module"
 	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
 )
@@ -34,7 +37,7 @@ var zerouPOKT = types.NewInt64Coin(volatile.DenomuPOKT, 0)
 func (s *tokenLogicModuleTestSuite) TestTLMProcessorsAreCommutative() {
 	// Generate all permutations of TLM processor ordering.
 	tokenLogicModules := tlm.NewDefaultTokenLogicModules()
-	tlmOrderPermutations := permute(tokenLogicModules)
+	tlmOrderPermutations := permute(s.T(), tokenLogicModules)
 
 	numTLMOrderPermutations := factorial(len(tokenLogicModules))
 	require.Equal(s.T(), numTLMOrderPermutations, len(tlmOrderPermutations))
@@ -132,6 +135,10 @@ func (s *tokenLogicModuleTestSuite) getSettlementState(t *testing.T) *settlement
 	proposerBech32 := sample.AccAddressFromConsBech32(s.proposerConsAddr.String())
 
 	return &settlementState{
+		appModuleBalance:        s.getBalance(t, authtypes.NewModuleAddress(apptypes.ModuleName).String()),
+		supplierModuleBalance:   s.getBalance(t, authtypes.NewModuleAddress(suppliertypes.ModuleName).String()),
+		tokenomicsModuleBalance: s.getBalance(t, authtypes.NewModuleAddress(tokenomicstypes.ModuleName).String()),
+
 		appStake:             app.GetStake(),
 		supplierOwnerBalance: s.getBalance(t, s.supplier.GetOwnerAddress()),
 		proposerBalance:      s.getBalance(t, proposerBech32),
@@ -188,12 +195,12 @@ func (s *tokenLogicModuleTestSuite) assertExpectedSettlementState(
 		actualSettlementState := s.getSettlementState(t)
 
 		// Assert that app stake and rewardee balances are non-zero.
-		require.NotEqual(t, &zerouPOKT, actualSettlementState.appStake)
-		require.NotEqual(t, &zerouPOKT, actualSettlementState.appBalance)
-		require.NotEqual(t, &zerouPOKT, actualSettlementState.supplierOwnerBalance)
-		require.NotEqual(t, &zerouPOKT, actualSettlementState.proposerBalance)
-		require.NotEqual(t, &zerouPOKT, actualSettlementState.daoBalance)
-		require.NotEqual(t, &zerouPOKT, actualSettlementState.sourceOwnerBalance)
+		coinIsZeroMsg := "coin has zero amount"
+		require.NotEqual(t, &zerouPOKT, actualSettlementState.appStake, coinIsZeroMsg)
+		require.NotEqual(t, &zerouPOKT, actualSettlementState.supplierOwnerBalance, coinIsZeroMsg)
+		require.NotEqual(t, &zerouPOKT, actualSettlementState.proposerBalance, coinIsZeroMsg)
+		require.NotEqual(t, &zerouPOKT, actualSettlementState.daoBalance, coinIsZeroMsg)
+		require.NotEqual(t, &zerouPOKT, actualSettlementState.sourceOwnerBalance, coinIsZeroMsg)
 
 		// Assert that the expected and actual settlement states match.
 		require.EqualValues(t, s.expectedSettlementState, actualSettlementState)

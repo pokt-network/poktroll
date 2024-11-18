@@ -49,8 +49,11 @@ type tokenLogicModuleTestSuite struct {
 
 // settlementState holds the expected post-settlement app stake and rewardee balances.
 type settlementState struct {
+	appModuleBalance        *cosmostypes.Coin
+	supplierModuleBalance   *cosmostypes.Coin
+	tokenomicsModuleBalance *cosmostypes.Coin
+
 	appStake             *cosmostypes.Coin
-	appBalance           *cosmostypes.Coin
 	supplierOwnerBalance *cosmostypes.Coin
 	proposerBalance      *cosmostypes.Coin
 	daoBalance           *cosmostypes.Coin
@@ -98,7 +101,7 @@ func (s *tokenLogicModuleTestSuite) SetupTest() {
 				RevShare: []*sharedtypes.ServiceRevenueShare{
 					{
 						Address:            supplierBech32,
-						RevSharePercentage: 50,
+						RevSharePercentage: 100,
 					},
 				},
 			},
