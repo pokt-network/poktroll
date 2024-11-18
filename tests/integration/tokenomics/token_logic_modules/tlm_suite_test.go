@@ -23,10 +23,10 @@ import (
 	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
 )
 
-// daoRewardBech32 is a random address intended for use in tests.
+// daoRewardAddr is a random address intended for use in tests.
 // In the commutativity test, the dao_reward_address is set to this
 // address and MUST remain unchanged between permutations.
-var daoRewardBech32 = sample.AccAddress()
+var daoRewardAddr = sample.AccAddress()
 
 type tokenLogicModuleTestSuite struct {
 	suite.Suite
@@ -40,7 +40,7 @@ type tokenLogicModuleTestSuite struct {
 
 	proposerConsAddr cosmostypes.ConsAddress
 	sourceOwnerBech32,
-	daoRewardBech32 string
+	daoRewardAddr string
 
 	expectedSettledResults,
 	expectedExpiredResults tlm.SettlementResults
@@ -71,7 +71,7 @@ func TestTLMProcessorTestSuite(t *testing.T) {
 // SetupTest generates and sets all rewardee addresses on the suite, and
 // set a service, application, and supplier on the suite.
 func (s *tokenLogicModuleTestSuite) SetupTest() {
-	s.daoRewardBech32 = daoRewardBech32
+	s.daoRewardAddr = daoRewardAddr
 	s.sourceOwnerBech32 = sample.AccAddress()
 	s.proposerConsAddr = sample.ConsAddress()
 
@@ -129,10 +129,10 @@ func (s *tokenLogicModuleTestSuite) getSharedParams() *sharedtypes.Params {
 	return &sharedParams
 }
 
-// getTokenomicsParams returns the default tokenomics params with the dao_reward_address set to s.daoRewardBech32.
+// getTokenomicsParams returns the default tokenomics params with the dao_reward_address set to s.daoRewardAddr.
 func (s *tokenLogicModuleTestSuite) getTokenomicsParams() *tokenomicstypes.Params {
 	tokenomicsParams := tokenomicstypes.DefaultParams()
-	tokenomicsParams.DaoRewardAddress = s.daoRewardBech32
+	tokenomicsParams.DaoRewardAddress = s.daoRewardAddr
 	return &tokenomicsParams
 }
 
@@ -161,7 +161,7 @@ func (s *tokenLogicModuleTestSuite) createClaims(
 			RootHash:                proof.SmstRootWithSumAndCount(1000, 1000),
 		}
 
-		keepers.UpsertClaim(s.ctx, claim)
+		keepers.ProofKeeper.UpsertClaim(s.ctx, claim)
 	}
 }
 
@@ -185,4 +185,12 @@ func (s *tokenLogicModuleTestSuite) settleClaims(t *testing.T) (settledResults, 
 // setBlockHeight sets the block height of the suite's context to height.
 func (s *tokenLogicModuleTestSuite) setBlockHeight(height int64) {
 	s.ctx = cosmostypes.UnwrapSDKContext(s.ctx).WithBlockHeight(height)
+}
+
+// assertNoPendingClaims asserts that no pending claims exist.
+func (s *tokenLogicModuleTestSuite) assertNoPendingClaims(t *testing.T) {
+	sdkCtx := cosmostypes.UnwrapSDKContext(s.ctx)
+	pendingClaims, err := s.keepers.Keeper.GetExpiringClaims(sdkCtx)
+	require.NoError(t, err)
+	require.Zero(t, len(pendingClaims))
 }

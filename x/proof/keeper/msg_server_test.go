@@ -14,7 +14,7 @@ import (
 func setupMsgServer(t testing.TB) (keeper.Keeper, types.MsgServer, context.Context) {
 	t.Helper()
 
-	k, ctx := keepertest.ProofKeeper(t)
+	k, ctx := keepertest.NewProofKeeper(t)
 	return k, keeper.NewMsgServerImpl(k), ctx
 }
 

@@ -69,9 +69,9 @@ type ProofModuleKeepers struct {
 // and proof keepers during construction of the aggregation.
 type ProofKeepersOpt func(context.Context, *ProofModuleKeepers) context.Context
 
-// ProofKeeper is a helper function to create a proof keeper and a context. It uses
+// NewProofKeeper is a helper function to create a proof keeper and a context. It uses
 // mocked dependencies only.
-func ProofKeeper(t testing.TB) (keeper.Keeper, context.Context) {
+func NewProofKeeper(t testing.TB) (keeper.Keeper, context.Context) {
 	t.Helper()
 
 	storeKey := storetypes.NewKVStoreKey(types.StoreKey)

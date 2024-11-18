@@ -3,6 +3,7 @@ package token_logic_module
 import (
 	"errors"
 	"fmt"
+	"sort"
 
 	"cosmossdk.io/log"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
@@ -87,12 +88,18 @@ func (rs SettlementResults) GetServiceIds() (serviceIds []string) {
 	for _, result := range rs {
 		serviceIds = append(serviceIds, result.GetServiceId())
 	}
+
+	// Sort service IDs to mitigate non-determinism.
+	sort.Strings(serviceIds)
+
 	return serviceIds
 }
 
 // GetRelaysPerServiceMap returns a map of service IDs to the total number of relays
 // claimed for that service in the combined results.
-// IMPORTANT: **DO NOT** iterate over returned map in on-chain code.
+// IMPORTANT: **DO NOT** directly iterate over returned map in on-chain code to avoid
+// the possibility of introducing non-determinism. Instead, iterate over the service ID
+// slice returned by OR a sorted slice of the service ID keys.
 func (rs SettlementResults) GetRelaysPerServiceMap() (_ map[string]uint64, errs error) {
 	relaysPerServiceMap := make(map[string]uint64)
 

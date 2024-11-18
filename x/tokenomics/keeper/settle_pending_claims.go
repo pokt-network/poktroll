@@ -35,7 +35,7 @@ func (k Keeper) SettlePendingClaims(ctx cosmostypes.Context) (
 ) {
 	logger := k.Logger().With("method", "SettlePendingClaims")
 
-	expiringClaims, err := k.getExpiringClaims(ctx)
+	expiringClaims, err := k.GetExpiringClaims(ctx)
 	if err != nil {
 		return settledResults, expiredResults, err
 	}
@@ -501,11 +501,12 @@ func (k Keeper) executePendingModToAcctTransfers(
 	return nil
 }
 
-// getExpiringClaims returns all claims that are expiring at the current block height.
+// GetExpiringClaims returns all claims that are expiring at the current block height.
 // This is the height at which the proof window closes.
 // If the proof window closes and a proof IS NOT required -> settle the claim.
 // If the proof window closes and a proof IS required -> only settle it if a proof is available.
-func (k Keeper) getExpiringClaims(ctx cosmostypes.Context) (expiringClaims []prooftypes.Claim, _ error) {
+// DEV_NOTE: It is exported for testing purposes.
+func (k Keeper) GetExpiringClaims(ctx cosmostypes.Context) (expiringClaims []prooftypes.Claim, _ error) {
 	// TODO_IMPROVE(@bryanchriswhite):
 	//   1. Move height logic up to SettlePendingClaims.
 	//   2. Ensure that claims are only settled or expired on a session end height.

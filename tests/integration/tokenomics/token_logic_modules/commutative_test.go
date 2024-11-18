@@ -28,12 +28,13 @@ var zerouPOKT = types.NewInt64Coin(volatile.DenomuPOKT, 0)
 
 // TestTLMProcessorTestSuite asserts that the network state that results from running
 // each permutation of the default TLM processors is identical (demonstrating
-// commutativity). It does this in the following steps:
+// commutativity).
 //
-// 1. Construct a TokenomicsModuleKeepers instance for each TLM processor permutation.
-// 2. Create valid claims (which require no proofs).
-// 3. Advance the block height to the settlement height and settle the claims.
-// 5. Assert that the settlement states of all TLM order permutations match.
+// It does this in the following steps:
+//  1. Construct a TokenomicsModuleKeepers instance for each TLM processor permutation.
+//  2. Create valid claims (which require no proofs).
+//  3. Advance the block height to the settlement height and settle the claims.
+//  4. Assert that the settlement states of all TLM order permutations match.
 func (s *tokenLogicModuleTestSuite) TestTLMProcessorsAreCommutative() {
 	// Generate all permutations of TLM processor ordering.
 	tokenLogicModules := tlm.NewDefaultTokenLogicModules()
@@ -75,6 +76,7 @@ func (s *tokenLogicModuleTestSuite) TestTLMProcessorsAreCommutative() {
 			}
 
 			s.assertExpectedSettlementState(t, settledResults, expiredResults)
+			s.assertNoPendingClaims(t)
 		})
 	}
 }
@@ -142,7 +144,7 @@ func (s *tokenLogicModuleTestSuite) getSettlementState(t *testing.T) *settlement
 		appStake:             app.GetStake(),
 		supplierOwnerBalance: s.getBalance(t, s.supplier.GetOwnerAddress()),
 		proposerBalance:      s.getBalance(t, proposerBech32),
-		daoBalance:           s.getBalance(t, s.daoRewardBech32),
+		daoBalance:           s.getBalance(t, s.daoRewardAddr),
 		sourceOwnerBalance:   s.getBalance(t, s.sourceOwnerBech32),
 	}
 }

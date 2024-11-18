@@ -13,7 +13,7 @@ import (
 )
 
 func TestGetParams(t *testing.T) {
-	k, ctx := keepertest.ProofKeeper(t)
+	k, ctx := keepertest.NewProofKeeper(t)
 	params := prooftypes.DefaultParams()
 
 	require.NoError(t, k.SetParams(ctx, params))
