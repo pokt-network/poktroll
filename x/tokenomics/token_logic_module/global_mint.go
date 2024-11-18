@@ -115,7 +115,7 @@ func (tlm tlmGlobalMint) Process(
 		uint64(supplierCoinsToShareAmt),
 	); err != nil {
 		return tokenomicstypes.ErrTokenomicsTLMInternal.Wrapf(
-			"queueing operation: distributing rewards to supplier with operator address %s shareholders: %v",
+			"queueing operation: distributing rewards to supplier with operator address %q shareholders: %s",
 			tlmCtx.Supplier.OperatorAddress,
 			err,
 		)

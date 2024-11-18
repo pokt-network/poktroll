@@ -57,22 +57,27 @@ func (r *SettlementResult) AppendModToAcctTransfer(transfer ModToAcctTransfer) {
 
 // Validate returns an error if the MintBurnOperation has either an unspecified TLM or TLMReason.
 func (m *MintBurnOp) Validate() error {
-	return validateOpReason(m.OpReason, m)
+	if m.OpReason == SettlementOpReason_UNSPECIFIED {
+		return ErrTokenomicsSettlementModuleBurn.Wrapf("settlement operation reason is unspecified: %+v", m.OpReason)
+	}
+	return nil
 }
 
 // Validate returns an error if the ModToAcctTransfer has either an unspecified TLM or TLMReason.
 func (m *ModToAcctTransfer) Validate() error {
-	return validateOpReason(m.OpReason, m)
+	if m.OpReason == SettlementOpReason_UNSPECIFIED {
+		return ErrTokenomicsSettlementTransfer.Wrapf("settlement operation reason is unspecified: %+v", m.OpReason)
+	}
+	return nil
 }
 
 // Validate returns an error if the ModToModTransfer has either an unspecified TLM or TLMReason.
 func (m *ModToModTransfer) Validate() error {
-	return validateOpReason(m.OpReason, m)
-}
-
-func validateOpReason(opReason SettlementOpReason, op any) error {
-	if opReason == SettlementOpReason_UNSPECIFIED {
-		return ErrTokenomicsSettlementModuleBurn.Wrapf("origin reason is unspecified: %+v", op)
+	if m.OpReason == SettlementOpReason_UNSPECIFIED {
+		return ErrTokenomicsSettlementTransfer.Wrapf(
+			"settlement operation reason is unspecified: %+v",
+			m.OpReason,
+		)
 	}
 	return nil
 }

@@ -128,7 +128,12 @@ func (k Keeper) ProcessTokenLogicModules(
 	supplier, isSupplierFound := k.supplierKeeper.GetSupplier(ctx, supplierOperatorAddr.String())
 	if !isSupplierFound {
 		logger.Warn(fmt.Sprintf("supplier for claim with address %q not found", supplierOperatorAddr))
-		return tokenomicstypes.ErrTokenomicsSupplierNotFound
+		return tokenomicstypes.ErrTokenomicsSupplierNotFound.Wrapf(
+			"could not find supplier with operator address %q for service %q at height %d",
+			pendingResult.Claim.GetSupplierOperatorAddress(),
+			sessionHeader.ServiceId,
+			cosmostypes.UnwrapSDKContext(ctx).BlockHeight(),
+		)
 	}
 
 	service, isServiceFound := k.serviceKeeper.GetService(ctx, sessionHeader.ServiceId)

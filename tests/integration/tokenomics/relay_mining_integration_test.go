@@ -83,7 +83,7 @@ func TestComputeNewDifficultyHash_RewardsReflectWorkCompleted(t *testing.T) {
 		testutils.WithService(service),
 		testutils.WithApplication(application),
 		testutils.WithSupplier(supplier),
-		testutils.WithProofRequirement(false),
+		testutils.WithProofRequirement(prooftypes.ProofRequirementReason_NOT_REQUIRED),
 	)
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 	sdkCtx = sdkCtx.WithBlockHeight(1)

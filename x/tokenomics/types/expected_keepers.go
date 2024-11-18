@@ -85,6 +85,8 @@ type SupplierKeeper interface {
 	GetSupplier(ctx context.Context, supplierOperatorAddr string) (supplier sharedtypes.Supplier, found bool)
 	GetAllSuppliers(ctx context.Context) (suppliers []sharedtypes.Supplier)
 	SetSupplier(ctx context.Context, supplier sharedtypes.Supplier)
+	RemoveSupplier(ctx context.Context, supplierOperatorAddress string)
+	UnbondSupplier(ctx context.Context, app *sharedtypes.Supplier) error
 }
 
 type ServiceKeeper interface {
@@ -93,4 +95,5 @@ type ServiceKeeper interface {
 	UpdateRelayMiningDifficulty(ctx context.Context, relaysPerServiceMap map[string]uint64) (map[string]servicetypes.RelayMiningDifficulty, error)
 	// Only used for testing & simulation
 	SetService(ctx context.Context, service sharedtypes.Service)
+	RemoveService(ctx context.Context, serviceId string)
 }

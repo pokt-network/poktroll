@@ -4,6 +4,7 @@ import (
 	"encoding/hex"
 
 	"github.com/cometbft/cometbft/crypto/tmhash"
+	"github.com/cosmos/cosmos-sdk/codec/address"
 	"github.com/cosmos/cosmos-sdk/crypto/keys/ed25519"
 	"github.com/cosmos/cosmos-sdk/crypto/keys/secp256k1"
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
@@ -65,4 +66,16 @@ func AccAddressFromConsBech32(consBech32 string) string {
 	consAccAddr, _ := cosmostypes.ConsAddressFromBech32(consBech32)
 	accAddr, _ := cosmostypes.AccAddressFromHexUnsafe(hex.EncodeToString(consAccAddr.Bytes()))
 	return accAddr.String()
+}
+
+// TODO_IN_THIS_COMMIT: godoc... & move to pkg/crypto/...
+func ConsAddrFromAccBech32(accBech32 string) cosmostypes.ConsAddress {
+	accAddr, _ := cosmostypes.AccAddressFromBech32(accBech32)
+
+	addrCodec := address.NewBech32Codec(cosmostypes.GetConfig().GetBech32ConsensusAddrPrefix())
+	consBech32, _ := addrCodec.BytesToString(accAddr.Bytes())
+
+	consAddr, _ := cosmostypes.ConsAddressFromBech32(consBech32)
+
+	return consAddr
 }
