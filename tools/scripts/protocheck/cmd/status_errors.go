@@ -6,6 +6,7 @@ import (
 	"go/ast"
 	"go/types"
 	"log"
+	"sort"
 	"strings"
 
 	"github.com/spf13/cobra"
@@ -23,17 +24,6 @@ var (
 		Short: "Checks that all message handler function errors are wrapped in gRPC status errors.",
 		RunE:  runStatusErrorsCheck,
 	}
-
-	poktrollModules = map[string]struct{}{
-		"application": {},
-		//"gateway":     {},
-		//"service":     {},
-		//"session":     {},
-		//"shared":      {},
-		//"supplier":    {},
-		//"proof":       {},
-		//"tokenomics":  {},
-	}
 )
 
 func init() {
@@ -47,13 +37,7 @@ func runStatusErrorsCheck(cmd *cobra.Command, _ []string) error {
 
 	// TODO_IN_THIS_COMMIT: to support this, need to load all modules but only inspect target module.
 	//if flagModule != "*" {
-	//	if _, ok := poktrollModules[flagModule]; !ok {
-	//		return fmt.Errorf("unknown module %q", flagModule)
-	//	}
-	//
-	//	if err := checkModule(ctx, flagModule); err != nil {
-	//		return err
-	//	}
+	// ...
 	//}
 
 	//for module := range poktrollModules {
@@ -77,33 +61,22 @@ func checkModule(_ context.Context) error {
 	// TODO: import polyzero for side effects.
 	//logger := polylog.Ctx(ctx)
 
-	//xDir := filepath.Join(".", "x")
-	//xDir := filepath.Join(".", "x", "application")
-	//moduleDir := filepath.Join(".", "x", "application")
-	//moduleDir := filepath.Join(".", "x", moduleName)
-	//keeperDir := filepath.Join(moduleDir, "keeper")
-
 	// TODO_IN_THIS_COMMIT: extract --- BEGIN
 	// Set up the package configuration
 	cfg := &packages.Config{
-		Mode: packages.NeedName | packages.NeedFiles | packages.NeedImports | packages.NeedTypes | packages.NeedTypesInfo | packages.LoadSyntax,
-		//Mode:  packages.LoadAllSyntax,
-		Tests: false, // Set to true if you also want to load test files
+		//Mode: packages.NeedName | packages.NeedFiles | packages.NeedImports | packages.NeedTypes | packages.NeedTypesInfo | packages.LoadSyntax,
+		Mode:  packages.LoadSyntax,
+		Tests: false,
 	}
 
 	// Load the package containing the target file or directory
 	poktrollPkgPathPattern := "github.com/pokt-network/poktroll/x/..."
-	//moduleKeeperPkgPath := filepath.Join(poktrollPkgPathPattern, keeperDir)
-	//xPkgPath := filepath.Join(poktrollPkgPathPattern, xDir)
-	//fmt.Printf(">>> pkg path: %s\n", moduleKeeperPkgPath)
-	//pkgs, err := packages.Load(cfg, moduleKeeperPkgPath)
 	pkgs, err := packages.Load(cfg, poktrollPkgPathPattern)
-	//pkgs, err := packages.Load(cfg, "github.com/pokt-network/poktroll/x/application")
 	if err != nil {
 		log.Fatalf("Failed to load package: %v", err)
 	}
 
-	offendingPkgErrLines := make([]string, 0)
+	offendingPkgErrLineSet := make(map[string]struct{})
 
 	// Iterate over the keeper packages
 	// E.g.:
@@ -111,7 +84,6 @@ func checkModule(_ context.Context) error {
 	// - github.com/pokt-network/poktroll/x/gateway/keeper
 	// - ...
 	for _, pkg := range pkgs {
-		fmt.Printf("pkg: %+v\n", pkg)
 		if pkg.Name != "keeper" {
 			continue
 		}
@@ -122,9 +94,6 @@ func checkModule(_ context.Context) error {
 			}
 			continue
 		}
-
-		// Print the package name and path
-		//fmt.Printf("Package: %s (Path: %s)\n", pkg.Name, pkg.PkgPath)
 
 		// Access type information
 		info := pkg.TypesInfo
@@ -149,6 +118,31 @@ func checkModule(_ context.Context) error {
 					return false
 				}
 
+				fnNodeTypeObj, ok := typeInfo.Defs[fnNode.Name] //.Type.Results.List[0].Type
+				if !ok {
+					fmt.Printf("ERROR: unable to find fnNode type def: %s\n", fnNode.Name.Name)
+					return true
+				}
+
+				// Skip methods which are not exported.
+				if !fnNodeTypeObj.Exported() {
+					return false
+				}
+
+				// Skip methods which have no return arguments.
+				if fnNode.Type.Results == nil {
+					return false
+				}
+
+				// TODO_IN_THIS_COMMIT: check the signature of the method to ensure it returns an error type.
+				fnResultsList := fnNode.Type.Results.List
+				fnLastResultType := fnResultsList[len(fnResultsList)-1].Type
+				if fnLastResultIdent, ok := fnLastResultType.(*ast.Ident); ok {
+					if fnLastResultIdent.Name != "error" {
+						return false
+					}
+				}
+
 				fnType := fnNode.Recv.List[0].Type
 				typeIdentNode, ok := fnType.(*ast.Ident)
 				if !ok {
@@ -159,27 +153,18 @@ func checkModule(_ context.Context) error {
 					return false
 				}
 
-				//fmt.Printf("Found msgServer method %q in %s\n", fnNode.Name.Name, matchFilePath)
-				//fmt.Printf("in %q in %s\n", fnNode.Name.Name, astFile.Name.Name)
-
 				condition := func(returnErrNode ast.Node) func(*ast.Ident, types.Object) bool {
 					return func(sel *ast.Ident, typeObj types.Object) bool {
 						isStatusError := sel.Name == "Error" && typeObj.Pkg().Path() == "google.golang.org/grpc/status"
-						pos := pkg.Fset.Position(returnErrNode.Pos())
 						if !isStatusError {
-							//fmt.Printf("fnNode: %+v", fnNode)
-							//fmt.Printf("typeIdentNode: %+v", typeIdentNode)
-							offendingPkgErrLines = append(offendingPkgErrLines, fmt.Sprintf("%s:%d:%d", pos.Filename, pos.Line, pos.Column))
+							offendingPkgErrLineSet[pkg.Fset.Position(returnErrNode.Pos()).String()] = struct{}{}
 						}
 
 						return isStatusError
-						//return true
-						//return false
 					}
 				}
 
 				// Recursively traverse the function body, looking for non-nil error returns.
-				//var errorReturns []*ast.IfStmt
 				// TODO_IN_THIS_COMMIT: extract --- BEGIN
 				ast.Inspect(fnNode.Body, func(n ast.Node) bool {
 					switch n := n.(type) {
@@ -187,119 +172,162 @@ func checkModule(_ context.Context) error {
 						return true
 					// Search for a return statement.
 					case *ast.ReturnStmt:
-						lastReturnArg := n.Results[len(n.Results)-1]
+						lastResult := n.Results[len(n.Results)-1]
 
-						switch lastReturnArgNode := lastReturnArg.(type) {
+						switch lastReturnArgNode := lastResult.(type) {
 						// `return nil, err` <-- last arg is an *ast.Ident.
 						case *ast.Ident:
-							//fmt.Printf("ast.Ident: %T: %+v\n", lastReturnArg, lastReturnArgNode)
-							//return true
-
-							//defs := typeInfo.Defs[lastReturnArgNode]
-							//fmt.Printf("type defs: %+v\n", defs)
-
-							//use := typeInfo.Uses[lastReturnArgNode]
-							//fmt.Printf("type use: %+v\n", use)
-
 							// TODO_IN_THIS_COMMIT: No need to check that the last return
 							// arg is an error type if we checked that the function returns
 							// an error as the last arg.
-							if lastReturnArgNode.Name == "err" {
-								if lastReturnArgNode.Obj == nil {
-									return true
-								}
-
-								// TODO_IN_THIS_COMMIT: factor out and call in a case in the switch above where we handle *ast.AssignStmt
-								switch node := lastReturnArgNode.Obj.Decl.(type) {
-								case *ast.AssignStmt:
-									//fmt.Printf("errAssignStmt found: %+v\n", node)
-
-									selection := typeInfo.Selections[node.Rhs[0].(*ast.CallExpr).Fun.(*ast.SelectorExpr)]
-									//fmt.Printf("type selection: %+v\n", selection)
-
-									// TODO_IN_THIS_COMMIT: account for other cases...
-
-									if selection == nil {
-										fmt.Printf("ERROR: selection is nil\n")
-										//return true
-										return false
-									}
-
-									traverseFunctionBody(selection.Obj().(*types.Func), pkgs, 0, condition(lastReturnArgNode))
-
-									return false
-									//default:
-									//return true
-								}
-
-								return false
-								//return true
+							//if lastReturnArgNode.Name == "err" {
+							if lastReturnArgNode.Obj == nil {
+								return true
 							}
+
+							// TODO_IN_THIS_COMMIT: factor out and call in a case in the switch above where we handle *ast.AssignStmt
+							switch lastReturnArgDecl := lastReturnArgNode.Obj.Decl.(type) {
+							case *ast.AssignStmt:
+								switch lastReturnArg := lastReturnArgDecl.Rhs[0].(type) {
+								case *ast.Ident:
+									// TODO_IN_THIS_COMMIT: recurse into the outer ident case.
+									// TODO_IN_THIS_COMMIT: recurse into the outer ident case.
+									// TODO_IN_THIS_COMMIT: recurse into the outer ident case.
+									// TODO_IN_THIS_COMMIT: recurse into the outer ident case.
+									return true
+								case *ast.SelectorExpr:
+									// TODO_IN_THIS_COMMIT: recurse into the outer ident case.
+									// TODO_IN_THIS_COMMIT: recurse into the outer ident case.
+									// TODO_IN_THIS_COMMIT: recurse into the outer ident case.
+									// TODO_IN_THIS_COMMIT: recurse into the outer ident case.
+									selection := typeInfo.Selections[lastReturnArg]
+									traverseFunctionBody(selection.Obj().(*types.Func), pkgs, 0, condition(lastReturnArgNode))
+									return false
+								case *ast.CallExpr:
+									switch lastReturnArgFun := lastReturnArg.Fun.(type) {
+									case *ast.SelectorExpr:
+										var selection *types.Selection
+										for _, srcPkg := range pkgs {
+											selection = srcPkg.TypesInfo.Selections[lastReturnArgFun]
+											if selection != nil {
+												break
+											}
+										}
+										//fmt.Printf("type selection: %+v\n", selection)
+
+										// TODO_IN_THIS_COMMIT: account for other cases...
+
+										if selection == nil {
+											//fmt.Printf("ERROR: selection is nil\n")
+											printNodeSource("lastReturnArgFun selection is nil", pkg, lastReturnArgFun)
+											return false
+										}
+
+										traverseFunctionBody(selection.Obj().(*types.Func), pkgs, 0, condition(lastReturnArgNode))
+
+										return false
+									default:
+										printNodeSource(
+											"lastReturnArgFun",
+											pkg, lastReturnArgFun,
+										)
+
+										return true
+									}
+								default:
+									printNodeSource(
+										"lastReturnArg",
+										pkg, lastReturnArg,
+									)
+									return false
+								}
+							case *ast.ValueSpec:
+								// Ignore
+								return false
+							case *ast.Field:
+								// Ignore
+								return false
+							default:
+								printNodeSource(
+									fmt.Sprintf("unknown return arg decl node type: %T: %+v", lastReturnArgNode.Obj.Decl, lastReturnArgNode.Obj.Decl),
+									pkg, lastReturnArgNode.Obj.Decl,
+								)
+								return true
+							}
+
 						// `return nil, types.ErrXXX.Wrapf(...)` <-- last arg is a *ast.CallExpr.
 						case *ast.CallExpr:
-							//fmt.Printf("ast.CallExpr: %T: %+v\n", lastReturnArg, lastReturnArgNode)
-
 							TraverseCallStack(lastReturnArgNode, pkgs, 0, condition(lastReturnArgNode))
-
 							return false
-							//return true
-						default:
-							//panic(fmt.Sprintf("unknown AST node type: %T: %+v", lastReturnArg, lastReturnArg))
-							fmt.Printf("unknown AST node type: %T: %+v\n", lastReturnArg, lastReturnArg)
-						}
 
-						return false
-						//return true
+						case *ast.SelectorExpr:
+							var selection *types.Selection
+							for _, srcPkg := range pkgs {
+								selection = srcPkg.TypesInfo.Selections[lastReturnArgNode]
+								if selection != nil {
+									break
+								}
+							}
+
+							if selection == nil {
+								printNodeSource(
+									fmt.Sprintf("lastReturnArgNode selection is nil: %T: %+v", lastReturnArgNode, lastReturnArgNode),
+									pkg, lastReturnArgNode,
+								)
+
+								return true
+							}
+
+							traverseFunctionBody(selection.Obj().(*types.Func), pkgs, 0, condition(lastReturnArgNode))
+
+						default:
+							printNodeSource(
+								fmt.Sprintf("unknown return arg node type: %T: %+v", lastResult, lastResult),
+								pkg, lastResult,
+							)
+							return false
+						}
 					}
 
 					return true
 				})
 				// --- END
 
-				//// TODO_IN_THIS_COMMIT: extract --- BEGIN
-				//for _, errorReturn := range errorReturns {
-				//	// Check if the error return is wrapped in a gRPC status error.
-				//	//ifStmt, ok := errorReturn.If.(*ast.IfStmt)
-				//	//if !ok {
-				//	//	return false
-				//	//}
-				//	ifStmt := errorReturn //.If.(*ast.IfStmt)
-				//
-				//	switch node := ifStmt.Cond.(type) {
-				//	case *ast.BinaryExpr:
-				//		if node.Op != token.NEQ {
-				//			return false
-				//		}
-				//	}
-				//}
-				//// --- END
-
 				return false
-				//return true
 			})
 		}
 
 	}
 	// --- END
 
+	// TODO_IN_THIS_COMMIT: extract --- BEGIN
+	// TODO_IN_THIS_COMMIT: figure out why there are duplicate offending lines.
 	// Print offending lines in package
 	// TODO_IN_THIS_COMMIT: refactor to const.
 	pkgsPattern := "github.com/pokt-network/poktroll/x/..."
-	numOffendingLines := len(offendingPkgErrLines)
+	numOffendingLines := len(offendingPkgErrLineSet)
 	if numOffendingLines == 0 {
-		fmt.Printf("No offending lines in %s\n", pkgsPattern)
+		fmt.Printf("No offending lines in %q\n", pkgsPattern)
 	} else {
+		offendingPkgErrLines := make([]string, 0, len(offendingPkgErrLineSet))
+		for offendingPkgErrLine := range offendingPkgErrLineSet {
+			offendingPkgErrLines = append(offendingPkgErrLines, offendingPkgErrLine)
+		}
+
+		sort.Strings(offendingPkgErrLines)
+
 		msg := fmt.Sprintf(
-			"\nFound %d offending lines in %s:",
+			"\nFound %d offending lines in %q",
 			numOffendingLines, pkgsPattern,
 		)
 		fmt.Printf(
-			"\n%s\n%s\n%s\n",
+			"%s:\n%s%s\n",
 			msg,
 			strings.Join(offendingPkgErrLines, "\n"),
 			msg,
 		)
 	}
+	// --- END
 
 	return nil
 }
@@ -421,4 +449,18 @@ func traverseFunctionBody(fn *types.Func, pkgs []*packages.Package, indent int, 
 // Helper function to generate indentation
 func indentSpaces(indent int) string {
 	return strings.Repeat(" ", indent)
+}
+
+// TODO_IN_THIS_COMMIT: remove or move to a testutil package.
+func printNodeSource(msg string, pkg *packages.Package, queryNode any) {
+	node, ok := queryNode.(ast.Node)
+	if !ok {
+		fmt.Printf("ERROR: queryNode is not an ast.Node: %T: %+v\n", queryNode, queryNode)
+		return
+	}
+
+	fmt.Printf(
+		"not traversing %+v\n\t%s\n",
+		pkg.Fset.Position(node.Pos()), msg,
+	)
 }
