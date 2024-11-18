@@ -47,29 +47,7 @@ func TestMsgUpdateParams(t *testing.T) {
 			expectedErrMsg: "the provided authority address does not match the on-chain governance address",
 		},
 		{
-			desc: "invalid: incompatible dao reward params",
-
-			req: &tokenomicstypes.MsgUpdateParams{
-				Authority: sample.AccAddress(),
-				Params: tokenomicstypes.Params{
-					// DaoRewardAddress MUST NOT be empty string
-					// when MintAllocationDao is greater than 0.
-					MintAllocationDao: 0.1,
-					DaoRewardAddress:  "",
-
-					// MintAllocationXXX params MUST sum to 1.
-					MintAllocationProposer:    0.1,
-					MintAllocationSupplier:    0.1,
-					MintAllocationSourceOwner: 0.1,
-					MintAllocationApplication: 0.6,
-				},
-			},
-
-			shouldError:    true,
-			expectedErrMsg: "dao reward address required when mint_allocation_dao is 0",
-		},
-		{
-			desc: "valid: no dao rewards",
+			desc: "invalid: no dao rewards",
 
 			req: &tokenomicstypes.MsgUpdateParams{
 				Authority: tokenomicsKeeper.GetAuthority(),
@@ -87,7 +65,8 @@ func TestMsgUpdateParams(t *testing.T) {
 				},
 			},
 
-			shouldError: false,
+			shouldError:    true,
+			expectedErrMsg: "empty address string is not allowed",
 		},
 		{
 			desc: "valid: successful param update",

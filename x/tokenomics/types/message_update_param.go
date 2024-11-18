@@ -86,9 +86,9 @@ func (msg *MsgUpdateParam) paramTypeIsString() error {
 	return genericParamTypeIs[*MsgUpdateParam_AsString](msg)
 }
 
-// TODO_TECHDEBT:
+// TODO_TECHDEBT(@bryanchriswhite):
 // 1. Move this to a shared package.
-// 2. Refactor other module mesagese_upddate_param.go files to use this.
+// 2. Refactor other module message_update_param.go files to use this.
 // 3. Update "adding on-chain module params" docs.
 func genericParamTypeIs[T any](msg *MsgUpdateParam) error {
 	if _, ok := msg.AsType.(T); !ok {
