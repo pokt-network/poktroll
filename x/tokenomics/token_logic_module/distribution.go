@@ -19,8 +19,6 @@ import (
 func distributeSupplierRewardsToShareHolders(
 	logger cosmoslog.Logger,
 	result *tokenomicstypes.SettlementResult,
-	// TODO_IN_THIS_COMMIT: double-check that multiple reasons are used;
-	// otherwise, remove this argument.
 	settlementOpReason tokenomicstypes.SettlementOpReason,
 	supplier *sharedtypes.Supplier,
 	serviceId string,
@@ -44,7 +42,7 @@ func distributeSupplierRewardsToShareHolders(
 	// The check is here just for redundancy.
 	// TODO_MAINNET(@red-0ne): Double check this doesn't happen.
 	if serviceRevShares == nil {
-		return tokenomicstypes.ErrTokenomicsSupplierRevShareFailed.Wrapf(
+		return tokenomicstypes.ErrTokenomicsConstraint.Wrapf(
 			"service %q not found for supplier %v",
 			serviceId,
 			supplier,
@@ -52,7 +50,6 @@ func distributeSupplierRewardsToShareHolders(
 	}
 
 	// NOTE: Use the serviceRevShares slice to iterate through the serviceRevSharesMap deterministically.
-	var errs error
 	shareAmountMap := GetShareAmountMap(serviceRevShares, amountToDistribute)
 	for _, revShare := range serviceRevShares {
 		shareAmount := shareAmountMap[revShare.GetAddress()]
@@ -81,7 +78,7 @@ func distributeSupplierRewardsToShareHolders(
 
 	logger.Info(fmt.Sprintf("operation queued: distribute %d uPOKT to supplier %q shareholders", amountToDistribute, supplier.GetOperatorAddress()))
 
-	return errs
+	return nil
 }
 
 // GetShareAmountMap calculates the amount of uPOKT to distribute to each revenue

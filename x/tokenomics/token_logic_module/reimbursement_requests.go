@@ -48,7 +48,7 @@ func (tlm tlmGlobalMintReimbursementRequest) Process(
 	// Determine how much new uPOKT to mint based on global inflation
 	newMintCoin, _ := CalculateGlobalPerClaimMintInflationFromSettlementAmount(actualSettlementCoin)
 	if newMintCoin.Amount.Int64() == 0 {
-		return tokenomicstypes.ErrTokenomicsMintAmountZero
+		return tokenomicstypes.ErrTokenomicsCoinIsZero
 	}
 
 	newAppStake, err := application.Stake.SafeSub(newMintCoin)

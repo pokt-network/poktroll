@@ -17,7 +17,7 @@ func ValidateTLMConfig(tokenLogicModules []TokenLogicModule) error {
 	}
 
 	if hasGlobalMintTLM != hasGlobalMintReimbursementRequestTLM {
-		return tokenomicstypes.ErrTokenomicsTLMError.Wrap("TLMGlobalMint and TLMGlobalMintReimbursementRequest must be (de-)activated together")
+		return tokenomicstypes.ErrTokenomicsConstraint.Wrap("TLMGlobalMint and TLMGlobalMintReimbursementRequest must be (de-)activated together")
 	}
 
 	return nil

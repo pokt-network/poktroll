@@ -9,8 +9,7 @@ import "cosmos_proto/cosmos.proto";
 import "gogoproto/gogo.proto";
 import "poktroll/proof/types.proto";
 
-// TODO_IN_THIS_COMMIT: update comment...
-// SettlementResult holds a claim and mints, burns, and transfers that result from its settlement.
+// SettlementResult holds mint, burn, and transfer operations that result from individual claim settlement.
 message SettlementResult {
   poktroll.proof.Claim claim = 1 [(gogoproto.nullable) = false, (gogoproto.jsontag) = "claim"];
   repeated MintBurnOp mints = 2 [(gogoproto.nullable) = false, (gogoproto.jsontag) = "mints"];
@@ -42,7 +41,7 @@ message ModToModTransfer {
   cosmos.base.v1beta1.Coin coin = 4 [(gogoproto.nullable) = false, (gogoproto.jsontag) = "coin"];
 }
 
-// TODO_IN_THIS_COMMIT: comment...
+// SettlementOpReason is a distinct, tlm-specific causal reason for a given operation.
 enum SettlementOpReason {
   // UNSPECIFIED is the default value for TokenLogicModuleReason, it is used as a field
   // type for objects which need to distinguish whether a SettlementOpReason has been specified it or not.

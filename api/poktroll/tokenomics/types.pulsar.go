@@ -3,11 +3,11 @@ package tokenomics
 
 import (
 	v1beta1 "cosmossdk.io/api/cosmos/base/v1beta1"
-	proof "github.com/pokt-network/poktroll/api/poktroll/proof"
 	fmt "fmt"
 	_ "github.com/cosmos/cosmos-proto"
 	runtime "github.com/cosmos/cosmos-proto/runtime"
 	_ "github.com/cosmos/gogoproto/gogoproto"
+	proof "github.com/pokt-network/poktroll/api/poktroll/proof"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoiface "google.golang.org/protobuf/runtime/protoiface"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
@@ -2785,7 +2785,7 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-// TODO_IN_THIS_COMMIT: comment...
+// SettlementOpReason is a distinct, tlm-specific causal reason for a given operation.
 type SettlementOpReason int32
 
 const (
@@ -2876,8 +2876,7 @@ func (SettlementOpReason) EnumDescriptor() ([]byte, []int) {
 	return file_poktroll_tokenomics_types_proto_rawDescGZIP(), []int{0}
 }
 
-// TODO_IN_THIS_COMMIT: update comment...
-// SettlementResult holds a claim and mints, burns, and transfers that result from its settlement.
+// SettlementResult holds mint, burn, and transfer operations that result from individual claim settlement.
 type SettlementResult struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache

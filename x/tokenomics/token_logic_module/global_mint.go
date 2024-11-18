@@ -68,8 +68,8 @@ func (tlm tlmGlobalMint) Process(
 
 	// Determine how much new uPOKT to mint based on global inflation
 	newMintCoin, newMintAmtFloat := CalculateGlobalPerClaimMintInflationFromSettlementAmount(tlmCtx.SettlementCoin)
-	if newMintCoin.Amount.Int64() == 0 {
-		return tokenomicstypes.ErrTokenomicsMintAmountZero
+	if newMintCoin.IsZero() {
+		return tokenomicstypes.ErrTokenomicsCoinIsZero.Wrapf("newMintCoin cannot be zero, TLMContext: %+v", tlmCtx)
 	}
 
 	// Mint new uPOKT to the tokenomics module account
@@ -83,7 +83,7 @@ func (tlm tlmGlobalMint) Process(
 	mintAllocationPercentages := tlmCtx.Params.Tokenomics.GetMintAllocationPercentages()
 
 	// Send a portion of the rewards to the application
-	appCoin, err := sendRewardsToAccount(
+	appCoin := sendRewardsToAccount(
 		logger,
 		tlmCtx.Result,
 		tokenomicstypes.SettlementOpReason_TLM_GLOBAL_MINT_APPLICATION_REWARD_DISTRIBUTION,
@@ -92,9 +92,6 @@ func (tlm tlmGlobalMint) Process(
 		&newMintAmtFloat,
 		mintAllocationPercentages.Application,
 	)
-	if err != nil {
-		return tokenomicstypes.ErrTokenomicsSendingMintRewards.Wrapf("sending rewards to application: %v", err)
-	}
 	logMsg := fmt.Sprintf("operation queued: send (%v) newley minted coins from the tokenomics module to the application with address %q", appCoin, tlmCtx.Application.GetAddress())
 	logRewardOperation(logger, logMsg, &appCoin)
 
@@ -109,7 +106,7 @@ func (tlm tlmGlobalMint) Process(
 		Coin:            supplierCoin,
 	})
 	// Distribute the rewards from within the supplier's module account.
-	if err = distributeSupplierRewardsToShareHolders(
+	if err := distributeSupplierRewardsToShareHolders(
 		logger,
 		tlmCtx.Result,
 		tokenomicstypes.SettlementOpReason_TLM_GLOBAL_MINT_SUPPLIER_SHAREHOLDER_REWARD_DISTRIBUTION,
@@ -117,8 +114,8 @@ func (tlm tlmGlobalMint) Process(
 		tlmCtx.Service.Id,
 		uint64(supplierCoinsToShareAmt),
 	); err != nil {
-		return tokenomicstypes.ErrTokenomicsModuleMint.Wrapf(
-			"distributing rewards to supplier with operator address %s shareholders: %v",
+		return tokenomicstypes.ErrTokenomicsTLMInternal.Wrapf(
+			"queueing operation: distributing rewards to supplier with operator address %s shareholders: %v",
 			tlmCtx.Supplier.OperatorAddress,
 			err,
 		)
@@ -127,7 +124,7 @@ func (tlm tlmGlobalMint) Process(
 
 	// Send a portion of the rewards to the DAO
 	daoRewardAddress := tlmCtx.Params.Tokenomics.GetDaoRewardAddress()
-	daoCoin, err := sendRewardsToAccount(
+	daoCoin := sendRewardsToAccount(
 		logger,
 		tlmCtx.Result,
 		tokenomicstypes.SettlementOpReason_TLM_GLOBAL_MINT_DAO_REWARD_DISTRIBUTION,
@@ -136,14 +133,11 @@ func (tlm tlmGlobalMint) Process(
 		&newMintAmtFloat,
 		mintAllocationPercentages.Dao,
 	)
-	if err != nil {
-		return tokenomicstypes.ErrTokenomicsSendingMintRewards.Wrapf("sending rewards to DAO: %v", err)
-	}
 	logMsg = fmt.Sprintf("send (%v) newley minted coins from the tokenomics module to the DAO with address %q", daoCoin, daoRewardAddress)
 	logRewardOperation(logger, logMsg, &daoCoin)
 
 	// Send a portion of the rewards to the source owner
-	serviceCoin, err := sendRewardsToAccount(
+	serviceCoin := sendRewardsToAccount(
 		logger,
 		tlmCtx.Result,
 		tokenomicstypes.SettlementOpReason_TLM_GLOBAL_MINT_SOURCE_OWNER_REWARD_DISTRIBUTION,
@@ -152,15 +146,12 @@ func (tlm tlmGlobalMint) Process(
 		&newMintAmtFloat,
 		mintAllocationPercentages.SourceOwner,
 	)
-	if err != nil {
-		return tokenomicstypes.ErrTokenomicsSendingMintRewards.Wrapf("sending rewards to source owner: %v", err)
-	}
 	logMsg = fmt.Sprintf("send (%v) newley minted coins from the tokenomics module to the source owner with address %q", serviceCoin, tlmCtx.Service.OwnerAddress)
 	logRewardOperation(logger, logMsg, &serviceCoin)
 
 	// Send a portion of the rewards to the block proposer
 	proposerAddr := cosmostypes.AccAddress(cosmostypes.UnwrapSDKContext(ctx).BlockHeader().ProposerAddress).String()
-	proposerCoin, err := sendRewardsToAccount(
+	proposerCoin := sendRewardsToAccount(
 		logger,
 		tlmCtx.Result,
 		tokenomicstypes.SettlementOpReason_TLM_GLOBAL_MINT_PROPOSER_REWARD_DISTRIBUTION,
@@ -169,9 +160,6 @@ func (tlm tlmGlobalMint) Process(
 		&newMintAmtFloat,
 		mintAllocationPercentages.Proposer,
 	)
-	if err != nil {
-		return tokenomicstypes.ErrTokenomicsSendingMintRewards.Wrapf("sending rewards to proposer: %v", err)
-	}
 	logMsg = fmt.Sprintf("send (%v) newley minted coins from the tokenomics module to the proposer with address %q", proposerCoin, proposerAddr)
 	logRewardOperation(logger, logMsg, &proposerCoin)
 
@@ -211,7 +199,7 @@ func ensureMintedCoinsAreDistributed(
 
 	// Discrepancy exists and is too large, return an error
 	if isPercentDifferenceTooLarge && isAbsDifferenceSignificant {
-		return tokenomicstypes.ErrTokenomicsAmountMismatchTooLarge.Wrapf(
+		return tokenomicstypes.ErrTokenomicsConstraint.Wrapf(
 			"the total distributed coins (%v) do not equal the amount of newly minted coins (%v) with a percent difference of (%f). Likely floating point arithmetic.\n"+
 				"appCoin: %v, supplierCoin: %v, daoCoin: %v, serviceCoin: %v, proposerCoin: %v",
 			totalMintDistributedCoin, newMintCoin, percentDifference,
@@ -236,7 +224,7 @@ func sendRewardsToAccount(
 	recipientAddr string,
 	settlementAmtFloat *big.Float,
 	allocation float64,
-) (cosmostypes.Coin, error) {
+) cosmostypes.Coin {
 	logger = logger.With(
 		"method", "mintRewardsToAccount",
 		"session_id", result.GetSessionId(),
@@ -246,7 +234,7 @@ func sendRewardsToAccount(
 	coinToAcc := cosmostypes.NewCoin(volatile.DenomuPOKT, math.NewInt(coinsToAccAmt))
 
 	if coinToAcc.IsZero() {
-		return cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 0), nil
+		return cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 0)
 	}
 
 	result.AppendModToAcctTransfer(tokenomicstypes.ModToAcctTransfer{
@@ -258,7 +246,7 @@ func sendRewardsToAccount(
 
 	logger.Info(fmt.Sprintf("operation queued: send (%v) coins from the tokenomics module to the account with address %q", coinToAcc, recipientAddr))
 
-	return coinToAcc, nil
+	return coinToAcc
 }
 
 // CalculateGlobalPerClaimMintInflationFromSettlementAmount calculates the amount

@@ -212,7 +212,7 @@ func (k Keeper) ProcessTokenLogicModules(
 		logger.Info(fmt.Sprintf("Starting processing TLM: %q", tlmName))
 
 		if err = tokenLogicModule.Process(ctx, logger, tlmCtx); err != nil {
-			return tokenomicstypes.ErrTokenomicsTLMError.Wrapf("TLM %q: %s", tlmName, err)
+			return tokenomicstypes.ErrTokenomicsProcessingTLM.Wrapf("TLM %q: %s", tlmName, err)
 		}
 
 		logger.Info(fmt.Sprintf("Finished processing TLM: %q", tlmName))

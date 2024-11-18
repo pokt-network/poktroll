@@ -3,10 +3,10 @@ package tokenomics
 
 import (
 	v1beta1 "cosmossdk.io/api/cosmos/base/v1beta1"
-	proof "github.com/pokt-network/poktroll/api/poktroll/proof"
 	fmt "fmt"
 	runtime "github.com/cosmos/cosmos-proto/runtime"
 	_ "github.com/cosmos/gogoproto/gogoproto"
+	proof "github.com/pokt-network/poktroll/api/poktroll/proof"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoiface "google.golang.org/protobuf/runtime/protoiface"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
@@ -3586,7 +3586,7 @@ type EventClaimSettled struct {
 	// The uPOKT coin claimed to be rewarded for the work done as a function of
 	// the number of estimated compute units and the compute uints to token multiplier.
 	ClaimedUpokt *v1beta1.Coin `protobuf:"bytes,6,opt,name=claimed_upokt,json=claimedUpokt,proto3" json:"claimed_upokt,omitempty"`
-	// TODO_IN_THIS_COMMIT: comment...
+	// SettlementResult holds mint, burn, and transfer operations on a per-claim basis.
 	SettlementResult *SettlementResult `protobuf:"bytes,7,opt,name=settlement_result,json=settlementResult,proto3" json:"settlement_result,omitempty"`
 }
 

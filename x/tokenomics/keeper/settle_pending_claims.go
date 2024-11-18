@@ -57,16 +57,6 @@ func (k Keeper) SettlePendingClaims(ctx cosmostypes.Context) (
 	settledResults = make(tlm.SettlementResults, 0)
 	expiredResults = make(tlm.SettlementResults, 0)
 
-	// TODO_IN_THIS_COMMIT: remove
-	//// expiredClaimSupplierOperatorAddresses is a slice of supplier operator addresses
-	//// which are found in expiring claims. This slice is intended to be sorted once complete
-	//// and used for deterministic iteration.
-	//expiredClaimSupplierOperatorAddresses := make([]string, 0)
-	//// A map from a supplier operator address to the number of expired claims that
-	//// supplier has in this session.
-	//// Expired claims due to reasons such as invalid or missing proofs when required.
-	//supplierToExpiredClaimCount := make(map[string]uint64)
-
 	logger.Debug("settling expiring claims")
 	for _, claim := range expiringClaims {
 		var (
@@ -247,18 +237,6 @@ func (k Keeper) SettlePendingClaims(ctx cosmostypes.Context) (
 			return settledResults, expiredResults, err
 		}
 
-		// TODO_IN_THIS_COMMIT: remove... not sure why this is here...
-		//if err = ctx.EventManager().EmitTypedEvent(&prooftypes.EventProofUpdated{
-		//	Claim:                    &claim,
-		//	Proof:                    nil,
-		//	NumRelays:                0,
-		//	NumClaimedComputeUnits:   0,
-		//	NumEstimatedComputeUnits: numEstimatedComputeUnits,
-		//	ClaimedUpokt:             &claimeduPOKT,
-		//}); err != nil {
-		//	return settledResults, expiredResults, err
-		//}
-
 		logger.Info("claim settled")
 
 		// The claim & proof are no longer necessary, so there's no need for them
@@ -391,7 +369,7 @@ func (k Keeper) executePendingModuleMints(
 			return err
 		}
 		if err := k.bankKeeper.MintCoins(ctx, mint.DestinationModule, cosmostypes.NewCoins(mint.Coin)); err != nil {
-			return tokenomicstypes.ErrTokenomicsModuleMint.Wrapf(
+			return tokenomicstypes.ErrTokenomicsSettlementModuleMint.Wrapf(
 				"destination module %q minting %s: %s", mint.DestinationModule, mint.Coin, err,
 			)
 		}
@@ -417,7 +395,7 @@ func (k Keeper) executePendingModuleBurns(
 		}
 
 		if err := k.bankKeeper.BurnCoins(ctx, burn.DestinationModule, cosmostypes.NewCoins(burn.Coin)); err != nil {
-			return tokenomicstypes.ErrTokenomicsModuleBurn.Wrapf(
+			return tokenomicstypes.ErrTokenomicsSettlementModuleBurn.Wrapf(
 				"destination module %q burning %s: %s", burn.DestinationModule, burn.Coin, err,
 			)
 		}
@@ -447,7 +425,7 @@ func (k Keeper) executePendingModToModTransfers(
 			transfer.RecipientModule,
 			cosmostypes.NewCoins(transfer.Coin),
 		); err != nil {
-			return tokenomicstypes.ErrTokenomicsTransfer.Wrapf(
+			return tokenomicstypes.ErrTokenomicsSettlementTransfer.Wrapf(
 				"sender module %q to recipient module %q transferring %s: %s",
 				transfer.SenderModule, transfer.RecipientModule, transfer.Coin, err,
 			)
@@ -487,7 +465,7 @@ func (k Keeper) executePendingModToAcctTransfers(
 			recepientAddr,
 			cosmostypes.NewCoins(transfer.Coin),
 		); err != nil {
-			return tokenomicstypes.ErrTokenomicsTransfer.Wrapf(
+			return tokenomicstypes.ErrTokenomicsSettlementTransfer.Wrapf(
 				"sender module %q to recipient address %q transferring %s: %s",
 				transfer.SenderModule, transfer.RecipientAddress, transfer.Coin, err,
 			)
@@ -654,9 +632,7 @@ func (k Keeper) slashSupplierStake(
 
 	// Emit an event that a supplier has been slashed.
 	supplierSlashedEvent := tokenomicstypes.EventSupplierSlashed{
-		Claim: &claim,
-		//SupplierOperatorAddr: supplierOperatorAddress,
-		// TODO_IN_THIS_COMMIT: consider renaming to ProofMissingPenalty
+		Claim:               &claim,
 		ProofMissingPenalty: &slashingCoin,
 	}
 	if err := ctx.EventManager().EmitTypedEvent(&supplierSlashedEvent); err != nil {

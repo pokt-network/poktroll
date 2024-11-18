@@ -53,7 +53,7 @@ message EventClaimSettled {
     // The uPOKT coin claimed to be rewarded for the work done as a function of
     // the number of estimated compute units and the compute uints to token multiplier.
     cosmos.base.v1beta1.Coin claimed_upokt = 6 [(gogoproto.jsontag) = "claimed_upokt"];
-    // TODO_IN_THIS_COMMIT: comment...
+    // SettlementResult holds mint, burn, and transfer operations on a per-claim basis.
     SettlementResult settlement_result = 7 [(gogoproto.nullable) = false, (gogoproto.jsontag) = "settlement_result"];
 }
 

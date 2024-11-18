@@ -161,7 +161,7 @@ type EventClaimSettled struct {
 	// The uPOKT coin claimed to be rewarded for the work done as a function of
 	// the number of estimated compute units and the compute uints to token multiplier.
 	ClaimedUpokt *types1.Coin `protobuf:"bytes,6,opt,name=claimed_upokt,json=claimedUpokt,proto3" json:"claimed_upokt"`
-	// TODO_IN_THIS_COMMIT: comment...
+	// SettlementResult holds mint, burn, and transfer operations on a per-claim basis.
 	SettlementResult SettlementResult `protobuf:"bytes,7,opt,name=settlement_result,json=settlementResult,proto3" json:"settlement_result"`
 }
 

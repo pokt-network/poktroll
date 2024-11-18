@@ -57,27 +57,22 @@ func (r *SettlementResult) AppendModToAcctTransfer(transfer ModToAcctTransfer) {
 
 // Validate returns an error if the MintBurnOperation has either an unspecified TLM or TLMReason.
 func (m *MintBurnOp) Validate() error {
-	// TODO_IN_THIS_COMMIT: factor common unspecified validation out (can build interface from proto getters) when refactoring to protobufs.
-	if m.OpReason == SettlementOpReason_UNSPECIFIED {
-		return ErrTokenomicsModuleBurn.Wrapf("origin reason is unspecified: %+v", m)
-	}
-	return nil
+	return validateOpReason(m.OpReason, m)
 }
 
 // Validate returns an error if the ModToAcctTransfer has either an unspecified TLM or TLMReason.
 func (m *ModToAcctTransfer) Validate() error {
-	// TODO_IN_THIS_COMMIT: factor common unspecified validation out (can build interface from proto getters) when refactoring to protobufs.
-	if m.OpReason == SettlementOpReason_UNSPECIFIED {
-		return ErrTokenomicsModuleBurn.Wrapf("origin reason is unspecified: %+v", m)
-	}
-	return nil
+	return validateOpReason(m.OpReason, m)
 }
 
 // Validate returns an error if the ModToModTransfer has either an unspecified TLM or TLMReason.
 func (m *ModToModTransfer) Validate() error {
-	// TODO_IN_THIS_COMMIT: factor common unspecified validation out (can build interface from proto getters) when refactoring to protobufs.
-	if m.OpReason == SettlementOpReason_UNSPECIFIED {
-		return ErrTokenomicsModuleBurn.Wrapf("origin reason is unspecified: %+v", m)
+	return validateOpReason(m.OpReason, m)
+}
+
+func validateOpReason(opReason SettlementOpReason, op any) error {
+	if opReason == SettlementOpReason_UNSPECIFIED {
+		return ErrTokenomicsSettlementModuleBurn.Wrapf("origin reason is unspecified: %+v", op)
 	}
 	return nil
 }

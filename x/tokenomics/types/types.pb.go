@@ -26,7 +26,7 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 
-// TODO_IN_THIS_COMMIT: comment...
+// SettlementOpReason is a distinct, tlm-specific causal reason for a given operation.
 type SettlementOpReason int32
 
 const (
@@ -96,8 +96,7 @@ func (SettlementOpReason) EnumDescriptor() ([]byte, []int) {
 	return fileDescriptor_6e327d53f335a53d, []int{0}
 }
 
-// TODO_IN_THIS_COMMIT: update comment...
-// SettlementResult holds a claim and mints, burns, and transfers that result from its settlement.
+// SettlementResult holds mint, burn, and transfer operations that result from individual claim settlement.
 type SettlementResult struct {
 	Claim              types.Claim         `protobuf:"bytes,1,opt,name=claim,proto3" json:"claim"`
 	Mints              []MintBurnOp        `protobuf:"bytes,2,rep,name=mints,proto3" json:"mints"`
