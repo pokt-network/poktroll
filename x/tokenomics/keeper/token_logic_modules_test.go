@@ -118,8 +118,9 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_Valid(t *testing.T) {
 	// Prepare the claim for which the supplier did work for the application
 	claim := prepareTestClaim(numRelays, service, &app, &supplier)
 
+	claimedCoin := cosmostypes.NewInt64Coin(volatile.DenomuPOKT, int64(numTokensClaimed))
 	// Process the token logic modules
-	err = keepers.ProcessTokenLogicModules(ctx, &claim, appStake)
+	err = keepers.ProcessTokenLogicModules(ctx, &claim, claimedCoin)
 	require.NoError(t, err)
 
 	// Assert that `applicationAddress` account balance is *unchanged*
@@ -190,6 +191,7 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_Valid_SupplierExceedsMaxClai
 	// be able to claim more than the max claimable amount.
 	numRelays *= 5
 	numTokensClaimed := int64(numRelays * serviceComputeUnitsPerRelay * globalComputeUnitsToTokensMultiplier)
+	claimCoin := sdk.NewInt64Coin(volatile.DenomuPOKT, numTokensClaimed)
 
 	// Retrieve the app and supplier module addresses
 	appModuleAddress := authtypes.NewModuleAddress(apptypes.ModuleName).String()
@@ -249,8 +251,19 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_Valid_SupplierExceedsMaxClai
 	// Prepare the claim for which the supplier did work for the application
 	claim := prepareTestClaim(numRelays, service, &app, &supplier)
 
+	claimedCoin, err := keepers.EnsureClaimAmountLimits(
+		ctx,
+		keepers.Logger(),
+		&sharedParams,
+		&app,
+		&supplier,
+		claimCoin,
+		*app.Stake,
+	)
+	require.NoError(t, err)
+
 	// Process the token logic modules
-	err = keepers.ProcessTokenLogicModules(ctx, &claim, appStake)
+	err = keepers.ProcessTokenLogicModules(ctx, &claim, claimedCoin)
 	require.NoError(t, err)
 
 	// Assert that `applicationAddress` account balance is *unchanged*
@@ -384,8 +397,10 @@ func TestProcessTokenLogicModules_TLMGlobalMint_Valid_MintDistributionCorrect(t 
 		supplierShareholderBalancesBefore[addr] = getBalance(t, ctx, keepers, addr)
 	}
 
+	claimedCoin := cosmostypes.NewInt64Coin(volatile.DenomuPOKT, int64(numTokensClaimed))
+
 	// Process the token logic modules
-	err = keepers.ProcessTokenLogicModules(ctx, &claim, appStake)
+	err = keepers.ProcessTokenLogicModules(ctx, &claim, claimedCoin)
 	require.NoError(t, err)
 
 	// Determine balances after inflation
@@ -454,7 +469,7 @@ func TestProcessTokenLogicModules_AppNotFound(t *testing.T) {
 	}
 
 	// Process the token logic modules
-	err := keeper.ProcessTokenLogicModules(ctx, &claim, uPOKTCoin(math.MaxInt))
+	err := keeper.ProcessTokenLogicModules(ctx, &claim, uPOKTCoin(1))
 	require.Error(t, err)
 	require.ErrorIs(t, err, tokenomicstypes.ErrTokenomicsApplicationNotFound)
 }
@@ -547,7 +562,7 @@ func TestProcessTokenLogicModules_InvalidRoot(t *testing.T) {
 			claim.RootHash = smt.MerkleRoot(test.root[:])
 
 			// Execute test function
-			err := keeper.ProcessTokenLogicModules(ctx, &claim, uPOKTCoin(math.MaxInt))
+			err := keeper.ProcessTokenLogicModules(ctx, &claim, uPOKTCoin(1))
 
 			// Assert the error
 			if test.errExpected {
@@ -637,7 +652,7 @@ func TestProcessTokenLogicModules_InvalidClaim(t *testing.T) {
 						err = fmt.Errorf("panic occurred: %v", r)
 					}
 				}()
-				return keeper.ProcessTokenLogicModules(ctx, test.claim, uPOKTCoin(math.MaxInt))
+				return keeper.ProcessTokenLogicModules(ctx, test.claim, uPOKTCoin(1))
 			}()
 
 			// Assert the error

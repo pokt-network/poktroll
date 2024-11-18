@@ -42,3 +42,9 @@ func (appQueryClient *AppKeeperQueryClient) GetApplication(
 func (appQueryClient *AppKeeperQueryClient) GetAllApplications(ctx context.Context) ([]apptypes.Application, error) {
 	return appQueryClient.keeper.GetAllApplications(ctx), nil
 }
+
+// GetAllApplications returns all the applications in the application store.
+func (appQueryClient *AppKeeperQueryClient) GetParams(ctx context.Context) (*apptypes.Params, error) {
+	params := appQueryClient.keeper.GetParams(ctx)
+	return &params, nil
+}

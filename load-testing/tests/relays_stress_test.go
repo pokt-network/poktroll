@@ -4,6 +4,7 @@ package tests
 
 import (
 	"context"
+	"math/big"
 	"net/url"
 	"path/filepath"
 	"runtime"
@@ -18,6 +19,7 @@ import (
 	"github.com/regen-network/gocuke"
 	"github.com/stretchr/testify/require"
 
+	"github.com/pokt-network/poktroll/app/volatile"
 	"github.com/pokt-network/poktroll/cmd/signals"
 	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/observable"
@@ -25,7 +27,11 @@ import (
 	"github.com/pokt-network/poktroll/testutil/testclient"
 	"github.com/pokt-network/poktroll/testutil/testclient/testblock"
 	"github.com/pokt-network/poktroll/testutil/testclient/testtx"
+	apptypes "github.com/pokt-network/poktroll/x/application/types"
+	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
+	tokenomicskeeper "github.com/pokt-network/poktroll/x/tokenomics/keeper"
+	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
 )
 
 // The following constants are used to identify the different types of transactions,
@@ -91,7 +97,8 @@ var (
 	blockDuration = int64(2)
 	// newTxEventSubscriptionQuery is the format string which yields a subscription
 	// query to listen for on-chain Tx events.
-	newTxEventSubscriptionQuery = "tm.event='Tx'"
+	newTxEventSubscriptionQuery    = "tm.event='Tx'"
+	newBlockEventSubscriptionQuery = "tm.event='NewBlock'"
 	// eventsReplayClientBufferSize is the buffer size for the events replay client
 	// for the subscriptions above.
 	eventsReplayClientBufferSize = 100
@@ -127,15 +134,18 @@ type relaysSuite struct {
 	// batchInfoObs is the observable mapping session information to batch information.
 	// It is used to determine when to send a batch of relay requests to the network.
 	batchInfoObs observable.Observable[*relayBatchInfoNotif]
-	// newTxEventsObs is the observable that notifies the test suite of new
-	// transactions committed on-chain.
-	// It is used to check the results of the transactions sent by the test suite.
-	newTxEventsObs observable.Observable[*types.TxResult]
 	// txContext is the transaction context used to sign and send transactions.
 	txContext client.TxContext
 	// sharedParams is the shared on-chain parameters used in the test.
 	// It is queried at the beginning of the test.
 	sharedParams *sharedtypes.Params
+
+	// appParams is the application on-chain parameters used in the test.
+	// It is queried at the beginning of the test.
+	appParams *apptypes.Params
+
+	proofParams      *prooftypes.Params
+	tokenomicsParams *tokenomicstypes.Params
 
 	// numRelaysSent is the number of relay requests sent during the test.
 	numRelaysSent atomic.Uint64
@@ -224,6 +234,46 @@ type relaysSuite struct {
 	// isEphemeralChain is a flag that indicates whether the test is expected to be
 	// run on ephemeral chain setups like localnet or long living ones (i.e. Test/DevNet).
 	isEphemeralChain bool
+
+	eventsObs observable.Observable[[]types.Event]
+
+	tokenomics *tokenomics
+}
+
+type tokenomics struct {
+	// OverservicedApplications is the list of applications that are overserviced.
+	OverservicedApplications []*tokenomicstypes.EventApplicationOverserviced
+	// SuppliersSlashed is the list of suppliers that are slashed.
+	SuppliersSlashed []*tokenomicstypes.EventSupplierSlashed
+	// ExpiredClaims is the list of claims that are expired.
+	ExpiredClaims []*tokenomicstypes.EventClaimExpired
+	// ReimbursementRequests is the list of reimbursement requests.
+	ReimbursementRequests []*tokenomicstypes.EventApplicationReimbursementRequest
+	// ClaimsSettled is the list of claims that are settled.
+	ClaimsSettled []*tokenomicstypes.EventClaimSettled
+	// ClaimsSubmitted is the list of claims that are submitted.
+	ClaimsSubmitted []*prooftypes.EventClaimCreated
+	// ProofsSubmitted is the list of proofs that are submitted.
+	ProofsSubmitted []*prooftypes.EventProofSubmitted
+	// ActorsBalances is the balances of the actors on-chain.
+	ActorsBalances actorsBalances
+}
+
+type actorsBalances struct {
+	ApplicationBalances map[string]sdk.Coin
+	ApplicationStakes   map[string]sdk.Coin
+	GatewaysBalances    map[string]sdk.Coin
+	GatewaysStakes      map[string]sdk.Coin
+	SupplierBalances    map[string]sdk.Coin
+	SupplierStakes      map[string]sdk.Coin
+
+	ApplicationModuleAccountBalance sdk.Coin
+	SupplierModuleAccountBalance    sdk.Coin
+	GatewayModuleAccountBalance     sdk.Coin
+	TokenomicsModuleAccountBalance  sdk.Coin
+	DAOAccountBalance               sdk.Coin
+	ProposerAccountBalance          sdk.Coin
+	SourceOwnerAccountBalance       sdk.Coin
 }
 
 // accountInfo contains the account info needed to build and send transactions.
@@ -271,11 +321,30 @@ func TestLoadRelays(t *testing.T) {
 }
 
 func TestLoadRelaysSingleSupplier(t *testing.T) {
-	gocuke.NewRunner(t, &relaysSuite{}).Path(filepath.Join(".", "relays_stress_single_suppier.feature")).Run()
+
+	gocuke.NewRunner(t, &relaysSuite{}).Path(filepath.Join(".", "relays_stress_single_supplier.feature")).Run()
 }
 
 func (s *relaysSuite) LocalnetIsRunning() {
 	s.ctx, s.cancelCtx = context.WithCancel(context.Background())
+
+	s.tokenomics = &tokenomics{
+		OverservicedApplications: make([]*tokenomicstypes.EventApplicationOverserviced, 0),
+		SuppliersSlashed:         make([]*tokenomicstypes.EventSupplierSlashed, 0),
+		ExpiredClaims:            make([]*tokenomicstypes.EventClaimExpired, 0),
+		ReimbursementRequests:    make([]*tokenomicstypes.EventApplicationReimbursementRequest, 0),
+		ClaimsSettled:            make([]*tokenomicstypes.EventClaimSettled, 0),
+		ClaimsSubmitted:          make([]*prooftypes.EventClaimCreated, 0),
+		ProofsSubmitted:          make([]*prooftypes.EventProofSubmitted, 0),
+		ActorsBalances: actorsBalances{
+			ApplicationBalances: make(map[string]sdk.Coin),
+			ApplicationStakes:   make(map[string]sdk.Coin),
+			GatewaysBalances:    make(map[string]sdk.Coin),
+			GatewaysStakes:      make(map[string]sdk.Coin),
+			SupplierBalances:    make(map[string]sdk.Coin),
+			SupplierStakes:      make(map[string]sdk.Coin),
+		},
+	}
 
 	// Cancel the context if this process is interrupted or exits.
 	// Delete the keyring entries for the application accounts since they are
@@ -359,10 +428,16 @@ func (s *relaysSuite) LocalnetIsRunning() {
 	s.initFundingAccount(loadTestParams.FundingAccountAddress)
 
 	// Initialize the on-chain claims and proofs counter.
-	s.countClaimAndProofs()
+	s.forEachSettlement(s.ctx)
 
 	// Query for the current shared on-chain params.
 	s.querySharedParams(loadTestParams.TestNetNode)
+
+	// Query for the current app on-chain params.
+	s.queryAppParams(loadTestParams.TestNetNode)
+
+	// Quer for the current proof on-chain params.
+	s.queryProofParams(loadTestParams.TestNetNode)
 
 	// Some suppliers may already be staked at genesis, ensure that staking during
 	// this test succeeds by increasing the sake amount.
@@ -402,26 +477,15 @@ func (s *relaysSuite) MoreActorsAreStakedAsFollows(table gocuke.DataTable) {
 	// increment the actor count to the maximum.
 	s.relayLoadDurationBlocks = s.plans.maxActorBlocksToFinalIncrementEnd()
 
-	if s.isEphemeralChain {
-		// Adjust the max delegations parameter to the max gateways to permit all
-		// applications to delegate to all gateways.
-		// This is to ensure that requests are distributed evenly across all gateways
-		// at any given time.
-		s.sendAdjustMaxDelegationsParamTx(s.plans.gateways.maxActorCount)
-		s.waitForTxsToBeCommitted()
-		s.ensureUpdatedMaxDelegations(s.plans.gateways.maxActorCount)
-	}
-
 	// Fund all the provisioned suppliers and gateways since their addresses are
 	// known and they are not created on the fly, while funding only the initially
 	// created applications.
 	fundedSuppliers, fundedGateways, fundedApplications := s.sendFundAvailableActorsTx()
 	// Funding messages are sent in a single transaction by the funding account,
 	// only one transaction is expected to be committed.
-	txResults := s.waitForTxsToBeCommitted()
-	s.ensureFundedActors(txResults, fundedSuppliers)
-	s.ensureFundedActors(txResults, fundedGateways)
-	s.ensureFundedActors(txResults, fundedApplications)
+	fundedActors := append(fundedSuppliers, fundedGateways...)
+	fundedActors = append(fundedActors, fundedApplications...)
+	s.ensureFundedActors(s.ctx, fundedActors)
 
 	logger.Info().Msg("Actors funded")
 
@@ -430,11 +494,11 @@ func (s *relaysSuite) MoreActorsAreStakedAsFollows(table gocuke.DataTable) {
 	gateways := fundedGateways[:s.gatewayInitialCount]
 	applications := fundedApplications[:s.appInitialCount]
 
+	stakedActors := append(suppliers, gateways...)
+	stakedActors = append(stakedActors, applications...)
+
 	s.sendInitialActorsStakeMsgs(suppliers, gateways, applications)
-	txResults = s.waitForTxsToBeCommitted()
-	s.ensureStakedActors(txResults, EventActionMsgStakeSupplier, suppliers)
-	s.ensureStakedActors(txResults, EventActionMsgStakeGateway, gateways)
-	s.ensureStakedActors(txResults, EventActionMsgStakeApplication, applications)
+	s.ensureStakedActors(s.ctx, stakedActors)
 
 	logger.Info().Msg("Actors staked")
 
@@ -450,8 +514,7 @@ func (s *relaysSuite) MoreActorsAreStakedAsFollows(table gocuke.DataTable) {
 
 	// Delegate the initial applications to the initial gateways
 	s.sendDelegateInitialAppsTxs(applications, gateways)
-	txResults = s.waitForTxsToBeCommitted()
-	s.ensureDelegatedApps(txResults, applications, gateways)
+	s.ensureDelegatedApps(s.ctx, applications, gateways)
 
 	logger.Info().Msg("Apps delegated")
 
@@ -508,7 +571,7 @@ func (s *relaysSuite) ALoadOfConcurrentRelayRequestsAreSentFromTheApplications()
 	// Block the feature step until the test is done.
 	<-s.ctx.Done()
 }
-func (s *relaysSuite) TheCorrectPairsCountOfClaimAndProofMessagesShouldBeCommittedOnchain() {
+func (s *relaysSuite) TheCorrectCountOfClaimsAndProofsSubmittedOnChain() {
 	logger.Info().
 		Int("claims", s.currentClaimCount).
 		Int("proofs", s.currentProofCount).
@@ -533,4 +596,108 @@ func (s *relaysSuite) TheCorrectPairsCountOfClaimAndProofMessagesShouldBeCommitt
 	//	s.currentProofCount,
 	//	"unexpected claims and proofs count",
 	//)
+}
+
+func (s *relaysSuite) OverServicingEventsAreObserved(numEvents int64) {
+	require.Len(s, s.tokenomics.OverservicedApplications, int(numEvents))
+}
+
+func (s *relaysSuite) SlashingEventsAreObserved(numEvents int64) {
+	require.Len(s, s.tokenomics.SuppliersSlashed, int(numEvents))
+}
+
+func (s *relaysSuite) ExpiredClaimEventAreObserved(numEvents int64) {
+	require.Len(s, s.tokenomics.ExpiredClaims, int(numEvents))
+}
+
+func (s *relaysSuite) ThereIsAsManyReimbursmentRequestsAsTheNumberOfSettledClaims() {
+	require.Equal(s, len(s.tokenomics.ReimbursementRequests), len(s.tokenomics.ClaimsSettled))
+}
+
+func (s *relaysSuite) TheNumberOfClaimsSubmittedAndClaimsSettledIsTheSame() {
+	require.Equal(s, len(s.tokenomics.ClaimsSettled), len(s.tokenomics.ClaimsSubmitted))
+}
+
+func (s *relaysSuite) TheNumberOfProofsSubmittedAndProofsRequiredIsTheSame() {
+	numProofRequiredObserved := 0
+	for _, claimEvent := range s.tokenomics.ClaimsSettled {
+		if claimEvent.ProofRequirement != prooftypes.ProofRequirementReason_NOT_REQUIRED {
+			numProofRequiredObserved++
+		}
+	}
+
+	require.Len(s, s.tokenomics.ProofsSubmitted, numProofRequiredObserved)
+}
+
+func (s *relaysSuite) TheActorsOnchainBalancesAreAsExpected() {
+	balances := s.tokenomics.ActorsBalances
+
+	for _, claimSettlement := range s.tokenomics.ClaimsSettled {
+		settledUPOKT := claimSettlement.SettledUpokt
+		claim := claimSettlement.Claim
+
+		claimSupplierAddr := claim.SupplierOperatorAddress
+		_, ok := balances.SupplierBalances[claimSupplierAddr]
+		require.True(s, ok, "supplier expected balance not found")
+
+		claimAppAddr := claim.SessionHeader.ApplicationAddress
+		_, ok = balances.SupplierBalances[claimAppAddr]
+		require.True(s, ok, "application expected balance not found")
+
+		// account for GMI
+		mintUPOKT := s.getGlobalInflationMintedUPOKT(settledUPOKT)
+
+		// TODO_IN_THIS_PR: Should check with multiple supplier owners
+		supplierMintUPOKT := s.getGlobalInflationActorAllocation(mintUPOKT, s.tokenomicsParams.MintAllocationSupplier)
+		balances.SupplierBalances[claimSupplierAddr] = balances.SupplierBalances[claimSupplierAddr].
+			Add(*settledUPOKT).
+			Add(supplierMintUPOKT)
+
+		applicationMintUPOKT := s.getGlobalInflationActorAllocation(mintUPOKT, s.tokenomicsParams.MintAllocationApplication)
+		balances.ApplicationBalances[claimAppAddr] = balances.ApplicationBalances[claimAppAddr].
+			Add(applicationMintUPOKT)
+
+		balances.ApplicationStakes[claimAppAddr] = balances.ApplicationStakes[claimAppAddr].
+			Sub(*settledUPOKT).
+			Sub(mintUPOKT)
+
+		balances.ApplicationModuleAccountBalance = balances.ApplicationModuleAccountBalance.
+			Sub(*settledUPOKT).
+			Sub(mintUPOKT)
+
+		daoMintUPOKT := s.getGlobalInflationActorAllocation(mintUPOKT, s.tokenomicsParams.MintAllocationDao)
+		balances.DAOAccountBalance = balances.DAOAccountBalance.
+			Add(daoMintUPOKT).
+			Add(mintUPOKT)
+
+		proposerMintUPOKT := s.getGlobalInflationActorAllocation(mintUPOKT, s.tokenomicsParams.MintAllocationProposer)
+		balances.ProposerAccountBalance = balances.ProposerAccountBalance.
+			Add(proposerMintUPOKT)
+
+		sourceOwnerMintUPOKT := s.getGlobalInflationActorAllocation(mintUPOKT, s.tokenomicsParams.MintAllocationSourceOwner)
+		balances.SourceOwnerAccountBalance = balances.SourceOwnerAccountBalance.
+			Add(sourceOwnerMintUPOKT)
+	}
+
+	for _, proofSubmission := range s.tokenomics.ProofsSubmitted {
+		operatorAddr := proofSubmission.Claim.SupplierOperatorAddress
+		balances.SupplierBalances[operatorAddr] = balances.SupplierBalances[operatorAddr].
+			Sub(*s.proofParams.ProofSubmissionFee)
+	}
+}
+
+func (s *relaysSuite) getGlobalInflationMintedUPOKT(settledUPOKT *sdk.Coin) sdk.Coin {
+	settlementAmtFloat := new(big.Float).SetUint64(settledUPOKT.Amount.Uint64())
+	newMintAmtFloat := new(big.Float).Mul(settlementAmtFloat, big.NewFloat(tokenomicskeeper.GlobalInflationPerClaim))
+	newMintAmtInt, _ := newMintAmtFloat.Int64()
+	mintUPOKT := sdk.NewCoin(volatile.DenomuPOKT, math.NewInt(newMintAmtInt))
+	return mintUPOKT
+}
+
+func (s *relaysSuite) getGlobalInflationActorAllocation(mintUPOKT sdk.Coin, allocation float64) sdk.Coin {
+	mintAmtFloat := new(big.Float).SetInt(mintUPOKT.Amount.BigInt())
+	actorAllocationFloat := new(big.Float).Mul(mintAmtFloat, big.NewFloat(allocation))
+	actorAllocationInt, _ := actorAllocationFloat.Int64()
+	actorAllocation := sdk.NewCoin(volatile.DenomuPOKT, math.NewInt(actorAllocationInt))
+	return actorAllocation
 }
