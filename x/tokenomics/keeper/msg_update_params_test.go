@@ -47,7 +47,7 @@ func TestMsgUpdateParams(t *testing.T) {
 			expectedErrMsg: "the provided authority address does not match the on-chain governance address",
 		},
 		{
-			desc: "invalid: no dao rewards",
+			desc: "invalid: dao reward address missing",
 
 			req: &tokenomicstypes.MsgUpdateParams{
 				Authority: tokenomicsKeeper.GetAuthority(),
