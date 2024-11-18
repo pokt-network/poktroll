@@ -204,6 +204,12 @@ func (s *tokenLogicModuleTestSuite) assertExpectedSettlementState(
 		require.NotEqual(t, &zerouPOKT, actualSettlementState.daoBalance, coinIsZeroMsg)
 		require.NotEqual(t, &zerouPOKT, actualSettlementState.sourceOwnerBalance, coinIsZeroMsg)
 
+		require.NotEqual(t, &zerouPOKT, actualSettlementState.appModuleBalance, coinIsZeroMsg)
+		require.NotEqual(t, &zerouPOKT, actualSettlementState.supplierModuleBalance, coinIsZeroMsg)
+
+		// The tokenomics module balance should be zero because it is just an intermediary account which is utilized during settlement.
+		require.Equal(t, &zerouPOKT, actualSettlementState.tokenomicsModuleBalance)
+
 		// Assert that the expected and actual settlement states match.
 		require.EqualValues(t, s.expectedSettlementState, actualSettlementState)
 	}

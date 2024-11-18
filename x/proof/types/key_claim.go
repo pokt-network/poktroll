@@ -7,13 +7,13 @@ var _ binary.ByteOrder
 const (
 	// ClaimPrimaryKeyPrefix is the prefix to retrieve the entire Claim object (the primary store)
 	// TODO_TECHDEBT: consider renaming to ClaimSessionIDPrefix.
-	ClaimPrimaryKeyPrefix = "claim/primary_key/"
+	ClaimPrimaryKeyPrefix = "Claim/primary_key/"
 
 	// ClaimSupplierOperatorAddressPrefix is the key to retrieve a Claim's Primary Key from the Address index
-	ClaimSupplierOperatorAddressPrefix = "claim/address/"
+	ClaimSupplierOperatorAddressPrefix = "Claim/address/"
 
 	// ClaimSessionEndHeightPrefix is the key to retrieve a Claim's Primary Key from the Height index
-	ClaimSessionEndHeightPrefix = "claim/height/"
+	ClaimSessionEndHeightPrefix = "Claim/height/"
 )
 
 // ClaimPrimaryKey returns the primary store key used to retrieve a Claim by creating

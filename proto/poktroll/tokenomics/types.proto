@@ -43,7 +43,7 @@ message ModToModTransfer {
 
 // SettlementOpReason is a distinct, tlm-specific causal reason for a given operation.
 enum SettlementOpReason {
-  // UNSPECIFIED is the default value for TokenLogicModuleReason, it is used as a field
+  // UNSPECIFIED is the default value for SettlementOpReason, it is used as a field
   // type for objects which need to distinguish whether a SettlementOpReason has been specified it or not.
   UNSPECIFIED = 0;
 
@@ -62,8 +62,8 @@ enum SettlementOpReason {
   TLM_GLOBAL_MINT_SOURCE_OWNER_REWARD_DISTRIBUTION = 8;
   TLM_GLOBAL_MINT_APPLICATION_REWARD_DISTRIBUTION = 9;
 
-  // Self-servicing mitigation - MintBurnOperation (burn)
-  TLM_GLOBAL_MINT_REIMBURSEMENT_REQUEST_APP_REIMBURSEMENT_ESCROW = 10;
+  // Self-servicing mitigation - ModToAcctTransfer
+  TLM_GLOBAL_MINT_REIMBURSEMENT_REQUEST_ESCROW_DAO_TRANSFER = 10;
 
   // Penalization - MintBurnOperation (burn)
   UNSPECIFIED_TLM_SUPPLIER_SLASH = 11;

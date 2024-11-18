@@ -36,7 +36,7 @@ func createNClaims(keeper keeper.Keeper, ctx context.Context, n int) []types.Cla
 }
 
 func TestClaimGet(t *testing.T) {
-	keeper, ctx := keepertest.NewProofKeeper(t)
+	keeper, ctx := keepertest.ProofKeeper(t)
 	claims := createNClaims(keeper, ctx, 10)
 
 	for _, claim := range claims {
@@ -53,7 +53,7 @@ func TestClaimGet(t *testing.T) {
 	}
 }
 func TestClaimRemove(t *testing.T) {
-	keeper, ctx := keepertest.NewProofKeeper(t)
+	keeper, ctx := keepertest.ProofKeeper(t)
 	claims := createNClaims(keeper, ctx, 10)
 
 	for _, claim := range claims {
@@ -65,7 +65,7 @@ func TestClaimRemove(t *testing.T) {
 }
 
 func TestClaimGetAll(t *testing.T) {
-	keeper, ctx := keepertest.NewProofKeeper(t)
+	keeper, ctx := keepertest.ProofKeeper(t)
 	claims := createNClaims(keeper, ctx, 10)
 
 	// Get all the claims and check if they match

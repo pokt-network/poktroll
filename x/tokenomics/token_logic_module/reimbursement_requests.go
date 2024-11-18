@@ -83,7 +83,7 @@ func (tlm tlmGlobalMintReimbursementRequest) Process(
 	// for second order economic effects.
 	// See: https://discord.com/channels/824324475256438814/997192534168182905/1299372745632649408
 	result.AppendModToAcctTransfer(tokenomicstypes.ModToAcctTransfer{
-		OpReason:         tokenomicstypes.SettlementOpReason_TLM_GLOBAL_MINT_REIMBURSEMENT_REQUEST_ESCROW_MODULE_TRANSFER,
+		OpReason:         tokenomicstypes.SettlementOpReason_TLM_GLOBAL_MINT_REIMBURSEMENT_REQUEST_ESCROW_DAO_TRANSFER,
 		SenderModule:     tokenomicstypes.ModuleName,
 		RecipientAddress: daoRewardAddress,
 		Coin:             newMintCoin,

@@ -41,7 +41,7 @@ func TestGenesis(t *testing.T) {
 		// this line is used by starport scaffolding # genesis/test/state
 	}
 
-	k, ctx := keepertest.NewProofKeeper(t)
+	k, ctx := keepertest.ProofKeeper(t)
 	proof.InitGenesis(ctx, k, genesisState)
 	got := proof.ExportGenesis(ctx, k)
 	require.NotNil(t, got)

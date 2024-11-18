@@ -440,9 +440,7 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimExpired_ProofRequired_InvalidOn
 
 	// Confirm an expiration event was emitted
 	events := sdkCtx.EventManager().Events()
-	// TODO_IN_THIS_COMMIT: figure out why events went from 10 to 6.
-	// Seem to be missing a message, trasnfer, coin_spent, and coin_received.
-	//require.Equal(t, 10, len(events)) // minting, burning, settling, etc..
+	require.Equal(t, 6, len(events)) // minting, burning, settling, etc..
 	expectedClaimExpiredEvents := testutilevents.FilterEvents[*tokenomicstypes.EventClaimExpired](t, events)
 	require.Equal(t, 1, len(expectedClaimExpiredEvents))
 

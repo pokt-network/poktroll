@@ -23,7 +23,7 @@ func (am AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 				//					Short:     "List all claim",
 				//				},
 				//				{
-				//					RpcMethod:      "claim",
+				//					RpcMethod:      "Claim",
 				//					Use:            "show-claim [id]",
 				//					Short:          "Shows a claim",
 				//					PositionalArgs: []*autocliv1.PositionalArgDescriptor{{ProtoField: "index"}},

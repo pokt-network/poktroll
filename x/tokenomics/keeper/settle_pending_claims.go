@@ -171,9 +171,6 @@ func (k Keeper) SettlePendingClaims(ctx cosmostypes.Context) (
 				// The unstaking check is not done here because the slashed supplier may
 				// have other valid claims and the protocol might want to touch the supplier
 				// owner or operator balances if the stake is negative.
-				//expiredClaimSupplierOperatorAddresses = append(expiredClaimSupplierOperatorAddresses, claim.GetSupplierOperatorAddress())
-				//supplierToExpiredClaimCount[claim.GetSupplierOperatorAddress()]++
-				//settlementResult.WillSlashSupplier()
 
 				// The claim & proof are no longer necessary, so there's no need for them
 				// to take up on-chain space.
