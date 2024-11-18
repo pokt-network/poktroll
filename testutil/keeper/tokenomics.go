@@ -19,7 +19,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/runtime"
 	"github.com/cosmos/cosmos-sdk/testutil/integration"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	authkeeper "github.com/cosmos/cosmos-sdk/x/auth/keeper"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	bankkeeper "github.com/cosmos/cosmos-sdk/x/bank/keeper"
@@ -52,6 +51,18 @@ import (
 	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
 )
 
+// TODO_IN_THIS_COMMIT: godoc...
+var defaultMintConfigs = []ModuleBalanceConfig{
+	{
+		ModuleName: suppliertypes.ModuleName,
+		Coins:      cosmostypes.NewCoins(cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 1000000000000)),
+	},
+	{
+		ModuleName: apptypes.ModuleName,
+		Coins:      cosmostypes.NewCoins(cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 1000000000000)),
+	},
+}
+
 // TokenomicsModuleKeepers is an aggregation of the tokenomics keeper, all its dependency
 // keepers, and the codec that they share. Each keeper is embedded such that the
 // TokenomicsModuleKeepers implements all the interfaces of the keepers.
@@ -69,18 +80,27 @@ type TokenomicsModuleKeepers struct {
 	tokenomicstypes.SessionKeeper
 	tokenomicstypes.ServiceKeeper
 
-	Codec *codec.ProtoCodec
+	Codec codec.Codec
 }
 
 // tokenomicsModuleKeepersConfig is a configuration struct for a TokenomicsModuleKeepers
 // instance. Its fields are intended to be set/updated by TokenomicsModuleKeepersOptFn
 // functions which are passed during integration construction.
 type tokenomicsModuleKeepersConfig struct {
+	registry          codectypes.InterfaceRegistry
 	tokenLogicModules []tlm.TokenLogicModule
 	initKeepersFns    []func(context.Context, *TokenomicsModuleKeepers) context.Context
 	// moduleParams is a map of module names to their respective module parameters.
 	// This is used to set the initial module parameters in the keeper.
-	moduleParams map[string]sdk.Msg
+	moduleParams map[string]cosmostypes.Msg
+
+	moduleBalances []ModuleBalanceConfig
+}
+
+// TODO_IN_THIS_COMMIT: godoc...
+type ModuleBalanceConfig struct {
+	ModuleName string
+	Coins      cosmostypes.Coins
 }
 
 // TokenomicsModuleKeepersOptFn is a function which receives and potentially modifies
@@ -131,7 +151,7 @@ func TokenomicsKeeperWithActorAddrs(t testing.TB) (
 	// Prepare the test application.
 	application := apptypes.Application{
 		Address:        sample.AccAddress(),
-		Stake:          &sdk.Coin{Denom: "upokt", Amount: cosmosmath.NewInt(100000)},
+		Stake:          &cosmostypes.Coin{Denom: "upokt", Amount: cosmosmath.NewInt(100000)},
 		ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{{ServiceId: service.Id}},
 	}
 
@@ -140,7 +160,7 @@ func TokenomicsKeeperWithActorAddrs(t testing.TB) (
 	supplier := sharedtypes.Supplier{
 		OwnerAddress:    supplierOwnerAddr,
 		OperatorAddress: supplierOwnerAddr,
-		Stake:           &sdk.Coin{Denom: "upokt", Amount: cosmosmath.NewInt(100000)},
+		Stake:           &cosmostypes.Coin{Denom: "upokt", Amount: cosmosmath.NewInt(100000)},
 		Services: []*sharedtypes.SupplierServiceConfig{
 			{
 				ServiceId: service.Id,
@@ -154,7 +174,7 @@ func TokenomicsKeeperWithActorAddrs(t testing.TB) (
 		},
 	}
 
-	sdkCtx := sdk.NewContext(stateStore, cmtproto.Header{}, false, log.NewNopLogger())
+	sdkCtx := cosmostypes.NewContext(stateStore, cmtproto.Header{}, false, log.NewNopLogger())
 
 	ctrl := gomock.NewController(t)
 
@@ -296,6 +316,7 @@ func NewTokenomicsModuleKeepers(
 
 	cfg := &tokenomicsModuleKeepersConfig{
 		tokenLogicModules: tlm.NewDefaultTokenLogicModules(),
+		moduleBalances:    defaultMintConfigs,
 	}
 	for _, opt := range opts {
 		opt(cfg)
@@ -324,15 +345,17 @@ func NewTokenomicsModuleKeepers(
 	}
 
 	// Prepare the context
-	ctx = sdk.NewContext(stateStore, cmtproto.Header{}, false, logger)
-	sdkCtx := sdk.UnwrapSDKContext(ctx)
+	ctx = cosmostypes.NewContext(stateStore, cmtproto.Header{}, false, logger)
+	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
 
 	// Add a block proposer address to the context
 	sdkCtx = sdkCtx.WithProposer(sample.ConsAddress())
 
-	// ctx.SetAccount
 	// Prepare the account keeper.
 	registry := codectypes.NewInterfaceRegistry()
+	if cfg.registry != nil {
+		registry = cfg.registry
+	}
 	authtypes.RegisterInterfaces(registry)
 	cryptocodec.RegisterInterfaces(registry)
 
@@ -370,11 +393,10 @@ func NewTokenomicsModuleKeepers(
 	)
 	require.NoError(t, bankKeeper.SetParams(sdkCtx, banktypes.DefaultParams()))
 
-	// Provide some initial funds to the suppliers & applications module accounts.
-	err := bankKeeper.MintCoins(sdkCtx, suppliertypes.ModuleName, sdk.NewCoins(sdk.NewCoin("upokt", cosmosmath.NewInt(1000000000000))))
-	require.NoError(t, err)
-	err = bankKeeper.MintCoins(sdkCtx, apptypes.ModuleName, sdk.NewCoins(sdk.NewCoin("upokt", cosmosmath.NewInt(1000000000000))))
-	require.NoError(t, err)
+	for _, moduleBalanceCfg := range cfg.moduleBalances {
+		err := bankKeeper.MintCoins(sdkCtx, moduleBalanceCfg.ModuleName, moduleBalanceCfg.Coins)
+		require.NoError(t, err)
+	}
 
 	// Construct a real shared keeper.
 	sharedKeeper := sharedkeeper.NewKeeper(
@@ -386,7 +408,7 @@ func NewTokenomicsModuleKeepers(
 	require.NoError(t, sharedKeeper.SetParams(sdkCtx, sharedtypes.DefaultParams()))
 
 	if params, ok := cfg.moduleParams[sharedtypes.ModuleName]; ok {
-		err = sharedKeeper.SetParams(ctx, *params.(*sharedtypes.Params))
+		err := sharedKeeper.SetParams(ctx, *params.(*sharedtypes.Params))
 		require.NoError(t, err)
 	}
 
@@ -402,7 +424,7 @@ func NewTokenomicsModuleKeepers(
 	require.NoError(t, gatewayKeeper.SetParams(sdkCtx, gatewaytypes.DefaultParams()))
 
 	if params, ok := cfg.moduleParams[gatewaytypes.ModuleName]; ok {
-		err = gatewayKeeper.SetParams(ctx, *params.(*gatewaytypes.Params))
+		err := gatewayKeeper.SetParams(ctx, *params.(*gatewaytypes.Params))
 		require.NoError(t, err)
 	}
 
@@ -420,7 +442,7 @@ func NewTokenomicsModuleKeepers(
 	require.NoError(t, appKeeper.SetParams(sdkCtx, apptypes.DefaultParams()))
 
 	if params, ok := cfg.moduleParams[apptypes.ModuleName]; ok {
-		err = appKeeper.SetParams(ctx, *params.(*apptypes.Params))
+		err := appKeeper.SetParams(ctx, *params.(*apptypes.Params))
 		require.NoError(t, err)
 	}
 
@@ -434,7 +456,7 @@ func NewTokenomicsModuleKeepers(
 	)
 
 	if params, ok := cfg.moduleParams[servicetypes.ModuleName]; ok {
-		err = serviceKeeper.SetParams(ctx, *params.(*servicetypes.Params))
+		err := serviceKeeper.SetParams(ctx, *params.(*servicetypes.Params))
 		require.NoError(t, err)
 	}
 
@@ -451,7 +473,7 @@ func NewTokenomicsModuleKeepers(
 	require.NoError(t, supplierKeeper.SetParams(sdkCtx, suppliertypes.DefaultParams()))
 
 	if params, ok := cfg.moduleParams[suppliertypes.ModuleName]; ok {
-		err = supplierKeeper.SetParams(ctx, *params.(*suppliertypes.Params))
+		err := supplierKeeper.SetParams(ctx, *params.(*suppliertypes.Params))
 		require.NoError(t, err)
 	}
 
@@ -470,7 +492,7 @@ func NewTokenomicsModuleKeepers(
 	require.NoError(t, sessionKeeper.SetParams(sdkCtx, sessiontypes.DefaultParams()))
 
 	if params, ok := cfg.moduleParams[sessiontypes.ModuleName]; ok {
-		err = sessionKeeper.SetParams(ctx, *params.(*sessiontypes.Params))
+		err := sessionKeeper.SetParams(ctx, *params.(*sessiontypes.Params))
 		require.NoError(t, err)
 	}
 
@@ -490,7 +512,7 @@ func NewTokenomicsModuleKeepers(
 	require.NoError(t, proofKeeper.SetParams(sdkCtx, prooftypes.DefaultParams()))
 
 	if params, ok := cfg.moduleParams[prooftypes.ModuleName]; ok {
-		err = proofKeeper.SetParams(ctx, *params.(*prooftypes.Params))
+		err := proofKeeper.SetParams(ctx, *params.(*prooftypes.Params))
 		require.NoError(t, err)
 	}
 
@@ -514,7 +536,7 @@ func NewTokenomicsModuleKeepers(
 	require.NoError(t, tokenomicsKeeper.SetParams(sdkCtx, tokenomicstypes.DefaultParams()))
 
 	if params, ok := cfg.moduleParams[tokenomicstypes.ModuleName]; ok {
-		err = tokenomicsKeeper.SetParams(ctx, *params.(*tokenomicstypes.Params))
+		err := tokenomicsKeeper.SetParams(ctx, *params.(*tokenomicstypes.Params))
 		require.NoError(t, err)
 	}
 
@@ -582,7 +604,7 @@ func WithProposerAddr(addr string) TokenomicsModuleKeepersOptFn {
 		if err != nil {
 			panic(err)
 		}
-		sdkCtx := sdk.UnwrapSDKContext(ctx)
+		sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
 		sdkCtx = sdkCtx.WithProposer(consAddr)
 		return sdkCtx
 	}
@@ -599,9 +621,14 @@ func WithTokenLogicModules(processors []tlm.TokenLogicModule) TokenomicsModuleKe
 	}
 }
 
+// TODO_IN_THIS_COMMIT: godoc...
+func WithDaoRewardBech32(daoRewardBech32 string) TokenomicsModuleKeepersOptFn {
+	return WithTLMProcessors(tlm.NewDefaultTokenLogicModules(daoRewardBech32))
+}
+
 // WithModuleParams returns a KeeperOptionFn that sets the moduleParams field
 // on the keeperConfig.
-func WithModuleParams(moduleParams map[string]sdk.Msg) TokenomicsModuleKeepersOptFn {
+func WithModuleParams(moduleParams map[string]cosmostypes.Msg) TokenomicsModuleKeepersOptFn {
 	return func(cfg *tokenomicsModuleKeepersConfig) {
 		cfg.moduleParams = moduleParams
 	}
@@ -611,20 +638,24 @@ func WithModuleParams(moduleParams map[string]sdk.Msg) TokenomicsModuleKeepersOp
 // in the tokenomics module keepers by setting the proof request probability to
 // 1 or 0, respectively whie setting the proof requirement threshold to 0 or
 // MaxInt64, respectively.
-func WithProofRequirement(proofRequired bool) TokenomicsModuleKeepersOptFn {
+func WithProofRequirement(proofRequirementReason prooftypes.ProofRequirementReason) TokenomicsModuleKeepersOptFn {
 	setProofRequirement := func(ctx context.Context, keepers *TokenomicsModuleKeepers) context.Context {
 		proofParams := keepers.ProofKeeper.GetParams(ctx)
-		if proofRequired {
-			// Require a proof 100% of the time probabilistically speaking.
+
+		// By default, NEVER require a proof (via neither probabilistic nor threshold).
+		proofParams.ProofRequestProbability = 0
+		proofRequirementThreshold := cosmostypes.NewInt64Coin(volatile.DenomuPOKT, math.MaxInt64)
+		proofParams.ProofRequirementThreshold = &proofRequirementThreshold
+
+		// Override the default proof requirement based on proofRequirementReason.
+		switch proofRequirementReason {
+		case prooftypes.ProofRequirementReason_NOT_REQUIRED:
+		case prooftypes.ProofRequirementReason_PROBABILISTIC:
+			// Require a proof 100% of the time probabilistically.
 			proofParams.ProofRequestProbability = 1
+		case prooftypes.ProofRequirementReason_THRESHOLD:
 			// Require a proof of any claim amount (i.e. anything greater than 0).
 			proofRequirementThreshold := cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 0)
-			proofParams.ProofRequirementThreshold = &proofRequirementThreshold
-		} else {
-			// Never require a proof probabilistically speaking.
-			proofParams.ProofRequestProbability = 0
-			// Require a proof for MaxInt64 claim amount (i.e. should never trigger).
-			proofRequirementThreshold := cosmostypes.NewInt64Coin(volatile.DenomuPOKT, math.MaxInt64)
 			proofParams.ProofRequirementThreshold = &proofRequirementThreshold
 		}
 
@@ -636,5 +667,19 @@ func WithProofRequirement(proofRequired bool) TokenomicsModuleKeepersOptFn {
 	}
 	return func(cfg *tokenomicsModuleKeepersConfig) {
 		cfg.initKeepersFns = append(cfg.initKeepersFns, setProofRequirement)
+	}
+}
+
+// TODO_IN_THIS_COMMIT: godoc...
+func WithRegistry(registry codectypes.InterfaceRegistry) TokenomicsModuleKeepersOptFn {
+	return func(cfg *tokenomicsModuleKeepersConfig) {
+		cfg.registry = registry
+	}
+}
+
+// TODO_IN_THIS_COMMIT: godoc...
+func WithModuleBalances(mints []ModuleBalanceConfig) TokenomicsModuleKeepersOptFn {
+	return func(cfg *tokenomicsModuleKeepersConfig) {
+		cfg.moduleBalances = mints
 	}
 }
