@@ -35,6 +35,10 @@ func init() {
 func runStatusErrorsCheck(cmd *cobra.Command, _ []string) error {
 	ctx := cmd.Context()
 
+	// TODO_IN_THIS_COMMIT: add hack/work-around to temporarily strip patch version from go.mod.
+	// TODO_IN_THIS_COMMIT: add hack/work-around to temporarily strip patch version from go.mod.
+	// TODO_IN_THIS_COMMIT: add hack/work-around to temporarily strip patch version from go.mod.
+
 	// TODO_IN_THIS_COMMIT: to support this, need to load all modules but only inspect target module.
 	//if flagModule != "*" {
 	// ...
