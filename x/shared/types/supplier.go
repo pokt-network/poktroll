@@ -42,9 +42,9 @@ func (s *Supplier) HasOperator(address string) bool {
 	return s.OperatorAddress == address
 }
 
-// GetSupplierUnbondingHeight returns the session end height at which the given
+// GetSupplierUnbondingEndHeight returns the session end height at which the given
 // supplier finishes unbonding.
-func GetSupplierUnbondingHeight(
+func GetSupplierUnbondingEndHeight(
 	sharedParams *Params,
 	supplier *Supplier,
 ) int64 {

@@ -71,12 +71,12 @@ func (k msgServer) UnstakeSupplier(
 	k.SetSupplier(ctx, supplier)
 
 	// Emit an event which signals that the supplier successfully began unbonding their stake.
-	unbondingHeight := sharedtypes.GetSupplierUnbondingHeight(&sharedParams, &supplier)
+	unbondingEndHeight := sharedtypes.GetSupplierUnbondingEndHeight(&sharedParams, &supplier)
 	event := &suppliertypes.EventSupplierUnbondingBegin{
-		Supplier:         &supplier,
-		Reason:           suppliertypes.SupplierUnbondingReason_ELECTIVE,
-		SessionEndHeight: int64(supplier.GetUnstakeSessionEndHeight()),
-		UnbondingHeight:  unbondingHeight,
+		Supplier:           &supplier,
+		Reason:             suppliertypes.SupplierUnbondingReason_SUPPLIER_UNBONDING_REASON_ELECTIVE,
+		SessionEndHeight:   int64(supplier.GetUnstakeSessionEndHeight()),
+		UnbondingEndHeight: unbondingEndHeight,
 	}
 	if err := sdkCtx.EventManager().EmitTypedEvent(event); err != nil {
 		err = suppliertypes.ErrSupplierEmitEvent.Wrapf("(%+v): %s", event, err)

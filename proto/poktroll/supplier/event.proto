@@ -11,11 +11,11 @@ import "cosmos/base/v1beta1/coin.proto";
 import "poktroll/shared/supplier.proto";
 
 enum SupplierUnbondingReason {
-  ELECTIVE = 0;
-  BELOW_MIN_STAKE = 1;
+  SUPPLIER_UNBONDING_REASON_ELECTIVE = 0;
+  SUPPLIER_UNBONDING_REASON_BELOW_MIN_STAKE = 1;
 }
 
-// EventSupplierStaked is emitted with the commitment of the supplier stake message.
+// EventSupplierStaked is emitted when a supplier stake message is committed on-chain.
 message EventSupplierStaked {
   poktroll.shared.Supplier supplier = 1 [(gogoproto.jsontag) = "supplier"];
   // The session end height of the session in which the supplier was staked.
@@ -23,14 +23,14 @@ message EventSupplierStaked {
 }
 
 // EventSupplierUnbondingBegin is emitted when an application unstake message
-// is committed, indicating that an application has begun unbonding.
+// is committed on-chain, indicating that the supplier will now begin unbonding.
 message EventSupplierUnbondingBegin {
   poktroll.shared.Supplier supplier = 1 [(gogoproto.jsontag) = "supplier"];
   SupplierUnbondingReason reason = 2 [(gogoproto.jsontag) = "reason"];
   // The session end height of the session in which the supplier unbonding began.
   int64 session_end_height = 3 [(gogoproto.jsontag) = "session_end_height"];
   // The height at which supplier unbonding will end.
-  int64 unbonding_height = 4 [(gogoproto.jsontag) = "unbonding_height"];
+  int64 unbonding_end_height = 4 [(gogoproto.jsontag) = "unbonding_end_height"];
 }
 
 // EventSupplierUnbondingEnd is emitted when an supplier has completed
@@ -42,7 +42,7 @@ message EventSupplierUnbondingEnd {
   // The session end height of the session in which the supplier unbonding endeded.
   int64 session_end_height = 3 [(gogoproto.jsontag) = "session_end_height"];
   // The height at which supplier unbonding will end.
-  int64 unbonding_height = 4 [(gogoproto.jsontag) = "unbonding_height"];
+  int64 unbonding_end_height = 4 [(gogoproto.jsontag) = "unbonding_end_height"];
 }
 
 // EventSupplierUnbondingCanceled is emitted when an supplier which was unbonding
@@ -50,6 +50,8 @@ message EventSupplierUnbondingEnd {
 // event will also be emitted immediately after this event.
 message EventSupplierUnbondingCanceled {
   poktroll.shared.Supplier supplier = 1 [(gogoproto.jsontag) = "supplier"];
+  // The exact height at which the supplier unbonding was canceled.
+  int64 height = 3 [(gogoproto.jsontag) = "height"];
   // The session end height of the session in which the supplier unbonding was canceled.
   int64 session_end_height = 2 [(gogoproto.jsontag) = "session_end_height"];
 }

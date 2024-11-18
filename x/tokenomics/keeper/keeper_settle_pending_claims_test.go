@@ -744,16 +744,16 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimExpired_SupplierUnstaked() {
 	require.Len(t, unbondingBeginEvents, 1)
 
 	// Validate the EventSupplierUnbondingBegin event.
-	unbondingHeight := sharedtypes.GetSupplierUnbondingHeight(&sharedParams, &slashedSupplier)
+	unbondingEndHeight := sharedtypes.GetSupplierUnbondingEndHeight(&sharedParams, &slashedSupplier)
 	slashedSupplier.ServicesActivationHeightsMap = make(map[string]uint64)
 	for i, _ := range slashedSupplier.GetServices() {
 		slashedSupplier.Services[i].Endpoints = make([]*sharedtypes.SupplierEndpoint, 0)
 	}
 	expectedUnbondingBeginEvent := &suppliertypes.EventSupplierUnbondingBegin{
-		Supplier:         &slashedSupplier,
-		Reason:           suppliertypes.SupplierUnbondingReason_BELOW_MIN_STAKE,
-		SessionEndHeight: sessionEndHeight,
-		UnbondingHeight:  unbondingHeight,
+		Supplier:           &slashedSupplier,
+		Reason:             suppliertypes.SupplierUnbondingReason_SUPPLIER_UNBONDING_REASON_BELOW_MIN_STAKE,
+		SessionEndHeight:   sessionEndHeight,
+		UnbondingEndHeight: unbondingEndHeight,
 	}
 	require.EqualValues(t, expectedUnbondingBeginEvent, unbondingBeginEvents[0])
 
@@ -767,10 +767,10 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimExpired_SupplierUnstaked() {
 
 	// Validate the EventSupplierUnbondingEnd event.
 	expectedUnbondingEndEvent := &suppliertypes.EventSupplierUnbondingEnd{
-		Supplier:         &slashedSupplier,
-		Reason:           suppliertypes.SupplierUnbondingReason_BELOW_MIN_STAKE,
-		SessionEndHeight: sessionEndHeight,
-		UnbondingHeight:  unbondingHeight,
+		Supplier:           &slashedSupplier,
+		Reason:             suppliertypes.SupplierUnbondingReason_SUPPLIER_UNBONDING_REASON_BELOW_MIN_STAKE,
+		SessionEndHeight:   sessionEndHeight,
+		UnbondingEndHeight: unbondingEndHeight,
 	}
 	require.EqualValues(t, expectedUnbondingEndEvent, unbondingEndEvents[0])
 }

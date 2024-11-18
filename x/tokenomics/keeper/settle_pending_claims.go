@@ -435,12 +435,12 @@ func (k Keeper) slashSupplierStake(
 		supplierToSlash.UnstakeSessionEndHeight = unstakeSessionEndHeight
 
 		sessionEndHeight := sharedtypes.GetSettlementSessionEndHeight(&sharedParams, currentHeight)
-		unbondingHeight := sharedtypes.GetSupplierUnbondingHeight(&sharedParams, &supplierToSlash)
+		unbondingEndHeight := sharedtypes.GetSupplierUnbondingEndHeight(&sharedParams, &supplierToSlash)
 		events = append(events, &suppliertypes.EventSupplierUnbondingBegin{
-			Supplier:         &supplierToSlash,
-			Reason:           suppliertypes.SupplierUnbondingReason_BELOW_MIN_STAKE,
-			SessionEndHeight: sessionEndHeight,
-			UnbondingHeight:  unbondingHeight,
+			Supplier:           &supplierToSlash,
+			Reason:             suppliertypes.SupplierUnbondingReason_SUPPLIER_UNBONDING_REASON_BELOW_MIN_STAKE,
+			SessionEndHeight:   sessionEndHeight,
+			UnbondingEndHeight: unbondingEndHeight,
 		})
 	}
 

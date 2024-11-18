@@ -500,11 +500,11 @@ func (x *fastReflection_EventSupplierStaked) ProtoMethods() *protoiface.Methods 
 }
 
 var (
-	md_EventSupplierUnbondingBegin                    protoreflect.MessageDescriptor
-	fd_EventSupplierUnbondingBegin_supplier           protoreflect.FieldDescriptor
-	fd_EventSupplierUnbondingBegin_reason             protoreflect.FieldDescriptor
-	fd_EventSupplierUnbondingBegin_session_end_height protoreflect.FieldDescriptor
-	fd_EventSupplierUnbondingBegin_unbonding_height   protoreflect.FieldDescriptor
+	md_EventSupplierUnbondingBegin                      protoreflect.MessageDescriptor
+	fd_EventSupplierUnbondingBegin_supplier             protoreflect.FieldDescriptor
+	fd_EventSupplierUnbondingBegin_reason               protoreflect.FieldDescriptor
+	fd_EventSupplierUnbondingBegin_session_end_height   protoreflect.FieldDescriptor
+	fd_EventSupplierUnbondingBegin_unbonding_end_height protoreflect.FieldDescriptor
 )
 
 func init() {
@@ -513,7 +513,7 @@ func init() {
 	fd_EventSupplierUnbondingBegin_supplier = md_EventSupplierUnbondingBegin.Fields().ByName("supplier")
 	fd_EventSupplierUnbondingBegin_reason = md_EventSupplierUnbondingBegin.Fields().ByName("reason")
 	fd_EventSupplierUnbondingBegin_session_end_height = md_EventSupplierUnbondingBegin.Fields().ByName("session_end_height")
-	fd_EventSupplierUnbondingBegin_unbonding_height = md_EventSupplierUnbondingBegin.Fields().ByName("unbonding_height")
+	fd_EventSupplierUnbondingBegin_unbonding_end_height = md_EventSupplierUnbondingBegin.Fields().ByName("unbonding_end_height")
 }
 
 var _ protoreflect.Message = (*fastReflection_EventSupplierUnbondingBegin)(nil)
@@ -599,9 +599,9 @@ func (x *fastReflection_EventSupplierUnbondingBegin) Range(f func(protoreflect.F
 			return
 		}
 	}
-	if x.UnbondingHeight != int64(0) {
-		value := protoreflect.ValueOfInt64(x.UnbondingHeight)
-		if !f(fd_EventSupplierUnbondingBegin_unbonding_height, value) {
+	if x.UnbondingEndHeight != int64(0) {
+		value := protoreflect.ValueOfInt64(x.UnbondingEndHeight)
+		if !f(fd_EventSupplierUnbondingBegin_unbonding_end_height, value) {
 			return
 		}
 	}
@@ -626,8 +626,8 @@ func (x *fastReflection_EventSupplierUnbondingBegin) Has(fd protoreflect.FieldDe
 		return x.Reason != 0
 	case "poktroll.supplier.EventSupplierUnbondingBegin.session_end_height":
 		return x.SessionEndHeight != int64(0)
-	case "poktroll.supplier.EventSupplierUnbondingBegin.unbonding_height":
-		return x.UnbondingHeight != int64(0)
+	case "poktroll.supplier.EventSupplierUnbondingBegin.unbonding_end_height":
+		return x.UnbondingEndHeight != int64(0)
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.supplier.EventSupplierUnbondingBegin"))
@@ -650,8 +650,8 @@ func (x *fastReflection_EventSupplierUnbondingBegin) Clear(fd protoreflect.Field
 		x.Reason = 0
 	case "poktroll.supplier.EventSupplierUnbondingBegin.session_end_height":
 		x.SessionEndHeight = int64(0)
-	case "poktroll.supplier.EventSupplierUnbondingBegin.unbonding_height":
-		x.UnbondingHeight = int64(0)
+	case "poktroll.supplier.EventSupplierUnbondingBegin.unbonding_end_height":
+		x.UnbondingEndHeight = int64(0)
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.supplier.EventSupplierUnbondingBegin"))
@@ -677,8 +677,8 @@ func (x *fastReflection_EventSupplierUnbondingBegin) Get(descriptor protoreflect
 	case "poktroll.supplier.EventSupplierUnbondingBegin.session_end_height":
 		value := x.SessionEndHeight
 		return protoreflect.ValueOfInt64(value)
-	case "poktroll.supplier.EventSupplierUnbondingBegin.unbonding_height":
-		value := x.UnbondingHeight
+	case "poktroll.supplier.EventSupplierUnbondingBegin.unbonding_end_height":
+		value := x.UnbondingEndHeight
 		return protoreflect.ValueOfInt64(value)
 	default:
 		if descriptor.IsExtension() {
@@ -706,8 +706,8 @@ func (x *fastReflection_EventSupplierUnbondingBegin) Set(fd protoreflect.FieldDe
 		x.Reason = (SupplierUnbondingReason)(value.Enum())
 	case "poktroll.supplier.EventSupplierUnbondingBegin.session_end_height":
 		x.SessionEndHeight = value.Int()
-	case "poktroll.supplier.EventSupplierUnbondingBegin.unbonding_height":
-		x.UnbondingHeight = value.Int()
+	case "poktroll.supplier.EventSupplierUnbondingBegin.unbonding_end_height":
+		x.UnbondingEndHeight = value.Int()
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.supplier.EventSupplierUnbondingBegin"))
@@ -737,8 +737,8 @@ func (x *fastReflection_EventSupplierUnbondingBegin) Mutable(fd protoreflect.Fie
 		panic(fmt.Errorf("field reason of message poktroll.supplier.EventSupplierUnbondingBegin is not mutable"))
 	case "poktroll.supplier.EventSupplierUnbondingBegin.session_end_height":
 		panic(fmt.Errorf("field session_end_height of message poktroll.supplier.EventSupplierUnbondingBegin is not mutable"))
-	case "poktroll.supplier.EventSupplierUnbondingBegin.unbonding_height":
-		panic(fmt.Errorf("field unbonding_height of message poktroll.supplier.EventSupplierUnbondingBegin is not mutable"))
+	case "poktroll.supplier.EventSupplierUnbondingBegin.unbonding_end_height":
+		panic(fmt.Errorf("field unbonding_end_height of message poktroll.supplier.EventSupplierUnbondingBegin is not mutable"))
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.supplier.EventSupplierUnbondingBegin"))
@@ -759,7 +759,7 @@ func (x *fastReflection_EventSupplierUnbondingBegin) NewField(fd protoreflect.Fi
 		return protoreflect.ValueOfEnum(0)
 	case "poktroll.supplier.EventSupplierUnbondingBegin.session_end_height":
 		return protoreflect.ValueOfInt64(int64(0))
-	case "poktroll.supplier.EventSupplierUnbondingBegin.unbonding_height":
+	case "poktroll.supplier.EventSupplierUnbondingBegin.unbonding_end_height":
 		return protoreflect.ValueOfInt64(int64(0))
 	default:
 		if fd.IsExtension() {
@@ -840,8 +840,8 @@ func (x *fastReflection_EventSupplierUnbondingBegin) ProtoMethods() *protoiface.
 		if x.SessionEndHeight != 0 {
 			n += 1 + runtime.Sov(uint64(x.SessionEndHeight))
 		}
-		if x.UnbondingHeight != 0 {
-			n += 1 + runtime.Sov(uint64(x.UnbondingHeight))
+		if x.UnbondingEndHeight != 0 {
+			n += 1 + runtime.Sov(uint64(x.UnbondingEndHeight))
 		}
 		if x.unknownFields != nil {
 			n += len(x.unknownFields)
@@ -872,8 +872,8 @@ func (x *fastReflection_EventSupplierUnbondingBegin) ProtoMethods() *protoiface.
 			i -= len(x.unknownFields)
 			copy(dAtA[i:], x.unknownFields)
 		}
-		if x.UnbondingHeight != 0 {
-			i = runtime.EncodeVarint(dAtA, i, uint64(x.UnbondingHeight))
+		if x.UnbondingEndHeight != 0 {
+			i = runtime.EncodeVarint(dAtA, i, uint64(x.UnbondingEndHeight))
 			i--
 			dAtA[i] = 0x20
 		}
@@ -1026,9 +1026,9 @@ func (x *fastReflection_EventSupplierUnbondingBegin) ProtoMethods() *protoiface.
 				}
 			case 4:
 				if wireType != 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field UnbondingHeight", wireType)
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field UnbondingEndHeight", wireType)
 				}
-				x.UnbondingHeight = 0
+				x.UnbondingEndHeight = 0
 				for shift := uint(0); ; shift += 7 {
 					if shift >= 64 {
 						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
@@ -1038,7 +1038,7 @@ func (x *fastReflection_EventSupplierUnbondingBegin) ProtoMethods() *protoiface.
 					}
 					b := dAtA[iNdEx]
 					iNdEx++
-					x.UnbondingHeight |= int64(b&0x7F) << shift
+					x.UnbondingEndHeight |= int64(b&0x7F) << shift
 					if b < 0x80 {
 						break
 					}
@@ -1079,11 +1079,11 @@ func (x *fastReflection_EventSupplierUnbondingBegin) ProtoMethods() *protoiface.
 }
 
 var (
-	md_EventSupplierUnbondingEnd                    protoreflect.MessageDescriptor
-	fd_EventSupplierUnbondingEnd_supplier           protoreflect.FieldDescriptor
-	fd_EventSupplierUnbondingEnd_reason             protoreflect.FieldDescriptor
-	fd_EventSupplierUnbondingEnd_session_end_height protoreflect.FieldDescriptor
-	fd_EventSupplierUnbondingEnd_unbonding_height   protoreflect.FieldDescriptor
+	md_EventSupplierUnbondingEnd                      protoreflect.MessageDescriptor
+	fd_EventSupplierUnbondingEnd_supplier             protoreflect.FieldDescriptor
+	fd_EventSupplierUnbondingEnd_reason               protoreflect.FieldDescriptor
+	fd_EventSupplierUnbondingEnd_session_end_height   protoreflect.FieldDescriptor
+	fd_EventSupplierUnbondingEnd_unbonding_end_height protoreflect.FieldDescriptor
 )
 
 func init() {
@@ -1092,7 +1092,7 @@ func init() {
 	fd_EventSupplierUnbondingEnd_supplier = md_EventSupplierUnbondingEnd.Fields().ByName("supplier")
 	fd_EventSupplierUnbondingEnd_reason = md_EventSupplierUnbondingEnd.Fields().ByName("reason")
 	fd_EventSupplierUnbondingEnd_session_end_height = md_EventSupplierUnbondingEnd.Fields().ByName("session_end_height")
-	fd_EventSupplierUnbondingEnd_unbonding_height = md_EventSupplierUnbondingEnd.Fields().ByName("unbonding_height")
+	fd_EventSupplierUnbondingEnd_unbonding_end_height = md_EventSupplierUnbondingEnd.Fields().ByName("unbonding_end_height")
 }
 
 var _ protoreflect.Message = (*fastReflection_EventSupplierUnbondingEnd)(nil)
@@ -1178,9 +1178,9 @@ func (x *fastReflection_EventSupplierUnbondingEnd) Range(f func(protoreflect.Fie
 			return
 		}
 	}
-	if x.UnbondingHeight != int64(0) {
-		value := protoreflect.ValueOfInt64(x.UnbondingHeight)
-		if !f(fd_EventSupplierUnbondingEnd_unbonding_height, value) {
+	if x.UnbondingEndHeight != int64(0) {
+		value := protoreflect.ValueOfInt64(x.UnbondingEndHeight)
+		if !f(fd_EventSupplierUnbondingEnd_unbonding_end_height, value) {
 			return
 		}
 	}
@@ -1205,8 +1205,8 @@ func (x *fastReflection_EventSupplierUnbondingEnd) Has(fd protoreflect.FieldDesc
 		return x.Reason != 0
 	case "poktroll.supplier.EventSupplierUnbondingEnd.session_end_height":
 		return x.SessionEndHeight != int64(0)
-	case "poktroll.supplier.EventSupplierUnbondingEnd.unbonding_height":
-		return x.UnbondingHeight != int64(0)
+	case "poktroll.supplier.EventSupplierUnbondingEnd.unbonding_end_height":
+		return x.UnbondingEndHeight != int64(0)
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.supplier.EventSupplierUnbondingEnd"))
@@ -1229,8 +1229,8 @@ func (x *fastReflection_EventSupplierUnbondingEnd) Clear(fd protoreflect.FieldDe
 		x.Reason = 0
 	case "poktroll.supplier.EventSupplierUnbondingEnd.session_end_height":
 		x.SessionEndHeight = int64(0)
-	case "poktroll.supplier.EventSupplierUnbondingEnd.unbonding_height":
-		x.UnbondingHeight = int64(0)
+	case "poktroll.supplier.EventSupplierUnbondingEnd.unbonding_end_height":
+		x.UnbondingEndHeight = int64(0)
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.supplier.EventSupplierUnbondingEnd"))
@@ -1256,8 +1256,8 @@ func (x *fastReflection_EventSupplierUnbondingEnd) Get(descriptor protoreflect.F
 	case "poktroll.supplier.EventSupplierUnbondingEnd.session_end_height":
 		value := x.SessionEndHeight
 		return protoreflect.ValueOfInt64(value)
-	case "poktroll.supplier.EventSupplierUnbondingEnd.unbonding_height":
-		value := x.UnbondingHeight
+	case "poktroll.supplier.EventSupplierUnbondingEnd.unbonding_end_height":
+		value := x.UnbondingEndHeight
 		return protoreflect.ValueOfInt64(value)
 	default:
 		if descriptor.IsExtension() {
@@ -1285,8 +1285,8 @@ func (x *fastReflection_EventSupplierUnbondingEnd) Set(fd protoreflect.FieldDesc
 		x.Reason = (SupplierUnbondingReason)(value.Enum())
 	case "poktroll.supplier.EventSupplierUnbondingEnd.session_end_height":
 		x.SessionEndHeight = value.Int()
-	case "poktroll.supplier.EventSupplierUnbondingEnd.unbonding_height":
-		x.UnbondingHeight = value.Int()
+	case "poktroll.supplier.EventSupplierUnbondingEnd.unbonding_end_height":
+		x.UnbondingEndHeight = value.Int()
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.supplier.EventSupplierUnbondingEnd"))
@@ -1316,8 +1316,8 @@ func (x *fastReflection_EventSupplierUnbondingEnd) Mutable(fd protoreflect.Field
 		panic(fmt.Errorf("field reason of message poktroll.supplier.EventSupplierUnbondingEnd is not mutable"))
 	case "poktroll.supplier.EventSupplierUnbondingEnd.session_end_height":
 		panic(fmt.Errorf("field session_end_height of message poktroll.supplier.EventSupplierUnbondingEnd is not mutable"))
-	case "poktroll.supplier.EventSupplierUnbondingEnd.unbonding_height":
-		panic(fmt.Errorf("field unbonding_height of message poktroll.supplier.EventSupplierUnbondingEnd is not mutable"))
+	case "poktroll.supplier.EventSupplierUnbondingEnd.unbonding_end_height":
+		panic(fmt.Errorf("field unbonding_end_height of message poktroll.supplier.EventSupplierUnbondingEnd is not mutable"))
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.supplier.EventSupplierUnbondingEnd"))
@@ -1338,7 +1338,7 @@ func (x *fastReflection_EventSupplierUnbondingEnd) NewField(fd protoreflect.Fiel
 		return protoreflect.ValueOfEnum(0)
 	case "poktroll.supplier.EventSupplierUnbondingEnd.session_end_height":
 		return protoreflect.ValueOfInt64(int64(0))
-	case "poktroll.supplier.EventSupplierUnbondingEnd.unbonding_height":
+	case "poktroll.supplier.EventSupplierUnbondingEnd.unbonding_end_height":
 		return protoreflect.ValueOfInt64(int64(0))
 	default:
 		if fd.IsExtension() {
@@ -1419,8 +1419,8 @@ func (x *fastReflection_EventSupplierUnbondingEnd) ProtoMethods() *protoiface.Me
 		if x.SessionEndHeight != 0 {
 			n += 1 + runtime.Sov(uint64(x.SessionEndHeight))
 		}
-		if x.UnbondingHeight != 0 {
-			n += 1 + runtime.Sov(uint64(x.UnbondingHeight))
+		if x.UnbondingEndHeight != 0 {
+			n += 1 + runtime.Sov(uint64(x.UnbondingEndHeight))
 		}
 		if x.unknownFields != nil {
 			n += len(x.unknownFields)
@@ -1451,8 +1451,8 @@ func (x *fastReflection_EventSupplierUnbondingEnd) ProtoMethods() *protoiface.Me
 			i -= len(x.unknownFields)
 			copy(dAtA[i:], x.unknownFields)
 		}
-		if x.UnbondingHeight != 0 {
-			i = runtime.EncodeVarint(dAtA, i, uint64(x.UnbondingHeight))
+		if x.UnbondingEndHeight != 0 {
+			i = runtime.EncodeVarint(dAtA, i, uint64(x.UnbondingEndHeight))
 			i--
 			dAtA[i] = 0x20
 		}
@@ -1605,9 +1605,9 @@ func (x *fastReflection_EventSupplierUnbondingEnd) ProtoMethods() *protoiface.Me
 				}
 			case 4:
 				if wireType != 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field UnbondingHeight", wireType)
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field UnbondingEndHeight", wireType)
 				}
-				x.UnbondingHeight = 0
+				x.UnbondingEndHeight = 0
 				for shift := uint(0); ; shift += 7 {
 					if shift >= 64 {
 						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
@@ -1617,7 +1617,7 @@ func (x *fastReflection_EventSupplierUnbondingEnd) ProtoMethods() *protoiface.Me
 					}
 					b := dAtA[iNdEx]
 					iNdEx++
-					x.UnbondingHeight |= int64(b&0x7F) << shift
+					x.UnbondingEndHeight |= int64(b&0x7F) << shift
 					if b < 0x80 {
 						break
 					}
@@ -1660,6 +1660,7 @@ func (x *fastReflection_EventSupplierUnbondingEnd) ProtoMethods() *protoiface.Me
 var (
 	md_EventSupplierUnbondingCanceled                    protoreflect.MessageDescriptor
 	fd_EventSupplierUnbondingCanceled_supplier           protoreflect.FieldDescriptor
+	fd_EventSupplierUnbondingCanceled_height             protoreflect.FieldDescriptor
 	fd_EventSupplierUnbondingCanceled_session_end_height protoreflect.FieldDescriptor
 )
 
@@ -1667,6 +1668,7 @@ func init() {
 	file_poktroll_supplier_event_proto_init()
 	md_EventSupplierUnbondingCanceled = File_poktroll_supplier_event_proto.Messages().ByName("EventSupplierUnbondingCanceled")
 	fd_EventSupplierUnbondingCanceled_supplier = md_EventSupplierUnbondingCanceled.Fields().ByName("supplier")
+	fd_EventSupplierUnbondingCanceled_height = md_EventSupplierUnbondingCanceled.Fields().ByName("height")
 	fd_EventSupplierUnbondingCanceled_session_end_height = md_EventSupplierUnbondingCanceled.Fields().ByName("session_end_height")
 }
 
@@ -1741,6 +1743,12 @@ func (x *fastReflection_EventSupplierUnbondingCanceled) Range(f func(protoreflec
 			return
 		}
 	}
+	if x.Height != int64(0) {
+		value := protoreflect.ValueOfInt64(x.Height)
+		if !f(fd_EventSupplierUnbondingCanceled_height, value) {
+			return
+		}
+	}
 	if x.SessionEndHeight != int64(0) {
 		value := protoreflect.ValueOfInt64(x.SessionEndHeight)
 		if !f(fd_EventSupplierUnbondingCanceled_session_end_height, value) {
@@ -1764,6 +1772,8 @@ func (x *fastReflection_EventSupplierUnbondingCanceled) Has(fd protoreflect.Fiel
 	switch fd.FullName() {
 	case "poktroll.supplier.EventSupplierUnbondingCanceled.supplier":
 		return x.Supplier != nil
+	case "poktroll.supplier.EventSupplierUnbondingCanceled.height":
+		return x.Height != int64(0)
 	case "poktroll.supplier.EventSupplierUnbondingCanceled.session_end_height":
 		return x.SessionEndHeight != int64(0)
 	default:
@@ -1784,6 +1794,8 @@ func (x *fastReflection_EventSupplierUnbondingCanceled) Clear(fd protoreflect.Fi
 	switch fd.FullName() {
 	case "poktroll.supplier.EventSupplierUnbondingCanceled.supplier":
 		x.Supplier = nil
+	case "poktroll.supplier.EventSupplierUnbondingCanceled.height":
+		x.Height = int64(0)
 	case "poktroll.supplier.EventSupplierUnbondingCanceled.session_end_height":
 		x.SessionEndHeight = int64(0)
 	default:
@@ -1805,6 +1817,9 @@ func (x *fastReflection_EventSupplierUnbondingCanceled) Get(descriptor protorefl
 	case "poktroll.supplier.EventSupplierUnbondingCanceled.supplier":
 		value := x.Supplier
 		return protoreflect.ValueOfMessage(value.ProtoReflect())
+	case "poktroll.supplier.EventSupplierUnbondingCanceled.height":
+		value := x.Height
+		return protoreflect.ValueOfInt64(value)
 	case "poktroll.supplier.EventSupplierUnbondingCanceled.session_end_height":
 		value := x.SessionEndHeight
 		return protoreflect.ValueOfInt64(value)
@@ -1830,6 +1845,8 @@ func (x *fastReflection_EventSupplierUnbondingCanceled) Set(fd protoreflect.Fiel
 	switch fd.FullName() {
 	case "poktroll.supplier.EventSupplierUnbondingCanceled.supplier":
 		x.Supplier = value.Message().Interface().(*shared.Supplier)
+	case "poktroll.supplier.EventSupplierUnbondingCanceled.height":
+		x.Height = value.Int()
 	case "poktroll.supplier.EventSupplierUnbondingCanceled.session_end_height":
 		x.SessionEndHeight = value.Int()
 	default:
@@ -1857,6 +1874,8 @@ func (x *fastReflection_EventSupplierUnbondingCanceled) Mutable(fd protoreflect.
 			x.Supplier = new(shared.Supplier)
 		}
 		return protoreflect.ValueOfMessage(x.Supplier.ProtoReflect())
+	case "poktroll.supplier.EventSupplierUnbondingCanceled.height":
+		panic(fmt.Errorf("field height of message poktroll.supplier.EventSupplierUnbondingCanceled is not mutable"))
 	case "poktroll.supplier.EventSupplierUnbondingCanceled.session_end_height":
 		panic(fmt.Errorf("field session_end_height of message poktroll.supplier.EventSupplierUnbondingCanceled is not mutable"))
 	default:
@@ -1875,6 +1894,8 @@ func (x *fastReflection_EventSupplierUnbondingCanceled) NewField(fd protoreflect
 	case "poktroll.supplier.EventSupplierUnbondingCanceled.supplier":
 		m := new(shared.Supplier)
 		return protoreflect.ValueOfMessage(m.ProtoReflect())
+	case "poktroll.supplier.EventSupplierUnbondingCanceled.height":
+		return protoreflect.ValueOfInt64(int64(0))
 	case "poktroll.supplier.EventSupplierUnbondingCanceled.session_end_height":
 		return protoreflect.ValueOfInt64(int64(0))
 	default:
@@ -1950,6 +1971,9 @@ func (x *fastReflection_EventSupplierUnbondingCanceled) ProtoMethods() *protoifa
 			l = options.Size(x.Supplier)
 			n += 1 + l + runtime.Sov(uint64(l))
 		}
+		if x.Height != 0 {
+			n += 1 + runtime.Sov(uint64(x.Height))
+		}
 		if x.SessionEndHeight != 0 {
 			n += 1 + runtime.Sov(uint64(x.SessionEndHeight))
 		}
@@ -1981,6 +2005,11 @@ func (x *fastReflection_EventSupplierUnbondingCanceled) ProtoMethods() *protoifa
 		if x.unknownFields != nil {
 			i -= len(x.unknownFields)
 			copy(dAtA[i:], x.unknownFields)
+		}
+		if x.Height != 0 {
+			i = runtime.EncodeVarint(dAtA, i, uint64(x.Height))
+			i--
+			dAtA[i] = 0x18
 		}
 		if x.SessionEndHeight != 0 {
 			i = runtime.EncodeVarint(dAtA, i, uint64(x.SessionEndHeight))
@@ -2086,6 +2115,25 @@ func (x *fastReflection_EventSupplierUnbondingCanceled) ProtoMethods() *protoifa
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
 				}
 				iNdEx = postIndex
+			case 3:
+				if wireType != 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Height", wireType)
+				}
+				x.Height = 0
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					x.Height |= int64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
 			case 2:
 				if wireType != 0 {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field SessionEndHeight", wireType)
@@ -2156,19 +2204,19 @@ const (
 type SupplierUnbondingReason int32
 
 const (
-	SupplierUnbondingReason_ELECTIVE        SupplierUnbondingReason = 0
-	SupplierUnbondingReason_BELOW_MIN_STAKE SupplierUnbondingReason = 1
+	SupplierUnbondingReason_SUPPLIER_UNBONDING_REASON_ELECTIVE        SupplierUnbondingReason = 0
+	SupplierUnbondingReason_SUPPLIER_UNBONDING_REASON_BELOW_MIN_STAKE SupplierUnbondingReason = 1
 )
 
 // Enum value maps for SupplierUnbondingReason.
 var (
 	SupplierUnbondingReason_name = map[int32]string{
-		0: "ELECTIVE",
-		1: "BELOW_MIN_STAKE",
+		0: "SUPPLIER_UNBONDING_REASON_ELECTIVE",
+		1: "SUPPLIER_UNBONDING_REASON_BELOW_MIN_STAKE",
 	}
 	SupplierUnbondingReason_value = map[string]int32{
-		"ELECTIVE":        0,
-		"BELOW_MIN_STAKE": 1,
+		"SUPPLIER_UNBONDING_REASON_ELECTIVE":        0,
+		"SUPPLIER_UNBONDING_REASON_BELOW_MIN_STAKE": 1,
 	}
 )
 
@@ -2199,7 +2247,7 @@ func (SupplierUnbondingReason) EnumDescriptor() ([]byte, []int) {
 	return file_poktroll_supplier_event_proto_rawDescGZIP(), []int{0}
 }
 
-// EventSupplierStaked is emitted with the commitment of the supplier stake message.
+// EventSupplierStaked is emitted when a supplier stake message is committed on-chain.
 type EventSupplierStaked struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -2245,7 +2293,7 @@ func (x *EventSupplierStaked) GetSessionEndHeight() int64 {
 }
 
 // EventSupplierUnbondingBegin is emitted when an application unstake message
-// is committed, indicating that an application has begun unbonding.
+// is committed on-chain, indicating that the supplier will now begin unbonding.
 type EventSupplierUnbondingBegin struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -2256,7 +2304,7 @@ type EventSupplierUnbondingBegin struct {
 	// The session end height of the session in which the supplier unbonding began.
 	SessionEndHeight int64 `protobuf:"varint,3,opt,name=session_end_height,json=sessionEndHeight,proto3" json:"session_end_height,omitempty"`
 	// The height at which supplier unbonding will end.
-	UnbondingHeight int64 `protobuf:"varint,4,opt,name=unbonding_height,json=unbondingHeight,proto3" json:"unbonding_height,omitempty"`
+	UnbondingEndHeight int64 `protobuf:"varint,4,opt,name=unbonding_end_height,json=unbondingEndHeight,proto3" json:"unbonding_end_height,omitempty"`
 }
 
 func (x *EventSupplierUnbondingBegin) Reset() {
@@ -2290,7 +2338,7 @@ func (x *EventSupplierUnbondingBegin) GetReason() SupplierUnbondingReason {
 	if x != nil {
 		return x.Reason
 	}
-	return SupplierUnbondingReason_ELECTIVE
+	return SupplierUnbondingReason_SUPPLIER_UNBONDING_REASON_ELECTIVE
 }
 
 func (x *EventSupplierUnbondingBegin) GetSessionEndHeight() int64 {
@@ -2300,9 +2348,9 @@ func (x *EventSupplierUnbondingBegin) GetSessionEndHeight() int64 {
 	return 0
 }
 
-func (x *EventSupplierUnbondingBegin) GetUnbondingHeight() int64 {
+func (x *EventSupplierUnbondingBegin) GetUnbondingEndHeight() int64 {
 	if x != nil {
-		return x.UnbondingHeight
+		return x.UnbondingEndHeight
 	}
 	return 0
 }
@@ -2320,7 +2368,7 @@ type EventSupplierUnbondingEnd struct {
 	// The session end height of the session in which the supplier unbonding endeded.
 	SessionEndHeight int64 `protobuf:"varint,3,opt,name=session_end_height,json=sessionEndHeight,proto3" json:"session_end_height,omitempty"`
 	// The height at which supplier unbonding will end.
-	UnbondingHeight int64 `protobuf:"varint,4,opt,name=unbonding_height,json=unbondingHeight,proto3" json:"unbonding_height,omitempty"`
+	UnbondingEndHeight int64 `protobuf:"varint,4,opt,name=unbonding_end_height,json=unbondingEndHeight,proto3" json:"unbonding_end_height,omitempty"`
 }
 
 func (x *EventSupplierUnbondingEnd) Reset() {
@@ -2354,7 +2402,7 @@ func (x *EventSupplierUnbondingEnd) GetReason() SupplierUnbondingReason {
 	if x != nil {
 		return x.Reason
 	}
-	return SupplierUnbondingReason_ELECTIVE
+	return SupplierUnbondingReason_SUPPLIER_UNBONDING_REASON_ELECTIVE
 }
 
 func (x *EventSupplierUnbondingEnd) GetSessionEndHeight() int64 {
@@ -2364,9 +2412,9 @@ func (x *EventSupplierUnbondingEnd) GetSessionEndHeight() int64 {
 	return 0
 }
 
-func (x *EventSupplierUnbondingEnd) GetUnbondingHeight() int64 {
+func (x *EventSupplierUnbondingEnd) GetUnbondingEndHeight() int64 {
 	if x != nil {
-		return x.UnbondingHeight
+		return x.UnbondingEndHeight
 	}
 	return 0
 }
@@ -2380,6 +2428,8 @@ type EventSupplierUnbondingCanceled struct {
 	unknownFields protoimpl.UnknownFields
 
 	Supplier *shared.Supplier `protobuf:"bytes,1,opt,name=supplier,proto3" json:"supplier,omitempty"`
+	// The exact height at which the supplier unbonding was canceled.
+	Height int64 `protobuf:"varint,3,opt,name=height,proto3" json:"height,omitempty"`
 	// The session end height of the session in which the supplier unbonding was canceled.
 	SessionEndHeight int64 `protobuf:"varint,2,opt,name=session_end_height,json=sessionEndHeight,proto3" json:"session_end_height,omitempty"`
 }
@@ -2409,6 +2459,13 @@ func (x *EventSupplierUnbondingCanceled) GetSupplier() *shared.Supplier {
 		return x.Supplier
 	}
 	return nil
+}
+
+func (x *EventSupplierUnbondingCanceled) GetHeight() int64 {
+	if x != nil {
+		return x.Height
+	}
+	return 0
 }
 
 func (x *EventSupplierUnbondingCanceled) GetSessionEndHeight() int64 {
@@ -2441,7 +2498,7 @@ var file_poktroll_supplier_event_proto_rawDesc = []byte{
 	0x68, 0x65, 0x69, 0x67, 0x68, 0x74, 0x18, 0x02, 0x20, 0x01, 0x28, 0x03, 0x42, 0x16, 0xea, 0xde,
 	0x1f, 0x12, 0x73, 0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x5f, 0x65, 0x6e, 0x64, 0x5f, 0x68, 0x65,
 	0x69, 0x67, 0x68, 0x74, 0x52, 0x10, 0x73, 0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x45, 0x6e, 0x64,
-	0x48, 0x65, 0x69, 0x67, 0x68, 0x74, 0x22, 0xb9, 0x02, 0x0a, 0x1b, 0x45, 0x76, 0x65, 0x6e, 0x74,
+	0x48, 0x65, 0x69, 0x67, 0x68, 0x74, 0x22, 0xc4, 0x02, 0x0a, 0x1b, 0x45, 0x76, 0x65, 0x6e, 0x74,
 	0x53, 0x75, 0x70, 0x70, 0x6c, 0x69, 0x65, 0x72, 0x55, 0x6e, 0x62, 0x6f, 0x6e, 0x64, 0x69, 0x6e,
 	0x67, 0x42, 0x65, 0x67, 0x69, 0x6e, 0x12, 0x43, 0x0a, 0x08, 0x73, 0x75, 0x70, 0x70, 0x6c, 0x69,
 	0x65, 0x72, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x19, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72,
@@ -2457,57 +2514,64 @@ var file_poktroll_supplier_event_proto_rawDesc = []byte{
 	0x74, 0x18, 0x03, 0x20, 0x01, 0x28, 0x03, 0x42, 0x16, 0xea, 0xde, 0x1f, 0x12, 0x73, 0x65, 0x73,
 	0x73, 0x69, 0x6f, 0x6e, 0x5f, 0x65, 0x6e, 0x64, 0x5f, 0x68, 0x65, 0x69, 0x67, 0x68, 0x74, 0x52,
 	0x10, 0x73, 0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x45, 0x6e, 0x64, 0x48, 0x65, 0x69, 0x67, 0x68,
-	0x74, 0x12, 0x3f, 0x0a, 0x10, 0x75, 0x6e, 0x62, 0x6f, 0x6e, 0x64, 0x69, 0x6e, 0x67, 0x5f, 0x68,
-	0x65, 0x69, 0x67, 0x68, 0x74, 0x18, 0x04, 0x20, 0x01, 0x28, 0x03, 0x42, 0x14, 0xea, 0xde, 0x1f,
-	0x10, 0x75, 0x6e, 0x62, 0x6f, 0x6e, 0x64, 0x69, 0x6e, 0x67, 0x5f, 0x68, 0x65, 0x69, 0x67, 0x68,
-	0x74, 0x52, 0x0f, 0x75, 0x6e, 0x62, 0x6f, 0x6e, 0x64, 0x69, 0x6e, 0x67, 0x48, 0x65, 0x69, 0x67,
-	0x68, 0x74, 0x22, 0xb7, 0x02, 0x0a, 0x19, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x53, 0x75, 0x70, 0x70,
-	0x6c, 0x69, 0x65, 0x72, 0x55, 0x6e, 0x62, 0x6f, 0x6e, 0x64, 0x69, 0x6e, 0x67, 0x45, 0x6e, 0x64,
-	0x12, 0x43, 0x0a, 0x08, 0x73, 0x75, 0x70, 0x70, 0x6c, 0x69, 0x65, 0x72, 0x18, 0x01, 0x20, 0x01,
-	0x28, 0x0b, 0x32, 0x19, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x73, 0x68,
-	0x61, 0x72, 0x65, 0x64, 0x2e, 0x53, 0x75, 0x70, 0x70, 0x6c, 0x69, 0x65, 0x72, 0x42, 0x0c, 0xea,
-	0xde, 0x1f, 0x08, 0x73, 0x75, 0x70, 0x70, 0x6c, 0x69, 0x65, 0x72, 0x52, 0x08, 0x73, 0x75, 0x70,
-	0x70, 0x6c, 0x69, 0x65, 0x72, 0x12, 0x4e, 0x0a, 0x06, 0x72, 0x65, 0x61, 0x73, 0x6f, 0x6e, 0x18,
-	0x02, 0x20, 0x01, 0x28, 0x0e, 0x32, 0x2a, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c,
-	0x2e, 0x73, 0x75, 0x70, 0x70, 0x6c, 0x69, 0x65, 0x72, 0x2e, 0x53, 0x75, 0x70, 0x70, 0x6c, 0x69,
-	0x65, 0x72, 0x55, 0x6e, 0x62, 0x6f, 0x6e, 0x64, 0x69, 0x6e, 0x67, 0x52, 0x65, 0x61, 0x73, 0x6f,
-	0x6e, 0x42, 0x0a, 0xea, 0xde, 0x1f, 0x06, 0x72, 0x65, 0x61, 0x73, 0x6f, 0x6e, 0x52, 0x06, 0x72,
-	0x65, 0x61, 0x73, 0x6f, 0x6e, 0x12, 0x44, 0x0a, 0x12, 0x73, 0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e,
-	0x5f, 0x65, 0x6e, 0x64, 0x5f, 0x68, 0x65, 0x69, 0x67, 0x68, 0x74, 0x18, 0x03, 0x20, 0x01, 0x28,
-	0x03, 0x42, 0x16, 0xea, 0xde, 0x1f, 0x12, 0x73, 0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x5f, 0x65,
-	0x6e, 0x64, 0x5f, 0x68, 0x65, 0x69, 0x67, 0x68, 0x74, 0x52, 0x10, 0x73, 0x65, 0x73, 0x73, 0x69,
-	0x6f, 0x6e, 0x45, 0x6e, 0x64, 0x48, 0x65, 0x69, 0x67, 0x68, 0x74, 0x12, 0x3f, 0x0a, 0x10, 0x75,
-	0x6e, 0x62, 0x6f, 0x6e, 0x64, 0x69, 0x6e, 0x67, 0x5f, 0x68, 0x65, 0x69, 0x67, 0x68, 0x74, 0x18,
-	0x04, 0x20, 0x01, 0x28, 0x03, 0x42, 0x14, 0xea, 0xde, 0x1f, 0x10, 0x75, 0x6e, 0x62, 0x6f, 0x6e,
-	0x64, 0x69, 0x6e, 0x67, 0x5f, 0x68, 0x65, 0x69, 0x67, 0x68, 0x74, 0x52, 0x0f, 0x75, 0x6e, 0x62,
-	0x6f, 0x6e, 0x64, 0x69, 0x6e, 0x67, 0x48, 0x65, 0x69, 0x67, 0x68, 0x74, 0x22, 0xab, 0x01, 0x0a,
-	0x1e, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x53, 0x75, 0x70, 0x70, 0x6c, 0x69, 0x65, 0x72, 0x55, 0x6e,
-	0x62, 0x6f, 0x6e, 0x64, 0x69, 0x6e, 0x67, 0x43, 0x61, 0x6e, 0x63, 0x65, 0x6c, 0x65, 0x64, 0x12,
-	0x43, 0x0a, 0x08, 0x73, 0x75, 0x70, 0x70, 0x6c, 0x69, 0x65, 0x72, 0x18, 0x01, 0x20, 0x01, 0x28,
-	0x0b, 0x32, 0x19, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x73, 0x68, 0x61,
-	0x72, 0x65, 0x64, 0x2e, 0x53, 0x75, 0x70, 0x70, 0x6c, 0x69, 0x65, 0x72, 0x42, 0x0c, 0xea, 0xde,
-	0x1f, 0x08, 0x73, 0x75, 0x70, 0x70, 0x6c, 0x69, 0x65, 0x72, 0x52, 0x08, 0x73, 0x75, 0x70, 0x70,
-	0x6c, 0x69, 0x65, 0x72, 0x12, 0x44, 0x0a, 0x12, 0x73, 0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x5f,
-	0x65, 0x6e, 0x64, 0x5f, 0x68, 0x65, 0x69, 0x67, 0x68, 0x74, 0x18, 0x02, 0x20, 0x01, 0x28, 0x03,
-	0x42, 0x16, 0xea, 0xde, 0x1f, 0x12, 0x73, 0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x5f, 0x65, 0x6e,
-	0x64, 0x5f, 0x68, 0x65, 0x69, 0x67, 0x68, 0x74, 0x52, 0x10, 0x73, 0x65, 0x73, 0x73, 0x69, 0x6f,
-	0x6e, 0x45, 0x6e, 0x64, 0x48, 0x65, 0x69, 0x67, 0x68, 0x74, 0x2a, 0x3c, 0x0a, 0x17, 0x53, 0x75,
-	0x70, 0x70, 0x6c, 0x69, 0x65, 0x72, 0x55, 0x6e, 0x62, 0x6f, 0x6e, 0x64, 0x69, 0x6e, 0x67, 0x52,
-	0x65, 0x61, 0x73, 0x6f, 0x6e, 0x12, 0x0c, 0x0a, 0x08, 0x45, 0x4c, 0x45, 0x43, 0x54, 0x49, 0x56,
-	0x45, 0x10, 0x00, 0x12, 0x13, 0x0a, 0x0f, 0x42, 0x45, 0x4c, 0x4f, 0x57, 0x5f, 0x4d, 0x49, 0x4e,
-	0x5f, 0x53, 0x54, 0x41, 0x4b, 0x45, 0x10, 0x01, 0x42, 0xb0, 0x01, 0xd8, 0xe2, 0x1e, 0x01, 0x0a,
-	0x15, 0x63, 0x6f, 0x6d, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x73, 0x75,
-	0x70, 0x70, 0x6c, 0x69, 0x65, 0x72, 0x42, 0x0a, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x50, 0x72, 0x6f,
-	0x74, 0x6f, 0x50, 0x01, 0x5a, 0x22, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x73, 0x64, 0x6b, 0x2e,
-	0x69, 0x6f, 0x2f, 0x61, 0x70, 0x69, 0x2f, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2f,
-	0x73, 0x75, 0x70, 0x70, 0x6c, 0x69, 0x65, 0x72, 0xa2, 0x02, 0x03, 0x50, 0x53, 0x58, 0xaa, 0x02,
-	0x11, 0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x53, 0x75, 0x70, 0x70, 0x6c, 0x69,
-	0x65, 0x72, 0xca, 0x02, 0x11, 0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x5c, 0x53, 0x75,
-	0x70, 0x70, 0x6c, 0x69, 0x65, 0x72, 0xe2, 0x02, 0x1d, 0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c,
-	0x6c, 0x5c, 0x53, 0x75, 0x70, 0x70, 0x6c, 0x69, 0x65, 0x72, 0x5c, 0x47, 0x50, 0x42, 0x4d, 0x65,
-	0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0xea, 0x02, 0x12, 0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c,
-	0x6c, 0x3a, 0x3a, 0x53, 0x75, 0x70, 0x70, 0x6c, 0x69, 0x65, 0x72, 0x62, 0x06, 0x70, 0x72, 0x6f,
-	0x74, 0x6f, 0x33,
+	0x74, 0x12, 0x4a, 0x0a, 0x14, 0x75, 0x6e, 0x62, 0x6f, 0x6e, 0x64, 0x69, 0x6e, 0x67, 0x5f, 0x65,
+	0x6e, 0x64, 0x5f, 0x68, 0x65, 0x69, 0x67, 0x68, 0x74, 0x18, 0x04, 0x20, 0x01, 0x28, 0x03, 0x42,
+	0x18, 0xea, 0xde, 0x1f, 0x14, 0x75, 0x6e, 0x62, 0x6f, 0x6e, 0x64, 0x69, 0x6e, 0x67, 0x5f, 0x65,
+	0x6e, 0x64, 0x5f, 0x68, 0x65, 0x69, 0x67, 0x68, 0x74, 0x52, 0x12, 0x75, 0x6e, 0x62, 0x6f, 0x6e,
+	0x64, 0x69, 0x6e, 0x67, 0x45, 0x6e, 0x64, 0x48, 0x65, 0x69, 0x67, 0x68, 0x74, 0x22, 0xc2, 0x02,
+	0x0a, 0x19, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x53, 0x75, 0x70, 0x70, 0x6c, 0x69, 0x65, 0x72, 0x55,
+	0x6e, 0x62, 0x6f, 0x6e, 0x64, 0x69, 0x6e, 0x67, 0x45, 0x6e, 0x64, 0x12, 0x43, 0x0a, 0x08, 0x73,
+	0x75, 0x70, 0x70, 0x6c, 0x69, 0x65, 0x72, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x19, 0x2e,
+	0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x73, 0x68, 0x61, 0x72, 0x65, 0x64, 0x2e,
+	0x53, 0x75, 0x70, 0x70, 0x6c, 0x69, 0x65, 0x72, 0x42, 0x0c, 0xea, 0xde, 0x1f, 0x08, 0x73, 0x75,
+	0x70, 0x70, 0x6c, 0x69, 0x65, 0x72, 0x52, 0x08, 0x73, 0x75, 0x70, 0x70, 0x6c, 0x69, 0x65, 0x72,
+	0x12, 0x4e, 0x0a, 0x06, 0x72, 0x65, 0x61, 0x73, 0x6f, 0x6e, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0e,
+	0x32, 0x2a, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x73, 0x75, 0x70, 0x70,
+	0x6c, 0x69, 0x65, 0x72, 0x2e, 0x53, 0x75, 0x70, 0x70, 0x6c, 0x69, 0x65, 0x72, 0x55, 0x6e, 0x62,
+	0x6f, 0x6e, 0x64, 0x69, 0x6e, 0x67, 0x52, 0x65, 0x61, 0x73, 0x6f, 0x6e, 0x42, 0x0a, 0xea, 0xde,
+	0x1f, 0x06, 0x72, 0x65, 0x61, 0x73, 0x6f, 0x6e, 0x52, 0x06, 0x72, 0x65, 0x61, 0x73, 0x6f, 0x6e,
+	0x12, 0x44, 0x0a, 0x12, 0x73, 0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x5f, 0x65, 0x6e, 0x64, 0x5f,
+	0x68, 0x65, 0x69, 0x67, 0x68, 0x74, 0x18, 0x03, 0x20, 0x01, 0x28, 0x03, 0x42, 0x16, 0xea, 0xde,
+	0x1f, 0x12, 0x73, 0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x5f, 0x65, 0x6e, 0x64, 0x5f, 0x68, 0x65,
+	0x69, 0x67, 0x68, 0x74, 0x52, 0x10, 0x73, 0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x45, 0x6e, 0x64,
+	0x48, 0x65, 0x69, 0x67, 0x68, 0x74, 0x12, 0x4a, 0x0a, 0x14, 0x75, 0x6e, 0x62, 0x6f, 0x6e, 0x64,
+	0x69, 0x6e, 0x67, 0x5f, 0x65, 0x6e, 0x64, 0x5f, 0x68, 0x65, 0x69, 0x67, 0x68, 0x74, 0x18, 0x04,
+	0x20, 0x01, 0x28, 0x03, 0x42, 0x18, 0xea, 0xde, 0x1f, 0x14, 0x75, 0x6e, 0x62, 0x6f, 0x6e, 0x64,
+	0x69, 0x6e, 0x67, 0x5f, 0x65, 0x6e, 0x64, 0x5f, 0x68, 0x65, 0x69, 0x67, 0x68, 0x74, 0x52, 0x12,
+	0x75, 0x6e, 0x62, 0x6f, 0x6e, 0x64, 0x69, 0x6e, 0x67, 0x45, 0x6e, 0x64, 0x48, 0x65, 0x69, 0x67,
+	0x68, 0x74, 0x22, 0xcf, 0x01, 0x0a, 0x1e, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x53, 0x75, 0x70, 0x70,
+	0x6c, 0x69, 0x65, 0x72, 0x55, 0x6e, 0x62, 0x6f, 0x6e, 0x64, 0x69, 0x6e, 0x67, 0x43, 0x61, 0x6e,
+	0x63, 0x65, 0x6c, 0x65, 0x64, 0x12, 0x43, 0x0a, 0x08, 0x73, 0x75, 0x70, 0x70, 0x6c, 0x69, 0x65,
+	0x72, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x19, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f,
+	0x6c, 0x6c, 0x2e, 0x73, 0x68, 0x61, 0x72, 0x65, 0x64, 0x2e, 0x53, 0x75, 0x70, 0x70, 0x6c, 0x69,
+	0x65, 0x72, 0x42, 0x0c, 0xea, 0xde, 0x1f, 0x08, 0x73, 0x75, 0x70, 0x70, 0x6c, 0x69, 0x65, 0x72,
+	0x52, 0x08, 0x73, 0x75, 0x70, 0x70, 0x6c, 0x69, 0x65, 0x72, 0x12, 0x22, 0x0a, 0x06, 0x68, 0x65,
+	0x69, 0x67, 0x68, 0x74, 0x18, 0x03, 0x20, 0x01, 0x28, 0x03, 0x42, 0x0a, 0xea, 0xde, 0x1f, 0x06,
+	0x68, 0x65, 0x69, 0x67, 0x68, 0x74, 0x52, 0x06, 0x68, 0x65, 0x69, 0x67, 0x68, 0x74, 0x12, 0x44,
+	0x0a, 0x12, 0x73, 0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x5f, 0x65, 0x6e, 0x64, 0x5f, 0x68, 0x65,
+	0x69, 0x67, 0x68, 0x74, 0x18, 0x02, 0x20, 0x01, 0x28, 0x03, 0x42, 0x16, 0xea, 0xde, 0x1f, 0x12,
+	0x73, 0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x5f, 0x65, 0x6e, 0x64, 0x5f, 0x68, 0x65, 0x69, 0x67,
+	0x68, 0x74, 0x52, 0x10, 0x73, 0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x45, 0x6e, 0x64, 0x48, 0x65,
+	0x69, 0x67, 0x68, 0x74, 0x2a, 0x70, 0x0a, 0x17, 0x53, 0x75, 0x70, 0x70, 0x6c, 0x69, 0x65, 0x72,
+	0x55, 0x6e, 0x62, 0x6f, 0x6e, 0x64, 0x69, 0x6e, 0x67, 0x52, 0x65, 0x61, 0x73, 0x6f, 0x6e, 0x12,
+	0x26, 0x0a, 0x22, 0x53, 0x55, 0x50, 0x50, 0x4c, 0x49, 0x45, 0x52, 0x5f, 0x55, 0x4e, 0x42, 0x4f,
+	0x4e, 0x44, 0x49, 0x4e, 0x47, 0x5f, 0x52, 0x45, 0x41, 0x53, 0x4f, 0x4e, 0x5f, 0x45, 0x4c, 0x45,
+	0x43, 0x54, 0x49, 0x56, 0x45, 0x10, 0x00, 0x12, 0x2d, 0x0a, 0x29, 0x53, 0x55, 0x50, 0x50, 0x4c,
+	0x49, 0x45, 0x52, 0x5f, 0x55, 0x4e, 0x42, 0x4f, 0x4e, 0x44, 0x49, 0x4e, 0x47, 0x5f, 0x52, 0x45,
+	0x41, 0x53, 0x4f, 0x4e, 0x5f, 0x42, 0x45, 0x4c, 0x4f, 0x57, 0x5f, 0x4d, 0x49, 0x4e, 0x5f, 0x53,
+	0x54, 0x41, 0x4b, 0x45, 0x10, 0x01, 0x42, 0xb0, 0x01, 0xd8, 0xe2, 0x1e, 0x01, 0x0a, 0x15, 0x63,
+	0x6f, 0x6d, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x73, 0x75, 0x70, 0x70,
+	0x6c, 0x69, 0x65, 0x72, 0x42, 0x0a, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x50, 0x72, 0x6f, 0x74, 0x6f,
+	0x50, 0x01, 0x5a, 0x22, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x73, 0x64, 0x6b, 0x2e, 0x69, 0x6f,
+	0x2f, 0x61, 0x70, 0x69, 0x2f, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2f, 0x73, 0x75,
+	0x70, 0x70, 0x6c, 0x69, 0x65, 0x72, 0xa2, 0x02, 0x03, 0x50, 0x53, 0x58, 0xaa, 0x02, 0x11, 0x50,
+	0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x53, 0x75, 0x70, 0x70, 0x6c, 0x69, 0x65, 0x72,
+	0xca, 0x02, 0x11, 0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x5c, 0x53, 0x75, 0x70, 0x70,
+	0x6c, 0x69, 0x65, 0x72, 0xe2, 0x02, 0x1d, 0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x5c,
+	0x53, 0x75, 0x70, 0x70, 0x6c, 0x69, 0x65, 0x72, 0x5c, 0x47, 0x50, 0x42, 0x4d, 0x65, 0x74, 0x61,
+	0x64, 0x61, 0x74, 0x61, 0xea, 0x02, 0x12, 0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x3a,
+	0x3a, 0x53, 0x75, 0x70, 0x70, 0x6c, 0x69, 0x65, 0x72, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f,
+	0x33,
 }
 
 var (
