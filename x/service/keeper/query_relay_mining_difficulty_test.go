@@ -12,6 +12,7 @@ import (
 	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
 	"github.com/pokt-network/poktroll/testutil/nullify"
 	"github.com/pokt-network/poktroll/x/service/types"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 // Prevent strconv unused error
@@ -20,6 +21,13 @@ var _ = strconv.IntSize
 func TestRelayMiningDifficultyQuerySingle(t *testing.T) {
 	keeper, ctx := keepertest.ServiceKeeper(t)
 	msgs := createNRelayMiningDifficulty(keeper, ctx, 2)
+
+	// Add the corresponding services to the store to ensure that NotFound is returned
+	// only when the service does not exist and not when the relay mining difficulty does not exist.
+	for _, msg := range msgs {
+		keeper.SetService(ctx, sharedtypes.Service{Id: msg.ServiceId})
+	}
+
 	tests := []struct {
 		desc        string
 		request     *types.QueryGetRelayMiningDifficultyRequest
@@ -45,7 +53,10 @@ func TestRelayMiningDifficultyQuerySingle(t *testing.T) {
 			request: &types.QueryGetRelayMiningDifficultyRequest{
 				ServiceId: strconv.Itoa(100000),
 			},
-			expectedErr: status.Error(codes.NotFound, "not found"),
+			expectedErr: status.Error(
+				codes.NotFound,
+				types.ErrServiceNotFound.Wrapf("serviceID: %s", strconv.Itoa(100000)).Error(),
+			),
 		},
 		{
 			desc:        "InvalidRequest",
