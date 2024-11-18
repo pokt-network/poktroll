@@ -23,11 +23,6 @@ import (
 	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
 )
 
-// daoRewardAddr is a random address intended for use in tests.
-// In the commutativity test, the dao_reward_address is set to this
-// address and MUST remain unchanged between permutations.
-var daoRewardAddr = sample.AccAddress()
-
 type tokenLogicModuleTestSuite struct {
 	suite.Suite
 
@@ -71,7 +66,7 @@ func TestTLMProcessorTestSuite(t *testing.T) {
 // SetupTest generates and sets all rewardee addresses on the suite, and
 // set a service, application, and supplier on the suite.
 func (s *tokenLogicModuleTestSuite) SetupTest() {
-	s.daoRewardAddr = daoRewardAddr
+	s.daoRewardAddr = sample.AccAddress()
 	s.sourceOwnerBech32 = sample.AccAddress()
 	s.proposerConsAddr = sample.ConsAddress()
 

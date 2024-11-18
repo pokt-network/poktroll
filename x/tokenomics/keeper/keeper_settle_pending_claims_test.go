@@ -303,9 +303,10 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimExpired_ProofRequiredAndNotProv
 	require.Equal(t, uint64(0), slashedSupplier.UnstakeSessionEndHeight)
 
 	events := sdkCtx.EventManager().Events()
-	// TODO_IN_THIS_COMMIT: figure out why events went from 10 to 6.
+	// TODO_MAINNET(@bryanchriswhite)/TODO_INVESTIGATE: figure out why events went from 10 to 6 in PR#889.
+	// (https://github.com/pokt-network/poktroll/pull/889A)
 	// Seem to be missing a message, trasnfer, coin_spent, and coin_received.
-	//require.Equal(t, 10, len(events)) // asserting on the length of events so the developer must consciously update it upon changes
+	require.Equal(t, 6, len(events)) // asserting on the length of events so the developer must consciously update it upon changes
 
 	// Confirm an expiration event was emitted
 	expectedClaimExpiredEvents := testutilevents.FilterEvents[*tokenomicstypes.EventClaimExpired](t, events)
@@ -440,6 +441,9 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimExpired_ProofRequired_InvalidOn
 
 	// Confirm an expiration event was emitted
 	events := sdkCtx.EventManager().Events()
+	// TODO_MAINNET(@bryanchriswhite)/TODO_INVESTIGATE: figure out why events went from 10 to 6 in PR#889.
+	// (https://github.com/pokt-network/poktroll/pull/889)
+	// Seem to be missing a message, trasnfer, coin_spent, and coin_received.
 	require.Equal(t, 6, len(events)) // minting, burning, settling, etc..
 	expectedClaimExpiredEvents := testutilevents.FilterEvents[*tokenomicstypes.EventClaimExpired](t, events)
 	require.Equal(t, 1, len(expectedClaimExpiredEvents))

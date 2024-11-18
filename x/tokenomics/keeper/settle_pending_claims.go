@@ -449,10 +449,13 @@ func (k Keeper) executePendingModToAcctTransfers(
 
 		recepientAddr, err := cosmostypes.AccAddressFromBech32(transfer.RecipientAddress)
 		if err != nil {
-			// TODO_IN_THIS_COMMIT: find or create appropriate error type.
-			return fmt.Errorf(
-				"invalid recipient address %q: %s",
-				transfer.RecipientAddress, err,
+			return tokenomicstypes.ErrTokenomicsSettlementTransfer.Wrapf(
+				"sender module %q to recipient address %q transferring %s (reason %q): %s",
+				transfer.SenderModule,
+				transfer.RecipientAddress,
+				transfer.Coin,
+				transfer.GetOpReason(),
+				err,
 			)
 		}
 
@@ -463,8 +466,12 @@ func (k Keeper) executePendingModToAcctTransfers(
 			cosmostypes.NewCoins(transfer.Coin),
 		); err != nil {
 			return tokenomicstypes.ErrTokenomicsSettlementTransfer.Wrapf(
-				"sender module %q to recipient address %q transferring %s: %s",
-				transfer.SenderModule, transfer.RecipientAddress, transfer.Coin, err,
+				"sender module %q to recipient address %q transferring %s (reason %q): %s",
+				transfer.SenderModule,
+				transfer.RecipientAddress,
+				transfer.Coin,
+				transfer.GetOpReason(),
+				err,
 			)
 		}
 
