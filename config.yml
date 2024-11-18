@@ -258,7 +258,7 @@ genesis:
           owner_address: pokt1cwnu460557x0z78jv3hhc7356hhkrgc86c87q5
         - id: ollama
           name: "ollama"
-          compute_units_per_relay: Gk1
+          compute_units_per_relay: 1
           owner_address: pokt1mx0klkkrj6v3dw8gs4nzlq0cq8lsktmx35t03e
         - id: rest
           name: "rest"
