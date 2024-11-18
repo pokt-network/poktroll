@@ -15,7 +15,6 @@ import (
 
 	"github.com/pokt-network/poktroll/telemetry"
 	"github.com/pokt-network/poktroll/x/proof/types"
-	servicekeeper "github.com/pokt-network/poktroll/x/service/keeper"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
@@ -120,6 +119,14 @@ func (k msgServer) SubmitProof(
 		return nil, status.Error(codes.Internal, types.ErrProofInvalidClaimRootHash.Wrap(err.Error()).Error())
 	}
 
+	// Get the service ID relayMiningDifficulty to calculate the claimed uPOKT.
+	serviceId := session.GetHeader().GetServiceId()
+	sharedParams := k.sharedKeeper.GetParams(ctx)
+	relayMiningDifficulty, _ := k.serviceKeeper.GetRelayMiningDifficulty(ctx, serviceId)
+
+	claimedUPOKT, err := claim.GetClaimeduPOKT(sharedParams, relayMiningDifficulty)
+	numEstimatedComputUnits, err := claim.GetNumEstimatedComputeUnits(relayMiningDifficulty)
+
 	// Check if a prior proof already exists.
 	_, isExistingProof = k.GetProof(ctx, proof.SessionHeader.SessionId, proof.SupplierOperatorAddress)
 
@@ -133,21 +140,23 @@ func (k msgServer) SubmitProof(
 	case true:
 		proofUpsertEvent = proto.Message(
 			&types.EventProofUpdated{
-				Claim:                  claim,
-				Proof:                  &proof,
-				NumRelays:              numRelays,
-				NumClaimedComputeUnits: numClaimComputeUnits,
-				// TODO_BETA(@red-0ne): Add NumEstimatedComputeUnits and ClaimedAmountUpokt
+				Claim:                    claim,
+				Proof:                    &proof,
+				NumRelays:                numRelays,
+				NumClaimedComputeUnits:   numClaimComputeUnits,
+				NumEstimatedComputeUnits: numEstimatedComputUnits,
+				ClaimedUpokt:             &claimedUPOKT,
 			},
 		)
 	case false:
 		proofUpsertEvent = proto.Message(
 			&types.EventProofSubmitted{
-				Claim:                  claim,
-				Proof:                  &proof,
-				NumRelays:              numRelays,
-				NumClaimedComputeUnits: numClaimComputeUnits,
-				// TODO_BETA(@red-0ne): Add NumEstimatedComputeUnits and ClaimedAmountUpokt
+				Claim:                    claim,
+				Proof:                    &proof,
+				NumRelays:                numRelays,
+				NumClaimedComputeUnits:   numClaimComputeUnits,
+				NumEstimatedComputeUnits: numEstimatedComputUnits,
+				ClaimedUpokt:             &claimedUPOKT,
 			},
 		)
 	}
@@ -219,10 +228,7 @@ func (k Keeper) ProofRequirementForClaim(ctx context.Context, claim *types.Claim
 	sharedParams := k.sharedKeeper.GetParams(ctx)
 
 	serviceId := claim.GetSessionHeader().GetServiceId()
-	relayMiningDifficulty, found := k.serviceKeeper.GetRelayMiningDifficulty(ctx, serviceId)
-	if !found {
-		relayMiningDifficulty = servicekeeper.NewDefaultRelayMiningDifficulty(ctx, logger, serviceId, servicekeeper.TargetNumRelays)
-	}
+	relayMiningDifficulty, _ := k.serviceKeeper.GetRelayMiningDifficulty(ctx, serviceId)
 
 	// Retrieve the number of tokens claimed to compare against the threshold.
 	// Different services have varying compute_unit -> token multipliers, so the

@@ -30,9 +30,7 @@ func TestRelayMiningDifficultyGet(t *testing.T) {
 	keeper, ctx := keepertest.ServiceKeeper(t)
 	difficulties := createNRelayMiningDifficulty(keeper, ctx, 10)
 	for _, difficulty := range difficulties {
-		rst, found := keeper.GetRelayMiningDifficulty(ctx,
-			difficulty.ServiceId,
-		)
+		rst, found := keeper.GetRelayMiningDifficulty(ctx, difficulty.ServiceId)
 		require.True(t, found)
 		require.Equal(t,
 			nullify.Fill(&difficulty),
@@ -40,6 +38,7 @@ func TestRelayMiningDifficultyGet(t *testing.T) {
 		)
 	}
 }
+
 func TestRelayMiningDifficultyRemove(t *testing.T) {
 	keeper, ctx := keepertest.ServiceKeeper(t)
 	difficulties := createNRelayMiningDifficulty(keeper, ctx, 10)
@@ -47,9 +46,7 @@ func TestRelayMiningDifficultyRemove(t *testing.T) {
 		keeper.RemoveRelayMiningDifficulty(ctx,
 			difficulty.ServiceId,
 		)
-		_, found := keeper.GetRelayMiningDifficulty(ctx,
-			difficulty.ServiceId,
-		)
+		_, found := keeper.GetRelayMiningDifficulty(ctx, difficulty.ServiceId)
 		require.False(t, found)
 	}
 }

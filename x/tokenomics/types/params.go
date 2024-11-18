@@ -69,10 +69,6 @@ func (params *Params) ValidateBasic() error {
 		return err
 	}
 
-	if err := ValidateDaoRewardParams(params); err != nil {
-		return err
-	}
-
 	return nil
 }
 
@@ -162,23 +158,8 @@ func ValidateDaoRewardAddress(daoRewardAddress any) error {
 		return ErrTokenomicsParamInvalid.Wrapf("invalid parameter type: %T", daoRewardAddress)
 	}
 
-	// DEV_NOTE: Empty string is valid if mint_allocation_dao is 0.
-	if daoRewardAddressStr == "" {
-		return nil
-	}
-
 	if _, err := sdk.AccAddressFromBech32(daoRewardAddressStr); err != nil {
 		return ErrTokenomicsParamInvalid.Wrapf("invalid dao reward address %q: %s", daoRewardAddressStr, err)
-	}
-
-	return nil
-}
-
-// ValidateDaoRewardParams validates that the dao_reward_address param is not an empty
-// string so long as the mint_allocation_percentages.mint_allocation_dao param is not 0.
-func ValidateDaoRewardParams(params *Params) error {
-	if params.DaoRewardAddress == "" && params.MintAllocationPercentages.Dao != 0 {
-		return ErrTokenomicsParamInvalid.Wrapf("dao reward address required when mint_allocation_dao is 0")
 	}
 
 	return nil

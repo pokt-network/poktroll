@@ -44,13 +44,15 @@ func (k Keeper) RelayMiningDifficulty(ctx context.Context, req *types.QueryGetRe
 		return nil, status.Error(codes.InvalidArgument, "invalid request")
 	}
 
-	difficulty, found := k.GetRelayMiningDifficulty(
-		ctx,
-		req.ServiceId,
-	)
-	if !found {
-		return nil, status.Error(codes.NotFound, "not found")
+	_, serviceFound := k.GetService(ctx, req.ServiceId)
+	if !serviceFound {
+		return nil, status.Error(
+			codes.NotFound,
+			types.ErrServiceNotFound.Wrapf("serviceID: %s", req.ServiceId).Error(),
+		)
 	}
+
+	difficulty, _ := k.GetRelayMiningDifficulty(ctx, req.ServiceId)
 
 	return &types.QueryGetRelayMiningDifficultyResponse{RelayMiningDifficulty: difficulty}, nil
 }
