@@ -6,6 +6,8 @@ option (gogoproto.stable_marshaler_all) = true;
 
 import "amino/amino.proto";
 import "gogoproto/gogo.proto";
+import "cosmos_proto/cosmos.proto";
+
 
 // Params defines the parameters for the tokenomics module.
 message Params {
@@ -27,6 +29,9 @@ message Params {
   // mint_allocation_application is the percentage of the minted tokens which are sent
   // to the application account address during claim settlement.
   double mint_allocation_application = 5 [(gogoproto.jsontag) = "mint_allocation_application", (gogoproto.moretags) = "yaml:\"mint_allocation_application\""];
+  // dao_reward_address is the address to which mint_allocation_dao percentage of the
+  // minted tokens are at the end of claim settlement.
+  string dao_reward_address = 6 [(cosmos_proto.scalar) = "cosmos.AddressString", (gogoproto.jsontag) = "dao_reward_address", (gogoproto.moretags) = "yaml:\"dao_reward_address\""]; // Bech32 cosmos address
 
   // IMPORTANT: Make sure to update all related files if you're modifying or adding a new parameter.
   // Try the following grep to find all related places: `grep -r compute_units_to_tokens_multiplier`

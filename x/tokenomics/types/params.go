@@ -1,6 +1,7 @@
 package types
 
 import (
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	paramtypes "github.com/cosmos/cosmos-sdk/x/params/types"
 )
 
@@ -20,6 +21,11 @@ var (
 	KeyMintAllocationApplication             = []byte("MintAllocationApplication")
 	ParamMintAllocationApplication           = "mint_allocation_application"
 	DefaultMintAllocationApplication float64 = 0.0
+	KeyDaoRewardAddress                      = []byte("DaoRewardAddress")
+	ParamDaoRewardAddress                    = "dao_reward_address"
+	// DefaultDaoRewardAddress is the localnet DAO account address as specified in the config.yml.
+	// It is only used in tests.
+	DefaultDaoRewardAddress = "pokt1eeeksh2tvkh7wzmfrljnhw4wrhs55lcuvmekkw"
 
 	_ paramtypes.ParamSet = (*Params)(nil)
 )
@@ -36,6 +42,7 @@ func NewParams(
 	mintAllocationSupplier,
 	mintAllocationSourceOwner,
 	mintAllocationApplication float64,
+	daoRewardAddress string,
 ) Params {
 	return Params{
 		MintAllocationDao:         mintAllocationDao,
@@ -43,6 +50,7 @@ func NewParams(
 		MintAllocationSupplier:    mintAllocationSupplier,
 		MintAllocationSourceOwner: mintAllocationSourceOwner,
 		MintAllocationApplication: mintAllocationApplication,
+		DaoRewardAddress:          daoRewardAddress,
 	}
 }
 
@@ -54,6 +62,7 @@ func DefaultParams() Params {
 		DefaultMintAllocationSupplier,
 		DefaultMintAllocationSourceOwner,
 		DefaultMintAllocationApplication,
+		DefaultDaoRewardAddress,
 	)
 }
 
@@ -85,6 +94,11 @@ func (p *Params) ParamSetPairs() paramtypes.ParamSetPairs {
 			&p.MintAllocationApplication,
 			ValidateMintAllocationApplication,
 		),
+		paramtypes.NewParamSetPair(
+			KeyDaoRewardAddress,
+			&p.DaoRewardAddress,
+			ValidateDaoRewardAddress,
+		),
 	}
 }
 
@@ -111,6 +125,10 @@ func (params *Params) ValidateBasic() error {
 	}
 
 	if err := ValidateMintAllocationSum(params); err != nil {
+		return err
+	}
+
+	if err := ValidateDaoRewardAddress(params.DaoRewardAddress); err != nil {
 		return err
 	}
 
@@ -197,6 +215,20 @@ func ValidateMintAllocationSum(params *Params) error {
 
 	if sum != 1 {
 		return ErrTokenomicsParamInvalid.Wrapf("mint allocation percentages do not add to 1.0: got %f", sum)
+	}
+
+	return nil
+}
+
+// ValidateDaoRewardAddress validates the DaoRewardAddress param.
+func ValidateDaoRewardAddress(daoRewardAddress any) error {
+	daoRewardAddressStr, ok := daoRewardAddress.(string)
+	if !ok {
+		return ErrTokenomicsParamInvalid.Wrapf("invalid parameter type: %T", daoRewardAddress)
+	}
+
+	if _, err := sdk.AccAddressFromBech32(daoRewardAddressStr); err != nil {
+		return ErrTokenomicsParamInvalid.Wrapf("invalid dao reward address %q: %s", daoRewardAddressStr, err)
 	}
 
 	return nil

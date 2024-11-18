@@ -177,3 +177,37 @@ func TestParams_ValidateMintAllocationApplication(t *testing.T) {
 		})
 	}
 }
+
+func TestParams_ValidateDaoRewardAddress(t *testing.T) {
+	tests := []struct {
+		desc             string
+		daoRewardAddress any
+		expectedErr      error
+	}{
+		{
+			desc:             "invalid type",
+			daoRewardAddress: int64(0),
+			expectedErr:      tokenomicstypes.ErrTokenomicsParamInvalid.Wrap("invalid parameter type: int64"),
+		},
+		{
+			desc:             "invalid bech32 DaoRewardAddress",
+			daoRewardAddress: "not_a_bech32",
+			expectedErr:      tokenomicstypes.ErrTokenomicsParamInvalid.Wrapf("invalid dao reward address %q: decoding bech32 failed: invalid separator index -1", "not_a_bech32"),
+		},
+		{
+			desc:             "valid DaoRewardAddress",
+			daoRewardAddress: tokenomicstypes.DefaultDaoRewardAddress,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.desc, func(t *testing.T) {
+			err := tokenomicstypes.ValidateDaoRewardAddress(test.daoRewardAddress)
+			if test.expectedErr != nil {
+				require.ErrorContains(t, err, test.expectedErr.Error())
+			} else {
+				require.NoError(t, err)
+			}
+		})
+	}
+}

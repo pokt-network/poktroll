@@ -5,8 +5,13 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/pokt-network/poktroll/cmd/poktrolld/cmd"
 	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
 )
+
+func init() {
+	cmd.InitSDKConfig()
+}
 
 func TestGenesisState_Validate(t *testing.T) {
 	tests := []struct {

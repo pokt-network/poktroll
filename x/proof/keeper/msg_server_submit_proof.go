@@ -119,6 +119,14 @@ func (k msgServer) SubmitProof(
 		return nil, status.Error(codes.Internal, types.ErrProofInvalidClaimRootHash.Wrap(err.Error()).Error())
 	}
 
+	// Get the service ID relayMiningDifficulty to calculate the claimed uPOKT.
+	serviceId := session.GetHeader().GetServiceId()
+	sharedParams := k.sharedKeeper.GetParams(ctx)
+	relayMiningDifficulty, _ := k.serviceKeeper.GetRelayMiningDifficulty(ctx, serviceId)
+
+	claimedUPOKT, err := claim.GetClaimeduPOKT(sharedParams, relayMiningDifficulty)
+	numEstimatedComputUnits, err := claim.GetNumEstimatedComputeUnits(relayMiningDifficulty)
+
 	// Check if a prior proof already exists.
 	_, isExistingProof = k.GetProof(ctx, proof.SessionHeader.SessionId, proof.SupplierOperatorAddress)
 
@@ -132,21 +140,23 @@ func (k msgServer) SubmitProof(
 	case true:
 		proofUpsertEvent = proto.Message(
 			&types.EventProofUpdated{
-				Claim:                  claim,
-				Proof:                  &proof,
-				NumRelays:              numRelays,
-				NumClaimedComputeUnits: numClaimComputeUnits,
-				// TODO_BETA(@red-0ne): Add NumEstimatedComputeUnits and ClaimedAmountUpokt
+				Claim:                    claim,
+				Proof:                    &proof,
+				NumRelays:                numRelays,
+				NumClaimedComputeUnits:   numClaimComputeUnits,
+				NumEstimatedComputeUnits: numEstimatedComputUnits,
+				ClaimedUpokt:             &claimedUPOKT,
 			},
 		)
 	case false:
 		proofUpsertEvent = proto.Message(
 			&types.EventProofSubmitted{
-				Claim:                  claim,
-				Proof:                  &proof,
-				NumRelays:              numRelays,
-				NumClaimedComputeUnits: numClaimComputeUnits,
-				// TODO_BETA(@red-0ne): Add NumEstimatedComputeUnits and ClaimedAmountUpokt
+				Claim:                    claim,
+				Proof:                    &proof,
+				NumRelays:                numRelays,
+				NumClaimedComputeUnits:   numClaimComputeUnits,
+				NumEstimatedComputeUnits: numEstimatedComputUnits,
+				ClaimedUpokt:             &claimedUPOKT,
 			},
 		)
 	}
