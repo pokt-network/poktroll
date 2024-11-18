@@ -22,7 +22,27 @@ jobs:
           reporter: github-pr-review
           level: error
           fail_on_error: true
-          pattern: TODO_IN_THIS_
+          pattern: TODO_IN_THIS_|TODO_THIS_
+
+  # Makes sure that comments like TODO_UPNEXT prevent merging if there is
+  # no associated username right after.
+  #   Example failure: TODO_UPNEXT: <do something>
+  #   Example non-failure: TODO_UPNEXT(@olshansk): <do something>
+  # See https://github.com/pokt-network/action-fail-on-found
+  # TODO_IMPROVE: Add more details to the errors
+  #   Ref: https://github.com/pokt-network/poktroll/pull/896#pullrequestreview-2415490611
+  check_todo_upnext:
+    name: Check TODO_UPNEXT
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pokt-network/action-fail-on-found@v1
+        with:
+          github_token: ${{ secrets.github_token }}
+          reporter: github-pr-review
+          level: error
+          fail_on_error: true
+          pattern: "TODO_UPNEXT:"
 
   # Prevent the use of `sed` in helper scripts. This ensures compatibility across
   # Darwin and Linux systems.

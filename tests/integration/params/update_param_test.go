@@ -51,8 +51,13 @@ func (s *msgUpdateParamTestSuite) TestUnauthorizedMsgUpdateParamFails() {
 		// to that field's value.
 		validParamsValue := reflect.ValueOf(moduleCfg.ValidParams)
 		for fieldIdx := 0; fieldIdx < validParamsValue.NumField(); fieldIdx++ {
-			fieldValue := validParamsValue.Field(fieldIdx)
+			validParamsFieldValue := validParamsValue.Field(fieldIdx)
 			fieldName := validParamsValue.Type().Field(fieldIdx).Name
+
+			// Skip fields which in the excludedParams map.
+			if _, ok := suites.ExcludedParams[fieldName]; ok {
+				continue
+			}
 
 			testName := fmt.Sprintf("%s_%s", moduleName, fieldName)
 			s.T().Run(testName, func(t *testing.T) {
@@ -66,7 +71,7 @@ func (s *msgUpdateParamTestSuite) TestUnauthorizedMsgUpdateParamFails() {
 				updateResBz, err := s.RunUpdateParamAsSigner(t,
 					moduleName,
 					fieldName,
-					fieldValue.Interface(),
+					validParamsFieldValue.Interface(),
 					s.unauthorizedAddr,
 				)
 				require.ErrorContains(t, err, authz.ErrNoAuthorizationFound.Error())
@@ -87,6 +92,11 @@ func (s *msgUpdateParamTestSuite) TestAuthorizedMsgUpdateParamSucceeds() {
 		for fieldIdx := 0; fieldIdx < validParamsValue.NumField(); fieldIdx++ {
 			fieldExpectedValue := validParamsValue.Field(fieldIdx)
 			fieldName := validParamsValue.Type().Field(fieldIdx).Name
+
+			// Skip fields which in the excludedParams map.
+			if _, ok := suites.ExcludedParams[fieldName]; ok {
+				continue
+			}
 
 			testName := fmt.Sprintf("%s_%s", moduleName, fieldName)
 			s.T().Run(testName, func(t *testing.T) {

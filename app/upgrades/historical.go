@@ -4,7 +4,7 @@ package upgrades
 // separate file, and then move them to `historical.go` after a successful upgrade so the new nodes can still sync from
 // the genesis.
 
-// TODO_CONSIDERATION: after we verify `State Sync` is fully functional, we can hypothetically remove old upgrades from
+// TODO_TECHDEBT(@okdas): after we verify `State Sync` is fully functional, we can hypothetically remove old upgrades from
 // the codebase, as the nodes won't have to execute upgrades and will download the "snapshot" instead. Some other
 // blockchain networks do that (such as `evmos`: https://github.com/evmos/evmos/tree/main/app/upgrades).
 // Note that this may inhibit a full state sync from genesis.

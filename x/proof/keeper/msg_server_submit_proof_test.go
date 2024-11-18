@@ -26,6 +26,7 @@ import (
 	"github.com/pokt-network/poktroll/testutil/testtree"
 	"github.com/pokt-network/poktroll/x/proof/keeper"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
+	servicekeeper "github.com/pokt-network/poktroll/x/service/keeper"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
@@ -234,11 +235,21 @@ func TestMsgServer_SubmitProof_Success(t *testing.T) {
 
 			proofSubmittedEvent := proofSubmittedEvents[0]
 
+			targetNumRelays := servicekeeper.TargetNumRelays
+			relayMiningDifficulty := servicekeeper.NewDefaultRelayMiningDifficulty(ctx, keepers.Logger(), service.Id, targetNumRelays)
+
+			numEstimatedComputUnits, err := claim.GetNumEstimatedComputeUnits(relayMiningDifficulty)
+			require.NoError(t, err)
+
+			claimedUPOKT, err := claim.GetClaimeduPOKT(sharedParams, relayMiningDifficulty)
+			require.NoError(t, err)
+
 			require.EqualValues(t, claim, proofSubmittedEvent.GetClaim())
 			require.EqualValues(t, &proofs[0], proofSubmittedEvent.GetProof())
 			require.Equal(t, uint64(numRelays), proofSubmittedEvent.GetNumRelays())
 			require.Equal(t, uint64(numClaimComputeUnits), proofSubmittedEvent.GetNumClaimedComputeUnits())
-			// TODO_FOLLOWUP: Add NumEstimatedComputeUnits and ClaimedAmountUpokt assertions
+			require.Equal(t, numEstimatedComputUnits, proofSubmittedEvent.GetNumEstimatedComputeUnits())
+			require.Equal(t, &claimedUPOKT, proofSubmittedEvent.GetClaimedUpokt())
 		})
 	}
 }

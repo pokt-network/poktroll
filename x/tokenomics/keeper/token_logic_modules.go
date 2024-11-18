@@ -18,7 +18,6 @@ import (
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 	servicekeeper "github.com/pokt-network/poktroll/x/service/keeper"
 	servicetypes "github.com/pokt-network/poktroll/x/service/types"
-	sessionkeeper "github.com/pokt-network/poktroll/x/session/keeper"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
@@ -27,30 +26,25 @@ import (
 
 var (
 	// Governance parameters for the TLMGlobalMint module
-	// TODO_UPNEXT(@olshansk, #732): Make this a governance parameter and give it a non-zero value + tests.
-	MintPerClaimedTokenGlobalInflation = 0.1
+	// TODO_BETA(@red-0ne, #732): Make this a governance parameter.
+	// GlobalInflationPerClaim is the percentage of the claim amount that is minted
+	// by TLMGlobalMint to reward the actors in the network.
+	GlobalInflationPerClaim = 0.1
 )
 
 const (
-	// TODO_BETA(@bryanchriswhite): Make all of these governance params
-	MintAllocationDAO         = 0.1
-	MintAllocationProposer    = 0.05
-	MintAllocationSupplier    = 0.7
-	MintAllocationSourceOwner = 0.15
-	MintAllocationApplication = 0.0
-
 	// MintDistributionAllowableTolerancePercent is the percent difference that is allowable
 	// between the number of minted/ tokens in the tokenomics module and what is distributed
 	// to pocket network participants.
 	// This internal constant SHOULD ONLY be used in TokenLogicModuleGlobalMint.
 	// Due to floating point arithmetic, the total amount of minted coins may be slightly
 	// larger than what is distributed to pocket network participants
-	// TODO_MAINNET: Figure out if we can avoid this tolerance and use fixed point arithmetic.
+	// TODO_MAINNET(@red-0ne): Figure out if we can avoid this tolerance and use fixed point arithmetic.
 	MintDistributionAllowableTolerancePercent = 0.02 // 2%
 	// MintDistributionAllowableToleranceAbsolution is similar to MintDistributionAllowableTolerancePercent
 	// but provides an absolute number where the % difference might no be
 	// meaningful for small absolute numbers.
-	// TODO_MAINNET: Figure out if we can avoid this tolerance and use fixed point arithmetic.
+	// TODO_MAINNET(@red-0ne): Figure out if we can avoid this tolerance and use fixed point arithmetic.
 	MintDistributionAllowableToleranceAbs = 5.0 // 5 uPOKT
 )
 
@@ -68,11 +62,20 @@ const (
 	// global governance parameters in order to reward the participants providing
 	// services while keeping inflation in check.
 	TLMGlobalMint
+
+	// TLMGlobalMintReimbursementRequest is the token logic module that complements
+	// TLMGlobalMint to enable permissionless demand.
+	// In order to prevent self-dealing attacks, applications will be overcharged by
+	// the amount equal to global inflation, those funds will be sent to the DAO/PNF,
+	// and an event will be emitted to track and send reimbursements; managed offchain by PNF.
+	// TODO_POST_MAINNET: Introduce proper tokenomics based on the research done by @rawthil and @shane.
+	TLMGlobalMintReimbursementRequest
 )
 
 var tokenLogicModuleStrings = [...]string{
 	"TLMRelayBurnEqualsMint",
 	"TLMGlobalMint",
+	"TLMGlobalMintReimbursementRequest",
 }
 
 func (tlm TokenLogicModule) String() string {
@@ -105,18 +108,17 @@ type TokenLogicModuleProcessor func(
 
 // tokenLogicModuleProcessorMap is a map of TLMs to their respective independent processors.
 var tokenLogicModuleProcessorMap = map[TokenLogicModule]TokenLogicModuleProcessor{
-	TLMRelayBurnEqualsMint: Keeper.TokenLogicModuleRelayBurnEqualsMint,
-	TLMGlobalMint:          Keeper.TokenLogicModuleGlobalMint,
+	TLMRelayBurnEqualsMint:            Keeper.TokenLogicModuleRelayBurnEqualsMint,
+	TLMGlobalMint:                     Keeper.TokenLogicModuleGlobalMint,
+	TLMGlobalMintReimbursementRequest: Keeper.TokenLogicModuleGlobalMintReimbursementRequest,
 }
 
 func init() {
-	// Ensure 100% of minted rewards are allocated
-	if 1.0 != MintAllocationDAO+MintAllocationProposer+MintAllocationSupplier+MintAllocationSourceOwner+MintAllocationApplication {
-		panic("mint allocation percentages do not add to 1.0")
+	_, hasGlobalMintTLM := tokenLogicModuleProcessorMap[TLMGlobalMint]
+	_, hasGlobalMintReimbursementRequestTLM := tokenLogicModuleProcessorMap[TLMGlobalMintReimbursementRequest]
+	if hasGlobalMintTLM != hasGlobalMintReimbursementRequestTLM {
+		panic("TLMGlobalMint and TLMGlobalMintReimbursementRequest must be (de-)activated together")
 	}
-
-	// TODO_UPNEXT(@Olshansk): Ensure that if `TLMGlobalMint` is present in the map,
-	// then TLMGlobalMintReimbursementRequest will need to be there too.
 }
 
 // ProcessTokenLogicModules is the entrypoint for all TLM processing.
@@ -131,6 +133,7 @@ func init() {
 func (k Keeper) ProcessTokenLogicModules(
 	ctx context.Context,
 	claim *prooftypes.Claim,
+	applicationInitialStake cosmostypes.Coin,
 ) (err error) {
 	logger := k.Logger().With("method", "ProcessTokenLogicModules")
 
@@ -276,12 +279,24 @@ func (k Keeper) ProcessTokenLogicModules(
 
 	// Ensure the claim amount is within the limits set by Relay Mining.
 	// If not, update the settlement amount and emit relevant events.
-	actualSettlementCoin, err := k.ensureClaimAmountLimits(ctx, logger, &application, &supplier, claimSettlementCoin)
+	// TODO_MAINNET(@red-0ne): Consider pulling this out of Keeper#ProcessTokenLogicModules
+	// and ensure claim amount limits are enforced before TLM processing.
+	actualSettlementCoin, err := k.ensureClaimAmountLimits(ctx, logger, &sharedParams, &application, &supplier, claimSettlementCoin, applicationInitialStake)
 	if err != nil {
 		return err
 	}
 	logger = logger.With("actual_settlement_upokt", actualSettlementCoin)
 	logger.Info(fmt.Sprintf("About to start processing TLMs for (%d) compute units, equal to (%s) claimed", numClaimComputeUnits, actualSettlementCoin))
+
+	// TODO_MAINNET(@red-0ne): Add tests to ensure that a zero settlement coin
+	// due to integer division rounding is handled correctly.
+	if actualSettlementCoin.Amount.IsZero() {
+		logger.Warn(fmt.Sprintf(
+			"actual settlement coin is zero, skipping TLM processing, application %q stake %s",
+			application.Address, application.Stake,
+		))
+		return nil
+	}
 
 	// Execute all the token logic modules processors
 	for tlm, tlmProcessor := range tokenLogicModuleProcessorMap {
@@ -292,8 +307,7 @@ func (k Keeper) ProcessTokenLogicModules(
 		logger.Info(fmt.Sprintf("Finished TLM processing: %q", tlm))
 	}
 
-	// TODO_CONSIDERATION: If we support multiple native tokens, we will need to
-	// start checking the denom here.
+	// TODO_POST_MAINNET: If we support multiple native tokens, we will need to start checking the denom here.
 	sessionEndHeight := sharedtypes.GetSessionEndHeight(&sharedParams, cosmostypes.UnwrapSDKContext(ctx).BlockHeight())
 	if application.Stake.Amount.LT(apptypes.DefaultMinStake.Amount) {
 		// Mark the application as unbonding if it has less than the minimum stake.
@@ -319,9 +333,11 @@ func (k Keeper) ProcessTokenLogicModules(
 	k.applicationKeeper.SetApplication(ctx, application)
 	logger.Info(fmt.Sprintf("updated on-chain application record with address %q", application.Address))
 
-	// TODO_MAINNET: If the application stake has dropped to (near?) zero, should
-	// we unstake it? Should we use it's balance? Should there be a payee of last resort?
-	// Make sure to document whatever decision we come to.
+	// TODO_MAINNET(@bryanchriswhite): If the application stake has dropped to (near?) zero:
+	// - Unstake it
+	// - Emit an event
+	// - Ensure this doesn't happen
+	// - Document the decision
 
 	// State mutation: Update the suppliers's on-chain record
 	k.supplierKeeper.SetSupplier(ctx, supplier)
@@ -361,7 +377,13 @@ func (k Keeper) TokenLogicModuleRelayBurnEqualsMint(
 			err,
 		)
 	}
-	logger.Info(fmt.Sprintf("minted (%v) coins in the supplier module", settlementCoin))
+
+	// Update telemetry information
+	if settlementCoin.Amount.IsInt64() {
+		defer telemetry.MintedTokensFromModule(suppliertypes.ModuleName, float32(settlementCoin.Amount.Int64()))
+	}
+
+	logger.Debug(fmt.Sprintf("minted (%v) coins in the supplier module", settlementCoin))
 
 	// Distribute the rewards to the supplier's shareholders based on the rev share percentage.
 	if err := k.distributeSupplierRewardsToShareHolders(ctx, supplier, service.Id, settlementCoin.Amount.Uint64()); err != nil {
@@ -371,7 +393,7 @@ func (k Keeper) TokenLogicModuleRelayBurnEqualsMint(
 			err,
 		)
 	}
-	logger.Info(fmt.Sprintf("sent (%v) from the supplier module to the supplier account with address %q", settlementCoin, supplier.OperatorAddress))
+	logger.Debug(fmt.Sprintf("sent (%v) from the supplier module to the supplier account with address %q", settlementCoin, supplier.OperatorAddress))
 
 	// Burn uPOKT from the application module account which was held in escrow
 	// on behalf of the application account.
@@ -380,7 +402,13 @@ func (k Keeper) TokenLogicModuleRelayBurnEqualsMint(
 	); err != nil {
 		return tokenomicstypes.ErrTokenomicsApplicationModuleBurn.Wrapf("burning %s from the application module account: %v", settlementCoin, err)
 	}
-	logger.Info(fmt.Sprintf("burned (%v) from the application module account", settlementCoin))
+
+	// Update telemetry information
+	if settlementCoin.Amount.IsInt64() {
+		defer telemetry.BurnedTokensFromModule(apptypes.ModuleName, float32(settlementCoin.Amount.Int64()))
+	}
+
+	logger.Debug(fmt.Sprintf("burned (%v) from the application module account", settlementCoin))
 
 	// Update the application's on-chain stake
 	newAppStake, err := application.Stake.SafeSub(settlementCoin)
@@ -388,7 +416,7 @@ func (k Keeper) TokenLogicModuleRelayBurnEqualsMint(
 		return tokenomicstypes.ErrTokenomicsApplicationNewStakeInvalid.Wrapf("application %q stake cannot be reduced to a negative amount %v", application.Address, newAppStake)
 	}
 	application.Stake = &newAppStake
-	logger.Info(fmt.Sprintf("updated application %q stake to %v", application.Address, newAppStake))
+	logger.Debug(fmt.Sprintf("updated application %q stake to %v", application.Address, newAppStake))
 
 	return nil
 }
@@ -405,14 +433,13 @@ func (k Keeper) TokenLogicModuleGlobalMint(
 ) error {
 	logger := k.Logger().With("method", "TokenLogicModuleGlobalMint")
 
-	if MintPerClaimedTokenGlobalInflation == 0 {
-		// TODO_UPNEXT(@olshansk): Make sure to skip GMRR TLM in this case as well.
+	if GlobalInflationPerClaim == 0 {
 		logger.Warn("global inflation is set to zero. Skipping Global Mint TLM.")
 		return nil
 	}
 
 	// Determine how much new uPOKT to mint based on global inflation
-	newMintCoin, newMintAmtFloat := calculateGlobalPerClaimMintInflationFromSettlementAmount(settlementCoin)
+	newMintCoin, newMintAmtFloat := CalculateGlobalPerClaimMintInflationFromSettlementAmount(settlementCoin)
 	if newMintCoin.Amount.Int64() == 0 {
 		return tokenomicstypes.ErrTokenomicsMintAmountZero
 	}
@@ -422,17 +449,25 @@ func (k Keeper) TokenLogicModuleGlobalMint(
 		return tokenomicstypes.ErrTokenomicsModuleMintFailed.Wrapf(
 			"minting (%s) to the tokenomics module account: %v", newMintCoin, err)
 	}
+
+	// Update telemetry information
+	if newMintCoin.Amount.IsInt64() {
+		defer telemetry.MintedTokensFromModule(tokenomicstypes.ModuleName, float32(newMintCoin.Amount.Int64()))
+	}
+
 	logger.Info(fmt.Sprintf("minted (%s) to the tokenomics module account", newMintCoin))
 
 	// Send a portion of the rewards to the application
-	appCoin, err := k.sendRewardsToAccount(ctx, tokenomicstypes.ModuleName, application.GetAddress(), &newMintAmtFloat, MintAllocationApplication)
+	mintAllocationApplication := k.GetParams(ctx).MintAllocationApplication
+	appCoin, err := k.sendRewardsToAccount(ctx, tokenomicstypes.ModuleName, application.GetAddress(), &newMintAmtFloat, mintAllocationApplication)
 	if err != nil {
 		return tokenomicstypes.ErrTokenomicsSendingMintRewards.Wrapf("sending rewards to application: %v", err)
 	}
 	logger.Debug(fmt.Sprintf("sent (%v) newley minted coins from the tokenomics module to the application with address %q", appCoin, application.Address))
 
 	// Send a portion of the rewards to the supplier shareholders.
-	supplierCoinsToShareAmt := calculateAllocationAmount(&newMintAmtFloat, MintAllocationSupplier)
+	mintAllocationSupplier := k.GetParams(ctx).MintAllocationSupplier
+	supplierCoinsToShareAmt := calculateAllocationAmount(&newMintAmtFloat, mintAllocationSupplier)
 	supplierCoin := cosmostypes.NewCoin(volatile.DenomuPOKT, math.NewInt(supplierCoinsToShareAmt))
 	// Send funds from the tokenomics module to the supplier module account
 	if err = k.bankKeeper.SendCoinsFromModuleToModule(ctx, tokenomicstypes.ModuleName, suppliertypes.ModuleName, sdk.NewCoins(supplierCoin)); err != nil {
@@ -453,22 +488,25 @@ func (k Keeper) TokenLogicModuleGlobalMint(
 	logger.Debug(fmt.Sprintf("sent (%v) newley minted coins from the tokenomics module to the supplier with address %q", supplierCoin, supplier.OperatorAddress))
 
 	// Send a portion of the rewards to the DAO
-	daoCoin, err := k.sendRewardsToAccount(ctx, tokenomicstypes.ModuleName, k.GetAuthority(), &newMintAmtFloat, MintAllocationDAO)
+	mintAllocationDao := k.GetParams(ctx).MintAllocationDao
+	daoCoin, err := k.sendRewardsToAccount(ctx, tokenomicstypes.ModuleName, k.GetAuthority(), &newMintAmtFloat, mintAllocationDao)
 	if err != nil {
 		return tokenomicstypes.ErrTokenomicsSendingMintRewards.Wrapf("sending rewards to DAO: %v", err)
 	}
 	logger.Debug(fmt.Sprintf("sent (%v) newley minted coins from the tokenomics module to the DAO with address %q", daoCoin, k.GetAuthority()))
 
 	// Send a portion of the rewards to the source owner
-	serviceCoin, err := k.sendRewardsToAccount(ctx, tokenomicstypes.ModuleName, service.OwnerAddress, &newMintAmtFloat, MintAllocationSourceOwner)
+	mintAllocationSourceOwner := k.GetParams(ctx).MintAllocationSourceOwner
+	serviceCoin, err := k.sendRewardsToAccount(ctx, tokenomicstypes.ModuleName, service.OwnerAddress, &newMintAmtFloat, mintAllocationSourceOwner)
 	if err != nil {
 		return tokenomicstypes.ErrTokenomicsSendingMintRewards.Wrapf("sending rewards to source owner: %v", err)
 	}
 	logger.Debug(fmt.Sprintf("sent (%v) newley minted coins from the tokenomics module to the source owner with address %q", serviceCoin, service.OwnerAddress))
 
 	// Send a portion of the rewards to the block proposer
+	mintAllocationProposer := k.GetParams(ctx).MintAllocationProposer
 	proposerAddr := cosmostypes.AccAddress(sdk.UnwrapSDKContext(ctx).BlockHeader().ProposerAddress).String()
-	proposerCoin, err := k.sendRewardsToAccount(ctx, tokenomicstypes.ModuleName, proposerAddr, &newMintAmtFloat, MintAllocationProposer)
+	proposerCoin, err := k.sendRewardsToAccount(ctx, tokenomicstypes.ModuleName, proposerAddr, &newMintAmtFloat, mintAllocationProposer)
 	if err != nil {
 		return tokenomicstypes.ErrTokenomicsSendingMintRewards.Wrapf("sending rewards to proposer: %v", err)
 	}
@@ -476,6 +514,107 @@ func (k Keeper) TokenLogicModuleGlobalMint(
 
 	// Check and log the total amount of coins distributed
 	if err := k.ensureMintedCoinsAreDistributed(logger, appCoin, supplierCoin, daoCoin, serviceCoin, proposerCoin, newMintCoin); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// TokenLogicModuleGlobalMintReimbursementRequest processes the business logic
+// for the GlobalMintReimbursementRequest TLM.
+func (k Keeper) TokenLogicModuleGlobalMintReimbursementRequest(
+	ctx context.Context,
+	service *sharedtypes.Service,
+	sessionHeader *sessiontypes.SessionHeader,
+	application *apptypes.Application,
+	supplier *sharedtypes.Supplier,
+	actualSettlementCoin cosmostypes.Coin,
+	relayMiningDifficulty *servicetypes.RelayMiningDifficulty,
+) error {
+	logger := k.Logger().With("method", "TokenLogicModuleGlobalMintReimbursementRequest")
+
+	// Do not process the reimbursement request if there is no global inflation.
+	if GlobalInflationPerClaim == 0 {
+		logger.Warn("global inflation is set to zero. Skipping Global Mint Reimbursement Request TLM.")
+		return nil
+	}
+
+	// Determine how much new uPOKT to mint based on global inflation
+	newMintCoin, _ := CalculateGlobalPerClaimMintInflationFromSettlementAmount(actualSettlementCoin)
+	if newMintCoin.Amount.Int64() == 0 {
+		return tokenomicstypes.ErrTokenomicsMintAmountZero
+	}
+
+	newAppStake, err := application.Stake.SafeSub(newMintCoin)
+	// This should THEORETICALLY NEVER fall below zero.
+	// `ensureClaimAmountLimits` should have already checked and adjusted the settlement
+	// amount so that the application stake covers the global inflation.
+	// TODO_POST_MAINNET: Consider removing this since it should never happen just to simplify the code
+	if err != nil {
+		return err
+	}
+	application.Stake = &newAppStake
+	logger.Info(fmt.Sprintf("updated application %q stake to %s", application.Address, newAppStake))
+
+	globalInflationMintedCoinsForClaim := sdk.NewCoins(newMintCoin)
+
+	// Send the global per claim mint inflation uPOKT from the tokenomics module
+	// account to PNF/DAO.
+	daoAccountAddr, err := cosmostypes.AccAddressFromBech32(k.GetAuthority())
+	if err != nil {
+		return tokenomicstypes.ErrTokenomicsApplicationReimbursementRequestFailed.Wrapf(
+			"getting PNF/DAO address: %v",
+			err,
+		)
+	}
+
+	// Send the global per claim mint inflation uPOKT from the application module
+	// account to the tokenomics module account as an intermediary step.
+	if err := k.bankKeeper.SendCoinsFromModuleToModule(
+		ctx, apptypes.ModuleName, tokenomicstypes.ModuleName, globalInflationMintedCoinsForClaim,
+	); err != nil {
+		return tokenomicstypes.ErrTokenomicsApplicationReimbursementRequestFailed.Wrapf(
+			"sending %s from the application module account to the tokenomics module account: %v",
+			newMintCoin, err,
+		)
+	}
+	logger.Info(fmt.Sprintf(
+		"sent (%s) from the application module account to the tokenomics module account",
+		newMintCoin,
+	))
+
+	// Send the global per claim mint inflation uPOKT from the tokenomics module
+	// for second order economic effects.
+	// See: https://discord.com/channels/824324475256438814/997192534168182905/1299372745632649408
+	if err := k.bankKeeper.SendCoinsFromModuleToAccount(
+		ctx, tokenomicstypes.ModuleName, daoAccountAddr, globalInflationMintedCoinsForClaim,
+	); err != nil {
+		return tokenomicstypes.ErrTokenomicsApplicationReimbursementRequestFailed.Wrapf(
+			"sending %s from the tokenomics module account to the PNF/DAO account: %v",
+			newMintCoin, err,
+		)
+	}
+
+	// Prepare and emit the event for the application that'll required reimbursement.
+	// Recall that it is being overcharged to compoensate for global inflation while
+	// preventing self-dealing attacks.
+	reimbursementRequestEvent := &tokenomicstypes.EventApplicationReimbursementRequest{
+		ApplicationAddr:      application.Address,
+		SupplierOperatorAddr: supplier.OperatorAddress,
+		SupplierOwnerAddr:    supplier.OwnerAddress,
+		ServiceId:            service.Id,
+		SessionId:            sessionHeader.SessionId,
+		Amount:               &newMintCoin,
+	}
+
+	eventManger := cosmostypes.UnwrapSDKContext(ctx).EventManager()
+	if err := eventManger.EmitTypedEvent(reimbursementRequestEvent); err != nil {
+		err = tokenomicstypes.ErrTokenomicsEmittingEventFailed.Wrapf(
+			"(%+v): %s",
+			reimbursementRequestEvent, err,
+		)
+
+		logger.Error(err.Error())
 		return err
 	}
 
@@ -558,44 +697,73 @@ func (k Keeper) sendRewardsToAccount(
 func (k Keeper) ensureClaimAmountLimits(
 	ctx context.Context,
 	logger log.Logger,
+	sharedParams *sharedtypes.Params,
 	application *apptypes.Application,
 	supplier *sharedtypes.Supplier,
 	claimSettlementCoin cosmostypes.Coin,
+	initialApplicationStake cosmostypes.Coin,
 ) (
 	actualSettlementCoins cosmostypes.Coin,
 	err error,
 ) {
 	logger = logger.With("helper", "ensureClaimAmountLimits")
 
-	// TODO_BETA_OR_MAINNET(@red-0ne): The application stake gets reduced with every claim
-	// settlement. Relay miners use the appStake at the beginning of a session to determine
-	// the maximum amount they can claim. We need to somehow access and propagate this
-	// value (via context?) so it is the same for all TLM processors for each claim.
-	// Note that this will also need to incorporate MintPerClaimGlobalInflation because
-	// applications are being overcharged by that amount in the meantime. Whatever the
-	// solution and implementation ends up being, make sure to KISS.
-	appStake := application.GetStake()
+	// Note that this also incorporates MintPerClaimGlobalInflation since applications
+	// are being overcharged by that amount and the funds are sent to the DAO/PNF
+	// before being reimbursed to the application in the future.
+	appStake := initialApplicationStake
 
-	// Determine the max claimable amount for the supplier based on the application's stake in this session.
-	maxClaimableCoin := sdk.NewCoin(volatile.DenomuPOKT, appStake.Amount.Quo(math.NewInt(sessionkeeper.NumSupplierPerSession)))
+	// The application should have enough stake to cover for the global mint reimbursement.
+	// This amount is deducted from the maximum claimable amount.
+	globalInflationCoin, _ := CalculateGlobalPerClaimMintInflationFromSettlementAmount(claimSettlementCoin)
+	globalInflationAmt := globalInflationCoin.Amount
+	minRequiredAppStakeAmt := claimSettlementCoin.Amount.Add(globalInflationAmt)
+	totalClaimedCoin := sdk.NewCoin(volatile.DenomuPOKT, minRequiredAppStakeAmt)
 
-	if maxClaimableCoin.Amount.GTE(claimSettlementCoin.Amount) {
+	// get the number of pending sessions that share the application stake at claim time
+	// This is used to calculate the maximum claimable amount for the supplier within a session.
+	numPendingSessions := sharedtypes.GetNumPendingSessions(sharedParams)
+
+	// The maximum any single supplier can claim is a fraction of the app's total stake
+	// divided by the number of suppliers per session.
+	// Re decentralization - This ensures the app biases towards using all suppliers in a session.
+	// Re costs - This is an easy way to split the stake evenly.
+	// TODO_FUTURE: See if there's a way to let the application prefer (the best)
+	// supplier(s) in a session while maintaining a simple solution to implement this.
+	numSuppliersPerSession := int64(k.sessionKeeper.GetParams(ctx).NumSuppliersPerSession)
+	maxClaimableAmt := appStake.Amount.
+		Quo(math.NewInt(numSuppliersPerSession)).
+		Quo(math.NewInt(numPendingSessions))
+	maxClaimSettlementAmt := supplierAppStakeToMaxSettlementAmount(maxClaimableAmt)
+
+	// Check if the claimable amount is capped by the max claimable amount.
+	// As per the Relay Mining paper, the Supplier claim MUST NOT exceed the application's
+	// allocated stake. If it does, the claim is capped by the application's allocated stake
+	// and the supplier is effectively "overserviced".
+	if minRequiredAppStakeAmt.GT(maxClaimableAmt) {
+		logger.Warn(fmt.Sprintf("Claim by supplier %s EXCEEDS LIMITS for application %s. Max claimable amount < Claim amount: %v < %v",
+			supplier.GetOperatorAddress(), application.GetAddress(), maxClaimableAmt, claimSettlementCoin.Amount))
+
+		minRequiredAppStakeAmt = maxClaimableAmt
+		maxClaimSettlementAmt = supplierAppStakeToMaxSettlementAmount(minRequiredAppStakeAmt)
+	}
+
+	// Nominal case: The claimable amount is within the limits set by Relay Mining.
+	if claimSettlementCoin.Amount.LTE(maxClaimSettlementAmt) {
 		logger.Info(fmt.Sprintf("Claim by supplier %s IS WITHIN LIMITS of servicing application %s. Max claimable amount >= Claim amount: %v >= %v",
-			supplier.GetOperatorAddress(), application.GetAddress(), maxClaimableCoin, claimSettlementCoin.Amount))
+			supplier.GetOperatorAddress(), application.GetAddress(), maxClaimSettlementAmt, claimSettlementCoin.Amount))
 		return claimSettlementCoin, nil
 	}
 
-	logger.Warn(fmt.Sprintf("Claim by supplier %s EXCEEDS LIMITS for application %s. Max claimable amount < Claim amount: %v < %v",
-		supplier.GetOperatorAddress(), application.GetAddress(), maxClaimableCoin, claimSettlementCoin.Amount))
-
-	// Reduce the settlement amount if the application was over-serviced
-	actualSettlementCoins = maxClaimableCoin
+	// Claimable amount is capped by the max claimable amount or the application allocated stake.
+	// Determine the max claimable amount for the supplier based on the application's stake in this session.
+	maxClaimableCoin := sdk.NewCoin(volatile.DenomuPOKT, maxClaimSettlementAmt)
 
 	// Prepare and emit the event for the application being overserviced
 	applicationOverservicedEvent := &tokenomicstypes.EventApplicationOverserviced{
-		ApplicationAddr:      application.Address,
+		ApplicationAddr:      application.GetAddress(),
 		SupplierOperatorAddr: supplier.GetOperatorAddress(),
-		ExpectedBurn:         &claimSettlementCoin,
+		ExpectedBurn:         &totalClaimedCoin,
 		EffectiveBurn:        &maxClaimableCoin,
 	}
 	eventManager := cosmostypes.UnwrapSDKContext(ctx).EventManager()
@@ -604,7 +772,7 @@ func (k Keeper) ensureClaimAmountLimits(
 			tokenomicstypes.ErrTokenomicsEmittingEventFailed.Wrapf("error emitting event %v", applicationOverservicedEvent)
 	}
 
-	return actualSettlementCoins, nil
+	return maxClaimableCoin, nil
 }
 
 // distributeSupplierRewardsToShareHolders distributes the supplier rewards to its
@@ -663,14 +831,15 @@ func (k Keeper) distributeSupplierRewardsToShareHolders(
 	return nil
 }
 
-// calculateGlobalPerClaimMintInflationFromSettlementAmount calculates the amount
+// CalculateGlobalPerClaimMintInflationFromSettlementAmount calculates the amount
 // of uPOKT to mint based on the global per claim inflation rate as a function of
 // the settlement amount for a particular claim(s) or session(s).
-func calculateGlobalPerClaimMintInflationFromSettlementAmount(settlementCoin sdk.Coin) (sdk.Coin, big.Float) {
+// DEV_NOTE: This function is publically exposed to be used in the tests.
+func CalculateGlobalPerClaimMintInflationFromSettlementAmount(settlementCoin sdk.Coin) (sdk.Coin, big.Float) {
 	// Determine how much new uPOKT to mint based on global per claim inflation.
-	// TODO_MAINNET: Consider using fixed point arithmetic for deterministic results.
+	// TODO_MAINNET(@red-0ne): Consider using fixed point arithmetic for deterministic results.
 	settlementAmtFloat := new(big.Float).SetUint64(settlementCoin.Amount.Uint64())
-	newMintAmtFloat := new(big.Float).Mul(settlementAmtFloat, big.NewFloat(MintPerClaimedTokenGlobalInflation))
+	newMintAmtFloat := new(big.Float).Mul(settlementAmtFloat, big.NewFloat(GlobalInflationPerClaim))
 	// DEV_NOTE: If new mint is less than 1 and more than 0, ceil it to 1 so that
 	// we never expect to process a claim with 0 minted tokens.
 	if newMintAmtFloat.Cmp(big.NewFloat(1)) < 0 && newMintAmtFloat.Cmp(big.NewFloat(0)) > 0 {
@@ -681,9 +850,25 @@ func calculateGlobalPerClaimMintInflationFromSettlementAmount(settlementCoin sdk
 	return mintAmtCoin, *newMintAmtFloat
 }
 
+// supplierAppStakeToMaxSettlementAmount calculates the max amount of uPOKT the supplier
+// can claim based on the stake allocated to the supplier and the global inflation
+// allocation percentage.
+// This is the inverse of CalculateGlobalPerClaimMintInflationFromSettlementAmount:
+// stake = maxSettlementAmt + globalInflationAmt
+// stake = maxSettlementAmt + (maxSettlementAmt * MintPerClaimedTokenGlobalInflation)
+// stake = maxSettlementAmt * (1 + MintPerClaimedTokenGlobalInflation)
+// maxSettlementAmt = stake / (1 + MintPerClaimedTokenGlobalInflation)
+func supplierAppStakeToMaxSettlementAmount(stakeAmount math.Int) math.Int {
+	stakeAmountFloat := big.NewFloat(0).SetInt(stakeAmount.BigInt())
+	maxSettlementAmountFloat := big.NewFloat(0).Quo(stakeAmountFloat, big.NewFloat(1+GlobalInflationPerClaim))
+
+	settlementAmount, _ := maxSettlementAmountFloat.Int(nil)
+	return math.NewIntFromBigInt(settlementAmount)
+}
+
 // calculateAllocationAmount does big float arithmetic to determine the absolute
 // amount from amountFloat based on the allocation percentage provided.
-// TODO_MAINNET(@bryanchriswhite): Measure and limit the precision loss here.
+// TODO_MAINNET(@red-0ne): Measure and limit the precision loss here.
 func calculateAllocationAmount(
 	amountFloat *big.Float,
 	allocationPercentage float64,
@@ -704,7 +889,7 @@ func GetShareAmountMap(
 	totalDistributed := uint64(0)
 	shareAmountMap = make(map[string]uint64, len(serviceRevShare))
 	for _, revShare := range serviceRevShare {
-		// TODO_MAINNET: Consider using fixed point arithmetic for deterministic results.
+		// TODO_MAINNET(@red-0ne): Consider using fixed point arithmetic for deterministic results.
 		sharePercentageFloat := big.NewFloat(float64(revShare.RevSharePercentage) / 100)
 		amountToDistributeFloat := big.NewFloat(float64(amountToDistribute))
 		shareAmount, _ := big.NewFloat(0).Mul(amountToDistributeFloat, sharePercentageFloat).Uint64()

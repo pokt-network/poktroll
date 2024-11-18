@@ -1,0 +1,8 @@
+{
+  "label": "LocalNet",
+  "position": 9,
+  "link": {
+    "type": "generated-index",
+    "description": "Tips on how to leverage the most out of your LocalNet Environment."
+  }
+}

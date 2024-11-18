@@ -27,7 +27,7 @@ message RelayMiningDifficulty {
     // 0b0000111... (until 32 bytes are filled up).
     bytes target_hash = 4;
 
-    // TODO_BETA(@Olshansk): Add a `hash_algorithm` field either in this
+    // TODO_MAINNET(@bryanchriswhite): Add a `hash_algorithm` field either in this
     // structure or elsewhere so we can support changing it over time. There should
     // be one source of truth, somewhere on chain, to stay in sync with the SMT
     // configuration.

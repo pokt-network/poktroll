@@ -9,6 +9,7 @@ import (
 )
 
 func TestGenesisState_Validate(t *testing.T) {
+	defaultParams := types.DefaultParams()
 	tests := []struct {
 		desc     string
 		genState *types.GenesisState
@@ -20,8 +21,11 @@ func TestGenesisState_Validate(t *testing.T) {
 			isValid:  true,
 		},
 		{
-			desc:     "valid genesis state",
+			desc: "valid genesis state",
 			genState: &types.GenesisState{
+				Params: types.Params{
+					NumSuppliersPerSession: defaultParams.NumSuppliersPerSession,
+				},
 
 				// this line is used by starport scaffolding # types/genesis/validField
 			},

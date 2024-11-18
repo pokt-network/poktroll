@@ -39,6 +39,8 @@ var (
 	flagNodeRPCURL string
 	// flagNodeGRPCURL is the variable containing the Cosmos node GRPC URL flag value.
 	flagNodeGRPCURL string
+	// flagLogLevel is the variable to set a log level (used by cosmos and polylog).
+	flagLogLevel string
 )
 
 // RelayerCmd returns the Cobra command for running the relay miner.
@@ -72,6 +74,7 @@ for such operations.`,
 	cmd.Flags().StringVar(&flagNodeGRPCURL, cosmosflags.FlagGRPC, omittedDefaultFlagValue, "Register the default Cosmos node grpc flag, which is needed to initialize the Cosmos query context with grpc correctly. It can be used to override the `QueryNodeGRPCURL` field in the config file if specified.")
 	cmd.Flags().Bool(cosmosflags.FlagGRPCInsecure, true, "Used to initialize the Cosmos query context with grpc security options. It can be used to override the `QueryNodeGRPCInsecure` field in the config file if specified.")
 	cmd.Flags().String(cosmosflags.FlagChainID, "poktroll", "The network chain ID")
+	cmd.Flags().StringVar(&flagLogLevel, cosmosflags.FlagLogLevel, "debug", "The logging level (debug|info|warn|error)")
 
 	return cmd
 }
@@ -97,7 +100,7 @@ func runRelayer(cmd *cobra.Command, _ []string) error {
 
 	// TODO_TECHDEBT: populate logger from the config (ideally, from viper).
 	loggerOpts := []polylog.LoggerOption{
-		polyzero.WithLevel(polyzero.DebugLevel),
+		polyzero.WithLevel(polyzero.ParseLevel(flagLogLevel)),
 		polyzero.WithOutput(os.Stderr),
 	}
 
@@ -195,12 +198,13 @@ func setupRelayerDependencies(
 		config.NewSupplyDelegationClientFn(),                              // leaf
 		config.NewSupplySharedQueryClientFn(),                             // leaf
 		config.NewSupplyServiceQueryClientFn(),
+		config.NewSupplyApplicationQuerierFn(),
+		config.NewSupplySessionQuerierFn(),
+		supplyRelayMeter,
 		supplyMiner,
 		config.NewSupplyAccountQuerierFn(),
 		config.NewSupplyBankQuerierFn(),
-		config.NewSupplyApplicationQuerierFn(),
 		config.NewSupplySupplierQuerierFn(),
-		config.NewSupplySessionQuerierFn(),
 		config.NewSupplyProofQueryClientFn(),
 		config.NewSupplyRingCacheFn(),
 		supplyTxFactory,
@@ -226,6 +230,21 @@ func supplyMiner(
 	}
 
 	return depinject.Configs(deps, depinject.Supply(mnr)), nil
+}
+
+// supplyRelayMeter constructs a RelayMeter instance and returns a new
+// depinject.Config which is supplied with the given deps and the new RelayMeter.
+func supplyRelayMeter(
+	_ context.Context,
+	deps depinject.Config,
+	_ *cobra.Command,
+) (depinject.Config, error) {
+	rm, err := proxy.NewRelayMeter(deps)
+	if err != nil {
+		return nil, err
+	}
+
+	return depinject.Configs(deps, depinject.Supply(rm)), nil
 }
 
 // supplyTxFactory constructs a cosmostx.Factory instance and returns a new

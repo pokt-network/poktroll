@@ -5,12 +5,14 @@ import (
 	"fmt"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"github.com/pokt-network/poktroll/telemetry"
 	"github.com/pokt-network/poktroll/x/gateway/types"
 )
 
-// TODO_BLOCKER(#489): Apps & gateways unbonding periods
+// TODO_MAINNET(@bryanchriswhite): Implement Gateway unbonding periods
 func (k msgServer) UnstakeGateway(
 	goCtx context.Context,
 	msg *types.MsgUnstakeGateway,
@@ -58,10 +60,16 @@ func (k msgServer) UnstakeGateway(
 	k.RemoveGateway(ctx, gatewayAddress.String())
 	logger.Info(fmt.Sprintf("Successfully removed the gateway: %+v", gateway))
 
-	err = ctx.EventManager().EmitTypedEvent(&types.EventGatewayUnstaked{Address: msg.Address})
+	sessionEndHeight := k.sharedKeeper.GetSessionEndHeight(ctx, ctx.BlockHeight())
+	gatewayUnstakedEvent := &types.EventGatewayUnstaked{
+		Gateway:          &gateway,
+		SessionEndHeight: sessionEndHeight,
+	}
+	err = ctx.EventManager().EmitTypedEvent(gatewayUnstakedEvent)
 	if err != nil {
-		logger.Error(fmt.Sprintf("failed to emit event for unstaking gateway: %v", err))
-		return nil, err
+		err = types.ErrGatewayEmitEvent.Wrapf("(%+v): %s", gatewayUnstakedEvent, err)
+		logger.Error(err.Error())
+		return nil, status.Error(codes.Internal, err.Error())
 	}
 
 	isSuccessful = true

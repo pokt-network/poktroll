@@ -11,7 +11,7 @@ func GetSessionStartHeight(sharedParams *Params, queryHeight int64) int64 {
 
 	numBlocksPerSession := int64(sharedParams.GetNumBlocksPerSession())
 
-	// TODO_BLOCKER(@bryanchriswhite, #543): If the num_blocks_per_session param has ever been changed,
+	// TODO_BETA(@bryanchriswhite, #543): If the num_blocks_per_session param has ever been changed,
 	// this function may cause unexpected behavior.
 	return queryHeight - ((queryHeight - 1) % numBlocksPerSession)
 }
@@ -44,7 +44,7 @@ func GetSessionNumber(sharedParams *Params, queryHeight int64) int64 {
 
 	numBlocksPerSession := int64(sharedParams.GetNumBlocksPerSession())
 
-	// TODO_BLOCKER(@bryanchriswhite, #543): If the num_blocks_per_session param has ever been changed,
+	// TODO_MAINNET(@bryanchriswhite, #543): If the num_blocks_per_session param has ever been changed,
 	// this function may cause unexpected behavior.
 	return ((queryHeight - 1) / numBlocksPerSession) + 1
 }
@@ -99,7 +99,7 @@ func GetProofWindowCloseHeight(sharedParams *Params, queryHeight int64) int64 {
 // GetEarliestSupplierClaimCommitHeight returns the earliest block height at which a claim
 // for the session that includes queryHeight can be committed for a given supplier
 // and the passed sharedParams.
-// TODO_CLEANUP_DELETE(@red-0ne, @olshansk): Having claim distribution windows was
+// TODO_TECHDEBT(@red-0ne): Having claim distribution windows was
 // a requirement that was never determined to be necessary, but implemented regardless.
 // We are keeping around the functions but TBD whether it is deemed necessary. The results
 // of #711 are tengentially related to this requirement, after which the functions,
@@ -126,7 +126,7 @@ func GetEarliestSupplierClaimCommitHeight(
 // GetEarliestSupplierProofCommitHeight returns the earliest block height at which a proof
 // for the session that includes queryHeight can be committed for a given supplier
 // and the passed sharedParams.
-// TODO_CLEANUP_DELETE(@red-0ne, @olshansk): Having proof distribution windows was
+// TODO_TECHDEBT(@red-0ne): Having proof distribution windows was
 // a requirement that was never determined to be necessary, but implemented regardless.
 // We are keeping around the functions but TBD whether it is deemed necessary. The results
 // of #711 are tengentially related to this requirement, after which the functions,
@@ -175,4 +175,17 @@ func GetSessionEndToProofWindowCloseBlocks(params *Params) int64 {
 func GetSettlementSessionEndHeight(sharedParams *Params, queryHeight int64) int64 {
 	return GetSessionEndToProofWindowCloseBlocks(sharedParams) +
 		GetSessionEndHeight(sharedParams, queryHeight) + 1
+}
+
+// GetNumPendingSessions returns the number of pending sessions (i.e. that have not
+// yet been settled).
+func GetNumPendingSessions(sharedParams *Params) int64 {
+	// Get the number of blocks between the end of a session and the block height
+	// at which the session claim is settled.
+	numPendingSessionsBlocks := GetSessionEndToProofWindowCloseBlocks(sharedParams)
+	// Use the number of blocks per session to calculate the number of pending sessions.
+	numBlocksPerSession := int64(sharedParams.GetNumBlocksPerSession())
+	// numBlocksPerSession - 1 is added to round up the integer division so that pending
+	// sessions are all the sessions that have their end height at least `pendingBlocks` old.
+	return (numPendingSessionsBlocks + numBlocksPerSession - 1) / numBlocksPerSession
 }

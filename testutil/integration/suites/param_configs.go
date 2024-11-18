@@ -6,6 +6,7 @@ import (
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/pokt-network/poktroll/app/volatile"
+	"github.com/pokt-network/poktroll/testutil/sample"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	gatewaytypes "github.com/pokt-network/poktroll/x/gateway/types"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
@@ -23,11 +24,21 @@ type ParamType = string
 const (
 	ParamTypeInt64   ParamType = "int64"
 	ParamTypeUint64  ParamType = "uint64"
-	ParamTypeFloat32 ParamType = "float32"
+	ParamTypeFloat64 ParamType = "float64"
 	ParamTypeString  ParamType = "string"
 	ParamTypeBytes   ParamType = "uint8"
 	ParamTypeCoin    ParamType = "Coin"
 )
+
+// TODO_UPNEXT(@bryanchriswhite): Promote mint_allocation_XXX params to
+// a new mint_allocation message type. This map will no longer be needed
+var ExcludedParams = map[string]struct{}{
+	"MintAllocationDao":         {},
+	"MintAllocationProposer":    {},
+	"MintAllocationSupplier":    {},
+	"MintAllocationSourceOwner": {},
+	"MintAllocationApplication": {},
+}
 
 // ModuleParamConfig holds type information about a module's parameters update
 // message(s) along with default and valid non-default values and a query constructor
@@ -104,10 +115,17 @@ var (
 		ParamsMsgs: ModuleParamsMessages{
 			MsgUpdateParams:         sessiontypes.MsgUpdateParams{},
 			MsgUpdateParamsResponse: sessiontypes.MsgUpdateParamsResponse{},
+			MsgUpdateParam:          sessiontypes.MsgUpdateParam{},
+			MsgUpdateParamResponse:  sessiontypes.MsgUpdateParamResponse{},
 			QueryParamsRequest:      sessiontypes.QueryParamsRequest{},
 			QueryParamsResponse:     sessiontypes.QueryParamsResponse{},
 		},
-		ValidParams:      sessiontypes.Params{},
+		ValidParams: sessiontypes.Params{
+			NumSuppliersPerSession: 420,
+		},
+		ParamTypes: map[ParamType]any{
+			ParamTypeUint64: sessiontypes.MsgUpdateParam_AsUint64{},
+		},
 		DefaultParams:    sessiontypes.DefaultParams(),
 		NewParamClientFn: sessiontypes.NewQueryClient,
 	}
@@ -207,7 +225,7 @@ var (
 		},
 		ParamTypes: map[ParamType]any{
 			ParamTypeBytes:   prooftypes.MsgUpdateParam_AsBytes{},
-			ParamTypeFloat32: prooftypes.MsgUpdateParam_AsFloat{},
+			ParamTypeFloat64: prooftypes.MsgUpdateParam_AsFloat{},
 			ParamTypeCoin:    prooftypes.MsgUpdateParam_AsCoin{},
 		},
 		DefaultParams:    prooftypes.DefaultParams(),
@@ -218,10 +236,23 @@ var (
 		ParamsMsgs: ModuleParamsMessages{
 			MsgUpdateParams:         tokenomicstypes.MsgUpdateParams{},
 			MsgUpdateParamsResponse: tokenomicstypes.MsgUpdateParamsResponse{},
+			MsgUpdateParam:          tokenomicstypes.MsgUpdateParam{},
+			MsgUpdateParamResponse:  tokenomicstypes.MsgUpdateParamResponse{},
 			QueryParamsRequest:      tokenomicstypes.QueryParamsRequest{},
 			QueryParamsResponse:     tokenomicstypes.QueryParamsResponse{},
 		},
-		ValidParams:      tokenomicstypes.Params{},
+		ValidParams: tokenomicstypes.Params{
+			MintAllocationDao:         tokenomicstypes.DefaultMintAllocationDao,
+			MintAllocationProposer:    tokenomicstypes.DefaultMintAllocationProposer,
+			MintAllocationSupplier:    tokenomicstypes.DefaultMintAllocationSupplier,
+			MintAllocationSourceOwner: tokenomicstypes.DefaultMintAllocationSourceOwner,
+			MintAllocationApplication: tokenomicstypes.DefaultMintAllocationApplication,
+			DaoRewardAddress:          sample.AccAddress(),
+		},
+		ParamTypes: map[ParamType]any{
+			ParamTypeFloat64: tokenomicstypes.MsgUpdateParam_AsFloat{},
+			ParamTypeString:  tokenomicstypes.MsgUpdateParam_AsString{},
+		},
 		DefaultParams:    tokenomicstypes.DefaultParams(),
 		NewParamClientFn: tokenomicstypes.NewQueryClient,
 	}

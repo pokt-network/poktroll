@@ -10,6 +10,7 @@ import (
 
 	"github.com/pokt-network/poktroll/telemetry"
 	"github.com/pokt-network/poktroll/x/gateway/types"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 func (k msgServer) StakeGateway(
@@ -95,6 +96,19 @@ func (k msgServer) StakeGateway(
 	// Update the Gateway in the store
 	k.SetGateway(ctx, gateway)
 	logger.Info(fmt.Sprintf("Successfully updated stake for gateway: %+v", gateway))
+
+	sdkCtx := sdk.UnwrapSDKContext(ctx)
+	sharedParams := k.sharedKeeper.GetParams(sdkCtx)
+	sessionEndHeight := sharedtypes.GetSessionEndHeight(&sharedParams, sdkCtx.BlockHeight())
+	gatewayStakedEvent := &types.EventGatewayStaked{
+		Gateway:          &gateway,
+		SessionEndHeight: sessionEndHeight,
+	}
+	if eventErr := sdkCtx.EventManager().EmitTypedEvent(gatewayStakedEvent); eventErr != nil {
+		err = types.ErrGatewayEmitEvent.Wrapf("(%+v): %s", gatewayStakedEvent, err)
+		logger.Error(err.Error())
+		return nil, status.Error(codes.Internal, err.Error())
+	}
 
 	isSuccessful = true
 	return &types.MsgStakeGatewayResponse{

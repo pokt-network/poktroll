@@ -44,8 +44,6 @@ func TestCLI_StakeApplication(t *testing.T) {
 		stake_amount: 1000upokt
 		service_ids:
 		  - svc1
-		  - svc2
-		  - svc3
 		`
 
 	tests := []struct {
@@ -92,8 +90,6 @@ func TestCLI_StakeApplication(t *testing.T) {
 				stake_amount: # explicitly missing
 				service_ids:
 				  - svc1
-				  - svc2
-				  - svc3
 				`,
 
 			expectedErr: types.ErrAppInvalidStake,
@@ -106,8 +102,6 @@ func TestCLI_StakeApplication(t *testing.T) {
 				stake_amount: 1000invalid
 				service_ids:
 				  - svc1
-				  - svc2
-				  - svc3
 				`,
 
 			expectedErr: types.ErrAppInvalidStake,
@@ -120,8 +114,6 @@ func TestCLI_StakeApplication(t *testing.T) {
 				stake_amount: 0upokt
 				service_ids:
 				  - svc1
-				  - svc2
-				  - svc3
 				`,
 
 			expectedErr: types.ErrAppInvalidStake,
@@ -134,8 +126,6 @@ func TestCLI_StakeApplication(t *testing.T) {
 				stake_amount: -1000upokt
 				service_ids:
 				  - svc1
-				  - svc2
-				  - svc3
 				`,
 
 			expectedErr: types.ErrAppInvalidStake,
@@ -165,13 +155,13 @@ func TestCLI_StakeApplication(t *testing.T) {
 			expectedErr: types.ErrAppInvalidServiceConfigs,
 		},
 		{
-			desc: "invalid: one of two services is invalid because it contains spaces",
+			desc: "invalid: contains multiple services",
 
 			appAddr: appAccount.Address.String(),
 			appConfig: `
 				stake_amount: 1000upokt
 				service_ids:
-				  - svc1 svc1_part2
+				  - svc1
 				  - svc2
 				`,
 
@@ -184,7 +174,6 @@ func TestCLI_StakeApplication(t *testing.T) {
 			appConfig: `
 				stake_amount: 1000upokt
 				service_ids:
-				  - svc1,
 				  - abcdefghi
 				`,
 

@@ -32,7 +32,7 @@ func (gs GenesisState) Validate() error {
 
 	// Check that the stake value for the suppliers is valid
 	for _, supplier := range gs.SupplierList {
-		// TODO_MAINNET: Consider creating shared helpers across the board for stake validation,
+		// TODO_TECHDEBT: Consider creating shared helpers across the board for stake validation,
 		// similar to how we have `ValidateAppServiceConfigs` below
 		if supplier.Stake == nil {
 			return ErrSupplierInvalidStake.Wrapf("nil stake amount for supplier")

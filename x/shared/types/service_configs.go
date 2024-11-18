@@ -12,8 +12,8 @@ const (
 
 // ValidateAppServiceConfigs returns an error if any of the application service configs are invalid
 func ValidateAppServiceConfigs(services []*ApplicationServiceConfig) error {
-	if len(services) == 0 {
-		return fmt.Errorf("no services configs provided for application: %v", services)
+	if len(services) != 1 {
+		return fmt.Errorf("application must have exactly one service: %v", services)
 	}
 	for _, serviceConfig := range services {
 		if serviceConfig == nil {
@@ -72,7 +72,7 @@ func ValidateSupplierServiceConfigs(services []*SupplierServiceConfig) error {
 				return fmt.Errorf("endpoint.RpcType is not a valid RPCType: %v", serviceConfig)
 			}
 
-			// TODO_MAINNET(@okdas)/TODO_DISCUSS: Either add validation for `endpoint.Configs` (can be a part of
+			// TODO_MAINNET(@okdas): Either add validation for `endpoint.Configs` (can be a part of
 			// `parseEndpointConfigs`), or change the config structure to be more clear about what is expected here
 			// as currently, this is just a map[string]string, when values can be other types.
 			// if endpoint.Configs == nil {

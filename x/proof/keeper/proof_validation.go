@@ -32,11 +32,12 @@ import (
 	"bytes"
 	"context"
 
+	cosmostelemetry "github.com/cosmos/cosmos-sdk/telemetry"
 	"github.com/pokt-network/smt"
 
 	"github.com/pokt-network/poktroll/pkg/crypto/protocol"
+	"github.com/pokt-network/poktroll/telemetry"
 	"github.com/pokt-network/poktroll/x/proof/types"
-	servicekeeper "github.com/pokt-network/poktroll/x/service/keeper"
 	servicetypes "github.com/pokt-network/poktroll/x/service/types"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 )
@@ -59,6 +60,9 @@ func (k Keeper) EnsureValidProof(
 	ctx context.Context,
 	proof *types.Proof,
 ) error {
+	// Telemetry: measure execution time.
+	defer cosmostelemetry.MeasureSince(cosmostelemetry.Now(), telemetry.MetricNameKeys("proof", "validation")...)
+
 	logger := k.Logger().With("method", "ValidateProof")
 
 	// Retrieve the supplier operator's public key.
@@ -164,11 +168,7 @@ func (k Keeper) EnsureValidProof(
 	logger.Debug("successfully verified relay response signature")
 
 	// Get the service's relay mining difficulty.
-	serviceRelayDifficulty, found := k.serviceKeeper.GetRelayMiningDifficulty(ctx, sessionHeader.GetServiceId())
-	if !found {
-		// If the relay mining difficulty is not found, use the default relay mining difficulty.
-		serviceRelayDifficulty = servicekeeper.NewDefaultRelayMiningDifficulty(ctx, k.Logger(), sessionHeader.GetServiceId(), servicekeeper.TargetNumRelays)
-	}
+	serviceRelayDifficulty, _ := k.serviceKeeper.GetRelayMiningDifficulty(ctx, sessionHeader.GetServiceId())
 
 	// Verify the relay difficulty is above the minimum required to earn rewards.
 	if err = validateRelayDifficulty(
@@ -245,10 +245,6 @@ func (k Keeper) validateClosestPath(
 	// source of entropy for all the session trees in that batch, waiting for it to
 	// be received before proceeding.
 	proofPathSeedBlockHash := k.sessionKeeper.GetBlockHash(ctx, earliestSupplierProofCommitHeight-1)
-
-	// TODO_BETA: Investigate "proof for the path provided does not match one expected by the on-chain protocol"
-	// error that may occur due to block height differing from the off-chain part.
-	k.logger.Info("E2E_DEBUG: height for block hash when verifying the proof", earliestSupplierProofCommitHeight, sessionHeader.GetSessionId())
 
 	expectedProofPath := protocol.GetPathForProof(proofPathSeedBlockHash, sessionHeader.GetSessionId())
 	if !bytes.Equal(proof.Path, expectedProofPath) {

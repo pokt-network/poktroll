@@ -11,6 +11,7 @@ import (
 
 	"github.com/pokt-network/poktroll/telemetry"
 	"github.com/pokt-network/poktroll/x/proof/types"
+	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
@@ -25,16 +26,6 @@ func (k msgServer) CreateClaim(
 		numRelays            uint64
 		numClaimComputeUnits uint64
 	)
-
-	// Defer telemetry calls so that they reference the final values the relevant variables.
-	defer func() {
-		// Only increment these metrics counters if handling a new claim.
-		if !isExistingClaim {
-			telemetry.ClaimCounter(types.ClaimProofStage_CLAIMED, 1, err)
-			telemetry.ClaimRelaysCounter(types.ClaimProofStage_CLAIMED, numRelays, err)
-			telemetry.ClaimComputeUnitsCounter(types.ClaimProofStage_CLAIMED, numClaimComputeUnits, err)
-		}
-	}()
 
 	logger := k.Logger().With("method", "CreateClaim")
 	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
@@ -51,6 +42,9 @@ func (k msgServer) CreateClaim(
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
+
+	// Defer telemetry calls to a helper function to keep business logic clean.
+	defer k.finalizeCreateClaimTelemetry(session, msg, isExistingClaim, numRelays, numClaimComputeUnits, err)
 
 	// Construct and insert claim
 	claim = types.Claim{
@@ -117,25 +111,33 @@ func (k msgServer) CreateClaim(
 	k.Keeper.UpsertClaim(ctx, claim)
 	logger.Info("successfully upserted the claim")
 
+	// Get the service ID relayMiningDifficulty to calculate the claimed uPOKT.
+	serviceId := session.GetHeader().GetServiceId()
+	sharedParams := k.sharedKeeper.GetParams(ctx)
+	relayMiningDifficulty, _ := k.serviceKeeper.GetRelayMiningDifficulty(ctx, serviceId)
+	claimedUPOKT, err := claim.GetClaimeduPOKT(sharedParams, relayMiningDifficulty)
+
 	// Emit the appropriate event based on whether the claim was created or updated.
 	var claimUpsertEvent proto.Message
 	switch isExistingClaim {
 	case true:
 		claimUpsertEvent = proto.Message(
 			&types.EventClaimUpdated{
-				Claim:                  &claim,
-				NumRelays:              numRelays,
-				NumClaimedComputeUnits: numClaimComputeUnits,
-				// TODO_FOLLOWUP: Add NumEstimatedComputeUnits and ClaimedAmountUpokt
+				Claim:                    &claim,
+				NumRelays:                numRelays,
+				NumClaimedComputeUnits:   numClaimComputeUnits,
+				NumEstimatedComputeUnits: numExpectedComputeUnitsToClaim,
+				ClaimedUpokt:             &claimedUPOKT,
 			},
 		)
 	case false:
 		claimUpsertEvent = proto.Message(
 			&types.EventClaimCreated{
-				Claim:                  &claim,
-				NumRelays:              numRelays,
-				NumClaimedComputeUnits: numClaimComputeUnits,
-				// TODO_FOLLOWUP: Add NumEstimatedComputeUnits and ClaimedAmountUpokt
+				Claim:                    &claim,
+				NumRelays:                numRelays,
+				NumClaimedComputeUnits:   numClaimComputeUnits,
+				NumEstimatedComputeUnits: numExpectedComputeUnitsToClaim,
+				ClaimedUpokt:             &claimedUPOKT,
 			},
 		)
 	}
@@ -153,4 +155,21 @@ func (k msgServer) CreateClaim(
 	return &types.MsgCreateClaimResponse{
 		Claim: &claim,
 	}, nil
+}
+
+// finalizeCreateClaimTelemetry defers telemetry calls to be executed after business logic,
+// incrementing counters based on whether a new claim was handled successfully.
+// Meant to run deferred.
+func (k msgServer) finalizeCreateClaimTelemetry(session *sessiontypes.Session, msg *types.MsgCreateClaim, isExistingClaim bool, numRelays, numClaimComputeUnits uint64, err error) {
+	// Only increment these metrics counters if handling a new claim.
+	if !isExistingClaim {
+		serviceId := session.Header.ServiceId
+		applicationAddress := session.Header.ApplicationAddress
+		supplierOperatorAddress := msg.GetSupplierOperatorAddress()
+		claimProofStage := types.ClaimProofStage_CLAIMED.String()
+
+		telemetry.ClaimCounter(claimProofStage, 1, serviceId, applicationAddress, supplierOperatorAddress, err)
+		telemetry.ClaimRelaysCounter(claimProofStage, numRelays, serviceId, applicationAddress, supplierOperatorAddress, err)
+		telemetry.ClaimComputeUnitsCounter(claimProofStage, numClaimComputeUnits, serviceId, applicationAddress, supplierOperatorAddress, err)
+	}
 }
