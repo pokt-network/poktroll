@@ -6,6 +6,7 @@ import (
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/pokt-network/poktroll/app/volatile"
+	"github.com/pokt-network/poktroll/testutil/sample"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	gatewaytypes "github.com/pokt-network/poktroll/x/gateway/types"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
@@ -246,9 +247,11 @@ var (
 			MintAllocationSupplier:    tokenomicstypes.DefaultMintAllocationSupplier,
 			MintAllocationSourceOwner: tokenomicstypes.DefaultMintAllocationSourceOwner,
 			MintAllocationApplication: tokenomicstypes.DefaultMintAllocationApplication,
+			DaoRewardAddress:          sample.AccAddress(),
 		},
 		ParamTypes: map[ParamType]any{
 			ParamTypeFloat64: tokenomicstypes.MsgUpdateParam_AsFloat{},
+			ParamTypeString:  tokenomicstypes.MsgUpdateParam_AsString{},
 		},
 		DefaultParams:    tokenomicstypes.DefaultParams(),
 		NewParamClientFn: tokenomicstypes.NewQueryClient,

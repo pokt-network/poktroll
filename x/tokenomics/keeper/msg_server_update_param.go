@@ -43,6 +43,9 @@ func (k msgServer) UpdateParam(
 				"%s cannot be updated individually as all mint allocation percentages MUST ALWAYS sum to 1", msg.Name,
 			).Error(),
 		)
+	case tokenomicstypes.ParamDaoRewardAddress:
+		logger = logger.With("param_value", msg.GetAsString())
+		params.DaoRewardAddress = msg.GetAsString()
 	default:
 		return nil, status.Error(
 			codes.InvalidArgument,
