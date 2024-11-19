@@ -67,7 +67,8 @@ func (tlm TokenLogicModuleId) EnumIndex() int {
 type TokenLogicModule interface {
 	GetId() TokenLogicModuleId
 	// Process executes the token logic modules business logic given the input/output
-	// parameters encapsulated by the TLMContext. IT DOES NOT modify network state directly.
+	// parameters encapsulated by the TLMContext.
+	// IT DOES NOT modify network state directly.
 	Process(context.Context, cosmoslog.Logger, TLMContext) error
 }
 

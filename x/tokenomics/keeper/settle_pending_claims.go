@@ -26,8 +26,6 @@ import (
 // If a claim is expired and does NOT require a proof -> it's settled.
 // Events are emitted for each claim that is settled or removed.
 // On-chain Claims & Proofs are deleted after they're settled or expired to free up space.
-//
-// TODO_TECHDEBT: Refactor this function to return a struct instead of multiple return values.
 func (k Keeper) SettlePendingClaims(ctx cosmostypes.Context) (
 	settledResults tlm.ClaimSettlementResults,
 	expiredResults tlm.ClaimSettlementResults,
