@@ -7,6 +7,7 @@ import (
 	"math"
 	"testing"
 
+	cosmoslog "cosmossdk.io/log"
 	cosmosmath "cosmossdk.io/math"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -51,7 +52,11 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_Valid(t *testing.T) {
 	numRelays := uint64(1000) // By supplier for application in this session
 
 	// Prepare the keepers
-	keepers, ctx := testkeeper.NewTokenomicsModuleKeepers(t, nil, testkeeper.WithService(*service))
+	keepers, ctx := testkeeper.NewTokenomicsModuleKeepers(t,
+		cosmoslog.NewNopLogger(),
+		testkeeper.WithService(*service),
+		testkeeper.WithDefaultModuleBalances(),
+	)
 	keepers.SetService(ctx, *service)
 
 	// Ensure the claim is within relay mining bounds
@@ -184,7 +189,11 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_Valid_SupplierExceedsMaxClai
 	supplierRevShareRatios := []float32{12.5, 37.5, 50}
 
 	// Prepare the keepers
-	keepers, ctx := testkeeper.NewTokenomicsModuleKeepers(t, nil, testkeeper.WithService(*service))
+	keepers, ctx := testkeeper.NewTokenomicsModuleKeepers(t,
+		cosmoslog.NewNopLogger(),
+		testkeeper.WithService(*service),
+		testkeeper.WithDefaultModuleBalances(),
+	)
 	keepers.SetService(ctx, *service)
 
 	// Set up the relays to exceed the max claimable amount
@@ -347,6 +356,7 @@ func TestProcessTokenLogicModules_TLMGlobalMint_Valid_MintDistributionCorrect(t 
 		testkeeper.WithService(*service),
 		testkeeper.WithProposerAddr(proposerConsAddr),
 		testkeeper.WithTokenLogicModules(tokenLogicModules),
+		testkeeper.WithDefaultModuleBalances(),
 	}
 	keepers, ctx := testkeeper.NewTokenomicsModuleKeepers(t, nil, opts...)
 	keepers.SetService(ctx, *service)
