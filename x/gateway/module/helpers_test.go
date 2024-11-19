@@ -16,6 +16,7 @@ var _ = strconv.IntSize
 // networkWithGatewayObjects creates a network with a populated gateway state of n gateway objects
 func networkWithGatewayObjects(t *testing.T, n int) (*network.Network, []types.Gateway) {
 	t.Helper()
+
 	cfg := network.DefaultConfig()
 	gatewayGenesisState := network.DefaultGatewayModuleGenesisState(t, n)
 	buf, err := cfg.Codec.MarshalJSON(gatewayGenesisState)
