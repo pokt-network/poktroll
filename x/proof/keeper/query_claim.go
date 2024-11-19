@@ -21,7 +21,7 @@ func (k Keeper) AllClaims(ctx context.Context, req *types.QueryAllClaimsRequest)
 	storeAdapter := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
 
 	// isCustomIndex is used to determined if we'll be using the store that points
-	// to the actual Claim values, or a secondary index that points to the primary keys.
+	// to the actual claim values, or a secondary index that points to the primary keys.
 	var (
 		isCustomIndex bool
 		keyPrefix     []byte
