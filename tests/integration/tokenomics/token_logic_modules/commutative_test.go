@@ -118,7 +118,7 @@ func (s *tokenLogicModuleTestSuite) setupKeepers(t *testing.T, opts ...keeper.To
 func (s *tokenLogicModuleTestSuite) setExpectedSettlementState(
 	t *testing.T,
 	settledResults,
-	expiredResults tlm.SettlementResults,
+	expiredResults tlm.ClaimSettlementResults,
 ) {
 	t.Helper()
 
@@ -169,14 +169,14 @@ func (s *tokenLogicModuleTestSuite) getBalance(t *testing.T, bech32 string) *typ
 func (s *tokenLogicModuleTestSuite) assertExpectedSettlementState(
 	t *testing.T,
 	actualSettledResults,
-	actualExpiredResults tlm.SettlementResults,
+	actualExpiredResults tlm.ClaimSettlementResults,
 ) {
 	require.Equal(t, len(s.expectedSettledResults), len(actualSettledResults))
 	require.Equal(t, len(s.expectedExpiredResults), len(actualExpiredResults))
 
 	for _, expectedSettledResult := range s.expectedSettledResults {
 		// Find the corresponding actual settled result by matching on claim root hash.
-		foundActualResult := new(tokenomicstypes.SettlementResult)
+		foundActualResult := new(tokenomicstypes.ClaimSettlementResult)
 		for _, actualSettledResult := range actualSettledResults {
 			if bytes.Equal(expectedSettledResult.Claim.GetRootHash(), actualSettledResult.Claim.GetRootHash()) {
 				foundActualResult = actualSettledResult

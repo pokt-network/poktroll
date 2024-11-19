@@ -81,7 +81,7 @@ type TLMContext struct {
 	Params                TLMUsedParams
 	SettlementCoin        cosmostypes.Coin // This is the "actualSettlementCoin" rather than just the "claimCoin" because of how settlement functions; see ensureClaimAmountLimits for details.
 	SessionHeader         *sessiontypes.SessionHeader
-	Result                *tokenomicstypes.SettlementResult
+	Result                *tokenomicstypes.ClaimSettlementResult
 	Service               *sharedtypes.Service
 	Application           *apptypes.Application
 	Supplier              *sharedtypes.Supplier

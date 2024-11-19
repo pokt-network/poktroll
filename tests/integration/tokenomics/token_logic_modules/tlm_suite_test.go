@@ -38,7 +38,7 @@ type tokenLogicModuleTestSuite struct {
 	daoRewardAddr string
 
 	expectedSettledResults,
-	expectedExpiredResults tlm.SettlementResults
+	expectedExpiredResults tlm.ClaimSettlementResults
 	expectedSettlementState *settlementState
 }
 
@@ -162,7 +162,7 @@ func (s *tokenLogicModuleTestSuite) createClaims(
 
 // settleClaims sets the block height to the settlement height for the current
 // session and triggers the settlement of all pending claims.
-func (s *tokenLogicModuleTestSuite) settleClaims(t *testing.T) (settledResults, expiredResults tlm.SettlementResults) {
+func (s *tokenLogicModuleTestSuite) settleClaims(t *testing.T) (settledResults, expiredResults tlm.ClaimSettlementResults) {
 	// Increment the block height to the settlement height.
 	settlementHeight := sharedtypes.GetSettlementSessionEndHeight(s.getSharedParams(), 1)
 	s.setBlockHeight(settlementHeight)

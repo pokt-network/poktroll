@@ -18,7 +18,7 @@ import (
 // shareholders based on the rev share percentage of the supplier service config.
 func distributeSupplierRewardsToShareHolders(
 	logger cosmoslog.Logger,
-	result *tokenomicstypes.SettlementResult,
+	result *tokenomicstypes.ClaimSettlementResult,
 	settlementOpReason tokenomicstypes.SettlementOpReason,
 	supplier *sharedtypes.Supplier,
 	serviceId string,

@@ -12,19 +12,19 @@ import (
 	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
 )
 
-// SettlementResults is a slice of SettlementResult. It implements
-// methods for convenience when working with SettlementResult objects.
-type SettlementResults []*tokenomicstypes.SettlementResult
+// ClaimSettlementResults is a slice of ClaimSettlementResult. It implements
+// methods for convenience when working with ClaimSettlementResult objects.
+type ClaimSettlementResults []*tokenomicstypes.ClaimSettlementResult
 
-// resultOption is a function which receives a SettlementResult for modification.
-type resultOption func(*tokenomicstypes.SettlementResult)
+// resultOption is a function which receives a ClaimSettlementResult for modification.
+type resultOption func(*tokenomicstypes.ClaimSettlementResult)
 
-// NewSettlementResult returns a new SettlementResult with the given claim and options applied.
-func NewSettlementResult(
+// NewClaimSettlementResult returns a new ClaimSettlementResult with the given claim and options applied.
+func NewClaimSettlementResult(
 	claim prooftypes.Claim,
 	opts ...resultOption,
-) *tokenomicstypes.SettlementResult {
-	result := &tokenomicstypes.SettlementResult{Claim: claim}
+) *tokenomicstypes.ClaimSettlementResult {
+	result := &tokenomicstypes.ClaimSettlementResult{Claim: claim}
 	for _, opt := range opts {
 		opt(result)
 	}
@@ -32,7 +32,7 @@ func NewSettlementResult(
 }
 
 // GetNumComputeUnits returns the total number of claimed compute units in the results.
-func (rs SettlementResults) GetNumComputeUnits() (numComputeUnits uint64, errs error) {
+func (rs ClaimSettlementResults) GetNumComputeUnits() (numComputeUnits uint64, errs error) {
 	for _, result := range rs {
 		claimNumComputeUnits, err := result.GetNumComputeUnits()
 		if err != nil {
@@ -46,7 +46,7 @@ func (rs SettlementResults) GetNumComputeUnits() (numComputeUnits uint64, errs e
 }
 
 // GetNumRelays returns the total number of relays in the combined results.
-func (rs SettlementResults) GetNumRelays() (numRelays uint64, errs error) {
+func (rs ClaimSettlementResults) GetNumRelays() (numRelays uint64, errs error) {
 	for _, result := range rs {
 		claimNumRelays, err := result.Claim.GetNumRelays()
 		if err != nil {
@@ -60,13 +60,13 @@ func (rs SettlementResults) GetNumRelays() (numRelays uint64, errs error) {
 }
 
 // GetNumClaims returns the number of claims in the combined results.
-func (rs SettlementResults) GetNumClaims() uint64 {
+func (rs ClaimSettlementResults) GetNumClaims() uint64 {
 	// Each result holds a single claim.
 	return uint64(len(rs))
 }
 
 // GetApplicationAddrs returns a slice of application addresses from the combined results' claims.
-func (rs SettlementResults) GetApplicationAddrs() (appAddrs []string) {
+func (rs ClaimSettlementResults) GetApplicationAddrs() (appAddrs []string) {
 	for _, result := range rs {
 		appAddrs = append(appAddrs, result.GetApplicationAddr())
 	}
@@ -74,7 +74,7 @@ func (rs SettlementResults) GetApplicationAddrs() (appAddrs []string) {
 }
 
 // GetSupplierOperatorAddrs returns a slice of supplier addresses from the combined results' claims.
-func (rs SettlementResults) GetSupplierOperatorAddrs() (supplierOperatorAddrs []string) {
+func (rs ClaimSettlementResults) GetSupplierOperatorAddrs() (supplierOperatorAddrs []string) {
 	for _, result := range rs {
 		supplierOperatorAddrs = append(supplierOperatorAddrs, result.GetSupplierOperatorAddr())
 	}
@@ -84,7 +84,7 @@ func (rs SettlementResults) GetSupplierOperatorAddrs() (supplierOperatorAddrs []
 // GetServiceIds returns a slice of service IDs from the combined results' claims.
 // It is intended to be used for deterministic iterating over the map returned
 // from GetRelaysPerServiceMap via the serviceId key.
-func (rs SettlementResults) GetServiceIds() (serviceIds []string) {
+func (rs ClaimSettlementResults) GetServiceIds() (serviceIds []string) {
 	for _, result := range rs {
 		serviceIds = append(serviceIds, result.GetServiceId())
 	}
@@ -100,7 +100,7 @@ func (rs SettlementResults) GetServiceIds() (serviceIds []string) {
 // IMPORTANT: **DO NOT** directly iterate over returned map in on-chain code to avoid
 // the possibility of introducing non-determinism. Instead, iterate over the service ID
 // slice returned by OR a sorted slice of the service ID keys.
-func (rs SettlementResults) GetRelaysPerServiceMap() (_ map[string]uint64, errs error) {
+func (rs ClaimSettlementResults) GetRelaysPerServiceMap() (_ map[string]uint64, errs error) {
 	relaysPerServiceMap := make(map[string]uint64)
 
 	for _, result := range rs {
@@ -117,34 +117,34 @@ func (rs SettlementResults) GetRelaysPerServiceMap() (_ map[string]uint64, errs 
 }
 
 // Append appends a result to the results.
-func (rs *SettlementResults) Append(result ...*tokenomicstypes.SettlementResult) {
+func (rs *ClaimSettlementResults) Append(result ...*tokenomicstypes.ClaimSettlementResult) {
 	*rs = append(*rs, result...)
 }
 
-// WithMints returns a resultOption which sets the mints field of the SettlementResult.
+// WithMints returns a resultOption which sets the mints field of the ClaimSettlementResult.
 func WithMints(mints []tokenomicstypes.MintBurnOp) resultOption {
-	return func(r *tokenomicstypes.SettlementResult) {
+	return func(r *tokenomicstypes.ClaimSettlementResult) {
 		r.Mints = mints
 	}
 }
 
-// WithBurns returns a resultOption which sets the burns field of the SettlementResult.
+// WithBurns returns a resultOption which sets the burns field of the ClaimSettlementResult.
 func WithBurns(burns []tokenomicstypes.MintBurnOp) resultOption {
-	return func(r *tokenomicstypes.SettlementResult) {
+	return func(r *tokenomicstypes.ClaimSettlementResult) {
 		r.Burns = burns
 	}
 }
 
-// WithModToModTransfers returns a resultOption which sets the modToModTransfers field of the SettlementResult.
+// WithModToModTransfers returns a resultOption which sets the modToModTransfers field of the ClaimSettlementResult.
 func WithModToModTransfers(transfers []tokenomicstypes.ModToModTransfer) resultOption {
-	return func(r *tokenomicstypes.SettlementResult) {
+	return func(r *tokenomicstypes.ClaimSettlementResult) {
 		r.ModToModTransfers = transfers
 	}
 }
 
-// WithModToAcctTransfers returns a resultOption which sets the modToAcctTransfers field of the SettlementResult.
+// WithModToAcctTransfers returns a resultOption which sets the modToAcctTransfers field of the ClaimSettlementResult.
 func WithModToAcctTransfers(transfers []tokenomicstypes.ModToAcctTransfer) resultOption {
-	return func(r *tokenomicstypes.SettlementResult) {
+	return func(r *tokenomicstypes.ClaimSettlementResult) {
 		r.ModToAcctTransfers = transfers
 	}
 }

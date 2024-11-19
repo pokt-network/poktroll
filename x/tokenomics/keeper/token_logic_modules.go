@@ -32,7 +32,7 @@ import (
 // IMPORTANT: It is assumed that the proof for the claim has been validated BEFORE calling this function.
 func (k Keeper) ProcessTokenLogicModules(
 	ctx context.Context,
-	pendingResult *tokenomicstypes.SettlementResult,
+	pendingResult *tokenomicstypes.ClaimSettlementResult,
 	applicationInitialStake cosmostypes.Coin,
 ) error {
 	logger := k.Logger().With("method", "ProcessTokenLogicModules")

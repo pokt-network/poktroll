@@ -218,7 +218,7 @@ func ensureMintedCoinsAreDistributed(
 // tokenomics module account to the specified address.
 func sendRewardsToAccount(
 	logger cosmoslog.Logger,
-	result *tokenomicstypes.SettlementResult,
+	result *tokenomicstypes.ClaimSettlementResult,
 	opReason tokenomicstypes.SettlementOpReason,
 	senderModule string,
 	recipientAddr string,

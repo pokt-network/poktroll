@@ -90,6 +90,10 @@ func (tlm tlmRelayBurnEqualsMint) Process(
 
 	// Update the application's on-chain stake
 	newAppStake, err := tlmCtx.Application.Stake.SafeSub(tlmCtx.SettlementCoin)
+	// DEV_NOTE: This should never occur because:
+	//   1. Application overservicing SHOULD be mitigated by the protocol.
+	//   2. tokenomicskeeper.Keeper#ensureClaimAmountLimits deducts the
+	//      overserviced amount from the claimable amount ("free work").
 	if err != nil {
 		return tokenomicstypes.ErrTokenomicsApplicationNewStakeInvalid.Wrapf("application %q stake cannot be reduced to a negative amount %v", tlmCtx.Application.Address, newAppStake)
 	}

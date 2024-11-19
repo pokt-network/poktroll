@@ -54,7 +54,7 @@ message EventClaimSettled {
     // the number of estimated compute units and the compute uints to token multiplier.
     cosmos.base.v1beta1.Coin claimed_upokt = 6 [(gogoproto.jsontag) = "claimed_upokt"];
     // SettlementResult holds mint, burn, and transfer operations on a per-claim basis.
-    SettlementResult settlement_result = 7 [(gogoproto.nullable) = false, (gogoproto.jsontag) = "settlement_result"];
+    ClaimSettlementResult settlement_result = 7 [(gogoproto.nullable) = false, (gogoproto.jsontag) = "settlement_result"];
 }
 
 // EventApplicationOverserviced is emitted when an application has less stake than

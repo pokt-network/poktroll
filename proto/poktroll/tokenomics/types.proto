@@ -10,7 +10,7 @@ import "gogoproto/gogo.proto";
 import "poktroll/proof/types.proto";
 
 // SettlementResult holds mint, burn, and transfer operations that result from a single claim settlement.
-message SettlementResult {
+message ClaimSettlementResult {
   poktroll.proof.Claim claim = 1 [(gogoproto.nullable) = false, (gogoproto.jsontag) = "claim"];
   repeated MintBurnOp mints = 2 [(gogoproto.nullable) = false, (gogoproto.jsontag) = "mints"];
   repeated MintBurnOp burns = 3 [(gogoproto.nullable) = false, (gogoproto.jsontag) = "burns"];
@@ -47,14 +47,14 @@ enum SettlementOpReason {
   // type for objects which need to distinguish whether a SettlementOpReason has been specified it or not.
   UNSPECIFIED = 0;
 
-  // Value transfer (credit/debit) - MintBurnOperation (mint/burn)
+  // Value transfer (credit/debit)
   TLM_RELAY_BURN_EQUALS_MINT_SUPPLIER_STAKE_MINT = 1;
   TLM_RELAY_BURN_EQUALS_MINT_APPLICATION_STAKE_BURN = 2;
 
-  // Inflation - MintBurnOperation (mint)
+  // Inflation
   TLM_GLOBAL_MINT_INFLATION = 3;
 
-  // Reward distribution - ModToAcctTransfer
+  // Reward distribution
   TLM_RELAY_BURN_EQUALS_MINT_SUPPLIER_SHAREHOLDER_REWARD_DISTRIBUTION = 4;
   TLM_GLOBAL_MINT_DAO_REWARD_DISTRIBUTION = 5;
   TLM_GLOBAL_MINT_PROPOSER_REWARD_DISTRIBUTION = 6;
@@ -62,13 +62,14 @@ enum SettlementOpReason {
   TLM_GLOBAL_MINT_SOURCE_OWNER_REWARD_DISTRIBUTION = 8;
   TLM_GLOBAL_MINT_APPLICATION_REWARD_DISTRIBUTION = 9;
 
-  // Self-servicing mitigation - ModToAcctTransfer
+  // Self-servicing mitigation
   TLM_GLOBAL_MINT_REIMBURSEMENT_REQUEST_ESCROW_DAO_TRANSFER = 10;
 
-  // Penalization - MintBurnOperation (burn)
-  UNSPECIFIED_TLM_SUPPLIER_SLASH = 11;
+  // Penalization
+  UNSPECIFIED_TLM_SUPPLIER_SLASH_MODULE_TRANSFER = 11;
+  UNSPECIFIED_TLM_SUPPLIER_SLASH_STAKE_BURN = 12;
 
-  // Module accounting - ModToModTransfer
-  TLM_GLOBAL_MINT_SUPPLIER_SHAREHOLDER_REWARD_MODULE_TRANSFER = 12;
-  TLM_GLOBAL_MINT_REIMBURSEMENT_REQUEST_ESCROW_MODULE_TRANSFER = 13;
+  // Module accounting
+  TLM_GLOBAL_MINT_SUPPLIER_SHAREHOLDER_REWARD_MODULE_TRANSFER = 13;
+  TLM_GLOBAL_MINT_REIMBURSEMENT_REQUEST_ESCROW_MODULE_TRANSFER = 14;
 }
