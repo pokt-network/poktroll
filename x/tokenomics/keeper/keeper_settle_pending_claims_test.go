@@ -751,10 +751,10 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimExpired_SupplierUnstaked() {
 	require.Equal(t, 1, len(slashingEvents))
 
 	// Validate the slashing event
+	proofMissingPenalty := s.keepers.ProofKeeper.GetParams(sdkCtx).ProofMissingPenalty
 	expectedSlashingEvent := &tokenomicstypes.EventSupplierSlashed{
-		SupplierOperatorAddr: slashedSupplier.GetOperatorAddress(),
-		NumExpiredClaims:     uint64(1),
-		SlashingAmount:       proofParams.GetProofMissingPenalty(),
+		Claim:               &s.claim,
+		ProofMissingPenalty: proofMissingPenalty,
 	}
 	require.EqualValues(t, expectedSlashingEvent, slashingEvents[0])
 
