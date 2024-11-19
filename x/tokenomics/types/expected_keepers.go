@@ -86,7 +86,6 @@ type SupplierKeeper interface {
 	GetSupplier(ctx context.Context, supplierOperatorAddr string) (supplier sharedtypes.Supplier, found bool)
 	GetAllSuppliers(ctx context.Context) (suppliers []sharedtypes.Supplier)
 	SetSupplier(ctx context.Context, supplier sharedtypes.Supplier)
-	GetParams(ctx context.Context) suppliertypes.Params
 }
 
 type ServiceKeeper interface {
