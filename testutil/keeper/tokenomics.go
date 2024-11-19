@@ -632,7 +632,7 @@ func WithProofRequirement(proofRequired bool) TokenomicsModuleKeepersOptFn {
 	}
 }
 
-// TODO_IN_THIS_COMMIT: godoc...
+// WithDefaultModuleBalances mints an arbitrary amount of uPOKT to the respective modules.
 func WithDefaultModuleBalances() func(cfg *tokenomicsModuleKeepersConfig) {
 	return WithModuleAccountBalances(map[string]int64{
 		apptypes.ModuleName:      1000000000000,
@@ -640,7 +640,7 @@ func WithDefaultModuleBalances() func(cfg *tokenomicsModuleKeepersConfig) {
 	})
 }
 
-// TODO_IN_THIS_COMMIT: godoc...
+// WithModuleAccountBalances mints the given amount of uPOKT to the respective modules.
 func WithModuleAccountBalances(moduleAccountBalances map[string]int64) func(cfg *tokenomicsModuleKeepersConfig) {
 	setModuleAccountBalances := func(ctx context.Context, keepers *TokenomicsModuleKeepers) context.Context {
 		for moduleName, balanceCoin := range moduleAccountBalances {
