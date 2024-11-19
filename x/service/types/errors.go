@@ -19,4 +19,5 @@ var (
 	ErrServiceInvalidOwnerAddress          = sdkerrors.Register(ModuleName, 1113, "invalid owner address")
 	ErrServiceParamInvalid                 = sdkerrors.Register(ModuleName, 1115, "the provided param is invalid")
 	ErrServiceMissingRelayMiningDifficulty = sdkerrors.Register(ModuleName, 1116, "missing relay mining difficulty")
+	ErrServiceNotFound                     = sdkerrors.Register(ModuleName, 1117, "service not found")
 )

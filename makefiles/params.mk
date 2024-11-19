@@ -14,21 +14,9 @@ params_get_tokenomics: ## Get the tokenomics module params
 params_update_tokenomics_all: ## Update the tokenomics module params
 	poktrolld tx authz exec ./tools/scripts/params/tokenomics_all.json $(PARAM_FLAGS)
 
-.PHONY: params_update_tokenomics_mint_allocation_dao
-params_update_tokenomics_mint_allocation_dao: ## Update the tokenomics module mint_allocation_dao param
-	poktrolld tx authz exec ./tools/scripts/params/tokenomics_mint_allocation_dao.json $(PARAM_FLAGS)
-
-.PHONY: params_update_tokenomics_mint_allocation_proposer
-params_update_tokenomics_mint_allocation_proposer: ## Update the tokenomics module mint_allocation_proposer param
-	poktrolld tx authz exec ./tools/scripts/params/tokenomics_mint_allocation_proposer.json $(PARAM_FLAGS)
-
-.PHONY: params_update_tokenomics_mint_allocation_supplier
-params_update_tokenomics_mint_allocation_supplier: ## Update the tokenomics module mint_allocation_supplier param
-	poktrolld tx authz exec ./tools/scripts/params/tokenomics_mint_allocation_supplier.json $(PARAM_FLAGS)
-
-.PHONY: params_update_tokenomics_mint_allocation_source_owner
-params_update_tokenomics_mint_allocation_source_owner: ## Update the tokenomics module mint_allocation_source_owner param
-	poktrolld tx authz exec ./tools/scripts/params/tokenomics_mint_allocation_source_owner.json $(PARAM_FLAGS)
+.PHONY: params_update_tokenomics_mint_allocation_percentages
+params_update_tokenomics_mint_allocation_percentages: ## Update the tokenomics module mint_allocation_percentages param
+	poktrolld tx authz exec ./tools/scripts/params/tokenomics_mint_allocation_percentages.json $(PARAM_FLAGS)
 
 ### Service Module Params ###
 .PHONY: params_get_service
