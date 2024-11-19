@@ -14,6 +14,7 @@ import (
 	servicetypes "github.com/pokt-network/poktroll/x/service/types"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
+	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 )
 
 // AccountKeeper defines the expected interface for the Account module.
@@ -85,6 +86,7 @@ type SupplierKeeper interface {
 	GetSupplier(ctx context.Context, supplierOperatorAddr string) (supplier sharedtypes.Supplier, found bool)
 	GetAllSuppliers(ctx context.Context) (suppliers []sharedtypes.Supplier)
 	SetSupplier(ctx context.Context, supplier sharedtypes.Supplier)
+	GetParams(ctx context.Context) suppliertypes.Params
 }
 
 type ServiceKeeper interface {
