@@ -74,7 +74,7 @@ func (k Keeper) EndBlockerUnbondSuppliers(ctx context.Context) error {
 		k.RemoveSupplier(ctx, supplierOperatorAddress.String())
 		logger.Info(fmt.Sprintf("Successfully removed the supplier: %+v", supplier))
 
-		unbondingReason := suppliertypes.SupplierUnbondingReason_SUPPLIER_UNBONDING_REASON_ELECTIVE
+		unbondingReason := suppliertypes.SupplierUnbondingReason_SUPPLIER_UNBONDING_REASON_VOLUNTARY
 		if supplier.GetStake().Amount.LT(k.GetParams(ctx).MinStake.Amount) {
 			unbondingReason = suppliertypes.SupplierUnbondingReason_SUPPLIER_UNBONDING_REASON_BELOW_MIN_STAKE
 		}

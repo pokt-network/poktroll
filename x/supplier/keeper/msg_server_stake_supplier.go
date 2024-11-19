@@ -167,6 +167,7 @@ func (k msgServer) StakeSupplier(ctx context.Context, msg *suppliertypes.MsgStak
 		events = append(events, &suppliertypes.EventSupplierUnbondingCanceled{
 			Supplier:         &supplier,
 			SessionEndHeight: sessionEndHeight,
+			Height:           sdkCtx.BlockHeight(),
 		})
 	}
 

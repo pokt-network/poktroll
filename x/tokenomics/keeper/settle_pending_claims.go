@@ -419,7 +419,7 @@ func (k Keeper) slashSupplierStake(
 		sharedParams := k.sharedKeeper.GetParams(ctx)
 		sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
 		currentHeight := sdkCtx.BlockHeight()
-		unstakeSessionEndHeight := uint64(sharedtypes.GetSessionEndHeight(&sharedParams, currentHeight))
+		unstakeSessionEndHeight := sharedtypes.GetSessionEndHeight(&sharedParams, currentHeight)
 
 		logger.Warn(fmt.Sprintf(
 			"unstaking supplier %q owned by %q due to stake (%s) below the minimum (%s)",
@@ -432,14 +432,13 @@ func (k Keeper) slashSupplierStake(
 		// TODO_MAINNET: Should we just remove the supplier if the stake is
 		// below the minimum, at the risk of making the off-chain actors have an
 		// inconsistent session supplier list? See the comment above for more details.
-		supplierToSlash.UnstakeSessionEndHeight = unstakeSessionEndHeight
+		supplierToSlash.UnstakeSessionEndHeight = uint64(unstakeSessionEndHeight)
 
-		sessionEndHeight := sharedtypes.GetSettlementSessionEndHeight(&sharedParams, currentHeight)
 		unbondingEndHeight := sharedtypes.GetSupplierUnbondingEndHeight(&sharedParams, &supplierToSlash)
 		events = append(events, &suppliertypes.EventSupplierUnbondingBegin{
 			Supplier:           &supplierToSlash,
 			Reason:             suppliertypes.SupplierUnbondingReason_SUPPLIER_UNBONDING_REASON_BELOW_MIN_STAKE,
-			SessionEndHeight:   sessionEndHeight,
+			SessionEndHeight:   unstakeSessionEndHeight,
 			UnbondingEndHeight: unbondingEndHeight,
 		})
 	}

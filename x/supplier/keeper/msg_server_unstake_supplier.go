@@ -74,7 +74,7 @@ func (k msgServer) UnstakeSupplier(
 	unbondingEndHeight := sharedtypes.GetSupplierUnbondingEndHeight(&sharedParams, &supplier)
 	event := &suppliertypes.EventSupplierUnbondingBegin{
 		Supplier:           &supplier,
-		Reason:             suppliertypes.SupplierUnbondingReason_SUPPLIER_UNBONDING_REASON_ELECTIVE,
+		Reason:             suppliertypes.SupplierUnbondingReason_SUPPLIER_UNBONDING_REASON_VOLUNTARY,
 		SessionEndHeight:   int64(supplier.GetUnstakeSessionEndHeight()),
 		UnbondingEndHeight: unbondingEndHeight,
 	}

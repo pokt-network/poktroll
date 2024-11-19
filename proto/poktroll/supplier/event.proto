@@ -11,14 +11,15 @@ import "cosmos/base/v1beta1/coin.proto";
 import "poktroll/shared/supplier.proto";
 
 enum SupplierUnbondingReason {
-  SUPPLIER_UNBONDING_REASON_ELECTIVE = 0;
-  SUPPLIER_UNBONDING_REASON_BELOW_MIN_STAKE = 1;
+  SUPPLIER_UNBONDING_REASON_UNSPECIFIED = 0;
+  SUPPLIER_UNBONDING_REASON_VOLUNTARY = 1;
+  SUPPLIER_UNBONDING_REASON_BELOW_MIN_STAKE = 2;
 }
 
 // EventSupplierStaked is emitted when a supplier stake message is committed on-chain.
 message EventSupplierStaked {
   poktroll.shared.Supplier supplier = 1 [(gogoproto.jsontag) = "supplier"];
-  // The session end height of the session in which the supplier was staked.
+  // The session end height of the last session in which the supplier was staked.
   int64 session_end_height = 2 [(gogoproto.jsontag) = "session_end_height"];
 }
 
@@ -27,7 +28,7 @@ message EventSupplierStaked {
 message EventSupplierUnbondingBegin {
   poktroll.shared.Supplier supplier = 1 [(gogoproto.jsontag) = "supplier"];
   SupplierUnbondingReason reason = 2 [(gogoproto.jsontag) = "reason"];
-  // The session end height of the session in which the supplier unbonding began.
+  // The session end height of the last session in which the supplier unbonding began.
   int64 session_end_height = 3 [(gogoproto.jsontag) = "session_end_height"];
   // The height at which supplier unbonding will end.
   int64 unbonding_end_height = 4 [(gogoproto.jsontag) = "unbonding_end_height"];
