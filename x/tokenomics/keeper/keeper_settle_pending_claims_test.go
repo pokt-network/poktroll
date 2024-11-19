@@ -734,7 +734,6 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimExpired_SupplierUnstaked() {
 	_, _, err = s.keepers.SettlePendingClaims(sdkCtx)
 	require.NoError(t, err)
 
-	//settlementSessionEndHeight := sharedtypes.GetSettlementSessionEndHeight(&sharedParams, sessionProofWindowCloseHeight)
 	upcomingSessionEndHeight := sharedtypes.GetNextSessionStartHeight(&sharedParams, sessionProofWindowCloseHeight) - 1
 
 	// Slashing should have occurred and the supplier is unstaked but still unbonding.
