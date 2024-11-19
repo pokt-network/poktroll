@@ -48,11 +48,13 @@ func TestMsgUpdateParams_ValidateBasic(t *testing.T) {
 			msg: tokenomicstypes.MsgUpdateParams{
 				Authority: sample.AccAddress(),
 				Params: tokenomicstypes.Params{
-					MintAllocationDao:         0.1,
-					MintAllocationProposer:    0.1,
-					MintAllocationSupplier:    0.1,
-					MintAllocationSourceOwner: 0.1,
-					MintAllocationApplication: 0.1,
+					MintAllocationPercentages: tokenomicstypes.MintAllocationPercentages{
+						Dao:         0.1,
+						Proposer:    0.1,
+						Supplier:    0.1,
+						SourceOwner: 0.1,
+						Application: 0.1,
+					},
 				},
 			},
 			expectedErr: tokenomicstypes.ErrTokenomicsParamInvalid,

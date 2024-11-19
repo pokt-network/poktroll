@@ -54,14 +54,16 @@ func TestMsgUpdateParams(t *testing.T) {
 				Params: tokenomicstypes.Params{
 					// DaoRewardAddress MUST NOT be empty string
 					// when MintAllocationDao is greater than 0.
-					MintAllocationDao: 0,
-					DaoRewardAddress:  "",
+					DaoRewardAddress: "",
 
 					// MintAllocationXXX params MUST sum to 1.
-					MintAllocationProposer:    0.1,
-					MintAllocationSupplier:    0.1,
-					MintAllocationSourceOwner: 0.1,
-					MintAllocationApplication: 0.7,
+					MintAllocationPercentages: tokenomicstypes.MintAllocationPercentages{
+						Dao:         0,
+						Proposer:    0.1,
+						Supplier:    0.1,
+						SourceOwner: 0.1,
+						Application: 0.7,
+					},
 				},
 			},
 
@@ -74,12 +76,14 @@ func TestMsgUpdateParams(t *testing.T) {
 			req: &tokenomicstypes.MsgUpdateParams{
 				Authority: tokenomicsKeeper.GetAuthority(),
 				Params: tokenomicstypes.Params{
-					MintAllocationDao:         0.1,
-					MintAllocationProposer:    0.1,
-					MintAllocationSupplier:    0.1,
-					MintAllocationSourceOwner: 0.1,
-					MintAllocationApplication: 0.6,
-					DaoRewardAddress:          sample.AccAddress(),
+					MintAllocationPercentages: tokenomicstypes.MintAllocationPercentages{
+						Dao:         0.1,
+						Proposer:    0.1,
+						Supplier:    0.1,
+						SourceOwner: 0.1,
+						Application: 0.6,
+					},
+					DaoRewardAddress: sample.AccAddress(),
 				},
 			},
 

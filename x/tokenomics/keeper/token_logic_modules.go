@@ -458,7 +458,7 @@ func (k Keeper) TokenLogicModuleGlobalMint(
 	logger.Info(fmt.Sprintf("minted (%s) to the tokenomics module account", newMintCoin))
 
 	// Send a portion of the rewards to the application
-	mintAllocationApplication := k.GetParams(ctx).MintAllocationApplication
+	mintAllocationApplication := k.GetParams(ctx).MintAllocationPercentages.Application
 	appCoin, err := k.sendRewardsToAccount(ctx, tokenomicstypes.ModuleName, application.GetAddress(), &newMintAmtFloat, mintAllocationApplication)
 	if err != nil {
 		return tokenomicstypes.ErrTokenomicsSendingMintRewards.Wrapf("sending rewards to application: %v", err)
@@ -466,7 +466,7 @@ func (k Keeper) TokenLogicModuleGlobalMint(
 	logger.Debug(fmt.Sprintf("sent (%v) newley minted coins from the tokenomics module to the application with address %q", appCoin, application.Address))
 
 	// Send a portion of the rewards to the supplier shareholders.
-	mintAllocationSupplier := k.GetParams(ctx).MintAllocationSupplier
+	mintAllocationSupplier := k.GetParams(ctx).MintAllocationPercentages.Supplier
 	supplierCoinsToShareAmt := calculateAllocationAmount(&newMintAmtFloat, mintAllocationSupplier)
 	supplierCoin := cosmostypes.NewCoin(volatile.DenomuPOKT, math.NewInt(supplierCoinsToShareAmt))
 	// Send funds from the tokenomics module to the supplier module account
@@ -488,7 +488,7 @@ func (k Keeper) TokenLogicModuleGlobalMint(
 	logger.Debug(fmt.Sprintf("sent (%v) newley minted coins from the tokenomics module to the supplier with address %q", supplierCoin, supplier.OperatorAddress))
 
 	// Send a portion of the rewards to the DAO
-	mintAllocationDao := k.GetParams(ctx).MintAllocationDao
+	mintAllocationDao := k.GetParams(ctx).MintAllocationPercentages.Dao
 	daoCoin, err := k.sendRewardsToAccount(ctx, tokenomicstypes.ModuleName, k.GetAuthority(), &newMintAmtFloat, mintAllocationDao)
 	if err != nil {
 		return tokenomicstypes.ErrTokenomicsSendingMintRewards.Wrapf("sending rewards to DAO: %v", err)
@@ -496,7 +496,7 @@ func (k Keeper) TokenLogicModuleGlobalMint(
 	logger.Debug(fmt.Sprintf("sent (%v) newley minted coins from the tokenomics module to the DAO with address %q", daoCoin, k.GetAuthority()))
 
 	// Send a portion of the rewards to the source owner
-	mintAllocationSourceOwner := k.GetParams(ctx).MintAllocationSourceOwner
+	mintAllocationSourceOwner := k.GetParams(ctx).MintAllocationPercentages.SourceOwner
 	serviceCoin, err := k.sendRewardsToAccount(ctx, tokenomicstypes.ModuleName, service.OwnerAddress, &newMintAmtFloat, mintAllocationSourceOwner)
 	if err != nil {
 		return tokenomicstypes.ErrTokenomicsSendingMintRewards.Wrapf("sending rewards to source owner: %v", err)
@@ -504,7 +504,7 @@ func (k Keeper) TokenLogicModuleGlobalMint(
 	logger.Debug(fmt.Sprintf("sent (%v) newley minted coins from the tokenomics module to the source owner with address %q", serviceCoin, service.OwnerAddress))
 
 	// Send a portion of the rewards to the block proposer
-	mintAllocationProposer := k.GetParams(ctx).MintAllocationProposer
+	mintAllocationProposer := k.GetParams(ctx).MintAllocationPercentages.Proposer
 	proposerAddr := cosmostypes.AccAddress(sdk.UnwrapSDKContext(ctx).BlockHeader().ProposerAddress).String()
 	proposerCoin, err := k.sendRewardsToAccount(ctx, tokenomicstypes.ModuleName, proposerAddr, &newMintAmtFloat, mintAllocationProposer)
 	if err != nil {
