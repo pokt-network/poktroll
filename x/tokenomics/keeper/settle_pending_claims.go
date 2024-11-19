@@ -289,7 +289,7 @@ func (k Keeper) ExecutePendingExpiredResults(ctx cosmostypes.Context, expiredRes
 
 	// Slash any supplier(s) which failed to submit a required proof, per-claim.
 	for _, expiredResult := range expiredResults {
-		if err := k.slashSupplierStake(ctx, expiredResult, expiredResult.GetSupplierOperatorAddr()); err != nil {
+		if err := k.slashSupplierStake(ctx, expiredResult); err != nil {
 			logger.Error(fmt.Sprintf("error slashing supplier %s: %s", expiredResult.GetSupplierOperatorAddr(), err))
 
 			proofRequirement, requirementErr := k.proofKeeper.ProofRequirementForClaim(ctx, &expiredResult.Claim)
@@ -548,10 +548,10 @@ func (k Keeper) GetExpiringClaims(ctx cosmostypes.Context) (expiringClaims []pro
 func (k Keeper) slashSupplierStake(
 	ctx cosmostypes.Context,
 	ClaimSettlementResult *tokenomicstypes.ClaimSettlementResult,
-	supplierOperatorAddress string,
 ) error {
 	logger := k.logger.With("method", "slashSupplierStake")
 
+	supplierOperatorAddress := ClaimSettlementResult.GetClaim().SupplierOperatorAddress
 	proofParams := k.proofKeeper.GetParams(ctx)
 	slashingCoin := *proofParams.GetProofMissingPenalty()
 
