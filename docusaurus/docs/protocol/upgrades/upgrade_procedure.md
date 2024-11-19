@@ -17,8 +17,7 @@ This page describes the protocol upgrade process, which is internal to the proto
 - [Cancelling the upgrade plan](#cancelling-the-upgrade-plan)
 - [Testing the Upgrade](#testing-the-upgrade)
   - [LocalNet](#localnet)
-    - [LocalNet Upgrade tl;dr](#localnet-upgrade-tldr)
-    - [LocalNet Upgrade Full Example Walkthrough](#localnet-upgrade-full-example-walkthrough)
+    - [LocalNet Upgrade Cheat Sheet](#localnet-upgrade-cheat-sheet)
   - [DevNet](#devnet)
   - [TestNet](#testnet)
   - [Mainnet](#mainnet)
@@ -136,7 +135,7 @@ poktrolld tx authz exec tools/scripts/upgrades/authz_cancel_upgrade_tx.json --ga
 ## Testing the Upgrade
 
 :::warning
-Note that for local testing, `cosmovisor` won't pull the binary from the info field.
+Note that for local testing, `cosmovisor` won't pull the binary from the upgrade Plan's info field.
 :::
 
 ### LocalNet
@@ -145,86 +144,69 @@ LocalNet **DOES NOT** support `cosmovisor` and automatic upgrades at the moment.
 
 However, **IT IS NOT NEEDED** to simulate and test the upgrade procedure.
 
-#### LocalNet Upgrade tl;dr
+#### LocalNet Upgrade Cheat Sheet
 
-1. Pull git repo with old version (separate directory)
-2. Download release binary of the old version
-3. Wipe LocalNet data and generate genesis using OLD version
-4. Start node using anOLD binary
-5. Write and submit an upgrade transaction on-chain
-6. When the Upgrade Plan height is reached, stop the old node and run the new binary
-7. Observe the behavior
+For a hypothetical scenario to upgrade from `0.1` to `0.2`:
 
-#### LocalNet Upgrade Full Example Walkthrough
+1. **Stop LocalNet** to prevent interference. Pull the `poktroll` repo into two separate directories. Let's name them `old` and `new`. It is recommended to open at least two tabs/shell panels in each directory for easier switching between directories.
 
-Testing an upgrade requires a network running on an old version.
-
-Ensure LocalNet is running using a binary from the [previous release you wish to upgrade **FROM**](https://github.com/pokt-network/poktroll/releases). We also want to provision the network using this version, which requires us to pull the specific git tag.
-
-1. Make a note of the version you want to test an upgrade **FROM**. This will be the **OLD** version. For example, let's imagine we're upgrading from `v0.0.9`.
-2. Pull a new `poktroll` repo (will be used as an "old" version):
-
+2. **(`old` repo)** - Check out the old version. For the test to be accurate, we need to upgrade from the correct version.
    ```bash
-   git clone https://github.com/pokt-network/poktroll.git poktroll-upgrade-old
-   cd poktroll-upgrade-old
-   git checkout v0.0.9
-
-   # Download the v0.0.9 binary: https://github.com/pokt-network/poktroll/releases
-   # CHANGE POKTROLLD_VERSION and ARCH
-   curl -L "https://github.com/pokt-network/poktroll/releases/download/${POKTROLLD_VERSION}/poktroll_linux_${ARCH}.tar.gz" | tar -zxvf - -C .
-
-   # Validate the version
-   ./poktrolld version
-   0.0.9
+   git checkout v0.1
    ```
 
-3. Stop LocalNet
-
+3. **(`new` repo)** 
    ```bash
-   make localnet_down
+   git checkout -b branch_to_test
+   ```
+   Replace `branch_to_test` with the actual branch you want to test. **Note:** This branch should have an upgrade implemented - [Implementing the Upgrade](#implementing-the-upgrade). Here, the upgrade should be named `v0.2`.
+
+4. **(BOTH repos)** - We'll use binaries from both versions - old and new.
+   ```bash
+   make go_develop ignite_release ignite_release_extract_binaries
+   ```
+   :::note
+   The binary produced by these commands in the old repo should result in the same binary as it was downloaded from [production releases](https://github.com/pokt-network/poktroll/releases), however you might consider using 
+   :::
+
+5. **(`old` repo)** - Clean up and generate an empty genesis using the old version.
+   ```bash
+   rm -rf ~/.poktroll && ./release_binaries/poktroll_darwin_arm64 comet unsafe-reset-all && make localnet_regenesis
    ```
 
-4. Reset the data
+6. **(`old` repo)** Write and save [an upgrade transaction](#writing-an-upgrade-transaction) for `v0.2`. The upgrade plan should be named after the version to which you're upgrading.
 
+7. **(`old` repo)** Start the node:
    ```bash
-   ./poktrolld comet unsafe-reset-all
+   ./release_binaries/poktroll_darwin_arm64 start
+   ```
+   The validator node should run and produce blocks as expected.
+
+8. **(`old` repo)** Submit the upgrade transaction. **Note:** The upgrade height in the transaction should be higher than the current block height. Adjust and submit if necessary:
+   ```bash
+   ./release_binaries/poktroll_darwin_arm64 tx authz exec tools/scripts/upgrades/local_test_v0.2.json --from=pnf
+   ```
+   Replace the path to the JSON transaction with your prepared upgrade transaction. Verify the upgrade plan was submitted and accepted:
+   ```bash
+   ./release_binaries/poktroll_darwin_arm64 query upgrade plan
    ```
 
-5. Create new genesis using old version (from `poktroll-upgrade-old` dir)
+9. Wait for the upgrade height to be reached on the old version. The old version should stop working since it has no knowledge of the `v0.2` upgrade. This simulates a real-world scenario. Stop the old node, and switch to the new version.
 
-   ```bash
-   make localnet_regenesis
-   ```
-
-6. Start the network
-
-   ```bash
-   ./poktrolld start
-   ```
-
-7. [Write](#writing-an-upgrade-transaction) and [Submit](#submitting-the-upgrade-on-chain) a transaction. For example:
-
-   ```bash
-   poktrolld tx authz exec tools/scripts/upgrades/local_test_v0.0.9-2.json --from=pnf`
-   ```
-
-8. Verify the plan is active
-
-   ```bash
-   poktrolld query upgrade plan
-   ```
-
-9. Wait until the height is reached and the old node dies due to the error: `ERR UPGRADE "v0.0.9-2" NEEDED at height`, which is expected.
-10. At this point, switch to the repo with the **NEW** version - the code you wish to upgrade the network **TO**. It might be a
-    `poktroll` repo you working on or a release tag.
-11. In the **NEW VERSION GIT REPO** you can build binaries using `go_develop`, `ignite_release` and `ignite_release_extract_binaries` make targets.
-12. Start the new version from the **NEW VERSION REPO**:
-
+10. **(`new` repo)** 
     ```bash
     ./release_binaries/poktroll_darwin_arm64 start
     ```
 
-13. Observe the output. Your node should go through the upgrade process and start using the new version.
+11. **Observe the output:**
+    - A successful upgrade should output `applying upgrade "v0.2" at height: 20 module=x/upgrade`.
+    - The node on the new version should continue producing blocks.
+    - If there were errors during the upgrade, investigate and address them.
+
+12. **(`new` repo, optional**) - If parameters were changed during the upgrade, test if these changes were applied. For example:
+    ```bash
+    ./release_binaries/poktroll_darwin_arm64 q application params
+    ```
 
 ### DevNet
 
