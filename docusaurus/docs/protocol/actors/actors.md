@@ -7,6 +7,7 @@ sidebar_position: 1
 
 - [Overview](#overview)
 - [On-Chain Actors](#on-chain-actors)
+  - [Risks \& Misbehavior](#risks--misbehavior)
 - [Off-Chain Actors](#off-chain-actors)
 
 ## Overview
@@ -56,6 +57,10 @@ certain point in time. They have an `address`, an `account`, a `balance` and oft
 also have a `stake`.
 
 ### Risks & Misbehavior
+
+:::warning
+This is an open work in progress and an active area of research.
+:::
 
 ```mermaid
 mindmap
