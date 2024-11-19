@@ -22,23 +22,14 @@ import (
 type ParamType = string
 
 const (
-	ParamTypeInt64   ParamType = "int64"
-	ParamTypeUint64  ParamType = "uint64"
-	ParamTypeFloat64 ParamType = "float64"
-	ParamTypeString  ParamType = "string"
-	ParamTypeBytes   ParamType = "uint8"
-	ParamTypeCoin    ParamType = "Coin"
+	ParamTypeInt64                     ParamType = "int64"
+	ParamTypeUint64                    ParamType = "uint64"
+	ParamTypeFloat64                   ParamType = "float64"
+	ParamTypeString                    ParamType = "string"
+	ParamTypeBytes                     ParamType = "uint8"
+	ParamTypeCoin                      ParamType = "Coin"
+	ParamTypeMintAllocationPercentages ParamType = "MintAllocationPercentages"
 )
-
-// TODO_UPNEXT(@bryanchriswhite): Promote mint_allocation_XXX params to
-// a new mint_allocation message type. This map will no longer be needed
-var ExcludedParams = map[string]struct{}{
-	"MintAllocationDao":         {},
-	"MintAllocationProposer":    {},
-	"MintAllocationSupplier":    {},
-	"MintAllocationSourceOwner": {},
-	"MintAllocationApplication": {},
-}
 
 // ModuleParamConfig holds type information about a module's parameters update
 // message(s) along with default and valid non-default values and a query constructor
@@ -242,16 +233,12 @@ var (
 			QueryParamsResponse:     tokenomicstypes.QueryParamsResponse{},
 		},
 		ValidParams: tokenomicstypes.Params{
-			MintAllocationDao:         tokenomicstypes.DefaultMintAllocationDao,
-			MintAllocationProposer:    tokenomicstypes.DefaultMintAllocationProposer,
-			MintAllocationSupplier:    tokenomicstypes.DefaultMintAllocationSupplier,
-			MintAllocationSourceOwner: tokenomicstypes.DefaultMintAllocationSourceOwner,
-			MintAllocationApplication: tokenomicstypes.DefaultMintAllocationApplication,
+			MintAllocationPercentages: tokenomicstypes.DefaultMintAllocationPercentages,
 			DaoRewardAddress:          sample.AccAddress(),
 		},
 		ParamTypes: map[ParamType]any{
-			ParamTypeFloat64: tokenomicstypes.MsgUpdateParam_AsFloat{},
-			ParamTypeString:  tokenomicstypes.MsgUpdateParam_AsString{},
+			ParamTypeMintAllocationPercentages: tokenomicstypes.MsgUpdateParam_AsMintAllocationPercentages{},
+			ParamTypeString:                    tokenomicstypes.MsgUpdateParam_AsString{},
 		},
 		DefaultParams:    tokenomicstypes.DefaultParams(),
 		NewParamClientFn: tokenomicstypes.NewQueryClient,
