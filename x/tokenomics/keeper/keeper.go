@@ -10,6 +10,7 @@ import (
 
 	"github.com/pokt-network/poktroll/pkg/client"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
+	tlm "github.com/pokt-network/poktroll/x/tokenomics/token_logic_module"
 	"github.com/pokt-network/poktroll/x/tokenomics/types"
 )
 
@@ -33,6 +34,8 @@ type Keeper struct {
 	serviceKeeper     types.ServiceKeeper
 
 	sharedQuerier client.SharedQueryClient
+
+	tokenLogicModules []tlm.TokenLogicModule
 }
 
 func NewKeeper(
@@ -49,12 +52,17 @@ func NewKeeper(
 	sharedKeeper types.SharedKeeper,
 	sessionKeeper types.SessionKeeper,
 	serviceKeeper types.ServiceKeeper,
+
+	tokenLogicModules []tlm.TokenLogicModule,
 ) Keeper {
 	if _, err := sdk.AccAddressFromBech32(authority); err != nil {
 		panic(fmt.Sprintf("invalid authority address: %s", authority))
 	}
 
 	sharedQuerier := prooftypes.NewSharedKeeperQueryClient(sharedKeeper, sessionKeeper)
+	if err := tlm.ValidateTLMConfig(tokenLogicModules); err != nil {
+		panic(err)
+	}
 
 	return Keeper{
 		cdc:          cdc,
@@ -72,6 +80,8 @@ func NewKeeper(
 		serviceKeeper:     serviceKeeper,
 
 		sharedQuerier: sharedQuerier,
+
+		tokenLogicModules: tokenLogicModules,
 	}
 }
 

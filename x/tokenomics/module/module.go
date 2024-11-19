@@ -13,7 +13,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/codec"
 	cdctypes "github.com/cosmos/cosmos-sdk/codec/types"
-	sdk "github.com/cosmos/cosmos-sdk/types"
+	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
@@ -21,7 +21,8 @@ import (
 
 	tokenomicsmodule "github.com/pokt-network/poktroll/api/poktroll/tokenomics/module"
 	"github.com/pokt-network/poktroll/x/tokenomics/keeper"
-	"github.com/pokt-network/poktroll/x/tokenomics/types"
+	tlm "github.com/pokt-network/poktroll/x/tokenomics/token_logic_module"
+	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
 )
 
 var (
@@ -52,36 +53,36 @@ func NewAppModuleBasic(cdc codec.BinaryCodec) AppModuleBasic {
 
 // Name returns the name of the module as a string.
 func (AppModuleBasic) Name() string {
-	return types.ModuleName
+	return tokenomicstypes.ModuleName
 }
 
 // RegisterLegacyAminoCodec registers the amino codec for the module, which is used
 // to marshal and unmarshal structs to/from []byte in order to persist them in the module's KVStore.
 func (AppModuleBasic) RegisterLegacyAminoCodec(cdc *codec.LegacyAmino) {}
 
-// RegisterInterfaces registers a module's interface types and their concrete implementations as proto.Message.
+// RegisterInterfaces registers a module's interface tokenomicstypes and their concrete implementations as proto.Message.
 func (a AppModuleBasic) RegisterInterfaces(reg cdctypes.InterfaceRegistry) {
-	types.RegisterInterfaces(reg)
+	tokenomicstypes.RegisterInterfaces(reg)
 }
 
 // DefaultGenesis returns a default GenesisState for the module, marshalled to json.RawMessage.
 // The default GenesisState need to be defined by the module developer and is primarily used for testing.
 func (AppModuleBasic) DefaultGenesis(cdc codec.JSONCodec) json.RawMessage {
-	return cdc.MustMarshalJSON(types.DefaultGenesis())
+	return cdc.MustMarshalJSON(tokenomicstypes.DefaultGenesis())
 }
 
 // ValidateGenesis used to validate the GenesisState, given in its json.RawMessage form.
 func (AppModuleBasic) ValidateGenesis(cdc codec.JSONCodec, config client.TxEncodingConfig, bz json.RawMessage) error {
-	var genState types.GenesisState
+	var genState tokenomicstypes.GenesisState
 	if err := cdc.UnmarshalJSON(bz, &genState); err != nil {
-		return types.ErrTokenomicsUnmarshalInvalid.Wrapf("invalid genesis state: %v", err)
+		return tokenomicstypes.ErrTokenomicsUnmarshalInvalid.Wrapf("invalid genesis state: %v", err)
 	}
 	return genState.Validate()
 }
 
 // RegisterGRPCGatewayRoutes registers the gRPC Gateway routes for the module.
 func (AppModuleBasic) RegisterGRPCGatewayRoutes(clientCtx client.Context, mux *runtime.ServeMux) {
-	if err := types.RegisterQueryHandlerClient(context.Background(), mux, types.NewQueryClient(clientCtx)); err != nil {
+	if err := tokenomicstypes.RegisterQueryHandlerClient(context.Background(), mux, tokenomicstypes.NewQueryClient(clientCtx)); err != nil {
 		panic(err)
 	}
 }
@@ -95,17 +96,17 @@ type AppModule struct {
 	AppModuleBasic
 
 	tokenomicsKeeper keeper.Keeper
-	accountKeeper    types.AccountKeeper
-	bankKeeper       types.BankKeeper
-	supplierKeeper   types.SupplierKeeper
+	accountKeeper    tokenomicstypes.AccountKeeper
+	bankKeeper       tokenomicstypes.BankKeeper
+	supplierKeeper   tokenomicstypes.SupplierKeeper
 }
 
 func NewAppModule(
 	cdc codec.Codec,
 	tokenomicsKeeper keeper.Keeper,
-	accountKeeper types.AccountKeeper,
-	bankKeeper types.BankKeeper,
-	supplierKeeper types.SupplierKeeper,
+	accountKeeper tokenomicstypes.AccountKeeper,
+	bankKeeper tokenomicstypes.BankKeeper,
+	supplierKeeper tokenomicstypes.SupplierKeeper,
 ) AppModule {
 	return AppModule{
 		AppModuleBasic:   NewAppModuleBasic(cdc),
@@ -118,16 +119,16 @@ func NewAppModule(
 
 // RegisterServices registers a gRPC query service to respond to the module-specific gRPC queries
 func (am AppModule) RegisterServices(cfg module.Configurator) {
-	types.RegisterMsgServer(cfg.MsgServer(), keeper.NewMsgServerImpl(am.tokenomicsKeeper))
-	types.RegisterQueryServer(cfg.QueryServer(), am.tokenomicsKeeper)
+	tokenomicstypes.RegisterMsgServer(cfg.MsgServer(), keeper.NewMsgServerImpl(am.tokenomicsKeeper))
+	tokenomicstypes.RegisterQueryServer(cfg.QueryServer(), am.tokenomicsKeeper)
 }
 
 // RegisterInvariants registers the invariants of the module. If an invariant deviates from its predicted value, the InvariantRegistry triggers appropriate logic (most often the chain will be halted)
-func (am AppModule) RegisterInvariants(_ sdk.InvariantRegistry) {}
+func (am AppModule) RegisterInvariants(_ cosmostypes.InvariantRegistry) {}
 
 // InitGenesis performs the module's genesis initialization. It returns no validator updates.
-func (am AppModule) InitGenesis(ctx sdk.Context, cdc codec.JSONCodec, gs json.RawMessage) {
-	var genState types.GenesisState
+func (am AppModule) InitGenesis(ctx cosmostypes.Context, cdc codec.JSONCodec, gs json.RawMessage) {
+	var genState tokenomicstypes.GenesisState
 	// Initialize global index to index in genesis state
 	cdc.MustUnmarshalJSON(gs, &genState)
 
@@ -135,7 +136,7 @@ func (am AppModule) InitGenesis(ctx sdk.Context, cdc codec.JSONCodec, gs json.Ra
 }
 
 // ExportGenesis returns the module's exported genesis state as raw JSON bytes.
-func (am AppModule) ExportGenesis(ctx sdk.Context, cdc codec.JSONCodec) json.RawMessage {
+func (am AppModule) ExportGenesis(ctx cosmostypes.Context, cdc codec.JSONCodec) json.RawMessage {
 	genState := ExportGenesis(ctx, am.tokenomicsKeeper)
 	return cdc.MustMarshalJSON(genState)
 }
@@ -154,7 +155,7 @@ func (am AppModule) BeginBlock(_ context.Context) error {
 // EndBlock contains the logic that is automatically triggered at the end of each block.
 // The end block implementation is optional.
 func (am AppModule) EndBlock(goCtx context.Context) error {
-	ctx := sdk.UnwrapSDKContext(goCtx)
+	ctx := cosmostypes.UnwrapSDKContext(goCtx)
 	return EndBlocker(ctx, am.tokenomicsKeeper)
 }
 
@@ -180,14 +181,14 @@ type ModuleInputs struct {
 	Config       *tokenomicsmodule.Module
 	Logger       log.Logger
 
-	AccountKeeper     types.AccountKeeper
-	BankKeeper        types.BankKeeper
-	ApplicationKeeper types.ApplicationKeeper
-	SupplierKeeper    types.SupplierKeeper
-	ProofKeeper       types.ProofKeeper
-	SharedKeeper      types.SharedKeeper
-	SessionKeeper     types.SessionKeeper
-	ServiceKeeper     types.ServiceKeeper
+	AccountKeeper     tokenomicstypes.AccountKeeper
+	BankKeeper        tokenomicstypes.BankKeeper
+	ApplicationKeeper tokenomicstypes.ApplicationKeeper
+	SupplierKeeper    tokenomicstypes.SupplierKeeper
+	ProofKeeper       tokenomicstypes.ProofKeeper
+	SharedKeeper      tokenomicstypes.SharedKeeper
+	SessionKeeper     tokenomicstypes.SessionKeeper
+	ServiceKeeper     tokenomicstypes.ServiceKeeper
 }
 
 type ModuleOutputs struct {
@@ -203,6 +204,12 @@ func ProvideModule(in ModuleInputs) ModuleOutputs {
 	if in.Config.Authority != "" {
 		authority = authtypes.NewModuleAddressOrBech32Address(in.Config.Authority)
 	}
+
+	// DEV_NOTE: The token logic modules are provided as arguments to the keeper mainly
+	// to satisfy testing requirements (see: x/tokenomics/token_logic_modules_test.go).
+
+	tokenLogicModules := tlm.NewDefaultTokenLogicModules()
+
 	k := keeper.NewKeeper(
 		in.Cdc,
 		in.StoreService,
@@ -217,6 +224,8 @@ func ProvideModule(in ModuleInputs) ModuleOutputs {
 		in.SharedKeeper,
 		in.SessionKeeper,
 		in.ServiceKeeper,
+
+		tokenLogicModules,
 	)
 	m := NewAppModule(
 		in.Cdc,

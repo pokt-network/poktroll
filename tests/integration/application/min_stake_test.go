@@ -24,7 +24,7 @@ import (
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
-	tokenomicskeeper "github.com/pokt-network/poktroll/x/tokenomics/keeper"
+	tlm "github.com/pokt-network/poktroll/x/tokenomics/token_logic_module"
 )
 
 type applicationMinStakeTestSuite struct {
@@ -51,7 +51,11 @@ func TestApplicationMinStakeTestSuite(t *testing.T) {
 }
 
 func (s *applicationMinStakeTestSuite) SetupTest() {
-	s.keepers, s.ctx = keeper.NewTokenomicsModuleKeepers(s.T(), cosmoslog.NewNopLogger(), keeper.WithProofRequirement(false))
+	s.keepers, s.ctx = keeper.NewTokenomicsModuleKeepers(s.T(),
+		cosmoslog.NewNopLogger(),
+		keeper.WithProofRequirement(false),
+		keeper.WithDefaultModuleBalances(),
+	)
 
 	proofParams := prooftypes.DefaultParams()
 	proofParams.ProofRequestProbability = 0
@@ -235,7 +239,7 @@ func (s *applicationMinStakeTestSuite) getExpectedApp(claim *prooftypes.Claim) *
 	expectedBurnCoin, err := claim.GetClaimeduPOKT(sharedParams, relayMiningDifficulty)
 	require.NoError(s.T(), err)
 
-	globalInflationAmt, _ := tokenomicskeeper.CalculateGlobalPerClaimMintInflationFromSettlementAmount(expectedBurnCoin)
+	globalInflationAmt, _ := tlm.CalculateGlobalPerClaimMintInflationFromSettlementAmount(expectedBurnCoin)
 	expectedEndStake := s.appStake.Sub(expectedBurnCoin).Sub(globalInflationAmt)
 	return &apptypes.Application{
 		Address:                   s.appBech32,
@@ -307,7 +311,7 @@ func (s *applicationMinStakeTestSuite) assertAppStakeIsReturnedToBalance() {
 
 	expectedAppBurn := int64(s.numRelays * s.numComputeUnitsPerRelay * sharedtypes.DefaultComputeUnitsToTokensMultiplier)
 	expectedAppBurnCoin := cosmostypes.NewInt64Coin(volatile.DenomuPOKT, expectedAppBurn)
-	globalInflationCoin, _ := tokenomicskeeper.CalculateGlobalPerClaimMintInflationFromSettlementAmount(expectedAppBurnCoin)
+	globalInflationCoin, _ := tlm.CalculateGlobalPerClaimMintInflationFromSettlementAmount(expectedAppBurnCoin)
 	expectedAppBalance := s.appStake.Sub(expectedAppBurnCoin).Sub(globalInflationCoin)
 
 	appBalance := s.getAppBalance()

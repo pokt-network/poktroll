@@ -26,9 +26,7 @@ var (
 		ComputeUnitsToTokensMultiplier:     42,
 	}
 
-	sharedParamsOpt = keepertest.WithModuleParams(map[string]sdk.Msg{
-		sharedtypes.ModuleName: &testSharedParams,
-	})
+	sharedParamsOpt = keepertest.WithSharedModuleParams(&testSharedParams)
 )
 
 func TestSession_HydrateSession_Success_BaseCase(t *testing.T) {
