@@ -151,25 +151,31 @@ For a hypothetical scenario to upgrade from `0.1` to `0.2`:
 1. **Stop LocalNet** to prevent interference. Pull the `poktroll` repo into two separate directories. Let's name them `old` and `new`. It is recommended to open at least two tabs/shell panels in each directory for easier switching between directories.
 
 2. **(`old` repo)** - Check out the old version. For the test to be accurate, we need to upgrade from the correct version.
+
    ```bash
    git checkout v0.1
    ```
 
-3. **(`new` repo)** 
+3. **(`new` repo)**
+
    ```bash
    git checkout -b branch_to_test
    ```
+
    Replace `branch_to_test` with the actual branch you want to test. **Note:** This branch should have an upgrade implemented - [Implementing the Upgrade](#implementing-the-upgrade). Here, the upgrade should be named `v0.2`.
 
 4. **(BOTH repos)** - We'll use binaries from both versions - old and new.
+
    ```bash
    make go_develop ignite_release ignite_release_extract_binaries
    ```
+
    :::note
-   The binary produced by these commands in the old repo should result in the same binary as it was downloaded from [production releases](https://github.com/pokt-network/poktroll/releases), however you might consider using 
+   The binary produced by these commands in the old repo should result in the same binary as it was downloaded from [production releases](https://github.com/pokt-network/poktroll/releases), however you might consider using
    :::
 
 5. **(`old` repo)** - Clean up and generate an empty genesis using the old version.
+
    ```bash
    rm -rf ~/.poktroll && ./release_binaries/poktroll_darwin_arm64 comet unsafe-reset-all && make localnet_regenesis
    ```
@@ -177,28 +183,35 @@ For a hypothetical scenario to upgrade from `0.1` to `0.2`:
 6. **(`old` repo)** Write and save [an upgrade transaction](#writing-an-upgrade-transaction) for `v0.2`. The upgrade plan should be named after the version to which you're upgrading.
 
 7. **(`old` repo)** Start the node:
+
    ```bash
    ./release_binaries/poktroll_darwin_arm64 start
    ```
+
    The validator node should run and produce blocks as expected.
 
 8. **(`old` repo)** Submit the upgrade transaction. **Note:** The upgrade height in the transaction should be higher than the current block height. Adjust and submit if necessary:
+
    ```bash
    ./release_binaries/poktroll_darwin_arm64 tx authz exec tools/scripts/upgrades/local_test_v0.2.json --from=pnf
    ```
+
    Replace the path to the JSON transaction with your prepared upgrade transaction. Verify the upgrade plan was submitted and accepted:
+
    ```bash
    ./release_binaries/poktroll_darwin_arm64 query upgrade plan
    ```
 
 9. Wait for the upgrade height to be reached on the old version. The old version should stop working since it has no knowledge of the `v0.2` upgrade. This simulates a real-world scenario. Stop the old node, and switch to the new version.
 
-10. **(`new` repo)** 
+10. **(`new` repo)**
+
     ```bash
     ./release_binaries/poktroll_darwin_arm64 start
     ```
 
 11. **Observe the output:**
+
     - A successful upgrade should output `applying upgrade "v0.2" at height: 20 module=x/upgrade`.
     - The node on the new version should continue producing blocks.
     - If there were errors during the upgrade, investigate and address them.
