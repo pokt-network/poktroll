@@ -2,11 +2,12 @@
 package supplier
 
 import (
-	shared "github.com/pokt-network/poktroll/api/poktroll/shared"
+	_ "cosmossdk.io/api/cosmos/base/v1beta1"
 	fmt "fmt"
 	_ "github.com/cosmos/cosmos-proto"
 	runtime "github.com/cosmos/cosmos-proto/runtime"
 	_ "github.com/cosmos/gogoproto/gogoproto"
+	shared "github.com/pokt-network/poktroll/api/poktroll/shared"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoiface "google.golang.org/protobuf/runtime/protoiface"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
@@ -16,14 +17,16 @@ import (
 )
 
 var (
-	md_EventSupplierStaked          protoreflect.MessageDescriptor
-	fd_EventSupplierStaked_supplier protoreflect.FieldDescriptor
+	md_EventSupplierStaked                    protoreflect.MessageDescriptor
+	fd_EventSupplierStaked_supplier           protoreflect.FieldDescriptor
+	fd_EventSupplierStaked_session_end_height protoreflect.FieldDescriptor
 )
 
 func init() {
 	file_poktroll_supplier_event_proto_init()
 	md_EventSupplierStaked = File_poktroll_supplier_event_proto.Messages().ByName("EventSupplierStaked")
 	fd_EventSupplierStaked_supplier = md_EventSupplierStaked.Fields().ByName("supplier")
+	fd_EventSupplierStaked_session_end_height = md_EventSupplierStaked.Fields().ByName("session_end_height")
 }
 
 var _ protoreflect.Message = (*fastReflection_EventSupplierStaked)(nil)
@@ -97,6 +100,12 @@ func (x *fastReflection_EventSupplierStaked) Range(f func(protoreflect.FieldDesc
 			return
 		}
 	}
+	if x.SessionEndHeight != int64(0) {
+		value := protoreflect.ValueOfInt64(x.SessionEndHeight)
+		if !f(fd_EventSupplierStaked_session_end_height, value) {
+			return
+		}
+	}
 }
 
 // Has reports whether a field is populated.
@@ -114,6 +123,8 @@ func (x *fastReflection_EventSupplierStaked) Has(fd protoreflect.FieldDescriptor
 	switch fd.FullName() {
 	case "poktroll.supplier.EventSupplierStaked.supplier":
 		return x.Supplier != nil
+	case "poktroll.supplier.EventSupplierStaked.session_end_height":
+		return x.SessionEndHeight != int64(0)
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.supplier.EventSupplierStaked"))
@@ -132,6 +143,8 @@ func (x *fastReflection_EventSupplierStaked) Clear(fd protoreflect.FieldDescript
 	switch fd.FullName() {
 	case "poktroll.supplier.EventSupplierStaked.supplier":
 		x.Supplier = nil
+	case "poktroll.supplier.EventSupplierStaked.session_end_height":
+		x.SessionEndHeight = int64(0)
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.supplier.EventSupplierStaked"))
@@ -151,6 +164,9 @@ func (x *fastReflection_EventSupplierStaked) Get(descriptor protoreflect.FieldDe
 	case "poktroll.supplier.EventSupplierStaked.supplier":
 		value := x.Supplier
 		return protoreflect.ValueOfMessage(value.ProtoReflect())
+	case "poktroll.supplier.EventSupplierStaked.session_end_height":
+		value := x.SessionEndHeight
+		return protoreflect.ValueOfInt64(value)
 	default:
 		if descriptor.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.supplier.EventSupplierStaked"))
@@ -173,6 +189,8 @@ func (x *fastReflection_EventSupplierStaked) Set(fd protoreflect.FieldDescriptor
 	switch fd.FullName() {
 	case "poktroll.supplier.EventSupplierStaked.supplier":
 		x.Supplier = value.Message().Interface().(*shared.Supplier)
+	case "poktroll.supplier.EventSupplierStaked.session_end_height":
+		x.SessionEndHeight = value.Int()
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.supplier.EventSupplierStaked"))
@@ -198,6 +216,8 @@ func (x *fastReflection_EventSupplierStaked) Mutable(fd protoreflect.FieldDescri
 			x.Supplier = new(shared.Supplier)
 		}
 		return protoreflect.ValueOfMessage(x.Supplier.ProtoReflect())
+	case "poktroll.supplier.EventSupplierStaked.session_end_height":
+		panic(fmt.Errorf("field session_end_height of message poktroll.supplier.EventSupplierStaked is not mutable"))
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.supplier.EventSupplierStaked"))
@@ -214,6 +234,8 @@ func (x *fastReflection_EventSupplierStaked) NewField(fd protoreflect.FieldDescr
 	case "poktroll.supplier.EventSupplierStaked.supplier":
 		m := new(shared.Supplier)
 		return protoreflect.ValueOfMessage(m.ProtoReflect())
+	case "poktroll.supplier.EventSupplierStaked.session_end_height":
+		return protoreflect.ValueOfInt64(int64(0))
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.supplier.EventSupplierStaked"))
@@ -287,6 +309,9 @@ func (x *fastReflection_EventSupplierStaked) ProtoMethods() *protoiface.Methods 
 			l = options.Size(x.Supplier)
 			n += 1 + l + runtime.Sov(uint64(l))
 		}
+		if x.SessionEndHeight != 0 {
+			n += 1 + runtime.Sov(uint64(x.SessionEndHeight))
+		}
 		if x.unknownFields != nil {
 			n += len(x.unknownFields)
 		}
@@ -315,6 +340,11 @@ func (x *fastReflection_EventSupplierStaked) ProtoMethods() *protoiface.Methods 
 		if x.unknownFields != nil {
 			i -= len(x.unknownFields)
 			copy(dAtA[i:], x.unknownFields)
+		}
+		if x.SessionEndHeight != 0 {
+			i = runtime.EncodeVarint(dAtA, i, uint64(x.SessionEndHeight))
+			i--
+			dAtA[i] = 0x10
 		}
 		if x.Supplier != nil {
 			encoded, err := options.Marshal(x.Supplier)
@@ -415,6 +445,25 @@ func (x *fastReflection_EventSupplierStaked) ProtoMethods() *protoiface.Methods 
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
 				}
 				iNdEx = postIndex
+			case 2:
+				if wireType != 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field SessionEndHeight", wireType)
+				}
+				x.SessionEndHeight = 0
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					x.SessionEndHeight |= int64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
 			default:
 				iNdEx = preIndex
 				skippy, err := runtime.Skip(dAtA[iNdEx:])
@@ -451,16 +500,20 @@ func (x *fastReflection_EventSupplierStaked) ProtoMethods() *protoiface.Methods 
 }
 
 var (
-	md_EventSupplierUnbondingBegin                  protoreflect.MessageDescriptor
-	fd_EventSupplierUnbondingBegin_supplier         protoreflect.FieldDescriptor
-	fd_EventSupplierUnbondingBegin_unbonding_height protoreflect.FieldDescriptor
+	md_EventSupplierUnbondingBegin                      protoreflect.MessageDescriptor
+	fd_EventSupplierUnbondingBegin_supplier             protoreflect.FieldDescriptor
+	fd_EventSupplierUnbondingBegin_reason               protoreflect.FieldDescriptor
+	fd_EventSupplierUnbondingBegin_session_end_height   protoreflect.FieldDescriptor
+	fd_EventSupplierUnbondingBegin_unbonding_end_height protoreflect.FieldDescriptor
 )
 
 func init() {
 	file_poktroll_supplier_event_proto_init()
 	md_EventSupplierUnbondingBegin = File_poktroll_supplier_event_proto.Messages().ByName("EventSupplierUnbondingBegin")
 	fd_EventSupplierUnbondingBegin_supplier = md_EventSupplierUnbondingBegin.Fields().ByName("supplier")
-	fd_EventSupplierUnbondingBegin_unbonding_height = md_EventSupplierUnbondingBegin.Fields().ByName("unbonding_height")
+	fd_EventSupplierUnbondingBegin_reason = md_EventSupplierUnbondingBegin.Fields().ByName("reason")
+	fd_EventSupplierUnbondingBegin_session_end_height = md_EventSupplierUnbondingBegin.Fields().ByName("session_end_height")
+	fd_EventSupplierUnbondingBegin_unbonding_end_height = md_EventSupplierUnbondingBegin.Fields().ByName("unbonding_end_height")
 }
 
 var _ protoreflect.Message = (*fastReflection_EventSupplierUnbondingBegin)(nil)
@@ -534,9 +587,21 @@ func (x *fastReflection_EventSupplierUnbondingBegin) Range(f func(protoreflect.F
 			return
 		}
 	}
-	if x.UnbondingHeight != int64(0) {
-		value := protoreflect.ValueOfInt64(x.UnbondingHeight)
-		if !f(fd_EventSupplierUnbondingBegin_unbonding_height, value) {
+	if x.Reason != 0 {
+		value := protoreflect.ValueOfEnum((protoreflect.EnumNumber)(x.Reason))
+		if !f(fd_EventSupplierUnbondingBegin_reason, value) {
+			return
+		}
+	}
+	if x.SessionEndHeight != int64(0) {
+		value := protoreflect.ValueOfInt64(x.SessionEndHeight)
+		if !f(fd_EventSupplierUnbondingBegin_session_end_height, value) {
+			return
+		}
+	}
+	if x.UnbondingEndHeight != int64(0) {
+		value := protoreflect.ValueOfInt64(x.UnbondingEndHeight)
+		if !f(fd_EventSupplierUnbondingBegin_unbonding_end_height, value) {
 			return
 		}
 	}
@@ -557,8 +622,12 @@ func (x *fastReflection_EventSupplierUnbondingBegin) Has(fd protoreflect.FieldDe
 	switch fd.FullName() {
 	case "poktroll.supplier.EventSupplierUnbondingBegin.supplier":
 		return x.Supplier != nil
-	case "poktroll.supplier.EventSupplierUnbondingBegin.unbonding_height":
-		return x.UnbondingHeight != int64(0)
+	case "poktroll.supplier.EventSupplierUnbondingBegin.reason":
+		return x.Reason != 0
+	case "poktroll.supplier.EventSupplierUnbondingBegin.session_end_height":
+		return x.SessionEndHeight != int64(0)
+	case "poktroll.supplier.EventSupplierUnbondingBegin.unbonding_end_height":
+		return x.UnbondingEndHeight != int64(0)
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.supplier.EventSupplierUnbondingBegin"))
@@ -577,8 +646,12 @@ func (x *fastReflection_EventSupplierUnbondingBegin) Clear(fd protoreflect.Field
 	switch fd.FullName() {
 	case "poktroll.supplier.EventSupplierUnbondingBegin.supplier":
 		x.Supplier = nil
-	case "poktroll.supplier.EventSupplierUnbondingBegin.unbonding_height":
-		x.UnbondingHeight = int64(0)
+	case "poktroll.supplier.EventSupplierUnbondingBegin.reason":
+		x.Reason = 0
+	case "poktroll.supplier.EventSupplierUnbondingBegin.session_end_height":
+		x.SessionEndHeight = int64(0)
+	case "poktroll.supplier.EventSupplierUnbondingBegin.unbonding_end_height":
+		x.UnbondingEndHeight = int64(0)
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.supplier.EventSupplierUnbondingBegin"))
@@ -598,8 +671,14 @@ func (x *fastReflection_EventSupplierUnbondingBegin) Get(descriptor protoreflect
 	case "poktroll.supplier.EventSupplierUnbondingBegin.supplier":
 		value := x.Supplier
 		return protoreflect.ValueOfMessage(value.ProtoReflect())
-	case "poktroll.supplier.EventSupplierUnbondingBegin.unbonding_height":
-		value := x.UnbondingHeight
+	case "poktroll.supplier.EventSupplierUnbondingBegin.reason":
+		value := x.Reason
+		return protoreflect.ValueOfEnum((protoreflect.EnumNumber)(value))
+	case "poktroll.supplier.EventSupplierUnbondingBegin.session_end_height":
+		value := x.SessionEndHeight
+		return protoreflect.ValueOfInt64(value)
+	case "poktroll.supplier.EventSupplierUnbondingBegin.unbonding_end_height":
+		value := x.UnbondingEndHeight
 		return protoreflect.ValueOfInt64(value)
 	default:
 		if descriptor.IsExtension() {
@@ -623,8 +702,12 @@ func (x *fastReflection_EventSupplierUnbondingBegin) Set(fd protoreflect.FieldDe
 	switch fd.FullName() {
 	case "poktroll.supplier.EventSupplierUnbondingBegin.supplier":
 		x.Supplier = value.Message().Interface().(*shared.Supplier)
-	case "poktroll.supplier.EventSupplierUnbondingBegin.unbonding_height":
-		x.UnbondingHeight = value.Int()
+	case "poktroll.supplier.EventSupplierUnbondingBegin.reason":
+		x.Reason = (SupplierUnbondingReason)(value.Enum())
+	case "poktroll.supplier.EventSupplierUnbondingBegin.session_end_height":
+		x.SessionEndHeight = value.Int()
+	case "poktroll.supplier.EventSupplierUnbondingBegin.unbonding_end_height":
+		x.UnbondingEndHeight = value.Int()
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.supplier.EventSupplierUnbondingBegin"))
@@ -650,8 +733,12 @@ func (x *fastReflection_EventSupplierUnbondingBegin) Mutable(fd protoreflect.Fie
 			x.Supplier = new(shared.Supplier)
 		}
 		return protoreflect.ValueOfMessage(x.Supplier.ProtoReflect())
-	case "poktroll.supplier.EventSupplierUnbondingBegin.unbonding_height":
-		panic(fmt.Errorf("field unbonding_height of message poktroll.supplier.EventSupplierUnbondingBegin is not mutable"))
+	case "poktroll.supplier.EventSupplierUnbondingBegin.reason":
+		panic(fmt.Errorf("field reason of message poktroll.supplier.EventSupplierUnbondingBegin is not mutable"))
+	case "poktroll.supplier.EventSupplierUnbondingBegin.session_end_height":
+		panic(fmt.Errorf("field session_end_height of message poktroll.supplier.EventSupplierUnbondingBegin is not mutable"))
+	case "poktroll.supplier.EventSupplierUnbondingBegin.unbonding_end_height":
+		panic(fmt.Errorf("field unbonding_end_height of message poktroll.supplier.EventSupplierUnbondingBegin is not mutable"))
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.supplier.EventSupplierUnbondingBegin"))
@@ -668,7 +755,11 @@ func (x *fastReflection_EventSupplierUnbondingBegin) NewField(fd protoreflect.Fi
 	case "poktroll.supplier.EventSupplierUnbondingBegin.supplier":
 		m := new(shared.Supplier)
 		return protoreflect.ValueOfMessage(m.ProtoReflect())
-	case "poktroll.supplier.EventSupplierUnbondingBegin.unbonding_height":
+	case "poktroll.supplier.EventSupplierUnbondingBegin.reason":
+		return protoreflect.ValueOfEnum(0)
+	case "poktroll.supplier.EventSupplierUnbondingBegin.session_end_height":
+		return protoreflect.ValueOfInt64(int64(0))
+	case "poktroll.supplier.EventSupplierUnbondingBegin.unbonding_end_height":
 		return protoreflect.ValueOfInt64(int64(0))
 	default:
 		if fd.IsExtension() {
@@ -743,8 +834,14 @@ func (x *fastReflection_EventSupplierUnbondingBegin) ProtoMethods() *protoiface.
 			l = options.Size(x.Supplier)
 			n += 1 + l + runtime.Sov(uint64(l))
 		}
-		if x.UnbondingHeight != 0 {
-			n += 1 + runtime.Sov(uint64(x.UnbondingHeight))
+		if x.Reason != 0 {
+			n += 1 + runtime.Sov(uint64(x.Reason))
+		}
+		if x.SessionEndHeight != 0 {
+			n += 1 + runtime.Sov(uint64(x.SessionEndHeight))
+		}
+		if x.UnbondingEndHeight != 0 {
+			n += 1 + runtime.Sov(uint64(x.UnbondingEndHeight))
 		}
 		if x.unknownFields != nil {
 			n += len(x.unknownFields)
@@ -775,8 +872,18 @@ func (x *fastReflection_EventSupplierUnbondingBegin) ProtoMethods() *protoiface.
 			i -= len(x.unknownFields)
 			copy(dAtA[i:], x.unknownFields)
 		}
-		if x.UnbondingHeight != 0 {
-			i = runtime.EncodeVarint(dAtA, i, uint64(x.UnbondingHeight))
+		if x.UnbondingEndHeight != 0 {
+			i = runtime.EncodeVarint(dAtA, i, uint64(x.UnbondingEndHeight))
+			i--
+			dAtA[i] = 0x20
+		}
+		if x.SessionEndHeight != 0 {
+			i = runtime.EncodeVarint(dAtA, i, uint64(x.SessionEndHeight))
+			i--
+			dAtA[i] = 0x18
+		}
+		if x.Reason != 0 {
+			i = runtime.EncodeVarint(dAtA, i, uint64(x.Reason))
 			i--
 			dAtA[i] = 0x10
 		}
@@ -881,9 +988,9 @@ func (x *fastReflection_EventSupplierUnbondingBegin) ProtoMethods() *protoiface.
 				iNdEx = postIndex
 			case 2:
 				if wireType != 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field UnbondingHeight", wireType)
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Reason", wireType)
 				}
-				x.UnbondingHeight = 0
+				x.Reason = 0
 				for shift := uint(0); ; shift += 7 {
 					if shift >= 64 {
 						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
@@ -893,7 +1000,45 @@ func (x *fastReflection_EventSupplierUnbondingBegin) ProtoMethods() *protoiface.
 					}
 					b := dAtA[iNdEx]
 					iNdEx++
-					x.UnbondingHeight |= int64(b&0x7F) << shift
+					x.Reason |= SupplierUnbondingReason(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+			case 3:
+				if wireType != 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field SessionEndHeight", wireType)
+				}
+				x.SessionEndHeight = 0
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					x.SessionEndHeight |= int64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+			case 4:
+				if wireType != 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field UnbondingEndHeight", wireType)
+				}
+				x.UnbondingEndHeight = 0
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					x.UnbondingEndHeight |= int64(b&0x7F) << shift
 					if b < 0x80 {
 						break
 					}
@@ -934,16 +1079,20 @@ func (x *fastReflection_EventSupplierUnbondingBegin) ProtoMethods() *protoiface.
 }
 
 var (
-	md_EventSupplierUnbondingEnd                  protoreflect.MessageDescriptor
-	fd_EventSupplierUnbondingEnd_supplier         protoreflect.FieldDescriptor
-	fd_EventSupplierUnbondingEnd_unbonding_height protoreflect.FieldDescriptor
+	md_EventSupplierUnbondingEnd                      protoreflect.MessageDescriptor
+	fd_EventSupplierUnbondingEnd_supplier             protoreflect.FieldDescriptor
+	fd_EventSupplierUnbondingEnd_reason               protoreflect.FieldDescriptor
+	fd_EventSupplierUnbondingEnd_session_end_height   protoreflect.FieldDescriptor
+	fd_EventSupplierUnbondingEnd_unbonding_end_height protoreflect.FieldDescriptor
 )
 
 func init() {
 	file_poktroll_supplier_event_proto_init()
 	md_EventSupplierUnbondingEnd = File_poktroll_supplier_event_proto.Messages().ByName("EventSupplierUnbondingEnd")
 	fd_EventSupplierUnbondingEnd_supplier = md_EventSupplierUnbondingEnd.Fields().ByName("supplier")
-	fd_EventSupplierUnbondingEnd_unbonding_height = md_EventSupplierUnbondingEnd.Fields().ByName("unbonding_height")
+	fd_EventSupplierUnbondingEnd_reason = md_EventSupplierUnbondingEnd.Fields().ByName("reason")
+	fd_EventSupplierUnbondingEnd_session_end_height = md_EventSupplierUnbondingEnd.Fields().ByName("session_end_height")
+	fd_EventSupplierUnbondingEnd_unbonding_end_height = md_EventSupplierUnbondingEnd.Fields().ByName("unbonding_end_height")
 }
 
 var _ protoreflect.Message = (*fastReflection_EventSupplierUnbondingEnd)(nil)
@@ -1017,9 +1166,21 @@ func (x *fastReflection_EventSupplierUnbondingEnd) Range(f func(protoreflect.Fie
 			return
 		}
 	}
-	if x.UnbondingHeight != int64(0) {
-		value := protoreflect.ValueOfInt64(x.UnbondingHeight)
-		if !f(fd_EventSupplierUnbondingEnd_unbonding_height, value) {
+	if x.Reason != 0 {
+		value := protoreflect.ValueOfEnum((protoreflect.EnumNumber)(x.Reason))
+		if !f(fd_EventSupplierUnbondingEnd_reason, value) {
+			return
+		}
+	}
+	if x.SessionEndHeight != int64(0) {
+		value := protoreflect.ValueOfInt64(x.SessionEndHeight)
+		if !f(fd_EventSupplierUnbondingEnd_session_end_height, value) {
+			return
+		}
+	}
+	if x.UnbondingEndHeight != int64(0) {
+		value := protoreflect.ValueOfInt64(x.UnbondingEndHeight)
+		if !f(fd_EventSupplierUnbondingEnd_unbonding_end_height, value) {
 			return
 		}
 	}
@@ -1040,8 +1201,12 @@ func (x *fastReflection_EventSupplierUnbondingEnd) Has(fd protoreflect.FieldDesc
 	switch fd.FullName() {
 	case "poktroll.supplier.EventSupplierUnbondingEnd.supplier":
 		return x.Supplier != nil
-	case "poktroll.supplier.EventSupplierUnbondingEnd.unbonding_height":
-		return x.UnbondingHeight != int64(0)
+	case "poktroll.supplier.EventSupplierUnbondingEnd.reason":
+		return x.Reason != 0
+	case "poktroll.supplier.EventSupplierUnbondingEnd.session_end_height":
+		return x.SessionEndHeight != int64(0)
+	case "poktroll.supplier.EventSupplierUnbondingEnd.unbonding_end_height":
+		return x.UnbondingEndHeight != int64(0)
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.supplier.EventSupplierUnbondingEnd"))
@@ -1060,8 +1225,12 @@ func (x *fastReflection_EventSupplierUnbondingEnd) Clear(fd protoreflect.FieldDe
 	switch fd.FullName() {
 	case "poktroll.supplier.EventSupplierUnbondingEnd.supplier":
 		x.Supplier = nil
-	case "poktroll.supplier.EventSupplierUnbondingEnd.unbonding_height":
-		x.UnbondingHeight = int64(0)
+	case "poktroll.supplier.EventSupplierUnbondingEnd.reason":
+		x.Reason = 0
+	case "poktroll.supplier.EventSupplierUnbondingEnd.session_end_height":
+		x.SessionEndHeight = int64(0)
+	case "poktroll.supplier.EventSupplierUnbondingEnd.unbonding_end_height":
+		x.UnbondingEndHeight = int64(0)
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.supplier.EventSupplierUnbondingEnd"))
@@ -1081,8 +1250,14 @@ func (x *fastReflection_EventSupplierUnbondingEnd) Get(descriptor protoreflect.F
 	case "poktroll.supplier.EventSupplierUnbondingEnd.supplier":
 		value := x.Supplier
 		return protoreflect.ValueOfMessage(value.ProtoReflect())
-	case "poktroll.supplier.EventSupplierUnbondingEnd.unbonding_height":
-		value := x.UnbondingHeight
+	case "poktroll.supplier.EventSupplierUnbondingEnd.reason":
+		value := x.Reason
+		return protoreflect.ValueOfEnum((protoreflect.EnumNumber)(value))
+	case "poktroll.supplier.EventSupplierUnbondingEnd.session_end_height":
+		value := x.SessionEndHeight
+		return protoreflect.ValueOfInt64(value)
+	case "poktroll.supplier.EventSupplierUnbondingEnd.unbonding_end_height":
+		value := x.UnbondingEndHeight
 		return protoreflect.ValueOfInt64(value)
 	default:
 		if descriptor.IsExtension() {
@@ -1106,8 +1281,12 @@ func (x *fastReflection_EventSupplierUnbondingEnd) Set(fd protoreflect.FieldDesc
 	switch fd.FullName() {
 	case "poktroll.supplier.EventSupplierUnbondingEnd.supplier":
 		x.Supplier = value.Message().Interface().(*shared.Supplier)
-	case "poktroll.supplier.EventSupplierUnbondingEnd.unbonding_height":
-		x.UnbondingHeight = value.Int()
+	case "poktroll.supplier.EventSupplierUnbondingEnd.reason":
+		x.Reason = (SupplierUnbondingReason)(value.Enum())
+	case "poktroll.supplier.EventSupplierUnbondingEnd.session_end_height":
+		x.SessionEndHeight = value.Int()
+	case "poktroll.supplier.EventSupplierUnbondingEnd.unbonding_end_height":
+		x.UnbondingEndHeight = value.Int()
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.supplier.EventSupplierUnbondingEnd"))
@@ -1133,8 +1312,12 @@ func (x *fastReflection_EventSupplierUnbondingEnd) Mutable(fd protoreflect.Field
 			x.Supplier = new(shared.Supplier)
 		}
 		return protoreflect.ValueOfMessage(x.Supplier.ProtoReflect())
-	case "poktroll.supplier.EventSupplierUnbondingEnd.unbonding_height":
-		panic(fmt.Errorf("field unbonding_height of message poktroll.supplier.EventSupplierUnbondingEnd is not mutable"))
+	case "poktroll.supplier.EventSupplierUnbondingEnd.reason":
+		panic(fmt.Errorf("field reason of message poktroll.supplier.EventSupplierUnbondingEnd is not mutable"))
+	case "poktroll.supplier.EventSupplierUnbondingEnd.session_end_height":
+		panic(fmt.Errorf("field session_end_height of message poktroll.supplier.EventSupplierUnbondingEnd is not mutable"))
+	case "poktroll.supplier.EventSupplierUnbondingEnd.unbonding_end_height":
+		panic(fmt.Errorf("field unbonding_end_height of message poktroll.supplier.EventSupplierUnbondingEnd is not mutable"))
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.supplier.EventSupplierUnbondingEnd"))
@@ -1151,7 +1334,11 @@ func (x *fastReflection_EventSupplierUnbondingEnd) NewField(fd protoreflect.Fiel
 	case "poktroll.supplier.EventSupplierUnbondingEnd.supplier":
 		m := new(shared.Supplier)
 		return protoreflect.ValueOfMessage(m.ProtoReflect())
-	case "poktroll.supplier.EventSupplierUnbondingEnd.unbonding_height":
+	case "poktroll.supplier.EventSupplierUnbondingEnd.reason":
+		return protoreflect.ValueOfEnum(0)
+	case "poktroll.supplier.EventSupplierUnbondingEnd.session_end_height":
+		return protoreflect.ValueOfInt64(int64(0))
+	case "poktroll.supplier.EventSupplierUnbondingEnd.unbonding_end_height":
 		return protoreflect.ValueOfInt64(int64(0))
 	default:
 		if fd.IsExtension() {
@@ -1226,8 +1413,14 @@ func (x *fastReflection_EventSupplierUnbondingEnd) ProtoMethods() *protoiface.Me
 			l = options.Size(x.Supplier)
 			n += 1 + l + runtime.Sov(uint64(l))
 		}
-		if x.UnbondingHeight != 0 {
-			n += 1 + runtime.Sov(uint64(x.UnbondingHeight))
+		if x.Reason != 0 {
+			n += 1 + runtime.Sov(uint64(x.Reason))
+		}
+		if x.SessionEndHeight != 0 {
+			n += 1 + runtime.Sov(uint64(x.SessionEndHeight))
+		}
+		if x.UnbondingEndHeight != 0 {
+			n += 1 + runtime.Sov(uint64(x.UnbondingEndHeight))
 		}
 		if x.unknownFields != nil {
 			n += len(x.unknownFields)
@@ -1258,8 +1451,18 @@ func (x *fastReflection_EventSupplierUnbondingEnd) ProtoMethods() *protoiface.Me
 			i -= len(x.unknownFields)
 			copy(dAtA[i:], x.unknownFields)
 		}
-		if x.UnbondingHeight != 0 {
-			i = runtime.EncodeVarint(dAtA, i, uint64(x.UnbondingHeight))
+		if x.UnbondingEndHeight != 0 {
+			i = runtime.EncodeVarint(dAtA, i, uint64(x.UnbondingEndHeight))
+			i--
+			dAtA[i] = 0x20
+		}
+		if x.SessionEndHeight != 0 {
+			i = runtime.EncodeVarint(dAtA, i, uint64(x.SessionEndHeight))
+			i--
+			dAtA[i] = 0x18
+		}
+		if x.Reason != 0 {
+			i = runtime.EncodeVarint(dAtA, i, uint64(x.Reason))
 			i--
 			dAtA[i] = 0x10
 		}
@@ -1364,9 +1567,9 @@ func (x *fastReflection_EventSupplierUnbondingEnd) ProtoMethods() *protoiface.Me
 				iNdEx = postIndex
 			case 2:
 				if wireType != 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field UnbondingHeight", wireType)
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Reason", wireType)
 				}
-				x.UnbondingHeight = 0
+				x.Reason = 0
 				for shift := uint(0); ; shift += 7 {
 					if shift >= 64 {
 						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
@@ -1376,7 +1579,576 @@ func (x *fastReflection_EventSupplierUnbondingEnd) ProtoMethods() *protoiface.Me
 					}
 					b := dAtA[iNdEx]
 					iNdEx++
-					x.UnbondingHeight |= int64(b&0x7F) << shift
+					x.Reason |= SupplierUnbondingReason(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+			case 3:
+				if wireType != 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field SessionEndHeight", wireType)
+				}
+				x.SessionEndHeight = 0
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					x.SessionEndHeight |= int64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+			case 4:
+				if wireType != 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field UnbondingEndHeight", wireType)
+				}
+				x.UnbondingEndHeight = 0
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					x.UnbondingEndHeight |= int64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+			default:
+				iNdEx = preIndex
+				skippy, err := runtime.Skip(dAtA[iNdEx:])
+				if err != nil {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
+				}
+				if (skippy < 0) || (iNdEx+skippy) < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if (iNdEx + skippy) > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				if !options.DiscardUnknown {
+					x.unknownFields = append(x.unknownFields, dAtA[iNdEx:iNdEx+skippy]...)
+				}
+				iNdEx += skippy
+			}
+		}
+
+		if iNdEx > l {
+			return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+		}
+		return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, nil
+	}
+	return &protoiface.Methods{
+		NoUnkeyedLiterals: struct{}{},
+		Flags:             protoiface.SupportMarshalDeterministic | protoiface.SupportUnmarshalDiscardUnknown,
+		Size:              size,
+		Marshal:           marshal,
+		Unmarshal:         unmarshal,
+		Merge:             nil,
+		CheckInitialized:  nil,
+	}
+}
+
+var (
+	md_EventSupplierUnbondingCanceled                    protoreflect.MessageDescriptor
+	fd_EventSupplierUnbondingCanceled_supplier           protoreflect.FieldDescriptor
+	fd_EventSupplierUnbondingCanceled_height             protoreflect.FieldDescriptor
+	fd_EventSupplierUnbondingCanceled_session_end_height protoreflect.FieldDescriptor
+)
+
+func init() {
+	file_poktroll_supplier_event_proto_init()
+	md_EventSupplierUnbondingCanceled = File_poktroll_supplier_event_proto.Messages().ByName("EventSupplierUnbondingCanceled")
+	fd_EventSupplierUnbondingCanceled_supplier = md_EventSupplierUnbondingCanceled.Fields().ByName("supplier")
+	fd_EventSupplierUnbondingCanceled_height = md_EventSupplierUnbondingCanceled.Fields().ByName("height")
+	fd_EventSupplierUnbondingCanceled_session_end_height = md_EventSupplierUnbondingCanceled.Fields().ByName("session_end_height")
+}
+
+var _ protoreflect.Message = (*fastReflection_EventSupplierUnbondingCanceled)(nil)
+
+type fastReflection_EventSupplierUnbondingCanceled EventSupplierUnbondingCanceled
+
+func (x *EventSupplierUnbondingCanceled) ProtoReflect() protoreflect.Message {
+	return (*fastReflection_EventSupplierUnbondingCanceled)(x)
+}
+
+func (x *EventSupplierUnbondingCanceled) slowProtoReflect() protoreflect.Message {
+	mi := &file_poktroll_supplier_event_proto_msgTypes[3]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+var _fastReflection_EventSupplierUnbondingCanceled_messageType fastReflection_EventSupplierUnbondingCanceled_messageType
+var _ protoreflect.MessageType = fastReflection_EventSupplierUnbondingCanceled_messageType{}
+
+type fastReflection_EventSupplierUnbondingCanceled_messageType struct{}
+
+func (x fastReflection_EventSupplierUnbondingCanceled_messageType) Zero() protoreflect.Message {
+	return (*fastReflection_EventSupplierUnbondingCanceled)(nil)
+}
+func (x fastReflection_EventSupplierUnbondingCanceled_messageType) New() protoreflect.Message {
+	return new(fastReflection_EventSupplierUnbondingCanceled)
+}
+func (x fastReflection_EventSupplierUnbondingCanceled_messageType) Descriptor() protoreflect.MessageDescriptor {
+	return md_EventSupplierUnbondingCanceled
+}
+
+// Descriptor returns message descriptor, which contains only the protobuf
+// type information for the message.
+func (x *fastReflection_EventSupplierUnbondingCanceled) Descriptor() protoreflect.MessageDescriptor {
+	return md_EventSupplierUnbondingCanceled
+}
+
+// Type returns the message type, which encapsulates both Go and protobuf
+// type information. If the Go type information is not needed,
+// it is recommended that the message descriptor be used instead.
+func (x *fastReflection_EventSupplierUnbondingCanceled) Type() protoreflect.MessageType {
+	return _fastReflection_EventSupplierUnbondingCanceled_messageType
+}
+
+// New returns a newly allocated and mutable empty message.
+func (x *fastReflection_EventSupplierUnbondingCanceled) New() protoreflect.Message {
+	return new(fastReflection_EventSupplierUnbondingCanceled)
+}
+
+// Interface unwraps the message reflection interface and
+// returns the underlying ProtoMessage interface.
+func (x *fastReflection_EventSupplierUnbondingCanceled) Interface() protoreflect.ProtoMessage {
+	return (*EventSupplierUnbondingCanceled)(x)
+}
+
+// Range iterates over every populated field in an undefined order,
+// calling f for each field descriptor and value encountered.
+// Range returns immediately if f returns false.
+// While iterating, mutating operations may only be performed
+// on the current field descriptor.
+func (x *fastReflection_EventSupplierUnbondingCanceled) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
+	if x.Supplier != nil {
+		value := protoreflect.ValueOfMessage(x.Supplier.ProtoReflect())
+		if !f(fd_EventSupplierUnbondingCanceled_supplier, value) {
+			return
+		}
+	}
+	if x.Height != int64(0) {
+		value := protoreflect.ValueOfInt64(x.Height)
+		if !f(fd_EventSupplierUnbondingCanceled_height, value) {
+			return
+		}
+	}
+	if x.SessionEndHeight != int64(0) {
+		value := protoreflect.ValueOfInt64(x.SessionEndHeight)
+		if !f(fd_EventSupplierUnbondingCanceled_session_end_height, value) {
+			return
+		}
+	}
+}
+
+// Has reports whether a field is populated.
+//
+// Some fields have the property of nullability where it is possible to
+// distinguish between the default value of a field and whether the field
+// was explicitly populated with the default value. Singular message fields,
+// member fields of a oneof, and proto2 scalar fields are nullable. Such
+// fields are populated only if explicitly set.
+//
+// In other cases (aside from the nullable cases above),
+// a proto3 scalar field is populated if it contains a non-zero value, and
+// a repeated field is populated if it is non-empty.
+func (x *fastReflection_EventSupplierUnbondingCanceled) Has(fd protoreflect.FieldDescriptor) bool {
+	switch fd.FullName() {
+	case "poktroll.supplier.EventSupplierUnbondingCanceled.supplier":
+		return x.Supplier != nil
+	case "poktroll.supplier.EventSupplierUnbondingCanceled.height":
+		return x.Height != int64(0)
+	case "poktroll.supplier.EventSupplierUnbondingCanceled.session_end_height":
+		return x.SessionEndHeight != int64(0)
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.supplier.EventSupplierUnbondingCanceled"))
+		}
+		panic(fmt.Errorf("message poktroll.supplier.EventSupplierUnbondingCanceled does not contain field %s", fd.FullName()))
+	}
+}
+
+// Clear clears the field such that a subsequent Has call reports false.
+//
+// Clearing an extension field clears both the extension type and value
+// associated with the given field number.
+//
+// Clear is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_EventSupplierUnbondingCanceled) Clear(fd protoreflect.FieldDescriptor) {
+	switch fd.FullName() {
+	case "poktroll.supplier.EventSupplierUnbondingCanceled.supplier":
+		x.Supplier = nil
+	case "poktroll.supplier.EventSupplierUnbondingCanceled.height":
+		x.Height = int64(0)
+	case "poktroll.supplier.EventSupplierUnbondingCanceled.session_end_height":
+		x.SessionEndHeight = int64(0)
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.supplier.EventSupplierUnbondingCanceled"))
+		}
+		panic(fmt.Errorf("message poktroll.supplier.EventSupplierUnbondingCanceled does not contain field %s", fd.FullName()))
+	}
+}
+
+// Get retrieves the value for a field.
+//
+// For unpopulated scalars, it returns the default value, where
+// the default value of a bytes scalar is guaranteed to be a copy.
+// For unpopulated composite types, it returns an empty, read-only view
+// of the value; to obtain a mutable reference, use Mutable.
+func (x *fastReflection_EventSupplierUnbondingCanceled) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
+	switch descriptor.FullName() {
+	case "poktroll.supplier.EventSupplierUnbondingCanceled.supplier":
+		value := x.Supplier
+		return protoreflect.ValueOfMessage(value.ProtoReflect())
+	case "poktroll.supplier.EventSupplierUnbondingCanceled.height":
+		value := x.Height
+		return protoreflect.ValueOfInt64(value)
+	case "poktroll.supplier.EventSupplierUnbondingCanceled.session_end_height":
+		value := x.SessionEndHeight
+		return protoreflect.ValueOfInt64(value)
+	default:
+		if descriptor.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.supplier.EventSupplierUnbondingCanceled"))
+		}
+		panic(fmt.Errorf("message poktroll.supplier.EventSupplierUnbondingCanceled does not contain field %s", descriptor.FullName()))
+	}
+}
+
+// Set stores the value for a field.
+//
+// For a field belonging to a oneof, it implicitly clears any other field
+// that may be currently set within the same oneof.
+// For extension fields, it implicitly stores the provided ExtensionType.
+// When setting a composite type, it is unspecified whether the stored value
+// aliases the source's memory in any way. If the composite value is an
+// empty, read-only value, then it panics.
+//
+// Set is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_EventSupplierUnbondingCanceled) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
+	switch fd.FullName() {
+	case "poktroll.supplier.EventSupplierUnbondingCanceled.supplier":
+		x.Supplier = value.Message().Interface().(*shared.Supplier)
+	case "poktroll.supplier.EventSupplierUnbondingCanceled.height":
+		x.Height = value.Int()
+	case "poktroll.supplier.EventSupplierUnbondingCanceled.session_end_height":
+		x.SessionEndHeight = value.Int()
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.supplier.EventSupplierUnbondingCanceled"))
+		}
+		panic(fmt.Errorf("message poktroll.supplier.EventSupplierUnbondingCanceled does not contain field %s", fd.FullName()))
+	}
+}
+
+// Mutable returns a mutable reference to a composite type.
+//
+// If the field is unpopulated, it may allocate a composite value.
+// For a field belonging to a oneof, it implicitly clears any other field
+// that may be currently set within the same oneof.
+// For extension fields, it implicitly stores the provided ExtensionType
+// if not already stored.
+// It panics if the field does not contain a composite type.
+//
+// Mutable is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_EventSupplierUnbondingCanceled) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
+	switch fd.FullName() {
+	case "poktroll.supplier.EventSupplierUnbondingCanceled.supplier":
+		if x.Supplier == nil {
+			x.Supplier = new(shared.Supplier)
+		}
+		return protoreflect.ValueOfMessage(x.Supplier.ProtoReflect())
+	case "poktroll.supplier.EventSupplierUnbondingCanceled.height":
+		panic(fmt.Errorf("field height of message poktroll.supplier.EventSupplierUnbondingCanceled is not mutable"))
+	case "poktroll.supplier.EventSupplierUnbondingCanceled.session_end_height":
+		panic(fmt.Errorf("field session_end_height of message poktroll.supplier.EventSupplierUnbondingCanceled is not mutable"))
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.supplier.EventSupplierUnbondingCanceled"))
+		}
+		panic(fmt.Errorf("message poktroll.supplier.EventSupplierUnbondingCanceled does not contain field %s", fd.FullName()))
+	}
+}
+
+// NewField returns a new value that is assignable to the field
+// for the given descriptor. For scalars, this returns the default value.
+// For lists, maps, and messages, this returns a new, empty, mutable value.
+func (x *fastReflection_EventSupplierUnbondingCanceled) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
+	switch fd.FullName() {
+	case "poktroll.supplier.EventSupplierUnbondingCanceled.supplier":
+		m := new(shared.Supplier)
+		return protoreflect.ValueOfMessage(m.ProtoReflect())
+	case "poktroll.supplier.EventSupplierUnbondingCanceled.height":
+		return protoreflect.ValueOfInt64(int64(0))
+	case "poktroll.supplier.EventSupplierUnbondingCanceled.session_end_height":
+		return protoreflect.ValueOfInt64(int64(0))
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.supplier.EventSupplierUnbondingCanceled"))
+		}
+		panic(fmt.Errorf("message poktroll.supplier.EventSupplierUnbondingCanceled does not contain field %s", fd.FullName()))
+	}
+}
+
+// WhichOneof reports which field within the oneof is populated,
+// returning nil if none are populated.
+// It panics if the oneof descriptor does not belong to this message.
+func (x *fastReflection_EventSupplierUnbondingCanceled) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
+	switch d.FullName() {
+	default:
+		panic(fmt.Errorf("%s is not a oneof field in poktroll.supplier.EventSupplierUnbondingCanceled", d.FullName()))
+	}
+	panic("unreachable")
+}
+
+// GetUnknown retrieves the entire list of unknown fields.
+// The caller may only mutate the contents of the RawFields
+// if the mutated bytes are stored back into the message with SetUnknown.
+func (x *fastReflection_EventSupplierUnbondingCanceled) GetUnknown() protoreflect.RawFields {
+	return x.unknownFields
+}
+
+// SetUnknown stores an entire list of unknown fields.
+// The raw fields must be syntactically valid according to the wire format.
+// An implementation may panic if this is not the case.
+// Once stored, the caller must not mutate the content of the RawFields.
+// An empty RawFields may be passed to clear the fields.
+//
+// SetUnknown is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_EventSupplierUnbondingCanceled) SetUnknown(fields protoreflect.RawFields) {
+	x.unknownFields = fields
+}
+
+// IsValid reports whether the message is valid.
+//
+// An invalid message is an empty, read-only value.
+//
+// An invalid message often corresponds to a nil pointer of the concrete
+// message type, but the details are implementation dependent.
+// Validity is not part of the protobuf data model, and may not
+// be preserved in marshaling or other operations.
+func (x *fastReflection_EventSupplierUnbondingCanceled) IsValid() bool {
+	return x != nil
+}
+
+// ProtoMethods returns optional fastReflectionFeature-path implementations of various operations.
+// This method may return nil.
+//
+// The returned methods type is identical to
+// "google.golang.org/protobuf/runtime/protoiface".Methods.
+// Consult the protoiface package documentation for details.
+func (x *fastReflection_EventSupplierUnbondingCanceled) ProtoMethods() *protoiface.Methods {
+	size := func(input protoiface.SizeInput) protoiface.SizeOutput {
+		x := input.Message.Interface().(*EventSupplierUnbondingCanceled)
+		if x == nil {
+			return protoiface.SizeOutput{
+				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+				Size:              0,
+			}
+		}
+		options := runtime.SizeInputToOptions(input)
+		_ = options
+		var n int
+		var l int
+		_ = l
+		if x.Supplier != nil {
+			l = options.Size(x.Supplier)
+			n += 1 + l + runtime.Sov(uint64(l))
+		}
+		if x.Height != 0 {
+			n += 1 + runtime.Sov(uint64(x.Height))
+		}
+		if x.SessionEndHeight != 0 {
+			n += 1 + runtime.Sov(uint64(x.SessionEndHeight))
+		}
+		if x.unknownFields != nil {
+			n += len(x.unknownFields)
+		}
+		return protoiface.SizeOutput{
+			NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+			Size:              n,
+		}
+	}
+
+	marshal := func(input protoiface.MarshalInput) (protoiface.MarshalOutput, error) {
+		x := input.Message.Interface().(*EventSupplierUnbondingCanceled)
+		if x == nil {
+			return protoiface.MarshalOutput{
+				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+				Buf:               input.Buf,
+			}, nil
+		}
+		options := runtime.MarshalInputToOptions(input)
+		_ = options
+		size := options.Size(x)
+		dAtA := make([]byte, size)
+		i := len(dAtA)
+		_ = i
+		var l int
+		_ = l
+		if x.unknownFields != nil {
+			i -= len(x.unknownFields)
+			copy(dAtA[i:], x.unknownFields)
+		}
+		if x.Height != 0 {
+			i = runtime.EncodeVarint(dAtA, i, uint64(x.Height))
+			i--
+			dAtA[i] = 0x18
+		}
+		if x.SessionEndHeight != 0 {
+			i = runtime.EncodeVarint(dAtA, i, uint64(x.SessionEndHeight))
+			i--
+			dAtA[i] = 0x10
+		}
+		if x.Supplier != nil {
+			encoded, err := options.Marshal(x.Supplier)
+			if err != nil {
+				return protoiface.MarshalOutput{
+					NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+					Buf:               input.Buf,
+				}, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(encoded)))
+			i--
+			dAtA[i] = 0xa
+		}
+		if input.Buf != nil {
+			input.Buf = append(input.Buf, dAtA...)
+		} else {
+			input.Buf = dAtA
+		}
+		return protoiface.MarshalOutput{
+			NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+			Buf:               input.Buf,
+		}, nil
+	}
+	unmarshal := func(input protoiface.UnmarshalInput) (protoiface.UnmarshalOutput, error) {
+		x := input.Message.Interface().(*EventSupplierUnbondingCanceled)
+		if x == nil {
+			return protoiface.UnmarshalOutput{
+				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+				Flags:             input.Flags,
+			}, nil
+		}
+		options := runtime.UnmarshalInputToOptions(input)
+		_ = options
+		dAtA := input.Buf
+		l := len(dAtA)
+		iNdEx := 0
+		for iNdEx < l {
+			preIndex := iNdEx
+			var wire uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				wire |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			fieldNum := int32(wire >> 3)
+			wireType := int(wire & 0x7)
+			if wireType == 4 {
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: EventSupplierUnbondingCanceled: wiretype end group for non-group")
+			}
+			if fieldNum <= 0 {
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: EventSupplierUnbondingCanceled: illegal tag %d (wire type %d)", fieldNum, wire)
+			}
+			switch fieldNum {
+			case 1:
+				if wireType != 2 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Supplier", wireType)
+				}
+				var msglen int
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					msglen |= int(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				if msglen < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				postIndex := iNdEx + msglen
+				if postIndex < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if postIndex > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				if x.Supplier == nil {
+					x.Supplier = &shared.Supplier{}
+				}
+				if err := options.Unmarshal(dAtA[iNdEx:postIndex], x.Supplier); err != nil {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
+				}
+				iNdEx = postIndex
+			case 3:
+				if wireType != 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Height", wireType)
+				}
+				x.Height = 0
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					x.Height |= int64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+			case 2:
+				if wireType != 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field SessionEndHeight", wireType)
+				}
+				x.SessionEndHeight = 0
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					x.SessionEndHeight |= int64(b&0x7F) << shift
 					if b < 0x80 {
 						break
 					}
@@ -1429,13 +2201,64 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-// EventSupplierStaked is emitted with the commitment of the supplier stake message.
+type SupplierUnbondingReason int32
+
+const (
+	SupplierUnbondingReason_SUPPLIER_UNBONDING_REASON_UNSPECIFIED     SupplierUnbondingReason = 0
+	SupplierUnbondingReason_SUPPLIER_UNBONDING_REASON_VOLUNTARY       SupplierUnbondingReason = 1
+	SupplierUnbondingReason_SUPPLIER_UNBONDING_REASON_BELOW_MIN_STAKE SupplierUnbondingReason = 2
+)
+
+// Enum value maps for SupplierUnbondingReason.
+var (
+	SupplierUnbondingReason_name = map[int32]string{
+		0: "SUPPLIER_UNBONDING_REASON_UNSPECIFIED",
+		1: "SUPPLIER_UNBONDING_REASON_VOLUNTARY",
+		2: "SUPPLIER_UNBONDING_REASON_BELOW_MIN_STAKE",
+	}
+	SupplierUnbondingReason_value = map[string]int32{
+		"SUPPLIER_UNBONDING_REASON_UNSPECIFIED":     0,
+		"SUPPLIER_UNBONDING_REASON_VOLUNTARY":       1,
+		"SUPPLIER_UNBONDING_REASON_BELOW_MIN_STAKE": 2,
+	}
+)
+
+func (x SupplierUnbondingReason) Enum() *SupplierUnbondingReason {
+	p := new(SupplierUnbondingReason)
+	*p = x
+	return p
+}
+
+func (x SupplierUnbondingReason) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (SupplierUnbondingReason) Descriptor() protoreflect.EnumDescriptor {
+	return file_poktroll_supplier_event_proto_enumTypes[0].Descriptor()
+}
+
+func (SupplierUnbondingReason) Type() protoreflect.EnumType {
+	return &file_poktroll_supplier_event_proto_enumTypes[0]
+}
+
+func (x SupplierUnbondingReason) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use SupplierUnbondingReason.Descriptor instead.
+func (SupplierUnbondingReason) EnumDescriptor() ([]byte, []int) {
+	return file_poktroll_supplier_event_proto_rawDescGZIP(), []int{0}
+}
+
+// EventSupplierStaked is emitted when a supplier stake message is committed on-chain.
 type EventSupplierStaked struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
 	Supplier *shared.Supplier `protobuf:"bytes,1,opt,name=supplier,proto3" json:"supplier,omitempty"`
+	// The session end height of the last session in which the supplier was staked.
+	SessionEndHeight int64 `protobuf:"varint,2,opt,name=session_end_height,json=sessionEndHeight,proto3" json:"session_end_height,omitempty"`
 }
 
 func (x *EventSupplierStaked) Reset() {
@@ -1465,14 +2288,26 @@ func (x *EventSupplierStaked) GetSupplier() *shared.Supplier {
 	return nil
 }
 
-// EventSupplierUnstaked is emitted with the commitment of the supplier unstake message.
+func (x *EventSupplierStaked) GetSessionEndHeight() int64 {
+	if x != nil {
+		return x.SessionEndHeight
+	}
+	return 0
+}
+
+// EventSupplierUnbondingBegin is emitted when an application unstake message
+// is committed on-chain, indicating that the supplier will now begin unbonding.
 type EventSupplierUnbondingBegin struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Supplier        *shared.Supplier `protobuf:"bytes,1,opt,name=supplier,proto3" json:"supplier,omitempty"`
-	UnbondingHeight int64            `protobuf:"varint,2,opt,name=unbonding_height,json=unbondingHeight,proto3" json:"unbonding_height,omitempty"`
+	Supplier *shared.Supplier        `protobuf:"bytes,1,opt,name=supplier,proto3" json:"supplier,omitempty"`
+	Reason   SupplierUnbondingReason `protobuf:"varint,2,opt,name=reason,proto3,enum=poktroll.supplier.SupplierUnbondingReason" json:"reason,omitempty"`
+	// The session end height of the last session in which the supplier unbonding began.
+	SessionEndHeight int64 `protobuf:"varint,3,opt,name=session_end_height,json=sessionEndHeight,proto3" json:"session_end_height,omitempty"`
+	// The height at which supplier unbonding will end.
+	UnbondingEndHeight int64 `protobuf:"varint,4,opt,name=unbonding_end_height,json=unbondingEndHeight,proto3" json:"unbonding_end_height,omitempty"`
 }
 
 func (x *EventSupplierUnbondingBegin) Reset() {
@@ -1502,22 +2337,41 @@ func (x *EventSupplierUnbondingBegin) GetSupplier() *shared.Supplier {
 	return nil
 }
 
-func (x *EventSupplierUnbondingBegin) GetUnbondingHeight() int64 {
+func (x *EventSupplierUnbondingBegin) GetReason() SupplierUnbondingReason {
 	if x != nil {
-		return x.UnbondingHeight
+		return x.Reason
+	}
+	return SupplierUnbondingReason_SUPPLIER_UNBONDING_REASON_UNSPECIFIED
+}
+
+func (x *EventSupplierUnbondingBegin) GetSessionEndHeight() int64 {
+	if x != nil {
+		return x.SessionEndHeight
 	}
 	return 0
 }
 
-// EventSupplierUnbondingEnd is emitted with the commitment of last block of the
-// supplier unbonding period.
+func (x *EventSupplierUnbondingBegin) GetUnbondingEndHeight() int64 {
+	if x != nil {
+		return x.UnbondingEndHeight
+	}
+	return 0
+}
+
+// EventSupplierUnbondingEnd is emitted when an supplier has completed
+// unbonding. The unbonding period is determined by the shared param,
+// supplier_unbonding_period_sessions.
 type EventSupplierUnbondingEnd struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Supplier        *shared.Supplier `protobuf:"bytes,1,opt,name=supplier,proto3" json:"supplier,omitempty"`
-	UnbondingHeight int64            `protobuf:"varint,2,opt,name=unbonding_height,json=unbondingHeight,proto3" json:"unbonding_height,omitempty"`
+	Supplier *shared.Supplier        `protobuf:"bytes,1,opt,name=supplier,proto3" json:"supplier,omitempty"`
+	Reason   SupplierUnbondingReason `protobuf:"varint,2,opt,name=reason,proto3,enum=poktroll.supplier.SupplierUnbondingReason" json:"reason,omitempty"`
+	// The session end height of the session in which the supplier unbonding endeded.
+	SessionEndHeight int64 `protobuf:"varint,3,opt,name=session_end_height,json=sessionEndHeight,proto3" json:"session_end_height,omitempty"`
+	// The height at which supplier unbonding will end.
+	UnbondingEndHeight int64 `protobuf:"varint,4,opt,name=unbonding_end_height,json=unbondingEndHeight,proto3" json:"unbonding_end_height,omitempty"`
 }
 
 func (x *EventSupplierUnbondingEnd) Reset() {
@@ -1547,9 +2401,79 @@ func (x *EventSupplierUnbondingEnd) GetSupplier() *shared.Supplier {
 	return nil
 }
 
-func (x *EventSupplierUnbondingEnd) GetUnbondingHeight() int64 {
+func (x *EventSupplierUnbondingEnd) GetReason() SupplierUnbondingReason {
 	if x != nil {
-		return x.UnbondingHeight
+		return x.Reason
+	}
+	return SupplierUnbondingReason_SUPPLIER_UNBONDING_REASON_UNSPECIFIED
+}
+
+func (x *EventSupplierUnbondingEnd) GetSessionEndHeight() int64 {
+	if x != nil {
+		return x.SessionEndHeight
+	}
+	return 0
+}
+
+func (x *EventSupplierUnbondingEnd) GetUnbondingEndHeight() int64 {
+	if x != nil {
+		return x.UnbondingEndHeight
+	}
+	return 0
+}
+
+// EventSupplierUnbondingCanceled is emitted when an supplier which was unbonding
+// successfully (re-)stakes before the unbonding period has elapsed. An EventSupplierStaked
+// event will also be emitted immediately after this event.
+type EventSupplierUnbondingCanceled struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Supplier *shared.Supplier `protobuf:"bytes,1,opt,name=supplier,proto3" json:"supplier,omitempty"`
+	// The exact height at which the supplier unbonding was canceled.
+	Height int64 `protobuf:"varint,3,opt,name=height,proto3" json:"height,omitempty"`
+	// The session end height of the session in which the supplier unbonding was canceled.
+	SessionEndHeight int64 `protobuf:"varint,2,opt,name=session_end_height,json=sessionEndHeight,proto3" json:"session_end_height,omitempty"`
+}
+
+func (x *EventSupplierUnbondingCanceled) Reset() {
+	*x = EventSupplierUnbondingCanceled{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_poktroll_supplier_event_proto_msgTypes[3]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *EventSupplierUnbondingCanceled) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*EventSupplierUnbondingCanceled) ProtoMessage() {}
+
+// Deprecated: Use EventSupplierUnbondingCanceled.ProtoReflect.Descriptor instead.
+func (*EventSupplierUnbondingCanceled) Descriptor() ([]byte, []int) {
+	return file_poktroll_supplier_event_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *EventSupplierUnbondingCanceled) GetSupplier() *shared.Supplier {
+	if x != nil {
+		return x.Supplier
+	}
+	return nil
+}
+
+func (x *EventSupplierUnbondingCanceled) GetHeight() int64 {
+	if x != nil {
+		return x.Height
+	}
+	return 0
+}
+
+func (x *EventSupplierUnbondingCanceled) GetSessionEndHeight() int64 {
+	if x != nil {
+		return x.SessionEndHeight
 	}
 	return 0
 }
@@ -1563,47 +2487,96 @@ var file_poktroll_supplier_event_proto_rawDesc = []byte{
 	0x65, 0x72, 0x1a, 0x19, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x5f, 0x70, 0x72, 0x6f, 0x74, 0x6f,
 	0x2f, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x1a, 0x14, 0x67,
 	0x6f, 0x67, 0x6f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2f, 0x67, 0x6f, 0x67, 0x6f, 0x2e, 0x70, 0x72,
+	0x6f, 0x74, 0x6f, 0x1a, 0x1e, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2f, 0x62, 0x61, 0x73, 0x65,
+	0x2f, 0x76, 0x31, 0x62, 0x65, 0x74, 0x61, 0x31, 0x2f, 0x63, 0x6f, 0x69, 0x6e, 0x2e, 0x70, 0x72,
 	0x6f, 0x74, 0x6f, 0x1a, 0x1e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2f, 0x73, 0x68,
 	0x61, 0x72, 0x65, 0x64, 0x2f, 0x73, 0x75, 0x70, 0x70, 0x6c, 0x69, 0x65, 0x72, 0x2e, 0x70, 0x72,
-	0x6f, 0x74, 0x6f, 0x22, 0x5a, 0x0a, 0x13, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x53, 0x75, 0x70, 0x70,
-	0x6c, 0x69, 0x65, 0x72, 0x53, 0x74, 0x61, 0x6b, 0x65, 0x64, 0x12, 0x43, 0x0a, 0x08, 0x73, 0x75,
-	0x70, 0x70, 0x6c, 0x69, 0x65, 0x72, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x19, 0x2e, 0x70,
-	0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x73, 0x68, 0x61, 0x72, 0x65, 0x64, 0x2e, 0x53,
-	0x75, 0x70, 0x70, 0x6c, 0x69, 0x65, 0x72, 0x42, 0x0c, 0xea, 0xde, 0x1f, 0x08, 0x73, 0x75, 0x70,
-	0x70, 0x6c, 0x69, 0x65, 0x72, 0x52, 0x08, 0x73, 0x75, 0x70, 0x70, 0x6c, 0x69, 0x65, 0x72, 0x22,
-	0xa3, 0x01, 0x0a, 0x1b, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x53, 0x75, 0x70, 0x70, 0x6c, 0x69, 0x65,
-	0x72, 0x55, 0x6e, 0x62, 0x6f, 0x6e, 0x64, 0x69, 0x6e, 0x67, 0x42, 0x65, 0x67, 0x69, 0x6e, 0x12,
-	0x43, 0x0a, 0x08, 0x73, 0x75, 0x70, 0x70, 0x6c, 0x69, 0x65, 0x72, 0x18, 0x01, 0x20, 0x01, 0x28,
-	0x0b, 0x32, 0x19, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x73, 0x68, 0x61,
-	0x72, 0x65, 0x64, 0x2e, 0x53, 0x75, 0x70, 0x70, 0x6c, 0x69, 0x65, 0x72, 0x42, 0x0c, 0xea, 0xde,
-	0x1f, 0x08, 0x73, 0x75, 0x70, 0x70, 0x6c, 0x69, 0x65, 0x72, 0x52, 0x08, 0x73, 0x75, 0x70, 0x70,
-	0x6c, 0x69, 0x65, 0x72, 0x12, 0x3f, 0x0a, 0x10, 0x75, 0x6e, 0x62, 0x6f, 0x6e, 0x64, 0x69, 0x6e,
-	0x67, 0x5f, 0x68, 0x65, 0x69, 0x67, 0x68, 0x74, 0x18, 0x02, 0x20, 0x01, 0x28, 0x03, 0x42, 0x14,
-	0xea, 0xde, 0x1f, 0x10, 0x75, 0x6e, 0x62, 0x6f, 0x6e, 0x64, 0x69, 0x6e, 0x67, 0x5f, 0x68, 0x65,
-	0x69, 0x67, 0x68, 0x74, 0x52, 0x0f, 0x75, 0x6e, 0x62, 0x6f, 0x6e, 0x64, 0x69, 0x6e, 0x67, 0x48,
-	0x65, 0x69, 0x67, 0x68, 0x74, 0x22, 0xa1, 0x01, 0x0a, 0x19, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x53,
-	0x75, 0x70, 0x70, 0x6c, 0x69, 0x65, 0x72, 0x55, 0x6e, 0x62, 0x6f, 0x6e, 0x64, 0x69, 0x6e, 0x67,
-	0x45, 0x6e, 0x64, 0x12, 0x43, 0x0a, 0x08, 0x73, 0x75, 0x70, 0x70, 0x6c, 0x69, 0x65, 0x72, 0x18,
-	0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x19, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c,
-	0x2e, 0x73, 0x68, 0x61, 0x72, 0x65, 0x64, 0x2e, 0x53, 0x75, 0x70, 0x70, 0x6c, 0x69, 0x65, 0x72,
-	0x42, 0x0c, 0xea, 0xde, 0x1f, 0x08, 0x73, 0x75, 0x70, 0x70, 0x6c, 0x69, 0x65, 0x72, 0x52, 0x08,
-	0x73, 0x75, 0x70, 0x70, 0x6c, 0x69, 0x65, 0x72, 0x12, 0x3f, 0x0a, 0x10, 0x75, 0x6e, 0x62, 0x6f,
-	0x6e, 0x64, 0x69, 0x6e, 0x67, 0x5f, 0x68, 0x65, 0x69, 0x67, 0x68, 0x74, 0x18, 0x02, 0x20, 0x01,
-	0x28, 0x03, 0x42, 0x14, 0xea, 0xde, 0x1f, 0x10, 0x75, 0x6e, 0x62, 0x6f, 0x6e, 0x64, 0x69, 0x6e,
-	0x67, 0x5f, 0x68, 0x65, 0x69, 0x67, 0x68, 0x74, 0x52, 0x0f, 0x75, 0x6e, 0x62, 0x6f, 0x6e, 0x64,
-	0x69, 0x6e, 0x67, 0x48, 0x65, 0x69, 0x67, 0x68, 0x74, 0x42, 0xb0, 0x01, 0xd8, 0xe2, 0x1e, 0x01,
-	0x0a, 0x15, 0x63, 0x6f, 0x6d, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x73,
-	0x75, 0x70, 0x70, 0x6c, 0x69, 0x65, 0x72, 0x42, 0x0a, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x50, 0x72,
-	0x6f, 0x74, 0x6f, 0x50, 0x01, 0x5a, 0x22, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x73, 0x64, 0x6b,
-	0x2e, 0x69, 0x6f, 0x2f, 0x61, 0x70, 0x69, 0x2f, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c,
-	0x2f, 0x73, 0x75, 0x70, 0x70, 0x6c, 0x69, 0x65, 0x72, 0xa2, 0x02, 0x03, 0x50, 0x53, 0x58, 0xaa,
-	0x02, 0x11, 0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x53, 0x75, 0x70, 0x70, 0x6c,
-	0x69, 0x65, 0x72, 0xca, 0x02, 0x11, 0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x5c, 0x53,
-	0x75, 0x70, 0x70, 0x6c, 0x69, 0x65, 0x72, 0xe2, 0x02, 0x1d, 0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f,
-	0x6c, 0x6c, 0x5c, 0x53, 0x75, 0x70, 0x70, 0x6c, 0x69, 0x65, 0x72, 0x5c, 0x47, 0x50, 0x42, 0x4d,
-	0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0xea, 0x02, 0x12, 0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f,
-	0x6c, 0x6c, 0x3a, 0x3a, 0x53, 0x75, 0x70, 0x70, 0x6c, 0x69, 0x65, 0x72, 0x62, 0x06, 0x70, 0x72,
-	0x6f, 0x74, 0x6f, 0x33,
+	0x6f, 0x74, 0x6f, 0x22, 0xa0, 0x01, 0x0a, 0x13, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x53, 0x75, 0x70,
+	0x70, 0x6c, 0x69, 0x65, 0x72, 0x53, 0x74, 0x61, 0x6b, 0x65, 0x64, 0x12, 0x43, 0x0a, 0x08, 0x73,
+	0x75, 0x70, 0x70, 0x6c, 0x69, 0x65, 0x72, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x19, 0x2e,
+	0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x73, 0x68, 0x61, 0x72, 0x65, 0x64, 0x2e,
+	0x53, 0x75, 0x70, 0x70, 0x6c, 0x69, 0x65, 0x72, 0x42, 0x0c, 0xea, 0xde, 0x1f, 0x08, 0x73, 0x75,
+	0x70, 0x70, 0x6c, 0x69, 0x65, 0x72, 0x52, 0x08, 0x73, 0x75, 0x70, 0x70, 0x6c, 0x69, 0x65, 0x72,
+	0x12, 0x44, 0x0a, 0x12, 0x73, 0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x5f, 0x65, 0x6e, 0x64, 0x5f,
+	0x68, 0x65, 0x69, 0x67, 0x68, 0x74, 0x18, 0x02, 0x20, 0x01, 0x28, 0x03, 0x42, 0x16, 0xea, 0xde,
+	0x1f, 0x12, 0x73, 0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x5f, 0x65, 0x6e, 0x64, 0x5f, 0x68, 0x65,
+	0x69, 0x67, 0x68, 0x74, 0x52, 0x10, 0x73, 0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x45, 0x6e, 0x64,
+	0x48, 0x65, 0x69, 0x67, 0x68, 0x74, 0x22, 0xc4, 0x02, 0x0a, 0x1b, 0x45, 0x76, 0x65, 0x6e, 0x74,
+	0x53, 0x75, 0x70, 0x70, 0x6c, 0x69, 0x65, 0x72, 0x55, 0x6e, 0x62, 0x6f, 0x6e, 0x64, 0x69, 0x6e,
+	0x67, 0x42, 0x65, 0x67, 0x69, 0x6e, 0x12, 0x43, 0x0a, 0x08, 0x73, 0x75, 0x70, 0x70, 0x6c, 0x69,
+	0x65, 0x72, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x19, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72,
+	0x6f, 0x6c, 0x6c, 0x2e, 0x73, 0x68, 0x61, 0x72, 0x65, 0x64, 0x2e, 0x53, 0x75, 0x70, 0x70, 0x6c,
+	0x69, 0x65, 0x72, 0x42, 0x0c, 0xea, 0xde, 0x1f, 0x08, 0x73, 0x75, 0x70, 0x70, 0x6c, 0x69, 0x65,
+	0x72, 0x52, 0x08, 0x73, 0x75, 0x70, 0x70, 0x6c, 0x69, 0x65, 0x72, 0x12, 0x4e, 0x0a, 0x06, 0x72,
+	0x65, 0x61, 0x73, 0x6f, 0x6e, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0e, 0x32, 0x2a, 0x2e, 0x70, 0x6f,
+	0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x73, 0x75, 0x70, 0x70, 0x6c, 0x69, 0x65, 0x72, 0x2e,
+	0x53, 0x75, 0x70, 0x70, 0x6c, 0x69, 0x65, 0x72, 0x55, 0x6e, 0x62, 0x6f, 0x6e, 0x64, 0x69, 0x6e,
+	0x67, 0x52, 0x65, 0x61, 0x73, 0x6f, 0x6e, 0x42, 0x0a, 0xea, 0xde, 0x1f, 0x06, 0x72, 0x65, 0x61,
+	0x73, 0x6f, 0x6e, 0x52, 0x06, 0x72, 0x65, 0x61, 0x73, 0x6f, 0x6e, 0x12, 0x44, 0x0a, 0x12, 0x73,
+	0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x5f, 0x65, 0x6e, 0x64, 0x5f, 0x68, 0x65, 0x69, 0x67, 0x68,
+	0x74, 0x18, 0x03, 0x20, 0x01, 0x28, 0x03, 0x42, 0x16, 0xea, 0xde, 0x1f, 0x12, 0x73, 0x65, 0x73,
+	0x73, 0x69, 0x6f, 0x6e, 0x5f, 0x65, 0x6e, 0x64, 0x5f, 0x68, 0x65, 0x69, 0x67, 0x68, 0x74, 0x52,
+	0x10, 0x73, 0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x45, 0x6e, 0x64, 0x48, 0x65, 0x69, 0x67, 0x68,
+	0x74, 0x12, 0x4a, 0x0a, 0x14, 0x75, 0x6e, 0x62, 0x6f, 0x6e, 0x64, 0x69, 0x6e, 0x67, 0x5f, 0x65,
+	0x6e, 0x64, 0x5f, 0x68, 0x65, 0x69, 0x67, 0x68, 0x74, 0x18, 0x04, 0x20, 0x01, 0x28, 0x03, 0x42,
+	0x18, 0xea, 0xde, 0x1f, 0x14, 0x75, 0x6e, 0x62, 0x6f, 0x6e, 0x64, 0x69, 0x6e, 0x67, 0x5f, 0x65,
+	0x6e, 0x64, 0x5f, 0x68, 0x65, 0x69, 0x67, 0x68, 0x74, 0x52, 0x12, 0x75, 0x6e, 0x62, 0x6f, 0x6e,
+	0x64, 0x69, 0x6e, 0x67, 0x45, 0x6e, 0x64, 0x48, 0x65, 0x69, 0x67, 0x68, 0x74, 0x22, 0xc2, 0x02,
+	0x0a, 0x19, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x53, 0x75, 0x70, 0x70, 0x6c, 0x69, 0x65, 0x72, 0x55,
+	0x6e, 0x62, 0x6f, 0x6e, 0x64, 0x69, 0x6e, 0x67, 0x45, 0x6e, 0x64, 0x12, 0x43, 0x0a, 0x08, 0x73,
+	0x75, 0x70, 0x70, 0x6c, 0x69, 0x65, 0x72, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x19, 0x2e,
+	0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x73, 0x68, 0x61, 0x72, 0x65, 0x64, 0x2e,
+	0x53, 0x75, 0x70, 0x70, 0x6c, 0x69, 0x65, 0x72, 0x42, 0x0c, 0xea, 0xde, 0x1f, 0x08, 0x73, 0x75,
+	0x70, 0x70, 0x6c, 0x69, 0x65, 0x72, 0x52, 0x08, 0x73, 0x75, 0x70, 0x70, 0x6c, 0x69, 0x65, 0x72,
+	0x12, 0x4e, 0x0a, 0x06, 0x72, 0x65, 0x61, 0x73, 0x6f, 0x6e, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0e,
+	0x32, 0x2a, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x73, 0x75, 0x70, 0x70,
+	0x6c, 0x69, 0x65, 0x72, 0x2e, 0x53, 0x75, 0x70, 0x70, 0x6c, 0x69, 0x65, 0x72, 0x55, 0x6e, 0x62,
+	0x6f, 0x6e, 0x64, 0x69, 0x6e, 0x67, 0x52, 0x65, 0x61, 0x73, 0x6f, 0x6e, 0x42, 0x0a, 0xea, 0xde,
+	0x1f, 0x06, 0x72, 0x65, 0x61, 0x73, 0x6f, 0x6e, 0x52, 0x06, 0x72, 0x65, 0x61, 0x73, 0x6f, 0x6e,
+	0x12, 0x44, 0x0a, 0x12, 0x73, 0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x5f, 0x65, 0x6e, 0x64, 0x5f,
+	0x68, 0x65, 0x69, 0x67, 0x68, 0x74, 0x18, 0x03, 0x20, 0x01, 0x28, 0x03, 0x42, 0x16, 0xea, 0xde,
+	0x1f, 0x12, 0x73, 0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x5f, 0x65, 0x6e, 0x64, 0x5f, 0x68, 0x65,
+	0x69, 0x67, 0x68, 0x74, 0x52, 0x10, 0x73, 0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x45, 0x6e, 0x64,
+	0x48, 0x65, 0x69, 0x67, 0x68, 0x74, 0x12, 0x4a, 0x0a, 0x14, 0x75, 0x6e, 0x62, 0x6f, 0x6e, 0x64,
+	0x69, 0x6e, 0x67, 0x5f, 0x65, 0x6e, 0x64, 0x5f, 0x68, 0x65, 0x69, 0x67, 0x68, 0x74, 0x18, 0x04,
+	0x20, 0x01, 0x28, 0x03, 0x42, 0x18, 0xea, 0xde, 0x1f, 0x14, 0x75, 0x6e, 0x62, 0x6f, 0x6e, 0x64,
+	0x69, 0x6e, 0x67, 0x5f, 0x65, 0x6e, 0x64, 0x5f, 0x68, 0x65, 0x69, 0x67, 0x68, 0x74, 0x52, 0x12,
+	0x75, 0x6e, 0x62, 0x6f, 0x6e, 0x64, 0x69, 0x6e, 0x67, 0x45, 0x6e, 0x64, 0x48, 0x65, 0x69, 0x67,
+	0x68, 0x74, 0x22, 0xcf, 0x01, 0x0a, 0x1e, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x53, 0x75, 0x70, 0x70,
+	0x6c, 0x69, 0x65, 0x72, 0x55, 0x6e, 0x62, 0x6f, 0x6e, 0x64, 0x69, 0x6e, 0x67, 0x43, 0x61, 0x6e,
+	0x63, 0x65, 0x6c, 0x65, 0x64, 0x12, 0x43, 0x0a, 0x08, 0x73, 0x75, 0x70, 0x70, 0x6c, 0x69, 0x65,
+	0x72, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x19, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f,
+	0x6c, 0x6c, 0x2e, 0x73, 0x68, 0x61, 0x72, 0x65, 0x64, 0x2e, 0x53, 0x75, 0x70, 0x70, 0x6c, 0x69,
+	0x65, 0x72, 0x42, 0x0c, 0xea, 0xde, 0x1f, 0x08, 0x73, 0x75, 0x70, 0x70, 0x6c, 0x69, 0x65, 0x72,
+	0x52, 0x08, 0x73, 0x75, 0x70, 0x70, 0x6c, 0x69, 0x65, 0x72, 0x12, 0x22, 0x0a, 0x06, 0x68, 0x65,
+	0x69, 0x67, 0x68, 0x74, 0x18, 0x03, 0x20, 0x01, 0x28, 0x03, 0x42, 0x0a, 0xea, 0xde, 0x1f, 0x06,
+	0x68, 0x65, 0x69, 0x67, 0x68, 0x74, 0x52, 0x06, 0x68, 0x65, 0x69, 0x67, 0x68, 0x74, 0x12, 0x44,
+	0x0a, 0x12, 0x73, 0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x5f, 0x65, 0x6e, 0x64, 0x5f, 0x68, 0x65,
+	0x69, 0x67, 0x68, 0x74, 0x18, 0x02, 0x20, 0x01, 0x28, 0x03, 0x42, 0x16, 0xea, 0xde, 0x1f, 0x12,
+	0x73, 0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x5f, 0x65, 0x6e, 0x64, 0x5f, 0x68, 0x65, 0x69, 0x67,
+	0x68, 0x74, 0x52, 0x10, 0x73, 0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x45, 0x6e, 0x64, 0x48, 0x65,
+	0x69, 0x67, 0x68, 0x74, 0x2a, 0x9c, 0x01, 0x0a, 0x17, 0x53, 0x75, 0x70, 0x70, 0x6c, 0x69, 0x65,
+	0x72, 0x55, 0x6e, 0x62, 0x6f, 0x6e, 0x64, 0x69, 0x6e, 0x67, 0x52, 0x65, 0x61, 0x73, 0x6f, 0x6e,
+	0x12, 0x29, 0x0a, 0x25, 0x53, 0x55, 0x50, 0x50, 0x4c, 0x49, 0x45, 0x52, 0x5f, 0x55, 0x4e, 0x42,
+	0x4f, 0x4e, 0x44, 0x49, 0x4e, 0x47, 0x5f, 0x52, 0x45, 0x41, 0x53, 0x4f, 0x4e, 0x5f, 0x55, 0x4e,
+	0x53, 0x50, 0x45, 0x43, 0x49, 0x46, 0x49, 0x45, 0x44, 0x10, 0x00, 0x12, 0x27, 0x0a, 0x23, 0x53,
+	0x55, 0x50, 0x50, 0x4c, 0x49, 0x45, 0x52, 0x5f, 0x55, 0x4e, 0x42, 0x4f, 0x4e, 0x44, 0x49, 0x4e,
+	0x47, 0x5f, 0x52, 0x45, 0x41, 0x53, 0x4f, 0x4e, 0x5f, 0x56, 0x4f, 0x4c, 0x55, 0x4e, 0x54, 0x41,
+	0x52, 0x59, 0x10, 0x01, 0x12, 0x2d, 0x0a, 0x29, 0x53, 0x55, 0x50, 0x50, 0x4c, 0x49, 0x45, 0x52,
+	0x5f, 0x55, 0x4e, 0x42, 0x4f, 0x4e, 0x44, 0x49, 0x4e, 0x47, 0x5f, 0x52, 0x45, 0x41, 0x53, 0x4f,
+	0x4e, 0x5f, 0x42, 0x45, 0x4c, 0x4f, 0x57, 0x5f, 0x4d, 0x49, 0x4e, 0x5f, 0x53, 0x54, 0x41, 0x4b,
+	0x45, 0x10, 0x02, 0x42, 0xb0, 0x01, 0xd8, 0xe2, 0x1e, 0x01, 0x0a, 0x15, 0x63, 0x6f, 0x6d, 0x2e,
+	0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x73, 0x75, 0x70, 0x70, 0x6c, 0x69, 0x65,
+	0x72, 0x42, 0x0a, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x50, 0x72, 0x6f, 0x74, 0x6f, 0x50, 0x01, 0x5a,
+	0x22, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x73, 0x64, 0x6b, 0x2e, 0x69, 0x6f, 0x2f, 0x61, 0x70,
+	0x69, 0x2f, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2f, 0x73, 0x75, 0x70, 0x70, 0x6c,
+	0x69, 0x65, 0x72, 0xa2, 0x02, 0x03, 0x50, 0x53, 0x58, 0xaa, 0x02, 0x11, 0x50, 0x6f, 0x6b, 0x74,
+	0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x53, 0x75, 0x70, 0x70, 0x6c, 0x69, 0x65, 0x72, 0xca, 0x02, 0x11,
+	0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x5c, 0x53, 0x75, 0x70, 0x70, 0x6c, 0x69, 0x65,
+	0x72, 0xe2, 0x02, 0x1d, 0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x5c, 0x53, 0x75, 0x70,
+	0x70, 0x6c, 0x69, 0x65, 0x72, 0x5c, 0x47, 0x50, 0x42, 0x4d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74,
+	0x61, 0xea, 0x02, 0x12, 0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x3a, 0x3a, 0x53, 0x75,
+	0x70, 0x70, 0x6c, 0x69, 0x65, 0x72, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -1618,22 +2591,28 @@ func file_poktroll_supplier_event_proto_rawDescGZIP() []byte {
 	return file_poktroll_supplier_event_proto_rawDescData
 }
 
-var file_poktroll_supplier_event_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
+var file_poktroll_supplier_event_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
+var file_poktroll_supplier_event_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
 var file_poktroll_supplier_event_proto_goTypes = []interface{}{
-	(*EventSupplierStaked)(nil),         // 0: poktroll.supplier.EventSupplierStaked
-	(*EventSupplierUnbondingBegin)(nil), // 1: poktroll.supplier.EventSupplierUnbondingBegin
-	(*EventSupplierUnbondingEnd)(nil),   // 2: poktroll.supplier.EventSupplierUnbondingEnd
-	(*shared.Supplier)(nil),             // 3: poktroll.shared.Supplier
+	(SupplierUnbondingReason)(0),           // 0: poktroll.supplier.SupplierUnbondingReason
+	(*EventSupplierStaked)(nil),            // 1: poktroll.supplier.EventSupplierStaked
+	(*EventSupplierUnbondingBegin)(nil),    // 2: poktroll.supplier.EventSupplierUnbondingBegin
+	(*EventSupplierUnbondingEnd)(nil),      // 3: poktroll.supplier.EventSupplierUnbondingEnd
+	(*EventSupplierUnbondingCanceled)(nil), // 4: poktroll.supplier.EventSupplierUnbondingCanceled
+	(*shared.Supplier)(nil),                // 5: poktroll.shared.Supplier
 }
 var file_poktroll_supplier_event_proto_depIdxs = []int32{
-	3, // 0: poktroll.supplier.EventSupplierStaked.supplier:type_name -> poktroll.shared.Supplier
-	3, // 1: poktroll.supplier.EventSupplierUnbondingBegin.supplier:type_name -> poktroll.shared.Supplier
-	3, // 2: poktroll.supplier.EventSupplierUnbondingEnd.supplier:type_name -> poktroll.shared.Supplier
-	3, // [3:3] is the sub-list for method output_type
-	3, // [3:3] is the sub-list for method input_type
-	3, // [3:3] is the sub-list for extension type_name
-	3, // [3:3] is the sub-list for extension extendee
-	0, // [0:3] is the sub-list for field type_name
+	5, // 0: poktroll.supplier.EventSupplierStaked.supplier:type_name -> poktroll.shared.Supplier
+	5, // 1: poktroll.supplier.EventSupplierUnbondingBegin.supplier:type_name -> poktroll.shared.Supplier
+	0, // 2: poktroll.supplier.EventSupplierUnbondingBegin.reason:type_name -> poktroll.supplier.SupplierUnbondingReason
+	5, // 3: poktroll.supplier.EventSupplierUnbondingEnd.supplier:type_name -> poktroll.shared.Supplier
+	0, // 4: poktroll.supplier.EventSupplierUnbondingEnd.reason:type_name -> poktroll.supplier.SupplierUnbondingReason
+	5, // 5: poktroll.supplier.EventSupplierUnbondingCanceled.supplier:type_name -> poktroll.shared.Supplier
+	6, // [6:6] is the sub-list for method output_type
+	6, // [6:6] is the sub-list for method input_type
+	6, // [6:6] is the sub-list for extension type_name
+	6, // [6:6] is the sub-list for extension extendee
+	0, // [0:6] is the sub-list for field type_name
 }
 
 func init() { file_poktroll_supplier_event_proto_init() }
@@ -1678,19 +2657,32 @@ func file_poktroll_supplier_event_proto_init() {
 				return nil
 			}
 		}
+		file_poktroll_supplier_event_proto_msgTypes[3].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*EventSupplierUnbondingCanceled); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_poktroll_supplier_event_proto_rawDesc,
-			NumEnums:      0,
-			NumMessages:   3,
+			NumEnums:      1,
+			NumMessages:   4,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
 		GoTypes:           file_poktroll_supplier_event_proto_goTypes,
 		DependencyIndexes: file_poktroll_supplier_event_proto_depIdxs,
+		EnumInfos:         file_poktroll_supplier_event_proto_enumTypes,
 		MessageInfos:      file_poktroll_supplier_event_proto_msgTypes,
 	}.Build()
 	File_poktroll_supplier_event_proto = out.File
