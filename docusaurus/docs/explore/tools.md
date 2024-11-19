@@ -18,6 +18,8 @@ sidebar_position: 1
 
 ## Alpha TestNet
 
+https://github.com/pokt-network/pocket-network-genesis
+
 ### 🛠️ Tools & References <!-- omit in toc -->
 
 - 🪙 [Shannon Token Faucet](https://faucet.testnet.pokt.network/)
