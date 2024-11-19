@@ -131,10 +131,12 @@ var (
 			QueryParamsResponse:     servicetypes.QueryParamsResponse{},
 		},
 		ValidParams: servicetypes.Params{
-			AddServiceFee: &ValidAddServiceFeeCoin,
+			AddServiceFee:   &ValidAddServiceFeeCoin,
+			TargetNumRelays: servicetypes.DefaultTargetNumRelays,
 		},
 		ParamTypes: map[ParamType]any{
-			ParamTypeCoin: servicetypes.MsgUpdateParam_AsCoin{},
+			ParamTypeCoin:   servicetypes.MsgUpdateParam_AsCoin{},
+			ParamTypeUint64: servicetypes.MsgUpdateParam_AsUint64{},
 		},
 		DefaultParams:    servicetypes.DefaultParams(),
 		NewParamClientFn: servicetypes.NewQueryClient,

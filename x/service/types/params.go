@@ -14,11 +14,14 @@ import (
 var (
 	_ paramtypes.ParamSet = (*Params)(nil)
 
-	KeyAddServiceFee   = []byte("AddServiceFee")
-	ParamAddServiceFee = "add_service_fee"
-	// TODO_TECHDEBT: Determine a sensible default/min value for the add service fee.
-	// MinAddServiceFee is the default and minimum fee for adding a new service.
-	MinAddServiceFee = cosmostypes.NewCoin(volatile.DenomuPOKT, math.NewInt(1000000000))
+	// TODO_MAINNET: Determine a sensible default/min values.
+
+	KeyAddServiceFee       = []byte("AddServiceFee")
+	ParamAddServiceFee     = "add_service_fee"
+	MinAddServiceFee       = cosmostypes.NewCoin(volatile.DenomuPOKT, math.NewInt(1000000000))
+	KeyTargetNumRelays     = []byte("TargetNumRelays")
+	ParamTargetNumRelays   = "target_num_relays"
+	DefaultTargetNumRelays = uint64(1)
 )
 
 // ParamKeyTable the param key table for launch module
@@ -27,9 +30,13 @@ func ParamKeyTable() paramtypes.KeyTable {
 }
 
 // NewParams creates a new Params instance
-func NewParams(addServiceFee *cosmostypes.Coin) Params {
+func NewParams(
+	addServiceFee *cosmostypes.Coin,
+	targetNumRelays uint64,
+) Params {
 	return Params{
-		AddServiceFee: addServiceFee,
+		AddServiceFee:   addServiceFee,
+		TargetNumRelays: targetNumRelays,
 	}
 }
 
@@ -37,6 +44,7 @@ func NewParams(addServiceFee *cosmostypes.Coin) Params {
 func DefaultParams() Params {
 	return NewParams(
 		&MinAddServiceFee,
+		DefaultTargetNumRelays,
 	)
 }
 
@@ -44,6 +52,7 @@ func DefaultParams() Params {
 func (p *Params) ParamSetPairs() paramtypes.ParamSetPairs {
 	return paramtypes.ParamSetPairs{
 		paramtypes.NewParamSetPair(KeyAddServiceFee, &p.AddServiceFee, ValidateAddServiceFee),
+		paramtypes.NewParamSetPair(KeyTargetNumRelays, &p.AddServiceFee, ValidateTargetNumRelays),
 	}
 }
 
@@ -52,10 +61,15 @@ func (p Params) ValidateBasic() error {
 	if err := ValidateAddServiceFee(p.AddServiceFee); err != nil {
 		return err
 	}
+
+	if err := ValidateTargetNumRelays(p.TargetNumRelays); err != nil {
+		return err
+	}
+
 	return nil
 }
 
-// validateAddServiceFee validates the AddServiceFee param
+// ValidateAddServiceFee validates the AddServiceFee param
 func ValidateAddServiceFee(addServiceFeeAny any) error {
 	addServiceFee, ok := addServiceFeeAny.(*cosmostypes.Coin)
 	if !ok {
@@ -77,6 +91,20 @@ func ValidateAddServiceFee(addServiceFeeAny any) error {
 			MinAddServiceFee,
 			addServiceFee,
 		)
+	}
+
+	return nil
+}
+
+// ValidateTargetNumRelays validates the TargetNumRelays param
+func ValidateTargetNumRelays(targetNumRelaysAny any) error {
+	targetNumRelays, ok := targetNumRelaysAny.(uint64)
+	if !ok {
+		return ErrServiceParamInvalid.Wrapf("invalid parameter type: %T", targetNumRelaysAny)
+	}
+
+	if targetNumRelays < 1 {
+		return ErrServiceParamInvalid.Wrapf("target_num_relays must be greater than 0: got %d", targetNumRelays)
 	}
 
 	return nil
