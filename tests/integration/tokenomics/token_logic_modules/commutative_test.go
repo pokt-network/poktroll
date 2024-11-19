@@ -13,7 +13,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/pokt-network/poktroll/app/volatile"
-	"github.com/pokt-network/poktroll/testutil/keeper"
+	testkeeper "github.com/pokt-network/poktroll/testutil/keeper"
 	"github.com/pokt-network/poktroll/testutil/sample"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
@@ -58,7 +58,7 @@ func (s *tokenLogicModuleTestSuite) TestTLMProcessorsAreCommutative() {
 		)
 
 		s.T().Run(testDesc, func(t *testing.T) {
-			s.setupKeepers(t, keeper.WithTokenLogicModules(tlmPermutation))
+			s.setupKeepers(t, testkeeper.WithTokenLogicModules(tlmPermutation))
 
 			// Assert that no pre-existing claims are present.
 			numExistingClaims := len(s.keepers.GetAllClaims(s.ctx))
@@ -85,12 +85,12 @@ func (s *tokenLogicModuleTestSuite) TestTLMProcessorsAreCommutative() {
 // with the given options, and creates the suite's service, application, and supplier
 // from SetupTest(). It also sets the block height to 1 and the proposer address to
 // the proposer address from SetupTest().
-func (s *tokenLogicModuleTestSuite) setupKeepers(t *testing.T, opts ...keeper.TokenomicsModuleKeepersOptFn) {
-	defaultOpts := []keeper.TokenomicsModuleKeepersOptFn{
-		keeper.WithService(*s.service),
-		keeper.WithApplication(*s.app),
-		keeper.WithSupplier(*s.supplier),
-		keeper.WithModuleParams(map[string]types.Msg{
+func (s *tokenLogicModuleTestSuite) setupKeepers(t *testing.T, opts ...testkeeper.TokenomicsModuleKeepersOptFn) {
+	defaultOpts := []testkeeper.TokenomicsModuleKeepersOptFn{
+		testkeeper.WithService(*s.service),
+		testkeeper.WithApplication(*s.app),
+		testkeeper.WithSupplier(*s.supplier),
+		testkeeper.WithModuleParams(map[string]types.Msg{
 			// TODO_MAINNET(@bryanchriswhite): Set tokenomics mint allocation params to maximize coverage, once available.
 
 			// Set the proof params such that proofs are NEVER required.
@@ -100,9 +100,10 @@ func (s *tokenLogicModuleTestSuite) setupKeepers(t *testing.T, opts ...keeper.To
 			// Set the dao_reward_address for settlement rewards.
 			tokenomicstypes.ModuleName: s.getTokenomicsParams(),
 		}),
+		testkeeper.WithDefaultModuleBalances(),
 	}
 
-	s.keepers, s.ctx = keeper.NewTokenomicsModuleKeepers(
+	s.keepers, s.ctx = testkeeper.NewTokenomicsModuleKeepers(
 		t, log.NewNopLogger(),
 		append(defaultOpts, opts...)...,
 	)

@@ -51,7 +51,11 @@ func TestApplicationMinStakeTestSuite(t *testing.T) {
 }
 
 func (s *applicationMinStakeTestSuite) SetupTest() {
-	s.keepers, s.ctx = keeper.NewTokenomicsModuleKeepers(s.T(), cosmoslog.NewNopLogger(), keeper.WithProofRequirement(false))
+	s.keepers, s.ctx = keeper.NewTokenomicsModuleKeepers(s.T(),
+		cosmoslog.NewNopLogger(),
+		keeper.WithProofRequirement(false),
+		keeper.WithDefaultModuleBalances(),
+	)
 
 	proofParams := prooftypes.DefaultParams()
 	proofParams.ProofRequestProbability = 0

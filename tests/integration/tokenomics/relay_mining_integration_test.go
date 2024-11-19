@@ -12,7 +12,7 @@ import (
 
 	"github.com/pokt-network/poktroll/app/volatile"
 	"github.com/pokt-network/poktroll/pkg/crypto/protocol"
-	testutils "github.com/pokt-network/poktroll/testutil/keeper"
+	testkeeper "github.com/pokt-network/poktroll/testutil/keeper"
 	"github.com/pokt-network/poktroll/testutil/sample"
 	"github.com/pokt-network/poktroll/testutil/testrelayer"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
@@ -79,11 +79,12 @@ func TestComputeNewDifficultyHash_RewardsReflectWorkCompleted(t *testing.T) {
 		},
 	}
 
-	keepers, ctx := testutils.NewTokenomicsModuleKeepers(t, nil,
-		testutils.WithService(service),
-		testutils.WithApplication(application),
-		testutils.WithSupplier(supplier),
-		testutils.WithProofRequirement(false),
+	keepers, ctx := testkeeper.NewTokenomicsModuleKeepers(t, nil,
+		testkeeper.WithService(service),
+		testkeeper.WithApplication(application),
+		testkeeper.WithSupplier(supplier),
+		testkeeper.WithProofRequirement(false),
+		testkeeper.WithDefaultModuleBalances(),
 	)
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 	sdkCtx = sdkCtx.WithBlockHeight(1)

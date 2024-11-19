@@ -10,7 +10,8 @@ import (
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	"github.com/cosmos/cosmos-sdk/types"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
-	sdk "github.com/cosmos/cosmos-sdk/types"
+	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
+	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 
@@ -55,7 +56,7 @@ type TestSuite struct {
 	numRelays                uint64
 	numClaimedComputeUnits   uint64
 	numEstimatedComputeUnits uint64
-	claimedUpokt             sdk.Coin
+	claimedUpokt             cosmostypes.Coin
 	relayMiningDifficulty    servicetypes.RelayMiningDifficulty
 }
 
@@ -68,7 +69,11 @@ type TestSuite struct {
 func (s *TestSuite) SetupTest() {
 	t := s.T()
 
-	s.keepers, s.ctx = keepertest.NewTokenomicsModuleKeepers(s.T(), nil)
+	moduleBalancesOpt := keepertest.WithModuleAccountBalances(map[string]int64{
+		apptypes.ModuleName:      1000000000,
+		suppliertypes.ModuleName: supplierStakeAmt,
+	})
+	s.keepers, s.ctx = keepertest.NewTokenomicsModuleKeepers(s.T(), nil, moduleBalancesOpt)
 	sdkCtx := cosmostypes.UnwrapSDKContext(s.ctx).WithBlockHeight(1)
 
 	// Add a block proposer address to the context
@@ -265,7 +270,7 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimExpired_ProofRequiredAndNotProv
 
 	// Set the proof missing penalty to half the supplier's stake so it is not
 	// unstaked when being slashed.
-	belowStakeAmountProofMissingPenalty := sdk.NewCoin(volatile.DenomuPOKT, math.NewInt(supplierStakeAmt/2))
+	belowStakeAmountProofMissingPenalty := cosmostypes.NewCoin(volatile.DenomuPOKT, math.NewInt(supplierStakeAmt/2))
 
 	// Set the proof parameters such that s.claim requires a proof because:
 	// - proof_request_probability is 0%
@@ -303,8 +308,23 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimExpired_ProofRequiredAndNotProv
 	// remaining stake that is above the minimum stake (i.e. new_stake == prev_stake / 2).
 	slashedSupplier, supplierFound := s.keepers.GetSupplier(sdkCtx, s.claim.SupplierOperatorAddress)
 	require.True(t, supplierFound)
-	require.Equal(t, math.NewInt(supplierStakeAmt/2).Int64(), slashedSupplier.Stake.Amount.Int64())
+	require.Equal(t, supplierStakeAmt/2, slashedSupplier.Stake.Amount.Int64())
 	require.Equal(t, uint64(0), slashedSupplier.UnstakeSessionEndHeight)
+
+	// Validate the supplier and tokenomics module balances.
+	supplierModuleBalRes, err := s.keepers.Balance(s.ctx, &banktypes.QueryBalanceRequest{
+		Address: authtypes.NewModuleAddress(suppliertypes.ModuleName).String(),
+		Denom:   volatile.DenomuPOKT,
+	})
+	require.NoError(t, err)
+	require.Equal(t, supplierStakeAmt/2, supplierModuleBalRes.Balance.Amount.Int64())
+
+	tokenomicsModuleBalRes, err := s.keepers.Balance(s.ctx, &banktypes.QueryBalanceRequest{
+		Address: authtypes.NewModuleAddress(tokenomicstypes.ModuleName).String(),
+		Denom:   volatile.DenomuPOKT,
+	})
+	require.NoError(t, err)
+	require.Equal(t, int64(0), tokenomicsModuleBalRes.Balance.Amount.Int64())
 
 	events := sdkCtx.EventManager().Events()
 	require.Equal(t, 12, len(events)) // asserting on the length of events so the developer must consciously update it upon changes
@@ -400,7 +420,7 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimExpired_ProofRequired_InvalidOn
 	proofParams.ProofRequestProbability = 1
 	// Set the proof missing penalty to half the supplier's stake so it is not
 	// unstaked when being slashed.
-	belowStakeAmountProofMissingPenalty := sdk.NewCoin(volatile.DenomuPOKT, math.NewInt(supplierStakeAmt/2))
+	belowStakeAmountProofMissingPenalty := cosmostypes.NewCoin(volatile.DenomuPOKT, math.NewInt(supplierStakeAmt/2))
 	proofParams.ProofMissingPenalty = &belowStakeAmountProofMissingPenalty
 	err := s.keepers.ProofKeeper.SetParams(ctx, proofParams)
 	require.NoError(t, err)
@@ -698,7 +718,7 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimExpired_SupplierUnstaked() {
 	proofParams.ProofRequirementThreshold = &proofRequirementThreshold
 	// Set the proof missing penalty to be equal to the supplier's stake to make
 	// its stake below the minimum stake requirement and trigger an unstake.
-	proofParams.ProofMissingPenalty = &sdk.Coin{Denom: volatile.DenomuPOKT, Amount: math.NewInt(supplierStakeAmt)}
+	proofParams.ProofMissingPenalty = &cosmostypes.Coin{Denom: volatile.DenomuPOKT, Amount: math.NewInt(supplierStakeAmt)}
 	err = s.keepers.ProofKeeper.SetParams(ctx, proofParams)
 	require.NoError(t, err)
 
@@ -753,7 +773,7 @@ func getClaimedUpokt(
 	sharedParams sharedtypes.Params,
 	numClaimedComputeUnits uint64,
 	relayMiningDifficulty servicetypes.RelayMiningDifficulty,
-) sdk.Coin {
+) cosmostypes.Coin {
 	// Calculate the number of estimated compute units ratio instead of directly using
 	// the integer value to avoid precision loss.
 	difficultyMultiplierRat := protocol.GetRelayDifficultyMultiplier(relayMiningDifficulty.GetTargetHash())
@@ -765,10 +785,10 @@ func getClaimedUpokt(
 	claimedUpoktRat := new(big.Rat).Mul(numEstimatedComputeUnitsRat, computeUnitsToTokenMultiplierRat)
 	claimedUpoktInt := new(big.Int).Div(claimedUpoktRat.Num(), claimedUpoktRat.Denom())
 
-	return sdk.NewCoin(volatile.DenomuPOKT, math.NewIntFromBigInt(claimedUpoktInt))
+	return cosmostypes.NewCoin(volatile.DenomuPOKT, math.NewIntFromBigInt(claimedUpoktInt))
 }
 
 // uPOKTCoin returns a uPOKT coin with the given amount.
-func uPOKTCoin(amount int64) sdk.Coin {
-	return sdk.NewCoin(volatile.DenomuPOKT, math.NewInt(amount))
+func uPOKTCoin(amount int64) cosmostypes.Coin {
+	return cosmostypes.NewCoin(volatile.DenomuPOKT, math.NewInt(amount))
 }
