@@ -64,7 +64,7 @@ func (tlm tlmGlobalMintReimbursementRequest) Process(
 
 	// Send the global per claim mint inflation uPOKT from the tokenomics module
 	// account to PNF/DAO.
-	daoRewardAddress := tlmCtx.Params.Tokenomics.GetDaoRewardAddress()
+	daoRewardAddress := tlmCtx.TokenomicsParams.GetDaoRewardAddress()
 
 	// Send the global per claim mint inflation uPOKT from the application module
 	// account to the tokenomics module account as an intermediary step.

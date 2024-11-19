@@ -80,7 +80,7 @@ func (tlm tlmGlobalMint) Process(
 	})
 	logger.Info(fmt.Sprintf("operation queued: mint (%s) to the tokenomics module account", newMintCoin))
 
-	mintAllocationPercentages := tlmCtx.Params.Tokenomics.GetMintAllocationPercentages()
+	mintAllocationPercentages := tlmCtx.TokenomicsParams.GetMintAllocationPercentages()
 
 	// Send a portion of the rewards to the application
 	appCoin := sendRewardsToAccount(
@@ -123,7 +123,7 @@ func (tlm tlmGlobalMint) Process(
 	logger.Info(fmt.Sprintf("operation queued: send (%v) newley minted coins from the tokenomics module to the supplier with address %q", supplierCoin, tlmCtx.Supplier.OperatorAddress))
 
 	// Send a portion of the rewards to the DAO
-	daoRewardAddress := tlmCtx.Params.Tokenomics.GetDaoRewardAddress()
+	daoRewardAddress := tlmCtx.TokenomicsParams.GetDaoRewardAddress()
 	daoCoin := sendRewardsToAccount(
 		logger,
 		tlmCtx.Result,

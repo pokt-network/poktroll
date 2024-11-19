@@ -194,9 +194,8 @@ func (k Keeper) ProcessTokenLogicModules(
 		return nil
 	}
 
-	tlmUsedParams := tlm.TLMUsedParams{Tokenomics: k.GetParams(ctx)}
 	tlmCtx := tlm.TLMContext{
-		Params:                tlmUsedParams,
+		TokenomicsParams:      k.GetParams(ctx),
 		SettlementCoin:        actualSettlementCoin,
 		SessionHeader:         pendingResult.Claim.GetSessionHeader(),
 		Result:                pendingResult,

@@ -66,19 +66,16 @@ func (tlm TokenLogicModuleId) EnumIndex() int {
 // actors if their stake falls below a certain threshold.
 type TokenLogicModule interface {
 	GetId() TokenLogicModuleId
+	// Process executes the token logic modules business logic given the input/output
+	// parameters encapsulated by the TLMContext. IT DOES NOT modify network state directly.
 	Process(context.Context, cosmoslog.Logger, TLMContext) error
-}
-
-// TLMUsedParams provides a field for each module Params type upon which any TLM depends.
-type TLMUsedParams struct {
-	Tokenomics tokenomicstypes.Params
 }
 
 // TLMContext holds all inputs and outputs necessary for token logic module processing,
 // allowing TLMs to remain isolated from the tokenomics keeper and each other while still
 // permitting shared memory access (prior to an atomic state transition).
 type TLMContext struct {
-	Params                TLMUsedParams
+	TokenomicsParams      tokenomicstypes.Params
 	SettlementCoin        cosmostypes.Coin // This is the "actualSettlementCoin" rather than just the "claimCoin" because of how settlement functions; see ensureClaimAmountLimits for details.
 	SessionHeader         *sessiontypes.SessionHeader
 	Result                *tokenomicstypes.ClaimSettlementResult
