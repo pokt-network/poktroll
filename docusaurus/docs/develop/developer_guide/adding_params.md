@@ -7,8 +7,8 @@ title: Adding On-Chain Module Parameters
 
 - [Step-by-Step Instructions](#step-by-step-instructions)
   - [0. If the Module Doesn't Already Support a `MsgUpdateParam` Message](#0-if-the-module-doesnt-already-support-a-msgupdateparam-message)
-    - [0.1 Scaffold the `MsgUpdateParam` Message](#01-scaffold-the-msgupdateparam-message)
-    - [0.2 Update `MsgUpdateParam` and `MsgUpdateParamResponse` Fields](#02-update-msgupdateparam-and-msgupdateparamresponse-fields)
+    - [0.1. Scaffold the `MsgUpdateParam` Message](#01-scaffold-the-msgupdateparam-message)
+    - [0.2. Update `MsgUpdateParam` and `MsgUpdateParamResponse` Fields](#02-update-msgupdateparam-and-msgupdateparamresponse-fields)
     - [0.3 Comment Out AutoCLI](#03-comment-out-autocli)
     - [0.4. Update the DAO Genesis Authorizations JSON File](#04-update-the-dao-genesis-authorizations-json-file)
     - [0.5 Update the `NewMsgUpdateParam` Constructor and `MsgUpdateParam#ValidateBasic()`](#05-update-the-newmsgupdateparam-constructor-and-msgupdateparamvalidatebasic)
@@ -54,6 +54,7 @@ https://github.com/ignite/cli/issues/3684#issuecomment-2299796210
 
 :::warning
 The steps outlined below follow **the same example** where:
+
 - **Module name**: `examplemod`
 - **New parameter name**: `new_parameter`
 - **Default value**: `int64(42)`
@@ -79,38 +80,38 @@ Additional flags are used for convenience:
 ignite scaffold message update-param --module examplemod --signer authority name as_type --response params
 ```
 
-:::info
-If you experience errors like these:
-```
+Try running `make proto_clean_pulsar` if you experience errors like these:
+
+```bash
 ✘ Error while running command /home/bwhite/go/bin/buf generate /tmp/proto-sdk2893110128/cosmos/upgrade/v1beta1/tx.proto ...: {..."message":"import \"gogoproto/gogo.proto\": file does not exist"}
 : exit status 100
 ```
-```
-✘ Error while running command go mod tidy: go: 
-...                                                                                              
-go: github.com/pokt-network/poktroll/api/poktroll/examplemod imports                                                                                   
+
+```bash
+✘ Error while running command go mod tidy: go:
+...
+go: github.com/pokt-network/poktroll/api/poktroll/examplemod imports
         cosmossdk.io/api/poktroll/shared: module cosmossdk.io/api@latest found (v0.7.6), but does not contain package cosmossdk.io/api/poktroll/shared
 ```
-```go
+
+```bash
 ✘ Error while running command /home/bwhite/go/bin/buf dep update /home/bwhite/Projects/pokt/poktroll/proto: Failure: decode proto/buf.lock: no digest specified for module buf.build/cosmos/ics23
 : exit status 1
 ```
-Then try running `make proto_clean_pulsar`.
-:::
 
 #### 0.2. Update `MsgUpdateParam` and `MsgUpdateParamResponse` Fields
 
 Update the `MsgUpdateParam` message fields in the module's `tx.proto` file (e.g. `proto/poktroll/examplemod/tx.proto`) to include the following comments and protobuf options:
 
-```protobuf
+```diff
 + // MsgUpdateParam is the Msg/UpdateParam request type to update a single param.
   message MsgUpdateParam {
     option (cosmos.msg.v1.signer) = "authority";
 -   string authority = 1;
-+ 
++
 +   // authority is the address that controls the module (defaults to x/gov unless overwritten).
 +   string authority = 1  [(cosmos_proto.scalar) = "cosmos.AddressString"];
-+ 
++
     string name      = 2;
 -   string asType    = 3;
 +   oneof as_type {
@@ -120,12 +121,13 @@ Update the `MsgUpdateParam` message fields in the module's `tx.proto` file (e.g.
 +     // cosmos.base.v1beta1.Coin as_coin = 5 [(gogoproto.jsontag) = "as_coin"];
 +   }
   }
-  
+
   message MsgUpdateParamResponse {
 ```
 
 Update the `MsgUpdateParamResponse` message field (`params`) in the same `tx.proto` file:
-```protobuf
+
+```diff
   message MsgUpdateParamResponse {
 -   string params = 1;
 +   Params params = 1;
@@ -137,19 +139,19 @@ Update the `MsgUpdateParamResponse` message field (`params`) in the same `tx.pro
 When scaffolding the `MsgUpdateParam` message, generated code is added to `x/examplemod/module/autocli.go`.
 Since governance parameters aren't updated via `poktrolld` CLI, comment out these new lines:
 
-```go
+```diff
   // ...
   Tx: &autocliv1.ServiceCommandDescriptor{
       Service:              modulev1.Msg_ServiceDesc.ServiceName,
       EnhanceCustomCommand: true, // only required if you want to use the custom command
       RpcCommandOptions:    []*autocliv1.RpcCommandOptions{
           // ...
-+         //	{
-+         //		RpcMethod:      "UpdateParam",
-+         //		Use:            "update-param [name] [as-type]",
-+         //		Short:          "Send a update-param tx",
-+         //		PositionalArgs: []*autocliv1.PositionalArgDescriptor{{ProtoField: "name"}, {ProtoField: "asType"}},
-+         //	},
++         //  {
++         //    RpcMethod:      "UpdateParam",
++         //    Use:            "update-param [name] [as-type]",
++         //    Short:          "Send a update-param tx",
++         /     PositionalArgs: []*autocliv1.PositionalArgDescriptor{{ProtoField: "name"}, {ProtoField: "asType"}},
++         //  },
           // this line is used by ignite scaffolding # autocli/tx
       },
   },
@@ -160,7 +162,7 @@ Since governance parameters aren't updated via `poktrolld` CLI, comment out thes
 
 Add a grant (array element) to `tools/scripts/authz/dao_genesis_authorizations.json` with the `authorization.msg` typeURL for this module's `MsgUpdateType`:
 
-```json
+```diff
 + {
 +   "granter": "pokt10d07y265gmmuvt4z0w9aw880jnsr700j8yv32t",
 +   "grantee": "pokt1eeeksh2tvkh7wzmfrljnhw4wrhs55lcuvmekkw",
@@ -176,7 +178,7 @@ Add a grant (array element) to `tools/scripts/authz/dao_genesis_authorizations.j
 
 Prepare `x/examplemod/types/message_update_param.go` to handle message construction and parameter validations by type:
 
-```go
+```diff
 - func NewMsgUpdateParam(authority string, name string, asType string) *MsgUpdateParam {
 + func NewMsgUpdateParam(authority string, name string, asType any) (*MsgUpdateParam, error) {
 +   var asTypeIface isMsgUpdateParam_AsType
@@ -215,11 +217,12 @@ Prepare `x/examplemod/types/message_update_param.go` to handle message construct
 +   }
   }
 ```
+
 #### 0.6 Update the Module's `msgServer#UpdateParam()` Handler
 
 Prepare `x/examplemod/keeper/msg_server_update_param.go` to handle parameter updates by type:
 
-```go
+```diff
 - func (k msgServer) UpdateParam(goCtx context.Context, msg *examplemodtypes.MsgUpdateParam) (*examplemodtypes.MsgUpdateParamResponse, error) {
 -   ctx := sdk.UnwrapSDKContext(goCtx)
 -
@@ -282,7 +285,7 @@ Prepare `x/examplemod/keeper/msg_server_update_param.go` to handle parameter upd
 
 Add `MsgUpdateParam` & `MsgUpdateParamResponse` to the module's `ModuleParamConfig#ParamsMsg` in `testutil/integration/suites/param_config.go`:
 
-```go
+```diff
   ExamplemodModuleParamConfig = ModuleParamConfig{
     ParamsMsgs: ModuleParamsMessages{
       MsgUpdateParams:         gatewaytypes.MsgUpdateParams{},
@@ -300,10 +303,10 @@ Add `MsgUpdateParam` & `MsgUpdateParamResponse` to the module's `ModuleParamConf
 
 Define the new parameter in the module's `params.proto` file (e.g., `proto/poktroll/examplemod/params.proto`):
 
-```protobuf
+```diff
   message Params {
     // Other existing parameters...
-  
+
 +   // Description of the new parameter.
 +   int64 new_parameter = 3 [(gogoproto.jsontag) = "new_parameter", (gogoproto.moretags) = "yaml:\"new_parameter\""];
   }
@@ -325,15 +328,15 @@ In the corresponding Go file (e.g., `x/examplemod/types/params.go`), define the 
 value, key, and parameter name for the new parameter and include the default in the
 `NewParams` and `DefaultParams` functions:
 
-```go
+```diff
   var (
     // Other existing parameter keys, names, and defaults...
-  
+
 +   KeyNewParameter = []byte("NewParameter")
 +   ParamNewParameter = "new_parameter"
 +   DefaultNewParameter int64 = 42
   )
-  
+
   func NewParams(
     // Other existing parameters...
 +   newParameter int64,
@@ -343,7 +346,7 @@ value, key, and parameter name for the new parameter and include the default in 
 +     NewParameter: newParameter,
     }
   }
-  
+
   func DefaultParams() Params {
     return NewParams(
       // Other existing default parameters...
@@ -356,12 +359,12 @@ value, key, and parameter name for the new parameter and include the default in 
 
 Add the new parameter to the genesis configuration file (e.g., `config.yml`):
 
-```yaml
+```diff
   genesis:
     examplemod:
       params:
         # Other existing parameters...
-  
+
 +       new_parameter: 42
 ```
 
@@ -371,7 +374,7 @@ Add the new parameter to the genesis configuration file (e.g., `config.yml`):
 
 Implement a validation function for the new parameter in `x/examplemod/types/params.go`:
 
-```go
+```diff
 + // ValidateNewParameter validates the NewParameter param.
 + func ValidateNewParameter(newParamAny any) error {
 +   newParam, ok := newParamAny.(int64)
@@ -390,7 +393,7 @@ Implement a validation function for the new parameter in `x/examplemod/types/par
 Integrate the usage of the new `ValidateNewParameter` function in the corresponding
 `Params#Validate()` function where this is used:
 
-```go
+```diff
   func (params *Params) Validate() error {
     // ...
 +   if err := ValidateNewParameter(params.NewParameter); err != nil {
@@ -404,11 +407,11 @@ Integrate the usage of the new `ValidateNewParameter` function in the correspond
 
 Include a call to `NewParamSetPair()`, passing the parameter's key, value pointer, and validation function in the `ParamSetPairs` function return:
 
-```go
+```diff
   func (p *Params) ParamSetPairs() paramtypes.ParamSetPairs {
     return paramtypes.ParamSetPairs{
       // Other existing param set pairs...
-  
+
 +     paramtypes.NewParamSetPair(
 +       KeyNewParameter,
 +       &p.NewParameter,
@@ -424,7 +427,7 @@ Include a call to `NewParamSetPair()`, passing the parameter's key, value pointe
 
 Add the parameter type and name (e.g. `ParamNameNewParameter`) to new cases in the switch statements in `NewMsgUpdateParam()` and `MsgUpdateParam#ValidateBasic()` in `x/examplemod/types/message_update_param.go`:
 
-```go
+```diff
   func NewMsgUpdateParam(authority string, name string, asType any) (*MsgUpdateParam, error) {
     // ...
     switch t := asType.(type) {
@@ -473,7 +476,7 @@ Add the parameter name (e.g. `ParamNameNewParameter`) to a new case in the switc
 Every error return from `msgServer` methods (e.g. `#UpdateParams()`) **SHOULD** be encapsulated in a gRPC status error!
 :::
 
-```go
+```diff
   // UpdateParam updates a single parameter in the proof module and returns
   // all active parameters.
   func (k msgServer) UpdateParam(
@@ -481,7 +484,7 @@ Every error return from `msgServer` methods (e.g. `#UpdateParams()`) **SHOULD** 
     msg *examplemodtypes.MsgUpdateParam,
   ) (*examplemodtypes.MsgUpdateParamResponse, error) {
     if err := msg.ValidateBasic(); err != nil {
-		return nil, status.Error(codes.InvalidArgument, err.Error())
+      return nil, status.Error(codes.InvalidArgument, err.Error())
     }
     // ...
     switch msg.Name {
@@ -509,11 +512,11 @@ Every error return from `msgServer` methods (e.g. `#UpdateParams()`) **SHOULD** 
 Add unit tests which exercise validation of the new parameter(s) in `x/examplemod/keeper/params_test.go`.
 Ensure there is a test function for each parameter which covers all cases of invalid input:
 
-```go
+```diff
   func TestGetParams(t *testing.T) {
     // ...
   }
-  
+
 + func TestParams_ValidateNewParameter(t *testing.T) {
 +   tests := []struct {
 +     desc         string
@@ -530,7 +533,7 @@ Ensure there is a test function for each parameter which covers all cases of inv
 +       newParameter: int64(420),
 +     },
 +   }
-+ 
++
 +   for _, test := range tests {
 +     t.Run(test.desc, func(t *testing.T) {
 +       err := examplemodtypes.ValidateNewParameter(test.newParameter)
@@ -557,7 +560,7 @@ If one already exist, update it if applicable; e.g.:
 +   input: &examplemodtypes.MsgUpdateParams{
 +     Authority: k.GetAuthority(),
 +     Params: examplemodtypes.Params{
-+       NewParameter: 42, 
++       NewParameter: 42,
 +     },
 +   },
 +   shouldError: false,
@@ -570,15 +573,15 @@ This test asserts that updating was successful and that no other parameter was e
 ```go
 + func TestMsgUpdateParam_UpdateNewParameterOnly(t *testing.T) {
 +   var expectedNewParameter int64 = 420
-+ 
++
 +   // Set the parameters to their default values
 +   k, msgSrv, ctx := setupMsgServer(t)
 +   defaultParams := examplemodtypes.DefaultParams()
 +   require.NoError(t, k.SetParams(ctx, defaultParams))
-+ 
++
 +   // Ensure the default values are different from the new values we want to set
 +   require.NotEqual(t, expectedNewParameter, defaultParams.NewParameter)
-+ 
++
 +   // Update the new parameter
 +   updateParamMsg := &examplemodtypes.MsgUpdateParam{
 +     Authority: authtypes.NewModuleAddress(govtypes.ModuleName).String(),
@@ -596,14 +599,16 @@ This test asserts that updating was successful and that no other parameter was e
 
 :::warning
 If creating `msg_server_update_param_test.go`, be sure to:
+
 1. use the `keeper_test` package (i.e. `package keeper_test`).
 2. add the testutil keeper import: `testkeeper "github.com/pokt-network/poktroll/testutil/keeper"`
+
 :::
 
 Update `x/examplemod/types/message_update_param_test.go` to use the new `MsgUpdateParam#AsType` fields.
 Start with the following cases and add those which cover all invalid values for the new param (and its `AsType`; e.g. `AsCoin` cannot be nil):
 
-```go
+```diff
   func TestMsgUpdateParam_ValidateBasic(t *testing.T) {
     tests := []struct {
 -     name string
@@ -644,7 +649,7 @@ Start with the following cases and add those which cover all invalid values for 
   }
 ```
 
-### 6. Update the Parameter Integration Tests 
+### 6. Update the Parameter Integration Tests
 
 Integration tests which cover parameter updates utilize the `ModuleParamConfig`s defined in [`testutil/integration/params/param_configs.go`](https://github.com/pokt-network/poktroll/blob/main/testutil/integration/suites/param_configs.go) to dynamically (i.e. using reflection) construct and send parameter update messages in a test environment.
 When adding parameters to a module, it is necessary to update that module's `ModuleParamConfig` to include the new parameter, othwerwise it will not be covered by the integration test suite.
@@ -653,7 +658,7 @@ When adding parameters to a module, it is necessary to update that module's `Mod
 
 Update `ModuleParamConfig#ValidParams` to include a valid and non-default value for the new parameter in the module's `tx.proto` file (e.g. `proto/poktroll/examplemod/tx.proto`):
 
-```go
+```diff
   ExamplemodModuleParamConfig = ModuleParamConfig{
       // ...
       ValidParams: examplemodtypes.Params{
@@ -667,7 +672,7 @@ Update `ModuleParamConfig#ValidParams` to include a valid and non-default value 
 
 Ensure an `as_<type>` field exists on `MsgUpdateParam` corresponding to the type of the new parameter (`proto/poktroll/examplemod/tx.proto`):
 
-```proto
+```diff
  message MsgUpdateParam {
    ...
    oneof as_type {
@@ -681,7 +686,7 @@ Ensure an `as_<type>` field exists on `MsgUpdateParam` corresponding to the type
 
 Ensure that all available `as_<type>` types for the module are present on the module's `ModuleParamConfig#ParamTypes` field:
 
-```go
+```diff
   ExamplemodModuleParamConfig = ModuleParamConfig{
     // ...
     ValidParams: examplemodtypes.Params{},
@@ -691,7 +696,6 @@ Ensure that all available `as_<type>` types for the module are present on the mo
     DefaultParams:    examplemodtypes.DefaultParams(),
     // ...
   }
-
 ```
 
 ### 7. Update the Makefile and Supporting JSON Files
@@ -722,7 +726,7 @@ Create a new JSON file (e.g., `proof_new_parameter_name.json`) in the tools/scri
         "@type": "/poktroll.examplemod.MsgUpdateParam", // Replace module name
         "authority": "pokt10d07y265gmmuvt4z0w9aw880jnsr700j8yv32t",
         "name": "new_parameter", // Replace new parameter name
-        "as_int64": "42"         // Replace default value
+        "as_int64": "42" // Replace default value
       }
     ]
   }
@@ -734,7 +738,7 @@ Create a new JSON file (e.g., `proof_new_parameter_name.json`) in the tools/scri
 Add a line to the existing module's `MsgUpdateParam` JSON file (e.g., `proof_all.json`)
 with the default value for the new parameter.
 
-```json
+```diff
   {
     "body": {
       "messages": [
