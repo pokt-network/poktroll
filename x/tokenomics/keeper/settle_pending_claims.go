@@ -591,7 +591,7 @@ func (k Keeper) slashSupplierStake(
 		tokenomicstypes.ModuleName,
 		cosmostypes.NewCoins(slashingCoin),
 	); err != nil {
-		tokenomicstypes.ErrTokenomicsSettlementInternal.Wrapf(
+		return tokenomicstypes.ErrTokenomicsSettlementInternal.Wrapf(
 			"failed to send coins from module %q to module %q (reason %q): %s",
 			suppliertypes.ModuleName,
 			tokenomicstypes.ModuleName,
@@ -604,7 +604,7 @@ func (k Keeper) slashSupplierStake(
 		tokenomicstypes.ModuleName,
 		cosmostypes.NewCoins(slashingCoin),
 	); err != nil {
-		tokenomicstypes.ErrTokenomicsSettlementInternal.Wrapf(
+		return tokenomicstypes.ErrTokenomicsSettlementInternal.Wrapf(
 			"failed to burn coins from module %q (reason %q): %s",
 			tokenomicstypes.ModuleName,
 			tokenomicstypes.SettlementOpReason_UNSPECIFIED_TLM_SUPPLIER_SLASH_STAKE_BURN,
