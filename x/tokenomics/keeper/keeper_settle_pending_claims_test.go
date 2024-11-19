@@ -734,14 +734,14 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimExpired_SupplierUnstaked() {
 	_, _, err = s.keepers.SettlePendingClaims(sdkCtx)
 	require.NoError(t, err)
 
-	sessionEndHeight = sharedtypes.GetSettlementSessionEndHeight(&sharedParams, sessionProofWindowCloseHeight)
-	upcomingSessionEndHeight := uint64(sharedtypes.GetNextSessionStartHeight(&sharedParams, sessionProofWindowCloseHeight)) - 1
+	//settlementSessionEndHeight := sharedtypes.GetSettlementSessionEndHeight(&sharedParams, sessionProofWindowCloseHeight)
+	upcomingSessionEndHeight := sharedtypes.GetNextSessionStartHeight(&sharedParams, sessionProofWindowCloseHeight) - 1
 
 	// Slashing should have occurred and the supplier is unstaked but still unbonding.
 	slashedSupplier, supplierFound := s.keepers.GetSupplier(sdkCtx, s.claim.SupplierOperatorAddress)
 	require.True(t, supplierFound)
 	require.Equal(t, math.NewInt(0), slashedSupplier.Stake.Amount)
-	require.Equal(t, upcomingSessionEndHeight, slashedSupplier.UnstakeSessionEndHeight)
+	require.Equal(t, uint64(upcomingSessionEndHeight), slashedSupplier.UnstakeSessionEndHeight)
 	require.True(t, slashedSupplier.IsUnbonding())
 
 	events := sdkCtx.EventManager().Events()
@@ -760,7 +760,7 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimExpired_SupplierUnstaked() {
 
 	// Assert that an EventSupplierUnbondingBegin event was emitted.
 	unbondingBeginEvents := testutilevents.FilterEvents[*suppliertypes.EventSupplierUnbondingBegin](t, events)
-	require.Equal(t, 1, unbondingBeginEvents)
+	require.Equal(t, 1, len(unbondingBeginEvents))
 
 	// Validate the EventSupplierUnbondingBegin event.
 	unbondingEndHeight := sharedtypes.GetSupplierUnbondingEndHeight(&sharedParams, &slashedSupplier)
@@ -771,7 +771,7 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimExpired_SupplierUnstaked() {
 	expectedUnbondingBeginEvent := &suppliertypes.EventSupplierUnbondingBegin{
 		Supplier:           &slashedSupplier,
 		Reason:             suppliertypes.SupplierUnbondingReason_SUPPLIER_UNBONDING_REASON_BELOW_MIN_STAKE,
-		SessionEndHeight:   sessionEndHeight,
+		SessionEndHeight:   upcomingSessionEndHeight,
 		UnbondingEndHeight: unbondingEndHeight,
 	}
 	require.EqualValues(t, expectedUnbondingBeginEvent, unbondingBeginEvents[0])
@@ -788,7 +788,7 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimExpired_SupplierUnstaked() {
 	expectedUnbondingEndEvent := &suppliertypes.EventSupplierUnbondingEnd{
 		Supplier:           &slashedSupplier,
 		Reason:             suppliertypes.SupplierUnbondingReason_SUPPLIER_UNBONDING_REASON_BELOW_MIN_STAKE,
-		SessionEndHeight:   sessionEndHeight,
+		SessionEndHeight:   upcomingSessionEndHeight,
 		UnbondingEndHeight: unbondingEndHeight,
 	}
 	require.EqualValues(t, expectedUnbondingEndEvent, unbondingEndEvents[0])
