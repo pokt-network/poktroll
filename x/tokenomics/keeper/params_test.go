@@ -26,7 +26,7 @@ func TestParams_ValidateMintAllocationDao(t *testing.T) {
 		},
 		{
 			desc:             "valid MintAllocationDao",
-			mintAllocatioDao: tokenomicstypes.DefaultMintAllocationDao,
+			mintAllocatioDao: tokenomicstypes.DefaultMintAllocationPercentages.Dao,
 		},
 	}
 
@@ -60,7 +60,7 @@ func TestParams_ValidateMintAllocationProposer(t *testing.T) {
 		},
 		{
 			desc:                  "valid MintAllocationProposer",
-			mintAllocatioProposer: tokenomicstypes.DefaultMintAllocationProposer,
+			mintAllocatioProposer: tokenomicstypes.DefaultMintAllocationPercentages.Proposer,
 		},
 	}
 
@@ -94,7 +94,7 @@ func TestParams_ValidateMintAllocationSupplier(t *testing.T) {
 		},
 		{
 			desc:                  "valid MintAllocationSupplier",
-			mintAllocatioSupplier: tokenomicstypes.DefaultMintAllocationSupplier,
+			mintAllocatioSupplier: tokenomicstypes.DefaultMintAllocationPercentages.Supplier,
 		},
 	}
 
@@ -128,7 +128,7 @@ func TestParams_ValidateMintAllocationSourceOwner(t *testing.T) {
 		},
 		{
 			desc:                     "valid MintAllocationSourceOwner",
-			mintAllocatioSourceOwner: tokenomicstypes.DefaultMintAllocationSourceOwner,
+			mintAllocatioSourceOwner: tokenomicstypes.DefaultMintAllocationPercentages.SourceOwner,
 		},
 	}
 
@@ -162,7 +162,7 @@ func TestParams_ValidateMintAllocationApplication(t *testing.T) {
 		},
 		{
 			desc:                     "valid MintAllocationApplication",
-			mintAllocatioApplication: tokenomicstypes.DefaultMintAllocationApplication,
+			mintAllocatioApplication: tokenomicstypes.DefaultMintAllocationPercentages.Application,
 		},
 	}
 
