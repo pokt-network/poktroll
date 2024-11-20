@@ -1,5 +1,5 @@
 ---
-title: Full Node - Cosmovisor
+title: Full Node (Cosmovisor)
 sidebar_position: 2
 ---
 

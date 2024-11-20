@@ -9,13 +9,15 @@ sidebar_position: 1
 
 ## Beta TestNet
 
-- 🪙 [Shannon Token Faucet](https://faucet.testnet.pokt.network/)
-- 🗺️ [Shannon Explorer](https://shannon.testnet.pokt.network/poktroll/block)
+- 🪙 [Shannon Beta Token Faucet](https://faucet.beta.testnet.pokt.network/)
+- 🗺️ [Shannon Beta Explorer](https://shannon.beta.testnet.pokt.network)
+- 🗺️ [PoktScan's Shannon Beta Explorer](https://shannon.beta.poktscan.com/)
 
 ## Alpha TestNet
 
-- 🪙 [Shannon Token Faucet](https://faucet.testnet.pokt.network/)
-- 🗺️ [Shannon Explorer](https://shannon.testnet.pokt.network/poktroll/block)
+- 🪙 [Shannon Alpha Token Faucet](https://faucet.alpha.testnet.pokt.network/)
+- 🗺️ [Shannon Alpha Explorer](https://shannon.alpha.testnet.pokt.network)
+- 🗺️ [PoktScan's Shannon Alpha Explorer](https://shannon.alpha.poktscan.com/)
 
 ## 🛠️ Tools & References
 

@@ -1,5 +1,5 @@
 ---
-title: Full Node - Docker
+title: Full Node (Docker)
 sidebar_position: 3
 ---
 

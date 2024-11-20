@@ -23,9 +23,9 @@ You can review the difference between them in the [Cosmos SDK docs](https://docs
 
 We have provided `gRPC`, `JSON-RPC` and `REST` endpoints, which are available here:
 
-- **RPC**: `https://shannon-testnet-grove-seed-rpc.poktroll.com`
-- **gRPC**: `https://shannon-testnet-grove-seed-grpc.poktroll.com`
-- **REST**: `https://shannon-testnet-grove-seed-api.poktroll.com`
+- **RPC**: `https://shannon-testnet-grove-seed-rpc.beta.poktroll.com`
+- **gRPC**: `https://shannon-testnet-grove-seed-grpc.beta.poktroll.com`
+- **REST**: `https://shannon-testnet-grove-seed-api.beta.poktroll.com`
 
 ### Beta JSON-RPC Example
 
@@ -47,9 +47,9 @@ poktrolld query block --type=height 0 --node https://shannon-testnet-grove-seed-
 
 We have provided `gRPC`, `JSON-RPC` and `REST` endpoints, which are available here:
 
-- **RPC**: `https://shannon-testnet-grove-seed-rpc.poktroll.com`
-- **gRPC**: `https://shannon-testnet-grove-seed-grpc.poktroll.com`
-- **REST**: `https://shannon-testnet-grove-seed-api.poktroll.com`
+- **RPC**: `https://shannon-testnet-grove-seed-rpc.alpha.poktroll.com`
+- **gRPC**: `https://shannon-testnet-grove-seed-grpc.alpha.poktroll.com`
+- **REST**: `https://shannon-testnet-grove-seed-api.alpha.poktroll.com`
 
 ### Alpha JSON-RPC Example
 
