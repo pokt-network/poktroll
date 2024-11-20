@@ -5,7 +5,7 @@ sidebar_position: 2
 
 ## Blogs & Updates
 
-- [Pocket Network Shannon Update - Beta TestNet #1 Announcement](TODO_IN_THIS_PR)
+- [Pocket Network Shannon Update - Beta TestNet #1 Announcement](<TODO_BETA(@olshansk)>)
 - [Pocket Network Shannon Update - Alpha TestNet #3 Announcement](https://medium.com/decentralized-infrastructure/pocket-network-shannon-update-alpha-testnet-3-eca539a9e111)
 
 ## Alpha TestNet Roadmap
@@ -44,7 +44,7 @@ timeline
 				Governance Parameter Eval:
 				Mirror Morse MainNet Traffic:
 				Tooling & Documentation Improvements:
-				Genesis File Preperation
+				Genesis File Preparation
 			Public Migration <br> (Q1):
                 Public MainNet Launch:
 				Morse POKT "Airdrop":
