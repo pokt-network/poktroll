@@ -447,7 +447,7 @@ Add the parameter type and name (e.g. `ParamNameNewParameter`) to new cases in t
     // ...
     switch msg.Name {
 +   case ParamNewParameter:
-+     if err = msg.paramTypeIsInt64(); err != nil {
++     if err := genericParamTypeIs[*MsgUpdateParam_AsInt64](msg); err != nil {
 +       return err
 +     }
 +     return ValidateNewParameter(msg.GetAsInt64())
@@ -456,16 +456,17 @@ Add the parameter type and name (e.g. `ParamNameNewParameter`) to new cases in t
     }
   }
 +
-+ func (msg *MsgUpdateParam) paramTypeIsInt64() error {
-+   if _, ok := msg.AsType.(*MsgUpdateParam_AsInt64); !ok {
-+     return ErrExamplemodParamInvalid.Wrapf(
-+       "invalid type for param %q expected %T, got: %T",
-+       msg.Name, &MsgUpdateParam_AsInt64{}, msg.AsType,
++ func genericParamTypeIs[T any](msg *MsgUpdateParam) error {
++   if _, ok := msg.AsType.(T); !ok {
++     return ErrParamInvalid.Wrapf(
++       "invalid type for param %q; expected %T, got %T",
++       msg.Name, *new(T), msg.AsType,
 +     )
 +   }
 +
 +   return nil
 + }
+
 ```
 
 #### 4.2 `msgServer#UpdateParam()`
