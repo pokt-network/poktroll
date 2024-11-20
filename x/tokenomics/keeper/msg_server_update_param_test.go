@@ -52,8 +52,13 @@ func TestMsgUpdateParam_UpdateDaoRewardAddressOnly(t *testing.T) {
 	res, err := msgSrv.UpdateParam(ctx, updateParamMsg)
 	require.NoError(t, err)
 
+	// Assert that the response contains the expected dao reward address.
 	require.NotEqual(t, defaultParams.DaoRewardAddress, res.Params.DaoRewardAddress)
 	require.Equal(t, expectedDaoRewardAddress, res.Params.DaoRewardAddress)
+
+	// Assert that the on-chain dao reward address is updated.
+	params := k.GetParams(ctx)
+	require.Equal(t, expectedDaoRewardAddress, params.DaoRewardAddress)
 
 	// Ensure the other parameters are unchanged
 	testkeeper.AssertDefaultParamsEqualExceptFields(t, &defaultParams, res.Params, string(tokenomicstypes.KeyDaoRewardAddress))

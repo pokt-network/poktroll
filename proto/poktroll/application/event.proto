@@ -12,8 +12,8 @@ import "poktroll/shared/service.proto";
 import "poktroll/application/types.proto";
 
 enum ApplicationUnbondingReason {
-  ELECTIVE = 0;
-  BELOW_MIN_STAKE = 1;
+  APPLICATION_UNBONDING_REASON_ELECTIVE = 0;
+  APPLICATION_UNBONDING_REASON_BELOW_MIN_STAKE = 1;
 }
 
 // EventApplicationStaked is emitted when an application is staked or up-staked.

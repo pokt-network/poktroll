@@ -5,6 +5,8 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
+
+	tlm "github.com/pokt-network/poktroll/x/tokenomics/token_logic_module"
 )
 
 // IntegrationAppConfig is a configuration struct for an integration App. Its fields
@@ -14,6 +16,7 @@ type IntegrationAppConfig struct {
 	// InitChainerModuleFns are called for each module during the integration App's
 	// InitChainer function.
 	InitChainerModuleFns []InitChainerModuleFn
+	TokenLogicModules    []tlm.TokenLogicModule
 }
 
 // IntegrationAppOptionFn is a function that receives and has the opportunity to
@@ -57,5 +60,13 @@ func NewInitChainerModuleGenesisStateOptionFn[T module.HasGenesis](genesisState 
 
 		genesisJSON := cdc.MustMarshalJSON(genesisState)
 		targetModule.InitGenesis(ctx, cdc, genesisJSON)
+	}
+}
+
+// WithTokenLogicModules returns an IntegrationAppOptionFn that sets the given
+// TLM processors on the IntegrationAppConfig.
+func WithTokenLogicModules(tokenLogicModules []tlm.TokenLogicModule) IntegrationAppOptionFn {
+	return func(config *IntegrationAppConfig) {
+		config.TokenLogicModules = tokenLogicModules
 	}
 }

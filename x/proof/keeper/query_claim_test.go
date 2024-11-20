@@ -32,7 +32,7 @@ func TestClaimQuerySingle(t *testing.T) {
 		expectedErr error
 	}{
 		{
-			desc: "First Claim",
+			desc: "First claim",
 
 			request: &types.QueryGetClaimRequest{
 				SessionId:               claims[0].GetSessionHeader().GetSessionId(),
@@ -43,7 +43,7 @@ func TestClaimQuerySingle(t *testing.T) {
 			expectedErr: nil,
 		},
 		{
-			desc: "Second Claim",
+			desc: "Second claim",
 
 			request: &types.QueryGetClaimRequest{
 				SessionId:               claims[1].GetSessionHeader().GetSessionId(),
@@ -54,7 +54,7 @@ func TestClaimQuerySingle(t *testing.T) {
 			expectedErr: nil,
 		},
 		{
-			desc: "Claim Not Found - Random SessionId",
+			desc: "claim Not Found - Random SessionId",
 
 			request: &types.QueryGetClaimRequest{
 				SessionId:               "not a real session id",
@@ -72,7 +72,7 @@ func TestClaimQuerySingle(t *testing.T) {
 			),
 		},
 		{
-			desc: "Claim Not Found - Wrong Supplier Operator Address",
+			desc: "claim Not Found - Wrong Supplier Operator Address",
 
 			request: &types.QueryGetClaimRequest{
 				SessionId:               claims[0].GetSessionHeader().GetSessionId(),

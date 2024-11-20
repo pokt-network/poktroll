@@ -12,6 +12,7 @@ import (
 	"github.com/pokt-network/poktroll/telemetry"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 	"github.com/pokt-network/poktroll/x/supplier/types"
+	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 )
 
 var (
@@ -19,7 +20,7 @@ var (
 	SupplierStakingFee = sdk.NewInt64Coin(volatile.DenomuPOKT, 1)
 )
 
-func (k msgServer) StakeSupplier(ctx context.Context, msg *types.MsgStakeSupplier) (*types.MsgStakeSupplierResponse, error) {
+func (k msgServer) StakeSupplier(ctx context.Context, msg *suppliertypes.MsgStakeSupplier) (*suppliertypes.MsgStakeSupplierResponse, error) {
 	isSuccessful := false
 	defer telemetry.EventSuccessCounter(
 		"stake_supplier",
@@ -42,13 +43,16 @@ func (k msgServer) StakeSupplier(ctx context.Context, msg *types.MsgStakeSupplie
 			logger.Info(fmt.Sprintf("service %q does not exist", serviceConfig.ServiceId))
 			return nil, status.Error(
 				codes.InvalidArgument,
-				types.ErrSupplierServiceNotFound.Wrapf("service %q does not exist", serviceConfig.ServiceId).Error(),
+				suppliertypes.ErrSupplierServiceNotFound.Wrapf("service %q does not exist", serviceConfig.ServiceId).Error(),
 			)
 		}
 	}
 
 	// Check if the supplier already exists or not
-	var err error
+	var (
+		err                  error
+		wasSupplierUnbonding bool
+	)
 	supplier, isSupplierFound := k.GetSupplier(ctx, msg.OperatorAddress)
 
 	supplierCurrentStake := sdk.NewInt64Coin(volatile.DenomuPOKT, 0)
@@ -100,13 +104,16 @@ func (k msgServer) StakeSupplier(ctx context.Context, msg *types.MsgStakeSupplie
 		}
 
 		// If the supplier has initiated an unstake action, cancel it since they are staking again.
-		supplier.UnstakeSessionEndHeight = sharedtypes.SupplierNotUnstaking
+		if supplier.UnstakeSessionEndHeight != sharedtypes.SupplierNotUnstaking {
+			wasSupplierUnbonding = true
+			supplier.UnstakeSessionEndHeight = sharedtypes.SupplierNotUnstaking
+		}
 	}
 
 	// MUST ALWAYS have at least minimum stake.
 	minStake := k.GetParams(ctx).MinStake
 	if msg.Stake.Amount.LT(minStake.Amount) {
-		err = types.ErrSupplierInvalidStake.Wrapf(
+		err = suppliertypes.ErrSupplierInvalidStake.Wrapf(
 			"supplier with owner %q must stake at least %s",
 			msg.GetOwnerAddress(), minStake,
 		)
@@ -164,22 +171,36 @@ func (k msgServer) StakeSupplier(ctx context.Context, msg *types.MsgStakeSupplie
 	logger.Info(fmt.Sprintf("Successfully updated supplier stake for supplier: %+v", supplier))
 
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
-	// Emit an event which signals that the supplier staked.
-	event := &types.EventSupplierStaked{
-		Supplier: &supplier,
+	events := make([]sdk.Msg, 0)
+	sessionEndHeight := k.sharedKeeper.GetSessionEndHeight(ctx, sdkCtx.BlockHeight())
+
+	if wasSupplierUnbonding {
+		events = append(events, &suppliertypes.EventSupplierUnbondingCanceled{
+			Supplier:         &supplier,
+			SessionEndHeight: sessionEndHeight,
+			Height:           sdkCtx.BlockHeight(),
+		})
 	}
-	if eventErr := sdkCtx.EventManager().EmitTypedEvent(event); eventErr != nil {
-		logger.Error(fmt.Sprintf("failed to emit event: %+v; %s", event, eventErr))
+
+	// Emit an event which signals that the supplier staked.
+	events = append(events, &suppliertypes.EventSupplierStaked{
+		Supplier:         &supplier,
+		SessionEndHeight: sessionEndHeight,
+	})
+	if err = sdkCtx.EventManager().EmitTypedEvents(events...); err != nil {
+		err = suppliertypes.ErrSupplierEmitEvent.Wrapf("(%+v): %s", events, err)
+		logger.Error(err.Error())
+		return nil, status.Error(codes.Internal, err.Error())
 	}
 
 	isSuccessful = true
-	return &types.MsgStakeSupplierResponse{}, nil
+	return &suppliertypes.MsgStakeSupplierResponse{}, nil
 }
 
 // createSupplier creates a new supplier from the given message.
 func (k msgServer) createSupplier(
 	ctx context.Context,
-	msg *types.MsgStakeSupplier,
+	msg *suppliertypes.MsgStakeSupplier,
 ) sharedtypes.Supplier {
 	sharedParams := k.sharedKeeper.GetParams(ctx)
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
@@ -206,11 +227,11 @@ func (k msgServer) createSupplier(
 func (k msgServer) updateSupplier(
 	ctx context.Context,
 	supplier *sharedtypes.Supplier,
-	msg *types.MsgStakeSupplier,
+	msg *suppliertypes.MsgStakeSupplier,
 ) error {
 	// Validate that the stake is not being lowered
 	if msg.Stake == nil {
-		return types.ErrSupplierInvalidStake.Wrapf("stake amount cannot be nil")
+		return suppliertypes.ErrSupplierInvalidStake.Wrapf("stake amount cannot be nil")
 	}
 
 	supplier.Stake = msg.Stake
@@ -220,7 +241,7 @@ func (k msgServer) updateSupplier(
 	// Validate that the service configs maintain at least one service.
 	// Additional validation is done in `msg.ValidateBasic` above.
 	if len(msg.Services) == 0 {
-		return types.ErrSupplierInvalidServiceConfig.Wrapf("must have at least one service")
+		return suppliertypes.ErrSupplierInvalidServiceConfig.Wrapf("must have at least one service")
 	}
 
 	sharedParams := k.sharedKeeper.GetParams(ctx)
