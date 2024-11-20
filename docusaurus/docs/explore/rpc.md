@@ -62,5 +62,5 @@ curl -X POST https://shannon-testnet-grove-seed-rpc.alpha.poktroll.com/block
 Using the `poktrolld` binary:
 
 ```bash
-poktrolld query block --type=height 0 --node https://shannon-testnet-grove-seed-rpc.alpha.poktroll.com
+poktrolld query block --type=height 1 --node https://shannon-testnet-grove-seed-rpc.alpha.poktroll.com
 ```
