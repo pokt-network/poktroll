@@ -56,7 +56,7 @@ We have provided `gRPC`, `JSON-RPC` and `REST` endpoints, which are available he
 Using `curl`:
 
 ```bash
-curl -X POST https://shannon-testnet-grove-seed-rpc.poktroll.com/block
+curl -X POST https://shannon-testnet-grove-seed-rpc.alpha.poktroll.com/block
 ```
 
 Using the `poktrolld` binary:
