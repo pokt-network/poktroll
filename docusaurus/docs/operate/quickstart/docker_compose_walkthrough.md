@@ -315,6 +315,8 @@ You can check that your address is funded correctly by running:
 poktrolld query bank balances $SUPPLIER_ADDR
 ```
 
+**Note: You must wait until `full-node` has synced up to [current block #](https://shannon.testnet.pokt.network/poktroll/block) before this command and the stake command below (`poktrolld tx supplier stake-supplier...`) will work successfully. Watch your node's block height [here.](https://dev.poktroll.com/operate/quickstart/docker_compose_walkthrough#watch-the-height-)**
+
 If you're waiting to see if your transaction has been included in a block, you can run:
 
 ```bash
