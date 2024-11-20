@@ -31,7 +31,7 @@ for the Shannon upgrade of the [Pocket Network](https://pokt.network) blockchain
 - [Roadmap](#roadmap)
 - [Quickstart](#quickstart)
 - [Godoc](#godoc)
-- [Have questions? Ask An PNYC](#have-questions-ask-an-pnyc)
+- [Have questions? Ask An PNYX](#have-questions-ask-an-pnyx)
 - [License](#license)
 
 ## Learn about Pocket Network
@@ -61,9 +61,9 @@ The best way to get involved is by following the [quickstart instructions](https
 
 The Godoc for the source code in this can be found at [pkg.go.dev/github.com/pokt-network/poktroll](https://pkg.go.dev/github.com/pokt-network/poktroll).
 
-## Have questions? Ask An PNYC
+## Have questions? Ask An PNYX
 
-You can use [PNYX](https://pnyxai.com/), an AI-powered search engine that has been
+You can use [PNYX](https://migration.pnyxai.com/), an AI-powered search engine that has been
 trained and indexed on the Pocket Network documentation, community calls, forums
 and much more!
 

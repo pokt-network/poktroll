@@ -5,11 +5,11 @@ sidebar_position: 3
 
 - [Types of RPC Endpoints](#types-of-rpc-endpoints)
 - [Beta TestNet](#beta-testnet)
-  - [RPC Endpoints](#rpc-endpoints)
-  - [JSON-RPC Example](#json-rpc-example)
+  - [Beta RPC Endpoints](#beta-rpc-endpoints)
+  - [Beta JSON-RPC Example](#beta-json-rpc-example)
 - [Alpha TestNet](#alpha-testnet)
-  - [RPC Endpoints](#rpc-endpoints-1)
-  - [JSON-RPC Example](#json-rpc-example-1)
+  - [Alpha RPC Endpoints](#alpha-rpc-endpoints)
+  - [Alpha JSON-RPC Example](#alpha-json-rpc-example)
 
 ## Types of RPC Endpoints
 
@@ -19,7 +19,7 @@ You can review the difference between them in the [Cosmos SDK docs](https://docs
 
 ## Beta TestNet
 
-### RPC Endpoints
+### Beta RPC Endpoints
 
 We have provided `gRPC`, `JSON-RPC` and `REST` endpoints, which are available here:
 
@@ -27,7 +27,7 @@ We have provided `gRPC`, `JSON-RPC` and `REST` endpoints, which are available he
 - **gRPC**: `https://shannon-testnet-grove-seed-grpc.poktroll.com`
 - **REST**: `https://shannon-testnet-grove-seed-api.poktroll.com`
 
-### JSON-RPC Example
+### Beta JSON-RPC Example
 
 Using `curl`:
 
@@ -43,7 +43,7 @@ poktrolld query block --type=height 0 --node https://shannon-testnet-grove-seed-
 
 ## Alpha TestNet
 
-### RPC Endpoints
+### Alpha RPC Endpoints
 
 We have provided `gRPC`, `JSON-RPC` and `REST` endpoints, which are available here:
 
@@ -51,7 +51,7 @@ We have provided `gRPC`, `JSON-RPC` and `REST` endpoints, which are available he
 - **gRPC**: `https://shannon-testnet-grove-seed-grpc.poktroll.com`
 - **REST**: `https://shannon-testnet-grove-seed-api.poktroll.com`
 
-### JSON-RPC Example
+### Alpha JSON-RPC Example
 
 Using `curl`:
 
