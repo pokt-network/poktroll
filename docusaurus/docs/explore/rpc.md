@@ -21,7 +21,7 @@ You can review the difference between them in the [Cosmos SDK docs](https://docs
 
 ### Beta RPC Endpoints
 
-We have provided `gRPC`, `JSON-RPC` and `REST` endpoints, which are available here:
+We provide `gRPC`, `JSON-RPC` and `REST` endpoints, which are available here:
 
 - **RPC**: `https://shannon-testnet-grove-seed-rpc.beta.poktroll.com`
 - **gRPC**: `https://shannon-testnet-grove-seed-grpc.beta.poktroll.com`
