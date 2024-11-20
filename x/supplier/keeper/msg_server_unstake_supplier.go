@@ -5,16 +5,18 @@ import (
 	"fmt"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"github.com/pokt-network/poktroll/telemetry"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
-	"github.com/pokt-network/poktroll/x/supplier/types"
+	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 )
 
 func (k msgServer) UnstakeSupplier(
 	ctx context.Context,
-	msg *types.MsgUnstakeSupplier,
-) (*types.MsgUnstakeSupplierResponse, error) {
+	msg *suppliertypes.MsgUnstakeSupplier,
+) (*suppliertypes.MsgUnstakeSupplierResponse, error) {
 	isSuccessful := false
 	defer telemetry.EventSuccessCounter(
 		"unstake_supplier",
@@ -33,7 +35,7 @@ func (k msgServer) UnstakeSupplier(
 	supplier, isSupplierFound := k.GetSupplier(ctx, msg.OperatorAddress)
 	if !isSupplierFound {
 		logger.Info(fmt.Sprintf("Supplier not found. Cannot unstake address %s", msg.OperatorAddress))
-		return nil, types.ErrSupplierNotFound
+		return nil, suppliertypes.ErrSupplierNotFound
 	}
 
 	// Ensure the singer address matches the owner address or the operator address.
@@ -51,7 +53,7 @@ func (k msgServer) UnstakeSupplier(
 	// Check if the supplier has already initiated the unstake action.
 	if supplier.IsUnbonding() {
 		logger.Warn(fmt.Sprintf("Supplier %s still unbonding from previous unstaking", msg.OperatorAddress))
-		return nil, types.ErrSupplierIsUnstaking
+		return nil, suppliertypes.ErrSupplierIsUnstaking
 	}
 
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
@@ -69,15 +71,19 @@ func (k msgServer) UnstakeSupplier(
 	k.SetSupplier(ctx, supplier)
 
 	// Emit an event which signals that the supplier successfully began unbonding their stake.
-	unbondingHeight := sharedtypes.GetSupplierUnbondingHeight(&sharedParams, &supplier)
-	event := &types.EventSupplierUnbondingBegin{
-		Supplier:        &supplier,
-		UnbondingHeight: unbondingHeight,
+	unbondingEndHeight := sharedtypes.GetSupplierUnbondingEndHeight(&sharedParams, &supplier)
+	event := &suppliertypes.EventSupplierUnbondingBegin{
+		Supplier:           &supplier,
+		Reason:             suppliertypes.SupplierUnbondingReason_SUPPLIER_UNBONDING_REASON_VOLUNTARY,
+		SessionEndHeight:   int64(supplier.GetUnstakeSessionEndHeight()),
+		UnbondingEndHeight: unbondingEndHeight,
 	}
-	if eventErr := sdkCtx.EventManager().EmitTypedEvent(event); eventErr != nil {
-		logger.Error(fmt.Sprintf("failed to emit event: %+v; %s", event, eventErr))
+	if err := sdkCtx.EventManager().EmitTypedEvent(event); err != nil {
+		err = suppliertypes.ErrSupplierEmitEvent.Wrapf("(%+v): %s", event, err)
+		logger.Error(err.Error())
+		return nil, status.Error(codes.Internal, err.Error())
 	}
 
 	isSuccessful = true
-	return &types.MsgUnstakeSupplierResponse{}, nil
+	return &suppliertypes.MsgUnstakeSupplierResponse{}, nil
 }
