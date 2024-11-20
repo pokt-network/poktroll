@@ -13,7 +13,6 @@ sidebar_position: 3
 
 ## Types of RPC Endpoints
 
-We have provided `gRPC`, `JSON-RPC` and `REST` endpoints, which are available here:
 
 You can review the difference between them in the [Cosmos SDK docs](https://docs.cosmos.network/main/learn/advanced/grpc_rest#comparison-table).
 
