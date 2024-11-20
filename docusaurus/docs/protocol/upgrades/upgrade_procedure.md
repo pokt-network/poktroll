@@ -42,9 +42,13 @@ An upgrade is necessary whenever there's an API, State Machine, or other Consens
 1. When a new version includes a consensus-breaking change, plan for the next protocol upgrade:
    - If there's a change to a specific module, bump that module's consensus version.
    - Note any potential parameter changes to include in the upgrade.
-2. Create a new upgrade in `app/upgrades`. **THIS MUST BE DONE** even if there are no state changes.
+2. Create a new upgrade in `app/upgrades`.
    - Refer to `historical.go` for past upgrades and examples.
    - Consult Cosmos-sdk documentation on upgrades for additional guidance [here](https://docs.cosmos.network/main/build/building-apps/app-upgrade) and [here](https://docs.cosmos.network/main/build/modules/upgrade).
+
+:::info
+Creating a new upgrade plan MUST BE DONE even if there are no state changes.
+:::
 
 ## Writing an Upgrade Transaction
 
@@ -83,7 +87,7 @@ When `cosmovisor` is configured to automatically download binaries, it will pull
 The URLs of the binaries contain checksums. It is critical to ensure they are correct.
 Otherwise Cosmovisor won't be able to download the binaries and go through the upgrade.
 
-The command below (using toold build by the authors of Cosmosvisor) can be used to achieve the above:
+The command below (using tools build by the authors of Cosmosvisor) can be used to achieve the above:
 
 ```bash
 jq -r '.body.messages[0].plan.info | fromjson | .binaries[]' $PATH_TO_UPGRADE_TRANSACTION_JSON | while IFS= read -r url; do
@@ -162,7 +166,12 @@ For a hypothetical scenario to upgrade from `0.1` to `0.2`:
    git checkout -b branch_to_test
    ```
 
-   Replace `branch_to_test` with the actual branch you want to test. **Note:** This branch should have an upgrade implemented - [Implementing the Upgrade](#implementing-the-upgrade). Here, the upgrade should be named `v0.2`.
+   Replace `branch_to_test` with the actual branch you want to test.
+
+   :::note
+   This branch should have an upgrade implemented per the docs in [Implementing the Upgrade](#implementing-the-upgrade).
+   Here, the upgrade should be named `v0.2`.
+   :::
 
 4. **(BOTH repos)** - We'll use binaries from both versions - old and new.
 
@@ -171,7 +180,7 @@ For a hypothetical scenario to upgrade from `0.1` to `0.2`:
    ```
 
    :::note
-   The binary produced by these commands in the old repo should result in the same binary as it was downloaded from [production releases](https://github.com/pokt-network/poktroll/releases), however you might consider using
+   The binary produced by these commands in the old repo should result in the same binary as it was downloaded from [production releases](https://github.com/pokt-network/poktroll/releases), however you might consider using a different version.
    :::
 
 5. **(`old` repo)** - Clean up and generate an empty genesis using the old version.
@@ -190,7 +199,7 @@ For a hypothetical scenario to upgrade from `0.1` to `0.2`:
 
    The validator node should run and produce blocks as expected.
 
-8. **(`old` repo)** Submit the upgrade transaction. **Note:** The upgrade height in the transaction should be higher than the current block height. Adjust and submit if necessary:
+8. **(`old` repo)** Submit the upgrade transaction. **NOTE THAT** the upgrade height in the transaction should be higher than the current block height. Adjust and submit if necessary:
 
    ```bash
    ./release_binaries/poktroll_darwin_arm64 tx authz exec tools/scripts/upgrades/local_test_v0.2.json --from=pnf
@@ -217,6 +226,7 @@ For a hypothetical scenario to upgrade from `0.1` to `0.2`:
     - If there were errors during the upgrade, investigate and address them.
 
 12. **(`new` repo, optional**) - If parameters were changed during the upgrade, test if these changes were applied. For example:
+
     ```bash
     ./release_binaries/poktroll_darwin_arm64 q application params
     ```

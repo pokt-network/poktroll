@@ -7,11 +7,7 @@ title: Adding On-Chain Module Parameters
 
 - [Step-by-Step Instructions](#step-by-step-instructions)
   - [1. Define the Parameter in the Protocol Buffers File](#1-define-the-parameter-in-the-protocol-buffers-file)
-  - [2 Update the Parameter E2E Tests](#2-update-the-parameter-e2e-tests)
-    - [2.1 Scenario Example](#21-scenario-example)
-    - [2.2 Scenario Outline Example](#22-scenario-outline-example)
-    - [2.3 Step Definition Helpers Example](#23-step-definition-helpers-example)
-    - [2.4 Update switch statement to support new param](#24-update-switch-statement-to-support-new-param)
+  - [2 Update the Parameter Integration Tests](#2-update-the-parameter-integration-tests)
   - [3. Update the Default Parameter Values](#3-update-the-default-parameter-values)
   - [4. Add Parameter Default to Genesis Configuration](#4-add-parameter-default-to-genesis-configuration)
   - [5. Modify the Makefile](#5-modify-the-makefile)
@@ -149,7 +145,7 @@ with the default value for the new parameter.
         "authority": "pokt10d07y265gmmuvt4z0w9aw880jnsr700j8yv32t",
         "params": {
           "proof_request_probability": "0.25",
-          "proof_requirement_threshold":  {
+          "proof_requirement_threshold": {
             "denom": "upokt",
             "amount": "20000000"
           },
