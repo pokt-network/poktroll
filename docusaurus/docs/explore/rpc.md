@@ -45,7 +45,7 @@ poktrolld query block --type=height 0 --node https://shannon-testnet-grove-seed-
 
 ### Alpha RPC Endpoints
 
-We have provided `gRPC`, `JSON-RPC` and `REST` endpoints, which are available here:
+We provide `gRPC`, `JSON-RPC` and `REST` endpoints, which are available here:
 
 - **RPC**: `https://shannon-testnet-grove-seed-rpc.alpha.poktroll.com`
 - **gRPC**: `https://shannon-testnet-grove-seed-grpc.alpha.poktroll.com`
