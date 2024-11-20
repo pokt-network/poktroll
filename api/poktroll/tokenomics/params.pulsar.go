@@ -1096,6 +1096,8 @@ type Params struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
+	// mint_allocation_percentages represents the distribution of newly minted tokens,
+	// at the end of claim settlement, as a result of the Global Mint TLM.
 	MintAllocationPercentages *MintAllocationPercentages `protobuf:"bytes,1,opt,name=mint_allocation_percentages,json=mintAllocationPercentages,proto3" json:"mint_allocation_percentages,omitempty"`
 	// dao_reward_address is the address to which mint_allocation_dao percentage of the
 	// minted tokens are at the end of claim settlement.

@@ -15,6 +15,8 @@ message Params {
   option (amino.name) = "poktroll/x/tokenomics/Params";
   option (gogoproto.equal) = true;
 
+  // mint_allocation_percentages represents the distribution of newly minted tokens,
+  // at the end of claim settlement, as a result of the Global Mint TLM.
   MintAllocationPercentages mint_allocation_percentages = 1 [(gogoproto.nullable) = false, (gogoproto.jsontag) = "mint_allocation_proposer", (gogoproto.moretags) = "yaml:\"mint_allocation_percentages\""];
 
   // dao_reward_address is the address to which mint_allocation_dao percentage of the
