@@ -67,6 +67,8 @@ const config = {
           routeBasePath: "/",
           sidebarPath: "./sidebars.js",
           sidebarCollapsible: false,
+          remarkPlugins: [require("remark-math")],
+          rehypePlugins: [require("rehype-katex")],
         },
         theme: {
           customCss: [
