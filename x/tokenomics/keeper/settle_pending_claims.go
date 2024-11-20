@@ -501,7 +501,6 @@ func (k Keeper) GetExpiringClaims(ctx cosmostypes.Context) (expiringClaims []pro
 	//   1. Move height logic up to SettlePendingClaims.
 	//   2. Ensure that claims are only settled or expired on a session end height.
 	//     2a. This likely also requires adding validation to the shared module params.
-
 	blockHeight := ctx.BlockHeight()
 
 	// NB: This error can be safely ignored as on-chain SharedQueryClient implementation cannot return an error.
@@ -553,8 +552,8 @@ func (k Keeper) slashSupplierStake(
 	proofParams := k.proofKeeper.GetParams(ctx)
 	slashingCoin := *proofParams.GetProofMissingPenalty()
 
-	supplierToSlash, supplierFound := k.supplierKeeper.GetSupplier(ctx, supplierOperatorAddress)
-	if !supplierFound {
+	supplierToSlash, isSupplierFound := k.supplierKeeper.GetSupplier(ctx, supplierOperatorAddress)
+	if !isSupplierFound {
 		return tokenomicstypes.ErrTokenomicsSupplierNotFound.Wrapf(
 			"cannot slash supplier with operator address: %q",
 			supplierOperatorAddress,
@@ -625,6 +624,8 @@ func (k Keeper) slashSupplierStake(
 		supplierToSlash.GetStake(),
 	))
 
+	events := make([]cosmostypes.Msg, 0)
+
 	// Check if the supplier's stake is below the minimum and unstake it if necessary.
 	minSupplierStakeCoin := k.supplierKeeper.GetParams(ctx).MinStake
 	// TODO_MAINNET(@red-0ne): SettlePendingClaims is called at the end of every block,
@@ -637,7 +638,7 @@ func (k Keeper) slashSupplierStake(
 		sharedParams := k.sharedKeeper.GetParams(ctx)
 		sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
 		currentHeight := sdkCtx.BlockHeight()
-		unstakeSessionEndHeight := uint64(sharedtypes.GetSessionEndHeight(&sharedParams, currentHeight))
+		unstakeSessionEndHeight := sharedtypes.GetSessionEndHeight(&sharedParams, currentHeight)
 
 		logger.Warn(fmt.Sprintf(
 			"unstaking supplier %q owned by %q due to stake (%s) below the minimum (%s)",
@@ -650,8 +651,15 @@ func (k Keeper) slashSupplierStake(
 		// TODO_MAINNET: Should we just remove the supplier if the stake is
 		// below the minimum, at the risk of making the off-chain actors have an
 		// inconsistent session supplier list? See the comment above for more details.
-		supplierToSlash.UnstakeSessionEndHeight = unstakeSessionEndHeight
+		supplierToSlash.UnstakeSessionEndHeight = uint64(unstakeSessionEndHeight)
 
+		unbondingEndHeight := sharedtypes.GetSupplierUnbondingEndHeight(&sharedParams, &supplierToSlash)
+		events = append(events, &suppliertypes.EventSupplierUnbondingBegin{
+			Supplier:           &supplierToSlash,
+			Reason:             suppliertypes.SupplierUnbondingReason_SUPPLIER_UNBONDING_REASON_BELOW_MIN_STAKE,
+			SessionEndHeight:   unstakeSessionEndHeight,
+			UnbondingEndHeight: unbondingEndHeight,
+		})
 	}
 
 	k.supplierKeeper.SetSupplier(ctx, supplierToSlash)
@@ -659,11 +667,12 @@ func (k Keeper) slashSupplierStake(
 	claim := ClaimSettlementResult.GetClaim()
 
 	// Emit an event that a supplier has been slashed.
-	supplierSlashedEvent := tokenomicstypes.EventSupplierSlashed{
+	events = append(events, &tokenomicstypes.EventSupplierSlashed{
 		Claim:               &claim,
 		ProofMissingPenalty: &slashingCoin,
-	}
-	if err := ctx.EventManager().EmitTypedEvent(&supplierSlashedEvent); err != nil {
+	})
+
+	if err := ctx.EventManager().EmitTypedEvents(events...); err != nil {
 		return err
 	}
 

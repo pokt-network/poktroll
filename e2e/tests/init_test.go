@@ -516,7 +516,7 @@ func (s *suite) TheUserWaitsForTheSupplierForAccountUnbondingPeriodToFinish(accN
 	_, ok := operatorAccNameToSupplierMap[accName]
 	require.True(s, ok, "supplier %s not found", accName)
 
-	unbondingHeight := s.getSupplierUnbondingHeight(accName)
+	unbondingHeight := s.getSupplierUnbondingEndHeight(accName)
 	s.waitForBlockHeight(unbondingHeight + 1) // Add 1 to ensure the unbonding block has been committed
 }
 
@@ -763,8 +763,8 @@ func (s *suite) getSupplierInfo(supplierOperatorName string) *sharedtypes.Suppli
 	return &resp.Supplier
 }
 
-// getSupplierUnbondingHeight returns the height at which the supplier will be unbonded.
-func (s *suite) getSupplierUnbondingHeight(accName string) int64 {
+// getSupplierUnbondingEndHeight returns the height at which the supplier will be unbonded.
+func (s *suite) getSupplierUnbondingEndHeight(accName string) int64 {
 	supplier := s.getSupplierInfo(accName)
 
 	args := []string{
@@ -781,7 +781,7 @@ func (s *suite) getSupplierUnbondingHeight(accName string) int64 {
 	responseBz := []byte(strings.TrimSpace(res.Stdout))
 	s.cdc.MustUnmarshalJSON(responseBz, &resp)
 
-	return sharedtypes.GetSupplierUnbondingHeight(&resp.Params, supplier)
+	return sharedtypes.GetSupplierUnbondingEndHeight(&resp.Params, supplier)
 }
 
 // getApplicationInfo returns the application information for a given application address.
