@@ -618,13 +618,13 @@ explains what the Gateway Server operation config is and how it can be used.
 appgate/config/gateway_config.yaml
 
 ```bash
-docker-compose up -d gateway-example
+docker-compose up -d gateway
 ```
 
 Check logs and confirm the node works as expected:
 
 ```bash
-docker-compose logs -f --tail 100 gateway-example
+docker-compose logs -f --tail 100 gateway
 ```
 
 ### Delegate your Application to the Gateway <!-- omit in toc -->
