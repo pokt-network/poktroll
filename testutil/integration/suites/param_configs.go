@@ -236,10 +236,12 @@ var (
 		ValidParams: tokenomicstypes.Params{
 			MintAllocationPercentages: tokenomicstypes.DefaultMintAllocationPercentages,
 			DaoRewardAddress:          sample.AccAddress(),
+			GlobalInflationPerClaim:   0.666,
 		},
 		ParamTypes: map[ParamType]any{
 			ParamTypeMintAllocationPercentages: tokenomicstypes.MsgUpdateParam_AsMintAllocationPercentages{},
 			ParamTypeString:                    tokenomicstypes.MsgUpdateParam_AsString{},
+			ParamTypeFloat64:                   tokenomicstypes.MsgUpdateParam_AsFloat{},
 		},
 		DefaultParams:    tokenomicstypes.DefaultParams(),
 		NewParamClientFn: tokenomicstypes.NewQueryClient,

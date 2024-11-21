@@ -64,6 +64,17 @@ func TestMsgUpdateParam_ValidateBasic(t *testing.T) {
 			expectedErr: ErrTokenomicsParamInvalid,
 		},
 		{
+			name: "invalid: global inflation per claim less than 0",
+			msg: MsgUpdateParam{
+				Authority: sample.AccAddress(),
+				Name:      ParamGlobalInflationPerClaim,
+				AsType: &MsgUpdateParam_AsFloat{
+					AsFloat: -0.1,
+				},
+			},
+			expectedErr: ErrTokenomicsParamInvalid,
+		},
+		{
 			name: "valid: correct address, param name, and type",
 			msg: MsgUpdateParam{
 				Authority: sample.AccAddress(),

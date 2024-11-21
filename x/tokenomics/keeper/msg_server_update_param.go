@@ -1,5 +1,6 @@
 package keeper
 
+//
 import (
 	"context"
 	"fmt"
@@ -38,6 +39,9 @@ func (k msgServer) UpdateParam(
 	case tokenomicstypes.ParamDaoRewardAddress:
 		logger = logger.With("param_value", msg.GetAsString())
 		params.DaoRewardAddress = msg.GetAsString()
+	case tokenomicstypes.ParamGlobalInflationPerClaim:
+		logger = logger.With("param_value", msg.GetAsFloat())
+		params.GlobalInflationPerClaim = msg.GetAsFloat()
 	default:
 		return nil, status.Error(
 			codes.InvalidArgument,
