@@ -23,6 +23,26 @@ check_root() {
     fi
 }
 
+# Function to install jq if not installed
+install_jq() {
+    if ! command -v jq &> /dev/null; then
+        print_color $YELLOW "Installing jq..."
+        if [ -f /etc/debian_version ]; then
+            apt-get update
+            apt-get install -y jq
+        elif [ -f /etc/redhat-release ]; then
+            yum update -y
+            yum install -y jq
+        else
+            print_color $RED "Unsupported distribution. Please install jq manually."
+            exit 1
+        fi
+        print_color $GREEN "jq installed successfully."
+    else
+        print_color $YELLOW "jq is already installed."
+    fi
+}
+
 # Function to get user input
 get_user_input() {
     # Ask user which network to install
@@ -54,7 +74,6 @@ get_user_input() {
     BASE_URL="https://raw.githubusercontent.com/pokt-network/pocket-network-genesis/master/shannon/$NETWORK"
     SEEDS_URL="$BASE_URL/seeds"
     GENESIS_URL="$BASE_URL/genesis.json"
-    INIT_VERSION_URL="$BASE_URL/init-version"
 
     # Fetch seeds from the provided URL
     SEEDS=$(curl -s "$SEEDS_URL")
@@ -146,6 +165,7 @@ EOF
     print_color $GREEN "Cosmovisor set up successfully."
 }
 
+
 # Function to download and set up Poktrolld
 setup_poktrolld() {
     print_color $YELLOW "Setting up Poktrolld..."
@@ -159,9 +179,21 @@ setup_poktrolld() {
         exit 1
     fi
 
-    # Get the version genesis started from. We can't just use `latest` as the new binary won't sync from genesis.
-    # We need to start syncing from scratch using the version that was used when the network started.
-    POKTROLLD_VERSION=$(curl -s https://raw.githubusercontent.com/pokt-network/pocket-network-genesis/master/shannon/alpha/testnet-validated.init-version)
+    # Download genesis.json once and store it
+    GENESIS_FILE="/tmp/genesis.json"
+    curl -s -o "$GENESIS_FILE" "$GENESIS_URL"
+    if [ $? -ne 0 ]; then
+        print_color $RED "Failed to download genesis file. Please check your internet connection and try again."
+        exit 1
+    fi
+
+    # Extract the version from genesis.json using jq
+    POKTROLLD_VERSION=$(jq -r '.app_version' < "$GENESIS_FILE")
+
+    if [ -z "$POKTROLLD_VERSION" ]; then
+        print_color $RED "Failed to extract version information from genesis file."
+        exit 1
+    fi
 
     # Use the direct download link for the correct release
     RELEASE_URL="https://github.com/pokt-network/poktroll/releases/download/${POKTROLLD_VERSION}/poktroll_linux_${ARCH}.tar.gz"
@@ -180,12 +212,12 @@ EOF
 configure_poktrolld() {
     print_color $YELLOW "Configuring Poktrolld..."
     
-    # Ask for confirmation to download the genesis file
-    print_color $YELLOW "The script will download the genesis file from:"
+    # Ask for confirmation to use the downloaded genesis file
+    print_color $YELLOW "The script has downloaded the genesis file from:"
     print_color $YELLOW "$GENESIS_URL"
-    read -p "Are you OK with downloading and using this genesis file? (y/N): " confirm_genesis
+    read -p "Are you OK with using this genesis file? (y/N): " confirm_genesis
     if [[ ! $confirm_genesis =~ ^[Yy] ]]; then
-        print_color $RED "Genesis file download cancelled. Exiting."
+        print_color $RED "Genesis file usage cancelled. Exiting."
         exit 1
     fi
 
@@ -197,11 +229,7 @@ configure_poktrolld() {
     echo "Poktrolld version: \$POKTROLLD_VERSION"
     
     poktrolld init "$NODE_MONIKER" --chain-id="$CHAIN_ID" --home=\$HOME/.poktroll
-    curl -o \$HOME/.poktroll/config/genesis.json $GENESIS_URL
-    if [ \$? -ne 0 ]; then
-        echo "Failed to download genesis file. Please check your internet connection and try again."
-        exit 1
-    fi
+    cp "$GENESIS_FILE" \$HOME/.poktroll/config/genesis.json
     sed -i -e "s|^seeds *=.*|seeds = \"$SEEDS\"|" \$HOME/.poktroll/config/config.toml
 EOF
     if [ $? -eq 0 ]; then
@@ -247,6 +275,7 @@ EOF
 main() {
     print_color $GREEN "Welcome to the Poktroll Full Node Install Script!"
     check_root
+    install_jq
     get_user_input
     create_user
     install_dependencies
