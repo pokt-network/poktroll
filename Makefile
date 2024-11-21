@@ -342,7 +342,7 @@ go_docs: check_godoc ## Generate documentation for the project
 	godoc -http=:6060
 
 .PHONY: docusaurus_start
-docusaurus_start: check_npm check_node ## Start the Docusaurus server
+docusaurus_start: check_npm check_node docs_update_gov_params_page ## Start the Docusaurus server
 	(cd docusaurus && npm i && npm run start)
 
 .PHONY: docs_update_gov_params_page
