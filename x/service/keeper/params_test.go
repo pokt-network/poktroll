@@ -65,7 +65,7 @@ func TestParams_ValidateTargetNumRelays(t *testing.T) {
 		},
 		{
 			desc:            "valid TargetNumRelays",
-			targetNumRelays: 999,
+			targetNumRelays: uint64(999),
 		},
 	}
 

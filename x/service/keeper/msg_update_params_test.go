@@ -39,13 +39,12 @@ func TestMsgUpdateParams(t *testing.T) {
 			expectedErrMsg: "missing add_service_fee",
 		},
 		{
-			desc: "invalid: send default params",
+			desc: "valid: send default params",
 			input: &servicetypes.MsgUpdateParams{
 				Authority: k.GetAuthority(),
 				Params:    params,
 			},
-			shouldError:    true,
-			expectedErrMsg: "target_num_relays must be greater than 0: got 0",
+			shouldError: false,
 		},
 		{
 			desc: "valid: send minimal params",
