@@ -19,11 +19,6 @@ import (
 
 var SHA3HashLen = crypto.SHA3_256.Size()
 
-// TODO_BETA(@bryanchriswhite): Make this a governance parameter
-const (
-	NumSupplierPerSession = 15
-)
-
 const (
 	sessionIDComponentDelimiter = "."
 )
@@ -175,6 +170,7 @@ func (k Keeper) hydrateSessionApplication(ctx context.Context, sh *sessionHydrat
 func (k Keeper) hydrateSessionSuppliers(ctx context.Context, sh *sessionHydrator) error {
 	logger := k.Logger().With("method", "hydrateSessionSuppliers")
 
+	numSuppliersPerSession := int(k.GetParams(ctx).NumSuppliersPerSession)
 	suppliers := k.supplierKeeper.GetAllSuppliers(ctx)
 
 	candidateSuppliers := make([]*sharedtypes.Supplier, 0)
@@ -197,7 +193,7 @@ func (k Keeper) hydrateSessionSuppliers(ctx context.Context, sh *sessionHydrator
 		}
 	}
 
-	defer telemetry.SessionSuppliersGauge(len(candidateSuppliers), NumSupplierPerSession, sh.sessionHeader.ServiceId)
+	defer telemetry.SessionSuppliersGauge(len(candidateSuppliers), numSuppliersPerSession, sh.sessionHeader.ServiceId)
 
 	if len(candidateSuppliers) == 0 {
 		logger.Error("[ERROR] no suppliers found for session")
@@ -208,15 +204,15 @@ func (k Keeper) hydrateSessionSuppliers(ctx context.Context, sh *sessionHydrator
 		)
 	}
 
-	if len(candidateSuppliers) < NumSupplierPerSession {
+	if len(candidateSuppliers) < numSuppliersPerSession {
 		logger.Debug(fmt.Sprintf(
 			"Number of available suppliers (%d) is less than the maximum number of possible suppliers per session (%d)",
 			len(candidateSuppliers),
-			NumSupplierPerSession,
+			numSuppliersPerSession,
 		))
 		sh.session.Suppliers = candidateSuppliers
 	} else {
-		sh.session.Suppliers = pseudoRandomSelection(candidateSuppliers, NumSupplierPerSession, sh.sessionIDBz)
+		sh.session.Suppliers = pseudoRandomSelection(candidateSuppliers, numSuppliersPerSession, sh.sessionIDBz)
 	}
 
 	return nil

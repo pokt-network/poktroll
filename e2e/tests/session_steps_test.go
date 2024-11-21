@@ -276,7 +276,7 @@ func (s *suite) waitForNewBlockEvent(
 			// Range over each event's attributes to find the "action" attribute
 			// and compare its value to that of the action provided.
 			for _, event := range newBlockEvent.Data.Value.ResultFinalizeBlock.Events {
-				// Checks on the event. For example, for a Claim Settlement event,
+				// Checks on the event. For example, for a claim Settlement event,
 				// we can parse the claim and verify the compute units.
 				if isEventMatchFn(&event) {
 					done()

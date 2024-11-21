@@ -1,10 +1,26 @@
 package types
 
 import (
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	paramtypes "github.com/cosmos/cosmos-sdk/x/params/types"
 )
 
 var (
+	KeyMintAllocationPercentages     = []byte("MintAllocationPercentages")
+	ParamMintAllocationPercentages   = "mint_allocation_percentages"
+	DefaultMintAllocationPercentages = MintAllocationPercentages{
+		Dao:         0.1,
+		Proposer:    0.05,
+		Supplier:    0.7,
+		SourceOwner: 0.15,
+		Application: 0.0,
+	}
+	KeyDaoRewardAddress   = []byte("DaoRewardAddress")
+	ParamDaoRewardAddress = "dao_reward_address"
+	// DefaultDaoRewardAddress is the localnet DAO account address as specified in the config.yml.
+	// It is only used in tests.
+	DefaultDaoRewardAddress = "pokt1eeeksh2tvkh7wzmfrljnhw4wrhs55lcuvmekkw"
+
 	_ paramtypes.ParamSet = (*Params)(nil)
 )
 
@@ -14,21 +30,137 @@ func ParamKeyTable() paramtypes.KeyTable {
 }
 
 // NewParams creates a new Params instance
-func NewParams() Params {
-	return Params{}
+func NewParams(
+	mintAllocationPercentages MintAllocationPercentages,
+	daoRewardAddress string,
+) Params {
+	return Params{
+		MintAllocationPercentages: mintAllocationPercentages,
+		DaoRewardAddress:          daoRewardAddress,
+	}
 }
 
 // DefaultParams returns a default set of parameters
 func DefaultParams() Params {
-	return NewParams()
+	return NewParams(
+		DefaultMintAllocationPercentages,
+		DefaultDaoRewardAddress,
+	)
 }
 
 // ParamSetPairs get the params.ParamSet
 func (p *Params) ParamSetPairs() paramtypes.ParamSetPairs {
-	return paramtypes.ParamSetPairs{}
+	return paramtypes.ParamSetPairs{
+		paramtypes.NewParamSetPair(
+			KeyMintAllocationPercentages,
+			&p.MintAllocationPercentages,
+			ValidateMintAllocationPercentages,
+		),
+	}
 }
 
 // ValidateBasic does a sanity check on the provided params.
 func (params *Params) ValidateBasic() error {
+	if err := ValidateMintAllocationPercentages(params.MintAllocationPercentages); err != nil {
+		return err
+	}
+
+	if err := ValidateDaoRewardAddress(params.DaoRewardAddress); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// ValidateMintAllocationDao validates the MintAllocationDao param.
+func ValidateMintAllocationDao(mintAllocationDao any) error {
+	return validateParamValueGTEZero(mintAllocationDao, "DAO")
+}
+
+// ValidateMintAllocationProposer validates the MintAllocationProposer param.
+func ValidateMintAllocationProposer(mintAllocationProposer any) error {
+	return validateParamValueGTEZero(mintAllocationProposer, "proposer")
+}
+
+// ValidateMintAllocationSupplier validates the MintAllocationSupplier param.
+func ValidateMintAllocationSupplier(mintAllocationSupplier any) error {
+	return validateParamValueGTEZero(mintAllocationSupplier, "supplier")
+}
+
+// ValidateMintAllocationSourceOwner validates the MintAllocationSourceOwner param.
+func ValidateMintAllocationSourceOwner(mintAllocationSourceOwner any) error {
+	return validateParamValueGTEZero(mintAllocationSourceOwner, "source owner")
+}
+
+// ValidateMintAllocationApplication validates the MintAllocationApplication param.
+func ValidateMintAllocationApplication(mintAllocationApplication any) error {
+	return validateParamValueGTEZero(mintAllocationApplication, "application")
+}
+
+func validateParamValueGTEZero(value any, actorName string) error {
+	valueFloat, ok := value.(float64)
+	if !ok {
+		return ErrTokenomicsParamInvalid.Wrapf("invalid parameter type: %T", value)
+	}
+	if valueFloat < 0 {
+		return ErrTokenomicsParamInvalid.Wrapf("mint allocation to %s must be greater than or equal to 0: got %f", actorName, valueFloat)
+	}
+	return nil
+}
+
+func ValidateMintAllocationPercentages(mintAllocationPercentagesAny any) error {
+	mintAllocationPercentages, ok := mintAllocationPercentagesAny.(MintAllocationPercentages)
+	if !ok {
+		return ErrTokenomicsParamInvalid.Wrapf("invalid parameter type for mint_allocation_percentages: %T", mintAllocationPercentagesAny)
+	}
+
+	if err := ValidateMintAllocationDao(mintAllocationPercentages.Dao); err != nil {
+		return err
+	}
+
+	if err := ValidateMintAllocationProposer(mintAllocationPercentages.Proposer); err != nil {
+		return err
+	}
+
+	if err := ValidateMintAllocationSupplier(mintAllocationPercentages.Supplier); err != nil {
+		return err
+	}
+
+	if err := ValidateMintAllocationSourceOwner(mintAllocationPercentages.SourceOwner); err != nil {
+		return err
+	}
+
+	if err := ValidateMintAllocationApplication(mintAllocationPercentages.Application); err != nil {
+		return err
+	}
+
+	if err := ValidateMintAllocationSum(mintAllocationPercentages); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// ValidateMintAllocationSum validates that the sum of all actor mint allocation percentages is exactly 1.
+func ValidateMintAllocationSum(mintAllocationPercentage MintAllocationPercentages) error {
+	sum := mintAllocationPercentage.Sum()
+	if sum != 1 {
+		return ErrTokenomicsParamInvalid.Wrapf("mint allocation percentages do not add to 1.0: got %f", sum)
+	}
+
+	return nil
+}
+
+// ValidateDaoRewardAddress validates the DaoRewardAddress param.
+func ValidateDaoRewardAddress(daoRewardAddress any) error {
+	daoRewardAddressStr, ok := daoRewardAddress.(string)
+	if !ok {
+		return ErrTokenomicsParamInvalid.Wrapf("invalid parameter type: %T", daoRewardAddress)
+	}
+
+	if _, err := sdk.AccAddressFromBech32(daoRewardAddressStr); err != nil {
+		return ErrTokenomicsParamInvalid.Wrapf("invalid dao reward address %q: %s", daoRewardAddressStr, err)
+	}
+
 	return nil
 }

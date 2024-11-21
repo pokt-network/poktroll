@@ -1,6 +1,7 @@
 //go:generate mockgen -destination=../../testutil/mockrelayer/relayer_proxy_mock.go -package=mockrelayer . RelayerProxy
 //go:generate mockgen -destination=../../testutil/mockrelayer/miner_mock.go -package=mockrelayer . Miner
 //go:generate mockgen -destination=../../testutil/mockrelayer/relayer_sessions_manager_mock.go -package=mockrelayer . RelayerSessionsManager
+//go:generate mockgen -destination=../../testutil/mockrelayer/relay_meter_mock.go -package=mockrelayer . RelayMeter
 
 package relayer
 
@@ -161,4 +162,30 @@ type SessionTree interface {
 
 	// GetTrieSpec returns the trie spec of the SMST.
 	GetTrieSpec() smt.TrieSpec
+}
+
+// RelayMeter is an interface that keeps track of the amount of stake consumed between
+// a single onchain Application and a single onchain Supplier over the course of a single session.
+// It enables the RelayMiner to rate limit the number of requests handled offchain as a function
+// of the optimistic onchain rate limits.
+type RelayMeter interface {
+	// Start starts the relay meter.
+	Start(ctx context.Context) error
+
+	// AccumulateRelayReward adds the relay reward from the incoming request to session's accumulator.
+	// The relay cost is added optimistically, assuming that the relay WILL be volume / reward applicable.
+	//
+	// The reason why optimistic AccumulateRelayReward + SetNonApplicableRelayReward is used instead of
+	// a simpler AccumulateVolumeApplicableRelayReward is that when the relay is first seen
+	// we don't know if it will be volume / reward applicable until it is served.
+	//
+	// To rate limit or not the current relay, we need to always optimistically account all relays as being
+	// volume / reward applicable.
+	AccumulateRelayReward(ctx context.Context, relayRequestMeta servicetypes.RelayRequestMetadata) error
+
+	// SetNonApplicableRelayReward updates the relay meter for the given relay request as
+	// non-applicable between a single Application and a single Supplier for a single session.
+	// The volume / reward applicability of the relay is unknown to the relay miner
+	// until the relay is served and the relay response signed.
+	SetNonApplicableRelayReward(ctx context.Context, relayRequestMeta servicetypes.RelayRequestMetadata) error
 }

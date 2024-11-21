@@ -59,10 +59,10 @@ func (s *suite) parseParam(table gocuke.DataTable, rowIdx int) paramAny {
 	case "bytes":
 		paramValue = []byte(table.Cell(rowIdx, paramValueColIdx).String())
 	case "float":
-		floatValue, err := strconv.ParseFloat(table.Cell(rowIdx, paramValueColIdx).String(), 32)
+		floatValue, err := strconv.ParseFloat(table.Cell(rowIdx, paramValueColIdx).String(), 64)
 		require.NoError(s, err)
 
-		paramValue = float32(floatValue)
+		paramValue = floatValue
 	case "coin":
 		coinAmount := table.Cell(rowIdx, paramValueColIdx).Int64()
 		coinValue := cosmostypes.NewCoin(volatile.DenomuPOKT, math.NewInt(coinAmount))
@@ -132,7 +132,7 @@ func (s *suite) newProofMsgUpdateParams(params paramsAnyMap) cosmostypes.Msg {
 	for paramName, paramValue := range params {
 		switch paramName {
 		case prooftypes.ParamProofRequestProbability:
-			msgUpdateParams.Params.ProofRequestProbability = paramValue.value.(float32)
+			msgUpdateParams.Params.ProofRequestProbability = paramValue.value.(float64)
 		case prooftypes.ParamProofRequirementThreshold:
 			msgUpdateParams.Params.ProofRequirementThreshold = paramValue.value.(*cosmostypes.Coin)
 		case prooftypes.ParamProofMissingPenalty:
@@ -265,22 +265,6 @@ func (s *suite) newTokenomicsMsgUpdateParam(authority string, param paramAny) (m
 				AsString: param.value.(string),
 			},
 		})
-	case "int64":
-		msg = proto.Message(&tokenomicstypes.MsgUpdateParam{
-			Authority: authority,
-			Name:      param.name,
-			AsType: &tokenomicstypes.MsgUpdateParam_AsInt64{
-				AsInt64: param.value.(int64),
-			},
-		})
-	case "bytes":
-		msg = proto.Message(&tokenomicstypes.MsgUpdateParam{
-			Authority: authority,
-			Name:      param.name,
-			AsType: &tokenomicstypes.MsgUpdateParam_AsBytes{
-				AsBytes: param.value.([]byte),
-			},
-		})
 	default:
 		s.Fatalf("unexpected param type %q for %s module", param.typeStr, tokenomicstypes.ModuleName)
 	}
@@ -303,7 +287,7 @@ func (s *suite) newProofMsgUpdateParam(authority string, param paramAny) (msg pr
 			Authority: authority,
 			Name:      param.name,
 			AsType: &prooftypes.MsgUpdateParam_AsFloat{
-				AsFloat: param.value.(float32),
+				AsFloat: param.value.(float64),
 			},
 		})
 	case "coin":

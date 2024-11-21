@@ -18,6 +18,7 @@ var _ = strconv.IntSize
 // It returns the network and a slice of the created application objects.
 func networkWithApplicationObjects(t *testing.T, n int) (*network.Network, []types.Application) {
 	t.Helper()
+
 	cfg := network.DefaultConfig()
 	appGenesisState := network.DefaultApplicationModuleGenesisState(t, n)
 	buf, err := cfg.Codec.MarshalJSON(appGenesisState)

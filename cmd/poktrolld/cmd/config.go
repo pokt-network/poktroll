@@ -156,21 +156,21 @@ func customPoktrollAppConfigTemplate() string {
 		###############################################################################
 		###                               Poktroll                                  ###
 		###############################################################################
-		
+
 		# Poktroll-specific app configuration for Full Nodes and Validators.
 		[poktroll]
 
 		# Telemetry configuration in addition to the [telemetry] settings.
 		[poktroll.telemetry]
-	
+
 		# Cardinality level for telemetry metrics collection
 		# This controls the level of detail (number of unique labels) in metrics.
 		# Options:
-		#   - "low":    Collects basic metrics with low cardinality. 
+		#   - "low":    Collects basic metrics with low cardinality.
 		#              Suitable for production environments with tight performance constraints.
 		#   - "medium": Collects a moderate number of labels, balancing detail and performance.
 		#              Suitable for moderate workloads or staging environments.
-		#   - "high":   WARNING: WILL CAUSE STRESS TO YOUR MONITORING ENVIRONMENT! Collects detailed metrics with high 
+		#   - "high":   WARNING: WILL CAUSE STRESS TO YOUR MONITORING ENVIRONMENT! Collects detailed metrics with high
 		#              cardinality, including labels with many unique values (e.g., application_id, session_id).
 		#              Recommended for debugging or testing environments.
 		cardinality-level = "{{ .Poktroll.Telemetry.CardinalityLevel }}"

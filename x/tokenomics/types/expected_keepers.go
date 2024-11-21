@@ -5,8 +5,7 @@ package types
 import (
 	"context"
 
-	"github.com/cosmos/cosmos-sdk/types"
-	sdk "github.com/cosmos/cosmos-sdk/types"
+	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
@@ -14,29 +13,30 @@ import (
 	servicetypes "github.com/pokt-network/poktroll/x/service/types"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
+	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 )
 
 // AccountKeeper defines the expected interface for the Account module.
 type AccountKeeper interface {
 	// Only used for testing & simulation
-	GetAccount(ctx context.Context, addr sdk.AccAddress) sdk.AccountI
-	SetAccount(context.Context, types.AccountI)
+	GetAccount(ctx context.Context, addr cosmostypes.AccAddress) cosmostypes.AccountI
+	SetAccount(context.Context, cosmostypes.AccountI)
 	// Return a new account with the next account number and the specified address. Does not save the new account to the store.
-	NewAccountWithAddress(context.Context, sdk.AccAddress) sdk.AccountI
+	NewAccountWithAddress(context.Context, cosmostypes.AccAddress) cosmostypes.AccountI
 	// Fetch the next account number, and increment the internal counter.
 	NextAccountNumber(context.Context) uint64
 }
 
 // BankKeeper defines the expected interface for the Bank module.
 type BankKeeper interface {
-	MintCoins(ctx context.Context, moduleName string, amt sdk.Coins) error
-	BurnCoins(ctx context.Context, moduleName string, amt sdk.Coins) error
+	MintCoins(ctx context.Context, moduleName string, amt cosmostypes.Coins) error
+	BurnCoins(ctx context.Context, moduleName string, amt cosmostypes.Coins) error
 	// We use the bankkeeper SendXXX instead of DelegateXX methods
 	// because their purpose is to "escrow" funds on behalf of an account rather
 	// than "delegate" funds from one account to another which is more closely
 	// linked to staking.
-	SendCoinsFromModuleToAccount(ctx context.Context, senderModule string, recipientAddr sdk.AccAddress, amt sdk.Coins) error
-	SendCoinsFromModuleToModule(ctx context.Context, senderModule, recipientModule string, amt sdk.Coins) error
+	SendCoinsFromModuleToAccount(ctx context.Context, senderModule string, recipientAddr cosmostypes.AccAddress, amt cosmostypes.Coins) error
+	SendCoinsFromModuleToModule(ctx context.Context, senderModule, recipientModule string, amt cosmostypes.Coins) error
 	Balance(context.Context, *banktypes.QueryBalanceRequest) (*banktypes.QueryBalanceResponse, error)
 }
 
@@ -78,9 +78,11 @@ type SessionKeeper interface {
 	GetSession(context.Context, *sessiontypes.QueryGetSessionRequest) (*sessiontypes.QueryGetSessionResponse, error)
 	GetBlockHash(ctx context.Context, height int64) []byte
 	StoreBlockHash(ctx context.Context)
+	GetParams(ctx context.Context) sessiontypes.Params
 }
 
 type SupplierKeeper interface {
+	GetParams(ctx context.Context) suppliertypes.Params
 	GetSupplier(ctx context.Context, supplierOperatorAddr string) (supplier sharedtypes.Supplier, found bool)
 	GetAllSuppliers(ctx context.Context) (suppliers []sharedtypes.Supplier)
 	SetSupplier(ctx context.Context, supplier sharedtypes.Supplier)

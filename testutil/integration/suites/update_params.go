@@ -244,18 +244,32 @@ func (s *ParamsSuite) RunUpdateParamAsSigner(
 	msgAsTypeValue := reflect.New(msgAsTypeType)
 	switch paramType {
 	case ParamTypeUint64:
-		// NB: MsgUpdateParam doesn't currently support uint64 param type.
+		// =~ msg.AsType.AsUint64 = paramReflectValue.Interface().(uint64)
 		msgAsTypeValue.Elem().FieldByName("AsUint64").Set(paramReflectValue)
 	case ParamTypeInt64:
+		// =~ msg.AsType.AsInt64 = paramReflectValue.Interface().(int64)
 		msgAsTypeValue.Elem().FieldByName("AsInt64").Set(paramReflectValue)
-	case ParamTypeFloat32:
+	case ParamTypeFloat64:
+		// =~ msg.AsType.AsFloat = paramReflectValue.Interface().(float64)
 		msgAsTypeValue.Elem().FieldByName("AsFloat").Set(paramReflectValue)
 	case ParamTypeString:
+		// =~ msg.AsType.AsString = paramReflectValue.Interface().(string)
 		msgAsTypeValue.Elem().FieldByName("AsString").Set(paramReflectValue)
 	case ParamTypeBytes:
+		// =~ msg.AsType.AsBytes = paramReflectValue.Interface().([]byte)
 		msgAsTypeValue.Elem().FieldByName("AsBytes").Set(paramReflectValue)
 	case ParamTypeCoin:
+		// =~ msg.AsType.AsCoin = paramReflectValue.Interface().(*cosmostypes.Coin)
 		msgAsTypeValue.Elem().FieldByName("AsCoin").Set(paramReflectValue)
+	case ParamTypeMintAllocationPercentages:
+		// DEB_NOTE: Params.MintAllocationPercentages is a struct (not a pointer) because
+		// it is not nullable. As a result, in this case, we need to create a pointer to
+		// assign the paramValue to (because it won't be a pointer itself).
+		asMintAllocationPercentagesField := msgAsTypeValue.Elem().FieldByName("AsMintAllocationPercentages")
+		// =~ msg.AsType.AsMintAllocationPercentages = new(MsgUpdateParam_AsMintAllocationPercentages)
+		asMintAllocationPercentagesField.Set(reflect.New(paramReflectValue.Type()))
+		// =~ *msg.AsType.AsMintAllocationPercentages = paramReflectValue.Interface().(MintAllocationPercentages)
+		asMintAllocationPercentagesField.Elem().Set(paramReflectValue)
 	default:
 		t.Fatalf("ERROR: unknown field type %q", paramType)
 	}

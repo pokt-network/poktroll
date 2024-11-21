@@ -111,25 +111,33 @@ func (k msgServer) CreateClaim(
 	k.Keeper.UpsertClaim(ctx, claim)
 	logger.Info("successfully upserted the claim")
 
+	// Get the service ID relayMiningDifficulty to calculate the claimed uPOKT.
+	serviceId := session.GetHeader().GetServiceId()
+	sharedParams := k.sharedKeeper.GetParams(ctx)
+	relayMiningDifficulty, _ := k.serviceKeeper.GetRelayMiningDifficulty(ctx, serviceId)
+	claimedUPOKT, err := claim.GetClaimeduPOKT(sharedParams, relayMiningDifficulty)
+
 	// Emit the appropriate event based on whether the claim was created or updated.
 	var claimUpsertEvent proto.Message
 	switch isExistingClaim {
 	case true:
 		claimUpsertEvent = proto.Message(
 			&types.EventClaimUpdated{
-				Claim:                  &claim,
-				NumRelays:              numRelays,
-				NumClaimedComputeUnits: numClaimComputeUnits,
-				// TODO_BETA(@red-0ne): Add NumEstimatedComputeUnits and ClaimedAmountUpokt
+				Claim:                    &claim,
+				NumRelays:                numRelays,
+				NumClaimedComputeUnits:   numClaimComputeUnits,
+				NumEstimatedComputeUnits: numExpectedComputeUnitsToClaim,
+				ClaimedUpokt:             &claimedUPOKT,
 			},
 		)
 	case false:
 		claimUpsertEvent = proto.Message(
 			&types.EventClaimCreated{
-				Claim:                  &claim,
-				NumRelays:              numRelays,
-				NumClaimedComputeUnits: numClaimComputeUnits,
-				// TODO_BETA(@red-0ne): Add NumEstimatedComputeUnits and ClaimedAmountUpokt
+				Claim:                    &claim,
+				NumRelays:                numRelays,
+				NumClaimedComputeUnits:   numClaimComputeUnits,
+				NumEstimatedComputeUnits: numExpectedComputeUnitsToClaim,
+				ClaimedUpokt:             &claimedUPOKT,
 			},
 		)
 	}

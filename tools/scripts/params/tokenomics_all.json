@@ -1,0 +1,19 @@
+{
+  "body": {
+    "messages": [
+      {
+        "@type": "/poktroll.tokenomics.MsgUpdateParams",
+        "authority": "pokt10d07y265gmmuvt4z0w9aw880jnsr700j8yv32t",
+        "params": {
+          "mint_allocation_percentages": {
+            "dao": 0.1,
+            "proposer": 0.05,
+            "supplier": 0.7,
+            "source_owner": 0.15,
+            "application": 0.0
+          }
+        }
+      }
+    ]
+  }
+}

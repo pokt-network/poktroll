@@ -872,12 +872,11 @@ func (x *fastReflection_MsgUpdateParamsResponse) ProtoMethods() *protoiface.Meth
 }
 
 var (
-	md_MsgUpdateParam           protoreflect.MessageDescriptor
-	fd_MsgUpdateParam_authority protoreflect.FieldDescriptor
-	fd_MsgUpdateParam_name      protoreflect.FieldDescriptor
-	fd_MsgUpdateParam_as_string protoreflect.FieldDescriptor
-	fd_MsgUpdateParam_as_int64  protoreflect.FieldDescriptor
-	fd_MsgUpdateParam_as_bytes  protoreflect.FieldDescriptor
+	md_MsgUpdateParam                                protoreflect.MessageDescriptor
+	fd_MsgUpdateParam_authority                      protoreflect.FieldDescriptor
+	fd_MsgUpdateParam_name                           protoreflect.FieldDescriptor
+	fd_MsgUpdateParam_as_mint_allocation_percentages protoreflect.FieldDescriptor
+	fd_MsgUpdateParam_as_string                      protoreflect.FieldDescriptor
 )
 
 func init() {
@@ -885,9 +884,8 @@ func init() {
 	md_MsgUpdateParam = File_poktroll_tokenomics_tx_proto.Messages().ByName("MsgUpdateParam")
 	fd_MsgUpdateParam_authority = md_MsgUpdateParam.Fields().ByName("authority")
 	fd_MsgUpdateParam_name = md_MsgUpdateParam.Fields().ByName("name")
+	fd_MsgUpdateParam_as_mint_allocation_percentages = md_MsgUpdateParam.Fields().ByName("as_mint_allocation_percentages")
 	fd_MsgUpdateParam_as_string = md_MsgUpdateParam.Fields().ByName("as_string")
-	fd_MsgUpdateParam_as_int64 = md_MsgUpdateParam.Fields().ByName("as_int64")
-	fd_MsgUpdateParam_as_bytes = md_MsgUpdateParam.Fields().ByName("as_bytes")
 }
 
 var _ protoreflect.Message = (*fastReflection_MsgUpdateParam)(nil)
@@ -969,22 +967,16 @@ func (x *fastReflection_MsgUpdateParam) Range(f func(protoreflect.FieldDescripto
 	}
 	if x.AsType != nil {
 		switch o := x.AsType.(type) {
+		case *MsgUpdateParam_AsMintAllocationPercentages:
+			v := o.AsMintAllocationPercentages
+			value := protoreflect.ValueOfMessage(v.ProtoReflect())
+			if !f(fd_MsgUpdateParam_as_mint_allocation_percentages, value) {
+				return
+			}
 		case *MsgUpdateParam_AsString:
 			v := o.AsString
 			value := protoreflect.ValueOfString(v)
 			if !f(fd_MsgUpdateParam_as_string, value) {
-				return
-			}
-		case *MsgUpdateParam_AsInt64:
-			v := o.AsInt64
-			value := protoreflect.ValueOfInt64(v)
-			if !f(fd_MsgUpdateParam_as_int64, value) {
-				return
-			}
-		case *MsgUpdateParam_AsBytes:
-			v := o.AsBytes
-			value := protoreflect.ValueOfBytes(v)
-			if !f(fd_MsgUpdateParam_as_bytes, value) {
 				return
 			}
 		}
@@ -1008,26 +1000,18 @@ func (x *fastReflection_MsgUpdateParam) Has(fd protoreflect.FieldDescriptor) boo
 		return x.Authority != ""
 	case "poktroll.tokenomics.MsgUpdateParam.name":
 		return x.Name != ""
+	case "poktroll.tokenomics.MsgUpdateParam.as_mint_allocation_percentages":
+		if x.AsType == nil {
+			return false
+		} else if _, ok := x.AsType.(*MsgUpdateParam_AsMintAllocationPercentages); ok {
+			return true
+		} else {
+			return false
+		}
 	case "poktroll.tokenomics.MsgUpdateParam.as_string":
 		if x.AsType == nil {
 			return false
 		} else if _, ok := x.AsType.(*MsgUpdateParam_AsString); ok {
-			return true
-		} else {
-			return false
-		}
-	case "poktroll.tokenomics.MsgUpdateParam.as_int64":
-		if x.AsType == nil {
-			return false
-		} else if _, ok := x.AsType.(*MsgUpdateParam_AsInt64); ok {
-			return true
-		} else {
-			return false
-		}
-	case "poktroll.tokenomics.MsgUpdateParam.as_bytes":
-		if x.AsType == nil {
-			return false
-		} else if _, ok := x.AsType.(*MsgUpdateParam_AsBytes); ok {
 			return true
 		} else {
 			return false
@@ -1052,11 +1036,9 @@ func (x *fastReflection_MsgUpdateParam) Clear(fd protoreflect.FieldDescriptor) {
 		x.Authority = ""
 	case "poktroll.tokenomics.MsgUpdateParam.name":
 		x.Name = ""
+	case "poktroll.tokenomics.MsgUpdateParam.as_mint_allocation_percentages":
+		x.AsType = nil
 	case "poktroll.tokenomics.MsgUpdateParam.as_string":
-		x.AsType = nil
-	case "poktroll.tokenomics.MsgUpdateParam.as_int64":
-		x.AsType = nil
-	case "poktroll.tokenomics.MsgUpdateParam.as_bytes":
 		x.AsType = nil
 	default:
 		if fd.IsExtension() {
@@ -1080,6 +1062,14 @@ func (x *fastReflection_MsgUpdateParam) Get(descriptor protoreflect.FieldDescrip
 	case "poktroll.tokenomics.MsgUpdateParam.name":
 		value := x.Name
 		return protoreflect.ValueOfString(value)
+	case "poktroll.tokenomics.MsgUpdateParam.as_mint_allocation_percentages":
+		if x.AsType == nil {
+			return protoreflect.ValueOfMessage((*MintAllocationPercentages)(nil).ProtoReflect())
+		} else if v, ok := x.AsType.(*MsgUpdateParam_AsMintAllocationPercentages); ok {
+			return protoreflect.ValueOfMessage(v.AsMintAllocationPercentages.ProtoReflect())
+		} else {
+			return protoreflect.ValueOfMessage((*MintAllocationPercentages)(nil).ProtoReflect())
+		}
 	case "poktroll.tokenomics.MsgUpdateParam.as_string":
 		if x.AsType == nil {
 			return protoreflect.ValueOfString("")
@@ -1087,22 +1077,6 @@ func (x *fastReflection_MsgUpdateParam) Get(descriptor protoreflect.FieldDescrip
 			return protoreflect.ValueOfString(v.AsString)
 		} else {
 			return protoreflect.ValueOfString("")
-		}
-	case "poktroll.tokenomics.MsgUpdateParam.as_int64":
-		if x.AsType == nil {
-			return protoreflect.ValueOfInt64(int64(0))
-		} else if v, ok := x.AsType.(*MsgUpdateParam_AsInt64); ok {
-			return protoreflect.ValueOfInt64(v.AsInt64)
-		} else {
-			return protoreflect.ValueOfInt64(int64(0))
-		}
-	case "poktroll.tokenomics.MsgUpdateParam.as_bytes":
-		if x.AsType == nil {
-			return protoreflect.ValueOfBytes(nil)
-		} else if v, ok := x.AsType.(*MsgUpdateParam_AsBytes); ok {
-			return protoreflect.ValueOfBytes(v.AsBytes)
-		} else {
-			return protoreflect.ValueOfBytes(nil)
 		}
 	default:
 		if descriptor.IsExtension() {
@@ -1128,15 +1102,12 @@ func (x *fastReflection_MsgUpdateParam) Set(fd protoreflect.FieldDescriptor, val
 		x.Authority = value.Interface().(string)
 	case "poktroll.tokenomics.MsgUpdateParam.name":
 		x.Name = value.Interface().(string)
+	case "poktroll.tokenomics.MsgUpdateParam.as_mint_allocation_percentages":
+		cv := value.Message().Interface().(*MintAllocationPercentages)
+		x.AsType = &MsgUpdateParam_AsMintAllocationPercentages{AsMintAllocationPercentages: cv}
 	case "poktroll.tokenomics.MsgUpdateParam.as_string":
 		cv := value.Interface().(string)
 		x.AsType = &MsgUpdateParam_AsString{AsString: cv}
-	case "poktroll.tokenomics.MsgUpdateParam.as_int64":
-		cv := value.Int()
-		x.AsType = &MsgUpdateParam_AsInt64{AsInt64: cv}
-	case "poktroll.tokenomics.MsgUpdateParam.as_bytes":
-		cv := value.Bytes()
-		x.AsType = &MsgUpdateParam_AsBytes{AsBytes: cv}
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.tokenomics.MsgUpdateParam"))
@@ -1157,16 +1128,28 @@ func (x *fastReflection_MsgUpdateParam) Set(fd protoreflect.FieldDescriptor, val
 // Mutable is a mutating operation and unsafe for concurrent use.
 func (x *fastReflection_MsgUpdateParam) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
+	case "poktroll.tokenomics.MsgUpdateParam.as_mint_allocation_percentages":
+		if x.AsType == nil {
+			value := &MintAllocationPercentages{}
+			oneofValue := &MsgUpdateParam_AsMintAllocationPercentages{AsMintAllocationPercentages: value}
+			x.AsType = oneofValue
+			return protoreflect.ValueOfMessage(value.ProtoReflect())
+		}
+		switch m := x.AsType.(type) {
+		case *MsgUpdateParam_AsMintAllocationPercentages:
+			return protoreflect.ValueOfMessage(m.AsMintAllocationPercentages.ProtoReflect())
+		default:
+			value := &MintAllocationPercentages{}
+			oneofValue := &MsgUpdateParam_AsMintAllocationPercentages{AsMintAllocationPercentages: value}
+			x.AsType = oneofValue
+			return protoreflect.ValueOfMessage(value.ProtoReflect())
+		}
 	case "poktroll.tokenomics.MsgUpdateParam.authority":
 		panic(fmt.Errorf("field authority of message poktroll.tokenomics.MsgUpdateParam is not mutable"))
 	case "poktroll.tokenomics.MsgUpdateParam.name":
 		panic(fmt.Errorf("field name of message poktroll.tokenomics.MsgUpdateParam is not mutable"))
 	case "poktroll.tokenomics.MsgUpdateParam.as_string":
 		panic(fmt.Errorf("field as_string of message poktroll.tokenomics.MsgUpdateParam is not mutable"))
-	case "poktroll.tokenomics.MsgUpdateParam.as_int64":
-		panic(fmt.Errorf("field as_int64 of message poktroll.tokenomics.MsgUpdateParam is not mutable"))
-	case "poktroll.tokenomics.MsgUpdateParam.as_bytes":
-		panic(fmt.Errorf("field as_bytes of message poktroll.tokenomics.MsgUpdateParam is not mutable"))
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.tokenomics.MsgUpdateParam"))
@@ -1184,12 +1167,11 @@ func (x *fastReflection_MsgUpdateParam) NewField(fd protoreflect.FieldDescriptor
 		return protoreflect.ValueOfString("")
 	case "poktroll.tokenomics.MsgUpdateParam.name":
 		return protoreflect.ValueOfString("")
+	case "poktroll.tokenomics.MsgUpdateParam.as_mint_allocation_percentages":
+		value := &MintAllocationPercentages{}
+		return protoreflect.ValueOfMessage(value.ProtoReflect())
 	case "poktroll.tokenomics.MsgUpdateParam.as_string":
 		return protoreflect.ValueOfString("")
-	case "poktroll.tokenomics.MsgUpdateParam.as_int64":
-		return protoreflect.ValueOfInt64(int64(0))
-	case "poktroll.tokenomics.MsgUpdateParam.as_bytes":
-		return protoreflect.ValueOfBytes(nil)
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.tokenomics.MsgUpdateParam"))
@@ -1208,12 +1190,10 @@ func (x *fastReflection_MsgUpdateParam) WhichOneof(d protoreflect.OneofDescripto
 			return nil
 		}
 		switch x.AsType.(type) {
+		case *MsgUpdateParam_AsMintAllocationPercentages:
+			return x.Descriptor().Fields().ByName("as_mint_allocation_percentages")
 		case *MsgUpdateParam_AsString:
 			return x.Descriptor().Fields().ByName("as_string")
-		case *MsgUpdateParam_AsInt64:
-			return x.Descriptor().Fields().ByName("as_int64")
-		case *MsgUpdateParam_AsBytes:
-			return x.Descriptor().Fields().ByName("as_bytes")
 		}
 	default:
 		panic(fmt.Errorf("%s is not a oneof field in poktroll.tokenomics.MsgUpdateParam", d.FullName()))
@@ -1280,22 +1260,17 @@ func (x *fastReflection_MsgUpdateParam) ProtoMethods() *protoiface.Methods {
 			n += 1 + l + runtime.Sov(uint64(l))
 		}
 		switch x := x.AsType.(type) {
+		case *MsgUpdateParam_AsMintAllocationPercentages:
+			if x == nil {
+				break
+			}
+			l = options.Size(x.AsMintAllocationPercentages)
+			n += 1 + l + runtime.Sov(uint64(l))
 		case *MsgUpdateParam_AsString:
 			if x == nil {
 				break
 			}
 			l = len(x.AsString)
-			n += 1 + l + runtime.Sov(uint64(l))
-		case *MsgUpdateParam_AsInt64:
-			if x == nil {
-				break
-			}
-			n += 1 + runtime.Sov(uint64(x.AsInt64))
-		case *MsgUpdateParam_AsBytes:
-			if x == nil {
-				break
-			}
-			l = len(x.AsBytes)
 			n += 1 + l + runtime.Sov(uint64(l))
 		}
 		if x.unknownFields != nil {
@@ -1328,22 +1303,25 @@ func (x *fastReflection_MsgUpdateParam) ProtoMethods() *protoiface.Methods {
 			copy(dAtA[i:], x.unknownFields)
 		}
 		switch x := x.AsType.(type) {
+		case *MsgUpdateParam_AsMintAllocationPercentages:
+			encoded, err := options.Marshal(x.AsMintAllocationPercentages)
+			if err != nil {
+				return protoiface.MarshalOutput{
+					NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+					Buf:               input.Buf,
+				}, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(encoded)))
+			i--
+			dAtA[i] = 0x1a
 		case *MsgUpdateParam_AsString:
 			i -= len(x.AsString)
 			copy(dAtA[i:], x.AsString)
 			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.AsString)))
 			i--
-			dAtA[i] = 0x1a
-		case *MsgUpdateParam_AsInt64:
-			i = runtime.EncodeVarint(dAtA, i, uint64(x.AsInt64))
-			i--
-			dAtA[i] = 0x30
-		case *MsgUpdateParam_AsBytes:
-			i -= len(x.AsBytes)
-			copy(dAtA[i:], x.AsBytes)
-			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.AsBytes)))
-			i--
-			dAtA[i] = 0x3a
+			dAtA[i] = 0x22
 		}
 		if len(x.Name) > 0 {
 			i -= len(x.Name)
@@ -1474,6 +1452,41 @@ func (x *fastReflection_MsgUpdateParam) ProtoMethods() *protoiface.Methods {
 				iNdEx = postIndex
 			case 3:
 				if wireType != 2 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field AsMintAllocationPercentages", wireType)
+				}
+				var msglen int
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					msglen |= int(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				if msglen < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				postIndex := iNdEx + msglen
+				if postIndex < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if postIndex > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				v := &MintAllocationPercentages{}
+				if err := options.Unmarshal(dAtA[iNdEx:postIndex], v); err != nil {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
+				}
+				x.AsType = &MsgUpdateParam_AsMintAllocationPercentages{v}
+				iNdEx = postIndex
+			case 4:
+				if wireType != 2 {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field AsString", wireType)
 				}
 				var stringLen uint64
@@ -1503,59 +1516,6 @@ func (x *fastReflection_MsgUpdateParam) ProtoMethods() *protoiface.Methods {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
 				}
 				x.AsType = &MsgUpdateParam_AsString{string(dAtA[iNdEx:postIndex])}
-				iNdEx = postIndex
-			case 6:
-				if wireType != 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field AsInt64", wireType)
-				}
-				var v int64
-				for shift := uint(0); ; shift += 7 {
-					if shift >= 64 {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
-					}
-					if iNdEx >= l {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-					}
-					b := dAtA[iNdEx]
-					iNdEx++
-					v |= int64(b&0x7F) << shift
-					if b < 0x80 {
-						break
-					}
-				}
-				x.AsType = &MsgUpdateParam_AsInt64{v}
-			case 7:
-				if wireType != 2 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field AsBytes", wireType)
-				}
-				var byteLen int
-				for shift := uint(0); ; shift += 7 {
-					if shift >= 64 {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
-					}
-					if iNdEx >= l {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-					}
-					b := dAtA[iNdEx]
-					iNdEx++
-					byteLen |= int(b&0x7F) << shift
-					if b < 0x80 {
-						break
-					}
-				}
-				if byteLen < 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
-				}
-				postIndex := iNdEx + byteLen
-				if postIndex < 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
-				}
-				if postIndex > l {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-				}
-				v := make([]byte, postIndex-iNdEx)
-				copy(v, dAtA[iNdEx:postIndex])
-				x.AsType = &MsgUpdateParam_AsBytes{v}
 				iNdEx = postIndex
 			default:
 				iNdEx = preIndex
@@ -2128,9 +2088,8 @@ type MsgUpdateParam struct {
 	Name string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
 	// Types that are assignable to AsType:
 	//
+	//	*MsgUpdateParam_AsMintAllocationPercentages
 	//	*MsgUpdateParam_AsString
-	//	*MsgUpdateParam_AsInt64
-	//	*MsgUpdateParam_AsBytes
 	AsType isMsgUpdateParam_AsType `protobuf_oneof:"as_type"`
 }
 
@@ -2175,6 +2134,13 @@ func (x *MsgUpdateParam) GetAsType() isMsgUpdateParam_AsType {
 	return nil
 }
 
+func (x *MsgUpdateParam) GetAsMintAllocationPercentages() *MintAllocationPercentages {
+	if x, ok := x.GetAsType().(*MsgUpdateParam_AsMintAllocationPercentages); ok {
+		return x.AsMintAllocationPercentages
+	}
+	return nil
+}
+
 func (x *MsgUpdateParam) GetAsString() string {
 	if x, ok := x.GetAsType().(*MsgUpdateParam_AsString); ok {
 		return x.AsString
@@ -2182,41 +2148,21 @@ func (x *MsgUpdateParam) GetAsString() string {
 	return ""
 }
 
-func (x *MsgUpdateParam) GetAsInt64() int64 {
-	if x, ok := x.GetAsType().(*MsgUpdateParam_AsInt64); ok {
-		return x.AsInt64
-	}
-	return 0
-}
-
-func (x *MsgUpdateParam) GetAsBytes() []byte {
-	if x, ok := x.GetAsType().(*MsgUpdateParam_AsBytes); ok {
-		return x.AsBytes
-	}
-	return nil
-}
-
 type isMsgUpdateParam_AsType interface {
 	isMsgUpdateParam_AsType()
 }
 
+type MsgUpdateParam_AsMintAllocationPercentages struct {
+	AsMintAllocationPercentages *MintAllocationPercentages `protobuf:"bytes,3,opt,name=as_mint_allocation_percentages,json=asMintAllocationPercentages,proto3,oneof"`
+}
+
 type MsgUpdateParam_AsString struct {
-	AsString string `protobuf:"bytes,3,opt,name=as_string,json=asString,proto3,oneof"`
+	AsString string `protobuf:"bytes,4,opt,name=as_string,json=asString,proto3,oneof"`
 }
 
-type MsgUpdateParam_AsInt64 struct {
-	AsInt64 int64 `protobuf:"varint,6,opt,name=as_int64,json=asInt64,proto3,oneof"`
-}
-
-type MsgUpdateParam_AsBytes struct {
-	AsBytes []byte `protobuf:"bytes,7,opt,name=as_bytes,json=asBytes,proto3,oneof"`
-}
+func (*MsgUpdateParam_AsMintAllocationPercentages) isMsgUpdateParam_AsType() {}
 
 func (*MsgUpdateParam_AsString) isMsgUpdateParam_AsType() {}
-
-func (*MsgUpdateParam_AsInt64) isMsgUpdateParam_AsType() {}
-
-func (*MsgUpdateParam_AsBytes) isMsgUpdateParam_AsType() {}
 
 // MsgUpdateParamResponse defines the response structure for executing a
 // MsgUpdateParam message after a single param update.
@@ -2283,53 +2229,60 @@ var file_poktroll_tokenomics_tx_proto_rawDesc = []byte{
 	0x6b, 0x65, 0x6e, 0x6f, 0x6d, 0x69, 0x63, 0x73, 0x2f, 0x4d, 0x73, 0x67, 0x55, 0x70, 0x64, 0x61,
 	0x74, 0x65, 0x50, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x22, 0x19, 0x0a, 0x17, 0x4d, 0x73, 0x67, 0x55,
 	0x70, 0x64, 0x61, 0x74, 0x65, 0x50, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f,
-	0x6e, 0x73, 0x65, 0x22, 0xfb, 0x01, 0x0a, 0x0e, 0x4d, 0x73, 0x67, 0x55, 0x70, 0x64, 0x61, 0x74,
+	0x6e, 0x73, 0x65, 0x22, 0xea, 0x02, 0x0a, 0x0e, 0x4d, 0x73, 0x67, 0x55, 0x70, 0x64, 0x61, 0x74,
 	0x65, 0x50, 0x61, 0x72, 0x61, 0x6d, 0x12, 0x36, 0x0a, 0x09, 0x61, 0x75, 0x74, 0x68, 0x6f, 0x72,
 	0x69, 0x74, 0x79, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x42, 0x18, 0xd2, 0xb4, 0x2d, 0x14, 0x63,
 	0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x53, 0x74, 0x72,
 	0x69, 0x6e, 0x67, 0x52, 0x09, 0x61, 0x75, 0x74, 0x68, 0x6f, 0x72, 0x69, 0x74, 0x79, 0x12, 0x12,
 	0x0a, 0x04, 0x6e, 0x61, 0x6d, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x04, 0x6e, 0x61,
-	0x6d, 0x65, 0x12, 0x2c, 0x0a, 0x09, 0x61, 0x73, 0x5f, 0x73, 0x74, 0x72, 0x69, 0x6e, 0x67, 0x18,
-	0x03, 0x20, 0x01, 0x28, 0x09, 0x42, 0x0d, 0xea, 0xde, 0x1f, 0x09, 0x61, 0x73, 0x5f, 0x73, 0x74,
-	0x72, 0x69, 0x6e, 0x67, 0x48, 0x00, 0x52, 0x08, 0x61, 0x73, 0x53, 0x74, 0x72, 0x69, 0x6e, 0x67,
-	0x12, 0x29, 0x0a, 0x08, 0x61, 0x73, 0x5f, 0x69, 0x6e, 0x74, 0x36, 0x34, 0x18, 0x06, 0x20, 0x01,
-	0x28, 0x03, 0x42, 0x0c, 0xea, 0xde, 0x1f, 0x08, 0x61, 0x73, 0x5f, 0x69, 0x6e, 0x74, 0x36, 0x34,
-	0x48, 0x00, 0x52, 0x07, 0x61, 0x73, 0x49, 0x6e, 0x74, 0x36, 0x34, 0x12, 0x29, 0x0a, 0x08, 0x61,
-	0x73, 0x5f, 0x62, 0x79, 0x74, 0x65, 0x73, 0x18, 0x07, 0x20, 0x01, 0x28, 0x0c, 0x42, 0x0c, 0xea,
-	0xde, 0x1f, 0x08, 0x61, 0x73, 0x5f, 0x62, 0x79, 0x74, 0x65, 0x73, 0x48, 0x00, 0x52, 0x07, 0x61,
-	0x73, 0x42, 0x79, 0x74, 0x65, 0x73, 0x3a, 0x0e, 0x82, 0xe7, 0xb0, 0x2a, 0x09, 0x61, 0x75, 0x74,
-	0x68, 0x6f, 0x72, 0x69, 0x74, 0x79, 0x42, 0x09, 0x0a, 0x07, 0x61, 0x73, 0x5f, 0x74, 0x79, 0x70,
-	0x65, 0x22, 0x4d, 0x0a, 0x16, 0x4d, 0x73, 0x67, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x50, 0x61,
-	0x72, 0x61, 0x6d, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x33, 0x0a, 0x06, 0x70,
-	0x61, 0x72, 0x61, 0x6d, 0x73, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1b, 0x2e, 0x70, 0x6f,
+	0x6d, 0x65, 0x12, 0xc2, 0x01, 0x0a, 0x1e, 0x61, 0x73, 0x5f, 0x6d, 0x69, 0x6e, 0x74, 0x5f, 0x61,
+	0x6c, 0x6c, 0x6f, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x5f, 0x70, 0x65, 0x72, 0x63, 0x65, 0x6e,
+	0x74, 0x61, 0x67, 0x65, 0x73, 0x18, 0x03, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x2e, 0x2e, 0x70, 0x6f,
 	0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x74, 0x6f, 0x6b, 0x65, 0x6e, 0x6f, 0x6d, 0x69, 0x63,
-	0x73, 0x2e, 0x50, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x52, 0x06, 0x70, 0x61, 0x72, 0x61, 0x6d, 0x73,
-	0x32, 0xd1, 0x01, 0x0a, 0x03, 0x4d, 0x73, 0x67, 0x12, 0x62, 0x0a, 0x0c, 0x55, 0x70, 0x64, 0x61,
-	0x74, 0x65, 0x50, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x12, 0x24, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72,
-	0x6f, 0x6c, 0x6c, 0x2e, 0x74, 0x6f, 0x6b, 0x65, 0x6e, 0x6f, 0x6d, 0x69, 0x63, 0x73, 0x2e, 0x4d,
-	0x73, 0x67, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x50, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x1a, 0x2c,
-	0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x74, 0x6f, 0x6b, 0x65, 0x6e, 0x6f,
-	0x6d, 0x69, 0x63, 0x73, 0x2e, 0x4d, 0x73, 0x67, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x50, 0x61,
-	0x72, 0x61, 0x6d, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x5f, 0x0a, 0x0b,
-	0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x50, 0x61, 0x72, 0x61, 0x6d, 0x12, 0x23, 0x2e, 0x70, 0x6f,
-	0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x74, 0x6f, 0x6b, 0x65, 0x6e, 0x6f, 0x6d, 0x69, 0x63,
-	0x73, 0x2e, 0x4d, 0x73, 0x67, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x50, 0x61, 0x72, 0x61, 0x6d,
-	0x1a, 0x2b, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x74, 0x6f, 0x6b, 0x65,
-	0x6e, 0x6f, 0x6d, 0x69, 0x63, 0x73, 0x2e, 0x4d, 0x73, 0x67, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65,
-	0x50, 0x61, 0x72, 0x61, 0x6d, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x1a, 0x05, 0x80,
-	0xe7, 0xb0, 0x2a, 0x01, 0x42, 0xb9, 0x01, 0xd8, 0xe2, 0x1e, 0x01, 0x0a, 0x17, 0x63, 0x6f, 0x6d,
-	0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x74, 0x6f, 0x6b, 0x65, 0x6e, 0x6f,
-	0x6d, 0x69, 0x63, 0x73, 0x42, 0x07, 0x54, 0x78, 0x50, 0x72, 0x6f, 0x74, 0x6f, 0x50, 0x01, 0x5a,
-	0x24, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x73, 0x64, 0x6b, 0x2e, 0x69, 0x6f, 0x2f, 0x61, 0x70,
-	0x69, 0x2f, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2f, 0x74, 0x6f, 0x6b, 0x65, 0x6e,
-	0x6f, 0x6d, 0x69, 0x63, 0x73, 0xa2, 0x02, 0x03, 0x50, 0x54, 0x58, 0xaa, 0x02, 0x13, 0x50, 0x6f,
-	0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x54, 0x6f, 0x6b, 0x65, 0x6e, 0x6f, 0x6d, 0x69, 0x63,
-	0x73, 0xca, 0x02, 0x13, 0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x5c, 0x54, 0x6f, 0x6b,
-	0x65, 0x6e, 0x6f, 0x6d, 0x69, 0x63, 0x73, 0xe2, 0x02, 0x1f, 0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f,
-	0x6c, 0x6c, 0x5c, 0x54, 0x6f, 0x6b, 0x65, 0x6e, 0x6f, 0x6d, 0x69, 0x63, 0x73, 0x5c, 0x47, 0x50,
-	0x42, 0x4d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0xea, 0x02, 0x14, 0x50, 0x6f, 0x6b, 0x74,
-	0x72, 0x6f, 0x6c, 0x6c, 0x3a, 0x3a, 0x54, 0x6f, 0x6b, 0x65, 0x6e, 0x6f, 0x6d, 0x69, 0x63, 0x73,
-	0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x73, 0x2e, 0x4d, 0x69, 0x6e, 0x74, 0x41, 0x6c, 0x6c, 0x6f, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e,
+	0x50, 0x65, 0x72, 0x63, 0x65, 0x6e, 0x74, 0x61, 0x67, 0x65, 0x73, 0x42, 0x4b, 0xea, 0xde, 0x1f,
+	0x1e, 0x61, 0x73, 0x5f, 0x6d, 0x69, 0x6e, 0x74, 0x5f, 0x61, 0x6c, 0x6c, 0x6f, 0x63, 0x61, 0x74,
+	0x69, 0x6f, 0x6e, 0x5f, 0x70, 0x65, 0x72, 0x63, 0x65, 0x6e, 0x74, 0x61, 0x67, 0x65, 0x73, 0xf2,
+	0xde, 0x1f, 0x25, 0x79, 0x61, 0x6d, 0x6c, 0x3a, 0x22, 0x61, 0x73, 0x5f, 0x6d, 0x69, 0x6e, 0x74,
+	0x5f, 0x61, 0x6c, 0x6c, 0x6f, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x5f, 0x70, 0x65, 0x72, 0x63,
+	0x65, 0x6e, 0x74, 0x61, 0x67, 0x65, 0x73, 0x22, 0x48, 0x00, 0x52, 0x1b, 0x61, 0x73, 0x4d, 0x69,
+	0x6e, 0x74, 0x41, 0x6c, 0x6c, 0x6f, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x50, 0x65, 0x72, 0x63,
+	0x65, 0x6e, 0x74, 0x61, 0x67, 0x65, 0x73, 0x12, 0x2c, 0x0a, 0x09, 0x61, 0x73, 0x5f, 0x73, 0x74,
+	0x72, 0x69, 0x6e, 0x67, 0x18, 0x04, 0x20, 0x01, 0x28, 0x09, 0x42, 0x0d, 0xea, 0xde, 0x1f, 0x09,
+	0x61, 0x73, 0x5f, 0x73, 0x74, 0x72, 0x69, 0x6e, 0x67, 0x48, 0x00, 0x52, 0x08, 0x61, 0x73, 0x53,
+	0x74, 0x72, 0x69, 0x6e, 0x67, 0x3a, 0x0e, 0x82, 0xe7, 0xb0, 0x2a, 0x09, 0x61, 0x75, 0x74, 0x68,
+	0x6f, 0x72, 0x69, 0x74, 0x79, 0x42, 0x09, 0x0a, 0x07, 0x61, 0x73, 0x5f, 0x74, 0x79, 0x70, 0x65,
+	0x22, 0x4d, 0x0a, 0x16, 0x4d, 0x73, 0x67, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x50, 0x61, 0x72,
+	0x61, 0x6d, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x33, 0x0a, 0x06, 0x70, 0x61,
+	0x72, 0x61, 0x6d, 0x73, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1b, 0x2e, 0x70, 0x6f, 0x6b,
+	0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x74, 0x6f, 0x6b, 0x65, 0x6e, 0x6f, 0x6d, 0x69, 0x63, 0x73,
+	0x2e, 0x50, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x52, 0x06, 0x70, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x32,
+	0xd1, 0x01, 0x0a, 0x03, 0x4d, 0x73, 0x67, 0x12, 0x62, 0x0a, 0x0c, 0x55, 0x70, 0x64, 0x61, 0x74,
+	0x65, 0x50, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x12, 0x24, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f,
+	0x6c, 0x6c, 0x2e, 0x74, 0x6f, 0x6b, 0x65, 0x6e, 0x6f, 0x6d, 0x69, 0x63, 0x73, 0x2e, 0x4d, 0x73,
+	0x67, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x50, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x1a, 0x2c, 0x2e,
+	0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x74, 0x6f, 0x6b, 0x65, 0x6e, 0x6f, 0x6d,
+	0x69, 0x63, 0x73, 0x2e, 0x4d, 0x73, 0x67, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x50, 0x61, 0x72,
+	0x61, 0x6d, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x5f, 0x0a, 0x0b, 0x55,
+	0x70, 0x64, 0x61, 0x74, 0x65, 0x50, 0x61, 0x72, 0x61, 0x6d, 0x12, 0x23, 0x2e, 0x70, 0x6f, 0x6b,
+	0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x74, 0x6f, 0x6b, 0x65, 0x6e, 0x6f, 0x6d, 0x69, 0x63, 0x73,
+	0x2e, 0x4d, 0x73, 0x67, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x50, 0x61, 0x72, 0x61, 0x6d, 0x1a,
+	0x2b, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x74, 0x6f, 0x6b, 0x65, 0x6e,
+	0x6f, 0x6d, 0x69, 0x63, 0x73, 0x2e, 0x4d, 0x73, 0x67, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x50,
+	0x61, 0x72, 0x61, 0x6d, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x1a, 0x05, 0x80, 0xe7,
+	0xb0, 0x2a, 0x01, 0x42, 0xb9, 0x01, 0xd8, 0xe2, 0x1e, 0x01, 0x0a, 0x17, 0x63, 0x6f, 0x6d, 0x2e,
+	0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x74, 0x6f, 0x6b, 0x65, 0x6e, 0x6f, 0x6d,
+	0x69, 0x63, 0x73, 0x42, 0x07, 0x54, 0x78, 0x50, 0x72, 0x6f, 0x74, 0x6f, 0x50, 0x01, 0x5a, 0x24,
+	0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x73, 0x64, 0x6b, 0x2e, 0x69, 0x6f, 0x2f, 0x61, 0x70, 0x69,
+	0x2f, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2f, 0x74, 0x6f, 0x6b, 0x65, 0x6e, 0x6f,
+	0x6d, 0x69, 0x63, 0x73, 0xa2, 0x02, 0x03, 0x50, 0x54, 0x58, 0xaa, 0x02, 0x13, 0x50, 0x6f, 0x6b,
+	0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x54, 0x6f, 0x6b, 0x65, 0x6e, 0x6f, 0x6d, 0x69, 0x63, 0x73,
+	0xca, 0x02, 0x13, 0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x5c, 0x54, 0x6f, 0x6b, 0x65,
+	0x6e, 0x6f, 0x6d, 0x69, 0x63, 0x73, 0xe2, 0x02, 0x1f, 0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c,
+	0x6c, 0x5c, 0x54, 0x6f, 0x6b, 0x65, 0x6e, 0x6f, 0x6d, 0x69, 0x63, 0x73, 0x5c, 0x47, 0x50, 0x42,
+	0x4d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0xea, 0x02, 0x14, 0x50, 0x6f, 0x6b, 0x74, 0x72,
+	0x6f, 0x6c, 0x6c, 0x3a, 0x3a, 0x54, 0x6f, 0x6b, 0x65, 0x6e, 0x6f, 0x6d, 0x69, 0x63, 0x73, 0x62,
+	0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -2346,24 +2299,26 @@ func file_poktroll_tokenomics_tx_proto_rawDescGZIP() []byte {
 
 var file_poktroll_tokenomics_tx_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
 var file_poktroll_tokenomics_tx_proto_goTypes = []interface{}{
-	(*MsgUpdateParams)(nil),         // 0: poktroll.tokenomics.MsgUpdateParams
-	(*MsgUpdateParamsResponse)(nil), // 1: poktroll.tokenomics.MsgUpdateParamsResponse
-	(*MsgUpdateParam)(nil),          // 2: poktroll.tokenomics.MsgUpdateParam
-	(*MsgUpdateParamResponse)(nil),  // 3: poktroll.tokenomics.MsgUpdateParamResponse
-	(*Params)(nil),                  // 4: poktroll.tokenomics.Params
+	(*MsgUpdateParams)(nil),           // 0: poktroll.tokenomics.MsgUpdateParams
+	(*MsgUpdateParamsResponse)(nil),   // 1: poktroll.tokenomics.MsgUpdateParamsResponse
+	(*MsgUpdateParam)(nil),            // 2: poktroll.tokenomics.MsgUpdateParam
+	(*MsgUpdateParamResponse)(nil),    // 3: poktroll.tokenomics.MsgUpdateParamResponse
+	(*Params)(nil),                    // 4: poktroll.tokenomics.Params
+	(*MintAllocationPercentages)(nil), // 5: poktroll.tokenomics.MintAllocationPercentages
 }
 var file_poktroll_tokenomics_tx_proto_depIdxs = []int32{
 	4, // 0: poktroll.tokenomics.MsgUpdateParams.params:type_name -> poktroll.tokenomics.Params
-	4, // 1: poktroll.tokenomics.MsgUpdateParamResponse.params:type_name -> poktroll.tokenomics.Params
-	0, // 2: poktroll.tokenomics.Msg.UpdateParams:input_type -> poktroll.tokenomics.MsgUpdateParams
-	2, // 3: poktroll.tokenomics.Msg.UpdateParam:input_type -> poktroll.tokenomics.MsgUpdateParam
-	1, // 4: poktroll.tokenomics.Msg.UpdateParams:output_type -> poktroll.tokenomics.MsgUpdateParamsResponse
-	3, // 5: poktroll.tokenomics.Msg.UpdateParam:output_type -> poktroll.tokenomics.MsgUpdateParamResponse
-	4, // [4:6] is the sub-list for method output_type
-	2, // [2:4] is the sub-list for method input_type
-	2, // [2:2] is the sub-list for extension type_name
-	2, // [2:2] is the sub-list for extension extendee
-	0, // [0:2] is the sub-list for field type_name
+	5, // 1: poktroll.tokenomics.MsgUpdateParam.as_mint_allocation_percentages:type_name -> poktroll.tokenomics.MintAllocationPercentages
+	4, // 2: poktroll.tokenomics.MsgUpdateParamResponse.params:type_name -> poktroll.tokenomics.Params
+	0, // 3: poktroll.tokenomics.Msg.UpdateParams:input_type -> poktroll.tokenomics.MsgUpdateParams
+	2, // 4: poktroll.tokenomics.Msg.UpdateParam:input_type -> poktroll.tokenomics.MsgUpdateParam
+	1, // 5: poktroll.tokenomics.Msg.UpdateParams:output_type -> poktroll.tokenomics.MsgUpdateParamsResponse
+	3, // 6: poktroll.tokenomics.Msg.UpdateParam:output_type -> poktroll.tokenomics.MsgUpdateParamResponse
+	5, // [5:7] is the sub-list for method output_type
+	3, // [3:5] is the sub-list for method input_type
+	3, // [3:3] is the sub-list for extension type_name
+	3, // [3:3] is the sub-list for extension extendee
+	0, // [0:3] is the sub-list for field type_name
 }
 
 func init() { file_poktroll_tokenomics_tx_proto_init() }
@@ -2423,9 +2378,8 @@ func file_poktroll_tokenomics_tx_proto_init() {
 		}
 	}
 	file_poktroll_tokenomics_tx_proto_msgTypes[2].OneofWrappers = []interface{}{
+		(*MsgUpdateParam_AsMintAllocationPercentages)(nil),
 		(*MsgUpdateParam_AsString)(nil),
-		(*MsgUpdateParam_AsInt64)(nil),
-		(*MsgUpdateParam_AsBytes)(nil),
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
