@@ -38,7 +38,18 @@ func TestParams_ValidateMinStake(t *testing.T) {
 				Amount: math.NewInt(-1),
 			},
 			expectedErr: suppliertypes.ErrSupplierParamInvalid.Wrapf(
-				"min_stake amount must be greater than 0: got -1%s",
+				"min_stake amount must be positive: got -1%s",
+				volatile.DenomuPOKT,
+			),
+		},
+		{
+			desc: "MinStake equal to zero",
+			minStake: &cosmostypes.Coin{
+				Denom:  volatile.DenomuPOKT,
+				Amount: math.NewInt(0),
+			},
+			expectedErr: suppliertypes.ErrSupplierParamInvalid.Wrapf(
+				"min_stake amount must be greater than 0: got 0%s",
 				volatile.DenomuPOKT,
 			),
 		},
@@ -51,6 +62,47 @@ func TestParams_ValidateMinStake(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.desc, func(t *testing.T) {
 			err := suppliertypes.ValidateMinStake(test.minStake)
+			if test.expectedErr != nil {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), test.expectedErr.Error())
+			} else {
+				require.NoError(t, err)
+			}
+		})
+	}
+}
+
+func TestParams_ValidateStakingFee(t *testing.T) {
+	tests := []struct {
+		desc        string
+		minStake    any
+		expectedErr error
+	}{
+		{
+			desc:        "invalid type",
+			minStake:    "420",
+			expectedErr: suppliertypes.ErrSupplierParamInvalid.Wrapf("invalid parameter type: string"),
+		},
+		{
+			desc: "StakingFee less than zero",
+			minStake: &cosmostypes.Coin{
+				Denom:  volatile.DenomuPOKT,
+				Amount: math.NewInt(-1),
+			},
+			expectedErr: suppliertypes.ErrSupplierParamInvalid.Wrapf(
+				"staking_fee amount must be positive: got -1%s",
+				volatile.DenomuPOKT,
+			),
+		},
+		{
+			desc:     "valid StakingFee",
+			minStake: &suppliertypes.DefaultStakingFee,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.desc, func(t *testing.T) {
+			err := suppliertypes.ValidateStakingFee(test.minStake)
 			if test.expectedErr != nil {
 				require.Error(t, err)
 				require.Contains(t, err.Error(), test.expectedErr.Error())

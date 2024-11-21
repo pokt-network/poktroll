@@ -17,7 +17,7 @@ import (
 var (
 	// TODO_BETA(@bryanchriswhite): Make supplier staking fee a governance parameter
 	// TODO_BETA(@red-0ne): Update supplier staking documentation to remove the upstaking requirement and introduce the staking fee.
-	SupplierStakingFee = sdk.NewInt64Coin(volatile.DenomuPOKT, 1)
+	StakingFee = sdk.NewInt64Coin(volatile.DenomuPOKT, 1)
 )
 
 func (k msgServer) StakeSupplier(ctx context.Context, msg *suppliertypes.MsgStakeSupplier) (*suppliertypes.MsgStakeSupplierResponse, error) {
@@ -147,7 +147,7 @@ func (k msgServer) StakeSupplier(ctx context.Context, msg *suppliertypes.MsgStak
 	}
 
 	// Send the coins from the message signer account to the staked supplier pool
-	stakeWithFee := sdk.NewCoins(coinsToEscrow.Add(SupplierStakingFee))
+	stakeWithFee := sdk.NewCoins(coinsToEscrow.Add(StakingFee))
 	err = k.bankKeeper.SendCoinsFromAccountToModule(ctx, msgSignerAddress, suppliertypes.ModuleName, stakeWithFee)
 	if err != nil {
 		logger.Info(fmt.Sprintf("ERROR: could not send %v coins from %q to %q module account due to %v", coinsToEscrow, msgSignerAddress, suppliertypes.ModuleName, err))

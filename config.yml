@@ -200,6 +200,10 @@ genesis:
         min_stake:
           amount: "1000000" # 1 POKT
           denom: upokt
+        # TODO_BETA(@bryanchriswhite): Determine realistic amount for supplier staking fee.
+        staking_fee:
+          amount: "1" # 1 uPOKT
+          denom: upokt
       supplierList:
         - owner_address: pokt19a3t4yunp0dlpfjrp7qwnzwlrzd5fzs2gjaaaj
           operator_address: pokt19a3t4yunp0dlpfjrp7qwnzwlrzd5fzs2gjaaaj

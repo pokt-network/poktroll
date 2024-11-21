@@ -14,6 +14,10 @@ var (
 	ParamMinStake = "min_stake"
 	// TODO_MAINNET: Determine the default value.
 	DefaultMinStake = cosmostypes.NewInt64Coin("upokt", 1000000) // 1 POKT
+	KeyStakingFee   = []byte("StakingFee")
+	ParamStakingFee = "staking_fee"
+	// TODO_MAINNET: Determine the default value.
+	DefaultStakingFee = cosmostypes.NewInt64Coin("upokt", 1000000) // 1 POKT
 )
 
 // ParamKeyTable the param key table for launch module
@@ -22,15 +26,22 @@ func ParamKeyTable() paramtypes.KeyTable {
 }
 
 // NewParams creates a new Params instance
-func NewParams(minStake *cosmostypes.Coin) Params {
+func NewParams(
+	minStake *cosmostypes.Coin,
+	stakingFee *cosmostypes.Coin,
+) Params {
 	return Params{
-		MinStake: minStake,
+		MinStake:   minStake,
+		StakingFee: stakingFee,
 	}
 }
 
 // DefaultParams returns a default set of parameters
 func DefaultParams() Params {
-	return NewParams(&DefaultMinStake)
+	return NewParams(
+		&DefaultMinStake,
+		&DefaultStakingFee,
+	)
 }
 
 // ParamSetPairs get the params.ParamSet
@@ -41,6 +52,11 @@ func (p *Params) ParamSetPairs() paramtypes.ParamSetPairs {
 			&p.MinStake,
 			ValidateMinStake,
 		),
+		paramtypes.NewParamSetPair(
+			KeyStakingFee,
+			&p.StakingFee,
+			ValidateStakingFee,
+		),
 	}
 }
 
@@ -50,30 +66,57 @@ func (p Params) Validate() error {
 		return err
 	}
 
+	if err := ValidateStakingFee(p.StakingFee); err != nil {
+		return err
+	}
+
 	return nil
 }
 
 // ValidateMinStake validates the MinStake param.
 func ValidateMinStake(minStakeAny any) error {
-	minStakeCoin, ok := minStakeAny.(*cosmostypes.Coin)
-	if !ok {
-		return ErrSupplierParamInvalid.Wrapf("invalid parameter type: %T", minStakeAny)
+	minStakeCoin, err := paramAsPositiveuPOKT(minStakeAny, "min_stake")
+	if err != nil {
+		return err
 	}
 
-	if minStakeCoin == nil {
-		return ErrSupplierParamInvalid.Wrapf("missing min_stake")
-	}
-
-	if minStakeCoin.Denom != volatile.DenomuPOKT {
-		return ErrSupplierParamInvalid.Wrapf(
-			"invalid min_stake denom %q; expected %q",
-			minStakeCoin.Denom, volatile.DenomuPOKT,
-		)
-	}
-
-	if minStakeCoin.IsZero() || minStakeCoin.IsNegative() {
+	if minStakeCoin.IsZero() {
 		return ErrSupplierParamInvalid.Wrapf("min_stake amount must be greater than 0: got %s", minStakeCoin)
 	}
 
 	return nil
+}
+
+// ValidateStakingFee validates the StakingFee param.
+func ValidateStakingFee(stakingFeeAny any) error {
+	if _, err := paramAsPositiveuPOKT(stakingFeeAny, "staking_fee"); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// TODO_IN_THIS_COMMOT: godoc...
+func paramAsPositiveuPOKT(paramAny any, paramName string) (*cosmostypes.Coin, error) {
+	paramCoin, ok := paramAny.(*cosmostypes.Coin)
+	if !ok {
+		return nil, ErrSupplierParamInvalid.Wrapf("invalid parameter type: %T", paramAny)
+	}
+
+	if paramCoin == nil {
+		return nil, ErrSupplierParamInvalid.Wrapf("missing param")
+	}
+
+	if paramCoin.Denom != volatile.DenomuPOKT {
+		return nil, ErrSupplierParamInvalid.Wrapf(
+			"invalid %s denom %q; expected %q",
+			paramName, paramCoin.Denom, volatile.DenomuPOKT,
+		)
+	}
+
+	if paramCoin.IsNegative() {
+		return nil, ErrSupplierParamInvalid.Wrapf("%s amount must be positive: got %s", paramName, paramCoin)
+	}
+
+	return paramCoin, nil
 }
