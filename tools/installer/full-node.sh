@@ -208,42 +208,40 @@ setup_poktrolld() {
     RELEASE_URL="https://github.com/pokt-network/poktroll/releases/download/v${POKTROLLD_VERSION}/poktroll_linux_${ARCH}.tar.gz"
     print_color $YELLOW "Attempting to download from: $RELEASE_URL"
 
-    # Create temporary directory for download
+    # Create temporary directory for download and set permissions
     TMP_DIR=$(mktemp -d)
-    
+    chown "$POKTROLL_USER:$POKTROLL_USER" "$TMP_DIR"
+
+    # Download and extract as the POKTROLL_USER
     sudo -u "$POKTROLL_USER" bash << EOF
     mkdir -p \$HOME/.poktroll/cosmovisor/genesis/bin
     
-    # Download with better error handling
-    if curl -L "$RELEASE_URL" -o "$TMP_DIR/poktroll.tar.gz"; then
-        print_color \$GREEN "Download successful"
-        
-        # Extract with error checking
-        if tar -xzvf "$TMP_DIR/poktroll.tar.gz" -C \$HOME/.poktroll/cosmovisor/genesis/bin; then
-            print_color \$GREEN "Extraction successful"
-        else
-            print_color \$RED "Failed to extract archive"
-            exit 1
-        fi
-    else
-        print_color \$RED "Failed to download binary from $RELEASE_URL"
+    echo "Downloading binary..."
+    if ! curl -L "$RELEASE_URL" -o "$TMP_DIR/poktroll.tar.gz"; then
+        echo "Failed to download binary"
+        exit 1
+    fi
+    
+    echo "Extracting binary..."
+    if ! tar -xzvf "$TMP_DIR/poktroll.tar.gz" -C \$HOME/.poktroll/cosmovisor/genesis/bin; then
+        echo "Failed to extract binary"
         exit 1
     fi
     
     chmod +x \$HOME/.poktroll/cosmovisor/genesis/bin/poktrolld
     ln -sf \$HOME/.poktroll/cosmovisor/genesis/bin/poktrolld \$HOME/bin/poktrolld
-    source \$HOME/.profile
 EOF
+
+    # Check the result of the sudo command
+    if [ $? -ne 0 ]; then
+        print_color $RED "Failed to set up Poktrolld"
+        rm -rf "$TMP_DIR"
+        exit 1
+    fi
 
     # Cleanup
     rm -rf "$TMP_DIR"
-    
-    if [ $? -eq 0 ]; then
-        print_color $GREEN "Poktrolld set up successfully."
-    else
-        print_color $RED "Failed to set up Poktrolld."
-        exit 1
-    fi
+    print_color $GREEN "Poktrolld set up successfully."
 }
 
 # Function to configure Poktrolld
