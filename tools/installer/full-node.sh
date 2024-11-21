@@ -204,7 +204,7 @@ setup_poktrolld() {
     fi
 
     # Use the direct download link for the correct release
-    RELEASE_URL="https://github.com/pokt-network/poktroll/releases/download/${POKTROLLD_VERSION}/poktroll_linux_${ARCH}.tar.gz"
+    RELEASE_URL="https://github.com/pokt-network/poktroll/releases/download/v${POKTROLLD_VERSION}/poktroll_linux_${ARCH}.tar.gz"
 
     sudo -u "$POKTROLL_USER" bash << EOF
     mkdir -p \$HOME/.poktroll/cosmovisor/genesis/bin
