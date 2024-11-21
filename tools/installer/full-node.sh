@@ -8,8 +8,8 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
-# Add the branch constant here
-GENESIS_BRANCH="add-beta-seeds-rename-dirs"
+# Can change the branch from `pocket-network-genesis` repo to test before merging to master.
+GENESIS_BRANCH="master"
 
 # Function to print colored output
 print_color() {
