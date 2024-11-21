@@ -13,7 +13,7 @@ sidebar_position: 5
 
 ## What is a RelayMiner
 
-See the [RelayMiner](../../protocol/actors/appgate_server.md) documentation for more
+See the [RelayMiner](../../protocol/actors/relay_miner.md) documentation for more
 information on what a RelayMiner is. This page aims to provide links and
 details on how to deploy and operate it.
 
@@ -35,8 +35,8 @@ Please see the [Hardware Requirements](./hardware_requirements.md#relayminer) pa
 
 ## Docker Compose Example
 
-Please refer to the `Deploying a RelayMiner` section in [poktroll-docker-compose-example](https://github.com/pokt-network/poktroll-docker-compose-example#deploying-a-relay-miner)
-GitHub repository on how to deploy an AppGate Server using `docker-compose`.
+Please refer to the `Deploying a RelayMiner` section in [Docker compose walkthrough](../quickstart/docker_compose_walkthrough#b-creating-a-supplier-and-deploying-a-relayminer)
+on how to deploy a `RelayMiner` using `docker-compose`.
 
 _TODO_DOCUMENT: Move over the relevant information from the `poktroll-docker-compose-example` repository into the docs_
 

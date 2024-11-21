@@ -13,9 +13,8 @@ import ReactPlayer from "react-player";
 - [Prerequisites](#prerequisites)
 - [A. Deploying a Full Node](#a-deploying-a-full-node)
 - [B. Creating a Supplier and Deploying a RelayMiner](#b-creating-a-supplier-and-deploying-a-relayminer)
-- [C. Creating an Application and Deploying an AppGate Server](#c-creating-an-application-and-deploying-an-appgate-server)
-- [D. Creating a Gateway Deploying an Gateway Server](#d-creating-a-gateway-deploying-an-gateway-server)
-  - [\[BONUS\] Deploy a PATH Gateway](#bonus-deploy-a-path-gateway)
+- [C. Creating an Application and Deploying a PATH Gateway](#c-creating-an-application-and-deploying-a-path-gateway)
+- [D. Creating a Gateway Deploying a PATH Gateway](#d-creating-a-gateway-deploying-a-path-gateway)
 
 <!--
 
@@ -66,7 +65,7 @@ This is a text heavy walkthrough, but if all goes well, you should have somethin
   - In `Shannon` - This actor is responsible needs access to a Full Node (sovereign or node).
 - `RelayMiner` - The off-chain service that provides Relay services on behalf of a `Supplier`.
   - In `Shannon` - This actor is responsible for providing the Relay services.
-- `AppGate Server` - The off-chain service that provides Relay services on behalf of an `Application` or `Gateway`.
+- `PATH Gateway` - The off-chain service that provides Relay services on behalf of an `Application` or `Gateway`.
 
 For more details, please refer to the [Shannon actors documentation](https://dev.poktroll.com/actors).
 
@@ -81,9 +80,9 @@ In `Morse`, a `Validator` or a staked `Node` was responsible for both holding
 a copy of the on-chain data, as well as performing relays. With `Shannon`, the
 `RelayMiner` software, which runs the supplier logic, is distinct from the full-node/validator.
 
-Furthermore, `Shannon` introduces the `AppGate Server`, a software component that
-acts on behalf of either `Applications` or `Gateways` to access services provided
-by Pocket Network `Supplier`s via `RelayMiners`.
+Furthermore, `Shannon` uses the `PATH Gateway`, a software component that acts on
+behalf of either `Applications` or `Gateways` to access services provided by Pocket
+Network `Supplier`s via `RelayMiners`.
 
 The following diagram from the [actors](../../protocol/actors/) page captures the relationship
 between on-chain records (actors) and off-chain operators (servers).
@@ -101,12 +100,12 @@ flowchart TB
     end
 
     subgraph off-chain
-        APS[AppGate Server]
+        PG[PATH Gateway]
         RM[Relay Miner]
     end
 
-    A -.- APS
-    G -.- APS
+    A -.- PG
+    G -.- PG
     S -..- RM
 ```
 
@@ -397,13 +396,13 @@ Check logs and confirm the node works as expected:
 docker-compose logs -f --tail 100 relayminer
 ```
 
-## C. Creating an Application and Deploying an AppGate Server
+## C. Creating an Application and Deploying a PATH Gateway
 
-AppGate Server allows to use services provided by other operators on Pocket Network.
+`PATH Gateway` allows to use services provided by other operators on Pocket Network.
 
-### 0. Prerequisites for an AppGate Server <!-- omit in toc -->
+### 0. Prerequisites for PATH Gateway <!-- omit in toc -->
 
-- **Full Node**: This AppGate Server deployment guide assumes the Full Node is
+- **Full Node**: This `PATH Gateway` deployment guide assumes the Full Node is
   deployed in the same docker-compose stack; see section A.
 - **A poktroll account with uPOKT tokens**: Tokens can be acquired by contacting
   the team. You are going to need a BIPmnemonic phrase for an existing
@@ -480,38 +479,36 @@ Verify your application is staked
 poktrolld query application show-application $APPLICATION_ADDR
 ```
 
-### Configure and run your AppGate Server <!-- omit in toc -->
+### Configure and run your PATH Gateway <!-- omit in toc -->
 
-:::tip AppGate Server operation config
+:::tip PATH Gateway operation config
 
-[dev.poktroll.com/operate/configs/appgate_server_config](https://dev.poktroll.com/operate/configs/appgate_server_config)
-explains what the AppGate Server operation config is and how it can be used.
+[path.grove.city/operate/](https://path.grove.city/operate) explains what the
+`PATH Gateway` operation config is and how it can be used.
 
 :::
 
-appgate/config/appgate_config.yaml
-
 ```bash
-docker-compose up -d appgate
+docker-compose up -d pathgw
 ```
 
 Check logs and confirm the node works as expected:
 
 ```bash
-docker-compose logs -f --tail 100 appgate
+docker-compose logs -f --tail 100 pathgw
 ```
 
 ### Send a relay <!-- omit in toc -->
 
-You can send requests to the newly deployed AppGate Server. If there are any
+You can send requests to the newly deployed `PATH Gateway`. If there are any
 Suppliers on the network that can provide the service, the request will be
 routed to them.
 
-The endpoint you want to send request to is: `http://your_node:appgate_server_port/service_id`. For example, this is how the request can be routed to `ethereum`
-represented by `0021`:
+The endpoint you want to send request to is: `http://your_node:path_gateway_port/service_id`.
+For example, this is how the request can be routed to `ethereum` represented by the alias `eth-mainnet`:
 
 ```bash
-curl http://$NODE_HOSTNAME:85/0021 \
+curl http://eth-mainnet.$NODE_HOSTNAME:3000/v1 \
   -X POST \
   -H "Content-Type: application/json" \
   --data '{"method":"eth_blockNumber","params":[],"id":1,"jsonrpc":"2.0"}'
@@ -523,7 +520,7 @@ You should expect a result that looks like so:
 {"jsonrpc":"2.0","id":1,"result":"0x1289571"}
 ```
 
-## D. Creating a Gateway Deploying an Gateway Server
+## D. Creating a Gateway Deploying a PATH Gateway
 
 Gateway Server allows to use services provided by other operators on Pocket Network.
 
@@ -608,23 +605,21 @@ poktrolld query gateway show-gateway $GATEWAY_ADDR
 
 ### Configure and run your Gateway Server <!-- omit in toc -->
 
-:::tip Gateway Server operation config
+:::tip PATH Gateway operation config
 
-[dev.poktroll.com/operate/configs/appgate_server_config](https://dev.poktroll.com/operate/configs/appgate_server_config)
-explains what the Gateway Server operation config is and how it can be used.
+[path.grove.city/operate](https://path.grove.city/operate)
+explains what the `PATH Gateway` operation config is and how it can be used.
 
 :::
 
-appgate/config/gateway_config.yaml
-
 ```bash
-docker-compose up -d gateway-example
+docker-compose up -d pathgw
 ```
 
 Check logs and confirm the node works as expected:
 
 ```bash
-docker-compose logs -f --tail 100 gateway-example
+docker-compose logs -f --tail 100 pathgw
 ```
 
 ### Delegate your Application to the Gateway <!-- omit in toc -->
@@ -633,23 +628,20 @@ docker-compose logs -f --tail 100 gateway-example
 poktrolld tx application delegate-to-gateway $GATEWAY_ADDR --from=application-1 --chain-id=poktroll --chain-id=poktroll --yes
 ```
 
-### [BONUS] Deploy a PATH Gateway
-
-If you want to deploy a real Gateway, you can use [Grove's PATH](https://github.com/buildwithgrove/path).
-
 ### Send a relay <!-- omit in toc -->
 
 You can send requests to the newly deployed Gateway Server. If there are any
 Suppliers on the network that can provide the service, the request will be
 routed to them.
 
-The endpoint you want to send request to is: `http://your_node:gateway_server_port/service_id`. For example, this is how the request can be routed to `ethereum`
-represented by `0021`:
+The endpoint you want to send request to is: `http://your_node:gateway_server_port/service_id`.
+For example, this is how the request can be routed to `ethereum` represented by the alias `eth-mainnet`:
 
 ```bash
-curl http://$NODE_HOSTNAME:84/0021?applicationAddr=$APPLICATION_ADDR \
+curl http://eth-mainnet.$NODE_HOSTNAME:3000/v1 \
   -X POST \
   -H "Content-Type: application/json" \
+  -H "X-Application-Address: $APPLICATION_ADDR" \
   --data '{"method":"eth_blockNumber","params":[],"id":1,"jsonrpc":"2.0"}'
 ```
 
@@ -665,9 +657,10 @@ To ensure you get a response, you may need to run the request a few times:
 
 ```bash
 for i in {1..10}; do
-  curl http://$NODE_HOSTNAME:85/0021 \
+  curl http://eth-mainnet.$NODE_HOSTNAME:3000/v1 \
     -X POST \
     -H "Content-Type: application/json" \
+    -H "X-Application-Address: $APPLICATION_ADDR" \
     --data '{"method":"eth_blockNumber","params":[],"id":1,"jsonrpc":"2.0"}' \
     --max-time 1
   echo ""
@@ -679,4 +672,3 @@ Why?
 - Suppliers may have been staked, but the RelayMiner is no longer running.
 - Pocket does not currently have on-chain quality-of-service
 - Pocket does not currently have supplier jailing
-- You can follow along with [buildwithgrove/path](https://github.com/buildwithgrove/path) for what we'll open source.

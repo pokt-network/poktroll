@@ -15,7 +15,7 @@ We are still refining our observability guidelines. If in doubt - please reach o
   - [Best Practices](#best-practices)
   - [Examples](#examples)
   - [Counter](#counter)
-    - [x/proof/keeper/msg_server_create_claim.go](#xproofkeepermsg_server_create_claimgo)
+    - [x/proof/keeper/msg\_server\_create\_claim.go](#xproofkeepermsg_server_create_claimgo)
   - [Gauage](#gauage)
     - [x/tokenomics/module/abci.go](#xtokenomicsmoduleabcigo)
   - [Histogram](#histogram)
@@ -28,7 +28,7 @@ We are still refining our observability guidelines. If in doubt - please reach o
 In our system, metrics are exposed using the Prometheus exporter. This approach aligns with tools like Rollkit, and we
 leverage the [go-kit metrics package](https://pkg.go.dev/github.com/go-kit/kit/metrics) for custom metrics
 implementation. For practical examples of metric definitions, refer to
-[AppGate Metrics](https://github.com/pokt-network/poktroll/blob/main/pkg/appgateserver/metrics.go).
+[RelayMiner Metrics](https://github.com/pokt-network/poktroll/blob/main/pkg/relayer/proxy/metrics.go).
 
 ### Types of Metrics
 

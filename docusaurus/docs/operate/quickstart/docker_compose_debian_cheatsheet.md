@@ -16,7 +16,7 @@ import ReactPlayer from "react-player";
 - [Create new addresses for all your accounts and update .env](#create-new-addresses-for-all-your-accounts-and-update-env)
 - [Fund your accounts](#fund-your-accounts)
 - [Stake a Supplier \& Deploy a RelayMiner](#stake-a-supplier--deploy-a-relayminer)
-- [Stake an Application \& Deploy an AppGate Server](#stake-an-application--deploy-an-appgate-server)
+- [Stake an Application \& Deploy a PATH Gateway](#stake-an-application--deploy-a-path-gateway)
 - [Send a Relay](#send-a-relay)
   - [Ensure you get a response](#ensure-you-get-a-response)
 - [\[BONUS\] Deploy a PATH Gateway](#bonus-deploy-a-path-gateway)
@@ -25,7 +25,7 @@ import ReactPlayer from "react-player";
   - [Fund the same accounts](#fund-the-same-accounts)
     - [Faucet is not ready and you need to fund the accounts manually](#faucet-is-not-ready-and-you-need-to-fund-the-accounts-manually)
   - [Start the RelayMiner](#start-the-relayminer)
-  - [Start the AppGate Server](#start-the-appgate-server)
+  - [Start the PATH Gateway](#start-the-path-gateway)
   - [Re-stake the gateway](#re-stake-the-gateway)
 
 ## Results
@@ -192,7 +192,7 @@ docker compose up -d relayminer
 docker logs -f --tail 100 relayminer
 ```
 
-## Stake an Application & Deploy an AppGate Server
+## Stake an Application & Deploy a PATH Gateway
 
 Stake the application:
 
@@ -203,18 +203,18 @@ poktrolld tx application stake-application --config=/poktroll/stake_configs/appl
 poktrolld query application show-application $APPLICATION_ADDR
 ```
 
-Start the appgate server:
+Start the PATH gateway:
 
 ```bash
-docker compose up -d appgate
+docker compose up -d pathgw
 # OPTIONALLY view the logs
-docker logs -f --tail 100 appgate
+docker logs -f --tail 100 pathgw
 ```
 
 ## Send a Relay
 
 ```bash
-curl http://$NODE_HOSTNAME:85/0021 \
+curl http://eth-mainnet.$NODE_HOSTNAME:3000/v1 \
   -X POST \
   -H "Content-Type: application/json" \
   --data '{"method":"eth_blockNumber","params":[],"id":1,"jsonrpc":"2.0"}'
@@ -308,7 +308,7 @@ docker compose up -d relayminer
 docker logs -f --tail 100 relayminer
 ```
 
-### Start the AppGate Server
+### Start the PATH Gateway
 
 ```bash
 # Stake
@@ -316,9 +316,9 @@ poktrolld tx application stake-application --config=/poktroll/stake_configs/appl
 # Check
 poktrolld query application show-application $APPLICATION_ADDR
 # Start
-docker compose up -d appgate
+docker compose up -d pathgw
 # View
-docker logs -f --tail 100 appgate
+docker logs -f --tail 100 pathgw
 ```
 
 ### Re-stake the gateway

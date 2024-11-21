@@ -11,7 +11,7 @@ title: Performance troubleshooting
   - [Available `pprof` Endpoints](#available-pprof-endpoints)
   - [Configure Software to Expose `pprof` Endpoints](#configure-software-to-expose-pprof-endpoints)
     - [Full Nodes and Validator Configuration](#full-nodes-and-validator-configuration)
-    - [AppGate Server and RelayMiner](#appgate-server-and-relayminer)
+    - [RelayMiner](#relayminer)
   - [Save the Profiling Data](#save-the-profiling-data)
   - [Explore the Profiling Data](#explore-the-profiling-data)
   - [Explore without saving data](#explore-without-saving-data)
@@ -98,10 +98,9 @@ on a particular network interface and port. By default, `pprof` listens on `loca
 
 If the value has been modified, you must restart the process.
 
-#### AppGate Server and RelayMiner
+#### RelayMiner
 
-Both `AppGate Server` and `RelayMiner` can be configured to expose a `pprof`
-endpoint using a configuration file like this:
+The `RelayMiner` can be configured to expose a `pprof` endpoint using a configuration file like this:
 
 ```yaml
 pprof:
