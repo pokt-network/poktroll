@@ -8,6 +8,9 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
+# Add the branch constant here
+GENESIS_BRANCH="add-beta-seeds-rename-dirs"
+
 # Function to print colored output
 print_color() {
     COLOR=$1
@@ -70,8 +73,8 @@ get_user_input() {
     read -p "Enter the chain-id (default: poktroll): " CHAIN_ID
     CHAIN_ID=${CHAIN_ID:-"poktroll"}
 
-    # Set URLs based on the chosen network
-    BASE_URL="https://raw.githubusercontent.com/pokt-network/pocket-network-genesis/master/shannon/$NETWORK"
+    # Update URLs to use the branch constant
+    BASE_URL="https://raw.githubusercontent.com/pokt-network/pocket-network-genesis/${GENESIS_BRANCH}/shannon/$NETWORK"
     SEEDS_URL="$BASE_URL/seeds"
     GENESIS_URL="$BASE_URL/genesis.json"
 
