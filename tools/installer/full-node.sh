@@ -242,6 +242,15 @@ configure_poktrolld() {
         exit 1
     fi
 
+    # Detect external IP address
+    EXTERNAL_IP=$(curl -s https://api.ipify.org)
+    print_color $YELLOW "Detected external IP address: $EXTERNAL_IP"
+    read -p "Is this your correct external IP address? (Y/n): " confirm_ip
+    if [[ $confirm_ip =~ ^[Nn] ]]; then
+        read -p "Please enter your external IP address: " custom_ip
+        EXTERNAL_IP=${custom_ip:-$EXTERNAL_IP}
+    fi
+
     sudo -u "$POKTROLL_USER" bash << EOF
     source \$HOME/.profile
     
@@ -252,6 +261,7 @@ configure_poktrolld() {
     poktrolld init "$NODE_MONIKER" --chain-id="$CHAIN_ID" --home=\$HOME/.poktroll
     cp "$GENESIS_FILE" \$HOME/.poktroll/config/genesis.json
     sed -i -e "s|^seeds *=.*|seeds = \"$SEEDS\"|" \$HOME/.poktroll/config/config.toml
+    sed -i -e "s|^external_address *=.*|external_address = \"$EXTERNAL_IP:26656\"|" \$HOME/.poktroll/config/config.toml
 EOF
     if [ $? -eq 0 ]; then
         print_color $GREEN "Poktrolld configured successfully."
