@@ -197,23 +197,53 @@ setup_poktrolld() {
 
     # Extract the version from genesis.json using jq
     POKTROLLD_VERSION=$(jq -r '.app_version' < "$GENESIS_FILE")
+    print_color $YELLOW "Detected version from genesis: $POKTROLLD_VERSION"
 
     if [ -z "$POKTROLLD_VERSION" ]; then
         print_color $RED "Failed to extract version information from genesis file."
         exit 1
     fi
 
-    # Use the direct download link for the correct release
+    # Construct the release URL with proper version format
     RELEASE_URL="https://github.com/pokt-network/poktroll/releases/download/v${POKTROLLD_VERSION}/poktroll_linux_${ARCH}.tar.gz"
+    print_color $YELLOW "Attempting to download from: $RELEASE_URL"
 
+    # Create temporary directory for download
+    TMP_DIR=$(mktemp -d)
+    
     sudo -u "$POKTROLL_USER" bash << EOF
     mkdir -p \$HOME/.poktroll/cosmovisor/genesis/bin
-    curl -L "$RELEASE_URL" | tar -zxvf - -C \$HOME/.poktroll/cosmovisor/genesis/bin
+    
+    # Download with better error handling
+    if curl -L "$RELEASE_URL" -o "$TMP_DIR/poktroll.tar.gz"; then
+        print_color \$GREEN "Download successful"
+        
+        # Extract with error checking
+        if tar -xzvf "$TMP_DIR/poktroll.tar.gz" -C \$HOME/.poktroll/cosmovisor/genesis/bin; then
+            print_color \$GREEN "Extraction successful"
+        else
+            print_color \$RED "Failed to extract archive"
+            exit 1
+        fi
+    else
+        print_color \$RED "Failed to download binary from $RELEASE_URL"
+        exit 1
+    fi
+    
     chmod +x \$HOME/.poktroll/cosmovisor/genesis/bin/poktrolld
     ln -sf \$HOME/.poktroll/cosmovisor/genesis/bin/poktrolld \$HOME/bin/poktrolld
     source \$HOME/.profile
 EOF
-    print_color $GREEN "Poktrolld set up successfully."
+
+    # Cleanup
+    rm -rf "$TMP_DIR"
+    
+    if [ $? -eq 0 ]; then
+        print_color $GREEN "Poktrolld set up successfully."
+    else
+        print_color $RED "Failed to set up Poktrolld."
+        exit 1
+    fi
 }
 
 # Function to configure Poktrolld
