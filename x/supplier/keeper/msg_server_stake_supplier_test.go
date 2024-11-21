@@ -64,7 +64,7 @@ func TestMsgServer_StakeSupplier_SuccessfulCreateAndUpdate(t *testing.T) {
 	require.Len(t, foundSupplier.Services[0].Endpoints, 1)
 	require.Equal(t, "http://localhost:8080", foundSupplier.Services[0].Endpoints[0].Url)
 	// Assert that the supplier's account balance was reduced by the staking fee
-	balanceDecrease := keeper.StakingFee.Amount.Int64() + foundSupplier.Stake.Amount.Int64()
+	balanceDecrease := keeper.SupplierStakingFee.Amount.Int64() + foundSupplier.Stake.Amount.Int64()
 	// SupplierBalanceMap reflects the relative changes to the supplier's balance
 	// (i.e. it starts from 0 and can go below it).
 	// It is not using coins that enforce non-negativity of the balance nor account

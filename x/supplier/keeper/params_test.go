@@ -84,7 +84,7 @@ func TestParams_ValidateStakingFee(t *testing.T) {
 			expectedErr: suppliertypes.ErrSupplierParamInvalid.Wrapf("invalid parameter type: string"),
 		},
 		{
-			desc: "StakingFee less than zero",
+			desc: "SupplierStakingFee less than zero",
 			minStake: &cosmostypes.Coin{
 				Denom:  volatile.DenomuPOKT,
 				Amount: math.NewInt(-1),
@@ -95,7 +95,7 @@ func TestParams_ValidateStakingFee(t *testing.T) {
 			),
 		},
 		{
-			desc:     "valid StakingFee",
+			desc:     "valid SupplierStakingFee",
 			minStake: &suppliertypes.DefaultStakingFee,
 		},
 	}
