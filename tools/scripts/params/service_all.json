@@ -9,7 +9,7 @@
             "denom": "upokt",
             "amount": "1000000000"
           },
-          "target_num_relays": 10000
+          "target_num_relays": 100000
         }
       }
     ]

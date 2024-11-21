@@ -21,7 +21,7 @@ var (
 	MinAddServiceFee       = cosmostypes.NewCoin(volatile.DenomuPOKT, math.NewInt(1000000000))
 	KeyTargetNumRelays     = []byte("TargetNumRelays")
 	ParamTargetNumRelays   = "target_num_relays"
-	DefaultTargetNumRelays = uint64(1e4)
+	DefaultTargetNumRelays = uint64(10e4)
 )
 
 // ParamKeyTable the param key table for launch module
