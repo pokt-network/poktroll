@@ -208,39 +208,24 @@ setup_poktrolld() {
     RELEASE_URL="https://github.com/pokt-network/poktroll/releases/download/v${POKTROLLD_VERSION}/poktroll_linux_${ARCH}.tar.gz"
     print_color $YELLOW "Attempting to download from: $RELEASE_URL"
 
-    # Create temporary directory for download and set permissions
-    TMP_DIR=$(mktemp -d)
-    chown "$POKTROLL_USER:$POKTROLL_USER" "$TMP_DIR"
-
-    # Download and extract as the POKTROLL_USER
+    # Download and extract directly as the POKTROLL_USER
     sudo -u "$POKTROLL_USER" bash << EOF
     mkdir -p \$HOME/.poktroll/cosmovisor/genesis/bin
-    
-    echo "Downloading binary..."
-    if ! curl -L "$RELEASE_URL" -o "$TMP_DIR/poktroll.tar.gz"; then
-        echo "Failed to download binary"
+    curl -L "$RELEASE_URL" | tar -zxvf - -C \$HOME/.poktroll/cosmovisor/genesis/bin
+    if [ \$? -ne 0 ]; then
+        echo "Failed to download or extract binary"
         exit 1
     fi
-    
-    echo "Extracting binary..."
-    if ! tar -xzvf "$TMP_DIR/poktroll.tar.gz" -C \$HOME/.poktroll/cosmovisor/genesis/bin; then
-        echo "Failed to extract binary"
-        exit 1
-    fi
-    
     chmod +x \$HOME/.poktroll/cosmovisor/genesis/bin/poktrolld
     ln -sf \$HOME/.poktroll/cosmovisor/genesis/bin/poktrolld \$HOME/bin/poktrolld
+    source \$HOME/.profile
 EOF
 
-    # Check the result of the sudo command
     if [ $? -ne 0 ]; then
         print_color $RED "Failed to set up Poktrolld"
-        rm -rf "$TMP_DIR"
         exit 1
     fi
 
-    # Cleanup
-    rm -rf "$TMP_DIR"
     print_color $GREEN "Poktrolld set up successfully."
 }
 
