@@ -25,6 +25,22 @@ check_root() {
 
 # Function to get user input
 get_user_input() {
+    # Ask user which network to install
+    echo "Which network would you like to install?"
+    echo "1) testnet-alpha"
+    echo "2) testnet-beta"
+    echo "3) mainnet"
+    read -p "Enter your choice (1-3): " network_choice
+
+    case $network_choice in
+        1) NETWORK="testnet-alpha" ;;
+        2) NETWORK="testnet-beta" ;;
+        3) NETWORK="mainnet" ;;
+        *) print_color $RED "Invalid choice. Exiting."; exit 1 ;;
+    esac
+
+    print_color $GREEN "You have chosen to install the $NETWORK network."
+
     read -p "Enter the desired username to run poktrolld (default: poktroll): " POKTROLL_USER
     POKTROLL_USER=${POKTROLL_USER:-poktroll}
 
@@ -34,8 +50,13 @@ get_user_input() {
     read -p "Enter the chain-id (default: poktroll): " CHAIN_ID
     CHAIN_ID=${CHAIN_ID:-"poktroll"}
 
+    # Set URLs based on the chosen network
+    BASE_URL="https://raw.githubusercontent.com/pokt-network/pocket-network-genesis/master/shannon/$NETWORK"
+    SEEDS_URL="$BASE_URL/seeds"
+    GENESIS_URL="$BASE_URL/genesis.json"
+    INIT_VERSION_URL="$BASE_URL/init-version"
+
     # Fetch seeds from the provided URL
-    SEEDS_URL="https://raw.githubusercontent.com/pokt-network/pocket-network-genesis/master/shannon/alpha/testnet-validated.seeds"
     SEEDS=$(curl -s "$SEEDS_URL")
     if [ -z "$SEEDS" ]; then
         print_color $RED "Failed to fetch seeds from $SEEDS_URL. Please check your internet connection and try again."
@@ -160,7 +181,6 @@ configure_poktrolld() {
     print_color $YELLOW "Configuring Poktrolld..."
     
     # Ask for confirmation to download the genesis file
-    GENESIS_URL="https://raw.githubusercontent.com/pokt-network/pocket-network-genesis/master/shannon/alpha/testnet-validated.json"
     print_color $YELLOW "The script will download the genesis file from:"
     print_color $YELLOW "$GENESIS_URL"
     read -p "Are you OK with downloading and using this genesis file? (y/N): " confirm_genesis
@@ -235,7 +255,7 @@ main() {
     setup_poktrolld
     configure_poktrolld
     setup_systemd
-    print_color $GREEN "Poktroll Full Node installation completed successfully!"
+    print_color $GREEN "Poktroll Full Node installation for $NETWORK completed successfully!"
     print_color $YELLOW "You can check the status of your node with: sudo systemctl status cosmovisor.service"
     print_color $YELLOW "View logs with: sudo journalctl -u cosmovisor.service -f"
 }
