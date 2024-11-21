@@ -101,3 +101,6 @@ job.yaml
 
 # tmp directory for locally produced artifacts
 tmp/*
+
+# Auto-generated docs
+docusaurus/docs/protocol/governance/params.md
