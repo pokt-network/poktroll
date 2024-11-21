@@ -6,7 +6,7 @@
         "authority": "pokt10d07y265gmmuvt4z0w9aw880jnsr700j8yv32t",
         "name": "staking_fee",
         "as_coin": {
-          "amount": "1000000",
+          "amount": "1",
           "denom": "upokt"
         }
       }

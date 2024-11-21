@@ -17,7 +17,7 @@ var (
 	KeyStakingFee   = []byte("StakingFee")
 	ParamStakingFee = "staking_fee"
 	// TODO_MAINNET: Determine the default value.
-	DefaultStakingFee = cosmostypes.NewInt64Coin("upokt", 1000000) // 1 POKT
+	DefaultStakingFee = cosmostypes.NewInt64Coin("upokt", 1) // 1 uPOKT
 )
 
 // ParamKeyTable the param key table for launch module
