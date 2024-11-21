@@ -4,7 +4,7 @@
       {
         "@type": "/poktroll.tokenomics.MsgUpdateParam",
         "authority": "pokt10d07y265gmmuvt4z0w9aw880jnsr700j8yv32t",
-        "name": "mint_allocation_percentages",
+        "name": "global_inflation_per_claim",
         "as_float": 0.1
       }
     ]

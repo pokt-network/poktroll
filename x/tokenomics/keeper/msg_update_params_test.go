@@ -76,6 +76,7 @@ func TestMsgUpdateParams(t *testing.T) {
 			req: &tokenomicstypes.MsgUpdateParams{
 				Authority: tokenomicsKeeper.GetAuthority(),
 				Params: tokenomicstypes.Params{
+					// GlobalInflationPerClaim MUST be positive.
 					GlobalInflationPerClaim: -0.1,
 
 					// DaoRewardAddress MUST NOT be empty string
