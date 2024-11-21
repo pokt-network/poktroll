@@ -292,6 +292,22 @@ EOF
     print_color $GREEN "Systemd service set up and started successfully."
 }
 
+# Function to check if ufw is installed and open port 26656
+configure_ufw() {
+    if command -v ufw &> /dev/null; then
+        print_color $YELLOW "ufw is installed."
+        read -p "Do you want to open port 26656 for p2p communication? (Y/n): " open_port
+        if [[ $open_port =~ ^[Yy] ]]; then
+            ufw allow 26656
+            print_color $GREEN "Port 26656 opened successfully."
+        else
+            print_color $YELLOW "Port 26656 not opened."
+        fi
+    else
+        print_color $YELLOW "ufw is not installed. Skipping port configuration."
+    fi
+}
+
 # Main function
 main() {
     print_color $GREEN "Welcome to the Poktroll Full Node Install Script!"
@@ -305,6 +321,7 @@ main() {
     setup_poktrolld
     configure_poktrolld
     setup_systemd
+    configure_ufw
     print_color $GREEN "Poktroll Full Node installation for $NETWORK completed successfully!"
     print_color $YELLOW "You can check the status of your node with: sudo systemctl status cosmovisor.service"
     print_color $YELLOW "View logs with: sudo journalctl -u cosmovisor.service -f"
