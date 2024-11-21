@@ -392,7 +392,8 @@ func TestMsgServer_UnstakeSupplier_OperatorCanUnstake(t *testing.T) {
 
 	// Balance decrease is the total amount deducted from the supplier's balance, including
 	// the initial stake and the staking fee.
-	balanceDecrease := keeper.SupplierStakingFee.Amount.Int64() + foundSupplier.Stake.Amount.Int64()
+	supplierStakingFee := supplierModuleKeepers.Keeper.GetParams(ctx).StakingFee
+	balanceDecrease := supplierStakingFee.Amount.Int64() + foundSupplier.Stake.Amount.Int64()
 	// Ensure that the initial stake is not returned to the owner yet
 	require.Equal(t, -balanceDecrease, supplierModuleKeepers.SupplierBalanceMap[ownerAddr])
 
@@ -415,5 +416,5 @@ func TestMsgServer_UnstakeSupplier_OperatorCanUnstake(t *testing.T) {
 
 	// Ensure that the initial stake is returned to the owner while the staking fee
 	// remains deducted from the supplier's balance.
-	require.Equal(t, -keeper.SupplierStakingFee.Amount.Int64(), supplierModuleKeepers.SupplierBalanceMap[ownerAddr])
+	require.Equal(t, -supplierStakingFee.Amount.Int64(), supplierModuleKeepers.SupplierBalanceMap[ownerAddr])
 }
