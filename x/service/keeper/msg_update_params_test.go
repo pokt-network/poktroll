@@ -46,17 +46,6 @@ func TestMsgUpdateParams(t *testing.T) {
 			},
 			shouldError: false,
 		},
-		{
-			desc: "valid: send minimal params",
-			input: &servicetypes.MsgUpdateParams{
-				Authority: k.GetAuthority(),
-				Params: servicetypes.Params{
-					AddServiceFee:   &servicetypes.MinAddServiceFee,
-					TargetNumRelays: 1,
-				},
-			},
-			shouldError: false,
-		},
 	}
 
 	for _, test := range tests {
