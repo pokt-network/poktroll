@@ -70,13 +70,26 @@ get_user_input() {
     read -p "Enter the node moniker (default: $(hostname)): " NODE_MONIKER
     NODE_MONIKER=${NODE_MONIKER:-$(hostname)}
 
-    read -p "Enter the chain-id (default: poktroll): " CHAIN_ID
-    CHAIN_ID=${CHAIN_ID:-"poktroll"}
-
     # Update URLs to use the branch constant
     BASE_URL="https://raw.githubusercontent.com/pokt-network/pocket-network-genesis/${GENESIS_BRANCH}/shannon/$NETWORK"
     SEEDS_URL="$BASE_URL/seeds"
     GENESIS_URL="$BASE_URL/genesis.json"
+
+    # Download genesis.json and store it
+    GENESIS_FILE="/tmp/genesis.json"
+    curl -s -o "$GENESIS_FILE" "$GENESIS_URL"
+    if [ $? -ne 0 ]; then
+        print_color $RED "Failed to download genesis file. Please check your internet connection and try again."
+        exit 1
+    fi
+
+    # Extract chain_id from genesis.json
+    CHAIN_ID=$(jq -r '.chain_id' < "$GENESIS_FILE")
+    if [ -z "$CHAIN_ID" ]; then
+        print_color $RED "Failed to extract chain_id from genesis file."
+        exit 1
+    fi
+    print_color $GREEN "Using chain_id: $CHAIN_ID from genesis file"
 
     # Fetch seeds from the provided URL
     SEEDS=$(curl -s "$SEEDS_URL")
@@ -179,14 +192,6 @@ setup_poktrolld() {
         ARCH="arm64"
     else
         print_color $RED "Unsupported architecture: $ARCH"
-        exit 1
-    fi
-
-    # Download genesis.json once and store it
-    GENESIS_FILE="/tmp/genesis.json"
-    curl -s -o "$GENESIS_FILE" "$GENESIS_URL"
-    if [ $? -ne 0 ]; then
-        print_color $RED "Failed to download genesis file. Please check your internet connection and try again."
         exit 1
     fi
 
