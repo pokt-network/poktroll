@@ -3,15 +3,23 @@ package keeper
 import (
 	"context"
 
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+
 	"github.com/pokt-network/poktroll/x/proof/types"
 )
 
 func (k msgServer) UpdateParams(ctx context.Context, req *types.MsgUpdateParams) (*types.MsgUpdateParamsResponse, error) {
 	if err := req.ValidateBasic(); err != nil {
-		return nil, err
+		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 	if k.GetAuthority() != req.Authority {
-		return nil, types.ErrProofInvalidSigner.Wrapf("invalid authority; expected %s, got %s", k.GetAuthority(), req.Authority)
+		return nil, status.Error(
+			codes.PermissionDenied,
+			types.ErrProofInvalidSigner.Wrapf(
+				"invalid authority; expected %s, got %s", k.GetAuthority(), req.Authority,
+			).Error(),
+		)
 	}
 
 	if err := k.SetParams(ctx, req.Params); err != nil {
