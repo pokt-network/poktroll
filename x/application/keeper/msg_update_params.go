@@ -18,7 +18,7 @@ func (k msgServer) UpdateParams(ctx context.Context, req *types.MsgUpdateParams)
 	}
 	if k.GetAuthority() != req.Authority {
 		return nil, status.Error(
-			codes.InvalidArgument,
+			codes.PermissionDenied,
 			types.ErrAppInvalidSigner.Wrapf(
 				"invalid authority; expected %s, got %s",
 				k.GetAuthority(), req.Authority,
