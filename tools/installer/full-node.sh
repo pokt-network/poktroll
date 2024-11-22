@@ -8,7 +8,7 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
-# Can change the branch from `pocket-network-genesis` repo to test before merging to master.
+# DEV_NOTE: For testing purposes, you can change the branch name before merging to master.
 GENESIS_BRANCH="master"
 
 # Function to print colored output
@@ -302,7 +302,8 @@ EOF
     print_color $GREEN "Systemd service set up and started successfully."
 }
 
-# Function to check if ufw is installed and open port 26656
+# Function to check if ufw is installed and open port 26656. We need to open the port to keep the network healthy.
+# By default, at least on Debian vultr, this port is not open to the internet.
 configure_ufw() {
     if command -v ufw &> /dev/null; then
         print_color $YELLOW "ufw is installed."
