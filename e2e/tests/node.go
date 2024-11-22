@@ -203,6 +203,7 @@ func (p *pocketdBin) runCurlCmd(rpcBaseURL, service, method, path, appAddr, data
 		"-v",                                   // verbose output
 		"-sS",                                  // silent with error
 		"-H", `Content-Type: application/json`, // HTTP headers
+		"-H", fmt.Sprintf("X-App-Address: %s", appAddr),
 		rpcUrl.String(),
 	}
 
@@ -213,7 +214,6 @@ func (p *pocketdBin) runCurlCmd(rpcBaseURL, service, method, path, appAddr, data
 	}
 	args = append(base, args...)
 	commandStr := "curl " + strings.Join(args, " ") // Create a string representation of the command
-	fmt.Println(commandStr)
 	cmd := exec.Command("curl", args...)
 	var stdoutBuf, stderrBuf bytes.Buffer
 	cmd.Stdout = &stdoutBuf

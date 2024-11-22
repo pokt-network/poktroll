@@ -8,14 +8,15 @@ Feature: Relay Namespace
         And the session for application "app1" and service "anvil" contains the supplier "supplier1"
         Then the application "app1" sends the supplier "supplier1" a successful request for service "anvil" with path "" and data '{"jsonrpc":"2.0","method":"eth_blockNumber","params":[],"id":1}'
 
-    Scenario: App can send a REST relay to Supplier
-        Given the user has the pocketd binary installed
-        # Account "app2" is staked for service "rest"
-        And the application "app2" is staked for service "rest"
-        And the supplier "supplier1" is staked for service "rest"
-        And the session for application "app2" and service "rest" contains the supplier "supplier1"
-       When the application "app2" sends the supplier "supplier1" a successful request for service "rest" with path "/quote"
-       Then a "tokenomics" module "ClaimSettled" end block event is broadcast
+    # TODO_MAINNET(@red-0ne): Enable this test once PATH Gateway supports REST.
+    # Scenario: App can send a REST relay to Supplier
+    #     Given the user has the pocketd binary installed
+    #     # Account "app2" is staked for service "rest"
+    #     And the application "app2" is staked for service "rest"
+    #     And the supplier "supplier1" is staked for service "rest"
+    #     And the session for application "app2" and service "rest" contains the supplier "supplier1"
+    #    When the application "app2" sends the supplier "supplier1" a successful request for service "rest" with path "/quote"
+    #    Then a "tokenomics" module "ClaimSettled" end block event is broadcast
 
     # TODO_TEST(@Olshansk):
     # - Successful relay through applicat's sovereign appgate server

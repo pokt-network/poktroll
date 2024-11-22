@@ -204,7 +204,7 @@ genesis:
         - owner_address: pokt19a3t4yunp0dlpfjrp7qwnzwlrzd5fzs2gjaaaj
           operator_address: pokt19a3t4yunp0dlpfjrp7qwnzwlrzd5fzs2gjaaaj
           services:
-            - service_id: "anvil"
+            - service_id: anvil
               endpoints:
                 - configs: []
                   rpc_type: JSON_RPC
@@ -252,8 +252,8 @@ genesis:
           amount: "1000000000"
           denom: upokt
       serviceList:
-        - id: "anvil"
-          name: "anvil"
+        - id: anvil
+          name: anvil
           compute_units_per_relay: 1
           owner_address: pokt1cwnu460557x0z78jv3hhc7356hhkrgc86c87q5
         - id: ollama

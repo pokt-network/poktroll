@@ -4,15 +4,12 @@ shannon_config:
     grpc_config:
       host_port: validator-poktroll-validator:9090
       insecure: true
-    # TODO: Allow sovereign soverign apps to sign their own relay requests.
-    gateway_address: pokt15vzxjqklzjtlz7lahe8z2dfe9nm5vxwwmscne4 # gateway1
-    gateway_private_key: cf09805c952fa999e9a63a9f434147b0a5abfd10f268879694c6b5a70e1ae177
-    # TODO: Populate delegated_app_addres ses from on-chain records.
-    delegated_app_addresses:
-      - pokt1mrqt5f7qh8uxs27cjm9t7v9e74a9vvdnq5jva4 # app1
     lazy_mode: true
+  gateway_config:
+    gateway_address: pokt15vzxjqklzjtlz7lahe8z2dfe9nm5vxwwmscne4 # gateway1
+    gateway_hex_private_key: cf09805c952fa999e9a63a9f434147b0a5abfd10f268879694c6b5a70e1ae177
+    gateway_mode: delegated
 
 services:
-  # Path needs 0021 service ID to handle EVM relays.
-  "anvil":
+  anvil:
     alias: anvil
