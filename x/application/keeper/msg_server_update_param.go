@@ -17,7 +17,7 @@ func (k msgServer) UpdateParam(ctx context.Context, msg *apptypes.MsgUpdateParam
 	)
 
 	if err := msg.ValidateBasic(); err != nil {
-		return nil, err
+		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
 	if k.GetAuthority() != msg.Authority {

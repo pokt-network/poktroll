@@ -6,6 +6,8 @@ import (
 	"slices"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"github.com/pokt-network/poktroll/telemetry"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
@@ -25,7 +27,7 @@ func (k msgServer) UndelegateFromGateway(ctx context.Context, msg *apptypes.MsgU
 	// Basic validation of the message
 	if err := msg.ValidateBasic(); err != nil {
 		logger.Error(fmt.Sprintf("Undelegation Message failed basic validation: %v", err))
-		return nil, err
+		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
 	// Retrieve the application from the store

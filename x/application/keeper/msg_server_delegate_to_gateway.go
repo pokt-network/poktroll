@@ -5,6 +5,8 @@ import (
 	"fmt"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"github.com/pokt-network/poktroll/telemetry"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
@@ -24,14 +26,19 @@ func (k msgServer) DelegateToGateway(ctx context.Context, msg *apptypes.MsgDeleg
 
 	if err := msg.ValidateBasic(); err != nil {
 		logger.Error(fmt.Sprintf("Delegation Message failed basic validation: %v", err))
-		return nil, err
+		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
 	// Retrieve the application from the store
 	app, found := k.GetApplication(ctx, msg.AppAddress)
 	if !found {
 		logger.Info(fmt.Sprintf("Application not found with address [%s]", msg.AppAddress))
-		return nil, apptypes.ErrAppNotFound.Wrapf("application not found with address: %s", msg.AppAddress)
+		return nil, status.Error(
+			codes.NotFound,
+			apptypes.ErrAppNotFound.Wrapf(
+				"application not found with address: %s", msg.AppAddress,
+			).Error(),
+		)
 	}
 	logger.Info(fmt.Sprintf("Application found with address [%s]", msg.AppAddress))
 
