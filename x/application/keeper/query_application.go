@@ -2,6 +2,7 @@ package keeper
 
 import (
 	"context"
+	"slices"
 
 	"cosmossdk.io/store/prefix"
 	"github.com/cosmos/cosmos-sdk/runtime"
@@ -17,6 +18,10 @@ func (k Keeper) AllApplications(ctx context.Context, req *types.QueryAllApplicat
 		return nil, status.Error(codes.InvalidArgument, "invalid request")
 	}
 
+	if err := req.ValidateBasic(); err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
+
 	var apps []types.Application
 
 	store := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
@@ -26,6 +31,12 @@ func (k Keeper) AllApplications(ctx context.Context, req *types.QueryAllApplicat
 		var application types.Application
 		if err := k.cdc.Unmarshal(value, &application); err != nil {
 			return err
+		}
+
+		// Filter out the application if the request specifies a delegatee gateway address as a contraint and the application
+		// does not delegate to the specifies gateway address.
+		if req.DelegateeGatewayAddress != "" && !slices.Contains(application.DelegateeGatewayAddresses, req.DelegateeGatewayAddress) {
+			return nil
 		}
 
 		// Ensure that the PendingUndelegations is an empty map and not nil when

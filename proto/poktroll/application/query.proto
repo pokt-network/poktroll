@@ -53,6 +53,8 @@ message QueryGetApplicationResponse {
 
 message QueryAllApplicationsRequest {
   cosmos.base.query.v1beta1.PageRequest pagination = 1;
+  // delegatee_gateway_address, if specified, filters the application list to only include those with delegation to the specified gateway address.
+  string delegatee_gateway_address = 2;
 }
 
 message QueryAllApplicationsResponse {

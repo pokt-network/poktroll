@@ -2,6 +2,7 @@ package keeper_test
 
 import (
 	"context"
+	"slices"
 	"strconv"
 	"testing"
 
@@ -18,16 +19,33 @@ import (
 // Prevent strconv unused error
 var _ = strconv.IntSize
 
-func createNApplications(keeper keeper.Keeper, ctx context.Context, n int) []types.Application {
+// testAppModifier represents any function that can be used to modify an application being instantiated for testing purposes.
+type testAppModifier func(app *types.Application)
+
+func createNApplications(keeper keeper.Keeper, ctx context.Context, n int, testAppModifiers ...testAppModifier) []types.Application {
 	apps := make([]types.Application, n)
 	for i := range apps {
 		apps[i].Address = strconv.Itoa(i)
 		// Setting pending undelegations since nullify.Fill() does not seem to do it.
 		apps[i].PendingUndelegations = make(map[uint64]types.UndelegatingGatewayList)
 
+		for _, modifier := range testAppModifiers {
+			modifier(&apps[i])
+		}
+
 		keeper.SetApplication(ctx, apps[i])
 	}
 	return apps
+}
+
+// testAppModifierDelegateeAddr adds the supplied gateway address to the application's delegatee list if the application's address matches
+// the supplied address list.
+func testAppModifierDelegateeAddr(delegateeGatewayAddr string, appsWithDelegationAddr []string) testAppModifier {
+	return func(app *types.Application) {
+		if slices.Contains(appsWithDelegationAddr, app.Address) {
+			app.DelegateeGatewayAddresses = append(app.DelegateeGatewayAddresses, delegateeGatewayAddr)
+		}
+	}
 }
 
 func init() {
