@@ -5,7 +5,7 @@ title: Docker Compose Cheat Sheet
 
 import ReactPlayer from "react-player";
 
-# Docker Compose Cheat Sheet <!-- omit in toc --> <!-- omit in toc -->
+# Docker Compose Cheat Sheet <!-- omit in toc -->
 
 - [Results](#results)
 - [Deploy your server](#deploy-your-server)
