@@ -5,11 +5,15 @@ sidebar_position: 1
 
 # Create a New Wallet <!-- omit in toc -->
 
-:::warning Security Notice
+:::warning
 
-**ALWAYS back up your key and/or mnemonic**. Store it in a secure
-location accessible only to you, such as a password manager, or written down
-in a safe place. Under your 🛏️ does not count!
+tl;dr IFF you know what you're doing.
+
+```bash
+poktrolld keys add $USER
+```
+
+Retrieve the `address` and go to the [Beta TestNet Faucet](https://faucet.beta.testnet.pokt.network/) to fund your account.
 
 :::
 
@@ -19,6 +23,14 @@ This guide will walk you through creating a new wallet on the Pocket Network.
 - [Step 1: Install poktrolld](#step-1-install-poktrolld)
 - [Step 2: Creating the Wallet](#step-2-creating-the-wallet)
 - [Step 3: Backing Up Your Wallet](#step-3-backing-up-your-wallet)
+
+:::warning Security Notice
+
+**ALWAYS back up your key and/or mnemonic**. Store it in a secure
+location accessible only to you, such as a password manager, or written down
+in a safe place. Under your 🛏️ does not count!
+
+:::
 
 ## What is a keyring backend?
 

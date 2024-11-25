@@ -10,7 +10,7 @@ import ReactPlayer from "react-player";
 - [Results](#results)
 - [Deploy your server](#deploy-your-server)
 - [Install Dependencies](#install-dependencies)
-  - [Create a new user](#create-a-new-user)
+  - [\[Optional\] Create a new user](#optional-create-a-new-user)
 - [Retrieve the source code](#retrieve-the-source-code)
 - [Update your environment](#update-your-environment)
 - [Start up the full node](#start-up-the-full-node)
@@ -86,16 +86,22 @@ And then install docker:
 sudo apt-get install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
 ```
 
-### Create a new user
+### [Optional] Create a new user
+
+:::note
 
 Make sure to replace `olshansky` with your username.
+
+:::
 
 ```bash
 # Create a new user and give sudo permissions
 export USERNAME=olshansky
-sudo adduser olshansky
-sudo usermod -aG sudo olshansky
+sudo adduser $USERNAME
+sudo usermod -aG sudo $USERNAME
+```
 
+```
 # Optionally avoid needing to provide a password
 sudo /etc/sudoers
 
