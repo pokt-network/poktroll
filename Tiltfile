@@ -45,20 +45,6 @@ localnet_config_defaults = {
             "level": "debug",
         },
     },
-    "gateways": {
-        "count": 1,
-        "delve": {"enabled": False},
-        "logs": {
-            "level": "debug",
-        },
-    },
-    "appgateservers": {
-        "count": 1,
-        "delve": {"enabled": False},
-        "logs": {
-            "level": "debug",
-        },
-    },
     "ollama": {
         "enabled": False,
         "model": "qwen:0.5b",
@@ -300,91 +286,6 @@ for x in range(localnet_config["relayminers"]["count"]):
             # Use with pprof like this: `go tool pprof -http=:3333 http://localhost:6070/debug/pprof/goroutine`
             str(6069 + actor_number)
             + ":6060",  # Relayminer pprof port. relayminer1 - exposes 6070, relayminer2 exposes 6071, etc.
-        ],
-    )
-
-# Provision AppGate Servers
-actor_number = 0
-for x in range(localnet_config["appgateservers"]["count"]):
-    actor_number = actor_number + 1
-    helm_resource(
-        "appgateserver" + str(actor_number),
-        chart_prefix + "appgate-server",
-        flags=[
-            "--values=./localnet/kubernetes/values-common.yaml",
-            "--values=./localnet/kubernetes/values-appgateserver.yaml",
-            "--set=config.signing_key=app" + str(actor_number),
-            "--set=metrics.serviceMonitor.enabled=" + str(localnet_config["observability"]["enabled"]),
-            "--set=development.delve.enabled=" + str(localnet_config["appgateservers"]["delve"]["enabled"]),
-            "--set=logLevel=" + str(localnet_config["appgateservers"]["logs"]["level"]),
-            "--set=image.repository=poktrolld",
-        ],
-        image_deps=["poktrolld"],
-        image_keys=[("image.repository", "image.tag")],
-    )
-    k8s_resource(
-        "appgateserver" + str(actor_number),
-        labels=["gateways"],
-        resource_deps=["validator"],
-        links=[
-            link(
-                "http://localhost:3003/d/appgateserver/protocol-appgate-server?orgId=1&refresh=5s&var-appgateserver=appgateserver"
-                + str(actor_number),
-                "Grafana dashboard",
-            ),
-        ],
-        port_forwards=[
-            str(42068 + actor_number) + ":42069",  # appgateserver1 - exposes 42069, appgateserver2 exposes 42070, etc.
-            str(40054 + actor_number)
-            + ":40004",  # DLV port. appgateserver1 - exposes 40055, appgateserver2 exposes 40056, etc.
-            # Run `curl localhost:PORT` to see the current snapshot of appgateserver metrics.
-            str(9079 + actor_number)
-            + ":9090",  # appgateserver metrics port. appgateserver1 - exposes 9080, appgateserver2 exposes 9081, etc.
-            # Use with pprof like this: `go tool pprof -http=:3333 http://localhost:6080/debug/pprof/goroutine`
-            str(6079 + actor_number)
-            + ":6090",  # appgateserver metrics port. appgateserver1 - exposes 6080, appgateserver2 exposes 6081, etc.
-        ],
-    )
-
-# Provision Gateways
-actor_number = 0
-for x in range(localnet_config["gateways"]["count"]):
-    actor_number = actor_number + 1
-    helm_resource(
-        "gateway" + str(actor_number),
-        chart_prefix + "appgate-server",
-        flags=[
-            "--values=./localnet/kubernetes/values-common.yaml",
-            "--values=./localnet/kubernetes/values-gateway.yaml",
-            "--set=config.signing_key=gateway" + str(actor_number),
-            "--set=metrics.serviceMonitor.enabled=" + str(localnet_config["observability"]["enabled"]),
-            "--set=development.delve.enabled=" + str(localnet_config["gateways"]["delve"]["enabled"]),
-            "--set=logLevel=" + str(localnet_config["gateways"]["logs"]["level"]),
-            "--set=image.repository=poktrolld",
-        ],
-        image_deps=["poktrolld"],
-        image_keys=[("image.repository", "image.tag")],
-    )
-    k8s_resource(
-        "gateway" + str(actor_number),
-        labels=["gateways"],
-        resource_deps=["validator"],
-        links=[
-            link(
-                "http://localhost:3003/d/appgateserver/protocol-appgate-server?orgId=1&refresh=5s&var-appgateserver=gateway"
-                + str(actor_number),
-                "Grafana dashboard",
-            ),
-        ],
-        port_forwards=[
-            str(42078 + actor_number) + ":42069",  # gateway1 - exposes 42079, gateway2 exposes 42080, etc.
-            str(40064 + actor_number) + ":40004",  # DLV port. gateway1 - exposes 40065, gateway2 exposes 40066, etc.
-            # Run `curl localhost:PORT` to see the current snapshot of gateway metrics.
-            str(9059 + actor_number)
-            + ":9090",  # gateway metrics port. gateway1 - exposes 9060, gateway2 exposes 9061, etc.
-            # Use with pprof like this: `go tool pprof -http=:3333 http://localhost:6090/debug/pprof/goroutine`
-            str(6059 + actor_number)
-            + ":6060",  # gateway metrics port. gateway1 - exposes 6060, gateway2 exposes 6061, etc.
         ],
     )
 
