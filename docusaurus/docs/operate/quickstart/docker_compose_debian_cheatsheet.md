@@ -10,7 +10,6 @@ import ReactPlayer from "react-player";
 - [Results](#results)
 - [Deploy your server](#deploy-your-server)
 - [Install Dependencies](#install-dependencies)
-  - [\[Optional\] Create a new user](#optional-create-a-new-user)
 - [Retrieve the source code](#retrieve-the-source-code)
 - [Update your environment](#update-your-environment)
 - [Start up the full node](#start-up-the-full-node)
@@ -85,7 +84,7 @@ And then install docker:
 sudo apt-get install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
 ```
 
-### [Optional] Create a new user
+### [Optional] Create a new user <!-- omit in toc -->
 
 You can optionally create a new user and give it sudo permissions instead of using `root`.
 
