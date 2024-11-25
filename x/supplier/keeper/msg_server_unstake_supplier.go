@@ -45,7 +45,7 @@ func (k msgServer) UnstakeSupplier(
 
 	// Ensure the singer address matches the owner address or the operator address.
 	if !supplier.HasOperator(msg.GetSigner()) && !supplier.HasOwner(msg.GetSigner()) {
-		logger.Info(fmt.Sprintf("only the supplier owner or operator is allowed to unstake the supplier"))
+		logger.Info("only the supplier owner or operator is allowed to unstake the supplier")
 		return nil, status.Error(
 			codes.PermissionDenied,
 			sharedtypes.ErrSharedUnauthorizedSupplierUpdate.Wrapf(
