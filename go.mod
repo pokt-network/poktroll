@@ -1,6 +1,6 @@
 module github.com/pokt-network/poktroll
 
-go 1.23
+go 1.23.0
 
 // replace (
 // DEVELOPER_TIP: Uncomment to use a local copy of shannon-sdk for development purposes.
