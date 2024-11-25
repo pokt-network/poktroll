@@ -27,7 +27,6 @@ import ReactPlayer from "react-player";
     - [Faucet is not ready and you need to fund the accounts manually](#faucet-is-not-ready-and-you-need-to-fund-the-accounts-manually)
   - [Start the RelayMiner](#start-the-relayminer)
   - [Start the AppGate Server](#start-the-appgate-server)
-  - [Re-stake the gateway](#re-stake-the-gateway)
 
 ## Results
 
@@ -330,10 +329,4 @@ poktrolld query application show-application $APPLICATION_ADDR
 docker compose up -d appgate
 # View
 docker logs -f --tail 100 appgate
-```
-
-### Re-stake the gateway
-
-```
-
 ```

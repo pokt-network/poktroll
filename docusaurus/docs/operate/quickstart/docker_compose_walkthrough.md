@@ -11,7 +11,6 @@ import ReactPlayer from "react-player";
 - [Key Terms in Morse and Shannon](#key-terms-in-morse-and-shannon)
 - [Understanding Actors in the Shannon upgrade](#understanding-actors-in-the-shannon-upgrade)
 - [Prerequisites](#prerequisites)
-  - [\[Optional\] Create a new user](#optional-create-a-new-user)
 - [A. Deploying a Full Node](#a-deploying-a-full-node)
 - [B. Creating a Supplier and Deploying a RelayMiner](#b-creating-a-supplier-and-deploying-a-relayminer)
 - [C. Creating an Application and Deploying an AppGate Server](#c-creating-an-application-and-deploying-an-appgate-server)
@@ -153,7 +152,7 @@ Update `NODE_HOSTNAME` in `.env` to the IP address or hostname of your node. For
 sed -i -e s/NODE_HOSTNAME=/NODE_HOSTNAME=69.42.690.420/g .env
 ```
 
-### [Optional] Create a new user
+### [Optional] Create a new user <!-- omit in toc -->
 
 :::note
 
