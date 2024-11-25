@@ -68,7 +68,8 @@ func (k Keeper) AllClaims(ctx context.Context, req *types.QueryAllClaimsRequest)
 			// The value is the encoded claim.
 			var claim types.Claim
 			if err := k.cdc.Unmarshal(value, &claim); err != nil {
-				logger.Error(fmt.Sprintf("unable to unmarshal claim with key (hex): %x: %+v", key, err))
+				err = fmt.Errorf("unable to unmarshal claim with key (hex): %x: %+v", key, err)
+				logger.Error(err.Error())
 				return status.Error(codes.Internal, err.Error())
 			}
 			claims = append(claims, claim)
