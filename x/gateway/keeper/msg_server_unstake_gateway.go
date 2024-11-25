@@ -41,7 +41,7 @@ func (k msgServer) UnstakeGateway(
 		return nil, status.Error(
 			codes.NotFound,
 			types.ErrGatewayNotFound.Wrapf(
-				"gateway address %s", msg.Address,
+				"gateway with address %s", msg.Address,
 			).Error(),
 		)
 	}
@@ -50,14 +50,15 @@ func (k msgServer) UnstakeGateway(
 	// Retrieve the address of the gateway
 	gatewayAddress, err := sdk.AccAddressFromBech32(msg.Address)
 	if err != nil {
-		logger.Error(fmt.Sprintf("could not parse address %s", msg.Address))
+		logger.Info(fmt.Sprintf("could not parse address %s", msg.Address))
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
 	// Send the coins from the gateway pool back to the gateway
 	err = k.bankKeeper.SendCoinsFromModuleToAccount(ctx, types.ModuleName, gatewayAddress, []sdk.Coin{*gateway.Stake})
 	if err != nil {
-		logger.Error(fmt.Sprintf("could not send %v coins from %s module to %s account due to %v", gateway.Stake, gatewayAddress, types.ModuleName, err))
+		err = fmt.Errorf("could not send %v coins from %s module to %s account due to %v", gateway.Stake, gatewayAddress, types.ModuleName, err)
+		logger.Error(err.Error())
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 

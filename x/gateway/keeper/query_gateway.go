@@ -28,7 +28,7 @@ func (k Keeper) AllGateways(ctx context.Context, req *types.QueryAllGatewaysRequ
 	pageRes, err := query.Paginate(gatewayStore, req.Pagination, func(key []byte, value []byte) error {
 		var gateway types.Gateway
 		if err := k.cdc.Unmarshal(value, &gateway); err != nil {
-			logger.Error(fmt.Sprintf("unmarshaling gateway with key (hex): %x", key))
+			logger.Error(fmt.Sprintf("unmarshaling gateway with key (hex): %x: %+v", key, err))
 			return status.Error(codes.Internal, err.Error())
 		}
 
