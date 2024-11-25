@@ -43,7 +43,7 @@ func (k msgServer) UnstakeApplication(
 
 	// Check if the application has already initiated the unstaking process.
 	if foundApp.IsUnbonding() {
-		logger.Warn(fmt.Sprintf("Application with address [%s] is still unbonding from previous unstaking", msg.GetAddress()))
+		logger.Info(fmt.Sprintf("Application with address [%s] is still unbonding from previous unstaking", msg.GetAddress()))
 		return nil, status.Error(
 			codes.FailedPrecondition,
 			apptypes.ErrAppIsUnstaking.Wrapf(

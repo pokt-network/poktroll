@@ -36,7 +36,7 @@ func (k msgServer) DelegateToGateway(ctx context.Context, msg *apptypes.MsgDeleg
 		return nil, status.Error(
 			codes.NotFound,
 			apptypes.ErrAppNotFound.Wrapf(
-				"application address: %s", msg.GetAppAddress(),
+				"application with address: %s", msg.GetAppAddress(),
 			).Error(),
 		)
 	}
@@ -60,7 +60,8 @@ func (k msgServer) DelegateToGateway(ctx context.Context, msg *apptypes.MsgDeleg
 		return nil, status.Error(
 			codes.FailedPrecondition,
 			apptypes.ErrAppMaxDelegatedGateways.Wrapf(
-				"application already delegated to %d (max) gateways", maxDelegatedParam,
+				"application with address %q already delegated to %d (max) gateways",
+				msg.GetAppAddress(), maxDelegatedParam,
 			).Error(),
 		)
 	}
@@ -99,7 +100,7 @@ func (k msgServer) DelegateToGateway(ctx context.Context, msg *apptypes.MsgDeleg
 
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 	if err := sdkCtx.EventManager().EmitTypedEvent(event); err != nil {
-		err = fmt.Errorf("Failed to emit application redelegation event: %w", err)
+		err = fmt.Errorf("failed to emit application redelegation event: %w", err)
 		logger.Error(err.Error())
 		return nil, status.Error(codes.Internal, err.Error())
 	}

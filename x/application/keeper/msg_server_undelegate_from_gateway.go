@@ -26,7 +26,7 @@ func (k msgServer) UndelegateFromGateway(ctx context.Context, msg *apptypes.MsgU
 
 	// Basic validation of the message
 	if err := msg.ValidateBasic(); err != nil {
-		logger.Error(fmt.Sprintf("Undelegation Message failed basic validation: %s", err))
+		logger.Info(fmt.Sprintf("Undelegation Message failed basic validation: %s", err))
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
