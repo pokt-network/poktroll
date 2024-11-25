@@ -48,7 +48,7 @@ func init() {
 
 func setupLogger(_ *cobra.Command, _ []string) {
 	logger = polyzero.NewLogger(
-		polyzero.WithWriter(zerolog.ConsoleWriter{Out: os.Stderr}),
+		polyzero.WithWriter(zerolog.ConsoleWriter{Out: os.Stdout}),
 		polyzero.WithLevel(polyzero.ParseLevel(flagLogLevelValue)),
 	)
 }
@@ -56,6 +56,22 @@ func setupLogger(_ *cobra.Command, _ []string) {
 // TODO_IN_THIS_COMMIT: pre-run: drop patch version in go.mod; post-run: restore.
 func runStatusErrorsCheck(cmd *cobra.Command, _ []string) error {
 	ctx := cmd.Context()
+
+	// TODO_IN_THIS_COMMIT: extract to validation function.
+	if flagModuleValue != "*" {
+		switch flagModuleValue {
+		case "application":
+		case "gateway":
+		case "proof":
+		case "service":
+		case "session":
+		case "shared":
+		case "supplier":
+		case "tokenomics":
+		default:
+			return fmt.Errorf("ERROR: invalid module name: %s", flagModuleValue)
+		}
+	}
 
 	// TODO_IN_THIS_COMMIT: add hack/work-around to temporarily strip patch version from go.mod.
 	// TODO_IN_THIS_COMMIT: add hack/work-around to temporarily strip patch version from go.mod.
@@ -104,7 +120,7 @@ func checkModule(_ context.Context) error {
 
 	// Load the package containing the target file or directory
 	poktrollPkgPathPattern := "github.com/pokt-network/poktroll/x/..."
-	logger.Info().Msgf("Loading package(s) in %s", poktrollPkgPathPattern)
+	//logger.Info().Msgf("Loading package(s) in %s", poktrollPkgPathPattern)
 
 	pkgs, err := packages.Load(cfg, poktrollPkgPathPattern)
 	if err != nil {
@@ -117,6 +133,13 @@ func checkModule(_ context.Context) error {
 	// - github.com/pokt-network/poktroll/x/gateway/keeper
 	// - ...
 	for _, pkg := range pkgs {
+		if flagModuleValue != "*" {
+			moduleRootPath := fmt.Sprintf("github.com/pokt-network/poktroll/x/%s", flagModuleValue)
+			if !strings.HasPrefix(pkg.PkgPath, moduleRootPath) {
+				continue
+			}
+		}
+
 		if pkg.Name != "keeper" {
 			continue
 		}
@@ -336,9 +359,13 @@ func checkModule(_ context.Context) error {
 	// Print offending lines in package
 	// TODO_IN_THIS_COMMIT: refactor to const.
 	pkgsPattern := "github.com/pokt-network/poktroll/x/..."
+	if flagModuleValue != "*" {
+		pkgsPattern = fmt.Sprintf("github.com/pokt-network/poktroll/x/%s/...", flagModuleValue)
+	}
+
 	numOffendingLines := len(offendingPkgErrLineSet)
 	if numOffendingLines == 0 {
-		fmt.Printf("No offending lines in %q\n", pkgsPattern)
+		logger.Info().Msgf("🎉 No offending lines in %q 🎉", pkgsPattern)
 	} else {
 		offendingPkgErrLines := make([]string, 0, len(offendingPkgErrLineSet))
 		for offendingPkgErrLine := range offendingPkgErrLineSet {
@@ -348,33 +375,22 @@ func checkModule(_ context.Context) error {
 		sort.Strings(offendingPkgErrLines)
 
 		msg := fmt.Sprintf(
-			"Found %d offending lines in %q",
+			"🚨 Found %d offending lines in %q 🚨",
 			numOffendingLines, pkgsPattern,
 		)
 		logger.Info().Msgf(
-			"%s:\n%s\n%s",
+			"%s:\n%s",
 			msg,
 			strings.Join(offendingPkgErrLines, "\n"),
-			msg,
 		)
+
+		if numOffendingLines > 5 {
+			logger.Info().Msg(msg)
+		}
 	}
 	// --- END
 
 	return nil
-}
-
-// TODO_IN_THIS_COMMIT: remove or move to a testutil package.
-func printNodeSource(msg string, pkg *packages.Package, queryNode any) {
-	node, ok := queryNode.(ast.Node)
-	if !ok {
-		fmt.Printf("ERROR: queryNode is not an ast.Node: %T: %+v\n", queryNode, queryNode)
-		return
-	}
-
-	logger.Warn().Msgf(
-		"not traversing %+v\n\t%s",
-		pkg.Fset.Position(node.Pos()), msg,
-	)
 }
 
 // TODO_IN_THIS_COMMIT: move & godoc...
