@@ -2,6 +2,7 @@ package keeper
 
 import (
 	"context"
+	"fmt"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"google.golang.org/grpc/codes"
@@ -14,6 +15,8 @@ func (k msgServer) UpdateParams(
 	goCtx context.Context,
 	req *types.MsgUpdateParams,
 ) (*types.MsgUpdateParamsResponse, error) {
+	logger := k.Logger().With("method", "UpdateParams")
+
 	if err := req.ValidateBasic(); err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
