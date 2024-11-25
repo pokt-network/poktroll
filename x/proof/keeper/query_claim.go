@@ -3,6 +3,7 @@ package keeper
 import (
 	"context"
 	"encoding/binary"
+	"fmt"
 
 	"cosmossdk.io/store/prefix"
 	"github.com/cosmos/cosmos-sdk/runtime"
@@ -14,6 +15,8 @@ import (
 )
 
 func (k Keeper) AllClaims(ctx context.Context, req *types.QueryAllClaimsRequest) (*types.QueryAllClaimsResponse, error) {
+	logger := k.Logger().With("method", "AllClaims")
+
 	if req == nil {
 		return nil, status.Error(codes.InvalidArgument, "invalid request")
 	}
@@ -65,7 +68,8 @@ func (k Keeper) AllClaims(ctx context.Context, req *types.QueryAllClaimsRequest)
 			// The value is the encoded claim.
 			var claim types.Claim
 			if err := k.cdc.Unmarshal(value, &claim); err != nil {
-				return err
+				logger.Error(fmt.Sprintf("unable to unmarshal claim with key (hex): %x: %+v", key, err))
+				return status.Error(codes.Internal, err.Error())
 			}
 			claims = append(claims, claim)
 		}

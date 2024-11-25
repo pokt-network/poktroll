@@ -14,6 +14,8 @@ import (
 )
 
 func (k Keeper) AllProofs(ctx context.Context, req *types.QueryAllProofsRequest) (*types.QueryAllProofsResponse, error) {
+	logger := k.Logger().With("method", "AllProofs")
+
 	if req == nil {
 		return nil, status.Error(codes.InvalidArgument, "invalid request")
 	}
@@ -63,7 +65,8 @@ func (k Keeper) AllProofs(ctx context.Context, req *types.QueryAllProofsRequest)
 			// The value is the encoded proof.
 			var proof types.Proof
 			if err := k.cdc.Unmarshal(value, &proof); err != nil {
-				return err
+				logger.Error(fmt.Sprintf("unable to unmarshal proof with key (hex): %x: %+v", key, err))
+				return status.Error(codes.Internal, err.Error())
 			}
 
 			proofs = append(proofs, proof)
