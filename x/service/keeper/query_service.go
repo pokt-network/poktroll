@@ -2,6 +2,7 @@ package keeper
 
 import (
 	"context"
+	"fmt"
 
 	"cosmossdk.io/store/prefix"
 	"github.com/cosmos/cosmos-sdk/runtime"
@@ -15,6 +16,8 @@ import (
 
 // AllServices queries all services.
 func (k Keeper) AllServices(ctx context.Context, req *types.QueryAllServicesRequest) (*types.QueryAllServicesResponse, error) {
+	logger := k.Logger().With("method", "AllServices")
+
 	if req == nil {
 		return nil, status.Error(codes.InvalidArgument, "invalid request")
 	}
@@ -27,7 +30,8 @@ func (k Keeper) AllServices(ctx context.Context, req *types.QueryAllServicesRequ
 	pageRes, err := query.Paginate(serviceStore, req.Pagination, func(key []byte, value []byte) error {
 		var service sharedtypes.Service
 		if err := k.cdc.Unmarshal(value, &service); err != nil {
-			return err
+			logger.Error(fmt.Sprintf("unable to unmarshal service with key (hex): %x: %+v", key, err))
+			return status.Error(codes.Internal, err.Error())
 		}
 
 		services = append(services, service)

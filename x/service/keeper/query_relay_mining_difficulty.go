@@ -2,6 +2,7 @@ package keeper
 
 import (
 	"context"
+	"fmt"
 
 	"cosmossdk.io/store/prefix"
 	"github.com/cosmos/cosmos-sdk/runtime"
@@ -13,6 +14,8 @@ import (
 )
 
 func (k Keeper) RelayMiningDifficultyAll(ctx context.Context, req *types.QueryAllRelayMiningDifficultyRequest) (*types.QueryAllRelayMiningDifficultyResponse, error) {
+	logger := k.Logger().With("method", "RelayMiningDifficultyAll")
+
 	if req == nil {
 		return nil, status.Error(codes.InvalidArgument, "invalid request")
 	}
@@ -25,7 +28,8 @@ func (k Keeper) RelayMiningDifficultyAll(ctx context.Context, req *types.QueryAl
 	pageRes, err := query.Paginate(relayMiningDifficultyStore, req.Pagination, func(key []byte, value []byte) error {
 		var relayMiningDifficulty types.RelayMiningDifficulty
 		if err := k.cdc.Unmarshal(value, &relayMiningDifficulty); err != nil {
-			return err
+			logger.Error(fmt.Sprintf("unable to unmarshal relayMiningDifficulty with key (hex): %x: %+v", key, err))
+			return status.Error(codes.Internal, err.Error())
 		}
 
 		relayMiningDifficulties = append(relayMiningDifficulties, relayMiningDifficulty)
