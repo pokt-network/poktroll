@@ -27,7 +27,8 @@ func (k msgServer) UpdateParams(ctx context.Context, req *types.MsgUpdateParams)
 	}
 
 	if err := k.SetParams(ctx, req.Params); err != nil {
-		logger.Error(fmt.Sprintf("setting params: %+v", err))
+		err = fmt.Errorf("unable to set params: %w", err)
+		logger.Error(err.Error())
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 

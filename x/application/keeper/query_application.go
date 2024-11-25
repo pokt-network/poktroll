@@ -28,7 +28,7 @@ func (k Keeper) AllApplications(ctx context.Context, req *types.QueryAllApplicat
 	pageRes, err := query.Paginate(applicationStore, req.Pagination, func(key []byte, value []byte) error {
 		var application types.Application
 		if err := k.cdc.Unmarshal(value, &application); err != nil {
-			logger.Error(fmt.Sprintf("unmarshaling application with key (hex): %x", key))
+			logger.Error(fmt.Sprintf("unmarshaling application with key (hex): %x: %+v", key, err))
 			return status.Error(codes.Internal, err.Error())
 		}
 

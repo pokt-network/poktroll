@@ -99,7 +99,8 @@ func (k msgServer) DelegateToGateway(ctx context.Context, msg *apptypes.MsgDeleg
 
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 	if err := sdkCtx.EventManager().EmitTypedEvent(event); err != nil {
-		logger.Error(fmt.Sprintf("Failed to emit application redelegation event: %s", err))
+		err = fmt.Errorf("Failed to emit application redelegation event: %w", err)
+		logger.Error(err.Error())
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
