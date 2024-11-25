@@ -2,6 +2,7 @@ package keeper
 
 import (
 	"context"
+	"fmt"
 
 	"cosmossdk.io/store/prefix"
 	"github.com/cosmos/cosmos-sdk/runtime"
@@ -13,6 +14,8 @@ import (
 )
 
 func (k Keeper) AllApplications(ctx context.Context, req *types.QueryAllApplicationsRequest) (*types.QueryAllApplicationsResponse, error) {
+	logger := k.Logger().With("method", "AllApplications")
+
 	if req == nil {
 		return nil, status.Error(codes.InvalidArgument, "invalid request")
 	}
@@ -25,7 +28,8 @@ func (k Keeper) AllApplications(ctx context.Context, req *types.QueryAllApplicat
 	pageRes, err := query.Paginate(applicationStore, req.Pagination, func(key []byte, value []byte) error {
 		var application types.Application
 		if err := k.cdc.Unmarshal(value, &application); err != nil {
-			return err
+			logger.Error(fmt.Sprintf("unmarshaling application with key (hex): %x", key))
+			return status.Error(codes.Internal, err.Error())
 		}
 
 		// Ensure that the PendingUndelegations is an empty map and not nil when
