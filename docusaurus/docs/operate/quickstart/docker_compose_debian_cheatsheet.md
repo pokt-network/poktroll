@@ -88,28 +88,12 @@ sudo apt-get install docker-ce docker-ce-cli containerd.io docker-buildx-plugin 
 
 ### [Optional] Create a new user
 
-:::note
-
-Make sure to replace `olshansky` with your username.
-
-:::
+You can optionally create a new user and give it sudo permissions instead of using `root`.
 
 ```bash
-# Create a new user and give sudo permissions
 export USERNAME=olshansky
 sudo adduser $USERNAME
 sudo usermod -aG sudo $USERNAME
-```
-
-```
-# Optionally avoid needing to provide a password
-sudo /etc/sudoers
-
-# Add the following line to the end of the file
-olshansky ALL=(ALL) NOPASSWD:ALL
-
-# Switch to the new user
-su - olshansky
 ```
 
 ## Retrieve the source code
@@ -349,3 +333,7 @@ docker logs -f --tail 100 appgate
 ```
 
 ### Re-stake the gateway
+
+```
+
+```

@@ -11,6 +11,7 @@ import ReactPlayer from "react-player";
 - [Key Terms in Morse and Shannon](#key-terms-in-morse-and-shannon)
 - [Understanding Actors in the Shannon upgrade](#understanding-actors-in-the-shannon-upgrade)
 - [Prerequisites](#prerequisites)
+  - [\[Optional\] Create a new user](#optional-create-a-new-user)
 - [A. Deploying a Full Node](#a-deploying-a-full-node)
 - [B. Creating a Supplier and Deploying a RelayMiner](#b-creating-a-supplier-and-deploying-a-relayminer)
 - [C. Creating an Application and Deploying an AppGate Server](#c-creating-an-application-and-deploying-an-appgate-server)
@@ -115,7 +116,7 @@ flowchart TB
 _Note: the system must be capable of exposing ports to the internet for
 peer-to-peer communication._
 
-### 0. Software & Tooling <!-- omit in toc -->
+### Software & Tooling <!-- omit in toc -->
 
 Ensure the following software is installed on your system:
 
@@ -150,6 +151,42 @@ Update `NODE_HOSTNAME` in `.env` to the IP address or hostname of your node. For
 
 ```bash
 sed -i -e s/NODE_HOSTNAME=/NODE_HOSTNAME=69.42.690.420/g .env
+```
+
+### [Optional] Create a new user
+
+:::note
+
+Make sure to replace `olshansky` with your username.
+
+:::
+
+You can generally do everything as the `root` user, but it's recommended to
+create a new user and give it sudo permissions.
+
+This is necessary, in particular, if you want to use [homebrew](https://brew.sh/) [to install `poktrolld`](../user_guide/install.md).
+
+```bash
+# Create a new user and give sudo permissions
+export USERNAME=olshansky
+sudo adduser $USERNAME
+sudo usermod -aG sudo $USERNAME
+```
+
+Then, switch to the new user:
+
+```bash
+su - olshansky
+```
+
+You can also avoid needing to pass in the password each time by running the following:
+
+```bash
+# Optionally avoid needing to provide a password
+sudo /etc/sudoers
+
+# Add the following line to the end of the file
+olshansky ALL=(ALL) NOPASSWD:ALL
 ```
 
 ## A. Deploying a Full Node

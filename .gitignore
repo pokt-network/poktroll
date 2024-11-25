@@ -103,4 +103,6 @@ job.yaml
 tmp/*
 
 # Common testing configurations
-relayminer_config.toml
+relayminer_config.yaml
+gateway_config.yaml
+path_config.yaml
