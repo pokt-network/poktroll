@@ -10,7 +10,6 @@ import ReactPlayer from "react-player";
 - [Results](#results)
 - [Deploy your server](#deploy-your-server)
 - [Install Dependencies](#install-dependencies)
-  - [\[Optional\] Create a new user](#optional-create-a-new-user)
 - [Retrieve the source code](#retrieve-the-source-code)
 - [Update your environment](#update-your-environment)
 - [Start up the full node](#start-up-the-full-node)
@@ -27,7 +26,6 @@ import ReactPlayer from "react-player";
     - [Faucet is not ready and you need to fund the accounts manually](#faucet-is-not-ready-and-you-need-to-fund-the-accounts-manually)
   - [Start the RelayMiner](#start-the-relayminer)
   - [Start the AppGate Server](#start-the-appgate-server)
-  - [Re-stake the gateway](#re-stake-the-gateway)
 
 ## Results
 
@@ -86,7 +84,7 @@ And then install docker:
 sudo apt-get install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
 ```
 
-### [Optional] Create a new user
+### [Optional] Create a new user <!-- omit in toc -->
 
 You can optionally create a new user and give it sudo permissions instead of using `root`.
 
@@ -330,10 +328,4 @@ poktrolld query application show-application $APPLICATION_ADDR
 docker compose up -d appgate
 # View
 docker logs -f --tail 100 appgate
-```
-
-### Re-stake the gateway
-
-```
-
 ```
