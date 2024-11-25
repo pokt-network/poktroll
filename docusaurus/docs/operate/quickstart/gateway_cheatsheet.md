@@ -4,6 +4,7 @@ title: Gateway Cheat Sheet
 ---
 
 ## Gateway Cheat Sheet <!-- omit in toc -->
+<!-- markdownlint-disable MD014 -->
 
 :::tip
 
