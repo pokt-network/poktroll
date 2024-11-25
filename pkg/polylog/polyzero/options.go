@@ -50,3 +50,11 @@ func WithSetupFn(fn func(logger *zerolog.Logger)) polylog.LoggerOption {
 		fn(&logger.(*zerologLogger).Logger)
 	}
 }
+
+// TODO_IN_THIS_COMMIT: godoc & test...
+func WithWriter(writer io.Writer) polylog.LoggerOption {
+	return func(logger polylog.Logger) {
+		zl := logger.(*zerologLogger).Logger
+		logger.(*zerologLogger).Logger = zl.Output(writer)
+	}
+}
