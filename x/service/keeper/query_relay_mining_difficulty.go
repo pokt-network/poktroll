@@ -28,7 +28,8 @@ func (k Keeper) RelayMiningDifficultyAll(ctx context.Context, req *types.QueryAl
 	pageRes, err := query.Paginate(relayMiningDifficultyStore, req.Pagination, func(key []byte, value []byte) error {
 		var relayMiningDifficulty types.RelayMiningDifficulty
 		if err := k.cdc.Unmarshal(value, &relayMiningDifficulty); err != nil {
-			logger.Error(fmt.Sprintf("unable to unmarshal relayMiningDifficulty with key (hex): %x: %+v", key, err))
+			err = fmt.Errorf("unable to unmarshal relayMiningDifficulty with key (hex): %x: %w", key, err)
+			logger.Error(err.Error())
 			return status.Error(codes.Internal, err.Error())
 		}
 

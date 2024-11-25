@@ -30,7 +30,8 @@ func (k Keeper) AllServices(ctx context.Context, req *types.QueryAllServicesRequ
 	pageRes, err := query.Paginate(serviceStore, req.Pagination, func(key []byte, value []byte) error {
 		var service sharedtypes.Service
 		if err := k.cdc.Unmarshal(value, &service); err != nil {
-			logger.Error(fmt.Sprintf("unable to unmarshal service with key (hex): %x: %+v", key, err))
+			err = fmt.Errorf("unable to unmarshal service with key (hex): %x: %w", key, err)
+			logger.Error(err.Error())
 			return status.Error(codes.Internal, err.Error())
 		}
 
