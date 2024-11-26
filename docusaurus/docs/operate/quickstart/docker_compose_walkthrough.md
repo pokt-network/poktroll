@@ -182,7 +182,7 @@ You can also avoid needing to pass in the password each time by running the foll
 
 ```bash
 # Optionally avoid needing to provide a password
-sudo /etc/sudoers
+sudo vi /etc/sudoers
 
 # Add the following line to the end of the file
 olshansky ALL=(ALL) NOPASSWD:ALL
