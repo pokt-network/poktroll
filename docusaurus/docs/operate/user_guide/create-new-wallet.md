@@ -10,10 +10,13 @@ sidebar_position: 1
 tl;dr IFF you know what you're doing.
 
 ```bash
+# Add a new wallet
 poktrolld keys add $USER
+# Retrieve the address
+poktrolld keys show $USER -a
 ```
 
-Retrieve the `address` and go to the [Beta TestNet Faucet](https://faucet.beta.testnet.pokt.network/) to fund your account.
+Use the `address` and go to the [Beta TestNet Faucet](https://faucet.beta.testnet.pokt.network/) to fund your account.
 
 :::
 
