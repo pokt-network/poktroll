@@ -129,7 +129,7 @@ func TestAllApplicationsQuery_WithDelegateeGatewayAddressConstraint(t *testing.T
 	keeper, ctx := keepertest.ApplicationKeeper(t)
 	gatewayAddr1 := sample.AccAddress()
 	appsWithDelegationAddr := []string{"1", "2"}
-	apps := createNApplications(keeper, ctx, 5, testAppModifierDelegateeAddr(gatewayAddr1, appsWithDelegationAddr))
+	apps := createNApplications(keeper, ctx, 5, withAppDelegateeGatewayAddr(gatewayAddr1, appsWithDelegationAddr))
 
 	requestBuilder := func(gatewayAddr string) *types.QueryAllApplicationsRequest {
 		return &types.QueryAllApplicationsRequest{
@@ -154,14 +154,19 @@ func TestAllApplicationsQuery_WithDelegateeGatewayAddressConstraint(t *testing.T
 		)
 	})
 
+	t.Run("QueryAppsWithNoDelegationConstraint", func(t *testing.T) {
+		resp, err := keeper.AllApplications(ctx, &types.QueryAllApplicationsRequest{})
+		require.NoError(t, err)
+
+		require.ElementsMatch(t,
+			nullify.Fill(apps),
+			nullify.Fill(resp.Applications),
+		)
+	})
+
 	t.Run("QueryAppsWithInvalidGatewayAddr", func(t *testing.T) {
 		addrInvalid := "invalid-address"
 		_, err := keeper.AllApplications(ctx, requestBuilder(addrInvalid))
-		expectedErr := status.Error(
-			codes.InvalidArgument,
-			types.ErrAppInvalidGatewayAddress.Error(),
-		)
-
-		require.ErrorContains(t, err, expectedErr.Error())
+		require.ErrorContains(t, err, types.ErrQueryAppsInvalidGatewayAddress.Error())
 	})
 }

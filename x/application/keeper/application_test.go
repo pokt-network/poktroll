@@ -40,7 +40,7 @@ func createNApplications(keeper keeper.Keeper, ctx context.Context, n int, testA
 
 // testAppModifierDelegateeAddr adds the supplied gateway address to the application's delegatee list if the application's address matches
 // the supplied address list.
-func testAppModifierDelegateeAddr(delegateeGatewayAddr string, appsWithDelegationAddr []string) testAppModifier {
+func withAppDelegateeGatewayAddr(delegateeGatewayAddr string, appsWithDelegationAddr []string) testAppModifier {
 	return func(app *types.Application) {
 		if slices.Contains(appsWithDelegationAddr, app.Address) {
 			app.DelegateeGatewayAddresses = append(app.DelegateeGatewayAddresses, delegateeGatewayAddr)
