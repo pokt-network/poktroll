@@ -51,19 +51,18 @@ The upgrade needs to be fixed, and then a new plan needs to be submitted to the 
 
 ### Option 2: The migration is stuck
 
-If the migration is stuck, there's always a chance the state has been mutated for
-the upgrade but the migration didn't complete.
+If the migration is stuck, there's always a chance the upgrade handler was executed on-chain as scheduled, but the migration didn't complete.
 
 In such a case, we need to:
 
 - Roll back validators to the backup. A snapshot is taken by `cosmovisor` automatically prior to upgrade when`UNSAFE_SKIP_BACKUP` is set to `false` (which is a default and recommended value -
   [more information](https://docs.cosmos.network/main/build/tooling/cosmovisor#command-line-arguments-and-environment-variables)).
-- All full nodes and validators on the network: skip the upgrade by adding `--unsafe-skip-upgrade=$upgradeHeightNumber`
+- **All full nodes and validators**: skip the upgrade by adding `--unsafe-skip-upgrade=$upgradeHeightNumber`
   argument to your `poktroll start` command. Like this:
   ```bash
   poktrolld start --unsafe-skip-upgrade=$upgradeHeightNumber # ... the rest of the arguments
   ```
-- Protocol team: document and add `--unsafe-skip-upgrade=$upgradeHeightNumber` to the scripts (such as docker-compose and cosmovisor installer) so the next time somebody
+- **Protocol team**: document and add `--unsafe-skip-upgrade=$upgradeHeightNumber` to the scripts (such as docker-compose and cosmovisor installer) so the next time somebody
   tries to sync the network from genesis they will automatically skip the failed upgrade. [Documentation and scripts to update](#documentation-and-scripts-to-update)
 - Resolve the issue with an upgrade and schedule another plan.
 

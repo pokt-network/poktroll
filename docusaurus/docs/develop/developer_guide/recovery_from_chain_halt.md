@@ -5,8 +5,8 @@ title: Chain Halt Recovery
 
 ## Chain Halt Recovery <!-- omit in toc -->
 
-This document describes how to recover from a chain halt. It assumes the cause of
-the chain halt has been identified, the new release has been created, and verified
+This document describes how to recover from a chain halt. It assumes that the cause of
+the chain halt has been identified, and that the new release has been created and verified
 function correctly.
 
 :::tip
@@ -111,18 +111,18 @@ However, if necessary, the instructions to follow are:
    - Upgrade the chain at height `102`
    - Avoid the issue at height `103`
 5. Ensure all validators rolled back to the same height and use the same snapshot - ([how to get the snapshot](#step-5-data-rollback---retrieving-snapshot-at-a-specific-height))
-   - The snapshot should be imported into each Validator's data directory
+   - The snapshot should be imported into each Validator's data directory.
    - This is necessary to ensure data continuity and prevent forks.
-6. Isolate the validator set from full nodes - ([why this is necessary](#step-6-validator-isolation---risks))
+6. Isolate the validator set from full nodes - ([why this is necessary](#step-6-validator-isolation---risks)).
    - This is necessary to avoid full nodes from gossiping blocks that have been rolled back.
-   - This may require using a firewall or a private network
+   - This may require using a firewall or a private network.
    - Validators should only be permitted to gossip blocks amongst themselves.
-7. Start the network and perform the upgrade. For example, reiterating the process above:
-   - Start all Validators at height `100`
+7. Start the validator set and perform the upgrade. For example, reiterating the process above:
+   - Start all Validators at height `100`.
    - On block `101`, submit the `MsgSoftwareUpgrade` transaction with a `Plan.height` set to `102`.
-   - `x/upgrade` will perform the upgrade in the `EndBlocker` of block `102`
-   - If using `cosmosvisor`, the node will wait to replace the binary
-8. Wait for the network to reach the height of the previous ledger (`104`+)
+   - `x/upgrade` will perform the upgrade in the `EndBlocker` of block `102`.
+   - If using `cosmosvisor`, the node will wait to replace the binary.
+8. Wait for the network to reach the height of the previous ledger (`104`+).
 9. Allow validators to open their network to full nodes again.
    - Note that full nodes will need to perform the rollback or use a snapshot as well.
 
@@ -169,7 +169,7 @@ There are two ways to get a snapshot from a prior height:
 #### Step 6: Validator Isolation - risks
 
 Having at least one node that has knowledge of the forking ledger can jeopardize the whole process. In particular, the
-following errors in logs are the sign of the nodes populating existing blocks:
+following errors in logs are the sign of the nodes syncing blocks from the wrong fork:
 
 - `found conflicting vote from ourselves; did you unsafe_reset a validator?`
 - `conflicting votes from validator`
