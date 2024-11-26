@@ -241,7 +241,7 @@ Prepare `x/examplemod/keeper/msg_server_update_param.go` to handle parameter upd
 +
 +   if k.GetAuthority() != msg.Authority {
 +     return nil, status.Error(
-+       codes.InvalidArgument,
++       codes.PermissionDenied,
 +       examplemodtypes.ErrExamplemodInvalidSigner.Wrapf(
 +         "invalid authority; expected %s, got %s",
 +         k.GetAuthority(), msg.Authority,
