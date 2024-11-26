@@ -82,7 +82,7 @@ Alternatively, you can follow the [official cosmovisor installation instructions
 :::
 
 ```bash
-mkdir -p $HOME/bin
+mkdir -p $HOME/.local/bin
 COSMOVISOR_VERSION="v1.6.0"
 ARCH=$(uname -m)
 if [ "$ARCH" = "x86_64" ]; then 
@@ -91,8 +91,8 @@ elif [ "$ARCH" = "aarch64" ]; then
     ARCH="arm64"
 fi
 
-curl -L "https://github.com/cosmos/cosmos-sdk/releases/download/cosmovisor%2F${COSMOVISOR_VERSION}/cosmovisor-${COSMOVISOR_VERSION}-linux-${ARCH}.tar.gz" | tar -zxvf - -C $HOME/bin
-echo 'export PATH=$HOME/bin:$PATH' >> ~/.profile
+curl -L "https://github.com/cosmos/cosmos-sdk/releases/download/cosmovisor%2F${COSMOVISOR_VERSION}/cosmovisor-${COSMOVISOR_VERSION}-linux-${ARCH}.tar.gz" | tar -zxvf - -C $HOME/.local/bin
+echo 'export PATH=$HOME/.local/bin:$PATH' >> ~/.profile
 source ~/.profile
 ```
 
@@ -101,12 +101,20 @@ source ~/.profile
 
 Download and install `poktrolld`:
 
-1. **Extract Version and Set Architecture**:
-
-   Different networks start with different versions. Let's extract the version from the genesis file and set the architecture.
+1. **Download Genesis and Extract Version**:
 
    ```bash
-   # Extract version from genesis.json
+   # Select network (testnet-alpha, testnet-beta, or mainnet)
+   NETWORK="testnet-beta"  # Change this to your desired network
+   
+   # Create config directory if it doesn't exist
+   mkdir -p $HOME/.poktroll/config
+   
+   # Download genesis file
+   GENESIS_URL="https://raw.githubusercontent.com/pokt-network/pocket-network-genesis/master/shannon/${NETWORK}/genesis.json"
+   curl -s -o $HOME/.poktroll/config/genesis.json "$GENESIS_URL"
+   
+   # Extract version and set architecture
    POKTROLLD_VERSION=$(jq -r '.app_version' < $HOME/.poktroll/config/genesis.json)
    ARCH=$(uname -m)
    if [ "$ARCH" = "x86_64" ]; then ARCH="amd64"
@@ -121,34 +129,28 @@ Download and install `poktrolld`:
    mkdir -p $HOME/.poktroll/cosmovisor/genesis/bin
    curl -L "https://github.com/pokt-network/poktroll/releases/download/v${POKTROLLD_VERSION}/poktroll_linux_${ARCH}.tar.gz" | tar -zxvf - -C $HOME/.poktroll/cosmovisor/genesis/bin
    chmod +x $HOME/.poktroll/cosmovisor/genesis/bin/poktrolld
-   ln -sf $HOME/.poktroll/cosmovisor/genesis/bin/poktrolld $HOME/bin/poktrolld
+   ln -sf $HOME/.poktroll/cosmovisor/genesis/bin/poktrolld $HOME/.local/bin/poktrolld
    ```
 
 ### Step 6: Configure `poktrolld`
 
 Initialize configuration files and set up the node:
 
-1. **Select Network and Download Genesis**:
+1. **Extract Chain ID and Initialize Node**:
 
    ```bash
-   # Select network (testnet-alpha, testnet-beta, or mainnet)
-   NETWORK="testnet-beta"  # Change this to your desired network
-   
-   # Download genesis file
-   GENESIS_URL="https://raw.githubusercontent.com/pokt-network/pocket-network-genesis/master/shannon/${NETWORK}/genesis.json"
-   curl -s -o $HOME/.poktroll/config/genesis.json "$GENESIS_URL"
-   
-   # Extract chain-id from genesis
+   # Extract chain-id from existing genesis
    CHAIN_ID=$(jq -r '.chain_id' < $HOME/.poktroll/config/genesis.json)
-   ```
-
-2. **Initialize the Node**:
-
-   ```bash
+   
+   # Initialize the node
    poktrolld init "YourNodeMoniker" --chain-id="$CHAIN_ID" --home=$HOME/.poktroll
    ```
 
-3. **Set Seeds**:
+   :::note
+   You may see a message saying `genesis.json file already exists`. This is expected since we downloaded the genesis file in Step 5. The initialization will still complete successfully and set up the required configuration files.
+   :::
+
+2. **Set Seeds**:
 
    ```bash
    SEEDS_URL="https://raw.githubusercontent.com/pokt-network/pocket-network-genesis/master/shannon/${NETWORK}/seeds"
@@ -156,11 +158,11 @@ Initialize configuration files and set up the node:
    sed -i -e "s|^seeds *=.*|seeds = \"$SEEDS\"|" $HOME/.poktroll/config/config.toml
    ```
 
-4. **Set External Address**:
+3. **Set External Address**:
 
    ```bash
-   EXTERNAL_IP=\$(curl -s https://api.ipify.org)
-   sed -i -e "s|^external_address *=.*|external_address = \"\${EXTERNAL_IP}:26656\"|" \$HOME/.poktroll/config/config.toml
+   EXTERNAL_IP=$(curl -s https://api.ipify.org)
+   sed -i -e "s|^external_address *=.*|external_address = \"${EXTERNAL_IP}:26656\"|" $HOME/.poktroll/config/config.toml
    ```
 
 ### Step 7: Set Up `systemd` Service
@@ -175,7 +177,7 @@ After=network-online.target
 
 [Service]
 User=poktroll
-ExecStart=/home/poktroll/bin/cosmovisor run start --home=/home/poktroll/.poktroll
+ExecStart=/home/poktroll/.local/bin/cosmovisor run start --home=/home/poktroll/.poktroll
 Restart=always
 RestartSec=3
 LimitNOFILE=infinity
