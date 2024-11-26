@@ -19,7 +19,7 @@ title: Service Cheat Sheet
 
 ### How do I query for all existing onchain Services?
 
-Then, you can query for all services like so:
+You can query for all services like so:
 
 ```bash
 poktrolld query service all-services --node https://shannon-testnet-grove-rpc.beta.poktroll.com --output json | jq
