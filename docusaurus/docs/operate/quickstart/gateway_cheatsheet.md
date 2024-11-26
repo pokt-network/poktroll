@@ -4,7 +4,6 @@ title: Gateway Cheat Sheet
 ---
 
 # Gateway Cheat Sheet <!-- omit in toc -->
-<!-- markdownlint-disable MD014 -->
 
 This guide provides quick reference commands for setting up and running a gateway node.
 
