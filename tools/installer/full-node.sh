@@ -9,7 +9,7 @@ YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
 # DEV_NOTE: For testing purposes, you can change the branch name before merging to master.
-GENESIS_BRANCH="master"
+POCKET_NETWORK_GENESIS_BRANCH="master"
 
 # Function to print colored output
 print_color() {
@@ -59,10 +59,10 @@ get_user_input() {
         1) NETWORK="testnet-alpha" ;;
         2) NETWORK="testnet-beta" ;;
         3) NETWORK="mainnet" ;;
-        *) print_color $RED "Invalid choice. Exiting."; exit 1 ;;
+        *) print_color $RED "Invalid network choice. Exiting."; exit 1 ;;
     esac
 
-    print_color $GREEN "You have chosen to install the $NETWORK network."
+    print_color $GREEN "Installing the $NETWORK network."
 
     read -p "Enter the desired username to run poktrolld (default: poktroll): " POKTROLL_USER
     POKTROLL_USER=${POKTROLL_USER:-poktroll}
@@ -71,7 +71,7 @@ get_user_input() {
     NODE_MONIKER=${NODE_MONIKER:-$(hostname)}
 
     # Update URLs to use the branch constant
-    BASE_URL="https://raw.githubusercontent.com/pokt-network/pocket-network-genesis/${GENESIS_BRANCH}/shannon/$NETWORK"
+    BASE_URL="https://raw.githubusercontent.com/pokt-network/pocket-network-genesis/${POCKET_NETWORK_GENESIS_BRANCH}/shannon/$NETWORK"
     SEEDS_URL="$BASE_URL/seeds"
     GENESIS_URL="$BASE_URL/genesis.json"
 
@@ -211,13 +211,14 @@ setup_poktrolld() {
     # Download and extract directly as the POKTROLL_USER
     sudo -u "$POKTROLL_USER" bash << EOF
     mkdir -p \$HOME/.poktroll/cosmovisor/genesis/bin
+    mkdir -p \$HOME/.local/bin
     curl -L "$RELEASE_URL" | tar -zxvf - -C \$HOME/.poktroll/cosmovisor/genesis/bin
     if [ \$? -ne 0 ]; then
         echo "Failed to download or extract binary"
         exit 1
     fi
     chmod +x \$HOME/.poktroll/cosmovisor/genesis/bin/poktrolld
-    ln -sf \$HOME/.poktroll/cosmovisor/genesis/bin/poktrolld \$HOME/bin/poktrolld
+    ln -sf \$HOME/.poktroll/cosmovisor/genesis/bin/poktrolld \$HOME/.local/bin/poktrolld
     source \$HOME/.profile
 EOF
 
@@ -307,15 +308,23 @@ EOF
 configure_ufw() {
     if command -v ufw &> /dev/null; then
         print_color $YELLOW "ufw is installed."
+        
+        # Check if rule already exists
+        if ufw status | grep -q "26656"; then
+            print_color $YELLOW "Port 26656 is already allowed in ufw rules."
+            return
+        fi
+        
         read -p "Do you want to open port 26656 for p2p communication? (Y/n): " open_port
         if [[ $open_port =~ ^[Yy] ]]; then
             ufw allow 26656
             print_color $GREEN "Port 26656 opened successfully."
+            print_color $YELLOW "To remove this rule later, run: sudo ufw delete allow 26656"
         else
-            print_color $YELLOW "Port 26656 not opened."
+            print_color $YELLOW "No firewall rules modified."
         fi
     else
-        print_color $YELLOW "ufw is not installed. Skipping port configuration."
+        print_color $YELLOW "ufw is not installed. Skipping firewall configuration."
     fi
 }
 
