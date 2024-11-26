@@ -32,8 +32,10 @@ title: Adding On-Chain Module Parameters
     - [6.1 Add a valid param](#61-add-a-valid-param)
     - [6.2 Check for `as_<type>` on `MsgUpdateParam`](#62-check-for-as_type-on-msgupdateparam)
     - [6.3 Update the module's `ModuleParamConfig`](#63-update-the-modules-moduleparamconfig)
-  - [7. Update the Makefile and Supporting JSON Files](#7-update-the-makefile-and-supporting-json-files) - [7.1 Update the Makefile](#71-update-the-makefile) - [7.2 Create a new JSON File for the Individual Parameter Update](#72-create-a-new-json-file-for-the-individual-parameter-update) - [7.3 Update the JSON File for Updating All Parameters for the Module](#73-update-the-json-file-for-updating-all-parameters-for-the-module)
-    > > > > > > > main
+  - [7. Update the Makefile and Supporting JSON Files](#7-update-the-makefile-and-supporting-json-files)
+    - [7.1 Update the Makefile](#71-update-the-makefile)
+    - [7.2 Create a new JSON File for the Individual Parameter Update](#72-create-a-new-json-file-for-the-individual-parameter-update)
+    - [7.3 Update the JSON File for Updating All Parameters for the Module](#73-update-the-json-file-for-updating-all-parameters-for-the-module)
 
 Adding a new on-chain module parameter involves multiple steps to ensure that the
 parameter is properly integrated into the system. This guide will walk you through
