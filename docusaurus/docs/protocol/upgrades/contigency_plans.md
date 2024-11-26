@@ -33,7 +33,7 @@ See the instructions of [how to do that here](./upgrade_procedure.md#cancelling-
 
 If the nodes on the network stopped at the upgrade height and the migration did not
 start yet (i.e. there are no logs indicating the upgrade handler and store migrations are being executed),
-we mist gather social consensus to restart validators with the `--unsafe-skip-upgrade=$upgradeHeightNumber` flag.
+we MUST gather social consensus to restart validators with the `--unsafe-skip-upgrade=$upgradeHeightNumber` flag.
 
 This will skip the upgrade process, allowing the chain to continue and the protocol team to plan another release.
 
