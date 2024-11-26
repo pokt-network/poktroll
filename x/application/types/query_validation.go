@@ -13,7 +13,7 @@ func (query *QueryAllApplicationsRequest) ValidateBasic() error {
 
 	// Validate the delegation gateway address if the request specifies it as a constraint.
 	if _, err := sdk.AccAddressFromBech32(delegateeGatewayAddr); err != nil {
-		return ErrAppInvalidGatewayAddress.Wrapf("invalid gateway address for query: %q; (%v)", delegateeGatewayAddr, err)
+		return ErrAppInvalidGatewayAddress.Wrapf("querying for apps with delegatee gateway address: %q; (%v)", delegateeGatewayAddr, err)
 	}
 
 	return nil
