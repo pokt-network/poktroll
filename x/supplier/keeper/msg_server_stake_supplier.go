@@ -119,7 +119,9 @@ func (k msgServer) StakeSupplier(ctx context.Context, msg *types.MsgStakeSupplie
 			msg.Signer, msg.GetStake(), supplier.Stake,
 		)
 		logger.Info(fmt.Sprintf("WARN: %s", err))
-		return nil, status.Error(codes.InvalidArgument, err.Error())
+		//return nil, status.Error(codes.InvalidArgument, err.Error())
+		err = status.Error(codes.InvalidArgument, err.Error())
+		return nil, err
 	}
 
 	// MUST ALWAYS have at least minimum stake.
