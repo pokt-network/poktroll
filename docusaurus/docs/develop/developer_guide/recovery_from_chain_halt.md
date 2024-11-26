@@ -23,7 +23,7 @@ See [Chain Halt Troubleshooting](./chain_halt_troubleshooting.md) for more infor
 ## Background
 
 Pocket network is built on top of `cosmos-sdk`, which utilizes the CometBFT consensus engine.
-Byzantine Fault Tolerant (BFT) consensus algorithm requires that **at least** 2/3 of Validators
+Comet's Byzantine Fault Tolerant (BFT) consensus algorithm requires that **at least** 2/3 of Validators
 are online and voting for the same block to reach a consensus. In order to maintain liveness
 and avoid a chain-halt, we need the majority (> 2/3) of Validators to participate
 and use the same version of the software.
