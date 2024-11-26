@@ -116,7 +116,7 @@ However, if necessary, the instructions to follow are:
 6. Isolate the validator set from full nodes - ([why this is necessary](#step-6-validator-isolation---risks))
    - This is necessary to avoid full nodes from gossiping blocks that have been rolled back.
    - This may require using a firewall or a private network
-   - Validators should only be gossip blocks amongst themselves.
+   - Validators should only be permitted to gossip blocks amongst themselves.
 7. Start the network and perform the upgrade. For example, reiterating the process above:
    - Start all Validators at height `100`
    - On block `101`, submit the `MsgSoftwareUpgrade` transaction with a `Plan.height` set to `102`.
