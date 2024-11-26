@@ -3,55 +3,92 @@ sidebar_position: 5
 title: Gateway Cheat Sheet
 ---
 
-## Gateway Cheat Sheet <!-- omit in toc -->
+# Gateway Cheat Sheet <!-- omit in toc -->
 <!-- markdownlint-disable MD014 -->
 
+This guide provides quick reference commands for setting up and running a gateway node.
+
+- [Prerequisites](#prerequisites)
+- [Build Pocket](#build-pocket)
+- [Account Setup](#account-setup)
+  - [Create and fund the `Gateway` and `Application` accounts](#create-and-fund-the-gateway-and-application-accounts)
+  - [Fund the Gateway and Application accounts](#fund-the-gateway-and-application-accounts)
+  - [Stake the `Gateway`](#stake-the-gateway)
+  - [Stake the delegating `Application`](#stake-the-delegating-application)
+  - [Delegate the `Application` to the `Gateway`](#delegate-the-application-to-the-gateway)
+- [`PATH Gateway` Configuration](#path-gateway-configuration)
+  - [Generate a `PATH Gateway` config file for the Shannon network](#generate-a-path-gateway-config-file-for-the-shannon-network)
+- [`PATH Gateway` Setup](#path-gateway-setup)
+  - [Build and run the PATH Gateway](#build-and-run-the-path-gateway)
+
 :::tip
-
-See the [Gateway Walkthrough](./../run_a_node/gateway_walkthrough.md) for an in-depth guide on setting up a Gateway, troubleshooting, observability and more.
-
+For detailed instructions, troubleshooting, and observability setup, see the [Gateway Walkthrough](./../run_a_node/gateway_walkthrough.md).
 :::
 
-## Build Shannon binary
+## Prerequisites
+
+Install the required dependencies:
+
+```bash
+# Install go 1.23
+curl -o ./pkgx --compressed -f --proto '=https' https://pkgx.sh/$(uname)/$(uname -m)
+sudo install -m 755 pkgx /usr/local/bin
+pkgx install go@1.23.0
+export PATH=$PATH:$HOME/go/bin/
+
+# Install PATH Gateway required dependencies
+apt-get update && apt-get install git make build-essential
+
+# Install the ignite binary used to build the Pocket binary
+curl https://get.ignite.com/cli! | bash
+```
+
+## Build Pocket
 
 The `poktrolld` binary is needed to stake your `Gateway` and its delegating `Application`s.
 
-**Retrieve source code and build binaries**
+Retrieve source code and build binaries:
 
 ```bash
-mkdir ~/poktroll && cd ~/poktroll
 git clone https://github.com/pokt-network/poktroll.git
 cd poktroll
 make ignite_poktrolld_build
 ```
 
-## Create, fund and stake the Gateway and Application accounts
+## Account Setup
 
-**Create a new key pair for the delegating `Application`**
+### Create and fund the `Gateway` and `Application` accounts
+
+Create a new key pair for the delegating `Application`:
 
 ```bash
 poktrolld keys add application
 ```
 
-**Create a new key pair for the `Gateway`**
+Create a new key pair for the `Gateway`:
 
 ```bash
 poktrolld keys add gateway
 ```
 
-**Fund the Gateway and Application accounts**
+### Fund the Gateway and Application accounts
 
-Retrieve the `Gateway` and `Application` addresses:
+Set the environment variables needed to interact with the Shannon network:
 
 ```bash
-echo "Gateway address: $(poktrolld keys show gateway -a)"
-echo "Application address: $(poktrolld keys show application -a)"
+export NODE="--node=https://shannon-testnet-grove-rpc.beta.poktroll.com"
+export TX_PARAMS="--gas=auto --gas-prices=1upokt --gas-adjustment=1.5 --chain-id=pocket-beta --yes"
+export GATEWAY_ADDR=$(poktrolld keys show gateway -a)
+export APP_ADDR=$(poktrolld keys show application -a)
+
+echo "Gateway address: $GATEWAY_ADDR"
+echo "Application address: $APP_ADDR"
 ```
 
-Then use the [faucet](https://faucet.testnet.pokt.network/) to fund the `Gateway`
+Then use the [faucet](https://faucet.beta.testnet.pokt.network/) to fund the `Gateway`
 and `Application` accounts.
 
-**Stake the Gateway**
+### Stake the `Gateway`
 
 ```bash
 # Create a Gateway stake configuration file
@@ -59,50 +96,57 @@ cat <<EOF > /tmp/stake_gateway
 stake_amount: 1000000upokt
 EOF
 
-poktrolld tx gateway stake-gateway --config=/tmp/stake_gateway --from=gateway --chain-id=poktroll --yes
-
-# OPTIONALLY check the gateway's status
-poktrolld query gateway show-gateway $(poktrolld keys show gateway -a)
+poktrolld tx gateway stake-gateway --config=/tmp/stake_gateway --from=$GATEWAY_ADDR $TX_PARAMS $NODE
 ```
 
-**Stake the delegating Application**
+Optionally check the `Gateway`'s status:
+```bash
+poktrolld query gateway show-gateway $GATEWAY_ADDR $NODE
+```
+
+### Stake the delegating `Application`
 
 ```bash
 # Create an Application stake configuration file
 cat <<EOF > /tmp/stake_app
-stake_amount: 10000000upokt
+stake_amount: 100000000upokt
 service_ids:
   - "0021"
 EOF
 
-poktrolld tx application stake-application --config=/tmp/stake_app --from=application --chain-id=poktroll --yes
-
-# OPTIONALLY check the application's status
-poktrolld query application show-application $(poktrolld keys show application -a)
+poktrolld tx application stake-application --config=/tmp/stake_app --from=$APP_ADDR $GAS_PARAMS $NODE
 ```
 
-**Delegate the Application to the Gateway**
+Optionally check the `Application`'s status:
+```bash
+poktrolld query application show-application $APP_ADDR $NODE
+```
+
+### Delegate the `Application` to the `Gateway`
 
 ```bash
-poktrolld tx application delegate-to-gateway $(poktrolld keys show gateway -a) --from=application --chain-id=poktroll --chain-id=poktroll --yes
-
-# OPTIONALLY check the application's status
-poktrolld query application show-application $(poktrolld keys show application -a)
+poktrolld tx application delegate-to-gateway $GATEWAY_ADDR --from=$APP_ADDR $GAS_PARAMS $NODE
 ```
 
-## Retrieve PATH Gateway source code
+Optionally check if the application is delegating to the gateway
+```bash
+poktrolld query application show-application $APP_ADDR $NODE
+```
+
+## `PATH Gateway` Configuration
 
 Pull the latest `PATH Gateway` source code:
 
 ```bash
-mkdir ~/path-gateway && cd ~/path-gateway
+cd ~
 git clone https://github.com/buildwithgrove/path.git
-cd path-gateway
+cd path
 ```
 
-## Generate a PATH Gateway config file for the Shannon network
+### Generate a `PATH Gateway` config file for the Shannon network
 
-Run the following command to generate a default Shannon config `cmd/.config.yaml`
+Run the following command to generate a default Shannon config `cmd/.config.yaml`:
+<!-- TODO_CONSIDERATION: yq might provide better readability for editing the config file -->
 
 ```bash
 make copy_shannon_config
@@ -120,15 +164,26 @@ Refer to [PATH Gateway modes](https://path.grove.city/) for more information.
 
 :::
 
-**Update the `cmd/.config.yaml` file with the `Gateway` and `Application` keys**
+Update the `cmd/.config.yaml` file with the `Gateway` address and private key:
+
+_You'll be prompted to confirm the `gateway` account private key export._
 
 ```bash
-sed -i '/owned_apps_private_keys_hex:/!b;n;c\      - '"$(yes | poktrolld keys export application --unsafe --unarmored-hex)" cmd/.config.yaml
-sed -i "s|gateway_address: .*|gateway_address: $(poktrolld keys show gateway -a)|" cmd/.config.yaml
-sed -i "s|gateway_private_key_hex: .*|gateway_private_key_hex: $(yes | poktrolld keys export gateway --unsafe --unarmored-hex)|" cmd/.config.yaml
+sed -i "s|gateway_address: .*|gateway_address: $GATEWAY_ADDR|" cmd/.config.yaml
+sed -i "s|gateway_private_key_hex: .*|gateway_private_key_hex: $(poktrolld keys export gateway --unsafe --unarmored-hex)|" cmd/.config.yaml
 ```
 
-## Build and run the PATH Gateway
+Update the `cmd/.config.yaml` file with the delegating `Application` private key:
+
+_You'll be prompted to confirm the `application` account private key export._
+
+```bash
+sed -i '/owned_apps_private_keys_hex:/!b;n;c\      - '"$(poktrolld keys export application --unsafe --unarmored-hex)" cmd/.config.yaml
+```
+
+## `PATH Gateway` Setup
+
+### Build and run the PATH Gateway
 
 ```bash
 cd cmd/ && go build -o path . && ./path
@@ -140,12 +195,16 @@ You should see the following output:
 {"level":"info","message":"Starting the cache update process."}
 {"level":"warn","message":"endpoint hydrator is disabled: no service QoS generators are specified"}
 {"level":"info","package":"router","message":"PATH gateway running on port 3000"}
-{"level":"warn","error":"buildAppsServiceMap: no apps found.","message":"updateAppCache: error getting the list of apps; skipping update."}
-{"level":"warn","method":"fetchSessions","error":"buildAppsServiceMap: no apps found.","message":"fetchSession: error listing applications"}
-{"level":"warn","message":"updateSessionCache: received empty session list; skipping update."}
 ```
 
 Check that the `PATH Gateway` is serving relays:
+
+:::info
+
+Initial requests may hit unresponsive nodes, if that happens, retry the request a few times.
+`PATH Gateway` will exclude unresponsive nodes on subsequent requests.
+
+:::
 
 ```bash
 curl http://eth.localhost:3000/v1 \
