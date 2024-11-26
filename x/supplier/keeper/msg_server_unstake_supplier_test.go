@@ -280,7 +280,7 @@ func TestMsgServer_UnstakeSupplier_FailIfNotStaked(t *testing.T) {
 	}
 	_, err := srv.UnstakeSupplier(ctx, unstakeMsg)
 	require.Error(t, err)
-	require.ErrorIs(t, err, suppliertypes.ErrSupplierNotFound)
+	require.ErrorContains(t, err, suppliertypes.ErrSupplierNotFound.Error())
 
 	_, isSupplierFound = supplierModuleKeepers.GetSupplier(ctx, supplierOperatorAddr)
 	require.False(t, isSupplierFound)
@@ -311,7 +311,7 @@ func TestMsgServer_UnstakeSupplier_FailIfCurrentlyUnstaking(t *testing.T) {
 	ctx = keepertest.SetBlockHeight(ctx, sdkCtx.BlockHeight()+1)
 
 	_, err = srv.UnstakeSupplier(ctx, unstakeMsg)
-	require.ErrorIs(t, err, suppliertypes.ErrSupplierIsUnstaking)
+	require.ErrorContains(t, err, suppliertypes.ErrSupplierIsUnstaking.Error())
 }
 
 func TestMsgServer_UnstakeSupplier_OperatorCanUnstake(t *testing.T) {
