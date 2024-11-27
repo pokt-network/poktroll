@@ -101,6 +101,7 @@ If the value has been modified, you must restart the process.
 #### RelayMiner
 
 The `RelayMiner` can be configured to expose a `pprof` endpoint using a configuration file like this:
+<!-- TODO_DOC(red-0ne): Mention PATH Gateway once it has pprof support -->
 
 ```yaml
 pprof:

@@ -80,9 +80,9 @@ In `Morse`, a `Validator` or a staked `Node` was responsible for both holding
 a copy of the on-chain data, as well as performing relays. With `Shannon`, the
 `RelayMiner` software, which runs the supplier logic, is distinct from the full-node/validator.
 
-Furthermore, `Shannon` uses the `PATH Gateway`, a software component that acts on
-behalf of either `Applications` or `Gateways` to access services provided by Pocket
-Network `Supplier`s via `RelayMiners`.
+Furthermore, `Shannon` uses [`PATH Gateway`](https://github.com/buildwithgrove/path),
+a software component that acts on behalf of either `Applications` or `Gateways`
+to access services provided by Pocket Network `Supplier`s via `RelayMiners`.
 
 The following diagram from the [actors](../../protocol/actors/) page captures the relationship
 between on-chain records (actors) and off-chain operators (servers).
@@ -540,7 +540,7 @@ You can send requests to the newly deployed `PATH Gateway`. If there are any
 Suppliers on the network that can provide the service, the request will be
 routed to them.
 
-The endpoint you want to send request to is: `http://your_node:path_gateway_port/service_id`.
+The endpoint you want to send request to is: `http://service_alias.your_node:path_gateway_port/v1`.
 For example, this is how the request can be routed to `ethereum` represented by the alias `eth-mainnet`:
 
 ```bash
@@ -670,14 +670,13 @@ You can send requests to the newly deployed `PATH Gateway`. If there are any
 Suppliers on the network that can provide the service, the request will be
 routed to them.
 
-The endpoint you want to send request to is: `http://service_id.your_node:gateway_server_port/v1`.
+The endpoint you want to send request to is: `http://service_alias.your_node:gateway_server_port/v1`.
 For example, this is how the request can be routed to `ethereum` represented by the alias `eth-mainnet`:
 
 ```bash
 curl http://eth-mainnet.$NODE_HOSTNAME:3000/v1 \
   -X POST \
   -H "Content-Type: application/json" \
-  -H "X-Application-Address: $APPLICATION_ADDR" \
   --data '{"method":"eth_blockNumber","params":[],"id":1,"jsonrpc":"2.0"}'
 ```
 
@@ -696,7 +695,6 @@ for i in {1..10}; do
   curl http://eth-mainnet.$NODE_HOSTNAME:3000/v1 \
     -X POST \
     -H "Content-Type: application/json" \
-    -H "X-Application-Address: $APPLICATION_ADDR" \
     --data '{"method":"eth_blockNumber","params":[],"id":1,"jsonrpc":"2.0"}' \
     --max-time 1
   echo ""

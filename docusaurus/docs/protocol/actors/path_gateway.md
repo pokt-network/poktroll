@@ -7,7 +7,6 @@ sidebar_position: 6
 
 - [Overview](#overview)
 - [Configuration](#configuration)
-- [CLI](#cli)
 
 ## Overview
 
@@ -23,11 +22,3 @@ or custom software that implements the same functionality.
 
 Configurations and additional documentation related to operating a `PATH Gateway`
 can be found at [path_gateway.md](https://path.grove.city/operate).
-
-## CLI
-
-All of the operations needed to start and operate a `PATH Gateway` can be viewed by running:
-
-```bash
-path --help
-```

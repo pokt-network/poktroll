@@ -15,7 +15,7 @@ needed to send an end-to-end relay.
   - [Report issues](#report-issues)
   - [TL;DR](#tldr)
 - [Developing with LocalNet](#developing-with-localnet)
-  - [localnet\_config.yaml](#localnet_configyaml)
+  - [localnet_config.yaml](#localnet_configyaml)
   - [Scaling network actors](#scaling-network-actors)
   - [Off-chain actors configuration](#off-chain-actors-configuration)
   - [Modify Kubernetes workloads](#modify-kubernetes-workloads)
@@ -83,8 +83,8 @@ workloads and local development.
 Following best practices in Helm chart design, we have default values defined in the `values.yaml` file of each service
 Helm chart. For example, [here are the RelayMiner `values.yaml`](https://github.com/pokt-network/helm-charts/blob/main/charts/relayminer/values.yaml).
 
-Local infrastructure requires some changes to the default values to properly configure the RelayMiner
-ro PATH Gateway, so we override some of the values. You can find such overrides in the
+Local infrastructure requires some changes to the default values to properly configure the `RelayMiner`
+or `PATH Gateway`, so we override some of the values. You can find such overrides in the
 [poktroll/localnet/kubernetes directory](https://github.com/pokt-network/poktroll/tree/main/localnet/kubernetes).
 
 **IF YOU NEED TO CHANGE LocalNet configs, 👆 is the place.**

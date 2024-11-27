@@ -478,9 +478,10 @@ new shell instance.
 
 :::note Independent Gateway
 
-This section will show how to deploy a Sovereign Application, which acts as its
-own Gateway. We are leaving delegated Gateways outside the scope of the
-Quickstart guide.
+This section will show how to deploy a `PATH Gateway` with `Centralized` mode,
+which will use its configured `Application`s to sign relays.
+
+We are leaving delegated Gateways outside the scope of the Quickstart guide.
 
 :::
 
@@ -621,7 +622,7 @@ make supplier3_stake
 Running `make supplier_list` should now show that all three suppliers are staked.
 
 You can reuse the running `PATH Gateway` to send requests. However, since not all
-of them have a `RelayMiner` running, you'll see that initially some of requests will fail.
+the `Supplier`s have a `RelayMiner` running, you'll see that initially some of requests will fail.
 Meanwhile `PATH Gateway` will build a set of responsive `RelayMiner`s excluding the
 failing ones.
 

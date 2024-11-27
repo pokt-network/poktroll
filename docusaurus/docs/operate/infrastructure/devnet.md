@@ -137,8 +137,6 @@ We use the same ignite `config.yaml` to provision genesis in devnet as is used i
 ```yaml
 path_gateways:
   count: 1
-gateways:
-  count: 1
 relayminers:
   count: 1
 ```

@@ -19,7 +19,6 @@ import ReactPlayer from "react-player";
 - [Stake an Application \& Deploy a PATH Gateway](#stake-an-application--deploy-a-path-gateway)
 - [Send a Relay](#send-a-relay)
   - [Ensure you get a response](#ensure-you-get-a-response)
-- [\[BONUS\] Deploy a PATH Gateway](#bonus-deploy-a-path-gateway)
 - [Managing a re-genesis](#managing-a-re-genesis)
   - [Full Nodes](#full-nodes)
   - [Fund the same accounts](#fund-the-same-accounts)
@@ -244,22 +243,6 @@ for i in {1..10}; do
 done
 ```
 
-## [BONUS] Deploy a PATH Gateway
-
-If you want to deploy a real Gateway, you can use [Grove's PATH](https://github.com/buildwithgrove/path)
-after running the following commands:
-
-```bash
-# Stake the gateway
-poktrolld tx gateway stake-gateway --config=/poktroll/stake_configs/gateway_stake_config_example.yaml --from=gateway --chain-id=poktroll --yes
-# Delegate from the application to the gateway
-poktrolld tx application delegate-to-gateway $GATEWAY_ADDR --from=application --chain-id=poktroll --chain-id=poktroll --yes
-
-# OPTIONALLY check the gateway's and application's status
-poktrolld query gateway show-gateway $GATEWAY_ADDR
-poktrolld query application show-application $APPLICATION_ADDR
-```
-
 ## Managing a re-genesis
 
 Assuming you already had everything functioning following the steps above, this
@@ -329,3 +312,4 @@ docker compose up -d pathgw
 # View
 docker logs -f --tail 100 pathgw
 ```
+<!-- TODO_BETA: Update poktroll-docker-compose-example to use PATH Gateway -->
