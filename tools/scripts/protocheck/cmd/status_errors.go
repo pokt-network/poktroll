@@ -20,9 +20,8 @@ import (
 var (
 	flagModule          = "module"
 	flagModuleShorthand = "m"
-	// TODO_IN_THIS_COMMIT: support this flag.
-	flagModuleValue = "*"
-	flagModuleUsage = "If present, only check message handlers of the given module."
+	flagModuleValue     = "*"
+	flagModuleUsage     = "If present, only check message handlers of the given module."
 
 	flagLogLevel          = "log-level"
 	flagLogLevelShorthand = "l"
@@ -53,7 +52,6 @@ func setupLogger(_ *cobra.Command, _ []string) {
 	)
 }
 
-// TODO_IN_THIS_COMMIT: pre-run: drop patch version in go.mod; post-run: restore.
 func runStatusErrorsCheck(cmd *cobra.Command, _ []string) error {
 	ctx := cmd.Context()
 
@@ -73,21 +71,10 @@ func runStatusErrorsCheck(cmd *cobra.Command, _ []string) error {
 		}
 	}
 
-	// TODO_IN_THIS_COMMIT: add hack/work-around to temporarily strip patch version from go.mod.
-	// TODO_IN_THIS_COMMIT: add hack/work-around to temporarily strip patch version from go.mod.
-	// TODO_IN_THIS_COMMIT: add hack/work-around to temporarily strip patch version from go.mod.
-
-	// TODO_IN_THIS_COMMIT: to support this, need to load all modules but only inspect target module.
-	//if flagModule != "*" {
-	// ...
-	//}
-
-	//for module := range poktrollModules {
-	//	if err := checkModule(ctx, module); err != nil {
+	// TODO_IN_THIS_COMMIT: refactor...
 	if err := checkModule(ctx); err != nil {
 		return err
 	}
-	//}
 
 	return nil
 }
@@ -107,20 +94,15 @@ func checkModule(_ context.Context) error {
 	// 3. Recursively traverse the method body to find all of its error returns.
 	// 4. Lookup error assignments to ensure that they are wrapped in gRPC status errors.
 
-	// TODO: import polyzero for side effects.
-	//logger := polylog.Ctx(ctx)
-
 	// TODO_IN_THIS_COMMIT: extract --- BEGIN
 	// Set up the package configuration
 	cfg := &packages.Config{
-		//Mode: packages.NeedName | packages.NeedFiles | packages.NeedImports | packages.NeedTypes | packages.NeedTypesInfo | packages.LoadSyntax,
 		Mode:  packages.LoadSyntax,
 		Tests: false,
 	}
 
 	// Load the package containing the target file or directory
 	poktrollPkgPathPattern := "github.com/pokt-network/poktroll/x/..."
-	//logger.Info().Msgf("Loading package(s) in %s", poktrollPkgPathPattern)
 
 	pkgs, err := packages.Load(cfg, poktrollPkgPathPattern)
 	if err != nil {
@@ -160,12 +142,6 @@ func checkModule(_ context.Context) error {
 
 		// --- END
 
-		//filenames := make([]string, 0)
-		//for _, astFile := range pkg.Syntax {
-		//	filenames = append(filenames, filepath.Base(pkg.Fset.Position(astFile.Pos()).Filename))
-		//}
-		//fmt.Printf(">>> filenames:\n%s\n", strings.Join(filenames, "\n"))
-
 		// TODO_IN_THIS_COMMIT: extract --- BEGIN
 		// TODO_IN_THIS_COMMIT: check the filename and only inspect each once!
 		for _, astFile := range pkg.Syntax {
@@ -178,12 +154,6 @@ func checkModule(_ context.Context) error {
 			if strings.HasSuffix(filepath.Base(filename), ".pb.gw.go") {
 				continue
 			}
-
-			// TODO_IN_THIS_COMMIT: remove!
-			//fmt.Printf(">>> filename: %s\n", filename)
-			//if filename != "/home/bwhite/Projects/pokt/poktroll/x/application/keeper/msg_server_delegate_to_gateway.go" {
-			//	continue
-			//}
 
 			ast.Inspect(astFile, func(n ast.Node) bool {
 				fnNode, ok := n.(*ast.FuncDecl)
@@ -212,11 +182,6 @@ func checkModule(_ context.Context) error {
 					return false
 				}
 
-				//fmt.Printf(">>> fNode.Name.Name: %s\n", fnNode.Name.Name)
-				//if fnNode.Name.Name != "AllApplications" {
-				//	return false
-				//}
-
 				// TODO_IN_THIS_COMMIT: check the signature of the method to ensure it returns an error type.
 				fnResultsList := fnNode.Type.Results.List
 				fnLastResultType := fnResultsList[len(fnResultsList)-1].Type
@@ -233,10 +198,8 @@ func checkModule(_ context.Context) error {
 				}
 
 				fnPos := pkg.Fset.Position(fnNode.Pos())
-				//fmt.Printf(">>> fnNode.Pos(): %s\n", fnPos.String())
 				fnFilename := filepath.Base(fnPos.Filename)
 				fnSourceHasQueryHandlerPrefix := strings.HasPrefix(fnFilename, "query_")
-				//fnSourceHasQueryHandlerPrefix := false
 
 				if typeIdentNode.Name != "msgServer" && !fnSourceHasQueryHandlerPrefix {
 					return false
@@ -254,10 +217,7 @@ func checkModule(_ context.Context) error {
 				}
 
 				// Recursively traverse the function body, looking for non-nil error returns.
-				// TODO_IN_THIS_COMMIT: extract --- BEGIN
-				//fmt.Printf(">>> walking func from file: %s\n", pkg.Fset.Position(astFile.Pos()).Filename)
-				ast.Inspect(fnNode.Body, walkFuncBody(pkg, pkgs, true, true))
-				// --- END
+				ast.Inspect(fnNode.Body, walkFuncBody(pkg, pkgs, true))
 
 				return false
 			})
@@ -268,7 +228,6 @@ func checkModule(_ context.Context) error {
 	// --- END
 
 	// TODO_IN_THIS_COMMIT: extract --- BEGIN
-	// TODO_IN_THIS_COMMIT: figure out why there are duplicate offending lines.
 	// Print offending lines in package
 	// TODO_IN_THIS_COMMIT: refactor to const.
 	pkgsPattern := "github.com/pokt-network/poktroll/x/..."
