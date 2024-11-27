@@ -119,6 +119,13 @@ source ~/.bashrc
 
 ## Start up the full node
 
+
+:::warning
+The Alpha TestNet currently requires manual steps to sync the node to the latest block. Please find the affected block(s)
+in [this document](../../protocol/upgrades/upgrade_list.md), which leads to the manual upgrade instructions.
+:::
+
+
 ```bash
 docker compose up -d full-node
 # Optional: watch the block height sync up & logs
