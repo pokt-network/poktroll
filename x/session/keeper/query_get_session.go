@@ -14,6 +14,8 @@ import (
 // GetSession should be deterministic and always return the same session for
 // the same block height.
 func (k Keeper) GetSession(ctx context.Context, req *types.QueryGetSessionRequest) (*types.QueryGetSessionResponse, error) {
+	logger := k.Logger().With("method", "GetSession")
+
 	if req == nil {
 		return nil, status.Error(codes.InvalidArgument, "invalid request")
 	}
@@ -36,12 +38,14 @@ func (k Keeper) GetSession(ctx context.Context, req *types.QueryGetSessionReques
 		blockHeight = req.BlockHeight
 	}
 
-	k.Logger().Debug(fmt.Sprintf("Getting session for height: %d", blockHeight))
+	logger.Debug(fmt.Sprintf("Getting session for height: %d", blockHeight))
 
 	sessionHydrator := NewSessionHydrator(req.ApplicationAddress, req.ServiceId, blockHeight)
 	session, err := k.HydrateSession(ctx, sessionHydrator)
 	if err != nil {
-		return nil, err
+		err = types.ErrSessionHydration.Wrapf("QueryGetSessionRequest: %+v: %s", req, err)
+		logger.Error(err.Error())
+		return nil, status.Error(codes.Internal, err.Error())
 	}
 
 	res := &types.QueryGetSessionResponse{
