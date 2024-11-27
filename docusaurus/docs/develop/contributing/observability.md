@@ -15,7 +15,7 @@ We are still refining our observability guidelines. If in doubt - please reach o
   - [Best Practices](#best-practices)
   - [Examples](#examples)
   - [Counter](#counter)
-    - [x/proof/keeper/msg\_server\_create\_claim.go](#xproofkeepermsg_server_create_claimgo)
+    - [x/proof/keeper/msg_server_create_claim.go](#xproofkeepermsg_server_create_claimgo)
   - [Gauage](#gauage)
     - [x/tokenomics/module/abci.go](#xtokenomicsmoduleabcigo)
   - [Histogram](#histogram)
