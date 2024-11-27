@@ -40,7 +40,7 @@ var Upgrade_0_0_11 = Upgrade{
 			}
 			logger.Info("Successfully updated session params", "new_params", sessionParams)
 
-			// Set tokenomics params. The values are based on default values for LocalNet.
+			// Set tokenomics params. The values are based on default values for LocalNet/Beta TestNet.
 			// Validate with: `poktrolld q tokenomics params --node=https://testnet-validated-validator-rpc.poktroll.com/`
 			tokenomicsParams := keepers.TokenomicsKeeper.GetParams(ctx)
 			logger.Info("Current tokenomics params", "params", tokenomicsParams)
