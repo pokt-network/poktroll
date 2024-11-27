@@ -51,10 +51,10 @@ configuration for `cosmovisor` that could automate the process.
 :::
 
 Since the chain is not moving, **it is impossible** to issue an automatic upgrade with an upgrade plan. Instead,
-we need **social consensus** to manually replace the binary and get the chain moving. 
+we need **social consensus** to manually replace the binary and get the chain moving.
 
 1. Prepare and verify a new binary that addresses the consensus-breaking issue.
-2. Reach out to the community and validators so they can upgrade the binary manually. 
+2. Reach out to the community and validators so they can upgrade the binary manually.
    :::warning UNKNOWN, NEED TO INVESTIGATE
    <!-- TODO_INVESTIGATE(@okdas): check if need to sync rounds/steps -->
    We might need to coordinate the timing of when the nodes should be started. In Tendermint version of Pocket Network
@@ -63,7 +63,6 @@ we need **social consensus** to manually replace the binary and get the chain mo
 3. Update [the documentation](../../protocol/upgrades/upgrade_list.md) to include a range a height when the binary needs
    to be repleced. Consider a configuration change for `cosmovisor` so it would automatically replace the binary when
    synching from genesis. <!-- TODO_IMPROVE(@okdas): Investigate and add Cosmovisor documentation. -->
-
 
 ```mermaid
 sequenceDiagram
@@ -161,16 +160,17 @@ sequenceDiagram
 There are two ways to get a snapshot from a prior height:
 
 1. Execute
+
    ```bash
    poktrolld rollback --hard
    ```
    repeately, until the command responds with the desired block number.
 2. Use a snapshot from below the halt height (e.g. `100`) and start the node with `--halt-height=100` parameter so it only syncs up to certain height and then
    gracefully shuts down. Add this argument to `poktrolld start` like this:
+
    ```bash
    poktrolld start --halt-height=100
    ```
-
 
 #### Step 6: Validator Isolation - risks
 

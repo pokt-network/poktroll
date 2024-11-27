@@ -55,8 +55,7 @@ The upgrade needs to be fixed, and then a new plan needs to be submitted to the 
 
 ### Option 2: The migration is stuck
 
-If the migration is stuck, there's always a chance the state has been mutated for
-the upgrade but the migration didn't complete.
+If the migration is stuck, there's always a chance the upgrade handler was executed on-chain as scheduled, but the migration didn't complete.
 
 In such a case, we need to:
 

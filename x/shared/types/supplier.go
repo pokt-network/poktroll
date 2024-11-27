@@ -2,7 +2,7 @@ package types
 
 // SupplierNotUnstaking is the value of `unstake_session_end_height` if the
 // supplier is not actively in the unbonding period.
-const SupplierNotUnstaking uint64 = 0
+const SupplierNotUnstaking uint64 = iota
 
 // IsUnbonding returns true if the supplier is actively unbonding.
 // It determines if the supplier has submitted an unstake message, in which case
@@ -42,9 +42,9 @@ func (s *Supplier) HasOperator(address string) bool {
 	return s.OperatorAddress == address
 }
 
-// GetSupplierUnbondingHeight returns the session end height at which the given
+// GetSupplierUnbondingEndHeight returns the session end height at which the given
 // supplier finishes unbonding.
-func GetSupplierUnbondingHeight(
+func GetSupplierUnbondingEndHeight(
 	sharedParams *Params,
 	supplier *Supplier,
 ) int64 {

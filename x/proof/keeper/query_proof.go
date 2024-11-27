@@ -26,7 +26,7 @@ func (k Keeper) AllProofs(ctx context.Context, req *types.QueryAllProofsRequest)
 
 	var (
 		// isCustomIndex is used to determined if we'll be using the store that points
-		// to the actual Claim values, or a secondary index that points to the primary keys.
+		// to the actual claim values, or a secondary index that points to the primary keys.
 		isCustomIndex bool
 		keyPrefix     []byte
 	)

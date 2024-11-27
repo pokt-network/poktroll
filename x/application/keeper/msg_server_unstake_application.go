@@ -68,7 +68,7 @@ func (k msgServer) UnstakeApplication(
 	unbondingEndHeight := apptypes.GetApplicationUnbondingHeight(&sharedParams, &foundApp)
 	unbondingBeginEvent := &apptypes.EventApplicationUnbondingBegin{
 		Application:        &foundApp,
-		Reason:             apptypes.ApplicationUnbondingReason_ELECTIVE,
+		Reason:             apptypes.ApplicationUnbondingReason_APPLICATION_UNBONDING_REASON_ELECTIVE,
 		SessionEndHeight:   sessionEndHeight,
 		UnbondingEndHeight: unbondingEndHeight,
 	}
