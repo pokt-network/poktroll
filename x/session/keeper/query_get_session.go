@@ -43,7 +43,6 @@ func (k Keeper) GetSession(ctx context.Context, req *types.QueryGetSessionReques
 	sessionHydrator := NewSessionHydrator(req.ApplicationAddress, req.ServiceId, blockHeight)
 	session, err := k.HydrateSession(ctx, sessionHydrator)
 	if err != nil {
-		err = types.ErrSessionHydration.Wrapf("QueryGetSessionRequest: %+v: %s", req, err)
 		logger.Error(err.Error())
 		return nil, status.Error(codes.Internal, err.Error())
 	}
