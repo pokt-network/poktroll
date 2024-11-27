@@ -21,6 +21,8 @@ var (
 )
 
 func init() {
+	checkUnstableCmd.Flags().StringVarP(&flagRootValue, flagRootName, flagRootShorthand, flagRootValue, flagRootUsage)
+	checkUnstableCmd.Flags().StringVarP(&flagFileIncludePatternValue, flagFileIncludePatternName, flagFileIncludePatternShorthand, flagFileIncludePatternValue, flagFileIncludePatternUsage)
 	checkUnstableCmd.Flags().BoolVarP(&flagFixValue, flagFixName, flagFixShorthand, flagFixValue, flagFixUsage)
 	rootCmd.AddCommand(checkUnstableCmd)
 }

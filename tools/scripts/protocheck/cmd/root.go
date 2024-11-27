@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"flag"
 	"os"
 
 	"github.com/rs/zerolog"
@@ -13,30 +12,13 @@ import (
 )
 
 var (
-	flagRootName      = "root"
-	flagRootShorthand = "r"
-	flagRootValue     = "./proto"
-	flagRootUsage     = "Set the path of the directory from which to start walking the filesystem tree in search of files matching --file-pattern."
-
-	flagFileIncludePatternName      = "file-pattern"
-	flagFileIncludePatternShorthand = "p"
-	flagFileIncludePatternValue     = "*.proto"
-	flagFileIncludePatternUsage     = "Set the pattern passed to filepath.Match(), used to include file names which match."
-
 	rootCmd = &cobra.Command{
 		Use:   "protocheck [subcommand] [flags]",
 		Short: "A tool for heuristically identifying and fixing issues in protobuf files and usage.",
 	}
 )
 
-func init() {
-	rootCmd.PersistentFlags().StringVarP(&flagRootValue, flagRootName, flagRootShorthand, flagRootValue, flagRootUsage)
-	rootCmd.PersistentFlags().StringVarP(&flagFileIncludePatternValue, flagFileIncludePatternName, flagFileIncludePatternShorthand, flagFileIncludePatternValue, flagFileIncludePatternUsage)
-}
-
 func main() {
-	flag.Parse()
-
 	zlConsoleWriter := zerolog.ConsoleWriter{
 		Out: os.Stderr,
 		// Remove the timestamp from the output

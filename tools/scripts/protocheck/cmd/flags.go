@@ -1,6 +1,16 @@
 package main
 
 var (
+	flagRootName      = "root"
+	flagRootShorthand = "r"
+	flagRootValue     = "./proto"
+	flagRootUsage     = "Set the path of the directory from which to start walking the filesystem tree in search of files matching --file-pattern."
+
+	flagFileIncludePatternName      = "file-pattern"
+	flagFileIncludePatternShorthand = "p"
+	flagFileIncludePatternValue     = "*.proto"
+	flagFileIncludePatternUsage     = "Set the pattern passed to filepath.Match(), used to include file names which match."
+
 	flagModule          = "module"
 	flagModuleShorthand = "m"
 	flagModuleValue     = "*"
