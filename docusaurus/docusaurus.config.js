@@ -166,7 +166,13 @@ const config = {
       prism: {
         theme: prismThemes.github,
         darkTheme: prismThemes.dracula,
-        additionalLanguages: ["gherkin", "protobuf", "json", "makefile"],
+        additionalLanguages: [
+          "gherkin",
+          "protobuf",
+          "json",
+          "makefile",
+          "diff",
+        ],
       },
     }),
 };

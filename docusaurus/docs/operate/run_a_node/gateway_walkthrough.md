@@ -1,9 +1,11 @@
 ---
-title: AppGate Server
+title: Gateway Walkthrough
 sidebar_position: 4
 ---
 
-# Run an AppGate Server <!-- omit in toc -->
+# Run a Gateway <!-- omit in toc -->
+
+TODO_BETA(@red-0ne): Update this page to use PATH.
 
 - [What is AppGate Server?](#what-is-appgate-server)
 - [AppGate Server Operation Requirements](#appgate-server-operation-requirements)

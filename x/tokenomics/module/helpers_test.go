@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/pokt-network/poktroll/testutil/network"
-	"github.com/pokt-network/poktroll/x/tokenomics/types"
+	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
 )
 
 // Dummy variable to avoid unused import error.
@@ -20,10 +20,11 @@ var _ = strconv.IntSize
 //lint:ignore U1000 Ignore unused function for testing purposes
 func networkWithDefaultConfig(t *testing.T) *network.Network {
 	t.Helper()
+
 	cfg := network.DefaultConfig()
 	tokenomicsGenesisState := network.DefaultTokenomicsModuleGenesisState(t)
 	buf, err := cfg.Codec.MarshalJSON(tokenomicsGenesisState)
 	require.NoError(t, err)
-	cfg.GenesisState[types.ModuleName] = buf
+	cfg.GenesisState[tokenomicstypes.ModuleName] = buf
 	return network.New(t, cfg)
 }
