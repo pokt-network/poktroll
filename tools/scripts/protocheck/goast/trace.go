@@ -21,7 +21,7 @@ func TraceSelectorExpr(
 	candidatePkg *packages.Package,
 	modulePkgs []*packages.Package,
 	candidateNode ast.Node,
-	exonerate func(context.Context, string),
+	exclude func(context.Context, string),
 ) bool {
 	logger := polylog.Ctx(ctx).With("func", "TraceSelectorExpr")
 	logger.Debug().Send()
@@ -115,7 +115,7 @@ func TraceSelectorExpr(
 				isMatch := strings.Contains(obj.String(), grpcStatusImportPath) &&
 					expr.Sel.Name == "Error"
 				if isMatch {
-					exonerate(ctx, pkg.Fset.Position(candidateNode.Pos()).String())
+					exclude(ctx, pkg.Fset.Position(candidateNode.Pos()).String())
 					return false
 				}
 			} else if obj = pkg.TypesInfo.Defs[x]; obj != nil {
@@ -125,15 +125,15 @@ func TraceSelectorExpr(
 					Str("pkg_path", pkg.PkgPath).
 					Str("name", expr.Sel.Name).
 					Msgf("sel def")
-				TraceExpressionStack(ctx, expr.Sel, modulePkgs, candidatePkg, candidateNode, exonerate)
+				TraceExpressionStack(ctx, expr.Sel, modulePkgs, candidatePkg, candidateNode, exclude)
 			}
 		}
 	case *ast.SelectorExpr: // e.g., `obj.Method.Func`
 		logger.Debug().Msgf("tracing recursive selector expression: %+v", expr)
-		return TraceSelectorExpr(ctx, x, candidatePkg, modulePkgs, candidateNode, exonerate)
+		return TraceSelectorExpr(ctx, x, candidatePkg, modulePkgs, candidateNode, exclude)
 	case *ast.CallExpr:
 		logger.Debug().Msgf("tracing call expression: %+v", expr)
-		TraceExpressionStack(ctx, x.Fun, modulePkgs, candidatePkg, candidateNode, exonerate)
+		TraceExpressionStack(ctx, x.Fun, modulePkgs, candidatePkg, candidateNode, exclude)
 	default:
 		logger.Warn().Msgf("skipping selector expression X type: %T", x)
 	}
@@ -147,7 +147,7 @@ func TraceExpressionStack(
 	modulePkgs []*packages.Package,
 	candidatePkg *packages.Package,
 	candidateNode ast.Node,
-	exonerate func(context.Context, string),
+	exclude func(context.Context, string),
 ) bool {
 	logger := polylog.Ctx(ctx).With(
 		"func", "TraceExpressionStack",
@@ -164,22 +164,22 @@ func TraceExpressionStack(
 		return false
 	case *ast.CallExpr:
 		if sel, ok := expr.Fun.(*ast.SelectorExpr); ok {
-			return TraceSelectorExpr(ctx, sel, candidatePkg, modulePkgs, candidateNode, exonerate)
+			return TraceSelectorExpr(ctx, sel, candidatePkg, modulePkgs, candidateNode, exclude)
 		}
 		return true
 	case *ast.BinaryExpr:
 		logger.Debug().Msg("tracing binary expression")
 		// TODO_IN_THIS_COMMIT: return traceExpressionStack... ?
-		if TraceExpressionStack(ctx, expr.X, modulePkgs, candidatePkg, candidateNode, exonerate) {
-			TraceExpressionStack(ctx, expr.Y, modulePkgs, candidatePkg, candidateNode, exonerate)
+		if TraceExpressionStack(ctx, expr.X, modulePkgs, candidatePkg, candidateNode, exclude) {
+			TraceExpressionStack(ctx, expr.Y, modulePkgs, candidatePkg, candidateNode, exclude)
 		}
 		return true
 	case *ast.ParenExpr:
 		logger.Debug().Msg("tracing paren expression")
-		return TraceExpressionStack(ctx, expr.X, modulePkgs, candidatePkg, candidateNode, exonerate)
+		return TraceExpressionStack(ctx, expr.X, modulePkgs, candidatePkg, candidateNode, exclude)
 	case *ast.SelectorExpr:
 		logger.Debug().Msg("tracing selector expression")
-		return TraceSelectorExpr(ctx, expr, candidatePkg, modulePkgs, candidateNode, exonerate)
+		return TraceSelectorExpr(ctx, expr, candidatePkg, modulePkgs, candidateNode, exclude)
 	case *ast.Ident:
 		logger.Debug().Str("name", expr.Name).Msg("tracing ident")
 
@@ -190,9 +190,9 @@ func TraceExpressionStack(
 
 		switch valueNode := valueExpr.(type) {
 		case ast.Expr:
-			TraceExpressionStack(ctx, valueNode, modulePkgs, candidatePkg, candidateNode, exonerate)
+			TraceExpressionStack(ctx, valueNode, modulePkgs, candidatePkg, candidateNode, exclude)
 		case *ast.AssignStmt:
-			TraceExpressionStack(ctx, valueNode.Rhs[0], modulePkgs, candidatePkg, candidateNode, exonerate)
+			TraceExpressionStack(ctx, valueNode.Rhs[0], modulePkgs, candidatePkg, candidateNode, exclude)
 		default:
 			logger.Warn().Msgf("unknown value node type: %T", valueNode)
 		}

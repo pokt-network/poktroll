@@ -16,7 +16,7 @@ func NewInspectLastReturnArgFn(
 	pkg *packages.Package,
 	modulePkgs []*packages.Package,
 	flag func(context.Context, string),
-	exonerate func(context.Context, string),
+	exclude func(context.Context, string),
 ) func(ast.Node) bool {
 	logger := polylog.Ctx(ctx)
 
@@ -68,7 +68,7 @@ func NewInspectLastReturnArgFn(
 					logger.Debug().Msg("appending potential offending line")
 					flag(ctx, inspectPosition)
 				}
-				TraceExpressionStack(ctx, lastReturnArgNode, modulePkgs, pkg, lastReturnArgNode, exonerate)
+				TraceExpressionStack(ctx, lastReturnArgNode, modulePkgs, pkg, lastReturnArgNode, exclude)
 				return true
 
 			// E.g. `return nil, types.ErrXXX.Wrapf(...)` <-- last arg is a *ast.CallExpr.
@@ -77,7 +77,7 @@ func NewInspectLastReturnArgFn(
 					logger.Debug().Msg("appending potential offending line")
 					flag(ctx, inspectPosition)
 				}
-				TraceExpressionStack(ctx, lastReturnArgNode, modulePkgs, pkg, lastReturnArgNode, exonerate)
+				TraceExpressionStack(ctx, lastReturnArgNode, modulePkgs, pkg, lastReturnArgNode, exclude)
 				return true
 
 			case *ast.SelectorExpr:
@@ -85,7 +85,7 @@ func NewInspectLastReturnArgFn(
 					logger.Debug().Msg("appending potential offending line")
 					flag(ctx, inspectPosition)
 				}
-				TraceSelectorExpr(ctx, lastReturnArgNode, pkg, modulePkgs, lastReturnArgNode, exonerate)
+				TraceSelectorExpr(ctx, lastReturnArgNode, pkg, modulePkgs, lastReturnArgNode, exclude)
 				return true
 			}
 

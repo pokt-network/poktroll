@@ -212,7 +212,7 @@ func newInspectFileFn(ctx context.Context, pkg *packages.Package, pkgs []*packag
 		}
 
 		// Recursively traverse the function body, looking for non-nil error returns.
-		ast.Inspect(fnNode.Body, goast.NewInspectLastReturnArgFn(ctx, pkg, pkgs, appendOffendingLine, exonerateOffendingLine))
+		ast.Inspect(fnNode.Body, goast.NewInspectLastReturnArgFn(ctx, pkg, pkgs, appendOffendingLine, excludeOffendingLine))
 
 		return false
 	}
@@ -224,14 +224,14 @@ func appendOffendingLine(_ context.Context, sourceLine string) {
 }
 
 // TODO_IN_THIS_COMMIT: move & godoc...
-func exonerateOffendingLine(ctx context.Context, sourceLine string) {
+func excludeOffendingLine(ctx context.Context, sourceLine string) {
 	logger := polylog.Ctx(ctx)
 
 	if _, ok := offendingPkgErrLineSet[sourceLine]; ok {
 		logger.Debug().Msgf("exhonerating %s", sourceLine)
 		delete(offendingPkgErrLineSet, sourceLine)
 	} else {
-		logger.Warn().Msgf("can't exonerate %s", sourceLine)
+		logger.Warn().Msgf("can't exclude %s", sourceLine)
 	}
 }
 
