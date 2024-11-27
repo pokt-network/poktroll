@@ -3,6 +3,17 @@ title: CLI Installation
 sidebar_position: 0
 ---
 
+:::warning
+
+tl;dr IFF you know what you're doing.
+
+```bash
+brew tap pokt-network/poktroll
+brew install poktrolld
+```
+
+:::
+
 - [MacOS \& Linux Users](#macos--linux-users)
   - [Using Homebrew](#using-homebrew)
   - [From Source](#from-source)
@@ -12,12 +23,6 @@ sidebar_position: 0
 ## MacOS & Linux Users
 
 ### Using Homebrew
-
-:::tip
-See the [homebrew-poktroll](https://github.com/pokt-network/homebrew-poktroll/)
-repository for details on how to install homebrew or other details to install
-or debug the CLI.
-:::
 
 Ensure you have [Homebrew](https://brew.sh/) installed.
 
@@ -34,6 +39,12 @@ And verify it worked by running:
 poktrolld version
 poktrolld --help
 ```
+
+:::tip
+See the [homebrew-poktroll](https://github.com/pokt-network/homebrew-poktroll/)
+repository for details on how to install homebrew or other details to install
+or debug the CLI.
+:::
 
 ### From Source
 
