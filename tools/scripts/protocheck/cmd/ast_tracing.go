@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"go/ast"
 	"go/token"
+	"slices"
 	"strings"
 
 	"golang.org/x/tools/go/packages"
@@ -32,7 +33,7 @@ func walkFuncBody(
 			Msg("walking function body")
 
 		//position := pkg.Fset.Position(n.Pos())
-		//logger.Warn().Msgf("position: %s", position.String())
+		//logger.Debug().Msgf("position: %s", position.String())
 		//
 		//inspectPos := pkg.Fset.Position(n.Pos())
 		//fmt.Printf(">>> inspecting %T at %s\n", n, inspectPos)
@@ -72,18 +73,18 @@ func walkFuncBody(
 				// an error as the last arg.
 				//if lastReturnArgNode.Name == "err" {
 				if lastReturnArgNode.Obj == nil {
-					logger.Warn().Msg("lastReturnArgNode.Obj is nil")
+					logger.Debug().Msg("lastReturnArgNode.Obj is nil")
 					return true
 				}
 
 				def := pkg.TypesInfo.Uses[lastReturnArgNode]
 				if def == nil {
-					logger.Warn().Msg("def is nil")
+					logger.Debug().Msg("def is nil")
 					return true
 				}
 
 				if def.Type().String() != "error" {
-					logger.Warn().Msg("def is not error")
+					logger.Debug().Msg("def is not error")
 					//inspectPosition := pkg.Fset.Position(lastReturnArgNode.Pos()).String()
 					//break
 					return false
@@ -118,7 +119,7 @@ func walkFuncBody(
 			}
 
 		default:
-			//logger.Warn().Str("node_types", fmt.Sprintf("%T", n)).Msg("NOT traversing ast node")
+			//logger.Debug().Str("node_types", fmt.Sprintf("%T", n)).Msg("NOT traversing ast node")
 			return true
 		}
 
@@ -144,7 +145,7 @@ func traceSelectorExpr(
 	//fmt.Println(">>>>>>>>> TRACE SELECTOR EXPR")
 	for _, pkg := range pkgs {
 		if selection := pkg.TypesInfo.Selections[expr]; selection != nil {
-			//logger.Warn().Msgf("<<<<<<< has selection: %s", selection.String())
+			//logger.Debug().Msgf("<<<<<<< has selection: %s", selection.String())
 			for _, pkg2 := range pkgs {
 				position := pkg2.Fset.Position(selection.Obj().Pos())
 
@@ -153,7 +154,7 @@ func traceSelectorExpr(
 					foundNode = findNodeByPosition(pkg2.Fset, fileNode, position)
 					if foundNode != nil {
 						//traceExpressionStack(foundNode, pkgs, expr, pkg, foundNode, offendingPositions)
-						logger.Warn().
+						logger.Debug().
 							Str("node_type", fmt.Sprintf("%T", foundNode)).
 							Str("selection_position", fmt.Sprintf(" %s ", position)).
 							Str("expr_position", fmt.Sprintf(" %s ", pkg.Fset.Position(expr.Pos()).String())).
@@ -179,12 +180,12 @@ func traceSelectorExpr(
 						})
 
 						if declNode != nil {
-							logger.Warn().Str("decl_position", pkg2.Fset.Position(declNode.Pos()).String()).Msg("tracing decl node")
-							logger.Warn().Str("decl_body", pkg2.Fset.Position(declNode.Body.Pos()).String()).Msg("tracing decl node body")
+							logger.Debug().Str("decl_position", pkg2.Fset.Position(declNode.Pos()).String()).Msg("tracing decl node")
+							logger.Debug().Str("decl_body", pkg2.Fset.Position(declNode.Body.Pos()).String()).Msg("tracing decl node body")
 							ast.Inspect(declNode.Body, walkFuncBody(pkg, pkgs, false, false))
 							//walkFuncBody(pkg, pkgs)(declNode.Body)
 						} else {
-							logger.Warn().Msg("could not find decl node")
+							logger.Debug().Msg("could not find decl node")
 						}
 
 						//return false
@@ -245,7 +246,7 @@ func traceSelectorExpr(
 						logger.Debug().Msgf("exhonerating %s", candidateNodePosition)
 						delete(offendingPositions, candidateNodePosition)
 					} else {
-						logger.Warn().Msgf("can't exhonerating %s", candidateNodePosition)
+						logger.Warn().Msgf("can't exhonerate %s", candidateNodePosition)
 					}
 					return false
 				}
@@ -258,15 +259,15 @@ func traceSelectorExpr(
 				//		return true
 				//	}
 			} else if obj = pkg.TypesInfo.Defs[x]; obj != nil {
-				logger.Warn().Msgf("no use but def: %+v", obj)
+				logger.Debug().Msgf("no use but def: %+v", obj)
 			} else if obj = pkg.TypesInfo.Defs[expr.Sel]; obj != nil {
-				logger.Warn().
+				logger.Debug().
 					Str("pkg_path", pkg.PkgPath).
 					Str("name", expr.Sel.Name).
 					Msgf("sel def")
 				traceExpressionStack(expr.Sel, pkgs, expr, candidatePkg, candidateNode, offendingPositions)
 				//} else {
-				//	logger.Warn().Msgf("no use or def: %+v, sel: %+v", x, expr.Sel)
+				//	logger.Debug().Msgf("no use or def: %+v, sel: %+v", x, expr.Sel)
 			}
 		}
 	case *ast.SelectorExpr: // e.g., `obj.Method.Func`
@@ -278,7 +279,7 @@ func traceSelectorExpr(
 		//case *ast.SelectorExpr: // e.g., `obj.Method.Func`
 		//	return traceSelectorExpr(callExpr, pkgs, candidateNode, offendingPositions)
 		//default:
-		//	logger.Warn().Msgf("skipping sub-selector call expression X type: %T", x)
+		//	logger.Debug().Msgf("skipping sub-selector call expression X type: %T", x)
 		//}
 		traceExpressionStack(x.Fun, pkgs, expr, candidatePkg, candidateNode, offendingPositions)
 	default:
@@ -364,9 +365,10 @@ func traceExpressionStack(
 		// and their respective files/pkgs.
 		declOrAssign, _ := newFindDeclOrAssign(expr, candidatePkg)
 		if declOrAssign == nil {
-			logger.Warn().Msgf("no declaration or assignment found for ident %q", expr.String())
 			return false
 		}
+
+		//traceExpressionStack(declOrAssign.(ast.Expr), pkgs, expr, candidatePkg, candidateNode, offendingPositions)
 		//logger.Debug().
 		//	Str("pkg_path", candidatePkg.PkgPath).
 		//	//Str("file_path", fmt.Sprintf(" %s", candidatePkg.Fset.File(candidateFileNode.Pos()).Name())).
@@ -377,27 +379,27 @@ func traceExpressionStack(
 		case ast.Expr:
 			traceExpressionStack(doa, pkgs, expr, candidatePkg, candidateNode, offendingPositions)
 		case *ast.AssignStmt:
-			logger.Warn().Msgf(">>>>>>> assign stmt: %+v", doa)
+			//logger.Debug().Msgf(">>>>>>> assign stmt: %+v", doa)
 			// TODO_IN_THIS_COMMIT: what about len(Rhs) > 1?
 			traceExpressionStack(doa.Rhs[0], pkgs, expr, candidatePkg, candidateNode, offendingPositions)
-		case *ast.ValueSpec:
-			// TODO_RESUME_HERE!!!!
-			// TODO_RESUME_HERE!!!!
-			// TODO_RESUME_HERE!!!!
-			// TODO_RESUME_HERE!!!!
-			//
-			// find "closest" previous assignment...
-			//
-			logger.Warn().
-				//Str("position", fmt.Sprintf(" %s ", pkg.Fset.Position(doa.Pos()).String())).
-				Int("len(values)", len(doa.Values)).
-				Msgf(">>>>>>> value spec: %+v", doa)
-
-			if doa.Values != nil {
-				for _, value := range doa.Values {
-					traceExpressionStack(value, pkgs, expr, candidatePkg, candidateNode, offendingPositions)
-				}
-			}
+		//case *ast.ValueSpec:
+		//	// TODO_RESUME_HERE!!!!
+		//	// TODO_RESUME_HERE!!!!
+		//	// TODO_RESUME_HERE!!!!
+		//	// TODO_RESUME_HERE!!!!
+		//	//
+		//	// find "closest" previous assignment...
+		//	//
+		//	logger.Debug().
+		//		//Str("position", fmt.Sprintf(" %s ", pkg.Fset.Position(doa.Pos()).String())).
+		//		Int("len(values)", len(doa.Values)).
+		//		Msgf(">>>>>>> value spec: %+v", doa)
+		//
+		//	if doa.Values != nil {
+		//		for _, value := range doa.Values {
+		//			traceExpressionStack(value, pkgs, expr, candidatePkg, candidateNode, offendingPositions)
+		//		}
+		//	}
 		default:
 			logger.Warn().Msgf("unknown node type 3: %T", doa)
 		}
@@ -441,7 +443,8 @@ func newFindDeclOrAssign(
 
 	for _, fileNode := range pkg.Syntax {
 		if declNode != nil {
-			return declNode, declPos
+			//return declNode, declPos
+			break
 		}
 
 		//fmt.Println(">>>>>>>>> NEW FILE NODE")
@@ -455,14 +458,14 @@ func newFindDeclOrAssign(
 		//		ident.Name == targetIdent.Name {
 		//if obj := pkg.TypesInfo.Defs[targetIdent]; obj != nil {
 		//	declPos = pkg.Fset.Position(obj.Pos())
-		//	//logger.Debug().Fields(map[string]any{
-		//	//	//"pkg_path":   pkg.PkgPath,
-		//	//	"file_path":  fmt.Sprintf(" %s ", pkg.Fset.File(fileNode.Pos()).Name()),
-		//	//	"target_pos": fmt.Sprintf(" %s ", pkg.Fset.Position(targetIdent.Pos()).String()),
-		//	//	"decl_pos":   fmt.Sprintf(" %s ", declPos.String()),
-		//	//}).Msg("defs")
+		//	logger.Debug().Fields(map[string]any{
+		//		//"pkg_path":   pkg.PkgPath,
+		//		"file_path":  fmt.Sprintf(" %s ", pkg.Fset.File(fileNode.Pos()).Name()),
+		//		"target_pos": fmt.Sprintf(" %s ", pkg.Fset.Position(targetIdent.Pos()).String()),
+		//		"decl_pos":   fmt.Sprintf(" %s ", declPos.String()),
+		//	}).Msg("defs")
 		//	declNode = findNodeByPosition(pkg.Fset, fileNode, declPos)
-		//	return false
+		//	//return false
 		//} else if obj := pkg.TypesInfo.Uses[targetIdent]; obj != nil {
 		if obj := pkg.TypesInfo.Uses[targetIdent]; obj != nil {
 			// TODO_IN_THIS_COMMIT: figure out why this is called so frequently.
@@ -474,17 +477,173 @@ func newFindDeclOrAssign(
 			}).Msg("uses")
 			declPos = pkg.Fset.Position(obj.Pos())
 			declNode = findNodeByPosition(pkg.Fset, fileNode, declPos)
-			logger.Warn().
-				Str("decl_node", fmt.Sprintf("%+v", declNode)).
-				Str("decl_pos", fmt.Sprintf(" %s ", declPos)).
-				Msg("found decl node")
+			if declNode != nil {
+				logger.Debug().
+					Str("decl_node", fmt.Sprintf("%+v", declNode)).
+					Str("decl_pos", fmt.Sprintf(" %s ", declPos)).
+					Msg("found decl node")
+			}
 			//return false
+			//} else if obj := pkg.TypesInfo.Defs[targetIdent]; obj != nil {
+			//	declPos = pkg.Fset.Position(obj.Pos())
+			//	logger.Debug().Fields(map[string]any{
+			//		//"pkg_path":   pkg.PkgPath,
+			//		"file_path":  fmt.Sprintf(" %s ", pkg.Fset.File(fileNode.Pos()).Name()),
+			//		"target_pos": fmt.Sprintf(" %s ", pkg.Fset.Position(targetIdent.Pos()).String()),
+			//		"decl_pos":   fmt.Sprintf(" %s ", pkg.Fset.Position(obj.Pos()).String()),
+			//	}).Msg("defs")
+			//	declPos = pkg.Fset.Position(obj.Pos())
+			//	declNode = findNodeByPosition(pkg.Fset, fileNode, declPos)
+			//	logger.Debug().
+			//		Str("decl_node", fmt.Sprintf("%+v", declNode)).
+			//		Str("decl_pos", fmt.Sprintf(" %s ", declPos)).
+			//		Msg("found decl node (def)")
 		}
 		//	}
 		//	return true
 		//})
 	}
 	//fmt.Println(">>>>>>>>> DONE")
+
+	// TODO_IN_THIS_COMMIT: improve comment...
+	// Look through decl node to see if it contains a valudspec with values.
+	// If it does, return the value(s).
+	if declNode != nil {
+		ast.Inspect(declNode, func(n ast.Node) bool {
+			//if declNode != nil {
+			//	return true
+			//}
+
+			switch doa := n.(type) {
+			//case ast.Expr:
+			//	traceExpressionStack(doa, pkgs, expr, candidatePkg, candidateNode, offendingPositions)
+			//case *ast.AssignStmt:
+			//	logger.Debug().Msgf(">>>>>>> assign stmt: %+v", doa)
+			//	// TODO_IN_THIS_COMMIT: what about len(Rhs) > 1?
+			//	traceExpressionStack(doa.Rhs[0], pkgs, expr, candidatePkg, candidateNode, offendingPositions)
+			case *ast.ValueSpec:
+				// TODO_RESUME_HERE!!!!
+				// TODO_RESUME_HERE!!!!
+				// TODO_RESUME_HERE!!!!
+				// TODO_RESUME_HERE!!!!
+				//
+				// find "closest" previous assignment...
+				//
+				logger.Debug().
+					//Str("position", fmt.Sprintf(" %s ", pkg.Fset.Position(doa.Pos()).String())).
+					Int("len(values)", len(doa.Values)).
+					Msgf(">>>>>>> value spec: %+v", doa)
+
+				if doa.Values != nil {
+					logger.Debug().Msg("dao.Values != nil")
+					for _, value := range doa.Values {
+						//traceExpressionStack(value, pkgs, expr, candidatePkg, candidateNode, offendingPositions)
+						declPos = pkg.Fset.Position(value.Pos())
+						declNode = value
+					}
+				} else {
+					logger.Debug().Msg("dao.Values == nil")
+					declNode = nil
+				}
+			}
+
+			return true
+		})
+	} else {
+		logger.Debug().Msgf("no declaration or assignment found for ident %q", targetIdent.String())
+	}
+
+	// TODO_IN_THIS_COMMIT: improve comment...
+	// If it does not, search the package for
+	// the ident and return the closest assignment.
+	if declNode == nil {
+		var assignsRhs []ast.Expr
+		for _, fileNode := range pkg.Syntax {
+			ast.Inspect(fileNode, func(n ast.Node) bool {
+				if assign, ok := n.(*ast.AssignStmt); ok {
+					for lhsIdx, lhs := range assign.Lhs {
+						// TODO_TECHDEBT: Ignoring assignments via selectors for now.
+						// E.g., `a.b = c` will not be considered.
+						lhsIdent, lhsIsIdent := lhs.(*ast.Ident)
+						if !lhsIsIdent {
+							continue
+						}
+
+						if lhsIdent.Name != targetIdent.Name {
+							continue
+						}
+
+						rhsIdx := 0
+						if len(assign.Lhs) == len(assign.Rhs) {
+							rhsIdx = lhsIdx
+						}
+
+						rhs := assign.Rhs[rhsIdx]
+						assignsRhs = append(assignsRhs, rhs)
+					}
+				}
+				return true
+			})
+		}
+
+		if len(assignsRhs) > 0 {
+			// TODO_IN_THIS_COMMIT: comment explaining what's going on here...
+			slices.SortFunc[[]ast.Expr, ast.Expr](assignsRhs, func(a, b ast.Expr) int {
+				aPos := pkg.Fset.Position(a.Pos())
+				bPos := pkg.Fset.Position(b.Pos())
+
+				if aPos.Filename == bPos.Filename {
+					switch {
+					case aPos.Line < bPos.Line:
+						return -1
+					case aPos.Line > bPos.Line:
+						return 1
+					default:
+						return 0
+					}
+				} else {
+					return 1
+				}
+
+			})
+
+			// DeclNode is the closest assignment whose position is less than or equal to the declPos.
+			var (
+				closestAssignPos  token.Position
+				closestAssignNode ast.Expr
+				targetIdentPos    = pkg.Fset.Position(targetIdent.Pos())
+			)
+			for _, rhs := range assignsRhs {
+				if rhs == nil {
+					continue
+				}
+
+				// DEV_NOTE: using pkg here assumes that rhs is in the same file as targetIdent.
+				// This SHOULD ALWAYS be the case for error type non-initialization declarations
+				// (e.g. var err error). I.e. we SHOULD NEVER be assigning an error value directly
+				// from aa pkg-level error variable.
+				rhsPos := pkg.Fset.Position(rhs.Pos())
+				switch {
+				case rhsPos.Filename != targetIdentPos.Filename:
+					// TODO_TECHDEBT: handle case where rhs ident is defined in a different file.
+					logger.Debug().
+						Str("assignment_position", rhsPos.String()).
+						Msg("ignoring assignment from different file")
+					continue
+				case rhsPos.Line < targetIdentPos.Line:
+					closestAssignPos = rhsPos
+					closestAssignNode = rhs
+				case rhsPos.Line == targetIdentPos.Line:
+					if rhsPos.Column <= targetIdentPos.Column {
+						closestAssignPos = rhsPos
+						closestAssignNode = rhs
+					}
+				}
+			}
+			declPos = closestAssignPos
+			declNode = closestAssignNode
+		}
+	}
 
 	return declNode, declPos
 }

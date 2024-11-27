@@ -214,7 +214,7 @@ func excludeFileIfStableVisitFn(
 
 		optName, optNameOk := getOptNodeName(optNode)
 		if !optNameOk {
-			logger.Warn().Msgf(
+			logger.Debug().Msgf(
 				"unable to extract option name from option node at %s:%d:%d",
 				protoFilePath, optSrc.Line, optSrc.Col,
 			)
@@ -238,7 +238,7 @@ func excludeFileIfStableVisitFn(
 
 		if optValue != "true" {
 			// Not the value we're looking for, continue traversing...
-			logger.Warn().Msgf(
+			logger.Debug().Msgf(
 				"discovered an unstable_marshaler_all option with unexpected value %q at %s:%d:%d",
 				optValue, protoFilePath, optSrc.Line, optSrc.Col,
 			)

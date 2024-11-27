@@ -300,6 +300,8 @@ func checkModule(_ context.Context) error {
 		if numOffendingLines > 5 {
 			logger.Info().Msg(msg)
 		}
+
+		os.Exit(CodeNonStatusGRPCErrorsFound)
 	}
 	// --- END
 
