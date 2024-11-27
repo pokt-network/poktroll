@@ -21,7 +21,7 @@ func TraceSelectorExpr(
 	candidatePkg *packages.Package,
 	modulePkgs []*packages.Package,
 	candidateNode ast.Node,
-	exonerate func(string),
+	exonerate func(context.Context, string),
 ) bool {
 	logger := polylog.Ctx(ctx).With("func", "TraceSelectorExpr")
 	logger.Debug().Send()
@@ -115,7 +115,7 @@ func TraceSelectorExpr(
 				isMatch := strings.Contains(obj.String(), grpcStatusImportPath) &&
 					expr.Sel.Name == "Error"
 				if isMatch {
-					exonerate(pkg.Fset.Position(candidateNode.Pos()).String())
+					exonerate(ctx, pkg.Fset.Position(candidateNode.Pos()).String())
 					return false
 				}
 			} else if obj = pkg.TypesInfo.Defs[x]; obj != nil {
@@ -147,8 +147,7 @@ func TraceExpressionStack(
 	modulePkgs []*packages.Package,
 	candidatePkg *packages.Package,
 	candidateNode ast.Node,
-	//flag func(string),
-	exonerate func(string),
+	exonerate func(context.Context, string),
 ) bool {
 	logger := polylog.Ctx(ctx).With(
 		"func", "TraceExpressionStack",

@@ -9,12 +9,10 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/rs/zerolog"
 	"github.com/spf13/cobra"
 	"golang.org/x/tools/go/packages"
 
 	"github.com/pokt-network/poktroll/pkg/polylog"
-	"github.com/pokt-network/poktroll/pkg/polylog/polyzero"
 	"github.com/pokt-network/poktroll/tools/scripts/protocheck/goast"
 )
 
@@ -25,41 +23,27 @@ const (
 var (
 	poktrollModulesRootPkgPath = filepath.Dir(poktrollMoudlePkgsPattern)
 
-	flagModule          = "module"
-	flagModuleShorthand = "m"
-	flagModuleValue     = "*"
-	flagModuleUsage     = "If present, only check message handlers of the given module."
-
-	flagLogLevel          = "log-level"
-	flagLogLevelShorthand = "l"
-	flagLogLevelValue     = "info"
-	flagLogLevelUsage     = "The logging level (debug|info|warn|error)"
-
-	checkCtatusErrorsCmd = &cobra.Command{
+	checkStatusErrorsCmd = &cobra.Command{
 		Use:    "status-errors [flags]",
 		Short:  "Checks that all message handler function errors are wrapped in gRPC status errors.",
-		PreRun: setupLogger,
+		PreRun: setupPrettyLogger,
 		RunE:   runStatusErrorsCheck,
 	}
 
-	logger                 polylog.Logger
+	// TODO_IN_THIS_COMMIT: refactor to avoid global logger var.
+	//logger                 polylog.Logger
 	offendingPkgErrLineSet = make(map[string]struct{})
 )
 
 func init() {
-	checkCtatusErrorsCmd.Flags().StringVarP(&flagModuleValue, flagModule, flagModuleShorthand, flagModuleValue, flagModuleUsage)
-	checkCtatusErrorsCmd.Flags().StringVarP(&flagLogLevelValue, flagLogLevel, flagLogLevelShorthand, flagLogLevelValue, flagLogLevelUsage)
-	rootCmd.AddCommand(checkCtatusErrorsCmd)
-}
-
-func setupLogger(_ *cobra.Command, _ []string) {
-	logger = polyzero.NewLogger(
-		polyzero.WithWriter(zerolog.ConsoleWriter{Out: os.Stdout}),
-		polyzero.WithLevel(polyzero.ParseLevel(flagLogLevelValue)),
-	)
+	checkStatusErrorsCmd.Flags().StringVarP(&flagModuleValue, flagModule, flagModuleShorthand, flagModuleValue, flagModuleUsage)
+	checkStatusErrorsCmd.Flags().StringVarP(&flagLogLevelValue, flagLogLevel, flagLogLevelShorthand, flagLogLevelValue, flagLogLevelUsage)
+	rootCmd.AddCommand(checkStatusErrorsCmd)
 }
 
 func runStatusErrorsCheck(cmd *cobra.Command, _ []string) error {
+	ctx := cmd.Context()
+
 	if err := validateModuleFlag(); err != nil {
 		return err
 	}
@@ -90,17 +74,16 @@ func runStatusErrorsCheck(cmd *cobra.Command, _ []string) error {
 	// - github.com/pokt-network/poktroll/x/gateway/keeper
 	// - ...
 	for _, pkg := range pkgs {
-		if shouldSkipPackage(pkg) {
+		if shouldSkipPackage(ctx, pkg) {
 			continue
 		}
 
-		loggerCtx := logger.WithContext(cmd.Context())
-		if err := checkPackage(loggerCtx, pkg, pkgs); err != nil {
+		if err = checkPackage(ctx, pkg, pkgs); err != nil {
 			return err
 		}
 	}
 
-	printResults()
+	printResults(ctx)
 
 	return nil
 }
@@ -125,7 +108,9 @@ func validateModuleFlag() error {
 }
 
 // TODO_IN_THIS_COMMIT: move & godoc...
-func shouldSkipPackage(pkg *packages.Package) bool {
+func shouldSkipPackage(ctx context.Context, pkg *packages.Package) bool {
+	logger := polylog.Ctx(ctx)
+
 	if flagModuleValue != "*" {
 		moduleRootPath := fmt.Sprintf("%s/%s", poktrollModulesRootPkgPath, flagModuleValue)
 		if !strings.HasPrefix(pkg.PkgPath, moduleRootPath) {
@@ -174,6 +159,8 @@ func checkPackage(ctx context.Context, pkg *packages.Package, pkgs []*packages.P
 
 // TODO_IN_THIS_COMMIT: move & godoc...
 func newInspectFileFn(ctx context.Context, pkg *packages.Package, pkgs []*packages.Package) func(ast.Node) bool {
+	logger := polylog.Ctx(ctx)
+
 	return func(n ast.Node) bool {
 		fnNode, ok := n.(*ast.FuncDecl)
 		if !ok {
@@ -187,7 +174,7 @@ func newInspectFileFn(ctx context.Context, pkg *packages.Package, pkgs []*packag
 
 		fnNodeTypeObj, ok := pkg.TypesInfo.Defs[fnNode.Name] //.Type.Results.List[0].Type
 		if !ok {
-			fmt.Printf("ERROR: unable to find fnNode type def: %s\n", fnNode.Name.Name)
+			logger.Warn().Msgf("ERROR: unable to find fnNode type def: %s\n", fnNode.Name.Name)
 			return true
 		}
 
@@ -232,12 +219,14 @@ func newInspectFileFn(ctx context.Context, pkg *packages.Package, pkgs []*packag
 }
 
 // TODO_IN_THIS_COMMIT: move & godoc...
-func appendOffendingLine(sourceLine string) {
+func appendOffendingLine(_ context.Context, sourceLine string) {
 	offendingPkgErrLineSet[sourceLine] = struct{}{}
 }
 
 // TODO_IN_THIS_COMMIT: move & godoc...
-func exonerateOffendingLine(sourceLine string) {
+func exonerateOffendingLine(ctx context.Context, sourceLine string) {
+	logger := polylog.Ctx(ctx)
+
 	if _, ok := offendingPkgErrLineSet[sourceLine]; ok {
 		logger.Debug().Msgf("exhonerating %s", sourceLine)
 		delete(offendingPkgErrLineSet, sourceLine)
@@ -247,7 +236,9 @@ func exonerateOffendingLine(sourceLine string) {
 }
 
 // TODO_IN_THIS_COMMIT: move & godoc... exits with code CodeNonStatusGRPCErrorsFound if offending lines found if offending lines found.
-func printResults() {
+func printResults(ctx context.Context) {
+	logger := polylog.Ctx(ctx)
+
 	// Print offending lines in package
 	pkgsPattern := poktrollMoudlePkgsPattern
 	if flagModuleValue != "*" {
