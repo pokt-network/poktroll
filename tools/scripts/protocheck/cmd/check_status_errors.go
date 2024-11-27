@@ -35,7 +35,7 @@ var (
 	flagLogLevelValue     = "info"
 	flagLogLevelUsage     = "The logging level (debug|info|warn|error)"
 
-	statusErrorsCheckCmd = &cobra.Command{
+	checkCtatusErrorsCmd = &cobra.Command{
 		Use:    "status-errors [flags]",
 		Short:  "Checks that all message handler function errors are wrapped in gRPC status errors.",
 		PreRun: setupLogger,
@@ -47,9 +47,9 @@ var (
 )
 
 func init() {
-	statusErrorsCheckCmd.Flags().StringVarP(&flagModuleValue, flagModule, flagModuleShorthand, flagModuleValue, flagModuleUsage)
-	statusErrorsCheckCmd.Flags().StringVarP(&flagLogLevelValue, flagLogLevel, flagLogLevelShorthand, flagLogLevelValue, flagLogLevelUsage)
-	rootCmd.AddCommand(statusErrorsCheckCmd)
+	checkCtatusErrorsCmd.Flags().StringVarP(&flagModuleValue, flagModule, flagModuleShorthand, flagModuleValue, flagModuleUsage)
+	checkCtatusErrorsCmd.Flags().StringVarP(&flagLogLevelValue, flagLogLevel, flagLogLevelShorthand, flagLogLevelValue, flagLogLevelUsage)
+	rootCmd.AddCommand(checkCtatusErrorsCmd)
 }
 
 func setupLogger(_ *cobra.Command, _ []string) {

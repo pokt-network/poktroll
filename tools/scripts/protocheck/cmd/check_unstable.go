@@ -35,7 +35,7 @@ var (
 	flagFixValue     = false
 	flagFixUsage     = "If present, protocheck will add the 'gogoproto.stable_marshaler_all' option to files which were discovered to be unstable."
 
-	unstableCmd = &cobra.Command{
+	checkUnstableCmd = &cobra.Command{
 		Use:   "unstable [flags]",
 		Short: "Recursively list or fix all protobuf files which omit the 'stable_marshaler_all' option.",
 		RunE:  runUnstable,
@@ -50,8 +50,8 @@ var (
 )
 
 func init() {
-	unstableCmd.Flags().BoolVarP(&flagFixValue, flagFixName, flagFixShorthand, flagFixValue, flagFixUsage)
-	rootCmd.AddCommand(unstableCmd)
+	checkUnstableCmd.Flags().BoolVarP(&flagFixValue, flagFixName, flagFixShorthand, flagFixValue, flagFixUsage)
+	rootCmd.AddCommand(checkUnstableCmd)
 }
 
 func runUnstable(cmd *cobra.Command, args []string) error {
