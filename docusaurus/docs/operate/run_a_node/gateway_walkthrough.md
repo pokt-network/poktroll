@@ -5,8 +5,6 @@ sidebar_position: 4
 
 # Run a Gateway <!-- omit in toc -->
 
-TODO_BETA(@red-0ne): Update this page to use PATH.
-
 - [What is PATH Gateway?](#what-is-path-gateway)
 - [PATH Gateway Operation Requirements](#path-gateway-operation-requirements)
 - [Hardware requirements](#hardware-requirements)

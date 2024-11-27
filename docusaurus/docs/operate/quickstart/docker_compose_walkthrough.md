@@ -558,11 +558,11 @@ You should expect a result that looks like so:
 
 ## D. Creating a Gateway Deploying a PATH Gateway
 
-Gateway Server allows to use services provided by other operators on Pocket Network.
+`PATH Gateway` allows to use services provided by other operators on Pocket Network.
 
-### 0. Prerequisites for a Gateway Server <!-- omit in toc -->
+### 0. Prerequisites for a PATH Gateway <!-- omit in toc -->
 
-- **Full Node**: This Gateway Server deployment guide assumes the Full Node is
+- **Full Node**: This `PATH Gateway` deployment guide assumes the Full Node is
   deployed in the same docker-compose stack; see section A.
 - **A poktroll account with uPOKT tokens**: Tokens can be acquired by contacting
   the team. You are going to need a BIPmnemonic phrase for an existing
@@ -639,7 +639,7 @@ Verify your gateway is staked
 poktrolld query gateway show-gateway $GATEWAY_ADDR
 ```
 
-### Configure and run your Gateway Server <!-- omit in toc -->
+### Configure and run your `PATH Gateway` <!-- omit in toc -->
 
 :::tip PATH Gateway operation config
 
@@ -666,11 +666,11 @@ poktrolld tx application delegate-to-gateway $GATEWAY_ADDR --from=application-1 
 
 ### Send a relay <!-- omit in toc -->
 
-You can send requests to the newly deployed Gateway Server. If there are any
+You can send requests to the newly deployed `PATH Gateway`. If there are any
 Suppliers on the network that can provide the service, the request will be
 routed to them.
 
-The endpoint you want to send request to is: `http://your_node:gateway_server_port/service_id`.
+The endpoint you want to send request to is: `http://service_id.your_node:gateway_server_port/v1`.
 For example, this is how the request can be routed to `ethereum` represented by the alias `eth-mainnet`:
 
 ```bash
@@ -687,7 +687,7 @@ You should expect a result that looks like so:
 {"jsonrpc":"2.0","id":1,"result":"0x1289571"}
 ```
 
-#### 5.1 Ensure you get a response <!-- omit in toc --> <!-- omit in toc -->
+#### 5.1 Ensure you get a response <!-- omit in toc -->
 
 To ensure you get a response, you may need to run the request a few times:
 
