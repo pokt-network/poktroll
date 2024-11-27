@@ -1,5 +1,5 @@
 ---
-title: Full Node - Docker
+title: Full Node (Docker)
 sidebar_position: 3
 ---
 
@@ -44,8 +44,8 @@ There are two types of Full Nodes:
 ## Pocket Network Full Nodes
 
 Within Pocket Network, the role of Full Nodes is pivotal for Node Runners. These
-nodes needed for off-chain entities like [RelayMiners](./relay_miner.md) and
-[PATH Gateways](./path_gateway.md), which rely on interaction with the Pocket Network
+nodes needed for off-chain entities like [RelayMiners (Suppliers)](./supplier_walkthrough.md) and
+[Gateways](./gateway_walkthrough.md), which rely on interaction with the Pocket Network
 blockchain for full functionality.
 
 This guide outlines how to configure, deploy and maintain Full Nodes.
