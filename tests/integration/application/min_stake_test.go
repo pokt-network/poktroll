@@ -255,11 +255,14 @@ func (s *applicationMinStakeTestSuite) getExpectedApp(claim *prooftypes.Claim) *
 func (s *applicationMinStakeTestSuite) newRelayminingDifficulty() servicetypes.RelayMiningDifficulty {
 	s.T().Helper()
 
+	targetNumRelays := s.keepers.ServiceKeeper.GetParams(s.ctx).TargetNumRelays
+
 	return servicekeeper.NewDefaultRelayMiningDifficulty(
 		s.ctx,
 		cosmoslog.NewNopLogger(),
 		s.serviceId,
-		servicekeeper.TargetNumRelays,
+		targetNumRelays,
+		targetNumRelays,
 	)
 }
 
