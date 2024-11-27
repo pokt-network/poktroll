@@ -2,14 +2,11 @@ package upgrades
 
 import (
 	"context"
-	"fmt"
-	"time"
 
 	storetypes "cosmossdk.io/store/types"
 	upgradetypes "cosmossdk.io/x/upgrade/types"
 	cosmosTypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
-	"github.com/cosmos/cosmos-sdk/x/authz"
 	"github.com/pokt-network/poktroll/app/keepers"
 	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
 )
@@ -28,18 +25,25 @@ var Upgrade_0_0_11 = Upgrade{
 		// Adds new parameters using ignite's config.yml as a reference. Assuming we don't need any other parameters.
 		// https://github.com/pokt-network/poktroll/compare/v0.0.10...v0.0.11-rc
 		applyNewParameters := func(ctx context.Context) (err error) {
+			logger := cosmosTypes.UnwrapSDKContext(ctx).Logger()
+			logger.Info("Starting parameter updates for v0.0.11")
+
 			// Set num_suppliers_per_session to 15
 			// Validate with: `poktrolld q session params --node=https://testnet-validated-validator-rpc.poktroll.com/`
 			sessionParams := keepers.SessionKeeper.GetParams(ctx)
+			logger.Info("Current session params", "params", sessionParams)
 			sessionParams.NumSuppliersPerSession = uint64(15)
 			err = keepers.SessionKeeper.SetParams(ctx, sessionParams)
 			if err != nil {
+				logger.Error("Failed to set session params", "error", err)
 				return err
 			}
+			logger.Info("Successfully updated session params", "new_params", sessionParams)
 
 			// Set tokenomics params. The values are based on default values for LocalNet.
 			// Validate with: `poktrolld q tokenomics params --node=https://testnet-validated-validator-rpc.poktroll.com/`
 			tokenomicsParams := keepers.TokenomicsKeeper.GetParams(ctx)
+			logger.Info("Current tokenomics params", "params", tokenomicsParams)
 			tokenomicsParams.MintAllocationPercentages = tokenomicstypes.MintAllocationPercentages{
 				Dao:         0.1,
 				Proposer:    0.05,
@@ -50,53 +54,38 @@ var Upgrade_0_0_11 = Upgrade{
 			tokenomicsParams.DaoRewardAddress = AlphaTestNetPnfAddress
 			err = keepers.TokenomicsKeeper.SetParams(ctx, tokenomicsParams)
 			if err != nil {
+				logger.Error("Failed to set tokenomics params", "error", err)
 				return err
 			}
+			logger.Info("Successfully updated tokenomics params", "new_params", tokenomicsParams)
+
 			return
 		}
 
-		// Adds new authz authorizations from the diff:
-		// https://github.com/pokt-network/poktroll/compare/v0.0.10...v0.0.11-rc
-		applyNewAuthorizations := func(ctx context.Context) (err error) {
-			// Validate with:
-			// `poktrolld q authz grants-by-granter pokt10d07y265gmmuvt4z0w9aw880jnsr700j8yv32t --node=https://testnet-validated-validator-rpc.poktroll.com/`
-			grantAuthorizationMessages := []string{
-				"/poktroll.session.MsgUpdateParam",
-			}
-
-			expiration, err := time.Parse(time.RFC3339, "2500-01-01T00:00:00Z")
-			if err != nil {
-				return fmt.Errorf("failed to parse time: %w", err)
-			}
-
-			for _, msg := range grantAuthorizationMessages {
-				err = keepers.AuthzKeeper.SaveGrant(
-					ctx,
-					cosmosTypes.AccAddress(AlphaTestNetPnfAddress),
-					cosmosTypes.AccAddress(AlphaTestNetAuthorityAddress),
-					authz.NewGenericAuthorization(msg),
-					&expiration,
-				)
-				if err != nil {
-					return fmt.Errorf("failed to save grant for message %s: %w", msg, err)
-				}
-			}
-			return
-		}
+		// The diff shows that the only new authz authorization is for the `poktroll.session.MsgUpdateParam` message.
+		// However, this message is already authorized for the `pokt10d07y265gmmuvt4z0w9aw880jnsr700j8yv32t` address.
+		// See here: poktrolld q authz grants-by-granter pokt10d07y265gmmuvt4z0w9aw880jnsr700j8yv32t --node=https://shannon-testnet-grove-seed-rpc.alpha.poktroll.com
 
 		// Returns the upgrade handler for v0.0.11
 		return func(ctx context.Context, plan upgradetypes.Plan, vm module.VersionMap) (module.VersionMap, error) {
+			logger := cosmosTypes.UnwrapSDKContext(ctx).Logger()
+			logger.Info("Starting v0.0.11 upgrade handler")
+
 			err := applyNewParameters(ctx)
 			if err != nil {
+				logger.Error("Failed to apply new parameters", "error", err)
 				return vm, err
 			}
 
-			err = applyNewAuthorizations(ctx)
+			logger.Info("Running module migrations")
+			vm, err = mm.RunMigrations(ctx, configurator, vm)
 			if err != nil {
+				logger.Error("Failed to run migrations", "error", err)
 				return vm, err
 			}
 
-			return mm.RunMigrations(ctx, configurator, vm)
+			logger.Info("Successfully completed v0.0.11 upgrade handler")
+			return vm, nil
 		}
 	},
 	// No changes to the KVStore in this upgrade.

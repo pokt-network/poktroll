@@ -3,11 +3,11 @@ package tokenomics
 
 import (
 	v1beta1 "cosmossdk.io/api/cosmos/base/v1beta1"
+	proof "github.com/pokt-network/poktroll/api/poktroll/proof"
 	fmt "fmt"
 	_ "github.com/cosmos/cosmos-proto"
 	runtime "github.com/cosmos/cosmos-proto/runtime"
 	_ "github.com/cosmos/gogoproto/gogoproto"
-	proof "github.com/pokt-network/poktroll/api/poktroll/proof"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoiface "google.golang.org/protobuf/runtime/protoiface"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
