@@ -126,10 +126,10 @@ poktrolld query upgrade plan
 
 ## Cancelling the upgrade plan
 
-It is possible to cancel the upgrade before the upgrade plan height is reached. To do so, execute the following transaction:
+It is possible to cancel the upgrade before the upgrade plan height is reached. To do so, execute the following make target:
 
 ```bash
-poktrolld tx authz exec tools/scripts/upgrades/authz_cancel_upgrade_tx.json --gas=auto --from=pnf
+make localnet_cancel_upgrade
 ```
 
 ## Testing the Upgrade
@@ -166,7 +166,7 @@ For a hypothetical scenario to upgrade from `0.1` to `0.2`:
    make go_develop ignite_release ignite_release_extract_binaries
    ```
    :::note
-   The binary produced by these commands in the old repo should result in the same binary as it was downloaded from [production releases](https://github.com/pokt-network/poktroll/releases), however you might consider using 
+   The binary produced by these commands in the old repo should result in the same binary as it was downloaded from [production releases](https://github.com/pokt-network/poktroll/releases). You can use them as an alternative to building the binary from source.
    :::
 
 5. **(`old` repo)** - Clean up and generate an empty genesis using the old version.

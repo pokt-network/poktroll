@@ -18,7 +18,7 @@ There's always a chance the upgrade will fail.
 This document is intended to help you recover without significant downtime.
 
 - [Option 0: The bug is discovered before the upgrade height is reached](#option-0-the-bug-is-discovered-before-the-upgrade-height-is-reached)
-- [Option 1: The upgrade height is reached and the migration didn't start](#option-1-the-upgrade-height-is-reached-and-the-migration-didnt-start)
+- [Option 1: The upgrade height is reached and the migration didn't start (halted)](#option-1-the-upgrade-height-is-reached-and-the-migration-didnt-start-halted)
 - [Option 2: The migration is stuck](#option-2-the-migration-is-stuck)
 - [Option 3: The network is stuck at the future height after the upgrade](#option-3-the-network-is-stuck-at-the-future-height-after-the-upgrade)
 - [Documentation and scripts to update](#documentation-and-scripts-to-update)
@@ -29,11 +29,15 @@ This document is intended to help you recover without significant downtime.
 
 See the instructions of [how to do that here](./upgrade_procedure.md#cancelling-the-upgrade-plan).
 
-### Option 1: The upgrade height is reached and the migration didn't start
+### Option 1: The upgrade height is reached and the migration didn't start (halted)
+
+This is unlikely to happen. Possible cases are if the name of the upgrade handler is 
+different from the one specified in the upgrade plan, or if the binary suggested by
+the upgrade plan is wrong.
 
 If the nodes on the network stopped at the upgrade height and the migration did not
 start yet (i.e. there are no logs indicating the upgrade handler and store migrations are being executed),
-we mist gather social consensus to restart validators with the `--unsafe-skip-upgrade=$upgradeHeightNumber` flag.
+we **MUST** gather social consensus to restart validators with the `--unsafe-skip-upgrade=$upgradeHeightNumber` flag.
 
 This will skip the upgrade process, allowing the chain to continue and the protocol team to plan another release.
 
@@ -56,16 +60,16 @@ the upgrade but the migration didn't complete.
 
 In such a case, we need to:
 
-- Roll back validators to the backup. A snapshot is taken by `cosmovisor` automatically prior to upgrade when`UNSAFE_SKIP_BACKUP` is set to `false` (which is a default and recommended value -
+- **All full nodes and validators**: Roll back validators to the backup. A snapshot is taken by `cosmovisor` automatically prior to upgrade when`UNSAFE_SKIP_BACKUP` is set to `false` (which is a default and recommended value -
   [more information](https://docs.cosmos.network/main/build/tooling/cosmovisor#command-line-arguments-and-environment-variables)).
-- All full nodes and validators on the network: skip the upgrade by adding `--unsafe-skip-upgrade=$upgradeHeightNumber`
+- **All full nodes and validators**: skip the upgrade by adding `--unsafe-skip-upgrade=$upgradeHeightNumber`
   argument to your `poktroll start` command. Like this:
   ```bash
   poktrolld start --unsafe-skip-upgrade=$upgradeHeightNumber # ... the rest of the arguments
   ```
-- Protocol team: document and add `--unsafe-skip-upgrade=$upgradeHeightNumber` to the scripts (such as docker-compose and cosmovisor installer) so the next time somebody
+- **Protocol team**: document and add `--unsafe-skip-upgrade=$upgradeHeightNumber` to the scripts (such as docker-compose and cosmovisor installer) so the next time somebody
   tries to sync the network from genesis they will automatically skip the failed upgrade. [Documentation and scripts to update](#documentation-and-scripts-to-update)
-- Resolve the issue with an upgrade and schedule another plan.
+- **Protocol team**: Resolve the issue with an upgrade and schedule another plan.
 
 <!-- TODO_IMPROVE(@okdas): new cosmovisor UX can simplify this -->
 

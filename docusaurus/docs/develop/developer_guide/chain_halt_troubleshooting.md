@@ -108,7 +108,7 @@ reactor validation error: wrong Block.Header.LastResultsHash.
 The solution is to use the correct binary version to sync the full node at the correct height.
 
 Tools like [cosmosvisor](https://docs.cosmos.network/v0.45/run-node/cosmovisor.html) make it easier
-to sync a node from genesis, using the appropriate binary for each range of block heights.
+to sync a node from genesis by automatically using the appropriate binary for each range of block heights.
 
 ## Syncing from genesis
 

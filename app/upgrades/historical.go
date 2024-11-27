@@ -11,13 +11,13 @@ package upgrades
 
 import (
 	"context"
-	"fmt"
 
 	storetypes "cosmossdk.io/store/types"
 	upgradetypes "cosmossdk.io/x/upgrade/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 	consensusparamtypes "github.com/cosmos/cosmos-sdk/x/consensus/types"
 
+	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/pokt-network/poktroll/app/keepers"
 )
 
@@ -30,7 +30,8 @@ func defaultUpgradeHandler(
 	configurator module.Configurator,
 ) upgradetypes.UpgradeHandler {
 	return func(ctx context.Context, plan upgradetypes.Plan, vm module.VersionMap) (module.VersionMap, error) {
-		fmt.Println("Starting the migration in defaultUpgradeHandler.")
+		logger := cosmostypes.UnwrapSDKContext(ctx).Logger()
+		logger.Info("Starting the migration in defaultUpgradeHandler")
 		return mm.RunMigrations(ctx, configurator, vm)
 	}
 }
