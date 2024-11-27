@@ -25,7 +25,7 @@ func (k msgServer) DelegateToGateway(ctx context.Context, msg *apptypes.MsgDeleg
 	logger.Info(fmt.Sprintf("About to delegate application to gateway with msg: %+v", msg))
 
 	if err := msg.ValidateBasic(); err != nil {
-		logger.Error(fmt.Sprintf("Delegation Message failed basic validation: %s", err))
+		logger.Info(fmt.Sprintf("Delegation Message failed basic validation: %s", err))
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
