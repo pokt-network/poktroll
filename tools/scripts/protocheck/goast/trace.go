@@ -62,7 +62,7 @@ func TraceSelectorExpr(
 
 					if decl, ok := n.(*ast.FuncDecl); ok {
 						if decl.Name.Name == selectionNode.(*ast.Ident).Name &&
-							decl.Pos() < selectionNode.Pos() &&
+							decl.Pos() <= selectionNode.Pos() &&
 							selectionNode.Pos() <= decl.End() {
 							declNode = decl
 							return false
@@ -86,7 +86,7 @@ func TraceSelectorExpr(
 		return true
 	}
 
-	// TODO_IN_THIS_COMMIT: refactor; below happens when the selector is not found within any package.
+	// TODO_IN_THIS_COMMIT: refactor; below happens when the selector is not found within any module package.
 
 	// Resolve the base expression
 	switch x := expr.X.(type) {

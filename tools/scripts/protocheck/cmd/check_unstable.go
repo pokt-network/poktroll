@@ -44,7 +44,7 @@ func runUnstable(cmd *cobra.Command, args []string) error {
 		flagRootValue,
 		protoast.ForEachMatchingFileWalkFn(
 			flagFileIncludePatternValue,
-			protoast.FindUnstableProtosInFileFn(ctx, unstableProtoFilesByPath),
+			protoast.NewFindUnstableProtosInFileFn(ctx, unstableProtoFilesByPath),
 		),
 	); pathWalkErr != nil {
 		logger.Error().Err(pathWalkErr)
