@@ -16,7 +16,7 @@ const GogoImportName = "gogoproto/gogo.proto"
 // TODO_IN_THIS_COMMIT: godoc...
 func NewFindResponseProtosInFileFn(
 	ctx context.Context,
-	responseMsgNodes map[string]*ast.MessageNode,
+	responseMsgNodes map[string]*ProtoMsgStat,
 ) func(path string) {
 	logger := polylog.Ctx(ctx).With("func", "NewFindResponseProtosInFileFn")
 
@@ -36,7 +36,7 @@ func NewFindResponseProtosInFileFn(
 					if strings.HasSuffix(msg.Name.Val, "Response") {
 						logger.Debug().Msgf("found response message: %s", msg.Name.Val)
 
-						responseMsgNodes[msg.Name.Val] = msg
+						responseMsgNodes[msg.Name.Val] = newProtoMsgStat(ctx, msg, fileNode)
 					}
 
 					return false, nil
@@ -206,4 +206,41 @@ func newProtoFileStat(fileNode *ast.FileNode) *ProtoFileStat {
 	}
 
 	return protoStat
+}
+
+// TODO_IN_THIS_COMMIT: move & godoc...
+func newProtoMsgStat(ctx context.Context, msg *ast.MessageNode, fileNode *ast.FileNode) *ProtoMsgStat {
+	return &ProtoMsgStat{
+		Node:      msg,
+		GoPkgPath: getGoPkgPath(ctx, fileNode),
+	}
+}
+
+// TODO_IN_THIS_COMMIT: move & godoc...
+func getGoPkgPath(ctx context.Context, fileNode *ast.FileNode) string {
+	//logger := polylog.Ctx(ctx).With("func", "getGoPkgPath")
+
+	for _, n := range fileNode.Children() {
+		switch optNode := n.(type) {
+		case *ast.OptionNode:
+			optName, _ := getOptNodeName(optNode)
+
+			if optName != "go_package" {
+				continue
+			}
+
+			optValueNode := optNode.GetValue().Value()
+			//optValue, ok := optValueNode.(ast.Identifier)
+			//if !ok {
+			//	logger.Warn().Msgf(
+			//		"unable to cast option value to ast.Identifier for option %q, got: %T",
+			//		optName, optValueNode,
+			//	)
+			//}
+
+			return optValueNode.(string)
+		}
+	}
+
+	return ""
 }

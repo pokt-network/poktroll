@@ -14,6 +14,12 @@ type ProtoFileStat struct {
 }
 
 // TODO_IN_THIS_COMMIT: godoc...
+type ProtoMsgStat struct {
+	Node      *ast.MessageNode
+	GoPkgPath string
+}
+
+// TODO_IN_THIS_COMMIT: godoc...
 var DefaultParser = protoparse.Parser{
 	IncludeSourceCodeInfo: true,
 }

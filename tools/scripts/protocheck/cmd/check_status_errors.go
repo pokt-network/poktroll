@@ -140,10 +140,16 @@ func shouldSkipPackage(ctx context.Context, pkg *packages.Package) bool {
 
 // TODO_IN_THIS_COMMIT: move & godoc...
 func checkPackage(ctx context.Context, pkg *packages.Package, pkgs []*packages.Package) error {
+	inspectLastReturnArgFn := goast.NewInspectLastReturnArgFn(ctx, pkg, pkgs, appendOffendingLine, excludeOffendingLine)
+	inspectReturnStmtFn := newInspectLastReturnArgFn(pkg, inspectLastReturnArgFn)
+
 	for _, astFile := range pkg.Syntax {
 		filename := pkg.Fset.Position(astFile.Pos()).Filename
 
 		// Ignore protobuf generated files.
+		if pathMatchesProtobufGenGo(filename) {
+			continue
+		}
 		if strings.HasSuffix(filepath.Base(filename), ".pb.go") {
 			continue
 		}
@@ -151,14 +157,24 @@ func checkPackage(ctx context.Context, pkg *packages.Package, pkgs []*packages.P
 			continue
 		}
 
-		ast.Inspect(astFile, newInspectFileFn(ctx, pkg, pkgs))
+		ast.Inspect(astFile, newInspectReturnStmtFn(ctx, pkg, inspectReturnStmtFn))
 	}
 
 	return nil
 }
 
 // TODO_IN_THIS_COMMIT: move & godoc...
-func newInspectFileFn(ctx context.Context, pkg *packages.Package, pkgs []*packages.Package) func(ast.Node) bool {
+func pathMatchesProtobufGenGo(path string) bool {
+	return strings.HasSuffix(path, ".pb.go") ||
+		strings.HasSuffix(path, ".pb.gw.go")
+}
+
+// TODO_IN_THIS_COMMIT: move & godoc...
+func newInspectReturnStmtFn(
+	ctx context.Context,
+	pkg *packages.Package,
+	forEachFuncDecl func(*ast.FuncDecl) bool,
+) func(ast.Node) bool {
 	logger := polylog.Ctx(ctx)
 
 	return func(n ast.Node) bool {
@@ -188,34 +204,62 @@ func newInspectFileFn(ctx context.Context, pkg *packages.Package, pkgs []*packag
 			return false
 		}
 
-		// Ensure the last return argument type is error.
-		fnResultTypes := fnNode.Type.Results.List
-		lastResultType := fnResultTypes[len(fnResultTypes)-1].Type
-		if lastResultTypeIdent, ok := lastResultType.(*ast.Ident); ok {
-			if lastResultTypeIdent.Name != "error" {
-				return false
-			}
-		}
+		return forEachFuncDecl(fnNode)
+	}
+}
 
-		fnType := fnNode.Recv.List[0].Type
-		typeIdentNode, ok := fnType.(*ast.Ident)
-		if !ok {
+// TODO_IN_THIS_COMMIT: promote to shared pkg...
+// TODO_IN_THIS_COMMIT: move & godoc...
+func newInspectLastReturnArgFn(
+	pkg *packages.Package,
+	inspectFnNodeBody func(ast.Node) bool,
+) func(*ast.FuncDecl) bool {
+	return func(fnNode *ast.FuncDecl) bool {
+		// Ensure the last return argument type is error.
+		if !isLastReturnArgError(fnNode) {
 			return false
 		}
 
 		fnPos := pkg.Fset.Position(fnNode.Pos())
 		fnFilename := filepath.Base(fnPos.Filename)
-		fnSourceHasQueryHandlerPrefix := strings.HasPrefix(fnFilename, "query_")
-
-		if typeIdentNode.Name != "msgServer" && !fnSourceHasQueryHandlerPrefix {
+		if !isNodeReceiverMethod("msgServer", fnNode) &&
+			!strings.HasPrefix(fnFilename, "query_") {
 			return false
 		}
 
 		// Recursively traverse the function body, looking for non-nil error returns.
-		ast.Inspect(fnNode.Body, goast.NewInspectLastReturnArgFn(ctx, pkg, pkgs, appendOffendingLine, excludeOffendingLine))
+		ast.Inspect(fnNode.Body, inspectFnNodeBody)
 
 		return false
 	}
+}
+
+// TODO_IN_THIS_COMMIT: promote to shared pkg...
+// TODO_IN_THIS_COMMIT: move & godoc...
+func isNodeReceiverMethod(receiverName string, fnNode *ast.FuncDecl) bool {
+	// DEV_NOTE: It is safe to assume that the function is a method and
+	// its receiver is EITHER an ident OR a star expression (pointer).
+	switch fnNode.Recv.List[0].Type.(type) {
+	case *ast.Ident:
+		return fnNode.Recv.List[0].Type.(*ast.Ident).Name == receiverName
+	case *ast.StarExpr:
+		return fnNode.Recv.List[0].Type.(*ast.StarExpr).X.(*ast.Ident).Name == receiverName
+	default:
+		return false
+	}
+}
+
+// TODO_IN_THIS_COMMIT: promote to shared pkg...
+// TODO_IN_THIS_COMMIT: move & godoc...
+func isLastReturnArgError(fnNode *ast.FuncDecl) bool {
+	fnResultTypes := fnNode.Type.Results.List
+	lastResultType := fnResultTypes[len(fnResultTypes)-1].Type
+	lastResultTypeIdent, ok := lastResultType.(*ast.Ident)
+	if !ok {
+		return false
+	}
+
+	return lastResultTypeIdent.Name == "error"
 }
 
 // TODO_IN_THIS_COMMIT: move & godoc...
@@ -228,7 +272,7 @@ func excludeOffendingLine(ctx context.Context, sourceLine string) {
 	logger := polylog.Ctx(ctx)
 
 	if _, ok := offendingPkgErrLineSet[sourceLine]; ok {
-		logger.Debug().Msgf("exhonerating %s", sourceLine)
+		logger.Debug().Msgf("excluding %s", sourceLine)
 		delete(offendingPkgErrLineSet, sourceLine)
 	} else {
 		logger.Warn().Msgf("can't exclude %s", sourceLine)
