@@ -43,8 +43,10 @@ func TestMsgServer_UnstakeGateway_Success(t *testing.T) {
 
 	// Unstake the gateway
 	unstakeMsg := &types.MsgUnstakeGateway{Address: addr}
-	_, err = srv.UnstakeGateway(ctx, unstakeMsg)
+	unstakeRes, err := srv.UnstakeGateway(ctx, unstakeMsg)
 	require.NoError(t, err)
+
+	require.Equal(t, &foundGateway, unstakeRes.GetGateway())
 
 	// Make sure the gateway can no longer be found after unstaking
 	_, isGatewayFound = k.GetGateway(ctx, addr)
