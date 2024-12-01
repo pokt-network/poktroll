@@ -95,5 +95,7 @@ func (k msgServer) AddService(
 	k.SetService(ctx, msg.Service)
 
 	isSuccessful = true
-	return &types.MsgAddServiceResponse{}, nil
+	return &types.MsgAddServiceResponse{
+		Service: &msg.Service,
+	}, nil
 }
