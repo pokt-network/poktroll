@@ -93,11 +93,12 @@ func TestMsgUpdateParams(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.desc, func(t *testing.T) {
-			_, err := srv.UpdateParams(ctx, test.req)
+			updateRes, err := srv.UpdateParams(ctx, test.req)
 			if test.shouldError {
 				require.Error(t, err)
 				require.ErrorContains(t, err, test.expectedErrMsg)
 			} else {
+				require.Equal(t, &test.req.Params, updateRes.GetParams())
 				require.Nil(t, err)
 			}
 		})
