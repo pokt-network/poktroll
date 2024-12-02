@@ -1,8 +1,6 @@
 package suites
 
 import (
-	"encoding/hex"
-
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/pokt-network/poktroll/app/volatile"
@@ -70,8 +68,8 @@ var (
 	ValidProofMissingPenaltyCoin       = cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 500)
 	ValidProofSubmissionFeeCoin        = cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 5000000)
 	ValidProofRequirementThresholdCoin = cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 100)
-	ValidRelayDifficultyTargetHash, _  = hex.DecodeString("00000000ffffffffffffffffffffffffffffffffffffffffffffffffffffffff")
 	ValidActorMinStake                 = cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 100)
+	ValidStakingFee                    = cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 1)
 
 	SharedModuleParamConfig = ModuleParamConfig{
 		ParamsMsgs: ModuleParamsMessages{
@@ -131,10 +129,12 @@ var (
 			QueryParamsResponse:     servicetypes.QueryParamsResponse{},
 		},
 		ValidParams: servicetypes.Params{
-			AddServiceFee: &ValidAddServiceFeeCoin,
+			AddServiceFee:   &ValidAddServiceFeeCoin,
+			TargetNumRelays: servicetypes.DefaultTargetNumRelays,
 		},
 		ParamTypes: map[ParamType]any{
-			ParamTypeCoin: servicetypes.MsgUpdateParam_AsCoin{},
+			ParamTypeCoin:   servicetypes.MsgUpdateParam_AsCoin{},
+			ParamTypeUint64: servicetypes.MsgUpdateParam_AsUint64{},
 		},
 		DefaultParams:    servicetypes.DefaultParams(),
 		NewParamClientFn: servicetypes.NewQueryClient,
@@ -190,7 +190,8 @@ var (
 			QueryParamsResponse:     suppliertypes.QueryParamsResponse{},
 		},
 		ValidParams: suppliertypes.Params{
-			MinStake: &ValidActorMinStake,
+			MinStake:   &ValidActorMinStake,
+			StakingFee: &ValidStakingFee,
 		},
 		ParamTypes: map[ParamType]any{
 			ParamTypeCoin: suppliertypes.MsgUpdateParam_AsCoin{},
@@ -235,10 +236,12 @@ var (
 		ValidParams: tokenomicstypes.Params{
 			MintAllocationPercentages: tokenomicstypes.DefaultMintAllocationPercentages,
 			DaoRewardAddress:          sample.AccAddress(),
+			GlobalInflationPerClaim:   0.666,
 		},
 		ParamTypes: map[ParamType]any{
 			ParamTypeMintAllocationPercentages: tokenomicstypes.MsgUpdateParam_AsMintAllocationPercentages{},
 			ParamTypeString:                    tokenomicstypes.MsgUpdateParam_AsString{},
+			ParamTypeFloat64:                   tokenomicstypes.MsgUpdateParam_AsFloat{},
 		},
 		DefaultParams:    tokenomicstypes.DefaultParams(),
 		NewParamClientFn: tokenomicstypes.NewQueryClient,
