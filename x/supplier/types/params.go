@@ -96,7 +96,8 @@ func ValidateStakingFee(stakingFeeAny any) error {
 	return nil
 }
 
-// TODO_IN_THIS_COMMOT: godoc...
+// paramAsPositiveuPOKT checks that paramAny is a *cosmostypes.Coin and that its
+// amount is positive, returning an error if either is not the case.
 func paramAsPositiveuPOKT(paramAny any, paramName string) (*cosmostypes.Coin, error) {
 	paramCoin, ok := paramAny.(*cosmostypes.Coin)
 	if !ok {
