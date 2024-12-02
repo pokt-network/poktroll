@@ -31,6 +31,10 @@ params_update_service_all: ## Update the service module params
 params_update_service_add_service_fee: ## Update the service module add_service_fee param
 	poktrolld tx authz exec ./tools/scripts/params/service_add_service_fee.json $(PARAM_FLAGS)
 
+.PHONY: params_update_service_target_num_relays
+params_update_service_target_num_relays: ## Update the service module target_num_relays param
+	poktrolld tx authz exec ./tools/scripts/params/service_target_num_relays.json $(PARAM_FLAGS)
+
 ### Proof Module Params ###
 .PHONY: params_get_proof
 params_get_proof: ## Get the proof module params

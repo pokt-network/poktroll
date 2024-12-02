@@ -2,8 +2,10 @@ package keeper
 
 import (
 	"context"
+	"fmt"
 
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
+	"google.golang.org/grpc/status"
 
 	"github.com/pokt-network/poktroll/x/proof/types"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
@@ -30,6 +32,8 @@ func (k Keeper) queryAndValidateSessionHeader(
 	// session header is to be validated.
 	sessionRes, err := k.sessionKeeper.GetSession(ctx, sessionReq)
 	if err != nil {
+		// NB: Strip internal error status from error. An appropriate status will be associated by the caller.
+		err = fmt.Errorf("%s", status.Convert(err).Message())
 		return nil, err
 	}
 	onChainSession := sessionRes.GetSession()
