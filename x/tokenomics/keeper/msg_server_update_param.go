@@ -23,11 +23,17 @@ func (k msgServer) UpdateParam(
 	)
 
 	if err := msg.ValidateBasic(); err != nil {
-		return nil, err
+		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
 	if k.GetAuthority() != msg.Authority {
-		return nil, tokenomicstypes.ErrTokenomicsInvalidSigner.Wrapf("invalid authority; expected %s, got %s", k.GetAuthority(), msg.Authority)
+		return nil, status.Error(
+			codes.PermissionDenied,
+			tokenomicstypes.ErrTokenomicsInvalidSigner.Wrapf(
+				"invalid authority; expected %s, got %s",
+				k.GetAuthority(), msg.Authority,
+			).Error(),
+		)
 	}
 
 	params := k.GetParams(ctx)

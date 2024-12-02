@@ -95,6 +95,13 @@ func TestParams_ValidateStakingFee(t *testing.T) {
 			),
 		},
 		{
+			desc: "zero SupplierStakingFee",
+			minStake: &cosmostypes.Coin{
+				Denom:  volatile.DenomuPOKT,
+				Amount: math.NewInt(0),
+			},
+		},
+		{
 			desc:     "valid SupplierStakingFee",
 			minStake: &suppliertypes.DefaultStakingFee,
 		},
