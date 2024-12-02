@@ -66,7 +66,7 @@ func TestMsgServer_UnstakeGateway_FailIfNotStaked(t *testing.T) {
 	unstakeMsg := &types.MsgUnstakeGateway{Address: addr}
 	_, err := srv.UnstakeGateway(ctx, unstakeMsg)
 	require.Error(t, err)
-	require.ErrorIs(t, err, types.ErrGatewayNotFound)
+	require.ErrorContains(t, err, types.ErrGatewayNotFound.Error())
 
 	_, isGatewayFound = k.GetGateway(ctx, addr)
 	require.False(t, isGatewayFound)

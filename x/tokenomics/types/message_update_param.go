@@ -65,7 +65,7 @@ func (msg *MsgUpdateParam) ValidateBasic() error {
 	}
 }
 
-// genericTypeIsCoin checks if the parameter type is T, returning an error if not.
+// genericParamTypeIs checks if the parameter type is T, returning an error if not.
 func genericParamTypeIs[T any](msg *MsgUpdateParam) error {
 	if _, ok := msg.AsType.(T); !ok {
 		return ErrTokenomicsParamInvalid.Wrapf(
