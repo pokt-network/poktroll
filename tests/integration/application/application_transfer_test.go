@@ -22,7 +22,6 @@ var (
 
 	service1Id = "svc1"
 	service2Id = "svc2"
-	service3Id = "svc3"
 )
 
 type appTransferTestSuite struct {
@@ -229,8 +228,8 @@ func (s *appTransferTestSuite) TestMultipleSourceToSameNonexistentDestinationMer
 		require.EqualValues(s.T(), expectedPendingTransfer, pendingTransfer)
 
 		// Query and assert application pending transfer field updated in the store.
-		foundSrcApp, err := s.GetAppQueryClient().GetApplication(s.SdkCtx(), expectedSrcBech32)
-		require.NoError(s.T(), err)
+		foundSrcApp, srcAppErr := s.GetAppQueryClient().GetApplication(s.SdkCtx(), expectedSrcBech32)
+		require.NoError(s.T(), srcAppErr)
 		require.EqualValues(s.T(), expectedPendingTransfer, foundSrcApp.GetPendingTransfer())
 
 		// Assert that the "message" type event (tx result event) is observed which
