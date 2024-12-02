@@ -13,7 +13,6 @@ sidebar_position: 3
 
 ## Types of RPC Endpoints
 
-
 You can review the difference between them in the [Cosmos SDK docs](https://docs.cosmos.network/main/learn/advanced/grpc_rest#comparison-table).
 
 ## Beta TestNet
@@ -22,9 +21,9 @@ You can review the difference between them in the [Cosmos SDK docs](https://docs
 
 We provide `gRPC`, `JSON-RPC` and `REST` endpoints, which are available here:
 
-- **RPC**: `https://shannon-testnet-grove-seed-rpc.beta.poktroll.com`
-- **gRPC**: `https://shannon-testnet-grove-seed-grpc.beta.poktroll.com`
-- **REST**: `https://shannon-testnet-grove-seed-api.beta.poktroll.com`
+- **RPC**: `https://shannon-testnet-grove-rpc.beta.poktroll.com`
+- **gRPC**: `https://shannon-testnet-grove-grpc.beta.poktroll.com`
+- **REST**: `https://shannon-testnet-grove-api.beta.poktroll.com`
 
 ### Beta JSON-RPC Example
 
@@ -46,9 +45,9 @@ poktrolld query block --type=height 0 --node https://shannon-testnet-grove-seed-
 
 We provide `gRPC`, `JSON-RPC` and `REST` endpoints, which are available here:
 
-- **RPC**: `https://shannon-testnet-grove-seed-rpc.alpha.poktroll.com`
-- **gRPC**: `https://shannon-testnet-grove-seed-grpc.alpha.poktroll.com`
-- **REST**: `https://shannon-testnet-grove-seed-api.alpha.poktroll.com`
+- **RPC**: `https://shannon-testnet-grove-rpc.alpha.poktroll.com`
+- **gRPC**: `https://shannon-testnet-grove-grpc.alpha.poktroll.com`
+- **REST**: `https://shannon-testnet-grove-api.alpha.poktroll.com`
 
 ### Alpha JSON-RPC Example
 

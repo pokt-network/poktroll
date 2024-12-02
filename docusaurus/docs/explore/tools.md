@@ -9,15 +9,17 @@ sidebar_position: 1
 
 ## Beta TestNet
 
-- 🪙 [Shannon Beta Token Faucet](https://faucet.beta.testnet.pokt.network/)
-- 🗺️ [Shannon Beta Explorer](https://shannon.beta.testnet.pokt.network)
-- 🗺️ [PoktScan's Shannon Beta Explorer](https://shannon.beta.poktscan.com/)
+- 🪙 [Token Faucet](https://faucet.beta.testnet.pokt.network/)
+- 🗺️ [Explorer](https://shannon.beta.testnet.pokt.network)
+- 🗺️ [POKTScan's Explorer](https://shannon-beta.poktscan.com/)
+- 👨‍💻 [POKTScan's GraphQL Playground](https://shannon-beta-api.poktscan.com/)
 
 ## Alpha TestNet
 
-- 🪙 [Shannon Alpha Token Faucet](https://faucet.alpha.testnet.pokt.network/)
-- 🗺️ [Shannon Alpha Explorer](https://shannon.alpha.testnet.pokt.network)
-- 🗺️ [PoktScan's Shannon Alpha Explorer](https://shannon.alpha.poktscan.com/)
+- 🪙 [Token Faucet](https://faucet.alpha.testnet.pokt.network/)
+- 🗺️ [Explorer](https://shannon.alpha.testnet.pokt.network)
+- 🗺️ [POKTScan's Explorer](https://shannon-alpha.poktscan.com/)
+- 👨‍💻 [POKTScan's GraphQL Playground](https://shannon-alpha-api.poktscan.com/)
 
 ## 🛠️ Tools & References
 
