@@ -107,16 +107,19 @@ cd poktroll-docker-compose-example
 ## Update your environment
 
 First, copy the sample environment file:
+
 ```bash
 cp .env.sample .env
 ```
 
 By default, the `.env` file uses `testnet-beta`. If you want to use a different network, update the `NETWORK_NAME` in your `.env` file to one of:
+
 - `testnet-alpha` - Unstable testnet
 - `testnet-beta` - Stable testnet (default)
 - `mainnet` - Production network
 
 Then set your external IP and source the environment:
+
 ```bash
 EXTERNAL_IP=$(curl -4 ifconfig.me/ip)
 sed -i -e s/NODE_HOSTNAME=/NODE_HOSTNAME=$EXTERNAL_IP/g .env
@@ -128,12 +131,10 @@ source ~/.bashrc
 
 ## Start up the full node
 
-
 :::warning
 The Alpha TestNet currently requires manual steps to sync the node to the latest block. Please find the affected block(s)
 in [this document](../../protocol/upgrades/upgrade_list.md), which leads to the manual upgrade instructions.
 :::
-
 
 ```bash
 docker compose up -d full-node
