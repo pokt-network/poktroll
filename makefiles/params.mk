@@ -18,6 +18,14 @@ params_update_tokenomics_all: ## Update the tokenomics module params
 params_update_tokenomics_mint_allocation_percentages: ## Update the tokenomics module mint_allocation_percentages param
 	poktrolld tx authz exec ./tools/scripts/params/tokenomics_mint_allocation_percentages.json $(PARAM_FLAGS)
 
+.PHONY: params_update_tokenomics_dao_reward_address
+params_update_tokenomics_dao_reward_address: ## Update the tokenomics module dao_reward_address param
+	poktrolld tx authz exec ./tools/scripts/params/tokenomics_dao_reward_address.json $(PARAM_FLAGS)
+
+.PHONY: params_update_tokenomics_global_inflation_per_claim
+params_update_tokenomics_global_inflation_per_claim: ## Update the tokenomics module global_inflation_per_claim param
+	poktrolld tx authz exec ./tools/scripts/params/tokenomics_global_inflation_per_claim.json $(PARAM_FLAGS)
+
 ### Service Module Params ###
 .PHONY: params_get_service
 params_get_service: ## Get the service module params
