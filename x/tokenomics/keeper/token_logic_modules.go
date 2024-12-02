@@ -150,7 +150,14 @@ func (k Keeper) ProcessTokenLogicModules(
 	// Retrieving the relay mining difficulty for service.
 	relayMiningDifficulty, found := k.serviceKeeper.GetRelayMiningDifficulty(ctx, service.Id)
 	if !found {
-		relayMiningDifficulty = servicekeeper.NewDefaultRelayMiningDifficulty(ctx, logger, service.Id, servicekeeper.TargetNumRelays)
+		targetNumRelays := k.serviceKeeper.GetParams(ctx).TargetNumRelays
+		relayMiningDifficulty = servicekeeper.NewDefaultRelayMiningDifficulty(
+			ctx,
+			logger,
+			service.Id,
+			targetNumRelays,
+			targetNumRelays,
+		)
 	}
 	sharedParams := k.sharedKeeper.GetParams(ctx)
 

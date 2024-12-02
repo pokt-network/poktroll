@@ -251,6 +251,7 @@ genesis:
         add_service_fee:
           amount: "1000000000"
           denom: upokt
+        target_num_relays: 100000
       serviceList:
         - id: anvil
           name: "anvil"
