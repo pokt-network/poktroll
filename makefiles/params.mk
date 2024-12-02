@@ -148,6 +148,10 @@ params_update_supplier_all: ## Update the supplier module params
 params_update_supplier_min_stake: ## Update the supplier module min_stake param
 	poktrolld tx authz exec ./tools/scripts/params/supplier_min_stake.json $(PARAM_FLAGS)
 
+.PHONY: params_update_supplier_staking_fee
+params_update_supplier_staking_fee: ## Update the supplier module staking_fee param
+	poktrolld tx authz exec ./tools/scripts/params/supplier_staking_fee.json $(PARAM_FLAGS)
+
 ### Session Module Params ###
 .PHONY: params_get_session
 params_get_session: ## Get the session module params

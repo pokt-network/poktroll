@@ -1,8 +1,6 @@
 package suites
 
 import (
-	"encoding/hex"
-
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/pokt-network/poktroll/app/volatile"
@@ -70,8 +68,8 @@ var (
 	ValidProofMissingPenaltyCoin       = cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 500)
 	ValidProofSubmissionFeeCoin        = cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 5000000)
 	ValidProofRequirementThresholdCoin = cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 100)
-	ValidRelayDifficultyTargetHash, _  = hex.DecodeString("00000000ffffffffffffffffffffffffffffffffffffffffffffffffffffffff")
 	ValidActorMinStake                 = cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 100)
+	ValidStakingFee                    = cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 1)
 
 	SharedModuleParamConfig = ModuleParamConfig{
 		ParamsMsgs: ModuleParamsMessages{
@@ -192,7 +190,8 @@ var (
 			QueryParamsResponse:     suppliertypes.QueryParamsResponse{},
 		},
 		ValidParams: suppliertypes.Params{
-			MinStake: &ValidActorMinStake,
+			MinStake:   &ValidActorMinStake,
+			StakingFee: &ValidStakingFee,
 		},
 		ParamTypes: map[ParamType]any{
 			ParamTypeCoin: suppliertypes.MsgUpdateParam_AsCoin{},
