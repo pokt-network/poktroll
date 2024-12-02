@@ -1,5 +1,3 @@
-//go:build integration
-
 package application
 
 import (
@@ -20,7 +18,7 @@ import (
 
 var (
 	appFundAmount = int64(100000000)
-	stakeAmount   = int64(100)
+	stakeAmount   = int64(10000000)
 
 	service1Id = "svc1"
 	service2Id = "svc2"
@@ -66,8 +64,8 @@ func (s *appTransferTestSuite) SetupTest() {
 
 	// Stake app1 and app2.
 	s.setupStakeApps(map[string][]string{
-		s.app1: {service1Id, service3Id},
-		s.app2: {service1Id, service2Id},
+		s.app1: {service1Id},
+		s.app2: {service2Id},
 	})
 
 	// Delegate app 1 to gateway 1 and 3 and app 2 to gateways 1 and 2.
@@ -299,7 +297,6 @@ func (s *appTransferTestSuite) TestMultipleSourceToSameNonexistentDestinationMer
 	expectedApp3ServiceIds := []string{
 		service1Id,
 		service2Id,
-		service3Id,
 	}
 	for _, serviceId := range expectedApp3ServiceIds {
 		require.Contains(s.T(),
@@ -477,11 +474,15 @@ func (s *appTransferTestSuite) shouldObserveTransferEndEvent(
 			return false
 		}
 
-		eventSrcAddr, hasSrcAddr := events.GetAttributeValue(event, "source_address")
+		_, hasSrcAddr := events.GetAttributeValue(event, "source_address")
 		require.True(s.T(), hasSrcAddr)
 
-		return eventSrcAddr == expectedDstApp.GetAddress()
+		eventDstAddr, hasDstAddr := events.GetAttributeValue(event, "destination_address")
+		require.True(s.T(), hasDstAddr)
+
+		return eventDstAddr == expectedDstApp.GetAddress()
 	})
+
 	require.NotNil(s.T(), targetTransferEndEvent)
 
 	evtSrcAddr, hasSrcAddrAttr := events.GetAttributeValue(targetTransferEndEvent, "source_address")
