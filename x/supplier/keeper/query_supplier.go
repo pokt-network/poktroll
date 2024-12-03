@@ -18,6 +18,8 @@ func (k Keeper) AllSuppliers(
 	ctx context.Context,
 	req *types.QueryAllSuppliersRequest,
 ) (*types.QueryAllSuppliersResponse, error) {
+	logger := k.Logger().With("method", "AllSuppliers")
+
 	if req == nil {
 		return nil, status.Error(codes.InvalidArgument, "invalid request")
 	}
@@ -33,7 +35,9 @@ func (k Keeper) AllSuppliers(
 		func(key []byte, value []byte) error {
 			var supplier sharedtypes.Supplier
 			if err := k.cdc.Unmarshal(value, &supplier); err != nil {
-				return err
+				err = fmt.Errorf("unmarshaling supplier with key (hex): %x: %+v", key, err)
+				logger.Error(err.Error())
+				return status.Error(codes.Internal, err.Error())
 			}
 
 			suppliers = append(suppliers, supplier)

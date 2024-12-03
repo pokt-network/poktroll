@@ -11,7 +11,9 @@
             "supplier": 0.7,
             "source_owner": 0.15,
             "application": 0.0
-          }
+          },
+          "dao_reward_address": "pokt1eeeksh2tvkh7wzmfrljnhw4wrhs55lcuvmekkw",
+          "global_inflation_per_claim": 0.1
         }
       }
     ]
