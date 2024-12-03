@@ -46,3 +46,38 @@ func TestParams_ValidateAddServiceFee(t *testing.T) {
 		})
 	}
 }
+
+func TestParams_ValidateTargetNumRelays(t *testing.T) {
+	tests := []struct {
+		desc            string
+		targetNumRelays any
+		expectedErr     error
+	}{
+		{
+			desc:            "invalid type",
+			targetNumRelays: "999",
+			expectedErr:     servicetypes.ErrServiceParamInvalid,
+		},
+		{
+			desc:            "invalid value",
+			targetNumRelays: 0,
+			expectedErr:     servicetypes.ErrServiceParamInvalid,
+		},
+		{
+			desc:            "valid TargetNumRelays",
+			targetNumRelays: uint64(999),
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.desc, func(t *testing.T) {
+			err := servicetypes.ValidateTargetNumRelays(test.targetNumRelays)
+			if test.expectedErr != nil {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), test.expectedErr.Error())
+			} else {
+				require.NoError(t, err)
+			}
+		})
+	}
+}

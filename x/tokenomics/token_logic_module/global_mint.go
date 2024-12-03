@@ -30,14 +30,7 @@ const (
 	MintDistributionAllowableToleranceAbs = 5.0 // 5 uPOKT
 )
 
-var (
-	// TODO_BETA(@red-0ne, #732): Make this a governance parameter and give it a non-zero value + tests.
-	// GlobalInflationPerClaim is the percentage of the claim amount that is minted
-	// by TLMGlobalMint to reward the actors in the network.
-	GlobalInflationPerClaim = 0.1
-
-	_ TokenLogicModule = (*tlmGlobalMint)(nil)
-)
+var _ TokenLogicModule = (*tlmGlobalMint)(nil)
 
 type tlmGlobalMint struct{}
 
@@ -61,13 +54,15 @@ func (tlm tlmGlobalMint) Process(
 		"session_id", tlmCtx.Result.GetSessionId(),
 	)
 
-	if GlobalInflationPerClaim == 0 {
+	globalInflationPerClaim := tlmCtx.TokenomicsParams.GetGlobalInflationPerClaim()
+
+	if globalInflationPerClaim == 0 {
 		logger.Warn("global inflation is set to zero. Skipping Global Mint TLM.")
 		return nil
 	}
 
 	// Determine how much new uPOKT to mint based on global inflation
-	newMintCoin, newMintAmtFloat := CalculateGlobalPerClaimMintInflationFromSettlementAmount(tlmCtx.SettlementCoin)
+	newMintCoin, newMintAmtFloat := CalculateGlobalPerClaimMintInflationFromSettlementAmount(tlmCtx.SettlementCoin, globalInflationPerClaim)
 	if newMintCoin.IsZero() {
 		return tokenomicstypes.ErrTokenomicsCoinIsZero.Wrapf("newMintCoin cannot be zero, TLMContext: %+v", tlmCtx)
 	}
@@ -254,11 +249,12 @@ func sendRewardsToAccount(
 // the settlement amount for a particular claim(s) or session(s).
 func CalculateGlobalPerClaimMintInflationFromSettlementAmount(
 	settlementCoin cosmostypes.Coin,
+	globalInflationPerClaim float64,
 ) (cosmostypes.Coin, big.Float) {
 	// Determine how much new uPOKT to mint based on global per claim inflation.
 	// TODO_MAINNET: Consider using fixed point arithmetic for deterministic results.
 	settlementAmtFloat := new(big.Float).SetUint64(settlementCoin.Amount.Uint64())
-	newMintAmtFloat := new(big.Float).Mul(settlementAmtFloat, big.NewFloat(GlobalInflationPerClaim))
+	newMintAmtFloat := new(big.Float).Mul(settlementAmtFloat, big.NewFloat(globalInflationPerClaim))
 	// DEV_NOTE: If new mint is less than 1 and more than 0, ceil it to 1 so that
 	// we never expect to process a claim with 0 minted tokens.
 	if newMintAmtFloat.Cmp(big.NewFloat(1)) < 0 && newMintAmtFloat.Cmp(big.NewFloat(0)) > 0 {

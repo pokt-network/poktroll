@@ -76,11 +76,10 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_Valid(t *testing.T) {
 	require.NoError(t, err)
 	// TODO_TECHDEBT: Setting inflation to zero so we are testing the BurnEqualsMint logic exclusively.
 	// Once it is a governance param, update it using the keeper above.
-	prevInflationValue := tlm.GlobalInflationPerClaim
-	tlm.GlobalInflationPerClaim = 0
-	t.Cleanup(func() {
-		tlm.GlobalInflationPerClaim = prevInflationValue
-	})
+	tokenomicsParams := keepers.Keeper.GetParams(ctx)
+	tokenomicsParams.GlobalInflationPerClaim = 0
+	err = keepers.Keeper.SetParams(ctx, tokenomicsParams)
+	require.NoError(t, err)
 
 	// Add a new application with non-zero app stake end balance to assert against.
 	appStake := cosmostypes.NewCoin(volatile.DenomuPOKT, appInitialStake)
@@ -218,11 +217,10 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_Valid_SupplierExceedsMaxClai
 	require.NoError(t, err)
 	// TODO_TECHDEBT: Setting inflation to zero so we are testing the BurnEqualsMint logic exclusively.
 	// Once it is a governance param, update it using the keeper above.
-	prevInflationValue := tlm.GlobalInflationPerClaim
-	tlm.GlobalInflationPerClaim = 0
-	t.Cleanup(func() {
-		tlm.GlobalInflationPerClaim = prevInflationValue
-	})
+	tokenomicsParams := keepers.Keeper.GetParams(ctx)
+	tokenomicsParams.GlobalInflationPerClaim = 0
+	err = keepers.Keeper.SetParams(ctx, tokenomicsParams)
+	require.NoError(t, err)
 
 	// Add a new application with non-zero app stake end balance to assert against.
 	appStake := cosmostypes.NewCoin(volatile.DenomuPOKT, appInitialStake)
@@ -443,7 +441,7 @@ func TestProcessTokenLogicModules_TLMGlobalMint_Valid_MintDistributionCorrect(t 
 	}
 
 	// Compute mint per actor
-	numTokensMinted := numTokensClaimed * tlm.GlobalInflationPerClaim
+	numTokensMinted := numTokensClaimed * keepers.Keeper.GetParams(ctx).GlobalInflationPerClaim
 	numTokensMintedInt := cosmosmath.NewIntFromUint64(uint64(numTokensMinted))
 	daoMint := cosmosmath.NewInt(int64(numTokensMinted * tokenomicsParams.MintAllocationPercentages.Dao))
 	propMint := cosmosmath.NewInt(int64(numTokensMinted * tokenomicsParams.MintAllocationPercentages.Proposer))

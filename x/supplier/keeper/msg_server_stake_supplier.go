@@ -8,18 +8,12 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"github.com/pokt-network/poktroll/app/volatile"
 	"github.com/pokt-network/poktroll/telemetry"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 )
 
-var (
-	// TODO_BETA(@bryanchriswhite): Make supplier staking fee a governance parameter
-	// TODO_BETA(@red-0ne): Update supplier staking documentation to remove the upstaking requirement and introduce the staking fee.
-	SupplierStakingFee = sdk.NewInt64Coin(volatile.DenomuPOKT, 1)
-)
-
+// TODO_BETA(@red-0ne): Update supplier staking documentation to remove the upstaking requirement and introduce the staking fee.
 func (k msgServer) StakeSupplier(ctx context.Context, msg *suppliertypes.MsgStakeSupplier) (*suppliertypes.MsgStakeSupplierResponse, error) {
 	isSuccessful := false
 	defer telemetry.EventSuccessCounter(
@@ -147,7 +141,8 @@ func (k msgServer) StakeSupplier(ctx context.Context, msg *suppliertypes.MsgStak
 	}
 
 	// Send the coins from the message signer account to the staked supplier pool
-	stakeWithFee := sdk.NewCoins(coinsToEscrow.Add(SupplierStakingFee))
+	supplierStakingFee := k.GetParams(ctx).StakingFee
+	stakeWithFee := sdk.NewCoins(coinsToEscrow.Add(*supplierStakingFee))
 	err = k.bankKeeper.SendCoinsFromAccountToModule(ctx, msgSignerAddress, suppliertypes.ModuleName, stakeWithFee)
 	if err != nil {
 		logger.Info(fmt.Sprintf("ERROR: could not send %v coins from %q to %q module account due to %v", coinsToEscrow, msgSignerAddress, suppliertypes.ModuleName, err))
