@@ -101,7 +101,6 @@ if localnet_config["helm_chart_local_repo"]["enabled"]:
 
 # Configure PATH reference.
 # If using a local repo, set the path to the local repo; otherwise, use our own helm repo.
-# path_repo("pokt-network", "https://pokt-network.github.io/helm-charts/")
 path_local_repo = ""
 if localnet_config["path_local_repo"]["enabled"]:
     path_local_repo = localnet_config["path_local_repo"]["path"]
