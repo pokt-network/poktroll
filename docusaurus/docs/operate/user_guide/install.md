@@ -17,6 +17,8 @@ brew install poktrolld
 - [MacOS \& Linux Users](#macos--linux-users)
   - [Using Homebrew](#using-homebrew)
   - [From Source](#from-source)
+    - [Installing dependencies](#installing-dependencies)
+    - [Installing poktrolld](#installing-poktrolld)
   - [Using release binaries](#using-release-binaries)
 - [Windows Users](#windows-users)
 
@@ -48,12 +50,32 @@ or debug the CLI.
 
 ### From Source
 
+#### Installing dependencies
+
 Ensure you have the following installed:
 
 - [Go](https://go.dev/doc/install) (version 1.18 or later)
 - [Ignite CLI](https://docs.ignite.com/welcome/install)
 
-Then run the following commands:
+If you're on a Linux machine, you can follow the steps below for convenience:
+
+```bash
+# Install go 1.23
+curl -o ./pkgx --compressed -f --proto '=https' https://pkgx.sh/$(uname)/$(uname -m)
+sudo install -m 755 pkgx /usr/local/bin
+pkgx install go@1.23.0
+export PATH=$PATH:$HOME/go/bin/
+
+# Install PATH Gateway required dependencies
+apt-get update && apt-get install git make build-essential
+
+# Install the ignite binary used to build the Pocket binary
+curl https://get.ignite.com/cli! | bash
+```
+
+#### Installing poktrolld
+
+Then, Retrieve the source code and build the `poktrolld` locally like so:
 
 ```bash
 git clone https://github.com/pokt-network/poktroll.git
