@@ -291,33 +291,37 @@ for x in range(localnet_config["relayminers"]["count"]):
         ],
     )
 
+if localnet_config["path_local_repo"]["enabled"]:
+    docker_build("path-local", path_local_repo)
+
 # Provision PATH Gateway
 actor_number = 0
 # Loop to configure and apply multiple PATH gateway deployments
 for x in range(localnet_config["path_gateways"]["count"]):
     actor_number += 1
 
-    helm_flags = [
+    resource_flags = [
         "--values=./localnet/kubernetes/values-common.yaml",
         "--values=./localnet/kubernetes/values-path-common.yaml",
         "--values=./localnet/kubernetes/values-path-" + str(actor_number) + ".yaml",
         "--set=metrics.serviceMonitor.enabled=" + str(localnet_config["observability"]["enabled"]),
     ]
 
-    if not localnet_config["path_local_repo"]["enabled"]:
-        helm_flags.append("--set=image.respository=ghcr.io/buildwithgrove/path")
+    if localnet_config["path_local_repo"]["enabled"]:
+        resource_flags.append("--set=image.repository=path-local")
+        resource_flags.append("--set=image.pullPolicy=Never")
 
     helm_resource(
         "path" + str(actor_number),
         chart_prefix + "path",
-        flags=helm_flags,
+        flags=resource_flags,
     )
 
     # Apply the deployment to Kubernetes using Tilt
     k8s_resource(
         "path" + str(actor_number),
         labels=["gateways"],
-        resource_deps=["validator"],
+        resource_deps=["path-local:main"],
         # TODO_IMPROVE(, @HebertCL): Update this once PATH has grafana dashboards
         # links=[
         #     link(
