@@ -1,0 +1,14 @@
+config:
+  shannon_config:
+    full_node_config:
+      rpc_url: tcp://validator-poktroll-validator:26657
+      grpc_config:
+        host_port: validator-poktroll-validator:9090
+        insecure: true
+      lazy_mode: true
+    gateway_config:
+      gateway_mode: delegated
+
+  services:
+    anvil:
+      alias: anvil

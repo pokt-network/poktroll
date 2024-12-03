@@ -292,28 +292,26 @@ for x in range(localnet_config["relayminers"]["count"]):
     )
 
 # Provision PATH Gateway
-# Build the Docker image with Tilt (local build)
-docker_build("path-gateway-local", path_local_repo)
-
-# TODO_IN_THIS_PR(@okdas): Move configs to values and add helm charts for PATH
-path_deployment_yaml = str(read_file("./localnet/kubernetes/path-local.yaml", "r"))
 actor_number = 0
 # Loop to configure and apply multiple PATH gateway deployments
 for x in range(localnet_config["path_gateways"]["count"]):
     actor_number += 1
 
-    # Create the ConfigMap for each gateway instance
-    configmap_create(
-        "path-config" + str(actor_number), from_file="localnet/kubernetes/path-config-" + str(actor_number) + ".yaml"
+    helm_resource(
+        "path" + str(actor_number),
+        chart_prefix + "path",
+        flags=[
+            "--values=./localnet/kubernetes/values-common.yaml",
+            "--values=./localnet/kubernetes/values-path-common.yaml",
+            "--values=./localnet/kubernetes/values-path-" + str(actor_number) + ".yaml",
+            "--set=metrics.serviceMonitor.enabled=" + str(localnet_config["observability"]["enabled"]),
+            "--set=image.repository=ghcr.io/buildwithgrove/path",
+        ],
     )
 
-    # Format the YAML deployment with the actor number and port
-    formatted_path_deployment_yaml = path_deployment_yaml.format(actor_number=actor_number, port=2999 + actor_number)
-
     # Apply the deployment to Kubernetes using Tilt
-    k8s_yaml(blob(formatted_path_deployment_yaml))
     k8s_resource(
-        "path-gateway" + str(actor_number),
+        "path" + str(actor_number),
         labels=["gateways"],
         resource_deps=["validator"],
         # TODO_IMPROVE(, @HebertCL): Update this once PATH has grafana dashboards
