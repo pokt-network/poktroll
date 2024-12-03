@@ -306,6 +306,8 @@ for x in range(localnet_config["path_gateways"]["count"]):
         "--set=metrics.serviceMonitor.enabled=" + str(localnet_config["observability"]["enabled"]),
     ]
 
+    image_deps = []
+    image_keys = []
     if localnet_config["path_local_repo"]["enabled"]:
         image_deps = ["path-local"]
         image_keys = [("image.repository", "image.tag")]
