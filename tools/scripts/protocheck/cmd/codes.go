@@ -6,4 +6,5 @@ const (
 	CodeRootCmdErr = ExitCode(iota + 1)
 	CodePathWalkErr
 	CodeUnstableProtosFound
+	CodeNonStatusGRPCErrorsFound
 )

@@ -153,3 +153,10 @@ check_proto_unstable_marshalers: ## Check that all protobuf files have the `stab
 fix_proto_unstable_marshalers: ## Ensure the `stable_marshaler_all` option is present on all protobuf files.
 	go run ./tools/scripts/protocheck/cmd unstable --fix
 	${MAKE} proto_regen
+
+MODULE ?= "*"
+LEVEL ?= "info"
+
+.PHONY: check_grpc_status_errors
+check_grpc_status_errors: ## Check that all gRPC service handlers return gRPC status errors.
+	go run ./tools/scripts/protocheck/cmd status-errors -m ${MODULE} -l ${LEVEL}
