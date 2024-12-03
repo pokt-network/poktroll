@@ -159,10 +159,10 @@ EOF
 And run the following command to stake the `Application`:
 
 ```bash
-poktrolld tx application stake-application --config=/tmp/stake_app_config.yaml --from=$APP_ADDR $TX_PARAM_FLAGS $GAS_PARAMS $NODE_FLAGS
+poktrolld tx application stake-application --config=/tmp/stake_app_config.yaml --from=$APP_ADDR $TX_PARAM_FLAGS $NODE_FLAGS
 
 # Optionally, to avoid entering the password each time:
-# poktrolld tx application stake-application --config=/tmp/stake_app_config.yaml --from=$APP_ADDR $TX_PARAM_FLAGS $GAS_PARAMS $NODE_FLAGS --keyring-backend test
+# poktrolld tx application stake-application --config=/tmp/stake_app_config.yaml --from=$APP_ADDR $TX_PARAM_FLAGS $NODE_FLAGS --keyring-backend test
 ```
 
 After about a minute, you can check the `Application`'s status like so:
@@ -174,10 +174,10 @@ poktrolld query application show-application $APP_ADDR $NODE_FLAGS
 ### Delegate the `Application` to the `Gateway`
 
 ```bash
-poktrolld tx application delegate-to-gateway $GATEWAY_ADDR --from=$APP_ADDR $TX_PARAM_FLAGS $GAS_PARAMS $NODE_FLAGS
+poktrolld tx application delegate-to-gateway $GATEWAY_ADDR --from=$APP_ADDR $TX_PARAM_FLAGS $NODE_FLAGS
 
 # Optionally, to avoid entering the password each time:
-# poktrolld tx application delegate-to-gateway $GATEWAY_ADDR --from=$APP_ADDR $TX_PARAM_FLAGS $GAS_PARAMS $NODE_FLAGS --keyring-backend test
+# poktrolld tx application delegate-to-gateway $GATEWAY_ADDR --from=$APP_ADDR $TX_PARAM_FLAGS $NODE_FLAGS --keyring-backend test
 ```
 
 After about a minute, you can check the `Application`'s status like so:
