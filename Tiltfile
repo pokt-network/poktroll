@@ -26,6 +26,7 @@ def merge_dicts(base, updates):
 #            environment is not broken for future engineers.
 localnet_config_path = "localnet_config.yaml"
 localnet_config_defaults = {
+    "hot-reloading": True,
     "validator": {
         "cleanupBeforeEachStart": True,
         "logs": {
@@ -183,29 +184,30 @@ secret_create_generic(
 # Import configuration files into Kubernetes ConfigMap
 configmap_create("poktrolld-configs", from_file=listdir("localnet/poktrolld/config/"), watch=True)
 
-# Hot reload protobuf changes
-local_resource(
-    "hot-reload: generate protobufs",
-    "make proto_regen",
-    deps=["proto"],
-    labels=["hot-reloading"],
-)
-# Hot reload the poktrolld binary used by the k8s cluster
-local_resource(
-    "hot-reload: poktrolld",
-    "GOOS=linux ignite chain build --skip-proto --output=./bin --debug -v",
-    deps=hot_reload_dirs,
-    labels=["hot-reloading"],
-    resource_deps=["hot-reload: generate protobufs"],
-)
-# Hot reload the local poktrolld binary used by the CLI
-local_resource(
-    "hot-reload: poktrolld - local cli",
-    "ignite chain build --skip-proto --debug -v -o $(go env GOPATH)/bin",
-    deps=hot_reload_dirs,
-    labels=["hot-reloading"],
-    resource_deps=["hot-reload: generate protobufs"],
-)
+if localnet_config["hot-reloading"]:
+    # Hot reload protobuf changes
+    local_resource(
+        "hot-reload: generate protobufs",
+        "make proto_regen",
+        deps=["proto"],
+        labels=["hot-reloading"],
+    )
+    # Hot reload the poktrolld binary used by the k8s cluster
+    local_resource(
+        "hot-reload: poktrolld",
+        "GOOS=linux ignite chain build --skip-proto --output=./bin --debug -v",
+        deps=hot_reload_dirs,
+        labels=["hot-reloading"],
+        resource_deps=["hot-reload: generate protobufs"],
+    )
+    # Hot reload the local poktrolld binary used by the CLI
+    local_resource(
+        "hot-reload: poktrolld - local cli",
+        "ignite chain build --skip-proto --debug -v -o $(go env GOPATH)/bin",
+        deps=hot_reload_dirs,
+        labels=["hot-reloading"],
+        resource_deps=["hot-reload: generate protobufs"],
+    )
 
 # Build an image with a poktrolld binary
 docker_build_with_restart(
