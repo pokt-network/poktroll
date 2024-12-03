@@ -90,8 +90,10 @@ if (localnet_config_file != localnet_config) or (not os.path.exists(localnet_con
 # Configure helm chart reference.
 # If using a local repo, set the path to the local repo; otherwise, use our own helm repo.
 helm_repo("pokt-network", "https://pokt-network.github.io/helm-charts/")
+helm_repo("buildwithgrove", "https://buildwithgrove.github.io/helm-charts/")
 # TODO_IMPROVE: Use os.path.join to make this more OS-agnostic.
 chart_prefix = "pokt-network/"
+grove_chart_prefix = "buildwithgrove/"
 if localnet_config["helm_chart_local_repo"]["enabled"]:
     helm_chart_local_repo = localnet_config["helm_chart_local_repo"]["path"]
     hot_reload_dirs.append(helm_chart_local_repo)
@@ -301,30 +303,35 @@ for x in range(localnet_config["path_gateways"]["count"]):
 
     resource_flags = [
         "--values=./localnet/kubernetes/values-common.yaml",
-        "--values=./localnet/kubernetes/values-path-common.yaml",
-        "--values=./localnet/kubernetes/values-path-" + str(actor_number) + ".yaml",
         "--set=metrics.serviceMonitor.enabled=" + str(localnet_config["observability"]["enabled"]),
+        "--set=path.mountConfigMaps[0].name=path-config-" + str(actor_number),
+        "--set=path.mountConfigMaps[0].mountPath=/app/config",
+        "--set=global.imagePullPolicy=IfNotPresent"
     ]
 
-    image_deps = []
-    image_keys = []
     if localnet_config["path_local_repo"]["enabled"]:
-        image_deps = ["path-local"]
-        image_keys = [("image.repository", "image.tag")]
+        path_image_deps = ["path-local"]
+        path_image_keys = [("image.repository", "image.tag")]
+        path_deps=["path-local"]
+
+    configmap_create(
+        "path-config-" + str(actor_number),
+        from_file=".config.yaml=localnet/kubernetes/config-path-" + str(actor_number) + ".yaml"
+    )
 
     helm_resource(
         "path" + str(actor_number),
-        chart_prefix + "path",
+        grove_chart_prefix + "path",
         flags=resource_flags,
-        image_deps=image_deps,
-        image_keys=image_keys,
+        image_deps=path_image_deps,
+        image_keys=path_image_keys,
     )
 
     # Apply the deployment to Kubernetes using Tilt
     k8s_resource(
         "path" + str(actor_number),
         labels=["gateways"],
-        resource_deps=["path-local:main"],
+        resource_deps=path_deps,
         # TODO_IMPROVE(, @HebertCL): Update this once PATH has grafana dashboards
         # links=[
         #     link(

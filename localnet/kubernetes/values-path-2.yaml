@@ -1,5 +1,0 @@
-config:
-  shannon_config:
-    gateway_config:
-      gateway_address: pokt15w3fhfyc0lttv7r585e2ncpf6t2kl9uh8rsnyz # gateway2
-      gateway_private_key_hex: 177ba43cec962ea407f71da9c3994ba685708e82d5d7a6d7da3268e74119bf88
