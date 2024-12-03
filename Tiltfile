@@ -297,16 +297,20 @@ actor_number = 0
 for x in range(localnet_config["path_gateways"]["count"]):
     actor_number += 1
 
+    helm_flags = [
+        "--values=./localnet/kubernetes/values-common.yaml",
+        "--values=./localnet/kubernetes/values-path-common.yaml",
+        "--values=./localnet/kubernetes/values-path-" + str(actor_number) + ".yaml",
+        "--set=metrics.serviceMonitor.enabled=" + str(localnet_config["observability"]["enabled"]),
+    ]
+
+    if not localnet_config["path_local_repo"]["enabled"]:
+        helm_flags.append("--set=image.respository=ghcr.io/buildwithgrove/path")
+
     helm_resource(
         "path" + str(actor_number),
         chart_prefix + "path",
-        flags=[
-            "--values=./localnet/kubernetes/values-common.yaml",
-            "--values=./localnet/kubernetes/values-path-common.yaml",
-            "--values=./localnet/kubernetes/values-path-" + str(actor_number) + ".yaml",
-            "--set=metrics.serviceMonitor.enabled=" + str(localnet_config["observability"]["enabled"]),
-            "--set=image.repository=ghcr.io/buildwithgrove/path",
-        ],
+        flags=helm_flags,
     )
 
     # Apply the deployment to Kubernetes using Tilt

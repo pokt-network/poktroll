@@ -49,12 +49,8 @@ spec:
               value: "false" # Flip to true to see the command and result of the execution
             - name: POKTROLLD_HOME
               value: /root/.poktroll
-            - name: APPGATE_SERVER_URL
-              value: http://${NAMESPACE}-appgate-server:80
             - name: PATH_URL
-              value: http://${NAMESPACE}-path:80
-            - name: GATEWAY_URL
-              value: http://${NAMESPACE}-gateway:80
+              value: http://${NAMESPACE}-path:3000
           volumeMounts:
             - mountPath: /root/.poktroll/keyring-test/
               name: writable-keys-volume
