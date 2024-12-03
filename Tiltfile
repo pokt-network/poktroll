@@ -307,13 +307,15 @@ for x in range(localnet_config["path_gateways"]["count"]):
     ]
 
     if localnet_config["path_local_repo"]["enabled"]:
-        resource_flags.append("--set=image.repository=path-local")
-        resource_flags.append("--set=image.pullPolicy=Never")
+        image_deps = ["path-local"]
+        image_keys = [("image.repository", "image.tag")]
 
     helm_resource(
         "path" + str(actor_number),
         chart_prefix + "path",
         flags=resource_flags,
+        image_deps=image_deps,
+        image_keys=image_keys,
     )
 
     # Apply the deployment to Kubernetes using Tilt
