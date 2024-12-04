@@ -8,6 +8,10 @@
           "min_stake": {
             "amount": "1000000",
             "denom": "upokt"
+          },
+          "staking_fee": {
+            "amount": "1",
+            "denom": "upokt"
           }
         }
       }
