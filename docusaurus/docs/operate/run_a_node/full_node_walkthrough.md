@@ -1,9 +1,9 @@
 ---
-title: Full Node (systemd)
+title: Full Node (systemd & cosmovisor)
 sidebar_position: 2
 ---
 
-## Run a Full Node Using Systemd <!-- omit in toc -->
+## Run a Full Node Using Systemd & Cosmovisor <!-- omit in toc -->
 
 This walkthrough provides a detailed step-by-step instructions to install and
 configure a Pocket Network Full Node from scratch.
@@ -26,7 +26,12 @@ few commands to get started, check out the [Full Node Cheat Sheet](../quickstart
 - [7. Network Configuration](#7-network-configuration)
 - [8. Set Up `systemd` Service](#8-set-up-systemd-service)
 - [9. Configure your Firewall](#9-configure-your-firewall)
-- [Next Steps](#next-steps)
+- [FAQ \& Troubleshooting](#faq--troubleshooting)
+  - [How do I check the node is accessible from another machine?](#how-do-i-check-the-node-is-accessible-from-another-machine)
+  - [How do I view the node status?](#how-do-i-view-the-node-status)
+  - [How do I view the node logs?](#how-do-i-view-the-node-logs)
+  - [How do I restart my node?](#how-do-i-restart-my-node)
+  - [How do I query the latest block (i.e. check the node height)?](#how-do-i-query-the-latest-block-ie-check-the-node-height)
 
 ### Introduction
 
@@ -119,6 +124,13 @@ source ~/.profile
 ### 5. Install `poktrolld`
 
 Follow the instructions in the [CLI Installation Guide](../user_guide/install.md) page to install `poktrolld`.
+
+Create a symlink of the binary so Comosvisor knows where to find it:
+
+```bash
+mkdir -p $HOME/.poktroll/cosmovisor/genesis/bin
+ln -sf $(which poktrolld) $HOME/.poktroll/cosmovisor/genesis/bin/poktrolld
+```
 
 ### 6. Retrieve the latest genesis file
 
@@ -225,18 +237,43 @@ This may involve one or more of the following:
    nc -vz your_server_ip 26656
    ```
 
-### Next Steps
+### FAQ & Troubleshooting
 
-Your Full Node is now up and running. You can check its status and logs using the commands:
+#### How do I check the node is accessible from another machine?
 
-**Check Status**:
+```bash
+nc -vz your_server_ip 26656
+```
+
+#### How do I view the node status?
 
 ```bash
 sudo systemctl status cosmovisor.service
 ```
 
-**View Logs**:
+#### How do I view the node logs?
 
 ```bash
 sudo journalctl -u cosmovisor.service -f
+```
+
+#### How do I restart my node?
+
+```bash
+sudo systemctl stop cosmovisor.service
+sudo systemctl start cosmovisor.service
+```
+
+#### How do I query the latest block (i.e. check the node height)?
+
+Using poktrolld:
+
+```bash
+poktrolld query block --type=height --node http://localhost:26657
+```
+
+Or, using curl:
+
+```bash
+curl -X GET http://localhost:26657/block | jq
 ```
