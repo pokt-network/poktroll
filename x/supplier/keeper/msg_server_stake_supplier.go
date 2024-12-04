@@ -15,11 +15,7 @@ import (
 	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 )
 
-var (
-	// TODO_BETA(@bryanchriswhite): Make supplier staking fee a governance parameter
-	SupplierStakingFee = sdk.NewInt64Coin(volatile.DenomuPOKT, 1)
-)
-
+// TODO_BETA(@red-0ne): Update supplier staking documentation to remove the upstaking requirement and introduce the staking fee.
 func (k msgServer) StakeSupplier(ctx context.Context, msg *suppliertypes.MsgStakeSupplier) (*suppliertypes.MsgStakeSupplierResponse, error) {
 	isSuccessful := false
 	defer telemetry.EventSuccessCounter(
@@ -128,13 +124,16 @@ func (k msgServer) StakeSupplier(ctx context.Context, msg *suppliertypes.MsgStak
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
+	supplierStakingFee := k.GetParams(ctx).StakingFee
+
 	// The Supplier is increasing its stake, so escrow the difference
 	if supplierCurrentStake.Amount.LT(msg.Stake.Amount) {
 		coinsToEscrow := msg.Stake.Sub(supplierCurrentStake)
-		stakeWithFee := sdk.NewCoins(coinsToEscrow.Add(SupplierStakingFee))
+		stakeWithFee := sdk.NewCoins(coinsToEscrow.Add(*supplierStakingFee))
 
 		// Send the coins from the message signer account to the staked supplier pool
-		if err := k.bankKeeper.SendCoinsFromAccountToModule(ctx, msgSignerAddress, types.ModuleName, stakeWithFee); err != nil {
+		err = k.bankKeeper.SendCoinsFromAccountToModule(ctx, msgSignerAddress, suppliertypes.ModuleName, stakeWithFee)
+		if err != nil {
 			logger.Info(fmt.Sprintf("ERROR: could not send %s coins from %q to %q module account due to %v", coinsToEscrow, msgSignerAddress, types.ModuleName, err))
 			return nil, status.Error(codes.InvalidArgument, err.Error())
 		}
@@ -146,16 +145,16 @@ func (k msgServer) StakeSupplier(ctx context.Context, msg *suppliertypes.MsgStak
 	if supplierCurrentStake.Amount.GT(msg.Stake.Amount) {
 		coinsToUnescrow := supplierCurrentStake.Sub(*msg.Stake)
 
-		if coinsToUnescrow.Amount.LTE(SupplierStakingFee.Amount) {
+		if coinsToUnescrow.Amount.LTE(supplierStakingFee.Amount) {
 			err = types.ErrSupplierInvalidStake.Wrapf(
 				"supplier with owner %q must unescrow more than supplier staking fee (%s)",
-				msg.GetOwnerAddress(), SupplierStakingFee,
+				msg.GetOwnerAddress(), supplierStakingFee,
 			)
 			logger.Info(fmt.Sprintf("ERROR: %s", err))
 			return nil, status.Error(codes.InvalidArgument, err.Error())
 		}
 
-		coinsAfterFee := sdk.NewCoins(coinsToUnescrow.Sub(SupplierStakingFee))
+		coinsAfterFee := sdk.NewCoins(coinsToUnescrow.Sub(*supplierStakingFee))
 
 		// Send the coins from the staked supplier pool to the message signer account
 		if err := k.bankKeeper.SendCoinsFromModuleToAccount(ctx, types.ModuleName, msgSignerAddress, coinsAfterFee); err != nil {

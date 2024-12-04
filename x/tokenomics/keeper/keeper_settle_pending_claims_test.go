@@ -167,7 +167,14 @@ func (s *TestSuite) SetupTest() {
 	// Calculate the number of claimed compute units.
 	s.numClaimedComputeUnits = s.numRelays * service.ComputeUnitsPerRelay
 
-	s.relayMiningDifficulty = servicekeeper.NewDefaultRelayMiningDifficulty(sdkCtx, s.keepers.Logger(), testServiceId, servicekeeper.TargetNumRelays)
+	targetNumRelays := s.keepers.ServiceKeeper.GetParams(sdkCtx).TargetNumRelays
+	s.relayMiningDifficulty = servicekeeper.NewDefaultRelayMiningDifficulty(
+		sdkCtx,
+		s.keepers.Logger(),
+		testServiceId,
+		targetNumRelays,
+		targetNumRelays,
+	)
 
 	// Calculate the number of estimated compute units.
 	s.numEstimatedComputeUnits = getEstimatedComputeUnits(s.numClaimedComputeUnits, s.relayMiningDifficulty)
