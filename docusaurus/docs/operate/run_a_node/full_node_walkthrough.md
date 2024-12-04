@@ -1,5 +1,5 @@
 ---
-title: Full Node (systemd & cosmovisor)
+title: Full Node Walkthrough
 sidebar_position: 2
 ---
 
@@ -30,8 +30,14 @@ few commands to get started, check out the [Full Node Cheat Sheet](../quickstart
   - [How do I check the node is accessible from another machine?](#how-do-i-check-the-node-is-accessible-from-another-machine)
   - [How do I view the node status?](#how-do-i-view-the-node-status)
   - [How do I view the node logs?](#how-do-i-view-the-node-logs)
+  - [How do I stop my node?](#how-do-i-stop-my-node)
+  - [How do I start my node?](#how-do-i-start-my-node)
   - [How do I restart my node?](#how-do-i-restart-my-node)
   - [How do I query the latest block (i.e. check the node height)?](#how-do-i-query-the-latest-block-ie-check-the-node-height)
+  - [How do I check the node version?](#how-do-i-check-the-node-version)
+  - [How do I check the Cosmosvisor directory structure?](#how-do-i-check-the-cosmosvisor-directory-structure)
+  - [How do I check if an upgrade is available?](#how-do-i-check-if-an-upgrade-is-available)
+  - [How do I view node configuration?](#how-do-i-view-node-configuration)
 
 ### Introduction
 
@@ -257,11 +263,22 @@ sudo systemctl status cosmovisor.service
 sudo journalctl -u cosmovisor.service -f
 ```
 
-#### How do I restart my node?
+#### How do I stop my node?
 
 ```bash
 sudo systemctl stop cosmovisor.service
+```
+
+#### How do I start my node?
+
+```bash
 sudo systemctl start cosmovisor.service
+```
+
+#### How do I restart my node?
+
+```bash
+sudo systemctl restart cosmovisor.service
 ```
 
 #### How do I query the latest block (i.e. check the node height)?
@@ -276,4 +293,28 @@ Or, using curl:
 
 ```bash
 curl -X GET http://localhost:26657/block | jq
+```
+
+#### How do I check the node version?
+
+```bash
+sudo -u poktroll poktrolld version
+```
+
+#### How do I check the Cosmosvisor directory structure?
+
+```bash
+ls -la /home/poktroll/.poktroll/cosmovisor/
+```
+
+#### How do I check if an upgrade is available?
+
+```bash
+ls -la /home/poktroll/.poktroll/cosmovisor/upgrades/
+```
+
+#### How do I view node configuration?
+
+```bash
+cat /home/poktroll/.poktroll/config/config.toml
 ```

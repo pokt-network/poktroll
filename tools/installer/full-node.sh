@@ -28,7 +28,7 @@ check_root() {
 
 # Function to install jq if not installed
 install_jq() {
-    if ! command -v jq &> /dev/null; then
+    if ! command -v jq &>/dev/null; then
         print_color $YELLOW "Installing jq..."
         if [ -f /etc/debian_version ]; then
             apt-get update
@@ -50,16 +50,19 @@ install_jq() {
 get_user_input() {
     # Ask user which network to install
     echo "Which network would you like to install?"
-    echo "1) testnet-alpha"
-    echo "2) testnet-beta"
-    echo "3) mainnet"
+    echo "1) testnet-alpha (unstable)"
+    echo "2) testnet-beta (recommended)"
+    echo "3) mainnet (not launched yet)"
     read -p "Enter your choice (1-3): " network_choice
 
     case $network_choice in
-        1) NETWORK="testnet-alpha" ;;
-        2) NETWORK="testnet-beta" ;;
-        3) NETWORK="mainnet" ;;
-        *) print_color $RED "Invalid network choice. Exiting."; exit 1 ;;
+    1) NETWORK="testnet-alpha" ;;
+    2) NETWORK="testnet-beta" ;;
+    3) NETWORK="mainnet" ;;
+    *)
+        print_color $RED "Invalid network choice. Exiting."
+        exit 1
+        ;;
     esac
 
     print_color $GREEN "Installing the $NETWORK network."
@@ -84,7 +87,7 @@ get_user_input() {
     fi
 
     # Extract chain_id from genesis.json
-    CHAIN_ID=$(jq -r '.chain_id' < "$GENESIS_FILE")
+    CHAIN_ID=$(jq -r '.chain_id' <"$GENESIS_FILE")
     if [ -z "$CHAIN_ID" ]; then
         print_color $RED "Failed to extract chain_id from genesis file."
         exit 1
@@ -145,7 +148,7 @@ install_dependencies() {
 # Function to set up environment variables
 setup_env_vars() {
     print_color $YELLOW "Setting up environment variables..."
-    sudo -u "$POKTROLL_USER" bash << EOF
+    sudo -u "$POKTROLL_USER" bash <<EOF
     echo "export DAEMON_NAME=poktrolld" >> \$HOME/.profile
     echo "export DAEMON_HOME=\$HOME/.poktroll" >> \$HOME/.profile
     echo "export DAEMON_RESTART_AFTER_UPGRADE=true" >> \$HOME/.profile
@@ -160,9 +163,9 @@ EOF
 setup_cosmovisor() {
     print_color $YELLOW "Setting up Cosmovisor..."
     ARCH=$(uname -m)
-    if [ "$ARCH" = "x86_64" ]; then 
+    if [ "$ARCH" = "x86_64" ]; then
         ARCH="amd64"
-    elif [ "$ARCH" = "aarch64" ]; then 
+    elif [ "$ARCH" = "aarch64" ]; then
         ARCH="arm64"
     else
         print_color $RED "Unsupported architecture: $ARCH"
@@ -172,7 +175,7 @@ setup_cosmovisor() {
     COSMOVISOR_VERSION="v1.6.0"
     COSMOVISOR_URL="https://github.com/cosmos/cosmos-sdk/releases/download/cosmovisor%2F${COSMOVISOR_VERSION}/cosmovisor-${COSMOVISOR_VERSION}-linux-${ARCH}.tar.gz"
 
-    sudo -u "$POKTROLL_USER" bash << EOF
+    sudo -u "$POKTROLL_USER" bash <<EOF
     mkdir -p \$HOME/bin
     curl -L "$COSMOVISOR_URL" | tar -zxvf - -C \$HOME/bin
     echo 'export PATH=\$HOME/bin:\$PATH' >> \$HOME/.profile
@@ -181,14 +184,13 @@ EOF
     print_color $GREEN "Cosmovisor set up successfully."
 }
 
-
 # Function to download and set up Poktrolld
 setup_poktrolld() {
     print_color $YELLOW "Setting up Poktrolld..."
     ARCH=$(uname -m)
-    if [ "$ARCH" = "x86_64" ]; then 
+    if [ "$ARCH" = "x86_64" ]; then
         ARCH="amd64"
-    elif [ "$ARCH" = "aarch64" ]; then 
+    elif [ "$ARCH" = "aarch64" ]; then
         ARCH="arm64"
     else
         print_color $RED "Unsupported architecture: $ARCH"
@@ -196,7 +198,7 @@ setup_poktrolld() {
     fi
 
     # Extract the version from genesis.json using jq
-    POKTROLLD_VERSION=$(jq -r '.app_version' < "$GENESIS_FILE")
+    POKTROLLD_VERSION=$(jq -r '.app_version' <"$GENESIS_FILE")
     print_color $YELLOW "Detected version from genesis: $POKTROLLD_VERSION"
 
     if [ -z "$POKTROLLD_VERSION" ]; then
@@ -204,12 +206,15 @@ setup_poktrolld() {
         exit 1
     fi
 
+    # TODO_TECHDEBT(@okdas): Conslidate this business logic with what we have
+    # in `user_guide/install.md` to avoid duplication and have consistency.
+
     # Construct the release URL with proper version format
     RELEASE_URL="https://github.com/pokt-network/poktroll/releases/download/v${POKTROLLD_VERSION}/poktroll_linux_${ARCH}.tar.gz"
     print_color $YELLOW "Attempting to download from: $RELEASE_URL"
 
     # Download and extract directly as the POKTROLL_USER
-    sudo -u "$POKTROLL_USER" bash << EOF
+    sudo -u "$POKTROLL_USER" bash <<EOF
     mkdir -p \$HOME/.poktroll/cosmovisor/genesis/bin
     mkdir -p \$HOME/.local/bin
     curl -L "$RELEASE_URL" | tar -zxvf - -C \$HOME/.poktroll/cosmovisor/genesis/bin
@@ -233,12 +238,12 @@ EOF
 # Function to configure Poktrolld
 configure_poktrolld() {
     print_color $YELLOW "Configuring Poktrolld..."
-    
+
     # Ask for confirmation to use the downloaded genesis file
     print_color $YELLOW "The script has downloaded the genesis file from:"
     print_color $YELLOW "$GENESIS_URL"
-    read -p "Are you OK with using this genesis file? (y/N): " confirm_genesis
-    if [[ ! $confirm_genesis =~ ^[Yy] ]]; then
+    read -p "Are you OK with using this genesis file? (Y/n): " confirm_genesis
+    if [[ $confirm_genesis =~ ^[Nn] ]]; then
         print_color $RED "Genesis file usage cancelled. Exiting."
         exit 1
     fi
@@ -252,13 +257,13 @@ configure_poktrolld() {
         EXTERNAL_IP=${custom_ip:-$EXTERNAL_IP}
     fi
 
-    sudo -u "$POKTROLL_USER" bash << EOF
+    sudo -u "$POKTROLL_USER" bash <<EOF
     source \$HOME/.profile
-    
+
     # Check poktrolld version
     POKTROLLD_VERSION=\$(poktrolld version)
     echo "Poktrolld version: \$POKTROLLD_VERSION"
-    
+
     poktrolld init "$NODE_MONIKER" --chain-id="$CHAIN_ID" --home=\$HOME/.poktroll
     cp "$GENESIS_FILE" \$HOME/.poktroll/config/genesis.json
     sed -i -e "s|^seeds *=.*|seeds = \"$SEEDS\"|" \$HOME/.poktroll/config/config.toml
@@ -275,7 +280,7 @@ EOF
 # Function to set up systemd service
 setup_systemd() {
     print_color $YELLOW "Setting up systemd service..."
-    cat > /etc/systemd/system/cosmovisor.service << EOF
+    cat >/etc/systemd/system/cosmovisor.service <<EOF
 [Unit]
 Description=Cosmovisor daemon for poktrolld
 After=network-online.target
@@ -306,15 +311,15 @@ EOF
 # Function to check if ufw is installed and open port 26656. We need to open the port to keep the network healthy.
 # By default, at least on Debian vultr, this port is not open to the internet.
 configure_ufw() {
-    if command -v ufw &> /dev/null; then
+    if command -v ufw &>/dev/null; then
         print_color $YELLOW "ufw is installed."
-        
+
         # Check if rule already exists
         if ufw status | grep -q "26656"; then
             print_color $YELLOW "Port 26656 is already allowed in ufw rules."
             return
         fi
-        
+
         read -p "Do you want to open port 26656 for p2p communication? (Y/n): " open_port
         if [[ $open_port =~ ^[Yy] ]]; then
             ufw allow 26656
