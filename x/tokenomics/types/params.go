@@ -19,7 +19,10 @@ var (
 	ParamDaoRewardAddress = "dao_reward_address"
 	// DefaultDaoRewardAddress is the localnet DAO account address as specified in the config.yml.
 	// It is only used in tests.
-	DefaultDaoRewardAddress = "pokt1eeeksh2tvkh7wzmfrljnhw4wrhs55lcuvmekkw"
+	DefaultDaoRewardAddress        = "pokt1eeeksh2tvkh7wzmfrljnhw4wrhs55lcuvmekkw"
+	KeyGlobalInflationPerClaim     = []byte("GlobalInflationPerClaim")
+	ParamGlobalInflationPerClaim   = "global_inflation_per_claim"
+	DefaultGlobalInflationPerClaim = float64(0.1)
 
 	_ paramtypes.ParamSet = (*Params)(nil)
 )
@@ -33,10 +36,12 @@ func ParamKeyTable() paramtypes.KeyTable {
 func NewParams(
 	mintAllocationPercentages MintAllocationPercentages,
 	daoRewardAddress string,
+	globalInflationPerClaim float64,
 ) Params {
 	return Params{
 		MintAllocationPercentages: mintAllocationPercentages,
 		DaoRewardAddress:          daoRewardAddress,
+		GlobalInflationPerClaim:   globalInflationPerClaim,
 	}
 }
 
@@ -45,12 +50,18 @@ func DefaultParams() Params {
 	return NewParams(
 		DefaultMintAllocationPercentages,
 		DefaultDaoRewardAddress,
+		DefaultGlobalInflationPerClaim,
 	)
 }
 
 // ParamSetPairs get the params.ParamSet
 func (p *Params) ParamSetPairs() paramtypes.ParamSetPairs {
 	return paramtypes.ParamSetPairs{
+		paramtypes.NewParamSetPair(
+			KeyMintAllocationPercentages,
+			&p.MintAllocationPercentages,
+			ValidateMintAllocationPercentages,
+		),
 		paramtypes.NewParamSetPair(
 			KeyMintAllocationPercentages,
 			&p.MintAllocationPercentages,
@@ -66,6 +77,10 @@ func (params *Params) ValidateBasic() error {
 	}
 
 	if err := ValidateDaoRewardAddress(params.DaoRewardAddress); err != nil {
+		return err
+	}
+
+	if err := ValidateGlobalInflationPerClaim(params.GlobalInflationPerClaim); err != nil {
 		return err
 	}
 
@@ -160,6 +175,20 @@ func ValidateDaoRewardAddress(daoRewardAddress any) error {
 
 	if _, err := sdk.AccAddressFromBech32(daoRewardAddressStr); err != nil {
 		return ErrTokenomicsParamInvalid.Wrapf("invalid dao reward address %q: %s", daoRewardAddressStr, err)
+	}
+
+	return nil
+}
+
+// ValidateGlobalInflationPerClaim validates the GlobalInflationPerClaim param.
+func ValidateGlobalInflationPerClaim(GlobalInflationPerClaimAny any) error {
+	GlobalInflationPerClaim, ok := GlobalInflationPerClaimAny.(float64)
+	if !ok {
+		return ErrTokenomicsParamInvalid.Wrapf("invalid parameter type: %T", GlobalInflationPerClaimAny)
+	}
+
+	if GlobalInflationPerClaim < 0 {
+		return ErrTokenomicsParamInvalid.Wrapf("GlobalInflationPerClaim must be greater than or equal to 0: %f", GlobalInflationPerClaim)
 	}
 
 	return nil

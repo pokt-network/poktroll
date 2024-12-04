@@ -211,3 +211,39 @@ func TestParams_ValidateDaoRewardAddress(t *testing.T) {
 		})
 	}
 }
+
+func TestParams_ValidateGlobalInflationPerClaim(t *testing.T) {
+	tests := []struct {
+		desc                    string
+		globalInflationPerClaim any
+		expectedErr             error
+	}{
+		{
+			desc:                    "invalid type",
+			globalInflationPerClaim: float32(0.111),
+			expectedErr:             tokenomicstypes.ErrTokenomicsParamInvalid.Wrap("invalid parameter type: float32"),
+		},
+		{
+			desc:                    "less than zero",
+			globalInflationPerClaim: float64(-0.1),
+			expectedErr: tokenomicstypes.ErrTokenomicsParamInvalid.Wrapf(
+				"GlobalInflationPerClaim must be greater than or equal to 0: %f", float64(-0.1),
+			),
+		},
+		{
+			desc:                    "valid GlobalInflationPerClaim",
+			globalInflationPerClaim: tokenomicstypes.DefaultGlobalInflationPerClaim,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.desc, func(t *testing.T) {
+			err := tokenomicstypes.ValidateGlobalInflationPerClaim(test.globalInflationPerClaim)
+			if test.expectedErr != nil {
+				require.ErrorContains(t, err, test.expectedErr.Error())
+			} else {
+				require.NoError(t, err)
+			}
+		})
+	}
+}

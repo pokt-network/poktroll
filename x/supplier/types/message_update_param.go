@@ -45,23 +45,28 @@ func (msg *MsgUpdateParam) ValidateBasic() error {
 	// Parameter name MUST be supported by this module.
 	switch msg.Name {
 	case ParamMinStake:
-		if err := msg.paramTypeIsCoin(); err != nil {
+		if err := genericParamTypeIs[*MsgUpdateParam_AsCoin](msg); err != nil {
 			return err
 		}
 		return ValidateMinStake(msg.GetAsCoin())
+	case ParamStakingFee:
+		if err := genericParamTypeIs[*MsgUpdateParam_AsCoin](msg); err != nil {
+			return err
+		}
+		return ValidateStakingFee(msg.GetAsCoin())
 	default:
 		return ErrSupplierParamInvalid.Wrapf("unsupported param %q", msg.Name)
 	}
 }
 
-// paramTypeIsCoin checks if the parameter type is a Coin, returning an error if not.
-func (msg *MsgUpdateParam) paramTypeIsCoin() error {
-	if _, ok := msg.AsType.(*MsgUpdateParam_AsCoin); !ok {
+// genericParamTypeIs checks if the parameter type is T, returning an error if not.
+func genericParamTypeIs[T any](msg *MsgUpdateParam) error {
+	if _, ok := msg.AsType.(T); !ok {
 		return ErrSupplierParamInvalid.Wrapf(
-			"invalid type for param %q expected %T, got %T",
-			msg.Name, &MsgUpdateParam_AsCoin{},
-			msg.AsType,
+			"invalid type for param %q; expected %T, got %T",
+			msg.Name, *new(T), msg.AsType,
 		)
 	}
+
 	return nil
 }

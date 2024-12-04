@@ -6,15 +6,15 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"github.com/pokt-network/poktroll/x/service/types"
+	servicetypes "github.com/pokt-network/poktroll/x/service/types"
 )
 
 // UpdateParam updates a single parameter in the service module and returns
 // all active parameters.
 func (k msgServer) UpdateParam(
 	ctx context.Context,
-	msg *types.MsgUpdateParam,
-) (*types.MsgUpdateParamResponse, error) {
+	msg *servicetypes.MsgUpdateParam,
+) (*servicetypes.MsgUpdateParamResponse, error) {
 	logger := k.logger.With(
 		"method", "UpdateParam",
 		"param_name", msg.Name,
@@ -27,7 +27,7 @@ func (k msgServer) UpdateParam(
 	if k.GetAuthority() != msg.Authority {
 		return nil, status.Error(
 			codes.InvalidArgument,
-			types.ErrServiceInvalidSigner.Wrapf(
+			servicetypes.ErrServiceInvalidSigner.Wrapf(
 				"invalid authority; expected %s, got %s",
 				k.GetAuthority(), msg.Authority,
 			).Error(),
@@ -37,13 +37,16 @@ func (k msgServer) UpdateParam(
 	params := k.GetParams(ctx)
 
 	switch msg.Name {
-	case types.ParamAddServiceFee:
+	case servicetypes.ParamAddServiceFee:
 		logger = logger.With("param_value", msg.GetAsCoin())
 		params.AddServiceFee = msg.GetAsCoin()
+	case servicetypes.ParamTargetNumRelays:
+		logger = logger.With("param_value", msg.GetAsUint64())
+		params.TargetNumRelays = msg.GetAsUint64()
 	default:
 		return nil, status.Error(
 			codes.InvalidArgument,
-			types.ErrServiceParamInvalid.Wrapf("unsupported param %q", msg.Name).Error(),
+			servicetypes.ErrServiceParamInvalid.Wrapf("unsupported param %q", msg.Name).Error(),
 		)
 	}
 
@@ -60,7 +63,7 @@ func (k msgServer) UpdateParam(
 
 	updatedParams := k.GetParams(ctx)
 
-	return &types.MsgUpdateParamResponse{
+	return &servicetypes.MsgUpdateParamResponse{
 		Params: &updatedParams,
 	}, nil
 }

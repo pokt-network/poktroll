@@ -3,7 +3,12 @@ title: Roadmap
 sidebar_position: 2
 ---
 
-## Roadmap
+## Blogs & Updates
+
+- TODO_BETA(@olshansk): Pocket Network Shannon Update - Beta TestNet #1 Announcement
+- [Pocket Network Shannon Update - Alpha TestNet #3 Announcement](https://medium.com/decentralized-infrastructure/pocket-network-shannon-update-alpha-testnet-3-eca539a9e111)
+
+## Alpha TestNet Roadmap
 
 See the Alpha TestNet #3 Announcement [here](https://medium.com/decentralized-infrastructure/pocket-network-shannon-update-alpha-testnet-3-eca539a9e111).
 
@@ -11,34 +16,49 @@ See the Alpha TestNet #3 Announcement [here](https://medium.com/decentralized-in
 timeline
     title Shannon Roadmap
     section Morse
-      Alpha TestNets <br> (Q3):
-          Alpha TestNet 1 <br> ------- <br> Shannon Foundation:
-          Alpha TestNet 2 <br> ------- <br> Shannon SDK & Relay Mining:
-          Alpha TestNet 3 <br> ------- <br> Utility & Governance:
-          Continue Development...:
-          Tokenomics & Token Logic Modules:
-          Morse Utility Parity
-        Beta TestNets (Q3/Q4):
-          Beta TestNet 1 <br> ------- <br> Kickoff Incentivized TestNet:
-          Beta TestNet 2 <br> ------- <br> Shannon Migration:
-                Start wPOKT migration:
-                Kickoff audits
+      Alpha TestNet(s) <br> (Q3/Q4):
+	      ✅ Shannon Foundation:
+	      ✅ Shannon SDK:
+	      ✅ Relay Mining:
+	      ✅ Morse Utility Parity:
+	      ✅ Token Logic Modules:
+	      ⚙️ Governance:
+	      ⚙️ PATH Integration:
+	      ⚙️ Observability:
+	      ⚙️ Scalability Testing
+	    Beta TestNet (Q4/Q1):
+	      ⚙️  E2E Permissionless Load Testing:
+	      ⚙️  POKTScan Explorer:
+	      ⚙️  TODOs & Optimizations:
+	      ⚙️  Streamline Upgrades:
+	      IBC Integrations:
+	      EVM Interoperability:
+	      Migration module R&D:
+				Start wPOKT migration:
+				Auditing & Hardening
     section Morse & Shannon
-            Shadow Migration <br> (Q1):
-                Trusted Validators Only:
+			Shadow Migration <br> (Q1):
+				Shadow MainNet Launch:
+                Turn OFF Shannon inflation:
+				Bugs, Hardening & TECHDEBT:
+				Governance Parameter Eval:
+				Mirror Morse MainNet Traffic:
+				Tooling & Documentation Improvements:
+				Genesis File Preparation
+			Public Migration <br> (Q1):
+                Public MainNet Launch:
+				Morse POKT "Airdrop":
+				Gateway Migration:
                 Supplier Migration:
-                Send Shadow Traffic from Morse MainNet:
-                Bugs & Hardening:
-                Missing Features
-            Public Migration <br> (Q1):
-                Gateway Migration:
-                Morse Claims Enabled:
-                Exchange Operations:
-                Bridge Migration
+				Bridge Migration:
+				Onboard Morse Validators:
+				CEX Support:
+                DEX Support
     section Shannon
-        Launch & Deprecate <br> (Q2):
-            Onboard Morse validators:
-            Deprecate Morse <br>:
-            New Incentives Enabled:
-            Kickoff Post-MainNet Features
+	    Launch & Deprecate <br> (Q2):
+            Turn ON Shannon inflation:
+		    Enable New Incntives:
+		    Deprecate Morse:
+            MainNet IBC and EVM Interoperability:
+		    Kickoff Post-MainNet R&D
 ```

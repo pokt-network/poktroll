@@ -90,7 +90,7 @@ func (k msgServer) StakeGateway(
 	if err != nil {
 		// TODO_TECHDEBT(#384): determine whether to continue using cosmos logger for debug level.
 		logger.Error(fmt.Sprintf("could not escrowed %v coins from %q to %q module account due to %v", coinsToEscrow, gatewayAddress, types.ModuleName, err))
-		return nil, err
+		return nil, status.Error(codes.Internal, err.Error())
 	}
 
 	// Update the Gateway in the store

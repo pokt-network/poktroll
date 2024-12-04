@@ -174,7 +174,7 @@ func TestMsgServer_UndelegateFromGateway_FailNotDelegated(t *testing.T) {
 
 	// Attempt to undelgate the application from the gateway
 	_, err = srv.UndelegateFromGateway(ctx, undelegateMsg)
-	require.ErrorIs(t, err, types.ErrAppNotDelegated)
+	require.ErrorContains(t, err, types.ErrAppNotDelegated.Error())
 	foundApp, isAppFound := k.GetApplication(ctx, appAddr)
 	require.True(t, isAppFound)
 	require.Equal(t, appAddr, foundApp.Address)
@@ -221,7 +221,7 @@ func TestMsgServer_UndelegateFromGateway_FailNotDelegated(t *testing.T) {
 
 	// Ensure the failed undelegation did not affect the application
 	_, err = srv.UndelegateFromGateway(ctx, undelegateMsg)
-	require.ErrorIs(t, err, types.ErrAppNotDelegated)
+	require.ErrorContains(t, err, apptypes.ErrAppNotDelegated.Error())
 
 	events = sdkCtx.EventManager().Events()
 	require.Equal(t, 0, len(events), "expected no events")

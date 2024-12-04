@@ -14,6 +14,8 @@ import (
 )
 
 func (k Keeper) AllGateways(ctx context.Context, req *types.QueryAllGatewaysRequest) (*types.QueryAllGatewaysResponse, error) {
+	logger := k.Logger().With("method", "AllGateways")
+
 	if req == nil {
 		return nil, status.Error(codes.InvalidArgument, "invalid request")
 	}
@@ -26,7 +28,8 @@ func (k Keeper) AllGateways(ctx context.Context, req *types.QueryAllGatewaysRequ
 	pageRes, err := query.Paginate(gatewayStore, req.Pagination, func(key []byte, value []byte) error {
 		var gateway types.Gateway
 		if err := k.cdc.Unmarshal(value, &gateway); err != nil {
-			return err
+			logger.Error(fmt.Sprintf("unmarshaling gateway with key (hex): %x: %+v", key, err))
+			return status.Error(codes.Internal, err.Error())
 		}
 
 		gateways = append(gateways, gateway)

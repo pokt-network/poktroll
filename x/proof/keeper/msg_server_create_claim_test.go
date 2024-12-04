@@ -174,8 +174,14 @@ func TestMsgServer_CreateClaim_Success(t *testing.T) {
 			claimCreatedEvents := testutilevents.FilterEvents[*prooftypes.EventClaimCreated](t, events)
 			require.Len(t, claimCreatedEvents, 1)
 
-			targetNumRelays := servicekeeper.TargetNumRelays
-			relayMiningDifficulty := servicekeeper.NewDefaultRelayMiningDifficulty(ctx, keepers.Logger(), service.Id, targetNumRelays)
+			targetNumRelays := keepers.ServiceKeeper.GetParams(ctx).TargetNumRelays
+			relayMiningDifficulty := servicekeeper.NewDefaultRelayMiningDifficulty(
+				ctx,
+				keepers.Logger(),
+				service.Id,
+				targetNumRelays,
+				targetNumRelays,
+			)
 
 			numEstimatedComputUnits, err := claim.GetNumEstimatedComputeUnits(relayMiningDifficulty)
 			require.NoError(t, err)

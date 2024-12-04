@@ -115,7 +115,7 @@ flowchart TB
 _Note: the system must be capable of exposing ports to the internet for
 peer-to-peer communication._
 
-### 0. Software & Tooling <!-- omit in toc -->
+### Software & Tooling <!-- omit in toc -->
 
 Ensure the following software is installed on your system:
 
@@ -152,9 +152,50 @@ Update `NODE_HOSTNAME` in `.env` to the IP address or hostname of your node. For
 sed -i -e s/NODE_HOSTNAME=/NODE_HOSTNAME=69.42.690.420/g .env
 ```
 
+### [Optional] Create a new user <!-- omit in toc -->
+
+:::note
+
+Make sure to replace `olshansky` with your username.
+
+:::
+
+You can generally do everything as the `root` user, but it's recommended to
+create a new user and give it sudo permissions.
+
+This is necessary, in particular, if you want to use [homebrew](https://brew.sh/) [to install `poktrolld`](../user_guide/install.md).
+
+```bash
+# Create a new user and give sudo permissions
+export USERNAME=olshansky
+sudo adduser $USERNAME
+sudo usermod -aG sudo $USERNAME
+```
+
+Then, switch to the new user:
+
+```bash
+su - olshansky
+```
+
+You can also avoid needing to pass in the password each time by running the following:
+
+```bash
+# Optionally avoid needing to provide a password
+sudo vi /etc/sudoers
+
+# Add the following line to the end of the file
+olshansky ALL=(ALL) NOPASSWD:ALL
+```
+
 ## A. Deploying a Full Node
 
 ### Launch the Node <!-- omit in toc -->
+
+:::warning
+The Alpha TestNet currently requires manual steps to sync the node to the latest block. Please find the affected block(s)
+in [this document](../../protocol/upgrades/upgrade_list.md), which leads to the manual upgrade instructions.
+:::
 
 _Note: You may need to replace `docker-compose` with `docker compose` if you are
 running a newer version of Docker where `docker-compose` is integrated into `docker` itself._
@@ -314,6 +355,8 @@ You can check that your address is funded correctly by running:
 ```bash
 poktrolld query bank balances $SUPPLIER_ADDR
 ```
+
+_Note: You must wait until `full-node` has synced up to the [current block #](https://shannon.testnet.pokt.network/poktroll/block) before this command and the stake command below (`poktrolld tx supplier stake-supplier...`) will work successfully. Watch your node's block height [here.](https://dev.poktroll.com/operate/quickstart/docker_compose_walkthrough#watch-the-height-)_
 
 If you're waiting to see if your transaction has been included in a block, you can run:
 
@@ -618,13 +661,13 @@ explains what the Gateway Server operation config is and how it can be used.
 appgate/config/gateway_config.yaml
 
 ```bash
-docker-compose up -d gateway-example
+docker-compose up -d gateway
 ```
 
 Check logs and confirm the node works as expected:
 
 ```bash
-docker-compose logs -f --tail 100 gateway-example
+docker-compose logs -f --tail 100 gateway
 ```
 
 ### Delegate your Application to the Gateway <!-- omit in toc -->

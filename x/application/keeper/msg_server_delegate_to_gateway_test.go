@@ -182,7 +182,7 @@ func TestMsgServer_DelegateToGateway_FailDuplicate(t *testing.T) {
 
 	// Attempt to delegate the application to the gateway again
 	_, err = srv.DelegateToGateway(ctx, delegateMsg2)
-	require.ErrorIs(t, err, apptypes.ErrAppAlreadyDelegated)
+	require.ErrorContains(t, err, apptypes.ErrAppAlreadyDelegated.Error())
 
 	events = sdkCtx.EventManager().Events()
 	require.Equal(t, 0, len(events))
@@ -221,7 +221,7 @@ func TestMsgServer_DelegateToGateway_FailGatewayNotStaked(t *testing.T) {
 
 	// Attempt to delegate the application to the unstaked gateway
 	_, err = srv.DelegateToGateway(ctx, delegateMsg)
-	require.ErrorIs(t, err, apptypes.ErrAppGatewayNotFound)
+	require.ErrorContains(t, err, apptypes.ErrAppGatewayNotFound.Error())
 	foundApp, isAppFound := k.GetApplication(ctx, appAddr)
 	require.True(t, isAppFound)
 	require.Equal(t, 0, len(foundApp.DelegateeGatewayAddresses))
@@ -312,7 +312,7 @@ func TestMsgServer_DelegateToGateway_FailMaxReached(t *testing.T) {
 
 	// Attempt to delegate the application when the max is already reached
 	_, err = srv.DelegateToGateway(ctx, delegateMsg)
-	require.ErrorIs(t, err, apptypes.ErrAppMaxDelegatedGateways)
+	require.ErrorContains(t, err, apptypes.ErrAppMaxDelegatedGateways.Error())
 
 	events = sdkCtx.EventManager().Events()
 	filteredEvents = testevents.FilterEvents[*apptypes.EventRedelegation](t, events)

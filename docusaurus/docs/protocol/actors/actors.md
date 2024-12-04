@@ -7,6 +7,7 @@ sidebar_position: 1
 
 - [Overview](#overview)
 - [On-Chain Actors](#on-chain-actors)
+  - [Risks \& Misbehavior](#risks--misbehavior)
 - [Off-Chain Actors](#off-chain-actors)
 
 ## Overview
@@ -54,6 +55,37 @@ _"Web3"_ part of Pocket.
 They can thought of as a `record`, a `registration` or a piece of `state` at a
 certain point in time. They have an `address`, an `account`, a `balance` and often
 also have a `stake`.
+
+### Risks & Misbehavior
+
+:::warning
+This is an open work in progress and an active area of research.
+:::
+
+```mermaid
+mindmap
+    (On-Chain Actors)
+        Gateway
+            Risks
+                Intentional overservicing
+                Off-chain only?
+            Misbehavior
+                Low volume exploit
+                On-chain, there are few/any? expectations of gateway actors; basically a registry to track gateways and application delegations
+                On-chain, we cannot robustly distinguish requests sent by gateways from those sent by applications acting sovereignly
+        Application
+            Risks
+                Insufficient funds to pay for services received
+                Intentional overservicing
+            Misbehavior
+                Low volume exploit
+        Supplier
+            Risks
+                Service/quality degredation
+            Misbehavior
+                No or low quality responses to valid requests for service
+                Invalid/missing proofs
+```
 
 ## Off-Chain Actors
 

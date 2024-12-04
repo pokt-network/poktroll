@@ -30,7 +30,7 @@ func (k msgServer) UnstakeGateway(
 	logger.Info(fmt.Sprintf("About to unstake gateway with msg: %v", msg))
 
 	if err := msg.ValidateBasic(); err != nil {
-		return nil, err
+		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
 	// Check if the gateway already exists or not
@@ -38,22 +38,28 @@ func (k msgServer) UnstakeGateway(
 	gateway, isGatewayFound := k.GetGateway(ctx, msg.Address)
 	if !isGatewayFound {
 		logger.Info(fmt.Sprintf("Gateway not found. Cannot unstake address %s", msg.Address))
-		return nil, types.ErrGatewayNotFound
+		return nil, status.Error(
+			codes.NotFound,
+			types.ErrGatewayNotFound.Wrapf(
+				"gateway with address %s", msg.Address,
+			).Error(),
+		)
 	}
 	logger.Info(fmt.Sprintf("Gateway found. Unstaking gateway for address %s", msg.Address))
 
 	// Retrieve the address of the gateway
 	gatewayAddress, err := sdk.AccAddressFromBech32(msg.Address)
 	if err != nil {
-		logger.Error(fmt.Sprintf("could not parse address %s", msg.Address))
-		return nil, err
+		logger.Info(fmt.Sprintf("could not parse address %s", msg.Address))
+		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
 	// Send the coins from the gateway pool back to the gateway
 	err = k.bankKeeper.SendCoinsFromModuleToAccount(ctx, types.ModuleName, gatewayAddress, []sdk.Coin{*gateway.Stake})
 	if err != nil {
-		logger.Error(fmt.Sprintf("could not send %v coins from %s module to %s account due to %v", gateway.Stake, gatewayAddress, types.ModuleName, err))
-		return nil, err
+		err = fmt.Errorf("could not send %v coins from %s module to %s account due to %v", gateway.Stake, gatewayAddress, types.ModuleName, err)
+		logger.Error(err.Error())
+		return nil, status.Error(codes.Internal, err.Error())
 	}
 
 	// Update the Gateway in the store
