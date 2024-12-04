@@ -392,14 +392,6 @@ Use the configuration to stake your supplier:
 poktrolld tx supplier stake-supplier --config=/poktroll/stake_configs/supplier_stake_config_example.yaml --from=supplier-1 --chain-id=poktroll --yes
 ```
 
-:::warning Upstaking to restake
-
-If you need to change any of the configurations in your staking config, you MUST
-increase the stake by at least one uPOKT. This is the `stake_amount` field
-in the `supplier_stake_config_example.yaml` file above.
-
-:::
-
 Verify your supplier is staked:
 
 ```bash
