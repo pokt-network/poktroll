@@ -1,10 +1,21 @@
 ---
-sidebar_position: 3
 title: Full Node Cheat Sheet
+sidebar_position: 3
 ---
 
-This cheat sheet provides quick instructions for installing a Full Node using an automated script.
+## Full Node Walkthrough (Using Systemd) <!-- omit in toc -->
 
+This cheat sheet provides quick copy-pasta like instructions for installing and
+running a Full Node using an automated scripts.
+
+:::tip
+
+If you're interesting in understanding everything, or having full control of every
+step, check out the [Full Node Walkthrough](../run_a_node/full_node_walkthrough.md).
+
+:::
+
+- [Introduction](#introduction)
 - [Pre-Requisites](#pre-requisites)
 - [Install a Full Node using Cosmovisor](#install-a-full-node-using-cosmovisor)
 - [What Gets Installed](#what-gets-installed)
@@ -16,6 +27,13 @@ This cheat sheet provides quick instructions for installing a Full Node using an
   - [Restart the node](#restart-the-node)
   - [Advanced Operations](#advanced-operations)
 - [Automatic Upgrades](#automatic-upgrades)
+
+### Introduction
+
+This guide will help you install a Full Node for Pocket Network,
+**using helper that abstract out some of the underlying complexity.**
+
+Running a Full Node is the first step toward becoming a Validator, Supplier, or Gateway.
 
 ### Pre-Requisites
 
@@ -56,11 +74,13 @@ When you run the installation script, the following components are set up:
 1. **System User**: A dedicated user (default: `poktroll`) is created to run the node securely.
 
 2. **Cosmovisor**: A binary manager that handles chain upgrades automatically:
+
    - Location: `/home/poktroll/bin/cosmovisor`
    - Purpose: Manages different versions of `poktrolld` and handles chain upgrades
    - Configuration: Set up to automatically download and switch to new binaries during upgrades
 
 3. **Poktrolld**: The core node software:
+
    - Location: `/home/poktroll/.poktroll/cosmovisor/genesis/bin/poktrolld`
    - Configuration: `/home/poktroll/.poktroll/config/`
    - Data: `/home/poktroll/.poktroll/data/`
@@ -107,21 +127,25 @@ sudo systemctl restart cosmovisor.service
 #### Advanced Operations
 
 Check the current version:
+
 ```bash
 sudo -u poktroll poktrolld version
 ```
 
 View the Cosmovisor directory structure:
+
 ```bash
 ls -la /home/poktroll/.poktroll/cosmovisor/
 ```
 
 Check if an upgrade is available:
+
 ```bash
 ls -la /home/poktroll/.poktroll/cosmovisor/upgrades/
 ```
 
 View node configuration:
+
 ```bash
 cat /home/poktroll/.poktroll/config/config.toml
 ```
@@ -137,7 +161,7 @@ Your node is configured to handle chain upgrades automatically through Cosmoviso
 
 No manual intervention is required for standard upgrades.
 
-<!-- 
+<!--
 ## Becoming a Validator
 
 TODO(@okdas, #754): Add instructions for becoming a validator.
