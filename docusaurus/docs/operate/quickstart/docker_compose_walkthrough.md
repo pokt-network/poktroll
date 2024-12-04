@@ -137,8 +137,8 @@ This is necessary, in particular, if you want to use [homebrew](https://brew.sh/
 ```bash
 # Create a new user and give sudo permissions
 export USERNAME=olshansky
-sudo adduser $USERNAME
-sudo usermod -aG sudo,docker red0ne
+adduser $USERNAME
+usermod -aG sudo,docker $USERNAME
 ```
 
 You can also avoid needing to pass in the password each time by running the following:
@@ -154,9 +154,8 @@ olshansky ALL=(ALL) NOPASSWD:ALL
 Then, switch to the new user:
 
 ```bash
-su - olshansky
+su - $USERNAME
 ```
-
 
 ### Clone the Repository <!-- omit in toc -->
 
