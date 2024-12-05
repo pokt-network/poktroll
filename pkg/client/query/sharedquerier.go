@@ -2,45 +2,61 @@ package query
 
 import (
 	"context"
+	"errors"
+	"time"
 
 	"cosmossdk.io/depinject"
 	"github.com/cosmos/gogoproto/grpc"
 
 	"github.com/pokt-network/poktroll/pkg/client"
+	"github.com/pokt-network/poktroll/pkg/client/query/cache"
+	"github.com/pokt-network/poktroll/pkg/polylog"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 var _ client.SharedQueryClient = (*sharedQuerier)(nil)
 
 // sharedQuerier is a wrapper around the sharedtypes.QueryClient that enables the
-// querying of on-chain shared information through a single exposed method
-// which returns an sharedtypes.Session struct
+// querying of on-chain shared information
 type sharedQuerier struct {
 	clientConn    grpc.ClientConn
 	sharedQuerier sharedtypes.QueryClient
 	blockQuerier  client.BlockQueryClient
+	// Add cache for params
+	paramsCache client.QueryCache[*sharedtypes.Params]
 }
 
 // NewSharedQuerier returns a new instance of a client.SharedQueryClient by
-// injecting the dependecies provided by the depinject.Config.
+// injecting the dependencies provided by the depinject.Config.
 //
 // Required dependencies:
 // - clientCtx (grpc.ClientConn)
 // - client.BlockQueryClient
 func NewSharedQuerier(deps depinject.Config) (client.SharedQueryClient, error) {
-	querier := &sharedQuerier{}
+	sq := &sharedQuerier{}
 
 	if err := depinject.Inject(
 		deps,
-		&querier.clientConn,
-		&querier.blockQuerier,
+		&sq.clientConn,
+		&sq.blockQuerier,
 	); err != nil {
 		return nil, err
 	}
 
-	querier.sharedQuerier = sharedtypes.NewQueryClient(querier.clientConn)
+	sq.paramsCache = cache.NewInMemoryCache[*sharedtypes.Params](
+		// TODO_IN_THIS_COMMIT: extract to constants.
+		cache.WithHistoricalMode(100),
+		// TODO_IN_THIS_COMMIT: reconcile the fact that MaxSize doesn't apply to historical mode...
+		//cache.WithMaxSize(1),
+		cache.WithEvictionPolicy(cache.FirstInFirstOut),
+		// TODO_IN_THIS_COMMIT: extract to a constant.
+		cache.WithTTL(time.Hour*3),
+	)
+	sq.sharedQuerier = sharedtypes.NewQueryClient(sq.clientConn)
 
-	return querier, nil
+	// TODO: Implement a goroutine that subscribes to params updates and updates the cache
+
+	return sq, nil
 }
 
 // GetParams queries & returns the shared module on-chain parameters.
@@ -49,11 +65,35 @@ func NewSharedQuerier(deps depinject.Config) (client.SharedQueryClient, error) {
 // Once `ModuleParamsClient` is implemented, use its replay observable's `#Last()` method
 // to get the most recently (asynchronously) observed (and cached) value.
 func (sq *sharedQuerier) GetParams(ctx context.Context) (*sharedtypes.Params, error) {
+	logger := polylog.Ctx(ctx).With(
+		"querier", "session",
+		"method", "GetSession",
+	)
+
+	// Check cache first
+	cached, err := sq.paramsCache.Get("params")
+	switch {
+	case err == nil:
+		logger.Debug().Msg("cache hit")
+		return cached, nil
+	case !errors.Is(err, cache.ErrCacheMiss):
+		return nil, err
+	}
+
+	logger.Debug().Msg("cache miss")
+
+	// If not in cache, query the chain
 	req := &sharedtypes.QueryParamsRequest{}
 	res, err := sq.sharedQuerier.Params(ctx, req)
 	if err != nil {
-		return nil, ErrQuerySessionParams.Wrapf("[%v]", err)
+		return nil, ErrQuerySessionParams.Wrapf("%s", err)
 	}
+
+	// Cache the result before returning
+	if err = sq.paramsCache.Set("params", &res.Params); err != nil {
+		return nil, err
+	}
+
 	return &res.Params, nil
 }
 
@@ -118,7 +158,11 @@ func (sq *sharedQuerier) GetSessionGracePeriodEndHeight(
 // to get the most recently (asynchronously) observed (and cached) value.
 // TODO_MAINNET(@bryanchriswhite, #543): We also don't really want to use the current value of the params.
 // Instead, we should be using the value that the params had for the session which includes queryHeight.
-func (sq *sharedQuerier) GetEarliestSupplierClaimCommitHeight(ctx context.Context, queryHeight int64, supplierOperatorAddr string) (int64, error) {
+func (sq *sharedQuerier) GetEarliestSupplierClaimCommitHeight(
+	ctx context.Context,
+	queryHeight int64,
+	supplierOperatorAddr string,
+) (int64, error) {
 	sharedParams, err := sq.GetParams(ctx)
 	if err != nil {
 		return 0, err
@@ -151,7 +195,11 @@ func (sq *sharedQuerier) GetEarliestSupplierClaimCommitHeight(ctx context.Contex
 // to get the most recently (asynchronously) observed (and cached) value.
 // TODO_MAINNET(@bryanchriswhite, #543): We also don't really want to use the current value of the params.
 // Instead, we should be using the value that the params had for the session which includes queryHeight.
-func (sq *sharedQuerier) GetEarliestSupplierProofCommitHeight(ctx context.Context, queryHeight int64, supplierOperatorAddr string) (int64, error) {
+func (sq *sharedQuerier) GetEarliestSupplierProofCommitHeight(
+	ctx context.Context,
+	queryHeight int64,
+	supplierOperatorAddr string,
+) (int64, error) {
 	sharedParams, err := sq.GetParams(ctx)
 	if err != nil {
 		return 0, err

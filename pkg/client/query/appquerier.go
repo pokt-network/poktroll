@@ -4,7 +4,9 @@ import (
 	"context"
 
 	"cosmossdk.io/depinject"
-	grpc "github.com/cosmos/gogoproto/grpc"
+	cosmostypes "github.com/cosmos/cosmos-sdk/types"
+	accounttypes "github.com/cosmos/cosmos-sdk/x/auth/types"
+	"github.com/cosmos/gogoproto/grpc"
 
 	"github.com/pokt-network/poktroll/pkg/client"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
@@ -45,6 +47,12 @@ func (aq *appQuerier) GetApplication(
 	ctx context.Context,
 	appAddress string,
 ) (apptypes.Application, error) {
+	defer client.AllQueriesTotalCounter.With(
+		"method", "account",
+		"client_type", "account",
+		"msg_type", cosmostypes.MsgTypeURL(new(accounttypes.QueryAccountRequest)),
+	).Add(1)
+
 	req := apptypes.QueryGetApplicationRequest{Address: appAddress}
 	res, err := aq.applicationQuerier.Application(ctx, &req)
 	if err != nil {
