@@ -34,6 +34,7 @@ few commands to get started, check out the [Full Node Cheat Sheet](../quickstart
   - [How do I start my node?](#how-do-i-start-my-node)
   - [How do I restart my node?](#how-do-i-restart-my-node)
   - [How do I query the latest block (i.e. check the node height)?](#how-do-i-query-the-latest-block-ie-check-the-node-height)
+  - [How do I access my CometBFT endpoint externally?](#how-do-i-access-my-cometbft-endpoint-externally)
   - [How do I check the node version?](#how-do-i-check-the-node-version)
   - [How do I check the Cosmosvisor directory structure?](#how-do-i-check-the-cosmosvisor-directory-structure)
   - [How do I check if an upgrade is available?](#how-do-i-check-if-an-upgrade-is-available)
@@ -240,7 +241,7 @@ This may involve one or more of the following:
 5. **Verify your port** is accessible using a tool like netcat or telnet from another machine:
 
    ```bash
-   nc -vz your_server_ip 26656
+   nc -vz {EXTERNAL_IP} 26656
    ```
 
 ### FAQ & Troubleshooting
@@ -248,7 +249,7 @@ This may involve one or more of the following:
 #### How do I check the node is accessible from another machine?
 
 ```bash
-nc -vz your_server_ip 26656
+nc -vz {EXTERNAL_IP} 26656
 ```
 
 #### How do I view the node status?
@@ -294,6 +295,39 @@ Or, using curl:
 ```bash
 curl -X GET http://localhost:26657/block | jq
 ```
+
+#### How do I access my CometBFT endpoint externally?
+
+The default CometBFT port is at `26657`.
+
+To make it accessible externally, you'll need to port all the instructions from
+port `26656` on this page to port `26657`. Specifically:
+
+```bash
+# Update your firewall
+sudo ufw allow 26657/tcp
+
+# Update your iptables
+sudo iptables -A INPUT -p tcp --dport 26657 -j ACCEPT
+
+# Update your Cosmovisor config
+sed -i 's|laddr = "tcp://127.0.0.1:26657"|laddr = "tcp://0.0.0.0:26657"|' $HOME/.poktroll/config/config.toml
+sed -i 's|cors_allowed_origins = \[\]|cors_allowed_origins = ["*"]|' $HOME/.poktroll/config/config.toml
+
+# Restart the service
+sudo systemctl restart cosmovisor.service
+
+# Test the connection
+nc -vz $VULTR_GROVE_TEST_IP 26657
+```
+
+Learn more [here](https://docs.cometbft.com/main/rpc/).
+
+:::warning
+
+Be careful about making this public as adversarial actors may try to DDoS your node.
+
+:::
 
 #### How do I check the node version?
 
