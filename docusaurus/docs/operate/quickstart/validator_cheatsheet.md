@@ -8,7 +8,7 @@ sidebar_position: 4
 <!-- TODO_MAINNET(@okdas, #754): Update this page with all the details. -->
 
 This cheat sheet provides quick copy-pasta like instructions for installing and
-running a Validator using an automated scripts.
+running a Validator using an automated script.
 
 :::tip
 
