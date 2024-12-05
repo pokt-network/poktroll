@@ -260,10 +260,6 @@ helm_resource(
     image_keys=[("image.repository", "image.tag")],
 )
 
-# TODO_IN_THIS_PR:
-# - CI/CD of main image in buildwithgrove/path is outdated and not reading the config file.
-
-
 # Provision RelayMiners
 actor_number = 0
 for x in range(localnet_config["relayminers"]["count"]):
@@ -310,7 +306,6 @@ if localnet_config["path_local_repo"]["enabled"]:
     docker_build("path-local", path_local_repo)
 
 # TODO_IN_THIS_PR: Find and replace all `appgateserver` in /localnet` and fix them (see the .json files)
-
 
 # Provision PATH Gateway(s)
 actor_number = 0
