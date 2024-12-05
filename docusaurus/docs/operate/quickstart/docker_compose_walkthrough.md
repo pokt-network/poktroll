@@ -313,7 +313,7 @@ A RelayMiner is an operator / service that provides services to offer on the Poc
   the team or using the faucet. You are going to need a BIPmnemonic phrase for
   an existing funded account before continuing below.
 
-### Create, configure and fund a Supplier account <!-- omit in toc -->
+### Create and fund a Supplier account <!-- omit in toc -->
 
 On the host where you started the full node container, run the commands below to
 create your account.
@@ -384,9 +384,6 @@ Update the provided example supplier stake config:
 
 ```bash
 sed -i -e s/YOUR_NODE_IP_OR_HOST/$NODE_HOSTNAME/g ./stake_configs/supplier_stake_config_example.yaml
-```
-
-```bash
 sed -i -e s/YOUR_OWNER_ADDRESS/$SUPPLIER_ADDR/g ./stake_configs/supplier_stake_config_example.yaml
 ```
 
@@ -432,7 +429,7 @@ Update the provided example RelayMiner operation config:
 sudo sed -i -e s/YOUR_NODE_IP_OR_HOST/$NODE_HOSTNAME/g relayminer/config/relayminer_config.yaml
 ```
 
-Update the `backend_url` in `relayminer_config.yaml` with a valid `0021` (i.e. ETH MainNet)
+Update the `backend_url` in `relayminer_config.yaml` with a valid `F00C` (i.e. ETH MainNet)
 service URL. We suggest using your own node, but you can get one from Grove for testing purposes.
 
 ```bash
@@ -470,7 +467,7 @@ Copy the private key to the `APPLICATION_PRIV_KEY_HEX` variable in your `.env` f
 which can be obtained by running:
 
 ```bash
-poktrolld keys export application-1 --unsafe --unarmored-hex
+export_priv_key_hex application-1
 ```
 
 Make sure to:
@@ -527,7 +524,7 @@ Verify your application is staked
 poktrolld query application show-application $APPLICATION_ADDR
 ```
 
-### Create, configure and fund your Gateway <!-- omit in toc -->
+### Create and fund your Gateway <!-- omit in toc -->
 
 On the host where you started the full node container, run the commands below to
 create your account.
@@ -544,7 +541,7 @@ Copy the private key to the `GATEWAY_PRIV_KEY_HEX` variable in your `.env` file
 which can be obtained by running:
 
 ```bash
-poktrolld keys export gateway-1 --unsafe --unarmored-hex
+export_priv_key_hex gateway-1
 ```
 
 Make sure to:
@@ -628,13 +625,7 @@ Update the provided example PATH Gateway operation config:
 
 ```bash
 sudo sed -i -e s/YOUR_PATH_GATEWAY_ADDRESS/$GATEWAY_ADDR/g gateway/config/gateway_config.yaml
-```
-
-```bash
 sudo sed -i -e s/YOUR_PATH_GATEWAY_PRIVATE_KEY/$GATEWAY_PRIV_KEY_HEX/g gateway/config/gateway_config.yaml
-```
-
-```bash
 sudo sed -i -e s/YOUR_OWNED_APP_PRIVATE_KEY/$APPLICATION_PRIV_KEY_HEX/g gateway/config/gateway_config.yaml
 ```
 
@@ -650,12 +641,6 @@ Check logs and confirm the node works as expected:
 docker compose logs -f --tail 100 gateway
 ```
 
-### Delegate your Application to the Gateway <!-- omit in toc -->
-
-```bash
-poktrolld tx application delegate-to-gateway $GATEWAY_ADDR --from=application-1 --chain-id=poktroll --chain-id=poktroll --yes
-```
-
 ### Send a relay <!-- omit in toc -->
 
 You can send requests to the newly deployed `PATH Gateway`. If there are any
@@ -663,10 +648,15 @@ Suppliers on the network that can provide the service, the request will be
 routed to them.
 
 The endpoint you want to send request to is: `http://service_alias.your_node:path_gateway_port/v1`.
-For example, this is how the request can be routed to `ethereum` represented by the alias `eth-mainnet`:
+For example, this is how the request can be routed to `ethereum` represented by the alias `eth`:
+
+:::warning
+`PATH` uses subdomains to route requests to the correct service, which means
+you need to have a domain name that resolves to the IP address of your node.
+:::
 
 ```bash
-curl http://eth-mainnet.localhost:3000/v1 \
+curl http://eth.localhost:3000/v1 \
   -X POST \
   -H "Content-Type: application/json" \
   --data '{"method":"eth_blockNumber","params":[],"id":1,"jsonrpc":"2.0"}'
@@ -684,7 +674,7 @@ To ensure you get a response, you may need to run the request a few times:
 
 ```bash
 for i in {1..10}; do
-  curl http://eth-mainnet.$NODE_HOSTNAME:3000/v1 \
+  curl http://eth.localhost:3000/v1 \
     -X POST \
     -H "Content-Type: application/json" \
     --data '{"method":"eth_blockNumber","params":[],"id":1,"jsonrpc":"2.0"}' \

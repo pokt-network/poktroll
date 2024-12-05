@@ -16,7 +16,8 @@ import ReactPlayer from "react-player";
 - [Create new addresses for all your accounts and update .env](#create-new-addresses-for-all-your-accounts-and-update-env)
 - [Fund your accounts](#fund-your-accounts)
 - [Stake a Supplier \& Deploy a RelayMiner](#stake-a-supplier--deploy-a-relayminer)
-- [Stake an Application \& Deploy a PATH Gateway](#stake-an-application--deploy-a-path-gateway)
+- [Stake an Application and Gateway](#stake-an-application-and-gateway)
+- [Deploy a PATH Gateway](#deploy-a-path-gateway)
 - [Send a Relay](#send-a-relay)
   - [Ensure you get a response](#ensure-you-get-a-response)
 - [Managing a re-genesis](#managing-a-re-genesis)
@@ -89,8 +90,24 @@ You can optionally create a new user and give it sudo permissions instead of usi
 
 ```bash
 export USERNAME=olshansky
-sudo adduser $USERNAME
-sudo usermod -aG sudo $USERNAME
+adduser $USERNAME
+usermod -aG sudo,docker $USERNAME
+```
+
+You can also avoid needing to pass in the password each time by running the following:
+
+```bash
+# Optionally avoid needing to provide a password
+vi /etc/sudoers
+
+# Add the following line to the end of the file
+olshansky ALL=(ALL) NOPASSWD:ALL
+```
+
+Then, switch to the new user:
+
+```bash
+su - $USERNAME
 ```
 
 ## Retrieve the source code
@@ -128,6 +145,12 @@ echo "source $(pwd)/.env" >> ~/.bashrc
 source ~/.bashrc
 ```
 
+Setup tx parameters:
+
+```bash
+export TX_PARAM_FLAGS="--gas=auto --gas-prices=1upokt --gas-adjustment=1.5 --chain-id=pocket-beta --yes"
+```
+
 ## Start up the full node
 
 :::warning
@@ -157,24 +180,27 @@ address=$(awk '/address:/{print $3; exit}' /tmp/supplier | tr -d '\r'); sed -i "
 Application:
 
 ```bash
-poktrolld keys add application > /tmp/application
+poktrolld keys add application
 
-mnemonic=$(tail -n 1 /tmp/application | tr -d '\r'); sed -i "s|APPLICATION_MNEMONIC=\".*\"|APPLICATION_MNEMONIC=\"$mnemonic\"|" .env
+privKey=$(export_priv_key_hex application); sed -i "s|APPLICATION_PRIV_KEY_HEX=\".*\"|APPLICATION_PRIV_KEY_HEX=\"$privKey\"|" .env
 
-address=$(awk '/address:/{print $3; exit}' /tmp/application | tr -d '\r'); sed -i "s|APPLICATION_ADDR=\".*\"|APPLICATION_ADDR=\"$address\"|g" .env
+address=$(poktrolld keys show application -a | tr -d '\r'); sed -i "s|APPLICATION_ADDR=\".*\"|APPLICATION_ADDR=\"$address\"|g" .env
 ```
 
 Gateway:
 
 ```bash
-poktrolld keys add gateway > /tmp/gateway
+poktrolld keys add gateway
 
-mnemonic=$(tail -n 1 /tmp/gateway | tr -d '\r'); sed -i "s|GATEWAY_MNEMONIC=\".*\"|GATEWAY_MNEMONIC=\"$mnemonic\"|" .env
+privKey=$(export_priv_key_hex gateway); sed -i "s|GATEWAY_PRIV_KEY_HEX=\".*\"|GATEWAY_PRIV_KEY_HEX=\"$privKey\"|" .env
 
-address=$(awk '/address:/{print $3; exit}' /tmp/gateway | tr -d '\r'); sed -i "s|GATEWAY_ADDR=\".*\"|GATEWAY_ADDR=\"$address\"|g" .env
+address=$(poktrolld keys show gateway -a | tr -d '\r'); sed -i "s|GATEWAY_ADDR=\".*\"|GATEWAY_ADDR=\"$address\"|g" .env
 ```
 
-FINALLY, `source .env` to update the environment variables.
+FINALLY, update the environment variables:
+```bash
+source .env
+```
 
 ## Fund your accounts
 
@@ -203,14 +229,14 @@ Stake the supplier:
 ```bash
 sed -i -e s/YOUR_NODE_IP_OR_HOST/$NODE_HOSTNAME/g ./stake_configs/supplier_stake_config_example.yaml
 sed -i -e s/YOUR_OWNER_ADDRESS/$SUPPLIER_ADDR/g ./stake_configs/supplier_stake_config_example.yaml
-poktrolld tx supplier stake-supplier --config=/poktroll/stake_configs/supplier_stake_config_example.yaml --from=supplier --chain-id=poktroll --yes
+poktrolld tx supplier stake-supplier --config=/poktroll/stake_configs/supplier_stake_config_example.yaml --from=supplier $TX_PARAM_FLAGS
 
 # OPTIONALLY check the supplier's status
 poktrolld query supplier show-supplier $SUPPLIER_ADDR
 
 # Start the relay miner (please update the grove app ID if you can)
-sed -i -e s/YOUR_NODE_IP_OR_HOST/$NODE_HOSTNAME/g relayminer/config/relayminer_config.yaml
-sed -i -e "s|backend_url: \".*\"|backend_url: \"https://eth-mainnet.rpc.grove.city/v1/c7f14c60\"|g" relayminer/config/relayminer_config.yaml
+sudo sed -i -e s/YOUR_NODE_IP_OR_HOST/$NODE_HOSTNAME/g relayminer/config/relayminer_config.yaml
+sudo sed -i -e "s|backend_url: \".*\"|backend_url: \"https://eth-mainnet.rpc.grove.city/v1/c7f14c60\"|g" relayminer/config/relayminer_config.yaml
 ```
 
 Start the supplier
@@ -221,29 +247,57 @@ docker compose up -d relayminer
 docker logs -f --tail 100 relayminer
 ```
 
-## Stake an Application & Deploy a PATH Gateway
+## Stake an Application and Gateway
 
 Stake the application:
 
 ```bash
-poktrolld tx application stake-application --config=/poktroll/stake_configs/application_stake_config_example.yaml --from=application --chain-id=poktroll --yes
+poktrolld tx application stake-application --config=/poktroll/stake_configs/application_stake_config_example.yaml --from=application $TX_PARAM_FLAGS
 
 # OPTIONALLY check the application's status
 poktrolld query application show-application $APPLICATION_ADDR
 ```
 
+Stake the gateway:
+
+```bash
+poktrolld tx gateway stake-gateway --config=/poktroll/stake_configs/gateway_stake_config_example.yaml --from=gateway $TX_PARAM_FLAGS
+
+# OPTIONALLY check the application's status
+poktrolld query gateway show-gateway $GATEWAY_ADDR
+```
+
+Delegate the application to the gateway:
+
+```bash
+poktrolld tx application delegate-to-gateway $GATEWAY_ADDR --from=application $TX_PARAM_FLAGS
+
+# OPTIONALLY check the application's delegation status
+poktrolld query application show-application $APPLICATION_ADDR
+```
+
+## Deploy a PATH Gateway
+
+Configure the PATH gateway:
+
+```bash
+sudo sed -i -e s/YOUR_PATH_GATEWAY_ADDRESS/$GATEWAY_ADDR/g gateway/config/gateway_config.yaml
+sudo sed -i -e s/YOUR_PATH_GATEWAY_PRIVATE_KEY/$GATEWAY_PRIV_KEY_HEX/g gateway/config/gateway_config.yaml
+sudo sed -i -e s/YOUR_OWNED_APP_PRIVATE_KEY/$APPLICATION_PRIV_KEY_HEX/g gateway/config/gateway_config.yaml
+```
+
 Start the PATH gateway:
 
 ```bash
-docker compose up -d pathgw
+docker compose up -d gateway
 # OPTIONALLY view the logs
-docker logs -f --tail 100 pathgw
+docker logs -f --tail 100 gateway
 ```
 
 ## Send a Relay
 
 ```bash
-curl http://eth-mainnet.$NODE_HOSTNAME:3000/v1 \
+curl http://eth.localhost:3000/v1 \
   -X POST \
   -H "Content-Type: application/json" \
   --data '{"method":"eth_blockNumber","params":[],"id":1,"jsonrpc":"2.0"}'
@@ -255,7 +309,7 @@ To ensure you get a response, run the request a few times.
 
 ```bash
 for i in {1..10}; do
-  curl http://$NODE_HOSTNAME:85/0021 \
+  curl http://eth.localhost:3000/v1 \
     -X POST \
     -H "Content-Type: application/json" \
     --data '{"method":"eth_blockNumber","params":[],"id":1,"jsonrpc":"2.0"}' \
@@ -305,14 +359,14 @@ echo $SUPPLIER_ADDR
 ```bash
 # Import the faucet using the mnemonic
 poktrolld keys add --recover -i faucet
-poktrolld tx bank multi-send faucet $APPLICATION_ADDR $GATEWAY_ADDR $SUPPLIER_ADDR 100000upokt --chain-id=poktroll --yes
+poktrolld tx bank multi-send faucet $APPLICATION_ADDR $GATEWAY_ADDR $SUPPLIER_ADDR 100000upokt $TX_PARAM_FLAGS
 ```
 
 ### Start the RelayMiner
 
 ```bash
 # Stake
-poktrolld tx supplier stake-supplier --config=/poktroll/stake_configs/supplier_stake_config_example.yaml --from=supplier --chain-id=poktroll --yes
+poktrolld tx supplier stake-supplier --config=/poktroll/stake_configs/supplier_stake_config_example.yaml --from=supplier $TX_PARAM_FLAGS
 # Check
 poktrolld query supplier show-supplier $SUPPLIER_ADDR
 # Start
@@ -325,12 +379,11 @@ docker logs -f --tail 100 relayminer
 
 ```bash
 # Stake
-poktrolld tx application stake-application --config=/poktroll/stake_configs/application_stake_config_example.yaml --from=application --chain-id=poktroll --yes
+poktrolld tx application stake-application --config=/poktroll/stake_configs/application_stake_config_example.yaml --from=application $TX_PARAM_FLAGS
 # Check
 poktrolld query application show-application $APPLICATION_ADDR
 # Start
-docker compose up -d pathgw
+docker compose up -d gateway
 # View
-docker logs -f --tail 100 pathgw
+docker logs -f --tail 100 gateway
 ```
-<!-- TODO_BETA: Update poktroll-docker-compose-example to use PATH Gateway -->
