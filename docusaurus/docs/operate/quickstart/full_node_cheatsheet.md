@@ -6,7 +6,7 @@ sidebar_position: 3
 ## Full Node Cheat Sheet Using Systemd & Cosmovisor <!-- omit in toc -->
 
 This cheat sheet provides quick copy-pasta like instructions for installing and
-running a Full Node using an automated scripts.
+running a Full Node using an automated script.
 
 :::tip
 
