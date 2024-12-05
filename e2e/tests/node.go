@@ -27,13 +27,6 @@ var (
 	defaultPathURL = os.Getenv("PATH_URL")
 	// defaultDebugOutput provides verbose output on manipulations with binaries (cli command, stdout, stderr)
 	defaultDebugOutput = os.Getenv("E2E_DEBUG_OUTPUT")
-	// TODO_IN_THI_PR: Understand why this is not used.
-	// serviceIdToAliasMap maps service IDs to their respective aliases
-	// This is useful for gateway operators that map static on-chain names
-	// to semantic, easier to understand, off-chain names.
-	serviceIdToAliasMap = map[string]string{
-		"anvil": "anvil",
-	}
 )
 
 const ()

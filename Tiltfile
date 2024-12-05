@@ -305,7 +305,8 @@ for x in range(localnet_config["relayminers"]["count"]):
 if localnet_config["path_local_repo"]["enabled"]:
     docker_build("path-local", path_local_repo)
 
-# TODO_IN_THIS_PR: Find and replace all `appgateserver` in /localnet` and fix them (see the .json files)
+# TODO_TECHDEBT(path#72): Find and replace all `appgateserver` in /localnet/grafana-dashboards`
+# with PATH metrics (see the .json files)
 
 # Provision PATH Gateway(s)
 actor_number = 0
@@ -318,15 +319,14 @@ for x in range(localnet_config["path_gateways"]["count"]):
         "--set=metrics.serviceMonitor.enabled=" + str(localnet_config["observability"]["enabled"]),
         "--set=path.mountConfigMaps[0].name=path-config-" + str(actor_number),
         "--set=path.mountConfigMaps[0].mountPath=/app/config/",
-        "--set=global.imagePullPolicy=IfNotPresent"
     ]
 
     if localnet_config["path_local_repo"]["enabled"]:
         path_image_deps = ["path-local"]
         path_image_keys = [("image.repository", "image.tag")]
         path_deps=["path-local"]
+        resource_flags.append("--set=global.imagePullPolicy=Never")
     else:
-        # TODO_IN_THIS_PR: Either document that `main` doesn't work or make it work.
         path_image_deps = []
         path_image_keys = []
         path_deps=[]
