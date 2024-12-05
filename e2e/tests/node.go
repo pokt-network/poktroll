@@ -23,10 +23,11 @@ var (
 	defaultRPCHost = "127.0.0.1"
 	// defaultHome is the default home directory for pocketd
 	defaultHome = os.Getenv("POKTROLLD_HOME")
-	// defaultAppGateServerURL used by curl commands to send relay requests
-	defaultAppGateServerURL = os.Getenv("APPGATE_SERVER")
+	// defaultPathURL used by curl commands to send relay requests
+	defaultPathURL = os.Getenv("PATH_URL")
 	// defaultDebugOutput provides verbose output on manipulations with binaries (cli command, stdout, stderr)
 	defaultDebugOutput = os.Getenv("E2E_DEBUG_OUTPUT")
+	// TODO_IN_THI_PR: Understand why this is not used.
 	// serviceIdToAliasMap maps service IDs to their respective aliases
 	// This is useful for gateway operators that map static on-chain names
 	// to semantic, easier to understand, off-chain names.
@@ -109,7 +110,7 @@ func (p *pocketdBin) RunCommandOnHostWithRetry(rpcUrl string, numRetries uint8, 
 // RunCurl runs a curl command on the local machine
 func (p *pocketdBin) RunCurl(rpcUrl, service, method, path, appAddr, data string, args ...string) (*commandResult, error) {
 	if rpcUrl == "" {
-		rpcUrl = defaultAppGateServerURL
+		rpcUrl = defaultPathURL
 	}
 	return p.runCurlCmd(rpcUrl, service, method, path, appAddr, data, args...)
 }
