@@ -162,8 +162,8 @@ This is necessary, in particular, if you want to use [homebrew](https://brew.sh/
 You can create a new user (e.g. poktroll), provide sudo permissions and switch users like so:
 
 ```bash
-sudo adduser poktroll
-sudo usermod -aG sudo poktroll
+adduser poktroll
+sudo usermod -aG docker,sudo poktroll
 su - poktroll
 ```
 
