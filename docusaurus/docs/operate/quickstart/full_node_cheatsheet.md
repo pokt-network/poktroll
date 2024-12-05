@@ -86,7 +86,7 @@ for examples of useful commands, common debugging instructions and other advance
 This section is optional and for informational purposes only.
 :::
 
-If you're interest in understand what just got installed, keep reading...
+If you're interested in understanding what just got installed, keep reading...
 
 1. **System User**: A dedicated user (default: `poktroll`) is created to run the node securely.
 
