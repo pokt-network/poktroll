@@ -145,6 +145,8 @@ install_dependencies() {
     print_color $GREEN "Dependencies installed successfully."
 }
 
+# TODO_TECHDEBT(@okdas): Use `.poktrollrc` across the board to create a clean
+# separation of concerns for pocket specific configurations and debugging.
 # Function to set up environment variables
 setup_env_vars() {
     print_color $YELLOW "Setting up environment variables..."
@@ -277,6 +279,8 @@ EOF
     fi
 }
 
+# TODO_IMPROVE(@okdas): Use the fields from `setup_env_vars` to maintain a single source of truth
+# for the values. Specifically, everything starting with `Environment=` is duplicated in the env var helper.
 # Function to set up systemd service
 setup_systemd() {
     print_color $YELLOW "Setting up systemd service..."
