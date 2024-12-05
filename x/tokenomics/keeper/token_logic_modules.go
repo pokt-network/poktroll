@@ -150,7 +150,14 @@ func (k Keeper) ProcessTokenLogicModules(
 	// Retrieving the relay mining difficulty for service.
 	relayMiningDifficulty, found := k.serviceKeeper.GetRelayMiningDifficulty(ctx, service.Id)
 	if !found {
-		relayMiningDifficulty = servicekeeper.NewDefaultRelayMiningDifficulty(ctx, logger, service.Id, servicekeeper.TargetNumRelays)
+		targetNumRelays := k.serviceKeeper.GetParams(ctx).TargetNumRelays
+		relayMiningDifficulty = servicekeeper.NewDefaultRelayMiningDifficulty(
+			ctx,
+			logger,
+			service.Id,
+			targetNumRelays,
+			targetNumRelays,
+		)
 	}
 	sharedParams := k.sharedKeeper.GetParams(ctx)
 
@@ -286,7 +293,8 @@ func (k Keeper) ensureClaimAmountLimits(
 
 	// The application should have enough stake to cover for the global mint reimbursement.
 	// This amount is deducted from the maximum claimable amount.
-	globalInflationCoin, _ := tlm.CalculateGlobalPerClaimMintInflationFromSettlementAmount(claimSettlementCoin)
+	globalInflationPerClaim := k.GetParams(ctx).GlobalInflationPerClaim
+	globalInflationCoin, _ := tlm.CalculateGlobalPerClaimMintInflationFromSettlementAmount(claimSettlementCoin, globalInflationPerClaim)
 	globalInflationAmt := globalInflationCoin.Amount
 	minRequiredAppStakeAmt := claimSettlementCoin.Amount.Add(globalInflationAmt)
 	totalClaimedCoin := sdk.NewCoin(volatile.DenomuPOKT, minRequiredAppStakeAmt)
@@ -305,7 +313,7 @@ func (k Keeper) ensureClaimAmountLimits(
 	maxClaimableAmt := appStake.Amount.
 		Quo(math.NewInt(numSuppliersPerSession)).
 		Quo(math.NewInt(numPendingSessions))
-	maxClaimSettlementAmt := supplierAppStakeToMaxSettlementAmount(maxClaimableAmt)
+	maxClaimSettlementAmt := supplierAppStakeToMaxSettlementAmount(maxClaimableAmt, globalInflationPerClaim)
 
 	// Check if the claimable amount is capped by the max claimable amount.
 	// As per the Relay Mining paper, the Supplier claim MUST NOT exceed the application's
@@ -316,7 +324,7 @@ func (k Keeper) ensureClaimAmountLimits(
 			supplier.GetOperatorAddress(), application.GetAddress(), maxClaimableAmt, claimSettlementCoin.Amount))
 
 		minRequiredAppStakeAmt = maxClaimableAmt
-		maxClaimSettlementAmt = supplierAppStakeToMaxSettlementAmount(minRequiredAppStakeAmt)
+		maxClaimSettlementAmt = supplierAppStakeToMaxSettlementAmount(minRequiredAppStakeAmt, globalInflationPerClaim)
 	}
 
 	// Nominal case: The claimable amount is within the limits set by Relay Mining.
@@ -354,9 +362,9 @@ func (k Keeper) ensureClaimAmountLimits(
 // stake = maxSettlementAmt + (maxSettlementAmt * GlobalInflationPerClaim)
 // stake = maxSettlementAmt * (1 + GlobalInflationPerClaim)
 // maxSettlementAmt = stake / (1 + GlobalInflationPerClaim)
-func supplierAppStakeToMaxSettlementAmount(stakeAmount math.Int) math.Int {
+func supplierAppStakeToMaxSettlementAmount(stakeAmount math.Int, globalInflationPerClaim float64) math.Int {
 	stakeAmountFloat := big.NewFloat(0).SetInt(stakeAmount.BigInt())
-	maxSettlementAmountFloat := big.NewFloat(0).Quo(stakeAmountFloat, big.NewFloat(1+tlm.GlobalInflationPerClaim))
+	maxSettlementAmountFloat := big.NewFloat(0).Quo(stakeAmountFloat, big.NewFloat(1+globalInflationPerClaim))
 
 	settlementAmount, _ := maxSettlementAmountFloat.Int(nil)
 	return math.NewIntFromBigInt(settlementAmount)

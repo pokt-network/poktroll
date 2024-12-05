@@ -40,3 +40,30 @@ func TestMsgUpdateParam_UpdateAddServiceFeeOnly(t *testing.T) {
 	// Ensure the other parameters are unchanged
 	testkeeper.AssertDefaultParamsEqualExceptFields(t, &defaultParams, res.Params, "AddServiceFee")
 }
+
+func TestMsgUpdateParam_UpdateTargetNumRelaysOnly(t *testing.T) {
+	expectedTargetNumRelays := uint64(9001)
+
+	// Set the parameters to their default values
+	k, msgSrv, ctx := setupMsgServer(t)
+	defaultParams := servicetypes.DefaultParams()
+	require.NoError(t, k.SetParams(ctx, defaultParams))
+
+	// Ensure the default values are different from the new values we want to set
+	require.NotEqual(t, expectedTargetNumRelays, defaultParams.TargetNumRelays)
+
+	// Update the add service fee parameter
+	updateParamMsg := &servicetypes.MsgUpdateParam{
+		Authority: authtypes.NewModuleAddress(govtypes.ModuleName).String(),
+		Name:      servicetypes.ParamTargetNumRelays,
+		AsType:    &servicetypes.MsgUpdateParam_AsUint64{AsUint64: expectedTargetNumRelays},
+	}
+	res, err := msgSrv.UpdateParam(ctx, updateParamMsg)
+	require.NoError(t, err)
+
+	require.NotEqual(t, defaultParams.TargetNumRelays, res.Params.TargetNumRelays)
+	require.Equal(t, expectedTargetNumRelays, res.Params.TargetNumRelays)
+
+	// Ensure the other parameters are unchanged
+	testkeeper.AssertDefaultParamsEqualExceptFields(t, &defaultParams, res.Params, "TargetNumRelays")
+}

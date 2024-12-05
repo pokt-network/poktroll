@@ -190,6 +190,11 @@ sed -i -e s/NODE_HOSTNAME=/NODE_HOSTNAME=69.42.690.420/g .env
 
 ### Launch the Node <!-- omit in toc -->
 
+:::warning
+The Alpha TestNet currently requires manual steps to sync the node to the latest block. Please find the affected block(s)
+in [this document](../../protocol/upgrades/upgrade_list.md), which leads to the manual upgrade instructions.
+:::
+
 _Note: You may need to replace `docker compose` with `docker-compose` if you are
 running an older version of Docker where `docker-compose` is not integrated into `docker` itself yet._
 
@@ -350,6 +355,8 @@ You can check that your address is funded correctly by running:
 ```bash
 poktrolld query bank balances $SUPPLIER_ADDR
 ```
+
+_Note: You must wait until `full-node` has synced up to the [current block #](https://shannon.testnet.pokt.network/poktroll/block) before this command and the stake command below (`poktrolld tx supplier stake-supplier...`) will work successfully. Watch your node's block height [here.](https://dev.poktroll.com/operate/quickstart/docker_compose_walkthrough#watch-the-height-)_
 
 If you're waiting to see if your transaction has been included in a block, you can run:
 
@@ -634,13 +641,19 @@ sudo sed -i -e s/YOUR_OWNED_APP_PRIVATE_KEY/$APPLICATION_PRIV_KEY_HEX/g gateway/
 Start up the RelayMiner:
 
 ```bash
-docker compose up -d pathgw
+docker compose up -d gateway
 ```
 
 Check logs and confirm the node works as expected:
 
 ```bash
-docker compose logs -f --tail 100 pathgw
+docker compose logs -f --tail 100 gateway
+```
+
+### Delegate your Application to the Gateway <!-- omit in toc -->
+
+```bash
+poktrolld tx application delegate-to-gateway $GATEWAY_ADDR --from=application-1 --chain-id=poktroll --chain-id=poktroll --yes
 ```
 
 ### Send a relay <!-- omit in toc -->
