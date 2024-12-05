@@ -10,8 +10,8 @@ running a Full Node using an automated script.
 
 :::tip
 
-If you're interesting in understanding everything, or having full control of every
-step, check out the [Full Node Walkthrough](../run_a_node/full_node_walkthrough.md).
+If you're interested in understanding the underlying details, or having full control over every
+step of the process, check out the [Full Node Walkthrough](../run_a_node/full_node_walkthrough.md).
 
 :::
 
