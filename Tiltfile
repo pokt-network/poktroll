@@ -261,7 +261,7 @@ helm_resource(
 )
 
 # TODO_IN_THIS_PR:
-# - CI/CD of main image in buildwithgrove/path is outdated and not getting built
+# - CI/CD of main image in buildwithgrove/path is outdated and not reading the config file.
 
 
 # Provision RelayMiners

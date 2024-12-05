@@ -19,7 +19,7 @@ Feature: Relay Namespace
     #    Then a "tokenomics" module "ClaimSettled" end block event is broadcast
 
     # TODO_TEST(@Olshansk):
-    # - Successful relay through applicat's sovereign appgate server
+    # - Successful relay through PATH's Trusted mode
     # - Successful relay through gateway app is delegation to
     # - Successful relay through gateway when app is delegating to multiple gateways
     # - Failed relay through gateway app is not delegation to

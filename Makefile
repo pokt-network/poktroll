@@ -449,3 +449,4 @@ include ./makefiles/suppliers.mk
 include ./makefiles/gateways.mk
 include ./makefiles/session.mk
 include ./makefiles/claims.mk
+include ./makefiles/relay.mk
