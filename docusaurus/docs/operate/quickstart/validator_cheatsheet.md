@@ -12,7 +12,7 @@ running a Validator using an automated scripts.
 
 :::tip
 
-If you're interesting in understanding everything, or having full control of every
+If you're interested in understanding everything, or having full control of every
 step, check out the [Validator Walkthrough](../run_a_node/validator_walkthrough.md).
 
 :::
