@@ -307,7 +307,7 @@ port `26656` on this page to port `26657`. Specifically:
 # Update your firewall
 sudo ufw allow 26657/tcp
 
-# Update your iptables
+# Alternatively, if ufw is not available, update your iptables
 sudo iptables -A INPUT -p tcp --dport 26657 -j ACCEPT
 
 # Update your Cosmovisor config
