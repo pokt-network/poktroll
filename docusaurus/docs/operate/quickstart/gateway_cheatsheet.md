@@ -219,7 +219,7 @@ Refer to [PATH Gateway modes](https://path.grove.city/) for more configuration o
 
 :::
 
-Run the following command to generate a default Shannon config `cmd/.config.yaml`:
+Run the following command to generate a default Shannon config `config/.config.yaml`:
 
 _NOTE: You'll be prompted to confirm the `gateway` account private key export._
 
@@ -228,27 +228,27 @@ _NOTE: You'll be prompted to confirm the `gateway` account private key export._
 make copy_shannon_config
 
 # Replace the endpoints as needed
-sed -i "s|rpc_url: ".*"|rpc_url: $NODE|" cmd/.config.yaml
-sed -i "s|host_port: ".*"|host_port: shannon-testnet-grove-grpc.beta.poktroll.com:443|" cmd/.config.yaml
+sed -i "s|rpc_url: ".*"|rpc_url: $NODE|" config/.config.yaml
+sed -i "s|host_port: ".*"|host_port: shannon-testnet-grove-grpc.beta.poktroll.com:443|" config/.config.yaml
 
 # Update the gateway and application addresses
-sed -i "s|gateway_address: .*|gateway_address: $GATEWAY_ADDR|" cmd/.config.yaml
-sed -i "s|gateway_private_key_hex: .*|gateway_private_key_hex: $(poktrolld keys export gateway --unsafe --unarmored-hex)|" cmd/.config.yaml
-sed -i '/owned_apps_private_keys_hex:/!b;n;c\      - '"$(poktrolld keys export application --unsafe --unarmored-hex)" cmd/.config.yaml
+sed -i "s|gateway_address: .*|gateway_address: $GATEWAY_ADDR|" config/.config.yaml
+sed -i "s|gateway_private_key_hex: .*|gateway_private_key_hex: $(poktrolld keys export gateway --unsafe --unarmored-hex)|" config/.config.yaml
+sed -i '/owned_apps_private_keys_hex:/!b;n;c\      - '"$(poktrolld keys export application --unsafe --unarmored-hex)" config/.config.yaml
 
 # If you're using the test keyring-backend:
-# sed -i "s|gateway_private_key_hex: .*|gateway_private_key_hex: $(poktrolld keys export gateway --unsafe --unarmored-hex --keyring-backend test)|" cmd/.config.yaml
-# sed -i '/owned_apps_private_keys_hex:/!b;n;c\      - '"$(poktrolld keys export application --unsafe --unarmored-hex --keyring-backend test)" cmd/.config.yaml
+# sed -i "s|gateway_private_key_hex: .*|gateway_private_key_hex: $(poktrolld keys export gateway --unsafe --unarmored-hex --keyring-backend test)|" config/.config.yaml
+# sed -i '/owned_apps_private_keys_hex:/!b;n;c\      - '"$(poktrolld keys export application --unsafe --unarmored-hex --keyring-backend test)" config/.config.yaml
 ```
 
-When you're done, run `cat cmd/.config.yaml` to view the updated config file.
+When you're done, run `cat config/.config.yaml` to view the updated config file.
 
 ### Run the `PATH` Gateway
 
 #### Build and run the `PATH` Gateway from source
 
 ```bash
-cd cmd/ && go build -o path . && ./path
+go build -o ./path ./cmd
 ```
 
 You should see the following output:
