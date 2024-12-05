@@ -6,12 +6,12 @@ sidebar_position: 3
 ## Full Node Cheat Sheet Using Systemd & Cosmovisor <!-- omit in toc -->
 
 This cheat sheet provides quick copy-pasta like instructions for installing and
-running a Full Node using an automated scripts.
+running a Full Node using an automated script.
 
 :::tip
 
-If you're interesting in understanding everything, or having full control of every
-step, check out the [Full Node Walkthrough](../run_a_node/full_node_walkthrough.md).
+If you're interested in understanding the underlying details, or having full control over every
+step of the process, check out the [Full Node Walkthrough](../run_a_node/full_node_walkthrough.md).
 
 :::
 
@@ -86,7 +86,7 @@ for examples of useful commands, common debugging instructions and other advance
 This section is optional and for informational purposes only.
 :::
 
-If you're interest in understand what just got installed, keep reading...
+If you're interested in understanding what just got installed, keep reading...
 
 1. **System User**: A dedicated user (default: `poktroll`) is created to run the node securely.
 

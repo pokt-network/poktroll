@@ -89,8 +89,8 @@ sudo apt-get install docker-ce docker-ce-cli containerd.io docker-buildx-plugin 
 You can optionally create a new user and give it sudo permissions instead of using `root`.
 
 ```bash
-sudo adduser poktroll
-sudo usermod -aG sudo poktroll
+adduser poktroll
+usermod -aG docker,sudo poktroll
 su - poktroll
 ```
 

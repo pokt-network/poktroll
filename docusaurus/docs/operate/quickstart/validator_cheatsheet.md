@@ -8,11 +8,11 @@ sidebar_position: 4
 <!-- TODO_MAINNET(@okdas, #754): Update this page with all the details. -->
 
 This cheat sheet provides quick copy-pasta like instructions for installing and
-running a Validator using an automated scripts.
+running a Validator using an automated script.
 
 :::tip
 
-If you're interesting in understanding everything, or having full control of every
+If you're interested in understanding everything, or having full control of every
 step, check out the [Validator Walkthrough](../run_a_node/validator_walkthrough.md).
 
 :::
@@ -23,7 +23,7 @@ step, check out the [Validator Walkthrough](../run_a_node/validator_walkthrough.
 ## Introduction
 
 This guide will help you install a Validator on Pocket Network,
-**using helper that abstract out some of the underlying complexity.**
+**using helpers that abstract out some of the underlying complexity.**
 
 ### Pre-Requisites
 

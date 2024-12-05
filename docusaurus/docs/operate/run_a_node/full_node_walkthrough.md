@@ -298,7 +298,7 @@ curl -X GET http://localhost:26657/block | jq
 #### How do I check the node version?
 
 ```bash
-sudo -u poktroll poktrolld version
+poktrolld version
 ```
 
 #### How do I check the Cosmosvisor directory structure?
