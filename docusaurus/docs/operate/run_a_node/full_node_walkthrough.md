@@ -318,7 +318,7 @@ sed -i 's|cors_allowed_origins = \[\]|cors_allowed_origins = ["*"]|' $HOME/.pokt
 sudo systemctl restart cosmovisor.service
 
 # Test the connection
-nc -vz $VULTR_GROVE_TEST_IP 26657
+nc -vz {EXTERNAL_IP} 26657
 ```
 
 Learn more [here](https://docs.cometbft.com/main/rpc/).
