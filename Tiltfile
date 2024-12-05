@@ -56,7 +56,11 @@ localnet_config_defaults = {
     "path_gateways": {
         "count": 1,
     },
-    # NOTE: git submodule usage was explicitly avoided to reduce environment complexity.
+
+    #############
+    # NOTE: git submodule usage was explicitly avoided for the repositories below
+    # to reduce environment complexity.
+    #############
 
     # By default, we use the `helm_repo` function below to point to the remote repository
     # but can update it to the locally cloned repo for testing & development
@@ -64,14 +68,19 @@ localnet_config_defaults = {
         "enabled": False,
         "path": os.path.join("..", "helm-charts")
     },
+
+    # By default, we use a pre-built PATH image, but can update it to use a local
+    # repo instead.
+    "path_local_repo": {
+        "enabled": False,
+        "path": "../path"
+    },
+
     "indexer": {
         "repo_path": os.path.join("..", "pocketdex"),
         "enabled": True,
         "clone_if_not_present": False,
     },
-    # By default, we use a pre-built PATH image, but can update it to use a local
-    # repo instead.
-    "path_local_repo": {"enabled": False, "path": "../path"}
 }
 localnet_config_file = read_yaml(localnet_config_path, default=localnet_config_defaults)
 # Initial empty config
@@ -91,9 +100,9 @@ if (localnet_config_file != localnet_config) or (not os.path.exists(localnet_con
 # If using a local repo, set the path to the local repo; otherwise, use our own helm repo.
 helm_repo("pokt-network", "https://pokt-network.github.io/helm-charts/")
 helm_repo("buildwithgrove", "https://buildwithgrove.github.io/helm-charts/")
-# TODO_IMPROVE: Use os.path.join to make this more OS-agnostic.
+
+# Configure POKT chart references
 chart_prefix = "pokt-network/"
-grove_chart_prefix = "buildwithgrove/"
 if localnet_config["helm_chart_local_repo"]["enabled"]:
     helm_chart_local_repo = localnet_config["helm_chart_local_repo"]["path"]
     hot_reload_dirs.append(helm_chart_local_repo)
@@ -101,7 +110,8 @@ if localnet_config["helm_chart_local_repo"]["enabled"]:
     # TODO_IMPROVE: Use os.path.join to make this more OS-agnostic.
     chart_prefix = helm_chart_local_repo + "/charts/"
 
-# Configure PATH reference.
+# Configure PATH references
+grove_chart_prefix = "buildwithgrove/"
 # If using a local repo, set the path to the local repo; otherwise, use our own helm repo.
 path_local_repo = ""
 if localnet_config["path_local_repo"]["enabled"]:
@@ -295,7 +305,9 @@ for x in range(localnet_config["relayminers"]["count"]):
 if localnet_config["path_local_repo"]["enabled"]:
     docker_build("path-local", path_local_repo)
 
-# Provision PATH Gateway
+# TODO_IN_THIS_PR: Find and replace all `appgateserver` in /localnet` and fix them (see the .json files)
+
+# Provision PATH Gateway(s)
 actor_number = 0
 # Loop to configure and apply multiple PATH gateway deployments
 for x in range(localnet_config["path_gateways"]["count"]):
@@ -305,7 +317,7 @@ for x in range(localnet_config["path_gateways"]["count"]):
         "--values=./localnet/kubernetes/values-common.yaml",
         "--set=metrics.serviceMonitor.enabled=" + str(localnet_config["observability"]["enabled"]),
         "--set=path.mountConfigMaps[0].name=path-config-" + str(actor_number),
-        "--set=path.mountConfigMaps[0].mountPath=/app/config",
+        "--set=path.mountConfigMaps[0].mountPath=/app/config/",
         "--set=global.imagePullPolicy=IfNotPresent"
     ]
 
@@ -313,10 +325,15 @@ for x in range(localnet_config["path_gateways"]["count"]):
         path_image_deps = ["path-local"]
         path_image_keys = [("image.repository", "image.tag")]
         path_deps=["path-local"]
+    else:
+        # TODO_IN_THIS_PR: Either document that `main` doesn't work or make it work.
+        path_image_deps = []
+        path_image_keys = []
+        path_deps=[]
 
     configmap_create(
         "path-config-" + str(actor_number),
-        from_file=".config.yaml=localnet/kubernetes/config-path-" + str(actor_number) + ".yaml"
+        from_file=".config.yaml=./localnet/kubernetes/config-path-" + str(actor_number) + ".yaml"
     )
 
     helm_resource(
@@ -332,7 +349,7 @@ for x in range(localnet_config["path_gateways"]["count"]):
         "path" + str(actor_number),
         labels=["gateways"],
         resource_deps=path_deps,
-        # TODO_IMPROVE(, @HebertCL): Update this once PATH has grafana dashboards
+        # TODO_IMPROVE(@okdas): Update this once PATH has grafana dashboards
         # links=[
         #     link(
         #         "http://localhost:3003/d/path/protocol-path?orgId=1&refresh=5s&var-path=gateway"
@@ -340,8 +357,10 @@ for x in range(localnet_config["path_gateways"]["count"]):
         #         "Grafana dashboard",
         #     ),
         # ],
-        # TODO_IMPROVE(@HebertCL): Add port forwards to grafana, pprof, like the other resources
-        port_forwards=[str(2999 + actor_number) + ":3000"],
+        # TODO_IMPROVE(@okdas): Add port forwards to grafana, pprof, like the other resources
+        port_forwards=[
+                str(2999 + actor_number) + ":3000"
+        ],
     )
 
 

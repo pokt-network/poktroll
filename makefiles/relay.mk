@@ -1,21 +1,18 @@
 #####################
 ### Relay Helpers ###
 #####################
-.PHONY: send_relay_sovereign_app_JSONRPC
-send_relay_sovereign_app_JSONRPC: # Send a JSONRPC relay through the AppGateServer as a sovereign application
+
+.PHONY: send_relay_path_JSONRPC
+send_relay_path_JSONRPC: # Send a JSONRPC relay through PATH to a local anvil (test ETH) node
 	curl -X POST -H "Content-Type: application/json" \
 	--data '{"jsonrpc":"2.0","method":"eth_blockNumber","params":[],"id":1}' \
-	$(APPGATE_SERVER)/anvil
+	echo $(subst http://,http://anvil.,$(PATH_URL))/v1
 
-.PHONY: send_relay_delegating_app_JSONRPC
-send_relay_delegating_app_JSONRPC: # Send a relay through the gateway as an application that's delegating to this gateway
-	@appAddr=$$(poktrolld keys show app1 -a) && \
-	curl -X POST -H "Content-Type: application/json" \
-	--data '{"jsonrpc":"2.0","method":"eth_blockNumber","params":[],"id":1}' \
-	$(GATEWAY_URL)/anvil?applicationAddr=$$appAddr
-
-.PHONY: send_relay_sovereign_app_REST
-send_relay_sovereign_app_REST: # Send a REST relay through the AppGateServer as a sovereign application
+.PHONY: send_relay_path_REST
+send_relay_path_REST: # Send a REST relay through PATH to a local ollama (LLM) service
 	curl -X POST -H "Content-Type: application/json" \
 	--data '{"model": "qwen:0.5b", "stream": false, "messages": [{"role": "user", "content":"count from 1 to 10"}]}' \
-	$(APPGATE_SERVER)/ollama/api/chat
+	echo $(subst http://,http://ollama.,$(PATH_URL))/api/chat
+
+# TODO_MAINNET(@olshansk): Add all the permissionless/delegated/centralized variations once
+# the following documentation is ready: https://www.notion.so/buildwithgrove/Different-Modes-of-Operation-PATH-LocalNet-Discussions-122a36edfff6805e9090c9a14f72f3b5?pvs=4#151a36edfff680d681a2dd7f4e5fee55

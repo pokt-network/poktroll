@@ -5,8 +5,7 @@ SHELL = /bin/sh
 POKTROLLD_HOME ?= ./localnet/poktrolld
 POCKET_NODE ?= tcp://127.0.0.1:26657 # The pocket node (validator in the localnet context)
 TESTNET_RPC ?= https://testnet-validated-validator-rpc.poktroll.com/ # TestNet RPC endpoint for validator maintained by Grove. Needs to be update if there's another "primary" testnet.
-APPGATE_SERVER ?= http://localhost:42069
-GATEWAY_URL ?= http://localhost:42079
+PATH_URL ?= http://localhost:3000
 POCKET_ADDR_PREFIX = pokt
 LOAD_TEST_CUSTOM_MANIFEST ?= loadtest_manifest_example.yaml
 
@@ -450,3 +449,4 @@ include ./makefiles/suppliers.mk
 include ./makefiles/gateways.mk
 include ./makefiles/session.mk
 include ./makefiles/claims.mk
+include ./makefiles/relay.mk
