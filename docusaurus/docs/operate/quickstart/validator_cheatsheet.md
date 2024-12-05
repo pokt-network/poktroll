@@ -23,7 +23,7 @@ step, check out the [Validator Walkthrough](../run_a_node/validator_walkthrough.
 ## Introduction
 
 This guide will help you install a Validator on Pocket Network,
-**using helper that abstract out some of the underlying complexity.**
+**using helpers that abstract out some of the underlying complexity.**
 
 ### Pre-Requisites
 
