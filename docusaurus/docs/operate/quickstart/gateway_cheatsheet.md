@@ -1,5 +1,5 @@
 ---
-sidebar_position: 5
+sidebar_position: 7
 title: Gateway Cheat Sheet
 ---
 
@@ -91,8 +91,8 @@ export APP_ADDR=$(poktrolld keys show application -a)
 
 :::tip
 
-You can put the above in a special `~/.pocketrc` and add `source ~/.pocketrc` to
-your `~/.bashrc` file for a cleaner organization.
+You can put the above in a special `~/.poktrollrc` and add `source ~/.poktrollrc` to
+your `~/.profile` file for a cleaner organization.
 
 :::
 

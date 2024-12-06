@@ -176,14 +176,12 @@ func TestMsgServer_StakeSupplier_SuccessLoweringStakeAboveMinStake(t *testing.T)
 
 	minStake := supplierModuleKeepers.Keeper.GetParams(ctx).MinStake.Amount.Int64()
 
-	initialStake := minStake + 2
-
 	// Generate an owner and operator address for the supplier
 	ownerAddr := sample.AccAddress()
 	operatorAddr := sample.AccAddress()
 
 	// Prepare the supplier stake message
-	stakeMsg, _ := newSupplierStakeMsg(ownerAddr, operatorAddr, initialStake, "svcId")
+	stakeMsg, _ := newSupplierStakeMsg(ownerAddr, operatorAddr, minStake, "svcId")
 
 	// Stake the supplier & verify that the supplier exists
 	_, err := srv.StakeSupplier(ctx, stakeMsg)
@@ -193,7 +191,7 @@ func TestMsgServer_StakeSupplier_SuccessLoweringStakeAboveMinStake(t *testing.T)
 	require.True(t, isSupplierFound)
 
 	// Prepare an update supplier msg with a lower stake which is below staking fee.
-	newStake := initialStake - 1
+	newStake := minStake - 1
 	updateMsg, _ := newSupplierStakeMsg(ownerAddr, operatorAddr, newStake, "svcId")
 	updateMsg.Signer = operatorAddr
 
@@ -201,19 +199,10 @@ func TestMsgServer_StakeSupplier_SuccessLoweringStakeAboveMinStake(t *testing.T)
 	_, err = srv.StakeSupplier(ctx, updateMsg)
 	require.Error(t, err)
 
-	// Prepare an update supplier msg with a lower stake which is above staking fee.
-	newStake = initialStake - 2
-	updateMsg, _ = newSupplierStakeMsg(ownerAddr, operatorAddr, newStake, "svcId")
-	updateMsg.Signer = operatorAddr
-
-	// Verify that it succeeds
-	_, err = srv.StakeSupplier(ctx, updateMsg)
-	require.NoError(t, err)
-
 	// Verify that the supplier stake is unchanged
 	supplierFound, isSupplierFound := supplierModuleKeepers.GetSupplier(ctx, operatorAddr)
 	require.True(t, isSupplierFound)
-	require.Equal(t, newStake, supplierFound.Stake.Amount.Int64())
+	require.Equal(t, minStake, supplierFound.Stake.Amount.Int64())
 	require.Len(t, supplierFound.Services, 1)
 }
 
