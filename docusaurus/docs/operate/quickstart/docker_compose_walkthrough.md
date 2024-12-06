@@ -186,6 +186,31 @@ Update `NODE_HOSTNAME` in `.env` to the IP address or hostname of your node. For
 sed -i -e s/NODE_HOSTNAME=/NODE_HOSTNAME=69.42.690.420/g .env
 ```
 
+### [Recommended] Create a new user <!-- omit in toc -->
+
+You can generally do everything as the `root` user, but it's recommended to
+create a new user and give it sudo permissions.
+
+This is necessary, in particular, if you want to use [homebrew](https://brew.sh/) [to install `poktrolld`](../user_guide/install.md).
+
+You can create a new user (e.g. poktroll), provide sudo permissions and switch users like so:
+
+```bash
+adduser poktroll
+sudo usermod -aG docker,sudo poktroll
+su - poktroll
+```
+
+In order to avoid needing to pass in the password each time by running the following:
+
+```bash
+# Optionally avoid needing to provide a password
+sudo vi /etc/sudoers
+
+# Add the following line to the end of the file
+poktroll ALL=(ALL) NOPASSWD:ALL
+```
+
 ## A. Deploying a Full Node
 
 ### Launch the Node <!-- omit in toc -->

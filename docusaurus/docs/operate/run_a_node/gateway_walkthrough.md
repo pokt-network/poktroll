@@ -1,6 +1,6 @@
 ---
 title: Gateway Walkthrough
-sidebar_position: 4
+sidebar_position: 6
 ---
 
 # Run a Gateway <!-- omit in toc -->

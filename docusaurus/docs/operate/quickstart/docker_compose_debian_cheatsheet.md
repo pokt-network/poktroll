@@ -89,25 +89,9 @@ sudo apt-get install docker-ce docker-ce-cli containerd.io docker-buildx-plugin 
 You can optionally create a new user and give it sudo permissions instead of using `root`.
 
 ```bash
-export USERNAME=olshansky
-adduser $USERNAME
-usermod -aG sudo,docker $USERNAME
-```
-
-You can also avoid needing to pass in the password each time by running the following:
-
-```bash
-# Optionally avoid needing to provide a password
-vi /etc/sudoers
-
-# Add the following line to the end of the file
-olshansky ALL=(ALL) NOPASSWD:ALL
-```
-
-Then, switch to the new user:
-
-```bash
-su - $USERNAME
+adduser poktroll
+usermod -aG docker,sudo poktroll
+su - poktroll
 ```
 
 ## Retrieve the source code
@@ -130,9 +114,9 @@ cp .env.sample .env
 
 By default, the `.env` file uses `testnet-beta`. If you want to use a different network, update the `NETWORK_NAME` in your `.env` file to one of:
 
-- `testnet-alpha` - Unstable testnet
-- `testnet-beta` - Stable testnet (default)
-- `mainnet` - Production network
+- `testnet-alpha`: Unstable testnet (use at your own risk)
+- `testnet-beta`: Stable testnet (default)
+- `mainnet`: Production network (not launched yet)
 
 Then set your external IP and source the environment:
 
@@ -198,13 +182,14 @@ address=$(poktrolld keys show gateway -a | tr -d '\r'); sed -i "s|GATEWAY_ADDR=\
 ```
 
 FINALLY, update the environment variables:
+
 ```bash
 source .env
 ```
 
 ## Fund your accounts
 
-Run the following to see your addresses:
+Run the following helper command to see your addresses:
 
 ```bash
 show_actor_addresses
@@ -216,7 +201,8 @@ Get the faucet URL for your network:
 show_faucet_url
 ```
 
-Fund each address using the faucet URL shown above. Then run this helper to find each account on the explorer:
+Fund each address using the faucet URL shown above.
+Then run this helper to find each account on the explorer:
 
 ```bash
 show_explorer_urls
