@@ -136,7 +136,7 @@ func (k msgServer) StakeSupplier(ctx context.Context, msg *suppliertypes.MsgStak
 	// This is called after the stake difference is transferred give the supplier
 	// the opportunity to have enough balance to pay the fee.
 	if err = k.bankKeeper.SendCoinsFromAccountToModule(ctx, msgSignerAddress, suppliertypes.ModuleName, sdk.NewCoins(*supplierStakingFee)); err != nil {
-		logger.Info(fmt.Sprintf("ERROR: could not send %s coins from %q to %q module account due to %v", supplierStakingFee, msgSignerAddress, suppliertypes.ModuleName, err))
+		logger.Info(fmt.Sprintf("ERROR: signer %q could not pay for the staking fee %s due to %v", msgSignerAddress, supplierStakingFee, err))
 		return nil, status.Error(codes.FailedPrecondition, err.Error())
 	}
 
