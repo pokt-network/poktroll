@@ -48,11 +48,12 @@ func (k msgServer) StakeSupplier(ctx context.Context, msg *suppliertypes.MsgStak
 	var (
 		err                  error
 		wasSupplierUnbonding bool
+		supplierCurrentStake sdk.Coin
 	)
 	supplier, isSupplierFound := k.GetSupplier(ctx, msg.OperatorAddress)
 
-	supplierCurrentStake := sdk.NewInt64Coin(volatile.DenomuPOKT, 0)
 	if !isSupplierFound {
+		supplierCurrentStake = sdk.NewInt64Coin(volatile.DenomuPOKT, 0)
 		logger.Info(fmt.Sprintf("Supplier not found. Creating new supplier for address %q", msg.OperatorAddress))
 		supplier = k.createSupplier(ctx, msg)
 	} else {
@@ -126,43 +127,17 @@ func (k msgServer) StakeSupplier(ctx context.Context, msg *suppliertypes.MsgStak
 
 	supplierStakingFee := k.GetParams(ctx).StakingFee
 
-	// The Supplier is increasing its stake, so escrow the difference
-	if supplierCurrentStake.Amount.LT(msg.Stake.Amount) {
-		coinsToEscrow := msg.Stake.Sub(supplierCurrentStake)
-		stakeWithFee := sdk.NewCoins(coinsToEscrow.Add(*supplierStakingFee))
-
-		// Send the coins from the message signer account to the staked supplier pool
-		err = k.bankKeeper.SendCoinsFromAccountToModule(ctx, msgSignerAddress, suppliertypes.ModuleName, stakeWithFee)
-		if err != nil {
-			logger.Info(fmt.Sprintf("ERROR: could not send %s coins from %q to %q module account due to %v", coinsToEscrow, msgSignerAddress, types.ModuleName, err))
-			return nil, status.Error(codes.InvalidArgument, err.Error())
-		}
-
-		logger.Info(fmt.Sprintf("Successfully escrowed %s from %q to %q module account", coinsToEscrow, msgSignerAddress, types.ModuleName))
+	if err := k.transferSupplierStakeDiff(ctx, msgSignerAddress, supplierCurrentStake, *msg.Stake); err != nil {
+		logger.Info(fmt.Sprintf("ERROR: could not transfer supplier stake difference due to %v", err))
+		return nil, status.Error(codes.Internal, err.Error())
 	}
 
-	// The supplier is decreasing its stake, unescrow the difference but deduct the staking fee.
-	if supplierCurrentStake.Amount.GT(msg.Stake.Amount) {
-		coinsToUnescrow := supplierCurrentStake.Sub(*msg.Stake)
-
-		if coinsToUnescrow.Amount.LTE(supplierStakingFee.Amount) {
-			err = types.ErrSupplierInvalidStake.Wrapf(
-				"supplier with owner %q must unescrow more than supplier staking fee (%s)",
-				msg.GetOwnerAddress(), supplierStakingFee,
-			)
-			logger.Info(fmt.Sprintf("ERROR: %s", err))
-			return nil, status.Error(codes.InvalidArgument, err.Error())
-		}
-
-		coinsAfterFee := sdk.NewCoins(coinsToUnescrow.Sub(*supplierStakingFee))
-
-		// Send the coins from the staked supplier pool to the message signer account
-		if err := k.bankKeeper.SendCoinsFromModuleToAccount(ctx, types.ModuleName, msgSignerAddress, coinsAfterFee); err != nil {
-			logger.Info(fmt.Sprintf("ERROR: could not send %s coins from %q module account to %q due to %v", coinsToUnescrow, types.ModuleName, msgSignerAddress, err))
-			return nil, status.Error(codes.InvalidArgument, err.Error())
-		}
-
-		logger.Info(fmt.Sprintf("Successfully unescrowed %s from %q module account to %q", coinsToUnescrow, types.ModuleName, msgSignerAddress))
+	// Deduct the staking fee from the supplier's account balance.
+	// This is called after the stake difference is transferred give the supplier
+	// the opportunity to have enough balance to pay the fee.
+	if err := k.bankKeeper.SendCoinsFromAccountToModule(ctx, msgSignerAddress, suppliertypes.ModuleName, sdk.NewCoins(*supplierStakingFee)); err != nil {
+		logger.Info(fmt.Sprintf("ERROR: could not send %s coins from %q to %q module account due to %v", supplierStakingFee, msgSignerAddress, suppliertypes.ModuleName, err))
+		return nil, status.Error(codes.FailedPrecondition, err.Error())
 	}
 
 	// Update the Supplier in the store
@@ -271,5 +246,33 @@ func (k msgServer) updateSupplier(
 	supplier.Services = msg.Services
 	supplier.ServicesActivationHeightsMap = ServicesActivationHeightMap
 
+	return nil
+}
+
+// transferSupplierStakeDiff transfers the difference between the current and new stake
+// amounts by either escrowing when the stake is increased or unescrowing otherwise.
+func (k msgServer) transferSupplierStakeDiff(
+	ctx context.Context,
+	msgSignerAccAddress sdk.AccAddress,
+	supplierCurrentStake sdk.Coin,
+	newStake sdk.Coin,
+) error {
+	// The Supplier is increasing its stake, so escrow the difference
+	if supplierCurrentStake.Amount.LT(newStake.Amount) {
+		coinsToEscrow := sdk.NewCoins(newStake.Sub(supplierCurrentStake))
+
+		// Send the coins from the message signer account to the staked supplier pool
+		return k.bankKeeper.SendCoinsFromAccountToModule(ctx, msgSignerAccAddress, suppliertypes.ModuleName, coinsToEscrow)
+	}
+
+	// The supplier is decreasing its stake, unescrow the difference but deduct the staking fee.
+	if supplierCurrentStake.Amount.GT(newStake.Amount) {
+		coinsToUnescrow := sdk.NewCoins(supplierCurrentStake.Sub(newStake))
+
+		// Send the coins from the staked supplier pool to the message signer account
+		return k.bankKeeper.SendCoinsFromModuleToAccount(ctx, types.ModuleName, msgSignerAccAddress, coinsToUnescrow)
+	}
+
+	// The supplier is not changing its stake
 	return nil
 }
