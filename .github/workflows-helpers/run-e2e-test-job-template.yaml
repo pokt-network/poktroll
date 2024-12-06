@@ -49,8 +49,8 @@ spec:
               value: "false" # Flip to true to see the command and result of the execution
             - name: POKTROLLD_HOME
               value: /root/.poktroll
-            - name: PATH_HOST
-              value: ${NAMESPACE}-path:3000
+            - name: PATH_URL
+              value: http://${NAMESPACE}-path:3000
           volumeMounts:
             - mountPath: /root/.poktroll/keyring-test/
               name: writable-keys-volume
