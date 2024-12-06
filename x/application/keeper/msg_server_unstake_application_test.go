@@ -146,12 +146,14 @@ func TestMsgServer_UnstakeApplication_CancelUnbondingIfRestaked(t *testing.T) {
 
 	// Initiate the application unstaking
 	unstakeMsg := &apptypes.MsgUnstakeApplication{Address: appAddr}
-	_, err = srv.UnstakeApplication(ctx, unstakeMsg)
+	unstakeRes, err := srv.UnstakeApplication(ctx, unstakeMsg)
 	require.NoError(t, err)
 
-	// Assert that the EventApplicationUnbondingBegin event is emitted.
 	foundApp.UnstakeSessionEndHeight = uint64(sessionEndHeight)
 	foundApp.DelegateeGatewayAddresses = make([]string, 0)
+	require.Equal(t, &foundApp, unstakeRes.GetApplication())
+
+	// Assert that the EventApplicationUnbondingBegin event is emitted.
 	unbondingEndHeight := apptypes.GetApplicationUnbondingHeight(&sharedParams, &foundApp)
 	expectedAppUnbondingBeginEvent := &apptypes.EventApplicationUnbondingBegin{
 		Application:        &foundApp,
