@@ -8,8 +8,10 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
+	"github.com/pokt-network/poktroll/app/volatile"
 	"github.com/pokt-network/poktroll/telemetry"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
+	"github.com/pokt-network/poktroll/x/supplier/types"
 	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 )
 
@@ -45,18 +47,19 @@ func (k msgServer) StakeSupplier(ctx context.Context, msg *suppliertypes.MsgStak
 	// Check if the supplier already exists or not
 	var (
 		err                  error
-		coinsToEscrow        sdk.Coin
 		wasSupplierUnbonding bool
+		supplierCurrentStake sdk.Coin
 	)
 	supplier, isSupplierFound := k.GetSupplier(ctx, msg.OperatorAddress)
 
 	if !isSupplierFound {
+		supplierCurrentStake = sdk.NewInt64Coin(volatile.DenomuPOKT, 0)
 		logger.Info(fmt.Sprintf("Supplier not found. Creating new supplier for address %q", msg.OperatorAddress))
 		supplier = k.createSupplier(ctx, msg)
-
-		coinsToEscrow = *msg.Stake
 	} else {
 		logger.Info(fmt.Sprintf("Supplier found. About to try updating supplier with address %q", msg.OperatorAddress))
+
+		supplierCurrentStake = *supplier.Stake
 
 		// Ensure the signer is either the owner or the operator of the supplier.
 		if !msg.IsSigner(supplier.OwnerAddress) && !msg.IsSigner(supplier.OperatorAddress) {
@@ -92,34 +95,16 @@ func (k msgServer) StakeSupplier(ctx context.Context, msg *suppliertypes.MsgStak
 			return nil, status.Error(codes.InvalidArgument, err.Error())
 		}
 
-		currSupplierStake := *supplier.Stake
 		if err = k.updateSupplier(ctx, &supplier, msg); err != nil {
 			logger.Info(fmt.Sprintf("ERROR: could not update supplier for address %q due to error %v", msg.OperatorAddress, err))
 			return nil, status.Error(codes.InvalidArgument, err.Error())
 		}
-		coinsToEscrow, err = (*msg.Stake).SafeSub(currSupplierStake)
-		if err != nil {
-			logger.Info(fmt.Sprintf("ERROR: %s", err))
-			return nil, status.Error(codes.Internal, err.Error())
-		}
-		logger.Info(fmt.Sprintf("Supplier is going to escrow an additional %+v coins", coinsToEscrow))
 
 		// If the supplier has initiated an unstake action, cancel it since they are staking again.
 		if supplier.UnstakeSessionEndHeight != sharedtypes.SupplierNotUnstaking {
 			wasSupplierUnbonding = true
 			supplier.UnstakeSessionEndHeight = sharedtypes.SupplierNotUnstaking
 		}
-	}
-
-	// TODO_BETA(@red-0ne): Remove requirement of MUST ALWAYS stake or upstake (>= 0 delta)
-	// TODO_POST_MAINNET: Should we allow stake decrease down to min stake?
-	if coinsToEscrow.IsNegative() {
-		err = suppliertypes.ErrSupplierInvalidStake.Wrapf(
-			"Supplier signer %q stake (%s) must be greater than or equal to the current stake (%s)",
-			msg.Signer, msg.GetStake(), supplier.Stake,
-		)
-		logger.Info(fmt.Sprintf("WARN: %s", err))
-		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
 	// MUST ALWAYS have at least minimum stake.
@@ -140,15 +125,20 @@ func (k msgServer) StakeSupplier(ctx context.Context, msg *suppliertypes.MsgStak
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
-	// Send the coins from the message signer account to the staked supplier pool
 	supplierStakingFee := k.GetParams(ctx).StakingFee
-	stakeWithFee := sdk.NewCoins(coinsToEscrow.Add(*supplierStakingFee))
-	err = k.bankKeeper.SendCoinsFromAccountToModule(ctx, msgSignerAddress, suppliertypes.ModuleName, stakeWithFee)
-	if err != nil {
-		logger.Info(fmt.Sprintf("ERROR: could not send %v coins from %q to %q module account due to %v", coinsToEscrow, msgSignerAddress, suppliertypes.ModuleName, err))
-		return nil, status.Error(codes.InvalidArgument, err.Error())
+
+	if err = k.transferSupplierStakeDiff(ctx, msgSignerAddress, supplierCurrentStake, *msg.Stake); err != nil {
+		logger.Info(fmt.Sprintf("ERROR: could not transfer supplier stake difference due to %v", err))
+		return nil, status.Error(codes.Internal, err.Error())
 	}
-	logger.Info(fmt.Sprintf("Successfully escrowed %v coins from %q to %q module account", coinsToEscrow, msgSignerAddress, suppliertypes.ModuleName))
+
+	// Deduct the staking fee from the supplier's account balance.
+	// This is called after the stake difference is transferred give the supplier
+	// the opportunity to have enough balance to pay the fee.
+	if err = k.bankKeeper.SendCoinsFromAccountToModule(ctx, msgSignerAddress, suppliertypes.ModuleName, sdk.NewCoins(*supplierStakingFee)); err != nil {
+		logger.Info(fmt.Sprintf("ERROR: signer %q could not pay for the staking fee %s due to %v", msgSignerAddress, supplierStakingFee, err))
+		return nil, status.Error(codes.FailedPrecondition, err.Error())
+	}
 
 	// Update the Supplier in the store
 	k.SetSupplier(ctx, supplier)
@@ -218,13 +208,6 @@ func (k msgServer) updateSupplier(
 		return suppliertypes.ErrSupplierInvalidStake.Wrapf("stake amount cannot be nil")
 	}
 
-	// TODO_BETA: No longer require upstaking. Remove this check.
-	if msg.Stake.IsLT(*supplier.Stake) {
-		return suppliertypes.ErrSupplierInvalidStake.Wrapf(
-			"stake amount %v must be greater than or equal than previous stake amount %v",
-			msg.Stake, supplier.Stake,
-		)
-	}
 	supplier.Stake = msg.Stake
 
 	supplier.OwnerAddress = msg.OwnerAddress
@@ -263,5 +246,33 @@ func (k msgServer) updateSupplier(
 	supplier.Services = msg.Services
 	supplier.ServicesActivationHeightsMap = ServicesActivationHeightMap
 
+	return nil
+}
+
+// transferSupplierStakeDiff transfers the difference between the current and new stake
+// amounts by either escrowing when the stake is increased or unescrowing otherwise.
+func (k msgServer) transferSupplierStakeDiff(
+	ctx context.Context,
+	msgSignerAccAddress sdk.AccAddress,
+	supplierCurrentStake sdk.Coin,
+	newStake sdk.Coin,
+) error {
+	// The Supplier is increasing its stake, so escrow the difference
+	if supplierCurrentStake.Amount.LT(newStake.Amount) {
+		coinsToEscrow := sdk.NewCoins(newStake.Sub(supplierCurrentStake))
+
+		// Send the coins from the message signer account to the staked supplier pool
+		return k.bankKeeper.SendCoinsFromAccountToModule(ctx, msgSignerAccAddress, suppliertypes.ModuleName, coinsToEscrow)
+	}
+
+	// The supplier is decreasing its stake, unescrow the difference but deduct the staking fee.
+	if supplierCurrentStake.Amount.GT(newStake.Amount) {
+		coinsToUnescrow := sdk.NewCoins(supplierCurrentStake.Sub(newStake))
+
+		// Send the coins from the staked supplier pool to the message signer account
+		return k.bankKeeper.SendCoinsFromModuleToAccount(ctx, types.ModuleName, msgSignerAccAddress, coinsToUnescrow)
+	}
+
+	// The supplier is not changing its stake
 	return nil
 }
