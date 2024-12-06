@@ -16,7 +16,7 @@ func ParseRelayMinerConfigs(configContent []byte) (*RelayMinerConfig, error) {
 		return nil, ErrRelayMinerConfigEmpty
 	}
 
-	// Unmarshal the stake config file into a yamlAppGateConfig
+	// Unmarshal the stake config file into a yamlRelayMinerConfig
 	if err := yaml.Unmarshal(configContent, &yamlRelayMinerConfig); err != nil {
 		return nil, ErrRelayMinerConfigUnmarshalYAML.Wrap(err.Error())
 	}

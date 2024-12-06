@@ -5,6 +5,7 @@ package e2e
 import (
 	"bytes"
 	"fmt"
+	"net"
 	"net/url"
 	"os"
 	"os/exec"
@@ -23,8 +24,10 @@ var (
 	defaultRPCHost = "127.0.0.1"
 	// defaultHome is the default home directory for pocketd
 	defaultHome = os.Getenv("POKTROLLD_HOME")
-	// defaultAppGateServerURL used by curl commands to send relay requests
-	defaultAppGateServerURL = os.Getenv("APPGATE_SERVER")
+	// defaultPathURL used by curl commands to send relay requests
+	defaultPathURL = os.Getenv("PATH_URL")
+	// defaultPathHostOverride overrides the host in the URL used to send requests
+	defaultPathHostOverride = os.Getenv("PATH_HOST_OVERRIDE")
 	// defaultDebugOutput provides verbose output on manipulations with binaries (cli command, stdout, stderr)
 	defaultDebugOutput = os.Getenv("E2E_DEBUG_OUTPUT")
 )
@@ -101,7 +104,7 @@ func (p *pocketdBin) RunCommandOnHostWithRetry(rpcUrl string, numRetries uint8, 
 // RunCurl runs a curl command on the local machine
 func (p *pocketdBin) RunCurl(rpcUrl, service, method, path, appAddr, data string, args ...string) (*commandResult, error) {
 	if rpcUrl == "" {
-		rpcUrl = defaultAppGateServerURL
+		rpcUrl = defaultPathURL
 	}
 	return p.runCurlCmd(rpcUrl, service, method, path, appAddr, data, args...)
 }
@@ -178,8 +181,21 @@ func (p *pocketdBin) runCurlCmd(rpcBaseURL, service, method, path, appAddr, data
 		return nil, err
 	}
 
+	// Store the virtual host we want to send in the Host header
+	virtualHost := rpcUrl.Host
 	if len(service) > 0 {
-		rpcUrl.Path = rpcUrl.Path + service
+		// Strip port if it exists and add service prefix
+		host, _, err := net.SplitHostPort(rpcUrl.Host)
+		if err != nil {
+			// No port in the host, use as-is
+			host = rpcUrl.Host
+		}
+		virtualHost = fmt.Sprintf("%s.%s", service, host)
+	}
+
+	// Override the actual connection address if the environment requires it
+	if defaultPathHostOverride != "" {
+		rpcUrl.Host = defaultPathHostOverride
 	}
 
 	// Ensure that if a path is provided, it starts with a "/".
@@ -188,30 +204,21 @@ func (p *pocketdBin) runCurlCmd(rpcBaseURL, service, method, path, appAddr, data
 	if len(path) > 0 && path[0] != '/' {
 		path = "/" + path
 	}
-
 	rpcUrl.Path = rpcUrl.Path + path
 
-	// When sending a relay request, through a gateway (i.e. non-sovereign application)
-	// then, the application address must be provided.
-	if len(appAddr) > 0 {
-		queryValues := rpcUrl.Query()
-		queryValues.Set("applicationAddr", appAddr)
-		rpcUrl.RawQuery = queryValues.Encode()
-	}
-
 	base := []string{
-		"-v",         // verbose output
-		"-sS",        // silent with error
-		"-X", method, // HTTP method
-		"-H", "Content-Type: application/json", // HTTP headers
+		"-v",                                   // verbose output
+		"-sS",                                  // silent with error
+		"-H", `Content-Type: application/json`, // HTTP headers
+		"-H", fmt.Sprintf("Host: %s", virtualHost), // Add virtual host header
+		"-H", fmt.Sprintf("X-App-Address: %s", appAddr),
 		rpcUrl.String(),
 	}
 
 	if method == "POST" {
 		base = append(base, "--data", data)
 	} else if len(data) > 0 {
-		fmt.Println(fmt.Sprintf("WARN: data provided but not being included in the %s request", method))
-
+		fmt.Printf("WARN: data provided but not being included in the %s request because it is not of type POST", method)
 	}
 	args = append(base, args...)
 	commandStr := "curl " + strings.Join(args, " ") // Create a string representation of the command
@@ -239,4 +246,20 @@ func (p *pocketdBin) runCurlCmd(rpcBaseURL, service, method, path, appAddr, data
 	}
 
 	return r, err
+}
+
+// formatURLString returns  RESTful or JSON-RPC API endpoint URL depending
+// on the parameters provided.
+func formatURLString(serviceAlias, rpcUrl, path string) string {
+	// For JSON-RPC APIs, the path should be empty
+	if len(path) == 0 {
+		return fmt.Sprintf("http://%s.%s/v1", serviceAlias, rpcUrl)
+	}
+
+	// For RESTful APIs, the path should not be empty.
+	// We remove the leading / to make the format string below easier to read.
+	if path[0] == '/' {
+		path = path[1:]
+	}
+	return fmt.Sprintf("http://%s.%s/v1/%s", serviceAlias, rpcUrl, path)
 }

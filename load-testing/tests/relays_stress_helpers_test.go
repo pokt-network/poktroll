@@ -420,7 +420,7 @@ func (s *relaysSuite) mapSessionInfoWhenStakingNewSuppliersAndGatewaysFn() chann
 		// method since they are activated at the end of the session so they are
 		// available for the beginning of the next one.
 		// This is because the suppliers involvement is out of control of the test
-		// suite and is driven by the AppGateServer's supplier endpoint selection.
+		// suite and is driven by the Gateway's endpoint selection.
 		if suppliersPlan.shouldIncrementSupplierCount(s.sharedParams, notif, activeSuppliers, s.testStartHeight) {
 			newSuppliers = s.sendStakeSuppliersTxs(notif, &suppliersPlan)
 		}

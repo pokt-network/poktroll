@@ -5,7 +5,7 @@
 .PHONY: test_e2e_env
 test_e2e_env: warn_message_acc_initialize_pubkeys ## Setup the default env vars for E2E tests
 	export POCKET_NODE=$(POCKET_NODE) && \
-	export APPGATE_SERVER=$(APPGATE_SERVER) && \
+	export PATH_URL=$(PATH_URL) && \
 	export POKTROLLD_HOME=../../$(POKTROLLD_HOME)
 
 .PHONY: test_e2e
