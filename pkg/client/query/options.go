@@ -2,6 +2,7 @@ package query
 
 import (
 	sdkerrors "cosmossdk.io/errors"
+	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/pokt-network/poktroll/pkg/client/query/cache"
 )
@@ -14,8 +15,8 @@ type ParamsQuerierConfig struct {
 	ModuleName string
 	// ModuleParamError is the base error type for parameter query errors
 	ModuleParamError *sdkerrors.Error
-	// ParamsRequest is the request type used to query params
-	ParamsRequest any
+	//// ParamsRequest is the request type used to query params
+	//ParamsRequest R
 }
 
 // ParamsQuerierOptionFn defines a function that configures a ParamsQuerierConfig
@@ -36,17 +37,10 @@ func DefaultParamsQuerierConfig() *ParamsQuerierConfig {
 }
 
 // WithModuleInfo sets the module-specific information for the querier
-func WithModuleInfo(moduleName string, moduleParamError *sdkerrors.Error) ParamsQuerierOptionFn {
+func WithModuleInfo[R cosmostypes.Msg](moduleName string, moduleParamError *sdkerrors.Error) ParamsQuerierOptionFn {
 	return func(cfg *ParamsQuerierConfig) {
 		cfg.ModuleName = moduleName
 		cfg.ModuleParamError = moduleParamError
-	}
-}
-
-// WithParamsRequest sets the request type for querying params
-func WithParamsRequest(req any) ParamsQuerierOptionFn {
-	return func(cfg *ParamsQuerierConfig) {
-		cfg.ParamsRequest = req
 	}
 }
 
@@ -57,22 +51,22 @@ func WithParamsCacheOptions(opts ...cache.CacheOption) ParamsQuerierOptionFn {
 	}
 }
 
-// SharedQuerierConfig holds the configuration for the shared querier
-type SharedQuerierConfig = ParamsQuerierConfig
-
-// SharedQuerierOptionFn defines a function that configures a SharedQuerierConfig
-type SharedQuerierOptionFn = ParamsQuerierOptionFn
-
-// DefaultSharedQuerierConfig returns the default configuration
+//// SharedQuerierConfig holds the configuration for the shared querier
+//type SharedQuerierConfig = ParamsQuerierConfig
 //
-// TODO_IN_THIS_COMMIT: update comment... last option wins.
-func DefaultSharedQuerierConfig() *SharedQuerierConfig {
-	return DefaultParamsQuerierConfig()
-}
+//// SharedQuerierOptionFn defines a function that configures a SharedQuerierConfig
+//type SharedQuerierOptionFn = ParamsQuerierOptionFn
+//
+//// DefaultSharedQuerierConfig returns the default configuration
+////
+//// TODO_IN_THIS_COMMIT: update comment... last option wins.
+//func DefaultSharedQuerierConfig() *SharedQuerierConfig {
+//	return DefaultParamsQuerierConfig[*sharedtypes.QueryParamsRequest]()
+//}
 
 // WithCacheOptions adds cache configuration options to the shared querier
-func WithCacheOptions(opts ...cache.CacheOption) SharedQuerierOptionFn {
-	return func(cfg *SharedQuerierConfig) {
+func WithCacheOptions(opts ...cache.CacheOption) ParamsQuerierOptionFn {
+	return func(cfg *ParamsQuerierConfig) {
 		cfg.CacheOpts = append(cfg.CacheOpts, opts...)
 	}
 }

@@ -3,33 +3,48 @@ package query
 import (
 	"context"
 	"errors"
-	"fmt"
 
 	"cosmossdk.io/depinject"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
-	"google.golang.org/grpc"
+	gogogrpc "github.com/cosmos/gogoproto/grpc"
 
 	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/client/query/cache"
 	"github.com/pokt-network/poktroll/pkg/polylog"
 )
 
-type paramsQuerier interface {
-	Params(context.Context, any) (any, error)
+// TODO_IN_THIS_COMMIT: godoc...
+type paramsQuerierIface[P cosmostypes.Msg] interface {
+	GetParams(context.Context) (P, error)
 }
 
+// TODO_IN_THIS_COMMIT: godoc...
+//
+// DEV_NOTE: Can't use cosmostypes.Msg instead of any because M
+// would be a pointer but GetParams() returns a value. 🙄
+type paramsResponseType[P any] interface {
+	GetParams() P
+}
+
+//// DEV_NOTE: Can't use cosmostypes.Msg instead of any because M
+//// would be a pointer but GetParams() returns a value. 🙄
+//type paramsKeeper[M any] interface {
+//	GetParams(context.Context) M
+//}
+
+// TODO_IN_THIS_COMMIT: update godoc...
 // NewParamsQuerier creates a new params querier with the given configuration
-func NewParamsQuerier[P cosmostypes.Msg, C paramsQuerier](
+func NewParamsQuerier[P cosmostypes.Msg, Q paramsQuerierIface[P]](
 	deps depinject.Config,
-	queryClientConstructor func(grpc.ClientConn) C,
+	queryClientConstructor func(conn gogogrpc.ClientConn) Q,
 	opts ...ParamsQuerierOptionFn,
-) (*baseParamsQuerier[P, C], error) {
+) (_ *baseParamsQuerier[P, Q], err error) {
 	cfg := DefaultParamsQuerierConfig()
 	for _, opt := range opts {
 		opt(cfg)
 	}
 
-	querier := &baseParamsQuerier[P, C]{
+	querier := &baseParamsQuerier[P, Q]{
 		paramsCache: cache.NewInMemoryCache[P](cfg.CacheOpts...),
 	}
 
@@ -46,70 +61,63 @@ func NewParamsQuerier[P cosmostypes.Msg, C paramsQuerier](
 	return querier, nil
 }
 
+// TODO_IN_THIS_COMMIT: update godoc...
 // baseParamsQuerier provides common functionality for all params queriers.
 // It handles parameter caching and chain querying in a generic way, where
-// P is the type of the parameters and C is the type of the query client.
-type baseParamsQuerier[P cosmostypes.Msg, C paramsQuerier] struct {
-	clientConn   grpc.ClientConn
-	queryClient  C
+// R is the type of the parameters and Q is the type of the query client.
+type baseParamsQuerier[P cosmostypes.Msg, Q paramsQuerierIface[P]] struct {
+	clientConn   gogogrpc.ClientConn
+	queryClient  Q
 	blockQuerier client.BlockQueryClient
 	paramsCache  client.HistoricalQueryCache[P]
 	config       *ParamsQuerierConfig
 }
 
+// TODO_IN_THIS_COMMIT: update godoc...
 // paramsQueryFn defines a function type for querying parameters from the chain
 type paramsQueryFn[P any, C any] func(context.Context, C) (P, error)
 
+// TODO_IN_THIS_COMMIT: update godoc...
 // GetParams implements the common parameter querying with caching
-func (bq *baseParamsQuerier[P, C]) GetParams(ctx context.Context) (P, error) {
+func (bq *baseParamsQuerier[P, Q]) GetParams(ctx context.Context) (P, error) {
 	logger := polylog.Ctx(ctx).With(
 		"querier", bq.config.ModuleName,
 		"method", "GetParams",
 	)
 
 	// Check cache first
+	var paramsZero P
 	cached, err := bq.paramsCache.Get("params")
 	switch {
 	case err == nil:
 		logger.Debug().Msg("cache hit")
 		return cached, nil
 	case !errors.Is(err, cache.ErrCacheMiss):
-		return cached, err
+		return paramsZero, err
 	}
 
 	logger.Debug().Msg("cache miss")
 
 	// Query chain on cache miss
-	var zero P
-	if bq.config.ParamsRequest == nil {
-		return zero, fmt.Errorf("params request not configured")
-	}
-
-	res, err := bq.queryClient.Params(ctx, bq.config.ParamsRequest)
+	params, err := bq.queryClient.GetParams(ctx)
 	if err != nil {
 		if bq.config.ModuleParamError != nil {
-			return zero, bq.config.ModuleParamError.Wrap(err.Error())
+			return paramsZero, bq.config.ModuleParamError.Wrap(err.Error())
 		}
-		return zero, err
+		return paramsZero, err
 	}
-
-	params, ok := res.(interface{ GetParams() P })
-	if !ok {
-		return zero, fmt.Errorf("response does not implement GetParams method")
-	}
-
-	result := params.GetParams()
 
 	// Cache the result before returning
-	if err = bq.paramsCache.Set("params", result); err != nil {
-		return result, err
+	if err = bq.paramsCache.Set("params", params); err != nil {
+		return paramsZero, err
 	}
 
-	return result, nil
+	return params, nil
 }
 
+// TODO_IN_THIS_COMMIT: update godoc...
 // GetParamsAtHeight returns parameters as they were at a specific height
-func (bq *baseParamsQuerier[P, C]) GetParamsAtHeight(ctx context.Context, height int64) (P, error) {
+func (bq *baseParamsQuerier[P, Q]) GetParamsAtHeight(ctx context.Context, height int64) (P, error) {
 	logger := polylog.Ctx(ctx).With(
 		"querier", bq.config.ModuleName,
 		"method", "GetParamsAtHeight",

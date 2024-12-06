@@ -7,7 +7,9 @@ import (
 	"github.com/cosmos/gogoproto/grpc"
 
 	"github.com/pokt-network/poktroll/pkg/client"
+	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	servicetypes "github.com/pokt-network/poktroll/x/service/types"
+	sharedkeeper "github.com/pokt-network/poktroll/x/shared/keeper"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
@@ -19,6 +21,8 @@ var _ client.ServiceQueryClient = (*serviceQuerier)(nil)
 type serviceQuerier struct {
 	clientConn     grpc.ClientConn
 	serviceQuerier servicetypes.QueryClient
+	paramsQuerier  client.ParamsQuerier[*sharedtypes.Params]
+	paramsCache    client.QueryCache[*apptypes.Params]
 }
 
 // NewServiceQuerier returns a new instance of a client.ServiceQueryClient by
@@ -27,6 +31,8 @@ type serviceQuerier struct {
 // Required dependencies:
 // - clientCtx (grpc.ClientConn)
 func NewServiceQuerier(deps depinject.Config) (client.ServiceQueryClient, error) {
+	keeperParamsQuerier := sharedkeeper.NewKeeperParamsQuerier[servicetypes.Params](ServiceKeeper)
+
 	servq := &serviceQuerier{}
 
 	if err := depinject.Inject(

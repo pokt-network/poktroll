@@ -14,18 +14,18 @@ var _ client.ParamsQuerier[*sharedtypes.Params] = (*KeeperParamsQuerier[sharedty
 
 // DEV_NOTE: Can't use cosmostypes.Msg instead of any because M
 // would be a pointer but GetParams() returns a value. 🙄
-type paramsKeeper[M any] interface {
+type paramsKeeperIface[M any] interface {
 	GetParams(context.Context) M
 }
 
 // KeeperParamsQuerier provides a base implementation of ParamsQuerier for keeper-based clients
-type KeeperParamsQuerier[M any, K paramsKeeper[M]] struct {
+type KeeperParamsQuerier[M any, K paramsKeeperIface[M]] struct {
 	keeper K
 	cache  client.HistoricalQueryCache[M]
 }
 
 // NewKeeperParamsQuerier creates a new KeeperParamsQuerier instance
-func NewKeeperParamsQuerier[M any, K paramsKeeper[M]](
+func NewKeeperParamsQuerier[M any, K paramsKeeperIface[M]](
 	keeper K,
 	opts ...cache.CacheOption,
 ) *KeeperParamsQuerier[M, K] {
@@ -35,6 +35,8 @@ func NewKeeperParamsQuerier[M any, K paramsKeeper[M]](
 		cache.WithEvictionPolicy(cache.FirstInFirstOut),
 	}
 	opts = append(defaultOpts, opts...)
+
+	// TODO_IMPROVE: Implement and call a goroutine that subscribes to params updates to keep the cache hot.
 
 	return &KeeperParamsQuerier[M, K]{
 		keeper: keeper,

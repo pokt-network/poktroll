@@ -9,7 +9,9 @@ import (
 	"github.com/cosmos/gogoproto/grpc"
 
 	"github.com/pokt-network/poktroll/pkg/client"
+	"github.com/pokt-network/poktroll/pkg/client/query/cache"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 var _ client.ApplicationQueryClient = (*appQuerier)(nil)
@@ -18,8 +20,12 @@ var _ client.ApplicationQueryClient = (*appQuerier)(nil)
 // querying of on-chain application information through a single exposed method
 // which returns an apptypes.Application interface
 type appQuerier struct {
+	*baseParamsQuerier[*apptypes.Params, apptypes.ApplicationQueryClient]
+
 	clientConn         grpc.ClientConn
 	applicationQuerier apptypes.QueryClient
+	paramsQuerier      client.ParamsQuerier[*apptypes.Params]
+	paramsCache        client.QueryCache[*apptypes.Params]
 }
 
 // NewApplicationQuerier returns a new instance of a client.ApplicationQueryClient
@@ -27,8 +33,28 @@ type appQuerier struct {
 //
 // Required dependencies:
 // - clientCtx
-func NewApplicationQuerier(deps depinject.Config) (client.ApplicationQueryClient, error) {
-	aq := &appQuerier{}
+func NewApplicationQuerier(
+	deps depinject.Config,
+	opts ...ParamsQuerierOptionFn,
+) (client.ApplicationQueryClient, error) {
+	cfg := DefaultParamsQuerierConfig()
+	for _, opt := range opts {
+		opt(cfg)
+	}
+
+	paramsQuerier, err := NewParamsQuerier[*apptypes.Params, apptypes.ApplicationQueryClient](
+		deps, apptypes.NewAppQueryClient,
+		WithModuleInfo[*sharedtypes.Params](sharedtypes.ModuleName, sharedtypes.ErrSharedParamInvalid),
+		WithParamsCacheOptions(cfg.CacheOpts...),
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	aq := &appQuerier{
+		paramsCache:   cache.NewInMemoryCache[*apptypes.Params](cfg.CacheOpts...),
+		paramsQuerier: paramsQuerier,
+	}
 
 	if err := depinject.Inject(
 		deps,

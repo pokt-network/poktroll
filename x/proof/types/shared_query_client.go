@@ -14,7 +14,7 @@ var _ client.SharedQueryClient = (*SharedKeeperQueryClient)(nil)
 // It does not rely on the QueryClient, and therefore does not make any
 // network requests as in the off-chain implementation.
 type SharedKeeperQueryClient struct {
-	*keeper.KeeperParamsQuerier[sharedtypes.Params, keeper.Keeper]
+	*keeper.KeeperParamsQuerier[sharedtypes.Params, SharedKeeper]
 
 	sharedKeeper  SharedKeeper
 	sessionKeeper SessionKeeper
@@ -23,7 +23,7 @@ type SharedKeeperQueryClient struct {
 // NewSharedKeeperQueryClient returns a new SharedQueryClient that is backed
 // by an SharedKeeper instance.
 func NewSharedKeeperQueryClient(
-	sharedKeeper keeper.Keeper,
+	sharedKeeper SharedKeeper,
 	sessionKeeper SessionKeeper,
 ) client.SharedQueryClient {
 	keeperParamsQuerier := keeper.NewKeeperParamsQuerier[sharedtypes.Params](sharedKeeper)
@@ -34,14 +34,6 @@ func NewSharedKeeperQueryClient(
 		sessionKeeper:       sessionKeeper,
 	}
 }
-
-//// GetParams queries & returns the shared module on-chain parameters.
-//func (sqc *SharedKeeperQueryClient) GetParams(
-//	ctx context.Context,
-//) (params *sharedtypes.Params, err error) {
-//	sharedParams := sqc.sharedKeeper.GetParams(ctx)
-//	return &sharedParams, nil
-//}
 
 // GetSessionGracePeriodEndHeight returns the block height at which the grace period
 // for the session which includes queryHeight elapses.

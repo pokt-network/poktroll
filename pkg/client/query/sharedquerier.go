@@ -18,11 +18,12 @@ var _ client.SharedQueryClient = (*sharedQuerier)(nil)
 // sharedQuerier is a wrapper around the sharedtypes.QueryClient that enables the
 // querying of on-chain shared information
 type sharedQuerier struct {
-	*baseParamsQuerier[*sharedtypes.Params, sharedtypes.QueryClient]
+	*baseParamsQuerier[*sharedtypes.Params, client.SharedQueryClient]
 
 	clientConn    grpc.ClientConn
 	sharedQuerier sharedtypes.QueryClient
 	blockQuerier  client.BlockQueryClient
+	paramsQuerier client.ParamsQuerier[*sharedtypes.Params]
 	paramsCache   client.QueryCache[*sharedtypes.Params]
 }
 
@@ -34,17 +35,27 @@ type sharedQuerier struct {
 // - client.BlockQueryClient
 func NewSharedQuerier(
 	deps depinject.Config,
-	opts ...SharedQuerierOptionFn,
+	opts ...ParamsQuerierOptionFn,
 ) (client.SharedQueryClient, error) {
-	cfg := DefaultSharedQuerierConfig()
+	cfg := DefaultParamsQuerierConfig()
 	for _, opt := range opts {
 		opt(cfg)
+	}
+
+	paramsQuerier, err := NewParamsQuerier[*sharedtypes.Params, sharedtypes.SharedQueryClient](
+		deps, sharedtypes.NewSharedQueryClient,
+		WithModuleInfo[*sharedtypes.Params](sharedtypes.ModuleName, sharedtypes.ErrSharedParamInvalid),
+		WithParamsCacheOptions(cfg.CacheOpts...),
+	)
+	if err != nil {
+		return nil, err
 	}
 
 	sq := &sharedQuerier{
 		// TODO_IN_THIS_COMMIT: extract this to an option.
 		// TODO_IMPROVE: add an option for persistent cache.
-		paramsCache: cache.NewInMemoryCache[*sharedtypes.Params](cfg.CacheOpts...),
+		paramsCache:   cache.NewInMemoryCache[*sharedtypes.Params](cfg.CacheOpts...),
+		paramsQuerier: paramsQuerier,
 	}
 
 	if err := depinject.Inject(
@@ -56,8 +67,6 @@ func NewSharedQuerier(
 	}
 
 	sq.sharedQuerier = sharedtypes.NewQueryClient(sq.clientConn)
-
-	// TODO: Implement and call a goroutine that subscribes to params updates to keep the cache hot.
 
 	return sq, nil
 }
