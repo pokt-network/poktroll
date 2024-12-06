@@ -23,3 +23,9 @@ type ParamSubspace interface {
 	Get(context.Context, []byte, interface{})
 	Set(context.Context, []byte, interface{})
 }
+
+//type SessionKeeper interface {
+//	GetSession(context.Context, *sessiontypes.QueryGetSessionRequest) (*sessiontypes.QueryGetSessionResponse, error)
+//	GetBlockHash(ctx context.Context, height int64) []byte
+//	StoreBlockHash(ctx context.Context)
+//}

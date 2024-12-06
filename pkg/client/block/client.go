@@ -187,6 +187,12 @@ func (b *blockReplayClient) queryLatestBlock(
 	errCh := make(chan error)
 
 	go func() {
+		// TODO_IN_THIS_COMMIT: extract labels (and values?) to constants.
+		defer client.AllQueriesTotalCounter.With(
+			"method", "block",
+			"client_type", "block",
+		).Add(1)
+
 		queryBlockResult, err := b.onStartQueryClient.Block(ctx, nil)
 		if err != nil {
 			errCh <- err

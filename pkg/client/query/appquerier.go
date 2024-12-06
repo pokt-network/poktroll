@@ -4,10 +4,14 @@ import (
 	"context"
 
 	"cosmossdk.io/depinject"
-	grpc "github.com/cosmos/gogoproto/grpc"
+	cosmostypes "github.com/cosmos/cosmos-sdk/types"
+	accounttypes "github.com/cosmos/cosmos-sdk/x/auth/types"
+	gogogrpc "github.com/cosmos/gogoproto/grpc"
 
 	"github.com/pokt-network/poktroll/pkg/client"
+	"github.com/pokt-network/poktroll/pkg/client/query/cache"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 var _ client.ApplicationQueryClient = (*appQuerier)(nil)
@@ -16,17 +20,41 @@ var _ client.ApplicationQueryClient = (*appQuerier)(nil)
 // querying of on-chain application information through a single exposed method
 // which returns an apptypes.Application interface
 type appQuerier struct {
-	clientConn         grpc.ClientConn
+	*baseParamsQuerier[*apptypes.Params, apptypes.ApplicationQueryClient]
+
+	clientConn         gogogrpc.ClientConn
 	applicationQuerier apptypes.QueryClient
+	paramsQuerier      client.ParamsQuerier[*apptypes.Params]
+	paramsCache        client.QueryCache[*apptypes.Params]
 }
 
 // NewApplicationQuerier returns a new instance of a client.ApplicationQueryClient
 // by injecting the dependecies provided by the depinject.Config
 //
 // Required dependencies:
-// - clientCtx
-func NewApplicationQuerier(deps depinject.Config) (client.ApplicationQueryClient, error) {
-	aq := &appQuerier{}
+// - clientCtx (gogogrpc.ClientConn)
+func NewApplicationQuerier(
+	deps depinject.Config,
+	opts ...ParamsQuerierOptionFn,
+) (client.ApplicationQueryClient, error) {
+	cfg := DefaultParamsQuerierConfig()
+	for _, opt := range opts {
+		opt(cfg)
+	}
+
+	paramsQuerier, err := NewParamsQuerier[*apptypes.Params, apptypes.ApplicationQueryClient](
+		deps, apptypes.NewAppQueryClient,
+		WithModuleInfo[*sharedtypes.Params](sharedtypes.ModuleName, sharedtypes.ErrSharedParamInvalid),
+		WithParamsCacheOptions(cfg.CacheOpts...),
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	aq := &appQuerier{
+		paramsCache:   cache.NewInMemoryCache[*apptypes.Params](cfg.CacheOpts...),
+		paramsQuerier: paramsQuerier,
+	}
 
 	if err := depinject.Inject(
 		deps,
@@ -45,6 +73,12 @@ func (aq *appQuerier) GetApplication(
 	ctx context.Context,
 	appAddress string,
 ) (apptypes.Application, error) {
+	defer client.AllQueriesTotalCounter.With(
+		"method", "account",
+		"client_type", "account",
+		"msg_type", cosmostypes.MsgTypeURL(new(accounttypes.QueryAccountRequest)),
+	).Add(1)
+
 	req := apptypes.QueryGetApplicationRequest{Address: appAddress}
 	res, err := aq.applicationQuerier.Application(ctx, &req)
 	if err != nil {
