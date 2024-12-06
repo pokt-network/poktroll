@@ -23,7 +23,7 @@ There are 3 on-chain actors:
 There are 2 off-chain actors:
 
 - [RelayMiners](./relay_miner.md)
-- [AppGateServers](./appgate_server.md)
+- [PATH Gateways](./path_gateway.md)
 
 ```mermaid
 ---
@@ -38,7 +38,7 @@ flowchart TB
     end
 
     subgraph off-chain
-        APS[AppGate Server]
+        PG[PATH Gateway]
         RM[Relay Miner]
     end
 

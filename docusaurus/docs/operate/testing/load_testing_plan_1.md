@@ -22,7 +22,7 @@ _This document outlines the first load test for the Shannon upgrade. IT **IS NOT
   - [What to measure?](#what-to-measure)
     - [1. Chain State Size](#1-chain-state-size)
     - [2. Validators](#2-validators)
-    - [3. AppGate Server (Application, Gateway, etc…)](#3-appgate-server-application-gateway-etc)
+    - [3. PATH Gateway (Application, Gateway, etc…)](#3-path-gateway-application-gateway-etc)
     - [4. RelayMiner (Supplier, SMT, etc..)](#4-relayminer-supplier-smt-etc)
   - [Out-of-scope](#out-of-scope)
 - [Architecture / Component Diagram](#architecture--component-diagram)
@@ -131,7 +131,7 @@ pie showData
 | Block Publishing        |     |     | ❓       |      |      |
 | Data Availability State |     |     |         | ❓    |      |
 
-#### 3. AppGate Server (Application, Gateway, etc…)
+#### 3. PATH Gateway (Application, Gateway, etc…)
 
 `What`: Multiple `line charts` to capture `Disk` (size & iops), `RAM`, `CPU` , `Network` usage (ingress/egress)
 
@@ -140,7 +140,7 @@ pie showData
 - `Relay Proxies` Ingress/egress of relays could add up to large networking costs
 - `Caches & State` - All the caching & state can have impact across the board
 - `Request Processing` - Signature generation, request marshaling / unmarshaling, etc…
-- `Response handling` - Slow supplier responses could increase pending relays at the AppGate level (i.e. RAM)
+- `Response handling` - Slow supplier responses could increase pending relays at the `PATH Gateway` level (i.e. RAM)
 
 |                    | RAM | CPU | Network | Disk | Time |
 | ------------------ | --- | --- | ------- | ---- | ---- |
@@ -206,8 +206,8 @@ flowchart TB
         P("Pocket Validator")
 
         subgraph G["Gateways"]
-            AG1["AppGate Server 1"]
-            AGN["AppGate Server N"]
+            PG1["PATH Gateway 1"]
+            PGN["PATH Gateway N"]
         end
 
         subgraph S["Suppliers / RelayMiner"]
