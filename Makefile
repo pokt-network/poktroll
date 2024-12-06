@@ -283,6 +283,7 @@ ignite_acc_list: ## List all the accounts in LocalNet
 ignite_poktrolld_build: check_go_version check_ignite_version ## Build the poktrolld binary using Ignite
 	ignite chain build --skip-proto --debug -v -o $(shell go env GOPATH)/bin
 
+# TODO_TECHDEBT: Make sure this is called as part of CI
 .PHONY: ignite_openapi_gen
 ignite_openapi_gen: ## Generate the OpenAPI spec for the Ignite API
 	ignite generate openapi --yes

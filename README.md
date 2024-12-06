@@ -20,7 +20,7 @@
   <a href="https://github.com/tools/godep" ><img src="https://img.shields.io/badge/godep-dependency-71a3d9.svg"/></a>
 </div>
 
-# poktroll <!-- omit in toc -->
+# Pocket Network Shannon (aka poktroll) <!-- omit in toc -->
 
 **poktroll** is built using the [Cosmos SDK](https://docs.cosmos.network) and
 [CometBFT](https://cometbft.com/), created with [Ignite CLI](https://ignite.com/cli)

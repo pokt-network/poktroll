@@ -77,7 +77,7 @@ client:
   hooks:
     path: react/src/hooks
   openapi:
-    path: docs/static/openapi.yml
+    path: docs/static/openapi.json
 validators:
   - name: validator1
     bonded: 900000000upokt
