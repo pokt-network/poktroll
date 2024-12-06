@@ -25,6 +25,8 @@ var (
 	defaultHome = os.Getenv("POKTROLLD_HOME")
 	// defaultPathURL used by curl commands to send relay requests
 	defaultPathURL = os.Getenv("PATH_URL")
+	// defaultPathHostOverride overrides the host in the URL used to send requests
+	defaultPathHostOverride = os.Getenv("PATH_HOST_OVERRIDE")
 	// defaultDebugOutput provides verbose output on manipulations with binaries (cli command, stdout, stderr)
 	defaultDebugOutput = os.Getenv("E2E_DEBUG_OUTPUT")
 )
@@ -178,8 +180,15 @@ func (p *pocketdBin) runCurlCmd(rpcBaseURL, service, method, path, appAddr, data
 		return nil, err
 	}
 
+	// Store the virtual host we want to send in the Host header
+	virtualHost := rpcUrl.Host
 	if len(service) > 0 {
-		rpcUrl.Host = fmt.Sprintf("%s.%s", service, rpcUrl.Host)
+		virtualHost = fmt.Sprintf("%s.%s", service, virtualHost)
+	}
+
+	// Override the actual connection address if the environment requires it
+	if defaultPathHostOverride != "" {
+		rpcUrl.Host = defaultPathHostOverride
 	}
 
 	// Ensure that if a path is provided, it starts with a "/".
@@ -188,13 +197,13 @@ func (p *pocketdBin) runCurlCmd(rpcBaseURL, service, method, path, appAddr, data
 	if len(path) > 0 && path[0] != '/' {
 		path = "/" + path
 	}
-
 	rpcUrl.Path = rpcUrl.Path + path
 
 	base := []string{
 		"-v",                                   // verbose output
 		"-sS",                                  // silent with error
 		"-H", `Content-Type: application/json`, // HTTP headers
+		"-H", fmt.Sprintf("Host: %s", virtualHost), // Add virtual host header
 		"-H", fmt.Sprintf("X-App-Address: %s", appAddr),
 		rpcUrl.String(),
 	}

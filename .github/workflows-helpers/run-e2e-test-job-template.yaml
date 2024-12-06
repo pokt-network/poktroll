@@ -51,6 +51,10 @@ spec:
               value: /root/.poktroll
             - name: PATH_URL
               value: http://${NAMESPACE}-path:3000
+              # As we can't expose many DNS names, but the test requires to send requests to different subdomains (e.g. anvil., rest., etc.),
+              # we override the host in the URL used to send requests.
+            - name: PATH_HOST_OVERRIDE
+              value: ${NAMESPACE}-path:3000
           volumeMounts:
             - mountPath: /root/.poktroll/keyring-test/
               name: writable-keys-volume
