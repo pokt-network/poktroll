@@ -29,8 +29,6 @@ var (
 	defaultDebugOutput = os.Getenv("E2E_DEBUG_OUTPUT")
 )
 
-const ()
-
 func isVerbose() bool {
 	return defaultDebugOutput == "true"
 }
@@ -202,9 +200,9 @@ func (p *pocketdBin) runCurlCmd(rpcBaseURL, service, method, path, appAddr, data
 	}
 
 	if method == "POST" {
-		base = append(base, "--data", fmt.Sprintf("%s", data))
+		base = append(base, "--data", data)
 	} else if len(data) > 0 {
-		fmt.Printf("WARN: data provided but not being included in the %s request", method)
+		fmt.Printf("WARN: data provided but not being included in the %s request because it is not of type POST", method)
 	}
 	args = append(base, args...)
 	commandStr := "curl " + strings.Join(args, " ") // Create a string representation of the command

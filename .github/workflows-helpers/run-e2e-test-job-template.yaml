@@ -11,8 +11,8 @@ spec:
         pokt.network/purpose: e2e-tests
     spec:
       initContainers:
-        # We need to make sure the services like validator, relayminer, PATH, etc. work before we execute
-        # an e2e test.
+        # We need to ensure services like Validator, RelayMiner, PATH, etc. work
+        # before executing an e2e test.
         - name: check-services
           image: ruby:3.0
           command: ["ruby"]

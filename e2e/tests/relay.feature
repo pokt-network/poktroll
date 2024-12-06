@@ -9,6 +9,7 @@ Feature: Relay Namespace
         Then the application "app1" sends the supplier "supplier1" a successful request for service "anvil" with path "" and data '{"jsonrpc":"2.0","method":"eth_blockNumber","params":[],"id":1}'
 
     # TODO_MAINNET(@red-0ne): Enable this test once PATH Gateway supports REST.
+    # See https://github.com/buildwithgrove/path/issues/87
     # Scenario: App can send a REST relay to Supplier
     #     Given the user has the pocketd binary installed
     #     # Account "app2" is staked for service "rest"

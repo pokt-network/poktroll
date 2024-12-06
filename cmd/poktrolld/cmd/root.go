@@ -134,6 +134,10 @@ func NewRootCmd() *cobra.Command {
 		relayercmd.RelayerCmd(),
 	)
 
+	// TODO_MAINNET(@commoddity): Consider adding an entrypoint to deploy a PATH
+	// gateway to the localnet to streamline it for users.
+	// For reference, see how we removed appgateserver in #879.
+
 	return rootCmd
 }
 

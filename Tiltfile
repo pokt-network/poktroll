@@ -305,8 +305,9 @@ for x in range(localnet_config["relayminers"]["count"]):
 if localnet_config["path_local_repo"]["enabled"]:
     docker_build("path-local", path_local_repo)
 
-# TODO_TECHDEBT(path#72): Find and replace all `appgateserver` in /localnet/grafana-dashboards`
+# TODO_MAINNET(@okdas): Find and replace all `appgateserver` in ./localnet/grafana-dashboards`
 # with PATH metrics (see the .json files)
+# Ref: https://github.com/buildwithgrove/path/pull/72
 
 # Provision PATH Gateway(s)
 actor_number = 0

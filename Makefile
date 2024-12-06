@@ -10,7 +10,7 @@ POCKET_ADDR_PREFIX = pokt
 LOAD_TEST_CUSTOM_MANIFEST ?= loadtest_manifest_example.yaml
 
 # The domain ending in ".town" is staging, ".city" is production
-GROVE_GATEWAY_STAGING_ETH_MAINNET = https://eth-mainnet.rpc.grove.town
+GROVE_PORTAL_STAGING_ETH_MAINNET = https://eth-mainnet.rpc.grove.town
 # JSON RPC data for a test relay request
 JSON_RPC_DATA_ETH_BLOCK_HEIGHT = '{"jsonrpc":"2.0","id":"0","method":"eth_blockNumber", "params": []}'
 
@@ -414,13 +414,13 @@ release_tag_minor_release: ## Tag a new minor release (e.g. v1.0.0 -> v1.1.0)
 	@echo "  git push origin $(NEW_TAG)"
 	@echo "And draft a new release at https://github.com/pokt-network/poktroll/releases/new"
 
-#############################
-### Grove Gateway Helpers ###
-#############################
+############################
+### Grove Portal Helpers ###
+############################
 
 .PHONY: grove_staging_eth_block_height
 grove_staging_eth_block_height: ## Sends a relay through the staging grove gateway to the eth-mainnet chain. Must have GROVE_STAGING_PORTAL_APP_ID environment variable set.
-	curl $(GROVE_GATEWAY_STAGING_ETH_MAINNET)/v1/$(GROVE_STAGING_PORTAL_APP_ID) \
+	curl $(GROVE_PORTAL_STAGING_ETH_MAINNET)/v1/$(GROVE_STAGING_PORTAL_APP_ID) \
 		-H 'Content-Type: application/json' \
 		-H 'Protocol: shannon-testnet' \
 		--data $(JSON_RPC_DATA_ETH_BLOCK_HEIGHT)

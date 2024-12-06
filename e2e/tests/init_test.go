@@ -61,10 +61,8 @@ var (
 	flagFeaturesPath string
 	keyRingFlag      = "--keyring-backend=test"
 	chainIdFlag      = "--chain-id=poktroll"
-	// Keeping localhost by default because that is how we run the tests on our machines locally
-	// gatewayUrl is pointing to a non-sovereign app gate server so multiple
-	// apps could relay through it.
-	pathUrl = "http://localhost:3000/v1" // Keeping localhost by default because that is how we run the tests on our machines locally
+	// pathUrl points to a local gateway using the PATH framework in centralized mode.
+	pathUrl = "http://localhost:3000/v1" // localhost is kept as the default to streamline local development & testing.
 )
 
 func init() {
@@ -74,7 +72,7 @@ func init() {
 
 	flag.StringVar(&flagFeaturesPath, "features-path", "*.feature", "Specifies glob paths for the runner to look up .feature files")
 
-	// If "PATH_URL" envar is present, use it for pathUrl
+	// If "PATH_URL" ENV variable is present, use it for pathUrl
 	if url := os.Getenv("PATH_URL"); url != "" {
 		pathUrl = url
 	}
