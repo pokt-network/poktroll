@@ -5,7 +5,7 @@ config:
     addr: :9090
   pocket_node:
     query_node_rpc_url: tcp://validator-poktroll-validator:26657
-    query_node_grpc_url: tcp://validator-poktroll-validator:9090
+    query_node_grpc_url: tcp://proxy.local:10090
     tx_node_rpc_url: tcp://validator-poktroll-validator:26657
   suppliers: []
   pprof:

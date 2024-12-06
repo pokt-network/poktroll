@@ -8,122 +8,116 @@ import (
 	"cosmossdk.io/depinject"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"
+	"github.com/stretchr/testify/suite"
 	"google.golang.org/grpc"
 
 	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/client/query"
+	"github.com/pokt-network/poktroll/pkg/client/query/cache"
 	_ "github.com/pokt-network/poktroll/pkg/polylog/polyzero"
 	"github.com/pokt-network/poktroll/testutil/mockclient"
 	"github.com/pokt-network/poktroll/testutil/mockgrpc"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
-func setupTest(t *testing.T) (client.SharedQueryClient, *mockgrpc.MockClientConn, *mockclient.MockCometRPC) {
-	ctrl := gomock.NewController(t)
-
-	mockConn := mockgrpc.NewMockClientConn(ctrl)
-	mockBlock := mockclient.NewMockCometRPC(ctrl)
-
-	cfg := depinject.Supply(mockConn, mockBlock)
-
-	querier, err := query.NewSharedQuerier(cfg)
-	require.NoError(t, err)
-	require.NotNil(t, querier)
-
-	return querier, mockConn, mockBlock
+type SharedQuerierTestSuite struct {
+	suite.Suite
+	ctrl      *gomock.Controller
+	ctx       context.Context
+	querier   client.SharedQueryClient
+	mockConn  *mockgrpc.MockClientConn
+	mockBlock *mockclient.MockCometRPC
+	TTL       time.Duration
 }
 
-func TestSharedQuerier_ParamsHistoricalValues(t *testing.T) {
-	ctx := context.Background()
-	querier, mockConn, _ := setupTest(t)
+func TestSharedQuerierSuite(t *testing.T) {
+	suite.Run(t, new(SharedQuerierTestSuite))
+}
 
-	// Helper function to create params with specific values
-	createParamsWithMultiplier := func(multiplier uint64) *sharedtypes.Params {
-		return &sharedtypes.Params{
-			NumBlocksPerSession:             100,
-			GracePeriodEndOffsetBlocks:      10,
-			ClaimWindowOpenOffsetBlocks:     20,
-			ClaimWindowCloseOffsetBlocks:    30,
-			ProofWindowOpenOffsetBlocks:     40,
-			ProofWindowCloseOffsetBlocks:    50,
-			SupplierUnbondingPeriodSessions: 5,
-			ComputeUnitsToTokensMultiplier:  multiplier,
-		}
-	}
+func (s *SharedQuerierTestSuite) SetupTest() {
+	s.ctrl = gomock.NewController(s.T())
+	s.ctx = context.Background()
+	s.mockConn = mockgrpc.NewMockClientConn(s.ctrl)
+	s.mockBlock = mockclient.NewMockCometRPC(s.ctrl)
+	s.TTL = 200 * time.Millisecond
 
-	t.Run("retrieves and caches params values", func(t *testing.T) {
-		// First query - params with multiplier 1000
-		mockConn.EXPECT().
-			Invoke(
-				gomock.Any(),
-				"/poktroll.shared.Query/Params",
-				gomock.Any(),
-				gomock.Any(),
-				gomock.Any(),
-			).
-			DoAndReturn(func(_ context.Context, _ string, _ interface{}, reply interface{}, _ ...grpc.CallOption) error {
-				resp := reply.(*sharedtypes.QueryParamsResponse)
-				resp.Params = *createParamsWithMultiplier(1000)
-				return nil
-			}).Times(1)
+	cfg := depinject.Supply(s.mockConn, s.mockBlock)
 
-		// Initial query should fetch from chain
-		params1, err := querier.GetParams(ctx)
-		require.NoError(t, err)
-		require.Equal(t, uint64(1000), params1.ComputeUnitsToTokensMultiplier)
+	// Create querier with test-specific cache settings
+	querier, err := query.NewSharedQuerier(cfg,
+		query.WithCacheOptions(
+			cache.WithTTL(s.TTL),
+			cache.WithHistoricalMode(100),
+		),
+	)
+	require.NoError(s.T(), err)
+	require.NotNil(s.T(), querier)
 
-		// Second query - should use cache, no mock expectation needed
-		params2, err := querier.GetParams(ctx)
-		require.NoError(t, err)
-		require.Equal(t, uint64(1000), params2.ComputeUnitsToTokensMultiplier)
+	s.querier = querier
+}
 
-		// Third query after small delay - should still use cache
-		time.Sleep(100 * time.Millisecond)
-		params3, err := querier.GetParams(ctx)
-		require.NoError(t, err)
-		require.Equal(t, uint64(1000), params3.ComputeUnitsToTokensMultiplier)
-	})
+func (s *SharedQuerierTestSuite) TearDownTest() {
+	s.ctrl.Finish()
+}
 
-	t.Run("handles cache expiration", func(t *testing.T) {
-		// First query
-		mockConn.EXPECT().
-			Invoke(
-				gomock.Any(),
-				"/poktroll.shared.Query/Params",
-				gomock.Any(),
-				gomock.Any(),
-				gomock.Any(),
-			).
-			DoAndReturn(func(_ context.Context, _ string, _ interface{}, reply interface{}, _ ...grpc.CallOption) error {
-				resp := reply.(*sharedtypes.QueryParamsResponse)
-				resp.Params = *createParamsWithMultiplier(2000)
-				return nil
-			}).Times(1)
+func (s *SharedQuerierTestSuite) TestRetrievesAndCachesParamsValues() {
+	multiplier := uint64(1000)
 
-		params1, err := querier.GetParams(ctx)
-		require.NoError(t, err)
-		require.Equal(t, uint64(2000), params1.ComputeUnitsToTokensMultiplier)
+	// First query - params with multiplier 1000
+	s.expectMockConnToReturnParamsWithMultiplierOnce(multiplier)
 
-		// Wait for cache to expire
-		time.Sleep(2 * time.Hour)
+	// Initial query should fetch from chain.
+	params1, err := s.querier.GetParams(s.ctx)
+	s.NoError(err)
+	s.Equal(multiplier, params1.ComputeUnitsToTokensMultiplier)
 
-		// Next query should hit the chain again
-		mockConn.EXPECT().
-			Invoke(
-				gomock.Any(),
-				"/poktroll.shared.Query/Params",
-				gomock.Any(),
-				gomock.Any(),
-				gomock.Any(),
-			).
-			DoAndReturn(func(_ context.Context, _ string, _ interface{}, reply interface{}, _ ...grpc.CallOption) error {
-				resp := reply.(*sharedtypes.QueryParamsResponse)
-				resp.Params = *createParamsWithMultiplier(3000)
-				return nil
-			}).Times(1)
+	// Second query - should use cache, no mock expectation needed, this is
+	// asserted here due to the mock expectation calling Times(1).
+	params2, err := s.querier.GetParams(s.ctx)
+	s.NoError(err)
+	s.Equal(multiplier, params2.ComputeUnitsToTokensMultiplier)
 
-		params2, err := querier.GetParams(ctx)
-		require.NoError(t, err)
-		require.Equal(t, uint64(3000), params2.ComputeUnitsToTokensMultiplier)
-	})
+	// Third query after 90% of the TTL - should still use cache.
+	time.Sleep(time.Duration(float64(s.TTL) * .9))
+	params3, err := s.querier.GetParams(s.ctx)
+	s.NoError(err)
+	s.Equal(multiplier, params3.ComputeUnitsToTokensMultiplier)
+}
+
+func (s *SharedQuerierTestSuite) TestHandlesCacheExpiration() {
+	// First query
+	s.expectMockConnToReturnParamsWithMultiplierOnce(2000)
+
+	params1, err := s.querier.GetParams(s.ctx)
+	s.NoError(err)
+	s.Equal(uint64(2000), params1.ComputeUnitsToTokensMultiplier)
+
+	// Wait for cache to expire
+	time.Sleep(300 * time.Millisecond)
+
+	// Next query should hit the chain again
+	s.expectMockConnToReturnParamsWithMultiplierOnce(3000)
+
+	params2, err := s.querier.GetParams(s.ctx)
+	s.NoError(err)
+	s.Equal(uint64(3000), params2.ComputeUnitsToTokensMultiplier)
+}
+
+func (s *SharedQuerierTestSuite) expectMockConnToReturnParamsWithMultiplierOnce(multiplier uint64) {
+	s.mockConn.EXPECT().
+		Invoke(
+			gomock.Any(),
+			"/poktroll.shared.Query/Params",
+			gomock.Any(),
+			gomock.Any(),
+			gomock.Any(),
+		).
+		DoAndReturn(func(_ context.Context, _ string, _, reply any, _ ...grpc.CallOption) error {
+			resp := reply.(*sharedtypes.QueryParamsResponse)
+			params := sharedtypes.DefaultParams()
+			params.ComputeUnitsToTokensMultiplier = multiplier
+
+			resp.Params = params
+			return nil
+		}).Times(1)
 }

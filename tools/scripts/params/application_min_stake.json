@@ -7,7 +7,7 @@
         "name": "min_stake",
         "as_coin": {
           "denom": "upokt",
-          "amount": "1000000"
+          "amount": "1"
         }
       }
     ]

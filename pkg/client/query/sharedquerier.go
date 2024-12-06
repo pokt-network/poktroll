@@ -3,7 +3,6 @@ package query
 import (
 	"context"
 	"errors"
-	"time"
 
 	"cosmossdk.io/depinject"
 	"github.com/cosmos/gogoproto/grpc"
@@ -19,11 +18,12 @@ var _ client.SharedQueryClient = (*sharedQuerier)(nil)
 // sharedQuerier is a wrapper around the sharedtypes.QueryClient that enables the
 // querying of on-chain shared information
 type sharedQuerier struct {
+	*baseParamsQuerier[*sharedtypes.Params, sharedtypes.QueryClient]
+
 	clientConn    grpc.ClientConn
 	sharedQuerier sharedtypes.QueryClient
 	blockQuerier  client.BlockQueryClient
-	// Add cache for params
-	paramsCache client.QueryCache[*sharedtypes.Params]
+	paramsCache   client.QueryCache[*sharedtypes.Params]
 }
 
 // NewSharedQuerier returns a new instance of a client.SharedQueryClient by
@@ -32,8 +32,20 @@ type sharedQuerier struct {
 // Required dependencies:
 // - clientCtx (grpc.ClientConn)
 // - client.BlockQueryClient
-func NewSharedQuerier(deps depinject.Config) (client.SharedQueryClient, error) {
-	sq := &sharedQuerier{}
+func NewSharedQuerier(
+	deps depinject.Config,
+	opts ...SharedQuerierOptionFn,
+) (client.SharedQueryClient, error) {
+	cfg := DefaultSharedQuerierConfig()
+	for _, opt := range opts {
+		opt(cfg)
+	}
+
+	sq := &sharedQuerier{
+		// TODO_IN_THIS_COMMIT: extract this to an option.
+		// TODO_IMPROVE: add an option for persistent cache.
+		paramsCache: cache.NewInMemoryCache[*sharedtypes.Params](cfg.CacheOpts...),
+	}
 
 	if err := depinject.Inject(
 		deps,
@@ -43,18 +55,9 @@ func NewSharedQuerier(deps depinject.Config) (client.SharedQueryClient, error) {
 		return nil, err
 	}
 
-	sq.paramsCache = cache.NewInMemoryCache[*sharedtypes.Params](
-		// TODO_IN_THIS_COMMIT: extract to constants.
-		cache.WithHistoricalMode(100),
-		// TODO_IN_THIS_COMMIT: reconcile the fact that MaxSize doesn't apply to historical mode...
-		//cache.WithMaxSize(1),
-		cache.WithEvictionPolicy(cache.FirstInFirstOut),
-		// TODO_IN_THIS_COMMIT: extract to a constant.
-		cache.WithTTL(time.Hour*3),
-	)
 	sq.sharedQuerier = sharedtypes.NewQueryClient(sq.clientConn)
 
-	// TODO: Implement a goroutine that subscribes to params updates and updates the cache
+	// TODO: Implement and call a goroutine that subscribes to params updates to keep the cache hot.
 
 	return sq, nil
 }
