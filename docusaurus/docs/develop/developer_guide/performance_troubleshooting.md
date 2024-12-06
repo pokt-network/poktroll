@@ -10,8 +10,8 @@ title: Performance troubleshooting
 - [How to Use `pprof`](#how-to-use-pprof)
   - [Available `pprof` Endpoints](#available-pprof-endpoints)
   - [Configure Software to Expose `pprof` Endpoints](#configure-software-to-expose-pprof-endpoints)
-    - [Full Nodes and Validator Configuration](#full-nodes-and-validator-configuration)
-    - [RelayMiner](#relayminer)
+    - [Full Node \& Validator pprof](#full-node--validator-pprof)
+    - [RelayMiner pprof](#relayminer-pprof)
   - [Save the Profiling Data](#save-the-profiling-data)
   - [Explore the Profiling Data](#explore-the-profiling-data)
   - [Explore without saving data](#explore-without-saving-data)
@@ -91,16 +91,17 @@ or DoS your services if these endpoints are exposed to the internet.
 
 :::
 
-#### Full Nodes and Validator Configuration
+#### Full Node & Validator pprof
 
 In `config.toml`, you can configure `pprof_laddr` to expose a `pprof` endpoint
 on a particular network interface and port. By default, `pprof` listens on `localhost:6060`.
 
 If the value has been modified, you must restart the process.
 
-#### RelayMiner
+#### RelayMiner pprof
 
 The `RelayMiner` can be configured to expose a `pprof` endpoint using a configuration file like this:
+
 <!--
 TODO_MAINNET(@okdas): Mention PATH Gateway once it has pprof support.
 This should be the same as in the following link:

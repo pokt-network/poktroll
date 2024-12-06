@@ -43,7 +43,7 @@ Create a new [GitHub issue here](https://github.com/pokt-network/pocket/issues/n
   - [4.1 View Existing Application](#41-view-existing-application)
   - [4.2 Create an Application configuration](#42-create-an-application-configuration)
   - [4.3 Stake the new Application](#43-stake-the-new-application)
-  - [4.4 Prepare the PATH Gateway configuration](#44-prepare-the-path-gateway-configuration)
+  - [4.4 Prepare the PATH Gateway Configuration](#44-prepare-the-path-gateway-configuration)
 - [5. Send A Relay](#5-send-a-relay)
   - [5.1 Send a relay on Shannon](#51-send-a-relay-on-shannon)
   - [5.2 What just happened?](#52-what-just-happened)
@@ -138,11 +138,13 @@ available commands. Looking inside the Makefile is a great way to learn how to u
 ### 1.3 Prepare your development environment
 
 Run the following command to install `golang` dependencies:
+
 ```bash
 make install_ci_deps
 ```
 
 If you encounter issues related to `mockgen` not being found or failing, try running the following command to verify its installation:
+
 ```bash
 make check_mockgen
 ```
@@ -476,12 +478,12 @@ new shell instance.
 
 ## 4. Manually Stake an Application & Deploy a PATH Gateway
 
-:::note Independent Gateway
+:::note Centralized Gateway
 
-This section will show how to deploy a `PATH Gateway` with `Centralized` mode,
-which will use its configured `Application`s to sign relays.
+This section will show how to deploy a `PATH Gateway` in `Centralized` mode,
+which will use its configured (i.e. owned) `Application`s to sign relays.
 
-We are leaving delegated Gateways outside the scope of the Quickstart guide.
+_Other types of Gateways (e.g. Delegated) are outside the scope of this Quickstart guide._
 
 :::
 
@@ -531,7 +533,7 @@ You can also you re-run, `make app_list` you should see that `SHANNON_APPLICATIO
 
 ![Apps](./img/quickstart_applist.png)
 
-### 4.4 Prepare the PATH Gateway configuration
+### 4.4 Prepare the PATH Gateway Configuration
 
 You can learn more about our [PATH Gateway configs here](https://path.grove.city/operate).
 
