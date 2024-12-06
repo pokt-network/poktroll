@@ -127,7 +127,7 @@ func (k msgServer) StakeSupplier(ctx context.Context, msg *suppliertypes.MsgStak
 
 	supplierStakingFee := k.GetParams(ctx).StakingFee
 
-	if err := k.transferSupplierStakeDiff(ctx, msgSignerAddress, supplierCurrentStake, *msg.Stake); err != nil {
+	if err = k.transferSupplierStakeDiff(ctx, msgSignerAddress, supplierCurrentStake, *msg.Stake); err != nil {
 		logger.Info(fmt.Sprintf("ERROR: could not transfer supplier stake difference due to %v", err))
 		return nil, status.Error(codes.Internal, err.Error())
 	}
@@ -135,7 +135,7 @@ func (k msgServer) StakeSupplier(ctx context.Context, msg *suppliertypes.MsgStak
 	// Deduct the staking fee from the supplier's account balance.
 	// This is called after the stake difference is transferred give the supplier
 	// the opportunity to have enough balance to pay the fee.
-	if err := k.bankKeeper.SendCoinsFromAccountToModule(ctx, msgSignerAddress, suppliertypes.ModuleName, sdk.NewCoins(*supplierStakingFee)); err != nil {
+	if err = k.bankKeeper.SendCoinsFromAccountToModule(ctx, msgSignerAddress, suppliertypes.ModuleName, sdk.NewCoins(*supplierStakingFee)); err != nil {
 		logger.Info(fmt.Sprintf("ERROR: could not send %s coins from %q to %q module account due to %v", supplierStakingFee, msgSignerAddress, suppliertypes.ModuleName, err))
 		return nil, status.Error(codes.FailedPrecondition, err.Error())
 	}
