@@ -27,5 +27,5 @@ localnet_regenesis: check_yq warn_message_acc_initialize_pubkeys ## Regenerate t
 	@cp -r ${HOME}/.poktroll/config $(POKTROLLD_HOME)/
 
 .PHONY: cosmovisor_start_node
-cosmovisor_start_node: # Starts the node using cosmovisor that waits for an upgrade plan
+cosmovisor_start_node: ## Starts the node using cosmovisor that waits for an upgrade plan
 	bash tools/scripts/upgrades/cosmovisor-start-node.sh
