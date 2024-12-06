@@ -6,7 +6,7 @@ import (
 	"cosmossdk.io/depinject"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	accounttypes "github.com/cosmos/cosmos-sdk/x/auth/types"
-	"github.com/cosmos/gogoproto/grpc"
+	gogogrpc "github.com/cosmos/gogoproto/grpc"
 
 	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/client/query/cache"
@@ -22,7 +22,7 @@ var _ client.ApplicationQueryClient = (*appQuerier)(nil)
 type appQuerier struct {
 	*baseParamsQuerier[*apptypes.Params, apptypes.ApplicationQueryClient]
 
-	clientConn         grpc.ClientConn
+	clientConn         gogogrpc.ClientConn
 	applicationQuerier apptypes.QueryClient
 	paramsQuerier      client.ParamsQuerier[*apptypes.Params]
 	paramsCache        client.QueryCache[*apptypes.Params]
@@ -32,7 +32,7 @@ type appQuerier struct {
 // by injecting the dependecies provided by the depinject.Config
 //
 // Required dependencies:
-// - clientCtx
+// - clientCtx (gogogrpc.ClientConn)
 func NewApplicationQuerier(
 	deps depinject.Config,
 	opts ...ParamsQuerierOptionFn,

@@ -35,17 +35,17 @@ type sharedQuerier struct {
 // - client.BlockQueryClient
 func NewSharedQuerier(
 	deps depinject.Config,
-	opts ...ParamsQuerierOptionFn,
+	paramsQuerierOpts ...ParamsQuerierOptionFn,
 ) (client.SharedQueryClient, error) {
-	cfg := DefaultParamsQuerierConfig()
-	for _, opt := range opts {
-		opt(cfg)
+	paramsQuerierCfg := DefaultParamsQuerierConfig()
+	for _, opt := range paramsQuerierOpts {
+		opt(paramsQuerierCfg)
 	}
 
 	paramsQuerier, err := NewParamsQuerier[*sharedtypes.Params, sharedtypes.SharedQueryClient](
 		deps, sharedtypes.NewSharedQueryClient,
 		WithModuleInfo[*sharedtypes.Params](sharedtypes.ModuleName, sharedtypes.ErrSharedParamInvalid),
-		WithParamsCacheOptions(cfg.CacheOpts...),
+		WithParamsCacheOptions(paramsQuerierCfg.CacheOpts...),
 	)
 	if err != nil {
 		return nil, err
@@ -54,7 +54,7 @@ func NewSharedQuerier(
 	sq := &sharedQuerier{
 		// TODO_IN_THIS_COMMIT: extract this to an option.
 		// TODO_IMPROVE: add an option for persistent cache.
-		paramsCache:   cache.NewInMemoryCache[*sharedtypes.Params](cfg.CacheOpts...),
+		paramsCache:   cache.NewInMemoryCache[*sharedtypes.Params](paramsQuerierCfg.CacheOpts...),
 		paramsQuerier: paramsQuerier,
 	}
 

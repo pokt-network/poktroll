@@ -13,6 +13,7 @@ import (
 	"github.com/pokt-network/poktroll/pkg/client/query/cache"
 	"github.com/pokt-network/poktroll/pkg/polylog"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 var _ client.SessionQueryClient = (*sessionQuerier)(nil)
@@ -21,9 +22,12 @@ var _ client.SessionQueryClient = (*sessionQuerier)(nil)
 // querying of on-chain session information through a single exposed method
 // which returns an sessiontypes.Session struct
 type sessionQuerier struct {
+	*baseParamsQuerier[*sessiontypes.Params, sessiontypes.SessionQueryClient]
+
 	clientConn     grpc.ClientConn
 	sessionQuerier sessiontypes.QueryClient
 	sessionCache   client.QueryCache[*sessiontypes.Session]
+	paramsQuerier  client.ParamsQuerier[*sharedtypes.Params]
 	paramsCache    client.QueryCache[*sessiontypes.Params]
 }
 
@@ -32,40 +36,52 @@ type sessionQuerier struct {
 //
 // Required dependencies:
 // - clientCtx (grpc.ClientConn)
-func NewSessionQuerier(deps depinject.Config) (client.SessionQueryClient, error) {
-	sq := &sessionQuerier{}
+func NewSessionQuerier(
+	deps depinject.Config,
+	paramsQuerierOpts ...ParamsQuerierOptionFn,
+) (client.SessionQueryClient, error) {
+	paramsQuerierCfg := DefaultParamsQuerierConfig()
+	for _, opt := range paramsQuerierOpts {
+		opt(paramsQuerierCfg)
+	}
+
+	paramsQuerier, err := NewParamsQuerier[*sharedtypes.Params, sharedtypes.SharedQueryClient](
+		deps, sharedtypes.NewSharedQueryClient,
+		WithModuleInfo[*sharedtypes.Params](sharedtypes.ModuleName, sharedtypes.ErrSharedParamInvalid),
+		WithParamsCacheOptions(paramsQuerierCfg.CacheOpts...),
+	)
+	if err != nil {
+		return nil, err
+	}
 
 	// Initialize session cache with historical mode since sessions can vary by height
-	sq.sessionCache = cache.NewInMemoryCache[*sessiontypes.Session](
-		// TODO_IN_THIS_COMMIT: extract to a constant.
+	// TODO_IN_THIS_COMMIT: consider supporting multiple cache configs per query client.
+	sessionCache := cache.NewInMemoryCache[*sessiontypes.Session](
+		// TODO_IN_THIS_COMMIT: extract to an option fn.
 		cache.WithMaxSize(100),
 		cache.WithEvictionPolicy(cache.LeastRecentlyUsed),
 		// TODO_IN_THIS_COMMIT: extract to a constant.
 		cache.WithTTL(time.Hour*3),
 	)
 
-	// Initialize params cache with minimal configuration since we only need latest
-	sq.paramsCache = cache.NewInMemoryCache[*sessiontypes.Params](
-		// TODO_IN_THIS_COMMIT: extract to a constant.
-		cache.WithHistoricalMode(100),
-		// TODO_IN_THIS_COMMIT: reconcile the fact that MaxSize doesn't apply to historical mode...
-		//cache.WithMaxSize(1),
-		cache.WithEvictionPolicy(cache.FirstInFirstOut),
-		// TODO_IN_THIS_COMMIT: extract to a constant.
-		cache.WithTTL(time.Hour),
-	)
+	querier := &sessionQuerier{
+		// TODO_IN_THIS_COMMIT: extract this to an option.
+		// TODO_IMPROVE: add an option for persistent cache.
+		paramsCache:   cache.NewInMemoryCache[*sessiontypes.Params](paramsQuerierCfg.CacheOpts...),
+		paramsQuerier: paramsQuerier,
+		sessionCache:  sessionCache,
+	}
 
 	if err := depinject.Inject(
 		deps,
-		&sq.clientConn,
+		&querier.clientConn,
 	); err != nil {
 		return nil, err
 	}
 
-	// TODO_IN_THIS_COMMIT: kick off a goroutine that subscribes to params updates and populates the cache.
+	querier.sessionQuerier = sessiontypes.NewQueryClient(querier.clientConn)
 
-	sq.sessionQuerier = sessiontypes.NewQueryClient(sq.clientConn)
-	return sq, nil
+	return querier, nil
 }
 
 // GetSession returns an sessiontypes.Session struct for a given appAddress,

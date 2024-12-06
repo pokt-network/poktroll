@@ -4,12 +4,11 @@ import (
 	"context"
 
 	"cosmossdk.io/depinject"
-	"github.com/cosmos/gogoproto/grpc"
+	gogogrpc "github.com/cosmos/gogoproto/grpc"
 
 	"github.com/pokt-network/poktroll/pkg/client"
-	apptypes "github.com/pokt-network/poktroll/x/application/types"
+	"github.com/pokt-network/poktroll/pkg/client/query/cache"
 	servicetypes "github.com/pokt-network/poktroll/x/service/types"
-	sharedkeeper "github.com/pokt-network/poktroll/x/shared/keeper"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
@@ -19,32 +18,54 @@ var _ client.ServiceQueryClient = (*serviceQuerier)(nil)
 // querying of on-chain service information through a single exposed method
 // which returns a sharedtypes.Service struct
 type serviceQuerier struct {
-	clientConn     grpc.ClientConn
+	*baseParamsQuerier[*servicetypes.Params, servicetypes.ServiceQueryClient]
+
+	clientConn     gogogrpc.ClientConn
 	serviceQuerier servicetypes.QueryClient
-	paramsQuerier  client.ParamsQuerier[*sharedtypes.Params]
-	paramsCache    client.QueryCache[*apptypes.Params]
+	paramsQuerier  client.ParamsQuerier[*servicetypes.Params]
+	paramsCache    client.QueryCache[*servicetypes.Params]
 }
 
 // NewServiceQuerier returns a new instance of a client.ServiceQueryClient by
 // injecting the dependecies provided by the depinject.Config.
 //
 // Required dependencies:
-// - clientCtx (grpc.ClientConn)
-func NewServiceQuerier(deps depinject.Config) (client.ServiceQueryClient, error) {
-	keeperParamsQuerier := sharedkeeper.NewKeeperParamsQuerier[servicetypes.Params](ServiceKeeper)
+// - clientCtx (gogogrpc.ClientConn)
+func NewServiceQuerier(
+	deps depinject.Config,
+	paramsQuerierOpts ...ParamsQuerierOptionFn,
+) (client.ServiceQueryClient, error) {
+	paramsQuerierCfg := DefaultParamsQuerierConfig()
+	for _, opt := range paramsQuerierOpts {
+		opt(paramsQuerierCfg)
+	}
 
-	servq := &serviceQuerier{}
+	paramsQuerier, err := NewParamsQuerier[*servicetypes.Params, servicetypes.ServiceQueryClient](
+		deps, servicetypes.NewServiceQueryClient,
+		WithModuleInfo[*servicetypes.Params](servicetypes.ModuleName, servicetypes.ErrServiceParamInvalid),
+		WithParamsCacheOptions(paramsQuerierCfg.CacheOpts...),
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	querier := &serviceQuerier{
+		// TODO_IN_THIS_COMMIT: extract this to an option.
+		// TODO_IMPROVE: add an option for persistent cache.
+		paramsCache:   cache.NewInMemoryCache[*servicetypes.Params](paramsQuerierCfg.CacheOpts...),
+		paramsQuerier: paramsQuerier,
+	}
 
 	if err := depinject.Inject(
 		deps,
-		&servq.clientConn,
+		&querier.clientConn,
 	); err != nil {
 		return nil, err
 	}
 
-	servq.serviceQuerier = servicetypes.NewQueryClient(servq.clientConn)
+	querier.serviceQuerier = servicetypes.NewQueryClient(querier.clientConn)
 
-	return servq, nil
+	return querier, nil
 }
 
 // GetService returns a sharedtypes.Service struct for a given serviceId.
