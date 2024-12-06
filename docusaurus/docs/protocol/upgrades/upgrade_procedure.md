@@ -12,9 +12,12 @@ This page describes the protocol upgrade process, which is internal to the proto
 - [When is an Upgrade Warranted?](#when-is-an-upgrade-warranted)
 - [Implementing the Upgrade](#implementing-the-upgrade)
 - [Writing an Upgrade Transaction](#writing-an-upgrade-transaction)
+  - [Validate the URLs (live network only)](#validate-the-urls-live-network-only)
 - [Submitting the upgrade on-chain](#submitting-the-upgrade-on-chain)
+- [Cancelling the upgrade plan](#cancelling-the-upgrade-plan)
 - [Testing the Upgrade](#testing-the-upgrade)
   - [LocalNet](#localnet)
+    - [LocalNet Upgrade Cheat Sheet](#localnet-upgrade-cheat-sheet)
   - [DevNet](#devnet)
   - [TestNet](#testnet)
   - [Mainnet](#mainnet)
@@ -39,9 +42,13 @@ An upgrade is necessary whenever there's an API, State Machine, or other Consens
 1. When a new version includes a consensus-breaking change, plan for the next protocol upgrade:
    - If there's a change to a specific module, bump that module's consensus version.
    - Note any potential parameter changes to include in the upgrade.
-2. Create a new upgrade in `app/upgrades`:
+2. Create a new upgrade in `app/upgrades`.
    - Refer to `historical.go` for past upgrades and examples.
    - Consult Cosmos-sdk documentation on upgrades for additional guidance [here](https://docs.cosmos.network/main/build/building-apps/app-upgrade) and [here](https://docs.cosmos.network/main/build/modules/upgrade).
+
+:::info
+Creating a new upgrade plan MUST BE DONE even if there are no state changes.
+:::
 
 ## Writing an Upgrade Transaction
 
@@ -67,42 +74,162 @@ An upgrade transaction includes a [Plan](https://github.com/cosmos/cosmos-sdk/bl
 
 - `name`: Name of the upgrade. It should match the `VersionName` of `upgrades.Upgrade`.
 - `height`: The height at which an upgrade should be executed and the node will be restarted.
-- `info`: While this field can theoretically contain any information about the upgrade, in practice, `cosmovisor`uses it to obtain information about the binaries. When`cosmovisor` is configured to automatically download binaries, it will pull the binary from the link provided in this field and perform a hash verification (which is optional).
+- `info`: Can be empty. **Only needed for live networks where we want cosmovisor to upgrade nodes automatically**.
+
+:::tip
+
+When `cosmovisor` is configured to automatically download binaries, it will pull the binary from the link provided in this field and perform a hash verification (which is also optional). We only know the hashes **AFTER** the release has been cut and CI created artifacts for this version.
+
+:::
+
+### Validate the URLs (live network only)
+
+The URLs of the binaries contain checksums. It is critical to ensure they are correct.
+Otherwise Cosmovisor won't be able to download the binaries and go through the upgrade.
+
+The command below (using tools build by the authors of Cosmosvisor) can be used to achieve the above:
+
+```bash
+jq -r '.body.messages[0].plan.info | fromjson | .binaries[]' $PATH_TO_UPGRADE_TRANSACTION_JSON | while IFS= read -r url; do
+  go-getter "$url" .
+done
+```
+
+The output should look like this:
+
+```text
+2024/09/24 12:40:40 success!
+2024/09/24 12:40:42 success!
+2024/09/24 12:40:44 success!
+2024/09/24 12:40:46 success!
+```
+
+:::tip
+
+`go-getter` can be installed using the following command:
+
+```bash
+go install github.com/hashicorp/go-getter/cmd/go-getter@latest
+```
+
+:::
 
 ## Submitting the upgrade on-chain
 
 The `MsgSoftwareUpgrade` can be submitted using the following command:
 
 ```bash
-poktrolld tx authz exec PATH_TO_TRANSACTION_JSON --from pnf
+poktrolld tx authz exec $PATH_TO_UPGRADE_TRANSACTION_JSON --from=pnf
 ```
 
-If the transaction has been accepted, upgrade plan can be viewed with this command:
+If the transaction has been accepted, the upgrade plan can be viewed with this command:
 
 ```bash
 poktrolld query upgrade plan
 ```
 
+## Cancelling the upgrade plan
+
+It is possible to cancel the upgrade before the upgrade plan height is reached. To do so, execute the following make target:
+
+```bash
+make localnet_cancel_upgrade
+```
+
 ## Testing the Upgrade
 
 :::warning
-Note that for local testing, `cosmovisor` won't pull the binary from the info field.
+Note that for local testing, `cosmovisor` won't pull the binary from the upgrade Plan's info field.
 :::
 
 ### LocalNet
 
-LocalNet currently does not support `cosmovisor` and automatic upgrades. However, we have provided scripts to facilitate local testing in the `tools/scripts/upgrades` directory:
+LocalNet **DOES NOT** support `cosmovisor` and automatic upgrades at the moment.
 
-1. Modify `tools/scripts/upgrades/authz_upgrade_tx_example_v0.0.4_height_30.json` to reflect the name of the upgrade and the height at which it should be scheduled.
+However, **IT IS NOT NEEDED** to simulate and test the upgrade procedure.
 
-2. Check and update the `tools/scripts/upgrades/cosmovisor-start-node.sh` to point to the correct binaries:
+#### LocalNet Upgrade Cheat Sheet
 
-   - The old binary should be compiled to work before the upgrade.
-   - The new binary should contain the upgrade logic to be executed immediately after the node is started using the new binary.
+For a hypothetical scenario to upgrade from `0.1` to `0.2`:
 
-3. Run `bash tools/scripts/upgrades/cosmovisor-start-node.sh` to wipe the `~/.poktroll` directory and place binaries in the correct locations.
+1. **Stop LocalNet** to prevent interference. Pull the `poktroll` repo into two separate directories. Let's name them `old` and `new`. It is recommended to open at least two tabs/shell panels in each directory for easier switching between directories.
 
-4. Execute the transaction as shown in [Submitting the upgrade on-chain](#submitting-the-upgrade-on-chain) section above.
+2. **(`old` repo)** - Check out the old version. For the test to be accurate, we need to upgrade from the correct version.
+
+   ```bash
+   git checkout v0.1
+   ```
+
+3. **(`new` repo)**
+
+   ```bash
+   git checkout -b branch_to_test
+   ```
+
+   Replace `branch_to_test` with the actual branch you want to test.
+
+   :::note
+   This branch should have an upgrade implemented per the docs in [Implementing the Upgrade](#implementing-the-upgrade).
+   Here, the upgrade should be named `v0.2`.
+   :::
+
+4. **(BOTH repos)** - We'll use binaries from both versions - old and new.
+
+   ```bash
+   make go_develop ignite_release ignite_release_extract_binaries
+   ```
+
+   :::note
+   The binary produced by these commands in the old repo should result in the same binary as it was downloaded from [production releases](https://github.com/pokt-network/poktroll/releases). You can use them as an alternative to building the binary from source.
+   :::
+
+5. **(`old` repo)** - Clean up and generate an empty genesis using the old version.
+
+   ```bash
+   rm -rf ~/.poktroll && ./release_binaries/poktroll_darwin_arm64 comet unsafe-reset-all && make localnet_regenesis
+   ```
+
+6. **(`old` repo)** Write and save [an upgrade transaction](#writing-an-upgrade-transaction) for `v0.2`. The upgrade plan should be named after the version to which you're upgrading.
+
+7. **(`old` repo)** Start the node:
+
+   ```bash
+   ./release_binaries/poktroll_darwin_arm64 start
+   ```
+
+   The validator node should run and produce blocks as expected.
+
+8. **(`old` repo)** Submit the upgrade transaction. **NOTE THAT** the upgrade height in the transaction should be higher than the current block height. Adjust and submit if necessary:
+
+   ```bash
+   ./release_binaries/poktroll_darwin_arm64 tx authz exec tools/scripts/upgrades/local_test_v0.2.json --from=pnf
+   ```
+
+   Replace the path to the JSON transaction with your prepared upgrade transaction. Verify the upgrade plan was submitted and accepted:
+
+   ```bash
+   ./release_binaries/poktroll_darwin_arm64 query upgrade plan
+   ```
+
+9. Wait for the upgrade height to be reached on the old version. The old version should stop working since it has no knowledge of the `v0.2` upgrade. This simulates a real-world scenario. Stop the old node, and switch to the new version.
+
+10. **(`new` repo)**
+
+    ```bash
+    ./release_binaries/poktroll_darwin_arm64 start
+    ```
+
+11. **Observe the output:**
+
+    - A successful upgrade should output `applying upgrade "v0.2" at height: 20 module=x/upgrade`.
+    - The node on the new version should continue producing blocks.
+    - If there were errors during the upgrade, investigate and address them.
+
+12. **(`new` repo, optional**) - If parameters were changed during the upgrade, test if these changes were applied. For example:
+
+    ```bash
+    ./release_binaries/poktroll_darwin_arm64 q application params
+    ```
 
 ### DevNet
 

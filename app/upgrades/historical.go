@@ -17,6 +17,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/types/module"
 	consensusparamtypes "github.com/cosmos/cosmos-sdk/x/consensus/types"
 
+	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/pokt-network/poktroll/app/keepers"
 )
 
@@ -29,6 +30,8 @@ func defaultUpgradeHandler(
 	configurator module.Configurator,
 ) upgradetypes.UpgradeHandler {
 	return func(ctx context.Context, plan upgradetypes.Plan, vm module.VersionMap) (module.VersionMap, error) {
+		logger := cosmostypes.UnwrapSDKContext(ctx).Logger()
+		logger.Info("Starting the migration in defaultUpgradeHandler")
 		return mm.RunMigrations(ctx, configurator, vm)
 	}
 }
@@ -86,4 +89,11 @@ var Upgrade_0_0_4 = Upgrade{
 	},
 	// No changes to the KVStore in this upgrade.
 	StoreUpgrades: storetypes.StoreUpgrades{},
+}
+
+// Upgrade_0_0_9 is a small upgrade on TestNet.
+var Upgrade_0_0_9 = Upgrade{
+	PlanName:             "v0.0.9",
+	CreateUpgradeHandler: defaultUpgradeHandler,
+	StoreUpgrades:        storetypes.StoreUpgrades{},
 }
