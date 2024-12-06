@@ -5,6 +5,7 @@ package e2e
 import (
 	"bytes"
 	"fmt"
+	"net"
 	"net/url"
 	"os"
 	"os/exec"
@@ -183,7 +184,13 @@ func (p *pocketdBin) runCurlCmd(rpcBaseURL, service, method, path, appAddr, data
 	// Store the virtual host we want to send in the Host header
 	virtualHost := rpcUrl.Host
 	if len(service) > 0 {
-		virtualHost = fmt.Sprintf("%s.%s", service, virtualHost)
+		// Strip port if it exists and add service prefix
+		host, _, err := net.SplitHostPort(rpcUrl.Host)
+		if err != nil {
+			// No port in the host, use as-is
+			host = rpcUrl.Host
+		}
+		virtualHost = fmt.Sprintf("%s.%s", service, host)
 	}
 
 	// Override the actual connection address if the environment requires it
