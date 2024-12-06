@@ -12,6 +12,7 @@ import "gogoproto/gogo.proto";
 import "cosmos/base/v1beta1/coin.proto";
 import "poktroll/supplier/params.proto";
 import "poktroll/shared/service.proto";
+import "poktroll/shared/supplier.proto";
 
 // Msg defines the Msg service.
 service Msg {
@@ -50,7 +51,9 @@ message MsgStakeSupplier {
   repeated poktroll.shared.SupplierServiceConfig services         = 5; // The list of services this supplier is staked to provide service for
 }
 
-message MsgStakeSupplierResponse {}
+message MsgStakeSupplierResponse {
+  poktroll.shared.Supplier supplier = 1;
+}
 
 message MsgUnstakeSupplier {
   option (cosmos.msg.v1.signer) = "signer";
@@ -58,7 +61,9 @@ message MsgUnstakeSupplier {
   string operator_address = 2 [(cosmos_proto.scalar) = "cosmos.AddressString"]; // The Bech32 address of the operator (i.e. provider, non-custodial)
 }
 
-message MsgUnstakeSupplierResponse {}
+message MsgUnstakeSupplierResponse {
+  poktroll.shared.Supplier supplier = 1;
+}
 
 // MsgUpdateParam is the Msg/UpdateParam request type to update a single param.
 message MsgUpdateParam {

@@ -178,7 +178,9 @@ func (k msgServer) StakeSupplier(ctx context.Context, msg *suppliertypes.MsgStak
 	}
 
 	isSuccessful = true
-	return &suppliertypes.MsgStakeSupplierResponse{}, nil
+	return &suppliertypes.MsgStakeSupplierResponse{
+		Supplier: &supplier,
+	}, nil
 }
 
 // createSupplier creates a new supplier from the given message.

@@ -327,11 +327,11 @@ func TestMsgServer_UnstakeSupplier_OperatorCanUnstake(t *testing.T) {
 	stakeMsg, expectedSupplier := newSupplierStakeMsg(ownerAddr, ownerAddr, initialStake, serviceID)
 	stakeMsg.OperatorAddress = supplierOperatorAddr
 	expectedSupplier.OperatorAddress = supplierOperatorAddr
-	_, err := srv.StakeSupplier(ctx, stakeMsg)
+	stakeRes, err := srv.StakeSupplier(ctx, stakeMsg)
 	require.NoError(t, err)
 
 	// Assert that the MsgStakeSupplierResponse contains the newly staked supplier.
-	// TODO_TEST(#663): Ensure responses contain modified state objects.
+	require.Equal(t, expectedSupplier, stakeRes.GetSupplier())
 
 	// Assert that the EventSupplierStaked event is emitted.
 	sharedParams := supplierModuleKeepers.SharedKeeper.GetParams(ctx)
@@ -356,13 +356,13 @@ func TestMsgServer_UnstakeSupplier_OperatorCanUnstake(t *testing.T) {
 		Signer:          supplierOperatorAddr,
 		OperatorAddress: supplierOperatorAddr,
 	}
-	_, err = srv.UnstakeSupplier(ctx, unstakeMsg)
+	unstakeRes, err := srv.UnstakeSupplier(ctx, unstakeMsg)
 	require.NoError(t, err)
 
 	expectedSupplier.UnstakeSessionEndHeight = uint64(sessionEndHeight)
 
 	// Assert that the MsgUnstakeSupplierResponse contains the unstaking supplier.
-	// TODO_TEST(#663): Ensure responses contain modified state objects.
+	require.Equal(t, expectedSupplier, unstakeRes.GetSupplier())
 
 	// Assert that the EventSupplierUnbondingBegin event is emitted.
 	unbondingEndHeight := sharedtypes.GetSupplierUnbondingEndHeight(&sharedParams, expectedSupplier)
