@@ -50,7 +50,7 @@ spec:
             - name: POKTROLLD_HOME
               value: /root/.poktroll
             - name: PATH_URL
-              value: http://${NAMESPACE}-path:3000
+              value: http://${NAMESPACE}-path:3000/v1
               # As we can't expose many DNS names, but the test requires to send requests to different subdomains (e.g. anvil., rest., etc.),
               # we override the host in the URL used to send requests.
             - name: PATH_HOST_OVERRIDE
