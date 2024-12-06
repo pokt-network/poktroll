@@ -79,5 +79,7 @@ func (k msgServer) UnstakeGateway(
 	}
 
 	isSuccessful = true
-	return &types.MsgUnstakeGatewayResponse{}, nil
+	return &types.MsgUnstakeGatewayResponse{
+		Gateway: &gateway,
+	}, nil
 }
