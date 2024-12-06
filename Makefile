@@ -348,13 +348,18 @@ docusaurus_start: check_npm check_node ## Start the Docusaurus server
 docs_update_gov_params_page: ## Update the page in Docusaurus documenting all the governance parameters
 	go run tools/scripts/docusaurus/generate_docs_params.go
 
-######################
-### Ignite Helpers ###
-######################
+#######################
+### Keyring Helpers ###
+#######################
+
 
 .PHONY: poktrolld_addr
 poktrolld_addr: ## Retrieve the address for an account by ACC_NAME
 	@echo $(shell poktrolld --home=$(POKTROLLD_HOME) keys show -a $(ACC_NAME))
+
+.PHONY: poktrolld_key
+poktrolld_key: ## Retrieve the private key for an account by ACC_NAME
+	@echo $(shell poktrolld --home=$(POKTROLLD_HOME) keys export --unsafe --unarmored-hex $(ACC_NAME))
 
 ###################
 ### Act Helpers ###
