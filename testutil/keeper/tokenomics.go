@@ -19,7 +19,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/runtime"
 	"github.com/cosmos/cosmos-sdk/testutil/integration"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	authkeeper "github.com/cosmos/cosmos-sdk/x/auth/keeper"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	bankkeeper "github.com/cosmos/cosmos-sdk/x/bank/keeper"
@@ -48,6 +47,7 @@ import (
 	supplierkeeper "github.com/pokt-network/poktroll/x/supplier/keeper"
 	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 	tokenomicskeeper "github.com/pokt-network/poktroll/x/tokenomics/keeper"
+	tlm "github.com/pokt-network/poktroll/x/tokenomics/token_logic_module"
 	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
 )
 
@@ -71,9 +71,20 @@ type TokenomicsModuleKeepers struct {
 	Codec *codec.ProtoCodec
 }
 
-// TokenomicsKeepersOpt is a function which receives and potentially modifies the context
-// and tokenomics keepers during construction of the aggregation.
-type TokenomicsModuleKeepersOpt func(context.Context, *TokenomicsModuleKeepers) context.Context
+// tokenomicsModuleKeepersConfig is a configuration struct for a TokenomicsModuleKeepers
+// instance. Its fields are intended to be set/updated by TokenomicsModuleKeepersOptFn
+// functions which are passed during integration construction.
+type tokenomicsModuleKeepersConfig struct {
+	tokenLogicModules []tlm.TokenLogicModule
+	initKeepersFns    []func(context.Context, *TokenomicsModuleKeepers) context.Context
+	// moduleParams is a map of module names to their respective module parameters.
+	// This is used to set the initial module parameters in the keeper.
+	moduleParams map[string]cosmostypes.Msg
+}
+
+// TokenomicsModuleKeepersOptFn is a function which receives and potentially modifies
+// the context and tokenomics keepers during construction of the aggregation.
+type TokenomicsModuleKeepersOptFn func(cfg *tokenomicsModuleKeepersConfig)
 
 func TokenomicsKeeper(t testing.TB) (tokenomicsKeeper tokenomicskeeper.Keeper, ctx context.Context) {
 	t.Helper()
@@ -119,7 +130,7 @@ func TokenomicsKeeperWithActorAddrs(t testing.TB) (
 	// Prepare the test application.
 	application := apptypes.Application{
 		Address:        sample.AccAddress(),
-		Stake:          &sdk.Coin{Denom: "upokt", Amount: cosmosmath.NewInt(100000)},
+		Stake:          &cosmostypes.Coin{Denom: "upokt", Amount: cosmosmath.NewInt(100000)},
 		ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{{ServiceId: service.Id}},
 	}
 
@@ -128,7 +139,7 @@ func TokenomicsKeeperWithActorAddrs(t testing.TB) (
 	supplier := sharedtypes.Supplier{
 		OwnerAddress:    supplierOwnerAddr,
 		OperatorAddress: supplierOwnerAddr,
-		Stake:           &sdk.Coin{Denom: "upokt", Amount: cosmosmath.NewInt(100000)},
+		Stake:           &cosmostypes.Coin{Denom: "upokt", Amount: cosmosmath.NewInt(100000)},
 		Services: []*sharedtypes.SupplierServiceConfig{
 			{
 				ServiceId: service.Id,
@@ -142,7 +153,7 @@ func TokenomicsKeeperWithActorAddrs(t testing.TB) (
 		},
 	}
 
-	sdkCtx := sdk.NewContext(stateStore, cmtproto.Header{}, false, log.NewNopLogger())
+	sdkCtx := cosmostypes.NewContext(stateStore, cmtproto.Header{}, false, log.NewNopLogger())
 
 	ctrl := gomock.NewController(t)
 
@@ -240,11 +251,20 @@ func TokenomicsKeeperWithActorAddrs(t testing.TB) (
 		Return(sharedtypes.Service{}, false).
 		AnyTimes()
 
-	relayMiningDifficulty := servicekeeper.NewDefaultRelayMiningDifficulty(sdkCtx, log.NewNopLogger(), service.Id, servicekeeper.TargetNumRelays)
+	targetNumRelays := servicetypes.DefaultTargetNumRelays
+	relayMiningDifficulty := servicekeeper.NewDefaultRelayMiningDifficulty(
+		sdkCtx,
+		log.NewNopLogger(),
+		service.Id,
+		targetNumRelays,
+		targetNumRelays,
+	)
 	mockServiceKeeper.EXPECT().
 		GetRelayMiningDifficulty(gomock.Any(), gomock.Any()).
 		Return(relayMiningDifficulty, true).
 		AnyTimes()
+
+	tokenLogicModules := tlm.NewDefaultTokenLogicModules()
 
 	k := tokenomicskeeper.NewKeeper(
 		cdc,
@@ -259,13 +279,11 @@ func TokenomicsKeeperWithActorAddrs(t testing.TB) (
 		mockSharedKeeper,
 		mockSessionKeeper,
 		mockServiceKeeper,
+		tokenLogicModules,
 	)
 
 	// Add a block proposer address to the context
-	valAddr, err := cosmostypes.ValAddressFromBech32(sample.ValAddress())
-	require.NoError(t, err)
-	consensusAddr := cosmostypes.ConsAddress(valAddr)
-	sdkCtx = sdkCtx.WithProposer(consensusAddr)
+	sdkCtx = sdkCtx.WithProposer(sample.ConsAddress())
 
 	// Initialize params
 	require.NoError(t, k.SetParams(sdkCtx, tokenomicstypes.DefaultParams()))
@@ -278,9 +296,16 @@ func TokenomicsKeeperWithActorAddrs(t testing.TB) (
 func NewTokenomicsModuleKeepers(
 	t testing.TB,
 	logger log.Logger,
-	opts ...TokenomicsModuleKeepersOpt,
+	opts ...TokenomicsModuleKeepersOptFn,
 ) (_ TokenomicsModuleKeepers, ctx context.Context) {
 	t.Helper()
+
+	cfg := &tokenomicsModuleKeepersConfig{
+		tokenLogicModules: tlm.NewDefaultTokenLogicModules(),
+	}
+	for _, opt := range opts {
+		opt(cfg)
+	}
 
 	// Collect store keys for all keepers which be constructed & interact with the state store.
 	keys := storetypes.NewKVStoreKeys(
@@ -305,14 +330,11 @@ func NewTokenomicsModuleKeepers(
 	}
 
 	// Prepare the context
-	ctx = sdk.NewContext(stateStore, cmtproto.Header{}, false, logger)
-	sdkCtx := sdk.UnwrapSDKContext(ctx)
+	ctx = cosmostypes.NewContext(stateStore, cmtproto.Header{}, false, logger)
+	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
 
 	// Add a block proposer address to the context
-	valAddr, err := cosmostypes.ValAddressFromBech32(sample.ValAddress())
-	require.NoError(t, err)
-	consensusAddr := cosmostypes.ConsAddress(valAddr)
-	sdkCtx = sdkCtx.WithProposer(consensusAddr)
+	sdkCtx = sdkCtx.WithProposer(sample.ConsAddress())
 
 	// ctx.SetAccount
 	// Prepare the account keeper.
@@ -354,12 +376,6 @@ func NewTokenomicsModuleKeepers(
 	)
 	require.NoError(t, bankKeeper.SetParams(sdkCtx, banktypes.DefaultParams()))
 
-	// Provide some initial funds to the suppliers & applications module accounts.
-	err = bankKeeper.MintCoins(sdkCtx, suppliertypes.ModuleName, sdk.NewCoins(sdk.NewCoin("upokt", cosmosmath.NewInt(1000000000000))))
-	require.NoError(t, err)
-	err = bankKeeper.MintCoins(sdkCtx, apptypes.ModuleName, sdk.NewCoins(sdk.NewCoin("upokt", cosmosmath.NewInt(1000000000000))))
-	require.NoError(t, err)
-
 	// Construct a real shared keeper.
 	sharedKeeper := sharedkeeper.NewKeeper(
 		cdc,
@@ -368,6 +384,11 @@ func NewTokenomicsModuleKeepers(
 		authority.String(),
 	)
 	require.NoError(t, sharedKeeper.SetParams(sdkCtx, sharedtypes.DefaultParams()))
+
+	if params, ok := cfg.moduleParams[sharedtypes.ModuleName]; ok {
+		err := sharedKeeper.SetParams(ctx, *params.(*sharedtypes.Params))
+		require.NoError(t, err)
+	}
 
 	// Construct gateway keeper with a mocked bank keeper.
 	gatewayKeeper := gatewaykeeper.NewKeeper(
@@ -379,6 +400,11 @@ func NewTokenomicsModuleKeepers(
 		sharedKeeper,
 	)
 	require.NoError(t, gatewayKeeper.SetParams(sdkCtx, gatewaytypes.DefaultParams()))
+
+	if params, ok := cfg.moduleParams[gatewaytypes.ModuleName]; ok {
+		err := gatewayKeeper.SetParams(ctx, *params.(*gatewaytypes.Params))
+		require.NoError(t, err)
+	}
 
 	// Construct an application keeper to add apps to sessions.
 	appKeeper := appkeeper.NewKeeper(
@@ -393,6 +419,11 @@ func NewTokenomicsModuleKeepers(
 	)
 	require.NoError(t, appKeeper.SetParams(sdkCtx, apptypes.DefaultParams()))
 
+	if params, ok := cfg.moduleParams[apptypes.ModuleName]; ok {
+		err := appKeeper.SetParams(ctx, *params.(*apptypes.Params))
+		require.NoError(t, err)
+	}
+
 	// Construct a service keeper needed by the supplier keeper.
 	serviceKeeper := servicekeeper.NewKeeper(
 		cdc,
@@ -401,6 +432,11 @@ func NewTokenomicsModuleKeepers(
 		authority.String(),
 		bankKeeper,
 	)
+
+	if params, ok := cfg.moduleParams[servicetypes.ModuleName]; ok {
+		err := serviceKeeper.SetParams(ctx, *params.(*servicetypes.Params))
+		require.NoError(t, err)
+	}
 
 	// Construct a real supplier keeper to add suppliers to sessions.
 	supplierKeeper := supplierkeeper.NewKeeper(
@@ -413,6 +449,11 @@ func NewTokenomicsModuleKeepers(
 		serviceKeeper,
 	)
 	require.NoError(t, supplierKeeper.SetParams(sdkCtx, suppliertypes.DefaultParams()))
+
+	if params, ok := cfg.moduleParams[suppliertypes.ModuleName]; ok {
+		err := supplierKeeper.SetParams(ctx, *params.(*suppliertypes.Params))
+		require.NoError(t, err)
+	}
 
 	// Construct a real session keeper so that sessions can be queried.
 	sessionKeeper := sessionkeeper.NewKeeper(
@@ -427,6 +468,11 @@ func NewTokenomicsModuleKeepers(
 		sharedKeeper,
 	)
 	require.NoError(t, sessionKeeper.SetParams(sdkCtx, sessiontypes.DefaultParams()))
+
+	if params, ok := cfg.moduleParams[sessiontypes.ModuleName]; ok {
+		err := sessionKeeper.SetParams(ctx, *params.(*sessiontypes.Params))
+		require.NoError(t, err)
+	}
 
 	// Construct a real proof keeper so that claims & proofs can be created.
 	proofKeeper := proofkeeper.NewKeeper(
@@ -443,6 +489,11 @@ func NewTokenomicsModuleKeepers(
 	)
 	require.NoError(t, proofKeeper.SetParams(sdkCtx, prooftypes.DefaultParams()))
 
+	if params, ok := cfg.moduleParams[prooftypes.ModuleName]; ok {
+		err := proofKeeper.SetParams(ctx, *params.(*prooftypes.Params))
+		require.NoError(t, err)
+	}
+
 	// Construct a real tokenomics keeper so that claims & tokenomics can be created.
 	tokenomicsKeeper := tokenomicskeeper.NewKeeper(
 		cdc,
@@ -457,9 +508,15 @@ func NewTokenomicsModuleKeepers(
 		sharedKeeper,
 		sessionKeeper,
 		serviceKeeper,
+		cfg.tokenLogicModules,
 	)
 
 	require.NoError(t, tokenomicsKeeper.SetParams(sdkCtx, tokenomicstypes.DefaultParams()))
+
+	if params, ok := cfg.moduleParams[tokenomicstypes.ModuleName]; ok {
+		err := tokenomicsKeeper.SetParams(ctx, *params.(*tokenomicstypes.Params))
+		require.NoError(t, err)
+	}
 
 	keepers := TokenomicsModuleKeepers{
 		Keeper:            &tokenomicsKeeper,
@@ -477,49 +534,76 @@ func NewTokenomicsModuleKeepers(
 
 	// Apply any options to update the keepers or context prior to returning them.
 	ctx = sdkCtx
-	for _, opt := range opts {
-		ctx = opt(ctx, &keepers)
+	for _, fn := range cfg.initKeepersFns {
+		ctx = fn(ctx, &keepers)
 	}
 
 	return keepers, ctx
 }
 
 // WithService is an option to set the service in the tokenomics module keepers.
-func WithService(service sharedtypes.Service) TokenomicsModuleKeepersOpt {
-	return func(ctx context.Context, keepers *TokenomicsModuleKeepers) context.Context {
+func WithService(service sharedtypes.Service) TokenomicsModuleKeepersOptFn {
+	setService := func(ctx context.Context, keepers *TokenomicsModuleKeepers) context.Context {
 		keepers.SetService(ctx, service)
 		return ctx
+	}
+	return func(cfg *tokenomicsModuleKeepersConfig) {
+		cfg.initKeepersFns = append(cfg.initKeepersFns, setService)
 	}
 }
 
 // WithApplication is an option to set the application in the tokenomics module keepers.
-func WithApplication(applicaion apptypes.Application) TokenomicsModuleKeepersOpt {
-	return func(ctx context.Context, keepers *TokenomicsModuleKeepers) context.Context {
+func WithApplication(applicaion apptypes.Application) TokenomicsModuleKeepersOptFn {
+	setApp := func(ctx context.Context, keepers *TokenomicsModuleKeepers) context.Context {
 		keepers.SetApplication(ctx, applicaion)
 		return ctx
+	}
+	return func(cfg *tokenomicsModuleKeepersConfig) {
+		cfg.initKeepersFns = append(cfg.initKeepersFns, setApp)
 	}
 }
 
 // WithSupplier is an option to set the supplier in the tokenomics module keepers.
-func WithSupplier(supplier sharedtypes.Supplier) TokenomicsModuleKeepersOpt {
-	return func(ctx context.Context, keepers *TokenomicsModuleKeepers) context.Context {
+func WithSupplier(supplier sharedtypes.Supplier) TokenomicsModuleKeepersOptFn {
+	setSupplier := func(ctx context.Context, keepers *TokenomicsModuleKeepers) context.Context {
 		keepers.SetSupplier(ctx, supplier)
 		return ctx
+	}
+	return func(cfg *tokenomicsModuleKeepersConfig) {
+		cfg.initKeepersFns = append(cfg.initKeepersFns, setSupplier)
 	}
 }
 
 // WithProposerAddr is an option to set the proposer address in the context used
 // by the tokenomics module keepers.
-func WithProposerAddr(addr string) TokenomicsModuleKeepersOpt {
-	return func(ctx context.Context, keepers *TokenomicsModuleKeepers) context.Context {
-		valAddr, err := cosmostypes.ValAddressFromBech32(addr)
+func WithProposerAddr(addr string) TokenomicsModuleKeepersOptFn {
+	setProposerAddr := func(ctx context.Context, keepers *TokenomicsModuleKeepers) context.Context {
+		consAddr, err := cosmostypes.ConsAddressFromBech32(addr)
 		if err != nil {
 			panic(err)
 		}
-		consensusAddr := cosmostypes.ConsAddress(valAddr)
-		sdkCtx := sdk.UnwrapSDKContext(ctx)
-		sdkCtx = sdkCtx.WithProposer(consensusAddr)
+		sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
+		sdkCtx = sdkCtx.WithProposer(consAddr)
 		return sdkCtx
+	}
+	return func(cfg *tokenomicsModuleKeepersConfig) {
+		cfg.initKeepersFns = append(cfg.initKeepersFns, setProposerAddr)
+	}
+}
+
+// WithTokenLogicModules returns a TokenomicsModuleKeepersOptFn that sets the given
+// TLM processors on the tokenomicsModuleKeepersConfig.
+func WithTokenLogicModules(processors []tlm.TokenLogicModule) TokenomicsModuleKeepersOptFn {
+	return func(cfg *tokenomicsModuleKeepersConfig) {
+		cfg.tokenLogicModules = processors
+	}
+}
+
+// WithModuleParams returns a KeeperOptionFn that sets the moduleParams field
+// on the keeperConfig.
+func WithModuleParams(moduleParams map[string]cosmostypes.Msg) TokenomicsModuleKeepersOptFn {
+	return func(cfg *tokenomicsModuleKeepersConfig) {
+		cfg.moduleParams = moduleParams
 	}
 }
 
@@ -527,9 +611,8 @@ func WithProposerAddr(addr string) TokenomicsModuleKeepersOpt {
 // in the tokenomics module keepers by setting the proof request probability to
 // 1 or 0, respectively whie setting the proof requirement threshold to 0 or
 // MaxInt64, respectively.
-func WithProofRequirement(proofRequired bool) TokenomicsModuleKeepersOpt {
-	return func(ctx context.Context, keepers *TokenomicsModuleKeepers) context.Context {
-
+func WithProofRequirement(proofRequired bool) TokenomicsModuleKeepersOptFn {
+	setProofRequirement := func(ctx context.Context, keepers *TokenomicsModuleKeepers) context.Context {
 		proofParams := keepers.ProofKeeper.GetParams(ctx)
 		if proofRequired {
 			// Require a proof 100% of the time probabilistically speaking.
@@ -550,5 +633,33 @@ func WithProofRequirement(proofRequired bool) TokenomicsModuleKeepersOpt {
 		}
 
 		return ctx
+	}
+	return func(cfg *tokenomicsModuleKeepersConfig) {
+		cfg.initKeepersFns = append(cfg.initKeepersFns, setProofRequirement)
+	}
+}
+
+// WithDefaultModuleBalances mints an arbitrary amount of uPOKT to the respective modules.
+func WithDefaultModuleBalances() func(cfg *tokenomicsModuleKeepersConfig) {
+	return WithModuleAccountBalances(map[string]int64{
+		apptypes.ModuleName:      1000000000000,
+		suppliertypes.ModuleName: 1000000000000,
+	})
+}
+
+// WithModuleAccountBalances mints the given amount of uPOKT to the respective modules.
+func WithModuleAccountBalances(moduleAccountBalances map[string]int64) func(cfg *tokenomicsModuleKeepersConfig) {
+	setModuleAccountBalances := func(ctx context.Context, keepers *TokenomicsModuleKeepers) context.Context {
+		for moduleName, balanceCoin := range moduleAccountBalances {
+			err := keepers.MintCoins(ctx, moduleName, cosmostypes.NewCoins(cosmostypes.NewInt64Coin(volatile.DenomuPOKT, balanceCoin)))
+			if err != nil {
+				panic(err)
+			}
+		}
+
+		return ctx
+	}
+	return func(cfg *tokenomicsModuleKeepersConfig) {
+		cfg.initKeepersFns = append(cfg.initKeepersFns, setModuleAccountBalances)
 	}
 }

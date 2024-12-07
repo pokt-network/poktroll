@@ -33,7 +33,7 @@ func (k msgServer) CreateClaim(
 
 	// Basic validation of the CreateClaim message.
 	if err = msg.ValidateBasic(); err != nil {
-		return nil, err
+		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 	logger.Info("validated the createClaim message")
 

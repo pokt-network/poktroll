@@ -31,25 +31,40 @@ func (k msgServer) UnstakeApplication(
 	// Check if the application already exists or not.
 	foundApp, isAppFound := k.GetApplication(ctx, msg.GetAddress())
 	if !isAppFound {
-		logger.Info(fmt.Sprintf("Application not found. Cannot unstake address (%s)", msg.GetAddress()))
-		return nil, apptypes.ErrAppNotFound.Wrapf("application (%s)", msg.GetAddress())
+		logger.Info(fmt.Sprintf("Application not found. Cannot unstake address [%s]", msg.GetAddress()))
+		return nil, status.Error(
+			codes.NotFound,
+			apptypes.ErrAppNotFound.Wrapf(
+				"application with address %q", msg.GetAddress(),
+			).Error(),
+		)
 	}
-	logger.Info(fmt.Sprintf("Application found. Unstaking application for address (%s)", msg.GetAddress()))
+	logger.Info(fmt.Sprintf("Application found. Unstaking application for address [%s]", msg.GetAddress()))
 
 	// Check if the application has already initiated the unstaking process.
 	if foundApp.IsUnbonding() {
-		logger.Warn(fmt.Sprintf("Application (%s) is still unbonding from previous unstaking", msg.GetAddress()))
-		return nil, apptypes.ErrAppIsUnstaking.Wrapf("application (%s)", msg.GetAddress())
+		logger.Info(fmt.Sprintf("Application with address [%s] is still unbonding from previous unstaking", msg.GetAddress()))
+		return nil, status.Error(
+			codes.FailedPrecondition,
+			apptypes.ErrAppIsUnstaking.Wrapf(
+				"application with address %q", msg.GetAddress(),
+			).Error(),
+		)
 	}
 
 	// Check if the application has already initiated a transfer process.
 	// Transferring applications CANNOT unstake.
 	if foundApp.HasPendingTransfer() {
 		logger.Warn(fmt.Sprintf(
-			"Application (%s) has a pending transfer to (%s)",
+			"Application with address [%s] has a pending transfer to [%s]",
 			msg.Address, foundApp.GetPendingTransfer().GetDestinationAddress()),
 		)
-		return nil, apptypes.ErrAppHasPendingTransfer.Wrapf("application (%s)", msg.GetAddress())
+		return nil, status.Error(
+			codes.FailedPrecondition,
+			apptypes.ErrAppHasPendingTransfer.Wrapf(
+				"application with address %q", msg.GetAddress(),
+			).Error(),
+		)
 	}
 
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
@@ -68,7 +83,7 @@ func (k msgServer) UnstakeApplication(
 	unbondingEndHeight := apptypes.GetApplicationUnbondingHeight(&sharedParams, &foundApp)
 	unbondingBeginEvent := &apptypes.EventApplicationUnbondingBegin{
 		Application:        &foundApp,
-		Reason:             apptypes.ApplicationUnbondingReason_ELECTIVE,
+		Reason:             apptypes.ApplicationUnbondingReason_APPLICATION_UNBONDING_REASON_ELECTIVE,
 		SessionEndHeight:   sessionEndHeight,
 		UnbondingEndHeight: unbondingEndHeight,
 	}

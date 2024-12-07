@@ -3,10 +3,26 @@ title: Tools & References
 sidebar_position: 1
 ---
 
-## 🛠️ Tools & References <!-- omit in toc -->
+- [Beta TestNet](#beta-testnet)
+- [Alpha TestNet](#alpha-testnet)
+- [🛠️ Tools \& References](#️-tools--references)
 
-- 🪙 [Shannon Token Faucet](https://faucet.testnet.pokt.network/)
-- 🗺️ [Shannon Explorer](https://shannon.testnet.pokt.network/poktroll/block)
+## Beta TestNet
+
+- 🪙 [Token Faucet](https://faucet.beta.testnet.pokt.network/)
+- 🗺️ [Explorer](https://shannon.beta.testnet.pokt.network)
+- 🗺️ [POKTScan's Explorer](https://shannon-beta.poktscan.com/)
+- 👨‍💻 [POKTScan's GraphQL Playground](https://shannon-beta-api.poktscan.com/)
+
+## Alpha TestNet
+
+- 🪙 [Token Faucet](https://faucet.alpha.testnet.pokt.network/)
+- 🗺️ [Explorer](https://shannon.alpha.testnet.pokt.network)
+- 🗺️ [POKTScan's Explorer](https://shannon-alpha.poktscan.com/)
+- 👨‍💻 [POKTScan's GraphQL Playground](https://shannon-alpha-api.poktscan.com/)
+
+## 🛠️ Tools & References
+
 - 🏗️ [Deploy your own gateway & Supplier](https://dev.poktroll.com/operate/quickstart/docker_compose_walkthrough)
 - 🍝 [Copy-pasta your way to deploying on a Debian server](https://dev.poktroll.com/operate/quickstart/docker_compose_debian_cheatsheet)
 - 🧑‍💻 [Developer Onboarding](https://dev.poktroll.com/develop/developer_guide/quickstart)

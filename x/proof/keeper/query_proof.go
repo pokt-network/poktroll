@@ -14,6 +14,8 @@ import (
 )
 
 func (k Keeper) AllProofs(ctx context.Context, req *types.QueryAllProofsRequest) (*types.QueryAllProofsResponse, error) {
+	logger := k.Logger().With("method", "AllProofs")
+
 	if req == nil {
 		return nil, status.Error(codes.InvalidArgument, "invalid request")
 	}
@@ -26,7 +28,7 @@ func (k Keeper) AllProofs(ctx context.Context, req *types.QueryAllProofsRequest)
 
 	var (
 		// isCustomIndex is used to determined if we'll be using the store that points
-		// to the actual Claim values, or a secondary index that points to the primary keys.
+		// to the actual claim values, or a secondary index that points to the primary keys.
 		isCustomIndex bool
 		keyPrefix     []byte
 	)
@@ -63,7 +65,9 @@ func (k Keeper) AllProofs(ctx context.Context, req *types.QueryAllProofsRequest)
 			// The value is the encoded proof.
 			var proof types.Proof
 			if err := k.cdc.Unmarshal(value, &proof); err != nil {
-				return err
+				err = fmt.Errorf("unable to unmarshal proof with key (hex): %x: %+v", key, err)
+				logger.Error(err.Error())
+				return status.Error(codes.Internal, err.Error())
 			}
 
 			proofs = append(proofs, proof)

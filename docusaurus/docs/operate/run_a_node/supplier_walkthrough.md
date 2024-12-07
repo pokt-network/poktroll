@@ -1,9 +1,11 @@
 ---
-title: RelayMiner
+title: RelayMiner (Supplier) Walkthrough
 sidebar_position: 5
 ---
 
-# Run a RelayMiner <!-- omit in toc -->
+# Run a RelayMiner (Supplier) <!-- omit in toc -->
+
+TODO_BETA(@olshansk): Update this page with all the details.
 
 - [What is a RelayMiner](#what-is-a-relayminer)
 - [RelayMiner Operation Requirements](#relayminer-operation-requirements)
