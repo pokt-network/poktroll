@@ -2887,8 +2887,10 @@ type QueryAllApplicationsRequest struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Pagination              *v1beta1.PageRequest `protobuf:"bytes,1,opt,name=pagination,proto3" json:"pagination,omitempty"`
-	DelegateeGatewayAddress string               `protobuf:"bytes,2,opt,name=delegatee_gateway_address,json=delegateeGatewayAddress,proto3" json:"delegatee_gateway_address,omitempty"`
+	Pagination *v1beta1.PageRequest `protobuf:"bytes,1,opt,name=pagination,proto3" json:"pagination,omitempty"`
+	// TODO_MAINNET(@adshmh): rename this field to `gateway_address_delegated_to`
+	// delegatee_gateway_address, if specified, filters the application list to only include those with delegation to the specified gateway address.
+	DelegateeGatewayAddress string `protobuf:"bytes,2,opt,name=delegatee_gateway_address,json=delegateeGatewayAddress,proto3" json:"delegatee_gateway_address,omitempty"`
 }
 
 func (x *QueryAllApplicationsRequest) Reset() {
