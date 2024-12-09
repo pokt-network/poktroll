@@ -102,10 +102,6 @@ func TestMsgServer_UndelegateFromGateway_SuccessfullyUndelegate(t *testing.T) {
 		GatewayAddress: expectedGatewayAddresses[3],
 	}
 
-	// Undelegate the application from the gateway
-	_, err = srv.UndelegateFromGateway(ctx, undelegateMsg)
-	require.NoError(t, err)
-
 	// Assert that the EventRedelegation event is emitted.
 	expectedGatewayAddresses = append(expectedGatewayAddresses[:3], expectedGatewayAddresses[4:]...)
 	expectedApp := &apptypes.Application{
@@ -117,6 +113,11 @@ func TestMsgServer_UndelegateFromGateway_SuccessfullyUndelegate(t *testing.T) {
 			uint64(sessionEndHeight): {GatewayAddresses: []string{undelegateMsg.GetGatewayAddress()}},
 		},
 	}
+
+	// Undelegate the application from the gateway
+	undelegateRes, err := srv.UndelegateFromGateway(ctx, undelegateMsg)
+	require.NoError(t, err)
+	require.Equal(t, undelegateRes.GetApplication(), expectedApp)
 
 	events = sdkCtx.EventManager().Events()
 	redelgationEvents = testevents.FilterEvents[*apptypes.EventRedelegation](t, events)
