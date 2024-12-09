@@ -16,6 +16,8 @@ func NewMsgUpdateParam(authority string, name string, asTypeAny any) (*MsgUpdate
 		asTypeIface = &MsgUpdateParam_AsMintAllocationPercentages{AsMintAllocationPercentages: &asType}
 	case string:
 		asTypeIface = &MsgUpdateParam_AsString{AsString: asType}
+	case float64:
+		asTypeIface = &MsgUpdateParam_AsFloat{AsFloat: asType}
 	default:
 		return nil, fmt.Errorf("unexpected param value type: %T", asTypeAny)
 	}
@@ -44,26 +46,23 @@ func (msg *MsgUpdateParam) ValidateBasic() error {
 	// Parameter name must be supported by this module.
 	switch msg.Name {
 	case ParamMintAllocationPercentages:
-		if err := msg.paramTypeIsMintAllocationPercentages(); err != nil {
+		if err := genericParamTypeIs[*MsgUpdateParam_AsMintAllocationPercentages](msg); err != nil {
 			return err
 		}
 		return ValidateMintAllocationPercentages(*msg.GetAsMintAllocationPercentages())
 	case ParamDaoRewardAddress:
-		if err := msg.paramTypeIsString(); err != nil {
+		if err := genericParamTypeIs[*MsgUpdateParam_AsString](msg); err != nil {
 			return err
 		}
 		return ValidateDaoRewardAddress(msg.GetAsString())
+	case ParamGlobalInflationPerClaim:
+		if err := genericParamTypeIs[*MsgUpdateParam_AsFloat](msg); err != nil {
+			return err
+		}
+		return ValidateGlobalInflationPerClaim(msg.GetAsFloat())
 	default:
 		return ErrTokenomicsParamNameInvalid.Wrapf("unsupported param %q", msg.Name)
 	}
-}
-
-func (msg *MsgUpdateParam) paramTypeIsMintAllocationPercentages() error {
-	return genericParamTypeIs[*MsgUpdateParam_AsMintAllocationPercentages](msg)
-}
-
-func (msg *MsgUpdateParam) paramTypeIsString() error {
-	return genericParamTypeIs[*MsgUpdateParam_AsString](msg)
 }
 
 // genericParamTypeIs checks if the parameter type is T, returning an error if not.
