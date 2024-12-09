@@ -86,7 +86,14 @@ func (k Keeper) SettlePendingClaims(ctx cosmostypes.Context) (
 		serviceId := claim.GetSessionHeader().GetServiceId()
 		relayMiningDifficulty, found := k.serviceKeeper.GetRelayMiningDifficulty(ctx, serviceId)
 		if !found {
-			relayMiningDifficulty = servicekeeper.NewDefaultRelayMiningDifficulty(ctx, logger, serviceId, servicekeeper.TargetNumRelays)
+			targetNumRelays := k.serviceKeeper.GetParams(ctx).TargetNumRelays
+			relayMiningDifficulty = servicekeeper.NewDefaultRelayMiningDifficulty(
+				ctx,
+				logger,
+				serviceId,
+				targetNumRelays,
+				targetNumRelays,
+			)
 		}
 		// numEstimatedComputeUnits is the probabilistic estimation of the off-chain
 		// work done by the relay miner in this session. It is derived from the claimed
