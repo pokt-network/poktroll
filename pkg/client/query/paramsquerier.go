@@ -18,20 +18,6 @@ type paramsQuerierIface[P cosmostypes.Msg] interface {
 	GetParams(context.Context) (P, error)
 }
 
-// TODO_IN_THIS_COMMIT: godoc...
-//
-// DEV_NOTE: Can't use cosmostypes.Msg instead of any because M
-// would be a pointer but GetParams() returns a value. 🙄
-type paramsResponseType[P any] interface {
-	GetParams() P
-}
-
-//// DEV_NOTE: Can't use cosmostypes.Msg instead of any because M
-//// would be a pointer but GetParams() returns a value. 🙄
-//type paramsKeeper[M any] interface {
-//	GetParams(context.Context) M
-//}
-
 // TODO_IN_THIS_COMMIT: update godoc...
 // NewParamsQuerier creates a new params querier with the given configuration
 func NewParamsQuerier[P cosmostypes.Msg, Q paramsQuerierIface[P]](
