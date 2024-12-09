@@ -396,11 +396,11 @@ type HistoricalQueryCache[T any] interface {
 //
 // DEV_NOTE: Can't use cosmostypes.Msg instead of any because M
 // would be a pointer but Keeper#GetParams() returns a value. 🙄
-type ParamsQuerier[M any] interface {
+type ParamsQuerier[P any] interface {
 	// GetParams queries the chain for the current module parameters, where
-	// M is the params type of a given module (e.g. sharedtypes.Params).
-	GetParams(ctx context.Context) (M, error)
+	// P is the params type of a given module (e.g. sharedtypes.Params).
+	GetParams(ctx context.Context) (P, error)
 	// GetParamsAtHeight returns the parameters as they were at the specified
 	// height, where M is the params type of a given module (e.g. sharedtypes.Params).
-	GetParamsAtHeight(ctx context.Context, height int64) (M, error)
+	GetParamsAtHeight(ctx context.Context, height int64) (P, error)
 }
