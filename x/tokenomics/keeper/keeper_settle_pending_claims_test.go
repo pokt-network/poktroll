@@ -204,7 +204,7 @@ func (s *TestSuite) SetupTest() {
 	s.proof = *testtree.NewProof(t, supplierOwnerAddr, sessionHeader, sessionTree, expectedMerkleProofPath)
 }
 
-// TestSettleExpiringClaimsSuite tests the claim settlement process.
+// TestSettlePendingClaims tests the claim settlement process.
 // NB: Each test scenario (method) is run in isolation and #TestSetup() is called
 // for each prior to running.
 func TestSettlePendingClaims(t *testing.T) {
