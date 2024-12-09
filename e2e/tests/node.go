@@ -27,6 +27,9 @@ var (
 	// defaultPathURL used by curl commands to send relay requests
 	defaultPathURL = os.Getenv("PATH_URL")
 	// defaultPathHostOverride overrides the host in the URL used to send requests
+	// Since the current DevNet infrastructure does not support arbitrary subdomains,
+	// this is used to specify the host to connect to and the full host (with the service as a subdomain)
+	// will be sent in the "Host" request header.
 	defaultPathHostOverride = os.Getenv("PATH_HOST_OVERRIDE")
 	// defaultDebugOutput provides verbose output on manipulations with binaries (cli command, stdout, stderr)
 	defaultDebugOutput = os.Getenv("E2E_DEBUG_OUTPUT")
@@ -181,19 +184,14 @@ func (p *pocketdBin) runCurlCmd(rpcBaseURL, service, method, path, appAddr, data
 		return nil, err
 	}
 
-	// Store the virtual host we want to send in the Host header
-	virtualHost := rpcUrl.Host
-	if len(service) > 0 {
-		// Strip port if it exists and add service prefix
-		host, _, err := net.SplitHostPort(rpcUrl.Host)
-		if err != nil {
-			// No port in the host, use as-is
-			host = rpcUrl.Host
-		}
-		virtualHost = fmt.Sprintf("%s.%s", service, host)
-	}
+	// Get the virtual host that will be sent in the "Host" request header
+	virtualHost := getVirtualHostFromHost(rpcUrl, service)
 
-	// Override the actual connection address if the environment requires it
+	// The current DevNet infrastructure does not support routing requests to arbitrary subdomains.
+	// As a workaround, defaultPathHostOverride (which contains no subdomain) is used
+	// as the gateway's host:port to connect to, and the virtual host (which includes
+	// the service as subdomain) is sent in the "Host" request header.
+	// Override the actual connection address if the environment requires it.
 	if defaultPathHostOverride != "" {
 		rpcUrl.Host = defaultPathHostOverride
 	}
@@ -262,4 +260,25 @@ func formatURLString(serviceAlias, rpcUrl, path string) string {
 		path = path[1:]
 	}
 	return fmt.Sprintf("http://%s.%s/v1/%s", serviceAlias, rpcUrl, path)
+}
+
+// getVirtualHostFromHost returns the given rpcUrl host stripped of the port
+// and with the service included as a subdomain to be used in the "Host" request header.
+// This is needed by the current DevNet infrastructure that does not support arbitrary
+// subdomains which the PATH Gateway needs to identify the requested service.
+func getVirtualHostFromHost(rpcUrl *url.URL, service string) string {
+	// Store the virtual host we want to send in the Host header
+	virtualHost := rpcUrl.Host
+
+	if len(service) > 0 {
+		// Strip port if it exists and add service prefix
+		host, _, err := net.SplitHostPort(rpcUrl.Host)
+		if err != nil {
+			// No port in the host, use as-is
+			host = rpcUrl.Host
+		}
+		virtualHost = fmt.Sprintf("%s.%s", service, host)
+	}
+
+	return virtualHost
 }

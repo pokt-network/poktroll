@@ -51,8 +51,10 @@ spec:
               value: /root/.poktroll
             - name: PATH_URL
               value: http://${NAMESPACE}-path:3000/v1
-              # As we can't expose many DNS names, but the test requires to send requests to different subdomains (e.g. anvil., rest., etc.),
-              # we override the host in the URL used to send requests.
+              # PATH relies on subdomains to get the requested service but our DevNet infra is not
+              # built to expose arbitrary subdomains and supporting it would be a significant effort.
+              # As a workaround, PATH_HOST_OVERRIDE is used as the host:port to connect to PATH while
+              # the subdomain is passed as a Host header in the request.
             - name: PATH_HOST_OVERRIDE
               value: ${NAMESPACE}-path:3000
           volumeMounts:
