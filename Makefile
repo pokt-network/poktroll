@@ -261,8 +261,6 @@ acc_balance_total_supply: ## Query the total supply of the network
 # TODO_TECHDEBT: One of the accounts involved in this command always errors
 # so we need to understand why and fix it.
 
-# --gas=auto \
-# --gas-prices=0.000000001upokt \
 
 .PHONY: acc_initialize_pubkeys
 acc_initialize_pubkeys: ## Make sure the account keeper has public keys for all available accounts
@@ -272,6 +270,8 @@ acc_initialize_pubkeys: ## Make sure the account keeper has public keys for all 
 		poktrolld tx bank send \
 			$(addr) $(PNF_ADDRESS) 1000upokt \
 			--yes \
+			--gas=auto \
+			--gas-prices=0.000000001upokt \
 			--home=$(POKTROLLD_HOME) \
 			--node=$(POCKET_NODE);)
 

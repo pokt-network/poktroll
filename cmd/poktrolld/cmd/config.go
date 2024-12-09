@@ -181,6 +181,7 @@ func customPoktrollAppConfigTemplate() string {
 
 // initClientConfig helps to override default client config (client.toml) template and configs.
 // Allows to dynamically create client.toml file with custom values.
+// TODO_TECHDEBT: make use of this with `clientconfig.DefaultClientConfigTemplate` on newer cosmos-sdk versions (currently at v0.50.9)
 func initClientConfig() (string, interface{}) {
 	type GasConfig struct {
 		GasAdjustment float64 `mapstructure:"gas-adjustment"`
