@@ -37,10 +37,19 @@ func TestMsgServer_DelegateToGateway_SuccessfullyDelegate(t *testing.T) {
 		},
 	}
 
+	expectedApp := &apptypes.Application{
+		Address:                   stakeMsg.GetAddress(),
+		Stake:                     stakeMsg.GetStake(),
+		ServiceConfigs:            stakeMsg.GetServices(),
+		DelegateeGatewayAddresses: make([]string, 0),
+		PendingUndelegations:      make(map[uint64]apptypes.UndelegatingGatewayList),
+	}
+
 	// Stake the application & verify that the application exists
 	_, err := srv.StakeApplication(ctx, stakeMsg)
 	require.NoError(t, err)
-	_, isAppFound := k.GetApplication(ctx, appAddr)
+	foundApp, isAppFound := k.GetApplication(ctx, appAddr)
+	require.Equal(t, expectedApp, &foundApp)
 	require.True(t, isAppFound)
 
 	// Prepare the delegation message
@@ -49,21 +58,17 @@ func TestMsgServer_DelegateToGateway_SuccessfullyDelegate(t *testing.T) {
 		GatewayAddress: gatewayAddr1,
 	}
 
+	expectedApp.DelegateeGatewayAddresses = append(expectedApp.DelegateeGatewayAddresses, gatewayAddr1)
+
 	// Delegate the application to the gateway
-	_, err = srv.DelegateToGateway(ctx, delegateMsg)
+	delegateRes, err := srv.DelegateToGateway(ctx, delegateMsg)
 	require.NoError(t, err)
+	require.Equal(t, delegateRes.GetApplication(), expectedApp)
 
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 	currentHeight := sdkCtx.BlockHeight()
 	sharedParams := sharedtypes.DefaultParams()
 	sessionEndHeight := sharedtypes.GetSessionEndHeight(&sharedParams, currentHeight)
-	expectedApp := &apptypes.Application{
-		Address:                   stakeMsg.GetAddress(),
-		Stake:                     stakeMsg.GetStake(),
-		ServiceConfigs:            stakeMsg.GetServices(),
-		DelegateeGatewayAddresses: []string{gatewayAddr1},
-		PendingUndelegations:      make(map[uint64]apptypes.UndelegatingGatewayList),
-	}
 	expectedEvent := &apptypes.EventRedelegation{
 		Application:      expectedApp,
 		SessionEndHeight: sessionEndHeight,
@@ -76,11 +81,6 @@ func TestMsgServer_DelegateToGateway_SuccessfullyDelegate(t *testing.T) {
 
 	// Reset the events, as if a new block were created.
 	ctx, sdkCtx = testevents.ResetEventManager(ctx)
-
-	// Verify that the application exists
-	foundApp, isAppFound := k.GetApplication(ctx, appAddr)
-	require.True(t, isAppFound)
-	require.EqualValues(t, expectedApp, &foundApp)
 
 	// Prepare a second delegation message
 	delegateMsg2 := &apptypes.MsgDelegateToGateway{
