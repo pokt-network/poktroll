@@ -57,6 +57,7 @@ message MsgUpdateParam {
   oneof as_type {
     MintAllocationPercentages as_mint_allocation_percentages = 3 [(gogoproto.jsontag) = "as_mint_allocation_percentages", (gogoproto.moretags) = "yaml:\"as_mint_allocation_percentages\""];
     string as_string = 4 [(gogoproto.jsontag) = "as_string"];
+    double as_float = 5 [(gogoproto.jsontag) = "as_float"];
   }
 }
 

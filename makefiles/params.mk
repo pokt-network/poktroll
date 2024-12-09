@@ -18,6 +18,14 @@ params_update_tokenomics_all: ## Update the tokenomics module params
 params_update_tokenomics_mint_allocation_percentages: ## Update the tokenomics module mint_allocation_percentages param
 	poktrolld tx authz exec ./tools/scripts/params/tokenomics_mint_allocation_percentages.json $(PARAM_FLAGS)
 
+.PHONY: params_update_tokenomics_dao_reward_address
+params_update_tokenomics_dao_reward_address: ## Update the tokenomics module dao_reward_address param
+	poktrolld tx authz exec ./tools/scripts/params/tokenomics_dao_reward_address.json $(PARAM_FLAGS)
+
+.PHONY: params_update_tokenomics_global_inflation_per_claim
+params_update_tokenomics_global_inflation_per_claim: ## Update the tokenomics module global_inflation_per_claim param
+	poktrolld tx authz exec ./tools/scripts/params/tokenomics_global_inflation_per_claim.json $(PARAM_FLAGS)
+
 ### Service Module Params ###
 .PHONY: params_get_service
 params_get_service: ## Get the service module params
@@ -30,6 +38,10 @@ params_update_service_all: ## Update the service module params
 .PHONY: params_update_service_add_service_fee
 params_update_service_add_service_fee: ## Update the service module add_service_fee param
 	poktrolld tx authz exec ./tools/scripts/params/service_add_service_fee.json $(PARAM_FLAGS)
+
+.PHONY: params_update_service_target_num_relays
+params_update_service_target_num_relays: ## Update the service module target_num_relays param
+	poktrolld tx authz exec ./tools/scripts/params/service_target_num_relays.json $(PARAM_FLAGS)
 
 ### Proof Module Params ###
 .PHONY: params_get_proof
@@ -143,6 +155,10 @@ params_update_supplier_all: ## Update the supplier module params
 .PHONY: params_update_supplier_min_stake
 params_update_supplier_min_stake: ## Update the supplier module min_stake param
 	poktrolld tx authz exec ./tools/scripts/params/supplier_min_stake.json $(PARAM_FLAGS)
+
+.PHONY: params_update_supplier_staking_fee
+params_update_supplier_staking_fee: ## Update the supplier module staking_fee param
+	poktrolld tx authz exec ./tools/scripts/params/supplier_staking_fee.json $(PARAM_FLAGS)
 
 ### Session Module Params ###
 .PHONY: params_get_session
