@@ -191,7 +191,8 @@ func (s *suite) TheUserSendsUpoktFromAccountToAccount(amount int64, accName1, ac
 		fmt.Sprintf("%dupokt", amount),
 		keyRingFlag,
 		chainIdFlag,
-		"--fees=1upokt",
+		"--gas=auto",
+		"--gas-prices=0.000001upokt",
 		"-y",
 	}
 	res, err := s.pocketd.RunCommandOnHost("", args...)

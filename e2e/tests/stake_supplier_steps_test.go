@@ -29,18 +29,21 @@ func (s *suite) TheUnbondingPeriodParamIsSuccessfullySetToSessionsOfBlocks(
 		grantee, "user",
 	)
 
-	// NB: If new parameters are added to the shared module, they
-	// MUST be included here; otherwise, this step will fail.
+	// Get current params first
+	currentParams := s.queryAllModuleParams(paramModuleName)
+	currentSharedParams := currentParams.Params
+
+	// Only update the specific parameters we care about
 	sharedParams := sharedtypes.Params{
 		NumBlocksPerSession:                uint64(numBlocksPerSession),
-		GracePeriodEndOffsetBlocks:         0,
-		ClaimWindowOpenOffsetBlocks:        0,
-		ClaimWindowCloseOffsetBlocks:       1,
-		ProofWindowOpenOffsetBlocks:        0,
-		ProofWindowCloseOffsetBlocks:       1,
+		GracePeriodEndOffsetBlocks:         currentSharedParams.GracePeriodEndOffsetBlocks,
+		ClaimWindowOpenOffsetBlocks:        currentSharedParams.ClaimWindowOpenOffsetBlocks,
+		ClaimWindowCloseOffsetBlocks:       currentSharedParams.ClaimWindowCloseOffsetBlocks,
+		ProofWindowOpenOffsetBlocks:        currentSharedParams.ProofWindowOpenOffsetBlocks,
+		ProofWindowCloseOffsetBlocks:       currentSharedParams.ProofWindowCloseOffsetBlocks,
 		SupplierUnbondingPeriodSessions:    uint64(unbondingPeriodSessions),
 		ApplicationUnbondingPeriodSessions: uint64(unbondingPeriodSessions),
-		ComputeUnitsToTokensMultiplier:     sharedtypes.DefaultComputeUnitsToTokensMultiplier,
+		ComputeUnitsToTokensMultiplier:     currentSharedParams.ComputeUnitsToTokensMultiplier,
 	}
 
 	// Convert params struct to the map type expected by

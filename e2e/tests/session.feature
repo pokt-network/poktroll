@@ -5,9 +5,9 @@ Feature: Session Namespace
     # Set proof_requirement_threshold to 209000000 < num_relays (5) * compute_units_per_relay (1) * compute_units_to_tokens_multiplier (42)
     # to make sure a proof is required.
     And the "proof" module parameters are set as follows
-        | name                         | value                                                            | type  |
+        | name                         | value                                                           | type  |
         | proof_request_probability    | 0.25                                                            | float |
-        | proof_requirement_threshold  | 209000000                                                       | coin  |
+        | proof_requirement_threshold  | 20000000                                                        | coin  |
         | proof_missing_penalty        | 320000000                                                       | coin  |
         | proof_submission_fee         | 1000000                                                         | coin  |
     And all "proof" module params should be updated
