@@ -191,6 +191,7 @@ func (s *suite) TheUserSendsUpoktFromAccountToAccount(amount int64, accName1, ac
 		fmt.Sprintf("%dupokt", amount),
 		keyRingFlag,
 		chainIdFlag,
+		"--fees=1upokt",
 		"-y",
 	}
 	res, err := s.pocketd.RunCommandOnHost("", args...)
@@ -300,6 +301,7 @@ func (s *suite) TheUserStakesAWithUpoktForServiceFromTheAccount(actorType string
 		accName,
 		keyRingFlag,
 		chainIdFlag,
+		"--fees=1upokt",
 		"-y",
 	}
 	res, err := s.pocketd.RunCommandOnHost("", args...)
