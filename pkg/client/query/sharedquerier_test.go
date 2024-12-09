@@ -16,7 +16,6 @@ import (
 	"github.com/pokt-network/poktroll/pkg/client/query/cache"
 	_ "github.com/pokt-network/poktroll/pkg/polylog/polyzero"
 	"github.com/pokt-network/poktroll/testutil/mockclient"
-	"github.com/pokt-network/poktroll/testutil/mockgrpc"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
@@ -25,7 +24,7 @@ type SharedQuerierTestSuite struct {
 	ctrl      *gomock.Controller
 	ctx       context.Context
 	querier   client.SharedQueryClient
-	mockConn  *mockgrpc.MockClientConn
+	mockConn  *mockclient.MockClientConn
 	mockBlock *mockclient.MockCometRPC
 	TTL       time.Duration
 }
@@ -37,7 +36,7 @@ func TestSharedQuerierSuite(t *testing.T) {
 func (s *SharedQuerierTestSuite) SetupTest() {
 	s.ctrl = gomock.NewController(s.T())
 	s.ctx = context.Background()
-	s.mockConn = mockgrpc.NewMockClientConn(s.ctrl)
+	s.mockConn = mockclient.NewMockClientConn(s.ctrl)
 	s.mockBlock = mockclient.NewMockCometRPC(s.ctrl)
 	s.TTL = 200 * time.Millisecond
 
