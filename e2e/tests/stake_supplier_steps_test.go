@@ -80,3 +80,21 @@ func paramsAnyMapFromParamsStruct(paramStruct any) paramsAnyMap {
 	}
 	return paramsMap
 }
+
+// queryAllModuleParams queries all parameters for the given module and returns them
+// as a QueryParamsResponse.
+func (s *suite) queryAllModuleParams(moduleName string) *sharedtypes.QueryParamsResponse {
+	argsAndFlags := []string{
+		"query",
+		moduleName,
+		"params",
+		"--output=json",
+	}
+
+	res, err := s.pocketd.RunCommandOnHostWithRetry("", numQueryRetries, argsAndFlags...)
+	require.NoError(s, err)
+
+	var paramsRes sharedtypes.QueryParamsResponse
+	s.cdc.MustUnmarshalJSON([]byte(res.Stdout), &paramsRes)
+	return &paramsRes
+}
