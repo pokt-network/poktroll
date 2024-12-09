@@ -114,7 +114,16 @@ func txCommand() *cobra.Command {
 		authcmd.GetDecodeCommand(),
 		authcmd.GetSimulateCmd(),
 	)
-	cmd.PersistentFlags().String(flags.FlagChainID, DefaultChainID, "The network chain ID")
+
+	cmd.Flags().Set(flags.FlagGas, "auto")
+	cmd.Flags().Set(flags.FlagGasAdjustment, "1.5")
+	cmd.Flags().Set(flags.FlagGasPrices, "0.00001upokt")
+	cmd.Flags().Set(flags.FlagChainID, DefaultChainID)
+
+	cmd.PersistentFlags().String(flags.FlagChainID, DefaultChainID, "The network chain ID") // TODO_MAINNET: change to the actual chain-id, or if we've upgraded to the new cosmos-sdk version, switch to `config.CreateClientConfig` and `initClientConfig()`
+	cmd.PersistentFlags().String(flags.FlagGas, "auto", "gas limit to set per-transaction; set to \"auto\" to calculate sufficient gas automatically. Note: \"auto\" option doesn't always report accurate results. Set a valid coin value to adjust the result. Can be used instead of \"fees\".")
+	cmd.PersistentFlags().String(flags.FlagGasAdjustment, "1.5", "adjustment factor to be multiplied against the estimate returned by the tx simulation; if the gas limit is set manually this flag is ignored")
+	cmd.PersistentFlags().String(flags.FlagGasPrices, "0.00001upokt", "Gas prices in decimal format to determine the transaction fee")
 
 	return cmd
 }

@@ -1,10 +1,12 @@
 package cmd
 
 import (
+	"strings"
 	"sync"
 	"time"
 
 	cmtcfg "github.com/cometbft/cometbft/config"
+	clientconfig "github.com/cosmos/cosmos-sdk/client/config"
 	serverconfig "github.com/cosmos/cosmos-sdk/server/config"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
@@ -175,4 +177,65 @@ func customPoktrollAppConfigTemplate() string {
 		#              Recommended for debugging or testing environments.
 		cardinality-level = "{{ .Poktroll.Telemetry.CardinalityLevel }}"
 		`
+}
+
+// initClientConfig helps to override default client config (client.toml) template and configs.
+// Allows to dynamically create client.toml file with custom values.
+func initClientConfig() (string, interface{}) {
+	type GasConfig struct {
+		GasAdjustment float64 `mapstructure:"gas-adjustment"`
+		Gas           string  `mapstructure:"gas"`
+	}
+
+	type CustomClientConfig struct {
+		clientconfig.ClientConfig `mapstructure:",squash"`
+
+		GasConfig GasConfig `mapstructure:"gas"`
+	}
+
+	// Default configuration from cosmos-sdk
+	clientCfg := clientconfig.DefaultConfig()
+	// clientCfg.ChainID = "" TODO_MAINNET: set mainnet chain-id
+
+	// Now we set the custom config default values.
+	customClientConfig := CustomClientConfig{
+		ClientConfig: *clientCfg,
+		GasConfig: GasConfig{
+			GasAdjustment: 1.5,    // default is 1.
+			Gas:           "auto", // default is 200000
+		},
+	}
+
+	// According to cosmos-sdk documentation, the template is exported via clientconfig.DefaultClientConfigTemplate,
+	// however as of 0.50.9 - it is not, so we're copying their template.
+	// TODO_TECHDEBT: switch to `clientconfig.DefaultClientConfigTemplate` on newer cosmos-sdk versions.
+	defaultConfigTemplate := `# This is a TOML config file.
+	# For more information, see https://github.com/toml-lang/toml
+	
+	###############################################################################
+	###                           Client Configuration                            ###
+	###############################################################################
+	
+	# The network chain ID
+	chain-id = "{{ .ChainID }}"
+	# The keyring's backend, where the keys are stored (os|file|kwallet|pass|test|memory)
+	keyring-backend = "{{ .KeyringBackend }}"
+	# CLI output format (text|json)
+	output = "{{ .Output }}"
+	# <host>:<port> to CometBFT RPC interface for this chain
+	node = "{{ .Node }}"
+	# Transaction broadcasting mode (sync|async)
+	broadcast-mode = "{{ .BroadcastMode }}"
+	`
+
+	// Adding our custom config template
+	customClientConfigTemplate := defaultConfigTemplate + strings.TrimSpace(`
+	# This is default the gas adjustment factor used in tx commands.
+	# It can be overwritten by the --gas-adjustment flag in each tx command.
+	gas-adjustment = {{ .GasConfig.GasAdjustment }}
+	# Gas limit to set per-transaction; set to "auto" to calculate sufficient gas automatically
+	gas = "{{ .GasConfig.Gas }}"
+	`)
+
+	return customClientConfigTemplate, customClientConfig
 }
