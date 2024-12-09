@@ -190,7 +190,7 @@ func TestMsgServer_StakeSupplier_SuccessLoweringStakeAboveMinStake(t *testing.T)
 	_, isSupplierFound := supplierModuleKeepers.GetSupplier(ctx, operatorAddr)
 	require.True(t, isSupplierFound)
 
-	// Prepare an update supplier msg with a lower stake which is below staking fee.
+	// Prepare an update supplier msg with a lower stake which is below the minimum staking fee.
 	newStake := minStake - 1
 	updateMsg, _ := newSupplierStakeMsg(ownerAddr, operatorAddr, newStake, "svcId")
 	updateMsg.Signer = operatorAddr
@@ -203,6 +203,42 @@ func TestMsgServer_StakeSupplier_SuccessLoweringStakeAboveMinStake(t *testing.T)
 	supplierFound, isSupplierFound := supplierModuleKeepers.GetSupplier(ctx, operatorAddr)
 	require.True(t, isSupplierFound)
 	require.Equal(t, minStake, supplierFound.Stake.Amount.Int64())
+	require.Len(t, supplierFound.Services, 1)
+}
+
+func TestMsgServer_StakeSupplier_SuccessIncreasingStake(t *testing.T) {
+	supplierModuleKeepers, ctx := keepertest.SupplierKeeper(t)
+	srv := keeper.NewMsgServerImpl(*supplierModuleKeepers.Keeper)
+
+	minStake := supplierModuleKeepers.Keeper.GetParams(ctx).MinStake.Amount.Int64()
+
+	// Generate an owner and operator address for the supplier
+	ownerAddr := sample.AccAddress()
+	operatorAddr := sample.AccAddress()
+
+	// Prepare the supplier stake message
+	stakeMsg, _ := newSupplierStakeMsg(ownerAddr, operatorAddr, minStake, "svcId")
+
+	// Stake the supplier & verify that the supplier exists
+	_, err := srv.StakeSupplier(ctx, stakeMsg)
+	require.NoError(t, err)
+
+	_, isSupplierFound := supplierModuleKeepers.GetSupplier(ctx, operatorAddr)
+	require.True(t, isSupplierFound)
+
+	// Prepare an update supplier msg with a higher stake.
+	newStake := minStake + 1
+	updateMsg, _ := newSupplierStakeMsg(ownerAddr, operatorAddr, newStake, "svcId")
+	updateMsg.Signer = operatorAddr
+
+	// Verify that succeeds
+	_, err = srv.StakeSupplier(ctx, updateMsg)
+	require.NoError(t, err)
+
+	// Verify that the supplier stake is unchanged
+	supplierFound, isSupplierFound := supplierModuleKeepers.GetSupplier(ctx, operatorAddr)
+	require.True(t, isSupplierFound)
+	require.Equal(t, newStake, supplierFound.Stake.Amount.Int64())
 	require.Len(t, supplierFound.Services, 1)
 }
 

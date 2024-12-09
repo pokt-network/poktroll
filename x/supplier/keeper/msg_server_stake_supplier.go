@@ -127,16 +127,16 @@ func (k msgServer) StakeSupplier(ctx context.Context, msg *suppliertypes.MsgStak
 
 	supplierStakingFee := k.GetParams(ctx).StakingFee
 
-	if err = k.transferSupplierStakeDiff(ctx, msgSignerAddress, supplierCurrentStake, *msg.Stake); err != nil {
-		logger.Info(fmt.Sprintf("ERROR: could not transfer supplier stake difference due to %v", err))
+	if err = k.reconcileSupplierStakeDiff(ctx, msgSignerAddress, supplierCurrentStake, *msg.Stake); err != nil {
+		logger.Error(fmt.Sprintf("Could not transfer supplier stake difference due to %s", err))
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
 	// Deduct the staking fee from the supplier's account balance.
-	// This is called after the stake difference is transferred give the supplier
+	// This is called after the stake difference is transferred to give the supplier
 	// the opportunity to have enough balance to pay the fee.
 	if err = k.bankKeeper.SendCoinsFromAccountToModule(ctx, msgSignerAddress, suppliertypes.ModuleName, sdk.NewCoins(*supplierStakingFee)); err != nil {
-		logger.Info(fmt.Sprintf("ERROR: signer %q could not pay for the staking fee %s due to %v", msgSignerAddress, supplierStakingFee, err))
+		logger.Info(fmt.Sprintf("ERROR: signer %q could not pay for the staking fee %s: %s", msgSignerAddress, supplierStakingFee, err))
 		return nil, status.Error(codes.FailedPrecondition, err.Error())
 	}
 
@@ -249,30 +249,46 @@ func (k msgServer) updateSupplier(
 	return nil
 }
 
-// transferSupplierStakeDiff transfers the difference between the current and new stake
-// amounts by either escrowing when the stake is increased or unescrowing otherwise.
-func (k msgServer) transferSupplierStakeDiff(
+// reconcileSupplierStakeDiff transfers the difference between the current and new stake
+// amounts by either escrowing, when the stake is increased, or unescrowing otherwise.
+func (k msgServer) reconcileSupplierStakeDiff(
 	ctx context.Context,
-	msgSignerAccAddress sdk.AccAddress,
-	supplierCurrentStake sdk.Coin,
+	signerAddr sdk.AccAddress,
+	currentStake sdk.Coin,
 	newStake sdk.Coin,
 ) error {
+	logger := k.Logger().With("method", "reconcileSupplierStakeDiff")
+
 	// The Supplier is increasing its stake, so escrow the difference
-	if supplierCurrentStake.Amount.LT(newStake.Amount) {
-		coinsToEscrow := sdk.NewCoins(newStake.Sub(supplierCurrentStake))
+	if currentStake.Amount.LT(newStake.Amount) {
+		coinsToEscrow := sdk.NewCoins(newStake.Sub(currentStake))
 
 		// Send the coins from the message signer account to the staked supplier pool
-		return k.bankKeeper.SendCoinsFromAccountToModule(ctx, msgSignerAccAddress, suppliertypes.ModuleName, coinsToEscrow)
+		return k.bankKeeper.SendCoinsFromAccountToModule(ctx, signerAddr, suppliertypes.ModuleName, coinsToEscrow)
 	}
 
-	// The supplier is decreasing its stake, unescrow the difference but deduct the staking fee.
-	if supplierCurrentStake.Amount.GT(newStake.Amount) {
-		coinsToUnescrow := sdk.NewCoins(supplierCurrentStake.Sub(newStake))
+	// Ensure that the new stake is at least the minimum stake which is required for:
+	// 1. The supplier to be considered active.
+	// 2. Cover for any potential slashing that may occur during claims settlement.
+	minStake := k.GetParams(ctx).MinStake
+	if newStake.Amount.LT(minStake.Amount) {
+		err := suppliertypes.ErrSupplierInvalidStake.Wrapf(
+			"supplier with owner %q must stake at least %s",
+			signerAddr, minStake,
+		)
+		return err
+	}
+
+	// The supplier is decreasing its stake, unescrow the difference.
+	if currentStake.Amount.GT(newStake.Amount) {
+		coinsToUnescrow := sdk.NewCoins(currentStake.Sub(newStake))
 
 		// Send the coins from the staked supplier pool to the message signer account
-		return k.bankKeeper.SendCoinsFromModuleToAccount(ctx, types.ModuleName, msgSignerAccAddress, coinsToUnescrow)
+		return k.bankKeeper.SendCoinsFromModuleToAccount(ctx, types.ModuleName, signerAddr, coinsToUnescrow)
 	}
 
-	// The supplier is not changing its stake
+	// The supplier is not changing its stake. This can happen if the supplier
+	// is updating its service configurations or owner address but not the stake.
+	logger.Info(fmt.Sprintf("Updating supplier with address %q but stake is unchanged", signerAddr.String()))
 	return nil
 }
