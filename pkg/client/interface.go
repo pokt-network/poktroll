@@ -60,10 +60,6 @@ type MsgSubmitProof interface {
 // able to construct blockchain transactions from pocket protocol-specific messages
 // related to its role.
 type SupplierClient interface {
-	// TODO_MAINNET(@bryanchriswhite, #633): Refactor msg/query client structures
-	// to be more logically consistent. Then SupplierClient should embed
-	// ParamsQuerier[suppliertypes.Params].
-
 	// CreateClaims sends claim messages which creates an on-chain commitment by
 	// calling supplier to the given smt.SparseMerkleSumTree root hash of the given
 	// session's mined relays.

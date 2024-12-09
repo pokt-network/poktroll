@@ -60,10 +60,6 @@ type baseParamsQuerier[P cosmostypes.Msg, Q paramsQuerierIface[P]] struct {
 }
 
 // TODO_IN_THIS_COMMIT: update godoc...
-// paramsQueryFn defines a function type for querying parameters from the chain
-type paramsQueryFn[P any, C any] func(context.Context, C) (P, error)
-
-// TODO_IN_THIS_COMMIT: update godoc...
 // GetParams implements the common parameter querying with caching
 func (bq *baseParamsQuerier[P, Q]) GetParams(ctx context.Context) (P, error) {
 	logger := polylog.Ctx(ctx).With(

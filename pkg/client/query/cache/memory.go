@@ -243,37 +243,3 @@ func (c *InMemoryCache[T]) evict() {
 		}
 	}
 }
-
-// evictHeight removes one height entry according to the configured eviction policy
-func (c *InMemoryCache[T]) evictHeight(versions map[int64]heightCacheItem[T]) {
-	switch c.config.EvictionPolicy {
-	case FirstInFirstOut:
-		var oldestHeight int64
-		var oldestTime time.Time
-		first := true
-
-		for height, item := range versions {
-			if first || item.timestamp.Before(oldestTime) {
-				oldestHeight = height
-				oldestTime = item.timestamp
-				first = false
-			}
-		}
-		delete(versions, oldestHeight)
-
-	case LeastRecentlyUsed:
-		// TODO: Implement LRU eviction for heights
-		// This will require tracking access times per height
-		panic("LRU eviction not implemented")
-
-	default:
-		// Default to removing oldest height
-		var oldestHeight int64 = -1
-		for height := range versions {
-			if oldestHeight == -1 || height < oldestHeight {
-				oldestHeight = height
-			}
-		}
-		delete(versions, oldestHeight)
-	}
-}

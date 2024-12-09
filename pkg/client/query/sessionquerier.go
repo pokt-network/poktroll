@@ -160,6 +160,9 @@ func (sq *sessionQuerier) GetParams(ctx context.Context) (*sessiontypes.Params, 
 	}
 
 	// Cache the result before returning
-	sq.paramsCache.Set("params", &res.Params)
+	if err = sq.paramsCache.Set("params", &res.Params); err != nil {
+		return nil, err
+	}
+
 	return &res.Params, nil
 }
