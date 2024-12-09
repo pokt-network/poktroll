@@ -226,7 +226,7 @@ func TestMsgServer_UnstakeApplication_FailIfNotStaked(t *testing.T) {
 	unstakeMsg := &apptypes.MsgUnstakeApplication{Address: appAddr}
 	_, err := srv.UnstakeApplication(ctx, unstakeMsg)
 	require.Error(t, err)
-	require.ErrorIs(t, err, apptypes.ErrAppNotFound)
+	require.ErrorContains(t, err, apptypes.ErrAppNotFound.Error())
 
 	_, isAppFound = applicationModuleKeepers.GetApplication(ctx, appAddr)
 	require.False(t, isAppFound)
@@ -255,7 +255,7 @@ func TestMsgServer_UnstakeApplication_FailIfCurrentlyUnstaking(t *testing.T) {
 
 	// Verify that the application cannot unstake if it is already unstaking.
 	_, err = srv.UnstakeApplication(ctx, unstakeMsg)
-	require.ErrorIs(t, err, apptypes.ErrAppIsUnstaking)
+	require.ErrorContains(t, err, apptypes.ErrAppIsUnstaking.Error())
 }
 
 func createAppStakeMsg(appAddr string, stakeAmount int64) *apptypes.MsgStakeApplication {

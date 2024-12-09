@@ -10,7 +10,6 @@ import (
 	"github.com/pokt-network/poktroll/pkg/crypto/protocol"
 	testutilevents "github.com/pokt-network/poktroll/testutil/events"
 	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
-	servicekeeper "github.com/pokt-network/poktroll/x/service/keeper"
 	servicetypes "github.com/pokt-network/poktroll/x/service/types"
 )
 
@@ -150,7 +149,8 @@ func TestUpdateRelayMiningDifficulty_Base(t *testing.T) {
 	require.True(t, found)
 	require.Less(t, difficultySvc22.NumRelaysEma, difficultySvc21.NumRelaysEma)
 	// Since the relays EMA is lower than the target, the difficulty hash is all 1s
-	require.Less(t, difficultySvc22.NumRelaysEma, servicekeeper.TargetNumRelays)
+	targetNumRelays := keeper.GetParams(ctx).TargetNumRelays
+	require.Less(t, difficultySvc22.NumRelaysEma, targetNumRelays)
 	require.Equal(t, difficultySvc22.TargetHash, makeBytesFullOfOnes(32))
 
 	// svc3 is new so the relay ema is equal to the first value provided
@@ -172,29 +172,29 @@ func TestUpdateRelayMiningDifficulty_FirstDifficulty(t *testing.T) {
 	}{
 		{
 			desc:      "First Difficulty way below target",
-			numRelays: servicekeeper.TargetNumRelays / 1e3,
+			numRelays: servicetypes.DefaultTargetNumRelays / 1e3,
 			expectedRelayMiningDifficulty: servicetypes.RelayMiningDifficulty{
 				ServiceId:    "svc1",
 				BlockHeight:  1,
-				NumRelaysEma: servicekeeper.TargetNumRelays / 1e3,
+				NumRelaysEma: servicetypes.DefaultTargetNumRelays / 1e3,
 				TargetHash:   defaultDifficulty(), // default difficulty without any leading 0 bits
 			},
 		}, {
 			desc:      "First Difficulty equal to target",
-			numRelays: servicekeeper.TargetNumRelays,
+			numRelays: servicetypes.DefaultTargetNumRelays,
 			expectedRelayMiningDifficulty: servicetypes.RelayMiningDifficulty{
 				ServiceId:    "svc1",
 				BlockHeight:  1,
-				NumRelaysEma: servicekeeper.TargetNumRelays,
+				NumRelaysEma: servicetypes.DefaultTargetNumRelays,
 				TargetHash:   defaultDifficulty(), // default difficulty without any leading 0 bits
 			},
 		}, {
 			desc:      "First Difficulty way above target",
-			numRelays: servicekeeper.TargetNumRelays * 1e3,
+			numRelays: servicetypes.DefaultTargetNumRelays * 1e3,
 			expectedRelayMiningDifficulty: servicetypes.RelayMiningDifficulty{
 				ServiceId:    "svc1",
 				BlockHeight:  1,
-				NumRelaysEma: servicekeeper.TargetNumRelays * 1e3,
+				NumRelaysEma: servicetypes.DefaultTargetNumRelays * 1e3,
 				TargetHash: append(
 					[]byte{0b00000000}, // at least 8 leading 0 bits
 					makeBytesFullOfOnes(31)...,

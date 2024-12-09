@@ -5,7 +5,7 @@ title: Docker Compose Cheat Sheet
 
 import ReactPlayer from "react-player";
 
-# Docker Compose Cheat Sheet <!-- omit in toc --> <!-- omit in toc -->
+# Docker Compose Cheat Sheet <!-- omit in toc -->
 
 - [Results](#results)
 - [Deploy your server](#deploy-your-server)
@@ -89,9 +89,9 @@ sudo apt-get install docker-ce docker-ce-cli containerd.io docker-buildx-plugin 
 You can optionally create a new user and give it sudo permissions instead of using `root`.
 
 ```bash
-export USERNAME=olshansky
-sudo adduser $USERNAME
-sudo usermod -aG sudo $USERNAME
+adduser poktroll
+usermod -aG docker,sudo poktroll
+su - poktroll
 ```
 
 ## Retrieve the source code
@@ -107,16 +107,19 @@ cd poktroll-docker-compose-example
 ## Update your environment
 
 First, copy the sample environment file:
+
 ```bash
 cp .env.sample .env
 ```
 
 By default, the `.env` file uses `testnet-beta`. If you want to use a different network, update the `NETWORK_NAME` in your `.env` file to one of:
-- `testnet-alpha` - Unstable testnet
-- `testnet-beta` - Stable testnet (default)
-- `mainnet` - Production network
+
+- `testnet-alpha`: Unstable testnet (use at your own risk)
+- `testnet-beta`: Stable testnet (default)
+- `mainnet`: Production network (not launched yet)
 
 Then set your external IP and source the environment:
+
 ```bash
 EXTERNAL_IP=$(curl -4 ifconfig.me/ip)
 sed -i -e s/NODE_HOSTNAME=/NODE_HOSTNAME=$EXTERNAL_IP/g .env
@@ -128,12 +131,10 @@ source ~/.bashrc
 
 ## Start up the full node
 
-
 :::warning
 The Alpha TestNet currently requires manual steps to sync the node to the latest block. Please find the affected block(s)
 in [this document](../../protocol/upgrades/upgrade_list.md), which leads to the manual upgrade instructions.
 :::
-
 
 ```bash
 docker compose up -d full-node
@@ -178,7 +179,7 @@ FINALLY, `source .env` to update the environment variables.
 
 ## Fund your accounts
 
-Run the following to see your addresses:
+Run the following helper command to see your addresses:
 
 ```bash
 show_actor_addresses
@@ -190,7 +191,8 @@ Get the faucet URL for your network:
 show_faucet_url
 ```
 
-Fund each address using the faucet URL shown above. Then run this helper to find each account on the explorer:
+Fund each address using the faucet URL shown above.
+Then run this helper to find each account on the explorer:
 
 ```bash
 show_explorer_urls

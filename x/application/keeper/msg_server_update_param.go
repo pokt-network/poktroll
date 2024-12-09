@@ -17,12 +17,12 @@ func (k msgServer) UpdateParam(ctx context.Context, msg *apptypes.MsgUpdateParam
 	)
 
 	if err := msg.ValidateBasic(); err != nil {
-		return nil, err
+		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
 	if k.GetAuthority() != msg.Authority {
 		return nil, status.Error(
-			codes.InvalidArgument,
+			codes.PermissionDenied,
 			apptypes.ErrAppInvalidSigner.Wrapf(
 				"invalid authority; expected %s, got %s",
 				k.GetAuthority(), msg.Authority,
@@ -38,12 +38,22 @@ func (k msgServer) UpdateParam(ctx context.Context, msg *apptypes.MsgUpdateParam
 
 		params.MaxDelegatedGateways = msg.GetAsUint64()
 		if _, ok := msg.AsType.(*apptypes.MsgUpdateParam_AsUint64); !ok {
-			return nil, apptypes.ErrAppParamInvalid.Wrapf("unsupported value type for %s param: %T", msg.Name, msg.AsType)
+			return nil, status.Error(
+				codes.InvalidArgument,
+				apptypes.ErrAppParamInvalid.Wrapf(
+					"unsupported value type for %s param: %T", msg.Name, msg.AsType,
+				).Error(),
+			)
 		}
 		maxDelegatedGateways := msg.GetAsUint64()
 
 		if err := apptypes.ValidateMaxDelegatedGateways(maxDelegatedGateways); err != nil {
-			return nil, apptypes.ErrAppParamInvalid.Wrapf("maxdelegegated_gateways (%d): %v", maxDelegatedGateways, err)
+			return nil, status.Error(
+				codes.InvalidArgument,
+				apptypes.ErrAppParamInvalid.Wrapf(
+					"max_delegegated_gateways (%d): %s", maxDelegatedGateways, err,
+				).Error(),
+			)
 		}
 		params.MaxDelegatedGateways = maxDelegatedGateways
 	case apptypes.ParamMinStake:

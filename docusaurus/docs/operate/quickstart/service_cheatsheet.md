@@ -1,5 +1,5 @@
 ---
-sidebar_position: 6
+sidebar_position: 5
 title: Service Cheat Sheet
 ---
 
@@ -60,13 +60,14 @@ Here is an example of the output on Beta TestNet as of writing this document:
 You can use the `add-service` command to create a new service like so:
 
 ```bash
-poktrolld tx service add-service ${SERVICE_ID} "${SERVICE_NAME_OR_DESCRIPTION}" ${COMPUTE_UNITS_PER_RELAY} --from ${SERVICE_OWNER}
+poktrolld tx service add-service ${SERVICE_ID} "${SERVICE_NAME_OR_DESCRIPTION}" ${COMPUTE_UNITS_PER_RELAY} \
+  --fees 1upokt --from ${SERVICE_OWNER} --chain-id ${CHAIN_ID}
 ```
 
 Here is a concrete copy-pasta assuming you have created and funded a new account called `$USER`:
 
 ```bash
-poktrolld tx service add-service "svc-$USER" "service description for $USER" 69 \
+poktrolld tx service add-service "svc-$USER" "service description for $USER" 13 \
     --node https://shannon-testnet-grove-rpc.beta.poktroll.com \
     --fees 1upokt --from $USER --chain-id pocket-beta
 ```
@@ -74,7 +75,7 @@ poktrolld tx service add-service "svc-$USER" "service description for $USER" 69 
 Optionally, you can add some more flags to be ultra-verbose about your local environment:
 
 ```bash
-poktrolld tx service add-service "svc-$USER" "service description for $USER" 69 \
+poktrolld tx service add-service "svc-$USER" "service description for $USER" 13 \
     --node https://shannon-testnet-grove-rpc.beta.poktroll.com \
     --fees 1upokt --from $USER --chain-id pocket-beta \
     --home ~/.poktroll --keyring-backend test \

@@ -1,5 +1,3 @@
-stake_amount: 1000071upokt
+stake_amount: 100000070upokt
 service_ids:
   - anvil
-  - svc3
-  - svc4
