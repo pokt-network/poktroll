@@ -18,11 +18,10 @@ var _ client.ServiceQueryClient = (*serviceQuerier)(nil)
 // querying of on-chain service information through a single exposed method
 // which returns a sharedtypes.Service struct
 type serviceQuerier struct {
-	*baseParamsQuerier[*servicetypes.Params, servicetypes.ServiceQueryClient]
+	client.ParamsQuerier[*servicetypes.Params]
 
 	clientConn     gogogrpc.ClientConn
 	serviceQuerier servicetypes.QueryClient
-	paramsQuerier  client.ParamsQuerier[*servicetypes.Params]
 	paramsCache    client.QueryCache[*servicetypes.Params]
 }
 
@@ -40,7 +39,7 @@ func NewServiceQuerier(
 		opt(paramsQuerierCfg)
 	}
 
-	paramsQuerier, err := NewParamsQuerier[*servicetypes.Params, servicetypes.ServiceQueryClient](
+	paramsQuerier, err := NewBaseParamsQuerier[*servicetypes.Params, servicetypes.ServiceQueryClient](
 		deps, servicetypes.NewServiceQueryClient,
 		WithModuleInfo[*servicetypes.Params](servicetypes.ModuleName, servicetypes.ErrServiceParamInvalid),
 		WithParamsCacheOptions(paramsQuerierCfg.CacheOpts...),
@@ -53,7 +52,7 @@ func NewServiceQuerier(
 		// TODO_IN_THIS_COMMIT: extract this to an option.
 		// TODO_IMPROVE: add an option for persistent cache.
 		paramsCache:   cache.NewInMemoryCache[*servicetypes.Params](paramsQuerierCfg.CacheOpts...),
-		paramsQuerier: paramsQuerier,
+		ParamsQuerier: paramsQuerier,
 	}
 
 	if err := depinject.Inject(

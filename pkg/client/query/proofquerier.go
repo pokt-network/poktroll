@@ -18,12 +18,11 @@ import (
 // proofQuerier is a wrapper around the prooftypes.QueryClient that enables the
 // querying of on-chain proof module params.
 type proofQuerier struct {
-	*baseParamsQuerier[*prooftypes.Params, prooftypes.ProofQueryClient]
+	client.ParamsQuerier[*prooftypes.Params]
 
-	clientConn    grpc.ClientConn
-	proofQuerier  prooftypes.QueryClient
-	paramsQuerier client.ParamsQuerier[*prooftypes.Params]
-	paramsCache   client.QueryCache[*prooftypes.Params]
+	clientConn   grpc.ClientConn
+	proofQuerier prooftypes.QueryClient
+	paramsCache  client.QueryCache[*prooftypes.Params]
 }
 
 // NewProofQuerier returns a new instance of a client.ProofQueryClient by
@@ -43,7 +42,7 @@ func NewProofQuerier(
 		opt(paramsQuerierCfg)
 	}
 
-	paramsQuerier, err := NewParamsQuerier[*prooftypes.Params, prooftypes.ProofQueryClient](
+	paramsQuerier, err := NewBaseParamsQuerier[*prooftypes.Params, prooftypes.ProofQueryClient](
 		deps, prooftypes.NewProofQueryClient,
 		WithModuleInfo[*prooftypes.Params](prooftypes.ModuleName, prooftypes.ErrProofParamInvalid),
 		WithParamsCacheOptions(paramsQuerierCfg.CacheOpts...),
@@ -56,7 +55,7 @@ func NewProofQuerier(
 		// TODO_IN_THIS_COMMIT: extract this to an option.
 		// TODO_IMPROVE: add an option for persistent cache.
 		paramsCache:   cache.NewInMemoryCache[*prooftypes.Params](paramsQuerierCfg.CacheOpts...),
-		paramsQuerier: paramsQuerier,
+		ParamsQuerier: paramsQuerier,
 	}
 
 	if err := depinject.Inject(

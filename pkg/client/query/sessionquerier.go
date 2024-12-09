@@ -13,7 +13,6 @@ import (
 	"github.com/pokt-network/poktroll/pkg/client/query/cache"
 	"github.com/pokt-network/poktroll/pkg/polylog"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
-	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 var _ client.SessionQueryClient = (*sessionQuerier)(nil)
@@ -22,12 +21,11 @@ var _ client.SessionQueryClient = (*sessionQuerier)(nil)
 // querying of on-chain session information through a single exposed method
 // which returns an sessiontypes.Session struct
 type sessionQuerier struct {
-	*baseParamsQuerier[*sessiontypes.Params, sessiontypes.SessionQueryClient]
+	client.ParamsQuerier[*sessiontypes.Params]
 
 	clientConn     grpc.ClientConn
 	sessionQuerier sessiontypes.QueryClient
 	sessionCache   client.QueryCache[*sessiontypes.Session]
-	paramsQuerier  client.ParamsQuerier[*sharedtypes.Params]
 	paramsCache    client.QueryCache[*sessiontypes.Params]
 }
 
@@ -45,9 +43,9 @@ func NewSessionQuerier(
 		opt(paramsQuerierCfg)
 	}
 
-	paramsQuerier, err := NewParamsQuerier[*sharedtypes.Params, sharedtypes.SharedQueryClient](
-		deps, sharedtypes.NewSharedQueryClient,
-		WithModuleInfo[*sharedtypes.Params](sharedtypes.ModuleName, sharedtypes.ErrSharedParamInvalid),
+	paramsQuerier, err := NewBaseParamsQuerier[*sessiontypes.Params, sessiontypes.SessionQueryClient](
+		deps, sessiontypes.NewSessionQueryClient,
+		WithModuleInfo[*sessiontypes.Params](sessiontypes.ModuleName, sessiontypes.ErrSessionParamInvalid),
 		WithParamsCacheOptions(paramsQuerierCfg.CacheOpts...),
 	)
 	if err != nil {
@@ -68,7 +66,7 @@ func NewSessionQuerier(
 		// TODO_IN_THIS_COMMIT: extract this to an option.
 		// TODO_IMPROVE: add an option for persistent cache.
 		paramsCache:   cache.NewInMemoryCache[*sessiontypes.Params](paramsQuerierCfg.CacheOpts...),
-		paramsQuerier: paramsQuerier,
+		ParamsQuerier: paramsQuerier,
 		sessionCache:  sessionCache,
 	}
 

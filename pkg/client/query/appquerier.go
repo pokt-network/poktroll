@@ -20,11 +20,10 @@ var _ client.ApplicationQueryClient = (*appQuerier)(nil)
 // querying of on-chain application information through a single exposed method
 // which returns an apptypes.Application interface
 type appQuerier struct {
-	*baseParamsQuerier[*apptypes.Params, apptypes.ApplicationQueryClient]
+	client.ParamsQuerier[*apptypes.Params]
 
 	clientConn         gogogrpc.ClientConn
 	applicationQuerier apptypes.QueryClient
-	paramsQuerier      client.ParamsQuerier[*apptypes.Params]
 	paramsCache        client.QueryCache[*apptypes.Params]
 }
 
@@ -42,7 +41,7 @@ func NewApplicationQuerier(
 		opt(cfg)
 	}
 
-	paramsQuerier, err := NewParamsQuerier[*apptypes.Params, apptypes.ApplicationQueryClient](
+	paramsQuerier, err := NewBaseParamsQuerier[*apptypes.Params, apptypes.ApplicationQueryClient](
 		deps, apptypes.NewAppQueryClient,
 		WithModuleInfo[*sharedtypes.Params](sharedtypes.ModuleName, sharedtypes.ErrSharedParamInvalid),
 		WithParamsCacheOptions(cfg.CacheOpts...),
@@ -53,7 +52,7 @@ func NewApplicationQuerier(
 
 	aq := &appQuerier{
 		paramsCache:   cache.NewInMemoryCache[*apptypes.Params](cfg.CacheOpts...),
-		paramsQuerier: paramsQuerier,
+		ParamsQuerier: paramsQuerier,
 	}
 
 	if err := depinject.Inject(

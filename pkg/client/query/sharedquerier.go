@@ -42,7 +42,7 @@ func NewSharedQuerier(
 		opt(paramsQuerierCfg)
 	}
 
-	paramsQuerier, err := NewParamsQuerier[*sharedtypes.Params, sharedtypes.SharedQueryClient](
+	paramsQuerier, err := NewBaseParamsQuerier[*sharedtypes.Params, sharedtypes.SharedQueryClient](
 		deps, sharedtypes.NewSharedQueryClient,
 		WithModuleInfo[*sharedtypes.Params](sharedtypes.ModuleName, sharedtypes.ErrSharedParamInvalid),
 		WithParamsCacheOptions(paramsQuerierCfg.CacheOpts...),

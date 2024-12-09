@@ -18,11 +18,10 @@ var _ client.SupplierQueryClient = (*supplierQuerier)(nil)
 // querying of on-chain supplier information through a single exposed method
 // which returns an sharedtypes.Supplier struct
 type supplierQuerier struct {
-	*baseParamsQuerier[*suppliertypes.Params, client.SupplierQueryClient]
+	client.ParamsQuerier[*suppliertypes.Params]
 
 	clientConn      grpc.ClientConn
 	supplierQuerier suppliertypes.QueryClient
-	paramsQuerier   client.ParamsQuerier[*suppliertypes.Params]
 	paramsCache     client.QueryCache[*suppliertypes.Params]
 }
 
@@ -40,7 +39,7 @@ func NewSupplierQuerier(
 		opt(paramsQuerierCfg)
 	}
 
-	paramsQuerier, err := NewParamsQuerier[*suppliertypes.Params, suppliertypes.SupplierQueryClient](
+	paramsQuerier, err := NewBaseParamsQuerier[*suppliertypes.Params, suppliertypes.SupplierQueryClient](
 		deps, suppliertypes.NewSupplierQueryClient,
 		WithModuleInfo[*suppliertypes.Params](suppliertypes.ModuleName, suppliertypes.ErrSupplierParamInvalid),
 		WithParamsCacheOptions(paramsQuerierCfg.CacheOpts...),
@@ -51,7 +50,7 @@ func NewSupplierQuerier(
 
 	sq := &supplierQuerier{
 		paramsCache:   cache.NewInMemoryCache[*suppliertypes.Params](paramsQuerierCfg.CacheOpts...),
-		paramsQuerier: paramsQuerier,
+		ParamsQuerier: paramsQuerier,
 	}
 
 	if err := depinject.Inject(

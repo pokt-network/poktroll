@@ -19,8 +19,8 @@ type paramsQuerierIface[P cosmostypes.Msg] interface {
 }
 
 // TODO_IN_THIS_COMMIT: update godoc...
-// NewParamsQuerier creates a new params querier with the given configuration
-func NewParamsQuerier[P cosmostypes.Msg, Q paramsQuerierIface[P]](
+// NewBaseParamsQuerier creates a new params querier with the given configuration
+func NewBaseParamsQuerier[P cosmostypes.Msg, Q paramsQuerierIface[P]](
 	deps depinject.Config,
 	queryClientConstructor func(conn gogogrpc.ClientConn) Q,
 	opts ...ParamsQuerierOptionFn,
