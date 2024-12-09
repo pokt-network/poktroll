@@ -334,4 +334,3 @@ docker compose up -d pathgw
 # View
 docker logs -f --tail 100 pathgw
 ```
-<!-- TODO_BETA: Update poktroll-docker-compose-example to use PATH Gateway -->

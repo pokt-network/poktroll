@@ -623,10 +623,9 @@ make supplier3_stake
 
 Running `make supplier_list` should now show that all three suppliers are staked.
 
-You can reuse the running `PATH Gateway` to send requests. However, since not all
-the `Supplier`s have a `RelayMiner` running, you'll see that initially some of requests will fail.
-Meanwhile `PATH Gateway` will build a set of responsive `RelayMiner`s excluding the
-failing ones.
+You can reuse the running `PATH Gateway` to send requests. Its Quality-of-Service module
+will try to handle non-performant suppliers, but you should expect some requests to periodically
+fail.
 
 Give it a shot by running the following multiple times:
 

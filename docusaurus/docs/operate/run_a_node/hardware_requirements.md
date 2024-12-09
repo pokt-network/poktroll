@@ -63,8 +63,8 @@ information on what a `PATH Gateway` is.
 | ----------- | ------- | ----------- |
 | CPU Cores   | 1       | 4           |
 | RAM         | 1GB     | 16GB        |
-| SSD Storage | N/A     | N/A         |
-<!-- TODO_IN_THIS_PR: Figure out how much storage PATH Gateway needs -->
+| SSD Storage | 5GB     | 5GB         |
+<!-- TODO_TECHDEBT: Update the PATH Gateway hardware requirements -->
 
 ### Additional Considerations
 
