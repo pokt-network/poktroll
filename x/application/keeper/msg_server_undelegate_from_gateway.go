@@ -87,7 +87,9 @@ func (k msgServer) UndelegateFromGateway(ctx context.Context, msg *apptypes.MsgU
 	logger.Info(fmt.Sprintf("Emitted application redelegation event %v", event))
 
 	isSuccessful = true
-	return &apptypes.MsgUndelegateFromGatewayResponse{}, nil
+	return &apptypes.MsgUndelegateFromGatewayResponse{
+		Application: &foundApp,
+	}, nil
 }
 
 // recordPendingUndelegation adds the given gateway address to the application's
