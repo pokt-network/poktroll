@@ -73,5 +73,7 @@ message MsgAddService {
   poktroll.shared.Service service = 2 [(gogoproto.nullable) = false]; // The Service being added to the network
 }
 
-message MsgAddServiceResponse {}
+message MsgAddServiceResponse {
+  poktroll.shared.Service service = 1;
+}
 
