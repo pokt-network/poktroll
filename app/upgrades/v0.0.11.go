@@ -8,6 +8,7 @@ import (
 	cosmosTypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 	"github.com/pokt-network/poktroll/app/keepers"
+	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
 )
 
@@ -30,9 +31,11 @@ var Upgrade_0_0_11 = Upgrade{
 
 			// Set num_suppliers_per_session to 15
 			// Validate with: `poktrolld q session params --node=https://testnet-validated-validator-rpc.poktroll.com/`
-			sessionParams := keepers.SessionKeeper.GetParams(ctx)
-			logger.Info("Current session params", "params", sessionParams)
-			sessionParams.NumSuppliersPerSession = uint64(15)
+			sessionParams := sessiontypes.Params{
+				NumSuppliersPerSession: uint64(15),
+			}
+
+			// ALL parameters must be present when setting params.
 			err = keepers.SessionKeeper.SetParams(ctx, sessionParams)
 			if err != nil {
 				logger.Error("Failed to set session params", "error", err)
@@ -42,16 +45,18 @@ var Upgrade_0_0_11 = Upgrade{
 
 			// Set tokenomics params. The values are based on default values for LocalNet/Beta TestNet.
 			// Validate with: `poktrolld q tokenomics params --node=https://testnet-validated-validator-rpc.poktroll.com/`
-			tokenomicsParams := keepers.TokenomicsKeeper.GetParams(ctx)
-			logger.Info("Current tokenomics params", "params", tokenomicsParams)
-			tokenomicsParams.MintAllocationPercentages = tokenomicstypes.MintAllocationPercentages{
-				Dao:         0.1,
-				Proposer:    0.05,
-				Supplier:    0.7,
-				SourceOwner: 0.15,
-				Application: 0.0,
+			tokenomicsParams := tokenomicstypes.Params{
+				MintAllocationPercentages: tokenomicstypes.MintAllocationPercentages{
+					Dao:         0.1,
+					Proposer:    0.05,
+					Supplier:    0.7,
+					SourceOwner: 0.15,
+					Application: 0.0,
+				},
+				DaoRewardAddress: AlphaTestNetPnfAddress,
 			}
-			tokenomicsParams.DaoRewardAddress = AlphaTestNetPnfAddress
+
+			// ALL parameters must be present when setting params.
 			err = keepers.TokenomicsKeeper.SetParams(ctx, tokenomicsParams)
 			if err != nil {
 				logger.Error("Failed to set tokenomics params", "error", err)
@@ -65,6 +70,7 @@ var Upgrade_0_0_11 = Upgrade{
 		// The diff shows that the only new authz authorization is for the `poktroll.session.MsgUpdateParam` message.
 		// However, this message is already authorized for the `pokt10d07y265gmmuvt4z0w9aw880jnsr700j8yv32t` address.
 		// See here: poktrolld q authz grants-by-granter pokt10d07y265gmmuvt4z0w9aw880jnsr700j8yv32t --node=https://shannon-testnet-grove-seed-rpc.alpha.poktroll.com
+		// If this upgrade would have been applied to other networks, we could have added a separate upgrade handler for each network.
 
 		// Returns the upgrade handler for v0.0.11
 		return func(ctx context.Context, plan upgradetypes.Plan, vm module.VersionMap) (module.VersionMap, error) {
