@@ -287,6 +287,8 @@ type SupplierQueryClient interface {
 // SessionQueryClient defines an interface that enables the querying of the
 // on-chain session information
 type SessionQueryClient interface {
+	ParamsQuerier[*sessiontypes.Params]
+
 	// GetSession queries the chain for the details of the session provided
 	GetSession(
 		ctx context.Context,
@@ -294,9 +296,6 @@ type SessionQueryClient interface {
 		serviceId string,
 		blockHeight int64,
 	) (*sessiontypes.Session, error)
-
-	// GetParams queries the chain for the session module parameters.
-	GetParams(ctx context.Context) (*sessiontypes.Params, error)
 }
 
 // SharedQueryClient defines an interface that enables the querying of the
