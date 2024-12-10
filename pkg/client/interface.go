@@ -1,3 +1,4 @@
+//go:generate mockgen -destination=../../testutil/mockclient/grpc_conn_mock.go -package=mockclient github.com/cosmos/gogoproto/grpc ClientConn
 //go:generate mockgen -destination=../../testutil/mockclient/events_query_client_mock.go -package=mockclient . Dialer,Connection,EventsQueryClient
 //go:generate mockgen -destination=../../testutil/mockclient/block_client_mock.go -package=mockclient . Block,BlockClient
 //go:generate mockgen -destination=../../testutil/mockclient/delegation_client_mock.go -package=mockclient . DelegationClient
