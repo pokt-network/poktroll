@@ -300,8 +300,8 @@ type SessionQueryClient interface {
 // SharedQueryClient defines an interface that enables the querying of the
 // on-chain shared module params.
 type SharedQueryClient interface {
-	// GetParams queries the chain for the current shared module parameters.
-	GetParams(ctx context.Context) (*sharedtypes.Params, error)
+	ParamsQuerier[*sharedtypes.Params]
+
 	// GetSessionGracePeriodEndHeight returns the block height at which the grace period
 	// for the session that includes queryHeight elapses.
 	// The grace period is the number of blocks after the session ends during which relays
@@ -320,7 +320,7 @@ type SharedQueryClient interface {
 	// for the session that includes queryHeight can be committed for a given supplier.
 	GetEarliestSupplierProofCommitHeight(ctx context.Context, queryHeight int64, supplierOperatorAddr string) (int64, error)
 	// GetComputeUnitsToTokensMultiplier returns the multiplier used to convert compute units to tokens.
-	GetComputeUnitsToTokensMultiplier(ctx context.Context) (uint64, error)
+	GetComputeUnitsToTokensMultiplier(ctx context.Context, queryHeight int64) (uint64, error)
 }
 
 // BlockQueryClient defines an interface that enables the querying of
