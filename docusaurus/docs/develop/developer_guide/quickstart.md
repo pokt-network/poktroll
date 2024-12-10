@@ -39,12 +39,11 @@ Create a new [GitHub issue here](https://github.com/pokt-network/pocket/issues/n
   - [3.4 Stake the new Supplier](#34-stake-the-new-supplier)
   - [3.4 Prepare the RelayMiner configuration](#34-prepare-the-relayminer-configuration)
   - [3.5 Start the RelayMiner locally](#35-start-the-relayminer-locally)
-- [4. Manually Stake an Application \& Deploy an AppGate Server](#4-manually-stake-an-application--deploy-an-appgate-server)
+- [4. Manually Stake an Application \& Deploy a PATH Gateway](#4-manually-stake-an-application--deploy-a-path-gateway)
   - [4.1 View Existing Application](#41-view-existing-application)
   - [4.2 Create an Application configuration](#42-create-an-application-configuration)
   - [4.3 Stake the new Application](#43-stake-the-new-application)
-  - [4.4 Prepare the AppGate Server configuration](#44-prepare-the-appgate-server-configuration)
-  - [4.5 Start the AppGate Server locally](#45-start-the-appgate-server-locally)
+  - [4.4 Prepare the PATH Gateway Configuration](#44-prepare-the-path-gateway-configuration)
 - [5. Send A Relay](#5-send-a-relay)
   - [5.1 Send a relay on Shannon](#51-send-a-relay-on-shannon)
   - [5.2 What just happened?](#52-what-just-happened)
@@ -139,11 +138,13 @@ available commands. Looking inside the Makefile is a great way to learn how to u
 ### 1.3 Prepare your development environment
 
 Run the following command to install `golang` dependencies:
+
 ```bash
 make install_ci_deps
 ```
 
 If you encounter issues related to `mockgen` not being found or failing, try running the following command to verify its installation:
+
 ```bash
 make check_mockgen
 ```
@@ -475,13 +476,14 @@ new shell instance.
 
 :::
 
-## 4. Manually Stake an Application & Deploy an AppGate Server
+## 4. Manually Stake an Application & Deploy a PATH Gateway
 
-:::note Independent Gateway
+:::note Centralized Gateway
 
-This section will show how to deploy a Sovereign Application, which acts as its
-own Gateway. We are leaving delegated Gateways outside the scope of the
-Quickstart guide.
+This section will show how to deploy a `PATH Gateway` in `Centralized` mode,
+which will use its configured (i.e. owned) `Application`s to sign relays.
+
+_Other types of Gateways (e.g. Delegated) are outside the scope of this Quickstart guide._
 
 :::
 
@@ -531,46 +533,13 @@ You can also you re-run, `make app_list` you should see that `SHANNON_APPLICATIO
 
 ![Apps](./img/quickstart_applist.png)
 
-### 4.4 Prepare the AppGate Server configuration
+### 4.4 Prepare the PATH Gateway Configuration
 
-You can learn more about our [appgate server configs here](../../operate/configs/appgate_server_config.md).
-
-The following example should get you started:
-
-```yaml
-cat <<EOF >> shannon_appgate_config.yaml
-query_node_rpc_url: tcp://127.0.0.1:26657
-query_node_grpc_url: tcp://127.0.0.1:9090
-self_signing: true
-signing_key: shannon_application
-listening_endpoint: http://localhost:42042
-metrics:
-  enabled: true
-  addr: :9091
-EOF
-```
-
-### 4.5 Start the AppGate Server locally
-
-:::warning
-You might need to add the following to your `/etc/hosts` file:
-127.0.0.1 anvil
-127.0.0.1 relayminers
-:::
-
-And the start the appgate server locally:
-
-```bash
-poktrolld appgate-server \
-  --config shannon_appgate_config.yaml \
-  --keyring-backend test \
-  --node tcp://127.0.0.1:26657 \
-  --home=./localnet/poktrolld
-```
+You can learn more about our [PATH Gateway configs here](https://path.grove.city/operate).
 
 ## 5. Send A Relay
 
-Now that we've staked an `Application`, are running an `AppGate Server`, staked
+Now that we've staked an `Application`, are running a `PATH Gateway`, staked
 a `Supplier`, and are running a `RelayMiner`, we can send a relay!
 
 :::note Initialize Public Keys
@@ -590,7 +559,7 @@ You can use `curl`
 ```bash
 curl -X POST -H "Content-Type: application/json" \
   --data '{"jsonrpc":"2.0","method":"eth_blockNumber","params":[],"id":1}' \
-  http://localhost:42042/anvil
+  http://anvil.localhost:3000/v1
 ```
 
 If everything worked as expected, you should see output similar to the following:
@@ -609,16 +578,16 @@ The Relay Request/Response from is captured in the sequence diagram below.
 sequenceDiagram
   actor U as User <br> (curl Client)
 
-  participant AG as AppGate Server <br> (off-chain Application Operator)
+  participant PG as PATH Gateway<br> (off-chain Application Operator)
   participant RM as RelayMiner <br> (off-chain Supplier Operator)
   participant anvil as ETH Node <br> (Anvil)
 
-  U ->> +AG: eth_blockNumber <br> (JSON-RPC Request)
-  AG ->> +RM: POKT Relay Request
+  U ->> +PG: eth_blockNumber <br> (JSON-RPC Request)
+  PG ->> +RM: POKT Relay Request
   RM ->> +anvil: eth_blockNumber
   anvil ->> -RM: eth_result
-  RM ->> -AG: POKT  Relay Response
-  AG ->> -U: eth_result  <br> (JSON-RPC Response)
+  RM ->> -PG: POKT  Relay Response
+  PG ->> -U: eth_result  <br> (JSON-RPC Response)
 ```
 
 ### 5.3 What will happen later
@@ -654,16 +623,16 @@ make supplier3_stake
 
 Running `make supplier_list` should now show that all three suppliers are staked.
 
-You can reuse the running AppGate Server to send requests, which should round-robin
-through all the available suppliers. However, since not all of them have a RelayMiner
-running, you'll see that some of requests will fail.
+You can reuse the running `PATH Gateway` to send requests. Its Quality-of-Service module
+will try to handle non-performant suppliers, but you should expect some requests to periodically
+fail.
 
 Give it a shot by running the following multiple times:
 
 ```bash
 curl -X POST -H "Content-Type: application/json" \
   --data '{"jsonrpc":"2.0","method":"eth_blockNumber","params":[],"id":1}' \
-  http://localhost:42042/anvil
+  http://anvil.localhost:3000/v1
 ```
 
 ### 5.5. Inspect the logs
