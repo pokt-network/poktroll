@@ -425,14 +425,6 @@ poktrolld tx supplier stake-supplier \
   --yes
 ```
 
-:::warning Upstaking to restake
-
-If you need to change any of the configurations in your staking config, you MUST
-increase the stake by at least one uPOKT. This is the `stake_amount` field
-in the `supplier_stake_config_example.yaml` file above.
-
-:::
-
 Verify your supplier is staked:
 
 ```bash

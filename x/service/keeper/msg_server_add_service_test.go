@@ -43,11 +43,12 @@ func TestMsgServer_AddService(t *testing.T) {
 	keepertest.AddAccToAccMapCoins(t, oldServiceOwnerAddr, volatile.DenomuPOKT, oneUPOKTGreaterThanFee)
 
 	// Add the service to the store
-	_, err := srv.AddService(ctx, &types.MsgAddService{
+	addSvcRes, err := srv.AddService(ctx, &types.MsgAddService{
 		OwnerAddress: oldServiceOwnerAddr,
 		Service:      oldService,
 	})
 	require.NoError(t, err)
+	require.Equal(t, &oldService, addSvcRes.GetService())
 
 	// Validate the service was added
 	serviceFound, found := k.GetService(ctx, oldService.Id)
