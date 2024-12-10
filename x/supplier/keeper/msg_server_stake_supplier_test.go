@@ -190,7 +190,7 @@ func TestMsgServer_StakeSupplier_SuccessLoweringStakeAboveMinStake(t *testing.T)
 	_, isSupplierFound := supplierModuleKeepers.GetSupplier(ctx, operatorAddr)
 	require.True(t, isSupplierFound)
 
-	// Prepare an update supplier msg with a lower stake which is below the minimum staking fee.
+	// Prepare an updated supplier msg with a lower stake which is below the minimum staking fee.
 	newStake := minStake - 1
 	updateMsg, _ := newSupplierStakeMsg(ownerAddr, operatorAddr, newStake, "svcId")
 	updateMsg.Signer = operatorAddr
