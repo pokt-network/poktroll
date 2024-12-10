@@ -19,6 +19,9 @@ import (
 var _ = strconv.IntSize
 
 func TestRelayMiningDifficultyQuerySingle(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+
 	keeper, ctx := keepertest.ServiceKeeper(t)
 	msgs := createNRelayMiningDifficulty(keeper, ctx, 2)
 
@@ -80,6 +83,9 @@ func TestRelayMiningDifficultyQuerySingle(t *testing.T) {
 }
 
 func TestRelayMiningDifficultyQueryPaginated(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+
 	keeper, ctx := keepertest.ServiceKeeper(t)
 	msgs := createNRelayMiningDifficulty(keeper, ctx, 5)
 
@@ -132,4 +138,16 @@ func TestRelayMiningDifficultyQueryPaginated(t *testing.T) {
 		_, err := keeper.RelayMiningDifficultyAll(ctx, nil)
 		require.ErrorIs(t, err, status.Error(codes.InvalidArgument, "invalid request"))
 	})
+}
+
+func TestRelayMiningDifficultyNegativeIndex(t *testing.T) {
+    keeper, ctx := keepertest.ServiceKeeper(t)
+    _, found := keeper.GetRelayMiningDifficulty(ctx, "-1")
+    require.False(t, found, "Expected not to find a relay mining difficulty for negative index")
+}
+
+func TestRelayMiningDifficultyLargeIndex(t *testing.T) {
+    keeper, ctx := keepertest.ServiceKeeper(t)
+    _, found := keeper.GetRelayMiningDifficulty(ctx, "999999999")
+    require.False(t, found, "Expected not to find a relay mining difficulty for large index")
 }
