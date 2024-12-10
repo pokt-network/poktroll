@@ -377,3 +377,18 @@ type HistoricalQueryCache[T any] interface {
 	// SetAtHeight adds or updates a value at a specific height
 	SetAtHeight(key string, value T, height int64) error
 }
+
+// ParamsQuerier represents a generic querier for module parameters.
+// This interface should be implemented by any module-specific querier
+// that needs to access and cache on-chain parameters.
+//
+// DEV_NOTE: Can't use cosmostypes.Msg instead of any because M
+// would be a pointer but Keeper#GetParams() returns a value. 🙄
+type ParamsQuerier[P any] interface {
+	// GetParams queries the chain for the current module parameters, where
+	// P is the params type of a given module (e.g. sharedtypes.Params).
+	GetParams(ctx context.Context) (P, error)
+	// GetParamsAtHeight returns the parameters as they were at the specified
+	// height, where M is the params type of a given module (e.g. sharedtypes.Params).
+	GetParamsAtHeight(ctx context.Context, height int64) (P, error)
+}
