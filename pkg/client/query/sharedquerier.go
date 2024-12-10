@@ -13,48 +13,54 @@ import (
 var _ client.SharedQueryClient = (*sharedQuerier)(nil)
 
 // sharedQuerier is a wrapper around the sharedtypes.QueryClient that enables the
-// querying of on-chain shared information through a single exposed method
-// which returns an sharedtypes.Session struct
+// querying of on-chain shared information
 type sharedQuerier struct {
+	client.ParamsQuerier[*sharedtypes.Params]
+
 	clientConn    grpc.ClientConn
 	sharedQuerier sharedtypes.QueryClient
 	blockQuerier  client.BlockQueryClient
 }
 
 // NewSharedQuerier returns a new instance of a client.SharedQueryClient by
-// injecting the dependecies provided by the depinject.Config.
+// injecting the dependencies provided by the depinject.Config.
 //
 // Required dependencies:
 // - clientCtx (grpc.ClientConn)
 // - client.BlockQueryClient
-func NewSharedQuerier(deps depinject.Config) (client.SharedQueryClient, error) {
-	querier := &sharedQuerier{}
+func NewSharedQuerier(
+	deps depinject.Config,
+	paramsQuerierOpts ...ParamsQuerierOptionFn,
+) (client.SharedQueryClient, error) {
+	paramsQuerierCfg := DefaultParamsQuerierConfig()
+	for _, opt := range paramsQuerierOpts {
+		opt(paramsQuerierCfg)
+	}
 
-	if err := depinject.Inject(
+	paramsQuerier, err := NewCachedParamsQuerier[*sharedtypes.Params, sharedtypes.SharedQueryClient](
+		deps, sharedtypes.NewSharedQueryClient,
+		WithModuleInfo[*sharedtypes.Params](sharedtypes.ModuleName, sharedtypes.ErrSharedParamInvalid),
+		WithParamsCacheOptions(paramsQuerierCfg.CacheOpts...),
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	sq := &sharedQuerier{
+		ParamsQuerier: paramsQuerier,
+	}
+
+	if err = depinject.Inject(
 		deps,
-		&querier.clientConn,
-		&querier.blockQuerier,
+		&sq.clientConn,
+		&sq.blockQuerier,
 	); err != nil {
 		return nil, err
 	}
 
-	querier.sharedQuerier = sharedtypes.NewQueryClient(querier.clientConn)
+	sq.sharedQuerier = sharedtypes.NewQueryClient(sq.clientConn)
 
-	return querier, nil
-}
-
-// GetParams queries & returns the shared module on-chain parameters.
-//
-// TODO_TECHDEBT(#543): We don't really want to have to query the params for every method call.
-// Once `ModuleParamsClient` is implemented, use its replay observable's `#Last()` method
-// to get the most recently (asynchronously) observed (and cached) value.
-func (sq *sharedQuerier) GetParams(ctx context.Context) (*sharedtypes.Params, error) {
-	req := &sharedtypes.QueryParamsRequest{}
-	res, err := sq.sharedQuerier.Params(ctx, req)
-	if err != nil {
-		return nil, ErrQuerySessionParams.Wrapf("[%v]", err)
-	}
-	return &res.Params, nil
+	return sq, nil
 }
 
 // GetClaimWindowOpenHeight returns the block height at which the claim window of
@@ -118,7 +124,11 @@ func (sq *sharedQuerier) GetSessionGracePeriodEndHeight(
 // to get the most recently (asynchronously) observed (and cached) value.
 // TODO_MAINNET(@bryanchriswhite, #543): We also don't really want to use the current value of the params.
 // Instead, we should be using the value that the params had for the session which includes queryHeight.
-func (sq *sharedQuerier) GetEarliestSupplierClaimCommitHeight(ctx context.Context, queryHeight int64, supplierOperatorAddr string) (int64, error) {
+func (sq *sharedQuerier) GetEarliestSupplierClaimCommitHeight(
+	ctx context.Context,
+	queryHeight int64,
+	supplierOperatorAddr string,
+) (int64, error) {
 	sharedParams, err := sq.GetParams(ctx)
 	if err != nil {
 		return 0, err
@@ -151,7 +161,11 @@ func (sq *sharedQuerier) GetEarliestSupplierClaimCommitHeight(ctx context.Contex
 // to get the most recently (asynchronously) observed (and cached) value.
 // TODO_MAINNET(@bryanchriswhite, #543): We also don't really want to use the current value of the params.
 // Instead, we should be using the value that the params had for the session which includes queryHeight.
-func (sq *sharedQuerier) GetEarliestSupplierProofCommitHeight(ctx context.Context, queryHeight int64, supplierOperatorAddr string) (int64, error) {
+func (sq *sharedQuerier) GetEarliestSupplierProofCommitHeight(
+	ctx context.Context,
+	queryHeight int64,
+	supplierOperatorAddr string,
+) (int64, error) {
 	sharedParams, err := sq.GetParams(ctx)
 	if err != nil {
 		return 0, err

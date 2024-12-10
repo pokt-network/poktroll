@@ -300,8 +300,8 @@ type SessionQueryClient interface {
 // SharedQueryClient defines an interface that enables the querying of the
 // on-chain shared module params.
 type SharedQueryClient interface {
-	// GetParams queries the chain for the current shared module parameters.
-	GetParams(ctx context.Context) (*sharedtypes.Params, error)
+	ParamsQuerier[*sharedtypes.Params]
+
 	// GetSessionGracePeriodEndHeight returns the block height at which the grace period
 	// for the session that includes queryHeight elapses.
 	// The grace period is the number of blocks after the session ends during which relays
