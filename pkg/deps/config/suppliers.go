@@ -7,11 +7,9 @@ import (
 	"cosmossdk.io/depinject"
 	sdkclient "github.com/cosmos/cosmos-sdk/client"
 	cosmosflags "github.com/cosmos/cosmos-sdk/client/flags"
-	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	"github.com/cosmos/gogoproto/grpc"
 	"github.com/spf13/cobra"
 
-	"github.com/pokt-network/poktroll/pkg/appgateserver/sdkadapter"
 	"github.com/pokt-network/poktroll/pkg/client/block"
 	"github.com/pokt-network/poktroll/pkg/client/delegation"
 	"github.com/pokt-network/poktroll/pkg/client/events"
@@ -340,42 +338,6 @@ func NewSupplyRingCacheFn() SupplierFn {
 
 		// Supply the ring cache to the provided deps
 		return depinject.Configs(deps, depinject.Supply(ringCache)), nil
-	}
-}
-
-// NewSupplyShannonSDKFn supplies a depinject config with a ShannonSDK given
-// the signing key name.
-func NewSupplyShannonSDKFn(signingKeyName string) SupplierFn {
-	return func(
-		ctx context.Context,
-		deps depinject.Config,
-		_ *cobra.Command,
-	) (depinject.Config, error) {
-		var clientCtx sdkclient.Context
-
-		// On a Cosmos environment we get the private key from the keyring
-		// Inject the client context, get the keyring from it then get the private key
-		if err := depinject.Inject(deps, &clientCtx); err != nil {
-			return nil, err
-		}
-
-		keyRecord, err := clientCtx.Keyring.Key(signingKeyName)
-		if err != nil {
-			return nil, err
-		}
-
-		privateKey, ok := keyRecord.GetLocal().PrivKey.GetCachedValue().(cryptotypes.PrivKey)
-		if !ok {
-			return nil, err
-		}
-
-		shannonSDK, err := sdkadapter.NewShannonSDK(ctx, privateKey, deps)
-		if err != nil {
-			return nil, err
-		}
-
-		// Supply the session querier to the provided deps
-		return depinject.Configs(deps, depinject.Supply(shannonSDK)), nil
 	}
 }
 
