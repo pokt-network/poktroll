@@ -6,9 +6,9 @@ import (
 
 	"cosmossdk.io/depinject"
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
-	"github.com/cosmos/cosmos-sdk/types"
+	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	accounttypes "github.com/cosmos/cosmos-sdk/x/auth/types"
-	grpc "github.com/cosmos/gogoproto/grpc"
+	"github.com/cosmos/gogoproto/grpc"
 
 	"github.com/pokt-network/poktroll/pkg/client"
 )
@@ -24,7 +24,7 @@ type accQuerier struct {
 
 	// accountCache is a cache of accounts that have already been queried.
 	// TODO_TECHDEBT: Add a size limit to the cache and consider an LRU cache.
-	accountCache   map[string]types.AccountI
+	accountCache   map[string]cosmostypes.AccountI
 	accountCacheMu sync.Mutex
 }
 
@@ -34,7 +34,7 @@ type accQuerier struct {
 // Required dependencies:
 // - clientCtx
 func NewAccountQuerier(deps depinject.Config) (client.AccountQueryClient, error) {
-	aq := &accQuerier{accountCache: make(map[string]types.AccountI)}
+	aq := &accQuerier{accountCache: make(map[string]cosmostypes.AccountI)}
 
 	if err := depinject.Inject(
 		deps,
@@ -52,9 +52,16 @@ func NewAccountQuerier(deps depinject.Config) (client.AccountQueryClient, error)
 func (aq *accQuerier) GetAccount(
 	ctx context.Context,
 	address string,
-) (types.AccountI, error) {
+) (cosmostypes.AccountI, error) {
 	aq.accountCacheMu.Lock()
-	defer aq.accountCacheMu.Unlock()
+	defer func() {
+		aq.accountCacheMu.Unlock()
+		client.AllQueriesTotalCounter.With(
+			"method", "account",
+			"client_type", "account",
+			"msg_type", cosmostypes.MsgTypeURL(new(accounttypes.QueryAccountRequest)),
+		).Add(1)
+	}()
 
 	if foundAccount, isAccountFound := aq.accountCache[address]; isAccountFound {
 		return foundAccount, nil
@@ -68,7 +75,7 @@ func (aq *accQuerier) GetAccount(
 	}
 
 	// Unpack and cache the account object
-	var fetchedAccount types.AccountI
+	var fetchedAccount cosmostypes.AccountI
 	if err = queryCodec.UnpackAny(res.Account, &fetchedAccount); err != nil {
 		return nil, ErrQueryUnableToDeserializeAccount.Wrapf("address: %s [%v]", address, err)
 	}

@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"cosmossdk.io/depinject"
-	"github.com/cosmos/gogoproto/grpc"
+	gogogrpc "github.com/cosmos/gogoproto/grpc"
 
 	"github.com/pokt-network/poktroll/pkg/client"
 	servicetypes "github.com/pokt-network/poktroll/x/service/types"
@@ -17,7 +17,9 @@ var _ client.ServiceQueryClient = (*serviceQuerier)(nil)
 // querying of on-chain service information through a single exposed method
 // which returns a sharedtypes.Service struct
 type serviceQuerier struct {
-	clientConn     grpc.ClientConn
+	client.ParamsQuerier[*servicetypes.Params]
+
+	clientConn     gogogrpc.ClientConn
 	serviceQuerier servicetypes.QueryClient
 }
 
@@ -25,20 +27,39 @@ type serviceQuerier struct {
 // injecting the dependecies provided by the depinject.Config.
 //
 // Required dependencies:
-// - clientCtx (grpc.ClientConn)
-func NewServiceQuerier(deps depinject.Config) (client.ServiceQueryClient, error) {
-	servq := &serviceQuerier{}
+// - clientCtx (gogogrpc.ClientConn)
+func NewServiceQuerier(
+	deps depinject.Config,
+	paramsQuerierOpts ...ParamsQuerierOptionFn,
+) (client.ServiceQueryClient, error) {
+	paramsQuerierCfg := DefaultParamsQuerierConfig()
+	for _, opt := range paramsQuerierOpts {
+		opt(paramsQuerierCfg)
+	}
 
-	if err := depinject.Inject(
+	paramsQuerier, err := NewCachedParamsQuerier[*servicetypes.Params, servicetypes.ServiceQueryClient](
+		deps, servicetypes.NewServiceQueryClient,
+		WithModuleInfo[*servicetypes.Params](servicetypes.ModuleName, servicetypes.ErrServiceParamInvalid),
+		WithParamsCacheOptions(paramsQuerierCfg.CacheOpts...),
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	querier := &serviceQuerier{
+		ParamsQuerier: paramsQuerier,
+	}
+
+	if err = depinject.Inject(
 		deps,
-		&servq.clientConn,
+		&querier.clientConn,
 	); err != nil {
 		return nil, err
 	}
 
-	servq.serviceQuerier = servicetypes.NewQueryClient(servq.clientConn)
+	querier.serviceQuerier = servicetypes.NewQueryClient(querier.clientConn)
 
-	return servq, nil
+	return querier, nil
 }
 
 // GetService returns a sharedtypes.Service struct for a given serviceId.
@@ -50,6 +71,8 @@ func (servq *serviceQuerier) GetService(
 	req := &servicetypes.QueryGetServiceRequest{
 		Id: serviceId,
 	}
+
+	// TODO_IN_THIS_COMMIT: historically cache services...
 
 	res, err := servq.serviceQuerier.Service(ctx, req)
 	if err != nil {
@@ -70,6 +93,8 @@ func (servq *serviceQuerier) GetServiceRelayDifficulty(
 	req := &servicetypes.QueryGetRelayMiningDifficultyRequest{
 		ServiceId: serviceId,
 	}
+
+	// TODO_IN_THIS_COMMIT: historically cache relay mining difficulties...
 
 	res, err := servq.serviceQuerier.RelayMiningDifficulty(ctx, req)
 	if err != nil {

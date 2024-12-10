@@ -1,3 +1,4 @@
+//go:generate mockgen -destination=../../testutil/mockclient/grpc_conn_mock.go -package=mockclient github.com/cosmos/gogoproto/grpc ClientConn
 //go:generate mockgen -destination=../../testutil/mockclient/events_query_client_mock.go -package=mockclient . Dialer,Connection,EventsQueryClient
 //go:generate mockgen -destination=../../testutil/mockclient/block_client_mock.go -package=mockclient . Block,BlockClient
 //go:generate mockgen -destination=../../testutil/mockclient/delegation_client_mock.go -package=mockclient . DelegationClient
@@ -34,6 +35,7 @@ import (
 	servicetypes "github.com/pokt-network/poktroll/x/service/types"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
+	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 )
 
 // MsgCreateClaim is an interface satisfying proof.MsgCreateClaim concrete type
@@ -267,6 +269,8 @@ type AccountQueryClient interface {
 // ApplicationQueryClient defines an interface that enables the querying of the
 // on-chain application information
 type ApplicationQueryClient interface {
+	ParamsQuerier[*apptypes.Params]
+
 	// GetApplication queries the chain for the details of the application provided
 	GetApplication(ctx context.Context, appAddress string) (apptypes.Application, error)
 
@@ -277,6 +281,8 @@ type ApplicationQueryClient interface {
 // SupplierQueryClient defines an interface that enables the querying of the
 // on-chain supplier information
 type SupplierQueryClient interface {
+	ParamsQuerier[*suppliertypes.Params]
+
 	// GetSupplier queries the chain for the details of the supplier provided
 	GetSupplier(ctx context.Context, supplierOperatorAddress string) (sharedtypes.Supplier, error)
 }
@@ -284,6 +290,8 @@ type SupplierQueryClient interface {
 // SessionQueryClient defines an interface that enables the querying of the
 // on-chain session information
 type SessionQueryClient interface {
+	ParamsQuerier[*sessiontypes.Params]
+
 	// GetSession queries the chain for the details of the session provided
 	GetSession(
 		ctx context.Context,
@@ -291,16 +299,13 @@ type SessionQueryClient interface {
 		serviceId string,
 		blockHeight int64,
 	) (*sessiontypes.Session, error)
-
-	// GetParams queries the chain for the session module parameters.
-	GetParams(ctx context.Context) (*sessiontypes.Params, error)
 }
 
 // SharedQueryClient defines an interface that enables the querying of the
 // on-chain shared module params.
 type SharedQueryClient interface {
-	// GetParams queries the chain for the current shared module parameters.
-	GetParams(ctx context.Context) (*sharedtypes.Params, error)
+	ParamsQuerier[*sharedtypes.Params]
+
 	// GetSessionGracePeriodEndHeight returns the block height at which the grace period
 	// for the session that includes queryHeight elapses.
 	// The grace period is the number of blocks after the session ends during which relays
@@ -333,6 +338,8 @@ type BlockQueryClient interface {
 // protobuf message. Since the generated go types don't include interface types, this
 // is necessary to prevent dependency cycles.
 type ProofParams interface {
+	cosmostypes.Msg
+
 	GetProofRequestProbability() float64
 	GetProofRequirementThreshold() *cosmostypes.Coin
 	GetProofMissingPenalty() *cosmostypes.Coin
@@ -342,13 +349,14 @@ type ProofParams interface {
 // ProofQueryClient defines an interface that enables the querying of the
 // on-chain proof module params.
 type ProofQueryClient interface {
-	// GetParams queries the chain for the current shared module parameters.
-	GetParams(ctx context.Context) (ProofParams, error)
+	ParamsQuerier[ProofParams]
 }
 
 // ServiceQueryClient defines an interface that enables the querying of the
 // on-chain service information
 type ServiceQueryClient interface {
+	ParamsQuerier[*servicetypes.Params]
+
 	// GetService queries the chain for the details of the service provided
 	GetService(ctx context.Context, serviceId string) (sharedtypes.Service, error)
 	GetServiceRelayDifficulty(ctx context.Context, serviceId string) (servicetypes.RelayMiningDifficulty, error)
@@ -359,4 +367,36 @@ type ServiceQueryClient interface {
 type BankQueryClient interface {
 	// GetBalance queries the chain for the uPOKT balance of the account provided
 	GetBalance(ctx context.Context, address string) (*cosmostypes.Coin, error)
+}
+
+// QueryCache handles a single type of cached data
+type QueryCache[T any] interface {
+	Get(key string) (T, error)
+	Set(key string, value T) error
+	Delete(key string)
+	Clear()
+}
+
+// HistoricalQueryCache extends QueryCache to support historical values at different heights
+type HistoricalQueryCache[T any] interface {
+	QueryCache[T]
+	// GetAtHeight retrieves the nearest value <= the specified height
+	GetAtHeight(key string, height int64) (T, error)
+	// SetAtHeight adds or updates a value at a specific height
+	SetAtHeight(key string, value T, height int64) error
+}
+
+// ParamsQuerier represents a generic querier for module parameters.
+// This interface should be implemented by any module-specific querier
+// that needs to access and cache on-chain parameters.
+//
+// DEV_NOTE: Can't use cosmostypes.Msg instead of any because M
+// would be a pointer but Keeper#GetParams() returns a value. 🙄
+type ParamsQuerier[P any] interface {
+	// GetParams queries the chain for the current module parameters, where
+	// P is the params type of a given module (e.g. sharedtypes.Params).
+	GetParams(ctx context.Context) (P, error)
+	// GetParamsAtHeight returns the parameters as they were at the specified
+	// height, where M is the params type of a given module (e.g. sharedtypes.Params).
+	GetParamsAtHeight(ctx context.Context, height int64) (P, error)
 }
