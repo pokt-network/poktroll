@@ -368,3 +368,12 @@ type QueryCache[T any] interface {
 	Delete(key string)
 	Clear()
 }
+
+// HistoricalQueryCache extends QueryCache to support historical values at different heights
+type HistoricalQueryCache[T any] interface {
+	QueryCache[T]
+	// GetAtHeight retrieves the nearest value <= the specified height
+	GetAtHeight(key string, height int64) (T, error)
+	// SetAtHeight adds or updates a value at a specific height
+	SetAtHeight(key string, value T, height int64) error
+}
