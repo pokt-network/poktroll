@@ -129,12 +129,6 @@ echo "source $(pwd)/.env" >> ~/.bashrc
 source ~/.bashrc
 ```
 
-Setup tx parameters:
-
-```bash
-export TX_PARAM_FLAGS="--gas=auto --gas-prices=1upokt --gas-adjustment=1.5 --chain-id=pocket-beta --yes"
-```
-
 ## Start up the full node
 
 :::warning
@@ -181,7 +175,7 @@ privKey=$(export_priv_key_hex gateway); sed -i "s|GATEWAY_PRIV_KEY_HEX=\".*\"|GA
 address=$(poktrolld keys show gateway -a | tr -d '\r'); sed -i "s|GATEWAY_ADDR=\".*\"|GATEWAY_ADDR=\"$address\"|g" .env
 ```
 
-FINALLY, update the environment variables:
+FINALLY, update your environment:
 
 ```bash
 source .env
@@ -215,7 +209,7 @@ Stake the supplier:
 ```bash
 sed -i -e s/YOUR_NODE_IP_OR_HOST/$NODE_HOSTNAME/g ./stake_configs/supplier_stake_config_example.yaml
 sed -i -e s/YOUR_OWNER_ADDRESS/$SUPPLIER_ADDR/g ./stake_configs/supplier_stake_config_example.yaml
-poktrolld tx supplier stake-supplier --config=/poktroll/stake_configs/supplier_stake_config_example.yaml --from=supplier $TX_PARAM_FLAGS
+poktrolld tx supplier stake-supplier --config=/poktroll/stake_configs/supplier_stake_config_example.yaml --from=supplier $TX_PARAM_FLAGS_BETA
 
 # OPTIONALLY check the supplier's status
 poktrolld query supplier show-supplier $SUPPLIER_ADDR
@@ -238,7 +232,7 @@ docker logs -f --tail 100 relayminer
 Stake the application:
 
 ```bash
-poktrolld tx application stake-application --config=/poktroll/stake_configs/application_stake_config_example.yaml --from=application $TX_PARAM_FLAGS
+poktrolld tx application stake-application --config=/poktroll/stake_configs/application_stake_config_example.yaml --from=application $TX_PARAM_FLAGS_BETA
 
 # OPTIONALLY check the application's status
 poktrolld query application show-application $APPLICATION_ADDR
@@ -247,7 +241,7 @@ poktrolld query application show-application $APPLICATION_ADDR
 Stake the gateway:
 
 ```bash
-poktrolld tx gateway stake-gateway --config=/poktroll/stake_configs/gateway_stake_config_example.yaml --from=gateway $TX_PARAM_FLAGS
+poktrolld tx gateway stake-gateway --config=/poktroll/stake_configs/gateway_stake_config_example.yaml --from=gateway $TX_PARAM_FLAGS_BETA
 
 # OPTIONALLY check the application's status
 poktrolld query gateway show-gateway $GATEWAY_ADDR
@@ -256,7 +250,7 @@ poktrolld query gateway show-gateway $GATEWAY_ADDR
 Delegate the application to the gateway:
 
 ```bash
-poktrolld tx application delegate-to-gateway $GATEWAY_ADDR --from=application $TX_PARAM_FLAGS
+poktrolld tx application delegate-to-gateway $GATEWAY_ADDR --from=application $TX_PARAM_FLAGS_BETA
 
 # OPTIONALLY check the application's delegation status
 poktrolld query application show-application $APPLICATION_ADDR
@@ -345,14 +339,14 @@ echo $SUPPLIER_ADDR
 ```bash
 # Import the faucet using the mnemonic
 poktrolld keys add --recover -i faucet
-poktrolld tx bank multi-send faucet $APPLICATION_ADDR $GATEWAY_ADDR $SUPPLIER_ADDR 100000upokt $TX_PARAM_FLAGS
+poktrolld tx bank multi-send faucet $APPLICATION_ADDR $GATEWAY_ADDR $SUPPLIER_ADDR 100000upokt $TX_PARAM_FLAGS_BETA
 ```
 
 ### Start the RelayMiner
 
 ```bash
 # Stake
-poktrolld tx supplier stake-supplier --config=/poktroll/stake_configs/supplier_stake_config_example.yaml --from=supplier $TX_PARAM_FLAGS
+poktrolld tx supplier stake-supplier --config=/poktroll/stake_configs/supplier_stake_config_example.yaml --from=supplier $TX_PARAM_FLAGS_BETA
 # Check
 poktrolld query supplier show-supplier $SUPPLIER_ADDR
 # Start
@@ -365,7 +359,7 @@ docker logs -f --tail 100 relayminer
 
 ```bash
 # Stake
-poktrolld tx application stake-application --config=/poktroll/stake_configs/application_stake_config_example.yaml --from=application $TX_PARAM_FLAGS
+poktrolld tx application stake-application --config=/poktroll/stake_configs/application_stake_config_example.yaml --from=application $TX_PARAM_FLAGS_BETA
 # Check
 poktrolld query application show-application $APPLICATION_ADDR
 # Start

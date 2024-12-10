@@ -135,10 +135,9 @@ create a new user and give it sudo permissions.
 This is necessary, in particular, if you want to use [homebrew](https://brew.sh/) [to install `poktrolld`](../user_guide/install.md).
 
 ```bash
-# Create a new user and give sudo permissions
-export USERNAME=olshansky
-adduser $USERNAME
-usermod -aG sudo,docker $USERNAME
+adduser poktroll
+usermod -aG docker,sudo poktroll
+su - poktroll
 ```
 
 You can also avoid needing to pass in the password each time by running the following:
@@ -148,7 +147,7 @@ You can also avoid needing to pass in the password each time by running the foll
 vi /etc/sudoers
 
 # Add the following line to the end of the file
-olshansky ALL=(ALL) NOPASSWD:ALL
+poktroll ALL=(ALL) NOPASSWD:ALL
 ```
 
 Then, switch to the new user:
