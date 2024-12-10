@@ -336,6 +336,8 @@ type BlockQueryClient interface {
 // protobuf message. Since the generated go types don't include interface types, this
 // is necessary to prevent dependency cycles.
 type ProofParams interface {
+	cosmostypes.Msg
+
 	GetProofRequestProbability() float64
 	GetProofRequirementThreshold() *cosmostypes.Coin
 	GetProofMissingPenalty() *cosmostypes.Coin
@@ -345,8 +347,7 @@ type ProofParams interface {
 // ProofQueryClient defines an interface that enables the querying of the
 // on-chain proof module params.
 type ProofQueryClient interface {
-	// GetParams queries the chain for the current shared module parameters.
-	GetParams(ctx context.Context) (ProofParams, error)
+	ParamsQuerier[ProofParams]
 }
 
 // ServiceQueryClient defines an interface that enables the querying of the
