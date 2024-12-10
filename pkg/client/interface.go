@@ -360,3 +360,11 @@ type BankQueryClient interface {
 	// GetBalance queries the chain for the uPOKT balance of the account provided
 	GetBalance(ctx context.Context, address string) (*cosmostypes.Coin, error)
 }
+
+// QueryCache handles a single type of cached data
+type QueryCache[T any] interface {
+	Get(key string) (T, error)
+	Set(key string, value T) error
+	Delete(key string)
+	Clear()
+}
