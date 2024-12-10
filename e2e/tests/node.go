@@ -115,6 +115,11 @@ func (p *pocketdBin) RunCurl(rpcUrl, service, method, path, appAddr, data string
 // RunCurlWithRetry runs a curl command on the local machine with multiple retries.
 // It also accounts for an ephemeral error that may occur due to DNS resolution such as "no such host".
 func (p *pocketdBin) RunCurlWithRetry(rpcUrl, service, method, path, appAddr, data string, numRetries uint8, args ...string) (*commandResult, error) {
+	if service == "" {
+		err := fmt.Errorf("Missing service name for curl request with url: %s", rpcUrl)
+		return nil, err
+	}
+
 	// No more retries left
 	if numRetries <= 0 {
 		return p.RunCurl(rpcUrl, service, method, path, appAddr, data, args...)
@@ -185,12 +190,16 @@ func (p *pocketdBin) runCurlCmd(rpcBaseURL, service, method, path, appAddr, data
 	}
 
 	// Get the virtual host that will be sent in the "Host" request header
-	virtualHost := getVirtualHostFromHost(rpcUrl, service)
+	virtualHost := getVirtualHostFromUrlForService(rpcUrl, service)
 
-	// The current DevNet infrastructure does not support routing requests to arbitrary subdomains.
-	// As a workaround, defaultPathHostOverride (which contains no subdomain) is used
-	// as the gateway's host:port to connect to, and the virtual host (which includes
-	// the service as subdomain) is sent in the "Host" request header.
+	// TODO_HACK: As of PR #879, the DevNet infrastructure does not support routing
+	// requests to arbitrary subdomains due to TLS certificate-related complexities.
+	// In such environment, defaultPathHostOverride (which contains no subdomain)
+	// is used as:
+	//   1. The gateway's 'host:port' to connect to
+	//   2. A base to which the service is added as a subdomain then set as the "Host" request header.
+	//      (i.e. Host: <service>.<defaultPathHostOverride>)
+	//
 	// Override the actual connection address if the environment requires it.
 	if defaultPathHostOverride != "" {
 		rpcUrl.Host = defaultPathHostOverride
@@ -246,7 +255,7 @@ func (p *pocketdBin) runCurlCmd(rpcBaseURL, service, method, path, appAddr, data
 	return r, err
 }
 
-// formatURLString returns  RESTful or JSON-RPC API endpoint URL depending
+// formatURLString returns RESTful or JSON-RPC API endpoint URL depending
 // on the parameters provided.
 func formatURLString(serviceAlias, rpcUrl, path string) string {
 	// For JSON-RPC APIs, the path should be empty
@@ -262,23 +271,23 @@ func formatURLString(serviceAlias, rpcUrl, path string) string {
 	return fmt.Sprintf("http://%s.%s/v1/%s", serviceAlias, rpcUrl, path)
 }
 
-// getVirtualHostFromHost returns the given rpcUrl host stripped of the port
-// and with the service included as a subdomain to be used in the "Host" request header.
-// This is needed by the current DevNet infrastructure that does not support arbitrary
-// subdomains which the PATH Gateway needs to identify the requested service.
-func getVirtualHostFromHost(rpcUrl *url.URL, service string) string {
-	// Store the virtual host we want to send in the Host header
-	virtualHost := rpcUrl.Host
-
-	if len(service) > 0 {
-		// Strip port if it exists and add service prefix
-		host, _, err := net.SplitHostPort(rpcUrl.Host)
-		if err != nil {
-			// No port in the host, use as-is
-			host = rpcUrl.Host
-		}
-		virtualHost = fmt.Sprintf("%s.%s", service, host)
+// getVirtualHostFromUrlForService returns a virtual host taking into consideration
+// the URL's host and the service if it's non-empty.
+// Specifically, it:
+//  1. Extract's the host from the rpcURL
+//  2. Prefixes the service as a subdomain to (1) the given rpcUrl host stripped of the port
+//
+// TODO_HACK: This is needed as of PR #879 because the DevNet infrastructure does
+// not support arbitrary subdomains due to TLS certificate-related complexities.
+func getVirtualHostFromUrlForService(rpcUrl *url.URL, service string) string {
+	// Strip port if it exists and add service prefix
+	host, _, err := net.SplitHostPort(rpcUrl.Host)
+	if err != nil {
+		// err is non-nil if rpcUrl.Host does not have a port.
+		// Use the entire host as is
+		host = rpcUrl.Host
 	}
+	virtualHost := fmt.Sprintf("%s.%s", service, host)
 
 	return virtualHost
 }
