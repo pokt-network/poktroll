@@ -49,7 +49,7 @@ type ApplicationKeeper interface {
 	GetApplication(ctx context.Context, address string) (app apptypes.Application, found bool)
 	GetAllApplications(ctx context.Context) []apptypes.Application
 	SetApplication(context.Context, apptypes.Application)
-	GetParams(context.Context) apptypes.Params
+	GetParams(ctx context.Context) apptypes.Params
 }
 
 // SharedKeeper defines the expected interface needed to retrieve shared information.
