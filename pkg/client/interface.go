@@ -353,6 +353,8 @@ type ProofQueryClient interface {
 // ServiceQueryClient defines an interface that enables the querying of the
 // on-chain service information
 type ServiceQueryClient interface {
+	ParamsQuerier[*servicetypes.Params]
+
 	// GetService queries the chain for the details of the service provided
 	GetService(ctx context.Context, serviceId string) (sharedtypes.Service, error)
 	GetServiceRelayDifficulty(ctx context.Context, serviceId string) (servicetypes.RelayMiningDifficulty, error)
