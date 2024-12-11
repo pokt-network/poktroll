@@ -13,8 +13,7 @@ import ReactPlayer from "react-player";
 - [Prerequisites](#prerequisites)
 - [A. Deploying a Full Node](#a-deploying-a-full-node)
 - [B. Creating a Supplier and Deploying a RelayMiner](#b-creating-a-supplier-and-deploying-a-relayminer)
-- [C. Creating an Application and Deploying a PATH Gateway](#c-creating-an-application-and-deploying-a-path-gateway)
-- [D. Creating a Gateway Deploying a PATH Gateway](#d-creating-a-gateway-deploying-a-path-gateway)
+- [C. Creating an Application, a Gateway and Deploying a PATH Gateway](#c-creating-an-application-a-gateway-and-deploying-a-path-gateway)
 
 <!--
 
@@ -122,6 +121,41 @@ Ensure the following software is installed on your system:
 - [Docker](https://docs.docker.com/engine/install/)
 - [docker-compose](https://docs.docker.com/compose/install/#installation-scenarios)
 
+### [Optional] Create a new user <!-- omit in toc -->
+
+:::note
+
+Make sure to replace `olshansky` with your username.
+
+:::
+
+You can generally do everything as the `root` user, but it's recommended to
+create a new user and give it sudo permissions.
+
+This is necessary, in particular, if you want to use [homebrew](https://brew.sh/) [to install `poktrolld`](../user_guide/install.md).
+
+```bash
+adduser poktroll
+usermod -aG docker,sudo poktroll
+su - poktroll
+```
+
+You can also avoid needing to pass in the password each time by running the following:
+
+```bash
+# Optionally avoid needing to provide a password
+vi /etc/sudoers
+
+# Add the following line to the end of the file
+poktroll ALL=(ALL) NOPASSWD:ALL
+```
+
+Then, switch to the new user:
+
+```bash
+su - $USERNAME
+```
+
 ### Clone the Repository <!-- omit in toc -->
 
 ```bash
@@ -185,19 +219,19 @@ The Alpha TestNet currently requires manual steps to sync the node to the latest
 in [this document](../../protocol/upgrades/upgrade_list.md), which leads to the manual upgrade instructions.
 :::
 
-_Note: You may need to replace `docker-compose` with `docker compose` if you are
-running a newer version of Docker where `docker-compose` is integrated into `docker` itself._
+_Note: You may need to replace `docker compose` with `docker-compose` if you are
+running an older version of Docker where `docker-compose` is not integrated into `docker` itself yet._
 
 Initiate the node with:
 
 ```bash
-docker-compose up -d full-node
+docker compose up -d full-node
 ```
 
 Monitor node activity through logs with:
 
 ```bash
-docker-compose logs -f --tail 100 full-node
+docker compose logs -f --tail 100 full-node
 ```
 
 ### Inspecting the Full Node <!-- omit in toc -->
@@ -233,7 +267,7 @@ curl -s -X POST localhost:26657/block | jq
 watch -n 1 "curl -s -X POST localhost:26657/block | jq '.result.block.header.height'"
 ```
 
-You can compare the height relative to the [shannon testnet explorer](https://shannon.testnet.pokt.network/poktroll/block).
+You can compare the height relative to the [shannon testnet explorer](https://shannon.beta.testnet.pokt.network/poktroll/block).
 
 ### Get a way to fund your accounts <!-- omit in toc -->
 
@@ -242,7 +276,7 @@ at multiple points in time.
 
 #### 3.1 Funding using a Faucet <!-- omit in toc --> <!-- omit in toc -->
 
-When you need to fund an account, you can make use of the [Faucet](https://faucet.testnet.pokt.network/).
+When you need to fund an account, you can make use of the [Faucet](https://faucet.beta.testnet.pokt.network/).
 
 #### [Requires Grove Team Support] 3.2 Funding using faucet account <!-- omit in toc --> <!-- omit in toc -->
 
@@ -259,7 +293,7 @@ provided by the Pocket team for testnet.
 When you see the `> Enter your bippassphrase. This is combined with the mnemonic to derive the seed. Most users should just hit enter to use the default, ""`
 prompt, hit enter without adding a passphrase. Finish funding your account by using the command below:
 
-You can view the balance of the faucet address at [shannon.testnet.pokt.network/](https://shannon.testnet.pokt.network/).
+You can view the balance of the faucet address at [shannon.beta.testnet.pokt.network/](https://shannon.beta.testnet.pokt.network/poktroll).
 
 ### Restarting a full node after re-genesis <!-- omit in toc -->
 
@@ -270,22 +304,24 @@ start from a clean slate:
 ```bash
 
 # Stop & remove existing containers
-docker-compose down
+docker compose down
 docker rm $(docker ps -aq) -f
 
 # Remove existing data and renew genesis
 rm -rf poktrolld-data/config/addrbook.json poktrolld-data/config/genesis.json poktrolld-data/config/genesis.seeds poktrolld-data/data/ poktrolld-data/cosmovisor/ poktrolld-data/config/node_key.json poktrolld-data/config/priv_validator_key.json
 
 # Re-start the node
-docker-compose up -d
-docker-compose logs -f --tail 100
+docker compose up -d
+docker compose logs -f --tail 100
 ```
 
 ### Docker image updates <!-- omit in toc -->
 
 The `.env` file contains `POKTROLLD_IMAGE_TAG` which can be updated based on the
-images available on [ghcr](https://github.com/pokt-network/poktroll/pkgs/container/poktrolld/versions)
-to update the version of the `full_node` deployed.
+images available on [poktroll ghcr](https://github.com/pokt-network/poktroll/pkgs/container/poktrolld/versions)
+to update the version of the `full_node` deployed. As well as the `PATH_GATEWAY_IMAGE_TAG`
+which can be updated based on the `PATH Gateway` images available at
+[path ghcr](https://github.com/buildwithgrove/path/pkgs/container/path/versions)
 
 ## B. Creating a Supplier and Deploying a RelayMiner
 
@@ -293,15 +329,15 @@ A Supplier is an on-chain record that advertises services it'll provide.
 
 A RelayMiner is an operator / service that provides services to offer on the Pocket Network.
 
-### 0. Prerequisites for a RelayMiner <!-- omit in toc -->
+### Prerequisites for a RelayMiner <!-- omit in toc -->
 
 - **Full Node**: This RelayMiner deployment guide assumes the Full Node is
-  deployed in the same `docker-compose` stack; see section (A).
+  deployed in the same `docker compose` stack; see section (A).
 - **A poktroll account with uPOKT tokens**: Tokens can be acquired by contacting
   the team or using the faucet. You are going to need a BIPmnemonic phrase for
   an existing funded account before continuing below.
 
-### Create, configure and fund a Supplier account <!-- omit in toc -->
+### Create and fund a Supplier account <!-- omit in toc -->
 
 On the host where you started the full node container, run the commands below to
 create your account.
@@ -335,7 +371,7 @@ Add funds to your supplier account by either going to the [faucet](https://fauce
 or using the `faucet` account directly if you have access to it:
 
 ```bash
-poktrolld tx bank send faucet $SUPPLIER_ADDR 10000upokt --chain-id=poktroll --yes
+poktrolld tx bank send faucet $SUPPLIER_ADDR 10000upokt --chain-id=pocket-beta --yes
 ```
 
 You can check that your address is funded correctly by running:
@@ -372,12 +408,20 @@ Update the provided example supplier stake config:
 
 ```bash
 sed -i -e s/YOUR_NODE_IP_OR_HOST/$NODE_HOSTNAME/g ./stake_configs/supplier_stake_config_example.yaml
+sed -i -e s/YOUR_OWNER_ADDRESS/$SUPPLIER_ADDR/g ./stake_configs/supplier_stake_config_example.yaml
 ```
 
 Use the configuration to stake your supplier:
 
 ```bash
-poktrolld tx supplier stake-supplier --config=/poktroll/stake_configs/supplier_stake_config_example.yaml --from=supplier-1 --chain-id=poktroll --yes
+poktrolld tx supplier stake-supplier \
+  --config=/poktroll/stake_configs/supplier_stake_config_example.yaml \
+  --from=supplier-1 \
+  --gas=auto \
+  --gas-prices=1upokt \
+  --gas-adjustment=1.5 \
+  --chain-id=pocket-beta \
+  --yes
 ```
 
 Verify your supplier is staked:
@@ -398,41 +442,31 @@ explains what the RelayMiner operation config is and how it can be used.
 Update the provided example RelayMiner operation config:
 
 ```bash
-sed -i -e s/YOUR_NODE_IP_OR_HOST/$NODE_HOSTNAME/g relayminer/config/relayminer_config.yaml
+sudo sed -i -e s/YOUR_NODE_IP_OR_HOST/$NODE_HOSTNAME/g relayminer/config/relayminer_config.yaml
 ```
 
-Update the `backend_url` in `relayminer_config.yaml` with a valid `002(i.e. ETH MainNet)
+Update the `backend_url` in `relayminer_config.yaml` with a valid `F00C` (i.e. ETH MainNet)
 service URL. We suggest using your own node, but you can get one from Grove for testing purposes.
 
 ```bash
-sed -i "s|backend_url:\".*\"|backend_url: \"https://eth-mainnet.rpc.grove.city/v1/<APP_ID>\"|g" relayminer/config/relayminer_config.yaml
+sudo sed -i 's|backend_url: ".*"|backend_url: "https://eth-mainnet.rpc.grove.city/v1/<APP_ID>"|g' relayminer/config/relayminer_config.yaml
 ```
 
 Start up the RelayMiner:
 
 ```bash
-docker-compose up -d relayminer
+docker compose up -d relayminer
 ```
 
 Check logs and confirm the node works as expected:
 
 ```bash
-docker-compose logs -f --tail 100 relayminer
+docker compose logs -f --tail 100 relayminer
 ```
 
-## C. Creating an Application and Deploying a PATH Gateway
+## C. Creating an Application, a Gateway and Deploying a PATH Gateway
 
-`PATH Gateway` allows to use services provided by other operators on Pocket Network.
-
-### 0. Prerequisites for PATH Gateway <!-- omit in toc -->
-
-- **Full Node**: This `PATH Gateway` deployment guide assumes the Full Node is
-  deployed in the same docker-compose stack; see section A.
-- **A poktroll account with uPOKT tokens**: Tokens can be acquired by contacting
-  the team. You are going to need a BIPmnemonic phrase for an existing
-  funded account.
-
-### Create, configure and fund your Application <!-- omit in toc -->
+### Create and fund your Application <!-- omit in toc -->
 
 On the host where you started the full node container, run the commands below to
 create your account.
@@ -443,17 +477,13 @@ Create a new `application` account:
 poktrolld keys add application-1
 ```
 
-Copy the mnemonic that's printed to the screen to the `APPLICATION_MNEMONIC`
-variable in your `.env` file.
+Copy the outputted address to the `APPLICATION_ADDR` variable in your `.env` file:
+
+Copy the private key to the `APPLICATION_PRIV_KEY_HEX` variable in your `.env` file
+which can be obtained by running:
 
 ```bash
-export APPLICATION_MNEMONIC="foo bar ..."
-```
-
-Save the outputted address to a variable for simplicity::
-
-```bash
-export APPLICATION_ADDR="pokt1..."
+export_priv_key_hex application-1
 ```
 
 Make sure to:
@@ -462,11 +492,11 @@ Make sure to:
   source .env
 ```
 
-Add funds to your application account by either going to the [faucet](https://faucet.testnet.pokt.network)
+Add funds to your application account by either going to the [faucet](https://faucet.beta.testnet.pokt.network/)
 or using the `faucet` account directly if you have access to it:
 
 ```bash
-poktrolld tx bank send faucet $APPLICATION_ADDR 10000upokt --chain-id=poktroll --yes
+poktrolld tx bank send faucet $APPLICATION_ADDR 10000upokt --chain-id=pocket-beta --yes
 ```
 
 You can check that your address is funded correctly by running:
@@ -479,7 +509,7 @@ poktrolld query bank balances $APPLICATION_ADDR
 
 :::tip Application staking config
 
-[dev.poktroll.com/operate/configs/application_staking_config](https://dev.poktroll.com/operate/configs/application_staking_config)
+[dev.poktroll.com/operate/configs/application_staking_config](https://dev.poktroll.com/operate/configs/app_staking_config)
 explains what application staking config is and how it can be used.
 
 :::
@@ -494,7 +524,14 @@ poktrolld keys list --list-names | grep "application-1"
 Use the configuration to stake your application:
 
 ```bash
-poktrolld tx application stake-application --config=/poktroll/stake_configs/application_stake_config_example.yaml --from=application-1 --chain-id=poktroll --yes
+poktrolld tx application stake-application \
+  --config=/poktroll/stake_configs/application_stake_config_example.yaml \
+  --from=application-1 \
+  --gas=auto \
+  --gas-prices=1upokt \
+  --gas-adjustment=1.5 \
+  --chain-id=pocket-beta \
+  --yes
 ```
 
 Verify your application is staked
@@ -503,60 +540,7 @@ Verify your application is staked
 poktrolld query application show-application $APPLICATION_ADDR
 ```
 
-### Configure and run your PATH Gateway <!-- omit in toc -->
-
-:::tip PATH Gateway operation config
-
-[path.grove.city/operate/](https://path.grove.city/operate) explains what the
-`PATH Gateway` operation config is and how it can be used.
-
-:::
-
-```bash
-docker-compose up -d pathgw
-```
-
-Check logs and confirm the node works as expected:
-
-```bash
-docker-compose logs -f --tail 100 pathgw
-```
-
-### Send a relay <!-- omit in toc -->
-
-You can send requests to the newly deployed `PATH Gateway`. If there are any
-Suppliers on the network that can provide the service, the request will be
-routed to them.
-
-The endpoint you want to send request to is: `http://service_alias.your_node:path_gateway_port/v1`.
-For example, this is how the request can be routed to `ethereum` represented by the alias `eth-mainnet`:
-
-```bash
-curl http://eth-mainnet.$NODE_HOSTNAME:3000/v1 \
-  -X POST \
-  -H "Content-Type: application/json" \
-  --data '{"method":"eth_blockNumber","params":[],"id":1,"jsonrpc":"2.0"}'
-```
-
-You should expect a result that looks like so:
-
-```bash
-{"jsonrpc":"2.0","id":1,"result":"0x1289571"}
-```
-
-## D. Creating a Gateway Deploying a PATH Gateway
-
-`PATH Gateway` allows to use services provided by other operators on Pocket Network.
-
-### 0. Prerequisites for a PATH Gateway <!-- omit in toc -->
-
-- **Full Node**: This `PATH Gateway` deployment guide assumes the Full Node is
-  deployed in the same docker-compose stack; see section A.
-- **A poktroll account with uPOKT tokens**: Tokens can be acquired by contacting
-  the team. You are going to need a BIPmnemonic phrase for an existing
-  funded account.
-
-### Create, configure and fund your Gateway <!-- omit in toc -->
+### Create and fund your Gateway <!-- omit in toc -->
 
 On the host where you started the full node container, run the commands below to
 create your account.
@@ -567,17 +551,13 @@ Create a new `gateway` account:
 poktrolld keys add gateway-1
 ```
 
-Copy the mnemonic that's printed to the screen to the `GATEWAY_MNEMONIC`
-variable in your `.env` file.
+Copy the outputted address to the `GATEWAY_ADDR` variable in your `.env` file:
+
+Copy the private key to the `GATEWAY_PRIV_KEY_HEX` variable in your `.env` file
+which can be obtained by running:
 
 ```bash
-export GATEWAY_MNEMONIC="foo bar ..."
-```
-
-Save the outputted address to a variable for simplicity::
-
-```bash
-export GATEWAY_ADDR="pokt1..."
+export_priv_key_hex gateway-1
 ```
 
 Make sure to:
@@ -586,11 +566,11 @@ Make sure to:
   source .env
 ```
 
-Add funds to your gateway account by either going to the [faucet](https://faucet.testnet.pokt.network)
+Add funds to your gateway account by either going to the [faucet](https://faucet.beta.testnet.pokt.network/)
 or using the `faucet` account directly if you have access to it:
 
 ```bash
-poktrolld tx bank send faucet $GATEWAY_ADDR 10000upokt --chain-id=poktroll --yes
+poktrolld tx bank send faucet $GATEWAY_ADDR 10000upokt --chain-id=pocket-beta --yes
 ```
 
 You can check that your address is funded correctly by running:
@@ -618,7 +598,14 @@ poktrolld keys list --list-names | grep "gateway-1"
 Use the configuration to stake your gateway:
 
 ```bash
-poktrolld tx gateway stake-gateway --config=/poktroll/stake_configs/gateway_stake_config_example.yaml --from=gateway-1 --chain-id=poktroll --yes
+poktrolld tx gateway stake-gateway \
+  --config=/poktroll/stake_configs/gateway_stake_config_example.yaml \
+  --from=gateway-1 \
+  --gas=auto \
+  --gas-prices=1upokt \
+  --gas-adjustment=1.5 \
+  --chain-id=pocket-beta \
+  --yes
 ```
 
 Verify your gateway is staked
@@ -627,7 +614,21 @@ Verify your gateway is staked
 poktrolld query gateway show-gateway $GATEWAY_ADDR
 ```
 
+### Delegate your Application to the Gateway <!-- omit in toc -->
+
+```bash
+poktrolld tx application delegate-to-gateway $GATEWAY_ADDR \
+  --from=application-1 \
+  --gas=auto \
+  --gas-prices=1upokt \
+  --gas-adjustment=1.5 \
+  --chain-id=pocket-beta \
+  --yes
+```
+
 ### Configure and run your `PATH Gateway` <!-- omit in toc -->
+
+`PATH Gateway` allows to use services provided by other operators on Pocket Network.
 
 :::tip PATH Gateway operation config
 
@@ -636,20 +637,24 @@ explains what the `PATH Gateway` operation config is and how it can be used.
 
 :::
 
+Update the provided example PATH Gateway operation config:
+
 ```bash
-docker-compose up -d gateway
+sudo sed -i -e s/YOUR_PATH_GATEWAY_ADDRESS/$GATEWAY_ADDR/g gateway/config/gateway_config.yaml
+sudo sed -i -e s/YOUR_PATH_GATEWAY_PRIVATE_KEY/$GATEWAY_PRIV_KEY_HEX/g gateway/config/gateway_config.yaml
+sudo sed -i -e s/YOUR_OWNED_APP_PRIVATE_KEY/$APPLICATION_PRIV_KEY_HEX/g gateway/config/gateway_config.yaml
+```
+
+Start up the RelayMiner:
+
+```bash
+docker compose up -d gateway
 ```
 
 Check logs and confirm the node works as expected:
 
 ```bash
-docker-compose logs -f --tail 100 gateway
-```
-
-### Delegate your Application to the Gateway <!-- omit in toc -->
-
-```bash
-poktrolld tx application delegate-to-gateway $GATEWAY_ADDR --from=application-1 --chain-id=poktroll --chain-id=poktroll --yes
+docker compose logs -f --tail 100 gateway
 ```
 
 ### Send a relay <!-- omit in toc -->
@@ -658,11 +663,16 @@ You can send requests to the newly deployed `PATH Gateway`. If there are any
 Suppliers on the network that can provide the service, the request will be
 routed to them.
 
-The endpoint you want to send request to is: `http://service_alias.your_node:gateway_server_port/v1`.
-For example, this is how the request can be routed to `ethereum` represented by the alias `eth-mainnet`:
+The endpoint you want to send request to is: `http://service_alias.your_node:path_gateway_port/v1`.
+For example, this is how the request can be routed to `ethereum` represented by the alias `eth`:
+
+:::warning
+`PATH` uses subdomains to route requests to the correct service, which means
+you need to have a domain name that resolves to the IP address of your node.
+:::
 
 ```bash
-curl http://eth-mainnet.$NODE_HOSTNAME:3000/v1 \
+curl http://eth.localhost:3000/v1 \
   -X POST \
   -H "Content-Type: application/json" \
   --data '{"method":"eth_blockNumber","params":[],"id":1,"jsonrpc":"2.0"}'
@@ -674,13 +684,13 @@ You should expect a result that looks like so:
 {"jsonrpc":"2.0","id":1,"result":"0x1289571"}
 ```
 
-#### 5.1 Ensure you get a response <!-- omit in toc -->
+#### Ensure you get a response <!-- omit in toc -->
 
 To ensure you get a response, you may need to run the request a few times:
 
 ```bash
 for i in {1..10}; do
-  curl http://eth-mainnet.$NODE_HOSTNAME:3000/v1 \
+  curl http://eth.localhost:3000/v1 \
     -X POST \
     -H "Content-Type: application/json" \
     --data '{"method":"eth_blockNumber","params":[],"id":1,"jsonrpc":"2.0"}' \
