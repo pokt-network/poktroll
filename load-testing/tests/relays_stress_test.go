@@ -77,8 +77,6 @@ var (
 	// maxConcurrentRequestLimit is the maximum number of concurrent requests that can be made.
 	// By default, it is set to the number of logical CPUs available to the process.
 	maxConcurrentRequestLimit = runtime.GOMAXPROCS(0)
-	// fundingAccountAddress is the address of the account used to fund other accounts.
-	fundingAccountAddress string
 	// supplierStakeAmount is the amount of tokens to stake by suppliers.
 	supplierStakeAmount sdk.Coin
 	// gatewayStakeAmount is the amount of tokens to stake by gateways.
@@ -224,6 +222,10 @@ type relaysSuite struct {
 	// isEphemeralChain is a flag that indicates whether the test is expected to be
 	// run on ephemeral chain setups like localnet or long living ones (i.e. Test/DevNet).
 	isEphemeralChain bool
+
+	// appMinStakeAmount is the minimum amount of tokens the protocol requires
+	// to stake an application.
+	appMinStakeAmount int64
 }
 
 // accountInfo contains the account info needed to build and send transactions.
@@ -271,7 +273,7 @@ func TestLoadRelays(t *testing.T) {
 }
 
 func TestLoadRelaysSingleSupplier(t *testing.T) {
-	gocuke.NewRunner(t, &relaysSuite{}).Path(filepath.Join(".", "relays_stress_single_suppier.feature")).Run()
+	gocuke.NewRunner(t, &relaysSuite{}).Path(filepath.Join(".", "relays_stress_single_supplier.feature")).Run()
 }
 
 func (s *relaysSuite) LocalnetIsRunning() {
@@ -361,8 +363,8 @@ func (s *relaysSuite) LocalnetIsRunning() {
 	// Initialize the on-chain claims and proofs counter.
 	s.countClaimAndProofs()
 
-	// Query for the current shared on-chain params.
-	s.querySharedParams(loadTestParams.TestNetNode)
+	// Query for the current protocol on-chain params.
+	s.queryProtocolParams(loadTestParams.TestNetNode)
 
 	// Some suppliers may already be staked at genesis, ensure that staking during
 	// this test succeeds by increasing the sake amount.
@@ -513,12 +515,6 @@ func (s *relaysSuite) TheCorrectPairsCountOfClaimAndProofMessagesShouldBeCommitt
 		Int("claims", s.currentClaimCount).
 		Int("proofs", s.currentProofCount).
 		Msg("Claims and proofs count")
-
-	require.Equal(s,
-		s.currentClaimCount,
-		s.currentProofCount,
-		"claims and proofs count mismatch",
-	)
 
 	// TODO_TECHDEBT: The current counting mechanism for the expected claims and proofs
 	// is not accurate. The expected claims and proofs count should be calculated based

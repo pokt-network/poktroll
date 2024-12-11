@@ -8,7 +8,7 @@ service_id: anvil
 
 # The address of the account that will be used to fund the application,
 # gateway and supplier accounts so that they can stake on the network.
-funding_account_address: pokt1awtlw5sjmw2f5lgj8ekdkaqezphgz88rdk93sk # address for faucet account
+funding_account_address: pokt1eeeksh2tvkh7wzmfrljnhw4wrhs55lcuvmekkw # address for faucet account
 
 # List of pre-provisioned suppliers used for load testing.
 # These suppliers will be progressively staked during the load test, according
@@ -40,12 +40,12 @@ gateways:
 
   # Gateway 1; http://localhost:10350/r/gateway1/overview
   - address: pokt15vzxjqklzjtlz7lahe8z2dfe9nm5vxwwmscne4
-    exposed_url: http://anvil.localhost/v1:3000 # The gateway url that the user sends relays to (e.g. curl)
+    exposed_url: http://anvil.localhost:3000/v1 # The gateway url that the user sends relays to (e.g. curl)
 
   # Gateway 2; http://localhost:10350/r/gateway2/overview
   - address: pokt15w3fhfyc0lttv7r585e2ncpf6t2kl9uh8rsnyz
-    exposed_url: http://anvil.localhost/v1:3001
+    exposed_url: http://anvil.localhost:3001/v1
 
   # Gateway 3; http://localhost:10350/r/gateway3/overview
   - address: pokt1zhmkkd0rh788mc9prfq0m2h88t9ge0j83gnxya
-    exposed_url: http://anvil.localhost/v1:3002
+    exposed_url: http://anvil.localhost:3002/v1
