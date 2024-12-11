@@ -4,11 +4,12 @@ package tests
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
-	"net/url"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"sync"
 	"testing"
@@ -631,7 +632,8 @@ func (s *relaysSuite) getAppFundingAmount(currentBlockHeight int64) sdk.Coin {
 	// based on the number of relays it needs to send. Theoretically, `+1` should
 	// be enough, but probabilistic and time based mechanisms make it hard
 	// to predict exactly.
-	appFundingAmount := s.relayRatePerApp * s.relayCoinAmountCost * currentTestDuration * blockDuration * 2
+	amountToConsume := s.relayRatePerApp * s.relayCoinAmountCost * currentTestDuration * blockDuration
+	appFundingAmount := math.Max(amountToConsume, s.appMinStakeAmount) * 2
 	return sdk.NewCoin("upokt", math.NewInt(appFundingAmount))
 }
 
@@ -796,6 +798,12 @@ func (s *relaysSuite) addPendingStakeSupplierMsg(supplier *accountInfo) {
 					{
 						Url:     s.suppliersUrls[supplier.address],
 						RpcType: sharedtypes.RPCType_JSON_RPC,
+					},
+				},
+				RevShare: []*sharedtypes.ServiceRevenueShare{
+					{
+						Address:            supplier.address,
+						RevSharePercentage: 100,
 					},
 				},
 			},
@@ -1034,29 +1042,17 @@ func (s *relaysSuite) sendRelay(iteration uint64, relayPayload string) (appAddre
 	gateway := s.activeGateways[iteration%uint64(len(s.activeGateways))]
 	application := s.activeApplications[iteration%uint64(len(s.activeApplications))]
 
-	gatewayUrl, err := url.Parse(s.gatewayUrls[gateway.address])
-	require.NoError(s, err)
-
-	// Include the application address in the query to the gateway.
-	query := gatewayUrl.Query()
-	query.Add("applicationAddr", application.address)
-	query.Add("relayCount", fmt.Sprintf("%d", iteration))
-	gatewayUrl.RawQuery = query.Encode()
-
-	// Use the pre-defined service ID that all application and suppliers are staking for.
-	gatewayUrl.Path = testedServiceId
-
 	// TODO_MAINNET: Capture the relay response to check for failing relays.
 	// Send the relay request within a goroutine to avoid blocking the test batches
 	// when suppliers or gateways are unresponsive.
-	go func(gwURL, payload string) {
-		_, err = http.DefaultClient.Post(
-			gwURL,
-			"application/json",
-			strings.NewReader(payload),
-		)
+	go func(gwURL, appAddr, payload string) {
+		req, err := http.NewRequest("POST", gwURL, strings.NewReader(payload))
 		require.NoError(s, err)
-	}(gatewayUrl.String(), relayPayload)
+
+		req.Header.Add("X-App-Address", appAddr)
+		_, err = http.DefaultClient.Do(req)
+		require.NoError(s, err)
+	}(s.gatewayUrls[gateway.address], application.address, relayPayload)
 
 	return application.address, gateway.address
 }
@@ -1152,18 +1148,27 @@ func (s *relaysSuite) ensureDelegatedApps(
 				}
 
 				attrs := event.Attributes
-				appAddr := fmt.Sprintf("%q", application.address)
 				// Skip the event if the application is not the delegator.
-				if !hasEventAttr(attrs, "app_address", appAddr) {
-					break
-				}
+				for _, attr := range attrs {
+					if attr.Key != "application" {
+						continue
+					}
 
-				// Check if the application is delegated to each of the gateways.
-				for _, gateway := range gateways {
-					gwAddr := fmt.Sprintf("%q", gateway.address)
-					if hasEventAttr(attrs, "gateway_address", gwAddr) {
-						numDelegatees++
+					var app struct {
+						Address                   string   `json:"address"`
+						DelegatedGatewayAddresses []string `json:"delegatee_gateway_addresses"`
+					}
+					err := json.Unmarshal([]byte(attr.Value), &app)
+					require.NoError(s, err)
+					if app.Address != application.address {
 						break
+					}
+
+					// Check if the application is delegated to each of the gateways.
+					for _, gateway := range gateways {
+						if slices.Contains(app.DelegatedGatewayAddresses, gateway.address) {
+							numDelegatees++
+						}
 					}
 				}
 			}
@@ -1258,20 +1263,19 @@ func hasEventAttr(attributes []types.EventAttribute, key, value string) bool {
 func (s *relaysSuite) sendAdjustMaxDelegationsParamTx(maxGateways int64) {
 	authority := authtypes.NewModuleAddress(govtypes.ModuleName).String()
 
-	appMsgUpdateParams := &apptypes.MsgUpdateParams{
+	appMsgUpdateParam := &apptypes.MsgUpdateParam{
 		Authority: authority,
-		Params: apptypes.Params{
-			// Set the max_delegated_gateways parameter to the number of gateways
-			// that are currently used in the test.
-			MaxDelegatedGateways: uint64(maxGateways),
+		Name:      "max_delegated_gateways",
+		AsType: &apptypes.MsgUpdateParam_AsUint64{
+			AsUint64: uint64(maxGateways),
 		},
 	}
-	appMsgUpdateParamsAny, err := codectypes.NewAnyWithValue(appMsgUpdateParams)
+	appMsgUpdateParamAny, err := codectypes.NewAnyWithValue(appMsgUpdateParam)
 	require.NoError(s, err)
 
 	authzExecMsg := &authz.MsgExec{
 		Grantee: s.fundingAccountInfo.address,
-		Msgs:    []*codectypes.Any{appMsgUpdateParamsAny},
+		Msgs:    []*codectypes.Any{appMsgUpdateParamAny},
 	}
 
 	s.fundingAccountInfo.addPendingMsg(authzExecMsg)
@@ -1359,9 +1363,9 @@ func (s *relaysSuite) countClaimAndProofs() {
 	)
 }
 
-// querySharedParams queries the current on-chain shared module parameters for use
+// queryProtocolParams queries the current on-chain protocol parameters for use
 // over the duration of the test.
-func (s *relaysSuite) querySharedParams(queryNodeRPCURL string) {
+func (s *relaysSuite) queryProtocolParams(queryNodeRPCURL string) {
 	s.Helper()
 
 	deps := depinject.Supply(s.txContext.GetClientCtx())
@@ -1377,6 +1381,14 @@ func (s *relaysSuite) querySharedParams(queryNodeRPCURL string) {
 	require.NoError(s, err)
 
 	s.sharedParams = sharedParams
+
+	appQueryClient, err := query.NewApplicationQuerier(deps)
+	require.NoError(s, err)
+
+	appParams, err := appQueryClient.GetParams(s.ctx)
+	require.NoError(s, err)
+
+	s.appMinStakeAmount = appParams.MinStake.Amount.Int64()
 }
 
 // forEachStakedAndDelegatedAppPrepareApp is a ForEachFn that waits for txs which

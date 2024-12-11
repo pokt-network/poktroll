@@ -11,7 +11,7 @@ service_id: "anvil"
 
 # The address of the account that will be used to fund the application accounts
 # so that they can stake on the network.
-funding_account_address: pokt1awtlw5sjmw2f5lgj8ekdkaqezphgz88rdk93sk # address for faucet account
+funding_account_address: pokt1eeeksh2tvkh7wzmfrljnhw4wrhs55lcuvmekkw # address for faucet account
 
 # In non-ephemeral chains, the gateways are identified by their address.
 gateways:

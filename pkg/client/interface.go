@@ -272,6 +272,9 @@ type ApplicationQueryClient interface {
 
 	// GetAllApplications queries all on-chain applications
 	GetAllApplications(ctx context.Context) ([]apptypes.Application, error)
+
+	// GetParams queries the chain for the application module parameters.
+	GetParams(ctx context.Context) (*apptypes.Params, error)
 }
 
 // SupplierQueryClient defines an interface that enables the querying of the
