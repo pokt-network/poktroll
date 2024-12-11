@@ -21,12 +21,10 @@ type PoktrollAppConfig struct {
 }
 
 // poktrollAppConfigDefaults sets default values to render in `app.toml`.
-// Checkout `customAppConfigTemplate()` for additional information about each setting.
+// Checkout `customAppConfigTemplate()` for additional information about each config parameter.
 func poktrollAppConfigDefaults() PoktrollAppConfig {
 	return PoktrollAppConfig{
-		Telemetry: telemetry.PoktrollTelemetryConfig{
-			CardinalityLevel: "medium",
-		},
+		Telemetry: telemetry.DefaultConfig(),
 	}
 }
 
@@ -104,7 +102,6 @@ func initCometBFTConfig() *cmtcfg.Config {
 // return "", nil if no custom configuration is required for the application.
 // TODO_MAINNET: Reconsider values - check `app.toml` for possible options.
 func initAppConfig() (string, interface{}) {
-	// The following code snippet is just for reference.
 	type CustomAppConfig struct {
 		serverconfig.Config `mapstructure:",squash"`
 		Poktroll            PoktrollAppConfig `mapstructure:"poktroll"`
@@ -140,6 +137,7 @@ func initAppConfig() (string, interface{}) {
 	srvCfg.GRPC.Enable = true
 	srvCfg.GRPCWeb.Enable = true
 
+	// Create the custom config with both server and poktroll configs
 	customAppConfig := CustomAppConfig{
 		Config:   *srvCfg,
 		Poktroll: poktrollAppConfigDefaults(),
