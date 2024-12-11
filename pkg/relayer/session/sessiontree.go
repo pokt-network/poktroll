@@ -2,6 +2,7 @@ package session
 
 import (
 	"bytes"
+	"context"
 	"crypto/sha256"
 	"fmt"
 	"os"
@@ -95,7 +96,13 @@ func NewSessionTree(
 	// contain a non-hashed Relay that could be used to validate the proof on-chain.
 	trie := smt.NewSparseMerkleSumTrie(treeStore, protocol.NewTrieHasher(), smt.WithValueHasher(nil))
 
+	logger := polylog.Ctx(context.TODO()).With(
+		"session_id", sessionHeader.SessionId,
+		"supplier_operator_address", supplierOperatorAddress,
+	)
+
 	sessionTree := &sessionTree{
+		logger:                  logger,
 		sessionHeader:           sessionHeader,
 		storePath:               storePath,
 		treeStore:               treeStore,
@@ -268,7 +275,6 @@ func (st *sessionTree) Delete() error {
 	} else {
 		st.logger.With(
 			"claim_root", fmt.Sprintf("%x", st.GetClaimRoot()),
-			"session_id", st.GetSessionHeader().SessionId,
 		).Info().Msg("KVStore is already stopped")
 	}
 
