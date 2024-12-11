@@ -35,6 +35,7 @@ import (
 	servicetypes "github.com/pokt-network/poktroll/x/service/types"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
+	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 )
 
 // MsgCreateClaim is an interface satisfying proof.MsgCreateClaim concrete type
@@ -268,6 +269,8 @@ type AccountQueryClient interface {
 // ApplicationQueryClient defines an interface that enables the querying of the
 // on-chain application information
 type ApplicationQueryClient interface {
+	ParamsQuerier[*apptypes.Params]
+
 	// GetApplication queries the chain for the details of the application provided
 	GetApplication(ctx context.Context, appAddress string) (apptypes.Application, error)
 
@@ -278,6 +281,8 @@ type ApplicationQueryClient interface {
 // SupplierQueryClient defines an interface that enables the querying of the
 // on-chain supplier information
 type SupplierQueryClient interface {
+	ParamsQuerier[*suppliertypes.Params]
+
 	// GetSupplier queries the chain for the details of the supplier provided
 	GetSupplier(ctx context.Context, supplierOperatorAddress string) (sharedtypes.Supplier, error)
 }
@@ -285,6 +290,8 @@ type SupplierQueryClient interface {
 // SessionQueryClient defines an interface that enables the querying of the
 // on-chain session information
 type SessionQueryClient interface {
+	ParamsQuerier[*sessiontypes.Params]
+
 	// GetSession queries the chain for the details of the session provided
 	GetSession(
 		ctx context.Context,
@@ -292,9 +299,6 @@ type SessionQueryClient interface {
 		serviceId string,
 		blockHeight int64,
 	) (*sessiontypes.Session, error)
-
-	// GetParams queries the chain for the session module parameters.
-	GetParams(ctx context.Context) (*sessiontypes.Params, error)
 }
 
 // SharedQueryClient defines an interface that enables the querying of the
@@ -334,6 +338,8 @@ type BlockQueryClient interface {
 // protobuf message. Since the generated go types don't include interface types, this
 // is necessary to prevent dependency cycles.
 type ProofParams interface {
+	cosmostypes.Msg
+
 	GetProofRequestProbability() float64
 	GetProofRequirementThreshold() *cosmostypes.Coin
 	GetProofMissingPenalty() *cosmostypes.Coin
@@ -343,13 +349,14 @@ type ProofParams interface {
 // ProofQueryClient defines an interface that enables the querying of the
 // on-chain proof module params.
 type ProofQueryClient interface {
-	// GetParams queries the chain for the current shared module parameters.
-	GetParams(ctx context.Context) (ProofParams, error)
+	ParamsQuerier[ProofParams]
 }
 
 // ServiceQueryClient defines an interface that enables the querying of the
 // on-chain service information
 type ServiceQueryClient interface {
+	ParamsQuerier[*servicetypes.Params]
+
 	// GetService queries the chain for the details of the service provided
 	GetService(ctx context.Context, serviceId string) (sharedtypes.Service, error)
 	GetServiceRelayDifficulty(ctx context.Context, serviceId string) (servicetypes.RelayMiningDifficulty, error)
