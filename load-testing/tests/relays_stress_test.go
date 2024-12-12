@@ -558,19 +558,23 @@ func getEventAttributeValue(event types.Event, key string) string {
 
 func (s *relaysSuite) sendDelegateInitialAppsTxs(apps []*accountInfo, gateways []*accountInfo) {
 	for _, app := range apps {
+		app.pendingMsgs = []sdk.Msg{} // Reset pending messages for this app
+
 		for _, gateway := range gateways {
 			delegateMsg := &apptypes.MsgDelegateToGateway{
-				ApplicationAddress: app.address,
-				GatewayAddress:     gateway.address,
+				AppAddress:     app.address,
+				GatewayAddress: gateway.address,
 			}
 			app.pendingMsgs = append(app.pendingMsgs, delegateMsg)
 		}
 
-		if err := s.broadcastTx(app); err != nil {
+		// Use the correct method from the client interface
+		if err := client.SignAndBroadcastTx(s.ctx, s.txContext, app.address, app.pendingMsgs...); err != nil {
 			s.logAndAbortTest(nil, fmt.Sprintf("failed to send delegation tx for app %s: %v",
 				app.address, err))
 		}
 	}
 
+	// Wait a bit longer for delegations to be processed
 	time.Sleep(2 * time.Second)
 }
