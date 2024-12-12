@@ -293,7 +293,7 @@ func TestEnsureValidProof_Error(t *testing.T) {
 			desc: "relay must be deserializable",
 			newProof: func(t *testing.T) *prooftypes.Proof {
 				// Construct a session tree to which we'll add 1 unserializable relay.
-				mangledRelaySessionTree := testtree.NewEmptySessionTree(t, validSessionHeader, supplierOperatorAddr)
+				mangledRelaySessionTree := testtree.NewEmptySessionTree(t, validSessionHeader, supplierOperatorAddr, ctx)
 
 				// Add the mangled relay to the session tree.
 				err = mangledRelaySessionTree.Update([]byte{1}, mangledRelayBz, 1)
@@ -444,7 +444,7 @@ func TestEnsureValidProof_Error(t *testing.T) {
 
 				// Construct a session tree with 1 relay with a session header containing
 				// a session ID that doesn't match the expected session ID.
-				invalidRequestSignatureSessionTree := testtree.NewEmptySessionTree(t, validSessionHeader, supplierOperatorAddr)
+				invalidRequestSignatureSessionTree := testtree.NewEmptySessionTree(t, validSessionHeader, supplierOperatorAddr, ctx)
 
 				// Add the relay to the session tree.
 				err = invalidRequestSignatureSessionTree.Update([]byte{1}, invalidRequestSignatureRelayBz, 1)
@@ -505,7 +505,7 @@ func TestEnsureValidProof_Error(t *testing.T) {
 
 				// Construct a session tree with 1 relay with a session header containing
 				// a session ID that doesn't match the expected session ID.
-				invalidResponseSignatureSessionTree := testtree.NewEmptySessionTree(t, validSessionHeader, supplierOperatorAddr)
+				invalidResponseSignatureSessionTree := testtree.NewEmptySessionTree(t, validSessionHeader, supplierOperatorAddr, ctx)
 
 				// Add the relay to the session tree.
 				err = invalidResponseSignatureSessionTree.Update([]byte{1}, relayBz, 1)

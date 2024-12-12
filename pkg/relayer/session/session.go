@@ -468,6 +468,7 @@ func (rs *relayerSessionsManager) deleteExpiredSessionTreesFn(
 			return
 		}
 
+		// TODO_TEST: Add tests that cover existing expired failed session trees.
 		for _, sessionTree := range failedSessionTrees {
 			sessionEndHeight := sessionTree.GetSessionHeader().GetSessionEndBlockHeight()
 			proofWindowCloseHeight := expirationHeightFn(sharedParams, sessionEndHeight)
