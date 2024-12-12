@@ -14,7 +14,7 @@ TODO_MAINNET: Update this document prior to MainNet release
 - [Validator / Full Node](#validator--full-node)
 - [RPC Node](#rpc-node)
 - [RelayMiner](#relayminer)
-- [AppGate Server / Gateway](#appgate-server--gateway)
+- [PATH Gateway](#path-gateway)
 - [Additional Considerations](#additional-considerations)
 
 ### Validator / Full Node
@@ -34,7 +34,7 @@ If the Full Node will serve as the RPC endpoint for Gateways and RelayMiners und
 
 ### RelayMiner
 
-See the [RelayMiner](../../protocol/actors/appgate_server.md) documentation for more
+See the [RelayMiner](../../protocol/actors/relay_miner.md) documentation for more
 information on what a RelayMiner is.
 
 | Component   | Minimum | Recommended |
@@ -46,7 +46,7 @@ information on what a RelayMiner is.
 Note that resource requirements for RelayMiner scale linearly with load:
 
 - More suppliers --> Higher resource consumption
-- More relays --> HIgher resource consumption
+- More relays --> Higher resource consumption
 
 :::note
 
@@ -54,18 +54,17 @@ TODO_POST_MAINNET(@okdas): Provide benchmarks for relayminers handling different
 
 :::
 
-### AppGate Server / Gateway
+### PATH Gateway
 
-See the [AppGate Server](../../protocol/actors/appgate_server.md) documentation for more
-information on what an AppGate Server is.
+See the [PATH Gateway](https://path.grove.city) documentation for more
+information on what a `PATH Gateway` is.
 
 | Component   | Minimum | Recommended |
 | ----------- | ------- | ----------- |
 | CPU Cores   | 1       | 4           |
 | RAM         | 1GB     | 16GB        |
-| SSD Storage | N/A     | N/A         |
-
-**Note**: This service is stateless and does not require SSD storage.
+| SSD Storage | 5GB     | 5GB         |
+<!-- TODO_TECHDEBT: Update the PATH Gateway hardware requirements -->
 
 ### Additional Considerations
 

@@ -69,7 +69,9 @@ message MsgUnstakeApplication {
   string address = 1;
 }
 
-message MsgUnstakeApplicationResponse {}
+message MsgUnstakeApplicationResponse {
+  poktroll.application.Application application = 1;
+}
 
 message MsgDelegateToGateway {
   option (cosmos.msg.v1.signer) = "app_address"; // https://docs.cosmos.network/main/build/building-modules/messages-and-queries
@@ -87,7 +89,9 @@ message MsgUndelegateFromGateway {
   string gateway_address = 2 [(cosmos_proto.scalar) = "cosmos.AddressString"]; // The Bech32 address of the gateway the application wants to undelegate from.
 }
 
-message MsgUndelegateFromGatewayResponse {}
+message MsgUndelegateFromGatewayResponse {
+  poktroll.application.Application application = 1;
+}
 
 message MsgTransferApplication {
   option (cosmos.msg.v1.signer) = "source_address";

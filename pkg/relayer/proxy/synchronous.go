@@ -57,7 +57,7 @@ type synchronousRPCServer struct {
 // relay requests and forwards them to the supported proxied service endpoint.
 // It takes the serviceId, endpointUrl, and the main RelayerProxy as arguments
 // and returns a RelayServer that listens to incoming RelayRequests.
-// TODO_RESEARCH(#590): Currently, the communication between the AppGateServer and the
+// TODO_RESEARCH(#590): Currently, the communication between the Gateway and the
 // RelayMiner uses HTTP. This could be changed to a more generic and performant
 // one, such as pure TCP.
 func NewSynchronousServer(

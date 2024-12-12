@@ -43,12 +43,12 @@ func (msg *MsgUpdateParam) ValidateBasic() error {
 	// Parameter name MUST be supported by this module.
 	switch msg.Name {
 	case ParamMaxDelegatedGateways:
-		if err := msg.paramTypeIsUint64(); err != nil {
+		if err := genericParamTypeIs[*MsgUpdateParam_AsUint64](msg); err != nil {
 			return err
 		}
 		return ValidateMaxDelegatedGateways(msg.GetAsUint64())
 	case ParamMinStake:
-		if err := msg.paramTypeIsCoin(); err != nil {
+		if err := genericParamTypeIs[*MsgUpdateParam_AsCoin](msg); err != nil {
 			return err
 		}
 		return ValidateMinStake(msg.GetAsCoin())
@@ -57,22 +57,14 @@ func (msg *MsgUpdateParam) ValidateBasic() error {
 	}
 }
 
-func (msg *MsgUpdateParam) paramTypeIsUint64() error {
-	if _, ok := msg.AsType.(*MsgUpdateParam_AsUint64); !ok {
-		return ErrAppParamInvalid.Wrapf(""+
+// genericParamTypeIs checks if the parameter type is T, returning an error if not.
+func genericParamTypeIs[T any](msg *MsgUpdateParam) error {
+	if _, ok := msg.AsType.(T); !ok {
+		return ErrAppParamInvalid.Wrapf(
 			"invalid type for param %q; expected %T, got %T",
-			msg.Name, &MsgUpdateParam_AsUint64{}, msg.AsType,
+			msg.Name, *new(T), msg.AsType,
 		)
 	}
-	return nil
-}
 
-func (msg *MsgUpdateParam) paramTypeIsCoin() error {
-	if _, ok := msg.AsType.(*MsgUpdateParam_AsCoin); !ok {
-		return ErrAppParamInvalid.Wrapf(""+
-			"invalid type for param %q; expected %T, got %T",
-			msg.Name, &MsgUpdateParam_AsCoin{}, msg.AsType,
-		)
-	}
 	return nil
 }

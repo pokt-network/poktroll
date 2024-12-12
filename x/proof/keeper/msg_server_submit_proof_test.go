@@ -235,8 +235,14 @@ func TestMsgServer_SubmitProof_Success(t *testing.T) {
 
 			proofSubmittedEvent := proofSubmittedEvents[0]
 
-			targetNumRelays := servicekeeper.TargetNumRelays
-			relayMiningDifficulty := servicekeeper.NewDefaultRelayMiningDifficulty(ctx, keepers.Logger(), service.Id, targetNumRelays)
+			targetNumRelays := keepers.ServiceKeeper.GetParams(ctx).TargetNumRelays
+			relayMiningDifficulty := servicekeeper.NewDefaultRelayMiningDifficulty(
+				ctx,
+				keepers.Logger(),
+				service.Id,
+				targetNumRelays,
+				targetNumRelays,
+			)
 
 			numEstimatedComputUnits, err := claim.GetNumEstimatedComputeUnits(relayMiningDifficulty)
 			require.NoError(t, err)

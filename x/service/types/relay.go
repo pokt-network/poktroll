@@ -118,7 +118,7 @@ func (res *RelayResponse) VerifySupplierOperatorSignature(supplierOperatorPubKey
 	return nil
 }
 
-// nullifyForObservability generates an empty RelayRequest that has the same
+// NullifyForObservability generates an empty RelayRequest that has the same
 // service and payload as the source RelayRequest if they are not nil.
 // It is meant to be used when replying with an error but no valid RelayRequest is available.
 func (sourceRelayRequest *RelayRequest) NullifyForObservability() *RelayRequest {

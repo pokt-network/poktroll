@@ -3,8 +3,10 @@ package keeper_test
 import (
 	"testing"
 
+	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 
+	"github.com/pokt-network/poktroll/app/volatile"
 	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 )
 
@@ -12,6 +14,8 @@ func TestMsgUpdateParams(t *testing.T) {
 	k, ms, ctx := setupMsgServer(t)
 	params := suppliertypes.DefaultParams()
 	require.NoError(t, k.SetParams(ctx, params))
+
+	zerouPokt := cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 0)
 
 	// default params
 	tests := []struct {
@@ -42,7 +46,8 @@ func TestMsgUpdateParams(t *testing.T) {
 			params: &suppliertypes.MsgUpdateParams{
 				Authority: k.GetAuthority(),
 				Params: suppliertypes.Params{
-					MinStake: &suppliertypes.DefaultMinStake,
+					MinStake:   &suppliertypes.DefaultMinStake,
+					StakingFee: &zerouPokt,
 				},
 			},
 			shouldError: false,

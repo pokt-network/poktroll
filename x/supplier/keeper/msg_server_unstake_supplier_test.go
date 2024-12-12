@@ -280,7 +280,7 @@ func TestMsgServer_UnstakeSupplier_FailIfNotStaked(t *testing.T) {
 	}
 	_, err := srv.UnstakeSupplier(ctx, unstakeMsg)
 	require.Error(t, err)
-	require.ErrorIs(t, err, suppliertypes.ErrSupplierNotFound)
+	require.ErrorContains(t, err, suppliertypes.ErrSupplierNotFound.Error())
 
 	_, isSupplierFound = supplierModuleKeepers.GetSupplier(ctx, supplierOperatorAddr)
 	require.False(t, isSupplierFound)
@@ -311,7 +311,7 @@ func TestMsgServer_UnstakeSupplier_FailIfCurrentlyUnstaking(t *testing.T) {
 	ctx = keepertest.SetBlockHeight(ctx, sdkCtx.BlockHeight()+1)
 
 	_, err = srv.UnstakeSupplier(ctx, unstakeMsg)
-	require.ErrorIs(t, err, suppliertypes.ErrSupplierIsUnstaking)
+	require.ErrorContains(t, err, suppliertypes.ErrSupplierIsUnstaking.Error())
 }
 
 func TestMsgServer_UnstakeSupplier_OperatorCanUnstake(t *testing.T) {
@@ -327,11 +327,11 @@ func TestMsgServer_UnstakeSupplier_OperatorCanUnstake(t *testing.T) {
 	stakeMsg, expectedSupplier := newSupplierStakeMsg(ownerAddr, ownerAddr, initialStake, serviceID)
 	stakeMsg.OperatorAddress = supplierOperatorAddr
 	expectedSupplier.OperatorAddress = supplierOperatorAddr
-	_, err := srv.StakeSupplier(ctx, stakeMsg)
+	stakeRes, err := srv.StakeSupplier(ctx, stakeMsg)
 	require.NoError(t, err)
 
 	// Assert that the MsgStakeSupplierResponse contains the newly staked supplier.
-	// TODO_TEST(#663): Ensure responses contain modified state objects.
+	require.Equal(t, expectedSupplier, stakeRes.GetSupplier())
 
 	// Assert that the EventSupplierStaked event is emitted.
 	sharedParams := supplierModuleKeepers.SharedKeeper.GetParams(ctx)
@@ -356,13 +356,13 @@ func TestMsgServer_UnstakeSupplier_OperatorCanUnstake(t *testing.T) {
 		Signer:          supplierOperatorAddr,
 		OperatorAddress: supplierOperatorAddr,
 	}
-	_, err = srv.UnstakeSupplier(ctx, unstakeMsg)
+	unstakeRes, err := srv.UnstakeSupplier(ctx, unstakeMsg)
 	require.NoError(t, err)
 
 	expectedSupplier.UnstakeSessionEndHeight = uint64(sessionEndHeight)
 
 	// Assert that the MsgUnstakeSupplierResponse contains the unstaking supplier.
-	// TODO_TEST(#663): Ensure responses contain modified state objects.
+	require.Equal(t, expectedSupplier, unstakeRes.GetSupplier())
 
 	// Assert that the EventSupplierUnbondingBegin event is emitted.
 	unbondingEndHeight := sharedtypes.GetSupplierUnbondingEndHeight(&sharedParams, expectedSupplier)
@@ -392,7 +392,8 @@ func TestMsgServer_UnstakeSupplier_OperatorCanUnstake(t *testing.T) {
 
 	// Balance decrease is the total amount deducted from the supplier's balance, including
 	// the initial stake and the staking fee.
-	balanceDecrease := keeper.SupplierStakingFee.Amount.Int64() + foundSupplier.Stake.Amount.Int64()
+	supplierStakingFee := supplierModuleKeepers.Keeper.GetParams(ctx).StakingFee
+	balanceDecrease := supplierStakingFee.Amount.Int64() + foundSupplier.Stake.Amount.Int64()
 	// Ensure that the initial stake is not returned to the owner yet
 	require.Equal(t, -balanceDecrease, supplierModuleKeepers.SupplierBalanceMap[ownerAddr])
 
@@ -415,5 +416,5 @@ func TestMsgServer_UnstakeSupplier_OperatorCanUnstake(t *testing.T) {
 
 	// Ensure that the initial stake is returned to the owner while the staking fee
 	// remains deducted from the supplier's balance.
-	require.Equal(t, -keeper.SupplierStakingFee.Amount.Int64(), supplierModuleKeepers.SupplierBalanceMap[ownerAddr])
+	require.Equal(t, -supplierStakingFee.Amount.Int64(), supplierModuleKeepers.SupplierBalanceMap[ownerAddr])
 }

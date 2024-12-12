@@ -61,7 +61,6 @@ require (
 	github.com/prometheus/client_golang v1.19.0
 	github.com/regen-network/gocuke v1.1.0
 	github.com/rs/zerolog v1.32.0
-	github.com/slok/go-http-metrics v0.11.0
 	github.com/spf13/cobra v1.8.1
 	github.com/spf13/pflag v1.0.5
 	github.com/spf13/viper v1.18.2
@@ -167,11 +166,13 @@ require (
 	github.com/fsnotify/fsnotify v1.7.0 // indirect
 	github.com/getsentry/sentry-go v0.27.0 // indirect
 	github.com/ghodss/yaml v1.0.0 // indirect
+	github.com/gin-gonic/gin v1.9.1 // indirect
 	github.com/go-chi/chi/v5 v5.1.0 // indirect
 	github.com/go-kit/log v0.2.1 // indirect
 	github.com/go-logfmt/logfmt v0.6.0 // indirect
 	github.com/go-logr/logr v1.4.2 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
+	github.com/go-playground/validator/v10 v10.15.5 // indirect
 	github.com/godbus/dbus v0.0.0-20190726142602-4481cbc300e2 // indirect
 	github.com/gofrs/uuid v4.4.0+incompatible // indirect
 	github.com/gofrs/uuid/v5 v5.2.0 // indirect

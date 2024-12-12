@@ -1,5 +1,6 @@
 package keeper
 
+//
 import (
 	"context"
 	"fmt"
@@ -22,11 +23,17 @@ func (k msgServer) UpdateParam(
 	)
 
 	if err := msg.ValidateBasic(); err != nil {
-		return nil, err
+		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
 	if k.GetAuthority() != msg.Authority {
-		return nil, tokenomicstypes.ErrTokenomicsInvalidSigner.Wrapf("invalid authority; expected %s, got %s", k.GetAuthority(), msg.Authority)
+		return nil, status.Error(
+			codes.PermissionDenied,
+			tokenomicstypes.ErrTokenomicsInvalidSigner.Wrapf(
+				"invalid authority; expected %s, got %s",
+				k.GetAuthority(), msg.Authority,
+			).Error(),
+		)
 	}
 
 	params := k.GetParams(ctx)
@@ -38,6 +45,9 @@ func (k msgServer) UpdateParam(
 	case tokenomicstypes.ParamDaoRewardAddress:
 		logger = logger.With("param_value", msg.GetAsString())
 		params.DaoRewardAddress = msg.GetAsString()
+	case tokenomicstypes.ParamGlobalInflationPerClaim:
+		logger = logger.With("param_value", msg.GetAsFloat())
+		params.GlobalInflationPerClaim = msg.GetAsFloat()
 	default:
 		return nil, status.Error(
 			codes.InvalidArgument,

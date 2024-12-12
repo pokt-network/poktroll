@@ -200,6 +200,10 @@ genesis:
         min_stake:
           amount: "1000000" # 1 POKT
           denom: upokt
+        # TODO_BETA(@bryanchriswhite): Determine realistic amount for supplier staking fee.
+        staking_fee:
+          amount: "1" # 1 uPOKT
+          denom: upokt
       supplierList:
         - owner_address: pokt19a3t4yunp0dlpfjrp7qwnzwlrzd5fzs2gjaaaj
           operator_address: pokt19a3t4yunp0dlpfjrp7qwnzwlrzd5fzs2gjaaaj
@@ -251,6 +255,7 @@ genesis:
         add_service_fee:
           amount: "1000000000"
           denom: upokt
+        target_num_relays: 100000
       serviceList:
         - id: anvil
           name: "anvil"
@@ -291,6 +296,7 @@ genesis:
         # This is the address that will receive the dao/foundation rewards during claim settlement (global mint TLM).
         # TODO_MAINNET(@olshansk): Consolidate the usage of DAO/PNF throughout the configs & codebase.
         dao_reward_address: "pokt1eeeksh2tvkh7wzmfrljnhw4wrhs55lcuvmekkw"
+        global_inflation_per_claim: 0.1
     shared:
       params:
         num_blocks_per_session: 10

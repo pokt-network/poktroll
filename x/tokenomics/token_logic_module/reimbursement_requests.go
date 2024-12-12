@@ -39,14 +39,16 @@ func (tlm tlmGlobalMintReimbursementRequest) Process(
 
 	logger = logger.With("method", "TokenLogicModuleGlobalMintReimbursementRequest")
 
+	globalInflationPerClaim := tlmCtx.TokenomicsParams.GetGlobalInflationPerClaim()
+
 	// Do not process the reimbursement request if there is no global inflation.
-	if GlobalInflationPerClaim == 0 {
+	if globalInflationPerClaim == 0 {
 		logger.Warn("global inflation is set to zero. Skipping Global Mint Reimbursement Request TLM.")
 		return nil
 	}
 
 	// Determine how much new uPOKT to mint based on global inflation
-	newMintCoin, _ := CalculateGlobalPerClaimMintInflationFromSettlementAmount(actualSettlementCoin)
+	newMintCoin, _ := CalculateGlobalPerClaimMintInflationFromSettlementAmount(actualSettlementCoin, globalInflationPerClaim)
 	if newMintCoin.Amount.Int64() == 0 {
 		return tokenomicstypes.ErrTokenomicsCoinIsZero
 	}

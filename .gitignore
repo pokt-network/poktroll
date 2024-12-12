@@ -101,3 +101,8 @@ job.yaml
 
 # tmp directory for locally produced artifacts
 tmp/*
+
+# Common testing configurations
+relayminer_config.yaml
+gateway_config.yaml
+path_config.yaml

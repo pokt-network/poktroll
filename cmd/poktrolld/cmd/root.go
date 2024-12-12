@@ -26,7 +26,6 @@ import (
 	"github.com/spf13/pflag"
 
 	"github.com/pokt-network/poktroll/app"
-	appgateservercmd "github.com/pokt-network/poktroll/pkg/appgateserver/cmd"
 	relayercmd "github.com/pokt-network/poktroll/pkg/relayer/cmd"
 )
 
@@ -135,10 +134,9 @@ func NewRootCmd() *cobra.Command {
 		relayercmd.RelayerCmd(),
 	)
 
-	// add the appgate server command
-	rootCmd.AddCommand(
-		appgateservercmd.AppGateServerCmd(),
-	)
+	// TODO_MAINNET(@commoddity): Consider adding an entrypoint to deploy a PATH
+	// gateway to the localnet to streamline it for users.
+	// For reference, see how we removed appgateserver in #879.
 
 	return rootCmd
 }

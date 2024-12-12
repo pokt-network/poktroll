@@ -31,11 +31,18 @@ func (k Keeper) GetRelayMiningDifficulty(
 
 	difficultyBz := store.Get(types.RelayMiningDifficultyKey(serviceId))
 	if difficultyBz == nil {
+		targetNumRelays := k.GetParams(ctx).TargetNumRelays
 		k.Logger().Warn(fmt.Sprintf(
 			"relayMiningDifficulty not found for service: %s, defaulting to base difficulty with protocol TargetNumRelays (%d)",
-			serviceId, TargetNumRelays,
+			serviceId, targetNumRelays,
 		))
-		difficulty = NewDefaultRelayMiningDifficulty(ctx, k.logger, serviceId, TargetNumRelays)
+		difficulty = NewDefaultRelayMiningDifficulty(
+			ctx,
+			k.logger,
+			serviceId,
+			targetNumRelays,
+			targetNumRelays,
+		)
 		return difficulty, false
 	}
 

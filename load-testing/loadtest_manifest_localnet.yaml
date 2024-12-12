@@ -43,17 +43,17 @@ suppliers:
 gateways:
   # The gateway address that is available in the load test's environment keyring,
   # used to identify the gateway and sign relays and transactions with.
-  # It must be the address corresponding to the provided signing_key_name in the
-  # `appgate_server_config.yaml` file.
+  # It must be the address provided in the PATH configurations in
+  # `./localnet/kubernetes/config-path-*.yaml` files.
 
   # Gateway 1; http://localhost:10350/r/gateway1/overview
   - address: pokt15vzxjqklzjtlz7lahe8z2dfe9nm5vxwwmscne4
-    exposed_url: http://localhost:42079 # The url used to send relays to the gateway on.
+    exposed_url: http://anvil.localhost/v1:3000 # The gateway url that the user sends relays to (e.g. curl)
 
   # Gateway 2; http://localhost:10350/r/gateway2/overview
   - address: pokt15w3fhfyc0lttv7r585e2ncpf6t2kl9uh8rsnyz
-    exposed_url: http://localhost:42080
+    exposed_url: http://anvil.localhost/v1:3001
 
   # Gateway 3; http://localhost:10350/r/gateway3/overview
   - address: pokt1zhmkkd0rh788mc9prfq0m2h88t9ge0j83gnxya
-    exposed_url: http://localhost:42081
+    exposed_url: http://anvil.localhost/v1:3002

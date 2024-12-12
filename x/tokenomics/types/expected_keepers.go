@@ -94,4 +94,6 @@ type ServiceKeeper interface {
 	UpdateRelayMiningDifficulty(ctx context.Context, relaysPerServiceMap map[string]uint64) (map[string]servicetypes.RelayMiningDifficulty, error)
 	// Only used for testing & simulation
 	SetService(ctx context.Context, service sharedtypes.Service)
+	GetParams(ctx context.Context) servicetypes.Params
+	SetParams(ctx context.Context, params servicetypes.Params) error
 }

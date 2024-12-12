@@ -16,4 +16,7 @@ message Params {
   // min_stake is the minimum amount of uPOKT that a supplier must stake to be
   // included in network sessions and remain staked.
   cosmos.base.v1beta1.Coin min_stake = 1 [(gogoproto.jsontag) = "min_stake", (gogoproto.moretags) = "yaml:\"min_stake\""];
+
+  // staking_fee is the fee charged by the protocol for staking a supplier.
+  cosmos.base.v1beta1.Coin staking_fee = 2 [(gogoproto.jsontag) = "staking_fee", (gogoproto.moretags) = "yaml:\"staking_fee\""];
 }

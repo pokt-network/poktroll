@@ -16,15 +16,6 @@ import (
 )
 
 var (
-	// TargetNumRelays is the target number of relays we want the network to mine for
-	// a specific service across all applications & suppliers per session.
-	// This number determines the total number of leafs to be created across in
-	// the off-chain SMTs, across all suppliers, for each service.
-	// It indirectly drives the off-chain resource requirements of the network
-	// in additional to playing a critical role in Relay Mining.
-	// TODO_MAINNET(#542): Make this a governance parameter and figure out the correct value.
-	TargetNumRelays = uint64(10e4)
-
 	// Exponential moving average (ema) smoothing factor, commonly known as alpha.
 	// Usually, alpha = 2 / (N+1), where N is the number of periods.
 	// Large alpha -> more weight on recent data; less smoothing and fast response.
@@ -53,12 +44,19 @@ func (k Keeper) UpdateRelayMiningDifficulty(
 	// Iterate over the relaysPerServiceMap deterministically by sorting the keys.
 	// This ensures that the order of the keys is consistent across different nodes.
 	// See comment: https://github.com/pokt-network/poktroll/pull/840#discussion_r1796663285
+	targetNumRelays := k.GetParams(ctx).TargetNumRelays
 	sortedRelayPerServiceMapKeys := getSortedMapKeys(relaysPerServiceMap)
 	for _, serviceId := range sortedRelayPerServiceMapKeys {
 		numRelays := relaysPerServiceMap[serviceId]
 		prevDifficulty, found := k.GetRelayMiningDifficulty(ctx, serviceId)
 		if !found {
-			prevDifficulty = NewDefaultRelayMiningDifficulty(ctx, logger, serviceId, numRelays)
+			prevDifficulty = NewDefaultRelayMiningDifficulty(
+				ctx,
+				logger,
+				serviceId,
+				numRelays,
+				targetNumRelays,
+			)
 		}
 
 		// TODO_MAINNET(@Olshansk): We could potentially compute the smoothing factor
@@ -83,7 +81,7 @@ func (k Keeper) UpdateRelayMiningDifficulty(
 		// We kept scaling down even though numRelaysEma was decreasing.
 		// To avoid continuing to increase the difficulty (i.e. scaling down), the
 		// relative starting difficulty has to be kept constant.
-		difficultyHash := protocol.ComputeNewDifficultyTargetHash(protocol.BaseRelayDifficultyHashBz, TargetNumRelays, newRelaysEma)
+		difficultyHash := protocol.ComputeNewDifficultyTargetHash(protocol.BaseRelayDifficultyHashBz, targetNumRelays, newRelaysEma)
 		newDifficulty := types.RelayMiningDifficulty{
 			ServiceId:    serviceId,
 			BlockHeight:  sdkCtx.BlockHeight(),
@@ -152,11 +150,12 @@ func NewDefaultRelayMiningDifficulty(
 	logger log.Logger,
 	serviceId string,
 	numRelays uint64,
+	targetNumRelays uint64,
 ) types.RelayMiningDifficulty {
 	logger = logger.With("helper", "NewDefaultRelayMiningDifficulty")
 
 	// Compute the target hash based on the number of relays seen for the first time.
-	newDifficultyHash := protocol.ComputeNewDifficultyTargetHash(protocol.BaseRelayDifficultyHashBz, TargetNumRelays, numRelays)
+	newDifficultyHash := protocol.ComputeNewDifficultyTargetHash(protocol.BaseRelayDifficultyHashBz, targetNumRelays, numRelays)
 
 	logger.Warn(types.ErrServiceMissingRelayMiningDifficulty.Wrapf(
 		"No previous relay mining difficulty found for service %s.\n"+

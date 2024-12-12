@@ -11,8 +11,8 @@ spec:
         pokt.network/purpose: e2e-tests
     spec:
       initContainers:
-        # We need to make sure the services like validator, relayminer, appgate server, etc. work before we execute
-        # an e2e test.
+        # We need to ensure services like Validator, RelayMiner, PATH, etc. work
+        # before executing an e2e test.
         - name: check-services
           image: ruby:3.0
           command: ["ruby"]
@@ -49,10 +49,14 @@ spec:
               value: "false" # Flip to true to see the command and result of the execution
             - name: POKTROLLD_HOME
               value: /root/.poktroll
-            - name: APPGATE_SERVER_URL
-              value: http://${NAMESPACE}-appgate-server:80
-            - name: GATEWAY_URL
-              value: http://${NAMESPACE}-gateway:80
+            - name: PATH_URL
+              value: http://${NAMESPACE}-path:3000/v1
+              # PATH relies on subdomains to get the requested service but our DevNet infra is not
+              # built to expose arbitrary subdomains and supporting it would be a significant effort.
+              # As a workaround, PATH_HOST_OVERRIDE is used as the host:port to connect to PATH while
+              # the subdomain is passed as a Host header in the request.
+            - name: PATH_HOST_OVERRIDE
+              value: ${NAMESPACE}-path:3000
           volumeMounts:
             - mountPath: /root/.poktroll/keyring-test/
               name: writable-keys-volume
