@@ -6,7 +6,11 @@ sidebar_position: 2
 # Upgrade procedure <!-- omit in toc -->
 
 :::warning
-This page describes the protocol upgrade process, which is internal to the protocol team. If you're interested in upgrading your Pocket Network node, please check our [releases page](https://github.com/pokt-network/poktroll/releases) for upgrade instructions and changelogs.
+
+This page describes the protocol upgrade process, intended for the protocol team's internal use.
+
+If you're interested in upgrading your Pocket Network node, please check our [releases page](https://github.com/pokt-network/poktroll/releases) for upgrade instructions and changelogs.
+
 :::
 
 - [When is an Upgrade Warranted?](#when-is-an-upgrade-warranted)
@@ -16,15 +20,18 @@ This page describes the protocol upgrade process, which is internal to the proto
 - [Submitting the upgrade on-chain](#submitting-the-upgrade-on-chain)
 - [Cancelling the upgrade plan](#cancelling-the-upgrade-plan)
 - [Testing the Upgrade](#testing-the-upgrade)
-  - [LocalNet](#localnet)
+  - [LocalNet Upgrades](#localnet-upgrades)
     - [LocalNet Upgrade Cheat Sheet](#localnet-upgrade-cheat-sheet)
-  - [DevNet](#devnet)
-  - [TestNet](#testnet)
-  - [Mainnet](#mainnet)
+  - [DevNet Upgrades](#devnet-upgrades)
+  - [TestNet Upgrades](#testnet-upgrades)
+  - [Mainnet Upgrades](#mainnet-upgrades)
 
 ## Overview <!-- omit in toc -->
 
-When a consensus-breaking change is made to the protocol, we must carefully evaluate and implement an upgrade path that allows existing nodes to transition safely from one software version to another without disruption. This process involves several key steps:
+When a consensus-breaking change is made to the protocol, we must carefully evaluate and implement an upgrade path that
+allows existing nodes to transition safely from one software version to another without disruption.
+
+This process involves several key steps:
 
 1. **Proposal**: The DAO drafts an upgrade proposal using our off-chain governance system.
 2. **Implementation**: The proposed changes are implemented in the codebase.
@@ -39,20 +46,34 @@ An upgrade is necessary whenever there's an API, State Machine, or other Consens
 
 ## Implementing the Upgrade
 
-1. When a new version includes a consensus-breaking change, plan for the next protocol upgrade:
-   - If there's a change to a specific module, bump that module's consensus version.
+1. When a new version includes a `consensus-breaking` change, plan for the next protocol upgrade:
+
+   - If there's a change to a specific module -> bump that module's consensus version.
    - Note any potential parameter changes to include in the upgrade.
-2. Create a new upgrade in `app/upgrades`.
+
+2. Create a new upgrade in `app/upgrades`:
    - Refer to `historical.go` for past upgrades and examples.
-   - Consult Cosmos-sdk documentation on upgrades for additional guidance [here](https://docs.cosmos.network/main/build/building-apps/app-upgrade) and [here](https://docs.cosmos.network/main/build/modules/upgrade).
+   - Consult Cosmos-sdk documentation on upgrades for additional guidance on [building-apps/app-upgrade](https://docs.cosmos.network/main/build/building-apps/app-upgrade) and [modules/upgrade](https://docs.cosmos.network/main/build/modules/upgrade).
 
 :::info
-Creating a new upgrade plan MUST BE DONE even if there are no state changes.
+
+Creating a new upgrade plan **MUST BE DONE** even if there are no state changes.
+
 :::
 
 ## Writing an Upgrade Transaction
 
-An upgrade transaction includes a [Plan](https://github.com/cosmos/cosmos-sdk/blob/0fda53f265de4bcf4be1a13ea9fad450fc2e66d4/x/upgrade/proto/cosmos/upgrade/v1beta1/upgrade.proto#L14) with specific details about the upgrade. This information helps schedule the upgrade on the network and provides necessary data for automatic upgrades via `Cosmovisor`. A typical upgrade transaction will look like the following:
+An upgrade transaction includes a [Plan](https://github.com/cosmos/cosmos-sdk/blob/0fda53f265de4bcf4be1a13ea9fad450fc2e66d4/x/upgrade/proto/cosmos/upgrade/v1beta1/upgrade.proto#L14) with specific details about the upgrade.
+
+This information helps schedule the upgrade on the network and provides necessary data for automatic upgrades via `Cosmovisor`.
+
+A typical upgrade transaction includes:
+
+- `name`: Name of the upgrade. It should match the `VersionName` of `upgrades.Upgrade`.
+- `height`: The height at which an upgrade should be executed and the node will be restarted.
+- `info`: Can be empty. **Only needed for live networks where we want cosmovisor to upgrade nodes automatically**.
+
+And looks like the following as an example:
 
 ```json
 {
@@ -72,13 +93,12 @@ An upgrade transaction includes a [Plan](https://github.com/cosmos/cosmos-sdk/bl
 }
 ```
 
-- `name`: Name of the upgrade. It should match the `VersionName` of `upgrades.Upgrade`.
-- `height`: The height at which an upgrade should be executed and the node will be restarted.
-- `info`: Can be empty. **Only needed for live networks where we want cosmovisor to upgrade nodes automatically**.
-
 :::tip
 
-When `cosmovisor` is configured to automatically download binaries, it will pull the binary from the link provided in this field and perform a hash verification (which is also optional). We only know the hashes **AFTER** the release has been cut and CI created artifacts for this version.
+When `cosmovisor` is configured to automatically download binaries, it will pull the binary from the link provided in
+the object about and perform a hash verification (which is also optional).
+
+**NOTE THAT** we only know the hashes **AFTER** the release has been cut and CI created artifacts for this version.
 
 :::
 
@@ -142,7 +162,7 @@ make localnet_cancel_upgrade
 Note that for local testing, `cosmovisor` won't pull the binary from the upgrade Plan's info field.
 :::
 
-### LocalNet
+### LocalNet Upgrades
 
 LocalNet **DOES NOT** support `cosmovisor` and automatic upgrades at the moment.
 
@@ -231,13 +251,13 @@ For a hypothetical scenario to upgrade from `0.1` to `0.2`:
     ./release_binaries/poktroll_darwin_arm64 q application params
     ```
 
-### DevNet
+### DevNet Upgrades
 
 DevNets currently do not support `cosmovisor`.
 
 We use Kubernetes to manage software versions, including validators. Introducing another component to manage versions would be complex, requiring a re-architecture of our current solution to accommodate this change.
 
-### TestNet
+### TestNet Upgrades
 
 We currently deploy TestNet validators using Kubernetes with helm charts, which prevents us from managing the validator with `cosmovisor`. We do not control what other TestNet participants are running. However, if participants have deployed their nodes using the [cosmovisor guide](../../operate/run_a_node/full_node_walkthrough.md), their nodes will upgrade automatically.
 
@@ -248,9 +268,11 @@ Until we transition to [cosmos-operator](https://github.com/strangelove-ventures
 3. Monitor validator node(s) as they start and begin producing blocks.
 
 :::tip
-If you are a member of Grove, you can find the instructions to access the infrastructure [here](https://www.notion.so/buildwithgrove/How-to-re-genesis-a-Shannon-TestNet-a6230dd8869149c3a4c21613e3cfad15?pvs=4).
+
+If you are a member of Grove, you can find the instructions to access the infrastructure [on notion](https://www.notion.so/buildwithgrove/How-to-re-genesis-a-Shannon-TestNet-a6230dd8869149c3a4c21613e3cfad15?pvs=4).
+
 :::
 
-### Mainnet
+### Mainnet Upgrades
 
 The Mainnet upgrade process is to be determined. We aim to develop and implement improved tooling for this environment.
