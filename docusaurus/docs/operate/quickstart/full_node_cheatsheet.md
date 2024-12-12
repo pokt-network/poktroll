@@ -19,6 +19,7 @@ step of the process, check out the [Full Node Walkthrough](../run_a_node/full_no
 - [Pre-Requisites](#pre-requisites)
 - [Install and Run a Full Node using Cosmovisor](#install-and-run-a-full-node-using-cosmovisor)
   - [Automatic Upgrades Out of the Box](#automatic-upgrades-out-of-the-box)
+  - [Verify successful installation (curl latest block)](#verify-successful-installation-curl-latest-block)
 - [FAQ \& Troubleshooting](#faq--troubleshooting)
 - [\[OPTIONAL\] Do you care to know what just happened?](#optional-do-you-care-to-know-what-just-happened)
 
@@ -75,14 +76,17 @@ When a chain upgrade is proposed and approved:
 3. Cosmovisor will switch to the new binary
 4. The node will restart automatically
 
-#### Test that installation was successful
-Query the latesrt block (i.e. check the node height)
+#### Verify successful installation (curl latest block)
+
+You can verify the installation was successful by querying the latest block (i.e. checking the node height).
+
+Running the following command:
 
 ```bash
 curl -X GET http://localhost:26657/block | jq
 ```
 
-If you set it up correctly, you should see a response in this form:
+Should provide a response in this form:
 
 ```json
 {
@@ -144,30 +148,7 @@ If you set it up correctly, you should see a response in this form:
             "timestamp": "2024-11-25T21:33:54.770507235Z",
             "signature": "zQb3QPt032nIRTUc7kk4cSxgVF4hpMZycE6ZvpSSZM4Bj1XlOEcdFtHWiLsileVX9RkZHqChzGBstCnfCfK8Bg=="
           },
-          {
-            "block_id_flag": 2,
-            "validator_address": "80A08A0BE0916161F4D6375B300C6F9ADA7A2EA3",
-            "timestamp": "2024-11-25T21:33:54.785576474Z",
-            "signature": "qppmmdFchx8RKT4qnNQJGXV8/ukHW7PgI2fg9hrMU55HKosX0nTaz0yFIrDDL3TmHScKhdRYess777xT9T6VBA=="
-          },
-          {
-            "block_id_flag": 2,
-            "validator_address": "8AC6613D760B9B5D9C44F97A5893DB4AC9AF1ACB",
-            "timestamp": "2024-11-25T21:33:54.82911715Z",
-            "signature": "nlxxO5n0ueLRNjJXqk7afjPPsD4ltJLzPbC/VA3x9VygFZYPM6ngjBoNTIO1BQjnanfHGQrU39R4hGZwNLRnAA=="
-          },
-          {
-            "block_id_flag": 2,
-            "validator_address": "9B1E1BA4443F8962F56FB46745A7FBFDD6694B4F",
-            "timestamp": "2024-11-25T21:33:54.828959724Z",
-            "signature": "soip0IoEaCwIl2zHB69h5ehCifAw/WhMSO1lE74YCJIxWDSSPFQKQYAMiEBQ5K3+iaONHj7g+yIs4Sk9eCAWAQ=="
-          },
-          {
-            "block_id_flag": 2,
-            "validator_address": "F9854E3CB13E69501B5C596C1FB7A44DB231B38E",
-            "timestamp": "2024-11-25T21:33:54.770123943Z",
-            "signature": "NA4Y8Yv+z2wUprtT/mV+/lUBRyqF0BmBVFIpfHHjmq3ATsU2SmX5ur1nmukzWx5NiKPCW+fhowRfNH1u+79zCg=="
-          }
+          ...
         ]
       }
     }
