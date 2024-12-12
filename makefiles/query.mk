@@ -1,6 +1,7 @@
 #####################
 ### Query Helpers ###
 #####################
+
 .PHONY: query_tx
 query_tx: ## Query for a transaction by hash and output as YAML (default).
 	poktrolld --home=$(POKTROLLD_HOME) query tx $(HASH) --node $(POCKET_NODE)

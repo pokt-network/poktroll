@@ -24,4 +24,4 @@ Community members provide explorers for this testnet:
 ## Deployment Example
 
 We provide an example for the community on how to deploy the Full Node, Relay Miner,
-and AppGate Server in the [poktroll-docker-compose-example GitHub Repo](https://github.com/pokt-network/poktroll-docker-compose-example).
+and PATH Gateway in the [poktroll-docker-compose-example GitHub Repo](https://github.com/pokt-network/poktroll-docker-compose-example).

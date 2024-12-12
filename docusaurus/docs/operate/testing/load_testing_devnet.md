@@ -50,9 +50,7 @@ networkName: "sophon"
 image:
   tag: sha-7042be3
 
-appgateservers:
-  count: 1
-gateways:
+path_gateways:
   count: 3
 relayminers:
   count: 3

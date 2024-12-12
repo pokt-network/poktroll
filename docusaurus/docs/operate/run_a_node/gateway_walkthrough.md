@@ -5,23 +5,21 @@ sidebar_position: 6
 
 # Run a Gateway <!-- omit in toc -->
 
-TODO_BETA(@red-0ne): Update this page to use PATH.
-
-- [What is AppGate Server?](#what-is-appgate-server)
-- [AppGate Server Operation Requirements](#appgate-server-operation-requirements)
+- [What is PATH Gateway?](#what-is-path-gateway)
+- [PATH Gateway Operation Requirements](#path-gateway-operation-requirements)
 - [Hardware requirements](#hardware-requirements)
 - [Docker Compose Example](#docker-compose-example)
 - [Kubernetes Example](#kubernetes-example)
 
-## What is AppGate Server?
+## What is PATH Gateway?
 
-See the [AppGate Server](../../protocol/actors/appgate_server.md) documentation for more
-information on what an AppGate Server is. This page aims to provide links and
+See the [PATH Gateway](https://path.grove.city) documentation for more
+information on what a `PATH Gateway` is. This page aims to provide links and
 details on how to deploy and operate it.
 
-## AppGate Server Operation Requirements
+## PATH Gateway Operation Requirements
 
-An AppGate Server requires the following:
+A PATH Gateway requires the following:
 
 1. A staked on-chain [Application](../../protocol/actors/application.md) to pay for services.
 2. An optional on-chain [Gateway](../../protocol/actors/gateway.md) to optionally proxy services.
@@ -34,12 +32,12 @@ This ensures the necessary infrastructure for blockchain communication is in pla
 
 ## Hardware requirements
 
-Please see the [Hardware Requirements](./hardware_requirements.md#appgate-server--gateway) page.
+Please see the [Hardware Requirements](./hardware_requirements.md#path-gateway) page.
 
 ## Docker Compose Example
 
-Please refer to the `Deploying an AppGate Server` section in [poktroll-docker-compose-example](https://github.com/pokt-network/poktroll-docker-compose-example#deploying-an-appgate-server)
-GitHub repository on how to deploy an AppGate Server using `docker-compose`.
+Please refer to the `Deploying a PATH Gateway` section in [Docker compose walkthrough](../quickstart/docker_compose_walkthrough#d-creating-a-gateway-deploying-a-path-gateway)
+on how to deploy a `PATH Gateway` using `docker-compose`.
 
 ## Kubernetes Example
 
