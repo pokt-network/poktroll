@@ -361,7 +361,9 @@ type BankQueryClient interface {
 	GetBalance(ctx context.Context, address string) (*cosmostypes.Coin, error)
 }
 
-// QueryCache handles a single type of cached data
+// QueryCache is a key/value store style interface for a cache of a single type.
+// It is intended to be used to cache query responses (or derivatives thereof),
+// where each key uniquely indexes its most recent value.
 type QueryCache[T any] interface {
 	Get(key string) (T, error)
 	Set(key string, value T) error
@@ -369,7 +371,8 @@ type QueryCache[T any] interface {
 	Clear()
 }
 
-// HistoricalQueryCache extends QueryCache to support historical values at different heights
+// HistoricalQueryCache extends QueryCache to support getting and setting values
+// at multiple heights for a given key.
 type HistoricalQueryCache[T any] interface {
 	QueryCache[T]
 	// GetAtHeight retrieves the nearest value <= the specified height

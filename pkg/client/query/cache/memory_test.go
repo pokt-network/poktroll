@@ -260,13 +260,11 @@ func TestInMemoryCache_ConcurrentAccess(t *testing.T) {
 		wg.Add(numGoroutines)
 
 		for i := 0; i < numGoroutines; i++ {
-			go func(routineID int) {
+			go func() {
 				defer wg.Done()
 				for j := 0; j < numOperations; j++ {
-					// Check for timeout
 					select {
 					case <-ctx.Done():
-						t.Errorf("test timed out: %v", ctx.Err())
 						return
 					default:
 						key := "key"
@@ -275,10 +273,10 @@ func TestInMemoryCache_ConcurrentAccess(t *testing.T) {
 						_, _ = cache.Get(key)
 					}
 				}
-			}(i)
+			}()
 		}
 
-		// Wait with timeout
+		// Wait for waitgroup with timeout.
 		done := make(chan struct{})
 		go func() {
 			wg.Wait()
@@ -287,9 +285,9 @@ func TestInMemoryCache_ConcurrentAccess(t *testing.T) {
 
 		select {
 		case <-ctx.Done():
-			t.Errorf("test timed out waiting for goroutines to complete: %v", ctx.Err())
+			t.Errorf("test timed out waiting for workgroup to complete: %+v", ctx.Err())
 		case <-done:
-			// Test completed successfully
+			t.Log("test completed successfully")
 		}
 	})
 
@@ -308,13 +306,11 @@ func TestInMemoryCache_ConcurrentAccess(t *testing.T) {
 		wg.Add(numGoroutines)
 
 		for i := 0; i < numGoroutines; i++ {
-			go func(routineID int) {
+			go func() {
 				defer wg.Done()
 				for j := 0; j < numOpsPerGoRoutine; j++ {
-					// Check for timeout
 					select {
 					case <-ctx.Done():
-						t.Errorf("test timed out: %v", ctx.Err())
 						return
 					default:
 						key := "key"
@@ -323,10 +319,10 @@ func TestInMemoryCache_ConcurrentAccess(t *testing.T) {
 						_, _ = cache.GetAtHeight(key, int64(j))
 					}
 				}
-			}(i)
+			}()
 		}
 
-		// Wait with timeout
+		// Wait for waitgroup with timeout.
 		done := make(chan struct{})
 		go func() {
 			wg.Wait()
@@ -335,9 +331,9 @@ func TestInMemoryCache_ConcurrentAccess(t *testing.T) {
 
 		select {
 		case <-ctx.Done():
-			t.Errorf("test timed out waiting for goroutines to complete: %v", ctx.Err())
+			t.Errorf("test timed out waiting for goroutines to complete: %+v", ctx.Err())
 		case <-done:
-			// Test completed successfully
+			t.Log("test completed successfully")
 		}
 	})
 }
