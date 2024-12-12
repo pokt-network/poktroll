@@ -33,22 +33,11 @@ type queryCacheConfig struct {
 	pruneOlderThan int64
 }
 
-// QueryCacheOptionFn defines a function that configures a queryCacheConfig
+// QueryCacheOptionFn is a function which receives a queryCacheConfig for configuration.
 type QueryCacheOptionFn func(*queryCacheConfig)
 
-// HistoricalQueryCacheConfig extends the basic queryCacheConfig with historical settings.
-type HistoricalQueryCacheConfig struct {
-	queryCacheConfig
-
-	// MaxHeightsPerKey is the maximum number of different heights to store per key
-	MaxHeightsPerKey int
-	// PruneOlderThan specifies how many blocks back to maintain in history
-	// If 0, no historical pruning is performed
-	PruneOlderThan int64
-}
-
 // WithHistoricalMode enables historical caching with the given pruneOlderThan
-// configuration, if 0 no historical pruning is performed.
+// configuration; if 0, no historical pruning is performed.
 func WithHistoricalMode(pruneOlderThan int64) QueryCacheOptionFn {
 	return func(cfg *queryCacheConfig) {
 		cfg.historical = true
@@ -64,14 +53,15 @@ func WithMaxKeys(maxKeys int64) QueryCacheOptionFn {
 	}
 }
 
-// WithEvictionPolicy sets the eviction policy
+// WithEvictionPolicy sets the eviction policy.
 func WithEvictionPolicy(policy EvictionPolicy) QueryCacheOptionFn {
 	return func(cfg *queryCacheConfig) {
 		cfg.EvictionPolicy = policy
 	}
 }
 
-// WithTTL sets the time-to-live for cache entries
+// WithTTL sets the time-to-live for cached items. Items older than the TTL
+// MAY not be evicted but SHOULD not be considered as cache hits.
 func WithTTL(ttl time.Duration) QueryCacheOptionFn {
 	return func(cfg *queryCacheConfig) {
 		cfg.TTL = ttl

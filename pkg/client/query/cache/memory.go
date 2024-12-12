@@ -12,6 +12,13 @@ import (
 var (
 	_ client.QueryCache[any]           = (*InMemoryCache[any])(nil)
 	_ client.HistoricalQueryCache[any] = (*InMemoryCache[any])(nil)
+
+	DefaultQueryCacheConfig = queryCacheConfig{
+		EvictionPolicy: FirstInFirstOut,
+		// TODO_MAINNET(@bryanchriswhite): Consider how we can "guarantee" good
+		// alignment between the TTL and the block production rate.
+		TTL: time.Minute,
+	}
 )
 
 // InMemoryCache provides a concurrency-safe in-memory cache implementation with
@@ -29,12 +36,16 @@ type InMemoryCache[T any] struct {
 	items map[string]any
 }
 
-// cacheItem wraps cached values with metadata
+// cacheItem wraps cached values with a timestamp for later comparison against
+// the configured TTL.
 type cacheItem[T any] struct {
 	value     T
 	timestamp time.Time
 }
 
+// cacheItemHistory stores cachedItems by height and maintains a sorted list of
+// heights for which cached items exist. This list is sorted in descending order
+// to improve performance characteristics by positively correlating index with age.
 type cacheItemHistory[T any] struct {
 	// sortedDescHeights is a list of the heights for which values are cached.
 	// It is sorted in descending order.
@@ -42,11 +53,10 @@ type cacheItemHistory[T any] struct {
 	itemsByHeight     map[int64]cacheItem[T]
 }
 
-// NewInMemoryCache creates a new cache with the given configuration
+// NewInMemoryCache creates a new InMemoryCache with the configuration generated
+// by the given option functions.
 func NewInMemoryCache[T any](opts ...QueryCacheOptionFn) *InMemoryCache[T] {
-	config := queryCacheConfig{
-		EvictionPolicy: FirstInFirstOut,
-	}
+	config := DefaultQueryCacheConfig
 
 	for _, opt := range opts {
 		opt(&config)
@@ -178,7 +188,6 @@ func (c *InMemoryCache[T]) SetAtHeight(key string, value T, setHeight int64) err
 	c.itemsMu.Lock()
 	defer c.itemsMu.Unlock()
 
-	// TODO_IN_THIS_COMMIT: refactor history to be a struct which includes sortedDescHeights...
 	var itemHistory cacheItemHistory[T]
 	if itemHistoryAny, exists := c.items[key]; exists {
 		itemHistory = itemHistoryAny.(cacheItemHistory[T])
