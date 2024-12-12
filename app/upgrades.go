@@ -13,6 +13,7 @@ import (
 var allUpgrades = []upgrades.Upgrade{
 	upgrades.Upgrade_0_0_4,
 	upgrades.Upgrade_0_0_10,
+	upgrades.Upgrade_0_0_11,
 }
 
 // setUpgrades sets upgrade handlers for all upgrades and executes KVStore migration if an upgrade plan file exists.
