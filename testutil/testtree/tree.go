@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/pokt-network/poktroll/pkg/crypto"
+	"github.com/pokt-network/poktroll/pkg/polylog"
 	"github.com/pokt-network/poktroll/pkg/relayer"
 	"github.com/pokt-network/poktroll/pkg/relayer/session"
 	"github.com/pokt-network/poktroll/testutil/testrelayer"
@@ -31,7 +32,7 @@ func NewFilledSessionTree(
 	t.Helper()
 
 	// Initialize an empty session tree with the given session header.
-	sessionTree := NewEmptySessionTree(t, sessionTreeHeader, supplierOperatorAddr)
+	sessionTree := NewEmptySessionTree(t, sessionTreeHeader, supplierOperatorAddr, ctx)
 
 	// Add numRelays of relays to the session tree.
 	FillSessionTree(
@@ -52,6 +53,7 @@ func NewEmptySessionTree(
 	t *testing.T,
 	sessionTreeHeader *sessiontypes.SessionHeader,
 	supplierOperatorAddr string,
+	ctx context.Context,
 ) relayer.SessionTree {
 	t.Helper()
 
@@ -71,6 +73,7 @@ func NewEmptySessionTree(
 		sessionTreeHeader,
 		&accAddress,
 		testSessionTreeStoreDir,
+		polylog.Ctx(ctx),
 	)
 	require.NoError(t, err)
 
