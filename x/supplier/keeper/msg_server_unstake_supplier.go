@@ -28,32 +28,45 @@ func (k msgServer) UnstakeSupplier(
 	logger.Info(fmt.Sprintf("About to unstake supplier with msg: %v", msg))
 
 	if err := msg.ValidateBasic(); err != nil {
-		return nil, err
+		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
 	// Check if the supplier already exists or not
-	supplier, isSupplierFound := k.GetSupplier(ctx, msg.OperatorAddress)
+	supplier, isSupplierFound := k.GetSupplier(ctx, msg.GetOperatorAddress())
 	if !isSupplierFound {
-		logger.Info(fmt.Sprintf("Supplier not found. Cannot unstake address %s", msg.OperatorAddress))
-		return nil, suppliertypes.ErrSupplierNotFound
-	}
-
-	// Ensure the singer address matches the owner address or the operator address.
-	if !supplier.HasOperator(msg.Signer) && !supplier.HasOwner(msg.Signer) {
-		logger.Error("only the supplier owner or operator is allowed to unstake the supplier")
-		return nil, sharedtypes.ErrSharedUnauthorizedSupplierUpdate.Wrapf(
-			"signer %q is not allowed to unstake supplier %v",
-			msg.Signer,
-			supplier,
+		logger.Info(fmt.Sprintf("Supplier not found. Cannot unstake address %s", msg.GetOperatorAddress()))
+		return nil, status.Error(
+			codes.NotFound,
+			suppliertypes.ErrSupplierNotFound.Wrapf(
+				"supplier with operator address %q", msg.GetOperatorAddress(),
+			).Error(),
 		)
 	}
 
-	logger.Info(fmt.Sprintf("Supplier found. Unstaking supplier for address %s", msg.OperatorAddress))
+	// Ensure the singer address matches the owner address or the operator address.
+	if !supplier.HasOperator(msg.GetSigner()) && !supplier.HasOwner(msg.GetSigner()) {
+		logger.Info("only the supplier owner or operator is allowed to unstake the supplier")
+		return nil, status.Error(
+			codes.PermissionDenied,
+			sharedtypes.ErrSharedUnauthorizedSupplierUpdate.Wrapf(
+				"signer %q is not allowed to unstake supplier %+v",
+				msg.Signer,
+				supplier,
+			).Error(),
+		)
+	}
+
+	logger.Info(fmt.Sprintf("Supplier found. Unstaking supplier with operating address %s", msg.GetOperatorAddress()))
 
 	// Check if the supplier has already initiated the unstake action.
 	if supplier.IsUnbonding() {
-		logger.Warn(fmt.Sprintf("Supplier %s still unbonding from previous unstaking", msg.OperatorAddress))
-		return nil, suppliertypes.ErrSupplierIsUnstaking
+		logger.Info(fmt.Sprintf("Supplier %s still unbonding from previous unstaking", msg.GetOperatorAddress()))
+		return nil, status.Error(
+			codes.FailedPrecondition,
+			suppliertypes.ErrSupplierIsUnstaking.Wrapf(
+				"supplier with operator address %q", msg.GetOperatorAddress(),
+			).Error(),
+		)
 	}
 
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
@@ -85,5 +98,7 @@ func (k msgServer) UnstakeSupplier(
 	}
 
 	isSuccessful = true
-	return &suppliertypes.MsgUnstakeSupplierResponse{}, nil
+	return &suppliertypes.MsgUnstakeSupplierResponse{
+		Supplier: &supplier,
+	}, nil
 }

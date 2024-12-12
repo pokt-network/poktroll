@@ -5,7 +5,7 @@ title: Docker Compose Cheat Sheet
 
 import ReactPlayer from "react-player";
 
-# Docker Compose Cheat Sheet <!-- omit in toc --> <!-- omit in toc -->
+# Docker Compose Cheat Sheet <!-- omit in toc -->
 
 - [Results](#results)
 - [Deploy your server](#deploy-your-server)
@@ -16,16 +16,16 @@ import ReactPlayer from "react-player";
 - [Create new addresses for all your accounts and update .env](#create-new-addresses-for-all-your-accounts-and-update-env)
 - [Fund your accounts](#fund-your-accounts)
 - [Stake a Supplier \& Deploy a RelayMiner](#stake-a-supplier--deploy-a-relayminer)
-- [Stake an Application \& Deploy an AppGate Server](#stake-an-application--deploy-an-appgate-server)
+- [Stake an Application and Gateway](#stake-an-application-and-gateway)
+- [Deploy a PATH Gateway](#deploy-a-path-gateway)
 - [Send a Relay](#send-a-relay)
   - [Ensure you get a response](#ensure-you-get-a-response)
-- [\[BONUS\] Deploy a PATH Gateway](#bonus-deploy-a-path-gateway)
 - [Managing a re-genesis](#managing-a-re-genesis)
   - [Full Nodes](#full-nodes)
   - [Fund the same accounts](#fund-the-same-accounts)
     - [Faucet is not ready and you need to fund the accounts manually](#faucet-is-not-ready-and-you-need-to-fund-the-accounts-manually)
   - [Start the RelayMiner](#start-the-relayminer)
-  - [Start the AppGate Server](#start-the-appgate-server)
+  - [Start the PATH Gateway](#start-the-path-gateway)
 
 ## Results
 
@@ -72,7 +72,7 @@ sudo apt-get update
 if command -v ufw > /dev/null 2>&1; then
     sudo ufw allow from 172.16.0.0/12
     sudo ufw allow from 192.168.0.0/16
-    echo "UFW rules added for Docker networks"
+    echo "UFW rules added for Docker networks and validator endpoint"
 else
     echo "UFW is not installed, skipping firewall configuration"
 fi
@@ -89,9 +89,9 @@ sudo apt-get install docker-ce docker-ce-cli containerd.io docker-buildx-plugin 
 You can optionally create a new user and give it sudo permissions instead of using `root`.
 
 ```bash
-export USERNAME=olshansky
-sudo adduser $USERNAME
-sudo usermod -aG sudo $USERNAME
+adduser poktroll
+usermod -aG docker,sudo poktroll
+su - poktroll
 ```
 
 ## Retrieve the source code
@@ -106,9 +106,21 @@ cd poktroll-docker-compose-example
 
 ## Update your environment
 
+First, copy the sample environment file:
+
 ```bash
 cp .env.sample .env
+```
 
+By default, the `.env` file uses `testnet-beta`. If you want to use a different network, update the `NETWORK_NAME` in your `.env` file to one of:
+
+- `testnet-alpha`: Unstable testnet (use at your own risk)
+- `testnet-beta`: Stable testnet (default)
+- `mainnet`: Production network (not launched yet)
+
+Then set your external IP and source the environment:
+
+```bash
 EXTERNAL_IP=$(curl -4 ifconfig.me/ip)
 sed -i -e s/NODE_HOSTNAME=/NODE_HOSTNAME=$EXTERNAL_IP/g .env
 
@@ -119,12 +131,10 @@ source ~/.bashrc
 
 ## Start up the full node
 
-
 :::warning
 The Alpha TestNet currently requires manual steps to sync the node to the latest block. Please find the affected block(s)
 in [this document](../../protocol/upgrades/upgrade_list.md), which leads to the manual upgrade instructions.
 :::
-
 
 ```bash
 docker compose up -d full-node
@@ -148,36 +158,45 @@ address=$(awk '/address:/{print $3; exit}' /tmp/supplier | tr -d '\r'); sed -i "
 Application:
 
 ```bash
-poktrolld keys add application > /tmp/application
+poktrolld keys add application
 
-mnemonic=$(tail -n 1 /tmp/application | tr -d '\r'); sed -i "s|APPLICATION_MNEMONIC=\".*\"|APPLICATION_MNEMONIC=\"$mnemonic\"|" .env
+privKey=$(export_priv_key_hex application); sed -i "s|APPLICATION_PRIV_KEY_HEX=\".*\"|APPLICATION_PRIV_KEY_HEX=\"$privKey\"|" .env
 
-address=$(awk '/address:/{print $3; exit}' /tmp/application | tr -d '\r'); sed -i "s|APPLICATION_ADDR=\".*\"|APPLICATION_ADDR=\"$address\"|g" .env
+address=$(poktrolld keys show application -a | tr -d '\r'); sed -i "s|APPLICATION_ADDR=\".*\"|APPLICATION_ADDR=\"$address\"|g" .env
 ```
 
 Gateway:
 
 ```bash
-poktrolld keys add gateway > /tmp/gateway
+poktrolld keys add gateway
 
-mnemonic=$(tail -n 1 /tmp/gateway | tr -d '\r'); sed -i "s|GATEWAY_MNEMONIC=\".*\"|GATEWAY_MNEMONIC=\"$mnemonic\"|" .env
+privKey=$(export_priv_key_hex gateway); sed -i "s|GATEWAY_PRIV_KEY_HEX=\".*\"|GATEWAY_PRIV_KEY_HEX=\"$privKey\"|" .env
 
-address=$(awk '/address:/{print $3; exit}' /tmp/gateway | tr -d '\r'); sed -i "s|GATEWAY_ADDR=\".*\"|GATEWAY_ADDR=\"$address\"|g" .env
+address=$(poktrolld keys show gateway -a | tr -d '\r'); sed -i "s|GATEWAY_ADDR=\".*\"|GATEWAY_ADDR=\"$address\"|g" .env
 ```
 
-FINALLY, `source .env` to update the environment variables.
+FINALLY, update your environment:
+
+```bash
+source .env
+```
 
 ## Fund your accounts
 
-Run the following:
+Run the following helper command to see your addresses:
 
 ```bash
 show_actor_addresses
 ```
 
-For each one, fund the accounts using the [faucet](https://faucet.testnet.pokt.network/)
+Get the faucet URL for your network:
 
-Next, run this helper (it's part of `helpers.sh`) to find each of them on the explorer:
+```bash
+show_faucet_url
+```
+
+Fund each address using the faucet URL shown above.
+Then run this helper to find each account on the explorer:
 
 ```bash
 show_explorer_urls
@@ -190,14 +209,14 @@ Stake the supplier:
 ```bash
 sed -i -e s/YOUR_NODE_IP_OR_HOST/$NODE_HOSTNAME/g ./stake_configs/supplier_stake_config_example.yaml
 sed -i -e s/YOUR_OWNER_ADDRESS/$SUPPLIER_ADDR/g ./stake_configs/supplier_stake_config_example.yaml
-poktrolld tx supplier stake-supplier --config=/poktroll/stake_configs/supplier_stake_config_example.yaml --from=supplier --chain-id=poktroll --yes
+poktrolld tx supplier stake-supplier --config=/poktroll/stake_configs/supplier_stake_config_example.yaml --from=supplier $TX_PARAM_FLAGS_BETA
 
 # OPTIONALLY check the supplier's status
 poktrolld query supplier show-supplier $SUPPLIER_ADDR
 
 # Start the relay miner (please update the grove app ID if you can)
-sed -i -e s/YOUR_NODE_IP_OR_HOST/$NODE_HOSTNAME/g relayminer/config/relayminer_config.yaml
-sed -i -e "s|backend_url: \".*\"|backend_url: \"https://eth-mainnet.rpc.grove.city/v1/c7f14c60\"|g" relayminer/config/relayminer_config.yaml
+sudo sed -i -e s/YOUR_NODE_IP_OR_HOST/$NODE_HOSTNAME/g relayminer/config/relayminer_config.yaml
+sudo sed -i -e "s|backend_url: \".*\"|backend_url: \"https://eth-mainnet.rpc.grove.city/v1/c7f14c60\"|g" relayminer/config/relayminer_config.yaml
 ```
 
 Start the supplier
@@ -208,29 +227,57 @@ docker compose up -d relayminer
 docker logs -f --tail 100 relayminer
 ```
 
-## Stake an Application & Deploy an AppGate Server
+## Stake an Application and Gateway
 
 Stake the application:
 
 ```bash
-poktrolld tx application stake-application --config=/poktroll/stake_configs/application_stake_config_example.yaml --from=application --chain-id=poktroll --yes
+poktrolld tx application stake-application --config=/poktroll/stake_configs/application_stake_config_example.yaml --from=application $TX_PARAM_FLAGS_BETA
 
 # OPTIONALLY check the application's status
 poktrolld query application show-application $APPLICATION_ADDR
 ```
 
-Start the appgate server:
+Stake the gateway:
 
 ```bash
-docker compose up -d appgate
+poktrolld tx gateway stake-gateway --config=/poktroll/stake_configs/gateway_stake_config_example.yaml --from=gateway $TX_PARAM_FLAGS_BETA
+
+# OPTIONALLY check the application's status
+poktrolld query gateway show-gateway $GATEWAY_ADDR
+```
+
+Delegate the application to the gateway:
+
+```bash
+poktrolld tx application delegate-to-gateway $GATEWAY_ADDR --from=application $TX_PARAM_FLAGS_BETA
+
+# OPTIONALLY check the application's delegation status
+poktrolld query application show-application $APPLICATION_ADDR
+```
+
+## Deploy a PATH Gateway
+
+Configure the PATH gateway:
+
+```bash
+sudo sed -i -e s/YOUR_PATH_GATEWAY_ADDRESS/$GATEWAY_ADDR/g gateway/config/gateway_config.yaml
+sudo sed -i -e s/YOUR_PATH_GATEWAY_PRIVATE_KEY/$GATEWAY_PRIV_KEY_HEX/g gateway/config/gateway_config.yaml
+sudo sed -i -e s/YOUR_OWNED_APP_PRIVATE_KEY/$APPLICATION_PRIV_KEY_HEX/g gateway/config/gateway_config.yaml
+```
+
+Start the PATH gateway:
+
+```bash
+docker compose up -d gateway
 # OPTIONALLY view the logs
-docker logs -f --tail 100 appgate
+docker logs -f --tail 100 gateway
 ```
 
 ## Send a Relay
 
 ```bash
-curl http://$NODE_HOSTNAME:85/0021 \
+curl http://eth.localhost:3000/v1 \
   -X POST \
   -H "Content-Type: application/json" \
   --data '{"method":"eth_blockNumber","params":[],"id":1,"jsonrpc":"2.0"}'
@@ -242,29 +289,13 @@ To ensure you get a response, run the request a few times.
 
 ```bash
 for i in {1..10}; do
-  curl http://$NODE_HOSTNAME:85/0021 \
+  curl http://eth.localhost:3000/v1 \
     -X POST \
     -H "Content-Type: application/json" \
     --data '{"method":"eth_blockNumber","params":[],"id":1,"jsonrpc":"2.0"}' \
     --max-time 1
   echo ""
 done
-```
-
-## [BONUS] Deploy a PATH Gateway
-
-If you want to deploy a real Gateway, you can use [Grove's PATH](https://github.com/buildwithgrove/path)
-after running the following commands:
-
-```bash
-# Stake the gateway
-poktrolld tx gateway stake-gateway --config=/poktroll/stake_configs/gateway_stake_config_example.yaml --from=gateway --chain-id=poktroll --yes
-# Delegate from the application to the gateway
-poktrolld tx application delegate-to-gateway $GATEWAY_ADDR --from=application --chain-id=poktroll --chain-id=poktroll --yes
-
-# OPTIONALLY check the gateway's and application's status
-poktrolld query gateway show-gateway $GATEWAY_ADDR
-poktrolld query application show-application $APPLICATION_ADDR
 ```
 
 ## Managing a re-genesis
@@ -308,14 +339,14 @@ echo $SUPPLIER_ADDR
 ```bash
 # Import the faucet using the mnemonic
 poktrolld keys add --recover -i faucet
-poktrolld tx bank multi-send faucet $APPLICATION_ADDR $GATEWAY_ADDR $SUPPLIER_ADDR 100000upokt --chain-id=poktroll --yes
+poktrolld tx bank multi-send faucet $APPLICATION_ADDR $GATEWAY_ADDR $SUPPLIER_ADDR 100000upokt $TX_PARAM_FLAGS_BETA
 ```
 
 ### Start the RelayMiner
 
 ```bash
 # Stake
-poktrolld tx supplier stake-supplier --config=/poktroll/stake_configs/supplier_stake_config_example.yaml --from=supplier --chain-id=poktroll --yes
+poktrolld tx supplier stake-supplier --config=/poktroll/stake_configs/supplier_stake_config_example.yaml --from=supplier $TX_PARAM_FLAGS_BETA
 # Check
 poktrolld query supplier show-supplier $SUPPLIER_ADDR
 # Start
@@ -324,15 +355,15 @@ docker compose up -d relayminer
 docker logs -f --tail 100 relayminer
 ```
 
-### Start the AppGate Server
+### Start the PATH Gateway
 
 ```bash
 # Stake
-poktrolld tx application stake-application --config=/poktroll/stake_configs/application_stake_config_example.yaml --from=application --chain-id=poktroll --yes
+poktrolld tx application stake-application --config=/poktroll/stake_configs/application_stake_config_example.yaml --from=application $TX_PARAM_FLAGS_BETA
 # Check
 poktrolld query application show-application $APPLICATION_ADDR
 # Start
-docker compose up -d appgate
+docker compose up -d gateway
 # View
-docker logs -f --tail 100 appgate
+docker logs -f --tail 100 gateway
 ```

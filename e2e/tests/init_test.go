@@ -61,10 +61,8 @@ var (
 	flagFeaturesPath string
 	keyRingFlag      = "--keyring-backend=test"
 	chainIdFlag      = "--chain-id=poktroll"
-	// Keeping localhost by default because that is how we run the tests on our machines locally
-	// gatewayUrl is pointing to a non-sovereign app gate server so multiple
-	// apps could relay through it.
-	gatewayUrl = "http://localhost:42079"
+	// pathUrl points to a local gateway using the PATH framework in centralized mode.
+	pathUrl = "http://localhost:3000/v1" // localhost is kept as the default to streamline local development & testing.
 )
 
 func init() {
@@ -74,9 +72,9 @@ func init() {
 
 	flag.StringVar(&flagFeaturesPath, "features-path", "*.feature", "Specifies glob paths for the runner to look up .feature files")
 
-	// If "GATEWAY_URL" envar is present, use it for appGateServerUrl
-	if url := os.Getenv("GATEWAY_URL"); url != "" {
-		gatewayUrl = url
+	// If "PATH_URL" ENV variable is present, use it for pathUrl
+	if url := os.Getenv("PATH_URL"); url != "" {
+		pathUrl = url
 	}
 }
 
@@ -464,12 +462,12 @@ func (s *suite) TheApplicationSendsTheSupplierASuccessfulRequestForServiceWithPa
 
 	appAddr := accNameToAddrMap[appName]
 
-	res, err := s.pocketd.RunCurlWithRetry(gatewayUrl, serviceId, method, path, appAddr, requestData, 5)
+	res, err := s.pocketd.RunCurlWithRetry(pathUrl, serviceId, method, path, appAddr, requestData, 5)
 	require.NoError(s, err, "error sending relay request from app %q to supplier %q for service %q", appName, supplierOperatorName, serviceId)
 
 	var jsonContent json.RawMessage
 	err = json.Unmarshal([]byte(res.Stdout), &jsonContent)
-	require.NoError(s, err, `Expected valid JSON, got: %s`)
+	require.NoErrorf(s, err, `Expected valid JSON, got: %s`, res.Stdout)
 
 	jsonMap, err := jsonToMap(jsonContent)
 	require.NoError(s, err, "error converting JSON to map")

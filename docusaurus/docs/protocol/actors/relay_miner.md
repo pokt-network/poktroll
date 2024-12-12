@@ -13,8 +13,8 @@ sidebar_position: 5
 
 A `RelayMiner` is a specialized operation node (not an on-chain actor) designed
 for individuals to **offer services** through Pocket Network alongside a staked
-`Supplier`. It is responsible for proxying `RelayRequests` between an
-`AppGate Server` and the supplied `Service`.
+`Supplier`. It is responsible for proxying `RelayRequests` between a `PATH Gateway`
+and the supplied `Service`.
 
 [Suppliers](./supplier.md) interested in providing `Service`s on Pocket Network
 would need to run a `RelayMiner` in addition to the software that provides the said `Service`.
