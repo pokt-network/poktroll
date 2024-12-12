@@ -207,23 +207,23 @@ func (c *InMemoryCache[T]) SetAtHeight(key string, value T, setHeight int64) err
 		})
 	}
 
-	c.items[key] = itemHistory
-
 	// Prune historical values for this key, where the setHeight
 	// is oder than the configured pruneOlderThan.
 	if c.config.pruneOlderThan > 0 {
-		for heightIdx := int64(len(itemHistory.sortedDescHeights)) - 1; heightIdx >= 0; heightIdx-- {
+		lenCachedHeights := int64(len(itemHistory.sortedDescHeights))
+		for heightIdx := lenCachedHeights - 1; heightIdx >= 0; heightIdx-- {
 			cachedHeight := itemHistory.sortedDescHeights[heightIdx]
 
-			// DEV_NOTE: Since the list is sorted, and we're iterating from highest (youngest)
-			// to lowest (oldest) height, once we encounter a cachedHeight that is older than the
-			// configured pruneOlderThan, ALL subsequent heights SHOULD also be older than the
-			// configured pruneOlderThan.
-			if setHeight-cachedHeight < c.config.pruneOlderThan {
+			// DEV_NOTE: Since the list is sorted, and we're iterating from lowest
+			// (oldest) to highest (youngest) height, once we encounter a cachedHeight
+			// that is younger than the configured pruneOlderThan, ALL subsequent
+			// heights SHOULD also be younger than the configured pruneOlderThan.
+			if setHeight-cachedHeight <= c.config.pruneOlderThan {
+				itemHistory.sortedDescHeights = itemHistory.sortedDescHeights[:heightIdx+1]
 				break
 			}
 
-			delete(itemHistory.itemsByHeight, setHeight)
+			delete(itemHistory.itemsByHeight, cachedHeight)
 		}
 	}
 
@@ -231,6 +231,8 @@ func (c *InMemoryCache[T]) SetAtHeight(key string, value T, setHeight int64) err
 		value:     value,
 		timestamp: time.Now(),
 	}
+
+	c.items[key] = itemHistory
 
 	return nil
 }
