@@ -72,6 +72,7 @@ func NewSessionTree(
 	sessionHeader *sessiontypes.SessionHeader,
 	supplierOperatorAddress *cosmostypes.AccAddress,
 	storesDirectory string,
+	logger polylog.Logger,
 ) (relayer.SessionTree, error) {
 	// Join the storePrefix and the session.sessionId and supplier's operator address to
 	// create a unique storePath.
@@ -102,6 +103,7 @@ func NewSessionTree(
 		sessionSMT:              trie,
 		sessionMu:               &sync.Mutex{},
 		supplierOperatorAddress: supplierOperatorAddress,
+		logger:                  logger,
 	}
 
 	return sessionTree, nil
