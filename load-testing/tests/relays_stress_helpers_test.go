@@ -700,16 +700,16 @@ func (s *relaysSuite) sendStakeAndDelegateAppsTxs(
 
 // sendDelegateInitialAppsTxs pairs all applications with all gateways by generating
 // and sending DelegateMsgs in a single transaction for each application.
-func (s *relaysSuite) sendDelegateInitialAppsTxs(apps, gateways []*accountInfo) {
-	for _, app := range apps {
-		// Accumulate the delegate messages for all gateways given the application.
-		for _, gateway := range gateways {
-			s.addPendingDelegateToGatewayMsg(app, gateway)
-		}
-		// Send the application's delegate messages in a single transaction.
-		s.sendPendingMsgsTx(app)
-	}
-}
+// func (s *relaysSuite) sendDelegateInitialAppsTxs(apps, gateways []*accountInfo) {
+// 	for _, app := range apps {
+// 		// Accumulate the delegate messages for all gateways given the application.
+// 		for _, gateway := range gateways {
+// 			s.addPendingDelegateToGatewayMsg(app, gateway)
+// 		}
+// 		// Send the application's delegate messages in a single transaction.
+// 		s.sendPendingMsgsTx(app)
+// 	}
+// }
 
 // shouldIncrementActor returns true if the actor should be incremented based on
 // the sessionInfo provided and the actor's scaling parameters.

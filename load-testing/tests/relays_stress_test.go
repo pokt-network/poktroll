@@ -4,10 +4,12 @@ package tests
 
 import (
 	"context"
+	"fmt"
 	"net/url"
 	"path/filepath"
 	"runtime"
 	"strconv"
+	"strings"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -25,6 +27,7 @@ import (
 	"github.com/pokt-network/poktroll/testutil/testclient"
 	"github.com/pokt-network/poktroll/testutil/testclient/testblock"
 	"github.com/pokt-network/poktroll/testutil/testclient/testtx"
+	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
@@ -279,30 +282,17 @@ func TestLoadRelaysSingleSupplier(t *testing.T) {
 func (s *relaysSuite) LocalnetIsRunning() {
 	s.ctx, s.cancelCtx = context.WithCancel(context.Background())
 
-	// Cancel the context if this process is interrupted or exits.
-	// Delete the keyring entries for the application accounts since they are
-	// not persisted across test runs.
-	signals.GoOnExitSignal(func() {
-		for _, app := range append(s.activeApplications, s.preparedApplications...) {
-			accAddress := sdk.MustAccAddressFromBech32(app.address)
+	// Clean up any existing application keys before starting the test
+	s.cleanupExistingKeys()
 
-			_ = s.txContext.GetKeyring().DeleteByAddress(accAddress)
-		}
+	// Cancel the context if this process is interrupted or exits
+	signals.GoOnExitSignal(func() {
+		s.cleanupExistingKeys()
 		s.cancelCtx()
 	})
 
 	s.Cleanup(func() {
-		for _, app := range s.activeApplications {
-			accAddress := sdk.MustAccAddressFromBech32(app.address)
-
-			s.txContext.GetKeyring().DeleteByAddress(accAddress)
-		}
-		for _, app := range s.preparedApplications {
-			accAddress, err := sdk.AccAddressFromBech32(app.address)
-			require.NoError(s, err)
-
-			s.txContext.GetKeyring().DeleteByAddress(accAddress)
-		}
+		s.cleanupExistingKeys()
 	})
 
 	// Initialize the provisioned gateway and suppliers address->URL map that will
@@ -529,4 +519,58 @@ func (s *relaysSuite) TheCorrectPairsCountOfClaimAndProofMessagesShouldBeCommitt
 	//	s.currentProofCount,
 	//	"unexpected claims and proofs count",
 	//)
+}
+
+// cleanupExistingKeys deletes any test-related application keys from the keyring.
+func (s *relaysSuite) cleanupExistingKeys() {
+	// Get all keys from keyring
+	keys, err := s.txContext.GetKeyring().List()
+	if err != nil {
+		return // Skip cleanup if we can't list keys
+	}
+
+	// Delete any application keys
+	for _, key := range keys {
+		if strings.HasPrefix(key.Name, "app-") {
+			addr, err := key.GetAddress()
+			if err != nil {
+				continue
+			}
+			err = s.txContext.GetKeyring().DeleteByAddress(addr)
+			if err != nil {
+				logger.Debug().Err(err).Str("address", addr.String()).Msg("failed to delete key")
+			}
+		}
+	}
+
+	// Add a small delay to ensure cleanup is complete
+	time.Sleep(100 * time.Millisecond)
+}
+
+func getEventAttributeValue(event types.Event, key string) string {
+	for _, attr := range event.Attributes {
+		if string(attr.Key) == key {
+			return string(attr.Value)
+		}
+	}
+	return ""
+}
+
+func (s *relaysSuite) sendDelegateInitialAppsTxs(apps []*accountInfo, gateways []*accountInfo) {
+	for _, app := range apps {
+		for _, gateway := range gateways {
+			delegateMsg := &apptypes.MsgDelegateToGateway{
+				ApplicationAddress: app.address,
+				GatewayAddress:     gateway.address,
+			}
+			app.pendingMsgs = append(app.pendingMsgs, delegateMsg)
+		}
+
+		if err := s.broadcastTx(app); err != nil {
+			s.logAndAbortTest(nil, fmt.Sprintf("failed to send delegation tx for app %s: %v",
+				app.address, err))
+		}
+	}
+
+	time.Sleep(2 * time.Second)
 }
