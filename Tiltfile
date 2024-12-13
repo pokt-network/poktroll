@@ -320,6 +320,9 @@ for x in range(localnet_config["path_gateways"]["count"]):
         "--set=metrics.serviceMonitor.enabled=" + str(localnet_config["observability"]["enabled"]),
         "--set=path.mountConfigMaps[0].name=path-config-" + str(actor_number),
         "--set=path.mountConfigMaps[0].mountPath=/app/config/",
+        "--set=fullnameOverride=path" + str(actor_number),
+        "--set=nameOverride=path" + str(actor_number),
+        "--set=global.serviceAccount.name=path" + str(actor_number),
     ]
 
     if localnet_config["path_local_repo"]["enabled"]:
