@@ -1,8 +1,6 @@
 package query
 
 import (
-	"context"
-
 	"cosmossdk.io/depinject"
 	"github.com/cosmos/gogoproto/grpc"
 
@@ -10,9 +8,17 @@ import (
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 )
 
+// TODO_IN_THIS_COMMIT: comment explaining why we can't use client.ProofQueryClient;
+// tl;dr, it defines ian interface for ProofParams to avoid a dependency cycle
+// (i.e. instead of importing prooftypes).
+var _ client.ProofQueryClient = (*proofQuerier)(nil)
+
 // proofQuerier is a wrapper around the prooftypes.QueryClient that enables the
 // querying of on-chain proof module params.
 type proofQuerier struct {
+	//client.ParamsQuerier[*prooftypes.Params]
+	client.ParamsQuerier[client.ProofParams]
+
 	clientConn   grpc.ClientConn
 	proofQuerier prooftypes.QueryClient
 }
@@ -22,10 +28,33 @@ type proofQuerier struct {
 //
 // Required dependencies:
 // - grpc.ClientConn
-func NewProofQuerier(deps depinject.Config) (client.ProofQueryClient, error) {
-	querier := &proofQuerier{}
+func NewProofQuerier(
+	deps depinject.Config,
+	paramsQuerierOpts ...ParamsQuerierOptionFn,
+	// TODO_IN_THIS_COMMIT: comment explaining why we can't use client.ProofQueryClient;
+	// tl;dr, it defines ian interface for ProofParams to avoid a dependency cycle
+	// (i.e. instead of importing prooftypes).
+	// ) (paramsQuerierIface[*prooftypes.Params], error) {
+) (paramsQuerierIface[client.ProofParams], error) {
+	paramsQuerierCfg := DefaultParamsQuerierConfig()
+	for _, opt := range paramsQuerierOpts {
+		opt(paramsQuerierCfg)
+	}
 
-	if err := depinject.Inject(
+	paramsQuerier, err := NewCachedParamsQuerier[client.ProofParams, prooftypes.ProofQueryClient](
+		deps, prooftypes.NewProofQueryClient,
+		WithModuleInfo(prooftypes.ModuleName, prooftypes.ErrProofParamInvalid),
+		WithQueryCacheOptions(paramsQuerierCfg.CacheOpts...),
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	querier := &proofQuerier{
+		ParamsQuerier: paramsQuerier,
+	}
+
+	if err = depinject.Inject(
 		deps,
 		&querier.clientConn,
 	); err != nil {
@@ -35,16 +64,4 @@ func NewProofQuerier(deps depinject.Config) (client.ProofQueryClient, error) {
 	querier.proofQuerier = prooftypes.NewQueryClient(querier.clientConn)
 
 	return querier, nil
-}
-
-// GetParams queries the chain for the current proof module parameters.
-func (pq *proofQuerier) GetParams(
-	ctx context.Context,
-) (client.ProofParams, error) {
-	req := &prooftypes.QueryParamsRequest{}
-	res, err := pq.proofQuerier.Params(ctx, req)
-	if err != nil {
-		return nil, err
-	}
-	return &res.Params, nil
 }
