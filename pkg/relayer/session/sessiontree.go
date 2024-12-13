@@ -2,7 +2,6 @@ package session
 
 import (
 	"bytes"
-	"context"
 	"crypto/sha256"
 	"fmt"
 	"os"
@@ -97,7 +96,8 @@ func NewSessionTree(
 	// contain a non-hashed Relay that could be used to validate the proof on-chain.
 	trie := smt.NewSparseMerkleSumTrie(treeStore, protocol.NewTrieHasher(), smt.WithValueHasher(nil))
 
-	logger := polylog.Ctx(context.TODO()).With(
+	logger = logger.With(
+		"store_path", storePath,
 		"session_id", sessionHeader.SessionId,
 		"supplier_operator_address", supplierOperatorAddress,
 	)
