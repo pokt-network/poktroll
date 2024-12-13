@@ -110,7 +110,6 @@ func NewSessionTree(
 		sessionSMT:              trie,
 		sessionMu:               &sync.Mutex{},
 		supplierOperatorAddress: supplierOperatorAddress,
-		logger:                  logger,
 	}
 
 	return sessionTree, nil
