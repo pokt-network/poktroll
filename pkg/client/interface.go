@@ -35,6 +35,7 @@ import (
 	servicetypes "github.com/pokt-network/poktroll/x/service/types"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
+	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 )
 
 // MsgCreateClaim is an interface satisfying proof.MsgCreateClaim concrete type
@@ -280,6 +281,8 @@ type ApplicationQueryClient interface {
 // SupplierQueryClient defines an interface that enables the querying of the
 // on-chain supplier information
 type SupplierQueryClient interface {
+	ParamsQuerier[*suppliertypes.Params]
+
 	// GetSupplier queries the chain for the details of the supplier provided
 	GetSupplier(ctx context.Context, supplierOperatorAddress string) (sharedtypes.Supplier, error)
 }
