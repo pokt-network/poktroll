@@ -213,6 +213,14 @@ func (p *pocketdBin) runCurlCmd(rpcBaseURL, service, method, path, appAddr, data
 	}
 	rpcUrl.Path = rpcUrl.Path + path
 
+	// Ensure that the path also ends with a "/" if it only contains the version.
+	// This is required because the server responds with a 301 redirect for "/v1"
+	// and curl binaries on some platforms MAY NOT support re-sending POST data
+	// while following a redirect (`-L` flag).
+	if strings.HasSuffix(rpcUrl.Path, "/v1") {
+		rpcUrl.Path = rpcUrl.Path + "/"
+	}
+
 	base := []string{
 		"-v",                                   // verbose output
 		"-sS",                                  // silent with error
