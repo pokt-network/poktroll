@@ -16,13 +16,6 @@ sidebar_position: 4
 This document is for the Pocket Network protocol team's internal use only.
 :::
 
-- [1. Determine if the Release is Consensus-Breaking](#1-determine-if-the-release-is-consensus-breaking)
-- [2. Create a GitHub Release](#2-create-a-github-release)
-  - [Legend](#legend)
-- [3. Write an Upgrade Plan](#3-write-an-upgrade-plan)
-- [4. Issue Upgrade on TestNet](#4-issue-upgrade-on-testnet)
-- [5. Issue Upgrade on MainNet](#5-issue-upgrade-on-mainnet)
-
 ### 1. Determine if the Release is Consensus-Breaking
 
 :::note
@@ -59,12 +52,18 @@ You can find an example [here](https://github.com/pokt-network/poktroll/releases
 ```text
 ## Protocol Upgrades
 
+<!--
+IMPORTANT:If this release will be used to issue upgrade on the network, add a link to the upgrade code
+such as https://github.com/pokt-network/poktroll/blob/main/app/upgrades/historical.go#L51.
+-->
+
 - **Planned Upgrade:** ❌ Not applicable for this release.
 - **Breaking Change:** ❌ Not applicable for this release.
 - **Manual Intervention Required:** ✅ Yes, but only for Alpha TestNet participants. If you are participating, please follow the [instructions provided here](https://dev.poktroll.com/operate/quickstart/docker_compose_walkthrough#restarting-a-full-node-after-re-genesis-) for restarting your full node after re-genesis.
 - **Upgrade Height:** ❌ Not applicable for this release.
 
 ## What's Changed
+
 <!-- GitHub Release Notes continue here -->
 ```
 
