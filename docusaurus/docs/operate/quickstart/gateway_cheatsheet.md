@@ -33,7 +33,9 @@ TODO_TECHDEBT(@olshansky): Adapt the instructions to be macOS friendly.
   - [Check the `PATH Gateway` is serving relays](#check-the-path-gateway-is-serving-relays)
 
 :::note
+
 For detailed instructions, troubleshooting, and observability setup, see the [Gateway Walkthrough](./../run_a_node/gateway_walkthrough.md).
+
 :::
 
 ## Pre-Requisites
@@ -66,7 +68,9 @@ poktrolld keys add gateway
 :::tip
 
 You can set the `--keyring-backend` flag to `test` to avoid entering the password
-each time. Learn more about [cosmos keyring backends here](https://docs.cosmos.network/v0.46/run-node/keyring.html).
+each time.
+
+Learn more about [cosmos keyring backends here](https://docs.cosmos.network/v0.46/run-node/keyring.html).
 
 :::
 
@@ -116,7 +120,9 @@ poktrolld query bank balances $APP_ADDR $NODE_FLAGS
 ```
 
 :::tip
+
 You can find all the explorers, faucets and tools at the [tools page](../../explore/tools.md).
+
 :::
 
 ### Stake the `Gateway`
