@@ -345,7 +345,7 @@ type ProofParams interface {
 // ProofQueryClient defines an interface that enables the querying of the
 // on-chain proof module params.
 type ProofQueryClient interface {
-	// GetParams queries the chain for the current shared module parameters.
+	// GetParams queries the chain for the current proof module parameters.
 	GetParams(ctx context.Context) (ProofParams, error)
 }
 

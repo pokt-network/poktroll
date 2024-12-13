@@ -45,5 +45,6 @@ func (appQueryClient *AppKeeperQueryClient) GetAllApplications(ctx context.Conte
 
 // GetParams returns the application module parameters.
 func (appQueryClient *AppKeeperQueryClient) GetParams(ctx context.Context) (*apptypes.Params, error) {
-	return appQueryClient.GetParams(ctx)
+	params := appQueryClient.keeper.GetParams(ctx)
+	return &params, nil
 }
