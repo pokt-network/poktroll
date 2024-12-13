@@ -1079,7 +1079,7 @@ func (s *relaysSuite) sendRelay(iteration uint64, relayPayload string) (appAddre
 	// Send the relay request within a goroutine to avoid blocking the test batches
 	// when suppliers or gateways are unresponsive.
 	go func(gwURL, appAddr, payload string) {
-		gwURL = fmt.Sprintf("%s/%s", gwURL, "abcd1234")
+		gwURL = gwURL + "/"
 		req, err := http.NewRequest("POST", gwURL, strings.NewReader(payload))
 
 		req.Header.Add("X-App-Address", appAddr)
