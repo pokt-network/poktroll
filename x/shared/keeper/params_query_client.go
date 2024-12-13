@@ -31,7 +31,6 @@ func NewKeeperParamsQuerier[P any, K paramsKeeperIface[P]](
 ) *keeperParamsQuerier[P, K] {
 	// Use sensible defaults for keeper-based params cache
 	defaultOpts := []cache.QueryCacheOptionFn{
-		cache.WithHistoricalMode(100), // Keep history of last 100 blocks
 		cache.WithEvictionPolicy(cache.FirstInFirstOut),
 	}
 	opts = append(defaultOpts, opts...)
@@ -67,17 +66,12 @@ func (kpq *keeperParamsQuerier[P, K]) GetParams(ctx context.Context) (*P, error)
 }
 
 // GetParamsAtHeight retrieves parameters as they were at a specific height
-func (kpq *keeperParamsQuerier[P, K]) GetParamsAtHeight(ctx context.Context, height int64) (*P, error) {
-	// Try cache first
-	cached, err := kpq.cache.GetAtHeight("params", height)
-	if err == nil {
-		return &cached, nil
-	}
-	if err != nil && !errors.Is(err, cache.ErrCacheMiss) {
-		return &cached, err
-	}
-
-	// For now, return current params as historical params are not yet implemented
-	// TODO_MAINNET: Implement historical parameter querying from state
-	return kpq.GetParams(ctx)
+//
+// TODO_MAINNET(@bryanchriswhite, #931): Integrate with indexer module/mixin once available.
+// Currently, this method is (and MUST) NEVER called on-chain and only exists to satisfy the
+// client.ParamsQuerier interface. However, it will be needed as part of #931 to support
+// querying for params at historical heights, so it's short-circuited for now to always
+// return an error.
+func (kpq *keeperParamsQuerier[P, K]) GetParamsAtHeight(_ context.Context, _ int64) (*P, error) {
+	return nil, fmt.Errorf("TODO(#931): Support on-chain historical queries")
 }

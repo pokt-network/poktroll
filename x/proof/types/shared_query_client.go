@@ -39,11 +39,15 @@ func NewSharedKeeperQueryClient(
 // for the session which includes queryHeight elapses.
 // The grace period is the number of blocks after the session ends during which relays
 // SHOULD be included in the session which most recently ended.
+//
+// TODO_MAINNET(@bryanchriswhite, #931): We don't really want to use the current value of the params.
+// Instead, we should be using the value that the params had for the session given by queryHeight.
 func (sqc *sharedKeeperQueryClient) GetSessionGracePeriodEndHeight(
 	ctx context.Context,
 	queryHeight int64,
 ) (int64, error) {
-	sharedParams, err := sqc.GetParamsAtHeight(ctx, queryHeight)
+	// TODO_MAINNET(#931): sqc.GetParamsAtHeight(ctx, queryHeight)
+	sharedParams, err := sqc.GetParams(ctx)
 	if err != nil {
 		return 0, err
 	}
@@ -53,11 +57,15 @@ func (sqc *sharedKeeperQueryClient) GetSessionGracePeriodEndHeight(
 
 // GetClaimWindowOpenHeight returns the block height at which the claim window of
 // the session that includes queryHeight opens.
+//
+// TODO_MAINNET(@bryanchriswhite, #931): We don't really want to use the current value of the params.
+// Instead, we should be using the value that the params had for the session given by queryHeight.
 func (sqc *sharedKeeperQueryClient) GetClaimWindowOpenHeight(
 	ctx context.Context,
 	queryHeight int64,
 ) (int64, error) {
-	sharedParams, err := sqc.GetParamsAtHeight(ctx, queryHeight)
+	// TODO_MAINNET(#931): sqc.GetParamsAtHeight(ctx, queryHeight)
+	sharedParams, err := sqc.GetParams(ctx)
 	if err != nil {
 		return 0, err
 	}
@@ -67,11 +75,15 @@ func (sqc *sharedKeeperQueryClient) GetClaimWindowOpenHeight(
 
 // GetProofWindowOpenHeight returns the block height at which the proof window of
 // the session that includes queryHeight opens.
+//
+// TODO_MAINNET(@bryanchriswhite, #931): We don't really want to use the current value of the params.
+// Instead, we should be using the value that the params had for the session given by queryHeight.
 func (sqc *sharedKeeperQueryClient) GetProofWindowOpenHeight(
 	ctx context.Context,
 	queryHeight int64,
 ) (int64, error) {
-	sharedParams, err := sqc.GetParamsAtHeight(ctx, queryHeight)
+	// TODO_MAINNET(#931): sqc.GetParamsAtHeight(ctx, queryHeight)
+	sharedParams, err := sqc.GetParams(ctx)
 	if err != nil {
 		return 0, err
 	}
@@ -81,12 +93,16 @@ func (sqc *sharedKeeperQueryClient) GetProofWindowOpenHeight(
 
 // GetEarliestSupplierClaimCommitHeight returns the earliest block height at which a claim
 // for the session that includes queryHeight can be committed for a given supplier.
+//
+// TODO_MAINNET(@bryanchriswhite, #931): We don't really want to use the current value of the params.
+// Instead, we should be using the value that the params had for the session given by queryHeight.
 func (sqc *sharedKeeperQueryClient) GetEarliestSupplierClaimCommitHeight(
 	ctx context.Context,
 	queryHeight int64,
 	supplierOperatorAddr string,
 ) (int64, error) {
-	sharedParams, err := sqc.GetParamsAtHeight(ctx, queryHeight)
+	// TODO_MAINNET(#931): sqc.GetParamsAtHeight(ctx, queryHeight)
+	sharedParams, err := sqc.GetParams(ctx)
 	if err != nil {
 		return 0, err
 	}
@@ -109,12 +125,16 @@ func (sqc *sharedKeeperQueryClient) GetEarliestSupplierClaimCommitHeight(
 
 // GetEarliestSupplierProofCommitHeight returns the earliest block height at which a proof
 // for the session that includes queryHeight can be committed for a given supplier.
+//
+// TODO_MAINNET(@bryanchriswhite, #931): We don't really want to use the current value of the params.
+// Instead, we should be using the value that the params had for the session given by queryHeight.
 func (sqc *sharedKeeperQueryClient) GetEarliestSupplierProofCommitHeight(
 	ctx context.Context,
 	queryHeight int64,
 	supplierOperatorAddr string,
 ) (int64, error) {
-	sharedParams, err := sqc.GetParamsAtHeight(ctx, queryHeight)
+	// TODO_MAINNET(#931): sqc.GetParamsAtHeight(ctx, queryHeight)
+	sharedParams, err := sqc.GetParams(ctx)
 	if err != nil {
 		return 0, err
 	}
@@ -138,8 +158,12 @@ func (sqc *sharedKeeperQueryClient) GetEarliestSupplierProofCommitHeight(
 // GetComputeUnitsToTokensMultiplier returns the multiplier used to convert compute
 // units to tokens. The caller likely SHOULD pass the session start height for queryHeight
 // as to avoid miscalculations in scenarios where the params were changed mid-session.
+//
+// TODO_MAINNET(@bryanchriswhite, #931): We don't really want to use the current value of the params.
+// Instead, we should be using the value that the params had for the session given by queryHeight.
 func (sqc *sharedKeeperQueryClient) GetComputeUnitsToTokensMultiplier(ctx context.Context, queryHeight int64) (uint64, error) {
-	sharedParams, err := sqc.GetParamsAtHeight(ctx, queryHeight)
+	// TODO_MAINNET(#931): sqc.GetParamsAtHeight(ctx, queryHeight)
+	sharedParams, err := sqc.GetParams(ctx)
 	if err != nil {
 		return 0, err
 	}
