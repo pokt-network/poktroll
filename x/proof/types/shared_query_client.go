@@ -8,12 +8,12 @@ import (
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
-var _ client.SharedQueryClient = (*SharedKeeperQueryClient)(nil)
+var _ client.SharedQueryClient = (*sharedKeeperQueryClient)(nil)
 
-// SharedKeeperQueryClient is a thin wrapper around the SharedKeeper.
+// sharedKeeperQueryClient is a thin wrapper around the SharedKeeper.
 // It does not rely on the QueryClient, and therefore does not make any
 // network requests as in the off-chain implementation.
-type SharedKeeperQueryClient struct {
+type sharedKeeperQueryClient struct {
 	client.ParamsQuerier[*sharedtypes.Params]
 
 	sharedKeeper  SharedKeeper
@@ -28,7 +28,7 @@ func NewSharedKeeperQueryClient(
 ) client.SharedQueryClient {
 	keeperParamsQuerier := keeper.NewKeeperParamsQuerier[sharedtypes.Params](sharedKeeper)
 
-	return &SharedKeeperQueryClient{
+	return &sharedKeeperQueryClient{
 		ParamsQuerier: keeperParamsQuerier,
 		sharedKeeper:  sharedKeeper,
 		sessionKeeper: sessionKeeper,
@@ -39,7 +39,7 @@ func NewSharedKeeperQueryClient(
 // for the session which includes queryHeight elapses.
 // The grace period is the number of blocks after the session ends during which relays
 // SHOULD be included in the session which most recently ended.
-func (sqc *SharedKeeperQueryClient) GetSessionGracePeriodEndHeight(
+func (sqc *sharedKeeperQueryClient) GetSessionGracePeriodEndHeight(
 	ctx context.Context,
 	queryHeight int64,
 ) (int64, error) {
@@ -53,7 +53,7 @@ func (sqc *SharedKeeperQueryClient) GetSessionGracePeriodEndHeight(
 
 // GetClaimWindowOpenHeight returns the block height at which the claim window of
 // the session that includes queryHeight opens.
-func (sqc *SharedKeeperQueryClient) GetClaimWindowOpenHeight(
+func (sqc *sharedKeeperQueryClient) GetClaimWindowOpenHeight(
 	ctx context.Context,
 	queryHeight int64,
 ) (int64, error) {
@@ -67,7 +67,7 @@ func (sqc *SharedKeeperQueryClient) GetClaimWindowOpenHeight(
 
 // GetProofWindowOpenHeight returns the block height at which the proof window of
 // the session that includes queryHeight opens.
-func (sqc *SharedKeeperQueryClient) GetProofWindowOpenHeight(
+func (sqc *sharedKeeperQueryClient) GetProofWindowOpenHeight(
 	ctx context.Context,
 	queryHeight int64,
 ) (int64, error) {
@@ -81,7 +81,7 @@ func (sqc *SharedKeeperQueryClient) GetProofWindowOpenHeight(
 
 // GetEarliestSupplierClaimCommitHeight returns the earliest block height at which a claim
 // for the session that includes queryHeight can be committed for a given supplier.
-func (sqc *SharedKeeperQueryClient) GetEarliestSupplierClaimCommitHeight(
+func (sqc *sharedKeeperQueryClient) GetEarliestSupplierClaimCommitHeight(
 	ctx context.Context,
 	queryHeight int64,
 	supplierOperatorAddr string,
@@ -109,7 +109,7 @@ func (sqc *SharedKeeperQueryClient) GetEarliestSupplierClaimCommitHeight(
 
 // GetEarliestSupplierProofCommitHeight returns the earliest block height at which a proof
 // for the session that includes queryHeight can be committed for a given supplier.
-func (sqc *SharedKeeperQueryClient) GetEarliestSupplierProofCommitHeight(
+func (sqc *sharedKeeperQueryClient) GetEarliestSupplierProofCommitHeight(
 	ctx context.Context,
 	queryHeight int64,
 	supplierOperatorAddr string,
@@ -138,7 +138,7 @@ func (sqc *SharedKeeperQueryClient) GetEarliestSupplierProofCommitHeight(
 // GetComputeUnitsToTokensMultiplier returns the multiplier used to convert compute
 // units to tokens. The caller likely SHOULD pass the session start height for queryHeight
 // as to avoid miscalculations in scenarios where the params were changed mid-session.
-func (sqc *SharedKeeperQueryClient) GetComputeUnitsToTokensMultiplier(ctx context.Context, queryHeight int64) (uint64, error) {
+func (sqc *sharedKeeperQueryClient) GetComputeUnitsToTokensMultiplier(ctx context.Context, queryHeight int64) (uint64, error) {
 	sharedParams, err := sqc.GetParamsAtHeight(ctx, queryHeight)
 	if err != nil {
 		return 0, err
