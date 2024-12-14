@@ -17,13 +17,12 @@
     },
     "editable": true,
     "fiscalYearStartMonth": 0,
-    "graphTooltip": 1,
-    "id": 10,
+    "graphTooltip": 0,
+    "id": 12,
     "links": [],
     "panels": [
         {
             "datasource": {
-                "default": true,
                 "type": "prometheus",
                 "uid": "prometheus"
             },
@@ -78,14 +77,13 @@
                                 "value": 80
                             }
                         ]
-                    },
-                    "unit": "bytes"
+                    }
                 },
                 "overrides": []
             },
             "gridPos": {
-                "h": 8,
-                "w": 12,
+                "h": 7,
+                "w": 8,
                 "x": 0,
                 "y": 0
             },
@@ -110,133 +108,17 @@
                         "uid": "prometheus"
                     },
                     "editorMode": "code",
-                    "expr": "max(cometbft_consensus_block_size_bytes{})",
-                    "instant": false,
+                    "expr": "sum(increase(poktroll_claims{}[$__rate_interval])) by (claim_proof_stage)",
                     "legendFormat": "__auto",
                     "range": true,
                     "refId": "A"
                 }
             ],
-            "title": "Block size",
+            "title": "claims total",
             "type": "timeseries"
         },
         {
             "datasource": {
-                "default": false,
-                "type": "grafana-postgresql-datasource",
-                "uid": "PCC52D03280B7034C"
-            },
-            "fieldConfig": {
-                "defaults": {
-                    "color": {
-                        "mode": "palette-classic"
-                    },
-                    "custom": {
-                        "axisBorderShow": false,
-                        "axisCenteredZero": false,
-                        "axisColorMode": "text",
-                        "axisLabel": "",
-                        "axisPlacement": "auto",
-                        "barAlignment": 0,
-                        "barWidthFactor": 0.6,
-                        "drawStyle": "line",
-                        "fillOpacity": 0,
-                        "gradientMode": "none",
-                        "hideFrom": {
-                            "legend": false,
-                            "tooltip": false,
-                            "viz": false
-                        },
-                        "insertNulls": false,
-                        "lineInterpolation": "linear",
-                        "lineWidth": 1,
-                        "pointSize": 5,
-                        "scaleDistribution": {
-                            "type": "linear"
-                        },
-                        "showPoints": "auto",
-                        "spanNulls": false,
-                        "stacking": {
-                            "group": "A",
-                            "mode": "none"
-                        },
-                        "thresholdsStyle": {
-                            "mode": "off"
-                        }
-                    },
-                    "mappings": [],
-                    "thresholds": {
-                        "mode": "absolute",
-                        "steps": [
-                            {
-                                "color": "green",
-                                "value": null
-                            },
-                            {
-                                "color": "red",
-                                "value": 80
-                            }
-                        ]
-                    }
-                },
-                "overrides": []
-            },
-            "gridPos": {
-                "h": 8,
-                "w": 12,
-                "x": 12,
-                "y": 0
-            },
-            "id": 2,
-            "options": {
-                "legend": {
-                    "calcs": [],
-                    "displayMode": "list",
-                    "placement": "bottom",
-                    "showLegend": true
-                },
-                "tooltip": {
-                    "mode": "single",
-                    "sort": "none"
-                }
-            },
-            "pluginVersion": "11.3.1",
-            "targets": [
-                {
-                    "datasource": {
-                        "type": "grafana-postgresql-datasource",
-                        "uid": "PCC52D03280B7034C"
-                    },
-                    "editorMode": "code",
-                    "format": "time_series",
-                    "rawQuery": true,
-                    "rawSql": "SELECT\n    b.timestamp AS time,\n    COUNT(m.id) AS num_proofs\nFROM\n    localnet.messages m\nJOIN\n    localnet.transactions t ON t.id = m.transaction_id\nJOIN\n    localnet.blocks b ON b.id = t.block_id\nWHERE\n    m.type_url = '/poktroll.proof.MsgSubmitProof'\n    AND b.timestamp BETWEEN $__timeFrom() AND $__timeTo()\nGROUP BY\n    b.timestamp\nORDER BY\n    b.timestamp;\n",
-                    "refId": "A",
-                    "sql": {
-                        "columns": [
-                            {
-                                "parameters": [],
-                                "type": "function"
-                            }
-                        ],
-                        "groupBy": [
-                            {
-                                "property": {
-                                    "type": "string"
-                                },
-                                "type": "groupBy"
-                            }
-                        ],
-                        "limit": 50
-                    }
-                }
-            ],
-            "title": "Number of proofs",
-            "type": "timeseries"
-        },
-        {
-            "datasource": {
-                "default": true,
                 "type": "prometheus",
                 "uid": "prometheus"
             },
@@ -296,10 +178,106 @@
                 "overrides": []
             },
             "gridPos": {
-                "h": 8,
-                "w": 12,
-                "x": 0,
-                "y": 8
+                "h": 7,
+                "w": 8,
+                "x": 8,
+                "y": 0
+            },
+            "id": 2,
+            "options": {
+                "legend": {
+                    "calcs": [],
+                    "displayMode": "list",
+                    "placement": "bottom",
+                    "showLegend": true
+                },
+                "tooltip": {
+                    "mode": "single",
+                    "sort": "none"
+                }
+            },
+            "pluginVersion": "11.3.1",
+            "targets": [
+                {
+                    "datasource": {
+                        "type": "prometheus",
+                        "uid": "prometheus"
+                    },
+                    "editorMode": "code",
+                    "expr": "sum(increase(poktroll_claims{}[$__rate_interval])) by (app_addr)",
+                    "legendFormat": "__auto",
+                    "range": true,
+                    "refId": "A"
+                }
+            ],
+            "title": "claims by app",
+            "type": "timeseries"
+        },
+        {
+            "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+            },
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "palette-classic"
+                    },
+                    "custom": {
+                        "axisBorderShow": false,
+                        "axisCenteredZero": false,
+                        "axisColorMode": "text",
+                        "axisLabel": "",
+                        "axisPlacement": "auto",
+                        "barAlignment": 0,
+                        "barWidthFactor": 0.6,
+                        "drawStyle": "line",
+                        "fillOpacity": 0,
+                        "gradientMode": "none",
+                        "hideFrom": {
+                            "legend": false,
+                            "tooltip": false,
+                            "viz": false
+                        },
+                        "insertNulls": false,
+                        "lineInterpolation": "linear",
+                        "lineWidth": 1,
+                        "pointSize": 5,
+                        "scaleDistribution": {
+                            "type": "linear"
+                        },
+                        "showPoints": "auto",
+                        "spanNulls": false,
+                        "stacking": {
+                            "group": "A",
+                            "mode": "none"
+                        },
+                        "thresholdsStyle": {
+                            "mode": "off"
+                        }
+                    },
+                    "mappings": [],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": null
+                            },
+                            {
+                                "color": "red",
+                                "value": 80
+                            }
+                        ]
+                    }
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 7,
+                "w": 8,
+                "x": 16,
+                "y": 0
             },
             "id": 3,
             "options": {
@@ -322,21 +300,19 @@
                         "uid": "prometheus"
                     },
                     "editorMode": "code",
-                    "expr": "increase(appgateserver_relay_requests_total[1m])",
-                    "instant": false,
+                    "expr": "sum(increase(poktroll_claims{}[$__rate_interval])) by (sup_op_addr)",
                     "legendFormat": "__auto",
                     "range": true,
                     "refId": "A"
                 }
             ],
-            "title": "Actual relays",
+            "title": "claims by supplier operator",
             "type": "timeseries"
         },
         {
             "datasource": {
-                "default": false,
-                "type": "grafana-postgresql-datasource",
-                "uid": "PCC52D03280B7034C"
+                "type": "prometheus",
+                "uid": "prometheus"
             },
             "fieldConfig": {
                 "defaults": {
@@ -394,10 +370,10 @@
                 "overrides": []
             },
             "gridPos": {
-                "h": 8,
-                "w": 12,
-                "x": 12,
-                "y": 8
+                "h": 7,
+                "w": 8,
+                "x": 0,
+                "y": 7
             },
             "id": 4,
             "options": {
@@ -416,39 +392,21 @@
             "targets": [
                 {
                     "datasource": {
-                        "type": "grafana-postgresql-datasource",
-                        "uid": "PCC52D03280B7034C"
+                        "type": "prometheus",
+                        "uid": "prometheus"
                     },
                     "editorMode": "code",
-                    "format": "table",
-                    "rawQuery": true,
-                    "rawSql": "SELECT\n    $__timeGroup(b.\"timestamp\", '1m') AS time,\n    SUM(trim(both '\"' from ea_num_relays.value)::bigint) AS total_num_relays,\n    (ea_claim.value::json ->> 'supplier_operator_address') AS supplier_operator_address,\n    (ea_claim.value::json -> 'session_header' ->> 'service_id') AS service_id\nFROM\n    localnet.events e\nJOIN\n    localnet.event_attributes ea_num_relays ON ea_num_relays.event_id = e.id\n    AND ea_num_relays.key = 'num_relays'\nJOIN\n    localnet.event_attributes ea_claim ON ea_claim.event_id = e.id\n    AND ea_claim.key = 'claim'\nJOIN\n    localnet.blocks b ON b.id = e.block_id\nWHERE\n    e.type = 'poktroll.proof.EventClaimCreated'\n    AND b.\"timestamp\" BETWEEN $__timeFrom() AND $__timeTo()\nGROUP BY\n    time, supplier_operator_address, service_id\nORDER BY\n    time;\n",
-                    "refId": "A",
-                    "sql": {
-                        "columns": [
-                            {
-                                "parameters": [],
-                                "type": "function"
-                            }
-                        ],
-                        "groupBy": [
-                            {
-                                "property": {
-                                    "type": "string"
-                                },
-                                "type": "groupBy"
-                            }
-                        ],
-                        "limit": 50
-                    }
+                    "expr": "sum(increase(poktroll_relays{}[$__rate_interval])) by (claim_proof_stage)",
+                    "legendFormat": "__auto",
+                    "range": true,
+                    "refId": "A"
                 }
             ],
-            "title": "On chain relays from claims",
+            "title": "on-chain relays total",
             "type": "timeseries"
         },
         {
             "datasource": {
-                "default": true,
                 "type": "prometheus",
                 "uid": "prometheus"
             },
@@ -508,478 +466,45 @@
                 "overrides": []
             },
             "gridPos": {
-                "h": 8,
-                "w": 12,
-                "x": 0,
-                "y": 16
-            },
-            "id": 11,
-            "options": {
-                "legend": {
-                    "calcs": [],
-                    "displayMode": "list",
-                    "placement": "bottom",
-                    "showLegend": true
-                },
-                "tooltip": {
-                    "mode": "single",
-                    "sort": "none"
-                }
-            },
-            "pluginVersion": "11.3.1",
-            "targets": [
-                {
-                    "datasource": {
-                        "type": "prometheus",
-                        "uid": "prometheus"
-                    },
-                    "editorMode": "code",
-                    "expr": "sum(poktroll_relay_ema{}) by (service_id)",
-                    "instant": false,
-                    "legendFormat": "__auto",
-                    "range": true,
-                    "refId": "A"
-                }
-            ],
-            "title": "EMA by service",
-            "type": "timeseries"
-        },
-        {
-            "datasource": {
-                "default": true,
-                "type": "prometheus",
-                "uid": "prometheus"
-            },
-            "fieldConfig": {
-                "defaults": {
-                    "color": {
-                        "mode": "palette-classic"
-                    },
-                    "custom": {
-                        "axisBorderShow": false,
-                        "axisCenteredZero": false,
-                        "axisColorMode": "text",
-                        "axisLabel": "",
-                        "axisPlacement": "auto",
-                        "barAlignment": 0,
-                        "barWidthFactor": 0.6,
-                        "drawStyle": "line",
-                        "fillOpacity": 0,
-                        "gradientMode": "none",
-                        "hideFrom": {
-                            "legend": false,
-                            "tooltip": false,
-                            "viz": false
-                        },
-                        "insertNulls": false,
-                        "lineInterpolation": "linear",
-                        "lineWidth": 1,
-                        "pointSize": 5,
-                        "scaleDistribution": {
-                            "type": "linear"
-                        },
-                        "showPoints": "auto",
-                        "spanNulls": false,
-                        "stacking": {
-                            "group": "A",
-                            "mode": "none"
-                        },
-                        "thresholdsStyle": {
-                            "mode": "off"
-                        }
-                    },
-                    "mappings": [],
-                    "thresholds": {
-                        "mode": "absolute",
-                        "steps": [
-                            {
-                                "color": "green",
-                                "value": null
-                            },
-                            {
-                                "color": "red",
-                                "value": 80
-                            }
-                        ]
-                    }
-                },
-                "overrides": []
-            },
-            "gridPos": {
-                "h": 8,
-                "w": 12,
-                "x": 12,
-                "y": 16
-            },
-            "id": 12,
-            "options": {
-                "legend": {
-                    "calcs": [],
-                    "displayMode": "list",
-                    "placement": "bottom",
-                    "showLegend": true
-                },
-                "tooltip": {
-                    "mode": "single",
-                    "sort": "none"
-                }
-            },
-            "pluginVersion": "11.3.1",
-            "targets": [
-                {
-                    "datasource": {
-                        "type": "prometheus",
-                        "uid": "prometheus"
-                    },
-                    "editorMode": "code",
-                    "expr": "sum(poktroll_relay_mining_difficulty{service_id=~\"$service_id\"}) by (service_id)",
-                    "instant": false,
-                    "legendFormat": "__auto",
-                    "range": true,
-                    "refId": "A"
-                }
-            ],
-            "title": "RM difficulty by service",
-            "type": "timeseries"
-        },
-        {
-            "datasource": {
-                "default": false,
-                "type": "grafana-postgresql-datasource",
-                "uid": "PCC52D03280B7034C"
-            },
-            "fieldConfig": {
-                "defaults": {
-                    "color": {
-                        "mode": "palette-classic"
-                    },
-                    "custom": {
-                        "axisBorderShow": false,
-                        "axisCenteredZero": false,
-                        "axisColorMode": "text",
-                        "axisLabel": "",
-                        "axisPlacement": "auto",
-                        "fillOpacity": 80,
-                        "gradientMode": "none",
-                        "hideFrom": {
-                            "legend": false,
-                            "tooltip": false,
-                            "viz": false
-                        },
-                        "lineWidth": 1,
-                        "scaleDistribution": {
-                            "type": "linear"
-                        },
-                        "thresholdsStyle": {
-                            "mode": "off"
-                        }
-                    },
-                    "mappings": [],
-                    "thresholds": {
-                        "mode": "absolute",
-                        "steps": [
-                            {
-                                "color": "green",
-                                "value": null
-                            },
-                            {
-                                "color": "red",
-                                "value": 80
-                            }
-                        ]
-                    }
-                },
-                "overrides": []
-            },
-            "gridPos": {
-                "h": 8,
-                "w": 12,
-                "x": 0,
-                "y": 24
-            },
-            "id": 8,
-            "options": {
-                "barRadius": 0,
-                "barWidth": 0.97,
-                "fullHighlight": false,
-                "groupWidth": 0.7,
-                "legend": {
-                    "calcs": [],
-                    "displayMode": "list",
-                    "placement": "bottom",
-                    "showLegend": true
-                },
-                "orientation": "auto",
-                "showValue": "auto",
-                "stacking": "none",
-                "tooltip": {
-                    "mode": "single",
-                    "sort": "none"
-                },
-                "xTickLabelRotation": 0,
-                "xTickLabelSpacing": 0
-            },
-            "pluginVersion": "11.3.1",
-            "targets": [
-                {
-                    "datasource": {
-                        "type": "grafana-postgresql-datasource",
-                        "uid": "PCC52D03280B7034C"
-                    },
-                    "editorMode": "code",
-                    "format": "table",
-                    "rawQuery": true,
-                    "rawSql": "-- Average number of proofs per application\n\nWITH proofs_per_block AS (\n    SELECT\n        b.height AS block_height,\n        m.json::jsonb -> 'sessionHeader' ->> 'applicationAddress' AS application_address,\n        COUNT(m.id) AS num_proofs\n    FROM\n        localnet.messages m\n    JOIN\n        localnet.transactions t ON t.id = m.transaction_id\n    JOIN\n        localnet.blocks b ON b.id = t.block_id\n    WHERE\n        m.type_url = '/poktroll.proof.MsgSubmitProof'\n        AND b.timestamp BETWEEN $__timeFrom() AND $__timeTo()\n    GROUP BY\n        b.height, application_address\n)\n\nSELECT\n    application_address AS application,\n    AVG(num_proofs) AS avg_num_proofs\nFROM\n    proofs_per_block\nGROUP BY\n    application\nORDER BY\n    avg_num_proofs DESC;\n",
-                    "refId": "A",
-                    "sql": {
-                        "columns": [
-                            {
-                                "parameters": [],
-                                "type": "function"
-                            }
-                        ],
-                        "groupBy": [
-                            {
-                                "property": {
-                                    "type": "string"
-                                },
-                                "type": "groupBy"
-                            }
-                        ],
-                        "limit": 50
-                    }
-                }
-            ],
-            "title": "Average Number of Proofs per Application",
-            "type": "barchart"
-        },
-        {
-            "datasource": {
-                "default": false,
-                "type": "grafana-postgresql-datasource",
-                "uid": "PCC52D03280B7034C"
-            },
-            "fieldConfig": {
-                "defaults": {
-                    "color": {
-                        "mode": "palette-classic"
-                    },
-                    "custom": {
-                        "axisBorderShow": false,
-                        "axisCenteredZero": false,
-                        "axisColorMode": "text",
-                        "axisLabel": "",
-                        "axisPlacement": "auto",
-                        "fillOpacity": 80,
-                        "gradientMode": "none",
-                        "hideFrom": {
-                            "legend": false,
-                            "tooltip": false,
-                            "viz": false
-                        },
-                        "lineWidth": 1,
-                        "scaleDistribution": {
-                            "type": "linear"
-                        },
-                        "thresholdsStyle": {
-                            "mode": "off"
-                        }
-                    },
-                    "mappings": [],
-                    "thresholds": {
-                        "mode": "absolute",
-                        "steps": [
-                            {
-                                "color": "green",
-                                "value": null
-                            },
-                            {
-                                "color": "red",
-                                "value": 80
-                            }
-                        ]
-                    }
-                },
-                "overrides": []
-            },
-            "gridPos": {
-                "h": 8,
-                "w": 12,
-                "x": 12,
-                "y": 24
-            },
-            "id": 9,
-            "options": {
-                "barRadius": 0,
-                "barWidth": 0.97,
-                "fullHighlight": false,
-                "groupWidth": 0.7,
-                "legend": {
-                    "calcs": [],
-                    "displayMode": "list",
-                    "placement": "bottom",
-                    "showLegend": true
-                },
-                "orientation": "auto",
-                "showValue": "auto",
-                "stacking": "none",
-                "tooltip": {
-                    "mode": "single",
-                    "sort": "none"
-                },
-                "xTickLabelRotation": 0,
-                "xTickLabelSpacing": 0
-            },
-            "pluginVersion": "11.3.1",
-            "targets": [
-                {
-                    "datasource": {
-                        "type": "grafana-postgresql-datasource",
-                        "uid": "PCC52D03280B7034C"
-                    },
-                    "editorMode": "code",
-                    "format": "table",
-                    "rawQuery": true,
-                    "rawSql": "-- Average number of proofs per service\n\nWITH proofs_per_block AS (\n    SELECT\n        b.height AS block_height,\n        m.json::jsonb -> 'sessionHeader' ->> 'serviceId' AS service_id,\n        COUNT(m.id) AS num_proofs\n    FROM\n        localnet.messages m\n    JOIN\n        localnet.transactions t ON t.id = m.transaction_id\n    JOIN\n        localnet.blocks b ON b.id = t.block_id\n    WHERE\n        m.type_url = '/poktroll.proof.MsgSubmitProof'\n        AND b.timestamp BETWEEN $__timeFrom() AND $__timeTo()\n    GROUP BY\n        b.height, service_id\n)\n\nSELECT\n    service_id AS service,\n    AVG(num_proofs) AS avg_num_proofs\nFROM\n    proofs_per_block\nGROUP BY\n    service\nORDER BY\n    avg_num_proofs DESC;\n",
-                    "refId": "A",
-                    "sql": {
-                        "columns": [
-                            {
-                                "parameters": [],
-                                "type": "function"
-                            }
-                        ],
-                        "groupBy": [
-                            {
-                                "property": {
-                                    "type": "string"
-                                },
-                                "type": "groupBy"
-                            }
-                        ],
-                        "limit": 50
-                    }
-                }
-            ],
-            "title": "Average Number of Proofs per Service",
-            "type": "barchart"
-        },
-        {
-            "datasource": {
-                "default": false,
-                "type": "grafana-postgresql-datasource",
-                "uid": "PCC52D03280B7034C"
-            },
-            "fieldConfig": {
-                "defaults": {
-                    "color": {
-                        "mode": "palette-classic"
-                    },
-                    "custom": {
-                        "axisBorderShow": false,
-                        "axisCenteredZero": false,
-                        "axisColorMode": "text",
-                        "axisLabel": "",
-                        "axisPlacement": "auto",
-                        "fillOpacity": 80,
-                        "gradientMode": "none",
-                        "hideFrom": {
-                            "legend": false,
-                            "tooltip": false,
-                            "viz": false
-                        },
-                        "lineWidth": 1,
-                        "scaleDistribution": {
-                            "type": "linear"
-                        },
-                        "thresholdsStyle": {
-                            "mode": "off"
-                        }
-                    },
-                    "mappings": [],
-                    "thresholds": {
-                        "mode": "absolute",
-                        "steps": [
-                            {
-                                "color": "green",
-                                "value": null
-                            },
-                            {
-                                "color": "red",
-                                "value": 80
-                            }
-                        ]
-                    }
-                },
-                "overrides": []
-            },
-            "gridPos": {
-                "h": 8,
+                "h": 7,
                 "w": 8,
-                "x": 0,
-                "y": 32
+                "x": 8,
+                "y": 7
             },
             "id": 5,
             "options": {
-                "barRadius": 0,
-                "barWidth": 0.97,
-                "fullHighlight": false,
-                "groupWidth": 0.7,
                 "legend": {
                     "calcs": [],
                     "displayMode": "list",
                     "placement": "bottom",
                     "showLegend": true
                 },
-                "orientation": "auto",
-                "showValue": "auto",
-                "stacking": "none",
                 "tooltip": {
                     "mode": "single",
                     "sort": "none"
-                },
-                "xTickLabelRotation": 0,
-                "xTickLabelSpacing": 0
+                }
             },
             "pluginVersion": "11.3.1",
             "targets": [
                 {
                     "datasource": {
-                        "type": "grafana-postgresql-datasource",
-                        "uid": "PCC52D03280B7034C"
+                        "type": "prometheus",
+                        "uid": "prometheus"
                     },
                     "editorMode": "code",
-                    "format": "time_series",
-                    "rawQuery": true,
-                    "rawSql": "SELECT\n    b.timestamp AS time,\n    COUNT(m.id) AS num_proofs,\n    m.json::jsonb -> 'sessionHeader' ->> 'applicationAddress' AS application_address\nFROM\n    localnet.messages m\nJOIN\n    localnet.transactions t ON t.id = m.transaction_id\nJOIN\n    localnet.blocks b ON b.id = t.block_id\nWHERE\n    m.type_url = '/poktroll.proof.MsgSubmitProof'\n    AND b.timestamp BETWEEN $__timeFrom() AND $__timeTo()\nGROUP BY\n    b.timestamp, application_address\nORDER BY\n    b.timestamp;\n",
-                    "refId": "A",
-                    "sql": {
-                        "columns": [
-                            {
-                                "parameters": [],
-                                "type": "function"
-                            }
-                        ],
-                        "groupBy": [
-                            {
-                                "property": {
-                                    "type": "string"
-                                },
-                                "type": "groupBy"
-                            }
-                        ],
-                        "limit": 50
-                    }
+                    "expr": "sum(increase(poktroll_relays{}[$__rate_interval])) by (app_addr)",
+                    "legendFormat": "__auto",
+                    "range": true,
+                    "refId": "A"
                 }
             ],
-            "title": "Proof per application",
-            "type": "barchart"
+            "title": "relays by app (on-chain data)",
+            "type": "timeseries"
         },
         {
             "datasource": {
-                "default": false,
-                "type": "grafana-postgresql-datasource",
-                "uid": "PCC52D03280B7034C"
+                "type": "prometheus",
+                "uid": "prometheus"
             },
             "fieldConfig": {
                 "defaults": {
@@ -992,16 +517,28 @@
                         "axisColorMode": "text",
                         "axisLabel": "",
                         "axisPlacement": "auto",
-                        "fillOpacity": 80,
+                        "barAlignment": 0,
+                        "barWidthFactor": 0.6,
+                        "drawStyle": "line",
+                        "fillOpacity": 0,
                         "gradientMode": "none",
                         "hideFrom": {
                             "legend": false,
                             "tooltip": false,
                             "viz": false
                         },
+                        "insertNulls": false,
+                        "lineInterpolation": "linear",
                         "lineWidth": 1,
+                        "pointSize": 5,
                         "scaleDistribution": {
                             "type": "linear"
+                        },
+                        "showPoints": "auto",
+                        "spanNulls": false,
+                        "stacking": {
+                            "group": "A",
+                            "mode": "none"
                         },
                         "thresholdsStyle": {
                             "mode": "off"
@@ -1025,72 +562,45 @@
                 "overrides": []
             },
             "gridPos": {
-                "h": 8,
+                "h": 7,
                 "w": 8,
-                "x": 8,
-                "y": 32
+                "x": 16,
+                "y": 7
             },
             "id": 6,
             "options": {
-                "barRadius": 0,
-                "barWidth": 0.97,
-                "fullHighlight": false,
-                "groupWidth": 0.7,
                 "legend": {
                     "calcs": [],
                     "displayMode": "list",
                     "placement": "bottom",
                     "showLegend": true
                 },
-                "orientation": "auto",
-                "showValue": "auto",
-                "stacking": "none",
                 "tooltip": {
                     "mode": "single",
                     "sort": "none"
-                },
-                "xTickLabelRotation": 0,
-                "xTickLabelSpacing": 0
+                }
             },
             "pluginVersion": "11.3.1",
             "targets": [
                 {
                     "datasource": {
-                        "type": "grafana-postgresql-datasource",
-                        "uid": "PCC52D03280B7034C"
+                        "type": "prometheus",
+                        "uid": "prometheus"
                     },
                     "editorMode": "code",
-                    "format": "time_series",
-                    "rawQuery": true,
-                    "rawSql": "SELECT\n    b.timestamp AS time,\n    COUNT(m.id) AS num_proofs,\n    m.json::jsonb -> 'sessionHeader' ->> 'serviceId' AS service_id\nFROM\n    localnet.messages m\nJOIN\n    localnet.transactions t ON t.id = m.transaction_id\nJOIN\n    localnet.blocks b ON b.id = t.block_id\nWHERE\n    m.type_url = '/poktroll.proof.MsgSubmitProof'\n    AND b.timestamp BETWEEN $__timeFrom() AND $__timeTo()\nGROUP BY\n    b.timestamp, service_id\nORDER BY\n    b.timestamp;\n",
-                    "refId": "A",
-                    "sql": {
-                        "columns": [
-                            {
-                                "parameters": [],
-                                "type": "function"
-                            }
-                        ],
-                        "groupBy": [
-                            {
-                                "property": {
-                                    "type": "string"
-                                },
-                                "type": "groupBy"
-                            }
-                        ],
-                        "limit": 50
-                    }
+                    "expr": "sum(increase(poktroll_relays{}[$__rate_interval])) by (sup_op_addr)",
+                    "legendFormat": "__auto",
+                    "range": true,
+                    "refId": "A"
                 }
             ],
-            "title": "Proof per service",
-            "type": "barchart"
+            "title": "relays by supplier operator (on-chain data)",
+            "type": "timeseries"
         },
         {
             "datasource": {
-                "default": false,
-                "type": "grafana-postgresql-datasource",
-                "uid": "PCC52D03280B7034C"
+                "type": "prometheus",
+                "uid": "prometheus"
             },
             "fieldConfig": {
                 "defaults": {
@@ -1103,16 +613,28 @@
                         "axisColorMode": "text",
                         "axisLabel": "",
                         "axisPlacement": "auto",
-                        "fillOpacity": 80,
+                        "barAlignment": 0,
+                        "barWidthFactor": 0.6,
+                        "drawStyle": "bars",
+                        "fillOpacity": 0,
                         "gradientMode": "none",
                         "hideFrom": {
                             "legend": false,
                             "tooltip": false,
                             "viz": false
                         },
+                        "insertNulls": false,
+                        "lineInterpolation": "linear",
                         "lineWidth": 1,
+                        "pointSize": 5,
                         "scaleDistribution": {
                             "type": "linear"
+                        },
+                        "showPoints": "auto",
+                        "spanNulls": false,
+                        "stacking": {
+                            "group": "A",
+                            "mode": "none"
                         },
                         "thresholdsStyle": {
                             "mode": "off"
@@ -1136,72 +658,44 @@
                 "overrides": []
             },
             "gridPos": {
-                "h": 8,
+                "h": 7,
                 "w": 8,
-                "x": 16,
-                "y": 32
+                "x": 0,
+                "y": 14
             },
             "id": 7,
             "options": {
-                "barRadius": 0,
-                "barWidth": 0.97,
-                "fullHighlight": false,
-                "groupWidth": 0.7,
                 "legend": {
                     "calcs": [],
                     "displayMode": "list",
                     "placement": "bottom",
                     "showLegend": true
                 },
-                "orientation": "auto",
-                "showValue": "auto",
-                "stacking": "none",
                 "tooltip": {
                     "mode": "single",
                     "sort": "none"
-                },
-                "xTickLabelRotation": 0,
-                "xTickLabelSpacing": 0
+                }
             },
             "pluginVersion": "11.3.1",
             "targets": [
                 {
-                    "datasource": {
-                        "type": "grafana-postgresql-datasource",
-                        "uid": "PCC52D03280B7034C"
-                    },
                     "editorMode": "code",
-                    "format": "time_series",
-                    "rawQuery": true,
-                    "rawSql": "SELECT\n    b.timestamp AS time,\n    COUNT(m.id) AS num_proofs,\n    m.json::jsonb ->> 'supplierOperatorAddress' AS supplier_operator_address\nFROM\n    localnet.messages m\nJOIN\n    localnet.transactions t ON t.id = m.transaction_id\nJOIN\n    localnet.blocks b ON b.id = t.block_id\nWHERE\n    m.type_url = '/poktroll.proof.MsgSubmitProof'\n    AND b.timestamp BETWEEN $__timeFrom() AND $__timeTo()\nGROUP BY\n    b.timestamp, supplier_operator_address\nORDER BY\n    b.timestamp;\n",
-                    "refId": "A",
-                    "sql": {
-                        "columns": [
-                            {
-                                "parameters": [],
-                                "type": "function"
-                            }
-                        ],
-                        "groupBy": [
-                            {
-                                "property": {
-                                    "type": "string"
-                                },
-                                "type": "groupBy"
-                            }
-                        ],
-                        "limit": 50
-                    }
+                    "exemplar": false,
+                    "expr": "sum(increase(poktroll_claims[1m])) by (claim_proof_stage)",
+                    "instant": false,
+                    "legendFormat": "__auto",
+                    "range": true,
+                    "refId": "A"
                 }
             ],
-            "title": "Proof per supplier operator",
-            "type": "barchart"
+            "title": "Application count in claims",
+            "type": "timeseries"
         },
         {
             "datasource": {
-                "default": false,
-                "type": "grafana-postgresql-datasource",
-                "uid": "PCC52D03280B7034C"
+                "default": true,
+                "type": "prometheus",
+                "uid": "prometheus"
             },
             "fieldConfig": {
                 "defaults": {
@@ -1214,16 +708,28 @@
                         "axisColorMode": "text",
                         "axisLabel": "",
                         "axisPlacement": "auto",
-                        "fillOpacity": 80,
+                        "barAlignment": 0,
+                        "barWidthFactor": 0.6,
+                        "drawStyle": "line",
+                        "fillOpacity": 0,
                         "gradientMode": "none",
                         "hideFrom": {
                             "legend": false,
                             "tooltip": false,
                             "viz": false
                         },
+                        "insertNulls": false,
+                        "lineInterpolation": "linear",
                         "lineWidth": 1,
+                        "pointSize": 5,
                         "scaleDistribution": {
                             "type": "linear"
+                        },
+                        "showPoints": "auto",
+                        "spanNulls": false,
+                        "stacking": {
+                            "group": "A",
+                            "mode": "none"
                         },
                         "thresholdsStyle": {
                             "mode": "off"
@@ -1242,71 +748,198 @@
                                 "value": 80
                             }
                         ]
-                    }
+                    },
+                    "unit": "ms"
                 },
-                "overrides": []
+                "overrides": [
+                    {
+                        "matcher": {
+                            "id": "byRegexp",
+                            "options": ".*: avg$"
+                        },
+                        "properties": [
+                            {
+                                "id": "custom.lineWidth",
+                                "value": 3
+                            }
+                        ]
+                    }
+                ]
             },
             "gridPos": {
-                "h": 8,
-                "w": 24,
-                "x": 0,
-                "y": 40
+                "h": 7,
+                "w": 8,
+                "x": 8,
+                "y": 14
             },
-            "id": 10,
+            "id": 8,
             "options": {
-                "barRadius": 0,
-                "barWidth": 0.97,
-                "fullHighlight": false,
-                "groupWidth": 0.7,
                 "legend": {
                     "calcs": [],
                     "displayMode": "list",
                     "placement": "bottom",
                     "showLegend": true
                 },
-                "orientation": "auto",
-                "showValue": "auto",
-                "stacking": "none",
                 "tooltip": {
                     "mode": "single",
                     "sort": "none"
-                },
-                "xTickLabelRotation": 0,
-                "xTickLabelSpacing": 0
+                }
             },
             "pluginVersion": "11.3.1",
             "targets": [
                 {
                     "datasource": {
-                        "type": "grafana-postgresql-datasource",
-                        "uid": "PCC52D03280B7034C"
+                        "type": "prometheus",
+                        "uid": "prometheus"
                     },
                     "editorMode": "code",
-                    "format": "table",
-                    "rawQuery": true,
-                    "rawSql": "-- Serviced relays (from claims)\nWITH serviced_relays AS (\n    SELECT\n        (ea_claim.value::json ->> 'supplier_operator_address') AS supplier_operator_address,\n        SUM(trim(both '\"' from ea_num_relays.value)::bigint) AS total_serviced_relays\n    FROM\n        localnet.events e\n    JOIN\n        localnet.event_attributes ea_num_relays ON ea_num_relays.event_id = e.id\n            AND ea_num_relays.key = 'num_relays'\n    JOIN\n        localnet.event_attributes ea_claim ON ea_claim.event_id = e.id\n            AND ea_claim.key = 'claim'\n    JOIN\n        localnet.blocks b ON b.id = e.block_id\n    WHERE\n        e.type = 'poktroll.proof.EventClaimCreated'\n        AND b.\"timestamp\" BETWEEN $__timeFrom() AND $__timeTo()\n    GROUP BY\n        supplier_operator_address\n),\n\n-- Estimated relays (from proofs)\nestimated_relays AS (\n    SELECT\n        (ea_proof.value::json ->> 'supplier_operator_address') AS supplier_operator_address,\n        SUM(trim(both '\"' from ea_num_relays.value)::bigint) AS total_estimated_relays\n    FROM\n        localnet.events e\n    JOIN\n        localnet.event_attributes ea_num_relays ON ea_num_relays.event_id = e.id\n            AND ea_num_relays.key = 'num_relays'\n    JOIN\n        localnet.event_attributes ea_proof ON ea_proof.event_id = e.id\n            AND ea_proof.key = 'proof'\n    JOIN\n        localnet.blocks b ON b.id = e.block_id\n    WHERE\n        e.type = 'poktroll.proof.EventProofSubmitted'\n        AND b.\"timestamp\" BETWEEN $__timeFrom() AND $__timeTo()\n    GROUP BY\n        supplier_operator_address\n)\n\n-- Combine the totals per supplier\nSELECT\n    COALESCE(s.supplier_operator_address, e.supplier_operator_address) AS supplier_operator_address,\n    COALESCE(s.total_serviced_relays, 0) AS total_serviced_relays,\n    COALESCE(e.total_estimated_relays, 0) AS total_estimated_relays\nFROM\n    serviced_relays s\nFULL OUTER JOIN\n    estimated_relays e ON s.supplier_operator_address = e.supplier_operator_address\nORDER BY\n    supplier_operator_address;\n",
-                    "refId": "A",
-                    "sql": {
-                        "columns": [
-                            {
-                                "parameters": [],
-                                "type": "function"
-                            }
-                        ],
-                        "groupBy": [
-                            {
-                                "property": {
-                                    "type": "string"
-                                },
-                                "type": "groupBy"
-                            }
-                        ],
-                        "limit": 50
-                    }
+                    "expr": "sum(end_blocker{module=\"tokenomics\"}) by (module, quantile)",
+                    "instant": false,
+                    "legendFormat": "{{module}}: q{{quantile}}",
+                    "range": true,
+                    "refId": "A"
+                },
+                {
+                    "datasource": {
+                        "type": "prometheus",
+                        "uid": "prometheus"
+                    },
+                    "editorMode": "code",
+                    "expr": "sum(end_blocker_sum{module=\"tokenomics\"}) by (module) / sum(end_blocker_count{module=\"tokenomics\"}) by (module)",
+                    "hide": false,
+                    "instant": false,
+                    "legendFormat": "{{module}}: avg",
+                    "range": true,
+                    "refId": "B"
                 }
             ],
-            "title": "cumulative number of relays claims vs proofs per supplier",
-            "type": "barchart"
+            "title": "Tokenomics End Blocker Time",
+            "type": "timeseries"
+        },
+        {
+            "datasource": {
+                "default": true,
+                "type": "prometheus",
+                "uid": "prometheus"
+            },
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "palette-classic"
+                    },
+                    "custom": {
+                        "axisBorderShow": false,
+                        "axisCenteredZero": false,
+                        "axisColorMode": "text",
+                        "axisLabel": "",
+                        "axisPlacement": "auto",
+                        "barAlignment": 0,
+                        "barWidthFactor": 0.6,
+                        "drawStyle": "line",
+                        "fillOpacity": 0,
+                        "gradientMode": "none",
+                        "hideFrom": {
+                            "legend": false,
+                            "tooltip": false,
+                            "viz": false
+                        },
+                        "insertNulls": false,
+                        "lineInterpolation": "linear",
+                        "lineWidth": 1,
+                        "pointSize": 5,
+                        "scaleDistribution": {
+                            "type": "linear"
+                        },
+                        "showPoints": "auto",
+                        "spanNulls": true,
+                        "stacking": {
+                            "group": "A",
+                            "mode": "none"
+                        },
+                        "thresholdsStyle": {
+                            "mode": "off"
+                        }
+                    },
+                    "mappings": [],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": null
+                            },
+                            {
+                                "color": "red",
+                                "value": 80
+                            }
+                        ]
+                    },
+                    "unit": "ms"
+                },
+                "overrides": [
+                    {
+                        "matcher": {
+                            "id": "byRegexp",
+                            "options": ".*: avg$"
+                        },
+                        "properties": [
+                            {
+                                "id": "custom.lineWidth",
+                                "value": 3
+                            }
+                        ]
+                    }
+                ]
+            },
+            "gridPos": {
+                "h": 7,
+                "w": 8,
+                "x": 16,
+                "y": 14
+            },
+            "id": 9,
+            "options": {
+                "legend": {
+                    "calcs": [],
+                    "displayMode": "list",
+                    "placement": "bottom",
+                    "showLegend": true
+                },
+                "tooltip": {
+                    "mode": "single",
+                    "sort": "none"
+                }
+            },
+            "pluginVersion": "11.3.1",
+            "targets": [
+                {
+                    "datasource": {
+                        "type": "prometheus",
+                        "uid": "prometheus"
+                    },
+                    "editorMode": "code",
+                    "expr": "sum(poktroll_proof_validation{}) by (quantile)",
+                    "instant": false,
+                    "legendFormat": " q{{quantile}}",
+                    "range": true,
+                    "refId": "A"
+                },
+                {
+                    "datasource": {
+                        "type": "prometheus",
+                        "uid": "prometheus"
+                    },
+                    "editorMode": "code",
+                    "expr": "sum(poktroll_proof_validation_sum{}) / sum(poktroll_proof_validation_count{})",
+                    "hide": false,
+                    "instant": false,
+                    "legendFormat": "avg",
+                    "range": true,
+                    "refId": "B"
+                }
+            ],
+            "title": "Proof Validation Time",
+            "type": "timeseries"
         }
     ],
     "preload": false,
@@ -1317,13 +950,13 @@
         "list": []
     },
     "time": {
-        "from": "now-6h",
+        "from": "now-3h",
         "to": "now"
     },
     "timepicker": {},
     "timezone": "browser",
-    "title": "Permissionless demand observability",
-    "uid": "de6qlasnk658ga",
+    "title": "New dashboard",
+    "uid": "be6u7d7jhz7y8f",
     "version": 1,
     "weekStart": ""
 }

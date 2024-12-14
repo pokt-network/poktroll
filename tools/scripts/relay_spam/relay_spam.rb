@@ -6,6 +6,10 @@ require 'json'
 require 'fileutils'
 require 'pty'
 require 'timeout'
+require 'net/http'
+require 'uri'
+require 'openssl'
+require 'concurrent'
 
 class RelaySpammer
   attr_reader :config, :options
@@ -113,8 +117,8 @@ class RelaySpammer
     config['applications'].each do |app|
       puts "\nProcessing #{app['name']}..."
       
-      # First, try to delete the existing key
-      delete_cmd = "poktrolld keys delete #{app['name']} --keyring-backend=#{config['keyring_backend']} -y"
+      # First, try to delete the existing key, redirecting stderr to /dev/null
+      delete_cmd = "poktrolld keys delete #{app['name']} --keyring-backend=#{config['keyring_backend']} -y 2>/dev/null"
       system(delete_cmd)
       
       # Now import the key
@@ -303,60 +307,129 @@ class RelaySpammer
   def run_relay_spam
     puts "Running relay spam..."
     
-    # Create a Ractor for each application/gateway combination
-    ractors = config['applications'].flat_map do |app|
-      config['application_defaults']['gateways'].map do |gateway_addr|
+    # Create a thread-safe counter for rate limiting
+    request_count = Concurrent::AtomicFixnum.new(0)
+    start_time = Time.now
+
+    # Create a thread pool for handling concurrent requests
+    pool = Concurrent::FixedThreadPool.new(options.concurrency)
+    
+    # Create a queue to track completion
+    completion_queue = Queue.new
+    total_requests = config['applications'].length * 
+                     config['application_defaults']['gateways'].length * 
+                     options.num_requests
+
+    config['applications'].each do |app|
+      config['application_defaults']['gateways'].each do |gateway_addr|
         gateway_url = config['gateway_urls'][gateway_addr]
         
-        Ractor.new(app, gateway_url, options.num_requests, options.concurrency) do |app, url, num_requests, concurrency|
-          hey_cmd = [
-            "hey",
-            "-n #{num_requests}",
-            "-c #{concurrency}",
-            "-H 'Content-Type: application/json'",
-            "-H 'X-App-Address: #{app['address']}'",
-            "-m POST",
-            "-d '{\"jsonrpc\":\"2.0\",\"method\":\"eth_blockNumber\",\"params\":[],\"id\":1}'",
-            url
-          ].join(' ')
-          
-          start_time = Time.now
-          result = system(hey_cmd)
-          end_time = Time.now
-          
-          # Return results to main thread
-          {
-            app_name: app['name'],
-            gateway_url: url,
-            success: result,
-            duration: end_time - start_time
-          }
+        options.num_requests.times do
+          pool.post do
+            # Rate limiting logic
+            if options.rate_limit
+              current_count = request_count.increment
+              expected_time = current_count / options.rate_limit.to_f
+              elapsed = Time.now - start_time
+              
+              if elapsed < expected_time
+                sleep(expected_time - elapsed)
+              end
+            end
+            
+            begin
+              result = make_rpc_request(gateway_url, app['address'])
+              completion_queue << {
+                success: result[:success],
+                app_name: app['name'],
+                gateway_url: gateway_url,
+                error: result[:error]
+              }
+            rescue => e
+              completion_queue << {
+                success: false,
+                app_name: app['name'],
+                gateway_url: gateway_url,
+                error: e.message
+              }
+            end
+          end
         end
       end
     end
-    
-    # Create a progress monitor
-    total_jobs = ractors.size
-    completed_jobs = 0
-    
-    # Process results as they come in
-    results = ractors.map do |r|
-      result = r.take
-      completed_jobs += 1
+
+    # Monitor progress
+    completed = 0
+    successes = 0
+    start_time = Time.now
+
+    total_requests.times do
+      result = completion_queue.pop
+      completed += 1
+      successes += 1 if result[:success]
       
-      # Print progress
-      puts "[#{completed_jobs}/#{total_jobs}] #{result[:app_name]} -> #{result[:gateway_url]}: " +
-           "#{result[:success] ? 'Success' : 'Failed'} (#{result[:duration].round(2)}s)"
-      
-      result
+      # Print progress every 100 requests or when errors occur
+      if completed % 100 == 0 || !result[:success]
+        elapsed = Time.now - start_time
+        rate = completed / elapsed
+        
+        print "\rProgress: #{completed}/#{total_requests} " \
+              "(#{(completed.to_f/total_requests*100).round(1)}%) " \
+              "Success rate: #{(successes.to_f/completed*100).round(1)}% " \
+              "Rate: #{rate.round(1)} req/s"
+        
+        if !result[:success]
+          puts "\nError for #{result[:app_name]} -> #{result[:gateway_url]}: #{result[:error]}"
+        end
+      end
+    end
+
+    # Print final statistics
+    elapsed = Time.now - start_time
+    puts "\n\nRelay spam completed:"
+    puts "Total requests: #{total_requests}"
+    puts "Successful: #{successes}"
+    puts "Failed: #{total_requests - successes}"
+    puts "Time elapsed: #{elapsed.round(2)}s"
+    puts "Average rate: #{(total_requests / elapsed).round(2)} req/s"
+
+  ensure
+    pool&.shutdown
+    pool&.wait_for_termination(5) # Wait up to 5 seconds for graceful shutdown
+  end
+
+  def make_rpc_request(gateway_url, app_address)
+    uri = URI(gateway_url)
+    http = Net::HTTP.new(uri.host, uri.port)
+    
+    # Enable HTTPS if needed
+    if uri.scheme == 'https'
+      http.use_ssl = true
+      http.verify_mode = OpenSSL::SSL::VERIFY_NONE
     end
     
-    # Print summary
-    successful = results.count { |r| r[:success] }
-    puts "\nRelay spam completed:"
-    puts "Total jobs: #{total_jobs}"
-    puts "Successful: #{successful}"
-    puts "Failed: #{total_jobs - successful}"
+    request = Net::HTTP::Post.new(uri.path)
+    request['Content-Type'] = 'application/json'
+    request['X-App-Address'] = app_address
+    
+    request.body = {
+      jsonrpc: '2.0',
+      method: 'eth_blockNumber',
+      params: [],
+      id: 1
+    }.to_json
+
+    response = http.request(request)
+    
+    {
+      success: response.code == '200',
+      error: response.code != '200' ? "HTTP #{response.code}: #{response.body}" : nil
+    }
+  rescue => e
+    {
+      success: false,
+      error: e.message
+    }
   end
 
   # Optional: Add a signal handler to gracefully shut down Ractors
@@ -368,13 +441,14 @@ end
 
 # Parse command line options
 class Options
-  attr_accessor :command, :config_file, :num_requests, :concurrency, :num_accounts
+  attr_accessor :command, :config_file, :num_requests, :concurrency, :num_accounts, :rate_limit
 
   def initialize
     @config_file = 'config.yml'
-    @num_requests = 1000
-    @concurrency = 50
+    @num_requests = 10
+    @concurrency = 10
     @num_accounts = 1000
+    @rate_limit = nil
     parse
   end
 
@@ -388,16 +462,20 @@ class Options
         @config_file = f
       end
 
-      opts.on("-n", "--num-requests NUM", Integer, "Number of requests (default: 1000)") do |n|
+      opts.on("-n", "--num-requests NUM", Integer, "Number of requests per application-gateway pair (default: #{@num_requests})") do |n|
         @num_requests = n
       end
 
-      opts.on("-p", "--concurrency NUM", Integer, "Concurrent requests (default: 50)") do |c|
+      opts.on("-p", "--concurrency NUM", Integer, "Concurrent requests (default: #{@concurrency})") do |c|
         @concurrency = c
       end
 
-      opts.on("-a", "--num-accounts NUM", Integer, "Number of accounts to create (default: 1000)") do |a|
+      opts.on("-a", "--num-accounts NUM", Integer, "Number of accounts to create (default: #{@num_accounts})") do |a|
         @num_accounts = a
+      end
+
+      opts.on("-r", "--rate-limit NUM", Float, "Rate limit in requests per second (optional)") do |r|
+        @rate_limit = r
       end
     end.parse!
 

@@ -1,6 +1,6 @@
 load("ext://restart_process", "docker_build_with_restart")
 load("ext://helm_resource", "helm_resource", "helm_repo")
-load("ext://configmap", "configmap_create")
+load("ext://configmap", "configmap_create", "configmap_yaml")
 load("ext://secret", "secret_create_generic")
 load("ext://deployment", "deployment_create")
 load("ext://execute_in_pod", "execute_in_pod")
@@ -168,14 +168,21 @@ if localnet_config["observability"]["enabled"]:
     )
 
     # Import our custom grafana dashboards into Kubernetes ConfigMap
-    configmap_create("protocol-dashboards", from_file=listdir("localnet/grafana-dashboards/"))
+    def grafana_configmap_create(name, namespace="", from_file=None, watch=True, from_env_file=None):
+        """Creates a configmap with grafana_dashboard=1 label automatically added"""
+        yaml_str = configmap_yaml(name, namespace, from_file, watch, from_env_file)
+        yaml_dict = decode_yaml(yaml_str)
+        
+        if "metadata" not in yaml_dict:
+            yaml_dict["metadata"] = {}
+        if "labels" not in yaml_dict["metadata"]:
+            yaml_dict["metadata"]["labels"] = {}
+        yaml_dict["metadata"]["labels"]["grafana_dashboard"] = "1"
+        
+        k8s_yaml(encode_yaml(yaml_dict))
 
-    # Grafana discovers dashboards to "import" via a label
-    local_resource(
-        "protocol-dashboards-label",
-        "kubectl label configmap protocol-dashboards grafana_dashboard=1 --overwrite",
-        resource_deps=["protocol-dashboards"],
-    )
+    # Use the wrapper instead of configmap_create
+    grafana_configmap_create("protocol-dashboards", from_file=listdir("localnet/grafana-dashboards/"))
 
 # Import keyring/keybase files into Kubernetes ConfigMap
 configmap_create("poktrolld-keys", from_file=listdir("localnet/poktrolld/keyring-test/"))
