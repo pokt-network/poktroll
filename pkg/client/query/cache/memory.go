@@ -10,116 +10,119 @@ import (
 )
 
 var (
-	_ client.QueryCache[any]           = (*InMemoryCache[any])(nil)
-	_ client.HistoricalQueryCache[any] = (*InMemoryCache[any])(nil)
+	_ client.QueryCache[any]           = (*inMemoryCache[any])(nil)
+	_ client.HistoricalQueryCache[any] = (*inMemoryCache[any])(nil)
 
 	DefaultQueryCacheConfig = queryCacheConfig{
-		EvictionPolicy: FirstInFirstOut,
+		evictionPolicy: FirstInFirstOut,
 		// TODO_MAINNET(@bryanchriswhite): Consider how we can "guarantee" good
-		// alignment between the TTL and the block production rate.
-		TTL: time.Minute,
+		// alignment between the TTL and the block production rate,
+		// by accessing onchain block times directly.
+		ttl: time.Minute,
 	}
 )
 
-// InMemoryCache provides a concurrency-safe in-memory cache implementation with
+// inMemoryCache provides a concurrency-safe in-memory cache implementation with
 // optional historical value support.
-type InMemoryCache[T any] struct {
+type inMemoryCache[T any] struct {
 	config       queryCacheConfig
 	latestHeight atomic.Int64
 
-	itemsMu sync.RWMutex
-	// items type depends on historical mode:
-	// | historical mode |  type                          |
-	// | --------------- | ------------------------------ |
-	// | false           | map[string]cacheItem[T]        |
-	// | true            | map[string]cacheItemHistory[T] |
-	items map[string]any
+	// valuesMu is used to protect values AND valueHistories from concurrent access.
+	valuesMu sync.RWMutex
+	// values holds the cached values in non-historical mode.
+	values map[string]cacheValue[T]
+	// valueHistories holds the cached historical values in historical mode.
+	valueHistories map[string]cacheValueHistory[T]
 }
 
-// cacheItem wraps cached values with a timestamp for later comparison against
+// cacheValue wraps cached values with a cachedAt for later comparison against
 // the configured TTL.
-type cacheItem[T any] struct {
-	value     T
-	timestamp time.Time
+type cacheValue[T any] struct {
+	value    T
+	cachedAt time.Time
 }
 
-// cacheItemHistory stores cachedItems by height and maintains a sorted list of
+// cacheValueHistory stores cachedItems by height and maintains a sorted list of
 // heights for which cached items exist. This list is sorted in descending order
 // to improve performance characteristics by positively correlating index with age.
-type cacheItemHistory[T any] struct {
+type cacheValueHistory[T any] struct {
 	// sortedDescHeights is a list of the heights for which values are cached.
 	// It is sorted in descending order.
 	sortedDescHeights []int64
-	itemsByHeight     map[int64]cacheItem[T]
+	heightMap         map[int64]cacheValue[T]
 }
 
-// NewInMemoryCache creates a new InMemoryCache with the configuration generated
+// NewInMemoryCache creates a new inMemoryCache with the configuration generated
 // by the given option functions.
-func NewInMemoryCache[T any](opts ...QueryCacheOptionFn) *InMemoryCache[T] {
+func NewInMemoryCache[T any](opts ...QueryCacheOptionFn) (*inMemoryCache[T], error) {
 	config := DefaultQueryCacheConfig
 
 	for _, opt := range opts {
 		opt(&config)
 	}
 
-	return &InMemoryCache[T]{
-		items:  make(map[string]interface{}),
-		config: config,
+	if err := config.Validate(); err != nil {
+		return nil, err
 	}
+
+	return &inMemoryCache[T]{
+		values:         make(map[string]cacheValue[T]),
+		valueHistories: make(map[string]cacheValueHistory[T]),
+		config:         config,
+	}, nil
 }
 
 // Get retrieves the value from the cache with the given key. If the cache is
 // configured for historical mode, it will return the value at the latest **known**
 // height, which is only updated on calls to SetAtHeight, and therefore is not
-// guaranteed to be the current height.
-func (c *InMemoryCache[T]) Get(key string) (T, error) {
+// guaranteed to be the current height w.r.t the blockchain.
+func (c *inMemoryCache[T]) Get(key string) (T, error) {
 	if c.config.historical {
 		return c.GetAtHeight(key, c.latestHeight.Load())
 	}
 
-	c.itemsMu.RLock()
-	defer c.itemsMu.RUnlock()
+	c.valuesMu.RLock()
+	defer c.valuesMu.RUnlock()
 
 	var zero T
 
-	item, exists := c.items[key]
+	cachedItem, exists := c.values[key]
 	if !exists {
 		return zero, ErrCacheMiss.Wrapf("key: %s", key)
 	}
 
-	cItem := item.(cacheItem[T])
-	if c.config.TTL > 0 && time.Since(cItem.timestamp) > c.config.TTL {
+	isTTLEnabled := c.config.ttl > 0
+	isCacheItemExpired := time.Since(cachedItem.cachedAt) > c.config.ttl
+	if isTTLEnabled && isCacheItemExpired {
 		// DEV_NOTE: Intentionally not pruning here to improve concurrent speed;
 		// otherwise, the read lock would be insufficient. The value will be
-		// overwritten by the next call to Set().
+		// overwritten by the next call to Set(). If usage is such that values
+		// aren't being subsequently set, maxKeys (if configured) will eventually
+		// cause the pruning of values with expired TTLs.
 		return zero, ErrCacheMiss.Wrapf("key: %s", key)
 	}
 
-	return cItem.value, nil
+	return cachedItem.value, nil
 }
 
 // GetAtHeight retrieves the value from the cache with the given key, at the given
 // height. If a value is not found for that height, the value at the nearest previous
 // height is returned. If the cache is not configured for historical mode, it returns
 // an error.
-func (c *InMemoryCache[T]) GetAtHeight(key string, getHeight int64) (T, error) {
+func (c *inMemoryCache[T]) GetAtHeight(key string, getHeight int64) (T, error) {
 	var zero T
 
 	if !c.config.historical {
 		return zero, ErrHistoricalModeNotEnabled
 	}
 
-	c.itemsMu.RLock()
-	defer c.itemsMu.RUnlock()
+	c.valuesMu.RLock()
+	defer c.valuesMu.RUnlock()
 
-	itemHistoryAny, exists := c.items[key]
-	if !exists {
-		return zero, ErrCacheMiss.Wrapf("key: %s, height: %d", key, getHeight)
-	}
-
-	itemHistory := itemHistoryAny.(cacheItemHistory[T])
+	valueHistory := c.valueHistories[key]
 	var nearestCachedHeight int64 = -1
-	for _, cachedHeight := range itemHistory.sortedDescHeights {
+	for _, cachedHeight := range valueHistory.sortedDescHeights {
 		if cachedHeight <= getHeight {
 			nearestCachedHeight = cachedHeight
 			// DEV_NOTE: Since the list is sorted in descending order, once we
@@ -134,37 +137,47 @@ func (c *InMemoryCache[T]) GetAtHeight(key string, getHeight int64) (T, error) {
 		return zero, ErrCacheMiss.Wrapf("key: %s, height: %d", key, getHeight)
 	}
 
-	item := itemHistory.itemsByHeight[nearestCachedHeight]
-	if c.config.TTL > 0 && time.Since(item.timestamp) > c.config.TTL {
+	value, exists := valueHistory.heightMap[nearestCachedHeight]
+	if !exists {
+		return zero, ErrCacheInternal.Wrapf("failed to load historical value for key: %s, height: %d", key, getHeight)
+	}
+
+	if c.config.ttl > 0 && time.Since(value.cachedAt) > c.config.ttl {
 		// DEV_NOTE: Intentionally not pruning here to improve concurrent speed;
 		// otherwise, the read lock would be insufficient. The value will be pruned
-		// in the subsequent call to SetAtHeight() after c.config.pruneOlderThan
-		// blocks have elapsed.
+		// in the subsequent call to SetAtHeight() after c.config.numHistoricalValues
+		// blocks have elapsed. If usage is such that historical values aren't being
+		// subsequently set, numHistoricalBlocks (if configured) will eventually
+		// cause the pruning of historical values with expired TTLs.
 		return zero, ErrCacheMiss.Wrapf("key: %s, height: %d", key, getHeight)
 	}
 
-	return item.value, nil
+	return value.value, nil
 }
 
 // Set adds or updates the value in the cache for the given key. If the cache is
 // configured for historical mode, it will store the value at the latest **known**
 // height, which is only updated on calls to SetAtHeight, and therefore is not
 // guaranteed to be the current height.
-func (c *InMemoryCache[T]) Set(key string, value T) error {
+func (c *inMemoryCache[T]) Set(key string, value T) error {
 	if c.config.historical {
 		return c.SetAtHeight(key, value, c.latestHeight.Load())
 	}
 
-	if c.config.MaxKeys > 0 && int64(len(c.items)) >= c.config.MaxKeys {
-		c.evict()
+	isMaxKeysConfigured := c.config.maxKeys > 0
+	cacheHasMaxKeys := int64(len(c.values)) >= c.config.maxKeys
+	if isMaxKeysConfigured && cacheHasMaxKeys {
+		if err := c.evict(); err != nil {
+			return err
+		}
 	}
 
-	c.itemsMu.Lock()
-	defer c.itemsMu.Unlock()
+	c.valuesMu.Lock()
+	defer c.valuesMu.Unlock()
 
-	c.items[key] = cacheItem[T]{
-		value:     value,
-		timestamp: time.Now(),
+	c.values[key] = cacheValue[T]{
+		value:    value,
+		cachedAt: time.Now(),
 	}
 
 	return nil
@@ -173,7 +186,7 @@ func (c *InMemoryCache[T]) Set(key string, value T) error {
 // SetAtHeight adds or updates the historical value in the cache for the given key,
 // and at the given height. If the cache is not configured for historical mode, it
 // returns an error.
-func (c *InMemoryCache[T]) SetAtHeight(key string, value T, setHeight int64) error {
+func (c *inMemoryCache[T]) SetAtHeight(key string, value T, setHeight int64) error {
 	if !c.config.historical {
 		return ErrHistoricalModeNotEnabled
 	}
@@ -185,120 +198,165 @@ func (c *InMemoryCache[T]) SetAtHeight(key string, value T, setHeight int64) err
 		c.latestHeight.CompareAndSwap(latestHeight, setHeight)
 	}
 
-	c.itemsMu.Lock()
-	defer c.itemsMu.Unlock()
+	c.valuesMu.Lock()
+	defer c.valuesMu.Unlock()
 
-	var itemHistory cacheItemHistory[T]
-	if itemHistoryAny, exists := c.items[key]; exists {
-		itemHistory = itemHistoryAny.(cacheItemHistory[T])
-	} else {
-		itemsByHeight := make(map[int64]cacheItem[T])
-		itemHistory = cacheItemHistory[T]{
+	valueHistory, exists := c.valueHistories[key]
+	if !exists {
+		heightMap := make(map[int64]cacheValue[T])
+		valueHistory = cacheValueHistory[T]{
 			sortedDescHeights: make([]int64, 0),
-			itemsByHeight:     itemsByHeight,
+			heightMap:         heightMap,
 		}
 	}
 
 	// Update sortedDescHeights and ensure the list is sorted in descending order.
-	if _, setHeightExists := itemHistory.itemsByHeight[setHeight]; !setHeightExists {
-		itemHistory.sortedDescHeights = append(itemHistory.sortedDescHeights, setHeight)
-		sort.Slice(itemHistory.sortedDescHeights, func(i, j int) bool {
-			return itemHistory.sortedDescHeights[i] > itemHistory.sortedDescHeights[j]
+	if _, setHeightExists := valueHistory.heightMap[setHeight]; !setHeightExists {
+		valueHistory.sortedDescHeights = append(valueHistory.sortedDescHeights, setHeight)
+		sort.Slice(valueHistory.sortedDescHeights, func(i, j int) bool {
+			return valueHistory.sortedDescHeights[i] > valueHistory.sortedDescHeights[j]
 		})
 	}
 
 	// Prune historical values for this key, where the setHeight
-	// is oder than the configured pruneOlderThan.
-	if c.config.pruneOlderThan > 0 {
-		lenCachedHeights := int64(len(itemHistory.sortedDescHeights))
+	// is oder than the configured numHistoricalValues.
+	if c.config.numHistoricalValues > 0 {
+		lenCachedHeights := int64(len(valueHistory.sortedDescHeights))
 		for heightIdx := lenCachedHeights - 1; heightIdx >= 0; heightIdx-- {
-			cachedHeight := itemHistory.sortedDescHeights[heightIdx]
+			cachedHeight := valueHistory.sortedDescHeights[heightIdx]
 
 			// DEV_NOTE: Since the list is sorted, and we're iterating from lowest
 			// (oldest) to highest (youngest) height, once we encounter a cachedHeight
-			// that is younger than the configured pruneOlderThan, ALL subsequent
-			// heights SHOULD also be younger than the configured pruneOlderThan.
-			if setHeight-cachedHeight <= c.config.pruneOlderThan {
-				itemHistory.sortedDescHeights = itemHistory.sortedDescHeights[:heightIdx+1]
+			// that is younger than the configured numHistoricalValues, ALL subsequent
+			// heights SHOULD also be younger than the configured numHistoricalValues.
+			if setHeight-cachedHeight <= c.config.numHistoricalValues {
+				valueHistory.sortedDescHeights = valueHistory.sortedDescHeights[:heightIdx+1]
 				break
 			}
 
-			delete(itemHistory.itemsByHeight, cachedHeight)
+			delete(valueHistory.heightMap, cachedHeight)
 		}
 	}
 
-	itemHistory.itemsByHeight[setHeight] = cacheItem[T]{
-		value:     value,
-		timestamp: time.Now(),
+	valueHistory.heightMap[setHeight] = cacheValue[T]{
+		value:    value,
+		cachedAt: time.Now(),
 	}
 
-	c.items[key] = itemHistory
+	c.valueHistories[key] = valueHistory
 
 	return nil
 }
 
 // Delete removes an item from the cache.
-func (c *InMemoryCache[T]) Delete(key string) {
-	c.itemsMu.Lock()
-	defer c.itemsMu.Unlock()
+func (c *inMemoryCache[T]) Delete(key string) {
+	c.valuesMu.Lock()
+	defer c.valuesMu.Unlock()
 
-	delete(c.items, key)
+	if c.config.historical {
+		delete(c.valueHistories, key)
+	} else {
+		delete(c.values, key)
+	}
 }
 
 // Clear removes all items from the cache.
-func (c *InMemoryCache[T]) Clear() {
-	c.itemsMu.Lock()
-	defer c.itemsMu.Unlock()
+func (c *inMemoryCache[T]) Clear() {
+	c.valuesMu.Lock()
+	defer c.valuesMu.Unlock()
 
-	c.items = make(map[string]interface{})
+	if c.config.historical {
+		c.valueHistories = make(map[string]cacheValueHistory[T])
+	} else {
+		c.values = make(map[string]cacheValue[T])
+	}
+
 	c.latestHeight.Store(0)
 }
 
 // evict removes one item from the cache, to make space for a new one,
 // according to the configured eviction policy
-func (c *InMemoryCache[T]) evict() {
-	switch c.config.EvictionPolicy {
+func (c *inMemoryCache[T]) evict() error {
+	if c.config.historical {
+		return c.evictHistorical()
+	} else {
+		return c.evictNonHistorical()
+	}
+}
+
+// evictHistorical removes one item from the cache, to make space for a new one,
+// according to the configured eviction policy.
+func (c *inMemoryCache[T]) evictHistorical() error {
+	switch c.config.evictionPolicy {
 	case FirstInFirstOut:
 		var oldestKey string
 		var oldestTime time.Time
-		first := true
-
-		for key, item := range c.items {
-			var itemTime time.Time
-			if c.config.historical {
-				itemHistory := item.(cacheItemHistory[T])
-				for _, v := range itemHistory.itemsByHeight {
-					if itemTime.IsZero() || v.timestamp.Before(itemTime) {
-						itemTime = v.timestamp
-					}
-				}
-			} else {
-				itemTime = item.(cacheItem[T]).timestamp
+		for key, valueHistory := range c.valueHistories {
+			mostRecentHeight := valueHistory.sortedDescHeights[0]
+			value, exists := valueHistory.heightMap[mostRecentHeight]
+			if !exists {
+				return ErrCacheInternal.Wrapf(
+					"expected value history for key %s to contain height %d but it did not 💣",
+					key, mostRecentHeight,
+				)
 			}
 
-			if first || itemTime.Before(oldestTime) {
+			if value.cachedAt.IsZero() || value.cachedAt.Before(oldestTime) {
 				oldestKey = key
-				oldestTime = itemTime
-				first = false
+				oldestTime = value.cachedAt
 			}
 		}
-		delete(c.items, oldestKey)
+		delete(c.valueHistories, oldestKey)
+		return nil
 
 	case LeastRecentlyUsed:
 		// TODO_IMPROVE: Implement LRU eviction
 		// This will require tracking access times
-		panic("LRU eviction not implemented")
+		return ErrCacheInternal.Wrap("LRU eviction not implemented")
 
 	case LeastFrequentlyUsed:
 		// TODO_IMPROVE: Implement LFU eviction
 		// This will require tracking access times
-		panic("LFU eviction not implemented")
+		return ErrCacheInternal.Wrap("LFU eviction not implemented")
 
 	default:
-		// Default to FIFO if policy not recognized
-		for key := range c.items {
-			delete(c.items, key)
-			return
+		// DEV_NOTE: This SHOULD NEVER happen, QueryCacheConfig#Validate, SHOULD prevent it.
+		return ErrCacheInternal.Wrapf("unsupported eviction policy: %d", c.config.evictionPolicy)
+	}
+}
+
+// evictNonHistorical removes one item from the cache, to make space for a new one,
+// according to the configured eviction policy.
+func (c *inMemoryCache[T]) evictNonHistorical() error {
+	switch c.config.evictionPolicy {
+	case FirstInFirstOut:
+		var (
+			first      = true
+			oldestKey  string
+			oldestTime time.Time
+		)
+		for key, value := range c.values {
+			if first || value.cachedAt.Before(oldestTime) {
+				oldestKey = key
+				oldestTime = value.cachedAt
+			}
+			first = false
 		}
+		delete(c.values, oldestKey)
+		return nil
+
+	case LeastRecentlyUsed:
+		// TODO_IMPROVE: Implement LRU eviction
+		// This will require tracking access times
+		return ErrCacheInternal.Wrap("LRU eviction not implemented")
+
+	case LeastFrequentlyUsed:
+		// TODO_IMPROVE: Implement LFU eviction
+		// This will require tracking access times
+		return ErrCacheInternal.Wrap("LFU eviction not implemented")
+
+	default:
+		// DEV_NOTE: This SHOULD NEVER happen, QueryCacheConfig#Validate, SHOULD prevent it.
+		return ErrCacheInternal.Wrapf("unsupported eviction policy: %d", c.config.evictionPolicy)
 	}
 }

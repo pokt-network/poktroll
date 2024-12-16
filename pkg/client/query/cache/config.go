@@ -4,7 +4,7 @@ import (
 	"time"
 )
 
-// EvictionPolicy determines how items are removed when number of keys in the cache reaches MaxKeys.
+// EvictionPolicy determines which items are removed when number of keys in the cache reaches maxKeys.
 type EvictionPolicy int64
 
 const (
@@ -13,35 +13,55 @@ const (
 	LeastFrequentlyUsed
 )
 
-// queryCacheConfig is the configuration for query caches. It is intended to be
-// configured via QueryCacheOptionFn functions.
+// queryCacheConfig is the configuration for query caches.
+// It is intended to be configured via QueryCacheOptionFn functions.
 type queryCacheConfig struct {
-	// MaxKeys is the maximum number of items (key/value pairs) the cache can
+	// maxKeys is the maximum number of items (key/value pairs) the cache can
 	// hold before it starts evicting.
-	MaxKeys        int64
-	EvictionPolicy EvictionPolicy
-	// TTL is how long items should remain in the cache. Items older than the TTL
-	// MAY not be evicted but SHOULD not be considered as cache hits.
-	TTL time.Duration
+	maxKeys int64
 
-	// historical determines whether the cache will cache a single value for each
-	// key (false), or whether it will cache a history of values for each key (true).
+	// TODO_CONSIDERATION:
+	//
+	// maxValueSize is the maximum cumulative size of all values in the cache.
+	// maxValueSize int64
+	// maxCacheSize is the maximum cumulative size of all keys AND values in the cache.
+	// maxCacheSize int64
+
+	// evictionPolicy determines which items are removed when number of keys in the cache reaches maxKeys.
+	evictionPolicy EvictionPolicy
+	// ttl is how long items should remain in the cache. Items older than the ttl
+	// MAY NOT be evicted immediately, but are NEVER considered as cache hits.
+	ttl time.Duration
+	// historical determines whether each key will point to a single values (false)
+	// or a history (i.e. reverse chronological list) of values (true).
 	historical bool
-	// pruneOlderThan is the number of past blocks for which to keep historical
+	// numHistoricalValues is the number of past blocks for which to keep historical
 	// values. If 0, no historical pruning is performed. It only applies when
 	// historical is true.
-	pruneOlderThan int64
+	numHistoricalValues int64
 }
 
 // QueryCacheOptionFn is a function which receives a queryCacheConfig for configuration.
 type QueryCacheOptionFn func(*queryCacheConfig)
 
-// WithHistoricalMode enables historical caching with the given pruneOlderThan
+// Validate ensures that the queryCacheConfig isn't configured with incompatible options.
+func (cfg *queryCacheConfig) Validate() error {
+	switch cfg.evictionPolicy {
+	case FirstInFirstOut:
+	// TODO_IMPROVE: support LeastRecentlyUsed and LeastFrequentlyUsed policies.
+	default:
+		return ErrQueryCacheConfigValidation.Wrapf("eviction policy %d not imlemented", cfg.evictionPolicy)
+	}
+
+	return nil
+}
+
+// WithHistoricalMode enables historical caching with the given numHistoricalValues
 // configuration; if 0, no historical pruning is performed.
-func WithHistoricalMode(pruneOlderThan int64) QueryCacheOptionFn {
+func WithHistoricalMode(numHistoricalBlocks int64) QueryCacheOptionFn {
 	return func(cfg *queryCacheConfig) {
 		cfg.historical = true
-		cfg.pruneOlderThan = pruneOlderThan
+		cfg.numHistoricalValues = numHistoricalBlocks
 	}
 }
 
@@ -49,21 +69,21 @@ func WithHistoricalMode(pruneOlderThan int64) QueryCacheOptionFn {
 // hold before evicting according to the configured eviction policy.
 func WithMaxKeys(maxKeys int64) QueryCacheOptionFn {
 	return func(cfg *queryCacheConfig) {
-		cfg.MaxKeys = maxKeys
+		cfg.maxKeys = maxKeys
 	}
 }
 
 // WithEvictionPolicy sets the eviction policy.
 func WithEvictionPolicy(policy EvictionPolicy) QueryCacheOptionFn {
 	return func(cfg *queryCacheConfig) {
-		cfg.EvictionPolicy = policy
+		cfg.evictionPolicy = policy
 	}
 }
 
 // WithTTL sets the time-to-live for cached items. Items older than the TTL
-// MAY not be evicted but SHOULD not be considered as cache hits.
+// MAY NOT be evicted immediately, but are NEVER considered as cache hits.
 func WithTTL(ttl time.Duration) QueryCacheOptionFn {
 	return func(cfg *queryCacheConfig) {
-		cfg.TTL = ttl
+		cfg.ttl = ttl
 	}
 }

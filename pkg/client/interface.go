@@ -364,7 +364,7 @@ type BankQueryClient interface {
 
 // QueryCache is a key/value store style interface for a cache of a single type.
 // It is intended to be used to cache query responses (or derivatives thereof),
-// where each key uniquely indexes its most recent value.
+// where each key uniquely indexes the most recent query response.
 type QueryCache[T any] interface {
 	Get(key string) (T, error)
 	Set(key string, value T) error
