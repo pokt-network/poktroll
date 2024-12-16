@@ -42,9 +42,14 @@ func NewCachedParamsQuerier[P cosmostypes.Msg, Q paramsQuerierIface[P]](
 		opt(cfg)
 	}
 
+	paramsCache, err := cache.NewInMemoryCache[P](cfg.CacheOpts...)
+	if err != nil {
+		return nil, err
+	}
+
 	querier := &cachedParamsQuerier[P, Q]{
 		config:      cfg,
-		paramsCache: cache.NewInMemoryCache[P](cfg.CacheOpts...),
+		paramsCache: paramsCache,
 	}
 
 	if err = depinject.Inject(
