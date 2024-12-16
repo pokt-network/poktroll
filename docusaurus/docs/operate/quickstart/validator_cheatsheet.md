@@ -17,9 +17,7 @@ This cheat sheet provides quick copy-pasta instructions for staking and running 
 
 ## Prerequisites
 
-1. **Run a Full Node**: Make sure you have followed the [Full Node Cheat Sheet](./full_node_cheatsheet.md) to install and run a Full Node first.
-
-2. **Install `poktrolld` CLI**: Make sure `poktrolld` is installed and accessible from your command line.
+**Run a Full Node**: Make sure you have followed the [Full Node Cheat Sheet](./full_node_cheatsheet.md) to install and run a Full Node first.
 
 ## Account Setup
 
@@ -29,7 +27,7 @@ if you're running a full node using the [Full Node Cheat Sheet](./full_node_chea
 the user you created in the full node setup to get access to the `poktrolld` CLI. Like this:
 
 ```bash
-su - poktroll
+su - poktroll # or a different user if you used a different name
 ```
 
 :::
@@ -50,7 +48,7 @@ Set the validator address in an environment variable for convenience:
 export VALIDATOR_ADDR=$(poktrolld keys show validator -a)
 ```
 
-Fund the validator account using the TestNet faucet or by transferring tokens from another account.
+Fund the validator account using [the faucet](../../explore/tools.md) or by transferring tokens from another account.
 
 Check the balance:
 
@@ -104,7 +102,7 @@ Create a JSON file named `validator.json` with the following content:
 Run the following command to create the validator:
 
 ```bash
-poktrolld tx staking create-validator ~/validator.json --from validator --chain-id pocket-beta --gas=auto --gas-adjustment=1.5 --gas-prices=1upokt --yes
+poktrolld tx staking create-validator ./validator.json --from=validator --chain-id=pocket-beta --gas=auto --gas-adjustment=1.5 --gas-prices=1upokt
 ```
 
 This command uses the `validator.json` file to submit the `create-validator` transaction.
@@ -112,7 +110,7 @@ This command uses the `validator.json` file to submit the `create-validator` tra
 **Example**:
 
 ```bash
-poktrolld tx staking create-validator ~/validator.json --from validator --chain-id=pocket-beta --gas=auto --gas-prices=1upokt --gas-adjustment=1.5 --yes
+poktrolld tx staking create-validator ./validator.json --from=validator --chain-id=pocket-beta --gas=auto --gas-prices=1upokt --gas-adjustment=1.5
 ```
 
 ## Verify the Validator Status
@@ -130,19 +128,19 @@ This will display information about your validator, including its status and del
 - **Delegate additional tokens to your validator**:
 
   ```bash
-  poktrolld tx staking delegate $VALIDATOR_ADDR 1000000upokt --from your_account --chain-id pocket-beta --gas=auto --gas-adjustment=1.5 --gas-prices=1upokt --yes
+  poktrolld tx staking delegate $VALIDATOR_ADDR 1000000upokt --from your_account --chain-id=pocket-beta --gas=auto --gas-adjustment=1.5 --gas-prices=1upokt
   ```
 
 - **Unbond (undelegate) tokens from your validator**:
 
   ```bash
-  poktrolld tx staking unbond $VALIDATOR_ADDR 500000upokt --from your_account --chain-id pocket-beta --gas=auto --gas-adjustment=1.5 --gas-prices=1upokt --yes
+  poktrolld tx staking unbond $VALIDATOR_ADDR 500000upokt --from your_account --chain-id=pocket-beta --gas=auto --gas-adjustment=1.5 --gas-prices=1upokt
   ```
 
 - **Withdraw rewards**:
 
   ```bash
-  poktrolld tx distribution withdraw-rewards $VALIDATOR_ADDR --commission --from validator --chain-id pocket-beta --gas=auto --gas-adjustment=1.5 --gas-prices=1upokt --yes
+  poktrolld tx distribution withdraw-rewards $VALIDATOR_ADDR --commission --from validator --chain-id=pocket-beta --gas=auto --gas-adjustment=1.5 --gas-prices=1upokt
   ```
 
 - **Check validator's commission and rewards**:
@@ -161,7 +159,7 @@ This will display information about your validator, including its status and del
 
 :::tip
 
-If you're interested in understanding everything, or having full control of every
+If you're interested in understanding everything validator related, or having full control of every
 step, check out the [Validator Walkthrough](../run_a_node/validator_walkthrough.md).
 
 :::
