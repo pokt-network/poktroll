@@ -234,7 +234,7 @@ It can be validated with `grpcurl -plaintext 149.28.34.68:9090`; note that the `
 If `grpc-insecure=false`, then it **MUST** be an HTTPS port, with TLS.
 
 The Grove team exposed one such endpoint on one of our validators for Beta Testnet at `https://shannon-testnet-grove-grpc.beta.poktroll.com:443`.
-It can be validated with `grpcurl https://shannon-testnet-grove-grpc.beta.poktroll.com:443`; note no `-plaintext` flag meaning no TLS encryption.
+It can be validated with `grpcurl shannon-testnet-grove-grpc.beta.poktroll.com:443 list`; note no `-plaintext` flag meaning no TLS encryption.
 
 :::tip
 
