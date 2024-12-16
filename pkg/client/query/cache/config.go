@@ -13,8 +13,8 @@ const (
 	LeastFrequentlyUsed
 )
 
-// queryCacheConfig is the configuration for query caches. It is intended to be
-// configured via QueryCacheOptionFn functions.
+// queryCacheConfig is the configuration for query caches.
+// It is intended to be configured via QueryCacheOptionFn functions.
 type queryCacheConfig struct {
 	// MaxKeys is the maximum number of items (key/value pairs) the cache can
 	// hold before it starts evicting.
@@ -24,8 +24,8 @@ type queryCacheConfig struct {
 	// MAY not be evicted but SHOULD not be considered as cache hits.
 	TTL time.Duration
 
-	// historical determines whether the cache will cache a single value for each
-	// key (false), or whether it will cache a history of values for each key (true).
+	// historical determines whether each key will point to a single values (false)
+	// or a history (i.e. reverse chronological list) of values (true).
 	historical bool
 	// pruneOlderThan is the number of past blocks for which to keep historical
 	// values. If 0, no historical pruning is performed. It only applies when

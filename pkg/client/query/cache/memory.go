@@ -16,7 +16,8 @@ var (
 	DefaultQueryCacheConfig = queryCacheConfig{
 		EvictionPolicy: FirstInFirstOut,
 		// TODO_MAINNET(@bryanchriswhite): Consider how we can "guarantee" good
-		// alignment between the TTL and the block production rate.
+		// alignment between the TTL and the block production rate,
+		// by accessing onchain block times directly.
 		TTL: time.Minute,
 	}
 )
@@ -71,7 +72,7 @@ func NewInMemoryCache[T any](opts ...QueryCacheOptionFn) *InMemoryCache[T] {
 // Get retrieves the value from the cache with the given key. If the cache is
 // configured for historical mode, it will return the value at the latest **known**
 // height, which is only updated on calls to SetAtHeight, and therefore is not
-// guaranteed to be the current height.
+// guaranteed to be the current height w.r.t the blockchain.
 func (c *InMemoryCache[T]) Get(key string) (T, error) {
 	if c.config.historical {
 		return c.GetAtHeight(key, c.latestHeight.Load())
@@ -88,7 +89,9 @@ func (c *InMemoryCache[T]) Get(key string) (T, error) {
 	}
 
 	cItem := item.(cacheItem[T])
-	if c.config.TTL > 0 && time.Since(cItem.timestamp) > c.config.TTL {
+	isTTLEnabled := c.config.TTL > 0
+	isCacheItemExpired := time.Since(cItem.timestamp) > c.config.TTL
+	if isTTLEnabled && isCacheItemExpired {
 		// DEV_NOTE: Intentionally not pruning here to improve concurrent speed;
 		// otherwise, the read lock would be insufficient. The value will be
 		// overwritten by the next call to Set().
