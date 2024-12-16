@@ -81,9 +81,10 @@ type actorLoadTestIncrementPlan struct {
 	maxActorCount int64
 }
 
-// setupTxEventListeners sets up the transaction event listeners to observe the
-// transactions committed on-chain.
-func (s *relaysSuite) setupTxEventListeners() {
+// setupEventListeners sets up the event listeners for the relays suite.
+// It listens to both tx and block to keep track of the events that are happening
+// on the chain.
+func (s *relaysSuite) setupEventListeners() {
 	eventsQueryClient := testeventsquery.NewLocalnetClient(s.TestingT.(*testing.T))
 
 	deps := depinject.Supply(eventsQueryClient)
@@ -1136,6 +1137,7 @@ func (s *relaysSuite) ensureFundedActors(ctx context.Context, actors []*accountI
 	}
 }
 
+// allActorsFunded checks if all the expected actors are funded.
 func allActorsFunded(expectedActors []*accountInfo, fundedActors map[string]struct{}) bool {
 	for _, actor := range expectedActors {
 		if _, ok := fundedActors[actor.address]; !ok {
@@ -1184,6 +1186,7 @@ func (s *relaysSuite) ensureStakedActors(
 	}
 }
 
+// allActorsStaked checks if all the expected actors are staked.
 func allActorsStaked(expectedActors []*accountInfo, stakedActors map[string]struct{}) bool {
 	for _, actor := range expectedActors {
 		if _, ok := stakedActors[actor.address]; !ok {
@@ -1229,6 +1232,7 @@ func (s *relaysSuite) ensureDelegatedApps(
 	}
 }
 
+// allAppsDelegatedToAllGateways checks if all applications are delegated to all gateways.
 func allAppsDelegatedToAllGateways(
 	applications, gateways []*accountInfo,
 	appsToGateways map[string][]string,
@@ -1408,7 +1412,10 @@ func (s *relaysSuite) forEachSettlement(ctx context.Context) {
 	channel.ForEach(
 		s.ctx,
 		typedEventsObs,
-		func(_ context.Context, _ []proto.Message) {},
+		func(_ context.Context, _ []proto.Message) {
+			// TODO_FOLLOWUP(@red-0ne): Capture all settlement related events and use
+			// them to calculate the expected actor balances.
+		},
 	)
 }
 
@@ -1592,6 +1599,8 @@ func (s *relaysSuite) populateWithKnownGateways() (gateways []*accountInfo) {
 	return gateways
 }
 
+// WaitAll waits for all the provided functions to complete.
+// It is used to wait for multiple goroutines to complete before proceeding.
 func (s *relaysSuite) WaitAll(waitFuncs ...func()) {
 	wg := sync.WaitGroup{}
 	wg.Add(len(waitFuncs))
@@ -1606,25 +1615,11 @@ func (s *relaysSuite) WaitAll(waitFuncs ...func()) {
 	wg.Wait()
 }
 
-func forEachTypedEventFn(fn func(ctx context.Context, blockEvents []proto.Message)) func(ctx context.Context, blockEvents []*types.Event) {
-	return func(ctx context.Context, blockEvents []*types.Event) {
-		var typedEvents []proto.Message
-		for _, event := range blockEvents {
-			typedEvent, err := sdk.ParseTypedEvent(*event)
-			if err != nil {
-				continue
-			}
-
-			typedEvents = append(typedEvents, typedEvent)
-		}
-		fn(ctx, typedEvents)
-	}
-}
-
+// abciEventsToTypedEvents converts the abci events to typed events.
 func abciEventsToTypedEvents(ctx context.Context, abciEventObs observable.Observable[[]types.Event]) observable.Observable[[]proto.Message] {
-	return channel.Map(ctx, abciEventObs, func(ctx context.Context, blockEvents []types.Event) ([]proto.Message, bool) {
+	return channel.Map(ctx, abciEventObs, func(ctx context.Context, events []types.Event) ([]proto.Message, bool) {
 		var typedEvents []proto.Message
-		for _, event := range blockEvents {
+		for _, event := range events {
 			typedEvent, err := sdk.ParseTypedEvent(event)
 			if err != nil {
 				continue

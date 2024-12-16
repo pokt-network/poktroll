@@ -337,7 +337,7 @@ func (s *relaysSuite) LocalnetIsRunning() {
 	s.relayCoinAmountCost = s.getRelayCost()
 
 	// Setup the tx listener for on-chain events to check and assert on transactions results.
-	s.setupTxEventListeners()
+	s.setupEventListeners()
 
 	// Initialize the funding account.
 	s.initFundingAccount(loadTestParams.FundingAccountAddress)
