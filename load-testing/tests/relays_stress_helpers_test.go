@@ -1203,7 +1203,7 @@ func (s *relaysSuite) ensureDelegatedApps(
 	ctx context.Context,
 	applications, gateways []*accountInfo,
 ) {
-	if len(applications) == 0 && len(gateways) == 0 {
+	if len(applications) == 0 || len(gateways) == 0 {
 		return
 	}
 
