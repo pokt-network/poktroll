@@ -246,7 +246,7 @@ WORKDIR /
 
 # Run data nodes & validators
 k8s_yaml(
-    ["localnet/kubernetes/anvil.yaml", "localnet/kubernetes/rest.yaml", "localnet/kubernetes/validator-volume.yaml"]
+    ["localnet/kubernetes/anvil.yaml", "localnet/kubernetes/nginx-evm-response.yaml", "localnet/kubernetes/rest.yaml", "localnet/kubernetes/validator-volume.yaml"]
 )
 
 # Provision validator
@@ -432,3 +432,23 @@ load("./tiltfiles/pocketdex.tilt", "check_and_load_pocketdex")
 #   -- OR --
 #   2. Prints a message if true or false
 check_and_load_pocketdex(localnet_config["indexer"])
+
+# todo_in_this_pr: test if in-k8s relay spam works better than with port forwards
+docker_build(
+    "relay-spam",
+    ".",
+    dockerfile_contents="""FROM ruby:latest
+RUN apt-get update && apt-get install -y curl vim
+WORKDIR /app
+COPY tools/scripts/relay_spam /app
+RUN bundle install
+CMD ["tail", "-f", "/dev/null"]  # Keep container running
+""",
+    only=["tools/scripts/relay_spam"],
+)
+
+deployment_create(
+    "relay-spam",
+    image="relay-spam",
+    command=["tail", "-f", "/dev/null"],  # Keeps pod running for manual execution
+)

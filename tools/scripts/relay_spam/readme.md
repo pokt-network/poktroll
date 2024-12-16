@@ -1,5 +1,7 @@
 # Relay Spam
 
+The script is designed to send requests to path instances in a way that maximizes the number of sessions - it spreads the load across all applications in the config file.
+
 ## Prerequisites
 
 - LocalNet is running with PATH (3 relayminers, 3 path gateways).
@@ -28,6 +30,7 @@ Run the relay spam:
 ```
 ./relay_spam.rb run
 ```
+
 ```
 ./relay_spam.rb run --help
 Usage: relay_spam.rb [options] COMMAND
@@ -44,6 +47,7 @@ Possible options:
 - `-n` or `--num-requests` - number of requests to send (optional)
 
 
+# Helpful commands
 Add more accounts to the config.yml file (if you need more than already populated)
 ```
 ./relay_spam.rb populate_config_accounts -a 50

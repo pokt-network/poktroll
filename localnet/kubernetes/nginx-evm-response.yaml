@@ -1,0 +1,59 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-evm-response
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nginx-evm-response
+  template:
+    metadata:
+      labels:
+        app: nginx-evm-response
+    spec:
+      containers:
+        - name: nginx
+          image: nginx:alpine
+          ports:
+            - containerPort: 80
+          volumeMounts:
+            - name: nginx-config
+              mountPath: /etc/nginx/nginx.conf
+              subPath: nginx.conf
+      volumes:
+        - name: nginx-config
+          configMap:
+            name: nginx-evm-response-config
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nginx-evm-response-config
+data:
+  nginx.conf: |
+    events {}
+    http {
+        server {
+            listen 80;
+
+            location / {
+                default_type application/json;
+                return 200 '{"jsonrpc":"2.0","id":1,"result":"0x2f67"}';
+            }
+        }
+    }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx-evm-response
+spec:
+  selector:
+    app: nginx-evm-response
+  ports:
+    - protocol: TCP
+      name: rpc
+      port: 8547
+      targetPort: 80

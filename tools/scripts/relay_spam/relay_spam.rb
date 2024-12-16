@@ -307,52 +307,63 @@ class RelaySpammer
   def run_relay_spam
     puts "Running relay spam..."
     
-    # Create a thread-safe counter for rate limiting
     request_count = Concurrent::AtomicFixnum.new(0)
     start_time = Time.now
 
-    # Create a thread pool for handling concurrent requests
     pool = Concurrent::FixedThreadPool.new(options.concurrency)
-    
-    # Create a queue to track completion
     completion_queue = Queue.new
+    
+    # Calculate total requests
     total_requests = config['applications'].length * 
                      config['application_defaults']['gateways'].length * 
                      options.num_requests
 
-    config['applications'].each do |app|
-      config['application_defaults']['gateways'].each do |gateway_addr|
-        gateway_url = config['gateway_urls'][gateway_addr]
-        
-        options.num_requests.times do
-          pool.post do
-            # Rate limiting logic
-            if options.rate_limit
-              current_count = request_count.increment
-              expected_time = current_count / options.rate_limit.to_f
-              elapsed = Time.now - start_time
-              
-              if elapsed < expected_time
-                sleep(expected_time - elapsed)
-              end
-            end
+    # Create a queue of all work to be done
+    work_queue = Queue.new
+    
+    # First, distribute work evenly across applications
+    options.num_requests.times do
+      config['applications'].each do |app|
+        config['application_defaults']['gateways'].each do |gateway_addr|
+          work_queue << {
+            app: app,
+            gateway_addr: gateway_addr,
+            gateway_url: config['gateway_urls'][gateway_addr]
+          }
+        end
+      end
+    end
+
+    # Create worker threads
+    options.concurrency.times do
+      pool.post do
+        while work = work_queue.pop(true) rescue nil
+          # Rate limiting logic
+          if options.rate_limit
+            current_count = request_count.increment
+            expected_time = current_count / options.rate_limit.to_f
+            elapsed = Time.now - start_time
             
-            begin
-              result = make_rpc_request(gateway_url, app['address'])
-              completion_queue << {
-                success: result[:success],
-                app_name: app['name'],
-                gateway_url: gateway_url,
-                error: result[:error]
-              }
-            rescue => e
-              completion_queue << {
-                success: false,
-                app_name: app['name'],
-                gateway_url: gateway_url,
-                error: e.message
-              }
+            if elapsed < expected_time
+              sleep(expected_time - elapsed)
             end
+          end
+          
+          begin
+            result = make_rpc_request(work[:gateway_url], work[:app]['address'])
+            completion_queue << {
+              success: result[:success],
+              app_name: work[:app]['name'],
+              gateway_url: work[:gateway_url],
+              error: result[:error]
+            }
+          rescue => e
+            completion_queue << {
+              success: false,
+              app_name: work[:app]['name'],
+              gateway_url: work[:gateway_url],
+              error: e.message
+            }
           end
         end
       end
@@ -395,7 +406,7 @@ class RelaySpammer
 
   ensure
     pool&.shutdown
-    pool&.wait_for_termination(5) # Wait up to 5 seconds for graceful shutdown
+    pool&.wait_for_termination(5)
   end
 
   def make_rpc_request(gateway_url, app_address)
