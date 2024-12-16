@@ -25,14 +25,17 @@ type sharedKeeperQueryClient struct {
 func NewSharedKeeperQueryClient(
 	sharedKeeper SharedKeeper,
 	sessionKeeper SessionKeeper,
-) client.SharedQueryClient {
-	keeperParamsQuerier := keeper.NewKeeperParamsQuerier[sharedtypes.Params](sharedKeeper)
+) (client.SharedQueryClient, error) {
+	keeperParamsQuerier, err := keeper.NewKeeperParamsQuerier[sharedtypes.Params](sharedKeeper)
+	if err != nil {
+		return nil, err
+	}
 
 	return &sharedKeeperQueryClient{
 		ParamsQuerier: keeperParamsQuerier,
 		sharedKeeper:  sharedKeeper,
 		sessionKeeper: sessionKeeper,
-	}
+	}, nil
 }
 
 // GetSessionGracePeriodEndHeight returns the block height at which the grace period

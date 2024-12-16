@@ -2,11 +2,9 @@ package keeper
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
 	"github.com/pokt-network/poktroll/pkg/client"
-	"github.com/pokt-network/poktroll/pkg/client/query/cache"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
@@ -21,47 +19,20 @@ type paramsKeeperIface[P any] interface {
 // keeperParamsQuerier provides a base implementation of ParamsQuerier for keeper-based clients
 type keeperParamsQuerier[P any, K paramsKeeperIface[P]] struct {
 	keeper K
-	cache  client.HistoricalQueryCache[P]
 }
 
 // NewKeeperParamsQuerier creates a new keeperParamsQuerier instance
 func NewKeeperParamsQuerier[P any, K paramsKeeperIface[P]](
 	keeper K,
-	opts ...cache.QueryCacheOptionFn,
-) *keeperParamsQuerier[P, K] {
-	// Use sensible defaults for keeper-based params cache
-	defaultOpts := []cache.QueryCacheOptionFn{
-		cache.WithEvictionPolicy(cache.FirstInFirstOut),
-	}
-	opts = append(defaultOpts, opts...)
-
-	// TODO_IMPROVE: Implement and call a goroutine that subscribes to params updates to keep the cache hot.
-
+) (*keeperParamsQuerier[P, K], error) {
 	return &keeperParamsQuerier[P, K]{
 		keeper: keeper,
-		cache:  cache.NewInMemoryCache[P](opts...),
-	}
+	}, nil
 }
 
 // GetParams retrieves current parameters from the keeper
 func (kpq *keeperParamsQuerier[P, K]) GetParams(ctx context.Context) (*P, error) {
-	// Check cache first
-	cached, err := kpq.cache.Get("params")
-	if err == nil {
-		return &cached, nil
-	}
-	if err != nil && !errors.Is(err, cache.ErrCacheMiss) {
-		return &cached, err
-	}
-
-	// On cache miss, get from keeper
 	params := kpq.keeper.GetParams(ctx)
-
-	// Cache the result
-	if err := kpq.cache.Set("params", params); err != nil {
-		return &params, fmt.Errorf("failed to cache params: %w", err)
-	}
-
 	return &params, nil
 }
 

@@ -109,13 +109,16 @@ func TestEnsureValidProof_Error(t *testing.T) {
 	// TODO_TECHDEBT: add a test case such that we can distinguish between early
 	// & late session end block heights.
 
+	sharedKeeperQueryClient, err := prooftypes.NewSharedKeeperQueryClient(keepers.SharedKeeper, keepers.SessionKeeper)
+	require.NoError(t, err)
+
 	// Construct a ringClient to get the application's ring & verify the relay
 	// request signature.
 	ringClient, err := rings.NewRingClient(depinject.Supply(
 		polyzero.NewLogger(),
 		prooftypes.NewAppKeeperQueryClient(keepers.ApplicationKeeper),
 		prooftypes.NewAccountKeeperQueryClient(keepers.AccountKeeper),
-		prooftypes.NewSharedKeeperQueryClient(keepers.SharedKeeper, keepers.SessionKeeper),
+		sharedKeeperQueryClient,
 	))
 	require.NoError(t, err)
 

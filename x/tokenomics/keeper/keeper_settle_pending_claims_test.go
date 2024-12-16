@@ -143,13 +143,16 @@ func (s *TestSuite) SetupTest() {
 	require.NoError(t, err)
 	sessionHeader := sessionRes.Session.Header
 
+	sharedKeeperQueryClient, err := prooftypes.NewSharedKeeperQueryClient(s.keepers.SharedKeeper, s.keepers.SessionKeeper)
+	require.NoError(t, err)
+
 	// Construct a ringClient to get the application's ring & verify the relay
 	// request signature.
 	ringClient, err := rings.NewRingClient(depinject.Supply(
 		polyzero.NewLogger(),
 		prooftypes.NewAppKeeperQueryClient(s.keepers.ApplicationKeeper),
 		prooftypes.NewAccountKeeperQueryClient(s.keepers.AccountKeeper),
-		prooftypes.NewSharedKeeperQueryClient(s.keepers.SharedKeeper, s.keepers.SessionKeeper),
+		sharedKeeperQueryClient,
 	))
 	require.NoError(t, err)
 

@@ -144,12 +144,15 @@ func TestMsgServer_SubmitProof_Success(t *testing.T) {
 			// Construct a proof message server from the proof keeper.
 			srv := keeper.NewMsgServerImpl(*keepers.Keeper)
 
+			sharedKeeperQueryClient, err := prooftypes.NewSharedKeeperQueryClient(keepers.SharedKeeper, keepers.SessionKeeper)
+			require.NoError(t, err)
+
 			// Prepare a ring client to sign & validate relays.
 			ringClient, err := rings.NewRingClient(depinject.Supply(
 				polyzero.NewLogger(),
 				prooftypes.NewAppKeeperQueryClient(keepers.ApplicationKeeper),
 				prooftypes.NewAccountKeeperQueryClient(keepers.AccountKeeper),
-				prooftypes.NewSharedKeeperQueryClient(keepers.SharedKeeper, keepers.SessionKeeper),
+				sharedKeeperQueryClient,
 			))
 			require.NoError(t, err)
 
@@ -319,12 +322,15 @@ func TestMsgServer_SubmitProof_Error_OutsideOfWindow(t *testing.T) {
 	// Construct a proof message server from the proof keeper.
 	srv := keeper.NewMsgServerImpl(*keepers.Keeper)
 
+	sharedKeeperQueryClient, err := prooftypes.NewSharedKeeperQueryClient(keepers.SharedKeeper, keepers.SessionKeeper)
+	require.NoError(t, err)
+
 	// Prepare a ring client to sign & validate relays.
 	ringClient, err := rings.NewRingClient(depinject.Supply(
 		polyzero.NewLogger(),
 		prooftypes.NewAppKeeperQueryClient(keepers.ApplicationKeeper),
 		prooftypes.NewAccountKeeperQueryClient(keepers.AccountKeeper),
-		prooftypes.NewSharedKeeperQueryClient(keepers.SharedKeeper, keepers.SessionKeeper),
+		sharedKeeperQueryClient,
 	))
 	require.NoError(t, err)
 
@@ -516,13 +522,16 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 	// Construct a proof message server from the proof keeper.
 	srv := keeper.NewMsgServerImpl(*keepers.Keeper)
 
+	sharedKeeperQueryClient, err := prooftypes.NewSharedKeeperQueryClient(keepers.SharedKeeper, keepers.SessionKeeper)
+	require.NoError(t, err)
+
 	// Construct a ringClient to get the application's ring & verify the relay
 	// request signature.
 	ringClient, err := rings.NewRingClient(depinject.Supply(
 		polyzero.NewLogger(),
 		prooftypes.NewAppKeeperQueryClient(keepers.ApplicationKeeper),
 		prooftypes.NewAccountKeeperQueryClient(keepers.AccountKeeper),
-		prooftypes.NewSharedKeeperQueryClient(keepers.SharedKeeper, keepers.SessionKeeper),
+		sharedKeeperQueryClient,
 	))
 	require.NoError(t, err)
 
@@ -765,12 +774,15 @@ func TestMsgServer_SubmitProof_FailSubmittingNonRequiredProof(t *testing.T) {
 	// Construct a proof message server from the proof keeper.
 	srv := keeper.NewMsgServerImpl(*keepers.Keeper)
 
+	sharedKeeperQueryClient, err := prooftypes.NewSharedKeeperQueryClient(keepers.SharedKeeper, keepers.SessionKeeper)
+	require.NoError(t, err)
+
 	// Prepare a ring client to sign & validate relays.
 	ringClient, err := rings.NewRingClient(depinject.Supply(
 		polyzero.NewLogger(),
 		prooftypes.NewAppKeeperQueryClient(keepers.ApplicationKeeper),
 		prooftypes.NewAccountKeeperQueryClient(keepers.AccountKeeper),
-		prooftypes.NewSharedKeeperQueryClient(keepers.SharedKeeper, keepers.SessionKeeper),
+		sharedKeeperQueryClient,
 	))
 	require.NoError(t, err)
 
