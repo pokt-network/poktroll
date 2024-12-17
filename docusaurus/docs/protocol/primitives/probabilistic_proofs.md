@@ -482,7 +482,7 @@ By modeling the attack using a geometric distributions and calculating expected 
 - Determine the necessary penalty `S` to deter dishonest behavior.
 - Ensure that honest Suppliers remain profitable while dishonest Suppliers face negative expected profits.
 
-This approach allows the network to scale by reducing the number of on-chain Proofs while maintaining economic incentives that discourage dishonest behavior.
+This approach allows the network to scale by reducing the number of on-chain Proofs while maintaining economic (dis)incentives that deter dishonest behavior.
 
 ## Morse Based Value Selection
 
