@@ -214,6 +214,7 @@ $$ P(X = k+1) = q^k \cdot p $$
 
 $$ E[K] = \frac{q}{p} $$
 
+:::note
 Recall:
 
 - **Success**: The network **does** catch a dishonest Supplier
