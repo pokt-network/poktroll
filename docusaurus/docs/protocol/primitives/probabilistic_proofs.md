@@ -476,9 +476,9 @@ perspective of what the probabilities of success and failure are.
 
 By modeling the attack using a geometric distributions and calculating expected values, we can:
 
-- Determine `R = ProofRequirementThreshold` using statical onchain data
-- Manually adjust `p = ProofRequestProbability` to adjust scalability
-- Compute `S ≤ SupplierMinStake` to deter dishonest behavior
+- Determine `R = ProofRequirementThreshold` using statical onchain data.
+- Manually adjust `p = ProofRequestProbability` to adjust scalability.
+- Compute `S ≤ SupplierMinStake` to deter dishonest behavior.
 - Determine the necessary penalty `S` to deter dishonest behavior.
 - Ensure that honest Suppliers remain profitable while dishonest Suppliers face negative expected profits.
 
