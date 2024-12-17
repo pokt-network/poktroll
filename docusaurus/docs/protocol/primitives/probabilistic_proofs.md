@@ -62,32 +62,28 @@ TODO_IN_THIS_PR: Turn this into a table.
 
 Network parameters:
 
-- Session duration: `1` hour
+- **Session duration**: `1` hour
+- **Number of suppliers per session (per app)**: `20`
+- **Number of services per session (per app)**: `1`
 
-Network state:
+Network state (conservative scenario):
 
-- Median Proof Size: `1,000` bytes
-- Number of services: `10,000`
-- Number of applications: `100,000`
-- Number of suppliers: `100,000`
-- Number of suppliers per session: `10`
-- Number of Proofs per session: `1`
+- **Number of (active) services**: `10,000`
+- **Number of (active) applications**: `100,000`
+- **Number of (active) suppliers**: `100,000`
 
-Conservative (simple) scenario:
+Assumptions for the purpose of an example:
 
-- Number of active applications: `10,000`
-- Number of services used per application per session: `5`
-- Number of suppliers used per application per session: `10`
-- 1 Proof per (service, supplier) pair for each app
-- Total time: `1` day (`24` sessions)
+- **Median Proof Size**: `1,000` bytes
+- **Total time**: `1` day (`24` sessions)
 
 Total disk growth per day:
 
 ```bash
-10,000 apps * 1 Proof/(service,supplier) * 10 suppliers/app * 5 services/session * 24 sessions * 1,000 bytes/Proof = 12 GB
+10,000 apps * 1 Proof/(service,supplier) * 20 suppliers/app * 1 services/session * 24 sessions * 1,000 bytes/Proof = 4.8 GB ≈ 5 GB
 ```
 
-A very simple (conservative) scenario would result in `12 GB` of disk growth per day, amounting to more than `4 TB` of disk growth in a year.
+**CRITICAL**: A very simple (conservative) scenario would result in `5 GB` of disk growth per day, amounting to almost `2 TB` of disk growth in a year.
 
 This discounts CPU usage needed to verify the Proofs.
 
@@ -180,7 +176,7 @@ to model the probability of a dishonest Supplier getting caught when submitting 
   - All other outcomes
   - Does not include _short-circuited_ (i.e. Claim.ComputeUnits > ProofRequirementThreshold)
 
-### Onchain Governance Parameters
+### Conceptual Parameters: Onchain, Modeling, Governance, Etc
 
 - **ProofRequestProbability (p)**: The probability that a Claim will require a Proof.
 - **Penalty (S)**: The amount of stake slashed when a Supplier fails to provide a required Proof.
@@ -230,7 +226,7 @@ is penalized. This can be modeled using a Geometric PDF (Probability Distributio
 In practice, we need to track the likelihood of `k or less` failures `Pr(X<=k)`,
 until a single success. This can be modeled using a Geometric CDF.
 
-TODO_IN_THIS_PR: Remove the paragraph below.
+TODO_IN_THIS_PR: Remove the paragraph below. From Bryan: `This paragraph confuses me a bit. The previous paragraph says that we need to use a CDF but then this paragraph seems to turn around and say that this actually don't? I feel like this and the above paragraph should be combined and rephrased a bit.`
 
 To simplify the math, we'll be using the Expected Value of a Geometric PDF
 due to its [simpler proof formulation](https://en.wikipedia.org/wiki/Geometric_distribution#Proof_of_expected_value), guaranteeing the results be **AT LEAST**
@@ -342,6 +338,8 @@ While the expected profit is `0`, the variance in the number of successful false
 Claims can make dishonest behavior risky. The Supplier might get caught earlier than expected,
 leading to a net loss.
 
+TODO_IN_THIS_PR: Incorporate this from Ramiro: `Variance works both ways, hence my previous comment. This can be a justification for changing the calculation of S as I suggest. This is because the attacker might not be caught until much later and result in a net profit.`
+
 ## Crypto-economic Analysis & Incentives
 
 ### Impact on Honest Suppliers
@@ -394,6 +392,8 @@ By tweaking `p` and `S`, the network can:
 
 - **Lower `p`** reduces the number of Proofs required --> improves scalability --> requires higher penalties.
 - **Higher `S`** increases the risk for dishonest Suppliers --> lead to social adversity from network participants.
+
+TODO_IN_THIS_PR: Explain how `How does a high slashing penalty increase the risk of dishonest suppliers?`
 
 #### Selecting Optimal `p` and `S`
 
@@ -518,6 +518,7 @@ $$ S = R \cdot E[K] = 20 \cdot 99 = 1980 ≈ 2,000 $$
 
    - The number of sessions a supplier is in will need to be limited
    - The minimum stake amount will need to be significantly higher than the penalty to enable slashing across multiple sessions at once
+   - It could be a multiple of its provided services count.
 
 2. **Optimal Reward Value**: Evaluating onchain Shannon data to determine the optimal value for `R`
 3. **Closed Feedback Loop**: Having `p` dynamically adjust onchain as a function of onchain data without intervention from the DAO / PNF.
