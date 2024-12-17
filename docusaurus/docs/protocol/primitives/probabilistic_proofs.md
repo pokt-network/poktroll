@@ -219,6 +219,7 @@ Recall:
 
 - **Success**: The network **does** catch a dishonest Supplier
 - **Failure**: The network **does not** catch a dishonest Supplier
+:::
 
 #### Modeling a Dishonest Supplier's Strategy using a Geometric CDF (Cumulative Distribution Function)
 
