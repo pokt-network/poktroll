@@ -5,13 +5,12 @@ sidebar_position: 5
 
 _tl;dr Probabilistic Proofs is a method to scale Pocket Network indefinitely._
 
-## Abstract
+## Abstract <!-- omit in toc -->
 
-This document explains and walks through the mechanism of Probabilistic Proofs needed
-to scale Pocket Network indefinitely. Precisely, it'll allow an unlimited number of
-sessions that pair (Applications, Suppliers, Services) by requiring a single Claim
-for each such session, but only require a proof probabilistically if it is below a
-specific threshold.
+This document describes the mechanism of Probabilistic Proofs, which is what allows
+Pocket Network to scale verifiable relay throughput to match an arbitrarily large demand.
+Precisely, it allows an unlimited number of ["sessions"](./session.md) which pair (Applications and Suppliers for a given Service) by requiring the creation of a single on-chain Claim
+for each such session, but only probabilistically requiring an on-chain proof if it's total reward amount is below a specific threshold.
 
 External stakeholders (i.e. DAO/Foundation) need to be involved in adjusting the
 `ProofRequirementThreshold` by statistically analyzing onchain data, along with selecting
@@ -29,6 +28,90 @@ this value, staked collateral will be available for slashing, if needed.
 
 In future work, we will look at a potential attack vector that still needs to be considered,
 along with further research on the topic.
+
+## Table of Contents <!-- omit in toc -->
+
+- [Relationship to Relay Mining](#relationship-to-relay-mining)
+- [Problem Statement](#problem-statement)
+- [Example Scenario](#example-scenario)
+- [High Level Approach](#high-level-approach)
+- [Key Question](#key-question)
+- [Guarantees \& Expected Values](#guarantees--expected-values)
+- [Modeling an Attack](#modeling-an-attack)
+  - [Defining a Single (Bernoulli) Trial](#defining-a-single-bernoulli-trial)
+  - [Conceptual Parameters: Onchain, Modeling, Governance, Etc](#conceptual-parameters-onchain-modeling-governance-etc)
+  - [Dishonest Supplier: Calculating the Expected Value](#dishonest-supplier-calculating-the-expected-value)
+    - [Modeling a Dishonest Supplier's Strategy using a Geometric PDF (Probability Distribution Function)](#modeling-a-dishonest-suppliers-strategy-using-a-geometric-pdf-probability-distribution-function)
+    - [Expected Number of False Claims (Failures) Before Getting Caught (Success)](#expected-number-of-false-claims-failures-before-getting-caught-success)
+    - [Modeling a Dishonest Supplier's Strategy using a Geometric CDF (Cumulative Distribution Function)](#modeling-a-dishonest-suppliers-strategy-using-a-geometric-cdf-cumulative-distribution-function)
+    - [Total Rewards: Expected Value Calculation for Dishonest Supplier Before Penalty](#total-rewards-expected-value-calculation-for-dishonest-supplier-before-penalty)
+    - [Expected Penalty: Slashing amount for Dishonest Supplier](#expected-penalty-slashing-amount-for-dishonest-supplier)
+    - [Total Profit: Expected Value Calculation for Dishonest Supplier AFTER Penalty](#total-profit-expected-value-calculation-for-dishonest-supplier-after-penalty)
+  - [Honest Supplier: Calculating the Expected Value](#honest-supplier-calculating-the-expected-value)
+  - [Setting Parameters to Deter Dishonest Behavior](#setting-parameters-to-deter-dishonest-behavior)
+    - [Solving for Penalty `S`](#solving-for-penalty-s)
+  - [Example Calculation](#example-calculation)
+  - [Generalizing the Penalty Formula](#generalizing-the-penalty-formula)
+  - [Considering false Claim Variance](#considering-false-claim-variance)
+- [Crypto-economic Analysis \& Incentives](#crypto-economic-analysis--incentives)
+  - [Impact on Honest Suppliers](#impact-on-honest-suppliers)
+  - [Impact on Dishonest Suppliers](#impact-on-dishonest-suppliers)
+  - [Analogs between Model Parameters and onchain Governance Values](#analogs-between-model-parameters-and-onchain-governance-values)
+  - [Parameter Analog for Penalty (`S`)](#parameter-analog-for-penalty-s)
+  - [Parameter Analog for Reward (`R`)](#parameter-analog-for-reward-r)
+  - [TODO_IN_THIS_PR: Explain `p`](#todo_in_this_pr-explain-p)
+  - [Considerations during Parameter Adjustment](#considerations-during-parameter-adjustment)
+    - [Selecting Optimal `p` and `S`](#selecting-optimal-p-and-s)
+    - [Considerations for `Proof.ProofRequirementThreshold` an `ProofRequirementThreshold`](#considerations-for-proofproofrequirementthreshold-an-proofrequirementthreshold)
+      - [Normal Distribution](#normal-distribution)
+      - [Non-Normal Distribution](#non-normal-distribution)
+    - [Considerations for `ProofRequestProbability` (`p`)](#considerations-for-proofrequestprobability-p)
+      - [Maximizing `Pr(X<=k)` to ensure `k or less` failures (Supplier escapes without penalty)](#maximizing-prxk-to-ensure-k-or-less-failures-supplier-escapes-without-penalty)
+- [Conclusions for Modeling](#conclusions-for-modeling)
+- [Morse Based Value Selection](#morse-based-value-selection)
+  - [Selecting `ProofRequirementThreshold`](#selecting-proofrequirementthreshold)
+  - [Calculating `p`: `ProofRequestProbability`](#calculating-p-proofrequestprobability)
+  - [Calculating `S`: `ProofMissingPenalty`](#calculating-s-proofmissingpenalty)
+- [TODO_IN_THIS_PR: Above Threshold Attack Possibility](#todo_in_this_pr-above-threshold-attack-possibility)
+- [Future Work](#future-work)
+
+## Relationship to Relay Mining
+
+I think it may be worth noting that while probabilistic proofs reduce the number of on-chain proofs (block size), it will drive up supplier min stake amount as it's scaled. I think relaymining helps to mitigate this by taking the scaling pressure off of probabilistic proofs by reducing the size of each proof. Additionally, relaymining has the effect of minimizing the "max claim persistence footprint size":
+
+```mermaid
+---
+title: Scaling Up Relay Throughput (w/ respect to block size)
+---
+flowchart
+
+subgraph pp[Probabilistic Proofs]
+prob[proof requirement probability: **decreases**]
+thres["threshold (limited by target percentile): **increases**"]
+pen[penalty: **increases**]
+end
+
+prob <-."negative correlation yields constant security guarantees ⛓️".-> pen
+
+
+thres --"**minmizes**"---> pn
+pen --"**maximizes**"---> smin
+
+subgraph rm[RelayMining]
+diff[mining difficulty: **increases**]
+end
+
+%% Holding num relays constant:
+pn[num on-chain proofs]
+cn["num on-chain claims (pruned over time)"]
+ps[size of on-chain proofs]
+
+smin[Supplier min stake]
+
+prob --"**minimizes**"--> pn
+diff --"**minimizes**"--> cn
+diff --"**minimizes**"--> ps
+```
 
 ## Problem Statement
 
@@ -183,6 +266,13 @@ to model the probability of a dishonest Supplier getting caught when submitting 
 - **Reward per Claim (R)**: The reward received for a successful Claim without Proof.
 - **Maximum Claims Before Penalty (k)**: The expected number of false Claims a Supplier can make before getting caught.
 
+:::note
+
+Note that `k` is not an on-chain governance parameter, but rather a modeling parameter used
+to model out the attack.
+
+:::
+
 We note that `R` is variable and that `SupplierMinStake` is not taken into account in the definition of the problem.
 As will be demonstrated by the end of this document:
 
@@ -215,7 +305,7 @@ Recall:
 
 - **Success**: The network **does** catch a dishonest Supplier
 - **Failure**: The network **does not** catch a dishonest Supplier
-:::
+  :::
 
 #### Modeling a Dishonest Supplier's Strategy using a Geometric CDF (Cumulative Distribution Function)
 
@@ -233,7 +323,7 @@ as secure when compared to the Geometric CDF.
 
 Visual intuition of the two can be seen below:
 
-![Geometric CDF for Different p Values](./geometric_pdf_vs_cdf.png)
+![Geometric CDF for Different p Values](./probabilistic_proofs/geometric_pdf_vs_cdf.png)
 
 :::tip
 
@@ -331,6 +421,30 @@ This makes the expected profit for dishonest behavior `0`:
 
 $$ E[\text{Total Profit}_{\text{Dishonest}}] = R \cdot \frac{q}{p} - S = 0 $$
 
+TODO_IN_THIS_PR, incorporate feedback from ramiro:
+
+```
+This value will provide the attacker no expected return, but also no penalty.
+In fact, the expected cost of sending an attack is 0 POKT.
+An attacker can keep sending claims to the network because at the end of the day s/he will not lose money. This enables spam in the network.
+
+We can model this using the quantile function (or "percent point function"), the inverse of the CDF.
+Sadly I found no closed form for the geometric function (because it is a step function), but we can calculate it easily (is a really small iterative process).
+
+For example, to be sure that in 95% of all the attacks the attacker is punished (or breaks even in a marginal number of samples), we should set the slash amount (S) approx 3x from what you use here (~6K POKT for the numbers in this example).
+Doing this will penalize the attacker/spammer with an average of 4K POKT per attack try.
+
+If you want I can create small notebook with the procedure and simulation.
+
+
+Some notes:
+
+The CDF of the E(Geom(p=0.01)) is 63%, meaning that 37% of all attacks result in net profit (some very large).
+I use 95% in the example but this can be less, like 75%, resulting in lower S and hence lower min stakes while adding net loss to the attacker). Any value above 63% will result in net loss for the attacker.
+```
+
+Source: https://gist.github.com/RawthiL/9ed65065b896d13e96dc2a5910f6a7ab
+
 ### Considering false Claim Variance
 
 While the expected profit is `0`, the variance in the number of successful false
@@ -348,13 +462,24 @@ Their expected profit remains:
 
 $$ E[\text{Total Profit}_{\text{Honest}}] = R $$
 
+:::danger
+
+TODO_IN_THIS_PR: Honest faulty suppliers will also be affectd and peanlized,
+which was not an issue before.
+
+What about non-malicious faults (e.g. network outage)? In this case, I would argue that there's definitely a potential for impact on honest suppliers.
+Do you see it differently?
+Is it worth mentioning that possibility here?
+
+:::
+
 ### Impact on Dishonest Suppliers
 
-Dishonest Suppliers face:
+Dishonest suppliers must contend with substantial penalties that erase their
+anticipated profits, coupled with a heightened risk of early detection and ensuing net losses.
 
-- A high penalty (`S`) that wipes out their expected gains.
-- The risk of getting caught earlier than expected, resulting in a net loss.
-- Increased uncertainty due to the probabilistic nature of Proof requests.
+Furthermore, the inherently probabilistic nature of Proof requests introduces
+additional uncertainty, making dishonest behavior both less predictable and more costly.
 
 ### Analogs between Model Parameters and onchain Governance Values
 
@@ -369,7 +494,7 @@ always has in escrow. This amount can be slashed and/or taken from the Supplier 
 
 ### Parameter Analog for Reward (`R`)
 
-_tl;dr `R` = `ProofRequirementThreshold`_
+_tl;dr `R` = `Proof.ProofRequirementThreshold`_
 
 In practice, the reward for each onchain Claim is variable and a function of the amount
 of work done.
@@ -380,7 +505,11 @@ short-circuits this entire document.
 
 Therefore, `R` can be assumed constant when determining the optimal `p` and `S`.
 
+### TODO_IN_THIS_PR: Explain `p`
+
 ### Considerations during Parameter Adjustment
+
+TODO_IN_THIS_PR: Add a mermaid diagram for this.
 
 By tweaking `p` and `S`, the network can:
 
@@ -395,6 +524,8 @@ By tweaking `p` and `S`, the network can:
 TODO_IN_THIS_PR: Explain how `How does a high slashing penalty increase the risk of dishonest suppliers?`
 
 #### Selecting Optimal `p` and `S`
+
+TODO_IN_THIS_PR: Add a mermaid diagram for this.
 
 To select appropriate values:
 
@@ -416,7 +547,7 @@ To select appropriate values:
 
 To illustrate the relationship between `p`, `S`, see the following chart:
 
-![Penalty vs. ProofRequestProbability](./Peanlty_vs_ProofRequestProbability.png)
+![Penalty vs. ProofRequestProbability](./probabilistic_proofs/Peanlty_vs_ProofRequestProbability.png)
 
 :::tip
 
@@ -424,12 +555,10 @@ You can generate the graph above with `penalty_vs_proof_request_prob.py`
 
 :::
 
-#### Considerations for `ProofRequirementThreshold`
+#### Considerations for `Proof.ProofRequirementThreshold` an `ProofRequirementThreshold`
 
 - **Threshold Value**: Set the `ProofRequirementThreshold` low enough that most Claims are subject to probabilistic Proof requests, but high enough to prevent excessive Proof submissions.
 - **Short-Circuiting**: Claims above the threshold always require Proofs, eliminating the risk of large false Claims slipping through.
-
-##### Modeling `ProofRequirementThreshold`
 
 `ProofRequirementThreshold` should be as small as possible so that most such that
 most Claims for into the probabilistic bucket, while also balancing out penalties
@@ -450,7 +579,7 @@ such that 95% of Claims fall into the category of requiring a proof.
 
 :::note
 
-See [Pocket_Network_Morse_Probabilistic_Proofs.ipynb](./Pocket_Network_Morse_Probabilistic_Proofs.ipynb) for more details from Morse backing the fact that the majority of the block space is taken up by Proofs.
+See [Pocket_Network_Morse_Probabilistic_Proofs.ipynb](./Pocket_Network_Morse_Probabilistic_Proofs.ipynb) for more details from Morse, supporting the fact that the majority of the block space is taken up by Proofs.
 
 :::
 
@@ -489,7 +618,7 @@ As of writing (October 2024), Shannon MainNet is not live; therefore, data from 
 
 ### Selecting `ProofRequirementThreshold`
 
-Choose `R = 20` since it is greater than `p95` of all Claims collected in Morse. 
+Choose `R = 20` since it is greater than `p95` of all Claims collected in Morse.
 
 :::info
 Units are in `POKT`.
@@ -509,6 +638,22 @@ $$ E[K] = \frac{q}{p} = \frac{0.99}{0.01} = 99 $$
 ### Calculating `S`: `ProofMissingPenalty`
 
 $$ S = R \cdot E[K] = 20 \cdot 99 = 1980 ≈ 2,000 $$
+
+## TODO_IN_THIS_PR: Above Threshold Attack Possibility
+
+above threshold attacks possibilities.
+
+We should investigate above threshold attacks possibilities.
+
+Supplier adds fake serviced relays to the SMT.
+Submits the claim.
+If the closest proof corresponds to a:
+a. Fake relay -> Do not submit the proof and face slashing.
+b. Legit relay -> Submit the proof and be rewarded for fake relays.
+
+This is interesting, you talk about inflating the tree with fake relays. I think that the effect will be a reduction of the catch probability that is proportional to the fake relays ratio.
+Supose that you inflate your tree by a X%, then you have a a chance of being requested a proof given by ProofRequestProbability and a X/100 chance that the requested proof is a fake relay.
+I think that in practice this can be modeled as a reduced ProofRequestProbability, so we can add a security factor there.
 
 ## Future Work
 
