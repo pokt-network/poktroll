@@ -114,6 +114,9 @@ func txCommand() *cobra.Command {
 		authcmd.GetDecodeCommand(),
 		authcmd.GetSimulateCmd(),
 	)
+
+	// TODO_TECHDEBT: doesn't seem changing flags here has any effect (as commands use `flags.AddTxFlagsToCmd(cmd)`)
+	// consider moving to `clientconfig.DefaultClientConfigTemplate` and `initClientConfig()` on newer cosmos-sdk versions (currently at v0.50.9)
 	cmd.PersistentFlags().String(flags.FlagChainID, DefaultChainID, "The network chain ID")
 
 	return cmd

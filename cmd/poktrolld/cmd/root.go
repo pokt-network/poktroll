@@ -76,6 +76,7 @@ func NewRootCmd() *cobra.Command {
 				return err
 			}
 
+			// TODO_TECHDEBT: switch to `config.CreateClientConfig` on newer cosmos-sdk versions. Make use of `initClientConfig()`
 			clientCtx, err = config.ReadFromClientConfig(clientCtx)
 			if err != nil {
 				return err
@@ -94,10 +95,6 @@ func NewRootCmd() *cobra.Command {
 			}
 
 			clientCtx = clientCtx.WithTxConfig(txConfigWithTextual)
-			if err = client.SetCmdClientContextHandler(clientCtx, cmd); err != nil {
-				return err
-			}
-
 			if err = client.SetCmdClientContextHandler(clientCtx, cmd); err != nil {
 				return err
 			}
