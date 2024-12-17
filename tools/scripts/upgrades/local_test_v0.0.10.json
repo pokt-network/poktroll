@@ -1,0 +1,15 @@
+{
+    "body": {
+        "messages": [
+            {
+                "@type": "/cosmos.upgrade.v1beta1.MsgSoftwareUpgrade",
+                "authority": "pokt10d07y265gmmuvt4z0w9aw880jnsr700j8yv32t",
+                "plan": {
+                    "name": "v0.0.10",
+                    "height": "20",
+                    "info": "This field is not used for local testing"
+                }
+            }
+        ]
+    }
+}

@@ -2,6 +2,7 @@ package keeper
 
 import (
 	"context"
+	"fmt"
 
 	"cosmossdk.io/store/prefix"
 	"github.com/cosmos/cosmos-sdk/runtime"
@@ -13,6 +14,8 @@ import (
 )
 
 func (k Keeper) RelayMiningDifficultyAll(ctx context.Context, req *types.QueryAllRelayMiningDifficultyRequest) (*types.QueryAllRelayMiningDifficultyResponse, error) {
+	logger := k.Logger().With("method", "RelayMiningDifficultyAll")
+
 	if req == nil {
 		return nil, status.Error(codes.InvalidArgument, "invalid request")
 	}
@@ -25,7 +28,9 @@ func (k Keeper) RelayMiningDifficultyAll(ctx context.Context, req *types.QueryAl
 	pageRes, err := query.Paginate(relayMiningDifficultyStore, req.Pagination, func(key []byte, value []byte) error {
 		var relayMiningDifficulty types.RelayMiningDifficulty
 		if err := k.cdc.Unmarshal(value, &relayMiningDifficulty); err != nil {
-			return err
+			err = fmt.Errorf("unable to unmarshal relayMiningDifficulty with key (hex): %x: %w", key, err)
+			logger.Error(err.Error())
+			return status.Error(codes.Internal, err.Error())
 		}
 
 		relayMiningDifficulties = append(relayMiningDifficulties, relayMiningDifficulty)
@@ -44,13 +49,15 @@ func (k Keeper) RelayMiningDifficulty(ctx context.Context, req *types.QueryGetRe
 		return nil, status.Error(codes.InvalidArgument, "invalid request")
 	}
 
-	difficulty, found := k.GetRelayMiningDifficulty(
-		ctx,
-		req.ServiceId,
-	)
-	if !found {
-		return nil, status.Error(codes.NotFound, "not found")
+	_, serviceFound := k.GetService(ctx, req.ServiceId)
+	if !serviceFound {
+		return nil, status.Error(
+			codes.NotFound,
+			types.ErrServiceNotFound.Wrapf("serviceID: %s", req.ServiceId).Error(),
+		)
 	}
+
+	difficulty, _ := k.GetRelayMiningDifficulty(ctx, req.ServiceId)
 
 	return &types.QueryGetRelayMiningDifficultyResponse{RelayMiningDifficulty: difficulty}, nil
 }

@@ -1,33 +1,63 @@
-package types
+package types_test
 
 import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/pokt-network/poktroll/cmd/poktrolld/cmd"
 	"github.com/pokt-network/poktroll/testutil/sample"
+	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
 )
+
+func init() {
+	cmd.InitSDKConfig()
+}
 
 func TestMsgUpdateParams_ValidateBasic(t *testing.T) {
 	tests := []struct {
 		desc        string
-		msg         MsgUpdateParams
+		msg         tokenomicstypes.MsgUpdateParams
 		expectedErr error
 	}{
 		{
-			desc: "invalid authority address",
-			msg: MsgUpdateParams{
+			desc: "invalid: non-bech32 authority address",
+			msg: tokenomicstypes.MsgUpdateParams{
 				Authority: "invalid_address",
-				Params:    Params{},
+				Params:    tokenomicstypes.Params{},
 			},
-			expectedErr: ErrTokenomicsAddressInvalid,
+			expectedErr: tokenomicstypes.ErrTokenomicsAddressInvalid,
 		},
 		{
-			desc: "valid address",
-			msg: MsgUpdateParams{
+			desc: "invalid: empty params",
+			msg: tokenomicstypes.MsgUpdateParams{
 				Authority: sample.AccAddress(),
-				Params:    Params{},
+				Params:    tokenomicstypes.Params{},
 			},
+			expectedErr: tokenomicstypes.ErrTokenomicsParamInvalid,
+		},
+		{
+			desc: "valid: address and default params",
+			msg: tokenomicstypes.MsgUpdateParams{
+				Authority: sample.AccAddress(),
+				Params:    tokenomicstypes.DefaultParams(),
+			},
+		},
+		{
+			desc: "invalid: mint allocation params don't sum to 1",
+			msg: tokenomicstypes.MsgUpdateParams{
+				Authority: sample.AccAddress(),
+				Params: tokenomicstypes.Params{
+					MintAllocationPercentages: tokenomicstypes.MintAllocationPercentages{
+						Dao:         0.1,
+						Proposer:    0.1,
+						Supplier:    0.1,
+						SourceOwner: 0.1,
+						Application: 0.1,
+					},
+				},
+			},
+			expectedErr: tokenomicstypes.ErrTokenomicsParamInvalid,
 		},
 	}
 

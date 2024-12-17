@@ -26,6 +26,7 @@ def merge_dicts(base, updates):
 #            environment is not broken for future engineers.
 localnet_config_path = "localnet_config.yaml"
 localnet_config_defaults = {
+    "hot-reloading": True,
     "validator": {
         "cleanupBeforeEachStart": True,
         "logs": {
@@ -45,20 +46,6 @@ localnet_config_defaults = {
             "level": "debug",
         },
     },
-    "gateways": {
-        "count": 1,
-        "delve": {"enabled": False},
-        "logs": {
-            "level": "debug",
-        },
-    },
-    "appgateservers": {
-        "count": 1,
-        "delve": {"enabled": False},
-        "logs": {
-            "level": "debug",
-        },
-    },
     "ollama": {
         "enabled": False,
         "model": "qwen:0.5b",
@@ -66,8 +53,14 @@ localnet_config_defaults = {
     "rest": {
         "enabled": True,
     },
+    "path_gateways": {
+        "count": 1,
+    },
 
-    # NOTE: git submodule usage was explicitly avoided to reduce environment complexity.
+    #############
+    # NOTE: git submodule usage was explicitly avoided for the repositories below
+    # to reduce environment complexity.
+    #############
 
     # By default, we use the `helm_repo` function below to point to the remote repository
     # but can update it to the locally cloned repo for testing & development
@@ -75,11 +68,19 @@ localnet_config_defaults = {
         "enabled": False,
         "path": os.path.join("..", "helm-charts")
     },
+
+    # By default, we use a pre-built PATH image, but can update it to use a local
+    # repo instead.
+    "path_local_repo": {
+        "enabled": False,
+        "path": "../path"
+    },
+
     "indexer": {
         "repo_path": os.path.join("..", "pocketdex"),
         "enabled": True,
         "clone_if_not_present": False,
-    }
+    },
 }
 localnet_config_file = read_yaml(localnet_config_path, default=localnet_config_defaults)
 # Initial empty config
@@ -95,9 +96,12 @@ if (localnet_config_file != localnet_config) or (not os.path.exists(localnet_con
     print("Updating " + localnet_config_path + " with defaults")
     local("cat - > " + localnet_config_path, stdin=encode_yaml(localnet_config))
 
-# Configure helm chart reference. If using a local repo, set the path to the local repo; otherwise, use our own helm repo.
+# Configure helm chart reference.
+# If using a local repo, set the path to the local repo; otherwise, use our own helm repo.
 helm_repo("pokt-network", "https://pokt-network.github.io/helm-charts/")
-# TODO_IMPROVE: Use os.path.join to make this more OS-agnostic.
+helm_repo("buildwithgrove", "https://buildwithgrove.github.io/helm-charts/")
+
+# Configure POKT chart references
 chart_prefix = "pokt-network/"
 if localnet_config["helm_chart_local_repo"]["enabled"]:
     helm_chart_local_repo = localnet_config["helm_chart_local_repo"]["path"]
@@ -105,6 +109,15 @@ if localnet_config["helm_chart_local_repo"]["enabled"]:
     print("Using local helm chart repo " + helm_chart_local_repo)
     # TODO_IMPROVE: Use os.path.join to make this more OS-agnostic.
     chart_prefix = helm_chart_local_repo + "/charts/"
+
+# Configure PATH references
+grove_chart_prefix = "buildwithgrove/"
+# If using a local repo, set the path to the local repo; otherwise, use our own helm repo.
+path_local_repo = ""
+if localnet_config["path_local_repo"]["enabled"]:
+    path_local_repo = localnet_config["path_local_repo"]["path"]
+    hot_reload_dirs.append(path_local_repo)
+    print("Using local PATH repo " + path_local_repo)
 
 # Observability
 print("Observability enabled: " + str(localnet_config["observability"]["enabled"]))
@@ -182,29 +195,30 @@ secret_create_generic(
 # Import configuration files into Kubernetes ConfigMap
 configmap_create("poktrolld-configs", from_file=listdir("localnet/poktrolld/config/"), watch=True)
 
-# Hot reload protobuf changes
-local_resource(
-    "hot-reload: generate protobufs",
-    "make proto_regen",
-    deps=["proto"],
-    labels=["hot-reloading"],
-)
-# Hot reload the poktrolld binary used by the k8s cluster
-local_resource(
-    "hot-reload: poktrolld",
-    "GOOS=linux ignite chain build --skip-proto --output=./bin --debug -v",
-    deps=hot_reload_dirs,
-    labels=["hot-reloading"],
-    resource_deps=["hot-reload: generate protobufs"],
-)
-# Hot reload the local poktrolld binary used by the CLI
-local_resource(
-    "hot-reload: poktrolld - local cli",
-    "ignite chain build --skip-proto --debug -v -o $(go env GOPATH)/bin",
-    deps=hot_reload_dirs,
-    labels=["hot-reloading"],
-    resource_deps=["hot-reload: generate protobufs"],
-)
+if localnet_config["hot-reloading"]:
+    # Hot reload protobuf changes
+    local_resource(
+        "hot-reload: generate protobufs",
+        "make proto_regen",
+        deps=["proto"],
+        labels=["hot-reloading"],
+    )
+    # Hot reload the poktrolld binary used by the k8s cluster
+    local_resource(
+        "hot-reload: poktrolld",
+        "GOOS=linux ignite chain build --skip-proto --output=./bin --debug -v",
+        deps=hot_reload_dirs,
+        labels=["hot-reloading"],
+        resource_deps=["hot-reload: generate protobufs"],
+    )
+    # Hot reload the local poktrolld binary used by the CLI
+    local_resource(
+        "hot-reload: poktrolld - local cli",
+        "ignite chain build --skip-proto --debug -v -o $(go env GOPATH)/bin",
+        deps=hot_reload_dirs,
+        labels=["hot-reloading"],
+        resource_deps=["hot-reload: generate protobufs"],
+    )
 
 # Build an image with a poktrolld binary
 docker_build_with_restart(
@@ -288,91 +302,70 @@ for x in range(localnet_config["relayminers"]["count"]):
         ],
     )
 
-# Provision AppGate Servers
+if localnet_config["path_local_repo"]["enabled"]:
+    docker_build("path-local", path_local_repo)
+
+# TODO_MAINNET(@okdas): Find and replace all `appgateserver` in ./localnet/grafana-dashboards`
+# with PATH metrics (see the .json files)
+# Ref: https://github.com/buildwithgrove/path/pull/72
+
+# Provision PATH Gateway(s)
 actor_number = 0
-for x in range(localnet_config["appgateservers"]["count"]):
-    actor_number = actor_number + 1
-    helm_resource(
-        "appgateserver" + str(actor_number),
-        chart_prefix + "appgate-server",
-        flags=[
-            "--values=./localnet/kubernetes/values-common.yaml",
-            "--values=./localnet/kubernetes/values-appgateserver.yaml",
-            "--set=config.signing_key=app" + str(actor_number),
-            "--set=metrics.serviceMonitor.enabled=" + str(localnet_config["observability"]["enabled"]),
-            "--set=development.delve.enabled=" + str(localnet_config["appgateservers"]["delve"]["enabled"]),
-            "--set=logLevel=" + str(localnet_config["appgateservers"]["logs"]["level"]),
-            "--set=image.repository=poktrolld",
-        ],
-        image_deps=["poktrolld"],
-        image_keys=[("image.repository", "image.tag")],
+# Loop to configure and apply multiple PATH gateway deployments
+for x in range(localnet_config["path_gateways"]["count"]):
+    actor_number += 1
+
+    resource_flags = [
+        "--values=./localnet/kubernetes/values-common.yaml",
+        "--set=metrics.serviceMonitor.enabled=" + str(localnet_config["observability"]["enabled"]),
+        "--set=path.mountConfigMaps[0].name=path-config-" + str(actor_number),
+        "--set=path.mountConfigMaps[0].mountPath=/app/config/",
+    ]
+
+    if localnet_config["path_local_repo"]["enabled"]:
+        path_image_deps = ["path-local"]
+        path_image_keys = [("image.repository", "image.tag")]
+        path_deps=["path-local"]
+        resource_flags.append("--set=global.imagePullPolicy=Never")
+    else:
+        path_image_deps = []
+        path_image_keys = []
+        path_deps=[]
+
+    configmap_create(
+        "path-config-" + str(actor_number),
+        from_file=".config.yaml=./localnet/kubernetes/config-path-" + str(actor_number) + ".yaml"
     )
+
+    helm_resource(
+        "path" + str(actor_number),
+        grove_chart_prefix + "path",
+        flags=resource_flags,
+        image_deps=path_image_deps,
+        image_keys=path_image_keys,
+    )
+
+    # Apply the deployment to Kubernetes using Tilt
     k8s_resource(
-        "appgateserver" + str(actor_number),
+        "path" + str(actor_number),
         labels=["gateways"],
-        resource_deps=["validator"],
-        links=[
-            link(
-                "http://localhost:3003/d/appgateserver/protocol-appgate-server?orgId=1&refresh=5s&var-appgateserver=appgateserver"
-                + str(actor_number),
-                "Grafana dashboard",
-            ),
-        ],
+        resource_deps=path_deps,
+        # TODO_IMPROVE(@okdas): Update this once PATH has grafana dashboards
+        # links=[
+        #     link(
+        #         "http://localhost:3003/d/path/protocol-path?orgId=1&refresh=5s&var-path=gateway"
+        #         + str(actor_number),
+        #         "Grafana dashboard",
+        #     ),
+        # ],
+        # TODO_IMPROVE(@okdas): Add port forwards to grafana, pprof, like the other resources
         port_forwards=[
-            str(42068 + actor_number) + ":42069",  # appgateserver1 - exposes 42069, appgateserver2 exposes 42070, etc.
-            str(40054 + actor_number)
-            + ":40004",  # DLV port. appgateserver1 - exposes 40055, appgateserver2 exposes 40056, etc.
-            # Run `curl localhost:PORT` to see the current snapshot of appgateserver metrics.
-            str(9079 + actor_number)
-            + ":9090",  # appgateserver metrics port. appgateserver1 - exposes 9080, appgateserver2 exposes 9081, etc.
-            # Use with pprof like this: `go tool pprof -http=:3333 http://localhost:6080/debug/pprof/goroutine`
-            str(6079 + actor_number)
-            + ":6090",  # appgateserver metrics port. appgateserver1 - exposes 6080, appgateserver2 exposes 6081, etc.
+                str(2999 + actor_number) + ":3000"
         ],
     )
 
-# Provision Gateways
-actor_number = 0
-for x in range(localnet_config["gateways"]["count"]):
-    actor_number = actor_number + 1
-    helm_resource(
-        "gateway" + str(actor_number),
-        chart_prefix + "appgate-server",
-        flags=[
-            "--values=./localnet/kubernetes/values-common.yaml",
-            "--values=./localnet/kubernetes/values-gateway.yaml",
-            "--set=config.signing_key=gateway" + str(actor_number),
-            "--set=metrics.serviceMonitor.enabled=" + str(localnet_config["observability"]["enabled"]),
-            "--set=development.delve.enabled=" + str(localnet_config["gateways"]["delve"]["enabled"]),
-            "--set=logLevel=" + str(localnet_config["gateways"]["logs"]["level"]),
-            "--set=image.repository=poktrolld",
-        ],
-        image_deps=["poktrolld"],
-        image_keys=[("image.repository", "image.tag")],
-    )
-    k8s_resource(
-        "gateway" + str(actor_number),
-        labels=["gateways"],
-        resource_deps=["validator"],
-        links=[
-            link(
-                "http://localhost:3003/d/appgateserver/protocol-appgate-server?orgId=1&refresh=5s&var-appgateserver=gateway"
-                + str(actor_number),
-                "Grafana dashboard",
-            ),
-        ],
-        port_forwards=[
-            str(42078 + actor_number) + ":42069",  # gateway1 - exposes 42079, gateway2 exposes 42080, etc.
-            str(40064 + actor_number) + ":40004",  # DLV port. gateway1 - exposes 40065, gateway2 exposes 40066, etc.
-            # Run `curl localhost:PORT` to see the current snapshot of gateway metrics.
-            str(9059 + actor_number)
-            + ":9090",  # gateway metrics port. gateway1 - exposes 9060, gateway2 exposes 9061, etc.
-            # Use with pprof like this: `go tool pprof -http=:3333 http://localhost:6090/debug/pprof/goroutine`
-            str(6059 + actor_number)
-            + ":6060",  # gateway metrics port. gateway1 - exposes 6060, gateway2 exposes 6061, etc.
-        ],
-    )
 
+# Provision Validators
 k8s_resource(
     "validator",
     labels=["pocket_network"],
@@ -391,8 +384,10 @@ k8s_resource(
     ],
 )
 
+# Provision anvil (test Ethereum) service nodes
 k8s_resource("anvil", labels=["data_nodes"], port_forwards=["8547"])
 
+# Provision ollama (LLM) service nodes
 if localnet_config["ollama"]["enabled"]:
     print("Ollama enabled: " + str(localnet_config["ollama"]["enabled"]))
 
@@ -411,6 +406,7 @@ if localnet_config["ollama"]["enabled"]:
         resource_deps=["ollama"],
     )
 
+# Provision RESTful (not JSON-RPC) test service nodes
 if localnet_config["rest"]["enabled"]:
     print("REST enabled: " + str(localnet_config["rest"]["enabled"]))
     deployment_create("rest", image="davarski/go-rest-api-demo")

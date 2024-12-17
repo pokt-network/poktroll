@@ -25,7 +25,7 @@ func EndBlocker(ctx sdk.Context, k keeper.Keeper) (err error) {
 	//    even without a proof to be able to scale to unbounded Claims & Proofs.
 	// 2. Implementation - This cannot be done from the `x/proof` module because
 	//    it would create a circular dependency.
-	settledResult, expiredResult, err := k.SettlePendingClaims(ctx)
+	settledResults, expiredResults, err := k.SettlePendingClaims(ctx)
 	if err != nil {
 		logger.Error(fmt.Sprintf("could not settle pending claims due to error %v", err))
 		return err
@@ -33,20 +33,25 @@ func EndBlocker(ctx sdk.Context, k keeper.Keeper) (err error) {
 
 	logger.Info(fmt.Sprintf(
 		"settled %d claims and expired %d claims",
-		settledResult.NumClaims,
-		expiredResult.NumClaims,
+		settledResults.GetNumClaims(),
+		expiredResults.GetNumClaims(),
 	))
 
 	// Update the relay mining difficulty for every service that settled pending
 	// claims based on how many estimated relays were serviced for it.
-	difficultyPerServiceMap, err := k.UpdateRelayMiningDifficulty(ctx, settledResult.RelaysPerServiceMap)
+	settledRelaysPerServiceIdMap, err := settledResults.GetRelaysPerServiceMap()
+	if err != nil {
+		logger.Error(fmt.Sprintf("could not get settled relays per service map due to error %v", err))
+		return err
+	}
+	difficultyPerServiceMap, err := k.UpdateRelayMiningDifficulty(ctx, settledRelaysPerServiceIdMap)
 	if err != nil {
 		logger.Error(fmt.Sprintf("could not update relay mining difficulty due to error %v", err))
 		return err
 	}
 	logger.Info(fmt.Sprintf(
 		"successfully updated the relay mining difficulty for %d services",
-		len(settledResult.RelaysPerServiceMap),
+		len(settledResults.GetServiceIds()),
 	))
 
 	// Telemetry - emit telemetry for each service's relay mining difficulty.

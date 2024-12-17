@@ -24,7 +24,7 @@ import (
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
-	tokenomicskeeper "github.com/pokt-network/poktroll/x/tokenomics/keeper"
+	tlm "github.com/pokt-network/poktroll/x/tokenomics/token_logic_module"
 )
 
 type applicationMinStakeTestSuite struct {
@@ -51,7 +51,11 @@ func TestApplicationMinStakeTestSuite(t *testing.T) {
 }
 
 func (s *applicationMinStakeTestSuite) SetupTest() {
-	s.keepers, s.ctx = keeper.NewTokenomicsModuleKeepers(s.T(), cosmoslog.NewNopLogger(), keeper.WithProofRequirement(false))
+	s.keepers, s.ctx = keeper.NewTokenomicsModuleKeepers(s.T(),
+		cosmoslog.NewNopLogger(),
+		keeper.WithProofRequirement(false),
+		keeper.WithDefaultModuleBalances(),
+	)
 
 	proofParams := prooftypes.DefaultParams()
 	proofParams.ProofRequestProbability = 0
@@ -235,7 +239,8 @@ func (s *applicationMinStakeTestSuite) getExpectedApp(claim *prooftypes.Claim) *
 	expectedBurnCoin, err := claim.GetClaimeduPOKT(sharedParams, relayMiningDifficulty)
 	require.NoError(s.T(), err)
 
-	globalInflationAmt, _ := tokenomicskeeper.CalculateGlobalPerClaimMintInflationFromSettlementAmount(expectedBurnCoin)
+	globalInflationPerClaim := s.keepers.Keeper.GetParams(s.ctx).GlobalInflationPerClaim
+	globalInflationAmt, _ := tlm.CalculateGlobalPerClaimMintInflationFromSettlementAmount(expectedBurnCoin, globalInflationPerClaim)
 	expectedEndStake := s.appStake.Sub(expectedBurnCoin).Sub(globalInflationAmt)
 	return &apptypes.Application{
 		Address:                   s.appBech32,
@@ -251,11 +256,14 @@ func (s *applicationMinStakeTestSuite) getExpectedApp(claim *prooftypes.Claim) *
 func (s *applicationMinStakeTestSuite) newRelayminingDifficulty() servicetypes.RelayMiningDifficulty {
 	s.T().Helper()
 
+	targetNumRelays := s.keepers.ServiceKeeper.GetParams(s.ctx).TargetNumRelays
+
 	return servicekeeper.NewDefaultRelayMiningDifficulty(
 		s.ctx,
 		cosmoslog.NewNopLogger(),
 		s.serviceId,
-		servicekeeper.TargetNumRelays,
+		targetNumRelays,
+		targetNumRelays,
 	)
 }
 
@@ -269,7 +277,7 @@ func (s *applicationMinStakeTestSuite) assertUnbondingBeginEventObserved(expecte
 	sessionEndHeight := s.keepers.SharedKeeper.GetSessionEndHeight(s.ctx, s.getCurrentHeight())
 	expectedAppUnbondingBeginEvent := &apptypes.EventApplicationUnbondingBegin{
 		Application:        expectedApp,
-		Reason:             apptypes.ApplicationUnbondingReason_BELOW_MIN_STAKE,
+		Reason:             apptypes.ApplicationUnbondingReason_APPLICATION_UNBONDING_REASON_BELOW_MIN_STAKE,
 		SessionEndHeight:   sessionEndHeight,
 		UnbondingEndHeight: unbondingEndHeight,
 	}
@@ -290,7 +298,7 @@ func (s *applicationMinStakeTestSuite) assertUnbondingEndEventObserved(expectedA
 	unbondingSessionEndHeight := apptypes.GetApplicationUnbondingHeight(&sharedParams, expectedApp)
 	expectedAppUnbondingEndEvent := &apptypes.EventApplicationUnbondingEnd{
 		Application:        expectedApp,
-		Reason:             apptypes.ApplicationUnbondingReason_BELOW_MIN_STAKE,
+		Reason:             apptypes.ApplicationUnbondingReason_APPLICATION_UNBONDING_REASON_BELOW_MIN_STAKE,
 		SessionEndHeight:   unbondingSessionEndHeight,
 		UnbondingEndHeight: unbondingEndHeight,
 	}
@@ -307,7 +315,8 @@ func (s *applicationMinStakeTestSuite) assertAppStakeIsReturnedToBalance() {
 
 	expectedAppBurn := int64(s.numRelays * s.numComputeUnitsPerRelay * sharedtypes.DefaultComputeUnitsToTokensMultiplier)
 	expectedAppBurnCoin := cosmostypes.NewInt64Coin(volatile.DenomuPOKT, expectedAppBurn)
-	globalInflationCoin, _ := tokenomicskeeper.CalculateGlobalPerClaimMintInflationFromSettlementAmount(expectedAppBurnCoin)
+	globalInflationPerClaim := s.keepers.Keeper.GetParams(s.ctx).GlobalInflationPerClaim
+	globalInflationCoin, _ := tlm.CalculateGlobalPerClaimMintInflationFromSettlementAmount(expectedAppBurnCoin, globalInflationPerClaim)
 	expectedAppBalance := s.appStake.Sub(expectedAppBurnCoin).Sub(globalInflationCoin)
 
 	appBalance := s.getAppBalance()

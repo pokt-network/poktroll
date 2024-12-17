@@ -334,7 +334,7 @@ func (rs *relayerSessionsManager) isProofRequired(
 	return false, nil
 }
 
-// claimFromSessionTree creates a Claim object from the given SessionTree.
+// claimFromSessionTree creates a claim object from the given SessionTree.
 func claimFromSessionTree(sessionTree relayer.SessionTree) prooftypes.Claim {
 	return prooftypes.Claim{
 		SupplierOperatorAddress: sessionTree.GetSupplierOperatorAddress().String(),

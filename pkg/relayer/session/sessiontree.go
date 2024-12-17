@@ -21,13 +21,6 @@ import (
 var _ relayer.SessionTree = (*sessionTree)(nil)
 
 // sessionTree is an implementation of the SessionTree interface.
-// TODO_BETA(@red-0ne): Per the Relay Mining paper, we need to optimistically store
-// the number of requests that an application can pay for. This needs to be tracked
-// based on the app's stake in the beginning of a session and the number of nodes
-// per session. An operator should be able to specify "overservicing_compute_units_limit"
-// whereby an upper bound on how much it can overserviced an application is set. The
-// default value for this should be -1, implying "unlimited".
-// Ref discussion: https://github.com/pokt-network/poktroll/pull/755#discussion_r1737287860
 type sessionTree struct {
 	logger polylog.Logger
 
@@ -75,19 +68,11 @@ type sessionTree struct {
 // NewSessionTree creates a new sessionTree from a Session and a storePrefix. It also takes a function
 // removeFromRelayerSessions that removes the sessionTree from the RelayerSessionsManager.
 // It returns an error if the KVStore fails to be created.
-//
-// TODO_BETA(@red-0ne): When starting a new session, check what the MaxClaimableAmount
-// (in uPOKT) by the Supplier as a function of
-// (app_stake, compute_units_per_relay_for_service, global_compute_units_to_token_multiplier).
-// TODO_CONFIG_NOTE: Whether or not the RelayMiner stop handling requests when the max is reached should be
-// configurable by the operator.
-// TODO_ERROR_NOTE: If overservicing is set to false, create a new error that the relay is rejected
-// specifically because the supplier has reached the max claimable amount, so the caller should relay
-// the request to another supplier.
 func NewSessionTree(
 	sessionHeader *sessiontypes.SessionHeader,
 	supplierOperatorAddress *cosmostypes.AccAddress,
 	storesDirectory string,
+	logger polylog.Logger,
 ) (relayer.SessionTree, error) {
 	// Join the storePrefix and the session.sessionId and supplier's operator address to
 	// create a unique storePath.
@@ -111,7 +96,14 @@ func NewSessionTree(
 	// contain a non-hashed Relay that could be used to validate the proof on-chain.
 	trie := smt.NewSparseMerkleSumTrie(treeStore, protocol.NewTrieHasher(), smt.WithValueHasher(nil))
 
+	logger = logger.With(
+		"store_path", storePath,
+		"session_id", sessionHeader.SessionId,
+		"supplier_operator_address", supplierOperatorAddress,
+	)
+
 	sessionTree := &sessionTree{
+		logger:                  logger,
 		sessionHeader:           sessionHeader,
 		storePath:               storePath,
 		treeStore:               treeStore,
@@ -284,7 +276,6 @@ func (st *sessionTree) Delete() error {
 	} else {
 		st.logger.With(
 			"claim_root", fmt.Sprintf("%x", st.GetClaimRoot()),
-			"session_id", st.GetSessionHeader().SessionId,
 		).Info().Msg("KVStore is already stopped")
 	}
 

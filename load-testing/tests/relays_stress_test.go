@@ -170,7 +170,7 @@ type relaysSuite struct {
 	// gatewayUrls is a map of gatewayAddress->URL representing the provisioned gateways.
 	// These gateways are not staked yet but have their off-chain instance running
 	// and ready to be staked and used in the test.
-	// Since AppGateServers are pre-provisioned, and already assigned a signingAddress
+	// Since Gateways are pre-provisioned, and already assigned a signingAddress
 	// and an URL to send relays to, the test suite does not create new ones but picks
 	// from this list.
 	// The max gateways used in the test must be less than or equal to the number of

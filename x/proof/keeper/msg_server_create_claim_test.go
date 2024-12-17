@@ -18,6 +18,7 @@ import (
 	"github.com/pokt-network/poktroll/x/proof/keeper"
 	"github.com/pokt-network/poktroll/x/proof/types"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
+	servicekeeper "github.com/pokt-network/poktroll/x/service/keeper"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
@@ -173,9 +174,26 @@ func TestMsgServer_CreateClaim_Success(t *testing.T) {
 			claimCreatedEvents := testutilevents.FilterEvents[*prooftypes.EventClaimCreated](t, events)
 			require.Len(t, claimCreatedEvents, 1)
 
+			targetNumRelays := keepers.ServiceKeeper.GetParams(ctx).TargetNumRelays
+			relayMiningDifficulty := servicekeeper.NewDefaultRelayMiningDifficulty(
+				ctx,
+				keepers.Logger(),
+				service.Id,
+				targetNumRelays,
+				targetNumRelays,
+			)
+
+			numEstimatedComputUnits, err := claim.GetNumEstimatedComputeUnits(relayMiningDifficulty)
+			require.NoError(t, err)
+
+			claimedUPOKT, err := claim.GetClaimeduPOKT(sharedParams, relayMiningDifficulty)
+			require.NoError(t, err)
+
 			require.EqualValues(t, &claim, claimCreatedEvents[0].GetClaim())
 			require.Equal(t, uint64(test.expectedNumClaimedComputeUnits), claimCreatedEvents[0].GetNumClaimedComputeUnits())
 			require.Equal(t, uint64(expectedNumRelays), claimCreatedEvents[0].GetNumRelays())
+			require.Equal(t, numEstimatedComputUnits, claimCreatedEvents[0].GetNumClaimedComputeUnits())
+			require.Equal(t, &claimedUPOKT, claimCreatedEvents[0].GetClaimedUpokt())
 		})
 	}
 }

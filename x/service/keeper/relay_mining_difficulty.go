@@ -29,11 +29,20 @@ func (k Keeper) GetRelayMiningDifficulty(
 	storeAdapter := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
 	store := prefix.NewStore(storeAdapter, types.KeyPrefix(types.RelayMiningDifficultyKeyPrefix))
 
-	difficultyBz := store.Get(types.RelayMiningDifficultyKey(
-		serviceId,
-	))
+	difficultyBz := store.Get(types.RelayMiningDifficultyKey(serviceId))
 	if difficultyBz == nil {
-		difficulty.ServiceId = serviceId
+		targetNumRelays := k.GetParams(ctx).TargetNumRelays
+		k.Logger().Warn(fmt.Sprintf(
+			"relayMiningDifficulty not found for service: %s, defaulting to base difficulty with protocol TargetNumRelays (%d)",
+			serviceId, targetNumRelays,
+		))
+		difficulty = NewDefaultRelayMiningDifficulty(
+			ctx,
+			k.logger,
+			serviceId,
+			targetNumRelays,
+			targetNumRelays,
+		)
 		return difficulty, false
 	}
 

@@ -198,12 +198,13 @@ func setupRelayerDependencies(
 		config.NewSupplyDelegationClientFn(),                              // leaf
 		config.NewSupplySharedQueryClientFn(),                             // leaf
 		config.NewSupplyServiceQueryClientFn(),
+		config.NewSupplyApplicationQuerierFn(),
+		config.NewSupplySessionQuerierFn(),
+		supplyRelayMeter,
 		supplyMiner,
 		config.NewSupplyAccountQuerierFn(),
 		config.NewSupplyBankQuerierFn(),
-		config.NewSupplyApplicationQuerierFn(),
 		config.NewSupplySupplierQuerierFn(),
-		config.NewSupplySessionQuerierFn(),
 		config.NewSupplyProofQueryClientFn(),
 		config.NewSupplyRingCacheFn(),
 		supplyTxFactory,
@@ -229,6 +230,21 @@ func supplyMiner(
 	}
 
 	return depinject.Configs(deps, depinject.Supply(mnr)), nil
+}
+
+// supplyRelayMeter constructs a RelayMeter instance and returns a new
+// depinject.Config which is supplied with the given deps and the new RelayMeter.
+func supplyRelayMeter(
+	_ context.Context,
+	deps depinject.Config,
+	_ *cobra.Command,
+) (depinject.Config, error) {
+	rm, err := proxy.NewRelayMeter(deps)
+	if err != nil {
+		return nil, err
+	}
+
+	return depinject.Configs(deps, depinject.Supply(rm)), nil
 }
 
 // supplyTxFactory constructs a cosmostx.Factory instance and returns a new

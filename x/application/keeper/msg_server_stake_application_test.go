@@ -42,10 +42,14 @@ func TestMsgServer_StakeApplication_SuccessfulCreateAndUpdate(t *testing.T) {
 	require.NoError(t, err)
 
 	// Assert that the response contains the staked application.
-	app := stakeAppRes.GetApplication()
-	require.Equal(t, stakeMsg.GetAddress(), app.GetAddress())
-	require.Equal(t, stakeMsg.GetStake(), app.GetStake())
-	require.Equal(t, stakeMsg.GetServices(), app.GetServiceConfigs())
+	expectedApp := &apptypes.Application{
+		Address:                   stakeMsg.GetAddress(),
+		Stake:                     stakeMsg.GetStake(),
+		ServiceConfigs:            stakeMsg.GetServices(),
+		PendingUndelegations:      make(map[uint64]apptypes.UndelegatingGatewayList),
+		DelegateeGatewayAddresses: make([]string, 0),
+	}
+	require.Equal(t, expectedApp, stakeAppRes.GetApplication())
 
 	// Assert that the EventApplicationStaked event is emitted.
 	sharedParams := sharedtypes.DefaultParams()
@@ -53,7 +57,7 @@ func TestMsgServer_StakeApplication_SuccessfulCreateAndUpdate(t *testing.T) {
 	sessionEndHeight := sharedtypes.GetSessionEndHeight(&sharedParams, currentHeight)
 	expectedEvent, err := cosmostypes.TypedEventToEvent(
 		&apptypes.EventApplicationStaked{
-			Application:      app,
+			Application:      stakeAppRes.GetApplication(),
 			SessionEndHeight: sessionEndHeight,
 		},
 	)
@@ -85,8 +89,19 @@ func TestMsgServer_StakeApplication_SuccessfulCreateAndUpdate(t *testing.T) {
 	}
 
 	// Update the staked application
-	_, err = srv.StakeApplication(ctx, updateStakeMsg)
+	stakeAppRes, err = srv.StakeApplication(ctx, updateStakeMsg)
 	require.NoError(t, err)
+
+	// Assert that the response contains the staked application.
+	expectedApp = &apptypes.Application{
+		Address:                   updateStakeMsg.GetAddress(),
+		Stake:                     updateStakeMsg.GetStake(),
+		ServiceConfigs:            updateStakeMsg.GetServices(),
+		PendingUndelegations:      make(map[uint64]apptypes.UndelegatingGatewayList),
+		DelegateeGatewayAddresses: make([]string, 0),
+	}
+	require.Equal(t, expectedApp, stakeAppRes.GetApplication())
+
 	foundApp, isAppFound = k.GetApplication(ctx, appAddr)
 	require.True(t, isAppFound)
 	require.Equal(t, &upStake, foundApp.Stake)
@@ -154,7 +169,7 @@ func TestMsgServer_StakeApplication_FailRestakingDueToInvalidServices(t *testing
 		},
 	}
 
-	// Fail updating the application when the list of services is empty
+	// Fail updating the application when the list of services contains an invalid ID
 	_, err = srv.StakeApplication(ctx, updateStakeMsg)
 	require.Error(t, err)
 

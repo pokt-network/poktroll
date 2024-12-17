@@ -3,6 +3,7 @@ package keeper
 import (
 	"context"
 	"encoding/binary"
+	"fmt"
 
 	"cosmossdk.io/store/prefix"
 	"github.com/cosmos/cosmos-sdk/runtime"
@@ -14,6 +15,8 @@ import (
 )
 
 func (k Keeper) AllClaims(ctx context.Context, req *types.QueryAllClaimsRequest) (*types.QueryAllClaimsResponse, error) {
+	logger := k.Logger().With("method", "AllClaims")
+
 	if req == nil {
 		return nil, status.Error(codes.InvalidArgument, "invalid request")
 	}
@@ -21,7 +24,7 @@ func (k Keeper) AllClaims(ctx context.Context, req *types.QueryAllClaimsRequest)
 	storeAdapter := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
 
 	// isCustomIndex is used to determined if we'll be using the store that points
-	// to the actual Claim values, or a secondary index that points to the primary keys.
+	// to the actual claim values, or a secondary index that points to the primary keys.
 	var (
 		isCustomIndex bool
 		keyPrefix     []byte
@@ -65,7 +68,9 @@ func (k Keeper) AllClaims(ctx context.Context, req *types.QueryAllClaimsRequest)
 			// The value is the encoded claim.
 			var claim types.Claim
 			if err := k.cdc.Unmarshal(value, &claim); err != nil {
-				return err
+				err = fmt.Errorf("unable to unmarshal claim with key (hex): %x: %+v", key, err)
+				logger.Error(err.Error())
+				return status.Error(codes.Internal, err.Error())
 			}
 			claims = append(claims, claim)
 		}

@@ -29,6 +29,8 @@ jobs:
   #   Example failure: TODO_UPNEXT: <do something>
   #   Example non-failure: TODO_UPNEXT(@olshansk): <do something>
   # See https://github.com/pokt-network/action-fail-on-found
+  # TODO_IMPROVE: Add more details to the errors
+  #   Ref: https://github.com/pokt-network/poktroll/pull/896#pullrequestreview-2415490611
   check_todo_upnext:
     name: Check TODO_UPNEXT
     runs-on: ubuntu-latest
@@ -42,20 +44,25 @@ jobs:
           fail_on_error: true
           pattern: "TODO_UPNEXT:"
 
+  # TODO_TECHDEBT(@Olshansk): Consider removing or updating this check.
+  # It was originally added to avoid `sed` in helpers scripts and instructions
+  # to ensure compatibility across both Darwin &Linux. However, we then started
+  # writing Linux-only docs, leading to noise & false-positive.
+  #
   # Prevent the use of `sed` in helper scripts. This ensures compatibility across
   # Darwin and Linux systems.
-  check_sed:
-    name: Check sed
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: pokt-network/action-fail-on-found@v1
-        with:
-          github_token: ${{ secrets.github_token }}
-          reporter: github-pr-review
-          level: error
-          fail_on_error: true
-          pattern: sed -i .*
+  # check_sed:
+  #   name: Check sed
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #     - uses: pokt-network/action-fail-on-found@v1
+  #       with:
+  #         github_token: ${{ secrets.github_token }}
+  #         reporter: github-pr-review
+  #         level: error
+  #         fail_on_error: true
+  #         pattern: sed -i .*
 
   # Ensure that we are using polylog (via logger.) instead of the golang's stdlib
   # log package.

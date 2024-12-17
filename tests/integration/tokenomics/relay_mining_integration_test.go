@@ -12,12 +12,11 @@ import (
 
 	"github.com/pokt-network/poktroll/app/volatile"
 	"github.com/pokt-network/poktroll/pkg/crypto/protocol"
-	testutils "github.com/pokt-network/poktroll/testutil/keeper"
+	testkeeper "github.com/pokt-network/poktroll/testutil/keeper"
 	"github.com/pokt-network/poktroll/testutil/sample"
 	"github.com/pokt-network/poktroll/testutil/testrelayer"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
-	servicekeeper "github.com/pokt-network/poktroll/x/service/keeper"
 	servicetypes "github.com/pokt-network/poktroll/x/service/types"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
@@ -30,15 +29,6 @@ const (
 )
 
 func TestComputeNewDifficultyHash_RewardsReflectWorkCompleted(t *testing.T) {
-	// Update the target number of relays to a value that suits the test.
-	// A too high number would make the difficulty stay at BaseRelayDifficultyHash
-	initialTargetRelays := servicekeeper.TargetNumRelays
-	servicekeeper.TargetNumRelays = 1000
-	t.Cleanup(func() {
-		// Reset the target number of relays to its initial value.
-		servicekeeper.TargetNumRelays = initialTargetRelays
-	})
-
 	// Prepare the test service.
 	service := sharedtypes.Service{
 		Id:                   "svc1",
@@ -79,19 +69,27 @@ func TestComputeNewDifficultyHash_RewardsReflectWorkCompleted(t *testing.T) {
 		},
 	}
 
-	keepers, ctx := testutils.NewTokenomicsModuleKeepers(t, nil,
-		testutils.WithService(service),
-		testutils.WithApplication(application),
-		testutils.WithSupplier(supplier),
-		testutils.WithProofRequirement(false),
+	keepers, ctx := testkeeper.NewTokenomicsModuleKeepers(t, nil,
+		testkeeper.WithService(service),
+		testkeeper.WithApplication(application),
+		testkeeper.WithSupplier(supplier),
+		testkeeper.WithProofRequirement(false),
+		testkeeper.WithDefaultModuleBalances(),
 	)
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 	sdkCtx = sdkCtx.WithBlockHeight(1)
 
+	// Update the target number of relays to a value that suits the test.
+	// A too high number would make the difficulty stay at BaseRelayDifficultyHash
+	serviceParams := keepers.ServiceKeeper.GetParams(ctx)
+	serviceParams.TargetNumRelays = 1000
+	err := keepers.ServiceKeeper.SetParams(ctx, serviceParams)
+	require.NoError(t, err)
+
 	// Set the CUTTM to 1 to simplify the math
 	sharedParams := keepers.SharedKeeper.GetParams(sdkCtx)
 	sharedParams.ComputeUnitsToTokensMultiplier = uint64(1)
-	err := keepers.SharedKeeper.SetParams(sdkCtx, sharedParams)
+	err = keepers.SharedKeeper.SetParams(sdkCtx, sharedParams)
 	require.NoError(t, err)
 
 	// Update the relay mining difficulty so there's always a difficulty to retrieve
@@ -147,8 +145,8 @@ func TestComputeNewDifficultyHash_RewardsReflectWorkCompleted(t *testing.T) {
 		// Calling SettlePendingClaims calls ProcessTokenLogicModules behind the scenes
 		settledResult, expiredResult, err := keepers.Keeper.SettlePendingClaims(sdkCtx)
 		require.NoError(t, err)
-		require.Equal(t, 1, int(settledResult.NumClaims))
-		require.Equal(t, 0, int(expiredResult.NumClaims))
+		require.Equal(t, 1, int(settledResult.GetNumClaims()))
+		require.Equal(t, 0, int(expiredResult.GetNumClaims()))
 
 		// Update the relay mining difficulty
 		_, err = keepers.Keeper.UpdateRelayMiningDifficulty(sdkCtx, map[string]uint64{service.Id: claimNumRelays})
@@ -158,10 +156,12 @@ func TestComputeNewDifficultyHash_RewardsReflectWorkCompleted(t *testing.T) {
 		updatedRelayMiningDifficulty, ok := keepers.ServiceKeeper.GetRelayMiningDifficulty(sdkCtx, service.Id)
 		require.True(t, ok)
 
+		targetNumRelays := keepers.ServiceKeeper.GetParams(ctx).TargetNumRelays
+
 		// Compute the new difficulty hash based on the updated relay mining difficulty.
 		newDifficultyHash := protocol.ComputeNewDifficultyTargetHash(
 			protocol.BaseRelayDifficultyHashBz,
-			servicekeeper.TargetNumRelays,
+			targetNumRelays,
 			updatedRelayMiningDifficulty.NumRelaysEma,
 		)
 

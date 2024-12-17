@@ -8,24 +8,24 @@ import (
 
 var _ sdk.Msg = (*MsgUpdateParam)(nil)
 
-func NewMsgUpdateParam(authority string, name string, value any) (*MsgUpdateParam, error) {
-	var valueAsType isMsgUpdateParam_AsType
+func NewMsgUpdateParam(authority string, name string, asTypeAny any) (*MsgUpdateParam, error) {
+	var asTypeIface isMsgUpdateParam_AsType
 
-	switch v := value.(type) {
+	switch asType := asTypeAny.(type) {
+	case MintAllocationPercentages:
+		asTypeIface = &MsgUpdateParam_AsMintAllocationPercentages{AsMintAllocationPercentages: &asType}
 	case string:
-		valueAsType = &MsgUpdateParam_AsString{AsString: v}
-	case int64:
-		valueAsType = &MsgUpdateParam_AsInt64{AsInt64: v}
-	case []byte:
-		valueAsType = &MsgUpdateParam_AsBytes{AsBytes: v}
+		asTypeIface = &MsgUpdateParam_AsString{AsString: asType}
+	case float64:
+		asTypeIface = &MsgUpdateParam_AsFloat{AsFloat: asType}
 	default:
-		return nil, fmt.Errorf("unexpected param value type: %T", value)
+		return nil, fmt.Errorf("unexpected param value type: %T", asTypeAny)
 	}
 
 	return &MsgUpdateParam{
 		Authority: authority,
 		Name:      name,
-		AsType:    valueAsType,
+		AsType:    asTypeIface,
 	}, nil
 }
 
@@ -45,7 +45,34 @@ func (msg *MsgUpdateParam) ValidateBasic() error {
 
 	// Parameter name must be supported by this module.
 	switch msg.Name {
+	case ParamMintAllocationPercentages:
+		if err := genericParamTypeIs[*MsgUpdateParam_AsMintAllocationPercentages](msg); err != nil {
+			return err
+		}
+		return ValidateMintAllocationPercentages(*msg.GetAsMintAllocationPercentages())
+	case ParamDaoRewardAddress:
+		if err := genericParamTypeIs[*MsgUpdateParam_AsString](msg); err != nil {
+			return err
+		}
+		return ValidateDaoRewardAddress(msg.GetAsString())
+	case ParamGlobalInflationPerClaim:
+		if err := genericParamTypeIs[*MsgUpdateParam_AsFloat](msg); err != nil {
+			return err
+		}
+		return ValidateGlobalInflationPerClaim(msg.GetAsFloat())
 	default:
 		return ErrTokenomicsParamNameInvalid.Wrapf("unsupported param %q", msg.Name)
 	}
+}
+
+// genericParamTypeIs checks if the parameter type is T, returning an error if not.
+func genericParamTypeIs[T any](msg *MsgUpdateParam) error {
+	if _, ok := msg.AsType.(T); !ok {
+		return ErrTokenomicsParamInvalid.Wrapf(
+			"invalid type for param %q; expected %T, got %T",
+			msg.Name, *new(T), msg.AsType,
+		)
+	}
+
+	return nil
 }

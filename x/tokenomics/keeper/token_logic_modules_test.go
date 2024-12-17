@@ -7,6 +7,7 @@ import (
 	"math"
 	"testing"
 
+	cosmoslog "cosmossdk.io/log"
 	cosmosmath "cosmossdk.io/math"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -26,11 +27,10 @@ import (
 	testsession "github.com/pokt-network/poktroll/testutil/session"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
-	sessionkeeper "github.com/pokt-network/poktroll/x/session/keeper"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
-	tokenomicskeeper "github.com/pokt-network/poktroll/x/tokenomics/keeper"
+	tlm "github.com/pokt-network/poktroll/x/tokenomics/token_logic_module"
 	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
 )
 
@@ -52,12 +52,17 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_Valid(t *testing.T) {
 	numRelays := uint64(1000) // By supplier for application in this session
 
 	// Prepare the keepers
-	keepers, ctx := testkeeper.NewTokenomicsModuleKeepers(t, nil, testkeeper.WithService(*service))
+	keepers, ctx := testkeeper.NewTokenomicsModuleKeepers(t,
+		cosmoslog.NewNopLogger(),
+		testkeeper.WithService(*service),
+		testkeeper.WithDefaultModuleBalances(),
+	)
 	keepers.SetService(ctx, *service)
 
 	// Ensure the claim is within relay mining bounds
+	numSuppliersPerSession := int64(keepers.SessionKeeper.GetParams(ctx).NumSuppliersPerSession)
 	numTokensClaimed := int64(numRelays * serviceComputeUnitsPerRelay * globalComputeUnitsToTokensMultiplier)
-	maxClaimableAmountPerSupplier := appInitialStake.Quo(cosmosmath.NewInt(sessionkeeper.NumSupplierPerSession))
+	maxClaimableAmountPerSupplier := appInitialStake.Quo(cosmosmath.NewInt(numSuppliersPerSession))
 	require.GreaterOrEqual(t, maxClaimableAmountPerSupplier.Int64(), numTokensClaimed)
 
 	// Retrieve the app and supplier module addresses
@@ -65,17 +70,16 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_Valid(t *testing.T) {
 	supplierModuleAddress := authtypes.NewModuleAddress(suppliertypes.ModuleName).String()
 
 	// Set compute_units_to_tokens_multiplier to simplify expectation calculations.
-	err := keepers.SharedKeeper.SetParams(ctx, sharedtypes.Params{
-		ComputeUnitsToTokensMultiplier: globalComputeUnitsToTokensMultiplier,
-	})
+	sharedParams := keepers.SharedKeeper.GetParams(ctx)
+	sharedParams.ComputeUnitsToTokensMultiplier = globalComputeUnitsToTokensMultiplier
+	err := keepers.SharedKeeper.SetParams(ctx, sharedParams)
 	require.NoError(t, err)
 	// TODO_TECHDEBT: Setting inflation to zero so we are testing the BurnEqualsMint logic exclusively.
 	// Once it is a governance param, update it using the keeper above.
-	prevInflationValue := tokenomicskeeper.GlobalInflationPerClaim
-	tokenomicskeeper.GlobalInflationPerClaim = 0
-	t.Cleanup(func() {
-		tokenomicskeeper.GlobalInflationPerClaim = prevInflationValue
-	})
+	tokenomicsParams := keepers.Keeper.GetParams(ctx)
+	tokenomicsParams.GlobalInflationPerClaim = 0
+	err = keepers.Keeper.SetParams(ctx, tokenomicsParams)
+	require.NoError(t, err)
 
 	// Add a new application with non-zero app stake end balance to assert against.
 	appStake := cosmostypes.NewCoin(volatile.DenomuPOKT, appInitialStake)
@@ -117,9 +121,16 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_Valid(t *testing.T) {
 
 	// Prepare the claim for which the supplier did work for the application
 	claim := prepareTestClaim(numRelays, service, &app, &supplier)
+	pendingResult := tlm.NewClaimSettlementResult(claim)
 
 	// Process the token logic modules
-	err = keepers.ProcessTokenLogicModules(ctx, &claim, appStake)
+	err = keepers.ProcessTokenLogicModules(ctx, pendingResult, appStake)
+	require.NoError(t, err)
+
+	// Execute the pending results
+	pendingResults := make(tlm.ClaimSettlementResults, 0)
+	pendingResults.Append(pendingResult)
+	err = keepers.ExecutePendingSettledResults(cosmostypes.UnwrapSDKContext(ctx), pendingResults)
 	require.NoError(t, err)
 
 	// Assert that `applicationAddress` account balance is *unchanged*
@@ -157,7 +168,7 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_Valid(t *testing.T) {
 
 	// Assert that the supplier shareholders account balances have *increased* by
 	// the appropriate amount w.r.t token distribution.
-	shareAmounts := tokenomicskeeper.GetShareAmountMap(supplierRevShares, appBurn.Uint64())
+	shareAmounts := tlm.GetShareAmountMap(supplierRevShares, appBurn.Uint64())
 	for shareHolderAddr, expectedShareAmount := range shareAmounts {
 		shareHolderBalance := getBalance(t, ctx, keepers, shareHolderAddr)
 		require.Equal(t, int64(expectedShareAmount), shareHolderBalance.Amount.Int64())
@@ -177,14 +188,19 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_Valid_SupplierExceedsMaxClai
 	supplierRevShareRatios := []float32{12.5, 37.5, 50}
 
 	// Prepare the keepers
-	keepers, ctx := testkeeper.NewTokenomicsModuleKeepers(t, nil, testkeeper.WithService(*service))
+	keepers, ctx := testkeeper.NewTokenomicsModuleKeepers(t,
+		cosmoslog.NewNopLogger(),
+		testkeeper.WithService(*service),
+		testkeeper.WithDefaultModuleBalances(),
+	)
 	keepers.SetService(ctx, *service)
 
 	// Set up the relays to exceed the max claimable amount
 	// Determine the max a supplier can claim
 	maxClaimableAmountPerSupplier := int64(numRelays * serviceComputeUnitsPerRelay * globalComputeUnitsToTokensMultiplier)
 	// Figure out what the app's initial stake should be to cover the max claimable amount
-	appInitialStake := cosmosmath.NewInt(maxClaimableAmountPerSupplier*sessionkeeper.NumSupplierPerSession + 1)
+	numSuppliersPerSession := int64(keepers.SessionKeeper.GetParams(ctx).NumSuppliersPerSession)
+	appInitialStake := cosmosmath.NewInt(maxClaimableAmountPerSupplier*numSuppliersPerSession + 1)
 	// Increase the number of relay such that the supplier did "free work" and would
 	// be able to claim more than the max claimable amount.
 	numRelays *= 5
@@ -195,17 +211,16 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_Valid_SupplierExceedsMaxClai
 	supplierModuleAddress := authtypes.NewModuleAddress(suppliertypes.ModuleName).String()
 
 	// Set compute_units_to_tokens_multiplier to simplify expectation calculations.
-	err := keepers.SharedKeeper.SetParams(ctx, sharedtypes.Params{
-		ComputeUnitsToTokensMultiplier: globalComputeUnitsToTokensMultiplier,
-	})
+	sharedParams := keepers.SharedKeeper.GetParams(ctx)
+	sharedParams.ComputeUnitsToTokensMultiplier = globalComputeUnitsToTokensMultiplier
+	err := keepers.SharedKeeper.SetParams(ctx, sharedParams)
 	require.NoError(t, err)
 	// TODO_TECHDEBT: Setting inflation to zero so we are testing the BurnEqualsMint logic exclusively.
 	// Once it is a governance param, update it using the keeper above.
-	prevInflationValue := tokenomicskeeper.GlobalInflationPerClaim
-	tokenomicskeeper.GlobalInflationPerClaim = 0
-	t.Cleanup(func() {
-		tokenomicskeeper.GlobalInflationPerClaim = prevInflationValue
-	})
+	tokenomicsParams := keepers.Keeper.GetParams(ctx)
+	tokenomicsParams.GlobalInflationPerClaim = 0
+	err = keepers.Keeper.SetParams(ctx, tokenomicsParams)
+	require.NoError(t, err)
 
 	// Add a new application with non-zero app stake end balance to assert against.
 	appStake := cosmostypes.NewCoin(volatile.DenomuPOKT, appInitialStake)
@@ -247,9 +262,16 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_Valid_SupplierExceedsMaxClai
 
 	// Prepare the claim for which the supplier did work for the application
 	claim := prepareTestClaim(numRelays, service, &app, &supplier)
+	pendingResult := tlm.NewClaimSettlementResult(claim)
 
 	// Process the token logic modules
-	err = keepers.ProcessTokenLogicModules(ctx, &claim, appStake)
+	err = keepers.ProcessTokenLogicModules(ctx, pendingResult, appStake)
+	require.NoError(t, err)
+
+	// Execute the pending results
+	pendingResults := make(tlm.ClaimSettlementResults, 0)
+	pendingResults.Append(pendingResult)
+	err = keepers.ExecutePendingSettledResults(cosmostypes.UnwrapSDKContext(ctx), pendingResults)
 	require.NoError(t, err)
 
 	// Assert that `applicationAddress` account balance is *unchanged*
@@ -291,7 +313,7 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_Valid_SupplierExceedsMaxClai
 
 	// Assert that the supplier shareholders account balances have *increased* by
 	// the appropriate amount w.r.t token distribution.
-	shareAmounts := tokenomicskeeper.GetShareAmountMap(supplierRevShares, appBurn.Uint64())
+	shareAmounts := tlm.GetShareAmountMap(supplierRevShares, appBurn.Uint64())
 	for shareHolderAddr, expectedShareAmount := range shareAmounts {
 		shareHolderBalance := getBalance(t, ctx, keepers, shareHolderAddr)
 		require.Equal(t, int64(expectedShareAmount), shareHolderBalance.Amount.Int64())
@@ -322,16 +344,30 @@ func TestProcessTokenLogicModules_TLMGlobalMint_Valid_MintDistributionCorrect(t 
 	service := prepareTestService(serviceComputeUnitsPerRelay)
 	numRelays := uint64(1000) // By supplier for application in this session
 	numTokensClaimed := float64(numRelays * serviceComputeUnitsPerRelay * globalComputeUnitsToTokensMultiplier)
-	validatorAddr := sample.ValAddress()
+	proposerConsAddr := sample.ConsAddressBech32()
+	daoAddress := authtypes.NewModuleAddress(govtypes.ModuleName)
+
+	tokenLogicModules := tlm.NewDefaultTokenLogicModules()
 
 	// Prepare the keepers
-	keepers, ctx := testkeeper.NewTokenomicsModuleKeepers(t, nil, testkeeper.WithService(*service), testkeeper.WithProposerAddr(validatorAddr))
+	opts := []testkeeper.TokenomicsModuleKeepersOptFn{
+		testkeeper.WithService(*service),
+		testkeeper.WithProposerAddr(proposerConsAddr),
+		testkeeper.WithTokenLogicModules(tokenLogicModules),
+		testkeeper.WithDefaultModuleBalances(),
+	}
+	keepers, ctx := testkeeper.NewTokenomicsModuleKeepers(t, nil, opts...)
 	keepers.SetService(ctx, *service)
 
+	// Set the dao_reward_address param on the tokenomics keeper.
+	tokenomicsParams := keepers.Keeper.GetParams(ctx)
+	tokenomicsParams.DaoRewardAddress = daoAddress.String()
+	keepers.Keeper.SetParams(ctx, tokenomicsParams)
+
 	// Set compute_units_to_tokens_multiplier to simplify expectation calculations.
-	err := keepers.SharedKeeper.SetParams(ctx, sharedtypes.Params{
-		ComputeUnitsToTokensMultiplier: globalComputeUnitsToTokensMultiplier,
-	})
+	sharedParams := keepers.SharedKeeper.GetParams(ctx)
+	sharedParams.ComputeUnitsToTokensMultiplier = globalComputeUnitsToTokensMultiplier
+	err := keepers.SharedKeeper.SetParams(ctx, sharedParams)
 	require.NoError(t, err)
 
 	// Add a new application with non-zero app stake end balance to assert against.
@@ -366,11 +402,11 @@ func TestProcessTokenLogicModules_TLMGlobalMint_Valid_MintDistributionCorrect(t 
 
 	// Prepare the claim for which the supplier did work for the application
 	claim := prepareTestClaim(numRelays, service, &app, &supplier)
+	pendingResult := tlm.NewClaimSettlementResult(claim)
 
 	// Prepare addresses
-	daoAddress := authtypes.NewModuleAddress(govtypes.ModuleName)
 	appAddress := app.Address
-	proposerAddress := sample.AccAddressFromConsAddress(validatorAddr)
+	proposerAddress := sample.AccAddressFromConsBech32(proposerConsAddr)
 
 	// Determine balances before inflation
 	daoBalanceBefore := getBalance(t, ctx, keepers, daoAddress.String())
@@ -384,7 +420,13 @@ func TestProcessTokenLogicModules_TLMGlobalMint_Valid_MintDistributionCorrect(t 
 	}
 
 	// Process the token logic modules
-	err = keepers.ProcessTokenLogicModules(ctx, &claim, appStake)
+	err = keepers.ProcessTokenLogicModules(ctx, pendingResult, appStake)
+	require.NoError(t, err)
+
+	// Execute the pending results
+	pendingResults := make(tlm.ClaimSettlementResults, 0)
+	pendingResults.Append(pendingResult)
+	err = keepers.ExecutePendingSettledResults(cosmostypes.UnwrapSDKContext(ctx), pendingResults)
 	require.NoError(t, err)
 
 	// Determine balances after inflation
@@ -399,15 +441,15 @@ func TestProcessTokenLogicModules_TLMGlobalMint_Valid_MintDistributionCorrect(t 
 	}
 
 	// Compute mint per actor
-	numTokensMinted := numTokensClaimed * tokenomicskeeper.GlobalInflationPerClaim
+	numTokensMinted := numTokensClaimed * keepers.Keeper.GetParams(ctx).GlobalInflationPerClaim
 	numTokensMintedInt := cosmosmath.NewIntFromUint64(uint64(numTokensMinted))
-	daoMint := cosmosmath.NewInt(int64(numTokensMinted * tokenomicskeeper.MintAllocationDAO))
-	propMint := cosmosmath.NewInt(int64(numTokensMinted * tokenomicskeeper.MintAllocationProposer))
-	serviceOwnerMint := cosmosmath.NewInt(int64(numTokensMinted * tokenomicskeeper.MintAllocationSourceOwner))
-	appMint := cosmosmath.NewInt(int64(numTokensMinted * tokenomicskeeper.MintAllocationApplication))
-	supplierMint := float32(numTokensMinted * tokenomicskeeper.MintAllocationSupplier)
+	daoMint := cosmosmath.NewInt(int64(numTokensMinted * tokenomicsParams.MintAllocationPercentages.Dao))
+	propMint := cosmosmath.NewInt(int64(numTokensMinted * tokenomicsParams.MintAllocationPercentages.Proposer))
+	serviceOwnerMint := cosmosmath.NewInt(int64(numTokensMinted * tokenomicsParams.MintAllocationPercentages.SourceOwner))
+	appMint := cosmosmath.NewInt(int64(numTokensMinted * tokenomicsParams.MintAllocationPercentages.Application))
+	supplierMint := float32(numTokensMinted * tokenomicsParams.MintAllocationPercentages.Supplier)
 
-	// Ensure the balance was increase be the appropriate amount
+	// Ensure the balance was increased to the appropriate amount.
 	require.Equal(t, daoBalanceBefore.Amount.Add(daoMint).Add(numTokensMintedInt), daoBalanceAfter.Amount)
 	require.Equal(t, propBalanceBefore.Amount.Add(propMint), propBalanceAfter.Amount)
 	require.Equal(t, serviceOwnerBalanceBefore.Amount.Add(serviceOwnerMint), serviceOwnerBalanceAfter.Amount)
@@ -421,7 +463,7 @@ func TestProcessTokenLogicModules_TLMGlobalMint_Valid_MintDistributionCorrect(t 
 		balanceIncrease := cosmosmath.NewInt(mintShare + rewardShare)
 		expectedBalanceAfter := balanceBefore.Amount.Add(balanceIncrease).Int64()
 		// TODO_MAINNET(@red-0ne): Remove the InDelta check and use the exact amount once the floating point arithmetic is fixed
-		acceptableRoundingDelta := tokenomicskeeper.MintDistributionAllowableTolerancePercent * float64(balanceAfter)
+		acceptableRoundingDelta := tlm.MintDistributionAllowableTolerancePercent * float64(balanceAfter)
 		require.InDelta(t, expectedBalanceAfter, balanceAfter, acceptableRoundingDelta)
 	}
 
@@ -450,9 +492,10 @@ func TestProcessTokenLogicModules_AppNotFound(t *testing.T) {
 		},
 		RootHash: testproof.SmstRootWithSumAndCount(numComputeUnits, numRelays),
 	}
+	pendingResult := tlm.NewClaimSettlementResult(claim)
 
 	// Process the token logic modules
-	err := keeper.ProcessTokenLogicModules(ctx, &claim, uPOKTCoin(math.MaxInt))
+	err := keeper.ProcessTokenLogicModules(ctx, pendingResult, uPOKTCoin(math.MaxInt))
 	require.Error(t, err)
 	require.ErrorIs(t, err, tokenomicstypes.ErrTokenomicsApplicationNotFound)
 }
@@ -473,9 +516,10 @@ func TestProcessTokenLogicModules_ServiceNotFound(t *testing.T) {
 		},
 		RootHash: testproof.SmstRootWithSumAndCount(numComputeUnits, numRelays),
 	}
+	pendingResult := tlm.NewClaimSettlementResult(claim)
 
 	// Execute test function
-	err := keeper.ProcessTokenLogicModules(ctx, &claim, uPOKTCoin(math.MaxInt))
+	err := keeper.ProcessTokenLogicModules(ctx, pendingResult, uPOKTCoin(math.MaxInt))
 
 	require.Error(t, err)
 	require.ErrorIs(t, err, tokenomicstypes.ErrTokenomicsServiceNotFound)
@@ -543,9 +587,10 @@ func TestProcessTokenLogicModules_InvalidRoot(t *testing.T) {
 			// Setup claim by copying the testproof.BaseClaim and updating the root
 			claim := testproof.BaseClaim(service.Id, appAddr, supplierOperatorAddr, 0)
 			claim.RootHash = smt.MerkleRoot(test.root[:])
+			pendingResult := tlm.NewClaimSettlementResult(claim)
 
 			// Execute test function
-			err := keeper.ProcessTokenLogicModules(ctx, &claim, uPOKTCoin(math.MaxInt))
+			err := keeper.ProcessTokenLogicModules(ctx, pendingResult, uPOKTCoin(math.MaxInt))
 
 			// Assert the error
 			if test.errExpected {
@@ -564,61 +609,55 @@ func TestProcessTokenLogicModules_InvalidClaim(t *testing.T) {
 	// Define test cases
 	tests := []struct {
 		desc        string
-		claim       *prooftypes.Claim
+		claim       prooftypes.Claim
 		errExpected bool
 		expectErr   error
 	}{
 
 		{
-			desc: "Valid Claim",
-			claim: func() *prooftypes.Claim {
+			desc: "Valid claim",
+			claim: func() prooftypes.Claim {
 				claim := testproof.BaseClaim(service.Id, appAddr, supplierOperatorAddr, numRelays)
-				return &claim
+				return claim
 			}(),
 			errExpected: false,
 		},
 		{
-			desc:        "Nil Claim",
-			claim:       nil,
-			errExpected: true,
-			expectErr:   tokenomicstypes.ErrTokenomicsClaimNil,
-		},
-		{
-			desc: "Claim with nil session header",
-			claim: func() *prooftypes.Claim {
+			desc: "claim with nil session header",
+			claim: func() prooftypes.Claim {
 				claim := testproof.BaseClaim(service.Id, appAddr, supplierOperatorAddr, numRelays)
 				claim.SessionHeader = nil
-				return &claim
+				return claim
 			}(),
 			errExpected: true,
 			expectErr:   tokenomicstypes.ErrTokenomicsSessionHeaderNil,
 		},
 		{
-			desc: "Claim with invalid session id",
-			claim: func() *prooftypes.Claim {
+			desc: "claim with invalid session id",
+			claim: func() prooftypes.Claim {
 				claim := testproof.BaseClaim(service.Id, appAddr, supplierOperatorAddr, numRelays)
 				claim.SessionHeader.SessionId = ""
-				return &claim
+				return claim
 			}(),
 			errExpected: true,
 			expectErr:   tokenomicstypes.ErrTokenomicsSessionHeaderInvalid,
 		},
 		{
-			desc: "Claim with invalid application address",
-			claim: func() *prooftypes.Claim {
+			desc: "claim with invalid application address",
+			claim: func() prooftypes.Claim {
 				claim := testproof.BaseClaim(service.Id, appAddr, supplierOperatorAddr, numRelays)
 				claim.SessionHeader.ApplicationAddress = "invalid address"
-				return &claim
+				return claim
 			}(),
 			errExpected: true,
 			expectErr:   tokenomicstypes.ErrTokenomicsSessionHeaderInvalid,
 		},
 		{
-			desc: "Claim with invalid supplier operator address",
-			claim: func() *prooftypes.Claim {
+			desc: "claim with invalid supplier operator address",
+			claim: func() prooftypes.Claim {
 				claim := testproof.BaseClaim(service.Id, appAddr, supplierOperatorAddr, numRelays)
 				claim.SupplierOperatorAddress = "invalid address"
-				return &claim
+				return claim
 			}(),
 			errExpected: true,
 			expectErr:   tokenomicstypes.ErrTokenomicsSupplierOperatorAddressInvalid,
@@ -635,7 +674,8 @@ func TestProcessTokenLogicModules_InvalidClaim(t *testing.T) {
 						err = fmt.Errorf("panic occurred: %v", r)
 					}
 				}()
-				return keeper.ProcessTokenLogicModules(ctx, test.claim, uPOKTCoin(math.MaxInt))
+				pendingResult := tlm.NewClaimSettlementResult(test.claim)
+				return keeper.ProcessTokenLogicModules(ctx, pendingResult, uPOKTCoin(math.MaxInt))
 			}()
 
 			// Assert the error
