@@ -354,7 +354,7 @@ $$ E[\text{Total Profit}_{\text{Honest}}] = R $$
 
 Dishonest Suppliers face:
 
-- A high penalty `S` that wipes out their expected gains.
+- A high penalty (`S`) that wipes out their expected gains.
 - The risk of getting caught earlier than expected, resulting in a net loss.
 - Increased uncertainty due to the probabilistic nature of Proof requests.
 
