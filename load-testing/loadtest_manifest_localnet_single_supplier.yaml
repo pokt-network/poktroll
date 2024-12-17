@@ -3,6 +3,10 @@
 
 is_ephemeral_chain: true # This should be `true` for LocalNet as it is an ephemeral network
 
+# pocket_node is the URL of the node that the load test will use to query the
+# chain and submit transactions.
+pocket_node: http://localhost:26657
+
 # The service ID to use for the load test.
 service_id: anvil
 

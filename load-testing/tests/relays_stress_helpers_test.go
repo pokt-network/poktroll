@@ -5,6 +5,7 @@ package tests
 import (
 	"context"
 	"fmt"
+	"io"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -17,6 +18,9 @@ import (
 	"cosmossdk.io/depinject"
 	"cosmossdk.io/math"
 	"github.com/cometbft/cometbft/abci/types"
+	"github.com/cometbft/cometbft/libs/json"
+	cmtcoretypes "github.com/cometbft/cometbft/rpc/core/types"
+	rpctypes "github.com/cometbft/cometbft/rpc/jsonrpc/types"
 	sdkclient "github.com/cosmos/cosmos-sdk/client"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	"github.com/cosmos/cosmos-sdk/crypto/keys/secp256k1"
@@ -32,16 +36,12 @@ import (
 
 	"github.com/pokt-network/poktroll/load-testing/config"
 	"github.com/pokt-network/poktroll/pkg/client"
-	"github.com/pokt-network/poktroll/pkg/client/block"
-	"github.com/pokt-network/poktroll/pkg/client/events"
 	"github.com/pokt-network/poktroll/pkg/client/query"
-	"github.com/pokt-network/poktroll/pkg/client/tx"
 	"github.com/pokt-network/poktroll/pkg/observable"
 	"github.com/pokt-network/poktroll/pkg/observable/channel"
 	"github.com/pokt-network/poktroll/pkg/sync2"
-	testsession "github.com/pokt-network/poktroll/testutil/session"
 	"github.com/pokt-network/poktroll/testutil/testclient"
-	"github.com/pokt-network/poktroll/testutil/testclient/testeventsquery"
+	"github.com/pokt-network/poktroll/testutil/testclient/testblock"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	gatewaytypes "github.com/pokt-network/poktroll/x/gateway/types"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
@@ -82,90 +82,45 @@ type actorLoadTestIncrementPlan struct {
 }
 
 // setupEventListeners sets up the event listeners for the relays suite.
-// It listens to both tx and block to keep track of the events that are happening
+// It listens to both tx and block events to keep track of the events that are happening
 // on the chain.
-func (s *relaysSuite) setupEventListeners() {
-	eventsQueryClient := testeventsquery.NewLocalnetClient(s.TestingT.(*testing.T))
-
-	deps := depinject.Supply(eventsQueryClient)
-	txEventsReplayClient, err := events.NewEventsReplayClient(
-		s.ctx,
-		deps,
-		newTxEventSubscriptionQuery,
-		tx.UnmarshalTxResult,
-		eventsReplayClientBufferSize,
-	)
-	require.NoError(s, err)
-
+func (s *relaysSuite) setupEventListeners(pocketNode string) {
+	// Set up the blockClient that will be notifying the suite about the committed blocks.
 	eventsObs, eventsObsCh := channel.NewObservable[[]types.Event]()
 	s.eventsObs = eventsObs
 
-	// Map the eventsReplayClient.EventsSequence which is a replay observable
-	// to a regular observable to avoid replaying txResults from old blocks.
-	blockHeightToEvents := make(map[int64][]types.Event, 0)
-	blockHeightToEventsMu := sync.Mutex{}
-	channel.ForEach(
-		s.ctx,
-		txEventsReplayClient.EventsSequence(s.ctx),
-		func(ctx context.Context, txResult *types.TxResult) {
-			blockHeightToEventsMu.Lock()
-			defer blockHeightToEventsMu.Unlock()
-
-			blockHeight := txResult.Height
-			events := txResult.Result.Events
-
-			if _, ok := blockHeightToEvents[blockHeight]; !ok {
-				blockHeightToEvents[blockHeight] = make([]types.Event, 0)
-			}
-
-			blockHeightToEvents[blockHeight] = append(blockHeightToEvents[blockHeight], events...)
-		},
-	)
-
-	blockEventsReplayClient, err := events.NewEventsReplayClient(
-		s.ctx,
-		deps,
-		newBlockEventSubscriptionQuery,
-		block.UnmarshalNewBlockEvent,
-		eventsReplayClientBufferSize,
-	)
-	require.NoError(s, err)
-
-	// Map the eventsReplayClient.EventsSequence which is a replay observable
-	// to a regular observable to avoid replaying txResults from old blocks.
-	channel.ForEach(
-		s.ctx,
-		blockEventsReplayClient.EventsSequence(s.ctx),
-		func(ctx context.Context, block *block.CometNewBlockEvent) {
-			blockHeightToEventsMu.Lock()
-			defer blockHeightToEventsMu.Unlock()
-
-			blockHeight := block.Data.Value.Block.Height
-			events := block.Data.Value.ResultFinalizeBlock.Events
-
-			if _, ok := blockHeightToEvents[blockHeight]; !ok {
-				blockHeightToEvents[blockHeight] = make([]types.Event, 0)
-			}
-
-			blockHeightToEvents[blockHeight] = append(blockHeightToEvents[blockHeight], events...)
-		},
-	)
-
+	s.blockClient = testblock.NewLocalnetClient(s.ctx, s.TestingT.(*testing.T))
 	channel.ForEach(
 		s.ctx,
 		s.blockClient.CommittedBlocksSequence(s.ctx),
 		func(ctx context.Context, block client.Block) {
-			blockHeightToEventsMu.Lock()
-			defer blockHeightToEventsMu.Unlock()
+			// Query the block results endpoint for each observed block to get the tx and block events.
+			blockResultsUrl := fmt.Sprintf("%s/block_results?height=%d", pocketNode, block.Height())
+			blockResultsResp, err := http.DefaultClient.Get(blockResultsUrl)
+			require.NoError(s, err)
 
-			if _, ok := blockHeightToEvents[block.Height()]; ok {
-				for eventsHeight, events := range blockHeightToEvents {
-					if eventsHeight < block.Height() {
-						eventsObsCh <- events
-						delete(blockHeightToEvents, eventsHeight)
-					}
-				}
+			defer blockResultsResp.Body.Close()
+
+			blockResultsRespBz, err := io.ReadAll(blockResultsResp.Body)
+			require.NoError(s, err)
+
+			var rpcResponse rpctypes.RPCResponse
+			err = json.Unmarshal(blockResultsRespBz, &rpcResponse)
+			require.NoError(s, err)
+
+			var blockResults cmtcoretypes.ResultBlockResults
+			err = json.Unmarshal(rpcResponse.Result, &blockResults)
+			require.NoError(s, err)
+
+			events := make([]types.Event, 0, len(blockResults.TxsResults)+len(blockResults.FinalizeBlockEvents))
+			for _, txResult := range blockResults.TxsResults {
+				events = append(events, txResult.Events...)
 			}
+
+			events = append(events, blockResults.FinalizeBlockEvents...)
+
+			s.latestBlock = block
+			eventsObsCh <- events
 		},
 	)
 }
@@ -242,9 +197,9 @@ func (s *relaysSuite) mapSessionInfoForLoadTestDurationFn(
 
 		sessionInfo := &sessionInfoNotif{
 			blockHeight:             blockHeight,
-			sessionNumber:           testsession.GetSessionNumberWithDefaultParams(blockHeight),
-			sessionStartBlockHeight: testsession.GetSessionStartHeightWithDefaultParams(blockHeight),
-			sessionEndBlockHeight:   testsession.GetSessionEndHeightWithDefaultParams(blockHeight),
+			sessionNumber:           sharedtypes.GetSessionNumber(s.sharedParams, blockHeight),
+			sessionStartBlockHeight: sharedtypes.GetSessionStartHeight(s.sharedParams, blockHeight),
+			sessionEndBlockHeight:   sharedtypes.GetSessionEndHeight(s.sharedParams, blockHeight),
 		}
 
 		infoLogger := logger.Info().
@@ -790,7 +745,7 @@ func (plan *actorLoadTestIncrementPlan) shouldIncrementActorCount(
 		return false
 	}
 
-	initialSessionNumber := testsession.GetSessionNumberWithDefaultParams(startBlockHeight)
+	initialSessionNumber := sharedtypes.GetSessionNumber(sharedParams, startBlockHeight)
 	actorSessionIncRate := plan.blocksPerIncrement / int64(sharedParams.GetNumBlocksPerSession())
 	nextSessionNumber := sessionInfo.sessionNumber + 1 - initialSessionNumber
 	isSessionStartHeight := sessionInfo.blockHeight == sessionInfo.sessionStartBlockHeight
@@ -816,7 +771,7 @@ func (plan *actorLoadTestIncrementPlan) shouldIncrementSupplierCount(
 		return false
 	}
 
-	initialSessionNumber := testsession.GetSessionNumberWithDefaultParams(startBlockHeight)
+	initialSessionNumber := sharedtypes.GetSessionNumber(sharedParams, startBlockHeight)
 	supplierSessionIncRate := plan.blocksPerIncrement / int64(sharedParams.GetNumBlocksPerSession())
 	nextSessionNumber := sessionInfo.sessionNumber + 1 - initialSessionNumber
 	isSessionEndHeight := sessionInfo.blockHeight == sessionInfo.sessionEndBlockHeight
@@ -1084,8 +1039,12 @@ func (s *relaysSuite) sendRelay(iteration uint64, relayPayload string) (appAddre
 		req, err := http.NewRequest("POST", gwURL, strings.NewReader(payload))
 
 		req.Header.Add("X-App-Address", appAddr)
-		_, err = http.DefaultClient.Do(req)
+		res, err := http.DefaultClient.Do(req)
 		require.NoError(s, err)
+
+		if res.StatusCode != http.StatusOK {
+			s.failedRelays.Add(1)
+		}
 	}(s.gatewayUrls[gateway.address], application.address, relayPayload)
 
 	return application.address, gateway.address
@@ -1104,7 +1063,8 @@ func (s *relaysSuite) ensureFundedActors(ctx context.Context, actors []*accountI
 		actorsAddrs[i] = actor.address
 	}
 
-	ctx, cancel := context.WithCancel(ctx)
+	deadline := time.Now().Add(time.Second * time.Duration(blockDuration+1))
+	ctx, cancel := context.WithDeadline(ctx, deadline)
 	channel.ForEach(ctx, s.eventsObs, func(ctx context.Context, events []types.Event) {
 		for _, event := range events {
 			// Skip non-relevant events.
@@ -1160,7 +1120,8 @@ func (s *relaysSuite) ensureStakedActors(
 
 	stakedActors := make(map[string]struct{})
 
-	ctx, cancel := context.WithCancel(ctx)
+	deadline := time.Now().Add(time.Second * time.Duration(blockDuration+1))
+	ctx, cancel := context.WithDeadline(ctx, deadline)
 	typedEventsObs := abciEventsToTypedEvents(ctx, s.eventsObs)
 	channel.ForEach(ctx, typedEventsObs, func(ctx context.Context, blockEvents []proto.Message) {
 		for _, event := range blockEvents {
@@ -1209,7 +1170,8 @@ func (s *relaysSuite) ensureDelegatedApps(
 
 	appsToGateways := make(map[string][]string)
 
-	ctx, cancel := context.WithCancel(ctx)
+	deadline := time.Now().Add(time.Second * time.Duration(blockDuration+1))
+	ctx, cancel := context.WithDeadline(ctx, deadline)
 	typedEventsObs := abciEventsToTypedEvents(ctx, s.eventsObs)
 	channel.ForEach(ctx, typedEventsObs, func(ctx context.Context, blockEvents []proto.Message) {
 		for _, event := range blockEvents {

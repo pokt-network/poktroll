@@ -23,7 +23,6 @@ import (
 	"github.com/pokt-network/poktroll/pkg/observable"
 	"github.com/pokt-network/poktroll/pkg/observable/channel"
 	"github.com/pokt-network/poktroll/testutil/testclient"
-	"github.com/pokt-network/poktroll/testutil/testclient/testblock"
 	"github.com/pokt-network/poktroll/testutil/testclient/testtx"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
@@ -76,13 +75,6 @@ var (
 	// blockDuration is the duration of a block in seconds.
 	// NB: This value SHOULD be equal to `timeout_propose` in `config.yml`.
 	blockDuration = int64(2)
-	// newTxEventSubscriptionQuery is the format string which yields a subscription
-	// query to listen for on-chain Tx events.
-	newTxEventSubscriptionQuery    = "tm.event='Tx'"
-	newBlockEventSubscriptionQuery = "tm.event='NewBlock'"
-	// eventsReplayClientBufferSize is the buffer size for the events replay client
-	// for the subscriptions above.
-	eventsReplayClientBufferSize = 100
 	// relayPayloadFmt is the JSON-RPC request relayPayloadFmt to send a relay request.
 	relayPayloadFmt = `{"jsonrpc":"2.0","method":"%s","params":[],"id":%d}`
 	// relayRequestMethod is the method of the JSON-RPC request to be relayed.
@@ -207,6 +199,9 @@ type relaysSuite struct {
 
 	// eventsObs is the observable that maps committed blocks to on-chain events.
 	eventsObs observable.Observable[[]types.Event]
+
+	// failedRelays is the number of relay requests that returned non-200 status code.
+	failedRelays atomic.Uint64
 }
 
 // accountInfo contains the account info needed to build and send transactions.
@@ -254,7 +249,6 @@ func TestLoadRelays(t *testing.T) {
 }
 
 func TestSingleSupplierLoadRelays(t *testing.T) {
-
 	gocuke.NewRunner(t, &relaysSuite{}).Path(filepath.Join(".", "relays_stress_single_supplier.feature")).Run()
 }
 
@@ -302,9 +296,9 @@ func (s *relaysSuite) LocalnetIsRunning() {
 	// CometLocalWebsocketURL to the TestNetNode URL. These variables are used
 	// by the testtx txClient to send transactions to the network.
 	if !s.isEphemeralChain {
-		testclient.CometLocalTCPURL = loadTestParams.TestNetNode
+		testclient.CometLocalTCPURL = loadTestParams.PocketNode
 
-		webSocketURL, err := url.Parse(loadTestParams.TestNetNode)
+		webSocketURL, err := url.Parse(loadTestParams.PocketNode)
 		require.NoError(s, err)
 
 		// TestNet nodes may be exposed over HTTPS, so adjust the scheme accordingly.
@@ -320,24 +314,15 @@ func (s *relaysSuite) LocalnetIsRunning() {
 		blockDuration = 60
 	}
 
-	// Set up the blockClient that will be notifying the suite about the committed blocks.
-	s.blockClient = testblock.NewLocalnetClient(s.ctx, s.TestingT.(*testing.T))
-	channel.ForEach(
-		s.ctx,
-		s.blockClient.CommittedBlocksSequence(s.ctx),
-		func(ctx context.Context, block client.Block) {
-			s.latestBlock = block
-		},
-	)
-
 	// Setup the txContext that will be used to send transactions to the network.
 	s.txContext = testtx.NewLocalnetContext(s.TestingT.(*testing.T))
 
 	// Get the relay cost from the tokenomics module.
 	s.relayCoinAmountCost = s.getRelayCost()
 
-	// Setup the tx listener for on-chain events to check and assert on transactions results.
-	s.setupEventListeners()
+	// Setup the event listener for on-chain events to check and assert on transactions
+	// and finalized blocks results.
+	s.setupEventListeners(loadTestParams.PocketNode)
 
 	// Initialize the funding account.
 	s.initFundingAccount(loadTestParams.FundingAccountAddress)
@@ -346,9 +331,9 @@ func (s *relaysSuite) LocalnetIsRunning() {
 	s.forEachSettlement(s.ctx)
 
 	// Query for the current network on-chain params.
-	s.querySharedParams(loadTestParams.TestNetNode)
-	s.queryAppParams(loadTestParams.TestNetNode)
-	s.queryProofParams(loadTestParams.TestNetNode)
+	s.querySharedParams(loadTestParams.PocketNode)
+	s.queryAppParams(loadTestParams.PocketNode)
+	s.queryProofParams(loadTestParams.PocketNode)
 
 	// Some suppliers may already be staked at genesis, ensure that staking during
 	// this test succeeds by increasing the sake amount.
@@ -481,4 +466,11 @@ func (s *relaysSuite) ALoadOfConcurrentRelayRequestsAreSentFromTheApplications()
 
 	// Block the feature step until the test is done.
 	<-s.ctx.Done()
+}
+
+func (s *relaysSuite) TheNumberOfFailedRelayRequestsIs(expectedFailedRelays string) {
+	expectedFailedRelaysCount, err := strconv.ParseUint(expectedFailedRelays, 10, 64)
+	require.NoError(s, err)
+
+	require.EqualValues(s, expectedFailedRelaysCount, s.failedRelays.Load())
 }
