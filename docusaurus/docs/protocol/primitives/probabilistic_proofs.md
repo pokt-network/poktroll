@@ -454,7 +454,6 @@ See [Pocket_Network_Morse_Probabilistic_Proofs.ipynb](./Pocket_Network_Morse_Pro
 
 :::
 
-Accept the fact that the majority of the block space is taken up by Proofs.
 
 The number of on-chain relays (proofs) required by the network scales inversely to `ProofRequestProbability`. For example:
 
