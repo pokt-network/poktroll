@@ -118,7 +118,7 @@ flowchart TD
     ISCAT --> |Yes| PR
 
     ISPPR --> |No| NP
-    ISPPR --> |Yes| ISPA
+    ISPPR --> |Yes| PR
 
     ISPA --> |"Yes"| DR
     ISPA --> |No| SLASH
