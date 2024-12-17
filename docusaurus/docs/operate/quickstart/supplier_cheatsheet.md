@@ -8,11 +8,14 @@ title: Supplier (RelayMiner) Cheat Sheet
 This guide provides quick reference commands for setting up a **Supplier** and
 running a **RelayMiner** on Pocket Network.
 
-:::warning
+For detailed instructions, troubleshooting, and observability setup, see the [Supplier Walkthrough](./../run_a_node/supplier_walkthrough.md).
+
+:::note
 
 These instructions are intended to run on a Linux machine.
 
-TODO_TECHDEBT(@olshansky): Adapt the instructions to be macOS friendly.
+TODO_TECHDEBT(@olshansky): Adapt instructions to be macOS friendly in order to
+streamline development and reduce friction for any new potential contributor.
 
 :::
 
@@ -29,15 +32,9 @@ TODO_TECHDEBT(@olshansky): Adapt the instructions to be macOS friendly.
   - [Start the RelayMiner](#start-the-relayminer)
   - [Secure vs Non-Secure `query_node_grpc_url`](#secure-vs-non-secure-query_node_grpc_url)
 - [Supplier FAQ](#supplier-faq)
-  - [What Supplier transactions are available?](#what-supplier-transactions-are-available)
+  - [What Supplier operations are available?](#what-supplier-operations-are-available)
   - [What Supplier queries are available?](#what-supplier-queries-are-available)
   - [How do I query for all existing onchain Suppliers?](#how-do-i-query-for-all-existing-onchain-suppliers)
-
-:::note
-
-For detailed instructions, troubleshooting, and observability setup, see the [Supplier Walkthrough](./../run_a_node/supplier_walkthrough.md).
-
-:::
 
 ## Pre-Requisites
 
@@ -45,6 +42,17 @@ For detailed instructions, troubleshooting, and observability setup, see the [Su
 2. Make sure you know how to [create and fund a new account](../user_guide/create-new-wallet.md).
 3. You have either [staked a new `service` or found an existing one](./service_cheatsheet.md).
 4. `[Optional]` You can run things locally or have dedicated long-running hardware. See the [Docker Compose Cheat Sheet](./docker_compose_debian_cheatsheet#deploy-your-server) if you're interested in the latter.
+
+:::warning
+
+You can append `--keyring-backend test` to all the `poktrolld` commands throughout
+this guide to avoid entering the password each time.
+
+This is not recommended but provided for convenience for NON PRODUCTION USE ONLY.
+
+Use at your own risk.
+
+:::
 
 ### Context
 
@@ -224,22 +232,44 @@ poktrolld \
 
 ### Secure vs Non-Secure `query_node_grpc_url`
 
-In `/tmp/relayminer_config.yaml`, you'll see that we specify an endpoint for
-`query_node_grpc_url` which is TLS terminated.
+In `/tmp/relayminer_config.yaml`, you'll see that we specify an endpoint
+for `query_node_grpc_url` which is TLS terminated.
 
-If `grpc-insecure=true` then it **MUST** be an HTTP port, no TLS.
+If `grpc-insecure=true` then it **MUST** be an HTTP port, no TLS. Once you have
+an endpoint exposed, it can be validated like so:
 
-The Grove team exposed one such endpoint on one of our validators for Beta Testnet at `http://149.28.34.68:9090`.
-It can be validated with `grpcurl -plaintext 149.28.34.68:9090 list`; note that the `-plaintext` flag meaning no TLS encryption.
+```bash
+grpcurl -plaintext <host>:<port> list
+```
+
+<!--
+TODO_TECHDEBT(@olshansk): Remove this comment.
+
+Use at your own risk.
+
+The Grove team temporarily exposed an unmaintained endpoint on one of our validators
+for Beta Testnet at `http://149.28.34.68:9090`.
+
+`grpcurl -plaintext 149.28.34.68:9090 list`
+-->
 
 If `grpc-insecure=false`, then it **MUST** be an HTTPS port, with TLS.
 
-The Grove team exposed one such endpoint on one of our validators for Beta Testnet at `https://shannon-testnet-grove-grpc.beta.poktroll.com:443`.
-It can be validated with `grpcurl shannon-testnet-grove-grpc.beta.poktroll.com:443 list`; note no `-plaintext` flag meaning no TLS encryption.
+The Grove team exposed one such endpoint on one of our validators for Beta Testnet
+at `https://shannon-testnet-grove-grpc.beta.poktroll.com:443`.
+
+It can be validated with:
+
+```bash
+grpcurl shannon-testnet-grove-grpc.beta.poktroll.com:443 list
+```
+
+Note that no `-plaintext` flag is required when an endpoint is TLS terminated and
+must be omitted if it is not.
 
 :::tip
 
-You can replace both `http` and `https` with `tcp` and it should work the same.
+You can replace both `http` and `https` with `tcp` and it should work the same way.
 
 :::
 

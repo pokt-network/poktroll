@@ -12,7 +12,8 @@ on Pocket Network.
 
 These instructions are intended to run on a Linux machine.
 
-TODO_TECHDEBT(@olshansky): Adapt the instructions to be macOS friendly.
+TODO_TECHDEBT(@olshansky): Adapt instructions to be macOS friendly in order to
+streamline development and reduce friction for any new potential contributor.
 
 :::
 
@@ -82,8 +83,8 @@ the process of interacting with the Shannon network:
 We recommend you put these in your `~/.bashrc` file:
 
 ```bash
-export NODE="https://shannon-testnet-grove-rpc.beta.poktroll.com"
-export NODE_FLAGS="--node=https://shannon-testnet-grove-rpc.beta.poktroll.com"
+export POCKET_NODE="https://shannon-testnet-grove-rpc.beta.poktroll.com"
+export NODE_FLAGS="--node=$POCKET_NODE"
 export TX_PARAM_FLAGS="--gas=auto --gas-prices=1upokt --gas-adjustment=1.5 --chain-id=pocket-beta --yes"
 export GATEWAY_ADDR=$(poktrolld keys show gateway -a)
 export APP_ADDR=$(poktrolld keys show application -a)
