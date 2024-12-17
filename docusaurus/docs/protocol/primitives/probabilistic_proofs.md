@@ -219,12 +219,11 @@ Recall:
 
 #### Modeling a Dishonest Supplier's Strategy using a Geometric CDF (Cumulative Distribution Function)
 
-Above, we have been tracking the probability that `Pr(X=k+1)`, the probability
-of `k` failures (Supplier escapes without penalty) until a single success (Supplier)
-is penalized. This can be modeled using a Geometric PDF (Probability Distribution Function).
+So far, we've considered the probability given by `Pr(X=k+1)`: the probability
+of `k` "failures" (👆) until a single "success" (👆). This can be modeled using a Geometric PDF (Probability Distribution Function).
 
-In practice, we need to track the likelihood of `k or less` failures `Pr(X<=k)`,
-until a single success. This can be modeled using a Geometric CDF.
+In practice, we need to track the likelihood of `k or less` "failures" `Pr(X<=k)`,
+until a single "success". This can be modeled using a Geometric CDF.
 
 TODO_IN_THIS_PR: Remove the paragraph below. From Bryan: `This paragraph confuses me a bit. The previous paragraph says that we need to use a CDF but then this paragraph seems to turn around and say that this actually don't? I feel like this and the above paragraph should be combined and rephrased a bit.`
 
