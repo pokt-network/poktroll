@@ -490,7 +490,11 @@ As of writing (October 2024), Shannon MainNet is not live; therefore, data from 
 
 ### Selecting `ProofRequirementThreshold`
 
-Choose `R = 20` since it is greater than `p95` of all Claims collected in Morse. Units are in `POKT`.
+Choose `R = 20` since it is greater than `p95` of all Claims collected in Morse. 
+
+:::info
+Units are in `POKT`.
+:::
 
 See the original proposal from Morse available in [probabilistic_proofs_morse.md](./probabilistic_proofs_morse.md)
 and [Pocket_Network_Morse_Probabilistic_Proofs.ipynb](./Pocket_Network_Morse_Probabilistic_Proofs.ipynb) for supporting data.
