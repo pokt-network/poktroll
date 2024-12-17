@@ -106,7 +106,7 @@ flowchart TD
     SLASH[Slash Supplier Stake]
 
     %% Is Claim Above Threshold
-    ISCAT{ Is <br> Claim.ComputeUnits > Gov.ProofRequirementThreshold ? }
+    ISCAT{ Is <br> Claim.ComputeUnits > <br>Gov.ProofRequirementThreshold ? }
     %% Is Probabilistic Proof Required
     ISPPR{"Is P(Gov.ProofRequestProbability) == 1 ? <br> (omitting rand seed details)"}
     %% Is Proof Available
