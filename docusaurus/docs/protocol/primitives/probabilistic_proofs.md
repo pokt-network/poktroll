@@ -216,8 +216,8 @@ $$ E[K] = \frac{q}{p} $$
 
 Recall:
 
-- **Failure**: The network does not catch a dishonest Supplier
-- **Success**: The network catches a dishonest Supplier
+- **Success**: The network **does** catch a dishonest Supplier
+- **Failure**: The network **does not** catch a dishonest Supplier
 
 #### Modeling a Dishonest Supplier's Strategy using a Geometric CDF (Cumulative Distribution Function)
 
