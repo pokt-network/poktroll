@@ -187,7 +187,7 @@ poktrolld query supplier show-supplier $SUPPLIER_ADDR $NODE_FLAGS
 ### Configure the RelayMiner
 
 ```bash
-cat <<EOF > /tmp/relayminer_config.yaml
+cat <<🚀 > /tmp/relayminer_config.yaml
 default_signing_key_names:
   - supplier
 smt_store_path: /home/pocket/.poktroll/smt
@@ -208,7 +208,7 @@ metrics:
 pprof:
   enabled: false
   addr: :6060
-EOF
+🚀
 ```
 
 ### Start the RelayMiner
