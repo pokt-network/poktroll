@@ -33,7 +33,7 @@ This is a specification & proposal that will be submitted to [forum.pokt.network
   - [Flow](#flow)
   - [Scaling Benefits](#scaling-benefits)
     - [Block Data Verification](#block-data-verification)
-- [Attack Modelling](#attack-modelling)
+- [Attack Modeling](#attack-modeling)
   - [Approach](#approach)
   - [Definitions](#definitions)
   - [Example](#example)
@@ -136,7 +136,7 @@ This goes to show that reducing the number of Proofs & Claims submitted on-chain
 ![img2](https://user-images.githubusercontent.com/1892194/236548602-bb6cbc2a-aa2a-4b92-ae75-d40eda80685f.png)
 ![img1](https://user-images.githubusercontent.com/1892194/236548608-be569088-a19a-4759-8d7b-2c4f8c5e7ae8.png)
 
-## Attack Modelling
+## Attack Modeling
 
 In order to select the values for the three parameters, the attacker's likelihood of adversarial reward & penalty must be modeled.
 

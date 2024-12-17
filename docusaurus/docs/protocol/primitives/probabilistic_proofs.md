@@ -58,14 +58,19 @@ TODO_IN_THIS_PR: Reference the papers from justin taylor, Alin Tomescu, and axel
 
 Consider the hypothetical scenario below as an extremely rough approximation.
 
-Network state and parameters:
+TODO_IN_THIS_PR: Turn this into a table.
+
+Network parameters:
+
+- Session duration: `1` hour
+
+Network state:
 
 - Median Proof Size: `1,000` bytes
 - Number of services: `10,000`
 - Number of applications: `100,000`
 - Number of suppliers: `100,000`
 - Number of suppliers per session: `10`
-- Session duration: `1` hour
 - Number of Proofs per session: `1`
 
 Conservative (simple) scenario:
@@ -195,7 +200,7 @@ The dishonest Supplier's strategy:
 - Submit false Claims repeatedly, hoping not to be selected for Proof submission.
 - Accept that eventually, they will be caught and penalized.
 
-#### Modelling a Dishonest Supplier's Strategy using a Geometric PDF (Probability Distribution Function)
+#### Modeling a Dishonest Supplier's Strategy using a Geometric PDF (Probability Distribution Function)
 
 The number of successful false Claims before getting caught follows a [Geometric distribution](https://en.wikipedia.org/wiki/Geometric_distribution):
 
@@ -214,7 +219,7 @@ Recall:
 - **Failure**: The network does not catch a dishonest Supplier
 - **Success**: The network catches a dishonest Supplier
 
-#### Modelling a Dishonest Supplier's Strategy using a Geometric CDF (Cumulative Distribution Function)
+#### Modeling a Dishonest Supplier's Strategy using a Geometric CDF (Cumulative Distribution Function)
 
 Above, we have been tracking the probability that `Pr(X=k+1)`, the probability
 of `k` failures (Supplier escapes without penalty) until a single success (Supplier)
@@ -222,6 +227,8 @@ is penalized. This can be modeled using a Geometric PDF (Probability Distributio
 
 In practice, we need to track the likelihood of `k or less` failures `Pr(X<=k)`,
 until a single success. This can be modeled using a Geometric CDF.
+
+TODO_IN_THIS_PR: Remove the paragraph below.
 
 To simplify the math, we'll be using the Expected Value of a Geometric PDF
 due to its [simpler proof formulation](https://en.wikipedia.org/wiki/Geometric_distribution#Proof_of_expected_value), guaranteeing the results be **AT LEAST**
@@ -421,7 +428,7 @@ You can generate the graph above with `penalty_vs_proof_request_prob.py`
 - **Threshold Value**: Set the `ProofRequirementThreshold` low enough that most Claims are subject to probabilistic Proof requests, but high enough to prevent excessive Proof submissions.
 - **Short-Circuiting**: Claims above the threshold always require Proofs, eliminating the risk of large false Claims slipping through.
 
-##### Modelling `ProofRequirementThreshold`
+##### Modeling `ProofRequirementThreshold`
 
 `ProofRequirementThreshold` should be as small as possible so that most such that
 most Claims for into the probabilistic bucket, while also balancing out penalties
@@ -464,7 +471,7 @@ maximize `Pr(X<=k)` to ensure `k or less` failures (Supplier escapes without pen
 This does not affect the expected reward calculations above, but gives a different
 perspective of what the probabilities of success and failure are.
 
-## Conclusions for Modelling
+## Conclusions for Modeling
 
 By modeling the attack using a geometric distributions and calculating expected values, we can:
 
