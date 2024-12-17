@@ -72,6 +72,7 @@ func NewSessionTree(
 	sessionHeader *sessiontypes.SessionHeader,
 	supplierOperatorAddress *cosmostypes.AccAddress,
 	storesDirectory string,
+	logger polylog.Logger,
 ) (relayer.SessionTree, error) {
 	// Join the storePrefix and the session.sessionId and supplier's operator address to
 	// create a unique storePath.
@@ -95,7 +96,14 @@ func NewSessionTree(
 	// contain a non-hashed Relay that could be used to validate the proof on-chain.
 	trie := smt.NewSparseMerkleSumTrie(treeStore, protocol.NewTrieHasher(), smt.WithValueHasher(nil))
 
+	logger = logger.With(
+		"store_path", storePath,
+		"session_id", sessionHeader.SessionId,
+		"supplier_operator_address", supplierOperatorAddress,
+	)
+
 	sessionTree := &sessionTree{
+		logger:                  logger,
 		sessionHeader:           sessionHeader,
 		storePath:               storePath,
 		treeStore:               treeStore,
@@ -268,7 +276,6 @@ func (st *sessionTree) Delete() error {
 	} else {
 		st.logger.With(
 			"claim_root", fmt.Sprintf("%x", st.GetClaimRoot()),
-			"session_id", st.GetSessionHeader().SessionId,
 		).Info().Msg("KVStore is already stopped")
 	}
 
