@@ -96,8 +96,8 @@ export SUPPLIER_ADDR=$(poktrolld keys show supplier -a)
 
 :::tip
 
-You can put the above in a special `~/.poktrollrc` and add `source ~/.poktrollrc` to
-your `~/.profile` file for a cleaner organization.
+As an alternative to appending directly to `~/.bashrc`, you can put the above in a special `~/.poktrollrc` and add `source ~/.poktrollrc` to
+your `~/.profile` (or `~/.bashrc`) file for a cleaner organization.
 
 :::
 
@@ -111,7 +111,8 @@ Run the following command to get the `Supplier`:
 echo "Supplier address: $SUPPLIER_ADDR"
 ```
 
-Then use the [Shannon Beta TestNet faucet](https://faucet.beta.testnet.pokt.network/) to fund the account.
+Then use the [Shannon Beta TestNet faucet](https://faucet.beta.testnet.pokt.network/) to fund the (supplier owner address) account.
+See [Non-Custodial Staking](https://dev.poktroll.com/operate/configs/supplier_staking_config#non-custodial-staking) for more information about supplier owner vs operator and non-custodial staking.
 
 Afterwards, you can query the balance using the following command:
 
@@ -152,7 +153,7 @@ sudo ufw allow 8545/tcp
 Create a Supplier stake configuration file:
 
 ```bash
-cat <<EOF > /tmp/stake_supplier_config.yaml
+cat <<🚀 > /tmp/stake_supplier_config.yaml
 owner_address: $SUPPLIER_ADDR
 operator_address: $SUPPLIER_ADDR
 stake_amount: 1000069upokt
@@ -163,7 +164,7 @@ services:
     endpoints:
       - publicly_exposed_url: http://$EXTERNAL_IP:8545
         rpc_type: JSON_RPC
-EOF
+🚀
 ```
 
 And run the following command to stake the `Supplier`:
@@ -229,7 +230,7 @@ for `query_node_grpc_url`.
 If `grpc-insecure=true` then it **MUST** be an HTTP port, no TLS.
 
 The Grove team exposed one such endpoint on one of our validators for Beta Testnet at `http://149.28.34.68:9090`.
-It can be validated with `grpcurl -plaintext 149.28.34.68:9090`; note that the `-plaintext` flag meaning no TLS encryption.
+It can be validated with `grpcurl -plaintext 149.28.34.68:9090 list`; note that the `-plaintext` flag meaning no TLS encryption.
 
 If `grpc-insecure=false`, then it **MUST** be an HTTPS port, with TLS.
 
@@ -244,7 +245,7 @@ You can replace both `http` and `https` with `tcp` and it should work the same.
 
 ## Supplier FAQ
 
-### What Supplier transactions are available?
+### What Supplier operations are available?
 
 ```bash
 poktrolld tx supplier -h
