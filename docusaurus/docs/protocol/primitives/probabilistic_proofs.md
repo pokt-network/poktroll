@@ -514,7 +514,7 @@ $$ S = R \cdot E[K] = 20 \cdot 99 = 1980 ≈ 2,000 $$
    - The minimum stake amount will need to be significantly higher than the penalty to enable slashing across multiple sessions at once
 
 2. **Optimal Reward Value**: Evaluating onchain Shannon data to determine the optimal value for `R`
-3. **Closed Feedback Look**: Having `p` dynamically adjust onchain as a function of onchain data without intervention from the DAO / PNF (i.e. )
+3. **Closed Feedback Loop**: Having `p` dynamically adjust onchain as a function of onchain data without intervention from the DAO / PNF.
 4. Reviewing, comparing & contributing to **external literature** such as:
 
    - https://research.facebook.com/publications/distributed-auditing-proofs-of-liabilities/
