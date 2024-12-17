@@ -8,7 +8,8 @@ title: Supplier (RelayMiner) Cheat Sheet
 This guide provides quick reference commands for setting up a **Supplier** and
 running a **RelayMiner** on Pocket Network.
 
-For detailed instructions, troubleshooting, and observability setup, see the [Supplier Walkthrough](./../run_a_node/supplier_walkthrough.md).
+For detailed instructions, troubleshooting, and observability setup, see the
+[Supplier Walkthrough](./../run_a_node/supplier_walkthrough.md).
 
 :::note
 
@@ -50,7 +51,7 @@ this guide to avoid entering the password each time.
 
 This is not recommended but provided for convenience for NON PRODUCTION USE ONLY.
 
-Use at your own risk.
+⚠️ Use at your own risk. ⚠️
 
 :::
 
@@ -71,19 +72,7 @@ Create a new key pair for the `Supplier`
 
 ```bash
 poktrolld keys add supplier
-
-# Optionally, to avoid entering the password each time:
-# poktrolld keys add supplier --keyring-backend test
 ```
-
-:::tip
-
-You can set the `--keyring-backend` flag to `test` to avoid entering the password
-each time.
-
-Learn more about [cosmos keyring backends here](https://docs.cosmos.network/v0.46/run-node/keyring.html).
-
-:::
 
 ### Prepare your environment
 
@@ -97,14 +86,12 @@ export NODE="https://shannon-testnet-grove-rpc.beta.poktroll.com"
 export NODE_FLAGS="--node=https://shannon-testnet-grove-rpc.beta.poktroll.com"
 export TX_PARAM_FLAGS="--gas=auto --gas-prices=1upokt --gas-adjustment=1.5 --chain-id=pocket-beta --yes"
 export SUPPLIER_ADDR=$(poktrolld keys show supplier -a)
-
-# Optionally, to avoid entering the password each time:
-# export SUPPLIER_ADDR=$(poktrolld keys show supplier -a --keyring-backend test
 ```
 
 :::tip
 
-As an alternative to appending directly to `~/.bashrc`, you can put the above in a special `~/.poktrollrc` and add `source ~/.poktrollrc` to
+As an alternative to appending directly to `~/.bashrc`, you can put the above
+in a special `~/.poktrollrc` and add `source ~/.poktrollrc` to
 your `~/.profile` (or `~/.bashrc`) file for a cleaner organization.
 
 :::
@@ -140,9 +127,8 @@ You can find all the explorers, faucets and tools at the [tools page](../../expl
 
 For an in-depth look at how to stake a supplier, see the [Supplier configuration docs](./../configs/supplier_staking_config.md).
 
-The example below is a very quick and simple way to get you started by staking for
-Pocket Network's Morse service on Shannon using a public RPC endpoint provided by
-[Liquify](https://liquify.com/).
+These instructions help you stake a supplier for a specific service (POKT Morse)
+using a pre-configured RPC endpoint ([Liquify](https://liquify.com/) public RPC endpoint).
 
 :::
 
@@ -153,6 +139,9 @@ EXTERNAL_IP=$(curl -4 ifconfig.me/ip)
 ```
 
 Choose a port that'll be publicly accessible from the internet (e.g. `8545`)
+and expose it.
+
+You can use the following command for OSs that use `ufw` (learn more [here](https://wiki.archlinux.org/title/Uncomplicated_Firewall)):
 
 ```bash
 sudo ufw allow 8545/tcp
@@ -179,9 +168,6 @@ And run the following command to stake the `Supplier`:
 
 ```bash
 poktrolld tx supplier stake-supplier --config /tmp/stake_supplier_config.yaml --from=$SUPPLIER_ADDR $TX_PARAM_FLAGS $NODE_FLAGS
-
-# Optionally, to avoid entering the password each time:
-# poktrolld tx supplier stake-supplier --config /tmp/stake_supplier_config.yaml --from=$SUPPLIER_ADDR $TX_PARAM_FLAGS $NODE_FLAGS --keyring-backend test
 ```
 
 After about a minute, you can check the `Supplier`'s status like so:
@@ -226,8 +212,7 @@ poktrolld \
     relayminer \
     --grpc-insecure=false \
     --log_level=debug \
-    --config=/tmp/relayminer_config.yaml \
-    # --keyring-backend=test
+    --config=/tmp/relayminer_config.yaml
 ```
 
 ### Secure vs Non-Secure `query_node_grpc_url`

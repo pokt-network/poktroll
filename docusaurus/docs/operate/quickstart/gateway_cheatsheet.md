@@ -3,12 +3,15 @@ sidebar_position: 7
 title: Gateway Cheat Sheet
 ---
 
-# Gateway Cheat Sheet <!-- omit in toc -->
+## Gateway Cheat Sheet <!-- omit in toc -->
 
-This guide provides quick reference commands for setting up and running a Gateway
+This guide provides quick reference commands for setting up and running a **Gateway**
 on Pocket Network.
 
-:::warning
+For detailed instructions, troubleshooting, and observability setup, see the
+[Gateway Walkthrough](./../run_a_node/gateway_walkthrough.md).
+
+:::note
 
 These instructions are intended to run on a Linux machine.
 
@@ -33,16 +36,21 @@ streamline development and reduce friction for any new potential contributor.
     - [\[TODO\] Run the `PATH` Gateway using Docker](#todo-run-the-path-gateway-using-docker)
   - [Check the `PATH Gateway` is serving relays](#check-the-path-gateway-is-serving-relays)
 
-:::note
-
-For detailed instructions, troubleshooting, and observability setup, see the [Gateway Walkthrough](./../run_a_node/gateway_walkthrough.md).
-
-:::
-
 ## Pre-Requisites
 
 1. Make sure to [install the `poktrolld` CLI](../user_guide/install.md).
 2. Make sure you know how to [create and fund a new account](../user_guide/create-new-wallet.md).
+
+:::warning
+
+You can append `--keyring-backend test` to all the `poktrolld` commands throughout
+this guide to avoid entering the password each time.
+
+This is not recommended but provided for convenience for NON PRODUCTION USE ONLY.
+
+⚠️ Use at your own risk. ⚠️
+
+:::
 
 ## Account Setup
 
@@ -52,28 +60,13 @@ Create a new key pair for the delegating `Application`:
 
 ```bash
 poktrolld keys add application
-
-# Optionally, to avoid entering the password each time:
-# poktrolld keys add application --keyring-backend test
 ```
 
 Create a new key pair for the `Gateway`:
 
 ```bash
 poktrolld keys add gateway
-
-# Optionally, to avoid entering the password each time:
-# poktrolld keys add gateway --keyring-backend test
 ```
-
-:::tip
-
-You can set the `--keyring-backend` flag to `test` to avoid entering the password
-each time.
-
-Learn more about [cosmos keyring backends here](https://docs.cosmos.network/v0.46/run-node/keyring.html).
-
-:::
 
 ### Prepare your environment
 
@@ -88,16 +81,13 @@ export NODE_FLAGS="--node=$POCKET_NODE"
 export TX_PARAM_FLAGS="--gas=auto --gas-prices=1upokt --gas-adjustment=1.5 --chain-id=pocket-beta --yes"
 export GATEWAY_ADDR=$(poktrolld keys show gateway -a)
 export APP_ADDR=$(poktrolld keys show application -a)
-
-# Optionally, to avoid entering the password each time:
-# export GATEWAY_ADDR=$(poktrolld keys show gateway -a --keyring-backend test)
-# export APP_ADDR=$(poktrolld keys show application -a --keyring-backend test)
 ```
 
 :::tip
 
-You can put the above in a special `~/.poktrollrc` and add `source ~/.poktrollrc` to
-your `~/.profile` file for a cleaner organization.
+As an alternative to appending directly to `~/.bashrc`, you can put the above
+in a special `~/.poktrollrc` and add `source ~/.poktrollrc` to
+your `~/.profile` (or `~/.bashrc`) file for a cleaner organization.
 
 :::
 
@@ -131,18 +121,15 @@ You can find all the explorers, faucets and tools at the [tools page](../../expl
 Create a Gateway stake configuration file:
 
 ```bash
-cat <<EOF > /tmp/stake_gateway_config.yaml
+cat <<🚀 > /tmp/stake_gateway_config.yaml
 stake_amount: 1000000upokt
-EOF
+🚀
 ```
 
 And run the following command to stake the `Gateway`:
 
 ```bash
 poktrolld tx gateway stake-gateway --config=/tmp/stake_gateway_config.yaml --from=$GATEWAY_ADDR $TX_PARAM_FLAGS $NODE_FLAGS
-
-# Optionally, to avoid entering the password each time:
-# poktrolld tx gateway stake-gateway --config=/tmp/stake_gateway_config.yaml --from=$GATEWAY_ADDR $TX_PARAM_FLAGS $NODE_FLAGS --keyring-backend test
 ```
 
 After about a minute, you can check the `Gateway`'s status like so:
@@ -156,20 +143,17 @@ poktrolld query gateway show-gateway $GATEWAY_ADDR $NODE_FLAGS
 Create an Application stake configuration file:
 
 ```bash
-cat <<EOF > /tmp/stake_app_config.yaml
+cat <<🚀 > /tmp/stake_app_config.yaml
 stake_amount: 100000000upokt
 service_ids:
   - "F00C"
-EOF
+🚀
 ```
 
 And run the following command to stake the `Application`:
 
 ```bash
 poktrolld tx application stake-application --config=/tmp/stake_app_config.yaml --from=$APP_ADDR $TX_PARAM_FLAGS $NODE_FLAGS
-
-# Optionally, to avoid entering the password each time:
-# poktrolld tx application stake-application --config=/tmp/stake_app_config.yaml --from=$APP_ADDR $TX_PARAM_FLAGS $NODE_FLAGS --keyring-backend test
 ```
 
 After about a minute, you can check the `Application`'s status like so:
@@ -182,9 +166,6 @@ poktrolld query application show-application $APP_ADDR $NODE_FLAGS
 
 ```bash
 poktrolld tx application delegate-to-gateway $GATEWAY_ADDR --from=$APP_ADDR $TX_PARAM_FLAGS $NODE_FLAGS
-
-# Optionally, to avoid entering the password each time:
-# poktrolld tx application delegate-to-gateway $GATEWAY_ADDR --from=$APP_ADDR $TX_PARAM_FLAGS $NODE_FLAGS --keyring-backend test
 ```
 
 After about a minute, you can check the `Application`'s status like so:
@@ -240,10 +221,6 @@ sed -i "s|host_port: ".*"|host_port: shannon-testnet-grove-grpc.beta.poktroll.co
 sed -i "s|gateway_address: .*|gateway_address: $GATEWAY_ADDR|" config/.config.yaml
 sed -i "s|gateway_private_key_hex: .*|gateway_private_key_hex: $(export_priv_key_hex gateway)|" config/.config.yaml
 sed -i '/owned_apps_private_keys_hex:/!b;n;c\      - '"$(export_priv_key_hex application)" config/.config.yaml
-
-# If you're using the test keyring-backend:
-# sed -i "s|gateway_private_key_hex: .*|gateway_private_key_hex: $(export_priv_key_hex gateway)|" config/.config.yaml
-# sed -i '/owned_apps_private_keys_hex:/!b;n;c\      - '"$(export_priv_key_hex application)" config/.config.yaml
 ```
 
 When you're done, run `cat config/.config.yaml` to view the updated config file.
