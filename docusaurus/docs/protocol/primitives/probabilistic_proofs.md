@@ -486,7 +486,7 @@ This approach allows the network to scale by reducing the number of on-chain Pro
 
 ## Morse Based Value Selection
 
-As of writing (October 2024), Shannon is not live and only Morse can be used to approximate realistic values.
+As of writing (October 2024), Shannon MainNet is not live; therefore, data from Morse must be used to approximate realistic values.
 
 ### Selecting `ProofRequirementThreshold`
 
