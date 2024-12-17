@@ -15,19 +15,19 @@ specific threshold.
 
 External stakeholders (i.e. DAO/Foundation) need to be involved in adjusting the
 `ProofRequirementThreshold` by statistically analyzing onchain data, along with selecting
-an appropriate `ProofRequestProbability` that balances scalability and security. These values
-lead to calculating expected rewards and penalties of honest and dishonest Suppliers respectively,
-which should drive the decision for what `SupplierMinStake` should be. Reasonably
-selected values can be chosen to easily scale the network by `100x` without compromising
+an appropriate `ProofRequestProbability` that balances scalability and security. In turn, these values
+are used to derive on-chain reward and penalty amounts for honest and dishonest Suppliers, respectively.
+The penalty amount is then used to derive `SupplierMinStake`.
+Reasonably selected values can be chosen to easily scale the network by `100x` without compromising
 security.
 
 The results show that choosing a value of `20 POKT` for `ProofRequirementThreshold`,
 the `95th percentile` of all Claims, along with a `ProofRequestProbability` of `0.01`,
 can enable `100x` scalability of the network if the `Slashing penalty` for invalid/missing
 proofs is set to `2,000 POKT`. As long as the minimum required stake for Suppliers exceeds
-this value, the funds will be available for slashing staking is set to `2,000 POKT`.
+this value, staked collateral will be available for slashing, if needed.
 
-Under future work, we look at a potential attack vector that still needs to be considered,
+In future work, we will look at a potential attack vector that still needs to be considered,
 along with further research on the topic.
 
 ## Problem Statement
@@ -37,13 +37,13 @@ _tl;dr Too many on-chain Proofs do not scale due to state bloat and excessive CP
 The core limiting factor to Pocket Network's scalability is the number of required on-chain Proofs.
 For details on how Proofs are generated and validated, see the [Claim & Proof lifecycle](./Claim_and_Proof_lifecycle.md) section.
 
-In every session, for every `(Application, Supplier, Service)` tuple, there is a
-single on-chain Merkle required Proof to prove the Claimed work done.
+For every session (i.e. `(Application, Supplier, Service)` tuple), it is possible to construct a
+Merkle Proof which proves the Claimed work done, which can be stored on-chain.
 
 These Proofs are large and costly to both store and verify. Too many Proofs result in:
 
 - **State Bloat**: Full Node disk space grows too quickly because blocks are large (i.e.,full of transactions containing large Proofs), increasing disk usage.
-- **Verification Cost**: Block producers (i.e. Validators) must verify all these Proofs on every block, increasing CPU usage.
+- **Verification Cost**: Block producers (i.e. Validators) MUST verify ALL Proofs (once), correlating average CPU usage with the average throughput of on-chain Proofs.
 
 :::note
 
@@ -105,7 +105,7 @@ flowchart TD
     %% Is Probabilistic Proof Required
     ISPPR{"Is P(Gov.ProofRequestProbability) == 1 ? <br> (omitting rand seed details)"}
     %% Is Proof Available
-    ISPA{"Is Proof Available?"}
+    ISPA{"Is Proof Available AND Valid?"}
 
     SC --> ISCAT
 
@@ -115,7 +115,7 @@ flowchart TD
     ISPPR --> |No| NP
     ISPPR --> |Yes| ISPA
 
-    ISPA --> |"Yes<br>(Assume Proof is valid)"| DR
+    ISPA --> |"Yes"| DR
     ISPA --> |No| SLASH
 
     PR --> ISPA
@@ -243,7 +243,7 @@ $$ E[\text{Total Rewards}] = R \cdot E[K] = R \cdot \frac{q}{p} $$
 
 This represents the Supplier's earnings before the penalty is applied.
 
-If the Supplier chooses to leave the network at this point in time, they will
+If the Supplier chooses to leave the network at this point in time, it will
 have successfully gamed the system.
 
 #### Expected Penalty: Slashing amount for Dishonest Supplier
@@ -295,7 +295,7 @@ Assume:
 
 - Reward Per Claim: `R = 10`
 - ProofRequestProbability: `p = 0.2`
-- `q = 0.8`
+- Probability No Proof Requested: `q = 0.8`
 
 Calculate the expected profit for a dishonest Supplier:
 
@@ -406,7 +406,7 @@ To select appropriate values:
    - Simulate scenarios to verify that dishonest Suppliers have a negative expected profit.
    - Ensure honest Suppliers remain profitable.
 
-To illustrate the relationship between `p`, `S`, the following chart
+To illustrate the relationship between `p`, `S`, see the following chart:
 
 ![Penalty vs. ProofRequestProbability](./Peanlty_vs_ProofRequestProbability.png)
 
