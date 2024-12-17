@@ -224,8 +224,8 @@ poktrolld \
 
 ### Secure vs Non-Secure `query_node_grpc_url`
 
-In `/tmp/relayminer_config.yaml`, you'll see that we specify an endpoint with TLS
-for `query_node_grpc_url`.
+In `/tmp/relayminer_config.yaml`, you'll see that we specify an endpoint for
+`query_node_grpc_url` which is TLS terminated.
 
 If `grpc-insecure=true` then it **MUST** be an HTTP port, no TLS.
 
