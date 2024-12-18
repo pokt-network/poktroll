@@ -171,7 +171,7 @@ func (c *inMemoryCache[T]) GetAsOfVersion(key string, version int64) (T, error) 
 // guaranteed to be the current version w.r.t. the blockchain.
 func (c *inMemoryCache[T]) Set(key string, value T) error {
 	if c.config.historical {
-		return c.SetAsOfVersion(key, value, c.latestVersion.Load())
+		return ErrUnsupportedHistoricalModeOp.Wrap("inMemoryCache#Set() is not supported in historical mode")
 	}
 
 	c.valuesMu.Lock()
@@ -205,7 +205,9 @@ func (c *inMemoryCache[T]) SetAsOfVersion(key string, value T, version int64) er
 	latestVersion := c.latestVersion.Load()
 	if version > latestVersion {
 		// NB: Only update if c.latestVersion hasn't changed since we loaded it above.
-		if !c.latestVersion.CompareAndSwap(latestVersion, version) {
+		if c.latestVersion.CompareAndSwap(latestVersion, version) {
+			latestVersion = version
+		} else {
 			// Reload the latestVersion if it did change.
 			latestVersion = c.latestVersion.Load()
 		}
