@@ -184,7 +184,7 @@ func TokenomicsKeeperWithActorAddrs(t testing.TB) (
 
 	mockApplicationKeeper.EXPECT().
 		GetParams(gomock.Any()).
-		Return(apptypes.Params{}, nil).
+		Return(apptypes.Params{}).
 		AnyTimes()
 
 	// Mock the supplier keeper.
