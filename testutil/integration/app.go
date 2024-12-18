@@ -605,13 +605,16 @@ func NewCompleteIntegrationApp(t *testing.T, opts ...IntegrationAppOptionFn) *Ap
 	preGeneratedAccts := testkeyring.PreGeneratedAccounts()
 	integrationApp.preGeneratedAccts = preGeneratedAccts
 
+	sharedKeeperQueryClient, err := prooftypes.NewSharedKeeperQueryClient(sharedKeeper, sessionKeeper)
+	require.NoError(t, err)
+
 	// Construct a ringClient to get the application's ring & verify the relay
 	// request signature.
 	ringClient, err := rings.NewRingClient(depinject.Supply(
 		polyzero.NewLogger(),
 		prooftypes.NewAppKeeperQueryClient(applicationKeeper),
 		prooftypes.NewAccountKeeperQueryClient(accountKeeper),
-		prooftypes.NewSharedKeeperQueryClient(sharedKeeper, sessionKeeper),
+		sharedKeeperQueryClient,
 	))
 	require.NoError(t, err)
 	integrationApp.ringClient = ringClient

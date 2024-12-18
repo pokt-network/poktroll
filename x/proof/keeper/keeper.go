@@ -62,7 +62,10 @@ func NewKeeper(
 	polylogger := polylog.Ctx(context.Background())
 	applicationQuerier := types.NewAppKeeperQueryClient(applicationKeeper)
 	accountQuerier := types.NewAccountKeeperQueryClient(accountKeeper)
-	sharedQuerier := types.NewSharedKeeperQueryClient(sharedKeeper, sessionKeeper)
+	sharedQuerier, err := types.NewSharedKeeperQueryClient(sharedKeeper, sessionKeeper)
+	if err != nil {
+		panic(err)
+	}
 
 	// RingKeeperClient holds the logic of verifying RelayRequests ring signatures
 	// for both on-chain and off-chain actors.

@@ -59,8 +59,12 @@ func NewKeeper(
 		panic(fmt.Sprintf("invalid authority address: %s", authority))
 	}
 
-	sharedQuerier := prooftypes.NewSharedKeeperQueryClient(sharedKeeper, sessionKeeper)
-	if err := tlm.ValidateTLMConfig(tokenLogicModules); err != nil {
+	sharedQuerier, err := prooftypes.NewSharedKeeperQueryClient(sharedKeeper, sessionKeeper)
+	if err != nil {
+		panic(err)
+	}
+
+	if err = tlm.ValidateTLMConfig(tokenLogicModules); err != nil {
 		panic(err)
 	}
 
