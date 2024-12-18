@@ -1,9 +1,12 @@
 package query
 
 import (
+	"context"
+
 	sdkerrors "cosmossdk.io/errors"
 
 	"github.com/pokt-network/poktroll/pkg/client/query/cache"
+	"github.com/pokt-network/poktroll/pkg/polylog"
 )
 
 const (
@@ -14,12 +17,13 @@ const (
 // paramsQuerierConfig is the configuration for parameter queriers. It is intended
 // to be configured via ParamsQuerierOptionFn functions.
 type paramsQuerierConfig struct {
-	// CacheOpts are the options passed to create the params cache
-	CacheOpts []cache.QueryCacheOptionFn
-	// ModuleName is used for logging and error context
-	ModuleName string
-	// ModuleParamError is the base error type for parameter query errors
-	ModuleParamError *sdkerrors.Error
+	logger polylog.Logger
+	// cacheOpts are the options passed to create the params cache
+	cacheOpts []cache.QueryCacheOptionFn
+	// moduleName is used for logging and error context
+	moduleName string
+	// moduleParamError is the base error type for parameter query errors
+	moduleParamError *sdkerrors.Error
 }
 
 // ParamsQuerierOptionFn is a function which receives a paramsQuerierConfig for configuration.
@@ -28,7 +32,7 @@ type ParamsQuerierOptionFn func(*paramsQuerierConfig)
 // DefaultParamsQuerierConfig returns the default configuration for parameter queriers
 func DefaultParamsQuerierConfig() *paramsQuerierConfig {
 	return &paramsQuerierConfig{
-		CacheOpts: []cache.QueryCacheOptionFn{
+		cacheOpts: []cache.QueryCacheOptionFn{
 			cache.WithHistoricalMode(defaultPruneOlderThan),
 			cache.WithMaxKeys(defaultMaxKeys),
 			cache.WithEvictionPolicy(cache.FirstInFirstOut),
@@ -37,16 +41,27 @@ func DefaultParamsQuerierConfig() *paramsQuerierConfig {
 }
 
 // WithModuleInfo sets the module name and param error for the querier.
-func WithModuleInfo(moduleName string, moduleParamError *sdkerrors.Error) ParamsQuerierOptionFn {
+func WithModuleInfo(ctx context.Context, moduleName string, moduleParamError *sdkerrors.Error) ParamsQuerierOptionFn {
+	logger := polylog.Ctx(ctx).With(
+		"module_params_querier", moduleName,
+	)
 	return func(cfg *paramsQuerierConfig) {
-		cfg.ModuleName = moduleName
-		cfg.ModuleParamError = moduleParamError
+		cfg.logger = logger
+		cfg.moduleName = moduleName
+		cfg.moduleParamError = moduleParamError
 	}
 }
 
 // WithQueryCacheOptions is used to configure the params HistoricalQueryCache.
 func WithQueryCacheOptions(opts ...cache.QueryCacheOptionFn) ParamsQuerierOptionFn {
 	return func(cfg *paramsQuerierConfig) {
-		cfg.CacheOpts = append(cfg.CacheOpts, opts...)
+		cfg.cacheOpts = append(cfg.cacheOpts, opts...)
+	}
+}
+
+// WithLogger sets the logger for the querier.
+func WithLogger(logger polylog.Logger) ParamsQuerierOptionFn {
+	return func(cfg *paramsQuerierConfig) {
+		cfg.logger = logger
 	}
 }

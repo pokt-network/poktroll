@@ -3,11 +3,11 @@ package tokenomics
 
 import (
 	v1beta1 "cosmossdk.io/api/cosmos/base/v1beta1"
-	proof "github.com/pokt-network/poktroll/api/poktroll/proof"
 	fmt "fmt"
 	_ "github.com/cosmos/cosmos-proto"
 	runtime "github.com/cosmos/cosmos-proto/runtime"
 	_ "github.com/cosmos/gogoproto/gogoproto"
+	proof "github.com/pokt-network/poktroll/api/poktroll/proof"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoiface "google.golang.org/protobuf/runtime/protoiface"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
@@ -3067,7 +3067,7 @@ type ModToModTransfer struct {
 
 	OpReason        SettlementOpReason `protobuf:"varint,1,opt,name=op_reason,json=opReason,proto3,enum=poktroll.tokenomics.SettlementOpReason" json:"op_reason,omitempty"`
 	SenderModule    string             `protobuf:"bytes,2,opt,name=SenderModule,proto3" json:"SenderModule,omitempty"`
-	RecipientModule string             `protobuf:"bytes,3,opt,name=RecipientModule,proto3" json:"RecipientModule,omitempty"` // This the semantic module named that can be found by searching for "ModuleName =" in the codebase
+	RecipientModule string             `protobuf:"bytes,3,opt,name=RecipientModule,proto3" json:"RecipientModule,omitempty"` // This the semantic module named that can be found by searching for "moduleName =" in the codebase
 	Coin            *v1beta1.Coin      `protobuf:"bytes,4,opt,name=coin,proto3" json:"coin,omitempty"`
 }
 

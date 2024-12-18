@@ -10,7 +10,6 @@ import (
 
 	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/client/query/cache"
-	"github.com/pokt-network/poktroll/pkg/polylog"
 )
 
 // abstractParamsQuerier is NOT intended to be used for anything except the
@@ -42,7 +41,7 @@ func NewCachedParamsQuerier[P cosmostypes.Msg, Q paramsQuerierIface[P]](
 		opt(cfg)
 	}
 
-	paramsCache, err := cache.NewInMemoryCache[P](cfg.CacheOpts...)
+	paramsCache, err := cache.NewInMemoryCache[P](cfg.cacheOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -78,8 +77,7 @@ type cachedParamsQuerier[P cosmostypes.Msg, Q paramsQuerierIface[P]] struct {
 // GetParams returns the latest cached params, if any; otherwise, it queries the
 // current on-chain params and caches them.
 func (bq *cachedParamsQuerier[P, Q]) GetParams(ctx context.Context) (P, error) {
-	logger := polylog.Ctx(ctx).With(
-		"module", bq.config.ModuleName,
+	logger := bq.config.logger.With(
 		"method", "GetParams",
 	)
 
@@ -99,8 +97,8 @@ func (bq *cachedParamsQuerier[P, Q]) GetParams(ctx context.Context) (P, error) {
 	// Query on-chain on cache miss.
 	params, err := bq.queryClient.GetParams(ctx)
 	if err != nil {
-		if bq.config.ModuleParamError != nil {
-			return paramsZero, bq.config.ModuleParamError.Wrap(err.Error())
+		if bq.config.moduleParamError != nil {
+			return paramsZero, bq.config.moduleParamError.Wrap(err.Error())
 		}
 		return paramsZero, err
 	}
@@ -121,14 +119,13 @@ func (bq *cachedParamsQuerier[P, Q]) GetParams(ctx context.Context) (P, error) {
 // update this to query for the historical params, rather than returning the
 // current params, if the case of a cache miss.
 func (bq *cachedParamsQuerier[P, Q]) GetParamsAtHeight(ctx context.Context, height int64) (P, error) {
-	logger := polylog.Ctx(ctx).With(
-		"module", bq.config.ModuleName,
+	logger := bq.config.logger.With(
 		"method", "GetParamsAtHeight",
 		"height", height,
 	)
 
 	// Try to get from cache at specific height
-	cached, err := bq.paramsCache.GetAtHeight("params", height)
+	cached, err := bq.paramsCache.GetAsOfVersion("params", height)
 	switch {
 	case err == nil:
 		logger.Debug().Msg("params cache hit")
