@@ -68,21 +68,21 @@ func TestInMemoryCache_NonHistorical(t *testing.T) {
 		)
 		require.NoError(t, err)
 
-		// Add items up to max size
+		// Add values up to max keys
 		err = cache.Set("key1", "value1")
 		require.NoError(t, err)
 		err = cache.Set("key2", "value2")
 		require.NoError(t, err)
 
-		// Add one more item, should trigger eviction
+		// Add one more value, should trigger eviction
 		err = cache.Set("key3", "value3")
 		require.NoError(t, err)
 
-		// First item should be evicted
+		// First value should be evicted
 		_, err = cache.Get("key1")
 		require.ErrorIs(t, err, ErrCacheMiss)
 
-		// Other items should still be present
+		// Other values should still be present
 		val, err := cache.Get("key2")
 		require.NoError(t, err)
 		require.Equal(t, "value2", val)
@@ -101,34 +101,38 @@ func TestInMemoryCache_Historical(t *testing.T) {
 		)
 		require.NoError(t, err)
 
-		// Test SetAtHeight and GetAtHeight
-		err = cache.SetAtHeight("key", "value1", 10)
+		// Test SetAsOfVersion and GetAsOfVersion
+		err = cache.SetAsOfVersion("key", "value1", 10)
 		require.NoError(t, err)
-		err = cache.SetAtHeight("key", "value2", 20)
+		err = cache.SetAsOfVersion("key", "value2", 20)
 		require.NoError(t, err)
 
-		// Test getting exact heights
-		val, err := cache.GetAtHeight("key", 10)
+		// Test getting exact versions
+		val, err := cache.GetAsOfVersion("key", 10)
 		require.NoError(t, err)
 		require.Equal(t, "value1", val)
 
-		val, err = cache.GetAtHeight("key", 20)
+		val, err = cache.GetAsOfVersion("key", 20)
 		require.NoError(t, err)
 		require.Equal(t, "value2", val)
 
-		// Test getting intermediate height (should return nearest lower height)
-		val, err = cache.GetAtHeight("key", 15)
+		// Test getting intermediate version (should return nearest lower version)
+		val, err = cache.GetAsOfVersion("key", 15)
 		require.NoError(t, err)
 		require.Equal(t, "value1", val)
 
-		// Test getting height before first entry
-		_, err = cache.GetAtHeight("key", 5)
+		// Test getting version before first entry
+		_, err = cache.GetAsOfVersion("key", 5)
 		require.ErrorIs(t, err, ErrCacheMiss)
 
-		// Test getting height after last entry
-		val, err = cache.GetAtHeight("key", 25)
+		// Test getting version after last entry
+		val, err = cache.GetAsOfVersion("key", 25)
 		require.NoError(t, err)
 		require.Equal(t, "value2", val)
+
+		// Test getting a version for a key that isn't cached
+		_, err = cache.GetAsOfVersion("key2", 20)
+		require.ErrorIs(t, err, ErrCacheMiss)
 	})
 
 	t.Run("historical TTL expiration", func(t *testing.T) {
@@ -138,11 +142,11 @@ func TestInMemoryCache_Historical(t *testing.T) {
 		)
 		require.NoError(t, err)
 
-		err = cache.SetAtHeight("key", "value1", 10)
+		err = cache.SetAsOfVersion("key", "value1", 10)
 		require.NoError(t, err)
 
 		// Value should be available immediately
-		val, err := cache.GetAtHeight("key", 10)
+		val, err := cache.GetAsOfVersion("key", 10)
 		require.NoError(t, err)
 		require.Equal(t, "value1", val)
 
@@ -150,40 +154,40 @@ func TestInMemoryCache_Historical(t *testing.T) {
 		time.Sleep(150 * time.Millisecond)
 
 		// Value should now be expired
-		_, err = cache.GetAtHeight("key", 10)
+		_, err = cache.GetAsOfVersion("key", 10)
 		require.ErrorIs(t, err, ErrCacheMiss)
 	})
 
-	t.Run("pruning old heights", func(t *testing.T) {
+	t.Run("pruning old versions", func(t *testing.T) {
 		cache, err := NewInMemoryCache[string](
 			WithHistoricalMode(10), // Prune entries older than 10 blocks
 		)
 		require.NoError(t, err)
 
-		// Add entries at different heights
-		err = cache.SetAtHeight("key", "value1", 10)
+		// Add entries at different versions
+		err = cache.SetAsOfVersion("key", "value1", 10)
 		require.NoError(t, err)
-		err = cache.SetAtHeight("key", "value2", 20)
+		err = cache.SetAsOfVersion("key", "value2", 20)
 		require.NoError(t, err)
-		err = cache.SetAtHeight("key", "value3", 30)
+		err = cache.SetAsOfVersion("key", "value3", 30)
 		require.NoError(t, err)
 
 		// Add a new entry that should trigger pruning
-		err = cache.SetAtHeight("key", "value4", 40)
+		err = cache.SetAsOfVersion("key", "value4", 40)
 		require.NoError(t, err)
 
 		// Entries more than 10 blocks old should be pruned
-		_, err = cache.GetAtHeight("key", 10)
+		_, err = cache.GetAsOfVersion("key", 10)
 		require.ErrorIs(t, err, ErrCacheMiss)
-		_, err = cache.GetAtHeight("key", 20)
+		_, err = cache.GetAsOfVersion("key", 20)
 		require.ErrorIs(t, err, ErrCacheMiss)
 
 		// Recent entries should still be available
-		val, err := cache.GetAtHeight("key", 30)
+		val, err := cache.GetAsOfVersion("key", 30)
 		require.NoError(t, err)
 		require.Equal(t, "value3", val)
 
-		val, err = cache.GetAtHeight("key", 40)
+		val, err = cache.GetAsOfVersion("key", 40)
 		require.NoError(t, err)
 		require.Equal(t, "value4", val)
 	})
@@ -195,25 +199,25 @@ func TestInMemoryCache_Historical(t *testing.T) {
 		require.NoError(t, err)
 
 		// Set some historical values
-		err = cache.SetAtHeight("key", "value1", 10)
+		err = cache.SetAsOfVersion("key", "value1", 10)
 		require.NoError(t, err)
-		err = cache.SetAtHeight("key", "value2", 20)
+		err = cache.SetAsOfVersion("key", "value2", 20)
 		require.NoError(t, err)
 
-		// Regular Set should work with latest height
+		// Regular Set should work with latest version
 		err = cache.Set("key", "value3")
-		require.NoError(t, err)
+		require.ErrorIs(t, err, ErrUnsupportedHistoricalModeOp)
 
 		// Regular Get should return the latest value
 		val, err := cache.Get("key")
 		require.NoError(t, err)
-		require.Equal(t, "value3", val)
+		require.Equal(t, "value2", val)
 
 		// Delete should remove all historical values
 		cache.Delete("key")
-		_, err = cache.GetAtHeight("key", 10)
+		_, err = cache.GetAsOfVersion("key", 10)
 		require.ErrorIs(t, err, ErrCacheMiss)
-		_, err = cache.GetAtHeight("key", 20)
+		_, err = cache.GetAsOfVersion("key", 20)
 		require.ErrorIs(t, err, ErrCacheMiss)
 		_, err = cache.Get("key")
 		require.ErrorIs(t, err, ErrCacheMiss)
@@ -227,10 +231,10 @@ func TestInMemoryCache_ErrorCases(t *testing.T) {
 		require.NoError(t, err)
 
 		// Attempting historical operations should return error
-		err = cache.SetAtHeight("key", "value", 10)
+		err = cache.SetAsOfVersion("key", "value", 10)
 		require.ErrorIs(t, err, ErrHistoricalModeNotEnabled)
 
-		_, err = cache.GetAtHeight("key", 10)
+		_, err = cache.GetAsOfVersion("key", 10)
 		require.ErrorIs(t, err, ErrHistoricalModeNotEnabled)
 	})
 
@@ -327,9 +331,9 @@ func TestInMemoryCache_ConcurrentAccess(t *testing.T) {
 						return
 					default:
 						key := "key"
-						err := cache.SetAtHeight(key, j, int64(j))
+						err := cache.SetAsOfVersion(key, j, int64(j))
 						require.NoError(t, err)
-						_, _ = cache.GetAtHeight(key, int64(j))
+						_, _ = cache.GetAsOfVersion(key, int64(j))
 					}
 				}
 			}()
