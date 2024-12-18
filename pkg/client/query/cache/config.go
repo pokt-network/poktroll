@@ -54,7 +54,7 @@ func (cfg *queryCacheConfig) Validate() error {
 		return ErrQueryCacheConfigValidation.Wrapf("eviction policy %d not imlemented", cfg.evictionPolicy)
 	}
 
-	if cfg.maxVersionAge > 0 && cfg.historical == false {
+	if cfg.maxVersionAge > 0 && !cfg.historical {
 		return ErrQueryCacheConfigValidation.Wrap("maxVersionAge > 0 requires historical mode to be enabled")
 	}
 

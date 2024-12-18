@@ -131,7 +131,7 @@ func TestInMemoryCache_Historical(t *testing.T) {
 		require.Equal(t, "value2", val)
 
 		// Test getting a version for a key that isn't cached
-		val, err = cache.GetAsOfVersion("key2", 20)
+		_, err = cache.GetAsOfVersion("key2", 20)
 		require.ErrorIs(t, err, ErrCacheMiss)
 	})
 
