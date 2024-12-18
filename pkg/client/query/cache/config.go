@@ -4,7 +4,7 @@ import (
 	"time"
 )
 
-// EvictionPolicy determines which items are removed when number of keys in the cache reaches maxKeys.
+// EvictionPolicy determines which values are removed when number of keys in the cache reaches maxKeys.
 type EvictionPolicy int64
 
 const (
@@ -16,7 +16,7 @@ const (
 // queryCacheConfig is the configuration for query caches.
 // It is intended to be configured via QueryCacheOptionFn functions.
 type queryCacheConfig struct {
-	// maxKeys is the maximum number of items (key/value pairs) the cache can
+	// maxKeys is the maximum number of key/value pairs the cache can
 	// hold before it starts evicting.
 	maxKeys int64
 
@@ -27,18 +27,19 @@ type queryCacheConfig struct {
 	// maxCacheSize is the maximum cumulative size of all keys AND values in the cache.
 	// maxCacheSize int64
 
-	// evictionPolicy determines which items are removed when number of keys in the cache reaches maxKeys.
+	// evictionPolicy determines which values are removed when number of keys in the cache reaches maxKeys.
 	evictionPolicy EvictionPolicy
-	// ttl is how long items should remain in the cache. Items older than the ttl
-	// MAY NOT be evicted immediately, but are NEVER considered as cache hits.
+	// ttl is how long values should remain valid in the cache. Items older than the
+	// ttl MAY NOT be evicted immediately, but are NEVER considered as cache hits.
 	ttl time.Duration
 	// historical determines whether each key will point to a single values (false)
 	// or a history (i.e. reverse chronological list) of values (true).
 	historical bool
-	// numHistoricalValues is the number of past blocks for which to keep historical
-	// values. If 0, no historical pruning is performed. It only applies when
-	// historical is true.
-	numHistoricalValues int64
+	// maxVersionAge is the max difference between the latest known version and
+	// any other version, below which value versions are retained, and above which
+	// value versions are pruned. If 0, no historical pruning is performed.
+	// It only applies when historical is true.
+	maxVersionAge int64
 }
 
 // QueryCacheOptionFn is a function which receives a queryCacheConfig for configuration.
@@ -53,15 +54,23 @@ func (cfg *queryCacheConfig) Validate() error {
 		return ErrQueryCacheConfigValidation.Wrapf("eviction policy %d not imlemented", cfg.evictionPolicy)
 	}
 
+	if cfg.maxVersionAge > 0 && cfg.historical == false {
+		return ErrQueryCacheConfigValidation.Wrap("maxVersionAge > 0 requires historical mode to be enabled")
+	}
+
+	if cfg.historical && cfg.maxVersionAge < 0 {
+		return ErrQueryCacheConfigValidation.Wrapf("maxVersionAge MUST be >= 0, got: %d", cfg.maxVersionAge)
+	}
+
 	return nil
 }
 
-// WithHistoricalMode enables historical caching with the given numHistoricalValues
+// WithHistoricalMode enables historical caching with the given maxVersionAge
 // configuration; if 0, no historical pruning is performed.
-func WithHistoricalMode(numHistoricalBlocks int64) QueryCacheOptionFn {
+func WithHistoricalMode(numRetainedVersions int64) QueryCacheOptionFn {
 	return func(cfg *queryCacheConfig) {
 		cfg.historical = true
-		cfg.numHistoricalValues = numHistoricalBlocks
+		cfg.maxVersionAge = numRetainedVersions
 	}
 }
 
@@ -80,7 +89,7 @@ func WithEvictionPolicy(policy EvictionPolicy) QueryCacheOptionFn {
 	}
 }
 
-// WithTTL sets the time-to-live for cached items. Items older than the TTL
+// WithTTL sets the time-to-live for cached values. Values older than the TTL
 // MAY NOT be evicted immediately, but are NEVER considered as cache hits.
 func WithTTL(ttl time.Duration) QueryCacheOptionFn {
 	return func(cfg *queryCacheConfig) {

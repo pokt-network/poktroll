@@ -25,8 +25,8 @@ var (
 // inMemoryCache provides a concurrency-safe in-memory cache implementation with
 // optional historical value support.
 type inMemoryCache[T any] struct {
-	config       queryCacheConfig
-	latestHeight atomic.Int64
+	config        queryCacheConfig
+	latestVersion atomic.Int64
 
 	// valuesMu is used to protect values AND valueHistories from concurrent access.
 	valuesMu sync.RWMutex
@@ -43,14 +43,17 @@ type cacheValue[T any] struct {
 	cachedAt time.Time
 }
 
-// cacheValueHistory stores cachedItems by height and maintains a sorted list of
-// heights for which cached items exist. This list is sorted in descending order
-// to improve performance characteristics by positively correlating index with age.
+// cacheValueHistory stores cachedValues by version number and maintains a sorted
+// list of version numbers for which cached values exist. This list is sorted in
+// descending order to improve performance characteristics by positively correlating
+// index with age.
 type cacheValueHistory[T any] struct {
-	// sortedDescHeights is a list of the heights for which values are cached.
-	// It is sorted in descending order.
-	sortedDescHeights []int64
-	heightMap         map[int64]cacheValue[T]
+	// sortedDescVersions is a list of the version numbers for which values are
+	// cached. It is sorted in descending order.
+	sortedDescVersions []int64
+	// versionToValueMap is a map from a version number to the cached value at
+	// that version number, if present.
+	versionToValueMap map[int64]cacheValue[T]
 }
 
 // NewInMemoryCache creates a new inMemoryCache with the configuration generated
@@ -75,11 +78,11 @@ func NewInMemoryCache[T any](opts ...QueryCacheOptionFn) (*inMemoryCache[T], err
 
 // Get retrieves the value from the cache with the given key. If the cache is
 // configured for historical mode, it will return the value at the latest **known**
-// height, which is only updated on calls to SetAtHeight, and therefore is not
-// guaranteed to be the current height w.r.t the blockchain.
+// version, which is only updated on calls to SetAsOfVersion, and therefore is not
+// guaranteed to be the current version w.r.t the blockchain.
 func (c *inMemoryCache[T]) Get(key string) (T, error) {
 	if c.config.historical {
-		return c.GetAtHeight(key, c.latestHeight.Load())
+		return c.GetAsOfVersion(key, c.latestVersion.Load())
 	}
 
 	c.valuesMu.RLock()
@@ -87,14 +90,14 @@ func (c *inMemoryCache[T]) Get(key string) (T, error) {
 
 	var zero T
 
-	cachedItem, exists := c.values[key]
+	cachedValue, exists := c.values[key]
 	if !exists {
 		return zero, ErrCacheMiss.Wrapf("key: %s", key)
 	}
 
 	isTTLEnabled := c.config.ttl > 0
-	isCacheItemExpired := time.Since(cachedItem.cachedAt) > c.config.ttl
-	if isTTLEnabled && isCacheItemExpired {
+	isCacheValueExpired := time.Since(cachedValue.cachedAt) > c.config.ttl
+	if isTTLEnabled && isCacheValueExpired {
 		// DEV_NOTE: Intentionally not pruning here to improve concurrent speed;
 		// otherwise, the read lock would be insufficient. The value will be
 		// overwritten by the next call to Set(). If usage is such that values
@@ -103,14 +106,14 @@ func (c *inMemoryCache[T]) Get(key string) (T, error) {
 		return zero, ErrCacheMiss.Wrapf("key: %s", key)
 	}
 
-	return cachedItem.value, nil
+	return cachedValue.value, nil
 }
 
-// GetAtHeight retrieves the value from the cache with the given key, at the given
-// height. If a value is not found for that height, the value at the nearest previous
-// height is returned. If the cache is not configured for historical mode, it returns
-// an error.
-func (c *inMemoryCache[T]) GetAtHeight(key string, getHeight int64) (T, error) {
+// GetAsOfVersion retrieves the value from the cache with the given key, as of the
+// given version. If a value is not found for that version, the value at the nearest
+// previous version is returned. If the cache is not configured for historical mode,
+// it returns an error.
+func (c *inMemoryCache[T]) GetAsOfVersion(key string, version int64) (T, error) {
 	var zero T
 
 	if !c.config.historical {
@@ -120,36 +123,43 @@ func (c *inMemoryCache[T]) GetAtHeight(key string, getHeight int64) (T, error) {
 	c.valuesMu.RLock()
 	defer c.valuesMu.RUnlock()
 
-	valueHistory := c.valueHistories[key]
-	var nearestCachedHeight int64 = -1
-	for _, cachedHeight := range valueHistory.sortedDescHeights {
-		if cachedHeight <= getHeight {
-			nearestCachedHeight = cachedHeight
+	valueHistory, exists := c.valueHistories[key]
+	if !exists {
+		return zero, ErrCacheMiss.Wrapf("key: %s", key)
+	}
+
+	var nearestCachedVersion int64 = -1
+	for _, cachedVersion := range valueHistory.sortedDescVersions {
+		if cachedVersion <= version {
+			nearestCachedVersion = cachedVersion
 			// DEV_NOTE: Since the list is sorted in descending order, once we
-			// encounter a cachedHeight that is less than or equal to getHeight,
-			// all subsequent cachedHeights SHOULD also be less than or equal to
-			// getHeight.
+			// encounter a cachedVersion that is less than or equal to version,
+			// all subsequent cachedVersions SHOULD also be less than or equal to
+			// version.
 			break
 		}
 	}
 
-	if nearestCachedHeight == -1 {
-		return zero, ErrCacheMiss.Wrapf("key: %s, height: %d", key, getHeight)
+	if nearestCachedVersion == -1 {
+		return zero, ErrCacheMiss.Wrapf("key: %s, version: %d", key, version)
 	}
 
-	value, exists := valueHistory.heightMap[nearestCachedHeight]
+	value, exists := valueHistory.versionToValueMap[nearestCachedVersion]
 	if !exists {
-		return zero, ErrCacheInternal.Wrapf("failed to load historical value for key: %s, height: %d", key, getHeight)
+		// DEV_NOTE: This SHOULD NEVER happen. If it does, it means that the cache has been corrupted.
+		return zero, ErrCacheInternal.Wrapf("failed to load historical value for key: %s, version: %d", key, version)
 	}
 
-	if c.config.ttl > 0 && time.Since(value.cachedAt) > c.config.ttl {
+	isTTLEnabled := c.config.ttl > 0
+	isCacheValueExpired := time.Since(value.cachedAt) > c.config.ttl
+	if isTTLEnabled && isCacheValueExpired {
 		// DEV_NOTE: Intentionally not pruning here to improve concurrent speed;
 		// otherwise, the read lock would be insufficient. The value will be pruned
-		// in the subsequent call to SetAtHeight() after c.config.numHistoricalValues
+		// in the subsequent call to SetAsOfVersion() after c.config.maxVersionAge
 		// blocks have elapsed. If usage is such that historical values aren't being
 		// subsequently set, numHistoricalBlocks (if configured) will eventually
 		// cause the pruning of historical values with expired TTLs.
-		return zero, ErrCacheMiss.Wrapf("key: %s, height: %d", key, getHeight)
+		return zero, ErrCacheMiss.Wrapf("key: %s, version: %d", key, version)
 	}
 
 	return value.value, nil
@@ -157,23 +167,23 @@ func (c *inMemoryCache[T]) GetAtHeight(key string, getHeight int64) (T, error) {
 
 // Set adds or updates the value in the cache for the given key. If the cache is
 // configured for historical mode, it will store the value at the latest **known**
-// height, which is only updated on calls to SetAtHeight, and therefore is not
-// guaranteed to be the current height.
+// version, which is only updated on calls to SetAsOfVersion, and therefore is not
+// guaranteed to be the current version w.r.t. the blockchain.
 func (c *inMemoryCache[T]) Set(key string, value T) error {
 	if c.config.historical {
-		return c.SetAtHeight(key, value, c.latestHeight.Load())
-	}
-
-	isMaxKeysConfigured := c.config.maxKeys > 0
-	cacheHasMaxKeys := int64(len(c.values)) >= c.config.maxKeys
-	if isMaxKeysConfigured && cacheHasMaxKeys {
-		if err := c.evict(); err != nil {
-			return err
-		}
+		return c.SetAsOfVersion(key, value, c.latestVersion.Load())
 	}
 
 	c.valuesMu.Lock()
 	defer c.valuesMu.Unlock()
+
+	isMaxKeysConfigured := c.config.maxKeys > 0
+	cacheMaxKeysReached := int64(len(c.values)) >= c.config.maxKeys
+	if isMaxKeysConfigured && cacheMaxKeysReached {
+		if err := c.evict(); err != nil {
+			return err
+		}
+	}
 
 	c.values[key] = cacheValue[T]{
 		value:    value,
@@ -183,19 +193,22 @@ func (c *inMemoryCache[T]) Set(key string, value T) error {
 	return nil
 }
 
-// SetAtHeight adds or updates the historical value in the cache for the given key,
-// and at the given height. If the cache is not configured for historical mode, it
+// SetAsOfVersion adds or updates the historical value in the cache for the given key,
+// and at the version number. If the cache is not configured for historical mode, it
 // returns an error.
-func (c *inMemoryCache[T]) SetAtHeight(key string, value T, setHeight int64) error {
+func (c *inMemoryCache[T]) SetAsOfVersion(key string, value T, version int64) error {
 	if !c.config.historical {
 		return ErrHistoricalModeNotEnabled
 	}
 
-	// Update c.latestHeight if the given setHeight is newer (higher).
-	latestHeight := c.latestHeight.Load()
-	if setHeight > latestHeight {
-		// NB: Only update if c.latestHeight hasn't changed since we loaded it above.
-		c.latestHeight.CompareAndSwap(latestHeight, setHeight)
+	// Update c.latestVersion if the given version is newer (higher).
+	latestVersion := c.latestVersion.Load()
+	if version > latestVersion {
+		// NB: Only update if c.latestVersion hasn't changed since we loaded it above.
+		if !c.latestVersion.CompareAndSwap(latestVersion, version) {
+			// Reload the latestVersion if it did change.
+			latestVersion = c.latestVersion.Load()
+		}
 	}
 
 	c.valuesMu.Lock()
@@ -203,42 +216,43 @@ func (c *inMemoryCache[T]) SetAtHeight(key string, value T, setHeight int64) err
 
 	valueHistory, exists := c.valueHistories[key]
 	if !exists {
-		heightMap := make(map[int64]cacheValue[T])
+		versionToValueMap := make(map[int64]cacheValue[T])
 		valueHistory = cacheValueHistory[T]{
-			sortedDescHeights: make([]int64, 0),
-			heightMap:         heightMap,
+			sortedDescVersions: make([]int64, 0),
+			versionToValueMap:  versionToValueMap,
 		}
 	}
 
-	// Update sortedDescHeights and ensure the list is sorted in descending order.
-	if _, setHeightExists := valueHistory.heightMap[setHeight]; !setHeightExists {
-		valueHistory.sortedDescHeights = append(valueHistory.sortedDescHeights, setHeight)
-		sort.Slice(valueHistory.sortedDescHeights, func(i, j int) bool {
-			return valueHistory.sortedDescHeights[i] > valueHistory.sortedDescHeights[j]
+	// Update sortedDescVersions and ensure the list is sorted in descending order.
+	if _, versionExists := valueHistory.versionToValueMap[version]; !versionExists {
+		valueHistory.sortedDescVersions = append(valueHistory.sortedDescVersions, version)
+		sort.Slice(valueHistory.sortedDescVersions, func(i, j int) bool {
+			return valueHistory.sortedDescVersions[i] > valueHistory.sortedDescVersions[j]
 		})
 	}
 
-	// Prune historical values for this key, where the setHeight
-	// is oder than the configured numHistoricalValues.
-	if c.config.numHistoricalValues > 0 {
-		lenCachedHeights := int64(len(valueHistory.sortedDescHeights))
-		for heightIdx := lenCachedHeights - 1; heightIdx >= 0; heightIdx-- {
-			cachedHeight := valueHistory.sortedDescHeights[heightIdx]
+	// Prune historical values for this key, where the version
+	// is older than the configured maxVersionAge.
+	if c.config.maxVersionAge > 0 {
+		lenCachedVersions := int64(len(valueHistory.sortedDescVersions))
+		for versionIdx := lenCachedVersions - 1; versionIdx >= 0; versionIdx-- {
+			cachedVersion := valueHistory.sortedDescVersions[versionIdx]
 
 			// DEV_NOTE: Since the list is sorted, and we're iterating from lowest
-			// (oldest) to highest (youngest) height, once we encounter a cachedHeight
-			// that is younger than the configured numHistoricalValues, ALL subsequent
-			// heights SHOULD also be younger than the configured numHistoricalValues.
-			if setHeight-cachedHeight <= c.config.numHistoricalValues {
-				valueHistory.sortedDescHeights = valueHistory.sortedDescHeights[:heightIdx+1]
+			// (oldest) to highest (newest) version, once we encounter a cachedVersion
+			// that is newer than the configured maxVersionAge, ALL subsequent
+			// heights SHOULD also be newer than the configured maxVersionAge.
+			cachedVersionAge := latestVersion - cachedVersion
+			if cachedVersionAge <= c.config.maxVersionAge {
+				valueHistory.sortedDescVersions = valueHistory.sortedDescVersions[:versionIdx+1]
 				break
 			}
 
-			delete(valueHistory.heightMap, cachedHeight)
+			delete(valueHistory.versionToValueMap, cachedVersion)
 		}
 	}
 
-	valueHistory.heightMap[setHeight] = cacheValue[T]{
+	valueHistory.versionToValueMap[version] = cacheValue[T]{
 		value:    value,
 		cachedAt: time.Now(),
 	}
@@ -248,7 +262,7 @@ func (c *inMemoryCache[T]) SetAtHeight(key string, value T, setHeight int64) err
 	return nil
 }
 
-// Delete removes an item from the cache.
+// Delete removes a value from the cache.
 func (c *inMemoryCache[T]) Delete(key string) {
 	c.valuesMu.Lock()
 	defer c.valuesMu.Unlock()
@@ -260,7 +274,7 @@ func (c *inMemoryCache[T]) Delete(key string) {
 	}
 }
 
-// Clear removes all items from the cache.
+// Clear removes all values from the cache.
 func (c *inMemoryCache[T]) Clear() {
 	c.valuesMu.Lock()
 	defer c.valuesMu.Unlock()
@@ -271,10 +285,10 @@ func (c *inMemoryCache[T]) Clear() {
 		c.values = make(map[string]cacheValue[T])
 	}
 
-	c.latestHeight.Store(0)
+	c.latestVersion.Store(0)
 }
 
-// evict removes one item from the cache, to make space for a new one,
+// evict removes one value from the cache, to make space for a new one,
 // according to the configured eviction policy
 func (c *inMemoryCache[T]) evict() error {
 	if c.config.historical {
@@ -284,20 +298,20 @@ func (c *inMemoryCache[T]) evict() error {
 	}
 }
 
-// evictHistorical removes one item from the cache, to make space for a new one,
-// according to the configured eviction policy.
+// evictHistorical removes one value (and all its versions) from the cache,
+// to make space for a new one, according to the configured eviction policy.
 func (c *inMemoryCache[T]) evictHistorical() error {
 	switch c.config.evictionPolicy {
 	case FirstInFirstOut:
 		var oldestKey string
 		var oldestTime time.Time
 		for key, valueHistory := range c.valueHistories {
-			mostRecentHeight := valueHistory.sortedDescHeights[0]
-			value, exists := valueHistory.heightMap[mostRecentHeight]
+			mostRecentVersion := valueHistory.sortedDescVersions[0]
+			value, exists := valueHistory.versionToValueMap[mostRecentVersion]
 			if !exists {
 				return ErrCacheInternal.Wrapf(
-					"expected value history for key %s to contain height %d but it did not 💣",
-					key, mostRecentHeight,
+					"expected value history for key %s to contain version %d but it did not 💣",
+					key, mostRecentVersion,
 				)
 			}
 
