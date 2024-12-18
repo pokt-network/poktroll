@@ -67,10 +67,10 @@ func (cfg *queryCacheConfig) Validate() error {
 
 // WithHistoricalMode enables historical caching with the given maxVersionAge
 // configuration; if 0, no historical pruning is performed.
-func WithHistoricalMode(numRetainedVersions int64) QueryCacheOptionFn {
+func WithHistoricalMode(maxVersionAge int64) QueryCacheOptionFn {
 	return func(cfg *queryCacheConfig) {
 		cfg.historical = true
-		cfg.maxVersionAge = numRetainedVersions
+		cfg.maxVersionAge = maxVersionAge
 	}
 }
 

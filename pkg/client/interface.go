@@ -1,3 +1,4 @@
+//go:generate mockgen -destination=../../testutil/mockclient/grpc_conn_mock.go -package=mockclient github.com/cosmos/gogoproto/grpc ClientConn
 //go:generate mockgen -destination=../../testutil/mockclient/events_query_client_mock.go -package=mockclient . Dialer,Connection,EventsQueryClient
 //go:generate mockgen -destination=../../testutil/mockclient/block_client_mock.go -package=mockclient . Block,BlockClient
 //go:generate mockgen -destination=../../testutil/mockclient/delegation_client_mock.go -package=mockclient . DelegationClient
@@ -379,4 +380,16 @@ type HistoricalQueryCache[T any] interface {
 	GetAsOfVersion(key string, version int64) (T, error)
 	// SetAsOfVersion adds or updates a value at a specific version number.
 	SetAsOfVersion(key string, value T, version int64) error
+}
+
+// ParamsQuerier represents a generic querier for module parameters.
+// This interface should be implemented by any module-specific querier
+// that needs to access and cache on-chain parameters.
+type ParamsQuerier[P cosmostypes.Msg] interface {
+	// GetParams queries the chain for the current module parameters, where
+	// P is the params type of a given module (e.g. sharedtypes.Params).
+	GetParams(ctx context.Context) (P, error)
+	// GetParamsAtHeight returns the parameters as they were at the specified
+	// height, where P is the params type of a given module (e.g. sharedtypes.Params).
+	GetParamsAtHeight(ctx context.Context, height int64) (P, error)
 }

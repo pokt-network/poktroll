@@ -240,7 +240,7 @@ var (
 		stakingtypes.BondedPoolName,
 		stakingtypes.NotBondedPoolName,
 		// We allow the following module accounts to receive funds:
-		// govtypes.ModuleName
+		// govtypes.moduleName
 	}
 
 	// appConfig application configuration (used by depinject)
