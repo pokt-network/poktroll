@@ -5,6 +5,7 @@ import (
 
 	"github.com/pokt-network/poktroll/pkg/client"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
+	sharedkeeper "github.com/pokt-network/poktroll/x/shared/keeper"
 )
 
 var _ client.ApplicationQueryClient = (*AppKeeperQueryClient)(nil)
@@ -13,6 +14,8 @@ var _ client.ApplicationQueryClient = (*AppKeeperQueryClient)(nil)
 // It does not rely on the QueryClient, and therefore does not make any
 // network requests as in the off-chain implementation.
 type AppKeeperQueryClient struct {
+	client.ParamsQuerier[*apptypes.Params]
+
 	keeper ApplicationKeeper
 }
 
@@ -22,7 +25,12 @@ type AppKeeperQueryClient struct {
 // has delegated its signing power to.
 // It should be injected into the RingClient when initialized from within the a keeper.
 func NewAppKeeperQueryClient(appKeeper ApplicationKeeper) client.ApplicationQueryClient {
-	return &AppKeeperQueryClient{keeper: appKeeper}
+	keeperParamsQuerier := sharedkeeper.NewKeeperParamsQuerier[apptypes.Params](appKeeper)
+
+	return &AppKeeperQueryClient{
+		keeper:        appKeeper,
+		ParamsQuerier: keeperParamsQuerier,
+	}
 }
 
 // GetApplication returns the application corresponding to the given address.
