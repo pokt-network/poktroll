@@ -10,8 +10,8 @@ import (
 )
 
 const (
-	defaultPruneOlderThan = 100
-	defaultMaxKeys        = 1000
+	defaultMaxVersionAge = 100
+	defaultMaxKeys       = 1000
 )
 
 // paramsQuerierConfig is the configuration for parameter queriers. It is intended
@@ -33,7 +33,7 @@ type ParamsQuerierOptionFn func(*paramsQuerierConfig)
 func DefaultParamsQuerierConfig() *paramsQuerierConfig {
 	return &paramsQuerierConfig{
 		cacheOpts: []cache.QueryCacheOptionFn{
-			cache.WithHistoricalMode(defaultPruneOlderThan),
+			cache.WithHistoricalMode(defaultMaxVersionAge),
 			cache.WithMaxKeys(defaultMaxKeys),
 			cache.WithEvictionPolicy(cache.FirstInFirstOut),
 		},
