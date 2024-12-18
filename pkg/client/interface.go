@@ -376,10 +376,10 @@ type QueryCache[T any] interface {
 // at multiple heights for a given key.
 type HistoricalQueryCache[T any] interface {
 	QueryCache[T]
-	// GetAtHeight retrieves the nearest value <= the specified height
-	GetAtHeight(key string, height int64) (T, error)
-	// SetAtHeight adds or updates a value at a specific height
-	SetAtHeight(key string, value T, height int64) error
+	// GetAsOfVersion retrieves the nearest value <= the specified version number.
+	GetAsOfVersion(key string, version int64) (T, error)
+	// SetAsOfVersion adds or updates a value at a specific version number.
+	SetAsOfVersion(key string, value T, version int64) error
 }
 
 // ParamsQuerier represents a generic querier for module parameters.
