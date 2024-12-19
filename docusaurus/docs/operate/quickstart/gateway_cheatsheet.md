@@ -22,9 +22,10 @@ streamline development and reduce friction for any new potential contributor.
 
 - [Pre-Requisites](#pre-requisites)
 - [Account Setup](#account-setup)
-  - [Create and fund the `Gateway` and `Application` accounts](#create-and-fund-the-gateway-and-application-accounts)
+  - [Create the Gateway and Application accounts](#create-the-gateway-and-application-accounts)
   - [Prepare your environment](#prepare-your-environment)
   - [Fund the Gateway and Application accounts](#fund-the-gateway-and-application-accounts)
+- [Gateway and Application Configurations](#gateway-and-application-configurations)
   - [Stake the `Gateway`](#stake-the-gateway)
   - [Stake the delegating `Application`](#stake-the-delegating-application)
   - [Delegate the `Application` to the `Gateway`](#delegate-the-application-to-the-gateway)
@@ -54,7 +55,7 @@ This is not recommended but provided for convenience for NON PRODUCTION USE ONLY
 
 ## Account Setup
 
-### Create and fund the `Gateway` and `Application` accounts
+### Create the Gateway and Application accounts
 
 Create a new key pair for the delegating `Application`:
 
@@ -115,6 +116,8 @@ poktrolld query bank balances $APP_ADDR $NODE_FLAGS
 You can find all the explorers, faucets and tools at the [tools page](../../explore/tools.md).
 
 :::
+
+## Gateway and Application Configurations
 
 ### Stake the `Gateway`
 

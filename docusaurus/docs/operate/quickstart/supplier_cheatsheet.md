@@ -23,10 +23,10 @@ streamline development and reduce friction for any new potential contributor.
 - [Pre-Requisites](#pre-requisites)
   - [Context](#context)
 - [Account Setup](#account-setup)
-  - [Create and fund the `Supplier` account](#create-and-fund-the-supplier-account)
+  - [Create the `Supplier` account](#create-the-supplier-account)
   - [Prepare your environment](#prepare-your-environment)
-- [Supplier Configuration](#supplier-configuration)
   - [Fund the Supplier account](#fund-the-supplier-account)
+- [Supplier Configuration](#supplier-configuration)
   - [Stake the Supplier](#stake-the-supplier)
 - [RelayMiner Configuration](#relayminer-configuration)
   - [Configure the RelayMiner](#configure-the-relayminer)
@@ -66,7 +66,7 @@ By the end of it, you should be able to serve Relays off-chain, and claim on-cha
 
 ## Account Setup
 
-### Create and fund the `Supplier` account
+### Create the `Supplier` account
 
 Create a new key pair for the `Supplier`
 
@@ -96,8 +96,6 @@ your `~/.profile` (or `~/.bashrc`) file for a cleaner organization.
 
 :::
 
-## Supplier Configuration
-
 ### Fund the Supplier account
 
 Run the following command to get the `Supplier`:
@@ -120,6 +118,8 @@ poktrolld query bank balances $SUPPLIER_ADDR $NODE_FLAGS
 You can find all the explorers, faucets and tools at the [tools page](../../explore/tools.md).
 
 :::
+
+## Supplier Configuration
 
 ### Stake the Supplier
 
