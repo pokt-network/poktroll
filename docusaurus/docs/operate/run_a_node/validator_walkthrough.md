@@ -5,8 +5,6 @@ sidebar_position: 4
 
 This walkthrough provides detailed step-by-step instructions to stake and run a Validator node on Pocket Network.
 
-<!-- TODO_IN_THIS_PR: should we add a note about POKT rewards not being available for Validators? And suggesting to provide service on the network instead? -->
-
 :::tip
 
 If you're interested in a simple guide with _copy-pasta_ of a few commands to get started, check out the [Validator Cheat Sheet](../quickstart/validator_cheatsheet.md) instead.
@@ -17,7 +15,9 @@ If you're interested in a simple guide with _copy-pasta_ of a few commands to ge
 - [Prerequisites](#prerequisites)
 - [1. Run a Full Node](#1-run-a-full-node)
 - [2. Account Setup](#2-account-setup)
-  - [2.1. Create and Fund the Validator Account](#21-create-and-fund-the-validator-account)
+  - [2.1. Create the Validator Account](#21-create-the-validator-account)
+  - [2.2. Prepare your environment](#22-prepare-your-environment)
+  - [2.3. Fund the Validator Account](#23-fund-the-validator-account)
 - [3. Get the Validator's Public Key](#3-get-the-validators-public-key)
 - [4. Create the Validator JSON File](#4-create-the-validator-json-file)
 - [5. Create the Validator](#5-create-the-validator)
@@ -60,7 +60,7 @@ poktrolld status
 
 To become a Validator, you need a Validator account with sufficient funds to stake.
 
-### 2.1. Create and Fund the Validator Account
+### 2.1. Create the Validator Account
 
 Create a new key pair for your Validator account:
 
@@ -68,32 +68,43 @@ Create a new key pair for your Validator account:
 poktrolld keys add validator
 ```
 
-- This command generates a new key pair and stores it in your local keyring.
-- You will see output containing your new address and a mnemonic seed phrase.
-- **Important**: Securely save the mnemonic phrase in a safe place. If you lose it, you won't be able to recover your account.
+### 2.2. Prepare your environment
 
-Set the Validator address as an environment variable for convenience:
+For convenience, we're setting several environment variables to streamline
+the process of interacting with the network:
 
 ```bash
+export NODE="https://shannon-testnet-grove-rpc.beta.poktroll.com"
+export NODE_FLAGS="--node=https://shannon-testnet-grove-rpc.beta.poktroll.com"
+export TX_PARAM_FLAGS="--gas=auto --gas-prices=1upokt --gas-adjustment=1.5 --chain-id=pocket-beta --yes"
 export VALIDATOR_ADDR=$(poktrolld keys show validator -a)
 ```
 
-You can verify your Validator address by displaying the environment variable:
+:::tip
+As an alternative to appending directly to `~/.bashrc`, you can put the above
+in a special `~/.poktrollrc` and add `source ~/.poktrollrc` to
+your `~/.profile` (or `~/.bashrc`) file for a cleaner organization.
+:::
+
+### 2.3. Fund the Validator Account
+
+Run the following command to get the `Validator`:
 
 ```bash
-echo $VALIDATOR_ADDR
+echo "Validator address: $VALIDATOR_ADDR"
 ```
 
-Next, fund your Validator account. You need to send tokens to your Validator address to cover staking and transaction fees.
-
-- On **testnet**, you can use the [faucet](../../explore/tools.md) to obtain tokens.
-- On **mainnet**, you'll need to acquire tokens from an exchange or another account.
+Then use the [Shannon Beta TestNet faucet](https://faucet.beta.testnet.pokt.network/) to fund the validator account.
 
 Check the balance of your Validator account:
 
 ```bash
-poktrolld query bank balances $VALIDATOR_ADDR
+poktrolld query bank balances $VALIDATOR_ADDR $NODE_FLAGS
 ```
+
+:::tip
+You can find all the explorers, faucets and tools at the [tools page](../../explore/tools.md).
+:::
 
 ## 3. Get the Validator's Public Key
 
@@ -153,7 +164,7 @@ Now, you are ready to create your Validator on the network.
 Run the following command:
 
 ```bash
-poktrolld tx staking create-validator ~/validator.json --from=validator --chain-id=<your-chain-id> --gas=auto --gas-adjustment=1.5 --gas-prices=1upokt
+poktrolld tx staking create-validator ~/validator.json --from=validator $TX_PARAM_FLAGS $NODE_FLAGS
 ```
 
 - **Parameters**:
@@ -193,7 +204,7 @@ Here are some useful commands for managing your Validator:
   If you wish to increase your self-delegation or others want to delegate to your Validator, use:
 
   ```bash
-  poktrolld tx staking delegate $VALIDATOR_ADDR <amount> --from <delegator_account> --chain-id=<your-chain-id> --gas=auto --gas-adjustment=1.5 --gas-prices=1upokt
+  poktrolld tx staking delegate $VALIDATOR_ADDR <amount> --from <delegator_account> $TX_PARAM_FLAGS $NODE_FLAGS
   ```
 
   Replace `<amount>` with the amount to delegate (e.g., `1000000upokt`) and `<delegator_account>` with the name of the key in your keyring.
@@ -203,34 +214,10 @@ Here are some useful commands for managing your Validator:
   To unbond a portion of your staked tokens:
 
   ```bash
-  poktrolld tx staking unbond $VALIDATOR_ADDR <amount> --from <delegator_account> --chain-id=<your-chain-id> --gas=auto --gas-adjustment=1.5 --gas-prices=1upokt
+  poktrolld tx staking unbond $VALIDATOR_ADDR <amount> --from <delegator_account> $TX_PARAM_FLAGS $NODE_FLAGS
   ```
 
-  Note that unbonding tokens initiates an unbonding period during which the tokens are locked and not earning rewards. The unbonding period duration depends on the network configuration.
-
-- **Withdraw rewards**:
-
-  To withdraw accumulated rewards from your Validator:
-
-  ```bash
-  poktrolld tx distribution withdraw-rewards $VALIDATOR_ADDR --commission --from validator --chain-id=<your-chain-id> --gas=auto --gas-adjustment=1.5 --gas-prices=1upokt
-  ```
-
-  The `--commission` flag indicates that you are withdrawing both your commission and rewards.
-
-- **Check Validator's commission and rewards**:
-
-  To view your Validator's commission:
-
-  ```bash
-  poktrolld query distribution commission $VALIDATOR_ADDR
-  ```
-
-  To view rewards:
-
-  ```bash
-  poktrolld query distribution rewards $VALIDATOR_ADDR
-  ```
+  Note that unbonding tokens initiates an unbonding period during which the tokens are locked. The unbonding period duration depends on the network configuration.
 
 ## Notes
 

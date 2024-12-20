@@ -25,8 +25,6 @@ step, check out the [Validator Walkthrough](../run_a_node/validator_walkthrough.
 - [Validator FAQ](#validator-faq)
   - [How do I delegate additional tokens to my validator?](#how-do-i-delegate-additional-tokens-to-my-validator)
   - [How do I unbond (undelegate) tokens from my validator?](#how-do-i-unbond-undelegate-tokens-from-my-validator)
-  - [How do I withdraw my validator rewards?](#how-do-i-withdraw-my-validator-rewards)
-  - [How do I check my validator's commission and rewards?](#how-do-i-check-my-validators-commission-and-rewards)
 - [Troubleshooting and Critical Notes](#troubleshooting-and-critical-notes)
 
 ## Prerequisites
@@ -190,19 +188,6 @@ poktrolld tx staking delegate $VALIDATOR_ADDR 1000000upokt --from your_account -
 
 ```bash
 poktrolld tx staking unbond $VALIDATOR_ADDR 500000upokt --from your_account --chain-id=pocket-beta --gas=auto --gas-adjustment=1.5 --gas-prices=1upokt
-```
-
-### How do I withdraw my validator rewards?
-
-```bash
-poktrolld tx distribution withdraw-rewards $VALIDATOR_ADDR --commission --from validator --chain-id=pocket-beta --gas=auto --gas-adjustment=1.5 --gas-prices=1upokt
-```
-
-### How do I check my validator's commission and rewards?
-
-```bash
-poktrolld query distribution commission $VALIDATOR_ADDR
-poktrolld query distribution rewards $VALIDATOR_ADDR
 ```
 
 ## Troubleshooting and Critical Notes
