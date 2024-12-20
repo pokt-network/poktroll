@@ -16,7 +16,7 @@ import (
 var _ client.SupplierClient = (*supplierClient)(nil)
 
 const (
-	// TODO_TECHDEBT: Gas limit and price should have their dedicated configuration entry.
+	// TODO_TECHDEBT(@okdas): Gas limit and price should have their dedicated configuration entry.
 	// gasLimit is the default gas limit of the relay miner transactions.
 	gasLimit = 100000
 
