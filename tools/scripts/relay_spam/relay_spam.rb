@@ -51,6 +51,9 @@ class RelaySpammer
       raw_config['tx_flags'] = template.map { |k,v| "--#{k}=#{v}" }.join(' ')
     end
 
+    # Ensure home directory is set
+    raw_config['home'] ||= ENV['HOME'] + '/.poktroll'
+
     raw_config
   rescue => e
     puts "Error loading config file: #{e.message}"
@@ -118,11 +121,11 @@ class RelaySpammer
       puts "\nProcessing #{app['name']}..."
       
       # First, try to delete the existing key, redirecting stderr to /dev/null
-      delete_cmd = "poktrolld keys delete #{app['name']} --keyring-backend=#{config['keyring_backend']} -y 2>/dev/null"
+      delete_cmd = "poktrolld keys delete #{app['name']} --home=#{config['home']} --keyring-backend=#{config['keyring_backend']} -y 2>/dev/null"
       system(delete_cmd)
       
       # Now import the key
-      import_cmd = "poktrolld keys add --recover #{app['name']} --keyring-backend=#{config['keyring_backend']}"
+      import_cmd = "poktrolld keys add --recover #{app['name']} --home=#{config['home']} --keyring-backend=#{config['keyring_backend']}"
       
       begin
         PTY.spawn(import_cmd) do |stdout, stdin, pid|
@@ -171,11 +174,12 @@ class RelaySpammer
     # Build multi-send command
     fund_cmd = [
       "poktrolld tx bank multi-send",
-      config['funder_address'],  # from address
-      addresses.join(' '),       # all recipient addresses
-      "#{funding_amount}upokt",  # amount each
-      config['tx_flags'],        # common transaction flags
-      "-y"                       # auto-confirm
+      config['funder_address'],     # from address
+      addresses.join(' '),          # all recipient addresses
+      "#{funding_amount}upokt",     # amount each
+      "--home=#{config['home']}",   # home directory
+      config['tx_flags'],           # common transaction flags
+      "-y"                         # auto-confirm
     ].join(' ')
     
     puts "Executing funding command: #{fund_cmd}"
@@ -197,7 +201,7 @@ class RelaySpammer
     config['applications'].each_with_index do |app, idx|
       print "\r[#{idx + 1}/#{total_apps}] Checking stake for #{app['name']} (#{app['address']})..."
       
-      query_cmd = "poktrolld q application show-application #{app['address']} -o json"
+      query_cmd = "poktrolld q application show-application #{app['address']} --home=#{config['home']} -o json"
       app_state = JSON.parse(`#{query_cmd} 2>/dev/null`) rescue nil
       
       if app_state.nil? || app_state['application'].nil?
@@ -226,7 +230,7 @@ class RelaySpammer
       config['applications'].each_with_index do |app, app_idx|
         print "\r  [#{app_idx + 1}/#{total_apps}] Checking #{app['name']}..."
         
-        query_cmd = "poktrolld q application show-application #{app['address']} -o json"
+        query_cmd = "poktrolld q application show-application #{app['address']} --home=#{config['home']} -o json"
         app_state = JSON.parse(`#{query_cmd} 2>/dev/null`) rescue nil
         current_gateways = app_state&.dig('application', 'delegatee_gateway_addresses') || []
         
@@ -276,6 +280,7 @@ class RelaySpammer
         "poktrolld tx application stake-application",
         "--config=#{temp_config_path}",
         "--from=#{app['address']}",
+        "--home=#{config['home']}",
         config['tx_flags'],
         "-y"
       ].join(' ')
@@ -294,6 +299,7 @@ class RelaySpammer
         "poktrolld tx application delegate-to-gateway",
         gateway_addr,
         "--from=#{app['address']}",
+        "--home=#{config['home']}",
         config['tx_flags'],
         "-y"
       ].join(' ')
@@ -422,6 +428,7 @@ class RelaySpammer
     request = Net::HTTP::Post.new(uri.path)
     request['Content-Type'] = 'application/json'
     request['X-App-Address'] = app_address
+    request['Target-Service-ID'] = config['application_defaults']['service_id']
     
     request.body = {
       jsonrpc: '2.0',
@@ -458,7 +465,7 @@ class Options
     @config_file = 'config.yml'
     @num_requests = 10
     @concurrency = 10
-    @num_accounts = 1000
+    @num_accounts = 10
     @rate_limit = nil
     parse
   end
