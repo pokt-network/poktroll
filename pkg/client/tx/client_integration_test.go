@@ -20,6 +20,12 @@ import (
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 )
 
+const (
+	// Set gas limit and price to 0 since tests do not need require actual gas.
+	gasLimit = 0
+	gasPrice = 0
+)
+
 func TestTxClient_SignAndBroadcast_Integration(t *testing.T) {
 	t.Skip(
 		"TODO_TECHDEBT: this test depends on some setup which is currently not implemented in this test: staked application and servicer with matching services",
@@ -62,7 +68,7 @@ func TestTxClient_SignAndBroadcast_Integration(t *testing.T) {
 	}
 
 	// Sign and broadcast the message.
-	eitherErr := txClient.SignAndBroadcast(ctx, appStakeMsg)
+	eitherErr := txClient.SignAndBroadcast(ctx, gasLimit, gasPrice, appStakeMsg)
 	err, _ = eitherErr.SyncOrAsyncError()
 	require.NoError(t, err)
 }

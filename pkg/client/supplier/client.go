@@ -15,6 +15,15 @@ import (
 
 var _ client.SupplierClient = (*supplierClient)(nil)
 
+const (
+	// TODO_TECHDEBT: Gas limit and price should have their dedicated configuration entry.
+	// gasLimit is the default gas limit of the relay miner transactions.
+	gasLimit = 100000
+
+	// gasPrice is the gas price used to calculate the fee of the relay miner transactions.
+	gasPrice = 1
+)
+
 // supplierClient
 type supplierClient struct {
 	// signingKeyName is the name of the operator key in the keyring that will be
@@ -82,7 +91,7 @@ func (sClient *supplierClient) SubmitProofs(
 
 	// TODO(@bryanchriswhite): reconcile splitting of supplier & proof modules
 	//  with off-chain pkgs/nomenclature.
-	eitherErr := sClient.txClient.SignAndBroadcast(ctx, msgs...)
+	eitherErr := sClient.txClient.SignAndBroadcast(ctx, gasLimit, gasPrice, msgs...)
 	err, errCh := eitherErr.SyncOrAsyncError()
 	if err != nil {
 		return err
@@ -128,7 +137,7 @@ func (sClient *supplierClient) CreateClaims(
 
 	// TODO(@bryanchriswhite): reconcile splitting of supplier & proof modules
 	//  with off-chain pkgs/nomenclature.
-	eitherErr := sClient.txClient.SignAndBroadcast(ctx, msgs...)
+	eitherErr := sClient.txClient.SignAndBroadcast(ctx, gasLimit, gasPrice, msgs...)
 	err, errCh := eitherErr.SyncOrAsyncError()
 	if err != nil {
 		return err

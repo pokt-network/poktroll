@@ -73,6 +73,8 @@ func NewOneTimeSignAndBroadcastTxClient(
 	txClient.EXPECT().SignAndBroadcast(
 		gomock.Eq(ctx),
 		gomock.Any(),
+		gomock.Any(),
+		gomock.Any(),
 	).DoAndReturn(signAndBroadcast).Times(1)
 
 	return txClient
