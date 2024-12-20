@@ -213,8 +213,7 @@ func NewTxClient(
 // transaction results in an asynchronous error or times out.
 func (txnClient *txClient) SignAndBroadcast(
 	ctx context.Context,
-	gasLimit int64,
-	gasPrice int64,
+	gasLimit, gasPrice int64,
 	msgs ...cosmostypes.Msg,
 ) either.AsyncError {
 	var validationErrs error

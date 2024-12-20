@@ -81,8 +81,7 @@ type SupplierClient interface {
 type TxClient interface {
 	SignAndBroadcast(
 		ctx context.Context,
-		gasLimit int64,
-		gasPrice int64,
+		gasLimit, gasPrice int64,
 		msgs ...cosmostypes.Msg,
 	) either.AsyncError
 }
