@@ -65,7 +65,7 @@ func (txCtx cosmosTxContext) SignTx(
 ) error {
 	return authclient.SignTx(
 		txCtx.txFactory,
-		cosmosclient.Context(txCtx.clientCtx),
+		txCtx.GetClientCtx(),
 		signingKeyName,
 		txBuilder,
 		offline, overwriteSig,
@@ -85,7 +85,7 @@ func (txCtx cosmosTxContext) EncodeTx(txBuilder cosmosclient.TxBuilder) ([]byte,
 // BroadcastTx broadcasts the given transaction to the network, blocking until the check-tx
 // ABCI operation completes and returns a TxResponse of the transaction status at that point in time.
 func (txCtx cosmosTxContext) BroadcastTx(txBytes []byte) (*cosmostypes.TxResponse, error) {
-	clientCtx := cosmosclient.Context(txCtx.clientCtx)
+	clientCtx := txCtx.GetClientCtx()
 	return clientCtx.BroadcastTxAsync(txBytes)
 }
 
@@ -101,5 +101,5 @@ func (txCtx cosmosTxContext) QueryTx(
 
 // GetClientCtx returns the cosmos-sdk client context associated with the transaction context.
 func (txCtx cosmosTxContext) GetClientCtx() cosmosclient.Context {
-	return cosmosclient.Context(txCtx.clientCtx)
+	return cosmosclient.Context(txCtx.clientCtx).WithChainID("poktroll") // or pocket-beta
 }
