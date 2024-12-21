@@ -18,7 +18,7 @@ var _ client.SupplierClient = (*supplierClient)(nil)
 const (
 	// TODO_TECHDEBT(@okdas): Gas limit and price should have their dedicated configuration entry.
 	// gasLimit is the default gas limit of the relay miner transactions.
-	gasLimit = 4200069
+	gasLimit = 420000000069
 
 	// gasPrice is the gas price used to calculate the fee of the relay miner transactions.
 	gasPrice = 1
