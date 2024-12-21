@@ -213,7 +213,7 @@ func NewTxClient(
 // transaction results in an asynchronous error or times out.
 func (txnClient *txClient) SignAndBroadcast(
 	ctx context.Context,
-	gasLimit, gasPrice int64,
+	gasLimit, txFeeUpokt int64,
 	msgs ...cosmostypes.Msg,
 ) either.AsyncError {
 	var validationErrs error
@@ -241,7 +241,7 @@ func (txnClient *txClient) SignAndBroadcast(
 	timeoutHeight := txnClient.blockClient.LastBlock(ctx).
 		Height() + txnClient.commitTimeoutHeightOffset
 
-	fee := cosmostypes.NewCoins(cosmostypes.NewInt64Coin("upokt", gasLimit*gasPrice))
+	fee := cosmostypes.NewCoins(cosmostypes.NewInt64Coin("upokt", txFeeUpokt))
 	txBuilder.SetGasLimit(uint64(gasLimit))
 	txBuilder.SetFeeAmount(fee)
 	txBuilder.SetTimeoutHeight(uint64(timeoutHeight))

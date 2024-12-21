@@ -2,6 +2,8 @@ package supplier
 
 import (
 	"context"
+	"os"
+	"strconv"
 	"sync"
 
 	"cosmossdk.io/depinject"
@@ -16,13 +18,34 @@ import (
 var _ client.SupplierClient = (*supplierClient)(nil)
 
 const (
-	// TODO_TECHDEBT(@okdas): Gas limit and price should have their dedicated configuration entry.
-	// gasLimit is the default gas limit of the relay miner transactions.
-	gasLimit = 420000000069
+	// Default values for gas limit and price
+	defaultGasLimit   int64 = 420000000069
+	defaultTxFeeUpokt int64 = 1
 
-	// gasPrice is the gas price used to calculate the fee of the relay miner transactions.
-	gasPrice = 1
+	// TODO_IN_THIS_PR: Remove Environment variable names. Added them to modify values w/o rebuilding the binary.
+	envGasLimit   = "POKT_GAS_LIMIT"
+	envTxFeeUpokt = "POKT_TX_FEE_UPOKT"
 )
+
+// getGasLimit returns the gas limit from environment variable or falls back to default
+func getGasLimit() int64 {
+	if envVal := os.Getenv(envGasLimit); envVal != "" {
+		if val, err := strconv.ParseInt(envVal, 10, 64); err == nil {
+			return val
+		}
+	}
+	return defaultGasLimit
+}
+
+// getTxFeeUpokt returns the transaction fee from environment variable or falls back to default
+func getTxFeeUpokt() int64 {
+	if envVal := os.Getenv(envTxFeeUpokt); envVal != "" {
+		if val, err := strconv.ParseInt(envVal, 10, 64); err == nil {
+			return val
+		}
+	}
+	return defaultTxFeeUpokt
+}
 
 // supplierClient
 type supplierClient struct {
@@ -91,7 +114,7 @@ func (sClient *supplierClient) SubmitProofs(
 
 	// TODO(@bryanchriswhite): reconcile splitting of supplier & proof modules
 	//  with off-chain pkgs/nomenclature.
-	eitherErr := sClient.txClient.SignAndBroadcast(ctx, gasLimit, gasPrice, msgs...)
+	eitherErr := sClient.txClient.SignAndBroadcast(ctx, getGasLimit(), getTxFeeUpokt(), msgs...)
 	err, errCh := eitherErr.SyncOrAsyncError()
 	if err != nil {
 		return err
@@ -137,7 +160,7 @@ func (sClient *supplierClient) CreateClaims(
 
 	// TODO(@bryanchriswhite): reconcile splitting of supplier & proof modules
 	//  with off-chain pkgs/nomenclature.
-	eitherErr := sClient.txClient.SignAndBroadcast(ctx, gasLimit, gasPrice, msgs...)
+	eitherErr := sClient.txClient.SignAndBroadcast(ctx, getGasLimit(), getTxFeeUpokt(), msgs...)
 	err, errCh := eitherErr.SyncOrAsyncError()
 	if err != nil {
 		return err
