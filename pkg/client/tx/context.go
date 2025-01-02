@@ -105,3 +105,39 @@ func (txCtx cosmosTxContext) QueryTx(
 func (txCtx cosmosTxContext) GetClientCtx() cosmosclient.Context {
 	return cosmosclient.Context(txCtx.clientCtx)
 }
+
+// GetSimulatedTxGas calculates the gas for the given messages using the simulation mode.
+func (txCtx cosmosTxContext) GetSimulatedTxGas(
+	ctx context.Context,
+	signingKeyName string,
+	msgs ...cosmostypes.Msg,
+) (uint64, error) {
+	clientCtx := cosmosclient.Context(txCtx.clientCtx)
+	keyRecord, err := txCtx.GetKeyring().Key(signingKeyName)
+	if err != nil {
+		return 0, err
+	}
+
+	accAddress, err := keyRecord.GetAddress()
+	if err != nil {
+		return 0, err
+	}
+
+	accountRetriever := txCtx.clientCtx.AccountRetriever
+	_, seq, err := accountRetriever.GetAccountNumberSequence(clientCtx, accAddress)
+	if err != nil {
+		return 0, err
+	}
+
+	txf := txCtx.txFactory.
+		WithSimulateAndExecute(true).
+		WithFromName(signingKeyName).
+		WithSequence(seq)
+
+	_, gas, err := cosmostx.CalculateGas(txCtx.GetClientCtx(), txf, msgs...)
+	if err != nil {
+		return 0, err
+	}
+
+	return gas, nil
+}

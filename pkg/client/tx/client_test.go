@@ -38,10 +38,6 @@ const (
 	// maxServiceIdLen.
 	testServiceIdPrefix = "testsvc"
 	txCommitTimeout     = 10 * time.Millisecond
-
-	// Set gas limit and price to 0 since tests do not need require actual gas.
-	txGasLimit = 0
-	txGasPrice = 0
 )
 
 // TODO_TECHDEBT: add coverage for the transactions client handling an events bytes error either.
@@ -110,7 +106,7 @@ func TestTxClient_SignAndBroadcast_Succeeds(t *testing.T) {
 	}
 
 	// Sign and broadcast the message.
-	eitherErr := txClient.SignAndBroadcast(ctx, txGasLimit, txGasPrice, appStakeMsg)
+	eitherErr := txClient.SignAndBroadcast(ctx, appStakeMsg)
 	err, errCh := eitherErr.SyncOrAsyncError()
 	require.NoError(t, err)
 
@@ -269,7 +265,7 @@ func TestTxClient_SignAndBroadcast_SyncError(t *testing.T) {
 		// NB: explicitly omitting required fields
 	}
 
-	eitherErr := txClient.SignAndBroadcast(ctx, txGasLimit, txGasPrice, appStakeMsg)
+	eitherErr := txClient.SignAndBroadcast(ctx, appStakeMsg)
 	err, _ = eitherErr.SyncOrAsyncError()
 	require.ErrorIs(t, err, tx.ErrInvalidMsg)
 
@@ -347,7 +343,7 @@ $ go test -v -count=1 -run TestTxClient_SignAndBroadcast_CheckTxError ./pkg/clie
 	}
 
 	// Sign and broadcast the message.
-	eitherErr := txClient.SignAndBroadcast(ctx, txGasLimit, txGasPrice, appStakeMsg)
+	eitherErr := txClient.SignAndBroadcast(ctx, appStakeMsg)
 	err, _ = eitherErr.SyncOrAsyncError()
 	require.ErrorIs(t, err, tx.ErrCheckTx)
 	require.ErrorContains(t, err, expectedErrMsg)
@@ -419,7 +415,7 @@ func TestTxClient_SignAndBroadcast_Timeout(t *testing.T) {
 	}
 
 	// Sign and broadcast the message in a transaction.
-	eitherErr := txClient.SignAndBroadcast(ctx, txGasLimit, txGasPrice, appStakeMsg)
+	eitherErr := txClient.SignAndBroadcast(ctx, appStakeMsg)
 	err, errCh := eitherErr.SyncOrAsyncError()
 	require.NoError(t, err)
 

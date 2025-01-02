@@ -213,7 +213,6 @@ func NewTxClient(
 // transaction results in an asynchronous error or times out.
 func (txnClient *txClient) SignAndBroadcast(
 	ctx context.Context,
-	gasLimit, txFeeUpokt int64,
 	msgs ...cosmostypes.Msg,
 ) either.AsyncError {
 	var validationErrs error
@@ -230,6 +229,12 @@ func (txnClient *txClient) SignAndBroadcast(
 		return either.SyncErr(validationErrs)
 	}
 
+	// Simulate the transaction to calculate the gas limit.
+	gasLimit, simErr := txnClient.txCtx.GetSimulatedTxGas(ctx, txnClient.signingKeyName, msgs...)
+	if simErr != nil {
+		return either.SyncErr(simErr)
+	}
+
 	// Construct the transactions using cosmos' transactions builder.
 	txBuilder := txnClient.txCtx.NewTxBuilder()
 	if err := txBuilder.SetMsgs(msgs...); err != nil {
@@ -241,9 +246,7 @@ func (txnClient *txClient) SignAndBroadcast(
 	timeoutHeight := txnClient.blockClient.LastBlock(ctx).
 		Height() + txnClient.commitTimeoutHeightOffset
 
-	fee := cosmostypes.NewCoins(cosmostypes.NewInt64Coin("upokt", txFeeUpokt))
-	txBuilder.SetGasLimit(uint64(gasLimit))
-	txBuilder.SetFeeAmount(fee)
+	txBuilder.SetGasLimit(gasLimit)
 	txBuilder.SetTimeoutHeight(uint64(timeoutHeight))
 
 	// sign transactions
