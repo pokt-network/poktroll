@@ -201,8 +201,21 @@ class RelaySpammer
     config['applications'].each_with_index do |app, idx|
       print "\r[#{idx + 1}/#{total_apps}] Checking stake for #{app['name']} (#{app['address']})..."
       
-      query_cmd = "poktrolld q application show-application #{app['address']} --home=#{config['home']} -o json"
-      app_state = JSON.parse(`#{query_cmd} 2>/dev/null`) rescue nil
+      query_cmd = [
+        "poktrolld q application show-application",
+        app['address'],
+        "--home=#{config['home']}",
+        "--node=#{config['tx_flags_template']['node']}",
+        "-o json"
+      ].join(' ')
+      
+      # puts "\nExecuting query: #{query_cmd}"
+      
+      output = `#{query_cmd} 2>&1`
+      # puts "Query output: #{output}"
+      
+      app_state = JSON.parse(output) rescue nil
+      # puts "Parsed app_state: #{app_state.inspect}"
       
       if app_state.nil? || app_state['application'].nil?
         puts "\n  - Staking application..."
@@ -211,7 +224,12 @@ class RelaySpammer
         current_stake = app_state['application']['stake']['amount'].to_s.gsub('upokt', '').to_i rescue 0
         expected_stake = config['application_defaults']['stake_amount'].to_s.gsub('upokt', '').to_i
         
-        if current_stake < expected_stake
+        puts "\nCurrent stake: #{current_stake}"
+        puts "Expected stake: #{expected_stake}"
+        
+        if current_stake == expected_stake
+          print " already staked ✓"
+        elsif current_stake < expected_stake
           puts "\n  - Updating stake amount (current: #{current_stake}, expected: #{expected_stake})"
           stake_application(app)
         end
@@ -230,7 +248,7 @@ class RelaySpammer
       config['applications'].each_with_index do |app, app_idx|
         print "\r  [#{app_idx + 1}/#{total_apps}] Checking #{app['name']}..."
         
-        query_cmd = "poktrolld q application show-application #{app['address']} --home=#{config['home']} -o json"
+        query_cmd = "poktrolld q application show-application #{app['address']} --node=#{config['tx_flags_template']['node']} --home=#{config['home']} -o json"
         app_state = JSON.parse(`#{query_cmd} 2>/dev/null`) rescue nil
         current_gateways = app_state&.dig('application', 'delegatee_gateway_addresses') || []
         
@@ -304,7 +322,18 @@ class RelaySpammer
         "-y"
       ].join(' ')
 
-      return true if system(delegate_cmd, out: File::NULL, err: File::NULL)
+      puts "\nAttempt #{attempt + 1}: Executing delegation command:"
+      puts delegate_cmd
+      
+      # Capture both stdout and stderr
+      output = `#{delegate_cmd} 2>&1`
+      success = $?.success?
+      
+      puts "Command output:"
+      puts output
+      puts "Exit status: #{$?.exitstatus}"
+      
+      return true if success
       sleep 5 unless attempt == 2
     end
     false
