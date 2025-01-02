@@ -89,39 +89,41 @@ func (s *relaysSuite) setupEventListeners(pocketNode string) {
 	eventsObs, eventsObsCh := channel.NewObservable[[]types.Event]()
 	s.eventsObs = eventsObs
 
+	extractBlockEvents := func(ctx context.Context, block client.Block) {
+		// Query the block results endpoint for each observed block to get the tx and block events.
+		blockResultsUrl := fmt.Sprintf("%s/block_results?height=%d", pocketNode, block.Height())
+		blockResultsResp, err := http.DefaultClient.Get(blockResultsUrl)
+		require.NoError(s, err)
+
+		defer blockResultsResp.Body.Close()
+
+		blockResultsRespBz, err := io.ReadAll(blockResultsResp.Body)
+		require.NoError(s, err)
+
+		var rpcResponse rpctypes.RPCResponse
+		err = json.Unmarshal(blockResultsRespBz, &rpcResponse)
+		require.NoError(s, err)
+
+		var blockResults cmtcoretypes.ResultBlockResults
+		err = json.Unmarshal(rpcResponse.Result, &blockResults)
+		require.NoError(s, err)
+
+		events := make([]types.Event, 0, len(blockResults.TxsResults)+len(blockResults.FinalizeBlockEvents))
+		for _, txResult := range blockResults.TxsResults {
+			events = append(events, txResult.Events...)
+		}
+
+		events = append(events, blockResults.FinalizeBlockEvents...)
+
+		s.latestBlock = block
+		eventsObsCh <- events
+	}
+
 	s.blockClient = testblock.NewLocalnetClient(s.ctx, s.TestingT.(*testing.T))
 	channel.ForEach(
 		s.ctx,
 		s.blockClient.CommittedBlocksSequence(s.ctx),
-		func(ctx context.Context, block client.Block) {
-			// Query the block results endpoint for each observed block to get the tx and block events.
-			blockResultsUrl := fmt.Sprintf("%s/block_results?height=%d", pocketNode, block.Height())
-			blockResultsResp, err := http.DefaultClient.Get(blockResultsUrl)
-			require.NoError(s, err)
-
-			defer blockResultsResp.Body.Close()
-
-			blockResultsRespBz, err := io.ReadAll(blockResultsResp.Body)
-			require.NoError(s, err)
-
-			var rpcResponse rpctypes.RPCResponse
-			err = json.Unmarshal(blockResultsRespBz, &rpcResponse)
-			require.NoError(s, err)
-
-			var blockResults cmtcoretypes.ResultBlockResults
-			err = json.Unmarshal(rpcResponse.Result, &blockResults)
-			require.NoError(s, err)
-
-			events := make([]types.Event, 0, len(blockResults.TxsResults)+len(blockResults.FinalizeBlockEvents))
-			for _, txResult := range blockResults.TxsResults {
-				events = append(events, txResult.Events...)
-			}
-
-			events = append(events, blockResults.FinalizeBlockEvents...)
-
-			s.latestBlock = block
-			eventsObsCh <- events
-		},
+		extractBlockEvents,
 	)
 }
 
@@ -647,12 +649,12 @@ func (s *relaysSuite) createApplicationAccount(
 // cost, and the block duration.
 func (s *relaysSuite) getAppFundingAmount(currentBlockHeight int64) sdk.Coin {
 	currentTestDuration := s.testStartHeight + s.relayLoadDurationBlocks - currentBlockHeight
+	relayCostDuringTestUPOKT := s.relayRatePerApp * s.relayCoinAmountCost * currentTestDuration * blockDuration
 	// Multiply by 2 to make sure the application does not run out of funds
 	// based on the number of relays it needs to send. Theoretically, `+1` should
 	// be enough, but probabilistic and time based mechanisms make it hard
 	// to predict exactly.
-	amountToSpend := s.relayRatePerApp * s.relayCoinAmountCost * currentTestDuration * blockDuration
-	appFundingAmount := math.Max(amountToSpend, s.appParams.MinStake.Amount.Int64()*2)
+	appFundingAmount := math.Max(relayCostDuringTestUPOKT, s.appParams.MinStake.Amount.Int64()*2)
 	return sdk.NewCoin("upokt", math.NewInt(appFundingAmount))
 }
 
@@ -1034,18 +1036,26 @@ func (s *relaysSuite) sendRelay(iteration uint64, relayPayload string) (appAddre
 	// TODO_MAINNET: Capture the relay response to check for failing relays.
 	// Send the relay request within a goroutine to avoid blocking the test batches
 	// when suppliers or gateways are unresponsive.
-	go func(gwURL, appAddr, payload string) {
-		gwURL = gwURL + "/"
-		req, err := http.NewRequest("POST", gwURL, strings.NewReader(payload))
+	sendRelayRequest := func(gatewayURL, appAddr, payload string) {
+		gatewayURL = gatewayURL + "/"
+		req, err := http.NewRequest("POST", gatewayURL, strings.NewReader(payload))
 
+		// TODO_TECHDEBT(red-0ne): Use the app-address instead X-App-Address once PATH Gateway
+		// deprecates the X-App-Address header.
+		// This is needed by the PATH Gateway's trusted mode to identify the application
+		// that is sending the relay request.
 		req.Header.Add("X-App-Address", appAddr)
+		req.Header.Add("target-service-id", appAddr)
 		res, err := http.DefaultClient.Do(req)
 		require.NoError(s, err)
 
 		if res.StatusCode != http.StatusOK {
 			s.failedRelays.Add(1)
 		}
-	}(s.gatewayUrls[gateway.address], application.address, relayPayload)
+	}
+
+	gatewayURL := s.gatewayUrls[gateway.address]
+	go sendRelayRequest(gatewayURL, application.address, relayPayload)
 
 	return application.address, gateway.address
 }

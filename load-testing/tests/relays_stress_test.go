@@ -296,9 +296,9 @@ func (s *relaysSuite) LocalnetIsRunning() {
 	// CometLocalWebsocketURL to the TestNetNode URL. These variables are used
 	// by the testtx txClient to send transactions to the network.
 	if !s.isEphemeralChain {
-		testclient.CometLocalTCPURL = loadTestParams.PocketNode
+		testclient.CometLocalTCPURL = loadTestParams.PRCNode
 
-		webSocketURL, err := url.Parse(loadTestParams.PocketNode)
+		webSocketURL, err := url.Parse(loadTestParams.PRCNode)
 		require.NoError(s, err)
 
 		// TestNet nodes may be exposed over HTTPS, so adjust the scheme accordingly.
@@ -322,7 +322,7 @@ func (s *relaysSuite) LocalnetIsRunning() {
 
 	// Setup the event listener for on-chain events to check and assert on transactions
 	// and finalized blocks results.
-	s.setupEventListeners(loadTestParams.PocketNode)
+	s.setupEventListeners(loadTestParams.PRCNode)
 
 	// Initialize the funding account.
 	s.initFundingAccount(loadTestParams.FundingAccountAddress)
@@ -331,9 +331,9 @@ func (s *relaysSuite) LocalnetIsRunning() {
 	s.forEachSettlement(s.ctx)
 
 	// Query for the current network on-chain params.
-	s.querySharedParams(loadTestParams.PocketNode)
-	s.queryAppParams(loadTestParams.PocketNode)
-	s.queryProofParams(loadTestParams.PocketNode)
+	s.querySharedParams(loadTestParams.PRCNode)
+	s.queryAppParams(loadTestParams.PRCNode)
+	s.queryProofParams(loadTestParams.PRCNode)
 
 	// Some suppliers may already be staked at genesis, ensure that staking during
 	// this test succeeds by increasing the sake amount.
