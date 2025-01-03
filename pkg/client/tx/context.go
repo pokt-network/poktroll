@@ -87,7 +87,7 @@ func (txCtx cosmosTxContext) EncodeTx(txBuilder cosmosclient.TxBuilder) ([]byte,
 func (txCtx cosmosTxContext) BroadcastTx(txBytes []byte) (*cosmostypes.TxResponse, error) {
 	clientCtx := cosmosclient.Context(txCtx.clientCtx)
 	// BroadcastTxSync is used to capture any transaction error that occurs during
-	// the check-tx ABCI operation, otherwise errors would be returned.
+	// the check-tx ABCI operation, otherwise errors would not be returned.
 	return clientCtx.BroadcastTxSync(txBytes)
 }
 
