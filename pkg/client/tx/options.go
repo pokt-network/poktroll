@@ -34,7 +34,7 @@ func WithConnRetryLimit(limit int) client.TxClientOption {
 }
 
 // WithGasPrices sets the gas price to be used when constructing transactions.
-func WithGasPrices(gasPrices cosmostypes.Coins) client.TxClientOption {
+func WithGasPrices(gasPrices cosmostypes.DecCoins) client.TxClientOption {
 	return func(client client.TxClient) {
 		client.(*txClient).gasPrices = gasPrices
 	}

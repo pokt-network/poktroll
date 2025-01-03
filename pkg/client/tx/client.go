@@ -105,7 +105,7 @@ type txClient struct {
 	txTimeoutPool txTimeoutPool
 
 	// gasPrices is the gas unit prices used for sending transactions.
-	gasPrices cosmostypes.Coins
+	gasPrices cosmostypes.DecCoins
 
 	// connRetryLimit is the number of times the underlying replay client
 	// should retry in the event that it encounters an error or its connection is interrupted.
@@ -253,8 +253,19 @@ func (txnClient *txClient) SignAndBroadcast(
 	// Coin multiplication prevents doing it using a zero value.
 	if gasLimit > 0 {
 		txBuilder.SetGasLimit(gasLimit)
-		feeAmount := txnClient.gasPrices.MulInt(math.NewIntFromUint64(gasLimit))
-		txBuilder.SetFeeAmount(feeAmount)
+
+		gasLimitDec := math.LegacyNewDec(int64(gasLimit))
+		feeAmountDec := txnClient.gasPrices.MulDec(gasLimitDec)
+
+		feeCoins, changeCoins := feeAmountDec.TruncateDecimal()
+		// Ensure that any decimal remainder is added to the corresponding coin as a
+		// whole number.
+		for i, coin := range feeCoins {
+			if !changeCoins[i].IsZero() {
+				feeCoins[i] = coin.AddAmount(math.OneInt())
+			}
+		}
+		txBuilder.SetFeeAmount(feeCoins)
 	}
 
 	txBuilder.SetTimeoutHeight(uint64(timeoutHeight))

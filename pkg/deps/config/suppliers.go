@@ -12,6 +12,7 @@ import (
 	"github.com/cosmos/gogoproto/grpc"
 	"github.com/spf13/cobra"
 
+	"github.com/pokt-network/poktroll/app/volatile"
 	"github.com/pokt-network/poktroll/pkg/client/block"
 	"github.com/pokt-network/poktroll/pkg/client/delegation"
 	"github.com/pokt-network/poktroll/pkg/client/events"
@@ -359,7 +360,7 @@ func NewSupplySupplierClientsFn(signingKeyNames []string) SupplierFn {
 			return nil, err
 		}
 
-		gasPrices, err := cosmostypes.ParseCoinsNormalized(gasPriceStr)
+		gasPrices, err := cosmostypes.ParseDecCoins(gasPriceStr)
 		if err != nil {
 			return nil, err
 		}
@@ -482,10 +483,18 @@ func newSupplyTxClientsFn(
 	ctx context.Context,
 	deps depinject.Config,
 	signingKeyName string,
-	gasPrices cosmostypes.Coins,
+	gasPrices cosmostypes.DecCoins,
 ) (depinject.Config, error) {
-	uPOKTFound, _ := gasPrices.Find("upokt")
-	if !uPOKTFound {
+	// Ensure that the gas prices include upokt
+	uPOKTDenomFound := false
+	for _, gasPrice := range gasPrices {
+		if gasPrice.Denom == volatile.DenomuPOKT {
+			uPOKTDenomFound = true
+			break
+		}
+	}
+
+	if !uPOKTDenomFound {
 		return nil, fmt.Errorf("gas prices must include upokt")
 	}
 
