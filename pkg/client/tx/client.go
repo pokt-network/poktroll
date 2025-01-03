@@ -16,6 +16,7 @@ import (
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	"go.uber.org/multierr"
 
+	"github.com/pokt-network/poktroll/app/volatile"
 	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/client/events"
 	"github.com/pokt-network/poktroll/pkg/client/keyring"
@@ -260,10 +261,8 @@ func (txnClient *txClient) SignAndBroadcast(
 		feeCoins, changeCoins := feeAmountDec.TruncateDecimal()
 		// Ensure that any decimal remainder is added to the corresponding coin as a
 		// whole number.
-		for i, coin := range feeCoins {
-			if !changeCoins[i].IsZero() {
-				feeCoins[i] = coin.AddAmount(math.OneInt())
-			}
+		if !changeCoins.IsZero() {
+			feeCoins = feeCoins.Add(cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 1))
 		}
 		txBuilder.SetFeeAmount(feeCoins)
 	}
