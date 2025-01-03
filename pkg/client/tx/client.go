@@ -250,10 +250,14 @@ func (txnClient *txClient) SignAndBroadcast(
 	timeoutHeight := txnClient.blockClient.LastBlock(ctx).
 		Height() + txnClient.commitTimeoutHeightOffset
 
-	txBuilder.SetGasLimit(gasLimit)
+	if gasLimit > 0 {
+		txBuilder.SetGasLimit(gasLimit)
+	}
 
-	feeAmount := txnClient.gasPrices.MulInt(math.NewIntFromUint64(gasLimit))
-	txBuilder.SetFeeAmount(feeAmount)
+	if !txnClient.gasPrices.IsZero() && gasLimit > 0 {
+		feeAmount := txnClient.gasPrices.MulInt(math.NewIntFromUint64(gasLimit))
+		txBuilder.SetFeeAmount(feeAmount)
+	}
 
 	txBuilder.SetTimeoutHeight(uint64(timeoutHeight))
 
