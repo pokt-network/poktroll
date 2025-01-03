@@ -360,6 +360,9 @@ func NewSupplySupplierClientsFn(signingKeyNames []string) SupplierFn {
 		}
 
 		gasPrices, err := cosmostypes.ParseCoinsNormalized(gasPriceStr)
+		if err != nil {
+			return nil, err
+		}
 
 		suppliers := supplier.NewSupplierClientMap()
 		for _, signingKeyName := range signingKeyNames {
