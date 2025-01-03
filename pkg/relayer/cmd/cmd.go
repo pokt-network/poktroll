@@ -75,9 +75,8 @@ for such operations.`,
 	cmd.Flags().Bool(cosmosflags.FlagGRPCInsecure, true, "Used to initialize the Cosmos query context with grpc security options. It can be used to override the `QueryNodeGRPCInsecure` field in the config file if specified.")
 	cmd.Flags().String(cosmosflags.FlagChainID, "poktroll", "The network chain ID")
 	cmd.Flags().StringVar(&flagLogLevel, cosmosflags.FlagLogLevel, "debug", "The logging level (debug|info|warn|error)")
-	cmd.Flags().Float64(cosmosflags.FlagGasAdjustment, 1.5, "The adjustment factor to be multiplied by the estimate returned by the tx simulation; if the gas limit is set manually this flag is ignored")
-	cmd.Flags().String(cosmosflags.FlagGasPrices, "0.0001upokt", "Set the gas prices in upokt")
-	cmd.Flags().String(cosmosflags.FlagGas, cosmosflags.GasFlagAuto, fmt.Sprintf("gas limit to set per-transaction; set to auto to calculate sufficient gas automatically. Note: %q option doesn't always report accurate results - can adjust %q to allow more room for error in the simulation", cosmosflags.GasFlagAuto, cosmosflags.FlagGasAdjustment))
+	cmd.Flags().Float64(cosmosflags.FlagGasAdjustment, 1.5, "The adjustment factor to be multiplied by the gas estimate returned by the tx simulation")
+	cmd.Flags().String(cosmosflags.FlagGasPrices, "1upokt", "Set the gas prices in upokt")
 
 	return cmd
 }
