@@ -250,11 +250,9 @@ func (txnClient *txClient) SignAndBroadcast(
 	timeoutHeight := txnClient.blockClient.LastBlock(ctx).
 		Height() + txnClient.commitTimeoutHeightOffset
 
+	// Coin multiplication prevents doing it with a zero value.
 	if gasLimit > 0 {
 		txBuilder.SetGasLimit(gasLimit)
-	}
-
-	if !txnClient.gasPrices.IsZero() && gasLimit > 0 {
 		feeAmount := txnClient.gasPrices.MulInt(math.NewIntFromUint64(gasLimit))
 		txBuilder.SetFeeAmount(feeAmount)
 	}
