@@ -8,6 +8,7 @@ import (
 	"sync"
 
 	"cosmossdk.io/depinject"
+	"cosmossdk.io/math"
 	abci "github.com/cometbft/cometbft/abci/types"
 	"github.com/cometbft/cometbft/libs/json"
 	rpctypes "github.com/cometbft/cometbft/rpc/jsonrpc/types"
@@ -102,6 +103,9 @@ type txClient struct {
 	// is used to ensure that transactions error channels receive and close in the event
 	// that they have not already by the given timeout height.
 	txTimeoutPool txTimeoutPool
+
+	// gasPrices is the gas unit prices used for sending transactions.
+	gasPrices cosmostypes.Coins
 
 	// connRetryLimit is the number of times the underlying replay client
 	// should retry in the event that it encounters an error or its connection is interrupted.
@@ -247,6 +251,10 @@ func (txnClient *txClient) SignAndBroadcast(
 		Height() + txnClient.commitTimeoutHeightOffset
 
 	txBuilder.SetGasLimit(gasLimit)
+
+	feeAmount := txnClient.gasPrices.MulInt(math.NewIntFromUint64(gasLimit))
+	txBuilder.SetFeeAmount(feeAmount)
+
 	txBuilder.SetTimeoutHeight(uint64(timeoutHeight))
 
 	// sign transactions

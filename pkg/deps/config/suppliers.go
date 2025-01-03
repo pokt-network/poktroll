@@ -2,11 +2,13 @@ package config
 
 import (
 	"context"
+	"fmt"
 	"net/url"
 
 	"cosmossdk.io/depinject"
 	sdkclient "github.com/cosmos/cosmos-sdk/client"
 	cosmosflags "github.com/cosmos/cosmos-sdk/client/flags"
+	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/gogoproto/grpc"
 	"github.com/spf13/cobra"
 
@@ -350,11 +352,18 @@ func NewSupplySupplierClientsFn(signingKeyNames []string) SupplierFn {
 	return func(
 		ctx context.Context,
 		deps depinject.Config,
-		_ *cobra.Command,
+		cmd *cobra.Command,
 	) (depinject.Config, error) {
+		gasPriceStr, err := cmd.Flags().GetString(cosmosflags.FlagGasPrices)
+		if err != nil {
+			return nil, err
+		}
+
+		gasPrices, err := cosmostypes.ParseCoinsNormalized(gasPriceStr)
+
 		suppliers := supplier.NewSupplierClientMap()
 		for _, signingKeyName := range signingKeyNames {
-			txClientDepinjectConfig, err := newSupplyTxClientsFn(ctx, deps, signingKeyName)
+			txClientDepinjectConfig, err := newSupplyTxClientsFn(ctx, deps, signingKeyName, gasPrices)
 			if err != nil {
 				return nil, err
 			}
@@ -466,12 +475,23 @@ func NewSupplyBankQuerierFn() SupplierFn {
 
 // newSupplyTxClientFn returns a new depinject.Config which is supplied with
 // the given deps and the new TxClient.
-func newSupplyTxClientsFn(ctx context.Context, deps depinject.Config, signingKeyName string) (depinject.Config, error) {
+func newSupplyTxClientsFn(
+	ctx context.Context,
+	deps depinject.Config,
+	signingKeyName string,
+	gasPrices cosmostypes.Coins,
+) (depinject.Config, error) {
+	uPOKTFound, _ := gasPrices.Find("upokt")
+	if !uPOKTFound {
+		return nil, fmt.Errorf("gas prices must include upokt")
+	}
+
 	txClient, err := tx.NewTxClient(
 		ctx,
 		deps,
 		tx.WithSigningKeyName(signingKeyName),
 		tx.WithCommitTimeoutBlocks(tx.DefaultCommitTimeoutHeightOffset),
+		tx.WithGasPrices(gasPrices),
 	)
 	if err != nil {
 		return nil, err
