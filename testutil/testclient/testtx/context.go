@@ -96,7 +96,7 @@ func NewOneTimeErrTxTimeoutTxContext(
 		).Times(1)
 
 	txCtxMock.EXPECT().GetSimulatedTxGas(gomock.Any(), gomock.Any(), gomock.Any()).
-		Return(uint64(0), nil).
+		Return(uint64(1), nil).
 		Times(1)
 
 	txCtxMock.EXPECT().QueryTx(

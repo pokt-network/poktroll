@@ -251,21 +251,20 @@ func (txnClient *txClient) SignAndBroadcast(
 	timeoutHeight := txnClient.blockClient.LastBlock(ctx).
 		Height() + txnClient.commitTimeoutHeightOffset
 
-	// Coin multiplication prevents doing it using a zero value.
-	if gasLimit > 0 {
-		txBuilder.SetGasLimit(gasLimit)
+	txBuilder.SetGasLimit(gasLimit)
 
-		gasLimitDec := math.LegacyNewDec(int64(gasLimit))
-		feeAmountDec := txnClient.gasPrices.MulDec(gasLimitDec)
+	gasLimitDec := math.LegacyNewDec(int64(gasLimit))
+	feeAmountDec := txnClient.gasPrices.MulDec(gasLimitDec)
 
-		feeCoins, changeCoins := feeAmountDec.TruncateDecimal()
-		// Ensure that any decimal remainder is added to the corresponding coin as a
-		// whole number.
-		if !changeCoins.IsZero() {
-			feeCoins = feeCoins.Add(cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 1))
-		}
-		txBuilder.SetFeeAmount(feeCoins)
+	feeCoins, changeCoins := feeAmountDec.TruncateDecimal()
+	// Ensure that any decimal remainder is added to the corresponding coin as a
+	// whole number.
+	// Since changeCoins is the result of DecCoins#TruncateDecimal, it will always
+	// be less than 1 unit of the feeCoins.
+	if !changeCoins.IsZero() {
+		feeCoins = feeCoins.Add(cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 1))
 	}
+	txBuilder.SetFeeAmount(feeCoins)
 
 	txBuilder.SetTimeoutHeight(uint64(timeoutHeight))
 

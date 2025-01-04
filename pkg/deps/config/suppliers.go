@@ -486,16 +486,12 @@ func newSupplyTxClientsFn(
 	gasPrices cosmostypes.DecCoins,
 ) (depinject.Config, error) {
 	// Ensure that the gas prices include upokt
-	uPOKTDenomFound := false
 	for _, gasPrice := range gasPrices {
-		if gasPrice.Denom == volatile.DenomuPOKT {
-			uPOKTDenomFound = true
-			break
+		if gasPrice.Denom != volatile.DenomuPOKT {
+			// TODO_TECHDEBT(red-0ne): Allow other gas prices denominations once supported (e.g. mPOKT, POKT)
+			// See https://docs.cosmos.network/main/build/architecture/adr-024-coin-metadata#decision
+			return nil, fmt.Errorf("only gas prices with %s denom are supported", volatile.DenomuPOKT)
 		}
-	}
-
-	if !uPOKTDenomFound {
-		return nil, fmt.Errorf("gas prices must include upokt")
 	}
 
 	txClient, err := tx.NewTxClient(
