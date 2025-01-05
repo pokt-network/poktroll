@@ -182,7 +182,7 @@ func (p *pocketdBin) runPocketCmd(args ...string) (*commandResult, error) {
 	return r, err
 }
 
-// runCurlPostCmd is a helper to run a command using the local pocketd binary with the flags provided
+// runCurlCmd is a helper to run a command using the local pocketd binary with the flags provided
 func (p *pocketdBin) runCurlCmd(rpcBaseURL, service, method, path, appAddr, data string, args ...string) (*commandResult, error) {
 	rpcUrl, err := url.Parse(rpcBaseURL)
 	if err != nil {
