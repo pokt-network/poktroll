@@ -200,8 +200,6 @@ type relaysSuite struct {
 	// eventsObs is the observable that maps committed blocks to on-chain events.
 	eventsObs observable.Observable[[]types.Event]
 
-	// totalRelays is the total number of relay requests sent during the test.
-	totalRelays atomic.Uint64
 	// successfulRelays is the number of relay requests that returned 200 status code.
 	successfulRelays atomic.Uint64
 	// failedRelays is the number of relay requests that returned non-200 status code.
@@ -477,5 +475,5 @@ func (s *relaysSuite) TheNumberOfFailedRelayRequestsIs(expectedFailedRelays stri
 	require.NoError(s, err)
 
 	require.EqualValues(s, expectedFailedRelaysCount, s.failedRelays.Load())
-	require.EqualValues(s, s.totalRelays.Load(), s.successfulRelays.Load())
+	require.EqualValues(s, s.numRelaysSent.Load(), s.successfulRelays.Load())
 }

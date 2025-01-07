@@ -262,6 +262,13 @@ func (s *relaysSuite) mapSessionInfoForLoadTestDurationFn(
 			testProgressBlocksRelativeToTestStartHeight, s.relayLoadDurationBlocks,
 		)
 
+		logger.Info().Msgf(
+			"Relays sent: %d; Success: %d; Failed: %d",
+			s.numRelaysSent.Load(),
+			s.successfulRelays.Load(),
+			s.failedRelays.Load(),
+		)
+
 		// If the current block is the start of any new session, activate the prepared
 		// actors to be used in the current session.
 		s.activatePreparedActors(sessionInfo)
@@ -1056,7 +1063,6 @@ func (s *relaysSuite) sendRelay(iteration uint64, relayPayload string) (appAddre
 		res, err := http.DefaultClient.Do(req)
 		require.NoError(s, err)
 
-		s.totalRelays.Add(1)
 		if res.StatusCode == http.StatusOK {
 			s.successfulRelays.Add(1)
 		} else {
