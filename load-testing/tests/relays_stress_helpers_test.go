@@ -1089,7 +1089,8 @@ func (s *relaysSuite) ensureFundedActors(ctx context.Context, actors []*accountI
 	ctx, cancel := context.WithDeadline(ctx, deadline)
 	channel.ForEach(ctx, s.eventsObs, func(ctx context.Context, events []types.Event) {
 		for _, event := range events {
-			// Skip non-relevant events.
+			// In the context of ensuring the actors are funded, only the transfer events
+			// are relevant; filtering out the other events.
 			if event.GetType() != "transfer" {
 				continue
 			}
