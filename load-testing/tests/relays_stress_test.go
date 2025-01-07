@@ -72,9 +72,9 @@ var (
 	// testedServiceId is the service ID for that all applications and suppliers will
 	// be using in this test.
 	testedServiceId string
-	// blockDuration is the duration of a block in seconds.
+	// blockDurationSec is the duration of a block in seconds.
 	// NB: This value SHOULD be equal to `timeout_propose` in `config.yml`.
-	blockDuration = int64(2)
+	blockDurationSec = int64(2)
 	// relayPayloadFmt is the JSON-RPC request relayPayloadFmt to send a relay request.
 	relayPayloadFmt = `{"jsonrpc":"2.0","method":"%s","params":[],"id":%d}`
 	// relayRequestMethod is the method of the JSON-RPC request to be relayed.
@@ -200,6 +200,10 @@ type relaysSuite struct {
 	// eventsObs is the observable that maps committed blocks to on-chain events.
 	eventsObs observable.Observable[[]types.Event]
 
+	// totalRelays is the total number of relay requests sent during the test.
+	totalRelays atomic.Uint64
+	// successfulRelays is the number of relay requests that returned 200 status code.
+	successfulRelays atomic.Uint64
 	// failedRelays is the number of relay requests that returned non-200 status code.
 	failedRelays atomic.Uint64
 }
@@ -311,7 +315,7 @@ func (s *relaysSuite) LocalnetIsRunning() {
 
 		// Update the block duration when running the test on a non-ephemeral chain.
 		// TODO_TECHDEBT: Get the block duration value from the chain or the manifest.
-		blockDuration = 60
+		blockDurationSec = 60
 	}
 
 	// Setup the txContext that will be used to send transactions to the network.
@@ -386,37 +390,37 @@ func (s *relaysSuite) MoreActorsAreStakedAsFollows(table gocuke.DataTable) {
 	logger.Info().Msg("Actors funded")
 
 	// The initial actors are the first actors to stake.
-	suppliers := fundedSuppliers[:s.supplierInitialCount]
-	gateways := fundedGateways[:s.gatewayInitialCount]
-	applications := fundedApplications[:s.appInitialCount]
+	stakedSuppliers := fundedSuppliers[:s.supplierInitialCount]
+	stakedGateways := fundedGateways[:s.gatewayInitialCount]
+	stakedApplications := fundedApplications[:s.appInitialCount]
 
-	stakedActors := append(suppliers, gateways...)
-	stakedActors = append(stakedActors, applications...)
+	stakedActors := append(stakedSuppliers, stakedGateways...)
+	stakedActors = append(stakedActors, stakedApplications...)
 
-	s.sendInitialActorsStakeMsgs(suppliers, gateways, applications)
+	s.sendInitialActorsStakeMsgs(stakedSuppliers, stakedGateways, stakedApplications)
 	s.ensureStakedActors(s.ctx, stakedActors)
 
 	logger.Info().Msg("Actors staked")
 
 	// Update the list of staked suppliers.
-	s.activeSuppliers = append(s.activeSuppliers, suppliers...)
+	s.activeSuppliers = append(s.activeSuppliers, stakedSuppliers...)
 
 	// In the case of non-ephemeral chain load tests, the available gateways are
 	// not incrementally staked, but are already staked and delegated to, add all
 	// of them to the list of active gateways at the beginning of the test.
 	if !s.isEphemeralChain {
-		gateways = s.populateWithKnownGateways()
+		stakedGateways = s.populateWithKnownGateways()
 	}
 
 	// Delegate the initial applications to the initial gateways
-	s.sendDelegateInitialAppsTxs(applications, gateways)
-	s.ensureDelegatedApps(s.ctx, applications, gateways)
+	s.sendDelegateInitialAppsTxs(stakedApplications, stakedGateways)
+	s.ensureDelegatedApps(s.ctx, stakedApplications, stakedGateways)
 
 	logger.Info().Msg("Apps delegated")
 
 	// Applications and gateways are now ready and will be active in the next session.
-	s.preparedApplications = append(s.preparedApplications, applications...)
-	s.preparedGateways = append(s.preparedGateways, gateways...)
+	s.preparedApplications = append(s.preparedApplications, stakedApplications...)
+	s.preparedGateways = append(s.preparedGateways, stakedGateways...)
 
 	// relayBatchInfoObs maps session information to batch information used to schedule
 	// the relay requests to be sent on the current block.
@@ -473,4 +477,5 @@ func (s *relaysSuite) TheNumberOfFailedRelayRequestsIs(expectedFailedRelays stri
 	require.NoError(s, err)
 
 	require.EqualValues(s, expectedFailedRelaysCount, s.failedRelays.Load())
+	require.EqualValues(s, s.totalRelays.Load(), s.successfulRelays.Load())
 }

@@ -3,7 +3,7 @@
 
 is_ephemeral_chain: true # This should be `true` for LocalNet as it is an ephemeral network
 
-# prc_node is the URL of the RPC node that the load test will use to query the
+# rpc_node is the URL of the RPC node that the load test will use to query the
 # chain and submit transactions.
 rpc_node: http://localhost:26657
 
@@ -44,12 +44,12 @@ gateways:
 
   # Gateway 1; http://localhost:10350/r/gateway1/overview
   - address: pokt15vzxjqklzjtlz7lahe8z2dfe9nm5vxwwmscne4
-    exposed_url: http://localhost:3000/v1 # The gateway url that the user sends relays to (e.g. curl)
+    exposed_url: http://localhost:3000/v1/ # The gateway url that the user sends relays to (e.g. curl)
 
   # Gateway 2; http://localhost:10350/r/gateway2/overview
   - address: pokt15w3fhfyc0lttv7r585e2ncpf6t2kl9uh8rsnyz
-    exposed_url: http://localhost:3001/v1
+    exposed_url: http://localhost:3001/v1/
 
   # Gateway 3; http://localhost:10350/r/gateway3/overview
   - address: pokt1zhmkkd0rh788mc9prfq0m2h88t9ge0j83gnxya
-    exposed_url: http://localhost:3002/v1
+    exposed_url: http://localhost:3002/v1/

@@ -19,7 +19,8 @@ Feature: Loading gateway server with relays
     # Then "0" over servicing events are observed
     # And "0" slashing events are observed
     # And "0" expired claim events are observed
-    # And there is as many reimbursement requests as the number of settled claims
+    # And there are as many reimbursement requests as the number of settled claims
     # And the number of claims submitted and claims settled is the same
     # And the number of proofs submitted and proofs required is the same
     # And the actors onchain balances are as expected
+    # TODO_CONSIDERATION: Revisit for additional interesting test cases.
