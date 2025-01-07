@@ -27,7 +27,7 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 
-// Application defines the type used to store an on-chain definition and state for an application
+// Application defines the type used to store an onchain definition and state for an application
 type Application struct {
 	Address string      `protobuf:"bytes,1,opt,name=address,proto3" json:"address,omitempty"`
 	Stake   *types.Coin `protobuf:"bytes,2,opt,name=stake,proto3" json:"stake,omitempty"`

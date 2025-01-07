@@ -127,7 +127,7 @@ func (sync *synchronousRPCServer) ServeHTTP(writer http.ResponseWriter, request 
 
 	originHost := request.Host
 	// When the proxy is behind a reverse proxy, or is getting its requests from
-	// a CDN or a load balancer, the host header may not contain the on-chain
+	// a CDN or a load balancer, the host header may not contain the onchain
 	// advertized address needed to determine the service that the relay request is for.
 	// These CDNs and reverse proxies usually set the X-Forwarded-Host header
 	// to the original host.

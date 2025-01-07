@@ -11,7 +11,7 @@ var _ client.ApplicationQueryClient = (*AppKeeperQueryClient)(nil)
 
 // AppKeeperQueryClient is a thin wrapper around the AccountKeeper.
 // It does not rely on the QueryClient, and therefore does not make any
-// network requests as in the off-chain implementation.
+// network requests as in the offchain implementation.
 type AppKeeperQueryClient struct {
 	keeper ApplicationKeeper
 }

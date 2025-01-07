@@ -16,7 +16,7 @@ import (
 
 const (
 	// supplierStakeWaitTime is the time to wait for the supplier to be staked before
-	// attempting to (try again to) retrieve the supplier's on-chain record.
+	// attempting to (try again to) retrieve the supplier's onchain record.
 	// This is useful for testing and development purposes, where the supplier
 	// may not be staked before the relay miner starts.
 	supplierStakeWaitTime = 1 * time.Second
@@ -25,13 +25,13 @@ const (
 	// if the supplier is still not staked when the time elapses.
 	//
 	// This is intentionally a larger number because if a RelayMiner is provisioned
-	// for this long (either in testing or in prod) without an associated on-chain
+	// for this long (either in testing or in prod) without an associated onchain
 	// supplier being stake, we need to communicate it either to the operator or
 	// to the developer.
 	supplierMaxStakeWaitTimeMinutes = 20 * time.Minute
 )
 
-// BuildProvidedServices builds the advertised relay servers from the supplier's on-chain advertised services.
+// BuildProvidedServices builds the advertised relay servers from the supplier's onchain advertised services.
 // It populates the relayerProxy's `advertisedRelayServers` map of servers for each service, where each server
 // is responsible for listening for incoming relay requests and relaying them to the supported proxied service.
 func (rp *relayerProxy) BuildProvidedServices(ctx context.Context) error {
@@ -57,7 +57,7 @@ func (rp *relayerProxy) BuildProvidedServices(ctx context.Context) error {
 		// MainNet it might not be that big of a deal, though.
 
 		// Prevent the RelayMiner from stopping by waiting until its associated supplier
-		// is staked and its on-chain record retrieved.
+		// is staked and its onchain record retrieved.
 		supplier, err := rp.waitForSupplierToStake(ctx, supplierOperatorAddress.String())
 		if err != nil {
 			return err
@@ -138,7 +138,7 @@ func (rp *relayerProxy) initializeProxyServers() (proxyServerMap map[string]rela
 	return servers, nil
 }
 
-// waitForSupplierToStake waits in a loop until it gets the on-chain supplier's
+// waitForSupplierToStake waits in a loop until it gets the onchain supplier's
 // information back.
 // This is useful for testing and development purposes, in production the supplier
 // is most likely staked before the relay miner starts.
@@ -148,14 +148,14 @@ func (rp *relayerProxy) waitForSupplierToStake(
 ) (supplier sharedtypes.Supplier, err error) {
 	startTime := time.Now()
 	for {
-		// Get the supplier's on-chain record
+		// Get the supplier's onchain record
 		supplier, err = rp.supplierQuerier.GetSupplier(ctx, supplierOperatorAddress)
 
 		// If the supplier is not found, wait for the supplier to be staked.
 		// This enables provisioning and deploying a RelayMiner without staking a
-		// supplier on-chain. For testing purposes, this is particularly useful
+		// supplier onchain. For testing purposes, this is particularly useful
 		// to eliminate the needed of additional communication & coordination
-		// between on-chain staking and off-chain provisioning.
+		// between onchain staking and offchain provisioning.
 		if err != nil && suppliertypes.ErrSupplierNotFound.Is(err) {
 			rp.logger.Info().Msgf(
 				"Waiting %d seconds for the supplier with address %s to stake",

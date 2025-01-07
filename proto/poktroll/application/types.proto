@@ -14,7 +14,7 @@ import "cosmos_proto/cosmos.proto";
 
 import "poktroll/shared/service.proto";
 
-// Application defines the type used to store an on-chain definition and state for an application
+// Application defines the type used to store an onchain definition and state for an application
 message Application {
   string address = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"]; // The Bech32 address of the application.
   cosmos.base.v1beta1.Coin stake = 2; // The total amount of uPOKT the application has staked

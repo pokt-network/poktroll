@@ -23,7 +23,7 @@ details on how to deploy and operate it.
 
 A RelayMiner requires the following:
 
-1. A staked on-chain [Supplier](../../protocol/actors/supplier.md) to provide services.
+1. A staked onchain [Supplier](../../protocol/actors/supplier.md) to provide services.
 2. A connection to a [Full Node](./full_node_docker.md) to interact with the blockchain.
 
 :::tip

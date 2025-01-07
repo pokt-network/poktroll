@@ -21,10 +21,10 @@ const (
 )
 
 // Upgrade represents a protocol upgrade in code.
-// Once a `MsgSoftwareUpgrade` is submitted on-chain, and `Upgrade.PlanName` matches the `Plan.Name`,
+// Once a `MsgSoftwareUpgrade` is submitted onchain, and `Upgrade.PlanName` matches the `Plan.Name`,
 // the upgrade will be scheduled for execution at the corresponding height.
 type Upgrade struct {
-	// PlanName is a name an upgrade is matched to from the on-chain `upgradetypes.Plan`.
+	// PlanName is a name an upgrade is matched to from the onchain `upgradetypes.Plan`.
 	PlanName string
 
 	// CreateUpgradeHandler returns an upgrade handler that will be executed at the time of the upgrade.

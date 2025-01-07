@@ -19,7 +19,7 @@ import (
 // submitProofs maps over the given claimedSessions observable.
 // For each session batch, it:
 // 1. Calculates the earliest block height at which to submit proofs
-// 2. Waits for said height and submits the proofs on-chain
+// 2. Waits for said height and submits the proofs onchain
 // 3. Maps errors to a new observable and logs them
 // It DOES NOT BLOCK as map operations run in their own goroutines.
 func (rs *relayerSessionsManager) submitProofs(
@@ -76,7 +76,7 @@ func (rs *relayerSessionsManager) mapWaitForEarliestSubmitProofsHeight(
 // waitForEarliestSubmitProofsHeightAndGenerateProofs calculates and waits for
 // (blocking until) the earliest block height, allowed by the protocol, at which
 // proofs can be submitted for a session number which were claimed at createClaimHeight.
-// It is calculated relative to createClaimHeight using on-chain governance parameters
+// It is calculated relative to createClaimHeight using onchain governance parameters
 // and randomized input.
 func (rs *relayerSessionsManager) waitForEarliestSubmitProofsHeightAndGenerateProofs(
 	ctx context.Context,
@@ -256,8 +256,8 @@ func (rs *relayerSessionsManager) proveClaims(
 
 // isProofRequired determines whether a proof is required for the given session's
 // claim based on the current proof module governance parameters.
-// TODO_TECHDEBT: Refactor the method to be static and used both on-chain and off-chain.
-// TODO_INVESTIGATE: Passing a polylog.Logger should allow for on-chain/off-chain
+// TODO_TECHDEBT: Refactor the method to be static and used both onchain and offchain.
+// TODO_INVESTIGATE: Passing a polylog.Logger should allow for onchain/offchain
 // usage of this function but it is currently raising a type error.
 func (rs *relayerSessionsManager) isProofRequired(
 	ctx context.Context,

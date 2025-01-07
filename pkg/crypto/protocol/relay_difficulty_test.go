@@ -362,7 +362,7 @@ func TestRelayDifficulty_EnsureRelayMiningProbabilityIsProportional(t *testing.T
 	// a session tree should have.
 	const targetNumRelays = uint64(10e4)
 
-	// numEstimatedRelays aims to simulate the actual (i.e. off-chain) number of relays
+	// numEstimatedRelays aims to simulate the actual (i.e. offchain) number of relays
 	// a RelayMiner would service successfully.
 	for numEstimatedRelays := uint64(1); numEstimatedRelays < 1e18; numEstimatedRelays *= 10 {
 		// Compute the relay mining difficulty corresponding to the actual number of relays
@@ -410,7 +410,7 @@ func TestRelayDifficulty_TruncateRelayDifficultyHashToBaseSizeDoesNotChangeItsVa
 }
 
 // scaleRelaysFromActualToTarget scales the number of relays (i.e. estimated offchain serviced relays)
-// down to the number of expected on-chain volume applicable relays
+// down to the number of expected onchain volume applicable relays
 func scaleRelaysFromActualToTarget(t *testing.T, relayDifficultyProbability *big.Rat, numRelays uint64) uint64 {
 	numRelaysRat := new(big.Rat).SetUint64(numRelays)
 	volumeApplicableRelaysRat := new(big.Rat).Mul(relayDifficultyProbability, numRelaysRat)
@@ -428,8 +428,8 @@ func TestRelayDifficulty_EnsureRelayMiningMultiplierIsProportional(t *testing.T)
 	// Target Num Relays is the target number of volume applicable relays a session tree should have.
 	const (
 		targetNumRelays   = uint64(10e3) // Target number of volume applicable relays
-		lowVolumeService  = 1e5          // Number of actual off-chain relays serviced by a RelayMiner
-		highVolumeService = 1e7          // Number of actual off-chain relays serviced by a RelayMiner
+		lowVolumeService  = 1e5          // Number of actual offchain relays serviced by a RelayMiner
+		highVolumeService = 1e7          // Number of actual offchain relays serviced by a RelayMiner
 		allowableDelta    = 0.05         // Allow a 5% error margin between estimated probabilities and results
 	)
 

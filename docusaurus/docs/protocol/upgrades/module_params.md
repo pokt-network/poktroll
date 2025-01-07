@@ -7,7 +7,7 @@ sidebar_position: 3
 
 ## Parameters and the DAO
 
-Pocket Network utilizes an off-chain governance mechanism that enables the community to vote on proposals. Once a proposal passes, the DAO can adjust the parameters necessary for the protocol's operation.
+Pocket Network utilizes an offchain governance mechanism that enables the community to vote on proposals. Once a proposal passes, the DAO can adjust the parameters necessary for the protocol's operation.
 
 - [Parameters and the DAO](#parameters-and-the-dao)
 - [Examples](#examples)

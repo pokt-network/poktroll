@@ -494,7 +494,7 @@ func (s *relaysSuite) mapStakingInfoWhenStakingAndDelegatingNewApps(
 	notif *stakingInfoNotif,
 ) (*stakingInfoNotif, bool) {
 	// Ensure that new gateways and suppliers are staked.
-	// Ensure that new applications are funded and have an account entry on-chain
+	// Ensure that new applications are funded and have an account entry onchain
 	// so that they can stake and delegate in the next block.
 	testdelays.WaitAll(
 		func() { s.ensureStakedActors(ctx, notif.newSuppliers) },
@@ -1419,7 +1419,7 @@ func (s *relaysSuite) forEachSettlement(ctx context.Context) {
 	)
 }
 
-// querySharedParams queries the current on-chain shared module parameters for use
+// querySharedParams queries the current onchain shared module parameters for use
 // over the duration of the test.
 func (s *relaysSuite) querySharedParams(queryNodeRPCURL string) {
 	s.Helper()
@@ -1439,7 +1439,7 @@ func (s *relaysSuite) querySharedParams(queryNodeRPCURL string) {
 	s.sharedParams = sharedParams
 }
 
-// queryAppParams queries the current on-chain application module parameters for use
+// queryAppParams queries the current onchain application module parameters for use
 // over the duration of the test.
 func (s *relaysSuite) queryAppParams(queryNodeRPCURL string) {
 	s.Helper()
@@ -1459,7 +1459,7 @@ func (s *relaysSuite) queryAppParams(queryNodeRPCURL string) {
 	s.appParams = appParams
 }
 
-// queryProofParams queries the current on-chain proof module parameters for use
+// queryProofParams queries the current onchain proof module parameters for use
 // over the duration of the test.
 func (s *relaysSuite) queryProofParams(queryNodeRPCURL string) {
 	s.Helper()
@@ -1485,7 +1485,7 @@ func (s *relaysSuite) queryProofParams(queryNodeRPCURL string) {
 	s.proofParams = proofParams
 }
 
-// queryTokenomicsParams queries the current on-chain tokenomics module parameters for use
+// queryTokenomicsParams queries the current onchain tokenomics module parameters for use
 // over the duration of the test.
 func (s *relaysSuite) queryTokenomicsParams(queryNodeRPCURL string) {
 	s.Helper()

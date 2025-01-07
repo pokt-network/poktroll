@@ -12,7 +12,7 @@ This page describes the protocol upgrade process, which is internal to the proto
 - [When is an Upgrade Warranted?](#when-is-an-upgrade-warranted)
 - [Implementing the Upgrade](#implementing-the-upgrade)
 - [Writing an Upgrade Transaction](#writing-an-upgrade-transaction)
-- [Submitting the upgrade on-chain](#submitting-the-upgrade-on-chain)
+- [Submitting the upgrade onchain](#submitting-the-upgrade-onchain)
 - [Testing the Upgrade](#testing-the-upgrade)
   - [LocalNet](#localnet)
   - [DevNet](#devnet)
@@ -23,7 +23,7 @@ This page describes the protocol upgrade process, which is internal to the proto
 
 When a consensus-breaking change is made to the protocol, we must carefully evaluate and implement an upgrade path that allows existing nodes to transition safely from one software version to another without disruption. This process involves several key steps:
 
-1. **Proposal**: The DAO drafts an upgrade proposal using our off-chain governance system.
+1. **Proposal**: The DAO drafts an upgrade proposal using our offchain governance system.
 2. **Implementation**: The proposed changes are implemented in the codebase.
 3. **Testing**: Thorough testing of the proposed changes is conducted in devnet and testnet environments before mainnet deployment.
 4. **Announcement**: Upon successful testing, we announce the upgrade through our social media channels and community forums.
@@ -69,7 +69,7 @@ An upgrade transaction includes a [Plan](https://github.com/cosmos/cosmos-sdk/bl
 - `height`: The height at which an upgrade should be executed and the node will be restarted.
 - `info`: While this field can theoretically contain any information about the upgrade, in practice, `cosmovisor`uses it to obtain information about the binaries. When`cosmovisor` is configured to automatically download binaries, it will pull the binary from the link provided in this field and perform a hash verification (which is optional).
 
-## Submitting the upgrade on-chain
+## Submitting the upgrade onchain
 
 The `MsgSoftwareUpgrade` can be submitted using the following command:
 
@@ -102,7 +102,7 @@ LocalNet currently does not support `cosmovisor` and automatic upgrades. However
 
 3. Run `bash tools/scripts/upgrades/cosmovisor-start-node.sh` to wipe the `~/.poktroll` directory and place binaries in the correct locations.
 
-4. Execute the transaction as shown in [Submitting the upgrade on-chain](#submitting-the-upgrade-on-chain) section above.
+4. Execute the transaction as shown in [Submitting the upgrade onchain](#submitting-the-upgrade-onchain) section above.
 
 ### DevNet
 

@@ -126,7 +126,7 @@ type RelayMinerSupplierConfig struct {
 	// ServerType is the transport protocol used by the supplier, it must match the
 	// type of the relay miner server it is associated with.
 	ServerType RelayMinerServerType
-	// PubliclyExposedEndpoints is a list of hosts advertised on-chain by the supplier,
+	// PubliclyExposedEndpoints is a list of hosts advertised onchain by the supplier,
 	// the corresponding relay miner server will accept relay requests for these hosts.
 	PubliclyExposedEndpoints []string
 	// ServiceConfig is the config of the service that relays will be proxied to.
