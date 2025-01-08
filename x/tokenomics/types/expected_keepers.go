@@ -47,6 +47,7 @@ type ApplicationKeeper interface {
 	UnbondApplication(ctx context.Context, app *apptypes.Application) error
 	EndBlockerUnbondApplications(ctx context.Context) error
 	GetParams(ctx context.Context) (params apptypes.Params)
+	ResetCache()
 }
 
 type ProofKeeper interface {
@@ -65,6 +66,7 @@ type ProofKeeper interface {
 	UpsertProof(ctx context.Context, claim prooftypes.Proof)
 	GetParams(ctx context.Context) prooftypes.Params
 	SetParams(ctx context.Context, params prooftypes.Params) error
+	ResetCache()
 }
 
 type SharedKeeper interface {
@@ -73,6 +75,7 @@ type SharedKeeper interface {
 
 	GetSessionEndHeight(ctx context.Context, queryHeight int64) int64
 	GetProofWindowCloseHeight(ctx context.Context, queryHeight int64) int64
+	ResetCache()
 }
 
 type SessionKeeper interface {
@@ -80,6 +83,7 @@ type SessionKeeper interface {
 	GetBlockHash(ctx context.Context, height int64) []byte
 	StoreBlockHash(ctx context.Context)
 	GetParams(ctx context.Context) sessiontypes.Params
+	ResetCache()
 }
 
 type SupplierKeeper interface {
@@ -87,6 +91,7 @@ type SupplierKeeper interface {
 	GetSupplier(ctx context.Context, supplierOperatorAddr string) (supplier sharedtypes.Supplier, found bool)
 	GetAllSuppliers(ctx context.Context) (suppliers []sharedtypes.Supplier)
 	SetSupplier(ctx context.Context, supplier sharedtypes.Supplier)
+	ResetCache()
 }
 
 type ServiceKeeper interface {
@@ -97,4 +102,5 @@ type ServiceKeeper interface {
 	SetService(ctx context.Context, service sharedtypes.Service)
 	GetParams(ctx context.Context) servicetypes.Params
 	SetParams(ctx context.Context, params servicetypes.Params) error
+	ResetCache()
 }

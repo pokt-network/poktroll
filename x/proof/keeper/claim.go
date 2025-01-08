@@ -22,6 +22,9 @@ func (k Keeper) UpsertClaim(ctx context.Context, claim types.Claim) {
 	sessionId := claim.GetSessionHeader().GetSessionId()
 	primaryKey := types.ClaimPrimaryKey(sessionId, claim.SupplierOperatorAddress)
 	primaryStore.Set(primaryKey, claimBz)
+
+	k.cachedClaims[sessionId] = &claim
+
 	logger.Info(fmt.Sprintf("upserted claim for supplier %s with primaryKey %s", claim.SupplierOperatorAddress, primaryKey))
 
 	// Update the address index: supplierOperatorAddress -> [ClaimPrimaryKey]
@@ -40,7 +43,16 @@ func (k Keeper) UpsertClaim(ctx context.Context, claim types.Claim) {
 
 // GetClaim returns a claim from its index
 func (k Keeper) GetClaim(ctx context.Context, sessionId, supplierOperatorAddr string) (_ types.Claim, isClaimFound bool) {
-	return k.getClaimByPrimaryKey(ctx, types.ClaimPrimaryKey(sessionId, supplierOperatorAddr))
+	if claim, found := k.cachedClaims[sessionId]; found {
+		return *claim, true
+	}
+
+	claim, found := k.getClaimByPrimaryKey(ctx, types.ClaimPrimaryKey(sessionId, supplierOperatorAddr))
+	if found {
+		k.cachedClaims[sessionId] = &claim
+	}
+
+	return claim, found
 }
 
 // RemoveClaim removes a claim from the store
@@ -52,6 +64,7 @@ func (k Keeper) RemoveClaim(ctx context.Context, sessionId, supplierOperatorAddr
 
 	// Check if the claim exists
 	primaryKey := types.ClaimPrimaryKey(sessionId, supplierOperatorAddr)
+	delete(k.cachedClaims, sessionId)
 	foundClaim, isClaimFound := k.getClaimByPrimaryKey(ctx, primaryKey)
 	if !isClaimFound {
 		logger.Error(fmt.Sprintf("trying to delete non-existent claim with primary key %s for supplier %s and session %s", primaryKey, supplierOperatorAddr, sessionId))
@@ -85,6 +98,7 @@ func (k Keeper) GetAllClaims(ctx context.Context) (claims []types.Claim) {
 	for ; iterator.Valid(); iterator.Next() {
 		var claim types.Claim
 		k.cdc.MustUnmarshal(iterator.Value(), &claim)
+		k.cachedClaims[claim.GetSessionHeader().GetSessionId()] = &claim
 		claims = append(claims, claim)
 	}
 

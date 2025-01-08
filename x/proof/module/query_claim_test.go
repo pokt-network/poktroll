@@ -111,6 +111,7 @@ func TestClaim_Show(t *testing.T) {
 				require.Equal(t, test.claim.GetSupplierOperatorAddress(), resp.Claim.GetSupplierOperatorAddress())
 				require.Equal(t, test.claim.GetRootHash(), resp.Claim.GetRootHash())
 				require.Equal(t, test.claim.GetSessionHeader(), resp.Claim.GetSessionHeader())
+				net.WaitForNextBlock()
 			}
 		})
 	}

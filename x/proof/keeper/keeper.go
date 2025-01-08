@@ -38,6 +38,10 @@ type (
 		ringClient     crypto.RingClient
 		accountQuerier client.AccountQueryClient
 		sharedQuerier  client.SharedQueryClient
+
+		cachedParams *types.Params
+		cachedProofs map[string]*types.Proof
+		cachedClaims map[string]*types.Claim
 	}
 )
 
@@ -101,6 +105,9 @@ func NewKeeper(
 		ringClient:     ringKeeperClient,
 		accountQuerier: accountQuerier,
 		sharedQuerier:  sharedQuerier,
+
+		cachedProofs: make(map[string]*types.Proof),
+		cachedClaims: make(map[string]*types.Claim),
 	}
 }
 

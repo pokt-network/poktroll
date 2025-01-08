@@ -15,7 +15,8 @@ var _ client.AccountQueryClient = (*AccountKeeperQueryClient)(nil)
 // It does not rely on the QueryClient, and therefore does not make any
 // network requests as in the off-chain implementation.
 type AccountKeeperQueryClient struct {
-	keeper AccountKeeper
+	keeper             AccountKeeper
+	accountPubKeyCache map[string]cryptotypes.PubKey
 }
 
 // NewAccountKeeperQueryClient returns a new AccountQueryClient that is backed
@@ -24,7 +25,10 @@ type AccountKeeperQueryClient struct {
 // provided address.
 // It should be injected into the PubKeyClient when initialized from within the a keeper.
 func NewAccountKeeperQueryClient(accountKeeper AccountKeeper) client.AccountQueryClient {
-	return &AccountKeeperQueryClient{keeper: accountKeeper}
+	return &AccountKeeperQueryClient{
+		keeper:             accountKeeper,
+		accountPubKeyCache: make(map[string]cryptotypes.PubKey),
+	}
 }
 
 // GetAccount returns the account associated with the provided address.
@@ -58,6 +62,10 @@ func (accountQueryClient *AccountKeeperQueryClient) GetPubKeyFromAddress(
 	ctx context.Context,
 	address string,
 ) (cryptotypes.PubKey, error) {
+	if acc, found := accountQueryClient.accountPubKeyCache[address]; found {
+		return acc, nil
+	}
+
 	acc, err := accountQueryClient.GetAccount(ctx, address)
 	if err != nil {
 		return nil, err
@@ -72,5 +80,11 @@ func (accountQueryClient *AccountKeeperQueryClient) GetPubKeyFromAddress(
 		return nil, ErrProofPubKeyNotFound
 	}
 
+	accountQueryClient.accountPubKeyCache[address] = pubKey
+
 	return pubKey, nil
+}
+
+func (accountQueryClient *AccountKeeperQueryClient) ResetCache() {
+	clear(accountQueryClient.accountPubKeyCache)
 }

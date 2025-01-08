@@ -36,6 +36,8 @@ type Keeper struct {
 	sharedQuerier client.SharedQueryClient
 
 	tokenLogicModules []tlm.TokenLogicModule
+
+	cachedParams *types.Params
 }
 
 func NewKeeper(

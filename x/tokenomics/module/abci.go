@@ -66,5 +66,7 @@ func EndBlocker(ctx sdk.Context, k keeper.Keeper) (err error) {
 		telemetry.RelayEMAGauge(newRelayMiningDifficulty.NumRelaysEma, serviceId)
 	}
 
+	k.ResetCache()
+
 	return nil
 }

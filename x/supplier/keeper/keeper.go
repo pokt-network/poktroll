@@ -8,6 +8,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 	"github.com/pokt-network/poktroll/x/supplier/types"
 )
 
@@ -24,6 +25,9 @@ type (
 		bankKeeper    types.BankKeeper
 		sharedKeeper  types.SharedKeeper
 		serviceKeeper types.ServiceKeeper
+
+		cachedParams    *types.Params
+		cachedSuppliers map[string]*sharedtypes.Supplier
 	}
 )
 
@@ -50,6 +54,8 @@ func NewKeeper(
 		bankKeeper:    bankKeeper,
 		sharedKeeper:  sharedKeeper,
 		serviceKeeper: serviceKeeper,
+
+		cachedSuppliers: make(map[string]*sharedtypes.Supplier),
 	}
 }
 

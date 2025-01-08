@@ -13,6 +13,7 @@ import (
 
 // SetService set a specific service in the store from its index
 func (k Keeper) SetService(ctx context.Context, service sharedtypes.Service) {
+	k.cachedServices[service.Id] = &service
 	storeAdapter := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
 	store := prefix.NewStore(storeAdapter, types.KeyPrefix(types.ServiceKeyPrefix))
 	serviceBz := k.cdc.MustMarshal(&service)
@@ -24,6 +25,9 @@ func (k Keeper) GetService(
 	ctx context.Context,
 	serviceId string,
 ) (service sharedtypes.Service, found bool) {
+	if service, found := k.cachedServices[service.Id]; found {
+		return *service, true
+	}
 	storeAdapter := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
 	store := prefix.NewStore(storeAdapter, types.KeyPrefix(types.ServiceKeyPrefix))
 
@@ -33,6 +37,7 @@ func (k Keeper) GetService(
 	}
 
 	k.cdc.MustUnmarshal(serviceBz, &service)
+	k.cachedServices[service.Id] = &service
 	return service, true
 }
 
@@ -41,6 +46,7 @@ func (k Keeper) RemoveService(
 	ctx context.Context,
 	serviceId string,
 ) {
+	delete(k.cachedServices, serviceId)
 	storeAdapter := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
 	store := prefix.NewStore(storeAdapter, types.KeyPrefix(types.ServiceKeyPrefix))
 	store.Delete(types.ServiceKey(serviceId))
@@ -57,6 +63,7 @@ func (k Keeper) GetAllServices(ctx context.Context) (services []sharedtypes.Serv
 	for ; iterator.Valid(); iterator.Next() {
 		var service sharedtypes.Service
 		k.cdc.MustUnmarshal(iterator.Value(), &service)
+		k.cachedServices[service.Id] = &service
 		services = append(services, service)
 	}
 

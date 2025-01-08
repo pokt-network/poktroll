@@ -9,6 +9,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/pokt-network/poktroll/x/service/types"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 type (
@@ -22,6 +23,10 @@ type (
 		authority string
 
 		bankKeeper types.BankKeeper
+
+		cachedParams                *types.Params
+		cachedServices              map[string]*sharedtypes.Service
+		cachedRelayMiningDifficulty map[string]*types.RelayMiningDifficulty
 	}
 )
 
@@ -44,6 +49,9 @@ func NewKeeper(
 		logger:       logger,
 
 		bankKeeper: bankKeeper,
+
+		cachedServices:              make(map[string]*sharedtypes.Service),
+		cachedRelayMiningDifficulty: make(map[string]*types.RelayMiningDifficulty),
 	}
 }
 

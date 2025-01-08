@@ -144,6 +144,7 @@ func TestClaimQuerySingle(t *testing.T) {
 					nullify.Fill(response),
 				)
 			}
+			keeper.ResetCache()
 		})
 	}
 }

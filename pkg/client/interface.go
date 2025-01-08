@@ -269,6 +269,7 @@ type AccountQueryClient interface {
 
 	// GetPubKeyFromAddress returns the public key of the given address.
 	GetPubKeyFromAddress(ctx context.Context, address string) (cryptotypes.PubKey, error)
+	ResetCache()
 }
 
 // ApplicationQueryClient defines an interface that enables the querying of the

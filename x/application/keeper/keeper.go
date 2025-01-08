@@ -25,6 +25,9 @@ type (
 		accountKeeper types.AccountKeeper
 		gatewayKeeper types.GatewayKeeper
 		sharedKeeper  types.SharedKeeper
+
+		cachedParams *types.Params
+		cachedApps   map[string]*types.Application
 	}
 )
 
@@ -53,6 +56,8 @@ func NewKeeper(
 		accountKeeper: accountKeeper,
 		gatewayKeeper: gatewayKeeper,
 		sharedKeeper:  sharedKeeper,
+
+		cachedApps: make(map[string]*types.Application),
 	}
 }
 

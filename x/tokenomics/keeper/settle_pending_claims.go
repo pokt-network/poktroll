@@ -283,6 +283,8 @@ func (k Keeper) SettlePendingClaims(ctx cosmostypes.Context) (
 		blockHeight,
 	))
 
+	k.ResetCache()
+
 	return settledResults, expiredResults, nil
 }
 

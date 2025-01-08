@@ -10,6 +10,10 @@ import (
 
 // GetParams get all parameters as types.Params
 func (k Keeper) GetParams(ctx context.Context) (params types.Params) {
+	if k.cachedParams != nil {
+		return *k.cachedParams
+	}
+
 	store := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
 	paramsBz := store.Get(types.ParamsKey)
 	if paramsBz == nil {
@@ -17,11 +21,13 @@ func (k Keeper) GetParams(ctx context.Context) (params types.Params) {
 	}
 
 	k.cdc.MustUnmarshal(paramsBz, &params)
+	k.cachedParams = &params
 	return params
 }
 
 // SetParams set the params
 func (k Keeper) SetParams(ctx context.Context, params types.Params) error {
+	k.cachedParams = &params
 	store := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
 	paramsBz, err := k.cdc.Marshal(&params)
 	if err != nil {
