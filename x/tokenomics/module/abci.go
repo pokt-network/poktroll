@@ -51,7 +51,7 @@ func EndBlocker(ctx sdk.Context, k keeper.Keeper) (err error) {
 	}
 	logger.Info(fmt.Sprintf(
 		"successfully updated the relay mining difficulty for %d services",
-		len(settledResults.GetServiceIds()),
+		len(settledRelaysPerServiceIdMap),
 	))
 
 	// Telemetry - emit telemetry for each service's relay mining difficulty.
@@ -66,7 +66,7 @@ func EndBlocker(ctx sdk.Context, k keeper.Keeper) (err error) {
 		telemetry.RelayEMAGauge(newRelayMiningDifficulty.NumRelaysEma, serviceId)
 	}
 
-	k.ResetCache()
+	k.ClearCache()
 
 	return nil
 }

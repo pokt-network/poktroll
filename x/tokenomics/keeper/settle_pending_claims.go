@@ -38,6 +38,10 @@ func (k Keeper) SettlePendingClaims(ctx cosmostypes.Context) (
 		return settledResults, expiredResults, err
 	}
 
+	if len(expiringClaims) > 0 {
+		logger.Info("-----SettlePendingClaims-----")
+	}
+
 	// Capture the applications initial stake which will be used to calculate the
 	// max share any claim could burn from the application stake.
 	// This ensures that each supplier can calculate the maximum amount it can take
@@ -282,8 +286,6 @@ func (k Keeper) SettlePendingClaims(ctx cosmostypes.Context) (
 		expiredResults.GetNumClaims(),
 		blockHeight,
 	))
-
-	k.ResetCache()
 
 	return settledResults, expiredResults, nil
 }

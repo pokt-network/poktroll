@@ -30,8 +30,7 @@ type (
 		supplierKeeper    types.SupplierKeeper
 		sharedKeeper      types.SharedKeeper
 
-		cachedParams *types.Params
-		blockHashes  map[int64][]byte
+		cache *types.Cache
 	}
 )
 
@@ -63,7 +62,9 @@ func NewKeeper(
 		supplierKeeper:    supplierKeeper,
 		sharedKeeper:      sharedKeeper,
 
-		blockHashes: make(map[int64][]byte),
+		cache: &types.Cache{
+			BlockHashes: make(map[int64][]byte),
+		},
 	}
 }
 
@@ -89,7 +90,7 @@ func (k Keeper) StoreBlockHash(goCtx context.Context) {
 	// ctx.BlocHeight() is the height of the block being validated.
 	height := ctx.BlockHeight()
 
-	k.blockHashes[height] = hash
+	k.cache.BlockHashes[height] = hash
 
 	storeAdapter := runtime.KVStoreAdapter(k.storeService.OpenKVStore(goCtx))
 	store := prefix.NewStore(storeAdapter, types.KeyPrefix(types.BlockHashKeyPrefix))

@@ -2,6 +2,7 @@ package types
 
 import (
 	"context"
+	fmt "fmt"
 
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	"github.com/cosmos/cosmos-sdk/types"
@@ -63,6 +64,7 @@ func (accountQueryClient *AccountKeeperQueryClient) GetPubKeyFromAddress(
 	address string,
 ) (cryptotypes.PubKey, error) {
 	if acc, found := accountQueryClient.accountPubKeyCache[address]; found {
+		fmt.Println("-----PubKey cache hit-----")
 		return acc, nil
 	}
 
@@ -85,6 +87,6 @@ func (accountQueryClient *AccountKeeperQueryClient) GetPubKeyFromAddress(
 	return pubKey, nil
 }
 
-func (accountQueryClient *AccountKeeperQueryClient) ResetCache() {
+func (accountQueryClient *AccountKeeperQueryClient) ClearCache() {
 	clear(accountQueryClient.accountPubKeyCache)
 }

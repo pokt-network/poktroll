@@ -106,5 +106,5 @@ func (aq *accQuerier) GetPubKeyFromAddress(ctx context.Context, address string) 
 	return pubKey, nil
 }
 
-func (aq *accQuerier) ResetCache() {
+func (aq *accQuerier) ClearCache() {
 }

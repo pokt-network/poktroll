@@ -12,8 +12,8 @@ import (
 
 // SetApplication set a specific application in the store from its index
 func (k Keeper) SetApplication(ctx context.Context, application types.Application) {
-	if k.cachedApps[application.Address] != nil {
-		k.cachedApps[application.Address] = &application
+	if k.cache.Applications[application.Address] != nil {
+		k.cache.Applications[application.Address] = &application
 	}
 
 	storeAdapter := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
@@ -27,7 +27,8 @@ func (k Keeper) GetApplication(
 	ctx context.Context,
 	appAddr string,
 ) (app types.Application, found bool) {
-	if app, found := k.cachedApps[appAddr]; found {
+	if app, found := k.cache.Applications[appAddr]; found {
+		k.logger.Info("-----Application cache hit-----")
 		return *app, true
 	}
 
@@ -53,14 +54,14 @@ func (k Keeper) GetApplication(
 		app.DelegateeGatewayAddresses = make([]string, 0)
 	}
 
-	k.cachedApps[appAddr] = &app
+	k.cache.Applications[appAddr] = &app
 
 	return app, true
 }
 
 // RemoveApplication removes a application from the store
 func (k Keeper) RemoveApplication(ctx context.Context, appAddr string) {
-	delete(k.cachedApps, appAddr)
+	delete(k.cache.Applications, appAddr)
 
 	storeAdapter := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
 	store := prefix.NewStore(storeAdapter, types.KeyPrefix(types.ApplicationKeyPrefix))
@@ -85,15 +86,10 @@ func (k Keeper) GetAllApplications(ctx context.Context) (apps []types.Applicatio
 			app.PendingUndelegations = make(map[uint64]types.UndelegatingGatewayList)
 		}
 
-		k.cachedApps[app.Address] = &app
+		k.cache.Applications[app.Address] = &app
 
 		apps = append(apps, app)
 	}
 
 	return
-}
-
-func (k Keeper) ResetCache() {
-	k.cachedParams = nil
-	clear(k.cachedApps)
 }

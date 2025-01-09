@@ -23,7 +23,7 @@ func (k Keeper) UpsertProof(ctx context.Context, proof types.Proof) {
 	primaryKey := types.ProofPrimaryKey(sessionId, proof.GetSupplierOperatorAddress())
 	primaryStore.Set(primaryKey, proofBz)
 
-	k.cachedProofs[sessionId] = &proof
+	k.cache.Proofs[sessionId] = &proof
 
 	logger.Info(
 		fmt.Sprintf("upserted proof for supplier %s with primaryKey %s", proof.GetSupplierOperatorAddress(), primaryKey),
@@ -45,13 +45,14 @@ func (k Keeper) UpsertProof(ctx context.Context, proof types.Proof) {
 
 // GetProof returns a proof from its index
 func (k Keeper) GetProof(ctx context.Context, sessionId, supplierOperatorAddr string) (_ types.Proof, isProofFound bool) {
-	if proof, found := k.cachedProofs[sessionId]; found {
+	if proof, found := k.cache.Proofs[sessionId]; found {
+		k.logger.Info("-----Proof cache hit-----")
 		return *proof, true
 	}
 
 	proof, found := k.getProofByPrimaryKey(ctx, types.ProofPrimaryKey(sessionId, supplierOperatorAddr))
 	if found {
-		k.cachedProofs[sessionId] = &proof
+		k.cache.Proofs[sessionId] = &proof
 	}
 
 	return proof, found
@@ -66,7 +67,7 @@ func (k Keeper) RemoveProof(ctx context.Context, sessionId, supplierOperatorAddr
 
 	// Check if the proof exists
 	primaryKey := types.ProofPrimaryKey(sessionId, supplierOperatorAddr)
-	delete(k.cachedProofs, sessionId)
+	delete(k.cache.Proofs, sessionId)
 	foundProof, isProofFound := k.getProofByPrimaryKey(ctx, primaryKey)
 	if !isProofFound {
 		logger.Error(
@@ -114,7 +115,7 @@ func (k Keeper) GetAllProofs(ctx context.Context) (proofs []types.Proof) {
 	for ; iterator.Valid(); iterator.Next() {
 		var proof types.Proof
 		k.cdc.MustUnmarshal(iterator.Value(), &proof)
-		k.cachedProofs[proof.GetSessionHeader().GetSessionId()] = &proof
+		k.cache.Proofs[proof.GetSessionHeader().GetSessionId()] = &proof
 		proofs = append(proofs, proof)
 	}
 

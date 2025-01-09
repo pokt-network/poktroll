@@ -13,7 +13,7 @@ import (
 
 // SetRelayMiningDifficulty set a specific relayMiningDifficulty in the store from its index
 func (k Keeper) SetRelayMiningDifficulty(ctx context.Context, relayMiningDifficulty types.RelayMiningDifficulty) {
-	k.cachedRelayMiningDifficulty[relayMiningDifficulty.ServiceId] = &relayMiningDifficulty
+	k.cache.RelayMiningDifficulty[relayMiningDifficulty.ServiceId] = &relayMiningDifficulty
 	storeAdapter := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
 	store := prefix.NewStore(storeAdapter, types.KeyPrefix(types.RelayMiningDifficultyKeyPrefix))
 	difficultyBz := k.cdc.MustMarshal(&relayMiningDifficulty)
@@ -27,7 +27,8 @@ func (k Keeper) GetRelayMiningDifficulty(
 	ctx context.Context,
 	serviceId string,
 ) (difficulty types.RelayMiningDifficulty, found bool) {
-	if difficulty, found := k.cachedRelayMiningDifficulty[serviceId]; found {
+	if difficulty, found := k.cache.RelayMiningDifficulty[serviceId]; found {
+		k.logger.Info("-----Difficulty cache hit-----")
 		return *difficulty, true
 	}
 	storeAdapter := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
@@ -51,7 +52,7 @@ func (k Keeper) GetRelayMiningDifficulty(
 	}
 
 	k.cdc.MustUnmarshal(difficultyBz, &difficulty)
-	k.cachedRelayMiningDifficulty[serviceId] = &difficulty
+	k.cache.RelayMiningDifficulty[serviceId] = &difficulty
 	return difficulty, true
 }
 
@@ -62,7 +63,7 @@ func (k Keeper) RemoveRelayMiningDifficulty(
 ) {
 	logger := k.Logger().With("method", "RemoveRelayMiningDifficulty")
 
-	delete(k.cachedRelayMiningDifficulty, serviceId)
+	delete(k.cache.RelayMiningDifficulty, serviceId)
 
 	storeAdapter := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
 	store := prefix.NewStore(storeAdapter, types.KeyPrefix(types.RelayMiningDifficultyKeyPrefix))
@@ -91,7 +92,7 @@ func (k Keeper) GetAllRelayMiningDifficulty(ctx context.Context) (list []types.R
 	for ; iterator.Valid(); iterator.Next() {
 		var difficulty types.RelayMiningDifficulty
 		k.cdc.MustUnmarshal(iterator.Value(), &difficulty)
-		k.cachedRelayMiningDifficulty[difficulty.ServiceId] = &difficulty
+		k.cache.RelayMiningDifficulty[difficulty.ServiceId] = &difficulty
 		list = append(list, difficulty)
 	}
 

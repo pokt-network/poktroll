@@ -24,9 +24,7 @@ type (
 
 		bankKeeper types.BankKeeper
 
-		cachedParams                *types.Params
-		cachedServices              map[string]*sharedtypes.Service
-		cachedRelayMiningDifficulty map[string]*types.RelayMiningDifficulty
+		cache *types.Cache
 	}
 )
 
@@ -50,9 +48,15 @@ func NewKeeper(
 
 		bankKeeper: bankKeeper,
 
-		cachedServices:              make(map[string]*sharedtypes.Service),
-		cachedRelayMiningDifficulty: make(map[string]*types.RelayMiningDifficulty),
+		cache: &types.Cache{
+			Services:              make(map[string]*sharedtypes.Service),
+			RelayMiningDifficulty: make(map[string]*types.RelayMiningDifficulty),
+		},
 	}
+}
+
+func (k Keeper) ClearCache() {
+	k.cache.Clear()
 }
 
 // GetAuthority returns the module's authority.

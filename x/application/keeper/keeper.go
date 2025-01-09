@@ -26,8 +26,7 @@ type (
 		gatewayKeeper types.GatewayKeeper
 		sharedKeeper  types.SharedKeeper
 
-		cachedParams *types.Params
-		cachedApps   map[string]*types.Application
+		cache *types.Cache
 	}
 )
 
@@ -57,8 +56,14 @@ func NewKeeper(
 		gatewayKeeper: gatewayKeeper,
 		sharedKeeper:  sharedKeeper,
 
-		cachedApps: make(map[string]*types.Application),
+		cache: &types.Cache{
+			Applications: make(map[string]*types.Application),
+		},
 	}
+}
+
+func (k Keeper) ClearCache() {
+	k.cache.Clear()
 }
 
 // GetAuthority returns the module's authority.

@@ -37,7 +37,7 @@ type Keeper struct {
 
 	tokenLogicModules []tlm.TokenLogicModule
 
-	cachedParams *types.Params
+	cache *types.Cache
 }
 
 func NewKeeper(
@@ -84,6 +84,7 @@ func NewKeeper(
 		sharedQuerier: sharedQuerier,
 
 		tokenLogicModules: tokenLogicModules,
+		cache:             &types.Cache{},
 	}
 }
 

@@ -39,9 +39,7 @@ type (
 		accountQuerier client.AccountQueryClient
 		sharedQuerier  client.SharedQueryClient
 
-		cachedParams *types.Params
-		cachedProofs map[string]*types.Proof
-		cachedClaims map[string]*types.Claim
+		cache *types.Cache
 	}
 )
 
@@ -106,9 +104,16 @@ func NewKeeper(
 		accountQuerier: accountQuerier,
 		sharedQuerier:  sharedQuerier,
 
-		cachedProofs: make(map[string]*types.Proof),
-		cachedClaims: make(map[string]*types.Claim),
+		cache: &types.Cache{
+			Proofs: make(map[string]*types.Proof),
+			Claims: make(map[string]*types.Claim),
+		},
 	}
+}
+
+func (k Keeper) ClearCache() {
+	k.cache.Clear()
+	k.accountQuerier.ClearCache()
 }
 
 // GetAuthority returns the module's authority.

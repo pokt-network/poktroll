@@ -13,7 +13,7 @@ import (
 
 // SetSupplier set a specific supplier in the store from its index
 func (k Keeper) SetSupplier(ctx context.Context, supplier sharedtypes.Supplier) {
-	k.cachedSuppliers[supplier.OperatorAddress] = &supplier
+	k.cache.Suppliers[supplier.OperatorAddress] = &supplier
 	storeAdapter := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
 	store := prefix.NewStore(storeAdapter, types.KeyPrefix(types.SupplierKeyOperatorPrefix))
 	supplierBz := k.cdc.MustMarshal(&supplier)
@@ -27,7 +27,8 @@ func (k Keeper) GetSupplier(
 	ctx context.Context,
 	supplierOperatorAddr string,
 ) (supplier sharedtypes.Supplier, found bool) {
-	if supplier, found := k.cachedSuppliers[supplierOperatorAddr]; found {
+	if supplier, found := k.cache.Suppliers[supplierOperatorAddr]; found {
+		k.logger.Info("-----Supplier cache hit-----")
 		return *supplier, true
 	}
 
@@ -40,13 +41,13 @@ func (k Keeper) GetSupplier(
 	}
 
 	k.cdc.MustUnmarshal(supplierBz, &supplier)
-	k.cachedSuppliers[supplier.OperatorAddress] = &supplier
+	k.cache.Suppliers[supplier.OperatorAddress] = &supplier
 	return supplier, true
 }
 
 // RemoveSupplier removes a supplier from the store
 func (k Keeper) RemoveSupplier(ctx context.Context, supplierOperatorAddress string) {
-	delete(k.cachedSuppliers, supplierOperatorAddress)
+	delete(k.cache.Suppliers, supplierOperatorAddress)
 	storeAdapter := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
 	store := prefix.NewStore(storeAdapter, types.KeyPrefix(types.SupplierKeyOperatorPrefix))
 	store.Delete(types.SupplierOperatorKey(supplierOperatorAddress))
@@ -63,15 +64,15 @@ func (k Keeper) GetAllSuppliers(ctx context.Context) (suppliers []sharedtypes.Su
 	for ; iterator.Valid(); iterator.Next() {
 		var supplier sharedtypes.Supplier
 		k.cdc.MustUnmarshal(iterator.Value(), &supplier)
-		k.cachedSuppliers[supplier.OperatorAddress] = &supplier
+		k.cache.Suppliers[supplier.OperatorAddress] = &supplier
 		suppliers = append(suppliers, supplier)
 	}
 
 	return
 }
 
-func (k Keeper) ResetCache() {
-	clear(k.cachedSuppliers)
+func (k Keeper) ClearCache() {
+	k.cache.Clear()
 }
 
 // TODO_OPTIMIZE: Index suppliers by service ID

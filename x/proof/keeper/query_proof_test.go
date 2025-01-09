@@ -127,7 +127,7 @@ func TestProofQuerySingle(t *testing.T) {
 					nullify.Fill(response),
 				)
 			}
-			keeper.ResetCache()
+			keeper.ClearCache()
 		})
 	}
 }
