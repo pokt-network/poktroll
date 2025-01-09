@@ -15,6 +15,7 @@ import (
 	cosmoskeyring "github.com/cosmos/cosmos-sdk/crypto/keyring"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/golang/mock/gomock"
+	"github.com/spf13/pflag"
 	"github.com/stretchr/testify/require"
 
 	"github.com/pokt-network/poktroll/pkg/client"
@@ -245,10 +246,19 @@ func NewAnyTimesTxTxContext(
 ) (*mockclient.MockTxContext, client.TxContext) {
 	t.Helper()
 
-	var (
-		ctrl    = gomock.NewController(t)
-		flagSet = testclient.NewLocalnetFlagSet(t)
-	)
+	flagSet := testclient.NewLocalnetFlagSet(t)
+	return NewE2ETxContext(t, keyring, flagSet)
+}
+
+// TODO_IN_THIS_COMMIT: godoc...
+func NewE2ETxContext(
+	t *testing.T,
+	keyring cosmoskeyring.Keyring,
+	flagSet *pflag.FlagSet,
+) (*mockclient.MockTxContext, client.TxContext) {
+	t.Helper()
+
+	var ctrl = gomock.NewController(t)
 
 	// intercept #GetAccountNumberSequence() call to mock response and prevent actual query
 	accountRetrieverMock := mockclient.NewMockAccountRetriever(ctrl)

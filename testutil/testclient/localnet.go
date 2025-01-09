@@ -100,10 +100,19 @@ func NewLocalnetClientCtx(t gocuke.TestingT, flagSet *pflag.FlagSet) *client.Con
 func NewLocalnetFlagSet(t gocuke.TestingT) *pflag.FlagSet {
 	t.Helper()
 
+	return NewFlagSet(t, CometLocalTCPURL)
+}
+
+// TODO_IN_THIS_COMMIT: godoc...
+func NewFlagSet(t gocuke.TestingT, cometTCPURL string) *pflag.FlagSet {
+	t.Helper()
+
 	mockFlagSet := pflag.NewFlagSet("test", pflag.ContinueOnError)
 	// TODO_IMPROVE: It would be nice if the value could be set correctly based
 	// on whether the test using it is running in tilt or not.
-	mockFlagSet.String(flags.FlagNode, CometLocalTCPURL, "use localnet poktrolld node")
+	mockFlagSet.Bool(flags.FlagGRPCInsecure, true, "use insecure grpc connection")
+	mockFlagSet.String(flags.FlagGRPC, cometTCPURL, "use localnet poktrolld node")
+	//mockFlagSet.String(flags.FlagNode, cometTCPURL, "use localnet poktrolld node")
 	mockFlagSet.String(flags.FlagHome, "", "use localnet poktrolld node")
 	mockFlagSet.String(flags.FlagKeyringBackend, "test", "use test keyring")
 	mockFlagSet.String(flags.FlagChainID, app.Name, "use poktroll chain-id")

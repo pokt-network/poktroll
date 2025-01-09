@@ -819,6 +819,9 @@ func (app *App) NextBlock(t *testing.T) {
 		Time:   app.sdkCtx.BlockTime(),
 		// Randomize the proposer address for each block.
 		ProposerAddress: sample.ConsAddress().Bytes(),
+		DecidedLastCommit: cmtabcitypes.CommitInfo{
+			Votes: []cmtabcitypes.VoteInfo{{}},
+		},
 	})
 	require.NoError(t, err)
 
@@ -961,6 +964,11 @@ func (app *App) setupDefaultActorsState(
 	// Commit all the changes above by finalizing, committing, and moving
 	// to the next block.
 	app.NextBlock(t)
+}
+
+// TODO_IN_THIS_COMMIT: godoc...
+func (app *App) GetModuleManager() module.Manager {
+	return app.moduleManager
 }
 
 // fundAccount mints and sends amountUpokt tokens to the given recipientAddr.

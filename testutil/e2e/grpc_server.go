@@ -6,32 +6,16 @@ import (
 	"strings"
 	"testing"
 
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/reflection"
-	"google.golang.org/protobuf/proto"
-
 	"github.com/cosmos/cosmos-sdk/baseapp"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"google.golang.org/grpc"
+	"google.golang.org/protobuf/proto"
 )
 
 // newGRPCServer creates and configures a new gRPC server for the E2EApp
 func newGRPCServer(app *E2EApp, t *testing.T) *grpc.Server {
 	grpcServer := grpc.NewServer()
-	reflection.Register(grpcServer)
-
-	forwarder := &grpcForwarderServer{
-		queryHelper: app.QueryHelper(),
-		app:         app,
-		t:           t,
-	}
-
-	grpcServer.RegisterService(&grpc.ServiceDesc{
-		ServiceName: "cosmos.Service",
-		HandlerType: (*interface{})(nil),
-		Methods:     []grpc.MethodDesc{},
-		Streams:     []grpc.StreamDesc{},
-		Metadata:    "",
-	}, forwarder)
+	app.RegisterGRPCServer(grpcServer)
 
 	return grpcServer
 }
@@ -94,3 +78,100 @@ func (s *grpcForwarderServer) NewStream(ctx context.Context, desc *grpc.StreamDe
 func isQuery(method string) bool {
 	return strings.Contains(method, ".Query/")
 }
+
+//func newGRPCServer(app *E2EApp, t *testing.T) *grpc.Server {
+//	grpcServer := grpc.NewServer()
+//	reflection.Register(grpcServer)
+//
+//	forwarder := &grpcForwarderServer{
+//		app:         app,
+//		t:           t,
+//		queryHelper: app.QueryHelper(),
+//		msgRouter:   app.MsgServiceRouter(),
+//		msgHandlers: map[string]interface{}{},
+//	}
+//
+//	// Forward all gRPC messages through our forwarder
+//	sd := &grpc.ServiceDesc{
+//		ServiceName: "cosmos.Service",
+//		HandlerType: (*interface{})(nil),
+//		Methods: []grpc.MethodDesc{
+//			{
+//				MethodName: "HandleMessage",
+//				Handler:    forwarder.handleMessageGeneric,
+//			},
+//		},
+//	}
+//	grpcServer.RegisterService(sd, forwarder)
+//
+//	return grpcServer
+//}
+//
+//type grpcForwarderServer struct {
+//	app         *E2EApp
+//	t           *testing.T
+//	queryHelper *baseapp.QueryServiceTestHelper
+//	msgRouter   *baseapp.MsgServiceRouter
+//	msgHandlers map[string]interface{}
+//}
+//
+//func (s *grpcForwarderServer) handleMessageGeneric(
+//	srv interface{},
+//	ctx context.Context,
+//	dec func(interface{}) error,
+//	interceptor grpc.UnaryServerInterceptor,
+//) (interface{}, error) {
+//	msg, ok := srv.(sdk.Msg)
+//	if !ok {
+//		return nil, fmt.Errorf("invalid message type: %T", srv)
+//	}
+//
+//	// Use the app's existing message handling infrastructure
+//	msgRes, err := s.app.RunMsg(s.t, msg)
+//	if err != nil {
+//		return nil, err
+//	}
+//
+//	return msgRes, nil
+//}
+
+//func newGRPCServer(app *E2EApp, t *testing.T) *grpc.Server {
+//	grpcServer := grpc.NewServer()
+//	reflection.Register(grpcServer)
+//
+//	// Register a service handler that forwards to MsgServiceRouter
+//	msgHandler := &grpcForwarderServer{app: app, t: t}
+//	serverServiceDesc := &grpc.ServiceDesc{
+//		ServiceName: "cosmos.msg.v1.Msg",
+//		HandlerType: (*interface{})(nil),
+//		Methods: []grpc.MethodDesc{{
+//			MethodName: "HandleMessage",
+//			Handler: func(srv interface{}, ctx context.Context, dec func(interface{}) error, _ grpc.UnaryServerInterceptor) (interface{}, error) {
+//				var msg sdk.Msg
+//				if err := dec(&msg); err != nil {
+//					return nil, err
+//				}
+//				return msgHandler.app.RunMsg(msgHandler.t, msg)
+//			},
+//		}},
+//	}
+//	grpcServer.RegisterService(serverServiceDesc, msgHandler)
+//
+//	// Set up the gRPC-Gateway mux
+//	mux := runtime.NewServeMux()
+//	opts := []grpc.DialOption{grpc.WithTransportCredentials(insecure.NewCredentials())}
+//
+//	// Register all your service handlers with the mux
+//	if err := gatewaytypes.RegisterMsgHandlerFromEndpoint(context.Background(), mux, app.grpcListener.Addr().String(), opts); err != nil {
+//		panic(err)
+//	}
+//
+//	// Start HTTP server with the mux
+//	go func() {
+//		if err := http.ListenAndServe(":42070", mux); err != nil {
+//			panic(err)
+//		}
+//	}()
+//
+//	return grpcServer
+//}

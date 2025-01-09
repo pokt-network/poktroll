@@ -2,21 +2,25 @@ package e2e
 
 import (
 	"context"
-	"encoding/json"
+	"errors"
+	"fmt"
 	"net"
 	"net/http"
 	"sync"
 	"testing"
 
+	"github.com/cosmos/cosmos-sdk/crypto/keyring"
+	"github.com/cosmos/cosmos-sdk/types/module"
 	"github.com/gorilla/websocket"
+	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 
 	coretypes "github.com/cometbft/cometbft/rpc/core/types"
-	rpctypes "github.com/cometbft/cometbft/rpc/jsonrpc/types"
 
 	"github.com/pokt-network/poktroll/testutil/integration"
+	"github.com/pokt-network/poktroll/testutil/testclient"
 )
 
 // E2EApp wraps an integration.App and provides both gRPC and WebSocket servers for end-to-end testing
@@ -26,11 +30,9 @@ type E2EApp struct {
 	grpcListener   net.Listener
 	wsServer       *http.Server
 	wsListener     net.Listener
-	httpServer     *http.Server
-	httpListener   net.Listener
 	wsUpgrader     websocket.Upgrader
-	wsConnections  map[*websocket.Conn]map[string]struct{} // maps connections to their subscribed event queries
 	wsConnMutex    sync.RWMutex
+	wsConnections  map[*websocket.Conn]map[string]struct{} // maps connections to their subscribed event queries
 	blockEventChan chan *coretypes.ResultEvent
 }
 
@@ -38,8 +40,24 @@ type E2EApp struct {
 func NewE2EApp(t *testing.T, opts ...integration.IntegrationAppOptionFn) *E2EApp {
 	t.Helper()
 
+	// Initialize and start gRPC server
+	creds := insecure.NewCredentials()
+	grpcServer := grpc.NewServer(grpc.Creds(creds))
+	mux := runtime.NewServeMux()
+
 	// Create the integration app
 	app := integration.NewCompleteIntegrationApp(t, opts...)
+	app.RegisterGRPCServer(grpcServer)
+	//app.RegisterGRPCServer(e2eApp.grpcServer)
+
+	flagSet := testclient.NewFlagSet(t, "tcp://127.0.0.1:42070")
+	keyRing := keyring.NewInMemory(app.GetCodec())
+	clientCtx := testclient.NewLocalnetClientCtx(t, flagSet).WithKeyring(keyRing)
+
+	for moduleName, mod := range app.GetModuleManager().Modules {
+		fmt.Printf(">>> %s\n", moduleName)
+		mod.(module.AppModuleBasic).RegisterGRPCGatewayRoutes(clientCtx, mux)
+	}
 
 	// Create listeners for gRPC, WebSocket, and HTTP
 	grpcListener, err := net.Listen("tcp", "localhost:42069")
@@ -48,21 +66,16 @@ func NewE2EApp(t *testing.T, opts ...integration.IntegrationAppOptionFn) *E2EApp
 	wsListener, err := net.Listen("tcp", "localhost:6969")
 	require.NoError(t, err, "failed to create WebSocket listener")
 
-	httpListener, err := net.Listen("tcp", "localhost:42070")
-	require.NoError(t, err, "failed to create HTTP listener")
-
 	e2eApp := &E2EApp{
 		App:            app,
 		grpcListener:   grpcListener,
+		grpcServer:     grpcServer,
 		wsListener:     wsListener,
-		httpListener:   httpListener,
 		wsConnections:  make(map[*websocket.Conn]map[string]struct{}),
 		wsUpgrader:     websocket.Upgrader{},
 		blockEventChan: make(chan *coretypes.ResultEvent, 1),
 	}
 
-	// Initialize and start gRPC server
-	e2eApp.grpcServer = newGRPCServer(e2eApp, t)
 	go func() {
 		if err := e2eApp.grpcServer.Serve(grpcListener); err != nil {
 			panic(err)
@@ -72,17 +85,14 @@ func NewE2EApp(t *testing.T, opts ...integration.IntegrationAppOptionFn) *E2EApp
 	// Initialize and start WebSocket server
 	e2eApp.wsServer = newWebSocketServer(e2eApp)
 	go func() {
-		if err := e2eApp.wsServer.Serve(wsListener); err != nil && err != http.ErrServerClosed {
+		if err := e2eApp.wsServer.Serve(wsListener); err != nil && errors.Is(err, http.ErrServerClosed) {
 			panic(err)
 		}
 	}()
 
 	// Initialize and start HTTP server
-	mux := http.NewServeMux()
-	mux.HandleFunc("/", e2eApp.handleHTTP)
-	e2eApp.httpServer = &http.Server{Handler: mux}
 	go func() {
-		if err := e2eApp.httpServer.Serve(httpListener); err != nil && err != http.ErrServerClosed {
+		if err := http.ListenAndServe("localhost:42070", mux); err != nil {
 			panic(err)
 		}
 	}()
@@ -99,10 +109,9 @@ func (app *E2EApp) Close() error {
 	if err := app.wsServer.Close(); err != nil {
 		return err
 	}
-	if err := app.httpServer.Close(); err != nil {
-		return err
-	}
+
 	close(app.blockEventChan)
+
 	return nil
 }
 
@@ -118,24 +127,4 @@ func (app *E2EApp) GetClientConn(ctx context.Context) (*grpc.ClientConn, error) 
 // GetWSEndpoint returns the WebSocket endpoint URL
 func (app *E2EApp) GetWSEndpoint() string {
 	return "ws://" + app.wsListener.Addr().String() + "/websocket"
-}
-
-// handleHTTP handles incoming HTTP requests by responding with RPCResponse
-func (app *E2EApp) handleHTTP(w http.ResponseWriter, r *http.Request) {
-	var req rpctypes.RPCRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	// Process the request - for now just return a basic response
-	// TODO_IMPROVE: Implement proper CometBFT RPC endpoint handling
-	response := rpctypes.RPCResponse{
-		JSONRPC: "2.0",
-		ID:      req.ID,
-		Result:  json.RawMessage(`{}`),
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(response)
 }
