@@ -86,7 +86,9 @@ func (txCtx cosmosTxContext) EncodeTx(txBuilder cosmosclient.TxBuilder) ([]byte,
 // ABCI operation completes and returns a TxResponse of the transaction status at that point in time.
 func (txCtx cosmosTxContext) BroadcastTx(txBytes []byte) (*cosmostypes.TxResponse, error) {
 	clientCtx := cosmosclient.Context(txCtx.clientCtx)
-	return clientCtx.BroadcastTxAsync(txBytes)
+	// BroadcastTxSync is used to capture any transaction error that occurs during
+	// the check-tx ABCI operation, otherwise errors would not be returned.
+	return clientCtx.BroadcastTxSync(txBytes)
 }
 
 // QueryTx queries the transaction based on its hash and optionally provides proof
@@ -102,4 +104,40 @@ func (txCtx cosmosTxContext) QueryTx(
 // GetClientCtx returns the cosmos-sdk client context associated with the transaction context.
 func (txCtx cosmosTxContext) GetClientCtx() cosmosclient.Context {
 	return cosmosclient.Context(txCtx.clientCtx)
+}
+
+// GetSimulatedTxGas calculates the gas for the given messages using the simulation mode.
+func (txCtx cosmosTxContext) GetSimulatedTxGas(
+	ctx context.Context,
+	signingKeyName string,
+	msgs ...cosmostypes.Msg,
+) (uint64, error) {
+	clientCtx := cosmosclient.Context(txCtx.clientCtx)
+	keyRecord, err := txCtx.GetKeyring().Key(signingKeyName)
+	if err != nil {
+		return 0, err
+	}
+
+	accAddress, err := keyRecord.GetAddress()
+	if err != nil {
+		return 0, err
+	}
+
+	accountRetriever := txCtx.clientCtx.AccountRetriever
+	_, seq, err := accountRetriever.GetAccountNumberSequence(clientCtx, accAddress)
+	if err != nil {
+		return 0, err
+	}
+
+	txf := txCtx.txFactory.
+		WithSimulateAndExecute(true).
+		WithFromName(signingKeyName).
+		WithSequence(seq)
+
+	_, gas, err := cosmostx.CalculateGas(txCtx.GetClientCtx(), txf, msgs...)
+	if err != nil {
+		return 0, err
+	}
+
+	return gas, nil
 }
