@@ -10,6 +10,7 @@ require 'net/http'
 require 'uri'
 require 'openssl'
 require 'concurrent'
+require 'net/http/persistent'
 
 class RelaySpammer
   attr_reader :config, :options
@@ -344,6 +345,88 @@ class RelaySpammer
     
     request_count = Concurrent::AtomicFixnum.new(0)
     start_time = Time.now
+    service_id = config['application_defaults']['service_id']
+
+    # Create connection pools and configs using the full gateway URLs
+    connection_pools = {}
+    gateway_configs = {}
+    
+    config['gateway_urls'].each do |gateway_addr, url|
+      begin
+        uri = URI(url)
+        unless uri.host && uri.scheme
+          puts "Warning: Invalid URL format for gateway #{gateway_addr}: #{url}"
+          next
+        end
+        
+        # Store using the exact URL string from config
+        connection_pools[url] = Net::HTTP::Persistent.new(name: "relay_spam_#{uri.host}").tap do |pool|
+          pool.verify_mode = OpenSSL::SSL::VERIFY_NONE if uri.scheme == 'https'
+        end
+        
+        gateway_configs[url] = {
+          uri: uri,
+          body: {
+            jsonrpc: '2.0',
+            method: 'eth_blockNumber',
+            params: [],
+            id: 1
+          }.to_json
+        }
+      rescue URI::InvalidURIError => e
+        puts "Warning: Failed to parse URL for gateway #{gateway_addr}: #{url} (#{e.message})"
+        next
+      end
+    end
+
+    if gateway_configs.empty?
+      puts "Error: No valid gateway configurations found!"
+      exit 1
+    end
+
+    # Print debug information
+    puts "\nConfigured gateways:"
+    gateway_configs.each do |url, config|
+      puts "  #{url} -> #{config[:uri]}"
+    end
+
+    def make_rpc_request(gateway_url, app_address, connection_pools, gateway_configs, service_id)
+      # Validate inputs first
+      config = gateway_configs[gateway_url]
+      unless config && config[:uri] && config[:body]
+        return {
+          success: false,
+          error: "Invalid gateway configuration for URL: #{gateway_url}"
+        }
+      end
+
+      pool = connection_pools[gateway_url]
+      unless pool
+        return {
+          success: false,
+          error: "No connection pool found for URL: #{gateway_url}"
+        }
+      end
+      
+      # Create a fresh request for each call
+      request = Net::HTTP::Post.new(config[:uri].request_uri)
+      request['Content-Type'] = 'application/json'
+      request['Target-Service-ID'] = service_id
+      request['X-App-Address'] = app_address
+      request.body = config[:body]
+      
+      response = pool.request(config[:uri], request)
+      
+      {
+        success: response.code == '200',
+        error: response.code != '200' ? "HTTP #{response.code}: #{response.body}" : nil
+      }
+    rescue => e
+      {
+        success: false,
+        error: "#{e.class}: #{e.message} for URL: #{gateway_url}\nBacktrace: #{e.backtrace.first(3).join("\n")}"
+      }
+    end
 
     pool = Concurrent::FixedThreadPool.new(options.concurrency)
     completion_queue = Queue.new
@@ -385,7 +468,13 @@ class RelaySpammer
           end
           
           begin
-            result = make_rpc_request(work[:gateway_url], work[:app]['address'])
+            result = make_rpc_request(
+              work[:gateway_url], 
+              work[:app]['address'],
+              connection_pools,
+              gateway_configs,
+              service_id
+            )
             completion_queue << {
               success: result[:success],
               app_name: work[:app]['name'],
@@ -440,43 +529,10 @@ class RelaySpammer
     puts "Average rate: #{(total_requests / elapsed).round(2)} req/s"
 
   ensure
+    # Clean up connection pools
+    connection_pools&.each_value(&:shutdown)
     pool&.shutdown
     pool&.wait_for_termination(5)
-  end
-
-  def make_rpc_request(gateway_url, app_address)
-    uri = URI(gateway_url)
-    http = Net::HTTP.new(uri.host, uri.port)
-    
-    # Enable HTTPS if needed
-    if uri.scheme == 'https'
-      http.use_ssl = true
-      http.verify_mode = OpenSSL::SSL::VERIFY_NONE
-    end
-    
-    request = Net::HTTP::Post.new(uri.path)
-    request['Content-Type'] = 'application/json'
-    request['X-App-Address'] = app_address
-    request['Target-Service-ID'] = config['application_defaults']['service_id']
-    
-    request.body = {
-      jsonrpc: '2.0',
-      method: 'eth_blockNumber',
-      params: [],
-      id: 1
-    }.to_json
-
-    response = http.request(request)
-    
-    {
-      success: response.code == '200',
-      error: response.code != '200' ? "HTTP #{response.code}: #{response.body}" : nil
-    }
-  rescue => e
-    {
-      success: false,
-      error: e.message
-    }
   end
 
   # Optional: Add a signal handler to gracefully shut down Ractors
