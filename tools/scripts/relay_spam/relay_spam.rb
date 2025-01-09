@@ -15,6 +15,8 @@ require 'net/http/persistent'
 class RelaySpammer
   attr_reader :config, :options
 
+  BATCH_SIZE = 50  # Configurable batch size
+
   def initialize(options)
     @options = options
     @config = load_config(options.config_file)
@@ -346,7 +348,7 @@ class RelaySpammer
     request_count = Concurrent::AtomicFixnum.new(0)
     start_time = Time.now
     service_id = config['application_defaults']['service_id']
-
+    
     # Create connection pools and configs using the full gateway URLs
     connection_pools = {}
     gateway_configs = {}
@@ -362,6 +364,8 @@ class RelaySpammer
         # Store using the exact URL string from config
         connection_pools[url] = Net::HTTP::Persistent.new(name: "relay_spam_#{uri.host}").tap do |pool|
           pool.verify_mode = OpenSSL::SSL::VERIFY_NONE if uri.scheme == 'https'
+          pool.idle_timeout = 30  # Adjust as needed
+          pool.read_timeout = 10  # Adjust as needed
         end
         
         gateway_configs[url] = {
@@ -384,66 +388,12 @@ class RelaySpammer
       exit 1
     end
 
-    # Print debug information
-    puts "\nConfigured gateways:"
-    gateway_configs.each do |url, config|
-      puts "  #{url} -> #{config[:uri]}"
-    end
-
-    def make_rpc_request(gateway_url, app_address, connection_pools, gateway_configs, service_id)
-      # Validate inputs first
-      config = gateway_configs[gateway_url]
-      unless config && config[:uri] && config[:body]
-        return {
-          success: false,
-          error: "Invalid gateway configuration for URL: #{gateway_url}"
-        }
-      end
-
-      pool = connection_pools[gateway_url]
-      unless pool
-        return {
-          success: false,
-          error: "No connection pool found for URL: #{gateway_url}"
-        }
-      end
-      
-      # Create a fresh request for each call
-      request = Net::HTTP::Post.new(config[:uri].request_uri)
-      request['Content-Type'] = 'application/json'
-      request['Target-Service-ID'] = service_id
-      request['X-App-Address'] = app_address
-      request.body = config[:body]
-      
-      response = pool.request(config[:uri], request)
-      
-      {
-        success: response.code == '200',
-        error: response.code != '200' ? "HTTP #{response.code}: #{response.body}" : nil
-      }
-    rescue => e
-      {
-        success: false,
-        error: "#{e.class}: #{e.message} for URL: #{gateway_url}\nBacktrace: #{e.backtrace.first(3).join("\n")}"
-      }
-    end
-
-    pool = Concurrent::FixedThreadPool.new(options.concurrency)
-    completion_queue = Queue.new
-    
-    # Calculate total requests
-    total_requests = config['applications'].length * 
-                     config['application_defaults']['gateways'].length * 
-                     options.num_requests
-
-    # Create a queue of all work to be done
-    work_queue = Queue.new
-    
-    # First, distribute work evenly across applications
+    # Generate all work items upfront to ensure complete coverage
+    work_items = []
     options.num_requests.times do
       config['applications'].each do |app|
         config['application_defaults']['gateways'].each do |gateway_addr|
-          work_queue << {
+          work_items << {
             app: app,
             gateway_addr: gateway_addr,
             gateway_url: config['gateway_urls'][gateway_addr]
@@ -451,11 +401,65 @@ class RelaySpammer
         end
       end
     end
+    
+    # Shuffle work items for better distribution while maintaining coverage
+    work_items.shuffle!
+    total_requests = work_items.size
+    
+    pool = Concurrent::FixedThreadPool.new(options.concurrency)
+    completion_queue = Queue.new
+    
+    # Thread-safe work acquisition variables
+    work_mutex = Mutex.new
+    current_index = 0
+
+    def make_rpc_requests_batch(gateway_url, requests, connection_pools, gateway_configs, service_id)
+      config = gateway_configs[gateway_url]
+      pool = connection_pools[gateway_url]
+      
+      return [] unless config && pool
+      
+      results = requests.map do |req|
+        request = Net::HTTP::Post.new(config[:uri].request_uri)
+        request['Content-Type'] = 'application/json'
+        request['Target-Service-ID'] = service_id
+        request['X-App-Address'] = req[:app_address]
+        request.body = config[:body]
+        
+        begin
+          response = pool.request(config[:uri], request)
+          {
+            success: response.code == '200',
+            error: response.code != '200' ? "HTTP #{response.code}: #{response.body}" : nil
+          }
+        rescue => e
+          {
+            success: false,
+            error: "#{e.class}: #{e.message}"
+          }
+        end
+      end
+      
+      results
+    end
 
     # Create worker threads
     options.concurrency.times do
       pool.post do
-        while work = work_queue.pop(true) rescue nil
+        batch = []
+        
+        while true
+          # Thread-safe work acquisition
+          work = work_mutex.synchronize do
+            if current_index < total_requests
+              work_item = work_items[current_index]
+              current_index += 1
+              work_item
+            end
+          end
+          
+          break unless work
+          
           # Rate limiting logic
           if options.rate_limit
             current_count = request_count.increment
@@ -467,27 +471,34 @@ class RelaySpammer
             end
           end
           
-          begin
-            result = make_rpc_request(
-              work[:gateway_url], 
-              work[:app]['address'],
-              connection_pools,
-              gateway_configs,
-              service_id
-            )
-            completion_queue << {
-              success: result[:success],
-              app_name: work[:app]['name'],
-              gateway_url: work[:gateway_url],
-              error: result[:error]
-            }
-          rescue => e
-            completion_queue << {
-              success: false,
-              app_name: work[:app]['name'],
-              gateway_url: work[:gateway_url],
-              error: e.message
-            }
+          batch << work
+          
+          # Process batch when full or at end
+          if batch.size >= BATCH_SIZE || current_index >= total_requests
+            if batch.any?
+              # Group requests by gateway URL for efficient batching
+              batch.group_by { |w| w[:gateway_url] }.each do |gateway_url, requests|
+                results = make_rpc_requests_batch(
+                  gateway_url,
+                  requests.map { |w| { app_address: w[:app]['address'] } },
+                  connection_pools,
+                  gateway_configs,
+                  service_id
+                )
+                
+                # Send results to completion queue
+                results.each_with_index do |result, i|
+                  completion_queue << {
+                    success: result[:success],
+                    app_name: requests[i][:app]['name'],
+                    gateway_url: requests[i][:gateway_url],
+                    error: result[:error]
+                  }
+                end
+              end
+              
+              batch.clear
+            end
           end
         end
       end
