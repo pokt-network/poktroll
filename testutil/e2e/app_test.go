@@ -2,16 +2,17 @@ package e2e
 
 import (
 	"context"
+	"encoding/hex"
 	"net/http"
 	"testing"
 	"time"
 
 	"cosmossdk.io/depinject"
 	"cosmossdk.io/math"
+	abci "github.com/cometbft/cometbft/abci/types"
 	cometrpctypes "github.com/cometbft/cometbft/rpc/core/types"
 	"github.com/cometbft/cometbft/types"
 	cosmostx "github.com/cosmos/cosmos-sdk/client/tx"
-	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	"github.com/cosmos/cosmos-sdk/crypto/hd"
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
@@ -148,7 +149,10 @@ func TestNewE2EApp(t *testing.T) {
 	//blockQueryClient, err := sdkclient.NewClientFromNode("tcp://127.0.0.1:26657")
 	//require.NoError(t, err)
 
-	deps := depinject.Supply(app.QueryHelper(), blockQueryClient)
+	creds := insecure.NewCredentials()
+	grpcConn, err := grpc.NewClient("127.0.0.1:42069", grpc.WithTransportCredentials(creds))
+	require.NoError(t, err)
+	deps := depinject.Supply(grpcConn, blockQueryClient)
 
 	sharedQueryClient, err := query.NewSharedQuerier(deps)
 	require.NoError(t, err)
@@ -213,18 +217,58 @@ func TestGRPCServer(t *testing.T) {
 	//dataHex, err := hex.DecodeString("0A2B706F6B74313577336668667963306C747476377235383565326E6370663674326B6C3975683872736E797A")
 	require.NoError(t, err)
 
-	req := gatewaytypes.QueryGetGatewayRequest{
-		Address: "pokt15w3fhfyc0lttv7r585e2ncpf6t2kl9uh8rsnyz",
+	//req := gatewaytypes.QueryGetGatewayRequest{
+	//	Address: "pokt15w3fhfyc0lttv7r585e2ncpf6t2kl9uh8rsnyz",
+	//}
+	res := &abci.ResponseQuery{}
+
+	//grpcConn.Invoke(context.Background(), "abci_query", req, res)
+
+	ctrl := gomock.NewController(t)
+	blockQueryClient := mockclient.NewMockBlockQueryClient(ctrl)
+	blockQueryClient.EXPECT().
+		Block(gomock.Any(), gomock.Any()).
+		DoAndReturn(
+			func(ctx context.Context, height *int64) (*cometrpctypes.ResultBlock, error) {
+				//time.Sleep(time.Second * 100)
+				blockResultMock := &cometrpctypes.ResultBlock{
+					Block: &types.Block{
+						Header: types.Header{
+							Height: 1,
+						},
+					},
+				}
+				return blockResultMock, nil
+			},
+		).AnyTimes()
+
+	deps := depinject.Supply(grpcConn, blockQueryClient)
+
+	sharedQueryClient, err := query.NewSharedQuerier(deps)
+	require.NoError(t, err)
+
+	//res := new(gatewaytypes.QueryGetGatewayResponse)
+	//
+	//err = grpcConn.Invoke(context.Background(), "/poktroll.gateway.Query/Gateway", anyReq, res)
+	dataHex, err := hex.DecodeString("0A2B706F6B74313577336668667963306C747476377235383565326E6370663674326B6C3975683872736E797A")
+	require.NoError(t, err)
+
+	req := &abci.RequestQuery{
+		Data:   dataHex,
+		Path:   "/cosmos.auth.v1beta1.Query/Account",
+		Height: 0,
+		Prove:  false,
 	}
 
-	// convert the request to a proto message
-	anyReq, err := codectypes.NewAnyWithValue(&req)
+	err = grpcConn.Invoke(context.Background(), "abci_query", req, res)
+	//err = grpcConn.Invoke(context.Background(), "abci_query", req, res)
 	require.NoError(t, err)
 
-	res := new(gatewaytypes.QueryGetGatewayResponse)
-
-	err = grpcConn.Invoke(context.Background(), "/poktroll.gateway.Query/Gateway", anyReq, res)
 	require.NoError(t, err)
+	sharedParams, err := sharedQueryClient.GetParams(app.GetSdkCtx())
+	require.NoError(t, err)
+
+	t.Logf("shared params: %+v", sharedParams)
 
 	//"method" : "abci_query",
 	//"params" : {
