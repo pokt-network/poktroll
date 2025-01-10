@@ -1,4 +1,8 @@
 #!/usr/bin/env ruby
+#
+# The purpose of the script:
+# - Maximize the number of requests sent from unique accounts.
+# - Ideally, the amount of requests per uniq account should be set to the number of suppliers, in hopes that path will proxy requests to different suppliers.
 
 require 'yaml'
 require 'optparse'
@@ -10,6 +14,9 @@ require 'net/http'
 require 'uri'
 require 'openssl'
 require 'concurrent'
+require 'async'
+require 'async/http/internet'
+require 'async/semaphore'
 
 class RelaySpammer
   attr_reader :config, :options
@@ -344,23 +351,95 @@ class RelaySpammer
     
     request_count = Concurrent::AtomicFixnum.new(0)
     start_time = Time.now
-
-    pool = Concurrent::FixedThreadPool.new(options.concurrency)
-    completion_queue = Queue.new
     
     # Calculate total requests
     total_requests = config['applications'].length * 
                      config['application_defaults']['gateways'].length * 
                      options.num_requests
 
-    # Create a queue of all work to be done
-    work_queue = Queue.new
+    # Create work batches for better memory management
+    work_batches = create_work_batches(batch_size: 1000)
     
-    # First, distribute work evenly across applications
+    completion_queue = Queue.new
+    successes = Concurrent::AtomicFixnum.new(0)
+    completed = Concurrent::AtomicFixnum.new(0)
+
+    Async do |task|
+      # Create a connection pool
+      internet = Async::HTTP::Internet.new
+      semaphore = Async::Semaphore.new(options.concurrency)
+      
+      # Process work batches
+      work_batches.each do |batch|
+        # Create tasks for each work item in the batch
+        batch.map do |work|
+          task.async do
+            semaphore.acquire do
+              # Rate limiting logic
+              if options.rate_limit
+                current_count = request_count.increment
+                expected_time = current_count / options.rate_limit.to_f
+                elapsed = Time.now - start_time
+                
+                if elapsed < expected_time
+                  task.sleep(expected_time - elapsed)
+                end
+              end
+              
+              begin
+                result = make_async_request(
+                  internet, 
+                  work[:gateway_url], 
+                  work[:app]['address']
+                )
+                
+                successes.increment if result[:success]
+                current_completed = completed.increment
+                
+                # Print progress
+                if current_completed % 100 == 0 || !result[:success]
+                  elapsed = Time.now - start_time
+                  rate = current_completed / elapsed
+                  
+                  print "\rProgress: #{current_completed}/#{total_requests} " \
+                        "(#{(current_completed.to_f/total_requests*100).round(1)}%) " \
+                        "Success rate: #{(successes.value.to_f/current_completed*100).round(1)}% " \
+                        "Rate: #{rate.round(1)} req/s"
+                  
+                  if !result[:success]
+                    puts "\nError for #{work[:app]['name']} -> #{work[:gateway_url]}: #{result[:error]}"
+                  end
+                end
+              rescue => e
+                puts "\nError: #{e.message}"
+              end
+            end
+          end
+        end.each(&:wait)
+      end
+      
+      internet.close
+    end
+
+    # Print final statistics
+    elapsed = Time.now - start_time
+    puts "\n\nRelay spam completed:"
+    puts "Total requests: #{total_requests}"
+    puts "Successful: #{successes.value}"
+    puts "Failed: #{total_requests - successes.value}"
+    puts "Time elapsed: #{elapsed.round(2)}s"
+    puts "Average rate: #{(total_requests / elapsed).round(2)} req/s"
+  end
+
+  private
+
+  def create_work_batches(batch_size:)
+    work_items = []
+    
     options.num_requests.times do
       config['applications'].each do |app|
         config['application_defaults']['gateways'].each do |gateway_addr|
-          work_queue << {
+          work_items << {
             app: app,
             gateway_addr: gateway_addr,
             gateway_url: config['gateway_urls'][gateway_addr]
@@ -368,109 +447,31 @@ class RelaySpammer
         end
       end
     end
-
-    # Create worker threads
-    options.concurrency.times do
-      pool.post do
-        while work = work_queue.pop(true) rescue nil
-          # Rate limiting logic
-          if options.rate_limit
-            current_count = request_count.increment
-            expected_time = current_count / options.rate_limit.to_f
-            elapsed = Time.now - start_time
-            
-            if elapsed < expected_time
-              sleep(expected_time - elapsed)
-            end
-          end
-          
-          begin
-            result = make_rpc_request(work[:gateway_url], work[:app]['address'])
-            completion_queue << {
-              success: result[:success],
-              app_name: work[:app]['name'],
-              gateway_url: work[:gateway_url],
-              error: result[:error]
-            }
-          rescue => e
-            completion_queue << {
-              success: false,
-              app_name: work[:app]['name'],
-              gateway_url: work[:gateway_url],
-              error: e.message
-            }
-          end
-        end
-      end
-    end
-
-    # Monitor progress
-    completed = 0
-    successes = 0
-    start_time = Time.now
-
-    total_requests.times do
-      result = completion_queue.pop
-      completed += 1
-      successes += 1 if result[:success]
-      
-      # Print progress every 100 requests or when errors occur
-      if completed % 100 == 0 || !result[:success]
-        elapsed = Time.now - start_time
-        rate = completed / elapsed
-        
-        print "\rProgress: #{completed}/#{total_requests} " \
-              "(#{(completed.to_f/total_requests*100).round(1)}%) " \
-              "Success rate: #{(successes.to_f/completed*100).round(1)}% " \
-              "Rate: #{rate.round(1)} req/s"
-        
-        if !result[:success]
-          puts "\nError for #{result[:app_name]} -> #{result[:gateway_url]}: #{result[:error]}"
-        end
-      end
-    end
-
-    # Print final statistics
-    elapsed = Time.now - start_time
-    puts "\n\nRelay spam completed:"
-    puts "Total requests: #{total_requests}"
-    puts "Successful: #{successes}"
-    puts "Failed: #{total_requests - successes}"
-    puts "Time elapsed: #{elapsed.round(2)}s"
-    puts "Average rate: #{(total_requests / elapsed).round(2)} req/s"
-
-  ensure
-    pool&.shutdown
-    pool&.wait_for_termination(5)
+    
+    work_items.each_slice(batch_size).to_a
   end
 
-  def make_rpc_request(gateway_url, app_address)
+  def make_async_request(internet, gateway_url, app_address)
     uri = URI(gateway_url)
-    http = Net::HTTP.new(uri.host, uri.port)
     
-    # Enable HTTPS if needed
-    if uri.scheme == 'https'
-      http.use_ssl = true
-      http.verify_mode = OpenSSL::SSL::VERIFY_NONE
-    end
-    
-    request = Net::HTTP::Post.new(uri.path)
-    request['Content-Type'] = 'application/json'
-    request['X-App-Address'] = app_address
-    request['Target-Service-ID'] = config['application_defaults']['service_id']
-    
-    request.body = {
-      jsonrpc: '2.0',
-      method: 'eth_blockNumber',
-      params: [],
-      id: 1
-    }.to_json
-
-    response = http.request(request)
+    response = internet.post(
+      gateway_url,
+      headers: {
+        'Content-Type' => 'application/json',
+        'X-App-Address' => app_address,
+        'Target-Service-ID' => config['application_defaults']['service_id']
+      },
+      body: {
+        jsonrpc: '2.0',
+        method: 'eth_blockNumber',
+        params: [],
+        id: 1
+      }.to_json
+    )
     
     {
-      success: response.code == '200',
-      error: response.code != '200' ? "HTTP #{response.code}: #{response.body}" : nil
+      success: response.status == 200,
+      error: response.status != 200 ? "HTTP #{response.status}: #{response.read}" : nil
     }
   rescue => e
     {
