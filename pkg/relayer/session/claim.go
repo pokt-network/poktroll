@@ -308,12 +308,19 @@ func (rs *relayerSessionsManager) payableProofsSessionTrees(
 			continue
 		}
 
+		// Delete the session tree from the KVStore since it won't be claimed.
+		if err := sessionTree.Delete(); err != nil {
+			logger.With(
+				"session_id", sessionTree.GetSessionHeader().GetSessionId(),
+			).Error().Err(err).Msg("failed to delete session tree")
+		}
+
 		// Log a warning of any session that the supplier operator cannot afford to claim.
 		logger.With(
 			"session_id", sessionTree.GetSessionHeader().GetSessionId(),
 			"supplier_operator_balance", supplierOperatorBalanceCoin,
 			"proof_submission_fee", proofSubmissionFeeCoin,
-		).Warn().Msg("supplier operator cannot afford to submit proof for claim, skipping")
+		).Warn().Msg("supplier operator cannot afford to submit proof for claim, deleting session tree")
 	}
 
 	if len(claimableSessionTrees) < len(sessionTrees) {
