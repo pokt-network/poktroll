@@ -2,17 +2,16 @@ package e2e
 
 import (
 	"context"
-	"encoding/hex"
 	"net/http"
 	"testing"
 	"time"
 
 	"cosmossdk.io/depinject"
 	"cosmossdk.io/math"
-	abci "github.com/cometbft/cometbft/abci/types"
 	cometrpctypes "github.com/cometbft/cometbft/rpc/core/types"
 	"github.com/cometbft/cometbft/types"
 	cosmostx "github.com/cosmos/cosmos-sdk/client/tx"
+	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	"github.com/cosmos/cosmos-sdk/crypto/hd"
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
@@ -21,6 +20,7 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 
 	"github.com/pokt-network/poktroll/app/volatile"
 	"github.com/pokt-network/poktroll/pkg/client/block"
@@ -206,21 +206,25 @@ func TestGRPCServer(t *testing.T) {
 		app.Close()
 	})
 
-	grpcConn, err := grpc.NewClient("tcp://127.0.0.1:42069", grpc.WithInsecure())
+	creds := insecure.NewCredentials()
+	grpcConn, err := grpc.NewClient("127.0.0.1:42069", grpc.WithTransportCredentials(creds))
 	require.NoError(t, err)
 
-	dataHex, err := hex.DecodeString("0A2B706F6B74313577336668667963306C747476377235383565326E6370663674326B6C3975683872736E797A")
+	//dataHex, err := hex.DecodeString("0A2B706F6B74313577336668667963306C747476377235383565326E6370663674326B6C3975683872736E797A")
 	require.NoError(t, err)
 
-	req := &abci.RequestQuery{
-		Data:   dataHex,
-		Path:   "/cosmos.auth.v1beta1.Query/Account",
-		Height: 0,
-		Prove:  false,
+	req := gatewaytypes.QueryGetGatewayRequest{
+		Address: "pokt15w3fhfyc0lttv7r585e2ncpf6t2kl9uh8rsnyz",
 	}
-	res := &abci.ResponseQuery{}
 
-	grpcConn.Invoke(context.Background(), "abci_query", req, res)
+	// convert the request to a proto message
+	anyReq, err := codectypes.NewAnyWithValue(&req)
+	require.NoError(t, err)
+
+	res := new(gatewaytypes.QueryGetGatewayResponse)
+
+	err = grpcConn.Invoke(context.Background(), "/poktroll.gateway.Query/Gateway", anyReq, res)
+	require.NoError(t, err)
 
 	//"method" : "abci_query",
 	//"params" : {

@@ -103,7 +103,7 @@ type App struct {
 	txCfg             client.TxConfig
 	authority         sdk.AccAddress
 	moduleManager     module.Manager
-	queryHelper       *baseapp.QueryServiceTestHelper
+	queryHelper       *baseapp.GRPCQueryRouter
 	keyRing           keyring.Keyring
 	ringClient        crypto.RingClient
 	preGeneratedAccts *testkeyring.PreGeneratedAccountIterator
@@ -139,7 +139,7 @@ func NewIntegrationApp(
 	modules map[string]appmodule.AppModule,
 	keys map[string]*storetypes.KVStoreKey,
 	msgRouter *baseapp.MsgServiceRouter,
-	queryHelper *baseapp.QueryServiceTestHelper,
+	queryHelper *baseapp.GRPCQueryRouter,
 	opts ...IntegrationAppOptionFn,
 ) *App {
 	t.Helper()
@@ -513,8 +513,8 @@ func NewCompleteIntegrationApp(t *testing.T, opts ...IntegrationAppOptionFn) *Ap
 	)
 
 	// Prepare the message & query routers
-	msgRouter := baseapp.NewMsgServiceRouter()
-	queryHelper := baseapp.NewQueryServerTestHelper(sdkCtx, registry)
+	msgRouter := bApp.MsgServiceRouter()
+	queryHelper := bApp.GRPCQueryRouter()
 
 	// Prepare the authz keeper and module
 	authzKeeper := authzkeeper.NewKeeper(
@@ -661,8 +661,7 @@ func (app *App) GetPreGeneratedAccounts() *testkeyring.PreGeneratedAccountIterat
 
 // QueryHelper returns the query helper used by the application that can be
 // used to submit queries to the application.
-func (app *App) QueryHelper() *baseapp.QueryServiceTestHelper {
-	app.queryHelper.Ctx = *app.sdkCtx
+func (app *App) QueryHelper() *baseapp.GRPCQueryRouter {
 	return app.queryHelper
 }
 

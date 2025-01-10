@@ -50,7 +50,7 @@ func NewE2EApp(t *testing.T, opts ...integration.IntegrationAppOptionFn) *E2EApp
 	app.RegisterGRPCServer(grpcServer)
 	//app.RegisterGRPCServer(e2eApp.grpcServer)
 
-	flagSet := testclient.NewFlagSet(t, "tcp://127.0.0.1:42070")
+	flagSet := testclient.NewFlagSet(t, "tcp://127.0.0.1:42069")
 	keyRing := keyring.NewInMemory(app.GetCodec())
 	clientCtx := testclient.NewLocalnetClientCtx(t, flagSet).WithKeyring(keyRing)
 
