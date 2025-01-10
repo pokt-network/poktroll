@@ -110,12 +110,14 @@ type relaysSuite struct {
 	// txContext is the transaction context used to sign and send transactions.
 	txContext client.TxContext
 
-	// Protocol parameters used in the test.
+	// Protocol governance params used in the test.
 	// It is queried at the beginning of the test.
 	sharedParams     *sharedtypes.Params
 	appParams        *apptypes.Params
 	proofParams      *prooftypes.Params
 	tokenomicsParams *tokenomicstypes.Params
+
+	testedService *sharedtypes.Service
 
 	// numRelaysSent is the number of relay requests sent during the test.
 	numRelaysSent atomic.Uint64
@@ -197,8 +199,8 @@ type relaysSuite struct {
 	// run on ephemeral chain setups like localnet or long living ones (i.e. Test/DevNet).
 	isEphemeralChain bool
 
-	// eventsObs is the observable that maps committed blocks to on-chain events.
-	eventsObs observable.Observable[[]types.Event]
+	// committedEventsObs is the observable that maps committed blocks to on-chain events.
+	committedEventsObs observable.Observable[[]types.Event]
 
 	// successfulRelays is the number of relay requests that returned 200 status code.
 	successfulRelays atomic.Uint64
@@ -298,9 +300,9 @@ func (s *relaysSuite) LocalnetIsRunning() {
 	// CometLocalWebsocketURL to the TestNetNode URL. These variables are used
 	// by the testtx txClient to send transactions to the network.
 	if !s.isEphemeralChain {
-		testclient.CometLocalTCPURL = loadTestParams.PRCNode
+		testclient.CometLocalTCPURL = loadTestParams.RPCNode
 
-		webSocketURL, err := url.Parse(loadTestParams.PRCNode)
+		webSocketURL, err := url.Parse(loadTestParams.RPCNode)
 		require.NoError(s, err)
 
 		// TestNet nodes may be exposed over HTTPS, so adjust the scheme accordingly.
@@ -312,19 +314,16 @@ func (s *relaysSuite) LocalnetIsRunning() {
 		testclient.CometLocalWebsocketURL = webSocketURL.String() + "/websocket"
 
 		// Update the block duration when running the test on a non-ephemeral chain.
-		// TODO_TECHDEBT: Get the block duration value from the chain or the manifest.
+		// TODO_TECHDEBT: Get the block duration value from the chain.
 		blockDurationSec = 60
 	}
 
 	// Setup the txContext that will be used to send transactions to the network.
 	s.txContext = testtx.NewLocalnetContext(s.TestingT.(*testing.T))
 
-	// Get the relay cost from the tokenomics module.
-	s.relayCoinAmountCost = s.getRelayCost()
-
 	// Setup the event listener for on-chain events to check and assert on transactions
 	// and finalized blocks results.
-	s.setupEventListeners(loadTestParams.PRCNode)
+	s.setupEventListeners(loadTestParams.RPCNode)
 
 	// Initialize the funding account.
 	s.initFundingAccount(loadTestParams.FundingAccountAddress)
@@ -333,9 +332,13 @@ func (s *relaysSuite) LocalnetIsRunning() {
 	s.forEachSettlement(s.ctx)
 
 	// Query for the current network on-chain params.
-	s.querySharedParams(loadTestParams.PRCNode)
-	s.queryAppParams(loadTestParams.PRCNode)
-	s.queryProofParams(loadTestParams.PRCNode)
+	s.querySharedParams(loadTestParams.RPCNode)
+	s.queryAppParams(loadTestParams.RPCNode)
+	s.queryProofParams(loadTestParams.RPCNode)
+	s.queryTestedService(loadTestParams.RPCNode)
+
+	// Get the relay cost from the tokenomics module.
+	s.relayCoinAmountCost = s.getRelayCost()
 
 	// Some suppliers may already be staked at genesis, ensure that staking during
 	// this test succeeds by increasing the sake amount.
