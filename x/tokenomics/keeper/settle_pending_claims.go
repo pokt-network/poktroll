@@ -233,6 +233,7 @@ func (k Keeper) SettlePendingClaims(ctx cosmostypes.Context) (
 			NumEstimatedComputeUnits: numEstimatedComputeUnits,
 			ClaimedUpokt:             &claimeduPOKT,
 			ProofRequirement:         proofRequirement,
+			SettlementResult:         *ClaimSettlementResult,
 		}
 
 		if err = ctx.EventManager().EmitTypedEvent(&claimSettledEvent); err != nil {

@@ -62,3 +62,13 @@ func (aq *appQuerier) GetAllApplications(ctx context.Context) ([]apptypes.Applic
 	}
 	return res.Applications, nil
 }
+
+// GetParams returns the application module parameters
+func (aq *appQuerier) GetParams(ctx context.Context) (*apptypes.Params, error) {
+	req := apptypes.QueryParamsRequest{}
+	res, err := aq.applicationQuerier.Params(ctx, &req)
+	if err != nil {
+		return nil, err
+	}
+	return &res.Params, nil
+}
