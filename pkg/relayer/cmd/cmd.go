@@ -75,6 +75,8 @@ for such operations.`,
 	cmd.Flags().Bool(cosmosflags.FlagGRPCInsecure, true, "Used to initialize the Cosmos query context with grpc security options. It can be used to override the `QueryNodeGRPCInsecure` field in the config file if specified.")
 	cmd.Flags().String(cosmosflags.FlagChainID, "poktroll", "The network chain ID")
 	cmd.Flags().StringVar(&flagLogLevel, cosmosflags.FlagLogLevel, "debug", "The logging level (debug|info|warn|error)")
+	cmd.Flags().Float64(cosmosflags.FlagGasAdjustment, 1.5, "The adjustment factor to be multiplied by the gas estimate returned by the tx simulation")
+	cmd.Flags().String(cosmosflags.FlagGasPrices, "1upokt", "Set the gas unit price in upokt")
 
 	return cmd
 }

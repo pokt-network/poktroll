@@ -126,6 +126,13 @@ type TxContext interface {
 
 	// GetClientCtx returns the cosmos-sdk client context associated with the transaction context.
 	GetClientCtx() cosmosclient.Context
+
+	// GetSimulatedTxGas returns the estimated gas for the given messages.
+	GetSimulatedTxGas(
+		ctx context.Context,
+		signingKeyName string,
+		msgs ...cosmostypes.Msg,
+	) (uint64, error)
 }
 
 // Block is an interface which abstracts the details of a block to its minimal
