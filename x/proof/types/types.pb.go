@@ -143,7 +143,7 @@ func (m *Proof) GetClosestMerkleProof() []byte {
 	return nil
 }
 
-// Claim is the serialized object stored on-chain for claims pending to be proven
+// Claim is the serialized object stored onchain for claims pending to be proven
 type Claim struct {
 	SupplierOperatorAddress string `protobuf:"bytes,1,opt,name=supplier_operator_address,json=supplierOperatorAddress,proto3" json:"supplier_operator_address,omitempty"`
 	// The session header of the session that this claim is for.

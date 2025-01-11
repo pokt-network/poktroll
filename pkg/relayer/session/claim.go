@@ -20,7 +20,7 @@ import (
 
 // createClaims maps over the sessionsToClaimObs observable. For each claim batch, it:
 // 1. Calculates the earliest block height at which it is safe to CreateClaims
-// 2. Waits for said block and creates the claims on-chain
+// 2. Waits for said block and creates the claims onchain
 // 3. Maps errors to a new observable and logs them
 // 4. Returns an observable of the successfully claimed sessions
 // It DOES NOT BLOCK as map operations run in their own goroutines.
@@ -91,7 +91,7 @@ func (rs *relayerSessionsManager) mapWaitForEarliestCreateClaimsHeight(
 // waitForEarliestCreateClaimsHeight calculates and waits for (blocking until) the
 // earliest block height, allowed by the protocol, at which claims can be created
 // for a session with the given sessionEndHeight. It is calculated relative to
-// sessionEndHeight using on-chain governance parameters and randomized input.
+// sessionEndHeight using onchain governance parameters and randomized input.
 // It IS A BLOCKING function.
 func (rs *relayerSessionsManager) waitForEarliestCreateClaimsHeight(
 	ctx context.Context,
@@ -124,7 +124,7 @@ func (rs *relayerSessionsManager) waitForEarliestCreateClaimsHeight(
 	logger.Info().Msg("waiting & blocking until the earliest claim commit height offset seed block height")
 
 	// The block that'll be used as a source of entropy for which branch(es) to
-	// prove should be deterministic and use on-chain governance params.
+	// prove should be deterministic and use onchain governance params.
 	claimsWindowOpenBlock := rs.waitForBlock(ctx, claimWindowOpenHeight)
 	// TODO_MAINNET: If a relayminer is cold-started with persisted but unclaimed ("late")
 	// sessions, the claimsWindowOpenBlock will never be observed. In this case, we should

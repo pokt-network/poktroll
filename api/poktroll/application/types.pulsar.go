@@ -2182,7 +2182,7 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-// Application defines the type used to store an on-chain definition and state for an application
+// Application defines the type used to store an onchain definition and state for an application
 type Application struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache

@@ -105,7 +105,7 @@ This section will help you deploy a POKT LocalNet in a k8s cluster on your machi
 and inspect it so you have an idea of what's going on!
 
 We'll be manually configuring a few actors to run in your shell for the sake of
-the tutorial so you have visibility into the types of on-chain and off-chain
+the tutorial so you have visibility into the types of onchain and offchain
 actors. In practice, you should be using [localnet](../../operate/infrastructure/localnet.md)
 to dynamically scale your actors.
 
@@ -339,8 +339,8 @@ make acc_balance_query ACC=$SHANNON_APPLICATION
 
 ## 3. Manually Stake a Supplier & Deploy a RelayMiner
 
-As we mentioned earlier, if you want to understand the different on-chain actors
-and off-chain operators in POKT Network, look at the docs [here](../../protocol/actors/actors.md).
+As we mentioned earlier, if you want to understand the different onchain actors
+and offchain operators in POKT Network, look at the docs [here](../../protocol/actors/actors.md).
 
 If you just want to follow instructions to make things work and get your hands
 dirty, keep reading.
@@ -404,7 +404,7 @@ EOF
 
 ### 3.4 Stake the new Supplier
 
-Stake the `shannon_supplier` on-chain:
+Stake the `shannon_supplier` onchain:
 
 ```bash
 poktrolld \
@@ -511,7 +511,7 @@ EOF
 
 ### 4.3 Stake the new Application
 
-Stake the application on-chain:
+Stake the application onchain:
 
 ```bash
 poktrolld --home=./localnet/poktrolld \
@@ -548,7 +548,7 @@ You must run `make acc_initialize_pubkeys` before sending a relay in order for
 the public keys to be initialized correctly.
 
 See the [x/auth](https://docs.cosmos.network/main/build/modules/auth) for more
-information on how public keys are stored and accessible on-chain.
+information on how public keys are stored and accessible onchain.
 
 :::
 
@@ -578,8 +578,8 @@ The Relay Request/Response from is captured in the sequence diagram below.
 sequenceDiagram
   actor U as User <br> (curl Client)
 
-  participant PG as PATH Gateway<br> (off-chain Application Operator)
-  participant RM as RelayMiner <br> (off-chain Supplier Operator)
+  participant PG as PATH Gateway<br> (offchain Application Operator)
+  participant RM as RelayMiner <br> (offchain Supplier Operator)
   participant anvil as ETH Node <br> (Anvil)
 
   U ->> +PG: eth_blockNumber <br> (JSON-RPC Request)
@@ -600,8 +600,8 @@ provide some intuition:
 sequenceDiagram
   participant RM as RelayMiner <br> (Supplier Operator)
   participant P as Pocket Node
-  actor A as Application <br> (on-chain Record)
-  actor S as Supplier <br> (on-chain Record)
+  actor A as Application <br> (onchain Record)
+  actor S as Supplier <br> (onchain Record)
 
   RM -->> P: CreateClaim <br> (Relays Served)
   RM -->> P: SubmitProof <br> (Proof of Work)

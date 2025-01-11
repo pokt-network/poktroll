@@ -148,13 +148,13 @@ func (s *suite) TheSupplierHasServicedASessionWithRelaysForServiceForApplication
 	require.NoError(s, err)
 
 	// Query for any existing claims so that we can compare against them in
-	// future assertions about changes in on-chain claims.
+	// future assertions about changes in onchain claims.
 	allClaimsRes, err := s.proofQueryClient.AllClaims(ctx, &prooftypes.QueryAllClaimsRequest{})
 	require.NoError(s, err)
 	s.scenarioState[preExistingClaimsKey] = allClaimsRes.Claims
 
 	// Query for any existing proofs so that we can compare against them in
-	// future assertions about changes in on-chain proofs.
+	// future assertions about changes in onchain proofs.
 	allProofsRes, err := s.proofQueryClient.AllProofs(ctx, &prooftypes.QueryAllProofsRequest{})
 	require.NoError(s, err)
 	s.scenarioState[preExistingProofsKey] = allProofsRes.Proofs

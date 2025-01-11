@@ -45,7 +45,7 @@ type Params struct {
 	ProofMissingPenalty *types.Coin `protobuf:"bytes,4,opt,name=proof_missing_penalty,json=proofMissingPenalty,proto3" json:"proof_missing_penalty"`
 	// proof_submission_fee is the number of tokens (uPOKT) which should be paid by
 	// the supplier operator when submitting a proof.
-	// This is needed to account for the cost of storing proofs on-chain and prevent
+	// This is needed to account for the cost of storing proofs onchain and prevent
 	// spamming (i.e. sybil bloat attacks) the network with non-required proofs.
 	// TODO_MAINNET: Consider renaming this to `proof_submission_fee_upokt`.
 	ProofSubmissionFee *types.Coin `protobuf:"bytes,5,opt,name=proof_submission_fee,json=proofSubmissionFee,proto3" json:"proof_submission_fee"`

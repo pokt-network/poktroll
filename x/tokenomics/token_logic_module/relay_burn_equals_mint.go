@@ -88,7 +88,7 @@ func (tlm tlmRelayBurnEqualsMint) Process(
 		defer telemetry.BurnedTokensFromModule(suppliertypes.ModuleName, float32(tlmCtx.SettlementCoin.Amount.Int64()))
 	}
 
-	// Update the application's on-chain stake
+	// Update the application's onchain stake
 	newAppStake, err := tlmCtx.Application.Stake.SafeSub(tlmCtx.SettlementCoin)
 	// DEV_NOTE: This should never occur because:
 	//   1. Application overservicing SHOULD be mitigated by the protocol.

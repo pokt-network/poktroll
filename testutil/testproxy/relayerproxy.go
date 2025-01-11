@@ -293,7 +293,7 @@ func MarshalAndSend(
 		require.FailNow(test.t, "unsupported server type")
 	}
 
-	// originHost is the endpoint that the client will retrieve from the on-chain supplier record.
+	// originHost is the endpoint that the client will retrieve from the onchain supplier record.
 	// The supplier may have multiple endpoints (e.g. for load geo-balancing, host failover, etc.).
 	// In the current test setup, we only have one endpoint per supplier, which is why we are accessing `[0]`.
 	// In a real-world scenario, the publicly exposed endpoint would reach a load balancer

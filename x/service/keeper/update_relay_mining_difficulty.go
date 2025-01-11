@@ -30,8 +30,8 @@ var (
 	emaSmoothingFactor = new(big.Float).SetFloat64(0.1)
 )
 
-// UpdateRelayMiningDifficulty updates the on-chain relay mining difficulty
-// based on the amount of on-chain relays for each service, given a map of serviceId->numRelays.
+// UpdateRelayMiningDifficulty updates the onchain relay mining difficulty
+// based on the amount of onchain relays for each service, given a map of serviceId->numRelays.
 func (k Keeper) UpdateRelayMiningDifficulty(
 	ctx context.Context,
 	relaysPerServiceMap map[string]uint64,

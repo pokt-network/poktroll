@@ -6,7 +6,7 @@ import (
 )
 
 // GetSessionIdWithDefaultParams returns the string and bytes representation of the
-// sessionId for the session containing blockHeight, given the default shared on-chain
+// sessionId for the session containing blockHeight, given the default shared onchain
 // parameters, application public key, service ID, and block hash.
 func GetSessionIdWithDefaultParams(
 	appPubKey,
@@ -19,7 +19,7 @@ func GetSessionIdWithDefaultParams(
 }
 
 // GetSessionStartHeightWithDefaultParams returns the block height at which the
-// session containing queryHeight starts, given the default shared on-chain
+// session containing queryHeight starts, given the default shared onchain
 // parameters.
 // See shared.GetSessionStartHeight for more details.
 func GetSessionStartHeightWithDefaultParams(queryHeight int64) int64 {
@@ -28,7 +28,7 @@ func GetSessionStartHeightWithDefaultParams(queryHeight int64) int64 {
 }
 
 // GetSessionEndHeightWithDefaultParams returns the block height at which the session
-// containing queryHeight ends, given the default shared on-chain parameters.
+// containing queryHeight ends, given the default shared onchain parameters.
 // See shared.GetSessionEndHeight for more details.
 func GetSessionEndHeightWithDefaultParams(queryHeight int64) int64 {
 	sharedParams := sharedtypes.DefaultParams()
@@ -36,7 +36,7 @@ func GetSessionEndHeightWithDefaultParams(queryHeight int64) int64 {
 }
 
 // GetSessionNumberWithDefaultParams returns the session number of the session
-// containing queryHeight, given the default on-chain shared parameters.
+// containing queryHeight, given the default onchain shared parameters.
 // See shared.GetSessionNumber for more details.
 func GetSessionNumberWithDefaultParams(queryHeight int64) int64 {
 	sharedParams := sharedtypes.DefaultParams()

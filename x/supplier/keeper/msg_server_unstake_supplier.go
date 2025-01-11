@@ -76,10 +76,10 @@ func (k msgServer) UnstakeSupplier(
 	// Mark the supplier as unstaking by recording the height at which it should stop
 	// providing service.
 	// The supplier MUST continue to provide service until the end of the current
-	// session. I.e., on-chain sessions' suppliers list MUST NOT change mid-session.
+	// session. I.e., onchain sessions' suppliers list MUST NOT change mid-session.
 	// Removing it right away could have undesired effects on the network
 	// (e.g. a session with less than the minimum or 0 number of suppliers,
-	// off-chain actors that need to listen to session supplier's change mid-session, etc).
+	// offchain actors that need to listen to session supplier's change mid-session, etc).
 	supplier.UnstakeSessionEndHeight = uint64(sharedtypes.GetSessionEndHeight(&sharedParams, currentHeight))
 	k.SetSupplier(ctx, supplier)
 

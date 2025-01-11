@@ -794,7 +794,7 @@
           "refId": "A"
         }
       ],
-      "title": "On-Chain Relays",
+      "title": "Onchain Relays",
       "type": "timeseries"
     },
     {
@@ -1311,7 +1311,7 @@
   },
   "timepicker": {},
   "timezone": "browser",
-  "title": "Protocol / Insights and On-Chain data",
+  "title": "Protocol / Insights and Onchain data",
   "uid": "adzickiu028lcb",
   "version": 1,
   "weekStart": ""

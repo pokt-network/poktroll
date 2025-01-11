@@ -32,7 +32,7 @@ type Supplier struct {
 	// By default, this address is the one that receives all the rewards unless owtherwise specified.
 	// This property cannot be updated by the operator.
 	OwnerAddress string `protobuf:"bytes,1,opt,name=owner_address,json=ownerAddress,proto3" json:"owner_address,omitempty"`
-	// The operator address of the supplier operator (i.e. the one managing the off-chain server).
+	// The operator address of the supplier operator (i.e. the one managing the offchain server).
 	// The operator address can update the supplier's configurations excluding the owner address.
 	// This property does not change over the supplier's lifespan, the supplier must be unstaked
 	// and re-staked to effectively update this value.
