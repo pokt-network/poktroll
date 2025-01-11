@@ -35,7 +35,7 @@ require (
 	github.com/cosmos/cosmos-db v1.0.2
 	github.com/cosmos/cosmos-proto v1.0.0-beta.5
 	github.com/cosmos/cosmos-sdk v0.50.9
-	github.com/cosmos/gogoproto v1.5.0
+	github.com/cosmos/gogoproto v1.7.0
 	github.com/cosmos/ibc-go/modules/capability v1.0.0
 	github.com/cosmos/ibc-go/v8 v8.2.0
 	github.com/go-kit/kit v0.13.0
@@ -79,7 +79,7 @@ require (
 )
 
 require (
-	cosmossdk.io/x/tx v0.13.4
+	cosmossdk.io/x/tx v0.13.7
 	github.com/jhump/protoreflect v1.16.0
 	github.com/mitchellh/mapstructure v1.5.0
 )
