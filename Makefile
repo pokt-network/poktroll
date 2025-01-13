@@ -6,7 +6,7 @@ POKTROLLD_HOME ?= ./localnet/poktrolld
 # TODO_TECHDEBT(@adshmh): Track down why using the loopback address 127.0.0.1 instead of `localhost` results in an error when sending TXs on some LocalNet setups.
 # e.g.: poktrolld tx bank send $addr $PNF_ADDRESS 1000upokt --yes --home=${POKTROLLD_HOME} --node=${POCKET_NODE}
 # Results in the following error:
-# # rpc error: code = InvalidArgument desc = invalid Bech32 prefix; expected cosmos, got pokt: invalid request
+# rpc error: code = InvalidArgument desc = invalid Bech32 prefix; expected cosmos, got pokt: invalid request
 POCKET_NODE ?= tcp://localhost:26657 # The pocket node (validator in the localnet context)
 TESTNET_RPC ?= https://testnet-validated-validator-rpc.poktroll.com/ # TestNet RPC endpoint for validator maintained by Grove. Needs to be update if there's another "primary" testnet.
 PATH_URL ?= http://localhost:3000
