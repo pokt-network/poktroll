@@ -20,6 +20,7 @@ var _ = strconv.IntSize
 func TestSupplierQuerySingle(t *testing.T) {
 	supplierModuleKeepers, ctx := keepertest.SupplierKeeper(t)
 	suppliers := createNSuppliers(*supplierModuleKeepers.Keeper, ctx, 2)
+
 	tests := []struct {
 		desc        string
 		request     *types.QueryGetSupplierRequest
@@ -121,4 +122,36 @@ func TestSupplierQueryPaginated(t *testing.T) {
 		_, err := supplierModuleKeepers.AllSuppliers(ctx, nil)
 		require.ErrorIs(t, err, status.Error(codes.InvalidArgument, "invalid request"))
 	})
+}
+
+func TestSupplierQueryFilterByServiceId(t *testing.T) {
+	supplierModuleKeepers, ctx := keepertest.SupplierKeeper(t)
+	msgs := createNSuppliers(*supplierModuleKeepers.Keeper, ctx, 5)
+
+	// Get the first service ID from the first supplier to use as filter
+	firstServiceId := msgs[0].Services[0].ServiceId
+
+	request := &types.QueryAllSuppliersRequest{
+		Filter: &types.QueryAllSuppliersRequest_ServiceId{
+			ServiceId: firstServiceId,
+		},
+		Pagination: &query.PageRequest{
+			Limit: uint64(len(msgs)),
+		},
+	}
+
+	resp, err := supplierModuleKeepers.AllSuppliers(ctx, request)
+	require.NoError(t, err)
+
+	// Verify each returned supplier has the filtered service
+	for _, supplier := range resp.Supplier {
+		hasService := false
+		for _, service := range supplier.Services {
+			if service.ServiceId == firstServiceId {
+				hasService = true
+				break
+			}
+		}
+		require.True(t, hasService, "Supplier should have the filtered service")
+	}
 }

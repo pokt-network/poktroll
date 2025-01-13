@@ -2971,7 +2971,7 @@ type isQueryAllSuppliersRequest_Filter interface {
 }
 
 type QueryAllSuppliersRequest_ServiceId struct {
-	ServiceId string `protobuf:"bytes,2,opt,name=service_id,json=serviceId,proto3,oneof"`
+	ServiceId string `protobuf:"bytes,2,opt,name=service_id,json=serviceId,proto3,oneof"` // unique service identifier to filter by
 }
 
 func (*QueryAllSuppliersRequest_ServiceId) isQueryAllSuppliersRequest_Filter() {}

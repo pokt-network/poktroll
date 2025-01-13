@@ -55,7 +55,7 @@ message QueryAllSuppliersRequest {
   cosmos.base.query.v1beta1.PageRequest pagination = 1;
 
   oneof filter {
-    string service_id = 2;
+    string service_id = 2; // unique service identifier to filter by
   }
 }
 
