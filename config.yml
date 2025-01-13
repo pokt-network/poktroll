@@ -104,6 +104,11 @@ validators:
       instrumentation:
         prometheus: true
       log_level: "info"
+      # Increase the rpc and mempool max bytes to support larger proof transactions.
+      rpc:
+        max_body_bytes: "100000000"
+      mempool:
+        max_tx_bytes: "100000000"
     client:
       chain-id: poktroll
 
