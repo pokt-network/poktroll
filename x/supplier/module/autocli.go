@@ -6,6 +6,30 @@ import (
 	modulev1 "github.com/pokt-network/poktroll/api/poktroll/supplier"
 )
 
+// Query: &autocliv1.ServiceCommandDescriptor{
+// 	Service: modulev1.Query_ServiceDesc.ServiceName,
+// 	RpcCommandOptions: []*autocliv1.RpcCommandOptions{
+// 		//			{
+// 		//				RpcMethod: "Params",
+// 		//				Use:       "params",
+// 		//				Short:     "Shows the parameters of the module",
+// 		//			},
+// 		//			{
+// 		//				RpcMethod: "AllServices",
+// 		//				Use:       "list-service",
+// 		//				Short:     "List all service",
+// 		//			},
+// 		{
+// 			RpcMethod:      "Service",
+// 			Use:            "show-service [id]",
+// 			Short:          "Shows a service",
+// 			Long:           "Retrieve the service details by its id.",
+// 			PositionalArgs: []*autocliv1.PositionalArgDescriptor{{ProtoField: "id"}},
+// 		},
+// 		// this line is used by ignite scaffolding # autocli/query
+// 	},
+// },
+
 // AutoCLIOptions implements the autocli.HasAutoCLIConfig interface.
 func (am AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 	return &autocliv1.ModuleOptions{
@@ -19,8 +43,11 @@ func (am AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 				// },
 				{
 					RpcMethod: "AllSuppliers",
-					Use:       "list-supplier",
-					Short:     "List all supplier",
+					Use:       "list-suppliers",
+					Short:     "List all suppliers on the Pocket Network",
+					Long:      "Retrieves a paginated list of all suppliers currently registered on the Pocket Network, including their stakes and services.",
+					Example:   "poktrolld query supplier list-suppliers\npoktrolld query supplier list-suppliers --page 2 --limit 50",
+					Alias:     []string{"suppliers", "ls"},
 				},
 				// {
 				// 	RpcMethod:      "Supplier",

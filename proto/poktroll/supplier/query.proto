@@ -53,6 +53,10 @@ message QueryGetSupplierResponse {
 
 message QueryAllSuppliersRequest {
   cosmos.base.query.v1beta1.PageRequest pagination = 1;
+
+  oneof filter {
+    string service_id = 2;
+  }
 }
 
 message QueryAllSuppliersResponse {
