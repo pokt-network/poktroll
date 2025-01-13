@@ -10,24 +10,24 @@ import (
 func (am AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 	return &autocliv1.ModuleOptions{
 		Query: &autocliv1.ServiceCommandDescriptor{
-			Service:           modulev1.Query_ServiceDesc.ServiceName,
+			Service: modulev1.Query_ServiceDesc.ServiceName,
 			RpcCommandOptions: []*autocliv1.RpcCommandOptions{
-				//{
-				//	RpcMethod: "Params",
-				//	Use:       "params",
-				//	Short:     "Shows the parameters of the module",
-				//},
-				//{
-				//	RpcMethod: "AllSuppliers",
-				//	Use:       "list-supplier",
-				//	Short:     "List all supplier",
-				//},
-				//{
-				//	RpcMethod:      "Supplier",
-				//	Use:            "show-supplier [id]",
-				//	Short:          "Shows a supplier",
-				//	PositionalArgs: []*autocliv1.PositionalArgDescriptor{{ProtoField: "index"}},
-				//},
+				// {
+				// 	RpcMethod: "Params",
+				// 	Use:       "params",
+				// 	Short:     "Shows the parameters of the module",
+				// },
+				{
+					RpcMethod: "AllSuppliers",
+					Use:       "list-supplier",
+					Short:     "List all supplier",
+				},
+				// {
+				// 	RpcMethod:      "Supplier",
+				// 	Use:            "show-supplier [id]",
+				// 	Short:          "Shows a supplier",
+				// 	PositionalArgs: []*autocliv1.PositionalArgDescriptor{{ProtoField: "index"}},
+				// },
 				// this line is used by ignite scaffolding # autocli/query
 			},
 		},

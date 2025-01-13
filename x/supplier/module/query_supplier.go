@@ -8,6 +8,7 @@ import (
 	"github.com/pokt-network/poktroll/x/supplier/types"
 )
 
+// TODO_IMPROVE:
 func CmdListSuppliers() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "list-supplier",
