@@ -363,7 +363,7 @@ for x in range(localnet_config["path_gateways"]["count"]):
         # ],
         # TODO_IMPROVE(@okdas): Add port forwards to grafana, pprof, like the other resources
         port_forwards=[
-                str(2999 + actor_number) + ":3000"
+                str(2999 + actor_number) + ":3069"
         ],
     )
 
