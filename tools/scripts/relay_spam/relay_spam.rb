@@ -3,6 +3,7 @@
 # The purpose of the script:
 # - Maximize the number of requests sent from unique accounts.
 # - Ideally, the amount of requests per uniq account should be set to the number of suppliers, in hopes that path will proxy requests to different suppliers.
+# - When staking applications and delegating them to gateways, the script must look through each gateways (e.g. not each application-gateway, but each gateway-application), to avoid sending transactions from the same account as there are issues with sending multiple txes from the cosmos account in the same block.
 
 require 'yaml'
 require 'optparse'
@@ -17,6 +18,7 @@ require 'concurrent'
 require 'async'
 require 'async/http/internet'
 require 'async/semaphore'
+require 'async/process'
 
 class RelaySpammer
   attr_reader :config, :options
@@ -75,9 +77,21 @@ class RelaySpammer
     
     begin
       config_path = options.config_file
-      existing_config = File.exist?(config_path) ? YAML.load_file(config_path) : @config
+      mutex = Mutex.new
       
-      existing_config['applications'] ||= []
+      # Load initial config and ensure it's properly structured
+      existing_config = nil
+      mutex.synchronize do
+        existing_config = File.exist?(config_path) ? YAML.load_file(config_path) : @config
+        existing_config['applications'] ||= []
+        
+        # Clean up existing applications: remove duplicates and sort
+        existing_config['applications'].uniq! { |app| app['address'] }
+        existing_config['applications'].sort_by! { |app| app['name'].scan(/\d+/).first.to_i }
+        
+        # Save cleaned config
+        File.write(config_path, existing_config.to_yaml)
+      end
       
       # Find the highest existing index
       existing_indices = existing_config['applications']
@@ -85,37 +99,86 @@ class RelaySpammer
         .compact
       start_index = (existing_indices.max || -1) + 1
       
-      options.num_accounts.times do |i|
-        key_name = "relay_spam_app_#{start_index + i}"
-        create_key_cmd = [
-          "poktrolld keys add",
-          key_name,
-          "--home=#{temp_home}",
-          "--keyring-backend=#{config['keyring_backend']}",
-          "--output json"
-        ].join(' ')
-        
-        puts "Executing command: #{create_key_cmd}"
-        
-        output = `#{create_key_cmd} 2>&1`
-        puts "Command output: #{output}"
-        
-        key_info = JSON.parse(output.lines.first)
-        mnemonic = output.match(/mnemonic":"([^"]+)"/)[1]
-        
-        new_app = {
-          'name' => key_name,
-          'address' => key_info['address'],
-          'mnemonic' => mnemonic
-        }
-        
-        existing_config['applications'] << new_app
-        puts "[#{i + 1}/#{options.num_accounts}] Added #{key_name}: #{key_info['address']}"
-        
-        File.write(config_path, existing_config.to_yaml)
+      # Track new applications for bulk update
+      new_applications = Concurrent::Array.new
+      completed = Concurrent::AtomicFixnum.new(0)
+      semaphore = Async::Semaphore.new(20)
+      
+      Async do |task|
+        (0...options.num_accounts).each_slice(50).map do |batch|
+          task.async do
+            batch.each do |i|
+              semaphore.acquire do
+                key_name = "relay_spam_app_#{start_index + i}"
+                
+                create_key_cmd = [
+                  "poktrolld keys add",
+                  key_name,
+                  "--home=#{temp_home}",
+                  "--keyring-backend=#{config['keyring_backend']}",
+                  "--output json"
+                ].join(' ')
+                
+                begin
+                  output = Async::Process.capture(create_key_cmd)
+                  
+                  key_info = JSON.parse(output)
+                  mnemonic = output.match(/mnemonic":"([^"]+)"/)[1]
+                  
+                  new_app = {
+                    'name' => key_name,
+                    'address' => key_info['address'],
+                    'mnemonic' => mnemonic
+                  }
+                  
+                  new_applications << new_app
+                  current_completed = completed.increment
+                  print "\rProgress: [#{current_completed}/#{options.num_accounts}] Added #{key_name}: #{key_info['address']}"
+                rescue => e
+                  puts "\nError creating key #{key_name}: #{e.message}"
+                  puts "\nCommand output: #{output}" if defined?(output)
+                end
+              end
+            end
+          end
+        end.each(&:wait)
       end
       
-      puts "\nSuccessfully added #{options.num_accounts} accounts to config file"
+      # Final update of config file with all new applications
+      mutex.synchronize do
+        current_config = YAML.load_file(config_path)
+        current_config['applications'] ||= []
+        
+        # Add new applications
+        current_config['applications'].concat(new_applications)
+        
+        # Clean up and sort all applications
+        current_config['applications'].uniq! { |app| app['address'] }
+        current_config['applications'].sort_by! { |app| app['name'].scan(/\d+/).first.to_i }
+        
+        # Validate and renumber if needed
+        current_config['applications'].each_with_index do |app, index|
+          app['name'] = "relay_spam_app_#{index}"
+        end
+        
+        File.write(config_path, current_config.to_yaml)
+      end
+      
+      # Verify final count
+      final_config = YAML.load_file(config_path)
+      actual_count = final_config['applications'].length
+      expected_count = existing_config['applications'].length + options.num_accounts
+      
+      puts "\n\nConfig file update completed:"
+      puts "Previous count: #{existing_config['applications'].length}"
+      puts "New accounts added: #{new_applications.length}"
+      puts "Final count: #{actual_count}"
+      
+      if actual_count != expected_count
+        puts "\nWarning: Final count differs from expected count!"
+        puts "This might be due to duplicate addresses or failed operations."
+      end
+      
     ensure
       FileUtils.rm_rf(temp_home)
     end
@@ -130,13 +193,13 @@ class RelaySpammer
       # First, try to delete the existing key, redirecting stderr to /dev/null
       delete_cmd = "poktrolld keys delete #{app['name']} --home=#{config['home']} --keyring-backend=#{config['keyring_backend']} -y 2>/dev/null"
       system(delete_cmd)
-      
+
       # Now import the key
       import_cmd = "poktrolld keys add --recover #{app['name']} --home=#{config['home']} --keyring-backend=#{config['keyring_backend']}"
-      
-      begin
+
+                begin
         PTY.spawn(import_cmd) do |stdout, stdin, pid|
-          Timeout.timeout(10) do
+                  Timeout.timeout(10) do
             while true
               output = stdout.readline.strip
               puts output
@@ -144,14 +207,14 @@ class RelaySpammer
               if output.include?("Enter your bip39 mnemonic")
                 stdin.puts(app['mnemonic'])
                 break
-              end
-            end
+                  end
+                  end
             
             # Read remaining output
             begin
               while (line = stdout.readline)
                 puts line
-              end
+                end
             rescue EOFError
               # Expected when process ends
             end
@@ -172,32 +235,30 @@ class RelaySpammer
   end
 
   def fund_accounts
-    puts "Funding accounts..."
+    puts "Generating funding commands..."
     
-    # Get all addresses from applications
     addresses = config['applications'].map { |app| app['address'] }
     funding_amount = config['application_defaults']['funding_amount']
+    batch_size = 5000
     
-    # Build multi-send command
-    fund_cmd = [
-      "poktrolld tx bank multi-send",
-      config['funder_address'],     # from address
-      addresses.join(' '),          # all recipient addresses
-      "#{funding_amount}upokt",     # amount each
-      "--home=#{config['home']}",   # home directory
-      config['tx_flags'],           # common transaction flags
-      "-y"                         # auto-confirm
-    ].join(' ')
-    
-    puts "Executing funding command: #{fund_cmd}"
-    success = system(fund_cmd)
-    
-    if success
-      puts "\nSuccessfully funded #{addresses.length} accounts with #{funding_amount}upokt each"
-    else
-      puts "\nError funding accounts"
-      exit 1
+    addresses.each_slice(batch_size).with_index do |batch_addresses, index|
+      puts "\n# Batch #{index + 1}/#{(addresses.length.to_f / batch_size).ceil} (#{batch_addresses.length} addresses)"
+      
+      # Build multi-send command for this batch
+      fund_cmd = [
+        "poktrolld tx bank multi-send",
+        config['funder_address'],     # from address
+        batch_addresses.join(' '),    # batch of recipient addresses
+        "#{funding_amount}upokt",     # amount each
+        "--home=#{config['home']}",   # home directory
+        config['tx_flags'],           # common transaction flags
+       #  "-y"                         # auto-confirm
+      ].join(' ')
+      
+      puts fund_cmd
     end
+    
+    puts "\n# Total: #{addresses.length} accounts to be funded with #{funding_amount}upokt each"
   end
 
   def ensure_stake_applications
