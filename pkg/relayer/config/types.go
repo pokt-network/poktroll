@@ -30,7 +30,7 @@ type YAMLRelayMinerConfig struct {
 // YAMLRelayMinerPingConfig represents the configuration to expose a ping server.
 type YAMLRelayMinerPingConfig struct {
 	Enabled bool `yaml:"enabled"`
-	// Addr is the address to bind to (format: 'hostname:port')
+	// Addr is the address to bind to (format: 'hostname:port') where 'hostname' can be a DNS name or an IP
 	Addr string `yaml:"addr"`
 }
 
@@ -98,7 +98,7 @@ type RelayMinerConfig struct {
 // server configuration.
 type RelayMinerPingConfig struct {
 	Enabled bool
-	// Addr is the address to bind to (format: hostname:port)
+	// Addr is the address to bind to (format: hostname:port) where 'hostname' can be a DNS name or an IP
 	Addr string
 }
 
