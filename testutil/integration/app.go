@@ -563,32 +563,43 @@ func NewCompleteIntegrationApp(t *testing.T, opts ...IntegrationAppOptionFn) *Ap
 		opts...,
 	)
 
+	configurator := module.NewConfigurator(cdc, msgRouter, queryHelper)
+	//// TODO_IN_THIS_COMMIT: clean up...
+	//flagSet := testclient.NewFlagSet(t, "tcp://127.0.0.1:42070")
+	//keyRing := keyring.NewInMemory(cdc)
+	//clientCtx := testclient.NewLocalnetClientCtx(t, flagSet).WithKeyring(keyRing)
+
+	for _, mod := range integrationApp.GetModuleManager().Modules {
+		//mod.(module.AppModuleBasic).RegisterGRPCGatewayRoutes(clientCtx, mux)
+		mod.(module.HasServices).RegisterServices(configurator)
+	}
+
 	// Register the message servers
-	banktypes.RegisterMsgServer(msgRouter, bankkeeper.NewMsgServerImpl(bankKeeper))
-	tokenomicstypes.RegisterMsgServer(msgRouter, tokenomicskeeper.NewMsgServerImpl(tokenomicsKeeper))
-	servicetypes.RegisterMsgServer(msgRouter, servicekeeper.NewMsgServerImpl(serviceKeeper))
-	sharedtypes.RegisterMsgServer(msgRouter, sharedkeeper.NewMsgServerImpl(sharedKeeper))
-	gatewaytypes.RegisterMsgServer(msgRouter, gatewaykeeper.NewMsgServerImpl(gatewayKeeper))
-	apptypes.RegisterMsgServer(msgRouter, appkeeper.NewMsgServerImpl(applicationKeeper))
-	suppliertypes.RegisterMsgServer(msgRouter, supplierkeeper.NewMsgServerImpl(supplierKeeper))
-	prooftypes.RegisterMsgServer(msgRouter, proofkeeper.NewMsgServerImpl(proofKeeper))
-	authtypes.RegisterMsgServer(msgRouter, authkeeper.NewMsgServerImpl(accountKeeper))
-	sessiontypes.RegisterMsgServer(msgRouter, sessionkeeper.NewMsgServerImpl(sessionKeeper))
-	authz.RegisterMsgServer(msgRouter, authzKeeper)
+	//banktypes.RegisterMsgServer(msgRouter, bankkeeper.NewMsgServerImpl(bankKeeper))
+	//tokenomicstypes.RegisterMsgServer(msgRouter, tokenomicskeeper.NewMsgServerImpl(tokenomicsKeeper))
+	//servicetypes.RegisterMsgServer(msgRouter, servicekeeper.NewMsgServerImpl(serviceKeeper))
+	//sharedtypes.RegisterMsgServer(msgRouter, sharedkeeper.NewMsgServerImpl(sharedKeeper))
+	//gatewaytypes.RegisterMsgServer(msgRouter, gatewaykeeper.NewMsgServerImpl(gatewayKeeper))
+	//apptypes.RegisterMsgServer(msgRouter, appkeeper.NewMsgServerImpl(applicationKeeper))
+	//suppliertypes.RegisterMsgServer(msgRouter, supplierkeeper.NewMsgServerImpl(supplierKeeper))
+	//prooftypes.RegisterMsgServer(msgRouter, proofkeeper.NewMsgServerImpl(proofKeeper))
+	//authtypes.RegisterMsgServer(msgRouter, authkeeper.NewMsgServerImpl(accountKeeper))
+	//sessiontypes.RegisterMsgServer(msgRouter, sessionkeeper.NewMsgServerImpl(sessionKeeper))
+	//authz.RegisterMsgServer(msgRouter, authzKeeper)
 
 	// Register query servers
-	banktypes.RegisterQueryServer(queryHelper, bankKeeper)
-	authz.RegisterQueryServer(queryHelper, authzKeeper)
-	tokenomicstypes.RegisterQueryServer(queryHelper, tokenomicsKeeper)
-	servicetypes.RegisterQueryServer(queryHelper, serviceKeeper)
-	sharedtypes.RegisterQueryServer(queryHelper, sharedKeeper)
-	gatewaytypes.RegisterQueryServer(queryHelper, gatewayKeeper)
-	apptypes.RegisterQueryServer(queryHelper, applicationKeeper)
-	suppliertypes.RegisterQueryServer(queryHelper, supplierKeeper)
-	prooftypes.RegisterQueryServer(queryHelper, proofKeeper)
-	// TODO_TECHDEBT: What is the query server for authtypes?
-	// authtypes.RegisterQueryServer(queryHelper, accountKeeper)
-	sessiontypes.RegisterQueryServer(queryHelper, sessionKeeper)
+	//banktypes.RegisterQueryServer(queryHelper, bankKeeper)
+	//authz.RegisterQueryServer(queryHelper, authzKeeper)
+	//tokenomicstypes.RegisterQueryServer(queryHelper, tokenomicsKeeper)
+	//servicetypes.RegisterQueryServer(queryHelper, serviceKeeper)
+	//sharedtypes.RegisterQueryServer(queryHelper, sharedKeeper)
+	//gatewaytypes.RegisterQueryServer(queryHelper, gatewayKeeper)
+	//apptypes.RegisterQueryServer(queryHelper, applicationKeeper)
+	//suppliertypes.RegisterQueryServer(queryHelper, supplierKeeper)
+	//prooftypes.RegisterQueryServer(queryHelper, proofKeeper)
+	//// TODO_TECHDEBT: What is the query server for authtypes?
+	//// authtypes.RegisterQueryServer(queryHelper, accountKeeper)
+	//sessiontypes.RegisterQueryServer(queryHelper, sessionKeeper)
 
 	// Need to go to the next block to finalize the genesis and setup.
 	// This has to be after the params are set, as the params are stored in the

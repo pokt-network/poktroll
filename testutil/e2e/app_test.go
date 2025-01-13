@@ -1,15 +1,15 @@
 package e2e
 
 import (
+	"bytes"
 	"context"
-	"encoding/hex"
+	"io"
 	"net/http"
 	"testing"
 	"time"
 
 	"cosmossdk.io/depinject"
 	"cosmossdk.io/math"
-	abci "github.com/cometbft/cometbft/abci/types"
 	cometrpctypes "github.com/cometbft/cometbft/rpc/core/types"
 	"github.com/cometbft/cometbft/types"
 	cosmostx "github.com/cosmos/cosmos-sdk/client/tx"
@@ -170,7 +170,7 @@ func TestNewE2EApp(t *testing.T) {
 
 	// TODO_IN_THIS_COMMIT: NOT localnet flagset NOR context, should be
 	// configured to match the E2E app listeners.
-	flagSet := testclient.NewFlagSet(t, "127.0.0.1:42069")
+	flagSet := testclient.NewFlagSet(t, "tcp://127.0.0.1:42070")
 	clientCtx := testclient.NewLocalnetClientCtx(t, flagSet).WithKeyring(keyRing)
 
 	txFactory, err := cosmostx.NewFactoryCLI(clientCtx, flagSet)
@@ -220,7 +220,7 @@ func TestGRPCServer(t *testing.T) {
 	//req := gatewaytypes.QueryGetGatewayRequest{
 	//	Address: "pokt15w3fhfyc0lttv7r585e2ncpf6t2kl9uh8rsnyz",
 	//}
-	res := &abci.ResponseQuery{}
+	//res := &abci.ResponseQuery{}
 
 	//grpcConn.Invoke(context.Background(), "abci_query", req, res)
 
@@ -250,19 +250,19 @@ func TestGRPCServer(t *testing.T) {
 	//res := new(gatewaytypes.QueryGetGatewayResponse)
 	//
 	//err = grpcConn.Invoke(context.Background(), "/poktroll.gateway.Query/Gateway", anyReq, res)
-	dataHex, err := hex.DecodeString("0A2B706F6B74313577336668667963306C747476377235383565326E6370663674326B6C3975683872736E797A")
-	require.NoError(t, err)
+	//dataHex, err := hex.DecodeString("0A2B706F6B74313577336668667963306C747476377235383565326E6370663674326B6C3975683872736E797A")
+	//require.NoError(t, err)
 
-	req := &abci.RequestQuery{
-		Data:   dataHex,
-		Path:   "/cosmos.auth.v1beta1.Query/Account",
-		Height: 0,
-		Prove:  false,
-	}
-
-	err = grpcConn.Invoke(context.Background(), "abci_query", req, res)
+	//req := &abci.RequestQuery{
+	//	Data:   dataHex,
+	//	Path:   "/cosmos.auth.v1beta1.Query/Account",
+	//	Height: 0,
+	//	Prove:  false,
+	//}
+	//
 	//err = grpcConn.Invoke(context.Background(), "abci_query", req, res)
-	require.NoError(t, err)
+	////err = grpcConn.Invoke(context.Background(), "abci_query", req, res)
+	//require.NoError(t, err)
 
 	require.NoError(t, err)
 	sharedParams, err := sharedQueryClient.GetParams(app.GetSdkCtx())
@@ -282,4 +282,35 @@ func TestGRPCServer(t *testing.T) {
 	//"params" : {
 	//	"tx" : "CmsKZgohL3Bva3Ryb2xsLmdhdGV3YXkuTXNnU3Rha2VHYXRld2F5EkEKK3Bva3QxNXczZmhmeWMwbHR0djdyNTg1ZTJuY3BmNnQya2w5dWg4cnNueXoSEgoFdXBva3QSCTEwMDAwMDAwMRiGOxJYCk4KRgofL2Nvc21vcy5jcnlwdG8uc2VjcDI1NmsxLlB1YktleRIjCiEDZo2bY9XquUsFljtW/OKWVCDhYFf7NbidN4Y99VQ9438SBAoCCAESBhCqoYLJAhpAw5e7iJN5SpFit3fftxnZY7EDiFqupi7XEL3sUyeV0IBSQv2JZ7Cdu0dCG0yEVgj0xarkPi7dR10pNDL1gcUJxw=="
 	//}
+}
+
+func TestSanity3(t *testing.T) {
+	app := NewE2EApp(t)
+	t.Cleanup(func() {
+		app.Close()
+	})
+
+	time.Sleep(time.Second * 1)
+
+	client := http.DefaultClient
+	res, err := client.Post(
+		"http://127.0.0.1:42070/",
+		"application/json",
+		bytes.NewBuffer([]byte(`{
+			"jsonrpc":"2.0",
+			"id":"0",
+			"method":"abci_query",
+			"params":{"path":"/cosmos.auth.v1beta1.Query/Account",
+				"data":"0A2B706F6B74313577336668667963306C747476377235383565326E6370663674326B6C3975683872736E797A",
+				"prove":false,
+				"height":"0"
+			}
+		}`)),
+	)
+	require.NoError(t, err)
+
+	result, err := io.ReadAll(res.Body)
+	require.NoError(t, err)
+
+	t.Logf("result: %s", result)
 }

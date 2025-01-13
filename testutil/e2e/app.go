@@ -3,12 +3,12 @@ package e2e
 import (
 	"context"
 	"errors"
-	"fmt"
 	"net"
 	"net/http"
 	"sync"
 	"testing"
 
+	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	"github.com/cosmos/cosmos-sdk/types/module"
 	"github.com/gorilla/websocket"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
@@ -19,6 +19,7 @@ import (
 	coretypes "github.com/cometbft/cometbft/rpc/core/types"
 
 	"github.com/pokt-network/poktroll/testutil/integration"
+	"github.com/pokt-network/poktroll/testutil/testclient"
 )
 
 // E2EApp wraps an integration.App and provides both gRPC and WebSocket servers for end-to-end testing
@@ -43,14 +44,27 @@ func NewE2EApp(t *testing.T, opts ...integration.IntegrationAppOptionFn) *E2EApp
 	grpcServer := grpc.NewServer(grpc.Creds(creds))
 	mux := runtime.NewServeMux()
 
+	abciQueryPattern, err := runtime.NewPattern(
+		1,
+		[]int{},
+		[]string{""},
+		"",
+	)
+	require.NoError(t, err)
+
+	// Register the handler with the mux
+	mux.Handle(http.MethodPost, abciQueryPattern, handleABCIQuery)
+
 	// Create the integration app
+	opts = append(opts, integration.WithGRPCServer(grpcServer))
 	app := integration.NewCompleteIntegrationApp(t, opts...)
 	app.RegisterGRPCServer(grpcServer)
+	//app.RegisterGRPCServer(app.MsgServiceRouter())
 	//app.RegisterGRPCServer(e2eApp.grpcServer)
 
-	//flagSet := testclient.NewFlagSet(t, "127.0.0.1:42069")
-	//keyRing := keyring.NewInMemory(app.GetCodec())
-	//clientCtx := testclient.NewLocalnetClientCtx(t, flagSet).WithKeyring(keyRing)
+	flagSet := testclient.NewFlagSet(t, "tcp://127.0.0.1:42070")
+	keyRing := keyring.NewInMemory(app.GetCodec())
+	clientCtx := testclient.NewLocalnetClientCtx(t, flagSet).WithKeyring(keyRing)
 
 	//authtx.RegisterTxService(
 	//	//app.GRPCQueryRouter(),
@@ -61,12 +75,8 @@ func NewE2EApp(t *testing.T, opts ...integration.IntegrationAppOptionFn) *E2EApp
 	//)
 	//authtx.RegisterGRPCGatewayRoutes(clientCtx, mux)
 
-	configurator := module.NewConfigurator(app.GetCodec(), app.MsgServiceRouter(), app.GRPCQueryRouter())
-	for moduleName, mod := range app.GetModuleManager().Modules {
-		fmt.Printf(">>> start: %s\n", moduleName)
-		//mod.(module.AppModuleBasic).RegisterGRPCGatewayRoutes(clientCtx, mux)
-		mod.(module.HasServices).RegisterServices(configurator)
-		fmt.Printf(">>> done: %s\n", moduleName)
+	for _, mod := range app.GetModuleManager().Modules {
+		mod.(module.AppModuleBasic).RegisterGRPCGatewayRoutes(clientCtx, mux)
 	}
 
 	// Create listeners for gRPC, WebSocket, and HTTP
@@ -106,7 +116,7 @@ func NewE2EApp(t *testing.T, opts ...integration.IntegrationAppOptionFn) *E2EApp
 
 	// Initialize and start HTTP server
 	go func() {
-		if err := http.ListenAndServe("localhost:42070", mux); err != nil {
+		if err := http.ListenAndServe("127.0.0.1:42070", mux); err != nil {
 			if !errors.Is(err, http.ErrServerClosed) {
 				panic(err)
 			}
