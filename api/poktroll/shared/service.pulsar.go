@@ -3336,7 +3336,7 @@ func (RPCType) EnumDescriptor() ([]byte, []int) {
 }
 
 // Enum to define configuration options
-// TODO_RESEARCH: Should these be configs, SLAs or something else? There will be more discussion once we get closer to implementing on-chain QoS.
+// TODO_RESEARCH: Should these be configs, SLAs or something else? There will be more discussion once we get closer to implementing onchain QoS.
 type ConfigOptions int32
 
 const (
@@ -3398,7 +3398,7 @@ type Service struct {
 	// cost_per_relay_for_specific_service = compute_units_per_relay_for_specific_service * compute_units_to_tokens_multipler_global_value
 	ComputeUnitsPerRelay uint64 `protobuf:"varint,3,opt,name=compute_units_per_relay,json=computeUnitsPerRelay,proto3" json:"compute_units_per_relay,omitempty"` // Compute units required per relay for this service
 	// The owner address that created the service.
-	// It is the address that receives rewards based on the Service's on-chain usage
+	// It is the address that receives rewards based on the Service's onchain usage
 	// It is the only address that can update the service configuration (e.g. compute_units_per_relay),
 	// or make other updates to it.
 	OwnerAddress string `protobuf:"bytes,4,opt,name=owner_address,json=ownerAddress,proto3" json:"owner_address,omitempty"` // The Bech32 address of the service owner / creator

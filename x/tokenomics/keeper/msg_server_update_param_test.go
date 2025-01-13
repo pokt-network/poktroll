@@ -42,7 +42,7 @@ func TestMsgUpdateParam_UpdateMintAllocationPercentagesOnly(t *testing.T) {
 	require.NotEqual(t, defaultParams.MintAllocationPercentages, res.Params.MintAllocationPercentages)
 	require.Equal(t, expectedMintAllocationPercentages, res.Params.MintAllocationPercentages)
 
-	// Assert that the on-chain mint allocation percentages is updated.
+	// Assert that the onchain mint allocation percentages is updated.
 	params := k.GetParams(ctx)
 	require.Equal(t, expectedMintAllocationPercentages, params.MintAllocationPercentages)
 
@@ -74,7 +74,7 @@ func TestMsgUpdateParam_UpdateDaoRewardAddressOnly(t *testing.T) {
 	require.NotEqual(t, defaultParams.DaoRewardAddress, res.Params.DaoRewardAddress)
 	require.Equal(t, expectedDaoRewardAddress, res.Params.DaoRewardAddress)
 
-	// Assert that the on-chain dao reward address is updated.
+	// Assert that the onchain dao reward address is updated.
 	params := k.GetParams(ctx)
 	require.Equal(t, expectedDaoRewardAddress, params.DaoRewardAddress)
 
@@ -106,7 +106,7 @@ func TestMsgUpdateParam_UpdateGlobalInflationPerClaimOnly(t *testing.T) {
 	require.NotEqual(t, defaultParams.GlobalInflationPerClaim, res.Params.GlobalInflationPerClaim)
 	require.Equal(t, expectedGlobalInflationPerClaim, res.Params.GlobalInflationPerClaim)
 
-	// Assert that the on-chain dao reward address is updated.
+	// Assert that the onchain dao reward address is updated.
 	params := k.GetParams(ctx)
 	require.Equal(t, expectedGlobalInflationPerClaim, params.GlobalInflationPerClaim)
 

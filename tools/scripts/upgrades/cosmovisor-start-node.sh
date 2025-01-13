@@ -45,7 +45,7 @@ rm -rf $DAEMON_HOME
 # Runs regenesis.
 make localnet_regenesis
 
-# Setups cosmovisor directories and poktroll binaries. On real network cosmovisor can download the binaries using on-chain
+# Setups cosmovisor directories and poktroll binaries. On real network cosmovisor can download the binaries using onchain
 # data when `DAEMON_ALLOW_DOWNLOAD_BINARIES=true`.
 mkdir -p $DAEMON_HOME/cosmovisor/genesis/bin/ $DAEMON_HOME/cosmovisor/upgrades/$POKTROLLD_UPGRADE_PLAN_NAME/bin/
 cp -r $POKTROLLD_OLD_BINARY_PATH $DAEMON_HOME/cosmovisor/genesis/bin/poktrolld

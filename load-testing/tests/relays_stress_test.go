@@ -150,7 +150,7 @@ type relaysSuite struct {
 	plans *actorLoadTestIncrementPlans
 
 	// gatewayUrls is a map of gatewayAddress->URL representing the provisioned gateways.
-	// These gateways are not staked yet but have their off-chain instance running
+	// These gateways are not staked yet but have their offchain instance running
 	// and ready to be staked and used in the test.
 	// Since Gateways are pre-provisioned, and already assigned a signingAddress
 	// and an URL to send relays to, the test suite does not create new ones but picks
@@ -163,7 +163,7 @@ type relaysSuite struct {
 	// It is used to ensure that the gateways are staked in the order they are provisioned.
 	availableGatewayAddresses []string
 	// suppliersUrls is a map of supplierOperatorAddress->URL representing the provisioned suppliers.
-	// These suppliers are not staked yet but have their off-chain instance running
+	// These suppliers are not staked yet but have their offchain instance running
 	// and ready to be staked and used in the test.
 	// Since RelayMiners are pre-provisioned, and already assigned a signingAddress
 	// and an URL, the test suite does not create new ones but picks from this list.
@@ -199,7 +199,7 @@ type relaysSuite struct {
 	// run on ephemeral chain setups like localnet or long living ones (i.e. Test/DevNet).
 	isEphemeralChain bool
 
-	// committedEventsObs is the observable that maps committed blocks to on-chain events.
+	// committedEventsObs is the observable that maps committed blocks to onchain events.
 	committedEventsObs observable.Observable[[]types.Event]
 
 	// successfulRelays is the number of relay requests that returned 200 status code.
@@ -321,17 +321,17 @@ func (s *relaysSuite) LocalnetIsRunning() {
 	// Setup the txContext that will be used to send transactions to the network.
 	s.txContext = testtx.NewLocalnetContext(s.TestingT.(*testing.T))
 
-	// Setup the event listener for on-chain events to check and assert on transactions
+	// Setup the event listener for onchain events to check and assert on transactions
 	// and finalized blocks results.
 	s.setupEventListeners(loadTestParams.RPCNode)
 
 	// Initialize the funding account.
 	s.initFundingAccount(loadTestParams.FundingAccountAddress)
 
-	// Initialize the on-chain settlement events listener.
+	// Initialize the onchain settlement events listener.
 	s.forEachSettlement(s.ctx)
 
-	// Query for the current network on-chain params.
+	// Query for the current network onchain params.
 	s.querySharedParams(loadTestParams.RPCNode)
 	s.queryAppParams(loadTestParams.RPCNode)
 	s.queryProofParams(loadTestParams.RPCNode)

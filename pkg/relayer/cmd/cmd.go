@@ -48,16 +48,16 @@ func RelayerCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "relayminer",
 		Short: "Start a RelayMiner",
-		Long: `Run a RelayMiner. A RelayMiner is the off-chain complementary
+		Long: `Run a RelayMiner. A RelayMiner is the offchain complementary
 middleware that handles incoming requests for all the services a Supplier staked
-for on-chain.
+for onchain.
 
 Relay requests received by the relay servers are validated and proxied to their
-respective service endpoints, maintained by the relayer off-chain. The responses
+respective service endpoints, maintained by the relayer offchain. The responses
 are then signed and sent back to the requesting application.
 
 For each successfully served relay, the miner will hash and compare its difficulty
-against an on-chain threshold. If the difficulty is sufficient, it is applicable
+against an onchain threshold. If the difficulty is sufficient, it is applicable
 to relay volume and therefore rewards. Such relays are inserted into and persisted
 via an SMT KV store. The miner will monitor the current block height and periodically
 submit claim and proof messages according to the protocol as sessions become eligible

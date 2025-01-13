@@ -67,7 +67,7 @@ jobs:
   # Ensure that we are using polylog (via logger.) instead of the golang's stdlib
   # log package.
   check_stdlog_in_off_chain_package:
-    name: Check stdlog in off-chain source code
+    name: Check stdlog in offchain source code
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

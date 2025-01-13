@@ -66,13 +66,13 @@ by the supplier adheres to the optimistic maxIA set per the limits of the Relay 
 Pocket Network can be seen as a probabilistic, optimistic permissionless multi-tenant rate limiter.
 
 This works by putting funds in escrow, burning it after work is done, and putting optimistic limits
-in place whose work volume is proven on-chain.
+in place whose work volume is proven onchain.
 
 :::
 
 Suppliers always have the option to over-service an Application (**i.e. do free work**),
 in order to ensure high quality service in the network. This may lead to offchain
-reputation benefits (e.g. Gateways favoring them), but suppliers' on-chain rewards
+reputation benefits (e.g. Gateways favoring them), but suppliers' onchain rewards
 are always limited by the cumulative amounts Applications' stakes (at session start; per service)
 and the number of Suppliers in the session.
 
@@ -131,7 +131,7 @@ to only be able to stake for EXACTLY ONE service.
 :::note
 
 TODO_POST_MAINNET: After the Shannon upgrade, the team at Grove has a lot of ideas
-related to on-chain reputation, [supplier overlay networks](https://www.notion.so/buildwithgrove/Off-chain-Application-Stake-Tracking-6a8bebb107db4f7f9dc62cbe7ba555f7?pvs=4), and
+related to onchain reputation, [supplier overlay networks](https://www.notion.so/buildwithgrove/Off-chain-Application-Stake-Tracking-6a8bebb107db4f7f9dc62cbe7ba555f7?pvs=4), and
 much more, all of which is out of scope for the initial implementation.
 
 :::
@@ -418,7 +418,7 @@ Later, PNF, on behalf of the DAO, will review the reimbursement requests and app
 
 ```mermaid
 ---
-title: "Off-Chain Reimbursement Request Flow"
+title: "Offchain Reimbursement Request Flow"
 ---
 sequenceDiagram
     participant PNF as Pocket Network Foundation
@@ -449,10 +449,10 @@ The application `PAYS` the supplier for work done (i.e. Mint=Burn).
 The application `GETS REIMBURSED` for the inflation (i.e. Global Mint).
 
 This will require staked Applications (sovereign or those managed by Gateways) to periodically
-"top up" their balances to cover not only the on-chain costs/burn, but also the inflation
+"top up" their balances to cover not only the onchain costs/burn, but also the inflation
 until it is reimbursed by the DAO/PNF.
 
-#### Will there be on-chain enforcement of how Applications get reimbursed? <!-- omit in toc -->
+#### Will there be onchain enforcement of how Applications get reimbursed? <!-- omit in toc -->
 
 _tl;dr Unfortunately, no._
 
@@ -460,11 +460,11 @@ The Applications will indeed have to trust the DAO/PNF to reimburse them.
 The following is an example of the approach PNF could take.
 
 1. Assume Application staking by Gateways is permissionless and done.
-2. Applications pay on-chain for costs and inflation
+2. Applications pay onchain for costs and inflation
 3. PNF KYCs Gateways who seek reimbursement.
 4. Gateways that don't go through the KYC process cover the cost of inflation
    out of pocket.
-5. A script that retrieves on-chain reimbursement requests will be written that
+5. A script that retrieves onchain reimbursement requests will be written that
    automatically send funds to previously KYCed gateways
 6. The script above, and the trust that it'll be maintained, updated and executed
    relies in the Gateways' trust in the PNF.
@@ -473,7 +473,7 @@ This is similar, in spirit, but still an improvement on top of the trust
 between Gateways and PNF in Morse today in order to:
 
 - Get access to the limited supply of Gateway keys
-- Gateways paying the on-chain burn manually
+- Gateways paying the onchain burn manually
 
 #### How does this solution scale for Sovereign Applications? <!-- omit in toc -->
 
@@ -485,7 +485,7 @@ _Read more about about their differences and similarities [here](./../../protoco
 
 #### What kind of resources are needed to scale and automate reimbursement? <!-- omit in toc -->
 
-This will be a combination of on-chain and off-chain resources (EventReader, TxSubmission, Accounting, etc...). In particular:
+This will be a combination of onchain and offchain resources (EventReader, TxSubmission, Accounting, etc...). In particular:
 
-- **On-chain**: load testing will show if events take up too much on-chain space. This is unlikely to be an issue relative to proofs.
-- **Off-chain**: PNF Directors are aware and approve of the operational overhead this will require. This will require some off-chain scripting to automate the process.
+- **Onchain**: load testing will show if events take up too much onchain space. This is unlikely to be an issue relative to proofs.
+- **Offchain**: PNF Directors are aware and approve of the operational overhead this will require. This will require some offchain scripting to automate the process.

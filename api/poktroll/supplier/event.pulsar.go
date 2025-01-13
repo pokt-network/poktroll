@@ -2250,7 +2250,7 @@ func (SupplierUnbondingReason) EnumDescriptor() ([]byte, []int) {
 	return file_poktroll_supplier_event_proto_rawDescGZIP(), []int{0}
 }
 
-// EventSupplierStaked is emitted when a supplier stake message is committed on-chain.
+// EventSupplierStaked is emitted when a supplier stake message is committed onchain.
 type EventSupplierStaked struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -2296,7 +2296,7 @@ func (x *EventSupplierStaked) GetSessionEndHeight() int64 {
 }
 
 // EventSupplierUnbondingBegin is emitted when an application unstake message
-// is committed on-chain, indicating that the supplier will now begin unbonding.
+// is committed onchain, indicating that the supplier will now begin unbonding.
 type EventSupplierUnbondingBegin struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache

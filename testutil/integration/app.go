@@ -862,7 +862,7 @@ func (app *App) nextBlockUpdateCtx() {
 }
 
 // setupDefaultActorsState uses the integration app keepers to stake "default"
-// on-chain actors for use in tests. In creates a service, and stakes a supplier
+// onchain actors for use in tests. In creates a service, and stakes a supplier
 // and application as well as funding the bank balance of the default supplier.
 //
 // TODO_TECHDEBT(@bryanchriswhite): Eliminate usage of and remove this function in favor of
@@ -897,7 +897,7 @@ func (app *App) setupDefaultActorsState(
 		app.preGeneratedAccts,
 	)
 
-	// Prepare the on-chain supplier
+	// Prepare the onchain supplier
 	supplierStake := types.NewCoin("upokt", math.NewInt(1000000))
 	defaultSupplier := sharedtypes.Supplier{
 		OwnerAddress:    supplierOperatorAddr.String(),
@@ -928,7 +928,7 @@ func (app *App) setupDefaultActorsState(
 		app.preGeneratedAccts,
 	)
 
-	// Prepare the on-chain application
+	// Prepare the onchain application
 	appStake := types.NewCoin("upokt", math.NewInt(1000000))
 	defaultApplication := apptypes.Application{
 		Address: applicationAddr.String(),

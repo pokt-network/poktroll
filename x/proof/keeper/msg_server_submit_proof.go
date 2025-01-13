@@ -19,8 +19,8 @@ import (
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
-// SubmitProof is the server handler to submit and store a proof on-chain.
-// A proof that's stored on-chain is what leads to rewards (i.e. inflation)
+// SubmitProof is the server handler to submit and store a proof onchain.
+// A proof that's stored onchain is what leads to rewards (i.e. inflation)
 // downstream, making this a critical part of the protocol.
 //
 // Note that the validation of the proof is done in `EnsureValidProof`. However,
@@ -57,7 +57,7 @@ func (k msgServer) SubmitProof(
 	}
 	logger.Info("validated the submitProof message")
 
-	// Compare msg session header w/ on-chain session header.
+	// Compare msg session header w/ onchain session header.
 	session, err := k.queryAndValidateSessionHeader(ctx, msg.GetSessionHeader(), msg.GetSupplierOperatorAddress())
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
@@ -85,7 +85,7 @@ func (k msgServer) SubmitProof(
 		"supplier_operator_address", proof.SupplierOperatorAddress)
 
 	// Validate proof message commit height is within the respective session's
-	// proof submission window using the on-chain session header.
+	// proof submission window using the onchain session header.
 	if err = k.validateProofWindow(ctx, proof.SessionHeader, proof.SupplierOperatorAddress); err != nil {
 		return nil, status.Error(codes.FailedPrecondition, err.Error())
 	}

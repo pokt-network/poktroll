@@ -13,7 +13,7 @@ import (
 var _ client.ApplicationQueryClient = (*appQuerier)(nil)
 
 // appQuerier is a wrapper around the apptypes.QueryClient that enables the
-// querying of on-chain application information through a single exposed method
+// querying of onchain application information through a single exposed method
 // which returns an apptypes.Application interface
 type appQuerier struct {
 	clientConn         grpc.ClientConn

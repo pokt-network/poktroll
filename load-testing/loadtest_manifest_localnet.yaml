@@ -28,7 +28,7 @@ suppliers:
 
   # RelayMiner 1; http://localhost:10350/r/relayminer1/overview
   - address: pokt19a3t4yunp0dlpfjrp7qwnzwlrzd5fzs2gjaaaj
-    # The advertised URL used by the supplier when it submits a stake message on-chain.
+    # The advertised URL used by the supplier when it submits a stake message onchain.
     exposed_url: http://relayminer1:8545
 
   # RelayMiner 2; http://localhost:10350/r/relayminer2/overview

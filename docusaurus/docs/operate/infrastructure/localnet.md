@@ -17,7 +17,7 @@ needed to send an end-to-end relay.
 - [Developing with LocalNet](#developing-with-localnet)
   - [localnet_config.yaml](#localnet_configyaml)
   - [Scaling network actors](#scaling-network-actors)
-  - [Off-chain actors configuration](#off-chain-actors-configuration)
+  - [Offchain actors configuration](#offchain-actors-configuration)
   - [Modify Kubernetes workloads](#modify-kubernetes-workloads)
 - [Observability](#observability)
   - [Access dashboards with graphs and logs](#access-dashboards-with-graphs-and-logs)
@@ -75,7 +75,7 @@ relayers:
 
 _NOTE: You may need to up to 1 minute for the new actors to be registered and deployed locally._
 
-### Off-chain actors configuration
+### Offchain actors configuration
 
 We heavily use Helm charts for configuring LocalNet. The goal is to maximize the tooling involved in deploying production
 workloads and local development.
