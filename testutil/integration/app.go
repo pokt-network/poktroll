@@ -705,7 +705,9 @@ func (app *App) GetFaucetBech32() string {
 // returned. In order to run a message, the application must have a handler for it.
 // These handlers are registered on the application message service router.
 func (app *App) RunMsgs(t *testing.T, msgs ...sdk.Msg) (txMsgResps []tx.MsgResponse, err error) {
-	t.Helper()
+	if t != nil {
+		t.Helper()
+	}
 
 	// Commit the updated state after the message has been handled.
 	var finalizeBlockRes *abci.ResponseFinalizeBlock
@@ -738,6 +740,25 @@ func (app *App) RunMsgs(t *testing.T, msgs ...sdk.Msg) (txMsgResps []tx.MsgRespo
 		app.logger.Info("Running msg", "msg", msg.String())
 	}
 
+	txMsgResps, finalizeBlockRes, err = app.RunTx(t, txBz)
+	if err != nil {
+		// DEV_NOTE: Intentionally returning and not asserting nil error to improve reusability.
+		return nil, err
+	}
+
+	return txMsgResps, nil
+}
+
+// TODO_IN_THIS_COMMIT: godoc...
+func (app *App) RunTx(t *testing.T, txBz []byte) (
+	txMsgResps []tx.MsgResponse,
+	finalizeBlockRes *abci.ResponseFinalizeBlock,
+	err error,
+) {
+	if t != nil {
+		t.Helper()
+	}
+
 	// Finalize the block with the transaction.
 	finalizeBlockReq := &cmtabcitypes.RequestFinalizeBlock{
 		Height: app.LastBlockHeight() + 1,
@@ -751,12 +772,14 @@ func (app *App) RunMsgs(t *testing.T, msgs ...sdk.Msg) (txMsgResps []tx.MsgRespo
 
 	finalizeBlockRes, err = app.FinalizeBlock(finalizeBlockReq)
 	if err != nil {
-		return nil, fmt.Errorf("finalizing block: %w", err)
+		return nil, nil, fmt.Errorf("finalizing block: %w", err)
 	}
 
-	// NB: We're batching the messages in a single transaction, so we expect
-	// a single transaction result.
-	require.Equal(t, 1, len(finalizeBlockRes.TxResults))
+	if t != nil {
+		// NB: We're batching the messages in a single transaction, so we expect
+		// a single transaction result.
+		require.Equal(t, 1, len(finalizeBlockRes.TxResults))
+	}
 
 	// Collect the message responses. Accumulate errors related to message handling
 	// failure. If any message fails, an error will be returned.
@@ -769,24 +792,29 @@ func (app *App) RunMsgs(t *testing.T, msgs ...sdk.Msg) (txMsgResps []tx.MsgRespo
 		}
 
 		txMsgDataBz := txResult.GetData()
-		require.NotNil(t, txMsgDataBz)
+		if t != nil {
+			require.NotNil(t, txMsgDataBz)
+		}
 
 		txMsgData := new(cosmostypes.TxMsgData)
 		err = app.GetCodec().Unmarshal(txMsgDataBz, txMsgData)
-		require.NoError(t, err)
+		if t != nil {
+			require.NoError(t, err)
+		}
 
 		var txMsgRes tx.MsgResponse
 		err = app.GetCodec().UnpackAny(txMsgData.MsgResponses[0], &txMsgRes)
-		require.NoError(t, err)
-		require.NotNil(t, txMsgRes)
+		if t != nil {
+			require.NoError(t, err)
+			require.NotNil(t, txMsgRes)
+		} else {
+			return nil, nil, err
+		}
 
 		txMsgResps = append(txMsgResps, txMsgRes)
 	}
-	if txResultErrs != nil {
-		return nil, err
-	}
 
-	return txMsgResps, nil
+	return txMsgResps, finalizeBlockRes, nil
 }
 
 // NextBlocks calls NextBlock numBlocks times

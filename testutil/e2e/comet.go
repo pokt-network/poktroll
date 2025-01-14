@@ -10,70 +10,35 @@ import (
 	"net/http"
 
 	"github.com/cometbft/cometbft/abci/types"
-	cmtjson "github.com/cometbft/cometbft/libs/json"
 	coretypes "github.com/cometbft/cometbft/rpc/core/types"
+	coregrpc "github.com/cometbft/cometbft/rpc/grpc"
 	rpctypes "github.com/cometbft/cometbft/rpc/jsonrpc/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	gogogrpc "github.com/cosmos/gogoproto/grpc"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 )
 
-//func handleABCIQuery(w http.ResponseWriter, r *http.Request, pathParams map[string]string) {
-//	// Only accept POST method
-//	if r.Method != http.MethodPost {
-//		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-//		return
-//	}
-//
-//	// Read the request body
-//	body, err := io.ReadAll(r.Body)
-//	if err != nil {
-//		http.Error(w, "Error reading request body", http.StatusBadRequest)
-//		return
-//	}
-//	defer r.Body.Close()
-//
-//	// Parse the JSON-RPC request
-//	var req comettypes.RPCRequest
-//	if err := json.Unmarshal(body, &req); err != nil {
-//		http.Error(w, "Invalid JSON request", http.StatusBadRequest)
-//		return
-//	}
-//
-//	// Verify method
-//	if req.Method != "abci_query" {
-//		fmt.Printf(">>>> WRONG METHOD")
-//
-//		// TODO_IN_THIS_COMMIT: consolidate with other error response logic...
-//		res := comettypes.RPCInvalidRequestError(req.ID, fmt.Errorf("Method %s not supported", req.Method))
-//		json.NewEncoder(w).Encode(res)
-//
-//		return
-//	}
-//
-//	// Process the ABCI query
-//	// This is where you'd implement the actual ABCI query logic
-//	result := processABCIQuery(req.Params)
-//
-//	// Send response
-//	response := comettypes.RPCResponse{
-//		JSONRPC: "2.0",
-//		ID:      req.ID,
-//		Result:  result,
-//	}
-//
-//	w.Header().Set("Content-Type", "application/json")
-//	json.NewEncoder(w).Encode(response)
-//}
+// TODO_IN_THIS_COMMIT: godoc...
+type CometBFTMethod string
+
+// TODO_IN_THIS_COMMIT: godoc...
+type ServiceMethodUri string
 
 const (
-	authAccountQuery = "/cosmos.auth.v1beta1.Query/Account"
+	abciQueryMethod         = CometBFTMethod("abci_query")
+	broadcastTxSyncMethod   = CometBFTMethod("broadcast_tx_sync")
+	broadcastTxAsyncMethod  = CometBFTMethod("broadcast_tx_async")
+	broadcastTxCommitMethod = CometBFTMethod("broadcast_tx_commit")
+
+	authAccountQueryUri = ServiceMethodUri("/cosmos.auth.v1beta1.Query/Account")
 )
 
 // handleABCIQuery handles the actual ABCI query logic
-func newPostHandler(client gogogrpc.ClientConn) runtime.HandlerFunc {
+func newPostHandler(client gogogrpc.ClientConn, app *E2EApp) runtime.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request, pathParams map[string]string) {
 		ctx := context.Background()
+		// DEV_NOTE: http.Error() automatically sets the Content-Type header to "text/plain".
+		w.Header().Set("Content-Type", "application/json")
 
 		// Read and log request body
 		body, err := io.ReadAll(r.Body)
@@ -97,9 +62,9 @@ func newPostHandler(client gogogrpc.ClientConn) runtime.HandlerFunc {
 		}
 
 		var response rpctypes.RPCResponse
-		switch req.Method {
+		switch CometBFTMethod(req.Method) {
 		// TODO_IN_THIS_COMMIT: extract...
-		case "abci_query":
+		case abciQueryMethod:
 			var (
 				resData []byte
 				height  int64
@@ -117,10 +82,8 @@ func newPostHandler(client gogogrpc.ClientConn) runtime.HandlerFunc {
 				return
 			}
 
-			switch path {
-			case authAccountQuery:
-				//abciQueryReq := new(cmtservice.ABCIQueryRequest)
-
+			switch ServiceMethodUri(path) {
+			case authAccountQueryUri:
 				dataRaw, hasData := params["data"]
 				if !hasData {
 					writeErrorResponse(w, req, "missing data param", string(req.Params))
@@ -149,7 +112,6 @@ func newPostHandler(client gogogrpc.ClientConn) runtime.HandlerFunc {
 				}
 
 				queryRes := new(authtypes.QueryAccountResponse)
-
 				if err = client.Invoke(ctx, path, queryReq, queryRes); err != nil {
 					writeErrorResponseFromErr(w, req, err)
 					return
@@ -172,26 +134,59 @@ func newPostHandler(client gogogrpc.ClientConn) runtime.HandlerFunc {
 				},
 			}
 
-			w.Header().Set("Content-Type", "application/json")
+			response = rpctypes.NewRPCSuccessResponse(req.ID, abciQueryRes)
+		case broadcastTxSyncMethod, broadcastTxAsyncMethod, broadcastTxCommitMethod:
+			fmt.Println(">>>> BROADCAST_TX")
 
-			jsonRes, err := cmtjson.Marshal(abciQueryRes)
+			var txBz []byte
+			txRaw, hasTx := params["tx"]
+			if !hasTx {
+				writeErrorResponse(w, req, "missing tx param", string(req.Params))
+				return
+			}
+			if err = json.Unmarshal(txRaw, &txBz); err != nil {
+				writeErrorResponseFromErr(w, req, err)
+				return
+			}
+
+			// TODO_CONSIDERATION: more correct implementation of the different
+			// broadcast_tx methods (i.e. sync, async, commit) is a matter of
+			// the sequence of running the tx and sending the JSON-RPC response.
+
+			_, finalizeBlockRes, err := app.RunTx(nil, txBz)
 			if err != nil {
 				writeErrorResponseFromErr(w, req, err)
 				return
 			}
 
-			response = rpctypes.RPCResponse{
-				JSONRPC: "2.0",
-				ID:      req.ID,
-				Result:  jsonRes,
+			// DEV_NOTE: There SHOULD ALWAYS be exactly one tx result so long as
+			// we're finalizing one tx at a time (single tx blocks).
+			txRes := finalizeBlockRes.GetTxResults()[0]
+
+			bcastTxRes := coregrpc.ResponseBroadcastTx{
+				CheckTx: &types.ResponseCheckTx{
+					Code:      txRes.GetCode(),
+					Data:      txRes.GetData(),
+					Log:       txRes.GetLog(),
+					Info:      txRes.GetInfo(),
+					GasWanted: txRes.GetGasWanted(),
+					GasUsed:   txRes.GetGasUsed(),
+					Events:    txRes.GetEvents(),
+					Codespace: txRes.GetCodespace(),
+				},
+				TxResult: &types.ExecTxResult{
+					Code:      txRes.GetCode(),
+					Data:      txRes.GetData(),
+					Log:       txRes.GetLog(),
+					Info:      txRes.GetInfo(),
+					GasWanted: txRes.GetGasWanted(),
+					GasUsed:   txRes.GetGasUsed(),
+					Events:    txRes.GetEvents(),
+					Codespace: txRes.GetCodespace(),
+				},
 			}
-			fmt.Println(">>> Response sent")
-		case "broadcast_tx_sync":
-			fmt.Println(">>>> BROADCAST_TX_SYNC")
-			response = rpctypes.NewRPCErrorResponse(req.ID, 500, "unsupported method", string(req.Params))
-		case "broadcast_tx_async":
-			fmt.Println(">>>> BROADCAST_TX_ASYNC")
-			response = rpctypes.NewRPCErrorResponse(req.ID, 500, "unsupported method", string(req.Params))
+
+			response = rpctypes.NewRPCSuccessResponse(req.ID, bcastTxRes)
 		default:
 			response = rpctypes.NewRPCErrorResponse(req.ID, 500, "unsupported method", string(req.Params))
 		}
@@ -200,32 +195,6 @@ func newPostHandler(client gogogrpc.ClientConn) runtime.HandlerFunc {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
 	}
-}
-
-// processABCIQuery handles the actual ABCI query logic
-func processABCIQuery(params json.RawMessage) json.RawMessage {
-	// Implement your ABCI query processing logic here
-	// This would typically involve:
-	// 1. Decoding the hex data
-	// 2. Parsing the height
-	// 3. Making the actual ABCI query to your blockchain node
-	// 4. Processing the response
-	// 5. Returning the result in the expected format
-
-	fmt.Println(">>>> ABCI_QUERY")
-
-	// For now, returning a placeholder
-	//return map[string]interface{}{
-	//	"height": height,
-	//	"result": map[string]interface{}{
-	//		// Add your actual query result structure here
-	//		"code":   0,
-	//		"log":    "",
-	//		"height": height,
-	//		"value":  "", // Base64-encoded response value
-	//	},
-	//}
-	return nil
 }
 
 // TODO_IN_THIS_COMMIT: godoc...

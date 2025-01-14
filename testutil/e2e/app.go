@@ -66,8 +66,6 @@ func NewE2EApp(t *testing.T, opts ...integration.IntegrationAppOptionFn) *E2EApp
 	client, err := grpc.NewClient("127.0.0.1:42069", grpc.WithInsecure())
 	require.NoError(t, err)
 
-	mux.Handle(http.MethodPost, rootPattern, newPostHandler(client))
-
 	for _, mod := range app.GetModuleManager().Modules {
 		mod.(module.AppModuleBasic).RegisterGRPCGatewayRoutes(clientCtx, mux)
 	}
@@ -88,6 +86,8 @@ func NewE2EApp(t *testing.T, opts ...integration.IntegrationAppOptionFn) *E2EApp
 		wsUpgrader:     websocket.Upgrader{},
 		blockEventChan: make(chan *coretypes.ResultEvent, 1),
 	}
+
+	mux.Handle(http.MethodPost, rootPattern, newPostHandler(client, e2eApp))
 
 	go func() {
 		if err := e2eApp.grpcServer.Serve(grpcListener); err != nil {
