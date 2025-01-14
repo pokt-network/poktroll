@@ -12,6 +12,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/types/module"
 	"github.com/gorilla/websocket"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/grpc-ecosystem/grpc-gateway/utilities"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -46,14 +47,11 @@ func NewE2EApp(t *testing.T, opts ...integration.IntegrationAppOptionFn) *E2EApp
 
 	abciQueryPattern, err := runtime.NewPattern(
 		1,
-		[]int{},
+		[]int{int(utilities.OpLitPush), int(utilities.OpNop)},
 		[]string{""},
 		"",
 	)
 	require.NoError(t, err)
-
-	// Register the handler with the mux
-	mux.Handle(http.MethodPost, abciQueryPattern, handleABCIQuery)
 
 	// Create the integration app
 	opts = append(opts, integration.WithGRPCServer(grpcServer))
@@ -65,6 +63,13 @@ func NewE2EApp(t *testing.T, opts ...integration.IntegrationAppOptionFn) *E2EApp
 	flagSet := testclient.NewFlagSet(t, "tcp://127.0.0.1:42070")
 	keyRing := keyring.NewInMemory(app.GetCodec())
 	clientCtx := testclient.NewLocalnetClientCtx(t, flagSet).WithKeyring(keyRing)
+
+	// Register the handler with the mux
+	//client, err := comethttp.New("tcp://127.0.0.1:42070", "/websocket")
+	client, err := grpc.NewClient("127.0.0.1:42069", grpc.WithInsecure())
+	require.NoError(t, err)
+
+	mux.Handle(http.MethodPost, abciQueryPattern, newHandleABCIQuery(t, app.GetCodec(), client))
 
 	//authtx.RegisterTxService(
 	//	//app.GRPCQueryRouter(),

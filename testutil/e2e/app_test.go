@@ -293,6 +293,11 @@ func TestSanity3(t *testing.T) {
 	time.Sleep(time.Second * 1)
 
 	client := http.DefaultClient
+	//res, err := client.Do(&http.Request{
+	//	Method: http.MethodPost,
+	//	URL:    &url.URL{Scheme: "http", Host: "127.0.0.1:42070", Path: ""},
+	//	Body:   io.NopCloser(bytes.NewBuffer([]byte(`{"jsonrpc":"2.0","id":"0","method":"abci_query","params":{"path":"/cosmos.auth.v1beta1.Query/Account","data":"0A2B706F6B74313577336668667963306C747476377235383565326E6370663674326B6C3975683872736E797A","prove":false,"height":"0"}}`))),
+	//})
 	res, err := client.Post(
 		"http://127.0.0.1:42070/",
 		"application/json",
