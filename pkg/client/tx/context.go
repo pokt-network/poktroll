@@ -18,11 +18,12 @@ import (
 )
 
 // maxGRPCMsgSize is the maximum message size the gRPC client can send and receive.
-// The current value has been arbitrarily set to a large value after observing
-// proof messages bundled within transactions exceeding the default 4MB limit.
-// TODO_TECHDEBT: Adjust the max message size to a more sensible value.
-// DEV_NOTE: This value should adjusted in concert with the CometBFT's rpc max_body_bytes,
-// mempool max_tx_bytes and max_txs_bytes.
+// The current value has been set arbitrarily to a large value after empirically
+// observing multiple Proof messages bundled within a single transaction exceeding
+// the default 4MB limit.
+// TODO_MAINNET: Adjust the max message size to a more sensible value.
+// DEV_NOTE: This value should adjusted in concert with the CometBFT's rpc
+// max_body_bytes, mempool max_tx_bytes and max_txs_bytes.
 const maxGRPCMsgSize = 100 * 1024 * 1024 // 100MB
 
 var _ client.TxContext = (*cosmosTxContext)(nil)
