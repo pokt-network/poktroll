@@ -158,7 +158,6 @@ func DefaultSupplierModuleGenesisState(t *testing.T, n int) *suppliertypes.Genes
 		}
 		// TODO_CONSIDERATION: Evaluate whether we need `nullify.Fill` or if we should enforce `(gogoproto.nullable) = false` everywhere
 		// nullify.Fill(&supplier)
-		fmt.Println("OLSH", supplier)
 		state.SupplierList = append(state.SupplierList, supplier)
 	}
 	return state

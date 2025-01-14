@@ -54,12 +54,12 @@ func (am AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 					},
 					// PositionalArgs: []*autocliv1.PositionalArgDescriptor{{ProtoField: "service_id"}},
 				},
-				// {
-				// 	RpcMethod:      "Supplier",
-				// 	Use:            "show-supplier [id]",
-				// 	Short:          "Shows a supplier",
-				// 	PositionalArgs: []*autocliv1.PositionalArgDescriptor{{ProtoField: "index"}},
-				// },
+				{
+					RpcMethod: "Supplier",
+					Use:       "show-supplier [id]",
+					Short:     "Shows a supplier",
+					// PositionalArgs: []*autocliv1.PositionalArgDescriptor{{ProtoField: "index"}},
+				},
 				// this line is used by ignite scaffolding # autocli/query
 			},
 		},
