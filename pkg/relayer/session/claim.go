@@ -20,12 +20,12 @@ import (
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
-// The cumulative cost of submitting a proof and creating a claim.
-// This value corresponds to the sum of a single claim and proof message fee
-// which was obtained empirically from the network by submitting a claim and
-// proof message and observing the fee with a gas price of 0.01uPOKT.
+// The cumulative fees of creating a single claim, followed by submitting a single proof.
+// The value was obtained empirically by observing logs during load testing and observing
+// the claim & proof lifecycle.
+// The gas price at the time of observance was 0.01uPOKT.
 // The value is subject to change as the network parameters change.
-var clamAndProofGasCost = sdktypes.NewInt64Coin(volatile.DenomuPOKT, 50000)
+var ClamAndProofGasCost = sdktypes.NewInt64Coin(volatile.DenomuPOKT, 50000)
 
 // createClaims maps over the sessionsToClaimObs observable. For each claim batch, it:
 // 1. Calculates the earliest block height at which it is safe to CreateClaims
@@ -272,7 +272,7 @@ func (rs *relayerSessionsManager) payableProofsSessionTrees(
 
 	// Account for the gas cost of creating a claim and submitting a proof in addition
 	// to the ProofSubmissionFee.
-	claimAndProofSubmissionCost := proofParams.GetProofSubmissionFee().Add(clamAndProofGasCost)
+	claimAndProofSubmissionCost := proofParams.GetProofSubmissionFee().Add(ClamAndProofGasCost)
 
 	supplierOperatorBalanceCoin, err := rs.bankQueryClient.GetBalance(
 		ctx,
@@ -313,15 +313,18 @@ func (rs *relayerSessionsManager) payableProofsSessionTrees(
 	for _, sessionTree := range sessionTrees {
 		// If the supplier operator can afford to claim the session, add it to the
 		// claimableSessionTrees slice.
-		if supplierOperatorBalanceCoin.IsGTE(claimAndProofSubmissionCost) {
+		supplierCanAffordClaimAndProofFees := supplierOperatorBalanceCoin.IsGTE(claimAndProofSubmissionCost)
+		if supplierCanAffordClaimAndProofFees {
 			claimableSessionTrees = append(claimableSessionTrees, sessionTree)
 			newSupplierOperatorBalanceCoin := supplierOperatorBalanceCoin.Sub(claimAndProofSubmissionCost)
 			supplierOperatorBalanceCoin = &newSupplierOperatorBalanceCoin
 			continue
 		}
 
-		// Delete the session tree from the KVStore since it won't be claimed due to
-		// insufficient funds.
+		// At this point supplierCanAffordClaimAndProofFees is false.
+		// Delete the session tree from the relayer sessions and the KVStore since
+		// it won't be claimed due to insufficient funds.
+		rs.removeFromRelayerSessions(sessionTree)
 		if err := sessionTree.Delete(); err != nil {
 			logger.With(
 				"session_id", sessionTree.GetSessionHeader().GetSessionId(),
