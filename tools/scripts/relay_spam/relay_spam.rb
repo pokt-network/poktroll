@@ -190,42 +190,35 @@ class RelaySpammer
     config['applications'].each do |app|
       puts "\nProcessing #{app['name']}..."
       
-      # First, try to delete the existing key, redirecting stderr to /dev/null
+      # Delete existing key
       delete_cmd = "poktrolld keys delete #{app['name']} --home=#{config['home']} --keyring-backend=#{config['keyring_backend']} -y 2>/dev/null"
       system(delete_cmd)
 
-      # Now import the key
+      # Import key
       import_cmd = "poktrolld keys add --recover #{app['name']} --home=#{config['home']} --keyring-backend=#{config['keyring_backend']}"
 
-                begin
+      begin
         PTY.spawn(import_cmd) do |stdout, stdin, pid|
-                  Timeout.timeout(10) do
-            while true
-              output = stdout.readline.strip
-              puts output
-              
-              if output.include?("Enter your bip39 mnemonic")
-                stdin.puts(app['mnemonic'])
-                break
-                  end
-                  end
+          Timeout.timeout(10) do
+            # Wait for mnemonic prompt
+            while line = stdout.gets
+              break if line.include?("Enter your bip39 mnemonic")
+            end
             
-            # Read remaining output
-            begin
-              while (line = stdout.readline)
-                puts line
-                end
-            rescue EOFError
-              # Expected when process ends
+            # Send mnemonic
+            stdin.puts(app['mnemonic'])
+            
+            # Read remaining output until process completes
+            while line = stdout.gets
+              puts line.strip
             end
           end
         end
       rescue Timeout::Error
         puts "Timeout while processing #{app['name']}, moving to next..."
-      rescue PTY::ChildExited => e
-        puts "Process exited with status: #{e.status}"
-      rescue Errno::EIO
-        # This is expected when the process exits
+        Process.kill('TERM', pid) if pid rescue nil
+      rescue PTY::ChildExited, Errno::EIO
+        # These exceptions are expected when the process completes
       end
       
       puts "Processed #{app['name']}"
