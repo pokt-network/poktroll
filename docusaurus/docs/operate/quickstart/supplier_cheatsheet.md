@@ -277,5 +277,5 @@ poktrolld query supplier -h
 Then, you can query for all services like so:
 
 ```bash
-poktrolld query supplier list-supplier --node https://shannon-testnet-grove-rpc.beta.poktroll.com --output json | jq
+poktrolld query supplier list-suppliers --node https://shannon-testnet-grove-rpc.beta.poktroll.com --output json | jq
 ```

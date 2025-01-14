@@ -6,6 +6,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/pokt-network/poktroll/pkg/polylog"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 // NOTE: Please note that these messages are not of type `sdk.Msg`, and are therefore not a message/request
@@ -29,13 +30,14 @@ func (query *QueryAllSuppliersRequest) ValidateBasic() error {
 
 	switch filter := query.Filter.(type) {
 	case *QueryAllSuppliersRequest_ServiceId:
-		if filter.ServiceId == "" {
+		// If the service ID is set, check if it's valid
+		if filter.ServiceId != "" && !sharedtypes.IsValidServiceId(filter.ServiceId) {
 			return ErrSupplierInvalidServiceId.Wrap("invalid empty service ID for suppliers being retrieved")
 		}
 
 	default:
 		// No filter is set
-		logger.Info().Msg("No specific filter set when requesting proofs")
+		logger.Info().Msg("No specific filter set when listing suppliers")
 	}
 
 	return nil

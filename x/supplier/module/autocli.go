@@ -34,7 +34,8 @@ import (
 func (am AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 	return &autocliv1.ModuleOptions{
 		Query: &autocliv1.ServiceCommandDescriptor{
-			Service: modulev1.Query_ServiceDesc.ServiceName,
+			Service:              modulev1.Query_ServiceDesc.ServiceName,
+			EnhanceCustomCommand: true, // only required if you want to use the custom command (for backwards compatibility)
 			RpcCommandOptions: []*autocliv1.RpcCommandOptions{
 				// {
 				// 	RpcMethod: "Params",
@@ -42,12 +43,16 @@ func (am AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 				// 	Short:     "Shows the parameters of the module",
 				// },
 				{
-					RpcMethod: "AllSuppliers",
-					Use:       "list-suppliers",
-					Short:     "List all suppliers on the Pocket Network",
-					Long:      "Retrieves a paginated list of all suppliers currently registered on the Pocket Network, including their stakes and services.",
-					Example:   "poktrolld query supplier list-suppliers\npoktrolld query supplier list-suppliers --page 2 --limit 50",
 					Alias:     []string{"suppliers", "ls"},
+					RpcMethod: "AllSuppliers",
+					Use:       "list-suppliers [service-id]",
+					Short:     "List all suppliers on Pocket Network",
+					Long:      "Retrieves a paginated list of all suppliers currently registered on Pocket Network, including all their details.",
+					Example:   " poktrolld query supplier list-suppliers \n poktrolld query supplier list-suppliers --service-id anvil \n poktrolld query supplier list-suppliers --page 2 --limit 50",
+					FlagOptions: map[string]*autocliv1.FlagOptions{
+						"service_id": {Name: "service-id", Shorthand: "s", Usage: "service id to filter by", Hidden: false},
+					},
+					// PositionalArgs: []*autocliv1.PositionalArgDescriptor{{ProtoField: "service_id"}},
 				},
 				// {
 				// 	RpcMethod:      "Supplier",
@@ -60,7 +65,7 @@ func (am AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 		},
 		Tx: &autocliv1.ServiceCommandDescriptor{
 			Service:              modulev1.Msg_ServiceDesc.ServiceName,
-			EnhanceCustomCommand: true, // only required if you want to use the custom command
+			EnhanceCustomCommand: true, // only required if you want to use the custom command (for backwards compatibility)
 			RpcCommandOptions:    []*autocliv1.RpcCommandOptions{
 				//{
 				//	RpcMethod: "UpdateParams",

@@ -46,7 +46,7 @@ func TestSupplierQuerySingle(t *testing.T) {
 			request: &types.QueryGetSupplierRequest{
 				OperatorAddress: strconv.Itoa(100000),
 			},
-			expectedErr: status.Error(codes.NotFound, "supplier with address \"100000\""),
+			expectedErr: status.Error(codes.NotFound, "supplier with address: \"100000\""),
 		},
 		{
 			desc:        "InvalidRequest",
@@ -142,6 +142,10 @@ func TestSupplierQueryFilterByServiceId(t *testing.T) {
 
 	resp, err := supplierModuleKeepers.AllSuppliers(ctx, request)
 	require.NoError(t, err)
+
+	// createNSuppliers assigns a separate service to each supplier
+	// so we can only expect one supplier to have the filtered service.
+	require.Len(t, resp.Supplier, 1)
 
 	// Verify each returned supplier has the filtered service
 	for _, supplier := range resp.Supplier {
