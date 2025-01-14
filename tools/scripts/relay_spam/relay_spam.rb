@@ -187,56 +187,51 @@ class RelaySpammer
   def import_accounts
     puts "Importing accounts from config..."
     
-    total_accounts = config['applications'].length
-    completed = Concurrent::AtomicFixnum.new(0)
-    semaphore = Async::Semaphore.new(20) # Process 20 accounts concurrently
-    
-    Async do |task|
-      config['applications'].each_slice(50).map do |batch|
-        task.async do
-          batch.each do |app|
-            semaphore.acquire do
-              # Delete existing key
-              delete_cmd = "poktrolld keys delete #{app['name']} --home=#{config['home']} --keyring-backend=#{config['keyring_backend']} -y 2>/dev/null"
-              system(delete_cmd)
+    config['applications'].each do |app|
+      puts "\nProcessing #{app['name']}..."
+      
+      # First, try to delete the existing key, redirecting stderr to /dev/null
+      delete_cmd = "poktrolld keys delete #{app['name']} --home=#{config['home']} --keyring-backend=#{config['keyring_backend']} -y 2>/dev/null"
+      system(delete_cmd)
 
-              # Import key
-              import_cmd = "poktrolld keys add --recover #{app['name']} --home=#{config['home']} --keyring-backend=#{config['keyring_backend']}"
+      # Now import the key
+      import_cmd = "poktrolld keys add --recover #{app['name']} --home=#{config['home']} --keyring-backend=#{config['keyring_backend']}"
 
-              begin
-                PTY.spawn(import_cmd) do |stdout, stdin, pid|
+                begin
+        PTY.spawn(import_cmd) do |stdout, stdin, pid|
                   Timeout.timeout(10) do
-                    # Wait for mnemonic prompt
-                    while line = stdout.gets
-                      break if line.include?("Enter your bip39 mnemonic")
-                    end
-                    
-                    # Send mnemonic
-                    stdin.puts(app['mnemonic'])
-                    
-                    # Read remaining output until process completes
-                    while line = stdout.gets
-                      break if line.include?("successfully") # Stop reading once we see success
-                    end
+            while true
+              output = stdout.readline.strip
+              puts output
+              
+              if output.include?("Enter your bip39 mnemonic")
+                stdin.puts(app['mnemonic'])
+                break
                   end
+                  end
+            
+            # Read remaining output
+            begin
+              while (line = stdout.readline)
+                puts line
                 end
-                
-                current = completed.increment
-                print "\rProgress: [#{current}/#{total_accounts}] Processed #{app['name']}"
-                
-              rescue Timeout::Error
-                puts "\nTimeout while processing #{app['name']}, moving to next..."
-                Process.kill('TERM', pid) if pid rescue nil
-              rescue PTY::ChildExited, Errno::EIO
-                # These exceptions are expected when the process completes
-              end
+            rescue EOFError
+              # Expected when process ends
             end
           end
         end
-      end.each(&:wait)
+      rescue Timeout::Error
+        puts "Timeout while processing #{app['name']}, moving to next..."
+      rescue PTY::ChildExited => e
+        puts "Process exited with status: #{e.status}"
+      rescue Errno::EIO
+        # This is expected when the process exits
+      end
+      
+      puts "Processed #{app['name']}"
     end
     
-    puts "\n\nFinished importing accounts"
+    puts "\nFinished importing accounts"
   end
 
   def fund_accounts
