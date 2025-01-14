@@ -197,24 +197,25 @@ class RelaySpammer
       # Now import the key
       import_cmd = "poktrolld keys add --recover #{app['name']} --home=#{config['home']} --keyring-backend=#{config['keyring_backend']}"
 
-                begin
+      begin
         PTY.spawn(import_cmd) do |stdout, stdin, pid|
-                  Timeout.timeout(10) do
+          Timeout.timeout(10) do
             while true
               output = stdout.readline.strip
               puts output
               
               if output.include?("Enter your bip39 mnemonic")
-                stdin.puts(app['mnemonic'])
+                stdin.puts(app['mnemonic'] + "\n")  # Explicitly add newline
+                stdin.flush  # Ensure the input is sent immediately
                 break
-                  end
-                  end
+              end
+            end
             
             # Read remaining output
             begin
               while (line = stdout.readline)
                 puts line
-                end
+              end
             rescue EOFError
               # Expected when process ends
             end
