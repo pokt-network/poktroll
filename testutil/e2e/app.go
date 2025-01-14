@@ -45,7 +45,7 @@ func NewE2EApp(t *testing.T, opts ...integration.IntegrationAppOptionFn) *E2EApp
 	grpcServer := grpc.NewServer(grpc.Creds(creds))
 	mux := runtime.NewServeMux()
 
-	abciQueryPattern, err := runtime.NewPattern(
+	rootPattern, err := runtime.NewPattern(
 		1,
 		[]int{int(utilities.OpLitPush), int(utilities.OpNop)},
 		[]string{""},
@@ -57,28 +57,16 @@ func NewE2EApp(t *testing.T, opts ...integration.IntegrationAppOptionFn) *E2EApp
 	opts = append(opts, integration.WithGRPCServer(grpcServer))
 	app := integration.NewCompleteIntegrationApp(t, opts...)
 	app.RegisterGRPCServer(grpcServer)
-	//app.RegisterGRPCServer(app.MsgServiceRouter())
-	//app.RegisterGRPCServer(e2eApp.grpcServer)
 
 	flagSet := testclient.NewFlagSet(t, "tcp://127.0.0.1:42070")
 	keyRing := keyring.NewInMemory(app.GetCodec())
 	clientCtx := testclient.NewLocalnetClientCtx(t, flagSet).WithKeyring(keyRing)
 
 	// Register the handler with the mux
-	//client, err := comethttp.New("tcp://127.0.0.1:42070", "/websocket")
 	client, err := grpc.NewClient("127.0.0.1:42069", grpc.WithInsecure())
 	require.NoError(t, err)
 
-	mux.Handle(http.MethodPost, abciQueryPattern, newHandleABCIQuery(t, app.GetCodec(), client))
-
-	//authtx.RegisterTxService(
-	//	//app.GRPCQueryRouter(),
-	//	grpcServer,
-	//	clientCtx,
-	//	app.Simulate,
-	//	app.GetRegistry(),
-	//)
-	//authtx.RegisterGRPCGatewayRoutes(clientCtx, mux)
+	mux.Handle(http.MethodPost, rootPattern, newPostHandler(client))
 
 	for _, mod := range app.GetModuleManager().Modules {
 		mod.(module.AppModuleBasic).RegisterGRPCGatewayRoutes(clientCtx, mux)

@@ -8,17 +8,14 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"testing"
 
 	"github.com/cometbft/cometbft/abci/types"
 	cmtjson "github.com/cometbft/cometbft/libs/json"
 	coretypes "github.com/cometbft/cometbft/rpc/core/types"
 	rpctypes "github.com/cometbft/cometbft/rpc/jsonrpc/types"
-	cosmoscodec "github.com/cosmos/cosmos-sdk/codec"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	gogogrpc "github.com/cosmos/gogoproto/grpc"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
-	"github.com/stretchr/testify/require"
 )
 
 //func handleABCIQuery(w http.ResponseWriter, r *http.Request, pathParams map[string]string) {
@@ -69,163 +66,139 @@ import (
 //	json.NewEncoder(w).Encode(response)
 //}
 
+const (
+	authAccountQuery = "/cosmos.auth.v1beta1.Query/Account"
+)
+
 // handleABCIQuery handles the actual ABCI query logic
-func newHandleABCIQuery(t *testing.T, cdc cosmoscodec.Codec, client gogogrpc.ClientConn) runtime.HandlerFunc {
+func newPostHandler(client gogogrpc.ClientConn) runtime.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request, pathParams map[string]string) {
 		ctx := context.Background()
-
-		fmt.Println(">>> handleABCIQuery called")
-		//fmt.Printf("Method: %s, URL: %s\n", r.Method, r.URL.Path)
 
 		// Read and log request body
 		body, err := io.ReadAll(r.Body)
 		if err != nil {
-			//fmt.Printf("Error reading body: %v\n", err)
 			http.Error(w, "Error reading request body", http.StatusBadRequest)
 			return
 		}
 		defer r.Body.Close()
-		//fmt.Printf("Request body: %s\n", string(body))
 
 		// Parse JSON-RPC request
 		var req rpctypes.RPCRequest
-		if err := json.Unmarshal(body, &req); err != nil {
-			fmt.Printf("Error unmarshaling request: %v\n", err)
-			http.Error(w, "Invalid JSON request", http.StatusBadRequest)
+		if err = json.Unmarshal(body, &req); err != nil {
+			writeErrorResponseFromErr(w, req, err)
 			return
 		}
 
-		//fmt.Printf("RPC Method: %s\n", req.Method)
-		//fmt.Printf("RPC ID: %v\n", req.ID)
-		//fmt.Printf("RPC Params: %s\n", string(req.Params))
-
 		params := make(map[string]json.RawMessage)
-		err = json.Unmarshal(req.Params, &params)
-		require.NoError(t, err)
+		if err = json.Unmarshal(req.Params, &params); err != nil {
+			writeErrorResponseFromErr(w, req, err)
+			return
+		}
 
-		//t.Logf(">>> params: %+v", params)
-
-		//abciRes, err := client.ABCIQueryWithOptions(ctx, path, data, opts)
-		//require.NoError(t, err)
-
-		//var args, reply any
-		//var jsonRes json.RawMessage
+		var response rpctypes.RPCResponse
 		switch req.Method {
 		// TODO_IN_THIS_COMMIT: extract...
 		case "abci_query":
-			// TODO_IN_THIS_COMMIT: add switch for different service/method handlers...
+			var (
+				resData []byte
+				height  int64
+			)
 
 			pathRaw, hasPath := params["path"]
-			require.True(t, hasPath)
-
-			//abciQueryReq := new(cmtservice.ABCIQueryRequest)
-			var path string
-			err = json.Unmarshal(pathRaw, &path)
-			require.NoError(t, err)
-
-			dataRaw, hasData := params["data"]
-			require.True(t, hasData)
-
-			data, err := hex.DecodeString(string(bytes.Trim(dataRaw, `"`)))
-			require.NoError(t, err)
-
-			queryReq := new(authtypes.QueryAccountRequest)
-			err = queryReq.Unmarshal(data)
-			require.NoError(t, err)
-
-			var height int64
-			heightRaw, hasHeight := params["height"]
-			if hasHeight {
-				err = json.Unmarshal(bytes.Trim(heightRaw, `"`), &height)
-				require.NoError(t, err)
+			if !hasPath {
+				writeErrorResponse(w, req, "missing path param", string(req.Params))
+				return
 			}
 
-			//proveRaw, hasProve := params["prove"]
-			//if hasProve {
-			//	err = json.Unmarshal(proveRaw, &abciQueryReq.Prove)
-			//	require.NoError(t, err)
-			//}
+			var path string
+			if err = json.Unmarshal(pathRaw, &path); err != nil {
+				writeErrorResponseFromErr(w, req, err)
+				return
+			}
 
-			//abciQueryRes := new(cmtservice.ABCIQueryResponse)
-			//err = client.Invoke(ctx, fmt.Sprintf("%s", abciQueryReq.Path), abciQueryReq, abciQueryRes)
-			queryRes := new(authtypes.QueryAccountResponse)
+			switch path {
+			case authAccountQuery:
+				//abciQueryReq := new(cmtservice.ABCIQueryRequest)
 
-			err = client.Invoke(ctx, path, queryReq, queryRes)
-			require.NoError(t, err)
+				dataRaw, hasData := params["data"]
+				if !hasData {
+					writeErrorResponse(w, req, "missing data param", string(req.Params))
+					return
+				}
 
-			//resData, err := cdc.MarshalJSON(queryRes)
-			resData, err := queryRes.Marshal()
-			require.NoError(t, err)
+				data, err := hex.DecodeString(string(bytes.Trim(dataRaw, `"`)))
+				if err != nil {
+					writeErrorResponseFromErr(w, req, err)
+					return
+				}
+
+				queryReq := new(authtypes.QueryAccountRequest)
+				if err = queryReq.Unmarshal(data); err != nil {
+					writeErrorResponseFromErr(w, req, err)
+					return
+				}
+
+				var height int64
+				heightRaw, hasHeight := params["height"]
+				if hasHeight {
+					if err = json.Unmarshal(bytes.Trim(heightRaw, `"`), &height); err != nil {
+						writeErrorResponseFromErr(w, req, err)
+						return
+					}
+				}
+
+				queryRes := new(authtypes.QueryAccountResponse)
+
+				if err = client.Invoke(ctx, path, queryReq, queryRes); err != nil {
+					writeErrorResponseFromErr(w, req, err)
+					return
+				}
+
+				resData, err = queryRes.Marshal()
+				if err != nil {
+					writeErrorResponseFromErr(w, req, err)
+					return
+				}
+			}
 
 			abciQueryRes := coretypes.ResultABCIQuery{
 				Response: types.ResponseQuery{
 					//Code:      0,
-					//Log:       "",
-					//Info:      "",
 					//Index:     0,
 					//Key:       nil,
-					Value: resData,
-					//ProofOps:  nil,
+					Value:  resData,
 					Height: height,
-					//Codespace: "",
 				},
 			}
-			//abciQueryRes := &cmtservice.ABCIQueryResponse{
-			//	//Code:      0,
-			//	//Log:       "",
-			//	//Info:      "",
-			//	//Index:     0,
-			//	//Key:       nil,
-			//	Value: resData,
-			//	//ProofOps:  nil,
-			//	Height: height,
-			//	//Codespace: "",
-			//}
-			////jsonRes, err = json.Marshal(abciQueryRes)
-			////jsonRes, err = cmtjson.Marshal(queryRes)
-			//require.NoError(t, err)
 
 			w.Header().Set("Content-Type", "application/json")
-			//json.NewEncoder(w).Encode(abciQueryRes)
-			//err = json.NewEncoder(w).Encode(queryRes)
-			//jsonRes, err := cdc.MarshalJSON(queryRes)
-			//jsonRes, err := cmtjson.Marshal(queryRes)
 
 			jsonRes, err := cmtjson.Marshal(abciQueryRes)
-			require.NoError(t, err)
+			if err != nil {
+				writeErrorResponseFromErr(w, req, err)
+				return
+			}
 
-			response := rpctypes.RPCResponse{
+			response = rpctypes.RPCResponse{
 				JSONRPC: "2.0",
 				ID:      req.ID,
 				Result:  jsonRes,
 			}
-
-			//_, err = w.Write(response)
-			err = json.NewEncoder(w).Encode(response)
-			//err = json.NewEncoder(w).Encode(abciQueryRes)
-			require.NoError(t, err)
 			fmt.Println(">>> Response sent")
 		case "broadcast_tx_sync":
 			fmt.Println(">>>> BROADCAST_TX_SYNC")
-			t.Fatalf("ERROR: unsupported method %s", req.Method)
+			response = rpctypes.NewRPCErrorResponse(req.ID, 500, "unsupported method", string(req.Params))
 		case "broadcast_tx_async":
 			fmt.Println(">>>> BROADCAST_TX_ASYNC")
-			t.Fatalf("ERROR: unsupported method %s", req.Method)
+			response = rpctypes.NewRPCErrorResponse(req.ID, 500, "unsupported method", string(req.Params))
 		default:
-			t.Fatalf("ERROR: unsupported method %s", req.Method)
+			response = rpctypes.NewRPCErrorResponse(req.ID, 500, "unsupported method", string(req.Params))
 		}
 
-		// Send response with nil result
-		//response := rpctypes.NewRPCSuccessResponse(req.ID, nil)
-		//response := rpctypes.RPCResponse{
-		//	JSONRPC: "2.0",
-		//	ID:      req.ID,
-		//	Result:  jsonRes,
-		//}
-
-		//w.Header().Set("Content-Type", "application/json")
-		//json.NewEncoder(w).Encode(response)
-		//fmt.Println(">>> Response sent")
+		if err = json.NewEncoder(w).Encode(response); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
 	}
 }
 
@@ -253,4 +226,22 @@ func processABCIQuery(params json.RawMessage) json.RawMessage {
 	//	},
 	//}
 	return nil
+}
+
+// TODO_IN_THIS_COMMIT: godoc...
+func writeErrorResponseFromErr(w http.ResponseWriter, req rpctypes.RPCRequest, err error) {
+	var errMsg string
+	if err != nil {
+		errMsg = err.Error()
+	}
+	writeErrorResponse(w, req, errMsg, "")
+}
+
+// TODO_IN_THIS_COMMIT: godoc...
+func writeErrorResponse(w http.ResponseWriter, req rpctypes.RPCRequest, msg, data string) {
+	errRes := rpctypes.NewRPCErrorResponse(req.ID, 500, msg, data)
+	if err := json.NewEncoder(w).Encode(errRes); err != nil {
+		// TODO_IN_THIS_COMMIT: log error
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
 }
