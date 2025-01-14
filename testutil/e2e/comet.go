@@ -8,10 +8,10 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"time"
 
 	"github.com/cometbft/cometbft/abci/types"
 	coretypes "github.com/cometbft/cometbft/rpc/core/types"
-	coregrpc "github.com/cometbft/cometbft/rpc/grpc"
 	rpctypes "github.com/cometbft/cometbft/rpc/jsonrpc/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	gogogrpc "github.com/cosmos/gogoproto/grpc"
@@ -151,7 +151,10 @@ func newPostHandler(client gogogrpc.ClientConn, app *E2EApp) runtime.HandlerFunc
 
 			// TODO_CONSIDERATION: more correct implementation of the different
 			// broadcast_tx methods (i.e. sync, async, commit) is a matter of
-			// the sequence of running the tx and sending the JSON-RPC response.
+			// the sequencing of the following:
+			// - calling the finalize block ABCI method
+			// - returning the JSON-RPC response
+			// - emitting websocket event
 
 			_, finalizeBlockRes, err := app.RunTx(nil, txBz)
 			if err != nil {
@@ -159,31 +162,24 @@ func newPostHandler(client gogogrpc.ClientConn, app *E2EApp) runtime.HandlerFunc
 				return
 			}
 
+			// TODO_IN_THIS_COMMIT: something better...
+			go func() {
+				// Simulate 1 second block production delay.
+				time.Sleep(time.Second * 1)
+
+				app.EmitWSEvents(finalizeBlockRes.GetEvents())
+			}()
+
 			// DEV_NOTE: There SHOULD ALWAYS be exactly one tx result so long as
 			// we're finalizing one tx at a time (single tx blocks).
 			txRes := finalizeBlockRes.GetTxResults()[0]
 
-			bcastTxRes := coregrpc.ResponseBroadcastTx{
-				CheckTx: &types.ResponseCheckTx{
-					Code:      txRes.GetCode(),
-					Data:      txRes.GetData(),
-					Log:       txRes.GetLog(),
-					Info:      txRes.GetInfo(),
-					GasWanted: txRes.GetGasWanted(),
-					GasUsed:   txRes.GetGasUsed(),
-					Events:    txRes.GetEvents(),
-					Codespace: txRes.GetCodespace(),
-				},
-				TxResult: &types.ExecTxResult{
-					Code:      txRes.GetCode(),
-					Data:      txRes.GetData(),
-					Log:       txRes.GetLog(),
-					Info:      txRes.GetInfo(),
-					GasWanted: txRes.GetGasWanted(),
-					GasUsed:   txRes.GetGasUsed(),
-					Events:    txRes.GetEvents(),
-					Codespace: txRes.GetCodespace(),
-				},
+			bcastTxRes := coretypes.ResultBroadcastTx{
+				Code:      txRes.GetCode(),
+				Data:      txRes.GetData(),
+				Log:       txRes.GetLog(),
+				Codespace: txRes.GetCodespace(),
+				//Hash:,
 			}
 
 			response = rpctypes.NewRPCSuccessResponse(req.ID, bcastTxRes)

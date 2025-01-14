@@ -709,22 +709,6 @@ func (app *App) RunMsgs(t *testing.T, msgs ...sdk.Msg) (txMsgResps []tx.MsgRespo
 		t.Helper()
 	}
 
-	// Commit the updated state after the message has been handled.
-	var finalizeBlockRes *abci.ResponseFinalizeBlock
-	defer func() {
-		if _, commitErr := app.Commit(); commitErr != nil {
-			err = fmt.Errorf("committing state: %w", commitErr)
-			return
-		}
-
-		app.nextBlockUpdateCtx()
-
-		// Emit events MUST happen AFTER the context has been updated so that
-		// events are available on the context for the block after their actions
-		// were committed (e.g. msgs, begin/end block trigger).
-		app.emitEvents(t, finalizeBlockRes)
-	}()
-
 	// Package the message into a transaction.
 	txBuilder := app.txCfg.NewTxBuilder()
 	if err = txBuilder.SetMsgs(msgs...); err != nil {
@@ -740,7 +724,7 @@ func (app *App) RunMsgs(t *testing.T, msgs ...sdk.Msg) (txMsgResps []tx.MsgRespo
 		app.logger.Info("Running msg", "msg", msg.String())
 	}
 
-	txMsgResps, finalizeBlockRes, err = app.RunTx(t, txBz)
+	txMsgResps, _, err = app.RunTx(t, txBz)
 	if err != nil {
 		// DEV_NOTE: Intentionally returning and not asserting nil error to improve reusability.
 		return nil, err
@@ -758,6 +742,21 @@ func (app *App) RunTx(t *testing.T, txBz []byte) (
 	if t != nil {
 		t.Helper()
 	}
+
+	// Commit the updated state after the message has been handled.
+	defer func() {
+		if _, commitErr := app.Commit(); commitErr != nil {
+			err = fmt.Errorf("committing state: %w", commitErr)
+			return
+		}
+
+		app.nextBlockUpdateCtx()
+
+		// Emit events MUST happen AFTER the context has been updated so that
+		// events are available on the context for the block after their actions
+		// were committed (e.g. msgs, begin/end block trigger).
+		app.emitEvents(t, finalizeBlockRes)
+	}()
 
 	// Finalize the block with the transaction.
 	finalizeBlockReq := &cmtabcitypes.RequestFinalizeBlock{
@@ -829,7 +828,9 @@ func (app *App) NextBlocks(t *testing.T, numBlocks int) {
 // emitEvents emits the events from the finalized block such that they are available
 // via the current context's event manager (i.e. app.GetSdkCtx().EventManager.Events()).
 func (app *App) emitEvents(t *testing.T, res *abci.ResponseFinalizeBlock) {
-	t.Helper()
+	if t != nil {
+		t.Helper()
+	}
 
 	// Emit begin/end blocker events.
 	for _, event := range res.Events {

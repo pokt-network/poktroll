@@ -6,9 +6,10 @@ import (
 	"strings"
 	"testing"
 
+	abci "github.com/cometbft/cometbft/abci/types"
 	coretypes "github.com/cometbft/cometbft/rpc/core/types"
 	rpctypes "github.com/cometbft/cometbft/rpc/jsonrpc/types"
-	sdk "github.com/cosmos/cosmos-sdk/types"
+	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/tx"
 	"github.com/gorilla/websocket"
 )
@@ -418,7 +419,7 @@ func (app *E2EApp) handleBlockEvents(t *testing.T) {
 // TODO_IN_THIS_COMMIT: also wrap RunMsgs...
 // TODO_IN_THIS_COMMIT: godoc...
 // Override RunMsg to also emit transaction events via WebSocket
-func (app *E2EApp) RunMsg(t *testing.T, msg sdk.Msg) (tx.MsgResponse, error) {
+func (app *E2EApp) RunMsg(t *testing.T, msg cosmostypes.Msg) (tx.MsgResponse, error) {
 	msgRes, err := app.App.RunMsg(t, msg)
 	if err != nil {
 		return nil, err
@@ -432,7 +433,7 @@ func (app *E2EApp) RunMsg(t *testing.T, msg sdk.Msg) (tx.MsgResponse, error) {
 }
 
 // createBlockEvent creates a CometBFT-compatible event from transaction results
-func createBlockEvent(ctx *sdk.Context, msgRes tx.MsgResponse) *coretypes.ResultEvent {
+func createBlockEvent(ctx *cosmostypes.Context, msgRes tx.MsgResponse) *coretypes.ResultEvent {
 	// Convert SDK events to map[string][]string format that CometBFT expects
 	events := make(map[string][]string)
 	for _, event := range ctx.EventManager().Events() {
@@ -457,22 +458,27 @@ func createBlockEvent(ctx *sdk.Context, msgRes tx.MsgResponse) *coretypes.Result
 	}
 }
 
-//// createTxEvent creates a CometBFT-compatible event from transaction results
-//func createTxEvent(tx *coretypes.ResultTx, index int) *coretypes.ResultEvent {
-//	return &coretypes.ResultEvent{
-//		Query: "tm.event='Tx'",
-//		Data: map[string]interface{}{
-//			"height": ctx.BlockHeight(),
-//			"hash":   ctx.BlockHeader().LastBlockId.Hash,
-//			"events": events,
-//			// Add other relevant block and transaction data here as needed
-//		},
-//		Events: events,
-//	}
-//}
+// TODO_IN_THIS_COMMIT: godoc...
+func (app *E2EApp) EmitWSEvents(events []abci.Event) {
+	// TODO_IN_THIS_COMMIT: necessary?
+	//app.wsConnMutex.RLock()
+	//defer app.wsConnMutex.RUnlock()
+
+	for _, event := range events {
+		for conn, queries := range app.wsConnections {
+			// Check if connection is subscribed to this event type
+			for query, _ := range queries {
+				if eventMatchesQuery(event, query) {
+					// Marshal the event to JSON
+					_ = conn
+				}
+			}
+		}
+	}
+}
 
 // eventMatchesQuery checks if an event matches a subscription query
-func eventMatchesQuery(event *coretypes.ResultEvent, query string) bool {
+func eventMatchesQuery(event abci.Event, query string) bool {
 	// Basic implementation - should be expanded to handle more complex queries
-	return strings.Contains(query, event.Query)
+	return strings.Contains(query, event.Type)
 }
