@@ -50,13 +50,13 @@ spec:
             - name: POKTROLLD_HOME
               value: /root/.poktroll
             - name: PATH_URL
-              value: http://${NAMESPACE}-path:3000/v1
+              value: http://${NAMESPACE}-path:3069/v1
               # PATH relies on subdomains to get the requested service but our DevNet infra is not
               # built to expose arbitrary subdomains and supporting it would be a significant effort.
               # As a workaround, PATH_HOST_OVERRIDE is used as the host:port to connect to PATH while
               # the subdomain is passed as a Host header in the request.
             - name: PATH_HOST_OVERRIDE
-              value: ${NAMESPACE}-path:3000
+              value: ${NAMESPACE}-path:3069
           volumeMounts:
             - mountPath: /root/.poktroll/keyring-test/
               name: writable-keys-volume
