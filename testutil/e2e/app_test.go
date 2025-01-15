@@ -120,7 +120,7 @@ func TestNewE2EApp(t *testing.T) {
 	gateway2Addr, err := rec.GetAddress()
 	require.NoError(t, err)
 
-	// TODO_IN_THIS_COMMOT: fund gateway2 account.
+	// Fund gateway2 account.
 	_, err = app.RunMsg(t, &banktypes.MsgSend{
 		FromAddress: app.GetFaucetBech32(),
 		ToAddress:   gateway2Addr.String(),
@@ -134,7 +134,6 @@ func TestNewE2EApp(t *testing.T) {
 		Block(gomock.Any(), gomock.Any()).
 		DoAndReturn(
 			func(ctx context.Context, height *int64) (*cometrpctypes.ResultBlock, error) {
-				//time.Sleep(time.Second * 100)
 				blockResultMock := &cometrpctypes.ResultBlock{
 					Block: &types.Block{
 						Header: types.Header{
@@ -145,9 +144,6 @@ func TestNewE2EApp(t *testing.T) {
 				return blockResultMock, nil
 			},
 		).AnyTimes()
-	//blockQueryClient, err := sdkclient.NewClientFromNode("tcp://127.0.0.1:42070")
-	//blockQueryClient, err := sdkclient.NewClientFromNode("tcp://127.0.0.1:26657")
-	//require.NoError(t, err)
 
 	creds := insecure.NewCredentials()
 	grpcConn, err := grpc.NewClient("127.0.0.1:42069", grpc.WithTransportCredentials(creds))
@@ -178,7 +174,6 @@ func TestNewE2EApp(t *testing.T) {
 
 	deps = depinject.Configs(deps, depinject.Supply(txtypes.Context(clientCtx), txFactory))
 
-	//_, txContext := testtx.NewE2ETxContext(t, keyRing, flagSet)
 	txContext, err := tx.NewTxContext(deps)
 	require.NoError(t, err)
 
