@@ -12,8 +12,6 @@ import (
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	"github.com/stretchr/testify/require"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
 
 	"github.com/pokt-network/poktroll/app/volatile"
 	"github.com/pokt-network/poktroll/pkg/client/block"
@@ -46,8 +44,7 @@ func TestNewE2EApp(t *testing.T) {
 	blockQueryClient, err := comethttp.New("tcp://127.0.0.1:42070", "/websocket")
 	require.NoError(t, err)
 
-	creds := insecure.NewCredentials()
-	grpcConn, err := grpc.NewClient("127.0.0.1:42069", grpc.WithTransportCredentials(creds))
+	grpcConn, err := app.GetClientConn()
 	require.NoError(t, err)
 
 	deps := depinject.Supply(grpcConn, blockQueryClient)

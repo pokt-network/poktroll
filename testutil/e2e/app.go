@@ -136,10 +136,9 @@ func (app *E2EApp) Close() error {
 	return nil
 }
 
-// GetClientConn returns a gRPC client connection to the E2EApp's gRPC server
-func (app *E2EApp) GetClientConn(ctx context.Context) (*grpc.ClientConn, error) {
-	return grpc.DialContext(
-		ctx,
+// GetClientConn returns a gRPC client connection to the E2EApp's gRPC server.
+func (app *E2EApp) GetClientConn() (*grpc.ClientConn, error) {
+	return grpc.NewClient(
 		app.grpcListener.Addr().String(),
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 	)

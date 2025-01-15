@@ -68,19 +68,18 @@ func newPostHandler(
 
 		response := new(rpctypes.RPCResponse)
 		switch CometBFTMethod(req.Method) {
-		// TODO_IN_THIS_COMMIT: extract...
 		case abciQueryMethod:
-			response, err = app.abciQuery(ctx, client, req, params)
+			response, err = app.handleAbciQuery(ctx, client, req, params)
 			if err != nil {
 				*response = rpctypes.NewRPCErrorResponse(req.ID, 500, err.Error(), "")
 			}
 		case broadcastTxSyncMethod, broadcastTxAsyncMethod, broadcastTxCommitMethod:
-			response, err = app.broadcastTx(req, params)
+			response, err = app.handleBroadcastTx(req, params)
 			if err != nil {
 				*response = rpctypes.NewRPCErrorResponse(req.ID, 500, err.Error(), "")
 			}
 		case blockMethod:
-			response, err = app.block(ctx, client, req, params)
+			response, err = app.handleBlock(ctx, client, req, params)
 			if err != nil {
 				*response = rpctypes.NewRPCErrorResponse(req.ID, 500, err.Error(), "")
 			}
@@ -95,7 +94,7 @@ func newPostHandler(
 }
 
 // TODO_IN_THIS_COMMIT: godoc...
-func (app *E2EApp) abciQuery(
+func (app *E2EApp) handleAbciQuery(
 	ctx context.Context,
 	client gogogrpc.ClientConn,
 	req rpctypes.RPCRequest,
@@ -154,9 +153,6 @@ func (app *E2EApp) abciQuery(
 
 	abciQueryRes := coretypes.ResultABCIQuery{
 		Response: types.ResponseQuery{
-			//Code:      0,
-			//Index:     0,
-			//Key:       nil,
 			Value:  resData,
 			Height: height,
 		},
@@ -167,7 +163,7 @@ func (app *E2EApp) abciQuery(
 }
 
 // TODO_IN_THIS_COMMIT: godoc...
-func (app *E2EApp) broadcastTx(
+func (app *E2EApp) handleBroadcastTx(
 	req rpctypes.RPCRequest,
 	params map[string]json.RawMessage,
 ) (*rpctypes.RPCResponse, error) {
@@ -192,13 +188,9 @@ func (app *E2EApp) broadcastTx(
 		return nil, err
 	}
 
-	// TODO_IN_THIS_COMMIT: something better...
 	go func() {
 		// Simulate 1 second block production delay.
 		time.Sleep(time.Second * 1)
-
-		//fmt.Println(">>> emitting ws events")
-		//app.EmitWSEvents(app.GetSdkCtx().EventManager().Events())
 
 		// TODO_IMPROVE: If we want/need to support multiple txs per
 		// block in the future, this will have to be refactored.
@@ -222,7 +214,7 @@ func (app *E2EApp) broadcastTx(
 }
 
 // TODO_IN_THIS_COMMIT: godoc...
-func (app *E2EApp) block(
+func (app *E2EApp) handleBlock(
 	ctx context.Context,
 	client gogogrpc.ClientConn,
 	req rpctypes.RPCRequest,
@@ -269,7 +261,6 @@ func writeErrorResponseFromErr(w http.ResponseWriter, req rpctypes.RPCRequest, e
 func writeErrorResponse(w http.ResponseWriter, req rpctypes.RPCRequest, msg, data string) {
 	errRes := rpctypes.NewRPCErrorResponse(req.ID, 500, msg, data)
 	if err := json.NewEncoder(w).Encode(errRes); err != nil {
-		// TODO_IN_THIS_COMMIT: log error
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 }

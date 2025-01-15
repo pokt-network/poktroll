@@ -11,14 +11,6 @@ import (
 type cometBlockResult coretypes.ResultBlock
 
 func (cbr *cometBlockResult) Height() int64 {
-
-	//cdc := codec.NewProtoCodec(codectypes.NewInterfaceRegistry()) cbrPreJSON, err := cdc.MarshalJSON(cbr)
-
-	//cbrJSON, err := json.MarshalIndent(cbrPreJSON, "", "  ")
-	//if err != nil {
-	//	panic(err)
-	//}
-	//fmt.Println(string(cbrJSON))
 	return cbr.Block.Header.Height
 }
 

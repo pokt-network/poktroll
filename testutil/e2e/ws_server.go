@@ -213,7 +213,7 @@ func (app *E2EApp) EmitWSEvents(finalizeBlockRes *abci.ResponseFinalizeBlock, tx
 		app.resultEventChan <- resultEvent
 	}
 
-	// TODO_IN_THIS_COMMIT: emit individual events...
+	// TODO_IMPROVE: emit individual finalize block & tx result events?
 }
 
 // TODO_IN_THIS_COMMIT: godoc... see: https://github.com/cometbft/cometbft/blob/v0.38.10/types/event_bus.go#L112

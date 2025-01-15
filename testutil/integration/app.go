@@ -564,13 +564,7 @@ func NewCompleteIntegrationApp(t *testing.T, opts ...IntegrationAppOptionFn) *Ap
 	)
 
 	configurator := module.NewConfigurator(cdc, msgRouter, queryHelper)
-	//// TODO_IN_THIS_COMMIT: clean up...
-	//flagSet := testclient.NewFlagSet(t, "tcp://127.0.0.1:42070")
-	//keyRing := keyring.NewInMemory(cdc)
-	//clientCtx := testclient.NewLocalnetClientCtx(t, flagSet).WithKeyring(keyRing)
-
 	for _, mod := range integrationApp.GetModuleManager().Modules {
-		//mod.(module.AppModuleBasic).RegisterGRPCGatewayRoutes(clientCtx, mux)
 		mod.(module.HasServices).RegisterServices(configurator)
 	}
 
