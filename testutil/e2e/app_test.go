@@ -124,7 +124,7 @@ func TestNewE2EApp(t *testing.T) {
 	_, err = app.RunMsg(t, &banktypes.MsgSend{
 		FromAddress: app.GetFaucetBech32(),
 		ToAddress:   gateway2Addr.String(),
-		Amount:      cosmostypes.NewCoins(cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 100000000)),
+		Amount:      cosmostypes.NewCoins(cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 10000000000)),
 	})
 	require.NoError(t, err)
 
@@ -318,4 +318,109 @@ func TestSanity3(t *testing.T) {
 	require.NoError(t, err)
 
 	t.Logf("result: %s", result)
+}
+
+func TestSanity4(t *testing.T) {
+	ctx := context.Background()
+	initialHeight := int64(7553)
+	// TODO_IN_THIS_COMMIT: does this 👆 need to be reconciled with the internal height of app?
+
+	//app := NewE2EApp(t)
+
+	//registry := codectypes.NewInterfaceRegistry()
+	//cdc := codec.NewProtoCodec(registry)
+	keyRing := keyring.NewInMemory(testclient.Marshaler)
+	_, err := keyRing.NewAccount(
+		"pnf",
+		"crumble shrimp south strategy speed kick green topic stool seminar track stand rhythm almost bubble pet knock steel pull flag weekend country major blade",
+		"",
+		cosmostypes.FullFundraiserPath,
+		hd.Secp256k1,
+	)
+	require.NoError(t, err)
+
+	//// TODO_IN_THIS_COMMOT: fund gateway2 account.
+	//_, err = app.RunMsg(t, &banktypes.MsgSend{
+	//	FromAddress: app.GetFaucetBech32(),
+	//	ToAddress:   pnfAddr.String(),
+	//	Amount:      cosmostypes.NewCoins(cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 10000000000)),
+	//})
+	//require.NoError(t, err)
+
+	ctrl := gomock.NewController(t)
+	blockQueryClient := mockclient.NewMockBlockQueryClient(ctrl)
+	blockQueryClient.EXPECT().
+		Block(gomock.Any(), gomock.Any()).
+		DoAndReturn(
+			func(ctx context.Context, height *int64) (*cometrpctypes.ResultBlock, error) {
+				//time.Sleep(time.Second * 100)
+				blockResultMock := &cometrpctypes.ResultBlock{
+					Block: &types.Block{
+						Header: types.Header{
+							Height: initialHeight,
+						},
+					},
+				}
+				return blockResultMock, nil
+			},
+		).AnyTimes()
+	//blockQueryClient, err := sdkclient.NewClientFromNode("tcp://127.0.0.1:42070")
+	//blockQueryClient, err := sdkclient.NewClientFromNode("tcp://127.0.0.1:26657")
+	//require.NoError(t, err)
+
+	//creds := insecure.NewCredentials()
+	//grpcConn := testclient.NewLocalnetClientCtx(t, flagSet).GetClient()
+	//grpcConn, err := grpc.NewClient("127.0.0.1:42069", grpc.WithTransportCredentials(creds))
+	//require.NoError(t, err)
+
+	// TODO_IN_THIS_COMMIT: NOT localnet flagset NOR context, should be
+	// configured to match the E2E app listeners.
+	//flagSet := testclient.NewFlagSet(t, "tcp://127.0.0.1:42070")
+	flagSet := testclient.NewLocalnetFlagSet(t)
+	clientCtx := testclient.NewLocalnetClientCtx(t, flagSet).WithKeyring(keyRing)
+	deps := depinject.Supply(clientCtx, blockQueryClient)
+
+	sharedQueryClient, err := query.NewSharedQuerier(deps)
+	require.NoError(t, err)
+
+	sharedParams, err := sharedQueryClient.GetParams(ctx)
+	require.NoError(t, err)
+
+	t.Logf("shared params: %+v", sharedParams)
+
+	eventsQueryClient := events.NewEventsQueryClient("ws://127.0.0.1:26657/websocket")
+	deps = depinject.Configs(deps, depinject.Supply(eventsQueryClient))
+	blockClient, err := block.NewBlockClient(ctx, deps)
+	require.NoError(t, err)
+
+	txFactory, err := cosmostx.NewFactoryCLI(clientCtx, flagSet)
+	require.NoError(t, err)
+
+	deps = depinject.Configs(deps, depinject.Supply(txtypes.Context(clientCtx), txFactory))
+
+	//_, txContext := testtx.NewE2ETxContext(t, keyRing, flagSet)
+	txContext, err := tx.NewTxContext(deps)
+	require.NoError(t, err)
+
+	deps = depinject.Configs(deps, depinject.Supply(blockClient, txContext))
+	txClient, err := tx.NewTxClient(ctx, deps, tx.WithSigningKeyName("pnf"))
+	require.NoError(t, err)
+
+	time.Sleep(time.Second * 1)
+
+	eitherErr := txClient.SignAndBroadcast(
+		ctx,
+		&banktypes.MsgSend{
+			FromAddress: "pokt1eeeksh2tvkh7wzmfrljnhw4wrhs55lcuvmekkw",
+			ToAddress:   "pokt15w3fhfyc0lttv7r585e2ncpf6t2kl9uh8rsnyz",
+			Amount:      cosmostypes.NewCoins(cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 10000000000)),
+		},
+	)
+
+	// TODO_IN_THIS_COMMIT: signal to the WS server to send another block result event...
+	//app.NextBlock(t)
+
+	err, errCh := eitherErr.SyncOrAsyncError()
+	require.NoError(t, err)
+	require.NoError(t, <-errCh)
 }

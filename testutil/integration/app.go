@@ -807,7 +807,7 @@ func (app *App) RunTx(t *testing.T, txBz []byte) (
 			require.NoError(t, err)
 			require.NotNil(t, txMsgRes)
 		} else {
-			return nil, nil, err
+			return nil, finalizeBlockRes, err
 		}
 
 		txMsgResps = append(txMsgResps, txMsgRes)
@@ -833,10 +833,12 @@ func (app *App) emitEvents(t *testing.T, res *abci.ResponseFinalizeBlock) {
 	}
 
 	// Emit begin/end blocker events.
-	for _, event := range res.Events {
-		testutilevents.QuoteEventMode(&event)
-		abciEvent := cosmostypes.Event(event)
-		app.sdkCtx.EventManager().EmitEvent(abciEvent)
+	if res.Events != nil {
+		for _, event := range res.Events {
+			testutilevents.QuoteEventMode(&event)
+			abciEvent := cosmostypes.Event(event)
+			app.sdkCtx.EventManager().EmitEvent(abciEvent)
+		}
 	}
 
 	// Emit txResult events.

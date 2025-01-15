@@ -8,6 +8,7 @@ import (
 	"sync"
 	"testing"
 
+	comettypes "github.com/cometbft/cometbft/types"
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	"github.com/cosmos/cosmos-sdk/types/module"
 	"github.com/gorilla/websocket"
@@ -26,14 +27,14 @@ import (
 // E2EApp wraps an integration.App and provides both gRPC and WebSocket servers for end-to-end testing
 type E2EApp struct {
 	*integration.App
-	grpcServer     *grpc.Server
-	grpcListener   net.Listener
-	wsServer       *http.Server
-	wsListener     net.Listener
-	wsUpgrader     websocket.Upgrader
-	wsConnMutex    sync.RWMutex
-	wsConnections  map[*websocket.Conn]map[string]struct{} // maps connections to their subscribed event queries
-	blockEventChan chan *coretypes.ResultEvent
+	grpcServer      *grpc.Server
+	grpcListener    net.Listener
+	wsServer        *http.Server
+	wsListener      net.Listener
+	wsUpgrader      websocket.Upgrader
+	wsConnMutex     sync.RWMutex
+	wsConnections   map[*websocket.Conn]map[string]struct{} // maps connections to their subscribed event queries
+	resultEventChan chan *coretypes.ResultEvent
 }
 
 // NewE2EApp creates a new E2EApp instance with integration.App, gRPC, and WebSocket servers
@@ -78,13 +79,13 @@ func NewE2EApp(t *testing.T, opts ...integration.IntegrationAppOptionFn) *E2EApp
 	require.NoError(t, err, "failed to create WebSocket listener")
 
 	e2eApp := &E2EApp{
-		App:            app,
-		grpcListener:   grpcListener,
-		grpcServer:     grpcServer,
-		wsListener:     wsListener,
-		wsConnections:  make(map[*websocket.Conn]map[string]struct{}),
-		wsUpgrader:     websocket.Upgrader{},
-		blockEventChan: make(chan *coretypes.ResultEvent, 1),
+		App:             app,
+		grpcListener:    grpcListener,
+		grpcServer:      grpcServer,
+		wsListener:      wsListener,
+		wsConnections:   make(map[*websocket.Conn]map[string]struct{}),
+		wsUpgrader:      websocket.Upgrader{},
+		resultEventChan: make(chan *coretypes.ResultEvent),
 	}
 
 	mux.Handle(http.MethodPost, rootPattern, newPostHandler(client, e2eApp))
@@ -117,7 +118,7 @@ func NewE2EApp(t *testing.T, opts ...integration.IntegrationAppOptionFn) *E2EApp
 	}()
 
 	// Start event handling
-	go e2eApp.handleBlockEvents(t)
+	go e2eApp.handleResultEvents(t)
 
 	return e2eApp
 }
@@ -129,7 +130,7 @@ func (app *E2EApp) Close() error {
 		return err
 	}
 
-	close(app.blockEventChan)
+	close(app.resultEventChan)
 
 	return nil
 }
@@ -146,4 +147,18 @@ func (app *E2EApp) GetClientConn(ctx context.Context) (*grpc.ClientConn, error) 
 // GetWSEndpoint returns the WebSocket endpoint URL
 func (app *E2EApp) GetWSEndpoint() string {
 	return "ws://" + app.wsListener.Addr().String() + "/websocket"
+}
+
+// TODO_IN_THIS_COMMIT: godoc & move...
+func (app *E2EApp) GetCometBlockID() comettypes.BlockID {
+	lastBlockID := app.GetSdkCtx().BlockHeader().LastBlockId
+	partSetHeader := lastBlockID.GetPartSetHeader()
+
+	return comettypes.BlockID{
+		Hash: lastBlockID.GetHash(),
+		PartSetHeader: comettypes.PartSetHeader{
+			Total: partSetHeader.GetTotal(),
+			Hash:  partSetHeader.GetHash(),
+		},
+	}
 }

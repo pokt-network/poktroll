@@ -13,6 +13,7 @@ import (
 	"github.com/cometbft/cometbft/abci/types"
 	coretypes "github.com/cometbft/cometbft/rpc/core/types"
 	rpctypes "github.com/cometbft/cometbft/rpc/jsonrpc/types"
+	comettypes "github.com/cometbft/cometbft/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	gogogrpc "github.com/cosmos/gogoproto/grpc"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
@@ -167,7 +168,12 @@ func newPostHandler(client gogogrpc.ClientConn, app *E2EApp) runtime.HandlerFunc
 				// Simulate 1 second block production delay.
 				time.Sleep(time.Second * 1)
 
-				app.EmitWSEvents(finalizeBlockRes.GetEvents())
+				fmt.Println(">>> emitting ws events")
+				//app.EmitWSEvents(app.GetSdkCtx().EventManager().Events())
+
+				// TODO_IMPROVE: If we want/need to support multiple txs per
+				// block in the future, this will have to be refactored.
+				app.EmitWSEvents(finalizeBlockRes, txBz)
 			}()
 
 			// DEV_NOTE: There SHOULD ALWAYS be exactly one tx result so long as
@@ -179,7 +185,7 @@ func newPostHandler(client gogogrpc.ClientConn, app *E2EApp) runtime.HandlerFunc
 				Data:      txRes.GetData(),
 				Log:       txRes.GetLog(),
 				Codespace: txRes.GetCodespace(),
-				//Hash:,
+				Hash:      comettypes.Tx(txBz).Hash(),
 			}
 
 			response = rpctypes.NewRPCSuccessResponse(req.ID, bcastTxRes)
