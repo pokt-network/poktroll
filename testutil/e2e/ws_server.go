@@ -6,12 +6,12 @@ import (
 	"net/http"
 	"strings"
 	"testing"
+	"time"
 
 	abci "github.com/cometbft/cometbft/abci/types"
 	coretypes "github.com/cometbft/cometbft/rpc/core/types"
 	rpctypes "github.com/cometbft/cometbft/rpc/jsonrpc/types"
 	comettypes "github.com/cometbft/cometbft/types"
-	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/gorilla/websocket"
 	"github.com/stretchr/testify/require"
 )
@@ -39,6 +39,8 @@ func (app *E2EApp) handleWebSocket(w http.ResponseWriter, r *http.Request) {
 
 // handleWebSocketConnection handles messages from a specific WebSocket connection
 func (app *E2EApp) handleWebSocketConnection(conn *websocket.Conn) {
+	logger := app.Logger().With("method", "handleWebSocketConnection")
+
 	defer func() {
 		app.wsConnMutex.Lock()
 		delete(app.wsConnections, conn)
@@ -57,7 +59,7 @@ func (app *E2EApp) handleWebSocketConnection(conn *websocket.Conn) {
 			continue
 		}
 
-		// Handle subscribe/unsubscribe requests
+		// Handle subscription requests.
 		if req.Method == "subscribe" {
 			var params struct {
 				Query string `json:"query"`
@@ -70,24 +72,16 @@ func (app *E2EApp) handleWebSocketConnection(conn *websocket.Conn) {
 			app.wsConnections[conn][params.Query] = struct{}{}
 			app.wsConnMutex.Unlock()
 
-			// Send subscription response
+			// Send initial subscription response
 			resp := rpctypes.RPCResponse{
 				JSONRPC: "2.0",
 				ID:      req.ID,
-				// TODO_IN_THIS_COMMIT: generate a mock result...
-				//Result: json.RawMessage(mockBlockResultJSON),
 				// DEV_NOTE: Query subscription responses are initially empty; data is sent as subsequent events occur.
 				Result: json.RawMessage("{}"),
 			}
-
-			//time.Sleep(time.Second * 4)
-
 			if err = conn.WriteJSON(resp); err != nil {
-				panic(err)
+				logger.Error(fmt.Sprintf("writing JSON-RPC response: %s", err))
 			}
-			//if err = conn.WriteJSON(resp); err != nil {
-			//	return
-			//}
 		}
 	}
 }
@@ -97,9 +91,6 @@ func (app *E2EApp) handleResultEvents(t *testing.T) {
 	t.Helper()
 
 	for event := range app.resultEventChan {
-		fmt.Printf(">>> WS event: %+v\n", event)
-		fmt.Printf(">>> num WS conns: %d\n", len(app.wsConnections))
-
 		app.wsConnMutex.RLock()
 		for conn, queries := range app.wsConnections {
 			// Check if connection is subscribed to this event type
@@ -117,8 +108,6 @@ func (app *E2EApp) handleResultEvents(t *testing.T) {
 						continue
 					}
 
-					fmt.Printf(">>> checking query: %s\n", query)
-
 					// DEV_NOTE: An empty request ID is consistent with the cometbft
 					// implementation and is the reason that we MUST use a distinct
 					// websocket connection per query; it's not possible to determine
@@ -131,7 +120,6 @@ func (app *E2EApp) handleResultEvents(t *testing.T) {
 						delete(app.wsConnections, conn)
 						app.wsConnMutex.Unlock()
 						app.wsConnMutex.RLock()
-						continue
 					}
 				}
 			}
@@ -158,105 +146,36 @@ func parseQuery(t *testing.T, query string) map[string]string {
 	return queryPartPairs
 }
 
-//// TODO_IN_THIS_COMMIT: also wrap RunMsgs...
-//// TODO_IN_THIS_COMMIT: godoc...
-//// Override RunMsg to also emit transaction events via WebSocket
-//func (app *E2EApp) RunMsg(t *testing.T, msg cosmostypes.Msg) (tx.MsgResponse, error) {
-//	msgRes, err := app.App.RunMsg(t, msg)
-//	if err != nil {
-//		return nil, err
-//	}
-//
-//	// Create and emit block event with transaction results
-//	blockEvent := createBlockEvent(app.GetSdkCtx())
-//	app.resultEventChan <- blockEvent
-//
-//	return msgRes, nil
-//}
-
-// createBlockEvent creates a CometBFT-compatible event from transaction results
-func createBlockEvent(ctx *cosmostypes.Context) *coretypes.ResultEvent {
-	// Convert SDK events to map[string][]string format that CometBFT expects
-	events := make(map[string][]string)
-	for _, event := range ctx.EventManager().Events() {
-		// Each event type becomes a key, and its attributes become the values
-		for _, attr := range event.Attributes {
-			if events[event.Type] == nil {
-				events[event.Type] = make([]string, 0)
-			}
-			events[event.Type] = append(events[event.Type], string(attr.Value))
-		}
-	}
-
-	return &coretypes.ResultEvent{
-		Query: "tm.event='NewBlock'",
-		Data: map[string]interface{}{
-			"height": ctx.BlockHeight(),
-			"hash":   ctx.BlockHeader().LastBlockId.Hash,
-			"events": events,
-			// Add other relevant block and transaction data here as needed
-		},
-		Events: events,
-	}
-}
-
 // TODO_IN_THIS_COMMIT: godoc...
 func (app *E2EApp) EmitWSEvents(finalizeBlockRes *abci.ResponseFinalizeBlock, txBz []byte) {
-	//resultEvent := &coretypes.ResultEvent{
-	//	Query: "tm.event='NewBlock'",
-	//	Data:  map[string]interface{}{
-	//		//"height": ctx.BlockHeight(),
-	//		//"hash":   ctx.BlockHeader().LastBlockId.Hash,
-	//		//"events": events,
-	//		// Add other relevant block and transaction data here as needed
-	//	},
-	//	//Events: events,
-	//}
-
-	//emitEvent := func(event abci.Event, query string) error {
-	//	eventAny, err := codectypes.NewAnyWithValue(&event)
-	//	if err != nil {
-	//		return err
-	//	}
-	//
-	//	resultEvent := &coretypes.ResultEvent{
-	//		Query:  query,
-	//		Data:   eventAny,
-	//		Events: nil,
-	//	}
-	//
-	//	app.resultEventChan <- resultEvent
-	//
-	//	return nil
-	//}
-	//for _, event := range finalizeBlockRes.GetEvents() {
-	//	// TODO_IN_THIS_COMMIT: reconsider how to populate the queries...
-	//	if err := emitEvent(event, comettypes.EventQueryNewBlock.String()); err != nil {
-	//		app.Logger().Error(err.Error())
-	//	}
-	//}
-	//for _, txResult := range finalizeBlockRes.GetTxResults() {
-	//	for _, event := range txResult.GetEvents() {
-	//		// TODO_IN_THIS_COMMIT: reconsider how to populate the queries...
-	//		if err := emitEvent(event, comettypes.EventQueryTx.String()); err != nil {
-	//			app.Logger().Error(err.Error())
-	//		}
-	//	}
-	//}
-
-	// TODO_IN_THIS_COMMIT: necessary?
-	//app.wsConnMutex.RLock()
-	//defer app.wsConnMutex.RUnlock()
-
 	events := validateAndStringifyEvents(finalizeBlockRes.GetEvents())
 	// DEV_NOTE: see https://github.com/cometbft/cometbft/blob/v0.38.10/types/event_bus.go#L138
 	events[comettypes.EventTypeKey] = append(events[comettypes.EventTypeKey], comettypes.EventNewBlock)
 
 	evtDataNewBlock := comettypes.EventDataNewBlock{
-		// TODO_IN_THIS_COMMIT: add block...
-		Block:               nil,
+		Block: &comettypes.Block{
+			Header: comettypes.Header{
+				//Version:            version.Consensus{},
+				ChainID:     "poktroll-test",
+				Height:      app.GetSdkCtx().BlockHeight(),
+				Time:        time.Now(),
+				LastBlockID: app.GetCometBlockID(),
+				//LastCommitHash:     nil,
+				//DataHash:           nil,
+				//ValidatorsHash:     nil,
+				//NextValidatorsHash: nil,
+				//ConsensusHash:      nil,
+				//AppHash:            nil,
+				//LastResultsHash:    nil,
+				//EvidenceHash:       nil,
+				//ProposerAddress:    nil,
+			},
+			//Data:       comettypes.Data{},
+			//Evidence:   comettypes.EvidenceData{},
+			//LastCommit: nil,
+		},
 		BlockID:             app.GetCometBlockID(),
-		ResultFinalizeBlock: abci.ResponseFinalizeBlock{},
+		ResultFinalizeBlock: *finalizeBlockRes,
 	}
 
 	// TODO_IN_THIS_COMMIT: comment...

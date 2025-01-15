@@ -1,24 +1,16 @@
 package e2e
 
 import (
-	"bytes"
-	"context"
-	"io"
-	"net/http"
 	"testing"
-	"time"
 
 	"cosmossdk.io/depinject"
 	"cosmossdk.io/math"
-	cometrpctypes "github.com/cometbft/cometbft/rpc/core/types"
-	"github.com/cometbft/cometbft/types"
+	comethttp "github.com/cometbft/cometbft/rpc/client/http"
 	cosmostx "github.com/cosmos/cosmos-sdk/client/tx"
 	"github.com/cosmos/cosmos-sdk/crypto/hd"
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
-	"github.com/golang/mock/gomock"
-	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -29,84 +21,15 @@ import (
 	"github.com/pokt-network/poktroll/pkg/client/query"
 	"github.com/pokt-network/poktroll/pkg/client/tx"
 	txtypes "github.com/pokt-network/poktroll/pkg/client/tx/types"
-	"github.com/pokt-network/poktroll/testutil/integration"
-	"github.com/pokt-network/poktroll/testutil/mockclient"
 	"github.com/pokt-network/poktroll/testutil/testclient"
 	gatewaytypes "github.com/pokt-network/poktroll/x/gateway/types"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
-func TestGRPCServer2(t *testing.T) {
-	grpcServer := grpc.NewServer()
-	//gwKeeper := gatewaykeeper.NewKeeper()
-	//gwSvc := gatewaykeeper.NewMsgServerImpl(gwKeeper)
-
-	app := integration.NewCompleteIntegrationApp(t)
-	app.RegisterGRPCServer(grpcServer)
-
-	mux := runtime.NewServeMux()
-	err := http.ListenAndServe(":42070", mux)
-	require.NoError(t, err)
-	//gatewaytypes.RegisterMsgServer(grpcServer, gwSvc)
-	//gatewaytypes.RegisterMsgServer(app.MsgServiceRouter(), gwSvc)
-
-	//gatewaytypes.RegisterQueryHandlerFromEndpoint()
-
-	//reflectionService, err := services.NewReflectionService()
-	//require.NoError(t, err)
-
-	//desc, err := reflectionService.FileDescriptors(nil, nil)
-	//require.NoError(t, err)
-
-	//app := integration.NewCompleteIntegrationApp(t)
-	//grpcServer.RegisterService(desc, app.MsgServiceRouter())
-}
-
-func TestSanity(t *testing.T) {
-	app := integration.NewCompleteIntegrationApp(t)
-
-	//app.Query(nil, &authtypes.QueryAccountRequest{
-	//	Address: "pokt1h04g6njyuv03dhd74a73pyzeadmd8dk7l9tsk8",
-	//})
-
-	//app.Query(nil, types2.RequestQuery{
-	//	Data:   nil,
-	//	Path:   "",
-	//	Height: 0,
-	//	Prove:  false,
-	//})
-
-	ctrl := gomock.NewController(t)
-	blockQueryClient := mockclient.NewMockBlockQueryClient(ctrl)
-	blockQueryClient.EXPECT().
-		Block(gomock.Any(), gomock.Any()).
-		DoAndReturn(
-			func(ctx context.Context, height *int64) (*cometrpctypes.ResultBlock, error) {
-				blockResultMock := &cometrpctypes.ResultBlock{
-					Block: &types.Block{
-						Header: types.Header{
-							Height: 1,
-						},
-					},
-				}
-				return blockResultMock, nil
-			},
-		).AnyTimes()
-	deps := depinject.Supply(app.QueryHelper(), blockQueryClient)
-	sharedClient, err := query.NewSharedQuerier(deps)
-	require.NoError(t, err)
-
-	params, err := sharedClient.GetParams(app.GetSdkCtx())
-	require.NoError(t, err)
-
-	t.Logf("shared params: %+v", params)
-}
-
 func TestNewE2EApp(t *testing.T) {
-	initialHeight := int64(7553)
-	// TODO_IN_THIS_COMMIT: does this 👆 need to be reconciled with the internal height of app?
-
 	app := NewE2EApp(t)
 
+	// Construct dependencies...
 	keyRing := keyring.NewInMemory(app.GetCodec())
 	rec, err := keyRing.NewAccount(
 		"gateway2",
@@ -120,34 +43,13 @@ func TestNewE2EApp(t *testing.T) {
 	gateway2Addr, err := rec.GetAddress()
 	require.NoError(t, err)
 
-	// Fund gateway2 account.
-	_, err = app.RunMsg(t, &banktypes.MsgSend{
-		FromAddress: app.GetFaucetBech32(),
-		ToAddress:   gateway2Addr.String(),
-		Amount:      cosmostypes.NewCoins(cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 10000000000)),
-	})
+	blockQueryClient, err := comethttp.New("tcp://127.0.0.1:42070", "/websocket")
 	require.NoError(t, err)
-
-	ctrl := gomock.NewController(t)
-	blockQueryClient := mockclient.NewMockBlockQueryClient(ctrl)
-	blockQueryClient.EXPECT().
-		Block(gomock.Any(), gomock.Any()).
-		DoAndReturn(
-			func(ctx context.Context, height *int64) (*cometrpctypes.ResultBlock, error) {
-				blockResultMock := &cometrpctypes.ResultBlock{
-					Block: &types.Block{
-						Header: types.Header{
-							Height: initialHeight,
-						},
-					},
-				}
-				return blockResultMock, nil
-			},
-		).AnyTimes()
 
 	creds := insecure.NewCredentials()
 	grpcConn, err := grpc.NewClient("127.0.0.1:42069", grpc.WithTransportCredentials(creds))
 	require.NoError(t, err)
+
 	deps := depinject.Supply(grpcConn, blockQueryClient)
 
 	sharedQueryClient, err := query.NewSharedQuerier(deps)
@@ -155,18 +57,15 @@ func TestNewE2EApp(t *testing.T) {
 
 	sharedParams, err := sharedQueryClient.GetParams(app.GetSdkCtx())
 	require.NoError(t, err)
-
-	t.Logf("shared params: %+v", sharedParams)
+	require.Equal(t, sharedtypes.DefaultParams(), *sharedParams)
 
 	eventsQueryClient := events.NewEventsQueryClient("ws://127.0.0.1:6969/websocket")
-	//eventsQueryClient := events.NewEventsQueryClient("ws://127.0.0.1:26657/websocket")
 	deps = depinject.Configs(deps, depinject.Supply(eventsQueryClient))
 	blockClient, err := block.NewBlockClient(app.GetSdkCtx(), deps)
 	require.NoError(t, err)
 
-	// TODO_IN_THIS_COMMIT: NOT localnet flagset NOR context, should be
-	// configured to match the E2E app listeners.
 	flagSet := testclient.NewFlagSet(t, "tcp://127.0.0.1:42070")
+	// DEV_NOTE: DO NOT use the clientCtx as a grpc.ClientConn as it bypasses E2EApp integrations.
 	clientCtx := testclient.NewLocalnetClientCtx(t, flagSet).WithKeyring(keyRing)
 
 	txFactory, err := cosmostx.NewFactoryCLI(clientCtx, flagSet)
@@ -181,8 +80,20 @@ func TestNewE2EApp(t *testing.T) {
 	txClient, err := tx.NewTxClient(app.GetSdkCtx(), deps, tx.WithSigningKeyName("gateway2"))
 	require.NoError(t, err)
 
-	time.Sleep(time.Second * 1)
+	// Assert that no gateways are staked.
+	gatewayQueryClient := gatewaytypes.NewQueryClient(grpcConn)
+	allGatewaysRes, err := gatewayQueryClient.AllGateways(app.GetSdkCtx(), &gatewaytypes.QueryAllGatewaysRequest{})
+	require.Equal(t, 0, len(allGatewaysRes.Gateways))
 
+	// Fund gateway2 account.
+	_, err = app.RunMsg(t, &banktypes.MsgSend{
+		FromAddress: app.GetFaucetBech32(),
+		ToAddress:   gateway2Addr.String(),
+		Amount:      cosmostypes.NewCoins(cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 10000000000)),
+	})
+	require.NoError(t, err)
+
+	// Stake gateway2.
 	eitherErr := txClient.SignAndBroadcast(
 		app.GetSdkCtx(),
 		gatewaytypes.NewMsgStakeGateway(
@@ -191,231 +102,12 @@ func TestNewE2EApp(t *testing.T) {
 		),
 	)
 
-	// TODO_IN_THIS_COMMIT: signal to the WS server to send another block result event...
-	//app.NextBlock(t)
-
 	err, errCh := eitherErr.SyncOrAsyncError()
 	require.NoError(t, err)
 	require.NoError(t, <-errCh)
-}
 
-func TestGRPCServer(t *testing.T) {
-	app := NewE2EApp(t)
-	t.Cleanup(func() {
-		app.Close()
-	})
-
-	creds := insecure.NewCredentials()
-	grpcConn, err := grpc.NewClient("127.0.0.1:42069", grpc.WithTransportCredentials(creds))
-	require.NoError(t, err)
-
-	//dataHex, err := hex.DecodeString("0A2B706F6B74313577336668667963306C747476377235383565326E6370663674326B6C3975683872736E797A")
-	require.NoError(t, err)
-
-	//req := gatewaytypes.QueryGetGatewayRequest{
-	//	Address: "pokt15w3fhfyc0lttv7r585e2ncpf6t2kl9uh8rsnyz",
-	//}
-	//res := &abci.ResponseQuery{}
-
-	//grpcConn.Invoke(context.Background(), "abci_query", req, res)
-
-	ctrl := gomock.NewController(t)
-	blockQueryClient := mockclient.NewMockBlockQueryClient(ctrl)
-	blockQueryClient.EXPECT().
-		Block(gomock.Any(), gomock.Any()).
-		DoAndReturn(
-			func(ctx context.Context, height *int64) (*cometrpctypes.ResultBlock, error) {
-				//time.Sleep(time.Second * 100)
-				blockResultMock := &cometrpctypes.ResultBlock{
-					Block: &types.Block{
-						Header: types.Header{
-							Height: 1,
-						},
-					},
-				}
-				return blockResultMock, nil
-			},
-		).AnyTimes()
-
-	deps := depinject.Supply(grpcConn, blockQueryClient)
-
-	sharedQueryClient, err := query.NewSharedQuerier(deps)
-	require.NoError(t, err)
-
-	//res := new(gatewaytypes.QueryGetGatewayResponse)
-	//
-	//err = grpcConn.Invoke(context.Background(), "/poktroll.gateway.Query/Gateway", anyReq, res)
-	//dataHex, err := hex.DecodeString("0A2B706F6B74313577336668667963306C747476377235383565326E6370663674326B6C3975683872736E797A")
-	//require.NoError(t, err)
-
-	//req := &abci.RequestQuery{
-	//	Data:   dataHex,
-	//	Path:   "/cosmos.auth.v1beta1.Query/Account",
-	//	Height: 0,
-	//	Prove:  false,
-	//}
-	//
-	//err = grpcConn.Invoke(context.Background(), "abci_query", req, res)
-	////err = grpcConn.Invoke(context.Background(), "abci_query", req, res)
-	//require.NoError(t, err)
-
-	require.NoError(t, err)
-	sharedParams, err := sharedQueryClient.GetParams(app.GetSdkCtx())
-	require.NoError(t, err)
-
-	t.Logf("shared params: %+v", sharedParams)
-
-	//"method" : "abci_query",
-	//"params" : {
-	//  "data" : "0A2B706F6B74313577336668667963306C747476377235383565326E6370663674326B6C3975683872736E797A",
-	//	"height" : "0",
-	//	"path" : "/cosmos.auth.v1beta1.Query/Account",
-	//	"prove" : false
-	//}
-
-	//"method" : "broadcast_tx_async",
-	//"params" : {
-	//	"tx" : "CmsKZgohL3Bva3Ryb2xsLmdhdGV3YXkuTXNnU3Rha2VHYXRld2F5EkEKK3Bva3QxNXczZmhmeWMwbHR0djdyNTg1ZTJuY3BmNnQya2w5dWg4cnNueXoSEgoFdXBva3QSCTEwMDAwMDAwMRiGOxJYCk4KRgofL2Nvc21vcy5jcnlwdG8uc2VjcDI1NmsxLlB1YktleRIjCiEDZo2bY9XquUsFljtW/OKWVCDhYFf7NbidN4Y99VQ9438SBAoCCAESBhCqoYLJAhpAw5e7iJN5SpFit3fftxnZY7EDiFqupi7XEL3sUyeV0IBSQv2JZ7Cdu0dCG0yEVgj0xarkPi7dR10pNDL1gcUJxw=="
-	//}
-}
-
-func TestSanity3(t *testing.T) {
-	app := NewE2EApp(t)
-	t.Cleanup(func() {
-		app.Close()
-	})
-
-	time.Sleep(time.Second * 1)
-
-	client := http.DefaultClient
-	//res, err := client.Do(&http.Request{
-	//	Method: http.MethodPost,
-	//	URL:    &url.URL{Scheme: "http", Host: "127.0.0.1:42070", Path: ""},
-	//	Body:   io.NopCloser(bytes.NewBuffer([]byte(`{"jsonrpc":"2.0","id":"0","method":"abci_query","params":{"path":"/cosmos.auth.v1beta1.Query/Account","data":"0A2B706F6B74313577336668667963306C747476377235383565326E6370663674326B6C3975683872736E797A","prove":false,"height":"0"}}`))),
-	//})
-	res, err := client.Post(
-		"http://127.0.0.1:42070/",
-		"application/json",
-		bytes.NewBuffer([]byte(`{
-			"jsonrpc":"2.0",
-			"id":"0",
-			"method":"abci_query",
-			"params":{"path":"/cosmos.auth.v1beta1.Query/Account",
-				"data":"0A2B706F6B74313577336668667963306C747476377235383565326E6370663674326B6C3975683872736E797A",
-				"prove":false,
-				"height":"0"
-			}
-		}`)),
-	)
-	require.NoError(t, err)
-
-	result, err := io.ReadAll(res.Body)
-	require.NoError(t, err)
-
-	t.Logf("result: %s", result)
-}
-
-func TestSanity4(t *testing.T) {
-	ctx := context.Background()
-	initialHeight := int64(7553)
-	// TODO_IN_THIS_COMMIT: does this 👆 need to be reconciled with the internal height of app?
-
-	//app := NewE2EApp(t)
-
-	//registry := codectypes.NewInterfaceRegistry()
-	//cdc := codec.NewProtoCodec(registry)
-	keyRing := keyring.NewInMemory(testclient.Marshaler)
-	_, err := keyRing.NewAccount(
-		"pnf",
-		"crumble shrimp south strategy speed kick green topic stool seminar track stand rhythm almost bubble pet knock steel pull flag weekend country major blade",
-		"",
-		cosmostypes.FullFundraiserPath,
-		hd.Secp256k1,
-	)
-	require.NoError(t, err)
-
-	//// TODO_IN_THIS_COMMOT: fund gateway2 account.
-	//_, err = app.RunMsg(t, &banktypes.MsgSend{
-	//	FromAddress: app.GetFaucetBech32(),
-	//	ToAddress:   pnfAddr.String(),
-	//	Amount:      cosmostypes.NewCoins(cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 10000000000)),
-	//})
-	//require.NoError(t, err)
-
-	ctrl := gomock.NewController(t)
-	blockQueryClient := mockclient.NewMockBlockQueryClient(ctrl)
-	blockQueryClient.EXPECT().
-		Block(gomock.Any(), gomock.Any()).
-		DoAndReturn(
-			func(ctx context.Context, height *int64) (*cometrpctypes.ResultBlock, error) {
-				//time.Sleep(time.Second * 100)
-				blockResultMock := &cometrpctypes.ResultBlock{
-					Block: &types.Block{
-						Header: types.Header{
-							Height: initialHeight,
-						},
-					},
-				}
-				return blockResultMock, nil
-			},
-		).AnyTimes()
-	//blockQueryClient, err := sdkclient.NewClientFromNode("tcp://127.0.0.1:42070")
-	//blockQueryClient, err := sdkclient.NewClientFromNode("tcp://127.0.0.1:26657")
-	//require.NoError(t, err)
-
-	//creds := insecure.NewCredentials()
-	//grpcConn := testclient.NewLocalnetClientCtx(t, flagSet).GetClient()
-	//grpcConn, err := grpc.NewClient("127.0.0.1:42069", grpc.WithTransportCredentials(creds))
-	//require.NoError(t, err)
-
-	// TODO_IN_THIS_COMMIT: NOT localnet flagset NOR context, should be
-	// configured to match the E2E app listeners.
-	//flagSet := testclient.NewFlagSet(t, "tcp://127.0.0.1:42070")
-	flagSet := testclient.NewLocalnetFlagSet(t)
-	clientCtx := testclient.NewLocalnetClientCtx(t, flagSet).WithKeyring(keyRing)
-	deps := depinject.Supply(clientCtx, blockQueryClient)
-
-	sharedQueryClient, err := query.NewSharedQuerier(deps)
-	require.NoError(t, err)
-
-	sharedParams, err := sharedQueryClient.GetParams(ctx)
-	require.NoError(t, err)
-
-	t.Logf("shared params: %+v", sharedParams)
-
-	eventsQueryClient := events.NewEventsQueryClient("ws://127.0.0.1:26657/websocket")
-	deps = depinject.Configs(deps, depinject.Supply(eventsQueryClient))
-	blockClient, err := block.NewBlockClient(ctx, deps)
-	require.NoError(t, err)
-
-	txFactory, err := cosmostx.NewFactoryCLI(clientCtx, flagSet)
-	require.NoError(t, err)
-
-	deps = depinject.Configs(deps, depinject.Supply(txtypes.Context(clientCtx), txFactory))
-
-	//_, txContext := testtx.NewE2ETxContext(t, keyRing, flagSet)
-	txContext, err := tx.NewTxContext(deps)
-	require.NoError(t, err)
-
-	deps = depinject.Configs(deps, depinject.Supply(blockClient, txContext))
-	txClient, err := tx.NewTxClient(ctx, deps, tx.WithSigningKeyName("pnf"))
-	require.NoError(t, err)
-
-	time.Sleep(time.Second * 1)
-
-	eitherErr := txClient.SignAndBroadcast(
-		ctx,
-		&banktypes.MsgSend{
-			FromAddress: "pokt1eeeksh2tvkh7wzmfrljnhw4wrhs55lcuvmekkw",
-			ToAddress:   "pokt15w3fhfyc0lttv7r585e2ncpf6t2kl9uh8rsnyz",
-			Amount:      cosmostypes.NewCoins(cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 10000000000)),
-		},
-	)
-
-	// TODO_IN_THIS_COMMIT: signal to the WS server to send another block result event...
-	//app.NextBlock(t)
-
-	err, errCh := eitherErr.SyncOrAsyncError()
-	require.NoError(t, err)
-	require.NoError(t, <-errCh)
+	// Assert that only gateway2 is staked.
+	allGatewaysRes, err = gatewayQueryClient.AllGateways(app.GetSdkCtx(), &gatewaytypes.QueryAllGatewaysRequest{})
+	require.Equal(t, 1, len(allGatewaysRes.Gateways))
+	require.Equal(t, "pokt15w3fhfyc0lttv7r585e2ncpf6t2kl9uh8rsnyz", allGatewaysRes.Gateways[0].Address)
 }

@@ -40,6 +40,7 @@ type E2EApp struct {
 // NewE2EApp creates a new E2EApp instance with integration.App, gRPC, and WebSocket servers
 func NewE2EApp(t *testing.T, opts ...integration.IntegrationAppOptionFn) *E2EApp {
 	t.Helper()
+	ctx := context.Background()
 
 	// Initialize and start gRPC server
 	creds := insecure.NewCredentials()
@@ -88,7 +89,7 @@ func NewE2EApp(t *testing.T, opts ...integration.IntegrationAppOptionFn) *E2EApp
 		resultEventChan: make(chan *coretypes.ResultEvent),
 	}
 
-	mux.Handle(http.MethodPost, rootPattern, newPostHandler(client, e2eApp))
+	mux.Handle(http.MethodPost, rootPattern, newPostHandler(ctx, client, e2eApp))
 
 	go func() {
 		if err := e2eApp.grpcServer.Serve(grpcListener); err != nil {
