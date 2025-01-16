@@ -2,6 +2,7 @@ package query
 
 import (
 	"context"
+	"fmt"
 
 	sdkerrors "cosmossdk.io/errors"
 
@@ -29,6 +30,17 @@ type paramsQuerierConfig struct {
 // ParamsQuerierOptionFn is a function which receives a paramsQuerierConfig for configuration.
 type ParamsQuerierOptionFn func(*paramsQuerierConfig)
 
+// TODO_IN_THIS_COMMIT: godoc...
+func (pqc *paramsQuerierConfig) Validate() error {
+	if pqc.moduleName == "" {
+		return fmt.Errorf("moduleName must be set")
+	}
+	if pqc.moduleParamError == nil {
+		return fmt.Errorf("moduleParamError must be set")
+	}
+	return nil
+}
+
 // DefaultParamsQuerierConfig returns the default configuration for parameter queriers
 func DefaultParamsQuerierConfig() *paramsQuerierConfig {
 	return &paramsQuerierConfig{
@@ -41,7 +53,11 @@ func DefaultParamsQuerierConfig() *paramsQuerierConfig {
 }
 
 // WithModuleInfo sets the module name and param error for the querier.
-func WithModuleInfo(ctx context.Context, moduleName string, moduleParamError *sdkerrors.Error) ParamsQuerierOptionFn {
+func WithModuleInfo(
+	ctx context.Context,
+	moduleName string,
+	moduleParamError *sdkerrors.Error,
+) ParamsQuerierOptionFn {
 	logger := polylog.Ctx(ctx).With(
 		"module_params_querier", moduleName,
 	)
@@ -53,7 +69,9 @@ func WithModuleInfo(ctx context.Context, moduleName string, moduleParamError *sd
 }
 
 // WithQueryCacheOptions is used to configure the params HistoricalQueryCache.
-func WithQueryCacheOptions(opts ...cache.QueryCacheOptionFn) ParamsQuerierOptionFn {
+func WithQueryCacheOptions(
+	opts ...cache.QueryCacheOptionFn,
+) ParamsQuerierOptionFn {
 	return func(cfg *paramsQuerierConfig) {
 		cfg.cacheOpts = append(cfg.cacheOpts, opts...)
 	}

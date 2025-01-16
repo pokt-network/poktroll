@@ -16,6 +16,8 @@ var _ client.SharedQueryClient = (*sharedQuerier)(nil)
 // querying of on-chain shared information through a single exposed method
 // which returns an sharedtypes.Session struct
 type sharedQuerier struct {
+	client.ParamsQuerier[*sharedtypes.Params]
+
 	clientConn    grpc.ClientConn
 	sharedQuerier sharedtypes.QueryClient
 	blockQuerier  client.BlockQueryClient

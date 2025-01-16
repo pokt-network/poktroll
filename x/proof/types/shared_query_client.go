@@ -7,12 +7,14 @@ import (
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
-var _ client.SharedQueryClient = (*SharedKeeperQueryClient)(nil)
+//var _ client.SharedQueryClient = (*SharedKeeperQueryClient)(nil)
 
 // SharedKeeperQueryClient is a thin wrapper around the SharedKeeper.
 // It does not rely on the QueryClient, and therefore does not make any
 // network requests as in the off-chain implementation.
 type SharedKeeperQueryClient struct {
+	client.ParamsQuerier[*sharedtypes.Params]
+
 	sharedKeeper  SharedKeeper
 	sessionKeeper SessionKeeper
 }

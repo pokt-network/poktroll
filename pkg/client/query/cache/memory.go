@@ -58,7 +58,7 @@ type cacheValueHistory[T any] struct {
 
 // NewInMemoryCache creates a new inMemoryCache with the configuration generated
 // by the given option functions.
-func NewInMemoryCache[T any](opts ...QueryCacheOptionFn) (*inMemoryCache[T], error) {
+func NewInMemoryCache[T any](opts ...QueryCacheOptionFn) (client.QueryCache[T], error) {
 	config := DefaultQueryCacheConfig
 
 	for _, opt := range opts {

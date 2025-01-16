@@ -2,14 +2,22 @@ package query
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
+	"fmt"
 
 	"cosmossdk.io/depinject"
+	abcitypes "github.com/cometbft/cometbft/abci/types"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
+	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
+	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 	gogogrpc "github.com/cosmos/gogoproto/grpc"
 
 	"github.com/pokt-network/poktroll/pkg/client"
+	"github.com/pokt-network/poktroll/pkg/client/events"
 	"github.com/pokt-network/poktroll/pkg/client/query/cache"
+	"github.com/pokt-network/poktroll/pkg/client/tx"
+	"github.com/pokt-network/poktroll/pkg/observable/channel"
 )
 
 // abstractParamsQuerier is NOT intended to be used for anything except the
@@ -32,6 +40,7 @@ type paramsQuerierIface[P cosmostypes.Msg] interface {
 // concrete query client constructor and the configuration which results from
 // applying the given options.
 func NewCachedParamsQuerier[P cosmostypes.Msg, Q paramsQuerierIface[P]](
+	ctx context.Context,
 	deps depinject.Config,
 	queryClientConstructor func(conn gogogrpc.ClientConn) Q,
 	opts ...ParamsQuerierOptionFn,
@@ -41,24 +50,49 @@ func NewCachedParamsQuerier[P cosmostypes.Msg, Q paramsQuerierIface[P]](
 		opt(cfg)
 	}
 
-	paramsCache, err := cache.NewInMemoryCache[P](cfg.cacheOpts...)
-	if err != nil {
+	if err = cfg.Validate(); err != nil {
 		return nil, err
 	}
 
+	//paramsCache, err := cache.NewInMemoryCache[P](cfg.cacheOpts...)
+	//if err != nil {
+	//	return nil, err
+	//}
+
 	querier := &cachedParamsQuerier[P, Q]{
-		config:      cfg,
-		paramsCache: paramsCache,
+		config: cfg,
+		//paramsCache: paramsCache,
 	}
 
 	if err = depinject.Inject(
 		deps,
 		&querier.clientConn,
+		&querier.paramsCache,
+		&querier.blockClient,
 	); err != nil {
 		return nil, err
 	}
 
+	// Construct the module-specific query client.
 	querier.queryClient = queryClientConstructor(querier.clientConn)
+
+	// Construct an events replay client which is notified about txs which were
+	// signed by the governance module account; this includes all parameter update
+	// messages for all modules while excluding almost all other events, reducing
+	// bandwidth utilization.
+	query := fmt.Sprintf(govAccountTxQueryFmt, authtypes.NewModuleAddress(govtypes.ModuleName))
+	querier.eventsReplayClient, err = events.NewEventsReplayClient(ctx, deps, query, tx.UnmarshalTxResult, 1)
+	if err != nil {
+		return
+	}
+
+	// Prime the cache by querying for the current params.
+	if _, err = querier.GetParams(ctx); err != nil {
+		return nil, err
+	}
+
+	// Subscribe to asynchronous events to keep the cache up-to-date.
+	go querier.goSubscribeToParamUpdates(ctx)
 
 	return querier, nil
 }
@@ -68,10 +102,12 @@ func NewCachedParamsQuerier[P cosmostypes.Msg, Q paramsQuerierIface[P]](
 // P is a pointer type of the parameters, and Q is the interface type of the
 // corresponding query client.
 type cachedParamsQuerier[P cosmostypes.Msg, Q paramsQuerierIface[P]] struct {
-	clientConn  gogogrpc.ClientConn
-	queryClient Q
-	paramsCache client.HistoricalQueryCache[P]
-	config      *paramsQuerierConfig
+	clientConn         gogogrpc.ClientConn
+	queryClient        Q
+	eventsReplayClient client.EventsReplayClient[*abcitypes.TxResult]
+	blockClient        client.BlockClient
+	paramsCache        client.HistoricalQueryCache[P]
+	config             *paramsQuerierConfig
 }
 
 // GetParams returns the latest cached params, if any; otherwise, it queries the
@@ -100,11 +136,6 @@ func (bq *cachedParamsQuerier[P, Q]) GetParams(ctx context.Context) (P, error) {
 		if bq.config.moduleParamError != nil {
 			return paramsZero, bq.config.moduleParamError.Wrap(err.Error())
 		}
-		return paramsZero, err
-	}
-
-	// Update the cache.
-	if err = bq.paramsCache.Set("params", params); err != nil {
 		return paramsZero, err
 	}
 
@@ -142,4 +173,28 @@ func (bq *cachedParamsQuerier[P, Q]) GetParamsAtHeight(ctx context.Context, heig
 
 	// Meanwhile, return current params as fallback. 😬
 	return bq.GetParams(ctx)
+}
+
+// TODO_IN_THIS_COMMIT: godoc...
+var govAccountTxQueryFmt = "tm.event='Tx' AND message.sender='%s'"
+
+// TODO_IN_THIS_COMMIT: godoc...
+func (bq *cachedParamsQuerier[P, Q]) goSubscribeToParamUpdates(ctx context.Context) {
+	govSignedTxResultsObs := bq.eventsReplayClient.EventsSequence(ctx)
+	channel.ForEach[*abcitypes.TxResult](
+		ctx, govSignedTxResultsObs,
+		func(ctx context.Context, txEvent *abcitypes.TxResult) {
+			txEventJSON, err := json.MarshalIndent(txEvent, "", "  ")
+			if err != nil {
+				panic(err)
+			}
+			fmt.Printf(">>> event: %s\n", txEventJSON)
+		},
+	)
+
+	//govSignedTxResultsCh := govSignedTxResultsObs.Subscribe(ctx).Ch()
+
+	//for govSignedTxResult := range govSignedTxResultsCh {
+	//	// Ignore any message that is NOT a param update
+	//}
 }
