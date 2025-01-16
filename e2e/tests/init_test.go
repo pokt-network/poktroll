@@ -662,7 +662,7 @@ func (s *suite) buildSupplierMap() {
 	argsAndFlags := []string{
 		"query",
 		"supplier",
-		"list-supplier",
+		"list-suppliers",
 		fmt.Sprintf("--%s=json", cometcli.OutputFlag),
 	}
 	res, err := s.pocketd.RunCommandOnHostWithRetry("", numQueryRetries, argsAndFlags...)
