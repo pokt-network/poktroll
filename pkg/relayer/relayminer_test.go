@@ -104,17 +104,14 @@ func TestRelayMiner_Ping(t *testing.T) {
 
 	filename := "/tmp/relayerminer.ping.sock"
 
-	ln, err := net.Listen("unix", filename)
-	require.NoError(t, err)
+	relayminer.ServePing(ctx, "unix", filename)
 	defer os.Remove(filename)
-
-	relayminer.ServePing(ctx, ln)
 
 	time.Sleep(time.Millisecond)
 
 	transport := &http.Transport{
 		DialContext: func(ctx context.Context, network, addr string) (net.Conn, error) {
-			return net.Dial(ln.Addr().Network(), ln.Addr().String())
+			return net.Dial("unix", "/tmp/relayerminer.ping.sock")
 		},
 	}
 

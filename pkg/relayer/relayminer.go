@@ -138,8 +138,8 @@ func (rel *relayMiner) ServePprof(ctx context.Context, addr string) error {
 // ServePing exposes ping HTTP server to check the reachability between the
 // relay miner and its dependencies (Ex: relay server and their respective
 // backend URLs).
-func (rel *relayMiner) ServePing(ctx context.Context, addr string) error {
-	ln, err := net.Listen("tcp", addr)
+func (rel *relayMiner) ServePing(ctx context.Context, network, addr string) error {
+	ln, err := net.Listen(network, addr)
 	if err != nil {
 		return err
 	}
@@ -151,6 +151,12 @@ func (rel *relayMiner) ServePing(ctx context.Context, addr string) error {
 		if err := http.Serve(ln, rel.newPinghandlerFn(ctx, ln)); err != nil {
 			rel.logger.Error().Err(err).Msg("unable to serve ping server")
 		}
+	}()
+
+	go func() {
+		<-ctx.Done()
+		rel.logger.Info().Str("endpoint", addr).Msg("stopping ping server")
+		_ = ln.Close()
 	}()
 
 	return nil

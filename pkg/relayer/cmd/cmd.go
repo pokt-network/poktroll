@@ -162,7 +162,7 @@ func runRelayer(cmd *cobra.Command, _ []string) error {
 	}
 
 	if relayMinerConfig.Ping.Enabled {
-		if err := relayMiner.ServePing(ctx, relayMinerConfig.Ping.Addr); err != nil {
+		if err := relayMiner.ServePing(ctx, "tcp", relayMinerConfig.Ping.Addr); err != nil {
 			return fmt.Errorf("failed to start ping endpoint: %w", err)
 		}
 	}
