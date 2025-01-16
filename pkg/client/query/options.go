@@ -45,7 +45,7 @@ func (pqc *paramsQuerierConfig) Validate() error {
 func DefaultParamsQuerierConfig() *paramsQuerierConfig {
 	return &paramsQuerierConfig{
 		cacheOpts: []cache.QueryCacheOptionFn{
-			cache.WithHistoricalMode(defaultMaxVersionAge),
+			cache.WithMaxVersionAge(defaultMaxVersionAge),
 			cache.WithMaxKeys(defaultMaxKeys),
 			cache.WithEvictionPolicy(cache.FirstInFirstOut),
 		},

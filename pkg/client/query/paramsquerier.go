@@ -39,6 +39,9 @@ type paramsQuerierIface[P cosmostypes.Msg] interface {
 // NewCachedParamsQuerier creates a new, generic, params querier with the given
 // concrete query client constructor and the configuration which results from
 // applying the given options.
+// - gogogrpc.ClientConn
+// - client.HistoricalQueryCache[P]
+// - client.BlockQueryClient
 func NewCachedParamsQuerier[P cosmostypes.Msg, Q paramsQuerierIface[P]](
 	ctx context.Context,
 	deps depinject.Config,
@@ -119,7 +122,7 @@ func (bq *cachedParamsQuerier[P, Q]) GetParams(ctx context.Context) (P, error) {
 
 	// Check the cache first.
 	var paramsZero P
-	cached, err := bq.paramsCache.Get("params")
+	cached, err := bq.paramsCache.GetLatestVersion("params")
 	switch {
 	case err == nil:
 		logger.Debug().Msgf("params cache hit")
@@ -136,6 +139,12 @@ func (bq *cachedParamsQuerier[P, Q]) GetParams(ctx context.Context) (P, error) {
 		if bq.config.moduleParamError != nil {
 			return paramsZero, bq.config.moduleParamError.Wrap(err.Error())
 		}
+		return paramsZero, err
+	}
+
+	// Set the params at the current height in the cache.
+	currentHeight := bq.blockClient.LastBlock(ctx).Height()
+	if err = bq.SetParamsAtHeight(ctx, currentHeight, params); err != nil {
 		return paramsZero, err
 	}
 
@@ -156,7 +165,7 @@ func (bq *cachedParamsQuerier[P, Q]) GetParamsAtHeight(ctx context.Context, heig
 	)
 
 	// Try to get from cache at specific height
-	cached, err := bq.paramsCache.GetAsOfVersion("params", height)
+	cached, err := bq.paramsCache.GetVersion("params", height)
 	switch {
 	case err == nil:
 		logger.Debug().Msg("params cache hit")
@@ -173,6 +182,16 @@ func (bq *cachedParamsQuerier[P, Q]) GetParamsAtHeight(ctx context.Context, heig
 
 	// Meanwhile, return current params as fallback. 😬
 	return bq.GetParams(ctx)
+}
+
+// TODO_IN_THIS_COMMIT: godoc...
+func (bq *cachedParamsQuerier[P, Q]) SetParamsAtHeight(
+	_ context.Context,
+	height int64,
+	params P,
+) error {
+	// TODO_IN_THIS_COMMIT: extract "params" to a constant & reference in other usages.
+	return bq.paramsCache.SetVersion("params", params, height)
 }
 
 // TODO_IN_THIS_COMMIT: godoc...

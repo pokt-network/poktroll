@@ -13,6 +13,12 @@ const (
 	LeastFrequentlyUsed
 )
 
+var EvictionPolicies = map[EvictionPolicy]string{
+	FirstInFirstOut:     "FirstInFirstOut",
+	LeastRecentlyUsed:   "LeastRecentlyUsed",
+	LeastFrequentlyUsed: "LeastFrequentlyUsed",
+}
+
 // queryCacheConfig is the configuration for query caches.
 // It is intended to be configured via QueryCacheOptionFn functions.
 type queryCacheConfig struct {
@@ -51,7 +57,7 @@ func (cfg *queryCacheConfig) Validate() error {
 	case FirstInFirstOut:
 	// TODO_IMPROVE: support LeastRecentlyUsed and LeastFrequentlyUsed policies.
 	default:
-		return ErrQueryCacheConfigValidation.Wrapf("eviction policy %d not imlemented", cfg.evictionPolicy)
+		return ErrQueryCacheConfigValidation.Wrapf("eviction policy %s not imlemented", EvictionPolicies[cfg.evictionPolicy])
 	}
 
 	if cfg.maxVersionAge > 0 && !cfg.historical {
@@ -65,11 +71,11 @@ func (cfg *queryCacheConfig) Validate() error {
 	return nil
 }
 
-// WithHistoricalMode enables historical caching with the given maxVersionAge
+// TODO_IN_THIS_COMMIT: update comment...
+// WithMaxVersionAge enables historical caching with the given maxVersionAge
 // configuration; if 0, no historical pruning is performed.
-func WithHistoricalMode(maxVersionAge int64) QueryCacheOptionFn {
+func WithMaxVersionAge(maxVersionAge int64) QueryCacheOptionFn {
 	return func(cfg *queryCacheConfig) {
-		cfg.historical = true
 		cfg.maxVersionAge = maxVersionAge
 	}
 }

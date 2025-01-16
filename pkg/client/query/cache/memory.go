@@ -76,13 +76,33 @@ func NewInMemoryCache[T any](opts ...QueryCacheOptionFn) (client.QueryCache[T], 
 	}, nil
 }
 
+// TODO_IN_THIS_COMMIT: godoc...
+func NewHistoricalInMemoryCache[T any](opts ...QueryCacheOptionFn) (client.HistoricalQueryCache[T], error) {
+	config := DefaultQueryCacheConfig
+	config.historical = true
+
+	for _, opt := range opts {
+		opt(&config)
+	}
+
+	if err := config.Validate(); err != nil {
+		return nil, err
+	}
+
+	return &inMemoryCache[T]{
+		values:         make(map[string]cacheValue[T]),
+		valueHistories: make(map[string]cacheValueHistory[T]),
+		config:         config,
+	}, nil
+}
+
 // Get retrieves the value from the cache with the given key. If the cache is
 // configured for historical mode, it will return the value at the latest **known**
-// version, which is only updated on calls to SetAsOfVersion, and therefore is not
+// version, which is only updated on calls to SetVersion, and therefore is not
 // guaranteed to be the current version w.r.t the blockchain.
 func (c *inMemoryCache[T]) Get(key string) (T, error) {
 	if c.config.historical {
-		return c.GetAsOfVersion(key, c.latestVersion.Load())
+		return c.GetVersion(key, c.latestVersion.Load())
 	}
 
 	c.valuesMu.RLock()
@@ -109,11 +129,16 @@ func (c *inMemoryCache[T]) Get(key string) (T, error) {
 	return cachedValue.value, nil
 }
 
-// GetAsOfVersion retrieves the value from the cache with the given key, as of the
+// TODO_IN_THIS_COMMIT: godoc...
+func (c *inMemoryCache[T]) GetLatestVersion(key string) (T, error) {
+	return c.GetVersion(key, c.latestVersion.Load())
+}
+
+// GetVersion retrieves the value from the cache with the given key, as of the
 // given version. If a value is not found for that version, the value at the nearest
 // previous version is returned. If the cache is not configured for historical mode,
 // it returns an error.
-func (c *inMemoryCache[T]) GetAsOfVersion(key string, version int64) (T, error) {
+func (c *inMemoryCache[T]) GetVersion(key string, version int64) (T, error) {
 	var zero T
 
 	if !c.config.historical {
@@ -155,7 +180,7 @@ func (c *inMemoryCache[T]) GetAsOfVersion(key string, version int64) (T, error) 
 	if isTTLEnabled && isCacheValueExpired {
 		// DEV_NOTE: Intentionally not pruning here to improve concurrent speed;
 		// otherwise, the read lock would be insufficient. The value will be pruned
-		// in the subsequent call to SetAsOfVersion() after c.config.maxVersionAge
+		// in the subsequent call to SetVersion() after c.config.maxVersionAge
 		// blocks have elapsed. If usage is such that historical values aren't being
 		// subsequently set, numHistoricalBlocks (if configured) will eventually
 		// cause the pruning of historical values with expired TTLs.
@@ -167,7 +192,7 @@ func (c *inMemoryCache[T]) GetAsOfVersion(key string, version int64) (T, error) 
 
 // Set adds or updates the value in the cache for the given key. If the cache is
 // configured for historical mode, it will store the value at the latest **known**
-// version, which is only updated on calls to SetAsOfVersion, and therefore is not
+// version, which is only updated on calls to SetVersion, and therefore is not
 // guaranteed to be the current version w.r.t. the blockchain.
 func (c *inMemoryCache[T]) Set(key string, value T) error {
 	if c.config.historical {
@@ -193,10 +218,10 @@ func (c *inMemoryCache[T]) Set(key string, value T) error {
 	return nil
 }
 
-// SetAsOfVersion adds or updates the historical value in the cache for the given key,
+// SetVersion adds or updates the historical value in the cache for the given key,
 // and at the version number. If the cache is not configured for historical mode, it
 // returns an error.
-func (c *inMemoryCache[T]) SetAsOfVersion(key string, value T, version int64) error {
+func (c *inMemoryCache[T]) SetVersion(key string, value T, version int64) error {
 	if !c.config.historical {
 		return ErrHistoricalModeNotEnabled
 	}

@@ -2,6 +2,7 @@ package cache
 
 import (
 	"context"
+	"fmt"
 	"sync"
 	"testing"
 	"time"
@@ -9,8 +10,31 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// TestInMemoryCache_NonHistorical tests the basic cache functionality without historical mode
-func TestInMemoryCache_NonHistorical(t *testing.T) {
+func TestInMemoryCacheConfigValidation(t *testing.T) {
+	t.Run("non-historical and maxVersionAge > 0", func(t *testing.T) {
+		_, err := NewInMemoryCache[string](
+			WithMaxVersionAge(100),
+		)
+		require.ErrorContains(t, err, "maxVersionAge > 0 requires historical mode to be enabled")
+	})
+
+	t.Run("historical and maxVersionAge < 0", func(t *testing.T) {
+		_, err := NewHistoricalInMemoryCache[string](
+			WithMaxVersionAge(-1),
+		)
+		require.ErrorContains(t, err, "maxVersionAge MUST be >= 0")
+	})
+
+	t.Run("unsupported eviction policy", func(t *testing.T) {
+		_, err := NewInMemoryCache[string](
+			WithEvictionPolicy(LeastFrequentlyUsed),
+		)
+		require.ErrorContains(t, err, fmt.Sprintf("eviction policy %s not imlemented", EvictionPolicies[LeastFrequentlyUsed]))
+	})
+}
+
+// TestInMemoryCache tests basic functionality in non-historical mode
+func TestInMemoryCache(t *testing.T) {
 	t.Run("basic operations", func(t *testing.T) {
 		cache, err := NewInMemoryCache[string]()
 		require.NoError(t, err)
@@ -93,60 +117,60 @@ func TestInMemoryCache_NonHistorical(t *testing.T) {
 	})
 }
 
-// TestInMemoryCache_Historical tests the historical mode functionality
+// TestHistoricalInMemoryCache tests the historical mode functionality
 func TestInMemoryCache_Historical(t *testing.T) {
 	t.Run("basic historical operations", func(t *testing.T) {
-		cache, err := NewInMemoryCache[string](
-			WithHistoricalMode(100),
+		cache, err := NewHistoricalInMemoryCache[string](
+			WithMaxVersionAge(100),
 		)
 		require.NoError(t, err)
 
-		// Test SetAsOfVersion and GetAsOfVersion
-		err = cache.SetAsOfVersion("key", "value1", 10)
+		// Test SetVersion and GetVersion
+		err = cache.SetVersion("key", "value1", 10)
 		require.NoError(t, err)
-		err = cache.SetAsOfVersion("key", "value2", 20)
+		err = cache.SetVersion("key", "value2", 20)
 		require.NoError(t, err)
 
 		// Test getting exact versions
-		val, err := cache.GetAsOfVersion("key", 10)
+		val, err := cache.GetVersion("key", 10)
 		require.NoError(t, err)
 		require.Equal(t, "value1", val)
 
-		val, err = cache.GetAsOfVersion("key", 20)
+		val, err = cache.GetVersion("key", 20)
 		require.NoError(t, err)
 		require.Equal(t, "value2", val)
 
 		// Test getting intermediate version (should return nearest lower version)
-		val, err = cache.GetAsOfVersion("key", 15)
+		val, err = cache.GetVersion("key", 15)
 		require.NoError(t, err)
 		require.Equal(t, "value1", val)
 
 		// Test getting version before first entry
-		_, err = cache.GetAsOfVersion("key", 5)
+		_, err = cache.GetVersion("key", 5)
 		require.ErrorIs(t, err, ErrCacheMiss)
 
 		// Test getting version after last entry
-		val, err = cache.GetAsOfVersion("key", 25)
+		val, err = cache.GetVersion("key", 25)
 		require.NoError(t, err)
 		require.Equal(t, "value2", val)
 
 		// Test getting a version for a key that isn't cached
-		_, err = cache.GetAsOfVersion("key2", 20)
+		_, err = cache.GetVersion("key2", 20)
 		require.ErrorIs(t, err, ErrCacheMiss)
 	})
 
 	t.Run("historical TTL expiration", func(t *testing.T) {
-		cache, err := NewInMemoryCache[string](
-			WithHistoricalMode(100),
+		cache, err := NewHistoricalInMemoryCache[string](
+			WithMaxVersionAge(100),
 			WithTTL(100*time.Millisecond),
 		)
 		require.NoError(t, err)
 
-		err = cache.SetAsOfVersion("key", "value1", 10)
+		err = cache.SetVersion("key", "value1", 10)
 		require.NoError(t, err)
 
 		// Value should be available immediately
-		val, err := cache.GetAsOfVersion("key", 10)
+		val, err := cache.GetVersion("key", 10)
 		require.NoError(t, err)
 		require.Equal(t, "value1", val)
 
@@ -154,90 +178,47 @@ func TestInMemoryCache_Historical(t *testing.T) {
 		time.Sleep(150 * time.Millisecond)
 
 		// Value should now be expired
-		_, err = cache.GetAsOfVersion("key", 10)
+		_, err = cache.GetVersion("key", 10)
 		require.ErrorIs(t, err, ErrCacheMiss)
 	})
 
 	t.Run("pruning old versions", func(t *testing.T) {
-		cache, err := NewInMemoryCache[string](
-			WithHistoricalMode(10), // Prune entries older than 10 blocks
+		cache, err := NewHistoricalInMemoryCache[string](
+			WithMaxVersionAge(10), // Prune entries older than 10 blocks
 		)
 		require.NoError(t, err)
 
 		// Add entries at different versions
-		err = cache.SetAsOfVersion("key", "value1", 10)
+		err = cache.SetVersion("key", "value1", 10)
 		require.NoError(t, err)
-		err = cache.SetAsOfVersion("key", "value2", 20)
+		err = cache.SetVersion("key", "value2", 20)
 		require.NoError(t, err)
-		err = cache.SetAsOfVersion("key", "value3", 30)
+		err = cache.SetVersion("key", "value3", 30)
 		require.NoError(t, err)
 
 		// Add a new entry that should trigger pruning
-		err = cache.SetAsOfVersion("key", "value4", 40)
+		err = cache.SetVersion("key", "value4", 40)
 		require.NoError(t, err)
 
 		// Entries more than 10 blocks old should be pruned
-		_, err = cache.GetAsOfVersion("key", 10)
+		_, err = cache.GetVersion("key", 10)
 		require.ErrorIs(t, err, ErrCacheMiss)
-		_, err = cache.GetAsOfVersion("key", 20)
+		_, err = cache.GetVersion("key", 20)
 		require.ErrorIs(t, err, ErrCacheMiss)
 
 		// Recent entries should still be available
-		val, err := cache.GetAsOfVersion("key", 30)
+		val, err := cache.GetVersion("key", 30)
 		require.NoError(t, err)
 		require.Equal(t, "value3", val)
 
-		val, err = cache.GetAsOfVersion("key", 40)
+		val, err = cache.GetVersion("key", 40)
 		require.NoError(t, err)
 		require.Equal(t, "value4", val)
-	})
-
-	t.Run("non-historical operations on historical cache", func(t *testing.T) {
-		cache, err := NewInMemoryCache[string](
-			WithHistoricalMode(100),
-		)
-		require.NoError(t, err)
-
-		// Set some historical values
-		err = cache.SetAsOfVersion("key", "value1", 10)
-		require.NoError(t, err)
-		err = cache.SetAsOfVersion("key", "value2", 20)
-		require.NoError(t, err)
-
-		// Regular Set should work with latest version
-		err = cache.Set("key", "value3")
-		require.ErrorIs(t, err, ErrUnsupportedHistoricalModeOp)
-
-		// Regular Get should return the latest value
-		val, err := cache.Get("key")
-		require.NoError(t, err)
-		require.Equal(t, "value2", val)
-
-		// Delete should remove all historical values
-		cache.Delete("key")
-		_, err = cache.GetAsOfVersion("key", 10)
-		require.ErrorIs(t, err, ErrCacheMiss)
-		_, err = cache.GetAsOfVersion("key", 20)
-		require.ErrorIs(t, err, ErrCacheMiss)
-		_, err = cache.Get("key")
-		require.ErrorIs(t, err, ErrCacheMiss)
 	})
 }
 
 // TestInMemoryCache_ErrorCases tests various error conditions
 func TestInMemoryCache_ErrorCases(t *testing.T) {
-	t.Run("historical operations on non-historical cache", func(t *testing.T) {
-		cache, err := NewInMemoryCache[string]()
-		require.NoError(t, err)
-
-		// Attempting historical operations should return error
-		err = cache.SetAsOfVersion("key", "value", 10)
-		require.ErrorIs(t, err, ErrHistoricalModeNotEnabled)
-
-		_, err = cache.GetAsOfVersion("key", 10)
-		require.ErrorIs(t, err, ErrHistoricalModeNotEnabled)
-	})
-
 	t.Run("zero values", func(t *testing.T) {
 		cache, err := NewInMemoryCache[string]()
 		require.NoError(t, err)
@@ -307,8 +288,8 @@ func TestInMemoryCache_ConcurrentAccess(t *testing.T) {
 	})
 
 	t.Run("concurrent access historical", func(t *testing.T) {
-		cache, err := NewInMemoryCache[int](
-			WithHistoricalMode(100),
+		cache, err := NewHistoricalInMemoryCache[int](
+			WithMaxVersionAge(100),
 		)
 		require.NoError(t, err)
 
@@ -331,9 +312,9 @@ func TestInMemoryCache_ConcurrentAccess(t *testing.T) {
 						return
 					default:
 						key := "key"
-						err := cache.SetAsOfVersion(key, j, int64(j))
+						err := cache.SetVersion(key, j, int64(j))
 						require.NoError(t, err)
-						_, _ = cache.GetAsOfVersion(key, int64(j))
+						_, _ = cache.GetVersion(key, int64(j))
 					}
 				}
 			}()

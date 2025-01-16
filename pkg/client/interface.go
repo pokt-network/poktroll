@@ -375,11 +375,12 @@ type QueryCache[T any] interface {
 // HistoricalQueryCache extends QueryCache to support getting and setting values
 // at multiple heights for a given key.
 type HistoricalQueryCache[T any] interface {
-	QueryCache[T]
-	// GetAsOfVersion retrieves the nearest value <= the specified version number.
-	GetAsOfVersion(key string, version int64) (T, error)
-	// SetAsOfVersion adds or updates a value at a specific version number.
-	SetAsOfVersion(key string, value T, version int64) error
+	// GetLatestVersion retrieves the historical value with the highest version number.
+	GetLatestVersion(key string) (T, error)
+	// GetVersion retrieves the nearest value <= the specified version number.
+	GetVersion(key string, version int64) (T, error)
+	// SetVersion adds or updates a value at a specific version number.
+	SetVersion(key string, value T, version int64) error
 }
 
 // ParamsQuerier represents a generic querier for module parameters.
@@ -392,4 +393,8 @@ type ParamsQuerier[P cosmostypes.Msg] interface {
 	// GetParamsAtHeight returns the parameters as they were at the specified
 	// height, where P is the params type of a given module (e.g. sharedtypes.Params).
 	GetParamsAtHeight(ctx context.Context, height int64) (P, error)
+
+	// SetParamsAtHeight sets the parameters at the specified height, where
+	// P is the params type of a given module (e.g. sharedtypes.Params).
+	SetParamsAtHeight(ctx context.Context, height int64, params P) error
 }
