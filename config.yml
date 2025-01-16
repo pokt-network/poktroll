@@ -104,6 +104,20 @@ validators:
       instrumentation:
         prometheus: true
       log_level: "info"
+      # Increase the rpc and mempool max bytes to support large transactions.
+      # DEV_NOTE: These values were selected arbitrarily, but chosen to be large,
+      # as a result of load testing and seeing large proof messages during the
+      # Claim & Proof lifecycle.
+      rpc:
+        # Controls how large any single RPC request accepted by the CometBFT
+        # server (offchain) can be.
+        max_body_bytes: "100000000"
+      mempool:
+        # Control how big any single transaction accepted by the CometBFT server
+        # (offchain) can be.
+        # Since multiple messages are bundled into a single transaction,
+        # max_tx_bytes needs to be increased alongside max_txs_bytes as well.
+        max_tx_bytes: "100000000"
     client:
       chain-id: poktroll
 

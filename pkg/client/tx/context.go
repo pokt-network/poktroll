@@ -9,11 +9,22 @@ import (
 	cosmostx "github.com/cosmos/cosmos-sdk/client/tx"
 	cosmoskeyring "github.com/cosmos/cosmos-sdk/crypto/keyring"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/types/tx"
 	authclient "github.com/cosmos/cosmos-sdk/x/auth/client"
+	grpc "google.golang.org/grpc"
 
 	"github.com/pokt-network/poktroll/pkg/client"
 	txtypes "github.com/pokt-network/poktroll/pkg/client/tx/types"
 )
+
+// maxGRPCMsgSize is the maximum message size the gRPC client can send and receive.
+// The current value has been set arbitrarily to a large value after empirically
+// observing multiple Proof messages bundled within a single transaction exceeding
+// the default 4MB limit.
+// TODO_MAINNET: Adjust the max message size to a more sensible value.
+// DEV_NOTE: This value should adjusted in concert with the CometBFT's rpc
+// max_body_bytes, mempool max_tx_bytes and max_txs_bytes.
+const maxGRPCMsgSize = 100 * 1024 * 1024 // 100MB
 
 var _ client.TxContext = (*cosmosTxContext)(nil)
 
@@ -134,10 +145,24 @@ func (txCtx cosmosTxContext) GetSimulatedTxGas(
 		WithFromName(signingKeyName).
 		WithSequence(seq)
 
-	_, gas, err := cosmostx.CalculateGas(txCtx.GetClientCtx(), txf, msgs...)
+	txBytes, err := txf.BuildSimTx(msgs...)
 	if err != nil {
 		return 0, err
 	}
 
-	return gas, nil
+	txSvcClient := tx.NewServiceClient(clientCtx)
+
+	simRequest := &tx.SimulateRequest{TxBytes: txBytes}
+	// Set the maximum message size for the gRPC client to allow large transactions
+	// (e.g. transactions with multiple proof messages) to be simulated.
+	gRPCOpts := []grpc.CallOption{
+		grpc.MaxCallSendMsgSize(maxGRPCMsgSize),
+		grpc.MaxCallRecvMsgSize(maxGRPCMsgSize),
+	}
+	simRes, err := txSvcClient.Simulate(context.Background(), simRequest, gRPCOpts...)
+	if err != nil {
+		return 0, err
+	}
+
+	return uint64(txf.GasAdjustment() * float64(simRes.GasInfo.GasUsed)), nil
 }
