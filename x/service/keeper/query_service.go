@@ -54,8 +54,7 @@ func (k Keeper) Service(ctx context.Context, req *types.QueryGetServiceRequest) 
 
 	service, found := k.GetService(ctx, req.Id)
 	if !found {
-		msg := fmt.Sprintf("service ID not found: %q", req.GetId())
-		return nil, status.Error(codes.NotFound, msg)
+		return nil, status.Error(codes.NotFound, "service ID not found")
 	}
 
 	return &types.QueryGetServiceResponse{Service: service}, nil
