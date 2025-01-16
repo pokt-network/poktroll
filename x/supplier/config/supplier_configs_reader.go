@@ -19,14 +19,14 @@ type YAMLStakeConfig struct {
 	OperatorAddress        string              `yaml:"operator_address"`
 	StakeAmount            string              `yaml:"stake_amount"`
 	Services               []*YAMLStakeService `yaml:"services"`
-	DefaultRevSharePercent map[string]float32  `yaml:"default_rev_share_percent"`
+	DefaultRevSharePercent map[string]uint32   `yaml:"default_rev_share_percent"`
 }
 
 // YAMLStakeService is the structure describing a single service entry in the
 // stake config file.
 type YAMLStakeService struct {
 	ServiceId       string                `yaml:"service_id"`
-	RevSharePercent map[string]float32    `yaml:"rev_share_percent"`
+	RevSharePercent map[string]uint32     `yaml:"rev_share_percent"`
 	Endpoints       []YAMLServiceEndpoint `yaml:"endpoints"`
 }
 
@@ -102,7 +102,7 @@ func ParseSupplierConfigs(ctx context.Context, configContent []byte) (*SupplierS
 		)
 	}
 
-	defaultRevSharePercent := map[string]float32{}
+	defaultRevSharePercent := map[string]uint32{}
 	if len(stakeConfig.DefaultRevSharePercent) == 0 {
 		// Ensure that if no default rev share is provided, the owner address is set
 		// to 100% rev share.
