@@ -238,8 +238,18 @@ func NewCompleteIntegrationApp(t *testing.T, opts ...IntegrationAppOptionFn) *Ap
 	cfg := &IntegrationAppConfig{
 		TokenLogicModules: tlm.NewDefaultTokenLogicModules(),
 	}
+
+	// Set the default authority address; it may be overridden by config options.
+	authority := authtypes.NewModuleAddress(govtypes.ModuleName)
+
 	for _, opt := range opts {
 		opt(cfg)
+	}
+
+	var err error
+	if cfg.authorityAddress != "" {
+		authority, err = sdk.AccAddressFromBech32(cfg.authorityAddress)
+		require.NoError(t, err)
 	}
 
 	// Prepare & register the codec for all the interfaces
@@ -309,9 +319,6 @@ func NewCompleteIntegrationApp(t *testing.T, opts ...IntegrationAppOptionFn) *Ap
 		ChainID: appName,
 		Height:  1,
 	})
-
-	// Get the authority address
-	authority := authtypes.NewModuleAddress(govtypes.ModuleName)
 
 	// Prepare the account keeper dependencies
 	macPerms := map[string][]string{

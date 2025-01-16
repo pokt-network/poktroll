@@ -393,7 +393,6 @@ type ParamsQuerier[P cosmostypes.Msg] interface {
 	// GetParamsAtHeight returns the parameters as they were at the specified
 	// height, where P is the params type of a given module (e.g. sharedtypes.Params).
 	GetParamsAtHeight(ctx context.Context, height int64) (P, error)
-
 	// SetParamsAtHeight sets the parameters at the specified height, where
 	// P is the params type of a given module (e.g. sharedtypes.Params).
 	SetParamsAtHeight(ctx context.Context, height int64, params P) error

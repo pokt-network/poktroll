@@ -9,18 +9,26 @@ import (
 
 	"cosmossdk.io/depinject"
 	comethttp "github.com/cometbft/cometbft/rpc/client/http"
+	cosmostx "github.com/cosmos/cosmos-sdk/client/tx"
+	"github.com/cosmos/cosmos-sdk/crypto/hd"
+	"github.com/cosmos/cosmos-sdk/crypto/keyring"
+	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
+	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
-	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 
+	"github.com/pokt-network/poktroll/app/volatile"
 	"github.com/pokt-network/poktroll/pkg/client/block"
 	"github.com/pokt-network/poktroll/pkg/client/events"
 	"github.com/pokt-network/poktroll/pkg/client/query"
 	"github.com/pokt-network/poktroll/pkg/client/query/cache"
+	"github.com/pokt-network/poktroll/pkg/client/tx"
+	txtypes "github.com/pokt-network/poktroll/pkg/client/tx/types"
 	"github.com/pokt-network/poktroll/pkg/polylog/polyzero"
 	_ "github.com/pokt-network/poktroll/pkg/polylog/polyzero"
 	"github.com/pokt-network/poktroll/testutil/e2e"
+	"github.com/pokt-network/poktroll/testutil/integration"
 	"github.com/pokt-network/poktroll/testutil/testclient"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
@@ -151,30 +159,22 @@ func TestSanity2(t *testing.T) {
 	}
 }
 
-// TODO_IN_THIS_COMMIT: godoc...
-type MockParamsCache[P any] struct {
-	mock.Mock
-}
-
-func (m *MockParamsCache[P]) GetLatestVersion(key string) (P, error) {
-	args := m.Called(key)
-	return args.Get(0).(P), args.Error(1)
-}
-
-func (m *MockParamsCache[P]) GetVersion(key string, version int64) (P, error) {
-	args := m.Called(key, version)
-	return args.Get(0).(P), args.Error(1)
-}
-
-func (m *MockParamsCache[P]) SetVersion(key string, value P, version int64) error {
-	args := m.Called(key, value, version)
-	return args.Error(0)
-}
-
 func TestSanity(t *testing.T) {
 	ctx := context.Background()
-	app := e2e.NewE2EApp(t)
+	app := e2e.NewE2EApp(t, integration.WithAuthorityAddress("pokt1eeeksh2tvkh7wzmfrljnhw4wrhs55lcuvmekkw"))
 	t.Cleanup(func() { app.Close() })
+
+	keyRing := keyring.NewInMemory(app.GetCodec())
+	rec, err := keyRing.NewAccount(
+		"pnf",
+		"crumble shrimp south strategy speed kick green topic stool seminar track stand rhythm almost bubble pet knock steel pull flag weekend country major blade",
+		"",
+		cosmostypes.FullFundraiserPath,
+		hd.Secp256k1,
+	)
+	require.NoError(t, err)
+	pnfAddr, err := rec.GetAddress()
+	require.NoError(t, err)
 
 	clientConn, err := app.GetClientConn()
 	require.NoError(t, err)
@@ -194,6 +194,14 @@ func TestSanity(t *testing.T) {
 	blockClient, err := block.NewBlockClient(ctx, deps)
 	require.NoError(t, err)
 
+	// Fund gateway2 account.
+	_, err = app.RunMsg(t, &banktypes.MsgSend{
+		FromAddress: app.GetFaucetBech32(),
+		ToAddress:   pnfAddr.String(),
+		Amount:      cosmostypes.NewCoins(cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 10000000000)),
+	})
+	require.NoError(t, err)
+
 	logBuffer := new(bytes.Buffer)
 	logger := polyzero.NewLogger(
 		polyzero.WithLevel(polyzero.DebugLevel),
@@ -210,7 +218,6 @@ func TestSanity(t *testing.T) {
 		depinject.Supply(
 			logger,
 			clientConn,
-			//new(MockParamsCache[*sharedtypes.Params]),
 			paramsCache,
 			blockClient,
 		),
@@ -233,15 +240,50 @@ func TestSanity(t *testing.T) {
 	require.Equal(t, defaultCUTTM, sharedParams.ComputeUnitsToTokensMultiplier)
 
 	paramUpdateMsg := &sharedtypes.MsgUpdateParam{
-		Authority: authtypes.NewModuleAddress(govtypes.ModuleName).String(),
+		//Authority: authtypes.NewModuleAddress(govtypes.ModuleName).String(),
+		Authority: pnfAddr.String(),
 		Name:      "compute_units_to_tokens_multiplier",
 		AsType:    &sharedtypes.MsgUpdateParam_AsUint64{AsUint64: expectedCUTTM},
 	}
 
-	res, err := app.RunMsg(t, paramUpdateMsg)
+	// TODO_IN_THIS_COMMIT: investigate why app.RunMsg doesn't seem to update the state in the subsequent block...
+	//res, err := app.RunMsg(t, paramUpdateMsg)
+	//require.NoError(t, err)
+
+	//gprcClientConn, err := grpc.Dial(grpcAddr, grpc.WithInsecure())
+	//require.NoError(t, err)
+
+	flagSet := testclient.NewFlagSet(t, "tcp://127.0.0.1:42070")
+	// DEV_NOTE: DO NOT use the clientCtx as a grpc.ClientConn as it bypasses E2EApp integrations.
+	clientCtx := testclient.NewLocalnetClientCtx(t, flagSet).WithKeyring(keyRing)
+
+	txFactory, err := cosmostx.NewFactoryCLI(clientCtx, flagSet)
 	require.NoError(t, err)
 
-	t.Logf("res: %+v", res)
+	deps = depinject.Configs(deps, depinject.Supply(txtypes.Context(clientCtx), txFactory))
+
+	txContext, err := tx.NewTxContext(deps)
+	require.NoError(t, err)
+
+	deps = depinject.Configs(deps, depinject.Supply(txContext))
+	txClient, err := tx.NewTxClient(app.GetSdkCtx(), deps, tx.WithSigningKeyName("pnf"))
+	require.NoError(t, err)
+
+	eitherErr := txClient.SignAndBroadcast(app.GetSdkCtx(), paramUpdateMsg)
+	err, errCh := eitherErr.SyncOrAsyncError()
+	require.NoError(t, err)
+
+	select {
+	// TODO_IN_THIS_COMMIT: ...
+	case <-time.After(time.Second):
+		t.Fatal("timeout waiting for tx to be committed")
+	case err = <-errCh:
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	//t.Logf("res: %+v", res)
 
 	sharedParams, err = paramsQuerier.GetParams(ctx)
 	require.NoError(t, err)
