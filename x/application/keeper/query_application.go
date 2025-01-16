@@ -32,8 +32,11 @@ func (k Keeper) AllApplications(
 	var apps []types.Application
 
 	// TODO_IMPROVE(#767): Consider adding a custom onchain index (similar to proofs)
-	// based on other parameters (e.g. serviceId) if/when the performance of the
-	// flags used to filter the response becomes an issue.
+	// if/when the performance of the flags used to filter the response becomes an issue.
+	// Specifically, the following onchain indecies can be added:
+	// - app_addr -> [gateways delegated to]
+	// - gateway_addr -> [apps that delegate to it]
+	// - service_id -> [apps that have a service with that id]
 	store := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
 	applicationStore := prefix.NewStore(store, types.KeyPrefix(types.ApplicationKeyPrefix))
 
