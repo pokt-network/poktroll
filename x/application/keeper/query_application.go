@@ -14,7 +14,11 @@ import (
 	"github.com/pokt-network/poktroll/x/application/types"
 )
 
-func (k Keeper) AllApplications(ctx context.Context, req *types.QueryAllApplicationsRequest) (*types.QueryAllApplicationsResponse, error) {
+// AllApplications returns all applications filtered based on any criteria specified in the request.
+func (k Keeper) AllApplications(
+	ctx context.Context,
+	req *types.QueryAllApplicationsRequest,
+) (*types.QueryAllApplicationsResponse, error) {
 	logger := k.Logger().With("method", "AllApplications")
 
 	if req == nil {
@@ -27,6 +31,9 @@ func (k Keeper) AllApplications(ctx context.Context, req *types.QueryAllApplicat
 
 	var apps []types.Application
 
+	// TODO_IMPROVE(#767): Consider adding a custom onchain index (similar to proofs)
+	// based on other parameters (e.g. serviceId) if/when the performance of the
+	// flags used to filter the response becomes an issue.
 	store := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
 	applicationStore := prefix.NewStore(store, types.KeyPrefix(types.ApplicationKeyPrefix))
 
@@ -37,10 +44,12 @@ func (k Keeper) AllApplications(ctx context.Context, req *types.QueryAllApplicat
 			return status.Error(codes.Internal, err.Error())
 		}
 
-		// Filter out the application if the request specifies a delegatee gateway address as a contraint and the application
-		// does not delegate to the specifies gateway address.
-		if req.DelegateeGatewayAddress != "" && !slices.Contains(application.DelegateeGatewayAddresses, req.DelegateeGatewayAddress) {
-			return nil
+		// Filter out the application if the request specifies a gateway address delegated to as a constraint
+		gatewayDelegatedToAddrFilter := req.GetGatewayAddressDelegatedTo()
+		if gatewayDelegatedToAddrFilter != "" {
+			if !slices.Contains(application.DelegateeGatewayAddresses, req.GatewayAddressDelegatedTo) {
+				return nil
+			}
 		}
 
 		// Ensure that the PendingUndelegations is an empty map and not nil when

@@ -2,7 +2,6 @@ package keeper_test
 
 import (
 	"context"
-	"slices"
 	"strconv"
 	"testing"
 
@@ -12,6 +11,7 @@ import (
 	"github.com/pokt-network/poktroll/cmd/poktrolld/cmd"
 	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
 	"github.com/pokt-network/poktroll/testutil/nullify"
+	"github.com/pokt-network/poktroll/testutil/sample"
 	"github.com/pokt-network/poktroll/x/application/keeper"
 	"github.com/pokt-network/poktroll/x/application/types"
 )
@@ -25,7 +25,7 @@ type testAppModifier func(app *types.Application)
 func createNApplications(keeper keeper.Keeper, ctx context.Context, n int, testAppModifiers ...testAppModifier) []types.Application {
 	apps := make([]types.Application, n)
 	for i := range apps {
-		apps[i].Address = strconv.Itoa(i)
+		apps[i].Address = sample.AccAddress()
 		// Setting pending undelegations since nullify.Fill() does not seem to do it.
 		apps[i].PendingUndelegations = make(map[uint64]types.UndelegatingGatewayList)
 
@@ -38,13 +38,11 @@ func createNApplications(keeper keeper.Keeper, ctx context.Context, n int, testA
 	return apps
 }
 
-// testAppModifierDelegateeAddr adds the supplied gateway address to the application's delegatee list if the application's address matches
-// the supplied address list.
-func withAppDelegateeGatewayAddr(delegateeGatewayAddr string, appsWithDelegationAddr []string) testAppModifier {
+// withGatewayAddressDelegatedTo updates the list of gateways the application delegates
+// to by adding the given gateway address.
+func withGatewayAddressDelegatedTo(gatewayDelegatedToAddr string) testAppModifier {
 	return func(app *types.Application) {
-		if slices.Contains(appsWithDelegationAddr, app.Address) {
-			app.DelegateeGatewayAddresses = append(app.DelegateeGatewayAddresses, delegateeGatewayAddr)
-		}
+		app.DelegateeGatewayAddresses = append(app.DelegateeGatewayAddresses, gatewayDelegatedToAddr)
 	}
 }
 

@@ -47,6 +47,7 @@ func (k Keeper) AllSuppliers(
 				return status.Error(codes.Internal, err.Error())
 			}
 
+			// Filter out the supplier if the request specifies a serviceId as a constraint and the supplier
 			serviceIdFilter := req.GetServiceId()
 			if serviceIdFilter != "" {
 				hasService := false

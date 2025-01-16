@@ -10,36 +10,57 @@ import (
 func (am AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 	return &autocliv1.ModuleOptions{
 		Query: &autocliv1.ServiceCommandDescriptor{
-			Service:           modulev1.Query_ServiceDesc.ServiceName,
+			Service:              modulev1.Query_ServiceDesc.ServiceName,
+			EnhanceCustomCommand: true, // Enable custom command enhancement for backwards compatibility
 			RpcCommandOptions: []*autocliv1.RpcCommandOptions{
-				// 				{
-				// 					RpcMethod: "Params",
-				// 					Use:       "params",
-				// 					Short:     "Shows the parameters of the module",
-				// 					Long: `Shows all the parameters related to the application module.
-				//
-				// Example:
-				// $ poktrolld q application params --node $(POCKET_NODE) --home $(POKTROLLD_HOME)`,
-				// 				},
-				// 				{
-				// 					RpcMethod: "AllApplications",
-				// 					Use:       "list-application",
-				// 					Short:     "List all application",
-				// 					Long: `List all the applications that staked in the network.
-				//
-				// Example:
-				// $ poktrolld q application list-application --node $(POCKET_NODE) --home $(POKTROLLD_HOME)`,
-				// 				},
-				// 				{
-				// 					RpcMethod: "Application",
-				// 					Use:       "show-application [address]",
-				// 					Short:     "Shows a application",
-				// 					Long: `Finds a staked application given its address.
-				//
-				// Example:
-				// $ poktrolld q application show-application $(APP_ADDRESS) --node $(POCKET_NODE) --home $(POKTROLLD_HOME)`,
-				// 					PositionalArgs: []*autocliv1.PositionalArgDescriptor{{ProtoField: "address"}},
-				// 				},
+				{
+					Alias:     []string{"apps", "ls"},
+					RpcMethod: "AllApplications",
+					Use:       "list-applications",
+					Short:     "List all applications on Pocket Network",
+					Long: `Retrieves a paginated list of all applications currently registered on Pocket Network, including all their details.
+
+The command supports pagination parameters.
+Returns application addresses, staked amounts, and current status.`,
+
+					Example: `
+    poktrolld query application list-applications
+    poktrolld query application list-applications --page 2 --limit 50
+    poktrolld query application list-applications --page 1 --limit 100`,
+				},
+				{
+					Alias:     []string{"app", "a"},
+					RpcMethod: "Application",
+					Use:       "show-application [address]",
+					Short:     "Shows detailed information about a specific application",
+					Long: `Retrieves comprehensive information about an application identified by its address.
+
+Returns details include:
+- Application's staked amount and status
+- Application metadata and configuration`,
+
+					Example: `
+    poktrolld query application show-application pokt1abc...xyz
+    poktrolld query application show-application pokt1abc...xyz --output json
+    poktrolld query application show-application pokt1abc...xyz --height 100`,
+					PositionalArgs: []*autocliv1.PositionalArgDescriptor{
+						{
+							ProtoField: "address",
+						},
+					},
+				},
+				{
+					RpcMethod: "Params",
+					Use:       "params",
+					Short:     "Shows the parameters of the application module",
+					Long: `Shows all the parameters related to the application module.
+
+Returns the current values of all application module parameters.`,
+
+					Example: `
+    poktrolld query application params
+    poktrolld query application params --output json`,
+				},
 				// this line is used by ignite scaffolding # autocli/query
 			},
 		},

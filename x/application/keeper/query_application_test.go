@@ -125,25 +125,32 @@ func TestApplicationQueryPaginated(t *testing.T) {
 	})
 }
 
-func TestAllApplicationsQuery_WithDelegateeGatewayAddressConstraint(t *testing.T) {
+func TestAllApplicationsQuery_WithGatewayAddressDelegatedTo(t *testing.T) {
 	keeper, ctx := keepertest.ApplicationKeeper(t)
-	gatewayAddr1 := sample.AccAddress()
-	appsWithDelegationAddr := []string{"1", "2"}
-	apps := createNApplications(keeper, ctx, 5, withAppDelegateeGatewayAddr(gatewayAddr1, appsWithDelegationAddr))
+	gatewayAddr := sample.AccAddress()
+
+	appsWithDelegation := createNApplications(keeper, ctx, 2, withGatewayAddressDelegatedTo(gatewayAddr))
+	appsWithDelegationAddrs := make([]string, len(appsWithDelegation))
+	for i, app := range appsWithDelegation {
+		appsWithDelegationAddrs[i] = app.Address
+	}
+
+	appsWithoutDelegation := createNApplications(keeper, ctx, 3)
+	apps := append(appsWithDelegation, appsWithoutDelegation...)
 
 	requestBuilder := func(gatewayAddr string) *types.QueryAllApplicationsRequest {
 		return &types.QueryAllApplicationsRequest{
-			DelegateeGatewayAddress: gatewayAddr,
+			GatewayAddressDelegatedTo: gatewayAddr,
 		}
 	}
 
-	t.Run("QueryAppsWithDelegatee", func(t *testing.T) {
-		resp, err := keeper.AllApplications(ctx, requestBuilder(gatewayAddr1))
+	t.Run("QueryAppsWithGatewayAddressDelegatedTo", func(t *testing.T) {
+		resp, err := keeper.AllApplications(ctx, requestBuilder(gatewayAddr))
 		require.NoError(t, err)
 
 		var expectedApps []types.Application
 		for _, app := range apps {
-			if slices.Contains(appsWithDelegationAddr, app.Address) {
+			if slices.Contains(appsWithDelegationAddrs, app.Address) {
 				expectedApps = append(expectedApps, app)
 			}
 		}
@@ -154,7 +161,7 @@ func TestAllApplicationsQuery_WithDelegateeGatewayAddressConstraint(t *testing.T
 		)
 	})
 
-	t.Run("QueryAppsWithNoDelegationConstraint", func(t *testing.T) {
+	t.Run("QueryAppsWithoutGatewayAddressDelegatedTo", func(t *testing.T) {
 		resp, err := keeper.AllApplications(ctx, &types.QueryAllApplicationsRequest{})
 		require.NoError(t, err)
 
