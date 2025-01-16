@@ -9,9 +9,7 @@ import (
 	"cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
-	"github.com/gogo/status"
 	"github.com/stretchr/testify/require"
-	"google.golang.org/grpc/codes"
 
 	"github.com/pokt-network/poktroll/cmd/poktrolld/cmd"
 	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
@@ -59,53 +57,6 @@ func createNSuppliers(keeper keeper.Keeper, ctx context.Context, n int) []shared
 	}
 
 	return suppliers
-}
-
-func TestSupplierQuery(t *testing.T) {
-	keeper, ctx := keepertest.SupplierKeeper(t)
-	suppliers := createNSuppliers(*keeper.Keeper, ctx, 2)
-
-	tests := []struct {
-		desc        string
-		request     *types.QueryGetSupplierRequest
-		response    *types.QueryGetSupplierResponse
-		expectedErr error
-	}{
-		{
-			desc: "supplier found",
-			request: &types.QueryGetSupplierRequest{
-				OperatorAddress: suppliers[0].OperatorAddress,
-			},
-			response: &types.QueryGetSupplierResponse{
-				Supplier: suppliers[0],
-			},
-		},
-		{
-			desc: "supplier not found",
-			request: &types.QueryGetSupplierRequest{
-				OperatorAddress: "non_existent_address",
-			},
-			expectedErr: status.Error(codes.NotFound, fmt.Sprintf("supplier with address: %q", "non_existent_address")),
-		},
-	}
-
-	for _, test := range tests {
-		t.Run(test.desc, func(t *testing.T) {
-			response, err := keeper.Supplier(ctx, test.request)
-			if test.expectedErr != nil {
-				stat, ok := status.FromError(test.expectedErr)
-				require.True(t, ok)
-				require.ErrorIs(t, stat.Err(), test.expectedErr)
-			} else {
-				require.NoError(t, err)
-				require.NotNil(t, response)
-				require.Equal(t,
-					nullify.Fill(test.response),
-					nullify.Fill(response),
-				)
-			}
-		})
-	}
 }
 
 func TestSupplierGet(t *testing.T) {

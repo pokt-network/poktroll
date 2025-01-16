@@ -37,7 +37,7 @@ spec:
               ls -l /root/.poktroll/keyring-test/ && \
               poktrolld q gateway list-gateway --node=$POCKET_NODE && \
               poktrolld q application list-application --node=$POCKET_NODE && \
-              poktrolld q supplier list-suppliers --node=$POCKET_NODE && \
+              poktrolld q supplier list-supplier --node=$POCKET_NODE && \
               make acc_initialize_pubkeys && \
               go test -v ./e2e/tests/... -tags=e2e
           env:

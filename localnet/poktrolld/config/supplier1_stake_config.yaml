@@ -2,8 +2,8 @@ owner_address: pokt1mrqt5f7qh8uxs27cjm9t7v9e74a9vvdnq5jva4
 operator_address: pokt1mrqt5f7qh8uxs27cjm9t7v9e74a9vvdnq5jva4
 stake_amount: 1000069upokt
 default_rev_share_percent:
-  pokt1mrqt5f7qh8uxs27cjm9t7v9e74a9vvdnq5jva4: 80
-  pokt1eeeksh2tvkh7wzmfrljnhw4wrhs55lcuvmekkw: 20
+  pokt1mrqt5f7qh8uxs27cjm9t7v9e74a9vvdnq5jva4: 80.5
+  pokt1eeeksh2tvkh7wzmfrljnhw4wrhs55lcuvmekkw: 19.5
 services:
   - service_id: anvil
     endpoints:

@@ -4,7 +4,7 @@
 
 .PHONY: supplier_list
 supplier_list: ## List all the staked supplier
-	poktrolld --home=$(POKTROLLD_HOME) q supplier list-suppliers --node $(POCKET_NODE)
+	poktrolld --home=$(POKTROLLD_HOME) q supplier list-supplier --node $(POCKET_NODE)
 
 .PHONY: supplier_stake
 supplier_stake: ## Stake tokens for the supplier specified (must specify the SUPPLIER and SUPPLIER_CONFIG env vars)
