@@ -82,7 +82,7 @@ func (k Keeper) ValidateSubmittedProofs(ctx sdk.Context) {
 			//    response bytes which account for the majority of the proof size.
 			// 2. Mark the proof as validated to avoid re-validating it in subsequent blocks
 			//    within the same proof submission window.
-			proof.ClosestMerkleProof = make([]byte, 0, 0)
+			proof.ClosestMerkleProof = make([]byte, 0)
 
 			// Update the proof in the store to clear the ClosestMerkleProof which makes the
 			// committed block to never store the potentially large ClosestMerkleProof.
