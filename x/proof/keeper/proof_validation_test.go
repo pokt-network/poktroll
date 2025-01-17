@@ -31,10 +31,10 @@ import (
 
 func TestEnsureValidProof_Error(t *testing.T) {
 	opts := []keepertest.ProofKeepersOpt{
-		// Set block hash such that on-chain closest merkle proof validation
+		// Set block hash such that onchain closest merkle proof validation
 		// uses the expected path.
 		keepertest.WithBlockHash(blockHeaderHash),
-		// Set block height to 1 so there is a valid session on-chain.
+		// Set block height to 1 so there is a valid session onchain.
 		keepertest.WithBlockHeight(1),
 	}
 	keepers, ctx := keepertest.NewProofModuleKeepers(t, opts...)
@@ -210,7 +210,7 @@ func TestEnsureValidProof_Error(t *testing.T) {
 					expectedMerkleProofPath)
 			},
 			expectedErr: prooftypes.ErrProofInvalidSessionId.Wrapf(
-				"session ID does not match on-chain session ID; expected %q, got %q",
+				"session ID does not match onchain session ID; expected %q, got %q",
 				validSessionHeader.GetSessionId(),
 				"",
 			),
@@ -235,7 +235,7 @@ func TestEnsureValidProof_Error(t *testing.T) {
 			),
 		},
 		{
-			desc: "proof session ID must match on-chain session ID",
+			desc: "proof session ID must match onchain session ID",
 			newProof: func(t *testing.T) *prooftypes.Proof {
 				// Construct new proof message using the wrong session ID.
 				return testtree.NewProof(t,
@@ -246,13 +246,13 @@ func TestEnsureValidProof_Error(t *testing.T) {
 				)
 			},
 			expectedErr: prooftypes.ErrProofInvalidSessionId.Wrapf(
-				"session ID does not match on-chain session ID; expected %q, got %q",
+				"session ID does not match onchain session ID; expected %q, got %q",
 				validSessionHeader.GetSessionId(),
 				wrongSessionIdHeader.GetSessionId(),
 			),
 		},
 		{
-			desc: "proof supplier must be in on-chain session",
+			desc: "proof supplier must be in onchain session",
 			newProof: func(t *testing.T) *prooftypes.Proof {
 				// Construct a proof message with a  supplier that does not belong in the session.
 				return testtree.NewProof(t,
@@ -582,7 +582,7 @@ func TestEnsureValidProof_Error(t *testing.T) {
 				return testtree.NewProof(t, supplierOperatorAddr, validSessionHeader, wrongPathSessionTree, wrongClosestProofPath)
 			},
 			expectedErr: prooftypes.ErrProofInvalidProof.Wrapf(
-				"the path of the proof provided (%x) does not match one expected by the on-chain protocol (%x)",
+				"the path of the proof provided (%x) does not match one expected by the onchain protocol (%x)",
 				wrongClosestProofPath,
 				protocol.GetPathForProof(sdkCtx.HeaderHash(), validSessionHeader.GetSessionId()),
 			),
@@ -729,21 +729,21 @@ func TestEnsureValidProof_Error(t *testing.T) {
 		{
 			desc: "claim and proof application addresses must match",
 			newProof: func(t *testing.T) *prooftypes.Proof {
-				t.Skip("this test case reduces to either the 'claim must exist for proof message' or 'proof session ID must match on-chain session ID cases")
+				t.Skip("this test case reduces to either the 'claim must exist for proof message' or 'proof session ID must match onchain session ID cases")
 				return nil
 			},
 		},
 		{
 			desc: "claim and proof service IDs must match",
 			newProof: func(t *testing.T) *prooftypes.Proof {
-				t.Skip("this test case reduces to either the 'claim must exist for proof message' or 'proof session ID must match on-chain session ID cases")
+				t.Skip("this test case reduces to either the 'claim must exist for proof message' or 'proof session ID must match onchain session ID cases")
 				return nil
 			},
 		},
 		{
 			desc: "claim and proof supplier operator addresses must match",
 			newProof: func(t *testing.T) *prooftypes.Proof {
-				t.Skip("this test case reduces to either the 'claim must exist for proof message' or 'proof session ID must match on-chain session ID cases")
+				t.Skip("this test case reduces to either the 'claim must exist for proof message' or 'proof session ID must match onchain session ID cases")
 				return nil
 			},
 		},
@@ -769,8 +769,19 @@ func TestEnsureValidProof_Error(t *testing.T) {
 
 			// Advance the block height to the earliest proof commit height.
 			ctx = keepertest.SetBlockHeight(ctx, earliestSupplierProofCommitHeight)
-			err := keepers.EnsureValidProof(ctx, proof)
-			require.ErrorContains(t, err, test.expectedErr.Error())
+
+			// An invalid proof is either one that is not well-formed or one that
+			// has invalid signatures or closest path.
+
+			if _, err := keepers.EnsureWellFormedProof(ctx, proof); err != nil {
+				require.ErrorContains(t, err, test.expectedErr.Error())
+				return
+			}
+
+			if err := keepers.EnsureValidProofSignaturesAndClosestPath(ctx, proof); err != nil {
+				require.ErrorContains(t, err, test.expectedErr.Error())
+				return
+			}
 		})
 	}
 }

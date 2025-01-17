@@ -27,7 +27,7 @@ func (app *App) setUpgrades() error {
 	}
 
 	// Reads the upgrade info from disk.
-	// The previous binary is expected to have read the plan from on-chain and saved it locally.
+	// The previous binary is expected to have read the plan from onchain and saved it locally.
 	upgradePlan, err := app.Keepers.UpgradeKeeper.ReadUpgradeInfoFromDisk()
 	if err != nil {
 		return err

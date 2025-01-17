@@ -71,7 +71,7 @@ To execute tests on LocalNet:
 #### Interpreting Results
 
 - The CLI output displays standard Go test results. Successful tests are indicated by `PASS`, while failures are denoted by `FAIL` with accompanying error messages.
-- During test execution, the observability stack continuously collects metric data from off-chain actors. On LocalNet, [Grafana is accessible on port 3003](http://localhost:3003/?orgId=1). The
+- During test execution, the observability stack continuously collects metric data from offchain actors. On LocalNet, [Grafana is accessible on port 3003](http://localhost:3003/?orgId=1). The
   [Stress test](http://localhost:3003/d/ddkakqetrti4gb/protocol-stress-test?orgId=1&refresh=5s)
   and [Load Testing](http://localhost:3003/d/fdjwb9u9t9ts0e/protocol-load-testing?orgId=1) dashboards provide valuable
   insights into system status.
@@ -81,7 +81,7 @@ To execute tests on LocalNet:
 These networks are generated with random addresses, necessitating modifications to the load test manifest to reflect network-specific accounts.
 
 :::info
-Note: Such networks typically involve other participants, allowing load testing against off-chain actors deployed by third parties. Consequently, metrics and logs may not be available when testing against uncontrolled software. For comprehensive observability, consider creating a new service with custom gateways and suppliers, and conduct tests against this controlled environment.
+Note: Such networks typically involve other participants, allowing load testing against offchain actors deployed by third parties. Consequently, metrics and logs may not be available when testing against uncontrolled software. For comprehensive observability, consider creating a new service with custom gateways and suppliers, and conduct tests against this controlled environment.
 :::
 
 #### Prerequisites

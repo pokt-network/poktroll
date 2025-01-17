@@ -62,7 +62,7 @@ This document is a cheat sheet to get you quickly started with two things:
 1. Staking an onchain `Supplier`
 2. Deploying an offchain `RelayMiner`
 
-By the end of it, you should be able to serve Relays off-chain, and claim on-chain rewards.
+By the end of it, you should be able to serve Relays offchain, and claim onchain rewards.
 
 ## Account Setup
 

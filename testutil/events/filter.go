@@ -79,10 +79,14 @@ func NewEventTypeMatchFn(matchEventType string) func(*cosmostypes.Event) bool {
 }
 
 // AbciEventsToTypedEvents converts the abci events to typed events.
-func AbciEventsToTypedEvents(ctx context.Context, abciEventObs observable.Observable[[]abci.Event]) observable.Observable[[]proto.Message] {
+func AbciEventsToTypedEvents(
+	ctx context.Context,
+	abciEventObs observable.Observable[[]abci.Event],
+) observable.Observable[[]proto.Message] {
 	return channel.Map(ctx, abciEventObs, func(ctx context.Context, events []abci.Event) ([]proto.Message, bool) {
 		var typedEvents []proto.Message
 		for _, event := range events {
+			// TODO_TECHDEBT: Filter out events by event.Type before parsing them.
 			typedEvent, err := cosmostypes.ParseTypedEvent(event)
 			if err != nil {
 				continue

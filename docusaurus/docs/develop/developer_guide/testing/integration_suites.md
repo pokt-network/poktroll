@@ -35,7 +35,7 @@ The `testutil/integration/suites` package contains multiple **app integration su
 
 ### Example (`ParamsSuite`)
 
-The following example shows a test suite which embeds `suites.ParamsSuite`, in order to set on-chain module params as part of its `SetupTest()` method:
+The following example shows a test suite which embeds `suites.ParamsSuite`, in order to set onchain module params as part of its `SetupTest()` method:
 
 ```go
 package suites

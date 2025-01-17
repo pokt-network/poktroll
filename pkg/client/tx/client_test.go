@@ -272,7 +272,7 @@ func TestTxClient_SignAndBroadcast_SyncError(t *testing.T) {
 	time.Sleep(10 * time.Millisecond)
 }
 
-// TODO_INCOMPLETE: add coverage for async error; i.e. insufficient gas or on-chain error
+// TODO_INCOMPLETE: add coverage for async error; i.e. insufficient gas or onchain error
 func TestTxClient_SignAndBroadcast_CheckTxError(t *testing.T) {
 	var (
 		// expectedErrMsg is the expected error message that will be returned

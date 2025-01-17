@@ -67,19 +67,19 @@ func NewKeeper(
 	sharedQuerier := types.NewSharedKeeperQueryClient(sharedKeeper, sessionKeeper)
 
 	// RingKeeperClient holds the logic of verifying RelayRequests ring signatures
-	// for both on-chain and off-chain actors.
+	// for both onchain and offchain actors.
 	//
 	// ApplicationQueriers & AccountQuerier are compatible with the environment
 	// they're used in and may or may not make an actual network request.
 	//
-	// When used in an on-chain context, the ProofKeeper supplies AppKeeperQueryClient
+	// When used in an onchain context, the ProofKeeper supplies AppKeeperQueryClient
 	// and AccountKeeperQueryClient that are thin wrappers around the Application and
 	// Account keepers respectively to satisfy the RingClient needs.
 	//
 	// TODO_MAINNET(@red-0ne): Make ring signature verification a stateless
 	// function and get rid of the RingClient and its dependencies by moving
 	// application ring retrieval to the application keeper, and making it
-	// retrievable using the application query client for off-chain actors. Signature
+	// retrievable using the application query client for offchain actors. Signature
 	// verification code will still be shared across off/on chain environments.
 	ringKeeperClientDeps := depinject.Supply(polylogger, applicationQuerier, accountQuerier, sharedQuerier)
 	ringKeeperClient, err := rings.NewRingClient(ringKeeperClientDeps)

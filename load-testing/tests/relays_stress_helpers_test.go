@@ -88,7 +88,7 @@ type actorLoadTestIncrementPlan struct {
 func (s *relaysSuite) setupEventListeners(rpcNode string) {
 	// Set up the blockClient that will be notifying the suite about the committed blocks.
 	eventsObs, eventsObsCh := channel.NewObservable[[]types.Event]()
-	s.eventsObs = eventsObs
+	s.committedEventsObs = eventsObs
 
 	extractBlockEvents := func(ctx context.Context, block client.Block) {
 		// Query the block results endpoint for each observed block to get the tx and block events.
@@ -494,7 +494,7 @@ func (s *relaysSuite) mapStakingInfoWhenStakingAndDelegatingNewApps(
 	notif *stakingInfoNotif,
 ) (*stakingInfoNotif, bool) {
 	// Ensure that new gateways and suppliers are staked.
-	// Ensure that new applications are funded and have an account entry on-chain
+	// Ensure that new applications are funded and have an account entry onchain
 	// so that they can stake and delegate in the next block.
 	testdelays.WaitAll(
 		func() { s.ensureStakedActors(ctx, notif.newSuppliers) },
@@ -661,7 +661,7 @@ func (s *relaysSuite) createApplicationAccount(
 // cost, and the block duration.
 func (s *relaysSuite) getAppFundingAmount(currentBlockHeight int64) sdk.Coin {
 	currentTestDuration := s.testStartHeight + s.relayLoadDurationBlocks - currentBlockHeight
-	// Compute teh cost of all relays throughout the test duration.
+	// Compute the cost of all relays throughout the test duration.
 	totalRelayCostDuringTestUPOKT := s.relayRatePerApp * s.relayCoinAmountCost * currentTestDuration * blockDurationSec
 	// Multiply by 2 to make sure the application does not run out of funds
 	// based on the number of relays it needs to send. Theoretically, `+1` should
@@ -1054,7 +1054,7 @@ func (s *relaysSuite) sendRelay(iteration uint64, relayPayload string) (appAddre
 	sendRelayRequest := func(gatewayURL, appAddr, payload string) {
 		req, err := http.NewRequest("POST", gatewayURL, strings.NewReader(payload))
 
-		// TODO_TECHDEBT(red-0ne): Use the app-address instead X-App-Address once PATH Gateway
+		// TODO_TECHDEBT(red-0ne): Use 'app-address' instead of 'X-App-Address' once PATH Gateway
 		// deprecates the X-App-Address header.
 		// This is needed by the PATH Gateway's trusted mode to identify the application
 		// that is sending the relay request.
@@ -1093,7 +1093,7 @@ func (s *relaysSuite) ensureFundedActors(ctx context.Context, actors []*accountI
 	// Add 1 second to the block duration to make sure the deadline is after the next block.
 	deadline := time.Now().Add(time.Second * time.Duration(blockDurationSec+1))
 	ctx, cancel := context.WithDeadline(ctx, deadline)
-	channel.ForEach(ctx, s.eventsObs, func(ctx context.Context, events []types.Event) {
+	channel.ForEach(ctx, s.committedEventsObs, func(ctx context.Context, events []types.Event) {
 		for _, event := range events {
 			// In the context of ensuring the actors are funded, only the transfer events
 			// are relevant; filtering out the other events.
@@ -1129,7 +1129,7 @@ func (s *relaysSuite) ensureFundedActors(ctx context.Context, actors []*accountI
 }
 
 // allActorsFunded checks if all the expected actors are funded.
-// An error is returned if any of the expected actors was not funded.
+// An error is returned if any (at least one) of the expected actors was not funded.
 func allActorsFunded(expectedActors []*accountInfo, fundedActors map[string]struct{}) bool {
 	for _, actor := range expectedActors {
 		if _, ok := fundedActors[actor.address]; !ok {
@@ -1155,7 +1155,7 @@ func (s *relaysSuite) ensureStakedActors(
 	// Add 1 second to the block duration to make sure the deadline is after the next block.
 	deadline := time.Now().Add(time.Second * time.Duration(blockDurationSec+1))
 	ctx, cancel := context.WithDeadline(ctx, deadline)
-	typedEventsObs := events.AbciEventsToTypedEvents(ctx, s.eventsObs)
+	typedEventsObs := events.AbciEventsToTypedEvents(ctx, s.committedEventsObs)
 	channel.ForEach(ctx, typedEventsObs, func(ctx context.Context, blockEvents []proto.Message) {
 		for _, event := range blockEvents {
 			switch e := event.(type) {
@@ -1208,7 +1208,7 @@ func (s *relaysSuite) ensureDelegatedApps(
 
 	deadline := time.Now().Add(time.Second * time.Duration(blockDurationSec+1))
 	ctx, cancel := context.WithDeadline(ctx, deadline)
-	typedEventsObs := events.AbciEventsToTypedEvents(ctx, s.eventsObs)
+	typedEventsObs := events.AbciEventsToTypedEvents(ctx, s.committedEventsObs)
 	channel.ForEach(ctx, typedEventsObs, func(ctx context.Context, blockEvents []proto.Message) {
 		for _, event := range blockEvents {
 			redelegationEvent, ok := event.(*apptypes.EventRedelegation)
@@ -1254,16 +1254,9 @@ func allAppsDelegatedToAllGateways(
 
 // getRelayCost fetches the relay cost from the tokenomics module.
 func (s *relaysSuite) getRelayCost() int64 {
-	// Set up the tokenomics client.
-	flagSet := testclient.NewLocalnetFlagSet(s)
-	clientCtx := testclient.NewLocalnetClientCtx(s, flagSet)
-	sharedClient := sharedtypes.NewQueryClient(clientCtx)
+	relayCost := s.testedService.ComputeUnitsPerRelay * s.sharedParams.ComputeUnitsToTokensMultiplier
 
-	res, err := sharedClient.Params(s.ctx, &sharedtypes.QueryParamsRequest{})
-	require.NoError(s, err)
-
-	// multiply by the CUPR
-	return int64(res.Params.ComputeUnitsToTokensMultiplier)
+	return int64(relayCost)
 }
 
 // getProvisionedActorsCurrentStakedAmount fetches the current stake amount of
@@ -1408,7 +1401,7 @@ func (s *relaysSuite) parseActorLoadTestIncrementPlans(
 
 // forEachSettlement asynchronously captures the settlement events and processes them.
 func (s *relaysSuite) forEachSettlement(ctx context.Context) {
-	typedEventsObs := events.AbciEventsToTypedEvents(ctx, s.eventsObs)
+	typedEventsObs := events.AbciEventsToTypedEvents(ctx, s.committedEventsObs)
 	channel.ForEach(
 		s.ctx,
 		typedEventsObs,
@@ -1419,7 +1412,7 @@ func (s *relaysSuite) forEachSettlement(ctx context.Context) {
 	)
 }
 
-// querySharedParams queries the current on-chain shared module parameters for use
+// querySharedParams queries the current onchain shared module parameters for use
 // over the duration of the test.
 func (s *relaysSuite) querySharedParams(queryNodeRPCURL string) {
 	s.Helper()
@@ -1439,7 +1432,7 @@ func (s *relaysSuite) querySharedParams(queryNodeRPCURL string) {
 	s.sharedParams = sharedParams
 }
 
-// queryAppParams queries the current on-chain application module parameters for use
+// queryAppParams queries the current onchain application module parameters for use
 // over the duration of the test.
 func (s *relaysSuite) queryAppParams(queryNodeRPCURL string) {
 	s.Helper()
@@ -1459,7 +1452,7 @@ func (s *relaysSuite) queryAppParams(queryNodeRPCURL string) {
 	s.appParams = appParams
 }
 
-// queryProofParams queries the current on-chain proof module parameters for use
+// queryProofParams queries the current onchain proof module parameters for use
 // over the duration of the test.
 func (s *relaysSuite) queryProofParams(queryNodeRPCURL string) {
 	s.Helper()
@@ -1485,7 +1478,7 @@ func (s *relaysSuite) queryProofParams(queryNodeRPCURL string) {
 	s.proofParams = proofParams
 }
 
-// queryTokenomicsParams queries the current on-chain tokenomics module parameters for use
+// queryTokenomicsParams queries the current onchain tokenomics module parameters for use
 // over the duration of the test.
 func (s *relaysSuite) queryTokenomicsParams(queryNodeRPCURL string) {
 	s.Helper()
@@ -1507,6 +1500,25 @@ func (s *relaysSuite) queryTokenomicsParams(queryNodeRPCURL string) {
 	require.NoError(s, err)
 
 	s.tokenomicsParams = &res.Params
+}
+
+// queryTestedService queries the current service being tested.
+func (s *relaysSuite) queryTestedService(queryNodeRPCURL string) {
+	s.Helper()
+
+	deps := depinject.Supply(s.txContext.GetClientCtx())
+
+	blockQueryClient, err := sdkclient.NewClientFromNode(queryNodeRPCURL)
+	require.NoError(s, err)
+	deps = depinject.Configs(deps, depinject.Supply(blockQueryClient))
+
+	serviceQueryclient, err := query.NewServiceQuerier(deps)
+	require.NoError(s, err)
+
+	service, err := serviceQueryclient.GetService(s.ctx, "anvil")
+	require.NoError(s, err)
+
+	s.testedService = &service
 }
 
 // forEachStakedAndDelegatedAppPrepareApp is a ForEachFn that waits for txs which

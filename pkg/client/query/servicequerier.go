@@ -14,7 +14,7 @@ import (
 var _ client.ServiceQueryClient = (*serviceQuerier)(nil)
 
 // serviceQuerier is a wrapper around the servicetypes.QueryClient that enables the
-// querying of on-chain service information through a single exposed method
+// querying of onchain service information through a single exposed method
 // which returns a sharedtypes.Service struct
 type serviceQuerier struct {
 	clientConn     grpc.ClientConn

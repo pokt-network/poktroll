@@ -20,6 +20,6 @@ message Params {
   cosmos.base.v1beta1.Coin add_service_fee = 1 [(gogoproto.jsontag) = "add_service_fee", (gogoproto.moretags) = "yaml:\"add_service_fee\""];
 
   // target_num_relays is the target for the EMA of the number of relays per session.
-  // Per service, on-chain relay mining difficulty will be adjusted to maintain this target.
+  // Per service, onchain relay mining difficulty will be adjusted to maintain this target.
   uint64 target_num_relays = 2 [(gogoproto.jsontag) = "target_num_relays", (gogoproto.moretags) = "yaml:\"target_num_relays\""];
 }

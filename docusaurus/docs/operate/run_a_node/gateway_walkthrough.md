@@ -21,8 +21,8 @@ details on how to deploy and operate it.
 
 A PATH Gateway requires the following:
 
-1. A staked on-chain [Application](../../protocol/actors/application.md) to pay for services.
-2. An optional on-chain [Gateway](../../protocol/actors/gateway.md) to optionally proxy services.
+1. A staked onchain [Application](../../protocol/actors/application.md) to pay for services.
+2. An optional onchain [Gateway](../../protocol/actors/gateway.md) to optionally proxy services.
 3. A connection to a [Full Node](./full_node_docker.md) to interact with the blockchain.
 
 :::tip

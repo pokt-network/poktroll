@@ -92,7 +92,7 @@ flowchart TD
   NCS  ---> |owner_address or operator_address| US
 
   US -- funds --> OWA{{owner_address}}
-  US -- remove on-chain record --> OPA{{owner_address or operator_address}}
+  US -- remove onchain record --> OPA{{owner_address or operator_address}}
 
   classDef owner fill:#f9f, stroke:#333, stroke-width:2px, color:#222;
   classDef operator fill:#eba69a, color: #333, stroke:#333, stroke-width:2px;

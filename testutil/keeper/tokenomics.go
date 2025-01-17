@@ -124,7 +124,7 @@ func TokenomicsKeeperWithActorAddrs(t testing.TB) (
 	registry := codectypes.NewInterfaceRegistry()
 	cdc := codec.NewProtoCodec(registry)
 
-	// The on-chain governance address.
+	// The onchain governance address.
 	authority := authtypes.NewModuleAddress(govtypes.ModuleName)
 
 	// Prepare the test application.

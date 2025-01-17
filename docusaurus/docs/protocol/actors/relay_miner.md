@@ -11,7 +11,7 @@ sidebar_position: 5
 
 ## Overview
 
-A `RelayMiner` is a specialized operation node (not an on-chain actor) designed
+A `RelayMiner` is a specialized operation node (not an onchain actor) designed
 for individuals to **offer services** through Pocket Network alongside a staked
 `Supplier`. It is responsible for proxying `RelayRequests` between a `PATH Gateway`
 and the supplied `Service`.

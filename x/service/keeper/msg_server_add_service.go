@@ -15,7 +15,7 @@ import (
 // AddService adds a service to the network.
 // The operation checks if the signer has enough funds (upokt) to pay the AddServiceFee.
 // If funds are insufficient, the service won't be added. Otherwise, the fee is transferred from
-// the signer to the service module's account, afterwards the service will be present on-chain.
+// the signer to the service module's account, afterwards the service will be present onchain.
 func (k msgServer) AddService(
 	goCtx context.Context,
 	msg *types.MsgAddService,
