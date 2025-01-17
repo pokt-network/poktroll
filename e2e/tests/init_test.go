@@ -572,7 +572,10 @@ func (s *suite) getStakedAmount(actorType, accName string) (int, bool) {
 
 	listCommand := fmt.Sprintf("list-%s", actorType)
 	// TODO_TECHDEBT(@olshansky): As of #1028, we started migrating some parts
-	// of the CLI to use AutoCLI.
+	// of the CLI to use AutoCLI which made list commands pluralized.
+	// E.g. "list-suppliers" instead of "list-supplier".
+	// Over time, all actor commands will be updated like so and this if can
+	// be removed.
 	if actorType == suppliertypes.ModuleName {
 		listCommand = fmt.Sprintf("%ss", listCommand)
 	}
