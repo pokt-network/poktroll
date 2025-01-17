@@ -908,7 +908,7 @@ func (app *App) setupDefaultActorsState(
 				RevShare: []*sharedtypes.ServiceRevenueShare{
 					{
 						Address:            sample.AccAddress(),
-						RevSharePercentage: 100,
+						RevSharePercentage: uint64(100),
 					},
 				},
 				ServiceId: defaultService.Id,

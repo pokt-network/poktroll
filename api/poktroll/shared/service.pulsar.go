@@ -2,7 +2,6 @@
 package shared
 
 import (
-	binary "encoding/binary"
 	fmt "fmt"
 	_ "github.com/cosmos/cosmos-proto"
 	runtime "github.com/cosmos/cosmos-proto/runtime"
@@ -11,7 +10,6 @@ import (
 	protoiface "google.golang.org/protobuf/runtime/protoiface"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	io "io"
-	math "math"
 	reflect "reflect"
 	sync "sync"
 )
@@ -2418,8 +2416,8 @@ func (x *fastReflection_ServiceRevenueShare) Range(f func(protoreflect.FieldDesc
 			return
 		}
 	}
-	if x.RevSharePercentage != float64(0) || math.Signbit(x.RevSharePercentage) {
-		value := protoreflect.ValueOfFloat64(x.RevSharePercentage)
+	if x.RevSharePercentage != uint64(0) {
+		value := protoreflect.ValueOfUint64(x.RevSharePercentage)
 		if !f(fd_ServiceRevenueShare_rev_share_percentage, value) {
 			return
 		}
@@ -2442,7 +2440,7 @@ func (x *fastReflection_ServiceRevenueShare) Has(fd protoreflect.FieldDescriptor
 	case "poktroll.shared.ServiceRevenueShare.address":
 		return x.Address != ""
 	case "poktroll.shared.ServiceRevenueShare.rev_share_percentage":
-		return x.RevSharePercentage != float64(0) || math.Signbit(x.RevSharePercentage)
+		return x.RevSharePercentage != uint64(0)
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.shared.ServiceRevenueShare"))
@@ -2462,7 +2460,7 @@ func (x *fastReflection_ServiceRevenueShare) Clear(fd protoreflect.FieldDescript
 	case "poktroll.shared.ServiceRevenueShare.address":
 		x.Address = ""
 	case "poktroll.shared.ServiceRevenueShare.rev_share_percentage":
-		x.RevSharePercentage = float64(0)
+		x.RevSharePercentage = uint64(0)
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.shared.ServiceRevenueShare"))
@@ -2484,7 +2482,7 @@ func (x *fastReflection_ServiceRevenueShare) Get(descriptor protoreflect.FieldDe
 		return protoreflect.ValueOfString(value)
 	case "poktroll.shared.ServiceRevenueShare.rev_share_percentage":
 		value := x.RevSharePercentage
-		return protoreflect.ValueOfFloat64(value)
+		return protoreflect.ValueOfUint64(value)
 	default:
 		if descriptor.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.shared.ServiceRevenueShare"))
@@ -2508,7 +2506,7 @@ func (x *fastReflection_ServiceRevenueShare) Set(fd protoreflect.FieldDescriptor
 	case "poktroll.shared.ServiceRevenueShare.address":
 		x.Address = value.Interface().(string)
 	case "poktroll.shared.ServiceRevenueShare.rev_share_percentage":
-		x.RevSharePercentage = value.Float()
+		x.RevSharePercentage = value.Uint()
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.shared.ServiceRevenueShare"))
@@ -2549,7 +2547,7 @@ func (x *fastReflection_ServiceRevenueShare) NewField(fd protoreflect.FieldDescr
 	case "poktroll.shared.ServiceRevenueShare.address":
 		return protoreflect.ValueOfString("")
 	case "poktroll.shared.ServiceRevenueShare.rev_share_percentage":
-		return protoreflect.ValueOfFloat64(float64(0))
+		return protoreflect.ValueOfUint64(uint64(0))
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.shared.ServiceRevenueShare"))
@@ -2623,8 +2621,8 @@ func (x *fastReflection_ServiceRevenueShare) ProtoMethods() *protoiface.Methods 
 		if l > 0 {
 			n += 1 + l + runtime.Sov(uint64(l))
 		}
-		if x.RevSharePercentage != 0 || math.Signbit(x.RevSharePercentage) {
-			n += 9
+		if x.RevSharePercentage != 0 {
+			n += 1 + runtime.Sov(uint64(x.RevSharePercentage))
 		}
 		if x.unknownFields != nil {
 			n += len(x.unknownFields)
@@ -2655,11 +2653,10 @@ func (x *fastReflection_ServiceRevenueShare) ProtoMethods() *protoiface.Methods 
 			i -= len(x.unknownFields)
 			copy(dAtA[i:], x.unknownFields)
 		}
-		if x.RevSharePercentage != 0 || math.Signbit(x.RevSharePercentage) {
-			i -= 8
-			binary.LittleEndian.PutUint64(dAtA[i:], uint64(math.Float64bits(float64(x.RevSharePercentage))))
+		if x.RevSharePercentage != 0 {
+			i = runtime.EncodeVarint(dAtA, i, uint64(x.RevSharePercentage))
 			i--
-			dAtA[i] = 0x19
+			dAtA[i] = 0x18
 		}
 		if len(x.Address) > 0 {
 			i -= len(x.Address)
@@ -2750,16 +2747,24 @@ func (x *fastReflection_ServiceRevenueShare) ProtoMethods() *protoiface.Methods 
 				x.Address = string(dAtA[iNdEx:postIndex])
 				iNdEx = postIndex
 			case 3:
-				if wireType != 1 {
+				if wireType != 0 {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field RevSharePercentage", wireType)
 				}
-				var v uint64
-				if (iNdEx + 8) > l {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				x.RevSharePercentage = 0
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					x.RevSharePercentage |= uint64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
 				}
-				v = uint64(binary.LittleEndian.Uint64(dAtA[iNdEx:]))
-				iNdEx += 8
-				x.RevSharePercentage = float64(math.Float64frombits(v))
 			default:
 				iNdEx = preIndex
 				skippy, err := runtime.Skip(dAtA[iNdEx:])
@@ -3598,8 +3603,8 @@ type ServiceRevenueShare struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Address            string  `protobuf:"bytes,1,opt,name=address,proto3" json:"address,omitempty"`                                                     // The Bech32 address of the revenue share recipient
-	RevSharePercentage float64 `protobuf:"fixed64,3,opt,name=rev_share_percentage,json=revSharePercentage,proto3" json:"rev_share_percentage,omitempty"` // The percentage of revenue share the recipient will receive
+	Address            string `protobuf:"bytes,1,opt,name=address,proto3" json:"address,omitempty"`                                                    // The Bech32 address of the revenue share recipient
+	RevSharePercentage uint64 `protobuf:"varint,3,opt,name=rev_share_percentage,json=revSharePercentage,proto3" json:"rev_share_percentage,omitempty"` // The percentage of revenue share the recipient will receive
 }
 
 func (x *ServiceRevenueShare) Reset() {
@@ -3629,7 +3634,7 @@ func (x *ServiceRevenueShare) GetAddress() string {
 	return ""
 }
 
-func (x *ServiceRevenueShare) GetRevSharePercentage() float64 {
+func (x *ServiceRevenueShare) GetRevSharePercentage() uint64 {
 	if x != nil {
 		return x.RevSharePercentage
 	}
@@ -3730,7 +3735,7 @@ var file_poktroll_shared_service_proto_rawDesc = []byte{
 	0xb4, 0x2d, 0x14, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73,
 	0x73, 0x53, 0x74, 0x72, 0x69, 0x6e, 0x67, 0x52, 0x07, 0x61, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73,
 	0x12, 0x30, 0x0a, 0x14, 0x72, 0x65, 0x76, 0x5f, 0x73, 0x68, 0x61, 0x72, 0x65, 0x5f, 0x70, 0x65,
-	0x72, 0x63, 0x65, 0x6e, 0x74, 0x61, 0x67, 0x65, 0x18, 0x03, 0x20, 0x01, 0x28, 0x01, 0x52, 0x12,
+	0x72, 0x63, 0x65, 0x6e, 0x74, 0x61, 0x67, 0x65, 0x18, 0x03, 0x20, 0x01, 0x28, 0x04, 0x52, 0x12,
 	0x72, 0x65, 0x76, 0x53, 0x68, 0x61, 0x72, 0x65, 0x50, 0x65, 0x72, 0x63, 0x65, 0x6e, 0x74, 0x61,
 	0x67, 0x65, 0x4a, 0x04, 0x08, 0x02, 0x10, 0x03, 0x22, 0x56, 0x0a, 0x0c, 0x43, 0x6f, 0x6e, 0x66,
 	0x69, 0x67, 0x4f, 0x70, 0x74, 0x69, 0x6f, 0x6e, 0x12, 0x30, 0x0a, 0x03, 0x6b, 0x65, 0x79, 0x18,

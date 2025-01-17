@@ -45,7 +45,7 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_Valid(t *testing.T) {
 	// Test Parameters
 	appInitialStake := apptypes.DefaultMinStake.Amount.Mul(cosmosmath.NewInt(2))
 	supplierInitialStake := cosmosmath.NewInt(1000000)
-	supplierRevShareRatios := []float64{12.5, 37.5, 50}
+	supplierRevShareRatios := []uint64{12, 38, 50}
 	globalComputeUnitsToTokensMultiplier := uint64(1)
 	serviceComputeUnitsPerRelay := uint64(1)
 	service := prepareTestService(serviceComputeUnitsPerRelay)
@@ -185,7 +185,7 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_Valid_SupplierExceedsMaxClai
 	service := prepareTestService(serviceComputeUnitsPerRelay)
 	numRelays := uint64(1000) // By a single supplier for application in this session
 	supplierInitialStake := cosmosmath.NewInt(1000000)
-	supplierRevShareRatios := []float64{12.5, 37.5, 50}
+	supplierRevShareRatios := []uint64{12, 38, 50}
 
 	// Prepare the keepers
 	keepers, ctx := testkeeper.NewTokenomicsModuleKeepers(t,
@@ -338,7 +338,7 @@ func TestProcessTokenLogicModules_TLMGlobalMint_Valid_MintDistributionCorrect(t 
 	// Test Parameters
 	appInitialStake := apptypes.DefaultMinStake.Amount.Mul(cosmosmath.NewInt(2))
 	supplierInitialStake := cosmosmath.NewInt(1000000)
-	supplierRevShareRatios := []float64{12.5, 37.5, 50}
+	supplierRevShareRatios := []uint64{12, 38, 50}
 	globalComputeUnitsToTokensMultiplier := uint64(1)
 	serviceComputeUnitsPerRelay := uint64(1)
 	service := prepareTestService(serviceComputeUnitsPerRelay)
@@ -458,8 +458,8 @@ func TestProcessTokenLogicModules_TLMGlobalMint_Valid_MintDistributionCorrect(t 
 		addr := revShare.Address
 		balanceBefore := supplierShareholderBalancesBefore[addr]
 		balanceAfter := supplierShareholderBalancesAfter[addr].Amount.Int64()
-		mintShare := int64(supplierMint * revShare.RevSharePercentage / 100)
-		rewardShare := int64(float64(numTokensClaimed) * revShare.RevSharePercentage / 100)
+		mintShare := int64(supplierMint * float64(revShare.RevSharePercentage) / 100.0)
+		rewardShare := int64(float64(numTokensClaimed) * float64(revShare.RevSharePercentage) / 100.0)
 		balanceIncrease := cosmosmath.NewInt(mintShare + rewardShare)
 		expectedBalanceAfter := balanceBefore.Amount.Add(balanceIncrease).Int64()
 		// TODO_MAINNET(@red-0ne): Remove the InDelta check and use the exact amount once the floating point arithmetic is fixed
