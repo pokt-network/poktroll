@@ -62,6 +62,10 @@ func (k Keeper) AllSuppliers(
 				}
 			}
 
+			// TODO_MAINNET(@olshansk, #1033): Newer version of the CosmosSDK doesn't support maps.
+			// Decide on a direction w.r.t maps in protos based on feedback from the CosmoSDK team.
+			supplier.ServicesActivationHeightsMap = nil
+
 			suppliers = append(suppliers, supplier)
 			return nil
 		},

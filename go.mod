@@ -82,6 +82,7 @@ require (
 	cosmossdk.io/x/tx v0.13.4
 	github.com/jhump/protoreflect v1.16.0
 	github.com/mitchellh/mapstructure v1.5.0
+	go.uber.org/mock v0.5.0
 )
 
 require (
