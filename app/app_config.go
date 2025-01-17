@@ -1,7 +1,10 @@
 package app
 
 import (
-	// this line is used by starport scaffolding # stargate/app/moduleImport
+	migrationmodulev1 "github.com/pokt-network/poktroll/api/poktroll/migration/module"
+_ "github.com/pokt-network/poktroll/x/migration/module" // import for side-effects
+migrationmoduletypes "github.com/pokt-network/poktroll/x/migration/types"
+// this line is used by starport scaffolding # stargate/app/moduleImport
 	"time"
 
 	runtimev1alpha1 "cosmossdk.io/api/cosmos/app/runtime/v1alpha1"
@@ -140,7 +143,8 @@ var (
 		proofmoduletypes.ModuleName,
 		tokenomicsmoduletypes.ModuleName,
 		sharedmoduletypes.ModuleName,
-		// this line is used by starport scaffolding # stargate/app/initGenesis
+		migrationmoduletypes.ModuleName,
+// this line is used by starport scaffolding # stargate/app/initGenesis
 	}
 
 	// During begin block slashing happens after distr.BeginBlocker so that
@@ -172,7 +176,8 @@ var (
 		proofmoduletypes.ModuleName,
 		tokenomicsmoduletypes.ModuleName,
 		sharedmoduletypes.ModuleName,
-		// this line is used by starport scaffolding # stargate/app/beginBlockers
+		migrationmoduletypes.ModuleName,
+// this line is used by starport scaffolding # stargate/app/beginBlockers
 	}
 
 	endBlockers = []string{
@@ -203,7 +208,8 @@ var (
 		applicationmoduletypes.ModuleName,
 		suppliermoduletypes.ModuleName,
 		sharedmoduletypes.ModuleName,
-		// this line is used by starport scaffolding # stargate/app/endBlockers
+		migrationmoduletypes.ModuleName,
+// this line is used by starport scaffolding # stargate/app/endBlockers
 	}
 
 	preBlockers = []string{
@@ -391,7 +397,11 @@ var (
 				Name:   sharedmoduletypes.ModuleName,
 				Config: appconfig.WrapAny(&sharedmodulev1.Module{}),
 			},
-			// this line is used by starport scaffolding # stargate/app/moduleConfig
+			{
+				Name:   migrationmoduletypes.ModuleName,
+				Config: appconfig.WrapAny(&migrationmodulev1.Module{}),
+			},
+// this line is used by starport scaffolding # stargate/app/moduleConfig
 		},
 	})
 )
