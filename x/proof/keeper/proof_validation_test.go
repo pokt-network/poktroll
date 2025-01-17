@@ -769,8 +769,19 @@ func TestEnsureValidProof_Error(t *testing.T) {
 
 			// Advance the block height to the earliest proof commit height.
 			ctx = keepertest.SetBlockHeight(ctx, earliestSupplierProofCommitHeight)
-			err := keepers.EnsureValidProof(ctx, proof)
-			require.ErrorContains(t, err, test.expectedErr.Error())
+
+			// An invalid proof is either one that is not well-formed or one that
+			// has invalid signatures or closest path.
+
+			if _, err := keepers.EnsureWellFormedProof(ctx, proof); err != nil {
+				require.ErrorContains(t, err, test.expectedErr.Error())
+				return
+			}
+
+			if err := keepers.EnsureValidProofSignaturesAndClosestPath(ctx, proof); err != nil {
+				require.ErrorContains(t, err, test.expectedErr.Error())
+				return
+			}
 		})
 	}
 }

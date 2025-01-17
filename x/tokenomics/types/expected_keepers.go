@@ -56,10 +56,10 @@ type ProofKeeper interface {
 	RemoveProof(ctx context.Context, sessionId, supplierOperatorAddr string)
 
 	AllClaims(ctx context.Context, req *prooftypes.QueryAllClaimsRequest) (*prooftypes.QueryAllClaimsResponse, error)
-	EnsureValidProof(ctx context.Context, proof *prooftypes.Proof) error
 	ProofRequirementForClaim(ctx context.Context, claim *prooftypes.Claim) (prooftypes.ProofRequirementReason, error)
 
 	// Only used for testing & simulation
+	ValidateSubmittedProofs(ctx cosmostypes.Context)
 	GetAllProofs(ctx context.Context) []prooftypes.Proof
 	UpsertClaim(ctx context.Context, claim prooftypes.Claim)
 	UpsertProof(ctx context.Context, claim prooftypes.Proof)

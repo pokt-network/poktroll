@@ -440,12 +440,15 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimExpired_ProofRequired_InvalidOn
 	s.keepers.UpsertClaim(ctx, s.claim)
 	s.keepers.UpsertProof(ctx, proof)
 
+	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
+	s.keepers.ValidateSubmittedProofs(sdkCtx)
+
 	// Settle pending claims after proof window closes
 	// Expectation: All (1) claims should be expired.
 	// NB: proofs should be rejected when the current height equals the proof window close height.
 	sessionEndHeight := s.claim.SessionHeader.SessionEndBlockHeight
 	blockHeight := sharedtypes.GetProofWindowCloseHeight(&sharedParams, sessionEndHeight)
-	sdkCtx := cosmostypes.UnwrapSDKContext(ctx).WithBlockHeight(blockHeight)
+	sdkCtx = sdkCtx.WithBlockHeight(blockHeight)
 	settledResults, expiredResults, err := s.keepers.SettlePendingClaims(sdkCtx)
 	require.NoError(t, err)
 
@@ -475,7 +478,7 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimExpired_ProofRequired_InvalidOn
 
 	// Validate the event
 	expectedClaimExpiredEvent := expectedClaimExpiredEvents[0]
-	require.Equal(t, tokenomicstypes.ClaimExpirationReason_PROOF_INVALID, expectedClaimExpiredEvent.GetExpirationReason())
+	require.Equal(t, tokenomicstypes.ClaimExpirationReason_PROOF_MISSING, expectedClaimExpiredEvent.GetExpirationReason())
 	require.Equal(t, s.numRelays, expectedClaimExpiredEvent.GetNumRelays())
 	require.Equal(t, s.numClaimedComputeUnits, expectedClaimExpiredEvent.GetNumClaimedComputeUnits())
 	require.Equal(t, s.numEstimatedComputeUnits, expectedClaimExpiredEvent.GetNumEstimatedComputeUnits())

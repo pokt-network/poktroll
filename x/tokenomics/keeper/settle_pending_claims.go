@@ -112,7 +112,7 @@ func (k Keeper) SettlePendingClaims(ctx cosmostypes.Context) (
 			return settledResults, expiredResults, err
 		}
 
-		proof, isProofFound := k.proofKeeper.GetProof(ctx, sessionId, claim.SupplierOperatorAddress)
+		_, isProofFound := k.proofKeeper.GetProof(ctx, sessionId, claim.SupplierOperatorAddress)
 		// Using the probabilistic proofs approach, determine if this expiring
 		// claim required an onchain proof
 		proofRequirement, err = k.proofKeeper.ProofRequirementForClaim(ctx, &claim)
@@ -137,12 +137,7 @@ func (k Keeper) SettlePendingClaims(ctx cosmostypes.Context) (
 		if proofIsRequired {
 			expirationReason := tokenomicstypes.ClaimExpirationReason_EXPIRATION_REASON_UNSPECIFIED // EXPIRATION_REASON_UNSPECIFIED is the default
 
-			if isProofFound {
-				if err = k.proofKeeper.EnsureValidProof(ctx, &proof); err != nil {
-					logger.Warn(fmt.Sprintf("Proof was found but is invalid due to %v", err))
-					expirationReason = tokenomicstypes.ClaimExpirationReason_PROOF_INVALID
-				}
-			} else {
+			if !isProofFound {
 				expirationReason = tokenomicstypes.ClaimExpirationReason_PROOF_MISSING
 			}
 
