@@ -71,7 +71,7 @@ func TestSupplierQuerySingle(t *testing.T) {
 
 func TestSupplierQueryPaginated(t *testing.T) {
 	supplierModuleKeepers, ctx := keepertest.SupplierKeeper(t)
-	msgs := createNSuppliers(*supplierModuleKeepers.Keeper, ctx, 5)
+	suppliers := createNSuppliers(*supplierModuleKeepers.Keeper, ctx, 5)
 
 	request := func(next []byte, offset, limit uint64, total bool) *types.QueryAllSuppliersRequest {
 		return &types.QueryAllSuppliersRequest{
@@ -85,12 +85,12 @@ func TestSupplierQueryPaginated(t *testing.T) {
 	}
 	t.Run("ByOffset", func(t *testing.T) {
 		step := 2
-		for i := 0; i < len(msgs); i += step {
+		for i := 0; i < len(suppliers); i += step {
 			resp, err := supplierModuleKeepers.AllSuppliers(ctx, request(nil, uint64(i), uint64(step), false))
 			require.NoError(t, err)
 			require.LessOrEqual(t, len(resp.Supplier), step)
 			require.Subset(t,
-				nullify.Fill(msgs),
+				nullify.Fill(suppliers),
 				nullify.Fill(resp.Supplier),
 			)
 		}
@@ -98,12 +98,12 @@ func TestSupplierQueryPaginated(t *testing.T) {
 	t.Run("ByKey", func(t *testing.T) {
 		step := 2
 		var next []byte
-		for i := 0; i < len(msgs); i += step {
+		for i := 0; i < len(suppliers); i += step {
 			resp, err := supplierModuleKeepers.AllSuppliers(ctx, request(next, 0, uint64(step), false))
 			require.NoError(t, err)
 			require.LessOrEqual(t, len(resp.Supplier), step)
 			require.Subset(t,
-				nullify.Fill(msgs),
+				nullify.Fill(suppliers),
 				nullify.Fill(resp.Supplier),
 			)
 			next = resp.Pagination.NextKey
@@ -112,9 +112,9 @@ func TestSupplierQueryPaginated(t *testing.T) {
 	t.Run("Total", func(t *testing.T) {
 		resp, err := supplierModuleKeepers.AllSuppliers(ctx, request(nil, 0, 0, true))
 		require.NoError(t, err)
-		require.Equal(t, len(msgs), int(resp.Pagination.Total))
+		require.Equal(t, len(suppliers), int(resp.Pagination.Total))
 		require.ElementsMatch(t,
-			nullify.Fill(msgs),
+			nullify.Fill(suppliers),
 			nullify.Fill(resp.Supplier),
 		)
 	})
@@ -126,17 +126,17 @@ func TestSupplierQueryPaginated(t *testing.T) {
 
 func TestSupplierQueryFilterByServiceId(t *testing.T) {
 	supplierModuleKeepers, ctx := keepertest.SupplierKeeper(t)
-	msgs := createNSuppliers(*supplierModuleKeepers.Keeper, ctx, 5)
+	suppliers := createNSuppliers(*supplierModuleKeepers.Keeper, ctx, 5)
 
 	// Get the first service ID from the first supplier to use as filter
-	firstServiceId := msgs[0].Services[0].ServiceId
+	firstServiceId := suppliers[0].Services[0].ServiceId
 
 	request := &types.QueryAllSuppliersRequest{
 		Filter: &types.QueryAllSuppliersRequest_ServiceId{
 			ServiceId: firstServiceId,
 		},
 		Pagination: &query.PageRequest{
-			Limit: uint64(len(msgs)),
+			Limit: uint64(len(suppliers)),
 		},
 	}
 

@@ -41,7 +41,7 @@ Returns supplier addresses, staked amounts, service details, and current status.
 				{
 					Alias:     []string{"supplier", "s"},
 					RpcMethod: "Supplier",
-					Use:       "show-supplier [address]",
+					Use:       "show-supplier [operator_address]",
 					Short:     "Shows detailed information about a specific supplier",
 					Long: `Retrieves comprehensive information about a supplier identified by their address.
 
