@@ -91,19 +91,18 @@ func NewLocalnetClientCtx(t gocuke.TestingT, flagSet *pflag.FlagSet) *client.Con
 
 // NewLocalnetFlagSet creates a set of predefined flags suitable for a localnet
 // testing environment.
-//
-// Parameters:
-// - t: The testing.T instance used for the current test.
-//
-// Returns:
-// - A flag set populated with flags tailored for localnet environments.
 func NewLocalnetFlagSet(t gocuke.TestingT) *pflag.FlagSet {
 	t.Helper()
 
+	return NewFlagSet(t, CometLocalTCPURL)
+}
+
+// NewFlagSet creates a set of predefined flags suitable for use with the given cometbft endpoint.
+func NewFlagSet(t gocuke.TestingT, cometTCPURL string) *pflag.FlagSet {
+	t.Helper()
+
 	mockFlagSet := pflag.NewFlagSet("test", pflag.ContinueOnError)
-	// TODO_IMPROVE: It would be nice if the value could be set correctly based
-	// on whether the test using it is running in tilt or not.
-	mockFlagSet.String(flags.FlagNode, CometLocalTCPURL, "use localnet poktrolld node")
+	mockFlagSet.String(flags.FlagNode, cometTCPURL, "use localnet poktrolld node")
 	mockFlagSet.String(flags.FlagHome, "", "use localnet poktrolld node")
 	mockFlagSet.String(flags.FlagKeyringBackend, "test", "use test keyring")
 	mockFlagSet.String(flags.FlagChainID, app.Name, "use poktroll chain-id")

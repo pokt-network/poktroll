@@ -103,7 +103,7 @@ type App struct {
 	txCfg             client.TxConfig
 	authority         sdk.AccAddress
 	moduleManager     module.Manager
-	queryHelper       *baseapp.QueryServiceTestHelper
+	queryHelper       *baseapp.GRPCQueryRouter
 	keyRing           keyring.Keyring
 	ringClient        crypto.RingClient
 	preGeneratedAccts *testkeyring.PreGeneratedAccountIterator
@@ -139,7 +139,7 @@ func NewIntegrationApp(
 	modules map[string]appmodule.AppModule,
 	keys map[string]*storetypes.KVStoreKey,
 	msgRouter *baseapp.MsgServiceRouter,
-	queryHelper *baseapp.QueryServiceTestHelper,
+	queryHelper *baseapp.GRPCQueryRouter,
 	opts ...IntegrationAppOptionFn,
 ) *App {
 	t.Helper()
@@ -520,8 +520,8 @@ func NewCompleteIntegrationApp(t *testing.T, opts ...IntegrationAppOptionFn) *Ap
 	)
 
 	// Prepare the message & query routers
-	msgRouter := baseapp.NewMsgServiceRouter()
-	queryHelper := baseapp.NewQueryServerTestHelper(sdkCtx, registry)
+	msgRouter := bApp.MsgServiceRouter()
+	queryHelper := bApp.GRPCQueryRouter()
 
 	// Prepare the authz keeper and module
 	authzKeeper := authzkeeper.NewKeeper(
@@ -570,32 +570,10 @@ func NewCompleteIntegrationApp(t *testing.T, opts ...IntegrationAppOptionFn) *Ap
 		opts...,
 	)
 
-	// Register the message servers
-	banktypes.RegisterMsgServer(msgRouter, bankkeeper.NewMsgServerImpl(bankKeeper))
-	tokenomicstypes.RegisterMsgServer(msgRouter, tokenomicskeeper.NewMsgServerImpl(tokenomicsKeeper))
-	servicetypes.RegisterMsgServer(msgRouter, servicekeeper.NewMsgServerImpl(serviceKeeper))
-	sharedtypes.RegisterMsgServer(msgRouter, sharedkeeper.NewMsgServerImpl(sharedKeeper))
-	gatewaytypes.RegisterMsgServer(msgRouter, gatewaykeeper.NewMsgServerImpl(gatewayKeeper))
-	apptypes.RegisterMsgServer(msgRouter, appkeeper.NewMsgServerImpl(applicationKeeper))
-	suppliertypes.RegisterMsgServer(msgRouter, supplierkeeper.NewMsgServerImpl(supplierKeeper))
-	prooftypes.RegisterMsgServer(msgRouter, proofkeeper.NewMsgServerImpl(proofKeeper))
-	authtypes.RegisterMsgServer(msgRouter, authkeeper.NewMsgServerImpl(accountKeeper))
-	sessiontypes.RegisterMsgServer(msgRouter, sessionkeeper.NewMsgServerImpl(sessionKeeper))
-	authz.RegisterMsgServer(msgRouter, authzKeeper)
-
-	// Register query servers
-	banktypes.RegisterQueryServer(queryHelper, bankKeeper)
-	authz.RegisterQueryServer(queryHelper, authzKeeper)
-	tokenomicstypes.RegisterQueryServer(queryHelper, tokenomicsKeeper)
-	servicetypes.RegisterQueryServer(queryHelper, serviceKeeper)
-	sharedtypes.RegisterQueryServer(queryHelper, sharedKeeper)
-	gatewaytypes.RegisterQueryServer(queryHelper, gatewayKeeper)
-	apptypes.RegisterQueryServer(queryHelper, applicationKeeper)
-	suppliertypes.RegisterQueryServer(queryHelper, supplierKeeper)
-	prooftypes.RegisterQueryServer(queryHelper, proofKeeper)
-	// TODO_TECHDEBT: What is the query server for authtypes?
-	// authtypes.RegisterQueryServer(queryHelper, accountKeeper)
-	sessiontypes.RegisterQueryServer(queryHelper, sessionKeeper)
+	configurator := module.NewConfigurator(cdc, msgRouter, queryHelper)
+	for _, mod := range integrationApp.GetModuleManager().Modules {
+		mod.(module.HasServices).RegisterServices(configurator)
+	}
 
 	// Need to go to the next block to finalize the genesis and setup.
 	// This has to be after the params are set, as the params are stored in the
@@ -668,8 +646,7 @@ func (app *App) GetPreGeneratedAccounts() *testkeyring.PreGeneratedAccountIterat
 
 // QueryHelper returns the query helper used by the application that can be
 // used to submit queries to the application.
-func (app *App) QueryHelper() *baseapp.QueryServiceTestHelper {
-	app.queryHelper.Ctx = *app.sdkCtx
+func (app *App) QueryHelper() *baseapp.GRPCQueryRouter {
 	return app.queryHelper
 }
 
@@ -702,23 +679,9 @@ func (app *App) GetFaucetBech32() string {
 // returned. In order to run a message, the application must have a handler for it.
 // These handlers are registered on the application message service router.
 func (app *App) RunMsgs(t *testing.T, msgs ...sdk.Msg) (txMsgResps []tx.MsgResponse, err error) {
-	t.Helper()
-
-	// Commit the updated state after the message has been handled.
-	var finalizeBlockRes *abci.ResponseFinalizeBlock
-	defer func() {
-		if _, commitErr := app.Commit(); commitErr != nil {
-			err = fmt.Errorf("committing state: %w", commitErr)
-			return
-		}
-
-		app.nextBlockUpdateCtx()
-
-		// Emit events MUST happen AFTER the context has been updated so that
-		// events are available on the context for the block after their actions
-		// were committed (e.g. msgs, begin/end block trigger).
-		app.emitEvents(t, finalizeBlockRes)
-	}()
+	if t != nil {
+		t.Helper()
+	}
 
 	// Package the message into a transaction.
 	txBuilder := app.txCfg.NewTxBuilder()
@@ -735,6 +698,40 @@ func (app *App) RunMsgs(t *testing.T, msgs ...sdk.Msg) (txMsgResps []tx.MsgRespo
 		app.logger.Info("Running msg", "msg", msg.String())
 	}
 
+	txMsgResps, _, err = app.RunTx(t, txBz)
+	if err != nil {
+		// DEV_NOTE: Intentionally returning and not asserting nil error to improve reusability.
+		return nil, err
+	}
+
+	return txMsgResps, nil
+}
+
+// TODO_IN_THIS_COMMIT: godoc...
+func (app *App) RunTx(t *testing.T, txBz []byte) (
+	txMsgResps []tx.MsgResponse,
+	finalizeBlockRes *abci.ResponseFinalizeBlock,
+	err error,
+) {
+	if t != nil {
+		t.Helper()
+	}
+
+	// Commit the updated state after the message has been handled.
+	defer func() {
+		if _, commitErr := app.Commit(); commitErr != nil {
+			err = fmt.Errorf("committing state: %w", commitErr)
+			return
+		}
+
+		app.nextBlockUpdateCtx()
+
+		// Emit events MUST happen AFTER the context has been updated so that
+		// events are available on the context for the block after their actions
+		// were committed (e.g. msgs, begin/end block trigger).
+		app.emitEvents(t, finalizeBlockRes)
+	}()
+
 	// Finalize the block with the transaction.
 	finalizeBlockReq := &cmtabcitypes.RequestFinalizeBlock{
 		Height: app.LastBlockHeight() + 1,
@@ -748,12 +745,14 @@ func (app *App) RunMsgs(t *testing.T, msgs ...sdk.Msg) (txMsgResps []tx.MsgRespo
 
 	finalizeBlockRes, err = app.FinalizeBlock(finalizeBlockReq)
 	if err != nil {
-		return nil, fmt.Errorf("finalizing block: %w", err)
+		return nil, nil, fmt.Errorf("finalizing block: %w", err)
 	}
 
-	// NB: We're batching the messages in a single transaction, so we expect
-	// a single transaction result.
-	require.Equal(t, 1, len(finalizeBlockRes.TxResults))
+	if t != nil {
+		// NB: We're batching the messages in a single transaction, so we expect
+		// a single transaction result.
+		require.Equal(t, 1, len(finalizeBlockRes.TxResults))
+	}
 
 	// Collect the message responses. Accumulate errors related to message handling
 	// failure. If any message fails, an error will be returned.
@@ -766,24 +765,29 @@ func (app *App) RunMsgs(t *testing.T, msgs ...sdk.Msg) (txMsgResps []tx.MsgRespo
 		}
 
 		txMsgDataBz := txResult.GetData()
-		require.NotNil(t, txMsgDataBz)
+		if t != nil {
+			require.NotNil(t, txMsgDataBz)
+		}
 
 		txMsgData := new(cosmostypes.TxMsgData)
 		err = app.GetCodec().Unmarshal(txMsgDataBz, txMsgData)
-		require.NoError(t, err)
+		if t != nil {
+			require.NoError(t, err)
+		}
 
 		var txMsgRes tx.MsgResponse
 		err = app.GetCodec().UnpackAny(txMsgData.MsgResponses[0], &txMsgRes)
-		require.NoError(t, err)
-		require.NotNil(t, txMsgRes)
+		if t != nil {
+			require.NoError(t, err)
+			require.NotNil(t, txMsgRes)
+		} else {
+			return nil, finalizeBlockRes, err
+		}
 
 		txMsgResps = append(txMsgResps, txMsgRes)
 	}
-	if txResultErrs != nil {
-		return nil, err
-	}
 
-	return txMsgResps, nil
+	return txMsgResps, finalizeBlockRes, nil
 }
 
 // NextBlocks calls NextBlock numBlocks times
@@ -798,13 +802,17 @@ func (app *App) NextBlocks(t *testing.T, numBlocks int) {
 // emitEvents emits the events from the finalized block such that they are available
 // via the current context's event manager (i.e. app.GetSdkCtx().EventManager.Events()).
 func (app *App) emitEvents(t *testing.T, res *abci.ResponseFinalizeBlock) {
-	t.Helper()
+	if t != nil {
+		t.Helper()
+	}
 
 	// Emit begin/end blocker events.
-	for _, event := range res.Events {
-		testutilevents.QuoteEventMode(&event)
-		abciEvent := cosmostypes.Event(event)
-		app.sdkCtx.EventManager().EmitEvent(abciEvent)
+	if res.Events != nil {
+		for _, event := range res.Events {
+			testutilevents.QuoteEventMode(&event)
+			abciEvent := cosmostypes.Event(event)
+			app.sdkCtx.EventManager().EmitEvent(abciEvent)
+		}
 	}
 
 	// Emit txResult events.
@@ -826,6 +834,9 @@ func (app *App) NextBlock(t *testing.T) {
 		Time:   app.sdkCtx.BlockTime(),
 		// Randomize the proposer address for each block.
 		ProposerAddress: sample.ConsAddress().Bytes(),
+		DecidedLastCommit: cmtabcitypes.CommitInfo{
+			Votes: []cmtabcitypes.VoteInfo{{}},
+		},
 	})
 	require.NoError(t, err)
 
@@ -968,6 +979,11 @@ func (app *App) setupDefaultActorsState(
 	// Commit all the changes above by finalizing, committing, and moving
 	// to the next block.
 	app.NextBlock(t)
+}
+
+// TODO_IN_THIS_COMMIT: godoc...
+func (app *App) GetModuleManager() module.Manager {
+	return app.moduleManager
 }
 
 // fundAccount mints and sends amountUpokt tokens to the given recipientAddr.
