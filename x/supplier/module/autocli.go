@@ -21,22 +21,20 @@ func (am AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 				{
 					Alias:     []string{"suppliers", "ls"},
 					RpcMethod: "AllSuppliers",
-					Use:       "list-suppliers [service-id]",
+					Use:       "list-suppliers",
 					Short:     "List all suppliers on Pocket Network",
 					Long: `Retrieves a paginated list of all suppliers currently registered on Pocket Network, including all their details.
 
 The command supports optional filtering by service ID and pagination parameters.
 Returns supplier addresses, staked amounts, service details, and current status.`,
 
-					Example: `
-	poktrolld query supplier list-suppliers
+					Example: `	poktrolld query supplier list-suppliers
 	poktrolld query supplier list-suppliers --service-id anvil
 	poktrolld query supplier list-suppliers --page 2 --limit 50
 	poktrolld query supplier list-suppliers --service-id anvil --page 1 --limit 100`,
 					FlagOptions: map[string]*autocliv1.FlagOptions{
 						"service_id": {Name: "service-id", Shorthand: "s", Usage: "service id to filter by", Hidden: false},
 					},
-					// PositionalArgs: []*autocliv1.PositionalArgDescriptor{{ProtoField: "service_id"}},
 				},
 				{
 					Alias:     []string{"supplier", "s"},
@@ -49,9 +47,7 @@ Returns details include things like:
 - Supplier's staked amount and status
 - List of services they provide`,
 
-					Example: `
-
-	poktrolld query supplier show-supplier pokt1abc...xyz
+					Example: `	poktrolld query supplier show-supplier pokt1abc...xyz
 	poktrolld query supplier show-supplier pokt1abc...xyz --output json
 	poktrolld query supplier show-supplier pokt1abc...xyz --height 100`,
 					PositionalArgs: []*autocliv1.PositionalArgDescriptor{
