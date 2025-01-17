@@ -569,11 +569,19 @@ func (s *suite) TheUserWaitsForTheApplicationForAccountPeriodToFinish(accName, p
 
 func (s *suite) getStakedAmount(actorType, accName string) (int, bool) {
 	s.Helper()
+
+	listCommand := fmt.Sprintf("list-%s", actorType)
+	// TODO_TECHDEBT(@olshansky): As of #1028, we started migrating some parts
+	// of the CLI to use AutoCLI.
+	if actorType == suppliertypes.ModuleName {
+		listCommand = fmt.Sprintf("%ss", listCommand)
+	}
 	args := []string{
 		"query",
 		actorType,
-		fmt.Sprintf("list-%s", actorType),
+		listCommand,
 	}
+
 	res, err := s.pocketd.RunCommandOnHostWithRetry("", numQueryRetries, args...)
 	require.NoError(s, err, "error getting %s", actorType)
 	s.pocketd.result = res
