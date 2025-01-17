@@ -185,7 +185,7 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_Valid_SupplierExceedsMaxClai
 	service := prepareTestService(serviceComputeUnitsPerRelay)
 	numRelays := uint64(1000) // By a single supplier for application in this session
 	supplierInitialStake := cosmosmath.NewInt(1000000)
-	supplierRevShareRatios := []float32{12.5, 37.5, 50}
+	supplierRevShareRatios := []float64{12.5, 37.5, 50}
 
 	// Prepare the keepers
 	keepers, ctx := testkeeper.NewTokenomicsModuleKeepers(t,
@@ -338,7 +338,7 @@ func TestProcessTokenLogicModules_TLMGlobalMint_Valid_MintDistributionCorrect(t 
 	// Test Parameters
 	appInitialStake := apptypes.DefaultMinStake.Amount.Mul(cosmosmath.NewInt(2))
 	supplierInitialStake := cosmosmath.NewInt(1000000)
-	supplierRevShareRatios := []float32{12.5, 37.5, 50}
+	supplierRevShareRatios := []float64{12.5, 37.5, 50}
 	globalComputeUnitsToTokensMultiplier := uint64(1)
 	serviceComputeUnitsPerRelay := uint64(1)
 	service := prepareTestService(serviceComputeUnitsPerRelay)
