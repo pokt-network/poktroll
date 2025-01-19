@@ -191,8 +191,8 @@ func (rp *relayerProxy) PingAll(ctx context.Context) error {
 	var err error
 
 	for _, srv := range rp.servers {
-		if err := srv.Ping(ctx); err != nil {
-			err = errors.Join(err, err)
+		if e := srv.Ping(ctx); e != nil {
+			err = errors.Join(err, e)
 		}
 	}
 

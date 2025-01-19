@@ -12,6 +12,7 @@ import (
 	"net/url"
 	"os"
 	"testing"
+	"time"
 
 	"cosmossdk.io/depinject"
 	ring_secp256k1 "github.com/athanorlabs/go-dleq/secp256k1"
@@ -20,15 +21,18 @@ import (
 	"github.com/cosmos/cosmos-sdk/crypto/keys/secp256k1"
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	"github.com/cosmos/cosmos-sdk/types/bech32"
+	"github.com/golang/mock/gomock"
 	"github.com/pokt-network/ring-go"
 	sdktypes "github.com/pokt-network/shannon-sdk/types"
 	"github.com/stretchr/testify/require"
 
 	"github.com/pokt-network/poktroll/pkg/observable/channel"
 	"github.com/pokt-network/poktroll/pkg/polylog"
+	"github.com/pokt-network/poktroll/pkg/relayer"
 	"github.com/pokt-network/poktroll/pkg/relayer/config"
 	"github.com/pokt-network/poktroll/pkg/relayer/relay_authenticator"
 	"github.com/pokt-network/poktroll/pkg/signer"
+	"github.com/pokt-network/poktroll/testutil/mockrelayer"
 	testsession "github.com/pokt-network/poktroll/testutil/session"
 	"github.com/pokt-network/poktroll/testutil/testclient/testblock"
 	"github.com/pokt-network/poktroll/testutil/testclient/testdelegation"
@@ -103,6 +107,19 @@ func NewRelayerProxyTestBehavior(
 	return test
 }
 
+// ShutdownServiceID gracefully shuts down the http server for a given service id.
+func (t *TestBehavior) ShutdownServiceID(serviceID string) error {
+	srv, ok := t.proxyServersMap[serviceID]
+	if !ok {
+		return fmt.Errorf("shutdown service id: not found")
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+
+	return srv.Shutdown(ctx)
+}
+
 // WithRelayerProxyDependenciesForBlockHeight creates the dependencies for the relayer proxy
 // from the TestBehavior.mocks so they have the right interface and can be
 // used by the dependency injection framework.
@@ -156,6 +173,14 @@ func WithRelayerProxyDependenciesForBlockHeight(
 		)
 
 		test.Deps = testDeps
+	}
+}
+
+// WithRelayMeter creates the dependencies mocks for the relayproxy to use a relay meter.
+func WithRelayMeter() func(*TestBehavior) {
+	return func(test *TestBehavior) {
+		relayMeter := newMockRelayMeter(test.t)
+		test.Deps = depinject.Configs(test.Deps, depinject.Supply(relayMeter))
 	}
 }
 
@@ -295,6 +320,15 @@ func WithSuccessiveSessions(
 			)
 		}
 	}
+}
+
+func newMockRelayMeter(t *testing.T) relayer.RelayMeter {
+	ctrl := gomock.NewController(t)
+
+	relayMeter := mockrelayer.NewMockRelayMeter(ctrl)
+	relayMeter.EXPECT().Start(gomock.Any()).Return(nil).AnyTimes()
+
+	return relayMeter
 }
 
 // MarshalAndSend marshals the request and sends it to the provided service.
