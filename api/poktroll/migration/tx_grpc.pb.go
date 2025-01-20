@@ -19,8 +19,9 @@ import (
 const _ = grpc.SupportPackageIsVersion8
 
 const (
-	Msg_UpdateParams_FullMethodName            = "/poktroll.migration.Msg/UpdateParams"
-	Msg_CreateMorseAccountState_FullMethodName = "/poktroll.migration.Msg/CreateMorseAccountState"
+	Msg_UpdateParams_FullMethodName     = "/poktroll.migration.Msg/UpdateParams"
+	Msg_UploadMorseState_FullMethodName = "/poktroll.migration.Msg/UploadMorseState"
+	Msg_ClaimMorsePokt_FullMethodName   = "/poktroll.migration.Msg/ClaimMorsePokt"
 )
 
 // MsgClient is the client API for Msg service.
@@ -32,7 +33,8 @@ type MsgClient interface {
 	// UpdateParams defines a (governance) operation for updating the module
 	// parameters. The authority defaults to the x/gov module account.
 	UpdateParams(ctx context.Context, in *MsgUpdateParams, opts ...grpc.CallOption) (*MsgUpdateParamsResponse, error)
-	CreateMorseAccountState(ctx context.Context, in *MsgCreateMorseAccountState, opts ...grpc.CallOption) (*MsgCreateMorseAccountStateResponse, error)
+	UploadMorseState(ctx context.Context, in *MsgUploadMorseState, opts ...grpc.CallOption) (*MsgUploadMorseStateResponse, error)
+	ClaimMorsePokt(ctx context.Context, in *MsgClaimMorsePokt, opts ...grpc.CallOption) (*MsgClaimMorsePoktResponse, error)
 }
 
 type msgClient struct {
@@ -53,10 +55,20 @@ func (c *msgClient) UpdateParams(ctx context.Context, in *MsgUpdateParams, opts 
 	return out, nil
 }
 
-func (c *msgClient) CreateMorseAccountState(ctx context.Context, in *MsgCreateMorseAccountState, opts ...grpc.CallOption) (*MsgCreateMorseAccountStateResponse, error) {
+func (c *msgClient) UploadMorseState(ctx context.Context, in *MsgUploadMorseState, opts ...grpc.CallOption) (*MsgUploadMorseStateResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(MsgCreateMorseAccountStateResponse)
-	err := c.cc.Invoke(ctx, Msg_CreateMorseAccountState_FullMethodName, in, out, cOpts...)
+	out := new(MsgUploadMorseStateResponse)
+	err := c.cc.Invoke(ctx, Msg_UploadMorseState_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *msgClient) ClaimMorsePokt(ctx context.Context, in *MsgClaimMorsePokt, opts ...grpc.CallOption) (*MsgClaimMorsePoktResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(MsgClaimMorsePoktResponse)
+	err := c.cc.Invoke(ctx, Msg_ClaimMorsePokt_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -72,7 +84,8 @@ type MsgServer interface {
 	// UpdateParams defines a (governance) operation for updating the module
 	// parameters. The authority defaults to the x/gov module account.
 	UpdateParams(context.Context, *MsgUpdateParams) (*MsgUpdateParamsResponse, error)
-	CreateMorseAccountState(context.Context, *MsgCreateMorseAccountState) (*MsgCreateMorseAccountStateResponse, error)
+	UploadMorseState(context.Context, *MsgUploadMorseState) (*MsgUploadMorseStateResponse, error)
+	ClaimMorsePokt(context.Context, *MsgClaimMorsePokt) (*MsgClaimMorsePoktResponse, error)
 	mustEmbedUnimplementedMsgServer()
 }
 
@@ -83,8 +96,11 @@ type UnimplementedMsgServer struct {
 func (UnimplementedMsgServer) UpdateParams(context.Context, *MsgUpdateParams) (*MsgUpdateParamsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpdateParams not implemented")
 }
-func (UnimplementedMsgServer) CreateMorseAccountState(context.Context, *MsgCreateMorseAccountState) (*MsgCreateMorseAccountStateResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method CreateMorseAccountState not implemented")
+func (UnimplementedMsgServer) UploadMorseState(context.Context, *MsgUploadMorseState) (*MsgUploadMorseStateResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UploadMorseState not implemented")
+}
+func (UnimplementedMsgServer) ClaimMorsePokt(context.Context, *MsgClaimMorsePokt) (*MsgClaimMorsePoktResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ClaimMorsePokt not implemented")
 }
 func (UnimplementedMsgServer) mustEmbedUnimplementedMsgServer() {}
 
@@ -117,20 +133,38 @@ func _Msg_UpdateParams_Handler(srv interface{}, ctx context.Context, dec func(in
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Msg_CreateMorseAccountState_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(MsgCreateMorseAccountState)
+func _Msg_UploadMorseState_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(MsgUploadMorseState)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(MsgServer).CreateMorseAccountState(ctx, in)
+		return srv.(MsgServer).UploadMorseState(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: Msg_CreateMorseAccountState_FullMethodName,
+		FullMethod: Msg_UploadMorseState_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(MsgServer).CreateMorseAccountState(ctx, req.(*MsgCreateMorseAccountState))
+		return srv.(MsgServer).UploadMorseState(ctx, req.(*MsgUploadMorseState))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Msg_ClaimMorsePokt_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(MsgClaimMorsePokt)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MsgServer).ClaimMorsePokt(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Msg_ClaimMorsePokt_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MsgServer).ClaimMorsePokt(ctx, req.(*MsgClaimMorsePokt))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -147,8 +181,12 @@ var Msg_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _Msg_UpdateParams_Handler,
 		},
 		{
-			MethodName: "CreateMorseAccountState",
-			Handler:    _Msg_CreateMorseAccountState_Handler,
+			MethodName: "UploadMorseState",
+			Handler:    _Msg_UploadMorseState_Handler,
+		},
+		{
+			MethodName: "ClaimMorsePokt",
+			Handler:    _Msg_ClaimMorsePokt_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

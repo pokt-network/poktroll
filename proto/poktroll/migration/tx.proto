@@ -20,6 +20,7 @@ service Msg {
   // parameters. The authority defaults to the x/gov module account.
   rpc UpdateParams            (MsgUpdateParams           ) returns (MsgUpdateParamsResponse           );
   rpc CreateMorseAccountState (MsgCreateMorseAccountState) returns (MsgCreateMorseAccountStateResponse);
+  rpc ClaimMorsePokt   (MsgClaimMorsePokt  ) returns (MsgClaimMorsePoktResponse  );
 }
 // MsgUpdateParams is the Msg/UpdateParams request type.
 message MsgUpdateParams {
@@ -28,7 +29,7 @@ message MsgUpdateParams {
   
   // authority is the address that controls the module (defaults to x/gov unless overwritten).
   string authority = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
-  
+
   // params defines the module parameters to update.
   
   // NOTE: All parameters must be supplied.
@@ -50,4 +51,15 @@ message MsgCreateMorseAccountState {
 message MsgCreateMorseAccountStateResponse {
   bytes state_hash = 1 [(gogoproto.jsontag) = "state_hash"];
   uint64 num_accounts = 2 [(gogoproto.jsontag) = "num_accounts"];
+}
+
+message MsgClaimMorsePokt {
+  option (cosmos.msg.v1.signer) = "shannonDestAddress";
+  string shannonDestAddress = 1;
+  string morseSrcAddress    = 2;
+  string morseSignature     = 3;
+}
+
+message MsgClaimMorsePoktResponse {
+  string balance = 1;
 }
