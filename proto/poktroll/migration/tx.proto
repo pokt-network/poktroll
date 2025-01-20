@@ -20,6 +20,7 @@ service Msg {
   // parameters. The authority defaults to the x/gov module account.
   rpc UpdateParams     (MsgUpdateParams    ) returns (MsgUpdateParamsResponse    );
   rpc UploadMorseState (MsgUploadMorseState) returns (MsgUploadMorseStateResponse);
+  rpc ClaimMorsePokt   (MsgClaimMorsePokt  ) returns (MsgClaimMorsePoktResponse  );
 }
 // MsgUpdateParams is the Msg/UpdateParams request type.
 message MsgUpdateParams {
@@ -50,5 +51,16 @@ message MsgUploadMorseState {
 message MsgUploadMorseStateResponse {
   string state_hash = 1 [(gogoproto.jsontag) = "state_hash"];
   uint64 num_accounts = 2 [(gogoproto.jsontag) = "num_accounts"];
+}
+
+message MsgClaimMorsePokt {
+  option (cosmos.msg.v1.signer) = "shannonDestAddress";
+  string shannonDestAddress = 1;
+  string morseSrcAddress    = 2;
+  string morseSignature     = 3;
+}
+
+message MsgClaimMorsePoktResponse {
+  string balance = 1;
 }
 
