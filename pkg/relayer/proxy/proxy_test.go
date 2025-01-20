@@ -548,7 +548,6 @@ func (t *RelayProxyPingAllSuite) SetupSuite() {
 	appPrivateKey := secp256k1.GenPrivKey()
 	t.defaultRelayMinerServerAddress = "127.0.0.1:8245"
 	t.defaultServiceName = "defaultService"
-
 	t.supplierEndpoints = map[string][]*sharedtypes.SupplierEndpoint{
 		t.defaultServiceName: {
 			{
@@ -612,7 +611,9 @@ func (t *RelayProxyPingAllSuite) TestOKPingAllWithSingleRelayServer() {
 
 	}()
 
-	time.Sleep(time.Millisecond)
+	// waiting for relayer proxy to start
+	// and perform ping request.
+	time.Sleep(100 * time.Millisecond)
 
 	err = rp.PingAll(ctx)
 	require.NoError(t.T(), err)
@@ -687,7 +688,9 @@ func (t *RelayProxyPingAllSuite) TestOKPingAllWithMultipleRelayServers() {
 		}
 	}()
 
-	time.Sleep(time.Millisecond)
+	// waiting for relayer proxy to start
+	// and perform ping request.
+	time.Sleep(100 * time.Millisecond)
 
 	err = rp.PingAll(ctx)
 	require.NoError(t.T(), err)
@@ -775,7 +778,7 @@ func (t *RelayProxyPingAllSuite) TestNOKPingAllWithPartialFailureAfterStartup() 
 	supplierEndpoints := map[string][]*sharedtypes.SupplierEndpoint{
 		failingServiceName: {
 			{
-				Url:     "http://failingservice:8647",
+				Url:     "http://failingservice:8648",
 				RpcType: sharedtypes.RPCType_JSON_RPC,
 			},
 		},
@@ -792,7 +795,7 @@ func (t *RelayProxyPingAllSuite) TestNOKPingAllWithPartialFailureAfterStartup() 
 					ServiceConfig: &config.RelayMinerSupplierServiceConfig{
 						BackendUrl: &url.URL{
 							Scheme: "http",
-							Host:   "127.0.0.1:8647",
+							Host:   "127.0.0.1:8648",
 							Path:   "/",
 						},
 					},
@@ -830,7 +833,9 @@ func (t *RelayProxyPingAllSuite) TestNOKPingAllWithPartialFailureAfterStartup() 
 		}
 	}()
 
-	time.Sleep(time.Millisecond)
+	// waiting for relayer proxy to start
+	// and perform ping request.
+	time.Sleep(100 * time.Millisecond)
 
 	err = test.ShutdownServiceID(failingServiceName)
 	require.NoError(t.T(), err)
@@ -867,13 +872,13 @@ func (t *RelayProxyPingAllSuite) TestOKPingAllDifferentEndpoint() {
 	supplierEndpoints := map[string][]*sharedtypes.SupplierEndpoint{
 		relayminerZoneServiceName: {
 			{
-				Url:     "http://exampleservice.org:8648",
+				Url:     "http://exampleservice.org:8649",
 				RpcType: sharedtypes.RPCType_JSON_RPC,
 			},
 		},
 		relayminerIPV6ServiceName: {
 			{
-				Url:     "http://ipv6service:8649",
+				Url:     "http://ipv6service:8650",
 				RpcType: sharedtypes.RPCType_JSON_RPC,
 			},
 		},
@@ -890,7 +895,7 @@ func (t *RelayProxyPingAllSuite) TestOKPingAllDifferentEndpoint() {
 					ServiceConfig: &config.RelayMinerSupplierServiceConfig{
 						BackendUrl: &url.URL{
 							Scheme: "http",
-							Host:   "exampleservice.org:8648",
+							Host:   "exampleservice.org:8649",
 							Path:   "/",
 						},
 					},
@@ -910,7 +915,7 @@ func (t *RelayProxyPingAllSuite) TestOKPingAllDifferentEndpoint() {
 					ServiceConfig: &config.RelayMinerSupplierServiceConfig{
 						BackendUrl: &url.URL{
 							Scheme: "http",
-							Host:   "[::1]:8649",
+							Host:   "[::1]:8650",
 							Path:   "/",
 						},
 					},
@@ -948,7 +953,9 @@ func (t *RelayProxyPingAllSuite) TestOKPingAllDifferentEndpoint() {
 		}
 	}()
 
-	time.Sleep(time.Millisecond)
+	// waiting for relayer proxy to start
+	// and perform ping request.
+	time.Sleep(100 * time.Millisecond)
 
 	err = rp.PingAll(ctx)
 	require.NoError(t.T(), err)

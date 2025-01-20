@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"net/url"
 	"os"
@@ -203,13 +204,17 @@ $ go test -v -count=1 -run TestRelayerProxy ./pkg/relayer/...`)
 		}
 		for _, serviceConfig := range servicesConfigMap {
 			for serviceId, supplierConfig := range serviceConfig.SupplierConfigsMap {
-				server := &http.Server{Addr: supplierConfig.ServiceConfig.BackendUrl.Host}
-				server.Handler = http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-					sendJSONRPCResponse(test.t, w)
-				})
+				listener, err := net.Listen("tcp", supplierConfig.ServiceConfig.BackendUrl.Host)
+				require.NoError(test.t, err)
+
+				server := &http.Server{
+					Handler: http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+						sendJSONRPCResponse(test.t, w)
+					}),
+				}
 
 				go func() {
-					err := server.ListenAndServe()
+					err := server.Serve(listener)
 					if err != nil && !errors.Is(err, http.ErrServerClosed) {
 						require.NoError(test.t, err)
 					}
