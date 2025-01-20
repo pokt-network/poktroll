@@ -2848,7 +2848,7 @@ type QueryGetSupplierRequest struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	OperatorAddress string `protobuf:"bytes,1,opt,name=operator_address,json=operatorAddress,proto3" json:"operator_address,omitempty"`
+	OperatorAddress string `protobuf:"bytes,1,opt,name=operator_address,json=operatorAddress,proto3" json:"operator_address,omitempty"` // TODO_TECHDEBT: Add the ability to query for a supplier by owner_id
 }
 
 func (x *QueryGetSupplierRequest) Reset() {

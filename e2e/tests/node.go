@@ -93,7 +93,18 @@ func (p *pocketdBin) RunCommandOnHostWithRetry(rpcUrl string, numRetries uint8, 
 	if err == nil {
 		return res, nil
 	}
-	// TODO_HACK: Figure out a better solution for retries. A parameter? Exponential backoff? What else?
+	// DEV_NOTE: Intentionally keeping a print statement here so errors are
+	// very visible even though the output may be noisy.
+	fmt.Printf(`
+----------------------------------------
+Retrying command due to error:
+	- RPC URL:      %s
+	- Arguments:    %v
+	- Response:     %v
+	- Error:        %v
+----------------------------------------
+`, rpcUrl, args, res, err)
+	// TODO_TECHDEBT(@bryanchriswhite): Figure out a better solution for retries. A parameter? Exponential backoff? What else?
 	time.Sleep(5 * time.Second)
 	return p.RunCommandOnHostWithRetry(rpcUrl, numRetries-1, args...)
 }
