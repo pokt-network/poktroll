@@ -17,7 +17,7 @@ Pocket Network using the `poktrolld` command-line interface (CLI).
 
 ## Pre-requisites
 
-1. `poktrolld` is installed on your system; see the [installation guide](./install) for more details
+1. `poktrolld` is installed on your system; see the [installation guide](./poktrolld_cli.md) for more details
 2. You have access to your wallet with sufficient tokens for the transaction and fees
 3. You have the recipient's address
 

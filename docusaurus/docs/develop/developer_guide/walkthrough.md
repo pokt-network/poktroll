@@ -1,11 +1,11 @@
 ---
 sidebar_position: 1
-title: Quickstart
+title: Walkthrough
 ---
 
 import ReactPlayer from "react-player";
 
-# Quickstart <!-- omit in toc -->
+## Walkthrough <!-- omit in toc -->
 
 :::info
 The goal of this document is to get you up and running with a LocalNet, some
