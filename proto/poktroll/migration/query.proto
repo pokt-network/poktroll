@@ -8,6 +8,7 @@ import "cosmos/base/query/v1beta1/pagination.proto";
 import "poktroll/migration/params.proto";
 
 option go_package = "github.com/pokt-network/poktroll/x/migration/types";
+option (gogoproto.stable_marshaler_all) = true;
 
 // Query defines the gRPC querier service.
 service Query {
