@@ -92,5 +92,9 @@ func (k Keeper) Supplier(
 		return nil, status.Error(codes.NotFound, msg)
 	}
 
+	// TODO_MAINNET(@olshansk, #1033): Newer version of the CosmosSDK doesn't support maps.
+	// Decide on a direction w.r.t maps in protos based on feedback from the CosmoSDK team.
+	supplier.ServicesActivationHeightsMap = nil
+
 	return &types.QueryGetSupplierResponse{Supplier: supplier}, nil
 }
