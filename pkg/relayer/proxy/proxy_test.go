@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"net/url"
 	"strings"
@@ -12,6 +13,7 @@ import (
 	"time"
 
 	"github.com/cosmos/cosmos-sdk/crypto/keys/secp256k1"
+	"github.com/foxcpp/go-mockdns"
 	sdktypes "github.com/pokt-network/shannon-sdk/types"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
@@ -623,7 +625,7 @@ func (t *RelayProxyPingAllSuite) TestOKPingAllWithMultipleRelayServers() {
 	ctx, cancel := context.WithCancel(context.TODO())
 	defer cancel()
 
-	secondServiceName := "secondService"
+	secondServiceName := "secondservice"
 	secondServiceAddr := "127.0.0.1:8246"
 
 	// adding supplier endpoint.
@@ -841,18 +843,31 @@ func (t *RelayProxyPingAllSuite) TestNOKPingAllWithPartialFailureAfterStartup() 
 	require.NoError(t.T(), err)
 }
 
-/*func (t *RelayProxyPingAllSuite) TestOKPingAllDifferentEndpoint() {
+func (t *RelayProxyPingAllSuite) TestOKPingAllDifferentEndpoint() {
 	ctx, cancel := context.WithCancel(context.TODO())
 	defer cancel()
 
-	relayminerZoneServiceName := "fakehostservice"
-	relayminerZoneServiceAddr := "fakehostservice.com:8648"
+	srv, err := mockdns.NewServer(map[string]mockdns.Zone{
+		"exampleservice.org.": {
+			A: []string{"127.0.0.1"},
+		},
+	}, false)
+	require.NoError(t.T(), err)
+	defer srv.Close()
+
+	srv.PatchNet(net.DefaultResolver)
+	defer mockdns.UnpatchNet(net.DefaultResolver)
+
+	relayminerZoneServiceName := "exampleservice.org"
+	relayminerZoneServiceAddr := "exampleservice.org:8249"
+
 	relayminerIPV6ServiceName := "ipv6service"
+	relayminerIPV6ServiceAddr := "localhost:8250"
 
 	supplierEndpoints := map[string][]*sharedtypes.SupplierEndpoint{
 		relayminerZoneServiceName: {
 			{
-				Url:     "http://fakehostservice.com:8648",
+				Url:     "http://exampleservice.org:8648",
 				RpcType: sharedtypes.RPCType_JSON_RPC,
 			},
 		},
@@ -875,14 +890,20 @@ func (t *RelayProxyPingAllSuite) TestNOKPingAllWithPartialFailureAfterStartup() 
 					ServiceConfig: &config.RelayMinerSupplierServiceConfig{
 						BackendUrl: &url.URL{
 							Scheme: "http",
-							Host:   "fakehostservice.com:8648",
+							Host:   "exampleservice.org:8648",
 							Path:   "/",
 						},
 					},
 					PubliclyExposedEndpoints: []string{
-						"fakehostservice.com",
+						"exampleservice.org",
 					},
 				},
+			},
+		},
+		relayminerIPV6ServiceAddr: &config.RelayMinerServerConfig{
+			ListenAddress: relayminerIPV6ServiceAddr,
+			ServerType:    config.RelayMinerServerTypeHTTP,
+			SupplierConfigsMap: map[string]*config.RelayMinerSupplierConfig{
 				relayminerIPV6ServiceName: &config.RelayMinerSupplierConfig{
 					ServerType: config.RelayMinerServerTypeHTTP,
 					ServiceId:  relayminerIPV6ServiceName,
@@ -927,12 +948,14 @@ func (t *RelayProxyPingAllSuite) TestNOKPingAllWithPartialFailureAfterStartup() 
 		}
 	}()
 
+	time.Sleep(time.Millisecond)
+
 	err = rp.PingAll(ctx)
 	require.NoError(t.T(), err)
 
 	err = rp.Stop(ctx)
 	require.NoError(t.T(), err)
-        }*/
+}
 
 func sendRequestWithUnparsableBody(
 	t *testing.T,
