@@ -761,10 +761,11 @@ func (s *suite) getSupplierInfo(supplierOperatorName string) *sharedtypes.Suppli
 		supplierOperatorAddr,
 		"--output=json",
 	}
-
+	fmt.Println("OLSH1")
 	res, err := s.pocketd.RunCommandOnHostWithRetry("", numQueryRetries, args...)
 	require.NoError(s, err, "error getting supplier %s", supplierOperatorAddr)
 	s.pocketd.result = res
+	fmt.Println("OLSH2")
 
 	var resp suppliertypes.QueryGetSupplierResponse
 	responseBz := []byte(strings.TrimSpace(res.Stdout))

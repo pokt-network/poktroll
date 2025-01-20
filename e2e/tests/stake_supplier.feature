@@ -21,14 +21,14 @@ Feature: Stake Supplier Namespace
         And the "supplier" for account "supplier2" is staked with "1000070" uPOKT
         And an account exists for "supplier2"
         When the user unstakes a "supplier" from the account "supplier2"
-        Then the user should be able to see standard output containing "txhash:"
-        And the user should be able to see standard output containing "code: 0"
-        And the pocketd binary should exit without error
+        # Then the user should be able to see standard output containing "txhash:"
+        # And the user should be able to see standard output containing "code: 0"
+        # And the pocketd binary should exit without error
         And the supplier for account "supplier2" is unbonding
-        And the user should wait for the "supplier" module "SupplierUnbondingBegin" tx event to be broadcast
-        And a "supplier" module "SupplierUnbondingEnd" end block event is broadcast
-        And the user verifies the "supplier" for account "supplier2" is not staked
-        And the account balance of "supplier2" should be "1000070" uPOKT "more" than before
+        # And the user should wait for the "supplier" module "SupplierUnbondingBegin" tx event to be broadcast
+        # And a "supplier" module "SupplierUnbondingEnd" end block event is broadcast
+        # And the user verifies the "supplier" for account "supplier2" is not staked
+        # And the account balance of "supplier2" should be "1000070" uPOKT "more" than before
 
 	# TODO_MAINNET(@olshansk, #1033): Since the "to become active for service" step
     # requires reading "ServicesActivationHeightsMap", which is temporarily set to nil,

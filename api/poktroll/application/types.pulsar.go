@@ -2193,7 +2193,8 @@ type Application struct {
 	// Total amount of staked uPOKT
 	Stake *v1beta1.Coin `protobuf:"bytes,2,opt,name=stake,proto3" json:"stake,omitempty"`
 	// CRITICAL: Must contain EXACTLY ONE service config
-	// Kept as repeated for legacy and future compatibility
+	// This prevents applications from over-servicing.
+	// Kept as repeated field for legacy and future compatibility
 	// Refs:
 	//   - https://github.com/pokt-network/poktroll/pull/750#discussion_r1735025033
 	//   - https://www.notion.so/buildwithgrove/Off-chain-Application-Stake-Tracking-6a8bebb107db4f7f9dc62cbe7ba555f7
@@ -2203,8 +2204,8 @@ type Application struct {
 	// Non-nullable list of Bech32 encoded delegatee Gateway addresses
 	DelegateeGatewayAddresses []string `protobuf:"bytes,4,rep,name=delegatee_gateway_addresses,json=delegateeGatewayAddresses,proto3" json:"delegatee_gateway_addresses,omitempty"`
 	// Mapping of session end heights to gateways being undelegated from
-	// Key: Height of the last block of the session when undelegation was committed
-	// Value: List of gateways being undelegated from
+	// - Key: Height of the last block of the session when undelegation tx was committed
+	// - Value: List of gateways being undelegated from
 	// TODO_DOCUMENT(@red-0ne): Need to document the flow from this comment
 	// so its clear to everyone why this is necessary; https://github.com/pokt-network/poktroll/issues/476#issuecomment-2052639906.
 	PendingUndelegations map[uint64]*UndelegatingGatewayList `protobuf:"bytes,5,rep,name=pending_undelegations,json=pendingUndelegations,proto3" json:"pending_undelegations,omitempty" protobuf_key:"varint,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`

@@ -1,6 +1,7 @@
 package keeper_test
 
 import (
+	"fmt"
 	"strconv"
 	"testing"
 
@@ -11,6 +12,7 @@ import (
 
 	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
 	"github.com/pokt-network/poktroll/testutil/nullify"
+	"github.com/pokt-network/poktroll/testutil/sample"
 	"github.com/pokt-network/poktroll/x/supplier/types"
 )
 
@@ -20,6 +22,7 @@ var _ = strconv.IntSize
 func TestSupplierQuerySingle(t *testing.T) {
 	supplierModuleKeepers, ctx := keepertest.SupplierKeeper(t)
 	suppliers := createNSuppliers(*supplierModuleKeepers.Keeper, ctx, 2)
+	supplierAddr := sample.AccAddress()
 
 	tests := []struct {
 		desc        string
@@ -44,9 +47,9 @@ func TestSupplierQuerySingle(t *testing.T) {
 		{
 			desc: "KeyNotFound",
 			request: &types.QueryGetSupplierRequest{
-				OperatorAddress: strconv.Itoa(100000),
+				OperatorAddress: supplierAddr,
 			},
-			expectedErr: status.Error(codes.NotFound, "supplier with address: \"100000\""),
+			expectedErr: status.Error(codes.NotFound, fmt.Sprintf("supplier with address: \"%s\"", supplierAddr)),
 		},
 		{
 			desc:        "InvalidRequest",

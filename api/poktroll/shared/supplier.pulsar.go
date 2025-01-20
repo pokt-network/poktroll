@@ -1075,9 +1075,9 @@ type Supplier struct {
 	// Owner address that controls the staked funds and receives rewards by default
 	// Cannot be updated by the operator
 	OwnerAddress string `protobuf:"bytes,1,opt,name=owner_address,json=ownerAddress,proto3" json:"owner_address,omitempty"`
-	// Operator address managing the off-chain server
-	// Immutable for supplier's lifespan - requires unstake/re-stake to change
-	// Can update supplier configs except owner address
+	// Operator address managing the offchain server
+	// Immutable for supplier's lifespan - requires unstake/re-stake to change.
+	// Can update supplier configs except for owner address.
 	OperatorAddress string `protobuf:"bytes,2,opt,name=operator_address,json=operatorAddress,proto3" json:"operator_address,omitempty"`
 	// Total amount of staked uPOKT
 	Stake *v1beta1.Coin `protobuf:"bytes,3,opt,name=stake,proto3" json:"stake,omitempty"`
@@ -1086,8 +1086,8 @@ type Supplier struct {
 	// Session end height when supplier initiated unstaking (0 if not unstaking)
 	UnstakeSessionEndHeight uint64 `protobuf:"varint,5,opt,name=unstake_session_end_height,json=unstakeSessionEndHeight,proto3" json:"unstake_session_end_height,omitempty"`
 	// Mapping of serviceIds to their activation heights
-	// Key: serviceId
-	// Value: Session start height when supplier becomes active for the service
+	// - Key: serviceId
+	// - Value: Session start height when supplier becomes active for the service
 	// TODO_MAINNET(@olshansk, #1033): Look into moving this to an external repeated protobuf
 	// because maps are no longer supported for serialized types in the CosmoSDK.
 	ServicesActivationHeightsMap map[string]uint64 `protobuf:"bytes,6,rep,name=services_activation_heights_map,json=servicesActivationHeightsMap,proto3" json:"services_activation_heights_map,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"varint,2,opt,name=value,proto3"`
