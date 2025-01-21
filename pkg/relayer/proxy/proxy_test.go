@@ -528,28 +528,30 @@ func TestRelayerProxy_Relays(t *testing.T) {
 	}
 }
 
+// RelayProxyPingAllSuite implements the suite to test the relay proxy ping
+// application logic.
 type RelayProxyPingAllSuite struct {
 	suite.Suite
 	relayerProxyBehavior           []func(*testproxy.TestBehavior)
 	servicesConfigMap              map[string]*config.RelayMinerServerConfig
-	supplierEndpoints              map[string][]*sharedtypes.SupplierEndpoint
 	supplierOperatorPingAllKeyName string
-	defaultRelayMinerServerAddress string
-	defaultServiceName             string
 }
 
+// TestRelayProxyPingAllSuite executes the RelayProxyPingAllSuite test suite.
 func TestRelayProxyPingAllSuite(t *testing.T) {
 	suite.Run(t, new(RelayProxyPingAllSuite))
 }
 
-// SetupSuite setups a single default relayminer with one supplier.
+// SetupSuite setups a single default relayminer with one supplier. The
+// default relayminer will be reused in every subsequent tests in the
+// suite.
 func (t *RelayProxyPingAllSuite) SetupSuite() {
 	t.supplierOperatorPingAllKeyName = "supplierPingAllKeyName"
 	appPrivateKey := secp256k1.GenPrivKey()
-	t.defaultRelayMinerServerAddress = "127.0.0.1:8245"
-	t.defaultServiceName = "defaultService"
-	t.supplierEndpoints = map[string][]*sharedtypes.SupplierEndpoint{
-		t.defaultServiceName: {
+	defaultRelayMinerServerAddress := "127.0.0.1:8245"
+	defaultServiceName := "defaultService"
+	supplierEndpoints := map[string][]*sharedtypes.SupplierEndpoint{
+		defaultServiceName: {
 			{
 				Url:     "http://supplier1pingall:8645",
 				RpcType: sharedtypes.RPCType_JSON_RPC,
@@ -558,12 +560,12 @@ func (t *RelayProxyPingAllSuite) SetupSuite() {
 	}
 
 	t.servicesConfigMap = map[string]*config.RelayMinerServerConfig{
-		t.defaultRelayMinerServerAddress: {
+		defaultRelayMinerServerAddress: {
 			ServerType:    config.RelayMinerServerTypeHTTP,
-			ListenAddress: t.defaultRelayMinerServerAddress,
+			ListenAddress: defaultRelayMinerServerAddress,
 			SupplierConfigsMap: map[string]*config.RelayMinerSupplierConfig{
-				t.defaultServiceName: {
-					ServiceId:  t.defaultServiceName,
+				defaultServiceName: {
+					ServiceId:  defaultServiceName,
 					ServerType: config.RelayMinerServerTypeHTTP,
 					ServiceConfig: &config.RelayMinerSupplierServiceConfig{
 						BackendUrl: &url.URL{
@@ -583,13 +585,15 @@ func (t *RelayProxyPingAllSuite) SetupSuite() {
 	t.relayerProxyBehavior = []func(*testproxy.TestBehavior){
 		testproxy.WithRelayerProxyDependenciesForBlockHeight(t.supplierOperatorPingAllKeyName, 1),
 		testproxy.WithServicesConfigMap(t.servicesConfigMap),
-		testproxy.WithDefaultSupplier(t.supplierOperatorPingAllKeyName, t.supplierEndpoints),
+		testproxy.WithDefaultSupplier(t.supplierOperatorPingAllKeyName, supplierEndpoints),
 		testproxy.WithDefaultApplication(appPrivateKey),
-		testproxy.WithDefaultSessionSupplier(t.supplierOperatorPingAllKeyName, t.defaultServiceName, appPrivateKey),
+		testproxy.WithDefaultSessionSupplier(t.supplierOperatorPingAllKeyName, defaultServiceName, appPrivateKey),
 		testproxy.WithRelayMeter(),
 	}
 }
 
+// TestOKPingAllWithSingleRelayServer reuses the default relayminer with one
+// supplier to test the relayproxy.PingAll method.
 func (t *RelayProxyPingAllSuite) TestOKPingAllWithSingleRelayServer() {
 	ctx, cancel := context.WithCancel(context.TODO())
 	defer cancel()
@@ -608,7 +612,6 @@ func (t *RelayProxyPingAllSuite) TestOKPingAllWithSingleRelayServer() {
 		if http.ErrServerClosed != err {
 			require.NoError(t.T(), err)
 		}
-
 	}()
 
 	// waiting for relayer proxy to start
@@ -622,12 +625,14 @@ func (t *RelayProxyPingAllSuite) TestOKPingAllWithSingleRelayServer() {
 	require.NoError(t.T(), err)
 }
 
+// TestOKPingAllWithMultipleRelayServers reuses default relayminer and
+// instantiates an additional one to test the connectivity.
 func (t *RelayProxyPingAllSuite) TestOKPingAllWithMultipleRelayServers() {
 	ctx, cancel := context.WithCancel(context.TODO())
 	defer cancel()
 
+	secondRelayMinerAddr := "127.0.0.1:8246"
 	secondServiceName := "secondservice"
-	secondServiceAddr := "127.0.0.1:8246"
 
 	// adding supplier endpoint.
 	supplierEndpoints := map[string][]*sharedtypes.SupplierEndpoint{
@@ -640,9 +645,9 @@ func (t *RelayProxyPingAllSuite) TestOKPingAllWithMultipleRelayServers() {
 	}
 
 	servicesConfigMap := map[string]*config.RelayMinerServerConfig{
-		secondServiceAddr: {
+		secondRelayMinerAddr: {
 			ServerType:    config.RelayMinerServerTypeHTTP,
-			ListenAddress: secondServiceAddr,
+			ListenAddress: secondRelayMinerAddr,
 			SupplierConfigsMap: map[string]*config.RelayMinerSupplierConfig{
 				secondServiceName: {
 					ServiceId:  secondServiceName,
@@ -669,7 +674,8 @@ func (t *RelayProxyPingAllSuite) TestOKPingAllWithMultipleRelayServers() {
 
 	testBehavoirs := testproxy.NewRelayerProxyTestBehavior(ctx, t.T(), relayProxyBehavior...)
 
-	// copying default service config map
+	// copying the default relayminer in the test service config
+	// map for the relay proxy.
 	for k, v := range t.servicesConfigMap {
 		servicesConfigMap[k] = v
 	}
@@ -699,12 +705,14 @@ func (t *RelayProxyPingAllSuite) TestOKPingAllWithMultipleRelayServers() {
 	require.NoError(t.T(), err)
 }
 
+// TestNOKPingAllWithPartialFailureAtStartup test the connectivity for multiple
+// relayminer with a partial sucess/failure at startup.
 func (t *RelayProxyPingAllSuite) TestNOKPingAllWithPartialFailureAtStartup() {
 	ctx, cancel := context.WithCancel(context.TODO())
 	defer cancel()
 
+	failingRelayMinerAddr := "127.0.0.1:8247"
 	failingServiceName := "failingservice"
-	failingServiceAddr := "127.0.0.1:8247"
 
 	supplierEndpoints := map[string][]*sharedtypes.SupplierEndpoint{
 		failingServiceName: {
@@ -716,8 +724,8 @@ func (t *RelayProxyPingAllSuite) TestNOKPingAllWithPartialFailureAtStartup() {
 	}
 
 	servicesConfigMap := map[string]*config.RelayMinerServerConfig{
-		failingServiceAddr: &config.RelayMinerServerConfig{
-			ListenAddress: failingServiceAddr,
+		failingRelayMinerAddr: &config.RelayMinerServerConfig{
+			ListenAddress: failingRelayMinerAddr,
 			ServerType:    config.RelayMinerServerTypeHTTP,
 			SupplierConfigsMap: map[string]*config.RelayMinerSupplierConfig{
 				failingServiceName: &config.RelayMinerSupplierConfig{
@@ -745,7 +753,8 @@ func (t *RelayProxyPingAllSuite) TestNOKPingAllWithPartialFailureAtStartup() {
 
 	test := testproxy.NewRelayerProxyTestBehavior(ctx, t.T(), relayProxyBehavior...)
 
-	// copying services config maps from default values
+	// copying the default relayminer in the test service config
+	// map for the relay proxy.
 	for k, v := range t.servicesConfigMap {
 		servicesConfigMap[k] = v
 	}
@@ -757,9 +766,12 @@ func (t *RelayProxyPingAllSuite) TestNOKPingAllWithPartialFailureAtStartup() {
 	)
 	require.NoError(t.T(), err)
 
+	// we are explicitly shutting down a supplier to simulate a
+	// failure while testing the connectivity at startup.
 	err = test.ShutdownServiceID(failingServiceName)
 	require.NoError(t.T(), err)
 
+	// testing connectivity at startup
 	err = rp.Start(ctx)
 	require.Error(t.T(), err)
 	require.True(t.T(), strings.Contains(err.Error(), "connection refused"))
@@ -768,12 +780,14 @@ func (t *RelayProxyPingAllSuite) TestNOKPingAllWithPartialFailureAtStartup() {
 	require.NoError(t.T(), err)
 }
 
+// TestNOKPingAllWithPartialFailureAfterStartup test the connectivity for multiple
+// relayminer with a partial sucess/failure at runtime.
 func (t *RelayProxyPingAllSuite) TestNOKPingAllWithPartialFailureAfterStartup() {
 	ctx, cancel := context.WithCancel(context.TODO())
 	defer cancel()
 
+	failingRelayMinerAddr := "127.0.0.1:8248"
 	failingServiceName := "faillingservice"
-	failingServiceAddr := "127.0.0.1:8248"
 
 	supplierEndpoints := map[string][]*sharedtypes.SupplierEndpoint{
 		failingServiceName: {
@@ -785,8 +799,8 @@ func (t *RelayProxyPingAllSuite) TestNOKPingAllWithPartialFailureAfterStartup() 
 	}
 
 	servicesConfigMap := map[string]*config.RelayMinerServerConfig{
-		failingServiceAddr: &config.RelayMinerServerConfig{
-			ListenAddress: failingServiceAddr,
+		failingRelayMinerAddr: &config.RelayMinerServerConfig{
+			ListenAddress: failingRelayMinerAddr,
 			ServerType:    config.RelayMinerServerTypeHTTP,
 			SupplierConfigsMap: map[string]*config.RelayMinerSupplierConfig{
 				failingServiceName: &config.RelayMinerSupplierConfig{
@@ -814,7 +828,8 @@ func (t *RelayProxyPingAllSuite) TestNOKPingAllWithPartialFailureAfterStartup() 
 
 	test := testproxy.NewRelayerProxyTestBehavior(ctx, t.T(), relayProxyBehavior...)
 
-	// copying services config maps from default values
+	// copying the default relayminer in the test service config
+	// map for the relay proxy.
 	for k, v := range t.servicesConfigMap {
 		servicesConfigMap[k] = v
 	}
@@ -837,6 +852,8 @@ func (t *RelayProxyPingAllSuite) TestNOKPingAllWithPartialFailureAfterStartup() 
 	// and perform ping request.
 	time.Sleep(100 * time.Millisecond)
 
+	// we are explicitly shutting down a supplier to simulate an error
+	// while testing the connectivity.
 	err = test.ShutdownServiceID(failingServiceName)
 	require.NoError(t.T(), err)
 
@@ -848,6 +865,8 @@ func (t *RelayProxyPingAllSuite) TestNOKPingAllWithPartialFailureAfterStartup() 
 	require.NoError(t.T(), err)
 }
 
+// TestOKPingAllDifferentEndpoint test the connectivity with different type of
+// endpoints (ipv6, domain name).
 func (t *RelayProxyPingAllSuite) TestOKPingAllDifferentEndpoint() {
 	ctx, cancel := context.WithCancel(context.TODO())
 	defer cancel()
@@ -863,20 +882,20 @@ func (t *RelayProxyPingAllSuite) TestOKPingAllDifferentEndpoint() {
 	srv.PatchNet(net.DefaultResolver)
 	defer mockdns.UnpatchNet(net.DefaultResolver)
 
-	relayminerZoneServiceName := "exampleservice.org"
-	relayminerZoneServiceAddr := "exampleservice.org:8249"
+	relayminerDomainNameAddr := "exampleservice.org:8249"
+	domainNameServiceName := "exampleservice.org"
 
-	relayminerIPV6ServiceName := "ipv6service"
 	relayminerIPV6ServiceAddr := "localhost:8250"
+	IPV6ServiceName := "ipv6service"
 
 	supplierEndpoints := map[string][]*sharedtypes.SupplierEndpoint{
-		relayminerZoneServiceName: {
+		domainNameServiceName: {
 			{
 				Url:     "http://exampleservice.org:8649",
 				RpcType: sharedtypes.RPCType_JSON_RPC,
 			},
 		},
-		relayminerIPV6ServiceName: {
+		IPV6ServiceName: {
 			{
 				Url:     "http://ipv6service:8650",
 				RpcType: sharedtypes.RPCType_JSON_RPC,
@@ -885,13 +904,13 @@ func (t *RelayProxyPingAllSuite) TestOKPingAllDifferentEndpoint() {
 	}
 
 	servicesConfigMap := map[string]*config.RelayMinerServerConfig{
-		relayminerZoneServiceAddr: &config.RelayMinerServerConfig{
-			ListenAddress: relayminerZoneServiceAddr,
+		relayminerDomainNameAddr: &config.RelayMinerServerConfig{
+			ListenAddress: relayminerDomainNameAddr,
 			ServerType:    config.RelayMinerServerTypeHTTP,
 			SupplierConfigsMap: map[string]*config.RelayMinerSupplierConfig{
-				relayminerZoneServiceName: &config.RelayMinerSupplierConfig{
+				domainNameServiceName: &config.RelayMinerSupplierConfig{
 					ServerType: config.RelayMinerServerTypeHTTP,
-					ServiceId:  relayminerZoneServiceName,
+					ServiceId:  domainNameServiceName,
 					ServiceConfig: &config.RelayMinerSupplierServiceConfig{
 						BackendUrl: &url.URL{
 							Scheme: "http",
@@ -909,9 +928,9 @@ func (t *RelayProxyPingAllSuite) TestOKPingAllDifferentEndpoint() {
 			ListenAddress: relayminerIPV6ServiceAddr,
 			ServerType:    config.RelayMinerServerTypeHTTP,
 			SupplierConfigsMap: map[string]*config.RelayMinerSupplierConfig{
-				relayminerIPV6ServiceName: &config.RelayMinerSupplierConfig{
+				IPV6ServiceName: &config.RelayMinerSupplierConfig{
 					ServerType: config.RelayMinerServerTypeHTTP,
-					ServiceId:  relayminerIPV6ServiceName,
+					ServiceId:  IPV6ServiceName,
 					ServiceConfig: &config.RelayMinerSupplierServiceConfig{
 						BackendUrl: &url.URL{
 							Scheme: "http",
@@ -934,7 +953,8 @@ func (t *RelayProxyPingAllSuite) TestOKPingAllDifferentEndpoint() {
 
 	test := testproxy.NewRelayerProxyTestBehavior(ctx, t.T(), relayProxyBehavior...)
 
-	// copying services config maps from default values
+	// copying the default relayminer in the test service config
+	// map for the relay proxy.
 	for k, v := range t.servicesConfigMap {
 		servicesConfigMap[k] = v
 	}
