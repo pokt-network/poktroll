@@ -2,7 +2,7 @@ package app
 
 import (
 	migrationmodulekeeper "github.com/pokt-network/poktroll/x/migration/keeper"
-// this line is used by starport scaffolding # stargate/app/moduleImport
+	// this line is used by starport scaffolding # stargate/app/moduleImport
 	"io"
 	"os"
 	"path/filepath"
@@ -71,7 +71,7 @@ type App struct {
 	sm *module.SimulationManager
 
 	MigrationKeeper migrationmodulekeeper.Keeper
-// this line is used by starport scaffolding # stargate/app/keeperDeclaration
+	// this line is used by starport scaffolding # stargate/app/keeperDeclaration
 	// Ignite CLI adds keepers here when scaffolding new modules. Please move the created keeper to the `keepers` package.
 }
 

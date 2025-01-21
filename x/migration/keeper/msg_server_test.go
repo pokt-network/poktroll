@@ -6,9 +6,9 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-    keepertest "github.com/pokt-network/poktroll/testutil/keeper"
-    "github.com/pokt-network/poktroll/x/migration/types"
-    "github.com/pokt-network/poktroll/x/migration/keeper"
+	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
+	"github.com/pokt-network/poktroll/x/migration/keeper"
+	"github.com/pokt-network/poktroll/x/migration/types"
 )
 
 func setupMsgServer(t testing.TB) (keeper.Keeper, types.MsgServer, context.Context) {
