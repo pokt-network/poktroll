@@ -15,6 +15,7 @@ const (
 	responseSizeBytes    = "response_size_bytes"
 	smtSizeBytes         = "smt_size_bytes"
 	relayDurationSeconds = "relay_duration_seconds"
+	supplierStakeUpokt   = "supplier_stake_upokt"
 )
 
 var (
@@ -95,4 +96,13 @@ var (
 		Help:      "Histogram of request sizes in bytes for performance analysis.",
 		Buckets:   []float64{100, 500, 1000, 5000, 10000, 50000},
 	}, []string{"service_id"})
+
+	// supplierStake is a Gauge metric for observing the amount of stake for a supplier.
+	// It tracks the amount of stake for a supplier, labeled by supplier operator address
+	// and owner address.
+	supplierStake = prometheus.NewGaugeFrom(stdprometheus.GaugeOpts{
+		Subsystem: relayMinerProcess,
+		Name:      supplierStakeUpokt,
+		Help:      "The amount of stake for a supplier, labeled by supplier operator address and owner address.",
+	}, []string{"supplier_operator_address", "owner_address"})
 )

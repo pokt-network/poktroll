@@ -185,3 +185,9 @@ func (rp *relayerProxy) waitForSupplierToStake(
 
 	return supplier, nil
 }
+
+func (rp *relayerProxy) updateSupplierStakeMetric(supplier sharedtypes.Supplier) {
+	// Only use the float64 value, ignore accuracy
+	stakeAmount, _ := supplier.Stake.Amount.BigInt().Float64()
+	supplierStake.With(supplier.OperatorAddress, supplier.OwnerAddress).Set(stakeAmount)
+}
