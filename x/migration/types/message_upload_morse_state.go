@@ -8,18 +8,17 @@ import (
 
 var _ sdk.Msg = &MsgUploadMorseState{}
 
-func NewMsgUploadMorseState(authority string, state string) *MsgUploadMorseState {
-  return &MsgUploadMorseState{
+func NewMsgUploadMorseState(authority string, state MorseAccountState) *MsgUploadMorseState {
+	return &MsgUploadMorseState{
 		Authority: authority,
-    State: state,
+		State:     state,
 	}
 }
 
 func (msg *MsgUploadMorseState) ValidateBasic() error {
-  _, err := sdk.AccAddressFromBech32(msg.Authority)
-  	if err != nil {
-  		return errorsmod.Wrapf(sdkerrors.ErrInvalidAddress, "invalid authority address (%s)", err)
-  	}
-  return nil
+	_, err := sdk.AccAddressFromBech32(msg.Authority)
+	if err != nil {
+		return errorsmod.Wrapf(sdkerrors.ErrInvalidAddress, "invalid authority address (%s)", err)
+	}
+	return nil
 }
-

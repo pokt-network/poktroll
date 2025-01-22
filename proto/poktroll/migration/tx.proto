@@ -7,6 +7,7 @@ import "cosmos/msg/v1/msg.proto";
 import "cosmos_proto/cosmos.proto";
 import "gogoproto/gogo.proto";
 import "poktroll/migration/params.proto";
+import "poktroll/migration/types.proto";
 
 option go_package = "github.com/pokt-network/poktroll/x/migration/types";
 option (gogoproto.stable_marshaler_all) = true;
@@ -43,7 +44,7 @@ message MsgUpdateParamsResponse {}
 message MsgUploadMorseState {
   option (cosmos.msg.v1.signer) = "authority";
   string authority = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
-  bytes state      = 2;
+  MorseAccountState state = 2 [(gogoproto.nullable) = false];
 }
 
 message MsgUploadMorseStateResponse {}
