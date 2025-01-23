@@ -43,6 +43,8 @@ func NewApplicationQuerier(ctx context.Context, deps depinject.Config) (client.A
 		return nil, err
 	}
 
+	aq.appCache = make(map[string]*apptypes.Application)
+
 	aq.applicationQuerier = apptypes.NewQueryClient(aq.clientConn)
 
 	channel.ForEach(

@@ -44,6 +44,9 @@ func NewServiceQuerier(ctx context.Context, deps depinject.Config) (client.Servi
 		return nil, err
 	}
 
+	servq.serviceCache = make(map[string]*sharedtypes.Service)
+	servq.relayMiningDifficultyCache = make(map[string]servicetypes.RelayMiningDifficulty)
+
 	servq.serviceQuerier = servicetypes.NewQueryClient(servq.clientConn)
 
 	channel.ForEach(

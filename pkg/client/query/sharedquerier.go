@@ -48,6 +48,8 @@ func NewSharedQuerier(ctx context.Context, deps depinject.Config) (client.Shared
 
 	querier.sharedQuerier = sharedtypes.NewQueryClient(querier.clientConn)
 
+	querier.blockCache = make(map[int64][]byte)
+
 	channel.ForEach(
 		ctx,
 		querier.blockClient.CommittedBlocksSequence(ctx),

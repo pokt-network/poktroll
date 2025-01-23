@@ -45,6 +45,8 @@ func NewBankQuerier(ctx context.Context, deps depinject.Config) (client.BankQuer
 
 	bq.bankQuerier = banktypes.NewQueryClient(bq.clientConn)
 
+	bq.bankCache = make(map[string]*sdk.Coin)
+
 	channel.ForEach(
 		ctx,
 		bq.blockClient.CommittedBlocksSequence(ctx),

@@ -44,6 +44,8 @@ func NewSessionQuerier(ctx context.Context, deps depinject.Config) (client.Sessi
 		return nil, err
 	}
 
+	sessq.sessionCache = make(map[string]*sessiontypes.Session)
+
 	sessq.sessionQuerier = sessiontypes.NewQueryClient(sessq.clientConn)
 
 	channel.ForEach(

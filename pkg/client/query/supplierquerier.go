@@ -43,6 +43,8 @@ func NewSupplierQuerier(ctx context.Context, deps depinject.Config) (client.Supp
 
 	supq.supplierQuerier = suppliertypes.NewQueryClient(supq.clientConn)
 
+	supq.supplierCache = make(map[string]*sharedtypes.Supplier)
+
 	channel.ForEach(
 		ctx,
 		supq.blockClient.CommittedBlocksSequence(ctx),
