@@ -1,0 +1,42 @@
+syntax = "proto3";
+
+// Types in this file are ONLY present to facilitate the verifiability of the
+// migration state from Morse to Shannon. These types are used by the migration
+// subcommand (e.g. `poktrolld migrate collect-morse-accounts ...) to transform
+// the Morse state export into the Shannon state import. They ARE NOT persisted
+// on-chain at any point.
+package poktroll.migration;
+
+import "gogoproto/gogo.proto";
+import "poktroll/migration/types.proto";
+
+option go_package = "github.com/pokt-network/poktroll/x/migration/types";
+option (gogoproto.stable_marshaler_all) = true;
+
+message MorseStateExport {
+  string app_hash = 1 [(gogoproto.jsontag) = "app_hash"];
+  MorseAppState app_state = 2 [(gogoproto.jsontag) = "app_state"];
+}
+
+message MorseAppState {
+  MorseApplications application = 1 [(gogoproto.jsontag) = "application"];
+  MorseAuth auth = 2 [(gogoproto.jsontag) = "auth"];
+  MorsePos pos = 3 [(gogoproto.jsontag) = "pos"];
+}
+
+message MorseApplications {
+  repeated MorseApplication applications = 1 [(gogoproto.jsontag) = "applications"];
+}
+
+message MorseAuthAccount {
+  string Type = 1 [(gogoproto.jsontag) = "type"];
+  MorseAccount Value = 2 [(gogoproto.jsontag) = "value"];
+}
+
+message MorseAuth {
+  repeated MorseAuthAccount accounts = 1 [(gogoproto.jsontag) = "accounts"];
+}
+
+message MorsePos {
+  repeated MorseValidator validators = 1 [(gogoproto.jsontag) = "validators"];
+}
