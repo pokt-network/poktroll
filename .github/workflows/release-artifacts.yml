@@ -82,7 +82,7 @@ jobs:
 
       # TODO_TECHDEBT(@okdas): use for releases (also change the "on" part at the top so it only tgirrered for tags/releases)
       - name: Add release and publish binaries
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
           files: |
             release/*
