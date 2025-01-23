@@ -1,5 +1,5 @@
 ---
-title: CLI Installation
+title: poktrolld CLI Installation
 sidebar_position: 0
 ---
 
