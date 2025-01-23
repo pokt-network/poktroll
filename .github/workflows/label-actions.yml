@@ -18,5 +18,5 @@ jobs:
   action:
     runs-on: ubuntu-latest
     steps:
-      # TODO_TECHDEBT: switch to `dessant/label-actions@v4` when https://github.com/dessant/label-actions/pull/29 is merged.
+      # TODO_TECHDEBT: switch to `dessant/label-actions@v3` when https://github.com/dessant/label-actions/pull/29 is merged.
       - uses: okdas/label-actions@patch-1

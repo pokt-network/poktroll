@@ -44,7 +44,7 @@ jobs:
           make cosmovisor_cross_compile
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v4
+        uses: docker/setup-buildx-action@v3
 
       - name: Docker Metadata action
         id: meta
