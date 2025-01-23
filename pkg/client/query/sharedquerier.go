@@ -2,11 +2,13 @@ package query
 
 import (
 	"context"
+	"sync"
 
 	"cosmossdk.io/depinject"
 	"github.com/cosmos/gogoproto/grpc"
 
 	"github.com/pokt-network/poktroll/pkg/client"
+	"github.com/pokt-network/poktroll/pkg/observable/channel"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
@@ -19,6 +21,11 @@ type sharedQuerier struct {
 	clientConn    grpc.ClientConn
 	sharedQuerier sharedtypes.QueryClient
 	blockQuerier  client.BlockQueryClient
+
+	blockClient       client.BlockClient
+	sharedParamsCache *sharedtypes.Params
+	blockCache        map[int64][]byte
+	sessionCacheMu    sync.Mutex
 }
 
 // NewSharedQuerier returns a new instance of a client.SharedQueryClient by
@@ -27,18 +34,31 @@ type sharedQuerier struct {
 // Required dependencies:
 // - clientCtx (grpc.ClientConn)
 // - client.BlockQueryClient
-func NewSharedQuerier(deps depinject.Config) (client.SharedQueryClient, error) {
+func NewSharedQuerier(ctx context.Context, deps depinject.Config) (client.SharedQueryClient, error) {
 	querier := &sharedQuerier{}
 
 	if err := depinject.Inject(
 		deps,
 		&querier.clientConn,
+		&querier.blockClient,
 		&querier.blockQuerier,
 	); err != nil {
 		return nil, err
 	}
 
 	querier.sharedQuerier = sharedtypes.NewQueryClient(querier.clientConn)
+
+	channel.ForEach(
+		ctx,
+		querier.blockClient.CommittedBlocksSequence(ctx),
+		func(ctx context.Context, block client.Block) {
+			querier.sessionCacheMu.Lock()
+			defer querier.sessionCacheMu.Unlock()
+
+			querier.blockCache = make(map[int64][]byte)
+			querier.sharedParamsCache = nil
+		},
+	)
 
 	return querier, nil
 }
@@ -49,11 +69,20 @@ func NewSharedQuerier(deps depinject.Config) (client.SharedQueryClient, error) {
 // Once `ModuleParamsClient` is implemented, use its replay observable's `#Last()` method
 // to get the most recently (asynchronously) observed (and cached) value.
 func (sq *sharedQuerier) GetParams(ctx context.Context) (*sharedtypes.Params, error) {
+	sq.sessionCacheMu.Lock()
+	defer sq.sessionCacheMu.Unlock()
+
+	if sq.sharedParamsCache != nil {
+		return sq.sharedParamsCache, nil
+	}
+
 	req := &sharedtypes.QueryParamsRequest{}
 	res, err := sq.sharedQuerier.Params(ctx, req)
 	if err != nil {
 		return nil, ErrQuerySessionParams.Wrapf("[%v]", err)
 	}
+
+	sq.sharedParamsCache = &res.Params
 	return &res.Params, nil
 }
 
@@ -127,13 +156,22 @@ func (sq *sharedQuerier) GetEarliestSupplierClaimCommitHeight(ctx context.Contex
 	// Fetch the block at the proof window open height. Its hash is used as part
 	// of the seed to the pseudo-random number generator.
 	claimWindowOpenHeight := sharedtypes.GetClaimWindowOpenHeight(sharedParams, queryHeight)
-	claimWindowOpenBlock, err := sq.blockQuerier.Block(ctx, &claimWindowOpenHeight)
-	if err != nil {
-		return 0, err
-	}
+	sq.sessionCacheMu.Lock()
+	defer sq.sessionCacheMu.Unlock()
 
-	// NB: Byte slice representation of block hashes don't need to be normalized.
-	claimWindowOpenBlockHash := claimWindowOpenBlock.BlockID.Hash.Bytes()
+	var claimWindowOpenBlockHash []byte
+	if hash, ok := sq.blockCache[claimWindowOpenHeight]; !ok {
+		claimWindowOpenBlockHash = hash
+	} else {
+		claimWindowOpenBlock, err := sq.blockQuerier.Block(ctx, &claimWindowOpenHeight)
+		if err != nil {
+			return 0, err
+		}
+
+		// NB: Byte slice representation of block hashes don't need to be normalized.
+		claimWindowOpenBlockHash = claimWindowOpenBlock.BlockID.Hash.Bytes()
+		sq.blockCache[claimWindowOpenHeight] = claimWindowOpenBlockHash
+	}
 
 	return sharedtypes.GetEarliestSupplierClaimCommitHeight(
 		sharedParams,
@@ -160,15 +198,26 @@ func (sq *sharedQuerier) GetEarliestSupplierProofCommitHeight(ctx context.Contex
 	// Fetch the block at the proof window open height. Its hash is used as part
 	// of the seed to the pseudo-random number generator.
 	proofWindowOpenHeight := sharedtypes.GetProofWindowOpenHeight(sharedParams, queryHeight)
-	proofWindowOpenBlock, err := sq.blockQuerier.Block(ctx, &proofWindowOpenHeight)
-	if err != nil {
-		return 0, err
+	sq.sessionCacheMu.Lock()
+	defer sq.sessionCacheMu.Unlock()
+
+	var proofWindowOpenBlockHash []byte
+	if hash, ok := sq.blockCache[proofWindowOpenHeight]; !ok {
+		proofWindowOpenBlockHash = hash
+	} else {
+		proofWindowOpenBlock, err := sq.blockQuerier.Block(ctx, &proofWindowOpenHeight)
+		if err != nil {
+			return 0, err
+		}
+
+		proofWindowOpenBlockHash = proofWindowOpenBlock.BlockID.Hash
+		sq.blockCache[proofWindowOpenHeight] = proofWindowOpenBlockHash
 	}
 
 	return sharedtypes.GetEarliestSupplierProofCommitHeight(
 		sharedParams,
 		queryHeight,
-		proofWindowOpenBlock.BlockID.Hash,
+		proofWindowOpenBlockHash,
 		supplierOperatorAddr,
 	), nil
 }

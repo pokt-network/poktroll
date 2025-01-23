@@ -62,7 +62,7 @@ var (
 	keyRingFlag      = "--keyring-backend=test"
 	chainIdFlag      = "--chain-id=poktroll"
 	// pathUrl points to a local gateway using the PATH framework in centralized mode.
-	pathUrl = "http://localhost:3000/v1" // localhost is kept as the default to streamline local development & testing.
+	pathUrl = "http://localhost:3069/v1" // localhost is kept as the default to streamline local development & testing.
 )
 
 func init() {

@@ -365,7 +365,7 @@ for x in range(localnet_config["path_gateways"]["count"]):
         port_forwards=[
                 # See PATH for the default port used by the gateway. As of PR #1026, it is :3069.
                 # https://github.com/buildwithgrove/path/blob/main/config/router.go
-                str(2999 + actor_number) + ":3069"
+                str(3068 + actor_number) + ":3069"
         ],
     )
 

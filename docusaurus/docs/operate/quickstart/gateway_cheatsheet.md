@@ -238,7 +238,7 @@ You should see the following output:
 ```json
 {"level":"info","message":"Starting the cache update process."}
 {"level":"warn","message":"endpoint hydrator is disabled: no service QoS generators are specified"}
-{"level":"info","package":"router","message":"PATH gateway running on port 3000"}
+{"level":"info","package":"router","message":"PATH gateway running on port 3069"}
 ```
 
 #### [TODO] Run the `PATH` Gateway using Docker
@@ -250,7 +250,7 @@ _TODO_IMPROVE(@olshansk): Add instructions for running the `PATH` Gateway using 
 Check that the `PATH Gateway` is serving relays by running the following command yourself:
 
 ```bash
-curl http://eth.localhost:3000/v1 \
+curl http://eth.localhost:3069/v1/ \
     -X POST \
     -H "Content-Type: application/json" \
     -d '{"jsonrpc": "2.0", "id": 1, "method": "eth_blockNumber" }'

@@ -1,7 +1,7 @@
 # NB: The number of pre-provisioned **LocalNet** actors are managed in
 # 'localnet_config.yaml' by the respective actors `count` property.
 
-is_ephemeral_chain: true # This should be `true` for LocalNet as it is an ephemeral network
+is_ephemeral_chain: false # This should be `true` for LocalNet as it is an ephemeral network
 
 # rpc_node is the URL of the RPC node that the load test will use to query the
 # chain and submit transactions.
@@ -27,9 +27,9 @@ suppliers:
   # `relay_miner_config.yaml` file.
 
   # RelayMiner 1; http://localhost:10350/r/relayminer1/overview
-  - address: pokt19a3t4yunp0dlpfjrp7qwnzwlrzd5fzs2gjaaaj
-    # The advertised URL used by the supplier when it submits a stake message onchain.
-    exposed_url: http://relayminer1:8545
+  #- address: pokt19a3t4yunp0dlpfjrp7qwnzwlrzd5fzs2gjaaaj
+  #  # The advertised URL used by the supplier when it submits a stake message onchain.
+  #  exposed_url: http://relayminer1:8545
 
 # List of pre-provisioned gateways used for load testing.
 # These gateways will be progressively staked and delegated to during the load test.
@@ -44,12 +44,12 @@ gateways:
 
   # Gateway 1; http://localhost:10350/r/gateway1/overview
   - address: pokt15vzxjqklzjtlz7lahe8z2dfe9nm5vxwwmscne4
-    exposed_url: http://localhost:3000/v1/ # The gateway url that the user sends relays to (e.g. curl)
+    exposed_url: http://localhost:3069/v1/ # The gateway url that the user sends relays to (e.g. curl)
 
-  # Gateway 2; http://localhost:10350/r/gateway2/overview
-  - address: pokt15w3fhfyc0lttv7r585e2ncpf6t2kl9uh8rsnyz
-    exposed_url: http://localhost:3001/v1/
+  ## Gateway 2; http://localhost:10350/r/gateway2/overview
+  #- address: pokt15w3fhfyc0lttv7r585e2ncpf6t2kl9uh8rsnyz
+  #  exposed_url: http://localhost:3070/v1/
 
-  # Gateway 3; http://localhost:10350/r/gateway3/overview
-  - address: pokt1zhmkkd0rh788mc9prfq0m2h88t9ge0j83gnxya
-    exposed_url: http://localhost:3002/v1/
+  ## Gateway 3; http://localhost:10350/r/gateway3/overview
+  #- address: pokt1zhmkkd0rh788mc9prfq0m2h88t9ge0j83gnxya
+  #  exposed_url: http://localhost:3071/v1/

@@ -7,7 +7,7 @@
         "name": "proof_requirement_threshold",
         "as_coin": {
           "denom": "upokt",
-          "amount": "20000000"
+          "amount": "1"
         }
       }
     ]

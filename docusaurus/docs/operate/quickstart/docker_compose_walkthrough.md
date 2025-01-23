@@ -672,7 +672,7 @@ you need to have a domain name that resolves to the IP address of your node.
 :::
 
 ```bash
-curl http://eth.localhost:3000/v1 \
+curl http://eth.localhost:3069/v1/ \
   -X POST \
   -H "Content-Type: application/json" \
   --data '{"method":"eth_blockNumber","params":[],"id":1,"jsonrpc":"2.0"}'
@@ -690,7 +690,7 @@ To ensure you get a response, you may need to run the request a few times:
 
 ```bash
 for i in {1..10}; do
-  curl http://eth.localhost:3000/v1 \
+  curl http://eth.localhost:3069/v1/ \
     -X POST \
     -H "Content-Type: application/json" \
     --data '{"method":"eth_blockNumber","params":[],"id":1,"jsonrpc":"2.0"}' \

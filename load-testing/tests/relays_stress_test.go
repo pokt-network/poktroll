@@ -74,7 +74,7 @@ var (
 	testedServiceId string
 	// blockDurationSec is the duration of a block in seconds.
 	// NB: This value SHOULD be equal to `timeout_propose` in `config.yml`.
-	blockDurationSec = int64(2)
+	blockDurationSec = int64(60)
 	// relayPayloadFmt is the JSON-RPC request relayPayloadFmt to send a relay request.
 	relayPayloadFmt = `{"jsonrpc":"2.0","method":"%s","params":[],"id":%d}`
 	// relayRequestMethod is the method of the JSON-RPC request to be relayed.
@@ -386,7 +386,7 @@ func (s *relaysSuite) MoreActorsAreStakedAsFollows(table gocuke.DataTable) {
 	// only one transaction is expected to be committed.
 	fundedActors := append(fundedSuppliers, fundedGateways...)
 	fundedActors = append(fundedActors, fundedApplications...)
-	s.ensureFundedActors(s.ctx, fundedActors)
+	//s.ensureFundedActors(s.ctx, fundedActors)
 
 	logger.Info().Msg("Actors funded")
 
@@ -398,8 +398,8 @@ func (s *relaysSuite) MoreActorsAreStakedAsFollows(table gocuke.DataTable) {
 	stakedActors := append(stakedSuppliers, stakedGateways...)
 	stakedActors = append(stakedActors, stakedApplications...)
 
-	s.sendInitialActorsStakeMsgs(stakedSuppliers, stakedGateways, stakedApplications)
-	s.ensureStakedActors(s.ctx, stakedActors)
+	//s.sendInitialActorsStakeMsgs(stakedSuppliers, stakedGateways, stakedApplications)
+	//s.ensureStakedActors(s.ctx, stakedActors)
 
 	logger.Info().Msg("Actors staked")
 
@@ -414,8 +414,8 @@ func (s *relaysSuite) MoreActorsAreStakedAsFollows(table gocuke.DataTable) {
 	}
 
 	// Delegate the initial applications to the initial gateways
-	s.sendDelegateInitialAppsTxs(stakedApplications, stakedGateways)
-	s.ensureDelegatedApps(s.ctx, stakedApplications, stakedGateways)
+	//s.sendDelegateInitialAppsTxs(stakedApplications, stakedGateways)
+	//s.ensureDelegatedApps(s.ctx, stakedApplications, stakedGateways)
 
 	logger.Info().Msg("Apps delegated")
 

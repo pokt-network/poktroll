@@ -23,7 +23,6 @@ import (
 	rpctypes "github.com/cometbft/cometbft/rpc/jsonrpc/types"
 	sdkclient "github.com/cosmos/cosmos-sdk/client"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
-	"github.com/cosmos/cosmos-sdk/crypto/keys/secp256k1"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	"github.com/cosmos/cosmos-sdk/x/authz"
@@ -525,7 +524,7 @@ func (s *relaysSuite) sendFundAvailableActorsTx() (suppliers, gateways, applicat
 	// Send all the funding account's pending messages in a single transaction.
 	// This is done to avoid sending multiple transactions to fund the initial actors.
 	// pendingMsgs is reset after the transaction is sent.
-	defer s.sendPendingMsgsTx(s.fundingAccountInfo)
+	//defer s.sendPendingMsgsTx(s.fundingAccountInfo)
 	// Fund accounts for **initial** applications only.
 	// Additional applications are generated and funded as they're incremented.
 	for i := int64(0); i < s.appInitialCount; i++ {
@@ -536,7 +535,7 @@ func (s *relaysSuite) sendFundAvailableActorsTx() (suppliers, gateways, applicat
 		// The application is created with the keyName formatted as "app-%d" starting from 1.
 		application := s.createApplicationAccount(i+1, appFundingAmount)
 		// Add a bank.MsgSend message to fund the application.
-		s.addPendingFundMsg(application.address, sdk.NewCoins(application.amountToStake))
+		//s.addPendingFundMsg(application.address, sdk.NewCoins(application.amountToStake))
 
 		applications = append(applications, application)
 	}
@@ -637,17 +636,19 @@ func (s *relaysSuite) createApplicationAccount(
 	amountToStake sdk.Coin,
 ) *accountInfo {
 	keyName := fmt.Sprintf("app-%d", appIdx)
-	privKey := secp256k1.GenPrivKey()
-	privKeyHex := fmt.Sprintf("%x", privKey)
+	//privKey := secp256k1.GenPrivKey()
+	//privKeyHex := fmt.Sprintf("%x", privKey)
 
-	err := s.txContext.GetKeyring().ImportPrivKeyHex(keyName, privKeyHex, "secp256k1")
-	require.NoError(s, err)
+	//err := s.txContext.GetKeyring().ImportPrivKeyHex(keyName, privKeyHex, "secp256k1")
+	//require.NoError(s, err)
 
 	keyRecord, err := s.txContext.GetKeyring().Key(keyName)
 	require.NoError(s, err)
 
 	accAddress, err := keyRecord.GetAddress()
 	require.NoError(s, err)
+
+	logger.Debug().Msgf("Application added %s", keyName)
 
 	return &accountInfo{
 		address:       accAddress.String(),
@@ -1421,9 +1422,9 @@ func (s *relaysSuite) querySharedParams(queryNodeRPCURL string) {
 
 	blockQueryClient, err := sdkclient.NewClientFromNode(queryNodeRPCURL)
 	require.NoError(s, err)
-	deps = depinject.Configs(deps, depinject.Supply(blockQueryClient))
+	deps = depinject.Configs(deps, depinject.Supply(blockQueryClient, s.blockClient))
 
-	sharedQueryClient, err := query.NewSharedQuerier(deps)
+	sharedQueryClient, err := query.NewSharedQuerier(s.ctx, deps)
 	require.NoError(s, err)
 
 	sharedParams, err := sharedQueryClient.GetParams(s.ctx)
@@ -1441,9 +1442,9 @@ func (s *relaysSuite) queryAppParams(queryNodeRPCURL string) {
 
 	blockQueryClient, err := sdkclient.NewClientFromNode(queryNodeRPCURL)
 	require.NoError(s, err)
-	deps = depinject.Configs(deps, depinject.Supply(blockQueryClient))
+	deps = depinject.Configs(deps, depinject.Supply(blockQueryClient, s.blockClient))
 
-	appQueryclient, err := query.NewApplicationQuerier(deps)
+	appQueryclient, err := query.NewApplicationQuerier(s.ctx, deps)
 	require.NoError(s, err)
 
 	appParams, err := appQueryclient.GetParams(s.ctx)
@@ -1457,13 +1458,13 @@ func (s *relaysSuite) queryAppParams(queryNodeRPCURL string) {
 func (s *relaysSuite) queryProofParams(queryNodeRPCURL string) {
 	s.Helper()
 
-	deps := depinject.Supply(s.txContext.GetClientCtx())
+	deps := depinject.Supply(s.txContext.GetClientCtx(), s.blockClient)
 
 	blockQueryClient, err := sdkclient.NewClientFromNode(queryNodeRPCURL)
 	require.NoError(s, err)
 	deps = depinject.Configs(deps, depinject.Supply(blockQueryClient))
 
-	proofQueryclient, err := query.NewProofQuerier(deps)
+	proofQueryclient, err := query.NewProofQuerier(s.ctx, deps)
 	require.NoError(s, err)
 
 	params, err := proofQueryclient.GetParams(s.ctx)
@@ -1506,13 +1507,13 @@ func (s *relaysSuite) queryTokenomicsParams(queryNodeRPCURL string) {
 func (s *relaysSuite) queryTestedService(queryNodeRPCURL string) {
 	s.Helper()
 
-	deps := depinject.Supply(s.txContext.GetClientCtx())
+	deps := depinject.Supply(s.txContext.GetClientCtx(), s.blockClient)
 
 	blockQueryClient, err := sdkclient.NewClientFromNode(queryNodeRPCURL)
 	require.NoError(s, err)
 	deps = depinject.Configs(deps, depinject.Supply(blockQueryClient))
 
-	serviceQueryclient, err := query.NewServiceQuerier(deps)
+	serviceQueryclient, err := query.NewServiceQuerier(s.ctx, deps)
 	require.NoError(s, err)
 
 	service, err := serviceQueryclient.GetService(s.ctx, "anvil")
@@ -1553,13 +1554,15 @@ func (s *relaysSuite) forEachRelayBatchSendBatch(_ context.Context, relayBatchIn
 	// each sending relayRatePerApp relays per second.
 	relaysPerSec := len(relayBatchInfo.appAccounts) * int(s.relayRatePerApp)
 	// Determine the interval between each relay request.
-	relayInterval := time.Second / time.Duration(relaysPerSec)
+	relayInterval := time.Second / time.Duration(85)
 
 	batchWaitGroup := new(sync.WaitGroup)
 	batchWaitGroup.Add(relaysPerSec * int(blockDurationSec))
 
-	for i := 0; i < relaysPerSec*int(blockDurationSec); i++ {
-		iterationTime := relayBatchInfo.nextBatchTime.Add(time.Duration(i+1) * relayInterval)
+	now := time.Now()
+
+	for i := 0; i < 50000; i++ {
+		iterationTime := now.Add(time.Duration(i+1) * relayInterval)
 		batchLimiter.Go(s.ctx, func() {
 
 			relaysSent := s.numRelaysSent.Add(1) - 1

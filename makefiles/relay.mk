@@ -8,7 +8,7 @@ send_relay_path_JSONRPC: test_e2e_env ## Send a JSONRPC relay through PATH to a 
 		-H "X-App-Address: pokt1mrqt5f7qh8uxs27cjm9t7v9e74a9vvdnq5jva4" \
 		-H "target-service-id: anvil" \
 		--data '{"jsonrpc":"2.0","method":"eth_blockNumber","params":[],"id":1}' \
-		http://localhost:3000/v1/
+		http://localhost:3069/v1/
 
 # TODO_MAINNET(@red-0ne): Re-enable this once PATH Gateway supports REST.
 # See https://github.com/buildwithgrove/path/issues/87

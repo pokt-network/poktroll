@@ -257,12 +257,12 @@ func NewSupplyTxClientContextFn(
 // NewSupplyAccountQuerierFn supplies a depinject config with an AccountQuerier.
 func NewSupplyAccountQuerierFn() SupplierFn {
 	return func(
-		_ context.Context,
+		ctx context.Context,
 		deps depinject.Config,
 		_ *cobra.Command,
 	) (depinject.Config, error) {
 		// Create the account querier.
-		accountQuerier, err := query.NewAccountQuerier(deps)
+		accountQuerier, err := query.NewAccountQuerier(ctx, deps)
 		if err != nil {
 			return nil, err
 		}
@@ -275,12 +275,12 @@ func NewSupplyAccountQuerierFn() SupplierFn {
 // NewSupplyApplicationQuerierFn supplies a depinject config with an ApplicationQuerier.
 func NewSupplyApplicationQuerierFn() SupplierFn {
 	return func(
-		_ context.Context,
+		ctx context.Context,
 		deps depinject.Config,
 		_ *cobra.Command,
 	) (depinject.Config, error) {
 		// Create the application querier.
-		applicationQuerier, err := query.NewApplicationQuerier(deps)
+		applicationQuerier, err := query.NewApplicationQuerier(ctx, deps)
 		if err != nil {
 			return nil, err
 		}
@@ -293,12 +293,12 @@ func NewSupplyApplicationQuerierFn() SupplierFn {
 // NewSupplySessionQuerierFn supplies a depinject config with a SessionQuerier.
 func NewSupplySessionQuerierFn() SupplierFn {
 	return func(
-		_ context.Context,
+		ctx context.Context,
 		deps depinject.Config,
 		_ *cobra.Command,
 	) (depinject.Config, error) {
 		// Create the session querier.
-		sessionQuerier, err := query.NewSessionQuerier(deps)
+		sessionQuerier, err := query.NewSessionQuerier(ctx, deps)
 		if err != nil {
 			return nil, err
 		}
@@ -311,12 +311,12 @@ func NewSupplySessionQuerierFn() SupplierFn {
 // NewSupplySupplierQuerierFn supplies a depinject config with a SupplierQuerier.
 func NewSupplySupplierQuerierFn() SupplierFn {
 	return func(
-		_ context.Context,
+		ctx context.Context,
 		deps depinject.Config,
 		_ *cobra.Command,
 	) (depinject.Config, error) {
 		// Create the supplier querier.
-		supplierQuerier, err := query.NewSupplierQuerier(deps)
+		supplierQuerier, err := query.NewSupplierQuerier(ctx, deps)
 		if err != nil {
 			return nil, err
 		}
@@ -410,11 +410,11 @@ func NewSupplyBlockQueryClientFn(queryNodeRPCUrl *url.URL) SupplierFn {
 // is supplied with the given deps and the new SharedQueryClient.
 func NewSupplySharedQueryClientFn() SupplierFn {
 	return func(
-		_ context.Context,
+		ctx context.Context,
 		deps depinject.Config,
 		_ *cobra.Command,
 	) (depinject.Config, error) {
-		sharedQuerier, err := query.NewSharedQuerier(deps)
+		sharedQuerier, err := query.NewSharedQuerier(ctx, deps)
 		if err != nil {
 			return nil, err
 		}
@@ -428,11 +428,11 @@ func NewSupplySharedQueryClientFn() SupplierFn {
 // is supplied with the given deps and the new ProofQueryClient.
 func NewSupplyProofQueryClientFn() SupplierFn {
 	return func(
-		_ context.Context,
+		ctx context.Context,
 		deps depinject.Config,
 		_ *cobra.Command,
 	) (depinject.Config, error) {
-		proofQuerier, err := query.NewProofQuerier(deps)
+		proofQuerier, err := query.NewProofQuerier(ctx, deps)
 		if err != nil {
 			return nil, err
 		}
@@ -446,11 +446,11 @@ func NewSupplyProofQueryClientFn() SupplierFn {
 // is supplied with the given deps and the new ServiceQueryClient.
 func NewSupplyServiceQueryClientFn() SupplierFn {
 	return func(
-		_ context.Context,
+		ctx context.Context,
 		deps depinject.Config,
 		_ *cobra.Command,
 	) (depinject.Config, error) {
-		serviceQuerier, err := query.NewServiceQuerier(deps)
+		serviceQuerier, err := query.NewServiceQuerier(ctx, deps)
 		if err != nil {
 			return nil, err
 		}
@@ -462,12 +462,12 @@ func NewSupplyServiceQueryClientFn() SupplierFn {
 // NewSupplyBankQuerierFn supplies a depinject config with an BankQuerier.
 func NewSupplyBankQuerierFn() SupplierFn {
 	return func(
-		_ context.Context,
+		ctx context.Context,
 		deps depinject.Config,
 		_ *cobra.Command,
 	) (depinject.Config, error) {
 		// Create the bank querier.
-		bankQuerier, err := query.NewBankQuerier(deps)
+		bankQuerier, err := query.NewBankQuerier(ctx, deps)
 		if err != nil {
 			return nil, err
 		}

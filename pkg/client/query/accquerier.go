@@ -11,6 +11,7 @@ import (
 	grpc "github.com/cosmos/gogoproto/grpc"
 
 	"github.com/pokt-network/poktroll/pkg/client"
+	"github.com/pokt-network/poktroll/pkg/observable/channel"
 )
 
 var _ client.AccountQueryClient = (*accQuerier)(nil)
@@ -21,6 +22,7 @@ var _ client.AccountQueryClient = (*accQuerier)(nil)
 type accQuerier struct {
 	clientConn     grpc.ClientConn
 	accountQuerier accounttypes.QueryClient
+	blockClient    client.BlockClient
 
 	// accountCache is a cache of accounts that have already been queried.
 	// TODO_TECHDEBT: Add a size limit to the cache and consider an LRU cache.
@@ -33,15 +35,24 @@ type accQuerier struct {
 //
 // Required dependencies:
 // - clientCtx
-func NewAccountQuerier(deps depinject.Config) (client.AccountQueryClient, error) {
+func NewAccountQuerier(ctx context.Context, deps depinject.Config) (client.AccountQueryClient, error) {
 	aq := &accQuerier{accountCache: make(map[string]types.AccountI)}
 
 	if err := depinject.Inject(
 		deps,
+		&aq.blockClient,
 		&aq.clientConn,
 	); err != nil {
 		return nil, err
 	}
+
+	channel.ForEach(
+		ctx,
+		aq.blockClient.CommittedBlocksSequence(ctx),
+		func(ctx context.Context, block client.Block) {
+			aq.ClearCache()
+		},
+	)
 
 	aq.accountQuerier = accounttypes.NewQueryClient(aq.clientConn)
 
@@ -107,4 +118,8 @@ func (aq *accQuerier) GetPubKeyFromAddress(ctx context.Context, address string) 
 }
 
 func (aq *accQuerier) ClearCache() {
+	aq.accountCacheMu.Lock()
+	defer aq.accountCacheMu.Unlock()
+
+	aq.accountCache = make(map[string]types.AccountI)
 }

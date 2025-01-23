@@ -559,7 +559,7 @@ You can use `curl`
 ```bash
 curl -X POST -H "Content-Type: application/json" \
   --data '{"jsonrpc":"2.0","method":"eth_blockNumber","params":[],"id":1}' \
-  http://anvil.localhost:3000/v1
+  http://anvil.localhost:3069/v1/
 ```
 
 If everything worked as expected, you should see output similar to the following:
@@ -632,7 +632,7 @@ Give it a shot by running the following multiple times:
 ```bash
 curl -X POST -H "Content-Type: application/json" \
   --data '{"jsonrpc":"2.0","method":"eth_blockNumber","params":[],"id":1}' \
-  http://anvil.localhost:3000/v1
+  http://anvil.localhost:3069/v1/
 ```
 
 ### 5.5. Inspect the logs
