@@ -1,0 +1,16 @@
+Initializing logger
+Registering providers
+Registering outputs
+ Implicitly registering resolver *polyzero.zerologLogger for interface type polylog.Logger
+ Implicitly registering resolver *mockclient.MockAccountQueryClient for interface type client.AccountQueryClient
+ Implicitly registering resolver *mockclient.MockSharedQueryClient for interface type client.SharedQueryClient
+ Registering github.com/pokt-network/poktroll/pkg/crypto/rings.NewRingClient (/Users/dk/pocket/poktroll-1/pkg/crypto/rings/client.go:52)
+Building container
+Resolving dependencies for github.com/pokt-network/poktroll/pkg/crypto/rings.NewRingClient (/Users/dk/pocket/poktroll-1/pkg/crypto/rings/client.go:52)
+ Supplying *polyzero.zerologLogger from github.com/pokt-network/poktroll/testutil/testcrypto/rings.NewRingCacheWithMockDependencies (/Users/dk/pocket/poktroll-1/testutil/testcrypto/rings/cache.go:38) to github.com/pokt-network/poktroll/pkg/crypto/rings.NewRingClient
+ Supplying *mockclient.MockAccountQueryClient from github.com/pokt-network/poktroll/pkg/crypto/rings_test.createRingCache (/Users/dk/pocket/poktroll-1/pkg/crypto/rings/cache_test.go:315) to github.com/pokt-network/poktroll/pkg/crypto/rings.NewRingClient
+ Error: can't resolve type github.com/pokt-network/poktroll/pkg/client/client.ApplicationQueryClient for github.com/pokt-network/poktroll/pkg/crypto/rings.NewRingClient (/Users/dk/pocket/poktroll-1/pkg/crypto/rings/client.go:52):
+	while resolving:
+		client.ApplicationQueryClient for github.com/pokt-network/poktroll/pkg/crypto/rings.NewRingClient (/Users/dk/pocket/poktroll-1/pkg/crypto/rings/client.go:52)
+
+ Saved graph of container to /Users/dk/pocket/poktroll-1/pkg/crypto/rings/debug_container.dot

@@ -1,0 +1,23 @@
+digraph "" {
+  "*github.com/pokt-network/poktroll/pkg/polylog/polyzero.zerologLogger"[color="lightgrey", fontcolor="dimgrey", penwidth="0.5"];
+  "*github.com/pokt-network/poktroll/testutil/mockclient.MockAccountQueryClient"[color="lightgrey", fontcolor="dimgrey", penwidth="0.5"];
+  "*github.com/pokt-network/poktroll/testutil/mockclient.MockApplicationQueryClient"[color="lightgrey", fontcolor="dimgrey", penwidth="0.5"];
+  "*github.com/pokt-network/poktroll/testutil/mockclient.MockDelegationClient"[color="lightgrey", fontcolor="dimgrey", penwidth="0.5"];
+  "*github.com/pokt-network/poktroll/testutil/mockclient.MockSharedQueryClient"[color="lightgrey", fontcolor="dimgrey", penwidth="0.5"];
+  "github.com/pokt-network/poktroll/pkg/client.AccountQueryClient"[color="black", fontcolor="black", penwidth="1.5"];
+  "github.com/pokt-network/poktroll/pkg/client.ApplicationQueryClient"[color="red", fontcolor="red", penwidth="0.5"];
+  "github.com/pokt-network/poktroll/pkg/crypto/rings.NewRingClient"[color="red", fontcolor="red", penwidth="0.5", shape="hexagon"];
+  "github.com/pokt-network/poktroll/pkg/polylog.Logger"[color="black", fontcolor="black", penwidth="1.5"];
+  "github.com/pokt-network/poktroll/pkg/relayer/proxy_test.TestRelayerProxy_Relays.WithRelayerProxyDependenciesForBlockHeight.func13"[color="black", fontcolor="black", penwidth="1.5", shape="box"];
+  "github.com/pokt-network/poktroll/testutil/testcrypto/rings.NewRingCacheWithMockDependencies"[color="black", fontcolor="black", penwidth="1.5", shape="box"];
+  "github.com/pokt-network/poktroll/pkg/relayer/proxy_test.TestRelayerProxy_Relays.WithRelayerProxyDependenciesForBlockHeight.func13" -> "*github.com/pokt-network/poktroll/testutil/mockclient.MockAccountQueryClient";
+  "github.com/pokt-network/poktroll/pkg/relayer/proxy_test.TestRelayerProxy_Relays.WithRelayerProxyDependenciesForBlockHeight.func13" -> "*github.com/pokt-network/poktroll/testutil/mockclient.MockApplicationQueryClient";
+  "github.com/pokt-network/poktroll/pkg/relayer/proxy_test.TestRelayerProxy_Relays.WithRelayerProxyDependenciesForBlockHeight.func13" -> "*github.com/pokt-network/poktroll/testutil/mockclient.MockDelegationClient";
+  "github.com/pokt-network/poktroll/pkg/relayer/proxy_test.TestRelayerProxy_Relays.WithRelayerProxyDependenciesForBlockHeight.func13" -> "*github.com/pokt-network/poktroll/testutil/mockclient.MockSharedQueryClient";
+  "github.com/pokt-network/poktroll/testutil/testcrypto/rings.NewRingCacheWithMockDependencies" -> "*github.com/pokt-network/poktroll/pkg/polylog/polyzero.zerologLogger";
+  "*github.com/pokt-network/poktroll/pkg/polylog/polyzero.zerologLogger" -> "github.com/pokt-network/poktroll/pkg/crypto/rings.NewRingClient";
+  "*github.com/pokt-network/poktroll/testutil/mockclient.MockAccountQueryClient" -> "github.com/pokt-network/poktroll/pkg/crypto/rings.NewRingClient";
+  "github.com/pokt-network/poktroll/pkg/client.ApplicationQueryClient" -> "github.com/pokt-network/poktroll/pkg/crypto/rings.NewRingClient";
+  "*github.com/pokt-network/poktroll/testutil/mockclient.MockSharedQueryClient" -> "github.com/pokt-network/poktroll/pkg/crypto/rings.NewRingClient";
+}
+

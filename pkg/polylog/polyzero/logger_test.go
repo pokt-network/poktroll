@@ -345,6 +345,27 @@ func TestWithErrorKey(t *testing.T) {
 	t.Log(logOutput)
 }
 
+func TestZerologLogger_With_Deduplication(t *testing.T) {
+	logger, logOutput := newTestLogger(t, polyzero.DebugLevel)
+
+	// Step 1: Add a field "key" = "first_value"
+	logger = logger.With("key", "first_value")
+	logger.Debug().Msg("step1")
+	require.Contains(t, logOutput.String(), `"key":"first_value"`, "expected field in log output after first With() call")
+
+	// Clear buffer to isolate next output
+	logOutput.Reset()
+
+	// Step 2: Call With("key", "second_value") again
+	logger = logger.With("key", "second_value")
+	logger.Debug().Msg("step2")
+
+	// The final JSON should only have "key" once, with "second_value"
+	// If deduplication is broken, or fields are stacked, we might see "key":"first_value" plus "key":"second_value".
+	require.Contains(t, logOutput.String(), `"key":"second_value"`, "expected deduplicated field in final output")
+	require.NotContains(t, logOutput.String(), `"key":"first_value"`, "should not still contain the old value")
+}
+
 func newTestLogger(
 	t *testing.T,
 	level polylog.Level,

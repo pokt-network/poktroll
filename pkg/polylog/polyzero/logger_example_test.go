@@ -33,3 +33,22 @@ func ExampleNewLogger() {
 	// {"level":"warn","warn":"message"}
 	// {"level":"error","error":"message"}
 }
+
+func ExampleLogger_dedup() {
+	// Construct a debug logger writing to stdout (or os.Stderr).
+	logger := polyzero.NewLogger(
+		polyzero.WithOutput(os.Stdout),
+		polyzero.WithLevel(polyzero.DebugLevel),
+	)
+
+	// Overwrite the same key multiple times.
+	logger = logger.With("session_id", "abc123")
+	logger = logger.With("session_id", "xyz789")
+
+	// The final logger above deduplicates "session_id" so that only the last
+	// value "xyz789" is present in the JSON output. Let's emit a debug message:
+	logger.Debug().Msg("final deduped log entry")
+
+	// Output:
+	// {"level":"debug","session_id":"xyz789","message":"final deduped log entry"}
+}

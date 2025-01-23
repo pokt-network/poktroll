@@ -9,11 +9,12 @@ import (
 	"github.com/pokt-network/poktroll/pkg/polylog"
 )
 
-// zerologLogger is a thin wrapper around a zerolog logger which implements
-// the polylog.Logger interface.
+// zerologLogger is a thin wrapper around a zerolog logger
+// plus a map of fields for deduplication.
 type zerologLogger struct {
 	// NB: Default (0) is Debug.
-	level zerolog.Level
+	level  zerolog.Level
+	fields map[string]any // store accumulated fields as a map
 	zerolog.Logger
 }
 
@@ -30,6 +31,7 @@ func NewLogger(
 ) polylog.Logger {
 	ze := &zerologLogger{
 		level:  zerolog.DebugLevel,
+		fields: make(map[string]any),
 		Logger: zerolog.New(os.Stderr),
 	}
 
@@ -68,13 +70,47 @@ func (ze *zerologLogger) Error() polylog.Event {
 	return newEvent(ze.Logger.Error())
 }
 
-// With creates a child logger with the fields constructed from keyVals added
-// to its context.
+// With deduplicates the provided key-values by copying the parent's
+// fields, overriding any keys in the parent's map, and returning
+// a new logger instance. This avoids repeated keys in the final JSON.
 func (ze *zerologLogger) With(keyVals ...any) polylog.Logger {
+	newFields := make(map[string]any) // start with a fresh map
+
+	// Merge new fields, overriding duplicates
+	for i := 0; i < len(keyVals); i += 2 {
+		if i+1 < len(keyVals) {
+			if key, ok := keyVals[i].(string); ok {
+				newFields[key] = keyVals[i+1]
+			}
+		}
+	}
+
+	// Create a new logger with the same level
+	newLogger := ze.Logger.Level(ze.level)
+
+	// Create a new context builder
+	ctx := newLogger.With()
+
+	// Add fields one by one to ensure proper deduplication
+	for k, v := range newFields {
+		ctx = ctx.Interface(k, v)
+	}
+
+	// Return the new logger instance
 	return &zerologLogger{
 		level:  ze.level,
-		Logger: ze.Logger.With().Fields(keyVals).Logger(),
+		fields: newFields,
+		Logger: ctx.Logger(),
 	}
+}
+
+// copyMap is a helper to clone a map[string]any.
+func copyMap(src map[string]any) map[string]any {
+	dst := make(map[string]any, len(src))
+	for k, v := range src {
+		dst[k] = v
+	}
+	return dst
 }
 
 // WithLevel starts a new message with level.
