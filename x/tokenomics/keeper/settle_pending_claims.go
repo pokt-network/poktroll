@@ -116,7 +116,6 @@ func (k Keeper) SettlePendingClaims(ctx cosmostypes.Context) (
 			return settledResults, expiredResults, err
 		}
 
-		_, isProofFound := k.proofKeeper.GetProof(ctx, sessionId, claim.SupplierOperatorAddress)
 		// Using the probabilistic proofs approach, determine if this expiring
 		// claim required an onchain proof
 		proofRequirement, err = k.proofKeeper.ProofRequirementForClaim(ctx, &claim)
@@ -139,14 +138,27 @@ func (k Keeper) SettlePendingClaims(ctx cosmostypes.Context) (
 
 		proofIsRequired := proofRequirement != prooftypes.ProofRequirementReason_NOT_REQUIRED
 		if proofIsRequired {
-			expirationReason := tokenomicstypes.ClaimExpirationReason_EXPIRATION_REASON_UNSPECIFIED // EXPIRATION_REASON_UNSPECIFIED is the default
+			// The tokenomics end blocker, which calls SettlePendingClaims, is ALWAYS executed
+			// AFTER the proof submission window closes. In contrast, the proof end blocker,
+			// which handles proof validation, is ALWAYS executed WITHIN the proof submission
+			// window of the same session number.
+			// This ensures that proof validation is completed before claims settlement,
+			// as they occur at different block heights.
 
-			if !isProofFound {
+			var expirationReason tokenomicstypes.ClaimExpirationReason
+			switch claim.ProofStatus {
+			// If the proof is required and not found, the claim is expired.
+			case prooftypes.ClaimProofStatus_NOT_FOUND:
 				expirationReason = tokenomicstypes.ClaimExpirationReason_PROOF_MISSING
+			// If the proof is required and invalid, the claim is expired.
+			case prooftypes.ClaimProofStatus_INVALID:
+				expirationReason = tokenomicstypes.ClaimExpirationReason_PROOF_INVALID
+			// If the proof is required and valid, the claim is settled.
+			case prooftypes.ClaimProofStatus_VALID:
+				expirationReason = tokenomicstypes.ClaimExpirationReason_EXPIRATION_REASON_UNSPECIFIED
 			}
 
-			// If the proof is missing or invalid -> expire it
-			if expirationReason != tokenomicstypes.ClaimExpirationReason_EXPIRATION_REASON_UNSPECIFIED {
+			if claim.ProofStatus != prooftypes.ClaimProofStatus_VALID {
 				// TODO_BETA(@red-0ne): Slash the supplier in proportion to their stake.
 				// TODO_POST_MAINNET: Consider allowing suppliers to RemoveClaim via a new
 				// message in case it was sent by accident
@@ -176,12 +188,8 @@ func (k Keeper) SettlePendingClaims(ctx cosmostypes.Context) (
 				// have other valid claims and the protocol might want to touch the supplier
 				// owner or operator balances if the stake is negative.
 
-				// The claim & proof are no longer necessary, so there's no need for them
-				// to take up onchain space.
+				// The claim is no longer necessary, so there's no need for it to take up onchain space.
 				k.proofKeeper.RemoveClaim(ctx, sessionId, claim.SupplierOperatorAddress)
-				if isProofFound {
-					k.proofKeeper.RemoveProof(ctx, sessionId, claim.SupplierOperatorAddress)
-				}
 
 				// Append the settlement result to the expired results.
 				expiredResults.Append(ClaimSettlementResult)
@@ -244,13 +252,6 @@ func (k Keeper) SettlePendingClaims(ctx cosmostypes.Context) (
 		// The claim & proof are no longer necessary, so there's no need for them
 		// to take up onchain space.
 		k.proofKeeper.RemoveClaim(ctx, sessionId, claim.SupplierOperatorAddress)
-		// Whether or not the proof is required, the supplier may have submitted one
-		// so we need to delete it either way. If we don't have the if structure,
-		// a safe error will be printed, but it can be confusing to the operator
-		// or developer.
-		if isProofFound {
-			k.proofKeeper.RemoveProof(ctx, sessionId, claim.SupplierOperatorAddress)
-		}
 
 		logger.Debug(fmt.Sprintf("Successfully settled claim for session ID %q at block height %d", claim.SessionHeader.SessionId, blockHeight))
 
@@ -329,36 +330,36 @@ func (k Keeper) ExecutePendingSettledResults(ctx cosmostypes.Context, settledRes
 	logger.Info(fmt.Sprintf("begin executing %d pending settlement results", len(settledResults)))
 
 	for _, settledResult := range settledResults {
-		logger = logger.With("session_id", settledResult.GetSessionId())
-		logger.Info("begin executing pending settlement result")
+		sessionLogger := logger.With("session_id", settledResult.GetSessionId())
+		sessionLogger.Info("begin executing pending settlement result")
 
-		logger.Info(fmt.Sprintf("begin executing %d pending mints", len(settledResult.GetMints())))
-		if err := k.executePendingModuleMints(ctx, logger, settledResult.GetMints()); err != nil {
+		sessionLogger.Info(fmt.Sprintf("begin executing %d pending mints", len(settledResult.GetMints())))
+		if err := k.executePendingModuleMints(ctx, sessionLogger, settledResult.GetMints()); err != nil {
 			return err
 		}
-		logger.Info("done executing pending mints")
+		sessionLogger.Info("done executing pending mints")
 
-		logger.Info(fmt.Sprintf("begin executing %d pending module to module transfers", len(settledResult.GetModToModTransfers())))
-		if err := k.executePendingModToModTransfers(ctx, logger, settledResult.GetModToModTransfers()); err != nil {
+		sessionLogger.Info(fmt.Sprintf("begin executing %d pending module to module transfers", len(settledResult.GetModToModTransfers())))
+		if err := k.executePendingModToModTransfers(ctx, sessionLogger, settledResult.GetModToModTransfers()); err != nil {
 			return err
 		}
-		logger.Info("done executing pending module account to module account transfers")
+		sessionLogger.Info("done executing pending module account to module account transfers")
 
-		logger.Info(fmt.Sprintf("begin executing %d pending module to account transfers", len(settledResult.GetModToAcctTransfers())))
-		if err := k.executePendingModToAcctTransfers(ctx, logger, settledResult.GetModToAcctTransfers()); err != nil {
+		sessionLogger.Info(fmt.Sprintf("begin executing %d pending module to account transfers", len(settledResult.GetModToAcctTransfers())))
+		if err := k.executePendingModToAcctTransfers(ctx, sessionLogger, settledResult.GetModToAcctTransfers()); err != nil {
 			return err
 		}
-		logger.Info("done executing pending module to account transfers")
+		sessionLogger.Info("done executing pending module to account transfers")
 
-		logger.Info(fmt.Sprintf("begin executing %d pending burns", len(settledResult.GetBurns())))
-		if err := k.executePendingModuleBurns(ctx, logger, settledResult.GetBurns()); err != nil {
+		sessionLogger.Info(fmt.Sprintf("begin executing %d pending burns", len(settledResult.GetBurns())))
+		if err := k.executePendingModuleBurns(ctx, sessionLogger, settledResult.GetBurns()); err != nil {
 			return err
 		}
-		logger.Info("done executing pending burns")
+		sessionLogger.Info("done executing pending burns")
 
-		logger.Info("done executing pending settlement result")
+		sessionLogger.Info("done executing pending settlement result")
 
-		logger.Info(fmt.Sprintf(
+		sessionLogger.Info(fmt.Sprintf(
 			"done applying settled results for session %q",
 			settledResult.Claim.GetSessionHeader().GetSessionId(),
 		))

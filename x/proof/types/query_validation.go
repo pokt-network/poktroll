@@ -59,6 +59,7 @@ func (query *QueryGetProofRequest) ValidateBasic() error {
 	return nil
 }
 
+// ValidateBasic performs basic (non-state-dependant) validation on a QueryAllProofsRequest.
 func (query *QueryAllProofsRequest) ValidateBasic() error {
 	// TODO_TECHDEBT: update function signature to receive a context.
 	logger := polylog.Ctx(context.TODO())

@@ -60,7 +60,7 @@ type ProofKeeper interface {
 	ProofRequirementForClaim(ctx context.Context, claim *prooftypes.Claim) (prooftypes.ProofRequirementReason, error)
 
 	// Only used for testing & simulation
-	ValidateSubmittedProofs(ctx cosmostypes.Context)
+	ValidateSubmittedProofs(ctx cosmostypes.Context) (numValidProofs, numInvalidProofs uint64, err error)
 	GetAllProofs(ctx context.Context) []prooftypes.Proof
 	UpsertClaim(ctx context.Context, claim prooftypes.Claim)
 	UpsertProof(ctx context.Context, claim prooftypes.Proof)

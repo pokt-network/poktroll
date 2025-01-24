@@ -1,6 +1,8 @@
 package proof
 
 import (
+	"fmt"
+
 	cosmostelemetry "github.com/cosmos/cosmos-sdk/telemetry"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
@@ -8,14 +10,26 @@ import (
 	"github.com/pokt-network/poktroll/x/proof/types"
 )
 
-// EndBlocker called at every block and validates all proofs submitted at the block
-// height and removes any invalid proofs.
+// EndBlocker is called at every block and handles proof-related operations.
 func EndBlocker(ctx sdk.Context, k keeper.Keeper) (err error) {
 	// Telemetry: measure the end-block execution time following standard cosmos-sdk practices.
 	defer cosmostelemetry.ModuleMeasureSince(types.ModuleName, cosmostelemetry.Now(), cosmostelemetry.MetricKeyEndBlocker)
 
-	// ValidateSubmittedProofs does not return an error as it is a best-effort function.
-	k.ValidateSubmittedProofs(ctx)
+	logger := k.Logger().With("method", "EndBlocker")
+
+	// Iterates through all proofs submitted in this block and removes invalid ones.
+	numValidProofs, numInvalidProofs, err := k.ValidateSubmittedProofs(ctx)
+	if err != nil {
+		logger.Error(fmt.Sprintf("could not validate submitted proofs due to error %v", err))
+		return err
+	}
+
+	logger.Info(fmt.Sprintf(
+		"validated %d proofs: %d valid, %d invalid",
+		numValidProofs+numInvalidProofs,
+		numValidProofs,
+		numInvalidProofs,
+	))
 
 	return nil
 }

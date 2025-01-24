@@ -29,6 +29,9 @@ message Claim {
   poktroll.session.SessionHeader session_header = 2;
   // Root hash returned from smt.SMST#Root().
   bytes root_hash = 3;
+  // Claim proof status captures the status of the proof for this claim.
+  // WARNING: This field MUST only be set by proofKeeper#EnsureValidProofSignaturesAndClosestPath
+  ClaimProofStatus proof_status = 4;
 }
 
 enum ProofRequirementReason {
@@ -42,4 +45,12 @@ enum ClaimProofStage {
   PROVEN = 1;
   SETTLED = 2;
   EXPIRED = 3;
+}
+
+// ClaimProofStatus defines the status of the proof for a claim.
+// The default value is NOT_FOUND, whether the proof is required or not.
+enum ClaimProofStatus {
+  NOT_FOUND = 0;
+  VALID = 1;
+  INVALID = 2;
 }

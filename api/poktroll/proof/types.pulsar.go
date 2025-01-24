@@ -585,6 +585,7 @@ var (
 	fd_Claim_supplier_operator_address protoreflect.FieldDescriptor
 	fd_Claim_session_header            protoreflect.FieldDescriptor
 	fd_Claim_root_hash                 protoreflect.FieldDescriptor
+	fd_Claim_proof_status              protoreflect.FieldDescriptor
 )
 
 func init() {
@@ -593,6 +594,7 @@ func init() {
 	fd_Claim_supplier_operator_address = md_Claim.Fields().ByName("supplier_operator_address")
 	fd_Claim_session_header = md_Claim.Fields().ByName("session_header")
 	fd_Claim_root_hash = md_Claim.Fields().ByName("root_hash")
+	fd_Claim_proof_status = md_Claim.Fields().ByName("proof_status")
 }
 
 var _ protoreflect.Message = (*fastReflection_Claim)(nil)
@@ -678,6 +680,12 @@ func (x *fastReflection_Claim) Range(f func(protoreflect.FieldDescriptor, protor
 			return
 		}
 	}
+	if x.ProofStatus != 0 {
+		value := protoreflect.ValueOfEnum((protoreflect.EnumNumber)(x.ProofStatus))
+		if !f(fd_Claim_proof_status, value) {
+			return
+		}
+	}
 }
 
 // Has reports whether a field is populated.
@@ -699,6 +707,8 @@ func (x *fastReflection_Claim) Has(fd protoreflect.FieldDescriptor) bool {
 		return x.SessionHeader != nil
 	case "poktroll.proof.Claim.root_hash":
 		return len(x.RootHash) != 0
+	case "poktroll.proof.Claim.proof_status":
+		return x.ProofStatus != 0
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.proof.Claim"))
@@ -721,6 +731,8 @@ func (x *fastReflection_Claim) Clear(fd protoreflect.FieldDescriptor) {
 		x.SessionHeader = nil
 	case "poktroll.proof.Claim.root_hash":
 		x.RootHash = nil
+	case "poktroll.proof.Claim.proof_status":
+		x.ProofStatus = 0
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.proof.Claim"))
@@ -746,6 +758,9 @@ func (x *fastReflection_Claim) Get(descriptor protoreflect.FieldDescriptor) prot
 	case "poktroll.proof.Claim.root_hash":
 		value := x.RootHash
 		return protoreflect.ValueOfBytes(value)
+	case "poktroll.proof.Claim.proof_status":
+		value := x.ProofStatus
+		return protoreflect.ValueOfEnum((protoreflect.EnumNumber)(value))
 	default:
 		if descriptor.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.proof.Claim"))
@@ -772,6 +787,8 @@ func (x *fastReflection_Claim) Set(fd protoreflect.FieldDescriptor, value protor
 		x.SessionHeader = value.Message().Interface().(*session.SessionHeader)
 	case "poktroll.proof.Claim.root_hash":
 		x.RootHash = value.Bytes()
+	case "poktroll.proof.Claim.proof_status":
+		x.ProofStatus = (ClaimProofStatus)(value.Enum())
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.proof.Claim"))
@@ -801,6 +818,8 @@ func (x *fastReflection_Claim) Mutable(fd protoreflect.FieldDescriptor) protoref
 		panic(fmt.Errorf("field supplier_operator_address of message poktroll.proof.Claim is not mutable"))
 	case "poktroll.proof.Claim.root_hash":
 		panic(fmt.Errorf("field root_hash of message poktroll.proof.Claim is not mutable"))
+	case "poktroll.proof.Claim.proof_status":
+		panic(fmt.Errorf("field proof_status of message poktroll.proof.Claim is not mutable"))
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.proof.Claim"))
@@ -821,6 +840,8 @@ func (x *fastReflection_Claim) NewField(fd protoreflect.FieldDescriptor) protore
 		return protoreflect.ValueOfMessage(m.ProtoReflect())
 	case "poktroll.proof.Claim.root_hash":
 		return protoreflect.ValueOfBytes(nil)
+	case "poktroll.proof.Claim.proof_status":
+		return protoreflect.ValueOfEnum(0)
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.proof.Claim"))
@@ -902,6 +923,9 @@ func (x *fastReflection_Claim) ProtoMethods() *protoiface.Methods {
 		if l > 0 {
 			n += 1 + l + runtime.Sov(uint64(l))
 		}
+		if x.ProofStatus != 0 {
+			n += 1 + runtime.Sov(uint64(x.ProofStatus))
+		}
 		if x.unknownFields != nil {
 			n += len(x.unknownFields)
 		}
@@ -930,6 +954,11 @@ func (x *fastReflection_Claim) ProtoMethods() *protoiface.Methods {
 		if x.unknownFields != nil {
 			i -= len(x.unknownFields)
 			copy(dAtA[i:], x.unknownFields)
+		}
+		if x.ProofStatus != 0 {
+			i = runtime.EncodeVarint(dAtA, i, uint64(x.ProofStatus))
+			i--
+			dAtA[i] = 0x20
 		}
 		if len(x.RootHash) > 0 {
 			i -= len(x.RootHash)
@@ -1110,6 +1139,25 @@ func (x *fastReflection_Claim) ProtoMethods() *protoiface.Methods {
 					x.RootHash = []byte{}
 				}
 				iNdEx = postIndex
+			case 4:
+				if wireType != 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field ProofStatus", wireType)
+				}
+				x.ProofStatus = 0
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					x.ProofStatus |= ClaimProofStatus(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
 			default:
 				iNdEx = preIndex
 				skippy, err := runtime.Skip(dAtA[iNdEx:])
@@ -1263,6 +1311,57 @@ func (ClaimProofStage) EnumDescriptor() ([]byte, []int) {
 	return file_poktroll_proof_types_proto_rawDescGZIP(), []int{1}
 }
 
+// ClaimProofStatus defines the status of the proof for a claim.
+// The default value is NOT_FOUND, whether the proof is required or not.
+type ClaimProofStatus int32
+
+const (
+	ClaimProofStatus_NOT_FOUND ClaimProofStatus = 0
+	ClaimProofStatus_VALID     ClaimProofStatus = 1
+	ClaimProofStatus_INVALID   ClaimProofStatus = 2
+)
+
+// Enum value maps for ClaimProofStatus.
+var (
+	ClaimProofStatus_name = map[int32]string{
+		0: "NOT_FOUND",
+		1: "VALID",
+		2: "INVALID",
+	}
+	ClaimProofStatus_value = map[string]int32{
+		"NOT_FOUND": 0,
+		"VALID":     1,
+		"INVALID":   2,
+	}
+)
+
+func (x ClaimProofStatus) Enum() *ClaimProofStatus {
+	p := new(ClaimProofStatus)
+	*p = x
+	return p
+}
+
+func (x ClaimProofStatus) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (ClaimProofStatus) Descriptor() protoreflect.EnumDescriptor {
+	return file_poktroll_proof_types_proto_enumTypes[2].Descriptor()
+}
+
+func (ClaimProofStatus) Type() protoreflect.EnumType {
+	return &file_poktroll_proof_types_proto_enumTypes[2]
+}
+
+func (x ClaimProofStatus) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use ClaimProofStatus.Descriptor instead.
+func (ClaimProofStatus) EnumDescriptor() ([]byte, []int) {
+	return file_poktroll_proof_types_proto_rawDescGZIP(), []int{2}
+}
+
 type Proof struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -1328,6 +1427,9 @@ type Claim struct {
 	SessionHeader *session.SessionHeader `protobuf:"bytes,2,opt,name=session_header,json=sessionHeader,proto3" json:"session_header,omitempty"`
 	// Root hash returned from smt.SMST#Root().
 	RootHash []byte `protobuf:"bytes,3,opt,name=root_hash,json=rootHash,proto3" json:"root_hash,omitempty"`
+	// Claim proof status captures the status of the proof for this claim.
+	// WARNING: This field MUST only be set by proofKeeper#EnsureValidProofSignaturesAndClosestPath
+	ProofStatus ClaimProofStatus `protobuf:"varint,4,opt,name=proof_status,json=proofStatus,proto3,enum=poktroll.proof.ClaimProofStatus" json:"proof_status,omitempty"`
 }
 
 func (x *Claim) Reset() {
@@ -1371,6 +1473,13 @@ func (x *Claim) GetRootHash() []byte {
 	return nil
 }
 
+func (x *Claim) GetProofStatus() ClaimProofStatus {
+	if x != nil {
+		return x.ProofStatus
+	}
+	return ClaimProofStatus_NOT_FOUND
+}
+
 var File_poktroll_proof_types_proto protoreflect.FileDescriptor
 
 var file_poktroll_proof_types_proto_rawDesc = []byte{
@@ -1395,7 +1504,7 @@ var file_poktroll_proof_types_proto_rawDesc = []byte{
 	0x64, 0x65, 0x72, 0x12, 0x30, 0x0a, 0x14, 0x63, 0x6c, 0x6f, 0x73, 0x65, 0x73, 0x74, 0x5f, 0x6d,
 	0x65, 0x72, 0x6b, 0x6c, 0x65, 0x5f, 0x70, 0x72, 0x6f, 0x6f, 0x66, 0x18, 0x03, 0x20, 0x01, 0x28,
 	0x0c, 0x52, 0x12, 0x63, 0x6c, 0x6f, 0x73, 0x65, 0x73, 0x74, 0x4d, 0x65, 0x72, 0x6b, 0x6c, 0x65,
-	0x50, 0x72, 0x6f, 0x6f, 0x66, 0x22, 0xc2, 0x01, 0x0a, 0x05, 0x43, 0x6c, 0x61, 0x69, 0x6d, 0x12,
+	0x50, 0x72, 0x6f, 0x6f, 0x66, 0x22, 0x87, 0x02, 0x0a, 0x05, 0x43, 0x6c, 0x61, 0x69, 0x6d, 0x12,
 	0x54, 0x0a, 0x19, 0x73, 0x75, 0x70, 0x70, 0x6c, 0x69, 0x65, 0x72, 0x5f, 0x6f, 0x70, 0x65, 0x72,
 	0x61, 0x74, 0x6f, 0x72, 0x5f, 0x61, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x18, 0x01, 0x20, 0x01,
 	0x28, 0x09, 0x42, 0x18, 0xd2, 0xb4, 0x2d, 0x14, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x41,
@@ -1407,16 +1516,24 @@ var file_poktroll_proof_types_proto_rawDesc = []byte{
 	0x2e, 0x53, 0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x48, 0x65, 0x61, 0x64, 0x65, 0x72, 0x52, 0x0d,
 	0x73, 0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x48, 0x65, 0x61, 0x64, 0x65, 0x72, 0x12, 0x1b, 0x0a,
 	0x09, 0x72, 0x6f, 0x6f, 0x74, 0x5f, 0x68, 0x61, 0x73, 0x68, 0x18, 0x03, 0x20, 0x01, 0x28, 0x0c,
-	0x52, 0x08, 0x72, 0x6f, 0x6f, 0x74, 0x48, 0x61, 0x73, 0x68, 0x2a, 0x4c, 0x0a, 0x16, 0x50, 0x72,
-	0x6f, 0x6f, 0x66, 0x52, 0x65, 0x71, 0x75, 0x69, 0x72, 0x65, 0x6d, 0x65, 0x6e, 0x74, 0x52, 0x65,
-	0x61, 0x73, 0x6f, 0x6e, 0x12, 0x10, 0x0a, 0x0c, 0x4e, 0x4f, 0x54, 0x5f, 0x52, 0x45, 0x51, 0x55,
-	0x49, 0x52, 0x45, 0x44, 0x10, 0x00, 0x12, 0x11, 0x0a, 0x0d, 0x50, 0x52, 0x4f, 0x42, 0x41, 0x42,
-	0x49, 0x4c, 0x49, 0x53, 0x54, 0x49, 0x43, 0x10, 0x01, 0x12, 0x0d, 0x0a, 0x09, 0x54, 0x48, 0x52,
-	0x45, 0x53, 0x48, 0x4f, 0x4c, 0x44, 0x10, 0x02, 0x2a, 0x44, 0x0a, 0x0f, 0x43, 0x6c, 0x61, 0x69,
-	0x6d, 0x50, 0x72, 0x6f, 0x6f, 0x66, 0x53, 0x74, 0x61, 0x67, 0x65, 0x12, 0x0b, 0x0a, 0x07, 0x43,
-	0x4c, 0x41, 0x49, 0x4d, 0x45, 0x44, 0x10, 0x00, 0x12, 0x0a, 0x0a, 0x06, 0x50, 0x52, 0x4f, 0x56,
-	0x45, 0x4e, 0x10, 0x01, 0x12, 0x0b, 0x0a, 0x07, 0x53, 0x45, 0x54, 0x54, 0x4c, 0x45, 0x44, 0x10,
-	0x02, 0x12, 0x0b, 0x0a, 0x07, 0x45, 0x58, 0x50, 0x49, 0x52, 0x45, 0x44, 0x10, 0x03, 0x42, 0x9e,
+	0x52, 0x08, 0x72, 0x6f, 0x6f, 0x74, 0x48, 0x61, 0x73, 0x68, 0x12, 0x43, 0x0a, 0x0c, 0x70, 0x72,
+	0x6f, 0x6f, 0x66, 0x5f, 0x73, 0x74, 0x61, 0x74, 0x75, 0x73, 0x18, 0x04, 0x20, 0x01, 0x28, 0x0e,
+	0x32, 0x20, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x70, 0x72, 0x6f, 0x6f,
+	0x66, 0x2e, 0x43, 0x6c, 0x61, 0x69, 0x6d, 0x50, 0x72, 0x6f, 0x6f, 0x66, 0x53, 0x74, 0x61, 0x74,
+	0x75, 0x73, 0x52, 0x0b, 0x70, 0x72, 0x6f, 0x6f, 0x66, 0x53, 0x74, 0x61, 0x74, 0x75, 0x73, 0x2a,
+	0x4c, 0x0a, 0x16, 0x50, 0x72, 0x6f, 0x6f, 0x66, 0x52, 0x65, 0x71, 0x75, 0x69, 0x72, 0x65, 0x6d,
+	0x65, 0x6e, 0x74, 0x52, 0x65, 0x61, 0x73, 0x6f, 0x6e, 0x12, 0x10, 0x0a, 0x0c, 0x4e, 0x4f, 0x54,
+	0x5f, 0x52, 0x45, 0x51, 0x55, 0x49, 0x52, 0x45, 0x44, 0x10, 0x00, 0x12, 0x11, 0x0a, 0x0d, 0x50,
+	0x52, 0x4f, 0x42, 0x41, 0x42, 0x49, 0x4c, 0x49, 0x53, 0x54, 0x49, 0x43, 0x10, 0x01, 0x12, 0x0d,
+	0x0a, 0x09, 0x54, 0x48, 0x52, 0x45, 0x53, 0x48, 0x4f, 0x4c, 0x44, 0x10, 0x02, 0x2a, 0x44, 0x0a,
+	0x0f, 0x43, 0x6c, 0x61, 0x69, 0x6d, 0x50, 0x72, 0x6f, 0x6f, 0x66, 0x53, 0x74, 0x61, 0x67, 0x65,
+	0x12, 0x0b, 0x0a, 0x07, 0x43, 0x4c, 0x41, 0x49, 0x4d, 0x45, 0x44, 0x10, 0x00, 0x12, 0x0a, 0x0a,
+	0x06, 0x50, 0x52, 0x4f, 0x56, 0x45, 0x4e, 0x10, 0x01, 0x12, 0x0b, 0x0a, 0x07, 0x53, 0x45, 0x54,
+	0x54, 0x4c, 0x45, 0x44, 0x10, 0x02, 0x12, 0x0b, 0x0a, 0x07, 0x45, 0x58, 0x50, 0x49, 0x52, 0x45,
+	0x44, 0x10, 0x03, 0x2a, 0x39, 0x0a, 0x10, 0x43, 0x6c, 0x61, 0x69, 0x6d, 0x50, 0x72, 0x6f, 0x6f,
+	0x66, 0x53, 0x74, 0x61, 0x74, 0x75, 0x73, 0x12, 0x0d, 0x0a, 0x09, 0x4e, 0x4f, 0x54, 0x5f, 0x46,
+	0x4f, 0x55, 0x4e, 0x44, 0x10, 0x00, 0x12, 0x09, 0x0a, 0x05, 0x56, 0x41, 0x4c, 0x49, 0x44, 0x10,
+	0x01, 0x12, 0x0b, 0x0a, 0x07, 0x49, 0x4e, 0x56, 0x41, 0x4c, 0x49, 0x44, 0x10, 0x02, 0x42, 0x9e,
 	0x01, 0xd8, 0xe2, 0x1e, 0x01, 0x0a, 0x12, 0x63, 0x6f, 0x6d, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72,
 	0x6f, 0x6c, 0x6c, 0x2e, 0x70, 0x72, 0x6f, 0x6f, 0x66, 0x42, 0x0a, 0x54, 0x79, 0x70, 0x65, 0x73,
 	0x50, 0x72, 0x6f, 0x74, 0x6f, 0x50, 0x01, 0x5a, 0x1f, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x73,
@@ -1442,23 +1559,25 @@ func file_poktroll_proof_types_proto_rawDescGZIP() []byte {
 	return file_poktroll_proof_types_proto_rawDescData
 }
 
-var file_poktroll_proof_types_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
+var file_poktroll_proof_types_proto_enumTypes = make([]protoimpl.EnumInfo, 3)
 var file_poktroll_proof_types_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
 var file_poktroll_proof_types_proto_goTypes = []interface{}{
 	(ProofRequirementReason)(0),   // 0: poktroll.proof.ProofRequirementReason
 	(ClaimProofStage)(0),          // 1: poktroll.proof.ClaimProofStage
-	(*Proof)(nil),                 // 2: poktroll.proof.Proof
-	(*Claim)(nil),                 // 3: poktroll.proof.Claim
-	(*session.SessionHeader)(nil), // 4: poktroll.session.SessionHeader
+	(ClaimProofStatus)(0),         // 2: poktroll.proof.ClaimProofStatus
+	(*Proof)(nil),                 // 3: poktroll.proof.Proof
+	(*Claim)(nil),                 // 4: poktroll.proof.Claim
+	(*session.SessionHeader)(nil), // 5: poktroll.session.SessionHeader
 }
 var file_poktroll_proof_types_proto_depIdxs = []int32{
-	4, // 0: poktroll.proof.Proof.session_header:type_name -> poktroll.session.SessionHeader
-	4, // 1: poktroll.proof.Claim.session_header:type_name -> poktroll.session.SessionHeader
-	2, // [2:2] is the sub-list for method output_type
-	2, // [2:2] is the sub-list for method input_type
-	2, // [2:2] is the sub-list for extension type_name
-	2, // [2:2] is the sub-list for extension extendee
-	0, // [0:2] is the sub-list for field type_name
+	5, // 0: poktroll.proof.Proof.session_header:type_name -> poktroll.session.SessionHeader
+	5, // 1: poktroll.proof.Claim.session_header:type_name -> poktroll.session.SessionHeader
+	2, // 2: poktroll.proof.Claim.proof_status:type_name -> poktroll.proof.ClaimProofStatus
+	3, // [3:3] is the sub-list for method output_type
+	3, // [3:3] is the sub-list for method input_type
+	3, // [3:3] is the sub-list for extension type_name
+	3, // [3:3] is the sub-list for extension extendee
+	0, // [0:3] is the sub-list for field type_name
 }
 
 func init() { file_poktroll_proof_types_proto_init() }
@@ -1497,7 +1616,7 @@ func file_poktroll_proof_types_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_poktroll_proof_types_proto_rawDesc,
-			NumEnums:      2,
+			NumEnums:      3,
 			NumMessages:   2,
 			NumExtensions: 0,
 			NumServices:   0,
