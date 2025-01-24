@@ -384,12 +384,15 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimSettled_ProofRequiredAndProvide
 	s.keepers.UpsertClaim(ctx, s.claim)
 	s.keepers.UpsertProof(ctx, s.proof)
 
+	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
+	s.keepers.ValidateSubmittedProofs(sdkCtx)
+
 	// Settle pending claims after proof window closes
 	// Expectation: All (1) claims should be claimed.
 	// NB: proofs should be rejected when the current height equals the proof window close height.
 	sessionEndHeight := s.claim.SessionHeader.SessionEndBlockHeight
 	blockHeight := sharedtypes.GetProofWindowCloseHeight(&sharedParams, sessionEndHeight)
-	sdkCtx := cosmostypes.UnwrapSDKContext(ctx).WithBlockHeight(blockHeight)
+	sdkCtx = cosmostypes.UnwrapSDKContext(ctx).WithBlockHeight(blockHeight)
 	settledResult, expiredResult, err := s.keepers.SettlePendingClaims(sdkCtx)
 	require.NoError(t, err)
 
@@ -472,17 +475,25 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimExpired_ProofRequired_InvalidOn
 
 	// Confirm an expiration event was emitted
 	events := sdkCtx.EventManager().Events()
-	require.Equal(t, 12, len(events)) // minting, burning, settling, etc..
+	require.Equal(t, 13, len(events)) // minting, burning, settling, etc..
+
 	expectedClaimExpiredEvents := testutilevents.FilterEvents[*tokenomicstypes.EventClaimExpired](t, events)
 	require.Equal(t, 1, len(expectedClaimExpiredEvents))
 
+	// Confirm an invalid proof removed event was emitted
+	expectedProofValidityCheckedEvents := testutilevents.FilterEvents[*prooftypes.EventProofValidityChecked](t, events)
+	require.Equal(t, 1, len(expectedProofValidityCheckedEvents))
+
 	// Validate the event
 	expectedClaimExpiredEvent := expectedClaimExpiredEvents[0]
-	require.Equal(t, tokenomicstypes.ClaimExpirationReason_PROOF_MISSING, expectedClaimExpiredEvent.GetExpirationReason())
+	require.Equal(t, tokenomicstypes.ClaimExpirationReason_PROOF_INVALID, expectedClaimExpiredEvent.GetExpirationReason())
 	require.Equal(t, s.numRelays, expectedClaimExpiredEvent.GetNumRelays())
 	require.Equal(t, s.numClaimedComputeUnits, expectedClaimExpiredEvent.GetNumClaimedComputeUnits())
 	require.Equal(t, s.numEstimatedComputeUnits, expectedClaimExpiredEvent.GetNumEstimatedComputeUnits())
 	require.Equal(t, s.claimedUpokt, *expectedClaimExpiredEvent.GetClaimedUpokt())
+
+	expectedProofValidityCheckedEvent := expectedProofValidityCheckedEvents[0]
+	require.Equal(t, prooftypes.ClaimProofStatus_INVALID, expectedProofValidityCheckedEvent.GetProofStatus())
 
 	// Confirm that a slashing event was emitted
 	expectedSlashingEvents := testutilevents.FilterEvents[*tokenomicstypes.EventSupplierSlashed](t, events)
@@ -519,12 +530,15 @@ func (s *TestSuite) TestClaimSettlement_ClaimSettled_ProofRequiredAndProvided_Vi
 	s.keepers.UpsertClaim(ctx, s.claim)
 	s.keepers.UpsertProof(ctx, s.proof)
 
+	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
+	s.keepers.ValidateSubmittedProofs(sdkCtx)
+
 	// Settle pending claims after proof window closes
 	// Expectation: All (1) claims should be claimed.
 	// NB: proof window has definitely closed at this point
 	sessionEndHeight := s.claim.SessionHeader.SessionEndBlockHeight
 	blockHeight := sharedtypes.GetProofWindowCloseHeight(&sharedParams, sessionEndHeight)
-	sdkCtx := cosmostypes.UnwrapSDKContext(ctx).WithBlockHeight(blockHeight)
+	sdkCtx = cosmostypes.UnwrapSDKContext(ctx).WithBlockHeight(blockHeight)
 	settledResults, expiredResults, err := s.keepers.SettlePendingClaims(sdkCtx)
 	require.NoError(t, err)
 
@@ -574,12 +588,15 @@ func (s *TestSuite) TestSettlePendingClaims_Settles_WhenAProofIsNotRequired() {
 	// Upsert the claim only (not the proof)
 	s.keepers.UpsertClaim(ctx, s.claim)
 
+	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
+	s.keepers.ValidateSubmittedProofs(sdkCtx)
+
 	// Settle pending claims after proof window closes
 	// Expectation: All (1) claims should be claimed.
 	// NB: proofs should be rejected when the current height equals the proof window close height.
 	sessionEndHeight := s.claim.SessionHeader.SessionEndBlockHeight
 	blockHeight := sharedtypes.GetProofWindowCloseHeight(&sharedParams, sessionEndHeight)
-	sdkCtx := cosmostypes.UnwrapSDKContext(ctx).WithBlockHeight(blockHeight)
+	sdkCtx = cosmostypes.UnwrapSDKContext(ctx).WithBlockHeight(blockHeight)
 	settledResults, expiredResults, err := s.keepers.SettlePendingClaims(sdkCtx)
 	require.NoError(t, err)
 
@@ -774,7 +791,7 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimExpired_SupplierUnstaked() {
 	// Validate the EventSupplierUnbondingBegin event.
 	unbondingEndHeight := sharedtypes.GetSupplierUnbondingEndHeight(&sharedParams, &slashedSupplier)
 	slashedSupplier.ServicesActivationHeightsMap = make(map[string]uint64)
-	for i, _ := range slashedSupplier.GetServices() {
+	for i := range slashedSupplier.GetServices() {
 		slashedSupplier.Services[i].Endpoints = make([]*sharedtypes.SupplierEndpoint, 0)
 	}
 	expectedUnbondingBeginEvent := &suppliertypes.EventSupplierUnbondingBegin{

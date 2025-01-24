@@ -285,7 +285,7 @@ func TestEnsureValidProof_Error(t *testing.T) {
 				return proof
 			},
 			expectedErr: prooftypes.ErrProofInvalidProof.Wrapf(
-				"failed to unmarshal closest merkle proof: %s",
+				"failed to unmarshal sparse compact merkle closest proof: %s",
 				expectedInvalidProofUnmarshalErr,
 			),
 		},
@@ -753,6 +753,9 @@ func TestEnsureValidProof_Error(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.desc, func(t *testing.T) {
 			proof := test.newProof(t)
+			sessionId := proof.GetSessionHeader().GetSessionId()
+			supplierOperatorAddr := proof.GetSupplierOperatorAddress()
+			foundClaim, _ := keepers.GetClaim(ctx, sessionId, supplierOperatorAddr)
 
 			// Advance the block height to the proof path seed height.
 			earliestSupplierProofCommitHeight := sharedtypes.GetEarliestSupplierProofCommitHeight(
@@ -770,15 +773,19 @@ func TestEnsureValidProof_Error(t *testing.T) {
 			// Advance the block height to the earliest proof commit height.
 			ctx = keepertest.SetBlockHeight(ctx, earliestSupplierProofCommitHeight)
 
-			// An invalid proof is either one that is not well-formed or one that
-			// has invalid signatures or closest path.
+			// A proof is valid IFF it is:
+			//   1. Well-formed; session header and other metadata
+			//   2. Has valid relay signatures
+			//   3. Satisfies the closest merkle path
 
-			if _, err := keepers.EnsureWellFormedProof(ctx, proof); err != nil {
+			// Ensure the proof is well-formed.
+			if err := keepers.EnsureWellFormedProof(ctx, proof); err != nil {
 				require.ErrorContains(t, err, test.expectedErr.Error())
 				return
 			}
 
-			if err := keepers.EnsureValidProofSignaturesAndClosestPath(ctx, proof); err != nil {
+			// Ensure the proof satisfies the closest merkle path and has valid relay signatures.
+			if err := keepers.EnsureValidProofSignaturesAndClosestPath(ctx, &foundClaim, proof); err != nil {
 				require.ErrorContains(t, err, test.expectedErr.Error())
 				return
 			}
