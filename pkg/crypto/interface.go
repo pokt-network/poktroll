@@ -21,10 +21,10 @@ type RingCache interface {
 	// currently cached in the ring cache.
 	GetCachedAddresses() []string
 	// Start starts the ring cache, it takes a cancellable context and, in a
-	// separate goroutine, listens for on-chain delegation events and invalidates
+	// separate goroutine, listens for onchain delegation events and invalidates
 	// the cache if the redelegation event's AppAddress is stored in the cache.
 	Start(ctx context.Context)
-	// Stop stops the ring cache by unsubscribing from on-chain delegation events.
+	// Stop stops the ring cache by unsubscribing from onchain delegation events.
 	// And clears the cache, so that it no longer contains any rings,
 	Stop()
 }
@@ -47,7 +47,7 @@ type RingClient interface {
 }
 
 // PubKeyClient is used to get the public key given an address.
-// On-chain and off-chain implementations should take care of retrieving the
+// Onchain and offchain implementations should take care of retrieving the
 // address' account and returning its public key.
 type PubKeyClient interface {
 	// GetPubKeyFromAddress returns the public key of the given account address

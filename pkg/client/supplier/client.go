@@ -81,7 +81,7 @@ func (sClient *supplierClient) SubmitProofs(
 	}
 
 	// TODO(@bryanchriswhite): reconcile splitting of supplier & proof modules
-	//  with off-chain pkgs/nomenclature.
+	//  with offchain pkgs/nomenclature.
 	eitherErr := sClient.txClient.SignAndBroadcast(ctx, msgs...)
 	err, errCh := eitherErr.SyncOrAsyncError()
 	if err != nil {
@@ -127,7 +127,7 @@ func (sClient *supplierClient) CreateClaims(
 	}
 
 	// TODO(@bryanchriswhite): reconcile splitting of supplier & proof modules
-	//  with off-chain pkgs/nomenclature.
+	//  with offchain pkgs/nomenclature.
 	eitherErr := sClient.txClient.SignAndBroadcast(ctx, msgs...)
 	err, errCh := eitherErr.SyncOrAsyncError()
 	if err != nil {

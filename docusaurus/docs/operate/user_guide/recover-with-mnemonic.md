@@ -24,7 +24,7 @@ seed phrase, recovering your account is straightforward!
 ## Pre-requisites
 
 - You have the mnemonic seed phrase of the wallet you wish to recover
-- `poktrolld` is installed on your system; see the [installation guide](./install) for more details
+- `poktrolld` is installed on your system; see the [installation guide](./poktrolld_cli.md) for more details
 
 ## Step 1: Prepare to Recover Your Wallet
 

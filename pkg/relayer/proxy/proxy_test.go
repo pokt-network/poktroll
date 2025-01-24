@@ -36,7 +36,7 @@ var (
 
 	// supplierEndpoints is the map of serviceName -> []SupplierEndpoint
 	// where serviceName is the name of the service the supplier staked for
-	// and SupplierEndpoint is the endpoint of the service advertised on-chain
+	// and SupplierEndpoint is the endpoint of the service advertised onchain
 	// by the supplier
 	supplierEndpoints map[string][]*sharedtypes.SupplierEndpoint
 
@@ -213,7 +213,7 @@ func TestRelayerProxy_EmptyServicesConfigMap(t *testing.T) {
 }
 
 // RelayerProxy should fail to start if it cannot spawn a server for the
-// services it advertized on-chain.
+// services it advertized onchain.
 func TestRelayerProxy_UnsupportedRpcType(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.TODO())
 	defer cancel()
@@ -232,7 +232,7 @@ func TestRelayerProxy_UnsupportedRpcType(t *testing.T) {
 		testproxy.WithRelayerProxyDependenciesForBlockHeight(supplierOperatorKeyName, blockHeight),
 		testproxy.WithServicesConfigMap(servicesConfigMap),
 
-		// The supplier is staked on-chain but the service it provides is not supported by the proxy
+		// The supplier is staked onchain but the service it provides is not supported by the proxy
 		testproxy.WithDefaultSupplier(supplierOperatorKeyName, unsupportedSupplierEndpoint),
 		testproxy.WithDefaultApplication(appPrivateKey),
 		testproxy.WithDefaultSessionSupplier(supplierOperatorKeyName, defaultService, appPrivateKey),

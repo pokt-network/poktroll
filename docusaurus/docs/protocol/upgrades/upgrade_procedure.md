@@ -17,7 +17,7 @@ If you're interested in upgrading your Pocket Network node, please check our [re
 - [Implementing the Upgrade](#implementing-the-upgrade)
 - [Writing an Upgrade Transaction](#writing-an-upgrade-transaction)
   - [Validate the URLs (live network only)](#validate-the-urls-live-network-only)
-- [Submitting the upgrade on-chain](#submitting-the-upgrade-on-chain)
+- [Submitting the upgrade onchain](#submitting-the-upgrade-onchain)
 - [Cancelling the upgrade plan](#cancelling-the-upgrade-plan)
 - [Testing the Upgrade](#testing-the-upgrade)
   - [LocalNet Upgrades](#localnet-upgrades)
@@ -33,7 +33,7 @@ allows existing nodes to transition safely from one software version to another 
 
 This process involves several key steps:
 
-1. **Proposal**: The DAO drafts an upgrade proposal using our off-chain governance system.
+1. **Proposal**: The DAO drafts an upgrade proposal using our offchain governance system.
 2. **Implementation**: The proposed changes are implemented in the codebase.
 3. **Testing**: Thorough testing of the proposed changes is conducted in devnet and testnet environments before mainnet deployment.
 4. **Announcement**: Upon successful testing, we announce the upgrade through our social media channels and community forums.
@@ -134,7 +134,7 @@ go install github.com/hashicorp/go-getter/cmd/go-getter@latest
 
 :::
 
-## Submitting the upgrade on-chain
+## Submitting the upgrade onchain
 
 The `MsgSoftwareUpgrade` can be submitted using the following command:
 

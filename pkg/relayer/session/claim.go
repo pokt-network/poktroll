@@ -5,8 +5,10 @@ import (
 	"fmt"
 	"slices"
 
+	sdktypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/pokt-network/smt"
 
+	"github.com/pokt-network/poktroll/app/volatile"
 	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/either"
 	"github.com/pokt-network/poktroll/pkg/observable"
@@ -18,9 +20,16 @@ import (
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
+// The cumulative fees of creating a single claim, followed by submitting a single proof.
+// The value was obtained empirically by observing logs during load testing and observing
+// the claim & proof lifecycle.
+// The gas price at the time of observance was 0.01uPOKT.
+// The value is subject to change as the network parameters change.
+var ClamAndProofGasCost = sdktypes.NewInt64Coin(volatile.DenomuPOKT, 50000)
+
 // createClaims maps over the sessionsToClaimObs observable. For each claim batch, it:
 // 1. Calculates the earliest block height at which it is safe to CreateClaims
-// 2. Waits for said block and creates the claims on-chain
+// 2. Waits for said block and creates the claims onchain
 // 3. Maps errors to a new observable and logs them
 // 4. Returns an observable of the successfully claimed sessions
 // It DOES NOT BLOCK as map operations run in their own goroutines.
@@ -91,7 +100,7 @@ func (rs *relayerSessionsManager) mapWaitForEarliestCreateClaimsHeight(
 // waitForEarliestCreateClaimsHeight calculates and waits for (blocking until) the
 // earliest block height, allowed by the protocol, at which claims can be created
 // for a session with the given sessionEndHeight. It is calculated relative to
-// sessionEndHeight using on-chain governance parameters and randomized input.
+// sessionEndHeight using onchain governance parameters and randomized input.
 // It IS A BLOCKING function.
 func (rs *relayerSessionsManager) waitForEarliestCreateClaimsHeight(
 	ctx context.Context,
@@ -124,7 +133,7 @@ func (rs *relayerSessionsManager) waitForEarliestCreateClaimsHeight(
 	logger.Info().Msg("waiting & blocking until the earliest claim commit height offset seed block height")
 
 	// The block that'll be used as a source of entropy for which branch(es) to
-	// prove should be deterministic and use on-chain governance params.
+	// prove should be deterministic and use onchain governance params.
 	claimsWindowOpenBlock := rs.waitForBlock(ctx, claimWindowOpenHeight)
 	// TODO_MAINNET: If a relayminer is cold-started with persisted but unclaimed ("late")
 	// sessions, the claimsWindowOpenBlock will never be observed. In this case, we should
@@ -260,7 +269,10 @@ func (rs *relayerSessionsManager) payableProofsSessionTrees(
 	if err != nil {
 		return nil, err
 	}
-	proofSubmissionFeeCoin := proofParams.GetProofSubmissionFee()
+
+	// Account for the gas cost of creating a claim and submitting a proof in addition
+	// to the ProofSubmissionFee.
+	claimAndProofSubmissionCost := proofParams.GetProofSubmissionFee().Add(ClamAndProofGasCost)
 
 	supplierOperatorBalanceCoin, err := rs.bankQueryClient.GetBalance(
 		ctx,
@@ -301,19 +313,30 @@ func (rs *relayerSessionsManager) payableProofsSessionTrees(
 	for _, sessionTree := range sessionTrees {
 		// If the supplier operator can afford to claim the session, add it to the
 		// claimableSessionTrees slice.
-		if supplierOperatorBalanceCoin.IsGTE(*proofSubmissionFeeCoin) {
+		supplierCanAffordClaimAndProofFees := supplierOperatorBalanceCoin.IsGTE(claimAndProofSubmissionCost)
+		if supplierCanAffordClaimAndProofFees {
 			claimableSessionTrees = append(claimableSessionTrees, sessionTree)
-			newSupplierOperatorBalanceCoin := supplierOperatorBalanceCoin.Sub(*proofSubmissionFeeCoin)
+			newSupplierOperatorBalanceCoin := supplierOperatorBalanceCoin.Sub(claimAndProofSubmissionCost)
 			supplierOperatorBalanceCoin = &newSupplierOperatorBalanceCoin
 			continue
+		}
+
+		// At this point supplierCanAffordClaimAndProofFees is false.
+		// Delete the session tree from the relayer sessions and the KVStore since
+		// it won't be claimed due to insufficient funds.
+		rs.removeFromRelayerSessions(sessionTree)
+		if err := sessionTree.Delete(); err != nil {
+			logger.With(
+				"session_id", sessionTree.GetSessionHeader().GetSessionId(),
+			).Error().Err(err).Msg("failed to delete session tree")
 		}
 
 		// Log a warning of any session that the supplier operator cannot afford to claim.
 		logger.With(
 			"session_id", sessionTree.GetSessionHeader().GetSessionId(),
 			"supplier_operator_balance", supplierOperatorBalanceCoin,
-			"proof_submission_fee", proofSubmissionFeeCoin,
-		).Warn().Msg("supplier operator cannot afford to submit proof for claim, skipping")
+			"proof_submission_fee", claimAndProofSubmissionCost,
+		).Warn().Msg("supplier operator cannot afford to submit proof for claim, deleting session tree")
 	}
 
 	if len(claimableSessionTrees) < len(sessionTrees) {

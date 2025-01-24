@@ -144,7 +144,7 @@ func (b *blockReplayClient) asyncForwardBlockEvent(
 	)
 }
 
-// getInitialBlock fetches the latest committed on-chain block at the time the
+// getInitialBlock fetches the latest committed onchain block at the time the
 // client starts up, while concurrently waiting for the next block event,
 // publishing whichever occurs first to latestBlockPublishCh.
 // This is necessary to ensure that the most recent block is available to the

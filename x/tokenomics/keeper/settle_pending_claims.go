@@ -25,7 +25,7 @@ import (
 // If a claim is expired and requires a proof and a proof IS NOT available -> it's deleted.
 // If a claim is expired and does NOT require a proof -> it's settled.
 // Events are emitted for each claim that is settled or removed.
-// On-chain Claims & Proofs are deleted after they're settled or expired to free up space.
+// Onchain Claims & Proofs are deleted after they're settled or expired to free up space.
 func (k Keeper) SettlePendingClaims(ctx cosmostypes.Context) (
 	settledResults tlm.ClaimSettlementResults,
 	expiredResults tlm.ClaimSettlementResults,
@@ -95,7 +95,7 @@ func (k Keeper) SettlePendingClaims(ctx cosmostypes.Context) (
 				targetNumRelays,
 			)
 		}
-		// numEstimatedComputeUnits is the probabilistic estimation of the off-chain
+		// numEstimatedComputeUnits is the probabilistic estimation of the offchain
 		// work done by the relay miner in this session. It is derived from the claimed
 		// work and the relay mining difficulty.
 		numEstimatedComputeUnits, err = claim.GetNumEstimatedComputeUnits(relayMiningDifficulty)
@@ -114,7 +114,7 @@ func (k Keeper) SettlePendingClaims(ctx cosmostypes.Context) (
 
 		proof, isProofFound := k.proofKeeper.GetProof(ctx, sessionId, claim.SupplierOperatorAddress)
 		// Using the probabilistic proofs approach, determine if this expiring
-		// claim required an on-chain proof
+		// claim required an onchain proof
 		proofRequirement, err = k.proofKeeper.ProofRequirementForClaim(ctx, &claim)
 		if err != nil {
 			return settledResults, expiredResults, err
@@ -178,7 +178,7 @@ func (k Keeper) SettlePendingClaims(ctx cosmostypes.Context) (
 				// owner or operator balances if the stake is negative.
 
 				// The claim & proof are no longer necessary, so there's no need for them
-				// to take up on-chain space.
+				// to take up onchain space.
 				k.proofKeeper.RemoveClaim(ctx, sessionId, claim.SupplierOperatorAddress)
 				if isProofFound {
 					k.proofKeeper.RemoveProof(ctx, sessionId, claim.SupplierOperatorAddress)
@@ -233,6 +233,7 @@ func (k Keeper) SettlePendingClaims(ctx cosmostypes.Context) (
 			NumEstimatedComputeUnits: numEstimatedComputeUnits,
 			ClaimedUpokt:             &claimeduPOKT,
 			ProofRequirement:         proofRequirement,
+			SettlementResult:         *ClaimSettlementResult,
 		}
 
 		if err = ctx.EventManager().EmitTypedEvent(&claimSettledEvent); err != nil {
@@ -242,7 +243,7 @@ func (k Keeper) SettlePendingClaims(ctx cosmostypes.Context) (
 		logger.Info("claim settled")
 
 		// The claim & proof are no longer necessary, so there's no need for them
-		// to take up on-chain space.
+		// to take up onchain space.
 		k.proofKeeper.RemoveClaim(ctx, sessionId, claim.SupplierOperatorAddress)
 		// Whether or not the proof is required, the supplier may have submitted one
 		// so we need to delete it either way. If we don't have the if structure,
@@ -510,7 +511,7 @@ func (k Keeper) GetExpiringClaims(ctx cosmostypes.Context) (expiringClaims []pro
 	//     2a. This likely also requires adding validation to the shared module params.
 	blockHeight := ctx.BlockHeight()
 
-	// NB: This error can be safely ignored as on-chain SharedQueryClient implementation cannot return an error.
+	// NB: This error can be safely ignored as onchain SharedQueryClient implementation cannot return an error.
 	sharedParams, _ := k.sharedQuerier.GetParams(ctx)
 
 	// expiringSessionEndHeight is the session end height of the session whose proof
@@ -656,7 +657,7 @@ func (k Keeper) slashSupplierStake(
 		))
 
 		// TODO_MAINNET: Should we just remove the supplier if the stake is
-		// below the minimum, at the risk of making the off-chain actors have an
+		// below the minimum, at the risk of making the offchain actors have an
 		// inconsistent session supplier list? See the comment above for more details.
 		supplierToSlash.UnstakeSessionEndHeight = uint64(unstakeSessionEndHeight)
 

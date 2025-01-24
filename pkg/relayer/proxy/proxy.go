@@ -144,7 +144,7 @@ func NewRelayerProxy(
 // if any of them errors.
 // NB: This method IS BLOCKING until all RelayServers are stopped.
 func (rp *relayerProxy) Start(ctx context.Context) error {
-	// The provided services map is built from the supplier's on-chain advertised information,
+	// The provided services map is built from the supplier's onchain advertised information,
 	// which is a runtime parameter that can be changed by the supplier.
 	// NOTE: We build the provided services map at Start instead of NewRelayerProxy to avoid having to
 	// return an error from the constructor.
@@ -155,7 +155,7 @@ func (rp *relayerProxy) Start(ctx context.Context) error {
 	// Start the ring cache.
 	rp.ringCache.Start(ctx)
 
-	// Start the relay meter by subscribing to the on-chain events.
+	// Start the relay meter by subscribing to the onchain events.
 	// This function is non-blocking and the subscription cancellation is handled
 	// by the context passed to the Start method.
 	if err := rp.relayMeter.Start(ctx); err != nil {

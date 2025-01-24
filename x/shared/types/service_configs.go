@@ -7,7 +7,7 @@ import (
 )
 
 const (
-	requiredRevSharePercentageSum = 100
+	requiredRevSharePercentageSum = uint64(100)
 )
 
 // ValidateAppServiceConfigs returns an error if any of the application service configs are invalid
@@ -95,7 +95,7 @@ func ValidateSupplierServiceConfigs(services []*SupplierServiceConfig) error {
 // ensuring that the sum of the revenue share percentages is 100.
 // NB: This function is unit tested via the supplier staking config tests.
 func ValidateServiceRevShare(revShareList []*ServiceRevenueShare) error {
-	revSharePercentageSum := float32(0)
+	revSharePercentageSum := uint64(0)
 
 	if len(revShareList) == 0 {
 		return ErrSharedInvalidRevShare.Wrap("no rev share configurations")
@@ -106,7 +106,7 @@ func ValidateServiceRevShare(revShareList []*ServiceRevenueShare) error {
 			return ErrSharedInvalidRevShare.Wrap("rev share cannot be nil")
 		}
 
-		// Validate the revshare address
+		// Validate the revenue share address
 		if revShare.Address == "" {
 			return ErrSharedInvalidRevShare.Wrapf("rev share address cannot be empty: %v", revShare)
 		}

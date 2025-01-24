@@ -123,7 +123,7 @@ This level of testing ensures that the appchain behaves as expected in a multi-v
 
 ## [End-to-End Tests](e2e)
 
-**End-to-end tests** focus on testing the behavior of a network containing both on- and off-chain actors; typically exercising "localnet".
+**End-to-end tests** focus on testing the behavior of a network containing both on- and offchain actors; typically exercising "localnet".
 
 ### E2E Test Example
 
@@ -133,9 +133,9 @@ This level of testing ensures that the appchain behaves as expected in a multi-v
 
 ### E2E Test - Good Fit
 
-- Asserts or dependent on off-chain assertions
-- Asserts or dependent on off-chain actors
-- Asserts or dependent on off-chain behavior
+- Asserts or dependent on offchain assertions
+- Asserts or dependent on offchain actors
+- Asserts or dependent on offchain behavior
 
 ### E2E Test - Bad Fit
 
@@ -147,6 +147,6 @@ This level of testing ensures that the appchain behaves as expected in a multi-v
 
 - Depends on LocalNet to be running and healthy
 - Depends on other environments (DevNet/TestNet) to be running and healthy
-- Shared mutable network state on-chain
-- Shared mutable network state off-chain
+- Shared mutable network state onchain
+- Shared mutable network state offchain
 - Intolerant of non-idempotent operations (CI re-runnability).
