@@ -4,8 +4,8 @@ package keeper
 	TODO_MAINNET: Document these steps in the docs and link here.
 
 	## Actions (error if anything fails)
-	1. Retrieve a fully hydrated `session` from on-chain store using `msg` metadata
-	2. Retrieve a fully hydrated `claim` from on-chain store using `msg` metadata
+	1. Retrieve a fully hydrated `session` from onchain store using `msg` metadata
+	2. Retrieve a fully hydrated `claim` from onchain store using `msg` metadata
 	3. Retrieve `relay.Req` and `relay.Res` from deserializing `proof.ClosestValueHash`
 
 	## Basic Validations (metadata only)
@@ -23,7 +23,7 @@ package keeper
 	2. verify(relay.Res.Signature, supplier.pubKey)
 
 	## Relay Mining validation
-	1. verify(proof.path) is the expected path; pseudo-random variation using on-chain data
+	1. verify(proof.path) is the expected path; pseudo-random variation using onchain data
 	2. verify(proof.ValueHash, expectedDifficulty); governance based
 	3. verify(claim.Root, proof.ClosestProof); verify the closest proof is correct
 */
@@ -43,7 +43,7 @@ import (
 )
 
 // EnsureValidProof validates the proof submitted by the supplier is correct with
-// respect to an on-chain claim.
+// respect to an onchain claim.
 //
 // This function should be called during session settlement (i.e. EndBlocker)
 // rather than during proof submission (i.e. SubmitProof) because:
@@ -80,13 +80,13 @@ func (k Keeper) EnsureValidProof(
 	}
 	logger.Info("queried and validated the session header")
 
-	// Re-hydrate message session header with the on-chain session header.
+	// Re-hydrate message session header with the onchain session header.
 	// This corrects for discrepancies between unvalidated fields in the session
 	// header which can be derived from known values (e.g. session end height).
 	sessionHeader := onChainSession.GetHeader()
 
 	// Validate proof message commit height is within the respective session's
-	// proof submission window using the on-chain session header.
+	// proof submission window using the onchain session header.
 	if err = k.validateProofWindow(ctx, sessionHeader, supplierOperatorAddr); err != nil {
 		return err
 	}
@@ -180,7 +180,7 @@ func (k Keeper) EnsureValidProof(
 	logger.Debug("successfully validated relay mining difficulty")
 
 	// Validate that path the proof is submitted for matches the expected one
-	// based on the pseudo-random on-chain data associated with the header.
+	// based on the pseudo-random onchain data associated with the header.
 	if err = k.validateClosestPath(
 		ctx,
 		sparseMerkleClosestProof,
@@ -249,7 +249,7 @@ func (k Keeper) validateClosestPath(
 	expectedProofPath := protocol.GetPathForProof(proofPathSeedBlockHash, sessionHeader.GetSessionId())
 	if !bytes.Equal(proof.Path, expectedProofPath) {
 		return types.ErrProofInvalidProof.Wrapf(
-			"the path of the proof provided (%x) does not match one expected by the on-chain protocol (%x)",
+			"the path of the proof provided (%x) does not match one expected by the onchain protocol (%x)",
 			proof.Path,
 			expectedProofPath,
 		)

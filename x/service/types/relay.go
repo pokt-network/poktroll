@@ -83,7 +83,7 @@ func (res RelayResponse) GetSignableBytesHash() ([protocol.RelayHasherSize]byte,
 // TODO_TEST: Add tests for RelayResponse validation
 func (res *RelayResponse) ValidateBasic() error {
 	// TODO_POST_MAINNET: if a client gets a response with an invalid/incomplete
-	// SessionHeader, consider sending an on-chain challenge, lowering their
+	// SessionHeader, consider sending an onchain challenge, lowering their
 	// QoS, or other future work.
 
 	meta := res.GetMeta()
@@ -118,7 +118,7 @@ func (res *RelayResponse) VerifySupplierOperatorSignature(supplierOperatorPubKey
 	return nil
 }
 
-// nullifyForObservability generates an empty RelayRequest that has the same
+// NullifyForObservability generates an empty RelayRequest that has the same
 // service and payload as the source RelayRequest if they are not nil.
 // It is meant to be used when replying with an error but no valid RelayRequest is available.
 func (sourceRelayRequest *RelayRequest) NullifyForObservability() *RelayRequest {

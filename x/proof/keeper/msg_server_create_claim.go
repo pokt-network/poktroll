@@ -33,11 +33,11 @@ func (k msgServer) CreateClaim(
 
 	// Basic validation of the CreateClaim message.
 	if err = msg.ValidateBasic(); err != nil {
-		return nil, err
+		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 	logger.Info("validated the createClaim message")
 
-	// Compare msg session header w/ on-chain session header.
+	// Compare msg session header w/ onchain session header.
 	session, err := k.queryAndValidateSessionHeader(ctx, msg.GetSessionHeader(), msg.GetSupplierOperatorAddress())
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
@@ -62,7 +62,7 @@ func (k msgServer) CreateClaim(
 		)
 
 	// Validate claim message commit height is within the respective session's
-	// claim creation window using the on-chain session header.
+	// claim creation window using the onchain session header.
 	if err = k.validateClaimWindow(ctx, claim.SessionHeader, claim.SupplierOperatorAddress); err != nil {
 		return nil, status.Error(codes.FailedPrecondition, err.Error())
 	}

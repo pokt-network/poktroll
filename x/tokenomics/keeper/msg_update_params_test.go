@@ -44,7 +44,7 @@ func TestMsgUpdateParams(t *testing.T) {
 			},
 
 			shouldError:    true,
-			expectedErrMsg: "the provided authority address does not match the on-chain governance address",
+			expectedErrMsg: "the provided authority address does not match the onchain governance address",
 		},
 		{
 			desc: "invalid: dao reward address missing",
@@ -71,6 +71,33 @@ func TestMsgUpdateParams(t *testing.T) {
 			expectedErrMsg: "empty address string is not allowed",
 		},
 		{
+			desc: "invalid: negative global inflation per claim",
+
+			req: &tokenomicstypes.MsgUpdateParams{
+				Authority: tokenomicsKeeper.GetAuthority(),
+				Params: tokenomicstypes.Params{
+					// GlobalInflationPerClaim MUST be positive.
+					GlobalInflationPerClaim: -0.1,
+
+					// DaoRewardAddress MUST NOT be empty string
+					// when MintAllocationDao is greater than 0.
+					DaoRewardAddress: sample.AccAddress(),
+
+					// MintAllocationXXX params MUST sum to 1.
+					MintAllocationPercentages: tokenomicstypes.MintAllocationPercentages{
+						Dao:         0,
+						Proposer:    0.1,
+						Supplier:    0.1,
+						SourceOwner: 0.1,
+						Application: 0.7,
+					},
+				},
+			},
+
+			shouldError:    true,
+			expectedErrMsg: "GlobalInflationPerClaim must be greater than or equal to 0:",
+		},
+		{
 			desc: "valid: successful param update",
 
 			req: &tokenomicstypes.MsgUpdateParams{
@@ -93,11 +120,12 @@ func TestMsgUpdateParams(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.desc, func(t *testing.T) {
-			_, err := srv.UpdateParams(ctx, test.req)
+			updateRes, err := srv.UpdateParams(ctx, test.req)
 			if test.shouldError {
 				require.Error(t, err)
 				require.ErrorContains(t, err, test.expectedErrMsg)
 			} else {
+				require.Equal(t, &test.req.Params, updateRes.GetParams())
 				require.Nil(t, err)
 			}
 		})

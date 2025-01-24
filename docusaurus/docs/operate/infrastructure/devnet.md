@@ -60,7 +60,7 @@ The following is a list of details to know how our DevNet infrastructure is prov
 
 Each DevNet ArgoCD App (following the App of Apps pattern) provisions a Helm chart called [full-network](https://github.com/pokt-network/protocol-infra/tree/main/charts/full-network).
 
-Each `full-network` includes other ArgoCD applications that deploy Validators and off-chain actors.
+Each `full-network` includes other ArgoCD applications that deploy Validators and offchain actors.
 
 Each Helm chart receives a list of configuration files. For example, see the [relayminer configuration](https://github.com/pokt-network/protocol-infra/blob/main/charts/full-network/templates/Application-Relayminer.yaml#L37). All possible values can be found in the `values.yaml` of the Helm chart, such as the [relayminer Helm chart](https://github.com/pokt-network/helm-charts/blob/main/charts/relayminer/values.yaml).
 
@@ -135,9 +135,7 @@ We use the same ignite `config.yaml` to provision genesis in devnet as is used i
 
 
 ```yaml
-appgateservers:
-  count: 1
-gateways:
+path_gateways:
   count: 1
 relayminers:
   count: 1

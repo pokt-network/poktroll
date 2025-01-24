@@ -1,6 +1,7 @@
 package keeper_test
 
 import (
+	"slices"
 	"strconv"
 	"testing"
 
@@ -11,6 +12,7 @@ import (
 
 	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
 	"github.com/pokt-network/poktroll/testutil/nullify"
+	"github.com/pokt-network/poktroll/testutil/sample"
 	"github.com/pokt-network/poktroll/x/application/types"
 )
 
@@ -120,5 +122,51 @@ func TestApplicationQueryPaginated(t *testing.T) {
 	t.Run("InvalidRequest", func(t *testing.T) {
 		_, err := keeper.AllApplications(ctx, nil)
 		require.ErrorIs(t, err, status.Error(codes.InvalidArgument, "invalid request"))
+	})
+}
+
+func TestAllApplicationsQuery_WithDelegateeGatewayAddressConstraint(t *testing.T) {
+	keeper, ctx := keepertest.ApplicationKeeper(t)
+	gatewayAddr1 := sample.AccAddress()
+	appsWithDelegationAddr := []string{"1", "2"}
+	apps := createNApplications(keeper, ctx, 5, withAppDelegateeGatewayAddr(gatewayAddr1, appsWithDelegationAddr))
+
+	requestBuilder := func(gatewayAddr string) *types.QueryAllApplicationsRequest {
+		return &types.QueryAllApplicationsRequest{
+			DelegateeGatewayAddress: gatewayAddr,
+		}
+	}
+
+	t.Run("QueryAppsWithDelegatee", func(t *testing.T) {
+		resp, err := keeper.AllApplications(ctx, requestBuilder(gatewayAddr1))
+		require.NoError(t, err)
+
+		var expectedApps []types.Application
+		for _, app := range apps {
+			if slices.Contains(appsWithDelegationAddr, app.Address) {
+				expectedApps = append(expectedApps, app)
+			}
+		}
+
+		require.ElementsMatch(t,
+			nullify.Fill(expectedApps),
+			nullify.Fill(resp.Applications),
+		)
+	})
+
+	t.Run("QueryAppsWithNoDelegationConstraint", func(t *testing.T) {
+		resp, err := keeper.AllApplications(ctx, &types.QueryAllApplicationsRequest{})
+		require.NoError(t, err)
+
+		require.ElementsMatch(t,
+			nullify.Fill(apps),
+			nullify.Fill(resp.Applications),
+		)
+	})
+
+	t.Run("QueryAppsWithInvalidGatewayAddr", func(t *testing.T) {
+		addrInvalid := "invalid-address"
+		_, err := keeper.AllApplications(ctx, requestBuilder(addrInvalid))
+		require.ErrorContains(t, err, types.ErrQueryAppsInvalidGatewayAddress.Error())
 	})
 }

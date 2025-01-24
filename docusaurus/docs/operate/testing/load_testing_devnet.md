@@ -20,7 +20,7 @@ We can create DevNets that are suitable for running load tests.
 
 :::warning
 DevNets created with GitHub PRs using `devnet-test-e2e` tags are not suitable for load testing, as they only provision a
-single instance of each off-chain actor. We can create custom DevNets with multiple instances of each off-chain actor for load testing purposes.
+single instance of each offchain actor. We can create custom DevNets with multiple instances of each offchain actor for load testing purposes.
 :::
 
 ## Prerequisites
@@ -50,9 +50,7 @@ networkName: "sophon"
 image:
   tag: sha-7042be3
 
-appgateservers:
-  count: 1
-gateways:
+path_gateways:
   count: 3
 relayminers:
   count: 3

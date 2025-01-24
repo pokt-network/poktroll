@@ -54,7 +54,7 @@ func (ClaimExpirationReason) EnumDescriptor() ([]byte, []int) {
 }
 
 // EventClaimExpired is an event emitted during settlement whenever a claim requiring
-// an on-chain proof doesn't have one. The claim cannot be settled, leading to that work
+// an onchain proof doesn't have one. The claim cannot be settled, leading to that work
 // never being rewarded.
 type EventClaimExpired struct {
 	Claim *types.Claim `protobuf:"bytes,1,opt,name=claim,proto3" json:"claim"`

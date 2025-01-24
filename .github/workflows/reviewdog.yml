@@ -44,25 +44,30 @@ jobs:
           fail_on_error: true
           pattern: "TODO_UPNEXT:"
 
+  # TODO_TECHDEBT(@Olshansk): Consider removing or updating this check.
+  # It was originally added to avoid `sed` in helpers scripts and instructions
+  # to ensure compatibility across both Darwin &Linux. However, we then started
+  # writing Linux-only docs, leading to noise & false-positive.
+  #
   # Prevent the use of `sed` in helper scripts. This ensures compatibility across
   # Darwin and Linux systems.
-  check_sed:
-    name: Check sed
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: pokt-network/action-fail-on-found@v1
-        with:
-          github_token: ${{ secrets.github_token }}
-          reporter: github-pr-review
-          level: error
-          fail_on_error: true
-          pattern: sed -i .*
+  # check_sed:
+  #   name: Check sed
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #     - uses: pokt-network/action-fail-on-found@v1
+  #       with:
+  #         github_token: ${{ secrets.github_token }}
+  #         reporter: github-pr-review
+  #         level: error
+  #         fail_on_error: true
+  #         pattern: sed -i .*
 
   # Ensure that we are using polylog (via logger.) instead of the golang's stdlib
   # log package.
   check_stdlog_in_off_chain_package:
-    name: Check stdlog in off-chain source code
+    name: Check stdlog in offchain source code
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

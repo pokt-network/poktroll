@@ -26,7 +26,7 @@ balance using the `poktrolld` command-line interface (CLI).
 
 ## Pre-requisites
 
-1. `poktrolld` is installed on your system; see the [installation guide](./install) for more details
+1. `poktrolld` is installed on your system; see the [installation guide](./poktrolld_cli.md) for more details
 2. You have the address of the wallet you wish to check
 3. You know the token denomination you wish to check; `upokt` for POKT tokens
 

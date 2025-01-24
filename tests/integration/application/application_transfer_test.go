@@ -1,5 +1,3 @@
-//go:build integration
-
 package application
 
 import (
@@ -20,11 +18,10 @@ import (
 
 var (
 	appFundAmount = int64(100000000)
-	stakeAmount   = int64(100)
+	stakeAmount   = int64(10000000)
 
 	service1Id = "svc1"
 	service2Id = "svc2"
-	service3Id = "svc3"
 )
 
 type appTransferTestSuite struct {
@@ -66,8 +63,8 @@ func (s *appTransferTestSuite) SetupTest() {
 
 	// Stake app1 and app2.
 	s.setupStakeApps(map[string][]string{
-		s.app1: {service1Id, service3Id},
-		s.app2: {service1Id, service2Id},
+		s.app1: {service1Id},
+		s.app2: {service2Id},
 	})
 
 	// Delegate app 1 to gateway 1 and 3 and app 2 to gateways 1 and 2.
@@ -83,7 +80,7 @@ func (s *appTransferTestSuite) SetupTest() {
 		s.app2: {s.gateway1, s.gateway5},
 	})
 
-	// Assert the on-chain state shows the application 3 as NOT staked.
+	// Assert the onchain state shows the application 3 as NOT staked.
 	_, queryErr := s.GetAppQueryClient().GetApplication(s.SdkCtx(), s.app3)
 	require.ErrorContains(s.T(), queryErr, "application not found")
 	require.ErrorContains(s.T(), queryErr, s.app3)
@@ -231,8 +228,8 @@ func (s *appTransferTestSuite) TestMultipleSourceToSameNonexistentDestinationMer
 		require.EqualValues(s.T(), expectedPendingTransfer, pendingTransfer)
 
 		// Query and assert application pending transfer field updated in the store.
-		foundSrcApp, err := s.GetAppQueryClient().GetApplication(s.SdkCtx(), expectedSrcBech32)
-		require.NoError(s.T(), err)
+		foundSrcApp, srcAppErr := s.GetAppQueryClient().GetApplication(s.SdkCtx(), expectedSrcBech32)
+		require.NoError(s.T(), srcAppErr)
 		require.EqualValues(s.T(), expectedPendingTransfer, foundSrcApp.GetPendingTransfer())
 
 		// Assert that the "message" type event (tx result event) is observed which
@@ -299,7 +296,6 @@ func (s *appTransferTestSuite) TestMultipleSourceToSameNonexistentDestinationMer
 	expectedApp3ServiceIds := []string{
 		service1Id,
 		service2Id,
-		service3Id,
 	}
 	for _, serviceId := range expectedApp3ServiceIds {
 		require.Contains(s.T(),
@@ -394,7 +390,7 @@ func (s *appTransferTestSuite) setupStakeApps(appBech32ToServiceIdsMap map[strin
 		require.Equal(s.T(), appBech32, stakeAppRes.GetApplication().GetAddress())
 		require.Equal(s.T(), stakeAmount, stakeAppRes.GetApplication().GetStake().Amount.Int64())
 
-		// Assert the on-chain state shows the application as staked.
+		// Assert the onchain state shows the application as staked.
 		foundApp, queryErr := s.GetAppQueryClient().GetApplication(s.SdkCtx(), appBech32)
 		require.NoError(s.T(), queryErr)
 		require.Equal(s.T(), appBech32, foundApp.GetAddress())
@@ -477,11 +473,15 @@ func (s *appTransferTestSuite) shouldObserveTransferEndEvent(
 			return false
 		}
 
-		eventSrcAddr, hasSrcAddr := events.GetAttributeValue(event, "source_address")
+		_, hasSrcAddr := events.GetAttributeValue(event, "source_address")
 		require.True(s.T(), hasSrcAddr)
 
-		return eventSrcAddr == expectedDstApp.GetAddress()
+		eventDstAddr, hasDstAddr := events.GetAttributeValue(event, "destination_address")
+		require.True(s.T(), hasDstAddr)
+
+		return eventDstAddr == expectedDstApp.GetAddress()
 	})
+
 	require.NotNil(s.T(), targetTransferEndEvent)
 
 	evtSrcAddr, hasSrcAddrAttr := events.GetAttributeValue(targetTransferEndEvent, "source_address")

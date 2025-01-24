@@ -207,8 +207,11 @@ func TestRelayerSessionsManager_InsufficientBalanceForProofSubmission(t *testing
 
 	supplierOperatorAddress := sample.AccAddress()
 	supplierOperatorAccAddress := sdktypes.MustAccAddressFromBech32(supplierOperatorAddress)
+
+	proofSubmissionFee := prooftypes.DefaultParams().ProofSubmissionFee.Amount.Int64()
+	claimAndProofGasCost := session.ClamAndProofGasCost.Amount.Int64()
 	// Set the supplier operator balance to be able to submit only a single proof.
-	supplierOperatorBalance := prooftypes.DefaultParams().ProofSubmissionFee.Amount.Int64() + 1
+	supplierOperatorBalance := proofSubmissionFee + claimAndProofGasCost + 1
 	supplierClientMock.EXPECT().
 		OperatorAddress().
 		Return(&supplierOperatorAccAddress).

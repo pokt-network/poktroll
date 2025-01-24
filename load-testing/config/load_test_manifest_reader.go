@@ -22,7 +22,7 @@ type LoadTestManifestYAML struct {
 	// IsEphemeralChain is a flag that indicates whether the test is expected to be
 	// run on LocalNet or long-living remote chain (i.e. TestNet/DevNet).
 	IsEphemeralChain      bool                     `yaml:"is_ephemeral_chain"`
-	TestNetNode           string                   `yaml:"testnet_node"`
+	RPCNode               string                   `yaml:"rpc_node"`
 	ServiceId             string                   `yaml:"service_id"`
 	Suppliers             []ProvisionedActorConfig `yaml:"suppliers"`
 	Gateways              []ProvisionedActorConfig `yaml:"gateways"`
@@ -67,6 +67,10 @@ func validatedEphemeralChainManifest(manifest *LoadTestManifestYAML) (*LoadTestM
 		return nil, ErrEphemeralChainLoadTestInvalidManifest.Wrap("empty funding account address")
 	}
 
+	if len(manifest.RPCNode) == 0 {
+		return nil, ErrEphemeralChainLoadTestInvalidManifest.Wrap("empty rpc node url")
+	}
+
 	for _, gateway := range manifest.Gateways {
 		if len(gateway.Address) == 0 {
 			return nil, ErrEphemeralChainLoadTestInvalidManifest.Wrap("empty gateway address")
@@ -107,8 +111,8 @@ func validatedNonEphemeralChainManifest(manifest *LoadTestManifestYAML) (*LoadTe
 		return nil, ErrNonEphemeralChainLoadTestInvalidManifest.Wrap("suppliers entry forbidden")
 	}
 
-	if len(manifest.TestNetNode) == 0 {
-		return nil, ErrNonEphemeralChainLoadTestInvalidManifest.Wrap("empty testnet node url")
+	if len(manifest.RPCNode) == 0 {
+		return nil, ErrNonEphemeralChainLoadTestInvalidManifest.Wrap("empty rpc node url")
 	}
 
 	if len(manifest.ServiceId) == 0 {

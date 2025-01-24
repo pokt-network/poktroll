@@ -45,7 +45,7 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_Valid(t *testing.T) {
 	// Test Parameters
 	appInitialStake := apptypes.DefaultMinStake.Amount.Mul(cosmosmath.NewInt(2))
 	supplierInitialStake := cosmosmath.NewInt(1000000)
-	supplierRevShareRatios := []float32{12.5, 37.5, 50}
+	supplierRevShareRatios := []uint64{12, 38, 50}
 	globalComputeUnitsToTokensMultiplier := uint64(1)
 	serviceComputeUnitsPerRelay := uint64(1)
 	service := prepareTestService(serviceComputeUnitsPerRelay)
@@ -76,11 +76,10 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_Valid(t *testing.T) {
 	require.NoError(t, err)
 	// TODO_TECHDEBT: Setting inflation to zero so we are testing the BurnEqualsMint logic exclusively.
 	// Once it is a governance param, update it using the keeper above.
-	prevInflationValue := tlm.GlobalInflationPerClaim
-	tlm.GlobalInflationPerClaim = 0
-	t.Cleanup(func() {
-		tlm.GlobalInflationPerClaim = prevInflationValue
-	})
+	tokenomicsParams := keepers.Keeper.GetParams(ctx)
+	tokenomicsParams.GlobalInflationPerClaim = 0
+	err = keepers.Keeper.SetParams(ctx, tokenomicsParams)
+	require.NoError(t, err)
 
 	// Add a new application with non-zero app stake end balance to assert against.
 	appStake := cosmostypes.NewCoin(volatile.DenomuPOKT, appInitialStake)
@@ -186,7 +185,7 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_Valid_SupplierExceedsMaxClai
 	service := prepareTestService(serviceComputeUnitsPerRelay)
 	numRelays := uint64(1000) // By a single supplier for application in this session
 	supplierInitialStake := cosmosmath.NewInt(1000000)
-	supplierRevShareRatios := []float32{12.5, 37.5, 50}
+	supplierRevShareRatios := []uint64{12, 38, 50}
 
 	// Prepare the keepers
 	keepers, ctx := testkeeper.NewTokenomicsModuleKeepers(t,
@@ -218,11 +217,10 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_Valid_SupplierExceedsMaxClai
 	require.NoError(t, err)
 	// TODO_TECHDEBT: Setting inflation to zero so we are testing the BurnEqualsMint logic exclusively.
 	// Once it is a governance param, update it using the keeper above.
-	prevInflationValue := tlm.GlobalInflationPerClaim
-	tlm.GlobalInflationPerClaim = 0
-	t.Cleanup(func() {
-		tlm.GlobalInflationPerClaim = prevInflationValue
-	})
+	tokenomicsParams := keepers.Keeper.GetParams(ctx)
+	tokenomicsParams.GlobalInflationPerClaim = 0
+	err = keepers.Keeper.SetParams(ctx, tokenomicsParams)
+	require.NoError(t, err)
 
 	// Add a new application with non-zero app stake end balance to assert against.
 	appStake := cosmostypes.NewCoin(volatile.DenomuPOKT, appInitialStake)
@@ -340,7 +338,7 @@ func TestProcessTokenLogicModules_TLMGlobalMint_Valid_MintDistributionCorrect(t 
 	// Test Parameters
 	appInitialStake := apptypes.DefaultMinStake.Amount.Mul(cosmosmath.NewInt(2))
 	supplierInitialStake := cosmosmath.NewInt(1000000)
-	supplierRevShareRatios := []float32{12.5, 37.5, 50}
+	supplierRevShareRatios := []uint64{12, 38, 50}
 	globalComputeUnitsToTokensMultiplier := uint64(1)
 	serviceComputeUnitsPerRelay := uint64(1)
 	service := prepareTestService(serviceComputeUnitsPerRelay)
@@ -443,13 +441,13 @@ func TestProcessTokenLogicModules_TLMGlobalMint_Valid_MintDistributionCorrect(t 
 	}
 
 	// Compute mint per actor
-	numTokensMinted := numTokensClaimed * tlm.GlobalInflationPerClaim
+	numTokensMinted := numTokensClaimed * keepers.Keeper.GetParams(ctx).GlobalInflationPerClaim
 	numTokensMintedInt := cosmosmath.NewIntFromUint64(uint64(numTokensMinted))
 	daoMint := cosmosmath.NewInt(int64(numTokensMinted * tokenomicsParams.MintAllocationPercentages.Dao))
 	propMint := cosmosmath.NewInt(int64(numTokensMinted * tokenomicsParams.MintAllocationPercentages.Proposer))
 	serviceOwnerMint := cosmosmath.NewInt(int64(numTokensMinted * tokenomicsParams.MintAllocationPercentages.SourceOwner))
 	appMint := cosmosmath.NewInt(int64(numTokensMinted * tokenomicsParams.MintAllocationPercentages.Application))
-	supplierMint := float32(numTokensMinted * tokenomicsParams.MintAllocationPercentages.Supplier)
+	supplierMint := float64(numTokensMinted * tokenomicsParams.MintAllocationPercentages.Supplier)
 
 	// Ensure the balance was increased to the appropriate amount.
 	require.Equal(t, daoBalanceBefore.Amount.Add(daoMint).Add(numTokensMintedInt), daoBalanceAfter.Amount)
@@ -460,8 +458,8 @@ func TestProcessTokenLogicModules_TLMGlobalMint_Valid_MintDistributionCorrect(t 
 		addr := revShare.Address
 		balanceBefore := supplierShareholderBalancesBefore[addr]
 		balanceAfter := supplierShareholderBalancesAfter[addr].Amount.Int64()
-		mintShare := int64(supplierMint * revShare.RevSharePercentage / 100)
-		rewardShare := int64(float32(numTokensClaimed) * revShare.RevSharePercentage / 100)
+		mintShare := int64(supplierMint * float64(revShare.RevSharePercentage) / 100.0)
+		rewardShare := int64(float64(numTokensClaimed) * float64(revShare.RevSharePercentage) / 100.0)
 		balanceIncrease := cosmosmath.NewInt(mintShare + rewardShare)
 		expectedBalanceAfter := balanceBefore.Amount.Add(balanceIncrease).Int64()
 		// TODO_MAINNET(@red-0ne): Remove the InDelta check and use the exact amount once the floating point arithmetic is fixed

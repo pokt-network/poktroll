@@ -2,16 +2,17 @@ package config
 
 import (
 	"context"
+	"fmt"
 	"net/url"
 
 	"cosmossdk.io/depinject"
 	sdkclient "github.com/cosmos/cosmos-sdk/client"
 	cosmosflags "github.com/cosmos/cosmos-sdk/client/flags"
-	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
+	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/gogoproto/grpc"
 	"github.com/spf13/cobra"
 
-	"github.com/pokt-network/poktroll/pkg/appgateserver/sdkadapter"
+	"github.com/pokt-network/poktroll/app/volatile"
 	"github.com/pokt-network/poktroll/pkg/client/block"
 	"github.com/pokt-network/poktroll/pkg/client/delegation"
 	"github.com/pokt-network/poktroll/pkg/client/events"
@@ -343,42 +344,6 @@ func NewSupplyRingCacheFn() SupplierFn {
 	}
 }
 
-// NewSupplyShannonSDKFn supplies a depinject config with a ShannonSDK given
-// the signing key name.
-func NewSupplyShannonSDKFn(signingKeyName string) SupplierFn {
-	return func(
-		ctx context.Context,
-		deps depinject.Config,
-		_ *cobra.Command,
-	) (depinject.Config, error) {
-		var clientCtx sdkclient.Context
-
-		// On a Cosmos environment we get the private key from the keyring
-		// Inject the client context, get the keyring from it then get the private key
-		if err := depinject.Inject(deps, &clientCtx); err != nil {
-			return nil, err
-		}
-
-		keyRecord, err := clientCtx.Keyring.Key(signingKeyName)
-		if err != nil {
-			return nil, err
-		}
-
-		privateKey, ok := keyRecord.GetLocal().PrivKey.GetCachedValue().(cryptotypes.PrivKey)
-		if !ok {
-			return nil, err
-		}
-
-		shannonSDK, err := sdkadapter.NewShannonSDK(ctx, privateKey, deps)
-		if err != nil {
-			return nil, err
-		}
-
-		// Supply the session querier to the provided deps
-		return depinject.Configs(deps, depinject.Supply(shannonSDK)), nil
-	}
-}
-
 // NewSupplySupplierClientsFn returns a function which constructs a
 // SupplierClientMap and returns a new depinject.Config which is
 // supplied with the given deps and the new SupplierClientMap.
@@ -388,11 +353,21 @@ func NewSupplySupplierClientsFn(signingKeyNames []string) SupplierFn {
 	return func(
 		ctx context.Context,
 		deps depinject.Config,
-		_ *cobra.Command,
+		cmd *cobra.Command,
 	) (depinject.Config, error) {
+		gasPriceStr, err := cmd.Flags().GetString(cosmosflags.FlagGasPrices)
+		if err != nil {
+			return nil, err
+		}
+
+		gasPrices, err := cosmostypes.ParseDecCoins(gasPriceStr)
+		if err != nil {
+			return nil, err
+		}
+
 		suppliers := supplier.NewSupplierClientMap()
 		for _, signingKeyName := range signingKeyNames {
-			txClientDepinjectConfig, err := newSupplyTxClientsFn(ctx, deps, signingKeyName)
+			txClientDepinjectConfig, err := newSupplyTxClientsFn(ctx, deps, signingKeyName, gasPrices)
 			if err != nil {
 				return nil, err
 			}
@@ -504,12 +479,27 @@ func NewSupplyBankQuerierFn() SupplierFn {
 
 // newSupplyTxClientFn returns a new depinject.Config which is supplied with
 // the given deps and the new TxClient.
-func newSupplyTxClientsFn(ctx context.Context, deps depinject.Config, signingKeyName string) (depinject.Config, error) {
+func newSupplyTxClientsFn(
+	ctx context.Context,
+	deps depinject.Config,
+	signingKeyName string,
+	gasPrices cosmostypes.DecCoins,
+) (depinject.Config, error) {
+	// Ensure that the gas prices include upokt
+	for _, gasPrice := range gasPrices {
+		if gasPrice.Denom != volatile.DenomuPOKT {
+			// TODO_TECHDEBT(red-0ne): Allow other gas prices denominations once supported (e.g. mPOKT, POKT)
+			// See https://docs.cosmos.network/main/build/architecture/adr-024-coin-metadata#decision
+			return nil, fmt.Errorf("only gas prices with %s denom are supported", volatile.DenomuPOKT)
+		}
+	}
+
 	txClient, err := tx.NewTxClient(
 		ctx,
 		deps,
 		tx.WithSigningKeyName(signingKeyName),
 		tx.WithCommitTimeoutBlocks(tx.DefaultCommitTimeoutHeightOffset),
+		tx.WithGasPrices(gasPrices),
 	)
 	if err != nil {
 		return nil, err

@@ -17,7 +17,6 @@ import (
 	"github.com/pokt-network/poktroll/testutil/testrelayer"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
-	servicekeeper "github.com/pokt-network/poktroll/x/service/keeper"
 	servicetypes "github.com/pokt-network/poktroll/x/service/types"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
@@ -30,15 +29,6 @@ const (
 )
 
 func TestComputeNewDifficultyHash_RewardsReflectWorkCompleted(t *testing.T) {
-	// Update the target number of relays to a value that suits the test.
-	// A too high number would make the difficulty stay at BaseRelayDifficultyHash
-	initialTargetRelays := servicekeeper.TargetNumRelays
-	servicekeeper.TargetNumRelays = 1000
-	t.Cleanup(func() {
-		// Reset the target number of relays to its initial value.
-		servicekeeper.TargetNumRelays = initialTargetRelays
-	})
-
 	// Prepare the test service.
 	service := sharedtypes.Service{
 		Id:                   "svc1",
@@ -89,10 +79,17 @@ func TestComputeNewDifficultyHash_RewardsReflectWorkCompleted(t *testing.T) {
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 	sdkCtx = sdkCtx.WithBlockHeight(1)
 
+	// Update the target number of relays to a value that suits the test.
+	// A too high number would make the difficulty stay at BaseRelayDifficultyHash
+	serviceParams := keepers.ServiceKeeper.GetParams(ctx)
+	serviceParams.TargetNumRelays = 1000
+	err := keepers.ServiceKeeper.SetParams(ctx, serviceParams)
+	require.NoError(t, err)
+
 	// Set the CUTTM to 1 to simplify the math
 	sharedParams := keepers.SharedKeeper.GetParams(sdkCtx)
 	sharedParams.ComputeUnitsToTokensMultiplier = uint64(1)
-	err := keepers.SharedKeeper.SetParams(sdkCtx, sharedParams)
+	err = keepers.SharedKeeper.SetParams(sdkCtx, sharedParams)
 	require.NoError(t, err)
 
 	// Update the relay mining difficulty so there's always a difficulty to retrieve
@@ -159,10 +156,12 @@ func TestComputeNewDifficultyHash_RewardsReflectWorkCompleted(t *testing.T) {
 		updatedRelayMiningDifficulty, ok := keepers.ServiceKeeper.GetRelayMiningDifficulty(sdkCtx, service.Id)
 		require.True(t, ok)
 
+		targetNumRelays := keepers.ServiceKeeper.GetParams(ctx).TargetNumRelays
+
 		// Compute the new difficulty hash based on the updated relay mining difficulty.
 		newDifficultyHash := protocol.ComputeNewDifficultyTargetHash(
 			protocol.BaseRelayDifficultyHashBz,
-			servicekeeper.TargetNumRelays,
+			targetNumRelays,
 			updatedRelayMiningDifficulty.NumRelaysEma,
 		)
 
@@ -199,7 +198,7 @@ func TestComputeNewDifficultyHash_RewardsReflectWorkCompleted(t *testing.T) {
 }
 
 // prepareRealClaim prepares a claim by creating a real SMST with the given number
-// of mined relays that adhere to the actual on-chain difficulty of the test service.
+// of mined relays that adhere to the actual onchain difficulty of the test service.
 func prepareRealClaim(
 	t *testing.T,
 	numRelays uint64,

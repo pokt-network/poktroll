@@ -5,17 +5,16 @@ SHELL = /bin/sh
 POKTROLLD_HOME ?= ./localnet/poktrolld
 POCKET_NODE ?= tcp://127.0.0.1:26657 # The pocket node (validator in the localnet context)
 TESTNET_RPC ?= https://testnet-validated-validator-rpc.poktroll.com/ # TestNet RPC endpoint for validator maintained by Grove. Needs to be update if there's another "primary" testnet.
-APPGATE_SERVER ?= http://localhost:42069
-GATEWAY_URL ?= http://localhost:42079
+PATH_URL ?= http://localhost:3000
 POCKET_ADDR_PREFIX = pokt
 LOAD_TEST_CUSTOM_MANIFEST ?= loadtest_manifest_example.yaml
 
 # The domain ending in ".town" is staging, ".city" is production
-GROVE_GATEWAY_STAGING_ETH_MAINNET = https://eth-mainnet.rpc.grove.town
+GROVE_PORTAL_STAGING_ETH_MAINNET = https://eth-mainnet.rpc.grove.town
 # JSON RPC data for a test relay request
 JSON_RPC_DATA_ETH_BLOCK_HEIGHT = '{"jsonrpc":"2.0","id":"0","method":"eth_blockNumber", "params": []}'
 
-# On-chain module account addresses. Search for `func TestModuleAddress` in the
+# Onchain module account addresses. Search for `func TestModuleAddress` in the
 # codebase to get an understanding of how we got these values.
 APPLICATION_MODULE_ADDRESS = pokt1rl3gjgzexmplmds3tq3r3yk84zlwdl6djzgsvm
 SUPPLIER_MODULE_ADDRESS = pokt1j40dzzmn6cn9kxku7a5tjnud6hv37vesr5ccaa
@@ -349,13 +348,18 @@ docusaurus_start: check_npm check_node ## Start the Docusaurus server
 docs_update_gov_params_page: ## Update the page in Docusaurus documenting all the governance parameters
 	go run tools/scripts/docusaurus/generate_docs_params.go
 
-######################
-### Ignite Helpers ###
-######################
+#######################
+### Keyring Helpers ###
+#######################
+
 
 .PHONY: poktrolld_addr
 poktrolld_addr: ## Retrieve the address for an account by ACC_NAME
 	@echo $(shell poktrolld --home=$(POKTROLLD_HOME) keys show -a $(ACC_NAME))
+
+.PHONY: poktrolld_key
+poktrolld_key: ## Retrieve the private key for an account by ACC_NAME
+	@echo $(shell poktrolld --home=$(POKTROLLD_HOME) keys export --unsafe --unarmored-hex $(ACC_NAME))
 
 ###################
 ### Act Helpers ###
@@ -415,13 +419,13 @@ release_tag_minor_release: ## Tag a new minor release (e.g. v1.0.0 -> v1.1.0)
 	@echo "  git push origin $(NEW_TAG)"
 	@echo "And draft a new release at https://github.com/pokt-network/poktroll/releases/new"
 
-#############################
-### Grove Gateway Helpers ###
-#############################
+############################
+### Grove Portal Helpers ###
+############################
 
 .PHONY: grove_staging_eth_block_height
 grove_staging_eth_block_height: ## Sends a relay through the staging grove gateway to the eth-mainnet chain. Must have GROVE_STAGING_PORTAL_APP_ID environment variable set.
-	curl $(GROVE_GATEWAY_STAGING_ETH_MAINNET)/v1/$(GROVE_STAGING_PORTAL_APP_ID) \
+	curl $(GROVE_PORTAL_STAGING_ETH_MAINNET)/v1/$(GROVE_STAGING_PORTAL_APP_ID) \
 		-H 'Content-Type: application/json' \
 		-H 'Protocol: shannon-testnet' \
 		--data $(JSON_RPC_DATA_ETH_BLOCK_HEIGHT)
@@ -437,6 +441,7 @@ grove_staging_eth_block_height: ## Sends a relay through the staging grove gatew
 ###############
 ### Imports ###
 ###############
+
 include ./makefiles/warnings.mk
 include ./makefiles/todos.mk
 include ./makefiles/checks.mk
@@ -450,3 +455,4 @@ include ./makefiles/suppliers.mk
 include ./makefiles/gateways.mk
 include ./makefiles/session.mk
 include ./makefiles/claims.mk
+include ./makefiles/relay.mk

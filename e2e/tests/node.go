@@ -23,8 +23,8 @@ var (
 	defaultRPCHost = "127.0.0.1"
 	// defaultHome is the default home directory for pocketd
 	defaultHome = os.Getenv("POKTROLLD_HOME")
-	// defaultAppGateServerURL used by curl commands to send relay requests
-	defaultAppGateServerURL = os.Getenv("APPGATE_SERVER")
+	// defaultPathURL used by curl commands to send relay requests
+	defaultPathURL = os.Getenv("PATH_URL")
 	// defaultDebugOutput provides verbose output on manipulations with binaries (cli command, stdout, stderr)
 	defaultDebugOutput = os.Getenv("E2E_DEBUG_OUTPUT")
 )
@@ -93,7 +93,18 @@ func (p *pocketdBin) RunCommandOnHostWithRetry(rpcUrl string, numRetries uint8, 
 	if err == nil {
 		return res, nil
 	}
-	// TODO_HACK: Figure out a better solution for retries. A parameter? Exponential backoff? What else?
+	// DEV_NOTE: Intentionally keeping a print statement here so errors are
+	// very visible even though the output may be noisy.
+	fmt.Printf(`
+----------------------------------------
+Retrying command due to error:
+	- RPC URL:      %s
+	- Arguments:    %v
+	- Response:     %v
+	- Error:        %v
+----------------------------------------
+`, rpcUrl, args, res, err)
+	// TODO_TECHDEBT(@bryanchriswhite): Figure out a better solution for retries. A parameter? Exponential backoff? What else?
 	time.Sleep(5 * time.Second)
 	return p.RunCommandOnHostWithRetry(rpcUrl, numRetries-1, args...)
 }
@@ -101,7 +112,7 @@ func (p *pocketdBin) RunCommandOnHostWithRetry(rpcUrl string, numRetries uint8, 
 // RunCurl runs a curl command on the local machine
 func (p *pocketdBin) RunCurl(rpcUrl, service, method, path, appAddr, data string, args ...string) (*commandResult, error) {
 	if rpcUrl == "" {
-		rpcUrl = defaultAppGateServerURL
+		rpcUrl = defaultPathURL
 	}
 	return p.runCurlCmd(rpcUrl, service, method, path, appAddr, data, args...)
 }
@@ -109,6 +120,11 @@ func (p *pocketdBin) RunCurl(rpcUrl, service, method, path, appAddr, data string
 // RunCurlWithRetry runs a curl command on the local machine with multiple retries.
 // It also accounts for an ephemeral error that may occur due to DNS resolution such as "no such host".
 func (p *pocketdBin) RunCurlWithRetry(rpcUrl, service, method, path, appAddr, data string, numRetries uint8, args ...string) (*commandResult, error) {
+	if service == "" {
+		err := fmt.Errorf("Missing service name for curl request with url: %s", rpcUrl)
+		return nil, err
+	}
+
 	// No more retries left
 	if numRetries <= 0 {
 		return p.RunCurl(rpcUrl, service, method, path, appAddr, data, args...)
@@ -178,40 +194,36 @@ func (p *pocketdBin) runCurlCmd(rpcBaseURL, service, method, path, appAddr, data
 		return nil, err
 	}
 
-	if len(service) > 0 {
-		rpcUrl.Path = rpcUrl.Path + service
-	}
-
 	// Ensure that if a path is provided, it starts with a "/".
 	// This is required for RESTful APIs that use a path to identify resources.
 	// For JSON-RPC APIs, the resource path should be empty, so empty paths are allowed.
 	if len(path) > 0 && path[0] != '/' {
 		path = "/" + path
 	}
-
 	rpcUrl.Path = rpcUrl.Path + path
 
-	// When sending a relay request, through a gateway (i.e. non-sovereign application)
-	// then, the application address must be provided.
-	if len(appAddr) > 0 {
-		queryValues := rpcUrl.Query()
-		queryValues.Set("applicationAddr", appAddr)
-		rpcUrl.RawQuery = queryValues.Encode()
+	// Ensure that the path also ends with a "/" if it only contains the version.
+	// This is required because the server responds with a 301 redirect for "/v1"
+	// and curl binaries on some platforms MAY NOT support re-sending POST data
+	// while following a redirect (`-L` flag).
+	if strings.HasSuffix(rpcUrl.Path, "/v1") {
+		rpcUrl.Path = rpcUrl.Path + "/"
 	}
 
 	base := []string{
-		"-v",         // verbose output
-		"-sS",        // silent with error
-		"-X", method, // HTTP method
-		"-H", "Content-Type: application/json", // HTTP headers
+		"-v",                                   // verbose output
+		"-sS",                                  // silent with error
+		"-H", `Content-Type: application/json`, // HTTP headers
+		"-H", fmt.Sprintf("Host: %s", rpcUrl.Host), // Add virtual host header
+		"-H", fmt.Sprintf("X-App-Address: %s", appAddr),
+		"-H", fmt.Sprintf("target-service-id: %s", service),
 		rpcUrl.String(),
 	}
 
 	if method == "POST" {
 		base = append(base, "--data", data)
 	} else if len(data) > 0 {
-		fmt.Println(fmt.Sprintf("WARN: data provided but not being included in the %s request", method))
-
+		fmt.Printf("WARN: data provided but not being included in the %s request because it is not of type POST", method)
 	}
 	args = append(base, args...)
 	commandStr := "curl " + strings.Join(args, " ") // Create a string representation of the command

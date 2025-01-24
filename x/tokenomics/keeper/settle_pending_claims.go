@@ -25,7 +25,7 @@ import (
 // If a claim is expired and requires a proof and a proof IS NOT available -> it's deleted.
 // If a claim is expired and does NOT require a proof -> it's settled.
 // Events are emitted for each claim that is settled or removed.
-// On-chain Claims & Proofs are deleted after they're settled or expired to free up space.
+// Onchain Claims & Proofs are deleted after they're settled or expired to free up space.
 func (k Keeper) SettlePendingClaims(ctx cosmostypes.Context) (
 	settledResults tlm.ClaimSettlementResults,
 	expiredResults tlm.ClaimSettlementResults,
@@ -86,9 +86,16 @@ func (k Keeper) SettlePendingClaims(ctx cosmostypes.Context) (
 		serviceId := claim.GetSessionHeader().GetServiceId()
 		relayMiningDifficulty, found := k.serviceKeeper.GetRelayMiningDifficulty(ctx, serviceId)
 		if !found {
-			relayMiningDifficulty = servicekeeper.NewDefaultRelayMiningDifficulty(ctx, logger, serviceId, servicekeeper.TargetNumRelays)
+			targetNumRelays := k.serviceKeeper.GetParams(ctx).TargetNumRelays
+			relayMiningDifficulty = servicekeeper.NewDefaultRelayMiningDifficulty(
+				ctx,
+				logger,
+				serviceId,
+				targetNumRelays,
+				targetNumRelays,
+			)
 		}
-		// numEstimatedComputeUnits is the probabilistic estimation of the off-chain
+		// numEstimatedComputeUnits is the probabilistic estimation of the offchain
 		// work done by the relay miner in this session. It is derived from the claimed
 		// work and the relay mining difficulty.
 		numEstimatedComputeUnits, err = claim.GetNumEstimatedComputeUnits(relayMiningDifficulty)
@@ -107,7 +114,7 @@ func (k Keeper) SettlePendingClaims(ctx cosmostypes.Context) (
 
 		proof, isProofFound := k.proofKeeper.GetProof(ctx, sessionId, claim.SupplierOperatorAddress)
 		// Using the probabilistic proofs approach, determine if this expiring
-		// claim required an on-chain proof
+		// claim required an onchain proof
 		proofRequirement, err = k.proofKeeper.ProofRequirementForClaim(ctx, &claim)
 		if err != nil {
 			return settledResults, expiredResults, err
@@ -171,7 +178,7 @@ func (k Keeper) SettlePendingClaims(ctx cosmostypes.Context) (
 				// owner or operator balances if the stake is negative.
 
 				// The claim & proof are no longer necessary, so there's no need for them
-				// to take up on-chain space.
+				// to take up onchain space.
 				k.proofKeeper.RemoveClaim(ctx, sessionId, claim.SupplierOperatorAddress)
 				if isProofFound {
 					k.proofKeeper.RemoveProof(ctx, sessionId, claim.SupplierOperatorAddress)
@@ -226,6 +233,7 @@ func (k Keeper) SettlePendingClaims(ctx cosmostypes.Context) (
 			NumEstimatedComputeUnits: numEstimatedComputeUnits,
 			ClaimedUpokt:             &claimeduPOKT,
 			ProofRequirement:         proofRequirement,
+			SettlementResult:         *ClaimSettlementResult,
 		}
 
 		if err = ctx.EventManager().EmitTypedEvent(&claimSettledEvent); err != nil {
@@ -235,7 +243,7 @@ func (k Keeper) SettlePendingClaims(ctx cosmostypes.Context) (
 		logger.Info("claim settled")
 
 		// The claim & proof are no longer necessary, so there's no need for them
-		// to take up on-chain space.
+		// to take up onchain space.
 		k.proofKeeper.RemoveClaim(ctx, sessionId, claim.SupplierOperatorAddress)
 		// Whether or not the proof is required, the supplier may have submitted one
 		// so we need to delete it either way. If we don't have the if structure,
@@ -322,36 +330,36 @@ func (k Keeper) ExecutePendingSettledResults(ctx cosmostypes.Context, settledRes
 	logger.Info(fmt.Sprintf("begin executing %d pending settlement results", len(settledResults)))
 
 	for _, settledResult := range settledResults {
-		logger = logger.With("session_id", settledResult.GetSessionId())
-		logger.Info("begin executing pending settlement result")
+		sessionLogger := logger.With("session_id", settledResult.GetSessionId())
+		sessionLogger.Info("begin executing pending settlement result")
 
-		logger.Info(fmt.Sprintf("begin executing %d pending mints", len(settledResult.GetMints())))
-		if err := k.executePendingModuleMints(ctx, logger, settledResult.GetMints()); err != nil {
+		sessionLogger.Info(fmt.Sprintf("begin executing %d pending mints", len(settledResult.GetMints())))
+		if err := k.executePendingModuleMints(ctx, sessionLogger, settledResult.GetMints()); err != nil {
 			return err
 		}
-		logger.Info("done executing pending mints")
+		sessionLogger.Info("done executing pending mints")
 
-		logger.Info(fmt.Sprintf("begin executing %d pending module to module transfers", len(settledResult.GetModToModTransfers())))
-		if err := k.executePendingModToModTransfers(ctx, logger, settledResult.GetModToModTransfers()); err != nil {
+		sessionLogger.Info(fmt.Sprintf("begin executing %d pending module to module transfers", len(settledResult.GetModToModTransfers())))
+		if err := k.executePendingModToModTransfers(ctx, sessionLogger, settledResult.GetModToModTransfers()); err != nil {
 			return err
 		}
-		logger.Info("done executing pending module account to module account transfers")
+		sessionLogger.Info("done executing pending module account to module account transfers")
 
-		logger.Info(fmt.Sprintf("begin executing %d pending module to account transfers", len(settledResult.GetModToAcctTransfers())))
-		if err := k.executePendingModToAcctTransfers(ctx, logger, settledResult.GetModToAcctTransfers()); err != nil {
+		sessionLogger.Info(fmt.Sprintf("begin executing %d pending module to account transfers", len(settledResult.GetModToAcctTransfers())))
+		if err := k.executePendingModToAcctTransfers(ctx, sessionLogger, settledResult.GetModToAcctTransfers()); err != nil {
 			return err
 		}
-		logger.Info("done executing pending module to account transfers")
+		sessionLogger.Info("done executing pending module to account transfers")
 
-		logger.Info(fmt.Sprintf("begin executing %d pending burns", len(settledResult.GetBurns())))
-		if err := k.executePendingModuleBurns(ctx, logger, settledResult.GetBurns()); err != nil {
+		sessionLogger.Info(fmt.Sprintf("begin executing %d pending burns", len(settledResult.GetBurns())))
+		if err := k.executePendingModuleBurns(ctx, sessionLogger, settledResult.GetBurns()); err != nil {
 			return err
 		}
-		logger.Info("done executing pending burns")
+		sessionLogger.Info("done executing pending burns")
 
-		logger.Info("done executing pending settlement result")
+		sessionLogger.Info("done executing pending settlement result")
 
-		logger.Info(fmt.Sprintf(
+		sessionLogger.Info(fmt.Sprintf(
 			"done applying settled results for session %q",
 			settledResult.Claim.GetSessionHeader().GetSessionId(),
 		))
@@ -503,7 +511,7 @@ func (k Keeper) GetExpiringClaims(ctx cosmostypes.Context) (expiringClaims []pro
 	//     2a. This likely also requires adding validation to the shared module params.
 	blockHeight := ctx.BlockHeight()
 
-	// NB: This error can be safely ignored as on-chain SharedQueryClient implementation cannot return an error.
+	// NB: This error can be safely ignored as onchain SharedQueryClient implementation cannot return an error.
 	sharedParams, _ := k.sharedQuerier.GetParams(ctx)
 
 	// expiringSessionEndHeight is the session end height of the session whose proof
@@ -649,7 +657,7 @@ func (k Keeper) slashSupplierStake(
 		))
 
 		// TODO_MAINNET: Should we just remove the supplier if the stake is
-		// below the minimum, at the risk of making the off-chain actors have an
+		// below the minimum, at the risk of making the offchain actors have an
 		// inconsistent session supplier list? See the comment above for more details.
 		supplierToSlash.UnstakeSessionEndHeight = uint64(unstakeSessionEndHeight)
 

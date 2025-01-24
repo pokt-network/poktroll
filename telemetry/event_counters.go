@@ -89,7 +89,7 @@ func ProofRequirementCounter(
 }
 
 // ClaimComputeUnitsCounter increments a counter which tracks the number of compute units
-// which are represented by on-chain claims at the given ClaimProofStage.
+// which are represented by onchain claims at the given ClaimProofStage.
 // If err is not nil, the counter is not incremented but Prometheus will ingest this event.
 func ClaimComputeUnitsCounter(
 	claimProofStage string,
@@ -127,7 +127,7 @@ func ClaimComputeUnitsCounter(
 }
 
 // ClaimRelaysCounter increments a counter which tracks the number of relays
-// represented by on-chain claims at the given ClaimProofStage.
+// represented by onchain claims at the given ClaimProofStage.
 // If err is not nil, the counter is not incremented and an "error" label is added
 // with the error's message. I.e., Prometheus will ingest this event.
 func ClaimRelaysCounter(

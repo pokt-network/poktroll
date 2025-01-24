@@ -27,5 +27,13 @@ localnet_regenesis: check_yq warn_message_acc_initialize_pubkeys ## Regenerate t
 	@cp -r ${HOME}/.poktroll/config $(POKTROLLD_HOME)/
 
 .PHONY: cosmovisor_start_node
-cosmovisor_start_node: # Starts the node using cosmovisor that waits for an upgrade plan
+cosmovisor_start_node: ## Starts the node using cosmovisor that waits for an upgrade plan
 	bash tools/scripts/upgrades/cosmovisor-start-node.sh
+
+.PHONY: localnet_cancel_upgrade
+localnet_cancel_upgrade: ## Cancels the planed upgrade on local node
+	poktrolld tx authz exec tools/scripts/upgrades/authz_cancel_upgrade_tx.json --gas=auto --from=pnf
+
+.PHONY: localnet_show_upgrade_plan
+localnet_show_upgrade_plan: ## Shows the upgrade plan on local node
+	poktrolld query upgrade plan

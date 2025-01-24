@@ -54,7 +54,7 @@ func (SupplierUnbondingReason) EnumDescriptor() ([]byte, []int) {
 	return fileDescriptor_22d2d1a82853ce0a, []int{0}
 }
 
-// EventSupplierStaked is emitted when a supplier stake message is committed on-chain.
+// EventSupplierStaked is emitted when a supplier stake message is committed onchain.
 type EventSupplierStaked struct {
 	Supplier *types.Supplier `protobuf:"bytes,1,opt,name=supplier,proto3" json:"supplier"`
 	// The session end height of the last session in which the supplier was staked.
@@ -105,7 +105,7 @@ func (m *EventSupplierStaked) GetSessionEndHeight() int64 {
 }
 
 // EventSupplierUnbondingBegin is emitted when an application unstake message
-// is committed on-chain, indicating that the supplier will now begin unbonding.
+// is committed onchain, indicating that the supplier will now begin unbonding.
 type EventSupplierUnbondingBegin struct {
 	Supplier *types.Supplier         `protobuf:"bytes,1,opt,name=supplier,proto3" json:"supplier"`
 	Reason   SupplierUnbondingReason `protobuf:"varint,2,opt,name=reason,proto3,enum=poktroll.supplier.SupplierUnbondingReason" json:"reason"`

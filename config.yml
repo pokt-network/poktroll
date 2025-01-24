@@ -104,6 +104,20 @@ validators:
       instrumentation:
         prometheus: true
       log_level: "info"
+      # Increase the rpc and mempool max bytes to support large transactions.
+      # DEV_NOTE: These values were selected arbitrarily, but chosen to be large,
+      # as a result of load testing and seeing large proof messages during the
+      # Claim & Proof lifecycle.
+      rpc:
+        # Controls how large any single RPC request accepted by the CometBFT
+        # server (offchain) can be.
+        max_body_bytes: "100000000"
+      mempool:
+        # Control how big any single transaction accepted by the CometBFT server
+        # (offchain) can be.
+        # Since multiple messages are bundled into a single transaction,
+        # max_tx_bytes needs to be increased alongside max_txs_bytes as well.
+        max_tx_bytes: "100000000"
     client:
       chain-id: poktroll
 
@@ -200,6 +214,10 @@ genesis:
         min_stake:
           amount: "1000000" # 1 POKT
           denom: upokt
+        # TODO_BETA(@bryanchriswhite): Determine realistic amount for supplier staking fee.
+        staking_fee:
+          amount: "1" # 1 uPOKT
+          denom: upokt
       supplierList:
         - owner_address: pokt19a3t4yunp0dlpfjrp7qwnzwlrzd5fzs2gjaaaj
           operator_address: pokt19a3t4yunp0dlpfjrp7qwnzwlrzd5fzs2gjaaaj
@@ -211,7 +229,7 @@ genesis:
                   url: http://relayminer1:8545
               rev_share:
                 - address: pokt19a3t4yunp0dlpfjrp7qwnzwlrzd5fzs2gjaaaj
-                  rev_share_percentage: "100"
+                  rev_share_percentage: 100
             - service_id: rest
               endpoints:
                 - configs: []
@@ -219,7 +237,7 @@ genesis:
                   url: http://relayminer1:8545
               rev_share:
                 - address: pokt19a3t4yunp0dlpfjrp7qwnzwlrzd5fzs2gjaaaj
-                  rev_share_percentage: "100"
+                  rev_share_percentage: 100
             - service_id: ollama
               endpoints:
                 - configs: []
@@ -227,7 +245,7 @@ genesis:
                   url: http://relayminer1:8545
               rev_share:
                 - address: pokt19a3t4yunp0dlpfjrp7qwnzwlrzd5fzs2gjaaaj
-                  rev_share_percentage: "100"
+                  rev_share_percentage: 100
           stake:
             # NB: This value should be exactly 1upokt smaller than the value in
             # `supplier1_stake_config.yaml` so that the stake command causes a state change.
@@ -251,6 +269,7 @@ genesis:
         add_service_fee:
           amount: "1000000000"
           denom: upokt
+        target_num_relays: 100000
       serviceList:
         - id: anvil
           name: "anvil"
@@ -291,6 +310,7 @@ genesis:
         # This is the address that will receive the dao/foundation rewards during claim settlement (global mint TLM).
         # TODO_MAINNET(@olshansk): Consolidate the usage of DAO/PNF throughout the configs & codebase.
         dao_reward_address: "pokt1eeeksh2tvkh7wzmfrljnhw4wrhs55lcuvmekkw"
+        global_inflation_per_claim: 0.1
     shared:
       params:
         num_blocks_per_session: 10

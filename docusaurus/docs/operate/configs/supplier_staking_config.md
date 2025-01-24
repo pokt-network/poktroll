@@ -92,7 +92,7 @@ flowchart TD
   NCS  ---> |owner_address or operator_address| US
 
   US -- funds --> OWA{{owner_address}}
-  US -- remove on-chain record --> OPA{{owner_address or operator_address}}
+  US -- remove onchain record --> OPA{{owner_address or operator_address}}
 
   classDef owner fill:#f9f, stroke:#333, stroke-width:2px, color:#222;
   classDef operator fill:#eba69a, color: #333, stroke:#333, stroke-width:2px;
@@ -208,32 +208,14 @@ stake_amount: <number>upokt
 Defines the amount of `upokt` to stake for the `Supplier` account.
 This amount covers all the `service`s defined in the `services` section.
 
-:::note
-
-If the `Supplier` account already has a stake and wishes to change or add
-to the `service`s that it provides, then it MUST increase the current
-`stake_amount` by at least `1upokt`.
-
-For example, if the current stake is `1000upokt` and the `Supplier` wants to add
-a new `service`, then `stake_amount: 1001upokt` should be specified in the
-configuration file. This will increase the stake by `1upokt` and deduct `1upokt`
-from the `Supplier`'s account balance.
-
-The upstaking requirement is to ensure that a `Supplier` incurs a cost for
-changing the services they provide too frequently, which could lead to a poor user
-experience for `Gateways` and `Applications`. It is also necessary to dissuade
-sybil or flooding attacks on the network.
-
-:::
-
 ### `default_rev_share_percent`
 
 _`Optional`_, _`Non-empty`_
 
 ```yaml
 default_rev_share_percent:
-  <shareholder_address_1>: <float>
-  <shareholder_address_2>: <float>
+  <shareholder_address_1>: <uint32>
+  <shareholder_address_2>: <uint32>
 ```
 
 `default_rev_share_percent` is an optional map that defines the default the revenue

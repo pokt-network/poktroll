@@ -15,8 +15,8 @@ to all readers.
 :::
 
 - [Introduction](#introduction)
-- [Session Windows \& On-Chain Parameters](#session-windows--on-chain-parameters)
-  - [References:](#references)
+- [Session Windows \& Onchain Parameters](#session-windows--onchain-parameters)
+    - [References:](#references)
   - [Claim Expiration](#claim-expiration)
 - [Session](#session)
   - [Session Duration](#session-duration)
@@ -72,7 +72,7 @@ sequenceDiagram
     participant PN as Pocket Network<br>(Distributed Ledger)
 
     loop Session Duration
-        note over A,S: off-chain
+        note over A,S: offchain
         A ->> +S: Relay Request
         S ->> S: Insert Leaf into <br> Sparse Merkle Sum Trie
         S ->> -A: Relay Response
@@ -93,7 +93,7 @@ sequenceDiagram
     end
 ```
 
-## Session Windows & On-Chain Parameters
+## Session Windows & Onchain Parameters
 
 _TODO(@bryanchriswhite): Add message distribution offsets/windows to this picture._
 
@@ -159,7 +159,7 @@ See [Session](./session.md) for more details.
 
 ### Session Duration
 
-After a session is initiated, the majority of it is handled `off-chain`,
+After a session is initiated, the majority of it is handled `offchain`,
 as `Applications` make RPC requests (`relays`) to the `Supplier`.
 
 ### Session End
@@ -176,16 +176,16 @@ timeline
     CreateClaim <br> (Supplier)
         : Wait for Claim Window to open
         : Submit CreateClaim Transaction <br>(root, sum, session, app, supplier, service, etc...)
-        : Claim stored on-chain
+        : Claim stored onchain
     SubmitProof <br> (Supplier)
         : Wait for Proof Window to open
-        : Retrieve seed (entropy) from on-chain data (block hash)
+        : Retrieve seed (entropy) from onchain data (block hash)
         : Generate Merkle Proof for path in SMST based on seed
         : Submit SubmitProof Transaction <br>(session, merkle proof, leaf, etc...)
-        : Proof stored on-chain
+        : Proof stored onchain
     Proof Validation <br> (Protocol)
-        : Retrieve on-chain Claims that need to be settled
-        : Retrieve corresponding on-chain Proof for every Claim
+        : Retrieve onchain Claims that need to be settled
+        : Retrieve corresponding onchain Proof for every Claim
         : Validate leaf difficulty
         : Validate Merkle Proof
         : Validate Leaf Signature
@@ -195,7 +195,7 @@ timeline
 
 ## Claim
 
-A `Claim` is a structure submitted on-chain by a `Supplier` claiming to have done
+A `Claim` is a structure submitted onchain by a `Supplier` claiming to have done
 some amount of work in servicing `relays` for `Application`.
 
 Exactly one claim exists for every `(Application, Supplier, Session)`.
@@ -209,13 +209,13 @@ that were necessary to service that request.
 
 | Type                                                                                                 | Description                                             |
 | ---------------------------------------------------------------------------------------------------- | ------------------------------------------------------- |
-| [`Claim`](https://github.com/pokt-network/poktroll/blob/main/proto/poktroll/proof/claim.proto)       | A serialized version of the `Claim` is stored on-chain. |
-| [`MsgCreateClaim`](https://github.com/pokt-network/poktroll/blob/main/proto/poktroll/proof/tx.proto) | Submitted by a `Supplier` to store a claim `on-chain`.  |
+| [`Claim`](https://github.com/pokt-network/poktroll/blob/main/proto/poktroll/proof/claim.proto)       | A serialized version of the `Claim` is stored onchain. |
+| [`MsgCreateClaim`](https://github.com/pokt-network/poktroll/blob/main/proto/poktroll/proof/tx.proto) | Submitted by a `Supplier` to store a claim `onchain`.  |
 
 ### CreateClaim Validation
 
 When the network receives a [`MsgCreateClaim`](#TODO_link_to_MsgCreateClaim) message, before the claim is persisted
-on-chain, it MUST be validated:
+onchain, it MUST be validated:
 
 ```mermaid
 stateDiagram-v2
@@ -255,7 +255,7 @@ Validate_Claim --> [*]
   validation ([`MsgCreateClaim#ValidateBasic()`](https://github.com/pokt-network/poktroll/blob/main/x/proof/types/message_create_claim.go))
 - Session header
   validation ([diagram](#session-header-validation) / [`msgServer#queryAndValidateSessionHeader()`](https://github.com/pokt-network/poktroll/blob/main/x/proof/keeper/session.go))
-- On-chain claim window
+- Onchain claim window
   validation ([diagram](#TODO) / [`msgServer#validateClaimWindow()`](https://github.com/pokt-network/poktroll/blob/main/x/proof/keeper/session.go))
 
 ### Claim Window
@@ -267,11 +267,11 @@ or too late, it will be rejected by the protocol.
 If a `Supplier` fails to submit a `Claim` during the Claim Window, it will forfeit
 any potential rewards it could earn in exchange for the work done.
 
-See [Session Windows & On-Chain Parameters](#session-windows--on-chain-parameters) for more details.
+See [Session Windows & OnChain Parameters](#session-windows--onchain-parameters) for more details.
 
 ## Proof
 
-A `Proof` is a structure submitted on-chain by a `Supplier` containing a Merkle
+A `Proof` is a structure submitted onchain by a `Supplier` containing a Merkle
 Proof to a single pseudo-randomly selected leaf from the corresponding `Claim`.
 
 At most one `Proof` exists for every `Claim`.
@@ -283,13 +283,13 @@ rewarded for the work done.
 
 | Type                                                                                                 | Description                                                                                                                                                                  |
 | ---------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [`Proof`](https://github.com/pokt-network/poktroll/blob/main/proto/poktroll/proof/proof.proto)       | A serialized version of the `Proof` is stored on-chain.                                                                                                                      |
-| [`MsgSubmitProof`](https://github.com/pokt-network/poktroll/blob/main/proto/poktroll/proof/tx.proto) | Submitted by a `Supplier` to store a proof `on-chain`. If the `Proof` is invalid, or if there is no corresponding `Claim` for the `Proof`, the transaction will be rejected. |
+| [`Proof`](https://github.com/pokt-network/poktroll/blob/main/proto/poktroll/proof/proof.proto)       | A serialized version of the `Proof` is stored onchain.                                                                                                                      |
+| [`MsgSubmitProof`](https://github.com/pokt-network/poktroll/blob/main/proto/poktroll/proof/tx.proto) | Submitted by a `Supplier` to store a proof `onchain`. If the `Proof` is invalid, or if there is no corresponding `Claim` for the `Proof`, the transaction will be rejected. |
 
 ### SubmitProof Validation
 
 When the network receives a [`MsgSubmitProof`](#TODO_link_to_MsgSubmitProof) message, before the proof is accepted
-on-chain, it MUST be validated:
+onchain, it MUST be validated:
 
 ```mermaid
 stateDiagram-v2
@@ -361,15 +361,15 @@ If a proof is required (as determined by [Probabilistic Proofs](probabilistic_pr
 submit a `Proof` during the Proof Window, the Claim will expire, and the supplier will forfeit rewards for the claimed
 work done. See [Claim Expiration](#claim-expiration) for more.
 
-See [Session Windows & On-Chain Parameters](#session-windows--on-chain-parameters) for more details.
+See [Session Windows & Onchain Parameters](#session-windows--onchain-parameters) for more details.
 
 ## Proof Security
 
 In addition to basic validation as part of processing `SubmitProof` to determine
-whether or not the `Proof` should be stored on-chain, there are several additional
+whether or not the `Proof` should be stored onchain, there are several additional
 deep cryptographic validations needed:
 
-1. `Merkle Leaf Validation`: Proof of the off-chain `Supplier`/`Application` interaction during the Relay request & response.
+1. `Merkle Leaf Validation`: Proof of the offchain `Supplier`/`Application` interaction during the Relay request & response.
 2. `Merkle Proof Selection`: Proof of the amount of work done by the `Supplier` during the `Session`.
 
 :::note
@@ -387,7 +387,7 @@ After the leaf is validated, two things happen:
 1. The stake of `Application` signing the `Relay Request` is decreased through burn
 2. The account balance of the `Supplier` owner is increased through mint
 
-The validation on these signatures is done on-chain as part of `Proof Validation`.
+The validation on these signatures is done onchain as part of `Proof Validation`.
 
 ```mermaid
 graph LR
@@ -415,9 +415,9 @@ graph LR
 ### Merkle Proof Selection
 
 Before the leaf itself is validated, we need to make sure if there is a valid
-Merkle Proof for the associated pseudo-random path computed on-chain.
+Merkle Proof for the associated pseudo-random path computed onchain.
 
-Since the path that needs to be proven uses an on-chain seed after the `Claim`
+Since the path that needs to be proven uses an onchain seed after the `Claim`
 has been submitted, it is impossible to know the path in advance.
 
 Assume a collision resistant hash function `H` that takes a the `block header hash`
@@ -684,7 +684,7 @@ state Validate_Session_Header {
     Get_Session --> if_get_session_error
     if_get_session_error --> Session_Header_Validation_Error: get session error
     if_get_session_error --> if_session_id_mismatch
-    if_session_id_mismatch --> Session_Header_Validation_Error: claim & on-chain session ID mismatch
+    if_session_id_mismatch --> Session_Header_Validation_Error: claim & onchain session ID mismatch
     if_session_id_mismatch --> if_supplier_found
     if_supplier_found --> Session_Header_Validation_Error: claim supplier not in session
     if_supplier_found --> [*]
@@ -825,7 +825,7 @@ state Validate_Relay_Response {
         state if_supplier_sig_malformed <<choice>>
 
         [*] --> if_supplier_pubkey_exists
-        if_supplier_pubkey_exists --> Relay_Response_Signature_Error: no supplier public key on-chain
+        if_supplier_pubkey_exists --> Relay_Response_Signature_Error: no supplier public key onchain
         if_supplier_pubkey_exists --> if_supplier_sig_malformed
         if_supplier_sig_malformed --> Relay_Response_Signature_Error: cannot unmarshal supplier (response) signature
     }
