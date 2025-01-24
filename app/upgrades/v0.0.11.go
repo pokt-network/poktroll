@@ -22,7 +22,6 @@ var Upgrade_0_0_11 = Upgrade{
 		keepers *keepers.Keepers,
 		configurator module.Configurator,
 	) upgradetypes.UpgradeHandler {
-
 		// Adds new parameters using ignite's config.yml as a reference. Assuming we don't need any other parameters.
 		// https://github.com/pokt-network/poktroll/compare/v0.0.10...v0.0.11-rc
 		applyNewParameters := func(ctx context.Context) (err error) {
