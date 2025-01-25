@@ -10,9 +10,9 @@ import (
 
 // GetParams get all parameters as types.Params
 func (k Keeper) GetParams(ctx context.Context) (params types.Params) {
-	if k.cache.Params != nil {
+	if params, found := k.paramsCache.Get(""); found {
 		k.logger.Info("-----Tokenomics params cache hit-----")
-		return *k.cache.Params
+		return params
 	}
 	store := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
 	paramsBz := store.Get(types.ParamsKey)
@@ -21,25 +21,25 @@ func (k Keeper) GetParams(ctx context.Context) (params types.Params) {
 	}
 
 	k.cdc.MustUnmarshal(paramsBz, &params)
-	k.cache.Params = &params
+	k.paramsCache.Set("", params)
 	return params
 }
 
 // SetParams set the params
 func (k Keeper) SetParams(ctx context.Context, params types.Params) error {
-	k.cache.Params = &params
 	store := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
 	paramsBz, err := k.cdc.Marshal(&params)
 	if err != nil {
 		return err
 	}
 	store.Set(types.ParamsKey, paramsBz)
+	k.paramsCache.Set("", params)
 
 	return nil
 }
 
 func (k Keeper) ClearCache() {
-	k.cache.Clear()
+	k.paramsCache.Clear()
 	k.applicationKeeper.ClearCache()
 	k.supplierKeeper.ClearCache()
 	k.sharedKeeper.ClearCache()

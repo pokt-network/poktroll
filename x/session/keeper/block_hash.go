@@ -11,7 +11,7 @@ import (
 
 // GetBlockHash returns the hash of the block at the given height.
 func (k Keeper) GetBlockHash(ctx context.Context, height int64) []byte {
-	if hash, found := k.cache.BlockHashes[height]; found {
+	if hash, found := k.blockHashesCache.Get(height); found {
 		k.logger.Info("-----Blockhash cache hit-----")
 		return hash
 	}
@@ -24,10 +24,11 @@ func (k Keeper) GetBlockHash(ctx context.Context, height int64) []byte {
 	storeAdapter := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
 	store := prefix.NewStore(storeAdapter, types.KeyPrefix(types.BlockHashKeyPrefix))
 	blockHash := store.Get(types.BlockHashKey(height))
-	k.cache.BlockHashes[height] = blockHash
+	k.blockHashesCache.Set(height, blockHash)
 	return blockHash
 }
 
 func (k Keeper) ClearCache() {
-	k.cache.Clear()
+	k.blockHashesCache.Clear()
+	k.paramsCache.Clear()
 }

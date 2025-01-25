@@ -10,6 +10,7 @@ import (
 
 	"github.com/pokt-network/poktroll/pkg/client"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 	tlm "github.com/pokt-network/poktroll/x/tokenomics/token_logic_module"
 	"github.com/pokt-network/poktroll/x/tokenomics/types"
 )
@@ -37,7 +38,7 @@ type Keeper struct {
 
 	tokenLogicModules []tlm.TokenLogicModule
 
-	cache *types.Cache
+	paramsCache *sharedtypes.Cache[string, types.Params]
 }
 
 func NewKeeper(
@@ -84,7 +85,7 @@ func NewKeeper(
 		sharedQuerier: sharedQuerier,
 
 		tokenLogicModules: tokenLogicModules,
-		cache:             &types.Cache{},
+		paramsCache:       sharedtypes.NewCache[string, types.Params](),
 	}
 }
 

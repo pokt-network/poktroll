@@ -9,6 +9,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/pokt-network/poktroll/x/application/types"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 type (
@@ -26,7 +27,8 @@ type (
 		gatewayKeeper types.GatewayKeeper
 		sharedKeeper  types.SharedKeeper
 
-		cache *types.Cache
+		applicationsCache *sharedtypes.Cache[string, types.Application]
+		paramsCache       *sharedtypes.Cache[string, types.Params]
 	}
 )
 
@@ -56,14 +58,14 @@ func NewKeeper(
 		gatewayKeeper: gatewayKeeper,
 		sharedKeeper:  sharedKeeper,
 
-		cache: &types.Cache{
-			Applications: make(map[string]*types.Application),
-		},
+		applicationsCache: sharedtypes.NewCache[string, types.Application](),
+		paramsCache:       sharedtypes.NewCache[string, types.Params](),
 	}
 }
 
 func (k Keeper) ClearCache() {
-	k.cache.Clear()
+	k.applicationsCache.Clear()
+	k.paramsCache.Clear()
 }
 
 // GetAuthority returns the module's authority.

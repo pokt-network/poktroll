@@ -12,6 +12,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/pokt-network/poktroll/x/session/types"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 type (
@@ -30,7 +31,8 @@ type (
 		supplierKeeper    types.SupplierKeeper
 		sharedKeeper      types.SharedKeeper
 
-		cache *types.Cache
+		blockHashesCache *sharedtypes.Cache[int64, []byte]
+		paramsCache      *sharedtypes.Cache[string, types.Params]
 	}
 )
 
@@ -62,9 +64,8 @@ func NewKeeper(
 		supplierKeeper:    supplierKeeper,
 		sharedKeeper:      sharedKeeper,
 
-		cache: &types.Cache{
-			BlockHashes: make(map[int64][]byte),
-		},
+		blockHashesCache: sharedtypes.NewCache[int64, []byte](),
+		paramsCache:      sharedtypes.NewCache[string, types.Params](),
 	}
 }
 
@@ -90,7 +91,7 @@ func (k Keeper) StoreBlockHash(goCtx context.Context) {
 	// ctx.BlocHeight() is the height of the block being validated.
 	height := ctx.BlockHeight()
 
-	k.cache.BlockHashes[height] = hash
+	k.blockHashesCache.Set(height, hash)
 
 	storeAdapter := runtime.KVStoreAdapter(k.storeService.OpenKVStore(goCtx))
 	store := prefix.NewStore(storeAdapter, types.KeyPrefix(types.BlockHashKeyPrefix))

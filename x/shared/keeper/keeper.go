@@ -21,7 +21,7 @@ type (
 		// should be the x/gov module account.
 		authority string
 
-		cache *types.Cache
+		paramsCache *types.Cache[string, types.Params]
 	}
 )
 
@@ -42,7 +42,7 @@ func NewKeeper(
 		authority:    authority,
 		logger:       logger,
 
-		cache: &types.Cache{},
+		paramsCache: types.NewCache[string, types.Params](),
 	}
 }
 

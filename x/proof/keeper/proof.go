@@ -23,8 +23,6 @@ func (k Keeper) UpsertProof(ctx context.Context, proof types.Proof) {
 	primaryKey := types.ProofPrimaryKey(sessionId, proof.GetSupplierOperatorAddress())
 	primaryStore.Set(primaryKey, proofBz)
 
-	k.cache.Proofs[sessionId] = &proof
-
 	logger.Info(
 		fmt.Sprintf("upserted proof for supplier %s with primaryKey %s", proof.GetSupplierOperatorAddress(), primaryKey),
 	)
@@ -41,18 +39,20 @@ func (k Keeper) UpsertProof(ctx context.Context, proof types.Proof) {
 	sessionEndHeight := proof.GetSessionHeader().GetSessionEndBlockHeight()
 	sessionEndHeightKey := types.ProofSupplierEndSessionHeightKey(sessionEndHeight, primaryKey)
 	sessionEndHeightStore.Set(sessionEndHeightKey, primaryKey)
+	k.proofsCache.Set(string(primaryKey), proof)
 }
 
 // GetProof returns a proof from its index
 func (k Keeper) GetProof(ctx context.Context, sessionId, supplierOperatorAddr string) (_ types.Proof, isProofFound bool) {
-	if proof, found := k.cache.Proofs[sessionId]; found {
+	primaryKey := types.ProofPrimaryKey(sessionId, supplierOperatorAddr)
+	if proof, found := k.proofsCache.Get(string(primaryKey)); found {
 		k.logger.Info("-----Proof cache hit-----")
-		return *proof, true
+		return proof, true
 	}
 
-	proof, found := k.getProofByPrimaryKey(ctx, types.ProofPrimaryKey(sessionId, supplierOperatorAddr))
+	proof, found := k.getProofByPrimaryKey(ctx, primaryKey)
 	if found {
-		k.cache.Proofs[sessionId] = &proof
+		k.proofsCache.Set(string(primaryKey), proof)
 	}
 
 	return proof, found
@@ -67,7 +67,6 @@ func (k Keeper) RemoveProof(ctx context.Context, sessionId, supplierOperatorAddr
 
 	// Check if the proof exists
 	primaryKey := types.ProofPrimaryKey(sessionId, supplierOperatorAddr)
-	delete(k.cache.Proofs, sessionId)
 	foundProof, isProofFound := k.getProofByPrimaryKey(ctx, primaryKey)
 	if !isProofFound {
 		logger.Error(
@@ -78,6 +77,7 @@ func (k Keeper) RemoveProof(ctx context.Context, sessionId, supplierOperatorAddr
 				sessionId,
 			),
 		)
+		k.proofsCache.Delete(string(primaryKey))
 		return
 	}
 
@@ -93,6 +93,7 @@ func (k Keeper) RemoveProof(ctx context.Context, sessionId, supplierOperatorAddr
 	primaryStore.Delete(primaryKey)
 	supplierOperatorAddrStore.Delete(supplierOperatorAddrKey)
 	sessionEndHeightStore.Delete(sessionEndHeightKey)
+	k.proofsCache.Delete(string(primaryKey))
 
 	logger.Info(
 		fmt.Sprintf(
@@ -120,7 +121,7 @@ func (k Keeper) GetAllProofs(ctx context.Context) (proofs []types.Proof) {
 	for ; iterator.Valid(); iterator.Next() {
 		var proof types.Proof
 		k.cdc.MustUnmarshal(iterator.Value(), &proof)
-		k.cache.Proofs[proof.GetSessionHeader().GetSessionId()] = &proof
+		k.proofsCache.Set(string(iterator.Key()), proof)
 		proofs = append(proofs, proof)
 	}
 

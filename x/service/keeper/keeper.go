@@ -24,7 +24,9 @@ type (
 
 		bankKeeper types.BankKeeper
 
-		cache *types.Cache
+		servicesCache              *sharedtypes.Cache[string, sharedtypes.Service]
+		relayMiningDifficultyCache *sharedtypes.Cache[string, types.RelayMiningDifficulty]
+		paramsCache                *sharedtypes.Cache[string, types.Params]
 	}
 )
 
@@ -48,15 +50,16 @@ func NewKeeper(
 
 		bankKeeper: bankKeeper,
 
-		cache: &types.Cache{
-			Services:              make(map[string]*sharedtypes.Service),
-			RelayMiningDifficulty: make(map[string]*types.RelayMiningDifficulty),
-		},
+		servicesCache:              sharedtypes.NewCache[string, sharedtypes.Service](),
+		relayMiningDifficultyCache: sharedtypes.NewCache[string, types.RelayMiningDifficulty](),
+		paramsCache:                sharedtypes.NewCache[string, types.Params](),
 	}
 }
 
 func (k Keeper) ClearCache() {
-	k.cache.Clear()
+	k.servicesCache.Clear()
+	k.relayMiningDifficultyCache.Clear()
+	k.paramsCache.Clear()
 }
 
 // GetAuthority returns the module's authority.

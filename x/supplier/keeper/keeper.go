@@ -26,7 +26,8 @@ type (
 		sharedKeeper  types.SharedKeeper
 		serviceKeeper types.ServiceKeeper
 
-		cache types.Cache
+		suppliersCache *sharedtypes.Cache[string, sharedtypes.Supplier]
+		paramsCache    *sharedtypes.Cache[string, types.Params]
 	}
 )
 
@@ -54,9 +55,8 @@ func NewKeeper(
 		sharedKeeper:  sharedKeeper,
 		serviceKeeper: serviceKeeper,
 
-		cache: types.Cache{
-			Suppliers: make(map[string]*sharedtypes.Supplier),
-		},
+		suppliersCache: sharedtypes.NewCache[string, sharedtypes.Supplier](),
+		paramsCache:    sharedtypes.NewCache[string, types.Params](),
 	}
 }
 

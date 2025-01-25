@@ -12,14 +12,11 @@ import (
 
 // SetApplication set a specific application in the store from its index
 func (k Keeper) SetApplication(ctx context.Context, application types.Application) {
-	if k.cache.Applications[application.Address] != nil {
-		k.cache.Applications[application.Address] = &application
-	}
-
 	storeAdapter := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
 	store := prefix.NewStore(storeAdapter, types.KeyPrefix(types.ApplicationKeyPrefix))
 	appBz := k.cdc.MustMarshal(&application)
 	store.Set(types.ApplicationKey(application.Address), appBz)
+	k.applicationsCache.Set(application.Address, application)
 }
 
 // GetApplication returns a application from its index
@@ -27,9 +24,9 @@ func (k Keeper) GetApplication(
 	ctx context.Context,
 	appAddr string,
 ) (app types.Application, found bool) {
-	if app, found := k.cache.Applications[appAddr]; found {
+	if app, found := k.applicationsCache.Get(appAddr); found {
 		k.logger.Info("-----Application cache hit-----")
-		return *app, true
+		return app, true
 	}
 
 	storeAdapter := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
@@ -54,18 +51,17 @@ func (k Keeper) GetApplication(
 		app.DelegateeGatewayAddresses = make([]string, 0)
 	}
 
-	k.cache.Applications[appAddr] = &app
+	k.applicationsCache.Set(appAddr, app)
 
 	return app, true
 }
 
 // RemoveApplication removes a application from the store
 func (k Keeper) RemoveApplication(ctx context.Context, appAddr string) {
-	delete(k.cache.Applications, appAddr)
-
 	storeAdapter := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
 	store := prefix.NewStore(storeAdapter, types.KeyPrefix(types.ApplicationKeyPrefix))
 	store.Delete(types.ApplicationKey(appAddr))
+	k.applicationsCache.Delete(appAddr)
 }
 
 // GetAllApplications returns all application
@@ -86,7 +82,7 @@ func (k Keeper) GetAllApplications(ctx context.Context) (apps []types.Applicatio
 			app.PendingUndelegations = make(map[uint64]types.UndelegatingGatewayList)
 		}
 
-		k.cache.Applications[app.Address] = &app
+		k.applicationsCache.Set(app.Address, app)
 
 		apps = append(apps, app)
 	}

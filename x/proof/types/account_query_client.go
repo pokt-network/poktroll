@@ -3,6 +3,7 @@ package types
 import (
 	"context"
 	fmt "fmt"
+	"sync"
 
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	"github.com/cosmos/cosmos-sdk/types"
@@ -18,6 +19,7 @@ var _ client.AccountQueryClient = (*AccountKeeperQueryClient)(nil)
 type AccountKeeperQueryClient struct {
 	keeper             AccountKeeper
 	accountPubKeyCache map[string]cryptotypes.PubKey
+	CacheMu            *sync.RWMutex
 }
 
 // NewAccountKeeperQueryClient returns a new AccountQueryClient that is backed
@@ -29,6 +31,7 @@ func NewAccountKeeperQueryClient(accountKeeper AccountKeeper) client.AccountQuer
 	return &AccountKeeperQueryClient{
 		keeper:             accountKeeper,
 		accountPubKeyCache: make(map[string]cryptotypes.PubKey),
+		CacheMu:            &sync.RWMutex{},
 	}
 }
 
@@ -63,6 +66,8 @@ func (accountQueryClient *AccountKeeperQueryClient) GetPubKeyFromAddress(
 	ctx context.Context,
 	address string,
 ) (cryptotypes.PubKey, error) {
+	accountQueryClient.CacheMu.RLock()
+	defer accountQueryClient.CacheMu.RUnlock()
 	if acc, found := accountQueryClient.accountPubKeyCache[address]; found {
 		fmt.Println("-----PubKey cache hit-----")
 		return acc, nil
@@ -88,5 +93,7 @@ func (accountQueryClient *AccountKeeperQueryClient) GetPubKeyFromAddress(
 }
 
 func (accountQueryClient *AccountKeeperQueryClient) ClearCache() {
+	accountQueryClient.CacheMu.Lock()
+	defer accountQueryClient.CacheMu.Unlock()
 	clear(accountQueryClient.accountPubKeyCache)
 }

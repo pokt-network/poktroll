@@ -648,7 +648,9 @@ func (s *relaysSuite) createApplicationAccount(
 	accAddress, err := keyRecord.GetAddress()
 	require.NoError(s, err)
 
-	logger.Debug().Msgf("Application added %s", keyName)
+	if appIdx%5000 == 0 {
+		logger.Debug().Msgf("Application added %s", keyName)
+	}
 
 	return &accountInfo{
 		address:       accAddress.String(),

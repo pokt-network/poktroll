@@ -16,6 +16,7 @@ import (
 	"github.com/pokt-network/poktroll/pkg/polylog"
 	_ "github.com/pokt-network/poktroll/pkg/polylog/polyzero"
 	"github.com/pokt-network/poktroll/x/proof/types"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 type (
@@ -39,7 +40,9 @@ type (
 		accountQuerier client.AccountQueryClient
 		sharedQuerier  client.SharedQueryClient
 
-		cache *types.Cache
+		claimsCache *sharedtypes.Cache[string, types.Claim]
+		proofsCache *sharedtypes.Cache[string, types.Proof]
+		paramsCache *sharedtypes.Cache[string, types.Params]
 	}
 )
 
@@ -104,15 +107,16 @@ func NewKeeper(
 		accountQuerier: accountQuerier,
 		sharedQuerier:  sharedQuerier,
 
-		cache: &types.Cache{
-			Proofs: make(map[string]*types.Proof),
-			Claims: make(map[string]*types.Claim),
-		},
+		claimsCache: sharedtypes.NewCache[string, types.Claim](),
+		proofsCache: sharedtypes.NewCache[string, types.Proof](),
+		paramsCache: sharedtypes.NewCache[string, types.Params](),
 	}
 }
 
 func (k Keeper) ClearCache() {
-	k.cache.Clear()
+	k.claimsCache.Clear()
+	k.proofsCache.Clear()
+	k.paramsCache.Clear()
 	k.accountQuerier.ClearCache()
 }
 
