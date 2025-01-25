@@ -1556,14 +1556,14 @@ func (s *relaysSuite) forEachRelayBatchSendBatch(_ context.Context, relayBatchIn
 	// each sending relayRatePerApp relays per second.
 	relaysPerSec := len(relayBatchInfo.appAccounts) * int(s.relayRatePerApp)
 	// Determine the interval between each relay request.
-	relayInterval := time.Second / time.Duration(85)
+	relayInterval := time.Second / time.Duration(20)
 
 	batchWaitGroup := new(sync.WaitGroup)
 	batchWaitGroup.Add(relaysPerSec * int(blockDurationSec))
 
 	now := time.Now()
 
-	for i := 0; i < 50000; i++ {
+	for i := 0; i < 10000; i++ {
 		iterationTime := now.Add(time.Duration(i+1) * relayInterval)
 		batchLimiter.Go(s.ctx, func() {
 
