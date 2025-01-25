@@ -96,6 +96,8 @@ validators:
           # "high" produces a lot of timeseries.
           # ONLY suitable for small networks such as LocalNet.
           cardinality-level: high
+      max-recv-msg-size: "1000000000000"
+      max-send-msg-size: "1000000000000"
     config:
       moniker: "validator1"
       consensus:
@@ -111,13 +113,14 @@ validators:
       rpc:
         # Controls how large any single RPC request accepted by the CometBFT
         # server (offchain) can be.
-        max_body_bytes: "10000000000"
+        max_body_bytes: "1000000000000"
       mempool:
         # Control how big any single transaction accepted by the CometBFT server
         # (offchain) can be.
         # Since multiple messages are bundled into a single transaction,
         # max_tx_bytes needs to be increased alongside max_txs_bytes as well.
-        max_tx_bytes: "100000000000"
+        max_tx_bytes: "10000000000000"
+        max_txs_bytes: "100000000000000"
     client:
       chain-id: poktroll
 

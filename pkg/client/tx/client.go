@@ -290,6 +290,7 @@ func (txnClient *txClient) SignAndBroadcast(
 		return either.SyncErr(err)
 	}
 
+	fmt.Printf("----Tx size: %d\n", len(txBz))
 	txResponse, err := txnClient.txCtx.BroadcastTx(txBz)
 	if err != nil {
 		return either.SyncErr(err)
