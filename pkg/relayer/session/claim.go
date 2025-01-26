@@ -3,7 +3,9 @@ package session
 import (
 	"context"
 	"fmt"
+	"runtime"
 	"slices"
+	"sync"
 
 	sdktypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/pokt-network/smt"
@@ -231,21 +233,33 @@ func (rs *relayerSessionsManager) goCreateClaimRoots(
 ) {
 	failedClaims := []relayer.SessionTree{}
 	flushedClaims := []relayer.SessionTree{}
+	wg := sync.WaitGroup{}
+	sem := make(chan struct{}, runtime.NumCPU())
 	for _, sessionTree := range sessionTrees {
 		select {
 		case <-ctx.Done():
 			return
 		default:
 		}
-		// This session should no longer be updated
-		if _, err := sessionTree.Flush(); err != nil {
-			rs.logger.Error().Err(err).Msg("failed to flush session")
-			failedClaims = append(failedClaims, sessionTree)
-			continue
-		}
 
-		flushedClaims = append(flushedClaims, sessionTree)
+		sem <- struct{}{}
+		wg.Add(1)
+
+		go func(tree relayer.SessionTree) {
+			defer wg.Done()
+			defer func() { <-sem }()
+			// This session should no longer be updated
+			if _, err := tree.Flush(); err != nil {
+				rs.logger.Error().Err(err).Msg("failed to flush session")
+				failedClaims = append(failedClaims, tree)
+				return
+			}
+
+			flushedClaims = append(flushedClaims, tree)
+		}(sessionTree)
 	}
+
+	wg.Wait()
 
 	failSubmitProofsSessionsCh <- failedClaims
 	claimsFlushedCh <- flushedClaims

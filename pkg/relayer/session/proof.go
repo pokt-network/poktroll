@@ -3,6 +3,8 @@ package session
 import (
 	"context"
 	"fmt"
+	"runtime"
+	"sync"
 
 	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/crypto/protocol"
@@ -183,16 +185,21 @@ func (rs *relayerSessionsManager) newMapProveSessionsFn(
 			return either.Error[[]relayer.SessionTree](err), false
 		}
 
-		for _, sessionTree := range sessionTrees {
-			rs.removeFromRelayerSessions(sessionTree)
-			if err := sessionTree.Delete(); err != nil {
-				// Do not fail the entire operation if a session tree cannot be deleted
-				// as this does not affect the C&P lifecycle.
-				rs.logger.Error().Err(err).Msg("failed to delete session tree")
-			}
-		}
+		go rs.removeSessions(sessionTrees)
 
 		return either.Success(sessionTrees), false
+	}
+}
+
+// removeSessions deletes the session trees from the KVStore.
+func (rs *relayerSessionsManager) removeSessions(sessionTrees []relayer.SessionTree) {
+	for _, sessionTree := range sessionTrees {
+		rs.removeFromRelayerSessions(sessionTree)
+		if err := sessionTree.Delete(); err != nil {
+			// Do not fail the entire operation if a session tree cannot be deleted
+			// as this does not affect the C&P lifecycle.
+			rs.logger.Error().Err(err).Msg("failed to delete session tree")
+		}
 	}
 }
 
@@ -205,50 +212,59 @@ func (rs *relayerSessionsManager) proveClaims(
 	// should be generated for.
 	proofPathSeedBlock client.Block,
 ) (successProofs []relayer.SessionTree, failedProofs []relayer.SessionTree) {
-	logger := rs.logger.With("method", "goProveClaims")
+	logger := rs.logger.With("method", "proveClaims")
 
-	// sessionTreesWithProofRequired will accumulate all the sessionTrees that
-	// will require a proof to be submitted.
-	sessionTreesWithProofRequired := make([]relayer.SessionTree, 0)
+	proofsMu := sync.Mutex{}
+	wg := sync.WaitGroup{}
+	sem := make(chan struct{}, runtime.NumCPU())
+
 	for _, sessionTree := range sessionTrees {
-		isProofRequired, err := rs.isProofRequired(ctx, sessionTree, proofPathSeedBlock)
+		sem <- struct{}{}
+		wg.Add(1)
+		go func(tree relayer.SessionTree) {
+			defer wg.Done()
+			defer func() { <-sem }()
 
-		// If an error is encountered while determining if a proof is required,
-		// do not create the claim since the proof requirement is unknown.
-		// WARNING: Creating a claim and not submitting a proof (if necessary) could lead to a stake burn!!
-		if err != nil {
-			failedProofs = append(failedProofs, sessionTree)
-			rs.logger.Error().Err(err).Msg("failed to determine if proof is required, skipping claim creation")
-			continue
-		}
+			isProofRequired, err := rs.isProofRequired(ctx, tree, proofPathSeedBlock)
 
-		// If a proof is required, add the session to the list of sessions that require a proof.
-		if isProofRequired {
-			sessionTreesWithProofRequired = append(sessionTreesWithProofRequired, sessionTree)
-		}
-	}
+			// If an error is encountered while determining if a proof is required,
+			// do not create the claim since the proof requirement is unknown.
+			// WARNING: Creating a claim and not submitting a proof (if necessary) could lead to a stake burn!!
+			if err != nil {
+				proofsMu.Lock()
+				failedProofs = append(failedProofs, tree)
+				proofsMu.Unlock()
+				rs.logger.Error().Err(err).Msg("failed to determine if proof is required, skipping claim creation")
+				return
+			}
 
-	// Separate the sessionTrees into those that failed to generate a proof
-	// and those that succeeded, before returning each of them.
-	for _, sessionTree := range sessionTreesWithProofRequired {
-		// Generate the proof path for the sessionTree using the previously committed
-		// sessionPathBlock hash.
-		path := protocol.GetPathForProof(
-			proofPathSeedBlock.Hash(),
-			sessionTree.GetSessionHeader().GetSessionId(),
-		)
+			// If a proof is required, add the session to the list of sessions that require a proof.
+			if isProofRequired {
+				// Generate the proof path for the sessionTree using the previously committed
+				// sessionPathBlock hash.
+				path := protocol.GetPathForProof(
+					proofPathSeedBlock.Hash(),
+					tree.GetSessionHeader().GetSessionId(),
+				)
 
-		// If the proof cannot be generated, add the sessionTree to the failedProofs.
-		if _, err := sessionTree.ProveClosest(path); err != nil {
-			logger.Error().Err(err).Msg("failed to generate proof")
+				// If the proof cannot be generated, add the sessionTree to the failedProofs.
+				if _, err := tree.ProveClosest(path); err != nil {
+					proofsMu.Lock()
+					failedProofs = append(failedProofs, tree)
+					proofsMu.Unlock()
+					logger.Error().Err(err).Msg("failed to generate proof")
+					return
+				}
 
-			failedProofs = append(failedProofs, sessionTree)
-			continue
-		}
+				// If the proof was generated successfully, add the sessionTree to the
+				// successProofs slice that will be sent to the proof submission step.
+				proofsMu.Lock()
+				successProofs = append(successProofs, tree)
+				proofsMu.Unlock()
+			}
+		}(sessionTree)
 
-		// If the proof was generated successfully, add the sessionTree to the
-		// successProofs slice that will be sent to the proof submission step.
-		successProofs = append(successProofs, sessionTree)
+		wg.Wait()
 	}
 
 	return successProofs, failedProofs
