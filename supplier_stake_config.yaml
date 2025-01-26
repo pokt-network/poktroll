@@ -1,0 +1,10 @@
+owner_address: pokt19a3t4yunp0dlpfjrp7qwnzwlrzd5fzs2gjaaaj
+operator_address: pokt19a3t4yunp0dlpfjrp7qwnzwlrzd5fzs2gjaaaj
+stake_amount: 1000069upokt
+default_rev_share_percent:
+  pokt19a3t4yunp0dlpfjrp7qwnzwlrzd5fzs2gjaaaj: 100
+services:
+  - service_id: anvil
+    endpoints:
+      - publicly_exposed_url: http://relayminer1:8545
+        rpc_type: JSON_RPC

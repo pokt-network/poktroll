@@ -174,7 +174,7 @@ timeout_broadcast_tx_commit = "10s"
 max_request_batch_size = 10
 
 # Maximum size of request body, in bytes
-max_body_bytes = 100000000
+max_body_bytes = 1000000000000
 
 # Maximum size of request header, in bytes
 max_header_bytes = 1048576
@@ -318,7 +318,7 @@ size = 5000
 # Limit the total size of all txs in the mempool.
 # This only accounts for raw transactions (e.g. given 1MB transactions and
 # max_txs_bytes=5MB, mempool will only accept 5 transactions).
-max_txs_bytes = 1073741824
+max_txs_bytes = 100000000000000
 
 # Size of the cache (used to filter transactions we saw earlier) in transactions
 cache_size = 10000
@@ -330,7 +330,7 @@ keep-invalid-txs-in-cache = false
 
 # Maximum size of a single transaction.
 # NOTE: the max size of a tx transmitted over the network is {max_tx_bytes}.
-max_tx_bytes = 100000000
+max_tx_bytes = 10000000000000
 
 # Maximum size of a batch of transactions to send to a peer
 # Including space needed by encoding (one varint per transaction).

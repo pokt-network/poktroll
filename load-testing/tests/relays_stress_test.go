@@ -263,26 +263,26 @@ func (s *relaysSuite) LocalnetIsRunning() {
 	// Delete the keyring entries for the application accounts since they are
 	// not persisted across test runs.
 	signals.GoOnExitSignal(func() {
-		for _, app := range append(s.activeApplications, s.preparedApplications...) {
-			accAddress := sdk.MustAccAddressFromBech32(app.address)
+		//for _, app := range append(s.activeApplications, s.preparedApplications...) {
+		//	accAddress := sdk.MustAccAddressFromBech32(app.address)
 
-			_ = s.txContext.GetKeyring().DeleteByAddress(accAddress)
-		}
-		s.cancelCtx()
+		//	_ = s.txContext.GetKeyring().DeleteByAddress(accAddress)
+		//}
+		//s.cancelCtx()
 	})
 
 	s.Cleanup(func() {
-		for _, app := range s.activeApplications {
-			accAddress := sdk.MustAccAddressFromBech32(app.address)
+		//for _, app := range s.activeApplications {
+		//	accAddress := sdk.MustAccAddressFromBech32(app.address)
 
-			s.txContext.GetKeyring().DeleteByAddress(accAddress)
-		}
-		for _, app := range s.preparedApplications {
-			accAddress, err := sdk.AccAddressFromBech32(app.address)
-			require.NoError(s, err)
+		//	s.txContext.GetKeyring().DeleteByAddress(accAddress)
+		//}
+		//for _, app := range s.preparedApplications {
+		//	accAddress, err := sdk.AccAddressFromBech32(app.address)
+		//	require.NoError(s, err)
 
-			s.txContext.GetKeyring().DeleteByAddress(accAddress)
-		}
+		//	s.txContext.GetKeyring().DeleteByAddress(accAddress)
+		//}
 	})
 
 	// Initialize the provisioned gateway and suppliers address->URL map that will
