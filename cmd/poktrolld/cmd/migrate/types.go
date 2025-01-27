@@ -10,9 +10,9 @@ import (
 	migrationtypes "github.com/pokt-network/poktroll/x/migration/types"
 )
 
-// TODO_IN_THIS_COMMIT: godoc...
+// morseImportWorkspace is a helper struct that is used to consolidate the Morse account balance,
+// application stake, and supplier stake for each account as an entry in the resulting MorseAccountState.
 type morseImportWorkspace struct {
-	// TODO_IN_THIS_COMMIT: godoc...
 	addressToIdx map[string]uint64
 	accounts     []*migrationtypes.MorseAccount
 }
@@ -33,7 +33,9 @@ func (miw *morseImportWorkspace) hasAccount(addr string) bool {
 	return ok
 }
 
-// TODO_IN_THIS_COMMIT: godoc...
+// ensureAccount ensures that the given address is present in the accounts slice
+// and that its corresponding address is in the addressToIdx map. If the address
+// is not present, it is added to the accounts slice and the addressToIdx map.
 func (miw *morseImportWorkspace) ensureAccount(
 	addr string,
 	exportAccount *migrationtypes.MorseAuthAccount,
@@ -62,7 +64,7 @@ func (miw *morseImportWorkspace) ensureAccount(
 	return accountIdx, balance
 }
 
-// TODO_IN_THIS_COMMIT: godoc...
+// addUpokt adds the given amount to the corresponding account balances in the morseWorkspace.
 func (miw *morseImportWorkspace) addUpokt(addr string, amount cosmosmath.Int) error {
 	importAccountIdx, hasAccountAddr := miw.addressToIdx[addr]
 	if !hasAccountAddr {

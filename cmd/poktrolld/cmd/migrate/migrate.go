@@ -86,8 +86,6 @@ func validatePathIsFile(path string) error {
 
 // transformMorseState consolidates the Morse account balance, application stake,
 // and supplier stake for each account as an entry in the resulting MorseAccountState.
-//
-// TODO_IN_THIS_COMMIT: benchmark and consider at what point (i.e. number of accounts) does asynchronous import processing matter?
 func transformMorseState(inputState *migrationtypes.MorseStateExport) ([]byte, error) {
 	morseWorkspace := &morseImportWorkspace{
 		addressToIdx: make(map[string]uint64),
@@ -126,8 +124,13 @@ func collectInputAccountBalances(inputState *migrationtypes.MorseStateExport, mo
 		addr := exportAccount.Value.Address.String()
 		morseWorkspace.ensureAccount(addr, exportAccount)
 
-		// TODO_IN_THIS_COMMIT: comment... SHOULD ONLY be one denom (upokt).
-		coin := exportAccount.Value.Coins[0]
+		coins := exportAccount.Value.Coins
+		if len(coins) == 0 {
+			return nil
+		}
+
+		// DEV_NOTE: SHOULD ONLY be one denom (upokt).
+		coin := coins[0]
 		if coin.Denom != volatile.DenomuPOKT {
 			return fmt.Errorf("unsupported denom %q", coin.Denom)
 		}

@@ -1,179 +1,23 @@
 package migrate
 
 import (
-	"bytes"
+	"encoding/binary"
+	"fmt"
+	"math"
+	"math/rand"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
-	"text/template"
 
+	cometcrypto "github.com/cometbft/cometbft/crypto/ed25519"
+	cmtjson "github.com/cometbft/cometbft/libs/json"
+	cosmostypes "github.com/cosmos/cosmos-sdk/types"
+	"github.com/regen-network/gocuke"
 	"github.com/stretchr/testify/require"
-)
 
-type morseStateInputLocals struct {
-	Address1Hex,
-	Address2Hex,
-	PublicKey1Hex,
-	PublicKey2Hex string
-	Account1Amount,
-	Account2Amount,
-	App1StakeAmount,
-	App2StakeAmount,
-	Supplier1StakeAmount,
-	Supplier2StakeAmount uint64
-}
-
-type morseStateOutputLocals struct {
-	Address1Hex,
-	Address2Hex,
-	PublicKey1Hex,
-	PublicKey2Hex string
-	Account1Amount,
-	Account2Amount uint64
-}
-
-var (
-	mockMorseStateExport = template.Must(template.New("morse_state_export.json").Parse(`
-{
-    "app_hash": "",
-    "app_state": {
-        "application": {
-            "applications": [
-                {
-                    "address": "{{.Address1Hex}}",
-                    "public_key": "{{.PublicKey1Hex}}",
-                    "jailed": false,
-                    "status": 2,
-                    "staked_tokens": "{{.App1StakeAmount}}"
-                },
-                {
-                    "address": "{{.Address2Hex}}",
-                    "public_key": "{{.PublicKey2Hex}}",
-                    "jailed": false,
-                    "status": 2,
-                    "staked_tokens": "{{.App2StakeAmount}}"
-                }
-            ]
-        },
-        "auth": {
-            "accounts": [
-                {
-                    "type": "posmint/Account",
-                    "value": {
-                        "address": "{{.Address1Hex}}",
-                        "coins": [
-                            {
-                                "denom": "upokt",
-                                "amount": "{{.Account1Amount}}"
-                            }
-                        ],
-                        "public_key": {
-                            "type": "crypto/ed25519_public_key",
-                            "value": "{{.PublicKey1Hex}}"
-                        }
-                    }
-                },
-                {
-                    "type": "posmint/Account",
-                    "value": {
-                        "address": "{{.Address2Hex}}",
-                        "coins": [
-                            {
-                                "denom": "upokt",
-                                "amount": "{{.Account2Amount}}"
-                            }
-                        ],
-                        "public_key": {
-                            "type": "crypto/ed25519_public_key",
-                            "value": "{{.PublicKey2Hex}}"
-                        }
-                    }
-                }
-            ]
-        },
-        "pos": {
-            "validators": [
-                {
-                    "address": "{{.Address1Hex}}",
-                    "public_key": "{{.PublicKey1Hex}}",
-                    "jailed": false,
-                    "status": 2,
-                    "tokens": "{{.Supplier1StakeAmount}}"
-                },
-                {
-                    "address": "{{.Address2Hex}}",
-                    "public_key": "{{.PublicKey2Hex}}",
-                    "jailed": false,
-                    "status": 2,
-                    "tokens": "{{.Supplier2StakeAmount}}"
-                }
-            ]
-        }
-    }
-}
-`))
-	expectedMorseAccountStateJSONTmpl = template.Must(template.New("morse_account_state.json").Parse(`{
-  "accounts": [
-    {
-      "address": "{{.Address1Hex}}",
-      "public_key": {
-        "value": "{{.PublicKey1Hex}}"
-      },
-      "coins": [
-        {
-          "denom": "upokt",
-          "amount": "{{.Account1Amount}}"
-        }
-      ]
-    },
-    {
-      "address": "{{.Address2Hex}}",
-      "public_key": {
-        "value": "{{.PublicKey2Hex}}"
-      },
-      "coins": [
-        {
-          "denom": "upokt",
-          "amount": "{{.Account2Amount}}"
-        }
-      ]
-    }
-  ]
-}`))
-
-	Account1Amount       = uint64(2000000)
-	Account2Amount       = uint64(2000020)
-	App1StakeAmount      = uint64(10000000000000)
-	App2StakeAmount      = uint64(10000000000001)
-	Supplier1StakeAmount = uint64(30000000)
-	Supplier2StakeAmount = uint64(30000300)
-	Address1Hex          = "934066AAE79DA1E8012BACF4953985DC6BAC3371"
-	Address2Hex          = "3145CF09E0E780A16E57DE7DB2A419CFEA45C830"
-	PublicKey1Hex        = "f68e32d72e7f5f1c797bcd41d8d0e9a1004354c6b1c85429f2ebd7d82ccf4a70"
-	PublicKey2Hex        = "0a825f4415213910f949b9081ee43cca105eae13ca44bb69e93aaad122f52c11"
-
-	morseInputLocals = morseStateInputLocals{
-		Address1Hex:          Address1Hex,
-		Address2Hex:          Address2Hex,
-		PublicKey1Hex:        PublicKey1Hex,
-		PublicKey2Hex:        PublicKey2Hex,
-		Account1Amount:       Account1Amount,
-		Account2Amount:       Account2Amount,
-		App1StakeAmount:      App1StakeAmount,
-		App2StakeAmount:      App2StakeAmount,
-		Supplier1StakeAmount: Supplier1StakeAmount,
-		Supplier2StakeAmount: Supplier2StakeAmount,
-	}
-
-	morseOutputLocals = morseStateOutputLocals{
-		Address1Hex:    Address1Hex,
-		Address2Hex:    Address2Hex,
-		PublicKey1Hex:  PublicKey1Hex,
-		PublicKey2Hex:  PublicKey2Hex,
-		Account1Amount: App1StakeAmount + Account1Amount + Supplier1StakeAmount,
-		Account2Amount: App2StakeAmount + Account2Amount + Supplier2StakeAmount,
-	}
+	"github.com/pokt-network/poktroll/app/volatile"
+	migrationtypes "github.com/pokt-network/poktroll/x/migration/types"
 )
 
 func TestCollectMorseAccounts(t *testing.T) {
@@ -182,7 +26,8 @@ func TestCollectMorseAccounts(t *testing.T) {
 	inputFile, err := os.CreateTemp(tmpDir, "morse-state-input.json")
 	require.NoError(t, err)
 
-	err = mockMorseStateExport.Execute(inputFile, morseInputLocals)
+	morseStateExportBz, morseAccountStateBz := newMorseStateExportAndAccountState(t, 10)
+	_, err = inputFile.Write(morseStateExportBz)
 	require.NoError(t, err)
 
 	err = inputFile.Close()
@@ -195,15 +40,145 @@ func TestCollectMorseAccounts(t *testing.T) {
 	outputJSON, err := os.ReadFile(outputPath)
 	require.NoError(t, err)
 
-	expectedJSONBuf := new(bytes.Buffer)
-	err = expectedMorseAccountStateJSONTmpl.Execute(expectedJSONBuf, morseOutputLocals)
+	expectedJSON := string(morseAccountStateBz)
 	require.NoError(t, err)
 
 	// Strip all whitespace from the expected JSON.
-	expectedJSON := expectedJSONBuf.String()
 	expectedJSON = strings.ReplaceAll(expectedJSON, "\n", "")
 	expectedJSON = strings.ReplaceAll(expectedJSON, " ", "")
 
 	require.NoError(t, err)
 	require.Equal(t, expectedJSON, string(outputJSON))
+}
+
+func TestNewTestMorseStateExport(t *testing.T) {
+	for i := 1; i < 10; i++ {
+		t.Run(fmt.Sprintf("num_accounts=%d", i), func(t *testing.T) {
+			morseStateExport := new(migrationtypes.MorseStateExport)
+			stateExportBz, _ := newMorseStateExportAndAccountState(t, i)
+			err := cmtjson.Unmarshal(stateExportBz, morseStateExport)
+			require.NoError(t, err)
+
+			exportAccounts := morseStateExport.AppState.Auth.Accounts
+			require.Equal(t, i, len(exportAccounts))
+
+			expectedShannonBalance := fmt.Sprintf("%d%d%d0%d%d%d", i, i, i, i, i, i)
+			morseAccountState := new(migrationtypes.MorseAccountState)
+			morseAccountStateBz, err := transformMorseState(morseStateExport)
+			require.NoError(t, err)
+
+			err = cmtjson.Unmarshal(morseAccountStateBz, morseAccountState)
+			require.NoError(t, err)
+
+			require.Equal(t, expectedShannonBalance, morseAccountState.Accounts[i-1].Coins[0].Amount.String())
+		})
+	}
+}
+
+func BenchmarkTransformMorseState(b *testing.B) {
+	for i := 0; i < 5; i++ {
+		numAccounts := int(math.Pow10(i + 1))
+		morseStateExport := new(migrationtypes.MorseStateExport)
+		morseStateExportBz, _ := newMorseStateExportAndAccountState(b, numAccounts)
+		err := cmtjson.Unmarshal(morseStateExportBz, morseStateExport)
+		require.NoError(b, err)
+
+		b.Run(fmt.Sprintf("num_accounts=%d", numAccounts), func(b *testing.B) {
+
+			// Call the function under test.
+			b.ResetTimer()
+			for i := 0; i < b.N; i++ {
+				_, err = transformMorseState(morseStateExport)
+				require.NoError(b, err)
+			}
+		})
+	}
+}
+
+// TODO_CONSIDERATION: Test/benchmark execution speed can be optimized by refactoring this to a pre-generate fixture.
+func newMorseStateExportAndAccountState(
+	t gocuke.TestingT,
+	numAccounts int,
+) (morseStateExportBz []byte, morseAccountStateBz []byte) {
+	morseStateExport := &migrationtypes.MorseStateExport{
+		AppHash: "",
+		AppState: &migrationtypes.MorseAppState{
+			Application: &migrationtypes.MorseApplications{},
+			Auth:        &migrationtypes.MorseAuth{},
+			Pos:         &migrationtypes.MorsePos{},
+		},
+	}
+
+	morseAccountState := &migrationtypes.MorseAccountState{
+		Accounts: make([]*migrationtypes.MorseAccount, numAccounts),
+	}
+
+	for i := 1; i < numAccounts+1; i++ {
+		seedUint := rand.Uint64()
+		seedBz := make([]byte, 8)
+		binary.LittleEndian.PutUint64(seedBz, seedUint)
+		privKey := cometcrypto.GenPrivKeyFromSecret(seedBz)
+		pubKey := privKey.PubKey()
+		balanceAmount := int64(1e6*i + i)                                 // i_000_00i
+		appStakeAmount := int64(1e5*i + (i * 10))                         //   i00_0i0
+		supplierStakeAmount := int64(1e4*i + (i * 100))                   //    i0_i00
+		sumAmount := balanceAmount + appStakeAmount + supplierStakeAmount // i_ii0_iii
+
+		// Add an account.
+		morseStateExport.AppState.Auth.Accounts = append(
+			morseStateExport.AppState.Auth.Accounts,
+			&migrationtypes.MorseAuthAccount{
+				Type: "posmint/Account",
+				Value: &migrationtypes.MorseAccount{
+					Address: pubKey.Address(),
+					Coins:   cosmostypes.NewCoins(cosmostypes.NewInt64Coin(volatile.DenomuPOKT, balanceAmount)),
+					PubKey: &migrationtypes.MorsePublicKey{
+						Value: pubKey.Bytes(),
+					},
+				},
+			},
+		)
+
+		// Add an application.
+		morseStateExport.AppState.Application.Applications = append(
+			morseStateExport.AppState.Application.Applications,
+			&migrationtypes.MorseApplication{
+				Address:      pubKey.Address(),
+				PublicKey:    pubKey.Bytes(),
+				Jailed:       false,
+				Status:       2,
+				StakedTokens: fmt.Sprintf("%d", appStakeAmount),
+			},
+		)
+
+		// Add a supplier.
+		morseStateExport.AppState.Pos.Validators = append(
+			morseStateExport.AppState.Pos.Validators,
+			&migrationtypes.MorseValidator{
+				Address:      pubKey.Address(),
+				PublicKey:    pubKey.Bytes(),
+				Jailed:       false,
+				Status:       2,
+				StakedTokens: fmt.Sprintf("%d", supplierStakeAmount),
+			},
+		)
+
+		// Add the account to the morseAccountState.
+		morseAccountState.Accounts[i-1] = &migrationtypes.MorseAccount{
+			Address: pubKey.Address(),
+			Coins:   cosmostypes.NewCoins(cosmostypes.NewInt64Coin(volatile.DenomuPOKT, sumAmount)),
+			PubKey: &migrationtypes.MorsePublicKey{
+				Value: pubKey.Bytes(),
+			},
+		}
+	}
+
+	var err error
+	morseStateExportBz, err = cmtjson.Marshal(morseStateExport)
+	require.NoError(t, err)
+
+	morseAccountStateBz, err = cmtjson.Marshal(morseAccountState)
+	require.NoError(t, err)
+
+	return morseStateExportBz, morseAccountStateBz
 }
