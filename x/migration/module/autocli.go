@@ -29,12 +29,13 @@ func (am AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 					Skip:      true, // skipped because authority gated
 				},
 				{
-			RpcMethod: "UploadMorseState",
-			Use: "upload-morse-state [state]",
-			Short: "Send a upload-morse-state tx",
-			PositionalArgs: []*autocliv1.PositionalArgDescriptor{{ProtoField: "state"},},
-		},
-		// this line is used by ignite scaffolding # autocli/tx
+					RpcMethod:      "UploadMorseState",
+					Use:            "upload-morse-state [state]",
+					Short:          "Send a upload-morse-state tx",
+					PositionalArgs: []*autocliv1.PositionalArgDescriptor{{ProtoField: "state"}},
+					Skip:           true, // skipped because authority gated
+				},
+				// this line is used by ignite scaffolding # autocli/tx
 			},
 		},
 	}
