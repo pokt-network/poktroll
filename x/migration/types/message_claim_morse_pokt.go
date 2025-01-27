@@ -8,7 +8,7 @@ import (
 
 var _ sdk.Msg = &MsgClaimMorsePokt{}
 
-func NewMsgClaimMorsePokt(shannonDestAddress string, morseSrcAddress string, morseSignature string) *MsgClaimMorsePokt {
+func NewMsgClaimMorsePokt(shannonDestAddress string, morseSrcAddress string, morseSignature []byte) *MsgClaimMorsePokt {
 	return &MsgClaimMorsePokt{
 		ShannonDestAddress: shannonDestAddress,
 		MorseSrcAddress:    morseSrcAddress,
