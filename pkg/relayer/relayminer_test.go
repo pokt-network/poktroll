@@ -4,7 +4,7 @@ import (
 	"context"
 	"net"
 	"net/http"
-	"os"
+	"path/filepath"
 	"testing"
 	"time"
 
@@ -102,16 +102,15 @@ func TestRelayMiner_Ping(t *testing.T) {
 
 	time.Sleep(time.Millisecond)
 
-	filename := "/tmp/relayerminer.ping.sock"
+	relayminerSocketPath := filepath.Join(t.TempDir(), "relayerminer.ping.sock")
 
-	relayminer.ServePing(ctx, "unix", filename)
-	defer os.Remove(filename)
+	relayminer.ServePing(ctx, "unix", relayminerSocketPath)
 
 	time.Sleep(time.Millisecond)
 
 	transport := &http.Transport{
 		DialContext: func(ctx context.Context, network, addr string) (net.Conn, error) {
-			return net.Dial("unix", "/tmp/relayerminer.ping.sock")
+			return net.Dial("unix", relayminerSocketPath)
 		},
 	}
 
