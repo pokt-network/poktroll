@@ -94,7 +94,7 @@ func GetShareAmountMap(
 	shareAmountMap = make(map[string]uint64, len(serviceRevShare))
 	for _, revShare := range serviceRevShare {
 		// TODO_MAINNET(@red-0ne): Use big.Rat for deterministic results.
-		sharePercentageFloat := big.NewFloat(float64(revShare.RevSharePercentage) / 100)
+		sharePercentageFloat := big.NewFloat(float64(revShare.RevSharePercentage) / float64(100.0))
 		amountToDistributeFloat := big.NewFloat(float64(amountToDistribute))
 		shareAmount, _ := big.NewFloat(0).Mul(amountToDistributeFloat, sharePercentageFloat).Uint64()
 		shareAmountMap[revShare.Address] = shareAmount

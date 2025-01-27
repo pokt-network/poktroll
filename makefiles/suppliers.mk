@@ -4,7 +4,15 @@
 
 .PHONY: supplier_list
 supplier_list: ## List all the staked supplier
-	poktrolld --home=$(POKTROLLD_HOME) q supplier list-supplier --node $(POCKET_NODE)
+	poktrolld --home=$(POKTROLLD_HOME) q supplier list-suppliers --node $(POCKET_NODE)
+
+.PHONY: supplier_list_anvil
+supplier_list_anvil: ## List all the staked supplier staked for the anvil service
+	poktrolld --home=$(POKTROLLD_HOME) q supplier list-suppliers --service-id anvil --node $(POCKET_NODE)
+
+.PHONY: supplier_show_supplier1
+supplier_show_supplier1: ## Show supplier1 details
+	poktrolld --home=$(POKTROLLD_HOME) q supplier show-supplier supplier1 --node $(POCKET_NODE)
 
 .PHONY: supplier_stake
 supplier_stake: ## Stake tokens for the supplier specified (must specify the SUPPLIER and SUPPLIER_CONFIG env vars)

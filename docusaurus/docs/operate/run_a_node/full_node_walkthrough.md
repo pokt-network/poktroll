@@ -130,7 +130,7 @@ source ~/.profile
 
 ### 5. Install `poktrolld`
 
-Follow the instructions in the [CLI Installation Guide](../user_guide/install.md) page to install `poktrolld`.
+Follow the instructions in the [CLI Installation Guide](../user_guide/poktrolld_cli.md) page to install `poktrolld`.
 
 Create a symlink of the binary so Comosvisor knows where to find it:
 
