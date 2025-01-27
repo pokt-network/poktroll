@@ -22,11 +22,6 @@ func (miw *morseImportWorkspace) nextIdx() uint64 {
 	return uint64(len(miw.accounts))
 }
 
-// lastIdx returns the last index of the accounts slice.
-func (miw *morseImportWorkspace) lastIdx() uint64 {
-	return uint64(len(miw.accounts) - 1)
-}
-
 // hasAccount returns true if the given address is present in the accounts slice.
 func (miw *morseImportWorkspace) hasAccount(addr string) bool {
 	_, ok := miw.addressToIdx[addr]
@@ -44,7 +39,6 @@ func (miw *morseImportWorkspace) ensureAccount(
 	balance = cosmostypes.NewCoin(volatile.DenomuPOKT, cosmosmath.ZeroInt())
 
 	if accountIdx, ok = miw.addressToIdx[addr]; ok {
-		accountIdx = accountIdx
 		importAccount := miw.accounts[accountIdx]
 		// TODO_IN_THIS_COMMIT: comment... SHOULD ONLY be one denom (upokt).
 		if len(importAccount.Coins) != 0 {
