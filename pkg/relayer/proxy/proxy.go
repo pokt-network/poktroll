@@ -198,7 +198,7 @@ func (rp *relayerProxy) PingAll(ctx context.Context) error {
 
 	if err != nil {
 		rp.logger.Error().Err(err).
-			Msg("an unexpected error occured while pinging backend URL")
+			Msg("an unexpected error occured while pinging backend URL(s)")
 		return err
 	}
 
