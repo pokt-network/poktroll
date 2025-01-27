@@ -2,6 +2,7 @@ package relayer
 
 import (
 	"context"
+	"errors"
 	"net"
 	"net/http"
 	"net/http/pprof"
@@ -148,8 +149,8 @@ func (rel *relayMiner) ServePing(ctx context.Context, network, addr string) erro
 	// ping requests. A single ping request on the relay server broadcasts a
 	// ping to all backing services/data nodes.
 	go func() {
-		if err := http.Serve(ln, rel.newPinghandlerFn(ctx, ln)); err != nil {
-			rel.logger.Error().Err(err).Msg("unable to serve ping server")
+		if err := http.Serve(ln, rel.newPinghandlerFn(ctx, ln)); err != nil && !errors.Is(http.ErrServerClosed, err) {
+			rel.logger.Error().Err(err).Msg("ping server unexpectedly closed")
 		}
 	}()
 
