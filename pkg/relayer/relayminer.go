@@ -169,7 +169,7 @@ func (rel *relayMiner) newPinghandlerFn(ctx context.Context, ln net.Listener) ht
 		rel.logger.Debug().Msg("pinging relay servers...")
 
 		if err := rel.relayerProxy.PingAll(ctx); err != nil {
-			var urlError url.Error
+			var urlError *url.Error
 			if errors.As(err, &urlError) && urlError.Temporary() {
 				w.WriteHeader(http.StatusGatewayTimeout)
 			} else {
