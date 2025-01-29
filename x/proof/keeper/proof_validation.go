@@ -106,14 +106,14 @@ func (k Keeper) EnsureWellFormedProof(ctx context.Context, proof *types.Proof) e
 	}
 
 	// SparseCompactMerkeClosestProof does not implement GetValueHash, so we need to decompact it.
-	sparseMerkleClosestProof, err := smt.DecompactClosestProof(sparseCompactMerkleClosestProof, &protocol.SmtSpec)
+	sparseMerkleClosestProof, err := smt.DecompactClosestProof(sparseCompactMerkleClosestProof, protocol.NewSMTSpec())
 	if err != nil {
 		logger.Error(fmt.Sprintf("failed to decompact sparse merkle closest proof due to error: %v", err))
 		return types.ErrProofInvalidProof.Wrapf("failed to decompact sparse erkle closest proof: %s", err)
 	}
 
 	// Get the relay request and response from the proof.GetClosestMerkleProof.
-	relayBz := sparseMerkleClosestProof.GetValueHash(&protocol.SmtSpec)
+	relayBz := sparseMerkleClosestProof.GetValueHash(protocol.NewSMTSpec())
 	relay := &servicetypes.Relay{}
 	if err = k.cdc.Unmarshal(relayBz, relay); err != nil {
 		logger.Error(fmt.Sprintf("failed to unmarshal relay due to error: %v", err))
@@ -231,14 +231,14 @@ func (k Keeper) EnsureValidProofSignaturesAndClosestPath(
 
 	// SparseCompactMerkeClosestProof was intentionally compacted to reduce its onchain state size
 	// so it must be decompacted rather than just retrieving the value via GetValueHash (not implemented).
-	sparseMerkleClosestProof, err := smt.DecompactClosestProof(sparseCompactMerkleClosestProof, &protocol.SmtSpec)
+	sparseMerkleClosestProof, err := smt.DecompactClosestProof(sparseCompactMerkleClosestProof, protocol.NewSMTSpec())
 	if err != nil {
 		logger.Error(fmt.Sprintf("failed to decompact sparse merkle closest proof due to error: %v", err))
 		return types.ErrProofInvalidProof.Wrapf("failed to decompact sparse merkle closest proof: %s", err)
 	}
 
 	// Get the relay request and response from the proof.GetClosestMerkleProof.
-	relayBz := sparseMerkleClosestProof.GetValueHash(&protocol.SmtSpec)
+	relayBz := sparseMerkleClosestProof.GetValueHash(protocol.NewSMTSpec())
 	relay := &servicetypes.Relay{}
 	if err = k.cdc.Unmarshal(relayBz, relay); err != nil {
 		logger.Error(fmt.Sprintf("failed to unmarshal relay due to error: %v", err))
@@ -449,7 +449,7 @@ func verifyClosestProof(
 	proof *smt.SparseMerkleClosestProof,
 	claimRootHash []byte,
 ) error {
-	valid, err := smt.VerifyClosestProof(proof, claimRootHash, &protocol.SmtSpec)
+	valid, err := smt.VerifyClosestProof(proof, claimRootHash, protocol.NewSMTSpec())
 	if err != nil {
 		return err
 	}
