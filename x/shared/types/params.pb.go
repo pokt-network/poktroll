@@ -47,12 +47,12 @@ type Params struct {
 	ProofWindowCloseOffsetBlocks uint64 `protobuf:"varint,6,opt,name=proof_window_close_offset_blocks,json=proofWindowCloseOffsetBlocks,proto3" json:"proof_window_close_offset_blocks"`
 	// supplier_unbonding_period_sessions is the number of sessions that a supplier must wait after
 	// unstaking before their staked assets are moved to their account balance.
-	// On-chain business logic requires, and ensures, that the corresponding block count of the unbonding
+	// Onchain business logic requires, and ensures, that the corresponding block count of the unbonding
 	// period will exceed the end of any active claim & proof lifecycles.
 	SupplierUnbondingPeriodSessions uint64 `protobuf:"varint,7,opt,name=supplier_unbonding_period_sessions,json=supplierUnbondingPeriodSessions,proto3" json:"supplier_unbonding_period_sessions"`
 	// application_unbonding_period_sessions is the number of sessions that an application must wait after
 	// unstaking before their staked assets are moved to their account balance.
-	// On-chain business logic requires, and ensures, that the corresponding block count of the
+	// Onchain business logic requires, and ensures, that the corresponding block count of the
 	// application unbonding period will exceed the end of its corresponding proof window close height.
 	ApplicationUnbondingPeriodSessions uint64 `protobuf:"varint,8,opt,name=application_unbonding_period_sessions,json=applicationUnbondingPeriodSessions,proto3" json:"application_unbonding_period_sessions"`
 	// The amount of upokt that a compute unit should translate to when settling a session.

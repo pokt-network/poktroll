@@ -72,6 +72,7 @@ func NewSessionTree(
 	sessionHeader *sessiontypes.SessionHeader,
 	supplierOperatorAddress *cosmostypes.AccAddress,
 	storesDirectory string,
+	logger polylog.Logger,
 ) (relayer.SessionTree, error) {
 	// Join the storePrefix and the session.sessionId and supplier's operator address to
 	// create a unique storePath.
@@ -92,10 +93,17 @@ func NewSessionTree(
 	}
 
 	// Create the SMST from the KVStore and a nil value hasher so the proof would
-	// contain a non-hashed Relay that could be used to validate the proof on-chain.
+	// contain a non-hashed Relay that could be used to validate the proof onchain.
 	trie := smt.NewSparseMerkleSumTrie(treeStore, protocol.NewTrieHasher(), smt.WithValueHasher(nil))
 
+	logger = logger.With(
+		"store_path", storePath,
+		"session_id", sessionHeader.SessionId,
+		"supplier_operator_address", supplierOperatorAddress,
+	)
+
 	sessionTree := &sessionTree{
+		logger:                  logger,
 		sessionHeader:           sessionHeader,
 		storePath:               storePath,
 		treeStore:               treeStore,
@@ -213,7 +221,7 @@ func (st *sessionTree) GetProof() *smt.SparseCompactMerkleClosestProof {
 
 // Flush gets the root hash of the SMST needed for submitting the claim;
 // then commits the entire tree to disk and stops the KVStore.
-// It should be called before submitting the claim on-chain. This function frees up the KVStore resources.
+// It should be called before submitting the claim onchain. This function frees up the KVStore resources.
 // If the SMST has already been flushed to disk, it returns the cached root hash.
 func (st *sessionTree) Flush() (SMSTRoot []byte, err error) {
 	st.sessionMu.Lock()
@@ -249,7 +257,7 @@ func (st *sessionTree) GetClaimRoot() []byte {
 
 // Delete deletes the SMST from the KVStore and removes the sessionTree from the RelayerSessionsManager.
 // WARNING: This function deletes the KVStore associated to the session and should be
-// called only after the proof has been successfully submitted on-chain and the servicer
+// called only after the proof has been successfully submitted onchain and the servicer
 // has confirmed that it has been rewarded.
 func (st *sessionTree) Delete() error {
 	st.sessionMu.Lock()
@@ -268,7 +276,6 @@ func (st *sessionTree) Delete() error {
 	} else {
 		st.logger.With(
 			"claim_root", fmt.Sprintf("%x", st.GetClaimRoot()),
-			"session_id", st.GetSessionHeader().SessionId,
 		).Info().Msg("KVStore is already stopped")
 	}
 

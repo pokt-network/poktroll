@@ -11,7 +11,7 @@ import (
 )
 
 // proofQuerier is a wrapper around the prooftypes.QueryClient that enables the
-// querying of on-chain proof module params.
+// querying of onchain proof module params.
 type proofQuerier struct {
 	clientConn   grpc.ClientConn
 	proofQuerier prooftypes.QueryClient

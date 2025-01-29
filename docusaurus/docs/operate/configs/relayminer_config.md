@@ -47,19 +47,19 @@ You can find a fully featured example configuration at [relayminer_config_full_e
 
 ## Introduction
 
-The following diagram illustrates how the _off-chain_ `RelayMiner` operator
-config (yaml) MUST match the _on-chain_ `Supplier` actor service endpoints
+The following diagram illustrates how the _offchain_ `RelayMiner` operator
+config (yaml) MUST match the _onchain_ `Supplier` actor service endpoints
 for correct and deterministic behavior.
 
 If these do not match, the behavior is non-deterministic and could result in
 a variety of errors such as bad QoS, incorrect proxying, burning of the actor, etc...
 
-_Assuming that the on-chain endpoints 1 and 2 have different hosts_
+_Assuming that the onchain endpoints 1 and 2 have different hosts_
 
 ```mermaid
 flowchart LR
 
-subgraph "Supplier Actor (On-Chain)"
+subgraph "Supplier Actor (Onchain)"
   subgraph "SupplierServiceConfig (protobuf)"
     subgraph svc1["Service1 (protobuf)"]
       svc1Id[Service1.Id]
@@ -74,7 +74,7 @@ subgraph "Supplier Actor (On-Chain)"
   end
 end
 
-subgraph "RelayMiner Operator (Off-Chain)"
+subgraph "RelayMiner Operator (Offchain)"
   subgraph "DevOps Operator Configs (yaml)"
     subgraph svc1Config ["Service1 Config (yaml)"]
       svc1IdConfig[service_id=Service1.Id]-->svc1Id
@@ -214,9 +214,9 @@ The `suppliers` section configures the services that the `RelayMiner` will offer
 to Pocket Network. It specifies exactly where those requests will be forwarded
 to by the Supplier's infrastructure.
 
-Each suppliers entry's `service_id` MUST reflect the on-chain `Service.Id` the
+Each suppliers entry's `service_id` MUST reflect the onchain `Service.Id` the
 supplier staked for. In addition, the `publicly_exposed_endpoints` list MUST
-contain the same endpoints that the Supplier advertised on-chain when staking for
+contain the same endpoints that the Supplier advertised onchain when staking for
 that service.
 
 At least one supplier is required for the `RelayMiner` to be functional.
@@ -306,11 +306,11 @@ _`Required`_, _`Unique` within the supplier's `publicly_exposed_endpoints` list_
 
 The `publicly_exposed_endpoints` section of the supplier configuration is a list
 of hosts that the `RelayMiner` will accept requests from. It MUST be a valid host
-that reflects the on-chain supplier staking service endpoints.
+that reflects the onchain supplier staking service endpoints.
 
 It is used to determine if the incoming request is allowed to be processed by
 the server listening on `listen_url` host address as well as to check if the
-request's RPC-Type matches the on-chain endpoint's RPC-Type.
+request's RPC-Type matches the onchain endpoint's RPC-Type.
 
 :::note
 
@@ -325,14 +325,14 @@ and/or send requests internally from a k8s cluster for example.
 There are various reasons to having multiple `publicly_exposed_endpoints`
 for the same supplier service.
 
-- The on-chain Supplier may provide the same Service on multiple domains
+- The onchain Supplier may provide the same Service on multiple domains
   (e.g. for different regions).
 - The operator may want to route requests of different RPC types to
   the same server
 - Migrating from one domain to another. Where the operator could still
   accept requests on the old domain while the new domain is being propagated.
 - The operator may want to have a different domain for internal requests.
-- The on-chain Service configuration accepts multiple endpoints.
+- The onchain Service configuration accepts multiple endpoints.
 
 ## Configuring Signing Keys
 

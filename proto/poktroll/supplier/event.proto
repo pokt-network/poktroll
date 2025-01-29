@@ -16,7 +16,7 @@ enum SupplierUnbondingReason {
   SUPPLIER_UNBONDING_REASON_BELOW_MIN_STAKE = 2;
 }
 
-// EventSupplierStaked is emitted when a supplier stake message is committed on-chain.
+// EventSupplierStaked is emitted when a supplier stake message is committed onchain.
 message EventSupplierStaked {
   poktroll.shared.Supplier supplier = 1 [(gogoproto.jsontag) = "supplier"];
   // The session end height of the last session in which the supplier was staked.
@@ -24,7 +24,7 @@ message EventSupplierStaked {
 }
 
 // EventSupplierUnbondingBegin is emitted when an application unstake message
-// is committed on-chain, indicating that the supplier will now begin unbonding.
+// is committed onchain, indicating that the supplier will now begin unbonding.
 message EventSupplierUnbondingBegin {
   poktroll.shared.Supplier supplier = 1 [(gogoproto.jsontag) = "supplier"];
   SupplierUnbondingReason reason = 2 [(gogoproto.jsontag) = "reason"];

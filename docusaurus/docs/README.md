@@ -57,7 +57,7 @@ You can view the Shannon Roadmap on [Github](https://github.com/orgs/pokt-networ
 
 ## Quickstart
 
-The best way to get involved is by following the [quickstart instructions](./develop/developer_guide/quickstart.md).
+The best way to get involved is by following the [quickstart instructions](develop/developer_guide/walkthrough.md).
 
 ## Godoc
 

@@ -18,7 +18,7 @@ GROVE_PORTAL_STAGING_ETH_MAINNET = https://eth-mainnet.rpc.grove.town
 # JSON RPC data for a test relay request
 JSON_RPC_DATA_ETH_BLOCK_HEIGHT = '{"jsonrpc":"2.0","id":"0","method":"eth_blockNumber", "params": []}'
 
-# On-chain module account addresses. Search for `func TestModuleAddress` in the
+# Onchain module account addresses. Search for `func TestModuleAddress` in the
 # codebase to get an understanding of how we got these values.
 APPLICATION_MODULE_ADDRESS = pokt1rl3gjgzexmplmds3tq3r3yk84zlwdl6djzgsvm
 SUPPLIER_MODULE_ADDRESS = pokt1j40dzzmn6cn9kxku7a5tjnud6hv37vesr5ccaa

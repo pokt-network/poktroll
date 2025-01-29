@@ -80,7 +80,7 @@ func (s *appTransferTestSuite) SetupTest() {
 		s.app2: {s.gateway1, s.gateway5},
 	})
 
-	// Assert the on-chain state shows the application 3 as NOT staked.
+	// Assert the onchain state shows the application 3 as NOT staked.
 	_, queryErr := s.GetAppQueryClient().GetApplication(s.SdkCtx(), s.app3)
 	require.ErrorContains(s.T(), queryErr, "application not found")
 	require.ErrorContains(s.T(), queryErr, s.app3)
@@ -390,7 +390,7 @@ func (s *appTransferTestSuite) setupStakeApps(appBech32ToServiceIdsMap map[strin
 		require.Equal(s.T(), appBech32, stakeAppRes.GetApplication().GetAddress())
 		require.Equal(s.T(), stakeAmount, stakeAppRes.GetApplication().GetStake().Amount.Int64())
 
-		// Assert the on-chain state shows the application as staked.
+		// Assert the onchain state shows the application as staked.
 		foundApp, queryErr := s.GetAppQueryClient().GetApplication(s.SdkCtx(), appBech32)
 		require.NoError(s.T(), queryErr)
 		require.Equal(s.T(), appBech32, foundApp.GetAddress())

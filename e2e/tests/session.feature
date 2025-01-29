@@ -17,7 +17,7 @@ Feature: Session Namespace
     When the supplier "supplier1" has serviced a session with "5" relays for service "anvil" for application "app1"
     And the user should wait for the "proof" module "CreateClaim" Message to be submitted
     And the user should wait for the "proof" module "ClaimCreated" tx event to be broadcast
-    Then the claim created by supplier "supplier1" for service "svc1" for application "app1" should be persisted on-chain
+    Then the claim created by supplier "supplier1" for service "svc1" for application "app1" should be persisted onchain
     And the user should wait for the "proof" module "SubmitProof" Message to be submitted
     And the user should wait for the "proof" module "ProofSubmitted" tx event to be broadcast
     Then the claim created by supplier "supplier1" for service "anvil" for application "app1" should be successfully settled
@@ -37,7 +37,7 @@ Feature: Session Namespace
   #     Then the supplier "supplier1" replys with a relay response for service "svc1" for application "app1" with session number "1"
   #     And the application "app1" receives a successful relay response signed by "supplier1" for session number "1"
   #     And after the supplier "supplier1" updates a claim for session number "1" for service "svc1" for application "app1"
-  #     Then the claim created by supplier "supplier1" for service "svc1" for application "app1" should be persisted on-chain
+  #     Then the claim created by supplier "supplier1" for service "svc1" for application "app1" should be persisted onchain
 
   # Scenario: A late Relay outside the SessionGracePeriod is rejected
   #     Given the user has the pocketd binary installed

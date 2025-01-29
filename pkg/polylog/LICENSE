@@ -2,7 +2,7 @@ The `Logger` and `Event` interfaces follow the `zerolog` package's API 1:1
 (possibly partially) to make zerolog implementation/integration become the
 thinnest wrapper possible.
 
-This is the API intended for all off-chain (i.e. under `/pkg`) logging.
+This is the API intended for all offchain (i.e. under `/pkg`) logging.
 
 The following is the MIT LICENSE from `zerolog` package at the time of writing:
 (see: https://github.com/rs/zerolog)

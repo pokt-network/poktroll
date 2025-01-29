@@ -92,7 +92,7 @@ flowchart TD
   NCS  ---> |owner_address or operator_address| US
 
   US -- funds --> OWA{{owner_address}}
-  US -- remove on-chain record --> OPA{{owner_address or operator_address}}
+  US -- remove onchain record --> OPA{{owner_address or operator_address}}
 
   classDef owner fill:#f9f, stroke:#333, stroke-width:2px, color:#222;
   classDef operator fill:#eba69a, color: #333, stroke:#333, stroke-width:2px;
@@ -214,8 +214,8 @@ _`Optional`_, _`Non-empty`_
 
 ```yaml
 default_rev_share_percent:
-  <shareholder_address_1>: <float>
-  <shareholder_address_2>: <float>
+  <shareholder_address_1>: <uint32>
+  <shareholder_address_2>: <uint32>
 ```
 
 `default_rev_share_percent` is an optional map that defines the default the revenue

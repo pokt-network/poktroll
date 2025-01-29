@@ -109,7 +109,7 @@ func (k Keeper) ProcessTokenLogicModules(
 		return tokenomicstypes.ErrTokenomicsApplicationAddressInvalid.Wrapf("address (%q)", sessionHeader.GetApplicationAddress())
 	}
 
-	// Retrieve the on-chain staked application record
+	// Retrieve the onchain staked application record
 	application, isAppFound := k.applicationKeeper.GetApplication(ctx, applicationAddress.String())
 	if !isAppFound {
 		logger.Warn(fmt.Sprintf("application for claim with address %q not found", applicationAddress))
@@ -124,7 +124,7 @@ func (k Keeper) ProcessTokenLogicModules(
 		)
 	}
 
-	// Retrieve the on-chain staked supplier record
+	// Retrieve the onchain staked supplier record
 	supplier, isSupplierFound := k.supplierKeeper.GetSupplier(ctx, supplierOperatorAddr.String())
 	if !isSupplierFound {
 		logger.Warn(fmt.Sprintf("supplier for claim with address %q not found", supplierOperatorAddr))
@@ -246,9 +246,9 @@ func (k Keeper) ProcessTokenLogicModules(
 		}
 	}
 
-	// State mutation: update the application's on-chain record.
+	// State mutation: update the application's onchain record.
 	k.applicationKeeper.SetApplication(ctx, application)
-	logger.Info(fmt.Sprintf("updated on-chain application record with address %q", application.Address))
+	logger.Info(fmt.Sprintf("updated onchain application record with address %q", application.Address))
 
 	// TODO_MAINNET(@bryanchriswhite): If the application stake has dropped to (near?) zero:
 	// - Unstake it
@@ -256,9 +256,9 @@ func (k Keeper) ProcessTokenLogicModules(
 	// - Ensure this doesn't happen
 	// - Document the decision
 
-	// State mutation: Update the suppliers's on-chain record
+	// State mutation: Update the suppliers's onchain record
 	k.supplierKeeper.SetSupplier(ctx, supplier)
-	logger.Info(fmt.Sprintf("updated on-chain supplier record with address %q", supplier.OperatorAddress))
+	logger.Info(fmt.Sprintf("updated onchain supplier record with address %q", supplier.OperatorAddress))
 
 	// Update isSuccessful to true for telemetry
 	isSuccessful = true
