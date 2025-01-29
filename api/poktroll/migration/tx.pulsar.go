@@ -873,27 +873,27 @@ func (x *fastReflection_MsgUpdateParamsResponse) ProtoMethods() *protoiface.Meth
 }
 
 var (
-	md_MsgUploadMorseState           protoreflect.MessageDescriptor
-	fd_MsgUploadMorseState_authority protoreflect.FieldDescriptor
-	fd_MsgUploadMorseState_state     protoreflect.FieldDescriptor
+	md_MsgCreateMorseAccountState                     protoreflect.MessageDescriptor
+	fd_MsgCreateMorseAccountState_authority           protoreflect.FieldDescriptor
+	fd_MsgCreateMorseAccountState_morse_account_state protoreflect.FieldDescriptor
 )
 
 func init() {
 	file_poktroll_migration_tx_proto_init()
-	md_MsgUploadMorseState = File_poktroll_migration_tx_proto.Messages().ByName("MsgUploadMorseState")
-	fd_MsgUploadMorseState_authority = md_MsgUploadMorseState.Fields().ByName("authority")
-	fd_MsgUploadMorseState_state = md_MsgUploadMorseState.Fields().ByName("state")
+	md_MsgCreateMorseAccountState = File_poktroll_migration_tx_proto.Messages().ByName("MsgCreateMorseAccountState")
+	fd_MsgCreateMorseAccountState_authority = md_MsgCreateMorseAccountState.Fields().ByName("authority")
+	fd_MsgCreateMorseAccountState_morse_account_state = md_MsgCreateMorseAccountState.Fields().ByName("morse_account_state")
 }
 
-var _ protoreflect.Message = (*fastReflection_MsgUploadMorseState)(nil)
+var _ protoreflect.Message = (*fastReflection_MsgCreateMorseAccountState)(nil)
 
-type fastReflection_MsgUploadMorseState MsgUploadMorseState
+type fastReflection_MsgCreateMorseAccountState MsgCreateMorseAccountState
 
-func (x *MsgUploadMorseState) ProtoReflect() protoreflect.Message {
-	return (*fastReflection_MsgUploadMorseState)(x)
+func (x *MsgCreateMorseAccountState) ProtoReflect() protoreflect.Message {
+	return (*fastReflection_MsgCreateMorseAccountState)(x)
 }
 
-func (x *MsgUploadMorseState) slowProtoReflect() protoreflect.Message {
+func (x *MsgCreateMorseAccountState) slowProtoReflect() protoreflect.Message {
 	mi := &file_poktroll_migration_tx_proto_msgTypes[2]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -905,43 +905,43 @@ func (x *MsgUploadMorseState) slowProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-var _fastReflection_MsgUploadMorseState_messageType fastReflection_MsgUploadMorseState_messageType
-var _ protoreflect.MessageType = fastReflection_MsgUploadMorseState_messageType{}
+var _fastReflection_MsgCreateMorseAccountState_messageType fastReflection_MsgCreateMorseAccountState_messageType
+var _ protoreflect.MessageType = fastReflection_MsgCreateMorseAccountState_messageType{}
 
-type fastReflection_MsgUploadMorseState_messageType struct{}
+type fastReflection_MsgCreateMorseAccountState_messageType struct{}
 
-func (x fastReflection_MsgUploadMorseState_messageType) Zero() protoreflect.Message {
-	return (*fastReflection_MsgUploadMorseState)(nil)
+func (x fastReflection_MsgCreateMorseAccountState_messageType) Zero() protoreflect.Message {
+	return (*fastReflection_MsgCreateMorseAccountState)(nil)
 }
-func (x fastReflection_MsgUploadMorseState_messageType) New() protoreflect.Message {
-	return new(fastReflection_MsgUploadMorseState)
+func (x fastReflection_MsgCreateMorseAccountState_messageType) New() protoreflect.Message {
+	return new(fastReflection_MsgCreateMorseAccountState)
 }
-func (x fastReflection_MsgUploadMorseState_messageType) Descriptor() protoreflect.MessageDescriptor {
-	return md_MsgUploadMorseState
+func (x fastReflection_MsgCreateMorseAccountState_messageType) Descriptor() protoreflect.MessageDescriptor {
+	return md_MsgCreateMorseAccountState
 }
 
 // Descriptor returns message descriptor, which contains only the protobuf
 // type information for the message.
-func (x *fastReflection_MsgUploadMorseState) Descriptor() protoreflect.MessageDescriptor {
-	return md_MsgUploadMorseState
+func (x *fastReflection_MsgCreateMorseAccountState) Descriptor() protoreflect.MessageDescriptor {
+	return md_MsgCreateMorseAccountState
 }
 
 // Type returns the message type, which encapsulates both Go and protobuf
 // type information. If the Go type information is not needed,
 // it is recommended that the message descriptor be used instead.
-func (x *fastReflection_MsgUploadMorseState) Type() protoreflect.MessageType {
-	return _fastReflection_MsgUploadMorseState_messageType
+func (x *fastReflection_MsgCreateMorseAccountState) Type() protoreflect.MessageType {
+	return _fastReflection_MsgCreateMorseAccountState_messageType
 }
 
 // New returns a newly allocated and mutable empty message.
-func (x *fastReflection_MsgUploadMorseState) New() protoreflect.Message {
-	return new(fastReflection_MsgUploadMorseState)
+func (x *fastReflection_MsgCreateMorseAccountState) New() protoreflect.Message {
+	return new(fastReflection_MsgCreateMorseAccountState)
 }
 
 // Interface unwraps the message reflection interface and
 // returns the underlying ProtoMessage interface.
-func (x *fastReflection_MsgUploadMorseState) Interface() protoreflect.ProtoMessage {
-	return (*MsgUploadMorseState)(x)
+func (x *fastReflection_MsgCreateMorseAccountState) Interface() protoreflect.ProtoMessage {
+	return (*MsgCreateMorseAccountState)(x)
 }
 
 // Range iterates over every populated field in an undefined order,
@@ -949,16 +949,16 @@ func (x *fastReflection_MsgUploadMorseState) Interface() protoreflect.ProtoMessa
 // Range returns immediately if f returns false.
 // While iterating, mutating operations may only be performed
 // on the current field descriptor.
-func (x *fastReflection_MsgUploadMorseState) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
+func (x *fastReflection_MsgCreateMorseAccountState) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
 	if x.Authority != "" {
 		value := protoreflect.ValueOfString(x.Authority)
-		if !f(fd_MsgUploadMorseState_authority, value) {
+		if !f(fd_MsgCreateMorseAccountState_authority, value) {
 			return
 		}
 	}
-	if x.State != nil {
-		value := protoreflect.ValueOfMessage(x.State.ProtoReflect())
-		if !f(fd_MsgUploadMorseState_state, value) {
+	if x.MorseAccountState != nil {
+		value := protoreflect.ValueOfMessage(x.MorseAccountState.ProtoReflect())
+		if !f(fd_MsgCreateMorseAccountState_morse_account_state, value) {
 			return
 		}
 	}
@@ -975,17 +975,17 @@ func (x *fastReflection_MsgUploadMorseState) Range(f func(protoreflect.FieldDesc
 // In other cases (aside from the nullable cases above),
 // a proto3 scalar field is populated if it contains a non-zero value, and
 // a repeated field is populated if it is non-empty.
-func (x *fastReflection_MsgUploadMorseState) Has(fd protoreflect.FieldDescriptor) bool {
+func (x *fastReflection_MsgCreateMorseAccountState) Has(fd protoreflect.FieldDescriptor) bool {
 	switch fd.FullName() {
-	case "poktroll.migration.MsgUploadMorseState.authority":
+	case "poktroll.migration.MsgCreateMorseAccountState.authority":
 		return x.Authority != ""
-	case "poktroll.migration.MsgUploadMorseState.state":
-		return x.State != nil
+	case "poktroll.migration.MsgCreateMorseAccountState.morse_account_state":
+		return x.MorseAccountState != nil
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.migration.MsgUploadMorseState"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.migration.MsgCreateMorseAccountState"))
 		}
-		panic(fmt.Errorf("message poktroll.migration.MsgUploadMorseState does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message poktroll.migration.MsgCreateMorseAccountState does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -995,17 +995,17 @@ func (x *fastReflection_MsgUploadMorseState) Has(fd protoreflect.FieldDescriptor
 // associated with the given field number.
 //
 // Clear is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_MsgUploadMorseState) Clear(fd protoreflect.FieldDescriptor) {
+func (x *fastReflection_MsgCreateMorseAccountState) Clear(fd protoreflect.FieldDescriptor) {
 	switch fd.FullName() {
-	case "poktroll.migration.MsgUploadMorseState.authority":
+	case "poktroll.migration.MsgCreateMorseAccountState.authority":
 		x.Authority = ""
-	case "poktroll.migration.MsgUploadMorseState.state":
-		x.State = nil
+	case "poktroll.migration.MsgCreateMorseAccountState.morse_account_state":
+		x.MorseAccountState = nil
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.migration.MsgUploadMorseState"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.migration.MsgCreateMorseAccountState"))
 		}
-		panic(fmt.Errorf("message poktroll.migration.MsgUploadMorseState does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message poktroll.migration.MsgCreateMorseAccountState does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -1015,19 +1015,19 @@ func (x *fastReflection_MsgUploadMorseState) Clear(fd protoreflect.FieldDescript
 // the default value of a bytes scalar is guaranteed to be a copy.
 // For unpopulated composite types, it returns an empty, read-only view
 // of the value; to obtain a mutable reference, use Mutable.
-func (x *fastReflection_MsgUploadMorseState) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_MsgCreateMorseAccountState) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
 	switch descriptor.FullName() {
-	case "poktroll.migration.MsgUploadMorseState.authority":
+	case "poktroll.migration.MsgCreateMorseAccountState.authority":
 		value := x.Authority
 		return protoreflect.ValueOfString(value)
-	case "poktroll.migration.MsgUploadMorseState.state":
-		value := x.State
+	case "poktroll.migration.MsgCreateMorseAccountState.morse_account_state":
+		value := x.MorseAccountState
 		return protoreflect.ValueOfMessage(value.ProtoReflect())
 	default:
 		if descriptor.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.migration.MsgUploadMorseState"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.migration.MsgCreateMorseAccountState"))
 		}
-		panic(fmt.Errorf("message poktroll.migration.MsgUploadMorseState does not contain field %s", descriptor.FullName()))
+		panic(fmt.Errorf("message poktroll.migration.MsgCreateMorseAccountState does not contain field %s", descriptor.FullName()))
 	}
 }
 
@@ -1041,17 +1041,17 @@ func (x *fastReflection_MsgUploadMorseState) Get(descriptor protoreflect.FieldDe
 // empty, read-only value, then it panics.
 //
 // Set is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_MsgUploadMorseState) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
+func (x *fastReflection_MsgCreateMorseAccountState) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
 	switch fd.FullName() {
-	case "poktroll.migration.MsgUploadMorseState.authority":
+	case "poktroll.migration.MsgCreateMorseAccountState.authority":
 		x.Authority = value.Interface().(string)
-	case "poktroll.migration.MsgUploadMorseState.state":
-		x.State = value.Message().Interface().(*MorseAccountState)
+	case "poktroll.migration.MsgCreateMorseAccountState.morse_account_state":
+		x.MorseAccountState = value.Message().Interface().(*MorseAccountState)
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.migration.MsgUploadMorseState"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.migration.MsgCreateMorseAccountState"))
 		}
-		panic(fmt.Errorf("message poktroll.migration.MsgUploadMorseState does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message poktroll.migration.MsgCreateMorseAccountState does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -1065,48 +1065,48 @@ func (x *fastReflection_MsgUploadMorseState) Set(fd protoreflect.FieldDescriptor
 // It panics if the field does not contain a composite type.
 //
 // Mutable is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_MsgUploadMorseState) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_MsgCreateMorseAccountState) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
-	case "poktroll.migration.MsgUploadMorseState.state":
-		if x.State == nil {
-			x.State = new(MorseAccountState)
+	case "poktroll.migration.MsgCreateMorseAccountState.morse_account_state":
+		if x.MorseAccountState == nil {
+			x.MorseAccountState = new(MorseAccountState)
 		}
-		return protoreflect.ValueOfMessage(x.State.ProtoReflect())
-	case "poktroll.migration.MsgUploadMorseState.authority":
-		panic(fmt.Errorf("field authority of message poktroll.migration.MsgUploadMorseState is not mutable"))
+		return protoreflect.ValueOfMessage(x.MorseAccountState.ProtoReflect())
+	case "poktroll.migration.MsgCreateMorseAccountState.authority":
+		panic(fmt.Errorf("field authority of message poktroll.migration.MsgCreateMorseAccountState is not mutable"))
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.migration.MsgUploadMorseState"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.migration.MsgCreateMorseAccountState"))
 		}
-		panic(fmt.Errorf("message poktroll.migration.MsgUploadMorseState does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message poktroll.migration.MsgCreateMorseAccountState does not contain field %s", fd.FullName()))
 	}
 }
 
 // NewField returns a new value that is assignable to the field
 // for the given descriptor. For scalars, this returns the default value.
 // For lists, maps, and messages, this returns a new, empty, mutable value.
-func (x *fastReflection_MsgUploadMorseState) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_MsgCreateMorseAccountState) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
-	case "poktroll.migration.MsgUploadMorseState.authority":
+	case "poktroll.migration.MsgCreateMorseAccountState.authority":
 		return protoreflect.ValueOfString("")
-	case "poktroll.migration.MsgUploadMorseState.state":
+	case "poktroll.migration.MsgCreateMorseAccountState.morse_account_state":
 		m := new(MorseAccountState)
 		return protoreflect.ValueOfMessage(m.ProtoReflect())
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.migration.MsgUploadMorseState"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.migration.MsgCreateMorseAccountState"))
 		}
-		panic(fmt.Errorf("message poktroll.migration.MsgUploadMorseState does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message poktroll.migration.MsgCreateMorseAccountState does not contain field %s", fd.FullName()))
 	}
 }
 
 // WhichOneof reports which field within the oneof is populated,
 // returning nil if none are populated.
 // It panics if the oneof descriptor does not belong to this message.
-func (x *fastReflection_MsgUploadMorseState) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
+func (x *fastReflection_MsgCreateMorseAccountState) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
 	switch d.FullName() {
 	default:
-		panic(fmt.Errorf("%s is not a oneof field in poktroll.migration.MsgUploadMorseState", d.FullName()))
+		panic(fmt.Errorf("%s is not a oneof field in poktroll.migration.MsgCreateMorseAccountState", d.FullName()))
 	}
 	panic("unreachable")
 }
@@ -1114,7 +1114,7 @@ func (x *fastReflection_MsgUploadMorseState) WhichOneof(d protoreflect.OneofDesc
 // GetUnknown retrieves the entire list of unknown fields.
 // The caller may only mutate the contents of the RawFields
 // if the mutated bytes are stored back into the message with SetUnknown.
-func (x *fastReflection_MsgUploadMorseState) GetUnknown() protoreflect.RawFields {
+func (x *fastReflection_MsgCreateMorseAccountState) GetUnknown() protoreflect.RawFields {
 	return x.unknownFields
 }
 
@@ -1125,7 +1125,7 @@ func (x *fastReflection_MsgUploadMorseState) GetUnknown() protoreflect.RawFields
 // An empty RawFields may be passed to clear the fields.
 //
 // SetUnknown is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_MsgUploadMorseState) SetUnknown(fields protoreflect.RawFields) {
+func (x *fastReflection_MsgCreateMorseAccountState) SetUnknown(fields protoreflect.RawFields) {
 	x.unknownFields = fields
 }
 
@@ -1137,7 +1137,7 @@ func (x *fastReflection_MsgUploadMorseState) SetUnknown(fields protoreflect.RawF
 // message type, but the details are implementation dependent.
 // Validity is not part of the protobuf data model, and may not
 // be preserved in marshaling or other operations.
-func (x *fastReflection_MsgUploadMorseState) IsValid() bool {
+func (x *fastReflection_MsgCreateMorseAccountState) IsValid() bool {
 	return x != nil
 }
 
@@ -1147,9 +1147,9 @@ func (x *fastReflection_MsgUploadMorseState) IsValid() bool {
 // The returned methods type is identical to
 // "google.golang.org/protobuf/runtime/protoiface".Methods.
 // Consult the protoiface package documentation for details.
-func (x *fastReflection_MsgUploadMorseState) ProtoMethods() *protoiface.Methods {
+func (x *fastReflection_MsgCreateMorseAccountState) ProtoMethods() *protoiface.Methods {
 	size := func(input protoiface.SizeInput) protoiface.SizeOutput {
-		x := input.Message.Interface().(*MsgUploadMorseState)
+		x := input.Message.Interface().(*MsgCreateMorseAccountState)
 		if x == nil {
 			return protoiface.SizeOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -1165,8 +1165,8 @@ func (x *fastReflection_MsgUploadMorseState) ProtoMethods() *protoiface.Methods 
 		if l > 0 {
 			n += 1 + l + runtime.Sov(uint64(l))
 		}
-		if x.State != nil {
-			l = options.Size(x.State)
+		if x.MorseAccountState != nil {
+			l = options.Size(x.MorseAccountState)
 			n += 1 + l + runtime.Sov(uint64(l))
 		}
 		if x.unknownFields != nil {
@@ -1179,7 +1179,7 @@ func (x *fastReflection_MsgUploadMorseState) ProtoMethods() *protoiface.Methods 
 	}
 
 	marshal := func(input protoiface.MarshalInput) (protoiface.MarshalOutput, error) {
-		x := input.Message.Interface().(*MsgUploadMorseState)
+		x := input.Message.Interface().(*MsgCreateMorseAccountState)
 		if x == nil {
 			return protoiface.MarshalOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -1198,8 +1198,8 @@ func (x *fastReflection_MsgUploadMorseState) ProtoMethods() *protoiface.Methods 
 			i -= len(x.unknownFields)
 			copy(dAtA[i:], x.unknownFields)
 		}
-		if x.State != nil {
-			encoded, err := options.Marshal(x.State)
+		if x.MorseAccountState != nil {
+			encoded, err := options.Marshal(x.MorseAccountState)
 			if err != nil {
 				return protoiface.MarshalOutput{
 					NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -1230,7 +1230,7 @@ func (x *fastReflection_MsgUploadMorseState) ProtoMethods() *protoiface.Methods 
 		}, nil
 	}
 	unmarshal := func(input protoiface.UnmarshalInput) (protoiface.UnmarshalOutput, error) {
-		x := input.Message.Interface().(*MsgUploadMorseState)
+		x := input.Message.Interface().(*MsgCreateMorseAccountState)
 		if x == nil {
 			return protoiface.UnmarshalOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -1262,10 +1262,10 @@ func (x *fastReflection_MsgUploadMorseState) ProtoMethods() *protoiface.Methods 
 			fieldNum := int32(wire >> 3)
 			wireType := int(wire & 0x7)
 			if wireType == 4 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: MsgUploadMorseState: wiretype end group for non-group")
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: MsgCreateMorseAccountState: wiretype end group for non-group")
 			}
 			if fieldNum <= 0 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: MsgUploadMorseState: illegal tag %d (wire type %d)", fieldNum, wire)
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: MsgCreateMorseAccountState: illegal tag %d (wire type %d)", fieldNum, wire)
 			}
 			switch fieldNum {
 			case 1:
@@ -1302,7 +1302,7 @@ func (x *fastReflection_MsgUploadMorseState) ProtoMethods() *protoiface.Methods 
 				iNdEx = postIndex
 			case 2:
 				if wireType != 2 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field State", wireType)
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field MorseAccountState", wireType)
 				}
 				var msglen int
 				for shift := uint(0); ; shift += 7 {
@@ -1329,10 +1329,10 @@ func (x *fastReflection_MsgUploadMorseState) ProtoMethods() *protoiface.Methods 
 				if postIndex > l {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
 				}
-				if x.State == nil {
-					x.State = &MorseAccountState{}
+				if x.MorseAccountState == nil {
+					x.MorseAccountState = &MorseAccountState{}
 				}
-				if err := options.Unmarshal(dAtA[iNdEx:postIndex], x.State); err != nil {
+				if err := options.Unmarshal(dAtA[iNdEx:postIndex], x.MorseAccountState); err != nil {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
 				}
 				iNdEx = postIndex
@@ -1372,27 +1372,27 @@ func (x *fastReflection_MsgUploadMorseState) ProtoMethods() *protoiface.Methods 
 }
 
 var (
-	md_MsgUploadMorseStateResponse              protoreflect.MessageDescriptor
-	fd_MsgUploadMorseStateResponse_state_hash   protoreflect.FieldDescriptor
-	fd_MsgUploadMorseStateResponse_num_accounts protoreflect.FieldDescriptor
+	md_MsgCreateMorseAccountStateResponse              protoreflect.MessageDescriptor
+	fd_MsgCreateMorseAccountStateResponse_state_hash   protoreflect.FieldDescriptor
+	fd_MsgCreateMorseAccountStateResponse_num_accounts protoreflect.FieldDescriptor
 )
 
 func init() {
 	file_poktroll_migration_tx_proto_init()
-	md_MsgUploadMorseStateResponse = File_poktroll_migration_tx_proto.Messages().ByName("MsgUploadMorseStateResponse")
-	fd_MsgUploadMorseStateResponse_state_hash = md_MsgUploadMorseStateResponse.Fields().ByName("state_hash")
-	fd_MsgUploadMorseStateResponse_num_accounts = md_MsgUploadMorseStateResponse.Fields().ByName("num_accounts")
+	md_MsgCreateMorseAccountStateResponse = File_poktroll_migration_tx_proto.Messages().ByName("MsgCreateMorseAccountStateResponse")
+	fd_MsgCreateMorseAccountStateResponse_state_hash = md_MsgCreateMorseAccountStateResponse.Fields().ByName("state_hash")
+	fd_MsgCreateMorseAccountStateResponse_num_accounts = md_MsgCreateMorseAccountStateResponse.Fields().ByName("num_accounts")
 }
 
-var _ protoreflect.Message = (*fastReflection_MsgUploadMorseStateResponse)(nil)
+var _ protoreflect.Message = (*fastReflection_MsgCreateMorseAccountStateResponse)(nil)
 
-type fastReflection_MsgUploadMorseStateResponse MsgUploadMorseStateResponse
+type fastReflection_MsgCreateMorseAccountStateResponse MsgCreateMorseAccountStateResponse
 
-func (x *MsgUploadMorseStateResponse) ProtoReflect() protoreflect.Message {
-	return (*fastReflection_MsgUploadMorseStateResponse)(x)
+func (x *MsgCreateMorseAccountStateResponse) ProtoReflect() protoreflect.Message {
+	return (*fastReflection_MsgCreateMorseAccountStateResponse)(x)
 }
 
-func (x *MsgUploadMorseStateResponse) slowProtoReflect() protoreflect.Message {
+func (x *MsgCreateMorseAccountStateResponse) slowProtoReflect() protoreflect.Message {
 	mi := &file_poktroll_migration_tx_proto_msgTypes[3]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1404,43 +1404,43 @@ func (x *MsgUploadMorseStateResponse) slowProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-var _fastReflection_MsgUploadMorseStateResponse_messageType fastReflection_MsgUploadMorseStateResponse_messageType
-var _ protoreflect.MessageType = fastReflection_MsgUploadMorseStateResponse_messageType{}
+var _fastReflection_MsgCreateMorseAccountStateResponse_messageType fastReflection_MsgCreateMorseAccountStateResponse_messageType
+var _ protoreflect.MessageType = fastReflection_MsgCreateMorseAccountStateResponse_messageType{}
 
-type fastReflection_MsgUploadMorseStateResponse_messageType struct{}
+type fastReflection_MsgCreateMorseAccountStateResponse_messageType struct{}
 
-func (x fastReflection_MsgUploadMorseStateResponse_messageType) Zero() protoreflect.Message {
-	return (*fastReflection_MsgUploadMorseStateResponse)(nil)
+func (x fastReflection_MsgCreateMorseAccountStateResponse_messageType) Zero() protoreflect.Message {
+	return (*fastReflection_MsgCreateMorseAccountStateResponse)(nil)
 }
-func (x fastReflection_MsgUploadMorseStateResponse_messageType) New() protoreflect.Message {
-	return new(fastReflection_MsgUploadMorseStateResponse)
+func (x fastReflection_MsgCreateMorseAccountStateResponse_messageType) New() protoreflect.Message {
+	return new(fastReflection_MsgCreateMorseAccountStateResponse)
 }
-func (x fastReflection_MsgUploadMorseStateResponse_messageType) Descriptor() protoreflect.MessageDescriptor {
-	return md_MsgUploadMorseStateResponse
+func (x fastReflection_MsgCreateMorseAccountStateResponse_messageType) Descriptor() protoreflect.MessageDescriptor {
+	return md_MsgCreateMorseAccountStateResponse
 }
 
 // Descriptor returns message descriptor, which contains only the protobuf
 // type information for the message.
-func (x *fastReflection_MsgUploadMorseStateResponse) Descriptor() protoreflect.MessageDescriptor {
-	return md_MsgUploadMorseStateResponse
+func (x *fastReflection_MsgCreateMorseAccountStateResponse) Descriptor() protoreflect.MessageDescriptor {
+	return md_MsgCreateMorseAccountStateResponse
 }
 
 // Type returns the message type, which encapsulates both Go and protobuf
 // type information. If the Go type information is not needed,
 // it is recommended that the message descriptor be used instead.
-func (x *fastReflection_MsgUploadMorseStateResponse) Type() protoreflect.MessageType {
-	return _fastReflection_MsgUploadMorseStateResponse_messageType
+func (x *fastReflection_MsgCreateMorseAccountStateResponse) Type() protoreflect.MessageType {
+	return _fastReflection_MsgCreateMorseAccountStateResponse_messageType
 }
 
 // New returns a newly allocated and mutable empty message.
-func (x *fastReflection_MsgUploadMorseStateResponse) New() protoreflect.Message {
-	return new(fastReflection_MsgUploadMorseStateResponse)
+func (x *fastReflection_MsgCreateMorseAccountStateResponse) New() protoreflect.Message {
+	return new(fastReflection_MsgCreateMorseAccountStateResponse)
 }
 
 // Interface unwraps the message reflection interface and
 // returns the underlying ProtoMessage interface.
-func (x *fastReflection_MsgUploadMorseStateResponse) Interface() protoreflect.ProtoMessage {
-	return (*MsgUploadMorseStateResponse)(x)
+func (x *fastReflection_MsgCreateMorseAccountStateResponse) Interface() protoreflect.ProtoMessage {
+	return (*MsgCreateMorseAccountStateResponse)(x)
 }
 
 // Range iterates over every populated field in an undefined order,
@@ -1448,16 +1448,16 @@ func (x *fastReflection_MsgUploadMorseStateResponse) Interface() protoreflect.Pr
 // Range returns immediately if f returns false.
 // While iterating, mutating operations may only be performed
 // on the current field descriptor.
-func (x *fastReflection_MsgUploadMorseStateResponse) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
-	if x.StateHash != "" {
-		value := protoreflect.ValueOfString(x.StateHash)
-		if !f(fd_MsgUploadMorseStateResponse_state_hash, value) {
+func (x *fastReflection_MsgCreateMorseAccountStateResponse) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
+	if len(x.StateHash) != 0 {
+		value := protoreflect.ValueOfBytes(x.StateHash)
+		if !f(fd_MsgCreateMorseAccountStateResponse_state_hash, value) {
 			return
 		}
 	}
 	if x.NumAccounts != uint64(0) {
 		value := protoreflect.ValueOfUint64(x.NumAccounts)
-		if !f(fd_MsgUploadMorseStateResponse_num_accounts, value) {
+		if !f(fd_MsgCreateMorseAccountStateResponse_num_accounts, value) {
 			return
 		}
 	}
@@ -1474,17 +1474,17 @@ func (x *fastReflection_MsgUploadMorseStateResponse) Range(f func(protoreflect.F
 // In other cases (aside from the nullable cases above),
 // a proto3 scalar field is populated if it contains a non-zero value, and
 // a repeated field is populated if it is non-empty.
-func (x *fastReflection_MsgUploadMorseStateResponse) Has(fd protoreflect.FieldDescriptor) bool {
+func (x *fastReflection_MsgCreateMorseAccountStateResponse) Has(fd protoreflect.FieldDescriptor) bool {
 	switch fd.FullName() {
-	case "poktroll.migration.MsgUploadMorseStateResponse.state_hash":
-		return x.StateHash != ""
-	case "poktroll.migration.MsgUploadMorseStateResponse.num_accounts":
+	case "poktroll.migration.MsgCreateMorseAccountStateResponse.state_hash":
+		return len(x.StateHash) != 0
+	case "poktroll.migration.MsgCreateMorseAccountStateResponse.num_accounts":
 		return x.NumAccounts != uint64(0)
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.migration.MsgUploadMorseStateResponse"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.migration.MsgCreateMorseAccountStateResponse"))
 		}
-		panic(fmt.Errorf("message poktroll.migration.MsgUploadMorseStateResponse does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message poktroll.migration.MsgCreateMorseAccountStateResponse does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -1494,17 +1494,17 @@ func (x *fastReflection_MsgUploadMorseStateResponse) Has(fd protoreflect.FieldDe
 // associated with the given field number.
 //
 // Clear is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_MsgUploadMorseStateResponse) Clear(fd protoreflect.FieldDescriptor) {
+func (x *fastReflection_MsgCreateMorseAccountStateResponse) Clear(fd protoreflect.FieldDescriptor) {
 	switch fd.FullName() {
-	case "poktroll.migration.MsgUploadMorseStateResponse.state_hash":
-		x.StateHash = ""
-	case "poktroll.migration.MsgUploadMorseStateResponse.num_accounts":
+	case "poktroll.migration.MsgCreateMorseAccountStateResponse.state_hash":
+		x.StateHash = nil
+	case "poktroll.migration.MsgCreateMorseAccountStateResponse.num_accounts":
 		x.NumAccounts = uint64(0)
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.migration.MsgUploadMorseStateResponse"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.migration.MsgCreateMorseAccountStateResponse"))
 		}
-		panic(fmt.Errorf("message poktroll.migration.MsgUploadMorseStateResponse does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message poktroll.migration.MsgCreateMorseAccountStateResponse does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -1514,19 +1514,19 @@ func (x *fastReflection_MsgUploadMorseStateResponse) Clear(fd protoreflect.Field
 // the default value of a bytes scalar is guaranteed to be a copy.
 // For unpopulated composite types, it returns an empty, read-only view
 // of the value; to obtain a mutable reference, use Mutable.
-func (x *fastReflection_MsgUploadMorseStateResponse) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_MsgCreateMorseAccountStateResponse) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
 	switch descriptor.FullName() {
-	case "poktroll.migration.MsgUploadMorseStateResponse.state_hash":
+	case "poktroll.migration.MsgCreateMorseAccountStateResponse.state_hash":
 		value := x.StateHash
-		return protoreflect.ValueOfString(value)
-	case "poktroll.migration.MsgUploadMorseStateResponse.num_accounts":
+		return protoreflect.ValueOfBytes(value)
+	case "poktroll.migration.MsgCreateMorseAccountStateResponse.num_accounts":
 		value := x.NumAccounts
 		return protoreflect.ValueOfUint64(value)
 	default:
 		if descriptor.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.migration.MsgUploadMorseStateResponse"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.migration.MsgCreateMorseAccountStateResponse"))
 		}
-		panic(fmt.Errorf("message poktroll.migration.MsgUploadMorseStateResponse does not contain field %s", descriptor.FullName()))
+		panic(fmt.Errorf("message poktroll.migration.MsgCreateMorseAccountStateResponse does not contain field %s", descriptor.FullName()))
 	}
 }
 
@@ -1540,17 +1540,17 @@ func (x *fastReflection_MsgUploadMorseStateResponse) Get(descriptor protoreflect
 // empty, read-only value, then it panics.
 //
 // Set is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_MsgUploadMorseStateResponse) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
+func (x *fastReflection_MsgCreateMorseAccountStateResponse) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
 	switch fd.FullName() {
-	case "poktroll.migration.MsgUploadMorseStateResponse.state_hash":
-		x.StateHash = value.Interface().(string)
-	case "poktroll.migration.MsgUploadMorseStateResponse.num_accounts":
+	case "poktroll.migration.MsgCreateMorseAccountStateResponse.state_hash":
+		x.StateHash = value.Bytes()
+	case "poktroll.migration.MsgCreateMorseAccountStateResponse.num_accounts":
 		x.NumAccounts = value.Uint()
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.migration.MsgUploadMorseStateResponse"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.migration.MsgCreateMorseAccountStateResponse"))
 		}
-		panic(fmt.Errorf("message poktroll.migration.MsgUploadMorseStateResponse does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message poktroll.migration.MsgCreateMorseAccountStateResponse does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -1564,44 +1564,44 @@ func (x *fastReflection_MsgUploadMorseStateResponse) Set(fd protoreflect.FieldDe
 // It panics if the field does not contain a composite type.
 //
 // Mutable is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_MsgUploadMorseStateResponse) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_MsgCreateMorseAccountStateResponse) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
-	case "poktroll.migration.MsgUploadMorseStateResponse.state_hash":
-		panic(fmt.Errorf("field state_hash of message poktroll.migration.MsgUploadMorseStateResponse is not mutable"))
-	case "poktroll.migration.MsgUploadMorseStateResponse.num_accounts":
-		panic(fmt.Errorf("field num_accounts of message poktroll.migration.MsgUploadMorseStateResponse is not mutable"))
+	case "poktroll.migration.MsgCreateMorseAccountStateResponse.state_hash":
+		panic(fmt.Errorf("field state_hash of message poktroll.migration.MsgCreateMorseAccountStateResponse is not mutable"))
+	case "poktroll.migration.MsgCreateMorseAccountStateResponse.num_accounts":
+		panic(fmt.Errorf("field num_accounts of message poktroll.migration.MsgCreateMorseAccountStateResponse is not mutable"))
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.migration.MsgUploadMorseStateResponse"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.migration.MsgCreateMorseAccountStateResponse"))
 		}
-		panic(fmt.Errorf("message poktroll.migration.MsgUploadMorseStateResponse does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message poktroll.migration.MsgCreateMorseAccountStateResponse does not contain field %s", fd.FullName()))
 	}
 }
 
 // NewField returns a new value that is assignable to the field
 // for the given descriptor. For scalars, this returns the default value.
 // For lists, maps, and messages, this returns a new, empty, mutable value.
-func (x *fastReflection_MsgUploadMorseStateResponse) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_MsgCreateMorseAccountStateResponse) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
-	case "poktroll.migration.MsgUploadMorseStateResponse.state_hash":
-		return protoreflect.ValueOfString("")
-	case "poktroll.migration.MsgUploadMorseStateResponse.num_accounts":
+	case "poktroll.migration.MsgCreateMorseAccountStateResponse.state_hash":
+		return protoreflect.ValueOfBytes(nil)
+	case "poktroll.migration.MsgCreateMorseAccountStateResponse.num_accounts":
 		return protoreflect.ValueOfUint64(uint64(0))
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.migration.MsgUploadMorseStateResponse"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.migration.MsgCreateMorseAccountStateResponse"))
 		}
-		panic(fmt.Errorf("message poktroll.migration.MsgUploadMorseStateResponse does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message poktroll.migration.MsgCreateMorseAccountStateResponse does not contain field %s", fd.FullName()))
 	}
 }
 
 // WhichOneof reports which field within the oneof is populated,
 // returning nil if none are populated.
 // It panics if the oneof descriptor does not belong to this message.
-func (x *fastReflection_MsgUploadMorseStateResponse) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
+func (x *fastReflection_MsgCreateMorseAccountStateResponse) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
 	switch d.FullName() {
 	default:
-		panic(fmt.Errorf("%s is not a oneof field in poktroll.migration.MsgUploadMorseStateResponse", d.FullName()))
+		panic(fmt.Errorf("%s is not a oneof field in poktroll.migration.MsgCreateMorseAccountStateResponse", d.FullName()))
 	}
 	panic("unreachable")
 }
@@ -1609,7 +1609,7 @@ func (x *fastReflection_MsgUploadMorseStateResponse) WhichOneof(d protoreflect.O
 // GetUnknown retrieves the entire list of unknown fields.
 // The caller may only mutate the contents of the RawFields
 // if the mutated bytes are stored back into the message with SetUnknown.
-func (x *fastReflection_MsgUploadMorseStateResponse) GetUnknown() protoreflect.RawFields {
+func (x *fastReflection_MsgCreateMorseAccountStateResponse) GetUnknown() protoreflect.RawFields {
 	return x.unknownFields
 }
 
@@ -1620,7 +1620,7 @@ func (x *fastReflection_MsgUploadMorseStateResponse) GetUnknown() protoreflect.R
 // An empty RawFields may be passed to clear the fields.
 //
 // SetUnknown is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_MsgUploadMorseStateResponse) SetUnknown(fields protoreflect.RawFields) {
+func (x *fastReflection_MsgCreateMorseAccountStateResponse) SetUnknown(fields protoreflect.RawFields) {
 	x.unknownFields = fields
 }
 
@@ -1632,7 +1632,7 @@ func (x *fastReflection_MsgUploadMorseStateResponse) SetUnknown(fields protorefl
 // message type, but the details are implementation dependent.
 // Validity is not part of the protobuf data model, and may not
 // be preserved in marshaling or other operations.
-func (x *fastReflection_MsgUploadMorseStateResponse) IsValid() bool {
+func (x *fastReflection_MsgCreateMorseAccountStateResponse) IsValid() bool {
 	return x != nil
 }
 
@@ -1642,9 +1642,9 @@ func (x *fastReflection_MsgUploadMorseStateResponse) IsValid() bool {
 // The returned methods type is identical to
 // "google.golang.org/protobuf/runtime/protoiface".Methods.
 // Consult the protoiface package documentation for details.
-func (x *fastReflection_MsgUploadMorseStateResponse) ProtoMethods() *protoiface.Methods {
+func (x *fastReflection_MsgCreateMorseAccountStateResponse) ProtoMethods() *protoiface.Methods {
 	size := func(input protoiface.SizeInput) protoiface.SizeOutput {
-		x := input.Message.Interface().(*MsgUploadMorseStateResponse)
+		x := input.Message.Interface().(*MsgCreateMorseAccountStateResponse)
 		if x == nil {
 			return protoiface.SizeOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -1673,7 +1673,7 @@ func (x *fastReflection_MsgUploadMorseStateResponse) ProtoMethods() *protoiface.
 	}
 
 	marshal := func(input protoiface.MarshalInput) (protoiface.MarshalOutput, error) {
-		x := input.Message.Interface().(*MsgUploadMorseStateResponse)
+		x := input.Message.Interface().(*MsgCreateMorseAccountStateResponse)
 		if x == nil {
 			return protoiface.MarshalOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -1715,7 +1715,7 @@ func (x *fastReflection_MsgUploadMorseStateResponse) ProtoMethods() *protoiface.
 		}, nil
 	}
 	unmarshal := func(input protoiface.UnmarshalInput) (protoiface.UnmarshalOutput, error) {
-		x := input.Message.Interface().(*MsgUploadMorseStateResponse)
+		x := input.Message.Interface().(*MsgCreateMorseAccountStateResponse)
 		if x == nil {
 			return protoiface.UnmarshalOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -1747,17 +1747,17 @@ func (x *fastReflection_MsgUploadMorseStateResponse) ProtoMethods() *protoiface.
 			fieldNum := int32(wire >> 3)
 			wireType := int(wire & 0x7)
 			if wireType == 4 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: MsgUploadMorseStateResponse: wiretype end group for non-group")
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: MsgCreateMorseAccountStateResponse: wiretype end group for non-group")
 			}
 			if fieldNum <= 0 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: MsgUploadMorseStateResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: MsgCreateMorseAccountStateResponse: illegal tag %d (wire type %d)", fieldNum, wire)
 			}
 			switch fieldNum {
 			case 1:
 				if wireType != 2 {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field StateHash", wireType)
 				}
-				var stringLen uint64
+				var byteLen int
 				for shift := uint(0); ; shift += 7 {
 					if shift >= 64 {
 						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
@@ -1767,23 +1767,25 @@ func (x *fastReflection_MsgUploadMorseStateResponse) ProtoMethods() *protoiface.
 					}
 					b := dAtA[iNdEx]
 					iNdEx++
-					stringLen |= uint64(b&0x7F) << shift
+					byteLen |= int(b&0x7F) << shift
 					if b < 0x80 {
 						break
 					}
 				}
-				intStringLen := int(stringLen)
-				if intStringLen < 0 {
+				if byteLen < 0 {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
 				}
-				postIndex := iNdEx + intStringLen
+				postIndex := iNdEx + byteLen
 				if postIndex < 0 {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
 				}
 				if postIndex > l {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
 				}
-				x.StateHash = string(dAtA[iNdEx:postIndex])
+				x.StateHash = append(x.StateHash[:0], dAtA[iNdEx:postIndex]...)
+				if x.StateHash == nil {
+					x.StateHash = []byte{}
+				}
 				iNdEx = postIndex
 			case 2:
 				if wireType != 0 {
@@ -2911,19 +2913,18 @@ func (*MsgUpdateParamsResponse) Descriptor() ([]byte, []int) {
 	return file_poktroll_migration_tx_proto_rawDescGZIP(), []int{1}
 }
 
-// MsgUploadMorseState commits the "Morse migration" state to the Shannon state
-// for subsequent migration operations on Shannon.
-type MsgUploadMorseState struct {
+type MsgCreateMorseAccountState struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Authority string             `protobuf:"bytes,1,opt,name=authority,proto3" json:"authority,omitempty"`
-	State     *MorseAccountState `protobuf:"bytes,2,opt,name=state,proto3" json:"state,omitempty"`
+	// authority is the address that controls the module (defaults to x/gov unless overwritten).
+	Authority         string             `protobuf:"bytes,1,opt,name=authority,proto3" json:"authority,omitempty"`
+	MorseAccountState *MorseAccountState `protobuf:"bytes,2,opt,name=morse_account_state,json=morseAccountState,proto3" json:"morse_account_state,omitempty"`
 }
 
-func (x *MsgUploadMorseState) Reset() {
-	*x = MsgUploadMorseState{}
+func (x *MsgCreateMorseAccountState) Reset() {
+	*x = MsgCreateMorseAccountState{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_poktroll_migration_tx_proto_msgTypes[2]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -2931,42 +2932,42 @@ func (x *MsgUploadMorseState) Reset() {
 	}
 }
 
-func (x *MsgUploadMorseState) String() string {
+func (x *MsgCreateMorseAccountState) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*MsgUploadMorseState) ProtoMessage() {}
+func (*MsgCreateMorseAccountState) ProtoMessage() {}
 
-// Deprecated: Use MsgUploadMorseState.ProtoReflect.Descriptor instead.
-func (*MsgUploadMorseState) Descriptor() ([]byte, []int) {
+// Deprecated: Use MsgCreateMorseAccountState.ProtoReflect.Descriptor instead.
+func (*MsgCreateMorseAccountState) Descriptor() ([]byte, []int) {
 	return file_poktroll_migration_tx_proto_rawDescGZIP(), []int{2}
 }
 
-func (x *MsgUploadMorseState) GetAuthority() string {
+func (x *MsgCreateMorseAccountState) GetAuthority() string {
 	if x != nil {
 		return x.Authority
 	}
 	return ""
 }
 
-func (x *MsgUploadMorseState) GetState() *MorseAccountState {
+func (x *MsgCreateMorseAccountState) GetMorseAccountState() *MorseAccountState {
 	if x != nil {
-		return x.State
+		return x.MorseAccountState
 	}
 	return nil
 }
 
-type MsgUploadMorseStateResponse struct {
+type MsgCreateMorseAccountStateResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	StateHash   string `protobuf:"bytes,1,opt,name=state_hash,json=stateHash,proto3" json:"state_hash,omitempty"`
+	StateHash   []byte `protobuf:"bytes,1,opt,name=state_hash,json=stateHash,proto3" json:"state_hash,omitempty"`
 	NumAccounts uint64 `protobuf:"varint,2,opt,name=num_accounts,json=numAccounts,proto3" json:"num_accounts,omitempty"`
 }
 
-func (x *MsgUploadMorseStateResponse) Reset() {
-	*x = MsgUploadMorseStateResponse{}
+func (x *MsgCreateMorseAccountStateResponse) Reset() {
+	*x = MsgCreateMorseAccountStateResponse{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_poktroll_migration_tx_proto_msgTypes[3]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -2974,25 +2975,25 @@ func (x *MsgUploadMorseStateResponse) Reset() {
 	}
 }
 
-func (x *MsgUploadMorseStateResponse) String() string {
+func (x *MsgCreateMorseAccountStateResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*MsgUploadMorseStateResponse) ProtoMessage() {}
+func (*MsgCreateMorseAccountStateResponse) ProtoMessage() {}
 
-// Deprecated: Use MsgUploadMorseStateResponse.ProtoReflect.Descriptor instead.
-func (*MsgUploadMorseStateResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use MsgCreateMorseAccountStateResponse.ProtoReflect.Descriptor instead.
+func (*MsgCreateMorseAccountStateResponse) Descriptor() ([]byte, []int) {
 	return file_poktroll_migration_tx_proto_rawDescGZIP(), []int{3}
 }
 
-func (x *MsgUploadMorseStateResponse) GetStateHash() string {
+func (x *MsgCreateMorseAccountStateResponse) GetStateHash() []byte {
 	if x != nil {
 		return x.StateHash
 	}
-	return ""
+	return nil
 }
 
-func (x *MsgUploadMorseStateResponse) GetNumAccounts() uint64 {
+func (x *MsgCreateMorseAccountStateResponse) GetNumAccounts() uint64 {
 	if x != nil {
 		return x.NumAccounts
 	}
@@ -3117,76 +3118,82 @@ var file_poktroll_migration_tx_proto_rawDesc = []byte{
 	0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2f, 0x78, 0x2f, 0x6d, 0x69, 0x67, 0x72, 0x61, 0x74,
 	0x69, 0x6f, 0x6e, 0x2f, 0x4d, 0x73, 0x67, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x50, 0x61, 0x72,
 	0x61, 0x6d, 0x73, 0x22, 0x19, 0x0a, 0x17, 0x4d, 0x73, 0x67, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65,
-	0x50, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0xa0,
-	0x01, 0x0a, 0x13, 0x4d, 0x73, 0x67, 0x55, 0x70, 0x6c, 0x6f, 0x61, 0x64, 0x4d, 0x6f, 0x72, 0x73,
-	0x65, 0x53, 0x74, 0x61, 0x74, 0x65, 0x12, 0x36, 0x0a, 0x09, 0x61, 0x75, 0x74, 0x68, 0x6f, 0x72,
-	0x69, 0x74, 0x79, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x42, 0x18, 0xd2, 0xb4, 0x2d, 0x14, 0x63,
-	0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x53, 0x74, 0x72,
-	0x69, 0x6e, 0x67, 0x52, 0x09, 0x61, 0x75, 0x74, 0x68, 0x6f, 0x72, 0x69, 0x74, 0x79, 0x12, 0x41,
-	0x0a, 0x05, 0x73, 0x74, 0x61, 0x74, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x25, 0x2e,
-	0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x6d, 0x69, 0x67, 0x72, 0x61, 0x74, 0x69,
-	0x6f, 0x6e, 0x2e, 0x4d, 0x6f, 0x72, 0x73, 0x65, 0x41, 0x63, 0x63, 0x6f, 0x75, 0x6e, 0x74, 0x53,
-	0x74, 0x61, 0x74, 0x65, 0x42, 0x04, 0xc8, 0xde, 0x1f, 0x00, 0x52, 0x05, 0x73, 0x74, 0x61, 0x74,
-	0x65, 0x3a, 0x0e, 0x82, 0xe7, 0xb0, 0x2a, 0x09, 0x61, 0x75, 0x74, 0x68, 0x6f, 0x72, 0x69, 0x74,
-	0x79, 0x22, 0x81, 0x01, 0x0a, 0x1b, 0x4d, 0x73, 0x67, 0x55, 0x70, 0x6c, 0x6f, 0x61, 0x64, 0x4d,
-	0x6f, 0x72, 0x73, 0x65, 0x53, 0x74, 0x61, 0x74, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73,
-	0x65, 0x12, 0x2d, 0x0a, 0x0a, 0x73, 0x74, 0x61, 0x74, 0x65, 0x5f, 0x68, 0x61, 0x73, 0x68, 0x18,
-	0x01, 0x20, 0x01, 0x28, 0x09, 0x42, 0x0e, 0xea, 0xde, 0x1f, 0x0a, 0x73, 0x74, 0x61, 0x74, 0x65,
-	0x5f, 0x68, 0x61, 0x73, 0x68, 0x52, 0x09, 0x73, 0x74, 0x61, 0x74, 0x65, 0x48, 0x61, 0x73, 0x68,
-	0x12, 0x33, 0x0a, 0x0c, 0x6e, 0x75, 0x6d, 0x5f, 0x61, 0x63, 0x63, 0x6f, 0x75, 0x6e, 0x74, 0x73,
-	0x18, 0x02, 0x20, 0x01, 0x28, 0x04, 0x42, 0x10, 0xea, 0xde, 0x1f, 0x0c, 0x6e, 0x75, 0x6d, 0x5f,
-	0x61, 0x63, 0x63, 0x6f, 0x75, 0x6e, 0x74, 0x73, 0x52, 0x0b, 0x6e, 0x75, 0x6d, 0x41, 0x63, 0x63,
-	0x6f, 0x75, 0x6e, 0x74, 0x73, 0x22, 0xcf, 0x01, 0x0a, 0x11, 0x4d, 0x73, 0x67, 0x43, 0x6c, 0x61,
-	0x69, 0x6d, 0x4d, 0x6f, 0x72, 0x73, 0x65, 0x50, 0x6f, 0x6b, 0x74, 0x12, 0x4a, 0x0a, 0x14, 0x73,
-	0x68, 0x61, 0x6e, 0x6e, 0x6f, 0x6e, 0x5f, 0x64, 0x65, 0x73, 0x74, 0x5f, 0x61, 0x64, 0x64, 0x72,
-	0x65, 0x73, 0x73, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x42, 0x18, 0xd2, 0xb4, 0x2d, 0x14, 0x63,
-	0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x53, 0x74, 0x72,
-	0x69, 0x6e, 0x67, 0x52, 0x12, 0x73, 0x68, 0x61, 0x6e, 0x6e, 0x6f, 0x6e, 0x44, 0x65, 0x73, 0x74,
-	0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x12, 0x2a, 0x0a, 0x11, 0x6d, 0x6f, 0x72, 0x73, 0x65,
-	0x5f, 0x73, 0x72, 0x63, 0x5f, 0x61, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x18, 0x02, 0x20, 0x01,
-	0x28, 0x09, 0x52, 0x0f, 0x6d, 0x6f, 0x72, 0x73, 0x65, 0x53, 0x72, 0x63, 0x41, 0x64, 0x64, 0x72,
-	0x65, 0x73, 0x73, 0x12, 0x27, 0x0a, 0x0f, 0x6d, 0x6f, 0x72, 0x73, 0x65, 0x5f, 0x73, 0x69, 0x67,
-	0x6e, 0x61, 0x74, 0x75, 0x72, 0x65, 0x18, 0x03, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x0e, 0x6d, 0x6f,
-	0x72, 0x73, 0x65, 0x53, 0x69, 0x67, 0x6e, 0x61, 0x74, 0x75, 0x72, 0x65, 0x3a, 0x19, 0x82, 0xe7,
-	0xb0, 0x2a, 0x14, 0x73, 0x68, 0x61, 0x6e, 0x6e, 0x6f, 0x6e, 0x5f, 0x64, 0x65, 0x73, 0x74, 0x5f,
-	0x61, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x22, 0x50, 0x0a, 0x19, 0x4d, 0x73, 0x67, 0x43, 0x6c,
-	0x61, 0x69, 0x6d, 0x4d, 0x6f, 0x72, 0x73, 0x65, 0x50, 0x6f, 0x6b, 0x74, 0x52, 0x65, 0x73, 0x70,
-	0x6f, 0x6e, 0x73, 0x65, 0x12, 0x33, 0x0a, 0x07, 0x62, 0x61, 0x6c, 0x61, 0x6e, 0x63, 0x65, 0x18,
-	0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x19, 0x2e, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x62,
-	0x61, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x62, 0x65, 0x74, 0x61, 0x31, 0x2e, 0x43, 0x6f, 0x69, 0x6e,
-	0x52, 0x07, 0x62, 0x61, 0x6c, 0x61, 0x6e, 0x63, 0x65, 0x32, 0xc4, 0x02, 0x0a, 0x03, 0x4d, 0x73,
-	0x67, 0x12, 0x60, 0x0a, 0x0c, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x50, 0x61, 0x72, 0x61, 0x6d,
-	0x73, 0x12, 0x23, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x6d, 0x69, 0x67,
-	0x72, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x2e, 0x4d, 0x73, 0x67, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65,
-	0x50, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x1a, 0x2b, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c,
-	0x6c, 0x2e, 0x6d, 0x69, 0x67, 0x72, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x2e, 0x4d, 0x73, 0x67, 0x55,
-	0x70, 0x64, 0x61, 0x74, 0x65, 0x50, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f,
-	0x6e, 0x73, 0x65, 0x12, 0x6c, 0x0a, 0x10, 0x55, 0x70, 0x6c, 0x6f, 0x61, 0x64, 0x4d, 0x6f, 0x72,
-	0x73, 0x65, 0x53, 0x74, 0x61, 0x74, 0x65, 0x12, 0x27, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f,
-	0x6c, 0x6c, 0x2e, 0x6d, 0x69, 0x67, 0x72, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x2e, 0x4d, 0x73, 0x67,
-	0x55, 0x70, 0x6c, 0x6f, 0x61, 0x64, 0x4d, 0x6f, 0x72, 0x73, 0x65, 0x53, 0x74, 0x61, 0x74, 0x65,
-	0x1a, 0x2f, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x6d, 0x69, 0x67, 0x72,
-	0x61, 0x74, 0x69, 0x6f, 0x6e, 0x2e, 0x4d, 0x73, 0x67, 0x55, 0x70, 0x6c, 0x6f, 0x61, 0x64, 0x4d,
-	0x6f, 0x72, 0x73, 0x65, 0x53, 0x74, 0x61, 0x74, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73,
-	0x65, 0x12, 0x66, 0x0a, 0x0e, 0x43, 0x6c, 0x61, 0x69, 0x6d, 0x4d, 0x6f, 0x72, 0x73, 0x65, 0x50,
-	0x6f, 0x6b, 0x74, 0x12, 0x25, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x6d,
-	0x69, 0x67, 0x72, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x2e, 0x4d, 0x73, 0x67, 0x43, 0x6c, 0x61, 0x69,
-	0x6d, 0x4d, 0x6f, 0x72, 0x73, 0x65, 0x50, 0x6f, 0x6b, 0x74, 0x1a, 0x2d, 0x2e, 0x70, 0x6f, 0x6b,
-	0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x6d, 0x69, 0x67, 0x72, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x2e,
-	0x4d, 0x73, 0x67, 0x43, 0x6c, 0x61, 0x69, 0x6d, 0x4d, 0x6f, 0x72, 0x73, 0x65, 0x50, 0x6f, 0x6b,
-	0x74, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x1a, 0x05, 0x80, 0xe7, 0xb0, 0x2a, 0x01,
-	0x42, 0xb3, 0x01, 0xd8, 0xe2, 0x1e, 0x01, 0x0a, 0x16, 0x63, 0x6f, 0x6d, 0x2e, 0x70, 0x6f, 0x6b,
-	0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x6d, 0x69, 0x67, 0x72, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x42,
-	0x07, 0x54, 0x78, 0x50, 0x72, 0x6f, 0x74, 0x6f, 0x50, 0x01, 0x5a, 0x23, 0x63, 0x6f, 0x73, 0x6d,
-	0x6f, 0x73, 0x73, 0x64, 0x6b, 0x2e, 0x69, 0x6f, 0x2f, 0x61, 0x70, 0x69, 0x2f, 0x70, 0x6f, 0x6b,
-	0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2f, 0x6d, 0x69, 0x67, 0x72, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0xa2,
-	0x02, 0x03, 0x50, 0x4d, 0x58, 0xaa, 0x02, 0x12, 0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c,
-	0x2e, 0x4d, 0x69, 0x67, 0x72, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0xca, 0x02, 0x12, 0x50, 0x6f, 0x6b,
-	0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x5c, 0x4d, 0x69, 0x67, 0x72, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0xe2,
-	0x02, 0x1e, 0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x5c, 0x4d, 0x69, 0x67, 0x72, 0x61,
-	0x74, 0x69, 0x6f, 0x6e, 0x5c, 0x47, 0x50, 0x42, 0x4d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61,
-	0xea, 0x02, 0x13, 0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x3a, 0x3a, 0x4d, 0x69, 0x67,
-	0x72, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x50, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0xd8,
+	0x01, 0x0a, 0x1a, 0x4d, 0x73, 0x67, 0x43, 0x72, 0x65, 0x61, 0x74, 0x65, 0x4d, 0x6f, 0x72, 0x73,
+	0x65, 0x41, 0x63, 0x63, 0x6f, 0x75, 0x6e, 0x74, 0x53, 0x74, 0x61, 0x74, 0x65, 0x12, 0x36, 0x0a,
+	0x09, 0x61, 0x75, 0x74, 0x68, 0x6f, 0x72, 0x69, 0x74, 0x79, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09,
+	0x42, 0x18, 0xd2, 0xb4, 0x2d, 0x14, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x41, 0x64, 0x64,
+	0x72, 0x65, 0x73, 0x73, 0x53, 0x74, 0x72, 0x69, 0x6e, 0x67, 0x52, 0x09, 0x61, 0x75, 0x74, 0x68,
+	0x6f, 0x72, 0x69, 0x74, 0x79, 0x12, 0x72, 0x0a, 0x13, 0x6d, 0x6f, 0x72, 0x73, 0x65, 0x5f, 0x61,
+	0x63, 0x63, 0x6f, 0x75, 0x6e, 0x74, 0x5f, 0x73, 0x74, 0x61, 0x74, 0x65, 0x18, 0x02, 0x20, 0x01,
+	0x28, 0x0b, 0x32, 0x25, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x6d, 0x69,
+	0x67, 0x72, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x2e, 0x4d, 0x6f, 0x72, 0x73, 0x65, 0x41, 0x63, 0x63,
+	0x6f, 0x75, 0x6e, 0x74, 0x53, 0x74, 0x61, 0x74, 0x65, 0x42, 0x1b, 0xc8, 0xde, 0x1f, 0x00, 0xea,
+	0xde, 0x1f, 0x13, 0x6d, 0x6f, 0x72, 0x73, 0x65, 0x5f, 0x61, 0x63, 0x63, 0x6f, 0x75, 0x6e, 0x74,
+	0x5f, 0x73, 0x74, 0x61, 0x74, 0x65, 0x52, 0x11, 0x6d, 0x6f, 0x72, 0x73, 0x65, 0x41, 0x63, 0x63,
+	0x6f, 0x75, 0x6e, 0x74, 0x53, 0x74, 0x61, 0x74, 0x65, 0x3a, 0x0e, 0x82, 0xe7, 0xb0, 0x2a, 0x09,
+	0x61, 0x75, 0x74, 0x68, 0x6f, 0x72, 0x69, 0x74, 0x79, 0x22, 0x88, 0x01, 0x0a, 0x22, 0x4d, 0x73,
+	0x67, 0x43, 0x72, 0x65, 0x61, 0x74, 0x65, 0x4d, 0x6f, 0x72, 0x73, 0x65, 0x41, 0x63, 0x63, 0x6f,
+	0x75, 0x6e, 0x74, 0x53, 0x74, 0x61, 0x74, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65,
+	0x12, 0x2d, 0x0a, 0x0a, 0x73, 0x74, 0x61, 0x74, 0x65, 0x5f, 0x68, 0x61, 0x73, 0x68, 0x18, 0x01,
+	0x20, 0x01, 0x28, 0x0c, 0x42, 0x0e, 0xea, 0xde, 0x1f, 0x0a, 0x73, 0x74, 0x61, 0x74, 0x65, 0x5f,
+	0x68, 0x61, 0x73, 0x68, 0x52, 0x09, 0x73, 0x74, 0x61, 0x74, 0x65, 0x48, 0x61, 0x73, 0x68, 0x12,
+	0x33, 0x0a, 0x0c, 0x6e, 0x75, 0x6d, 0x5f, 0x61, 0x63, 0x63, 0x6f, 0x75, 0x6e, 0x74, 0x73, 0x18,
+	0x02, 0x20, 0x01, 0x28, 0x04, 0x42, 0x10, 0xea, 0xde, 0x1f, 0x0c, 0x6e, 0x75, 0x6d, 0x5f, 0x61,
+	0x63, 0x63, 0x6f, 0x75, 0x6e, 0x74, 0x73, 0x52, 0x0b, 0x6e, 0x75, 0x6d, 0x41, 0x63, 0x63, 0x6f,
+	0x75, 0x6e, 0x74, 0x73, 0x22, 0xcf, 0x01, 0x0a, 0x11, 0x4d, 0x73, 0x67, 0x43, 0x6c, 0x61, 0x69,
+	0x6d, 0x4d, 0x6f, 0x72, 0x73, 0x65, 0x50, 0x6f, 0x6b, 0x74, 0x12, 0x4a, 0x0a, 0x14, 0x73, 0x68,
+	0x61, 0x6e, 0x6e, 0x6f, 0x6e, 0x5f, 0x64, 0x65, 0x73, 0x74, 0x5f, 0x61, 0x64, 0x64, 0x72, 0x65,
+	0x73, 0x73, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x42, 0x18, 0xd2, 0xb4, 0x2d, 0x14, 0x63, 0x6f,
+	0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x53, 0x74, 0x72, 0x69,
+	0x6e, 0x67, 0x52, 0x12, 0x73, 0x68, 0x61, 0x6e, 0x6e, 0x6f, 0x6e, 0x44, 0x65, 0x73, 0x74, 0x41,
+	0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x12, 0x2a, 0x0a, 0x11, 0x6d, 0x6f, 0x72, 0x73, 0x65, 0x5f,
+	0x73, 0x72, 0x63, 0x5f, 0x61, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x18, 0x02, 0x20, 0x01, 0x28,
+	0x09, 0x52, 0x0f, 0x6d, 0x6f, 0x72, 0x73, 0x65, 0x53, 0x72, 0x63, 0x41, 0x64, 0x64, 0x72, 0x65,
+	0x73, 0x73, 0x12, 0x27, 0x0a, 0x0f, 0x6d, 0x6f, 0x72, 0x73, 0x65, 0x5f, 0x73, 0x69, 0x67, 0x6e,
+	0x61, 0x74, 0x75, 0x72, 0x65, 0x18, 0x03, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x0e, 0x6d, 0x6f, 0x72,
+	0x73, 0x65, 0x53, 0x69, 0x67, 0x6e, 0x61, 0x74, 0x75, 0x72, 0x65, 0x3a, 0x19, 0x82, 0xe7, 0xb0,
+	0x2a, 0x14, 0x73, 0x68, 0x61, 0x6e, 0x6e, 0x6f, 0x6e, 0x5f, 0x64, 0x65, 0x73, 0x74, 0x5f, 0x61,
+	0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x22, 0x50, 0x0a, 0x19, 0x4d, 0x73, 0x67, 0x43, 0x6c, 0x61,
+	0x69, 0x6d, 0x4d, 0x6f, 0x72, 0x73, 0x65, 0x50, 0x6f, 0x6b, 0x74, 0x52, 0x65, 0x73, 0x70, 0x6f,
+	0x6e, 0x73, 0x65, 0x12, 0x33, 0x0a, 0x07, 0x62, 0x61, 0x6c, 0x61, 0x6e, 0x63, 0x65, 0x18, 0x01,
+	0x20, 0x01, 0x28, 0x0b, 0x32, 0x19, 0x2e, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x62, 0x61,
+	0x73, 0x65, 0x2e, 0x76, 0x31, 0x62, 0x65, 0x74, 0x61, 0x31, 0x2e, 0x43, 0x6f, 0x69, 0x6e, 0x52,
+	0x07, 0x62, 0x61, 0x6c, 0x61, 0x6e, 0x63, 0x65, 0x32, 0xda, 0x02, 0x0a, 0x03, 0x4d, 0x73, 0x67,
+	0x12, 0x60, 0x0a, 0x0c, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x50, 0x61, 0x72, 0x61, 0x6d, 0x73,
+	0x12, 0x23, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x6d, 0x69, 0x67, 0x72,
+	0x61, 0x74, 0x69, 0x6f, 0x6e, 0x2e, 0x4d, 0x73, 0x67, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x50,
+	0x61, 0x72, 0x61, 0x6d, 0x73, 0x1a, 0x2b, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c,
+	0x2e, 0x6d, 0x69, 0x67, 0x72, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x2e, 0x4d, 0x73, 0x67, 0x55, 0x70,
+	0x64, 0x61, 0x74, 0x65, 0x50, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e,
+	0x73, 0x65, 0x12, 0x81, 0x01, 0x0a, 0x17, 0x43, 0x72, 0x65, 0x61, 0x74, 0x65, 0x4d, 0x6f, 0x72,
+	0x73, 0x65, 0x41, 0x63, 0x63, 0x6f, 0x75, 0x6e, 0x74, 0x53, 0x74, 0x61, 0x74, 0x65, 0x12, 0x2e,
+	0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x6d, 0x69, 0x67, 0x72, 0x61, 0x74,
+	0x69, 0x6f, 0x6e, 0x2e, 0x4d, 0x73, 0x67, 0x43, 0x72, 0x65, 0x61, 0x74, 0x65, 0x4d, 0x6f, 0x72,
+	0x73, 0x65, 0x41, 0x63, 0x63, 0x6f, 0x75, 0x6e, 0x74, 0x53, 0x74, 0x61, 0x74, 0x65, 0x1a, 0x36,
+	0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x6d, 0x69, 0x67, 0x72, 0x61, 0x74,
+	0x69, 0x6f, 0x6e, 0x2e, 0x4d, 0x73, 0x67, 0x43, 0x72, 0x65, 0x61, 0x74, 0x65, 0x4d, 0x6f, 0x72,
+	0x73, 0x65, 0x41, 0x63, 0x63, 0x6f, 0x75, 0x6e, 0x74, 0x53, 0x74, 0x61, 0x74, 0x65, 0x52, 0x65,
+	0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x66, 0x0a, 0x0e, 0x43, 0x6c, 0x61, 0x69, 0x6d, 0x4d,
+	0x6f, 0x72, 0x73, 0x65, 0x50, 0x6f, 0x6b, 0x74, 0x12, 0x25, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72,
+	0x6f, 0x6c, 0x6c, 0x2e, 0x6d, 0x69, 0x67, 0x72, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x2e, 0x4d, 0x73,
+	0x67, 0x43, 0x6c, 0x61, 0x69, 0x6d, 0x4d, 0x6f, 0x72, 0x73, 0x65, 0x50, 0x6f, 0x6b, 0x74, 0x1a,
+	0x2d, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x6d, 0x69, 0x67, 0x72, 0x61,
+	0x74, 0x69, 0x6f, 0x6e, 0x2e, 0x4d, 0x73, 0x67, 0x43, 0x6c, 0x61, 0x69, 0x6d, 0x4d, 0x6f, 0x72,
+	0x73, 0x65, 0x50, 0x6f, 0x6b, 0x74, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x1a, 0x05,
+	0x80, 0xe7, 0xb0, 0x2a, 0x01, 0x42, 0xb3, 0x01, 0xd8, 0xe2, 0x1e, 0x01, 0x0a, 0x16, 0x63, 0x6f,
+	0x6d, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x6d, 0x69, 0x67, 0x72, 0x61,
+	0x74, 0x69, 0x6f, 0x6e, 0x42, 0x07, 0x54, 0x78, 0x50, 0x72, 0x6f, 0x74, 0x6f, 0x50, 0x01, 0x5a,
+	0x23, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x73, 0x64, 0x6b, 0x2e, 0x69, 0x6f, 0x2f, 0x61, 0x70,
+	0x69, 0x2f, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2f, 0x6d, 0x69, 0x67, 0x72, 0x61,
+	0x74, 0x69, 0x6f, 0x6e, 0xa2, 0x02, 0x03, 0x50, 0x4d, 0x58, 0xaa, 0x02, 0x12, 0x50, 0x6f, 0x6b,
+	0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x4d, 0x69, 0x67, 0x72, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0xca,
+	0x02, 0x12, 0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x5c, 0x4d, 0x69, 0x67, 0x72, 0x61,
+	0x74, 0x69, 0x6f, 0x6e, 0xe2, 0x02, 0x1e, 0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x5c,
+	0x4d, 0x69, 0x67, 0x72, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x5c, 0x47, 0x50, 0x42, 0x4d, 0x65, 0x74,
+	0x61, 0x64, 0x61, 0x74, 0x61, 0xea, 0x02, 0x13, 0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c,
+	0x3a, 0x3a, 0x4d, 0x69, 0x67, 0x72, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x62, 0x06, 0x70, 0x72, 0x6f,
+	0x74, 0x6f, 0x33,
 }
 
 var (
@@ -3203,25 +3210,25 @@ func file_poktroll_migration_tx_proto_rawDescGZIP() []byte {
 
 var file_poktroll_migration_tx_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
 var file_poktroll_migration_tx_proto_goTypes = []interface{}{
-	(*MsgUpdateParams)(nil),             // 0: poktroll.migration.MsgUpdateParams
-	(*MsgUpdateParamsResponse)(nil),     // 1: poktroll.migration.MsgUpdateParamsResponse
-	(*MsgUploadMorseState)(nil),         // 2: poktroll.migration.MsgUploadMorseState
-	(*MsgUploadMorseStateResponse)(nil), // 3: poktroll.migration.MsgUploadMorseStateResponse
-	(*MsgClaimMorsePokt)(nil),           // 4: poktroll.migration.MsgClaimMorsePokt
-	(*MsgClaimMorsePoktResponse)(nil),   // 5: poktroll.migration.MsgClaimMorsePoktResponse
-	(*Params)(nil),                      // 6: poktroll.migration.Params
-	(*MorseAccountState)(nil),           // 7: poktroll.migration.MorseAccountState
-	(*v1beta1.Coin)(nil),                // 8: cosmos.base.v1beta1.Coin
+	(*MsgUpdateParams)(nil),                    // 0: poktroll.migration.MsgUpdateParams
+	(*MsgUpdateParamsResponse)(nil),            // 1: poktroll.migration.MsgUpdateParamsResponse
+	(*MsgCreateMorseAccountState)(nil),         // 2: poktroll.migration.MsgCreateMorseAccountState
+	(*MsgCreateMorseAccountStateResponse)(nil), // 3: poktroll.migration.MsgCreateMorseAccountStateResponse
+	(*MsgClaimMorsePokt)(nil),                  // 4: poktroll.migration.MsgClaimMorsePokt
+	(*MsgClaimMorsePoktResponse)(nil),          // 5: poktroll.migration.MsgClaimMorsePoktResponse
+	(*Params)(nil),                             // 6: poktroll.migration.Params
+	(*MorseAccountState)(nil),                  // 7: poktroll.migration.MorseAccountState
+	(*v1beta1.Coin)(nil),                       // 8: cosmos.base.v1beta1.Coin
 }
 var file_poktroll_migration_tx_proto_depIdxs = []int32{
 	6, // 0: poktroll.migration.MsgUpdateParams.params:type_name -> poktroll.migration.Params
-	7, // 1: poktroll.migration.MsgUploadMorseState.state:type_name -> poktroll.migration.MorseAccountState
+	7, // 1: poktroll.migration.MsgCreateMorseAccountState.morse_account_state:type_name -> poktroll.migration.MorseAccountState
 	8, // 2: poktroll.migration.MsgClaimMorsePoktResponse.balance:type_name -> cosmos.base.v1beta1.Coin
 	0, // 3: poktroll.migration.Msg.UpdateParams:input_type -> poktroll.migration.MsgUpdateParams
-	2, // 4: poktroll.migration.Msg.UploadMorseState:input_type -> poktroll.migration.MsgUploadMorseState
+	2, // 4: poktroll.migration.Msg.CreateMorseAccountState:input_type -> poktroll.migration.MsgCreateMorseAccountState
 	4, // 5: poktroll.migration.Msg.ClaimMorsePokt:input_type -> poktroll.migration.MsgClaimMorsePokt
 	1, // 6: poktroll.migration.Msg.UpdateParams:output_type -> poktroll.migration.MsgUpdateParamsResponse
-	3, // 7: poktroll.migration.Msg.UploadMorseState:output_type -> poktroll.migration.MsgUploadMorseStateResponse
+	3, // 7: poktroll.migration.Msg.CreateMorseAccountState:output_type -> poktroll.migration.MsgCreateMorseAccountStateResponse
 	5, // 8: poktroll.migration.Msg.ClaimMorsePokt:output_type -> poktroll.migration.MsgClaimMorsePoktResponse
 	6, // [6:9] is the sub-list for method output_type
 	3, // [3:6] is the sub-list for method input_type
@@ -3263,7 +3270,7 @@ func file_poktroll_migration_tx_proto_init() {
 			}
 		}
 		file_poktroll_migration_tx_proto_msgTypes[2].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*MsgUploadMorseState); i {
+			switch v := v.(*MsgCreateMorseAccountState); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -3275,7 +3282,7 @@ func file_poktroll_migration_tx_proto_init() {
 			}
 		}
 		file_poktroll_migration_tx_proto_msgTypes[3].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*MsgUploadMorseStateResponse); i {
+			switch v := v.(*MsgCreateMorseAccountStateResponse); i {
 			case 0:
 				return &v.state
 			case 1:
