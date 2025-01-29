@@ -3,25 +3,51 @@ package keeper
 import (
 	"context"
 
-	errorsmod "cosmossdk.io/errors"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"github.com/pokt-network/poktroll/x/migration/types"
 )
 
-func (k msgServer) CreateMorseAccountState(goCtx context.Context, msg *types.MsgCreateMorseAccountState) (*types.MsgCreateMorseAccountStateResponse, error) {
-	ctx := sdk.UnwrapSDKContext(goCtx)
+func (k msgServer) CreateMorseAccountState(ctx context.Context, msg *types.MsgCreateMorseAccountState) (*types.MsgCreateMorseAccountStateResponse, error) {
+	sdkCtx := sdk.UnwrapSDKContext(ctx)
+
+	if err := msg.ValidateBasic(); err != nil {
+		return nil, err
+	}
 
 	// Check if the value already exists
-	_, isFound := k.GetMorseAccountState(ctx)
+	_, isFound := k.GetMorseAccountState(sdkCtx)
 	if isFound {
-		return nil, errorsmod.Wrap(sdkerrors.ErrInvalidRequest, "already set")
+		return nil, status.Error(
+			codes.FailedPrecondition,
+			sdkerrors.ErrInvalidRequest.Wrap("already set").Error(),
+		)
 	}
 
 	k.SetMorseAccountState(
-		ctx,
+		sdkCtx,
 		msg.MorseAccountState,
 	)
-	return &types.MsgCreateMorseAccountStateResponse{}, nil
+
+	stateHash, err := msg.MorseAccountState.GetHash()
+	if err != nil {
+		return nil, err
+	}
+
+	if err = sdkCtx.EventManager().EmitTypedEvent(
+		&types.EventCreateMorseAccountState{
+			Height:    sdkCtx.BlockHeight(),
+			StateHash: stateHash,
+		},
+	); err != nil {
+		return nil, err
+	}
+
+	return &types.MsgCreateMorseAccountStateResponse{
+		StateHash:   stateHash,
+		NumAccounts: uint64(len(msg.MorseAccountState.Accounts)),
+	}, nil
 }

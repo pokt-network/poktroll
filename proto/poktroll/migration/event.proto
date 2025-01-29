@@ -1,0 +1,18 @@
+syntax = "proto3";
+package poktroll.migration;
+
+option go_package = "github.com/pokt-network/poktroll/x/migration/types";
+option (gogoproto.stable_marshaler_all) = true;
+
+import "cosmos_proto/cosmos.proto";
+import "gogoproto/gogo.proto";
+import "cosmos/base/v1beta1/coin.proto";
+
+import "poktroll/shared/service.proto";
+import "poktroll/migration/types.proto";
+
+// EventUploadMorseState is emitted when a new state hash is uploaded.
+message EventCreateMorseAccountState {
+  int64 height = 1 [(gogoproto.jsontag) = "height"];
+  bytes state_hash = 3 [(gogoproto.jsontag) = "state_hash"];
+}
