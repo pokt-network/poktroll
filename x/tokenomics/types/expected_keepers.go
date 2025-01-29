@@ -9,6 +9,7 @@ import (
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
+	migrationtypes "github.com/pokt-network/poktroll/x/migration/types"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 	servicetypes "github.com/pokt-network/poktroll/x/service/types"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
@@ -97,4 +98,9 @@ type ServiceKeeper interface {
 	SetService(ctx context.Context, service sharedtypes.Service)
 	GetParams(ctx context.Context) servicetypes.Params
 	SetParams(ctx context.Context, params servicetypes.Params) error
+}
+
+type MigrationKeeper interface {
+	SetMorseAccountState(ctx context.Context, morseAccountState migrationtypes.MorseAccountState)
+	GetMorseAccountState(ctx context.Context) (migrationtypes.MorseAccountState, bool)
 }

@@ -3,7 +3,6 @@ package testmigration
 import (
 	"encoding/binary"
 	"fmt"
-	"math/rand"
 
 	cometcrypto "github.com/cometbft/cometbft/crypto/ed25519"
 	cmtjson "github.com/cometbft/cometbft/libs/json"
@@ -59,9 +58,8 @@ func NewMorseStateExportAndAccountState(
 	}
 
 	for i := 1; i < numAccounts+1; i++ {
-		seedUint := rand.Uint64()
 		seedBz := make([]byte, 8)
-		binary.LittleEndian.PutUint64(seedBz, seedUint)
+		binary.LittleEndian.PutUint64(seedBz, uint64(i))
 		privKey := cometcrypto.GenPrivKeyFromSecret(seedBz)
 		pubKey := privKey.PubKey()
 		balanceAmount := int64(1e6*i + i)                                 // i_000_00i
