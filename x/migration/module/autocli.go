@@ -17,6 +17,12 @@ func (am AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 					Use:       "params",
 					Short:     "Shows the parameters of the module",
 				},
+				{
+					RpcMethod: "MorseAccountState",
+					Use:       "show-morse-account-state",
+					Short:     "show morse_account_state",
+					Skip:      true,
+				},
 				// this line is used by ignite scaffolding # autocli/query
 			},
 		},
@@ -27,6 +33,13 @@ func (am AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 				{
 					RpcMethod: "UpdateParams",
 					Skip:      true, // skipped because authority gated
+				},
+				{
+					RpcMethod:      "CreateMorseAccountState",
+					Use:            "create-morse-account-state [accounts]",
+					Short:          "Create morse_account_state",
+					PositionalArgs: []*autocliv1.PositionalArgDescriptor{{ProtoField: "accounts"}},
+					Skip:           true,
 				},
 				// this line is used by ignite scaffolding # autocli/tx
 			},

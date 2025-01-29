@@ -19,7 +19,8 @@ import (
 const _ = grpc.SupportPackageIsVersion8
 
 const (
-	Msg_UpdateParams_FullMethodName = "/poktroll.migration.Msg/UpdateParams"
+	Msg_UpdateParams_FullMethodName            = "/poktroll.migration.Msg/UpdateParams"
+	Msg_CreateMorseAccountState_FullMethodName = "/poktroll.migration.Msg/CreateMorseAccountState"
 )
 
 // MsgClient is the client API for Msg service.
@@ -31,6 +32,7 @@ type MsgClient interface {
 	// UpdateParams defines a (governance) operation for updating the module
 	// parameters. The authority defaults to the x/gov module account.
 	UpdateParams(ctx context.Context, in *MsgUpdateParams, opts ...grpc.CallOption) (*MsgUpdateParamsResponse, error)
+	CreateMorseAccountState(ctx context.Context, in *MsgCreateMorseAccountState, opts ...grpc.CallOption) (*MsgCreateMorseAccountStateResponse, error)
 }
 
 type msgClient struct {
@@ -51,6 +53,16 @@ func (c *msgClient) UpdateParams(ctx context.Context, in *MsgUpdateParams, opts 
 	return out, nil
 }
 
+func (c *msgClient) CreateMorseAccountState(ctx context.Context, in *MsgCreateMorseAccountState, opts ...grpc.CallOption) (*MsgCreateMorseAccountStateResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(MsgCreateMorseAccountStateResponse)
+	err := c.cc.Invoke(ctx, Msg_CreateMorseAccountState_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // MsgServer is the server API for Msg service.
 // All implementations must embed UnimplementedMsgServer
 // for forward compatibility
@@ -60,6 +72,7 @@ type MsgServer interface {
 	// UpdateParams defines a (governance) operation for updating the module
 	// parameters. The authority defaults to the x/gov module account.
 	UpdateParams(context.Context, *MsgUpdateParams) (*MsgUpdateParamsResponse, error)
+	CreateMorseAccountState(context.Context, *MsgCreateMorseAccountState) (*MsgCreateMorseAccountStateResponse, error)
 	mustEmbedUnimplementedMsgServer()
 }
 
@@ -69,6 +82,9 @@ type UnimplementedMsgServer struct {
 
 func (UnimplementedMsgServer) UpdateParams(context.Context, *MsgUpdateParams) (*MsgUpdateParamsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpdateParams not implemented")
+}
+func (UnimplementedMsgServer) CreateMorseAccountState(context.Context, *MsgCreateMorseAccountState) (*MsgCreateMorseAccountStateResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CreateMorseAccountState not implemented")
 }
 func (UnimplementedMsgServer) mustEmbedUnimplementedMsgServer() {}
 
@@ -101,6 +117,24 @@ func _Msg_UpdateParams_Handler(srv interface{}, ctx context.Context, dec func(in
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Msg_CreateMorseAccountState_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(MsgCreateMorseAccountState)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MsgServer).CreateMorseAccountState(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Msg_CreateMorseAccountState_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MsgServer).CreateMorseAccountState(ctx, req.(*MsgCreateMorseAccountState))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Msg_ServiceDesc is the grpc.ServiceDesc for Msg service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -111,6 +145,10 @@ var Msg_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "UpdateParams",
 			Handler:    _Msg_UpdateParams_Handler,
+		},
+		{
+			MethodName: "CreateMorseAccountState",
+			Handler:    _Msg_CreateMorseAccountState_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

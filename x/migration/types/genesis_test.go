@@ -3,8 +3,9 @@ package types_test
 import (
 	"testing"
 
-	"github.com/pokt-network/poktroll/x/migration/types"
 	"github.com/stretchr/testify/require"
+
+	"github.com/pokt-network/poktroll/x/migration/types"
 )
 
 func TestGenesisState_Validate(t *testing.T) {
@@ -19,9 +20,10 @@ func TestGenesisState_Validate(t *testing.T) {
 			valid:    true,
 		},
 		{
-			desc:     "valid genesis state",
+			desc: "valid genesis state",
 			genState: &types.GenesisState{
 
+				MorseAccountState: &types.MorseAccountState{},
 				// this line is used by starport scaffolding # types/genesis/validField
 			},
 			valid: true,
