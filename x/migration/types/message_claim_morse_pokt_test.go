@@ -1,6 +1,7 @@
 package types
 
 import (
+	"encoding/hex"
 	"testing"
 
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
@@ -16,14 +17,23 @@ func TestMsgClaimMorsePokt_ValidateBasic(t *testing.T) {
 		err  error
 	}{
 		{
+			name: "invalid source address",
+			msg: MsgClaimMorsePokt{
+				MorseSrcAddress:    "invalid_address",
+				ShannonDestAddress: sample.AccAddress(),
+			},
+			err: sdkerrors.ErrInvalidAddress,
+		}, {
 			name: "invalid address",
 			msg: MsgClaimMorsePokt{
+				MorseSrcAddress:    hex.EncodeToString(sample.ConsAddress().Bytes()),
 				ShannonDestAddress: "invalid_address",
 			},
 			err: sdkerrors.ErrInvalidAddress,
 		}, {
-			name: "valid address",
+			name: "valid addresses",
 			msg: MsgClaimMorsePokt{
+				MorseSrcAddress:    hex.EncodeToString(sample.ConsAddress().Bytes()),
 				ShannonDestAddress: sample.AccAddress(),
 			},
 		},
