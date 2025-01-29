@@ -44,7 +44,7 @@ There are two types of Full Nodes:
 ## Pocket Network Full Nodes
 
 Within Pocket Network, the role of Full Nodes is pivotal for Node Runners. These
-nodes needed for off-chain entities like [RelayMiners (Suppliers)](./supplier_walkthrough.md) and
+nodes needed for offchain entities like [RelayMiners (Suppliers)](./supplier_walkthrough.md) and
 [Gateways](./gateway_walkthrough.md), which rely on interaction with the Pocket Network
 blockchain for full functionality.
 

@@ -44,7 +44,7 @@ func TestMsgUpdateParams(t *testing.T) {
 			},
 
 			shouldError:    true,
-			expectedErrMsg: "the provided authority address does not match the on-chain governance address",
+			expectedErrMsg: "the provided authority address does not match the onchain governance address",
 		},
 		{
 			desc: "invalid: dao reward address missing",

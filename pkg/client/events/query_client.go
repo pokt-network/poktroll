@@ -63,7 +63,7 @@ func (ebc *eventsBytesAndConn) Close() {
 }
 
 // NewEventsQueryClient returns a new events query client which is used to
-// subscribe to on-chain events matching the given query.
+// subscribe to onchain events matching the given query.
 //
 // Available options:
 //   - WithDialer

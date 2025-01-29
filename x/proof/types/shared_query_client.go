@@ -11,7 +11,7 @@ var _ client.SharedQueryClient = (*SharedKeeperQueryClient)(nil)
 
 // SharedKeeperQueryClient is a thin wrapper around the SharedKeeper.
 // It does not rely on the QueryClient, and therefore does not make any
-// network requests as in the off-chain implementation.
+// network requests as in the offchain implementation.
 type SharedKeeperQueryClient struct {
 	sharedKeeper  SharedKeeper
 	sessionKeeper SessionKeeper
@@ -29,7 +29,7 @@ func NewSharedKeeperQueryClient(
 	}
 }
 
-// GetParams queries & returns the shared module on-chain parameters.
+// GetParams queries & returns the shared module onchain parameters.
 func (sqc *SharedKeeperQueryClient) GetParams(
 	ctx context.Context,
 ) (params *sharedtypes.Params, err error) {

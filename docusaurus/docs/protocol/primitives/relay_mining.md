@@ -16,7 +16,7 @@ the [relay mining paper](https://arxiv.org/abs/2305.10672) as a reference for wr
 
 ## Introduction
 
-tl;dr Modulate on-chain difficulty up (similar to Bitcoin) so we can accommodate
+tl;dr Modulate onchain difficulty up (similar to Bitcoin) so we can accommodate
 surges in relays and have no upper limit on the number of relays per session.
 
 Relay Mining is the only solution in Web3 to incentivize read-only requests
@@ -154,8 +154,8 @@ sequenceDiagram
 
         Note over proto_part,proto_actor: ref: Interaction (other seq. diagram)
 
-        proto_part--xproto_actor: An action of protocol participant updates on-chain state of protocol actor
-        proto_part-xproto_actor: An action of protocol participant references on-chain state of protocol actor
+        proto_part--xproto_actor: An action of protocol participant updates onchain state of protocol actor
+        proto_part-xproto_actor: An action of protocol participant references onchain state of protocol actor
 
         break Time gap
             proto_actor->>proto_actor: Protocol actor performs some independent action

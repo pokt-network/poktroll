@@ -287,8 +287,8 @@ func Test_ParseSupplierConfigs_Services(t *testing.T) {
 				owner_address: %s
 				operator_address: %s
 				default_rev_share_percent:
-					%s: 50.5
-					%s: 49.5
+					%s: 51
+					%s: 49
 				stake_amount: 1000upokt
 				services:
 					# Service with default rev share
@@ -322,11 +322,11 @@ func Test_ParseSupplierConfigs_Services(t *testing.T) {
 						RevShare: []*types.ServiceRevenueShare{
 							{
 								Address:            firstShareHolderAddress,
-								RevSharePercentage: 50.5,
+								RevSharePercentage: 51,
 							},
 							{
 								Address:            secondShareHolderAddress,
-								RevSharePercentage: 49.5,
+								RevSharePercentage: 49,
 							},
 						},
 					},
@@ -727,24 +727,6 @@ func Test_ParseSupplierConfigs_Services(t *testing.T) {
 							%s: 49
 				`, ownerAddress, operatorAddress, firstShareHolderAddress, ""),
 			expectedError: config.ErrSupplierConfigUnmarshalYAML,
-		},
-		{
-			desc: "negative revenue share allocation is disallowed",
-			inputConfig: fmt.Sprintf(`
-				owner_address: %s
-				operator_address: %s
-				stake_amount: 1000upokt
-				services:
-				  - service_id: svc
-				    endpoints:
-				    - publicly_exposed_url: http://pokt.network:8081
-				      rpc_type: json_rpc
-						rev_share_percent:
-							%s: 90
-							%s: 11
-							%s: -1
-				`, ownerAddress, operatorAddress, ownerAddress, firstShareHolderAddress, secondShareHolderAddress),
-			expectedError: sharedtypes.ErrSharedInvalidRevShare,
 		},
 		{
 			desc: "errors when the rev share config is empty",

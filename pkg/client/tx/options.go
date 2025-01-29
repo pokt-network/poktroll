@@ -1,6 +1,10 @@
 package tx
 
-import "github.com/pokt-network/poktroll/pkg/client"
+import (
+	cosmostypes "github.com/cosmos/cosmos-sdk/types"
+
+	"github.com/pokt-network/poktroll/pkg/client"
+)
 
 // WithCommitTimeoutBlocks sets the timeout duration in terms of number of blocks
 // for the client to wait for broadcast transactions to be committed before
@@ -26,5 +30,12 @@ func WithSigningKeyName(keyName string) client.TxClientOption {
 func WithConnRetryLimit(limit int) client.TxClientOption {
 	return func(client client.TxClient) {
 		client.(*txClient).connRetryLimit = limit
+	}
+}
+
+// WithGasPrices sets the gas price to be used when constructing transactions.
+func WithGasPrices(gasPrices cosmostypes.DecCoins) client.TxClientOption {
+	return func(client client.TxClient) {
+		client.(*txClient).gasPrices = gasPrices
 	}
 }

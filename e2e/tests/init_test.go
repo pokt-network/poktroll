@@ -171,7 +171,7 @@ func (s *suite) ThePocketdBinaryShouldExitWithoutError() {
 func (s *suite) TheUserRunsTheCommand(cmd string) {
 	cmds := strings.Split(cmd, " ")
 	res, err := s.pocketd.RunCommand(cmds...)
-	require.NoError(s, err, "error running command %s", cmd)
+	require.NoError(s, err, "error running command %s due to: %v", cmd, err)
 	s.pocketd.result = res
 }
 
@@ -192,7 +192,7 @@ func (s *suite) TheUserSendsUpoktFromAccountToAccount(amount int64, accName1, ac
 		"-y",
 	}
 	res, err := s.pocketd.RunCommandOnHost("", args...)
-	require.NoError(s, err, "error sending upokt from %q to %q", accName1, accName2)
+	require.NoError(s, err, "error sending upokt from %q to %q due to: %v", accName1, accName2, err)
 	s.pocketd.result = res
 }
 
@@ -267,6 +267,7 @@ func (s *suite) TheUserStakesAWithUpoktFromTheAccount(actorType string, amount i
 		"-y",
 	}
 	res, err := s.pocketd.RunCommandOnHost("", args...)
+	require.NoError(s, err, "error staking %s due to: %v", actorType, err)
 
 	// Remove the temporary config file
 	err = os.Remove(configFile.Name())
@@ -301,7 +302,7 @@ func (s *suite) TheUserStakesAWithUpoktForServiceFromTheAccount(actorType string
 		"-y",
 	}
 	res, err := s.pocketd.RunCommandOnHost("", args...)
-	require.NoError(s, err, "error staking %s for service %s", actorType, serviceId)
+	require.NoError(s, err, "error staking %s for service %s due to: %v", actorType, serviceId, err)
 
 	// Remove the temporary config file
 	err = os.Remove(configFile.Name())
@@ -372,7 +373,7 @@ func (s *suite) TheUserUnstakesAFromTheAccount(actorType string, accName string)
 	}
 
 	res, err := s.pocketd.RunCommandOnHost("", args...)
-	require.NoError(s, err, "error unstaking %s", actorType)
+	require.NoError(s, err, "error unstaking %s due to: %v", actorType, err)
 
 	// Get current balance
 	balanceKey := accBalanceKey(accName)
@@ -463,7 +464,7 @@ func (s *suite) TheApplicationSendsTheSupplierASuccessfulRequestForServiceWithPa
 	appAddr := accNameToAddrMap[appName]
 
 	res, err := s.pocketd.RunCurlWithRetry(pathUrl, serviceId, method, path, appAddr, requestData, 5)
-	require.NoError(s, err, "error sending relay request from app %q to supplier %q for service %q", appName, supplierOperatorName, serviceId)
+	require.NoError(s, err, "error sending relay request from app %q to supplier %q for service %q due to: %v", appName, supplierOperatorName, serviceId, err)
 
 	var jsonContent json.RawMessage
 	err = json.Unmarshal([]byte(res.Stdout), &jsonContent)
@@ -569,11 +570,22 @@ func (s *suite) TheUserWaitsForTheApplicationForAccountPeriodToFinish(accName, p
 
 func (s *suite) getStakedAmount(actorType, accName string) (int, bool) {
 	s.Helper()
+
+	listCommand := fmt.Sprintf("list-%s", actorType)
+	// TODO_TECHDEBT(@olshansky): As of #1028, we started migrating some parts
+	// of the CLI to use AutoCLI which made list commands pluralized.
+	// E.g. "list-suppliers" instead of "list-supplier".
+	// Over time, all actor commands will be updated like so and this if can
+	// be removed.
+	if actorType == suppliertypes.ModuleName {
+		listCommand = fmt.Sprintf("%ss", listCommand)
+	}
 	args := []string{
 		"query",
 		actorType,
-		fmt.Sprintf("list-%s", actorType),
+		listCommand,
 	}
+
 	res, err := s.pocketd.RunCommandOnHostWithRetry("", numQueryRetries, args...)
 	require.NoError(s, err, "error getting %s", actorType)
 	s.pocketd.result = res
@@ -662,7 +674,7 @@ func (s *suite) buildSupplierMap() {
 	argsAndFlags := []string{
 		"query",
 		"supplier",
-		"list-supplier",
+		"list-suppliers",
 		fmt.Sprintf("--%s=json", cometcli.OutputFlag),
 	}
 	res, err := s.pocketd.RunCommandOnHostWithRetry("", numQueryRetries, argsAndFlags...)
@@ -752,7 +764,7 @@ func (s *suite) getSupplierInfo(supplierOperatorName string) *sharedtypes.Suppli
 	}
 
 	res, err := s.pocketd.RunCommandOnHostWithRetry("", numQueryRetries, args...)
-	require.NoError(s, err, "error getting supplier %s", supplierOperatorAddr)
+	require.NoError(s, err, "error getting supplier %s due to error: %v", supplierOperatorAddr, err)
 	s.pocketd.result = res
 
 	var resp suppliertypes.QueryGetSupplierResponse

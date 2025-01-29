@@ -13,7 +13,7 @@ import (
 var _ client.SharedQueryClient = (*sharedQuerier)(nil)
 
 // sharedQuerier is a wrapper around the sharedtypes.QueryClient that enables the
-// querying of on-chain shared information through a single exposed method
+// querying of onchain shared information through a single exposed method
 // which returns an sharedtypes.Session struct
 type sharedQuerier struct {
 	clientConn    grpc.ClientConn
@@ -43,7 +43,7 @@ func NewSharedQuerier(deps depinject.Config) (client.SharedQueryClient, error) {
 	return querier, nil
 }
 
-// GetParams queries & returns the shared module on-chain parameters.
+// GetParams queries & returns the shared module onchain parameters.
 //
 // TODO_TECHDEBT(#543): We don't really want to have to query the params for every method call.
 // Once `ModuleParamsClient` is implemented, use its replay observable's `#Last()` method

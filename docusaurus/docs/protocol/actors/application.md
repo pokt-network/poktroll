@@ -17,7 +17,7 @@ services available on Pocket Network as a function of volume and time.
 
 ## Schema
 
-The on-chain representation of an `Application` can be found at [application.proto](https://github.com/pokt-network/poktroll/blob/main/proto/poktroll/application/application.proto).
+The onchain representation of an `Application` can be found at [application.proto](https://github.com/pokt-network/poktroll/blob/main/proto/poktroll/application/application.proto).
 
 ## Configuration
 

@@ -1,7 +1,7 @@
 package types
 
 // GetSessionStartHeight returns the block height at which the session containing
-// queryHeight starts, given the passed shared on-chain parameters.
+// queryHeight starts, given the passed shared onchain parameters.
 // Returns 0 if the block height is not a consensus produced block.
 // Example: If NumBlocksPerSession == 4, sessions start at blocks 1, 5, 9, etc.
 func GetSessionStartHeight(sharedParams *Params, queryHeight int64) int64 {
@@ -17,7 +17,7 @@ func GetSessionStartHeight(sharedParams *Params, queryHeight int64) int64 {
 }
 
 // GetSessionEndHeight returns the block height at which the session containing
-// queryHeight ends, given the passed shared on-chain parameters.
+// queryHeight ends, given the passed shared onchain parameters.
 // Returns 0 if the block height is not a consensus produced block.
 // Example: If NumBlocksPerSession == 4, sessions end at blocks 4, 8, 11, etc.
 func GetSessionEndHeight(sharedParams *Params, queryHeight int64) int64 {
@@ -32,8 +32,8 @@ func GetSessionEndHeight(sharedParams *Params, queryHeight int64) int64 {
 }
 
 // GetSessionNumber returns the session number of the session containing queryHeight,
-// given the passed on-chain shared parameters.
-// shared on-chain parameters.
+// given the passed onchain shared parameters.
+// shared onchain parameters.
 // Returns session number 0 if the block height is not a consensus produced block.
 // Returns session number 1 for block 1 to block NumBlocksPerSession - 1 (inclusive).
 // i.e. If NubBlocksPerSession == 4, session == 1 for [1, 4], session == 2 for [5, 8], etc.
@@ -171,7 +171,7 @@ func GetSessionEndToProofWindowCloseBlocks(params *Params) int64 {
 }
 
 // GetSettlementSessionEndHeight returns the end height of the session in which the
-// session that includes queryHeight is settled, given the passed shared on-chain parameters.
+// session that includes queryHeight is settled, given the passed shared onchain parameters.
 func GetSettlementSessionEndHeight(sharedParams *Params, queryHeight int64) int64 {
 	return GetSessionEndToProofWindowCloseBlocks(sharedParams) +
 		GetSessionEndHeight(sharedParams, queryHeight) + 1

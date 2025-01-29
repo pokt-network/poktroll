@@ -1,4 +1,4 @@
-// Package events provides a generic client for subscribing to on-chain events
+// Package events provides a generic client for subscribing to onchain events
 // via an EventsQueryClient and transforming the received events into the type
 // defined by the EventsReplayClient's generic type parameter.
 //

@@ -5,7 +5,6 @@ package e2e
 import (
 	"bytes"
 	"fmt"
-	"net"
 	"net/url"
 	"os"
 	"os/exec"
@@ -26,11 +25,6 @@ var (
 	defaultHome = os.Getenv("POKTROLLD_HOME")
 	// defaultPathURL used by curl commands to send relay requests
 	defaultPathURL = os.Getenv("PATH_URL")
-	// defaultPathHostOverride overrides the host in the URL used to send requests
-	// Since the current DevNet infrastructure does not support arbitrary subdomains,
-	// this is used to specify the host to connect to and the full host (with the service as a subdomain)
-	// will be sent in the "Host" request header.
-	defaultPathHostOverride = os.Getenv("PATH_HOST_OVERRIDE")
 	// defaultDebugOutput provides verbose output on manipulations with binaries (cli command, stdout, stderr)
 	defaultDebugOutput = os.Getenv("E2E_DEBUG_OUTPUT")
 )
@@ -99,7 +93,18 @@ func (p *pocketdBin) RunCommandOnHostWithRetry(rpcUrl string, numRetries uint8, 
 	if err == nil {
 		return res, nil
 	}
-	// TODO_HACK: Figure out a better solution for retries. A parameter? Exponential backoff? What else?
+	// DEV_NOTE: Intentionally keeping a print statement here so errors are
+	// very visible even though the output may be noisy.
+	fmt.Printf(`
+----------------------------------------
+Retrying command due to error:
+	- RPC URL:      %s
+	- Arguments:    %v
+	- Response:     %v
+	- Error:        %v
+----------------------------------------
+`, rpcUrl, args, res, err)
+	// TODO_TECHDEBT(@bryanchriswhite): Figure out a better solution for retries. A parameter? Exponential backoff? What else?
 	time.Sleep(5 * time.Second)
 	return p.RunCommandOnHostWithRetry(rpcUrl, numRetries-1, args...)
 }
@@ -182,27 +187,11 @@ func (p *pocketdBin) runPocketCmd(args ...string) (*commandResult, error) {
 	return r, err
 }
 
-// runCurlPostCmd is a helper to run a command using the local pocketd binary with the flags provided
+// runCurlCmd is a helper to run a command using the local pocketd binary with the flags provided
 func (p *pocketdBin) runCurlCmd(rpcBaseURL, service, method, path, appAddr, data string, args ...string) (*commandResult, error) {
 	rpcUrl, err := url.Parse(rpcBaseURL)
 	if err != nil {
 		return nil, err
-	}
-
-	// Get the virtual host that will be sent in the "Host" request header
-	virtualHost := getVirtualHostFromUrlForService(rpcUrl, service)
-
-	// TODO_HACK: As of PR #879, the DevNet infrastructure does not support routing
-	// requests to arbitrary subdomains due to TLS certificate-related complexities.
-	// In such environment, defaultPathHostOverride (which contains no subdomain)
-	// is used as:
-	//   1. The gateway's 'host:port' to connect to
-	//   2. A base to which the service is added as a subdomain then set as the "Host" request header.
-	//      (i.e. Host: <service>.<defaultPathHostOverride>)
-	//
-	// Override the actual connection address if the environment requires it.
-	if defaultPathHostOverride != "" {
-		rpcUrl.Host = defaultPathHostOverride
 	}
 
 	// Ensure that if a path is provided, it starts with a "/".
@@ -225,8 +214,9 @@ func (p *pocketdBin) runCurlCmd(rpcBaseURL, service, method, path, appAddr, data
 		"-v",                                   // verbose output
 		"-sS",                                  // silent with error
 		"-H", `Content-Type: application/json`, // HTTP headers
-		"-H", fmt.Sprintf("Host: %s", virtualHost), // Add virtual host header
+		"-H", fmt.Sprintf("Host: %s", rpcUrl.Host), // Add virtual host header
 		"-H", fmt.Sprintf("X-App-Address: %s", appAddr),
+		"-H", fmt.Sprintf("target-service-id: %s", service),
 		rpcUrl.String(),
 	}
 
@@ -261,41 +251,4 @@ func (p *pocketdBin) runCurlCmd(rpcBaseURL, service, method, path, appAddr, data
 	}
 
 	return r, err
-}
-
-// formatURLString returns RESTful or JSON-RPC API endpoint URL depending
-// on the parameters provided.
-func formatURLString(serviceAlias, rpcUrl, path string) string {
-	// For JSON-RPC APIs, the path should be empty
-	if len(path) == 0 {
-		return fmt.Sprintf("http://%s.%s/v1", serviceAlias, rpcUrl)
-	}
-
-	// For RESTful APIs, the path should not be empty.
-	// We remove the leading / to make the format string below easier to read.
-	if path[0] == '/' {
-		path = path[1:]
-	}
-	return fmt.Sprintf("http://%s.%s/v1/%s", serviceAlias, rpcUrl, path)
-}
-
-// getVirtualHostFromUrlForService returns a virtual host taking into consideration
-// the URL's host and the service if it's non-empty.
-// Specifically, it:
-//  1. Extract's the host from the rpcURL
-//  2. Prefixes the service as a subdomain to (1) the given rpcUrl host stripped of the port
-//
-// TODO_HACK: This is needed as of PR #879 because the DevNet infrastructure does
-// not support arbitrary subdomains due to TLS certificate-related complexities.
-func getVirtualHostFromUrlForService(rpcUrl *url.URL, service string) string {
-	// Strip port if it exists and add service prefix
-	host, _, err := net.SplitHostPort(rpcUrl.Host)
-	if err != nil {
-		// err is non-nil if rpcUrl.Host does not have a port.
-		// Use the entire host as is
-		host = rpcUrl.Host
-	}
-	virtualHost := fmt.Sprintf("%s.%s", service, host)
-
-	return virtualHost
 }

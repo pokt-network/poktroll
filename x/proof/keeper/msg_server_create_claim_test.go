@@ -86,7 +86,7 @@ func TestMsgServer_CreateClaim_Success(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.desc, func(t *testing.T) {
-			// Set block height to 1 so there is a valid session on-chain.
+			// Set block height to 1 so there is a valid session onchain.
 			blockHeight := int64(1)
 			blockHeightOpt := keepertest.WithBlockHeight(blockHeight)
 
@@ -201,7 +201,7 @@ func TestMsgServer_CreateClaim_Success(t *testing.T) {
 func TestMsgServer_CreateClaim_Error_OutsideOfWindow(t *testing.T) {
 	var claimWindowOpenBlockHash []byte
 
-	// Set block height to 1 so there is a valid session on-chain.
+	// Set block height to 1 so there is a valid session onchain.
 	blockHeightOpt := keepertest.WithBlockHeight(1)
 	keepers, ctx := keepertest.NewProofModuleKeepers(t, blockHeightOpt)
 	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
@@ -326,7 +326,7 @@ func TestMsgServer_CreateClaim_Error_OutsideOfWindow(t *testing.T) {
 }
 
 func TestMsgServer_CreateClaim_Error(t *testing.T) {
-	// Set block height to 1 so there is a valid session on-chain.
+	// Set block height to 1 so there is a valid session onchain.
 	blockHeightOpt := keepertest.WithBlockHeight(1)
 	keepers, ctx := keepertest.NewProofModuleKeepers(t, blockHeightOpt)
 	srv := keeper.NewMsgServerImpl(*keepers.Keeper)
@@ -412,7 +412,7 @@ func TestMsgServer_CreateClaim_Error(t *testing.T) {
 		expectedErr error
 	}{
 		{
-			desc: "on-chain session ID must match claim msg session ID",
+			desc: "onchain session ID must match claim msg session ID",
 			claimMsgFn: func(t *testing.T) *types.MsgCreateClaim {
 				return newTestClaimMsg(t,
 					sessionStartHeight,
@@ -427,7 +427,7 @@ func TestMsgServer_CreateClaim_Error(t *testing.T) {
 			expectedErr: status.Error(
 				codes.InvalidArgument,
 				types.ErrProofInvalidSessionId.Wrapf(
-					"session ID does not match on-chain session ID; expected %q, got %q",
+					"session ID does not match onchain session ID; expected %q, got %q",
 					sessionRes.GetSession().GetSessionId(),
 					"invalid_session_id",
 				).Error(),
@@ -456,12 +456,12 @@ func TestMsgServer_CreateClaim_Error(t *testing.T) {
 			),
 		},
 		{
-			desc: "claim msg supplier operator address must exist on-chain",
+			desc: "claim msg supplier operator address must exist onchain",
 			claimMsgFn: func(t *testing.T) *types.MsgCreateClaim {
 				return newTestClaimMsg(t,
 					sessionStartHeight,
 					sessionRes.GetSession().GetSessionId(),
-					// Use a supplier operat address that's nonexistent on-chain.
+					// Use a supplier operat address that's nonexistent onchain.
 					randSupplierOperatorAddr,
 					appAddr,
 					service,
@@ -500,13 +500,13 @@ func TestMsgServer_CreateClaim_Error(t *testing.T) {
 			),
 		},
 		{
-			desc: "claim msg application address must exist on-chain",
+			desc: "claim msg application address must exist onchain",
 			claimMsgFn: func(t *testing.T) *types.MsgCreateClaim {
 				return newTestClaimMsg(t,
 					sessionStartHeight,
 					sessionRes.GetSession().GetSessionId(),
 					supplierOperatorAddr,
-					// Use an application address that's nonexistent on-chain.
+					// Use an application address that's nonexistent onchain.
 					randAppAddr,
 					service,
 					defaultMerkleRoot,
@@ -539,7 +539,7 @@ func TestMsgServer_CreateClaim_Error(t *testing.T) {
 }
 
 func TestMsgServer_CreateClaim_Error_ComputeUnitsMismatch(t *testing.T) {
-	// Set block height to 1 so there is a valid session on-chain.
+	// Set block height to 1 so there is a valid session onchain.
 	blockHeightOpt := keepertest.WithBlockHeight(1)
 	keepers, ctx := keepertest.NewProofModuleKeepers(t, blockHeightOpt)
 	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
@@ -555,7 +555,7 @@ func TestMsgServer_CreateClaim_Error_ComputeUnitsMismatch(t *testing.T) {
 		ComputeUnitsPerRelay: nonDefaultComputeUnitsPerRelay,
 		OwnerAddress:         sample.AccAddress(),
 	}
-	// Add the service that is expected to be on-chain.
+	// Add the service that is expected to be onchain.
 	keepers.SetService(ctx, *service)
 
 	// Add a supplier that is expected to be in the session.

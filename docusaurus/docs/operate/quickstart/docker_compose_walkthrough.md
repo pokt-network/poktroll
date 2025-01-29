@@ -60,11 +60,11 @@ This is a text heavy walkthrough, but if all goes well, you should have somethin
 - `Node` - A `Morse` actor that stakes to provide Relay services.
   - In `Morse` - All `Validator` are nodes but only the top 1000 stakes `Node`s are `Validator`s
   - This actor is not present in `Shannon` and decoupled into `Supplier` and a `RelayMiner`.
-- `Supplier` - The on-chain actor that stakes to provide Relay services.
+- `Supplier` - The onchain actor that stakes to provide Relay services.
   - In `Shannon` - This actor is responsible needs access to a Full Node (sovereign or node).
-- `RelayMiner` - The off-chain service that provides Relay services on behalf of a `Supplier`.
+- `RelayMiner` - The offchain service that provides Relay services on behalf of a `Supplier`.
   - In `Shannon` - This actor is responsible for providing the Relay services.
-- `PATH Gateway` - The off-chain service that provides Relay services on behalf of an `Application` or `Gateway`.
+- `PATH Gateway` - The offchain service that provides Relay services on behalf of an `Application` or `Gateway`.
 
 For more details, please refer to the [Shannon actors documentation](https://dev.poktroll.com/actors).
 
@@ -76,7 +76,7 @@ multiple node types in the upcoming `Shannon` requires some explanation.
 In `Shannon`, the `Supplier` role is separated from the `Full node` role.
 
 In `Morse`, a `Validator` or a staked `Node` was responsible for both holding
-a copy of the on-chain data, as well as performing relays. With `Shannon`, the
+a copy of the onchain data, as well as performing relays. With `Shannon`, the
 `RelayMiner` software, which runs the supplier logic, is distinct from the full-node/validator.
 
 Furthermore, `Shannon` uses [`PATH Gateway`](https://github.com/buildwithgrove/path),
@@ -84,7 +84,7 @@ a software component that acts on behalf of either `Applications` or `Gateways`
 to access services provided by Pocket Network `Supplier`s via `RelayMiners`.
 
 The following diagram from the [actors](../../protocol/actors/) page captures the relationship
-between on-chain records (actors) and off-chain operators (servers).
+between onchain records (actors) and offchain operators (servers).
 
 ```mermaid
 ---
@@ -92,13 +92,13 @@ title: Actors
 ---
 flowchart TB
 
-    subgraph on-chain
+    subgraph onchain
         A([Application])
         G([Gateway])
         S([Supplier])
     end
 
-    subgraph off-chain
+    subgraph offchain
         PG[PATH Gateway]
         RM[Relay Miner]
     end
@@ -132,7 +132,7 @@ Make sure to replace `olshansky` with your username.
 You can generally do everything as the `root` user, but it's recommended to
 create a new user and give it sudo permissions.
 
-This is necessary, in particular, if you want to use [homebrew](https://brew.sh/) [to install `poktrolld`](../user_guide/install.md).
+This is necessary, in particular, if you want to use [homebrew](https://brew.sh/) [to install `poktrolld`](../user_guide/poktrolld_cli.md).
 
 ```bash
 adduser poktroll
@@ -190,7 +190,7 @@ sed -i -e s/NODE_HOSTNAME=/NODE_HOSTNAME=69.42.690.420/g .env
 You can generally do everything as the `root` user, but it's recommended to
 create a new user and give it sudo permissions.
 
-This is necessary, in particular, if you want to use [homebrew](https://brew.sh/) [to install `poktrolld`](../user_guide/install.md).
+This is necessary, in particular, if you want to use [homebrew](https://brew.sh/) [to install `poktrolld`](../user_guide/poktrolld_cli.md).
 
 You can create a new user (e.g. poktroll), provide sudo permissions and switch users like so:
 
@@ -325,7 +325,7 @@ which can be updated based on the `PATH Gateway` images available at
 
 ## B. Creating a Supplier and Deploying a RelayMiner
 
-A Supplier is an on-chain record that advertises services it'll provide.
+A Supplier is an onchain record that advertises services it'll provide.
 
 A RelayMiner is an operator / service that provides services to offer on the Pocket Network.
 
@@ -702,5 +702,5 @@ done
 Why?
 
 - Suppliers may have been staked, but the RelayMiner is no longer running.
-- Pocket does not currently have on-chain quality-of-service
+- Pocket does not currently have onchain quality-of-service
 - Pocket does not currently have supplier jailing

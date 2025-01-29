@@ -5,10 +5,11 @@ package tests
 import (
 	"context"
 	"fmt"
+	"io"
 	"net/http"
-	"net/url"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"sync"
 	"testing"
@@ -17,6 +18,9 @@ import (
 	"cosmossdk.io/depinject"
 	"cosmossdk.io/math"
 	"github.com/cometbft/cometbft/abci/types"
+	"github.com/cometbft/cometbft/libs/json"
+	cmtcoretypes "github.com/cometbft/cometbft/rpc/core/types"
+	rpctypes "github.com/cometbft/cometbft/rpc/jsonrpc/types"
 	sdkclient "github.com/cosmos/cosmos-sdk/client"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	"github.com/cosmos/cosmos-sdk/crypto/keys/secp256k1"
@@ -25,23 +29,26 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/authz"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
+	"github.com/cosmos/gogoproto/proto"
 	"github.com/regen-network/gocuke"
 	"github.com/stretchr/testify/require"
+	"google.golang.org/grpc"
 
 	"github.com/pokt-network/poktroll/load-testing/config"
 	"github.com/pokt-network/poktroll/pkg/client"
-	"github.com/pokt-network/poktroll/pkg/client/events"
 	"github.com/pokt-network/poktroll/pkg/client/query"
-	"github.com/pokt-network/poktroll/pkg/client/tx"
 	"github.com/pokt-network/poktroll/pkg/observable/channel"
 	"github.com/pokt-network/poktroll/pkg/sync2"
-	testsession "github.com/pokt-network/poktroll/testutil/session"
+	testdelays "github.com/pokt-network/poktroll/testutil/delays"
+	"github.com/pokt-network/poktroll/testutil/events"
 	"github.com/pokt-network/poktroll/testutil/testclient"
-	"github.com/pokt-network/poktroll/testutil/testclient/testeventsquery"
+	"github.com/pokt-network/poktroll/testutil/testclient/testblock"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	gatewaytypes "github.com/pokt-network/poktroll/x/gateway/types"
+	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
+	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
 )
 
 // actorLoadTestIncrementPlans is a struct that holds the parameters for incrementing
@@ -75,29 +82,53 @@ type actorLoadTestIncrementPlan struct {
 	maxActorCount int64
 }
 
-// setupTxEventListeners sets up the transaction event listeners to observe the
-// transactions committed on-chain.
-func (s *relaysSuite) setupTxEventListeners() {
-	eventsQueryClient := testeventsquery.NewLocalnetClient(s.TestingT.(*testing.T))
+// setupEventListeners sets up the event listeners for the relays suite.
+// It listens to both tx and block events to keep track of the events that are happening
+// onchain.
+func (s *relaysSuite) setupEventListeners(rpcNode string) {
+	// Set up the blockClient that will be notifying the suite about the committed blocks.
+	eventsObs, eventsObsCh := channel.NewObservable[[]types.Event]()
+	s.committedEventsObs = eventsObs
 
-	deps := depinject.Supply(eventsQueryClient)
-	eventsReplayClient, err := events.NewEventsReplayClient(
-		s.ctx,
-		deps,
-		newTxEventSubscriptionQuery,
-		tx.UnmarshalTxResult,
-		eventsReplayClientBufferSize,
-	)
-	require.NoError(s, err)
+	extractBlockEvents := func(ctx context.Context, block client.Block) {
+		// Query the block results endpoint for each observed block to get the tx and block events.
+		// Ref: https://docs.cometbft.com/main/rpc/#/Info/block_results
+		blockResultsUrl := fmt.Sprintf("%s/block_results?height=%d", rpcNode, block.Height())
+		blockResultsResp, err := http.DefaultClient.Get(blockResultsUrl)
+		require.NoError(s, err)
 
-	// Map the eventsReplayClient.EventsSequence which is a replay observable
-	// to a regular observable to avoid replaying txResults from old blocks.
-	s.newTxEventsObs = channel.Map(
+		defer blockResultsResp.Body.Close()
+
+		blockResultsRespBz, err := io.ReadAll(blockResultsResp.Body)
+		require.NoError(s, err)
+
+		var rpcResponse rpctypes.RPCResponse
+		err = json.Unmarshal(blockResultsRespBz, &rpcResponse)
+		require.NoError(s, err)
+
+		var blockResults cmtcoretypes.ResultBlockResults
+		err = json.Unmarshal(rpcResponse.Result, &blockResults)
+		require.NoError(s, err)
+
+		numEvents := len(blockResults.TxsResults) + len(blockResults.FinalizeBlockEvents)
+		events := make([]types.Event, 0, numEvents)
+
+		// Flatten all tx result events and block event results into one slice.
+		for _, txResult := range blockResults.TxsResults {
+			events = append(events, txResult.Events...)
+		}
+
+		events = append(events, blockResults.FinalizeBlockEvents...)
+
+		s.latestBlock = block
+		eventsObsCh <- events
+	}
+
+	s.blockClient = testblock.NewLocalnetClient(s.ctx, s.TestingT.(*testing.T))
+	channel.ForEach(
 		s.ctx,
-		eventsReplayClient.EventsSequence(s.ctx),
-		func(ctx context.Context, txResult *types.TxResult) (*types.TxResult, bool) {
-			return txResult, false
-		},
+		s.blockClient.CommittedBlocksSequence(s.ctx),
+		extractBlockEvents,
 	)
 }
 
@@ -173,9 +204,9 @@ func (s *relaysSuite) mapSessionInfoForLoadTestDurationFn(
 
 		sessionInfo := &sessionInfoNotif{
 			blockHeight:             blockHeight,
-			sessionNumber:           testsession.GetSessionNumberWithDefaultParams(blockHeight),
-			sessionStartBlockHeight: testsession.GetSessionStartHeightWithDefaultParams(blockHeight),
-			sessionEndBlockHeight:   testsession.GetSessionEndHeightWithDefaultParams(blockHeight),
+			sessionNumber:           sharedtypes.GetSessionNumber(s.sharedParams, blockHeight),
+			sessionStartBlockHeight: sharedtypes.GetSessionStartHeight(s.sharedParams, blockHeight),
+			sessionEndBlockHeight:   sharedtypes.GetSessionEndHeight(s.sharedParams, blockHeight),
 		}
 
 		infoLogger := logger.Info().
@@ -231,10 +262,12 @@ func (s *relaysSuite) mapSessionInfoForLoadTestDurationFn(
 			testProgressBlocksRelativeToTestStartHeight, s.relayLoadDurationBlocks,
 		)
 
-		if sessionInfo.blockHeight == sessionInfo.sessionEndBlockHeight {
-			newSessionsCount := len(s.activeApplications) * len(s.activeSuppliers)
-			s.expectedClaimsAndProofsCount = s.expectedClaimsAndProofsCount + newSessionsCount
-		}
+		logger.Info().Msgf(
+			"Relays sent: %d; Success: %d; Failed: %d",
+			s.numRelaysSent.Load(),
+			s.successfulRelays.Load(),
+			s.failedRelays.Load(),
+		)
 
 		// If the current block is the start of any new session, activate the prepared
 		// actors to be used in the current session.
@@ -457,16 +490,17 @@ func (s *relaysSuite) mapSessionInfoWhenStakingNewSuppliersAndGatewaysFn() chann
 // For each notification received, it waits for the new actors' staking/funding
 // txs to be committed before sending staking & delegation txs for new applications.
 func (s *relaysSuite) mapStakingInfoWhenStakingAndDelegatingNewApps(
-	_ context.Context,
+	ctx context.Context,
 	notif *stakingInfoNotif,
 ) (*stakingInfoNotif, bool) {
 	// Ensure that new gateways and suppliers are staked.
-	// Ensure that new applications are funded and have an account entry on-chain
+	// Ensure that new applications are funded and have an account entry onchain
 	// so that they can stake and delegate in the next block.
-	txResults := s.waitForTxsToBeCommitted()
-	s.ensureFundedActors(txResults, notif.newApps)
-	s.ensureStakedActors(txResults, EventActionMsgStakeGateway, notif.newGateways)
-	s.ensureStakedActors(txResults, EventActionMsgStakeSupplier, notif.newSuppliers)
+	testdelays.WaitAll(
+		func() { s.ensureStakedActors(ctx, notif.newSuppliers) },
+		func() { s.ensureStakedActors(ctx, notif.newGateways) },
+		func() { s.ensureFundedActors(ctx, notif.newApps) },
+	)
 
 	// Update the list of staked suppliers.
 	s.activeSuppliers = append(s.activeSuppliers, notif.newSuppliers...)
@@ -627,11 +661,13 @@ func (s *relaysSuite) createApplicationAccount(
 // cost, and the block duration.
 func (s *relaysSuite) getAppFundingAmount(currentBlockHeight int64) sdk.Coin {
 	currentTestDuration := s.testStartHeight + s.relayLoadDurationBlocks - currentBlockHeight
+	// Compute the cost of all relays throughout the test duration.
+	totalRelayCostDuringTestUPOKT := s.relayRatePerApp * s.relayCoinAmountCost * currentTestDuration * blockDurationSec
 	// Multiply by 2 to make sure the application does not run out of funds
 	// based on the number of relays it needs to send. Theoretically, `+1` should
 	// be enough, but probabilistic and time based mechanisms make it hard
 	// to predict exactly.
-	appFundingAmount := s.relayRatePerApp * s.relayCoinAmountCost * currentTestDuration * blockDuration * 2
+	appFundingAmount := math.Max(totalRelayCostDuringTestUPOKT, s.appParams.MinStake.Amount.Int64()*2)
 	return sdk.NewCoin("upokt", math.NewInt(appFundingAmount))
 }
 
@@ -724,7 +760,7 @@ func (plan *actorLoadTestIncrementPlan) shouldIncrementActorCount(
 		return false
 	}
 
-	initialSessionNumber := testsession.GetSessionNumberWithDefaultParams(startBlockHeight)
+	initialSessionNumber := sharedtypes.GetSessionNumber(sharedParams, startBlockHeight)
 	actorSessionIncRate := plan.blocksPerIncrement / int64(sharedParams.GetNumBlocksPerSession())
 	nextSessionNumber := sessionInfo.sessionNumber + 1 - initialSessionNumber
 	isSessionStartHeight := sessionInfo.blockHeight == sessionInfo.sessionStartBlockHeight
@@ -750,7 +786,7 @@ func (plan *actorLoadTestIncrementPlan) shouldIncrementSupplierCount(
 		return false
 	}
 
-	initialSessionNumber := testsession.GetSessionNumberWithDefaultParams(startBlockHeight)
+	initialSessionNumber := sharedtypes.GetSessionNumber(sharedParams, startBlockHeight)
 	supplierSessionIncRate := plan.blocksPerIncrement / int64(sharedParams.GetNumBlocksPerSession())
 	nextSessionNumber := sessionInfo.sessionNumber + 1 - initialSessionNumber
 	isSessionEndHeight := sessionInfo.blockHeight == sessionInfo.sessionEndBlockHeight
@@ -797,6 +833,9 @@ func (s *relaysSuite) addPendingStakeSupplierMsg(supplier *accountInfo) {
 						Url:     s.suppliersUrls[supplier.address],
 						RpcType: sharedtypes.RPCType_JSON_RPC,
 					},
+				},
+				RevShare: []*sharedtypes.ServiceRevenueShare{
+					{Address: supplier.address, RevSharePercentage: 100},
 				},
 			},
 		},
@@ -943,7 +982,9 @@ func (s *relaysSuite) sendPendingMsgsTx(actor *accountInfo) {
 	err := txBuilder.SetMsgs(actor.pendingMsgs...)
 	require.NoError(s, err)
 
-	txBuilder.SetTimeoutHeight(uint64(s.latestBlock.Height() + 1))
+	// Set the transaction timeout height to 2 blocks beyond the current block height.
+	// This ensures the transaction won't be rejected if the next block commit is imminent.
+	txBuilder.SetTimeoutHeight(uint64(s.latestBlock.Height() + 2))
 	txBuilder.SetGasLimit(690000042)
 
 	accAddress := sdk.MustAccAddressFromBech32(actor.address)
@@ -971,33 +1012,6 @@ func (s *relaysSuite) sendPendingMsgsTx(actor *accountInfo) {
 		require.NoError(s, err)
 		require.NotNil(s, r)
 	}()
-}
-
-// waitForTxsToBeCommitted waits for transactions to be observed on-chain.
-// It is used to ensure that the transactions are committed before taking
-// dependent actions.
-func (s *relaysSuite) waitForTxsToBeCommitted() (txResults []*types.TxResult) {
-	ctx, cancel := context.WithCancel(s.ctx)
-	defer cancel()
-
-	ch := s.newTxEventsObs.Subscribe(ctx).Ch()
-	for {
-		txResult := <-ch
-		txResults = append(txResults, txResult)
-
-		// The number of transactions to be observed is not available in the TxResult
-		// event, so this number is taken from the last block event.
-		// The block received from s.latestBlock may be the previous one, it is
-		// necessary to wait until the block matching the txResult height is received
-		// in order to get the right number of transaction events to collect.
-		numTxs := s.waitUntilLatestBlockHeightEquals(txResult.Height)
-
-		// If all transactions are observed, break the loop.
-		if len(txResults) == numTxs {
-			break
-		}
-	}
-	return txResults
 }
 
 // waitUntilLatestBlockHeightEquals blocks until s.latestBlock.Height() equals the targetHeight.
@@ -1034,161 +1048,215 @@ func (s *relaysSuite) sendRelay(iteration uint64, relayPayload string) (appAddre
 	gateway := s.activeGateways[iteration%uint64(len(s.activeGateways))]
 	application := s.activeApplications[iteration%uint64(len(s.activeApplications))]
 
-	gatewayUrl, err := url.Parse(s.gatewayUrls[gateway.address])
-	require.NoError(s, err)
-
-	// Include the application address in the query to the gateway.
-	query := gatewayUrl.Query()
-	query.Add("applicationAddr", application.address)
-	query.Add("relayCount", fmt.Sprintf("%d", iteration))
-	gatewayUrl.RawQuery = query.Encode()
-
-	// Use the pre-defined service ID that all application and suppliers are staking for.
-	gatewayUrl.Path = testedServiceId
-
 	// TODO_MAINNET: Capture the relay response to check for failing relays.
 	// Send the relay request within a goroutine to avoid blocking the test batches
 	// when suppliers or gateways are unresponsive.
-	go func(gwURL, payload string) {
-		_, err = http.DefaultClient.Post(
-			gwURL,
-			"application/json",
-			strings.NewReader(payload),
-		)
+	sendRelayRequest := func(gatewayURL, appAddr, payload string) {
+		req, err := http.NewRequest("POST", gatewayURL, strings.NewReader(payload))
+
+		// TODO_TECHDEBT(red-0ne): Use 'app-address' instead of 'X-App-Address' once PATH Gateway
+		// deprecates the X-App-Address header.
+		// This is needed by the PATH Gateway's trusted mode to identify the application
+		// that is sending the relay request.
+		req.Header.Add("X-App-Address", appAddr)
+		req.Header.Add("target-service-id", "anvil")
+		res, err := http.DefaultClient.Do(req)
 		require.NoError(s, err)
-	}(gatewayUrl.String(), relayPayload)
+
+		if res.StatusCode == http.StatusOK {
+			s.successfulRelays.Add(1)
+		} else {
+			s.failedRelays.Add(1)
+		}
+	}
+
+	gatewayURL := s.gatewayUrls[gateway.address]
+	go sendRelayRequest(gatewayURL, application.address, relayPayload)
 
 	return application.address, gateway.address
 }
 
 // ensureFundedActors checks if the actors are funded by observing the transfer events
 // in the transactions results.
-func (s *relaysSuite) ensureFundedActors(
-	txResults []*types.TxResult,
-	actors []*accountInfo,
-) {
-	for _, actor := range actors {
-		actorFunded := false
-		for _, txResult := range txResults {
-			for _, event := range txResult.Result.Events {
-				// Skip non-relevant events.
-				if event.Type != "transfer" {
-					continue
-				}
+func (s *relaysSuite) ensureFundedActors(ctx context.Context, actors []*accountInfo) {
+	if len(actors) == 0 {
+		s.Logf("No actors to fund")
+		return
+	}
 
-				attrs := event.Attributes
-				// Check if the actor is the recipient of the transfer event.
-				if actorFunded = hasEventAttr(attrs, "recipient", actor.address); actorFunded {
-					break
-				}
+	fundedActors := make(map[string]struct{})
+	actorsAddrs := make([]string, len(actors))
+	for i, actor := range actors {
+		actorsAddrs[i] = actor.address
+	}
+
+	// Add 1 second to the block duration to make sure the deadline is after the next block.
+	deadline := time.Now().Add(time.Second * time.Duration(blockDurationSec+1))
+	ctx, cancel := context.WithDeadline(ctx, deadline)
+	channel.ForEach(ctx, s.committedEventsObs, func(ctx context.Context, events []types.Event) {
+		for _, event := range events {
+			// In the context of ensuring the actors are funded, only the transfer events
+			// are relevant; filtering out the other events.
+			if event.GetType() != "transfer" {
+				continue
 			}
 
-			// If the actor is funded, no need to check the other transactions.
-			if actorFunded {
-				break
+			attrs := event.GetAttributes()
+			// Check if the actor is the recipient of the transfer event.
+			fundedActorAddr, ok := getEventAttr(attrs, "recipient")
+			if !ok {
+				continue
 			}
+
+			if !slices.Contains(actorsAddrs, fundedActorAddr) {
+				continue
+			}
+
+			fundedActors[fundedActorAddr] = struct{}{}
 		}
 
-		// If no transfer event is found for the actor, the test is canceled.
-		if !actorFunded {
-			s.logAndAbortTest(txResults, "actor not funded")
-			return
+		// Cancel this scope once all expected actors are successfully funded before
+		// the deadline was reached.
+		if allActorsFunded(actors, fundedActors) {
+			cancel()
+		}
+	})
+
+	<-ctx.Done()
+	if !allActorsFunded(actors, fundedActors) {
+		s.logAndAbortTest("at least one actor was not funded successfully")
+	}
+}
+
+// allActorsFunded checks if all the expected actors are funded.
+// An error is returned if any (at least one) of the expected actors was not funded.
+func allActorsFunded(expectedActors []*accountInfo, fundedActors map[string]struct{}) bool {
+	for _, actor := range expectedActors {
+		if _, ok := fundedActors[actor.address]; !ok {
+			return false
 		}
 	}
+
+	return true
 }
 
 // ensureStakedActors checks if the actors are staked by observing the message events
 // in the transactions results.
 func (s *relaysSuite) ensureStakedActors(
-	txResults []*types.TxResult,
-	msg string,
+	ctx context.Context,
 	actors []*accountInfo,
 ) {
-	for _, actor := range actors {
-		actorStaked := false
-		for _, txResult := range txResults {
-			for _, event := range txResult.Result.Events {
-				// Skip non-relevant events.
-				if event.Type != "message" {
-					continue
-				}
+	if len(actors) == 0 {
+		return
+	}
 
-				attrs := event.Attributes
-				// Check if the actor is the sender of the message event.
-				if hasEventAttr(attrs, "action", msg) && hasEventAttr(attrs, "sender", actor.address) {
-					actorStaked = true
-					break
-				}
-			}
+	stakedActors := make(map[string]struct{})
 
-			// If the actor is staked, no need to check the other transactions.
-			if actorStaked {
-				break
+	// Add 1 second to the block duration to make sure the deadline is after the next block.
+	deadline := time.Now().Add(time.Second * time.Duration(blockDurationSec+1))
+	ctx, cancel := context.WithDeadline(ctx, deadline)
+	typedEventsObs := events.AbciEventsToTypedEvents(ctx, s.committedEventsObs)
+	channel.ForEach(ctx, typedEventsObs, func(ctx context.Context, blockEvents []proto.Message) {
+		for _, event := range blockEvents {
+			switch e := event.(type) {
+			case *suppliertypes.EventSupplierStaked:
+				stakedActors[e.Supplier.GetOperatorAddress()] = struct{}{}
+			case *gatewaytypes.EventGatewayStaked:
+				stakedActors[e.Gateway.GetAddress()] = struct{}{}
+			case *apptypes.EventApplicationStaked:
+				stakedActors[e.Application.GetAddress()] = struct{}{}
 			}
 		}
 
-		// If no message event is found for the actor, log the transaction results
-		// and cancel the test.
-		if !actorStaked {
-			s.logAndAbortTest(txResults, fmt.Sprintf("actor not staked: %s", actor.address))
-			return
+		// Cancel this scope once all expected actors are successfully staked before
+		// the deadline was reached.
+		if allActorsStaked(actors, stakedActors) {
+			cancel()
+		}
+	})
+
+	<-ctx.Done()
+	if !allActorsStaked(actors, stakedActors) {
+		s.logAndAbortTest("at least one actor was not staked successfully")
+		return
+	}
+}
+
+// allActorsStaked checks if all the expected actors are staked.
+// An error is returned if any of the expected actors was not staked.
+func allActorsStaked(expectedActors []*accountInfo, stakedActors map[string]struct{}) bool {
+	for _, actor := range expectedActors {
+		if _, ok := stakedActors[actor.address]; !ok {
+			return false
 		}
 	}
+
+	return true
 }
 
 // ensureDelegatedActors checks if the actors are delegated by observing the
 // delegation events in the transactions results.
 func (s *relaysSuite) ensureDelegatedApps(
-	txResults []*types.TxResult,
+	ctx context.Context,
 	applications, gateways []*accountInfo,
 ) {
-	for _, application := range applications {
-		numDelegatees := 0
-		for _, txResult := range txResults {
-			for _, event := range txResult.Result.Events {
-				// Skip non-EventDelegation events.
-				if event.Type != EventTypeRedelegation {
-					continue
-				}
+	if len(applications) == 0 || len(gateways) == 0 {
+		return
+	}
 
-				attrs := event.Attributes
-				appAddr := fmt.Sprintf("%q", application.address)
-				// Skip the event if the application is not the delegator.
-				if !hasEventAttr(attrs, "app_address", appAddr) {
-					break
-				}
+	appsToGateways := make(map[string][]string)
 
-				// Check if the application is delegated to each of the gateways.
-				for _, gateway := range gateways {
-					gwAddr := fmt.Sprintf("%q", gateway.address)
-					if hasEventAttr(attrs, "gateway_address", gwAddr) {
-						numDelegatees++
-						break
-					}
-				}
+	deadline := time.Now().Add(time.Second * time.Duration(blockDurationSec+1))
+	ctx, cancel := context.WithDeadline(ctx, deadline)
+	typedEventsObs := events.AbciEventsToTypedEvents(ctx, s.committedEventsObs)
+	channel.ForEach(ctx, typedEventsObs, func(ctx context.Context, blockEvents []proto.Message) {
+		for _, event := range blockEvents {
+			redelegationEvent, ok := event.(*apptypes.EventRedelegation)
+			if ok {
+				app := redelegationEvent.GetApplication()
+				appsToGateways[app.GetAddress()] = app.GetDelegateeGatewayAddresses()
 			}
 		}
 
-		// If the number of delegatees is not equal to the number of gateways,
-		// the test is canceled.
-		if numDelegatees != len(gateways) {
-			s.logAndAbortTest(txResults, "applications not delegated to all gateways")
-			return
+		// Cancel this scope once all expected applications are successfully delegated
+		// to the expected gateways before the deadline was reached.
+		if allAppsDelegatedToAllGateways(applications, gateways, appsToGateways) {
+			cancel()
+		}
+	})
+
+	<-ctx.Done()
+	if !allAppsDelegatedToAllGateways(applications, gateways, appsToGateways) {
+		s.logAndAbortTest("applications not delegated to all gateways")
+		return
+	}
+}
+
+// allAppsDelegatedToAllGateways checks if all applications are delegated to all gateways.
+func allAppsDelegatedToAllGateways(
+	applications, gateways []*accountInfo,
+	appsToGateways map[string][]string,
+) bool {
+	for _, app := range applications {
+		if _, ok := appsToGateways[app.address]; !ok {
+			return false
+		}
+
+		for _, gateway := range gateways {
+			if !slices.Contains(appsToGateways[app.address], gateway.address) {
+				return false
+			}
 		}
 	}
+
+	return true
 }
 
 // getRelayCost fetches the relay cost from the tokenomics module.
 func (s *relaysSuite) getRelayCost() int64 {
-	// Set up the tokenomics client.
-	flagSet := testclient.NewLocalnetFlagSet(s)
-	clientCtx := testclient.NewLocalnetClientCtx(s, flagSet)
-	sharedClient := sharedtypes.NewQueryClient(clientCtx)
+	relayCost := s.testedService.ComputeUnitsPerRelay * s.sharedParams.ComputeUnitsToTokensMultiplier
 
-	res, err := sharedClient.Params(s.ctx, &sharedtypes.QueryParamsRequest{})
-	require.NoError(s, err)
-
-	return int64(res.Params.ComputeUnitsToTokensMultiplier)
+	return int64(relayCost)
 }
 
 // getProvisionedActorsCurrentStakedAmount fetches the current stake amount of
@@ -1242,15 +1310,15 @@ func (s *relaysSuite) activatePreparedActors(notif *sessionInfoNotif) {
 	}
 }
 
-// hasEventAttr checks if the event attributes contain a given key-value pair.
-func hasEventAttr(attributes []types.EventAttribute, key, value string) bool {
+// getEventAttr returns the event attribute value corresponding to the provided key.
+func getEventAttr(attributes []types.EventAttribute, key string) (value string, found bool) {
 	for _, attribute := range attributes {
-		if attribute.Key == key && attribute.Value == value {
-			return true
+		if attribute.Key == key {
+			return attribute.Value, true
 		}
 	}
 
-	return false
+	return "", false
 }
 
 // sendAdjustMaxDelegationsParamTx sends a transaction to adjust the max_delegated_gateways
@@ -1258,20 +1326,17 @@ func hasEventAttr(attributes []types.EventAttribute, key, value string) bool {
 func (s *relaysSuite) sendAdjustMaxDelegationsParamTx(maxGateways int64) {
 	authority := authtypes.NewModuleAddress(govtypes.ModuleName).String()
 
-	appMsgUpdateParams := &apptypes.MsgUpdateParams{
+	appMsgUpdateMaxDelegatedGatewaysParam := &apptypes.MsgUpdateParam{
 		Authority: authority,
-		Params: apptypes.Params{
-			// Set the max_delegated_gateways parameter to the number of gateways
-			// that are currently used in the test.
-			MaxDelegatedGateways: uint64(maxGateways),
-		},
+		Name:      "max_delegated_gateways",
+		AsType:    &apptypes.MsgUpdateParam_AsUint64{AsUint64: uint64(maxGateways)},
 	}
-	appMsgUpdateParamsAny, err := codectypes.NewAnyWithValue(appMsgUpdateParams)
+	appMsgUpdateParamAny, err := codectypes.NewAnyWithValue(appMsgUpdateMaxDelegatedGatewaysParam)
 	require.NoError(s, err)
 
 	authzExecMsg := &authz.MsgExec{
 		Grantee: s.fundingAccountInfo.address,
-		Msgs:    []*codectypes.Any{appMsgUpdateParamsAny},
+		Msgs:    []*codectypes.Any{appMsgUpdateParamAny},
 	}
 
 	s.fundingAccountInfo.addPendingMsg(authzExecMsg)
@@ -1334,32 +1399,20 @@ func (s *relaysSuite) parseActorLoadTestIncrementPlans(
 	return actorPlans
 }
 
-// countClaimAndProofs asynchronously counts the number of claim and proof messages
-// in the observed transaction events.
-func (s *relaysSuite) countClaimAndProofs() {
+// forEachSettlement asynchronously captures the settlement events and processes them.
+func (s *relaysSuite) forEachSettlement(ctx context.Context) {
+	typedEventsObs := events.AbciEventsToTypedEvents(ctx, s.committedEventsObs)
 	channel.ForEach(
 		s.ctx,
-		s.newTxEventsObs,
-		func(ctx context.Context, txEvent *types.TxResult) {
-			for _, event := range txEvent.Result.Events {
-				if event.Type != "message" {
-					continue
-				}
-
-				if hasEventAttr(event.Attributes, "action", EventActionMsgCreateClaim) {
-					s.currentClaimCount++
-				}
-
-				if hasEventAttr(event.Attributes, "action", EventActionMsgSubmitProof) {
-					s.currentProofCount++
-				}
-
-			}
+		typedEventsObs,
+		func(_ context.Context, _ []proto.Message) {
+			// TODO_FOLLOWUP(@red-0ne): Capture all settlement related events and use
+			// them to calculate the expected actor balances.
 		},
 	)
 }
 
-// querySharedParams queries the current on-chain shared module parameters for use
+// querySharedParams queries the current onchain shared module parameters for use
 // over the duration of the test.
 func (s *relaysSuite) querySharedParams(queryNodeRPCURL string) {
 	s.Helper()
@@ -1379,19 +1432,107 @@ func (s *relaysSuite) querySharedParams(queryNodeRPCURL string) {
 	s.sharedParams = sharedParams
 }
 
+// queryAppParams queries the current onchain application module parameters for use
+// over the duration of the test.
+func (s *relaysSuite) queryAppParams(queryNodeRPCURL string) {
+	s.Helper()
+
+	deps := depinject.Supply(s.txContext.GetClientCtx())
+
+	blockQueryClient, err := sdkclient.NewClientFromNode(queryNodeRPCURL)
+	require.NoError(s, err)
+	deps = depinject.Configs(deps, depinject.Supply(blockQueryClient))
+
+	appQueryclient, err := query.NewApplicationQuerier(deps)
+	require.NoError(s, err)
+
+	appParams, err := appQueryclient.GetParams(s.ctx)
+	require.NoError(s, err)
+
+	s.appParams = appParams
+}
+
+// queryProofParams queries the current onchain proof module parameters for use
+// over the duration of the test.
+func (s *relaysSuite) queryProofParams(queryNodeRPCURL string) {
+	s.Helper()
+
+	deps := depinject.Supply(s.txContext.GetClientCtx())
+
+	blockQueryClient, err := sdkclient.NewClientFromNode(queryNodeRPCURL)
+	require.NoError(s, err)
+	deps = depinject.Configs(deps, depinject.Supply(blockQueryClient))
+
+	proofQueryclient, err := query.NewProofQuerier(deps)
+	require.NoError(s, err)
+
+	params, err := proofQueryclient.GetParams(s.ctx)
+	require.NoError(s, err)
+
+	// The proofQueryclient#GetParams returns an Params interface to avoid a circular
+	// dependency between the proof module and the query module, so it needs to be casted
+	// to the actual prooftypes.Params type.
+	proofParams, ok := params.(*prooftypes.Params)
+	require.True(s, ok)
+
+	s.proofParams = proofParams
+}
+
+// queryTokenomicsParams queries the current onchain tokenomics module parameters for use
+// over the duration of the test.
+func (s *relaysSuite) queryTokenomicsParams(queryNodeRPCURL string) {
+	s.Helper()
+
+	deps := depinject.Supply(s.txContext.GetClientCtx())
+
+	blockQueryClient, err := sdkclient.NewClientFromNode(queryNodeRPCURL)
+	require.NoError(s, err)
+	deps = depinject.Configs(deps, depinject.Supply(blockQueryClient))
+
+	// TODO_TECHDEBT(red-0ne): Use tokenomics client querier instead of the grpc client
+	// once implemented.
+	var clientConn *grpc.ClientConn
+	err = depinject.Inject(deps, clientConn)
+	require.NoError(s, err)
+
+	tokenomicsQuerier := tokenomicstypes.NewQueryClient(clientConn)
+	res, err := tokenomicsQuerier.Params(s.ctx, &tokenomicstypes.QueryParamsRequest{})
+	require.NoError(s, err)
+
+	s.tokenomicsParams = &res.Params
+}
+
+// queryTestedService queries the current service being tested.
+func (s *relaysSuite) queryTestedService(queryNodeRPCURL string) {
+	s.Helper()
+
+	deps := depinject.Supply(s.txContext.GetClientCtx())
+
+	blockQueryClient, err := sdkclient.NewClientFromNode(queryNodeRPCURL)
+	require.NoError(s, err)
+	deps = depinject.Configs(deps, depinject.Supply(blockQueryClient))
+
+	serviceQueryclient, err := query.NewServiceQuerier(deps)
+	require.NoError(s, err)
+
+	service, err := serviceQueryclient.GetService(s.ctx, "anvil")
+	require.NoError(s, err)
+
+	s.testedService = &service
+}
+
 // forEachStakedAndDelegatedAppPrepareApp is a ForEachFn that waits for txs which
 // were broadcast in previous pipeline stages have been committed. It ensures that
 // new applications were successfully staked and all application actors are delegated
 // to all gateways. Then it adds the new application actors to the prepared set, to
 // be activated & used in the next session.
-func (s *relaysSuite) forEachStakedAndDelegatedAppPrepareApp(_ context.Context, notif *stakingInfoNotif) {
-	// Wait for the next block to commit staking and delegation transactions
-	// and be able to send relay requests evenly distributed across all gateways.
-	txResults := s.waitForTxsToBeCommitted()
-	s.ensureStakedActors(txResults, EventActionMsgStakeApplication, notif.newApps)
-	s.ensureDelegatedApps(txResults, s.activeApplications, notif.newGateways)
-	s.ensureDelegatedApps(txResults, notif.newApps, notif.newGateways)
-	s.ensureDelegatedApps(txResults, notif.newApps, s.activeGateways)
+func (s *relaysSuite) forEachStakedAndDelegatedAppPrepareApp(ctx context.Context, notif *stakingInfoNotif) {
+	testdelays.WaitAll(
+		func() { s.ensureStakedActors(ctx, notif.newApps) },
+		func() { s.ensureDelegatedApps(ctx, s.activeApplications, notif.newGateways) },
+		func() { s.ensureDelegatedApps(ctx, notif.newApps, notif.newGateways) },
+		func() { s.ensureDelegatedApps(ctx, notif.newApps, s.activeGateways) },
+	)
 
 	// Add the new applications to the list of prepared applications to be activated in
 	// the next session.
@@ -1415,9 +1556,9 @@ func (s *relaysSuite) forEachRelayBatchSendBatch(_ context.Context, relayBatchIn
 	relayInterval := time.Second / time.Duration(relaysPerSec)
 
 	batchWaitGroup := new(sync.WaitGroup)
-	batchWaitGroup.Add(relaysPerSec * int(blockDuration))
+	batchWaitGroup.Add(relaysPerSec * int(blockDurationSec))
 
-	for i := 0; i < relaysPerSec*int(blockDuration); i++ {
+	for i := 0; i < relaysPerSec*int(blockDurationSec); i++ {
 		iterationTime := relayBatchInfo.nextBatchTime.Add(time.Duration(i+1) * relayInterval)
 		batchLimiter.Go(s.ctx, func() {
 
@@ -1453,17 +1594,12 @@ func (s *relaysSuite) forEachRelayBatchSendBatch(_ context.Context, relayBatchIn
 	batchWaitGroup.Wait()
 }
 
-func (s *relaysSuite) logAndAbortTest(txResults []*types.TxResult, errorMsg string) {
-	for _, txResult := range txResults {
-		if txResult.Result.Log != "" {
-			logger.Error().Msgf("tx result log: %s", txResult.Result.Log)
-		}
-	}
+func (s *relaysSuite) logAndAbortTest(errorMsg string) {
 	s.cancelCtx()
 	s.Fatal(errorMsg)
 }
 
-// populateWithKnownApplications creates a list of gateways based on the gatewayUrls
+// populateWithKnownGateways creates a list of gateways based on the gatewayUrls
 // provided in the test manifest. It is used in non-ephemeral chain tests where the
 // gateways are not under the test's control and are expected to be already staked.
 func (s *relaysSuite) populateWithKnownGateways() (gateways []*accountInfo) {

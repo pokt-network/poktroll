@@ -13,7 +13,7 @@ import (
 var _ client.SessionQueryClient = (*sessionQuerier)(nil)
 
 // sessionQuerier is a wrapper around the sessiontypes.QueryClient that enables the
-// querying of on-chain session information through a single exposed method
+// querying of onchain session information through a single exposed method
 // which returns an sessiontypes.Session struct
 type sessionQuerier struct {
 	clientConn     grpc.ClientConn
@@ -63,7 +63,7 @@ func (sessq *sessionQuerier) GetSession(
 	return res.Session, nil
 }
 
-// GetParams queries & returns the session module on-chain parameters.
+// GetParams queries & returns the session module onchain parameters.
 func (sessq *sessionQuerier) GetParams(ctx context.Context) (*sessiontypes.Params, error) {
 	req := &sessiontypes.QueryParamsRequest{}
 	res, err := sessq.sessionQuerier.Params(ctx, req)

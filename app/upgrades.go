@@ -13,6 +13,7 @@ import (
 var allUpgrades = []upgrades.Upgrade{
 	upgrades.Upgrade_0_0_4,
 	upgrades.Upgrade_0_0_10,
+	upgrades.Upgrade_0_0_11,
 }
 
 // setUpgrades sets upgrade handlers for all upgrades and executes KVStore migration if an upgrade plan file exists.
@@ -27,7 +28,7 @@ func (app *App) setUpgrades() error {
 	}
 
 	// Reads the upgrade info from disk.
-	// The previous binary is expected to have read the plan from on-chain and saved it locally.
+	// The previous binary is expected to have read the plan from onchain and saved it locally.
 	upgradePlan, err := app.Keepers.UpgradeKeeper.ReadUpgradeInfoFromDisk()
 	if err != nil {
 		return err

@@ -32,7 +32,7 @@ type Params struct {
 	// and transferred to the pocket network foundation.
 	AddServiceFee *types.Coin `protobuf:"bytes,1,opt,name=add_service_fee,json=addServiceFee,proto3" json:"add_service_fee" yaml:"add_service_fee"`
 	// target_num_relays is the target for the EMA of the number of relays per session.
-	// Per service, on-chain relay mining difficulty will be adjusted to maintain this target.
+	// Per service, onchain relay mining difficulty will be adjusted to maintain this target.
 	TargetNumRelays uint64 `protobuf:"varint,2,opt,name=target_num_relays,json=targetNumRelays,proto3" json:"target_num_relays" yaml:"target_num_relays"`
 }
 

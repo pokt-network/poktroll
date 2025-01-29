@@ -13,7 +13,10 @@ import (
 	"github.com/pokt-network/poktroll/x/proof/types"
 )
 
-func (k Keeper) AllProofs(ctx context.Context, req *types.QueryAllProofsRequest) (*types.QueryAllProofsResponse, error) {
+func (k Keeper) AllProofs(
+	ctx context.Context,
+	req *types.QueryAllProofsRequest,
+) (*types.QueryAllProofsResponse, error) {
 	logger := k.Logger().With("method", "AllProofs")
 
 	if req == nil {

@@ -14,7 +14,7 @@ import (
 
 // queryAndValidateSessionHeader ensures that a session with the sessionID of the given session
 // header exists and that this session includes the supplier with the given operator address.
-// It returns a session which is hydrated with the on-chain session data.
+// It returns a session which is hydrated with the onchain session data.
 func (k Keeper) queryAndValidateSessionHeader(
 	ctx context.Context,
 	sessionHeader *sessiontypes.SessionHeader,
@@ -28,7 +28,7 @@ func (k Keeper) queryAndValidateSessionHeader(
 		BlockHeight:        sessionHeader.GetSessionStartBlockHeight(),
 	}
 
-	// Get the on-chain session for the ground-truth against which the given
+	// Get the onchain session for the ground-truth against which the given
 	// session header is to be validated.
 	sessionRes, err := k.sessionKeeper.GetSession(ctx, sessionReq)
 	if err != nil {
@@ -46,17 +46,17 @@ func (k Keeper) queryAndValidateSessionHeader(
 		).
 		Debug("got sessionId for proof")
 
-	// Ensure that the given session header's session ID matches the on-chain onChainSession ID.
+	// Ensure that the given session header's session ID matches the onchain onChainSession ID.
 	if sessionHeader.GetSessionId() != onChainSession.GetSessionId() {
 		return nil, types.ErrProofInvalidSessionId.Wrapf(
-			"session ID does not match on-chain session ID; expected %q, got %q",
+			"session ID does not match onchain session ID; expected %q, got %q",
 			onChainSession.GetSessionId(),
 			sessionHeader.GetSessionId(),
 		)
 	}
 
 	// NB: it is redundant to assert that the service ID in the request matches the
-	// on-chain session service ID because the session is queried using the service
+	// onchain session service ID because the session is queried using the service
 	// ID as a parameter. Either a different session (i.e. different session ID)
 	// or an error would be returned depending on whether an application/supplier
 	// pair exists for the given service ID or not, respectively.
@@ -77,7 +77,7 @@ func (k Keeper) queryAndValidateSessionHeader(
 }
 
 // validateClaimWindow returns an error if the given session is not eligible for claiming.
-// It *assumes* that the msg's session header is a valid on-chain session with correct
+// It *assumes* that the msg's session header is a valid onchain session with correct
 // height fields. First call #queryAndValidateSessionHeader to ensure any user-provided
 // session header is valid and correctly hydrated.
 func (k Keeper) validateClaimWindow(
@@ -145,7 +145,7 @@ func (k Keeper) validateClaimWindow(
 }
 
 // validateProofWindow returns an error if the given session is not eligible for proving.
-// It *assumes* that the msg's session header is a valid on-chain session with correct
+// It *assumes* that the msg's session header is a valid onchain session with correct
 // height fields. First call #queryAndValidateSessionHeader to ensure any user-provided
 // session header is valid and correctly hydrated.
 func (k Keeper) validateProofWindow(

@@ -583,7 +583,6 @@ See [Pocket_Network_Morse_Probabilistic_Proofs.ipynb](./Pocket_Network_Morse_Pro
 
 :::
 
-
 The number of on-chain relays (proofs) required by the network scales inversely to `ProofRequestProbability`. For example:
 
 - `ProofRequestProbability` = 0.5 -> 2x scale

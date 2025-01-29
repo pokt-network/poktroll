@@ -320,6 +320,9 @@ for x in range(localnet_config["path_gateways"]["count"]):
         "--set=metrics.serviceMonitor.enabled=" + str(localnet_config["observability"]["enabled"]),
         "--set=path.mountConfigMaps[0].name=path-config-" + str(actor_number),
         "--set=path.mountConfigMaps[0].mountPath=/app/config/",
+        "--set=fullnameOverride=path" + str(actor_number),
+        "--set=nameOverride=path" + str(actor_number),
+        "--set=global.serviceAccount.name=path" + str(actor_number),
     ]
 
     if localnet_config["path_local_repo"]["enabled"]:
@@ -360,7 +363,9 @@ for x in range(localnet_config["path_gateways"]["count"]):
         # ],
         # TODO_IMPROVE(@okdas): Add port forwards to grafana, pprof, like the other resources
         port_forwards=[
-                str(2999 + actor_number) + ":3000"
+                # See PATH for the default port used by the gateway. As of PR #1026, it is :3069.
+                # https://github.com/buildwithgrove/path/blob/main/config/router.go
+                str(2999 + actor_number) + ":3069"
         ],
     )
 

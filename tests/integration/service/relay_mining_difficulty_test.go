@@ -205,7 +205,7 @@ func prepareSMST(
 	for i := uint64(0); i < numRelays; i++ {
 		// DEV_NOTE: A signed mined relay is a MinedRelay type with the appropriate
 		// payload, signatures and metadata populated.
-		// It does not (as of writing) adhere to the actual on-chain difficulty (i.e.
+		// It does not (as of writing) adhere to the actual onchain difficulty (i.e.
 		// hash check) of the test service surrounding the scope of this test.
 		minedRelay := testrelayer.NewSignedMinedRelay(t, ctx,
 			session,
