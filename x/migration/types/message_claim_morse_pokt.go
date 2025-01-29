@@ -8,7 +8,9 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 )
 
-var _ sdk.Msg = &MsgClaimMorsePokt{}
+const morseAddressByteLength = 20
+
+var _ sdk.Msg = (*MsgClaimMorsePokt)(nil)
 
 func NewMsgClaimMorsePokt(shannonDestAddress string, morseSrcAddress string, morseSignature []byte) *MsgClaimMorsePokt {
 	return &MsgClaimMorsePokt{
@@ -29,7 +31,7 @@ func (msg *MsgClaimMorsePokt) ValidateBasic() error {
 		return errorsmod.Wrapf(sdkerrors.ErrInvalidAddress, "invalid morseSrcAddress address (%s)", err)
 	}
 
-	if len(morseAddrBz) != 20 {
+	if len(morseAddrBz) != morseAddressByteLength {
 		return errorsmod.Wrapf(sdkerrors.ErrInvalidAddress, "invalid morseSrcAddress address (%s)", err)
 	}
 
