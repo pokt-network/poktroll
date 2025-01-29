@@ -175,7 +175,7 @@ func (k Keeper) EnsureWellFormedProof(ctx context.Context, proof *types.Proof) e
 	logger.Debug("successfully validated relay mining difficulty")
 
 	// Retrieve the corresponding claim for the proof submitted
-	if err := k.validateClaimForProof(ctx, sessionHeader, supplierOperatorAddr); err != nil {
+	if err := k.validateSessionClaim(ctx, sessionHeader, supplierOperatorAddr); err != nil {
 		return err
 	}
 	logger.Debug("successfully retrieved and validated claim")
@@ -331,17 +331,16 @@ func (k Keeper) validateClosestPath(
 	return nil
 }
 
-// validateClaimForProof ensures that a claim corresponding to the given proof's
-// session exists & has a matching supplier operator address and session header.
-func (k Keeper) validateClaimForProof(
+// validateSessionClaim ensures that the given session header and supplierOperatorAddress
+// have a corresponding claim.
+func (k Keeper) validateSessionClaim(
 	ctx context.Context,
 	sessionHeader *sessiontypes.SessionHeader,
 	supplierOperatorAddr string,
 ) error {
 	sessionId := sessionHeader.SessionId
-	// NB: no need to assert the testSessionId or supplier operator address as it is retrieved
-	// by respective values of the given proof. I.e., if the claim exists, then these
-	// values are guaranteed to match.
+
+	// Retrieve the claim corresponding to the session ID and supplier operator address.
 	foundClaim, found := k.GetClaim(ctx, sessionId, supplierOperatorAddr)
 	if !found {
 		return types.ErrProofClaimNotFound.Wrapf(
@@ -352,41 +351,40 @@ func (k Keeper) validateClaimForProof(
 	}
 
 	claimSessionHeader := foundClaim.GetSessionHeader()
-	proofSessionHeader := sessionHeader
 
 	// Ensure session start heights match.
-	if claimSessionHeader.GetSessionStartBlockHeight() != proofSessionHeader.GetSessionStartBlockHeight() {
+	if claimSessionHeader.GetSessionStartBlockHeight() != sessionHeader.GetSessionStartBlockHeight() {
 		return types.ErrProofInvalidSessionStartHeight.Wrapf(
 			"claim session start height %d does not match proof session start height %d",
 			claimSessionHeader.GetSessionStartBlockHeight(),
-			proofSessionHeader.GetSessionStartBlockHeight(),
+			sessionHeader.GetSessionStartBlockHeight(),
 		)
 	}
 
 	// Ensure session end heights match.
-	if claimSessionHeader.GetSessionEndBlockHeight() != proofSessionHeader.GetSessionEndBlockHeight() {
+	if claimSessionHeader.GetSessionEndBlockHeight() != sessionHeader.GetSessionEndBlockHeight() {
 		return types.ErrProofInvalidSessionEndHeight.Wrapf(
 			"claim session end height %d does not match proof session end height %d",
 			claimSessionHeader.GetSessionEndBlockHeight(),
-			proofSessionHeader.GetSessionEndBlockHeight(),
+			sessionHeader.GetSessionEndBlockHeight(),
 		)
 	}
 
 	// Ensure application addresses match.
-	if claimSessionHeader.GetApplicationAddress() != proofSessionHeader.GetApplicationAddress() {
+	if claimSessionHeader.GetApplicationAddress() != sessionHeader.GetApplicationAddress() {
 		return types.ErrProofInvalidAddress.Wrapf(
 			"claim application address %q does not match proof application address %q",
 			claimSessionHeader.GetApplicationAddress(),
-			proofSessionHeader.GetApplicationAddress(),
+			sessionHeader.GetApplicationAddress(),
 		)
 	}
 
 	// Ensure service IDs match.
-	if claimSessionHeader.GetServiceId() != proofSessionHeader.GetServiceId() {
+	if claimSessionHeader.GetServiceId() != sessionHeader.GetServiceId() {
 		return types.ErrProofInvalidService.Wrapf(
 			"claim service ID %q does not match proof service ID %q",
 			claimSessionHeader.GetServiceId(),
-			proofSessionHeader.GetServiceId(),
+			sessionHeader.GetServiceId(),
 		)
 	}
 

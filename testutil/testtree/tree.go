@@ -152,6 +152,6 @@ func NewClaim(
 		SupplierOperatorAddress: supplierOperatorAddr,
 		SessionHeader:           sessionHeader,
 		RootHash:                rootHash,
-		ProofStatus:             prooftypes.ClaimProofStatus_NOT_FOUND,
+		ProofValidationStatus:   prooftypes.ClaimProofStatus_PENDING_VALIDATION,
 	}
 }

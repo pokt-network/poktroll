@@ -19,21 +19,18 @@ import (
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
-// SubmitProof is the server handler to submit and store a proof onchain.
-// A proof that's stored onchain is what leads to rewards (i.e. inflation)
-// downstream, making this a critical part of the protocol.
+// SubmitProof is the server message handler that stores a valid
+// proof onchain, enabling downstream reward distribution.
 //
-// Note that the validation of the proof is done in `EnsureValidProofSignaturesAndClosestPath`.
-// However, preliminary checks are done in the handler to prevent sybil or DoS attacks on
-// full nodes by submitting malformed proofs.
+// IMPORTANT: Full proof validation occurs in EnsureValidProofSignaturesAndClosestPath.
+// This handler performs preliminary validation to prevent sybil/DoS attacks.
 //
-// We are playing a balance of security and efficiency here, where enough validation
-// is done on proof submission, and exhaustive validation is done during the endblocker.
+// There is a security & performance balance and tradeoff between the handler and end blocker:
+// - Basic validation on submission (here)
+// - Exhaustive validation in endblocker (EnsureValidProofSignaturesAndClosestPath)
 //
-// The entity sending the SubmitProof messages does not necessarily need
-// to correspond to the supplier signing the proof. For example, a single entity
-// could (theoretically) batch multiple proofs (signed by the corresponding supplier)
-// into one transaction to save on transaction fees.
+// Note: Proof submitter may differ from supplier signer, allowing batched submissions
+// to optimize transaction fees.
 func (k msgServer) SubmitProof(
 	ctx context.Context,
 	msg *types.MsgSubmitProof,
@@ -85,7 +82,7 @@ func (k msgServer) SubmitProof(
 		logger.Error(fmt.Sprintf("failed to ensure well-formed proof: %v", err))
 		return nil, status.Error(codes.FailedPrecondition, err.Error())
 	}
-	logger.Info("checked the proof is well-formed")
+	logger.Info("ensured the proof is well-formed")
 
 	// Retrieve the claim associated with the proof.
 	// The claim should ALWAYS exist since the proof validation in EnsureWellFormedProof

@@ -330,12 +330,15 @@ func (m *EventProofUpdated) GetClaimedUpokt() *types.Coin {
 	return nil
 }
 
-// Event emitted after a proof has been checked for validity.
+// Event emitted after a proof has been checked for validity in the proof module's
+// EndBlocker.
 type EventProofValidityChecked struct {
 	Proof       *Proof           `protobuf:"bytes,1,opt,name=proof,proto3" json:"proof"`
 	BlockHeight uint64           `protobuf:"varint,2,opt,name=block_height,json=blockHeight,proto3" json:"block_height"`
 	ProofStatus ClaimProofStatus `protobuf:"varint,3,opt,name=proof_status,json=proofStatus,proto3,enum=poktroll.proof.ClaimProofStatus" json:"proof_status"`
-	Reason      string           `protobuf:"bytes,4,opt,name=reason,proto3" json:"reason"`
+	// reason is the string representation of the error that led to the proof being
+	// marked as invalid (e.g. "invalid closest merkle proof", "invalid relay request signature")
+	Reason string `protobuf:"bytes,4,opt,name=reason,proto3" json:"reason"`
 }
 
 func (m *EventProofValidityChecked) Reset()         { *m = EventProofValidityChecked{} }
@@ -385,7 +388,7 @@ func (m *EventProofValidityChecked) GetProofStatus() ClaimProofStatus {
 	if m != nil {
 		return m.ProofStatus
 	}
-	return ClaimProofStatus_NOT_FOUND
+	return ClaimProofStatus_PENDING_VALIDATION
 }
 
 func (m *EventProofValidityChecked) GetReason() string {
