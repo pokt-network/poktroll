@@ -11,7 +11,7 @@ var _ client.ApplicationQueryClient = (*AppKeeperQueryClient)(nil)
 
 // AppKeeperQueryClient is a thin wrapper around the AccountKeeper.
 // It does not rely on the QueryClient, and therefore does not make any
-// network requests as in the off-chain implementation.
+// network requests as in the offchain implementation.
 type AppKeeperQueryClient struct {
 	keeper ApplicationKeeper
 }
@@ -41,4 +41,10 @@ func (appQueryClient *AppKeeperQueryClient) GetApplication(
 // GetAllApplications returns all the applications in the application store.
 func (appQueryClient *AppKeeperQueryClient) GetAllApplications(ctx context.Context) ([]apptypes.Application, error) {
 	return appQueryClient.keeper.GetAllApplications(ctx), nil
+}
+
+// GetParams returns the application module parameters.
+func (appQueryClient *AppKeeperQueryClient) GetParams(ctx context.Context) (*apptypes.Params, error) {
+	params := appQueryClient.keeper.GetParams(ctx)
+	return &params, nil
 }

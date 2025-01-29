@@ -51,7 +51,7 @@ refer to the [Cosmos SDK Keyring documentation](https://docs.cosmos.network/main
 
 Ensure you have `poktrolld` installed on your system.
 
-Follow the [installation guide](./install) specific to your operating system.
+Follow the [installation guide](./poktrolld_cli.md) specific to your operating system.
 
 ## Step 2: Creating the Wallet
 

@@ -86,9 +86,9 @@ func TestMsgServer_SubmitProof_Success(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.desc, func(t *testing.T) {
 			opts := []keepertest.ProofKeepersOpt{
-				// Set block hash so we can have a deterministic expected on-chain proof requested by the protocol.
+				// Set block hash so we can have a deterministic expected onchain proof requested by the protocol.
 				keepertest.WithBlockHash(blockHeaderHash),
-				// Set block height to 1 so there is a valid session on-chain.
+				// Set block height to 1 so there is a valid session onchain.
 				keepertest.WithBlockHeight(1),
 			}
 			keepers, ctx := keepertest.NewProofModuleKeepers(t, opts...)
@@ -264,9 +264,9 @@ func TestMsgServer_SubmitProof_Error_OutsideOfWindow(t *testing.T) {
 	var claimWindowOpenHeightBlockHash, proofWindowOpenHeightBlockHash []byte
 
 	opts := []keepertest.ProofKeepersOpt{
-		// Set block hash so we can have a deterministic expected on-chain proof requested by the protocol.
+		// Set block hash so we can have a deterministic expected onchain proof requested by the protocol.
 		keepertest.WithBlockHash(blockHeaderHash),
-		// Set block height to 1 so there is a valid session on-chain.
+		// Set block height to 1 so there is a valid session onchain.
 		keepertest.WithBlockHeight(1),
 	}
 	keepers, ctx := keepertest.NewProofModuleKeepers(t, opts...)
@@ -438,10 +438,10 @@ func TestMsgServer_SubmitProof_Error_OutsideOfWindow(t *testing.T) {
 
 func TestMsgServer_SubmitProof_Error(t *testing.T) {
 	opts := []keepertest.ProofKeepersOpt{
-		// Set block hash such that on-chain closest merkle proof validation
+		// Set block hash such that onchain closest merkle proof validation
 		// uses the expected path.
 		keepertest.WithBlockHash(blockHeaderHash),
-		// Set block height to 1 so there is a valid session on-chain.
+		// Set block height to 1 so there is a valid session onchain.
 		keepertest.WithBlockHeight(1),
 	}
 	keepers, ctx := keepertest.NewProofModuleKeepers(t, opts...)
@@ -618,7 +618,7 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 			},
 		},
 		{
-			desc: "proof session ID must match on-chain session ID",
+			desc: "proof session ID must match onchain session ID",
 			newProofMsg: func(t *testing.T) *prooftypes.MsgSubmitProof {
 				// Construct new proof message using the wrong session ID.
 				return newTestProofMsg(t,
@@ -632,7 +632,7 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 				return status.Error(
 					codes.InvalidArgument,
 					prooftypes.ErrProofInvalidSessionId.Wrapf(
-						"session ID does not match on-chain session ID; expected %q, got %q",
+						"session ID does not match onchain session ID; expected %q, got %q",
 						validSessionHeader.GetSessionId(),
 						msgSubmitProof.GetSessionHeader().GetSessionId(),
 					).Error(),
@@ -640,7 +640,7 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 			},
 		},
 		{
-			desc: "proof supplier must be in on-chain session",
+			desc: "proof supplier must be in onchain session",
 			newProofMsg: func(t *testing.T) *prooftypes.MsgSubmitProof {
 				// Construct a proof message with a  supplier that does not belong in the session.
 				return newTestProofMsg(t,
@@ -708,9 +708,9 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 
 func TestMsgServer_SubmitProof_FailSubmittingNonRequiredProof(t *testing.T) {
 	opts := []keepertest.ProofKeepersOpt{
-		// Set block hash so we can have a deterministic expected on-chain proof requested by the protocol.
+		// Set block hash so we can have a deterministic expected onchain proof requested by the protocol.
 		keepertest.WithBlockHash(blockHeaderHash),
-		// Set block height to 1 so there is a valid session on-chain.
+		// Set block height to 1 so there is a valid session onchain.
 		keepertest.WithBlockHeight(1),
 	}
 	keepers, ctx := keepertest.NewProofModuleKeepers(t, opts...)
@@ -843,7 +843,7 @@ func TestMsgServer_SubmitProof_FailSubmittingNonRequiredProof(t *testing.T) {
 }
 
 // newTestProofMsg creates a new submit proof message that can be submitted
-// to be validated and stored on-chain.
+// to be validated and stored onchain.
 func newTestProofMsg(
 	t *testing.T,
 	supplierOperatorAddr string,
@@ -869,7 +869,7 @@ func newTestProofMsg(
 	}
 }
 
-// createClaimAndStoreBlockHash creates a valid claim, submits it on-chain,
+// createClaimAndStoreBlockHash creates a valid claim, submits it onchain,
 // and on success, stores the block hash for retrieval at future heights.
 // TODO_TECHDEBT(@bryanchriswhite): Consider if we could/should split
 // this into two functions.

@@ -25,7 +25,7 @@ type AuthzIntegrationSuite struct {
 	BaseIntegrationSuite
 }
 
-// RunAuthzGrantMsgForPoktrollModules creates an on-chain authz grant for the given
+// RunAuthzGrantMsgForPoktrollModules creates an onchain authz grant for the given
 // granter and grantee addresses for the specified message name in each of the poktroll
 // modules present in the integration app.
 func (s *AuthzIntegrationSuite) RunAuthzGrantMsgForPoktrollModules(
@@ -65,7 +65,7 @@ func (s *AuthzIntegrationSuite) RunAuthzGrantMsgForPoktrollModules(
 	}
 }
 
-// RunAuthzGrantMsg creates an on-chain authz grant from the given granter to the
+// RunAuthzGrantMsg creates an onchain authz grant from the given granter to the
 // grantee addresses for the authorization object provided.
 func (s *AuthzIntegrationSuite) RunAuthzGrantMsg(
 	t *testing.T,

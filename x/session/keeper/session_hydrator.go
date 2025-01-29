@@ -108,7 +108,7 @@ func (k Keeper) hydrateSessionMetadata(ctx context.Context, sh *sessionHydrator)
 	return nil
 }
 
-// hydrateSessionID use both session and on-chain data to determine a unique session ID
+// hydrateSessionID use both session and onchain data to determine a unique session ID
 func (k Keeper) hydrateSessionID(ctx context.Context, sh *sessionHydrator) error {
 	prevHashBz := k.GetBlockHash(ctx, sh.sessionHeader.SessionStartBlockHeight)
 
@@ -290,7 +290,7 @@ func (k Keeper) GetSessionId(
 }
 
 // GetSessionId returns the string and bytes representation of the sessionId for the
-// session containing blockHeight, given the shared on-chain parameters, application
+// session containing blockHeight, given the shared onchain parameters, application
 // address, service ID, and block hash.
 func GetSessionId(
 	sharedParams *sharedtypes.Params,
@@ -316,7 +316,7 @@ func GetSessionId(
 }
 
 // getSessionStartBlockHeightBz returns the bytes representation of the session
-// start height for the session containing blockHeight, given the shared on-chain
+// start height for the session containing blockHeight, given the shared onchain
 // parameters.
 func getSessionStartBlockHeightBz(sharedParams *sharedtypes.Params, blockHeight int64) []byte {
 	sessionStartBlockHeight := sharedtypes.GetSessionStartHeight(sharedParams, blockHeight)

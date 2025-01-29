@@ -39,7 +39,7 @@ streamline development and reduce friction for any new potential contributor.
 
 ## Pre-Requisites
 
-1. Make sure to [install the `poktrolld` CLI](../user_guide/install.md).
+1. Make sure to [install the `poktrolld` CLI](../user_guide/poktrolld_cli.md).
 2. Make sure you know how to [create and fund a new account](../user_guide/create-new-wallet.md).
 3. You have either [staked a new `service` or found an existing one](./service_cheatsheet.md).
 4. `[Optional]` You can run things locally or have dedicated long-running hardware. See the [Docker Compose Cheat Sheet](./docker_compose_debian_cheatsheet#deploy-your-server) if you're interested in the latter.
@@ -62,7 +62,7 @@ This document is a cheat sheet to get you quickly started with two things:
 1. Staking an onchain `Supplier`
 2. Deploying an offchain `RelayMiner`
 
-By the end of it, you should be able to serve Relays off-chain, and claim on-chain rewards.
+By the end of it, you should be able to serve Relays offchain, and claim onchain rewards.
 
 ## Account Setup
 
@@ -277,5 +277,5 @@ poktrolld query supplier -h
 Then, you can query for all services like so:
 
 ```bash
-poktrolld query supplier list-supplier --node https://shannon-testnet-grove-rpc.beta.poktroll.com --output json | jq
+poktrolld query supplier list-suppliers --node https://shannon-testnet-grove-rpc.beta.poktroll.com --output json | jq
 ```

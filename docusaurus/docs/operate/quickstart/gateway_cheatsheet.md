@@ -39,7 +39,7 @@ streamline development and reduce friction for any new potential contributor.
 
 ## Pre-Requisites
 
-1. Make sure to [install the `poktrolld` CLI](../user_guide/install.md).
+1. Make sure to [install the `poktrolld` CLI](../user_guide/poktrolld_cli.md).
 2. Make sure you know how to [create and fund a new account](../user_guide/create-new-wallet.md).
 
 :::warning

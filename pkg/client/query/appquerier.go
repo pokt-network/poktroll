@@ -13,7 +13,7 @@ import (
 var _ client.ApplicationQueryClient = (*appQuerier)(nil)
 
 // appQuerier is a wrapper around the apptypes.QueryClient that enables the
-// querying of on-chain application information through a single exposed method
+// querying of onchain application information through a single exposed method
 // which returns an apptypes.Application interface
 type appQuerier struct {
 	clientConn         grpc.ClientConn
@@ -61,4 +61,14 @@ func (aq *appQuerier) GetAllApplications(ctx context.Context) ([]apptypes.Applic
 		return []apptypes.Application{}, err
 	}
 	return res.Applications, nil
+}
+
+// GetParams returns the application module parameters
+func (aq *appQuerier) GetParams(ctx context.Context) (*apptypes.Params, error) {
+	req := apptypes.QueryParamsRequest{}
+	res, err := aq.applicationQuerier.Params(ctx, &req)
+	if err != nil {
+		return nil, err
+	}
+	return &res.Params, nil
 }

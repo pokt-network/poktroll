@@ -8,13 +8,15 @@ title: Chain Halt Troubleshooting
 - [Understanding Chain Halts](#understanding-chain-halts)
   - [Definition and Causes](#definition-and-causes)
   - [Impact on Network](#impact-on-network)
-- [Troubleshooting Process](#troubleshooting-process)
+- [Troubleshooting `wrong Block.Header.AppHash`](#troubleshooting-wrong-blockheaderapphash)
   - [Step 1: Identifying the Issue](#step-1-identifying-the-issue)
   - [Step 2: Collecting Node Data](#step-2-collecting-node-data)
   - [Step 3: Analyzing Discrepancies](#step-3-analyzing-discrepancies)
   - [Step 4: Decoding and Interpreting Data](#step-4-decoding-and-interpreting-data)
   - [Step 5: Comparing Records](#step-5-comparing-records)
   - [Step 6: Investigation and Resolution](#step-6-investigation-and-resolution)
+- [Troubleshooting `wrong Block.Header.LastResultsHash`](#troubleshooting-wrong-blockheaderlastresultshash)
+- [Syncing from genesis](#syncing-from-genesis)
 
 ## Understanding Chain Halts
 
@@ -40,7 +42,7 @@ Chain halts can have severe consequences for the network:
 
 Given these impacts, swift and effective troubleshooting is crucial to maintain network health and user trust.
 
-## Troubleshooting Process
+## Troubleshooting `wrong Block.Header.AppHash`
 
 ### Step 1: Identifying the Issue
 
@@ -94,3 +96,20 @@ Based on the identified discrepancies:
 2. Develop a fix or patch to address the issue.
 3. If necessary, initiate discussions with the validator community to reach social consensus on how to proceed.
 4. Implement the agreed-upon solution and monitor the network closely during and after the fix.
+
+## Troubleshooting `wrong Block.Header.LastResultsHash`
+
+Errors like the following can occur from using the incorrect binary version at a certain height.
+
+```bash
+reactor validation error: wrong Block.Header.LastResultsHash.
+```
+
+The solution is to use the correct binary version to sync the full node at the correct height.
+
+Tools like [cosmosvisor](https://docs.cosmos.network/v0.45/run-node/cosmovisor.html) make it easier
+to sync a node from genesis by automatically using the appropriate binary for each range of block heights.
+
+## Syncing from genesis
+
+If you're encountering any of the errors mentioned above while trying to sync the historical blocks - make sure you're running the correct version of the binary in accordance with this table [Upgrade List](../../protocol/upgrades/upgrade_list.md).

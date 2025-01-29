@@ -52,8 +52,10 @@ func (s *suite) TheUserShouldWaitForTheModuleMessageToBeSubmitted(module, msgTyp
 	// so that next steps that assert on supplier rewards can do it without having
 	// the proof submission fee skewing the results.
 	switch msgType {
+	case "CreateClaim":
+		fallthrough
 	case "SubmitProof":
-		supplierOperatorAddress := getMsgSubmitProofSenderAddress(event)
+		supplierOperatorAddress := getMsgSenderAddress(event)
 		require.NotEmpty(s, supplierOperatorAddress)
 
 		supplierAccName := accAddrToNameMap[supplierOperatorAddress]
@@ -146,13 +148,13 @@ func (s *suite) TheSupplierHasServicedASessionWithRelaysForServiceForApplication
 	require.NoError(s, err)
 
 	// Query for any existing claims so that we can compare against them in
-	// future assertions about changes in on-chain claims.
+	// future assertions about changes in onchain claims.
 	allClaimsRes, err := s.proofQueryClient.AllClaims(ctx, &prooftypes.QueryAllClaimsRequest{})
 	require.NoError(s, err)
 	s.scenarioState[preExistingClaimsKey] = allClaimsRes.Claims
 
 	// Query for any existing proofs so that we can compare against them in
-	// future assertions about changes in on-chain proofs.
+	// future assertions about changes in onchain proofs.
 	allProofsRes, err := s.proofQueryClient.AllProofs(ctx, &prooftypes.QueryAllProofsRequest{})
 	require.NoError(s, err)
 	s.scenarioState[preExistingProofsKey] = allProofsRes.Proofs
@@ -417,8 +419,8 @@ func combineEventMatchFns(fns ...func(*abci.Event) bool) func(*abci.Event) bool 
 	}
 }
 
-// getMsgSubmitProofSenderAddress returns the sender address from the given event.
-func getMsgSubmitProofSenderAddress(event *abci.Event) string {
+// getMsgSenderAddress returns the sender address from the given event.
+func getMsgSenderAddress(event *abci.Event) string {
 	senderAttrIdx := slices.IndexFunc(event.Attributes, func(attr abci.EventAttribute) bool {
 		return attr.Key == "sender"
 	})

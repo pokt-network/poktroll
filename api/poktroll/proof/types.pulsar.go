@@ -1317,7 +1317,7 @@ func (x *Proof) GetClosestMerkleProof() []byte {
 	return nil
 }
 
-// Claim is the serialized object stored on-chain for claims pending to be proven
+// Claim is the serialized object stored onchain for claims pending to be proven
 type Claim struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache

@@ -6,7 +6,7 @@ import sdkerrors "cosmossdk.io/errors"
 
 // x/tokenomics module sentinel errors
 var (
-	ErrTokenomicsInvalidSigner                  = sdkerrors.Register(ModuleName, 1100, "the provided authority address does not match the on-chain governance address")
+	ErrTokenomicsInvalidSigner                  = sdkerrors.Register(ModuleName, 1100, "the provided authority address does not match the onchain governance address")
 	ErrTokenomicsAddressInvalid                 = sdkerrors.Register(ModuleName, 1101, "the provided authority address is not a valid bech32 address")
 	ErrTokenomicsSessionHeaderNil               = sdkerrors.Register(ModuleName, 1102, "provided claim's session header is nil")
 	ErrTokenomicsSessionHeaderInvalid           = sdkerrors.Register(ModuleName, 1103, "provided claim's session header is invalid")
