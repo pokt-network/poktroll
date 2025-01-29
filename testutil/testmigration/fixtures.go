@@ -15,7 +15,10 @@ import (
 	migrationtypes "github.com/pokt-network/poktroll/x/migration/types"
 )
 
-// TODO_IN_THIS_COMMIT: godoc...
+// NewMorseStateExportAndAccountStateBytes returns a serialized `MorseStateExport`
+// and its corresponding `MorseAccountState`, populated dynamically with randomized
+// account addresses, and monotonically increasing balances/stakes. For each account,
+// one application and supplier are also added to the states.
 // TODO_CONSIDERATION: Test/benchmark execution speed can be optimized by refactoring this to a pre-generate fixture.
 func NewMorseStateExportAndAccountStateBytes(
 	t gocuke.TestingT,
@@ -33,7 +36,10 @@ func NewMorseStateExportAndAccountStateBytes(
 	return morseStateExportBz, morseAccountStateBz
 }
 
-// TODO_IN_THIS_COMMIT: godoc...
+// NewMorseStateExportAndAccountState returns a `MorseStateExport` and its
+// corresponding `MorseAccountState`, populated dynamically with randomized
+// account addresses, and monotonically increasing balances/stakes. For each account,
+// one application and supplier are also added to the states.
 func NewMorseStateExportAndAccountState(
 	t gocuke.TestingT, numAccounts int,
 ) (export *migrationtypes.MorseStateExport, state *migrationtypes.MorseAccountState) {
