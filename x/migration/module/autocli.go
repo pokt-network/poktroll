@@ -41,6 +41,7 @@ func (am AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 					PositionalArgs: []*autocliv1.PositionalArgDescriptor{{ProtoField: "accounts"}},
 					Skip:           true,
 				},
+				// TODO_UPNEXT(@bryanchriswhite): Add CLI business logic and args/flags.
 				{
 					RpcMethod:      "ClaimMorsePokt",
 					Use:            "claim-morse-pokt [morse-src-address] [morse-signature]",
