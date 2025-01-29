@@ -4,9 +4,10 @@ import (
 	"context"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/pokt-network/poktroll/x/migration/types"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+
+	"github.com/pokt-network/poktroll/x/migration/types"
 )
 
 func (k Keeper) MorseAccountState(goCtx context.Context, req *types.QueryGetMorseAccountStateRequest) (*types.QueryGetMorseAccountStateResponse, error) {
@@ -17,7 +18,7 @@ func (k Keeper) MorseAccountState(goCtx context.Context, req *types.QueryGetMors
 
 	val, found := k.GetMorseAccountState(ctx)
 	if !found {
-	    return nil, status.Error(codes.NotFound, "not found")
+		return nil, status.Error(codes.NotFound, "not found")
 	}
 
 	return &types.QueryGetMorseAccountStateResponse{MorseAccountState: val}, nil

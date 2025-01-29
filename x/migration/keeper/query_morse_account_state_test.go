@@ -46,4 +46,3 @@ func TestMorseAccountStateQuery(t *testing.T) {
 		})
 	}
 }
-
