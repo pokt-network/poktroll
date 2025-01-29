@@ -24,7 +24,7 @@ type appQuerier struct {
 	blockClient    client.BlockClient
 	appCache       map[string]*apptypes.Application
 	appParamsCache *apptypes.Params
-	appCacheMu     sync.Mutex
+	appCacheMu     *sync.Mutex
 }
 
 // NewApplicationQuerier returns a new instance of a client.ApplicationQueryClient
@@ -33,7 +33,7 @@ type appQuerier struct {
 // Required dependencies:
 // - clientCtx
 func NewApplicationQuerier(ctx context.Context, deps depinject.Config) (client.ApplicationQueryClient, error) {
-	aq := &appQuerier{}
+	aq := &appQuerier{appCacheMu: &sync.Mutex{}}
 
 	if err := depinject.Inject(
 		deps,

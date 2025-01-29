@@ -3,12 +3,12 @@ package types
 import (
 	"context"
 	fmt "fmt"
-	"sync"
 
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	"github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/pokt-network/poktroll/pkg/client"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 var _ client.AccountQueryClient = (*AccountKeeperQueryClient)(nil)
@@ -18,8 +18,7 @@ var _ client.AccountQueryClient = (*AccountKeeperQueryClient)(nil)
 // network requests as in the offchain implementation.
 type AccountKeeperQueryClient struct {
 	keeper             AccountKeeper
-	accountPubKeyCache map[string]cryptotypes.PubKey
-	CacheMu            *sync.RWMutex
+	accountPubKeyCache *sharedtypes.Cache[string, cryptotypes.PubKey]
 }
 
 // NewAccountKeeperQueryClient returns a new AccountQueryClient that is backed
@@ -30,8 +29,7 @@ type AccountKeeperQueryClient struct {
 func NewAccountKeeperQueryClient(accountKeeper AccountKeeper) client.AccountQueryClient {
 	return &AccountKeeperQueryClient{
 		keeper:             accountKeeper,
-		accountPubKeyCache: make(map[string]cryptotypes.PubKey),
-		CacheMu:            &sync.RWMutex{},
+		accountPubKeyCache: sharedtypes.NewCache[string, cryptotypes.PubKey](),
 	}
 }
 
@@ -66,11 +64,9 @@ func (accountQueryClient *AccountKeeperQueryClient) GetPubKeyFromAddress(
 	ctx context.Context,
 	address string,
 ) (cryptotypes.PubKey, error) {
-	accountQueryClient.CacheMu.RLock()
-	defer accountQueryClient.CacheMu.RUnlock()
-	if acc, found := accountQueryClient.accountPubKeyCache[address]; found {
+	if pubkey, found := accountQueryClient.accountPubKeyCache.Get(address); found {
 		fmt.Println("-----PubKey cache hit-----")
-		return acc, nil
+		return pubkey, nil
 	}
 
 	acc, err := accountQueryClient.GetAccount(ctx, address)
@@ -87,13 +83,11 @@ func (accountQueryClient *AccountKeeperQueryClient) GetPubKeyFromAddress(
 		return nil, ErrProofPubKeyNotFound
 	}
 
-	accountQueryClient.accountPubKeyCache[address] = pubKey
+	accountQueryClient.accountPubKeyCache.Set(address, pubKey)
 
 	return pubKey, nil
 }
 
 func (accountQueryClient *AccountKeeperQueryClient) ClearCache() {
-	accountQueryClient.CacheMu.Lock()
-	defer accountQueryClient.CacheMu.Unlock()
-	clear(accountQueryClient.accountPubKeyCache)
+	accountQueryClient.accountPubKeyCache.Clear()
 }

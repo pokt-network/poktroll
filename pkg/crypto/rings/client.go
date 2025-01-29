@@ -21,9 +21,7 @@ import (
 
 var _ crypto.RingClient = (*ringClient)(nil)
 
-// ringClient is an implementation of the RingClient interface that uses the
-// client.ApplicationQueryClient to get application's delegation information
-// needed to construct the ring for signing relay requests.
+// ringClient implements the RingClient interface.
 type ringClient struct {
 	logger polylog.Logger
 

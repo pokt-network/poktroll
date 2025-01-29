@@ -44,10 +44,13 @@ message EventProofUpdated {
   cosmos.base.v1beta1.Coin claimed_upokt = 6 [(gogoproto.jsontag) = "claimed_upokt"];
 }
 
-// Event emitted after a proof has been checked for validity.
+// Event emitted after a proof has been checked for validity in the proof module's
+// EndBlocker.
 message EventProofValidityChecked {
   poktroll.proof.Proof proof = 1 [(gogoproto.jsontag) = "proof"];
   uint64 block_height = 2 [(gogoproto.jsontag) = "block_height"];
   poktroll.proof.ClaimProofStatus proof_status = 3 [(gogoproto.jsontag) = "proof_status"];
+  // reason is the string representation of the error that led to the proof being
+  // marked as invalid (e.g. "invalid closest merkle proof", "invalid relay request signature")
   string reason = 4 [(gogoproto.jsontag) = "reason"];
 }
