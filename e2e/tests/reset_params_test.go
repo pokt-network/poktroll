@@ -28,7 +28,7 @@ func (s *suite) resetAllModuleParamsToDefaults() {
 	s.sendAuthzExecTx(s.granteeName, resetTxJSONFile.Name())
 }
 
-// allMoudlesMsgUpdateParamsToDefaultsAny returns a slice of Any messages, each corresponding
+// allModulesMsgUpdateParamsToDefaultsAny returns a slice of Any messages, each corresponding
 // to a MsgUpdateParams for a module, populated with the respective default values.
 func (s *suite) allModulesMsgUpdateParamsToDefaultsAny() []*codectypes.Any {
 	s.Helper()
