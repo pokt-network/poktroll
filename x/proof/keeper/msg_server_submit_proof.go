@@ -19,82 +19,85 @@ import (
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
-// SubmitProof is the server handler to submit and store a proof onchain.
-// A proof that's stored onchain is what leads to rewards (i.e. inflation)
-// downstream, making this a critical part of the protocol.
+// SubmitProof is the server message handler that stores a valid
+// proof onchain, enabling downstream reward distribution.
 //
-// Note that the validation of the proof is done in `EnsureValidProof`. However,
-// preliminary checks are done in the handler to prevent sybil or DoS attacks on
-// full nodes because storing and validating proofs is expensive.
+// IMPORTANT: Full proof validation occurs in EnsureValidProofSignaturesAndClosestPath.
+// This handler performs preliminary validation to prevent sybil/DoS attacks.
 //
-// We are playing a balance of security and efficiency here, where enough validation
-// is done on proof submission, and exhaustive validation is done during session
-// settlement.
+// There is a security & performance balance and tradeoff between the handler and end blocker:
+// - Basic validation on submission (here)
+// - Exhaustive validation in endblocker (EnsureValidProofSignaturesAndClosestPath)
 //
-// The entity sending the SubmitProof messages does not necessarily need
-// to correspond to the supplier signing the proof. For example, a single entity
-// could (theoretically) batch multiple proofs (signed by the corresponding supplier)
-// into one transaction to save on transaction fees.
+// Note: Proof submitter may differ from supplier signer, allowing batched submissions
+// to optimize transaction fees.
 func (k msgServer) SubmitProof(
 	ctx context.Context,
 	msg *types.MsgSubmitProof,
 ) (_ *types.MsgSubmitProofResponse, err error) {
+	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
+
 	// Declare claim to reference in telemetry.
 	var (
-		claim                = new(types.Claim)
+		claim                *types.Claim
 		isExistingProof      bool
 		numRelays            uint64
 		numClaimComputeUnits uint64
+		sessionHeader        *sessiontypes.SessionHeader
 	)
 
 	logger := k.Logger().With("method", "SubmitProof")
-	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
 	logger.Info("About to start submitting proof")
 
 	// Basic validation of the SubmitProof message.
 	if err = msg.ValidateBasic(); err != nil {
+		logger.Error("failed to validate the submitProof message")
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
+
+	sessionHeader = msg.GetSessionHeader()
+	supplierOperatorAddress := msg.GetSupplierOperatorAddress()
+
+	logger = logger.With(
+		"session_id", sessionHeader.GetSessionId(),
+		"application_address", sessionHeader.GetApplicationAddress(),
+		"service_id", sessionHeader.GetServiceId(),
+		"session_end_height", sessionHeader.GetSessionEndBlockHeight(),
+		"supplier_operator_address", supplierOperatorAddress,
+	)
 	logger.Info("validated the submitProof message")
 
-	// Compare msg session header w/ onchain session header.
-	session, err := k.queryAndValidateSessionHeader(ctx, msg.GetSessionHeader(), msg.GetSupplierOperatorAddress())
-	if err != nil {
-		return nil, status.Error(codes.InvalidArgument, err.Error())
+	// Defer telemetry calls so that they reference the final values the relevant variables.
+	defer k.finalizeSubmitProofTelemetry(sessionHeader, msg, isExistingProof, numRelays, numClaimComputeUnits, err)
+
+	// Construct the proof from the message.
+	proof := newProofFromMsg(msg)
+
+	// EnsureWellFormedProof ensures proper proof formation by verifying:
+	// - Proof structure
+	// - Associated claim
+	// - Relay session headers
+	// - Submission timing within required window
+	if err = k.EnsureWellFormedProof(ctx, proof); err != nil {
+		logger.Error(fmt.Sprintf("failed to ensure well-formed proof: %v", err))
+		return nil, status.Error(codes.FailedPrecondition, err.Error())
+	}
+	logger.Info("ensured the proof is well-formed")
+
+	// Retrieve the claim associated with the proof.
+	// The claim should ALWAYS exist since the proof validation in EnsureWellFormedProof
+	// retrieves and validates the associated claim.
+	foundClaim, claimFound := k.GetClaim(ctx, sessionHeader.GetSessionId(), supplierOperatorAddress)
+	if !claimFound {
+		logger.Error("failed to find the claim associated with the proof")
+		return nil, status.Error(codes.FailedPrecondition, types.ErrProofClaimNotFound.Error())
 	}
 
-	// Defer telemetry calls so that they reference the final values the relevant variables.
-	defer k.finalizeSubmitProofTelemetry(session, msg, isExistingProof, numRelays, numClaimComputeUnits, err)
+	claim = &foundClaim
 
-	if err = k.deductProofSubmissionFee(ctx, msg.GetSupplierOperatorAddress()); err != nil {
+	if err = k.deductProofSubmissionFee(ctx, supplierOperatorAddress); err != nil {
 		logger.Error(fmt.Sprintf("failed to deduct proof submission fee: %v", err))
 		return nil, status.Error(codes.FailedPrecondition, err.Error())
-	}
-
-	// Construct the proof
-	proof := types.Proof{
-		SupplierOperatorAddress: msg.GetSupplierOperatorAddress(),
-		SessionHeader:           session.GetHeader(),
-		ClosestMerkleProof:      msg.GetProof(),
-	}
-
-	// Helpers for logging the same metadata throughout this function calls
-	logger = logger.With(
-		"session_id", proof.SessionHeader.SessionId,
-		"session_end_height", proof.SessionHeader.SessionEndBlockHeight,
-		"supplier_operator_address", proof.SupplierOperatorAddress)
-
-	// Validate proof message commit height is within the respective session's
-	// proof submission window using the onchain session header.
-	if err = k.validateProofWindow(ctx, proof.SessionHeader, proof.SupplierOperatorAddress); err != nil {
-		return nil, status.Error(codes.FailedPrecondition, err.Error())
-	}
-
-	// Retrieve the corresponding claim for the proof submitted so it can be
-	// used in the proof validation below.
-	claim, err = k.queryAndValidateClaimForProof(ctx, proof.SessionHeader, proof.SupplierOperatorAddress)
-	if err != nil {
-		return nil, status.Error(codes.Internal, types.ErrProofClaimNotFound.Wrap(err.Error()).Error())
 	}
 
 	// Check if a proof is required for the claim.
@@ -120,7 +123,7 @@ func (k msgServer) SubmitProof(
 	}
 
 	// Get the service ID relayMiningDifficulty to calculate the claimed uPOKT.
-	serviceId := session.GetHeader().GetServiceId()
+	serviceId := sessionHeader.GetServiceId()
 	sharedParams := k.sharedKeeper.GetParams(ctx)
 	relayMiningDifficulty, _ := k.serviceKeeper.GetRelayMiningDifficulty(ctx, serviceId)
 
@@ -131,7 +134,7 @@ func (k msgServer) SubmitProof(
 	_, isExistingProof = k.GetProof(ctx, proof.SessionHeader.SessionId, proof.SupplierOperatorAddress)
 
 	// Upsert the proof
-	k.UpsertProof(ctx, proof)
+	k.UpsertProof(ctx, *proof)
 	logger.Info("successfully upserted the proof")
 
 	// Emit the appropriate event based on whether the claim was created or updated.
@@ -141,7 +144,7 @@ func (k msgServer) SubmitProof(
 		proofUpsertEvent = proto.Message(
 			&types.EventProofUpdated{
 				Claim:                    claim,
-				Proof:                    &proof,
+				Proof:                    proof,
 				NumRelays:                numRelays,
 				NumClaimedComputeUnits:   numClaimComputeUnits,
 				NumEstimatedComputeUnits: numEstimatedComputUnits,
@@ -152,7 +155,7 @@ func (k msgServer) SubmitProof(
 		proofUpsertEvent = proto.Message(
 			&types.EventProofSubmitted{
 				Claim:                    claim,
-				Proof:                    &proof,
+				Proof:                    proof,
 				NumRelays:                numRelays,
 				NumClaimedComputeUnits:   numClaimComputeUnits,
 				NumEstimatedComputeUnits: numEstimatedComputUnits,
@@ -160,6 +163,7 @@ func (k msgServer) SubmitProof(
 			},
 		)
 	}
+
 	if err = sdkCtx.EventManager().EmitTypedEvent(proofUpsertEvent); err != nil {
 		return nil, status.Error(
 			codes.Internal,
@@ -172,7 +176,7 @@ func (k msgServer) SubmitProof(
 	}
 
 	return &types.MsgSubmitProofResponse{
-		Proof: &proof,
+		Proof: proof,
 	}, nil
 }
 
@@ -322,10 +326,17 @@ func (k Keeper) getProofRequirementSeedBlockHash(
 
 // finalizeSubmitProofTelemetry finalizes telemetry updates for SubmitProof, incrementing counters as needed.
 // Meant to run deferred.
-func (k msgServer) finalizeSubmitProofTelemetry(session *sessiontypes.Session, msg *types.MsgSubmitProof, isExistingProof bool, numRelays, numClaimComputeUnits uint64, err error) {
+func (k msgServer) finalizeSubmitProofTelemetry(
+	sessionHeader *sessiontypes.SessionHeader,
+	msg *types.MsgSubmitProof,
+	isExistingProof bool,
+	numRelays,
+	numClaimComputeUnits uint64,
+	err error,
+) {
 	if !isExistingProof {
-		serviceId := session.Header.ServiceId
-		applicationAddress := session.Header.ApplicationAddress
+		serviceId := sessionHeader.ServiceId
+		applicationAddress := sessionHeader.ApplicationAddress
 		supplierOperatorAddress := msg.GetSupplierOperatorAddress()
 		claimProofStage := types.ClaimProofStage_PROVEN.String()
 
@@ -337,7 +348,11 @@ func (k msgServer) finalizeSubmitProofTelemetry(session *sessiontypes.Session, m
 
 // finalizeProofRequirementTelemetry finalizes telemetry updates for proof requirements.
 // Meant to run deferred.
-func (k Keeper) finalizeProofRequirementTelemetry(requirementReason types.ProofRequirementReason, claim *types.Claim, err error) {
+func (k Keeper) finalizeProofRequirementTelemetry(
+	requirementReason types.ProofRequirementReason,
+	claim *types.Claim,
+	err error,
+) {
 	telemetry.ProofRequirementCounter(
 		requirementReason.String(),
 		claim.SessionHeader.ServiceId,
@@ -345,4 +360,13 @@ func (k Keeper) finalizeProofRequirementTelemetry(requirementReason types.ProofR
 		claim.SupplierOperatorAddress,
 		err,
 	)
+}
+
+// newProofFromMsg creates a new proof from a MsgSubmitProof message.
+func newProofFromMsg(msg *types.MsgSubmitProof) *types.Proof {
+	return &types.Proof{
+		SupplierOperatorAddress: msg.GetSupplierOperatorAddress(),
+		SessionHeader:           msg.GetSessionHeader(),
+		ClosestMerkleProof:      msg.GetProof(),
+	}
 }
