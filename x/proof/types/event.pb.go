@@ -388,7 +388,7 @@ func (m *EventProofValidityChecked) GetProofStatus() ClaimProofStatus {
 	if m != nil {
 		return m.ProofStatus
 	}
-	return ClaimProofStatus_NOT_FOUND
+	return ClaimProofStatus_PENDING_VALIDATION
 }
 
 func (m *EventProofValidityChecked) GetReason() string {

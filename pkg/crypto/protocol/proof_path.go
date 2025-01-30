@@ -2,30 +2,32 @@ package protocol
 
 import (
 	"crypto/sha256"
+
+	"github.com/pokt-network/smt"
 )
 
-// SMT specification used for the proof verification.
-var (
-	NewHasher = sha256.New
-	//SmtSpec   smt.TrieSpec
-)
-
-func init() {
-	// Use a spec that does not prehash values in the smst. This returns a nil value
-	// hasher for the proof verification in order to avoid hashing the value twice.
-	//SmtSpec = smt.NewTrieSpec(
-	//	newHasher(), true,
-	//	smt.WithValueHasher(nil),
-	//)
-}
+// newHasher is the hash function used by the SMT specification.
+var newHasher = sha256.New
 
 // GetPathForProof computes the path to be used for proof validation by hashing
 // the block hash and session id.
 func GetPathForProof(blockHash []byte, sessionId string) []byte {
-	hasher := NewHasher()
+	hasher := newHasher()
 	if _, err := hasher.Write(append(blockHash, []byte(sessionId)...)); err != nil {
 		panic(err)
 	}
 
 	return hasher.Sum(nil)
+}
+
+// NewSMTSpec returns the SMT specification used for the proof verification.
+// It uses a new hasher at every call to avoid concurrency issues that could be
+// caused by a shared hasher.
+func NewSMTSpec() *smt.TrieSpec {
+	trieSpec := smt.NewTrieSpec(
+		newHasher(), true,
+		smt.WithValueHasher(nil),
+	)
+
+	return &trieSpec
 }

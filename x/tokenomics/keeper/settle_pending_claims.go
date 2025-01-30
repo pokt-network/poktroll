@@ -138,27 +138,25 @@ func (k Keeper) SettlePendingClaims(ctx cosmostypes.Context) (
 
 		proofIsRequired := proofRequirement != prooftypes.ProofRequirementReason_NOT_REQUIRED
 		if proofIsRequired {
-			// The tokenomics end blocker, which calls SettlePendingClaims, is ALWAYS executed
-			// AFTER the proof submission window closes. In contrast, the proof end blocker,
-			// which handles proof validation, is ALWAYS executed WITHIN the proof submission
-			// window of the same session number.
-			// This ensures that proof validation is completed before claims settlement,
-			// as they occur at different block heights.
+			// IMPORTANT: Proof validation and claims settlement timing:
+			// 	- Proof validation (proof end blocker): Executes WITHIN proof submission window
+			// 	- Claims settlement (tokenomics end blocker): Executes AFTER window closes
+			// This ensures proofs are validated before claims are settled
 
 			var expirationReason tokenomicstypes.ClaimExpirationReason
-			switch claim.ProofStatus {
+			switch claim.ProofValidationStatus {
 			// If the proof is required and not found, the claim is expired.
-			case prooftypes.ClaimProofStatus_NOT_FOUND:
+			case prooftypes.ClaimProofStatus_PENDING_VALIDATION:
 				expirationReason = tokenomicstypes.ClaimExpirationReason_PROOF_MISSING
 			// If the proof is required and invalid, the claim is expired.
 			case prooftypes.ClaimProofStatus_INVALID:
 				expirationReason = tokenomicstypes.ClaimExpirationReason_PROOF_INVALID
 			// If the proof is required and valid, the claim is settled.
-			case prooftypes.ClaimProofStatus_VALID:
+			case prooftypes.ClaimProofStatus_VALIDATED:
 				expirationReason = tokenomicstypes.ClaimExpirationReason_EXPIRATION_REASON_UNSPECIFIED
 			}
 
-			if claim.ProofStatus != prooftypes.ClaimProofStatus_VALID {
+			if claim.ProofValidationStatus != prooftypes.ClaimProofStatus_VALIDATED {
 				// TODO_BETA(@red-0ne): Slash the supplier in proportion to their stake.
 				// TODO_POST_MAINNET: Consider allowing suppliers to RemoveClaim via a new
 				// message in case it was sent by accident

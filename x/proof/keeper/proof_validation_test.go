@@ -611,10 +611,10 @@ func TestEnsureValidProof_Error(t *testing.T) {
 				err = sparseCompactMerkleClosestProof.Unmarshal(proof.ClosestMerkleProof)
 				require.NoError(t, err)
 				var sparseMerkleClosestProof *smt.SparseMerkleClosestProof
-				sparseMerkleClosestProof, err = smt.DecompactClosestProof(sparseCompactMerkleClosestProof, &protocol.SmtSpec)
+				sparseMerkleClosestProof, err = smt.DecompactClosestProof(sparseCompactMerkleClosestProof, protocol.NewSMTSpec())
 				require.NoError(t, err)
 
-				relayBz := sparseMerkleClosestProof.GetValueHash(&protocol.SmtSpec)
+				relayBz := sparseMerkleClosestProof.GetValueHash(protocol.NewSMTSpec())
 				relayHashArr := protocol.GetRelayHashFromBytes(relayBz)
 				relayHash := relayHashArr[:]
 
