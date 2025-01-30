@@ -151,14 +151,14 @@ func (k Keeper) validateProof(
 	// Set the proof status to valid by default.
 	proofStatus := types.ClaimProofStatus_VALIDATED
 	// Set the invalidity reason to an empty string by default.
-	invalidProofCause := ""
+	invalidProofReason := ""
 
 	if err := k.EnsureValidProofSignaturesAndClosestPath(ctx, &claim, &proof); err != nil {
 		// Set the proof status to invalid.
 		proofStatus = types.ClaimProofStatus_INVALID
 
 		// Set the invalidity reason to the error message.
-		invalidProofCause = err.Error()
+		invalidProofReason = err.Error()
 
 		logger.Info(fmt.Sprintf("invalid proof due to error: %v", err))
 	}
@@ -166,10 +166,10 @@ func (k Keeper) validateProof(
 
 	// Create and emit an event for the proof validation result.
 	eventProofValidityChecked := types.EventProofValidityChecked{
-		Proof:       &proof,
-		BlockHeight: uint64(sdkCtx.BlockHeight()),
-		ProofStatus: proofStatus,
-		Reason:      invalidProofCause,
+		Proof:         &proof,
+		BlockHeight:   uint64(sdkCtx.BlockHeight()),
+		ProofStatus:   proofStatus,
+		FailureReason: invalidProofReason,
 	}
 
 	if err := sdkCtx.EventManager().EmitTypedEvent(&eventProofValidityChecked); err != nil {

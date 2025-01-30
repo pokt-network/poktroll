@@ -52,5 +52,5 @@ message EventProofValidityChecked {
   poktroll.proof.ClaimProofStatus proof_status = 3 [(gogoproto.jsontag) = "proof_status"];
   // reason is the string representation of the error that led to the proof being
   // marked as invalid (e.g. "invalid closest merkle proof", "invalid relay request signature")
-  string reason = 4 [(gogoproto.jsontag) = "reason"];
+  string failure_reason = 4 [(gogoproto.jsontag) = "failure_reason"];
 }
