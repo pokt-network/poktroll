@@ -11,6 +11,4 @@ option (gogoproto.stable_marshaler_all) = true;
 message Params {
   option (amino.name) = "poktroll/x/migration/Params";
   option (gogoproto.equal) = true;
-
-  
 }
