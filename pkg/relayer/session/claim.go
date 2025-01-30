@@ -233,6 +233,10 @@ func (rs *relayerSessionsManager) goCreateClaimRoots(
 ) {
 	failedClaims := []relayer.SessionTree{}
 	flushedClaims := []relayer.SessionTree{}
+
+	failedClaimsCh := make(chan relayer.SessionTree, len(sessionTrees))
+	flushedClaimsCh := make(chan relayer.SessionTree, len(sessionTrees))
+
 	wg := sync.WaitGroup{}
 	sem := make(chan struct{}, runtime.NumCPU())
 	for _, sessionTree := range sessionTrees {
@@ -251,15 +255,25 @@ func (rs *relayerSessionsManager) goCreateClaimRoots(
 			// This session should no longer be updated
 			if _, err := tree.Flush(); err != nil {
 				rs.logger.Error().Err(err).Msg("failed to flush session")
-				failedClaims = append(failedClaims, tree)
+				failedClaimsCh <- tree
 				return
 			}
 
-			flushedClaims = append(flushedClaims, tree)
+			flushedClaimsCh <- tree
 		}(sessionTree)
 	}
 
 	wg.Wait()
+	close(failedClaimsCh)
+	close(flushedClaimsCh)
+
+	for failedClaim := range failedClaimsCh {
+		failedClaims = append(failedClaims, failedClaim)
+	}
+
+	for flushedClaim := range flushedClaimsCh {
+		flushedClaims = append(flushedClaims, flushedClaim)
+	}
 
 	failSubmitProofsSessionsCh <- failedClaims
 	claimsFlushedCh <- flushedClaims

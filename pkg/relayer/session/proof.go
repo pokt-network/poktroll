@@ -214,9 +214,12 @@ func (rs *relayerSessionsManager) proveClaims(
 ) (successProofs []relayer.SessionTree, failedProofs []relayer.SessionTree) {
 	logger := rs.logger.With("method", "proveClaims")
 
-	proofsMu := sync.Mutex{}
-	wg := sync.WaitGroup{}
+	wg := &sync.WaitGroup{}
 	sem := make(chan struct{}, runtime.NumCPU())
+
+	// Create buffered channels for collecting results
+	successProofsCh := make(chan relayer.SessionTree, len(sessionTrees))
+	failedProofsCh := make(chan relayer.SessionTree, len(sessionTrees))
 
 	for _, sessionTree := range sessionTrees {
 		sem <- struct{}{}
@@ -231,9 +234,7 @@ func (rs *relayerSessionsManager) proveClaims(
 			// do not create the claim since the proof requirement is unknown.
 			// WARNING: Creating a claim and not submitting a proof (if necessary) could lead to a stake burn!!
 			if err != nil {
-				proofsMu.Lock()
-				failedProofs = append(failedProofs, tree)
-				proofsMu.Unlock()
+				failedProofsCh <- tree
 				rs.logger.Error().Err(err).Msg("failed to determine if proof is required, skipping claim creation")
 				return
 			}
@@ -249,22 +250,28 @@ func (rs *relayerSessionsManager) proveClaims(
 
 				// If the proof cannot be generated, add the sessionTree to the failedProofs.
 				if _, err := tree.ProveClosest(path); err != nil {
-					proofsMu.Lock()
-					failedProofs = append(failedProofs, tree)
-					proofsMu.Unlock()
+					failedProofsCh <- tree
 					logger.Error().Err(err).Msg("failed to generate proof")
 					return
 				}
 
 				// If the proof was generated successfully, add the sessionTree to the
 				// successProofs slice that will be sent to the proof submission step.
-				proofsMu.Lock()
-				successProofs = append(successProofs, tree)
-				proofsMu.Unlock()
+				successProofsCh <- tree
 			}
 		}(sessionTree)
+	}
 
-		wg.Wait()
+	wg.Wait()
+	close(successProofsCh)
+	close(failedProofsCh)
+
+	// Convert channels to slices
+	for tree := range successProofsCh {
+		successProofs = append(successProofs, tree)
+	}
+	for tree := range failedProofsCh {
+		failedProofs = append(failedProofs, tree)
 	}
 
 	return successProofs, failedProofs
