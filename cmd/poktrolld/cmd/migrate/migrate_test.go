@@ -17,8 +17,14 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/pokt-network/poktroll/app/volatile"
+	"github.com/pokt-network/poktroll/pkg/polylog/polyzero"
 	migrationtypes "github.com/pokt-network/poktroll/x/migration/types"
 )
+
+func init() {
+	logger = polyzero.NewLogger(polyzero.WithLevel(polyzero.DebugLevel))
+	flagDebugAccountsPerLog = 1
+}
 
 func TestCollectMorseAccounts(t *testing.T) {
 	tmpDir := t.TempDir()
@@ -34,7 +40,7 @@ func TestCollectMorseAccounts(t *testing.T) {
 	require.NoError(t, err)
 
 	// Call the function under test.
-	err = collectMorseAccounts(inputFile.Name(), outputPath)
+	_, err = collectMorseAccounts(inputFile.Name(), outputPath)
 	require.NoError(t, err)
 
 	outputJSON, err := os.ReadFile(outputPath)
@@ -63,14 +69,12 @@ func TestNewTestMorseStateExport(t *testing.T) {
 			require.Equal(t, i, len(exportAccounts))
 
 			expectedShannonBalance := fmt.Sprintf("%d%d%d0%d%d%d", i, i, i, i, i, i)
-			morseAccountState := new(migrationtypes.MorseAccountState)
-			morseAccountStateBz, err := transformMorseState(morseStateExport)
+			morseWorkspace := newMorseImportWorkspace()
+			err = transformMorseState(morseStateExport, morseWorkspace)
 			require.NoError(t, err)
 
-			err = cmtjson.Unmarshal(morseAccountStateBz, morseAccountState)
-			require.NoError(t, err)
-
-			require.Equal(t, expectedShannonBalance, morseAccountState.Accounts[i-1].Coins[0].Amount.String())
+			morseAccounts := morseWorkspace.accountState.Accounts[i-1]
+			require.Equal(t, expectedShannonBalance, morseAccounts.Coins[0].Amount.String())
 		})
 	}
 }
@@ -84,11 +88,12 @@ func BenchmarkTransformMorseState(b *testing.B) {
 		require.NoError(b, err)
 
 		b.Run(fmt.Sprintf("num_accounts=%d", numAccounts), func(b *testing.B) {
+			morseWorkspace := newMorseImportWorkspace()
 
 			// Call the function under test.
 			b.ResetTimer()
 			for i := 0; i < b.N; i++ {
-				_, err = transformMorseState(morseStateExport)
+				err = transformMorseState(morseStateExport, morseWorkspace)
 				require.NoError(b, err)
 			}
 		})
