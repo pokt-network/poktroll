@@ -70,21 +70,11 @@ message MorseApplication {
 
   // Address is a hex-encoded string representation of the address corresponding
   // to a Morse application's ed25519 public key.
-  bytes address = 1 [
-    (gogoproto.casttype) = "github.com/cometbft/cometbft/crypto.Address",
-    (gogoproto.jsontag) = "address",
-    (gogoproto.moretags) = "yaml:\"address\""
-  ];
+  bytes address = 1 [(gogoproto.casttype) = "github.com/cometbft/cometbft/crypto.Address", (gogoproto.jsontag) = "address", (gogoproto.moretags) = "yaml:\"address\""];
   // PublicKey is the binary representation of a Morse application's ed25519 public key.
-  bytes public_key = 2 [
-    (gogoproto.jsontag) = "public_key",
-    (gogoproto.moretags) = "yaml:\"public_key\""];
-  bool   jailed = 3[
-    (gogoproto.jsontag) = "jailed",
-    (gogoproto.moretags) = "yaml:\"jailed\""];
-  int32  status = 4 [
-    (gogoproto.jsontag) = "status",
-    (gogoproto.moretags) = "yaml:\"status\""];
+  bytes public_key = 2 [(gogoproto.jsontag) = "public_key", (gogoproto.moretags) = "yaml:\"public_key\""];
+  bool   jailed = 3[(gogoproto.jsontag) = "jailed", (gogoproto.moretags) = "yaml:\"jailed\""];
+  int32  status = 4 [(gogoproto.jsontag) = "status", (gogoproto.moretags) = "yaml:\"status\""];
   string staked_tokens = 6 [(gogoproto.jsontag) = "tokens"];
 }
 

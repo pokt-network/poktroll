@@ -182,8 +182,8 @@ func collectInputAccountBalances(inputState *migrationtypes.MorseStateExport, mo
 			continue
 		}
 
-		addr := exportAccount.Value.Address.String()
-		if _, _, err := morseWorkspace.ensureAccount(addr, exportAccount); err != nil {
+		accountAddr := exportAccount.Value.Address.String()
+		if _, _, err := morseWorkspace.ensureAccount(accountAddr, exportAccount); err != nil {
 			return err
 		}
 
@@ -196,7 +196,7 @@ func collectInputAccountBalances(inputState *migrationtypes.MorseStateExport, mo
 		if len(coins) != 1 {
 			return ErrMorseExportState.Wrapf(
 				"account %q has %d token denominations, expected upokt only: %s",
-				addr, len(coins), coins,
+				accountAddr, len(coins), coins,
 			)
 		}
 
@@ -205,10 +205,10 @@ func collectInputAccountBalances(inputState *migrationtypes.MorseStateExport, mo
 			return ErrMorseExportState.Wrapf("unsupported denom %q", coin.Denom)
 		}
 
-		if err := morseWorkspace.addUpokt(addr, coin.Amount); err != nil {
+		if err := morseWorkspace.addUpokt(accountAddr, coin.Amount); err != nil {
 			return fmt.Errorf(
 				"adding morse account balance (%s) to account balance of address %q: %w",
-				coin, addr, err,
+				coin, accountAddr, err,
 			)
 		}
 	}
@@ -226,11 +226,11 @@ func shouldDebugLogProgress(exportAccountIdx int) bool {
 // adds the stake to the corresponding account balances in the morseWorkspace.
 func collectInputApplicationStakes(inputState *migrationtypes.MorseStateExport, morseWorkspace *morseImportWorkspace) error {
 	for _, exportApplication := range inputState.AppState.Application.Applications {
-		addr := exportApplication.Address.String()
+		appAddr := exportApplication.Address.String()
 
 		// DEV_NOTE: An account SHOULD exist for each actor.
-		if !morseWorkspace.hasAccount(addr) {
-			return ErrMorseExportState.Wrapf("account not found corresponding to application with address %q", addr)
+		if !morseWorkspace.hasAccount(appAddr) {
+			return ErrMorseExportState.Wrapf("account not found corresponding to application with address %q", appAddr)
 		}
 
 		appStakeAmtUpokt, ok := cosmosmath.NewIntFromString(exportApplication.StakedTokens)
@@ -238,10 +238,10 @@ func collectInputApplicationStakes(inputState *migrationtypes.MorseStateExport, 
 			return ErrMorseExportState.Wrapf("failed to parse application stake amount %q", exportApplication.StakedTokens)
 		}
 
-		if err := morseWorkspace.addUpokt(addr, appStakeAmtUpokt); err != nil {
+		if err := morseWorkspace.addUpokt(appAddr, appStakeAmtUpokt); err != nil {
 			return fmt.Errorf(
 				"adding application stake amount to account balance of address %q: %w",
-				addr, err,
+				appAddr, err,
 			)
 		}
 	}
@@ -252,11 +252,11 @@ func collectInputApplicationStakes(inputState *migrationtypes.MorseStateExport, 
 // adds the stake to the corresponding account balances in the morseWorkspace.
 func collectInputSupplierStakes(inputState *migrationtypes.MorseStateExport, morseWorkspace *morseImportWorkspace) error {
 	for _, exportSupplier := range inputState.AppState.Pos.Validators {
-		addr := exportSupplier.Address.String()
+		supplierAddr := exportSupplier.Address.String()
 
 		// DEV_NOTE: An account SHOULD exist for each actor.
-		if !morseWorkspace.hasAccount(addr) {
-			return ErrMorseExportState.Wrapf("account not found corresponding to supplier with address %q", addr)
+		if !morseWorkspace.hasAccount(supplierAddr) {
+			return ErrMorseExportState.Wrapf("account not found corresponding to supplier with address %q", supplierAddr)
 		}
 
 		supplierStakeAmtUpokt, ok := cosmosmath.NewIntFromString(exportSupplier.StakedTokens)
@@ -264,10 +264,10 @@ func collectInputSupplierStakes(inputState *migrationtypes.MorseStateExport, mor
 			return ErrMorseExportState.Wrapf("failed to parse supplier stake amount %q", exportSupplier.StakedTokens)
 		}
 
-		if err := morseWorkspace.addUpokt(addr, supplierStakeAmtUpokt); err != nil {
+		if err := morseWorkspace.addUpokt(supplierAddr, supplierStakeAmtUpokt); err != nil {
 			return fmt.Errorf(
 				"adding supplier stake amount to account balance of address %q: %w",
-				addr, err,
+				supplierAddr, err,
 			)
 		}
 	}
