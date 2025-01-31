@@ -14,13 +14,16 @@ import (
 	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 )
 
-// Upgrade_0_0_12 is the upgrade handler for v0.0.12 upgrade.
-//   - Before: v0.0.11
+// Upgrade_0_0_12 handles the v0.0.12 upgrade.
+//
+// Versions:
+//   - Before: v0.0.11 
 //   - After: v0.0.12
 
-// This upgrade introduces a type change to RevSharePercent from float32 to uint64, which is introduced as a separate
-// protobuf field. As a result, we expect existing on-chain data to switch to default value.
-// Investigate the impact of this change on existing on-chain data.
+// This upgrade changes RevSharePercent from float32  to uint64 in a new protobuf field.
+// The result is existing onchain resetting to the default.
+//
+// TODO_IN_THIS_PR: Verify impact on existing chain data
 var Upgrade_0_0_12 = Upgrade{
 	PlanName: "v0.0.12",
 	CreateUpgradeHandler: func(mm *module.Manager,
@@ -32,9 +35,13 @@ var Upgrade_0_0_12 = Upgrade{
 			logger := cosmosTypes.UnwrapSDKContext(ctx).Logger()
 			logger.Info("Starting parameter updates for v0.0.12")
 
-			// Add supplier module staking_fee per `config.yml`. The min stake is set to 1000000 upokt, but we avoid
-			// GetParams() to avoid potential protobuf issues and all networks have the same value (no need to read).
-			// Validate with: `poktrolld q supplier params --node=https://testnet-validated-validator-rpc.poktroll.com/`
+			// Set supplier module staking_fee to 1000000 upokt to match config.yml. 
+			// Using hardcoded value because:  
+			//   - All networks (Alpha & Beta TestNet) share the same value
+			//   - Avoids potential protobuf issues with GetParams()
+			//
+			// Verify via:
+			// $ poktrolld q supplier params --node=https://testnet-validated-validator-rpc.poktroll.com/
 			supplierParams := suppliertypes.Params{
 				MinStake: &cosmosTypes.Coin{
 					Denom:  "upokt",
