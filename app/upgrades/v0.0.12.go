@@ -10,6 +10,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/types/module"
 	"github.com/pokt-network/poktroll/app/keepers"
 	servicetypes "github.com/pokt-network/poktroll/x/service/types"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 )
 
@@ -20,11 +21,6 @@ import (
 // This upgrade introduces a type change to RevSharePercent from float32 to uint64, which is introduced as a separate
 // protobuf field. As a result, we expect existing on-chain data to switch to default value.
 // Investigate the impact of this change on existing on-chain data.
-//
-// TODO_IN_THIS_PR: decide if we need a proper module migration.
-
-// TODO_IN_THIS_PR: WIP. Using this diff as a starting point: https://github.com/pokt-network/poktroll/compare/v0.0.11...feat/proof-endblocker
-// TODO_IN_THIS_PR: Wait for https://github.com/pokt-network/poktroll/pull/1042
 var Upgrade_0_0_12 = Upgrade{
 	PlanName: "v0.0.12",
 	CreateUpgradeHandler: func(mm *module.Manager,
@@ -96,6 +92,26 @@ var Upgrade_0_0_12 = Upgrade{
 			if err != nil {
 				logger.Error("Failed to apply new parameters", "error", err)
 				return vm, err
+			}
+
+			// Since we changed the type of RevSharePercent from float32 to uint64, we need to update all on-chain data.
+			// The easiest way to do this is to iterate over all suppliers and services and set the revshare to 100 by default.
+			suppliers := keepers.SupplierKeeper.GetAllSuppliers(ctx)
+			logger.Info("Updating all suppliers to have a 100% revshare to the supplier", "num_suppliers", len(suppliers))
+			for _, supplier := range suppliers {
+				for _, service := range supplier.Services {
+					// Force all services to have a 100% revshare to the supplier.
+					// Not something we would do on a real mainnet, but it's a quick way to resolve the issue.
+					// Currently, we don't break any existing suppliers (as all of them have a 100% revshare to the supplier).
+					service.RevShare = []*sharedtypes.ServiceRevenueShare{
+						{
+							Address:            supplier.OperatorAddress,
+							RevSharePercentage: uint64(100),
+						},
+					}
+				}
+				keepers.SupplierKeeper.SetSupplier(ctx, supplier)
+				logger.Info("Updated supplier", "supplier", supplier.OperatorAddress)
 			}
 
 			logger.Info("Running module migrations")
