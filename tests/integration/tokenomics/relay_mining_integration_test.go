@@ -214,7 +214,7 @@ func prepareRealClaim(
 	require.NoError(t, err)
 
 	// Prepare an SMST
-	trie := smt.NewSparseMerkleSumTrie(kvStore, protocol.NewTrieHasher(), smt.WithValueHasher(nil))
+	trie := smt.NewSparseMerkleSumTrie(kvStore, protocol.NewTrieHasher(), protocol.SMTValueHasher())
 
 	// Insert the mined relays into the SMST
 	for i := uint64(0); i < numRelays; i++ {
