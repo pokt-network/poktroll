@@ -1,6 +1,10 @@
 package protocol
 
-import "crypto/sha256"
+import (
+	"crypto/sha256"
+
+	"github.com/pokt-network/smt"
+)
 
 const (
 	RelayHasherSize      = sha256.Size
@@ -15,3 +19,7 @@ var (
 	NewRelayHasher = sha256.New
 	NewTrieHasher  = sha256.New
 )
+
+func SMTValueHasher() smt.TrieSpecOption {
+	return smt.WithValueHasher(nil)
+}
