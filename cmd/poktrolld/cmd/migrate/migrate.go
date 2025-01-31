@@ -106,7 +106,7 @@ func collectMorseAccounts(morseStateExportPath, morseAccountStatePath string) (*
 	}
 
 	morseWorkspace := newMorseImportWorkspace()
-	if err := transformMorseState(inputState, morseWorkspace); err != nil {
+	if err = transformMorseState(inputState, morseWorkspace); err != nil {
 		return nil, err
 	}
 
@@ -220,23 +220,6 @@ func collectInputAccountBalances(inputState *migrationtypes.MorseStateExport, mo
 func shouldDebugLogProgress(exportAccountIdx int) bool {
 	return flagDebugAccountsPerLog > 0 &&
 		exportAccountIdx%flagDebugAccountsPerLog == 0
-}
-
-// debugLogProgress logs the total balances, app stakes, and supplier stakes of
-// all accounts that have been processed.
-func debugLogProgress(exportAccountIdx int, morseWorkspace *morseImportWorkspace) {
-	totalBalance := morseWorkspace.totalBalance()
-	totalAppStake := morseWorkspace.totalAppStake()
-	totalSupplierStake := morseWorkspace.totalSupplierStake()
-	grandTotal := totalBalance.Add(totalAppStake).Add(totalSupplierStake)
-
-	logger.Debug().
-		Int("account_idx", exportAccountIdx).
-		Str("total_balance", totalBalance.String()).
-		Str("total_app_stake", totalAppStake.String()).
-		Str("total_supplier_stake", totalSupplierStake.String()).
-		Str("grand_total", grandTotal.String()).
-		Msg("processing accounts...")
 }
 
 // collectInputApplicationStakes iterates over the applications in the inputState and
