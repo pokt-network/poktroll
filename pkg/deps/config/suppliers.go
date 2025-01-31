@@ -17,6 +17,7 @@ import (
 	"github.com/pokt-network/poktroll/pkg/client/delegation"
 	"github.com/pokt-network/poktroll/pkg/client/events"
 	"github.com/pokt-network/poktroll/pkg/client/query"
+	"github.com/pokt-network/poktroll/pkg/client/query/cache"
 	querytypes "github.com/pokt-network/poktroll/pkg/client/query/types"
 	"github.com/pokt-network/poktroll/pkg/client/supplier"
 	"github.com/pokt-network/poktroll/pkg/client/tx"
@@ -506,4 +507,46 @@ func newSupplyTxClientsFn(
 	}
 
 	return depinject.Configs(deps, depinject.Supply(txClient)), nil
+}
+
+// NewSupplyTxClientFn returns a function which constructs a KeyValueCache of type T.
+// It take a list of cache options that can be used to configure the cache.
+func NewSupplyKeyValueCacheFn[T any](opts ...cache.CacheOption[query.KeyValueCache[T]]) SupplierFn {
+	return func(
+		ctx context.Context,
+		deps depinject.Config,
+		_ *cobra.Command,
+	) (depinject.Config, error) {
+		kvCache := cache.NewKeyValueCache[T]()
+
+		// Apply the cache options
+		for _, opt := range opts {
+			if err := opt(ctx, deps, kvCache); err != nil {
+				return nil, err
+			}
+		}
+
+		return depinject.Configs(deps, depinject.Supply(kvCache)), nil
+	}
+}
+
+// NewSupplyParamsCacheFn returns a function which constructs a ParamsCache of type T.
+// It take a list of cache options that can be used to configure the cache.
+func NewSupplyParamsCacheFn[T any](opts ...cache.CacheOption[query.ParamsCache[T]]) SupplierFn {
+	return func(
+		ctx context.Context,
+		deps depinject.Config,
+		_ *cobra.Command,
+	) (depinject.Config, error) {
+		paramsCache := cache.NewParamsCache[T]()
+
+		// Apply the cache options
+		for _, opt := range opts {
+			if err := opt(ctx, deps, paramsCache); err != nil {
+				return nil, err
+			}
+		}
+
+		return depinject.Configs(deps, depinject.Supply(paramsCache)), nil
+	}
 }

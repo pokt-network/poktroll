@@ -18,6 +18,8 @@ var _ client.ApplicationQueryClient = (*appQuerier)(nil)
 type appQuerier struct {
 	clientConn         grpc.ClientConn
 	applicationQuerier apptypes.QueryClient
+	applicationsCache  KeyValueCache[apptypes.Application]
+	paramsCache        ParamsCache[apptypes.Params]
 }
 
 // NewApplicationQuerier returns a new instance of a client.ApplicationQueryClient
@@ -30,6 +32,8 @@ func NewApplicationQuerier(deps depinject.Config) (client.ApplicationQueryClient
 
 	if err := depinject.Inject(
 		deps,
+		&aq.paramsCache,
+		&aq.applicationsCache,
 		&aq.clientConn,
 	); err != nil {
 		return nil, err
@@ -45,17 +49,28 @@ func (aq *appQuerier) GetApplication(
 	ctx context.Context,
 	appAddress string,
 ) (apptypes.Application, error) {
+	// Check if the application is present in the cache.
+	if app, found := aq.applicationsCache.Get(appAddress); found {
+		return app, nil
+	}
+
 	req := apptypes.QueryGetApplicationRequest{Address: appAddress}
 	res, err := aq.applicationQuerier.Application(ctx, &req)
 	if err != nil {
 		return apptypes.Application{}, apptypes.ErrAppNotFound.Wrapf("app address: %s [%v]", appAddress, err)
 	}
+
+	// Cache the application.
+	aq.applicationsCache.Set(appAddress, res.Application)
 	return res.Application, nil
 }
 
 // GetAllApplications returns all staked applications
 func (aq *appQuerier) GetAllApplications(ctx context.Context) ([]apptypes.Application, error) {
 	req := apptypes.QueryAllApplicationsRequest{}
+	// TODO_CONSIDERATION: Fill the cache with all applications and mark it as
+	// having been filled, such that subsequent calls to this function will
+	// return the cached value.
 	res, err := aq.applicationQuerier.AllApplications(ctx, &req)
 	if err != nil {
 		return []apptypes.Application{}, err
@@ -65,10 +80,18 @@ func (aq *appQuerier) GetAllApplications(ctx context.Context) ([]apptypes.Applic
 
 // GetParams returns the application module parameters
 func (aq *appQuerier) GetParams(ctx context.Context) (*apptypes.Params, error) {
+	// Check if the application module parameters are present in the cache.
+	if params, found := aq.paramsCache.Get(); found {
+		return &params, nil
+	}
+
 	req := apptypes.QueryParamsRequest{}
 	res, err := aq.applicationQuerier.Params(ctx, &req)
 	if err != nil {
 		return nil, err
 	}
+
+	// Update the cache with the newly retrieved application module parameters.
+	aq.paramsCache.Set(res.Params)
 	return &res.Params, nil
 }

@@ -17,6 +17,7 @@ import (
 type supplierQuerier struct {
 	clientConn      grpc.ClientConn
 	supplierQuerier suppliertypes.QueryClient
+	suppliersCache  KeyValueCache[sharedtypes.Supplier]
 }
 
 // NewSupplierQuerier returns a new instance of a client.SupplierQueryClient by
@@ -29,6 +30,7 @@ func NewSupplierQuerier(deps depinject.Config) (client.SupplierQueryClient, erro
 
 	if err := depinject.Inject(
 		deps,
+		&supq.suppliersCache,
 		&supq.clientConn,
 	); err != nil {
 		return nil, err
@@ -44,6 +46,11 @@ func (supq *supplierQuerier) GetSupplier(
 	ctx context.Context,
 	operatorAddress string,
 ) (sharedtypes.Supplier, error) {
+	// Check if the supplier is present in the cache.
+	if supplier, found := supq.suppliersCache.Get(operatorAddress); found {
+		return supplier, nil
+	}
+
 	req := &suppliertypes.QueryGetSupplierRequest{OperatorAddress: operatorAddress}
 	res, err := supq.supplierQuerier.Supplier(ctx, req)
 	if err != nil {
@@ -52,5 +59,8 @@ func (supq *supplierQuerier) GetSupplier(
 			operatorAddress, err,
 		)
 	}
+
+	// Cache the supplier for future use.
+	supq.suppliersCache.Set(operatorAddress, res.Supplier)
 	return res.Supplier, nil
 }

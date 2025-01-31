@@ -17,8 +17,10 @@ var _ client.ServiceQueryClient = (*serviceQuerier)(nil)
 // querying of onchain service information through a single exposed method
 // which returns a sharedtypes.Service struct
 type serviceQuerier struct {
-	clientConn     grpc.ClientConn
-	serviceQuerier servicetypes.QueryClient
+	clientConn                 grpc.ClientConn
+	serviceQuerier             servicetypes.QueryClient
+	servicesCache              KeyValueCache[sharedtypes.Service]
+	relayMiningDifficultyCache KeyValueCache[servicetypes.RelayMiningDifficulty]
 }
 
 // NewServiceQuerier returns a new instance of a client.ServiceQueryClient by
@@ -31,6 +33,8 @@ func NewServiceQuerier(deps depinject.Config) (client.ServiceQueryClient, error)
 
 	if err := depinject.Inject(
 		deps,
+		&servq.servicesCache,
+		&servq.relayMiningDifficultyCache,
 		&servq.clientConn,
 	); err != nil {
 		return nil, err
@@ -47,6 +51,11 @@ func (servq *serviceQuerier) GetService(
 	ctx context.Context,
 	serviceId string,
 ) (sharedtypes.Service, error) {
+	// Check if the service is present in the cache.
+	if service, found := servq.servicesCache.Get(serviceId); found {
+		return service, nil
+	}
+
 	req := &servicetypes.QueryGetServiceRequest{
 		Id: serviceId,
 	}
@@ -58,6 +67,9 @@ func (servq *serviceQuerier) GetService(
 			serviceId, err,
 		)
 	}
+
+	// Cache the service for future use.
+	servq.servicesCache.Set(serviceId, res.Service)
 	return res.Service, nil
 }
 
@@ -67,6 +79,11 @@ func (servq *serviceQuerier) GetServiceRelayDifficulty(
 	ctx context.Context,
 	serviceId string,
 ) (servicetypes.RelayMiningDifficulty, error) {
+	// Check if the relay mining difficulty is present in the cache.
+	if relayMiningDifficulty, found := servq.relayMiningDifficultyCache.Get(serviceId); found {
+		return relayMiningDifficulty, nil
+	}
+
 	req := &servicetypes.QueryGetRelayMiningDifficultyRequest{
 		ServiceId: serviceId,
 	}
@@ -76,5 +93,7 @@ func (servq *serviceQuerier) GetServiceRelayDifficulty(
 		return servicetypes.RelayMiningDifficulty{}, err
 	}
 
+	// Cache the relay mining difficulty for future use.
+	servq.relayMiningDifficultyCache.Set(serviceId, res.RelayMiningDifficulty)
 	return res.RelayMiningDifficulty, nil
 }

@@ -10,6 +10,7 @@ import (
 	"github.com/pokt-network/poktroll/app/volatile"
 	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/client/query"
+	"github.com/pokt-network/poktroll/pkg/client/query/cache"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
@@ -25,7 +26,9 @@ type ApplicationModuleSuite struct {
 // GetAppQueryClient constructs and returns a query client for the application
 // module of the integration app.
 func (s *ApplicationModuleSuite) GetAppQueryClient() client.ApplicationQueryClient {
-	deps := depinject.Supply(s.GetApp().QueryHelper())
+	appCache := cache.NewKeyValueCache[apptypes.Application]()
+	appParamsCache := cache.NewParamsCache[apptypes.Params]()
+	deps := depinject.Supply(s.GetApp().QueryHelper(), appCache, appParamsCache)
 	appQueryClient, err := query.NewApplicationQuerier(deps)
 	require.NoError(s.T(), err)
 
