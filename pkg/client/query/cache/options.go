@@ -9,7 +9,7 @@ import (
 	"github.com/pokt-network/poktroll/pkg/observable/channel"
 )
 
-// ClearableCache is an interface that defines the common methods for a cache object.
+// Cache is an interface that defines the common methods for a cache object.
 type Cache interface {
 	Clear()
 }
