@@ -9,52 +9,44 @@ import (
 	cosmosTypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 	"github.com/pokt-network/poktroll/app/keepers"
-	servicetypes "github.com/pokt-network/poktroll/x/service/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
-	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 )
 
-// Upgrade_0_0_12 handles the v0.0.12 upgrade.
-//
-// Versions:
-//   - Before: v0.0.11 
-//   - After: v0.0.12
+const Upgrade_0_0_12_PlanName = "v0.0.12"
 
-// This upgrade changes RevSharePercent from float32  to uint64 in a new protobuf field.
-// The result is existing onchain resetting to the default.
-//
-// TODO_IN_THIS_PR: Verify impact on existing chain data
+// Upgrade_0_0_12 handles the upgrade to release `v0.0.12`. To be issued on both Alpha and Beta TestNets.
 var Upgrade_0_0_12 = Upgrade{
-	PlanName: "v0.0.12",
+	PlanName: Upgrade_0_0_12_PlanName,
 	CreateUpgradeHandler: func(mm *module.Manager,
 		keepers *keepers.Keepers,
 		configurator module.Configurator,
 	) upgradetypes.UpgradeHandler {
-		// Adds new parameters using ignite's config.yml as a reference. Assuming we don't need any other parameters.
+		// Parameter configurations aligned with repository config.yml specifications
+		// These values reflect the delta between v0.0.11 and current main branch
+		// Reference:
+		// - Comparison: https://github.com/pokt-network/poktroll/compare/v0.0.11..main
+		// - Direct diff: `git diff v0.0.11..main -- config.yml`
+		//
+		// Note: Parameter updates are derived from config.yml modifications, which serves
+		// as the source of truth for all parameter changes.
+		const (
+			supplierStakingFee                = 1000000
+			serviceTargetNumRelays            = 100
+			tokenomicsGlobalInflationPerClaim = 0.1
+		)
+
 		applyNewParameters := func(ctx context.Context) (err error) {
 			logger := cosmosTypes.UnwrapSDKContext(ctx).Logger()
-			logger.Info("Starting parameter updates for v0.0.12")
+			logger.Info("Starting parameter updates", "upgrade_plan_name", Upgrade_0_0_12_PlanName)
 
-			// Set supplier module staking_fee to 1000000 upokt to match config.yml. 
-			// Using hardcoded value because:  
-			//   - All networks (Alpha & Beta TestNet) share the same value
-			//   - Avoids potential protobuf issues with GetParams()
-			//
+			// Set supplier module staking_fee to 1000000upokt, in line with the config.yml in the repo.
 			// Verify via:
-			// $ poktrolld q supplier params --node=https://testnet-validated-validator-rpc.poktroll.com/
-			supplierParams := suppliertypes.Params{
-				MinStake: &cosmosTypes.Coin{
-					Denom:  "upokt",
-					Amount: math.NewInt(1000000),
-				},
-				StakingFee: &cosmosTypes.Coin{
-					Denom: "upokt",
-					// TODO_IN_THIS_PR: 100upokt a good value?
-					Amount: math.NewInt(100),
-				},
+			// $ poktrolld q supplier params --node=...
+			supplierParams := keepers.SupplierKeeper.GetParams(ctx)
+			supplierParams.MinStake = &cosmosTypes.Coin{
+				Denom:  "upokt",
+				Amount: math.NewInt(supplierStakingFee),
 			}
-
-			// ALL parameters must be present when setting params.
 			err = keepers.SupplierKeeper.SetParams(ctx, supplierParams)
 			if err != nil {
 				logger.Error("Failed to set supplier params", "error", err)
@@ -62,15 +54,11 @@ var Upgrade_0_0_12 = Upgrade{
 			}
 			logger.Info("Successfully updated supplier params", "new_params", supplierParams)
 
-			// Add service module `target_num_relays` parameter per `config.yml`.
-			// We don't use `GetParams()` to avoid potential protobuf issues and all networks have the same value (no need to read).
-			serviceParams := servicetypes.Params{
-				AddServiceFee: &cosmosTypes.Coin{
-					Denom:  "upokt",
-					Amount: math.NewInt(1000000000),
-				},
-				TargetNumRelays: 100,
-			}
+			// Add service module `target_num_relays` parameter, in line with the config.yml in the repo.
+			// Verify via:
+			// $ poktrolld q service params --node=...
+			serviceParams := keepers.ServiceKeeper.GetParams(ctx)
+			serviceParams.TargetNumRelays = serviceTargetNumRelays
 			err = keepers.ServiceKeeper.SetParams(ctx, serviceParams)
 			if err != nil {
 				logger.Error("Failed to set service params", "error", err)
@@ -78,38 +66,40 @@ var Upgrade_0_0_12 = Upgrade{
 			}
 			logger.Info("Successfully updated service params", "new_params", serviceParams)
 
-			// Add tokenomics module `global_inflation_per_claim` parameter per `config.yml`.
-			// We use GetParams() as `DaoRewardAddress` is different between networks and we don't want to hardcode it.
+			// Add tokenomics module `global_inflation_per_claim` parameter, in line with the config.yml in the repo.
+			// Verify via:
+			// $ poktrolld q tokenomics params --node=...
 			tokenomicsParams := keepers.TokenomicsKeeper.GetParams(ctx)
-			tokenomicsParams.GlobalInflationPerClaim = 0.1
+			tokenomicsParams.GlobalInflationPerClaim = tokenomicsGlobalInflationPerClaim
 			err = keepers.TokenomicsKeeper.SetParams(ctx, tokenomicsParams)
 			if err != nil {
 				logger.Error("Failed to set tokenomics params", "error", err)
 				return err
 			}
-			return
+			logger.Info("Successfully updated tokenomics params", "new_params", tokenomicsParams)
+			return nil
 		}
 
-		// Returns the upgrade handler for v0.0.12
-		return func(ctx context.Context, plan upgradetypes.Plan, vm module.VersionMap) (module.VersionMap, error) {
+		// Helper function to update all suppliers' RevShare to 100%. This is necessary to ensure that
+		// we have that value populated before suppliers are connected.
+		updateSuppliersRevShare := func(ctx context.Context) error {
 			logger := cosmosTypes.UnwrapSDKContext(ctx).Logger()
-			logger.Info("Starting v0.0.12 upgrade handler")
-
-			err := applyNewParameters(ctx)
-			if err != nil {
-				logger.Error("Failed to apply new parameters", "error", err)
-				return vm, err
-			}
-
-			// Since we changed the type of RevSharePercent from float32 to uint64, we need to update all on-chain data.
-			// The easiest way to do this is to iterate over all suppliers and services and set the revshare to 100 by default.
 			suppliers := keepers.SupplierKeeper.GetAllSuppliers(ctx)
-			logger.Info("Updating all suppliers to have a 100% revshare to the supplier", "num_suppliers", len(suppliers))
+			logger.Info("Updating all suppliers to have a 100% revshare to the supplier",
+				"num_suppliers", len(suppliers))
+
 			for _, supplier := range suppliers {
 				for _, service := range supplier.Services {
-					// Force all services to have a 100% revshare to the supplier.
-					// Not something we would do on a real mainnet, but it's a quick way to resolve the issue.
-					// Currently, we don't break any existing suppliers (as all of them have a 100% revshare to the supplier).
+					// Add warning log if we're overwriting existing revshare settings. We can't get the previous
+					// revshare percentage due to a protobuf change, but we can at least log the number of previous revshares.
+					if len(service.RevShare) > 1 {
+						logger.Warn(
+							"Overwriting existing revenue share configuration",
+							"supplier", supplier.OperatorAddress,
+							"service", service.ServiceId,
+							"previous_revshare_count", len(service.RevShare),
+						)
+					}
 					service.RevShare = []*sharedtypes.ServiceRevenueShare{
 						{
 							Address:            supplier.OperatorAddress,
@@ -118,17 +108,44 @@ var Upgrade_0_0_12 = Upgrade{
 					}
 				}
 				keepers.SupplierKeeper.SetSupplier(ctx, supplier)
-				logger.Info("Updated supplier", "supplier", supplier.OperatorAddress)
+				logger.Info("Updated supplier",
+					"supplier", supplier.OperatorAddress)
 			}
+			return nil
+		}
 
-			logger.Info("Running module migrations")
-			vm, err = mm.RunMigrations(ctx, configurator, vm)
+		// Returns the upgrade handler for v0.0.12
+		return func(ctx context.Context, plan upgradetypes.Plan, vm module.VersionMap) (module.VersionMap, error) {
+			logger := cosmosTypes.UnwrapSDKContext(ctx).Logger()
+			logger.Info("Starting upgrade handler", "upgrade_plan_name", Upgrade_0_0_12_PlanName)
+
+			err := applyNewParameters(ctx)
 			if err != nil {
-				logger.Error("Failed to run migrations", "error", err)
+				logger.Error("Failed to apply new parameters",
+					"upgrade_plan_name", Upgrade_0_0_12_PlanName,
+					"error", err)
 				return vm, err
 			}
 
-			logger.Info("Successfully completed v0.0.12 upgrade handler")
+			// Update all suppliers' RevShare
+			err = updateSuppliersRevShare(ctx)
+			if err != nil {
+				logger.Error("Failed to update suppliers RevShare",
+					"upgrade_plan_name", Upgrade_0_0_12_PlanName,
+					"error", err)
+				return vm, err
+			}
+
+			logger.Info("Running module migrations", "upgrade_plan_name", Upgrade_0_0_12_PlanName)
+			vm, err = mm.RunMigrations(ctx, configurator, vm)
+			if err != nil {
+				logger.Error("Failed to run migrations",
+					"upgrade_plan_name", Upgrade_0_0_12_PlanName,
+					"error", err)
+				return vm, err
+			}
+
+			logger.Info("Successfully completed upgrade handler", "upgrade_plan_name", Upgrade_0_0_12_PlanName)
 			return vm, nil
 		}
 	},
