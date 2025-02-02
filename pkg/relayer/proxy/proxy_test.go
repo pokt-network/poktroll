@@ -549,9 +549,8 @@ func (t *RelayProxyPingAllSuite) SetupSuite() {
 	t.supplierOperatorPingAllKeyName = "supplierPingAllKeyName"
 	appPrivateKey := secp256k1.GenPrivKey()
 	defaultRelayMinerServerAddress := "127.0.0.1:8245"
-	defaultServiceName := "defaultService"
 	supplierEndpoints := map[string][]*sharedtypes.SupplierEndpoint{
-		defaultServiceName: {
+		defaultService: {
 			{
 				Url:     "http://supplier1pingall:8645",
 				RpcType: sharedtypes.RPCType_JSON_RPC,
@@ -564,8 +563,8 @@ func (t *RelayProxyPingAllSuite) SetupSuite() {
 			ServerType:    config.RelayMinerServerTypeHTTP,
 			ListenAddress: defaultRelayMinerServerAddress,
 			SupplierConfigsMap: map[string]*config.RelayMinerSupplierConfig{
-				defaultServiceName: {
-					ServiceId:  defaultServiceName,
+				defaultService: {
+					ServiceId:  defaultService,
 					ServerType: config.RelayMinerServerTypeHTTP,
 					ServiceConfig: &config.RelayMinerSupplierServiceConfig{
 						BackendUrl: &url.URL{
@@ -587,7 +586,7 @@ func (t *RelayProxyPingAllSuite) SetupSuite() {
 		testproxy.WithServicesConfigMap(t.servicesConfigMap),
 		testproxy.WithDefaultSupplier(t.supplierOperatorPingAllKeyName, supplierEndpoints),
 		testproxy.WithDefaultApplication(appPrivateKey),
-		testproxy.WithDefaultSessionSupplier(t.supplierOperatorPingAllKeyName, defaultServiceName, appPrivateKey),
+		testproxy.WithDefaultSessionSupplier(t.supplierOperatorPingAllKeyName, defaultService, appPrivateKey),
 		testproxy.WithRelayMeter(),
 	}
 }
