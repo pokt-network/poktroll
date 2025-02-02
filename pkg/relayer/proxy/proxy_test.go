@@ -532,9 +532,8 @@ func TestRelayerProxy_Relays(t *testing.T) {
 // application logic.
 type RelayProxyPingAllSuite struct {
 	suite.Suite
-	relayerProxyBehavior           []func(*testproxy.TestBehavior)
-	servicesConfigMap              map[string]*config.RelayMinerServerConfig
-	supplierOperatorPingAllKeyName string
+	relayerProxyBehavior []func(*testproxy.TestBehavior)
+	servicesConfigMap    map[string]*config.RelayMinerServerConfig
 }
 
 // TestRelayProxyPingAllSuite executes the RelayProxyPingAllSuite test suite.
@@ -546,7 +545,6 @@ func TestRelayProxyPingAllSuite(t *testing.T) {
 // default relayminer will be reused in every subsequent tests in the
 // suite.
 func (t *RelayProxyPingAllSuite) SetupSuite() {
-	t.supplierOperatorPingAllKeyName = "supplierPingAllKeyName"
 	appPrivateKey := secp256k1.GenPrivKey()
 	defaultRelayMinerServerAddress := "127.0.0.1:8245"
 	supplierEndpoints := map[string][]*sharedtypes.SupplierEndpoint{
@@ -582,11 +580,11 @@ func (t *RelayProxyPingAllSuite) SetupSuite() {
 	}
 
 	t.relayerProxyBehavior = []func(*testproxy.TestBehavior){
-		testproxy.WithRelayerProxyDependenciesForBlockHeight(t.supplierOperatorPingAllKeyName, 1),
+		testproxy.WithRelayerProxyDependenciesForBlockHeight(supplierOperatorKeyName, 1),
 		testproxy.WithServicesConfigMap(t.servicesConfigMap),
-		testproxy.WithDefaultSupplier(t.supplierOperatorPingAllKeyName, supplierEndpoints),
+		testproxy.WithDefaultSupplier(supplierOperatorKeyName, supplierEndpoints),
 		testproxy.WithDefaultApplication(appPrivateKey),
-		testproxy.WithDefaultSessionSupplier(t.supplierOperatorPingAllKeyName, defaultService, appPrivateKey),
+		testproxy.WithDefaultSessionSupplier(supplierOperatorKeyName, defaultService, appPrivateKey),
 		testproxy.WithRelayMeter(),
 	}
 }
@@ -601,7 +599,7 @@ func (t *RelayProxyPingAllSuite) TestOKPingAllWithSingleRelayServer() {
 
 	rp, err := proxy.NewRelayerProxy(
 		testBehavoirs.Deps,
-		proxy.WithSigningKeyNames([]string{t.supplierOperatorPingAllKeyName}),
+		proxy.WithSigningKeyNames([]string{supplierOperatorKeyName}),
 		proxy.WithServicesConfigMap(t.servicesConfigMap),
 	)
 	require.NoError(t.T(), err)
@@ -667,7 +665,7 @@ func (t *RelayProxyPingAllSuite) TestOKPingAllWithMultipleRelayServers() {
 	}
 
 	relayProxyBehavior := append(t.relayerProxyBehavior, []func(*testproxy.TestBehavior){
-		testproxy.WithDefaultSupplier(t.supplierOperatorPingAllKeyName, supplierEndpoints),
+		testproxy.WithDefaultSupplier(supplierOperatorKeyName, supplierEndpoints),
 		testproxy.WithServicesConfigMap(servicesConfigMap),
 	}...)
 
@@ -681,7 +679,7 @@ func (t *RelayProxyPingAllSuite) TestOKPingAllWithMultipleRelayServers() {
 
 	rp, err := proxy.NewRelayerProxy(
 		testBehavoirs.Deps,
-		proxy.WithSigningKeyNames([]string{t.supplierOperatorPingAllKeyName}),
+		proxy.WithSigningKeyNames([]string{supplierOperatorKeyName}),
 		proxy.WithServicesConfigMap(servicesConfigMap),
 	)
 	require.NoError(t.T(), err)
@@ -746,7 +744,7 @@ func (t *RelayProxyPingAllSuite) TestNOKPingAllWithPartialFailureAtStartup() {
 	}
 
 	relayProxyBehavior := append(t.relayerProxyBehavior, []func(*testproxy.TestBehavior){
-		testproxy.WithDefaultSupplier(t.supplierOperatorPingAllKeyName, supplierEndpoints),
+		testproxy.WithDefaultSupplier(supplierOperatorKeyName, supplierEndpoints),
 		testproxy.WithServicesConfigMap(servicesConfigMap),
 	}...)
 
@@ -760,7 +758,7 @@ func (t *RelayProxyPingAllSuite) TestNOKPingAllWithPartialFailureAtStartup() {
 
 	rp, err := proxy.NewRelayerProxy(
 		test.Deps,
-		proxy.WithSigningKeyNames([]string{t.supplierOperatorPingAllKeyName}),
+		proxy.WithSigningKeyNames([]string{supplierOperatorKeyName}),
 		proxy.WithServicesConfigMap(servicesConfigMap),
 	)
 	require.NoError(t.T(), err)
@@ -821,7 +819,7 @@ func (t *RelayProxyPingAllSuite) TestNOKPingAllWithPartialFailureAfterStartup() 
 	}
 
 	relayProxyBehavior := append(t.relayerProxyBehavior, []func(*testproxy.TestBehavior){
-		testproxy.WithDefaultSupplier(t.supplierOperatorPingAllKeyName, supplierEndpoints),
+		testproxy.WithDefaultSupplier(supplierOperatorKeyName, supplierEndpoints),
 		testproxy.WithServicesConfigMap(servicesConfigMap),
 	}...)
 
@@ -835,7 +833,7 @@ func (t *RelayProxyPingAllSuite) TestNOKPingAllWithPartialFailureAfterStartup() 
 
 	rp, err := proxy.NewRelayerProxy(
 		test.Deps,
-		proxy.WithSigningKeyNames([]string{t.supplierOperatorPingAllKeyName}),
+		proxy.WithSigningKeyNames([]string{supplierOperatorKeyName}),
 		proxy.WithServicesConfigMap(servicesConfigMap),
 	)
 	require.NoError(t.T(), err)
@@ -946,7 +944,7 @@ func (t *RelayProxyPingAllSuite) TestOKPingAllDifferentEndpoint() {
 	}
 
 	relayProxyBehavior := append(t.relayerProxyBehavior, []func(*testproxy.TestBehavior){
-		testproxy.WithDefaultSupplier(t.supplierOperatorPingAllKeyName, supplierEndpoints),
+		testproxy.WithDefaultSupplier(supplierOperatorKeyName, supplierEndpoints),
 		testproxy.WithServicesConfigMap(servicesConfigMap),
 	}...)
 
@@ -960,7 +958,7 @@ func (t *RelayProxyPingAllSuite) TestOKPingAllDifferentEndpoint() {
 
 	rp, err := proxy.NewRelayerProxy(
 		test.Deps,
-		proxy.WithSigningKeyNames([]string{t.supplierOperatorPingAllKeyName}),
+		proxy.WithSigningKeyNames([]string{supplierOperatorKeyName}),
 		proxy.WithServicesConfigMap(servicesConfigMap),
 	)
 	require.NoError(t.T(), err)
