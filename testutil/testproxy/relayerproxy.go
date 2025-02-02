@@ -186,9 +186,12 @@ func WithRelayMeter() func(*TestBehavior) {
 }
 
 // WithServicesConfigMap creates the services that the relayer proxy will
-// proxy requests to.
-// It creates an HTTP server for each service and starts listening on the
-// provided host.
+// proxy requests to. It creates an HTTP server for each service and starts
+// listening on the provided host.
+//
+// It is recommended to run this function on the main Go routine to ensure that
+// the HTTP servers created for each service are fully initialized and ready to
+// receive requests before executing the test cases.
 func WithServicesConfigMap(
 	servicesConfigMap map[string]*config.RelayMinerServerConfig,
 ) func(*TestBehavior) {
