@@ -17,7 +17,7 @@ option go_package = "github.com/pokt-network/poktroll/x/migration/types";
 option (gogoproto.stable_marshaler_all) = true;
 
 // MorseStateExport is the data structure that is serialized and output when running
-// `pocket utils export-genesis-for-reset`.
+// `pocket util export-genesis-for-reset`.
 // See: https://editor.swagger.io/?url=https://raw.githubusercontent.com/pokt-network/pocket-core/staging/doc/specs/rpc-spec.yaml#operations-query-post_query_state
 message MorseStateExport {
   // app_hash is the Morse tendermint state hash.

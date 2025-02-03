@@ -35,7 +35,7 @@ var _ = math.Inf
 const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 
 // MorseStateExport is the data structure that is serialized and output when running
-// `pocket utils export-genesis-for-reset`.
+// `pocket util export-genesis-for-reset`.
 // See: https://editor.swagger.io/?url=https://raw.githubusercontent.com/pokt-network/pocket-core/staging/doc/specs/rpc-spec.yaml#operations-query-post_query_state
 type MorseStateExport struct {
 	// app_hash is the Morse tendermint state hash.
