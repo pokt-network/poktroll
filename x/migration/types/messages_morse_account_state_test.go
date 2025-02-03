@@ -31,7 +31,7 @@ func TestMsgCreateMorseAccountState_ValidateBasic(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := tt.msg.ValidateBasic()
+			err = tt.msg.ValidateBasic()
 			if tt.err != nil {
 				require.ErrorIs(t, err, tt.err)
 				return
