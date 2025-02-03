@@ -10,6 +10,9 @@ import (
 )
 
 func TestMsgCreateMorseAccountState_ValidateBasic(t *testing.T) {
+	validMsg, err := NewMsgCreateMorseAccountState(sample.AccAddress(), MorseAccountState{})
+	require.NoError(t, err)
+
 	tests := []struct {
 		name string
 		msg  MsgCreateMorseAccountState
@@ -23,14 +26,12 @@ func TestMsgCreateMorseAccountState_ValidateBasic(t *testing.T) {
 			err: sdkerrors.ErrInvalidAddress,
 		}, {
 			name: "valid address",
-			msg: MsgCreateMorseAccountState{
-				Authority: sample.AccAddress(),
-			},
+			msg:  *validMsg,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := tt.msg.ValidateBasic()
+			err = tt.msg.ValidateBasic()
 			if tt.err != nil {
 				require.ErrorIs(t, err, tt.err)
 				return
