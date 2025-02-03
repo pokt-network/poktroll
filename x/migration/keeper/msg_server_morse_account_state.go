@@ -34,7 +34,10 @@ func (k msgServer) CreateMorseAccountState(ctx context.Context, msg *types.MsgCr
 
 	stateHash, err := msg.MorseAccountState.GetHash()
 	if err != nil {
-		return nil, err
+		return nil, status.Error(
+			codes.Internal,
+			err.Error(),
+		)
 	}
 
 	if err = sdkCtx.EventManager().EmitTypedEvent(

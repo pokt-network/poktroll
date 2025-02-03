@@ -3,18 +3,26 @@ package types
 import (
 	"bytes"
 
-	"cosmossdk.io/store/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 )
 
 var _ sdk.Msg = &MsgCreateMorseAccountState{}
 
-func NewMsgCreateMorseAccountState(authority string, morseAccountState MorseAccountState) *MsgCreateMorseAccountState {
-	return &MsgCreateMorseAccountState{
-		Authority:         authority,
-		MorseAccountState: morseAccountState,
+func NewMsgCreateMorseAccountState(
+	authority string,
+	morseAccountState MorseAccountState,
+) (*MsgCreateMorseAccountState, error) {
+	morseAccountStateHash, err := morseAccountState.GetHash()
+	if err != nil {
+		return nil, err
 	}
+
+	return &MsgCreateMorseAccountState{
+		Authority:             authority,
+		MorseAccountState:     morseAccountState,
+		MorseAccountStateHash: morseAccountStateHash,
+	}, nil
 }
 
 func (msg *MsgCreateMorseAccountState) ValidateBasic() error {
@@ -28,12 +36,16 @@ func (msg *MsgCreateMorseAccountState) ValidateBasic() error {
 	}
 
 	expectedHash := msg.GetMorseAccountStateHash()
-	if bytes.Equal(actualHash, expectedHash) {
-		return nil
+	if len(expectedHash) == 0 {
+		return ErrMorseAccountState.Wrapf("expected hash is empty")
 	}
 
-	return types.ErrInvalidRequest.Wrapf(
-		"Morse account state hash (%s) doesn't match expected: (%s)",
-		actualHash, expectedHash,
-	)
+	if !bytes.Equal(actualHash, expectedHash) {
+		return ErrMorseAccountState.Wrapf(
+			"Morse account state hash (%x) doesn't match expected: (%x)",
+			actualHash, expectedHash,
+		)
+	}
+
+	return nil
 }
