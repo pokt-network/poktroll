@@ -12,7 +12,10 @@ import (
 )
 
 // CreateMorseAccountState creates the on-chain MorseAccountState ONLY ONCE (per network / re-genesis).
-func (k msgServer) CreateMorseAccountState(ctx context.Context, msg *types.MsgCreateMorseAccountState) (*types.MsgCreateMorseAccountStateResponse, error) {
+func (k msgServer) CreateMorseAccountState(
+	ctx context.Context,
+	msg *types.MsgCreateMorseAccountState
+) (*types.MsgCreateMorseAccountStateResponse, error) {
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 
 	if err := msg.ValidateBasic(); err != nil {
