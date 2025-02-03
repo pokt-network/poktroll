@@ -24,11 +24,17 @@ message Proof {
 
 // Claim is the serialized object stored onchain for claims pending to be proven
 message Claim {
+  // Address of the supplier's operator that submitted this claim.
   string supplier_operator_address = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"]; // the address of the supplier's operator that submitted this claim
-  // The session header of the session that this claim is for.
+
+  // Session header this claim is for.
   poktroll.session.SessionHeader session_header = 2;
-  // Root hash returned from smt.SMST#Root().
+
+  // Root hash from smt.SMST#Root().
   bytes root_hash = 3;
+
+  // Important: This field MUST only be set by proofKeeper#EnsureValidProofSignaturesAndClosestPath
+  ClaimProofStatus proof_validation_status = 4;
 }
 
 enum ProofRequirementReason {
@@ -42,4 +48,12 @@ enum ClaimProofStage {
   PROVEN = 1;
   SETTLED = 2;
   EXPIRED = 3;
+}
+
+// Status of proof validation for a claim
+// Default is PENDING_VALIDATION regardless of proof requirement
+enum ClaimProofStatus {
+  PENDING_VALIDATION = 0;
+  VALIDATED = 1;
+  INVALID = 2;
 }

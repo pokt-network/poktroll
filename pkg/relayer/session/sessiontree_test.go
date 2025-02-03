@@ -39,7 +39,7 @@ func TestSessionTree_CompactProofsAreSmallerThanNonCompactProofs(t *testing.T) {
 			kvStore, err := pebble.NewKVStore("")
 			require.NoError(t, err)
 
-			trie := smt.NewSparseMerkleSumTrie(kvStore, protocol.NewTrieHasher(), smt.WithValueHasher(nil))
+			trie := smt.NewSparseMerkleSumTrie(kvStore, protocol.NewTrieHasher(), protocol.SMTValueHasher())
 
 			// Insert numLeaf random leaves.
 			for i := 0; i < numLeafs; i++ {
