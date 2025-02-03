@@ -16,7 +16,7 @@ import (
 )
 
 // NewMorseStateExportAndAccountStateBytes returns:
-// - A serialized MorseStateExport 
+// - A serialized MorseStateExport
 // - Its corresponding MorseAccountState
 //
 // The states are populated with:
@@ -44,13 +44,10 @@ func NewMorseStateExportAndAccountStateBytes(
 
 // NewMorseStateExportAndAccountState returns MorseStateExport and MorseAccountState
 // structs populated with:
-//   - Random account addresses 
+//   - Random account addresses
 //   - Monotonically increasing balances/stakes
 //   - One application per account
 //   - One supplier per account
-func NewMorseStateExportAndAccountState(
-	t gocuke.TestingT, numAccounts int,
-) (*types.MorseStateExport, *types.MorseAccountState)
 func NewMorseStateExportAndAccountState(
 	t gocuke.TestingT, numAccounts int,
 ) (export *migrationtypes.MorseStateExport, state *migrationtypes.MorseAccountState) {

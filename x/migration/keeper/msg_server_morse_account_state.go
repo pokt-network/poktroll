@@ -14,7 +14,7 @@ import (
 // CreateMorseAccountState creates the on-chain MorseAccountState ONLY ONCE (per network / re-genesis).
 func (k msgServer) CreateMorseAccountState(
 	ctx context.Context,
-	msg *types.MsgCreateMorseAccountState
+	msg *types.MsgCreateMorseAccountState,
 ) (*types.MsgCreateMorseAccountStateResponse, error) {
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 
@@ -45,8 +45,8 @@ func (k msgServer) CreateMorseAccountState(
 
 	if err = sdkCtx.EventManager().EmitTypedEvent(
 		&types.EventCreateMorseAccountState{
-			Height:    sdkCtx.BlockHeight(),
-			StateHash: stateHash,
+			CreatedAtHeight:       sdkCtx.BlockHeight(),
+			MorseAccountStateHash: stateHash,
 		},
 	); err != nil {
 		return nil, err

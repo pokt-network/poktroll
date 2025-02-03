@@ -11,8 +11,10 @@ import "cosmos/base/v1beta1/coin.proto";
 import "poktroll/shared/service.proto";
 import "poktroll/migration/types.proto";
 
-// EventUploadMorseState is emitted when a new state hash is uploaded.
+// EventUploadMorseState is emitted when the MorseAccountState is created on-chain.
 message EventCreateMorseAccountState {
-  int64 height = 1 [(gogoproto.jsontag) = "height"];
-  bytes state_hash = 3 [(gogoproto.jsontag) = "state_hash"];
+  // The height (on Shannon) at which the MorseAccountState was created on-chain.
+  int64 created_at_height = 1 [(gogoproto.jsontag) = "created_at_height"];
+  // The sha256 has of the MorseAccountState.
+  bytes morse_account_state_hash = 2 [(gogoproto.jsontag) = "morse_account_state_hash"];
 }
