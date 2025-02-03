@@ -1,7 +1,9 @@
 package types
 
 import (
-	errorsmod "cosmossdk.io/errors"
+	"bytes"
+
+	"cosmossdk.io/store/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 )
@@ -16,9 +18,22 @@ func NewMsgCreateMorseAccountState(authority string, morseAccountState MorseAcco
 }
 
 func (msg *MsgCreateMorseAccountState) ValidateBasic() error {
-	_, err := sdk.AccAddressFromBech32(msg.Authority)
-	if err != nil {
-		return errorsmod.Wrapf(sdkerrors.ErrInvalidAddress, "invalid creator address (%s)", err)
+	if _, err := sdk.AccAddressFromBech32(msg.Authority); err != nil {
+		return sdkerrors.ErrInvalidAddress.Wrapf("invalid authority address (%s)", err)
 	}
-	return nil
+
+	actualHash, err := msg.MorseAccountState.GetHash()
+	if err != nil {
+		return err
+	}
+
+	expectedHash := msg.GetMorseAccountStateHash()
+	if bytes.Equal(actualHash, expectedHash) {
+		return nil
+	}
+
+	return types.ErrInvalidRequest.Wrapf(
+		"Morse account state hash (%s) doesn't match expected: (%s)",
+		actualHash, expectedHash,
+	)
 }

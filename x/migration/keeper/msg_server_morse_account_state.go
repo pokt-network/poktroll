@@ -11,6 +11,7 @@ import (
 	"github.com/pokt-network/poktroll/x/migration/types"
 )
 
+// CreateMorseAccountState creates the on-chain MorseAccountState ONLY ONCE (per network / re-genesis).
 func (k msgServer) CreateMorseAccountState(ctx context.Context, msg *types.MsgCreateMorseAccountState) (*types.MsgCreateMorseAccountStateResponse, error) {
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 
@@ -19,8 +20,7 @@ func (k msgServer) CreateMorseAccountState(ctx context.Context, msg *types.MsgCr
 	}
 
 	// Check if the value already exists
-	_, isFound := k.GetMorseAccountState(sdkCtx)
-	if isFound {
+	if _, isFound := k.GetMorseAccountState(sdkCtx); isFound {
 		return nil, status.Error(
 			codes.FailedPrecondition,
 			sdkerrors.ErrInvalidRequest.Wrap("already set").Error(),

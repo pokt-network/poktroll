@@ -31,7 +31,7 @@ const (
 type QueryClient interface {
 	// Parameters queries the parameters of the module.
 	Params(ctx context.Context, in *QueryParamsRequest, opts ...grpc.CallOption) (*QueryParamsResponse, error)
-	// Queries a MorseAccountState by index.
+	// Queries the MorseAccountState.
 	MorseAccountState(ctx context.Context, in *QueryGetMorseAccountStateRequest, opts ...grpc.CallOption) (*QueryGetMorseAccountStateResponse, error)
 }
 
@@ -71,7 +71,7 @@ func (c *queryClient) MorseAccountState(ctx context.Context, in *QueryGetMorseAc
 type QueryServer interface {
 	// Parameters queries the parameters of the module.
 	Params(context.Context, *QueryParamsRequest) (*QueryParamsResponse, error)
-	// Queries a MorseAccountState by index.
+	// Queries the MorseAccountState.
 	MorseAccountState(context.Context, *QueryGetMorseAccountStateRequest) (*QueryGetMorseAccountStateResponse, error)
 	mustEmbedUnimplementedQueryServer()
 }

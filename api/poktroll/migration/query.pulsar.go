@@ -1675,6 +1675,7 @@ func (x *QueryParamsResponse) GetParams() *Params {
 	return nil
 }
 
+// Queries the MorseAccountState which was created with MsgCreateMorseAccountState.
 type QueryGetMorseAccountStateRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -1701,6 +1702,7 @@ func (*QueryGetMorseAccountStateRequest) Descriptor() ([]byte, []int) {
 	return file_poktroll_migration_query_proto_rawDescGZIP(), []int{2}
 }
 
+// Returns the MorseAccountState. If it has not yet been created, an error is returned.
 type QueryGetMorseAccountStateResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
