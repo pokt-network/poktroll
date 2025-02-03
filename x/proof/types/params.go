@@ -36,7 +36,7 @@ var (
 	ParamProofSubmissionFee = "proof_submission_fee"
 	// TODO_MAINNET: Determine a sensible default value for the proof submission fee.
 	// MinProofSubmissionFee is the default and minimum fee for submitting a proof.
-	MinProofSubmissionFee = cosmostypes.NewCoin(volatile.DenomuPOKT, math.NewInt(1000000))
+	MinProofSubmissionFee = cosmostypes.NewCoin(volatile.DenomuPOKT, math.NewInt(100))
 )
 
 // ParamKeyTable the param key table for launch module

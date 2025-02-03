@@ -112,7 +112,6 @@ func (k Keeper) SettlePendingClaims(ctx cosmostypes.Context) (
 			return settledResults, expiredResults, err
 		}
 
-		proof, isProofFound := k.proofKeeper.GetProof(ctx, sessionId, claim.SupplierOperatorAddress)
 		// Using the probabilistic proofs approach, determine if this expiring
 		// claim required an onchain proof
 		proofRequirement, err = k.proofKeeper.ProofRequirementForClaim(ctx, &claim)
@@ -135,19 +134,25 @@ func (k Keeper) SettlePendingClaims(ctx cosmostypes.Context) (
 
 		proofIsRequired := proofRequirement != prooftypes.ProofRequirementReason_NOT_REQUIRED
 		if proofIsRequired {
-			expirationReason := tokenomicstypes.ClaimExpirationReason_EXPIRATION_REASON_UNSPECIFIED // EXPIRATION_REASON_UNSPECIFIED is the default
+			// IMPORTANT: Proof validation and claims settlement timing:
+			// 	- Proof validation (proof end blocker): Executes WITHIN proof submission window
+			// 	- Claims settlement (tokenomics end blocker): Executes AFTER window closes
+			// This ensures proofs are validated before claims are settled
 
-			if isProofFound {
-				if err = k.proofKeeper.EnsureValidProof(ctx, &proof); err != nil {
-					logger.Warn(fmt.Sprintf("Proof was found but is invalid due to %v", err))
-					expirationReason = tokenomicstypes.ClaimExpirationReason_PROOF_INVALID
-				}
-			} else {
+			var expirationReason tokenomicstypes.ClaimExpirationReason
+			switch claim.ProofValidationStatus {
+			// If the proof is required and not found, the claim is expired.
+			case prooftypes.ClaimProofStatus_PENDING_VALIDATION:
 				expirationReason = tokenomicstypes.ClaimExpirationReason_PROOF_MISSING
+			// If the proof is required and invalid, the claim is expired.
+			case prooftypes.ClaimProofStatus_INVALID:
+				expirationReason = tokenomicstypes.ClaimExpirationReason_PROOF_INVALID
+			// If the proof is required and valid, the claim is settled.
+			case prooftypes.ClaimProofStatus_VALIDATED:
+				expirationReason = tokenomicstypes.ClaimExpirationReason_EXPIRATION_REASON_UNSPECIFIED
 			}
 
-			// If the proof is missing or invalid -> expire it
-			if expirationReason != tokenomicstypes.ClaimExpirationReason_EXPIRATION_REASON_UNSPECIFIED {
+			if claim.ProofValidationStatus != prooftypes.ClaimProofStatus_VALIDATED {
 				// TODO_BETA(@red-0ne): Slash the supplier in proportion to their stake.
 				// TODO_POST_MAINNET: Consider allowing suppliers to RemoveClaim via a new
 				// message in case it was sent by accident
@@ -177,12 +182,8 @@ func (k Keeper) SettlePendingClaims(ctx cosmostypes.Context) (
 				// have other valid claims and the protocol might want to touch the supplier
 				// owner or operator balances if the stake is negative.
 
-				// The claim & proof are no longer necessary, so there's no need for them
-				// to take up onchain space.
+				// The claim is no longer necessary, so there's no need for it to take up onchain space.
 				k.proofKeeper.RemoveClaim(ctx, sessionId, claim.SupplierOperatorAddress)
-				if isProofFound {
-					k.proofKeeper.RemoveProof(ctx, sessionId, claim.SupplierOperatorAddress)
-				}
 
 				// Append the settlement result to the expired results.
 				expiredResults.Append(ClaimSettlementResult)
@@ -245,13 +246,6 @@ func (k Keeper) SettlePendingClaims(ctx cosmostypes.Context) (
 		// The claim & proof are no longer necessary, so there's no need for them
 		// to take up onchain space.
 		k.proofKeeper.RemoveClaim(ctx, sessionId, claim.SupplierOperatorAddress)
-		// Whether or not the proof is required, the supplier may have submitted one
-		// so we need to delete it either way. If we don't have the if structure,
-		// a safe error will be printed, but it can be confusing to the operator
-		// or developer.
-		if isProofFound {
-			k.proofKeeper.RemoveProof(ctx, sessionId, claim.SupplierOperatorAddress)
-		}
 
 		logger.Debug(fmt.Sprintf("Successfully settled claim for session ID %q at block height %d", claim.SessionHeader.SessionId, blockHeight))
 
