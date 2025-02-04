@@ -6,6 +6,8 @@ import (
 	"github.com/cosmos/gogoproto/proto"
 )
 
+// GetHash calculates the sha256 hash of the MorseAccountState.
+// It is intended to be used to verify the integrity of the MorseAccountState.
 func (m MorseAccountState) GetHash() ([]byte, error) {
 	accountStateBz, err := proto.Marshal(&m)
 	if err != nil {

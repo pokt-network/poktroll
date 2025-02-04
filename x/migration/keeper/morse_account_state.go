@@ -9,26 +9,26 @@ import (
 	"github.com/pokt-network/poktroll/x/migration/types"
 )
 
-// SetMorseAccountState set morseAccountState in the store
+// SetMorseAccountState sets morseAccountState in the store
 func (k Keeper) SetMorseAccountState(ctx context.Context, morseAccountState types.MorseAccountState) {
 	storeAdapter := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
 	store := prefix.NewStore(storeAdapter, types.KeyPrefix(types.MorseAccountStateKey))
-	b := k.cdc.MustMarshal(&morseAccountState)
-	store.Set([]byte{0}, b)
+	morseAccountStateBz := k.cdc.MustMarshal(&morseAccountState)
+	store.Set([]byte{0}, morseAccountStateBz)
 }
 
 // GetMorseAccountState returns morseAccountState
-func (k Keeper) GetMorseAccountState(ctx context.Context) (val types.MorseAccountState, found bool) {
+func (k Keeper) GetMorseAccountState(ctx context.Context) (morseAccountState types.MorseAccountState, found bool) {
 	storeAdapter := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
 	store := prefix.NewStore(storeAdapter, types.KeyPrefix(types.MorseAccountStateKey))
 
-	b := store.Get([]byte{0})
-	if b == nil {
-		return val, false
+	morseAccountStateBz := store.Get([]byte{0})
+	if morseAccountStateBz == nil {
+		return morseAccountState, false
 	}
 
-	k.cdc.MustUnmarshal(b, &val)
-	return val, true
+	k.cdc.MustUnmarshal(morseAccountStateBz, &morseAccountState)
+	return morseAccountState, true
 }
 
 // RemoveMorseAccountState removes morseAccountState from the store

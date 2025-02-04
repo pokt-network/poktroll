@@ -27,10 +27,13 @@ func TestMorseAccountStateMsgServerCreate_Success(t *testing.T) {
 	_, isFound := k.GetMorseAccountState(ctx)
 	require.False(t, isFound)
 
-	res, err := srv.CreateMorseAccountState(ctx, &migrationtypes.MsgCreateMorseAccountState{
-		Authority:         authtypes.NewModuleAddress(govtypes.ModuleName).String(),
-		MorseAccountState: *accountState,
-	})
+	msgCreateMorseAccountState, err := migrationtypes.NewMsgCreateMorseAccountState(
+		authtypes.NewModuleAddress(govtypes.ModuleName).String(),
+		*accountState,
+	)
+	require.NoError(t, err)
+
+	res, err := srv.CreateMorseAccountState(ctx, msgCreateMorseAccountState)
 	require.NoError(t, err)
 
 	expectedUploadMsg := &migrationtypes.MsgCreateMorseAccountState{
@@ -62,8 +65,8 @@ func TestMorseAccountStateMsgServerCreate_Success(t *testing.T) {
 	require.Equal(t, 1, len(filteredEvts))
 
 	expectedEvent := &migrationtypes.EventCreateMorseAccountState{
-		Height:    ctx.BlockHeight(),
-		StateHash: expectedStateHash,
+		CreatedAtHeight:       ctx.BlockHeight(),
+		MorseAccountStateHash: expectedStateHash,
 	}
 	require.Equal(t, expectedEvent, filteredEvts[0])
 }
@@ -81,12 +84,13 @@ func TestMorseAccountStateMsgServerCreate_Error(t *testing.T) {
 	require.True(t, isFound)
 
 	// Assert that the MorseAccountState can ONLY be set once.
-	_, err := srv.CreateMorseAccountState(ctx, &migrationtypes.MsgCreateMorseAccountState{
-		Authority:         authtypes.NewModuleAddress(govtypes.ModuleName).String(),
-		MorseAccountState: *accountState,
-	})
-	t.Log(err)
+	msgCreateMorseAccountState, err := migrationtypes.NewMsgCreateMorseAccountState(
+		authtypes.NewModuleAddress(govtypes.ModuleName).String(),
+		*accountState,
+	)
+	require.NoError(t, err)
 
+	_, err = srv.CreateMorseAccountState(ctx, msgCreateMorseAccountState)
 	stat := status.Convert(err)
 	require.Equal(t, codes.FailedPrecondition, stat.Code())
 	require.ErrorContains(t, err, "already set")

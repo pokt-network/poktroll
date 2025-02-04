@@ -41,16 +41,30 @@ message MsgUpdateParams {
 // MsgUpdateParams message.
 message MsgUpdateParamsResponse {}
 
+// MsgCreateMorseAccountState is used to create the on-chain MorseAccountState ONLY ONCE (per network / re-genesis).
 message MsgCreateMorseAccountState {
   option (cosmos.msg.v1.signer) = "authority";
 
 // authority is the address that controls the module (defaults to x/gov unless overwritten).
   string authority  = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+  // the account state derived from the Morse state export and the `poktrolld migrate collect-morse-accounts` command.
   MorseAccountState morse_account_state = 2 [(gogoproto.jsontag) = "morse_account_state", (gogoproto.nullable) = false];
+  // expected sha256 hash of the morse_account_state. If this hash does not match the on-chain
+  // computation, the transaction will fail. Social consensus regarding the correctness of
+  // morse_account_state should have be achieved off-chain and can be verified on-chain by
+  // comparing this hash with that of a locally derived Morse state export:
+  // E.g., `poktrolld migrate collect-morse-accounts $<(pocket util export-genesis-for-reset)`.
+  // See: `pocket util export-genesis-for-migration --help` & `poktrolld migrate collect-morse-accounts --help`
+  // for more details.
+  bytes morse_account_state_hash = 3 [(gogoproto.jsontag) = "morse_account_state_hash"];
 }
 
+// MsgCreateMorseAccountStateResponse represents an on-chain summary of the result of the corresponding MsgCreateMorseAccountState.
 message MsgCreateMorseAccountStateResponse {
+  // On-chain computed sha256 hash of the morse_account_state provided in the corresponding MsgCreateMorseAccountState.
   bytes state_hash = 1 [(gogoproto.jsontag) = "state_hash"];
+  // Number of accounts (EOAs) which were collected from the Morse state export, which may be claimed.
+  // NOTE: Application and supplier actor stakes are consolidated into their corresponding account balances.
   uint64 num_accounts = 2 [(gogoproto.jsontag) = "num_accounts"];
 }
 

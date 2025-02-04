@@ -4,49 +4,51 @@ import (
 	"context"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"github.com/pokt-network/poktroll/x/migration/types"
+	migrationtypes "github.com/pokt-network/poktroll/x/migration/types"
 )
 
-func (k msgServer) CreateMorseAccountState(ctx context.Context, msg *types.MsgCreateMorseAccountState) (*types.MsgCreateMorseAccountStateResponse, error) {
+// CreateMorseAccountState creates the on-chain MorseAccountState ONLY ONCE (per network / re-genesis).
+func (k msgServer) CreateMorseAccountState(
+	ctx context.Context,
+	msg *migrationtypes.MsgCreateMorseAccountState,
+) (*migrationtypes.MsgCreateMorseAccountStateResponse, error) {
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
+	logger := sdkCtx.Logger().With("method", "CreateMorseAccountState")
 
 	if err := msg.ValidateBasic(); err != nil {
-		return nil, err
+		logger.Info(err.Error())
+		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
 	// Check if the value already exists
-	_, isFound := k.GetMorseAccountState(sdkCtx)
-	if isFound {
-		return nil, status.Error(
-			codes.FailedPrecondition,
-			sdkerrors.ErrInvalidRequest.Wrap("already set").Error(),
-		)
+	if _, isFound := k.GetMorseAccountState(sdkCtx); isFound {
+		err := migrationtypes.ErrMorseAccountState.Wrap("already set")
+		logger.Info(err.Error())
+		return nil, status.Error(codes.FailedPrecondition, err.Error())
 	}
 
-	k.SetMorseAccountState(
-		sdkCtx,
-		msg.MorseAccountState,
-	)
+	k.SetMorseAccountState(sdkCtx, msg.MorseAccountState)
 
 	stateHash, err := msg.MorseAccountState.GetHash()
 	if err != nil {
-		return nil, err
+		logger.Info(err.Error())
+		return nil, status.Error(codes.Internal, err.Error())
 	}
 
 	if err = sdkCtx.EventManager().EmitTypedEvent(
-		&types.EventCreateMorseAccountState{
-			Height:    sdkCtx.BlockHeight(),
-			StateHash: stateHash,
+		&migrationtypes.EventCreateMorseAccountState{
+			CreatedAtHeight:       sdkCtx.BlockHeight(),
+			MorseAccountStateHash: stateHash,
 		},
 	); err != nil {
+		logger.Info(err.Error())
 		return nil, err
 	}
 
-	return &types.MsgCreateMorseAccountStateResponse{
+	return &migrationtypes.MsgCreateMorseAccountStateResponse{
 		StateHash:   stateHash,
 		NumAccounts: uint64(len(msg.MorseAccountState.Accounts)),
 	}, nil

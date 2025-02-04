@@ -1,7 +1,6 @@
 package app
 
 import (
-	migrationmodulekeeper "github.com/pokt-network/poktroll/x/migration/keeper"
 	// this line is used by starport scaffolding # stargate/app/moduleImport
 	"io"
 	"os"
@@ -70,9 +69,9 @@ type App struct {
 	// simulation manager
 	sm *module.SimulationManager
 
-	MigrationKeeper migrationmodulekeeper.Keeper
 	// this line is used by starport scaffolding # stargate/app/keeperDeclaration
-	// Ignite CLI adds keepers here when scaffolding new modules. Please move the created keeper to the `keepers` package.
+	// MUST_READ_DEV_NOTE: Ignite CLI adds keepers here when scaffolding new modules.
+	// MUST_READ_DEV_ACTION_ITEM: Please move the created keeper to the `keepers` package.
 }
 
 func init() {
@@ -216,9 +215,10 @@ func New(
 		&app.Keepers.ProofKeeper,
 		&app.Keepers.TokenomicsKeeper,
 		&app.Keepers.SharedKeeper,
-		&app.MigrationKeeper,
+		&app.Keepers.MigrationKeeper,
 		// this line is used by starport scaffolding # stargate/app/keeperDefinition
-		// Ignite CLI adds keepers here when scaffolding new modules. Please move the created keeper to the `keepers` package.
+		// MUST_READ_DEV_NOTE: Ignite CLI adds keepers here when scaffolding new modules.
+		// MUST_READ_DEV_ACTION_ITEM: Please move the created keeper to the `keepers` package.
 	); err != nil {
 		panic(err)
 	}

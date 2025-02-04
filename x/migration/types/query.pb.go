@@ -106,6 +106,7 @@ func (m *QueryParamsResponse) GetParams() Params {
 	return Params{}
 }
 
+// Queries the MorseAccountState which was created with MsgCreateMorseAccountState.
 type QueryGetMorseAccountStateRequest struct {
 }
 
@@ -138,6 +139,7 @@ func (m *QueryGetMorseAccountStateRequest) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_QueryGetMorseAccountStateRequest proto.InternalMessageInfo
 
+// Returns the MorseAccountState. If it has not yet been created, an error is returned.
 type QueryGetMorseAccountStateResponse struct {
 	MorseAccountState MorseAccountState `protobuf:"bytes,1,opt,name=MorseAccountState,proto3" json:"MorseAccountState"`
 }
@@ -232,7 +234,7 @@ const _ = grpc.SupportPackageIsVersion4
 type QueryClient interface {
 	// Parameters queries the parameters of the module.
 	Params(ctx context.Context, in *QueryParamsRequest, opts ...grpc.CallOption) (*QueryParamsResponse, error)
-	// Queries a MorseAccountState by index.
+	// Queries the MorseAccountState.
 	MorseAccountState(ctx context.Context, in *QueryGetMorseAccountStateRequest, opts ...grpc.CallOption) (*QueryGetMorseAccountStateResponse, error)
 }
 
@@ -266,7 +268,7 @@ func (c *queryClient) MorseAccountState(ctx context.Context, in *QueryGetMorseAc
 type QueryServer interface {
 	// Parameters queries the parameters of the module.
 	Params(context.Context, *QueryParamsRequest) (*QueryParamsResponse, error)
-	// Queries a MorseAccountState by index.
+	// Queries the MorseAccountState.
 	MorseAccountState(context.Context, *QueryGetMorseAccountStateRequest) (*QueryGetMorseAccountStateResponse, error)
 }
 

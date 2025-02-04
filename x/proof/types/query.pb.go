@@ -436,7 +436,6 @@ func (m *QueryGetProofResponse) GetProof() Proof {
 type QueryAllProofsRequest struct {
 	Pagination *query.PageRequest `protobuf:"bytes,1,opt,name=pagination,proto3" json:"pagination,omitempty"`
 	// Types that are valid to be assigned to Filter:
-	//
 	//	*QueryAllProofsRequest_SupplierOperatorAddress
 	//	*QueryAllProofsRequest_SessionId
 	//	*QueryAllProofsRequest_SessionEndHeight

@@ -21,7 +21,7 @@ service Query {
   
   }
   
-  // Queries a MorseAccountState by index.
+  // Queries the MorseAccountState.
   rpc MorseAccountState (QueryGetMorseAccountStateRequest) returns (QueryGetMorseAccountStateResponse) {
     option (google.api.http).get = "/pokt-network/poktroll/migration/morse_account_state";
   
@@ -37,8 +37,10 @@ message QueryParamsResponse {
   Params params = 1 [(gogoproto.nullable) = false, (amino.dont_omitempty) = true];
 }
 
+// Queries the MorseAccountState which was created with MsgCreateMorseAccountState.
 message QueryGetMorseAccountStateRequest {}
 
+// Returns the MorseAccountState. If it has not yet been created, an error is returned.
 message QueryGetMorseAccountStateResponse {
   MorseAccountState MorseAccountState = 1 [(gogoproto.nullable) = false];
 }
