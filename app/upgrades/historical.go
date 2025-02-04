@@ -42,7 +42,7 @@ func defaultUpgradeHandler(
 var UpgradeExample = Upgrade{
 	// PlanName can be any string.
 	// This code is executed when the upgrade with this plan name is submitted to the network.
-	// This does not necessarly need to be a version, but it's usually the case with consensus-breaking changes.
+	// This does not necessarily need to be a version, but it's usually the case with consensus-breaking changes.
 	PlanName:             "v0.0.0-Example",
 	CreateUpgradeHandler: defaultUpgradeHandler,
 

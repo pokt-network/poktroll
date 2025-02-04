@@ -93,8 +93,8 @@ var Upgrade_0_0_12 = Upgrade{
 			for _, supplier := range suppliers {
 				for _, service := range supplier.Services {
 					if len(service.RevShare) > 1 {
-						// Warning: Overwriting existing revshare settings without preserving history.
-						// Note: While the canonical approach would be using Module Upgrade (docs.cosmos.network/v0.46/building-modules/upgrade)
+						// WARNING: Overwriting existing revshare settings without preserving history.
+						// NOTE: While the canonical approach would be using Module Upgrade (docs.cosmos.network/v0.46/building-modules/upgrade)
 						// to handle protobuf type changes (see: github.com/cosmos/cosmos-sdk/blob/v0.46.0-rc1/x/bank/migrations/v043/store.go#L50-L71),
 						// we've opted for direct overwrite because:
 						// 1. No active revenue shares are impacted at time of writing
