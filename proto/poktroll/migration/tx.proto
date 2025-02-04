@@ -72,12 +72,20 @@ message MsgCreateMorseAccountStateResponse {
 message MsgClaimMorsePokt {
   option (cosmos.msg.v1.signer) = "shannon_dest_address";
 
+  // Bech32-encoded address of the Shannon account (secp256k1 keypair) to which the claimed tokens should be transferred.
   string shannon_dest_address = 1 [(cosmos_proto.scalar) = "cosmos.AddressString", (gogoproto.jsontag) = "shannon_dest_address"];
+  // Hex-encoded address of the Morse account (ed25519 keypair) which is included
+  // in the MorseAccountState and has not already been claimed.
+  // Each claim is per Morse account address, claims the entire account.
+  // I.e., subsequent claims for an account which has already been claimed will return an error.
   string morse_src_address    = 2 [(gogoproto.jsontag) = "morse_src_address"];
+  // Ed25519 signature of this MsgClaimMorsePokt messsage, signed by the
+  // corresponding Morse account (ed25519 keypair) given by morse_src_address.
   bytes morse_signature     = 3 [(gogoproto.jsontag) = "morse_signature"];
 }
 
 message MsgClaimMorsePoktResponse {
-  cosmos.base.v1beta1.Coin balance = 1 [(gogoproto.jsontag) = "balance"];
-  bytes state_hash = 2 [(gogoproto.jsontag) = "state_hash"];
+  // The balance which was claimed.
+  cosmos.base.v1beta1.Coin claimed_coin = 1 [(gogoproto.jsontag) = "claimed_coin"];
+  int64 claimed_at_height = 2 [(gogoproto.jsontag) = "claimed_at_height"];
 }
