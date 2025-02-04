@@ -28,12 +28,12 @@ var Upgrade_0_0_12 = Upgrade{
 		// - Comparison: https://github.com/pokt-network/poktroll/compare/v0.0.11..main
 		// - Direct diff: `git diff v0.0.11..main -- config.yml`
 		//
-		// DEV_NOTE: These parameter updates are derived from config.yml in the root directory 
+		// DEV_NOTE: These parameter updates are derived from config.yml in the root directory
 		// of this repository, which serves as the source of truth for all parameter changes.
 		const (
-			supplierStakingFee                = 1000000 # uPOKT
-			serviceTargetNumRelays            = 100 # num relays
-			tokenomicsGlobalInflationPerClaim = 0.1 # % of the claim amount
+			supplierStakingFee                = 1000000 // uPOKT
+			serviceTargetNumRelays            = 100     // num relays
+			tokenomicsGlobalInflationPerClaim = 0.1     // % of the claim amount
 		)
 
 		applyNewParameters := func(ctx context.Context) (err error) {
@@ -83,6 +83,7 @@ var Upgrade_0_0_12 = Upgrade{
 
 		// Helper function to update all suppliers' RevShare to 100%.
 		// This is necessary to ensure that we have that value populated before suppliers are connected.
+		//
 		updateSuppliersRevShare := func(ctx context.Context) error {
 			logger := cosmosTypes.UnwrapSDKContext(ctx).Logger()
 			suppliers := keepers.SupplierKeeper.GetAllSuppliers(ctx)
@@ -91,27 +92,65 @@ var Upgrade_0_0_12 = Upgrade{
 
 			for _, supplier := range suppliers {
 				for _, service := range supplier.Services {
-					// Log a warning log if we're overwriting existing revshare settings.
-					// We chose not to retrieve previous revshare settings due to the complexities of a 
-					// managing protobuf changes, but we can at least log potential surprises.
 					if len(service.RevShare) > 1 {
+						// Warning: Overwriting existing revshare settings without preserving history.
+						// Note: While the canonical approach would be using Module Upgrade (docs.cosmos.network/v0.46/building-modules/upgrade)
+						// to handle protobuf type changes (see: github.com/cosmos/cosmos-sdk/blob/v0.46.0-rc1/x/bank/migrations/v043/store.go#L50-L71),
+						// we've opted for direct overwrite because:
+						// 1. No active revenue shares are impacted at time of writing
+						// 2. Additional protobuf and repo structure changes would be required for proper (though unnecessary) migration
+
+						// Create a string representation of just the revenue share addresses
+						revShareAddresses := "["
+						for i, rs := range service.RevShare {
+							if i > 0 {
+								revShareAddresses += ","
+							}
+							revShareAddresses += rs.Address
+						}
+						revShareAddresses += "]"
 						logger.Warn(
 							"Overwriting existing revenue share configuration",
 							"supplier_operator", supplier.OperatorAddress,
+							"supplier_owner", supplier.OwnerAddress,
 							"service", service.ServiceId,
 							"previous_revshare_count", len(service.RevShare),
+							"previous_revshare_addresses", revShareAddresses,
 						)
-					}
-					service.RevShare = []*sharedtypes.ServiceRevenueShare{
-						{
-							Address:            supplier.OperatorAddress,
-							RevSharePercentage: uint64(100),
-						},
+						service.RevShare = []*sharedtypes.ServiceRevenueShare{
+							{
+								Address:            supplier.OperatorAddress,
+								RevSharePercentage: uint64(100),
+							},
+						}
+					} else if len(service.RevShare) == 1 {
+						// If there is only one revshare setting, we can safely overwrite it (because it has 100%
+						// revenue share), keeping the existing address.
+						logger.Info("Updating supplier's revenue share configuration",
+							"supplier_operator", supplier.OperatorAddress,
+							"supplier_owner", supplier.OwnerAddress,
+							"service", service.ServiceId,
+							"previous_revshare_address", service.RevShare[0].Address,
+						)
+						currentRevShare := service.RevShare[0]
+						service.RevShare = []*sharedtypes.ServiceRevenueShare{
+							{
+								Address:            currentRevShare.Address,
+								RevSharePercentage: uint64(100),
+							},
+						}
+					} else {
+						logger.Warn("That shouldn't happen: no revenue share configuration found for supplier",
+							"supplier_operator", supplier.OperatorAddress,
+							"supplier_owner", supplier.OwnerAddress,
+							"service", service.ServiceId,
+						)
 					}
 				}
 				keepers.SupplierKeeper.SetSupplier(ctx, supplier)
 				logger.Info("Updated supplier",
-					"supplier", supplier.OperatorAddress)
+					"supplier_operator", supplier.OperatorAddress,
+					"supplier_owner", supplier.OwnerAddress)
 			}
 			return nil
 		}
@@ -121,6 +160,7 @@ var Upgrade_0_0_12 = Upgrade{
 			logger := cosmosTypes.UnwrapSDKContext(ctx).Logger()
 			logger.Info("Starting upgrade handler", "upgrade_plan_name", Upgrade_0_0_12_PlanName)
 
+			logger.Info("Starting parameter updates section", "upgrade_plan_name", Upgrade_0_0_12_PlanName)
 			// Update all governance parameter changes.
 			// This includes adding params, removing params and changing values of existing params.
 			err := applyNewParameters(ctx)
@@ -131,6 +171,7 @@ var Upgrade_0_0_12 = Upgrade{
 				return vm, err
 			}
 
+			logger.Info("Starting supplier RevShare updates section", "upgrade_plan_name", Upgrade_0_0_12_PlanName)
 			// Override all suppliers' RevShare to be 100% delegate to the supplier's operator address
 			err = updateSuppliersRevShare(ctx)
 			if err != nil {
@@ -140,7 +181,7 @@ var Upgrade_0_0_12 = Upgrade{
 				return vm, err
 			}
 
-			logger.Info("Running module migrations", "upgrade_plan_name", Upgrade_0_0_12_PlanName)
+			logger.Info("Starting module migrations section", "upgrade_plan_name", Upgrade_0_0_12_PlanName)
 			vm, err = mm.RunMigrations(ctx, configurator, vm)
 			if err != nil {
 				logger.Error("Failed to run migrations",
