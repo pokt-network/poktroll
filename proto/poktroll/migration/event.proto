@@ -17,4 +17,7 @@ message EventCreateMorseAccountState {
   int64 created_at_height = 1 [(gogoproto.jsontag) = "created_at_height"];
   // The sha256 has of the MorseAccountState.
   bytes morse_account_state_hash = 2 [(gogoproto.jsontag) = "morse_account_state_hash"];
+  // The number of accounts (EOAs) which were collected from the Morse state export, which may be claimed.
+  // NOTE: Application and supplier actor stakes are consolidated into their corresponding account balances.
+  uint64 num_accounts = 3 [(gogoproto.jsontag) = "num_accounts"];
 }
