@@ -42,6 +42,7 @@ func (k msgServer) CreateMorseAccountState(
 		&migrationtypes.EventCreateMorseAccountState{
 			CreatedAtHeight:       sdkCtx.BlockHeight(),
 			MorseAccountStateHash: stateHash,
+			NumAccounts:           uint64(len(msg.MorseAccountState.Accounts)),
 		},
 	); err != nil {
 		logger.Info(err.Error())

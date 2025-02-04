@@ -67,6 +67,7 @@ func TestMorseAccountStateMsgServerCreate_Success(t *testing.T) {
 	expectedEvent := &migrationtypes.EventCreateMorseAccountState{
 		CreatedAtHeight:       ctx.BlockHeight(),
 		MorseAccountStateHash: expectedStateHash,
+		NumAccounts:           uint64(numAccounts),
 	}
 	require.Equal(t, expectedEvent, filteredEvts[0])
 }
