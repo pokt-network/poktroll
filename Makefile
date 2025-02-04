@@ -283,8 +283,10 @@ ignite_poktrolld_build: check_go_version check_ignite_version ## Build the poktr
 	ignite chain build --skip-proto --debug -v -o $(shell go env GOPATH)/bin
 
 .PHONY: ignite_openapi_gen
-ignite_openapi_gen: ## Generate the OpenAPI spec for the Ignite API
-	ignite generate openapi --yes
+ignite_openapi_gen: ## Generate the OpenAPI spec for the Ignite API adn convert it to YAML
+	docker build -f ./proto/Dockerfile.ignite -t ignite-openapi .
+	docker run --rm -v "$(PWD):/workspace" ignite-openapi
+	yq -P eval '.' docs/static/openapi.yml -o yaml -i
 
 ##################
 ### CI Helpers ###
