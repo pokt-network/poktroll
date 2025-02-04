@@ -14,25 +14,26 @@ import (
 
 const Upgrade_0_0_12_PlanName = "v0.0.12"
 
-// Upgrade_0_0_12 handles the upgrade to release `v0.0.12`. To be issued on both Alpha and Beta TestNets.
+// Upgrade_0_0_12 handles the upgrade to release `v0.0.12`.
+// This is planned to be issued on both Pocket Network's Shannon Alpha & Beta TestNets.
 var Upgrade_0_0_12 = Upgrade{
 	PlanName: Upgrade_0_0_12_PlanName,
 	CreateUpgradeHandler: func(mm *module.Manager,
 		keepers *keepers.Keepers,
 		configurator module.Configurator,
 	) upgradetypes.UpgradeHandler {
-		// Parameter configurations aligned with repository config.yml specifications
-		// These values reflect the delta between v0.0.11 and current main branch
+		// Parameter configurations aligned with repository config.yml specifications.
+		// These values reflect the delta between v0.0.11 and the main branch as of #1043.
 		// Reference:
 		// - Comparison: https://github.com/pokt-network/poktroll/compare/v0.0.11..main
 		// - Direct diff: `git diff v0.0.11..main -- config.yml`
 		//
-		// Note: Parameter updates are derived from config.yml modifications, which serves
-		// as the source of truth for all parameter changes.
+		// DEV_NOTE: These parameter updates are derived from config.yml in the root directory 
+		// of this repository, which serves as the source of truth for all parameter changes.
 		const (
-			supplierStakingFee                = 1000000
-			serviceTargetNumRelays            = 100
-			tokenomicsGlobalInflationPerClaim = 0.1
+			supplierStakingFee                = 1000000 # uPOKT
+			serviceTargetNumRelays            = 100 # num relays
+			tokenomicsGlobalInflationPerClaim = 0.1 # % of the claim amount
 		)
 
 		applyNewParameters := func(ctx context.Context) (err error) {
@@ -80,22 +81,23 @@ var Upgrade_0_0_12 = Upgrade{
 			return nil
 		}
 
-		// Helper function to update all suppliers' RevShare to 100%. This is necessary to ensure that
-		// we have that value populated before suppliers are connected.
+		// Helper function to update all suppliers' RevShare to 100%.
+		// This is necessary to ensure that we have that value populated before suppliers are connected.
 		updateSuppliersRevShare := func(ctx context.Context) error {
 			logger := cosmosTypes.UnwrapSDKContext(ctx).Logger()
 			suppliers := keepers.SupplierKeeper.GetAllSuppliers(ctx)
-			logger.Info("Updating all suppliers to have a 100% revshare to the supplier",
+			logger.Info("Updating (overriding) all suppliers to delegate 100% revenue share to the supplier's operator address",
 				"num_suppliers", len(suppliers))
 
 			for _, supplier := range suppliers {
 				for _, service := range supplier.Services {
-					// Add warning log if we're overwriting existing revshare settings. We can't get the previous
-					// revshare percentage due to a protobuf change, but we can at least log the number of previous revshares.
+					// Log a warning log if we're overwriting existing revshare settings.
+					// We chose not to retrieve previous revshare settings due to the complexities of a 
+					// managing protobuf changes, but we can at least log potential surprises.
 					if len(service.RevShare) > 1 {
 						logger.Warn(
 							"Overwriting existing revenue share configuration",
-							"supplier", supplier.OperatorAddress,
+							"supplier_operator", supplier.OperatorAddress,
 							"service", service.ServiceId,
 							"previous_revshare_count", len(service.RevShare),
 						)
@@ -119,6 +121,8 @@ var Upgrade_0_0_12 = Upgrade{
 			logger := cosmosTypes.UnwrapSDKContext(ctx).Logger()
 			logger.Info("Starting upgrade handler", "upgrade_plan_name", Upgrade_0_0_12_PlanName)
 
+			// Update all governance parameter changes.
+			// This includes adding params, removing params and changing values of existing params.
 			err := applyNewParameters(ctx)
 			if err != nil {
 				logger.Error("Failed to apply new parameters",
@@ -127,7 +131,7 @@ var Upgrade_0_0_12 = Upgrade{
 				return vm, err
 			}
 
-			// Update all suppliers' RevShare
+			// Override all suppliers' RevShare to be 100% delegate to the supplier's operator address
 			err = updateSuppliersRevShare(ctx)
 			if err != nil {
 				logger.Error("Failed to update suppliers RevShare",
