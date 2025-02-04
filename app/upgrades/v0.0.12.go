@@ -2,6 +2,7 @@ package upgrades
 
 import (
 	"context"
+	"strings"
 
 	"cosmossdk.io/math"
 	storetypes "cosmossdk.io/store/types"
@@ -25,8 +26,8 @@ var Upgrade_0_0_12 = Upgrade{
 		// Parameter configurations aligned with repository config.yml specifications.
 		// These values reflect the delta between v0.0.11 and the main branch as of #1043.
 		// Reference:
-		// - Comparison: https://github.com/pokt-network/poktroll/compare/v0.0.11..main
-		// - Direct diff: `git diff v0.0.11..main -- config.yml`
+		// - Comparison: https://github.com/pokt-network/poktroll/compare/v0.0.11..7541afd6d89a12d61e2c32637b535f24fae20b58
+		// - Direct diff: `git diff v0.0.11..7541afd6d89a12d61e2c32637b535f24fae20b58 -- config.yml`
 		//
 		// DEV_NOTE: These parameter updates are derived from config.yml in the root directory
 		// of this repository, which serves as the source of truth for all parameter changes.
@@ -101,21 +102,18 @@ var Upgrade_0_0_12 = Upgrade{
 						// 2. Additional protobuf and repo structure changes would be required for proper (though unnecessary) migration
 
 						// Create a string representation of just the revenue share addresses
-						revShareAddresses := "["
+						addresses := make([]string, len(service.RevShare))
 						for i, rs := range service.RevShare {
-							if i > 0 {
-								revShareAddresses += ","
-							}
-							revShareAddresses += rs.Address
+							addresses[i] = rs.Address
 						}
-						revShareAddresses += "]"
+						revShareAddressesStr := "[" + strings.Join(addresses, ",") + "]"
 						logger.Warn(
 							"Overwriting existing revenue share configuration",
 							"supplier_operator", supplier.OperatorAddress,
 							"supplier_owner", supplier.OwnerAddress,
 							"service", service.ServiceId,
 							"previous_revshare_count", len(service.RevShare),
-							"previous_revshare_addresses", revShareAddresses,
+							"previous_revshare_addresses", revShareAddressesStr,
 						)
 						service.RevShare = []*sharedtypes.ServiceRevenueShare{
 							{
