@@ -70,7 +70,8 @@ type App struct {
 	sm *module.SimulationManager
 
 	// this line is used by starport scaffolding # stargate/app/keeperDeclaration
-	// Ignite CLI adds keepers here when scaffolding new modules. Please move the created keeper to the `keepers` package.
+	// MUST_READ_DEV_NOTE: Ignite CLI adds keepers here when scaffolding new modules.
+	// MUST_READ_DEV_ACTION_ITEM: Please move the created keeper to the `keepers` package.
 }
 
 func init() {
@@ -216,7 +217,8 @@ func New(
 		&app.Keepers.SharedKeeper,
 		&app.Keepers.MigrationKeeper,
 		// this line is used by starport scaffolding # stargate/app/keeperDefinition
-		// Ignite CLI adds keepers here when scaffolding new modules. Please move the created keeper to the `keepers` package.
+		// MUST_READ_DEV_NOTE: Ignite CLI adds keepers here when scaffolding new modules.
+		// MUST_READ_DEV_ACTION_ITEM: Please move the created keeper to the `keepers` package.
 	); err != nil {
 		panic(err)
 	}
