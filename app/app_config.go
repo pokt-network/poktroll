@@ -1,6 +1,10 @@
 package app
 
 import (
+	migrationmodulev1 "github.com/pokt-network/poktroll/api/poktroll/migration/module"
+	_ "github.com/pokt-network/poktroll/x/migration/module" // import for side-effects
+	migrationmoduletypes "github.com/pokt-network/poktroll/x/migration/types"
+
 	// this line is used by starport scaffolding # stargate/app/moduleImport
 	"time"
 
@@ -140,6 +144,7 @@ var (
 		proofmoduletypes.ModuleName,
 		tokenomicsmoduletypes.ModuleName,
 		sharedmoduletypes.ModuleName,
+		migrationmoduletypes.ModuleName,
 		// this line is used by starport scaffolding # stargate/app/initGenesis
 	}
 
@@ -172,6 +177,7 @@ var (
 		proofmoduletypes.ModuleName,
 		tokenomicsmoduletypes.ModuleName,
 		sharedmoduletypes.ModuleName,
+		migrationmoduletypes.ModuleName,
 		// this line is used by starport scaffolding # stargate/app/beginBlockers
 	}
 
@@ -203,6 +209,7 @@ var (
 		applicationmoduletypes.ModuleName,
 		suppliermoduletypes.ModuleName,
 		sharedmoduletypes.ModuleName,
+		migrationmoduletypes.ModuleName,
 		// this line is used by starport scaffolding # stargate/app/endBlockers
 	}
 
@@ -390,6 +397,10 @@ var (
 			{
 				Name:   sharedmoduletypes.ModuleName,
 				Config: appconfig.WrapAny(&sharedmodulev1.Module{}),
+			},
+			{
+				Name:   migrationmoduletypes.ModuleName,
+				Config: appconfig.WrapAny(&migrationmodulev1.Module{}),
 			},
 			// this line is used by starport scaffolding # stargate/app/moduleConfig
 		},

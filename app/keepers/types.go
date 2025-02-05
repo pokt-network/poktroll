@@ -32,6 +32,7 @@ import (
 
 	applicationmodulekeeper "github.com/pokt-network/poktroll/x/application/keeper"
 	gatewaymodulekeeper "github.com/pokt-network/poktroll/x/gateway/keeper"
+	migrationmodulekeeper "github.com/pokt-network/poktroll/x/migration/keeper"
 	proofmodulekeeper "github.com/pokt-network/poktroll/x/proof/keeper"
 	servicemodulekeeper "github.com/pokt-network/poktroll/x/service/keeper"
 	sessionmodulekeeper "github.com/pokt-network/poktroll/x/session/keeper"
@@ -82,4 +83,5 @@ type Keepers struct {
 	ProofKeeper       proofmodulekeeper.Keeper
 	TokenomicsKeeper  tokenomicsmodulekeeper.Keeper
 	SharedKeeper      sharedmodulekeeper.Keeper
+	MigrationKeeper   migrationmodulekeeper.Keeper
 }
