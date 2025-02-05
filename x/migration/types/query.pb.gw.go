@@ -69,6 +69,10 @@ func local_request_Query_MorseAccountState_0(ctx context.Context, marshaler runt
 
 }
 
+var (
+	filter_Query_MorseAccountClaim_0 = &utilities.DoubleArray{Encoding: map[string]int{"morse_src_address": 0}, Base: []int{1, 1, 0}, Check: []int{0, 1, 2}}
+)
+
 func request_Query_MorseAccountClaim_0(ctx context.Context, marshaler runtime.Marshaler, client QueryClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var protoReq QueryGetMorseAccountClaimRequest
 	var metadata runtime.ServerMetadata
@@ -80,15 +84,22 @@ func request_Query_MorseAccountClaim_0(ctx context.Context, marshaler runtime.Ma
 		_   = err
 	)
 
-	val, ok = pathParams["morseSrcAddress"]
+	val, ok = pathParams["morse_src_address"]
 	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "morseSrcAddress")
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "morse_src_address")
 	}
 
 	protoReq.MorseSrcAddress, err = runtime.String(val)
 
 	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "morseSrcAddress", err)
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "morse_src_address", err)
+	}
+
+	if err := req.ParseForm(); err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_Query_MorseAccountClaim_0); err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 
 	msg, err := client.MorseAccountClaim(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
@@ -107,15 +118,22 @@ func local_request_Query_MorseAccountClaim_0(ctx context.Context, marshaler runt
 		_   = err
 	)
 
-	val, ok = pathParams["morseSrcAddress"]
+	val, ok = pathParams["morse_src_address"]
 	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "morseSrcAddress")
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "morse_src_address")
 	}
 
 	protoReq.MorseSrcAddress, err = runtime.String(val)
 
 	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "morseSrcAddress", err)
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "morse_src_address", err)
+	}
+
+	if err := req.ParseForm(); err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_Query_MorseAccountClaim_0); err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 
 	msg, err := server.MorseAccountClaim(ctx, &protoReq)
@@ -386,7 +404,7 @@ var (
 
 	pattern_Query_MorseAccountState_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"pokt-network", "poktroll", "migration", "morse_account_state"}, "", runtime.AssumeColonVerbOpt(false)))
 
-	pattern_Query_MorseAccountClaim_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3, 1, 0, 4, 1, 5, 4}, []string{"pokt-network", "poktroll", "migration", "morse_account_claim", "morseSrcAddress"}, "", runtime.AssumeColonVerbOpt(false)))
+	pattern_Query_MorseAccountClaim_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3, 1, 0, 4, 1, 5, 4}, []string{"pokt-network", "poktroll", "migration", "morse_account_claim", "morse_src_address"}, "", runtime.AssumeColonVerbOpt(false)))
 
 	pattern_Query_MorseAccountClaimAll_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"pokt-network", "poktroll", "migration", "morse_account_claim"}, "", runtime.AssumeColonVerbOpt(false)))
 )

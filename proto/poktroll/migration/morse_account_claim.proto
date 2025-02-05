@@ -6,8 +6,10 @@ import "cosmos_proto/cosmos.proto";
 option go_package = "github.com/pokt-network/poktroll/x/migration/types";
 
 message MorseAccountClaim {
-  string morse_src_address = 2;
-  //
-  string morse_signature = 3;
-  string shannon_dest_address = 4[(cosmos_proto.scalar) = "cosmos.AddressString"];
+  // The hex-encoded address of the Morse account associated with the claim.
+  string morse_src_address = 1;
+  // The bech32-encoded address of the Shannon account associated with the claim.
+  string shannon_dest_address = 2[(cosmos_proto.scalar) = "cosmos.AddressString"];
+  // The height (on Shannon) at which the claim was created.
+  int64 claimed_at_height = 3;
 }
