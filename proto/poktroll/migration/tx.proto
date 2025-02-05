@@ -8,6 +8,7 @@ import "cosmos_proto/cosmos.proto";
 import "gogoproto/gogo.proto";
 import "poktroll/migration/params.proto";
 import "poktroll/migration/types.proto";
+import "poktroll/migration/morse_account_claim.proto";
 
 option go_package = "github.com/pokt-network/poktroll/x/migration/types";
 option (gogoproto.stable_marshaler_all) = true;
@@ -20,6 +21,9 @@ service Msg {
   // parameters. The authority defaults to the x/gov module account.
   rpc UpdateParams            (MsgUpdateParams           ) returns (MsgUpdateParamsResponse           );
   rpc CreateMorseAccountState (MsgCreateMorseAccountState) returns (MsgCreateMorseAccountStateResponse);
+  rpc CreateMorseAccountClaim (MsgCreateMorseAccountClaim) returns (MsgCreateMorseAccountClaimResponse);
+  rpc UpdateMorseAccountClaim (MsgUpdateMorseAccountClaim) returns (MsgUpdateMorseAccountClaimResponse);
+  rpc DeleteMorseAccountClaim (MsgDeleteMorseAccountClaim) returns (MsgDeleteMorseAccountClaimResponse);
 }
 // MsgUpdateParams is the Msg/UpdateParams request type.
 message MsgUpdateParams {
@@ -28,7 +32,7 @@ message MsgUpdateParams {
   
   // authority is the address that controls the module (defaults to x/gov unless overwritten).
   string authority = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
-  
+
   // params defines the module parameters to update.
   
   // NOTE: All parameters must be supplied.
@@ -42,11 +46,13 @@ message MsgUpdateParamsResponse {}
 // MsgCreateMorseAccountState is used to create the on-chain MorseAccountState ONLY ONCE (per network / re-genesis).
 message MsgCreateMorseAccountState {
   option (cosmos.msg.v1.signer) = "authority";
-
+  
   // authority is the address that controls the module (defaults to x/gov unless overwritten).
-  string authority  = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+  string authority = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+  
   // the account state derived from the Morse state export and the `poktrolld migrate collect-morse-accounts` command.
   MorseAccountState morse_account_state = 2 [(gogoproto.jsontag) = "morse_account_state", (gogoproto.nullable) = false];
+  
   // expected sha256 hash of the morse_account_state. If this hash does not match the on-chain
   // computation, the transaction will fail. Social consensus regarding the correctness of
   // morse_account_state should have be achieved off-chain and can be verified on-chain by
@@ -59,9 +65,38 @@ message MsgCreateMorseAccountState {
 
 // MsgCreateMorseAccountStateResponse represents an on-chain summary of the result of the corresponding MsgCreateMorseAccountState.
 message MsgCreateMorseAccountStateResponse {
+  
   // On-chain computed sha256 hash of the morse_account_state provided in the corresponding MsgCreateMorseAccountState.
   bytes state_hash = 1 [(gogoproto.jsontag) = "state_hash"];
+  
   // Number of accounts (EOAs) which were collected from the Morse state export, which may be claimed.
   // NOTE: Application and supplier actor stakes are consolidated into their corresponding account balances.
   uint64 num_accounts = 2 [(gogoproto.jsontag) = "num_accounts"];
 }
+
+message MsgCreateMorseAccountClaim {
+  option (cosmos.msg.v1.signer) = "shannonDestAddress";
+  string shannonDestAddress = 1;
+  string morseSrcAddress    = 2;
+  string morseSignature     = 3;
+}
+
+message MsgCreateMorseAccountClaimResponse {}
+
+message MsgUpdateMorseAccountClaim {
+  option (cosmos.msg.v1.signer) = "shannonDestAddress";
+  string shannonDestAddress = 1;
+  string morseSrcAddress    = 2;
+  string morseSignature     = 3;
+}
+
+message MsgUpdateMorseAccountClaimResponse {}
+
+message MsgDeleteMorseAccountClaim {
+  option (cosmos.msg.v1.signer) = "shannonDestAddress";
+  string shannonDestAddress = 1;
+  string morseSrcAddress    = 2;
+}
+
+message MsgDeleteMorseAccountClaimResponse {}
+

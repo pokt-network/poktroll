@@ -234,51 +234,323 @@ func (m *MsgCreateMorseAccountStateResponse) GetNumAccounts() uint64 {
 	return 0
 }
 
+type MsgCreateMorseAccountClaim struct {
+	ShannonDestAddress string `protobuf:"bytes,1,opt,name=shannonDestAddress,proto3" json:"shannonDestAddress,omitempty"`
+	MorseSrcAddress    string `protobuf:"bytes,2,opt,name=morseSrcAddress,proto3" json:"morseSrcAddress,omitempty"`
+	MorseSignature     string `protobuf:"bytes,3,opt,name=morseSignature,proto3" json:"morseSignature,omitempty"`
+}
+
+func (m *MsgCreateMorseAccountClaim) Reset()         { *m = MsgCreateMorseAccountClaim{} }
+func (m *MsgCreateMorseAccountClaim) String() string { return proto.CompactTextString(m) }
+func (*MsgCreateMorseAccountClaim) ProtoMessage()    {}
+func (*MsgCreateMorseAccountClaim) Descriptor() ([]byte, []int) {
+	return fileDescriptor_21658240592266b6, []int{4}
+}
+func (m *MsgCreateMorseAccountClaim) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *MsgCreateMorseAccountClaim) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	b = b[:cap(b)]
+	n, err := m.MarshalToSizedBuffer(b)
+	if err != nil {
+		return nil, err
+	}
+	return b[:n], nil
+}
+func (m *MsgCreateMorseAccountClaim) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_MsgCreateMorseAccountClaim.Merge(m, src)
+}
+func (m *MsgCreateMorseAccountClaim) XXX_Size() int {
+	return m.Size()
+}
+func (m *MsgCreateMorseAccountClaim) XXX_DiscardUnknown() {
+	xxx_messageInfo_MsgCreateMorseAccountClaim.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_MsgCreateMorseAccountClaim proto.InternalMessageInfo
+
+func (m *MsgCreateMorseAccountClaim) GetShannonDestAddress() string {
+	if m != nil {
+		return m.ShannonDestAddress
+	}
+	return ""
+}
+
+func (m *MsgCreateMorseAccountClaim) GetMorseSrcAddress() string {
+	if m != nil {
+		return m.MorseSrcAddress
+	}
+	return ""
+}
+
+func (m *MsgCreateMorseAccountClaim) GetMorseSignature() string {
+	if m != nil {
+		return m.MorseSignature
+	}
+	return ""
+}
+
+type MsgCreateMorseAccountClaimResponse struct {
+}
+
+func (m *MsgCreateMorseAccountClaimResponse) Reset()         { *m = MsgCreateMorseAccountClaimResponse{} }
+func (m *MsgCreateMorseAccountClaimResponse) String() string { return proto.CompactTextString(m) }
+func (*MsgCreateMorseAccountClaimResponse) ProtoMessage()    {}
+func (*MsgCreateMorseAccountClaimResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_21658240592266b6, []int{5}
+}
+func (m *MsgCreateMorseAccountClaimResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *MsgCreateMorseAccountClaimResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	b = b[:cap(b)]
+	n, err := m.MarshalToSizedBuffer(b)
+	if err != nil {
+		return nil, err
+	}
+	return b[:n], nil
+}
+func (m *MsgCreateMorseAccountClaimResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_MsgCreateMorseAccountClaimResponse.Merge(m, src)
+}
+func (m *MsgCreateMorseAccountClaimResponse) XXX_Size() int {
+	return m.Size()
+}
+func (m *MsgCreateMorseAccountClaimResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_MsgCreateMorseAccountClaimResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_MsgCreateMorseAccountClaimResponse proto.InternalMessageInfo
+
+type MsgUpdateMorseAccountClaim struct {
+	ShannonDestAddress string `protobuf:"bytes,1,opt,name=shannonDestAddress,proto3" json:"shannonDestAddress,omitempty"`
+	MorseSrcAddress    string `protobuf:"bytes,2,opt,name=morseSrcAddress,proto3" json:"morseSrcAddress,omitempty"`
+	MorseSignature     string `protobuf:"bytes,3,opt,name=morseSignature,proto3" json:"morseSignature,omitempty"`
+}
+
+func (m *MsgUpdateMorseAccountClaim) Reset()         { *m = MsgUpdateMorseAccountClaim{} }
+func (m *MsgUpdateMorseAccountClaim) String() string { return proto.CompactTextString(m) }
+func (*MsgUpdateMorseAccountClaim) ProtoMessage()    {}
+func (*MsgUpdateMorseAccountClaim) Descriptor() ([]byte, []int) {
+	return fileDescriptor_21658240592266b6, []int{6}
+}
+func (m *MsgUpdateMorseAccountClaim) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *MsgUpdateMorseAccountClaim) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	b = b[:cap(b)]
+	n, err := m.MarshalToSizedBuffer(b)
+	if err != nil {
+		return nil, err
+	}
+	return b[:n], nil
+}
+func (m *MsgUpdateMorseAccountClaim) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_MsgUpdateMorseAccountClaim.Merge(m, src)
+}
+func (m *MsgUpdateMorseAccountClaim) XXX_Size() int {
+	return m.Size()
+}
+func (m *MsgUpdateMorseAccountClaim) XXX_DiscardUnknown() {
+	xxx_messageInfo_MsgUpdateMorseAccountClaim.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_MsgUpdateMorseAccountClaim proto.InternalMessageInfo
+
+func (m *MsgUpdateMorseAccountClaim) GetShannonDestAddress() string {
+	if m != nil {
+		return m.ShannonDestAddress
+	}
+	return ""
+}
+
+func (m *MsgUpdateMorseAccountClaim) GetMorseSrcAddress() string {
+	if m != nil {
+		return m.MorseSrcAddress
+	}
+	return ""
+}
+
+func (m *MsgUpdateMorseAccountClaim) GetMorseSignature() string {
+	if m != nil {
+		return m.MorseSignature
+	}
+	return ""
+}
+
+type MsgUpdateMorseAccountClaimResponse struct {
+}
+
+func (m *MsgUpdateMorseAccountClaimResponse) Reset()         { *m = MsgUpdateMorseAccountClaimResponse{} }
+func (m *MsgUpdateMorseAccountClaimResponse) String() string { return proto.CompactTextString(m) }
+func (*MsgUpdateMorseAccountClaimResponse) ProtoMessage()    {}
+func (*MsgUpdateMorseAccountClaimResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_21658240592266b6, []int{7}
+}
+func (m *MsgUpdateMorseAccountClaimResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *MsgUpdateMorseAccountClaimResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	b = b[:cap(b)]
+	n, err := m.MarshalToSizedBuffer(b)
+	if err != nil {
+		return nil, err
+	}
+	return b[:n], nil
+}
+func (m *MsgUpdateMorseAccountClaimResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_MsgUpdateMorseAccountClaimResponse.Merge(m, src)
+}
+func (m *MsgUpdateMorseAccountClaimResponse) XXX_Size() int {
+	return m.Size()
+}
+func (m *MsgUpdateMorseAccountClaimResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_MsgUpdateMorseAccountClaimResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_MsgUpdateMorseAccountClaimResponse proto.InternalMessageInfo
+
+type MsgDeleteMorseAccountClaim struct {
+	ShannonDestAddress string `protobuf:"bytes,1,opt,name=shannonDestAddress,proto3" json:"shannonDestAddress,omitempty"`
+	MorseSrcAddress    string `protobuf:"bytes,2,opt,name=morseSrcAddress,proto3" json:"morseSrcAddress,omitempty"`
+}
+
+func (m *MsgDeleteMorseAccountClaim) Reset()         { *m = MsgDeleteMorseAccountClaim{} }
+func (m *MsgDeleteMorseAccountClaim) String() string { return proto.CompactTextString(m) }
+func (*MsgDeleteMorseAccountClaim) ProtoMessage()    {}
+func (*MsgDeleteMorseAccountClaim) Descriptor() ([]byte, []int) {
+	return fileDescriptor_21658240592266b6, []int{8}
+}
+func (m *MsgDeleteMorseAccountClaim) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *MsgDeleteMorseAccountClaim) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	b = b[:cap(b)]
+	n, err := m.MarshalToSizedBuffer(b)
+	if err != nil {
+		return nil, err
+	}
+	return b[:n], nil
+}
+func (m *MsgDeleteMorseAccountClaim) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_MsgDeleteMorseAccountClaim.Merge(m, src)
+}
+func (m *MsgDeleteMorseAccountClaim) XXX_Size() int {
+	return m.Size()
+}
+func (m *MsgDeleteMorseAccountClaim) XXX_DiscardUnknown() {
+	xxx_messageInfo_MsgDeleteMorseAccountClaim.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_MsgDeleteMorseAccountClaim proto.InternalMessageInfo
+
+func (m *MsgDeleteMorseAccountClaim) GetShannonDestAddress() string {
+	if m != nil {
+		return m.ShannonDestAddress
+	}
+	return ""
+}
+
+func (m *MsgDeleteMorseAccountClaim) GetMorseSrcAddress() string {
+	if m != nil {
+		return m.MorseSrcAddress
+	}
+	return ""
+}
+
+type MsgDeleteMorseAccountClaimResponse struct {
+}
+
+func (m *MsgDeleteMorseAccountClaimResponse) Reset()         { *m = MsgDeleteMorseAccountClaimResponse{} }
+func (m *MsgDeleteMorseAccountClaimResponse) String() string { return proto.CompactTextString(m) }
+func (*MsgDeleteMorseAccountClaimResponse) ProtoMessage()    {}
+func (*MsgDeleteMorseAccountClaimResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_21658240592266b6, []int{9}
+}
+func (m *MsgDeleteMorseAccountClaimResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *MsgDeleteMorseAccountClaimResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	b = b[:cap(b)]
+	n, err := m.MarshalToSizedBuffer(b)
+	if err != nil {
+		return nil, err
+	}
+	return b[:n], nil
+}
+func (m *MsgDeleteMorseAccountClaimResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_MsgDeleteMorseAccountClaimResponse.Merge(m, src)
+}
+func (m *MsgDeleteMorseAccountClaimResponse) XXX_Size() int {
+	return m.Size()
+}
+func (m *MsgDeleteMorseAccountClaimResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_MsgDeleteMorseAccountClaimResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_MsgDeleteMorseAccountClaimResponse proto.InternalMessageInfo
+
 func init() {
 	proto.RegisterType((*MsgUpdateParams)(nil), "poktroll.migration.MsgUpdateParams")
 	proto.RegisterType((*MsgUpdateParamsResponse)(nil), "poktroll.migration.MsgUpdateParamsResponse")
 	proto.RegisterType((*MsgCreateMorseAccountState)(nil), "poktroll.migration.MsgCreateMorseAccountState")
 	proto.RegisterType((*MsgCreateMorseAccountStateResponse)(nil), "poktroll.migration.MsgCreateMorseAccountStateResponse")
+	proto.RegisterType((*MsgCreateMorseAccountClaim)(nil), "poktroll.migration.MsgCreateMorseAccountClaim")
+	proto.RegisterType((*MsgCreateMorseAccountClaimResponse)(nil), "poktroll.migration.MsgCreateMorseAccountClaimResponse")
+	proto.RegisterType((*MsgUpdateMorseAccountClaim)(nil), "poktroll.migration.MsgUpdateMorseAccountClaim")
+	proto.RegisterType((*MsgUpdateMorseAccountClaimResponse)(nil), "poktroll.migration.MsgUpdateMorseAccountClaimResponse")
+	proto.RegisterType((*MsgDeleteMorseAccountClaim)(nil), "poktroll.migration.MsgDeleteMorseAccountClaim")
+	proto.RegisterType((*MsgDeleteMorseAccountClaimResponse)(nil), "poktroll.migration.MsgDeleteMorseAccountClaimResponse")
 }
 
 func init() { proto.RegisterFile("poktroll/migration/tx.proto", fileDescriptor_21658240592266b6) }
 
 var fileDescriptor_21658240592266b6 = []byte{
-	// 541 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x9c, 0x53, 0x3f, 0x6f, 0xd3, 0x5e,
-	0x14, 0xcd, 0x6b, 0x7f, 0xbf, 0x4a, 0x79, 0x8d, 0x0a, 0x35, 0x45, 0x71, 0x5d, 0x64, 0x47, 0x06,
-	0xa4, 0x28, 0x28, 0xb6, 0x48, 0xa5, 0x22, 0x55, 0x62, 0xa8, 0x59, 0x58, 0x22, 0x55, 0xae, 0xba,
-	0xb0, 0x84, 0xd7, 0xe4, 0xc9, 0xb6, 0xda, 0xe7, 0x67, 0xbd, 0xf7, 0x0c, 0xed, 0x06, 0x4c, 0x88,
-	0x89, 0x8f, 0xc1, 0x46, 0x06, 0xbe, 0x00, 0x5b, 0xc7, 0x8a, 0xa9, 0x93, 0x85, 0x92, 0x21, 0x52,
-	0x46, 0x3e, 0x01, 0xf2, 0xbf, 0x34, 0x69, 0x6c, 0x09, 0x58, 0x12, 0xbf, 0x7b, 0xcf, 0x3d, 0xe7,
-	0xdc, 0xab, 0x7b, 0xe1, 0x4e, 0x40, 0x4f, 0x05, 0xa3, 0x67, 0x67, 0x26, 0xf1, 0x1c, 0x86, 0x84,
-	0x47, 0x7d, 0x53, 0x9c, 0x1b, 0x01, 0xa3, 0x82, 0x4a, 0x52, 0x9e, 0x34, 0x66, 0x49, 0x65, 0x13,
-	0x11, 0xcf, 0xa7, 0x66, 0xf2, 0x9b, 0xc2, 0x94, 0x7a, 0x9f, 0x72, 0x42, 0xb9, 0x49, 0xb8, 0x63,
-	0xbe, 0x79, 0x1a, 0xff, 0x65, 0x89, 0xed, 0x34, 0xd1, 0x4b, 0x5e, 0x66, 0xfa, 0xc8, 0x52, 0x5b,
-	0x0e, 0x75, 0x68, 0x1a, 0x8f, 0xbf, 0xb2, 0xa8, 0x56, 0xe0, 0x26, 0x40, 0x0c, 0x91, 0xbc, 0x4c,
-	0x2d, 0xb2, 0x7b, 0x11, 0xe0, 0x2c, 0xaf, 0x7f, 0x07, 0xf0, 0x4e, 0x97, 0x3b, 0xc7, 0xc1, 0x00,
-	0x09, 0x7c, 0x98, 0x54, 0x4a, 0x7b, 0xb0, 0x8a, 0x42, 0xe1, 0x52, 0xe6, 0x89, 0x0b, 0x19, 0x34,
-	0x40, 0xb3, 0x6a, 0xc9, 0x3f, 0xbe, 0xb5, 0xb7, 0x32, 0x3f, 0x07, 0x83, 0x01, 0xc3, 0x9c, 0x1f,
-	0x09, 0xe6, 0xf9, 0x8e, 0x7d, 0x03, 0x95, 0x9e, 0xc3, 0xb5, 0x54, 0x5b, 0x5e, 0x69, 0x80, 0xe6,
-	0x7a, 0x47, 0x31, 0x96, 0xc7, 0x61, 0xa4, 0x1a, 0x56, 0xf5, 0x32, 0xd2, 0x2a, 0x5f, 0x26, 0xc3,
-	0x16, 0xb0, 0xb3, 0xa2, 0xfd, 0x67, 0x1f, 0x26, 0xc3, 0xd6, 0x0d, 0xdd, 0xa7, 0xc9, 0xb0, 0xf5,
-	0x68, 0xe6, 0xfe, 0x7c, 0xce, 0xff, 0x2d, 0xbf, 0xfa, 0x36, 0xac, 0xdf, 0x0a, 0xd9, 0x98, 0x07,
-	0xd4, 0xe7, 0x58, 0xff, 0xba, 0x02, 0x95, 0x2e, 0x77, 0x5e, 0x30, 0x8c, 0x04, 0xee, 0x52, 0xc6,
-	0xf1, 0x41, 0xbf, 0x4f, 0x43, 0x5f, 0x1c, 0x09, 0x24, 0xf0, 0x3f, 0x77, 0xca, 0xe0, 0x3d, 0x12,
-	0x93, 0xf5, 0x50, 0xca, 0xd6, 0xe3, 0x31, 0x5d, 0xd6, 0xf6, 0xe3, 0xa2, 0xb6, 0x97, 0xb4, 0xad,
-	0x9d, 0x78, 0x02, 0xd3, 0x48, 0x2b, 0x62, 0xb2, 0x37, 0xc9, 0x92, 0xd7, 0x63, 0x28, 0x17, 0x20,
-	0x7b, 0x2e, 0xe2, 0xae, 0xbc, 0xda, 0x00, 0xcd, 0x9a, 0xf5, 0x60, 0x1a, 0x69, 0xa5, 0x18, 0xfb,
-	0xfe, 0x12, 0xe5, 0x4b, 0xc4, 0xdd, 0xfd, 0x8d, 0xc5, 0xa9, 0xeb, 0x1f, 0x01, 0xd4, 0xcb, 0x27,
-	0x96, 0x0f, 0x56, 0x6a, 0x43, 0x38, 0xa7, 0x0f, 0x12, 0xfd, 0x8d, 0x69, 0xa4, 0xcd, 0x45, 0xed,
-	0x2a, 0xcf, 0x55, 0xa4, 0x5d, 0x58, 0xf3, 0x43, 0x92, 0xdb, 0x4a, 0x17, 0xe4, 0x3f, 0xeb, 0xee,
-	0x34, 0xd2, 0x16, 0xe2, 0xf6, 0xba, 0x1f, 0x92, 0x4c, 0x8f, 0x77, 0x7e, 0x01, 0xb8, 0xda, 0xe5,
-	0x8e, 0xf4, 0x1a, 0xd6, 0x16, 0xf6, 0xf3, 0x61, 0xe1, 0x80, 0x17, 0x37, 0x40, 0x79, 0xf2, 0x07,
-	0xa0, 0x59, 0x37, 0xef, 0x01, 0xac, 0x97, 0xed, 0x88, 0x51, 0x42, 0x54, 0x82, 0x57, 0xf6, 0xfe,
-	0x0e, 0x9f, 0x7b, 0x50, 0xfe, 0x7f, 0x17, 0x5f, 0x83, 0x75, 0x78, 0x39, 0x52, 0xc1, 0xd5, 0x48,
-	0x05, 0xd7, 0x23, 0x15, 0xfc, 0x1c, 0xa9, 0xe0, 0xf3, 0x58, 0xad, 0x5c, 0x8d, 0xd5, 0xca, 0xf5,
-	0x58, 0xad, 0xbc, 0xea, 0x38, 0x9e, 0x70, 0xc3, 0x13, 0xa3, 0x4f, 0x89, 0x19, 0xcb, 0xb4, 0x7d,
-	0x2c, 0xde, 0x52, 0x76, 0x6a, 0x16, 0x1e, 0x4a, 0x72, 0xe8, 0x27, 0x6b, 0xc9, 0xa5, 0xef, 0xfe,
-	0x0e, 0x00, 0x00, 0xff, 0xff, 0x6c, 0x34, 0xcf, 0x74, 0xba, 0x04, 0x00, 0x00,
+	// 694 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xd4, 0x56, 0x41, 0x4f, 0x13, 0x41,
+	0x14, 0xee, 0x00, 0x92, 0x74, 0x20, 0x20, 0x2b, 0xa6, 0x65, 0x31, 0x5b, 0xb2, 0xa2, 0x69, 0x50,
+	0x76, 0x23, 0x24, 0x98, 0x90, 0x78, 0xa0, 0x70, 0xf0, 0xd2, 0x84, 0x2c, 0xe1, 0xe2, 0xa5, 0x0e,
+	0x65, 0xb2, 0xdd, 0xd0, 0x9d, 0x69, 0x66, 0xa6, 0x0a, 0x37, 0xf5, 0x64, 0xbc, 0xe8, 0xcf, 0xf0,
+	0x26, 0x07, 0x13, 0xcf, 0xde, 0x38, 0x12, 0x4f, 0x9c, 0x1a, 0x53, 0x0e, 0x24, 0xfd, 0x11, 0xc6,
+	0xec, 0xcc, 0x6e, 0xa1, 0xed, 0x8e, 0x05, 0x0f, 0x26, 0x5e, 0xda, 0xee, 0x7b, 0xdf, 0xbe, 0xf7,
+	0x7d, 0xdf, 0xbc, 0x99, 0x29, 0x9c, 0x6f, 0xd0, 0x03, 0xc1, 0x68, 0xbd, 0xee, 0x86, 0x81, 0xcf,
+	0x90, 0x08, 0x28, 0x71, 0xc5, 0xa1, 0xd3, 0x60, 0x54, 0x50, 0xc3, 0x48, 0x92, 0x4e, 0x37, 0x69,
+	0xce, 0xa0, 0x30, 0x20, 0xd4, 0x95, 0x9f, 0x0a, 0x66, 0xe6, 0xaa, 0x94, 0x87, 0x94, 0xbb, 0x21,
+	0xf7, 0xdd, 0x57, 0x4f, 0xa2, 0xaf, 0x38, 0x31, 0xa7, 0x12, 0x15, 0xf9, 0xe4, 0xaa, 0x87, 0x38,
+	0x35, 0xeb, 0x53, 0x9f, 0xaa, 0x78, 0xf4, 0x2b, 0x8e, 0x16, 0x52, 0xd8, 0x34, 0x10, 0x43, 0x61,
+	0xf2, 0x9a, 0x95, 0x46, 0xf7, 0xa8, 0x81, 0x93, 0xfc, 0xe3, 0x94, 0x7c, 0x48, 0x19, 0xc7, 0x15,
+	0x54, 0xad, 0xd2, 0x26, 0x11, 0x95, 0x6a, 0x1d, 0x05, 0xa1, 0x42, 0xdb, 0xdf, 0x01, 0x9c, 0x2e,
+	0x73, 0x7f, 0xb7, 0xb1, 0x8f, 0x04, 0xde, 0x96, 0x7d, 0x8c, 0x35, 0x98, 0x45, 0x4d, 0x51, 0xa3,
+	0x2c, 0x10, 0x47, 0x79, 0xb0, 0x00, 0x8a, 0xd9, 0x52, 0xfe, 0xc7, 0xd7, 0xe5, 0xd9, 0x98, 0xfd,
+	0xc6, 0xfe, 0x3e, 0xc3, 0x9c, 0xef, 0x08, 0x16, 0x10, 0xdf, 0xbb, 0x84, 0x1a, 0xcf, 0xe0, 0xb8,
+	0x62, 0x9a, 0x1f, 0x59, 0x00, 0xc5, 0x89, 0x15, 0xd3, 0x19, 0x34, 0xcf, 0x51, 0x3d, 0x4a, 0xd9,
+	0x93, 0x56, 0x21, 0xf3, 0xf9, 0xe2, 0x78, 0x09, 0x78, 0xf1, 0x4b, 0xeb, 0x4f, 0xdf, 0x5d, 0x1c,
+	0x2f, 0x5d, 0x96, 0xfb, 0x70, 0x71, 0xbc, 0xb4, 0xd8, 0xd5, 0x72, 0x78, 0x45, 0x4d, 0x1f, 0x5f,
+	0x7b, 0x0e, 0xe6, 0xfa, 0x42, 0x1e, 0xe6, 0x0d, 0x4a, 0x38, 0xb6, 0xbf, 0x8c, 0x40, 0xb3, 0xcc,
+	0xfd, 0x4d, 0x86, 0x91, 0xc0, 0xe5, 0xc8, 0x85, 0x0d, 0x65, 0xc2, 0x8e, 0x40, 0x02, 0xff, 0xb5,
+	0x52, 0x06, 0xef, 0xf4, 0x5a, 0xca, 0xa3, 0x72, 0xb1, 0xec, 0x07, 0x69, 0xb2, 0x07, 0x7a, 0x97,
+	0xe6, 0x23, 0x07, 0x3a, 0xad, 0x42, 0x5a, 0x25, 0x6f, 0x26, 0x1c, 0xe0, 0xba, 0x0b, 0xf3, 0x29,
+	0xc8, 0x4a, 0x0d, 0xf1, 0x5a, 0x7e, 0x74, 0x01, 0x14, 0x27, 0x4b, 0xf7, 0x3a, 0xad, 0x82, 0x16,
+	0xe3, 0xdd, 0x1d, 0x28, 0xf9, 0x1c, 0xf1, 0xda, 0xfa, 0x54, 0xaf, 0xeb, 0xf6, 0x7b, 0x00, 0x6d,
+	0xbd, 0x63, 0x89, 0xb1, 0xc6, 0x32, 0x84, 0x57, 0xfa, 0x03, 0xd9, 0x7f, 0xaa, 0xd3, 0x2a, 0x5c,
+	0x89, 0x7a, 0x59, 0x9e, 0x74, 0x31, 0x56, 0xe1, 0x24, 0x69, 0x86, 0x09, 0x2d, 0x35, 0x20, 0x63,
+	0xa5, 0xdb, 0x9d, 0x56, 0xa1, 0x27, 0xee, 0x4d, 0x90, 0x66, 0x18, 0xf7, 0xe3, 0xf6, 0x37, 0xa0,
+	0x59, 0xbc, 0xcd, 0x68, 0x80, 0x0d, 0x07, 0x1a, 0xbc, 0x86, 0x08, 0xa1, 0x64, 0x0b, 0x73, 0x11,
+	0xaf, 0x95, 0x5a, 0x45, 0x2f, 0x25, 0x63, 0x14, 0xe1, 0xb4, 0xb4, 0x60, 0x87, 0x55, 0x13, 0xf0,
+	0x88, 0x04, 0xf7, 0x87, 0x8d, 0x87, 0x70, 0x4a, 0x85, 0x02, 0x9f, 0x20, 0xd1, 0x64, 0x58, 0x1a,
+	0x9c, 0xf5, 0xfa, 0xa2, 0xeb, 0xb9, 0xc8, 0xbb, 0x94, 0x56, 0xf6, 0xa2, 0xc6, 0x43, 0x49, 0xbc,
+	0x3b, 0x9c, 0xb1, 0x3e, 0x35, 0xb8, 0xff, 0xa1, 0x3e, 0x0d, 0xf1, 0xae, 0xbe, 0x8f, 0x4a, 0xdf,
+	0x16, 0xae, 0xe3, 0x7f, 0xaa, 0x6f, 0x18, 0x6f, 0x0d, 0xa1, 0x84, 0xf7, 0xca, 0xaf, 0x31, 0x38,
+	0x5a, 0xe6, 0xbe, 0xf1, 0x12, 0x4e, 0xf6, 0x9c, 0x8b, 0xf7, 0x53, 0x37, 0x76, 0xef, 0xc9, 0x63,
+	0x3e, 0xba, 0x06, 0xa8, 0xbb, 0x8b, 0xde, 0x02, 0x98, 0xd3, 0x9d, 0x4d, 0x8e, 0xa6, 0x90, 0x06,
+	0x6f, 0xae, 0xdd, 0x0c, 0x3f, 0x84, 0x43, 0xbc, 0x44, 0xd7, 0xae, 0x29, 0xf1, 0x37, 0xe0, 0xd0,
+	0xe3, 0xb8, 0xe4, 0xa0, 0xdd, 0x06, 0x7f, 0x34, 0xf4, 0xfa, 0x1c, 0x86, 0x4c, 0xab, 0xe4, 0xa0,
+	0x1d, 0x55, 0x4d, 0x4d, 0x0d, 0x5e, 0xcb, 0x61, 0xc8, 0xe4, 0x99, 0xb7, 0xde, 0x44, 0x37, 0x62,
+	0x69, 0xfb, 0xa4, 0x6d, 0x81, 0xd3, 0xb6, 0x05, 0xce, 0xda, 0x16, 0xf8, 0xd9, 0xb6, 0xc0, 0xa7,
+	0x73, 0x2b, 0x73, 0x7a, 0x6e, 0x65, 0xce, 0xce, 0xad, 0xcc, 0x8b, 0x15, 0x3f, 0x10, 0xb5, 0xe6,
+	0x9e, 0x53, 0xa5, 0xa1, 0x1b, 0xb5, 0x59, 0x26, 0x58, 0xbc, 0xa6, 0xec, 0xc0, 0x4d, 0xbd, 0x2c,
+	0xe5, 0x5f, 0x83, 0xbd, 0x71, 0x79, 0xdb, 0xaf, 0xfe, 0x0e, 0x00, 0x00, 0xff, 0xff, 0xb5, 0x29,
+	0x11, 0x8d, 0xec, 0x08, 0x00, 0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -297,6 +569,9 @@ type MsgClient interface {
 	// parameters. The authority defaults to the x/gov module account.
 	UpdateParams(ctx context.Context, in *MsgUpdateParams, opts ...grpc.CallOption) (*MsgUpdateParamsResponse, error)
 	CreateMorseAccountState(ctx context.Context, in *MsgCreateMorseAccountState, opts ...grpc.CallOption) (*MsgCreateMorseAccountStateResponse, error)
+	CreateMorseAccountClaim(ctx context.Context, in *MsgCreateMorseAccountClaim, opts ...grpc.CallOption) (*MsgCreateMorseAccountClaimResponse, error)
+	UpdateMorseAccountClaim(ctx context.Context, in *MsgUpdateMorseAccountClaim, opts ...grpc.CallOption) (*MsgUpdateMorseAccountClaimResponse, error)
+	DeleteMorseAccountClaim(ctx context.Context, in *MsgDeleteMorseAccountClaim, opts ...grpc.CallOption) (*MsgDeleteMorseAccountClaimResponse, error)
 }
 
 type msgClient struct {
@@ -325,12 +600,42 @@ func (c *msgClient) CreateMorseAccountState(ctx context.Context, in *MsgCreateMo
 	return out, nil
 }
 
+func (c *msgClient) CreateMorseAccountClaim(ctx context.Context, in *MsgCreateMorseAccountClaim, opts ...grpc.CallOption) (*MsgCreateMorseAccountClaimResponse, error) {
+	out := new(MsgCreateMorseAccountClaimResponse)
+	err := c.cc.Invoke(ctx, "/poktroll.migration.Msg/CreateMorseAccountClaim", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *msgClient) UpdateMorseAccountClaim(ctx context.Context, in *MsgUpdateMorseAccountClaim, opts ...grpc.CallOption) (*MsgUpdateMorseAccountClaimResponse, error) {
+	out := new(MsgUpdateMorseAccountClaimResponse)
+	err := c.cc.Invoke(ctx, "/poktroll.migration.Msg/UpdateMorseAccountClaim", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *msgClient) DeleteMorseAccountClaim(ctx context.Context, in *MsgDeleteMorseAccountClaim, opts ...grpc.CallOption) (*MsgDeleteMorseAccountClaimResponse, error) {
+	out := new(MsgDeleteMorseAccountClaimResponse)
+	err := c.cc.Invoke(ctx, "/poktroll.migration.Msg/DeleteMorseAccountClaim", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // MsgServer is the server API for Msg service.
 type MsgServer interface {
 	// UpdateParams defines a (governance) operation for updating the module
 	// parameters. The authority defaults to the x/gov module account.
 	UpdateParams(context.Context, *MsgUpdateParams) (*MsgUpdateParamsResponse, error)
 	CreateMorseAccountState(context.Context, *MsgCreateMorseAccountState) (*MsgCreateMorseAccountStateResponse, error)
+	CreateMorseAccountClaim(context.Context, *MsgCreateMorseAccountClaim) (*MsgCreateMorseAccountClaimResponse, error)
+	UpdateMorseAccountClaim(context.Context, *MsgUpdateMorseAccountClaim) (*MsgUpdateMorseAccountClaimResponse, error)
+	DeleteMorseAccountClaim(context.Context, *MsgDeleteMorseAccountClaim) (*MsgDeleteMorseAccountClaimResponse, error)
 }
 
 // UnimplementedMsgServer can be embedded to have forward compatible implementations.
@@ -342,6 +647,15 @@ func (*UnimplementedMsgServer) UpdateParams(ctx context.Context, req *MsgUpdateP
 }
 func (*UnimplementedMsgServer) CreateMorseAccountState(ctx context.Context, req *MsgCreateMorseAccountState) (*MsgCreateMorseAccountStateResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateMorseAccountState not implemented")
+}
+func (*UnimplementedMsgServer) CreateMorseAccountClaim(ctx context.Context, req *MsgCreateMorseAccountClaim) (*MsgCreateMorseAccountClaimResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CreateMorseAccountClaim not implemented")
+}
+func (*UnimplementedMsgServer) UpdateMorseAccountClaim(ctx context.Context, req *MsgUpdateMorseAccountClaim) (*MsgUpdateMorseAccountClaimResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdateMorseAccountClaim not implemented")
+}
+func (*UnimplementedMsgServer) DeleteMorseAccountClaim(ctx context.Context, req *MsgDeleteMorseAccountClaim) (*MsgDeleteMorseAccountClaimResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeleteMorseAccountClaim not implemented")
 }
 
 func RegisterMsgServer(s grpc1.Server, srv MsgServer) {
@@ -384,6 +698,60 @@ func _Msg_CreateMorseAccountState_Handler(srv interface{}, ctx context.Context, 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Msg_CreateMorseAccountClaim_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(MsgCreateMorseAccountClaim)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MsgServer).CreateMorseAccountClaim(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/poktroll.migration.Msg/CreateMorseAccountClaim",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MsgServer).CreateMorseAccountClaim(ctx, req.(*MsgCreateMorseAccountClaim))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Msg_UpdateMorseAccountClaim_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(MsgUpdateMorseAccountClaim)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MsgServer).UpdateMorseAccountClaim(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/poktroll.migration.Msg/UpdateMorseAccountClaim",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MsgServer).UpdateMorseAccountClaim(ctx, req.(*MsgUpdateMorseAccountClaim))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Msg_DeleteMorseAccountClaim_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(MsgDeleteMorseAccountClaim)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MsgServer).DeleteMorseAccountClaim(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/poktroll.migration.Msg/DeleteMorseAccountClaim",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MsgServer).DeleteMorseAccountClaim(ctx, req.(*MsgDeleteMorseAccountClaim))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 var _Msg_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "poktroll.migration.Msg",
 	HandlerType: (*MsgServer)(nil),
@@ -395,6 +763,18 @@ var _Msg_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "CreateMorseAccountState",
 			Handler:    _Msg_CreateMorseAccountState_Handler,
+		},
+		{
+			MethodName: "CreateMorseAccountClaim",
+			Handler:    _Msg_CreateMorseAccountClaim_Handler,
+		},
+		{
+			MethodName: "UpdateMorseAccountClaim",
+			Handler:    _Msg_UpdateMorseAccountClaim_Handler,
+		},
+		{
+			MethodName: "DeleteMorseAccountClaim",
+			Handler:    _Msg_DeleteMorseAccountClaim_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
@@ -546,6 +926,200 @@ func (m *MsgCreateMorseAccountStateResponse) MarshalToSizedBuffer(dAtA []byte) (
 	return len(dAtA) - i, nil
 }
 
+func (m *MsgCreateMorseAccountClaim) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *MsgCreateMorseAccountClaim) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *MsgCreateMorseAccountClaim) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if len(m.MorseSignature) > 0 {
+		i -= len(m.MorseSignature)
+		copy(dAtA[i:], m.MorseSignature)
+		i = encodeVarintTx(dAtA, i, uint64(len(m.MorseSignature)))
+		i--
+		dAtA[i] = 0x1a
+	}
+	if len(m.MorseSrcAddress) > 0 {
+		i -= len(m.MorseSrcAddress)
+		copy(dAtA[i:], m.MorseSrcAddress)
+		i = encodeVarintTx(dAtA, i, uint64(len(m.MorseSrcAddress)))
+		i--
+		dAtA[i] = 0x12
+	}
+	if len(m.ShannonDestAddress) > 0 {
+		i -= len(m.ShannonDestAddress)
+		copy(dAtA[i:], m.ShannonDestAddress)
+		i = encodeVarintTx(dAtA, i, uint64(len(m.ShannonDestAddress)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *MsgCreateMorseAccountClaimResponse) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *MsgCreateMorseAccountClaimResponse) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *MsgCreateMorseAccountClaimResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	return len(dAtA) - i, nil
+}
+
+func (m *MsgUpdateMorseAccountClaim) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *MsgUpdateMorseAccountClaim) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *MsgUpdateMorseAccountClaim) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if len(m.MorseSignature) > 0 {
+		i -= len(m.MorseSignature)
+		copy(dAtA[i:], m.MorseSignature)
+		i = encodeVarintTx(dAtA, i, uint64(len(m.MorseSignature)))
+		i--
+		dAtA[i] = 0x1a
+	}
+	if len(m.MorseSrcAddress) > 0 {
+		i -= len(m.MorseSrcAddress)
+		copy(dAtA[i:], m.MorseSrcAddress)
+		i = encodeVarintTx(dAtA, i, uint64(len(m.MorseSrcAddress)))
+		i--
+		dAtA[i] = 0x12
+	}
+	if len(m.ShannonDestAddress) > 0 {
+		i -= len(m.ShannonDestAddress)
+		copy(dAtA[i:], m.ShannonDestAddress)
+		i = encodeVarintTx(dAtA, i, uint64(len(m.ShannonDestAddress)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *MsgUpdateMorseAccountClaimResponse) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *MsgUpdateMorseAccountClaimResponse) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *MsgUpdateMorseAccountClaimResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	return len(dAtA) - i, nil
+}
+
+func (m *MsgDeleteMorseAccountClaim) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *MsgDeleteMorseAccountClaim) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *MsgDeleteMorseAccountClaim) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if len(m.MorseSrcAddress) > 0 {
+		i -= len(m.MorseSrcAddress)
+		copy(dAtA[i:], m.MorseSrcAddress)
+		i = encodeVarintTx(dAtA, i, uint64(len(m.MorseSrcAddress)))
+		i--
+		dAtA[i] = 0x12
+	}
+	if len(m.ShannonDestAddress) > 0 {
+		i -= len(m.ShannonDestAddress)
+		copy(dAtA[i:], m.ShannonDestAddress)
+		i = encodeVarintTx(dAtA, i, uint64(len(m.ShannonDestAddress)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *MsgDeleteMorseAccountClaimResponse) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *MsgDeleteMorseAccountClaimResponse) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *MsgDeleteMorseAccountClaimResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	return len(dAtA) - i, nil
+}
+
 func encodeVarintTx(dAtA []byte, offset int, v uint64) int {
 	offset -= sovTx(v)
 	base := offset
@@ -613,6 +1187,92 @@ func (m *MsgCreateMorseAccountStateResponse) Size() (n int) {
 	if m.NumAccounts != 0 {
 		n += 1 + sovTx(uint64(m.NumAccounts))
 	}
+	return n
+}
+
+func (m *MsgCreateMorseAccountClaim) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.ShannonDestAddress)
+	if l > 0 {
+		n += 1 + l + sovTx(uint64(l))
+	}
+	l = len(m.MorseSrcAddress)
+	if l > 0 {
+		n += 1 + l + sovTx(uint64(l))
+	}
+	l = len(m.MorseSignature)
+	if l > 0 {
+		n += 1 + l + sovTx(uint64(l))
+	}
+	return n
+}
+
+func (m *MsgCreateMorseAccountClaimResponse) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	return n
+}
+
+func (m *MsgUpdateMorseAccountClaim) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.ShannonDestAddress)
+	if l > 0 {
+		n += 1 + l + sovTx(uint64(l))
+	}
+	l = len(m.MorseSrcAddress)
+	if l > 0 {
+		n += 1 + l + sovTx(uint64(l))
+	}
+	l = len(m.MorseSignature)
+	if l > 0 {
+		n += 1 + l + sovTx(uint64(l))
+	}
+	return n
+}
+
+func (m *MsgUpdateMorseAccountClaimResponse) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	return n
+}
+
+func (m *MsgDeleteMorseAccountClaim) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.ShannonDestAddress)
+	if l > 0 {
+		n += 1 + l + sovTx(uint64(l))
+	}
+	l = len(m.MorseSrcAddress)
+	if l > 0 {
+		n += 1 + l + sovTx(uint64(l))
+	}
+	return n
+}
+
+func (m *MsgDeleteMorseAccountClaimResponse) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
 	return n
 }
 
@@ -1018,6 +1678,562 @@ func (m *MsgCreateMorseAccountStateResponse) Unmarshal(dAtA []byte) error {
 					break
 				}
 			}
+		default:
+			iNdEx = preIndex
+			skippy, err := skipTx(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthTx
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *MsgCreateMorseAccountClaim) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowTx
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: MsgCreateMorseAccountClaim: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: MsgCreateMorseAccountClaim: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ShannonDestAddress", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTx
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthTx
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTx
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.ShannonDestAddress = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field MorseSrcAddress", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTx
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthTx
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTx
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.MorseSrcAddress = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field MorseSignature", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTx
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthTx
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTx
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.MorseSignature = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipTx(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthTx
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *MsgCreateMorseAccountClaimResponse) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowTx
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: MsgCreateMorseAccountClaimResponse: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: MsgCreateMorseAccountClaimResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		default:
+			iNdEx = preIndex
+			skippy, err := skipTx(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthTx
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *MsgUpdateMorseAccountClaim) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowTx
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: MsgUpdateMorseAccountClaim: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: MsgUpdateMorseAccountClaim: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ShannonDestAddress", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTx
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthTx
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTx
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.ShannonDestAddress = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field MorseSrcAddress", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTx
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthTx
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTx
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.MorseSrcAddress = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field MorseSignature", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTx
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthTx
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTx
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.MorseSignature = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipTx(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthTx
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *MsgUpdateMorseAccountClaimResponse) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowTx
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: MsgUpdateMorseAccountClaimResponse: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: MsgUpdateMorseAccountClaimResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		default:
+			iNdEx = preIndex
+			skippy, err := skipTx(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthTx
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *MsgDeleteMorseAccountClaim) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowTx
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: MsgDeleteMorseAccountClaim: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: MsgDeleteMorseAccountClaim: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ShannonDestAddress", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTx
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthTx
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTx
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.ShannonDestAddress = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field MorseSrcAddress", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTx
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthTx
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTx
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.MorseSrcAddress = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipTx(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthTx
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *MsgDeleteMorseAccountClaimResponse) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowTx
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: MsgDeleteMorseAccountClaimResponse: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: MsgDeleteMorseAccountClaimResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
 		default:
 			iNdEx = preIndex
 			skippy, err := skipTx(dAtA[iNdEx:])

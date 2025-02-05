@@ -13,6 +13,10 @@ func InitGenesis(ctx sdk.Context, k keeper.Keeper, genState types.GenesisState) 
 	if genState.MorseAccountState != nil {
 		k.SetMorseAccountState(ctx, *genState.MorseAccountState)
 	}
+	// Set all the morseAccountClaim
+	for _, elem := range genState.MorseAccountClaimList {
+		k.SetMorseAccountClaim(ctx, elem)
+	}
 	// this line is used by starport scaffolding # genesis/module/init
 	if err := k.SetParams(ctx, genState.Params); err != nil {
 		panic(err)
@@ -29,6 +33,7 @@ func ExportGenesis(ctx sdk.Context, k keeper.Keeper) *types.GenesisState {
 	if found {
 		genesis.MorseAccountState = &morseAccountState
 	}
+	genesis.MorseAccountClaimList = k.GetAllMorseAccountClaim(ctx)
 	// this line is used by starport scaffolding # genesis/module/export
 
 	return genesis

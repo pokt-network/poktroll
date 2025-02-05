@@ -23,6 +23,17 @@ func (am AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 					Short:     "show morse_account_state",
 					Skip:      true,
 				},
+				{
+					RpcMethod: "MorseAccountClaimAll",
+					Use:       "list-morse-account-claim",
+					Short:     "List all morse_account_claim",
+				},
+				{
+					RpcMethod:      "MorseAccountClaim",
+					Use:            "show-morse-account-claim [id]",
+					Short:          "Shows a morse_account_claim",
+					PositionalArgs: []*autocliv1.PositionalArgDescriptor{{ProtoField: "morseSrcAddress"}},
+				},
 				// this line is used by ignite scaffolding # autocli/query
 			},
 		},
@@ -40,6 +51,24 @@ func (am AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 					Short:          "Create morse_account_state",
 					PositionalArgs: []*autocliv1.PositionalArgDescriptor{{ProtoField: "accounts"}},
 					Skip:           true,
+				},
+				{
+					RpcMethod:      "CreateMorseAccountClaim",
+					Use:            "create-morse-account-claim [morseSrcAddress] [morseSignature]",
+					Short:          "Create a new morse_account_claim",
+					PositionalArgs: []*autocliv1.PositionalArgDescriptor{{ProtoField: "morseSrcAddress"}, {ProtoField: "morseSignature"}},
+				},
+				{
+					RpcMethod:      "UpdateMorseAccountClaim",
+					Use:            "update-morse-account-claim [morseSrcAddress] [morseSignature]",
+					Short:          "Update morse_account_claim",
+					PositionalArgs: []*autocliv1.PositionalArgDescriptor{{ProtoField: "morseSrcAddress"}, {ProtoField: "morseSignature"}},
+				},
+				{
+					RpcMethod:      "DeleteMorseAccountClaim",
+					Use:            "delete-morse-account-claim [morseSrcAddress]",
+					Short:          "Delete morse_account_claim",
+					PositionalArgs: []*autocliv1.PositionalArgDescriptor{{ProtoField: "morseSrcAddress"}},
 				},
 				// this line is used by ignite scaffolding # autocli/tx
 			},

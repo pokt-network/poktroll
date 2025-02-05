@@ -8,6 +8,7 @@ import "google/api/annotations.proto";
 import "cosmos/base/query/v1beta1/pagination.proto";
 import "poktroll/migration/params.proto";
 import "poktroll/migration/types.proto";
+import "poktroll/migration/morse_account_claim.proto";
 
 option go_package = "github.com/pokt-network/poktroll/x/migration/types";
 option (gogoproto.stable_marshaler_all) = true;
@@ -24,6 +25,16 @@ service Query {
   // Queries the MorseAccountState.
   rpc MorseAccountState (QueryGetMorseAccountStateRequest) returns (QueryGetMorseAccountStateResponse) {
     option (google.api.http).get = "/pokt-network/poktroll/migration/morse_account_state";
+  
+  }
+  
+  // Queries a list of MorseAccountClaim items.
+  rpc MorseAccountClaim    (QueryGetMorseAccountClaimRequest) returns (QueryGetMorseAccountClaimResponse) {
+    option (google.api.http).get = "/pokt-network/poktroll/migration/morse_account_claim/{morseSrcAddress}";
+  
+  }
+  rpc MorseAccountClaimAll (QueryAllMorseAccountClaimRequest) returns (QueryAllMorseAccountClaimResponse) {
+    option (google.api.http).get = "/pokt-network/poktroll/migration/morse_account_claim";
   
   }
 }
@@ -43,5 +54,22 @@ message QueryGetMorseAccountStateRequest {}
 // Returns the MorseAccountState. If it has not yet been created, an error is returned.
 message QueryGetMorseAccountStateResponse {
   MorseAccountState MorseAccountState = 1 [(gogoproto.nullable) = false];
+}
+
+message QueryGetMorseAccountClaimRequest {
+  string morseSrcAddress = 1;
+}
+
+message QueryGetMorseAccountClaimResponse {
+  MorseAccountClaim morseAccountClaim = 1 [(gogoproto.nullable) = false];
+}
+
+message QueryAllMorseAccountClaimRequest {
+  cosmos.base.query.v1beta1.PageRequest pagination = 1;
+}
+
+message QueryAllMorseAccountClaimResponse {
+  repeated MorseAccountClaim                      morseAccountClaim = 1 [(gogoproto.nullable) = false];
+           cosmos.base.query.v1beta1.PageResponse pagination        = 2;
 }
 

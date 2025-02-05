@@ -19,8 +19,10 @@ import (
 const _ = grpc.SupportPackageIsVersion8
 
 const (
-	Query_Params_FullMethodName            = "/poktroll.migration.Query/Params"
-	Query_MorseAccountState_FullMethodName = "/poktroll.migration.Query/MorseAccountState"
+	Query_Params_FullMethodName               = "/poktroll.migration.Query/Params"
+	Query_MorseAccountState_FullMethodName    = "/poktroll.migration.Query/MorseAccountState"
+	Query_MorseAccountClaim_FullMethodName    = "/poktroll.migration.Query/MorseAccountClaim"
+	Query_MorseAccountClaimAll_FullMethodName = "/poktroll.migration.Query/MorseAccountClaimAll"
 )
 
 // QueryClient is the client API for Query service.
@@ -33,6 +35,9 @@ type QueryClient interface {
 	Params(ctx context.Context, in *QueryParamsRequest, opts ...grpc.CallOption) (*QueryParamsResponse, error)
 	// Queries the MorseAccountState.
 	MorseAccountState(ctx context.Context, in *QueryGetMorseAccountStateRequest, opts ...grpc.CallOption) (*QueryGetMorseAccountStateResponse, error)
+	// Queries a list of MorseAccountClaim items.
+	MorseAccountClaim(ctx context.Context, in *QueryGetMorseAccountClaimRequest, opts ...grpc.CallOption) (*QueryGetMorseAccountClaimResponse, error)
+	MorseAccountClaimAll(ctx context.Context, in *QueryAllMorseAccountClaimRequest, opts ...grpc.CallOption) (*QueryAllMorseAccountClaimResponse, error)
 }
 
 type queryClient struct {
@@ -63,6 +68,26 @@ func (c *queryClient) MorseAccountState(ctx context.Context, in *QueryGetMorseAc
 	return out, nil
 }
 
+func (c *queryClient) MorseAccountClaim(ctx context.Context, in *QueryGetMorseAccountClaimRequest, opts ...grpc.CallOption) (*QueryGetMorseAccountClaimResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(QueryGetMorseAccountClaimResponse)
+	err := c.cc.Invoke(ctx, Query_MorseAccountClaim_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *queryClient) MorseAccountClaimAll(ctx context.Context, in *QueryAllMorseAccountClaimRequest, opts ...grpc.CallOption) (*QueryAllMorseAccountClaimResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(QueryAllMorseAccountClaimResponse)
+	err := c.cc.Invoke(ctx, Query_MorseAccountClaimAll_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // QueryServer is the server API for Query service.
 // All implementations must embed UnimplementedQueryServer
 // for forward compatibility
@@ -73,6 +98,9 @@ type QueryServer interface {
 	Params(context.Context, *QueryParamsRequest) (*QueryParamsResponse, error)
 	// Queries the MorseAccountState.
 	MorseAccountState(context.Context, *QueryGetMorseAccountStateRequest) (*QueryGetMorseAccountStateResponse, error)
+	// Queries a list of MorseAccountClaim items.
+	MorseAccountClaim(context.Context, *QueryGetMorseAccountClaimRequest) (*QueryGetMorseAccountClaimResponse, error)
+	MorseAccountClaimAll(context.Context, *QueryAllMorseAccountClaimRequest) (*QueryAllMorseAccountClaimResponse, error)
 	mustEmbedUnimplementedQueryServer()
 }
 
@@ -85,6 +113,12 @@ func (UnimplementedQueryServer) Params(context.Context, *QueryParamsRequest) (*Q
 }
 func (UnimplementedQueryServer) MorseAccountState(context.Context, *QueryGetMorseAccountStateRequest) (*QueryGetMorseAccountStateResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method MorseAccountState not implemented")
+}
+func (UnimplementedQueryServer) MorseAccountClaim(context.Context, *QueryGetMorseAccountClaimRequest) (*QueryGetMorseAccountClaimResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method MorseAccountClaim not implemented")
+}
+func (UnimplementedQueryServer) MorseAccountClaimAll(context.Context, *QueryAllMorseAccountClaimRequest) (*QueryAllMorseAccountClaimResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method MorseAccountClaimAll not implemented")
 }
 func (UnimplementedQueryServer) mustEmbedUnimplementedQueryServer() {}
 
@@ -135,6 +169,42 @@ func _Query_MorseAccountState_Handler(srv interface{}, ctx context.Context, dec 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Query_MorseAccountClaim_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(QueryGetMorseAccountClaimRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(QueryServer).MorseAccountClaim(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Query_MorseAccountClaim_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(QueryServer).MorseAccountClaim(ctx, req.(*QueryGetMorseAccountClaimRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Query_MorseAccountClaimAll_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(QueryAllMorseAccountClaimRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(QueryServer).MorseAccountClaimAll(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Query_MorseAccountClaimAll_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(QueryServer).MorseAccountClaimAll(ctx, req.(*QueryAllMorseAccountClaimRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Query_ServiceDesc is the grpc.ServiceDesc for Query service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -149,6 +219,14 @@ var Query_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "MorseAccountState",
 			Handler:    _Query_MorseAccountState_Handler,
+		},
+		{
+			MethodName: "MorseAccountClaim",
+			Handler:    _Query_MorseAccountClaim_Handler,
+		},
+		{
+			MethodName: "MorseAccountClaimAll",
+			Handler:    _Query_MorseAccountClaimAll_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

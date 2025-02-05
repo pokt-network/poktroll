@@ -21,6 +21,9 @@ const _ = grpc.SupportPackageIsVersion8
 const (
 	Msg_UpdateParams_FullMethodName            = "/poktroll.migration.Msg/UpdateParams"
 	Msg_CreateMorseAccountState_FullMethodName = "/poktroll.migration.Msg/CreateMorseAccountState"
+	Msg_CreateMorseAccountClaim_FullMethodName = "/poktroll.migration.Msg/CreateMorseAccountClaim"
+	Msg_UpdateMorseAccountClaim_FullMethodName = "/poktroll.migration.Msg/UpdateMorseAccountClaim"
+	Msg_DeleteMorseAccountClaim_FullMethodName = "/poktroll.migration.Msg/DeleteMorseAccountClaim"
 )
 
 // MsgClient is the client API for Msg service.
@@ -33,6 +36,9 @@ type MsgClient interface {
 	// parameters. The authority defaults to the x/gov module account.
 	UpdateParams(ctx context.Context, in *MsgUpdateParams, opts ...grpc.CallOption) (*MsgUpdateParamsResponse, error)
 	CreateMorseAccountState(ctx context.Context, in *MsgCreateMorseAccountState, opts ...grpc.CallOption) (*MsgCreateMorseAccountStateResponse, error)
+	CreateMorseAccountClaim(ctx context.Context, in *MsgCreateMorseAccountClaim, opts ...grpc.CallOption) (*MsgCreateMorseAccountClaimResponse, error)
+	UpdateMorseAccountClaim(ctx context.Context, in *MsgUpdateMorseAccountClaim, opts ...grpc.CallOption) (*MsgUpdateMorseAccountClaimResponse, error)
+	DeleteMorseAccountClaim(ctx context.Context, in *MsgDeleteMorseAccountClaim, opts ...grpc.CallOption) (*MsgDeleteMorseAccountClaimResponse, error)
 }
 
 type msgClient struct {
@@ -63,6 +69,36 @@ func (c *msgClient) CreateMorseAccountState(ctx context.Context, in *MsgCreateMo
 	return out, nil
 }
 
+func (c *msgClient) CreateMorseAccountClaim(ctx context.Context, in *MsgCreateMorseAccountClaim, opts ...grpc.CallOption) (*MsgCreateMorseAccountClaimResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(MsgCreateMorseAccountClaimResponse)
+	err := c.cc.Invoke(ctx, Msg_CreateMorseAccountClaim_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *msgClient) UpdateMorseAccountClaim(ctx context.Context, in *MsgUpdateMorseAccountClaim, opts ...grpc.CallOption) (*MsgUpdateMorseAccountClaimResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(MsgUpdateMorseAccountClaimResponse)
+	err := c.cc.Invoke(ctx, Msg_UpdateMorseAccountClaim_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *msgClient) DeleteMorseAccountClaim(ctx context.Context, in *MsgDeleteMorseAccountClaim, opts ...grpc.CallOption) (*MsgDeleteMorseAccountClaimResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(MsgDeleteMorseAccountClaimResponse)
+	err := c.cc.Invoke(ctx, Msg_DeleteMorseAccountClaim_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // MsgServer is the server API for Msg service.
 // All implementations must embed UnimplementedMsgServer
 // for forward compatibility
@@ -73,6 +109,9 @@ type MsgServer interface {
 	// parameters. The authority defaults to the x/gov module account.
 	UpdateParams(context.Context, *MsgUpdateParams) (*MsgUpdateParamsResponse, error)
 	CreateMorseAccountState(context.Context, *MsgCreateMorseAccountState) (*MsgCreateMorseAccountStateResponse, error)
+	CreateMorseAccountClaim(context.Context, *MsgCreateMorseAccountClaim) (*MsgCreateMorseAccountClaimResponse, error)
+	UpdateMorseAccountClaim(context.Context, *MsgUpdateMorseAccountClaim) (*MsgUpdateMorseAccountClaimResponse, error)
+	DeleteMorseAccountClaim(context.Context, *MsgDeleteMorseAccountClaim) (*MsgDeleteMorseAccountClaimResponse, error)
 	mustEmbedUnimplementedMsgServer()
 }
 
@@ -85,6 +124,15 @@ func (UnimplementedMsgServer) UpdateParams(context.Context, *MsgUpdateParams) (*
 }
 func (UnimplementedMsgServer) CreateMorseAccountState(context.Context, *MsgCreateMorseAccountState) (*MsgCreateMorseAccountStateResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateMorseAccountState not implemented")
+}
+func (UnimplementedMsgServer) CreateMorseAccountClaim(context.Context, *MsgCreateMorseAccountClaim) (*MsgCreateMorseAccountClaimResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CreateMorseAccountClaim not implemented")
+}
+func (UnimplementedMsgServer) UpdateMorseAccountClaim(context.Context, *MsgUpdateMorseAccountClaim) (*MsgUpdateMorseAccountClaimResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdateMorseAccountClaim not implemented")
+}
+func (UnimplementedMsgServer) DeleteMorseAccountClaim(context.Context, *MsgDeleteMorseAccountClaim) (*MsgDeleteMorseAccountClaimResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeleteMorseAccountClaim not implemented")
 }
 func (UnimplementedMsgServer) mustEmbedUnimplementedMsgServer() {}
 
@@ -135,6 +183,60 @@ func _Msg_CreateMorseAccountState_Handler(srv interface{}, ctx context.Context, 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Msg_CreateMorseAccountClaim_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(MsgCreateMorseAccountClaim)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MsgServer).CreateMorseAccountClaim(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Msg_CreateMorseAccountClaim_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MsgServer).CreateMorseAccountClaim(ctx, req.(*MsgCreateMorseAccountClaim))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Msg_UpdateMorseAccountClaim_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(MsgUpdateMorseAccountClaim)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MsgServer).UpdateMorseAccountClaim(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Msg_UpdateMorseAccountClaim_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MsgServer).UpdateMorseAccountClaim(ctx, req.(*MsgUpdateMorseAccountClaim))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Msg_DeleteMorseAccountClaim_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(MsgDeleteMorseAccountClaim)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MsgServer).DeleteMorseAccountClaim(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Msg_DeleteMorseAccountClaim_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MsgServer).DeleteMorseAccountClaim(ctx, req.(*MsgDeleteMorseAccountClaim))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Msg_ServiceDesc is the grpc.ServiceDesc for Msg service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -149,6 +251,18 @@ var Msg_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "CreateMorseAccountState",
 			Handler:    _Msg_CreateMorseAccountState_Handler,
+		},
+		{
+			MethodName: "CreateMorseAccountClaim",
+			Handler:    _Msg_CreateMorseAccountClaim_Handler,
+		},
+		{
+			MethodName: "UpdateMorseAccountClaim",
+			Handler:    _Msg_UpdateMorseAccountClaim_Handler,
+		},
+		{
+			MethodName: "DeleteMorseAccountClaim",
+			Handler:    _Msg_DeleteMorseAccountClaim_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

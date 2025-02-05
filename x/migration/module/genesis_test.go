@@ -16,6 +16,14 @@ func TestGenesis(t *testing.T) {
 		Params: types.DefaultParams(),
 
 		MorseAccountState: &types.MorseAccountState{},
+		MorseAccountClaimList: []types.MorseAccountClaim{
+			{
+				MorseSrcAddress: "0",
+			},
+			{
+				MorseSrcAddress: "1",
+			},
+		},
 		// this line is used by starport scaffolding # genesis/test/state
 	}
 
@@ -28,5 +36,6 @@ func TestGenesis(t *testing.T) {
 	nullify.Fill(got)
 
 	require.Equal(t, genesisState.MorseAccountState, got.MorseAccountState)
+	require.ElementsMatch(t, genesisState.MorseAccountClaimList, got.MorseAccountClaimList)
 	// this line is used by starport scaffolding # genesis/test/assert
 }
