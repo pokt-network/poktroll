@@ -1,6 +1,7 @@
 package query
 
 // ParamsCache is an interface for a simple in-memory cache implementation for query parameters.
+// It does not involve key-value pairs, but only stores a single value.
 type ParamsCache[T any] interface {
 	Get() (T, bool)
 	Set(T)

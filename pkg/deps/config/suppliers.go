@@ -509,7 +509,7 @@ func newSupplyTxClientsFn(
 	return depinject.Configs(deps, depinject.Supply(txClient)), nil
 }
 
-// NewSupplyTxClientFn returns a function which constructs a KeyValueCache of type T.
+// NewSupplyKeyValueCacheFn returns a function which constructs a KeyValueCache of type T.
 // It take a list of cache options that can be used to configure the cache.
 func NewSupplyKeyValueCacheFn[T any](opts ...cache.CacheOption[query.KeyValueCache[T]]) SupplierFn {
 	return func(
@@ -517,7 +517,12 @@ func NewSupplyKeyValueCacheFn[T any](opts ...cache.CacheOption[query.KeyValueCac
 		deps depinject.Config,
 		_ *cobra.Command,
 	) (depinject.Config, error) {
-		kvCache := cache.NewKeyValueCache[T]()
+		var logger polylog.Logger
+		if err := depinject.Inject(deps, &logger); err != nil {
+			return nil, err
+		}
+
+		kvCache := cache.NewKeyValueCache[T](logger)
 
 		// Apply the cache options
 		for _, opt := range opts {
@@ -538,7 +543,12 @@ func NewSupplyParamsCacheFn[T any](opts ...cache.CacheOption[query.ParamsCache[T
 		deps depinject.Config,
 		_ *cobra.Command,
 	) (depinject.Config, error) {
-		paramsCache := cache.NewParamsCache[T]()
+		var logger polylog.Logger
+		if err := depinject.Inject(deps, &logger); err != nil {
+			return nil, err
+		}
+
+		paramsCache := cache.NewParamsCache[T](logger)
 
 		// Apply the cache options
 		for _, opt := range opts {

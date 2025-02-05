@@ -3,7 +3,9 @@ package cache
 import (
 	"sync"
 
+	proto "github.com/cosmos/gogoproto/proto"
 	"github.com/pokt-network/poktroll/pkg/client/query"
+	"github.com/pokt-network/poktroll/pkg/polylog"
 )
 
 var _ query.ParamsCache[any] = (*paramsCache[any])(nil)
@@ -11,14 +13,28 @@ var _ query.ParamsCache[any] = (*paramsCache[any])(nil)
 // paramsCache is a simple in-memory cache implementation for query parameters.
 // It does not involve key-value pairs, but only stores a single value.
 type paramsCache[T any] struct {
+	logger  polylog.Logger
 	cacheMu sync.RWMutex
 	found   bool
 	value   T
 }
 
 // NewParamsCache returns a new instance of a ParamsCache.
-func NewParamsCache[T any]() query.ParamsCache[T] {
-	return &paramsCache[T]{}
+func NewParamsCache[T any](logger polylog.Logger) query.ParamsCache[T] {
+	// Get the name of the cached type.
+	cachedTypeName := "unknown"
+	var zero T
+
+	// Update the cached type name if the type is a proto message.
+	if msg, ok := any(zero).(proto.Message); ok {
+		cachedTypeName = proto.MessageName(msg)
+	} else {
+		logger.Warn().Msg("Could not determine cached type")
+	}
+
+	return &paramsCache[T]{
+		logger: logger.With("type", cachedTypeName),
+	}
 }
 
 // Get returns the value stored in the cache.
@@ -26,6 +42,10 @@ func NewParamsCache[T any]() query.ParamsCache[T] {
 func (c *paramsCache[T]) Get() (value T, found bool) {
 	c.cacheMu.RLock()
 	defer c.cacheMu.RUnlock()
+
+	if c.found {
+		c.logger.Debug().Msg("Cache hit")
+	}
 
 	return c.value, c.found
 }
@@ -45,10 +65,7 @@ func (c *paramsCache[T]) Clear() {
 	defer c.cacheMu.Unlock()
 
 	c.found = false
-	c.value = zeroValue[T]()
-}
 
-// zeroValue is a generic helper which returns the zero value of the given type.
-func zeroValue[T any]() (zero T) {
-	return zero
+	var zero T
+	c.value = zero
 }

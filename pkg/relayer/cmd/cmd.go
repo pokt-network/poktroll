@@ -212,13 +212,15 @@ func setupRelayerDependencies(
 		config.NewSupplyParamsCacheFn[sessiontypes.Params](cache.WithNewBlockCacheClearing),
 		config.NewSupplyParamsCacheFn[prooftypes.Params](cache.WithNewBlockCacheClearing),
 
-		// Setup the key-value caches and configure them to clear on new blocks.
+		// Setup the key-value caches for poktroll types and configure them to clear on new blocks.
 		config.NewSupplyKeyValueCacheFn[sharedtypes.Service](cache.WithNewBlockCacheClearing),
 		config.NewSupplyKeyValueCacheFn[servicetypes.RelayMiningDifficulty](cache.WithNewBlockCacheClearing),
 		config.NewSupplyKeyValueCacheFn[apptypes.Application](cache.WithNewBlockCacheClearing),
-		config.NewSupplyKeyValueCacheFn[cosmostypes.AccountI](cache.WithNewBlockCacheClearing),
 		config.NewSupplyKeyValueCacheFn[sharedtypes.Supplier](cache.WithNewBlockCacheClearing),
 		config.NewSupplyKeyValueCacheFn[*sessiontypes.Session](cache.WithNewBlockCacheClearing),
+
+		// Setup the key-value for cosmos types and configure them to clear on new blocks.
+		config.NewSupplyKeyValueCacheFn[cosmostypes.AccountI](cache.WithNewBlockCacheClearing),
 		config.NewSupplyKeyValueCacheFn[*cosmostypes.Coin](cache.WithNewBlockCacheClearing),
 
 		config.NewSupplySharedQueryClientFn(), // leaf

@@ -17,8 +17,10 @@ var _ client.BankQueryClient = (*bankQuerier)(nil)
 // bankQuerier is a wrapper around the banktypes.QueryClient that enables the
 // querying of onchain balance information.
 type bankQuerier struct {
-	clientConn    grpc.ClientConn
-	bankQuerier   banktypes.QueryClient
+	clientConn  grpc.ClientConn
+	bankQuerier banktypes.QueryClient
+
+	// balancesCache caches bankQueryClient.GetBalance requests
 	balancesCache KeyValueCache[*sdk.Coin]
 }
 
@@ -32,8 +34,8 @@ func NewBankQuerier(deps depinject.Config) (client.BankQueryClient, error) {
 
 	if err := depinject.Inject(
 		deps,
-		&bq.balancesCache,
 		&bq.clientConn,
+		&bq.balancesCache,
 	); err != nil {
 		return nil, err
 	}

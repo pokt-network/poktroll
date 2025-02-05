@@ -17,11 +17,14 @@ var _ client.SharedQueryClient = (*sharedQuerier)(nil)
 // querying of onchain shared information through a single exposed method
 // which returns an sharedtypes.Session struct
 type sharedQuerier struct {
-	clientConn     grpc.ClientConn
-	sharedQuerier  sharedtypes.QueryClient
-	blockQuerier   client.BlockQueryClient
+	clientConn    grpc.ClientConn
+	sharedQuerier sharedtypes.QueryClient
+	blockQuerier  client.BlockQueryClient
+
+	// blockHashCache caches blockQuerier.Block requests
 	blockHashCache KeyValueCache[[]byte]
-	paramsCache    ParamsCache[sharedtypes.Params]
+	// paramsCache caches sharedQueryClient.Params requests
+	paramsCache ParamsCache[sharedtypes.Params]
 }
 
 // NewSharedQuerier returns a new instance of a client.SharedQueryClient by
@@ -35,9 +38,9 @@ func NewSharedQuerier(deps depinject.Config) (client.SharedQueryClient, error) {
 
 	if err := depinject.Inject(
 		deps,
-		&querier.paramsCache,
 		&querier.clientConn,
 		&querier.blockQuerier,
+		&querier.paramsCache,
 	); err != nil {
 		return nil, err
 	}
@@ -141,8 +144,8 @@ func (sq *sharedQuerier) GetEarliestSupplierClaimCommitHeight(ctx context.Contex
 	claimWindowOpenHeight := sharedtypes.GetClaimWindowOpenHeight(sharedParams, queryHeight)
 
 	// Check if the block hash is already in the cache.
-	claimWindowOpenHeightStr := strconv.FormatInt(claimWindowOpenHeight, 10)
-	claimWindowOpenBlockHash, found := sq.blockHashCache.Get(claimWindowOpenHeightStr)
+	blockHashCacheKey := getBlockHashKacheKey(claimWindowOpenHeight)
+	claimWindowOpenBlockHash, found := sq.blockHashCache.Get(blockHashCacheKey)
 	if !found {
 		claimWindowOpenBlock, err := sq.blockQuerier.Block(ctx, &claimWindowOpenHeight)
 		if err != nil {
@@ -152,6 +155,7 @@ func (sq *sharedQuerier) GetEarliestSupplierClaimCommitHeight(ctx context.Contex
 		// Cache the block hash for future use.
 		// NB: Byte slice representation of block hashes don't need to be normalized.
 		claimWindowOpenBlockHash = claimWindowOpenBlock.BlockID.Hash.Bytes()
+		sq.blockHashCache.Set(blockHashCacheKey, claimWindowOpenBlockHash)
 	}
 
 	return sharedtypes.GetEarliestSupplierClaimCommitHeight(
@@ -176,7 +180,8 @@ func (sq *sharedQuerier) GetEarliestSupplierProofCommitHeight(ctx context.Contex
 		return 0, err
 	}
 
-	proofWindowOpenBlockHash, found := sq.blockHashCache.Get(strconv.FormatInt(queryHeight, 10))
+	blockHashCacheKey := getBlockHashKacheKey(queryHeight)
+	proofWindowOpenBlockHash, found := sq.blockHashCache.Get(blockHashCacheKey)
 
 	if !found {
 		// Fetch the block at the proof window open height. Its hash is used as part
@@ -189,6 +194,7 @@ func (sq *sharedQuerier) GetEarliestSupplierProofCommitHeight(ctx context.Contex
 
 		// Cache the block hash for future use.
 		proofWindowOpenBlockHash = proofWindowOpenBlock.BlockID.Hash.Bytes()
+		sq.blockHashCache.Set(blockHashCacheKey, proofWindowOpenBlockHash)
 	}
 
 	return sharedtypes.GetEarliestSupplierProofCommitHeight(
@@ -212,4 +218,9 @@ func (sq *sharedQuerier) GetComputeUnitsToTokensMultiplier(ctx context.Context) 
 		return 0, err
 	}
 	return sharedParams.GetComputeUnitsToTokensMultiplier(), nil
+}
+
+// getBlockHashKacheKey constructs the cache key for a block hash.
+func getBlockHashKacheKey(height int64) string {
+	return strconv.FormatInt(height, 10)
 }

@@ -17,9 +17,12 @@ var _ client.ServiceQueryClient = (*serviceQuerier)(nil)
 // querying of onchain service information through a single exposed method
 // which returns a sharedtypes.Service struct
 type serviceQuerier struct {
-	clientConn                 grpc.ClientConn
-	serviceQuerier             servicetypes.QueryClient
-	servicesCache              KeyValueCache[sharedtypes.Service]
+	clientConn     grpc.ClientConn
+	serviceQuerier servicetypes.QueryClient
+
+	// servicesCache caches serviceQueryClient.Service requests
+	servicesCache KeyValueCache[sharedtypes.Service]
+	// relayMiningDifficultyCache caches serviceQueryClient.RelayMiningDifficulty requests
 	relayMiningDifficultyCache KeyValueCache[servicetypes.RelayMiningDifficulty]
 }
 
@@ -33,9 +36,9 @@ func NewServiceQuerier(deps depinject.Config) (client.ServiceQueryClient, error)
 
 	if err := depinject.Inject(
 		deps,
+		&servq.clientConn,
 		&servq.servicesCache,
 		&servq.relayMiningDifficultyCache,
-		&servq.clientConn,
 	); err != nil {
 		return nil, err
 	}

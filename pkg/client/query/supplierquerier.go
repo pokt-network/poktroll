@@ -17,7 +17,9 @@ import (
 type supplierQuerier struct {
 	clientConn      grpc.ClientConn
 	supplierQuerier suppliertypes.QueryClient
-	suppliersCache  KeyValueCache[sharedtypes.Supplier]
+
+	// suppliersCache caches supplierQueryClient.Supplier requests
+	suppliersCache KeyValueCache[sharedtypes.Supplier]
 }
 
 // NewSupplierQuerier returns a new instance of a client.SupplierQueryClient by
@@ -30,8 +32,8 @@ func NewSupplierQuerier(deps depinject.Config) (client.SupplierQueryClient, erro
 
 	if err := depinject.Inject(
 		deps,
-		&supq.suppliersCache,
 		&supq.clientConn,
+		&supq.suppliersCache,
 	); err != nil {
 		return nil, err
 	}

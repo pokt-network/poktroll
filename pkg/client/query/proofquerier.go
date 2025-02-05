@@ -15,7 +15,9 @@ import (
 type proofQuerier struct {
 	clientConn   grpc.ClientConn
 	proofQuerier prooftypes.QueryClient
-	paramsCache  ParamsCache[prooftypes.Params]
+
+	// paramsCache caches proofQuerier.Params requests
+	paramsCache ParamsCache[prooftypes.Params]
 }
 
 // NewProofQuerier returns a new instance of a client.ProofQueryClient by
@@ -28,8 +30,8 @@ func NewProofQuerier(deps depinject.Config) (client.ProofQueryClient, error) {
 
 	if err := depinject.Inject(
 		deps,
-		&querier.paramsCache,
 		&querier.clientConn,
+		&querier.paramsCache,
 	); err != nil {
 		return nil, err
 	}

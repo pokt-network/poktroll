@@ -18,8 +18,11 @@ var _ client.ApplicationQueryClient = (*appQuerier)(nil)
 type appQuerier struct {
 	clientConn         grpc.ClientConn
 	applicationQuerier apptypes.QueryClient
-	applicationsCache  KeyValueCache[apptypes.Application]
-	paramsCache        ParamsCache[apptypes.Params]
+
+	// applicationsCache caches applicationQueryClient.Application requests
+	applicationsCache KeyValueCache[apptypes.Application]
+	// paramsCache caches applicationQueryClient.Params requests
+	paramsCache ParamsCache[apptypes.Params]
 }
 
 // NewApplicationQuerier returns a new instance of a client.ApplicationQueryClient
@@ -32,9 +35,9 @@ func NewApplicationQuerier(deps depinject.Config) (client.ApplicationQueryClient
 
 	if err := depinject.Inject(
 		deps,
-		&aq.paramsCache,
-		&aq.applicationsCache,
 		&aq.clientConn,
+		&aq.applicationsCache,
+		&aq.paramsCache,
 	); err != nil {
 		return nil, err
 	}
@@ -68,7 +71,7 @@ func (aq *appQuerier) GetApplication(
 // GetAllApplications returns all staked applications
 func (aq *appQuerier) GetAllApplications(ctx context.Context) ([]apptypes.Application, error) {
 	req := apptypes.QueryAllApplicationsRequest{}
-	// TODO_CONSIDERATION: Fill the cache with all applications and mark it as
+	// TODO_OPTIMIZE: Fill the cache with all applications and mark it as
 	// having been filled, such that subsequent calls to this function will
 	// return the cached value.
 	res, err := aq.applicationQuerier.AllApplications(ctx, &req)

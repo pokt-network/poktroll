@@ -20,7 +20,9 @@ var _ client.AccountQueryClient = (*accQuerier)(nil)
 type accQuerier struct {
 	clientConn     grpc.ClientConn
 	accountQuerier accounttypes.QueryClient
-	accountsCache  KeyValueCache[types.AccountI]
+
+	// accountsCache caches accountQueryClient.Account requests
+	accountsCache KeyValueCache[types.AccountI]
 }
 
 // NewAccountQuerier returns a new instance of a client.AccountQueryClient by
@@ -33,8 +35,8 @@ func NewAccountQuerier(deps depinject.Config) (client.AccountQueryClient, error)
 
 	if err := depinject.Inject(
 		deps,
-		&aq.accountsCache,
 		&aq.clientConn,
+		&aq.accountsCache,
 	); err != nil {
 		return nil, err
 	}
