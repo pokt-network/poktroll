@@ -31,14 +31,6 @@ const (
 	// TODO: Determine the simulation weight value
 	defaultWeightMsgCreateMorseAccountClaim int = 100
 
-	opWeightMsgUpdateMorseAccountClaim = "op_weight_msg_morse_account_claim"
-	// TODO: Determine the simulation weight value
-	defaultWeightMsgUpdateMorseAccountClaim int = 100
-
-	opWeightMsgDeleteMorseAccountClaim = "op_weight_msg_morse_account_claim"
-	// TODO: Determine the simulation weight value
-	defaultWeightMsgDeleteMorseAccountClaim int = 100
-
 	// this line is used by starport scaffolding # simapp/module/const
 )
 
@@ -94,28 +86,6 @@ func (am AppModule) WeightedOperations(simState module.SimulationState) []simtyp
 		migrationsimulation.SimulateMsgCreateMorseAccountClaim(am.accountKeeper, am.bankKeeper, am.keeper),
 	))
 
-	var weightMsgUpdateMorseAccountClaim int
-	simState.AppParams.GetOrGenerate(opWeightMsgUpdateMorseAccountClaim, &weightMsgUpdateMorseAccountClaim, nil,
-		func(_ *rand.Rand) {
-			weightMsgUpdateMorseAccountClaim = defaultWeightMsgUpdateMorseAccountClaim
-		},
-	)
-	operations = append(operations, simulation.NewWeightedOperation(
-		weightMsgUpdateMorseAccountClaim,
-		migrationsimulation.SimulateMsgUpdateMorseAccountClaim(am.accountKeeper, am.bankKeeper, am.keeper),
-	))
-
-	var weightMsgDeleteMorseAccountClaim int
-	simState.AppParams.GetOrGenerate(opWeightMsgDeleteMorseAccountClaim, &weightMsgDeleteMorseAccountClaim, nil,
-		func(_ *rand.Rand) {
-			weightMsgDeleteMorseAccountClaim = defaultWeightMsgDeleteMorseAccountClaim
-		},
-	)
-	operations = append(operations, simulation.NewWeightedOperation(
-		weightMsgDeleteMorseAccountClaim,
-		migrationsimulation.SimulateMsgDeleteMorseAccountClaim(am.accountKeeper, am.bankKeeper, am.keeper),
-	))
-
 	// this line is used by starport scaffolding # simapp/module/operation
 
 	return operations
@@ -137,22 +107,6 @@ func (am AppModule) ProposalMsgs(simState module.SimulationState) []simtypes.Wei
 			defaultWeightMsgCreateMorseAccountClaim,
 			func(r *rand.Rand, ctx sdk.Context, accs []simtypes.Account) sdk.Msg {
 				migrationsimulation.SimulateMsgCreateMorseAccountClaim(am.accountKeeper, am.bankKeeper, am.keeper)
-				return nil
-			},
-		),
-		simulation.NewWeightedProposalMsg(
-			opWeightMsgUpdateMorseAccountClaim,
-			defaultWeightMsgUpdateMorseAccountClaim,
-			func(r *rand.Rand, ctx sdk.Context, accs []simtypes.Account) sdk.Msg {
-				migrationsimulation.SimulateMsgUpdateMorseAccountClaim(am.accountKeeper, am.bankKeeper, am.keeper)
-				return nil
-			},
-		),
-		simulation.NewWeightedProposalMsg(
-			opWeightMsgDeleteMorseAccountClaim,
-			defaultWeightMsgDeleteMorseAccountClaim,
-			func(r *rand.Rand, ctx sdk.Context, accs []simtypes.Account) sdk.Msg {
-				migrationsimulation.SimulateMsgDeleteMorseAccountClaim(am.accountKeeper, am.bankKeeper, am.keeper)
 				return nil
 			},
 		),

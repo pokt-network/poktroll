@@ -58,18 +58,6 @@ func (am AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 					Short:          "Create a new morse_account_claim",
 					PositionalArgs: []*autocliv1.PositionalArgDescriptor{{ProtoField: "morseSrcAddress"}, {ProtoField: "morseSignature"}},
 				},
-				{
-					RpcMethod:      "UpdateMorseAccountClaim",
-					Use:            "update-morse-account-claim [morseSrcAddress] [morseSignature]",
-					Short:          "Update morse_account_claim",
-					PositionalArgs: []*autocliv1.PositionalArgDescriptor{{ProtoField: "morseSrcAddress"}, {ProtoField: "morseSignature"}},
-				},
-				{
-					RpcMethod:      "DeleteMorseAccountClaim",
-					Use:            "delete-morse-account-claim [morseSrcAddress]",
-					Short:          "Delete morse_account_claim",
-					PositionalArgs: []*autocliv1.PositionalArgDescriptor{{ProtoField: "morseSrcAddress"}},
-				},
 				// this line is used by ignite scaffolding # autocli/tx
 			},
 		},
