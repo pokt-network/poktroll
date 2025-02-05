@@ -6,6 +6,7 @@ import (
 	"cosmossdk.io/store/prefix"
 	storetypes "cosmossdk.io/store/types"
 	"github.com/cosmos/cosmos-sdk/runtime"
+
 	"github.com/pokt-network/poktroll/x/migration/types"
 )
 

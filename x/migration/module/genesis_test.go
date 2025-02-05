@@ -15,15 +15,8 @@ func TestGenesis(t *testing.T) {
 	genesisState := types.GenesisState{
 		Params: types.DefaultParams(),
 
-		MorseAccountState: &types.MorseAccountState{},
-		MorseAccountClaimList: []types.MorseAccountClaim{
-			{
-				MorseSrcAddress: "0",
-			},
-			{
-				MorseSrcAddress: "1",
-			},
-		},
+		MorseAccountState:     &types.MorseAccountState{},
+		MorseAccountClaimList: []types.MorseAccountClaim{},
 		// this line is used by starport scaffolding # genesis/test/state
 	}
 

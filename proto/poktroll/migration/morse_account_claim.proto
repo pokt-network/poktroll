@@ -1,11 +1,13 @@
 syntax = "proto3";
 package poktroll.migration;
 
+import "cosmos_proto/cosmos.proto";
+
 option go_package = "github.com/pokt-network/poktroll/x/migration/types";
 
 message MorseAccountClaim {
-  string morseSrcAddress = 1; 
-  string morseSignature = 2; 
-  string shannonDestAddress = 3;
+  string morse_src_address = 2;
+  //
+  string morse_signature = 3;
+  string shannon_dest_address = 4[(cosmos_proto.scalar) = "cosmos.AddressString"];
 }
-

@@ -29,10 +29,9 @@ func (am AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 					Short:     "List all morse_account_claim",
 				},
 				{
-					RpcMethod:      "MorseAccountClaim",
-					Use:            "show-morse-account-claim [id]",
-					Short:          "Shows a morse_account_claim",
-					PositionalArgs: []*autocliv1.PositionalArgDescriptor{{ProtoField: "morseSrcAddress"}},
+					RpcMethod: "MorseAccountClaim",
+					Use:       "show-morse-account-claim --morse_src_address [morse_hex_address] | --shannon_dest_address [shannon_bech32_address]",
+					Short:     "Shows a morse_account_claim by EITHER morse_src_address OR shannon_dest_address",
 				},
 				// this line is used by ignite scaffolding # autocli/query
 			},
@@ -54,9 +53,9 @@ func (am AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 				},
 				{
 					RpcMethod:      "CreateMorseAccountClaim",
-					Use:            "create-morse-account-claim [morseSrcAddress] [morseSignature]",
-					Short:          "Create a new morse_account_claim",
-					PositionalArgs: []*autocliv1.PositionalArgDescriptor{{ProtoField: "morseSrcAddress"}, {ProtoField: "morseSignature"}},
+					Use:            "create-morse-account-claim [hex-morse-src-address] [hex-morse-signature]",
+					Short:          "Create morse_account_claim",
+					PositionalArgs: []*autocliv1.PositionalArgDescriptor{{ProtoField: "morse_src_address"}, {ProtoField: "morse_signature"}},
 				},
 				// this line is used by ignite scaffolding # autocli/tx
 			},

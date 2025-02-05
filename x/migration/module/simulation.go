@@ -41,17 +41,8 @@ func (AppModule) GenerateGenesisState(simState *module.SimulationState) {
 		accs[i] = acc.Address.String()
 	}
 	migrationGenesis := types.GenesisState{
-		Params: types.DefaultParams(),
-		MorseAccountClaimList: []types.MorseAccountClaim{
-			{
-				ShannonDestAddress: sample.AccAddress(),
-				MorseSrcAddress:    "0",
-			},
-			{
-				ShannonDestAddress: sample.AccAddress(),
-				MorseSrcAddress:    "1",
-			},
-		},
+		Params:                types.DefaultParams(),
+		MorseAccountClaimList: []types.MorseAccountClaim{},
 		// this line is used by starport scaffolding # simapp/module/genesisState
 	}
 	simState.GenState[types.ModuleName] = simState.Cdc.MustMarshalJSON(&migrationGenesis)
