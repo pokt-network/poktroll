@@ -23,7 +23,7 @@ metrics:
   addr: :9070
 pocket_node:
   query_node_rpc_url: tcp://localhost:26657
-  query_node_grpc_url: tcp://localhost:36658
+  query_node_grpc_url: tcp://localhost:9090
   tx_node_rpc_url: tcp://localhost:26657
 suppliers:
   - service_id: anvil
