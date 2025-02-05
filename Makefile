@@ -294,10 +294,13 @@ ignite_openapi_gen_docker: ## Generate the OpenAPI spec using Docker and process
 	$(MAKE) process_openapi
 
 .PHONY: process_openapi
-process_openapi: ## Convert OpenAPI YAML to JSON and back to YAML for consistency
+process_openapi: ## Ensure OpenAPI JSON and YAML files are properly formatted
+	# The original command incorrectly outputs a JSON-formatted file with a .yml extension.
+	# This fixes the issue by properly converting the JSON to a valid YAML format.
 	mv docs/static/openapi.yml docs/static/openapi.json
 	yq -o=json '.' docs/static/openapi.json -I=4 > docs/static/openapi.json.tmp && mv docs/static/openapi.json.tmp docs/static/openapi.json
 	yq -P -o=yaml '.' docs/static/openapi.json > docs/static/openapi.yml
+
 ##################
 ### CI Helpers ###
 ##################
