@@ -1,0 +1,11 @@
+syntax = "proto3";
+package poktroll.migration;
+
+option go_package = "github.com/pokt-network/poktroll/x/migration/types";
+
+message MorseAccountClaim {
+  string morseSrcAddress = 1; 
+  string morseSignature = 2; 
+  string shannonDestAddress = 3;
+}
+
