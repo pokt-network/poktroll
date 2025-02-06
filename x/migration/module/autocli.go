@@ -25,7 +25,6 @@ func (am AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 					RpcMethod: "MorseAccountState",
 					Use:       "morse-account-state",
 					Short:     "show morse_account_state",
-					Skip:      true,
 				},
 				{
 					RpcMethod: "MorseAccountClaimAll",
