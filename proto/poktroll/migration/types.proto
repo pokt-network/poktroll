@@ -25,7 +25,7 @@ message MorseAccount {
 
   bytes address = 1 [(gogoproto.jsontag) = "address", (gogoproto.casttype) = "github.com/cometbft/cometbft/crypto.Address"];
   MorsePublicKey pub_key = 2 [(gogoproto.jsontag) = "public_key", (gogoproto.moretags) = "yaml:\"public_key\""];
-  repeated cosmos.base.v1beta1.Coin coins = 3 [(gogoproto.nullable) = false];
+  repeated cosmos.base.v1beta1.Coin coins = 3 [(gogoproto.nullable) = false, (gogoproto.jsontag) = "coins"];
 }
 
 // MorsePublicKey is required to conform to the encoding of the Morse state export.
