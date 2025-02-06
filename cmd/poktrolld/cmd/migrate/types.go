@@ -66,26 +66,22 @@ func (miw *morseImportWorkspace) hasAccount(addr string) bool {
 	return ok
 }
 
-// TODO_IN_THIS_COMMIT: godoc...
+// debugLogProgress prints debug level logs indicating the progress of the import,
+// according to flagDebugAccountsPerLog.
 func (miw *morseImportWorkspace) debugLogProgress(accountIdx int) {
-	totalBalance := miw.totalBalance()
-	totalAppStake := miw.totalAppStake()
-	totalSupplierStake := miw.totalSupplierStake()
-	grandTotal := totalBalance.Add(totalAppStake).Add(totalSupplierStake)
-
 	logger.Debug().
 		Int("account_idx", accountIdx).
 		Uint64("num_accounts", miw.numAccounts).
 		Uint64("num_applications", miw.numApplications).
 		Uint64("num_suppliers", miw.numSuppliers).
-		Str("total_balance", totalBalance.String()).
-		Str("total_app_stake", totalAppStake.String()).
-		Str("total_supplier_stake", totalSupplierStake.String()).
-		Str("grand_total", grandTotal.String()).
+		Str("total_balance", miw.lastAccTotalBalance.String()).
+		Str("total_app_stake", miw.lastAccTotalAppStake.String()).
+		Str("total_supplier_stake", miw.lastAccTotalSupplierStake.String()).
+		Str("grand_total", miw.lastAccGrandTotal().String()).
 		Msg("processing accounts...")
 }
 
-// TODO_IN_THIS_COMMIT: godoc...
+// infoLogComplete prints info level logs indicating the completion of the import.
 func (miw *morseImportWorkspace) infoLogComplete() error {
 	accountStateHash, err := miw.accountState.GetHash()
 	if err != nil {
@@ -96,48 +92,21 @@ func (miw *morseImportWorkspace) infoLogComplete() error {
 		Uint64("num_accounts", miw.numAccounts).
 		Uint64("num_applications", miw.numApplications).
 		Uint64("num_suppliers", miw.numSuppliers).
-		Str("total_balance", miw.totalBalance().String()).
-		Str("total_app_stake", miw.totalAppStake().String()).
-		Str("total_supplier_stake", miw.totalSupplierStake().String()).
-		Str("grand_total", miw.grandTotal().String()).
+		Str("total_balance", miw.lastAccTotalBalance.String()).
+		Str("total_app_stake", miw.lastAccTotalAppStake.String()).
+		Str("total_supplier_stake", miw.lastAccTotalSupplierStake.String()).
+		Str("grand_total", miw.lastAccGrandTotal().String()).
 		Str("morse_account_state_hash", fmt.Sprintf("%x", accountStateHash)).
 		Msg("processing accounts complete")
 	return nil
 }
 
-// TODO_IN_THIS_COMMIT: godoc...
-func (miw *morseImportWorkspace) totalBalance() cosmosmath.Int {
-	miw.accumulateTotals()
-	return miw.lastAccTotalBalance
-}
-
-// TODO_IN_THIS_COMMIT: godoc...
-func (miw *morseImportWorkspace) totalAppStake() cosmosmath.Int {
-	miw.accumulateTotals()
-	return miw.lastAccTotalAppStake
-}
-
-// TODO_IN_THIS_COMMIT: godoc...
-func (miw *morseImportWorkspace) totalSupplierStake() cosmosmath.Int {
-	miw.accumulateTotals()
-	return miw.lastAccTotalSupplierStake
-}
-
-// TODO_IN_THIS_COMMIT: godoc...
-func (miw *morseImportWorkspace) grandTotal() cosmosmath.Int {
-	return miw.totalBalance().
-		Add(miw.totalAppStake()).
-		Add(miw.totalSupplierStake())
-}
-
-// TODO_IN_THIS_COMMIT: godoc...
-func (miw *morseImportWorkspace) accumulateTotals() {
-	for idx, account := range miw.accountState.Accounts[miw.lastAccAccountIdx:] {
-		miw.lastAccTotalBalance = miw.lastAccTotalBalance.Add(account.Coins[0].Amount)
-		miw.lastAccTotalAppStake = miw.lastAccTotalAppStake.Add(account.Coins[0].Amount)
-		miw.lastAccTotalSupplierStake = miw.lastAccTotalSupplierStake.Add(account.Coins[0].Amount)
-		miw.lastAccAccountIdx = uint64(idx)
-	}
+// lastAccGrandTotal returns the sum of the lastAccTotalBalance, lastAccTotalAppStake,
+// and lastAccTotalSupplierStake.
+func (miw *morseImportWorkspace) lastAccGrandTotal() cosmosmath.Int {
+	return miw.lastAccTotalBalance.
+		Add(miw.lastAccTotalAppStake).
+		Add(miw.lastAccTotalSupplierStake)
 }
 
 // ensureAccount ensures that the given address is present in the accounts slice

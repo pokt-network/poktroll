@@ -244,6 +244,8 @@ func collectInputApplicationStakes(inputState *migrationtypes.MorseStateExport, 
 				appAddr, err,
 			)
 		}
+
+		morseWorkspace.lastAccTotalAppStake = morseWorkspace.lastAccTotalAppStake.Add(appStakeAmtUpokt)
 	}
 	return nil
 }
@@ -270,6 +272,8 @@ func collectInputSupplierStakes(inputState *migrationtypes.MorseStateExport, mor
 				supplierAddr, err,
 			)
 		}
+
+		morseWorkspace.lastAccTotalSupplierStake = morseWorkspace.lastAccTotalSupplierStake.Add(supplierStakeAmtUpokt)
 	}
 	return nil
 }
