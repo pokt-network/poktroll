@@ -1,9 +1,9 @@
 ---
-title: Protocol Upgrades
+title: Introduction to Protocol Upgrades
 sidebar_position: 1
 ---
 
-# Protocol Upgrades <!-- omit in toc -->
+## Introduction to Protocol Upgrades <!-- omit in toc -->
 
 Pocket Network is continuously evolving through regular protocol upgrades. We implement software upgrades via a DAO process, allowing validator nodes to incorporate consensus-breaking changes. These upgrades can be automatically applied when using [Cosmovisor](../../operate/walkthroughs/full_node_walkthrough.md), or manually if not using `cosmovisor`.
 

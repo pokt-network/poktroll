@@ -1,8 +1,8 @@
 {
-  "label": "Testing (Internal)",
-  "position": 6,
+  "label": "Testing",
+  "position": 5,
   "link": {
     "type": "generated-index",
-    "description": "Documentation related to the type of end-to-end testing (load or other) we are doing."
+    "description": "Documentation related to unit testing."
   }
 }

@@ -112,7 +112,7 @@ poktrolld query bank balances $APP_ADDR $NODE_FLAGS
 
 :::tip
 
-You can find all the explorers, faucets and tools at the [tools page](../../tools/tools.md).
+You can find all the explorers, faucets and tools at the [tools page](../../tools/tools/source_code.md).
 
 :::
 

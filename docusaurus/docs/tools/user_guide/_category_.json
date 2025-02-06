@@ -1,8 +1,8 @@
 {
-  "label": "User Guide",
-  "position": 2,
+  "label": "poktrolld CLI",
+  "position": 1,
   "link": {
     "type": "generated-index",
-    "description": "poktrolld CLI documentation"
+    "description": "User Guide on using the poktrolld CLI"
   }
 }

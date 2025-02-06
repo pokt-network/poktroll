@@ -1,5 +1,5 @@
 ---
-title: RPC Endpoints
+title: Shannon RPC Endpoints
 sidebar_position: 3
 ---
 
@@ -10,6 +10,7 @@ sidebar_position: 3
 - [Alpha TestNet](#alpha-testnet)
   - [Alpha RPC Endpoints](#alpha-rpc-endpoints)
   - [Alpha JSON-RPC Example](#alpha-json-rpc-example)
+- [Genesis](#genesis)
 
 ## Types of RPC Endpoints
 
@@ -62,3 +63,7 @@ Using the `poktrolld` binary:
 ```bash
 poktrolld query block --type=height 1 --node https://shannon-testnet-grove-seed-rpc.alpha.poktroll.com
 ```
+
+## Genesis
+
+The genesis file for the Pocket Network is located at [pokt-network-genesis](https://github.com/pokt-network/pocket-network-genesis).

@@ -27,12 +27,12 @@ single instance of each offchain actor. We can create custom DevNets with multip
 
 ### 1. Create and configure the DevNet
 
-Please refer to the DevNet creation guide [here](../infrastructure/devnet.md#how-to-create).
+Please refer to the DevNet creation guide [here](../networks/devnet.md#how-to-create).
 
 ### 2. Stake the necessary actors
 
 - Depending on your load testing requirements, you may need to stake one or more `gateways` and `suppliers`.
-- [DevNet documentation](../infrastructure/devnet.md#stake-actors) provides more details about staking actors in DevNets.
+- [DevNet documentation](../networks/devnet.md#stake-actors) provides more details about staking actors in DevNets.
 
 ### 3. Configure the load test manifest
 
@@ -96,7 +96,7 @@ gateways:
     exposed_url: https://devnet-sophon-gateway-1.poktroll.com
   - address: pokt15w3fhfyc0lttv7r585e2ncpf6t2kl9uh8rsnyz
     exposed_url: https://devnet-sophon-gateway-2.poktroll.com
-  - address: pokt1zhmkkd0rh788mc9prfq0m2h88t9ge0j83gnxya 
+  - address: pokt1zhmkkd0rh788mc9prfq0m2h88t9ge0j83gnxya
     exposed_url: https://devnet-sophon-gateway-3.poktroll.com
 ```
 

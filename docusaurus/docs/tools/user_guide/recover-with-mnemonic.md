@@ -1,6 +1,6 @@
 ---
 title: Mnemonic Seed Phrase Recovery
-sidebar_position: 2
+sidebar_position: 3
 ---
 
 # Recovering an Account from a Mnemonic Seed Phrase <!-- omit in toc -->

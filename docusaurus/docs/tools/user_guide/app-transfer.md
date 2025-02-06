@@ -1,6 +1,6 @@
 ---
-title: Application Transfer
-sidebar_position: 5
+title: Application Stake Transfer
+sidebar_position: 6
 ---
 
 # Transferring an Application <!-- omit in toc -->
