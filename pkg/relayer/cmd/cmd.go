@@ -208,6 +208,9 @@ func setupRelayerDependencies(
 		config.NewSupplyDelegationClientFn(),                              // leaf
 
 		// Setup the params caches and configure them to clear on new blocks.
+		// TODO_TECHDEBT: Consider a flag to change client queriers caching behavior.
+		// This would allow to easily switch between caching and non-caching queriers
+		// for benchmarking purposes.
 		config.NewSupplyParamsCacheFn[sharedtypes.Params](cache.WithNewBlockCacheClearing),
 		config.NewSupplyParamsCacheFn[apptypes.Params](cache.WithNewBlockCacheClearing),
 		config.NewSupplyParamsCacheFn[sessiontypes.Params](cache.WithNewBlockCacheClearing),
