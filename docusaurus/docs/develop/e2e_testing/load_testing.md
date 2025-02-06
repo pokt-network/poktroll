@@ -27,7 +27,7 @@ The load-testing suite is built on [Gherkin](https://cucumber.io/docs/gherkin/),
 
 ## Dependencies
 
-- [LocalNet](../infrastructure/localnet.md) (for local suite execution)
+- [LocalNet](../networks/localnet.md) (for local suite execution)
 - [Golang](https://go.dev/dl/)
 
 ## Load Test Manifests
@@ -63,7 +63,7 @@ This natural language syntax is parsed and used to match and execute the corresp
 
 To execute tests on LocalNet:
 
-1. Ensure [LocalNet](../infrastructure/localnet.md) is operational.
+1. Ensure [LocalNet](../networks/localnet.md) is operational.
 2. In the `localnet_config.yaml` file, set `gateways.count` and `relayminers.count` to `3`.
 3. Run `make acc_initialize_pubkeys` to initialize blockchain state public keys.
 4. Run `make test_load_relays_stress_localnet` to run the LocalNet stress-test.

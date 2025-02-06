@@ -1,6 +1,6 @@
 ---
-title: poktrolld CLI Installation
-sidebar_position: 0
+title: poktrolld Installation
+sidebar_position: 1
 ---
 
 :::warning

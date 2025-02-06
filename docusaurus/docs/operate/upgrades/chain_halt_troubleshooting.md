@@ -74,7 +74,7 @@ To interpret this data:
 2. Input the hexadecimal data into CyberChef.
 3. Apply the "From Hex" operation followed by "Protobuf Decode" to reveal the human-readable content.
 
-![CyberChef Decoding Example](./img/cyberchef_1.png)
+![CyberChef Decoding Example](../../develop/developer_guide/img/cyberchef_1.png)
 
 ### Step 5: Comparing Records
 
@@ -84,7 +84,7 @@ After decoding, compare the data from both nodes:
 2. Identify specific fields or values that differ between the two records.
 3. Pay close attention to timestamps, numerical values, and complex data structures.
 
-![CyberChef Diff Example](./img/cyberchef_2.png)
+![CyberChef Diff Example](../../develop/developer_guide/img/cyberchef_2.png)
 
 The image above illustrates a difference in the JSON representation of an object, which is likely the root cause of the non-deterministic state breaking consensus between nodes.
 
@@ -112,4 +112,4 @@ to sync a node from genesis by automatically using the appropriate binary for ea
 
 ## Syncing from genesis
 
-If you're encountering any of the errors mentioned above while trying to sync the historical blocks - make sure you're running the correct version of the binary in accordance with this table [Upgrade List](../../protocol/upgrades/upgrade_list.md).
+If you're encountering any of the errors mentioned above while trying to sync the historical blocks - make sure you're running the correct version of the binary in accordance with this table [Upgrade List](upgrade_list.md).

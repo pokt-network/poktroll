@@ -1,6 +1,6 @@
 {
   "label": "Networks",
-  "position": 5,
+  "position": 3,
   "link": {
     "type": "generated-index",
     "description": "Infrastructure related to deploying, maintaining and testing various (Local, Dev, Test) environments."

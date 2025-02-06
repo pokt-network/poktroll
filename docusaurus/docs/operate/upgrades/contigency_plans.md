@@ -90,7 +90,7 @@ In such a case, we need:
 
 ### Option 3: The migration succeed but the network is stuck (i.e. migration had a bug)
 
-This should be treated as a consensus or non-determinism bug that is unrelated to the upgrade. See [Recovery From Chain Halt](../../develop/developer_guide/recovery_from_chain_halt.md) for more information on how to handle such issues.
+This should be treated as a consensus or non-determinism bug that is unrelated to the upgrade. See [Recovery From Chain Halt](recovery_from_chain_halt.md) for more information on how to handle such issues.
 
 ### MANDATORY Checklist of Documentation & Scripts to Update
 

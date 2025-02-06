@@ -1,6 +1,6 @@
 ---
 title: Send tokens
-sidebar_position: 4
+sidebar_position: 5
 ---
 
 # Sending Tokens Between Accounts <!-- omit in toc -->

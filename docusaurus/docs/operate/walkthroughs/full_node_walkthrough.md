@@ -21,12 +21,12 @@ See the [Full Node Cheat Sheet](../cheat_sheets/full_node_cheatsheet.md) if you 
   - [1. Install Dependencies](#1-install-dependencies)
   - [2. Create a New User](#2-create-a-new-user)
   - [3. Set Up Environment Variables for Cosmovisor](#3-set-up-environment-variables-for-cosmovisor)
-- [4. Install Cosmovisor](#4-install-cosmovisor)
-- [5. Install `poktrolld`](#5-install-poktrolld)
-- [6. Retrieve the latest genesis file](#6-retrieve-the-latest-genesis-file)
-- [7. Network Configuration](#7-network-configuration)
-- [8. Set Up `systemd` Service](#8-set-up-systemd-service)
-- [9. Configure your Firewall](#9-configure-your-firewall)
+  - [4. Install Cosmovisor](#4-install-cosmovisor)
+  - [5. Install `poktrolld`](#5-install-poktrolld)
+  - [6. Retrieve the latest genesis file](#6-retrieve-the-latest-genesis-file)
+  - [7. Network Configuration](#7-network-configuration)
+  - [8. Set Up `systemd` Service](#8-set-up-systemd-service)
+  - [9. Configure your Firewall](#9-configure-your-firewall)
 
 ## Introduction - why run a Full Node?
 
@@ -91,7 +91,7 @@ echo "source ~/.poktrollrc" >> ~/.profile
 source ~/.profile
 ```
 
-## 4. Install Cosmovisor
+### 4. Install Cosmovisor
 
 **Option 1**: You can follow the official Cosmovisor installation instructions [here](https://docs.cosmos.network/main/build/tooling/cosmovisor#installation).
 
@@ -114,7 +114,7 @@ echo 'export PATH=$HOME/.local/bin:$PATH' >> ~/.profile
 source ~/.profile
 ```
 
-## 5. Install `poktrolld`
+### 5. Install `poktrolld`
 
 Follow the instructions in the [CLI Installation Guide](../../tools/user_guide/poktrolld_cli.md) page to install `poktrolld`.
 
@@ -125,7 +125,7 @@ mkdir -p $HOME/.poktroll/cosmovisor/genesis/bin
 ln -sf $(which poktrolld) $HOME/.poktroll/cosmovisor/genesis/bin/poktrolld
 ```
 
-## 6. Retrieve the latest genesis file
+### 6. Retrieve the latest genesis file
 
 Follow the instructions below to download the latest genesis file.
 
@@ -141,7 +141,7 @@ GENESIS_URL="https://raw.githubusercontent.com/pokt-network/pocket-network-genes
 curl -s -o $HOME/.poktroll/config/genesis.json "$GENESIS_URL"
 ```
 
-## 7. Network Configuration
+### 7. Network Configuration
 
 :::note
 You may see a message saying `genesis.json file already exists`.
@@ -171,7 +171,7 @@ EXTERNAL_IP=$(curl -s https://api.ipify.org)
 sed -i -e "s|^external_address *=.*|external_address = \"${EXTERNAL_IP}:26656\"|" $HOME/.poktroll/config/config.toml
 ```
 
-## 8. Set Up `systemd` Service
+### 8. Set Up `systemd` Service
 
 Create a `systemd` service file to manage the node:
 
@@ -207,7 +207,7 @@ sudo systemctl enable cosmovisor.service
 sudo systemctl start cosmovisor.service
 ```
 
-## 9. Configure your Firewall
+### 9. Configure your Firewall
 
 To ensure your node can properly participate in the P2P network, you need to make port `26656` accessible from the internet.
 
