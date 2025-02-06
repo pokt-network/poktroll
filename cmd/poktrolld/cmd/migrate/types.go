@@ -34,10 +34,6 @@ type morseImportWorkspace struct {
 	// the input MorseStateExport into the output MorseAccountState.
 	accountState *migrationtypes.MorseAccountState
 
-	// lastAccAccountIdx is the index at which the most recent accumulation/totaling
-	// (of actor counts, balances, and stakes) was performed such that the next
-	// accumulation/totaling operation may reuse previous accumulations values.
-	lastAccAccountIdx uint64
 	// lastAccTotalBalance is the most recently accumulated balances of all Morse
 	// accounts which have been processed.
 	lastAccTotalBalance cosmosmath.Int
