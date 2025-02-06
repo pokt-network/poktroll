@@ -1,5 +1,5 @@
 ---
-sidebar_position: 5
+sidebar_position: 2
 title: Service Cheat Sheet
 ---
 
@@ -14,8 +14,8 @@ title: Service Cheat Sheet
 
 ### Pre-Requisites
 
-1. Make sure to [install the `poktrolld` CLI](../user_guide/poktrolld_cli.md).
-2. Make sure you know how to [create and fund a new account](../user_guide/create-new-wallet.md).
+1. Make sure to [install the `poktrolld` CLI](../../tools/user_guide/poktrolld_cli.md).
+2. Make sure you know how to [create and fund a new account](../../tools/user_guide/create-new-wallet.md).
 
 ### How do I query for all existing onchain Services?
 

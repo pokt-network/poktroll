@@ -7,7 +7,12 @@ This walkthrough provides detailed step-by-step instructions to stake and run a 
 
 :::tip
 
+<<<<<<< HEAD:docusaurus/docs/operate/run_a_node/validator_walkthrough.md
 If you're interested in a simple guide with _copy-pasta_ of a few commands to get started, check out the [Validator Cheat Sheet](../quickstart/validator_cheatsheet.md) instead.
+=======
+If you're comfortable using an automated scripts, or simply want to _copy-pasta_ a
+few commands to get started, check out the [Validator Cheat Sheet](../cheat_sheet/validator_cheatsheet.md).
+>>>>>>> 2e49d7c64 (WIP):docusaurus/docs/operate/walkthroughs/validator_walkthrough.md
 
 :::
 
@@ -31,6 +36,7 @@ This guide will help you stake and run a Validator node on Pocket Network, from 
 
 As a Validator, you'll be participating in the consensus of the network, validating transactions, and securing the blockchain.
 
+<<<<<<< HEAD:docusaurus/docs/operate/run_a_node/validator_walkthrough.md
 ## Prerequisites
 
 **Run a Full Node**: Ensure you have followed the [Full Node Walkthrough](./full_node_walkthrough.md) to install and run a Full Node. Your node must be fully synced with the network before proceeding.
@@ -232,3 +238,6 @@ Here are some useful commands for managing your Validator:
 ---
 
 Congratulations! You have successfully set up and run a Validator on Pocket Network. Remember to stay engaged with the community and keep your node running smoothly to contribute to the network's security and decentralization.
+=======
+1. **Run a Full Node**: Make sure you have followed the [Full Node Walkthrough](full_node_walkthrough.md) to install and run a Full Node first
+>>>>>>> 2e49d7c64 (WIP):docusaurus/docs/operate/walkthroughs/validator_walkthrough.md

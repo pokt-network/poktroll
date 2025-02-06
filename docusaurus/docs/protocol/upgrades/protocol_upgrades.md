@@ -5,7 +5,7 @@ sidebar_position: 1
 
 # Protocol Upgrades <!-- omit in toc -->
 
-Pocket Network is continuously evolving through regular protocol upgrades. We implement software upgrades via a DAO process, allowing validator nodes to incorporate consensus-breaking changes. These upgrades can be automatically applied when using [Cosmovisor](../../operate/run_a_node/full_node_walkthrough.md), or manually if not using `cosmovisor`.
+Pocket Network is continuously evolving through regular protocol upgrades. We implement software upgrades via a DAO process, allowing validator nodes to incorporate consensus-breaking changes. These upgrades can be automatically applied when using [Cosmovisor](../../operate/walkthroughs/full_node_walkthrough.md), or manually if not using `cosmovisor`.
 
 - [What is a Protocol Upgrade?](#what-is-a-protocol-upgrade)
 - [List of Upgrades](#list-of-upgrades)

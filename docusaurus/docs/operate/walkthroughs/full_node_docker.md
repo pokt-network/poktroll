@@ -52,11 +52,11 @@ This guide outlines how to configure, deploy and maintain Full Nodes.
 
 ## Hardware requirements
 
-Please see the [Hardware Requirements](./hardware_requirements.md#validator--full-node) page.
+Please see the [Hardware Requirements](../configs/hardware_requirements.md#validator--full-node) page.
 
 ## Docker Compose Example
 
-Please refer to the `Deploying a Full Node` section in [Docker Compose Walkthrough](../quickstart/docker_compose_walkthrough.md)
+Please refer to the `Deploying a Full Node` section in [Docker Compose Walkthrough](../cheat_sheet/docker_compose_walkthrough.md)
 on how to deploy a Full Node using `docker-compose`.
 
 ## Kubernetes Example

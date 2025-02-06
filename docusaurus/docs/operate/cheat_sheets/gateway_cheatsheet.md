@@ -1,5 +1,5 @@
 ---
-sidebar_position: 7
+sidebar_position: 4
 title: Gateway Cheat Sheet
 ---
 
@@ -9,7 +9,7 @@ This guide provides quick reference commands for setting up and running a **Gate
 on Pocket Network.
 
 For detailed instructions, troubleshooting, and observability setup, see the
-[Gateway Walkthrough](./../run_a_node/gateway_walkthrough.md).
+[Gateway Walkthrough](../walkthroughs/gateway_walkthrough.md).
 
 :::note
 
@@ -39,8 +39,8 @@ streamline development and reduce friction for any new potential contributor.
 
 ## Pre-Requisites
 
-1. Make sure to [install the `poktrolld` CLI](../user_guide/poktrolld_cli.md).
-2. Make sure you know how to [create and fund a new account](../user_guide/create-new-wallet.md).
+1. Make sure to [install the `poktrolld` CLI](../../tools/user_guide/poktrolld_cli.md).
+2. Make sure you know how to [create and fund a new account](../../tools/user_guide/create-new-wallet.md).
 
 :::warning
 
@@ -113,7 +113,7 @@ poktrolld query bank balances $APP_ADDR $NODE_FLAGS
 
 :::tip
 
-You can find all the explorers, faucets and tools at the [tools page](../../explore/tools.md).
+You can find all the explorers, faucets and tools at the [tools page](../../tools/tools.md).
 
 :::
 
