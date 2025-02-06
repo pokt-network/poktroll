@@ -15,6 +15,8 @@ import (
 	migrationtypes "github.com/pokt-network/poktroll/x/migration/types"
 )
 
+const defaultLogOutput = "-"
+
 var (
 	flagDebugAccountsPerLog int
 	flagLogLevel            string
@@ -35,8 +37,8 @@ pocket util export-genesis-for-reset [height] [new-chain-id] > morse-state-expor
 				err       error
 			)
 			logLevel := polyzero.ParseLevel(flagLogLevel)
-			if flagLogOutput == "-" {
-				logOutput = os.Stderr
+			if flagLogOutput == defaultLogOutput {
+				logOutput = os.Stdout
 			} else {
 				logOutput, err = os.Open(flagLogOutput)
 				if err != nil {
@@ -61,7 +63,7 @@ func MigrateCmd() *cobra.Command {
 	}
 	migrateCmd.AddCommand(collectMorseAccountsCmd)
 	migrateCmd.PersistentFlags().StringVar(&flagLogLevel, "log-level", "info", "The logging level (debug|info|warn|error)")
-	migrateCmd.PersistentFlags().StringVar(&flagLogOutput, "log-output", "-", "The logging output (file path); defaults to stdout")
+	migrateCmd.PersistentFlags().StringVar(&flagLogOutput, "log-output", defaultLogOutput, "The logging output (file path); defaults to stdout")
 
 	collectMorseAccountsCmd.Flags().IntVar(&flagDebugAccountsPerLog, "debug-accounts-per-log", 0, "The number of accounts to log per debug message")
 
@@ -155,13 +157,7 @@ func transformMorseState(
 
 	// Iterate over suppliers and add the stakes to the corresponding account balances.
 	logger.Info().Msg("collecting supplier stakes...")
-	err := collectInputSupplierStakes(inputState, morseWorkspace)
-	if err != nil {
-		return err
-	}
-
-	morseWorkspace.accountState = &migrationtypes.MorseAccountState{Accounts: morseWorkspace.accounts}
-	return nil
+	return collectInputSupplierStakes(inputState, morseWorkspace)
 }
 
 // collectInputAccountBalances iterates over the accounts in the inputState and
@@ -188,12 +184,16 @@ func collectInputAccountBalances(inputState *migrationtypes.MorseStateExport, mo
 		}
 
 		coins := exportAccount.Value.Coins
+
+		// If, for whatever reason, the account has no coins, skip it.
+		// DEV_NOTE: This is NEVER expected to happen, but is technically possible.
 		if len(coins) == 0 {
+			logger.Warn().Str("address", accountAddr).Msg("account has no coins; skipping")
 			return nil
 		}
 
 		// DEV_NOTE: SHOULD ONLY be one denom (upokt).
-		if len(coins) != 1 {
+		if len(coins) > 1 {
 			return ErrMorseExportState.Wrapf(
 				"account %q has %d token denominations, expected upokt only: %s",
 				accountAddr, len(coins), coins,

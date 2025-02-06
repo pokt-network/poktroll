@@ -2095,15 +2095,15 @@ func (x *fastReflection_MorseAuth) ProtoMethods() *protoiface.Methods {
 
 var (
 	md_MorseAuthAccount       protoreflect.MessageDescriptor
-	fd_MorseAuthAccount_Type  protoreflect.FieldDescriptor
-	fd_MorseAuthAccount_Value protoreflect.FieldDescriptor
+	fd_MorseAuthAccount_type  protoreflect.FieldDescriptor
+	fd_MorseAuthAccount_value protoreflect.FieldDescriptor
 )
 
 func init() {
 	file_poktroll_migration_legacy_proto_init()
 	md_MorseAuthAccount = File_poktroll_migration_legacy_proto.Messages().ByName("MorseAuthAccount")
-	fd_MorseAuthAccount_Type = md_MorseAuthAccount.Fields().ByName("Type")
-	fd_MorseAuthAccount_Value = md_MorseAuthAccount.Fields().ByName("Value")
+	fd_MorseAuthAccount_type = md_MorseAuthAccount.Fields().ByName("type")
+	fd_MorseAuthAccount_value = md_MorseAuthAccount.Fields().ByName("value")
 }
 
 var _ protoreflect.Message = (*fastReflection_MorseAuthAccount)(nil)
@@ -2173,13 +2173,13 @@ func (x *fastReflection_MorseAuthAccount) Interface() protoreflect.ProtoMessage 
 func (x *fastReflection_MorseAuthAccount) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
 	if x.Type_ != "" {
 		value := protoreflect.ValueOfString(x.Type_)
-		if !f(fd_MorseAuthAccount_Type, value) {
+		if !f(fd_MorseAuthAccount_type, value) {
 			return
 		}
 	}
 	if x.Value != nil {
 		value := protoreflect.ValueOfMessage(x.Value.ProtoReflect())
-		if !f(fd_MorseAuthAccount_Value, value) {
+		if !f(fd_MorseAuthAccount_value, value) {
 			return
 		}
 	}
@@ -2198,9 +2198,9 @@ func (x *fastReflection_MorseAuthAccount) Range(f func(protoreflect.FieldDescrip
 // a repeated field is populated if it is non-empty.
 func (x *fastReflection_MorseAuthAccount) Has(fd protoreflect.FieldDescriptor) bool {
 	switch fd.FullName() {
-	case "poktroll.migration.MorseAuthAccount.Type":
+	case "poktroll.migration.MorseAuthAccount.type":
 		return x.Type_ != ""
-	case "poktroll.migration.MorseAuthAccount.Value":
+	case "poktroll.migration.MorseAuthAccount.value":
 		return x.Value != nil
 	default:
 		if fd.IsExtension() {
@@ -2218,9 +2218,9 @@ func (x *fastReflection_MorseAuthAccount) Has(fd protoreflect.FieldDescriptor) b
 // Clear is a mutating operation and unsafe for concurrent use.
 func (x *fastReflection_MorseAuthAccount) Clear(fd protoreflect.FieldDescriptor) {
 	switch fd.FullName() {
-	case "poktroll.migration.MorseAuthAccount.Type":
+	case "poktroll.migration.MorseAuthAccount.type":
 		x.Type_ = ""
-	case "poktroll.migration.MorseAuthAccount.Value":
+	case "poktroll.migration.MorseAuthAccount.value":
 		x.Value = nil
 	default:
 		if fd.IsExtension() {
@@ -2238,10 +2238,10 @@ func (x *fastReflection_MorseAuthAccount) Clear(fd protoreflect.FieldDescriptor)
 // of the value; to obtain a mutable reference, use Mutable.
 func (x *fastReflection_MorseAuthAccount) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
 	switch descriptor.FullName() {
-	case "poktroll.migration.MorseAuthAccount.Type":
+	case "poktroll.migration.MorseAuthAccount.type":
 		value := x.Type_
 		return protoreflect.ValueOfString(value)
-	case "poktroll.migration.MorseAuthAccount.Value":
+	case "poktroll.migration.MorseAuthAccount.value":
 		value := x.Value
 		return protoreflect.ValueOfMessage(value.ProtoReflect())
 	default:
@@ -2264,9 +2264,9 @@ func (x *fastReflection_MorseAuthAccount) Get(descriptor protoreflect.FieldDescr
 // Set is a mutating operation and unsafe for concurrent use.
 func (x *fastReflection_MorseAuthAccount) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
 	switch fd.FullName() {
-	case "poktroll.migration.MorseAuthAccount.Type":
+	case "poktroll.migration.MorseAuthAccount.type":
 		x.Type_ = value.Interface().(string)
-	case "poktroll.migration.MorseAuthAccount.Value":
+	case "poktroll.migration.MorseAuthAccount.value":
 		x.Value = value.Message().Interface().(*MorseAccount)
 	default:
 		if fd.IsExtension() {
@@ -2288,13 +2288,13 @@ func (x *fastReflection_MorseAuthAccount) Set(fd protoreflect.FieldDescriptor, v
 // Mutable is a mutating operation and unsafe for concurrent use.
 func (x *fastReflection_MorseAuthAccount) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
-	case "poktroll.migration.MorseAuthAccount.Value":
+	case "poktroll.migration.MorseAuthAccount.value":
 		if x.Value == nil {
 			x.Value = new(MorseAccount)
 		}
 		return protoreflect.ValueOfMessage(x.Value.ProtoReflect())
-	case "poktroll.migration.MorseAuthAccount.Type":
-		panic(fmt.Errorf("field Type of message poktroll.migration.MorseAuthAccount is not mutable"))
+	case "poktroll.migration.MorseAuthAccount.type":
+		panic(fmt.Errorf("field type of message poktroll.migration.MorseAuthAccount is not mutable"))
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.migration.MorseAuthAccount"))
@@ -2308,9 +2308,9 @@ func (x *fastReflection_MorseAuthAccount) Mutable(fd protoreflect.FieldDescripto
 // For lists, maps, and messages, this returns a new, empty, mutable value.
 func (x *fastReflection_MorseAuthAccount) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
-	case "poktroll.migration.MorseAuthAccount.Type":
+	case "poktroll.migration.MorseAuthAccount.type":
 		return protoreflect.ValueOfString("")
-	case "poktroll.migration.MorseAuthAccount.Value":
+	case "poktroll.migration.MorseAuthAccount.value":
 		m := new(MorseAccount)
 		return protoreflect.ValueOfMessage(m.ProtoReflect())
 	default:
@@ -3741,22 +3741,22 @@ func (x *fastReflection_MorseApplication) ProtoMethods() *protoiface.Methods {
 }
 
 var (
-	md_MorseValidator              protoreflect.MessageDescriptor
-	fd_MorseValidator_Address      protoreflect.FieldDescriptor
-	fd_MorseValidator_PublicKey    protoreflect.FieldDescriptor
-	fd_MorseValidator_jailed       protoreflect.FieldDescriptor
-	fd_MorseValidator_status       protoreflect.FieldDescriptor
-	fd_MorseValidator_StakedTokens protoreflect.FieldDescriptor
+	md_MorseValidator               protoreflect.MessageDescriptor
+	fd_MorseValidator_address       protoreflect.FieldDescriptor
+	fd_MorseValidator_public_key    protoreflect.FieldDescriptor
+	fd_MorseValidator_jailed        protoreflect.FieldDescriptor
+	fd_MorseValidator_status        protoreflect.FieldDescriptor
+	fd_MorseValidator_staked_tokens protoreflect.FieldDescriptor
 )
 
 func init() {
 	file_poktroll_migration_legacy_proto_init()
 	md_MorseValidator = File_poktroll_migration_legacy_proto.Messages().ByName("MorseValidator")
-	fd_MorseValidator_Address = md_MorseValidator.Fields().ByName("Address")
-	fd_MorseValidator_PublicKey = md_MorseValidator.Fields().ByName("PublicKey")
+	fd_MorseValidator_address = md_MorseValidator.Fields().ByName("address")
+	fd_MorseValidator_public_key = md_MorseValidator.Fields().ByName("public_key")
 	fd_MorseValidator_jailed = md_MorseValidator.Fields().ByName("jailed")
 	fd_MorseValidator_status = md_MorseValidator.Fields().ByName("status")
-	fd_MorseValidator_StakedTokens = md_MorseValidator.Fields().ByName("StakedTokens")
+	fd_MorseValidator_staked_tokens = md_MorseValidator.Fields().ByName("staked_tokens")
 }
 
 var _ protoreflect.Message = (*fastReflection_MorseValidator)(nil)
@@ -3826,13 +3826,13 @@ func (x *fastReflection_MorseValidator) Interface() protoreflect.ProtoMessage {
 func (x *fastReflection_MorseValidator) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
 	if len(x.Address) != 0 {
 		value := protoreflect.ValueOfBytes(x.Address)
-		if !f(fd_MorseValidator_Address, value) {
+		if !f(fd_MorseValidator_address, value) {
 			return
 		}
 	}
 	if len(x.PublicKey) != 0 {
 		value := protoreflect.ValueOfBytes(x.PublicKey)
-		if !f(fd_MorseValidator_PublicKey, value) {
+		if !f(fd_MorseValidator_public_key, value) {
 			return
 		}
 	}
@@ -3850,7 +3850,7 @@ func (x *fastReflection_MorseValidator) Range(f func(protoreflect.FieldDescripto
 	}
 	if x.StakedTokens != "" {
 		value := protoreflect.ValueOfString(x.StakedTokens)
-		if !f(fd_MorseValidator_StakedTokens, value) {
+		if !f(fd_MorseValidator_staked_tokens, value) {
 			return
 		}
 	}
@@ -3869,15 +3869,15 @@ func (x *fastReflection_MorseValidator) Range(f func(protoreflect.FieldDescripto
 // a repeated field is populated if it is non-empty.
 func (x *fastReflection_MorseValidator) Has(fd protoreflect.FieldDescriptor) bool {
 	switch fd.FullName() {
-	case "poktroll.migration.MorseValidator.Address":
+	case "poktroll.migration.MorseValidator.address":
 		return len(x.Address) != 0
-	case "poktroll.migration.MorseValidator.PublicKey":
+	case "poktroll.migration.MorseValidator.public_key":
 		return len(x.PublicKey) != 0
 	case "poktroll.migration.MorseValidator.jailed":
 		return x.Jailed != false
 	case "poktroll.migration.MorseValidator.status":
 		return x.Status != int32(0)
-	case "poktroll.migration.MorseValidator.StakedTokens":
+	case "poktroll.migration.MorseValidator.staked_tokens":
 		return x.StakedTokens != ""
 	default:
 		if fd.IsExtension() {
@@ -3895,15 +3895,15 @@ func (x *fastReflection_MorseValidator) Has(fd protoreflect.FieldDescriptor) boo
 // Clear is a mutating operation and unsafe for concurrent use.
 func (x *fastReflection_MorseValidator) Clear(fd protoreflect.FieldDescriptor) {
 	switch fd.FullName() {
-	case "poktroll.migration.MorseValidator.Address":
+	case "poktroll.migration.MorseValidator.address":
 		x.Address = nil
-	case "poktroll.migration.MorseValidator.PublicKey":
+	case "poktroll.migration.MorseValidator.public_key":
 		x.PublicKey = nil
 	case "poktroll.migration.MorseValidator.jailed":
 		x.Jailed = false
 	case "poktroll.migration.MorseValidator.status":
 		x.Status = int32(0)
-	case "poktroll.migration.MorseValidator.StakedTokens":
+	case "poktroll.migration.MorseValidator.staked_tokens":
 		x.StakedTokens = ""
 	default:
 		if fd.IsExtension() {
@@ -3921,10 +3921,10 @@ func (x *fastReflection_MorseValidator) Clear(fd protoreflect.FieldDescriptor) {
 // of the value; to obtain a mutable reference, use Mutable.
 func (x *fastReflection_MorseValidator) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
 	switch descriptor.FullName() {
-	case "poktroll.migration.MorseValidator.Address":
+	case "poktroll.migration.MorseValidator.address":
 		value := x.Address
 		return protoreflect.ValueOfBytes(value)
-	case "poktroll.migration.MorseValidator.PublicKey":
+	case "poktroll.migration.MorseValidator.public_key":
 		value := x.PublicKey
 		return protoreflect.ValueOfBytes(value)
 	case "poktroll.migration.MorseValidator.jailed":
@@ -3933,7 +3933,7 @@ func (x *fastReflection_MorseValidator) Get(descriptor protoreflect.FieldDescrip
 	case "poktroll.migration.MorseValidator.status":
 		value := x.Status
 		return protoreflect.ValueOfInt32(value)
-	case "poktroll.migration.MorseValidator.StakedTokens":
+	case "poktroll.migration.MorseValidator.staked_tokens":
 		value := x.StakedTokens
 		return protoreflect.ValueOfString(value)
 	default:
@@ -3956,15 +3956,15 @@ func (x *fastReflection_MorseValidator) Get(descriptor protoreflect.FieldDescrip
 // Set is a mutating operation and unsafe for concurrent use.
 func (x *fastReflection_MorseValidator) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
 	switch fd.FullName() {
-	case "poktroll.migration.MorseValidator.Address":
+	case "poktroll.migration.MorseValidator.address":
 		x.Address = value.Bytes()
-	case "poktroll.migration.MorseValidator.PublicKey":
+	case "poktroll.migration.MorseValidator.public_key":
 		x.PublicKey = value.Bytes()
 	case "poktroll.migration.MorseValidator.jailed":
 		x.Jailed = value.Bool()
 	case "poktroll.migration.MorseValidator.status":
 		x.Status = int32(value.Int())
-	case "poktroll.migration.MorseValidator.StakedTokens":
+	case "poktroll.migration.MorseValidator.staked_tokens":
 		x.StakedTokens = value.Interface().(string)
 	default:
 		if fd.IsExtension() {
@@ -3986,16 +3986,16 @@ func (x *fastReflection_MorseValidator) Set(fd protoreflect.FieldDescriptor, val
 // Mutable is a mutating operation and unsafe for concurrent use.
 func (x *fastReflection_MorseValidator) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
-	case "poktroll.migration.MorseValidator.Address":
-		panic(fmt.Errorf("field Address of message poktroll.migration.MorseValidator is not mutable"))
-	case "poktroll.migration.MorseValidator.PublicKey":
-		panic(fmt.Errorf("field PublicKey of message poktroll.migration.MorseValidator is not mutable"))
+	case "poktroll.migration.MorseValidator.address":
+		panic(fmt.Errorf("field address of message poktroll.migration.MorseValidator is not mutable"))
+	case "poktroll.migration.MorseValidator.public_key":
+		panic(fmt.Errorf("field public_key of message poktroll.migration.MorseValidator is not mutable"))
 	case "poktroll.migration.MorseValidator.jailed":
 		panic(fmt.Errorf("field jailed of message poktroll.migration.MorseValidator is not mutable"))
 	case "poktroll.migration.MorseValidator.status":
 		panic(fmt.Errorf("field status of message poktroll.migration.MorseValidator is not mutable"))
-	case "poktroll.migration.MorseValidator.StakedTokens":
-		panic(fmt.Errorf("field StakedTokens of message poktroll.migration.MorseValidator is not mutable"))
+	case "poktroll.migration.MorseValidator.staked_tokens":
+		panic(fmt.Errorf("field staked_tokens of message poktroll.migration.MorseValidator is not mutable"))
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.migration.MorseValidator"))
@@ -4009,15 +4009,15 @@ func (x *fastReflection_MorseValidator) Mutable(fd protoreflect.FieldDescriptor)
 // For lists, maps, and messages, this returns a new, empty, mutable value.
 func (x *fastReflection_MorseValidator) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
-	case "poktroll.migration.MorseValidator.Address":
+	case "poktroll.migration.MorseValidator.address":
 		return protoreflect.ValueOfBytes(nil)
-	case "poktroll.migration.MorseValidator.PublicKey":
+	case "poktroll.migration.MorseValidator.public_key":
 		return protoreflect.ValueOfBytes(nil)
 	case "poktroll.migration.MorseValidator.jailed":
 		return protoreflect.ValueOfBool(false)
 	case "poktroll.migration.MorseValidator.status":
 		return protoreflect.ValueOfInt32(int32(0))
-	case "poktroll.migration.MorseValidator.StakedTokens":
+	case "poktroll.migration.MorseValidator.staked_tokens":
 		return protoreflect.ValueOfString("")
 	default:
 		if fd.IsExtension() {
@@ -4403,11 +4403,11 @@ func (x *fastReflection_MorseValidator) ProtoMethods() *protoiface.Methods {
 // Types in this file are ONLY present to facilitate the verifiability of the
 // migration state from Morse to Shannon.
 //
-// These types are used by the migration subcommand  to transform
+// These types are used by the migration subcommand to transform
 // the Morse state export into the Shannon state import.
 // Ref: `poktrolld migrate collect-morse-accounts ...`
 //
-// They ARE NOT persisted on-chain at any point.package poktroll.migration;
+// They ARE NOT persisted on-chain at any point.
 
 const (
 	// Verify that this generated code is sufficiently up-to-date.
@@ -4589,19 +4589,19 @@ func (x *MorseAuth) GetAccounts() []*MorseAuthAccount {
 	return nil
 }
 
-// A wrapper around Morse account information, necessary in order to to confirm to the Morse genesis
+// A wrapper around Morse account information, necessary in order to to conform to the Morse genesis
 // structure. Morse originally serialized accounts as pb.Any types in order to support multiple
 // account types. For the purposes of the Morse -> Shannon migration, we're only concerned with
 // externally owned accounts (as opposed to module accounts). As a result, we're simplifying its
-// representation in Shannon by avoiding usage of pb.Any. It is necessary in order too conform to
+// representation in Shannon by avoiding usage of pb.Any. It is necessary in order to conform to
 // the Morse genesis structure.
 type MorseAuthAccount struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Type_ string        `protobuf:"bytes,1,opt,name=Type,proto3" json:"Type,omitempty"`
-	Value *MorseAccount `protobuf:"bytes,2,opt,name=Value,proto3" json:"Value,omitempty"`
+	Type_ string        `protobuf:"bytes,1,opt,name=type,proto3" json:"type,omitempty"`
+	Value *MorseAccount `protobuf:"bytes,2,opt,name=value,proto3" json:"value,omitempty"`
 }
 
 func (x *MorseAuthAccount) Reset() {
@@ -4683,13 +4683,14 @@ type MorseApplication struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Address is a hex-encoded string representation of the address corresponding
+	// Address is a binary representation of the address corresponding
 	// to a Morse application's ed25519 public key.
 	Address []byte `protobuf:"bytes,1,opt,name=address,proto3" json:"address,omitempty"`
 	// PublicKey is the binary representation of a Morse application's ed25519 public key.
-	PublicKey    []byte `protobuf:"bytes,2,opt,name=public_key,json=publicKey,proto3" json:"public_key,omitempty"`
-	Jailed       bool   `protobuf:"varint,3,opt,name=jailed,proto3" json:"jailed,omitempty"`
-	Status       int32  `protobuf:"varint,4,opt,name=status,proto3" json:"status,omitempty"`
+	PublicKey []byte `protobuf:"bytes,2,opt,name=public_key,json=publicKey,proto3" json:"public_key,omitempty"`
+	Jailed    bool   `protobuf:"varint,3,opt,name=jailed,proto3" json:"jailed,omitempty"`
+	Status    int32  `protobuf:"varint,4,opt,name=status,proto3" json:"status,omitempty"`
+	// The string representation of the BigInt amount of upokt.
 	StakedTokens string `protobuf:"bytes,6,opt,name=staked_tokens,json=stakedTokens,proto3" json:"staked_tokens,omitempty"`
 }
 
@@ -4756,11 +4757,14 @@ type MorseValidator struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Address      []byte `protobuf:"bytes,1,opt,name=Address,proto3" json:"Address,omitempty"`
-	PublicKey    []byte `protobuf:"bytes,2,opt,name=PublicKey,proto3" json:"PublicKey,omitempty"`
-	Jailed       bool   `protobuf:"varint,3,opt,name=jailed,proto3" json:"jailed,omitempty"`
-	Status       int32  `protobuf:"varint,4,opt,name=status,proto3" json:"status,omitempty"`
-	StakedTokens string `protobuf:"bytes,7,opt,name=StakedTokens,proto3" json:"StakedTokens,omitempty"`
+	// A binary representation of the address corresponding to a Morse application's ed25519 public key.
+	Address []byte `protobuf:"bytes,1,opt,name=address,proto3" json:"address,omitempty"`
+	// The binary representation of a Morse application's ed25519 public key.
+	PublicKey []byte `protobuf:"bytes,2,opt,name=public_key,json=publicKey,proto3" json:"public_key,omitempty"`
+	Jailed    bool   `protobuf:"varint,3,opt,name=jailed,proto3" json:"jailed,omitempty"`
+	Status    int32  `protobuf:"varint,4,opt,name=status,proto3" json:"status,omitempty"`
+	// The string representation of the BigInt amount of upokt.
+	StakedTokens string `protobuf:"bytes,7,opt,name=staked_tokens,json=stakedTokens,proto3" json:"staked_tokens,omitempty"`
 }
 
 func (x *MorseValidator) Reset() {
@@ -4865,12 +4869,12 @@ var file_poktroll_migration_legacy_proto_rawDesc = []byte{
 	0x42, 0x0c, 0xea, 0xde, 0x1f, 0x08, 0x61, 0x63, 0x63, 0x6f, 0x75, 0x6e, 0x74, 0x73, 0x52, 0x08,
 	0x61, 0x63, 0x63, 0x6f, 0x75, 0x6e, 0x74, 0x73, 0x22, 0x73, 0x0a, 0x10, 0x4d, 0x6f, 0x72, 0x73,
 	0x65, 0x41, 0x75, 0x74, 0x68, 0x41, 0x63, 0x63, 0x6f, 0x75, 0x6e, 0x74, 0x12, 0x1c, 0x0a, 0x04,
-	0x54, 0x79, 0x70, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x42, 0x08, 0xea, 0xde, 0x1f, 0x04,
-	0x74, 0x79, 0x70, 0x65, 0x52, 0x04, 0x54, 0x79, 0x70, 0x65, 0x12, 0x41, 0x0a, 0x05, 0x56, 0x61,
+	0x74, 0x79, 0x70, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x42, 0x08, 0xea, 0xde, 0x1f, 0x04,
+	0x74, 0x79, 0x70, 0x65, 0x52, 0x04, 0x74, 0x79, 0x70, 0x65, 0x12, 0x41, 0x0a, 0x05, 0x76, 0x61,
 	0x6c, 0x75, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x20, 0x2e, 0x70, 0x6f, 0x6b, 0x74,
 	0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x6d, 0x69, 0x67, 0x72, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x2e, 0x4d,
 	0x6f, 0x72, 0x73, 0x65, 0x41, 0x63, 0x63, 0x6f, 0x75, 0x6e, 0x74, 0x42, 0x09, 0xea, 0xde, 0x1f,
-	0x05, 0x76, 0x61, 0x6c, 0x75, 0x65, 0x52, 0x05, 0x56, 0x61, 0x6c, 0x75, 0x65, 0x22, 0x5e, 0x0a,
+	0x05, 0x76, 0x61, 0x6c, 0x75, 0x65, 0x52, 0x05, 0x76, 0x61, 0x6c, 0x75, 0x65, 0x22, 0x5e, 0x0a,
 	0x08, 0x4d, 0x6f, 0x72, 0x73, 0x65, 0x50, 0x6f, 0x73, 0x12, 0x52, 0x0a, 0x0a, 0x76, 0x61, 0x6c,
 	0x69, 0x64, 0x61, 0x74, 0x6f, 0x72, 0x73, 0x18, 0x01, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x22, 0x2e,
 	0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x6d, 0x69, 0x67, 0x72, 0x61, 0x74, 0x69,
@@ -4899,39 +4903,39 @@ var file_poktroll_migration_legacy_proto_rawDesc = []byte{
 	0x65, 0x64, 0x5f, 0x74, 0x6f, 0x6b, 0x65, 0x6e, 0x73, 0x18, 0x06, 0x20, 0x01, 0x28, 0x09, 0x42,
 	0x0a, 0xea, 0xde, 0x1f, 0x06, 0x74, 0x6f, 0x6b, 0x65, 0x6e, 0x73, 0x52, 0x0c, 0x73, 0x74, 0x61,
 	0x6b, 0x65, 0x64, 0x54, 0x6f, 0x6b, 0x65, 0x6e, 0x73, 0x3a, 0x08, 0x88, 0xa0, 0x1f, 0x00, 0xe8,
-	0xa0, 0x1f, 0x01, 0x22, 0xc1, 0x02, 0x0a, 0x0e, 0x4d, 0x6f, 0x72, 0x73, 0x65, 0x56, 0x61, 0x6c,
-	0x69, 0x64, 0x61, 0x74, 0x6f, 0x72, 0x12, 0x66, 0x0a, 0x07, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73,
+	0xa0, 0x1f, 0x01, 0x22, 0xc3, 0x02, 0x0a, 0x0e, 0x4d, 0x6f, 0x72, 0x73, 0x65, 0x56, 0x61, 0x6c,
+	0x69, 0x64, 0x61, 0x74, 0x6f, 0x72, 0x12, 0x66, 0x0a, 0x07, 0x61, 0x64, 0x64, 0x72, 0x65, 0x73,
 	0x73, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0c, 0x42, 0x4c, 0xea, 0xde, 0x1f, 0x07, 0x61, 0x64, 0x64,
 	0x72, 0x65, 0x73, 0x73, 0xf2, 0xde, 0x1f, 0x0e, 0x79, 0x61, 0x6d, 0x6c, 0x3a, 0x22, 0x61, 0x64,
 	0x64, 0x72, 0x65, 0x73, 0x73, 0x22, 0xfa, 0xde, 0x1f, 0x2b, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62,
 	0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x63, 0x6f, 0x6d, 0x65, 0x74, 0x62, 0x66, 0x74, 0x2f, 0x63, 0x6f,
 	0x6d, 0x65, 0x74, 0x62, 0x66, 0x74, 0x2f, 0x63, 0x72, 0x79, 0x70, 0x74, 0x6f, 0x2e, 0x41, 0x64,
-	0x64, 0x72, 0x65, 0x73, 0x73, 0x52, 0x07, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x12, 0x41,
-	0x0a, 0x09, 0x50, 0x75, 0x62, 0x6c, 0x69, 0x63, 0x4b, 0x65, 0x79, 0x18, 0x02, 0x20, 0x01, 0x28,
-	0x0c, 0x42, 0x23, 0xea, 0xde, 0x1f, 0x0a, 0x70, 0x75, 0x62, 0x6c, 0x69, 0x63, 0x5f, 0x6b, 0x65,
-	0x79, 0xf2, 0xde, 0x1f, 0x11, 0x79, 0x61, 0x6d, 0x6c, 0x3a, 0x22, 0x70, 0x75, 0x62, 0x6c, 0x69,
-	0x63, 0x5f, 0x6b, 0x65, 0x79, 0x22, 0x52, 0x09, 0x50, 0x75, 0x62, 0x6c, 0x69, 0x63, 0x4b, 0x65,
-	0x79, 0x12, 0x22, 0x0a, 0x06, 0x6a, 0x61, 0x69, 0x6c, 0x65, 0x64, 0x18, 0x03, 0x20, 0x01, 0x28,
-	0x08, 0x42, 0x0a, 0xea, 0xde, 0x1f, 0x06, 0x6a, 0x61, 0x69, 0x6c, 0x65, 0x64, 0x52, 0x06, 0x6a,
-	0x61, 0x69, 0x6c, 0x65, 0x64, 0x12, 0x22, 0x0a, 0x06, 0x73, 0x74, 0x61, 0x74, 0x75, 0x73, 0x18,
-	0x04, 0x20, 0x01, 0x28, 0x05, 0x42, 0x0a, 0xea, 0xde, 0x1f, 0x06, 0x73, 0x74, 0x61, 0x74, 0x75,
-	0x73, 0x52, 0x06, 0x73, 0x74, 0x61, 0x74, 0x75, 0x73, 0x12, 0x2e, 0x0a, 0x0c, 0x53, 0x74, 0x61,
-	0x6b, 0x65, 0x64, 0x54, 0x6f, 0x6b, 0x65, 0x6e, 0x73, 0x18, 0x07, 0x20, 0x01, 0x28, 0x09, 0x42,
-	0x0a, 0xea, 0xde, 0x1f, 0x06, 0x74, 0x6f, 0x6b, 0x65, 0x6e, 0x73, 0x52, 0x0c, 0x53, 0x74, 0x61,
-	0x6b, 0x65, 0x64, 0x54, 0x6f, 0x6b, 0x65, 0x6e, 0x73, 0x3a, 0x0c, 0x88, 0xa0, 0x1f, 0x00, 0x98,
-	0xa0, 0x1f, 0x01, 0xe8, 0xa0, 0x1f, 0x01, 0x42, 0xb7, 0x01, 0xd8, 0xe2, 0x1e, 0x01, 0x0a, 0x16,
-	0x63, 0x6f, 0x6d, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x6d, 0x69, 0x67,
-	0x72, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x42, 0x0b, 0x4c, 0x65, 0x67, 0x61, 0x63, 0x79, 0x50, 0x72,
-	0x6f, 0x74, 0x6f, 0x50, 0x01, 0x5a, 0x23, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x73, 0x64, 0x6b,
-	0x2e, 0x69, 0x6f, 0x2f, 0x61, 0x70, 0x69, 0x2f, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c,
-	0x2f, 0x6d, 0x69, 0x67, 0x72, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0xa2, 0x02, 0x03, 0x50, 0x4d, 0x58,
-	0xaa, 0x02, 0x12, 0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x4d, 0x69, 0x67, 0x72,
-	0x61, 0x74, 0x69, 0x6f, 0x6e, 0xca, 0x02, 0x12, 0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c,
-	0x5c, 0x4d, 0x69, 0x67, 0x72, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0xe2, 0x02, 0x1e, 0x50, 0x6f, 0x6b,
-	0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x5c, 0x4d, 0x69, 0x67, 0x72, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x5c,
-	0x47, 0x50, 0x42, 0x4d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0xea, 0x02, 0x13, 0x50, 0x6f,
-	0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x3a, 0x3a, 0x4d, 0x69, 0x67, 0x72, 0x61, 0x74, 0x69, 0x6f,
-	0x6e, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x64, 0x72, 0x65, 0x73, 0x73, 0x52, 0x07, 0x61, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x12, 0x42,
+	0x0a, 0x0a, 0x70, 0x75, 0x62, 0x6c, 0x69, 0x63, 0x5f, 0x6b, 0x65, 0x79, 0x18, 0x02, 0x20, 0x01,
+	0x28, 0x0c, 0x42, 0x23, 0xea, 0xde, 0x1f, 0x0a, 0x70, 0x75, 0x62, 0x6c, 0x69, 0x63, 0x5f, 0x6b,
+	0x65, 0x79, 0xf2, 0xde, 0x1f, 0x11, 0x79, 0x61, 0x6d, 0x6c, 0x3a, 0x22, 0x70, 0x75, 0x62, 0x6c,
+	0x69, 0x63, 0x5f, 0x6b, 0x65, 0x79, 0x22, 0x52, 0x09, 0x70, 0x75, 0x62, 0x6c, 0x69, 0x63, 0x4b,
+	0x65, 0x79, 0x12, 0x22, 0x0a, 0x06, 0x6a, 0x61, 0x69, 0x6c, 0x65, 0x64, 0x18, 0x03, 0x20, 0x01,
+	0x28, 0x08, 0x42, 0x0a, 0xea, 0xde, 0x1f, 0x06, 0x6a, 0x61, 0x69, 0x6c, 0x65, 0x64, 0x52, 0x06,
+	0x6a, 0x61, 0x69, 0x6c, 0x65, 0x64, 0x12, 0x22, 0x0a, 0x06, 0x73, 0x74, 0x61, 0x74, 0x75, 0x73,
+	0x18, 0x04, 0x20, 0x01, 0x28, 0x05, 0x42, 0x0a, 0xea, 0xde, 0x1f, 0x06, 0x73, 0x74, 0x61, 0x74,
+	0x75, 0x73, 0x52, 0x06, 0x73, 0x74, 0x61, 0x74, 0x75, 0x73, 0x12, 0x2f, 0x0a, 0x0d, 0x73, 0x74,
+	0x61, 0x6b, 0x65, 0x64, 0x5f, 0x74, 0x6f, 0x6b, 0x65, 0x6e, 0x73, 0x18, 0x07, 0x20, 0x01, 0x28,
+	0x09, 0x42, 0x0a, 0xea, 0xde, 0x1f, 0x06, 0x74, 0x6f, 0x6b, 0x65, 0x6e, 0x73, 0x52, 0x0c, 0x73,
+	0x74, 0x61, 0x6b, 0x65, 0x64, 0x54, 0x6f, 0x6b, 0x65, 0x6e, 0x73, 0x3a, 0x0c, 0x88, 0xa0, 0x1f,
+	0x00, 0x98, 0xa0, 0x1f, 0x01, 0xe8, 0xa0, 0x1f, 0x01, 0x42, 0xb7, 0x01, 0xd8, 0xe2, 0x1e, 0x01,
+	0x0a, 0x16, 0x63, 0x6f, 0x6d, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x6d,
+	0x69, 0x67, 0x72, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x42, 0x0b, 0x4c, 0x65, 0x67, 0x61, 0x63, 0x79,
+	0x50, 0x72, 0x6f, 0x74, 0x6f, 0x50, 0x01, 0x5a, 0x23, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x73,
+	0x64, 0x6b, 0x2e, 0x69, 0x6f, 0x2f, 0x61, 0x70, 0x69, 0x2f, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f,
+	0x6c, 0x6c, 0x2f, 0x6d, 0x69, 0x67, 0x72, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0xa2, 0x02, 0x03, 0x50,
+	0x4d, 0x58, 0xaa, 0x02, 0x12, 0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x4d, 0x69,
+	0x67, 0x72, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0xca, 0x02, 0x12, 0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f,
+	0x6c, 0x6c, 0x5c, 0x4d, 0x69, 0x67, 0x72, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0xe2, 0x02, 0x1e, 0x50,
+	0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x5c, 0x4d, 0x69, 0x67, 0x72, 0x61, 0x74, 0x69, 0x6f,
+	0x6e, 0x5c, 0x47, 0x50, 0x42, 0x4d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0xea, 0x02, 0x13,
+	0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x3a, 0x3a, 0x4d, 0x69, 0x67, 0x72, 0x61, 0x74,
+	0x69, 0x6f, 0x6e, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -4965,7 +4969,7 @@ var file_poktroll_migration_legacy_proto_depIdxs = []int32{
 	5, // 3: poktroll.migration.MorseAppState.pos:type_name -> poktroll.migration.MorsePos
 	6, // 4: poktroll.migration.MorseApplications.applications:type_name -> poktroll.migration.MorseApplication
 	4, // 5: poktroll.migration.MorseAuth.accounts:type_name -> poktroll.migration.MorseAuthAccount
-	8, // 6: poktroll.migration.MorseAuthAccount.Value:type_name -> poktroll.migration.MorseAccount
+	8, // 6: poktroll.migration.MorseAuthAccount.value:type_name -> poktroll.migration.MorseAccount
 	7, // 7: poktroll.migration.MorsePos.validators:type_name -> poktroll.migration.MorseValidator
 	8, // [8:8] is the sub-list for method output_type
 	8, // [8:8] is the sub-list for method input_type

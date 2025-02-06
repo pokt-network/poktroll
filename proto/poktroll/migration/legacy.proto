@@ -3,11 +3,11 @@ syntax = "proto3";
 // Types in this file are ONLY present to facilitate the verifiability of the
 // migration state from Morse to Shannon.
 //
-// These types are used by the migration subcommand  to transform
+// These types are used by the migration subcommand to transform
 // the Morse state export into the Shannon state import.
 // Ref: `poktrolld migrate collect-morse-accounts ...`
 //
-// They ARE NOT persisted on-chain at any point.package poktroll.migration;
+// They ARE NOT persisted on-chain at any point.
 package poktroll.migration;
 
 import "gogoproto/gogo.proto";
@@ -44,15 +44,15 @@ message MorseAuth {
   repeated MorseAuthAccount accounts = 1 [(gogoproto.jsontag) = "accounts"];
 }
 
-// A wrapper around Morse account information, necessary in order to to confirm to the Morse genesis
+// A wrapper around Morse account information, necessary in order to to conform to the Morse genesis
 // structure. Morse originally serialized accounts as pb.Any types in order to support multiple
 // account types. For the purposes of the Morse -> Shannon migration, we're only concerned with
 // externally owned accounts (as opposed to module accounts). As a result, we're simplifying its
-// representation in Shannon by avoiding usage of pb.Any. It is necessary in order too conform to
+// representation in Shannon by avoiding usage of pb.Any. It is necessary in order to conform to
 // the Morse genesis structure.
 message MorseAuthAccount {
-  string Type = 1 [(gogoproto.jsontag) = "type"];
-  MorseAccount Value = 2 [(gogoproto.jsontag) = "value"];
+  string type = 1 [(gogoproto.jsontag) = "type"];
+  MorseAccount value = 2 [(gogoproto.jsontag) = "value"];
 }
 
 // A wrapper around the list of Morse suppliers (aka "validators", "nodes", of "servicers").
@@ -68,13 +68,14 @@ message MorseApplication {
   option (gogoproto.equal) = true;
   option (gogoproto.goproto_getters) = false;
 
-  // Address is a hex-encoded string representation of the address corresponding
+  // Address is a binary representation of the address corresponding
   // to a Morse application's ed25519 public key.
   bytes address = 1 [(gogoproto.casttype) = "github.com/cometbft/cometbft/crypto.Address", (gogoproto.jsontag) = "address", (gogoproto.moretags) = "yaml:\"address\""];
   // PublicKey is the binary representation of a Morse application's ed25519 public key.
   bytes public_key = 2 [(gogoproto.jsontag) = "public_key", (gogoproto.moretags) = "yaml:\"public_key\""];
   bool   jailed = 3[(gogoproto.jsontag) = "jailed", (gogoproto.moretags) = "yaml:\"jailed\""];
   int32  status = 4 [(gogoproto.jsontag) = "status", (gogoproto.moretags) = "yaml:\"status\""];
+  // The string representation of the BigInt amount of upokt.
   string staked_tokens = 6 [(gogoproto.jsontag) = "tokens"];
 }
 
@@ -86,9 +87,12 @@ message MorseValidator {
   option (gogoproto.goproto_stringer) = true;
   option (gogoproto.goproto_getters) = false;
 
-  bytes Address = 1 [(gogoproto.casttype) = "github.com/cometbft/cometbft/crypto.Address", (gogoproto.moretags) = "yaml:\"address\"", (gogoproto.jsontag) = "address"];
-  bytes PublicKey = 2 [(gogoproto.moretags) = "yaml:\"public_key\"", (gogoproto.jsontag) = "public_key"];
+  // A binary representation of the address corresponding to a Morse application's ed25519 public key.
+  bytes address = 1 [(gogoproto.casttype) = "github.com/cometbft/cometbft/crypto.Address", (gogoproto.moretags) = "yaml:\"address\"", (gogoproto.jsontag) = "address"];
+  // The binary representation of a Morse application's ed25519 public key.
+  bytes public_key = 2 [(gogoproto.moretags) = "yaml:\"public_key\"", (gogoproto.jsontag) = "public_key"];
   bool jailed = 3 [(gogoproto.jsontag) = "jailed"];
   int32 status = 4 [(gogoproto.jsontag) = "status"];
-  string StakedTokens = 7 [(gogoproto.jsontag) = "tokens"];
+  // The string representation of the BigInt amount of upokt.
+  string staked_tokens = 7 [(gogoproto.jsontag) = "tokens"];
 }
