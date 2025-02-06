@@ -26,24 +26,61 @@ check_root() {
     fi
 }
 
-# Function to install jq if not installed
-install_jq() {
-    if ! command -v jq &>/dev/null; then
-        print_color $YELLOW "Installing jq..."
-        if [ -f /etc/debian_version ]; then
-            apt-get update
-            apt-get install -y jq
-        elif [ -f /etc/redhat-release ]; then
-            yum update -y
-            yum install -y jq
+# Function to check and install dependencies
+install_dependencies() {
+    local missing_deps=0
+    local deps=("jq" "curl" "tar" "wget")
+    local to_install=()
+
+    # Check which dependencies are missing
+    for dep in "${deps[@]}"; do
+        if ! command -v "$dep" &>/dev/null; then
+            print_color $YELLOW "$dep is not installed."
+            to_install+=("$dep")
+            ((missing_deps++))
         else
-            print_color $RED "Unsupported distribution. Please install jq manually."
-            exit 1
+            print_color $GREEN "$dep is already installed."
         fi
-        print_color $GREEN "jq installed successfully."
-    else
-        print_color $YELLOW "jq is already installed."
+    done
+
+    # If no dependencies are missing, we're done
+    if [ $missing_deps -eq 0 ]; then
+        print_color $GREEN "All dependencies are already installed."
+        return 0
     fi
+
+    # Try to install missing dependencies
+    print_color $YELLOW "Installing missing dependencies: ${to_install[*]}"
+
+    if [ -f /etc/debian_version ]; then
+        apt-get update
+        apt-get install -y "${to_install[@]}"
+    elif [ -f /etc/redhat-release ]; then
+        yum update -y
+        yum install -y "${to_install[@]}"
+    else
+        print_color $RED "Unsupported distribution. Please install ${to_install[*]} manually."
+        return 1
+    fi
+
+    # Verify all dependencies were installed successfully
+    missing_deps=0
+    for dep in "${to_install[@]}"; do
+        if ! command -v "$dep" &>/dev/null; then
+            print_color $RED "Failed to install $dep"
+            ((missing_deps++))
+        else
+            print_color $GREEN "$dep installed successfully."
+        fi
+    done
+
+    if [ $missing_deps -gt 0 ]; then
+        print_color $RED "Some dependencies failed to install."
+        return 1
+    fi
+
+    print_color $GREEN "All dependencies installed successfully."
+    return 0
 }
 
 # Function to get user input
@@ -127,22 +164,6 @@ create_user() {
         usermod -aG sudo "$POKTROLL_USER"
         print_color $GREEN "User $POKTROLL_USER created successfully and added to sudo group."
     fi
-}
-
-# Function to install dependencies
-install_dependencies() {
-    print_color $YELLOW "Installing dependencies..."
-    if [ -f /etc/debian_version ]; then
-        apt-get update
-        apt-get install -y curl tar wget
-    elif [ -f /etc/redhat-release ]; then
-        yum update -y
-        yum install -y curl tar wget
-    else
-        print_color $RED "Unsupported distribution. Please install curl, tar and wget manually."
-        exit 1
-    fi
-    print_color $GREEN "Dependencies installed successfully."
 }
 
 # TODO_TECHDEBT(@okdas): Use `.poktrollrc` across the board to create a clean
@@ -341,10 +362,9 @@ configure_ufw() {
 main() {
     print_color $GREEN "Welcome to the Poktroll Full Node Install Script!"
     check_root
-    install_jq
+    install_dependencies
     get_user_input
     create_user
-    install_dependencies
     setup_env_vars
     setup_cosmovisor
     setup_poktrolld

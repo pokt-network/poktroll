@@ -11,7 +11,7 @@ configure a Pocket Network Full Node from scratch.
 :::tip
 
 If you're comfortable using an automated scripts, or simply want to _copy-pasta_ a
-few commands to get started, check out the [Full Node Cheat Sheet](../quickstart/full_node_cheatsheet.md).
+few commands to get started, check out the [Full Node Cheat Sheet](../cheat_sheet/full_node_cheatsheet.md).
 
 :::
 
@@ -130,7 +130,7 @@ source ~/.profile
 
 ### 5. Install `poktrolld`
 
-Follow the instructions in the [CLI Installation Guide](../user_guide/poktrolld_cli.md) page to install `poktrolld`.
+Follow the instructions in the [CLI Installation Guide](../../tools/user_guide/poktrolld_cli.md) page to install `poktrolld`.
 
 Create a symlink of the binary so Comosvisor knows where to find it:
 

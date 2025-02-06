@@ -1,21 +1,21 @@
 ---
 title: Full Node Cheat Sheet
-sidebar_position: 3
+sidebar_position: 1
 ---
 
-## Full Node Cheat Sheet Using Systemd & Cosmovisor <!-- omit in toc -->
+**🖨 🍝 instructions to get you up and running with a `Full Node` on Pocket Network using `Systemd` and `Cosmovisor` ✅**
 
-This cheat sheet provides quick copy-pasta like instructions for installing and
-running a Full Node using an automated script.
+:::warning There is lots of scripting and some details are abstracted away
 
-:::tip
-
-If you're interested in understanding the underlying details, or having full control over every
-step of the process, check out the [Full Node Walkthrough](../run_a_node/full_node_walkthrough.md).
+See the [Full Node Walkthrough](../walkthroughs/full_node_walkthrough.md) if you want to understand what's happening under the hood.
 
 :::
 
-- [Introduction](#introduction)
+---
+
+## Table of Contents <!-- omit in toc -->
+
+- [Introduction - why run a Full Node?](#introduction---why-run-a-full-node)
 - [Pre-Requisites](#pre-requisites)
 - [Install and Run a Full Node using Cosmovisor](#install-and-run-a-full-node-using-cosmovisor)
   - [Automatic Upgrades Out of the Box](#automatic-upgrades-out-of-the-box)
@@ -23,20 +23,20 @@ step of the process, check out the [Full Node Walkthrough](../run_a_node/full_no
 - [FAQ \& Troubleshooting](#faq--troubleshooting)
 - [\[OPTIONAL\] Do you care to know what just happened?](#optional-do-you-care-to-know-what-just-happened)
 
-### Introduction
+## Introduction - why run a Full Node?
 
-This guide will help you install a Full Node for Pocket Network,
-**using helper that abstract out some of the underlying complexity.**
+This guide will help you install a Full Node for Pocket Network
+**using helpers that abstract out some of the underlying complexity.**
 
 Running a Full Node is the first step toward becoming a Validator, Supplier, or Gateway.
 
-### Pre-Requisites
+## Pre-Requisites
 
-1. **Linux-based System**: Ensure you have a Debian-based Linux distribution (other distributions may work but are not fully supported).
+1. **Linux-based System**: Ensure you have a Debian-based Linux distribution.
 2. **Root or Sudo Access**: You need administrative privileges to run the installation script.
-3. **Dedicated Server or Virtual Machine**: Any provider should work (Vultr and Hetzner have been tested).
+3. **Dedicated Server or Virtual Machine**: Any provider should work (e.g. Vultr).
 
-### Install and Run a Full Node using Cosmovisor
+## Install and Run a Full Node using Cosmovisor
 
 :::info
 This section script will handle the installation of dependencies, user creation,
@@ -65,7 +65,7 @@ Follow the instructions below to **quickly** install and set up a Full Node:
    - **Confirm Seeds and Genesis File**: The script fetches seeds and the genesis file automatically.
    - **External IP Address**: The script detects your external IP address. Confirm or input manually if incorrect.
 
-#### Automatic Upgrades Out of the Box
+### Automatic Upgrades Out of the Box
 
 Your node is configured to handle chain upgrades automatically through Cosmovisor. No manual intervention is required for standard upgrades.
 
@@ -76,7 +76,7 @@ When a chain upgrade is proposed and approved:
 3. Cosmovisor will switch to the new binary
 4. The node will restart automatically
 
-#### Verify successful installation (curl latest block)
+### Verify successful installation (curl latest block)
 
 You can verify the installation was successful by querying the latest block (i.e. checking the node height).
 
@@ -156,12 +156,12 @@ Should provide a response in this form:
 }
 ```
 
-### FAQ & Troubleshooting
+## FAQ & Troubleshooting
 
-See the [FAQ & Troubleshooting section in the Full Node Walkthrough](../run_a_node/full_node_walkthrough.md#faq--troubleshooting)
+See the [FAQ & Troubleshooting section in the Full Node Walkthrough](../walkthroughs/full_node_walkthrough.md#faq--troubleshooting)
 for examples of useful commands, common debugging instructions and other advanced usage.
 
-### [OPTIONAL] Do you care to know what just happened?
+## [OPTIONAL] Do you care to know what just happened?
 
 :::info
 This section is optional and for informational purposes only.

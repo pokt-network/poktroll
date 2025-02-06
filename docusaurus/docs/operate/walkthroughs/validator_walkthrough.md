@@ -12,7 +12,7 @@ This walkthrough provides a detailed step-by-step instructions to run a validato
 :::tip
 
 If you're comfortable using an automated scripts, or simply want to _copy-pasta_ a
-few commands to get started, check out the [Validator Cheat Sheet](../quickstart/validator_cheatsheet.md).
+few commands to get started, check out the [Validator Cheat Sheet](../cheat_sheet/validator_cheatsheet.md).
 
 :::
 
@@ -26,4 +26,4 @@ This guide will help you install a Validator on Pocket Network, from scratch, ma
 
 ## Pre-Requisites
 
-1. **Run a Full Node**: Make sure you have followed the [Full Node Walkthrough](../run_a_node/full_node_walkthrough.md) to install and run a Full Node first
+1. **Run a Full Node**: Make sure you have followed the [Full Node Walkthrough](full_node_walkthrough.md) to install and run a Full Node first

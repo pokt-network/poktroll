@@ -1,5 +1,5 @@
 ---
-sidebar_position: 6
+sidebar_position: 3
 title: Supplier (RelayMiner) Cheat Sheet
 ---
 
@@ -9,7 +9,7 @@ This guide provides quick reference commands for setting up a **Supplier** and
 running a **RelayMiner** on Pocket Network.
 
 For detailed instructions, troubleshooting, and observability setup, see the
-[Supplier Walkthrough](./../run_a_node/supplier_walkthrough.md).
+[Supplier Walkthrough](../walkthroughs/supplier_walkthrough.md).
 
 :::note
 
@@ -39,8 +39,8 @@ streamline development and reduce friction for any new potential contributor.
 
 ## Pre-Requisites
 
-1. Make sure to [install the `poktrolld` CLI](../user_guide/poktrolld_cli.md).
-2. Make sure you know how to [create and fund a new account](../user_guide/create-new-wallet.md).
+1. Make sure to [install the `poktrolld` CLI](../../tools/user_guide/poktrolld_cli.md).
+2. Make sure you know how to [create and fund a new account](../../tools/user_guide/create-new-wallet.md).
 3. You have either [staked a new `service` or found an existing one](./service_cheatsheet.md).
 4. `[Optional]` You can run things locally or have dedicated long-running hardware. See the [Docker Compose Cheat Sheet](./docker_compose_debian_cheatsheet#deploy-your-server) if you're interested in the latter.
 
@@ -117,7 +117,7 @@ poktrolld query bank balances $SUPPLIER_ADDR $NODE_FLAGS
 
 :::tip
 
-You can find all the explorers, faucets and tools at the [tools page](../../explore/tools.md).
+You can find all the explorers, faucets and tools at the [tools page](../../tools/tools.md).
 
 :::
 

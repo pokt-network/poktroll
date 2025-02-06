@@ -32,7 +32,7 @@ This ensures the necessary infrastructure for blockchain communication is in pla
 
 ## Hardware requirements
 
-Please see the [Hardware Requirements](./hardware_requirements.md#path-gateway) page.
+Please see the [Hardware Requirements](../configs/hardware_requirements.md#path-gateway) page.
 
 ## Docker Compose Example
 

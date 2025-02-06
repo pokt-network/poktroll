@@ -1,6 +1,6 @@
 ---
 title: Validator Cheat Sheet
-sidebar_position: 4
+sidebar_position: 6
 ---
 
 ## Validator Cheat Sheet <!-- omit in toc -->
@@ -13,7 +13,7 @@ running a Validator using an automated script.
 :::tip
 
 If you're interested in understanding everything, or having full control of every
-step, check out the [Validator Walkthrough](../run_a_node/validator_walkthrough.md).
+step, check out the [Validator Walkthrough](../walkthroughs/validator_walkthrough.md).
 
 :::
 
@@ -27,4 +27,4 @@ This guide will help you install a Validator on Pocket Network,
 
 ### Pre-Requisites
 
-1. **Run a Full Node**: Make sure you have followed the [Full Node Cheat Sheet](../quickstart/full_node_cheatsheet.md) to install and run a Full Node first
+1. **Run a Full Node**: Make sure you have followed the [Full Node Cheat Sheet](full_node_cheatsheet.md) to install and run a Full Node first
