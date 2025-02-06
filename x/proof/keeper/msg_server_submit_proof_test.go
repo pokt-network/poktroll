@@ -630,7 +630,7 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 			},
 			msgSubmitProofToExpectedErrorFn: func(msgSubmitProof *prooftypes.MsgSubmitProof) error {
 				return status.Error(
-					codes.InvalidArgument,
+					codes.FailedPrecondition,
 					prooftypes.ErrProofInvalidSessionId.Wrapf(
 						"session ID does not match onchain session ID; expected %q, got %q",
 						validSessionHeader.GetSessionId(),
@@ -652,7 +652,7 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 			},
 			msgSubmitProofToExpectedErrorFn: func(msgSubmitProof *prooftypes.MsgSubmitProof) error {
 				return status.Error(
-					codes.InvalidArgument,
+					codes.FailedPrecondition,
 					prooftypes.ErrProofNotFound.Wrapf(
 						"supplier operator address %q not found in session ID %q",
 						wrongSupplierOperatorAddr,

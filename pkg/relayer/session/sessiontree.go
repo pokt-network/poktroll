@@ -2,7 +2,6 @@ package session
 
 import (
 	"bytes"
-	"crypto/sha256"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -94,7 +93,7 @@ func NewSessionTree(
 
 	// Create the SMST from the KVStore and a nil value hasher so the proof would
 	// contain a non-hashed Relay that could be used to validate the proof onchain.
-	trie := smt.NewSparseMerkleSumTrie(treeStore, protocol.NewTrieHasher(), smt.WithValueHasher(nil))
+	trie := smt.NewSparseMerkleSumTrie(treeStore, protocol.NewTrieHasher(), protocol.SMTValueHasher())
 
 	logger = logger.With(
 		"store_path", storePath,
@@ -175,7 +174,7 @@ func (st *sessionTree) ProveClosest(path []byte) (compactProof *smt.SparseCompac
 		return nil, err
 	}
 
-	sessionSMT := smt.ImportSparseMerkleSumTrie(st.treeStore, sha256.New(), st.claimedRoot, smt.WithValueHasher(nil))
+	sessionSMT := smt.ImportSparseMerkleSumTrie(st.treeStore, protocol.NewTrieHasher(), st.claimedRoot, protocol.SMTValueHasher())
 
 	// Generate the proof and cache it along with the path for which it was generated.
 	// There is no ProveClosest variant that generates a compact proof directly.
