@@ -1,62 +1,49 @@
 ---
 title: Full Node Walkthrough
-sidebar_position: 2
+sidebar_position: 1
 ---
 
-## Run a Full Node Using Systemd & Cosmovisor <!-- omit in toc -->
+**🧑‍🔬 detailed step-by-step instructions to get you up and running with a `Full Node` on Pocket Network ✅**
 
-This walkthrough provides a detailed step-by-step instructions to install and
-configure a Pocket Network Full Node from scratch.
+:::warning This is an in-depth walkthrough
 
-:::tip
-
-If you're comfortable using an automated scripts, or simply want to _copy-pasta_ a
-few commands to get started, check out the [Full Node Cheat Sheet](../cheat_sheet/full_node_cheatsheet.md).
+See the [Full Node Cheat Sheet](../cheat_sheets/full_node_cheatsheet.md) if you want to just copy-pasta a few commands.
 
 :::
 
-- [Introduction](#introduction)
-- [Pre-Requisites](#pre-requisites)
-- [1. Install Dependencies](#1-install-dependencies)
-- [2. Create a New User](#2-create-a-new-user)
-- [3. Set Up Environment Variables for Cosmovisor](#3-set-up-environment-variables-for-cosmovisor)
+---
+
+## Table of Contents <!-- omit in toc -->
+
+- [Introduction - why run a Full Node?](#introduction---why-run-a-full-node)
+- [Pre-Requisites \& Requirements](#pre-requisites--requirements)
+- [Instructions](#instructions)
+  - [1. Install Dependencies](#1-install-dependencies)
+  - [2. Create a New User](#2-create-a-new-user)
+  - [3. Set Up Environment Variables for Cosmovisor](#3-set-up-environment-variables-for-cosmovisor)
 - [4. Install Cosmovisor](#4-install-cosmovisor)
 - [5. Install `poktrolld`](#5-install-poktrolld)
 - [6. Retrieve the latest genesis file](#6-retrieve-the-latest-genesis-file)
 - [7. Network Configuration](#7-network-configuration)
 - [8. Set Up `systemd` Service](#8-set-up-systemd-service)
 - [9. Configure your Firewall](#9-configure-your-firewall)
-- [FAQ \& Troubleshooting](#faq--troubleshooting)
-  - [How do I check the node is accessible from another machine?](#how-do-i-check-the-node-is-accessible-from-another-machine)
-  - [How do I view the node status?](#how-do-i-view-the-node-status)
-  - [How do I view the node logs?](#how-do-i-view-the-node-logs)
-  - [How do I stop my node?](#how-do-i-stop-my-node)
-  - [How do I start my node?](#how-do-i-start-my-node)
-  - [How do I restart my node?](#how-do-i-restart-my-node)
-  - [How do I query the latest block (i.e. check the node height)?](#how-do-i-query-the-latest-block-ie-check-the-node-height)
-  - [How do I access my CometBFT endpoint externally?](#how-do-i-access-my-cometbft-endpoint-externally)
-  - [How do I check the node version?](#how-do-i-check-the-node-version)
-  - [How do I check the Cosmosvisor directory structure?](#how-do-i-check-the-cosmosvisor-directory-structure)
-  - [How do I check if an upgrade is available?](#how-do-i-check-if-an-upgrade-is-available)
-  - [How do I view node configuration?](#how-do-i-view-node-configuration)
 
-### Introduction
+## Introduction - why run a Full Node?
 
-This guide will help you install a Full Node for Pocket Network, from scratch, manually,
-**giving you control over each step of the process**.
+This guide will guide through, step-by-step, through running a Full Node for Pocket Network.
 
 Running a Full Node is the first step toward becoming a Validator, Supplier, or Gateway.
-
-These instructions are **intended to be run on a Linux machine**.
 
 The instructions outlined here use [Cosmovisor](https://docs.cosmos.network/v0.45/run-node/cosmovisor.html)
 to enable automatic binary upgrades.
 
-### Pre-Requisites
+## Pre-Requisites & Requirements
 
 1. **Linux-based System**: Preferably Debian-based distributions.
 2. **Root or Sudo Access**: Administrative privileges are required.
 3. **Dedicated Server or Virtual Machine**: Any provider is acceptable.
+
+## Instructions
 
 ### 1. Install Dependencies
 
@@ -89,7 +76,7 @@ sudo su - poktroll
 
 ### 3. Set Up Environment Variables for Cosmovisor
 
-Create a `.poktrollrc` file and set environment variables:
+Create a `.poktrollrc` file and set the following environment variables:
 
 ```bash
 touch ~/.poktrollrc
@@ -104,17 +91,16 @@ echo "source ~/.poktrollrc" >> ~/.profile
 source ~/.profile
 ```
 
-### 4. Install Cosmovisor
+## 4. Install Cosmovisor
 
-:::info
-Instead of following the instructions below, you can follow the [official cosmovisor installation instructions](https://docs.cosmos.network/main/build/tooling/cosmovisor#installation).
-:::
+**Option 1**: You can follow the official Cosmovisor installation instructions [here](https://docs.cosmos.network/main/build/tooling/cosmovisor#installation).
 
-Download and install Cosmovisor:
+**Option 2**: You can simply copy-paste the following commands to download and install Cosmovisor:
 
 ```bash
 mkdir -p $HOME/.local/bin
 COSMOVISOR_VERSION="v1.6.0"
+
 ARCH=$(uname -m)
 if [ "$ARCH" = "x86_64" ]; then
     ARCH="amd64"
@@ -128,7 +114,7 @@ echo 'export PATH=$HOME/.local/bin:$PATH' >> ~/.profile
 source ~/.profile
 ```
 
-### 5. Install `poktrolld`
+## 5. Install `poktrolld`
 
 Follow the instructions in the [CLI Installation Guide](../../tools/user_guide/poktrolld_cli.md) page to install `poktrolld`.
 
@@ -139,7 +125,7 @@ mkdir -p $HOME/.poktroll/cosmovisor/genesis/bin
 ln -sf $(which poktrolld) $HOME/.poktroll/cosmovisor/genesis/bin/poktrolld
 ```
 
-### 6. Retrieve the latest genesis file
+## 6. Retrieve the latest genesis file
 
 Follow the instructions below to download the latest genesis file.
 
@@ -155,12 +141,15 @@ GENESIS_URL="https://raw.githubusercontent.com/pokt-network/pocket-network-genes
 curl -s -o $HOME/.poktroll/config/genesis.json "$GENESIS_URL"
 ```
 
-### 7. Network Configuration
+## 7. Network Configuration
 
 :::note
 You may see a message saying `genesis.json file already exists`.
 
-This is expected since we downloaded the genesis file in Step 5. The initialization will still complete successfully and set up the required configuration files.
+This is expected since we downloaded the genesis file in one of the steps above.
+
+The initialization will still complete successfully and set up the required configuration files.
+
 :::
 
 Run the following commands to configure your network environment appropriately:
@@ -182,7 +171,7 @@ EXTERNAL_IP=$(curl -s https://api.ipify.org)
 sed -i -e "s|^external_address *=.*|external_address = \"${EXTERNAL_IP}:26656\"|" $HOME/.poktroll/config/config.toml
 ```
 
-### 8. Set Up `systemd` Service
+## 8. Set Up `systemd` Service
 
 Create a `systemd` service file to manage the node:
 
@@ -218,7 +207,7 @@ sudo systemctl enable cosmovisor.service
 sudo systemctl start cosmovisor.service
 ```
 
-### 9. Configure your Firewall
+## 9. Configure your Firewall
 
 To ensure your node can properly participate in the P2P network, you need to make port `26656` accessible from the internet.
 
@@ -243,112 +232,3 @@ This may involve one or more of the following:
    ```bash
    nc -vz {EXTERNAL_IP} 26656
    ```
-
-### FAQ & Troubleshooting
-
-#### How do I check the node is accessible from another machine?
-
-```bash
-nc -vz {EXTERNAL_IP} 26656
-```
-
-#### How do I view the node status?
-
-```bash
-sudo systemctl status cosmovisor.service
-```
-
-#### How do I view the node logs?
-
-```bash
-sudo journalctl -u cosmovisor.service -f
-```
-
-#### How do I stop my node?
-
-```bash
-sudo systemctl stop cosmovisor.service
-```
-
-#### How do I start my node?
-
-```bash
-sudo systemctl start cosmovisor.service
-```
-
-#### How do I restart my node?
-
-```bash
-sudo systemctl restart cosmovisor.service
-```
-
-#### How do I query the latest block (i.e. check the node height)?
-
-Using poktrolld:
-
-```bash
-poktrolld query block --type=height --node http://localhost:26657
-```
-
-Or, using curl:
-
-```bash
-curl -X GET http://localhost:26657/block | jq
-```
-
-#### How do I access my CometBFT endpoint externally?
-
-The default CometBFT port is at `26657`.
-
-To make it accessible externally, you'll need to port all the instructions from
-port `26656` on this page to port `26657`. Specifically:
-
-```bash
-# Update your firewall
-sudo ufw allow 26657/tcp
-
-# Alternatively, if ufw is not available, update your iptables
-sudo iptables -A INPUT -p tcp --dport 26657 -j ACCEPT
-
-# Update your Cosmovisor config
-sed -i 's|laddr = "tcp://127.0.0.1:26657"|laddr = "tcp://0.0.0.0:26657"|' $HOME/.poktroll/config/config.toml
-sed -i 's|cors_allowed_origins = \[\]|cors_allowed_origins = ["*"]|' $HOME/.poktroll/config/config.toml
-
-# Restart the service
-sudo systemctl restart cosmovisor.service
-
-# Test the connection
-nc -vz {EXTERNAL_IP} 26657
-```
-
-Learn more [here](https://docs.cometbft.com/main/rpc/).
-
-:::warning
-
-Be careful about making this public as adversarial actors may try to DDoS your node.
-
-:::
-
-#### How do I check the node version?
-
-```bash
-poktrolld version
-```
-
-#### How do I check the Cosmosvisor directory structure?
-
-```bash
-ls -la /home/poktroll/.poktroll/cosmovisor/
-```
-
-#### How do I check if an upgrade is available?
-
-```bash
-ls -la /home/poktroll/.poktroll/cosmovisor/upgrades/
-```
-
-#### How do I view node configuration?
-
-```bash
-cat /home/poktroll/.poktroll/config/config.toml
-```

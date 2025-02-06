@@ -16,12 +16,11 @@ See the [Full Node Walkthrough](../walkthroughs/full_node_walkthrough.md) if you
 ## Table of Contents <!-- omit in toc -->
 
 - [Introduction - why run a Full Node?](#introduction---why-run-a-full-node)
-- [Pre-Requisites](#pre-requisites)
+- [Pre-Requisites \& Requirements](#pre-requisites--requirements)
 - [Install and Run a Full Node using Cosmovisor](#install-and-run-a-full-node-using-cosmovisor)
-  - [Automatic Upgrades Out of the Box](#automatic-upgrades-out-of-the-box)
-  - [Verify successful installation (curl latest block)](#verify-successful-installation-curl-latest-block)
-- [FAQ \& Troubleshooting](#faq--troubleshooting)
-- [\[OPTIONAL\] Do you care to know what just happened?](#optional-do-you-care-to-know-what-just-happened)
+  - [Verify successful installation using `curl`](#verify-successful-installation-using-curl)
+  - [How are automatic upgrades handled out of the box?](#how-are-automatic-upgrades-handled-out-of-the-box)
+- [Do you care to know what just happened?](#do-you-care-to-know-what-just-happened)
 
 ## Introduction - why run a Full Node?
 
@@ -30,7 +29,10 @@ This guide will help you install a Full Node for Pocket Network
 
 Running a Full Node is the first step toward becoming a Validator, Supplier, or Gateway.
 
-## Pre-Requisites
+The instructions outlined here use [Cosmovisor](https://docs.cosmos.network/v0.45/run-node/cosmovisor.html)
+to enable automatic binary upgrades.
+
+## Pre-Requisites & Requirements
 
 1. **Linux-based System**: Ensure you have a Debian-based Linux distribution.
 2. **Root or Sudo Access**: You need administrative privileges to run the installation script.
@@ -59,34 +61,29 @@ Follow the instructions below to **quickly** install and set up a Full Node:
 
 3. **Follow the Prompts**:
 
-   - **Choose the Network**: Select `testnet-alpha`, `testnet-beta`, or `mainnet`.
-   - **Set Username**: Input the desired username to run `poktrolld` (default: `poktroll`).
-   - **Set Node Moniker**: Input the node moniker (default: your `hostname`).
-   - **Confirm Seeds and Genesis File**: The script fetches seeds and the genesis file automatically.
-   - **External IP Address**: The script detects your external IP address. Confirm or input manually if incorrect.
+   1. **Choose the Network**: Select `testnet-alpha`, `testnet-beta`, or `mainnet`.
+   2. **Set Username**: Input the desired username to run `poktrolld` (default: `poktroll`).
+   3. **Set Node Moniker**: Input the node moniker (default: your `hostname`).
+   4. **Confirm Seeds and Genesis File**: The script fetches seeds and the genesis file automatically.
+   5. **External IP Address**: The script detects your external IP address. Confirm or input manually if incorrect.
 
-### Automatic Upgrades Out of the Box
+### Verify successful installation using `curl`
 
-Your node is configured to handle chain upgrades automatically through Cosmovisor. No manual intervention is required for standard upgrades.
+We are going to use `curl` to query the latest block to verify the installation was successful.
 
-When a chain upgrade is proposed and approved:
+Running the following command will return the latest synched block height:
 
-1. Cosmovisor will download the new binary
-2. The node will stop at the designated upgrade height
-3. Cosmovisor will switch to the new binary
-4. The node will restart automatically
+```bash
+curl -X GET http://localhost:26657/block | jq '.result.block.header.height'
+```
 
-### Verify successful installation (curl latest block)
-
-You can verify the installation was successful by querying the latest block (i.e. checking the node height).
-
-Running the following command:
+Or the following command to get the entire block:
 
 ```bash
 curl -X GET http://localhost:26657/block | jq
 ```
 
-Should provide a response in this form:
+Which should return a response similar to the following format:
 
 ```json
 {
@@ -156,15 +153,23 @@ Should provide a response in this form:
 }
 ```
 
-## FAQ & Troubleshooting
+### How are automatic upgrades handled out of the box?
 
-See the [FAQ & Troubleshooting section in the Full Node Walkthrough](../walkthroughs/full_node_walkthrough.md#faq--troubleshooting)
-for examples of useful commands, common debugging instructions and other advanced usage.
+Your node is configured to handle chain upgrades automatically through Cosmovisor. No manual intervention is required for standard upgrades.
 
-## [OPTIONAL] Do you care to know what just happened?
+When a chain upgrade is proposed and approved:
 
-:::info
+1. Cosmovisor will download the new binary
+2. The node will stop at the designated upgrade height
+3. Cosmovisor will switch to the new binary
+4. The node will restart automatically
+
+## Do you care to know what just happened?
+
+:::info Optional reading for the curious
+
 This section is optional and for informational purposes only.
+
 :::
 
 If you're interested in understanding what just got installed, keep reading...
@@ -173,17 +178,17 @@ If you're interested in understanding what just got installed, keep reading...
 
 2. **Cosmovisor**: A binary manager that handles chain upgrades automatically:
 
-   - Location: `/home/poktroll/bin/cosmovisor`
-   - Purpose: Manages different versions of `poktrolld` and handles chain upgrades
-   - Configuration: Set up to automatically download and switch to new binaries during upgrades
+   - **Location**: `/home/poktroll/bin/cosmovisor`
+   - **Purpose**: Manages different versions of `poktrolld` and handles chain upgrades
+   - **Configuration**: Set up to automatically download and switch to new binaries during upgrades
 
 3. **Poktrolld**: The core node software:
 
-   - Location: `/home/poktroll/.poktroll/cosmovisor/genesis/bin/poktrolld`
-   - Configuration: `/home/poktroll/.poktroll/config/`
-   - Data: `/home/poktroll/.poktroll/data/`
+   - **Location**: `/home/poktroll/.poktroll/cosmovisor/genesis/bin/poktrolld`
+   - **Configuration**: `/home/poktroll/.poktroll/config/`
+   - **Data**: `/home/poktroll/.poktroll/data/`
 
 4. **Systemd Service**: A service that manages the node:
-   - Name: `cosmovisor.service`
-   - Status: Enabled and started automatically
-   - Configured for automatic restarts and upgrades
+   - **Name**: `cosmovisor.service`
+   - **Status**: Enabled and started automatically
+   - **Configured** for automatic restarts and upgrades
