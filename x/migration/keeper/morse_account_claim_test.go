@@ -33,13 +33,13 @@ func createNMorseAccountClaim(
 func TestMorseAccountClaimGet(t *testing.T) {
 	keeper, ctx := keepertest.MigrationKeeper(t)
 	morseAccountClaims := createNMorseAccountClaim(keeper, ctx, 10)
-	for _, item := range morseAccountClaims {
+	for _, morseAccountClaim := range morseAccountClaims {
 		foundMorseAccountClaim, isFound := keeper.GetMorseAccountClaim(ctx,
-			item.MorseSrcAddress,
+			morseAccountClaim.MorseSrcAddress,
 		)
 		require.True(t, isFound)
 		require.Equal(t,
-			nullify.Fill(&item),
+			nullify.Fill(&morseAccountClaim),
 			nullify.Fill(&foundMorseAccountClaim),
 		)
 	}

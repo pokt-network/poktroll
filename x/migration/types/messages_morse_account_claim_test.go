@@ -1,6 +1,7 @@
 package types
 
 import (
+	"encoding/hex"
 	"testing"
 
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
@@ -16,18 +17,26 @@ func TestMsgCreateMorseAccountClaim_ValidateBasic(t *testing.T) {
 		err  error
 	}{
 		{
+			name: "invalid source address",
+			msg: MsgCreateMorseAccountClaim{
+				MorseSrcAddress:    "invalid_address",
+				ShannonDestAddress: sample.AccAddress(),
+			},
+			err: sdkerrors.ErrInvalidAddress,
+		}, {
 			name: "invalid address",
 			msg: MsgCreateMorseAccountClaim{
+				MorseSrcAddress:    hex.EncodeToString(sample.ConsAddress().Bytes()),
 				ShannonDestAddress: "invalid_address",
 			},
 			err: sdkerrors.ErrInvalidAddress,
 		}, {
-			name: "valid address",
+			name: "valid addresses",
 			msg: MsgCreateMorseAccountClaim{
+				MorseSrcAddress:    hex.EncodeToString(sample.ConsAddress().Bytes()),
 				ShannonDestAddress: sample.AccAddress(),
 			},
-		},
-	}
+		}}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			err := tt.msg.ValidateBasic()
