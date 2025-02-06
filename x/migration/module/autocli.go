@@ -39,11 +39,8 @@ func (am AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 					Skip:      true, // skipped because authority gated
 				},
 				{
-					RpcMethod:      "CreateMorseAccountState",
-					Use:            "create-morse-account-state [accounts]",
-					Short:          "Create morse_account_state",
-					PositionalArgs: []*autocliv1.PositionalArgDescriptor{{ProtoField: "accounts"}},
-					Skip:           true,
+					RpcMethod: "CreateMorseAccountState",
+					Skip:      true, // skipped because authority gated
 				},
 				// this line is used by ignite scaffolding # autocli/tx
 			},

@@ -28,5 +28,9 @@ func (k msgServer) CreateMorseAccountState(goCtx context.Context, msg *types.Msg
 		ctx,
 		msg.MorseAccountState,
 	)
+
+	// TODO_UPNEXT(@bryanchriswhite#1034): Emit an event...
+
+	// TODO_UPNEXT(@bryanchriswhite#1034): Populate the response...
 	return &types.MsgCreateMorseAccountStateResponse{}, nil
 }
