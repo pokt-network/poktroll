@@ -6,6 +6,10 @@ import (
 	modulev1 "github.com/pokt-network/poktroll/api/poktroll/migration"
 )
 
+// TODO_UPNEXT(@bryanchriswhite, #1046): Add `MsgClaimMorsePOKT` to the autocli.
+// TODO_UPNEXT(@bryanchriswhite, #1047): Make sure to document why the autocli is
+// not used for transactions requiring auth signatures.
+
 // AutoCLIOptions implements the autocli.HasAutoCLIConfig interface.
 func (am AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 	return &autocliv1.ModuleOptions{
@@ -45,11 +49,8 @@ func (am AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 					Skip:      true, // skipped because authority gated
 				},
 				{
-					RpcMethod:      "CreateMorseAccountState",
-					Use:            "create-morse-account-state [accounts]",
-					Short:          "Create morse_account_state",
-					PositionalArgs: []*autocliv1.PositionalArgDescriptor{{ProtoField: "accounts"}},
-					Skip:           true,
+					RpcMethod: "CreateMorseAccountState",
+					Skip:      true, // skipped because authority gated
 				},
 				{
 					RpcMethod:      "CreateMorseAccountClaim",
