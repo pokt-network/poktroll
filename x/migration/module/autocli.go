@@ -23,9 +23,8 @@ func (am AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 				},
 				{
 					RpcMethod: "MorseAccountState",
-					Use:       "show-morse-account-state",
+					Use:       "morse-account-state",
 					Short:     "show morse_account_state",
-					Skip:      true,
 				},
 				// this line is used by ignite scaffolding # autocli/query
 			},
