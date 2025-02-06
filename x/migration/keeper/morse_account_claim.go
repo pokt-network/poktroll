@@ -10,17 +10,18 @@ import (
 	"github.com/pokt-network/poktroll/x/migration/types"
 )
 
-// SetMorseAccountClaim set a specific morseAccountClaim in the store from its index
+// SetMorseAccountClaim sets a specific morseAccountClaim in the store, with a key derived from its morse_src_address.
 func (k Keeper) SetMorseAccountClaim(ctx context.Context, morseAccountClaim types.MorseAccountClaim) {
 	storeAdapter := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
 	store := prefix.NewStore(storeAdapter, types.KeyPrefix(types.MorseAccountClaimKeyPrefix))
-	b := k.cdc.MustMarshal(&morseAccountClaim)
-	store.Set(types.MorseAccountClaimKey(
+	morseAccountClaimBz := k.cdc.MustMarshal(&morseAccountClaim)
+	morseAccountClaimKey := types.MorseAccountClaimKey(
 		morseAccountClaim.MorseSrcAddress,
-	), b)
+	)
+	store.Set(morseAccountClaimKey, morseAccountClaimBz)
 }
 
-// GetMorseAccountClaim returns a morseAccountClaim from its index
+// GetMorseAccountClaim returns a morseAccountClaim corresponding to the given morseSrcAddress.
 func (k Keeper) GetMorseAccountClaim(
 	ctx context.Context,
 	morseSrcAddress string,
@@ -40,7 +41,7 @@ func (k Keeper) GetMorseAccountClaim(
 	return val, true
 }
 
-// RemoveMorseAccountClaim removes a morseAccountClaim from the store
+// RemoveMorseAccountClaim removes a morseAccountClaim from the store.
 func (k Keeper) RemoveMorseAccountClaim(
 	ctx context.Context,
 	morseSrcAddress string,
@@ -53,7 +54,7 @@ func (k Keeper) RemoveMorseAccountClaim(
 	))
 }
 
-// GetAllMorseAccountClaim returns all morseAccountClaim
+// GetAllMorseAccountClaim returns all morseAccountClaim.
 func (k Keeper) GetAllMorseAccountClaim(ctx context.Context) (list []types.MorseAccountClaim) {
 	storeAdapter := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
 	store := prefix.NewStore(storeAdapter, types.KeyPrefix(types.MorseAccountClaimKeyPrefix))

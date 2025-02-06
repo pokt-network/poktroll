@@ -73,8 +73,10 @@ message MsgCreateMorseAccountStateResponse {
   uint64 num_accounts = 2 [(gogoproto.jsontag) = "num_accounts"];
 }
 
-// MsgCreateMorseAccountClaim is used to execute a claim (minting of tokens on Shannon),
-// of the balance of a Morse account, according to the MorseAccountState.
+// MsgCreateMorseAccountClaim is used to execute a claim (one-time minting of tokens on Shannon),
+// of the balance of the given Morse account, according to the MorseAccountState, to the balance
+// of the given Shannon account (who MUST also be the signer of this message).
+// Authz grant(s) MAY be used to delegate the authority to create a claim on behalf of another Shannon account.
 message MsgCreateMorseAccountClaim {
   option (cosmos.msg.v1.signer) = "shannon_dest_address";
 

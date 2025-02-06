@@ -5,28 +5,32 @@ import (
 
 	"cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	migrationtypes "github.com/pokt-network/poktroll/x/migration/types"
 )
 
+// CreateMorseAccountClaim creates a new MorseAccountClaim if the claim (msg)
+// is valid AND the corresponding morse account has not already been claimed.
 func (k msgServer) CreateMorseAccountClaim(
 	ctx context.Context,
 	msg *migrationtypes.MsgCreateMorseAccountClaim,
 ) (*migrationtypes.MsgCreateMorseAccountClaimResponse, error) {
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 
-	// Check if the value already exists
+	// Ensure that a claim for the given morseSrcAddress does not already exist.
 	_, isFound := k.GetMorseAccountClaim(
 		sdkCtx,
 		msg.MorseSrcAddress,
 	)
 	if isFound {
-		// TODO_IN_THIS_COMMIT: migration module errors...
-		// TODO_UPNEXT(@bryanchriswhite:#1034): grpc status errors...
-		return nil, sdkerrors.ErrInvalidRequest.Wrapf(
-			"morse account already claimed with address %q",
-			msg.MorseSrcAddress,
+		return nil, status.Error(
+			codes.FailedPrecondition,
+			migrationtypes.ErrMorseAccountClaim.Wrapf(
+				"morse account already claimed with address %q",
+				msg.MorseSrcAddress,
+			).Error(),
 		)
 	}
 
@@ -36,9 +40,10 @@ func (k msgServer) CreateMorseAccountClaim(
 	}
 
 	if err := msg.ValidateBasic(); err != nil {
-		// TODO_UPNEXT(@bryanchriswhite:#1034): migration module errors...
-		// TODO_IN_THIS_COMMIT: grpc status errors...
-		return nil, sdkerrors.ErrInvalidRequest.Wrap(err.Error())
+		return nil, status.Error(
+			codes.InvalidArgument,
+			migrationtypes.ErrMorseAccountClaim.Wrap(err.Error()).Error(),
+		)
 	}
 
 	// TODO_UPNEXT(@bryanchriswhite#1034): Assign claimedBalance based on the MorseAccountState...

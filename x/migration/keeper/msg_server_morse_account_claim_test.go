@@ -14,6 +14,9 @@ import (
 	"github.com/pokt-network/poktroll/x/migration/types"
 )
 
+// TODO_IMPROVE: Promote this to a shared testutil pkg.
+const morseAddressLengthBytes = 20
+
 var (
 	// Prevent strconv unused error
 	_   = strconv.IntSize
@@ -38,10 +41,10 @@ func TestMorseAccountClaimMsgServerCreate(t *testing.T) {
 	}
 }
 
-// TODO_IN_THIS_COMMIT: godoc...
+// randomMorseAddressBytes returns a random hex-encoded string with the same
+// length as a valid morse address.
 func randomMorseAddressBytes(t *testing.T) string {
-	// TODO_IN_THIS_COMMOT: extract/promote 20 to a constant...
-	addrBz := make([]byte, 20)
+	addrBz := make([]byte, morseAddressLengthBytes)
 	_, err := rng.Read(addrBz)
 	require.NoError(t, err)
 

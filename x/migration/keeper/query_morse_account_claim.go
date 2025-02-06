@@ -6,11 +6,13 @@ import (
 	"cosmossdk.io/store/prefix"
 	"github.com/cosmos/cosmos-sdk/runtime"
 	"github.com/cosmos/cosmos-sdk/types/query"
-	"github.com/pokt-network/poktroll/x/migration/types"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+
+	"github.com/pokt-network/poktroll/x/migration/types"
 )
 
+// MorseAccountClaimAll returns all morseAccountClaims.
 func (k Keeper) MorseAccountClaimAll(ctx context.Context, req *types.QueryAllMorseAccountClaimRequest) (*types.QueryAllMorseAccountClaimResponse, error) {
 	if req == nil {
 		return nil, status.Error(codes.InvalidArgument, "invalid request")
@@ -38,6 +40,8 @@ func (k Keeper) MorseAccountClaimAll(ctx context.Context, req *types.QueryAllMor
 	return &types.QueryAllMorseAccountClaimResponse{MorseAccountClaim: morseAccountClaims, Pagination: pageRes}, nil
 }
 
+// MorseAccountClaim returns the morseAccountClaim with the given morseSrcAddress, if it exists.
+// Otherwise, it returns an error.
 func (k Keeper) MorseAccountClaim(ctx context.Context, req *types.QueryGetMorseAccountClaimRequest) (*types.QueryGetMorseAccountClaimResponse, error) {
 	if req == nil {
 		return nil, status.Error(codes.InvalidArgument, "invalid request")

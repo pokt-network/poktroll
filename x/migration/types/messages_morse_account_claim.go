@@ -1,7 +1,6 @@
 package types
 
 import (
-	errorsmod "cosmossdk.io/errors"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 )
@@ -24,7 +23,7 @@ func NewMsgCreateMorseAccountClaim(
 func (msg *MsgCreateMorseAccountClaim) ValidateBasic() error {
 	_, err := sdk.AccAddressFromBech32(msg.ShannonDestAddress)
 	if err != nil {
-		return errorsmod.Wrapf(sdkerrors.ErrInvalidAddress, "invalid shannonDestAddress address (%s)", err)
+		return sdkerrors.ErrInvalidAddress.Wrapf("invalid shannonDestAddress address (%s)", err)
 	}
 	return nil
 }

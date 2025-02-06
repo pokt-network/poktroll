@@ -5,59 +5,65 @@ import (
 	"strconv"
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
 	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
 	"github.com/pokt-network/poktroll/testutil/nullify"
 	"github.com/pokt-network/poktroll/x/migration/keeper"
 	"github.com/pokt-network/poktroll/x/migration/types"
-	"github.com/stretchr/testify/require"
 )
 
 // Prevent strconv unused error
 var _ = strconv.IntSize
 
-func createNMorseAccountClaim(keeper keeper.Keeper, ctx context.Context, n int) []types.MorseAccountClaim {
-	items := make([]types.MorseAccountClaim, n)
-	for i := range items {
-		items[i].MorseSrcAddress = strconv.Itoa(i)
+func createNMorseAccountClaim(
+	keeper keeper.Keeper,
+	ctx context.Context,
+	numMorseAccountClaims int,
+) []types.MorseAccountClaim {
+	morseAccountClaims := make([]types.MorseAccountClaim, numMorseAccountClaims)
+	for morseAccountClaimIdx := range morseAccountClaims {
+		morseAccountClaims[morseAccountClaimIdx].MorseSrcAddress = strconv.Itoa(morseAccountClaimIdx)
 
-		keeper.SetMorseAccountClaim(ctx, items[i])
+		keeper.SetMorseAccountClaim(ctx, morseAccountClaims[morseAccountClaimIdx])
 	}
-	return items
+	return morseAccountClaims
 }
 
 func TestMorseAccountClaimGet(t *testing.T) {
 	keeper, ctx := keepertest.MigrationKeeper(t)
-	items := createNMorseAccountClaim(keeper, ctx, 10)
-	for _, item := range items {
-		rst, found := keeper.GetMorseAccountClaim(ctx,
+	morseAccountClaims := createNMorseAccountClaim(keeper, ctx, 10)
+	for _, item := range morseAccountClaims {
+		foundMorseAccountClaim, isFound := keeper.GetMorseAccountClaim(ctx,
 			item.MorseSrcAddress,
 		)
-		require.True(t, found)
+		require.True(t, isFound)
 		require.Equal(t,
 			nullify.Fill(&item),
-			nullify.Fill(&rst),
+			nullify.Fill(&foundMorseAccountClaim),
 		)
 	}
 }
+
 func TestMorseAccountClaimRemove(t *testing.T) {
 	keeper, ctx := keepertest.MigrationKeeper(t)
-	items := createNMorseAccountClaim(keeper, ctx, 10)
-	for _, item := range items {
+	morseAccountClaims := createNMorseAccountClaim(keeper, ctx, 10)
+	for _, morseAccountClaim := range morseAccountClaims {
 		keeper.RemoveMorseAccountClaim(ctx,
-			item.MorseSrcAddress,
+			morseAccountClaim.MorseSrcAddress,
 		)
-		_, found := keeper.GetMorseAccountClaim(ctx,
-			item.MorseSrcAddress,
+		_, isFound := keeper.GetMorseAccountClaim(ctx,
+			morseAccountClaim.MorseSrcAddress,
 		)
-		require.False(t, found)
+		require.False(t, isFound)
 	}
 }
 
 func TestMorseAccountClaimGetAll(t *testing.T) {
 	keeper, ctx := keepertest.MigrationKeeper(t)
-	items := createNMorseAccountClaim(keeper, ctx, 10)
+	morseAccountClaims := createNMorseAccountClaim(keeper, ctx, 10)
 	require.ElementsMatch(t,
-		nullify.Fill(items),
+		nullify.Fill(morseAccountClaims),
 		nullify.Fill(keeper.GetAllMorseAccountClaim(ctx)),
 	)
 }
