@@ -34,8 +34,8 @@ func (am AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 				},
 				{
 					RpcMethod: "MorseAccountClaim",
-					Use:       "morse-account-claim --morse_src_address [morse_hex_address] | --shannon_dest_address [shannon_bech32_address]",
-					Short:     "Shows a morse_account_claim by EITHER morse_src_address OR shannon_dest_address",
+					Use:       "morse-account-claim --morse-src-address [morse_hex_address] | --shannon-dest-address [shannon_bech32_address]",
+					Short:     "Shows a morse_account_claim by EITHER --morse-src-address OR --shannon-dest-address",
 				},
 				// this line is used by ignite scaffolding # autocli/query
 			},

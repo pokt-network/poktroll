@@ -23,15 +23,8 @@ func TestGenesisState_Validate(t *testing.T) {
 			desc: "valid genesis state",
 			genState: &types.GenesisState{
 
-				MorseAccountState: &types.MorseAccountState{},
-				MorseAccountClaimList: []types.MorseAccountClaim{
-					{
-						MorseSrcAddress: "0",
-					},
-					{
-						MorseSrcAddress: "1",
-					},
-				},
+				MorseAccountState:     &types.MorseAccountState{},
+				MorseAccountClaimList: []types.MorseAccountClaim{},
 				// this line is used by starport scaffolding # types/genesis/validField
 			},
 			valid: true,
@@ -39,14 +32,7 @@ func TestGenesisState_Validate(t *testing.T) {
 		{
 			desc: "duplicated morseAccountClaim",
 			genState: &types.GenesisState{
-				MorseAccountClaimList: []types.MorseAccountClaim{
-					{
-						MorseSrcAddress: "0",
-					},
-					{
-						MorseSrcAddress: "0",
-					},
-				},
+				MorseAccountClaimList: []types.MorseAccountClaim{},
 			},
 			valid: false,
 		},

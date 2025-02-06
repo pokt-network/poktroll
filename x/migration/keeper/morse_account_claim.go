@@ -26,19 +26,19 @@ func (k Keeper) GetMorseAccountClaim(
 	ctx context.Context,
 	morseSrcAddress string,
 
-) (val types.MorseAccountClaim, found bool) {
+) (morseAccountClaim types.MorseAccountClaim, isFound bool) {
 	storeAdapter := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
 	store := prefix.NewStore(storeAdapter, types.KeyPrefix(types.MorseAccountClaimKeyPrefix))
 
-	b := store.Get(types.MorseAccountClaimKey(
+	morseAccountClaimKey := store.Get(types.MorseAccountClaimKey(
 		morseSrcAddress,
 	))
-	if b == nil {
-		return val, false
+	if morseAccountClaimKey == nil {
+		return morseAccountClaim, false
 	}
 
-	k.cdc.MustUnmarshal(b, &val)
-	return val, true
+	k.cdc.MustUnmarshal(morseAccountClaimKey, &morseAccountClaim)
+	return morseAccountClaim, true
 }
 
 // RemoveMorseAccountClaim removes a morseAccountClaim from the store.
@@ -63,9 +63,9 @@ func (k Keeper) GetAllMorseAccountClaim(ctx context.Context) (list []types.Morse
 	defer iterator.Close()
 
 	for ; iterator.Valid(); iterator.Next() {
-		var val types.MorseAccountClaim
-		k.cdc.MustUnmarshal(iterator.Value(), &val)
-		list = append(list, val)
+		var morseACcountClaim types.MorseAccountClaim
+		k.cdc.MustUnmarshal(iterator.Value(), &morseACcountClaim)
+		list = append(list, morseACcountClaim)
 	}
 
 	return
