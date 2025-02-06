@@ -8,6 +8,7 @@ import (
 	"github.com/cosmos/gogoproto/grpc"
 
 	"github.com/pokt-network/poktroll/pkg/client"
+	"github.com/pokt-network/poktroll/pkg/polylog"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
@@ -21,6 +22,7 @@ type sessionQuerier struct {
 	clientConn        grpc.ClientConn
 	sessionQuerier    sessiontypes.QueryClient
 	sharedQueryClient client.SharedQueryClient
+	logger            polylog.Logger
 
 	// sessionsCache caches sessionQueryClient.GetSession requests
 	sessionsCache KeyValueCache[*sessiontypes.Session]
@@ -40,6 +42,7 @@ func NewSessionQuerier(deps depinject.Config) (client.SessionQueryClient, error)
 		deps,
 		&sessq.clientConn,
 		&sessq.sharedQueryClient,
+		&sessq.logger,
 		&sessq.sessionsCache,
 		&sessq.paramsCache,
 	); err != nil {
@@ -59,6 +62,8 @@ func (sessq *sessionQuerier) GetSession(
 	serviceId string,
 	blockHeight int64,
 ) (*sessiontypes.Session, error) {
+	logger := sessq.logger.With("query_client", "session", "method", "GetSession")
+
 	// Get the shared parameters to calculate the session start height.
 	// Use the session start height as the canonical height to be used in the cache key.
 	sharedParams, err := sessq.sharedQueryClient.GetParams(ctx)
@@ -69,8 +74,11 @@ func (sessq *sessionQuerier) GetSession(
 
 	// Check if the session is present in the cache.
 	if session, found := sessq.sessionsCache.Get(sessionCacheKey); found {
+		logger.Debug().Msgf("cache hit for key: %s", sessionCacheKey)
 		return session, nil
 	}
+
+	logger.Debug().Msgf("cache miss for key: %s", sessionCacheKey)
 
 	req := &sessiontypes.QueryGetSessionRequest{
 		ApplicationAddress: appAddress,
@@ -92,10 +100,15 @@ func (sessq *sessionQuerier) GetSession(
 
 // GetParams queries & returns the session module onchain parameters.
 func (sessq *sessionQuerier) GetParams(ctx context.Context) (*sessiontypes.Params, error) {
+	logger := sessq.logger.With("query_client", "session", "method", "GetParams")
+
 	// Check if the params are present in the cache.
 	if params, found := sessq.paramsCache.Get(); found {
+		logger.Debug().Msg("cache hit")
 		return &params, nil
 	}
+
+	logger.Debug().Msg("cache miss")
 
 	req := &sessiontypes.QueryParamsRequest{}
 	res, err := sessq.sessionQuerier.Params(ctx, req)

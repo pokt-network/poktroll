@@ -3,10 +3,7 @@ package cache
 import (
 	"sync"
 
-	proto "github.com/cosmos/gogoproto/proto"
-
 	"github.com/pokt-network/poktroll/pkg/client/query"
-	"github.com/pokt-network/poktroll/pkg/polylog"
 )
 
 var _ query.KeyValueCache[any] = (*keyValueCache[any])(nil)
@@ -14,26 +11,13 @@ var _ query.KeyValueCache[any] = (*keyValueCache[any])(nil)
 // keyValueCache is a simple in-memory key-value cache implementation.
 // It is safe for concurrent use.
 type keyValueCache[V any] struct {
-	logger    polylog.Logger
 	cacheMu   sync.RWMutex
 	valuesMap map[string]V
 }
 
 // NewKeyValueCache returns a new instance of a KeyValueCache.
-func NewKeyValueCache[T any](logger polylog.Logger) query.KeyValueCache[T] {
-	// Get the name of the cached type
-	cachedTypeName := "unknown"
-	var zero T
-
-	// Update the cached type name if the type is a proto message.
-	if msg, ok := any(zero).(proto.Message); ok {
-		cachedTypeName = proto.MessageName(msg)
-	} else {
-		logger.Warn().Msg("Could not determine cached type")
-	}
-
+func NewKeyValueCache[T any]() query.KeyValueCache[T] {
 	return &keyValueCache[T]{
-		logger:    logger.With("type", cachedTypeName),
 		valuesMap: make(map[string]T),
 	}
 }
@@ -45,9 +29,6 @@ func (c *keyValueCache[V]) Get(key string) (value V, found bool) {
 	defer c.cacheMu.RUnlock()
 
 	value, found = c.valuesMap[key]
-	if found {
-		c.logger.Debug().Msgf("Cache hit for key %s", key)
-	}
 	return value, found
 }
 

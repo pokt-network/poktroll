@@ -10,6 +10,7 @@ import (
 	grpc "github.com/cosmos/gogoproto/grpc"
 
 	"github.com/pokt-network/poktroll/pkg/client"
+	"github.com/pokt-network/poktroll/pkg/polylog"
 )
 
 var _ client.AccountQueryClient = (*accQuerier)(nil)
@@ -20,6 +21,7 @@ var _ client.AccountQueryClient = (*accQuerier)(nil)
 type accQuerier struct {
 	clientConn     grpc.ClientConn
 	accountQuerier accounttypes.QueryClient
+	logger         polylog.Logger
 
 	// accountsCache caches accountQueryClient.Account requests
 	accountsCache KeyValueCache[types.AccountI]
@@ -36,6 +38,7 @@ func NewAccountQuerier(deps depinject.Config) (client.AccountQueryClient, error)
 	if err := depinject.Inject(
 		deps,
 		&aq.clientConn,
+		&aq.logger,
 		&aq.accountsCache,
 	); err != nil {
 		return nil, err
@@ -51,10 +54,15 @@ func (aq *accQuerier) GetAccount(
 	ctx context.Context,
 	address string,
 ) (types.AccountI, error) {
+	logger := aq.logger.With("query_client", "account", "method", "GetAccount")
+
 	// Check if the account is present in the cache.
 	if account, found := aq.accountsCache.Get(address); found {
+		logger.Debug().Msgf("cache hit for key: %s", address)
 		return account, nil
 	}
+
+	logger.Debug().Msgf("cache miss for key: %s", address)
 
 	// Query the blockchain for the account record
 	req := &accounttypes.QueryAccountRequest{Address: address}

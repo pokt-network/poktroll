@@ -10,6 +10,8 @@ import (
 
 	"github.com/pokt-network/poktroll/app/volatile"
 	"github.com/pokt-network/poktroll/pkg/client"
+	querytypes "github.com/pokt-network/poktroll/pkg/client/query/types"
+	"github.com/pokt-network/poktroll/pkg/polylog"
 )
 
 var _ client.BankQueryClient = (*bankQuerier)(nil)
@@ -19,9 +21,10 @@ var _ client.BankQueryClient = (*bankQuerier)(nil)
 type bankQuerier struct {
 	clientConn  grpc.ClientConn
 	bankQuerier banktypes.QueryClient
+	logger      polylog.Logger
 
 	// balancesCache caches bankQueryClient.GetBalance requests
-	balancesCache KeyValueCache[*sdk.Coin]
+	balancesCache KeyValueCache[querytypes.Balance]
 }
 
 // NewBankQuerier returns a new instance of a client.BankQueryClient by
@@ -35,6 +38,7 @@ func NewBankQuerier(deps depinject.Config) (client.BankQueryClient, error) {
 	if err := depinject.Inject(
 		deps,
 		&bq.clientConn,
+		&bq.logger,
 		&bq.balancesCache,
 	); err != nil {
 		return nil, err
@@ -50,10 +54,15 @@ func (bq *bankQuerier) GetBalance(
 	ctx context.Context,
 	address string,
 ) (*sdk.Coin, error) {
+	logger := bq.logger.With("query_client", "bank", "method", "GetBalance")
+
 	// Check if the account balance is present in the cache.
 	if balance, found := bq.balancesCache.Get(address); found {
+		logger.Debug().Msgf("cache hit for key: %s", address)
 		return balance, nil
 	}
+
+	logger.Debug().Msgf("cache miss for key: %s", address)
 
 	// Query the blockchain for the balance record
 	req := &banktypes.QueryBalanceRequest{Address: address, Denom: volatile.DenomuPOKT}

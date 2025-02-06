@@ -7,6 +7,7 @@ import (
 	grpc "github.com/cosmos/gogoproto/grpc"
 
 	"github.com/pokt-network/poktroll/pkg/client"
+	"github.com/pokt-network/poktroll/pkg/polylog"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 )
 
@@ -18,6 +19,7 @@ var _ client.ApplicationQueryClient = (*appQuerier)(nil)
 type appQuerier struct {
 	clientConn         grpc.ClientConn
 	applicationQuerier apptypes.QueryClient
+	logger             polylog.Logger
 
 	// applicationsCache caches applicationQueryClient.Application requests
 	applicationsCache KeyValueCache[apptypes.Application]
@@ -36,6 +38,7 @@ func NewApplicationQuerier(deps depinject.Config) (client.ApplicationQueryClient
 	if err := depinject.Inject(
 		deps,
 		&aq.clientConn,
+		&aq.logger,
 		&aq.applicationsCache,
 		&aq.paramsCache,
 	); err != nil {
@@ -52,10 +55,15 @@ func (aq *appQuerier) GetApplication(
 	ctx context.Context,
 	appAddress string,
 ) (apptypes.Application, error) {
+	logger := aq.logger.With("query_client", "application", "method", "GetApplication")
+
 	// Check if the application is present in the cache.
 	if app, found := aq.applicationsCache.Get(appAddress); found {
+		logger.Debug().Msgf("cache hit for key: %s", appAddress)
 		return app, nil
 	}
+
+	logger.Debug().Msgf("cache miss for key: %s", appAddress)
 
 	req := apptypes.QueryGetApplicationRequest{Address: appAddress}
 	res, err := aq.applicationQuerier.Application(ctx, &req)
@@ -83,10 +91,15 @@ func (aq *appQuerier) GetAllApplications(ctx context.Context) ([]apptypes.Applic
 
 // GetParams returns the application module parameters
 func (aq *appQuerier) GetParams(ctx context.Context) (*apptypes.Params, error) {
+	logger := aq.logger.With("query_client", "application", "method", "GetParams")
+
 	// Check if the application module parameters are present in the cache.
 	if params, found := aq.paramsCache.Get(); found {
+		logger.Debug().Msg("cache hit")
 		return &params, nil
 	}
+
+	logger.Debug().Msg("cache miss")
 
 	req := apptypes.QueryParamsRequest{}
 	res, err := aq.applicationQuerier.Params(ctx, &req)

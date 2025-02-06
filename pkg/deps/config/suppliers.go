@@ -517,12 +517,7 @@ func NewSupplyKeyValueCacheFn[T any](opts ...cache.CacheOption[query.KeyValueCac
 		deps depinject.Config,
 		_ *cobra.Command,
 	) (depinject.Config, error) {
-		var logger polylog.Logger
-		if err := depinject.Inject(deps, &logger); err != nil {
-			return nil, err
-		}
-
-		kvCache := cache.NewKeyValueCache[T](logger)
+		kvCache := cache.NewKeyValueCache[T]()
 
 		// Apply the cache options
 		for _, opt := range opts {
@@ -543,12 +538,7 @@ func NewSupplyParamsCacheFn[T any](opts ...cache.CacheOption[query.ParamsCache[T
 		deps depinject.Config,
 		_ *cobra.Command,
 	) (depinject.Config, error) {
-		var logger polylog.Logger
-		if err := depinject.Inject(deps, &logger); err != nil {
-			return nil, err
-		}
-
-		paramsCache := cache.NewParamsCache[T](logger)
+		paramsCache := cache.NewParamsCache[T]()
 
 		// Apply the cache options
 		for _, opt := range opts {

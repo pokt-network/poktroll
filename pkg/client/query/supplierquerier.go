@@ -7,6 +7,7 @@ import (
 	"github.com/cosmos/gogoproto/grpc"
 
 	"github.com/pokt-network/poktroll/pkg/client"
+	"github.com/pokt-network/poktroll/pkg/polylog"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 )
@@ -17,6 +18,7 @@ import (
 type supplierQuerier struct {
 	clientConn      grpc.ClientConn
 	supplierQuerier suppliertypes.QueryClient
+	logger          polylog.Logger
 
 	// suppliersCache caches supplierQueryClient.Supplier requests
 	suppliersCache KeyValueCache[sharedtypes.Supplier]
@@ -33,6 +35,7 @@ func NewSupplierQuerier(deps depinject.Config) (client.SupplierQueryClient, erro
 	if err := depinject.Inject(
 		deps,
 		&supq.clientConn,
+		&supq.logger,
 		&supq.suppliersCache,
 	); err != nil {
 		return nil, err
@@ -48,10 +51,15 @@ func (supq *supplierQuerier) GetSupplier(
 	ctx context.Context,
 	operatorAddress string,
 ) (sharedtypes.Supplier, error) {
+	logger := supq.logger.With("query_client", "supplier", "method", "GetSupplier")
+
 	// Check if the supplier is present in the cache.
 	if supplier, found := supq.suppliersCache.Get(operatorAddress); found {
+		logger.Debug().Msgf("cache hit for key: %s", operatorAddress)
 		return supplier, nil
 	}
+
+	logger.Debug().Msgf("cache miss for key: %s", operatorAddress)
 
 	req := &suppliertypes.QueryGetSupplierRequest{OperatorAddress: operatorAddress}
 	res, err := supq.supplierQuerier.Supplier(ctx, req)

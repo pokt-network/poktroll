@@ -17,6 +17,7 @@ import (
 
 	"github.com/pokt-network/poktroll/cmd/signals"
 	"github.com/pokt-network/poktroll/pkg/client/query/cache"
+	querytypes "github.com/pokt-network/poktroll/pkg/client/query/types"
 	"github.com/pokt-network/poktroll/pkg/client/tx"
 	txtypes "github.com/pokt-network/poktroll/pkg/client/tx/types"
 	"github.com/pokt-network/poktroll/pkg/deps/config"
@@ -218,10 +219,11 @@ func setupRelayerDependencies(
 		config.NewSupplyKeyValueCacheFn[apptypes.Application](cache.WithNewBlockCacheClearing),
 		config.NewSupplyKeyValueCacheFn[sharedtypes.Supplier](cache.WithNewBlockCacheClearing),
 		config.NewSupplyKeyValueCacheFn[*sessiontypes.Session](cache.WithNewBlockCacheClearing),
+		config.NewSupplyKeyValueCacheFn[querytypes.BlockHash](cache.WithNewBlockCacheClearing),
+		config.NewSupplyKeyValueCacheFn[querytypes.Balance](cache.WithNewBlockCacheClearing),
 
 		// Setup the key-value for cosmos types and configure them to clear on new blocks.
 		config.NewSupplyKeyValueCacheFn[cosmostypes.AccountI](cache.WithNewBlockCacheClearing),
-		config.NewSupplyKeyValueCacheFn[*cosmostypes.Coin](cache.WithNewBlockCacheClearing),
 
 		config.NewSupplySharedQueryClientFn(), // leaf
 		config.NewSupplyServiceQueryClientFn(),

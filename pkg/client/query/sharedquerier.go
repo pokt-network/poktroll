@@ -8,6 +8,8 @@ import (
 	"github.com/cosmos/gogoproto/grpc"
 
 	"github.com/pokt-network/poktroll/pkg/client"
+	querytypes "github.com/pokt-network/poktroll/pkg/client/query/types"
+	"github.com/pokt-network/poktroll/pkg/polylog"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
@@ -20,9 +22,10 @@ type sharedQuerier struct {
 	clientConn    grpc.ClientConn
 	sharedQuerier sharedtypes.QueryClient
 	blockQuerier  client.BlockQueryClient
+	logger        polylog.Logger
 
 	// blockHashCache caches blockQuerier.Block requests
-	blockHashCache KeyValueCache[[]byte]
+	blockHashCache KeyValueCache[querytypes.BlockHash]
 	// paramsCache caches sharedQueryClient.Params requests
 	paramsCache ParamsCache[sharedtypes.Params]
 }
@@ -39,7 +42,9 @@ func NewSharedQuerier(deps depinject.Config) (client.SharedQueryClient, error) {
 	if err := depinject.Inject(
 		deps,
 		&querier.clientConn,
+		&querier.logger,
 		&querier.blockQuerier,
+		&querier.blockHashCache,
 		&querier.paramsCache,
 	); err != nil {
 		return nil, err
@@ -56,10 +61,15 @@ func NewSharedQuerier(deps depinject.Config) (client.SharedQueryClient, error) {
 // Once `ModuleParamsClient` is implemented, use its replay observable's `#Last()` method
 // to get the most recently (asynchronously) observed (and cached) value.
 func (sq *sharedQuerier) GetParams(ctx context.Context) (*sharedtypes.Params, error) {
+	logger := sq.logger.With("query_client", "shared", "method", "GetParams")
+
 	// Get the params from the cache if they exist.
 	if params, found := sq.paramsCache.Get(); found {
+		logger.Debug().Msg("cache hit")
 		return &params, nil
 	}
+
+	logger.Debug().Msg("cache miss")
 
 	req := &sharedtypes.QueryParamsRequest{}
 	res, err := sq.sharedQuerier.Params(ctx, req)
@@ -134,6 +144,8 @@ func (sq *sharedQuerier) GetSessionGracePeriodEndHeight(
 // TODO_MAINNET(@bryanchriswhite, #543): We also don't really want to use the current value of the params.
 // Instead, we should be using the value that the params had for the session which includes queryHeight.
 func (sq *sharedQuerier) GetEarliestSupplierClaimCommitHeight(ctx context.Context, queryHeight int64, supplierOperatorAddr string) (int64, error) {
+	logger := sq.logger.With("query_client", "shared", "method", "GetEarliestSupplierClaimCommitHeight")
+
 	sharedParams, err := sq.GetParams(ctx)
 	if err != nil {
 		return 0, err
@@ -147,6 +159,8 @@ func (sq *sharedQuerier) GetEarliestSupplierClaimCommitHeight(ctx context.Contex
 	blockHashCacheKey := getBlockHashKacheKey(claimWindowOpenHeight)
 	claimWindowOpenBlockHash, found := sq.blockHashCache.Get(blockHashCacheKey)
 	if !found {
+		logger.Debug().Msgf("cache miss for blockHeight: %s", blockHashCacheKey)
+
 		claimWindowOpenBlock, err := sq.blockQuerier.Block(ctx, &claimWindowOpenHeight)
 		if err != nil {
 			return 0, err
@@ -156,6 +170,8 @@ func (sq *sharedQuerier) GetEarliestSupplierClaimCommitHeight(ctx context.Contex
 		// NB: Byte slice representation of block hashes don't need to be normalized.
 		claimWindowOpenBlockHash = claimWindowOpenBlock.BlockID.Hash.Bytes()
 		sq.blockHashCache.Set(blockHashCacheKey, claimWindowOpenBlockHash)
+	} else {
+		logger.Debug().Msgf("cache hit for blockHeight: %s", blockHashCacheKey)
 	}
 
 	return sharedtypes.GetEarliestSupplierClaimCommitHeight(
@@ -175,6 +191,8 @@ func (sq *sharedQuerier) GetEarliestSupplierClaimCommitHeight(ctx context.Contex
 // TODO_MAINNET(@bryanchriswhite, #543): We also don't really want to use the current value of the params.
 // Instead, we should be using the value that the params had for the session which includes queryHeight.
 func (sq *sharedQuerier) GetEarliestSupplierProofCommitHeight(ctx context.Context, queryHeight int64, supplierOperatorAddr string) (int64, error) {
+	logger := sq.logger.With("query_client", "shared", "method", "GetEarliestSupplierProofCommitHeight")
+
 	sharedParams, err := sq.GetParams(ctx)
 	if err != nil {
 		return 0, err
@@ -184,6 +202,8 @@ func (sq *sharedQuerier) GetEarliestSupplierProofCommitHeight(ctx context.Contex
 	proofWindowOpenBlockHash, found := sq.blockHashCache.Get(blockHashCacheKey)
 
 	if !found {
+		logger.Debug().Msgf("cache miss for blockHeight: %s", blockHashCacheKey)
+
 		// Fetch the block at the proof window open height. Its hash is used as part
 		// of the seed to the pseudo-random number generator.
 		proofWindowOpenHeight := sharedtypes.GetProofWindowOpenHeight(sharedParams, queryHeight)
@@ -195,6 +215,8 @@ func (sq *sharedQuerier) GetEarliestSupplierProofCommitHeight(ctx context.Contex
 		// Cache the block hash for future use.
 		proofWindowOpenBlockHash = proofWindowOpenBlock.BlockID.Hash.Bytes()
 		sq.blockHashCache.Set(blockHashCacheKey, proofWindowOpenBlockHash)
+	} else {
+		logger.Debug().Msgf("cache hit for blockHeight: %s", blockHashCacheKey)
 	}
 
 	return sharedtypes.GetEarliestSupplierProofCommitHeight(
