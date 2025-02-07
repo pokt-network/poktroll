@@ -87,8 +87,7 @@ The Shannon Roadmap, along with all past, active and future work is tracked via 
 ## PATH for Gateways
 
 [Grove](https://grove.city/) is developing [PATH](https://path.grove.city/) for
-anyone who aims to deploy a Pocket Network gateway. Visit the [docs](https://path.grove.city/)
-to get started.
+anyone who aims to deploy a Pocket Network gateway. Visit the docs to get started.
 
 The PATH Roadmap, along with all past, active and future work is tracked via [this Github project](https://github.com/orgs/buildwithgrove/projects/1).
 
