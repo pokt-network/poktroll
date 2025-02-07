@@ -15,7 +15,7 @@ nc -vz {EXTERNAL_IP} 26656
 sudo systemctl status cosmovisor.service
 ```
 
-## How do I view the node logs?
+## How do I view my node logs?
 
 ```bash
 sudo journalctl -u cosmovisor.service -f
