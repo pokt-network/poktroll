@@ -12,7 +12,7 @@ This walkthrough provides a detailed step-by-step instructions to run a validato
 :::tip
 
 If you're comfortable using an automated scripts, or simply want to _copy-pasta_ a
-few commands to get started, check out the [Validator Cheat Sheet](../cheat_sheet/validator_cheatsheet.md).
+few commands to get started, check out the [Validator Cheat Sheet](../cheat_sheets/validator_cheatsheet.md) instead.
 
 :::
 
