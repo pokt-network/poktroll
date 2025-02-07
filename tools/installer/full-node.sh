@@ -119,7 +119,7 @@ install_dependencies() {
         return 1
     fi
 
-    print_color $YELLOW "All dependencies installed successfully."
+    print_color $GREEN "All dependencies installed successfully."
     return 0
 }
 
@@ -233,7 +233,6 @@ setup_cosmovisor() {
     print_color $YELLOW "Setting up Cosmovisor..."
 
     ARCH=$(get_normalized_arch)
-    OS_TYPE=$(get_os_type)
 
     if [ "$OS_TYPE" = "unsupported" ]; then
         echo "Unsupported OS: $(uname -s)"
@@ -241,7 +240,6 @@ setup_cosmovisor() {
     fi
 
     COSMOVISOR_VERSION="v1.6.0"
-    # COSMOVISOR_URL="https://github.com/cosmos/cosmos-sdk/releases/download/cosmovisor%2F${COSMOVISOR_VERSION}/cosmovisor-${COSMOVISOR_VERSION}-${OS_TYPE}-${ARCH}.tar.gz"
     COSMOVISOR_URL="https://github.com/cosmos/cosmos-sdk/releases/download/cosmovisor%2F${COSMOVISOR_VERSION}/cosmovisor-${COSMOVISOR_VERSION}-linux-${ARCH}.tar.gz"
     print_color $YELLOW "Attempting to download from: $COSMOVISOR_URL"
 
