@@ -3,7 +3,7 @@ sidebar_position: 1
 title: Full Node FAQ
 ---
 
-## How do I check the node is accessible from another machine?
+## How do I check whether my node is accessible from another machine?
 
 ```bash
 nc -vz {EXTERNAL_IP} 26656
