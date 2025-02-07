@@ -152,7 +152,11 @@ func (m *MockAccountQueryServer) Account(ctx context.Context, req *authtypes.Que
 	pubKey := secp256k1.GenPrivKey().PubKey()
 
 	account := &authtypes.BaseAccount{}
-	account.SetPubKey(pubKey)
+	err := account.SetPubKey(pubKey)
+	if err != nil {
+		return nil, err
+	}
+
 	accountAny, err := codectypes.NewAnyWithValue(account)
 	if err != nil {
 		return nil, err
