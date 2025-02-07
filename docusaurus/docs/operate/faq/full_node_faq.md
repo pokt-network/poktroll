@@ -9,7 +9,7 @@ title: Full Node FAQ
 nc -vz {EXTERNAL_IP} 26656
 ```
 
-## How do I view the node status?
+## How do I view my node status?
 
 ```bash
 sudo systemctl status cosmovisor.service
