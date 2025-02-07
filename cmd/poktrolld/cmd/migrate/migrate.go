@@ -24,13 +24,18 @@ var (
 	logger                  polylog.Logger
 
 	collectMorseAccountsCmd = &cobra.Command{
-		Use:   "collect-morse-accounts [morse-state-export-path] [morse-account-state-path]",
-		Args:  cobra.ExactArgs(2),
-		Short: "Collect all account balances and corresponding stakes from the JSON file at [morse-state-export-path] and outputs them as JSON to [morse-account-state-path]",
-		Long: `Collects the account balances and corresponding stakes from the MorseStateExport JSON file at morse-state-path
-and outputs them as a MorseAccountState JSON to morse-accounts-path for use with
-Shannon's MsgUploadMorseState. The Morse state export is generated via the Morse CLI:
-pocket util export-genesis-for-reset [height] [new-chain-id] > morse-state-export.json`,
+	   Use:   "collect-morse-accounts [morse-state-export-path] [morse-account-state-path]",
+	   Args:  cobra.ExactArgs(2),
+	   Short: "Collect account balances and stakes from [morse-state-export-path] JSON file and output to [morse-account-state-path] as JSON",
+	   Long: `Processes Morse state for Shannon migration:
+	          * Reads MorseStateExport JSON from morse-state-path
+	          * Contains account balances and associated stakes  
+	          * Outputs MorseAccountState JSON to morse-accounts-path
+	          * Integrates with Shannon's MsgUploadMorseState
+	
+	          Generate required input via Morse CLI:
+	          pocket util export-genesis-for-reset [height] [new-chain-id] > morse-state-export.json`,
+	}
 		PreRunE: func(cmd *cobra.Command, args []string) error {
 			var (
 				logOutput io.Writer
@@ -89,9 +94,10 @@ func runCollectMorseAccounts(_ *cobra.Command, args []string) error {
 	return morseWorkspace.infoLogComplete()
 }
 
-// collectMorseAccounts reads and transforms the JSON serialized MorseStateExport
-// at morseStateExportPath into a JSON serialized MorseAccountState, and then writes
-// it to morseAccountStatePath.
+// collectMorseAccounts:
+// - Reads a MorseStateExport JSON file from morseStateExportPath
+// - Transforms it into a MorseAccountState
+// - Writes the resulting JSON to morseAccountStatePath
 func collectMorseAccounts(morseStateExportPath, morseAccountStatePath string) (*morseImportWorkspace, error) {
 	if err := validatePathIsFile(morseStateExportPath); err != nil {
 		return nil, err

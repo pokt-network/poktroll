@@ -43,6 +43,7 @@ type morseImportWorkspace struct {
 	// lastAccTotalSupplierStake is the most recently accumulated supplier stakes of
 	// all Morse accounts which have been processed.
 	lastAccTotalSupplierStake cosmosmath.Int
+
 	// numAccounts is the number of accounts that have been processed.
 	numAccounts uint64
 	// numApplications is the number of applications that have been processed.
@@ -112,9 +113,10 @@ func (miw *morseImportWorkspace) ensureAccount(
 	addr string,
 	exportAccount *migrationtypes.MorseAuthAccount,
 ) (accountIdx uint64, balance cosmostypes.Coin, err error) {
-	var ok bool
+	// Initialize balance to zero
 	balance = cosmostypes.NewCoin(volatile.DenomuPOKT, cosmosmath.ZeroInt())
 
+	var ok bool
 	if accountIdx, ok = miw.addressToIdx[addr]; ok {
 		logger.Warn().Str("address", addr).Msg("unexpected workspace state: account already exists")
 
