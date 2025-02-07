@@ -93,7 +93,7 @@ The PATH Roadmap, along with all past, active and future work is tracked via [th
 
 ## GoDoc Documentation
 
-The Godoc for the source code in this can be found at [pkg.go.dev/github.com/pokt-network/poktroll](https://pkg.go.dev/github.com/pokt-network/poktroll).
+The Godoc for the source code can be found at [pkg.go.dev/github.com/pokt-network/poktroll](https://pkg.go.dev/github.com/pokt-network/poktroll).
 
 ---
 
