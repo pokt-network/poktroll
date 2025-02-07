@@ -36,7 +36,7 @@ Please see the [Hardware Requirements](../configs/hardware_requirements.md#path-
 
 ## Docker Compose Example
 
-Please refer to the `Deploying a PATH Gateway` section in [Docker compose walkthrough](../quickstart/docker_compose_walkthrough#d-creating-a-gateway-deploying-a-path-gateway)
+Please refer to the `Deploying a PATH Gateway` section in [Docker compose walkthrough](../../operate/walkthroughs/docker_compose_walkthrough.md) for detailed instructions
 on how to deploy a `PATH Gateway` using `docker-compose`.
 
 ## Kubernetes Example

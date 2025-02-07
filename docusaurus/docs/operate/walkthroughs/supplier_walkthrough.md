@@ -37,7 +37,7 @@ Please see the [Hardware Requirements](../configs/hardware_requirements.md#relay
 
 ## Docker Compose Example
 
-Please refer to the `Deploying a RelayMiner` section in [Docker compose walkthrough](../quickstart/docker_compose_walkthrough#b-creating-a-supplier-and-deploying-a-relayminer)
+Please refer to the `Deploying a RelayMiner` section in [Docker compose walkthrough](../../operate/walkthroughs/docker_compose_walkthrough.md) for detailed instructions
 on how to deploy a `RelayMiner` using `docker-compose`.
 
 _TODO_DOCUMENT: Move over the relevant information from the `poktroll-docker-compose-example` repository into the docs_
