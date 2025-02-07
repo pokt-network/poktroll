@@ -38,7 +38,7 @@ transitioning to `Shannon`.
 
 This document has a lot of details and explanations. If you're looking for a
 copy-paste quickstart guide to set all of it up on a Debian server, check out
-the [Debian cheat sheet](./docker_compose_debian_cheatsheet.md).
+the [Debian cheat sheet](../cheat_sheets/docker_compose_debian_cheatsheet.md).
 
 :::
 
@@ -83,7 +83,7 @@ Furthermore, `Shannon` uses [`PATH Gateway`](https://github.com/buildwithgrove/p
 a software component that acts on behalf of either `Applications` or `Gateways`
 to access services provided by Pocket Network `Supplier`s via `RelayMiners`.
 
-The following diagram from the [actors](../../protocol/actors/) page captures the relationship
+The following diagram from the [actors](../../protocol/actors) page captures the relationship
 between onchain records (actors) and offchain operators (servers).
 
 ```mermaid

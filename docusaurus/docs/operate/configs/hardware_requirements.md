@@ -1,6 +1,6 @@
 ---
 title: Hardware Requirements
-sidebar_position: 1
+sidebar_position: 5
 ---
 
 ## Hardware Requirements <!-- omit in toc -->
@@ -64,6 +64,7 @@ information on what a `PATH Gateway` is.
 | CPU Cores   | 1       | 4           |
 | RAM         | 1GB     | 16GB        |
 | SSD Storage | 5GB     | 5GB         |
+
 <!-- TODO_TECHDEBT: Update the PATH Gateway hardware requirements -->
 
 ### Additional Considerations
