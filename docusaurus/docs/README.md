@@ -76,7 +76,7 @@ to get some understanding of why you need Pocket & Grove.
 
 As of 02/2025, this documentation is under construction and does not have a clear
 user journey. Different parts are intended to serve as references one can link to
-or jump to/from to when needed.
+or jump to/from when needed.
 
 :::
 
