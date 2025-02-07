@@ -5,11 +5,22 @@ id: home-doc
 slug: /
 ---
 
+<!-- markdownlint-disable MD033 -->
+<!-- markdownlint-disable MD045 -->
+
 <div align="center">
   <a href="https://www.pokt.network">
-    <img src="https://user-images.githubusercontent.com/2219004/151564884-212c0e40-3bfa-412e-a341-edb54b5f1498.jpeg" alt="Pocket Network logo" width="340"/>
+    <img src="https://github.com/user-attachments/assets/01ddfcac-3b64-42ab-8e83-e87a5e9b36a6" alt="Pocket Network logo" width="340"/>
   </a>
 </div>
+
+:::note Pocket Network Project Documentation
+
+This is the living technical documentation for the protocol design, implementation,
+and operation. If you're looking for general documentation related to Pocket Network,
+please visit [docs.pokt.network](https://docs.pokt.network).
+
+:::
 
 <div>
   <a href="https://discord.gg/pokt"><img src="https://img.shields.io/discord/553741558869131266"/></a>
@@ -27,47 +38,62 @@ slug: /
   <a href="https://github.com/tools/godep" ><img src="https://img.shields.io/badge/godep-dependency-71a3d9.svg"/></a>
 </div>
 
-# poktroll <!-- omit in toc -->
+## Pocket Network Shannon Technical Docs (aka poktroll) <!-- omit in toc -->
 
-**poktroll** is built using the [Cosmos SDK](https://docs.cosmos.network) and
-[CometBFT](https://cometbft.com/), created with [Ignite CLI](https://ignite.com/cli)
-for the Shannon upgrade of the [Pocket Network](https://pokt.network) blockchain.
+**poktroll** is the source code and core implementation of the [Shannon upgrade](https://docs.pokt.network/pokt-protocol/the-shannon-upgrade) for [Pocket Network](https://pokt.network/).
 
-- [Learn about Pocket Network](#learn-about-pocket-network)
-- [Roadmap](#roadmap)
-- [Quickstart](#quickstart)
-- [Godoc](#godoc)
-- [Have questions? Ask An PNYC](#have-questions-ask-an-pnyc)
+`poktroll` is built using the [Cosmos SDK](https://docs.cosmos.network), [CometBFT](https://cometbft.com/) and [Ignite CLI](https://ignite.com/cli).
+
+## What is Pocket Network? <!-- omit in toc -->
+
+:::note 🚧 Under Construction 🚧
+
+This documentation is not intended to answer this question as of 02/2025
+
+Consider reading [this post from 02/2025](https://medium.com/decentralized-infrastructure/an-update-from-grove-on-shannon-beta-testnet-path-the-past-the-future-5bf7ec2a9acf) by @olshansk
+to get some understanding of why you need Pocket & Grove.
+
+:::
+
+---
+
+## Table of Contents <!-- omit in toc -->
+
+- [Where do I start?](#where-do-i-start)
+- [Shannon Roadmap](#shannon-roadmap)
+- [PATH for Gateways](#path-for-gateways)
+- [GoDoc Documentation](#godoc-documentation)
 - [License](#license)
 
-## Learn about Pocket Network
+## Where do I start?
 
-User friendly documentation of the Shannon upgrade is still a WIP, but there are
-a handful of (potentially outdated) resources you can reference in the meantime
-to build a better understanding of Pocket Network:
+1. [Guides & Deployment](./operate/cheat_sheets/full_node_cheatsheet.md): Deployment cheat sheets and config overviews for node runners, infrastructure operators and CLI users.
+2. [Tools & Explorers](./tools/user_guide/poktrolld_cli.md): Explorers, wallets, faucets and other resources to interact with the network.
+3. [Core Developers](./develop/developer_guide/walkthrough.md): Guides & walkthroughs for core or external developers looking to contribute to the core protocol or SDK.
+4. [Protocol Design](./protocol/actors/actors.md): Learn more about tokenomics design & protocol architecture.
 
-- [Pocket Network official documentation](https://docs.pokt.network)
-- [[Live] Pocket Network Morse; aka v0](https://github.com/pokt-network/pocket-core)
-- [[Outdated] Pocket Network Protocol](https://github.com/pokt-network/pocket-network-protocol)
-- [[Deprecated]Pocket Network V1](https://github.com/pokt-network/pocket)
+:::note 🚧 Under Construction 🚧
 
-## Roadmap
+As of 02/2025, this documentation is under construction and does not have a clear
+user journey. Different parts are intended to serve as references one can link to
+or jump to/from when needed.
 
-You can view the Shannon Roadmap on [Github](https://github.com/orgs/pokt-network/projects/144?query=is%3Aopen+sort%3Aupdated-desc)
+:::
 
-## Quickstart
+## Shannon Roadmap
 
-The best way to get involved is by following the [quickstart instructions](develop/developer_guide/walkthrough.md).
+The Shannon Roadmap, along with all past, active and future work is tracked via [this Github project](https://github.com/orgs/pokt-network/projects/144).
 
-## Godoc
+## PATH for Gateways
 
-The Godoc for the source code in this can be found at [pkg.go.dev/github.com/pokt-network/poktroll](https://pkg.go.dev/github.com/pokt-network/poktroll).
+[Grove](https://grove.city/) is developing [PATH](https://path.grove.city/) for
+anyone who aims to deploy a Pocket Network gateway. Visit the docs to get started.
 
-## Have questions? Ask An PNYC
+The PATH Roadmap, along with all past, active and future work is tracked via [this Github project](https://github.com/orgs/buildwithgrove/projects/1).
 
-You can use [PNYX](https://pnyxai.com/), an AI-powered search engine that has been
-trained and indexed on the Pocket Network documentation, community calls, forums
-and much more!
+## GoDoc Documentation
+
+The Godoc for the source code can be found at [pkg.go.dev/github.com/pokt-network/poktroll](https://pkg.go.dev/github.com/pokt-network/poktroll).
 
 ---
 
