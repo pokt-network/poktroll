@@ -11,6 +11,7 @@ import (
 	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/client/query"
 	"github.com/pokt-network/poktroll/pkg/client/query/cache"
+	"github.com/pokt-network/poktroll/pkg/polylog"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
@@ -28,7 +29,9 @@ type ApplicationModuleSuite struct {
 func (s *ApplicationModuleSuite) GetAppQueryClient() client.ApplicationQueryClient {
 	appCache := cache.NewKeyValueCache[apptypes.Application]()
 	appParamsCache := cache.NewParamsCache[apptypes.Params]()
-	deps := depinject.Supply(s.GetApp().QueryHelper(), appCache, appParamsCache)
+	logger := polylog.Ctx(s.GetApp().QueryHelper().Ctx)
+
+	deps := depinject.Supply(s.GetApp().QueryHelper(), appCache, appParamsCache, logger)
 	appQueryClient, err := query.NewApplicationQuerier(deps)
 	require.NoError(s.T(), err)
 
