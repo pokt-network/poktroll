@@ -11,12 +11,15 @@ import (
 	"time"
 
 	"cosmossdk.io/depinject"
+	"github.com/cometbft/cometbft/libs/os"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"
+	"github.com/stretchr/testify/suite"
 
 	"github.com/pokt-network/poktroll/pkg/observable/channel"
 	"github.com/pokt-network/poktroll/pkg/polylog/polyzero"
 	"github.com/pokt-network/poktroll/pkg/relayer"
+	"github.com/pokt-network/poktroll/testutil/mockrelayer"
 	"github.com/pokt-network/poktroll/testutil/testrelayer"
 	servicetypes "github.com/pokt-network/poktroll/x/service/types"
 )
@@ -64,30 +67,47 @@ func TestRelayMiner_StartAndStop(t *testing.T) {
 	require.NoError(t, err)
 }
 
-func TestRelayMiner_Ping(t *testing.T) {
+type RelayMinerPingSuite struct {
+	suite.Suite
+
+	servedRelaysObs relayer.RelaysObservable
+	minedRelaysObs  relayer.MinedRelaysObservable
+
+	relayerProxyMock           *mockrelayer.MockRelayerProxy
+	minerMock                  *mockrelayer.MockMiner
+	relayerSessionsManagerMock *mockrelayer.MockRelayerSessionsManager
+}
+
+func TestRelayMinerPingSuite(t *testing.T) {
+	suite.Run(t, new(RelayMinerPingSuite))
+}
+
+func (t *RelayMinerPingSuite) SetupTest() {
 	// servedRelaysObs is NEVER published to. It exists to satisfy test mocks.
 	srObs, _ := channel.NewObservable[*servicetypes.Relay]()
-	servedRelaysObs := relayer.RelaysObservable(srObs)
+	t.servedRelaysObs = relayer.RelaysObservable(srObs)
 
 	// minedRelaysObs is NEVER published to. It exists to satisfy test mocks.
 	mrObs, _ := channel.NewObservable[*relayer.MinedRelay]()
-	minedRelaysObs := relayer.MinedRelaysObservable(mrObs)
+	t.minedRelaysObs = relayer.MinedRelaysObservable(mrObs)
+}
 
+func (t *RelayMinerPingSuite) TestOKPingAll() {
 	ctx := polyzero.NewLogger().WithContext(context.Background())
 	relayerProxyMock := testrelayer.NewMockOneTimeRelayerProxyWithPing(
-		ctx, t,
-		servedRelaysObs,
+		ctx, t.T(),
+		t.servedRelaysObs,
 	)
 
 	minerMock := testrelayer.NewMockOneTimeMiner(
-		ctx, t,
-		servedRelaysObs,
-		minedRelaysObs,
+		ctx, t.T(),
+		t.servedRelaysObs,
+		t.minedRelaysObs,
 	)
 
 	relayerSessionsManagerMock := testrelayer.NewMockOneTimeRelayerSessionsManager(
-		ctx, t,
-		minedRelaysObs,
+		ctx, t.T(),
+		t.minedRelaysObs,
 	)
 
 	deps := depinject.Supply(
@@ -97,15 +117,15 @@ func TestRelayMiner_Ping(t *testing.T) {
 	)
 
 	relayminer, err := relayer.NewRelayMiner(ctx, deps)
-	require.NoError(t, err)
-	require.NotNil(t, relayminer)
+	require.NoError(t.T(), err)
+	require.NotNil(t.T(), relayminer)
 
 	err = relayminer.Start(ctx)
-	require.NoError(t, err)
+	require.NoError(t.T(), err)
 
 	time.Sleep(time.Millisecond)
 
-	relayminerSocketPath := filepath.Join(t.TempDir(), "relayerminer.ping.sock")
+	relayminerSocketPath := filepath.Join(t.T().TempDir(), "1d031ace")
 
 	relayminer.ServePing(ctx, "unix", relayminerSocketPath)
 
@@ -119,28 +139,20 @@ func TestRelayMiner_Ping(t *testing.T) {
 
 	// Override transport configuration to adapt the http client to the unix socket listener.
 	httpClient := http.Client{Transport: transport}
-	require.NoError(t, err)
+	require.NoError(t.T(), err)
 
 	resp, err := httpClient.Get("http://unix")
-	require.NoError(t, err)
+	require.NoError(t.T(), err)
 
-	require.Equal(t, http.StatusNoContent, resp.StatusCode)
+	require.Equal(t.T(), http.StatusNoContent, resp.StatusCode)
 
 	err = relayminer.Stop(ctx)
-	require.NoError(t, err)
+	require.NoError(t.T(), err)
 }
 
-func TestRelayMiner_NOKPingTemporaryError(t *testing.T) {
-	// servedRelaysObs is NEVER published to. It exists to satisfy test mocks.
-	srObs, _ := channel.NewObservable[*servicetypes.Relay]()
-	servedRelaysObs := relayer.RelaysObservable(srObs)
-
-	// minedRelaysObs is NEVER published to. It exists to satisfy test mocks.
-	mrObs, _ := channel.NewObservable[*relayer.MinedRelay]()
-	minedRelaysObs := relayer.MinedRelaysObservable(mrObs)
-
+func (t *RelayMinerPingSuite) TestNOKPingAllWithTemporaryError() {
 	ctx := polyzero.NewLogger().WithContext(context.Background())
-	relayerProxyMock := testrelayer.NewMockOneTimeRelayerProxy(ctx, t, servedRelaysObs)
+	relayerProxyMock := testrelayer.NewMockOneTimeRelayerProxy(ctx, t.T(), t.servedRelaysObs)
 
 	urlErr := url.Error{
 		Op:  http.MethodGet,
@@ -158,14 +170,14 @@ func TestRelayMiner_NOKPingTemporaryError(t *testing.T) {
 		Times(1).Return(&urlErr)
 
 	minerMock := testrelayer.NewMockOneTimeMiner(
-		ctx, t,
-		servedRelaysObs,
-		minedRelaysObs,
+		ctx, t.T(),
+		t.servedRelaysObs,
+		t.minedRelaysObs,
 	)
 
 	relayerSessionsManagerMock := testrelayer.NewMockOneTimeRelayerSessionsManager(
-		ctx, t,
-		minedRelaysObs,
+		ctx, t.T(),
+		t.minedRelaysObs,
 	)
 
 	deps := depinject.Supply(
@@ -175,17 +187,20 @@ func TestRelayMiner_NOKPingTemporaryError(t *testing.T) {
 	)
 
 	relayminer, err := relayer.NewRelayMiner(ctx, deps)
-	require.NoError(t, err)
-	require.NotNil(t, relayminer)
+	require.NoError(t.T(), err)
+	require.NotNil(t.T(), relayminer)
 
 	err = relayminer.Start(ctx)
-	require.NoError(t, err)
+	require.NoError(t.T(), err)
 
 	time.Sleep(time.Millisecond)
 
-	relayminerSocketPath := filepath.Join(t.TempDir(), "aae252f8-b19d-4bde-bd23-d8f2f6bf4011")
+	relayminerSocketPath := filepath.Join(t.T().TempDir(), "5478a402")
 
-	relayminer.ServePing(ctx, "unix", relayminerSocketPath)
+	err = relayminer.ServePing(ctx, "unix", relayminerSocketPath)
+	require.NoError(t.T(), err)
+
+	require.True(t.T(), os.FileExists(relayminerSocketPath))
 
 	time.Sleep(time.Millisecond)
 
@@ -197,41 +212,33 @@ func TestRelayMiner_NOKPingTemporaryError(t *testing.T) {
 
 	// Override transport configuration to adapt the http client to the unix socket listener.
 	httpClient := http.Client{Transport: transport}
-	require.NoError(t, err)
+	require.NoError(t.T(), err)
 
 	resp, err := httpClient.Get("http://unix")
-	require.NoError(t, err)
+	require.NoError(t.T(), err)
 
-	require.Equal(t, http.StatusGatewayTimeout, resp.StatusCode)
+	require.Equal(t.T(), http.StatusGatewayTimeout, resp.StatusCode)
 
 	err = relayminer.Stop(ctx)
-	require.NoError(t, err)
+	require.NoError(t.T(), err)
 }
 
-func TestRelayMiner_NOKPingNonTemporaryError(t *testing.T) {
-	// servedRelaysObs is NEVER published to. It exists to satisfy test mocks.
-	srObs, _ := channel.NewObservable[*servicetypes.Relay]()
-	servedRelaysObs := relayer.RelaysObservable(srObs)
-
-	// minedRelaysObs is NEVER published to. It exists to satisfy test mocks.
-	mrObs, _ := channel.NewObservable[*relayer.MinedRelay]()
-	minedRelaysObs := relayer.MinedRelaysObservable(mrObs)
-
+func (t *RelayMinerPingSuite) NOKPingWithoutTemporaryError() {
 	ctx := polyzero.NewLogger().WithContext(context.Background())
-	relayerProxyMock := testrelayer.NewMockOneTimeRelayerProxy(ctx, t, servedRelaysObs)
+	relayerProxyMock := testrelayer.NewMockOneTimeRelayerProxy(ctx, t.T(), t.servedRelaysObs)
 
 	relayerProxyMock.EXPECT().PingAll(gomock.Eq(ctx)).
 		Times(1).Return(errors.New("fake"))
 
 	minerMock := testrelayer.NewMockOneTimeMiner(
-		ctx, t,
-		servedRelaysObs,
-		minedRelaysObs,
+		ctx, t.T(),
+		t.servedRelaysObs,
+		t.minedRelaysObs,
 	)
 
 	relayerSessionsManagerMock := testrelayer.NewMockOneTimeRelayerSessionsManager(
-		ctx, t,
-		minedRelaysObs,
+		ctx, t.T(),
+		t.minedRelaysObs,
 	)
 
 	deps := depinject.Supply(
@@ -241,15 +248,15 @@ func TestRelayMiner_NOKPingNonTemporaryError(t *testing.T) {
 	)
 
 	relayminer, err := relayer.NewRelayMiner(ctx, deps)
-	require.NoError(t, err)
-	require.NotNil(t, relayminer)
+	require.NoError(t.T(), err)
+	require.NotNil(t.T(), relayminer)
 
 	err = relayminer.Start(ctx)
-	require.NoError(t, err)
+	require.NoError(t.T(), err)
 
 	time.Sleep(time.Millisecond)
 
-	relayminerSocketPath := filepath.Join(t.TempDir(), "aae252f8-b19d-4bde-bd23-d8f2f6bf4011")
+	relayminerSocketPath := filepath.Join(t.T().TempDir(), "aae252f8")
 
 	relayminer.ServePing(ctx, "unix", relayminerSocketPath)
 
@@ -263,13 +270,13 @@ func TestRelayMiner_NOKPingNonTemporaryError(t *testing.T) {
 
 	// Override transport configuration to adapt the http client to the unix socket listener.
 	httpClient := http.Client{Transport: transport}
-	require.NoError(t, err)
+	require.NoError(t.T(), err)
 
 	resp, err := httpClient.Get("http://unix")
-	require.NoError(t, err)
+	require.NoError(t.T(), err)
 
-	require.Equal(t, http.StatusBadGateway, resp.StatusCode)
+	require.Equal(t.T(), http.StatusBadGateway, resp.StatusCode)
 
 	err = relayminer.Stop(ctx)
-	require.NoError(t, err)
+	require.NoError(t.T(), err)
 }
