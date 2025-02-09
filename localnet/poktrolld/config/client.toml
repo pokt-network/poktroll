@@ -1,5 +1,7 @@
 broadcast-mode = "sync"
 chain-id = "poktroll"
+gas = "auto"
+gas-prices = "0.000000001upokt"
 keyring-backend = "test"
 node = "tcp://localhost:26657"
 output = "text"

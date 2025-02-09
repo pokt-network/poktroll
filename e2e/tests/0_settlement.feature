@@ -21,8 +21,8 @@ Feature: Tokenomics Namespace
         And the "proof" module parameters are set as follows
             | name                         | value                                                            | type  |
             | proof_request_probability    | 0.25                                                             | float |
-            | proof_requirement_threshold  | 839                                                              | coin  |
-            | proof_missing_penalty        | 320                                                              | coin  |
+            | proof_requirement_threshold  | 839000000                                                        | coin  |
+            | proof_missing_penalty        | 320000000                                                        | coin  |
             | proof_submission_fee         | 1000000                                                          | coin  |
         And all "proof" module params should be updated
         And the "shared" module parameters are set as follows
@@ -55,9 +55,9 @@ Feature: Tokenomics Namespace
         # to make sure a proof is not required.
         And the "proof" module parameters are set as follows
             | name                         | value                                                            | type  |
-            | proof_request_probability    | 0                                                                | float |
-            | proof_requirement_threshold  | 421                                                              | coin  |
-            | proof_missing_penalty        | 320                                                              | coin  |
+            | proof_request_probability    | 0.25                                                             | float |
+            | proof_requirement_threshold  | 20000000                                                         | coin  |
+            | proof_missing_penalty        | 320000000                                                        | coin  |
             | proof_submission_fee         | 1000000                                                          | coin  |
         And all "proof" module params should be updated
         And the "shared" module parameters are set as follows
