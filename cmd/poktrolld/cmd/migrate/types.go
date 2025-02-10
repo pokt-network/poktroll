@@ -115,8 +115,7 @@ func (miw *morseImportWorkspace) addAccount(
 	// Initialize balance to zero
 	balance = cosmostypes.NewCoin(volatile.DenomuPOKT, cosmosmath.ZeroInt())
 
-	var ok bool
-	if accountIdx, ok = miw.addressToIdx[addr]; ok {
+	if _, ok := miw.addressToIdx[addr]; ok {
 		return 0, cosmostypes.Coin{}, ErrMorseStateTransform.Wrapf(
 			"unexpected workspace state: account already exists (%s)", addr,
 		)
