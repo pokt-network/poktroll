@@ -30,8 +30,6 @@ func (msg *MsgCreateMorseAccountState) ValidateBasic() error {
 		return sdkerrors.ErrInvalidAddress.Wrapf("invalid authority address (%s)", err)
 	}
 
-	// TODO_UPNEXT(@bryanchriswhite): add validation.
-
 	actualHash, err := msg.MorseAccountState.GetHash()
 	if err != nil {
 		return err

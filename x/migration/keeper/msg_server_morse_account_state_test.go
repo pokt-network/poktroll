@@ -27,6 +27,7 @@ func TestMorseAccountStateMsgServerCreate_Success(t *testing.T) {
 	_, isFound := k.GetMorseAccountState(ctx)
 	require.False(t, isFound)
 
+	// Create the on-chain MorseAccountState.
 	msgCreateMorseAccountState, err := migrationtypes.NewMsgCreateMorseAccountState(
 		authtypes.NewModuleAddress(govtypes.ModuleName).String(),
 		*accountState,
@@ -36,6 +37,7 @@ func TestMorseAccountStateMsgServerCreate_Success(t *testing.T) {
 	res, err := srv.CreateMorseAccountState(ctx, msgCreateMorseAccountState)
 	require.NoError(t, err)
 
+	// Assert that the response matches expectations.
 	expectedUploadMsg := &migrationtypes.MsgCreateMorseAccountState{
 		Authority:         authtypes.NewModuleAddress(govtypes.ModuleName).String(),
 		MorseAccountState: *accountState,
@@ -51,15 +53,17 @@ func TestMorseAccountStateMsgServerCreate_Success(t *testing.T) {
 	}
 	require.Equal(t, expectedRes, res)
 
-	MorseAccountState, isFound := k.GetMorseAccountState(ctx)
+	// Assert that the MorseAccountState was created and matches expectations.
+	morseAccountState, isFound := k.GetMorseAccountState(ctx)
 	require.True(t, isFound)
 	require.NoError(t, err)
 
-	actualStateHash, err := MorseAccountState.GetHash()
+	actualStateHash, err := morseAccountState.GetHash()
 	require.NoError(t, err)
 	require.Equal(t, expectedRes.StateHash, actualStateHash)
-	require.Equal(t, int(expectedRes.NumAccounts), len(MorseAccountState.GetAccounts()))
+	require.Equal(t, int(expectedRes.NumAccounts), len(morseAccountState.GetAccounts()))
 
+	// Assert that the EventCreateMorseAccountState event was emitted.
 	evts := ctx.EventManager().Events()
 	filteredEvts := events.FilterEvents[*migrationtypes.EventCreateMorseAccountState](t, evts)
 	require.Equal(t, 1, len(filteredEvts))
@@ -72,7 +76,7 @@ func TestMorseAccountStateMsgServerCreate_Success(t *testing.T) {
 	require.Equal(t, expectedEvent, filteredEvts[0])
 }
 
-func TestMorseAccountStateMsgServerCreate_Error(t *testing.T) {
+func TestMorseAccountStateMsgServerCreate_ErrorAlreadySet(t *testing.T) {
 	k, ctx := keepertest.MigrationKeeper(t)
 	srv := keeper.NewMsgServerImpl(k)
 
