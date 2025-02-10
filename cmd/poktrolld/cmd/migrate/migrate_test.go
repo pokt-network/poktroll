@@ -107,7 +107,7 @@ func newMorseStateExportAndAccountState(
 ) (morseStateExportBz []byte, morseAccountStateBz []byte) {
 	morseStateExport := &migrationtypes.MorseStateExport{
 		AppHash: "",
-		AppState: &migrationtypes.MorseAppState{
+		AppState: &migrationtypes.MorseTendermintAppState{
 			Application: &migrationtypes.MorseApplications{},
 			Auth:        &migrationtypes.MorseAuth{},
 			Pos:         &migrationtypes.MorsePos{},

@@ -15,28 +15,39 @@ import (
 	migrationtypes "github.com/pokt-network/poktroll/x/migration/types"
 )
 
+const defaultLogOutput = "-"
+
 var (
 	flagDebugAccountsPerLog int
 	flagLogLevel            string
 	flagLogOutput           string
 	logger                  polylog.Logger
 
+	// DEV_NOTE: AutoCLI does not apply here because there is no gRPC service,
+	// message, or query. The purpose of this command is to facilitate the
+	// deterministic (i.e. reproducible) transformation from the Morse export
+	// data structure (MorseStateExport) into the Shannon import data structure
+	// (MorseAccountState). It does not interact with the network directly.
 	collectMorseAccountsCmd = &cobra.Command{
 		Use:   "collect-morse-accounts [morse-state-export-path] [morse-account-state-path]",
 		Args:  cobra.ExactArgs(2),
-		Short: "Collect all account balances and corresponding stakes from the JSON file at [morse-state-export-path] and outputs them as JSON to [morse-account-state-path]",
-		Long: `Collects the account balances and corresponding stakes from the MorseStateExport JSON file at morse-state-path
-and outputs them as a MorseAccountState JSON to morse-accounts-path for use with
-Shannon's MsgUploadMorseState. The Morse state export is generated via the Morse CLI:
-pocket util export-genesis-for-reset [height] [new-chain-id] > morse-state-export.json`,
+		Short: "Collect account balances and stakes from [morse-state-export-path] JSON file and output to [morse-account-state-path] as JSON",
+		Long: `Processes Morse state for Shannon migration:
+	          * Reads MorseStateExport JSON from morse-state-path
+	          * Contains account balances and associated stakes  
+	          * Outputs MorseAccountState JSON to morse-accounts-path
+	          * Integrates with Shannon's MsgUploadMorseState
+	
+	          Generate required input via Morse CLI:
+	          pocket util export-genesis-for-reset [height] [new-chain-id] > morse-state-export.json`,
 		PreRunE: func(cmd *cobra.Command, args []string) error {
 			var (
 				logOutput io.Writer
 				err       error
 			)
 			logLevel := polyzero.ParseLevel(flagLogLevel)
-			if flagLogOutput == "-" {
-				logOutput = os.Stderr
+			if flagLogOutput == defaultLogOutput {
+				logOutput = os.Stdout
 			} else {
 				logOutput, err = os.Open(flagLogOutput)
 				if err != nil {
@@ -61,7 +72,7 @@ func MigrateCmd() *cobra.Command {
 	}
 	migrateCmd.AddCommand(collectMorseAccountsCmd)
 	migrateCmd.PersistentFlags().StringVar(&flagLogLevel, "log-level", "info", "The logging level (debug|info|warn|error)")
-	migrateCmd.PersistentFlags().StringVar(&flagLogOutput, "log-output", "-", "The logging output (file path); defaults to stdout")
+	migrateCmd.PersistentFlags().StringVar(&flagLogOutput, "log-output", defaultLogOutput, "The logging output (file path); defaults to stdout")
 
 	collectMorseAccountsCmd.Flags().IntVar(&flagDebugAccountsPerLog, "debug-accounts-per-log", 0, "The number of accounts to log per debug message")
 
@@ -87,9 +98,10 @@ func runCollectMorseAccounts(_ *cobra.Command, args []string) error {
 	return morseWorkspace.infoLogComplete()
 }
 
-// collectMorseAccounts reads and transforms the JSON serialized MorseStateExport
-// at morseStateExportPath into a JSON serialized MorseAccountState, and then writes
-// it to morseAccountStatePath.
+// collectMorseAccounts:
+// - Reads a MorseStateExport JSON file from morseStateExportPath
+// - Transforms it into a MorseAccountState
+// - Writes the resulting JSON to morseAccountStatePath
 func collectMorseAccounts(morseStateExportPath, morseAccountStatePath string) (*morseImportWorkspace, error) {
 	if err := validatePathIsFile(morseStateExportPath); err != nil {
 		return nil, err
@@ -137,6 +149,10 @@ func validatePathIsFile(path string) error {
 
 // transformMorseState consolidates the Morse account balance, application stake,
 // and supplier stake for each account as an entry in the resulting MorseAccountState.
+// NOTE: In Shannon terms, "supplier" is equivalent to the following in Morse terms:
+// - "validator"
+// - "node"
+// - "servicer"
 func transformMorseState(
 	inputState *migrationtypes.MorseStateExport,
 	morseWorkspace *morseImportWorkspace,
@@ -155,13 +171,7 @@ func transformMorseState(
 
 	// Iterate over suppliers and add the stakes to the corresponding account balances.
 	logger.Info().Msg("collecting supplier stakes...")
-	err := collectInputSupplierStakes(inputState, morseWorkspace)
-	if err != nil {
-		return err
-	}
-
-	morseWorkspace.accountState = &migrationtypes.MorseAccountState{Accounts: morseWorkspace.accounts}
-	return nil
+	return collectInputSupplierStakes(inputState, morseWorkspace)
 }
 
 // collectInputAccountBalances iterates over the accounts in the inputState and
@@ -183,17 +193,21 @@ func collectInputAccountBalances(inputState *migrationtypes.MorseStateExport, mo
 		}
 
 		accountAddr := exportAccount.Value.Address.String()
-		if _, _, err := morseWorkspace.ensureAccount(accountAddr, exportAccount); err != nil {
+		if _, _, err := morseWorkspace.addAccount(accountAddr, exportAccount); err != nil {
 			return err
 		}
 
 		coins := exportAccount.Value.Coins
+
+		// If, for whatever reason, the account has no coins, skip it.
+		// DEV_NOTE: This is NEVER expected to happen, but is technically possible.
 		if len(coins) == 0 {
+			logger.Warn().Str("address", accountAddr).Msg("account has no coins; skipping")
 			return nil
 		}
 
 		// DEV_NOTE: SHOULD ONLY be one denom (upokt).
-		if len(coins) != 1 {
+		if len(coins) > 1 {
 			return ErrMorseExportState.Wrapf(
 				"account %q has %d token denominations, expected upokt only: %s",
 				accountAddr, len(coins), coins,
@@ -244,6 +258,8 @@ func collectInputApplicationStakes(inputState *migrationtypes.MorseStateExport, 
 				appAddr, err,
 			)
 		}
+
+		morseWorkspace.accumulatedTotalAppStake = morseWorkspace.accumulatedTotalAppStake.Add(appStakeAmtUpokt)
 	}
 	return nil
 }
@@ -270,6 +286,8 @@ func collectInputSupplierStakes(inputState *migrationtypes.MorseStateExport, mor
 				supplierAddr, err,
 			)
 		}
+
+		morseWorkspace.accumulatedTotalSupplierStake = morseWorkspace.accumulatedTotalSupplierStake.Add(supplierStakeAmtUpokt)
 	}
 	return nil
 }
