@@ -1,6 +1,9 @@
+<!-- markdownlint-disable MD033 -->
+<!-- markdownlint-disable MD045 -->
+
 <div align="center">
   <a href="https://www.pokt.network">
-    <img src="https://user-images.githubusercontent.com/2219004/151564884-212c0e40-3bfa-412e-a341-edb54b5f1498.jpeg" alt="Pocket Network logo" width="340"/>
+    <img src="https://github.com/user-attachments/assets/5dbddd4a-d932-4c44-8396-270f140f086a" alt="Pocket Network logo" width="340"/>
   </a>
 </div>
 
@@ -22,52 +25,13 @@
 
 # poktroll <!-- omit in toc -->
 
-**poktroll** is built using the [Cosmos SDK](https://docs.cosmos.network) and
-[CometBFT](https://cometbft.com/), created with [Ignite CLI](https://ignite.com/cli)
-for the Shannon upgrade of the [Pocket Network](https://pokt.network) blockchain.
+**poktroll** is the source code for [Pocket Network's](https://pokt.network/)
+[Shannon upgrade](https://docs.pokt.network/pokt-protocol/the-shannon-upgrade).
 
-- [Learn about Pocket Network](#learn-about-pocket-network)
-- [Developer Documentation](#developer-documentation)
-- [Roadmap](#roadmap)
-- [Quickstart](#quickstart)
-- [Godoc](#godoc)
-- [Have questions? Ask An PNYX](#have-questions-ask-an-pnyx)
-- [License](#license)
+For technical documentation, visit [dev.poktroll.com](https://dev.poktroll.com).
 
-## Learn about Pocket Network
-
-User friendly documentation of the Shannon upgrade is still a WIP, but there are
-a handful of (potentially outdated) resources you can reference in the meantime
-to build a better understanding of Pocket Network:
-
-- [Pocket Network official documentation](https://docs.pokt.network)
-- [[Live] Pocket Network Morse; aka v0](https://github.com/pokt-network/pocket-core)
-- [[Outdated] Pocket Network Protocol](https://github.com/pokt-network/pocket-network-protocol)
-- [[Deprecated]Pocket Network V1](https://github.com/pokt-network/pocket)
-
-## Developer Documentation
-
-The developer documentation is available at [dev.poktroll.com](https://dev.poktroll.com).
-
-## Roadmap
-
-You can view the Shannon Roadmap on [Github](https://github.com/orgs/pokt-network/projects/144?query=is%3Aopen+sort%3Aupdated-desc)
-
-## Quickstart
-
-The best way to get involved is by following the [quickstart instructions](https://dev.poktroll.com/develop/developer_guide/quickstart).
-
-## Godoc
-
-The Godoc for the source code in this can be found at [pkg.go.dev/github.com/pokt-network/poktroll](https://pkg.go.dev/github.com/pokt-network/poktroll).
-
-## Have questions? Ask An PNYX
-
-You can use [PNYX](https://migration.pnyxai.com/), an AI-powered search engine that has been
-trained and indexed on the Pocket Network documentation, community calls, forums
-and much more!
-
----
+Documentation is maintained in the [docusaurus repo](./docusaurus) and is
+automatically deployed to the link above.
 
 ## License
 

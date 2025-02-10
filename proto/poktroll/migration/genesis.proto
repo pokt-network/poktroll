@@ -5,7 +5,7 @@ package poktroll.migration;
 import "amino/amino.proto";
 import "gogoproto/gogo.proto";
 import "poktroll/migration/params.proto";
-import "poktroll/migration/types.proto";
+import "poktroll/migration/morse_onchain.proto";
 import "poktroll/migration/morse_account_claim.proto";
 
 option go_package = "github.com/pokt-network/poktroll/x/migration/types";

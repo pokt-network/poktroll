@@ -16,16 +16,18 @@ import (
 )
 
 // NewMorseStateExportAndAccountStateBytes returns:
-// - A serialized MorseStateExport
-// - Its corresponding MorseAccountState
+//   - A serialized MorseStateExport.
+//     This is the JSON output of `pocket util export-genesis-for-reset`.
+//     It is used to generate the MorseAccountState.
+//   - Its corresponding MorseAccountState.
+//     This is the JSON output of `poktrolld migrate collect-morse-accounts`.
+//     It is used to persist the canonical Morse migration state from on Shannon.
 //
 // The states are populated with:
 // - Random account addresses
 // - Monotonically increasing balances/stakes
 // - One application per account
 // - One supplier per account
-//
-// TODO_CONSIDERATION: Test/benchmark execution speed can be optimized by refactoring this to a pre-generate fixture.
 func NewMorseStateExportAndAccountStateBytes(
 	t gocuke.TestingT,
 	numAccounts int,
@@ -55,7 +57,7 @@ func NewMorseStateExportAndAccountState(
 
 	morseStateExport := &migrationtypes.MorseStateExport{
 		AppHash: "",
-		AppState: &migrationtypes.MorseAppState{
+		AppState: &migrationtypes.MorseTendermintAppState{
 			Application: &migrationtypes.MorseApplications{},
 			Auth:        &migrationtypes.MorseAuth{},
 			Pos:         &migrationtypes.MorsePos{},

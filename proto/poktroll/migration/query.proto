@@ -8,7 +8,7 @@ import "gogoproto/gogo.proto";
 import "google/api/annotations.proto";
 import "cosmos/base/query/v1beta1/pagination.proto";
 import "poktroll/migration/params.proto";
-import "poktroll/migration/types.proto";
+import "poktroll/migration/morse_onchain.proto";
 import "poktroll/migration/morse_account_claim.proto";
 
 option go_package = "github.com/pokt-network/poktroll/x/migration/types";
@@ -28,15 +28,15 @@ service Query {
     option (google.api.http).get = "/pokt-network/poktroll/migration/morse_account_state";
   
   }
-  
+
   // Queries a list of MorseAccountClaim items.
   rpc MorseAccountClaim    (QueryGetMorseAccountClaimRequest) returns (QueryGetMorseAccountClaimResponse) {
     option (google.api.http).get = "/pokt-network/poktroll/migration/morse_account_claim/{morse_src_address}";
-  
+
   }
   rpc MorseAccountClaimAll (QueryAllMorseAccountClaimRequest) returns (QueryAllMorseAccountClaimResponse) {
     option (google.api.http).get = "/pokt-network/poktroll/migration/morse_account_claim";
-  
+
   }
 }
 // QueryParamsRequest is request type for the Query/Params RPC method.
