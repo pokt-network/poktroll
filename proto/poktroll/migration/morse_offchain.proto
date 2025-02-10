@@ -7,7 +7,7 @@ syntax = "proto3";
 // but are not completely identical to their Morse counterparts, not all of which are defined
 // as protobuf types in the Morse codebase.
 //
-// Morse also leverages pb.Any types, as well as the gogoproto.casttype option in several places.
+// Morse leverages pb.Any types, as well as the gogoproto.casttype option in several places.
 // All usages of pb.Any have been replaced with equivalent protobuf types
 // (i.e. an interstitial type with `type` and/or `value` field(s)).
 // All usages of gogoproto.casttype which previously referenced Morse data structures have been removed.
@@ -15,10 +15,10 @@ syntax = "proto3";
 // external lib type that the Morse type was wrapping (e.g. address and public key fields).
 //
 // These types are used by the migration subcommand to transform
-// the Morse state export into the Shannon state import.
-// Ref: `poktrolld migrate collect-morse-accounts ...`
+// the Morse state export into the Shannon state import like so:
+//  $ poktrolld migrate collect-morse-accounts ...
 //
-// They ARE NOT persisted on-chain (Shannon) at any point.
+// CRITICAL: These types are offchain and ARE NOT persisted onchain (Shannon) at any point.
 package poktroll.migration;
 
 import "gogoproto/gogo.proto";
@@ -27,10 +27,10 @@ import "poktroll/migration/morse_onchain.proto";
 option go_package = "github.com/pokt-network/poktroll/x/migration/types";
 option (gogoproto.stable_marshaler_all) = true;
 
-// MorseStateExport is the data structure that is serialized and output when running
-// `pocket utils export-genesis-for-reset`.
+// MorseStateExport is the data structure that is serialized and output when running:
+//  $ pocket utils export-genesis-for-reset ...
 //
-// See: https://editor.swagger.io/?url=https://raw.githubusercontent.com/pokt-network/pocket-core/staging/doc/specs/rpc-spec.yaml#operations-query-post_query_state
+// Ref: https://editor.swagger.io/?url=https://raw.githubusercontent.com/pokt-network/pocket-core/staging/doc/specs/rpc-spec.yaml#operations-query-post_query_state
 message MorseStateExport {
   // app_hash is the Morse tendermint state hash.
   string app_hash = 1 [(gogoproto.jsontag) = "app_hash"];
@@ -58,7 +58,7 @@ message MorseApplications {
   repeated MorseApplication applications = 1 [(gogoproto.jsontag) = "applications"];
 }
 
-// A wrapper around a list of Morse accounts.
+// A wrapper around a list of MorseAuthAccount.
 // It encapsulates the minimum information required to import Morse accounts.
 //
 // See: https://github.com/pokt-network/pocket-core/blob/staging/x/auth/types/genesis.go#L9
@@ -67,7 +67,7 @@ message MorseAuth {
 }
 
 // MorseAccount:
-// * Wraps Morse account information to conform to Morse genesis structure
+// * Wraps MorseAuthAccount information to conform to Morse genesis structure
 // * Represents only externally owned accounts (not module accounts)
 // * Avoids pb.Any serialization since only external accounts needed for migration
 message MorseAuthAccount {
@@ -96,6 +96,7 @@ message MorseApplication {
   bytes address = 1 [(gogoproto.casttype) = "github.com/cometbft/cometbft/crypto.Address", (gogoproto.jsontag) = "address", (gogoproto.moretags) = "yaml:\"address\""];
   // PublicKey is the binary representation of a Morse application's ed25519 public key.
   bytes public_key = 2 [(gogoproto.jsontag) = "public_key", (gogoproto.moretags) = "yaml:\"public_key\""];
+  // TODO_MAINNET(@Olshansk):  Should status and/or jailed be considered during the migration, and if so, how?
   bool   jailed = 3[(gogoproto.jsontag) = "jailed", (gogoproto.moretags) = "yaml:\"jailed\""];
   int32  status = 4 [(gogoproto.jsontag) = "status", (gogoproto.moretags) = "yaml:\"status\""];
   // The string representation of the BigInt amount of upokt.
@@ -115,7 +116,7 @@ message MorseValidator {
   bytes address = 1 [(gogoproto.casttype) = "github.com/cometbft/cometbft/crypto.Address", (gogoproto.moretags) = "yaml:\"address\"", (gogoproto.jsontag) = "address"];
   // The binary representation of a Morse application's ed25519 public key.
   bytes public_key = 2 [(gogoproto.moretags) = "yaml:\"public_key\"", (gogoproto.jsontag) = "public_key"];
-  // TODO_MAINNET(@Olshansk):  Should status or jailed be considered during the migration, and if so, how?
+  // TODO_MAINNET(@Olshansk):  Should status and/or jailed be considered during the migration, and if so, how?
   bool jailed = 3 [(gogoproto.jsontag) = "jailed"];
   int32 status = 4 [(gogoproto.jsontag) = "status"];
   // The string representation of the BigInt amount of upokt.

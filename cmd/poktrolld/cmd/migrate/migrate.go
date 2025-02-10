@@ -23,21 +23,22 @@ var (
 	flagLogOutput           string
 	logger                  polylog.Logger
 
-	// DEV_NOTE: AutoCLI does not apply here because there is no gRPC service,
-	// message, or query. The purpose of this command is to facilitate the
-	// deterministic (i.e. reproducible) transformation from the Morse export
-	// data structure (MorseStateExport) into the Shannon import data structure
-	// (MorseAccountState). It does not interact with the network directly.
+	// DEV_NOTE: AutoCLI does not apply here because there is no gRPC service, message, or query.
+	//
+	// The purpose of this command is to facilitate the deterministic (i.e. reproducible) transformation
+	// from Morse's export data structure (MorseStateExport) into Shannon's import data structure (MorseAccountState).
+	//
+	// It does not interact with the network directly.
 	collectMorseAccountsCmd = &cobra.Command{
 		Use:   "collect-morse-accounts [morse-state-export-path] [morse-account-state-path]",
 		Args:  cobra.ExactArgs(2),
 		Short: "Collect account balances and stakes from [morse-state-export-path] JSON file and output to [morse-account-state-path] as JSON",
 		Long: `Processes Morse state for Shannon migration:
-	          * Reads MorseStateExport JSON from morse-state-path
-	          * Contains account balances and associated stakes  
-	          * Outputs MorseAccountState JSON to morse-accounts-path
+	          * Reads MorseStateExport JSON from [morse-state-export-path]
+	          * Contains account balances and associated stakes
+	          * Outputs MorseAccountState JSON to [morse-account-state-path]
 	          * Integrates with Shannon's MsgUploadMorseState
-	
+
 	          Generate required input via Morse CLI:
 	          pocket util export-genesis-for-reset [height] [new-chain-id] > morse-state-export.json`,
 		PreRunE: func(cmd *cobra.Command, args []string) error {
@@ -45,6 +46,7 @@ var (
 				logOutput io.Writer
 				err       error
 			)
+
 			logLevel := polyzero.ParseLevel(flagLogLevel)
 			if flagLogOutput == defaultLogOutput {
 				logOutput = os.Stdout
@@ -59,6 +61,7 @@ var (
 				polyzero.WithLevel(logLevel),
 				polyzero.WithOutput(logOutput),
 			).With("cmd", "migrate")
+
 			return nil
 		},
 		RunE: runCollectMorseAccounts,
@@ -79,7 +82,8 @@ func MigrateCmd() *cobra.Command {
 	return migrateCmd
 }
 
-// runCollectedMorseAccounts is run by the `poktrolld migrate collect-morse-accounts` command.
+// runCollectedMorseAccounts is run via the following command:
+// $ poktrolld migrate collect-morse-accounts
 func runCollectMorseAccounts(_ *cobra.Command, args []string) error {
 	// DEV_NOTE: No need to check args length due to cobra.ExactArgs(2).
 	morseStateExportPath := args[0]
@@ -149,7 +153,7 @@ func validatePathIsFile(path string) error {
 
 // transformMorseState consolidates the Morse account balance, application stake,
 // and supplier stake for each account as an entry in the resulting MorseAccountState.
-// NOTE: In Shannon terms, "supplier" is equivalent to the following in Morse terms:
+// NOTE: In Shannon terms, a "supplier" is equivalent to all of the following in Morse terms:
 // - "validator"
 // - "node"
 // - "servicer"
@@ -179,6 +183,7 @@ func transformMorseState(
 func collectInputAccountBalances(inputState *migrationtypes.MorseStateExport, morseWorkspace *morseImportWorkspace) error {
 	for exportAccountIdx, exportAccount := range inputState.AppState.Auth.Accounts {
 		// DEV_NOTE: Ignore module accounts.
+		// TODO_IN_THIS_PR: Create a GitHub issue based on this thread: https://github.com/pokt-network/poktroll/pull/1039/files#r1934711993
 		if exportAccount.Type != "posmint/Account" {
 			logger.Warn().
 				Str("type", exportAccount.Type).

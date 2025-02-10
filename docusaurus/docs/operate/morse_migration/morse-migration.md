@@ -3,113 +3,125 @@ title: Diagrams
 sidebar_position: 1
 ---
 
-// TODO_UPNEXT(@bryanchriswhite#1034): Expand migration docs and re-organize this page.
+:::warning TODO_UPNEXT(@bryanchriswhite,#1034)
+Expand migration docs and re-organize this page.
+
+    All migration documents can be found on notion [here](https://www.notion.so/buildwithgrove/Morse-to-Shannon-Migration-173a36edfff6809cb1cbe10827c040de?pvs=4).
+
+:::
+
+## Table of Contents <!-- omit in toc -->
+
+- [Complete E2E User Sequence](#complete-e2e-user-sequence)
+- [Onchain Actors \& Messages](#onchain-actors--messages)
+- [Shannon Data Structures to Represent Morse State](#shannon-data-structures-to-represent-morse-state)
 
 ## Complete E2E User Sequence
 
 ```mermaid
 sequenceDiagram
-autonumber
-actor A as Authority (Foundation)
-actor MA as Morse Account Holders
-participant MN as Morse Network
-participant SN as Shannon Network
+    autonumber
 
-loop (Re-)Generate morse_account_state.json
+    actor A as Authority (Foundation)
+    actor MA as Morse Account Holders
+    participant MN as Morse Network
+    participant SN as Shannon Network
 
-    A ->>+ MN: $ pocket util export-geneis-for-reset
-    MN ->>- A: return morse_state_export.json
+    loop (Re-)Generate morse_account_state.json
 
-    A ->> A: $ poktrolld migrate collect-morse-accounts
-    note over A: morse_account_state.json generated
+        A ->>+ MN: $ pocket util export-geneis-for-reset
+        MN ->>- A: return morse_state_export.json
 
-    A ->>+ MA: distribute for verification <br> morse_account_state.json
+        A ->> A: $ poktrolld migrate collect-morse-accounts
+        note over A: morse_account_state.json generated
 
-    opt Morse Stakeholders optionally do local verification
-        MA ->>+ MN: $ pocket util export-geneis-for-reset
-        MN ->>- MA: return for local verification <br> morse_state_export.json
+        A ->>+ MA: distribute for verification <br> morse_account_state.json
 
-        MA ->> MA: $ poktrolld migrate collect-morse-accounts
-        note over MA: morse_account_state.json generated
-        MA ->> MA: manual comparison of <br> morse_account_state.json hashes
+        opt Morse Stakeholders optionally do local verification
+            MA ->>+ MN: $ pocket util export-geneis-for-reset
+            MN ->>- MA: return for local verification <br> morse_state_export.json
 
-        MA ->>- A: ** (off-chain feedback) **
+            MA ->> MA: $ poktrolld migrate collect-morse-accounts
+            note over MA: morse_account_state.json generated
+            MA ->> MA: manual comparison of <br> morse_account_state.json hashes
+
+            MA ->>- A: ** (off-chain feedback) **
+        end
+
     end
 
-end
+    A ->>+ SN: upload morse state<br/>(MsgCreateMorseAccountState)
+    SN ->> SN: verify morse_account_state_hash field
+    SN -->- A: valid / invalid
 
-A ->>+ SN: upload morse state<br/>(MsgCreateMorseAccountState)
-SN ->> SN: verify morse_account_state_hash field
-SN -->- A: 
-
-MA ->> SN: $ poktrolld migration claim-morse-pokt<br/>claim morse POKT<br/>(MsgClaimMorsePOKT): 
+    MA ->> SN: $ poktrolld migration claim-morse-pokt<br/>claim morse POKT<br/>(MsgClaimMorsePOKT)
 ```
 
 ## Onchain Actors & Messages
 
 ```mermaid
 flowchart
-m1[MsgCreateMorseAccountClaim]:::account
-m2[MsgCreateMorseSupplierClaim]:::supplier
-m3[MsgCreateMorseApplicationClaim]:::application
-m4[MsgCreateMorseGatewayClaim]:::gateway
+    m1[MsgCreateMorseAccountClaim]:::account
+    m2[MsgCreateMorseSupplierClaim]:::supplier
+    m3[MsgCreateMorseApplicationClaim]:::application
+    m4[MsgCreateMorseGatewayClaim]:::gateway
 
-subgraph MigrationKeeper
-h1([CreateMorseAccountClaim]):::account
-h2([CreateMorseSupplierClaim]):::supplier
-h3([CreateMorseApplicationClaim]):::application
-h4([CreateMorseGatewayClaim]):::gateway
-%% ms[[MorseAccountState]]
-ac[[MorseAccountClaims]]:::general
-end
+    subgraph MigrationKeeper
+    h1([CreateMorseAccountClaim]):::account
+    h2([CreateMorseSupplierClaim]):::supplier
+    h3([CreateMorseApplicationClaim]):::application
+    h4([CreateMorseGatewayClaim]):::gateway
+    %% ms[[MorseAccountState]]
+    ac[[MorseAccountClaims]]:::general
+    end
 
-h1 --"Morse Account Claim Creation<br/>(ensure not previously claimed)"--> ac
-h2 --"Morse Account Claim Creation<br/>(ensure not previously claimed)"--> ac
-h3 --"Morse Account Claim Creation<br/>(ensure not previously claimed)"--> ac
-h4 --"Morse Account Claim Creation<br/>(ensure not previously claimed)"--> ac
+    h1 --"Morse Account Claim Creation<br/>(ensure not previously claimed)"--> ac
+    h2 --"Morse Account Claim Creation<br/>(ensure not previously claimed)"--> ac
+    h3 --"Morse Account Claim Creation<br/>(ensure not previously claimed)"--> ac
+    h4 --"Morse Account Claim Creation<br/>(ensure not previously claimed)"--> ac
 
-%% h1 --"ensure claim is valid"--> ms
-%% h2 --"ensure claim is valid"--> ms
-%% h3 --"ensure claim is valid"--> ms
-%% h4 --"ensure claim is valid"--> ms
+    %% h1 --"ensure claim is valid"--> ms
+    %% h2 --"ensure claim is valid"--> ms
+    %% h3 --"ensure claim is valid"--> ms
+    %% h4 --"ensure claim is valid"--> ms
 
-m1 --> h1
-m2 --> h2
-m3 --> h3
-m4 --> h4
+    m1 --> h1
+    m2 --> h2
+    m3 --> h3
+    m4 --> h4
 
-subgraph BankKeeper
-bk1[[Balances]]:::general
-end
+    subgraph BankKeeper
+    bk1[[Balances]]:::general
+    end
 
-subgraph SupplierKeeper
-sk1[["Suppliers"]]:::supplier
-end
+    subgraph SupplierKeeper
+    sk1[["Suppliers"]]:::supplier
+    end
 
-subgraph ApplicationKeeper
-ak1[["Applications"]]:::application
-end
+    subgraph ApplicationKeeper
+    ak1[["Applications"]]:::application
+    end
 
-subgraph GatewayKeeper
-gk1[["Gateways"]]:::gateway
-end
+    subgraph GatewayKeeper
+    gk1[["Gateways"]]:::gateway
+    end
 
-h1 --"Mint Balance"----> bk1
-h2 --"Mint Supplier Stake &<br/>Non-staked Balance"--> bk1
-h2 --"Stake Supplier"---> sk1
-h3 --"Mint Application Stake &<br/>Non-staked Balance"--> bk1
-h3 --"Stake Application"---> ak1
-h4 --"Mint Gateway Stake &<br/>Non-staked Balance"--> bk1
-h4 --"Stake Gateway"---> gk1
+    h1 --"Mint Balance"----> bk1
+    h2 --"Mint Supplier Stake &<br/>Non-staked Balance"--> bk1
+    h2 --"Stake Supplier"---> sk1
+    h3 --"Mint Application Stake &<br/>Non-staked Balance"--> bk1
+    h3 --"Stake Application"---> ak1
+    h4 --"Mint Gateway Stake &<br/>Non-staked Balance"--> bk1
+    h4 --"Stake Gateway"---> gk1
 
-classDef account fill:#90EE90,color:#000
-classDef supplier fill:#FFA500,color:#000
-classDef application fill:#FFB6C6,color:#000
-classDef gateway fill:#FF0000,color:#000
-classDef general fill:#87CEEB,color:#000
+    classDef account fill:#90EE90,color:#000
+    classDef supplier fill:#FFA500,color:#000
+    classDef application fill:#FFB6C6,color:#000
+    classDef gateway fill:#FF0000,color:#000
+    classDef general fill:#87CEEB,color:#000
 ```
 
-## Data Structures
+## Shannon Data Structures to Represent Morse State
 
 ```mermaid
 ---

@@ -20,6 +20,9 @@ import (
 	migrationtypes "github.com/pokt-network/poktroll/x/migration/types"
 )
 
+// TODO_IN_THIS_PR: Add a TODO to an E2E assuming this approach is sufficient
+// for what we need to do: https://github.com/pokt-network/poktroll/pull/1039#discussion_r1947036729
+
 func init() {
 	logger = polyzero.NewLogger(polyzero.WithLevel(polyzero.DebugLevel))
 	flagDebugAccountsPerLog = 1

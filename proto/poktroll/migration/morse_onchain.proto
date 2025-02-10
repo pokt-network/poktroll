@@ -9,8 +9,9 @@ import "gogoproto/gogo.proto";
 option go_package = "github.com/pokt-network/poktroll/x/migration/types";
 option (gogoproto.stable_marshaler_all) = true;
 
-// MorseAccountState is the on-chain representation of the imported account state from Morse.
+// MorseAccountState is the onchain representation of the imported account state from Morse.
 message MorseAccountState {
+  // TODO_IN_THIS_PR: #PUC to the rationale of needing to index this.
   map<string, uint64> accounts_idx_by_address = 1 [(gogoproto.jsontag) = "accounts_idx_by_address", (gogoproto.moretags) = "yaml:\"accounts_idx_by_address\""];
   repeated MorseAccount accounts = 2 [(gogoproto.jsontag) = "accounts", (gogoproto.moretags) = "yaml:\"accounts\""];
 }
@@ -26,8 +27,14 @@ message MorseAccount {
   option (cosmos_proto.implements_interface) = "Account";
 
   // A binary representation of the address corresponding to a Morse application's ed25519 public key.
+  // TODO_IN_THIS_PR: #PUC if this is hex or not?
   bytes address = 1 [(gogoproto.jsontag) = "address", (gogoproto.casttype) = "github.com/cometbft/cometbft/crypto.Address"];
+
+  // The ed25519 public key of the account.
   MorsePublicKey pub_key = 2 [(gogoproto.jsontag) = "public_key", (gogoproto.moretags) = "yaml:\"public_key\""];
+
+  // The amount of uPOKT held by the account.
+  // TODO_IN_THIS_PR: #PUC how we distinguish staked tokens from regular tokens?
   repeated cosmos.base.v1beta1.Coin coins = 3 [(gogoproto.nullable) = false, (gogoproto.jsontag) = "coins"];
 }
 
