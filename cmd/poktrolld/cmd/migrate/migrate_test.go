@@ -198,7 +198,7 @@ func newMorseStateExportAndAccountState(
 		}
 
 		// Add the account index to the morseAccountState.
-		morseAccountState.AccountsIdxByAddress[pubKey.Address().String()] = uint64(i)
+		morseAccountState.AccountsIdxByAddress[pubKey.Address().String()] = uint64(i - 1)
 	}
 
 	var err error
