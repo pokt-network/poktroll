@@ -1,0 +1,8 @@
+{
+  "label": "Explorers, Faucets, Wallets, and More",
+  "position": 3,
+  "link": {
+    "type": "generated-index",
+    "description": "poktrolld CLI documentation"
+  }
+}
