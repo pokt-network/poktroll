@@ -29,10 +29,10 @@ var (
 	// data structure (MorseStateExport) into the Shannon import data structure
 	// (MorseAccountState). It does not interact with the network directly.
 	collectMorseAccountsCmd = &cobra.Command{
-	   Use:   "collect-morse-accounts [morse-state-export-path] [morse-account-state-path]",
-	   Args:  cobra.ExactArgs(2),
-	   Short: "Collect account balances and stakes from [morse-state-export-path] JSON file and output to [morse-account-state-path] as JSON",
-	   Long: `Processes Morse state for Shannon migration:
+		Use:   "collect-morse-accounts [morse-state-export-path] [morse-account-state-path]",
+		Args:  cobra.ExactArgs(2),
+		Short: "Collect account balances and stakes from [morse-state-export-path] JSON file and output to [morse-account-state-path] as JSON",
+		Long: `Processes Morse state for Shannon migration:
 	          * Reads MorseStateExport JSON from morse-state-path
 	          * Contains account balances and associated stakes  
 	          * Outputs MorseAccountState JSON to morse-accounts-path
@@ -40,7 +40,6 @@ var (
 	
 	          Generate required input via Morse CLI:
 	          pocket util export-genesis-for-reset [height] [new-chain-id] > morse-state-export.json`,
-	}
 		PreRunE: func(cmd *cobra.Command, args []string) error {
 			var (
 				logOutput io.Writer
