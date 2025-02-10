@@ -113,6 +113,10 @@ params_update_shared_application_unbonding_period_sessions: ## Update the shared
 params_update_shared_compute_units_to_tokens_multiplier: ## Update the shared module compute_units_to_tokens_multiplier param
 	poktrolld tx authz exec ./tools/scripts/params/shared_compute_units_to_tokens_multiplier.json $(PARAM_FLAGS)
 
+.PHONY: params_update_shared_gateway_unbonding_period_sessions
+params_update_shared_gateway_unbonding_period_sessions: ## Update the shared module gateway_unbonding_period_sessions param
+	poktrolld tx authz exec ./tools/scripts/params/shared_gateway_unbonding_period_sessions.json $(PARAM_FLAGS)
+
 ### Gateway Module Params ###
 .PHONY: params_get_gateway
 params_get_gateway: ## Get the gateway module params

@@ -47,33 +47,37 @@ func (k msgServer) UnstakeGateway(
 	}
 	logger.Info(fmt.Sprintf("Gateway found. Unstaking gateway for address %s", msg.Address))
 
-	// Retrieve the address of the gateway
-	gatewayAddress, err := sdk.AccAddressFromBech32(msg.Address)
-	if err != nil {
-		logger.Info(fmt.Sprintf("could not parse address %s", msg.Address))
-		return nil, status.Error(codes.InvalidArgument, err.Error())
+	// Check if the gateway has already initiated the unstaking process.
+	if gateway.IsUnbonding() {
+		logger.Info(fmt.Sprintf("Gateway with address [%s] is still unbonding from previous unstaking", msg.GetAddress()))
+		return nil, status.Error(
+			codes.FailedPrecondition,
+			types.ErrGatewayIsUnstaking.Wrapf(
+				"gateway with address %q", msg.GetAddress(),
+			).Error(),
+		)
 	}
 
-	// Send the coins from the gateway pool back to the gateway
-	err = k.bankKeeper.SendCoinsFromModuleToAccount(ctx, types.ModuleName, gatewayAddress, []sdk.Coin{*gateway.Stake})
-	if err != nil {
-		err = fmt.Errorf("could not send %v coins from %s module to %s account due to %v", gateway.Stake, gatewayAddress, types.ModuleName, err)
-		logger.Error(err.Error())
-		return nil, status.Error(codes.Internal, err.Error())
-	}
+	currentHeight := ctx.BlockHeight()
+	sessionEndHeight := k.sharedKeeper.GetSessionEndHeight(ctx, currentHeight)
 
-	// Update the Gateway in the store
-	k.RemoveGateway(ctx, gatewayAddress.String())
-	logger.Info(fmt.Sprintf("Successfully removed the gateway: %+v", gateway))
+	// Mark the gateway as unstaking by recording the height at which it should
+	// no longer be able to process requests.
+	// The gateway MAY continue to process requests until the end of the current
+	// session. After that, the gateway will be considered inactive.
+	gateway.UnstakeSessionEndHeight = uint64(sessionEndHeight)
+	k.SetGateway(ctx, gateway)
 
-	sessionEndHeight := k.sharedKeeper.GetSessionEndHeight(ctx, ctx.BlockHeight())
-	gatewayUnstakedEvent := &types.EventGatewayUnstaked{
-		Gateway:          &gateway,
-		SessionEndHeight: sessionEndHeight,
+	sharedParams := k.sharedKeeper.GetParams(ctx)
+	unbondingEndHeight := types.GetGatewayUnbondingHeight(&sharedParams, &gateway)
+	unbondingBeginEvent := &types.EventGatewayUnbondingBegin{
+		Gateway:            &gateway,
+		SessionEndHeight:   sessionEndHeight,
+		UnbondingEndHeight: unbondingEndHeight,
 	}
-	err = ctx.EventManager().EmitTypedEvent(gatewayUnstakedEvent)
+	err = ctx.EventManager().EmitTypedEvent(unbondingBeginEvent)
 	if err != nil {
-		err = types.ErrGatewayEmitEvent.Wrapf("(%+v): %s", gatewayUnstakedEvent, err)
+		err = types.ErrGatewayEmitEvent.Wrapf("(%+v): %s", unbondingBeginEvent, err)
 		logger.Error(err.Error())
 		return nil, status.Error(codes.Internal, err.Error())
 	}

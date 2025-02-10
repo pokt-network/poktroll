@@ -21,6 +21,8 @@ const (
 	ParamSupplierUnbondingPeriodSessions      = "supplier_unbonding_period_sessions"
 	DefaultApplicationUnbondingPeriodSessions = 1 // 1 session
 	ParamApplicationUnbondingPeriodSessions   = "application_unbonding_period_sessions"
+	DefaultGatewayUnbondingPeriodSessions     = 1 // 1 session
+	ParamGatewayUnbondingPeriodSessions       = "gateway_unbonding_period_sessions"
 	DefaultComputeUnitsToTokensMultiplier     = 42 // TODO_MAINNET: Determine the default value.
 	ParamComputeUnitsToTokensMultiplier       = "compute_units_to_tokens_multiplier"
 )
@@ -35,6 +37,7 @@ var (
 	KeyProofWindowCloseOffsetBlocks                           = []byte("ProofWindowCloseOffsetBlocks")
 	KeySupplierUnbondingPeriodSessions                        = []byte("SupplierUnbondingPeriodSessions")
 	KeyApplicationUnbondingPeriodSessions                     = []byte("ApplicationUnbondingPeriodSessions")
+	KeyGatewayUnbondingPeriodSessions                         = []byte("GatewayUnbondingPeriodSessions")
 	KeyComputeUnitsToTokensMultiplier                         = []byte("ComputeUnitsToTokensMultiplier")
 )
 
@@ -54,6 +57,7 @@ func NewParams() Params {
 		GracePeriodEndOffsetBlocks:         DefaultGracePeriodEndOffsetBlocks,
 		SupplierUnbondingPeriodSessions:    DefaultSupplierUnbondingPeriodSessions,
 		ApplicationUnbondingPeriodSessions: DefaultApplicationUnbondingPeriodSessions,
+		GatewayUnbondingPeriodSessions:     DefaultGatewayUnbondingPeriodSessions,
 		ComputeUnitsToTokensMultiplier:     DefaultComputeUnitsToTokensMultiplier,
 	}
 }
@@ -107,6 +111,11 @@ func (params *Params) ParamSetPairs() paramtypes.ParamSetPairs {
 			ValidateApplicationUnbondingPeriodSessions,
 		),
 		paramtypes.NewParamSetPair(
+			KeyGatewayUnbondingPeriodSessions,
+			&params.GatewayUnbondingPeriodSessions,
+			ValidateGatewayUnbondingPeriodSessions,
+		),
+		paramtypes.NewParamSetPair(
 			KeyComputeUnitsToTokensMultiplier,
 			&params.ComputeUnitsToTokensMultiplier,
 			ValidateComputeUnitsToTokensMultiplier,
@@ -148,6 +157,10 @@ func (params *Params) ValidateBasic() error {
 		return err
 	}
 
+	if err := ValidateGatewayUnbondingPeriodSessions(params.GatewayUnbondingPeriodSessions); err != nil {
+		return err
+	}
+
 	if err := ValidateComputeUnitsToTokensMultiplier(params.ComputeUnitsToTokensMultiplier); err != nil {
 		return err
 	}
@@ -165,6 +178,10 @@ func (params *Params) ValidateBasic() error {
 	}
 
 	if err := validateApplicationUnbondingPeriodIsGreaterThanCumulativeProofWindowCloseBlocks(params); err != nil {
+		return err
+	}
+
+	if err := validateGatewayUnbondingPeriodIsGreaterThanCumulativeProofWindowCloseBlocks(params); err != nil {
 		return err
 	}
 
@@ -256,6 +273,22 @@ func ValidateApplicationUnbondingPeriodSessions(applicationUnboindingPeriodSessi
 	return nil
 }
 
+// ValidateGatewayUnbondingPeriodSessions validates the GatewayUnbondingPeriodSessions
+// governance parameter.
+// NB: The argument is an interface type to satisfy the ParamSetPair function signature.
+func ValidateGatewayUnbondingPeriodSessions(gatewayUnboindingPeriodSessionsAny any) error {
+	gatewayUnbondingPeriodSessions, err := validateIsUint64(gatewayUnboindingPeriodSessionsAny)
+	if err != nil {
+		return err
+	}
+
+	if gatewayUnbondingPeriodSessions < 1 {
+		return ErrSharedParamInvalid.Wrapf("invalid GatewayUnbondingPeriodSessions: (%v)", gatewayUnbondingPeriodSessions)
+	}
+
+	return nil
+}
+
 // ValidateComputeUnitsToTokensMultiplier validates the ComputeUnitsToTokensMultiplier governance parameter.
 // NB: The argument is an interface type to satisfy the ParamSetPair function signature.
 func ValidateComputeUnitsToTokensMultiplier(computeUnitsToTokensMultiplerAny any) error {
@@ -331,7 +364,7 @@ func validateSupplierUnbondingPeriodIsGreaterThanCumulativeProofWindowCloseBlock
 }
 
 // validateApplicationUnbondingPeriodIsGreaterThanCumulativeProofWindowCloseBlocks
-// ensures that a supplier cannot unbond before the pending claims are settled.
+// ensures that an application cannot unbond before the pending claims are settled.
 func validateApplicationUnbondingPeriodIsGreaterThanCumulativeProofWindowCloseBlocks(params *Params) error {
 	cumulativeProofWindowCloseBlocks := GetSessionEndToProofWindowCloseBlocks(params)
 	applicationUnbondingPeriodSessions := int64(params.ApplicationUnbondingPeriodSessions * params.NumBlocksPerSession)
@@ -341,6 +374,24 @@ func validateApplicationUnbondingPeriodIsGreaterThanCumulativeProofWindowCloseBl
 			"ApplicationUnbondingPeriodSessions (%v session) (%v blocks) must be greater than the cumulative ProofWindowCloseOffsetBlocks (%v)",
 			params.ApplicationUnbondingPeriodSessions,
 			applicationUnbondingPeriodSessions,
+			cumulativeProofWindowCloseBlocks,
+		)
+	}
+
+	return nil
+}
+
+// validateGatewayUnbondingPeriodIsGreaterThanCumulativeProofWindowCloseBlocks
+// ensures that a gateway cannot unbond before the pending claims are settled.
+func validateGatewayUnbondingPeriodIsGreaterThanCumulativeProofWindowCloseBlocks(params *Params) error {
+	cumulativeProofWindowCloseBlocks := GetSessionEndToProofWindowCloseBlocks(params)
+	gatewayUnbondingPeriodSessions := int64(params.GatewayUnbondingPeriodSessions * params.NumBlocksPerSession)
+
+	if gatewayUnbondingPeriodSessions < cumulativeProofWindowCloseBlocks {
+		return ErrSharedParamInvalid.Wrapf(
+			"GatewayUnbondingPeriodSessions (%v session) (%v blocks) must be greater than the cumulative ProofWindowCloseOffsetBlocks (%v)",
+			params.GatewayUnbondingPeriodSessions,
+			gatewayUnbondingPeriodSessions,
 			cumulativeProofWindowCloseBlocks,
 		)
 	}

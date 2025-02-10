@@ -498,27 +498,29 @@ func (x *fastReflection_EventGatewayStaked) ProtoMethods() *protoiface.Methods {
 }
 
 var (
-	md_EventGatewayUnstaked                    protoreflect.MessageDescriptor
-	fd_EventGatewayUnstaked_gateway            protoreflect.FieldDescriptor
-	fd_EventGatewayUnstaked_session_end_height protoreflect.FieldDescriptor
+	md_EventGatewayUnbondingBegin                      protoreflect.MessageDescriptor
+	fd_EventGatewayUnbondingBegin_gateway              protoreflect.FieldDescriptor
+	fd_EventGatewayUnbondingBegin_session_end_height   protoreflect.FieldDescriptor
+	fd_EventGatewayUnbondingBegin_unbonding_end_height protoreflect.FieldDescriptor
 )
 
 func init() {
 	file_poktroll_gateway_event_proto_init()
-	md_EventGatewayUnstaked = File_poktroll_gateway_event_proto.Messages().ByName("EventGatewayUnstaked")
-	fd_EventGatewayUnstaked_gateway = md_EventGatewayUnstaked.Fields().ByName("gateway")
-	fd_EventGatewayUnstaked_session_end_height = md_EventGatewayUnstaked.Fields().ByName("session_end_height")
+	md_EventGatewayUnbondingBegin = File_poktroll_gateway_event_proto.Messages().ByName("EventGatewayUnbondingBegin")
+	fd_EventGatewayUnbondingBegin_gateway = md_EventGatewayUnbondingBegin.Fields().ByName("gateway")
+	fd_EventGatewayUnbondingBegin_session_end_height = md_EventGatewayUnbondingBegin.Fields().ByName("session_end_height")
+	fd_EventGatewayUnbondingBegin_unbonding_end_height = md_EventGatewayUnbondingBegin.Fields().ByName("unbonding_end_height")
 }
 
-var _ protoreflect.Message = (*fastReflection_EventGatewayUnstaked)(nil)
+var _ protoreflect.Message = (*fastReflection_EventGatewayUnbondingBegin)(nil)
 
-type fastReflection_EventGatewayUnstaked EventGatewayUnstaked
+type fastReflection_EventGatewayUnbondingBegin EventGatewayUnbondingBegin
 
-func (x *EventGatewayUnstaked) ProtoReflect() protoreflect.Message {
-	return (*fastReflection_EventGatewayUnstaked)(x)
+func (x *EventGatewayUnbondingBegin) ProtoReflect() protoreflect.Message {
+	return (*fastReflection_EventGatewayUnbondingBegin)(x)
 }
 
-func (x *EventGatewayUnstaked) slowProtoReflect() protoreflect.Message {
+func (x *EventGatewayUnbondingBegin) slowProtoReflect() protoreflect.Message {
 	mi := &file_poktroll_gateway_event_proto_msgTypes[1]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -530,43 +532,43 @@ func (x *EventGatewayUnstaked) slowProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-var _fastReflection_EventGatewayUnstaked_messageType fastReflection_EventGatewayUnstaked_messageType
-var _ protoreflect.MessageType = fastReflection_EventGatewayUnstaked_messageType{}
+var _fastReflection_EventGatewayUnbondingBegin_messageType fastReflection_EventGatewayUnbondingBegin_messageType
+var _ protoreflect.MessageType = fastReflection_EventGatewayUnbondingBegin_messageType{}
 
-type fastReflection_EventGatewayUnstaked_messageType struct{}
+type fastReflection_EventGatewayUnbondingBegin_messageType struct{}
 
-func (x fastReflection_EventGatewayUnstaked_messageType) Zero() protoreflect.Message {
-	return (*fastReflection_EventGatewayUnstaked)(nil)
+func (x fastReflection_EventGatewayUnbondingBegin_messageType) Zero() protoreflect.Message {
+	return (*fastReflection_EventGatewayUnbondingBegin)(nil)
 }
-func (x fastReflection_EventGatewayUnstaked_messageType) New() protoreflect.Message {
-	return new(fastReflection_EventGatewayUnstaked)
+func (x fastReflection_EventGatewayUnbondingBegin_messageType) New() protoreflect.Message {
+	return new(fastReflection_EventGatewayUnbondingBegin)
 }
-func (x fastReflection_EventGatewayUnstaked_messageType) Descriptor() protoreflect.MessageDescriptor {
-	return md_EventGatewayUnstaked
+func (x fastReflection_EventGatewayUnbondingBegin_messageType) Descriptor() protoreflect.MessageDescriptor {
+	return md_EventGatewayUnbondingBegin
 }
 
 // Descriptor returns message descriptor, which contains only the protobuf
 // type information for the message.
-func (x *fastReflection_EventGatewayUnstaked) Descriptor() protoreflect.MessageDescriptor {
-	return md_EventGatewayUnstaked
+func (x *fastReflection_EventGatewayUnbondingBegin) Descriptor() protoreflect.MessageDescriptor {
+	return md_EventGatewayUnbondingBegin
 }
 
 // Type returns the message type, which encapsulates both Go and protobuf
 // type information. If the Go type information is not needed,
 // it is recommended that the message descriptor be used instead.
-func (x *fastReflection_EventGatewayUnstaked) Type() protoreflect.MessageType {
-	return _fastReflection_EventGatewayUnstaked_messageType
+func (x *fastReflection_EventGatewayUnbondingBegin) Type() protoreflect.MessageType {
+	return _fastReflection_EventGatewayUnbondingBegin_messageType
 }
 
 // New returns a newly allocated and mutable empty message.
-func (x *fastReflection_EventGatewayUnstaked) New() protoreflect.Message {
-	return new(fastReflection_EventGatewayUnstaked)
+func (x *fastReflection_EventGatewayUnbondingBegin) New() protoreflect.Message {
+	return new(fastReflection_EventGatewayUnbondingBegin)
 }
 
 // Interface unwraps the message reflection interface and
 // returns the underlying ProtoMessage interface.
-func (x *fastReflection_EventGatewayUnstaked) Interface() protoreflect.ProtoMessage {
-	return (*EventGatewayUnstaked)(x)
+func (x *fastReflection_EventGatewayUnbondingBegin) Interface() protoreflect.ProtoMessage {
+	return (*EventGatewayUnbondingBegin)(x)
 }
 
 // Range iterates over every populated field in an undefined order,
@@ -574,16 +576,22 @@ func (x *fastReflection_EventGatewayUnstaked) Interface() protoreflect.ProtoMess
 // Range returns immediately if f returns false.
 // While iterating, mutating operations may only be performed
 // on the current field descriptor.
-func (x *fastReflection_EventGatewayUnstaked) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
+func (x *fastReflection_EventGatewayUnbondingBegin) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
 	if x.Gateway != nil {
 		value := protoreflect.ValueOfMessage(x.Gateway.ProtoReflect())
-		if !f(fd_EventGatewayUnstaked_gateway, value) {
+		if !f(fd_EventGatewayUnbondingBegin_gateway, value) {
 			return
 		}
 	}
 	if x.SessionEndHeight != int64(0) {
 		value := protoreflect.ValueOfInt64(x.SessionEndHeight)
-		if !f(fd_EventGatewayUnstaked_session_end_height, value) {
+		if !f(fd_EventGatewayUnbondingBegin_session_end_height, value) {
+			return
+		}
+	}
+	if x.UnbondingEndHeight != int64(0) {
+		value := protoreflect.ValueOfInt64(x.UnbondingEndHeight)
+		if !f(fd_EventGatewayUnbondingBegin_unbonding_end_height, value) {
 			return
 		}
 	}
@@ -600,17 +608,19 @@ func (x *fastReflection_EventGatewayUnstaked) Range(f func(protoreflect.FieldDes
 // In other cases (aside from the nullable cases above),
 // a proto3 scalar field is populated if it contains a non-zero value, and
 // a repeated field is populated if it is non-empty.
-func (x *fastReflection_EventGatewayUnstaked) Has(fd protoreflect.FieldDescriptor) bool {
+func (x *fastReflection_EventGatewayUnbondingBegin) Has(fd protoreflect.FieldDescriptor) bool {
 	switch fd.FullName() {
-	case "poktroll.gateway.EventGatewayUnstaked.gateway":
+	case "poktroll.gateway.EventGatewayUnbondingBegin.gateway":
 		return x.Gateway != nil
-	case "poktroll.gateway.EventGatewayUnstaked.session_end_height":
+	case "poktroll.gateway.EventGatewayUnbondingBegin.session_end_height":
 		return x.SessionEndHeight != int64(0)
+	case "poktroll.gateway.EventGatewayUnbondingBegin.unbonding_end_height":
+		return x.UnbondingEndHeight != int64(0)
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.gateway.EventGatewayUnstaked"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.gateway.EventGatewayUnbondingBegin"))
 		}
-		panic(fmt.Errorf("message poktroll.gateway.EventGatewayUnstaked does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message poktroll.gateway.EventGatewayUnbondingBegin does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -620,17 +630,19 @@ func (x *fastReflection_EventGatewayUnstaked) Has(fd protoreflect.FieldDescripto
 // associated with the given field number.
 //
 // Clear is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_EventGatewayUnstaked) Clear(fd protoreflect.FieldDescriptor) {
+func (x *fastReflection_EventGatewayUnbondingBegin) Clear(fd protoreflect.FieldDescriptor) {
 	switch fd.FullName() {
-	case "poktroll.gateway.EventGatewayUnstaked.gateway":
+	case "poktroll.gateway.EventGatewayUnbondingBegin.gateway":
 		x.Gateway = nil
-	case "poktroll.gateway.EventGatewayUnstaked.session_end_height":
+	case "poktroll.gateway.EventGatewayUnbondingBegin.session_end_height":
 		x.SessionEndHeight = int64(0)
+	case "poktroll.gateway.EventGatewayUnbondingBegin.unbonding_end_height":
+		x.UnbondingEndHeight = int64(0)
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.gateway.EventGatewayUnstaked"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.gateway.EventGatewayUnbondingBegin"))
 		}
-		panic(fmt.Errorf("message poktroll.gateway.EventGatewayUnstaked does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message poktroll.gateway.EventGatewayUnbondingBegin does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -640,19 +652,22 @@ func (x *fastReflection_EventGatewayUnstaked) Clear(fd protoreflect.FieldDescrip
 // the default value of a bytes scalar is guaranteed to be a copy.
 // For unpopulated composite types, it returns an empty, read-only view
 // of the value; to obtain a mutable reference, use Mutable.
-func (x *fastReflection_EventGatewayUnstaked) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_EventGatewayUnbondingBegin) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
 	switch descriptor.FullName() {
-	case "poktroll.gateway.EventGatewayUnstaked.gateway":
+	case "poktroll.gateway.EventGatewayUnbondingBegin.gateway":
 		value := x.Gateway
 		return protoreflect.ValueOfMessage(value.ProtoReflect())
-	case "poktroll.gateway.EventGatewayUnstaked.session_end_height":
+	case "poktroll.gateway.EventGatewayUnbondingBegin.session_end_height":
 		value := x.SessionEndHeight
+		return protoreflect.ValueOfInt64(value)
+	case "poktroll.gateway.EventGatewayUnbondingBegin.unbonding_end_height":
+		value := x.UnbondingEndHeight
 		return protoreflect.ValueOfInt64(value)
 	default:
 		if descriptor.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.gateway.EventGatewayUnstaked"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.gateway.EventGatewayUnbondingBegin"))
 		}
-		panic(fmt.Errorf("message poktroll.gateway.EventGatewayUnstaked does not contain field %s", descriptor.FullName()))
+		panic(fmt.Errorf("message poktroll.gateway.EventGatewayUnbondingBegin does not contain field %s", descriptor.FullName()))
 	}
 }
 
@@ -666,17 +681,19 @@ func (x *fastReflection_EventGatewayUnstaked) Get(descriptor protoreflect.FieldD
 // empty, read-only value, then it panics.
 //
 // Set is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_EventGatewayUnstaked) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
+func (x *fastReflection_EventGatewayUnbondingBegin) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
 	switch fd.FullName() {
-	case "poktroll.gateway.EventGatewayUnstaked.gateway":
+	case "poktroll.gateway.EventGatewayUnbondingBegin.gateway":
 		x.Gateway = value.Message().Interface().(*Gateway)
-	case "poktroll.gateway.EventGatewayUnstaked.session_end_height":
+	case "poktroll.gateway.EventGatewayUnbondingBegin.session_end_height":
 		x.SessionEndHeight = value.Int()
+	case "poktroll.gateway.EventGatewayUnbondingBegin.unbonding_end_height":
+		x.UnbondingEndHeight = value.Int()
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.gateway.EventGatewayUnstaked"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.gateway.EventGatewayUnbondingBegin"))
 		}
-		panic(fmt.Errorf("message poktroll.gateway.EventGatewayUnstaked does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message poktroll.gateway.EventGatewayUnbondingBegin does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -690,48 +707,52 @@ func (x *fastReflection_EventGatewayUnstaked) Set(fd protoreflect.FieldDescripto
 // It panics if the field does not contain a composite type.
 //
 // Mutable is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_EventGatewayUnstaked) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_EventGatewayUnbondingBegin) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
-	case "poktroll.gateway.EventGatewayUnstaked.gateway":
+	case "poktroll.gateway.EventGatewayUnbondingBegin.gateway":
 		if x.Gateway == nil {
 			x.Gateway = new(Gateway)
 		}
 		return protoreflect.ValueOfMessage(x.Gateway.ProtoReflect())
-	case "poktroll.gateway.EventGatewayUnstaked.session_end_height":
-		panic(fmt.Errorf("field session_end_height of message poktroll.gateway.EventGatewayUnstaked is not mutable"))
+	case "poktroll.gateway.EventGatewayUnbondingBegin.session_end_height":
+		panic(fmt.Errorf("field session_end_height of message poktroll.gateway.EventGatewayUnbondingBegin is not mutable"))
+	case "poktroll.gateway.EventGatewayUnbondingBegin.unbonding_end_height":
+		panic(fmt.Errorf("field unbonding_end_height of message poktroll.gateway.EventGatewayUnbondingBegin is not mutable"))
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.gateway.EventGatewayUnstaked"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.gateway.EventGatewayUnbondingBegin"))
 		}
-		panic(fmt.Errorf("message poktroll.gateway.EventGatewayUnstaked does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message poktroll.gateway.EventGatewayUnbondingBegin does not contain field %s", fd.FullName()))
 	}
 }
 
 // NewField returns a new value that is assignable to the field
 // for the given descriptor. For scalars, this returns the default value.
 // For lists, maps, and messages, this returns a new, empty, mutable value.
-func (x *fastReflection_EventGatewayUnstaked) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_EventGatewayUnbondingBegin) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
-	case "poktroll.gateway.EventGatewayUnstaked.gateway":
+	case "poktroll.gateway.EventGatewayUnbondingBegin.gateway":
 		m := new(Gateway)
 		return protoreflect.ValueOfMessage(m.ProtoReflect())
-	case "poktroll.gateway.EventGatewayUnstaked.session_end_height":
+	case "poktroll.gateway.EventGatewayUnbondingBegin.session_end_height":
+		return protoreflect.ValueOfInt64(int64(0))
+	case "poktroll.gateway.EventGatewayUnbondingBegin.unbonding_end_height":
 		return protoreflect.ValueOfInt64(int64(0))
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.gateway.EventGatewayUnstaked"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.gateway.EventGatewayUnbondingBegin"))
 		}
-		panic(fmt.Errorf("message poktroll.gateway.EventGatewayUnstaked does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message poktroll.gateway.EventGatewayUnbondingBegin does not contain field %s", fd.FullName()))
 	}
 }
 
 // WhichOneof reports which field within the oneof is populated,
 // returning nil if none are populated.
 // It panics if the oneof descriptor does not belong to this message.
-func (x *fastReflection_EventGatewayUnstaked) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
+func (x *fastReflection_EventGatewayUnbondingBegin) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
 	switch d.FullName() {
 	default:
-		panic(fmt.Errorf("%s is not a oneof field in poktroll.gateway.EventGatewayUnstaked", d.FullName()))
+		panic(fmt.Errorf("%s is not a oneof field in poktroll.gateway.EventGatewayUnbondingBegin", d.FullName()))
 	}
 	panic("unreachable")
 }
@@ -739,7 +760,7 @@ func (x *fastReflection_EventGatewayUnstaked) WhichOneof(d protoreflect.OneofDes
 // GetUnknown retrieves the entire list of unknown fields.
 // The caller may only mutate the contents of the RawFields
 // if the mutated bytes are stored back into the message with SetUnknown.
-func (x *fastReflection_EventGatewayUnstaked) GetUnknown() protoreflect.RawFields {
+func (x *fastReflection_EventGatewayUnbondingBegin) GetUnknown() protoreflect.RawFields {
 	return x.unknownFields
 }
 
@@ -750,7 +771,7 @@ func (x *fastReflection_EventGatewayUnstaked) GetUnknown() protoreflect.RawField
 // An empty RawFields may be passed to clear the fields.
 //
 // SetUnknown is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_EventGatewayUnstaked) SetUnknown(fields protoreflect.RawFields) {
+func (x *fastReflection_EventGatewayUnbondingBegin) SetUnknown(fields protoreflect.RawFields) {
 	x.unknownFields = fields
 }
 
@@ -762,7 +783,7 @@ func (x *fastReflection_EventGatewayUnstaked) SetUnknown(fields protoreflect.Raw
 // message type, but the details are implementation dependent.
 // Validity is not part of the protobuf data model, and may not
 // be preserved in marshaling or other operations.
-func (x *fastReflection_EventGatewayUnstaked) IsValid() bool {
+func (x *fastReflection_EventGatewayUnbondingBegin) IsValid() bool {
 	return x != nil
 }
 
@@ -772,9 +793,1050 @@ func (x *fastReflection_EventGatewayUnstaked) IsValid() bool {
 // The returned methods type is identical to
 // "google.golang.org/protobuf/runtime/protoiface".Methods.
 // Consult the protoiface package documentation for details.
-func (x *fastReflection_EventGatewayUnstaked) ProtoMethods() *protoiface.Methods {
+func (x *fastReflection_EventGatewayUnbondingBegin) ProtoMethods() *protoiface.Methods {
 	size := func(input protoiface.SizeInput) protoiface.SizeOutput {
-		x := input.Message.Interface().(*EventGatewayUnstaked)
+		x := input.Message.Interface().(*EventGatewayUnbondingBegin)
+		if x == nil {
+			return protoiface.SizeOutput{
+				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+				Size:              0,
+			}
+		}
+		options := runtime.SizeInputToOptions(input)
+		_ = options
+		var n int
+		var l int
+		_ = l
+		if x.Gateway != nil {
+			l = options.Size(x.Gateway)
+			n += 1 + l + runtime.Sov(uint64(l))
+		}
+		if x.SessionEndHeight != 0 {
+			n += 1 + runtime.Sov(uint64(x.SessionEndHeight))
+		}
+		if x.UnbondingEndHeight != 0 {
+			n += 1 + runtime.Sov(uint64(x.UnbondingEndHeight))
+		}
+		if x.unknownFields != nil {
+			n += len(x.unknownFields)
+		}
+		return protoiface.SizeOutput{
+			NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+			Size:              n,
+		}
+	}
+
+	marshal := func(input protoiface.MarshalInput) (protoiface.MarshalOutput, error) {
+		x := input.Message.Interface().(*EventGatewayUnbondingBegin)
+		if x == nil {
+			return protoiface.MarshalOutput{
+				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+				Buf:               input.Buf,
+			}, nil
+		}
+		options := runtime.MarshalInputToOptions(input)
+		_ = options
+		size := options.Size(x)
+		dAtA := make([]byte, size)
+		i := len(dAtA)
+		_ = i
+		var l int
+		_ = l
+		if x.unknownFields != nil {
+			i -= len(x.unknownFields)
+			copy(dAtA[i:], x.unknownFields)
+		}
+		if x.UnbondingEndHeight != 0 {
+			i = runtime.EncodeVarint(dAtA, i, uint64(x.UnbondingEndHeight))
+			i--
+			dAtA[i] = 0x20
+		}
+		if x.SessionEndHeight != 0 {
+			i = runtime.EncodeVarint(dAtA, i, uint64(x.SessionEndHeight))
+			i--
+			dAtA[i] = 0x18
+		}
+		if x.Gateway != nil {
+			encoded, err := options.Marshal(x.Gateway)
+			if err != nil {
+				return protoiface.MarshalOutput{
+					NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+					Buf:               input.Buf,
+				}, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(encoded)))
+			i--
+			dAtA[i] = 0xa
+		}
+		if input.Buf != nil {
+			input.Buf = append(input.Buf, dAtA...)
+		} else {
+			input.Buf = dAtA
+		}
+		return protoiface.MarshalOutput{
+			NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+			Buf:               input.Buf,
+		}, nil
+	}
+	unmarshal := func(input protoiface.UnmarshalInput) (protoiface.UnmarshalOutput, error) {
+		x := input.Message.Interface().(*EventGatewayUnbondingBegin)
+		if x == nil {
+			return protoiface.UnmarshalOutput{
+				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+				Flags:             input.Flags,
+			}, nil
+		}
+		options := runtime.UnmarshalInputToOptions(input)
+		_ = options
+		dAtA := input.Buf
+		l := len(dAtA)
+		iNdEx := 0
+		for iNdEx < l {
+			preIndex := iNdEx
+			var wire uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				wire |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			fieldNum := int32(wire >> 3)
+			wireType := int(wire & 0x7)
+			if wireType == 4 {
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: EventGatewayUnbondingBegin: wiretype end group for non-group")
+			}
+			if fieldNum <= 0 {
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: EventGatewayUnbondingBegin: illegal tag %d (wire type %d)", fieldNum, wire)
+			}
+			switch fieldNum {
+			case 1:
+				if wireType != 2 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Gateway", wireType)
+				}
+				var msglen int
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					msglen |= int(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				if msglen < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				postIndex := iNdEx + msglen
+				if postIndex < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if postIndex > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				if x.Gateway == nil {
+					x.Gateway = &Gateway{}
+				}
+				if err := options.Unmarshal(dAtA[iNdEx:postIndex], x.Gateway); err != nil {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
+				}
+				iNdEx = postIndex
+			case 3:
+				if wireType != 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field SessionEndHeight", wireType)
+				}
+				x.SessionEndHeight = 0
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					x.SessionEndHeight |= int64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+			case 4:
+				if wireType != 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field UnbondingEndHeight", wireType)
+				}
+				x.UnbondingEndHeight = 0
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					x.UnbondingEndHeight |= int64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+			default:
+				iNdEx = preIndex
+				skippy, err := runtime.Skip(dAtA[iNdEx:])
+				if err != nil {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
+				}
+				if (skippy < 0) || (iNdEx+skippy) < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if (iNdEx + skippy) > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				if !options.DiscardUnknown {
+					x.unknownFields = append(x.unknownFields, dAtA[iNdEx:iNdEx+skippy]...)
+				}
+				iNdEx += skippy
+			}
+		}
+
+		if iNdEx > l {
+			return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+		}
+		return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, nil
+	}
+	return &protoiface.Methods{
+		NoUnkeyedLiterals: struct{}{},
+		Flags:             protoiface.SupportMarshalDeterministic | protoiface.SupportUnmarshalDiscardUnknown,
+		Size:              size,
+		Marshal:           marshal,
+		Unmarshal:         unmarshal,
+		Merge:             nil,
+		CheckInitialized:  nil,
+	}
+}
+
+var (
+	md_EventGatewayUnbondingEnd                      protoreflect.MessageDescriptor
+	fd_EventGatewayUnbondingEnd_gateway              protoreflect.FieldDescriptor
+	fd_EventGatewayUnbondingEnd_session_end_height   protoreflect.FieldDescriptor
+	fd_EventGatewayUnbondingEnd_unbonding_end_height protoreflect.FieldDescriptor
+)
+
+func init() {
+	file_poktroll_gateway_event_proto_init()
+	md_EventGatewayUnbondingEnd = File_poktroll_gateway_event_proto.Messages().ByName("EventGatewayUnbondingEnd")
+	fd_EventGatewayUnbondingEnd_gateway = md_EventGatewayUnbondingEnd.Fields().ByName("gateway")
+	fd_EventGatewayUnbondingEnd_session_end_height = md_EventGatewayUnbondingEnd.Fields().ByName("session_end_height")
+	fd_EventGatewayUnbondingEnd_unbonding_end_height = md_EventGatewayUnbondingEnd.Fields().ByName("unbonding_end_height")
+}
+
+var _ protoreflect.Message = (*fastReflection_EventGatewayUnbondingEnd)(nil)
+
+type fastReflection_EventGatewayUnbondingEnd EventGatewayUnbondingEnd
+
+func (x *EventGatewayUnbondingEnd) ProtoReflect() protoreflect.Message {
+	return (*fastReflection_EventGatewayUnbondingEnd)(x)
+}
+
+func (x *EventGatewayUnbondingEnd) slowProtoReflect() protoreflect.Message {
+	mi := &file_poktroll_gateway_event_proto_msgTypes[2]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+var _fastReflection_EventGatewayUnbondingEnd_messageType fastReflection_EventGatewayUnbondingEnd_messageType
+var _ protoreflect.MessageType = fastReflection_EventGatewayUnbondingEnd_messageType{}
+
+type fastReflection_EventGatewayUnbondingEnd_messageType struct{}
+
+func (x fastReflection_EventGatewayUnbondingEnd_messageType) Zero() protoreflect.Message {
+	return (*fastReflection_EventGatewayUnbondingEnd)(nil)
+}
+func (x fastReflection_EventGatewayUnbondingEnd_messageType) New() protoreflect.Message {
+	return new(fastReflection_EventGatewayUnbondingEnd)
+}
+func (x fastReflection_EventGatewayUnbondingEnd_messageType) Descriptor() protoreflect.MessageDescriptor {
+	return md_EventGatewayUnbondingEnd
+}
+
+// Descriptor returns message descriptor, which contains only the protobuf
+// type information for the message.
+func (x *fastReflection_EventGatewayUnbondingEnd) Descriptor() protoreflect.MessageDescriptor {
+	return md_EventGatewayUnbondingEnd
+}
+
+// Type returns the message type, which encapsulates both Go and protobuf
+// type information. If the Go type information is not needed,
+// it is recommended that the message descriptor be used instead.
+func (x *fastReflection_EventGatewayUnbondingEnd) Type() protoreflect.MessageType {
+	return _fastReflection_EventGatewayUnbondingEnd_messageType
+}
+
+// New returns a newly allocated and mutable empty message.
+func (x *fastReflection_EventGatewayUnbondingEnd) New() protoreflect.Message {
+	return new(fastReflection_EventGatewayUnbondingEnd)
+}
+
+// Interface unwraps the message reflection interface and
+// returns the underlying ProtoMessage interface.
+func (x *fastReflection_EventGatewayUnbondingEnd) Interface() protoreflect.ProtoMessage {
+	return (*EventGatewayUnbondingEnd)(x)
+}
+
+// Range iterates over every populated field in an undefined order,
+// calling f for each field descriptor and value encountered.
+// Range returns immediately if f returns false.
+// While iterating, mutating operations may only be performed
+// on the current field descriptor.
+func (x *fastReflection_EventGatewayUnbondingEnd) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
+	if x.Gateway != nil {
+		value := protoreflect.ValueOfMessage(x.Gateway.ProtoReflect())
+		if !f(fd_EventGatewayUnbondingEnd_gateway, value) {
+			return
+		}
+	}
+	if x.SessionEndHeight != int64(0) {
+		value := protoreflect.ValueOfInt64(x.SessionEndHeight)
+		if !f(fd_EventGatewayUnbondingEnd_session_end_height, value) {
+			return
+		}
+	}
+	if x.UnbondingEndHeight != int64(0) {
+		value := protoreflect.ValueOfInt64(x.UnbondingEndHeight)
+		if !f(fd_EventGatewayUnbondingEnd_unbonding_end_height, value) {
+			return
+		}
+	}
+}
+
+// Has reports whether a field is populated.
+//
+// Some fields have the property of nullability where it is possible to
+// distinguish between the default value of a field and whether the field
+// was explicitly populated with the default value. Singular message fields,
+// member fields of a oneof, and proto2 scalar fields are nullable. Such
+// fields are populated only if explicitly set.
+//
+// In other cases (aside from the nullable cases above),
+// a proto3 scalar field is populated if it contains a non-zero value, and
+// a repeated field is populated if it is non-empty.
+func (x *fastReflection_EventGatewayUnbondingEnd) Has(fd protoreflect.FieldDescriptor) bool {
+	switch fd.FullName() {
+	case "poktroll.gateway.EventGatewayUnbondingEnd.gateway":
+		return x.Gateway != nil
+	case "poktroll.gateway.EventGatewayUnbondingEnd.session_end_height":
+		return x.SessionEndHeight != int64(0)
+	case "poktroll.gateway.EventGatewayUnbondingEnd.unbonding_end_height":
+		return x.UnbondingEndHeight != int64(0)
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.gateway.EventGatewayUnbondingEnd"))
+		}
+		panic(fmt.Errorf("message poktroll.gateway.EventGatewayUnbondingEnd does not contain field %s", fd.FullName()))
+	}
+}
+
+// Clear clears the field such that a subsequent Has call reports false.
+//
+// Clearing an extension field clears both the extension type and value
+// associated with the given field number.
+//
+// Clear is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_EventGatewayUnbondingEnd) Clear(fd protoreflect.FieldDescriptor) {
+	switch fd.FullName() {
+	case "poktroll.gateway.EventGatewayUnbondingEnd.gateway":
+		x.Gateway = nil
+	case "poktroll.gateway.EventGatewayUnbondingEnd.session_end_height":
+		x.SessionEndHeight = int64(0)
+	case "poktroll.gateway.EventGatewayUnbondingEnd.unbonding_end_height":
+		x.UnbondingEndHeight = int64(0)
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.gateway.EventGatewayUnbondingEnd"))
+		}
+		panic(fmt.Errorf("message poktroll.gateway.EventGatewayUnbondingEnd does not contain field %s", fd.FullName()))
+	}
+}
+
+// Get retrieves the value for a field.
+//
+// For unpopulated scalars, it returns the default value, where
+// the default value of a bytes scalar is guaranteed to be a copy.
+// For unpopulated composite types, it returns an empty, read-only view
+// of the value; to obtain a mutable reference, use Mutable.
+func (x *fastReflection_EventGatewayUnbondingEnd) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
+	switch descriptor.FullName() {
+	case "poktroll.gateway.EventGatewayUnbondingEnd.gateway":
+		value := x.Gateway
+		return protoreflect.ValueOfMessage(value.ProtoReflect())
+	case "poktroll.gateway.EventGatewayUnbondingEnd.session_end_height":
+		value := x.SessionEndHeight
+		return protoreflect.ValueOfInt64(value)
+	case "poktroll.gateway.EventGatewayUnbondingEnd.unbonding_end_height":
+		value := x.UnbondingEndHeight
+		return protoreflect.ValueOfInt64(value)
+	default:
+		if descriptor.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.gateway.EventGatewayUnbondingEnd"))
+		}
+		panic(fmt.Errorf("message poktroll.gateway.EventGatewayUnbondingEnd does not contain field %s", descriptor.FullName()))
+	}
+}
+
+// Set stores the value for a field.
+//
+// For a field belonging to a oneof, it implicitly clears any other field
+// that may be currently set within the same oneof.
+// For extension fields, it implicitly stores the provided ExtensionType.
+// When setting a composite type, it is unspecified whether the stored value
+// aliases the source's memory in any way. If the composite value is an
+// empty, read-only value, then it panics.
+//
+// Set is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_EventGatewayUnbondingEnd) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
+	switch fd.FullName() {
+	case "poktroll.gateway.EventGatewayUnbondingEnd.gateway":
+		x.Gateway = value.Message().Interface().(*Gateway)
+	case "poktroll.gateway.EventGatewayUnbondingEnd.session_end_height":
+		x.SessionEndHeight = value.Int()
+	case "poktroll.gateway.EventGatewayUnbondingEnd.unbonding_end_height":
+		x.UnbondingEndHeight = value.Int()
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.gateway.EventGatewayUnbondingEnd"))
+		}
+		panic(fmt.Errorf("message poktroll.gateway.EventGatewayUnbondingEnd does not contain field %s", fd.FullName()))
+	}
+}
+
+// Mutable returns a mutable reference to a composite type.
+//
+// If the field is unpopulated, it may allocate a composite value.
+// For a field belonging to a oneof, it implicitly clears any other field
+// that may be currently set within the same oneof.
+// For extension fields, it implicitly stores the provided ExtensionType
+// if not already stored.
+// It panics if the field does not contain a composite type.
+//
+// Mutable is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_EventGatewayUnbondingEnd) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
+	switch fd.FullName() {
+	case "poktroll.gateway.EventGatewayUnbondingEnd.gateway":
+		if x.Gateway == nil {
+			x.Gateway = new(Gateway)
+		}
+		return protoreflect.ValueOfMessage(x.Gateway.ProtoReflect())
+	case "poktroll.gateway.EventGatewayUnbondingEnd.session_end_height":
+		panic(fmt.Errorf("field session_end_height of message poktroll.gateway.EventGatewayUnbondingEnd is not mutable"))
+	case "poktroll.gateway.EventGatewayUnbondingEnd.unbonding_end_height":
+		panic(fmt.Errorf("field unbonding_end_height of message poktroll.gateway.EventGatewayUnbondingEnd is not mutable"))
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.gateway.EventGatewayUnbondingEnd"))
+		}
+		panic(fmt.Errorf("message poktroll.gateway.EventGatewayUnbondingEnd does not contain field %s", fd.FullName()))
+	}
+}
+
+// NewField returns a new value that is assignable to the field
+// for the given descriptor. For scalars, this returns the default value.
+// For lists, maps, and messages, this returns a new, empty, mutable value.
+func (x *fastReflection_EventGatewayUnbondingEnd) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
+	switch fd.FullName() {
+	case "poktroll.gateway.EventGatewayUnbondingEnd.gateway":
+		m := new(Gateway)
+		return protoreflect.ValueOfMessage(m.ProtoReflect())
+	case "poktroll.gateway.EventGatewayUnbondingEnd.session_end_height":
+		return protoreflect.ValueOfInt64(int64(0))
+	case "poktroll.gateway.EventGatewayUnbondingEnd.unbonding_end_height":
+		return protoreflect.ValueOfInt64(int64(0))
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.gateway.EventGatewayUnbondingEnd"))
+		}
+		panic(fmt.Errorf("message poktroll.gateway.EventGatewayUnbondingEnd does not contain field %s", fd.FullName()))
+	}
+}
+
+// WhichOneof reports which field within the oneof is populated,
+// returning nil if none are populated.
+// It panics if the oneof descriptor does not belong to this message.
+func (x *fastReflection_EventGatewayUnbondingEnd) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
+	switch d.FullName() {
+	default:
+		panic(fmt.Errorf("%s is not a oneof field in poktroll.gateway.EventGatewayUnbondingEnd", d.FullName()))
+	}
+	panic("unreachable")
+}
+
+// GetUnknown retrieves the entire list of unknown fields.
+// The caller may only mutate the contents of the RawFields
+// if the mutated bytes are stored back into the message with SetUnknown.
+func (x *fastReflection_EventGatewayUnbondingEnd) GetUnknown() protoreflect.RawFields {
+	return x.unknownFields
+}
+
+// SetUnknown stores an entire list of unknown fields.
+// The raw fields must be syntactically valid according to the wire format.
+// An implementation may panic if this is not the case.
+// Once stored, the caller must not mutate the content of the RawFields.
+// An empty RawFields may be passed to clear the fields.
+//
+// SetUnknown is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_EventGatewayUnbondingEnd) SetUnknown(fields protoreflect.RawFields) {
+	x.unknownFields = fields
+}
+
+// IsValid reports whether the message is valid.
+//
+// An invalid message is an empty, read-only value.
+//
+// An invalid message often corresponds to a nil pointer of the concrete
+// message type, but the details are implementation dependent.
+// Validity is not part of the protobuf data model, and may not
+// be preserved in marshaling or other operations.
+func (x *fastReflection_EventGatewayUnbondingEnd) IsValid() bool {
+	return x != nil
+}
+
+// ProtoMethods returns optional fastReflectionFeature-path implementations of various operations.
+// This method may return nil.
+//
+// The returned methods type is identical to
+// "google.golang.org/protobuf/runtime/protoiface".Methods.
+// Consult the protoiface package documentation for details.
+func (x *fastReflection_EventGatewayUnbondingEnd) ProtoMethods() *protoiface.Methods {
+	size := func(input protoiface.SizeInput) protoiface.SizeOutput {
+		x := input.Message.Interface().(*EventGatewayUnbondingEnd)
+		if x == nil {
+			return protoiface.SizeOutput{
+				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+				Size:              0,
+			}
+		}
+		options := runtime.SizeInputToOptions(input)
+		_ = options
+		var n int
+		var l int
+		_ = l
+		if x.Gateway != nil {
+			l = options.Size(x.Gateway)
+			n += 1 + l + runtime.Sov(uint64(l))
+		}
+		if x.SessionEndHeight != 0 {
+			n += 1 + runtime.Sov(uint64(x.SessionEndHeight))
+		}
+		if x.UnbondingEndHeight != 0 {
+			n += 1 + runtime.Sov(uint64(x.UnbondingEndHeight))
+		}
+		if x.unknownFields != nil {
+			n += len(x.unknownFields)
+		}
+		return protoiface.SizeOutput{
+			NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+			Size:              n,
+		}
+	}
+
+	marshal := func(input protoiface.MarshalInput) (protoiface.MarshalOutput, error) {
+		x := input.Message.Interface().(*EventGatewayUnbondingEnd)
+		if x == nil {
+			return protoiface.MarshalOutput{
+				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+				Buf:               input.Buf,
+			}, nil
+		}
+		options := runtime.MarshalInputToOptions(input)
+		_ = options
+		size := options.Size(x)
+		dAtA := make([]byte, size)
+		i := len(dAtA)
+		_ = i
+		var l int
+		_ = l
+		if x.unknownFields != nil {
+			i -= len(x.unknownFields)
+			copy(dAtA[i:], x.unknownFields)
+		}
+		if x.UnbondingEndHeight != 0 {
+			i = runtime.EncodeVarint(dAtA, i, uint64(x.UnbondingEndHeight))
+			i--
+			dAtA[i] = 0x20
+		}
+		if x.SessionEndHeight != 0 {
+			i = runtime.EncodeVarint(dAtA, i, uint64(x.SessionEndHeight))
+			i--
+			dAtA[i] = 0x18
+		}
+		if x.Gateway != nil {
+			encoded, err := options.Marshal(x.Gateway)
+			if err != nil {
+				return protoiface.MarshalOutput{
+					NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+					Buf:               input.Buf,
+				}, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(encoded)))
+			i--
+			dAtA[i] = 0xa
+		}
+		if input.Buf != nil {
+			input.Buf = append(input.Buf, dAtA...)
+		} else {
+			input.Buf = dAtA
+		}
+		return protoiface.MarshalOutput{
+			NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+			Buf:               input.Buf,
+		}, nil
+	}
+	unmarshal := func(input protoiface.UnmarshalInput) (protoiface.UnmarshalOutput, error) {
+		x := input.Message.Interface().(*EventGatewayUnbondingEnd)
+		if x == nil {
+			return protoiface.UnmarshalOutput{
+				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+				Flags:             input.Flags,
+			}, nil
+		}
+		options := runtime.UnmarshalInputToOptions(input)
+		_ = options
+		dAtA := input.Buf
+		l := len(dAtA)
+		iNdEx := 0
+		for iNdEx < l {
+			preIndex := iNdEx
+			var wire uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				wire |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			fieldNum := int32(wire >> 3)
+			wireType := int(wire & 0x7)
+			if wireType == 4 {
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: EventGatewayUnbondingEnd: wiretype end group for non-group")
+			}
+			if fieldNum <= 0 {
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: EventGatewayUnbondingEnd: illegal tag %d (wire type %d)", fieldNum, wire)
+			}
+			switch fieldNum {
+			case 1:
+				if wireType != 2 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Gateway", wireType)
+				}
+				var msglen int
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					msglen |= int(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				if msglen < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				postIndex := iNdEx + msglen
+				if postIndex < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if postIndex > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				if x.Gateway == nil {
+					x.Gateway = &Gateway{}
+				}
+				if err := options.Unmarshal(dAtA[iNdEx:postIndex], x.Gateway); err != nil {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
+				}
+				iNdEx = postIndex
+			case 3:
+				if wireType != 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field SessionEndHeight", wireType)
+				}
+				x.SessionEndHeight = 0
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					x.SessionEndHeight |= int64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+			case 4:
+				if wireType != 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field UnbondingEndHeight", wireType)
+				}
+				x.UnbondingEndHeight = 0
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					x.UnbondingEndHeight |= int64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+			default:
+				iNdEx = preIndex
+				skippy, err := runtime.Skip(dAtA[iNdEx:])
+				if err != nil {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
+				}
+				if (skippy < 0) || (iNdEx+skippy) < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if (iNdEx + skippy) > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				if !options.DiscardUnknown {
+					x.unknownFields = append(x.unknownFields, dAtA[iNdEx:iNdEx+skippy]...)
+				}
+				iNdEx += skippy
+			}
+		}
+
+		if iNdEx > l {
+			return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+		}
+		return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, nil
+	}
+	return &protoiface.Methods{
+		NoUnkeyedLiterals: struct{}{},
+		Flags:             protoiface.SupportMarshalDeterministic | protoiface.SupportUnmarshalDiscardUnknown,
+		Size:              size,
+		Marshal:           marshal,
+		Unmarshal:         unmarshal,
+		Merge:             nil,
+		CheckInitialized:  nil,
+	}
+}
+
+var (
+	md_EventGatewayUnbondingCanceled                    protoreflect.MessageDescriptor
+	fd_EventGatewayUnbondingCanceled_gateway            protoreflect.FieldDescriptor
+	fd_EventGatewayUnbondingCanceled_session_end_height protoreflect.FieldDescriptor
+)
+
+func init() {
+	file_poktroll_gateway_event_proto_init()
+	md_EventGatewayUnbondingCanceled = File_poktroll_gateway_event_proto.Messages().ByName("EventGatewayUnbondingCanceled")
+	fd_EventGatewayUnbondingCanceled_gateway = md_EventGatewayUnbondingCanceled.Fields().ByName("gateway")
+	fd_EventGatewayUnbondingCanceled_session_end_height = md_EventGatewayUnbondingCanceled.Fields().ByName("session_end_height")
+}
+
+var _ protoreflect.Message = (*fastReflection_EventGatewayUnbondingCanceled)(nil)
+
+type fastReflection_EventGatewayUnbondingCanceled EventGatewayUnbondingCanceled
+
+func (x *EventGatewayUnbondingCanceled) ProtoReflect() protoreflect.Message {
+	return (*fastReflection_EventGatewayUnbondingCanceled)(x)
+}
+
+func (x *EventGatewayUnbondingCanceled) slowProtoReflect() protoreflect.Message {
+	mi := &file_poktroll_gateway_event_proto_msgTypes[3]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+var _fastReflection_EventGatewayUnbondingCanceled_messageType fastReflection_EventGatewayUnbondingCanceled_messageType
+var _ protoreflect.MessageType = fastReflection_EventGatewayUnbondingCanceled_messageType{}
+
+type fastReflection_EventGatewayUnbondingCanceled_messageType struct{}
+
+func (x fastReflection_EventGatewayUnbondingCanceled_messageType) Zero() protoreflect.Message {
+	return (*fastReflection_EventGatewayUnbondingCanceled)(nil)
+}
+func (x fastReflection_EventGatewayUnbondingCanceled_messageType) New() protoreflect.Message {
+	return new(fastReflection_EventGatewayUnbondingCanceled)
+}
+func (x fastReflection_EventGatewayUnbondingCanceled_messageType) Descriptor() protoreflect.MessageDescriptor {
+	return md_EventGatewayUnbondingCanceled
+}
+
+// Descriptor returns message descriptor, which contains only the protobuf
+// type information for the message.
+func (x *fastReflection_EventGatewayUnbondingCanceled) Descriptor() protoreflect.MessageDescriptor {
+	return md_EventGatewayUnbondingCanceled
+}
+
+// Type returns the message type, which encapsulates both Go and protobuf
+// type information. If the Go type information is not needed,
+// it is recommended that the message descriptor be used instead.
+func (x *fastReflection_EventGatewayUnbondingCanceled) Type() protoreflect.MessageType {
+	return _fastReflection_EventGatewayUnbondingCanceled_messageType
+}
+
+// New returns a newly allocated and mutable empty message.
+func (x *fastReflection_EventGatewayUnbondingCanceled) New() protoreflect.Message {
+	return new(fastReflection_EventGatewayUnbondingCanceled)
+}
+
+// Interface unwraps the message reflection interface and
+// returns the underlying ProtoMessage interface.
+func (x *fastReflection_EventGatewayUnbondingCanceled) Interface() protoreflect.ProtoMessage {
+	return (*EventGatewayUnbondingCanceled)(x)
+}
+
+// Range iterates over every populated field in an undefined order,
+// calling f for each field descriptor and value encountered.
+// Range returns immediately if f returns false.
+// While iterating, mutating operations may only be performed
+// on the current field descriptor.
+func (x *fastReflection_EventGatewayUnbondingCanceled) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
+	if x.Gateway != nil {
+		value := protoreflect.ValueOfMessage(x.Gateway.ProtoReflect())
+		if !f(fd_EventGatewayUnbondingCanceled_gateway, value) {
+			return
+		}
+	}
+	if x.SessionEndHeight != int64(0) {
+		value := protoreflect.ValueOfInt64(x.SessionEndHeight)
+		if !f(fd_EventGatewayUnbondingCanceled_session_end_height, value) {
+			return
+		}
+	}
+}
+
+// Has reports whether a field is populated.
+//
+// Some fields have the property of nullability where it is possible to
+// distinguish between the default value of a field and whether the field
+// was explicitly populated with the default value. Singular message fields,
+// member fields of a oneof, and proto2 scalar fields are nullable. Such
+// fields are populated only if explicitly set.
+//
+// In other cases (aside from the nullable cases above),
+// a proto3 scalar field is populated if it contains a non-zero value, and
+// a repeated field is populated if it is non-empty.
+func (x *fastReflection_EventGatewayUnbondingCanceled) Has(fd protoreflect.FieldDescriptor) bool {
+	switch fd.FullName() {
+	case "poktroll.gateway.EventGatewayUnbondingCanceled.gateway":
+		return x.Gateway != nil
+	case "poktroll.gateway.EventGatewayUnbondingCanceled.session_end_height":
+		return x.SessionEndHeight != int64(0)
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.gateway.EventGatewayUnbondingCanceled"))
+		}
+		panic(fmt.Errorf("message poktroll.gateway.EventGatewayUnbondingCanceled does not contain field %s", fd.FullName()))
+	}
+}
+
+// Clear clears the field such that a subsequent Has call reports false.
+//
+// Clearing an extension field clears both the extension type and value
+// associated with the given field number.
+//
+// Clear is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_EventGatewayUnbondingCanceled) Clear(fd protoreflect.FieldDescriptor) {
+	switch fd.FullName() {
+	case "poktroll.gateway.EventGatewayUnbondingCanceled.gateway":
+		x.Gateway = nil
+	case "poktroll.gateway.EventGatewayUnbondingCanceled.session_end_height":
+		x.SessionEndHeight = int64(0)
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.gateway.EventGatewayUnbondingCanceled"))
+		}
+		panic(fmt.Errorf("message poktroll.gateway.EventGatewayUnbondingCanceled does not contain field %s", fd.FullName()))
+	}
+}
+
+// Get retrieves the value for a field.
+//
+// For unpopulated scalars, it returns the default value, where
+// the default value of a bytes scalar is guaranteed to be a copy.
+// For unpopulated composite types, it returns an empty, read-only view
+// of the value; to obtain a mutable reference, use Mutable.
+func (x *fastReflection_EventGatewayUnbondingCanceled) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
+	switch descriptor.FullName() {
+	case "poktroll.gateway.EventGatewayUnbondingCanceled.gateway":
+		value := x.Gateway
+		return protoreflect.ValueOfMessage(value.ProtoReflect())
+	case "poktroll.gateway.EventGatewayUnbondingCanceled.session_end_height":
+		value := x.SessionEndHeight
+		return protoreflect.ValueOfInt64(value)
+	default:
+		if descriptor.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.gateway.EventGatewayUnbondingCanceled"))
+		}
+		panic(fmt.Errorf("message poktroll.gateway.EventGatewayUnbondingCanceled does not contain field %s", descriptor.FullName()))
+	}
+}
+
+// Set stores the value for a field.
+//
+// For a field belonging to a oneof, it implicitly clears any other field
+// that may be currently set within the same oneof.
+// For extension fields, it implicitly stores the provided ExtensionType.
+// When setting a composite type, it is unspecified whether the stored value
+// aliases the source's memory in any way. If the composite value is an
+// empty, read-only value, then it panics.
+//
+// Set is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_EventGatewayUnbondingCanceled) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
+	switch fd.FullName() {
+	case "poktroll.gateway.EventGatewayUnbondingCanceled.gateway":
+		x.Gateway = value.Message().Interface().(*Gateway)
+	case "poktroll.gateway.EventGatewayUnbondingCanceled.session_end_height":
+		x.SessionEndHeight = value.Int()
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.gateway.EventGatewayUnbondingCanceled"))
+		}
+		panic(fmt.Errorf("message poktroll.gateway.EventGatewayUnbondingCanceled does not contain field %s", fd.FullName()))
+	}
+}
+
+// Mutable returns a mutable reference to a composite type.
+//
+// If the field is unpopulated, it may allocate a composite value.
+// For a field belonging to a oneof, it implicitly clears any other field
+// that may be currently set within the same oneof.
+// For extension fields, it implicitly stores the provided ExtensionType
+// if not already stored.
+// It panics if the field does not contain a composite type.
+//
+// Mutable is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_EventGatewayUnbondingCanceled) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
+	switch fd.FullName() {
+	case "poktroll.gateway.EventGatewayUnbondingCanceled.gateway":
+		if x.Gateway == nil {
+			x.Gateway = new(Gateway)
+		}
+		return protoreflect.ValueOfMessage(x.Gateway.ProtoReflect())
+	case "poktroll.gateway.EventGatewayUnbondingCanceled.session_end_height":
+		panic(fmt.Errorf("field session_end_height of message poktroll.gateway.EventGatewayUnbondingCanceled is not mutable"))
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.gateway.EventGatewayUnbondingCanceled"))
+		}
+		panic(fmt.Errorf("message poktroll.gateway.EventGatewayUnbondingCanceled does not contain field %s", fd.FullName()))
+	}
+}
+
+// NewField returns a new value that is assignable to the field
+// for the given descriptor. For scalars, this returns the default value.
+// For lists, maps, and messages, this returns a new, empty, mutable value.
+func (x *fastReflection_EventGatewayUnbondingCanceled) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
+	switch fd.FullName() {
+	case "poktroll.gateway.EventGatewayUnbondingCanceled.gateway":
+		m := new(Gateway)
+		return protoreflect.ValueOfMessage(m.ProtoReflect())
+	case "poktroll.gateway.EventGatewayUnbondingCanceled.session_end_height":
+		return protoreflect.ValueOfInt64(int64(0))
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.gateway.EventGatewayUnbondingCanceled"))
+		}
+		panic(fmt.Errorf("message poktroll.gateway.EventGatewayUnbondingCanceled does not contain field %s", fd.FullName()))
+	}
+}
+
+// WhichOneof reports which field within the oneof is populated,
+// returning nil if none are populated.
+// It panics if the oneof descriptor does not belong to this message.
+func (x *fastReflection_EventGatewayUnbondingCanceled) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
+	switch d.FullName() {
+	default:
+		panic(fmt.Errorf("%s is not a oneof field in poktroll.gateway.EventGatewayUnbondingCanceled", d.FullName()))
+	}
+	panic("unreachable")
+}
+
+// GetUnknown retrieves the entire list of unknown fields.
+// The caller may only mutate the contents of the RawFields
+// if the mutated bytes are stored back into the message with SetUnknown.
+func (x *fastReflection_EventGatewayUnbondingCanceled) GetUnknown() protoreflect.RawFields {
+	return x.unknownFields
+}
+
+// SetUnknown stores an entire list of unknown fields.
+// The raw fields must be syntactically valid according to the wire format.
+// An implementation may panic if this is not the case.
+// Once stored, the caller must not mutate the content of the RawFields.
+// An empty RawFields may be passed to clear the fields.
+//
+// SetUnknown is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_EventGatewayUnbondingCanceled) SetUnknown(fields protoreflect.RawFields) {
+	x.unknownFields = fields
+}
+
+// IsValid reports whether the message is valid.
+//
+// An invalid message is an empty, read-only value.
+//
+// An invalid message often corresponds to a nil pointer of the concrete
+// message type, but the details are implementation dependent.
+// Validity is not part of the protobuf data model, and may not
+// be preserved in marshaling or other operations.
+func (x *fastReflection_EventGatewayUnbondingCanceled) IsValid() bool {
+	return x != nil
+}
+
+// ProtoMethods returns optional fastReflectionFeature-path implementations of various operations.
+// This method may return nil.
+//
+// The returned methods type is identical to
+// "google.golang.org/protobuf/runtime/protoiface".Methods.
+// Consult the protoiface package documentation for details.
+func (x *fastReflection_EventGatewayUnbondingCanceled) ProtoMethods() *protoiface.Methods {
+	size := func(input protoiface.SizeInput) protoiface.SizeOutput {
+		x := input.Message.Interface().(*EventGatewayUnbondingCanceled)
 		if x == nil {
 			return protoiface.SizeOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -803,7 +1865,7 @@ func (x *fastReflection_EventGatewayUnstaked) ProtoMethods() *protoiface.Methods
 	}
 
 	marshal := func(input protoiface.MarshalInput) (protoiface.MarshalOutput, error) {
-		x := input.Message.Interface().(*EventGatewayUnstaked)
+		x := input.Message.Interface().(*EventGatewayUnbondingCanceled)
 		if x == nil {
 			return protoiface.MarshalOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -852,7 +1914,7 @@ func (x *fastReflection_EventGatewayUnstaked) ProtoMethods() *protoiface.Methods
 		}, nil
 	}
 	unmarshal := func(input protoiface.UnmarshalInput) (protoiface.UnmarshalOutput, error) {
-		x := input.Message.Interface().(*EventGatewayUnstaked)
+		x := input.Message.Interface().(*EventGatewayUnbondingCanceled)
 		if x == nil {
 			return protoiface.UnmarshalOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -884,10 +1946,10 @@ func (x *fastReflection_EventGatewayUnstaked) ProtoMethods() *protoiface.Methods
 			fieldNum := int32(wire >> 3)
 			wireType := int(wire & 0x7)
 			if wireType == 4 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: EventGatewayUnstaked: wiretype end group for non-group")
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: EventGatewayUnbondingCanceled: wiretype end group for non-group")
 			}
 			if fieldNum <= 0 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: EventGatewayUnstaked: illegal tag %d (wire type %d)", fieldNum, wire)
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: EventGatewayUnbondingCanceled: illegal tag %d (wire type %d)", fieldNum, wire)
 			}
 			switch fieldNum {
 			case 1:
@@ -993,7 +2055,7 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-// GatewayStaked is emitted when a gateway is staked or up-staked.
+// EventGatewayStaked is emitted when a gateway is staked or up-staked.
 type EventGatewayStaked struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -1039,20 +2101,24 @@ func (x *EventGatewayStaked) GetSessionEndHeight() int64 {
 	return 0
 }
 
-// GatewayUnstaked defines the event emitted when a gateway has been unstaked.
-type EventGatewayUnstaked struct {
+// EventGatewayUnbondingBegin is emitted when a gateway begins unbonding.
+// It is triggered by the commitment of an unstake gateway message.
+// This event signals that a gateway has begun unbonding.
+// The unbonding period is determined by the shared param gateway_unbonding_period_sessions.
+type EventGatewayUnbondingBegin struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The gateway that has been unstaked.
 	Gateway *Gateway `protobuf:"bytes,1,opt,name=gateway,proto3" json:"gateway,omitempty"`
-	// The end height of the session in which gateway was unstaked.
-	SessionEndHeight int64 `protobuf:"varint,2,opt,name=session_end_height,json=sessionEndHeight,proto3" json:"session_end_height,omitempty"`
+	// The end height of the session in which the unbonding began.
+	SessionEndHeight int64 `protobuf:"varint,3,opt,name=session_end_height,json=sessionEndHeight,proto3" json:"session_end_height,omitempty"`
+	// The height at which gateway unbonding will end.
+	UnbondingEndHeight int64 `protobuf:"varint,4,opt,name=unbonding_end_height,json=unbondingEndHeight,proto3" json:"unbonding_end_height,omitempty"`
 }
 
-func (x *EventGatewayUnstaked) Reset() {
-	*x = EventGatewayUnstaked{}
+func (x *EventGatewayUnbondingBegin) Reset() {
+	*x = EventGatewayUnbondingBegin{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_poktroll_gateway_event_proto_msgTypes[1]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1060,25 +2126,136 @@ func (x *EventGatewayUnstaked) Reset() {
 	}
 }
 
-func (x *EventGatewayUnstaked) String() string {
+func (x *EventGatewayUnbondingBegin) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*EventGatewayUnstaked) ProtoMessage() {}
+func (*EventGatewayUnbondingBegin) ProtoMessage() {}
 
-// Deprecated: Use EventGatewayUnstaked.ProtoReflect.Descriptor instead.
-func (*EventGatewayUnstaked) Descriptor() ([]byte, []int) {
+// Deprecated: Use EventGatewayUnbondingBegin.ProtoReflect.Descriptor instead.
+func (*EventGatewayUnbondingBegin) Descriptor() ([]byte, []int) {
 	return file_poktroll_gateway_event_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *EventGatewayUnstaked) GetGateway() *Gateway {
+func (x *EventGatewayUnbondingBegin) GetGateway() *Gateway {
 	if x != nil {
 		return x.Gateway
 	}
 	return nil
 }
 
-func (x *EventGatewayUnstaked) GetSessionEndHeight() int64 {
+func (x *EventGatewayUnbondingBegin) GetSessionEndHeight() int64 {
+	if x != nil {
+		return x.SessionEndHeight
+	}
+	return 0
+}
+
+func (x *EventGatewayUnbondingBegin) GetUnbondingEndHeight() int64 {
+	if x != nil {
+		return x.UnbondingEndHeight
+	}
+	return 0
+}
+
+// EventGatewayUnbondingEnd is emitted when a gateway has completed
+// unbonding.
+// The unbonding period is determined by the shared param gateway_unbonding_period_sessions.
+type EventGatewayUnbondingEnd struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	// The gateway that has completed unbonding.
+	Gateway *Gateway `protobuf:"bytes,1,opt,name=gateway,proto3" json:"gateway,omitempty"`
+	// The end height of the session in which the unbonding began.
+	SessionEndHeight int64 `protobuf:"varint,3,opt,name=session_end_height,json=sessionEndHeight,proto3" json:"session_end_height,omitempty"`
+	// The height at which gateway unbonding will end.
+	UnbondingEndHeight int64 `protobuf:"varint,4,opt,name=unbonding_end_height,json=unbondingEndHeight,proto3" json:"unbonding_end_height,omitempty"`
+}
+
+func (x *EventGatewayUnbondingEnd) Reset() {
+	*x = EventGatewayUnbondingEnd{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_poktroll_gateway_event_proto_msgTypes[2]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *EventGatewayUnbondingEnd) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*EventGatewayUnbondingEnd) ProtoMessage() {}
+
+// Deprecated: Use EventGatewayUnbondingEnd.ProtoReflect.Descriptor instead.
+func (*EventGatewayUnbondingEnd) Descriptor() ([]byte, []int) {
+	return file_poktroll_gateway_event_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *EventGatewayUnbondingEnd) GetGateway() *Gateway {
+	if x != nil {
+		return x.Gateway
+	}
+	return nil
+}
+
+func (x *EventGatewayUnbondingEnd) GetSessionEndHeight() int64 {
+	if x != nil {
+		return x.SessionEndHeight
+	}
+	return 0
+}
+
+func (x *EventGatewayUnbondingEnd) GetUnbondingEndHeight() int64 {
+	if x != nil {
+		return x.UnbondingEndHeight
+	}
+	return 0
+}
+
+// EventGatewayUnbondingCanceled is emitted when a gateway which was unbonding
+// successfully (re-)stakes before the unbonding period has elapsed.
+// An EventGatewayStaked event will also be emitted immediately after this event.
+type EventGatewayUnbondingCanceled struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Gateway *Gateway `protobuf:"bytes,1,opt,name=gateway,proto3" json:"gateway,omitempty"`
+	// The end height of the session in which the unbonding was canceled.
+	SessionEndHeight int64 `protobuf:"varint,2,opt,name=session_end_height,json=sessionEndHeight,proto3" json:"session_end_height,omitempty"`
+}
+
+func (x *EventGatewayUnbondingCanceled) Reset() {
+	*x = EventGatewayUnbondingCanceled{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_poktroll_gateway_event_proto_msgTypes[3]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *EventGatewayUnbondingCanceled) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*EventGatewayUnbondingCanceled) ProtoMessage() {}
+
+// Deprecated: Use EventGatewayUnbondingCanceled.ProtoReflect.Descriptor instead.
+func (*EventGatewayUnbondingCanceled) Descriptor() ([]byte, []int) {
+	return file_poktroll_gateway_event_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *EventGatewayUnbondingCanceled) GetGateway() *Gateway {
+	if x != nil {
+		return x.Gateway
+	}
+	return nil
+}
+
+func (x *EventGatewayUnbondingCanceled) GetSessionEndHeight() int64 {
 	if x != nil {
 		return x.SessionEndHeight
 	}
@@ -1105,29 +2282,59 @@ var file_poktroll_gateway_event_proto_rawDesc = []byte{
 	0x69, 0x6f, 0x6e, 0x5f, 0x65, 0x6e, 0x64, 0x5f, 0x68, 0x65, 0x69, 0x67, 0x68, 0x74, 0x18, 0x02,
 	0x20, 0x01, 0x28, 0x03, 0x42, 0x16, 0xea, 0xde, 0x1f, 0x12, 0x73, 0x65, 0x73, 0x73, 0x69, 0x6f,
 	0x6e, 0x5f, 0x65, 0x6e, 0x64, 0x5f, 0x68, 0x65, 0x69, 0x67, 0x68, 0x74, 0x52, 0x10, 0x73, 0x65,
-	0x73, 0x73, 0x69, 0x6f, 0x6e, 0x45, 0x6e, 0x64, 0x48, 0x65, 0x69, 0x67, 0x68, 0x74, 0x22, 0x9e,
-	0x01, 0x0a, 0x14, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x47, 0x61, 0x74, 0x65, 0x77, 0x61, 0x79, 0x55,
-	0x6e, 0x73, 0x74, 0x61, 0x6b, 0x65, 0x64, 0x12, 0x40, 0x0a, 0x07, 0x67, 0x61, 0x74, 0x65, 0x77,
-	0x61, 0x79, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x19, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72,
-	0x6f, 0x6c, 0x6c, 0x2e, 0x67, 0x61, 0x74, 0x65, 0x77, 0x61, 0x79, 0x2e, 0x47, 0x61, 0x74, 0x65,
-	0x77, 0x61, 0x79, 0x42, 0x0b, 0xea, 0xde, 0x1f, 0x07, 0x67, 0x61, 0x74, 0x65, 0x77, 0x61, 0x79,
-	0x52, 0x07, 0x67, 0x61, 0x74, 0x65, 0x77, 0x61, 0x79, 0x12, 0x44, 0x0a, 0x12, 0x73, 0x65, 0x73,
-	0x73, 0x69, 0x6f, 0x6e, 0x5f, 0x65, 0x6e, 0x64, 0x5f, 0x68, 0x65, 0x69, 0x67, 0x68, 0x74, 0x18,
-	0x02, 0x20, 0x01, 0x28, 0x03, 0x42, 0x16, 0xea, 0xde, 0x1f, 0x12, 0x73, 0x65, 0x73, 0x73, 0x69,
-	0x6f, 0x6e, 0x5f, 0x65, 0x6e, 0x64, 0x5f, 0x68, 0x65, 0x69, 0x67, 0x68, 0x74, 0x52, 0x10, 0x73,
-	0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x45, 0x6e, 0x64, 0x48, 0x65, 0x69, 0x67, 0x68, 0x74, 0x42,
-	0xaa, 0x01, 0xd8, 0xe2, 0x1e, 0x01, 0x0a, 0x14, 0x63, 0x6f, 0x6d, 0x2e, 0x70, 0x6f, 0x6b, 0x74,
-	0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x67, 0x61, 0x74, 0x65, 0x77, 0x61, 0x79, 0x42, 0x0a, 0x45, 0x76,
-	0x65, 0x6e, 0x74, 0x50, 0x72, 0x6f, 0x74, 0x6f, 0x50, 0x01, 0x5a, 0x21, 0x63, 0x6f, 0x73, 0x6d,
-	0x6f, 0x73, 0x73, 0x64, 0x6b, 0x2e, 0x69, 0x6f, 0x2f, 0x61, 0x70, 0x69, 0x2f, 0x70, 0x6f, 0x6b,
-	0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2f, 0x67, 0x61, 0x74, 0x65, 0x77, 0x61, 0x79, 0xa2, 0x02, 0x03,
-	0x50, 0x47, 0x58, 0xaa, 0x02, 0x10, 0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x47,
-	0x61, 0x74, 0x65, 0x77, 0x61, 0x79, 0xca, 0x02, 0x10, 0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c,
-	0x6c, 0x5c, 0x47, 0x61, 0x74, 0x65, 0x77, 0x61, 0x79, 0xe2, 0x02, 0x1c, 0x50, 0x6f, 0x6b, 0x74,
-	0x72, 0x6f, 0x6c, 0x6c, 0x5c, 0x47, 0x61, 0x74, 0x65, 0x77, 0x61, 0x79, 0x5c, 0x47, 0x50, 0x42,
-	0x4d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0xea, 0x02, 0x11, 0x50, 0x6f, 0x6b, 0x74, 0x72,
-	0x6f, 0x6c, 0x6c, 0x3a, 0x3a, 0x47, 0x61, 0x74, 0x65, 0x77, 0x61, 0x79, 0x62, 0x06, 0x70, 0x72,
-	0x6f, 0x74, 0x6f, 0x33,
+	0x73, 0x73, 0x69, 0x6f, 0x6e, 0x45, 0x6e, 0x64, 0x48, 0x65, 0x69, 0x67, 0x68, 0x74, 0x22, 0xec,
+	0x01, 0x0a, 0x1a, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x47, 0x61, 0x74, 0x65, 0x77, 0x61, 0x79, 0x55,
+	0x6e, 0x62, 0x6f, 0x6e, 0x64, 0x69, 0x6e, 0x67, 0x42, 0x65, 0x67, 0x69, 0x6e, 0x12, 0x40, 0x0a,
+	0x07, 0x67, 0x61, 0x74, 0x65, 0x77, 0x61, 0x79, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x19,
+	0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x67, 0x61, 0x74, 0x65, 0x77, 0x61,
+	0x79, 0x2e, 0x47, 0x61, 0x74, 0x65, 0x77, 0x61, 0x79, 0x42, 0x0b, 0xea, 0xde, 0x1f, 0x07, 0x67,
+	0x61, 0x74, 0x65, 0x77, 0x61, 0x79, 0x52, 0x07, 0x67, 0x61, 0x74, 0x65, 0x77, 0x61, 0x79, 0x12,
+	0x44, 0x0a, 0x12, 0x73, 0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x5f, 0x65, 0x6e, 0x64, 0x5f, 0x68,
+	0x65, 0x69, 0x67, 0x68, 0x74, 0x18, 0x03, 0x20, 0x01, 0x28, 0x03, 0x42, 0x16, 0xea, 0xde, 0x1f,
+	0x12, 0x73, 0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x5f, 0x65, 0x6e, 0x64, 0x5f, 0x68, 0x65, 0x69,
+	0x67, 0x68, 0x74, 0x52, 0x10, 0x73, 0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x45, 0x6e, 0x64, 0x48,
+	0x65, 0x69, 0x67, 0x68, 0x74, 0x12, 0x46, 0x0a, 0x14, 0x75, 0x6e, 0x62, 0x6f, 0x6e, 0x64, 0x69,
+	0x6e, 0x67, 0x5f, 0x65, 0x6e, 0x64, 0x5f, 0x68, 0x65, 0x69, 0x67, 0x68, 0x74, 0x18, 0x04, 0x20,
+	0x01, 0x28, 0x03, 0x42, 0x14, 0xea, 0xde, 0x1f, 0x10, 0x75, 0x6e, 0x62, 0x6f, 0x6e, 0x64, 0x69,
+	0x6e, 0x67, 0x5f, 0x68, 0x65, 0x69, 0x67, 0x68, 0x74, 0x52, 0x12, 0x75, 0x6e, 0x62, 0x6f, 0x6e,
+	0x64, 0x69, 0x6e, 0x67, 0x45, 0x6e, 0x64, 0x48, 0x65, 0x69, 0x67, 0x68, 0x74, 0x22, 0xea, 0x01,
+	0x0a, 0x18, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x47, 0x61, 0x74, 0x65, 0x77, 0x61, 0x79, 0x55, 0x6e,
+	0x62, 0x6f, 0x6e, 0x64, 0x69, 0x6e, 0x67, 0x45, 0x6e, 0x64, 0x12, 0x40, 0x0a, 0x07, 0x67, 0x61,
+	0x74, 0x65, 0x77, 0x61, 0x79, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x19, 0x2e, 0x70, 0x6f,
+	0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x67, 0x61, 0x74, 0x65, 0x77, 0x61, 0x79, 0x2e, 0x47,
+	0x61, 0x74, 0x65, 0x77, 0x61, 0x79, 0x42, 0x0b, 0xea, 0xde, 0x1f, 0x07, 0x67, 0x61, 0x74, 0x65,
+	0x77, 0x61, 0x79, 0x52, 0x07, 0x67, 0x61, 0x74, 0x65, 0x77, 0x61, 0x79, 0x12, 0x44, 0x0a, 0x12,
+	0x73, 0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x5f, 0x65, 0x6e, 0x64, 0x5f, 0x68, 0x65, 0x69, 0x67,
+	0x68, 0x74, 0x18, 0x03, 0x20, 0x01, 0x28, 0x03, 0x42, 0x16, 0xea, 0xde, 0x1f, 0x12, 0x73, 0x65,
+	0x73, 0x73, 0x69, 0x6f, 0x6e, 0x5f, 0x65, 0x6e, 0x64, 0x5f, 0x68, 0x65, 0x69, 0x67, 0x68, 0x74,
+	0x52, 0x10, 0x73, 0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x45, 0x6e, 0x64, 0x48, 0x65, 0x69, 0x67,
+	0x68, 0x74, 0x12, 0x46, 0x0a, 0x14, 0x75, 0x6e, 0x62, 0x6f, 0x6e, 0x64, 0x69, 0x6e, 0x67, 0x5f,
+	0x65, 0x6e, 0x64, 0x5f, 0x68, 0x65, 0x69, 0x67, 0x68, 0x74, 0x18, 0x04, 0x20, 0x01, 0x28, 0x03,
+	0x42, 0x14, 0xea, 0xde, 0x1f, 0x10, 0x75, 0x6e, 0x62, 0x6f, 0x6e, 0x64, 0x69, 0x6e, 0x67, 0x5f,
+	0x68, 0x65, 0x69, 0x67, 0x68, 0x74, 0x52, 0x12, 0x75, 0x6e, 0x62, 0x6f, 0x6e, 0x64, 0x69, 0x6e,
+	0x67, 0x45, 0x6e, 0x64, 0x48, 0x65, 0x69, 0x67, 0x68, 0x74, 0x22, 0xa7, 0x01, 0x0a, 0x1d, 0x45,
+	0x76, 0x65, 0x6e, 0x74, 0x47, 0x61, 0x74, 0x65, 0x77, 0x61, 0x79, 0x55, 0x6e, 0x62, 0x6f, 0x6e,
+	0x64, 0x69, 0x6e, 0x67, 0x43, 0x61, 0x6e, 0x63, 0x65, 0x6c, 0x65, 0x64, 0x12, 0x40, 0x0a, 0x07,
+	0x67, 0x61, 0x74, 0x65, 0x77, 0x61, 0x79, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x19, 0x2e,
+	0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x67, 0x61, 0x74, 0x65, 0x77, 0x61, 0x79,
+	0x2e, 0x47, 0x61, 0x74, 0x65, 0x77, 0x61, 0x79, 0x42, 0x0b, 0xea, 0xde, 0x1f, 0x07, 0x67, 0x61,
+	0x74, 0x65, 0x77, 0x61, 0x79, 0x52, 0x07, 0x67, 0x61, 0x74, 0x65, 0x77, 0x61, 0x79, 0x12, 0x44,
+	0x0a, 0x12, 0x73, 0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x5f, 0x65, 0x6e, 0x64, 0x5f, 0x68, 0x65,
+	0x69, 0x67, 0x68, 0x74, 0x18, 0x02, 0x20, 0x01, 0x28, 0x03, 0x42, 0x16, 0xea, 0xde, 0x1f, 0x12,
+	0x73, 0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x5f, 0x65, 0x6e, 0x64, 0x5f, 0x68, 0x65, 0x69, 0x67,
+	0x68, 0x74, 0x52, 0x10, 0x73, 0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x45, 0x6e, 0x64, 0x48, 0x65,
+	0x69, 0x67, 0x68, 0x74, 0x42, 0xaa, 0x01, 0xd8, 0xe2, 0x1e, 0x01, 0x0a, 0x14, 0x63, 0x6f, 0x6d,
+	0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x67, 0x61, 0x74, 0x65, 0x77, 0x61,
+	0x79, 0x42, 0x0a, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x50, 0x72, 0x6f, 0x74, 0x6f, 0x50, 0x01, 0x5a,
+	0x21, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x73, 0x64, 0x6b, 0x2e, 0x69, 0x6f, 0x2f, 0x61, 0x70,
+	0x69, 0x2f, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2f, 0x67, 0x61, 0x74, 0x65, 0x77,
+	0x61, 0x79, 0xa2, 0x02, 0x03, 0x50, 0x47, 0x58, 0xaa, 0x02, 0x10, 0x50, 0x6f, 0x6b, 0x74, 0x72,
+	0x6f, 0x6c, 0x6c, 0x2e, 0x47, 0x61, 0x74, 0x65, 0x77, 0x61, 0x79, 0xca, 0x02, 0x10, 0x50, 0x6f,
+	0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x5c, 0x47, 0x61, 0x74, 0x65, 0x77, 0x61, 0x79, 0xe2, 0x02,
+	0x1c, 0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x5c, 0x47, 0x61, 0x74, 0x65, 0x77, 0x61,
+	0x79, 0x5c, 0x47, 0x50, 0x42, 0x4d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0xea, 0x02, 0x11,
+	0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x3a, 0x3a, 0x47, 0x61, 0x74, 0x65, 0x77, 0x61,
+	0x79, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -1142,20 +2349,24 @@ func file_poktroll_gateway_event_proto_rawDescGZIP() []byte {
 	return file_poktroll_gateway_event_proto_rawDescData
 }
 
-var file_poktroll_gateway_event_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
+var file_poktroll_gateway_event_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
 var file_poktroll_gateway_event_proto_goTypes = []interface{}{
-	(*EventGatewayStaked)(nil),   // 0: poktroll.gateway.EventGatewayStaked
-	(*EventGatewayUnstaked)(nil), // 1: poktroll.gateway.EventGatewayUnstaked
-	(*Gateway)(nil),              // 2: poktroll.gateway.Gateway
+	(*EventGatewayStaked)(nil),            // 0: poktroll.gateway.EventGatewayStaked
+	(*EventGatewayUnbondingBegin)(nil),    // 1: poktroll.gateway.EventGatewayUnbondingBegin
+	(*EventGatewayUnbondingEnd)(nil),      // 2: poktroll.gateway.EventGatewayUnbondingEnd
+	(*EventGatewayUnbondingCanceled)(nil), // 3: poktroll.gateway.EventGatewayUnbondingCanceled
+	(*Gateway)(nil),                       // 4: poktroll.gateway.Gateway
 }
 var file_poktroll_gateway_event_proto_depIdxs = []int32{
-	2, // 0: poktroll.gateway.EventGatewayStaked.gateway:type_name -> poktroll.gateway.Gateway
-	2, // 1: poktroll.gateway.EventGatewayUnstaked.gateway:type_name -> poktroll.gateway.Gateway
-	2, // [2:2] is the sub-list for method output_type
-	2, // [2:2] is the sub-list for method input_type
-	2, // [2:2] is the sub-list for extension type_name
-	2, // [2:2] is the sub-list for extension extendee
-	0, // [0:2] is the sub-list for field type_name
+	4, // 0: poktroll.gateway.EventGatewayStaked.gateway:type_name -> poktroll.gateway.Gateway
+	4, // 1: poktroll.gateway.EventGatewayUnbondingBegin.gateway:type_name -> poktroll.gateway.Gateway
+	4, // 2: poktroll.gateway.EventGatewayUnbondingEnd.gateway:type_name -> poktroll.gateway.Gateway
+	4, // 3: poktroll.gateway.EventGatewayUnbondingCanceled.gateway:type_name -> poktroll.gateway.Gateway
+	4, // [4:4] is the sub-list for method output_type
+	4, // [4:4] is the sub-list for method input_type
+	4, // [4:4] is the sub-list for extension type_name
+	4, // [4:4] is the sub-list for extension extendee
+	0, // [0:4] is the sub-list for field type_name
 }
 
 func init() { file_poktroll_gateway_event_proto_init() }
@@ -1178,7 +2389,31 @@ func file_poktroll_gateway_event_proto_init() {
 			}
 		}
 		file_poktroll_gateway_event_proto_msgTypes[1].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*EventGatewayUnstaked); i {
+			switch v := v.(*EventGatewayUnbondingBegin); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_poktroll_gateway_event_proto_msgTypes[2].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*EventGatewayUnbondingEnd); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_poktroll_gateway_event_proto_msgTypes[3].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*EventGatewayUnbondingCanceled); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -1196,7 +2431,7 @@ func file_poktroll_gateway_event_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_poktroll_gateway_event_proto_rawDesc,
 			NumEnums:      0,
-			NumMessages:   2,
+			NumMessages:   4,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

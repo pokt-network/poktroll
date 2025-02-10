@@ -10,6 +10,7 @@ import (
 
 	"github.com/pokt-network/poktroll/telemetry"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
+	gatewaytypes "github.com/pokt-network/poktroll/x/gateway/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
@@ -20,6 +21,8 @@ func (k msgServer) DelegateToGateway(ctx context.Context, msg *apptypes.MsgDeleg
 		telemetry.DefaultCounterFn,
 		func() bool { return isSuccessful },
 	)
+
+	sdkCtx := sdk.UnwrapSDKContext(ctx)
 
 	logger := k.Logger().With("method", "DelegateToGateway")
 	logger.Info(fmt.Sprintf("About to delegate application to gateway with msg: %+v", msg))
@@ -43,7 +46,8 @@ func (k msgServer) DelegateToGateway(ctx context.Context, msg *apptypes.MsgDeleg
 	logger.Info(fmt.Sprintf("Application found with address [%s]", msg.AppAddress))
 
 	// Check if the gateway is staked
-	if _, found := k.gatewayKeeper.GetGateway(ctx, msg.GetGatewayAddress()); !found {
+	gateway, gatewayFound := k.gatewayKeeper.GetGateway(ctx, msg.GetGatewayAddress())
+	if !gatewayFound {
 		logger.Info(fmt.Sprintf("Gateway not found with address [%s]", msg.GetGatewayAddress()))
 		return nil, status.Error(
 			codes.NotFound,
@@ -62,6 +66,18 @@ func (k msgServer) DelegateToGateway(ctx context.Context, msg *apptypes.MsgDeleg
 			apptypes.ErrAppMaxDelegatedGateways.Wrapf(
 				"application with address %q already delegated to %d (max) gateways",
 				msg.GetAppAddress(), maxDelegatedParam,
+			).Error(),
+		)
+	}
+
+	currentHeight := sdkCtx.BlockHeight()
+	// Ensure that the gateway is still active
+	if !gateway.IsActive(currentHeight) {
+		logger.Info(fmt.Sprintf("Gateway with address [%s] is unbonding and no longer active", msg.GetGatewayAddress()))
+		return nil, status.Error(
+			codes.FailedPrecondition,
+			gatewaytypes.ErrGatewayIsInactive.Wrapf(
+				"gateway with address: %q", msg.GetGatewayAddress(),
 			).Error(),
 		)
 	}
@@ -89,7 +105,6 @@ func (k msgServer) DelegateToGateway(ctx context.Context, msg *apptypes.MsgDeleg
 	logger.Info(fmt.Sprintf("Successfully delegated application to gateway for app: %+v", app))
 
 	// Emit the application redelegation event
-	currentHeight := sdk.UnwrapSDKContext(ctx).BlockHeight()
 	sharedParams := k.sharedKeeper.GetParams(ctx)
 	sessionEndHeight := sharedtypes.GetSessionEndHeight(&sharedParams, currentHeight)
 	event := &apptypes.EventRedelegation{
@@ -98,7 +113,6 @@ func (k msgServer) DelegateToGateway(ctx context.Context, msg *apptypes.MsgDeleg
 	}
 	logger.Info(fmt.Sprintf("Emitting application redelegation event %+v", event))
 
-	sdkCtx := sdk.UnwrapSDKContext(ctx)
 	if err := sdkCtx.EventManager().EmitTypedEvent(event); err != nil {
 		err = fmt.Errorf("failed to emit application redelegation event: %w", err)
 		logger.Error(err.Error())

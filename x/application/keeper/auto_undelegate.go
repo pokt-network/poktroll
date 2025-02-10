@@ -16,18 +16,14 @@ func (k Keeper) EndBlockerAutoUndelegateFromUnstakedGateways(ctx cosmostypes.Con
 	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
 	currentHeight := sdkCtx.BlockHeight()
 
-	// Get all the GatewayUnstaked events emitted in the block to avoid checking
-	// each application's delegated gateways for unstaked gateways.
-	unstakedGateways, err := k.getUnstakedGateways(sdkCtx.EventManager().Events())
-	if err != nil {
-		return err
-	}
+	// Get all the gateways that are unbonding and have reached their unstake session end height.
+	unbondingGateways := k.getUnbondingGateways(ctx)
 
 	// TODO_IMPROVE: Once delegating applications are indexed by gateway address,
 	// this can be optimized to only check applications that have delegated to
 	// unstaked gateways.
 	for _, application := range k.GetAllApplications(ctx) {
-		for _, unstakedGateway := range unstakedGateways {
+		for _, unstakedGateway := range unbondingGateways {
 			gwIdx := slices.Index(application.DelegateeGatewayAddresses, unstakedGateway.GetAddress())
 			if gwIdx >= 0 {
 				application.DelegateeGatewayAddresses = append(
@@ -46,25 +42,18 @@ func (k Keeper) EndBlockerAutoUndelegateFromUnstakedGateways(ctx cosmostypes.Con
 	return nil
 }
 
-// getUnstakedGateways returns the gateways which were unstaked in the given tx events.
-func (k Keeper) getUnstakedGateways(
-	events cosmostypes.Events,
-) (unstakedGateways []*gatewaytypes.Gateway, err error) {
-	for _, e := range events.ToABCIEvents() {
-		typedEvent, err := cosmostypes.ParseTypedEvent(e)
-		if err != nil {
-			// Ignore non-typed errors (e.g. coin_received).
-			continue
-		}
+// getUnbondingGateways returns the gateways which are unbonding and have reached their
+// unstake session end height.
+func (k Keeper) getUnbondingGateways(ctx cosmostypes.Context) []*gatewaytypes.Gateway {
+	currentBlockHeight := ctx.BlockHeight()
+	gateways := k.gatewayKeeper.GetAllGateways(ctx)
 
-		// Ignore events which are not gateway unstaked events.
-		gatewayUnstakedEvent, ok := typedEvent.(*gatewaytypes.EventGatewayUnstaked)
-		if !ok {
-			continue
+	unbondingGateways := make([]*gatewaytypes.Gateway, 0)
+	for _, gateway := range gateways {
+		if !gateway.IsActive(currentBlockHeight) {
+			unbondingGateways = append(unbondingGateways, &gateway)
 		}
-
-		unstakedGateways = append(unstakedGateways, gatewayUnstakedEvent.GetGateway())
 	}
 
-	return unstakedGateways, nil
+	return unbondingGateways
 }

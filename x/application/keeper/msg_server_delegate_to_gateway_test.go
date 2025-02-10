@@ -11,6 +11,7 @@ import (
 	"github.com/pokt-network/poktroll/testutil/sample"
 	"github.com/pokt-network/poktroll/x/application/keeper"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
+	gatewaytypes "github.com/pokt-network/poktroll/x/gateway/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
@@ -23,8 +24,8 @@ func TestMsgServer_DelegateToGateway_SuccessfullyDelegate(t *testing.T) {
 	gatewayAddr1 := sample.AccAddress()
 	gatewayAddr2 := sample.AccAddress()
 	// Mock the gateway being staked via the staked gateway map
-	keepertest.AddGatewayToStakedGatewayMap(t, gatewayAddr1)
-	keepertest.AddGatewayToStakedGatewayMap(t, gatewayAddr2)
+	keepertest.AddGatewayToStakedGatewayMap(t, gatewayAddr1, gatewaytypes.GatewayNotUnstaking)
+	keepertest.AddGatewayToStakedGatewayMap(t, gatewayAddr2, gatewaytypes.GatewayNotUnstaking)
 
 	// Prepare the application
 	stakeMsg := &apptypes.MsgStakeApplication{
@@ -114,7 +115,7 @@ func TestMsgServer_DelegateToGateway_FailDuplicate(t *testing.T) {
 	appAddr := sample.AccAddress()
 	gatewayAddr := sample.AccAddress()
 	// Mock the gateway being staked via the staked gateway map
-	keepertest.AddGatewayToStakedGatewayMap(t, gatewayAddr)
+	keepertest.AddGatewayToStakedGatewayMap(t, gatewayAddr, gatewaytypes.GatewayNotUnstaking)
 
 	// Prepare the application
 	stakeMsg := &apptypes.MsgStakeApplication{
@@ -259,7 +260,7 @@ func TestMsgServer_DelegateToGateway_FailMaxReached(t *testing.T) {
 		gatewayAddr := sample.AccAddress()
 		gatewayAddresses[i] = gatewayAddr
 		// Mock the gateway being staked via the staked gateway map
-		keepertest.AddGatewayToStakedGatewayMap(t, gatewayAddr)
+		keepertest.AddGatewayToStakedGatewayMap(t, gatewayAddr, gatewaytypes.GatewayNotUnstaking)
 		delegateMsg := &apptypes.MsgDelegateToGateway{
 			AppAddress:     appAddr,
 			GatewayAddress: gatewayAddr,
@@ -302,7 +303,7 @@ func TestMsgServer_DelegateToGateway_FailMaxReached(t *testing.T) {
 
 	// Generate an address for the gateway that'll exceed the max
 	gatewayAddr := sample.AccAddress()
-	keepertest.AddGatewayToStakedGatewayMap(t, gatewayAddr)
+	keepertest.AddGatewayToStakedGatewayMap(t, gatewayAddr, gatewaytypes.GatewayNotUnstaking)
 
 	// Prepare the delegation message
 	delegateMsg := &apptypes.MsgDelegateToGateway{
@@ -321,4 +322,58 @@ func TestMsgServer_DelegateToGateway_FailMaxReached(t *testing.T) {
 	foundApp, isStakedAppFound := k.GetApplication(ctx, appAddr)
 	require.True(t, isStakedAppFound)
 	require.Equal(t, maxDelegatedParam, uint64(len(foundApp.DelegateeGatewayAddresses)))
+}
+
+func TestMsgServer_DelegateToGateway_FailGatewayInactive(t *testing.T) {
+	k, ctx := keepertest.ApplicationKeeper(t)
+	srv := keeper.NewMsgServerImpl(k)
+
+	// Generate an address for the application and gateway.
+	appAddr := sample.AccAddress()
+	gatewayAddr := sample.AccAddress()
+
+	sdkCtx := sdk.UnwrapSDKContext(ctx)
+	sdkCtx = sdkCtx.WithBlockHeight(1)
+
+	currentHeight := sdkCtx.BlockHeight()
+	sharedParams := sharedtypes.DefaultParams()
+	sessionEndHeight := sharedtypes.GetSessionEndHeight(&sharedParams, currentHeight)
+
+	// Mock the gateway being staked and unbonding via the staked gateway map.
+	keepertest.AddGatewayToStakedGatewayMap(t, gatewayAddr, uint64(sessionEndHeight))
+
+	// Prepare the application
+	stakeMsg := &apptypes.MsgStakeApplication{
+		Address: appAddr,
+		Stake:   &apptypes.DefaultMinStake,
+		Services: []*sharedtypes.ApplicationServiceConfig{
+			{
+				ServiceId: "svc1",
+			},
+		},
+	}
+
+	// Stake the application & verify that the application exists.
+	_, err := srv.StakeApplication(sdkCtx, stakeMsg)
+	require.NoError(t, err)
+	_, isAppFound := k.GetApplication(sdkCtx, appAddr)
+	require.True(t, isAppFound)
+
+	// Set the block height to the session end height + 1 to simulate the gateway becoming inactive.
+	sdkCtx = sdkCtx.WithBlockHeight(sessionEndHeight + 1)
+
+	// Prepare the delegation message
+	delegateMsg := &apptypes.MsgDelegateToGateway{
+		AppAddress:     appAddr,
+		GatewayAddress: gatewayAddr,
+	}
+
+	// Attempt to delegate the application to the inactive gateway.
+	_, err = srv.DelegateToGateway(sdkCtx, delegateMsg)
+	require.ErrorContains(t, err, gatewaytypes.ErrGatewayIsInactive.Error())
+
+	// Verify that the application is not delegated to the gateway.
+	foundApp, isAppFound := k.GetApplication(sdkCtx, appAddr)
+	require.True(t, isAppFound)
+	require.Equal(t, 0, len(foundApp.DelegateeGatewayAddresses))
 }

@@ -24,7 +24,7 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 
-// GatewayStaked is emitted when a gateway is staked or up-staked.
+// EventGatewayStaked is emitted when a gateway is staked or up-staked.
 type EventGatewayStaked struct {
 	// The gateway that has been staked.
 	Gateway *Gateway `protobuf:"bytes,1,opt,name=gateway,proto3" json:"gateway"`
@@ -75,24 +75,28 @@ func (m *EventGatewayStaked) GetSessionEndHeight() int64 {
 	return 0
 }
 
-// GatewayUnstaked defines the event emitted when a gateway has been unstaked.
-type EventGatewayUnstaked struct {
-	// The gateway that has been unstaked.
+// EventGatewayUnbondingBegin is emitted when a gateway begins unbonding.
+// It is triggered by the commitment of an unstake gateway message.
+// This event signals that a gateway has begun unbonding.
+// The unbonding period is determined by the shared param gateway_unbonding_period_sessions.
+type EventGatewayUnbondingBegin struct {
 	Gateway *Gateway `protobuf:"bytes,1,opt,name=gateway,proto3" json:"gateway"`
-	// The end height of the session in which gateway was unstaked.
-	SessionEndHeight int64 `protobuf:"varint,2,opt,name=session_end_height,json=sessionEndHeight,proto3" json:"session_end_height"`
+	// The end height of the session in which the unbonding began.
+	SessionEndHeight int64 `protobuf:"varint,3,opt,name=session_end_height,json=sessionEndHeight,proto3" json:"session_end_height"`
+	// The height at which gateway unbonding will end.
+	UnbondingEndHeight int64 `protobuf:"varint,4,opt,name=unbonding_end_height,json=unbondingEndHeight,proto3" json:"unbonding_height"`
 }
 
-func (m *EventGatewayUnstaked) Reset()         { *m = EventGatewayUnstaked{} }
-func (m *EventGatewayUnstaked) String() string { return proto.CompactTextString(m) }
-func (*EventGatewayUnstaked) ProtoMessage()    {}
-func (*EventGatewayUnstaked) Descriptor() ([]byte, []int) {
+func (m *EventGatewayUnbondingBegin) Reset()         { *m = EventGatewayUnbondingBegin{} }
+func (m *EventGatewayUnbondingBegin) String() string { return proto.CompactTextString(m) }
+func (*EventGatewayUnbondingBegin) ProtoMessage()    {}
+func (*EventGatewayUnbondingBegin) Descriptor() ([]byte, []int) {
 	return fileDescriptor_34212b93ec812e7c, []int{1}
 }
-func (m *EventGatewayUnstaked) XXX_Unmarshal(b []byte) error {
+func (m *EventGatewayUnbondingBegin) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *EventGatewayUnstaked) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *EventGatewayUnbondingBegin) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	b = b[:cap(b)]
 	n, err := m.MarshalToSizedBuffer(b)
 	if err != nil {
@@ -100,26 +104,147 @@ func (m *EventGatewayUnstaked) XXX_Marshal(b []byte, deterministic bool) ([]byte
 	}
 	return b[:n], nil
 }
-func (m *EventGatewayUnstaked) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_EventGatewayUnstaked.Merge(m, src)
+func (m *EventGatewayUnbondingBegin) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_EventGatewayUnbondingBegin.Merge(m, src)
 }
-func (m *EventGatewayUnstaked) XXX_Size() int {
+func (m *EventGatewayUnbondingBegin) XXX_Size() int {
 	return m.Size()
 }
-func (m *EventGatewayUnstaked) XXX_DiscardUnknown() {
-	xxx_messageInfo_EventGatewayUnstaked.DiscardUnknown(m)
+func (m *EventGatewayUnbondingBegin) XXX_DiscardUnknown() {
+	xxx_messageInfo_EventGatewayUnbondingBegin.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_EventGatewayUnstaked proto.InternalMessageInfo
+var xxx_messageInfo_EventGatewayUnbondingBegin proto.InternalMessageInfo
 
-func (m *EventGatewayUnstaked) GetGateway() *Gateway {
+func (m *EventGatewayUnbondingBegin) GetGateway() *Gateway {
 	if m != nil {
 		return m.Gateway
 	}
 	return nil
 }
 
-func (m *EventGatewayUnstaked) GetSessionEndHeight() int64 {
+func (m *EventGatewayUnbondingBegin) GetSessionEndHeight() int64 {
+	if m != nil {
+		return m.SessionEndHeight
+	}
+	return 0
+}
+
+func (m *EventGatewayUnbondingBegin) GetUnbondingEndHeight() int64 {
+	if m != nil {
+		return m.UnbondingEndHeight
+	}
+	return 0
+}
+
+// EventGatewayUnbondingEnd is emitted when a gateway has completed
+// unbonding.
+// The unbonding period is determined by the shared param gateway_unbonding_period_sessions.
+type EventGatewayUnbondingEnd struct {
+	// The gateway that has completed unbonding.
+	Gateway *Gateway `protobuf:"bytes,1,opt,name=gateway,proto3" json:"gateway"`
+	// The end height of the session in which the unbonding began.
+	SessionEndHeight int64 `protobuf:"varint,3,opt,name=session_end_height,json=sessionEndHeight,proto3" json:"session_end_height"`
+	// The height at which gateway unbonding will end.
+	UnbondingEndHeight int64 `protobuf:"varint,4,opt,name=unbonding_end_height,json=unbondingEndHeight,proto3" json:"unbonding_height"`
+}
+
+func (m *EventGatewayUnbondingEnd) Reset()         { *m = EventGatewayUnbondingEnd{} }
+func (m *EventGatewayUnbondingEnd) String() string { return proto.CompactTextString(m) }
+func (*EventGatewayUnbondingEnd) ProtoMessage()    {}
+func (*EventGatewayUnbondingEnd) Descriptor() ([]byte, []int) {
+	return fileDescriptor_34212b93ec812e7c, []int{2}
+}
+func (m *EventGatewayUnbondingEnd) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *EventGatewayUnbondingEnd) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	b = b[:cap(b)]
+	n, err := m.MarshalToSizedBuffer(b)
+	if err != nil {
+		return nil, err
+	}
+	return b[:n], nil
+}
+func (m *EventGatewayUnbondingEnd) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_EventGatewayUnbondingEnd.Merge(m, src)
+}
+func (m *EventGatewayUnbondingEnd) XXX_Size() int {
+	return m.Size()
+}
+func (m *EventGatewayUnbondingEnd) XXX_DiscardUnknown() {
+	xxx_messageInfo_EventGatewayUnbondingEnd.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_EventGatewayUnbondingEnd proto.InternalMessageInfo
+
+func (m *EventGatewayUnbondingEnd) GetGateway() *Gateway {
+	if m != nil {
+		return m.Gateway
+	}
+	return nil
+}
+
+func (m *EventGatewayUnbondingEnd) GetSessionEndHeight() int64 {
+	if m != nil {
+		return m.SessionEndHeight
+	}
+	return 0
+}
+
+func (m *EventGatewayUnbondingEnd) GetUnbondingEndHeight() int64 {
+	if m != nil {
+		return m.UnbondingEndHeight
+	}
+	return 0
+}
+
+// EventGatewayUnbondingCanceled is emitted when a gateway which was unbonding
+// successfully (re-)stakes before the unbonding period has elapsed.
+// An EventGatewayStaked event will also be emitted immediately after this event.
+type EventGatewayUnbondingCanceled struct {
+	Gateway *Gateway `protobuf:"bytes,1,opt,name=gateway,proto3" json:"gateway"`
+	// The end height of the session in which the unbonding was canceled.
+	SessionEndHeight int64 `protobuf:"varint,2,opt,name=session_end_height,json=sessionEndHeight,proto3" json:"session_end_height"`
+}
+
+func (m *EventGatewayUnbondingCanceled) Reset()         { *m = EventGatewayUnbondingCanceled{} }
+func (m *EventGatewayUnbondingCanceled) String() string { return proto.CompactTextString(m) }
+func (*EventGatewayUnbondingCanceled) ProtoMessage()    {}
+func (*EventGatewayUnbondingCanceled) Descriptor() ([]byte, []int) {
+	return fileDescriptor_34212b93ec812e7c, []int{3}
+}
+func (m *EventGatewayUnbondingCanceled) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *EventGatewayUnbondingCanceled) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	b = b[:cap(b)]
+	n, err := m.MarshalToSizedBuffer(b)
+	if err != nil {
+		return nil, err
+	}
+	return b[:n], nil
+}
+func (m *EventGatewayUnbondingCanceled) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_EventGatewayUnbondingCanceled.Merge(m, src)
+}
+func (m *EventGatewayUnbondingCanceled) XXX_Size() int {
+	return m.Size()
+}
+func (m *EventGatewayUnbondingCanceled) XXX_DiscardUnknown() {
+	xxx_messageInfo_EventGatewayUnbondingCanceled.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_EventGatewayUnbondingCanceled proto.InternalMessageInfo
+
+func (m *EventGatewayUnbondingCanceled) GetGateway() *Gateway {
+	if m != nil {
+		return m.Gateway
+	}
+	return nil
+}
+
+func (m *EventGatewayUnbondingCanceled) GetSessionEndHeight() int64 {
 	if m != nil {
 		return m.SessionEndHeight
 	}
@@ -128,13 +253,15 @@ func (m *EventGatewayUnstaked) GetSessionEndHeight() int64 {
 
 func init() {
 	proto.RegisterType((*EventGatewayStaked)(nil), "poktroll.gateway.EventGatewayStaked")
-	proto.RegisterType((*EventGatewayUnstaked)(nil), "poktroll.gateway.EventGatewayUnstaked")
+	proto.RegisterType((*EventGatewayUnbondingBegin)(nil), "poktroll.gateway.EventGatewayUnbondingBegin")
+	proto.RegisterType((*EventGatewayUnbondingEnd)(nil), "poktroll.gateway.EventGatewayUnbondingEnd")
+	proto.RegisterType((*EventGatewayUnbondingCanceled)(nil), "poktroll.gateway.EventGatewayUnbondingCanceled")
 }
 
 func init() { proto.RegisterFile("poktroll/gateway/event.proto", fileDescriptor_34212b93ec812e7c) }
 
 var fileDescriptor_34212b93ec812e7c = []byte{
-	// 270 bytes of a gzipped FileDescriptorProto
+	// 340 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xe2, 0x92, 0x29, 0xc8, 0xcf, 0x2e,
 	0x29, 0xca, 0xcf, 0xc9, 0xd1, 0x4f, 0x4f, 0x2c, 0x49, 0x2d, 0x4f, 0xac, 0xd4, 0x4f, 0x2d, 0x4b,
 	0xcd, 0x2b, 0xd1, 0x2b, 0x28, 0xca, 0x2f, 0xc9, 0x17, 0x12, 0x80, 0xc9, 0xea, 0x41, 0x65, 0xa5,
@@ -146,12 +273,17 @@ var fileDescriptor_34212b93ec812e7c = []byte{
 	0xc1, 0x18, 0x42, 0x2e, 0x5c, 0x42, 0xc5, 0xa9, 0xc5, 0xc5, 0x99, 0xf9, 0x79, 0xf1, 0xa9, 0x79,
 	0x29, 0xf1, 0x19, 0xa9, 0x99, 0xe9, 0x19, 0x25, 0x12, 0x4c, 0x0a, 0x8c, 0x1a, 0xcc, 0x4e, 0x62,
 	0xaf, 0xee, 0xc9, 0x63, 0x91, 0x0d, 0x12, 0x80, 0x8a, 0xb9, 0xe6, 0xa5, 0x78, 0x80, 0x45, 0x94,
-	0xe6, 0x31, 0x72, 0x89, 0x20, 0x3b, 0x2f, 0x34, 0xaf, 0x78, 0x50, 0x39, 0xd0, 0xc9, 0xef, 0xc4,
-	0x23, 0x39, 0xc6, 0x0b, 0x8f, 0xe4, 0x18, 0x6f, 0x3c, 0x92, 0x63, 0x7c, 0xf0, 0x48, 0x8e, 0x71,
-	0xc2, 0x63, 0x39, 0x86, 0x0b, 0x8f, 0xe5, 0x18, 0x6e, 0x3c, 0x96, 0x63, 0x88, 0x32, 0x48, 0xcf,
-	0x2c, 0xc9, 0x28, 0x4d, 0xd2, 0x4b, 0xce, 0xcf, 0xd5, 0x07, 0x39, 0x4f, 0x37, 0x2f, 0xb5, 0xa4,
-	0x3c, 0xbf, 0x28, 0x5b, 0x1f, 0x1e, 0x27, 0x15, 0xa8, 0xb1, 0x92, 0xc4, 0x06, 0x8e, 0x16, 0x63,
-	0x40, 0x00, 0x00, 0x00, 0xff, 0xff, 0xae, 0x1b, 0x3b, 0x48, 0x17, 0x02, 0x00, 0x00,
+	0xde, 0x30, 0x72, 0x49, 0x21, 0x3b, 0x2f, 0x34, 0x2f, 0x29, 0x3f, 0x2f, 0x25, 0x33, 0x2f, 0xdd,
+	0x29, 0x35, 0x3d, 0x33, 0x8f, 0x66, 0xce, 0x64, 0x26, 0xcd, 0x99, 0x42, 0x6e, 0x5c, 0x22, 0xa5,
+	0x30, 0x97, 0x21, 0x9b, 0xc3, 0x02, 0x36, 0x47, 0xe4, 0xd5, 0x3d, 0x79, 0x01, 0x84, 0x3c, 0xd4,
+	0x14, 0x21, 0xb8, 0x08, 0xc2, 0xbb, 0xaf, 0x18, 0xb9, 0x24, 0xb0, 0x7a, 0xd7, 0x35, 0x2f, 0x65,
+	0xd8, 0x79, 0x76, 0x39, 0x23, 0x97, 0x2c, 0x56, 0xcf, 0x3a, 0x27, 0xe6, 0x25, 0xa7, 0xe6, 0x0c,
+	0x9e, 0x54, 0xe8, 0xe4, 0x77, 0xe2, 0x91, 0x1c, 0xe3, 0x85, 0x47, 0x72, 0x8c, 0x37, 0x1e, 0xc9,
+	0x31, 0x3e, 0x78, 0x24, 0xc7, 0x38, 0xe1, 0xb1, 0x1c, 0xc3, 0x85, 0xc7, 0x72, 0x0c, 0x37, 0x1e,
+	0xcb, 0x31, 0x44, 0x19, 0xa4, 0x67, 0x96, 0x64, 0x94, 0x26, 0xe9, 0x25, 0xe7, 0xe7, 0xea, 0x83,
+	0x9c, 0xa7, 0x9b, 0x97, 0x5a, 0x52, 0x9e, 0x5f, 0x94, 0xad, 0x0f, 0xcf, 0x78, 0x15, 0xa8, 0x59,
+	0x2f, 0x89, 0x0d, 0x9c, 0xf7, 0x8c, 0x01, 0x01, 0x00, 0x00, 0xff, 0xff, 0xa7, 0xdc, 0x3e, 0x58,
+	0xfc, 0x03, 0x00, 0x00,
 }
 
 func (m *EventGatewayStaked) Marshal() (dAtA []byte, err error) {
@@ -194,7 +326,7 @@ func (m *EventGatewayStaked) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *EventGatewayUnstaked) Marshal() (dAtA []byte, err error) {
+func (m *EventGatewayUnbondingBegin) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -204,12 +336,102 @@ func (m *EventGatewayUnstaked) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *EventGatewayUnstaked) MarshalTo(dAtA []byte) (int, error) {
+func (m *EventGatewayUnbondingBegin) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *EventGatewayUnstaked) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *EventGatewayUnbondingBegin) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.UnbondingEndHeight != 0 {
+		i = encodeVarintEvent(dAtA, i, uint64(m.UnbondingEndHeight))
+		i--
+		dAtA[i] = 0x20
+	}
+	if m.SessionEndHeight != 0 {
+		i = encodeVarintEvent(dAtA, i, uint64(m.SessionEndHeight))
+		i--
+		dAtA[i] = 0x18
+	}
+	if m.Gateway != nil {
+		{
+			size, err := m.Gateway.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintEvent(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *EventGatewayUnbondingEnd) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *EventGatewayUnbondingEnd) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *EventGatewayUnbondingEnd) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.UnbondingEndHeight != 0 {
+		i = encodeVarintEvent(dAtA, i, uint64(m.UnbondingEndHeight))
+		i--
+		dAtA[i] = 0x20
+	}
+	if m.SessionEndHeight != 0 {
+		i = encodeVarintEvent(dAtA, i, uint64(m.SessionEndHeight))
+		i--
+		dAtA[i] = 0x18
+	}
+	if m.Gateway != nil {
+		{
+			size, err := m.Gateway.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintEvent(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *EventGatewayUnbondingCanceled) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *EventGatewayUnbondingCanceled) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *EventGatewayUnbondingCanceled) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
@@ -261,7 +483,45 @@ func (m *EventGatewayStaked) Size() (n int) {
 	return n
 }
 
-func (m *EventGatewayUnstaked) Size() (n int) {
+func (m *EventGatewayUnbondingBegin) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.Gateway != nil {
+		l = m.Gateway.Size()
+		n += 1 + l + sovEvent(uint64(l))
+	}
+	if m.SessionEndHeight != 0 {
+		n += 1 + sovEvent(uint64(m.SessionEndHeight))
+	}
+	if m.UnbondingEndHeight != 0 {
+		n += 1 + sovEvent(uint64(m.UnbondingEndHeight))
+	}
+	return n
+}
+
+func (m *EventGatewayUnbondingEnd) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.Gateway != nil {
+		l = m.Gateway.Size()
+		n += 1 + l + sovEvent(uint64(l))
+	}
+	if m.SessionEndHeight != 0 {
+		n += 1 + sovEvent(uint64(m.SessionEndHeight))
+	}
+	if m.UnbondingEndHeight != 0 {
+		n += 1 + sovEvent(uint64(m.UnbondingEndHeight))
+	}
+	return n
+}
+
+func (m *EventGatewayUnbondingCanceled) Size() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -388,7 +648,7 @@ func (m *EventGatewayStaked) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *EventGatewayUnstaked) Unmarshal(dAtA []byte) error {
+func (m *EventGatewayUnbondingBegin) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -411,10 +671,258 @@ func (m *EventGatewayUnstaked) Unmarshal(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: EventGatewayUnstaked: wiretype end group for non-group")
+			return fmt.Errorf("proto: EventGatewayUnbondingBegin: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: EventGatewayUnstaked: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: EventGatewayUnbondingBegin: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Gateway", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEvent
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthEvent
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthEvent
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Gateway == nil {
+				m.Gateway = &Gateway{}
+			}
+			if err := m.Gateway.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 3:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field SessionEndHeight", wireType)
+			}
+			m.SessionEndHeight = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEvent
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.SessionEndHeight |= int64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 4:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field UnbondingEndHeight", wireType)
+			}
+			m.UnbondingEndHeight = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEvent
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.UnbondingEndHeight |= int64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		default:
+			iNdEx = preIndex
+			skippy, err := skipEvent(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthEvent
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *EventGatewayUnbondingEnd) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowEvent
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: EventGatewayUnbondingEnd: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: EventGatewayUnbondingEnd: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Gateway", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEvent
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthEvent
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthEvent
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Gateway == nil {
+				m.Gateway = &Gateway{}
+			}
+			if err := m.Gateway.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 3:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field SessionEndHeight", wireType)
+			}
+			m.SessionEndHeight = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEvent
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.SessionEndHeight |= int64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 4:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field UnbondingEndHeight", wireType)
+			}
+			m.UnbondingEndHeight = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEvent
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.UnbondingEndHeight |= int64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		default:
+			iNdEx = preIndex
+			skippy, err := skipEvent(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthEvent
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *EventGatewayUnbondingCanceled) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowEvent
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: EventGatewayUnbondingCanceled: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: EventGatewayUnbondingCanceled: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
