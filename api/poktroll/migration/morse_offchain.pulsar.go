@@ -20,8 +20,8 @@ var (
 )
 
 func init() {
-	file_poktroll_migration_legacy_proto_init()
-	md_MorseStateExport = File_poktroll_migration_legacy_proto.Messages().ByName("MorseStateExport")
+	file_poktroll_migration_morse_offchain_proto_init()
+	md_MorseStateExport = File_poktroll_migration_morse_offchain_proto.Messages().ByName("MorseStateExport")
 	fd_MorseStateExport_app_hash = md_MorseStateExport.Fields().ByName("app_hash")
 	fd_MorseStateExport_app_state = md_MorseStateExport.Fields().ByName("app_state")
 }
@@ -35,7 +35,7 @@ func (x *MorseStateExport) ProtoReflect() protoreflect.Message {
 }
 
 func (x *MorseStateExport) slowProtoReflect() protoreflect.Message {
-	mi := &file_poktroll_migration_legacy_proto_msgTypes[0]
+	mi := &file_poktroll_migration_morse_offchain_proto_msgTypes[0]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -187,7 +187,7 @@ func (x *fastReflection_MorseStateExport) Set(fd protoreflect.FieldDescriptor, v
 	case "poktroll.migration.MorseStateExport.app_hash":
 		x.AppHash = value.Interface().(string)
 	case "poktroll.migration.MorseStateExport.app_state":
-		x.AppState = value.Message().Interface().(*MorseAppState)
+		x.AppState = value.Message().Interface().(*MorseTendermintAppState)
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.migration.MorseStateExport"))
@@ -210,7 +210,7 @@ func (x *fastReflection_MorseStateExport) Mutable(fd protoreflect.FieldDescripto
 	switch fd.FullName() {
 	case "poktroll.migration.MorseStateExport.app_state":
 		if x.AppState == nil {
-			x.AppState = new(MorseAppState)
+			x.AppState = new(MorseTendermintAppState)
 		}
 		return protoreflect.ValueOfMessage(x.AppState.ProtoReflect())
 	case "poktroll.migration.MorseStateExport.app_hash":
@@ -231,7 +231,7 @@ func (x *fastReflection_MorseStateExport) NewField(fd protoreflect.FieldDescript
 	case "poktroll.migration.MorseStateExport.app_hash":
 		return protoreflect.ValueOfString("")
 	case "poktroll.migration.MorseStateExport.app_state":
-		m := new(MorseAppState)
+		m := new(MorseTendermintAppState)
 		return protoreflect.ValueOfMessage(m.ProtoReflect())
 	default:
 		if fd.IsExtension() {
@@ -471,7 +471,7 @@ func (x *fastReflection_MorseStateExport) ProtoMethods() *protoiface.Methods {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
 				}
 				if x.AppState == nil {
-					x.AppState = &MorseAppState{}
+					x.AppState = &MorseTendermintAppState{}
 				}
 				if err := options.Unmarshal(dAtA[iNdEx:postIndex], x.AppState); err != nil {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
@@ -513,30 +513,30 @@ func (x *fastReflection_MorseStateExport) ProtoMethods() *protoiface.Methods {
 }
 
 var (
-	md_MorseAppState             protoreflect.MessageDescriptor
-	fd_MorseAppState_application protoreflect.FieldDescriptor
-	fd_MorseAppState_auth        protoreflect.FieldDescriptor
-	fd_MorseAppState_pos         protoreflect.FieldDescriptor
+	md_MorseTendermintAppState             protoreflect.MessageDescriptor
+	fd_MorseTendermintAppState_application protoreflect.FieldDescriptor
+	fd_MorseTendermintAppState_auth        protoreflect.FieldDescriptor
+	fd_MorseTendermintAppState_pos         protoreflect.FieldDescriptor
 )
 
 func init() {
-	file_poktroll_migration_legacy_proto_init()
-	md_MorseAppState = File_poktroll_migration_legacy_proto.Messages().ByName("MorseAppState")
-	fd_MorseAppState_application = md_MorseAppState.Fields().ByName("application")
-	fd_MorseAppState_auth = md_MorseAppState.Fields().ByName("auth")
-	fd_MorseAppState_pos = md_MorseAppState.Fields().ByName("pos")
+	file_poktroll_migration_morse_offchain_proto_init()
+	md_MorseTendermintAppState = File_poktroll_migration_morse_offchain_proto.Messages().ByName("MorseTendermintAppState")
+	fd_MorseTendermintAppState_application = md_MorseTendermintAppState.Fields().ByName("application")
+	fd_MorseTendermintAppState_auth = md_MorseTendermintAppState.Fields().ByName("auth")
+	fd_MorseTendermintAppState_pos = md_MorseTendermintAppState.Fields().ByName("pos")
 }
 
-var _ protoreflect.Message = (*fastReflection_MorseAppState)(nil)
+var _ protoreflect.Message = (*fastReflection_MorseTendermintAppState)(nil)
 
-type fastReflection_MorseAppState MorseAppState
+type fastReflection_MorseTendermintAppState MorseTendermintAppState
 
-func (x *MorseAppState) ProtoReflect() protoreflect.Message {
-	return (*fastReflection_MorseAppState)(x)
+func (x *MorseTendermintAppState) ProtoReflect() protoreflect.Message {
+	return (*fastReflection_MorseTendermintAppState)(x)
 }
 
-func (x *MorseAppState) slowProtoReflect() protoreflect.Message {
-	mi := &file_poktroll_migration_legacy_proto_msgTypes[1]
+func (x *MorseTendermintAppState) slowProtoReflect() protoreflect.Message {
+	mi := &file_poktroll_migration_morse_offchain_proto_msgTypes[1]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -547,43 +547,43 @@ func (x *MorseAppState) slowProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-var _fastReflection_MorseAppState_messageType fastReflection_MorseAppState_messageType
-var _ protoreflect.MessageType = fastReflection_MorseAppState_messageType{}
+var _fastReflection_MorseTendermintAppState_messageType fastReflection_MorseTendermintAppState_messageType
+var _ protoreflect.MessageType = fastReflection_MorseTendermintAppState_messageType{}
 
-type fastReflection_MorseAppState_messageType struct{}
+type fastReflection_MorseTendermintAppState_messageType struct{}
 
-func (x fastReflection_MorseAppState_messageType) Zero() protoreflect.Message {
-	return (*fastReflection_MorseAppState)(nil)
+func (x fastReflection_MorseTendermintAppState_messageType) Zero() protoreflect.Message {
+	return (*fastReflection_MorseTendermintAppState)(nil)
 }
-func (x fastReflection_MorseAppState_messageType) New() protoreflect.Message {
-	return new(fastReflection_MorseAppState)
+func (x fastReflection_MorseTendermintAppState_messageType) New() protoreflect.Message {
+	return new(fastReflection_MorseTendermintAppState)
 }
-func (x fastReflection_MorseAppState_messageType) Descriptor() protoreflect.MessageDescriptor {
-	return md_MorseAppState
+func (x fastReflection_MorseTendermintAppState_messageType) Descriptor() protoreflect.MessageDescriptor {
+	return md_MorseTendermintAppState
 }
 
 // Descriptor returns message descriptor, which contains only the protobuf
 // type information for the message.
-func (x *fastReflection_MorseAppState) Descriptor() protoreflect.MessageDescriptor {
-	return md_MorseAppState
+func (x *fastReflection_MorseTendermintAppState) Descriptor() protoreflect.MessageDescriptor {
+	return md_MorseTendermintAppState
 }
 
 // Type returns the message type, which encapsulates both Go and protobuf
 // type information. If the Go type information is not needed,
 // it is recommended that the message descriptor be used instead.
-func (x *fastReflection_MorseAppState) Type() protoreflect.MessageType {
-	return _fastReflection_MorseAppState_messageType
+func (x *fastReflection_MorseTendermintAppState) Type() protoreflect.MessageType {
+	return _fastReflection_MorseTendermintAppState_messageType
 }
 
 // New returns a newly allocated and mutable empty message.
-func (x *fastReflection_MorseAppState) New() protoreflect.Message {
-	return new(fastReflection_MorseAppState)
+func (x *fastReflection_MorseTendermintAppState) New() protoreflect.Message {
+	return new(fastReflection_MorseTendermintAppState)
 }
 
 // Interface unwraps the message reflection interface and
 // returns the underlying ProtoMessage interface.
-func (x *fastReflection_MorseAppState) Interface() protoreflect.ProtoMessage {
-	return (*MorseAppState)(x)
+func (x *fastReflection_MorseTendermintAppState) Interface() protoreflect.ProtoMessage {
+	return (*MorseTendermintAppState)(x)
 }
 
 // Range iterates over every populated field in an undefined order,
@@ -591,22 +591,22 @@ func (x *fastReflection_MorseAppState) Interface() protoreflect.ProtoMessage {
 // Range returns immediately if f returns false.
 // While iterating, mutating operations may only be performed
 // on the current field descriptor.
-func (x *fastReflection_MorseAppState) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
+func (x *fastReflection_MorseTendermintAppState) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
 	if x.Application != nil {
 		value := protoreflect.ValueOfMessage(x.Application.ProtoReflect())
-		if !f(fd_MorseAppState_application, value) {
+		if !f(fd_MorseTendermintAppState_application, value) {
 			return
 		}
 	}
 	if x.Auth != nil {
 		value := protoreflect.ValueOfMessage(x.Auth.ProtoReflect())
-		if !f(fd_MorseAppState_auth, value) {
+		if !f(fd_MorseTendermintAppState_auth, value) {
 			return
 		}
 	}
 	if x.Pos != nil {
 		value := protoreflect.ValueOfMessage(x.Pos.ProtoReflect())
-		if !f(fd_MorseAppState_pos, value) {
+		if !f(fd_MorseTendermintAppState_pos, value) {
 			return
 		}
 	}
@@ -623,19 +623,19 @@ func (x *fastReflection_MorseAppState) Range(f func(protoreflect.FieldDescriptor
 // In other cases (aside from the nullable cases above),
 // a proto3 scalar field is populated if it contains a non-zero value, and
 // a repeated field is populated if it is non-empty.
-func (x *fastReflection_MorseAppState) Has(fd protoreflect.FieldDescriptor) bool {
+func (x *fastReflection_MorseTendermintAppState) Has(fd protoreflect.FieldDescriptor) bool {
 	switch fd.FullName() {
-	case "poktroll.migration.MorseAppState.application":
+	case "poktroll.migration.MorseTendermintAppState.application":
 		return x.Application != nil
-	case "poktroll.migration.MorseAppState.auth":
+	case "poktroll.migration.MorseTendermintAppState.auth":
 		return x.Auth != nil
-	case "poktroll.migration.MorseAppState.pos":
+	case "poktroll.migration.MorseTendermintAppState.pos":
 		return x.Pos != nil
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.migration.MorseAppState"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.migration.MorseTendermintAppState"))
 		}
-		panic(fmt.Errorf("message poktroll.migration.MorseAppState does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message poktroll.migration.MorseTendermintAppState does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -645,19 +645,19 @@ func (x *fastReflection_MorseAppState) Has(fd protoreflect.FieldDescriptor) bool
 // associated with the given field number.
 //
 // Clear is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_MorseAppState) Clear(fd protoreflect.FieldDescriptor) {
+func (x *fastReflection_MorseTendermintAppState) Clear(fd protoreflect.FieldDescriptor) {
 	switch fd.FullName() {
-	case "poktroll.migration.MorseAppState.application":
+	case "poktroll.migration.MorseTendermintAppState.application":
 		x.Application = nil
-	case "poktroll.migration.MorseAppState.auth":
+	case "poktroll.migration.MorseTendermintAppState.auth":
 		x.Auth = nil
-	case "poktroll.migration.MorseAppState.pos":
+	case "poktroll.migration.MorseTendermintAppState.pos":
 		x.Pos = nil
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.migration.MorseAppState"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.migration.MorseTendermintAppState"))
 		}
-		panic(fmt.Errorf("message poktroll.migration.MorseAppState does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message poktroll.migration.MorseTendermintAppState does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -667,22 +667,22 @@ func (x *fastReflection_MorseAppState) Clear(fd protoreflect.FieldDescriptor) {
 // the default value of a bytes scalar is guaranteed to be a copy.
 // For unpopulated composite types, it returns an empty, read-only view
 // of the value; to obtain a mutable reference, use Mutable.
-func (x *fastReflection_MorseAppState) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_MorseTendermintAppState) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
 	switch descriptor.FullName() {
-	case "poktroll.migration.MorseAppState.application":
+	case "poktroll.migration.MorseTendermintAppState.application":
 		value := x.Application
 		return protoreflect.ValueOfMessage(value.ProtoReflect())
-	case "poktroll.migration.MorseAppState.auth":
+	case "poktroll.migration.MorseTendermintAppState.auth":
 		value := x.Auth
 		return protoreflect.ValueOfMessage(value.ProtoReflect())
-	case "poktroll.migration.MorseAppState.pos":
+	case "poktroll.migration.MorseTendermintAppState.pos":
 		value := x.Pos
 		return protoreflect.ValueOfMessage(value.ProtoReflect())
 	default:
 		if descriptor.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.migration.MorseAppState"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.migration.MorseTendermintAppState"))
 		}
-		panic(fmt.Errorf("message poktroll.migration.MorseAppState does not contain field %s", descriptor.FullName()))
+		panic(fmt.Errorf("message poktroll.migration.MorseTendermintAppState does not contain field %s", descriptor.FullName()))
 	}
 }
 
@@ -696,19 +696,19 @@ func (x *fastReflection_MorseAppState) Get(descriptor protoreflect.FieldDescript
 // empty, read-only value, then it panics.
 //
 // Set is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_MorseAppState) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
+func (x *fastReflection_MorseTendermintAppState) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
 	switch fd.FullName() {
-	case "poktroll.migration.MorseAppState.application":
+	case "poktroll.migration.MorseTendermintAppState.application":
 		x.Application = value.Message().Interface().(*MorseApplications)
-	case "poktroll.migration.MorseAppState.auth":
+	case "poktroll.migration.MorseTendermintAppState.auth":
 		x.Auth = value.Message().Interface().(*MorseAuth)
-	case "poktroll.migration.MorseAppState.pos":
+	case "poktroll.migration.MorseTendermintAppState.pos":
 		x.Pos = value.Message().Interface().(*MorsePos)
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.migration.MorseAppState"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.migration.MorseTendermintAppState"))
 		}
-		panic(fmt.Errorf("message poktroll.migration.MorseAppState does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message poktroll.migration.MorseTendermintAppState does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -722,60 +722,60 @@ func (x *fastReflection_MorseAppState) Set(fd protoreflect.FieldDescriptor, valu
 // It panics if the field does not contain a composite type.
 //
 // Mutable is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_MorseAppState) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_MorseTendermintAppState) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
-	case "poktroll.migration.MorseAppState.application":
+	case "poktroll.migration.MorseTendermintAppState.application":
 		if x.Application == nil {
 			x.Application = new(MorseApplications)
 		}
 		return protoreflect.ValueOfMessage(x.Application.ProtoReflect())
-	case "poktroll.migration.MorseAppState.auth":
+	case "poktroll.migration.MorseTendermintAppState.auth":
 		if x.Auth == nil {
 			x.Auth = new(MorseAuth)
 		}
 		return protoreflect.ValueOfMessage(x.Auth.ProtoReflect())
-	case "poktroll.migration.MorseAppState.pos":
+	case "poktroll.migration.MorseTendermintAppState.pos":
 		if x.Pos == nil {
 			x.Pos = new(MorsePos)
 		}
 		return protoreflect.ValueOfMessage(x.Pos.ProtoReflect())
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.migration.MorseAppState"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.migration.MorseTendermintAppState"))
 		}
-		panic(fmt.Errorf("message poktroll.migration.MorseAppState does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message poktroll.migration.MorseTendermintAppState does not contain field %s", fd.FullName()))
 	}
 }
 
 // NewField returns a new value that is assignable to the field
 // for the given descriptor. For scalars, this returns the default value.
 // For lists, maps, and messages, this returns a new, empty, mutable value.
-func (x *fastReflection_MorseAppState) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_MorseTendermintAppState) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
-	case "poktroll.migration.MorseAppState.application":
+	case "poktroll.migration.MorseTendermintAppState.application":
 		m := new(MorseApplications)
 		return protoreflect.ValueOfMessage(m.ProtoReflect())
-	case "poktroll.migration.MorseAppState.auth":
+	case "poktroll.migration.MorseTendermintAppState.auth":
 		m := new(MorseAuth)
 		return protoreflect.ValueOfMessage(m.ProtoReflect())
-	case "poktroll.migration.MorseAppState.pos":
+	case "poktroll.migration.MorseTendermintAppState.pos":
 		m := new(MorsePos)
 		return protoreflect.ValueOfMessage(m.ProtoReflect())
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.migration.MorseAppState"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.migration.MorseTendermintAppState"))
 		}
-		panic(fmt.Errorf("message poktroll.migration.MorseAppState does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message poktroll.migration.MorseTendermintAppState does not contain field %s", fd.FullName()))
 	}
 }
 
 // WhichOneof reports which field within the oneof is populated,
 // returning nil if none are populated.
 // It panics if the oneof descriptor does not belong to this message.
-func (x *fastReflection_MorseAppState) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
+func (x *fastReflection_MorseTendermintAppState) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
 	switch d.FullName() {
 	default:
-		panic(fmt.Errorf("%s is not a oneof field in poktroll.migration.MorseAppState", d.FullName()))
+		panic(fmt.Errorf("%s is not a oneof field in poktroll.migration.MorseTendermintAppState", d.FullName()))
 	}
 	panic("unreachable")
 }
@@ -783,7 +783,7 @@ func (x *fastReflection_MorseAppState) WhichOneof(d protoreflect.OneofDescriptor
 // GetUnknown retrieves the entire list of unknown fields.
 // The caller may only mutate the contents of the RawFields
 // if the mutated bytes are stored back into the message with SetUnknown.
-func (x *fastReflection_MorseAppState) GetUnknown() protoreflect.RawFields {
+func (x *fastReflection_MorseTendermintAppState) GetUnknown() protoreflect.RawFields {
 	return x.unknownFields
 }
 
@@ -794,7 +794,7 @@ func (x *fastReflection_MorseAppState) GetUnknown() protoreflect.RawFields {
 // An empty RawFields may be passed to clear the fields.
 //
 // SetUnknown is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_MorseAppState) SetUnknown(fields protoreflect.RawFields) {
+func (x *fastReflection_MorseTendermintAppState) SetUnknown(fields protoreflect.RawFields) {
 	x.unknownFields = fields
 }
 
@@ -806,7 +806,7 @@ func (x *fastReflection_MorseAppState) SetUnknown(fields protoreflect.RawFields)
 // message type, but the details are implementation dependent.
 // Validity is not part of the protobuf data model, and may not
 // be preserved in marshaling or other operations.
-func (x *fastReflection_MorseAppState) IsValid() bool {
+func (x *fastReflection_MorseTendermintAppState) IsValid() bool {
 	return x != nil
 }
 
@@ -816,9 +816,9 @@ func (x *fastReflection_MorseAppState) IsValid() bool {
 // The returned methods type is identical to
 // "google.golang.org/protobuf/runtime/protoiface".Methods.
 // Consult the protoiface package documentation for details.
-func (x *fastReflection_MorseAppState) ProtoMethods() *protoiface.Methods {
+func (x *fastReflection_MorseTendermintAppState) ProtoMethods() *protoiface.Methods {
 	size := func(input protoiface.SizeInput) protoiface.SizeOutput {
-		x := input.Message.Interface().(*MorseAppState)
+		x := input.Message.Interface().(*MorseTendermintAppState)
 		if x == nil {
 			return protoiface.SizeOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -852,7 +852,7 @@ func (x *fastReflection_MorseAppState) ProtoMethods() *protoiface.Methods {
 	}
 
 	marshal := func(input protoiface.MarshalInput) (protoiface.MarshalOutput, error) {
-		x := input.Message.Interface().(*MorseAppState)
+		x := input.Message.Interface().(*MorseTendermintAppState)
 		if x == nil {
 			return protoiface.MarshalOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -924,7 +924,7 @@ func (x *fastReflection_MorseAppState) ProtoMethods() *protoiface.Methods {
 		}, nil
 	}
 	unmarshal := func(input protoiface.UnmarshalInput) (protoiface.UnmarshalOutput, error) {
-		x := input.Message.Interface().(*MorseAppState)
+		x := input.Message.Interface().(*MorseTendermintAppState)
 		if x == nil {
 			return protoiface.UnmarshalOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -956,10 +956,10 @@ func (x *fastReflection_MorseAppState) ProtoMethods() *protoiface.Methods {
 			fieldNum := int32(wire >> 3)
 			wireType := int(wire & 0x7)
 			if wireType == 4 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: MorseAppState: wiretype end group for non-group")
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: MorseTendermintAppState: wiretype end group for non-group")
 			}
 			if fieldNum <= 0 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: MorseAppState: illegal tag %d (wire type %d)", fieldNum, wire)
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: MorseTendermintAppState: illegal tag %d (wire type %d)", fieldNum, wire)
 			}
 			switch fieldNum {
 			case 1:
@@ -1162,8 +1162,8 @@ var (
 )
 
 func init() {
-	file_poktroll_migration_legacy_proto_init()
-	md_MorseApplications = File_poktroll_migration_legacy_proto.Messages().ByName("MorseApplications")
+	file_poktroll_migration_morse_offchain_proto_init()
+	md_MorseApplications = File_poktroll_migration_morse_offchain_proto.Messages().ByName("MorseApplications")
 	fd_MorseApplications_applications = md_MorseApplications.Fields().ByName("applications")
 }
 
@@ -1176,7 +1176,7 @@ func (x *MorseApplications) ProtoReflect() protoreflect.Message {
 }
 
 func (x *MorseApplications) slowProtoReflect() protoreflect.Message {
-	mi := &file_poktroll_migration_legacy_proto_msgTypes[2]
+	mi := &file_poktroll_migration_morse_offchain_proto_msgTypes[2]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1656,8 +1656,8 @@ var (
 )
 
 func init() {
-	file_poktroll_migration_legacy_proto_init()
-	md_MorseAuth = File_poktroll_migration_legacy_proto.Messages().ByName("MorseAuth")
+	file_poktroll_migration_morse_offchain_proto_init()
+	md_MorseAuth = File_poktroll_migration_morse_offchain_proto.Messages().ByName("MorseAuth")
 	fd_MorseAuth_accounts = md_MorseAuth.Fields().ByName("accounts")
 }
 
@@ -1670,7 +1670,7 @@ func (x *MorseAuth) ProtoReflect() protoreflect.Message {
 }
 
 func (x *MorseAuth) slowProtoReflect() protoreflect.Message {
-	mi := &file_poktroll_migration_legacy_proto_msgTypes[3]
+	mi := &file_poktroll_migration_morse_offchain_proto_msgTypes[3]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2100,8 +2100,8 @@ var (
 )
 
 func init() {
-	file_poktroll_migration_legacy_proto_init()
-	md_MorseAuthAccount = File_poktroll_migration_legacy_proto.Messages().ByName("MorseAuthAccount")
+	file_poktroll_migration_morse_offchain_proto_init()
+	md_MorseAuthAccount = File_poktroll_migration_morse_offchain_proto.Messages().ByName("MorseAuthAccount")
 	fd_MorseAuthAccount_type = md_MorseAuthAccount.Fields().ByName("type")
 	fd_MorseAuthAccount_value = md_MorseAuthAccount.Fields().ByName("value")
 }
@@ -2115,7 +2115,7 @@ func (x *MorseAuthAccount) ProtoReflect() protoreflect.Message {
 }
 
 func (x *MorseAuthAccount) slowProtoReflect() protoreflect.Message {
-	mi := &file_poktroll_migration_legacy_proto_msgTypes[4]
+	mi := &file_poktroll_migration_morse_offchain_proto_msgTypes[4]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2649,8 +2649,8 @@ var (
 )
 
 func init() {
-	file_poktroll_migration_legacy_proto_init()
-	md_MorsePos = File_poktroll_migration_legacy_proto.Messages().ByName("MorsePos")
+	file_poktroll_migration_morse_offchain_proto_init()
+	md_MorsePos = File_poktroll_migration_morse_offchain_proto.Messages().ByName("MorsePos")
 	fd_MorsePos_validators = md_MorsePos.Fields().ByName("validators")
 }
 
@@ -2663,7 +2663,7 @@ func (x *MorsePos) ProtoReflect() protoreflect.Message {
 }
 
 func (x *MorsePos) slowProtoReflect() protoreflect.Message {
-	mi := &file_poktroll_migration_legacy_proto_msgTypes[5]
+	mi := &file_poktroll_migration_morse_offchain_proto_msgTypes[5]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3096,8 +3096,8 @@ var (
 )
 
 func init() {
-	file_poktroll_migration_legacy_proto_init()
-	md_MorseApplication = File_poktroll_migration_legacy_proto.Messages().ByName("MorseApplication")
+	file_poktroll_migration_morse_offchain_proto_init()
+	md_MorseApplication = File_poktroll_migration_morse_offchain_proto.Messages().ByName("MorseApplication")
 	fd_MorseApplication_address = md_MorseApplication.Fields().ByName("address")
 	fd_MorseApplication_public_key = md_MorseApplication.Fields().ByName("public_key")
 	fd_MorseApplication_jailed = md_MorseApplication.Fields().ByName("jailed")
@@ -3114,7 +3114,7 @@ func (x *MorseApplication) ProtoReflect() protoreflect.Message {
 }
 
 func (x *MorseApplication) slowProtoReflect() protoreflect.Message {
-	mi := &file_poktroll_migration_legacy_proto_msgTypes[6]
+	mi := &file_poktroll_migration_morse_offchain_proto_msgTypes[6]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3750,8 +3750,8 @@ var (
 )
 
 func init() {
-	file_poktroll_migration_legacy_proto_init()
-	md_MorseValidator = File_poktroll_migration_legacy_proto.Messages().ByName("MorseValidator")
+	file_poktroll_migration_morse_offchain_proto_init()
+	md_MorseValidator = File_poktroll_migration_morse_offchain_proto.Messages().ByName("MorseValidator")
 	fd_MorseValidator_address = md_MorseValidator.Fields().ByName("address")
 	fd_MorseValidator_public_key = md_MorseValidator.Fields().ByName("public_key")
 	fd_MorseValidator_jailed = md_MorseValidator.Fields().ByName("jailed")
@@ -3768,7 +3768,7 @@ func (x *MorseValidator) ProtoReflect() protoreflect.Message {
 }
 
 func (x *MorseValidator) slowProtoReflect() protoreflect.Message {
-	mi := &file_poktroll_migration_legacy_proto_msgTypes[7]
+	mi := &file_poktroll_migration_morse_offchain_proto_msgTypes[7]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4398,16 +4398,27 @@ func (x *fastReflection_MorseValidator) ProtoMethods() *protoiface.Methods {
 // versions:
 // 	protoc-gen-go v1.27.0
 // 	protoc        (unknown)
-// source: poktroll/migration/legacy.proto
+// source: poktroll/migration/morse_offchain.proto
 
 // Types in this file are ONLY present to facilitate the verifiability of the
 // migration state from Morse to Shannon.
+//
+// These types reproduce a 1:1 de/serialization for the corresponding Morse data structures
+// but are not completely identical to their Morse counterparts, not all of which are defined
+// as protobuf types in the Morse codebase.
+//
+// Morse also leverages pb.Any types, as well as the gogoproto.casttype option in several places.
+// All usages of pb.Any have been replaced with equivalent protobuf types
+// (i.e. an interstitial type with `type` and/or `value` field(s)).
+// All usages of gogoproto.casttype which previously referenced Morse data structures have been removed.
+// A few specific fields have retained this option where the type is changed to the underlying
+// external lib type that the Morse type was wrapping (e.g. address and public key fields).
 //
 // These types are used by the migration subcommand to transform
 // the Morse state export into the Shannon state import.
 // Ref: `poktrolld migrate collect-morse-accounts ...`
 //
-// They ARE NOT persisted on-chain at any point.
+// They ARE NOT persisted on-chain (Shannon) at any point.
 
 const (
 	// Verify that this generated code is sufficiently up-to-date.
@@ -4418,6 +4429,7 @@ const (
 
 // MorseStateExport is the data structure that is serialized and output when running
 // `pocket utils export-genesis-for-reset`.
+//
 // See: https://editor.swagger.io/?url=https://raw.githubusercontent.com/pokt-network/pocket-core/staging/doc/specs/rpc-spec.yaml#operations-query-post_query_state
 type MorseStateExport struct {
 	state         protoimpl.MessageState
@@ -4427,13 +4439,13 @@ type MorseStateExport struct {
 	// app_hash is the Morse tendermint state hash.
 	AppHash string `protobuf:"bytes,1,opt,name=app_hash,json=appHash,proto3" json:"app_hash,omitempty"`
 	// app_state is the entire Morse tendermint application state.
-	AppState *MorseAppState `protobuf:"bytes,2,opt,name=app_state,json=appState,proto3" json:"app_state,omitempty"`
+	AppState *MorseTendermintAppState `protobuf:"bytes,2,opt,name=app_state,json=appState,proto3" json:"app_state,omitempty"`
 }
 
 func (x *MorseStateExport) Reset() {
 	*x = MorseStateExport{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_poktroll_migration_legacy_proto_msgTypes[0]
+		mi := &file_poktroll_migration_morse_offchain_proto_msgTypes[0]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -4447,7 +4459,7 @@ func (*MorseStateExport) ProtoMessage() {}
 
 // Deprecated: Use MorseStateExport.ProtoReflect.Descriptor instead.
 func (*MorseStateExport) Descriptor() ([]byte, []int) {
-	return file_poktroll_migration_legacy_proto_rawDescGZIP(), []int{0}
+	return file_poktroll_migration_morse_offchain_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *MorseStateExport) GetAppHash() string {
@@ -4457,16 +4469,19 @@ func (x *MorseStateExport) GetAppHash() string {
 	return ""
 }
 
-func (x *MorseStateExport) GetAppState() *MorseAppState {
+func (x *MorseStateExport) GetAppState() *MorseTendermintAppState {
 	if x != nil {
 		return x.AppState
 	}
 	return nil
 }
 
-// MorseAppState is the tendermint application state for the Morse tendermint
+// MorseTendermintAppState is the tendermint application state for the Morse tendermint
 // application; not to be confused with the pokt protocol actor.
-type MorseAppState struct {
+// It is constructed in Morse via `PocketCoreApp#ExportAppState()`.
+//
+// See: https://github.com/pokt-network/pocket-core/blob/5fa61920aa9d45ca6bf9e01e863134e242c95fa7/app/pocket.go#L142
+type MorseTendermintAppState struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
@@ -4476,41 +4491,41 @@ type MorseAppState struct {
 	Pos         *MorsePos          `protobuf:"bytes,3,opt,name=pos,proto3" json:"pos,omitempty"`
 }
 
-func (x *MorseAppState) Reset() {
-	*x = MorseAppState{}
+func (x *MorseTendermintAppState) Reset() {
+	*x = MorseTendermintAppState{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_poktroll_migration_legacy_proto_msgTypes[1]
+		mi := &file_poktroll_migration_morse_offchain_proto_msgTypes[1]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
 }
 
-func (x *MorseAppState) String() string {
+func (x *MorseTendermintAppState) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*MorseAppState) ProtoMessage() {}
+func (*MorseTendermintAppState) ProtoMessage() {}
 
-// Deprecated: Use MorseAppState.ProtoReflect.Descriptor instead.
-func (*MorseAppState) Descriptor() ([]byte, []int) {
-	return file_poktroll_migration_legacy_proto_rawDescGZIP(), []int{1}
+// Deprecated: Use MorseTendermintAppState.ProtoReflect.Descriptor instead.
+func (*MorseTendermintAppState) Descriptor() ([]byte, []int) {
+	return file_poktroll_migration_morse_offchain_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *MorseAppState) GetApplication() *MorseApplications {
+func (x *MorseTendermintAppState) GetApplication() *MorseApplications {
 	if x != nil {
 		return x.Application
 	}
 	return nil
 }
 
-func (x *MorseAppState) GetAuth() *MorseAuth {
+func (x *MorseTendermintAppState) GetAuth() *MorseAuth {
 	if x != nil {
 		return x.Auth
 	}
 	return nil
 }
 
-func (x *MorseAppState) GetPos() *MorsePos {
+func (x *MorseTendermintAppState) GetPos() *MorsePos {
 	if x != nil {
 		return x.Pos
 	}
@@ -4518,6 +4533,9 @@ func (x *MorseAppState) GetPos() *MorsePos {
 }
 
 // A wrapper around the list of MorseApplications, necessary in order to conform to the Morse genesis structure.
+// It encapsulates the minimum information required to import Morse applications.
+//
+// See: https://github.com/pokt-network/pocket-core/blob/staging/x/apps/types/genesis.go#L4
 type MorseApplications struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -4529,7 +4547,7 @@ type MorseApplications struct {
 func (x *MorseApplications) Reset() {
 	*x = MorseApplications{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_poktroll_migration_legacy_proto_msgTypes[2]
+		mi := &file_poktroll_migration_morse_offchain_proto_msgTypes[2]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -4543,7 +4561,7 @@ func (*MorseApplications) ProtoMessage() {}
 
 // Deprecated: Use MorseApplications.ProtoReflect.Descriptor instead.
 func (*MorseApplications) Descriptor() ([]byte, []int) {
-	return file_poktroll_migration_legacy_proto_rawDescGZIP(), []int{2}
+	return file_poktroll_migration_morse_offchain_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *MorseApplications) GetApplications() []*MorseApplication {
@@ -4554,6 +4572,9 @@ func (x *MorseApplications) GetApplications() []*MorseApplication {
 }
 
 // A wrapper around a list of Morse accounts.
+// It encapsulates the minimum information required to import Morse accounts.
+//
+// See: https://github.com/pokt-network/pocket-core/blob/staging/x/auth/types/genesis.go#L9
 type MorseAuth struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -4565,7 +4586,7 @@ type MorseAuth struct {
 func (x *MorseAuth) Reset() {
 	*x = MorseAuth{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_poktroll_migration_legacy_proto_msgTypes[3]
+		mi := &file_poktroll_migration_morse_offchain_proto_msgTypes[3]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -4579,7 +4600,7 @@ func (*MorseAuth) ProtoMessage() {}
 
 // Deprecated: Use MorseAuth.ProtoReflect.Descriptor instead.
 func (*MorseAuth) Descriptor() ([]byte, []int) {
-	return file_poktroll_migration_legacy_proto_rawDescGZIP(), []int{3}
+	return file_poktroll_migration_morse_offchain_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *MorseAuth) GetAccounts() []*MorseAuthAccount {
@@ -4607,7 +4628,7 @@ type MorseAuthAccount struct {
 func (x *MorseAuthAccount) Reset() {
 	*x = MorseAuthAccount{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_poktroll_migration_legacy_proto_msgTypes[4]
+		mi := &file_poktroll_migration_morse_offchain_proto_msgTypes[4]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -4621,7 +4642,7 @@ func (*MorseAuthAccount) ProtoMessage() {}
 
 // Deprecated: Use MorseAuthAccount.ProtoReflect.Descriptor instead.
 func (*MorseAuthAccount) Descriptor() ([]byte, []int) {
-	return file_poktroll_migration_legacy_proto_rawDescGZIP(), []int{4}
+	return file_poktroll_migration_morse_offchain_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *MorseAuthAccount) GetType_() string {
@@ -4640,6 +4661,8 @@ func (x *MorseAuthAccount) GetValue() *MorseAccount {
 
 // A wrapper around the list of Morse suppliers (aka "validators", "nodes", of "servicers").
 // It is necessary to conform to the Morse genesis structure.
+//
+// See: https://github.com/pokt-network/pocket-core/blob/staging/x/nodes/types/genesis.go#L8
 type MorsePos struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -4651,7 +4674,7 @@ type MorsePos struct {
 func (x *MorsePos) Reset() {
 	*x = MorsePos{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_poktroll_migration_legacy_proto_msgTypes[5]
+		mi := &file_poktroll_migration_morse_offchain_proto_msgTypes[5]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -4665,7 +4688,7 @@ func (*MorsePos) ProtoMessage() {}
 
 // Deprecated: Use MorsePos.ProtoReflect.Descriptor instead.
 func (*MorsePos) Descriptor() ([]byte, []int) {
-	return file_poktroll_migration_legacy_proto_rawDescGZIP(), []int{5}
+	return file_poktroll_migration_morse_offchain_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *MorsePos) GetValidators() []*MorseValidator {
@@ -4677,6 +4700,7 @@ func (x *MorsePos) GetValidators() []*MorseValidator {
 
 // MorseApplication is a subset of the Morse ProtoApplication type.
 // It encapsulates the minimum information required to import Morse applications.
+//
 // See: https://github.com/pokt-network/pocket-core/blob/staging/proto/x/apps/apps.proto#L16
 type MorseApplication struct {
 	state         protoimpl.MessageState
@@ -4697,7 +4721,7 @@ type MorseApplication struct {
 func (x *MorseApplication) Reset() {
 	*x = MorseApplication{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_poktroll_migration_legacy_proto_msgTypes[6]
+		mi := &file_poktroll_migration_morse_offchain_proto_msgTypes[6]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -4711,7 +4735,7 @@ func (*MorseApplication) ProtoMessage() {}
 
 // Deprecated: Use MorseApplication.ProtoReflect.Descriptor instead.
 func (*MorseApplication) Descriptor() ([]byte, []int) {
-	return file_poktroll_migration_legacy_proto_rawDescGZIP(), []int{6}
+	return file_poktroll_migration_morse_offchain_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *MorseApplication) GetAddress() []byte {
@@ -4751,6 +4775,7 @@ func (x *MorseApplication) GetStakedTokens() string {
 
 // MorseValidator is a subset of the Morse ProtoValidator type.
 // It encapsulates the minimum information required to import Morse suppliers (aka "servicers" or "validators").
+//
 // See: https://github.com/pokt-network/pocket-core/blob/staging/proto/x/pos/types.proto#L16
 type MorseValidator struct {
 	state         protoimpl.MessageState
@@ -4770,7 +4795,7 @@ type MorseValidator struct {
 func (x *MorseValidator) Reset() {
 	*x = MorseValidator{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_poktroll_migration_legacy_proto_msgTypes[7]
+		mi := &file_poktroll_migration_morse_offchain_proto_msgTypes[7]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -4784,7 +4809,7 @@ func (*MorseValidator) ProtoMessage() {}
 
 // Deprecated: Use MorseValidator.ProtoReflect.Descriptor instead.
 func (*MorseValidator) Descriptor() ([]byte, []int) {
-	return file_poktroll_migration_legacy_proto_rawDescGZIP(), []int{7}
+	return file_poktroll_migration_morse_offchain_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *MorseValidator) GetAddress() []byte {
@@ -4822,89 +4847,69 @@ func (x *MorseValidator) GetStakedTokens() string {
 	return ""
 }
 
-var File_poktroll_migration_legacy_proto protoreflect.FileDescriptor
+var File_poktroll_migration_morse_offchain_proto protoreflect.FileDescriptor
 
-var file_poktroll_migration_legacy_proto_rawDesc = []byte{
-	0x0a, 0x1f, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2f, 0x6d, 0x69, 0x67, 0x72, 0x61,
-	0x74, 0x69, 0x6f, 0x6e, 0x2f, 0x6c, 0x65, 0x67, 0x61, 0x63, 0x79, 0x2e, 0x70, 0x72, 0x6f, 0x74,
-	0x6f, 0x12, 0x12, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x6d, 0x69, 0x67, 0x72,
-	0x61, 0x74, 0x69, 0x6f, 0x6e, 0x1a, 0x14, 0x67, 0x6f, 0x67, 0x6f, 0x70, 0x72, 0x6f, 0x74, 0x6f,
-	0x2f, 0x67, 0x6f, 0x67, 0x6f, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x1a, 0x1e, 0x70, 0x6f, 0x6b,
-	0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2f, 0x6d, 0x69, 0x67, 0x72, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x2f,
-	0x74, 0x79, 0x70, 0x65, 0x73, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x22, 0x8a, 0x01, 0x0a, 0x10,
+var file_poktroll_migration_morse_offchain_proto_rawDesc = []byte{
+	0x0a, 0x27, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2f, 0x6d, 0x69, 0x67, 0x72, 0x61,
+	0x74, 0x69, 0x6f, 0x6e, 0x2f, 0x6d, 0x6f, 0x72, 0x73, 0x65, 0x5f, 0x6f, 0x66, 0x66, 0x63, 0x68,
+	0x61, 0x69, 0x6e, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x12, 0x12, 0x70, 0x6f, 0x6b, 0x74, 0x72,
+	0x6f, 0x6c, 0x6c, 0x2e, 0x6d, 0x69, 0x67, 0x72, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x1a, 0x14, 0x67,
+	0x6f, 0x67, 0x6f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2f, 0x67, 0x6f, 0x67, 0x6f, 0x2e, 0x70, 0x72,
+	0x6f, 0x74, 0x6f, 0x1a, 0x26, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2f, 0x6d, 0x69,
+	0x67, 0x72, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x2f, 0x6d, 0x6f, 0x72, 0x73, 0x65, 0x5f, 0x6f, 0x6e,
+	0x63, 0x68, 0x61, 0x69, 0x6e, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x22, 0x94, 0x01, 0x0a, 0x10,
 	0x4d, 0x6f, 0x72, 0x73, 0x65, 0x53, 0x74, 0x61, 0x74, 0x65, 0x45, 0x78, 0x70, 0x6f, 0x72, 0x74,
 	0x12, 0x27, 0x0a, 0x08, 0x61, 0x70, 0x70, 0x5f, 0x68, 0x61, 0x73, 0x68, 0x18, 0x01, 0x20, 0x01,
 	0x28, 0x09, 0x42, 0x0c, 0xea, 0xde, 0x1f, 0x08, 0x61, 0x70, 0x70, 0x5f, 0x68, 0x61, 0x73, 0x68,
-	0x52, 0x07, 0x61, 0x70, 0x70, 0x48, 0x61, 0x73, 0x68, 0x12, 0x4d, 0x0a, 0x09, 0x61, 0x70, 0x70,
-	0x5f, 0x73, 0x74, 0x61, 0x74, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x21, 0x2e, 0x70,
+	0x52, 0x07, 0x61, 0x70, 0x70, 0x48, 0x61, 0x73, 0x68, 0x12, 0x57, 0x0a, 0x09, 0x61, 0x70, 0x70,
+	0x5f, 0x73, 0x74, 0x61, 0x74, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x2b, 0x2e, 0x70,
 	0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x6d, 0x69, 0x67, 0x72, 0x61, 0x74, 0x69, 0x6f,
-	0x6e, 0x2e, 0x4d, 0x6f, 0x72, 0x73, 0x65, 0x41, 0x70, 0x70, 0x53, 0x74, 0x61, 0x74, 0x65, 0x42,
-	0x0d, 0xea, 0xde, 0x1f, 0x09, 0x61, 0x70, 0x70, 0x5f, 0x73, 0x74, 0x61, 0x74, 0x65, 0x52, 0x08,
-	0x61, 0x70, 0x70, 0x53, 0x74, 0x61, 0x74, 0x65, 0x22, 0xdf, 0x01, 0x0a, 0x0d, 0x4d, 0x6f, 0x72,
-	0x73, 0x65, 0x41, 0x70, 0x70, 0x53, 0x74, 0x61, 0x74, 0x65, 0x12, 0x58, 0x0a, 0x0b, 0x61, 0x70,
-	0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32,
-	0x25, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x6d, 0x69, 0x67, 0x72, 0x61,
-	0x74, 0x69, 0x6f, 0x6e, 0x2e, 0x4d, 0x6f, 0x72, 0x73, 0x65, 0x41, 0x70, 0x70, 0x6c, 0x69, 0x63,
-	0x61, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x42, 0x0f, 0xea, 0xde, 0x1f, 0x0b, 0x61, 0x70, 0x70, 0x6c,
-	0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x52, 0x0b, 0x61, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61,
-	0x74, 0x69, 0x6f, 0x6e, 0x12, 0x3b, 0x0a, 0x04, 0x61, 0x75, 0x74, 0x68, 0x18, 0x02, 0x20, 0x01,
-	0x28, 0x0b, 0x32, 0x1d, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x6d, 0x69,
-	0x67, 0x72, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x2e, 0x4d, 0x6f, 0x72, 0x73, 0x65, 0x41, 0x75, 0x74,
-	0x68, 0x42, 0x08, 0xea, 0xde, 0x1f, 0x04, 0x61, 0x75, 0x74, 0x68, 0x52, 0x04, 0x61, 0x75, 0x74,
-	0x68, 0x12, 0x37, 0x0a, 0x03, 0x70, 0x6f, 0x73, 0x18, 0x03, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1c,
-	0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x6d, 0x69, 0x67, 0x72, 0x61, 0x74,
-	0x69, 0x6f, 0x6e, 0x2e, 0x4d, 0x6f, 0x72, 0x73, 0x65, 0x50, 0x6f, 0x73, 0x42, 0x07, 0xea, 0xde,
-	0x1f, 0x03, 0x70, 0x6f, 0x73, 0x52, 0x03, 0x70, 0x6f, 0x73, 0x22, 0x6f, 0x0a, 0x11, 0x4d, 0x6f,
-	0x72, 0x73, 0x65, 0x41, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x12,
-	0x5a, 0x0a, 0x0c, 0x61, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x18,
-	0x01, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x24, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c,
-	0x2e, 0x6d, 0x69, 0x67, 0x72, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x2e, 0x4d, 0x6f, 0x72, 0x73, 0x65,
-	0x41, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x42, 0x10, 0xea, 0xde, 0x1f,
-	0x0c, 0x61, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x52, 0x0c, 0x61,
-	0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x22, 0x5b, 0x0a, 0x09, 0x4d,
-	0x6f, 0x72, 0x73, 0x65, 0x41, 0x75, 0x74, 0x68, 0x12, 0x4e, 0x0a, 0x08, 0x61, 0x63, 0x63, 0x6f,
-	0x75, 0x6e, 0x74, 0x73, 0x18, 0x01, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x24, 0x2e, 0x70, 0x6f, 0x6b,
-	0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x6d, 0x69, 0x67, 0x72, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x2e,
-	0x4d, 0x6f, 0x72, 0x73, 0x65, 0x41, 0x75, 0x74, 0x68, 0x41, 0x63, 0x63, 0x6f, 0x75, 0x6e, 0x74,
-	0x42, 0x0c, 0xea, 0xde, 0x1f, 0x08, 0x61, 0x63, 0x63, 0x6f, 0x75, 0x6e, 0x74, 0x73, 0x52, 0x08,
-	0x61, 0x63, 0x63, 0x6f, 0x75, 0x6e, 0x74, 0x73, 0x22, 0x73, 0x0a, 0x10, 0x4d, 0x6f, 0x72, 0x73,
-	0x65, 0x41, 0x75, 0x74, 0x68, 0x41, 0x63, 0x63, 0x6f, 0x75, 0x6e, 0x74, 0x12, 0x1c, 0x0a, 0x04,
-	0x74, 0x79, 0x70, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x42, 0x08, 0xea, 0xde, 0x1f, 0x04,
-	0x74, 0x79, 0x70, 0x65, 0x52, 0x04, 0x74, 0x79, 0x70, 0x65, 0x12, 0x41, 0x0a, 0x05, 0x76, 0x61,
-	0x6c, 0x75, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x20, 0x2e, 0x70, 0x6f, 0x6b, 0x74,
+	0x6e, 0x2e, 0x4d, 0x6f, 0x72, 0x73, 0x65, 0x54, 0x65, 0x6e, 0x64, 0x65, 0x72, 0x6d, 0x69, 0x6e,
+	0x74, 0x41, 0x70, 0x70, 0x53, 0x74, 0x61, 0x74, 0x65, 0x42, 0x0d, 0xea, 0xde, 0x1f, 0x09, 0x61,
+	0x70, 0x70, 0x5f, 0x73, 0x74, 0x61, 0x74, 0x65, 0x52, 0x08, 0x61, 0x70, 0x70, 0x53, 0x74, 0x61,
+	0x74, 0x65, 0x22, 0xe9, 0x01, 0x0a, 0x17, 0x4d, 0x6f, 0x72, 0x73, 0x65, 0x54, 0x65, 0x6e, 0x64,
+	0x65, 0x72, 0x6d, 0x69, 0x6e, 0x74, 0x41, 0x70, 0x70, 0x53, 0x74, 0x61, 0x74, 0x65, 0x12, 0x58,
+	0x0a, 0x0b, 0x61, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x18, 0x01, 0x20,
+	0x01, 0x28, 0x0b, 0x32, 0x25, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x6d,
+	0x69, 0x67, 0x72, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x2e, 0x4d, 0x6f, 0x72, 0x73, 0x65, 0x41, 0x70,
+	0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x42, 0x0f, 0xea, 0xde, 0x1f, 0x0b,
+	0x61, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x52, 0x0b, 0x61, 0x70, 0x70,
+	0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x12, 0x3b, 0x0a, 0x04, 0x61, 0x75, 0x74, 0x68,
+	0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1d, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c,
+	0x6c, 0x2e, 0x6d, 0x69, 0x67, 0x72, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x2e, 0x4d, 0x6f, 0x72, 0x73,
+	0x65, 0x41, 0x75, 0x74, 0x68, 0x42, 0x08, 0xea, 0xde, 0x1f, 0x04, 0x61, 0x75, 0x74, 0x68, 0x52,
+	0x04, 0x61, 0x75, 0x74, 0x68, 0x12, 0x37, 0x0a, 0x03, 0x70, 0x6f, 0x73, 0x18, 0x03, 0x20, 0x01,
+	0x28, 0x0b, 0x32, 0x1c, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x6d, 0x69,
+	0x67, 0x72, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x2e, 0x4d, 0x6f, 0x72, 0x73, 0x65, 0x50, 0x6f, 0x73,
+	0x42, 0x07, 0xea, 0xde, 0x1f, 0x03, 0x70, 0x6f, 0x73, 0x52, 0x03, 0x70, 0x6f, 0x73, 0x22, 0x6f,
+	0x0a, 0x11, 0x4d, 0x6f, 0x72, 0x73, 0x65, 0x41, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69,
+	0x6f, 0x6e, 0x73, 0x12, 0x5a, 0x0a, 0x0c, 0x61, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69,
+	0x6f, 0x6e, 0x73, 0x18, 0x01, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x24, 0x2e, 0x70, 0x6f, 0x6b, 0x74,
 	0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x6d, 0x69, 0x67, 0x72, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x2e, 0x4d,
-	0x6f, 0x72, 0x73, 0x65, 0x41, 0x63, 0x63, 0x6f, 0x75, 0x6e, 0x74, 0x42, 0x09, 0xea, 0xde, 0x1f,
-	0x05, 0x76, 0x61, 0x6c, 0x75, 0x65, 0x52, 0x05, 0x76, 0x61, 0x6c, 0x75, 0x65, 0x22, 0x5e, 0x0a,
-	0x08, 0x4d, 0x6f, 0x72, 0x73, 0x65, 0x50, 0x6f, 0x73, 0x12, 0x52, 0x0a, 0x0a, 0x76, 0x61, 0x6c,
-	0x69, 0x64, 0x61, 0x74, 0x6f, 0x72, 0x73, 0x18, 0x01, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x22, 0x2e,
+	0x6f, 0x72, 0x73, 0x65, 0x41, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x42,
+	0x10, 0xea, 0xde, 0x1f, 0x0c, 0x61, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e,
+	0x73, 0x52, 0x0c, 0x61, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x22,
+	0x5b, 0x0a, 0x09, 0x4d, 0x6f, 0x72, 0x73, 0x65, 0x41, 0x75, 0x74, 0x68, 0x12, 0x4e, 0x0a, 0x08,
+	0x61, 0x63, 0x63, 0x6f, 0x75, 0x6e, 0x74, 0x73, 0x18, 0x01, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x24,
+	0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x6d, 0x69, 0x67, 0x72, 0x61, 0x74,
+	0x69, 0x6f, 0x6e, 0x2e, 0x4d, 0x6f, 0x72, 0x73, 0x65, 0x41, 0x75, 0x74, 0x68, 0x41, 0x63, 0x63,
+	0x6f, 0x75, 0x6e, 0x74, 0x42, 0x0c, 0xea, 0xde, 0x1f, 0x08, 0x61, 0x63, 0x63, 0x6f, 0x75, 0x6e,
+	0x74, 0x73, 0x52, 0x08, 0x61, 0x63, 0x63, 0x6f, 0x75, 0x6e, 0x74, 0x73, 0x22, 0x73, 0x0a, 0x10,
+	0x4d, 0x6f, 0x72, 0x73, 0x65, 0x41, 0x75, 0x74, 0x68, 0x41, 0x63, 0x63, 0x6f, 0x75, 0x6e, 0x74,
+	0x12, 0x1c, 0x0a, 0x04, 0x74, 0x79, 0x70, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x42, 0x08,
+	0xea, 0xde, 0x1f, 0x04, 0x74, 0x79, 0x70, 0x65, 0x52, 0x04, 0x74, 0x79, 0x70, 0x65, 0x12, 0x41,
+	0x0a, 0x05, 0x76, 0x61, 0x6c, 0x75, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x20, 0x2e,
 	0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x6d, 0x69, 0x67, 0x72, 0x61, 0x74, 0x69,
-	0x6f, 0x6e, 0x2e, 0x4d, 0x6f, 0x72, 0x73, 0x65, 0x56, 0x61, 0x6c, 0x69, 0x64, 0x61, 0x74, 0x6f,
-	0x72, 0x42, 0x0e, 0xea, 0xde, 0x1f, 0x0a, 0x76, 0x61, 0x6c, 0x69, 0x64, 0x61, 0x74, 0x6f, 0x72,
-	0x73, 0x52, 0x0a, 0x76, 0x61, 0x6c, 0x69, 0x64, 0x61, 0x74, 0x6f, 0x72, 0x73, 0x22, 0xe3, 0x02,
-	0x0a, 0x10, 0x4d, 0x6f, 0x72, 0x73, 0x65, 0x41, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69,
-	0x6f, 0x6e, 0x12, 0x66, 0x0a, 0x07, 0x61, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x18, 0x01, 0x20,
-	0x01, 0x28, 0x0c, 0x42, 0x4c, 0xea, 0xde, 0x1f, 0x07, 0x61, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73,
-	0xf2, 0xde, 0x1f, 0x0e, 0x79, 0x61, 0x6d, 0x6c, 0x3a, 0x22, 0x61, 0x64, 0x64, 0x72, 0x65, 0x73,
-	0x73, 0x22, 0xfa, 0xde, 0x1f, 0x2b, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d,
-	0x2f, 0x63, 0x6f, 0x6d, 0x65, 0x74, 0x62, 0x66, 0x74, 0x2f, 0x63, 0x6f, 0x6d, 0x65, 0x74, 0x62,
-	0x66, 0x74, 0x2f, 0x63, 0x72, 0x79, 0x70, 0x74, 0x6f, 0x2e, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73,
-	0x73, 0x52, 0x07, 0x61, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x12, 0x42, 0x0a, 0x0a, 0x70, 0x75,
-	0x62, 0x6c, 0x69, 0x63, 0x5f, 0x6b, 0x65, 0x79, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0c, 0x42, 0x23,
-	0xea, 0xde, 0x1f, 0x0a, 0x70, 0x75, 0x62, 0x6c, 0x69, 0x63, 0x5f, 0x6b, 0x65, 0x79, 0xf2, 0xde,
-	0x1f, 0x11, 0x79, 0x61, 0x6d, 0x6c, 0x3a, 0x22, 0x70, 0x75, 0x62, 0x6c, 0x69, 0x63, 0x5f, 0x6b,
-	0x65, 0x79, 0x22, 0x52, 0x09, 0x70, 0x75, 0x62, 0x6c, 0x69, 0x63, 0x4b, 0x65, 0x79, 0x12, 0x33,
-	0x0a, 0x06, 0x6a, 0x61, 0x69, 0x6c, 0x65, 0x64, 0x18, 0x03, 0x20, 0x01, 0x28, 0x08, 0x42, 0x1b,
-	0xea, 0xde, 0x1f, 0x06, 0x6a, 0x61, 0x69, 0x6c, 0x65, 0x64, 0xf2, 0xde, 0x1f, 0x0d, 0x79, 0x61,
-	0x6d, 0x6c, 0x3a, 0x22, 0x6a, 0x61, 0x69, 0x6c, 0x65, 0x64, 0x22, 0x52, 0x06, 0x6a, 0x61, 0x69,
-	0x6c, 0x65, 0x64, 0x12, 0x33, 0x0a, 0x06, 0x73, 0x74, 0x61, 0x74, 0x75, 0x73, 0x18, 0x04, 0x20,
-	0x01, 0x28, 0x05, 0x42, 0x1b, 0xea, 0xde, 0x1f, 0x06, 0x73, 0x74, 0x61, 0x74, 0x75, 0x73, 0xf2,
-	0xde, 0x1f, 0x0d, 0x79, 0x61, 0x6d, 0x6c, 0x3a, 0x22, 0x73, 0x74, 0x61, 0x74, 0x75, 0x73, 0x22,
-	0x52, 0x06, 0x73, 0x74, 0x61, 0x74, 0x75, 0x73, 0x12, 0x2f, 0x0a, 0x0d, 0x73, 0x74, 0x61, 0x6b,
-	0x65, 0x64, 0x5f, 0x74, 0x6f, 0x6b, 0x65, 0x6e, 0x73, 0x18, 0x06, 0x20, 0x01, 0x28, 0x09, 0x42,
-	0x0a, 0xea, 0xde, 0x1f, 0x06, 0x74, 0x6f, 0x6b, 0x65, 0x6e, 0x73, 0x52, 0x0c, 0x73, 0x74, 0x61,
-	0x6b, 0x65, 0x64, 0x54, 0x6f, 0x6b, 0x65, 0x6e, 0x73, 0x3a, 0x08, 0x88, 0xa0, 0x1f, 0x00, 0xe8,
-	0xa0, 0x1f, 0x01, 0x22, 0xc3, 0x02, 0x0a, 0x0e, 0x4d, 0x6f, 0x72, 0x73, 0x65, 0x56, 0x61, 0x6c,
-	0x69, 0x64, 0x61, 0x74, 0x6f, 0x72, 0x12, 0x66, 0x0a, 0x07, 0x61, 0x64, 0x64, 0x72, 0x65, 0x73,
+	0x6f, 0x6e, 0x2e, 0x4d, 0x6f, 0x72, 0x73, 0x65, 0x41, 0x63, 0x63, 0x6f, 0x75, 0x6e, 0x74, 0x42,
+	0x09, 0xea, 0xde, 0x1f, 0x05, 0x76, 0x61, 0x6c, 0x75, 0x65, 0x52, 0x05, 0x76, 0x61, 0x6c, 0x75,
+	0x65, 0x22, 0x5e, 0x0a, 0x08, 0x4d, 0x6f, 0x72, 0x73, 0x65, 0x50, 0x6f, 0x73, 0x12, 0x52, 0x0a,
+	0x0a, 0x76, 0x61, 0x6c, 0x69, 0x64, 0x61, 0x74, 0x6f, 0x72, 0x73, 0x18, 0x01, 0x20, 0x03, 0x28,
+	0x0b, 0x32, 0x22, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x6d, 0x69, 0x67,
+	0x72, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x2e, 0x4d, 0x6f, 0x72, 0x73, 0x65, 0x56, 0x61, 0x6c, 0x69,
+	0x64, 0x61, 0x74, 0x6f, 0x72, 0x42, 0x0e, 0xea, 0xde, 0x1f, 0x0a, 0x76, 0x61, 0x6c, 0x69, 0x64,
+	0x61, 0x74, 0x6f, 0x72, 0x73, 0x52, 0x0a, 0x76, 0x61, 0x6c, 0x69, 0x64, 0x61, 0x74, 0x6f, 0x72,
+	0x73, 0x22, 0xe3, 0x02, 0x0a, 0x10, 0x4d, 0x6f, 0x72, 0x73, 0x65, 0x41, 0x70, 0x70, 0x6c, 0x69,
+	0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x12, 0x66, 0x0a, 0x07, 0x61, 0x64, 0x64, 0x72, 0x65, 0x73,
 	0x73, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0c, 0x42, 0x4c, 0xea, 0xde, 0x1f, 0x07, 0x61, 0x64, 0x64,
 	0x72, 0x65, 0x73, 0x73, 0xf2, 0xde, 0x1f, 0x0e, 0x79, 0x61, 0x6d, 0x6c, 0x3a, 0x22, 0x61, 0x64,
 	0x64, 0x72, 0x65, 0x73, 0x73, 0x22, 0xfa, 0xde, 0x1f, 0x2b, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62,
@@ -4915,58 +4920,81 @@ var file_poktroll_migration_legacy_proto_rawDesc = []byte{
 	0x28, 0x0c, 0x42, 0x23, 0xea, 0xde, 0x1f, 0x0a, 0x70, 0x75, 0x62, 0x6c, 0x69, 0x63, 0x5f, 0x6b,
 	0x65, 0x79, 0xf2, 0xde, 0x1f, 0x11, 0x79, 0x61, 0x6d, 0x6c, 0x3a, 0x22, 0x70, 0x75, 0x62, 0x6c,
 	0x69, 0x63, 0x5f, 0x6b, 0x65, 0x79, 0x22, 0x52, 0x09, 0x70, 0x75, 0x62, 0x6c, 0x69, 0x63, 0x4b,
-	0x65, 0x79, 0x12, 0x22, 0x0a, 0x06, 0x6a, 0x61, 0x69, 0x6c, 0x65, 0x64, 0x18, 0x03, 0x20, 0x01,
-	0x28, 0x08, 0x42, 0x0a, 0xea, 0xde, 0x1f, 0x06, 0x6a, 0x61, 0x69, 0x6c, 0x65, 0x64, 0x52, 0x06,
-	0x6a, 0x61, 0x69, 0x6c, 0x65, 0x64, 0x12, 0x22, 0x0a, 0x06, 0x73, 0x74, 0x61, 0x74, 0x75, 0x73,
-	0x18, 0x04, 0x20, 0x01, 0x28, 0x05, 0x42, 0x0a, 0xea, 0xde, 0x1f, 0x06, 0x73, 0x74, 0x61, 0x74,
-	0x75, 0x73, 0x52, 0x06, 0x73, 0x74, 0x61, 0x74, 0x75, 0x73, 0x12, 0x2f, 0x0a, 0x0d, 0x73, 0x74,
-	0x61, 0x6b, 0x65, 0x64, 0x5f, 0x74, 0x6f, 0x6b, 0x65, 0x6e, 0x73, 0x18, 0x07, 0x20, 0x01, 0x28,
-	0x09, 0x42, 0x0a, 0xea, 0xde, 0x1f, 0x06, 0x74, 0x6f, 0x6b, 0x65, 0x6e, 0x73, 0x52, 0x0c, 0x73,
-	0x74, 0x61, 0x6b, 0x65, 0x64, 0x54, 0x6f, 0x6b, 0x65, 0x6e, 0x73, 0x3a, 0x0c, 0x88, 0xa0, 0x1f,
-	0x00, 0x98, 0xa0, 0x1f, 0x01, 0xe8, 0xa0, 0x1f, 0x01, 0x42, 0xb7, 0x01, 0xd8, 0xe2, 0x1e, 0x01,
-	0x0a, 0x16, 0x63, 0x6f, 0x6d, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x6d,
-	0x69, 0x67, 0x72, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x42, 0x0b, 0x4c, 0x65, 0x67, 0x61, 0x63, 0x79,
-	0x50, 0x72, 0x6f, 0x74, 0x6f, 0x50, 0x01, 0x5a, 0x23, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x73,
-	0x64, 0x6b, 0x2e, 0x69, 0x6f, 0x2f, 0x61, 0x70, 0x69, 0x2f, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f,
-	0x6c, 0x6c, 0x2f, 0x6d, 0x69, 0x67, 0x72, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0xa2, 0x02, 0x03, 0x50,
-	0x4d, 0x58, 0xaa, 0x02, 0x12, 0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x4d, 0x69,
-	0x67, 0x72, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0xca, 0x02, 0x12, 0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f,
-	0x6c, 0x6c, 0x5c, 0x4d, 0x69, 0x67, 0x72, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0xe2, 0x02, 0x1e, 0x50,
-	0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x5c, 0x4d, 0x69, 0x67, 0x72, 0x61, 0x74, 0x69, 0x6f,
-	0x6e, 0x5c, 0x47, 0x50, 0x42, 0x4d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0xea, 0x02, 0x13,
-	0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x3a, 0x3a, 0x4d, 0x69, 0x67, 0x72, 0x61, 0x74,
-	0x69, 0x6f, 0x6e, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x65, 0x79, 0x12, 0x33, 0x0a, 0x06, 0x6a, 0x61, 0x69, 0x6c, 0x65, 0x64, 0x18, 0x03, 0x20, 0x01,
+	0x28, 0x08, 0x42, 0x1b, 0xea, 0xde, 0x1f, 0x06, 0x6a, 0x61, 0x69, 0x6c, 0x65, 0x64, 0xf2, 0xde,
+	0x1f, 0x0d, 0x79, 0x61, 0x6d, 0x6c, 0x3a, 0x22, 0x6a, 0x61, 0x69, 0x6c, 0x65, 0x64, 0x22, 0x52,
+	0x06, 0x6a, 0x61, 0x69, 0x6c, 0x65, 0x64, 0x12, 0x33, 0x0a, 0x06, 0x73, 0x74, 0x61, 0x74, 0x75,
+	0x73, 0x18, 0x04, 0x20, 0x01, 0x28, 0x05, 0x42, 0x1b, 0xea, 0xde, 0x1f, 0x06, 0x73, 0x74, 0x61,
+	0x74, 0x75, 0x73, 0xf2, 0xde, 0x1f, 0x0d, 0x79, 0x61, 0x6d, 0x6c, 0x3a, 0x22, 0x73, 0x74, 0x61,
+	0x74, 0x75, 0x73, 0x22, 0x52, 0x06, 0x73, 0x74, 0x61, 0x74, 0x75, 0x73, 0x12, 0x2f, 0x0a, 0x0d,
+	0x73, 0x74, 0x61, 0x6b, 0x65, 0x64, 0x5f, 0x74, 0x6f, 0x6b, 0x65, 0x6e, 0x73, 0x18, 0x06, 0x20,
+	0x01, 0x28, 0x09, 0x42, 0x0a, 0xea, 0xde, 0x1f, 0x06, 0x74, 0x6f, 0x6b, 0x65, 0x6e, 0x73, 0x52,
+	0x0c, 0x73, 0x74, 0x61, 0x6b, 0x65, 0x64, 0x54, 0x6f, 0x6b, 0x65, 0x6e, 0x73, 0x3a, 0x08, 0x88,
+	0xa0, 0x1f, 0x00, 0xe8, 0xa0, 0x1f, 0x01, 0x22, 0xc3, 0x02, 0x0a, 0x0e, 0x4d, 0x6f, 0x72, 0x73,
+	0x65, 0x56, 0x61, 0x6c, 0x69, 0x64, 0x61, 0x74, 0x6f, 0x72, 0x12, 0x66, 0x0a, 0x07, 0x61, 0x64,
+	0x64, 0x72, 0x65, 0x73, 0x73, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0c, 0x42, 0x4c, 0xea, 0xde, 0x1f,
+	0x07, 0x61, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0xf2, 0xde, 0x1f, 0x0e, 0x79, 0x61, 0x6d, 0x6c,
+	0x3a, 0x22, 0x61, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x22, 0xfa, 0xde, 0x1f, 0x2b, 0x67, 0x69,
+	0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x63, 0x6f, 0x6d, 0x65, 0x74, 0x62, 0x66,
+	0x74, 0x2f, 0x63, 0x6f, 0x6d, 0x65, 0x74, 0x62, 0x66, 0x74, 0x2f, 0x63, 0x72, 0x79, 0x70, 0x74,
+	0x6f, 0x2e, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x52, 0x07, 0x61, 0x64, 0x64, 0x72, 0x65,
+	0x73, 0x73, 0x12, 0x42, 0x0a, 0x0a, 0x70, 0x75, 0x62, 0x6c, 0x69, 0x63, 0x5f, 0x6b, 0x65, 0x79,
+	0x18, 0x02, 0x20, 0x01, 0x28, 0x0c, 0x42, 0x23, 0xea, 0xde, 0x1f, 0x0a, 0x70, 0x75, 0x62, 0x6c,
+	0x69, 0x63, 0x5f, 0x6b, 0x65, 0x79, 0xf2, 0xde, 0x1f, 0x11, 0x79, 0x61, 0x6d, 0x6c, 0x3a, 0x22,
+	0x70, 0x75, 0x62, 0x6c, 0x69, 0x63, 0x5f, 0x6b, 0x65, 0x79, 0x22, 0x52, 0x09, 0x70, 0x75, 0x62,
+	0x6c, 0x69, 0x63, 0x4b, 0x65, 0x79, 0x12, 0x22, 0x0a, 0x06, 0x6a, 0x61, 0x69, 0x6c, 0x65, 0x64,
+	0x18, 0x03, 0x20, 0x01, 0x28, 0x08, 0x42, 0x0a, 0xea, 0xde, 0x1f, 0x06, 0x6a, 0x61, 0x69, 0x6c,
+	0x65, 0x64, 0x52, 0x06, 0x6a, 0x61, 0x69, 0x6c, 0x65, 0x64, 0x12, 0x22, 0x0a, 0x06, 0x73, 0x74,
+	0x61, 0x74, 0x75, 0x73, 0x18, 0x04, 0x20, 0x01, 0x28, 0x05, 0x42, 0x0a, 0xea, 0xde, 0x1f, 0x06,
+	0x73, 0x74, 0x61, 0x74, 0x75, 0x73, 0x52, 0x06, 0x73, 0x74, 0x61, 0x74, 0x75, 0x73, 0x12, 0x2f,
+	0x0a, 0x0d, 0x73, 0x74, 0x61, 0x6b, 0x65, 0x64, 0x5f, 0x74, 0x6f, 0x6b, 0x65, 0x6e, 0x73, 0x18,
+	0x07, 0x20, 0x01, 0x28, 0x09, 0x42, 0x0a, 0xea, 0xde, 0x1f, 0x06, 0x74, 0x6f, 0x6b, 0x65, 0x6e,
+	0x73, 0x52, 0x0c, 0x73, 0x74, 0x61, 0x6b, 0x65, 0x64, 0x54, 0x6f, 0x6b, 0x65, 0x6e, 0x73, 0x3a,
+	0x0c, 0x88, 0xa0, 0x1f, 0x00, 0x98, 0xa0, 0x1f, 0x01, 0xe8, 0xa0, 0x1f, 0x01, 0x42, 0xbe, 0x01,
+	0xd8, 0xe2, 0x1e, 0x01, 0x0a, 0x16, 0x63, 0x6f, 0x6d, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f,
+	0x6c, 0x6c, 0x2e, 0x6d, 0x69, 0x67, 0x72, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x42, 0x12, 0x4d, 0x6f,
+	0x72, 0x73, 0x65, 0x4f, 0x66, 0x66, 0x63, 0x68, 0x61, 0x69, 0x6e, 0x50, 0x72, 0x6f, 0x74, 0x6f,
+	0x50, 0x01, 0x5a, 0x23, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x73, 0x64, 0x6b, 0x2e, 0x69, 0x6f,
+	0x2f, 0x61, 0x70, 0x69, 0x2f, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2f, 0x6d, 0x69,
+	0x67, 0x72, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0xa2, 0x02, 0x03, 0x50, 0x4d, 0x58, 0xaa, 0x02, 0x12,
+	0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x4d, 0x69, 0x67, 0x72, 0x61, 0x74, 0x69,
+	0x6f, 0x6e, 0xca, 0x02, 0x12, 0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x5c, 0x4d, 0x69,
+	0x67, 0x72, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0xe2, 0x02, 0x1e, 0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f,
+	0x6c, 0x6c, 0x5c, 0x4d, 0x69, 0x67, 0x72, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x5c, 0x47, 0x50, 0x42,
+	0x4d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0xea, 0x02, 0x13, 0x50, 0x6f, 0x6b, 0x74, 0x72,
+	0x6f, 0x6c, 0x6c, 0x3a, 0x3a, 0x4d, 0x69, 0x67, 0x72, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x62, 0x06,
+	0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
-	file_poktroll_migration_legacy_proto_rawDescOnce sync.Once
-	file_poktroll_migration_legacy_proto_rawDescData = file_poktroll_migration_legacy_proto_rawDesc
+	file_poktroll_migration_morse_offchain_proto_rawDescOnce sync.Once
+	file_poktroll_migration_morse_offchain_proto_rawDescData = file_poktroll_migration_morse_offchain_proto_rawDesc
 )
 
-func file_poktroll_migration_legacy_proto_rawDescGZIP() []byte {
-	file_poktroll_migration_legacy_proto_rawDescOnce.Do(func() {
-		file_poktroll_migration_legacy_proto_rawDescData = protoimpl.X.CompressGZIP(file_poktroll_migration_legacy_proto_rawDescData)
+func file_poktroll_migration_morse_offchain_proto_rawDescGZIP() []byte {
+	file_poktroll_migration_morse_offchain_proto_rawDescOnce.Do(func() {
+		file_poktroll_migration_morse_offchain_proto_rawDescData = protoimpl.X.CompressGZIP(file_poktroll_migration_morse_offchain_proto_rawDescData)
 	})
-	return file_poktroll_migration_legacy_proto_rawDescData
+	return file_poktroll_migration_morse_offchain_proto_rawDescData
 }
 
-var file_poktroll_migration_legacy_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
-var file_poktroll_migration_legacy_proto_goTypes = []interface{}{
-	(*MorseStateExport)(nil),  // 0: poktroll.migration.MorseStateExport
-	(*MorseAppState)(nil),     // 1: poktroll.migration.MorseAppState
-	(*MorseApplications)(nil), // 2: poktroll.migration.MorseApplications
-	(*MorseAuth)(nil),         // 3: poktroll.migration.MorseAuth
-	(*MorseAuthAccount)(nil),  // 4: poktroll.migration.MorseAuthAccount
-	(*MorsePos)(nil),          // 5: poktroll.migration.MorsePos
-	(*MorseApplication)(nil),  // 6: poktroll.migration.MorseApplication
-	(*MorseValidator)(nil),    // 7: poktroll.migration.MorseValidator
-	(*MorseAccount)(nil),      // 8: poktroll.migration.MorseAccount
+var file_poktroll_migration_morse_offchain_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
+var file_poktroll_migration_morse_offchain_proto_goTypes = []interface{}{
+	(*MorseStateExport)(nil),        // 0: poktroll.migration.MorseStateExport
+	(*MorseTendermintAppState)(nil), // 1: poktroll.migration.MorseTendermintAppState
+	(*MorseApplications)(nil),       // 2: poktroll.migration.MorseApplications
+	(*MorseAuth)(nil),               // 3: poktroll.migration.MorseAuth
+	(*MorseAuthAccount)(nil),        // 4: poktroll.migration.MorseAuthAccount
+	(*MorsePos)(nil),                // 5: poktroll.migration.MorsePos
+	(*MorseApplication)(nil),        // 6: poktroll.migration.MorseApplication
+	(*MorseValidator)(nil),          // 7: poktroll.migration.MorseValidator
+	(*MorseAccount)(nil),            // 8: poktroll.migration.MorseAccount
 }
-var file_poktroll_migration_legacy_proto_depIdxs = []int32{
-	1, // 0: poktroll.migration.MorseStateExport.app_state:type_name -> poktroll.migration.MorseAppState
-	2, // 1: poktroll.migration.MorseAppState.application:type_name -> poktroll.migration.MorseApplications
-	3, // 2: poktroll.migration.MorseAppState.auth:type_name -> poktroll.migration.MorseAuth
-	5, // 3: poktroll.migration.MorseAppState.pos:type_name -> poktroll.migration.MorsePos
+var file_poktroll_migration_morse_offchain_proto_depIdxs = []int32{
+	1, // 0: poktroll.migration.MorseStateExport.app_state:type_name -> poktroll.migration.MorseTendermintAppState
+	2, // 1: poktroll.migration.MorseTendermintAppState.application:type_name -> poktroll.migration.MorseApplications
+	3, // 2: poktroll.migration.MorseTendermintAppState.auth:type_name -> poktroll.migration.MorseAuth
+	5, // 3: poktroll.migration.MorseTendermintAppState.pos:type_name -> poktroll.migration.MorsePos
 	6, // 4: poktroll.migration.MorseApplications.applications:type_name -> poktroll.migration.MorseApplication
 	4, // 5: poktroll.migration.MorseAuth.accounts:type_name -> poktroll.migration.MorseAuthAccount
 	8, // 6: poktroll.migration.MorseAuthAccount.value:type_name -> poktroll.migration.MorseAccount
@@ -4978,14 +5006,14 @@ var file_poktroll_migration_legacy_proto_depIdxs = []int32{
 	0, // [0:8] is the sub-list for field type_name
 }
 
-func init() { file_poktroll_migration_legacy_proto_init() }
-func file_poktroll_migration_legacy_proto_init() {
-	if File_poktroll_migration_legacy_proto != nil {
+func init() { file_poktroll_migration_morse_offchain_proto_init() }
+func file_poktroll_migration_morse_offchain_proto_init() {
+	if File_poktroll_migration_morse_offchain_proto != nil {
 		return
 	}
-	file_poktroll_migration_types_proto_init()
+	file_poktroll_migration_morse_onchain_proto_init()
 	if !protoimpl.UnsafeEnabled {
-		file_poktroll_migration_legacy_proto_msgTypes[0].Exporter = func(v interface{}, i int) interface{} {
+		file_poktroll_migration_morse_offchain_proto_msgTypes[0].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*MorseStateExport); i {
 			case 0:
 				return &v.state
@@ -4997,8 +5025,8 @@ func file_poktroll_migration_legacy_proto_init() {
 				return nil
 			}
 		}
-		file_poktroll_migration_legacy_proto_msgTypes[1].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*MorseAppState); i {
+		file_poktroll_migration_morse_offchain_proto_msgTypes[1].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*MorseTendermintAppState); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -5009,7 +5037,7 @@ func file_poktroll_migration_legacy_proto_init() {
 				return nil
 			}
 		}
-		file_poktroll_migration_legacy_proto_msgTypes[2].Exporter = func(v interface{}, i int) interface{} {
+		file_poktroll_migration_morse_offchain_proto_msgTypes[2].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*MorseApplications); i {
 			case 0:
 				return &v.state
@@ -5021,7 +5049,7 @@ func file_poktroll_migration_legacy_proto_init() {
 				return nil
 			}
 		}
-		file_poktroll_migration_legacy_proto_msgTypes[3].Exporter = func(v interface{}, i int) interface{} {
+		file_poktroll_migration_morse_offchain_proto_msgTypes[3].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*MorseAuth); i {
 			case 0:
 				return &v.state
@@ -5033,7 +5061,7 @@ func file_poktroll_migration_legacy_proto_init() {
 				return nil
 			}
 		}
-		file_poktroll_migration_legacy_proto_msgTypes[4].Exporter = func(v interface{}, i int) interface{} {
+		file_poktroll_migration_morse_offchain_proto_msgTypes[4].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*MorseAuthAccount); i {
 			case 0:
 				return &v.state
@@ -5045,7 +5073,7 @@ func file_poktroll_migration_legacy_proto_init() {
 				return nil
 			}
 		}
-		file_poktroll_migration_legacy_proto_msgTypes[5].Exporter = func(v interface{}, i int) interface{} {
+		file_poktroll_migration_morse_offchain_proto_msgTypes[5].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*MorsePos); i {
 			case 0:
 				return &v.state
@@ -5057,7 +5085,7 @@ func file_poktroll_migration_legacy_proto_init() {
 				return nil
 			}
 		}
-		file_poktroll_migration_legacy_proto_msgTypes[6].Exporter = func(v interface{}, i int) interface{} {
+		file_poktroll_migration_morse_offchain_proto_msgTypes[6].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*MorseApplication); i {
 			case 0:
 				return &v.state
@@ -5069,7 +5097,7 @@ func file_poktroll_migration_legacy_proto_init() {
 				return nil
 			}
 		}
-		file_poktroll_migration_legacy_proto_msgTypes[7].Exporter = func(v interface{}, i int) interface{} {
+		file_poktroll_migration_morse_offchain_proto_msgTypes[7].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*MorseValidator); i {
 			case 0:
 				return &v.state
@@ -5086,18 +5114,18 @@ func file_poktroll_migration_legacy_proto_init() {
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: file_poktroll_migration_legacy_proto_rawDesc,
+			RawDescriptor: file_poktroll_migration_morse_offchain_proto_rawDesc,
 			NumEnums:      0,
 			NumMessages:   8,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
-		GoTypes:           file_poktroll_migration_legacy_proto_goTypes,
-		DependencyIndexes: file_poktroll_migration_legacy_proto_depIdxs,
-		MessageInfos:      file_poktroll_migration_legacy_proto_msgTypes,
+		GoTypes:           file_poktroll_migration_morse_offchain_proto_goTypes,
+		DependencyIndexes: file_poktroll_migration_morse_offchain_proto_depIdxs,
+		MessageInfos:      file_poktroll_migration_morse_offchain_proto_msgTypes,
 	}.Build()
-	File_poktroll_migration_legacy_proto = out.File
-	file_poktroll_migration_legacy_proto_rawDesc = nil
-	file_poktroll_migration_legacy_proto_goTypes = nil
-	file_poktroll_migration_legacy_proto_depIdxs = nil
+	File_poktroll_migration_morse_offchain_proto = out.File
+	file_poktroll_migration_morse_offchain_proto_rawDesc = nil
+	file_poktroll_migration_morse_offchain_proto_goTypes = nil
+	file_poktroll_migration_morse_offchain_proto_depIdxs = nil
 }

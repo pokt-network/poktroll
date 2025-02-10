@@ -1,6 +1,6 @@
 ---
 title: Create a New Wallet
-sidebar_position: 1
+sidebar_position: 2
 ---
 
 # Create a New Wallet <!-- omit in toc -->

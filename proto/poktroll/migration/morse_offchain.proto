@@ -3,43 +3,65 @@ syntax = "proto3";
 // Types in this file are ONLY present to facilitate the verifiability of the
 // migration state from Morse to Shannon.
 //
+// These types reproduce a 1:1 de/serialization for the corresponding Morse data structures
+// but are not completely identical to their Morse counterparts, not all of which are defined
+// as protobuf types in the Morse codebase.
+//
+// Morse also leverages pb.Any types, as well as the gogoproto.casttype option in several places.
+// All usages of pb.Any have been replaced with equivalent protobuf types
+// (i.e. an interstitial type with `type` and/or `value` field(s)).
+// All usages of gogoproto.casttype which previously referenced Morse data structures have been removed.
+// A few specific fields have retained this option where the type is changed to the underlying
+// external lib type that the Morse type was wrapping (e.g. address and public key fields).
+//
 // These types are used by the migration subcommand to transform
 // the Morse state export into the Shannon state import.
 // Ref: `poktrolld migrate collect-morse-accounts ...`
 //
-// They ARE NOT persisted on-chain at any point.
+// They ARE NOT persisted on-chain (Shannon) at any point.
 package poktroll.migration;
 
 import "gogoproto/gogo.proto";
-import "poktroll/migration/types.proto";
+import "poktroll/migration/morse_onchain.proto";
 
 option go_package = "github.com/pokt-network/poktroll/x/migration/types";
 option (gogoproto.stable_marshaler_all) = true;
 
 // MorseStateExport is the data structure that is serialized and output when running
 // `pocket utils export-genesis-for-reset`.
+//
 // See: https://editor.swagger.io/?url=https://raw.githubusercontent.com/pokt-network/pocket-core/staging/doc/specs/rpc-spec.yaml#operations-query-post_query_state
 message MorseStateExport {
   // app_hash is the Morse tendermint state hash.
   string app_hash = 1 [(gogoproto.jsontag) = "app_hash"];
+
   // app_state is the entire Morse tendermint application state.
-  MorseAppState app_state = 2 [(gogoproto.jsontag) = "app_state"];
+  MorseTendermintAppState app_state = 2 [(gogoproto.jsontag) = "app_state"];
 }
 
-// MorseAppState is the tendermint application state for the Morse tendermint
+// MorseTendermintAppState is the tendermint application state for the Morse tendermint
 // application; not to be confused with the pokt protocol actor.
-message MorseAppState {
+// It is constructed in Morse via `PocketCoreApp#ExportAppState()`.
+//
+// See: https://github.com/pokt-network/pocket-core/blob/5fa61920aa9d45ca6bf9e01e863134e242c95fa7/app/pocket.go#L142
+message MorseTendermintAppState {
   MorseApplications application = 1 [(gogoproto.jsontag) = "application"];
   MorseAuth auth = 2 [(gogoproto.jsontag) = "auth"];
   MorsePos pos = 3 [(gogoproto.jsontag) = "pos"];
 }
 
 // A wrapper around the list of MorseApplications, necessary in order to conform to the Morse genesis structure.
+// It encapsulates the minimum information required to import Morse applications.
+//
+// See: https://github.com/pokt-network/pocket-core/blob/staging/x/apps/types/genesis.go#L4
 message MorseApplications {
   repeated MorseApplication applications = 1 [(gogoproto.jsontag) = "applications"];
 }
 
 // A wrapper around a list of Morse accounts.
+// It encapsulates the minimum information required to import Morse accounts.
+//
+// See: https://github.com/pokt-network/pocket-core/blob/staging/x/auth/types/genesis.go#L9
 message MorseAuth {
   repeated MorseAuthAccount accounts = 1 [(gogoproto.jsontag) = "accounts"];
 }
@@ -55,12 +77,15 @@ message MorseAuthAccount {
 
 // A wrapper around the list of Morse suppliers (aka "validators", "nodes", of "servicers").
 // It is necessary to conform to the Morse genesis structure.
+//
+// See: https://github.com/pokt-network/pocket-core/blob/staging/x/nodes/types/genesis.go#L8
 message MorsePos {
   repeated MorseValidator validators = 1 [(gogoproto.jsontag) = "validators"];
 }
 
 // MorseApplication is a subset of the Morse ProtoApplication type.
 // It encapsulates the minimum information required to import Morse applications.
+//
 // See: https://github.com/pokt-network/pocket-core/blob/staging/proto/x/apps/apps.proto#L16
 message MorseApplication {
   option (gogoproto.equal) = true;
@@ -79,6 +104,7 @@ message MorseApplication {
 
 // MorseValidator is a subset of the Morse ProtoValidator type.
 // It encapsulates the minimum information required to import Morse suppliers (aka "servicers" or "validators").
+//
 // See: https://github.com/pokt-network/pocket-core/blob/staging/proto/x/pos/types.proto#L16
 message MorseValidator {
   option (gogoproto.equal) = true;

@@ -23,6 +23,11 @@ var (
 	flagLogOutput           string
 	logger                  polylog.Logger
 
+	// DEV_NOTE: AutoCLI does not apply here because there is no gRPC service,
+	// message, or query. The purpose of this command is to facilitate the
+	// deterministic (i.e. reproducible) transformation from the Morse export
+	// data structure (MorseStateExport) into the Shannon import data structure
+	// (MorseAccountState). It does not interact with the network directly.
 	collectMorseAccountsCmd = &cobra.Command{
 	   Use:   "collect-morse-accounts [morse-state-export-path] [morse-account-state-path]",
 	   Args:  cobra.ExactArgs(2),
@@ -145,6 +150,10 @@ func validatePathIsFile(path string) error {
 
 // transformMorseState consolidates the Morse account balance, application stake,
 // and supplier stake for each account as an entry in the resulting MorseAccountState.
+// NOTE: In Shannon terms, "supplier" is equivalent to the following in Morse terms:
+// - "validator"
+// - "node"
+// - "servicer"
 func transformMorseState(
 	inputState *migrationtypes.MorseStateExport,
 	morseWorkspace *morseImportWorkspace,
@@ -185,7 +194,7 @@ func collectInputAccountBalances(inputState *migrationtypes.MorseStateExport, mo
 		}
 
 		accountAddr := exportAccount.Value.Address.String()
-		if _, _, err := morseWorkspace.ensureAccount(accountAddr, exportAccount); err != nil {
+		if _, _, err := morseWorkspace.addAccount(accountAddr, exportAccount); err != nil {
 			return err
 		}
 
@@ -251,7 +260,7 @@ func collectInputApplicationStakes(inputState *migrationtypes.MorseStateExport, 
 			)
 		}
 
-		morseWorkspace.lastAccTotalAppStake = morseWorkspace.lastAccTotalAppStake.Add(appStakeAmtUpokt)
+		morseWorkspace.accumulatedTotalAppStake = morseWorkspace.accumulatedTotalAppStake.Add(appStakeAmtUpokt)
 	}
 	return nil
 }
@@ -279,7 +288,7 @@ func collectInputSupplierStakes(inputState *migrationtypes.MorseStateExport, mor
 			)
 		}
 
-		morseWorkspace.lastAccTotalSupplierStake = morseWorkspace.lastAccTotalSupplierStake.Add(supplierStakeAmtUpokt)
+		morseWorkspace.accumulatedTotalSupplierStake = morseWorkspace.accumulatedTotalSupplierStake.Add(supplierStakeAmtUpokt)
 	}
 	return nil
 }

@@ -17,9 +17,9 @@ func newMorseImportWorkspace() *morseImportWorkspace {
 		accountState: &migrationtypes.MorseAccountState{
 			Accounts: make([]*migrationtypes.MorseAccount, 0),
 		},
-		lastAccTotalBalance:       cosmosmath.ZeroInt(),
-		lastAccTotalAppStake:      cosmosmath.ZeroInt(),
-		lastAccTotalSupplierStake: cosmosmath.ZeroInt(),
+		accumulatedTotalBalance:       cosmosmath.ZeroInt(),
+		accumulatedTotalAppStake:      cosmosmath.ZeroInt(),
+		accumulatedTotalSupplierStake: cosmosmath.ZeroInt(),
 	}
 }
 
@@ -34,16 +34,15 @@ type morseImportWorkspace struct {
 	// the input MorseStateExport into the output MorseAccountState.
 	accountState *migrationtypes.MorseAccountState
 
-	// lastAccTotalBalance is the most recently accumulated balances of all Morse
+	// accumulatedTotalBalance is the most recently accumulated balances of all Morse
 	// accounts which have been processed.
-	lastAccTotalBalance cosmosmath.Int
-	// lastAccTotalAppStake is the most recently accumulated application stakes of
+	accumulatedTotalBalance cosmosmath.Int
+	// accumulatedTotalAppStake is the most recently accumulated application stakes of
 	// all Morse accounts which have been processed.
-	lastAccTotalAppStake cosmosmath.Int
-	// lastAccTotalSupplierStake is the most recently accumulated supplier stakes of
+	accumulatedTotalAppStake cosmosmath.Int
+	// accumulatedTotalSupplierStake is the most recently accumulated supplier stakes of
 	// all Morse accounts which have been processed.
-	lastAccTotalSupplierStake cosmosmath.Int
-
+	accumulatedTotalSupplierStake cosmosmath.Int
 	// numAccounts is the number of accounts that have been processed.
 	numAccounts uint64
 	// numApplications is the number of applications that have been processed.
@@ -71,10 +70,10 @@ func (miw *morseImportWorkspace) debugLogProgress(accountIdx int) {
 		Uint64("num_accounts", miw.numAccounts).
 		Uint64("num_applications", miw.numApplications).
 		Uint64("num_suppliers", miw.numSuppliers).
-		Str("total_balance", miw.lastAccTotalBalance.String()).
-		Str("total_app_stake", miw.lastAccTotalAppStake.String()).
-		Str("total_supplier_stake", miw.lastAccTotalSupplierStake.String()).
-		Str("grand_total", miw.lastAccGrandTotal().String()).
+		Str("total_balance", miw.accumulatedTotalBalance.String()).
+		Str("total_app_stake", miw.accumulatedTotalAppStake.String()).
+		Str("total_supplier_stake", miw.accumulatedTotalSupplierStake.String()).
+		Str("grand_total", miw.accumulatedTotalsSum().String()).
 		Msg("processing accounts...")
 }
 
@@ -89,27 +88,27 @@ func (miw *morseImportWorkspace) infoLogComplete() error {
 		Uint64("num_accounts", miw.numAccounts).
 		Uint64("num_applications", miw.numApplications).
 		Uint64("num_suppliers", miw.numSuppliers).
-		Str("total_balance", miw.lastAccTotalBalance.String()).
-		Str("total_app_stake", miw.lastAccTotalAppStake.String()).
-		Str("total_supplier_stake", miw.lastAccTotalSupplierStake.String()).
-		Str("grand_total", miw.lastAccGrandTotal().String()).
+		Str("total_balance", miw.accumulatedTotalBalance.String()).
+		Str("total_app_stake", miw.accumulatedTotalAppStake.String()).
+		Str("total_supplier_stake", miw.accumulatedTotalSupplierStake.String()).
+		Str("grand_total", miw.accumulatedTotalsSum().String()).
 		Str("morse_account_state_hash", fmt.Sprintf("%x", accountStateHash)).
 		Msg("processing accounts complete")
 	return nil
 }
 
-// lastAccGrandTotal returns the sum of the lastAccTotalBalance, lastAccTotalAppStake,
-// and lastAccTotalSupplierStake.
-func (miw *morseImportWorkspace) lastAccGrandTotal() cosmosmath.Int {
-	return miw.lastAccTotalBalance.
-		Add(miw.lastAccTotalAppStake).
-		Add(miw.lastAccTotalSupplierStake)
+// accumulatedTotalsSum returns the sum of the accumulatedTotalBalance,
+// accumulatedTotalAppStake, and accumulatedTotalSupplierStake.
+func (miw *morseImportWorkspace) accumulatedTotalsSum() cosmosmath.Int {
+	return miw.accumulatedTotalBalance.
+		Add(miw.accumulatedTotalAppStake).
+		Add(miw.accumulatedTotalSupplierStake)
 }
 
-// ensureAccount ensures that the given address is present in the accounts slice
-// and that its corresponding address is in the addressToIdx map. If the address
-// is not present, it is added to the accounts slice and the addressToIdx map.
-func (miw *morseImportWorkspace) ensureAccount(
+// addAccount adds the account with the given address to the accounts slice and
+// its corresponding address is in the addressToIdx map.
+// If the address is already present, an error is returned.
+func (miw *morseImportWorkspace) addAccount(
 	addr string,
 	exportAccount *migrationtypes.MorseAuthAccount,
 ) (accountIdx uint64, balance cosmostypes.Coin, err error) {
@@ -118,15 +117,9 @@ func (miw *morseImportWorkspace) ensureAccount(
 
 	var ok bool
 	if accountIdx, ok = miw.addressToIdx[addr]; ok {
-		logger.Warn().Str("address", addr).Msg("unexpected workspace state: account already exists")
-
-		importAccount := miw.accountState.Accounts[accountIdx]
-		// Each account should have EXACTLY one token denomination.
-		if len(importAccount.Coins) != 1 {
-			err := ErrMorseStateTransform.Wrapf("account %q has multiple token denominations: %s", addr, importAccount.Coins)
-			return 0, cosmostypes.Coin{}, err
-		}
-		balance = importAccount.Coins[0]
+		return 0, cosmostypes.Coin{}, ErrMorseStateTransform.Wrapf(
+			"unexpected workspace state: account already exists (%s)", addr,
+		)
 	} else {
 		accountIdx = miw.nextIdx()
 		importAccount := &migrationtypes.MorseAccount{

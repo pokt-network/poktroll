@@ -14,8 +14,9 @@ message MorseAccountState {
   repeated MorseAccount accounts = 1 [(gogoproto.jsontag) = "accounts"];
 }
 
-// MorseAccount is an analog of the Morse ProtoBaseAccount type. It encapsulates
-// the minimum information required to import accounts.
+// MorseAccount is an analog of the Morse ProtoBaseAccount type.
+// It encapsulates the minimum information required to import accounts.
+//
 // See: https://github.com/pokt-network/pocket-core/blob/staging/proto/x/auth/auth.proto#L14.
 message MorseAccount {
   option (gogoproto.messagename) = true;
@@ -23,6 +24,7 @@ message MorseAccount {
   option (gogoproto.goproto_stringer) = true;
   option (cosmos_proto.implements_interface) = "Account";
 
+  // A binary representation of the address corresponding to a Morse application's ed25519 public key.
   bytes address = 1 [(gogoproto.jsontag) = "address", (gogoproto.casttype) = "github.com/cometbft/cometbft/crypto.Address"];
   MorsePublicKey pub_key = 2 [(gogoproto.jsontag) = "public_key", (gogoproto.moretags) = "yaml:\"public_key\""];
   repeated cosmos.base.v1beta1.Coin coins = 3 [(gogoproto.nullable) = false, (gogoproto.jsontag) = "coins"];
