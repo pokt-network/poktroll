@@ -4610,12 +4610,10 @@ func (x *MorseAuth) GetAccounts() []*MorseAuthAccount {
 	return nil
 }
 
-// A wrapper around Morse account information, necessary in order to to conform to the Morse genesis
-// structure. Morse originally serialized accounts as pb.Any types in order to support multiple
-// account types. For the purposes of the Morse -> Shannon migration, we're only concerned with
-// externally owned accounts (as opposed to module accounts). As a result, we're simplifying its
-// representation in Shannon by avoiding usage of pb.Any. It is necessary in order to conform to
-// the Morse genesis structure.
+// MorseAccount:
+// * Wraps Morse account information to conform to Morse genesis structure
+// * Represents only externally owned accounts (not module accounts)
+// * Avoids pb.Any serialization since only external accounts needed for migration
 type MorseAuthAccount struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache

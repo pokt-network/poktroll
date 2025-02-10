@@ -178,10 +178,6 @@ func transformMorseState(
 // adds the balances to the corresponding account balances in the morseWorkspace.
 func collectInputAccountBalances(inputState *migrationtypes.MorseStateExport, morseWorkspace *morseImportWorkspace) error {
 	for exportAccountIdx, exportAccount := range inputState.AppState.Auth.Accounts {
-		if shouldDebugLogProgress(exportAccountIdx) {
-			morseWorkspace.debugLogProgress(exportAccountIdx)
-		}
-
 		// DEV_NOTE: Ignore module accounts.
 		if exportAccount.Type != "posmint/Account" {
 			logger.Warn().
@@ -225,6 +221,17 @@ func collectInputAccountBalances(inputState *migrationtypes.MorseStateExport, mo
 				coin, accountAddr, err,
 			)
 		}
+
+		morseWorkspace.accumulatedTotalBalance = morseWorkspace.accumulatedTotalBalance.Add(coin.Amount)
+
+		if shouldDebugLogProgress(exportAccountIdx) {
+			logger.Debug().
+				Int("account_idx", exportAccountIdx).
+				Uint64("num_accounts", morseWorkspace.getNumAccounts()).
+				Str("total_balance", morseWorkspace.accumulatedTotalBalance.String()).
+				Str("grand_total", morseWorkspace.accumulatedTotalsSum().String()).
+				Msg("processing account balances...")
+		}
 	}
 	return nil
 }
@@ -239,7 +246,7 @@ func shouldDebugLogProgress(exportAccountIdx int) bool {
 // collectInputApplicationStakes iterates over the applications in the inputState and
 // adds the stake to the corresponding account balances in the morseWorkspace.
 func collectInputApplicationStakes(inputState *migrationtypes.MorseStateExport, morseWorkspace *morseImportWorkspace) error {
-	for _, exportApplication := range inputState.AppState.Application.Applications {
+	for exportApplicationIdx, exportApplication := range inputState.AppState.Application.Applications {
 		appAddr := exportApplication.Address.String()
 
 		// DEV_NOTE: An account SHOULD exist for each actor.
@@ -260,6 +267,17 @@ func collectInputApplicationStakes(inputState *migrationtypes.MorseStateExport, 
 		}
 
 		morseWorkspace.accumulatedTotalAppStake = morseWorkspace.accumulatedTotalAppStake.Add(appStakeAmtUpokt)
+		morseWorkspace.numApplications++
+
+		if shouldDebugLogProgress(exportApplicationIdx) {
+			logger.Debug().
+				Int("application_idx", exportApplicationIdx).
+				Uint64("num_accounts", morseWorkspace.getNumAccounts()).
+				Uint64("num_applications", morseWorkspace.numApplications).
+				Str("total_app_stake", morseWorkspace.accumulatedTotalAppStake.String()).
+				Str("grand_total", morseWorkspace.accumulatedTotalsSum().String()).
+				Msg("processing application stakes...")
+		}
 	}
 	return nil
 }
@@ -267,7 +285,7 @@ func collectInputApplicationStakes(inputState *migrationtypes.MorseStateExport, 
 // collectInputSupplierStakes iterates over the suppliers in the inputState and
 // adds the stake to the corresponding account balances in the morseWorkspace.
 func collectInputSupplierStakes(inputState *migrationtypes.MorseStateExport, morseWorkspace *morseImportWorkspace) error {
-	for _, exportSupplier := range inputState.AppState.Pos.Validators {
+	for exportSupplierIdx, exportSupplier := range inputState.AppState.Pos.Validators {
 		supplierAddr := exportSupplier.Address.String()
 
 		// DEV_NOTE: An account SHOULD exist for each actor.
@@ -288,6 +306,17 @@ func collectInputSupplierStakes(inputState *migrationtypes.MorseStateExport, mor
 		}
 
 		morseWorkspace.accumulatedTotalSupplierStake = morseWorkspace.accumulatedTotalSupplierStake.Add(supplierStakeAmtUpokt)
+		morseWorkspace.numSuppliers++
+
+		if shouldDebugLogProgress(exportSupplierIdx) {
+			logger.Debug().
+				Int("supplier_idx", exportSupplierIdx).
+				Uint64("num_accounts", morseWorkspace.getNumAccounts()).
+				Uint64("num_suppliers", morseWorkspace.numSuppliers).
+				Str("total_supplier_stake", morseWorkspace.accumulatedTotalSupplierStake.String()).
+				Str("grand_total", morseWorkspace.accumulatedTotalsSum().String()).
+				Msg("processing accounts...")
+		}
 	}
 	return nil
 }

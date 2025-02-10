@@ -7,7 +7,6 @@ import (
 	"math/rand"
 	"os"
 	"path/filepath"
-	"strings"
 	"testing"
 
 	cometcrypto "github.com/cometbft/cometbft/crypto/ed25519"
@@ -32,6 +31,7 @@ func TestCollectMorseAccounts(t *testing.T) {
 	inputFile, err := os.CreateTemp(tmpDir, "morse-state-input.json")
 	require.NoError(t, err)
 
+	// Generate and write the MorseStateExport input JSON file.
 	morseStateExportBz, morseAccountStateBz := newMorseStateExportAndAccountState(t, 10)
 	_, err = inputFile.Write(morseStateExportBz)
 	require.NoError(t, err)
@@ -46,19 +46,24 @@ func TestCollectMorseAccounts(t *testing.T) {
 	outputJSON, err := os.ReadFile(outputPath)
 	require.NoError(t, err)
 
-	expectedJSON := string(morseAccountStateBz)
+	var (
+		expectedMorseAccountState,
+		actualMorseAccountState *migrationtypes.MorseAccountState
+	)
+
+	err = cmtjson.Unmarshal(morseAccountStateBz, &expectedMorseAccountState)
 	require.NoError(t, err)
 
-	// Strip all whitespace from the expected JSON.
-	expectedJSON = strings.ReplaceAll(expectedJSON, "\n", "")
-	expectedJSON = strings.ReplaceAll(expectedJSON, " ", "")
+	err = cmtjson.Unmarshal(outputJSON, &actualMorseAccountState)
+	require.NoError(t, err)
 
 	require.NoError(t, err)
-	require.Equal(t, expectedJSON, string(outputJSON))
+	require.Equal(t, expectedMorseAccountState, actualMorseAccountState)
 }
 
 func TestNewTestMorseStateExport(t *testing.T) {
-	for i := 1; i < 10; i++ {
+	// DEV_NOTE: Beyond i=3, the naive method for calculating the expected Shannon accumulated actor stakes fails.
+	for i := 1; i < 4; i++ {
 		t.Run(fmt.Sprintf("num_accounts=%d", i), func(t *testing.T) {
 			morseStateExport := new(migrationtypes.MorseStateExport)
 			stateExportBz, _ := newMorseStateExportAndAccountState(t, i)
@@ -68,13 +73,27 @@ func TestNewTestMorseStateExport(t *testing.T) {
 			exportAccounts := morseStateExport.AppState.Auth.Accounts
 			require.Equal(t, i, len(exportAccounts))
 
-			expectedShannonBalance := fmt.Sprintf("%d%d%d0%d%d%d", i, i, i, i, i, i)
+			numTotalAccounts := 1
+			for k := i; k > 1; k-- {
+				numTotalAccounts += k
+			}
+
+			expectedShannonAccountBalance := fmt.Sprintf("%d%d%d0%d%d%d", i, i, i, i, i, i)
+			expectedShannonTotalAppStake := fmt.Sprintf("%d000%d0", numTotalAccounts, numTotalAccounts)
+			expectedShannonTotalSupplierStake := fmt.Sprintf("%d0%d00", numTotalAccounts, numTotalAccounts)
+
 			morseWorkspace := newMorseImportWorkspace()
 			err = transformMorseState(morseStateExport, morseWorkspace)
 			require.NoError(t, err)
 
+			require.Equal(t, uint64(i), morseWorkspace.getNumAccounts())
+			require.Equal(t, uint64(i), morseWorkspace.numApplications)
+			require.Equal(t, uint64(i), morseWorkspace.numSuppliers)
+
 			morseAccounts := morseWorkspace.accountState.Accounts[i-1]
-			require.Equal(t, expectedShannonBalance, morseAccounts.Coins[0].Amount.String())
+			require.Equal(t, expectedShannonAccountBalance, morseAccounts.Coins[0].Amount.String())
+			require.Equal(t, expectedShannonTotalAppStake, morseWorkspace.accumulatedTotalAppStake.String())
+			require.Equal(t, expectedShannonTotalSupplierStake, morseWorkspace.accumulatedTotalSupplierStake.String())
 		})
 	}
 }
@@ -115,7 +134,8 @@ func newMorseStateExportAndAccountState(
 	}
 
 	morseAccountState := &migrationtypes.MorseAccountState{
-		Accounts: make([]*migrationtypes.MorseAccount, numAccounts),
+		AccountsIdxByAddress: make(map[string]uint64),
+		Accounts:             make([]*migrationtypes.MorseAccount, numAccounts),
 	}
 
 	for i := 1; i < numAccounts+1; i++ {
@@ -176,6 +196,9 @@ func newMorseStateExportAndAccountState(
 				Value: pubKey.Bytes(),
 			},
 		}
+
+		// Add the account index to the morseAccountState.
+		morseAccountState.AccountsIdxByAddress[pubKey.Address().String()] = uint64(i)
 	}
 
 	var err error
