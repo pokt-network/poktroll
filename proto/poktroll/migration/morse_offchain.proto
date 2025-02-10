@@ -115,6 +115,7 @@ message MorseValidator {
   bytes address = 1 [(gogoproto.casttype) = "github.com/cometbft/cometbft/crypto.Address", (gogoproto.moretags) = "yaml:\"address\"", (gogoproto.jsontag) = "address"];
   // The binary representation of a Morse application's ed25519 public key.
   bytes public_key = 2 [(gogoproto.moretags) = "yaml:\"public_key\"", (gogoproto.jsontag) = "public_key"];
+  // TODO_MAINNET(@Olshansk):  Should status or jailed be considered during the migration, and if so, how?
   bool jailed = 3 [(gogoproto.jsontag) = "jailed"];
   int32 status = 4 [(gogoproto.jsontag) = "status"];
   // The string representation of the BigInt amount of upokt.
