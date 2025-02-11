@@ -58,8 +58,14 @@ If you encounter any issues, like being unable to install the latest version, yo
 ```bash
 brew update
 brew upgrade poktrolld
+```
+
+Or as a last resort, you can try the following:
+
+```bash
 brew tap --repair
 brew untap pokt-network/poktroll
+brew uninstall poktrolld
 brew tap pokt-network/poktroll
 brew install poktrolld
 ```
