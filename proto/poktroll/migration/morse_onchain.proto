@@ -33,10 +33,52 @@ message MorseAccount {
   // The ed25519 public key of the account.
   MorsePublicKey pub_key = 2 [(gogoproto.jsontag) = "public_key", (gogoproto.moretags) = "yaml:\"public_key\""];
 
+  enum MorseAccountType {
+    MORSE_ACCOUNT_UNSPECIFIED = 0;
+    MORSE_ACCOUNT_APPLICATION = 1;
+    MORSE_ACCOUNT_NODE = 2;
+  }
+
   // The amount of uPOKT held by the account.
   // TODO_IN_THIS_PR: #PUC how we distinguish staked tokens from regular tokens?
-  repeated cosmos.base.v1beta1.Coin coins = 3 [(gogoproto.nullable) = false, (gogoproto.jsontag) = "coins"];
+  // repeated cosmos.base.v1beta1.Coin coins = 3 [(gogoproto.nullable) = false, (gogoproto.jsontag) = "coins"];
+  // TODO_MAINNET/UPNEXT
+  repeated cosmos.base.v1beta1.Coin staked_coins = 3 [(gogoproto.nullable) = false, (gogoproto.jsontag) = "coins"];
+  repeated cosmos.base.v1beta1.Coin unstaked_coins = 3 [(gogoproto.nullable) = false, (gogoproto.jsontag) = "coins"];
 }
+
+// Goals:
+// 1. Minimizing on-chain
+// 2. PR exhaustion + iterating on main
+// 3. Olshansky will update TODO_IN_THIS_PR
+// 4.
+
+// TODO_MAINNET: Enforce AppStake & SupplierStake is mapped 1:1 between Morse & Shannon during staked claiming
+// Open Questions to enable enforcing the above:
+// - Minimum stake amounts (e.g. adjust parameters)
+// -
+
+addr1: 200 POKT
+
+I am a morse Application (addr1)
+- 100 stakd POKT
+- 100 unstaked POKT
+
+ClaimAsApplication(config; ):
+- 100 staked POKT
+- 100 unstaked POKT
+
+Example:
+- Addr1 is staked in Morse (as supplier)
+- Addr1 claims as application in Shannon
+
+
+
+Case 1 (incorrect)
+- ClaimAsApplication(config.stake=99 POKT)
+-> error (ShannonClaimStake != MorseStake)
+
+
 
 // MorsePublicKey is required to conform to the encoding of the Morse state export.
 // NB: All Morse account public keys will be ed25519 keys by definition.
