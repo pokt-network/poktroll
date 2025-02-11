@@ -53,9 +53,10 @@ message QueryGetApplicationResponse {
 
 message QueryAllApplicationsRequest {
   cosmos.base.query.v1beta1.PageRequest pagination = 1;
-  // TODO_MAINNET(@adshmh): rename this field to `gateway_address_delegated_to`
-  // delegatee_gateway_address, if specified, filters the application list to only include those with delegation to the specified gateway address.
-  string delegatee_gateway_address = 2;
+
+  oneof filter {
+    string gateway_address_delegated_to = 2; // filters applications that delegate to the specified gateway address
+  }
 }
 
 message QueryAllApplicationsResponse {

@@ -22,7 +22,10 @@ var _ = strconv.IntSize
 func TestSupplierQuerySingle(t *testing.T) {
 	supplierModuleKeepers, ctx := keepertest.SupplierKeeper(t)
 	suppliers := createNSuppliers(*supplierModuleKeepers.Keeper, ctx, 2)
+<<<<<<< HEAD
+=======
 	supplierAddr := sample.AccAddress()
+>>>>>>> main
 
 	tests := []struct {
 		desc        string
@@ -49,7 +52,11 @@ func TestSupplierQuerySingle(t *testing.T) {
 			request: &types.QueryGetSupplierRequest{
 				OperatorAddress: supplierAddr,
 			},
+<<<<<<< HEAD
+			expectedErr: status.Error(codes.NotFound, "supplier with address: \"100000\""),
+=======
 			expectedErr: status.Error(codes.NotFound, fmt.Sprintf("supplier with address: \"%s\"", supplierAddr)),
+>>>>>>> main
 		},
 		{
 			desc:        "InvalidRequest",
@@ -135,17 +142,28 @@ func TestSupplierQueryPaginated(t *testing.T) {
 
 func TestSupplierQueryFilterByServiceId(t *testing.T) {
 	supplierModuleKeepers, ctx := keepertest.SupplierKeeper(t)
+<<<<<<< HEAD
+	msgs := createNSuppliers(*supplierModuleKeepers.Keeper, ctx, 5)
+
+	// Get the first service ID from the first supplier to use as filter
+	firstServiceId := msgs[0].Services[0].ServiceId
+=======
 	suppliers := createNSuppliers(*supplierModuleKeepers.Keeper, ctx, 5)
 
 	// Get the first service ID from the first supplier to use as filter
 	firstServiceId := suppliers[0].Services[0].ServiceId
+>>>>>>> main
 
 	request := &types.QueryAllSuppliersRequest{
 		Filter: &types.QueryAllSuppliersRequest_ServiceId{
 			ServiceId: firstServiceId,
 		},
 		Pagination: &query.PageRequest{
+<<<<<<< HEAD
+			Limit: uint64(len(msgs)),
+=======
 			Limit: uint64(len(suppliers)),
+>>>>>>> main
 		},
 	}
 

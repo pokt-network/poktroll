@@ -47,6 +47,10 @@ func (k Keeper) AllSuppliers(
 				return status.Error(codes.Internal, err.Error())
 			}
 
+<<<<<<< HEAD
+			// Filter out the supplier if the request specifies a serviceId as a constraint and the supplier
+=======
+>>>>>>> main
 			serviceIdFilter := req.GetServiceId()
 			if serviceIdFilter != "" {
 				hasService := false
@@ -62,10 +66,13 @@ func (k Keeper) AllSuppliers(
 				}
 			}
 
+<<<<<<< HEAD
+=======
 			// TODO_MAINNET(@olshansk, #1033): Newer version of the CosmosSDK doesn't support maps.
 			// Decide on a direction w.r.t maps in protos based on feedback from the CosmoSDK team.
 			supplier.ServicesActivationHeightsMap = nil
 
+>>>>>>> main
 			suppliers = append(suppliers, supplier)
 			return nil
 		},

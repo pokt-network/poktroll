@@ -2,7 +2,7 @@ module github.com/pokt-network/poktroll
 
 go 1.23.0
 
-// replace (
+replace (
 // DEVELOPER_TIP: Uncomment to use a local copy of shannon-sdk for development purposes.
 // github.com/pokt-network/shannon-sdk => ../shannon-sdk
 
@@ -10,7 +10,7 @@ go 1.23.0
 // github.com/pokt-network/smt => ../smt
 // github.com/pokt-network/smt/kvstore/badger => ../smt/kvstore/badger
 // github.com/pokt-network/smt/kvstore/pebble => ../smt/kvstore/pebble
-// )
+)
 
 // replace broken goleveldb
 replace github.com/syndtr/goleveldb => github.com/syndtr/goleveldb v1.0.1-0.20210819022825-2ae1ddf74ef7
