@@ -11,10 +11,25 @@ option (gogoproto.stable_marshaler_all) = true;
 
 // MorseAccountState is the onchain representation of the imported account state from Morse.
 message MorseAccountState {
-  // TODO_IN_THIS_PR: #PUC to the rationale of needing to index this.
+  // TODO_MAINNET(@bryanchriswhite): Explain the rationale of this mapping/index/#PUC or refactor.
   map<string, uint64> accounts_idx_by_address = 1 [(gogoproto.jsontag) = "accounts_idx_by_address", (gogoproto.moretags) = "yaml:\"accounts_idx_by_address\""];
   repeated MorseAccount accounts = 2 [(gogoproto.jsontag) = "accounts", (gogoproto.moretags) = "yaml:\"accounts\""];
 }
+
+// TODO_MAINNET(@bryanchriswhite): Refactor morse_onchain and morse_offchain to support
+// the full all migration requirements.
+// This is being merged in as an interim step in #1039 but will not be the final implementation.
+// Example:
+// 1. Assume a Supplier in Morse with 100 staked POKT (in escrow) and 100 unstaked POKT (balance)
+// 2. When ClaimPOKTMorseAsSupplier is called:
+// - A single new Supplier in Shannon will be staked with 100 POKT (escrow) and 100 POKT (balance)
+// - The configs (i.e. the data) staked for can vary as long as the total POKT (staked + unstaked) is equivalent
+// - The following situations ARE NOT allowed:
+//    - Claiming different variations of total amounts (e.g. 99 unstaked POKT + 101 staked POKT)
+//    - Partial claiming (e.g. 1 staked POKT + 1 unstaked POKT)
+//    - Claiming to multiple Supplier
+// 3. The above needs to be done for each actor
+// 4. Caveats: edge cases like "min stake amounts" will be accounted for in the operational process to ensure they're non issues
 
 // MorseAccount is an analog of the Morse ProtoBaseAccount type.
 // It encapsulates the minimum information required to import accounts.
@@ -26,59 +41,17 @@ message MorseAccount {
   option (gogoproto.goproto_stringer) = true;
   option (cosmos_proto.implements_interface) = "Account";
 
-  // A binary representation of the address corresponding to a Morse application's ed25519 public key.
-  // TODO_IN_THIS_PR: #PUC if this is hex or not?
+  // address is a binary (not hex) representation of the Account's ed25519 public key.
   bytes address = 1 [(gogoproto.jsontag) = "address", (gogoproto.casttype) = "github.com/cometbft/cometbft/crypto.Address"];
 
   // The ed25519 public key of the account.
   MorsePublicKey pub_key = 2 [(gogoproto.jsontag) = "public_key", (gogoproto.moretags) = "yaml:\"public_key\""];
 
-  enum MorseAccountType {
-    MORSE_ACCOUNT_UNSPECIFIED = 0;
-    MORSE_ACCOUNT_APPLICATION = 1;
-    MORSE_ACCOUNT_NODE = 2;
-  }
-
-  // The amount of uPOKT held by the account.
-  // TODO_IN_THIS_PR: #PUC how we distinguish staked tokens from regular tokens?
-  // repeated cosmos.base.v1beta1.Coin coins = 3 [(gogoproto.nullable) = false, (gogoproto.jsontag) = "coins"];
-  // TODO_MAINNET/UPNEXT
-  repeated cosmos.base.v1beta1.Coin staked_coins = 3 [(gogoproto.nullable) = false, (gogoproto.jsontag) = "coins"];
-  repeated cosmos.base.v1beta1.Coin unstaked_coins = 3 [(gogoproto.nullable) = false, (gogoproto.jsontag) = "coins"];
+  // The amount of uPOKT held by the account
+  // TODO_MAINNET(@bryanchriswhite): Refactor to another approach supporting the new requirements to claim as a staked actor.
+  // This could be a split to "staked_coins" + "unstaked_coins" (as an example), but any other approaches is valid.
+  repeated cosmos.base.v1beta1.Coin coins = 3 [(gogoproto.nullable) = false, (gogoproto.jsontag) = "coins"];
 }
-
-// Goals:
-// 1. Minimizing on-chain
-// 2. PR exhaustion + iterating on main
-// 3. Olshansky will update TODO_IN_THIS_PR
-// 4.
-
-// TODO_MAINNET: Enforce AppStake & SupplierStake is mapped 1:1 between Morse & Shannon during staked claiming
-// Open Questions to enable enforcing the above:
-// - Minimum stake amounts (e.g. adjust parameters)
-// -
-
-addr1: 200 POKT
-
-I am a morse Application (addr1)
-- 100 stakd POKT
-- 100 unstaked POKT
-
-ClaimAsApplication(config; ):
-- 100 staked POKT
-- 100 unstaked POKT
-
-Example:
-- Addr1 is staked in Morse (as supplier)
-- Addr1 claims as application in Shannon
-
-
-
-Case 1 (incorrect)
-- ClaimAsApplication(config.stake=99 POKT)
--> error (ShannonClaimStake != MorseStake)
-
-
 
 // MorsePublicKey is required to conform to the encoding of the Morse state export.
 // NB: All Morse account public keys will be ed25519 keys by definition.

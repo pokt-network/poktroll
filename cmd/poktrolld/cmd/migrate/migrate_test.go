@@ -20,9 +20,10 @@ import (
 	migrationtypes "github.com/pokt-network/poktroll/x/migration/types"
 )
 
-// TODO_IN_THIS_PR: Add a TODO to an E2E assuming this approach is sufficient
-// for what we need to do: https://github.com/pokt-network/poktroll/pull/1039#discussion_r1947036729
-// Not in CI. Get the user to run wget and download the 90GB, and verify things on their computer.
+// TODO_MAINNET(@bryanchriswhite): Add an E2E/integration test using real data.
+// Note: This test should not be included in CI due to its size (90GB).
+// Users should manually run wget to download the data and verify it on their computer.
+// Reference: https://github.com/pokt-network/poktroll/pull/1039#discussion_r1947036729
 
 func init() {
 	logger = polyzero.NewLogger(polyzero.WithLevel(polyzero.DebugLevel))
