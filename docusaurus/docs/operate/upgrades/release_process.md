@@ -7,10 +7,10 @@ sidebar_position: 4
 
 - [1. Determine if the Release is Consensus-Breaking](#1-determine-if-the-release-is-consensus-breaking)
 - [2. Create a GitHub Release](#2-create-a-github-release)
-  - [Legend](#legend)
-- [3. Write an Upgrade Plan](#3-write-an-upgrade-plan)
-- [4. Issue Upgrade on TestNet](#4-issue-upgrade-on-testnet)
-- [5. Issue Upgrade on MainNet](#5-issue-upgrade-on-mainnet)
+- [3. Update the homebrew-tap formula](#3-update-the-homebrew-tap-formula)
+- [4. Write an Upgrade Plan](#4-write-an-upgrade-plan)
+- [5. Issue Upgrade on TestNet](#5-issue-upgrade-on-testnet)
+- [6. Issue Upgrade on MainNet](#6-issue-upgrade-on-mainnet)
 
 :::info
 This document is for the Pocket Network protocol team's internal use only.
@@ -67,14 +67,26 @@ such as https://github.com/pokt-network/poktroll/blob/main/app/upgrades/historic
 <!-- GitHub Release Notes continue here -->
 ```
 
-#### Legend
+**Legend**:
 
 - ✅ - Yes
 - ❌ - No
 - ❓ - Unknown/To Be Determined
 - ⚠️ - Warning/Caution Required
 
-### 3. Write an Upgrade Plan
+### 3. Update the homebrew-tap formula
+
+```bash
+git clone git@github.com:pokt-network/homebrew-poktroll.git
+cd homebrew-poktroll
+make tap_update_version
+git commit -am "Update poktroll tap from v.X1.Y1.Z1 to vX1.Y2.Z2
+git push
+```
+
+See the [poktrolld CLI docs](../../tools/user_guide/poktrolld_cli.md) for more information.
+
+### 4. Write an Upgrade Plan
 
 Protocol upgrades are only necessary for `consensus-breaking` changes. However, we can still issue an upgrade transaction to require Full Nodes and Validators to use a new version.
 
@@ -90,12 +102,12 @@ You can use the following template as a starting point.
 - [ ] Prepare a contingency plan to address potential issues.
 ```
 
-### 4. Issue Upgrade on TestNet
+### 5. Issue Upgrade on TestNet
 
 - Follow the [Upgrade Procedure](./upgrade_procedure.md) to upgrade existing/running Full Nodes and Validators to the new version of `poktroll`.
 - Monitor the network's health metrics to identify any significant changes, such as the loss of many validators due to an unexpected consensus-breaking change.
 
-### 5. Issue Upgrade on MainNet
+### 6. Issue Upgrade on MainNet
 
 - Repeat the upgrade process on the MainNet, following the same steps as on the TestNet.
 - Ensure that the upgrade height is set correctly and communicated to the community.
