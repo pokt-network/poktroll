@@ -45,6 +45,7 @@ message QueryParamsResponse {
 
 message QueryGetSupplierRequest {
   string operator_address = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+  // TODO_TECHDEBT: Add the ability to query for a supplier by owner_id
 }
 
 message QueryGetSupplierResponse {
@@ -53,6 +54,10 @@ message QueryGetSupplierResponse {
 
 message QueryAllSuppliersRequest {
   cosmos.base.query.v1beta1.PageRequest pagination = 1;
+
+  oneof filter {
+    string service_id = 2; // unique service identifier to filter by
+  }
 }
 
 message QueryAllSuppliersResponse {

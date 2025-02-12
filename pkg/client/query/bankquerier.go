@@ -15,7 +15,7 @@ import (
 var _ client.BankQueryClient = (*bankQuerier)(nil)
 
 // bankQuerier is a wrapper around the banktypes.QueryClient that enables the
-// querying of on-chain balance information.
+// querying of onchain balance information.
 type bankQuerier struct {
 	clientConn  grpc.ClientConn
 	bankQuerier banktypes.QueryClient

@@ -90,7 +90,7 @@ func GetRelayDifficultyProbability(relayDifficultyHash []byte) *big.Rat {
 }
 
 // GetRelayDifficultyMultiplier returns the inverse of GetRelayDifficultyProbability
-// to scale on-chain volume applicable relays to estimated serviced off-chain relays.
+// to scale onchain volume applicable relays to estimated serviced offchain relays.
 func GetRelayDifficultyMultiplier(relayDifficultyHash []byte) *big.Rat {
 	probability := GetRelayDifficultyProbability(relayDifficultyHash)
 	return new(big.Rat).Inv(probability)

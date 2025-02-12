@@ -45,7 +45,7 @@ func (k Keeper) EndBlockerPruneAppToGatewayPendingUndelegation(ctx sdk.Context) 
 }
 
 // GetNumBlocksUndelegationRetention returns the number of blocks for which
-// undelegations should be kept before being pruned, given the current on-chain
+// undelegations should be kept before being pruned, given the current onchain
 // shared module parameters.
 func (k Keeper) GetNumBlocksUndelegationRetention(ctx context.Context) int64 {
 	sharedParams := k.sharedKeeper.GetParams(ctx)

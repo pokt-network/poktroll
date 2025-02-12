@@ -26,7 +26,7 @@ type ringCache struct {
 	ringsByAddr   map[string]*ring.Ring
 	ringsByAddrMu *sync.RWMutex
 
-	// delegationClient is used to listen for on-chain delegation events and
+	// delegationClient is used to listen for onchain delegation events and
 	// invalidate entries in ringsByAddr if an associated updated has been made.
 	delegationClient client.DelegationClient
 
@@ -66,7 +66,7 @@ func NewRingCache(deps depinject.Config) (_ crypto.RingCache, err error) {
 	return rc, nil
 }
 
-// Start starts the ring cache by subscribing to on-chain redelegation events.
+// Start starts the ring cache by subscribing to onchain redelegation events.
 func (rc *ringCache) Start(ctx context.Context) {
 	rc.logger.Info().Msg("starting ring cache")
 	// Stop the ringCache when the context is cancelled.
@@ -106,7 +106,7 @@ func (rc *ringCache) goInvalidateCache(ctx context.Context) {
 		})
 }
 
-// Stop stops the ring cache by unsubscribing from on-chain redelegation events
+// Stop stops the ring cache by unsubscribing from onchain redelegation events
 // and clears any existing entries.
 func (rc *ringCache) Stop() {
 	// Clear the cache.

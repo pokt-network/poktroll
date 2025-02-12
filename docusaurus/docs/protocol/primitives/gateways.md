@@ -22,13 +22,13 @@ to all readers.
 - [Application -\> Gateway Delegation](#application---gateway-delegation)
 - [Relay Signatures](#relay-signatures)
   - [Delegating Application Example](#delegating-application-example)
-- [\[WIP\] Gateway Off-Chain Operations](#wip-gateway-off-chain-operations)
+- [\[WIP\] Gateway Offchain Operations](#wip-gateway-offchain-operations)
 
 ## Introduction
 
 The [Gateway Actor](../../protocol/actors/gateway.md) section covers what a Gateway is.
 Recall that it is a permissionless protocol actor to whom the Application can
-**optionally** delegate on-chain trust in order to perform off-chain operations.
+**optionally** delegate onchain trust in order to perform offchain operations.
 
 This section aims to cover the cryptographic aspects of Gateway interactions,
 trust delegation, and how they fit into the Pocket Network protocol.
@@ -42,22 +42,22 @@ There are three modes of operation to interact with the Suppliers on the network
 3. **Gateway Application**: Client trusts Gateway to sign relays on behalf of its Application
 
 For the purposes of this discussion, it is important to note that an `Application`
-and `Gateway` are on-chain actors/records that stake POKT to participate in the
+and `Gateway` are onchain actors/records that stake POKT to participate in the
 network. The term `Client` is used to represent an application running on a user's
 device, such as a smartphone or a web browser.
 
-The goal of Gateways is to enable free-market off-chain economics tie into
-on-chain interactions.
+The goal of Gateways is to enable free-market offchain economics tie into
+onchain interactions.
 
 ### Sovereign Application
 
-A Sovereign Application is one where the `Client` manages its own on-chain `Application`
+A Sovereign Application is one where the `Client` manages its own onchain `Application`
 and interacts with the Pocket Supplier Network directly.
 
 The Application is responsible for:
 
 - Protecting it's own `Application` private key on the `Client`
-- Maintaining and updating it's own on-chain stake to pay for `Supplier` services
+- Maintaining and updating it's own onchain stake to pay for `Supplier` services
 - Determining which `Supplier` to use from the available list in the session
 
 ```mermaid
@@ -88,13 +88,13 @@ sequenceDiagram
 
 A Delegated Application is one where an `Application` delegates to one or more
 `Gateways`. Agreements (authentication, payments, etc) between the `Client` and
-`Gateway` are then managed off-chain, but payment for the on-chain `Supplier`
+`Gateway` are then managed offchain, but payment for the onchain `Supplier`
 services still comes from the `Application`s stake.
 
 The Application is responsible for:
 
 - Protecting it's own `Application` private key somewhere in hot/cold storage
-- Maintaining and updating it's own on-chain stake to pay for `Supplier` services
+- Maintaining and updating it's own onchain stake to pay for `Supplier` services
 - Managing, through (un)delegation, which Gateway(s) can sign requests on ts behalf
 
 The Gateway is responsible for:
@@ -138,10 +138,10 @@ sequenceDiagram
 ### Gateway Application
 
 A Gateway Application is one where the `Gateway` takes full onus, on behalf of
-`Client`s to manage all on-chain `Application` interactions to access the
+`Client`s to manage all onchain `Application` interactions to access the
 Pocket `Supplier` Network. Agreements (authentication, payments, etc) between
-the `Client` and `Gateway` are then managed off-chain, and payment for the
-on-chain `Supplier` services will comes from the `Application`s stake, which
+the `Client` and `Gateway` are then managed offchain, and payment for the
+onchain `Supplier` services will comes from the `Application`s stake, which
 is now maintained by the `Gateway`.
 
 It is responsible for:
@@ -149,7 +149,7 @@ It is responsible for:
 The Gateway is responsible for:
 
 - Protecting it's own `Application` private key somewhere in hot/cold storage
-- Maintaining and updating it's own on-chain stake to pay for `Supplier` services
+- Maintaining and updating it's own onchain stake to pay for `Supplier` services
 - Providing tooling and infrastructure to coordinate with the `Client`
 - Determining which `Supplier` to use from the available list in the session
 
@@ -188,7 +188,7 @@ sequenceDiagram
 An Application that chooses to delegate trust to a gateway by submitting a
 one-time `DelegateMsg` transaction. Once this is done, the `Gateway` will be
 able to sign relay requests on behalf of the `Application` that'll use the
-`Application`s on-chain stake to pay for service to access the Pocket `Supplier` Network.
+`Application`s onchain stake to pay for service to access the Pocket `Supplier` Network.
 
 This can be done any number of times, so an `Application` can delegate to multiple
 `Gateways` simultaneously.
@@ -329,9 +329,9 @@ stateDiagram-v2
     sigCheck --> Invalid: No
 ```
 
-## [WIP] Gateway Off-Chain Operations
+## [WIP] Gateway Offchain Operations
 
-Gateways can design and manage off-chain operations to coordinate with the `Client`
+Gateways can design and manage offchain operations to coordinate with the `Client`
 including by not limited to:
 
 - Dashboards & user management
@@ -340,7 +340,7 @@ including by not limited to:
 - Providing altruist backups
 - QoS (SLA, SLO) guarantees
 - Prove & validate data integrity
-- Provide additional off-chain services
+- Provide additional offchain services
 - Guarantee certain SLAs and SLOs
-- Manage on-chain Pocket logic (account top-ups, etc...)
+- Manage onchain Pocket logic (account top-ups, etc...)
 - Etc...

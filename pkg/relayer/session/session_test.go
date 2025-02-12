@@ -73,9 +73,9 @@ func requireProofCountEqualsExpectedValueFromProofParams(t *testing.T, proofPara
 	}
 	supplierOperatorAddress := sample.AccAddress()
 	// Set the supplier operator balance to be able to submit the expected number of proofs.
-	feePerProof := prooftypes.DefaultParams().ProofSubmissionFee.Amount.Int64()
+	claimAndFeeGasCost := session.ClamAndProofGasCost.Amount.Int64()
 	numExpectedProofs := int64(2)
-	supplierOperatorBalance := feePerProof * numExpectedProofs
+	supplierOperatorBalance := claimAndFeeGasCost * numExpectedProofs
 	supplierClientMap := testsupplier.NewClaimProofSupplierClientMap(ctx, t, supplierOperatorAddress, proofCount)
 	blockPublishCh, minedRelaysPublishCh := setupDependencies(t, ctx, supplierClientMap, emptyBlockHash, proofParams, supplierOperatorBalance)
 
@@ -207,8 +207,11 @@ func TestRelayerSessionsManager_InsufficientBalanceForProofSubmission(t *testing
 
 	supplierOperatorAddress := sample.AccAddress()
 	supplierOperatorAccAddress := sdktypes.MustAccAddressFromBech32(supplierOperatorAddress)
+
+	proofSubmissionFee := prooftypes.DefaultParams().ProofSubmissionFee.Amount.Int64()
+	claimAndProofGasCost := session.ClamAndProofGasCost.Amount.Int64()
 	// Set the supplier operator balance to be able to submit only a single proof.
-	supplierOperatorBalance := prooftypes.DefaultParams().ProofSubmissionFee.Amount.Int64() + 1
+	supplierOperatorBalance := proofSubmissionFee + claimAndProofGasCost + 1
 	supplierClientMock.EXPECT().
 		OperatorAddress().
 		Return(&supplierOperatorAccAddress).

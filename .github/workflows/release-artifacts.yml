@@ -13,18 +13,18 @@ jobs:
   release-artifacts:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           fetch-depth: "0" # Per https://github.com/ignite/cli/issues/1674#issuecomment-1144619147
-
-      - name: install ignite
-        run: |
-          make ignite_install
 
       - name: Set up Go
         uses: actions/setup-go@v4
         with:
           go-version: "1.23.0"
+
+      - name: install ignite
+        run: |
+          make ignite_install
 
       - name: Install CI dependencies
         run: make install_ci_deps
@@ -82,7 +82,7 @@ jobs:
 
       # TODO_TECHDEBT(@okdas): use for releases (also change the "on" part at the top so it only tgirrered for tags/releases)
       - name: Add release and publish binaries
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
           files: |
             release/*

@@ -14,7 +14,7 @@ GROVE_PORTAL_STAGING_ETH_MAINNET = https://eth-mainnet.rpc.grove.town
 # JSON RPC data for a test relay request
 JSON_RPC_DATA_ETH_BLOCK_HEIGHT = '{"jsonrpc":"2.0","id":"0","method":"eth_blockNumber", "params": []}'
 
-# On-chain module account addresses. Search for `func TestModuleAddress` in the
+# Onchain module account addresses. Search for `func TestModuleAddress` in the
 # codebase to get an understanding of how we got these values.
 APPLICATION_MODULE_ADDRESS = pokt1rl3gjgzexmplmds3tq3r3yk84zlwdl6djzgsvm
 SUPPLIER_MODULE_ADDRESS = pokt1j40dzzmn6cn9kxku7a5tjnud6hv37vesr5ccaa
@@ -283,8 +283,23 @@ ignite_poktrolld_build: check_go_version check_ignite_version ## Build the poktr
 	ignite chain build --skip-proto --debug -v -o $(shell go env GOPATH)/bin
 
 .PHONY: ignite_openapi_gen
-ignite_openapi_gen: ## Generate the OpenAPI spec for the Ignite API
+ignite_openapi_gen: ## Generate the OpenAPI spec natively and process the output
 	ignite generate openapi --yes
+	$(MAKE) process_openapi
+
+.PHONY: ignite_openapi_gen_docker
+ignite_openapi_gen_docker: ## Generate the OpenAPI spec using Docker and process the output; workaround due to https://github.com/ignite/cli/issues/4495
+	docker build -f ./proto/Dockerfile.ignite -t ignite-openapi .
+	docker run --rm -v "$(PWD):/workspace" ignite-openapi
+	$(MAKE) process_openapi
+
+.PHONY: process_openapi
+process_openapi: ## Ensure OpenAPI JSON and YAML files are properly formatted
+	# The original command incorrectly outputs a JSON-formatted file with a .yml extension.
+	# This fixes the issue by properly converting the JSON to a valid YAML format.
+	mv docs/static/openapi.yml docs/static/openapi.json
+	yq -o=json '.' docs/static/openapi.json -I=4 > docs/static/openapi.json.tmp && mv docs/static/openapi.json.tmp docs/static/openapi.json
+	yq -P -o=yaml '.' docs/static/openapi.json > docs/static/openapi.yml
 
 ##################
 ### CI Helpers ###

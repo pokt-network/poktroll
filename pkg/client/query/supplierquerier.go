@@ -12,7 +12,7 @@ import (
 )
 
 // supplierQuerier is a wrapper around the suppliertypes.QueryClient that enables the
-// querying of on-chain supplier information through a single exposed method
+// querying of onchain supplier information through a single exposed method
 // which returns an sharedtypes.Supplier struct
 type supplierQuerier struct {
 	clientConn      grpc.ClientConn

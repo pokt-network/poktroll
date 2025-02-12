@@ -31,10 +31,10 @@ import (
 
 func TestEnsureValidProof_Error(t *testing.T) {
 	opts := []keepertest.ProofKeepersOpt{
-		// Set block hash such that on-chain closest merkle proof validation
+		// Set block hash such that onchain closest merkle proof validation
 		// uses the expected path.
 		keepertest.WithBlockHash(blockHeaderHash),
-		// Set block height to 1 so there is a valid session on-chain.
+		// Set block height to 1 so there is a valid session onchain.
 		keepertest.WithBlockHeight(1),
 	}
 	keepers, ctx := keepertest.NewProofModuleKeepers(t, opts...)
@@ -210,7 +210,7 @@ func TestEnsureValidProof_Error(t *testing.T) {
 					expectedMerkleProofPath)
 			},
 			expectedErr: prooftypes.ErrProofInvalidSessionId.Wrapf(
-				"session ID does not match on-chain session ID; expected %q, got %q",
+				"session ID does not match onchain session ID; expected %q, got %q",
 				validSessionHeader.GetSessionId(),
 				"",
 			),
@@ -235,7 +235,7 @@ func TestEnsureValidProof_Error(t *testing.T) {
 			),
 		},
 		{
-			desc: "proof session ID must match on-chain session ID",
+			desc: "proof session ID must match onchain session ID",
 			newProof: func(t *testing.T) *prooftypes.Proof {
 				// Construct new proof message using the wrong session ID.
 				return testtree.NewProof(t,
@@ -246,13 +246,13 @@ func TestEnsureValidProof_Error(t *testing.T) {
 				)
 			},
 			expectedErr: prooftypes.ErrProofInvalidSessionId.Wrapf(
-				"session ID does not match on-chain session ID; expected %q, got %q",
+				"session ID does not match onchain session ID; expected %q, got %q",
 				validSessionHeader.GetSessionId(),
 				wrongSessionIdHeader.GetSessionId(),
 			),
 		},
 		{
-			desc: "proof supplier must be in on-chain session",
+			desc: "proof supplier must be in onchain session",
 			newProof: func(t *testing.T) *prooftypes.Proof {
 				// Construct a proof message with a  supplier that does not belong in the session.
 				return testtree.NewProof(t,
@@ -285,7 +285,7 @@ func TestEnsureValidProof_Error(t *testing.T) {
 				return proof
 			},
 			expectedErr: prooftypes.ErrProofInvalidProof.Wrapf(
-				"failed to unmarshal closest merkle proof: %s",
+				"failed to unmarshal sparse compact merkle closest proof: %s",
 				expectedInvalidProofUnmarshalErr,
 			),
 		},
@@ -582,7 +582,7 @@ func TestEnsureValidProof_Error(t *testing.T) {
 				return testtree.NewProof(t, supplierOperatorAddr, validSessionHeader, wrongPathSessionTree, wrongClosestProofPath)
 			},
 			expectedErr: prooftypes.ErrProofInvalidProof.Wrapf(
-				"the path of the proof provided (%x) does not match one expected by the on-chain protocol (%x)",
+				"the path of the proof provided (%x) does not match one expected by the onchain protocol (%x)",
 				wrongClosestProofPath,
 				protocol.GetPathForProof(sdkCtx.HeaderHash(), validSessionHeader.GetSessionId()),
 			),
@@ -611,10 +611,10 @@ func TestEnsureValidProof_Error(t *testing.T) {
 				err = sparseCompactMerkleClosestProof.Unmarshal(proof.ClosestMerkleProof)
 				require.NoError(t, err)
 				var sparseMerkleClosestProof *smt.SparseMerkleClosestProof
-				sparseMerkleClosestProof, err = smt.DecompactClosestProof(sparseCompactMerkleClosestProof, &protocol.SmtSpec)
+				sparseMerkleClosestProof, err = smt.DecompactClosestProof(sparseCompactMerkleClosestProof, protocol.NewSMTSpec())
 				require.NoError(t, err)
 
-				relayBz := sparseMerkleClosestProof.GetValueHash(&protocol.SmtSpec)
+				relayBz := sparseMerkleClosestProof.GetValueHash(protocol.NewSMTSpec())
 				relayHashArr := protocol.GetRelayHashFromBytes(relayBz)
 				relayHash := relayHashArr[:]
 
@@ -729,21 +729,21 @@ func TestEnsureValidProof_Error(t *testing.T) {
 		{
 			desc: "claim and proof application addresses must match",
 			newProof: func(t *testing.T) *prooftypes.Proof {
-				t.Skip("this test case reduces to either the 'claim must exist for proof message' or 'proof session ID must match on-chain session ID cases")
+				t.Skip("this test case reduces to either the 'claim must exist for proof message' or 'proof session ID must match onchain session ID cases")
 				return nil
 			},
 		},
 		{
 			desc: "claim and proof service IDs must match",
 			newProof: func(t *testing.T) *prooftypes.Proof {
-				t.Skip("this test case reduces to either the 'claim must exist for proof message' or 'proof session ID must match on-chain session ID cases")
+				t.Skip("this test case reduces to either the 'claim must exist for proof message' or 'proof session ID must match onchain session ID cases")
 				return nil
 			},
 		},
 		{
 			desc: "claim and proof supplier operator addresses must match",
 			newProof: func(t *testing.T) *prooftypes.Proof {
-				t.Skip("this test case reduces to either the 'claim must exist for proof message' or 'proof session ID must match on-chain session ID cases")
+				t.Skip("this test case reduces to either the 'claim must exist for proof message' or 'proof session ID must match onchain session ID cases")
 				return nil
 			},
 		},
@@ -753,6 +753,9 @@ func TestEnsureValidProof_Error(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.desc, func(t *testing.T) {
 			proof := test.newProof(t)
+			sessionId := proof.GetSessionHeader().GetSessionId()
+			supplierOperatorAddr := proof.GetSupplierOperatorAddress()
+			foundClaim, _ := keepers.GetClaim(ctx, sessionId, supplierOperatorAddr)
 
 			// Advance the block height to the proof path seed height.
 			earliestSupplierProofCommitHeight := sharedtypes.GetEarliestSupplierProofCommitHeight(
@@ -769,8 +772,23 @@ func TestEnsureValidProof_Error(t *testing.T) {
 
 			// Advance the block height to the earliest proof commit height.
 			ctx = keepertest.SetBlockHeight(ctx, earliestSupplierProofCommitHeight)
-			err := keepers.EnsureValidProof(ctx, proof)
-			require.ErrorContains(t, err, test.expectedErr.Error())
+
+			// A proof is valid IFF it is:
+			//   1. Well-formed; session header and other metadata
+			//   2. Has valid relay signatures
+			//   3. Satisfies the closest merkle path
+
+			// Ensure the proof is well-formed.
+			if err := keepers.EnsureWellFormedProof(ctx, proof); err != nil {
+				require.ErrorContains(t, err, test.expectedErr.Error())
+				return
+			}
+
+			// Ensure the proof satisfies the closest merkle path and has valid relay signatures.
+			if err := keepers.EnsureValidProofSignaturesAndClosestPath(ctx, &foundClaim, proof); err != nil {
+				require.ErrorContains(t, err, test.expectedErr.Error())
+				return
+			}
 		})
 	}
 }

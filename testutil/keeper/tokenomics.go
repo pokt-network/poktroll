@@ -124,7 +124,7 @@ func TokenomicsKeeperWithActorAddrs(t testing.TB) (
 	registry := codectypes.NewInterfaceRegistry()
 	cdc := codec.NewProtoCodec(registry)
 
-	// The on-chain governance address.
+	// The onchain governance address.
 	authority := authtypes.NewModuleAddress(govtypes.ModuleName)
 
 	// Prepare the test application.
@@ -146,7 +146,7 @@ func TokenomicsKeeperWithActorAddrs(t testing.TB) (
 				RevShare: []*sharedtypes.ServiceRevenueShare{
 					{
 						Address:            supplierOwnerAddr,
-						RevSharePercentage: 100,
+						RevSharePercentage: uint64(100),
 					},
 				},
 			},
@@ -180,6 +180,11 @@ func TokenomicsKeeperWithActorAddrs(t testing.TB) (
 	mockApplicationKeeper.EXPECT().
 		EndBlockerUnbondApplications(gomock.Any()).
 		Return(nil).
+		AnyTimes()
+
+	mockApplicationKeeper.EXPECT().
+		GetParams(gomock.Any()).
+		Return(apptypes.Params{}).
 		AnyTimes()
 
 	// Mock the supplier keeper.

@@ -15,4 +15,5 @@ var (
 	ErrSupplierServiceNotFound      = sdkerrors.Register(ModuleName, 1106, "service not found")
 	ErrSupplierParamInvalid         = sdkerrors.Register(ModuleName, 1107, "the provided param is invalid")
 	ErrSupplierEmitEvent            = sdkerrors.Register(ModuleName, 1108, "failed to emit event")
+	ErrSupplierInvalidServiceId     = sdkerrors.Register(ModuleName, 1109, "invalid service ID")
 )

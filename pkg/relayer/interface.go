@@ -140,7 +140,7 @@ type SessionTree interface {
 
 	// Flush gets the root hash of the SMST needed for submitting the claim;
 	// then commits the entire tree to disk and stops the KVStore.
-	// It should be called before submitting the claim on-chain. This function frees up
+	// It should be called before submitting the claim onchain. This function frees up
 	// the in-memory resources used by the SMST that are no longer needed while waiting
 	// for the proof submission window to open.
 	Flush() (SMSTRoot []byte, err error)
@@ -149,7 +149,7 @@ type SessionTree interface {
 	// aiming to free up KVStore resources after the proof is no longer needed.
 	// Delete deletes the SMST from the KVStore.
 	// WARNING: This function should be called only after the proof has been successfully
-	// submitted on-chain and the servicer has confirmed that it has been rewarded.
+	// submitted onchain and the servicer has confirmed that it has been rewarded.
 	Delete() error
 
 	// StartClaiming marks the session tree as being picked up for claiming,

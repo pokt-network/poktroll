@@ -1,9 +1,9 @@
 ---
 sidebar_position: 5
-title: Adding On-Chain Module Parameters
+title: Adding Onchain Module Parameters
 ---
 
-# Adding On-Chain Module Parameters <!-- omit in toc -->
+# Adding Onchain Module Parameters <!-- omit in toc -->
 
 - [Step-by-Step Instructions](#step-by-step-instructions)
   - [0. If the Module Doesn't Already Support a `MsgUpdateParam` Message](#0-if-the-module-doesnt-already-support-a-msgupdateparam-message)
@@ -37,7 +37,7 @@ title: Adding On-Chain Module Parameters
     - [7.2 Create a new JSON File for the Individual Parameter Update](#72-create-a-new-json-file-for-the-individual-parameter-update)
     - [7.3 Update the JSON File for Updating All Parameters for the Module](#73-update-the-json-file-for-updating-all-parameters-for-the-module)
 
-Adding a new on-chain module parameter involves multiple steps to ensure that the
+Adding a new onchain module parameter involves multiple steps to ensure that the
 parameter is properly integrated into the system. This guide will walk you through
 the process using a generic approach, illustrated by adding a parameter to the `proof` module.
 
