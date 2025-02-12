@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"math"
+	"math/big"
 	"testing"
 
 	cosmoslog "cosmossdk.io/log"
@@ -168,10 +169,10 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_Valid(t *testing.T) {
 
 	// Assert that the supplier shareholders account balances have *increased* by
 	// the appropriate amount w.r.t token distribution.
-	shareAmounts := tlm.GetShareAmountMap(supplierRevShares, appBurn.Uint64())
+	shareAmounts := tlm.GetShareAmountMap(supplierRevShares, appBurn)
 	for shareHolderAddr, expectedShareAmount := range shareAmounts {
 		shareHolderBalance := getBalance(t, ctx, keepers, shareHolderAddr)
-		require.Equal(t, int64(expectedShareAmount), shareHolderBalance.Amount.Int64())
+		require.Equal(t, expectedShareAmount, shareHolderBalance.Amount)
 	}
 }
 
@@ -313,10 +314,10 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_Valid_SupplierExceedsMaxClai
 
 	// Assert that the supplier shareholders account balances have *increased* by
 	// the appropriate amount w.r.t token distribution.
-	shareAmounts := tlm.GetShareAmountMap(supplierRevShares, appBurn.Uint64())
+	shareAmounts := tlm.GetShareAmountMap(supplierRevShares, appBurn)
 	for shareHolderAddr, expectedShareAmount := range shareAmounts {
 		shareHolderBalance := getBalance(t, ctx, keepers, shareHolderAddr)
-		require.Equal(t, int64(expectedShareAmount), shareHolderBalance.Amount.Int64())
+		require.Equal(t, expectedShareAmount, shareHolderBalance.Amount)
 	}
 
 	// Check that the expected burn >> effective burn because application is overserviced
@@ -343,7 +344,8 @@ func TestProcessTokenLogicModules_TLMGlobalMint_Valid_MintDistributionCorrect(t 
 	serviceComputeUnitsPerRelay := uint64(1)
 	service := prepareTestService(serviceComputeUnitsPerRelay)
 	numRelays := uint64(1000) // By supplier for application in this session
-	numTokensClaimed := float64(numRelays * serviceComputeUnitsPerRelay * globalComputeUnitsToTokensMultiplier)
+	numTokensClaimed := numRelays * serviceComputeUnitsPerRelay * globalComputeUnitsToTokensMultiplier
+	numTokensClaimedInt := cosmosmath.NewIntFromUint64(numTokensClaimed)
 	proposerConsAddr := sample.ConsAddressBech32()
 	daoAddress := authtypes.NewModuleAddress(govtypes.ModuleName)
 
@@ -413,10 +415,10 @@ func TestProcessTokenLogicModules_TLMGlobalMint_Valid_MintDistributionCorrect(t 
 	propBalanceBefore := getBalance(t, ctx, keepers, proposerAddress)
 	serviceOwnerBalanceBefore := getBalance(t, ctx, keepers, service.OwnerAddress)
 	appBalanceBefore := getBalance(t, ctx, keepers, appAddress)
-	supplierShareholderBalancesBefore := make(map[string]*sdk.Coin, len(supplierRevShares))
+	supplierShareholderBalancesBeforeSettlementMap := make(map[string]*sdk.Coin, len(supplierRevShares))
 	for _, revShare := range supplierRevShares {
 		addr := revShare.Address
-		supplierShareholderBalancesBefore[addr] = getBalance(t, ctx, keepers, addr)
+		supplierShareholderBalancesBeforeSettlementMap[addr] = getBalance(t, ctx, keepers, addr)
 	}
 
 	// Process the token logic modules
@@ -440,39 +442,77 @@ func TestProcessTokenLogicModules_TLMGlobalMint_Valid_MintDistributionCorrect(t 
 		supplierShareholderBalancesAfter[addr] = getBalance(t, ctx, keepers, addr)
 	}
 
-	// Compute mint per actor
-	numTokensMinted := numTokensClaimed * keepers.Keeper.GetParams(ctx).GlobalInflationPerClaim
-	numTokensMintedInt := cosmosmath.NewIntFromUint64(uint64(numTokensMinted))
-	daoMint := cosmosmath.NewInt(int64(numTokensMinted * tokenomicsParams.MintAllocationPercentages.Dao))
-	propMint := cosmosmath.NewInt(int64(numTokensMinted * tokenomicsParams.MintAllocationPercentages.Proposer))
-	serviceOwnerMint := cosmosmath.NewInt(int64(numTokensMinted * tokenomicsParams.MintAllocationPercentages.SourceOwner))
-	appMint := cosmosmath.NewInt(int64(numTokensMinted * tokenomicsParams.MintAllocationPercentages.Application))
-	supplierMint := float64(numTokensMinted * tokenomicsParams.MintAllocationPercentages.Supplier)
+	// Compute the expected minted to mint.
+	globalInflationPerClaimRat, err := tlm.Float64ToRat(tokenomicsParams.GlobalInflationPerClaim)
+	require.NoError(t, err)
+
+	numTokensClaimedRat := new(big.Rat).SetInt(numTokensClaimedInt.BigInt())
+	numTokensMintedRat := new(big.Rat).Mul(numTokensClaimedRat, globalInflationPerClaimRat)
+	reminder := new(big.Int)
+	numTokensMintedInt, reminder := new(big.Int).QuoRem(
+		numTokensMintedRat.Num(),
+		numTokensMintedRat.Denom(),
+		reminder,
+	)
+
+	// Ceil the number of tokens minted if there is a remainder.
+	if reminder.Cmp(big.NewInt(0)) != 0 {
+		numTokensMintedInt = numTokensMintedInt.Add(numTokensMintedInt, big.NewInt(1))
+	}
+	numTokensMinted := cosmosmath.NewIntFromBigInt(numTokensMintedInt)
+
+	// Compute the expected minted to each module.
+	propMint := computeShare(t, numTokensMintedRat, tokenomicsParams.MintAllocationPercentages.Proposer)
+	serviceOwnerMint := computeShare(t, numTokensMintedRat, tokenomicsParams.MintAllocationPercentages.SourceOwner)
+	appMint := computeShare(t, numTokensMintedRat, tokenomicsParams.MintAllocationPercentages.Application)
+	supplierMint := computeShare(t, numTokensMintedRat, tokenomicsParams.MintAllocationPercentages.Supplier)
+	// The DAO mint gets any remainder resulting from integer division.
+	daoMint := numTokensMinted.Sub(propMint).Sub(serviceOwnerMint).Sub(appMint).Sub(supplierMint)
 
 	// Ensure the balance was increased to the appropriate amount.
-	require.Equal(t, daoBalanceBefore.Amount.Add(daoMint).Add(numTokensMintedInt), daoBalanceAfter.Amount)
 	require.Equal(t, propBalanceBefore.Amount.Add(propMint), propBalanceAfter.Amount)
 	require.Equal(t, serviceOwnerBalanceBefore.Amount.Add(serviceOwnerMint), serviceOwnerBalanceAfter.Amount)
 	require.Equal(t, appBalanceBefore.Amount.Add(appMint), appBalanceAfter.Amount)
+	require.Equal(t, daoBalanceBefore.Amount.Add(daoMint).Add(numTokensMinted), daoBalanceAfter.Amount)
+
+	supplierMintRat := new(big.Rat).SetInt(supplierMint.BigInt())
+	shareHoldersBalancesAfterSettlementMap := make(map[string]cosmosmath.Int, len(supplierRevShares))
+	supplierMintWithoutRemainder := cosmosmath.NewInt(0)
 	for _, revShare := range supplierRevShares {
 		addr := revShare.Address
-		balanceBefore := supplierShareholderBalancesBefore[addr]
-		balanceAfter := supplierShareholderBalancesAfter[addr].Amount.Int64()
-		mintShare := int64(supplierMint * float64(revShare.RevSharePercentage) / 100.0)
-		rewardShare := int64(float64(numTokensClaimed) * float64(revShare.RevSharePercentage) / 100.0)
-		balanceIncrease := cosmosmath.NewInt(mintShare + rewardShare)
-		expectedBalanceAfter := balanceBefore.Amount.Add(balanceIncrease).Int64()
-		// TODO_MAINNET(@red-0ne): Remove the InDelta check and use the exact amount once the floating point arithmetic is fixed
-		acceptableRoundingDelta := tlm.MintDistributionAllowableTolerancePercent * float64(balanceAfter)
-		require.InDelta(t, expectedBalanceAfter, balanceAfter, acceptableRoundingDelta)
+
+		// Compute the expected balance increase for the shareholder
+		mintShareFloat := float64(revShare.RevSharePercentage) / 100.0
+		rewardShare := computeShare(t, numTokensClaimedRat, mintShareFloat)
+		mintShare := computeShare(t, supplierMintRat, mintShareFloat)
+		balanceIncrease := rewardShare.Add(mintShare)
+
+		// Compute the expected balance after minting
+		balanceBefore := supplierShareholderBalancesBeforeSettlementMap[addr]
+		shareHoldersBalancesAfterSettlementMap[addr] = balanceBefore.Amount.Add(balanceIncrease)
+
+		supplierMintWithoutRemainder = supplierMintWithoutRemainder.Add(mintShare)
+	}
+
+	// The first shareholder gets any remainder resulting from integer division.
+	firstShareHolderAddr := supplierRevShares[0].Address
+	firstShareHolderBalance := shareHoldersBalancesAfterSettlementMap[firstShareHolderAddr]
+	remainder := supplierMint.Sub(supplierMintWithoutRemainder)
+	shareHoldersBalancesAfterSettlementMap[firstShareHolderAddr] = firstShareHolderBalance.Add(remainder)
+
+	for _, revShare := range supplierRevShares {
+		addr := revShare.Address
+		balanceAfter := supplierShareholderBalancesAfter[addr].Amount
+		expectedBalanceAfter := shareHoldersBalancesAfterSettlementMap[addr]
+		require.Equal(t, expectedBalanceAfter, balanceAfter)
 	}
 
 	foundApp, appFound := keepers.GetApplication(ctx, appAddress)
 	require.True(t, appFound)
 
 	appStakeAfter := foundApp.GetStake().Amount
-	numTokensClaimedInt := cosmosmath.NewIntFromUint64(uint64(numTokensClaimed))
-	require.Equal(t, appInitialStake.Sub(numTokensMintedInt).Sub(numTokensClaimedInt), appStakeAfter)
+	expectedStakeAfter := appInitialStake.Sub(numTokensMinted).Sub(numTokensClaimedInt)
+	require.Equal(t, expectedStakeAfter, appStakeAfter)
 }
 
 func TestProcessTokenLogicModules_AppNotFound(t *testing.T) {
@@ -749,4 +789,15 @@ func getBalance(
 	require.NotNil(t, balance)
 
 	return balance
+}
+
+// computeShare computes the share of the given amount based a percentage.
+func computeShare(t *testing.T, amount *big.Rat, sharePercentage float64) cosmosmath.Int {
+	amountRat, err := tlm.Float64ToRat(sharePercentage)
+	require.NoError(t, err)
+
+	mintRat := new(big.Rat).Mul(amount, amountRat)
+	flooredShare := new(big.Int).Quo(mintRat.Num(), mintRat.Denom())
+
+	return cosmosmath.NewIntFromBigInt(flooredShare)
 }

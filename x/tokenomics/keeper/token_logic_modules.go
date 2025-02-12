@@ -294,7 +294,13 @@ func (k Keeper) ensureClaimAmountLimits(
 	// The application should have enough stake to cover for the global mint reimbursement.
 	// This amount is deducted from the maximum claimable amount.
 	globalInflationPerClaim := k.GetParams(ctx).GlobalInflationPerClaim
-	globalInflationCoin, _ := tlm.CalculateGlobalPerClaimMintInflationFromSettlementAmount(claimSettlementCoin, globalInflationPerClaim)
+	globalInflationPerClaimRat, err := tlm.Float64ToRat(globalInflationPerClaim)
+	if err != nil {
+		logger.Error(fmt.Sprintf("error calculating claim amount limits due to: %v", err))
+		return actualSettlementCoins, err
+	}
+
+	globalInflationCoin := tlm.CalculateGlobalPerClaimMintInflationFromSettlementAmount(claimSettlementCoin, globalInflationPerClaimRat)
 	globalInflationAmt := globalInflationCoin.Amount
 	minRequiredAppStakeAmt := claimSettlementCoin.Amount.Add(globalInflationAmt)
 	totalClaimedCoin := sdk.NewCoin(volatile.DenomuPOKT, minRequiredAppStakeAmt)

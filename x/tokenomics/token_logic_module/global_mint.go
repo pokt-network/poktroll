@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"math/big"
+	"strconv"
 
 	cosmoslog "cosmossdk.io/log"
 	"cosmossdk.io/math"
@@ -12,22 +13,6 @@ import (
 	"github.com/pokt-network/poktroll/app/volatile"
 	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
-)
-
-const (
-	// MintDistributionAllowableTolerancePercent is the percent difference that is allowable
-	// between the number of minted/ tokens in the tokenomics module and what is distributed
-	// to pocket network participants.
-	// This internal constant SHOULD ONLY be used in TokenLogicModuleGlobalMint.
-	// Due to floating point arithmetic, the total amount of minted coins may be slightly
-	// larger than what is distributed to pocket network participants
-	// TODO_MAINNET: Figure out if we can avoid this tolerance and use fixed point arithmetic.
-	MintDistributionAllowableTolerancePercent = 0.02 // 2%
-	// MintDistributionAllowableToleranceAbsolution is similar to MintDistributionAllowableTolerancePercent
-	// but provides an absolute number where the % difference might no be
-	// meaningful for small absolute numbers.
-	// TODO_MAINNET: Figure out if we can avoid this tolerance and use fixed point arithmetic.
-	MintDistributionAllowableToleranceAbs = 5.0 // 5 uPOKT
 )
 
 var _ TokenLogicModule = (*tlmGlobalMint)(nil)
@@ -55,6 +40,11 @@ func (tlm tlmGlobalMint) Process(
 	)
 
 	globalInflationPerClaim := tlmCtx.TokenomicsParams.GetGlobalInflationPerClaim()
+	globalInflationPerClaimRat, err := Float64ToRat(globalInflationPerClaim)
+	if err != nil {
+		logger.Error(fmt.Sprintf("error converting global inflation per claim due to: %v", err))
+		return err
+	}
 
 	if globalInflationPerClaim == 0 {
 		logger.Warn("global inflation is set to zero. Skipping Global Mint TLM.")
@@ -62,7 +52,7 @@ func (tlm tlmGlobalMint) Process(
 	}
 
 	// Determine how much new uPOKT to mint based on global inflation
-	newMintCoin, newMintAmtFloat := CalculateGlobalPerClaimMintInflationFromSettlementAmount(tlmCtx.SettlementCoin, globalInflationPerClaim)
+	newMintCoin := CalculateGlobalPerClaimMintInflationFromSettlementAmount(tlmCtx.SettlementCoin, globalInflationPerClaimRat)
 	if newMintCoin.IsZero() {
 		return tokenomicstypes.ErrTokenomicsCoinIsZero.Wrapf("newMintCoin cannot be zero, TLMContext: %+v", tlmCtx)
 	}
@@ -78,21 +68,33 @@ func (tlm tlmGlobalMint) Process(
 	mintAllocationPercentages := tlmCtx.TokenomicsParams.GetMintAllocationPercentages()
 
 	// Send a portion of the rewards to the application
+	appMintAllocationRat, err := Float64ToRat(mintAllocationPercentages.Application)
+	if err != nil {
+		logger.Error(fmt.Sprintf("error converting application mint allocation percentage due to: %v", err))
+		return err
+	}
+
 	appCoin := sendRewardsToAccount(
 		logger,
 		tlmCtx.Result,
 		tokenomicstypes.SettlementOpReason_TLM_GLOBAL_MINT_APPLICATION_REWARD_DISTRIBUTION,
 		tokenomicstypes.ModuleName,
 		tlmCtx.Application.GetAddress(),
-		&newMintAmtFloat,
-		mintAllocationPercentages.Application,
+		appMintAllocationRat,
+		newMintCoin,
 	)
 	logMsg := fmt.Sprintf("operation queued: send (%v) newley minted coins from the tokenomics module to the application with address %q", appCoin, tlmCtx.Application.GetAddress())
 	logRewardOperation(logger, logMsg, &appCoin)
 
 	// Send a portion of the rewards to the supplier shareholders.
-	supplierCoinsToShareAmt := calculateAllocationAmount(&newMintAmtFloat, mintAllocationPercentages.Supplier)
-	supplierCoin := cosmostypes.NewCoin(volatile.DenomuPOKT, math.NewInt(supplierCoinsToShareAmt))
+	supplierMintAllocationRat, err := Float64ToRat(mintAllocationPercentages.Supplier)
+	if err != nil {
+		logger.Error(fmt.Sprintf("error converting supplier mint allocation percentage due to: %v", err))
+		return err
+	}
+
+	supplierCoinsToShareAmt := calculateAllocationAmount(newMintCoin.Amount, supplierMintAllocationRat)
+	supplierCoin := cosmostypes.NewCoin(volatile.DenomuPOKT, supplierCoinsToShareAmt)
 	// Send funds from the tokenomics module to the supplier module account
 	tlmCtx.Result.AppendModToModTransfer(tokenomicstypes.ModToModTransfer{
 		OpReason:        tokenomicstypes.SettlementOpReason_TLM_GLOBAL_MINT_REIMBURSEMENT_REQUEST_ESCROW_MODULE_TRANSFER,
@@ -107,7 +109,7 @@ func (tlm tlmGlobalMint) Process(
 		tokenomicstypes.SettlementOpReason_TLM_GLOBAL_MINT_SUPPLIER_SHAREHOLDER_REWARD_DISTRIBUTION,
 		tlmCtx.Supplier,
 		tlmCtx.Service.Id,
-		uint64(supplierCoinsToShareAmt),
+		supplierCoinsToShareAmt,
 	); err != nil {
 		return tokenomicstypes.ErrTokenomicsTLMInternal.Wrapf(
 			"queueing operation: distributing rewards to supplier with operator address %s shareholders: %v",
@@ -117,46 +119,57 @@ func (tlm tlmGlobalMint) Process(
 	}
 	logger.Info(fmt.Sprintf("operation queued: send (%v) newley minted coins from the tokenomics module to the supplier with address %q", supplierCoin, tlmCtx.Supplier.OperatorAddress))
 
-	// Send a portion of the rewards to the DAO
-	daoRewardAddress := tlmCtx.TokenomicsParams.GetDaoRewardAddress()
-	daoCoin := sendRewardsToAccount(
-		logger,
-		tlmCtx.Result,
-		tokenomicstypes.SettlementOpReason_TLM_GLOBAL_MINT_DAO_REWARD_DISTRIBUTION,
-		tokenomicstypes.ModuleName,
-		daoRewardAddress,
-		&newMintAmtFloat,
-		mintAllocationPercentages.Dao,
-	)
-	logMsg = fmt.Sprintf("send (%v) newley minted coins from the tokenomics module to the DAO with address %q", daoCoin, daoRewardAddress)
-	logRewardOperation(logger, logMsg, &daoCoin)
-
 	// Send a portion of the rewards to the source owner
+	sourceOwnerMintAllocationRat, err := Float64ToRat(mintAllocationPercentages.SourceOwner)
+	if err != nil {
+		logger.Error(fmt.Sprintf("error converting source owner mint allocation percentage due to: %v", err))
+		return err
+	}
+
 	serviceCoin := sendRewardsToAccount(
 		logger,
 		tlmCtx.Result,
 		tokenomicstypes.SettlementOpReason_TLM_GLOBAL_MINT_SOURCE_OWNER_REWARD_DISTRIBUTION,
 		tokenomicstypes.ModuleName,
 		tlmCtx.Service.OwnerAddress,
-		&newMintAmtFloat,
-		mintAllocationPercentages.SourceOwner,
+		sourceOwnerMintAllocationRat,
+		newMintCoin,
 	)
 	logMsg = fmt.Sprintf("send (%v) newley minted coins from the tokenomics module to the source owner with address %q", serviceCoin, tlmCtx.Service.OwnerAddress)
 	logRewardOperation(logger, logMsg, &serviceCoin)
 
 	// Send a portion of the rewards to the block proposer
 	proposerAddr := cosmostypes.AccAddress(cosmostypes.UnwrapSDKContext(ctx).BlockHeader().ProposerAddress).String()
+	proposerMintAllocationRat, err := Float64ToRat(mintAllocationPercentages.Proposer)
+	if err != nil {
+		logger.Error(fmt.Sprintf("error converting proposer mint allocation percentage due to: %v", err))
+		return err
+	}
 	proposerCoin := sendRewardsToAccount(
 		logger,
 		tlmCtx.Result,
 		tokenomicstypes.SettlementOpReason_TLM_GLOBAL_MINT_PROPOSER_REWARD_DISTRIBUTION,
 		tokenomicstypes.ModuleName,
 		proposerAddr,
-		&newMintAmtFloat,
-		mintAllocationPercentages.Proposer,
+		proposerMintAllocationRat,
+		newMintCoin,
 	)
 	logMsg = fmt.Sprintf("send (%v) newley minted coins from the tokenomics module to the proposer with address %q", proposerCoin, proposerAddr)
 	logRewardOperation(logger, logMsg, &proposerCoin)
+
+	// Send a portion of the rewards to the DAO
+	daoRewardAddress := tlmCtx.TokenomicsParams.GetDaoRewardAddress()
+	daoCoin := sendRewardsToDAOAccount(
+		logger,
+		tlmCtx.Result,
+		tokenomicstypes.SettlementOpReason_TLM_GLOBAL_MINT_DAO_REWARD_DISTRIBUTION,
+		tokenomicstypes.ModuleName,
+		daoRewardAddress,
+		newMintCoin,
+		appCoin, supplierCoin, proposerCoin, serviceCoin,
+	)
+	logMsg = fmt.Sprintf("send (%v) newley minted coins from the tokenomics module to the DAO with address %q", daoCoin, daoRewardAddress)
+	logRewardOperation(logger, logMsg, &daoCoin)
 
 	// Check and log the total amount of coins distributed
 	if err := ensureMintedCoinsAreDistributed(logger, appCoin, supplierCoin, daoCoin, serviceCoin, proposerCoin, newMintCoin); err != nil {
@@ -177,36 +190,56 @@ func ensureMintedCoinsAreDistributed(
 ) error {
 	// Compute the difference between the total distributed coins and the amount of newly minted coins
 	totalMintDistributedCoin := appCoin.Add(supplierCoin).Add(daoCoin).Add(serviceCoin).Add(proposerCoin)
-	coinDifference := new(big.Int).Sub(totalMintDistributedCoin.Amount.BigInt(), newMintCoin.Amount.BigInt())
-	coinDifference = coinDifference.Abs(coinDifference)
-	percentDifference := new(big.Float).Quo(new(big.Float).SetInt(coinDifference), new(big.Float).SetInt(newMintCoin.Amount.BigInt()))
 
-	// Helper booleans for readability
-	doesDiscrepancyExist := coinDifference.Cmp(big.NewInt(0)) > 0
-	isPercentDifferenceTooLarge := percentDifference.Cmp(big.NewFloat(MintDistributionAllowableTolerancePercent)) > 0
-	isAbsDifferenceSignificant := coinDifference.Cmp(big.NewInt(int64(MintDistributionAllowableToleranceAbs))) > 0
-
-	// No discrepancy, return early
-	logger.Info(fmt.Sprintf("operation queued: distribute (%v) coins to the application, supplier, DAO, source owner, and proposer", totalMintDistributedCoin))
-	if !doesDiscrepancyExist {
-		return nil
-	}
-
-	// Discrepancy exists and is too large, return an error
-	if isPercentDifferenceTooLarge && isAbsDifferenceSignificant {
+	coinDifference := totalMintDistributedCoin.Sub(newMintCoin)
+	if !coinDifference.IsZero() {
 		return tokenomicstypes.ErrTokenomicsConstraint.Wrapf(
-			"the total distributed coins (%v) do not equal the amount of newly minted coins (%v) with a percent difference of (%f). Likely floating point arithmetic.\n"+
-				"appCoin: %v, supplierCoin: %v, daoCoin: %v, serviceCoin: %v, proposerCoin: %v",
-			totalMintDistributedCoin, newMintCoin, percentDifference,
-			appCoin, supplierCoin, daoCoin, serviceCoin, proposerCoin)
+			"the total distributed coins (%s) do not equal the amount of newly minted coins (%s)"+
+				"appCoin: %s, supplierCoin: %s, daoCoin: %s, serviceCoin: %s, proposerCoin: %s",
+			totalMintDistributedCoin, newMintCoin, appCoin, supplierCoin, daoCoin, serviceCoin, proposerCoin)
 	}
 
-	// Discrepancy exists but is within tolerance, log and return nil
-	logger.Warn(fmt.Sprintf("Floating point arithmetic led to a discrepancy of %v (%f) between the total distributed coins (%v) and the amount of new minted coins (%v).\n"+
-		"appCoin: %v, supplierCoin: %v, daoCoin: %v, serviceCoin: %v, proposerCoin: %v",
-		coinDifference, percentDifference, totalMintDistributedCoin, newMintCoin,
-		appCoin, supplierCoin, daoCoin, serviceCoin, proposerCoin))
+	logger.Info(fmt.Sprintf("operation queued: distribute (%v) coins to the application, supplier, DAO, source owner, and proposer", totalMintDistributedCoin))
+
 	return nil
+}
+
+// sendRewardsToDAOAccount calculates and sends rewards to the DAO account.
+// The DAO reward amount is computed as the difference between the total settlement amount
+// and the sum of all other actors' rewards (application, supplier, proposer, and source owner).
+// This difference-based approach, rather than using a fixed percentage, ensures that any
+// rounding remainders from the integer division of other rewards are captured in the DAO's share.
+// The tokenomics.Params validation guarantees that allocation percentages sum to 100%,
+// ensuring this calculation's correctness.
+func sendRewardsToDAOAccount(
+	logger cosmoslog.Logger,
+	result *tokenomicstypes.ClaimSettlementResult,
+	opReason tokenomicstypes.SettlementOpReason,
+	senderModule string,
+	recipientAddr string,
+	settlementCoin, appRewards, supplierRewards, proposerRewards, sourceOwnerRewards cosmostypes.Coin,
+) cosmostypes.Coin {
+	logger = logger.With(
+		"method", "mintRewardsToAccount",
+		"session_id", result.GetSessionId(),
+	)
+
+	coinToDAOAcc := settlementCoin.
+		Sub(appRewards).
+		Sub(supplierRewards).
+		Sub(proposerRewards).
+		Sub(sourceOwnerRewards)
+
+	if !coinToDAOAcc.IsZero() {
+		result.AppendModToAcctTransfer(tokenomicstypes.ModToAcctTransfer{
+			OpReason:         opReason,
+			SenderModule:     senderModule,
+			RecipientAddress: recipientAddr,
+			Coin:             coinToDAOAcc,
+		})
+	}
+
+	return coinToDAOAcc
 }
 
 // sendRewardsToAccount sends (settlementAmtFloat * allocation) tokens from the
@@ -217,16 +250,16 @@ func sendRewardsToAccount(
 	opReason tokenomicstypes.SettlementOpReason,
 	senderModule string,
 	recipientAddr string,
-	settlementAmtFloat *big.Float,
-	allocation float64,
+	allocationRat *big.Rat,
+	settlementCoin cosmostypes.Coin,
 ) cosmostypes.Coin {
 	logger = logger.With(
 		"method", "mintRewardsToAccount",
 		"session_id", result.GetSessionId(),
 	)
 
-	coinsToAccAmt := calculateAllocationAmount(settlementAmtFloat, allocation)
-	coinToAcc := cosmostypes.NewCoin(volatile.DenomuPOKT, math.NewInt(coinsToAccAmt))
+	coinsToAccAmt := calculateAllocationAmount(settlementCoin.Amount, allocationRat)
+	coinToAcc := cosmostypes.NewCoin(volatile.DenomuPOKT, coinsToAccAmt)
 
 	if coinToAcc.IsZero() {
 		return cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 0)
@@ -249,29 +282,48 @@ func sendRewardsToAccount(
 // the settlement amount for a particular claim(s) or session(s).
 func CalculateGlobalPerClaimMintInflationFromSettlementAmount(
 	settlementCoin cosmostypes.Coin,
-	globalInflationPerClaim float64,
-) (cosmostypes.Coin, big.Float) {
+	globalInflationPerClaimRat *big.Rat,
+) cosmostypes.Coin {
 	// Determine how much new uPOKT to mint based on global per claim inflation.
-	// TODO_MAINNET: Consider using fixed point arithmetic for deterministic results.
-	settlementAmtFloat := new(big.Float).SetUint64(settlementCoin.Amount.Uint64())
-	newMintAmtFloat := new(big.Float).Mul(settlementAmtFloat, big.NewFloat(globalInflationPerClaim))
-	// DEV_NOTE: If new mint is less than 1 and more than 0, ceil it to 1 so that
-	// we never expect to process a claim with 0 minted tokens.
-	if newMintAmtFloat.Cmp(big.NewFloat(1)) < 0 && newMintAmtFloat.Cmp(big.NewFloat(0)) > 0 {
-		newMintAmtFloat = big.NewFloat(1)
+	settlementAmtRat := new(big.Rat).SetInt(settlementCoin.Amount.BigInt())
+	newMintAmtRat := new(big.Rat).Mul(settlementAmtRat, globalInflationPerClaimRat)
+	// Always ceil the new mint amount.
+	// DEV_NOTE: Since settlementCoin is never zero and the mint amount is ceiled,
+	// mintAmtCoin will always be greater than zero.
+	newMintRem := new(big.Int)
+	newMintAmt, newMintRem := new(big.Int).QuoRem(newMintAmtRat.Num(), newMintAmtRat.Denom(), newMintRem)
+	// If there is a remainder, add one to the mint amount to ceil the value.
+	if newMintRem.Cmp(big.NewInt(0)) > 0 {
+		newMintAmt.Add(newMintAmt, big.NewInt(1))
 	}
-	newMintAmtInt, _ := newMintAmtFloat.Int64()
-	mintAmtCoin := cosmostypes.NewCoin(volatile.DenomuPOKT, math.NewInt(newMintAmtInt))
-	return mintAmtCoin, *newMintAmtFloat
+	mintAmtCoin := cosmostypes.NewCoin(volatile.DenomuPOKT, math.NewIntFromBigInt(newMintAmt))
+	return mintAmtCoin
 }
 
-// calculateAllocationAmount does big float arithmetic to determine the absolute
-// amount from amountFloat based on the allocation percentage provided.
-// TODO_MAINNET(@bryanchriswhite): Measure and limit the precision loss here.
+// calculateAllocationAmount does big.Rat arithmetic to determine the absolute
+// amount from amountInt based on the allocation percentage provided.
 func calculateAllocationAmount(
-	amountFloat *big.Float,
-	allocationPercentage float64,
-) int64 {
-	coinsToAccAmt, _ := big.NewFloat(0).Mul(amountFloat, big.NewFloat(allocationPercentage)).Int64()
-	return coinsToAccAmt
+	amountInt math.Int,
+	allocationPercentageRat *big.Rat,
+) math.Int {
+	amountRat := new(big.Rat).SetInt(amountInt.BigInt())
+
+	allocationRat := new(big.Rat).Mul(amountRat, allocationPercentageRat)
+	allocationAmtInt := new(big.Int).Quo(allocationRat.Num(), allocationRat.Denom())
+
+	return math.NewIntFromBigInt(allocationAmtInt)
+}
+
+// Float64ToRat converts a float64 to a big.Rat.
+// NB: It is publicly exposed to be used in the tests.
+func Float64ToRat(f float64) (*big.Rat, error) {
+	// Convert the float64 to a string before big.Rat conversion to avoid floating
+	// point precision issues (e.g. bigRat.SetString("0.1") == 1/10 while bigRat.SetFloat64(0.1) == 3602879701896397/36028797018963968)
+	allocationPercentageStr := strconv.FormatFloat(f, 'f', -1, 64)
+	allocationPercentageRat, ok := new(big.Rat).SetString(allocationPercentageStr)
+	if !ok {
+		return nil, tokenomicstypes.ErrTokenomicsTLMInternal.Wrapf("error converting float64 to big.Rat: %f", f)
+	}
+
+	return allocationPercentageRat, nil
 }

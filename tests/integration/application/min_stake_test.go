@@ -240,7 +240,10 @@ func (s *applicationMinStakeTestSuite) getExpectedApp(claim *prooftypes.Claim) *
 	require.NoError(s.T(), err)
 
 	globalInflationPerClaim := s.keepers.Keeper.GetParams(s.ctx).GlobalInflationPerClaim
-	globalInflationAmt, _ := tlm.CalculateGlobalPerClaimMintInflationFromSettlementAmount(expectedBurnCoin, globalInflationPerClaim)
+	globalInflationPerClaimRat, err := tlm.Float64ToRat(globalInflationPerClaim)
+	require.NoError(s.T(), err)
+
+	globalInflationAmt := tlm.CalculateGlobalPerClaimMintInflationFromSettlementAmount(expectedBurnCoin, globalInflationPerClaimRat)
 	expectedEndStake := s.appStake.Sub(expectedBurnCoin).Sub(globalInflationAmt)
 	return &apptypes.Application{
 		Address:                   s.appBech32,
@@ -316,7 +319,10 @@ func (s *applicationMinStakeTestSuite) assertAppStakeIsReturnedToBalance() {
 	expectedAppBurn := int64(s.numRelays * s.numComputeUnitsPerRelay * sharedtypes.DefaultComputeUnitsToTokensMultiplier)
 	expectedAppBurnCoin := cosmostypes.NewInt64Coin(volatile.DenomuPOKT, expectedAppBurn)
 	globalInflationPerClaim := s.keepers.Keeper.GetParams(s.ctx).GlobalInflationPerClaim
-	globalInflationCoin, _ := tlm.CalculateGlobalPerClaimMintInflationFromSettlementAmount(expectedAppBurnCoin, globalInflationPerClaim)
+	globalInflationPerClaimRat, err := tlm.Float64ToRat(globalInflationPerClaim)
+	require.NoError(s.T(), err)
+
+	globalInflationCoin := tlm.CalculateGlobalPerClaimMintInflationFromSettlementAmount(expectedAppBurnCoin, globalInflationPerClaimRat)
 	expectedAppBalance := s.appStake.Sub(expectedAppBurnCoin).Sub(globalInflationCoin)
 
 	appBalance := s.getAppBalance()
