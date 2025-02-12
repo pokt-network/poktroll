@@ -27,7 +27,7 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 
-// Application represents the on-chain definition and state of an application
+// Application represents the onchain definition and state of an application
 type Application struct {
 	// Bech32 address of the application
 	Address string `protobuf:"bytes,1,opt,name=address,proto3" json:"address,omitempty"`

@@ -1,0 +1,8 @@
+{
+  "label": "Morse -> Shannon Migration",
+  "position": 4,
+  "link": {
+    "type": "generated-index",
+    "description": "Morse to Shannon network migration documentation"
+  }
+}
