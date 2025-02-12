@@ -41,7 +41,7 @@ to enable automatic binary upgrades.
 ## Install and Run a Full Node using Cosmovisor
 
 :::info
-This section script will handle the installation of dependencies, user creation,
+This section's script will handle the installation of dependencies, user creation,
 environment variable setup, and configuration of Cosmovisor and `poktrolld`.
 :::
 

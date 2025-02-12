@@ -3,19 +3,19 @@ sidebar_position: 1
 title: Full Node FAQ
 ---
 
-## How do I check the node is accessible from another machine?
+## How do I check whether my node is accessible from another machine?
 
 ```bash
 nc -vz {EXTERNAL_IP} 26656
 ```
 
-## How do I view the node status?
+## How do I view my node status?
 
 ```bash
 sudo systemctl status cosmovisor.service
 ```
 
-## How do I view the node logs?
+## How do I view my node logs?
 
 ```bash
 sudo journalctl -u cosmovisor.service -f

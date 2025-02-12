@@ -3,31 +3,15 @@ title: Validator Cheat Sheet
 sidebar_position: 6
 ---
 
-<<<<<<< HEAD
-This cheat sheet provides quick copy-pasta instructions for staking and running a Validator node on Pocket Network.
-
-:::info
-
-<<<<<<< HEAD:docusaurus/docs/operate/quickstart/validator_cheatsheet.md
-If you're interested in understanding everything validator related, or having full control of every
-step, check out the [Validator Walkthrough](../run_a_node/validator_walkthrough.md).
-=======
-=======
 ## Validator Cheat Sheet <!-- omit in toc -->
 
 <!-- TODO_MAINNET(@okdas, #754): Update this page with all the details. -->
 
->>>>>>> docs_rewrite
-This cheat sheet provides quick copy-pasta like instructions for installing and
-running a Validator using an automated script.
+This cheat sheet provides quick copy-pasta instructions for staking and running a Validator node on Pocket Network.
 
 :::tip
-
 If you're interested in understanding everything, or having full control of every
 step, check out the [Validator Walkthrough](../walkthroughs/validator_walkthrough.md).
-<<<<<<< HEAD
->>>>>>> 2e49d7c64 (WIP):docusaurus/docs/operate/cheat_sheets/validator_cheatsheet.md
-
 :::
 
 - [Prerequisites](#prerequisites)
@@ -52,7 +36,6 @@ step, check out the [Validator Walkthrough](../walkthroughs/validator_walkthroug
 
 ## Account Setup
 
-<<<<<<< HEAD:docusaurus/docs/operate/quickstart/validator_cheatsheet.md
 :::tip
 
 if you're running a full node using the [Full Node Cheat Sheet](./full_node_cheatsheet.md), you can can switch to
@@ -215,22 +198,3 @@ poktrolld tx staking unbond $VALIDATOR_ADDR 500000upokt --from your_account --ch
 - Keep your mnemonic and private keys secure.
 - Adjust the `"amount"` in `validator.json` and delegation amounts according to your available balance.
 - The `commission-rate`, `commission-max-rate`, and `commission-max-change-rate` are expressed as decimal numbers (e.g., `0.1` for 10%).
-=======
-1. **Run a Full Node**: Make sure you have followed the [Full Node Cheat Sheet](full_node_cheatsheet.md) to install and run a Full Node first
->>>>>>> 2e49d7c64 (WIP):docusaurus/docs/operate/cheat_sheets/validator_cheatsheet.md
-=======
-
-:::
-
-- [Introduction](#introduction)
-  - [Pre-Requisites](#pre-requisites)
-
-## Introduction
-
-This guide will help you install a Validator on Pocket Network,
-**using helpers that abstract out some of the underlying complexity.**
-
-### Pre-Requisites
-
-1. **Run a Full Node**: Make sure you have followed the [Full Node Cheat Sheet](full_node_cheatsheet.md) to install and run a Full Node first
->>>>>>> docs_rewrite

@@ -67,16 +67,16 @@ to get some understanding of why you need Pocket & Grove.
 
 ## Where do I start?
 
-1. [Guides & Deployment](./operate/): Deployment cheat sheets and config overviews for node runners, infrastructure operators and CLI users.
-2. [Tools & Explorers](tools): Explorers, wallets, faucets and other resources to interact with the network.
-3. [Core Developers](./develop/): Guides & walkthroughs for core or external developers looking to contribute to the core protocol or SDK.
-4. [Protocol Design](./protocol/): Learn more about tokenomics design & protocol architecture.
+1. [Guides & Deployment](./operate/cheat_sheets/full_node_cheatsheet.md): Deployment cheat sheets and config overviews for node runners, infrastructure operators and CLI users.
+2. [Tools & Explorers](./tools/user_guide/poktrolld_cli.md): Explorers, wallets, faucets and other resources to interact with the network.
+3. [Core Developers](./develop/developer_guide/walkthrough.md): Guides & walkthroughs for core or external developers looking to contribute to the core protocol or SDK.
+4. [Protocol Design](./protocol/actors/actors.md): Learn more about tokenomics design & protocol architecture.
 
 :::note 🚧 Under Construction 🚧
 
 As of 02/2025, this documentation is under construction and does not have a clear
 user journey. Different parts are intended to serve as references one can link to
-or jump to/from to when needed.
+or jump to/from when needed.
 
 :::
 
@@ -87,14 +87,13 @@ The Shannon Roadmap, along with all past, active and future work is tracked via 
 ## PATH for Gateways
 
 [Grove](https://grove.city/) is developing [PATH](https://path.grove.city/) for
-anyone who aims to deploy a Pocket Network gateway. Visit the [docs](https://path.grove.city/)
-to get started.
+anyone who aims to deploy a Pocket Network gateway. Visit the docs to get started.
 
 The PATH Roadmap, along with all past, active and future work is tracked via [this Github project](https://github.com/orgs/buildwithgrove/projects/1).
 
 ## GoDoc Documentation
 
-The Godoc for the source code in this can be found at [pkg.go.dev/github.com/pokt-network/poktroll](https://pkg.go.dev/github.com/pokt-network/poktroll).
+The Godoc for the source code can be found at [pkg.go.dev/github.com/pokt-network/poktroll](https://pkg.go.dev/github.com/pokt-network/poktroll).
 
 ---
 

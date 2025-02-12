@@ -3,7 +3,7 @@
 
 <div align="center">
   <a href="https://www.pokt.network">
-    <img src="https://github.com/user-attachments/assets/01ddfcac-3b64-42ab-8e83-e87a5e9b36a6" alt="Pocket Network logo" width="340"/>
+    <img src="https://user-images.githubusercontent.com/2219004/151564884-212c0e40-3bfa-412e-a341-edb54b5f1498.jpeg" alt="Pocket Network logo" width="340"/>
   </a>
 </div>
 

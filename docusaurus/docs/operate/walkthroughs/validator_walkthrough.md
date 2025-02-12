@@ -3,34 +3,18 @@ title: Validator Walkthrough
 sidebar_position: 4
 ---
 
-<<<<<<< HEAD
-This walkthrough provides detailed step-by-step instructions to stake and run a Validator node on Pocket Network.
-
-:::tip
-
-<<<<<<< HEAD:docusaurus/docs/operate/run_a_node/validator_walkthrough.md
-If you're interested in a simple guide with _copy-pasta_ of a few commands to get started, check out the [Validator Cheat Sheet](../quickstart/validator_cheatsheet.md) instead.
-=======
-If you're comfortable using an automated scripts, or simply want to _copy-pasta_ a
-few commands to get started, check out the [Validator Cheat Sheet](../cheat_sheet/validator_cheatsheet.md).
->>>>>>> 2e49d7c64 (WIP):docusaurus/docs/operate/walkthroughs/validator_walkthrough.md
-=======
 ## Validator Walkthrough <!-- omit in toc -->
 
 <!-- TODO_MAINNET(@okdas, #754): Update this page with all the details. -->
 
-This walkthrough provides a detailed step-by-step instructions to run a validator node for Pocket Network.
+This walkthrough provides detailed step-by-step instructions to stake and run a Validator node on Pocket Network.
 
 :::tip
-
-If you're comfortable using an automated scripts, or simply want to _copy-pasta_ a
-few commands to get started, check out the [Validator Cheat Sheet](../cheat_sheet/validator_cheatsheet.md).
->>>>>>> docs_rewrite
-
+If you're comfortable using automated scripts, or simply want to _copy-pasta_ a
+few commands to get started, check out the [Validator Cheat Sheet](../cheat_sheets/validator_cheatsheet.md) instead.
 :::
 
 - [Introduction](#introduction)
-<<<<<<< HEAD
 - [Prerequisites](#prerequisites)
 - [1. Run a Full Node](#1-run-a-full-node)
 - [2. Account Setup](#2-account-setup)
@@ -50,7 +34,6 @@ This guide will help you stake and run a Validator node on Pocket Network, from 
 
 As a Validator, you'll be participating in the consensus of the network, validating transactions, and securing the blockchain.
 
-<<<<<<< HEAD:docusaurus/docs/operate/run_a_node/validator_walkthrough.md
 ## Prerequisites
 
 **Run a Full Node**: Ensure you have followed the [Full Node Walkthrough](./full_node_walkthrough.md) to install and run a Full Node. Your node must be fully synced with the network before proceeding.
@@ -139,7 +122,7 @@ poktrolld comet show-validator
 This command outputs your node's public key in JSON format:
 
 ```json
-{"@type":"/cosmos.crypto.ed25519.PubKey","key":"YourPublicKeyHere"}
+{ "@type": "/cosmos.crypto.ed25519.PubKey", "key": "YourPublicKeyHere" }
 ```
 
 - Copy the entire output (including `"@type"` and `"key"`), as you'll need it for the next step.
@@ -156,7 +139,10 @@ Paste the following content into `validator.json`, replacing placeholders with y
 
 ```json
 {
-  "pubkey": {"@type":"/cosmos.crypto.ed25519.PubKey","key":"YourPublicKeyHere"},
+  "pubkey": {
+    "@type": "/cosmos.crypto.ed25519.PubKey",
+    "key": "YourPublicKeyHere"
+  },
   "amount": "1000000upokt",
   "moniker": "YourValidatorName",
   "identity": "",
@@ -252,18 +238,3 @@ Here are some useful commands for managing your Validator:
 ---
 
 Congratulations! You have successfully set up and run a Validator on Pocket Network. Remember to stay engaged with the community and keep your node running smoothly to contribute to the network's security and decentralization.
-=======
-1. **Run a Full Node**: Make sure you have followed the [Full Node Walkthrough](full_node_walkthrough.md) to install and run a Full Node first
->>>>>>> 2e49d7c64 (WIP):docusaurus/docs/operate/walkthroughs/validator_walkthrough.md
-=======
-- [Pre-Requisites](#pre-requisites)
-
-## Introduction
-
-This guide will help you install a Validator on Pocket Network, from scratch, manually,
-**giving you control over each step of the process**.
-
-## Pre-Requisites
-
-1. **Run a Full Node**: Make sure you have followed the [Full Node Walkthrough](full_node_walkthrough.md) to install and run a Full Node first
->>>>>>> docs_rewrite

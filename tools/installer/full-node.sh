@@ -119,7 +119,7 @@ install_dependencies() {
         return 1
     fi
 
-    print_color $YELLOW "All dependencies installed successfully."
+    print_color $GREEN "All dependencies installed successfully."
     return 0
 }
 
