@@ -3,11 +3,15 @@ package types_test
 import (
 	"testing"
 
-	"github.com/pokt-network/poktroll/x/migration/types"
 	"github.com/stretchr/testify/require"
+
+	"github.com/pokt-network/poktroll/testutil/sample"
+	"github.com/pokt-network/poktroll/x/migration/types"
 )
 
 func TestGenesisState_Validate(t *testing.T) {
+	duplicateMorseAddress := []byte(sample.MorseAddressHex())
+
 	tests := []struct {
 		desc     string
 		genState *types.GenesisState
@@ -24,10 +28,10 @@ func TestGenesisState_Validate(t *testing.T) {
 
 				MorseClaimableAccountList: []types.MorseClaimableAccount{
 					{
-						Address: "0",
+						Address: []byte(sample.MorseAddressHex()),
 					},
 					{
-						Address: "1",
+						Address: []byte(sample.MorseAddressHex()),
 					},
 				},
 				// this line is used by starport scaffolding # types/genesis/validField
@@ -39,10 +43,10 @@ func TestGenesisState_Validate(t *testing.T) {
 			genState: &types.GenesisState{
 				MorseClaimableAccountList: []types.MorseClaimableAccount{
 					{
-						Address: "0",
+						Address: duplicateMorseAddress,
 					},
 					{
-						Address: "0",
+						Address: duplicateMorseAddress,
 					},
 				},
 			},

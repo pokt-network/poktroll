@@ -96,7 +96,7 @@ func TestNewTestMorseStateExport(t *testing.T) {
 			require.Equal(t, uint64(i), morseWorkspace.numSuppliers)
 
 			morseAccounts := morseWorkspace.accountState.Accounts[i-1]
-			require.Equal(t, expectedShannonAccountBalance, morseAccounts.Coins[0].Amount.String())
+			require.Equal(t, expectedShannonAccountBalance, morseAccounts.TotalTokens.Amount.String())
 			require.Equal(t, expectedShannonTotalAppStake, morseWorkspace.accumulatedTotalAppStake.String())
 			require.Equal(t, expectedShannonTotalSupplierStake, morseWorkspace.accumulatedTotalSupplierStake.String())
 		})
@@ -139,8 +139,7 @@ func newMorseStateExportAndAccountState(
 	}
 
 	morseAccountState := &migrationtypes.MorseAccountState{
-		AccountsIdxByAddress: make(map[string]uint64),
-		Accounts:             make([]*migrationtypes.MorseAccount, numAccounts),
+		Accounts: make([]*migrationtypes.MorseClaimableAccount, numAccounts),
 	}
 
 	for i := 1; i < numAccounts+1; i++ {
@@ -194,16 +193,11 @@ func newMorseStateExportAndAccountState(
 		)
 
 		// Add the account to the morseAccountState.
-		morseAccountState.Accounts[i-1] = &migrationtypes.MorseAccount{
-			Address: pubKey.Address(),
-			Coins:   cosmostypes.NewCoins(cosmostypes.NewInt64Coin(volatile.DenomuPOKT, sumAmount)),
-			PubKey: &migrationtypes.MorsePublicKey{
-				Value: pubKey.Bytes(),
-			},
+		morseAccountState.Accounts[i-1] = &migrationtypes.MorseClaimableAccount{
+			Address:     pubKey.Address(),
+			TotalTokens: cosmostypes.NewInt64Coin(volatile.DenomuPOKT, sumAmount),
+			PublicKey:   pubKey.Bytes(),
 		}
-
-		// Add the account index to the morseAccountState.
-		morseAccountState.AccountsIdxByAddress[pubKey.Address().String()] = uint64(i - 1)
 	}
 
 	var err error

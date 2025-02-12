@@ -23,7 +23,7 @@ func (gs GenesisState) Validate() error {
 	morseClaimableAccountIndexMap := make(map[string]struct{})
 
 	for _, elem := range gs.MorseClaimableAccountList {
-		index := string(MorseClaimableAccountKey(elem.Address))
+		index := string(MorseClaimableAccountKey(elem.Address.String()))
 		if _, ok := morseClaimableAccountIndexMap[index]; ok {
 			return fmt.Errorf("duplicated index for morseClaimableAccount")
 		}

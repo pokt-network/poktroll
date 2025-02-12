@@ -13,9 +13,9 @@ import (
 // newMorseImportWorkspace returns a new morseImportWorkspace with fields initialized to their zero values.
 func newMorseImportWorkspace() *morseImportWorkspace {
 	return &morseImportWorkspace{
+		accountIdxByAddress: make(map[string]uint64),
 		accountState: &migrationtypes.MorseAccountState{
-			AccountsIdxByAddress: make(map[string]uint64),
-			Accounts:             make([]*migrationtypes.MorseAccount, 0),
+			Accounts: make([]*migrationtypes.MorseClaimableAccount, 0),
 		},
 		accumulatedTotalBalance:       cosmosmath.ZeroInt(),
 		accumulatedTotalAppStake:      cosmosmath.ZeroInt(),
@@ -26,6 +26,9 @@ func newMorseImportWorkspace() *morseImportWorkspace {
 // morseImportWorkspace is a helper struct that is used to consolidate the Morse account balance,
 // application stake, and supplier stake for each account as an entry in the resulting MorseAccountState.
 type morseImportWorkspace struct {
+	// accountIdxByAddress is a map from the Shannon bech32 address to the index of the
+	// corresponding MorseAccount in the accounts slice.
+	accountIdxByAddress map[string]uint64
 	// accountState is the final MorseAccountState that will be imported into Shannon.
 	// It includes a slice of MorseAccount objects which are populated, by transforming
 	// the input MorseStateExport into the output MorseAccountState.
@@ -54,8 +57,8 @@ func (miw *morseImportWorkspace) nextIdx() int64 {
 // getAccount returns the MorseAccount for the given address and its index,
 // if present, in the accountState accounts slice.
 // If the given address is not present, it returns nil, -1.
-func (miw *morseImportWorkspace) getAccount(addr string) (*migrationtypes.MorseAccount, int64) {
-	accountIdx, ok := miw.accountState.AccountsIdxByAddress[addr]
+func (miw *morseImportWorkspace) getAccount(addr string) (*migrationtypes.MorseClaimableAccount, int64) {
+	accountIdx, ok := miw.accountIdxByAddress[addr]
 	if !ok {
 		return nil, -1
 	}
@@ -104,7 +107,7 @@ func (miw *morseImportWorkspace) accumulatedTotalsSum() cosmosmath.Int {
 }
 
 // addAccount adds the account with the given address to the accounts slice and
-// its corresponding address is in the addressToIdx map.
+// its corresponding address is in the accountIdxByAddress map.
 // If the address is already present, an error is returned.
 func (miw *morseImportWorkspace) addAccount(
 	addr string,
@@ -120,13 +123,13 @@ func (miw *morseImportWorkspace) addAccount(
 	}
 
 	accountIdx = miw.nextIdx()
-	importAccount := &migrationtypes.MorseAccount{
-		Address: exportAccount.Value.Address,
-		PubKey:  exportAccount.Value.PubKey,
-		Coins:   cosmostypes.Coins{balance},
+	importAccount := &migrationtypes.MorseClaimableAccount{
+		Address:     exportAccount.Value.Address,
+		PublicKey:   exportAccount.Value.PubKey.Value,
+		TotalTokens: cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 0),
 	}
 	miw.accountState.Accounts = append(miw.accountState.Accounts, importAccount)
-	miw.accountState.AccountsIdxByAddress[addr] = uint64(accountIdx)
+	miw.accountIdxByAddress[addr] = uint64(accountIdx)
 
 	return accountIdx, balance, nil
 }
@@ -138,21 +141,13 @@ func (miw *morseImportWorkspace) addUpokt(addr string, amount cosmosmath.Int) er
 		return ErrMorseStateTransform.Wrapf("account %q not found", addr)
 	}
 
-	if len(account.Coins) != 1 {
-		return ErrMorseStateTransform.Wrapf(
-			"account %q has %d token denominations, expected upokt only: %s",
-			addr, len(account.Coins), account.Coins,
-		)
-	}
-
-	upoktCoins := account.Coins[0]
-	if upoktCoins.Denom != volatile.DenomuPOKT {
+	if account.TotalTokens.Denom != volatile.DenomuPOKT {
 		return fmt.Errorf(
 			"account %q has %s token denomination, expected upokt only: %s",
-			addr, upoktCoins.Denom, account.Coins,
+			addr, account.TotalTokens.Denom, account.TotalTokens,
 		)
 	}
 
-	account.Coins[0].Amount = account.Coins[0].Amount.Add(amount)
+	account.TotalTokens.Amount = account.TotalTokens.Amount.Add(amount)
 	return nil
 }

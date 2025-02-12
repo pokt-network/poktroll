@@ -6,6 +6,7 @@ import (
 	"cosmossdk.io/store/prefix"
 	storetypes "cosmossdk.io/store/types"
 	"github.com/cosmos/cosmos-sdk/runtime"
+
 	"github.com/pokt-network/poktroll/x/migration/types"
 )
 
@@ -15,7 +16,7 @@ func (k Keeper) SetMorseClaimableAccount(ctx context.Context, morseClaimableAcco
 	store := prefix.NewStore(storeAdapter, types.KeyPrefix(types.MorseClaimableAccountKeyPrefix))
 	b := k.cdc.MustMarshal(&morseClaimableAccount)
 	store.Set(types.MorseClaimableAccountKey(
-		morseClaimableAccount.Address,
+		morseClaimableAccount.Address.String(),
 	), b)
 }
 
