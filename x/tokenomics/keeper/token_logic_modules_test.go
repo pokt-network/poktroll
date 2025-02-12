@@ -442,7 +442,7 @@ func TestProcessTokenLogicModules_TLMGlobalMint_Valid_MintDistributionCorrect(t 
 		supplierShareholderBalancesAfter[addr] = getBalance(t, ctx, keepers, addr)
 	}
 
-	// Compute the expected minted to mint.
+	// Compute the expected amount to mint.
 	globalInflationPerClaimRat, err := tlm.Float64ToRat(tokenomicsParams.GlobalInflationPerClaim)
 	require.NoError(t, err)
 
@@ -461,7 +461,7 @@ func TestProcessTokenLogicModules_TLMGlobalMint_Valid_MintDistributionCorrect(t 
 	}
 	numTokensMinted := cosmosmath.NewIntFromBigInt(numTokensMintedInt)
 
-	// Compute the expected minted to each module.
+	// Compute the expected amount minted to each module.
 	propMint := computeShare(t, numTokensMintedRat, tokenomicsParams.MintAllocationPercentages.Proposer)
 	serviceOwnerMint := computeShare(t, numTokensMintedRat, tokenomicsParams.MintAllocationPercentages.SourceOwner)
 	appMint := computeShare(t, numTokensMintedRat, tokenomicsParams.MintAllocationPercentages.Application)

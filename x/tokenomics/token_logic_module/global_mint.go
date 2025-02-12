@@ -103,7 +103,7 @@ func (tlm tlmGlobalMint) Process(
 		Coin:            supplierCoin,
 	})
 	// Distribute the rewards from within the supplier's module account.
-	if err := distributeSupplierRewardsToShareHolders(
+	if err = distributeSupplierRewardsToShareHolders(
 		logger,
 		tlmCtx.Result,
 		tokenomicstypes.SettlementOpReason_TLM_GLOBAL_MINT_SUPPLIER_SHAREHOLDER_REWARD_DISTRIBUTION,
@@ -212,18 +212,12 @@ func ensureMintedCoinsAreDistributed(
 // The tokenomics.Params validation guarantees that allocation percentages sum to 100%,
 // ensuring this calculation's correctness.
 func sendRewardsToDAOAccount(
-	logger cosmoslog.Logger,
 	result *tokenomicstypes.ClaimSettlementResult,
 	opReason tokenomicstypes.SettlementOpReason,
 	senderModule string,
 	recipientAddr string,
 	settlementCoin, appRewards, supplierRewards, proposerRewards, sourceOwnerRewards cosmostypes.Coin,
 ) cosmostypes.Coin {
-	logger = logger.With(
-		"method", "mintRewardsToAccount",
-		"session_id", result.GetSessionId(),
-	)
-
 	coinToDAOAcc := settlementCoin.
 		Sub(appRewards).
 		Sub(supplierRewards).
