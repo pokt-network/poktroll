@@ -314,7 +314,10 @@ func calculateAllocationAmount(
 	return math.NewIntFromBigInt(allocationAmtInt)
 }
 
-// Float64ToRat converts a float64 to a big.Rat.
+// Float64ToRat converts a float64 to a big.Rat for precise decimal arithmetic.
+// TODO_CONSIDERATION: Future versions of CosmosSDK will deprecate float64 values
+// with zero copy encoding of scalar values.
+// We should consider switching to string representations for tokenomics allocation percentages.
 // NB: It is publicly exposed to be used in the tests.
 func Float64ToRat(f float64) (*big.Rat, error) {
 	// Convert the float64 to a string before big.Rat conversion to avoid floating
