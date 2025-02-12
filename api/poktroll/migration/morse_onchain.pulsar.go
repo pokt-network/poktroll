@@ -1872,7 +1872,9 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-// MorseAccountState is the on-chain representation of the imported account state from Morse.
+// MorseAccountState is the onchain representation of the imported account state from Morse.
+//
+// TODO_UPNEXT(@bryanchriswhite): Decompose this on-chain structure.
 type MorseAccountState struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -1925,10 +1927,13 @@ type MorseAccount struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// A binary representation of the address corresponding to a Morse application's ed25519 public key.
-	Address []byte          `protobuf:"bytes,1,opt,name=address,proto3" json:"address,omitempty"`
-	PubKey  *MorsePublicKey `protobuf:"bytes,2,opt,name=pub_key,json=pubKey,proto3" json:"pub_key,omitempty"`
-	Coins   []*v1beta1.Coin `protobuf:"bytes,3,rep,name=coins,proto3" json:"coins,omitempty"`
+	// A hex-encoded representation of the address corresponding to a Morse application's ed25519 public key.
+	Address []byte `protobuf:"bytes,1,opt,name=address,proto3" json:"address,omitempty"`
+	// The ed25519 public key of the account.
+	PubKey *MorsePublicKey `protobuf:"bytes,2,opt,name=pub_key,json=pubKey,proto3" json:"pub_key,omitempty"`
+	// The total amount of uPOKT owned by the account; this is a sum of the balance and any actor stakes.
+	// NB: The default stake/balance proportion is derived from Morse query response(s) at the time of claiming.
+	Coins []*v1beta1.Coin `protobuf:"bytes,3,rep,name=coins,proto3" json:"coins,omitempty"`
 }
 
 func (x *MorseAccount) Reset() {

@@ -8,7 +8,7 @@
 // but are not completely identical to their Morse counterparts, not all of which are defined
 // as protobuf types in the Morse codebase.
 //
-// Morse also leverages pb.Any types, as well as the gogoproto.casttype option in several places.
+// Morse leverages pb.Any types, as well as the gogoproto.casttype option in several places.
 // All usages of pb.Any have been replaced with equivalent protobuf types
 // (i.e. an interstitial type with `type` and/or `value` field(s)).
 // All usages of gogoproto.casttype which previously referenced Morse data structures have been removed.
@@ -16,10 +16,10 @@
 // external lib type that the Morse type was wrapping (e.g. address and public key fields).
 //
 // These types are used by the migration subcommand to transform
-// the Morse state export into the Shannon state import.
-// Ref: `poktrolld migrate collect-morse-accounts ...`
+// the Morse state export into the Shannon state import like so:
+//  $ poktrolld migrate collect-morse-accounts ...
 //
-// They ARE NOT persisted on-chain (Shannon) at any point.
+// CRITICAL: These types are offchain and ARE NOT persisted onchain (Shannon) at any point.
 
 package types
 
@@ -45,10 +45,11 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 
-// MorseStateExport is the data structure that is serialized and output when running
-// `pocket utils export-genesis-for-reset`.
+// MorseStateExport is the data structure that is serialized and output when running:
 //
-// See: https://editor.swagger.io/?url=https://raw.githubusercontent.com/pokt-network/pocket-core/staging/doc/specs/rpc-spec.yaml#operations-query-post_query_state
+//	$ pocket utils export-genesis-for-reset ...
+//
+// Ref: https://editor.swagger.io/?url=https://raw.githubusercontent.com/pokt-network/pocket-core/staging/doc/specs/rpc-spec.yaml#operations-query-post_query_state
 type MorseStateExport struct {
 	// app_hash is the Morse tendermint state hash.
 	AppHash string `protobuf:"bytes,1,opt,name=app_hash,json=appHash,proto3" json:"app_hash"`
@@ -204,7 +205,7 @@ func (m *MorseApplications) GetApplications() []*MorseApplication {
 	return nil
 }
 
-// A wrapper around a list of Morse accounts.
+// A wrapper around a list of MorseAuthAccount.
 // It encapsulates the minimum information required to import Morse accounts.
 //
 // See: https://github.com/pokt-network/pocket-core/blob/staging/x/auth/types/genesis.go#L9
@@ -249,7 +250,7 @@ func (m *MorseAuth) GetAccounts() []*MorseAuthAccount {
 }
 
 // MorseAccount:
-// * Wraps Morse account information to conform to Morse genesis structure
+// * Wraps MorseAuthAccount information to conform to Morse genesis structure
 // * Represents only externally owned accounts (not module accounts)
 // * Avoids pb.Any serialization since only external accounts needed for migration
 type MorseAuthAccount struct {
@@ -354,8 +355,9 @@ type MorseApplication struct {
 	Address github_com_cometbft_cometbft_crypto.Address `protobuf:"bytes,1,opt,name=address,proto3,casttype=github.com/cometbft/cometbft/crypto.Address" json:"address" yaml:"address"`
 	// PublicKey is the binary representation of a Morse application's ed25519 public key.
 	PublicKey []byte `protobuf:"bytes,2,opt,name=public_key,json=publicKey,proto3" json:"public_key" yaml:"public_key"`
-	Jailed    bool   `protobuf:"varint,3,opt,name=jailed,proto3" json:"jailed" yaml:"jailed"`
-	Status    int32  `protobuf:"varint,4,opt,name=status,proto3" json:"status" yaml:"status"`
+	// TODO_MAINNET(@Olshansk):  Should status and/or jailed be considered during the migration, and if so, how?
+	Jailed bool  `protobuf:"varint,3,opt,name=jailed,proto3" json:"jailed" yaml:"jailed"`
+	Status int32 `protobuf:"varint,4,opt,name=status,proto3" json:"status" yaml:"status"`
 	// The string representation of the BigInt amount of upokt.
 	StakedTokens string `protobuf:"bytes,6,opt,name=staked_tokens,json=stakedTokens,proto3" json:"tokens"`
 }
@@ -398,8 +400,9 @@ type MorseValidator struct {
 	Address github_com_cometbft_cometbft_crypto.Address `protobuf:"bytes,1,opt,name=address,proto3,casttype=github.com/cometbft/cometbft/crypto.Address" json:"address" yaml:"address"`
 	// The binary representation of a Morse application's ed25519 public key.
 	PublicKey []byte `protobuf:"bytes,2,opt,name=public_key,json=publicKey,proto3" json:"public_key" yaml:"public_key"`
-	Jailed    bool   `protobuf:"varint,3,opt,name=jailed,proto3" json:"jailed"`
-	Status    int32  `protobuf:"varint,4,opt,name=status,proto3" json:"status"`
+	// TODO_MAINNET(@Olshansk):  Should status and/or jailed be considered during the migration, and if so, how?
+	Jailed bool  `protobuf:"varint,3,opt,name=jailed,proto3" json:"jailed"`
+	Status int32 `protobuf:"varint,4,opt,name=status,proto3" json:"status"`
 	// The string representation of the BigInt amount of upokt.
 	StakedTokens string `protobuf:"bytes,7,opt,name=staked_tokens,json=stakedTokens,proto3" json:"tokens"`
 }

@@ -184,7 +184,7 @@ func collectInputAccountBalances(inputState *migrationtypes.MorseStateExport, mo
 	for exportAccountIdx, exportAccount := range inputState.AppState.Auth.Accounts {
 		// DEV_NOTE: Ignore module accounts.
 		// TODO_MAINNET(@olshansky): Revisit this business logic to ensure that no tokens go missing from Morse to Shannon.
-		// Ref: https://github.com/pokt-network/poktroll/pull/1039/files#r1934711993
+		// See: https://github.com/pokt-network/poktroll/issues/1066 regarding supply validation.
 		if exportAccount.Type != "posmint/Account" {
 			logger.Warn().
 				Str("type", exportAccount.Type).

@@ -28,7 +28,9 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 
-// MorseAccountState is the on-chain representation of the imported account state from Morse.
+// MorseAccountState is the onchain representation of the imported account state from Morse.
+//
+// TODO_UPNEXT(@bryanchriswhite): Decompose this on-chain structure.
 type MorseAccountState struct {
 	AccountsIdxByAddress map[string]uint64 `protobuf:"bytes,1,rep,name=accounts_idx_by_address,json=accountsIdxByAddress,proto3" json:"accounts_idx_by_address" yaml:"accounts_idx_by_address" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"varint,2,opt,name=value,proto3"`
 	Accounts             []*MorseAccount   `protobuf:"bytes,2,rep,name=accounts,proto3" json:"accounts" yaml:"accounts"`
@@ -82,10 +84,13 @@ func (m *MorseAccountState) GetAccounts() []*MorseAccount {
 //
 // See: https://github.com/pokt-network/pocket-core/blob/staging/proto/x/auth/auth.proto#L14.
 type MorseAccount struct {
-	// A binary representation of the address corresponding to a Morse application's ed25519 public key.
+	// A hex-encoded representation of the address corresponding to a Morse application's ed25519 public key.
 	Address github_com_cometbft_cometbft_crypto.Address `protobuf:"bytes,1,opt,name=address,proto3,casttype=github.com/cometbft/cometbft/crypto.Address" json:"address"`
-	PubKey  *MorsePublicKey                             `protobuf:"bytes,2,opt,name=pub_key,json=pubKey,proto3" json:"public_key" yaml:"public_key"`
-	Coins   []types.Coin                                `protobuf:"bytes,3,rep,name=coins,proto3" json:"coins"`
+	// The ed25519 public key of the account.
+	PubKey *MorsePublicKey `protobuf:"bytes,2,opt,name=pub_key,json=pubKey,proto3" json:"public_key" yaml:"public_key"`
+	// The total amount of uPOKT owned by the account; this is a sum of the balance and any actor stakes.
+	// NB: The default stake/balance proportion is derived from Morse query response(s) at the time of claiming.
+	Coins []types.Coin `protobuf:"bytes,3,rep,name=coins,proto3" json:"coins"`
 }
 
 func (m *MorseAccount) Reset()         { *m = MorseAccount{} }
