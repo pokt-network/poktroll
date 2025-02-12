@@ -1,0 +1,13 @@
+syntax = "proto3";
+package poktroll.migration;
+
+option go_package = "github.com/pokt-network/poktroll/x/migration/types";
+
+message MorseClaimableAccount {
+  string address = 1; 
+  string publicKey = 2; 
+  string totalTokens = 3; 
+  bool claimed = 4; 
+  
+}
+
