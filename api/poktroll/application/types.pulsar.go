@@ -3,11 +3,12 @@ package application
 
 import (
 	v1beta1 "cosmossdk.io/api/cosmos/base/v1beta1"
-	shared "github.com/pokt-network/poktroll/api/poktroll/shared"
 	fmt "fmt"
 	_ "github.com/cosmos/cosmos-proto"
 	runtime "github.com/cosmos/cosmos-proto/runtime"
 	_ "github.com/cosmos/gogoproto/gogoproto"
+	shared "github.com/pokt-network/poktroll/api/poktroll/shared"
+
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoiface "google.golang.org/protobuf/runtime/protoiface"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
@@ -2182,7 +2183,7 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-// Application represents the on-chain definition and state of an application
+// Application represents the onchain definition and state of an application
 type Application struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
