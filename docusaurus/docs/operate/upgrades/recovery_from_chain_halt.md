@@ -97,7 +97,7 @@ sequenceDiagram
 
 These instructions are only relevant to Pocket Network's Shannon release.
 
-We do not currently use `x/gov` or on-chain voting for upgrades.
+We do not currently use `x/gov` or onchain voting for upgrades.
 Instead, all participants in our DAO vote on upgrades off-chain, and the Foundation
 executes transactions on their behalf.
 
