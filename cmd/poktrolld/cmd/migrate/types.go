@@ -137,15 +137,6 @@ func (miw *morseImportWorkspace) addAccount(
 	return accountIdx, balance, nil
 }
 
-// ensureUpoktDenom ensures that the denom of coin is upokt.
-func ensureUpoktDenom(coin cosmostypes.Coin) error {
-	if coin.Denom != volatile.DenomuPOKT {
-		return ErrMorseStateTransform.Wrapf("unsupported denom %q", coin.Denom)
-	}
-
-	return nil
-}
-
 // addUnstakedBalance adds the given amount to the corresponding account balances in the morseWorkspace.
 func (miw *morseImportWorkspace) addUnstakedBalance(addr string, amount cosmosmath.Int) error {
 	account, err := miw.getAccount(addr)
