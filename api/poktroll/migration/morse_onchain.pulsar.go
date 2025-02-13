@@ -513,7 +513,9 @@ var (
 	md_MorseClaimableAccount                   protoreflect.MessageDescriptor
 	fd_MorseClaimableAccount_address           protoreflect.FieldDescriptor
 	fd_MorseClaimableAccount_public_key        protoreflect.FieldDescriptor
-	fd_MorseClaimableAccount_total_tokens      protoreflect.FieldDescriptor
+	fd_MorseClaimableAccount_unstaked_balance  protoreflect.FieldDescriptor
+	fd_MorseClaimableAccount_supplier_stake    protoreflect.FieldDescriptor
+	fd_MorseClaimableAccount_application_stake protoreflect.FieldDescriptor
 	fd_MorseClaimableAccount_claimed_at_height protoreflect.FieldDescriptor
 )
 
@@ -522,7 +524,9 @@ func init() {
 	md_MorseClaimableAccount = File_poktroll_migration_morse_onchain_proto.Messages().ByName("MorseClaimableAccount")
 	fd_MorseClaimableAccount_address = md_MorseClaimableAccount.Fields().ByName("address")
 	fd_MorseClaimableAccount_public_key = md_MorseClaimableAccount.Fields().ByName("public_key")
-	fd_MorseClaimableAccount_total_tokens = md_MorseClaimableAccount.Fields().ByName("total_tokens")
+	fd_MorseClaimableAccount_unstaked_balance = md_MorseClaimableAccount.Fields().ByName("unstaked_balance")
+	fd_MorseClaimableAccount_supplier_stake = md_MorseClaimableAccount.Fields().ByName("supplier_stake")
+	fd_MorseClaimableAccount_application_stake = md_MorseClaimableAccount.Fields().ByName("application_stake")
 	fd_MorseClaimableAccount_claimed_at_height = md_MorseClaimableAccount.Fields().ByName("claimed_at_height")
 }
 
@@ -603,9 +607,21 @@ func (x *fastReflection_MorseClaimableAccount) Range(f func(protoreflect.FieldDe
 			return
 		}
 	}
-	if x.TotalTokens != nil {
-		value := protoreflect.ValueOfMessage(x.TotalTokens.ProtoReflect())
-		if !f(fd_MorseClaimableAccount_total_tokens, value) {
+	if x.UnstakedBalance != nil {
+		value := protoreflect.ValueOfMessage(x.UnstakedBalance.ProtoReflect())
+		if !f(fd_MorseClaimableAccount_unstaked_balance, value) {
+			return
+		}
+	}
+	if x.SupplierStake != nil {
+		value := protoreflect.ValueOfMessage(x.SupplierStake.ProtoReflect())
+		if !f(fd_MorseClaimableAccount_supplier_stake, value) {
+			return
+		}
+	}
+	if x.ApplicationStake != nil {
+		value := protoreflect.ValueOfMessage(x.ApplicationStake.ProtoReflect())
+		if !f(fd_MorseClaimableAccount_application_stake, value) {
 			return
 		}
 	}
@@ -634,8 +650,12 @@ func (x *fastReflection_MorseClaimableAccount) Has(fd protoreflect.FieldDescript
 		return len(x.Address) != 0
 	case "poktroll.migration.MorseClaimableAccount.public_key":
 		return len(x.PublicKey) != 0
-	case "poktroll.migration.MorseClaimableAccount.total_tokens":
-		return x.TotalTokens != nil
+	case "poktroll.migration.MorseClaimableAccount.unstaked_balance":
+		return x.UnstakedBalance != nil
+	case "poktroll.migration.MorseClaimableAccount.supplier_stake":
+		return x.SupplierStake != nil
+	case "poktroll.migration.MorseClaimableAccount.application_stake":
+		return x.ApplicationStake != nil
 	case "poktroll.migration.MorseClaimableAccount.claimed_at_height":
 		return x.ClaimedAtHeight != int64(0)
 	default:
@@ -658,8 +678,12 @@ func (x *fastReflection_MorseClaimableAccount) Clear(fd protoreflect.FieldDescri
 		x.Address = nil
 	case "poktroll.migration.MorseClaimableAccount.public_key":
 		x.PublicKey = nil
-	case "poktroll.migration.MorseClaimableAccount.total_tokens":
-		x.TotalTokens = nil
+	case "poktroll.migration.MorseClaimableAccount.unstaked_balance":
+		x.UnstakedBalance = nil
+	case "poktroll.migration.MorseClaimableAccount.supplier_stake":
+		x.SupplierStake = nil
+	case "poktroll.migration.MorseClaimableAccount.application_stake":
+		x.ApplicationStake = nil
 	case "poktroll.migration.MorseClaimableAccount.claimed_at_height":
 		x.ClaimedAtHeight = int64(0)
 	default:
@@ -684,8 +708,14 @@ func (x *fastReflection_MorseClaimableAccount) Get(descriptor protoreflect.Field
 	case "poktroll.migration.MorseClaimableAccount.public_key":
 		value := x.PublicKey
 		return protoreflect.ValueOfBytes(value)
-	case "poktroll.migration.MorseClaimableAccount.total_tokens":
-		value := x.TotalTokens
+	case "poktroll.migration.MorseClaimableAccount.unstaked_balance":
+		value := x.UnstakedBalance
+		return protoreflect.ValueOfMessage(value.ProtoReflect())
+	case "poktroll.migration.MorseClaimableAccount.supplier_stake":
+		value := x.SupplierStake
+		return protoreflect.ValueOfMessage(value.ProtoReflect())
+	case "poktroll.migration.MorseClaimableAccount.application_stake":
+		value := x.ApplicationStake
 		return protoreflect.ValueOfMessage(value.ProtoReflect())
 	case "poktroll.migration.MorseClaimableAccount.claimed_at_height":
 		value := x.ClaimedAtHeight
@@ -714,8 +744,12 @@ func (x *fastReflection_MorseClaimableAccount) Set(fd protoreflect.FieldDescript
 		x.Address = value.Bytes()
 	case "poktroll.migration.MorseClaimableAccount.public_key":
 		x.PublicKey = value.Bytes()
-	case "poktroll.migration.MorseClaimableAccount.total_tokens":
-		x.TotalTokens = value.Message().Interface().(*v1beta1.Coin)
+	case "poktroll.migration.MorseClaimableAccount.unstaked_balance":
+		x.UnstakedBalance = value.Message().Interface().(*v1beta1.Coin)
+	case "poktroll.migration.MorseClaimableAccount.supplier_stake":
+		x.SupplierStake = value.Message().Interface().(*v1beta1.Coin)
+	case "poktroll.migration.MorseClaimableAccount.application_stake":
+		x.ApplicationStake = value.Message().Interface().(*v1beta1.Coin)
 	case "poktroll.migration.MorseClaimableAccount.claimed_at_height":
 		x.ClaimedAtHeight = value.Int()
 	default:
@@ -738,11 +772,21 @@ func (x *fastReflection_MorseClaimableAccount) Set(fd protoreflect.FieldDescript
 // Mutable is a mutating operation and unsafe for concurrent use.
 func (x *fastReflection_MorseClaimableAccount) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
-	case "poktroll.migration.MorseClaimableAccount.total_tokens":
-		if x.TotalTokens == nil {
-			x.TotalTokens = new(v1beta1.Coin)
+	case "poktroll.migration.MorseClaimableAccount.unstaked_balance":
+		if x.UnstakedBalance == nil {
+			x.UnstakedBalance = new(v1beta1.Coin)
 		}
-		return protoreflect.ValueOfMessage(x.TotalTokens.ProtoReflect())
+		return protoreflect.ValueOfMessage(x.UnstakedBalance.ProtoReflect())
+	case "poktroll.migration.MorseClaimableAccount.supplier_stake":
+		if x.SupplierStake == nil {
+			x.SupplierStake = new(v1beta1.Coin)
+		}
+		return protoreflect.ValueOfMessage(x.SupplierStake.ProtoReflect())
+	case "poktroll.migration.MorseClaimableAccount.application_stake":
+		if x.ApplicationStake == nil {
+			x.ApplicationStake = new(v1beta1.Coin)
+		}
+		return protoreflect.ValueOfMessage(x.ApplicationStake.ProtoReflect())
 	case "poktroll.migration.MorseClaimableAccount.address":
 		panic(fmt.Errorf("field address of message poktroll.migration.MorseClaimableAccount is not mutable"))
 	case "poktroll.migration.MorseClaimableAccount.public_key":
@@ -766,7 +810,13 @@ func (x *fastReflection_MorseClaimableAccount) NewField(fd protoreflect.FieldDes
 		return protoreflect.ValueOfBytes(nil)
 	case "poktroll.migration.MorseClaimableAccount.public_key":
 		return protoreflect.ValueOfBytes(nil)
-	case "poktroll.migration.MorseClaimableAccount.total_tokens":
+	case "poktroll.migration.MorseClaimableAccount.unstaked_balance":
+		m := new(v1beta1.Coin)
+		return protoreflect.ValueOfMessage(m.ProtoReflect())
+	case "poktroll.migration.MorseClaimableAccount.supplier_stake":
+		m := new(v1beta1.Coin)
+		return protoreflect.ValueOfMessage(m.ProtoReflect())
+	case "poktroll.migration.MorseClaimableAccount.application_stake":
 		m := new(v1beta1.Coin)
 		return protoreflect.ValueOfMessage(m.ProtoReflect())
 	case "poktroll.migration.MorseClaimableAccount.claimed_at_height":
@@ -848,8 +898,16 @@ func (x *fastReflection_MorseClaimableAccount) ProtoMethods() *protoiface.Method
 		if l > 0 {
 			n += 1 + l + runtime.Sov(uint64(l))
 		}
-		if x.TotalTokens != nil {
-			l = options.Size(x.TotalTokens)
+		if x.UnstakedBalance != nil {
+			l = options.Size(x.UnstakedBalance)
+			n += 1 + l + runtime.Sov(uint64(l))
+		}
+		if x.SupplierStake != nil {
+			l = options.Size(x.SupplierStake)
+			n += 1 + l + runtime.Sov(uint64(l))
+		}
+		if x.ApplicationStake != nil {
+			l = options.Size(x.ApplicationStake)
 			n += 1 + l + runtime.Sov(uint64(l))
 		}
 		if x.ClaimedAtHeight != 0 {
@@ -887,10 +945,38 @@ func (x *fastReflection_MorseClaimableAccount) ProtoMethods() *protoiface.Method
 		if x.ClaimedAtHeight != 0 {
 			i = runtime.EncodeVarint(dAtA, i, uint64(x.ClaimedAtHeight))
 			i--
-			dAtA[i] = 0x20
+			dAtA[i] = 0x30
 		}
-		if x.TotalTokens != nil {
-			encoded, err := options.Marshal(x.TotalTokens)
+		if x.ApplicationStake != nil {
+			encoded, err := options.Marshal(x.ApplicationStake)
+			if err != nil {
+				return protoiface.MarshalOutput{
+					NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+					Buf:               input.Buf,
+				}, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(encoded)))
+			i--
+			dAtA[i] = 0x2a
+		}
+		if x.SupplierStake != nil {
+			encoded, err := options.Marshal(x.SupplierStake)
+			if err != nil {
+				return protoiface.MarshalOutput{
+					NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+					Buf:               input.Buf,
+				}, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(encoded)))
+			i--
+			dAtA[i] = 0x22
+		}
+		if x.UnstakedBalance != nil {
+			encoded, err := options.Marshal(x.UnstakedBalance)
 			if err != nil {
 				return protoiface.MarshalOutput{
 					NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -1036,7 +1122,7 @@ func (x *fastReflection_MorseClaimableAccount) ProtoMethods() *protoiface.Method
 				iNdEx = postIndex
 			case 3:
 				if wireType != 2 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field TotalTokens", wireType)
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field UnstakedBalance", wireType)
 				}
 				var msglen int
 				for shift := uint(0); ; shift += 7 {
@@ -1063,14 +1149,86 @@ func (x *fastReflection_MorseClaimableAccount) ProtoMethods() *protoiface.Method
 				if postIndex > l {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
 				}
-				if x.TotalTokens == nil {
-					x.TotalTokens = &v1beta1.Coin{}
+				if x.UnstakedBalance == nil {
+					x.UnstakedBalance = &v1beta1.Coin{}
 				}
-				if err := options.Unmarshal(dAtA[iNdEx:postIndex], x.TotalTokens); err != nil {
+				if err := options.Unmarshal(dAtA[iNdEx:postIndex], x.UnstakedBalance); err != nil {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
 				}
 				iNdEx = postIndex
 			case 4:
+				if wireType != 2 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field SupplierStake", wireType)
+				}
+				var msglen int
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					msglen |= int(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				if msglen < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				postIndex := iNdEx + msglen
+				if postIndex < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if postIndex > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				if x.SupplierStake == nil {
+					x.SupplierStake = &v1beta1.Coin{}
+				}
+				if err := options.Unmarshal(dAtA[iNdEx:postIndex], x.SupplierStake); err != nil {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
+				}
+				iNdEx = postIndex
+			case 5:
+				if wireType != 2 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field ApplicationStake", wireType)
+				}
+				var msglen int
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					msglen |= int(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				if msglen < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				postIndex := iNdEx + msglen
+				if postIndex < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if postIndex > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				if x.ApplicationStake == nil {
+					x.ApplicationStake = &v1beta1.Coin{}
+				}
+				if err := options.Unmarshal(dAtA[iNdEx:postIndex], x.ApplicationStake); err != nil {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
+				}
+				iNdEx = postIndex
+			case 6:
 				if wireType != 0 {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field ClaimedAtHeight", wireType)
 				}
@@ -1187,10 +1345,14 @@ type MorseClaimableAccount struct {
 	Address []byte `protobuf:"bytes,1,opt,name=address,proto3" json:"address,omitempty"`
 	// The ed25519 public key of the account.
 	PublicKey []byte `protobuf:"bytes,2,opt,name=public_key,json=publicKey,proto3" json:"public_key,omitempty"`
-	// The total amount of uPOKT owned by the account; this is a sum of the balance and any actor stakes.
-	// NB: The default stake/balance proportion is derived from Morse query response(s) at the time of claiming.
-	TotalTokens     *v1beta1.Coin `protobuf:"bytes,3,opt,name=total_tokens,json=totalTokens,proto3" json:"total_tokens,omitempty"`
-	ClaimedAtHeight int64         `protobuf:"varint,4,opt,name=claimed_at_height,json=claimedAtHeight,proto3" json:"claimed_at_height,omitempty"`
+	// The unstaked upokt tokens (i.e. account balance) available for claiming.
+	UnstakedBalance *v1beta1.Coin `protobuf:"bytes,3,opt,name=unstaked_balance,json=unstakedBalance,proto3" json:"unstaked_balance,omitempty"`
+	// The staked tokens associated with a supplier actor which corresponds to this account address.
+	SupplierStake *v1beta1.Coin `protobuf:"bytes,4,opt,name=supplier_stake,json=supplierStake,proto3" json:"supplier_stake,omitempty"`
+	// The staked tokens associated with an application actor which corresponds to this account address.
+	ApplicationStake *v1beta1.Coin `protobuf:"bytes,5,opt,name=application_stake,json=applicationStake,proto3" json:"application_stake,omitempty"`
+	// The Shannon height at which the account was claimed.
+	ClaimedAtHeight int64 `protobuf:"varint,6,opt,name=claimed_at_height,json=claimedAtHeight,proto3" json:"claimed_at_height,omitempty"`
 }
 
 func (x *MorseClaimableAccount) Reset() {
@@ -1227,9 +1389,23 @@ func (x *MorseClaimableAccount) GetPublicKey() []byte {
 	return nil
 }
 
-func (x *MorseClaimableAccount) GetTotalTokens() *v1beta1.Coin {
+func (x *MorseClaimableAccount) GetUnstakedBalance() *v1beta1.Coin {
 	if x != nil {
-		return x.TotalTokens
+		return x.UnstakedBalance
+	}
+	return nil
+}
+
+func (x *MorseClaimableAccount) GetSupplierStake() *v1beta1.Coin {
+	if x != nil {
+		return x.SupplierStake
+	}
+	return nil
+}
+
+func (x *MorseClaimableAccount) GetApplicationStake() *v1beta1.Coin {
+	if x != nil {
+		return x.ApplicationStake
 	}
 	return nil
 }
@@ -1260,7 +1436,7 @@ var file_poktroll_migration_morse_onchain_proto_rawDesc = []byte{
 	0x6c, 0x61, 0x69, 0x6d, 0x61, 0x62, 0x6c, 0x65, 0x41, 0x63, 0x63, 0x6f, 0x75, 0x6e, 0x74, 0x42,
 	0x1f, 0xea, 0xde, 0x1f, 0x08, 0x61, 0x63, 0x63, 0x6f, 0x75, 0x6e, 0x74, 0x73, 0xf2, 0xde, 0x1f,
 	0x0f, 0x79, 0x61, 0x6d, 0x6c, 0x3a, 0x22, 0x61, 0x63, 0x63, 0x6f, 0x75, 0x6e, 0x74, 0x73, 0x22,
-	0x52, 0x08, 0x61, 0x63, 0x63, 0x6f, 0x75, 0x6e, 0x74, 0x73, 0x22, 0xa3, 0x02, 0x0a, 0x15, 0x4d,
+	0x52, 0x08, 0x61, 0x63, 0x63, 0x6f, 0x75, 0x6e, 0x74, 0x73, 0x22, 0xa6, 0x04, 0x0a, 0x15, 0x4d,
 	0x6f, 0x72, 0x73, 0x65, 0x43, 0x6c, 0x61, 0x69, 0x6d, 0x61, 0x62, 0x6c, 0x65, 0x41, 0x63, 0x63,
 	0x6f, 0x75, 0x6e, 0x74, 0x12, 0x54, 0x0a, 0x07, 0x61, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x18,
 	0x01, 0x20, 0x01, 0x28, 0x0c, 0x42, 0x3a, 0xea, 0xde, 0x1f, 0x07, 0x61, 0x64, 0x64, 0x72, 0x65,
@@ -1271,27 +1447,43 @@ var file_poktroll_migration_morse_onchain_proto_rawDesc = []byte{
 	0x62, 0x6c, 0x69, 0x63, 0x5f, 0x6b, 0x65, 0x79, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0c, 0x42, 0x1c,
 	0xfa, 0xde, 0x1f, 0x18, 0x63, 0x72, 0x79, 0x70, 0x74, 0x6f, 0x2f, 0x65, 0x64, 0x32, 0x35, 0x35,
 	0x31, 0x39, 0x2e, 0x50, 0x75, 0x62, 0x6c, 0x69, 0x63, 0x4b, 0x65, 0x79, 0x52, 0x09, 0x70, 0x75,
-	0x62, 0x6c, 0x69, 0x63, 0x4b, 0x65, 0x79, 0x12, 0x4b, 0x0a, 0x0c, 0x74, 0x6f, 0x74, 0x61, 0x6c,
-	0x5f, 0x74, 0x6f, 0x6b, 0x65, 0x6e, 0x73, 0x18, 0x03, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x19, 0x2e,
-	0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x62, 0x61, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x62, 0x65,
-	0x74, 0x61, 0x31, 0x2e, 0x43, 0x6f, 0x69, 0x6e, 0x42, 0x0d, 0xc8, 0xde, 0x1f, 0x00, 0xea, 0xde,
-	0x1f, 0x05, 0x63, 0x6f, 0x69, 0x6e, 0x73, 0x52, 0x0b, 0x74, 0x6f, 0x74, 0x61, 0x6c, 0x54, 0x6f,
-	0x6b, 0x65, 0x6e, 0x73, 0x12, 0x2a, 0x0a, 0x11, 0x63, 0x6c, 0x61, 0x69, 0x6d, 0x65, 0x64, 0x5f,
-	0x61, 0x74, 0x5f, 0x68, 0x65, 0x69, 0x67, 0x68, 0x74, 0x18, 0x04, 0x20, 0x01, 0x28, 0x03, 0x52,
-	0x0f, 0x63, 0x6c, 0x61, 0x69, 0x6d, 0x65, 0x64, 0x41, 0x74, 0x48, 0x65, 0x69, 0x67, 0x68, 0x74,
-	0x42, 0xbd, 0x01, 0xd8, 0xe2, 0x1e, 0x01, 0x0a, 0x16, 0x63, 0x6f, 0x6d, 0x2e, 0x70, 0x6f, 0x6b,
-	0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x6d, 0x69, 0x67, 0x72, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x42,
-	0x11, 0x4d, 0x6f, 0x72, 0x73, 0x65, 0x4f, 0x6e, 0x63, 0x68, 0x61, 0x69, 0x6e, 0x50, 0x72, 0x6f,
-	0x74, 0x6f, 0x50, 0x01, 0x5a, 0x23, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x73, 0x64, 0x6b, 0x2e,
-	0x69, 0x6f, 0x2f, 0x61, 0x70, 0x69, 0x2f, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2f,
-	0x6d, 0x69, 0x67, 0x72, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0xa2, 0x02, 0x03, 0x50, 0x4d, 0x58, 0xaa,
-	0x02, 0x12, 0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x4d, 0x69, 0x67, 0x72, 0x61,
-	0x74, 0x69, 0x6f, 0x6e, 0xca, 0x02, 0x12, 0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x5c,
-	0x4d, 0x69, 0x67, 0x72, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0xe2, 0x02, 0x1e, 0x50, 0x6f, 0x6b, 0x74,
-	0x72, 0x6f, 0x6c, 0x6c, 0x5c, 0x4d, 0x69, 0x67, 0x72, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x5c, 0x47,
-	0x50, 0x42, 0x4d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0xea, 0x02, 0x13, 0x50, 0x6f, 0x6b,
-	0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x3a, 0x3a, 0x4d, 0x69, 0x67, 0x72, 0x61, 0x74, 0x69, 0x6f, 0x6e,
-	0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x62, 0x6c, 0x69, 0x63, 0x4b, 0x65, 0x79, 0x12, 0x5e, 0x0a, 0x10, 0x75, 0x6e, 0x73, 0x74, 0x61,
+	0x6b, 0x65, 0x64, 0x5f, 0x62, 0x61, 0x6c, 0x61, 0x6e, 0x63, 0x65, 0x18, 0x03, 0x20, 0x01, 0x28,
+	0x0b, 0x32, 0x19, 0x2e, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x62, 0x61, 0x73, 0x65, 0x2e,
+	0x76, 0x31, 0x62, 0x65, 0x74, 0x61, 0x31, 0x2e, 0x43, 0x6f, 0x69, 0x6e, 0x42, 0x18, 0xc8, 0xde,
+	0x1f, 0x00, 0xea, 0xde, 0x1f, 0x10, 0x75, 0x6e, 0x73, 0x74, 0x61, 0x6b, 0x65, 0x64, 0x5f, 0x62,
+	0x61, 0x6c, 0x61, 0x6e, 0x63, 0x65, 0x52, 0x0f, 0x75, 0x6e, 0x73, 0x74, 0x61, 0x6b, 0x65, 0x64,
+	0x42, 0x61, 0x6c, 0x61, 0x6e, 0x63, 0x65, 0x12, 0x58, 0x0a, 0x0e, 0x73, 0x75, 0x70, 0x70, 0x6c,
+	0x69, 0x65, 0x72, 0x5f, 0x73, 0x74, 0x61, 0x6b, 0x65, 0x18, 0x04, 0x20, 0x01, 0x28, 0x0b, 0x32,
+	0x19, 0x2e, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x62, 0x61, 0x73, 0x65, 0x2e, 0x76, 0x31,
+	0x62, 0x65, 0x74, 0x61, 0x31, 0x2e, 0x43, 0x6f, 0x69, 0x6e, 0x42, 0x16, 0xc8, 0xde, 0x1f, 0x00,
+	0xea, 0xde, 0x1f, 0x0e, 0x73, 0x75, 0x70, 0x70, 0x6c, 0x69, 0x65, 0x72, 0x5f, 0x73, 0x74, 0x61,
+	0x6b, 0x65, 0x52, 0x0d, 0x73, 0x75, 0x70, 0x70, 0x6c, 0x69, 0x65, 0x72, 0x53, 0x74, 0x61, 0x6b,
+	0x65, 0x12, 0x61, 0x0a, 0x11, 0x61, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e,
+	0x5f, 0x73, 0x74, 0x61, 0x6b, 0x65, 0x18, 0x05, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x19, 0x2e, 0x63,
+	0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x62, 0x61, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x62, 0x65, 0x74,
+	0x61, 0x31, 0x2e, 0x43, 0x6f, 0x69, 0x6e, 0x42, 0x19, 0xc8, 0xde, 0x1f, 0x00, 0xea, 0xde, 0x1f,
+	0x11, 0x61, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x5f, 0x73, 0x74, 0x61,
+	0x6b, 0x65, 0x52, 0x10, 0x61, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x53,
+	0x74, 0x61, 0x6b, 0x65, 0x12, 0x5d, 0x0a, 0x11, 0x63, 0x6c, 0x61, 0x69, 0x6d, 0x65, 0x64, 0x5f,
+	0x61, 0x74, 0x5f, 0x68, 0x65, 0x69, 0x67, 0x68, 0x74, 0x18, 0x06, 0x20, 0x01, 0x28, 0x03, 0x42,
+	0x31, 0xea, 0xde, 0x1f, 0x11, 0x63, 0x6c, 0x61, 0x69, 0x6d, 0x65, 0x64, 0x5f, 0x61, 0x74, 0x5f,
+	0x68, 0x65, 0x69, 0x67, 0x68, 0x74, 0xf2, 0xde, 0x1f, 0x18, 0x79, 0x61, 0x6d, 0x6c, 0x3a, 0x22,
+	0x63, 0x6c, 0x61, 0x69, 0x6d, 0x65, 0x64, 0x5f, 0x61, 0x74, 0x5f, 0x68, 0x65, 0x69, 0x67, 0x68,
+	0x74, 0x22, 0x52, 0x0f, 0x63, 0x6c, 0x61, 0x69, 0x6d, 0x65, 0x64, 0x41, 0x74, 0x48, 0x65, 0x69,
+	0x67, 0x68, 0x74, 0x42, 0xbd, 0x01, 0xd8, 0xe2, 0x1e, 0x01, 0x0a, 0x16, 0x63, 0x6f, 0x6d, 0x2e,
+	0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x6d, 0x69, 0x67, 0x72, 0x61, 0x74, 0x69,
+	0x6f, 0x6e, 0x42, 0x11, 0x4d, 0x6f, 0x72, 0x73, 0x65, 0x4f, 0x6e, 0x63, 0x68, 0x61, 0x69, 0x6e,
+	0x50, 0x72, 0x6f, 0x74, 0x6f, 0x50, 0x01, 0x5a, 0x23, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x73,
+	0x64, 0x6b, 0x2e, 0x69, 0x6f, 0x2f, 0x61, 0x70, 0x69, 0x2f, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f,
+	0x6c, 0x6c, 0x2f, 0x6d, 0x69, 0x67, 0x72, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0xa2, 0x02, 0x03, 0x50,
+	0x4d, 0x58, 0xaa, 0x02, 0x12, 0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x4d, 0x69,
+	0x67, 0x72, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0xca, 0x02, 0x12, 0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f,
+	0x6c, 0x6c, 0x5c, 0x4d, 0x69, 0x67, 0x72, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0xe2, 0x02, 0x1e, 0x50,
+	0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x5c, 0x4d, 0x69, 0x67, 0x72, 0x61, 0x74, 0x69, 0x6f,
+	0x6e, 0x5c, 0x47, 0x50, 0x42, 0x4d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0xea, 0x02, 0x13,
+	0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x3a, 0x3a, 0x4d, 0x69, 0x67, 0x72, 0x61, 0x74,
+	0x69, 0x6f, 0x6e, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -1314,12 +1506,14 @@ var file_poktroll_migration_morse_onchain_proto_goTypes = []interface{}{
 }
 var file_poktroll_migration_morse_onchain_proto_depIdxs = []int32{
 	1, // 0: poktroll.migration.MorseAccountState.accounts:type_name -> poktroll.migration.MorseClaimableAccount
-	2, // 1: poktroll.migration.MorseClaimableAccount.total_tokens:type_name -> cosmos.base.v1beta1.Coin
-	2, // [2:2] is the sub-list for method output_type
-	2, // [2:2] is the sub-list for method input_type
-	2, // [2:2] is the sub-list for extension type_name
-	2, // [2:2] is the sub-list for extension extendee
-	0, // [0:2] is the sub-list for field type_name
+	2, // 1: poktroll.migration.MorseClaimableAccount.unstaked_balance:type_name -> cosmos.base.v1beta1.Coin
+	2, // 2: poktroll.migration.MorseClaimableAccount.supplier_stake:type_name -> cosmos.base.v1beta1.Coin
+	2, // 3: poktroll.migration.MorseClaimableAccount.application_stake:type_name -> cosmos.base.v1beta1.Coin
+	4, // [4:4] is the sub-list for method output_type
+	4, // [4:4] is the sub-list for method input_type
+	4, // [4:4] is the sub-list for extension type_name
+	4, // [4:4] is the sub-list for extension extendee
+	0, // [0:4] is the sub-list for field type_name
 }
 
 func init() { file_poktroll_migration_morse_onchain_proto_init() }

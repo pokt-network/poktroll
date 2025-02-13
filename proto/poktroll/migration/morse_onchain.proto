@@ -26,11 +26,16 @@ message MorseClaimableAccount {
   // The ed25519 public key of the account.
   bytes public_key = 2 [(gogoproto.casttype) = "crypto/ed25519.PublicKey"];
 
-  // The total amount of uPOKT owned by the account; this is a sum of the balance and any actor stakes.
-  // NB: The default stake/balance proportion is derived from Morse query response(s) at the time of claiming.
-  cosmos.base.v1beta1.Coin total_tokens = 3 [(gogoproto.nullable) = false, (gogoproto.jsontag) = "coins"];
+  // The unstaked upokt tokens (i.e. account balance) available for claiming.
+  cosmos.base.v1beta1.Coin unstaked_balance = 3 [(gogoproto.nullable) = false, (gogoproto.jsontag) = "unstaked_balance"];
 
-  int64 claimed_at_height = 4;
+  // The staked tokens associated with a supplier actor which corresponds to this account address.
+  cosmos.base.v1beta1.Coin supplier_stake = 4 [(gogoproto.nullable) = false, (gogoproto.jsontag) = "supplier_stake"];
 
+  // The staked tokens associated with an application actor which corresponds to this account address.
+  cosmos.base.v1beta1.Coin application_stake = 5 [(gogoproto.nullable) = false, (gogoproto.jsontag) = "application_stake"];
+
+  // The Shannon height at which the account was claimed.
+  int64 claimed_at_height = 6 [(gogoproto.jsontag) = "claimed_at_height", (gogoproto.moretags) = "yaml:\"claimed_at_height\""];
 }
 

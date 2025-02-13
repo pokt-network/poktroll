@@ -83,7 +83,7 @@ func TestNewTestMorseStateExport(t *testing.T) {
 				numTotalAccounts += k
 			}
 
-			expectedShannonAccountBalance := fmt.Sprintf("%d%d%d0%d%d%d", i, i, i, i, i, i)
+			expectedShannonAccountBalance := fmt.Sprintf("%d00000%d", i, i)
 			expectedShannonTotalAppStake := fmt.Sprintf("%d000%d0", numTotalAccounts, numTotalAccounts)
 			expectedShannonTotalSupplierStake := fmt.Sprintf("%d0%d00", numTotalAccounts, numTotalAccounts)
 
@@ -96,7 +96,7 @@ func TestNewTestMorseStateExport(t *testing.T) {
 			require.Equal(t, uint64(i), morseWorkspace.numSuppliers)
 
 			morseAccounts := morseWorkspace.accountState.Accounts[i-1]
-			require.Equal(t, expectedShannonAccountBalance, morseAccounts.TotalTokens.Amount.String())
+			require.Equal(t, expectedShannonAccountBalance, morseAccounts.UnstakedBalance.Amount.String())
 			require.Equal(t, expectedShannonTotalAppStake, morseWorkspace.accumulatedTotalAppStake.String())
 			require.Equal(t, expectedShannonTotalSupplierStake, morseWorkspace.accumulatedTotalSupplierStake.String())
 		})
@@ -148,10 +148,9 @@ func newMorseStateExportAndAccountState(
 		binary.LittleEndian.PutUint64(seedBz, seedUint)
 		privKey := cometcrypto.GenPrivKeyFromSecret(seedBz)
 		pubKey := privKey.PubKey()
-		balanceAmount := int64(1e6*i + i)                                 // i_000_00i
-		appStakeAmount := int64(1e5*i + (i * 10))                         //   i00_0i0
-		supplierStakeAmount := int64(1e4*i + (i * 100))                   //    i0_i00
-		sumAmount := balanceAmount + appStakeAmount + supplierStakeAmount // i_ii0_iii
+		balanceAmount := int64(1e6*i + i)               // i_000_00i
+		appStakeAmount := int64(1e5*i + (i * 10))       //   i00_0i0
+		supplierStakeAmount := int64(1e4*i + (i * 100)) //    i0_i00
 
 		// Add an account.
 		morseStateExport.AppState.Auth.Accounts = append(
@@ -194,9 +193,11 @@ func newMorseStateExportAndAccountState(
 
 		// Add the account to the morseAccountState.
 		morseAccountState.Accounts[i-1] = &migrationtypes.MorseClaimableAccount{
-			Address:     pubKey.Address(),
-			TotalTokens: cosmostypes.NewInt64Coin(volatile.DenomuPOKT, sumAmount),
-			PublicKey:   pubKey.Bytes(),
+			Address:          pubKey.Address(),
+			UnstakedBalance:  cosmostypes.NewInt64Coin(volatile.DenomuPOKT, balanceAmount),
+			SupplierStake:    cosmostypes.NewInt64Coin(volatile.DenomuPOKT, supplierStakeAmount),
+			ApplicationStake: cosmostypes.NewInt64Coin(volatile.DenomuPOKT, appStakeAmount),
+			PublicKey:        pubKey.Bytes(),
 		}
 	}
 

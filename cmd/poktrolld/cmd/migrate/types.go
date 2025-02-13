@@ -57,20 +57,20 @@ func (miw *morseImportWorkspace) nextIdx() int64 {
 // getAccount returns the MorseAccount for the given address and its index,
 // if present, in the accountState accounts slice.
 // If the given address is not present, it returns nil, -1.
-func (miw *morseImportWorkspace) getAccount(addr string) (*migrationtypes.MorseClaimableAccount, int64) {
+func (miw *morseImportWorkspace) getAccount(addr string) (*migrationtypes.MorseClaimableAccount, error) {
 	accountIdx, ok := miw.accountIdxByAddress[addr]
 	if !ok {
-		return nil, -1
+		return nil, ErrMorseStateTransform.Wrapf("account %q not found", addr)
 	}
 
 	account := miw.accountState.GetAccounts()[accountIdx]
-	return account, int64(accountIdx)
+	return account, nil
 }
 
 // hasAccount returns true if the given address is present in the accounts slice.
 func (miw *morseImportWorkspace) hasAccount(addr string) bool {
-	_, accountIdx := miw.getAccount(addr)
-	return accountIdx != -1
+	_, err := miw.getAccount(addr)
+	return err == nil
 }
 
 // getNumAccounts returns the number of accounts in the accountState accounts map.
@@ -113,10 +113,11 @@ func (miw *morseImportWorkspace) addAccount(
 	addr string,
 	exportAccount *migrationtypes.MorseAuthAccount,
 ) (accountIdx int64, balance cosmostypes.Coin, err error) {
-	// Initialize balance to zero
+	// Initialize balance to zero.
+	// DEV_NOTE: This guarantees that all accounts tracked by the morseWorkspace have the upokt denom.
 	balance = cosmostypes.NewCoin(volatile.DenomuPOKT, cosmosmath.ZeroInt())
 
-	if _, accountIdx = miw.getAccount(addr); accountIdx != -1 {
+	if _, err = miw.getAccount(addr); err == nil {
 		return 0, cosmostypes.Coin{}, ErrMorseStateTransform.Wrapf(
 			"unexpected workspace state: account already exists (%s)", addr,
 		)
@@ -124,9 +125,11 @@ func (miw *morseImportWorkspace) addAccount(
 
 	accountIdx = miw.nextIdx()
 	importAccount := &migrationtypes.MorseClaimableAccount{
-		Address:     exportAccount.Value.Address,
-		PublicKey:   exportAccount.Value.PubKey.Value,
-		TotalTokens: cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 0),
+		Address:          exportAccount.Value.Address,
+		PublicKey:        exportAccount.Value.PubKey.Value,
+		UnstakedBalance:  cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 0),
+		SupplierStake:    cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 0),
+		ApplicationStake: cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 0),
 	}
 	miw.accountState.Accounts = append(miw.accountState.Accounts, importAccount)
 	miw.accountIdxByAddress[addr] = uint64(accountIdx)
@@ -134,20 +137,44 @@ func (miw *morseImportWorkspace) addAccount(
 	return accountIdx, balance, nil
 }
 
-// addUpokt adds the given amount to the corresponding account balances in the morseWorkspace.
-func (miw *morseImportWorkspace) addUpokt(addr string, amount cosmosmath.Int) error {
-	account, accountIdx := miw.getAccount(addr)
-	if accountIdx == -1 {
-		return ErrMorseStateTransform.Wrapf("account %q not found", addr)
+// ensureUpoktDenom ensures that the denom of coin is upokt.
+func ensureUpoktDenom(coin cosmostypes.Coin) error {
+	if coin.Denom != volatile.DenomuPOKT {
+		return ErrMorseStateTransform.Wrapf("unsupported denom %q", coin.Denom)
 	}
 
-	if account.TotalTokens.Denom != volatile.DenomuPOKT {
-		return fmt.Errorf(
-			"account %q has %s token denomination, expected upokt only: %s",
-			addr, account.TotalTokens.Denom, account.TotalTokens,
-		)
+	return nil
+}
+
+// addUnstakedBalance adds the given amount to the corresponding account balances in the morseWorkspace.
+func (miw *morseImportWorkspace) addUnstakedBalance(addr string, amount cosmosmath.Int) error {
+	account, err := miw.getAccount(addr)
+	if err != nil {
+		return err
 	}
 
-	account.TotalTokens.Amount = account.TotalTokens.Amount.Add(amount)
+	account.UnstakedBalance.Amount = account.UnstakedBalance.Amount.Add(amount)
+	return nil
+}
+
+// addSupplierStake adds the given amount to the corresponding account balances in the morseWorkspace.
+func (miw *morseImportWorkspace) addSupplierStake(addr string, amount cosmosmath.Int) error {
+	account, err := miw.getAccount(addr)
+	if err != nil {
+		return err
+	}
+
+	account.SupplierStake.Amount = account.SupplierStake.Amount.Add(amount)
+	return nil
+}
+
+// addAppStake adds the given amount to the corresponding account balances in the morseWorkspace.
+func (miw *morseImportWorkspace) addAppStake(addr string, amount cosmosmath.Int) error {
+	account, err := miw.getAccount(addr)
+	if err != nil {
+		return err
+	}
+
+	account.ApplicationStake.Amount = account.ApplicationStake.Amount.Add(amount)
 	return nil
 }
