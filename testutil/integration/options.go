@@ -5,6 +5,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
+	gogogrpc "github.com/cosmos/gogoproto/grpc"
 
 	tlm "github.com/pokt-network/poktroll/x/tokenomics/token_logic_module"
 )
@@ -17,6 +18,9 @@ type IntegrationAppConfig struct {
 	// InitChainer function.
 	InitChainerModuleFns []InitChainerModuleFn
 	TokenLogicModules    []tlm.TokenLogicModule
+
+	grpcServer       gogogrpc.Server
+	authorityAddress string
 }
 
 // IntegrationAppOptionFn is a function that receives and has the opportunity to
@@ -68,5 +72,19 @@ func NewInitChainerModuleGenesisStateOptionFn[T module.HasGenesis](genesisState 
 func WithTokenLogicModules(tokenLogicModules []tlm.TokenLogicModule) IntegrationAppOptionFn {
 	return func(config *IntegrationAppConfig) {
 		config.TokenLogicModules = tokenLogicModules
+	}
+}
+
+// TODO_IN_THIS_COMMIT: godoc...
+func WithGRPCServer(grpcServer gogogrpc.Server) IntegrationAppOptionFn {
+	return func(config *IntegrationAppConfig) {
+		config.grpcServer = grpcServer
+	}
+}
+
+// TODO_IN_THIS_COMMIT: godoc...
+func WithAuthorityAddress(bech32 string) IntegrationAppOptionFn {
+	return func(config *IntegrationAppConfig) {
+		config.authorityAddress = bech32
 	}
 }

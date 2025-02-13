@@ -160,7 +160,7 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_Valid(t *testing.T) {
 	require.True(t, supplierIsFound)
 	require.Equal(t, &supplierStake, supplier.GetStake())
 
-	// Assert that `suppliertypes.ModuleName` account module balance is *unchanged*
+	// Assert that `suppliertypes.moduleName` account module balance is *unchanged*
 	// NB: Supplier rewards are minted to the supplier module account but then immediately
 	// distributed to the supplier accounts which provided service in a given session.
 	supplierModuleEndBalance := getBalance(t, ctx, keepers, supplierModuleAddress)
@@ -305,7 +305,7 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_Valid_SupplierExceedsMaxClai
 	require.True(t, supplierIsFound)
 	require.Equal(t, &supplierStake, supplier.GetStake())
 
-	// Assert that `suppliertypes.ModuleName` account module balance is *unchanged*
+	// Assert that `suppliertypes.moduleName` account module balance is *unchanged*
 	// NB: Supplier rewards are minted to the supplier module account but then immediately
 	// distributed to the supplier accounts which provided service in a given session.
 	supplierModuleEndBalance := getBalance(t, ctx, keepers, supplierModuleAddress)

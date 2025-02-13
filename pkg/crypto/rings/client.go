@@ -49,7 +49,7 @@ type ringClient struct {
 func NewRingClient(deps depinject.Config) (_ crypto.RingClient, err error) {
 	rc := new(ringClient)
 
-	if err := depinject.Inject(
+	if err = depinject.Inject(
 		deps,
 		&rc.logger,
 		&rc.accountQuerier,

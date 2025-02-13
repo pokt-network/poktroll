@@ -1,3 +1,4 @@
+//go:generate mockgen -destination=../../testutil/mockclient/grpc_conn_mock.go -package=mockclient github.com/cosmos/gogoproto/grpc ClientConn
 //go:generate mockgen -destination=../../testutil/mockclient/events_query_client_mock.go -package=mockclient . Dialer,Connection,EventsQueryClient
 //go:generate mockgen -destination=../../testutil/mockclient/block_client_mock.go -package=mockclient . Block,BlockClient
 //go:generate mockgen -destination=../../testutil/mockclient/delegation_client_mock.go -package=mockclient . DelegationClient
@@ -309,8 +310,8 @@ type SessionQueryClient interface {
 // SharedQueryClient defines an interface that enables the querying of the
 // onchain shared module params.
 type SharedQueryClient interface {
-	// GetParams queries the chain for the current shared module parameters.
-	GetParams(ctx context.Context) (*sharedtypes.Params, error)
+	ParamsQuerier[*sharedtypes.Params]
+
 	// GetSessionGracePeriodEndHeight returns the block height at which the grace period
 	// for the session that includes queryHeight elapses.
 	// The grace period is the number of blocks after the session ends during which relays
@@ -384,9 +385,25 @@ type QueryCache[T any] interface {
 // HistoricalQueryCache extends QueryCache to support getting and setting values
 // at multiple heights for a given key.
 type HistoricalQueryCache[T any] interface {
-	QueryCache[T]
-	// GetAsOfVersion retrieves the nearest value <= the specified version number.
-	GetAsOfVersion(key string, version int64) (T, error)
-	// SetAsOfVersion adds or updates a value at a specific version number.
-	SetAsOfVersion(key string, value T, version int64) error
+	// GetLatestVersion retrieves the historical value with the highest version number.
+	GetLatestVersion(key string) (T, error)
+	// GetVersion retrieves the nearest value <= the specified version number.
+	GetVersion(key string, version int64) (T, error)
+	// SetVersion adds or updates a value at a specific version number.
+	SetVersion(key string, value T, version int64) error
+}
+
+// ParamsQuerier represents a generic querier for module parameters.
+// This interface should be implemented by any module-specific querier
+// that needs to access and cache on-chain parameters.
+type ParamsQuerier[P cosmostypes.Msg] interface {
+	// GetParams queries the chain for the current module parameters, where
+	// P is the params type of a given module (e.g. sharedtypes.Params).
+	GetParams(ctx context.Context) (P, error)
+	// GetParamsAtHeight returns the parameters as they were at the specified
+	// height, where P is the params type of a given module (e.g. sharedtypes.Params).
+	GetParamsAtHeight(ctx context.Context, height int64) (P, error)
+	// SetParamsAtHeight sets the parameters at the specified height, where
+	// P is the params type of a given module (e.g. sharedtypes.Params).
+	SetParamsAtHeight(ctx context.Context, height int64, params P) error
 }

@@ -189,7 +189,7 @@ func (eqc *eventsQueryClient) openEventsBytesAndConn(
 	}
 
 	// Send the event subscription request on the connection.
-	if err := conn.Send(req); err != nil {
+	if err = conn.Send(req); err != nil {
 		subscribeErr := ErrEventsSubscribe.Wrapf("%s", err)
 		// assume the connection is bad
 		closeErr := conn.Close()
