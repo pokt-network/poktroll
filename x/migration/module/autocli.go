@@ -43,6 +43,12 @@ func (am AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 					RpcMethod: "UpdateParams",
 					Skip:      true, // skipped because authority gated
 				},
+				{
+					RpcMethod:      "ImportMorseClaimableAccounts",
+					Use:            "import-morse-claimable-accounts [morse-account-state]",
+					Short:          "Send a import_morse_claimable_accounts tx",
+					PositionalArgs: []*autocliv1.PositionalArgDescriptor{{ProtoField: "morseAccountState"}},
+				},
 				// this line is used by ignite scaffolding # autocli/tx
 			},
 		},
