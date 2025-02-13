@@ -6,10 +6,10 @@ import (
 	"time"
 
 	"cosmossdk.io/depinject"
-	"github.com/golang/mock/gomock"
 	"github.com/pokt-network/smt"
 	"github.com/pokt-network/smt/kvstore/pebble"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/mock/gomock"
 
 	"github.com/pokt-network/poktroll/pkg/client/keyring"
 	"github.com/pokt-network/poktroll/pkg/client/supplier"

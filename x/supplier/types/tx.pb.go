@@ -674,6 +674,7 @@ func _Msg_UpdateParam_Handler(srv interface{}, ctx context.Context, dec func(int
 	return interceptor(ctx, in, info, handler)
 }
 
+var Msg_serviceDesc = _Msg_serviceDesc
 var _Msg_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "poktroll.supplier.Msg",
 	HandlerType: (*MsgServer)(nil),
