@@ -28,7 +28,7 @@ See the [Validator Walkthrough](../walkthroughs/validator_walkthrough.md) if you
 
 ## Prerequisites
 
-1. **CLI**: Make sure to [install the `poktrolld` CLI](../tools/user_guide/poktrolld_cli.m)
+1. **CLI**: Make sure to [install the `poktrolld` CLI](../../tools/user_guide/poktrolld_cli.md).
 2. **Full Node**: Make sure you have followed the [Full Node Cheat Sheet](./full_node_cheatsheet.md) to install and run a Full Node first.
 
 :::tip `poktroll` user

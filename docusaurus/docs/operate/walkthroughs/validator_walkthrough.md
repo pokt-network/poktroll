@@ -32,7 +32,7 @@ As a Validator, you'll be participating in the consensus of the network, validat
 
 ## Pre-Requisites & Requirements
 
-1. **CLI**: Make sure to [install the `poktrolld` CLI](../tools/user_guide/poktrolld_cli.m)
+1. **CLI**: Make sure to [install the `poktrolld` CLI](../../tools/user_guide/poktrolld_cli.md).
 2. **Synched Full Node**: Ensure you have followed the [Full Node Walkthrough](./full_node_walkthrough.md) to install and run a Full Node. Your node must be fully synced with the network before proceeding.
 
 Ensure your node is running and fully synchronized with the network. You can check the synchronization status by running:

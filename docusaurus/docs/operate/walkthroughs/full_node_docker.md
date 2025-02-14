@@ -3,7 +3,7 @@ title: Full Node (Docker)
 sidebar_position: 3
 ---
 
-# Run a Full Node using Docker <!-- omit in toc -->
+## Run a Full Node using Docker <!-- omit in toc -->
 
 - [What is a Full Node](#what-is-a-full-node)
 - [Roles \& Responsibilities](#roles--responsibilities)
@@ -56,7 +56,7 @@ Please see the [Hardware Requirements](../configs/hardware_requirements.md#valid
 
 ## Docker Compose Example
 
-Please refer to the `Deploying a Full Node` section in [Docker Compose Walkthrough](../walkthrough/docker_compose_walkthrough.md)
+Please refer to the `Deploying a Full Node` section in [Docker Compose Walkthrough](../walkthroughs/full_node_docker.md) for instructions
 on how to deploy a Full Node using `docker-compose`.
 
 ## Kubernetes Example
