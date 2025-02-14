@@ -26,8 +26,8 @@ func newMorseImportWorkspace() *morseImportWorkspace {
 // morseImportWorkspace is a helper struct that is used to consolidate the Morse account balance,
 // application stake, and supplier stake for each account as an entry in the resulting MorseAccountState.
 type morseImportWorkspace struct {
-	// accountIdxByAddress is a map from the Shannon bech32 address to the index of the
-	// corresponding MorseAccount in the accounts slice.
+	// accountIdxByAddress is a map from the hex-encoded Morse address to the index
+	// of the corresponding MorseAccount in the accounts slice.
 	accountIdxByAddress map[string]uint64
 	// accountState is the final MorseAccountState that will be imported into Shannon.
 	// It includes a slice of MorseAccount objects which are populated, by transforming
@@ -57,10 +57,10 @@ func (miw *morseImportWorkspace) nextIdx() int64 {
 // getAccount returns the MorseAccount for the given address and its index,
 // if present, in the accountState accounts slice.
 // If the given address is not present, it returns nil, -1.
-func (miw *morseImportWorkspace) getAccount(addr string) (*migrationtypes.MorseClaimableAccount, error) {
-	accountIdx, ok := miw.accountIdxByAddress[addr]
+func (miw *morseImportWorkspace) getAccount(morseAddress string) (*migrationtypes.MorseClaimableAccount, error) {
+	accountIdx, ok := miw.accountIdxByAddress[morseAddress]
 	if !ok {
-		return nil, ErrMorseStateTransform.Wrapf("account %q not found", addr)
+		return nil, ErrMorseStateTransform.Wrapf("account %q not found", morseAddress)
 	}
 
 	account := miw.accountState.GetAccounts()[accountIdx]
@@ -68,12 +68,12 @@ func (miw *morseImportWorkspace) getAccount(addr string) (*migrationtypes.MorseC
 }
 
 // hasAccount returns true if the given address is present in the accounts slice.
-func (miw *morseImportWorkspace) hasAccount(addr string) bool {
-	_, err := miw.getAccount(addr)
+func (miw *morseImportWorkspace) hasAccount(morseAddress string) bool {
+	_, err := miw.getAccount(morseAddress)
 	return err == nil
 }
 
-// getNumAccounts returns the number of accounts in the accountState accounts map.
+// getNumAccounts returns the number of Morse accounts in the accountState accounts map.
 func (miw *morseImportWorkspace) getNumAccounts() uint64 {
 	return uint64(len(miw.accountState.GetAccounts()))
 }
@@ -106,8 +106,8 @@ func (miw *morseImportWorkspace) accumulatedTotalsSum() cosmosmath.Int {
 		Add(miw.accumulatedTotalSupplierStake)
 }
 
-// addAccount adds the account with the given address to the accounts slice and
-// its corresponding address is in the accountIdxByAddress map.
+// addAccount adds the Morse account with the given Morse address to the accounts
+// slice and its corresponding address is in the accountIdxByAddress map.
 // If the address is already present, an error is returned.
 func (miw *morseImportWorkspace) addAccount(
 	addr string,
@@ -137,7 +137,7 @@ func (miw *morseImportWorkspace) addAccount(
 	return accountIdx, balance, nil
 }
 
-// addUnstakedBalance adds the given amount to the corresponding account balances in the morseWorkspace.
+// addUnstakedBalance adds the given amount to the corresponding Morse account balances in the morseWorkspace.
 func (miw *morseImportWorkspace) addUnstakedBalance(addr string, amount cosmosmath.Int) error {
 	account, err := miw.getAccount(addr)
 	if err != nil {
@@ -148,7 +148,7 @@ func (miw *morseImportWorkspace) addUnstakedBalance(addr string, amount cosmosma
 	return nil
 }
 
-// addSupplierStake adds the given amount to the corresponding account balances in the morseWorkspace.
+// addSupplierStake adds the given amount to the corresponding Morse account balances in the morseWorkspace.
 func (miw *morseImportWorkspace) addSupplierStake(addr string, amount cosmosmath.Int) error {
 	account, err := miw.getAccount(addr)
 	if err != nil {
@@ -159,7 +159,7 @@ func (miw *morseImportWorkspace) addSupplierStake(addr string, amount cosmosmath
 	return nil
 }
 
-// addAppStake adds the given amount to the corresponding account balances in the morseWorkspace.
+// addAppStake adds the given amount to the corresponding Morse account balances in the morseWorkspace.
 func (miw *morseImportWorkspace) addAppStake(addr string, amount cosmosmath.Int) error {
 	account, err := miw.getAccount(addr)
 	if err != nil {
