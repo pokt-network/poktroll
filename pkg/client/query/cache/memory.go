@@ -10,7 +10,7 @@ import (
 )
 
 var (
-	_ client.QueryCache[any]           = (*inMemoryCache[any])(nil)
+	_ client.KeyValueCache[any]        = (*inMemoryCache[any])(nil)
 	_ client.HistoricalQueryCache[any] = (*inMemoryCache[any])(nil)
 
 	DefaultQueryCacheConfig = queryCacheConfig{
