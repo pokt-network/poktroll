@@ -1,9 +1,9 @@
 package cache
 
 import (
+	"errors"
 	"sort"
 	"sync"
-	"sync/atomic"
 	"time"
 
 	"github.com/pokt-network/poktroll/pkg/client"
@@ -25,8 +25,7 @@ var (
 // inMemoryKVCache provides a concurrency-safe in-memory cache implementation with
 // optional historical value support.
 type inMemoryKVCache[T any] struct {
-	config        queryCacheConfig
-	latestVersion atomic.Int64
+	config queryCacheConfig
 
 	// valuesMu is used to protect values AND valueHistories from concurrent access.
 	valuesMu sync.RWMutex
@@ -81,14 +80,13 @@ func NewInMemoryCache[T any](opts ...QueryCacheOptionFn) (*inMemoryKVCache[T], e
 // version, which is only updated on calls to SetAsOfVersion, and therefore is not
 // guaranteed to be the current version w.r.t the blockchain.
 func (c *inMemoryKVCache[T]) Get(key string) (T, error) {
+	var zero T
 	if c.config.historical {
-		return c.GetVersion(key, c.latestVersion.Load())
+		return c.GetLatestVersion(key)
 	}
 
 	c.valuesMu.RLock()
 	defer c.valuesMu.RUnlock()
-
-	var zero T
 
 	cachedValue, exists := c.values[key]
 	if !exists {
@@ -216,16 +214,15 @@ func (c *inMemoryKVCache[T]) SetVersion(key string, value T, version int64) erro
 		return ErrHistoricalModeNotEnabled
 	}
 
-	// Update c.latestVersion if the given version is newer (higher).
-	latestVersion := c.latestVersion.Load()
-	if version > latestVersion {
-		// NB: Only update if c.latestVersion hasn't changed since we loaded it above.
-		if c.latestVersion.CompareAndSwap(latestVersion, version) {
-			latestVersion = version
-		} else {
-			// Reload the latestVersion if it did change.
-			latestVersion = c.latestVersion.Load()
+	// DEV_NOTE: MUST call getLatestVersionNumber() before locking valuesMu.
+	latestVersion, err := c.getLatestVersionNumber(key)
+	if err != nil {
+		if !errors.Is(err, ErrCacheMiss) {
+			return err
 		}
+	}
+	if version > latestVersion {
+		latestVersion = version
 	}
 
 	c.valuesMu.Lock()
@@ -301,8 +298,6 @@ func (c *inMemoryKVCache[T]) Clear() {
 	} else {
 		c.values = make(map[string]cacheValue[T])
 	}
-
-	c.latestVersion.Store(0)
 }
 
 // evict removes one value from the cache, to make space for a new one,

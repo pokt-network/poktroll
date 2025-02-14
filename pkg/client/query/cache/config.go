@@ -37,8 +37,10 @@ type queryCacheConfig struct {
 	historical bool
 	// maxVersionAge is the max difference between the latest known version and
 	// any other version, below which value versions are retained, and above which
-	// value versions are pruned. If 0, no historical pruning is performed.
-	// It only applies when historical is true.
+	// value versions are pruned.
+	// E.g.: Given a latest version of 100, and a maxVersionAge of 10, then the
+	// oldest version that is not pruned is 90 (100 - 10).
+	// If 0, no historical pruning is performed. It ONLY applies when historical is true.
 	maxVersionAge int64
 }
 

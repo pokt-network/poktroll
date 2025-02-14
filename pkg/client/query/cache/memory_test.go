@@ -182,7 +182,7 @@ func TestInMemoryCache_Historical(t *testing.T) {
 
 	t.Run("pruning old versions", func(t *testing.T) {
 		cache, err := NewInMemoryCache[string](
-			WithHistoricalMode(10), // Prune entries older than 10 blocks
+			WithHistoricalMode(10), // Prune entries older than 10 versions
 		)
 		require.NoError(t, err)
 
