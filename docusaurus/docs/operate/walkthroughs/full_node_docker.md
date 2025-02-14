@@ -56,7 +56,7 @@ Please see the [Hardware Requirements](../configs/hardware_requirements.md#valid
 
 ## Docker Compose Example
 
-Please refer to the `Deploying a Full Node` section in [Docker Compose Walkthrough](../cheat_sheet/docker_compose_walkthrough.md)
+Please refer to the `Deploying a Full Node` section in [Docker Compose Walkthrough](../walkthrough/docker_compose_walkthrough.md)
 on how to deploy a Full Node using `docker-compose`.
 
 ## Kubernetes Example

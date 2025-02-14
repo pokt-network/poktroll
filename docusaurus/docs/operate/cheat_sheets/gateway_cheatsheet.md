@@ -22,7 +22,7 @@ streamline development and reduce friction for any new potential contributor.
 
 - [Pre-Requisites](#pre-requisites)
 - [Account Setup](#account-setup)
-  - [Create the Gateway and Application accounts](#create-the-gateway-and-application-accounts)
+  - [Create and fund the `Gateway` and `Application` accounts](#create-and-fund-the-gateway-and-application-accounts)
   - [Prepare your environment](#prepare-your-environment)
   - [Fund the Gateway and Application accounts](#fund-the-gateway-and-application-accounts)
 - [Gateway and Application Configurations](#gateway-and-application-configurations)
@@ -55,7 +55,7 @@ This is not recommended but provided for convenience for NON PRODUCTION USE ONLY
 
 ## Account Setup
 
-### Create the Gateway and Application accounts
+### Create and fund the `Gateway` and `Application` accounts
 
 Create a new key pair for the delegating `Application`:
 

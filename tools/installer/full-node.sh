@@ -241,7 +241,7 @@ setup_cosmovisor() {
     fi
 
     COSMOVISOR_VERSION="v1.6.0"
-    # COSMOVISOR_URL="https://github.com/cosmos/cosmos-sdk/releases/download/cosmovisor%2F${COSMOVISOR_VERSION}/cosmovisor-${COSMOVISOR_VERSION}-${OS_TYPE}-${ARCH}.tar.gz"
+    # Note that cosmosorvisor only support linux, which is why OS_TYPE is not used in the URL.
     COSMOVISOR_URL="https://github.com/cosmos/cosmos-sdk/releases/download/cosmovisor%2F${COSMOVISOR_VERSION}/cosmovisor-${COSMOVISOR_VERSION}-linux-${ARCH}.tar.gz"
     print_color $YELLOW "Attempting to download from: $COSMOVISOR_URL"
 

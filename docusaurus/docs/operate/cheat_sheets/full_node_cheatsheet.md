@@ -15,22 +15,11 @@ See the [Full Node Walkthrough](../walkthroughs/full_node_walkthrough.md) if you
 
 ## Table of Contents <!-- omit in toc -->
 
-- [Introduction - why run a Full Node?](#introduction---why-run-a-full-node)
 - [Pre-Requisites \& Requirements](#pre-requisites--requirements)
 - [Install and Run a Full Node using Cosmovisor](#install-and-run-a-full-node-using-cosmovisor)
   - [Verify successful installation using `curl`](#verify-successful-installation-using-curl)
   - [How are automatic upgrades handled out of the box?](#how-are-automatic-upgrades-handled-out-of-the-box)
 - [Do you care to know what just happened?](#do-you-care-to-know-what-just-happened)
-
-## Introduction - why run a Full Node?
-
-This guide will help you install a Full Node for Pocket Network
-**using helpers that abstract out some of the underlying complexity.**
-
-Running a Full Node is the first step toward becoming a Validator, Supplier, or Gateway.
-
-The instructions outlined here use [Cosmovisor](https://docs.cosmos.network/v0.45/run-node/cosmovisor.html)
-to enable automatic binary upgrades.
 
 ## Pre-Requisites & Requirements
 
