@@ -60,6 +60,6 @@ func TestMorseClaimableAccountGetAll(t *testing.T) {
 	morseClaimableAccounts := createNMorseClaimableAccount(keeper, ctx, 10)
 	require.ElementsMatch(t,
 		nullify.Fill(morseClaimableAccounts),
-		nullify.Fill(keeper.GetAllMorseClaimableAccount(ctx)),
+		nullify.Fill(keeper.GetAllMorseClaimableAccounts(ctx)),
 	)
 }

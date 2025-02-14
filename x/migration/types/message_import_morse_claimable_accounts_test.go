@@ -5,10 +5,14 @@ import (
 
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/stretchr/testify/require"
+
 	"github.com/pokt-network/poktroll/testutil/sample"
 )
 
 func TestMsgImportMorseClaimableAccounts_ValidateBasic(t *testing.T) {
+	validMsg, err := NewMsgImportMorseClaimableAccounts(sample.AccAddress(), MorseAccountState{})
+	require.NoError(t, err)
+
 	tests := []struct {
 		name string
 		msg  MsgImportMorseClaimableAccounts
@@ -22,9 +26,7 @@ func TestMsgImportMorseClaimableAccounts_ValidateBasic(t *testing.T) {
 			err: sdkerrors.ErrInvalidAddress,
 		}, {
 			name: "valid address",
-			msg: MsgImportMorseClaimableAccounts{
-				Authority: sample.AccAddress(),
-			},
+			msg:  *validMsg,
 		},
 	}
 	for _, tt := range tests {

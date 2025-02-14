@@ -3,11 +3,11 @@ package migration
 
 import (
 	_ "cosmossdk.io/api/cosmos/base/v1beta1"
-	_ "github.com/pokt-network/poktroll/api/poktroll/shared"
 	fmt "fmt"
 	_ "github.com/cosmos/cosmos-proto"
 	runtime "github.com/cosmos/cosmos-proto/runtime"
 	_ "github.com/cosmos/gogoproto/gogoproto"
+	_ "github.com/pokt-network/poktroll/api/poktroll/shared"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoiface "google.golang.org/protobuf/runtime/protoiface"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
@@ -17,29 +17,29 @@ import (
 )
 
 var (
-	md_EventCreateMorseAccountState                          protoreflect.MessageDescriptor
-	fd_EventCreateMorseAccountState_created_at_height        protoreflect.FieldDescriptor
-	fd_EventCreateMorseAccountState_morse_account_state_hash protoreflect.FieldDescriptor
-	fd_EventCreateMorseAccountState_num_accounts             protoreflect.FieldDescriptor
+	md_EventImportMorseClaimableAccounts                          protoreflect.MessageDescriptor
+	fd_EventImportMorseClaimableAccounts_created_at_height        protoreflect.FieldDescriptor
+	fd_EventImportMorseClaimableAccounts_morse_account_state_hash protoreflect.FieldDescriptor
+	fd_EventImportMorseClaimableAccounts_num_accounts             protoreflect.FieldDescriptor
 )
 
 func init() {
 	file_poktroll_migration_event_proto_init()
-	md_EventCreateMorseAccountState = File_poktroll_migration_event_proto.Messages().ByName("EventCreateMorseAccountState")
-	fd_EventCreateMorseAccountState_created_at_height = md_EventCreateMorseAccountState.Fields().ByName("created_at_height")
-	fd_EventCreateMorseAccountState_morse_account_state_hash = md_EventCreateMorseAccountState.Fields().ByName("morse_account_state_hash")
-	fd_EventCreateMorseAccountState_num_accounts = md_EventCreateMorseAccountState.Fields().ByName("num_accounts")
+	md_EventImportMorseClaimableAccounts = File_poktroll_migration_event_proto.Messages().ByName("EventImportMorseClaimableAccounts")
+	fd_EventImportMorseClaimableAccounts_created_at_height = md_EventImportMorseClaimableAccounts.Fields().ByName("created_at_height")
+	fd_EventImportMorseClaimableAccounts_morse_account_state_hash = md_EventImportMorseClaimableAccounts.Fields().ByName("morse_account_state_hash")
+	fd_EventImportMorseClaimableAccounts_num_accounts = md_EventImportMorseClaimableAccounts.Fields().ByName("num_accounts")
 }
 
-var _ protoreflect.Message = (*fastReflection_EventCreateMorseAccountState)(nil)
+var _ protoreflect.Message = (*fastReflection_EventImportMorseClaimableAccounts)(nil)
 
-type fastReflection_EventCreateMorseAccountState EventCreateMorseAccountState
+type fastReflection_EventImportMorseClaimableAccounts EventImportMorseClaimableAccounts
 
-func (x *EventCreateMorseAccountState) ProtoReflect() protoreflect.Message {
-	return (*fastReflection_EventCreateMorseAccountState)(x)
+func (x *EventImportMorseClaimableAccounts) ProtoReflect() protoreflect.Message {
+	return (*fastReflection_EventImportMorseClaimableAccounts)(x)
 }
 
-func (x *EventCreateMorseAccountState) slowProtoReflect() protoreflect.Message {
+func (x *EventImportMorseClaimableAccounts) slowProtoReflect() protoreflect.Message {
 	mi := &file_poktroll_migration_event_proto_msgTypes[0]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -51,43 +51,43 @@ func (x *EventCreateMorseAccountState) slowProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-var _fastReflection_EventCreateMorseAccountState_messageType fastReflection_EventCreateMorseAccountState_messageType
-var _ protoreflect.MessageType = fastReflection_EventCreateMorseAccountState_messageType{}
+var _fastReflection_EventImportMorseClaimableAccounts_messageType fastReflection_EventImportMorseClaimableAccounts_messageType
+var _ protoreflect.MessageType = fastReflection_EventImportMorseClaimableAccounts_messageType{}
 
-type fastReflection_EventCreateMorseAccountState_messageType struct{}
+type fastReflection_EventImportMorseClaimableAccounts_messageType struct{}
 
-func (x fastReflection_EventCreateMorseAccountState_messageType) Zero() protoreflect.Message {
-	return (*fastReflection_EventCreateMorseAccountState)(nil)
+func (x fastReflection_EventImportMorseClaimableAccounts_messageType) Zero() protoreflect.Message {
+	return (*fastReflection_EventImportMorseClaimableAccounts)(nil)
 }
-func (x fastReflection_EventCreateMorseAccountState_messageType) New() protoreflect.Message {
-	return new(fastReflection_EventCreateMorseAccountState)
+func (x fastReflection_EventImportMorseClaimableAccounts_messageType) New() protoreflect.Message {
+	return new(fastReflection_EventImportMorseClaimableAccounts)
 }
-func (x fastReflection_EventCreateMorseAccountState_messageType) Descriptor() protoreflect.MessageDescriptor {
-	return md_EventCreateMorseAccountState
+func (x fastReflection_EventImportMorseClaimableAccounts_messageType) Descriptor() protoreflect.MessageDescriptor {
+	return md_EventImportMorseClaimableAccounts
 }
 
 // Descriptor returns message descriptor, which contains only the protobuf
 // type information for the message.
-func (x *fastReflection_EventCreateMorseAccountState) Descriptor() protoreflect.MessageDescriptor {
-	return md_EventCreateMorseAccountState
+func (x *fastReflection_EventImportMorseClaimableAccounts) Descriptor() protoreflect.MessageDescriptor {
+	return md_EventImportMorseClaimableAccounts
 }
 
 // Type returns the message type, which encapsulates both Go and protobuf
 // type information. If the Go type information is not needed,
 // it is recommended that the message descriptor be used instead.
-func (x *fastReflection_EventCreateMorseAccountState) Type() protoreflect.MessageType {
-	return _fastReflection_EventCreateMorseAccountState_messageType
+func (x *fastReflection_EventImportMorseClaimableAccounts) Type() protoreflect.MessageType {
+	return _fastReflection_EventImportMorseClaimableAccounts_messageType
 }
 
 // New returns a newly allocated and mutable empty message.
-func (x *fastReflection_EventCreateMorseAccountState) New() protoreflect.Message {
-	return new(fastReflection_EventCreateMorseAccountState)
+func (x *fastReflection_EventImportMorseClaimableAccounts) New() protoreflect.Message {
+	return new(fastReflection_EventImportMorseClaimableAccounts)
 }
 
 // Interface unwraps the message reflection interface and
 // returns the underlying ProtoMessage interface.
-func (x *fastReflection_EventCreateMorseAccountState) Interface() protoreflect.ProtoMessage {
-	return (*EventCreateMorseAccountState)(x)
+func (x *fastReflection_EventImportMorseClaimableAccounts) Interface() protoreflect.ProtoMessage {
+	return (*EventImportMorseClaimableAccounts)(x)
 }
 
 // Range iterates over every populated field in an undefined order,
@@ -95,22 +95,22 @@ func (x *fastReflection_EventCreateMorseAccountState) Interface() protoreflect.P
 // Range returns immediately if f returns false.
 // While iterating, mutating operations may only be performed
 // on the current field descriptor.
-func (x *fastReflection_EventCreateMorseAccountState) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
+func (x *fastReflection_EventImportMorseClaimableAccounts) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
 	if x.CreatedAtHeight != int64(0) {
 		value := protoreflect.ValueOfInt64(x.CreatedAtHeight)
-		if !f(fd_EventCreateMorseAccountState_created_at_height, value) {
+		if !f(fd_EventImportMorseClaimableAccounts_created_at_height, value) {
 			return
 		}
 	}
 	if len(x.MorseAccountStateHash) != 0 {
 		value := protoreflect.ValueOfBytes(x.MorseAccountStateHash)
-		if !f(fd_EventCreateMorseAccountState_morse_account_state_hash, value) {
+		if !f(fd_EventImportMorseClaimableAccounts_morse_account_state_hash, value) {
 			return
 		}
 	}
 	if x.NumAccounts != uint64(0) {
 		value := protoreflect.ValueOfUint64(x.NumAccounts)
-		if !f(fd_EventCreateMorseAccountState_num_accounts, value) {
+		if !f(fd_EventImportMorseClaimableAccounts_num_accounts, value) {
 			return
 		}
 	}
@@ -127,19 +127,19 @@ func (x *fastReflection_EventCreateMorseAccountState) Range(f func(protoreflect.
 // In other cases (aside from the nullable cases above),
 // a proto3 scalar field is populated if it contains a non-zero value, and
 // a repeated field is populated if it is non-empty.
-func (x *fastReflection_EventCreateMorseAccountState) Has(fd protoreflect.FieldDescriptor) bool {
+func (x *fastReflection_EventImportMorseClaimableAccounts) Has(fd protoreflect.FieldDescriptor) bool {
 	switch fd.FullName() {
-	case "poktroll.migration.EventCreateMorseAccountState.created_at_height":
+	case "poktroll.migration.EventImportMorseClaimableAccounts.created_at_height":
 		return x.CreatedAtHeight != int64(0)
-	case "poktroll.migration.EventCreateMorseAccountState.morse_account_state_hash":
+	case "poktroll.migration.EventImportMorseClaimableAccounts.morse_account_state_hash":
 		return len(x.MorseAccountStateHash) != 0
-	case "poktroll.migration.EventCreateMorseAccountState.num_accounts":
+	case "poktroll.migration.EventImportMorseClaimableAccounts.num_accounts":
 		return x.NumAccounts != uint64(0)
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.migration.EventCreateMorseAccountState"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.migration.EventImportMorseClaimableAccounts"))
 		}
-		panic(fmt.Errorf("message poktroll.migration.EventCreateMorseAccountState does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message poktroll.migration.EventImportMorseClaimableAccounts does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -149,19 +149,19 @@ func (x *fastReflection_EventCreateMorseAccountState) Has(fd protoreflect.FieldD
 // associated with the given field number.
 //
 // Clear is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_EventCreateMorseAccountState) Clear(fd protoreflect.FieldDescriptor) {
+func (x *fastReflection_EventImportMorseClaimableAccounts) Clear(fd protoreflect.FieldDescriptor) {
 	switch fd.FullName() {
-	case "poktroll.migration.EventCreateMorseAccountState.created_at_height":
+	case "poktroll.migration.EventImportMorseClaimableAccounts.created_at_height":
 		x.CreatedAtHeight = int64(0)
-	case "poktroll.migration.EventCreateMorseAccountState.morse_account_state_hash":
+	case "poktroll.migration.EventImportMorseClaimableAccounts.morse_account_state_hash":
 		x.MorseAccountStateHash = nil
-	case "poktroll.migration.EventCreateMorseAccountState.num_accounts":
+	case "poktroll.migration.EventImportMorseClaimableAccounts.num_accounts":
 		x.NumAccounts = uint64(0)
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.migration.EventCreateMorseAccountState"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.migration.EventImportMorseClaimableAccounts"))
 		}
-		panic(fmt.Errorf("message poktroll.migration.EventCreateMorseAccountState does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message poktroll.migration.EventImportMorseClaimableAccounts does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -171,22 +171,22 @@ func (x *fastReflection_EventCreateMorseAccountState) Clear(fd protoreflect.Fiel
 // the default value of a bytes scalar is guaranteed to be a copy.
 // For unpopulated composite types, it returns an empty, read-only view
 // of the value; to obtain a mutable reference, use Mutable.
-func (x *fastReflection_EventCreateMorseAccountState) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_EventImportMorseClaimableAccounts) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
 	switch descriptor.FullName() {
-	case "poktroll.migration.EventCreateMorseAccountState.created_at_height":
+	case "poktroll.migration.EventImportMorseClaimableAccounts.created_at_height":
 		value := x.CreatedAtHeight
 		return protoreflect.ValueOfInt64(value)
-	case "poktroll.migration.EventCreateMorseAccountState.morse_account_state_hash":
+	case "poktroll.migration.EventImportMorseClaimableAccounts.morse_account_state_hash":
 		value := x.MorseAccountStateHash
 		return protoreflect.ValueOfBytes(value)
-	case "poktroll.migration.EventCreateMorseAccountState.num_accounts":
+	case "poktroll.migration.EventImportMorseClaimableAccounts.num_accounts":
 		value := x.NumAccounts
 		return protoreflect.ValueOfUint64(value)
 	default:
 		if descriptor.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.migration.EventCreateMorseAccountState"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.migration.EventImportMorseClaimableAccounts"))
 		}
-		panic(fmt.Errorf("message poktroll.migration.EventCreateMorseAccountState does not contain field %s", descriptor.FullName()))
+		panic(fmt.Errorf("message poktroll.migration.EventImportMorseClaimableAccounts does not contain field %s", descriptor.FullName()))
 	}
 }
 
@@ -200,19 +200,19 @@ func (x *fastReflection_EventCreateMorseAccountState) Get(descriptor protoreflec
 // empty, read-only value, then it panics.
 //
 // Set is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_EventCreateMorseAccountState) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
+func (x *fastReflection_EventImportMorseClaimableAccounts) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
 	switch fd.FullName() {
-	case "poktroll.migration.EventCreateMorseAccountState.created_at_height":
+	case "poktroll.migration.EventImportMorseClaimableAccounts.created_at_height":
 		x.CreatedAtHeight = value.Int()
-	case "poktroll.migration.EventCreateMorseAccountState.morse_account_state_hash":
+	case "poktroll.migration.EventImportMorseClaimableAccounts.morse_account_state_hash":
 		x.MorseAccountStateHash = value.Bytes()
-	case "poktroll.migration.EventCreateMorseAccountState.num_accounts":
+	case "poktroll.migration.EventImportMorseClaimableAccounts.num_accounts":
 		x.NumAccounts = value.Uint()
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.migration.EventCreateMorseAccountState"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.migration.EventImportMorseClaimableAccounts"))
 		}
-		panic(fmt.Errorf("message poktroll.migration.EventCreateMorseAccountState does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message poktroll.migration.EventImportMorseClaimableAccounts does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -226,48 +226,48 @@ func (x *fastReflection_EventCreateMorseAccountState) Set(fd protoreflect.FieldD
 // It panics if the field does not contain a composite type.
 //
 // Mutable is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_EventCreateMorseAccountState) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_EventImportMorseClaimableAccounts) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
-	case "poktroll.migration.EventCreateMorseAccountState.created_at_height":
-		panic(fmt.Errorf("field created_at_height of message poktroll.migration.EventCreateMorseAccountState is not mutable"))
-	case "poktroll.migration.EventCreateMorseAccountState.morse_account_state_hash":
-		panic(fmt.Errorf("field morse_account_state_hash of message poktroll.migration.EventCreateMorseAccountState is not mutable"))
-	case "poktroll.migration.EventCreateMorseAccountState.num_accounts":
-		panic(fmt.Errorf("field num_accounts of message poktroll.migration.EventCreateMorseAccountState is not mutable"))
+	case "poktroll.migration.EventImportMorseClaimableAccounts.created_at_height":
+		panic(fmt.Errorf("field created_at_height of message poktroll.migration.EventImportMorseClaimableAccounts is not mutable"))
+	case "poktroll.migration.EventImportMorseClaimableAccounts.morse_account_state_hash":
+		panic(fmt.Errorf("field morse_account_state_hash of message poktroll.migration.EventImportMorseClaimableAccounts is not mutable"))
+	case "poktroll.migration.EventImportMorseClaimableAccounts.num_accounts":
+		panic(fmt.Errorf("field num_accounts of message poktroll.migration.EventImportMorseClaimableAccounts is not mutable"))
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.migration.EventCreateMorseAccountState"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.migration.EventImportMorseClaimableAccounts"))
 		}
-		panic(fmt.Errorf("message poktroll.migration.EventCreateMorseAccountState does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message poktroll.migration.EventImportMorseClaimableAccounts does not contain field %s", fd.FullName()))
 	}
 }
 
 // NewField returns a new value that is assignable to the field
 // for the given descriptor. For scalars, this returns the default value.
 // For lists, maps, and messages, this returns a new, empty, mutable value.
-func (x *fastReflection_EventCreateMorseAccountState) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_EventImportMorseClaimableAccounts) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
-	case "poktroll.migration.EventCreateMorseAccountState.created_at_height":
+	case "poktroll.migration.EventImportMorseClaimableAccounts.created_at_height":
 		return protoreflect.ValueOfInt64(int64(0))
-	case "poktroll.migration.EventCreateMorseAccountState.morse_account_state_hash":
+	case "poktroll.migration.EventImportMorseClaimableAccounts.morse_account_state_hash":
 		return protoreflect.ValueOfBytes(nil)
-	case "poktroll.migration.EventCreateMorseAccountState.num_accounts":
+	case "poktroll.migration.EventImportMorseClaimableAccounts.num_accounts":
 		return protoreflect.ValueOfUint64(uint64(0))
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.migration.EventCreateMorseAccountState"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.migration.EventImportMorseClaimableAccounts"))
 		}
-		panic(fmt.Errorf("message poktroll.migration.EventCreateMorseAccountState does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message poktroll.migration.EventImportMorseClaimableAccounts does not contain field %s", fd.FullName()))
 	}
 }
 
 // WhichOneof reports which field within the oneof is populated,
 // returning nil if none are populated.
 // It panics if the oneof descriptor does not belong to this message.
-func (x *fastReflection_EventCreateMorseAccountState) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
+func (x *fastReflection_EventImportMorseClaimableAccounts) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
 	switch d.FullName() {
 	default:
-		panic(fmt.Errorf("%s is not a oneof field in poktroll.migration.EventCreateMorseAccountState", d.FullName()))
+		panic(fmt.Errorf("%s is not a oneof field in poktroll.migration.EventImportMorseClaimableAccounts", d.FullName()))
 	}
 	panic("unreachable")
 }
@@ -275,7 +275,7 @@ func (x *fastReflection_EventCreateMorseAccountState) WhichOneof(d protoreflect.
 // GetUnknown retrieves the entire list of unknown fields.
 // The caller may only mutate the contents of the RawFields
 // if the mutated bytes are stored back into the message with SetUnknown.
-func (x *fastReflection_EventCreateMorseAccountState) GetUnknown() protoreflect.RawFields {
+func (x *fastReflection_EventImportMorseClaimableAccounts) GetUnknown() protoreflect.RawFields {
 	return x.unknownFields
 }
 
@@ -286,7 +286,7 @@ func (x *fastReflection_EventCreateMorseAccountState) GetUnknown() protoreflect.
 // An empty RawFields may be passed to clear the fields.
 //
 // SetUnknown is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_EventCreateMorseAccountState) SetUnknown(fields protoreflect.RawFields) {
+func (x *fastReflection_EventImportMorseClaimableAccounts) SetUnknown(fields protoreflect.RawFields) {
 	x.unknownFields = fields
 }
 
@@ -298,7 +298,7 @@ func (x *fastReflection_EventCreateMorseAccountState) SetUnknown(fields protoref
 // message type, but the details are implementation dependent.
 // Validity is not part of the protobuf data model, and may not
 // be preserved in marshaling or other operations.
-func (x *fastReflection_EventCreateMorseAccountState) IsValid() bool {
+func (x *fastReflection_EventImportMorseClaimableAccounts) IsValid() bool {
 	return x != nil
 }
 
@@ -308,9 +308,9 @@ func (x *fastReflection_EventCreateMorseAccountState) IsValid() bool {
 // The returned methods type is identical to
 // "google.golang.org/protobuf/runtime/protoiface".Methods.
 // Consult the protoiface package documentation for details.
-func (x *fastReflection_EventCreateMorseAccountState) ProtoMethods() *protoiface.Methods {
+func (x *fastReflection_EventImportMorseClaimableAccounts) ProtoMethods() *protoiface.Methods {
 	size := func(input protoiface.SizeInput) protoiface.SizeOutput {
-		x := input.Message.Interface().(*EventCreateMorseAccountState)
+		x := input.Message.Interface().(*EventImportMorseClaimableAccounts)
 		if x == nil {
 			return protoiface.SizeOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -342,7 +342,7 @@ func (x *fastReflection_EventCreateMorseAccountState) ProtoMethods() *protoiface
 	}
 
 	marshal := func(input protoiface.MarshalInput) (protoiface.MarshalOutput, error) {
-		x := input.Message.Interface().(*EventCreateMorseAccountState)
+		x := input.Message.Interface().(*EventImportMorseClaimableAccounts)
 		if x == nil {
 			return protoiface.MarshalOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -389,7 +389,7 @@ func (x *fastReflection_EventCreateMorseAccountState) ProtoMethods() *protoiface
 		}, nil
 	}
 	unmarshal := func(input protoiface.UnmarshalInput) (protoiface.UnmarshalOutput, error) {
-		x := input.Message.Interface().(*EventCreateMorseAccountState)
+		x := input.Message.Interface().(*EventImportMorseClaimableAccounts)
 		if x == nil {
 			return protoiface.UnmarshalOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -421,10 +421,10 @@ func (x *fastReflection_EventCreateMorseAccountState) ProtoMethods() *protoiface
 			fieldNum := int32(wire >> 3)
 			wireType := int(wire & 0x7)
 			if wireType == 4 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: EventCreateMorseAccountState: wiretype end group for non-group")
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: EventImportMorseClaimableAccounts: wiretype end group for non-group")
 			}
 			if fieldNum <= 0 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: EventCreateMorseAccountState: illegal tag %d (wire type %d)", fieldNum, wire)
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: EventImportMorseClaimableAccounts: illegal tag %d (wire type %d)", fieldNum, wire)
 			}
 			switch fieldNum {
 			case 1:
@@ -547,8 +547,8 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-// EventUploadMorseState is emitted when the MorseAccountState is created on-chain.
-type EventCreateMorseAccountState struct {
+// EventImportMorseClaimableAccounts is emitted when the MorseClaimableAccounts are created on-chain.
+type EventImportMorseClaimableAccounts struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
@@ -562,8 +562,8 @@ type EventCreateMorseAccountState struct {
 	NumAccounts uint64 `protobuf:"varint,3,opt,name=num_accounts,json=numAccounts,proto3" json:"num_accounts,omitempty"`
 }
 
-func (x *EventCreateMorseAccountState) Reset() {
-	*x = EventCreateMorseAccountState{}
+func (x *EventImportMorseClaimableAccounts) Reset() {
+	*x = EventImportMorseClaimableAccounts{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_poktroll_migration_event_proto_msgTypes[0]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -571,32 +571,32 @@ func (x *EventCreateMorseAccountState) Reset() {
 	}
 }
 
-func (x *EventCreateMorseAccountState) String() string {
+func (x *EventImportMorseClaimableAccounts) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*EventCreateMorseAccountState) ProtoMessage() {}
+func (*EventImportMorseClaimableAccounts) ProtoMessage() {}
 
-// Deprecated: Use EventCreateMorseAccountState.ProtoReflect.Descriptor instead.
-func (*EventCreateMorseAccountState) Descriptor() ([]byte, []int) {
+// Deprecated: Use EventImportMorseClaimableAccounts.ProtoReflect.Descriptor instead.
+func (*EventImportMorseClaimableAccounts) Descriptor() ([]byte, []int) {
 	return file_poktroll_migration_event_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *EventCreateMorseAccountState) GetCreatedAtHeight() int64 {
+func (x *EventImportMorseClaimableAccounts) GetCreatedAtHeight() int64 {
 	if x != nil {
 		return x.CreatedAtHeight
 	}
 	return 0
 }
 
-func (x *EventCreateMorseAccountState) GetMorseAccountStateHash() []byte {
+func (x *EventImportMorseClaimableAccounts) GetMorseAccountStateHash() []byte {
 	if x != nil {
 		return x.MorseAccountStateHash
 	}
 	return nil
 }
 
-func (x *EventCreateMorseAccountState) GetNumAccounts() uint64 {
+func (x *EventImportMorseClaimableAccounts) GetNumAccounts() uint64 {
 	if x != nil {
 		return x.NumAccounts
 	}
@@ -618,34 +618,35 @@ var file_poktroll_migration_event_proto_rawDesc = []byte{
 	0x73, 0x68, 0x61, 0x72, 0x65, 0x64, 0x2f, 0x73, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x2e, 0x70,
 	0x72, 0x6f, 0x74, 0x6f, 0x1a, 0x26, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2f, 0x6d,
 	0x69, 0x67, 0x72, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x2f, 0x6d, 0x6f, 0x72, 0x73, 0x65, 0x5f, 0x6f,
-	0x6e, 0x63, 0x68, 0x61, 0x69, 0x6e, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x22, 0xed, 0x01, 0x0a,
-	0x1c, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x43, 0x72, 0x65, 0x61, 0x74, 0x65, 0x4d, 0x6f, 0x72, 0x73,
-	0x65, 0x41, 0x63, 0x63, 0x6f, 0x75, 0x6e, 0x74, 0x53, 0x74, 0x61, 0x74, 0x65, 0x12, 0x41, 0x0a,
-	0x11, 0x63, 0x72, 0x65, 0x61, 0x74, 0x65, 0x64, 0x5f, 0x61, 0x74, 0x5f, 0x68, 0x65, 0x69, 0x67,
-	0x68, 0x74, 0x18, 0x01, 0x20, 0x01, 0x28, 0x03, 0x42, 0x15, 0xea, 0xde, 0x1f, 0x11, 0x63, 0x72,
-	0x65, 0x61, 0x74, 0x65, 0x64, 0x5f, 0x61, 0x74, 0x5f, 0x68, 0x65, 0x69, 0x67, 0x68, 0x74, 0x52,
-	0x0f, 0x63, 0x72, 0x65, 0x61, 0x74, 0x65, 0x64, 0x41, 0x74, 0x48, 0x65, 0x69, 0x67, 0x68, 0x74,
-	0x12, 0x55, 0x0a, 0x18, 0x6d, 0x6f, 0x72, 0x73, 0x65, 0x5f, 0x61, 0x63, 0x63, 0x6f, 0x75, 0x6e,
-	0x74, 0x5f, 0x73, 0x74, 0x61, 0x74, 0x65, 0x5f, 0x68, 0x61, 0x73, 0x68, 0x18, 0x02, 0x20, 0x01,
-	0x28, 0x0c, 0x42, 0x1c, 0xea, 0xde, 0x1f, 0x18, 0x6d, 0x6f, 0x72, 0x73, 0x65, 0x5f, 0x61, 0x63,
-	0x63, 0x6f, 0x75, 0x6e, 0x74, 0x5f, 0x73, 0x74, 0x61, 0x74, 0x65, 0x5f, 0x68, 0x61, 0x73, 0x68,
-	0x52, 0x15, 0x6d, 0x6f, 0x72, 0x73, 0x65, 0x41, 0x63, 0x63, 0x6f, 0x75, 0x6e, 0x74, 0x53, 0x74,
-	0x61, 0x74, 0x65, 0x48, 0x61, 0x73, 0x68, 0x12, 0x33, 0x0a, 0x0c, 0x6e, 0x75, 0x6d, 0x5f, 0x61,
-	0x63, 0x63, 0x6f, 0x75, 0x6e, 0x74, 0x73, 0x18, 0x03, 0x20, 0x01, 0x28, 0x04, 0x42, 0x10, 0xea,
-	0xde, 0x1f, 0x0c, 0x6e, 0x75, 0x6d, 0x5f, 0x61, 0x63, 0x63, 0x6f, 0x75, 0x6e, 0x74, 0x73, 0x52,
-	0x0b, 0x6e, 0x75, 0x6d, 0x41, 0x63, 0x63, 0x6f, 0x75, 0x6e, 0x74, 0x73, 0x42, 0xb6, 0x01, 0xd8,
-	0xe2, 0x1e, 0x01, 0x0a, 0x16, 0x63, 0x6f, 0x6d, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c,
-	0x6c, 0x2e, 0x6d, 0x69, 0x67, 0x72, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x42, 0x0a, 0x45, 0x76, 0x65,
-	0x6e, 0x74, 0x50, 0x72, 0x6f, 0x74, 0x6f, 0x50, 0x01, 0x5a, 0x23, 0x63, 0x6f, 0x73, 0x6d, 0x6f,
-	0x73, 0x73, 0x64, 0x6b, 0x2e, 0x69, 0x6f, 0x2f, 0x61, 0x70, 0x69, 0x2f, 0x70, 0x6f, 0x6b, 0x74,
-	0x72, 0x6f, 0x6c, 0x6c, 0x2f, 0x6d, 0x69, 0x67, 0x72, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0xa2, 0x02,
-	0x03, 0x50, 0x4d, 0x58, 0xaa, 0x02, 0x12, 0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e,
-	0x4d, 0x69, 0x67, 0x72, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0xca, 0x02, 0x12, 0x50, 0x6f, 0x6b, 0x74,
-	0x72, 0x6f, 0x6c, 0x6c, 0x5c, 0x4d, 0x69, 0x67, 0x72, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0xe2, 0x02,
-	0x1e, 0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x5c, 0x4d, 0x69, 0x67, 0x72, 0x61, 0x74,
-	0x69, 0x6f, 0x6e, 0x5c, 0x47, 0x50, 0x42, 0x4d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0xea,
-	0x02, 0x13, 0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x3a, 0x3a, 0x4d, 0x69, 0x67, 0x72,
-	0x61, 0x74, 0x69, 0x6f, 0x6e, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x6e, 0x63, 0x68, 0x61, 0x69, 0x6e, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x22, 0xf2, 0x01, 0x0a,
+	0x21, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x49, 0x6d, 0x70, 0x6f, 0x72, 0x74, 0x4d, 0x6f, 0x72, 0x73,
+	0x65, 0x43, 0x6c, 0x61, 0x69, 0x6d, 0x61, 0x62, 0x6c, 0x65, 0x41, 0x63, 0x63, 0x6f, 0x75, 0x6e,
+	0x74, 0x73, 0x12, 0x41, 0x0a, 0x11, 0x63, 0x72, 0x65, 0x61, 0x74, 0x65, 0x64, 0x5f, 0x61, 0x74,
+	0x5f, 0x68, 0x65, 0x69, 0x67, 0x68, 0x74, 0x18, 0x01, 0x20, 0x01, 0x28, 0x03, 0x42, 0x15, 0xea,
+	0xde, 0x1f, 0x11, 0x63, 0x72, 0x65, 0x61, 0x74, 0x65, 0x64, 0x5f, 0x61, 0x74, 0x5f, 0x68, 0x65,
+	0x69, 0x67, 0x68, 0x74, 0x52, 0x0f, 0x63, 0x72, 0x65, 0x61, 0x74, 0x65, 0x64, 0x41, 0x74, 0x48,
+	0x65, 0x69, 0x67, 0x68, 0x74, 0x12, 0x55, 0x0a, 0x18, 0x6d, 0x6f, 0x72, 0x73, 0x65, 0x5f, 0x61,
+	0x63, 0x63, 0x6f, 0x75, 0x6e, 0x74, 0x5f, 0x73, 0x74, 0x61, 0x74, 0x65, 0x5f, 0x68, 0x61, 0x73,
+	0x68, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0c, 0x42, 0x1c, 0xea, 0xde, 0x1f, 0x18, 0x6d, 0x6f, 0x72,
+	0x73, 0x65, 0x5f, 0x61, 0x63, 0x63, 0x6f, 0x75, 0x6e, 0x74, 0x5f, 0x73, 0x74, 0x61, 0x74, 0x65,
+	0x5f, 0x68, 0x61, 0x73, 0x68, 0x52, 0x15, 0x6d, 0x6f, 0x72, 0x73, 0x65, 0x41, 0x63, 0x63, 0x6f,
+	0x75, 0x6e, 0x74, 0x53, 0x74, 0x61, 0x74, 0x65, 0x48, 0x61, 0x73, 0x68, 0x12, 0x33, 0x0a, 0x0c,
+	0x6e, 0x75, 0x6d, 0x5f, 0x61, 0x63, 0x63, 0x6f, 0x75, 0x6e, 0x74, 0x73, 0x18, 0x03, 0x20, 0x01,
+	0x28, 0x04, 0x42, 0x10, 0xea, 0xde, 0x1f, 0x0c, 0x6e, 0x75, 0x6d, 0x5f, 0x61, 0x63, 0x63, 0x6f,
+	0x75, 0x6e, 0x74, 0x73, 0x52, 0x0b, 0x6e, 0x75, 0x6d, 0x41, 0x63, 0x63, 0x6f, 0x75, 0x6e, 0x74,
+	0x73, 0x42, 0xb6, 0x01, 0xd8, 0xe2, 0x1e, 0x01, 0x0a, 0x16, 0x63, 0x6f, 0x6d, 0x2e, 0x70, 0x6f,
+	0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x6d, 0x69, 0x67, 0x72, 0x61, 0x74, 0x69, 0x6f, 0x6e,
+	0x42, 0x0a, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x50, 0x72, 0x6f, 0x74, 0x6f, 0x50, 0x01, 0x5a, 0x23,
+	0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x73, 0x64, 0x6b, 0x2e, 0x69, 0x6f, 0x2f, 0x61, 0x70, 0x69,
+	0x2f, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2f, 0x6d, 0x69, 0x67, 0x72, 0x61, 0x74,
+	0x69, 0x6f, 0x6e, 0xa2, 0x02, 0x03, 0x50, 0x4d, 0x58, 0xaa, 0x02, 0x12, 0x50, 0x6f, 0x6b, 0x74,
+	0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x4d, 0x69, 0x67, 0x72, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0xca, 0x02,
+	0x12, 0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x5c, 0x4d, 0x69, 0x67, 0x72, 0x61, 0x74,
+	0x69, 0x6f, 0x6e, 0xe2, 0x02, 0x1e, 0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x5c, 0x4d,
+	0x69, 0x67, 0x72, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x5c, 0x47, 0x50, 0x42, 0x4d, 0x65, 0x74, 0x61,
+	0x64, 0x61, 0x74, 0x61, 0xea, 0x02, 0x13, 0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x3a,
+	0x3a, 0x4d, 0x69, 0x67, 0x72, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74,
+	0x6f, 0x33,
 }
 
 var (
@@ -662,7 +663,7 @@ func file_poktroll_migration_event_proto_rawDescGZIP() []byte {
 
 var file_poktroll_migration_event_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
 var file_poktroll_migration_event_proto_goTypes = []interface{}{
-	(*EventCreateMorseAccountState)(nil), // 0: poktroll.migration.EventCreateMorseAccountState
+	(*EventImportMorseClaimableAccounts)(nil), // 0: poktroll.migration.EventImportMorseClaimableAccounts
 }
 var file_poktroll_migration_event_proto_depIdxs = []int32{
 	0, // [0:0] is the sub-list for method output_type
@@ -680,7 +681,7 @@ func file_poktroll_migration_event_proto_init() {
 	file_poktroll_migration_morse_onchain_proto_init()
 	if !protoimpl.UnsafeEnabled {
 		file_poktroll_migration_event_proto_msgTypes[0].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*EventCreateMorseAccountState); i {
+			switch v := v.(*EventImportMorseClaimableAccounts); i {
 			case 0:
 				return &v.state
 			case 1:

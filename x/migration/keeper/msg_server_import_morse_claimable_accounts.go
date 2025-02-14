@@ -3,16 +3,50 @@ package keeper
 import (
 	"context"
 
-    "github.com/pokt-network/poktroll/x/migration/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+
+	migrationtypes "github.com/pokt-network/poktroll/x/migration/types"
 )
 
+func (k msgServer) ImportMorseClaimableAccounts(ctx context.Context, msg *migrationtypes.MsgImportMorseClaimableAccounts) (*migrationtypes.MsgImportMorseClaimableAccountsResponse, error) {
+	sdkCtx := sdk.UnwrapSDKContext(ctx)
+	logger := sdkCtx.Logger().With("method", "CreateMorseAccountState")
 
-func (k msgServer) ImportMorseClaimableAccounts(goCtx context.Context,  msg *types.MsgImportMorseClaimableAccounts) (*types.MsgImportMorseClaimableAccountsResponse, error) {
-	ctx := sdk.UnwrapSDKContext(goCtx)
+	// Validate the import message.
+	if err := msg.ValidateBasic(); err != nil {
+		logger.Info(err.Error())
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
 
-    // TODO: Handling the message
-    _ = ctx
+	// Check if MorseClaimableAccounts have already been imported.
+	if morseClaimableAccounts := k.GetAllMorseClaimableAccounts(sdkCtx); len(morseClaimableAccounts) > 0 {
+		err := migrationtypes.ErrMorseAccountState.Wrap("Morse claimable accounts already imported")
+		logger.Info(err.Error())
+		return nil, status.Error(codes.FailedPrecondition, err.Error())
+	}
 
-	return &types.MsgImportMorseClaimableAccountsResponse{}, nil
+	// Import MorseClaimableAccounts.
+	k.ImportFromMorseAccountState(sdkCtx, &msg.MorseAccountState)
+
+	// Emit the corresponding event.
+	if err := sdkCtx.EventManager().EmitTypedEvent(
+		&migrationtypes.EventImportMorseClaimableAccounts{
+			CreatedAtHeight: sdkCtx.BlockHeight(),
+			// DEV_NOTE: The MorseAccountStateHash is validated in msg#ValidateBasic().
+			MorseAccountStateHash: msg.MorseAccountStateHash,
+			NumAccounts:           uint64(len(msg.MorseAccountState.Accounts)),
+		},
+	); err != nil {
+		logger.Info(err.Error())
+		return nil, err
+	}
+
+	// Return the response.
+	return &migrationtypes.MsgImportMorseClaimableAccountsResponse{
+		// DEV_NOTE: The MorseAccountStateHash is validated in msg#ValidateBasic().
+		StateHash:   msg.MorseAccountStateHash,
+		NumAccounts: uint64(len(msg.MorseAccountState.Accounts)),
+	}, nil
 }

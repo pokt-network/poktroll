@@ -53,8 +53,8 @@ func (k Keeper) RemoveMorseClaimableAccount(
 	))
 }
 
-// GetAllMorseClaimableAccount returns all morseClaimableAccount
-func (k Keeper) GetAllMorseClaimableAccount(ctx context.Context) (list []types.MorseClaimableAccount) {
+// GetAllMorseClaimableAccounts returns all morseClaimableAccount
+func (k Keeper) GetAllMorseClaimableAccounts(ctx context.Context) (list []types.MorseClaimableAccount) {
 	storeAdapter := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
 	store := prefix.NewStore(storeAdapter, types.KeyPrefix(types.MorseClaimableAccountKeyPrefix))
 	iterator := storetypes.KVStorePrefixIterator(store, []byte{})
@@ -68,4 +68,15 @@ func (k Keeper) GetAllMorseClaimableAccount(ctx context.Context) (list []types.M
 	}
 
 	return
+}
+
+// ImportFromMorseAccountState imports the MorseClaimableAccounts from the given MorseAccountState.
+// It returns the state hash of the imported MorseAccountState.
+func (k Keeper) ImportFromMorseAccountState(
+	ctx context.Context,
+	morseAccountState *types.MorseAccountState,
+) {
+	for _, morseAccount := range morseAccountState.Accounts {
+		k.SetMorseClaimableAccount(ctx, *morseAccount)
+	}
 }
