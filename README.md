@@ -1,5 +1,6 @@
 <!-- markdownlint-disable MD033 -->
 <!-- markdownlint-disable MD045 -->
+<!-- markdownlint-disable MD041 -->
 
 <div align="center">
   <a href="https://www.pokt.network">

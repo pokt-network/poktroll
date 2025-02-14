@@ -3,6 +3,17 @@ sidebar_position: 2
 title: Service Cheat Sheet
 ---
 
+<!-- markdownlint-disable MD036 -->
+
+**🖨 🍝 instructions to set you up with becoming an Owner of a new Service or Data Source on Pocket Network ✅**
+
+:::warning Intentionally simple
+
+See the [Service Walkthrough](../walkthroughs/full_node_walkthrough.md) if you want to understand more about what
+a source is under the hood.
+
+:::
+
 ## Service Cheat Sheet <!-- omit in toc -->
 
 - [Pre-Requisites](#pre-requisites)
@@ -14,8 +25,9 @@ title: Service Cheat Sheet
 
 ### Pre-Requisites
 
-1. Make sure to [install the `poktrolld` CLI](../../tools/user_guide/poktrolld_cli.md).
+1. Install the [`poktrolld` CLI](../../tools/user_guide/poktrolld_cli.md).
 2. Make sure you know how to [create and fund a new account](../../tools/user_guide/create-new-wallet.md).
+3. 
 
 ### How do I query for all existing onchain Services?
 
