@@ -10,8 +10,8 @@ import (
 )
 
 var (
-	_ client.KeyValueCache[any]        = (*inMemoryCache[any])(nil)
-	_ client.HistoricalQueryCache[any] = (*inMemoryCache[any])(nil)
+	_ client.KeyValueCache[any]        = (*inMemoryKVCache[any])(nil)
+	_ client.HistoricalQueryCache[any] = (*inMemoryKVCache[any])(nil)
 
 	DefaultQueryCacheConfig = queryCacheConfig{
 		evictionPolicy: FirstInFirstOut,
@@ -22,9 +22,9 @@ var (
 	}
 )
 
-// inMemoryCache provides a concurrency-safe in-memory cache implementation with
+// inMemoryKVCache provides a concurrency-safe in-memory cache implementation with
 // optional historical value support.
-type inMemoryCache[T any] struct {
+type inMemoryKVCache[T any] struct {
 	config        queryCacheConfig
 	latestVersion atomic.Int64
 
@@ -56,9 +56,9 @@ type cacheValueHistory[T any] struct {
 	versionToValueMap map[int64]cacheValue[T]
 }
 
-// NewInMemoryCache creates a new inMemoryCache with the configuration generated
+// NewInMemoryCache creates a new inMemoryKVCache with the configuration generated
 // by the given option functions.
-func NewInMemoryCache[T any](opts ...QueryCacheOptionFn) (*inMemoryCache[T], error) {
+func NewInMemoryCache[T any](opts ...QueryCacheOptionFn) (*inMemoryKVCache[T], error) {
 	config := DefaultQueryCacheConfig
 
 	for _, opt := range opts {
@@ -69,7 +69,7 @@ func NewInMemoryCache[T any](opts ...QueryCacheOptionFn) (*inMemoryCache[T], err
 		return nil, err
 	}
 
-	return &inMemoryCache[T]{
+	return &inMemoryKVCache[T]{
 		values:         make(map[string]cacheValue[T]),
 		valueHistories: make(map[string]cacheValueHistory[T]),
 		config:         config,
@@ -80,7 +80,7 @@ func NewInMemoryCache[T any](opts ...QueryCacheOptionFn) (*inMemoryCache[T], err
 // configured for historical mode, it will return the value at the latest **known**
 // version, which is only updated on calls to SetAsOfVersion, and therefore is not
 // guaranteed to be the current version w.r.t the blockchain.
-func (c *inMemoryCache[T]) Get(key string) (T, error) {
+func (c *inMemoryKVCache[T]) Get(key string) (T, error) {
 	if c.config.historical {
 		return c.GetAsOfVersion(key, c.latestVersion.Load())
 	}
@@ -113,7 +113,7 @@ func (c *inMemoryCache[T]) Get(key string) (T, error) {
 // given version. If a value is not found for that version, the value at the nearest
 // previous version is returned. If the cache is not configured for historical mode,
 // it returns an error.
-func (c *inMemoryCache[T]) GetAsOfVersion(key string, version int64) (T, error) {
+func (c *inMemoryKVCache[T]) GetAsOfVersion(key string, version int64) (T, error) {
 	var zero T
 
 	if !c.config.historical {
@@ -169,9 +169,9 @@ func (c *inMemoryCache[T]) GetAsOfVersion(key string, version int64) (T, error) 
 // configured for historical mode, it will store the value at the latest **known**
 // version, which is only updated on calls to SetAsOfVersion, and therefore is not
 // guaranteed to be the current version w.r.t. the blockchain.
-func (c *inMemoryCache[T]) Set(key string, value T) error {
+func (c *inMemoryKVCache[T]) Set(key string, value T) error {
 	if c.config.historical {
-		return ErrUnsupportedHistoricalModeOp.Wrap("inMemoryCache#Set() is not supported in historical mode")
+		return ErrUnsupportedHistoricalModeOp.Wrap("inMemoryKVCache#Set() is not supported in historical mode")
 	}
 
 	c.valuesMu.Lock()
@@ -196,7 +196,7 @@ func (c *inMemoryCache[T]) Set(key string, value T) error {
 // SetAsOfVersion adds or updates the historical value in the cache for the given key,
 // and at the version number. If the cache is not configured for historical mode, it
 // returns an error.
-func (c *inMemoryCache[T]) SetAsOfVersion(key string, value T, version int64) error {
+func (c *inMemoryKVCache[T]) SetAsOfVersion(key string, value T, version int64) error {
 	if !c.config.historical {
 		return ErrHistoricalModeNotEnabled
 	}
@@ -265,7 +265,7 @@ func (c *inMemoryCache[T]) SetAsOfVersion(key string, value T, version int64) er
 }
 
 // Delete removes a value from the cache.
-func (c *inMemoryCache[T]) Delete(key string) {
+func (c *inMemoryKVCache[T]) Delete(key string) {
 	c.valuesMu.Lock()
 	defer c.valuesMu.Unlock()
 
@@ -277,7 +277,7 @@ func (c *inMemoryCache[T]) Delete(key string) {
 }
 
 // Clear removes all values from the cache.
-func (c *inMemoryCache[T]) Clear() {
+func (c *inMemoryKVCache[T]) Clear() {
 	c.valuesMu.Lock()
 	defer c.valuesMu.Unlock()
 
@@ -292,7 +292,7 @@ func (c *inMemoryCache[T]) Clear() {
 
 // evict removes one value from the cache, to make space for a new one,
 // according to the configured eviction policy
-func (c *inMemoryCache[T]) evict() error {
+func (c *inMemoryKVCache[T]) evict() error {
 	if c.config.historical {
 		return c.evictHistorical()
 	} else {
@@ -302,7 +302,7 @@ func (c *inMemoryCache[T]) evict() error {
 
 // evictHistorical removes one value (and all its versions) from the cache,
 // to make space for a new one, according to the configured eviction policy.
-func (c *inMemoryCache[T]) evictHistorical() error {
+func (c *inMemoryKVCache[T]) evictHistorical() error {
 	switch c.config.evictionPolicy {
 	case FirstInFirstOut:
 		var oldestKey string
@@ -343,7 +343,7 @@ func (c *inMemoryCache[T]) evictHistorical() error {
 
 // evictNonHistorical removes one item from the cache, to make space for a new one,
 // according to the configured eviction policy.
-func (c *inMemoryCache[T]) evictNonHistorical() error {
+func (c *inMemoryKVCache[T]) evictNonHistorical() error {
 	switch c.config.evictionPolicy {
 	case FirstInFirstOut:
 		var (
