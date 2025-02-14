@@ -7,7 +7,7 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 )
 
-var _ sdk.Msg = &MsgImportMorseClaimableAccounts{}
+var _ sdk.Msg = (*MsgImportMorseClaimableAccounts)(nil)
 
 func NewMsgImportMorseClaimableAccounts(
 	authority string,
