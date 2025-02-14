@@ -10,8 +10,8 @@ import (
 // InitGenesis initializes the module's state from a provided genesis state.
 func InitGenesis(ctx sdk.Context, k keeper.Keeper, genState types.GenesisState) {
 	// Set all the morseClaimableAccount
-	for _, elem := range genState.MorseClaimableAccountList {
-		k.SetMorseClaimableAccount(ctx, elem)
+	for _, morseClaimableAccounts := range genState.MorseClaimableAccountList {
+		k.SetMorseClaimableAccount(ctx, morseClaimableAccounts)
 	}
 	// this line is used by starport scaffolding # genesis/module/init
 	if err := k.SetParams(ctx, genState.Params); err != nil {

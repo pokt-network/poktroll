@@ -14,10 +14,10 @@ import (
 func (k Keeper) SetMorseClaimableAccount(ctx context.Context, morseClaimableAccount types.MorseClaimableAccount) {
 	storeAdapter := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
 	store := prefix.NewStore(storeAdapter, types.KeyPrefix(types.MorseClaimableAccountKeyPrefix))
-	b := k.cdc.MustMarshal(&morseClaimableAccount)
+	morseClaimableAccountBz := k.cdc.MustMarshal(&morseClaimableAccount)
 	store.Set(types.MorseClaimableAccountKey(
 		morseClaimableAccount.Address.String(),
-	), b)
+	), morseClaimableAccountBz)
 }
 
 // GetMorseClaimableAccount returns a morseClaimableAccount from its index
@@ -25,19 +25,19 @@ func (k Keeper) GetMorseClaimableAccount(
 	ctx context.Context,
 	address string,
 
-) (val types.MorseClaimableAccount, found bool) {
+) (morseClaimableAccount types.MorseClaimableAccount, found bool) {
 	storeAdapter := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
 	store := prefix.NewStore(storeAdapter, types.KeyPrefix(types.MorseClaimableAccountKeyPrefix))
 
-	b := store.Get(types.MorseClaimableAccountKey(
+	morseClaimableAccountBz := store.Get(types.MorseClaimableAccountKey(
 		address,
 	))
-	if b == nil {
-		return val, false
+	if morseClaimableAccountBz == nil {
+		return morseClaimableAccount, false
 	}
 
-	k.cdc.MustUnmarshal(b, &val)
-	return val, true
+	k.cdc.MustUnmarshal(morseClaimableAccountBz, &morseClaimableAccount)
+	return morseClaimableAccount, true
 }
 
 // RemoveMorseClaimableAccount removes a morseClaimableAccount from the store
@@ -62,9 +62,9 @@ func (k Keeper) GetAllMorseClaimableAccount(ctx context.Context) (list []types.M
 	defer iterator.Close()
 
 	for ; iterator.Valid(); iterator.Next() {
-		var val types.MorseClaimableAccount
-		k.cdc.MustUnmarshal(iterator.Value(), &val)
-		list = append(list, val)
+		var morseClaimableAccount types.MorseClaimableAccount
+		k.cdc.MustUnmarshal(iterator.Value(), &morseClaimableAccount)
+		list = append(list, morseClaimableAccount)
 	}
 
 	return

@@ -6,12 +6,17 @@ import (
 	"cosmossdk.io/store/prefix"
 	"github.com/cosmos/cosmos-sdk/runtime"
 	"github.com/cosmos/cosmos-sdk/types/query"
-	"github.com/pokt-network/poktroll/x/migration/types"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+
+	"github.com/pokt-network/poktroll/x/migration/types"
 )
 
-func (k Keeper) MorseClaimableAccountAll(ctx context.Context, req *types.QueryAllMorseClaimableAccountRequest) (*types.QueryAllMorseClaimableAccountResponse, error) {
+// MorseClaimableAccountAll returns all MorseClaimableAccounts created as a result of MsgImportMorseClaimableAccounts.
+func (k Keeper) MorseClaimableAccountAll(
+	ctx context.Context,
+	req *types.QueryAllMorseClaimableAccountRequest,
+) (*types.QueryAllMorseClaimableAccountResponse, error) {
 	if req == nil {
 		return nil, status.Error(codes.InvalidArgument, "invalid request")
 	}
@@ -38,7 +43,11 @@ func (k Keeper) MorseClaimableAccountAll(ctx context.Context, req *types.QueryAl
 	return &types.QueryAllMorseClaimableAccountResponse{MorseClaimableAccount: morseClaimableAccounts, Pagination: pageRes}, nil
 }
 
-func (k Keeper) MorseClaimableAccount(ctx context.Context, req *types.QueryGetMorseClaimableAccountRequest) (*types.QueryGetMorseClaimableAccountResponse, error) {
+// MorseClaimableAccount returns a MorseClaimableAccount by its hex-encoded Morse address.
+func (k Keeper) MorseClaimableAccount(
+	ctx context.Context,
+	req *types.QueryGetMorseClaimableAccountRequest,
+) (*types.QueryGetMorseClaimableAccountResponse, error) {
 	if req == nil {
 		return nil, status.Error(codes.InvalidArgument, "invalid request")
 	}
