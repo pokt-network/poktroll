@@ -381,9 +381,9 @@ type KeyValueCache[T any] interface {
 	Clear()
 }
 
-// HistoricalQueryCache extends KeyValueCache to support getting and setting values
+// HistoricalKeyValueCache extends KeyValueCache to support getting and setting values
 // at multiple heights for a given key.
-type HistoricalQueryCache[T any] interface {
+type HistoricalKeyValueCache[T any] interface {
 	KeyValueCache[T]
 	// GetAsOfVersion retrieves the nearest value <= the specified version number.
 	GetAsOfVersion(key string, version int64) (T, error)

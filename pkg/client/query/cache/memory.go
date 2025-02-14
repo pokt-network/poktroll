@@ -10,8 +10,8 @@ import (
 )
 
 var (
-	_ client.KeyValueCache[any]        = (*inMemoryKVCache[any])(nil)
-	_ client.HistoricalQueryCache[any] = (*inMemoryKVCache[any])(nil)
+	_ client.KeyValueCache[any]           = (*inMemoryKVCache[any])(nil)
+	_ client.HistoricalKeyValueCache[any] = (*inMemoryKVCache[any])(nil)
 
 	DefaultQueryCacheConfig = queryCacheConfig{
 		evictionPolicy: FirstInFirstOut,
