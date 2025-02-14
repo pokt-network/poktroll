@@ -16,7 +16,7 @@ import (
 	migrationtypes "github.com/pokt-network/poktroll/x/migration/types"
 )
 
-func TestMorseAccountStateMsgServerCreate_Success(t *testing.T) {
+func TestMsgServer_ImportMorseClaimableAccounts_Success(t *testing.T) {
 	k, ctx := keepertest.MigrationKeeper(t)
 	srv := keeper.NewMsgServerImpl(k)
 
@@ -71,7 +71,7 @@ func TestMorseAccountStateMsgServerCreate_Success(t *testing.T) {
 	require.Equal(t, expectedEvent, filteredEvts[0])
 }
 
-func TestMorseAccountStateMsgServerCreate_ErrorAlreadySet(t *testing.T) {
+func TestMsgServer_ImportMorseClaimableAccounts_ErrorAlreadySet(t *testing.T) {
 	k, ctx := keepertest.MigrationKeeper(t)
 	srv := keeper.NewMsgServerImpl(k)
 
@@ -98,4 +98,23 @@ func TestMorseAccountStateMsgServerCreate_ErrorAlreadySet(t *testing.T) {
 	stat := status.Convert(err)
 	require.Equal(t, codes.FailedPrecondition, stat.Code())
 	require.ErrorContains(t, err, "Morse claimable accounts already imported")
+}
+
+func TestMsgServer_ImportMorseClaimableAccounts_ErrorInvalidAuthority(t *testing.T) {
+	k, ctx := keepertest.MigrationKeeper(t)
+	srv := keeper.NewMsgServerImpl(k)
+
+	numAccounts := 10
+	_, accountState := testmigration.NewMorseStateExportAndAccountState(t, numAccounts)
+
+	msgImportMorseClaimableAccounts, err := migrationtypes.NewMsgImportMorseClaimableAccounts(
+		authtypes.NewModuleAddress("invalid_authority").String(),
+		*accountState,
+	)
+	require.NoError(t, err)
+
+	_, err = srv.ImportMorseClaimableAccounts(ctx, msgImportMorseClaimableAccounts)
+	stat := status.Convert(err)
+	require.Equal(t, codes.PermissionDenied, stat.Code())
+	require.ErrorContains(t, err, "invalid authority address")
 }

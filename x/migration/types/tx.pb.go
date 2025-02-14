@@ -124,7 +124,7 @@ type MsgImportMorseClaimableAccounts struct {
 	MorseAccountState MorseAccountState `protobuf:"bytes,2,opt,name=morse_account_state,json=morseAccountState,proto3" json:"morse_account_state"`
 	// expected sha256 hash of the morse_account_state. If this hash does not match the on-chain
 	// computation, the transaction will fail. Social consensus regarding the correctness of
-	// morse_account_state should have be achieved off-chain and can be verified on-chain by
+	// morse_account_state should have been achieved off-chain and can be verified on-chain by
 	// comparing this hash with that of a locally derived Morse state export:
 	// E.g., `poktrolld migrate collect-morse-accounts $<(pocket util export-genesis-for-reset)`.
 	// See: `pocket util export-genesis-for-migration --help` & `poktrolld migrate collect-morse-accounts --help`

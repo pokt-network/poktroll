@@ -14,6 +14,11 @@ func (k msgServer) ImportMorseClaimableAccounts(ctx context.Context, msg *migrat
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 	logger := sdkCtx.Logger().With("method", "CreateMorseAccountState")
 
+	if msg.GetAuthority() != k.GetAuthority() {
+		err := migrationtypes.ErrUnauthorized.Wrapf("invalid authority address (%s)", msg.GetAuthority())
+		return nil, status.Error(codes.PermissionDenied, err.Error())
+	}
+
 	// Validate the import message.
 	if err := msg.ValidateBasic(); err != nil {
 		logger.Info(err.Error())
@@ -39,8 +44,8 @@ func (k msgServer) ImportMorseClaimableAccounts(ctx context.Context, msg *migrat
 			NumAccounts:           uint64(len(msg.MorseAccountState.Accounts)),
 		},
 	); err != nil {
-		logger.Info(err.Error())
-		return nil, err
+		logger.Error(err.Error())
+		return nil, status.Error(codes.Internal, err.Error())
 	}
 
 	// Return the response.
