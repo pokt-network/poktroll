@@ -60,7 +60,7 @@ they will automatically skip the failed upgrade.
 
 ### Option 2: The migration is stuck (i.e. incomplete/partial migration)
 
-If the migration is stuck, there's always a chance the upgrade handler was executed on-chain as scheduled, but the migration didn't complete.
+If the migration is stuck, there's always a chance the upgrade handler was executed onchain as scheduled, but the migration didn't complete.
 
 In such a case, we need:
 
