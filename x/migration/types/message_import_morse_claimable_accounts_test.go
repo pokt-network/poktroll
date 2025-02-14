@@ -13,6 +13,9 @@ func TestMsgImportMorseClaimableAccounts_ValidateBasic(t *testing.T) {
 	validMsg, err := NewMsgImportMorseClaimableAccounts(sample.AccAddress(), MorseAccountState{})
 	require.NoError(t, err)
 
+	invalidMsg := *validMsg
+	invalidMsg.MorseAccountStateHash = []byte("invalid_hash")
+
 	tests := []struct {
 		name string
 		msg  MsgImportMorseClaimableAccounts
@@ -24,7 +27,13 @@ func TestMsgImportMorseClaimableAccounts_ValidateBasic(t *testing.T) {
 				Authority: "invalid_address",
 			},
 			err: sdkerrors.ErrInvalidAddress,
-		}, {
+		},
+		{
+			name: "invalid morse account state hash",
+			msg:  invalidMsg,
+			err:  ErrMorseAccountState,
+		},
+		{
 			name: "valid address",
 			msg:  *validMsg,
 		},
