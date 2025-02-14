@@ -1348,6 +1348,12 @@ type MorseClaimableAccount struct {
 	// The unstaked upokt tokens (i.e. account balance) available for claiming.
 	UnstakedBalance *v1beta1.Coin `protobuf:"bytes,3,opt,name=unstaked_balance,json=unstakedBalance,proto3" json:"unstaked_balance,omitempty"`
 	// The staked tokens associated with a supplier actor which corresponds to this account address.
+	// DEV_NOTE: A few contextual notes related to Morse:
+	// - A Supplier is called a Servicer or Node (not a full node) in Morse
+	// - All Validators are Servicers, not all servicers are Validators
+	// - Automatically, the top 100 staked Servicers are validator
+	// - This only accounts for servicer stake balance transition
+	// TODO_MAINNET(@Olshansk): Develop a strategy for bootstrapping validators in Shannon by working with the cosmos ecosystem
 	SupplierStake *v1beta1.Coin `protobuf:"bytes,4,opt,name=supplier_stake,json=supplierStake,proto3" json:"supplier_stake,omitempty"`
 	// The staked tokens associated with an application actor which corresponds to this account address.
 	ApplicationStake *v1beta1.Coin `protobuf:"bytes,5,opt,name=application_stake,json=applicationStake,proto3" json:"application_stake,omitempty"`

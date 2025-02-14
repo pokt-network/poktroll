@@ -459,6 +459,7 @@ func _Query_MorseClaimableAccountAll_Handler(srv interface{}, ctx context.Contex
 	return interceptor(ctx, in, info, handler)
 }
 
+var Query_serviceDesc = _Query_serviceDesc
 var _Query_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "poktroll.migration.Query",
 	HandlerType: (*QueryServer)(nil),
