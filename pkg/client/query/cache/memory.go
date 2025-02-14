@@ -190,17 +190,14 @@ func (c *inMemoryKVCache[T]) Set(key string, value T) error {
 	c.valuesMu.Lock()
 	defer c.valuesMu.Unlock()
 
-	isMaxKeysConfigured := c.config.maxKeys > 0
-	cacheMaxKeysReached := int64(len(c.values)) >= c.config.maxKeys
-	if isMaxKeysConfigured && cacheMaxKeysReached {
-		if err := c.evict(); err != nil {
-			return err
-		}
-	}
-
 	c.values[key] = cacheValue[T]{
 		value:    value,
 		cachedAt: time.Now(),
+	}
+
+	// Evict after adding the new key/value.
+	if err := c.evict(); err != nil {
+		return err
 	}
 
 	return nil
@@ -273,6 +270,11 @@ func (c *inMemoryKVCache[T]) SetVersion(key string, value T, version int64) erro
 
 	c.valueHistories[key] = valueHistory
 
+	// Evict after adding the new key/value.
+	if err = c.evict(); err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -303,11 +305,16 @@ func (c *inMemoryKVCache[T]) Clear() {
 // evict removes one value from the cache, to make space for a new one,
 // according to the configured eviction policy
 func (c *inMemoryKVCache[T]) evict() error {
-	if c.config.historical {
-		return c.evictHistorical()
-	} else {
-		return c.evictNonHistorical()
+	isMaxKeysConfigured := c.config.maxKeys > 0
+	cacheMaxKeysReached := int64(len(c.values)) > c.config.maxKeys
+	if isMaxKeysConfigured && cacheMaxKeysReached {
+		if c.config.historical {
+			return c.evictHistorical()
+		} else {
+			return c.evictNonHistorical()
+		}
 	}
+	return nil
 }
 
 // evictHistorical removes one value (and all its versions) from the cache,

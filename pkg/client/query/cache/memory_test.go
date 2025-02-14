@@ -226,16 +226,16 @@ func TestInMemoryCache_Historical(t *testing.T) {
 		err = cache.SetVersion("key", "value2", 20)
 		require.NoError(t, err)
 
-		// Regular Set should work with latest version
+		// Calling Set in historical mode is an error.
 		err = cache.Set("key", "value3")
 		require.ErrorIs(t, err, ErrUnsupportedHistoricalModeOp)
 
-		// Regular Get should return the latest value
+		// Calling Get should return the latest value.
 		val, err := cache.Get("key")
 		require.NoError(t, err)
 		require.Equal(t, "value2", val)
 
-		// Delete should remove all historical values
+		// Delete should remove all historical values.
 		cache.Delete("key")
 		_, err = cache.GetVersion("key", 10)
 		require.ErrorIs(t, err, ErrCacheMiss)
