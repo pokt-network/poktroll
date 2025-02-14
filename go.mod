@@ -12,6 +12,8 @@ go 1.23.0
 // github.com/pokt-network/smt/kvstore/pebble => ../smt/kvstore/pebble
 // )
 
+replace nhooyr.io/websocket => github.com/coder/websocket v1.8.6
+
 // replace broken goleveldb
 replace github.com/syndtr/goleveldb => github.com/syndtr/goleveldb v1.0.1-0.20210819022825-2ae1ddf74ef7
 

@@ -83,8 +83,13 @@ func TestNewTestMorseStateExport(t *testing.T) {
 				numTotalAccounts += k
 			}
 
-			expectedShannonAccountBalance := fmt.Sprintf("%d%d%d0%d%d%d", i, i, i, i, i, i)
+			// i=1 -> "100000001", i=2 -> "200000002": creates scaled balance with unique ID
+			expectedShannonAccountBalance := fmt.Sprintf("%d00000%d", i, i)
+
+			// n=5 -> "5000050": scales with total accounts plus unique suffix
 			expectedShannonTotalAppStake := fmt.Sprintf("%d000%d0", numTotalAccounts, numTotalAccounts)
+
+			// n=5 -> "505000": different scaling pattern using same total accounts
 			expectedShannonTotalSupplierStake := fmt.Sprintf("%d0%d00", numTotalAccounts, numTotalAccounts)
 
 			morseWorkspace := newMorseImportWorkspace()
@@ -96,7 +101,7 @@ func TestNewTestMorseStateExport(t *testing.T) {
 			require.Equal(t, uint64(i), morseWorkspace.numSuppliers)
 
 			morseAccounts := morseWorkspace.accountState.Accounts[i-1]
-			require.Equal(t, expectedShannonAccountBalance, morseAccounts.Coins[0].Amount.String())
+			require.Equal(t, expectedShannonAccountBalance, morseAccounts.UnstakedBalance.Amount.String())
 			require.Equal(t, expectedShannonTotalAppStake, morseWorkspace.accumulatedTotalAppStake.String())
 			require.Equal(t, expectedShannonTotalSupplierStake, morseWorkspace.accumulatedTotalSupplierStake.String())
 		})
@@ -139,8 +144,7 @@ func newMorseStateExportAndAccountState(
 	}
 
 	morseAccountState := &migrationtypes.MorseAccountState{
-		AccountsIdxByAddress: make(map[string]uint64),
-		Accounts:             make([]*migrationtypes.MorseAccount, numAccounts),
+		Accounts: make([]*migrationtypes.MorseClaimableAccount, numAccounts),
 	}
 
 	for i := 1; i < numAccounts+1; i++ {
@@ -149,10 +153,9 @@ func newMorseStateExportAndAccountState(
 		binary.LittleEndian.PutUint64(seedBz, seedUint)
 		privKey := cometcrypto.GenPrivKeyFromSecret(seedBz)
 		pubKey := privKey.PubKey()
-		balanceAmount := int64(1e6*i + i)                                 // i_000_00i
-		appStakeAmount := int64(1e5*i + (i * 10))                         //   i00_0i0
-		supplierStakeAmount := int64(1e4*i + (i * 100))                   //    i0_i00
-		sumAmount := balanceAmount + appStakeAmount + supplierStakeAmount // i_ii0_iii
+		balanceAmount := int64(1e6*i + i)               // i_000_00i
+		appStakeAmount := int64(1e5*i + (i * 10))       //   i00_0i0
+		supplierStakeAmount := int64(1e4*i + (i * 100)) //    i0_i00
 
 		// Add an account.
 		morseStateExport.AppState.Auth.Accounts = append(
@@ -194,16 +197,13 @@ func newMorseStateExportAndAccountState(
 		)
 
 		// Add the account to the morseAccountState.
-		morseAccountState.Accounts[i-1] = &migrationtypes.MorseAccount{
-			Address: pubKey.Address(),
-			Coins:   cosmostypes.NewCoins(cosmostypes.NewInt64Coin(volatile.DenomuPOKT, sumAmount)),
-			PubKey: &migrationtypes.MorsePublicKey{
-				Value: pubKey.Bytes(),
-			},
+		morseAccountState.Accounts[i-1] = &migrationtypes.MorseClaimableAccount{
+			Address:          pubKey.Address(),
+			UnstakedBalance:  cosmostypes.NewInt64Coin(volatile.DenomuPOKT, balanceAmount),
+			SupplierStake:    cosmostypes.NewInt64Coin(volatile.DenomuPOKT, supplierStakeAmount),
+			ApplicationStake: cosmostypes.NewInt64Coin(volatile.DenomuPOKT, appStakeAmount),
+			PublicKey:        pubKey.Bytes(),
 		}
-
-		// Add the account index to the morseAccountState.
-		morseAccountState.AccountsIdxByAddress[pubKey.Address().String()] = uint64(i - 1)
 	}
 
 	var err error

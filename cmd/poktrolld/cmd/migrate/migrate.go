@@ -221,7 +221,7 @@ func collectInputAccountBalances(inputState *migrationtypes.MorseStateExport, mo
 			return ErrMorseExportState.Wrapf("unsupported denom %q", coin.Denom)
 		}
 
-		if err := morseWorkspace.addUpokt(accountAddr, coin.Amount); err != nil {
+		if err := morseWorkspace.addUnstakedBalance(accountAddr, coin.Amount); err != nil {
 			return fmt.Errorf(
 				"adding morse account balance (%s) to account balance of address %q: %w",
 				coin, accountAddr, err,
@@ -265,7 +265,7 @@ func collectInputApplicationStakes(inputState *migrationtypes.MorseStateExport, 
 			return ErrMorseExportState.Wrapf("failed to parse application stake amount %q", exportApplication.StakedTokens)
 		}
 
-		if err := morseWorkspace.addUpokt(appAddr, appStakeAmtUpokt); err != nil {
+		if err := morseWorkspace.addAppStake(appAddr, appStakeAmtUpokt); err != nil {
 			return fmt.Errorf(
 				"adding application stake amount to account balance of address %q: %w",
 				appAddr, err,
@@ -304,7 +304,7 @@ func collectInputSupplierStakes(inputState *migrationtypes.MorseStateExport, mor
 			return ErrMorseExportState.Wrapf("failed to parse supplier stake amount %q", exportSupplier.StakedTokens)
 		}
 
-		if err := morseWorkspace.addUpokt(supplierAddr, supplierStakeAmtUpokt); err != nil {
+		if err := morseWorkspace.addSupplierStake(supplierAddr, supplierStakeAmtUpokt); err != nil {
 			return fmt.Errorf(
 				"adding supplier stake amount to account balance of address %q: %w",
 				supplierAddr, err,
