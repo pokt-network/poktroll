@@ -385,8 +385,10 @@ type KeyValueCache[T any] interface {
 // at multiple heights for a given key.
 type HistoricalKeyValueCache[T any] interface {
 	KeyValueCache[T]
-	// GetAsOfVersion retrieves the nearest value <= the specified version number.
-	GetAsOfVersion(key string, version int64) (T, error)
-	// SetAsOfVersion adds or updates a value at a specific version number.
-	SetAsOfVersion(key string, value T, version int64) error
+	// GetLatestVersion returns the value of the latest version for the given key.
+	GetLatestVersion(key string) (T, error)
+	// GetVersion retrieves the nearest value <= the specified version number.
+	GetVersion(key string, version int64) (T, error)
+	// SetVersion adds or updates a value at a specific version number.
+	SetVersion(key string, value T, version int64) error
 }

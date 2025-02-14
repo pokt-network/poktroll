@@ -82,7 +82,7 @@ func NewInMemoryCache[T any](opts ...QueryCacheOptionFn) (*inMemoryKVCache[T], e
 // guaranteed to be the current version w.r.t the blockchain.
 func (c *inMemoryKVCache[T]) Get(key string) (T, error) {
 	if c.config.historical {
-		return c.GetAsOfVersion(key, c.latestVersion.Load())
+		return c.GetVersion(key, c.latestVersion.Load())
 	}
 
 	c.valuesMu.RLock()
@@ -109,11 +109,11 @@ func (c *inMemoryKVCache[T]) Get(key string) (T, error) {
 	return cachedValue.value, nil
 }
 
-// GetAsOfVersion retrieves the value from the cache with the given key, as of the
+// GetVersion retrieves the value from the cache with the given key, as of the
 // given version. If a value is not found for that version, the value at the nearest
 // previous version is returned. If the cache is not configured for historical mode,
 // it returns an error.
-func (c *inMemoryKVCache[T]) GetAsOfVersion(key string, version int64) (T, error) {
+func (c *inMemoryKVCache[T]) GetVersion(key string, version int64) (T, error) {
 	var zero T
 
 	if !c.config.historical {
@@ -155,7 +155,7 @@ func (c *inMemoryKVCache[T]) GetAsOfVersion(key string, version int64) (T, error
 	if isTTLEnabled && isCacheValueExpired {
 		// DEV_NOTE: Intentionally not pruning here to improve concurrent speed;
 		// otherwise, the read lock would be insufficient. The value will be pruned
-		// in the subsequent call to SetAsOfVersion() after c.config.maxVersionAge
+		// in the subsequent call to SetVersion() after c.config.maxVersionAge
 		// blocks have elapsed. If usage is such that historical values aren't being
 		// subsequently set, numHistoricalBlocks (if configured) will eventually
 		// cause the pruning of historical values with expired TTLs.
@@ -163,6 +163,21 @@ func (c *inMemoryKVCache[T]) GetAsOfVersion(key string, version int64) (T, error
 	}
 
 	return value.value, nil
+}
+
+// GetLatestVersion returns the value of the latest version of the given key.
+func (c *inMemoryKVCache[T]) GetLatestVersion(key string) (T, error) {
+	var zero T
+	if !c.config.historical {
+		return zero, ErrHistoricalModeNotEnabled
+	}
+
+	version, err := c.getLatestVersionNumber(key)
+	if err != nil {
+		return zero, err
+	}
+
+	return c.GetVersion(key, version)
 }
 
 // Set adds or updates the value in the cache for the given key. If the cache is
@@ -193,10 +208,10 @@ func (c *inMemoryKVCache[T]) Set(key string, value T) error {
 	return nil
 }
 
-// SetAsOfVersion adds or updates the historical value in the cache for the given key,
+// SetVersion adds or updates the historical value in the cache for the given key,
 // and at the version number. If the cache is not configured for historical mode, it
 // returns an error.
-func (c *inMemoryKVCache[T]) SetAsOfVersion(key string, value T, version int64) error {
+func (c *inMemoryKVCache[T]) SetVersion(key string, value T, version int64) error {
 	if !c.config.historical {
 		return ErrHistoricalModeNotEnabled
 	}
@@ -375,4 +390,21 @@ func (c *inMemoryKVCache[T]) evictNonHistorical() error {
 		// DEV_NOTE: This SHOULD NEVER happen, QueryCacheConfig#Validate, SHOULD prevent it.
 		return ErrCacheInternal.Wrapf("unsupported eviction policy: %d", c.config.evictionPolicy)
 	}
+}
+
+// getLatestVersionNumber returns the latest version number (not the value) of the given key.
+func (c *inMemoryKVCache[T]) getLatestVersionNumber(key string) (int64, error) {
+	if !c.config.historical {
+		return 0, ErrHistoricalModeNotEnabled
+	}
+
+	c.valuesMu.Lock()
+	defer c.valuesMu.Unlock()
+
+	valueHistory, exists := c.valueHistories[key]
+	if !exists {
+		return 0, ErrCacheMiss.Wrapf("key: %s", key)
+	}
+
+	return valueHistory.sortedDescVersions[0], nil
 }
