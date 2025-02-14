@@ -83,14 +83,14 @@ func TestNewTestMorseStateExport(t *testing.T) {
 				numTotalAccounts += k
 			}
 
-		// i=1 -> "100000001", i=2 -> "200000002": creates scaled balance with unique ID
-		expectedShannonAccountBalance := fmt.Sprintf("%d00000%d", i, i)
-		
-		// n=5 -> "5000050": scales with total accounts plus unique suffix
-		expectedShannonTotalAppStake := fmt.Sprintf("%d000%d0", numTotalAccounts, numTotalAccounts)
-		
-		// n=5 -> "505000": different scaling pattern using same total accounts
-		expectedShannonTotalSupplierStake := fmt.Sprintf("%d0%d00", numTotalAccounts, numTotalAccounts)
+			// i=1 -> "100000001", i=2 -> "200000002": creates scaled balance with unique ID
+			expectedShannonAccountBalance := fmt.Sprintf("%d00000%d", i, i)
+
+			// n=5 -> "5000050": scales with total accounts plus unique suffix
+			expectedShannonTotalAppStake := fmt.Sprintf("%d000%d0", numTotalAccounts, numTotalAccounts)
+
+			// n=5 -> "505000": different scaling pattern using same total accounts
+			expectedShannonTotalSupplierStake := fmt.Sprintf("%d0%d00", numTotalAccounts, numTotalAccounts)
 
 			morseWorkspace := newMorseImportWorkspace()
 			err = transformMorseState(morseStateExport, morseWorkspace)
