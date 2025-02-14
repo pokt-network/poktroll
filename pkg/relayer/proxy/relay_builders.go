@@ -9,7 +9,7 @@ import (
 )
 
 // newRelayRequest builds a RelayRequest from an http.Request.
-func (sync *synchronousRPCServer) newRelayRequest(request *http.Request) (*types.RelayRequest, error) {
+func (sync *httpServer) newRelayRequest(request *http.Request) (*types.RelayRequest, error) {
 	requestBody, err := io.ReadAll(request.Body)
 	if err != nil {
 		return nil, ErrRelayerProxyInternalError.Wrap(err.Error())
@@ -30,7 +30,7 @@ func (sync *synchronousRPCServer) newRelayRequest(request *http.Request) (*types
 // It also signs the RelayResponse and assigns it to RelayResponse.Meta.SupplierOperatorSignature.
 // The whole serialized response (i.e. status code, headers and body) is embedded
 // into the RelayResponse.
-func (sync *synchronousRPCServer) newRelayResponse(
+func (sync *httpServer) newRelayResponse(
 	responseBz []byte,
 	sessionHeader *sessiontypes.SessionHeader,
 	supplierOperatorAddr string,

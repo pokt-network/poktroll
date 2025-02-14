@@ -11,7 +11,7 @@ import (
 // using the passed in error and writes it to the writer.
 // NOTE: This method is used to reply with an "internal" error that is related
 // to the server itself and not to the relayed request.
-func (sync *synchronousRPCServer) replyWithError(
+func (sync *httpServer) replyWithError(
 	replyError error,
 	relayRequest *types.RelayRequest,
 	writer http.ResponseWriter,
