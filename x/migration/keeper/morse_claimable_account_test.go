@@ -18,19 +18,19 @@ import (
 var _ = strconv.IntSize
 
 func createNMorseClaimableAccount(keeper keeper.Keeper, ctx context.Context, n int) []types.MorseClaimableAccount {
-	items := make([]types.MorseClaimableAccount, n)
-	for i := range items {
-		items[i].Address = []byte(sample.MorseAddressHex())
+	morseClaimableAccounts := make([]types.MorseClaimableAccount, n)
+	for i := range morseClaimableAccounts {
+		morseClaimableAccounts[i].Address = []byte(sample.MorseAddressHex())
 
-		keeper.SetMorseClaimableAccount(ctx, items[i])
+		keeper.SetMorseClaimableAccount(ctx, morseClaimableAccounts[i])
 	}
-	return items
+	return morseClaimableAccounts
 }
 
 func TestMorseClaimableAccountGet(t *testing.T) {
 	keeper, ctx := keepertest.MigrationKeeper(t)
-	items := createNMorseClaimableAccount(keeper, ctx, 10)
-	for _, item := range items {
+	morseClaimableAccounts := createNMorseClaimableAccount(keeper, ctx, 10)
+	for _, item := range morseClaimableAccounts {
 		rst, found := keeper.GetMorseClaimableAccount(ctx,
 			item.Address.String(),
 		)
@@ -43,8 +43,8 @@ func TestMorseClaimableAccountGet(t *testing.T) {
 }
 func TestMorseClaimableAccountRemove(t *testing.T) {
 	keeper, ctx := keepertest.MigrationKeeper(t)
-	items := createNMorseClaimableAccount(keeper, ctx, 10)
-	for _, item := range items {
+	morseClaimableAccounts := createNMorseClaimableAccount(keeper, ctx, 10)
+	for _, item := range morseClaimableAccounts {
 		keeper.RemoveMorseClaimableAccount(ctx,
 			item.Address.String(),
 		)
@@ -57,9 +57,9 @@ func TestMorseClaimableAccountRemove(t *testing.T) {
 
 func TestMorseClaimableAccountGetAll(t *testing.T) {
 	keeper, ctx := keepertest.MigrationKeeper(t)
-	items := createNMorseClaimableAccount(keeper, ctx, 10)
+	morseClaimableAccounts := createNMorseClaimableAccount(keeper, ctx, 10)
 	require.ElementsMatch(t,
-		nullify.Fill(items),
+		nullify.Fill(morseClaimableAccounts),
 		nullify.Fill(keeper.GetAllMorseClaimableAccount(ctx)),
 	)
 }

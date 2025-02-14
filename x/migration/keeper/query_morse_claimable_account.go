@@ -52,7 +52,7 @@ func (k Keeper) MorseClaimableAccount(
 		return nil, status.Error(codes.InvalidArgument, "invalid request")
 	}
 
-	val, found := k.GetMorseClaimableAccount(
+	morseClaimableAccount, found := k.GetMorseClaimableAccount(
 		ctx,
 		req.Address,
 	)
@@ -60,5 +60,5 @@ func (k Keeper) MorseClaimableAccount(
 		return nil, status.Error(codes.NotFound, "not found")
 	}
 
-	return &types.QueryGetMorseClaimableAccountResponse{MorseClaimableAccount: val}, nil
+	return &types.QueryGetMorseClaimableAccountResponse{MorseClaimableAccount: morseClaimableAccount}, nil
 }
