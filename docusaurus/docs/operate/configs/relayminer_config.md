@@ -178,10 +178,10 @@ You can learn how to use that endpoint on the [Performance Troubleshooting](../.
 
 _`Optional`_
 
-Configures a `ping` server to test the connectivity of all backend URLs. If
-all the backend URLs are reachable, the endpoint returns a 204 HTTP
-Code. If one or more backend URLs aren't reachable, the service
-returns an appropriate HTTP error.
+Configures a `ping` healh check server to test the connectivity of all backend
+URLs. If all the backend URLs are reachable, the endpoint returns a 204 HTTP
+Code. If one or more backend URLs aren't reachable, the service returns an
+appropriate HTTP error.
 
 Example configuration:
 
