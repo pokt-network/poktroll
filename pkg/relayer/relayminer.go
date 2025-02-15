@@ -157,7 +157,7 @@ func (rel *relayMiner) ServePing(ctx context.Context, network, addr string) erro
 	}()
 
 	go func() {
-		<-ctx.Done()
+		<-ctx.Done() // A message a receive when we stop the relayminer.
 		rel.logger.Info().Str("endpoint", addr).Msg("stopping ping server")
 		_ = ln.Close()
 	}()
