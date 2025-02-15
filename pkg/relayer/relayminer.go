@@ -146,9 +146,10 @@ func (rel *relayMiner) ServePing(ctx context.Context, network, addr string) erro
 		return err
 	}
 
-	// Start a long-lived goroutine that starts an HTTP server responding to
-	// ping requests. A single ping request on the relay server broadcasts a
-	// ping to all backing services/data nodes.
+	// Starts a go routine that:
+	// - Create a long-running HTTP server
+	// - Handles ping requests by broadcasting health checks to all backing services
+	// - Tests connectivity to all configured data nodes
 	go func() {
 		if err := http.Serve(ln, rel.newPinghandlerFn(ctx)); err != nil && !errors.Is(http.ErrServerClosed, err) {
 			rel.logger.Error().Err(err).Msg("ping server unexpectedly closed")
