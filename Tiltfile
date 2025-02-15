@@ -275,6 +275,13 @@ for x in range(localnet_config["relayminers"]["count"]):
             "--set=image.repository=poktrolld",
     ]
 
+    #############
+    # NOTE: To provide a proper configuration for the relayminer, we dynamically
+    # define the supplier configuration overrides for the relayminer helm chart
+    # so that every service enabled in the localnet configuration (ollama, rest)
+    # file are also declared in the relayminer.config.suppliers list.
+    #############
+
     supplier_number = 0
 
     flags.append("--set=config.suppliers["+str(supplier_number)+"].service_id=anvil")
