@@ -86,9 +86,9 @@ curl -X 'GET' 'https://shannon-testnet-grove-rpc.beta.poktroll.com/status' -H 'a
 
 ---
 
-## Embedded View
+<!-- ## Embedded View
 
 import OpenAPI from '@site/src/components/OpenAPI';
 import apiSpec from '../../../../docs/static/openapi.json';
 
-<OpenAPI spec={apiSpec} />
+<OpenAPI spec={apiSpec} /> -->
