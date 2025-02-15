@@ -137,9 +137,9 @@ func (rel *relayMiner) ServePprof(ctx context.Context, addr string) error {
 	return nil
 }
 
-// ServePing exposes ping HTTP server to check the reachability between the
-// relay miner and its dependencies (Ex: relay server and their respective
-// backend URLs).
+// ServePing starts an HTTP server that:
+// - Checks connectivity between relay miner and dependencies
+// - Tests reachability of relay servers and their backend URLs
 func (rel *relayMiner) ServePing(ctx context.Context, network, addr string) error {
 	ln, err := net.Listen(network, addr)
 	if err != nil {
