@@ -19,7 +19,6 @@ import (
 	"github.com/pokt-network/poktroll/pkg/observable/channel"
 	"github.com/pokt-network/poktroll/pkg/polylog/polyzero"
 	"github.com/pokt-network/poktroll/pkg/relayer"
-	"github.com/pokt-network/poktroll/testutil/mockrelayer"
 	"github.com/pokt-network/poktroll/testutil/testrelayer"
 	servicetypes "github.com/pokt-network/poktroll/x/service/types"
 )
@@ -72,10 +71,6 @@ type RelayMinerPingSuite struct {
 
 	servedRelaysObs relayer.RelaysObservable
 	minedRelaysObs  relayer.MinedRelaysObservable
-
-	relayerProxyMock           *mockrelayer.MockRelayerProxy
-	minerMock                  *mockrelayer.MockMiner
-	relayerSessionsManagerMock *mockrelayer.MockRelayerSessionsManager
 }
 
 func TestRelayMinerPingSuite(t *testing.T) {

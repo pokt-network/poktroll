@@ -535,7 +535,6 @@ type RelayProxyPingAllSuite struct {
 	suite.Suite
 	relayerProxyBehavior []func(*testproxy.TestBehavior)
 	servicesConfigMap    map[string]*config.RelayMinerServerConfig
-	supplierEndpoints    map[string][]*sharedtypes.SupplierEndpoint
 }
 
 // TestRelayProxyPingAllSuite executes the RelayProxyPingAllSuite test suite.
@@ -547,7 +546,7 @@ func TestRelayProxyPingAllSuite(t *testing.T) {
 // default relayminer will be reused in every subsequent tests in the
 // suite.
 func (t *RelayProxyPingAllSuite) SetupSuite() {
-	appPrivateKey := secp256k1.GenPrivKey()
+	pingAppPrivateKey := secp256k1.GenPrivKey()
 	defaultRelayMinerServerAddress := "127.0.0.1:8245"
 	supplierEndpoints := map[string][]*sharedtypes.SupplierEndpoint{
 		defaultService: {
@@ -585,7 +584,7 @@ func (t *RelayProxyPingAllSuite) SetupSuite() {
 		testproxy.WithRelayerProxyDependenciesForBlockHeight(supplierOperatorKeyName, 1),
 		testproxy.WithServicesConfigMap(t.servicesConfigMap),
 		testproxy.WithDefaultSupplier(supplierOperatorKeyName, supplierEndpoints),
-		testproxy.WithDefaultApplication(appPrivateKey),
+		testproxy.WithDefaultApplication(pingAppPrivateKey),
 		testproxy.WithDefaultSessionSupplier(supplierOperatorKeyName, defaultService, appPrivateKey),
 		testproxy.WithRelayMeter(),
 	}
@@ -607,8 +606,7 @@ func (t *RelayProxyPingAllSuite) TestOKPingAllWithSingleRelayServer() {
 	require.NoError(t.T(), err)
 
 	go func() {
-		err := rp.Start(ctx)
-		if !errors.Is(err, http.ErrServerClosed) {
+		if err := rp.Start(ctx); !errors.Is(err, http.ErrServerClosed) {
 			require.NoError(t.T(), err)
 		}
 	}()
@@ -636,7 +634,7 @@ func (t *RelayProxyPingAllSuite) TestOKPingAllWithMultipleRelayServers() {
 	secondServiceName := "secondService"
 
 	newSupplierOperatorKeyName := "newSupplierKeyName"
-	appPrivateKey := secp256k1.GenPrivKey()
+	pingAppPrivateKey := secp256k1.GenPrivKey()
 
 	// adding supplier endpoint.
 	supplierEndpoints := map[string][]*sharedtypes.SupplierEndpoint{
@@ -654,7 +652,7 @@ func (t *RelayProxyPingAllSuite) TestOKPingAllWithMultipleRelayServers() {
 		},
 	}
 
-	servicesConfigMap := map[string]*config.RelayMinerServerConfig{
+	cm := map[string]*config.RelayMinerServerConfig{
 		firstRelayMinerAddr: &config.RelayMinerServerConfig{
 			ServerType:    config.RelayMinerServerTypeHTTP,
 			ListenAddress: firstRelayMinerAddr,
@@ -700,8 +698,8 @@ func (t *RelayProxyPingAllSuite) TestOKPingAllWithMultipleRelayServers() {
 	relayerProxyBehavior := []func(*testproxy.TestBehavior){
 		testproxy.WithRelayerProxyDependenciesForBlockHeight(newSupplierOperatorKeyName, 1),
 		testproxy.WithDefaultSupplier(newSupplierOperatorKeyName, supplierEndpoints),
-		testproxy.WithServicesConfigMap(servicesConfigMap),
-		testproxy.WithDefaultApplication(appPrivateKey),
+		testproxy.WithServicesConfigMap(cm),
+		testproxy.WithDefaultApplication(pingAppPrivateKey),
 		testproxy.WithDefaultSessionSupplier(newSupplierOperatorKeyName, defaultService, appPrivateKey),
 		testproxy.WithRelayMeter(),
 	}
@@ -716,8 +714,7 @@ func (t *RelayProxyPingAllSuite) TestOKPingAllWithMultipleRelayServers() {
 	require.NoError(t.T(), err)
 
 	go func() {
-		err := rp.Start(ctx)
-		if !errors.Is(err, http.ErrServerClosed) {
+		if err := rp.Start(ctx); !errors.Is(err, http.ErrServerClosed) {
 			require.NoError(t.T(), err)
 		}
 	}()
@@ -751,7 +748,7 @@ func (t *RelayProxyPingAllSuite) TestNOKPingAllWithPartialFailureAtStartup() {
 		},
 	}
 
-	servicesConfigMap := map[string]*config.RelayMinerServerConfig{
+	cm := map[string]*config.RelayMinerServerConfig{
 		failingRelayMinerAddr: &config.RelayMinerServerConfig{
 			ListenAddress: failingRelayMinerAddr,
 			ServerType:    config.RelayMinerServerTypeHTTP,
@@ -776,7 +773,7 @@ func (t *RelayProxyPingAllSuite) TestNOKPingAllWithPartialFailureAtStartup() {
 
 	relayProxyBehavior := append(t.relayerProxyBehavior, []func(*testproxy.TestBehavior){
 		testproxy.WithDefaultSupplier(supplierOperatorKeyName, supplierEndpoints),
-		testproxy.WithServicesConfigMap(servicesConfigMap),
+		testproxy.WithServicesConfigMap(cm),
 	}...)
 
 	test := testproxy.NewRelayerProxyTestBehavior(ctx, t.T(), relayProxyBehavior...)
