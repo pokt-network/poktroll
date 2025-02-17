@@ -6,66 +6,93 @@ import (
 
 	"github.com/gorilla/websocket"
 
-	"github.com/pokt-network/poktroll/pkg/client"
-	"github.com/pokt-network/poktroll/pkg/observable/channel"
-	"github.com/pokt-network/poktroll/pkg/relayer"
-	"github.com/pokt-network/poktroll/pkg/relayer/config"
 	proxyws "github.com/pokt-network/poktroll/pkg/relayer/proxy/websockets"
-	"github.com/pokt-network/poktroll/x/service/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
-// serveHTTP holds the underlying logic of ServeHTTP.
-func (server *httpServer) handleAsyncConnection(
+// handleAsyncConnection handles the asynchronous relay request by creating a
+// websocket bridge between the client and the service endpoint.
+func (server *relayMinerHTTPServer) handleAsyncConnection(
 	ctx context.Context,
-	relayAuthenticator relayer.RelayAuthenticator,
-	serviceConfig *config.RelayMinerSupplierServiceConfig,
-	sharedParams *sharedtypes.Params,
-	relayRequest *types.RelayRequest,
 	writer http.ResponseWriter,
 	request *http.Request,
 ) error {
+	// Determine the service ID and application address from the request headers.
+	serviceId := request.Header.Get("target-service-id")
+	appAddress := request.Header.Get("X-App-Address")
+
+	logger := server.logger.With(
+		"relay_request_type", "asynchronous",
+		"service_id", serviceId,
+		"application_address", appAddress,
+	)
+
+	// Get the current height session to determine the session parameters.
+	block := server.blockClient.LastBlock(ctx)
+	session, err := server.sessionQueryClient.GetSession(ctx, appAddress, serviceId, block.Height())
+	if err != nil {
+		return ErrRelayerProxyInternalError.Wrapf("error getting session: %v", err)
+	}
+
+	sessionHeader := session.Header
+
+	// Determine the supplier's service configuration.
+	supplierConfig, ok := server.serverConfig.SupplierConfigsMap[serviceId]
+	if !ok {
+		return ErrRelayerProxyServiceEndpointNotHandled
+	}
+	supplierServiceConfig := supplierConfig.ServiceConfig
+
+	logger = logger.With(
+		"server_addr", server.server.Addr,
+		"session_start_height", sessionHeader.SessionStartBlockHeight,
+		"destination_url", supplierServiceConfig.BackendUrl.String(),
+	)
+
+	// Upgrade the HTTP connection to a websocket connection.
 	upgrader := websocket.Upgrader{
 		CheckOrigin: func(r *http.Request) bool { return true },
 	}
-
 	clientConn, err := upgrader.Upgrade(writer, request, nil)
 	if err != nil {
-		server.logger.Error().Err(err).Msg("upgrading connection to websocket")
+		logger.Error().Err(err).Msg("upgrading connection to websocket")
 		return ErrRelayerProxyInternalError.Wrap(err.Error())
 	}
 
+	// TODO_IN_THIS_PR: Add unit and e2e tests for the websocket bridge and connection.
+	// Create a new websocket bridge between the gateway and the service endpoint.
 	bridge, err := proxyws.NewBridge(
-		ctx,
-		server.logger,
-		relayAuthenticator,
+		logger,
+		server.relayAuthenticator,
 		server.relayMeter,
 		server.servedRelaysProducer,
-		serviceConfig,
-		relayRequest,
+		server.blockClient,
+		supplierServiceConfig,
+		serviceId,
 		clientConn,
 	)
-
-	sessionEndHeight := relayRequest.Meta.SessionHeader.SessionEndBlockHeight
-	claimWindowOpenHeight := sharedtypes.GetClaimWindowOpenHeight(sharedParams, sessionEndHeight)
-	channel.ForEach(
-		ctx,
-		server.blockClient.CommittedBlocksSequence(ctx),
-		func(ctx context.Context, block client.Block) {
-			if block.Height() >= claimWindowOpenHeight {
-				bridge.Close()
-			}
-		},
-	)
-
 	if err != nil {
-		server.logger.Error().Err(err).Msg("creating websocket bridge")
+		logger.Error().Err(err).Msg("creating websocket bridge")
 		return ErrRelayerProxyInternalError.Wrap(err.Error())
 	}
 
-	go bridge.Run(ctx)
+	// Set up the bridge to close before the claim window opens.
+	// TODO_CONSIDERATION: Async connection could be stricter and close the bridge
+	// right after the session ends, but it is technically possible to delay it
+	// until the claim window opening height to maximize profit for the supplier
+	// and delay reconnecting the upstream client as much as possible.
+	sharedParams, err := server.sharedQueryClient.GetParams(ctx)
+	if err != nil {
+		return ErrRelayerProxyInternalError.Wrap(err.Error())
+	}
+	sessionEndHeight := sessionHeader.SessionEndBlockHeight
+	claimWindowOpenHeight := sharedtypes.GetClaimWindowOpenHeight(sharedParams, sessionEndHeight)
 
-	server.logger.Info().Msg("websocket connection established with client")
+	// Run the websockets bridge.
+	// Set up the bridge to close after the session ends.
+	go bridge.Run(claimWindowOpenHeight)
+
+	logger.Info().Msg("websocket connection established with client")
 
 	return nil
 }

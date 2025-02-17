@@ -2,270 +2,378 @@ package websockets
 
 import (
 	"context"
-	"encoding/base64"
 	"net/http"
-	"net/url"
-	"path"
+	"sync"
 
 	"github.com/gorilla/websocket"
-	sdktypes "github.com/pokt-network/shannon-sdk/types"
 
+	"github.com/pokt-network/poktroll/pkg/client"
+	"github.com/pokt-network/poktroll/pkg/observable/channel"
 	"github.com/pokt-network/poktroll/pkg/polylog"
 	"github.com/pokt-network/poktroll/pkg/relayer"
 	"github.com/pokt-network/poktroll/pkg/relayer/config"
 	"github.com/pokt-network/poktroll/x/service/types"
 )
 
+// bridge represents a websocket bridge between the gateway and the service backend.
+// It is responsible for forwarding relay requests from the gateway to the service
+// backend ant relay responses from the service backend to the gateway.
 type bridge struct {
-	logger             polylog.Logger
-	serviceBackendConn *connection
-	gatewayConn        *connection
-	msgChan            chan message
-	stopChan           chan error
+	ctx       context.Context
+	cancelCtx context.CancelFunc
+	logger    polylog.Logger
 
-	relayAuthenticator   relayer.RelayAuthenticator
-	relayMeter           relayer.RelayMeter
-	latestRelayRequest   *types.RelayRequest
-	latestRelayResponse  *types.RelayResponse
-	servedRelaysProducer chan<- *types.Relay
+	// serviceBackendConn is the websocket connection to the service backend.
+	serviceBackendConn *connection
+
+	// gatewayConn is the websocket connection to the gateway.
+	gatewayConn *connection
+
+	// msgChan is the channel that the bridge uses to communicate with the connections.
+	msgChan <-chan message
+
+	// relayAuthenticator is the relay authenticator that the bridge uses to verify
+	// relay requests and sign relay responses.
+	relayAuthenticator relayer.RelayAuthenticator
+
+	// relayMeter is the relay meter that the bridge uses to estimate the relay reward
+	// of the bridged relay requests.
+	relayMeter relayer.RelayMeter
+
+	// blockClient is the client used to get the latest block height.
+	blockClient client.BlockClient
+
+	// latestRelayRequest is the latest relay request received from the gateway.
+	// It is used to emit relays to the miner such that there is always a request/response
+	// pair available when submitting proofs.
+	// This is particularly important for asynchronous communication where it is
+	// mostly or exclusively the service backend that sends messages to the gateway
+	// such as eth_subscribe.
+	latestRelayRequest *types.RelayRequest
+
+	// latestRelayResponse is the latest relay response received from the service backend.
+	// It is used to emit relays to the miner such that there is always a request/response
+	// pair available when submitting proofs.
+	// This is particularly important for asynchronous communication where it is
+	// mostly or exclusively the gateway that sends messages to the service backend
+	// such as file upload protocols.
+	latestRelayResponse *types.RelayResponse
+
+	// latestRelayMu is the mutex that protects the latest relay request and response.
+	latestRelayMu sync.RWMutex
+
+	// relaysProducer is the channel that the bridge uses to emit the relays that
+	// have been served to the miner.
+	relaysProducer chan<- *types.Relay
 }
 
+// NewBridge creates a new websocket bridge between the gateway and the service backend.
 func NewBridge(
-	ctx context.Context,
 	logger polylog.Logger,
 	relayAuthenticator relayer.RelayAuthenticator,
 	relayMeter relayer.RelayMeter,
 	serverRelaysProducer chan<- *types.Relay,
+	blockClient client.BlockClient,
 	serviceConfig *config.RelayMinerSupplierServiceConfig,
-	relayRequest *types.RelayRequest,
+	serviceId string,
 	gatewayWSConn *websocket.Conn,
 ) (*bridge, error) {
-	sessionHeader := relayRequest.Meta.SessionHeader
-	if err := relayAuthenticator.VerifyRelayRequest(ctx, relayRequest, sessionHeader.ServiceId); err != nil {
-		return nil, err
+	bridgeLogger := logger.With("component", "bridge")
+
+	header := make(http.Header)
+	for headerKey, headerValue := range serviceConfig.Headers {
+		header.Add(headerKey, headerValue)
 	}
 
-	// Deserialize the relay request payload to get the upstream HTTP request.
-	poktHTTPRequest, err := sdktypes.DeserializeHTTPRequest(relayRequest.Payload)
+	// Connect to the service backend.
+	serviceBackendWSConn, err := connectServiceBackend(serviceConfig.BackendUrl, header)
 	if err != nil {
-		return nil, err
+		bridgeLogger.Error().Err(err).Msg("failed to connect to the service backend")
+		return nil, ErrWebsocketsBridge.Wrapf("failed to connect to the service backend: %v", err)
 	}
 
-	serviceBackendUrl, headers, err := buildServiceBackendRequest(poktHTTPRequest, serviceConfig)
-	if err != nil {
-		return nil, err
-	}
-
-	serviceBackendWSConn, err := connectServiceBackend(serviceBackendUrl, headers)
-	if err != nil {
-		return nil, err
-	}
-
+	// Use an observable to stop the bridge to avoid concurrent reads from the stop channel.
+	stopBridgeObservable, stopChan := channel.NewObservable[error]()
 	msgChan := make(chan message)
-	stopChan := make(chan error)
+	ctx, cancelCtx := context.WithCancel(context.Background())
 
-	bridgeLogger := logger.With("")
-
+	// Create the service backend connection manager.
 	serviceBackendConn := newConnection(
-		logger.With("connection", "service_backend"),
+		ctx,
 		serviceBackendWSConn,
+		bridgeLogger,
 		messageSourceServiceBackend,
+		serviceId,
 		msgChan,
 		stopChan,
+		stopBridgeObservable,
 	)
 
+	// Create the gateway connection manager.
 	gatewayConn := newConnection(
-		logger.With("connection", "gateway"),
+		ctx,
 		gatewayWSConn,
+		bridgeLogger,
 		messageSourceGateway,
+		serviceId,
 		msgChan,
 		stopChan,
+		stopBridgeObservable,
 	)
 
 	bridge := &bridge{
-		logger:               bridgeLogger,
-		serviceBackendConn:   serviceBackendConn,
-		gatewayConn:          gatewayConn,
-		msgChan:              make(chan message),
-		stopChan:             make(chan error),
-		latestRelayRequest:   relayRequest,
-		relayAuthenticator:   relayAuthenticator,
-		relayMeter:           relayMeter,
-		servedRelaysProducer: serverRelaysProducer,
+		ctx:                ctx,
+		cancelCtx:          cancelCtx,
+		logger:             bridgeLogger,
+		serviceBackendConn: serviceBackendConn,
+		gatewayConn:        gatewayConn,
+		msgChan:            msgChan,
+		relayAuthenticator: relayAuthenticator,
+		relayMeter:         relayMeter,
+		relaysProducer:     serverRelaysProducer,
+		blockClient:        blockClient,
 	}
 
 	return bridge, nil
 }
 
-func (b *bridge) Run(ctx context.Context) {
-	go b.messageLoop(ctx)
+// Run initiates the message loop of the bridge.
+// It is a blocking method and should be called in a goroutine.
+// It is scheduled to stop when the closeHeight is reached.
+func (b *bridge) Run(closeHeight int64) {
+	go b.messageLoop()
+
+	channel.ForEach(
+		b.ctx,
+		b.blockClient.CommittedBlocksSequence(b.ctx),
+		func(ctx context.Context, block client.Block) {
+			if block.Height() >= closeHeight {
+				b.logger.Info().Msg("session closing, bridge stopped")
+				b.cancelCtx()
+			}
+		},
+	)
 
 	b.logger.Info().Msg("bridge started")
-
-	<-b.stopChan
 }
 
-func (b *bridge) Close() {
-	close(b.stopChan)
-}
-
-func (b *bridge) messageLoop(ctx context.Context) {
+// messageLoop is the main loop of the bridge:
+//   - It listens for messages from the gateway and forwards them to the service backend,
+//   - It listens for messages from the service backend and forwards them to the gateway.
+func (b *bridge) messageLoop() {
 	for {
 		select {
-		case <-b.stopChan:
+		case <-b.ctx.Done():
 			return
-
 		case msg := <-b.msgChan:
 			switch msg.source {
 
 			case messageSourceGateway:
-				b.handleGatewayMessage(ctx, msg)
+				b.handleGatewayIncomingMessage(msg)
 
 			case messageSourceServiceBackend:
-				b.handleServiceBackendMessage(ctx, msg)
+				b.handleServiceBackendIncomingMessage(msg)
 			}
 		}
 	}
 }
 
-func (b *bridge) handleGatewayMessage(ctx context.Context, msg message) {
-	b.logger.Debug().Msg("received message from gateway")
+// handleGatewayIncomingMessage handles incoming messages from the gateway.
+// It receives relay requests from the gateway, verifies them, forwards their payloads
+// to the service backend.
+func (b *bridge) handleGatewayIncomingMessage(msg message) {
+	logger := b.logger.With(
+		"message_source", messageSourceGateway,
+		"message_type", msg.messageType,
+	)
 
+	logger.Debug().Msg("received message from gateway")
+
+	// Unmarshal msg.data into a RelayRequest.
 	var relayRequest types.RelayRequest
 	if err := relayRequest.Unmarshal(msg.data); err != nil {
-		b.serviceBackendConn.handleError(err, messageSourceGateway)
+		b.serviceBackendConn.handleError(
+			ErrWebsocketsGatewayMessage.Wrapf("failed to unmarshal relay request: %v", err),
+		)
 		return
 	}
-
-	b.latestRelayRequest = &relayRequest
-
 	serviceId := relayRequest.Meta.SessionHeader.ServiceId
 
-	if err := b.relayAuthenticator.VerifyRelayRequest(ctx, &relayRequest, serviceId); err != nil {
-		b.serviceBackendConn.handleError(err, messageSourceGateway)
+	// Store the latest relay request to guarantee that there is always a request/response.
+	b.setLatestRelayRequest(&relayRequest)
+
+	relayer.RelaysTotal.With(
+		"service_id", serviceId,
+		"supplier_operator_address", relayRequest.Meta.SupplierOperatorAddress,
+	).Add(1)
+
+	relayer.RelayRequestSizeBytes.With("service_id", serviceId).
+		Observe(float64(relayRequest.Size()))
+
+	// Verify the relay request signature and session.
+	if err := b.relayAuthenticator.VerifyRelayRequest(b.ctx, &relayRequest, serviceId); err != nil {
+		b.serviceBackendConn.handleError(
+			ErrWebsocketsGatewayMessage.Wrapf("failed to verify relay request: %v", err),
+		)
 		return
 	}
 
+	logger.Debug().Msg("relay request verified")
+
+	// Forward the relay request payload to the service backend.
 	if err := b.serviceBackendConn.WriteMessage(msg.messageType, relayRequest.Payload); err != nil {
-		b.serviceBackendConn.handleError(err, messageSourceServiceBackend)
+		b.serviceBackendConn.handleError(
+			ErrWebsocketsGatewayMessage.Wrapf("failed to send relay request to service backend: %v", err),
+		)
 		return
 	}
 
-	if b.latestRelayResponse == nil {
-		b.logger.Debug().Msg("waiting for service backend response")
+	logger.Debug().Msg("relay request forwarded to service backend")
+
+	// Do not emit a relay to the miner if there is no response to form a request/response pair.
+	if b.getLatestRelayResponse() == nil {
+		logger.Info().Msg("waiting for service backend response")
 		return
 	}
 
 	relay := &types.Relay{
 		Req: &relayRequest,
-		Res: b.latestRelayResponse,
+		Res: b.getLatestRelayResponse(),
 	}
 
-	b.servedRelaysProducer <- relay
+	relayer.RelaysSuccessTotal.With("service_id", serviceId).Add(1)
 
-	if err := b.relayMeter.AccumulateRelayReward(ctx, relayRequest.Meta); err != nil {
-		b.serviceBackendConn.handleError(err, messageSourceGateway)
+	// Emit the relay to the miner.
+	// Since async relays might be request or response only, each request or response
+	// is considered to be eligible for a reward.
+	b.relaysProducer <- relay
+
+	logger.Debug().Msg("relay emitted to miner")
+
+	// Accumulate the relay reward.
+	if err := b.relayMeter.AccumulateRelayReward(b.ctx, relayRequest.Meta); err != nil {
+		b.serviceBackendConn.handleError(
+			ErrWebsocketsGatewayMessage.Wrapf("failed to accumulate relay reward: %v", err),
+		)
 		return
 	}
 
 }
 
-func (b *bridge) handleServiceBackendMessage(ctx context.Context, msg message) {
-	b.logger.Debug().Msg("received message from service backend")
+func (b *bridge) handleServiceBackendIncomingMessage(msg message) {
+	logger := b.logger.With(
+		"message_source", messageSourceServiceBackend,
+		"message_type", msg.messageType,
+	)
 
+	logger.Debug().Msg("received message from service backend")
+
+	// Use the latest relay request's session header to create the RelayResponse.
 	meta := b.latestRelayRequest.Meta
+	serviceId := meta.SessionHeader.ServiceId
 
+	// Create a RelayResponse from the service backend message.
 	relayResponse := &types.RelayResponse{
 		Meta:    types.RelayResponseMetadata{SessionHeader: meta.SessionHeader},
 		Payload: msg.data,
 	}
 
+	relayer.RelaysTotal.With(
+		"service_id", serviceId,
+		"supplier_operator_address", meta.SupplierOperatorAddress,
+	).Add(1)
+
+	relayer.RelayResponseSizeBytes.With("service_id", serviceId).
+		Observe(float64(relayResponse.Size()))
+
 	// Sign the relay response and add the signature to the relay response metadata
 	if err := b.relayAuthenticator.SignRelayResponse(relayResponse, meta.SupplierOperatorAddress); err != nil {
-		b.gatewayConn.handleError(err, messageSourceGateway)
+		b.gatewayConn.handleError(
+			ErrWebsocketsServiceBackendMessage.Wrapf("failed to sign relay response: %v", err),
+		)
 		return
 	}
 
-	b.latestRelayResponse = relayResponse
+	logger.Debug().Msg("relay response signed")
+
+	// Store the latest relay response to guarantee that there is always a request/response.
+	b.setLatestRelayResponse(relayResponse)
 
 	relayResponseBz, err := relayResponse.Marshal()
 	if err != nil {
-		b.gatewayConn.handleError(err, messageSourceGateway)
+		b.gatewayConn.handleError(
+			ErrWebsocketsServiceBackendMessage.Wrapf("failed to marshal relay response: %v", err),
+		)
 		return
 	}
 
+	// Forward the relay response to the gateway.
 	if err := b.gatewayConn.WriteMessage(msg.messageType, relayResponseBz); err != nil {
-		b.gatewayConn.handleError(err, messageSourceGateway)
+		b.gatewayConn.handleError(
+			ErrWebsocketsServiceBackendMessage.Wrapf("failed to send relay response to gateway: %v", err),
+		)
+		return
+	}
+
+	logger.Debug().Msg("relay response forwarded to gateway")
+
+	// Do not emit a relay to the miner if there is no response to form a request/response pair.
+	if b.getLatestRelayRequest() == nil {
+		logger.Info().Msg("waiting for service backend request")
+		return
 	}
 
 	relay := &types.Relay{
-		Req: b.latestRelayRequest,
+		Req: b.getLatestRelayRequest(),
 		Res: relayResponse,
 	}
 
-	b.servedRelaysProducer <- relay
+	relayer.RelaysSuccessTotal.With("service_id", serviceId).Add(1)
 
-	if err := b.relayMeter.AccumulateRelayReward(ctx, b.latestRelayRequest.Meta); err != nil {
-		b.serviceBackendConn.handleError(err, messageSourceGateway)
+	// Emit the relay to the miner.
+	// Since async relays might be request or response only, each request or response
+	// is considered to be eligible for a reward.
+	b.relaysProducer <- relay
+
+	logger.Debug().Msg("relay emitted to miner")
+
+	// Accumulate the relay reward.
+	if err := b.relayMeter.AccumulateRelayReward(b.ctx, b.latestRelayRequest.Meta); err != nil {
+		b.gatewayConn.handleError(
+			ErrWebsocketsServiceBackendMessage.Wrapf("failed to accumulate relay reward: %v", err),
+		)
 		return
 	}
 }
 
-func buildServiceBackendRequest(
-	poktHTTPRequest *sdktypes.POKTHTTPRequest,
-	serviceConfig *config.RelayMinerSupplierServiceConfig,
-) (*url.URL, http.Header, error) {
-	serviceBackendUrl, err := url.Parse(poktHTTPRequest.Url)
-	if err != nil {
-		return nil, nil, err
-	}
+// setLatestRelayRequest sets the latest relay request in a concurrency-safe manner.
+func (b *bridge) setLatestRelayRequest(relayRequest *types.RelayRequest) {
+	b.latestRelayMu.Lock()
+	defer b.latestRelayMu.Unlock()
 
-	serviceBackendUrl.Host = serviceConfig.BackendUrl.Host
-	serviceBackendUrl.Scheme = serviceConfig.BackendUrl.Scheme
+	b.latestRelayRequest = relayRequest
+}
 
-	// Prepend the path of the service's backend URL to the path of the upstream request.
-	// This is done to ensure that the request complies with the service's backend URL,
-	// while preserving the path of the original request.
-	// This is particularly important for RESTful APIs where the path is used to
-	// determine the resource being accessed.
-	// For example, if the service's backend URL is "http://host:8080/api/v1",
-	// and the upstream request path is "/users", the final request path will be
-	// "http://host:8080/api/v1/users".
-	serviceBackendUrl.Path = path.Join(serviceConfig.BackendUrl.Path, serviceBackendUrl.Path)
+// getLatestRelayRequest gets the latest relay request in a concurrency-safe manner.
+func (b *bridge) getLatestRelayRequest() *types.RelayRequest {
+	b.latestRelayMu.RLock()
+	defer b.latestRelayMu.RUnlock()
 
-	// Merge the query parameters of the upstream request with the query parameters
-	// of the service's backend URL.
-	// This is done to ensure that the query parameters of the original request are
-	// passed and that the service's backend URL query parameters are also included.
-	// This is important for RESTful APIs where query parameters are used to filter
-	// and paginate resources.
-	// For example, if the service's backend URL is "http://host:8080/api/v1?key=abc",
-	// and the upstream request has a query parameter "page=1", the final request URL
-	// will be "http://host:8080/api/v1?key=abc&page=1".
-	query := serviceBackendUrl.Query()
-	for key, values := range serviceConfig.BackendUrl.Query() {
-		for _, value := range values {
-			query.Add(key, value)
-		}
-	}
-	serviceBackendUrl.RawQuery = query.Encode()
+	return b.latestRelayRequest
+}
 
-	// Create the HTTP header for the request by converting the RelayRequest's
-	// POKTHTTPRequest.Header to an http.Header.
-	header := http.Header{}
-	poktHTTPRequest.CopyToHTTPHeader(header)
+// setLatestRelayResponse sets the latest relay response in a concurrency-safe manner.
+func (b *bridge) setLatestRelayResponse(relayResponse *types.RelayResponse) {
+	b.latestRelayMu.Lock()
+	defer b.latestRelayMu.Unlock()
 
-	if serviceConfig.Authentication != nil {
-		auth := serviceConfig.Authentication.Username + ":" + serviceConfig.Authentication.Password
-		header.Set("Authorization", "Basic "+base64.StdEncoding.EncodeToString([]byte(auth)))
-	}
+	b.latestRelayResponse = relayResponse
+}
 
-	// Add any service configuration specific headers to the request, such as
-	// authentication or authorization headers. These will override any upstream
-	// request headers with the same key.
-	for key, value := range serviceConfig.Headers {
-		header.Set(key, value)
-	}
+// getLatestRelayResponse gets the latest relay response in a concurrency-safe manner.
+func (b *bridge) getLatestRelayResponse() *types.RelayResponse {
+	b.latestRelayMu.RLock()
+	defer b.latestRelayMu.RUnlock()
 
-	return serviceBackendUrl, header, nil
+	return b.latestRelayResponse
 }

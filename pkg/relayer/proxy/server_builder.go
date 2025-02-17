@@ -109,14 +109,20 @@ func (rp *relayerProxy) initializeProxyServers() (proxyServerMap map[string]rela
 		// Initialize the server according to the server type defined in the config file
 		switch serverConfig.ServerType {
 		case config.RelayMinerServerTypeHTTP:
+			logger := rp.logger.With(
+				"server_type", "http",
+				"server_host", serverConfig.ListenAddress,
+			)
+
 			servers[serverConfig.ListenAddress] = NewHTTPServer(
-				rp.logger,
+				logger,
 				serverConfig,
 				rp.servedRelaysPublishCh,
 				rp.relayAuthenticator,
 				rp.relayMeter,
 				rp.blockClient,
 				rp.sharedQuerier,
+				rp.sessionQuerier,
 			)
 		default:
 			return nil, ErrRelayerProxyUnsupportedTransportType
