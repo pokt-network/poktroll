@@ -19,7 +19,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 
-	"github.com/pokt-network/poktroll/testutil/proof/mocks"
+	"github.com/pokt-network/poktroll/testutil/migration/mocks"
 	"github.com/pokt-network/poktroll/x/migration/keeper"
 	"github.com/pokt-network/poktroll/x/migration/types"
 )
@@ -50,6 +50,15 @@ func MigrationKeeper(t testing.TB) (keeper.Keeper, sdk.Context) {
 				return sdk.Coins{}
 			},
 		).AnyTimes()
+
+	mockBankKeeper.EXPECT().
+		MintCoins(gomock.Any(), gomock.Any(), gomock.Any()).
+		AnyTimes()
+
+	mockBankKeeper.EXPECT().
+		SendCoinsFromModuleToAccount(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
+		AnyTimes()
+
 	mockAccountKeeper := mocks.NewMockAccountKeeper(ctrl)
 
 	k := keeper.NewKeeper(
