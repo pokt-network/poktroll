@@ -50,6 +50,12 @@ func (am AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 					PositionalArgs: []*autocliv1.PositionalArgDescriptor{{ProtoField: "morseAccountState"}},
 					Skip:           true, // skipped because authority gated
 				},
+				{
+					RpcMethod:      "ClaimMorseAccount",
+					Use:            "claim-morse-account [morse-src-address] [morse-signature]",
+					Short:          "Send a claim_morse_account tx",
+					PositionalArgs: []*autocliv1.PositionalArgDescriptor{{ProtoField: "morseSrcAddress"}, {ProtoField: "morseSignature"}},
+				},
 				// this line is used by ignite scaffolding # autocli/tx
 			},
 		},

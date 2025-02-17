@@ -7,6 +7,7 @@ import (
 	context "context"
 	fmt "fmt"
 	_ "github.com/cosmos/cosmos-proto"
+	types "github.com/cosmos/cosmos-sdk/types"
 	_ "github.com/cosmos/cosmos-sdk/types/msgservice"
 	_ "github.com/cosmos/cosmos-sdk/types/tx/amino"
 	_ "github.com/cosmos/gogoproto/gogoproto"
@@ -235,52 +236,176 @@ func (m *MsgImportMorseClaimableAccountsResponse) GetNumAccounts() uint64 {
 	return 0
 }
 
+type MsgClaimMorseAccount struct {
+	ShannonDestAddress string `protobuf:"bytes,1,opt,name=shannonDestAddress,proto3" json:"shannonDestAddress,omitempty"`
+	MorseSrcAddress    string `protobuf:"bytes,2,opt,name=morseSrcAddress,proto3" json:"morseSrcAddress,omitempty"`
+	MorseSignature     string `protobuf:"bytes,3,opt,name=morseSignature,proto3" json:"morseSignature,omitempty"`
+}
+
+func (m *MsgClaimMorseAccount) Reset()         { *m = MsgClaimMorseAccount{} }
+func (m *MsgClaimMorseAccount) String() string { return proto.CompactTextString(m) }
+func (*MsgClaimMorseAccount) ProtoMessage()    {}
+func (*MsgClaimMorseAccount) Descriptor() ([]byte, []int) {
+	return fileDescriptor_21658240592266b6, []int{4}
+}
+func (m *MsgClaimMorseAccount) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *MsgClaimMorseAccount) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	b = b[:cap(b)]
+	n, err := m.MarshalToSizedBuffer(b)
+	if err != nil {
+		return nil, err
+	}
+	return b[:n], nil
+}
+func (m *MsgClaimMorseAccount) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_MsgClaimMorseAccount.Merge(m, src)
+}
+func (m *MsgClaimMorseAccount) XXX_Size() int {
+	return m.Size()
+}
+func (m *MsgClaimMorseAccount) XXX_DiscardUnknown() {
+	xxx_messageInfo_MsgClaimMorseAccount.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_MsgClaimMorseAccount proto.InternalMessageInfo
+
+func (m *MsgClaimMorseAccount) GetShannonDestAddress() string {
+	if m != nil {
+		return m.ShannonDestAddress
+	}
+	return ""
+}
+
+func (m *MsgClaimMorseAccount) GetMorseSrcAddress() string {
+	if m != nil {
+		return m.MorseSrcAddress
+	}
+	return ""
+}
+
+func (m *MsgClaimMorseAccount) GetMorseSignature() string {
+	if m != nil {
+		return m.MorseSignature
+	}
+	return ""
+}
+
+type MsgClaimMorseAccountResponse struct {
+	MorseSrcAddress string     `protobuf:"bytes,1,opt,name=morseSrcAddress,proto3" json:"morseSrcAddress,omitempty"`
+	ClaimedBalance  types.Coin `protobuf:"bytes,2,opt,name=claimedBalance,proto3" json:"claimedBalance"`
+	ClaimedAtHeight int32      `protobuf:"varint,3,opt,name=claimedAtHeight,proto3" json:"claimedAtHeight,omitempty"`
+}
+
+func (m *MsgClaimMorseAccountResponse) Reset()         { *m = MsgClaimMorseAccountResponse{} }
+func (m *MsgClaimMorseAccountResponse) String() string { return proto.CompactTextString(m) }
+func (*MsgClaimMorseAccountResponse) ProtoMessage()    {}
+func (*MsgClaimMorseAccountResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_21658240592266b6, []int{5}
+}
+func (m *MsgClaimMorseAccountResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *MsgClaimMorseAccountResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	b = b[:cap(b)]
+	n, err := m.MarshalToSizedBuffer(b)
+	if err != nil {
+		return nil, err
+	}
+	return b[:n], nil
+}
+func (m *MsgClaimMorseAccountResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_MsgClaimMorseAccountResponse.Merge(m, src)
+}
+func (m *MsgClaimMorseAccountResponse) XXX_Size() int {
+	return m.Size()
+}
+func (m *MsgClaimMorseAccountResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_MsgClaimMorseAccountResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_MsgClaimMorseAccountResponse proto.InternalMessageInfo
+
+func (m *MsgClaimMorseAccountResponse) GetMorseSrcAddress() string {
+	if m != nil {
+		return m.MorseSrcAddress
+	}
+	return ""
+}
+
+func (m *MsgClaimMorseAccountResponse) GetClaimedBalance() types.Coin {
+	if m != nil {
+		return m.ClaimedBalance
+	}
+	return types.Coin{}
+}
+
+func (m *MsgClaimMorseAccountResponse) GetClaimedAtHeight() int32 {
+	if m != nil {
+		return m.ClaimedAtHeight
+	}
+	return 0
+}
+
 func init() {
 	proto.RegisterType((*MsgUpdateParams)(nil), "poktroll.migration.MsgUpdateParams")
 	proto.RegisterType((*MsgUpdateParamsResponse)(nil), "poktroll.migration.MsgUpdateParamsResponse")
 	proto.RegisterType((*MsgImportMorseClaimableAccounts)(nil), "poktroll.migration.MsgImportMorseClaimableAccounts")
 	proto.RegisterType((*MsgImportMorseClaimableAccountsResponse)(nil), "poktroll.migration.MsgImportMorseClaimableAccountsResponse")
+	proto.RegisterType((*MsgClaimMorseAccount)(nil), "poktroll.migration.MsgClaimMorseAccount")
+	proto.RegisterType((*MsgClaimMorseAccountResponse)(nil), "poktroll.migration.MsgClaimMorseAccountResponse")
 }
 
 func init() { proto.RegisterFile("poktroll/migration/tx.proto", fileDescriptor_21658240592266b6) }
 
 var fileDescriptor_21658240592266b6 = []byte{
-	// 557 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x9c, 0x54, 0xbf, 0x6b, 0xdb, 0x40,
-	0x14, 0xf6, 0x39, 0x6d, 0xc0, 0x17, 0x93, 0x36, 0x6a, 0x4a, 0x1c, 0x25, 0x48, 0xc6, 0xfd, 0x65,
-	0x5c, 0x6c, 0x51, 0x1b, 0x5a, 0x48, 0xe9, 0x10, 0x75, 0x69, 0x07, 0x43, 0x50, 0xc8, 0xd2, 0xc5,
-	0x3d, 0xcb, 0x42, 0x12, 0xf1, 0xdd, 0x89, 0xbb, 0x53, 0x9b, 0x6c, 0x6d, 0xc7, 0x42, 0x21, 0x7f,
-	0x46, 0x47, 0x0f, 0xf9, 0x07, 0xba, 0x65, 0x0c, 0x9d, 0x32, 0x89, 0x62, 0x0f, 0x06, 0xff, 0x15,
-	0x45, 0xbf, 0x1c, 0xdb, 0x51, 0xd2, 0x92, 0x45, 0xd2, 0xbd, 0xf7, 0xbd, 0xef, 0x7d, 0xef, 0xe3,
-	0x9d, 0xe0, 0x96, 0x47, 0x0f, 0x05, 0xa3, 0xfd, 0xbe, 0x86, 0x5d, 0x9b, 0x21, 0xe1, 0x52, 0xa2,
-	0x89, 0xa3, 0x86, 0xc7, 0xa8, 0xa0, 0x92, 0x94, 0x26, 0x1b, 0xd3, 0xa4, 0xbc, 0x86, 0xb0, 0x4b,
-	0xa8, 0x16, 0x3d, 0x63, 0x98, 0xbc, 0x61, 0x52, 0x8e, 0x29, 0xd7, 0x30, 0xb7, 0xb5, 0x4f, 0x2f,
-	0xc2, 0x57, 0x92, 0xd8, 0x8c, 0x13, 0x9d, 0xe8, 0xa4, 0xc5, 0x87, 0x24, 0xb5, 0x6e, 0x53, 0x9b,
-	0xc6, 0xf1, 0xf0, 0x2b, 0x89, 0x3e, 0xcd, 0x50, 0x83, 0x29, 0xe3, 0x56, 0x87, 0x12, 0xd3, 0x41,
-	0x2e, 0x49, 0x70, 0x6a, 0x06, 0xce, 0x43, 0x0c, 0xe1, 0x84, 0xbe, 0xf2, 0x0b, 0xc0, 0x7b, 0x6d,
-	0x6e, 0x1f, 0x78, 0x3d, 0x24, 0xac, 0xbd, 0x28, 0x23, 0xbd, 0x84, 0x05, 0xe4, 0x0b, 0x87, 0x32,
-	0x57, 0x1c, 0x97, 0x40, 0x19, 0x54, 0x0b, 0x7a, 0xe9, 0xf7, 0x69, 0x7d, 0x3d, 0xd1, 0xb5, 0xdb,
-	0xeb, 0x31, 0x8b, 0xf3, 0x7d, 0xc1, 0x5c, 0x62, 0x1b, 0x97, 0x50, 0xe9, 0x0d, 0x5c, 0x8e, 0xb9,
-	0x4b, 0xf9, 0x32, 0xa8, 0xae, 0x34, 0xe5, 0xc6, 0x55, 0x5b, 0x1a, 0x71, 0x0f, 0xbd, 0x70, 0x16,
-	0xa8, 0xb9, 0x9f, 0xe3, 0x41, 0x0d, 0x18, 0x49, 0xd1, 0xce, 0xab, 0x6f, 0xe3, 0x41, 0xed, 0x92,
-	0xee, 0xfb, 0x78, 0x50, 0x7b, 0x3c, 0x95, 0x7f, 0x34, 0x33, 0xc0, 0x82, 0xde, 0xca, 0x26, 0xdc,
-	0x58, 0x08, 0x19, 0x16, 0xf7, 0x28, 0xe1, 0x56, 0xe5, 0x34, 0x0f, 0xd5, 0x36, 0xb7, 0xdf, 0x63,
-	0x8f, 0x32, 0xd1, 0x0e, 0x0d, 0x7a, 0xdb, 0x47, 0x2e, 0x46, 0xdd, 0xbe, 0xb5, 0x6b, 0x9a, 0xd4,
-	0x27, 0xe2, 0xf6, 0xe3, 0x32, 0xf8, 0x20, 0xb6, 0x1c, 0xc5, 0x4c, 0x1d, 0x2e, 0x90, 0xb0, 0x92,
-	0xd9, 0x9f, 0x64, 0xcd, 0x1e, 0x09, 0x48, 0xfa, 0xee, 0x87, 0x60, 0x7d, 0x2b, 0xb4, 0x61, 0x12,
-	0xa8, 0x59, 0x4c, 0xc6, 0x1a, 0x5e, 0xc4, 0x4b, 0x07, 0xb0, 0x94, 0x81, 0xec, 0x38, 0x88, 0x3b,
-	0xa5, 0xa5, 0x32, 0xa8, 0x16, 0xf5, 0xed, 0x49, 0xa0, 0x5e, 0x8b, 0x31, 0x1e, 0x5e, 0xa1, 0x7c,
-	0x87, 0xb8, 0xb3, 0xb3, 0x3a, 0x6f, 0x7d, 0xe5, 0x07, 0x80, 0xcf, 0xfe, 0x61, 0x5b, 0x6a, 0xb1,
-	0x54, 0x87, 0x70, 0x46, 0x04, 0x88, 0x44, 0xac, 0x4e, 0x02, 0x75, 0x26, 0x6a, 0x14, 0x78, 0xda,
-	0x4a, 0x6a, 0xc1, 0x22, 0xf1, 0x71, 0xaa, 0x2d, 0x5e, 0x95, 0x3b, 0xfa, 0xfd, 0x49, 0xa0, 0xce,
-	0xc5, 0x8d, 0x15, 0xe2, 0xe3, 0xb4, 0x57, 0xf3, 0x6b, 0x1e, 0x2e, 0xb5, 0xb9, 0x2d, 0x7d, 0x84,
-	0xc5, 0xb9, 0x4d, 0x7d, 0x94, 0xe9, 0xf2, 0xfc, 0x2e, 0xc8, 0xcf, 0xff, 0x03, 0x34, 0x9d, 0xe6,
-	0x04, 0xc0, 0xed, 0x1b, 0xb7, 0xa5, 0x75, 0x0d, 0xdb, 0x4d, 0x45, 0xf2, 0xeb, 0x5b, 0x14, 0xa5,
-	0x92, 0xe4, 0xbb, 0x5f, 0xc2, 0x6b, 0xa2, 0xef, 0x9d, 0x0d, 0x15, 0x70, 0x3e, 0x54, 0xc0, 0xc5,
-	0x50, 0x01, 0x7f, 0x86, 0x0a, 0x38, 0x19, 0x29, 0xb9, 0xf3, 0x91, 0x92, 0xbb, 0x18, 0x29, 0xb9,
-	0x0f, 0x4d, 0xdb, 0x15, 0x8e, 0xdf, 0x6d, 0x98, 0x14, 0x6b, 0x61, 0xaf, 0x3a, 0xb1, 0xc4, 0x67,
-	0xca, 0x0e, 0xb5, 0xcc, 0x1b, 0x24, 0x8e, 0x3d, 0x8b, 0x77, 0x97, 0xa3, 0x5f, 0x40, 0xeb, 0x6f,
-	0x00, 0x00, 0x00, 0xff, 0xff, 0xe3, 0x2d, 0xb8, 0x70, 0xdb, 0x04, 0x00, 0x00,
+	// 720 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x9c, 0x54, 0xbf, 0x4f, 0xdb, 0x40,
+	0x14, 0xce, 0x85, 0x1f, 0x52, 0x0e, 0x14, 0x8a, 0x4b, 0x45, 0x30, 0xc8, 0x46, 0x69, 0x4b, 0x23,
+	0x2a, 0xec, 0x02, 0x52, 0x2b, 0x51, 0x75, 0xc0, 0x54, 0x2a, 0x1d, 0x22, 0x21, 0x23, 0x96, 0x2e,
+	0xe9, 0xc5, 0x39, 0xd9, 0x16, 0xf1, 0x9d, 0xe5, 0xbb, 0x50, 0xd8, 0xaa, 0x8e, 0x95, 0x2a, 0xf1,
+	0x67, 0x74, 0xa4, 0x12, 0x5b, 0xa7, 0x6e, 0x8c, 0xa8, 0x13, 0x53, 0x54, 0x85, 0x01, 0x29, 0x63,
+	0xff, 0x82, 0xca, 0xf6, 0x39, 0x24, 0x8e, 0xa1, 0x88, 0x05, 0xe2, 0xef, 0x7d, 0xef, 0xbd, 0xef,
+	0x7d, 0xf7, 0xee, 0xe0, 0xbc, 0x4f, 0xf7, 0x79, 0x40, 0x9b, 0x4d, 0xdd, 0x73, 0xed, 0x00, 0x71,
+	0x97, 0x12, 0x9d, 0x1f, 0x6a, 0x7e, 0x40, 0x39, 0x95, 0xa4, 0x24, 0xa8, 0xf5, 0x82, 0xf2, 0x34,
+	0xf2, 0x5c, 0x42, 0xf5, 0xe8, 0x6f, 0x4c, 0x93, 0x67, 0x2d, 0xca, 0x3c, 0xca, 0x74, 0x8f, 0xd9,
+	0xfa, 0xc1, 0x6a, 0xf8, 0x4f, 0x04, 0xe6, 0xe2, 0x40, 0x2d, 0xfa, 0xd2, 0xe3, 0x0f, 0x11, 0x9a,
+	0xb1, 0xa9, 0x4d, 0x63, 0x3c, 0xfc, 0x25, 0xd0, 0xa5, 0x0c, 0x35, 0x1e, 0x0d, 0x18, 0xae, 0x51,
+	0x62, 0x39, 0xc8, 0x25, 0x82, 0xa7, 0x66, 0xf0, 0x7c, 0x14, 0x20, 0x2f, 0x29, 0xaf, 0x08, 0x49,
+	0x75, 0xc4, 0xb0, 0x7e, 0xb0, 0x5a, 0xc7, 0x1c, 0xad, 0xea, 0x16, 0x4d, 0x0a, 0x94, 0x7f, 0x01,
+	0x38, 0x55, 0x65, 0xf6, 0x9e, 0xdf, 0x40, 0x1c, 0xef, 0x44, 0x99, 0xd2, 0x4b, 0x58, 0x40, 0x2d,
+	0xee, 0xd0, 0xc0, 0xe5, 0x47, 0x25, 0xb0, 0x08, 0x2a, 0x05, 0xa3, 0xf4, 0xfb, 0x74, 0x65, 0x46,
+	0xe8, 0xde, 0x6c, 0x34, 0x02, 0xcc, 0xd8, 0x2e, 0x0f, 0x5c, 0x62, 0x9b, 0xd7, 0x54, 0xe9, 0x0d,
+	0x1c, 0x8f, 0x7b, 0x97, 0xf2, 0x8b, 0xa0, 0x32, 0xb1, 0x26, 0x6b, 0xc3, 0xb6, 0x69, 0x71, 0x0f,
+	0xa3, 0x70, 0xd6, 0x56, 0x73, 0xdf, 0xaf, 0x4e, 0x96, 0x81, 0x29, 0x92, 0x36, 0x5e, 0x7d, 0xb9,
+	0x3a, 0x59, 0xbe, 0x2e, 0xf7, 0xf5, 0xea, 0x64, 0xf9, 0x49, 0x6f, 0xbc, 0xc3, 0xbe, 0x01, 0x53,
+	0x7a, 0xcb, 0x73, 0x70, 0x36, 0x05, 0x99, 0x98, 0xf9, 0x94, 0x30, 0x5c, 0x3e, 0xcd, 0x43, 0xb5,
+	0xca, 0xec, 0xf7, 0x9e, 0x4f, 0x03, 0x5e, 0x0d, 0x0d, 0xdc, 0x6a, 0x22, 0xd7, 0x43, 0xf5, 0x26,
+	0xde, 0xb4, 0x2c, 0xda, 0x22, 0xfc, 0xfe, 0xe3, 0x06, 0xf0, 0x61, 0x7c, 0x24, 0x28, 0xae, 0x54,
+	0x63, 0x1c, 0x71, 0x2c, 0x66, 0x7f, 0x9a, 0x35, 0x7b, 0x24, 0x40, 0xf4, 0xdd, 0x0d, 0xc9, 0xc6,
+	0x7c, 0x68, 0x43, 0xb7, 0xad, 0x66, 0x55, 0x32, 0xa7, 0xbd, 0x34, 0x5f, 0xda, 0x83, 0xa5, 0x0c,
+	0x66, 0xcd, 0x41, 0xcc, 0x29, 0x8d, 0x2c, 0x82, 0xca, 0xa4, 0xb1, 0xd0, 0x6d, 0xab, 0x37, 0x72,
+	0xcc, 0x47, 0x43, 0x25, 0xb7, 0x11, 0x73, 0x36, 0x8a, 0x83, 0xd6, 0x97, 0xbf, 0x01, 0xf8, 0xec,
+	0x3f, 0xb6, 0x25, 0x16, 0x4b, 0x2b, 0x10, 0xf6, 0x89, 0x00, 0x91, 0x88, 0x62, 0xb7, 0xad, 0xf6,
+	0xa1, 0x66, 0x81, 0x25, 0xad, 0xa4, 0x75, 0x38, 0x49, 0x5a, 0x5e, 0xa2, 0x2d, 0x5e, 0x95, 0x51,
+	0xe3, 0x41, 0xb7, 0xad, 0x0e, 0xe0, 0xe6, 0x04, 0x69, 0x79, 0x49, 0xaf, 0xf2, 0x0f, 0x00, 0x67,
+	0xaa, 0xcc, 0x8e, 0x44, 0xf4, 0x9b, 0x28, 0x69, 0x50, 0x62, 0x0e, 0x22, 0x84, 0x92, 0xb7, 0x98,
+	0x71, 0x71, 0x54, 0xf1, 0x21, 0x9a, 0x19, 0x11, 0xa9, 0x02, 0xa7, 0x22, 0x07, 0x76, 0x03, 0x2b,
+	0x21, 0xe7, 0x23, 0x72, 0x1a, 0x96, 0x96, 0x60, 0x31, 0x86, 0x5c, 0x9b, 0x20, 0xde, 0x0a, 0x70,
+	0xe4, 0x6f, 0xc1, 0x4c, 0xa1, 0x1b, 0xb3, 0xa1, 0x75, 0x19, 0xad, 0xca, 0x3f, 0x01, 0x5c, 0xc8,
+	0xd2, 0xdc, 0x33, 0x2e, 0x43, 0x0b, 0xc8, 0xd6, 0xf2, 0x0e, 0x16, 0xad, 0xb0, 0x0c, 0x6e, 0x18,
+	0xa8, 0x89, 0x88, 0x95, 0x2c, 0xd9, 0x9c, 0x26, 0x76, 0x34, 0xbc, 0xdd, 0x9a, 0xb8, 0xdd, 0xda,
+	0x16, 0x75, 0x89, 0x31, 0x1a, 0x2e, 0x96, 0x99, 0x4a, 0x0b, 0x5b, 0x0a, 0x64, 0x93, 0x6f, 0x63,
+	0xd7, 0x76, 0x78, 0x34, 0xd5, 0x98, 0x99, 0x86, 0xd7, 0xfe, 0xe6, 0xe1, 0x48, 0x95, 0xd9, 0xd2,
+	0x47, 0x38, 0x39, 0xf0, 0x36, 0x3c, 0xce, 0xdc, 0xeb, 0xc1, 0xdb, 0x27, 0x3f, 0xbf, 0x03, 0xa9,
+	0x67, 0xc3, 0x31, 0x80, 0x0b, 0xb7, 0xde, 0xcf, 0xf5, 0x1b, 0xaa, 0xdd, 0x96, 0x24, 0xbf, 0xbe,
+	0x47, 0x52, 0x4f, 0x12, 0x85, 0xd3, 0xc3, 0xab, 0x56, 0xb9, 0xa1, 0xe2, 0x10, 0x53, 0x7e, 0x71,
+	0x57, 0x66, 0xd2, 0x50, 0x1e, 0xfb, 0x1c, 0xbe, 0x84, 0xc6, 0xce, 0x59, 0x47, 0x01, 0xe7, 0x1d,
+	0x05, 0x5c, 0x74, 0x14, 0xf0, 0xa7, 0xa3, 0x80, 0xe3, 0x4b, 0x25, 0x77, 0x7e, 0xa9, 0xe4, 0x2e,
+	0x2e, 0x95, 0xdc, 0x87, 0x35, 0xdb, 0xe5, 0x4e, 0xab, 0xae, 0x59, 0xd4, 0xd3, 0xc3, 0x06, 0x2b,
+	0x04, 0xf3, 0x4f, 0x34, 0xd8, 0xd7, 0x33, 0x1f, 0x49, 0x7e, 0xe4, 0x63, 0x56, 0x1f, 0x8f, 0x5e,
+	0xf9, 0xf5, 0x7f, 0x01, 0x00, 0x00, 0xff, 0xff, 0x6c, 0xb5, 0x8b, 0x84, 0xde, 0x06, 0x00, 0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -299,6 +424,7 @@ type MsgClient interface {
 	// parameters. The authority defaults to the x/gov module account.
 	UpdateParams(ctx context.Context, in *MsgUpdateParams, opts ...grpc.CallOption) (*MsgUpdateParamsResponse, error)
 	ImportMorseClaimableAccounts(ctx context.Context, in *MsgImportMorseClaimableAccounts, opts ...grpc.CallOption) (*MsgImportMorseClaimableAccountsResponse, error)
+	ClaimMorseAccount(ctx context.Context, in *MsgClaimMorseAccount, opts ...grpc.CallOption) (*MsgClaimMorseAccountResponse, error)
 }
 
 type msgClient struct {
@@ -327,12 +453,22 @@ func (c *msgClient) ImportMorseClaimableAccounts(ctx context.Context, in *MsgImp
 	return out, nil
 }
 
+func (c *msgClient) ClaimMorseAccount(ctx context.Context, in *MsgClaimMorseAccount, opts ...grpc.CallOption) (*MsgClaimMorseAccountResponse, error) {
+	out := new(MsgClaimMorseAccountResponse)
+	err := c.cc.Invoke(ctx, "/poktroll.migration.Msg/ClaimMorseAccount", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // MsgServer is the server API for Msg service.
 type MsgServer interface {
 	// UpdateParams defines a (governance) operation for updating the module
 	// parameters. The authority defaults to the x/gov module account.
 	UpdateParams(context.Context, *MsgUpdateParams) (*MsgUpdateParamsResponse, error)
 	ImportMorseClaimableAccounts(context.Context, *MsgImportMorseClaimableAccounts) (*MsgImportMorseClaimableAccountsResponse, error)
+	ClaimMorseAccount(context.Context, *MsgClaimMorseAccount) (*MsgClaimMorseAccountResponse, error)
 }
 
 // UnimplementedMsgServer can be embedded to have forward compatible implementations.
@@ -344,6 +480,9 @@ func (*UnimplementedMsgServer) UpdateParams(ctx context.Context, req *MsgUpdateP
 }
 func (*UnimplementedMsgServer) ImportMorseClaimableAccounts(ctx context.Context, req *MsgImportMorseClaimableAccounts) (*MsgImportMorseClaimableAccountsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ImportMorseClaimableAccounts not implemented")
+}
+func (*UnimplementedMsgServer) ClaimMorseAccount(ctx context.Context, req *MsgClaimMorseAccount) (*MsgClaimMorseAccountResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ClaimMorseAccount not implemented")
 }
 
 func RegisterMsgServer(s grpc1.Server, srv MsgServer) {
@@ -386,6 +525,24 @@ func _Msg_ImportMorseClaimableAccounts_Handler(srv interface{}, ctx context.Cont
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Msg_ClaimMorseAccount_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(MsgClaimMorseAccount)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MsgServer).ClaimMorseAccount(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/poktroll.migration.Msg/ClaimMorseAccount",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MsgServer).ClaimMorseAccount(ctx, req.(*MsgClaimMorseAccount))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 var Msg_serviceDesc = _Msg_serviceDesc
 var _Msg_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "poktroll.migration.Msg",
@@ -398,6 +555,10 @@ var _Msg_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ImportMorseClaimableAccounts",
 			Handler:    _Msg_ImportMorseClaimableAccounts_Handler,
+		},
+		{
+			MethodName: "ClaimMorseAccount",
+			Handler:    _Msg_ClaimMorseAccount_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
@@ -549,6 +710,95 @@ func (m *MsgImportMorseClaimableAccountsResponse) MarshalToSizedBuffer(dAtA []by
 	return len(dAtA) - i, nil
 }
 
+func (m *MsgClaimMorseAccount) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *MsgClaimMorseAccount) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *MsgClaimMorseAccount) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if len(m.MorseSignature) > 0 {
+		i -= len(m.MorseSignature)
+		copy(dAtA[i:], m.MorseSignature)
+		i = encodeVarintTx(dAtA, i, uint64(len(m.MorseSignature)))
+		i--
+		dAtA[i] = 0x1a
+	}
+	if len(m.MorseSrcAddress) > 0 {
+		i -= len(m.MorseSrcAddress)
+		copy(dAtA[i:], m.MorseSrcAddress)
+		i = encodeVarintTx(dAtA, i, uint64(len(m.MorseSrcAddress)))
+		i--
+		dAtA[i] = 0x12
+	}
+	if len(m.ShannonDestAddress) > 0 {
+		i -= len(m.ShannonDestAddress)
+		copy(dAtA[i:], m.ShannonDestAddress)
+		i = encodeVarintTx(dAtA, i, uint64(len(m.ShannonDestAddress)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *MsgClaimMorseAccountResponse) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *MsgClaimMorseAccountResponse) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *MsgClaimMorseAccountResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.ClaimedAtHeight != 0 {
+		i = encodeVarintTx(dAtA, i, uint64(m.ClaimedAtHeight))
+		i--
+		dAtA[i] = 0x18
+	}
+	{
+		size, err := m.ClaimedBalance.MarshalToSizedBuffer(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = encodeVarintTx(dAtA, i, uint64(size))
+	}
+	i--
+	dAtA[i] = 0x12
+	if len(m.MorseSrcAddress) > 0 {
+		i -= len(m.MorseSrcAddress)
+		copy(dAtA[i:], m.MorseSrcAddress)
+		i = encodeVarintTx(dAtA, i, uint64(len(m.MorseSrcAddress)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
 func encodeVarintTx(dAtA []byte, offset int, v uint64) int {
 	offset -= sovTx(v)
 	base := offset
@@ -615,6 +865,45 @@ func (m *MsgImportMorseClaimableAccountsResponse) Size() (n int) {
 	}
 	if m.NumAccounts != 0 {
 		n += 1 + sovTx(uint64(m.NumAccounts))
+	}
+	return n
+}
+
+func (m *MsgClaimMorseAccount) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.ShannonDestAddress)
+	if l > 0 {
+		n += 1 + l + sovTx(uint64(l))
+	}
+	l = len(m.MorseSrcAddress)
+	if l > 0 {
+		n += 1 + l + sovTx(uint64(l))
+	}
+	l = len(m.MorseSignature)
+	if l > 0 {
+		n += 1 + l + sovTx(uint64(l))
+	}
+	return n
+}
+
+func (m *MsgClaimMorseAccountResponse) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.MorseSrcAddress)
+	if l > 0 {
+		n += 1 + l + sovTx(uint64(l))
+	}
+	l = m.ClaimedBalance.Size()
+	n += 1 + l + sovTx(uint64(l))
+	if m.ClaimedAtHeight != 0 {
+		n += 1 + sovTx(uint64(m.ClaimedAtHeight))
 	}
 	return n
 }
@@ -1017,6 +1306,286 @@ func (m *MsgImportMorseClaimableAccountsResponse) Unmarshal(dAtA []byte) error {
 				b := dAtA[iNdEx]
 				iNdEx++
 				m.NumAccounts |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		default:
+			iNdEx = preIndex
+			skippy, err := skipTx(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthTx
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *MsgClaimMorseAccount) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowTx
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: MsgClaimMorseAccount: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: MsgClaimMorseAccount: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ShannonDestAddress", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTx
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthTx
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTx
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.ShannonDestAddress = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field MorseSrcAddress", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTx
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthTx
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTx
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.MorseSrcAddress = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field MorseSignature", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTx
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthTx
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTx
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.MorseSignature = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipTx(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthTx
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *MsgClaimMorseAccountResponse) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowTx
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: MsgClaimMorseAccountResponse: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: MsgClaimMorseAccountResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field MorseSrcAddress", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTx
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthTx
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTx
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.MorseSrcAddress = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ClaimedBalance", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTx
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthTx
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthTx
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := m.ClaimedBalance.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 3:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ClaimedAtHeight", wireType)
+			}
+			m.ClaimedAtHeight = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTx
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.ClaimedAtHeight |= int32(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
