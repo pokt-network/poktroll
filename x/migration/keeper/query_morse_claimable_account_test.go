@@ -29,14 +29,14 @@ func TestMorseClaimableAccountQuerySingle(t *testing.T) {
 		{
 			desc: "First",
 			request: &types.QueryGetMorseClaimableAccountRequest{
-				Address: msgs[0].Address.String(),
+				Address: msgs[0].MorseSrcAddress,
 			},
 			response: &types.QueryGetMorseClaimableAccountResponse{MorseClaimableAccount: msgs[0]},
 		},
 		{
 			desc: "Second",
 			request: &types.QueryGetMorseClaimableAccountRequest{
-				Address: msgs[1].Address.String(),
+				Address: msgs[1].MorseSrcAddress,
 			},
 			response: &types.QueryGetMorseClaimableAccountResponse{MorseClaimableAccount: msgs[1]},
 		},

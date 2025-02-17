@@ -18,10 +18,10 @@ func TestGenesis(t *testing.T) {
 
 		MorseClaimableAccountList: []types.MorseClaimableAccount{
 			{
-				Address: []byte(sample.MorseAddressHex()),
+				MorseSrcAddress: sample.MorseAddressHex(),
 			},
 			{
-				Address: []byte(sample.MorseAddressHex()),
+				MorseSrcAddress: sample.MorseAddressHex(),
 			},
 		},
 		// this line is used by starport scaffolding # genesis/test/state

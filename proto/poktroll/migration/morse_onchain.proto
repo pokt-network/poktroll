@@ -20,14 +20,17 @@ message MorseAccountState {
 // account which is claimable as part of the Morse -> Shannon migration.
 // They are intended to be created during MorseAccountState import (see: MsgImportMorseClaimableAccount).
 message MorseClaimableAccount {
-  // A hex-encoded representation of the address corresponding to a Morse application's ed25519 public key.
-  bytes address = 1 [(gogoproto.jsontag) = "address", (gogoproto.casttype) = "github.com/cometbft/cometbft/crypto.Address"];
+  // The bech32-encoded address of the Shannon account to which the claimed balance will be minted.
+  string shannon_dest_address = 1 [(cosmos_proto.scalar) = "cosmos.AddressString", (gogoproto.jsontag) = "shannon_dest_address"];
+
+  // The hex-encoded address of the Morse account whose balance will be claimed.
+  string morse_src_address = 2 [(gogoproto.jsontag) = "morse_src_address"];
 
   // The ed25519 public key of the account.
-  bytes public_key = 2 [(gogoproto.casttype) = "crypto/ed25519.PublicKey"];
+  bytes public_key = 4 [(gogoproto.casttype) = "crypto/ed25519.PublicKey"];
 
   // The unstaked upokt tokens (i.e. account balance) available for claiming.
-  cosmos.base.v1beta1.Coin unstaked_balance = 3 [(gogoproto.nullable) = false, (gogoproto.jsontag) = "unstaked_balance"];
+  cosmos.base.v1beta1.Coin unstaked_balance = 5 [(gogoproto.nullable) = false, (gogoproto.jsontag) = "unstaked_balance"];
 
   // The staked tokens associated with a supplier actor which corresponds to this account address.
   // DEV_NOTE: A few contextual notes related to Morse:
@@ -36,12 +39,12 @@ message MorseClaimableAccount {
   // - Automatically, the top 100 staked Servicers are validator
   // - This only accounts for servicer stake balance transition
   // TODO_MAINNET(@Olshansk): Develop a strategy for bootstrapping validators in Shannon by working with the cosmos ecosystem
-  cosmos.base.v1beta1.Coin supplier_stake = 4 [(gogoproto.nullable) = false, (gogoproto.jsontag) = "supplier_stake"];
+  cosmos.base.v1beta1.Coin supplier_stake = 6 [(gogoproto.nullable) = false, (gogoproto.jsontag) = "supplier_stake"];
 
   // The staked tokens associated with an application actor which corresponds to this account address.
-  cosmos.base.v1beta1.Coin application_stake = 5 [(gogoproto.nullable) = false, (gogoproto.jsontag) = "application_stake"];
+  cosmos.base.v1beta1.Coin application_stake = 7 [(gogoproto.nullable) = false, (gogoproto.jsontag) = "application_stake"];
 
   // The Shannon height at which the account was claimed.
-  int64 claimed_at_height = 6 [(gogoproto.jsontag) = "claimed_at_height", (gogoproto.moretags) = "yaml:\"claimed_at_height\""];
+  int64 claimed_at_height = 8 [(gogoproto.jsontag) = "claimed_at_height", (gogoproto.moretags) = "yaml:\"claimed_at_height\""];
 }
 

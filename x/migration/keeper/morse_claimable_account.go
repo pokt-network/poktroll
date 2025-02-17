@@ -16,7 +16,7 @@ func (k Keeper) SetMorseClaimableAccount(ctx context.Context, morseClaimableAcco
 	store := prefix.NewStore(storeAdapter, types.KeyPrefix(types.MorseClaimableAccountKeyPrefix))
 	morseClaimableAccountBz := k.cdc.MustMarshal(&morseClaimableAccount)
 	store.Set(types.MorseClaimableAccountKey(
-		morseClaimableAccount.Address.String(),
+		morseClaimableAccount.MorseSrcAddress,
 	), morseClaimableAccountBz)
 }
 

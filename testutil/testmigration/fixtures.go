@@ -119,7 +119,7 @@ func NewMorseStateExportAndAccountState(
 
 		// Add the account to the morseAccountState.
 		morseAccountState.Accounts[i-1] = &migrationtypes.MorseClaimableAccount{
-			Address:          pubKey.Address(),
+			MorseSrcAddress:  pubKey.Address().String(),
 			UnstakedBalance:  cosmostypes.NewInt64Coin(volatile.DenomuPOKT, balanceAmount),
 			SupplierStake:    cosmostypes.NewInt64Coin(volatile.DenomuPOKT, supplierStakeAmount),
 			ApplicationStake: cosmostypes.NewInt64Coin(volatile.DenomuPOKT, appStakeAmount),
