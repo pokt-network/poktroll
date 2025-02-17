@@ -184,7 +184,7 @@ func (m *MsgImportMorseClaimableAccounts) GetMorseAccountStateHash() []byte {
 }
 
 // MsgImportMorseClaimableAccountsResponse is used to execute a claim (one-time minting of tokens on Shannon),
-// of the balance of the given Morse account, according to the MorseAccountState, to the balance
+// of the balance of the given Morse account, according to the on-chain MorseClaimableAccounts, to the balance
 // of the given Shannon account (who MUST also be the signer of this message).
 // Authz grant(s) MAY be used to delegate the authority to create a claim on behalf of another Shannon account.
 type MsgImportMorseClaimableAccountsResponse struct {
@@ -240,6 +240,9 @@ func (m *MsgImportMorseClaimableAccountsResponse) GetNumAccounts() uint64 {
 	return 0
 }
 
+// MsgClaimMorseAccount is an on-chain, persisted data structure which represents the state of a claimable account.
+// It is initially created by the (one-time) MsgImportMorseClaimableAccounts message, and is subsequently updated
+// by the MsgClaimMorseAccount message, when it is claimed (also a one-time event, per claimable account).
 type MsgClaimMorseAccount struct {
 	// The bech32-encoded address of the Shannon account to which the claimed balance will be minted.
 	ShannonDestAddress string `protobuf:"bytes,1,opt,name=shannon_dest_address,json=shannonDestAddress,proto3" json:"shannon_dest_address"`

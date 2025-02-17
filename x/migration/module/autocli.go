@@ -53,7 +53,8 @@ func (am AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 				{
 					RpcMethod:      "ClaimMorseAccount",
 					Use:            "claim-morse-account [morse-src-address-hex] [morse-signature-hex]",
-					Short:          "Send a claim_morse_account tx",
+					Short:          "Claim the account balance of the given Morse account address",
+					Long:           "Claim the account balance of the given Morse account address, by signing the message with the private key of the Morse account.",
 					PositionalArgs: []*autocliv1.PositionalArgDescriptor{{ProtoField: "morse_src_address"}, {ProtoField: "morse_signature"}},
 				},
 				// this line is used by ignite scaffolding # autocli/tx
