@@ -61,6 +61,10 @@ message MsgImportMorseClaimableAccounts {
   bytes morse_account_state_hash = 3 [(gogoproto.jsontag) = "morse_account_state_hash"];
 }
 
+// MsgImportMorseClaimableAccountsResponse is used to execute a claim (one-time minting of tokens on Shannon),
+// of the balance of the given Morse account, according to the MorseAccountState, to the balance
+// of the given Shannon account (who MUST also be the signer of this message).
+// Authz grant(s) MAY be used to delegate the authority to create a claim on behalf of another Shannon account.
 message MsgImportMorseClaimableAccountsResponse {
 
   // On-chain computed sha256 hash of the morse_account_state provided in the corresponding MsgCreateMorseAccountState.
@@ -72,15 +76,26 @@ message MsgImportMorseClaimableAccountsResponse {
 }
 
 message MsgClaimMorseAccount {
-  option (cosmos.msg.v1.signer) = "shannonDestAddress";
-  string shannonDestAddress = 1;
-  string morseSrcAddress    = 2;
-  string morseSignature     = 3;
+  option (cosmos.msg.v1.signer) = "shannon_dest_address";
+
+  // The bech32-encoded address of the Shannon account to which the claimed balance will be minted.
+  string shannon_dest_address = 1 [(cosmos_proto.scalar) = "cosmos.AddressString", (gogoproto.jsontag) = "shannon_dest_address"];
+
+  // The hex-encoded address of the Morse account whose balance will be claimed.
+  string morse_src_address = 2 [(gogoproto.jsontag) = "morse_src_address"];
+
+  // The hex-encoded signature, by the Morse account, of this message (where this field is nil).
+  string morse_signature = 3 [(gogoproto.jsontag) = "morse_signature"];
 }
 
 message MsgClaimMorseAccountResponse {
-  string                   morseSrcAddress = 1;
-  cosmos.base.v1beta1.Coin claimedBalance  = 2 [(gogoproto.nullable) = false];
-  int32                    claimedAtHeight = 3;
+  // The hex-encoded address of the Morse account whose balance will be claimed.
+  string morse_src_address = 1 [(gogoproto.jsontag) = "morse_src_address"];
+
+  // The balance which was claimed.
+  cosmos.base.v1beta1.Coin claimed_balance = 2 [(gogoproto.jsontag) = "claimed_balance", (gogoproto.nullable) = false];
+
+  // The height (on Shannon) at which the claim was created.
+  int64 claimed_at_height = 3;
 }
 

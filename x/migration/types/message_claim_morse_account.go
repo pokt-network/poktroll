@@ -17,6 +17,9 @@ func NewMsgClaimMorseAccount(shannonDestAddress string, morseSrcAddress string, 
 }
 
 func (msg *MsgClaimMorseAccount) ValidateBasic() error {
+
+	// TODO_UPNEXT(@bryanchriswhite#1034): Add validation
+
 	_, err := sdk.AccAddressFromBech32(msg.ShannonDestAddress)
 	if err != nil {
 		return errorsmod.Wrapf(sdkerrors.ErrInvalidAddress, "invalid shannonDestAddress address (%s)", err)
