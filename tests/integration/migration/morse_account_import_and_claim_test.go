@@ -11,18 +11,12 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/pokt-network/poktroll/app/volatile"
-	"github.com/pokt-network/poktroll/cmd/poktrolld/cmd"
 	"github.com/pokt-network/poktroll/pkg/client/query"
 	"github.com/pokt-network/poktroll/testutil/integration"
 	"github.com/pokt-network/poktroll/testutil/sample"
 	"github.com/pokt-network/poktroll/testutil/testmigration"
 	migrationtypes "github.com/pokt-network/poktroll/x/migration/types"
 )
-
-// TODO_IN_THIS_COMMIT: confirm whether this is necessary...
-func init() {
-	cmd.InitSDKConfig()
-}
 
 func TestMsgServer_CreateMorseAccountClaim(t *testing.T) {
 	app := integration.NewCompleteIntegrationApp(t)

@@ -51,8 +51,3 @@ func TestMsgClaimMorseAccount_ValidateBasic(t *testing.T) {
 		})
 	}
 }
-
-// TODO_IN_THIS_COMMIT: error cases...
-// - empty signature
-// - invalid length morse hex addr
-// - invalid shannon bech32 addr

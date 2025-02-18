@@ -83,9 +83,13 @@ func TestMsgServer_ImportMorseClaimableAccounts_ErrorAlreadySet(t *testing.T) {
 	_, accountState := testmigration.NewMorseStateExportAndAccountState(t, numAccounts)
 	k.ImportFromMorseAccountState(ctx, accountState)
 
-	// Assert that the MorseAccountState have been set.
+	// Assert that the MorseClaimableAccounts are persisted AND unclaimed.
 	morseClaimableAccounts = k.GetAllMorseClaimableAccounts(ctx)
-	require.Equal(t, 10, len(morseClaimableAccounts))
+	require.Equal(t, numAccounts, len(morseClaimableAccounts))
+	for _, morseClaimableAccount := range morseClaimableAccounts {
+		require.Equal(t, int64(0), morseClaimableAccount.ClaimedAtHeight)
+		require.Equal(t, "", morseClaimableAccount.ShannonDestAddress)
+	}
 
 	// Assert that the MorseAccountState can ONLY be set once.
 	msgImportMorseClaimableAccounts, err := migrationtypes.NewMsgImportMorseClaimableAccounts(
@@ -118,6 +122,3 @@ func TestMsgServer_ImportMorseClaimableAccounts_ErrorInvalidAuthority(t *testing
 	require.Equal(t, codes.PermissionDenied, stat.Code())
 	require.ErrorContains(t, err, "invalid authority address")
 }
-
-// TODO_IN_THIS_COMMIT: Test an import with non-zero ClaimedAtHeight for one or
-// more accounts; the heights SHOULD be reset to 0 when persisted.

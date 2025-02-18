@@ -24,7 +24,7 @@ message EventImportMorseClaimableAccounts {
   uint64 num_accounts = 3 [(gogoproto.jsontag) = "num_accounts"];
 }
 
-// TODO_IN_THIS_COMMIT: comments...
+// EventMorseAccountClaimed is emitted when a MorseAccount is claimed on-chain.
 message EventMorseAccountClaimed {
   // The height (on Shannon) at which the claim was executed (i.e. claimed).
   int64 claimed_at_height = 1 [(gogoproto.jsontag) = "claimed_at_height"];

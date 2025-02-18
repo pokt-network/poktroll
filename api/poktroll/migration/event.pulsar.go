@@ -3,11 +3,11 @@ package migration
 
 import (
 	v1beta1 "cosmossdk.io/api/cosmos/base/v1beta1"
+	_ "github.com/pokt-network/poktroll/api/poktroll/shared"
 	fmt "fmt"
 	_ "github.com/cosmos/cosmos-proto"
 	runtime "github.com/cosmos/cosmos-proto/runtime"
 	_ "github.com/cosmos/gogoproto/gogoproto"
-	_ "github.com/pokt-network/poktroll/api/poktroll/shared"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoiface "google.golang.org/protobuf/runtime/protoiface"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
@@ -1214,7 +1214,7 @@ func (x *EventImportMorseClaimableAccounts) GetNumAccounts() uint64 {
 	return 0
 }
 
-// TODO_IN_THIS_COMMIT: comments...
+// EventMorseAccountClaimed is emitted when a MorseAccount is claimed on-chain.
 type EventMorseAccountClaimed struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache

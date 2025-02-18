@@ -87,7 +87,7 @@ func (m *EventImportMorseClaimableAccounts) GetNumAccounts() uint64 {
 	return 0
 }
 
-// TODO_IN_THIS_COMMIT: comments...
+// EventMorseAccountClaimed is emitted when a MorseAccount is claimed on-chain.
 type EventMorseAccountClaimed struct {
 	// The height (on Shannon) at which the claim was executed (i.e. claimed).
 	ClaimedAtHeight int64 `protobuf:"varint,1,opt,name=claimed_at_height,json=claimedAtHeight,proto3" json:"claimed_at_height"`

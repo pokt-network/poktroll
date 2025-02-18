@@ -27,6 +27,10 @@ func NewMsgClaimMorseAccount(
 	}
 
 	morseSignature, err := morsePrivateKey.Sign(msgBz)
+	if err != nil {
+		return nil, err
+	}
+
 	msg.MorseSignature = hex.EncodeToString(morseSignature)
 
 	return msg, nil
