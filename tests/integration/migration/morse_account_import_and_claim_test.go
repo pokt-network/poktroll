@@ -88,7 +88,7 @@ func TestMsgServer_CreateMorseAccountClaim(t *testing.T) {
 	expectedMorseClaimableAccount.ClaimedAtHeight = app.GetSdkCtx().BlockHeight() - 1
 
 	morseAccountQuerier := migrationtypes.NewQueryClient(app.QueryHelper())
-	morseClaimableAcctRes, err := morseAccountQuerier.MorseClaimableAccount(app.GetSdkCtx(), &migrationtypes.QueryGetMorseClaimableAccountRequest{
+	morseClaimableAcctRes, err := morseAccountQuerier.MorseClaimableAccount(app.GetSdkCtx(), &migrationtypes.QueryMorseClaimableAccountRequest{
 		Address: morseSrcAddr,
 	})
 	require.NoError(t, err)
