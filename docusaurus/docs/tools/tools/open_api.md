@@ -83,3 +83,14 @@ curl -X 'GET' 'https://shannon-testnet-grove-rpc.beta.poktroll.com/status' -H 'a
 | **CometBFT RPC**                       | `26657`          | `sh curl -X GET 'http://localhost:26657/status'`                                | `/status`, `/net_info`, `/block`, `/broadcast_tx_commit`                             |
 | **Cosmos SDK gRPC**                    | `9090`           | `sh grpcurl -plaintext localhost:9090 list`                                     | `cosmos.auth.v1beta1.Query/Account`, `cosmos.bank.v1beta1.Query/Balance`             |
 | **Cosmos SDK REST API (gRPC-Gateway)** | `1317`           | `sh curl -X GET 'http://localhost:1317/cosmos/auth/v1beta1/accounts/{address}'` | `/cosmos/auth/v1beta1/accounts/{address}`, `/cosmos/bank/v1beta1/balances/{address}` |
+
+<!-- 
+
+TODO_IMPROVE(#1081): Add an embedded view of the OpenAPI spec
+
+import OpenAPI from '@site/src/components/OpenAPI';
+import apiSpec from '@site/static/openapi.json';
+
+<OpenAPI spec={apiSpec} />
+
+-->
