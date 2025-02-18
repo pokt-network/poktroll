@@ -526,12 +526,16 @@ func NewCompleteIntegrationApp(t *testing.T, opts ...IntegrationAppOptionFn) *Ap
 		authority.String(),
 		accountKeeper,
 		bankKeeper,
+		applicationKeeper,
+		supplierKeeper,
 	)
 	migrationModule := migration.NewAppModule(
 		cdc,
 		migrationKeeper,
 		accountKeeper,
 		bankKeeper,
+		applicationKeeper,
+		supplierKeeper,
 	)
 
 	// Prepare the message & query routers

@@ -61,6 +61,22 @@ func MigrationKeeper(t testing.TB) (keeper.Keeper, sdk.Context) {
 
 	mockAccountKeeper := mocks.NewMockAccountKeeper(ctrl)
 
+	mockAppKeeper := mocks.NewMockApplicationKeeper(ctrl)
+	mockAppKeeper.EXPECT().
+		GetApplication(gomock.Any(), gomock.Any()).
+		AnyTimes()
+	mockAppKeeper.EXPECT().
+		SetApplication(gomock.Any(), gomock.Any()).
+		AnyTimes()
+
+	mockSupplierKeeper := mocks.NewMockSupplierKeeper(ctrl)
+	mockSupplierKeeper.EXPECT().
+		GetSupplier(gomock.Any(), gomock.Any()).
+		AnyTimes()
+	mockSupplierKeeper.EXPECT().
+		SetSupplier(gomock.Any(), gomock.Any()).
+		AnyTimes()
+
 	k := keeper.NewKeeper(
 		cdc,
 		runtime.NewKVStoreService(storeKey),
@@ -68,6 +84,8 @@ func MigrationKeeper(t testing.TB) (keeper.Keeper, sdk.Context) {
 		authority.String(),
 		mockAccountKeeper,
 		mockBankKeeper,
+		mockAppKeeper,
+		mockSupplierKeeper,
 	)
 
 	ctx := sdk.NewContext(stateStore, cmtproto.Header{}, false, log.NewNopLogger())

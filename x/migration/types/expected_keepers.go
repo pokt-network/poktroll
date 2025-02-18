@@ -1,4 +1,4 @@
-//go:generate go run go.uber.org/mock/mockgen -destination ../../../testutil/migration/mocks/expected_keepers_mock.go -package mocks . AccountKeeper,BankKeeper
+//go:generate go run go.uber.org/mock/mockgen -destination ../../../testutil/migration/mocks/expected_keepers_mock.go -package mocks . AccountKeeper,BankKeeper,ApplicationKeeper,SupplierKeeper
 
 package types
 
@@ -6,6 +6,9 @@ import (
 	"context"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+
+	apptypes "github.com/pokt-network/poktroll/x/application/types"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 // AccountKeeper defines the expected interface for the Account module.
@@ -20,6 +23,15 @@ type BankKeeper interface {
 	MintCoins(ctx context.Context, moduleName string, amt sdk.Coins) error
 	SendCoinsFromModuleToAccount(ctx context.Context, senderModule string, recipientAddr sdk.AccAddress, amt sdk.Coins) error
 	// Methods imported from bank should be defined here
+}
+
+type ApplicationKeeper interface {
+	GetApplication(ctx context.Context, appAddr string) (app apptypes.Application, found bool)
+	SetApplication(ctx context.Context, application apptypes.Application)
+}
+type SupplierKeeper interface {
+	GetSupplier(ctx context.Context, supplierOperatorAddr string) (supplier sharedtypes.Supplier, found bool)
+	SetSupplier(ctx context.Context, supplier sharedtypes.Supplier)
 }
 
 // ParamSubspace defines the expected Subspace interface for parameters.
