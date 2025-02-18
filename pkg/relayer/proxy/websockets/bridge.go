@@ -17,7 +17,7 @@ import (
 
 // bridge represents a websocket bridge between the gateway and the service backend.
 // It is responsible for forwarding relay requests from the gateway to the service
-// backend ant relay responses from the service backend to the gateway.
+// backend and relay responses from the service backend to the gateway.
 type bridge struct {
 	ctx       context.Context
 	cancelCtx context.CancelFunc
