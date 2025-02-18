@@ -197,7 +197,6 @@ func (s *RelayAuthenticatorTestSuite) setupSupplierKeyring() {
 
 // setupQueryClients initializes all the necessary query clients
 func (s *RelayAuthenticatorTestSuite) setupQueryClients() {
-	blockHeight := int64(1)
 	s.sessionQuerier = testqueryclients.NewTestSessionQueryClient(s.T())
 	s.sharedQuerier = testqueryclients.NewTestSharedQueryClient(s.T())
 	s.blockClient = testblock.NewAnyTimeLastBlockBlockClient(s.T(), []byte{}, blockHeight)
