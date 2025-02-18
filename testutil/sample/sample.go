@@ -66,3 +66,9 @@ func AccAddressFromConsBech32(consBech32 string) string {
 	accAddr, _ := cosmostypes.AccAddressFromHexUnsafe(hex.EncodeToString(consAccAddr.Bytes()))
 	return accAddr.String()
 }
+
+// MorseAddressHex returns the hex-encoded string representation of the address
+// corresponding to a random Morse (ed25519) keypair.
+func MorseAddressHex() string {
+	return hex.EncodeToString(ConsAddress().Bytes())
+}
