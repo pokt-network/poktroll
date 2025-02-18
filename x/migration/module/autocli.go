@@ -59,6 +59,12 @@ func (am AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 					Skip:           true, // skipped because autoCLI cannot handle signing
 					// TODO_UPNEXT(@bryanchriswhite#1034): Add morse account claiming CLI.
 				},
+				{
+					RpcMethod:      "ClaimMorseApplication",
+					Use:            "claim-morse-application [morse-src-address] [morse-signature] [stake] [service-config]",
+					Short:          "Send a claim_morse_application tx",
+					PositionalArgs: []*autocliv1.PositionalArgDescriptor{{ProtoField: "morseSrcAddress"}, {ProtoField: "morseSignature"}, {ProtoField: "stake"}, {ProtoField: "serviceConfig"}},
+				},
 				// this line is used by ignite scaffolding # autocli/tx
 			},
 		},
