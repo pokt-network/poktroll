@@ -1,3 +1,5 @@
+//go:generate go run go.uber.org/mock/mockgen -destination ../../../testutil/migration/mocks/expected_keepers_mock.go -package mocks . AccountKeeper,BankKeeper
+
 package types
 
 import (
