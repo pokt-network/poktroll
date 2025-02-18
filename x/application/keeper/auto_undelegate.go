@@ -8,23 +8,21 @@ import (
 	gatewaytypes "github.com/pokt-network/poktroll/x/gateway/types"
 )
 
-// EndBlockerAutoUndelegateFromUnstakedGateways is called every block and handles
-// Application auto-undelegating from unstaked gateways.
-// TODO_BETA(@bryanchriswhite): Gateway unstaking should be delayed until the current block's
-// session end height to align with the application's pending undelegations.
-func (k Keeper) EndBlockerAutoUndelegateFromUnstakedGateways(ctx cosmostypes.Context) error {
+// EndBlockerAutoUndelegateFromUnbondingGateways is called every block and handles
+// Application auto-undelegating from unbonding gateways that are no longer active.
+func (k Keeper) EndBlockerAutoUndelegateFromUnbondingGateways(ctx cosmostypes.Context) error {
 	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
 	currentHeight := sdkCtx.BlockHeight()
 
 	// Get all the gateways that are unbonding and have reached their unstake session end height.
-	unbondingGateways := k.getUnbondingGateways(ctx)
+	unbondingGateways := k.getInactiveUnbondingGateways(ctx)
 
-	// TODO_IMPROVE: Once delegating applications are indexed by gateway address,
+	// TODO_POST_MAINNET: Once delegating applications are indexed by gateway address,
 	// this can be optimized to only check applications that have delegated to
 	// unstaked gateways.
 	for _, application := range k.GetAllApplications(ctx) {
-		for _, unstakedGateway := range unbondingGateways {
-			gwIdx := slices.Index(application.DelegateeGatewayAddresses, unstakedGateway.GetAddress())
+		for _, unbondingGateway := range unbondingGateways {
+			gwIdx := slices.Index(application.DelegateeGatewayAddresses, unbondingGateway.GetAddress())
 			if gwIdx >= 0 {
 				application.DelegateeGatewayAddresses = append(
 					application.DelegateeGatewayAddresses[:gwIdx],
@@ -32,7 +30,7 @@ func (k Keeper) EndBlockerAutoUndelegateFromUnstakedGateways(ctx cosmostypes.Con
 				)
 				// Record the pending undelegation for the application to allow any upcoming
 				// proofs to get the application's ring signatures.
-				k.recordPendingUndelegation(ctx, &application, unstakedGateway.GetAddress(), currentHeight)
+				k.recordPendingUndelegation(ctx, &application, unbondingGateway.GetAddress(), currentHeight)
 			}
 		}
 
@@ -42,9 +40,8 @@ func (k Keeper) EndBlockerAutoUndelegateFromUnstakedGateways(ctx cosmostypes.Con
 	return nil
 }
 
-// getUnbondingGateways returns the gateways which are unbonding and have reached their
-// unstake session end height.
-func (k Keeper) getUnbondingGateways(ctx cosmostypes.Context) []*gatewaytypes.Gateway {
+// getInactiveUnbondingGateways returns the gateways which are unbonding and are no longer active.
+func (k Keeper) getInactiveUnbondingGateways(ctx cosmostypes.Context) []*gatewaytypes.Gateway {
 	currentBlockHeight := ctx.BlockHeight()
 	gateways := k.gatewayKeeper.GetAllGateways(ctx)
 

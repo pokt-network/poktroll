@@ -60,8 +60,6 @@ type Params struct {
 	ComputeUnitsToTokensMultiplier uint64 `protobuf:"varint,9,opt,name=compute_units_to_tokens_multiplier,json=computeUnitsToTokensMultiplier,proto3" json:"compute_units_to_tokens_multiplier" yaml:"compute_units_to_tokens_multiplier"`
 	// gateway_unbonding_period_sessions is the number of sessions that a gateway must wait after
 	// unstaking before their staked assets are moved to its account balance.
-	// Onchain business logic requires, and ensures, that the corresponding block count of the
-	// gateway unbonding period will exceed the end of its corresponding proof window close height.
 	GatewayUnbondingPeriodSessions uint64 `protobuf:"varint,10,opt,name=gateway_unbonding_period_sessions,json=gatewayUnbondingPeriodSessions,proto3" json:"gateway_unbonding_period_sessions"`
 }
 

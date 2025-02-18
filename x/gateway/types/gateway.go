@@ -24,11 +24,11 @@ func GetGatewayUnbondingHeight(
 	return int64(gateway.UnstakeSessionEndHeight + gatewayUnbondingPeriodBlocks)
 }
 
-// IsActive returns whether the gateway is allowed to handle services at the
-// given query height.
-// A gateway that has not submitted an unstake message is always active.
-// A gateway that has submitted an unstake message is active until the end of
-// the session containing the height at which unstake message was submitted.
+// IsActive returns whether the gateway is allowed to handle services at the given query height.
+//
+// Gateway activity rules:
+// - Gateway without unstake message: Always active
+// - Gateway with unstake message: Active until end of session containing unstake height
 func (s *Gateway) IsActive(queryHeight int64) bool {
 	return !s.IsUnbonding() || uint64(queryHeight) <= s.GetUnstakeSessionEndHeight()
 }

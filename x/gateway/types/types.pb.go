@@ -26,8 +26,10 @@ var _ = math.Inf
 const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 
 type Gateway struct {
-	Address string      `protobuf:"bytes,1,opt,name=address,proto3" json:"address,omitempty"`
-	Stake   *types.Coin `protobuf:"bytes,2,opt,name=stake,proto3" json:"stake,omitempty"`
+	// The Bech32 address of the gateway
+	Address string `protobuf:"bytes,1,opt,name=address,proto3" json:"address,omitempty"`
+	// The total amount of uPOKT the gateway has staked
+	Stake *types.Coin `protobuf:"bytes,2,opt,name=stake,proto3" json:"stake,omitempty"`
 	// Session end height at which the gateway initiated unstaking (0 if not unstaking)
 	UnstakeSessionEndHeight uint64 `protobuf:"varint,3,opt,name=unstake_session_end_height,json=unstakeSessionEndHeight,proto3" json:"unstake_session_end_height,omitempty"`
 }

@@ -137,8 +137,7 @@ func (m *EventGatewayUnbondingBegin) GetUnbondingEndHeight() int64 {
 	return 0
 }
 
-// EventGatewayUnbondingEnd is emitted when a gateway has completed
-// unbonding.
+// EventGatewayUnbondingEnd is emitted when a gateway has completed unbonding.
 // The unbonding period is determined by the shared param gateway_unbonding_period_sessions.
 type EventGatewayUnbondingEnd struct {
 	// The gateway that has completed unbonding.

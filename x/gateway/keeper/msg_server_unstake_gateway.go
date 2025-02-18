@@ -61,10 +61,11 @@ func (k msgServer) UnstakeGateway(
 	currentHeight := ctx.BlockHeight()
 	sessionEndHeight := k.sharedKeeper.GetSessionEndHeight(ctx, currentHeight)
 
-	// Mark the gateway as unstaking by recording the height at which it should
-	// no longer be able to process requests.
-	// The gateway MAY continue to process requests until the end of the current
-	// session. After that, the gateway will be considered inactive.
+	// Mark the gateway as unstaking by recording its deactivation height.
+	//
+	// Processing rules:
+	// - Gateway MAY continue processing requests until current session ends
+	// - After session end: Gateway becomes inactive
 	gateway.UnstakeSessionEndHeight = uint64(sessionEndHeight)
 	k.SetGateway(ctx, gateway)
 

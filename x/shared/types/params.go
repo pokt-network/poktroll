@@ -181,10 +181,6 @@ func (params *Params) ValidateBasic() error {
 		return err
 	}
 
-	if err := validateGatewayUnbondingPeriodIsGreaterThanCumulativeProofWindowCloseBlocks(params); err != nil {
-		return err
-	}
-
 	// TODO_MAINNET(@bryanchriswhite): Add validation which ensures that
 	// SessionEndToProofWindowCloseBlocks is a multiple of NumBlocksPerSession.
 
@@ -374,24 +370,6 @@ func validateApplicationUnbondingPeriodIsGreaterThanCumulativeProofWindowCloseBl
 			"ApplicationUnbondingPeriodSessions (%v session) (%v blocks) must be greater than the cumulative ProofWindowCloseOffsetBlocks (%v)",
 			params.ApplicationUnbondingPeriodSessions,
 			applicationUnbondingPeriodSessions,
-			cumulativeProofWindowCloseBlocks,
-		)
-	}
-
-	return nil
-}
-
-// validateGatewayUnbondingPeriodIsGreaterThanCumulativeProofWindowCloseBlocks
-// ensures that a gateway cannot unbond before the pending claims are settled.
-func validateGatewayUnbondingPeriodIsGreaterThanCumulativeProofWindowCloseBlocks(params *Params) error {
-	cumulativeProofWindowCloseBlocks := GetSessionEndToProofWindowCloseBlocks(params)
-	gatewayUnbondingPeriodSessions := int64(params.GatewayUnbondingPeriodSessions * params.NumBlocksPerSession)
-
-	if gatewayUnbondingPeriodSessions < cumulativeProofWindowCloseBlocks {
-		return ErrSharedParamInvalid.Wrapf(
-			"GatewayUnbondingPeriodSessions (%v session) (%v blocks) must be greater than the cumulative ProofWindowCloseOffsetBlocks (%v)",
-			params.GatewayUnbondingPeriodSessions,
-			gatewayUnbondingPeriodSessions,
 			cumulativeProofWindowCloseBlocks,
 		)
 	}

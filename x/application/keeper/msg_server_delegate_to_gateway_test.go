@@ -377,3 +377,57 @@ func TestMsgServer_DelegateToGateway_FailGatewayInactive(t *testing.T) {
 	require.True(t, isAppFound)
 	require.Equal(t, 0, len(foundApp.DelegateeGatewayAddresses))
 }
+
+func TestMsgServer_DelegateToGateway_UnbondingButActive(t *testing.T) {
+	k, ctx := keepertest.ApplicationKeeper(t)
+	srv := keeper.NewMsgServerImpl(k)
+
+	// Generate an address for the application and gateway.
+	appAddr := sample.AccAddress()
+	gatewayAddr := sample.AccAddress()
+
+	sdkCtx := sdk.UnwrapSDKContext(ctx)
+	sdkCtx = sdkCtx.WithBlockHeight(1)
+
+	currentHeight := sdkCtx.BlockHeight()
+	sharedParams := sharedtypes.DefaultParams()
+	sessionEndHeight := sharedtypes.GetSessionEndHeight(&sharedParams, currentHeight)
+
+	// Mock the gateway being staked and unbonding via the staked gateway map.
+	keepertest.AddGatewayToStakedGatewayMap(t, gatewayAddr, uint64(sessionEndHeight))
+
+	// Prepare the application
+	stakeMsg := &apptypes.MsgStakeApplication{
+		Address: appAddr,
+		Stake:   &apptypes.DefaultMinStake,
+		Services: []*sharedtypes.ApplicationServiceConfig{
+			{
+				ServiceId: "svc1",
+			},
+		},
+	}
+
+	// Stake the application & verify that the application exists.
+	_, err := srv.StakeApplication(sdkCtx, stakeMsg)
+	require.NoError(t, err)
+	_, isAppFound := k.GetApplication(sdkCtx, appAddr)
+	require.True(t, isAppFound)
+
+	// Set the block height to 1 block before the session ends.
+	sdkCtx = sdkCtx.WithBlockHeight(sessionEndHeight)
+
+	// Prepare the delegation message
+	delegateMsg := &apptypes.MsgDelegateToGateway{
+		AppAddress:     appAddr,
+		GatewayAddress: gatewayAddr,
+	}
+
+	// Attempt to delegate the application to the unbonding gateway.
+	_, err = srv.DelegateToGateway(sdkCtx, delegateMsg)
+	require.NoError(t, err)
+
+	// Verify that the application is delegated to the gateway.
+	foundApp, isAppFound := k.GetApplication(sdkCtx, appAddr)
+	require.True(t, isAppFound)
+	require.Contains(t, foundApp.DelegateeGatewayAddresses, gatewayAddr)
+}

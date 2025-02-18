@@ -543,7 +543,7 @@ func TestMsgServer_UndelegateFromGateway_UndelegateFromUnbondingGateway(t *testi
 	// Increment the block height to make the gateway inactive.
 	sdkCtx = sdkCtx.WithBlockHeight(sessionEndHeight + 1)
 
-	err := k.EndBlockerAutoUndelegateFromUnstakedGateways(sdkCtx)
+	err := k.EndBlockerAutoUndelegateFromUnbondingGateways(sdkCtx)
 	require.NoError(t, err)
 
 	app, isAppFound := k.GetApplication(sdkCtx, app.Address)

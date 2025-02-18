@@ -115,7 +115,7 @@ func (k msgServer) StakeGateway(
 		})
 	}
 
-	// ALWAYS emit an application staked event.
+	// ALWAYS emit a gateway staked event.
 	events = append(events, &types.EventGatewayStaked{
 		Gateway:          &gateway,
 		SessionEndHeight: sessionEndHeight,

@@ -29,8 +29,7 @@ message EventGatewayUnbondingBegin {
   int64 unbonding_end_height = 4 [(gogoproto.jsontag) = "unbonding_height"];
 }
 
-// EventGatewayUnbondingEnd is emitted when a gateway has completed
-// unbonding.
+// EventGatewayUnbondingEnd is emitted when a gateway has completed unbonding.
 // The unbonding period is determined by the shared param gateway_unbonding_period_sessions.
 message EventGatewayUnbondingEnd {
   // The gateway that has completed unbonding.

@@ -584,8 +584,10 @@ type Gateway struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Address string        `protobuf:"bytes,1,opt,name=address,proto3" json:"address,omitempty"` // The Bech32 address of the gateway
-	Stake   *v1beta1.Coin `protobuf:"bytes,2,opt,name=stake,proto3" json:"stake,omitempty"`     // The total amount of uPOKT the gateway has staked
+	// The Bech32 address of the gateway
+	Address string `protobuf:"bytes,1,opt,name=address,proto3" json:"address,omitempty"`
+	// The total amount of uPOKT the gateway has staked
+	Stake *v1beta1.Coin `protobuf:"bytes,2,opt,name=stake,proto3" json:"stake,omitempty"`
 	// Session end height at which the gateway initiated unstaking (0 if not unstaking)
 	UnstakeSessionEndHeight uint64 `protobuf:"varint,3,opt,name=unstake_session_end_height,json=unstakeSessionEndHeight,proto3" json:"unstake_session_end_height,omitempty"`
 }
