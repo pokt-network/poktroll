@@ -121,7 +121,7 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 		Observe(float64(relayRequest.Size()))
 
 	// Verify the relay request signature and session.
-	if err := server.relayAuthenticator.VerifyRelayRequest(ctx, relayRequest, serviceId); err != nil {
+	if err = server.relayAuthenticator.VerifyRelayRequest(ctx, relayRequest, serviceId); err != nil {
 		return relayRequest, err
 	}
 
@@ -129,7 +129,7 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 	// The relay price will be deducted from the application's stake before the relay is served.
 	// If the relay comes out to be not reward / volume applicable, the miner will refund the
 	// claimed price back to the application.
-	if err := server.relayMeter.AccumulateRelayReward(ctx, meta); err != nil {
+	if err = server.relayMeter.AccumulateRelayReward(ctx, meta); err != nil {
 		return relayRequest, err
 	}
 
@@ -186,7 +186,7 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 	relay := &types.Relay{Req: relayRequest, Res: relayResponse}
 
 	// Send the relay response to the client.
-	if err := server.sendRelayResponse(relay.Res, writer); err != nil {
+	if err = server.sendRelayResponse(relay.Res, writer); err != nil {
 		// If the originHost cannot be parsed, reply with an internal error so that
 		// the original error is not exposed to the client.
 		clientError := ErrRelayerProxyInternalError.Wrap(err.Error())

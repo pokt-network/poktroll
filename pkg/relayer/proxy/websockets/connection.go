@@ -236,7 +236,7 @@ func (c *connection) handleError(err error) {
 }
 
 // cleanup closes the websocket connection and sends a close message to the peer.
-func (c *connection) cleanup() error {
+func (c *connection) cleanup() {
 	logger := c.logger.With("connection_context", "cleanup")
 
 	// Wait for the stop observable to emit a value before cleaning up the connection.
@@ -244,7 +244,6 @@ func (c *connection) cleanup() error {
 
 	if !c.isClosed.CompareAndSwap(false, true) {
 		logger.Info().Msg("connection already closed")
-		return nil
 	}
 
 	logger.Info().Msg("connection closing, cleaning up")
@@ -266,7 +265,6 @@ func (c *connection) cleanup() error {
 	deadline := time.Now().Add(writeWaitSec)
 	if err := c.WriteControl(websocket.CloseMessage, closeMsg, deadline); err != nil {
 		logger.Error().Err(err).Msg("failed to send close message")
-		return err
 	}
 
 	// Wait for the control message to be received by the peer.
@@ -275,6 +273,4 @@ func (c *connection) cleanup() error {
 		logger.Error().Err(err).Msg("failed to close connection")
 	}
 	logger.Info().Msg("connection closed")
-
-	return nil
 }
