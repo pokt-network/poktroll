@@ -7,6 +7,7 @@ import (
 	cosmoslog "cosmossdk.io/log"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 
+	"github.com/pokt-network/poktroll/pkg/encoding"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
 )
@@ -40,7 +41,7 @@ func (tlm tlmGlobalMintReimbursementRequest) Process(
 	logger = logger.With("method", "TokenLogicModuleGlobalMintReimbursementRequest")
 
 	globalInflationPerClaim := tlmCtx.TokenomicsParams.GetGlobalInflationPerClaim()
-	globalInflationPerClaimRat, err := Float64ToRat(globalInflationPerClaim)
+	globalInflationPerClaimRat, err := encoding.Float64ToRat(globalInflationPerClaim)
 	if err != nil {
 		logger.Error(fmt.Sprintf("error processing TLM due to: %v", err))
 		return err

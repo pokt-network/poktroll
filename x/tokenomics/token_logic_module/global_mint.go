@@ -4,13 +4,13 @@ import (
 	"context"
 	"fmt"
 	"math/big"
-	"strconv"
 
 	cosmoslog "cosmossdk.io/log"
 	"cosmossdk.io/math"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/pokt-network/poktroll/app/volatile"
+	"github.com/pokt-network/poktroll/pkg/encoding"
 	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
 )
@@ -40,7 +40,7 @@ func (tlm tlmGlobalMint) Process(
 	)
 
 	globalInflationPerClaim := tlmCtx.TokenomicsParams.GetGlobalInflationPerClaim()
-	globalInflationPerClaimRat, err := Float64ToRat(globalInflationPerClaim)
+	globalInflationPerClaimRat, err := encoding.Float64ToRat(globalInflationPerClaim)
 	if err != nil {
 		logger.Error(fmt.Sprintf("error converting global inflation per claim due to: %v", err))
 		return err
@@ -68,7 +68,7 @@ func (tlm tlmGlobalMint) Process(
 	mintAllocationPercentages := tlmCtx.TokenomicsParams.GetMintAllocationPercentages()
 
 	// Send a portion of the rewards to the application
-	appMintAllocationRat, err := Float64ToRat(mintAllocationPercentages.Application)
+	appMintAllocationRat, err := encoding.Float64ToRat(mintAllocationPercentages.Application)
 	if err != nil {
 		logger.Error(fmt.Sprintf("error converting application mint allocation percentage due to: %v", err))
 		return err
@@ -87,7 +87,7 @@ func (tlm tlmGlobalMint) Process(
 	logRewardOperation(logger, logMsg, &appCoin)
 
 	// Send a portion of the rewards to the supplier shareholders.
-	supplierMintAllocationRat, err := Float64ToRat(mintAllocationPercentages.Supplier)
+	supplierMintAllocationRat, err := encoding.Float64ToRat(mintAllocationPercentages.Supplier)
 	if err != nil {
 		logger.Error(fmt.Sprintf("error converting supplier mint allocation percentage due to: %v", err))
 		return err
@@ -120,7 +120,7 @@ func (tlm tlmGlobalMint) Process(
 	logger.Info(fmt.Sprintf("operation queued: send (%v) newley minted coins from the tokenomics module to the supplier with address %q", supplierCoin, tlmCtx.Supplier.OperatorAddress))
 
 	// Send a portion of the rewards to the source owner
-	sourceOwnerMintAllocationRat, err := Float64ToRat(mintAllocationPercentages.SourceOwner)
+	sourceOwnerMintAllocationRat, err := encoding.Float64ToRat(mintAllocationPercentages.SourceOwner)
 	if err != nil {
 		logger.Error(fmt.Sprintf("error converting source owner mint allocation percentage due to: %v", err))
 		return err
@@ -140,7 +140,7 @@ func (tlm tlmGlobalMint) Process(
 
 	// Send a portion of the rewards to the block proposer
 	proposerAddr := cosmostypes.AccAddress(cosmostypes.UnwrapSDKContext(ctx).BlockHeader().ProposerAddress).String()
-	proposerMintAllocationRat, err := Float64ToRat(mintAllocationPercentages.Proposer)
+	proposerMintAllocationRat, err := encoding.Float64ToRat(mintAllocationPercentages.Proposer)
 	if err != nil {
 		logger.Error(fmt.Sprintf("error converting proposer mint allocation percentage due to: %v", err))
 		return err
@@ -160,7 +160,6 @@ func (tlm tlmGlobalMint) Process(
 	// Send a portion of the rewards to the DAO
 	daoRewardAddress := tlmCtx.TokenomicsParams.GetDaoRewardAddress()
 	daoCoin := sendRewardsToDAOAccount(
-		logger,
 		tlmCtx.Result,
 		tokenomicstypes.SettlementOpReason_TLM_GLOBAL_MINT_DAO_REWARD_DISTRIBUTION,
 		tokenomicstypes.ModuleName,
@@ -306,21 +305,4 @@ func calculateAllocationAmount(
 	allocationAmtInt := new(big.Int).Quo(allocationRat.Num(), allocationRat.Denom())
 
 	return math.NewIntFromBigInt(allocationAmtInt)
-}
-
-// Float64ToRat converts a float64 to a big.Rat for precise decimal arithmetic.
-// TODO_CONSIDERATION: Future versions of CosmosSDK will deprecate float64 values
-// with zero copy encoding of scalar values.
-// We should consider switching to string representations for tokenomics allocation percentages.
-// NB: It is publicly exposed to be used in the tests.
-func Float64ToRat(f float64) (*big.Rat, error) {
-	// Convert the float64 to a string before big.Rat conversion to avoid floating
-	// point precision issues (e.g. bigRat.SetString("0.1") == 1/10 while bigRat.SetFloat64(0.1) == 3602879701896397/36028797018963968)
-	allocationPercentageStr := strconv.FormatFloat(f, 'f', -1, 64)
-	allocationPercentageRat, ok := new(big.Rat).SetString(allocationPercentageStr)
-	if !ok {
-		return nil, tokenomicstypes.ErrTokenomicsTLMInternal.Wrapf("error converting float64 to big.Rat: %f", f)
-	}
-
-	return allocationPercentageRat, nil
 }

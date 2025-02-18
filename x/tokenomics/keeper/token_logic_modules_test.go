@@ -21,6 +21,7 @@ import (
 	"github.com/pokt-network/poktroll/app/volatile"
 	"github.com/pokt-network/poktroll/cmd/poktrolld/cmd"
 	"github.com/pokt-network/poktroll/pkg/crypto/protocol"
+	"github.com/pokt-network/poktroll/pkg/encoding"
 	testutilevents "github.com/pokt-network/poktroll/testutil/events"
 	testkeeper "github.com/pokt-network/poktroll/testutil/keeper"
 	testproof "github.com/pokt-network/poktroll/testutil/proof"
@@ -443,7 +444,7 @@ func TestProcessTokenLogicModules_TLMGlobalMint_Valid_MintDistributionCorrect(t 
 	}
 
 	// Compute the expected amount to mint.
-	globalInflationPerClaimRat, err := tlm.Float64ToRat(tokenomicsParams.GlobalInflationPerClaim)
+	globalInflationPerClaimRat, err := encoding.Float64ToRat(tokenomicsParams.GlobalInflationPerClaim)
 	require.NoError(t, err)
 
 	numTokensClaimedRat := new(big.Rat).SetInt(numTokensClaimedInt.BigInt())
@@ -793,7 +794,7 @@ func getBalance(
 
 // computeShare computes the share of the given amount based a percentage.
 func computeShare(t *testing.T, amount *big.Rat, sharePercentage float64) cosmosmath.Int {
-	amountRat, err := tlm.Float64ToRat(sharePercentage)
+	amountRat, err := encoding.Float64ToRat(sharePercentage)
 	require.NoError(t, err)
 
 	mintRat := new(big.Rat).Mul(amount, amountRat)
