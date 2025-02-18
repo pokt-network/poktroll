@@ -37,11 +37,11 @@ func (msg *MsgImportMorseClaimableAccounts) ValidateBasic() error {
 
 	expectedHash := msg.GetMorseAccountStateHash()
 	if len(expectedHash) == 0 {
-		return ErrMorseAccountState.Wrapf("expected hash is empty")
+		return ErrMorseAccountsImport.Wrapf("expected hash is empty")
 	}
 
 	if !bytes.Equal(actualHash, expectedHash) {
-		return ErrMorseAccountState.Wrapf(
+		return ErrMorseAccountsImport.Wrapf(
 			"Morse account state hash (%x) doesn't match expected: (%x)",
 			actualHash, expectedHash,
 		)

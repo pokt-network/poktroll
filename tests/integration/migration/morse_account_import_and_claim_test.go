@@ -64,12 +64,12 @@ func TestMsgServer_CreateMorseAccountClaim(t *testing.T) {
 	require.Equal(t, int64(0), shannonDestBalance.Amount.Int64())
 
 	morsePrivateKey := testmigration.NewMorsePrivateKey(t, 1)
-	morseDestAddr := morsePrivateKey.PubKey().Address().String()
-	require.Equal(t, morseDestAddr, accountState.Accounts[0].MorseSrcAddress)
+	morseSrcAddr := morsePrivateKey.PubKey().Address().String()
+	require.Equal(t, morseSrcAddr, accountState.Accounts[0].MorseSrcAddress)
 
 	morseClaimMsg, err := migrationtypes.NewMsgClaimMorseAccount(
 		shannonDestAddr,
-		morseDestAddr,
+		morseSrcAddr,
 		morsePrivateKey,
 	)
 	require.NoError(t, err)
@@ -80,7 +80,7 @@ func TestMsgServer_CreateMorseAccountClaim(t *testing.T) {
 
 	expectedBalance := sdk.NewInt64Coin(volatile.DenomuPOKT, 1110111)
 	expectedClaimAccountRes := &migrationtypes.MsgClaimMorseAccountResponse{
-		MorseSrcAddress: morseDestAddr,
+		MorseSrcAddress: morseSrcAddr,
 		ClaimedBalance:  expectedBalance,
 		ClaimedAtHeight: app.GetSdkCtx().BlockHeight() - 1,
 	}
@@ -90,13 +90,15 @@ func TestMsgServer_CreateMorseAccountClaim(t *testing.T) {
 	require.Equal(t, expectedClaimAccountRes, claimAccountRes)
 
 	// Assert that the MorseClaimableAccount was updated on-chain.
-	expectedMorseClaimableAccount := accountState.Accounts[0]
+	expectedMorseClaimableAccount := *accountState.Accounts[0]
+	expectedMorseClaimableAccount.ClaimedAtHeight = app.GetSdkCtx().BlockHeight() - 1
+
 	morseAccountQuerier := migrationtypes.NewQueryClient(app.QueryHelper())
 	morseClaimableAcctRes, err := morseAccountQuerier.MorseClaimableAccount(app.GetSdkCtx(), &migrationtypes.QueryGetMorseClaimableAccountRequest{
-		Address: morseDestAddr,
+		Address: morseSrcAddr,
 	})
 	require.NoError(t, err)
-	require.Equal(t, *expectedMorseClaimableAccount, morseClaimableAcctRes.MorseClaimableAccount)
+	require.Equal(t, expectedMorseClaimableAccount, morseClaimableAcctRes.MorseClaimableAccount)
 
 	// Assert that the shannonDestAddr account balance has been updated.
 	shannonDestBalance, err = bankClient.GetBalance(app.GetSdkCtx(), shannonDestAddr)

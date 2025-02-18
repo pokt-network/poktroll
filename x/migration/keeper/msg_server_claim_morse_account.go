@@ -15,10 +15,7 @@ func (k msgServer) ClaimMorseAccount(ctx context.Context, msg *migrationtypes.Ms
 	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
 
 	if err := msg.ValidateBasic(); err != nil {
-		return nil, status.Error(
-			codes.InvalidArgument,
-			migrationtypes.ErrMorseClaimableAccount.Wrap(err.Error()).Error(),
-		)
+		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
 	shannonAccAddr, err := cosmostypes.AccAddressFromBech32(msg.ShannonDestAddress)
@@ -34,41 +31,51 @@ func (k msgServer) ClaimMorseAccount(ctx context.Context, msg *migrationtypes.Ms
 		)
 	}
 
-	// Ensure that a claim for the given morseSrcAddress does not already exist.
-	morseAccountClaim, isFound := k.GetMorseClaimableAccount(
+	// Ensure that a MorseClaimableAccount exists for the given morseSrcAddress.
+	morseClaimableAccount, isFound := k.GetMorseClaimableAccount(
 		sdkCtx,
 		msg.MorseSrcAddress,
 	)
 	if !isFound {
 		return nil, status.Error(
 			codes.NotFound,
-			migrationtypes.ErrMorseClaimableAccount.Wrapf(
+			migrationtypes.ErrMorseAccountClaim.Wrapf(
 				"no morse claimable account exists with address %q",
 				msg.MorseSrcAddress,
 			).Error(),
 		)
 	}
 
+	// Ensure that the given MorseClaimableAccount has not already been claimed.
+	if morseClaimableAccount.ClaimedAtHeight > 0 ||
+		morseClaimableAccount.ShannonDestAddress != "" {
+		return nil, status.Error(
+			codes.FailedPrecondition,
+			migrationtypes.ErrMorseAccountClaim.Wrapf(
+				"morse address %q has already been claimed at height %d by shannon address %q",
+				msg.MorseSrcAddress,
+				morseClaimableAccount.ClaimedAtHeight,
+				morseClaimableAccount.ShannonDestAddress,
+			).Error(),
+		)
+	}
+
+	// Update the MorseClaimableAccount
+	morseClaimableAccount.ClaimedAtHeight = sdkCtx.BlockHeight()
 	k.SetMorseClaimableAccount(
 		sdkCtx,
-		morseAccountClaim,
+		morseClaimableAccount,
 	)
 
 	// Add any actor stakes to the account balance because we're not creating
 	// a shannon actor (i.e. not a re-stake claim).
-	totalTokens := morseAccountClaim.UnstakedBalance.
-		Add(morseAccountClaim.ApplicationStake).
-		Add(morseAccountClaim.SupplierStake)
+	totalTokens := morseClaimableAccount.UnstakedBalance.
+		Add(morseClaimableAccount.ApplicationStake).
+		Add(morseClaimableAccount.SupplierStake)
 
 	// Mint the sum of the account balance (totalTokens) and any actor stakes to the migration module account.
 	if err = k.bankKeeper.MintCoins(ctx, migrationtypes.ModuleName, cosmostypes.NewCoins(totalTokens)); err != nil {
-		return nil, status.Error(
-			codes.Internal,
-			migrationtypes.ErrMorseClaimableAccount.Wrapf(
-				"failed to mint coins: %v",
-				err,
-			).Error(),
-		)
+		return nil, status.Error(codes.Internal, err.Error())
 	}
 
 	// Transfer the totalTokens to the shannonDestAddress account.
@@ -77,13 +84,7 @@ func (k msgServer) ClaimMorseAccount(ctx context.Context, msg *migrationtypes.Ms
 		shannonAccAddr,
 		cosmostypes.NewCoins(totalTokens),
 	); err != nil {
-		return nil, status.Error(
-			codes.Internal,
-			migrationtypes.ErrMorseClaimableAccount.Wrapf(
-				"failed to send coins: %v",
-				err,
-			).Error(),
-		)
+		return nil, status.Error(codes.Internal, err.Error())
 	}
 
 	// Emit an event which signals that the morse account has been claimed.
@@ -96,7 +97,7 @@ func (k msgServer) ClaimMorseAccount(ctx context.Context, msg *migrationtypes.Ms
 	if err = sdkCtx.EventManager().EmitTypedEvent(&event); err != nil {
 		return nil, status.Error(
 			codes.Internal,
-			migrationtypes.ErrMorseClaimableAccount.Wrapf(
+			migrationtypes.ErrMorseAccountClaim.Wrapf(
 				"failed to emit event type %T: %v",
 				&event,
 				err,

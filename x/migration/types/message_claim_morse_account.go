@@ -33,11 +33,15 @@ func NewMsgClaimMorseAccount(
 }
 
 func (msg *MsgClaimMorseAccount) ValidateBasic() error {
+	if len(msg.MorseSignature) == 0 {
+		return ErrMorseAccountClaim.Wrap("morseSignature is empty")
+	}
 
-	// TODO_UPNEXT(@bryanchriswhite#1034): Add validation
+	if len(msg.MorseSrcAddress) != MorseAddressHexLengthBytes {
+		return ErrMorseAccountClaim.Wrapf("invalid morseSrcAddress length (%d)", len(msg.MorseSrcAddress))
+	}
 
-	_, err := sdk.AccAddressFromBech32(msg.ShannonDestAddress)
-	if err != nil {
+	if _, err := sdk.AccAddressFromBech32(msg.ShannonDestAddress); err != nil {
 		return errorsmod.Wrapf(sdkerrors.ErrInvalidAddress, "invalid shannonDestAddress address (%s)", err)
 	}
 	return nil

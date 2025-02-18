@@ -27,7 +27,7 @@ func (k msgServer) ImportMorseClaimableAccounts(ctx context.Context, msg *migrat
 
 	// Check if MorseClaimableAccounts have already been imported.
 	if morseClaimableAccounts := k.GetAllMorseClaimableAccounts(sdkCtx); len(morseClaimableAccounts) > 0 {
-		err := migrationtypes.ErrMorseAccountState.Wrap("Morse claimable accounts already imported")
+		err := migrationtypes.ErrMorseAccountsImport.Wrap("Morse claimable accounts already imported")
 		logger.Info(err.Error())
 		return nil, status.Error(codes.FailedPrecondition, err.Error())
 	}

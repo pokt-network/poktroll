@@ -4,8 +4,9 @@ import (
 	"testing"
 
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
-	"github.com/pokt-network/poktroll/testutil/sample"
 	"github.com/stretchr/testify/require"
+
+	"github.com/pokt-network/poktroll/testutil/sample"
 )
 
 func TestMsgClaimMorseAccount_ValidateBasic(t *testing.T) {
@@ -15,15 +16,27 @@ func TestMsgClaimMorseAccount_ValidateBasic(t *testing.T) {
 		err  error
 	}{
 		{
-			name: "invalid address",
+			name: "invalid ShannonDestAddress",
 			msg: MsgClaimMorseAccount{
 				ShannonDestAddress: "invalid_address",
+				MorseSrcAddress:    sample.MorseAddressHex(),
+				MorseSignature:     "mock_signature",
 			},
 			err: sdkerrors.ErrInvalidAddress,
 		}, {
-			name: "valid address",
+			name: "invalid MorseSrcAddress",
 			msg: MsgClaimMorseAccount{
 				ShannonDestAddress: sample.AccAddress(),
+				MorseSrcAddress:    "invalid_address",
+				MorseSignature:     "mock_signature",
+			},
+			err: ErrMorseAccountClaim,
+		}, {
+			name: "valid claim message",
+			msg: MsgClaimMorseAccount{
+				ShannonDestAddress: sample.AccAddress(),
+				MorseSrcAddress:    sample.MorseAddressHex(),
+				MorseSignature:     "mock_signature",
 			},
 		},
 	}
@@ -38,3 +51,8 @@ func TestMsgClaimMorseAccount_ValidateBasic(t *testing.T) {
 		})
 	}
 }
+
+// TODO_IN_THIS_COMMIT: error cases...
+// - empty signature
+// - invalid length morse hex addr
+// - invalid shannon bech32 addr

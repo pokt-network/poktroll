@@ -118,3 +118,6 @@ func TestMsgServer_ImportMorseClaimableAccounts_ErrorInvalidAuthority(t *testing
 	require.Equal(t, codes.PermissionDenied, stat.Code())
 	require.ErrorContains(t, err, "invalid authority address")
 }
+
+// TODO_IN_THIS_COMMIT: Test an import with non-zero ClaimedAtHeight for one or
+// more accounts; the heights SHOULD be reset to 0 when persisted.
