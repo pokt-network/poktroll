@@ -22,6 +22,8 @@ syntax = "proto3";
 package poktroll.migration;
 
 import "gogoproto/gogo.proto";
+import "cosmos_proto/cosmos.proto";
+import "cosmos/base/v1beta1/coin.proto";
 import "poktroll/migration/morse_onchain.proto";
 
 option go_package = "github.com/pokt-network/poktroll/x/migration/types";
@@ -121,4 +123,30 @@ message MorseValidator {
   int32 status = 4 [(gogoproto.jsontag) = "status"];
   // The string representation of the BigInt amount of upokt.
   string staked_tokens = 7 [(gogoproto.jsontag) = "tokens"];
+}
+
+// MorseAccount is an analog of the Morse ProtoBaseAccount type.
+// It encapsulates the minimum information required to import accounts.
+//
+// See: https://github.com/pokt-network/pocket-core/blob/staging/proto/x/auth/auth.proto#L14.
+message MorseAccount {
+  option (gogoproto.messagename) = true;
+  option (gogoproto.goproto_getters) = false;
+  option (gogoproto.goproto_stringer) = true;
+  option (cosmos_proto.implements_interface) = "Account";
+
+  // A hex-encoded representation of the address corresponding to a Morse application's ed25519 public key.
+  bytes address = 1 [(gogoproto.jsontag) = "address", (gogoproto.casttype) = "github.com/cometbft/cometbft/crypto.Address"];
+
+  // The ed25519 public key of the account.
+  MorsePublicKey pub_key = 2 [(gogoproto.jsontag) = "public_key", (gogoproto.moretags) = "yaml:\"public_key\""];
+
+  // The account balance; this does not include any actor stakes.
+  repeated cosmos.base.v1beta1.Coin coins = 3 [(gogoproto.nullable) = false, (gogoproto.jsontag) = "coins"];
+}
+
+// MorsePublicKey is required to conform to the encoding of the Morse state export.
+// NB: All Morse account public keys will be ed25519 keys by definition.
+message MorsePublicKey {
+  bytes value = 2 [(gogoproto.casttype) = "crypto/ed25519.PublicKey"];
 }

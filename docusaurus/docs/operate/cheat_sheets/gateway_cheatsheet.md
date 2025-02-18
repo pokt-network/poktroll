@@ -25,6 +25,7 @@ streamline development and reduce friction for any new potential contributor.
   - [Create and fund the `Gateway` and `Application` accounts](#create-and-fund-the-gateway-and-application-accounts)
   - [Prepare your environment](#prepare-your-environment)
   - [Fund the Gateway and Application accounts](#fund-the-gateway-and-application-accounts)
+- [Gateway and Application Configurations](#gateway-and-application-configurations)
   - [Stake the `Gateway`](#stake-the-gateway)
   - [Stake the delegating `Application`](#stake-the-delegating-application)
   - [Delegate the `Application` to the `Gateway`](#delegate-the-application-to-the-gateway)
@@ -115,6 +116,8 @@ poktrolld query bank balances $APP_ADDR $NODE_FLAGS
 You can find all the explorers, faucets and tools at the [tools page](../../tools/tools/source_code.md).
 
 :::
+
+## Gateway and Application Configurations
 
 ### Stake the `Gateway`
 

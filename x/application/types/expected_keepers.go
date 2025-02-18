@@ -1,4 +1,4 @@
-//go:generate mockgen -destination ../../../testutil/application/mocks/expected_keepers_mock.go -package mocks . AccountKeeper,BankKeeper,GatewayKeeper,SharedKeeper
+//go:generate go run go.uber.org/mock/mockgen -destination ../../../testutil/application/mocks/expected_keepers_mock.go -package mocks . AccountKeeper,BankKeeper,GatewayKeeper,SharedKeeper
 
 package types
 

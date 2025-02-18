@@ -171,6 +171,7 @@ const config = {
           "json",
           "makefile",
           "diff",
+          "bash",
         ],
       },
     }),
