@@ -11,7 +11,7 @@ The raw file can be found at [poktroll/blob/main/docs/static/openapi.yml](https:
 
 ## Swagger UI
 
-This spec for Shannon Beta TestNet may also be viewed at [shannon-testnet-grove-api.beta.poktroll.com](https://shannon-testnet-grove-api.beta.poktroll.com).
+The Swagger UI for the Shannon Beta TestNet OpenAPI Spec may be viewed at [shannon-testnet-grove-api.beta.poktroll.com](https://shannon-testnet-grove-api.beta.poktroll.com).
 
 ## Re-generating the OpenAPI Spec
 
@@ -70,25 +70,27 @@ curl -X 'GET' 'https://shannon-testnet-grove-rpc.beta.poktroll.com/status' -H 'a
 
 ### What is it?
 
-| **Layer**                                                                   | **What is it?**                                                                                                                                                                                                                                                                                                                                                |
-| --------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **CometBFT RPC** _(Independent of the Cosmos SDK gRPC and REST API)_        | A **low-level RPC interface** that interacts with the **Tendermint consensus engine**. It is **completely independent** of the Cosmos SDK gRPC and REST API. Used for network, consensus, and blockchain-related queries (**not** application state). Also used for **sending transactions** and querying blockchain state at a protocol level.                |
+| **Layer**                                                                   | **What is it?**                                                                                                                                                                                                                                                                                                                                               |
+| --------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **CometBFT RPC** _(Independent of the Cosmos SDK gRPC and REST API)_        | A **low-level RPC interface** that interacts with the **Tendermint consensus engine**. It is **completely independent** of the Cosmos SDK gRPC and REST API. Used for network, consensus, and blockchain-related queries (**not** application state). Also used for **sending transactions** and querying blockchain state at a protocol level.               |
 | **Cosmos SDK gRPC** _(The core application-level API)_                      | A **high-performance binary API** for querying **Cosmos SDK modules**. Provides **structured access** to chain state using **protobuf messages**. Used by full nodes, wallets, and services for **efficient state access**. **🚀 All Cosmos SDK REST API requests ultimately rely on this gRPC API.**                                                          |
 | **Cosmos SDK REST API (gRPC-Gateway)** _(A wrapper around Cosmos SDK gRPC)_ | A **RESTful wrapper** around **Cosmos SDK gRPC** that translates gRPC queries into **HTTP REST endpoints**. Enables **browser-friendly** and **frontend-compatible** access to Cosmos SDK modules. Uses **JSON over HTTP** instead of binary gRPC messages. **🚀 This API depends entirely on the Cosmos SDK gRPC API and does not work if gRPC is disabled.** |
 
 ### Example Ports & Commands
 
-| **Layer**                              | **Example Port** | **Example Command**                                                              | **Example Endpoint**                                                                 |
-| -------------------------------------- | ---------------- | -------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
-| **CometBFT RPC**                       | `26657`          | `sh curl -X GET 'http://localhost:26657/status' `                                | `/status`, `/net_info`, `/block`, `/broadcast_tx_commit`                             |
-| **Cosmos SDK gRPC**                    | `9090`           | `sh grpcurl -plaintext localhost:9090 list `                                     | `cosmos.auth.v1beta1.Query/Account`, `cosmos.bank.v1beta1.Query/Balance`             |
-| **Cosmos SDK REST API (gRPC-Gateway)** | `1317`           | `sh curl -X GET 'http://localhost:1317/cosmos/auth/v1beta1/accounts/{address}' ` | `/cosmos/auth/v1beta1/accounts/{address}`, `/cosmos/bank/v1beta1/balances/{address}` |
+| **Layer**                              | **Example Port** | **Example Command**                                                             | **Example Endpoint**                                                                 |
+| -------------------------------------- | ---------------- | ------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| **CometBFT RPC**                       | `26657`          | `sh curl -X GET 'http://localhost:26657/status'`                                | `/status`, `/net_info`, `/block`, `/broadcast_tx_commit`                             |
+| **Cosmos SDK gRPC**                    | `9090`           | `sh grpcurl -plaintext localhost:9090 list`                                     | `cosmos.auth.v1beta1.Query/Account`, `cosmos.bank.v1beta1.Query/Balance`             |
+| **Cosmos SDK REST API (gRPC-Gateway)** | `1317`           | `sh curl -X GET 'http://localhost:1317/cosmos/auth/v1beta1/accounts/{address}'` | `/cosmos/auth/v1beta1/accounts/{address}`, `/cosmos/bank/v1beta1/balances/{address}` |
 
----
+<!-- 
 
-## Embedded View
+TODO_IMPROVE(#1081): Add an embedded view of the OpenAPI spec
 
 import OpenAPI from '@site/src/components/OpenAPI';
 import apiSpec from '@site/static/openapi.json';
 
 <OpenAPI spec={apiSpec} />
+
+-->
