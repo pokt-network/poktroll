@@ -33,5 +33,23 @@ func NewMockOneTimeRelayerProxy(
 		ServedRelays().
 		Return(returnedRelaysObs).
 		Times(1)
+
+	return relayerProxyMock
+}
+
+// NewMockOneTimeRelayerProxyWithPing creates a new mock RelayerProxy that:
+// - Expects a call to ServedRelays with the given context
+// - Returns returnedRelaysObs when ServedRelays is called
+// - Expects one call each to Start, Ping, and Stop with the given context
+func NewMockOneTimeRelayerProxyWithPing(
+	ctx context.Context,
+	t *testing.T,
+	returnedRelaysObs relayer.RelaysObservable,
+) *mockrelayer.MockRelayerProxy {
+	relayerProxyMock := NewMockOneTimeRelayerProxy(ctx, t, returnedRelaysObs)
+	relayerProxyMock.EXPECT().
+		PingAll(gomock.Eq(ctx)).
+		Times(1)
+
 	return relayerProxyMock
 }

@@ -23,6 +23,7 @@ You can find a fully featured example configuration at [relayminer_config_full_e
   - [`smt_store_path`](#smt_store_path)
   - [`metrics`](#metrics)
   - [`pprof`](#pprof)
+  - [`ping`](#ping)
 - [Pocket node connectivity](#pocket-node-connectivity)
   - [`query_node_rpc_url`](#query_node_rpc_url)
   - [`query_node_grpc_url`](#query_node_grpc_url)
@@ -172,6 +173,23 @@ pprof:
 ```
 
 You can learn how to use that endpoint on the [Performance Troubleshooting](../../develop/developer_guide/performance_troubleshooting.md) page.
+
+### `ping`
+
+_`Optional`_
+
+Configures a `ping` healh check server to test the connectivity of all backend
+URLs. If all the backend URLs are reachable, the endpoint returns a 204 HTTP
+Code. If one or more backend URLs aren't reachable, the service returns an
+appropriate HTTP error.
+
+Example configuration:
+
+```yaml
+ping:
+  enabled: true
+  addr: localhost:8081
+```
 
 ## Pocket node connectivity
 
