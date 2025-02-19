@@ -1,4 +1,4 @@
-//go:generate go run go.uber.org/mock/mockgen -destination ../../../testutil/migration/mocks/expected_keepers_mock.go -package mocks . AccountKeeper,BankKeeper,ApplicationKeeper,SupplierKeeper
+//go:generate go run go.uber.org/mock/mockgen -destination ../../../testutil/migration/mocks/expected_keepers_mock.go -package mocks . AccountKeeper,BankKeeper,GatewayKeeper,ApplicationKeeper,SupplierKeeper
 
 package types
 
@@ -8,6 +8,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
+	"github.com/pokt-network/poktroll/x/gateway/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
@@ -23,6 +24,11 @@ type BankKeeper interface {
 	MintCoins(ctx context.Context, moduleName string, amt sdk.Coins) error
 	SendCoinsFromModuleToAccount(ctx context.Context, senderModule string, recipientAddr sdk.AccAddress, amt sdk.Coins) error
 	// Methods imported from bank should be defined here
+}
+
+type GatewayKeeper interface {
+	GetGateway(ctx context.Context, address string) (gateway types.Gateway, found bool)
+	SetGateway(ctx context.Context, gateway types.Gateway)
 }
 
 type ApplicationKeeper interface {

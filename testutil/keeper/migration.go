@@ -61,6 +61,14 @@ func MigrationKeeper(t testing.TB) (keeper.Keeper, sdk.Context) {
 
 	mockAccountKeeper := mocks.NewMockAccountKeeper(ctrl)
 
+	mockGatewayKeeper := mocks.NewMockGatewayKeeper(ctrl)
+	mockGatewayKeeper.EXPECT().
+		GetGateway(gomock.Any(), gomock.Any()).
+		AnyTimes()
+	mockGatewayKeeper.EXPECT().
+		SetGateway(gomock.Any(), gomock.Any()).
+		AnyTimes()
+
 	mockAppKeeper := mocks.NewMockApplicationKeeper(ctrl)
 	mockAppKeeper.EXPECT().
 		GetApplication(gomock.Any(), gomock.Any()).
@@ -84,6 +92,7 @@ func MigrationKeeper(t testing.TB) (keeper.Keeper, sdk.Context) {
 		authority.String(),
 		mockAccountKeeper,
 		mockBankKeeper,
+		mockGatewayKeeper,
 		mockAppKeeper,
 		mockSupplierKeeper,
 	)

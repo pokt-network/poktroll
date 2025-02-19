@@ -526,6 +526,7 @@ func NewCompleteIntegrationApp(t *testing.T, opts ...IntegrationAppOptionFn) *Ap
 		authority.String(),
 		accountKeeper,
 		bankKeeper,
+		gatewayKeeper,
 		applicationKeeper,
 		supplierKeeper,
 	)
