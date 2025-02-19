@@ -18,41 +18,46 @@ import (
 type MigrationModuleTestSuite struct {
 	suites.MigrationModuleSuite
 
-	// TODO_IN_THIS_COMMIT: godoc...
-	numAccounts int
+	// numMorseClaimableAccounts is the number of morse claimable accounts to
+	// generate when calling #GenerateMorseAccountState.
+	numMorseClaimableAccounts int
 }
 
 func (s *MigrationModuleTestSuite) SetupTest() {
 	// Initialize a new integration app for the suite.
 	s.NewApp(s.T())
 
-	s.numAccounts = 10
+	s.numMorseClaimableAccounts = 10
 
 	// Assign the app to nested suites.
-	s.AppSuite.SetApp(s.GetApp())
+	// TODO_UPNEXT(@bryanchriswhite, #1043): Initialize the app module suite.
+	// s.AppSuite.SetApp(s.GetApp())
 }
 
 func TestMigrationModuleSuite(t *testing.T) {
 	suite.Run(t, &MigrationModuleTestSuite{})
 }
 
-// TODO_IN_THIS_COMMIT: godoc...
+// TestImportMorseClaimableAccounts tests claiming of morse claimable accounts.
+// It only claims account balances and does not test staking any actors as a result of claiming.
 func (s *MigrationModuleTestSuite) TestImportMorseClaimableAccounts() {
-	s.GenerateMorseAccountState(s.T(), s.numAccounts)
+	s.GenerateMorseAccountState(s.T(), s.numMorseClaimableAccounts)
 	msgImportRes := s.ImportMorseClaimableAccounts(s.T())
 	morseAccountStateHash, err := s.GetAccountState(s.T()).GetHash()
 	require.NoError(s.T(), err)
 
 	expectedMsgImportRes := &migrationtypes.MsgImportMorseClaimableAccountsResponse{
 		StateHash:   morseAccountStateHash,
-		NumAccounts: uint64(s.numAccounts),
+		NumAccounts: uint64(s.numMorseClaimableAccounts),
 	}
 	require.Equal(s.T(), expectedMsgImportRes, msgImportRes)
 }
 
-// TODO_IN_THIS_COMMIT: godoc...
+// TestClaimMorseAccount tests claiming of a MorseClaimableAccounts.
+// It only exercises claiming of account balances and does not exercise
+// the staking any actors as a result of claiming.
 func (s *MigrationModuleTestSuite) TestClaimMorseAccount() {
-	s.GenerateMorseAccountState(s.T(), s.numAccounts)
+	s.GenerateMorseAccountState(s.T(), s.numMorseClaimableAccounts)
 	s.ImportMorseClaimableAccounts(s.T())
 
 	shannonDestAddr := sample.AccAddress()

@@ -314,8 +314,6 @@ func (s *appTransferTestSuite) TestMultipleSourceToSameNonexistentDestinationMer
 	require.ErrorContains(s.T(), err, s.app2)
 
 	// Assert that app1's bank balance has not changed
-	require.NoError(s.T(), err)
-
 	balance, err := s.GetBankQueryClient(s.T()).GetBalance(s.SdkCtx(), s.app1)
 	require.NoError(s.T(), err)
 	require.Equal(s.T(), appFundAmount-stakeAmount, balance.Amount.Int64())
