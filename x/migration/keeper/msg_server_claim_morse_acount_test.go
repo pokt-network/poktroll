@@ -68,6 +68,7 @@ func TestMsgServer_ClaimMorseAccount_Success(t *testing.T) {
 
 		// Assert that the persisted MorseClaimableAccount is updated.
 		expectedMorseAccount := morseAccount
+		expectedMorseAccount.ShannonDestAddress = msgClaim.GetShannonDestAddress()
 		expectedMorseAccount.ClaimedAtHeight = ctx.BlockHeight()
 		foundMorseAccount, found := k.GetMorseClaimableAccount(ctx, msgClaim.MorseSrcAddress)
 		require.True(t, found)
