@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"cosmossdk.io/core/appmodule"
+	"cosmossdk.io/depinject"
 	"github.com/cosmos/cosmos-sdk/codec"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
@@ -14,6 +15,8 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/pokt-network/poktroll/app/volatile"
+	"github.com/pokt-network/poktroll/pkg/client"
+	"github.com/pokt-network/poktroll/pkg/client/query"
 	"github.com/pokt-network/poktroll/pkg/polylog"
 	_ "github.com/pokt-network/poktroll/pkg/polylog/polyzero"
 	"github.com/pokt-network/poktroll/testutil/integration"
@@ -97,8 +100,14 @@ func (s *BaseIntegrationSuite) FundAddress(
 
 // GetBankQueryClient constructs and returns a query client for the bank module
 // of the integration app.
-func (s *BaseIntegrationSuite) GetBankQueryClient() banktypes.QueryClient {
-	return banktypes.NewQueryClient(s.GetApp().QueryHelper())
+func (s *BaseIntegrationSuite) GetBankQueryClient(t *testing.T) client.BankQueryClient {
+	t.Helper()
+
+	deps := depinject.Supply(s.GetApp().QueryHelper())
+	bankqueryClient, err := query.NewBankQuerier(deps)
+	require.NoError(t, err)
+
+	return bankqueryClient
 }
 
 // FilterEvents returns the events from the event manager which match the given
