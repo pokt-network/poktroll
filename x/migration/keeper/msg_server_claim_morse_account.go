@@ -4,7 +4,7 @@ import (
 	"context"
 
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/types/errors"
+	cosmoserrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
@@ -24,7 +24,7 @@ func (k msgServer) ClaimMorseAccount(ctx context.Context, msg *migrationtypes.Ms
 	if err != nil {
 		return nil, status.Error(
 			codes.InvalidArgument,
-			errors.ErrInvalidAddress.Wrapf(
+			cosmoserrors.ErrInvalidAddress.Wrapf(
 				"failed to parse shannon destination address (%s): %s",
 				msg.ShannonDestAddress, err,
 			).Error(),
@@ -47,8 +47,7 @@ func (k msgServer) ClaimMorseAccount(ctx context.Context, msg *migrationtypes.Ms
 	}
 
 	// Ensure that the given MorseClaimableAccount has not already been claimed.
-	if morseClaimableAccount.ClaimedAtHeight > 0 ||
-		morseClaimableAccount.ShannonDestAddress != "" {
+	if morseClaimableAccount.IsClaimed() {
 		return nil, status.Error(
 			codes.FailedPrecondition,
 			migrationtypes.ErrMorseAccountClaim.Wrapf(
@@ -60,8 +59,11 @@ func (k msgServer) ClaimMorseAccount(ctx context.Context, msg *migrationtypes.Ms
 		)
 	}
 
-	// Update the MorseClaimableAccount
+	// Set ShannonDestAddress & ClaimedAtHeight (claim).
+	morseClaimableAccount.ShannonDestAddress = shannonAccAddr.String()
 	morseClaimableAccount.ClaimedAtHeight = sdkCtx.BlockHeight()
+
+	// Update the MorseClaimableAccount.
 	k.SetMorseClaimableAccount(
 		sdkCtx,
 		morseClaimableAccount,
@@ -73,17 +75,8 @@ func (k msgServer) ClaimMorseAccount(ctx context.Context, msg *migrationtypes.Ms
 		Add(morseClaimableAccount.ApplicationStake).
 		Add(morseClaimableAccount.SupplierStake)
 
-	// Mint the sum of the account balance (totalTokens) and any actor stakes to the migration module account.
-	if err = k.bankKeeper.MintCoins(ctx, migrationtypes.ModuleName, cosmostypes.NewCoins(totalTokens)); err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
-	}
-
-	// Transfer the totalTokens to the shannonDestAddress account.
-	if err = k.bankKeeper.SendCoinsFromModuleToAccount(ctx,
-		migrationtypes.ModuleName,
-		shannonAccAddr,
-		cosmostypes.NewCoins(totalTokens),
-	); err != nil {
+	// Mint the totalTokens to the shannonDestAddress account balance.
+	if err = k.MintClaimedMorseTokens(ctx, shannonAccAddr, totalTokens); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 

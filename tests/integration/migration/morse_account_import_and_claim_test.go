@@ -85,6 +85,7 @@ func TestMsgServer_CreateMorseAccountClaim(t *testing.T) {
 
 	// Assert that the MorseClaimableAccount was updated on-chain.
 	expectedMorseClaimableAccount := *accountState.Accounts[0]
+	expectedMorseClaimableAccount.ShannonDestAddress = shannonDestAddr
 	expectedMorseClaimableAccount.ClaimedAtHeight = app.GetSdkCtx().BlockHeight() - 1
 
 	morseAccountQuerier := migrationtypes.NewQueryClient(app.QueryHelper())
