@@ -85,11 +85,11 @@ install_ci_deps: ## Installs `golangci-lint` and other go tools
 
 .PHONY: install_cosmovisor
 install_cosmovisor: ## Installs `cosmovisor`
-	go install cosmossdk.io/tools/cosmovisor/cmd/cosmovisor@v1.6.0 && cosmovisor version --cosmovisor-only
+	go install cosmossdk.io/tools/cosmovisor/cmd/cosmovisor@v1.7.1 && cosmovisor version --cosmovisor-only
 
 .PHONY: cosmovisor_cross_compile
 cosmovisor_cross_compile: # Installs multiple cosmovisor binaries for different platforms (used by Dockerfile.release)
-	@COSMOVISOR_VERSION="v1.6.0"; \
+	@COSMOVISOR_VERSION="v1.7.1"; \
 	PLATFORMS="linux/amd64 linux/arm64"; \
 	mkdir -p ./tmp; \
 	echo "Fetching Cosmovisor source..."; \
