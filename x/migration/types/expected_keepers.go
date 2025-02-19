@@ -34,6 +34,7 @@ type GatewayKeeper interface {
 type ApplicationKeeper interface {
 	GetApplication(ctx context.Context, appAddr string) (app apptypes.Application, found bool)
 	SetApplication(ctx context.Context, application apptypes.Application)
+	GetParams(ctx context.Context) apptypes.Params
 }
 type SupplierKeeper interface {
 	GetSupplier(ctx context.Context, supplierOperatorAddr string) (supplier sharedtypes.Supplier, found bool)
