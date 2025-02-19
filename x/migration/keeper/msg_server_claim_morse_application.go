@@ -61,6 +61,24 @@ func (k msgServer) ClaimMorseApplication(ctx context.Context, msg *migrationtype
 		)
 	}
 
+	// Default to the stake amount recorded in the MorseClaimableAccount.
+	if msg.Stake == nil {
+		msg.Stake = &morseClaimableAccount.ApplicationStake
+	}
+
+	// Ensure the stake amount is above the minimum.
+	appParams := k.appKeeper.GetParams(ctx)
+	appMinStake := appParams.MinStake
+	if msg.Stake.IsLT(*appMinStake) {
+		return nil, status.Error(
+			codes.InvalidArgument,
+			migrationtypes.ErrMorseApplicationClaim.Wrapf(
+				"stake (%s) is below minimum stake (%s)",
+				msg.Stake.String(), appMinStake.String(),
+			).Error(),
+		)
+	}
+
 	// Set ShannonDestAddress & ClaimedAtHeight (claim).
 	morseClaimableAccount.ShannonDestAddress = shannonAccAddr.String()
 	morseClaimableAccount.ClaimedAtHeight = sdkCtx.BlockHeight()
@@ -71,10 +89,11 @@ func (k msgServer) ClaimMorseApplication(ctx context.Context, msg *migrationtype
 		morseClaimableAccount,
 	)
 
-	// Add any non-application actor stakes to the account balance because we're not creating
-	// a shannon actor (i.e. not a re-stake claim).
+	// TODO_IN_THIS_COMMIT: comment...
 	unstakedBalanceTokens := morseClaimableAccount.UnstakedBalance.
-		Add(morseClaimableAccount.SupplierStake)
+		Add(morseClaimableAccount.ApplicationStake).
+		Add(morseClaimableAccount.SupplierStake).
+		Sub(*msg.Stake)
 
 	// Mint the unstakedBalanceTokens to the shannonDestAddress account balance.
 	if err = k.MintClaimedMorseTokens(ctx, shannonAccAddr, unstakedBalanceTokens); err != nil {
@@ -85,7 +104,7 @@ func (k msgServer) ClaimMorseApplication(ctx context.Context, msg *migrationtype
 	// increment the stake and replace the service config.
 	app, isFound := k.appKeeper.GetApplication(ctx, shannonAccAddr.String())
 	if isFound {
-		newStake := app.Stake.Add(msg.Stake)
+		newStake := app.Stake.Add(*msg.Stake)
 		app.Stake = &newStake
 		app.ServiceConfigs = []*sharedtypes.ApplicationServiceConfig{
 			msg.ServiceConfig,
@@ -93,7 +112,7 @@ func (k msgServer) ClaimMorseApplication(ctx context.Context, msg *migrationtype
 	} else {
 		app = apptypes.Application{
 			Address: shannonAccAddr.String(),
-			Stake:   &msg.Stake,
+			Stake:   msg.Stake,
 			ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{
 				msg.ServiceConfig,
 			},

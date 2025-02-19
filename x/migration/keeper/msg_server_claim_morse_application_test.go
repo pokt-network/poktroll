@@ -110,11 +110,12 @@ func TestMsgServer_ClaimMorseApplication_SuccessNewApplication(t *testing.T) {
 	require.NoError(t, err)
 
 	// Claim the MorseClaimableAccount.
+	morseAppStake := morseClaimableAccount.GetApplicationStake()
 	msgClaim, err := migrationtypes.NewMsgClaimMorseApplication(
 		shannonDestAddr,
 		morseClaimableAccount.GetMorseSrcAddress(),
 		morsePrivKey,
-		morseClaimableAccount.GetApplicationStake(),
+		&morseAppStake,
 		testServiceConfig,
 	)
 	require.NoError(t, err)
@@ -151,9 +152,6 @@ func TestMsgServer_ClaimMorseApplication_SuccessNewApplication(t *testing.T) {
 	claimEvents := events.FilterEvents[*migrationtypes.EventMorseAccountClaimed](t, ctx.EventManager().Events())
 	require.Equal(t, 1, len(claimEvents))
 	require.Equal(t, expectedEvent, claimEvents[0])
-
-	// Reset the event manager to isolate events between claims.
-	ctx = ctx.WithEventManager(sdk.NewEventManager())
 }
 
 func TestMsgServer_ClaimMorseApplication_SuccessExistingApplication(t *testing.T) {
@@ -249,11 +247,12 @@ func TestMsgServer_ClaimMorseApplication_SuccessExistingApplication(t *testing.T
 	require.NoError(t, err)
 
 	// Claim the MorseClaimableAccount.
+	morseAppStake := morseClaimableAccount.GetApplicationStake()
 	msgClaim, err := migrationtypes.NewMsgClaimMorseApplication(
 		shannonDestAddr,
 		morseClaimableAccount.GetMorseSrcAddress(),
 		morsePrivKey,
-		morseClaimableAccount.GetApplicationStake(),
+		&morseAppStake,
 		expectedAppServiceConfig,
 	)
 	require.NoError(t, err)
@@ -290,9 +289,6 @@ func TestMsgServer_ClaimMorseApplication_SuccessExistingApplication(t *testing.T
 	claimEvents := events.FilterEvents[*migrationtypes.EventMorseAccountClaimed](t, ctx.EventManager().Events())
 	require.Equal(t, 1, len(claimEvents))
 	require.Equal(t, expectedEvent, claimEvents[0])
-
-	// Reset the event manager to isolate events between claims.
-	ctx = ctx.WithEventManager(sdk.NewEventManager())
 }
 
 // TODO_IN_THIS_COMMIT: update - copy/pasta'd...
@@ -335,7 +331,7 @@ func TestMsgServer_ClaimMorseApplication_Error(t *testing.T) {
 		sample.AccAddress(),
 		accountState.Accounts[0].GetMorseSrcAddress(),
 		morsePrivKey,
-		claimableApplicationStake,
+		&claimableApplicationStake,
 		expectedAppServiceConfig,
 	)
 	require.NoError(t, err)
@@ -375,9 +371,8 @@ func TestMsgServer_ClaimMorseApplication_Error(t *testing.T) {
 
 	t.Run("account already claimed (non-zero claimed_at_height)", func(t *testing.T) {
 		// Set the claimed at height BUT NOT the Shannon destination address.
-		morseClaimableAccount := *accountState.Accounts[0]
 		morseClaimableAccount.ClaimedAtHeight = 10
-		k.SetMorseClaimableAccount(ctx, morseClaimableAccount)
+		k.SetMorseClaimableAccount(ctx, *morseClaimableAccount)
 
 		expectedErr := status.Error(
 			codes.FailedPrecondition,
@@ -395,10 +390,9 @@ func TestMsgServer_ClaimMorseApplication_Error(t *testing.T) {
 
 	t.Run("account already claimed (non-empty shannon_dest_address)", func(t *testing.T) {
 		// Set the Shannon destination address BUT NOT the claimed at height.
-		morseClaimableAccount := *accountState.Accounts[0]
 		morseClaimableAccount.ClaimedAtHeight = 0
 		morseClaimableAccount.ShannonDestAddress = sample.AccAddress()
-		k.SetMorseClaimableAccount(ctx, morseClaimableAccount)
+		k.SetMorseClaimableAccount(ctx, *morseClaimableAccount)
 
 		expectedErr := status.Error(
 			codes.FailedPrecondition,

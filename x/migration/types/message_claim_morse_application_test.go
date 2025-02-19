@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/pokt-network/poktroll/testutil/sample"
-	"github.com/pokt-network/poktroll/x/application/types"
+	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
@@ -25,7 +25,7 @@ func TestMsgClaimMorseApplication_ValidateBasic(t *testing.T) {
 				ShannonDestAddress: "invalid_address",
 				MorseSrcAddress:    sample.MorseAddressHex(),
 				MorseSignature:     "mock_signature",
-				Stake:              types.DefaultMinStake,
+				Stake:              &apptypes.DefaultMinStake,
 				ServiceConfig: &sharedtypes.ApplicationServiceConfig{
 					ServiceId: testServiceId,
 				},
@@ -37,7 +37,7 @@ func TestMsgClaimMorseApplication_ValidateBasic(t *testing.T) {
 				ShannonDestAddress: sample.AccAddress(),
 				MorseSrcAddress:    "invalid_address",
 				MorseSignature:     "mock_signature",
-				Stake:              types.DefaultMinStake,
+				Stake:              &apptypes.DefaultMinStake,
 				ServiceConfig: &sharedtypes.ApplicationServiceConfig{
 					ServiceId: testServiceId,
 				},
@@ -49,7 +49,7 @@ func TestMsgClaimMorseApplication_ValidateBasic(t *testing.T) {
 				ShannonDestAddress: sample.AccAddress(),
 				MorseSrcAddress:    sample.MorseAddressHex(),
 				MorseSignature:     "mock_signature",
-				Stake:              types.DefaultMinStake,
+				Stake:              &apptypes.DefaultMinStake,
 				ServiceConfig: &sharedtypes.ApplicationServiceConfig{
 					ServiceId: "",
 				},
@@ -61,19 +61,30 @@ func TestMsgClaimMorseApplication_ValidateBasic(t *testing.T) {
 				ShannonDestAddress: sample.AccAddress(),
 				MorseSrcAddress:    sample.MorseAddressHex(),
 				MorseSignature:     "mock_signature",
-				Stake:              types.DefaultMinStake,
+				Stake:              &apptypes.DefaultMinStake,
 				ServiceConfig: &sharedtypes.ApplicationServiceConfig{
 					ServiceId: "xxxxxxxxxxxxxxxxxxxx",
 				},
 			},
 			err: ErrMorseApplicationClaim,
 		}, {
+			name: "valid nil stake",
+			msg: MsgClaimMorseApplication{
+				ShannonDestAddress: sample.AccAddress(),
+				MorseSrcAddress:    sample.MorseAddressHex(),
+				MorseSignature:     "mock_signature",
+				Stake:              nil,
+				ServiceConfig: &sharedtypes.ApplicationServiceConfig{
+					ServiceId: testServiceId,
+				},
+			},
+		}, {
 			name: "valid claim message",
 			msg: MsgClaimMorseApplication{
 				ShannonDestAddress: sample.AccAddress(),
 				MorseSrcAddress:    sample.MorseAddressHex(),
 				MorseSignature:     "mock_signature",
-				Stake:              types.DefaultMinStake,
+				Stake:              &apptypes.DefaultMinStake,
 				ServiceConfig: &sharedtypes.ApplicationServiceConfig{
 					ServiceId: testServiceId,
 				},

@@ -118,10 +118,10 @@ message MsgClaimMorseApplication {
   string morse_signature = 3 [(gogoproto.jsontag) = "morse_signature"];
 
   // TODO_IN_THIS_COMMIT: comments...
-  cosmos.base.v1beta1.Coin stake = 4 [(gogoproto.nullable) = false];
+  cosmos.base.v1beta1.Coin stake = 4 [(gogoproto.jsontag) = "stake"];
 
   // TODO_IN_THIS_COMMIT: comments...
-  shared.ApplicationServiceConfig service_config = 5;
+  shared.ApplicationServiceConfig service_config = 5 [(gogoproto.jsontag) = "service_config"];
 }
 
 // TODO_IN_THIS_COMMIT: comments...
@@ -133,12 +133,12 @@ message MsgClaimMorseApplicationResponse {
   cosmos.base.v1beta1.Coin claimed_balance = 2 [(gogoproto.jsontag) = "claimed_balance", (gogoproto.nullable) = false];
 
   // TODO_IN_THIS_COMMIT: comments...
-  cosmos.base.v1beta1.Coin claimedApplicationStake = 3 [(gogoproto.nullable) = false];
+  cosmos.base.v1beta1.Coin claimedApplicationStake = 3 [(gogoproto.jsontag) = "claimed_application_stake", (gogoproto.nullable) = false];
 
   // The height (on Shannon) at which the claim was created.
-  int64 claimed_at_height = 4;
+  int64 claimed_at_height = 4 [(gogoproto.jsontag) = "claimed_at_height"];
 
   // TODO_IN_THIS_COMMIT: comments...
-  string service_id = 5;
+  string service_id = 5 [(gogoproto.jsontag) = "service_id"];
 }
 
