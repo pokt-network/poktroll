@@ -3,106 +3,93 @@ package migration
 import (
 	"testing"
 
-	"cosmossdk.io/depinject"
 	"cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
-	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 	"github.com/stretchr/testify/require"
+	"github.com/stretchr/testify/suite"
 
 	"github.com/pokt-network/poktroll/app/volatile"
-	"github.com/pokt-network/poktroll/pkg/client/query"
-	"github.com/pokt-network/poktroll/testutil/integration"
+	"github.com/pokt-network/poktroll/testutil/integration/suites"
 	"github.com/pokt-network/poktroll/testutil/sample"
-	"github.com/pokt-network/poktroll/testutil/testmigration"
 	migrationtypes "github.com/pokt-network/poktroll/x/migration/types"
 )
 
-func TestMsgServer_CreateMorseAccountClaim(t *testing.T) {
-	app := integration.NewCompleteIntegrationApp(t)
+type MigrationModuleTestSuite struct {
+	suites.MigrationModuleSuite
 
-	// Generate Morse claimable accounts.
-	numAccounts := 10
-	_, accountState := testmigration.NewMorseStateExportAndAccountState(t, numAccounts)
+	// TODO_IN_THIS_COMMIT: godoc...
+	numAccounts int
+}
 
-	msgImport, err := migrationtypes.NewMsgImportMorseClaimableAccounts(
-		authtypes.NewModuleAddress(govtypes.ModuleName).String(),
-		*accountState,
-	)
-	require.NoError(t, err)
+func (s *MigrationModuleTestSuite) SetupTest() {
+	// Initialize a new integration app for the suite.
+	s.NewApp(s.T())
 
-	// Import Morse claimable accounts.
-	resAny, err := app.RunMsg(t, msgImport)
-	require.NoError(t, err)
+	s.numAccounts = 10
 
-	msgImportRes, ok := resAny.(*migrationtypes.MsgImportMorseClaimableAccountsResponse)
-	require.True(t, ok)
+	// Assign the app to nested suites.
+	s.AppSuite.SetApp(s.GetApp())
+}
 
-	morseAccountStateHash, err := accountState.GetHash()
-	require.NoError(t, err)
+func TestMigrationModuleSuite(t *testing.T) {
+	suite.Run(t, &MigrationModuleTestSuite{})
+}
+
+// TODO_IN_THIS_COMMIT: godoc...
+func (s *MigrationModuleTestSuite) TestImportMorseClaimableAccounts() {
+	s.GenerateMorseAccountState(s.T(), s.numAccounts)
+	msgImportRes := s.ImportMorseClaimableAccounts(s.T())
+	morseAccountStateHash, err := s.GetAccountState(s.T()).GetHash()
+	require.NoError(s.T(), err)
 
 	expectedMsgImportRes := &migrationtypes.MsgImportMorseClaimableAccountsResponse{
 		StateHash:   morseAccountStateHash,
-		NumAccounts: uint64(numAccounts),
+		NumAccounts: uint64(s.numAccounts),
 	}
-	require.Equal(t, expectedMsgImportRes, msgImportRes)
+	require.Equal(s.T(), expectedMsgImportRes, msgImportRes)
+}
 
-	deps := depinject.Supply(app.QueryHelper())
-	bankClient, err := query.NewBankQuerier(deps)
-	require.NoError(t, err)
+// TODO_IN_THIS_COMMIT: godoc...
+func (s *MigrationModuleTestSuite) TestClaimMorseAccount() {
+	s.GenerateMorseAccountState(s.T(), s.numAccounts)
+	s.ImportMorseClaimableAccounts(s.T())
 
-	// Assert that the shannonDestAddr account initially has a zero balance.
 	shannonDestAddr := sample.AccAddress()
-	shannonDestBalance, err := bankClient.GetBalance(app.GetSdkCtx(), shannonDestAddr)
-	require.NoError(t, err)
-	require.Equal(t, int64(0), shannonDestBalance.Amount.Int64())
 
-	morsePrivateKey := testmigration.NewMorsePrivateKey(t, 1)
-	morseSrcAddr := morsePrivateKey.PubKey().Address().String()
-	require.Equal(t, morseSrcAddr, accountState.Accounts[0].MorseSrcAddress)
+	bankClient := s.GetBankQueryClient(s.T())
+	shannonDestBalance, err := bankClient.GetBalance(s.SdkCtx(), shannonDestAddr)
+	require.NoError(s.T(), err)
+	require.Equal(s.T(), int64(0), shannonDestBalance.Amount.Int64())
 
-	morseClaimMsg, err := migrationtypes.NewMsgClaimMorseAccount(
-		shannonDestAddr,
-		morseSrcAddr,
-		morsePrivateKey,
-	)
-	require.NoError(t, err)
+	morseSrcAddr, claimAccountRes := s.ClaimMorseAccount(s.T(), 1, shannonDestAddr)
 
-	// Claim a Morse claimable account.
-	resAny, err = app.RunMsg(t, morseClaimMsg)
-	require.NoError(t, err)
+	expectedMorseClaimableAccount := s.GetAccountState(s.T()).Accounts[0]
+	expectedBalance := expectedMorseClaimableAccount.GetUnstakedBalance().
+		Add(expectedMorseClaimableAccount.GetApplicationStake()).
+		Add(expectedMorseClaimableAccount.GetSupplierStake())
 
-	expectedBalance := sdk.NewInt64Coin(volatile.DenomuPOKT, 1110111)
 	expectedClaimAccountRes := &migrationtypes.MsgClaimMorseAccountResponse{
 		MorseSrcAddress: morseSrcAddr,
 		ClaimedBalance:  expectedBalance,
-		ClaimedAtHeight: app.GetSdkCtx().BlockHeight() - 1,
+		ClaimedAtHeight: s.SdkCtx().BlockHeight() - 1,
 	}
-
-	claimAccountRes, ok := resAny.(*migrationtypes.MsgClaimMorseAccountResponse)
-	require.True(t, ok)
-	require.Equal(t, expectedClaimAccountRes, claimAccountRes)
+	require.Equal(s.T(), expectedClaimAccountRes, claimAccountRes)
 
 	// Assert that the MorseClaimableAccount was updated on-chain.
-	expectedMorseClaimableAccount := *accountState.Accounts[0]
 	expectedMorseClaimableAccount.ShannonDestAddress = shannonDestAddr
-	expectedMorseClaimableAccount.ClaimedAtHeight = app.GetSdkCtx().BlockHeight() - 1
-
-	morseAccountQuerier := migrationtypes.NewQueryClient(app.QueryHelper())
-	morseClaimableAcctRes, err := morseAccountQuerier.MorseClaimableAccount(app.GetSdkCtx(), &migrationtypes.QueryGetMorseClaimableAccountRequest{
-		Address: morseSrcAddr,
-	})
-	require.NoError(t, err)
-	require.Equal(t, expectedMorseClaimableAccount, morseClaimableAcctRes.MorseClaimableAccount)
+	expectedMorseClaimableAccount.ClaimedAtHeight = s.SdkCtx().BlockHeight() - 1
+	morseClaimableAccount := s.QueryMorseClaimableAccount(s.T(), morseSrcAddr)
+	require.Equal(s.T(), expectedMorseClaimableAccount, morseClaimableAccount)
 
 	// Assert that the shannonDestAddr account balance has been updated.
-	shannonDestBalance, err = bankClient.GetBalance(app.GetSdkCtx(), shannonDestAddr)
-	require.NoError(t, err)
-	require.Equal(t, expectedBalance, *shannonDestBalance)
+	shannonDestBalance, err = bankClient.GetBalance(s.GetApp().GetSdkCtx(), shannonDestAddr)
+	require.NoError(s.T(), err)
+	require.Equal(s.T(), expectedBalance, *shannonDestBalance)
 
 	// Assert that the migration module account balance returns to zero.
 	migrationModuleAddress := authtypes.NewModuleAddress(migrationtypes.ModuleName).String()
-	migrationModuleBalance, err := bankClient.GetBalance(app.GetSdkCtx(), migrationModuleAddress)
-	require.NoError(t, err)
-	require.Equal(t, sdk.NewCoin(volatile.DenomuPOKT, math.ZeroInt()), *migrationModuleBalance)
+	migrationModuleBalance, err := bankClient.GetBalance(s.SdkCtx(), migrationModuleAddress)
+	require.NoError(s.T(), err)
+	require.Equal(s.T(), sdk.NewCoin(volatile.DenomuPOKT, math.ZeroInt()), *migrationModuleBalance)
 }
