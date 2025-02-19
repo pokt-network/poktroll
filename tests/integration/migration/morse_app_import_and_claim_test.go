@@ -8,6 +8,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -17,10 +18,15 @@ import (
 	"github.com/pokt-network/poktroll/testutil/integration"
 	"github.com/pokt-network/poktroll/testutil/sample"
 	"github.com/pokt-network/poktroll/testutil/testmigration"
+	"github.com/pokt-network/poktroll/x/application/types"
 	migrationtypes "github.com/pokt-network/poktroll/x/migration/types"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 func TestMsgServer_CreateMorseApplicationClaim(t *testing.T) {
+	expectedAppServiceConfig := &sharedtypes.ApplicationServiceConfig{ServiceId: "svc1"}
+	expectedAppStake := sdk.NewInt64Coin(volatile.DenomuPOKT, 1000)
+
 	app := integration.NewCompleteIntegrationApp(t)
 
 	// Generate Morse claimable accounts.
@@ -67,6 +73,8 @@ func TestMsgServer_CreateMorseApplicationClaim(t *testing.T) {
 		shannonDestAddr,
 		morseSrcAddr,
 		morsePrivateKey,
+		expectedAppStake,
+		expectedAppServiceConfig,
 	)
 	require.NoError(t, err)
 
@@ -75,26 +83,31 @@ func TestMsgServer_CreateMorseApplicationClaim(t *testing.T) {
 	require.NoError(t, err)
 
 	_, err = appQuerier.GetApplication(app.GetSdkCtx(), shannonDestAddr)
-	errStatus := status.Convert(err)
-	require.Equal(t, codes.NotFound, errStatus.Code())
+	require.EqualError(t, err, status.Error(
+		codes.NotFound,
+		types.ErrAppNotFound.Wrapf("app with address %q not found", shannonDestAddr).Error(),
+	).Error())
 
 	// Claim a Morse claimable account as a staked application.
 	resAny, err = app.RunMsg(t, morseClaimMsg)
 	require.NoError(t, err)
 
-	expectedBalance := sdk.NewInt64Coin(volatile.DenomuPOKT, 1110111)
-	expectedClaimAccountRes := &migrationtypes.MsgClaimMorseAccountResponse{
-		MorseSrcAddress: morseSrcAddr,
-		ClaimedBalance:  expectedBalance,
-		ClaimedAtHeight: app.GetSdkCtx().BlockHeight() - 1,
+	expectedBalance := sdk.NewInt64Coin(volatile.DenomuPOKT, 1010101)
+	expectedClaimAccountRes := &migrationtypes.MsgClaimMorseApplicationResponse{
+		MorseSrcAddress:         morseSrcAddr,
+		ClaimedBalance:          expectedBalance,
+		ClaimedApplicationStake: expectedAppStake,
+		ClaimedAtHeight:         app.GetSdkCtx().BlockHeight() - 1,
+		ServiceId:               expectedAppServiceConfig.GetServiceId(),
 	}
 
-	claimAccountRes, ok := resAny.(*migrationtypes.MsgClaimMorseAccountResponse)
-	require.True(t, ok)
+	claimAccountRes, ok := resAny.(*migrationtypes.MsgClaimMorseApplicationResponse)
+	assert.True(t, ok)
 	require.Equal(t, expectedClaimAccountRes, claimAccountRes)
 
 	// Assert that the MorseClaimableAccount was updated on-chain.
 	expectedMorseClaimableAccount := *accountState.Accounts[0]
+	expectedMorseClaimableAccount.ShannonDestAddress = shannonDestAddr
 	expectedMorseClaimableAccount.ClaimedAtHeight = app.GetSdkCtx().BlockHeight() - 1
 
 	morseAccountQuerier := migrationtypes.NewQueryClient(app.QueryHelper())
