@@ -95,20 +95,8 @@ func TestMemoryKeyValueCache(t *testing.T) {
 	})
 }
 
-// TestInMemoryCache_ErrorCases tests various error conditions
-func TestInMemoryCache_ErrorCases(t *testing.T) {
-	t.Run("historical operations on non-historical cache", func(t *testing.T) {
-		cache, err := NewHistoricalKeyValueCache[string]()
-		require.NoError(t, err)
-
-		// Attempting historical operations should return error
-		err = cache.SetVersion("key", "value", 10)
-		require.ErrorIs(t, err, cache2.ErrHistoricalModeNotEnabled)
-
-		_, err = cache.GetVersion("key", 10)
-		require.ErrorIs(t, err, cache2.ErrHistoricalModeNotEnabled)
-	})
-
+// TestKeyValueCache_ErrorCases exercises various error conditions
+func TestKeyValueCache_ErrorCases(t *testing.T) {
 	t.Run("zero values", func(t *testing.T) {
 		cache, err := NewKeyValueCache[string]()
 		require.NoError(t, err)
@@ -129,99 +117,49 @@ func TestInMemoryCache_ErrorCases(t *testing.T) {
 	})
 }
 
-// TestInMemoryCache_ConcurrentAccess tests thread safety of the cache
-func TestInMemoryCache_ConcurrentAccess(t *testing.T) {
-	t.Run("concurrent access non-historical", func(t *testing.T) {
-		cache, err := NewKeyValueCache[int]()
-		require.NoError(t, err)
+// TestKeyValueCache_ConcurrentAccess exercises thread safety of the cache
+func TestKeyValueCache_ConcurrentAccess(t *testing.T) {
+	cache, err := NewKeyValueCache[int]()
+	require.NoError(t, err)
 
-		const numGoroutines = 10
-		const numOperations = 100
+	const numGoroutines = 10
+	const numOperations = 100
 
-		// Create a context with timeout
-		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-		defer cancel()
+	// Create a context with timeout
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
 
-		var wg sync.WaitGroup
-		wg.Add(numGoroutines)
+	var wg sync.WaitGroup
+	wg.Add(numGoroutines)
 
-		for i := 0; i < numGoroutines; i++ {
-			go func() {
-				defer wg.Done()
-				for j := 0; j < numOperations; j++ {
-					select {
-					case <-ctx.Done():
-						return
-					default:
-						key := "key"
-						err := cache.Set(key, j)
-						require.NoError(t, err)
-						_, _ = cache.Get(key)
-					}
-				}
-			}()
-		}
-
-		// Wait for waitgroup with timeout.
-		done := make(chan struct{})
+	for i := 0; i < numGoroutines; i++ {
 		go func() {
-			wg.Wait()
-			close(done)
-		}()
-
-		select {
-		case <-ctx.Done():
-			t.Errorf("test timed out waiting for workgroup to complete: %+v", ctx.Err())
-		case <-done:
-			t.Log("test completed successfully")
-		}
-	})
-
-	t.Run("concurrent access historical", func(t *testing.T) {
-		cache, err := NewHistoricalKeyValueCache[int](
-			WithHistoricalMode(100),
-		)
-		require.NoError(t, err)
-
-		const numGoroutines = 10
-		const numOpsPerGoRoutine = 100
-
-		// Create a context with timeout
-		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-		t.Cleanup(cancel)
-
-		var wg sync.WaitGroup
-		wg.Add(numGoroutines)
-
-		for i := 0; i < numGoroutines; i++ {
-			go func() {
-				defer wg.Done()
-				for j := 0; j < numOpsPerGoRoutine; j++ {
-					select {
-					case <-ctx.Done():
-						return
-					default:
-						key := "key"
-						err = cache.SetVersion(key, j, int64(j))
-						require.NoError(t, err)
-						_, _ = cache.GetVersion(key, int64(j))
-					}
+			defer wg.Done()
+			for j := 0; j < numOperations; j++ {
+				select {
+				case <-ctx.Done():
+					return
+				default:
+					key := "key"
+					err := cache.Set(key, j)
+					require.NoError(t, err)
+					_, _ = cache.Get(key)
 				}
-			}()
-		}
-
-		// Wait for waitgroup with timeout.
-		done := make(chan struct{})
-		go func() {
-			wg.Wait()
-			close(done)
+			}
 		}()
+	}
 
-		select {
-		case <-ctx.Done():
-			t.Errorf("test timed out waiting for goroutines to complete: %+v", ctx.Err())
-		case <-done:
-			t.Log("test completed successfully")
-		}
-	})
+	// Wait for waitgroup with timeout.
+	done := make(chan struct{})
+	go func() {
+		wg.Wait()
+		close(done)
+	}()
+
+	select {
+	case <-ctx.Done():
+		t.Errorf("test timed out waiting for workgroup to complete: %+v", ctx.Err())
+	case <-done:
+		t.Log("test completed successfully")
+	}
 }

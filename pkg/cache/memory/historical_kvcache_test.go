@@ -1,6 +1,8 @@
 package memory
 
 import (
+	"context"
+	"sync"
 	"testing"
 	"time"
 
@@ -13,7 +15,7 @@ import (
 func TestMemoryHistoricalKeyValueCache(t *testing.T) {
 	t.Run("basic historical operations", func(t *testing.T) {
 		cache, err := NewHistoricalKeyValueCache[string](
-			WithHistoricalMode(100),
+			WithMaxVersionAge(100),
 		)
 		require.NoError(t, err)
 
@@ -75,7 +77,7 @@ func TestMemoryHistoricalKeyValueCache(t *testing.T) {
 
 	t.Run("historical TTL expiration", func(t *testing.T) {
 		cache, err := NewHistoricalKeyValueCache[string](
-			WithHistoricalMode(100),
+			WithMaxVersionAge(100),
 			WithTTL(100*time.Millisecond),
 		)
 		require.NoError(t, err)
@@ -98,7 +100,7 @@ func TestMemoryHistoricalKeyValueCache(t *testing.T) {
 
 	t.Run("pruning old versions", func(t *testing.T) {
 		cache, err := NewHistoricalKeyValueCache[string](
-			WithHistoricalMode(10), // Prune entries older than 10 versions
+			WithMaxVersionAge(10), // Prune entries older than 10 versions
 		)
 		require.NoError(t, err)
 
@@ -129,4 +131,53 @@ func TestMemoryHistoricalKeyValueCache(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, "value4", val)
 	})
+}
+
+// TestHistoricalKeyValueCache_ConcurrentAccess exercises thread safety of the cache
+func TestHistoricalKeyValueCache_ConcurrentAccess(t *testing.T) {
+	cache, err := NewHistoricalKeyValueCache[int](
+		WithMaxVersionAge(100),
+	)
+	require.NoError(t, err)
+
+	const numGoroutines = 10
+	const numOpsPerGoRoutine = 100
+
+	// Create a context with timeout
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	t.Cleanup(cancel)
+
+	var wg sync.WaitGroup
+	wg.Add(numGoroutines)
+
+	for i := 0; i < numGoroutines; i++ {
+		go func() {
+			defer wg.Done()
+			for j := 0; j < numOpsPerGoRoutine; j++ {
+				select {
+				case <-ctx.Done():
+					return
+				default:
+					key := "key"
+					err = cache.SetVersion(key, j, int64(j))
+					require.NoError(t, err)
+					_, _ = cache.GetVersion(key, int64(j))
+				}
+			}
+		}()
+	}
+
+	// Wait for waitgroup with timeout.
+	done := make(chan struct{})
+	go func() {
+		wg.Wait()
+		close(done)
+	}()
+
+	select {
+	case <-ctx.Done():
+		t.Errorf("test timed out waiting for goroutines to complete: %+v", ctx.Err())
+	case <-done:
+		t.Log("test completed successfully")
+	}
 }

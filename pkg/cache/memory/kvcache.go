@@ -28,11 +28,13 @@ type cacheValue[T any] struct {
 
 // NewKeyValueCache creates a new keyValueCache with the configuration generated
 // by the given option functions.
-func NewKeyValueCache[T any](opts ...QueryCacheOptionFn) (*keyValueCache[T], error) {
+func NewKeyValueCache[T any](opts ...KeyValueCacheOptionFn) (*keyValueCache[T], error) {
 	config := DefaultKeyValueCacheConfig
 
 	for _, opt := range opts {
-		opt(&config)
+		if err := opt(&config); err != nil {
+			return nil, err
+		}
 	}
 
 	if err := config.Validate(); err != nil {
@@ -78,10 +80,6 @@ func (c *keyValueCache[T]) Get(key string) (T, error) {
 // version, which is only updated on calls to SetAsOfVersion, and therefore is not
 // guaranteed to be the current version w.r.t. the blockchain.
 func (c *keyValueCache[T]) Set(key string, value T) error {
-	if c.config.historical {
-		return cache.ErrUnsupportedHistoricalModeOp.Wrap("keyValueCache#Set() is not supported in historical mode")
-	}
-
 	c.valuesMu.Lock()
 	defer c.valuesMu.Unlock()
 
@@ -117,7 +115,6 @@ func (c *keyValueCache[T]) Clear() {
 // evict removes one item from the cache, to make space for a new one,
 // according to the configured eviction policy.
 func (c *keyValueCache[T]) evict() error {
-	// TODO_IN_THIS_COMMIT: reconcile config(s) with splitting of the cache implementations.
 	isMaxKeysConfigured := c.config.maxKeys > 0
 	cacheMaxKeysReached := int64(len(c.values)) > c.config.maxKeys
 	if !isMaxKeysConfigured || !cacheMaxKeysReached {
