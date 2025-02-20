@@ -13,7 +13,6 @@ type KeyValueCache[T any] interface {
 // HistoricalKeyValueCache extends KeyValueCache to support getting and setting values
 // at multiple heights for a given key.
 type HistoricalKeyValueCache[T any] interface {
-	KeyValueCache[T]
 	// GetLatestVersion returns the value of the latest version for the given key.
 	GetLatestVersion(key string) (T, error)
 	// GetVersion retrieves the nearest value <= the specified version number.

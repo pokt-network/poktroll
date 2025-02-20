@@ -15,6 +15,16 @@ const (
 	LeastFrequentlyUsed
 )
 
+var DefaultQueryCacheConfig = queryCacheConfig{
+	evictionPolicy: FirstInFirstOut,
+	// TODO_MAINNET(@bryanchriswhite): Consider how we can "guarantee" good
+	// alignment between the TTL and the block production rate,
+	// by accessing onchain block times directly.
+	ttl: time.Minute,
+}
+
+// TODO_IN_THIS_COMMIT: reconcile config(s) with splitting of the cache implementations.
+
 // queryCacheConfig is the configuration for query caches.
 // It is intended to be configured via QueryCacheOptionFn functions.
 type queryCacheConfig struct {
