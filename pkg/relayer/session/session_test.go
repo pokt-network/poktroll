@@ -73,9 +73,10 @@ func requireProofCountEqualsExpectedValueFromProofParams(t *testing.T, proofPara
 	}
 	supplierOperatorAddress := sample.AccAddress()
 	// Set the supplier operator balance to be able to submit the expected number of proofs.
-	claimAndFeeGasCost := session.ClamAndProofGasCost.Amount.Int64()
-	numExpectedProofs := int64(2)
-	supplierOperatorBalance := claimAndFeeGasCost * numExpectedProofs
+	feePerProof := prooftypes.DefaultParams().ProofSubmissionFee.Amount.Int64()
+	gasCost := session.ClamAndProofGasCost.Amount.Int64()
+	proofCost := feePerProof + gasCost
+	supplierOperatorBalance := proofCost
 	supplierClientMap := testsupplier.NewClaimProofSupplierClientMap(ctx, t, supplierOperatorAddress, proofCount)
 	blockPublishCh, minedRelaysPublishCh := setupDependencies(t, ctx, supplierClientMap, emptyBlockHash, proofParams, supplierOperatorBalance)
 
