@@ -41,8 +41,9 @@ type synchronousRPCServer struct {
 	// server is the HTTP server that listens for incoming relay requests.
 	server *http.Server
 
-	// relayerProxy is the main relayer proxy that the server uses to perform its operations.
-	relayerProxy relayer.RelayerProxy
+	// relayAuthenticator is the relay authenticator that the RelayServer uses to
+	// authenticate the relay requests and responses.
+	relayAuthenticator relayer.RelayAuthenticator
 
 	// servedRelaysProducer is a channel that emits the relays that have been served, allowing
 	// the servedRelays observable to fan-out notifications to its subscribers.
@@ -64,13 +65,13 @@ func NewSynchronousServer(
 	logger polylog.Logger,
 	serverConfig *config.RelayMinerServerConfig,
 	servedRelaysProducer chan<- *types.Relay,
-	proxy relayer.RelayerProxy,
+	relayAuthenticator relayer.RelayAuthenticator,
 	relayMeter relayer.RelayMeter,
 ) relayer.RelayServer {
 	return &synchronousRPCServer{
 		logger:               logger,
 		server:               &http.Server{Addr: serverConfig.ListenAddress},
-		relayerProxy:         proxy,
+		relayAuthenticator:   relayAuthenticator,
 		servedRelaysProducer: servedRelaysProducer,
 		serverConfig:         serverConfig,
 		relayMeter:           relayMeter,
@@ -242,7 +243,7 @@ func (sync *synchronousRPCServer) serveHTTP(
 	// request signature verification, session verification, and response signature.
 	// This would help in separating concerns and improving code maintainability.
 	// See https://github.com/pokt-network/poktroll/issues/160
-	if err := sync.relayerProxy.VerifyRelayRequest(ctx, relayRequest, supplierServiceId); err != nil {
+	if err := sync.relayAuthenticator.VerifyRelayRequest(ctx, relayRequest, supplierServiceId); err != nil {
 		return nil, err
 	}
 

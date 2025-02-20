@@ -1,4 +1,4 @@
-package proxy
+package relay_authenticator
 
 import (
 	"context"
@@ -7,9 +7,8 @@ import (
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
-// VerifyRelayRequest is a shared method used by RelayServers to check the relay
-// request signature and session validity.
-func (rp *relayerProxy) VerifyRelayRequest(
+// VerifyRelayRequest checks the relay request signature and session validity.
+func (ra *relayAuthenticator) VerifyRelayRequest(
 	ctx context.Context,
 	relayRequest *servicetypes.RelayRequest,
 	supplierServiceId string,
@@ -17,21 +16,21 @@ func (rp *relayerProxy) VerifyRelayRequest(
 	// Get the block height at which the relayRequest should be processed.
 	// Check if the relayRequest is on time or within the session's grace period
 	// before attempting to verify the relayRequest signature.
-	sessionBlockHeight, err := rp.getTargetSessionBlockHeight(ctx, relayRequest)
+	sessionBlockHeight, err := ra.getTargetSessionBlockHeight(ctx, relayRequest)
 	if err != nil {
 		return err
 	}
 
 	// Verify the relayRequest metadata, signature, session header and other
 	// basic validation.
-	if err = rp.ringCache.VerifyRelayRequestSignature(ctx, relayRequest); err != nil {
+	if err = ra.ringCache.VerifyRelayRequestSignature(ctx, relayRequest); err != nil {
 		return err
 	}
 
 	meta := relayRequest.GetMeta()
 
 	// Extract the session header for usage below.
-	// ringCache.VerifyRelayRequestSignature already verified the header's validaity.
+	// ringCache.VerifyRelayRequestSignature already verified the header's validity.
 	sessionHeader := meta.SessionHeader
 
 	// Application address is used to verify the relayRequest signature.
@@ -39,7 +38,7 @@ func (rp *relayerProxy) VerifyRelayRequest(
 	// has already been verified.
 	appAddress := sessionHeader.GetApplicationAddress()
 
-	rp.logger.Debug().
+	ra.logger.Debug().
 		Fields(map[string]any{
 			"session_id":                sessionHeader.GetSessionId(),
 			"application_address":       appAddress,
@@ -48,9 +47,8 @@ func (rp *relayerProxy) VerifyRelayRequest(
 		}).
 		Msg("verifying relay request session")
 
-	// TODO_TECHDEBT(@red-0ne): Optimize this so we don't have to query the session for every relay request.
 	// Query for the current session to check if relayRequest sessionId matches the current session.
-	session, err := rp.sessionQuerier.GetSession(
+	session, err := ra.sessionQuerier.GetSession(
 		ctx,
 		appAddress,
 		supplierServiceId,
@@ -67,7 +65,7 @@ func (rp *relayerProxy) VerifyRelayRequest(
 	// - serviceId (which is not provided by the relayRequest)
 	// - applicationAddress (which is used to verify the relayRequest signature)
 	if session.SessionId != sessionHeader.GetSessionId() {
-		return ErrRelayerProxyInvalidSession.Wrapf(
+		return ErrRelayAuthenticatorInvalidSession.Wrapf(
 			"session ID mismatch, expecting: %+v, got: %+v",
 			session.GetSessionId(),
 			relayRequest.Meta.GetSessionHeader().GetSessionId(),
@@ -75,39 +73,34 @@ func (rp *relayerProxy) VerifyRelayRequest(
 	}
 
 	// Check if the relayRequest is allowed to be served by the relayer proxy.
-	_, isSupplierOperatorAddressPresent := rp.OperatorAddressToSigningKeyNameMap[meta.GetSupplierOperatorAddress()]
+	_, isSupplierOperatorAddressPresent := ra.operatorAddressToSigningKeyNameMap[meta.GetSupplierOperatorAddress()]
 	if !isSupplierOperatorAddressPresent {
-		return ErrRelayerProxyMissingSupplierOperatorAddress
+		return ErrRelayAuthenticatorMissingSupplierOperatorAddress
 	}
 
 	for _, supplier := range session.Suppliers {
 		// Verify if the supplier operator address in the session matches the one in the relayRequest.
-		if isSupplierOperatorAddressPresent && supplier.OperatorAddress == meta.GetSupplierOperatorAddress() {
+		if supplier.OperatorAddress == meta.GetSupplierOperatorAddress() {
 			return nil
 		}
 	}
 
-	return ErrRelayerProxyInvalidSupplier
+	return ErrRelayAuthenticatorInvalidSupplier
 }
 
 // getTargetSessionBlockHeight returns the block height at which the session
-// for the given relayRequest should be processed. If the session is within the
-// grace period, the session's end block height is returned. Otherwise,
-// the current block height is returned.
-// If the session has expired, then return an error.
-func (rp *relayerProxy) getTargetSessionBlockHeight(
+// for the given relayRequest should be processed.
+//   - If the session is within the grace period, the session's end block height is returned.
+//   - Otherwise, the current block height is returned.
+//   - If the session has expired, then return an error.
+func (ra *relayAuthenticator) getTargetSessionBlockHeight(
 	ctx context.Context,
 	relayRequest *servicetypes.RelayRequest,
 ) (sessionHeight int64, err error) {
-	currentHeight := rp.blockClient.LastBlock(ctx).Height()
+	currentHeight := ra.blockClient.LastBlock(ctx).Height()
 	sessionEndHeight := relayRequest.Meta.SessionHeader.GetSessionEndBlockHeight()
 
-	// TODO_MAINNET(#543): We don't really want to have to query the params for every method call.
-	// Once `ModuleParamsClient` is implemented, use its replay observable's `#Last()` method
-	// to get the most recently (asynchronously) observed (and cached) value.
-	// TODO_MAINNET(@bryanchriswhite, #543): We also don't really want to use the current value of the params.
-	// Instead, we should be using the value that the params had for the session given by sessionEndHeight.
-	sharedParams, err := rp.sharedQuerier.GetParams(ctx)
+	sharedParams, err := ra.sharedQuerier.GetParams(ctx)
 	if err != nil {
 		return 0, err
 	}
@@ -118,17 +111,17 @@ func (rp *relayerProxy) getTargetSessionBlockHeight(
 		// block height is outside the session's grace period.
 		if !sharedtypes.IsGracePeriodElapsed(sharedParams, sessionEndHeight, currentHeight) {
 			// The RelayRequest's session has expired but is still within the
-			// grace period so process it as if the session is still active.
+			// grace period, process it as if the session is still active.
 			return sessionEndHeight, nil
 		}
 
-		return 0, ErrRelayerProxyInvalidSession.Wrapf(
+		return 0, ErrRelayAuthenticatorInvalidSession.Wrapf(
 			"session expired, expecting: %d, got: %d",
 			sessionEndHeight,
 			currentHeight,
 		)
 	}
 
-	// The RelayRequest's session is active so return the current block height.
+	// The RelayRequest's session is active, return the current block height.
 	return currentHeight, nil
 }

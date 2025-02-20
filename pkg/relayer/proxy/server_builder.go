@@ -35,19 +35,7 @@ const (
 // It populates the relayerProxy's `advertisedRelayServers` map of servers for each service, where each server
 // is responsible for listening for incoming relay requests and relaying them to the supported proxied service.
 func (rp *relayerProxy) BuildProvidedServices(ctx context.Context) error {
-	rp.OperatorAddressToSigningKeyNameMap = make(map[string]string)
-	for _, operatorSigningKeyName := range rp.signingKeyNames {
-		// Get the supplier operator address from the keyring
-		supplierOperatorKey, err := rp.keyring.Key(operatorSigningKeyName)
-		if err != nil {
-			return err
-		}
-
-		supplierOperatorAddress, err := supplierOperatorKey.GetAddress()
-		if err != nil {
-			return err
-		}
-
+	for _, supplierOperatorAddress := range rp.relayAuthenticator.GetSupplierOperatorAddresses() {
 		// TODO_MAINNET: We currently block RelayMiner from starting if at least one address
 		// is not staked or staked incorrectly. As node runners will maintain many different
 		// suppliers on one RelayMiner, and we expect them to stake and restake often - it might
@@ -58,7 +46,7 @@ func (rp *relayerProxy) BuildProvidedServices(ctx context.Context) error {
 
 		// Prevent the RelayMiner from stopping by waiting until its associated supplier
 		// is staked and its onchain record retrieved.
-		supplier, err := rp.waitForSupplierToStake(ctx, supplierOperatorAddress.String())
+		supplier, err := rp.waitForSupplierToStake(ctx, supplierOperatorAddress)
 		if err != nil {
 			return err
 		}
@@ -93,8 +81,6 @@ func (rp *relayerProxy) BuildProvidedServices(ctx context.Context) error {
 				}
 			}
 		}
-
-		rp.OperatorAddressToSigningKeyNameMap[supplier.OperatorAddress] = operatorSigningKeyName
 	}
 
 	var err error
@@ -127,7 +113,7 @@ func (rp *relayerProxy) initializeProxyServers() (proxyServerMap map[string]rela
 				rp.logger,
 				serverConfig,
 				rp.servedRelaysPublishCh,
-				rp,
+				rp.relayAuthenticator,
 				rp.relayMeter,
 			)
 		default:

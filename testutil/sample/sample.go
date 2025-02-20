@@ -17,6 +17,14 @@ func AccAddressAndPubKey() (string, cryptotypes.PubKey) {
 	return cosmostypes.AccAddress(addr).String(), pk
 }
 
+// AccAddressAndKeyPair returns a sample account address its public key and private key
+func AccAddressAndKeyPair() (string, cryptotypes.PubKey, cryptotypes.PrivKey) {
+	sk := secp256k1.GenPrivKey()
+	pk := sk.PubKey()
+	addr := pk.Address()
+	return cosmostypes.AccAddress(addr).String(), pk, sk
+}
+
 // AccAddress returns a sample account address
 func AccAddress() string {
 	addr, _ := AccAddressAndPubKey()
