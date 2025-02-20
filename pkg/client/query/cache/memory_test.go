@@ -12,7 +12,7 @@ import (
 // TestInMemoryCache_NonHistorical tests the basic cache functionality without historical mode
 func TestInMemoryCache_NonHistorical(t *testing.T) {
 	t.Run("basic operations", func(t *testing.T) {
-		cache, err := NewInMemoryCache[string]()
+		cache, err := NewKeyValueCache[string]()
 		require.NoError(t, err)
 
 		// Test Set and Get
@@ -40,7 +40,7 @@ func TestInMemoryCache_NonHistorical(t *testing.T) {
 	})
 
 	t.Run("TTL expiration", func(t *testing.T) {
-		cache, err := NewInMemoryCache[string](
+		cache, err := NewKeyValueCache[string](
 			WithTTL(100 * time.Millisecond),
 		)
 		require.NoError(t, err)
@@ -62,7 +62,7 @@ func TestInMemoryCache_NonHistorical(t *testing.T) {
 	})
 
 	t.Run("max keys eviction", func(t *testing.T) {
-		cache, err := NewInMemoryCache[string](
+		cache, err := NewKeyValueCache[string](
 			WithMaxKeys(2),
 			WithEvictionPolicy(FirstInFirstOut),
 		)
@@ -96,7 +96,7 @@ func TestInMemoryCache_NonHistorical(t *testing.T) {
 // TestInMemoryCache_Historical tests the historical mode functionality
 func TestInMemoryCache_Historical(t *testing.T) {
 	t.Run("basic historical operations", func(t *testing.T) {
-		cache, err := NewInMemoryCache[string](
+		cache, err := NewKeyValueCache[string](
 			WithHistoricalMode(100),
 		)
 		require.NoError(t, err)
@@ -158,7 +158,7 @@ func TestInMemoryCache_Historical(t *testing.T) {
 	})
 
 	t.Run("historical TTL expiration", func(t *testing.T) {
-		cache, err := NewInMemoryCache[string](
+		cache, err := NewKeyValueCache[string](
 			WithHistoricalMode(100),
 			WithTTL(100*time.Millisecond),
 		)
@@ -181,7 +181,7 @@ func TestInMemoryCache_Historical(t *testing.T) {
 	})
 
 	t.Run("pruning old versions", func(t *testing.T) {
-		cache, err := NewInMemoryCache[string](
+		cache, err := NewKeyValueCache[string](
 			WithHistoricalMode(10), // Prune entries older than 10 versions
 		)
 		require.NoError(t, err)
@@ -215,7 +215,7 @@ func TestInMemoryCache_Historical(t *testing.T) {
 	})
 
 	t.Run("non-historical operations on historical cache", func(t *testing.T) {
-		cache, err := NewInMemoryCache[string](
+		cache, err := NewKeyValueCache[string](
 			WithHistoricalMode(100),
 		)
 		require.NoError(t, err)
@@ -249,7 +249,7 @@ func TestInMemoryCache_Historical(t *testing.T) {
 // TestInMemoryCache_ErrorCases tests various error conditions
 func TestInMemoryCache_ErrorCases(t *testing.T) {
 	t.Run("historical operations on non-historical cache", func(t *testing.T) {
-		cache, err := NewInMemoryCache[string]()
+		cache, err := NewKeyValueCache[string]()
 		require.NoError(t, err)
 
 		// Attempting historical operations should return error
@@ -261,7 +261,7 @@ func TestInMemoryCache_ErrorCases(t *testing.T) {
 	})
 
 	t.Run("zero values", func(t *testing.T) {
-		cache, err := NewInMemoryCache[string]()
+		cache, err := NewKeyValueCache[string]()
 		require.NoError(t, err)
 
 		// Test with empty key
@@ -283,7 +283,7 @@ func TestInMemoryCache_ErrorCases(t *testing.T) {
 // TestInMemoryCache_ConcurrentAccess tests thread safety of the cache
 func TestInMemoryCache_ConcurrentAccess(t *testing.T) {
 	t.Run("concurrent access non-historical", func(t *testing.T) {
-		cache, err := NewInMemoryCache[int]()
+		cache, err := NewKeyValueCache[int]()
 		require.NoError(t, err)
 
 		const numGoroutines = 10
@@ -329,7 +329,7 @@ func TestInMemoryCache_ConcurrentAccess(t *testing.T) {
 	})
 
 	t.Run("concurrent access historical", func(t *testing.T) {
-		cache, err := NewInMemoryCache[int](
+		cache, err := NewKeyValueCache[int](
 			WithHistoricalMode(100),
 		)
 		require.NoError(t, err)

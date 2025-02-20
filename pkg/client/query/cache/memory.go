@@ -55,9 +55,9 @@ type cacheValueHistory[T any] struct {
 	versionToValueMap map[int64]cacheValue[T]
 }
 
-// NewInMemoryCache creates a new keyValueCache with the configuration generated
+// NewKeyValueCache creates a new keyValueCache with the configuration generated
 // by the given option functions.
-func NewInMemoryCache[T any](opts ...QueryCacheOptionFn) (*keyValueCache[T], error) {
+func NewKeyValueCache[T any](opts ...QueryCacheOptionFn) (*keyValueCache[T], error) {
 	config := DefaultQueryCacheConfig
 
 	for _, opt := range opts {
