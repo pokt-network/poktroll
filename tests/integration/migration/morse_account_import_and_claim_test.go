@@ -65,7 +65,7 @@ func (s *MigrationModuleTestSuite) TestClaimMorseAccount() {
 	bankClient := s.GetBankQueryClient(s.T())
 	shannonDestBalance, err := bankClient.GetBalance(s.SdkCtx(), shannonDestAddr)
 	require.NoError(s.T(), err)
-	require.Equal(s.T(), int64(0), shannonDestBalance.Amount.Int64())
+	require.True(s.T(), shannonDestBalance.IsZero())
 
 	morseSrcAddr, claimAccountRes := s.ClaimMorseAccount(s.T(), 1, shannonDestAddr)
 
