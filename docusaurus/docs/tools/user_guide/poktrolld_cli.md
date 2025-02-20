@@ -16,7 +16,7 @@ brew install poktrolld
 
 - [MacOS \& Linux Users](#macos--linux-users)
   - [Using Homebrew](#using-homebrew)
-    - [Troubleshooting Homebrew](#troubleshooting-homebrew)
+  - [Troubleshooting Homebrew](#troubleshooting-homebrew)
   - [From Source](#from-source)
     - [Installing dependencies](#installing-dependencies)
     - [Installing poktrolld](#installing-poktrolld)
@@ -49,7 +49,13 @@ repository for details on how to install homebrew or other details to install
 or debug the CLI.
 :::
 
-#### Troubleshooting Homebrew
+### Troubleshooting Homebrew
+
+:::info Having issues with Homebrew?
+
+Read this section if you're having problems downloading or upgrading your `poktrolld` binary using Homebrew.
+
+:::
 
 The source code for the Homebrew formula is available in the [homebrew-poktroll](https://github.com/pokt-network/homebrew-poktroll) repository.
 

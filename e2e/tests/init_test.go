@@ -35,6 +35,7 @@ import (
 	"github.com/pokt-network/poktroll/testutil/testclient"
 	"github.com/pokt-network/poktroll/testutil/yaml"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
+	gatewaytypes "github.com/pokt-network/poktroll/x/gateway/types"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 	servicetypes "github.com/pokt-network/poktroll/x/service/types"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
@@ -511,6 +512,16 @@ func (s *suite) TheSupplierForAccountIsUnbonding(supplierOperatorName string) {
 	require.True(s, supplier.IsUnbonding())
 }
 
+func (s *suite) TheGatewayForAccountIsUnbonding(gatewayName string) {
+	_, ok := accNameToAddrMap[gatewayName]
+	require.True(s, ok, "gateway %s not found", gatewayName)
+
+	s.waitForTxResultEvent(newEventMsgTypeMatchFn("gateway", "UnstakeGateway"))
+
+	gateway := s.getGatewayInfo(gatewayName)
+	require.True(s, gateway.IsUnbonding())
+}
+
 func (s *suite) TheUserWaitsForTheSupplierForAccountUnbondingPeriodToFinish(accName string) {
 	_, ok := operatorAccNameToSupplierMap[accName]
 	require.True(s, ok, "supplier %s not found", accName)
@@ -771,6 +782,27 @@ func (s *suite) getSupplierInfo(supplierOperatorName string) *sharedtypes.Suppli
 	responseBz := []byte(strings.TrimSpace(res.Stdout))
 	s.cdc.MustUnmarshalJSON(responseBz, &resp)
 	return &resp.Supplier
+}
+
+// getGatewayInfo returns the gateway information for a given gateway account address
+func (s *suite) getGatewayInfo(gatewayName string) *gatewaytypes.Gateway {
+	gatewayAddr := accNameToAddrMap[gatewayName]
+	args := []string{
+		"query",
+		"gateway",
+		"show-gateway",
+		gatewayAddr,
+		"--output=json",
+	}
+
+	res, err := s.pocketd.RunCommandOnHostWithRetry("", numQueryRetries, args...)
+	require.NoError(s, err, "error getting gateway %s due to error: %v", gatewayAddr, err)
+	s.pocketd.result = res
+
+	var resp gatewaytypes.QueryGetGatewayResponse
+	responseBz := []byte(strings.TrimSpace(res.Stdout))
+	s.cdc.MustUnmarshalJSON(responseBz, &resp)
+	return &resp.Gateway
 }
 
 // getSupplierUnbondingEndHeight returns the height at which the supplier will be unbonded.
