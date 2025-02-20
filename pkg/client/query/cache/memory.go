@@ -6,12 +6,12 @@ import (
 	"sync"
 	"time"
 
-	"github.com/pokt-network/poktroll/pkg/client"
+	"github.com/pokt-network/poktroll/pkg/cache"
 )
 
 var (
-	_ client.KeyValueCache[any]           = (*keyValueCache[any])(nil)
-	_ client.HistoricalKeyValueCache[any] = (*keyValueCache[any])(nil)
+	_ cache.KeyValueCache[any]           = (*keyValueCache[any])(nil)
+	_ cache.HistoricalKeyValueCache[any] = (*keyValueCache[any])(nil)
 
 	DefaultQueryCacheConfig = queryCacheConfig{
 		evictionPolicy: FirstInFirstOut,
