@@ -29,7 +29,7 @@ type cacheValue[T any] struct {
 // NewKeyValueCache creates a new keyValueCache with the configuration generated
 // by the given option functions.
 func NewKeyValueCache[T any](opts ...QueryCacheOptionFn) (*keyValueCache[T], error) {
-	config := DefaultQueryCacheConfig
+	config := DefaultKeyValueCacheConfig
 
 	for _, opt := range opts {
 		opt(&config)

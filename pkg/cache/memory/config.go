@@ -15,7 +15,7 @@ const (
 	LeastFrequentlyUsed
 )
 
-var DefaultQueryCacheConfig = keyValueCacheConfig{
+var DefaultKeyValueCacheConfig = keyValueCacheConfig{
 	evictionPolicy: FirstInFirstOut,
 	// TODO_MAINNET(@bryanchriswhite): Consider how we can "guarantee" good
 	// alignment between the TTL and the block production rate,
