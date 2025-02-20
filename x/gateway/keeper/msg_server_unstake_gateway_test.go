@@ -150,7 +150,7 @@ func TestMsgServer_UnstakeGateway_FailIfNotStaked(t *testing.T) {
 	require.False(t, isGatewayFound)
 }
 
-func TestMsgServer_UnstakeGateway_RestakeSuccess(t *testing.T) {
+func TestMsgServer_UnstakeGateway_RestakeBeforeUnbondingSuccess(t *testing.T) {
 	k, ctx := keepertest.GatewayKeeper(t)
 	srv := keeper.NewMsgServerImpl(k)
 

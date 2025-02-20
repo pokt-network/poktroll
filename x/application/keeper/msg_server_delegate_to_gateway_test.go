@@ -378,7 +378,7 @@ func TestMsgServer_DelegateToGateway_FailGatewayInactive(t *testing.T) {
 	require.Equal(t, 0, len(foundApp.DelegateeGatewayAddresses))
 }
 
-func TestMsgServer_DelegateToGateway_UnbondingButActive(t *testing.T) {
+func TestMsgServer_DelegateToGateway_UnbondingButActive_Success(t *testing.T) {
 	k, ctx := keepertest.ApplicationKeeper(t)
 	srv := keeper.NewMsgServerImpl(k)
 

@@ -41,6 +41,8 @@ func (k Keeper) EndBlockerUnbondGateways(ctx context.Context) (numUnbondedGatewa
 			continue
 		}
 
+		// DEV_NOTE: Auto-undelegating applications from unbonding gateways is taken care
+		// of by the application module's EndBlockerAutoUndelegateFromUnbondingGateways.
 		if err := k.UnbondGateway(ctx, &gateway); err != nil {
 			return numUnbondedGateways, err
 		}
