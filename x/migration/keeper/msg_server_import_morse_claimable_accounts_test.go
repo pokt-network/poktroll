@@ -55,7 +55,7 @@ func TestMsgServer_ImportMorseClaimableAccounts_Success(t *testing.T) {
 
 	// Assert that the MorseAccountState was created and matches expectations.
 	morseClaimableAccounts = k.GetAllMorseClaimableAccounts(ctx)
-	require.Greater(t, len(morseClaimableAccounts), 0)
+	require.Equal(t, len(morseClaimableAccounts), numAccounts)
 	require.NoError(t, err)
 
 	// Assert that the EventCreateMorseAccountState event was emitted.

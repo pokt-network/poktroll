@@ -1993,7 +1993,7 @@ func (*MsgUpdateParamsResponse) Descriptor() ([]byte, []int) {
 	return file_poktroll_migration_tx_proto_rawDescGZIP(), []int{1}
 }
 
-// MsgImportMorseClaimableAccounts is used to create the on-chain MorseClaimableAccounts ONLY ONCE (per network / re-genesis).
+// MsgImportMorseClaimableAccounts is used to create the on-chain MorseClaimableAccounts ONLY AND EXACTLY ONCE (per network / re-genesis).
 type MsgImportMorseClaimableAccounts struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -2003,13 +2003,17 @@ type MsgImportMorseClaimableAccounts struct {
 	Authority string `protobuf:"bytes,1,opt,name=authority,proto3" json:"authority,omitempty"`
 	// the account state derived from the Morse state export and the `poktrolld migrate collect-morse-accounts` command.
 	MorseAccountState *MorseAccountState `protobuf:"bytes,2,opt,name=morse_account_state,json=morseAccountState,proto3" json:"morse_account_state,omitempty"`
-	// expected sha256 hash of the morse_account_state. If this hash does not match the on-chain
-	// computation, the transaction will fail. Social consensus regarding the correctness of
-	// morse_account_state should have been achieved off-chain and can be verified on-chain by
-	// comparing this hash with that of a locally derived Morse state export:
-	// E.g., `poktrolld migrate collect-morse-accounts $<(pocket util export-genesis-for-reset)`.
-	// See: `pocket util export-genesis-for-migration --help` & `poktrolld migrate collect-morse-accounts --help`
-	// for more details.
+	// Validates the morse_account_state sha256 hash:
+	// - Transaction fails if hash doesn't match on-chain computation
+	// - Off-chain social consensus should be reached off-chain before verification
+	//
+	// Verification can be done by comparing with locally derived Morse state like so:
+	//
+	//	$ poktrolld migrate collect-morse-accounts $<(pocket util export-genesis-for-reset)
+	//
+	// Additional documentation:
+	// - pocket util export-genesis-for-migration --help
+	// - poktrolld migrate collect-morse-accounts --help
 	MorseAccountStateHash []byte `protobuf:"bytes,3,opt,name=morse_account_state_hash,json=morseAccountStateHash,proto3" json:"morse_account_state_hash,omitempty"`
 }
 
@@ -2061,8 +2065,8 @@ type MsgImportMorseClaimableAccountsResponse struct {
 
 	// On-chain computed sha256 hash of the morse_account_state provided in the corresponding MsgCreateMorseAccountState.
 	StateHash []byte `protobuf:"bytes,1,opt,name=state_hash,json=stateHash,proto3" json:"state_hash,omitempty"`
-	// Number of accounts (EOAs) which were collected from the Morse state export, which may be claimed.
-	// NOTE: Application and supplier actor stakes are consolidated into their corresponding account balances.
+	// Number of claimable accounts (EOAs) collected from Morse state export.
+	// NOTE: Account balances include consolidated application and supplier actor stakes.
 	NumAccounts uint64 `protobuf:"varint,2,opt,name=num_accounts,json=numAccounts,proto3" json:"num_accounts,omitempty"`
 }
 

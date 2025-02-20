@@ -21,7 +21,7 @@ import (
 //     It is used to generate the MorseAccountState.
 //   - Its corresponding MorseAccountState.
 //     This is the JSON output of `poktrolld migrate collect-morse-accounts`.
-//     It is used to persist the canonical Morse migration state from on Shannon.
+//     It is used to persist the canonical Morse migration state (snapshot) from on Shannon.
 //
 // The states are populated with:
 // - Random account addresses
@@ -106,6 +106,8 @@ func NewMorseStateExportAndAccountState(
 		)
 
 		// Add a supplier.
+		// In Morse, a node (aka a Service) is a Shannon supplier.
+		// In Morse, Validators are, by default, the top 1000 staked nodes.
 		morseStateExport.AppState.Pos.Validators = append(
 			morseStateExport.AppState.Pos.Validators,
 			&migrationtypes.MorseValidator{
