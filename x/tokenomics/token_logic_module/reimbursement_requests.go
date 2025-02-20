@@ -7,6 +7,7 @@ import (
 	cosmoslog "cosmossdk.io/log"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 
+	"github.com/pokt-network/poktroll/pkg/encoding"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
 )
@@ -40,6 +41,11 @@ func (tlm tlmGlobalMintReimbursementRequest) Process(
 	logger = logger.With("method", "TokenLogicModuleGlobalMintReimbursementRequest")
 
 	globalInflationPerClaim := tlmCtx.TokenomicsParams.GetGlobalInflationPerClaim()
+	globalInflationPerClaimRat, err := encoding.Float64ToRat(globalInflationPerClaim)
+	if err != nil {
+		logger.Error(fmt.Sprintf("error processing TLM due to: %v", err))
+		return err
+	}
 
 	// Do not process the reimbursement request if there is no global inflation.
 	if globalInflationPerClaim == 0 {
@@ -48,7 +54,7 @@ func (tlm tlmGlobalMintReimbursementRequest) Process(
 	}
 
 	// Determine how much new uPOKT to mint based on global inflation
-	newMintCoin, _ := CalculateGlobalPerClaimMintInflationFromSettlementAmount(actualSettlementCoin, globalInflationPerClaim)
+	newMintCoin := CalculateGlobalPerClaimMintInflationFromSettlementAmount(actualSettlementCoin, globalInflationPerClaimRat)
 	if newMintCoin.Amount.Int64() == 0 {
 		return tokenomicstypes.ErrTokenomicsCoinIsZero
 	}
