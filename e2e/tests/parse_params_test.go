@@ -172,6 +172,8 @@ func (s *suite) newSharedMsgUpdateParams(params paramsAnyMap) cosmostypes.Msg {
 			msgUpdateParams.Params.SupplierUnbondingPeriodSessions = uint64(paramValue.value.(int64))
 		case sharedtypes.ParamApplicationUnbondingPeriodSessions:
 			msgUpdateParams.Params.ApplicationUnbondingPeriodSessions = uint64(paramValue.value.(int64))
+		case sharedtypes.ParamGatewayUnbondingPeriodSessions:
+			msgUpdateParams.Params.GatewayUnbondingPeriodSessions = uint64(paramValue.value.(int64))
 		case sharedtypes.ParamComputeUnitsToTokensMultiplier:
 			msgUpdateParams.Params.ComputeUnitsToTokensMultiplier = uint64(paramValue.value.(int64))
 		default:

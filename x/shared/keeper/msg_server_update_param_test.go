@@ -23,6 +23,7 @@ var testSharedParams = sharedtypes.Params{
 	ProofWindowCloseOffsetBlocks:       4,
 	SupplierUnbondingPeriodSessions:    4,
 	ApplicationUnbondingPeriodSessions: 4,
+	GatewayUnbondingPeriodSessions:     4,
 	ComputeUnitsToTokensMultiplier:     42,
 }
 
@@ -166,6 +167,10 @@ func TestMsgUpdateParam_UpdateProofWindowOpenOffsetBlocks(t *testing.T) {
 	// Update the ApplicationUnbondingPeriodSessions such that it is greater than the
 	// cumulative proof window close blocks to pass UpdateParam validation.
 	sharedParams.ApplicationUnbondingPeriodSessions = minUnbodningPeriodSessions
+
+	// Update the GatewayUnbondingPeriodSessions such that it is greater than the
+	// cumulative proof window close blocks to pass UpdateParam validation.
+	sharedParams.GatewayUnbondingPeriodSessions = minUnbodningPeriodSessions
 
 	// Set the parameters to their default values
 	require.NoError(t, k.SetParams(ctx, sharedParams))
