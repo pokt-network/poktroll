@@ -15,7 +15,7 @@ const (
 	LeastFrequentlyUsed
 )
 
-var DefaultQueryCacheConfig = queryCacheConfig{
+var DefaultQueryCacheConfig = keyValueCacheConfig{
 	evictionPolicy: FirstInFirstOut,
 	// TODO_MAINNET(@bryanchriswhite): Consider how we can "guarantee" good
 	// alignment between the TTL and the block production rate,
@@ -25,9 +25,9 @@ var DefaultQueryCacheConfig = queryCacheConfig{
 
 // TODO_IN_THIS_COMMIT: reconcile config(s) with splitting of the cache implementations.
 
-// queryCacheConfig is the configuration for query caches.
+// keyValueCacheConfig is the configuration for query caches.
 // It is intended to be configured via QueryCacheOptionFn functions.
-type queryCacheConfig struct {
+type keyValueCacheConfig struct {
 	// maxKeys is the maximum number of key/value pairs the cache can
 	// hold before it starts evicting.
 	maxKeys int64
@@ -56,11 +56,11 @@ type queryCacheConfig struct {
 	maxVersionAge int64
 }
 
-// QueryCacheOptionFn is a function which receives a queryCacheConfig for configuration.
-type QueryCacheOptionFn func(*queryCacheConfig)
+// QueryCacheOptionFn is a function which receives a keyValueCacheConfig for configuration.
+type QueryCacheOptionFn func(*keyValueCacheConfig)
 
-// Validate ensures that the queryCacheConfig isn't configured with incompatible options.
-func (cfg *queryCacheConfig) Validate() error {
+// Validate ensures that the keyValueCacheConfig isn't configured with incompatible options.
+func (cfg *keyValueCacheConfig) Validate() error {
 	switch cfg.evictionPolicy {
 	case FirstInFirstOut:
 	// TODO_IMPROVE: support LeastRecentlyUsed and LeastFrequentlyUsed policies.
@@ -82,7 +82,7 @@ func (cfg *queryCacheConfig) Validate() error {
 // WithHistoricalMode enables historical caching with the given maxVersionAge
 // configuration; if 0, no historical pruning is performed.
 func WithHistoricalMode(numRetainedVersions int64) QueryCacheOptionFn {
-	return func(cfg *queryCacheConfig) {
+	return func(cfg *keyValueCacheConfig) {
 		cfg.historical = true
 		cfg.maxVersionAge = numRetainedVersions
 	}
@@ -91,14 +91,14 @@ func WithHistoricalMode(numRetainedVersions int64) QueryCacheOptionFn {
 // WithMaxKeys sets the maximum number of distinct key/value pairs the cache will
 // hold before evicting according to the configured eviction policy.
 func WithMaxKeys(maxKeys int64) QueryCacheOptionFn {
-	return func(cfg *queryCacheConfig) {
+	return func(cfg *keyValueCacheConfig) {
 		cfg.maxKeys = maxKeys
 	}
 }
 
 // WithEvictionPolicy sets the eviction policy.
 func WithEvictionPolicy(policy EvictionPolicy) QueryCacheOptionFn {
-	return func(cfg *queryCacheConfig) {
+	return func(cfg *keyValueCacheConfig) {
 		cfg.evictionPolicy = policy
 	}
 }
@@ -106,7 +106,7 @@ func WithEvictionPolicy(policy EvictionPolicy) QueryCacheOptionFn {
 // WithTTL sets the time-to-live for cached values. Values older than the TTL
 // MAY NOT be evicted immediately, but are NEVER considered as cache hits.
 func WithTTL(ttl time.Duration) QueryCacheOptionFn {
-	return func(cfg *queryCacheConfig) {
+	return func(cfg *keyValueCacheConfig) {
 		cfg.ttl = ttl
 	}
 }

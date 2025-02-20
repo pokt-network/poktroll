@@ -11,7 +11,7 @@ var _ cache.KeyValueCache[any] = (*keyValueCache[any])(nil)
 
 // keyValueCache provides a concurrency-safe in-memory key/value cache implementation.
 type keyValueCache[T any] struct {
-	config queryCacheConfig
+	config keyValueCacheConfig
 
 	// valuesMu is used to protect values AND valueHistories from concurrent access.
 	valuesMu sync.RWMutex

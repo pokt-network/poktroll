@@ -14,7 +14,7 @@ var _ cache.HistoricalKeyValueCache[any] = (*historicalKeyValueCache[any])(nil)
 // historicalKeyValueCache provides a concurrency-safe in-memory cache implementation
 // with support for tracking multiple value versions for a given key.
 type historicalKeyValueCache[T any] struct {
-	config queryCacheConfig
+	config keyValueCacheConfig
 
 	// valuesMu is used to protect values AND valueHistories from concurrent access.
 	valuesMu sync.RWMutex
