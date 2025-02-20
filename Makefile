@@ -85,11 +85,11 @@ install_ci_deps: ## Installs `golangci-lint` and other go tools
 
 .PHONY: install_cosmovisor
 install_cosmovisor: ## Installs `cosmovisor`
-	go install cosmossdk.io/tools/cosmovisor/cmd/cosmovisor@v1.6.0 && cosmovisor version --cosmovisor-only
+	go install cosmossdk.io/tools/cosmovisor/cmd/cosmovisor@v1.7.1 && cosmovisor version --cosmovisor-only
 
 .PHONY: cosmovisor_cross_compile
 cosmovisor_cross_compile: # Installs multiple cosmovisor binaries for different platforms (used by Dockerfile.release)
-	@COSMOVISOR_VERSION="v1.6.0"; \
+	@COSMOVISOR_VERSION="v1.7.1"; \
 	PLATFORMS="linux/amd64 linux/arm64"; \
 	mkdir -p ./tmp; \
 	echo "Fetching Cosmovisor source..."; \
@@ -355,8 +355,8 @@ go_docs: check_godoc ## Generate documentation for the project
 	godoc -http=:6060
 
 .PHONY: docusaurus_start
-docusaurus_start: check_npm check_node ## Start the Docusaurus server
-	(cd docusaurus && npm i && npm run start)
+docusaurus_start: check_yarn check_node ## Start the Docusaurus server
+	(cd docusaurus && yarn install && yarn start)
 
 .PHONY: docs_update_gov_params_page
 docs_update_gov_params_page: ## Update the page in Docusaurus documenting all the governance parameters
