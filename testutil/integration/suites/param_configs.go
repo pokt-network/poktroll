@@ -7,6 +7,7 @@ import (
 	"github.com/pokt-network/poktroll/testutil/sample"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	gatewaytypes "github.com/pokt-network/poktroll/x/gateway/types"
+	migrationtypes "github.com/pokt-network/poktroll/x/migration/types"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 	servicetypes "github.com/pokt-network/poktroll/x/service/types"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
@@ -245,5 +246,17 @@ var (
 		},
 		DefaultParams:    tokenomicstypes.DefaultParams(),
 		NewParamClientFn: tokenomicstypes.NewQueryClient,
+	}
+
+	MigrationModuleParamConfig = ModuleParamConfig{
+		ParamsMsgs: ModuleParamsMessages{
+			MsgUpdateParams:         migrationtypes.MsgUpdateParams{},
+			MsgUpdateParamsResponse: migrationtypes.MsgUpdateParamsResponse{},
+			QueryParamsRequest:      migrationtypes.QueryParamsRequest{},
+			QueryParamsResponse:     migrationtypes.QueryParamsResponse{},
+		},
+		ValidParams:      migrationtypes.DefaultParams(),
+		DefaultParams:    migrationtypes.DefaultParams(),
+		NewParamClientFn: migrationtypes.NewQueryClient,
 	}
 )

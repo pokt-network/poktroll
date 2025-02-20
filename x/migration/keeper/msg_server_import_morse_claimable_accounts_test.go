@@ -83,9 +83,13 @@ func TestMsgServer_ImportMorseClaimableAccounts_ErrorAlreadySet(t *testing.T) {
 	_, accountState := testmigration.NewMorseStateExportAndAccountState(t, numAccounts)
 	k.ImportFromMorseAccountState(ctx, accountState)
 
-	// Assert that the MorseAccountState have been set.
+	// Assert that the MorseClaimableAccounts are persisted AND unclaimed.
 	morseClaimableAccounts = k.GetAllMorseClaimableAccounts(ctx)
-	require.Equal(t, 10, len(morseClaimableAccounts))
+	require.Equal(t, numAccounts, len(morseClaimableAccounts))
+	for _, morseClaimableAccount := range morseClaimableAccounts {
+		require.Equal(t, int64(0), morseClaimableAccount.ClaimedAtHeight)
+		require.Equal(t, "", morseClaimableAccount.ShannonDestAddress)
+	}
 
 	// Assert that the MorseAccountState can ONLY be set once.
 	msgImportMorseClaimableAccounts, err := migrationtypes.NewMsgImportMorseClaimableAccounts(
