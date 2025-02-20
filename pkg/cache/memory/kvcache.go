@@ -1,7 +1,7 @@
 package memory
 
 import (
-	fmt "fmt"
+	"fmt"
 	"sync"
 	"time"
 
@@ -76,10 +76,7 @@ func (c *keyValueCache[T]) Get(key string) (T, bool) {
 	return cachedValue.value, true
 }
 
-// Set adds or updates the value in the cache for the given key. If the cache is
-// configured for historical mode, it will store the value at the latest **known**
-// version, which is only updated on calls to SetAsOfVersion, and therefore is not
-// guaranteed to be the current version w.r.t. the blockchain.
+// Set adds or updates the value in the cache for the given key.
 func (c *keyValueCache[T]) Set(key string, value T) error {
 	c.valuesMu.Lock()
 	defer c.valuesMu.Unlock()

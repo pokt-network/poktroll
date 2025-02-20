@@ -115,6 +115,7 @@ func WithEvictionPolicy(policy EvictionPolicy) KeyValueCacheOptionFn {
 
 // WithTTL sets the time-to-live for cached values. Values older than the TTL
 // MAY NOT be evicted immediately, but are NEVER considered as cache hits.
+// NOTE: TTL is ignored by the HistoricalKeyValueCache.
 func WithTTL(ttl time.Duration) KeyValueCacheOptionFn {
 	return func(cfg keyValueConfigI) error {
 		cfg.SetTTL(ttl)

@@ -92,18 +92,6 @@ func (c *historicalKeyValueCache[T]) GetVersion(key string, version int64) (T, b
 		return zero, false
 	}
 
-	isTTLEnabled := c.config.ttl > 0
-	isCacheValueExpired := time.Since(value.cachedAt) > c.config.ttl
-	if isTTLEnabled && isCacheValueExpired {
-		// DEV_NOTE: Intentionally not pruning here to improve concurrent speed;
-		// otherwise, the read lock would be insufficient. The value will be pruned
-		// in the subsequent call to SetVersion() after c.config.maxVersionAge
-		// blocks have elapsed. If usage is such that historical values aren't being
-		// subsequently set, numHistoricalBlocks (if configured) will eventually
-		// cause the pruning of historical values with expired TTLs.
-		return zero, false
-	}
-
 	return value.value, true
 }
 
@@ -198,12 +186,12 @@ func (c *historicalKeyValueCache[T]) evict() error {
 		var oldestKey string
 		var oldestTime time.Time
 		for key, valueHistory := range c.valueHistories {
-			mostRecentVersion := valueHistory.sortedDescVersions[0]
-			value, exists := valueHistory.versionToValueMap[mostRecentVersion]
+			latestVersion := valueHistory.sortedDescVersions[0]
+			value, exists := valueHistory.versionToValueMap[latestVersion]
 			if !exists {
 				return cache.ErrCacheInternal.Wrapf(
 					"expected value history for key %s to contain version %d but it did not 💣",
-					key, mostRecentVersion,
+					key, latestVersion,
 				)
 			}
 
