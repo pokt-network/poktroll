@@ -10,7 +10,6 @@ import (
 // TODO_FUTURE: Consider switching to string representations for tokenomics % allocations
 // since CosmosSDK will deprecate float64 values with zero copy encoding of scalar values.
 // Ref: https://docs.cosmos.network/main/build/rfc/rfc-002-zero-copy-encoding
-// NB: It is publicly exposed to be used in the tests.
 func Float64ToRat(f float64) (*big.Rat, error) {
 	// Convert float64 to string before big.Rat conversion to avoid floating point precision issues
 	// Example:
