@@ -40,6 +40,7 @@ func (s *suite) TheUnbondingPeriodParamIsSuccessfullySetToSessionsOfBlocks(
 		ProofWindowCloseOffsetBlocks:       1,
 		SupplierUnbondingPeriodSessions:    uint64(unbondingPeriodSessions),
 		ApplicationUnbondingPeriodSessions: uint64(unbondingPeriodSessions),
+		GatewayUnbondingPeriodSessions:     uint64(unbondingPeriodSessions),
 		ComputeUnitsToTokensMultiplier:     sharedtypes.DefaultComputeUnitsToTokensMultiplier,
 	}
 

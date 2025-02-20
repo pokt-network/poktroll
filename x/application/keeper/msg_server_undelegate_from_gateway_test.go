@@ -30,7 +30,7 @@ func TestMsgServer_UndelegateFromGateway_SuccessfullyUndelegate(t *testing.T) {
 	for i := 0; i < len(expectedGatewayAddresses); i++ {
 		gatewayAddr := sample.AccAddress()
 		// Mock the gateway being staked via the staked gateway map
-		keepertest.AddGatewayToStakedGatewayMap(t, gatewayAddr)
+		keepertest.AddGatewayToStakedGatewayMap(t, gatewayAddr, 0)
 		expectedGatewayAddresses[i] = gatewayAddr
 	}
 
@@ -149,8 +149,8 @@ func TestMsgServer_UndelegateFromGateway_FailNotDelegated(t *testing.T) {
 	gatewayAddr1 := sample.AccAddress()
 	gatewayAddr2 := sample.AccAddress()
 	// Mock the gateway being staked via the staked gateway map
-	keepertest.AddGatewayToStakedGatewayMap(t, gatewayAddr1)
-	keepertest.AddGatewayToStakedGatewayMap(t, gatewayAddr2)
+	keepertest.AddGatewayToStakedGatewayMap(t, gatewayAddr1, gwtypes.GatewayNotUnstaking)
+	keepertest.AddGatewayToStakedGatewayMap(t, gatewayAddr2, gwtypes.GatewayNotUnstaking)
 
 	// Prepare the application
 	stakeMsg := &types.MsgStakeApplication{
@@ -241,7 +241,7 @@ func TestMsgServer_UndelegateFromGateway_SuccessfullyUndelegateFromUnstakedGatew
 	appAddr := sample.AccAddress()
 	gatewayAddr := sample.AccAddress()
 	// Mock the gateway being staked via the staked gateway map
-	keepertest.AddGatewayToStakedGatewayMap(t, gatewayAddr)
+	keepertest.AddGatewayToStakedGatewayMap(t, gatewayAddr, gwtypes.GatewayNotUnstaking)
 
 	// Prepare the application
 	stakeMsg := &types.MsgStakeApplication{
@@ -522,7 +522,7 @@ func TestMsgServer_UndelegateFromGateway_RedelegationAfterUndelegationAtTheSameS
 	require.Contains(t, gatewayAddressesAfterPruning, gatewayAddrToRedelegate)
 }
 
-func TestMsgServer_UndelegateFromGateway_UndelegateFromUnstakedGateway(t *testing.T) {
+func TestMsgServer_UndelegateFromGateway_UndelegateFromUnbondingGateway(t *testing.T) {
 	k, ctx := keepertest.ApplicationKeeper(t)
 	srv := keeper.NewMsgServerImpl(k)
 
@@ -539,27 +539,17 @@ func TestMsgServer_UndelegateFromGateway_UndelegateFromUnstakedGateway(t *testin
 	}
 	require.Contains(t, pendingUndelegateFromAddrs, pendingUndelegateFromAddr)
 
-	// Increment the block height without moving to the next session.
-	sdkCtx = sdkCtx.WithBlockHeight(undelegationHeight + 1)
+	sessionEndHeight := testsession.GetSessionEndHeightWithDefaultParams(undelegationHeight)
+	// Increment the block height to make the gateway inactive.
+	sdkCtx = sdkCtx.WithBlockHeight(sessionEndHeight + 1)
 
-	// Auto-undelegation reacts to the unstaked gateway event but since the test
-	// does not exercise the gateway unstaking logic, the event is emitted manually.
-	err := sdkCtx.EventManager().EmitTypedEvents(
-		&gwtypes.EventGatewayUnstaked{Gateway: &gwtypes.Gateway{Address: delegateAddr}},
-		&gwtypes.EventGatewayUnstaked{Gateway: &gwtypes.Gateway{Address: pendingUndelegateFromAddr}},
-	)
+	err := k.EndBlockerAutoUndelegateFromUnbondingGateways(sdkCtx)
 	require.NoError(t, err)
 
-	err = k.EndBlockerAutoUndelegateFromUnstakedGateways(sdkCtx)
-	require.NoError(t, err)
-
-	app, _ = k.GetApplication(sdkCtx, app.Address)
-
+	app, isAppFound := k.GetApplication(sdkCtx, app.Address)
+	require.True(t, isAppFound)
 	require.Len(t, app.DelegateeGatewayAddresses, 0)
-
-	currentHeight := sdkCtx.BlockHeight()
-	sessionEndHeight := uint64(testsession.GetSessionEndHeightWithDefaultParams(currentHeight))
-	require.Len(t, app.PendingUndelegations[sessionEndHeight].GatewayAddresses, 2)
+	require.Len(t, app.PendingUndelegations[uint64(sessionEndHeight)].GatewayAddresses, 1)
 }
 
 // createAppStakeDelegateAndUndelegate is a helper function that is used in the tests
@@ -592,10 +582,12 @@ func createAppStakeDelegateAndUndelegate(
 	_, err := srv.StakeApplication(ctx, stakeMsg)
 	require.NoError(t, err)
 
+	sessionEndHeight := uint64(testsession.GetSessionEndHeightWithDefaultParams(undelegationHeight))
+
 	// Generate gateway addresses, mock the gateways being staked then delegate the
 	// application to the gateways.
 	delegateAddr = sample.AccAddress()
-	keepertest.AddGatewayToStakedGatewayMap(t, delegateAddr)
+	keepertest.AddGatewayToStakedGatewayMap(t, delegateAddr, sessionEndHeight)
 
 	delegateMsg := &types.MsgDelegateToGateway{
 		AppAddress:     appAddr,
@@ -605,7 +597,7 @@ func createAppStakeDelegateAndUndelegate(
 	require.NoError(t, err)
 
 	pendingUndelegateFromAddr = sample.AccAddress()
-	keepertest.AddGatewayToStakedGatewayMap(t, pendingUndelegateFromAddr)
+	keepertest.AddGatewayToStakedGatewayMap(t, pendingUndelegateFromAddr, sessionEndHeight)
 
 	delegateMsg = &types.MsgDelegateToGateway{
 		AppAddress:     appAddr,
