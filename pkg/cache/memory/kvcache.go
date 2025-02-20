@@ -1,4 +1,4 @@
-package cache
+package memory
 
 import (
 	"errors"
@@ -90,7 +90,7 @@ func (c *keyValueCache[T]) Get(key string) (T, error) {
 
 	cachedValue, exists := c.values[key]
 	if !exists {
-		return zero, ErrCacheMiss.Wrapf("key: %s", key)
+		return zero, cache.ErrCacheMiss.Wrapf("key: %s", key)
 	}
 
 	isTTLEnabled := c.config.ttl > 0
@@ -101,7 +101,7 @@ func (c *keyValueCache[T]) Get(key string) (T, error) {
 		// overwritten by the next call to Set(). If usage is such that values
 		// aren't being subsequently set, maxKeys (if configured) will eventually
 		// cause the pruning of values with expired TTLs.
-		return zero, ErrCacheMiss.Wrapf("key: %s", key)
+		return zero, cache.ErrCacheMiss.Wrapf("key: %s", key)
 	}
 
 	return cachedValue.value, nil
@@ -115,7 +115,7 @@ func (c *keyValueCache[T]) GetVersion(key string, version int64) (T, error) {
 	var zero T
 
 	if !c.config.historical {
-		return zero, ErrHistoricalModeNotEnabled
+		return zero, cache.ErrHistoricalModeNotEnabled
 	}
 
 	c.valuesMu.RLock()
@@ -123,7 +123,7 @@ func (c *keyValueCache[T]) GetVersion(key string, version int64) (T, error) {
 
 	valueHistory, exists := c.valueHistories[key]
 	if !exists {
-		return zero, ErrCacheMiss.Wrapf("key: %s", key)
+		return zero, cache.ErrCacheMiss.Wrapf("key: %s", key)
 	}
 
 	var nearestCachedVersion int64 = -1
@@ -139,13 +139,13 @@ func (c *keyValueCache[T]) GetVersion(key string, version int64) (T, error) {
 	}
 
 	if nearestCachedVersion == -1 {
-		return zero, ErrCacheMiss.Wrapf("key: %s, version: %d", key, version)
+		return zero, cache.ErrCacheMiss.Wrapf("key: %s, version: %d", key, version)
 	}
 
 	value, exists := valueHistory.versionToValueMap[nearestCachedVersion]
 	if !exists {
 		// DEV_NOTE: This SHOULD NEVER happen. If it does, it means that the cache has been corrupted.
-		return zero, ErrCacheInternal.Wrapf("failed to load historical value for key: %s, version: %d", key, version)
+		return zero, cache.ErrCacheInternal.Wrapf("failed to load historical value for key: %s, version: %d", key, version)
 	}
 
 	isTTLEnabled := c.config.ttl > 0
@@ -157,7 +157,7 @@ func (c *keyValueCache[T]) GetVersion(key string, version int64) (T, error) {
 		// blocks have elapsed. If usage is such that historical values aren't being
 		// subsequently set, numHistoricalBlocks (if configured) will eventually
 		// cause the pruning of historical values with expired TTLs.
-		return zero, ErrCacheMiss.Wrapf("key: %s, version: %d", key, version)
+		return zero, cache.ErrCacheMiss.Wrapf("key: %s, version: %d", key, version)
 	}
 
 	return value.value, nil
@@ -167,7 +167,7 @@ func (c *keyValueCache[T]) GetVersion(key string, version int64) (T, error) {
 func (c *keyValueCache[T]) GetLatestVersion(key string) (T, error) {
 	var zero T
 	if !c.config.historical {
-		return zero, ErrHistoricalModeNotEnabled
+		return zero, cache.ErrHistoricalModeNotEnabled
 	}
 
 	version, err := c.getLatestVersionNumber(key)
@@ -184,7 +184,7 @@ func (c *keyValueCache[T]) GetLatestVersion(key string) (T, error) {
 // guaranteed to be the current version w.r.t. the blockchain.
 func (c *keyValueCache[T]) Set(key string, value T) error {
 	if c.config.historical {
-		return ErrUnsupportedHistoricalModeOp.Wrap("keyValueCache#Set() is not supported in historical mode")
+		return cache.ErrUnsupportedHistoricalModeOp.Wrap("keyValueCache#Set() is not supported in historical mode")
 	}
 
 	c.valuesMu.Lock()
@@ -208,13 +208,13 @@ func (c *keyValueCache[T]) Set(key string, value T) error {
 // returns an error.
 func (c *keyValueCache[T]) SetVersion(key string, value T, version int64) error {
 	if !c.config.historical {
-		return ErrHistoricalModeNotEnabled
+		return cache.ErrHistoricalModeNotEnabled
 	}
 
 	// DEV_NOTE: MUST call getLatestVersionNumber() before locking valuesMu.
 	latestVersion, err := c.getLatestVersionNumber(key)
 	if err != nil {
-		if !errors.Is(err, ErrCacheMiss) {
+		if !errors.Is(err, cache.ErrCacheMiss) {
 			return err
 		}
 	}
@@ -328,7 +328,7 @@ func (c *keyValueCache[T]) evictHistorical() error {
 			mostRecentVersion := valueHistory.sortedDescVersions[0]
 			value, exists := valueHistory.versionToValueMap[mostRecentVersion]
 			if !exists {
-				return ErrCacheInternal.Wrapf(
+				return cache.ErrCacheInternal.Wrapf(
 					"expected value history for key %s to contain version %d but it did not 💣",
 					key, mostRecentVersion,
 				)
@@ -345,16 +345,16 @@ func (c *keyValueCache[T]) evictHistorical() error {
 	case LeastRecentlyUsed:
 		// TODO_IMPROVE: Implement LRU eviction
 		// This will require tracking access times
-		return ErrCacheInternal.Wrap("LRU eviction not implemented")
+		return cache.ErrCacheInternal.Wrap("LRU eviction not implemented")
 
 	case LeastFrequentlyUsed:
 		// TODO_IMPROVE: Implement LFU eviction
 		// This will require tracking access times
-		return ErrCacheInternal.Wrap("LFU eviction not implemented")
+		return cache.ErrCacheInternal.Wrap("LFU eviction not implemented")
 
 	default:
 		// DEV_NOTE: This SHOULD NEVER happen, QueryCacheConfig#Validate, SHOULD prevent it.
-		return ErrCacheInternal.Wrapf("unsupported eviction policy: %d", c.config.evictionPolicy)
+		return cache.ErrCacheInternal.Wrapf("unsupported eviction policy: %d", c.config.evictionPolicy)
 	}
 }
 
@@ -381,23 +381,23 @@ func (c *keyValueCache[T]) evictNonHistorical() error {
 	case LeastRecentlyUsed:
 		// TODO_IMPROVE: Implement LRU eviction
 		// This will require tracking access times
-		return ErrCacheInternal.Wrap("LRU eviction not implemented")
+		return cache.ErrCacheInternal.Wrap("LRU eviction not implemented")
 
 	case LeastFrequentlyUsed:
 		// TODO_IMPROVE: Implement LFU eviction
 		// This will require tracking access times
-		return ErrCacheInternal.Wrap("LFU eviction not implemented")
+		return cache.ErrCacheInternal.Wrap("LFU eviction not implemented")
 
 	default:
 		// DEV_NOTE: This SHOULD NEVER happen, QueryCacheConfig#Validate, SHOULD prevent it.
-		return ErrCacheInternal.Wrapf("unsupported eviction policy: %d", c.config.evictionPolicy)
+		return cache.ErrCacheInternal.Wrapf("unsupported eviction policy: %d", c.config.evictionPolicy)
 	}
 }
 
 // getLatestVersionNumber returns the latest version number (not the value) of the given key.
 func (c *keyValueCache[T]) getLatestVersionNumber(key string) (int64, error) {
 	if !c.config.historical {
-		return 0, ErrHistoricalModeNotEnabled
+		return 0, cache.ErrHistoricalModeNotEnabled
 	}
 
 	c.valuesMu.Lock()
@@ -405,7 +405,7 @@ func (c *keyValueCache[T]) getLatestVersionNumber(key string) (int64, error) {
 
 	valueHistory, exists := c.valueHistories[key]
 	if !exists {
-		return 0, ErrCacheMiss.Wrapf("key: %s", key)
+		return 0, cache.ErrCacheMiss.Wrapf("key: %s", key)
 	}
 
 	return valueHistory.sortedDescVersions[0], nil

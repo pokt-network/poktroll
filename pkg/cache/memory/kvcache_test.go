@@ -1,4 +1,4 @@
-package cache
+package memory
 
 import (
 	"context"
@@ -7,6 +7,8 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/require"
+
+	cache2 "github.com/pokt-network/poktroll/pkg/cache"
 )
 
 // TestInMemoryCache_NonHistorical tests the basic cache functionality without historical mode
@@ -24,19 +26,19 @@ func TestInMemoryCache_NonHistorical(t *testing.T) {
 
 		// Test missing key
 		_, err = cache.Get("nonexistent")
-		require.ErrorIs(t, err, ErrCacheMiss)
+		require.ErrorIs(t, err, cache2.ErrCacheMiss)
 
 		// Test Delete
 		cache.Delete("key1")
 		_, err = cache.Get("key1")
-		require.ErrorIs(t, err, ErrCacheMiss)
+		require.ErrorIs(t, err, cache2.ErrCacheMiss)
 
 		// Test Clear
 		err = cache.Set("key2", "value2")
 		require.NoError(t, err)
 		cache.Clear()
 		_, err = cache.Get("key2")
-		require.ErrorIs(t, err, ErrCacheMiss)
+		require.ErrorIs(t, err, cache2.ErrCacheMiss)
 	})
 
 	t.Run("TTL expiration", func(t *testing.T) {
@@ -58,7 +60,7 @@ func TestInMemoryCache_NonHistorical(t *testing.T) {
 
 		// Value should now be expired
 		_, err = cache.Get("key")
-		require.ErrorIs(t, err, ErrCacheMiss)
+		require.ErrorIs(t, err, cache2.ErrCacheMiss)
 	})
 
 	t.Run("max keys eviction", func(t *testing.T) {
@@ -80,7 +82,7 @@ func TestInMemoryCache_NonHistorical(t *testing.T) {
 
 		// First value should be evicted
 		_, err = cache.Get("key1")
-		require.ErrorIs(t, err, ErrCacheMiss)
+		require.ErrorIs(t, err, cache2.ErrCacheMiss)
 
 		// Other values should still be present
 		val, err := cache.Get("key2")
@@ -145,7 +147,7 @@ func TestInMemoryCache_Historical(t *testing.T) {
 
 		// Test getting version before first entry
 		_, err = cache.GetVersion("key", 5)
-		require.ErrorIs(t, err, ErrCacheMiss)
+		require.ErrorIs(t, err, cache2.ErrCacheMiss)
 
 		// Test getting version after last entry
 		val, err = cache.GetVersion("key", 25)
@@ -154,7 +156,7 @@ func TestInMemoryCache_Historical(t *testing.T) {
 
 		// Test getting a version for a key that isn't cached
 		_, err = cache.GetVersion("key2", 20)
-		require.ErrorIs(t, err, ErrCacheMiss)
+		require.ErrorIs(t, err, cache2.ErrCacheMiss)
 	})
 
 	t.Run("historical TTL expiration", func(t *testing.T) {
@@ -177,7 +179,7 @@ func TestInMemoryCache_Historical(t *testing.T) {
 
 		// Value should now be expired
 		_, err = cache.GetVersion("key", 10)
-		require.ErrorIs(t, err, ErrCacheMiss)
+		require.ErrorIs(t, err, cache2.ErrCacheMiss)
 	})
 
 	t.Run("pruning old versions", func(t *testing.T) {
@@ -200,9 +202,9 @@ func TestInMemoryCache_Historical(t *testing.T) {
 
 		// Entries more than 10 blocks old should be pruned
 		_, err = cache.GetVersion("key", 10)
-		require.ErrorIs(t, err, ErrCacheMiss)
+		require.ErrorIs(t, err, cache2.ErrCacheMiss)
 		_, err = cache.GetVersion("key", 20)
-		require.ErrorIs(t, err, ErrCacheMiss)
+		require.ErrorIs(t, err, cache2.ErrCacheMiss)
 
 		// Recent entries should still be available
 		val, err := cache.GetVersion("key", 30)
@@ -228,7 +230,7 @@ func TestInMemoryCache_Historical(t *testing.T) {
 
 		// Calling Set in historical mode is an error.
 		err = cache.Set("key", "value3")
-		require.ErrorIs(t, err, ErrUnsupportedHistoricalModeOp)
+		require.ErrorIs(t, err, cache2.ErrUnsupportedHistoricalModeOp)
 
 		// Calling Get should return the latest value.
 		val, err := cache.Get("key")
@@ -238,11 +240,11 @@ func TestInMemoryCache_Historical(t *testing.T) {
 		// Delete should remove all historical values.
 		cache.Delete("key")
 		_, err = cache.GetVersion("key", 10)
-		require.ErrorIs(t, err, ErrCacheMiss)
+		require.ErrorIs(t, err, cache2.ErrCacheMiss)
 		_, err = cache.GetVersion("key", 20)
-		require.ErrorIs(t, err, ErrCacheMiss)
+		require.ErrorIs(t, err, cache2.ErrCacheMiss)
 		_, err = cache.Get("key")
-		require.ErrorIs(t, err, ErrCacheMiss)
+		require.ErrorIs(t, err, cache2.ErrCacheMiss)
 	})
 }
 
@@ -254,10 +256,10 @@ func TestInMemoryCache_ErrorCases(t *testing.T) {
 
 		// Attempting historical operations should return error
 		err = cache.SetVersion("key", "value", 10)
-		require.ErrorIs(t, err, ErrHistoricalModeNotEnabled)
+		require.ErrorIs(t, err, cache2.ErrHistoricalModeNotEnabled)
 
 		_, err = cache.GetVersion("key", 10)
-		require.ErrorIs(t, err, ErrHistoricalModeNotEnabled)
+		require.ErrorIs(t, err, cache2.ErrHistoricalModeNotEnabled)
 	})
 
 	t.Run("zero values", func(t *testing.T) {

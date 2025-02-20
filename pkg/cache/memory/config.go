@@ -1,7 +1,9 @@
-package cache
+package memory
 
 import (
 	"time"
+
+	"github.com/pokt-network/poktroll/pkg/cache"
 )
 
 // EvictionPolicy determines which values are removed when number of keys in the cache reaches maxKeys.
@@ -53,15 +55,15 @@ func (cfg *queryCacheConfig) Validate() error {
 	case FirstInFirstOut:
 	// TODO_IMPROVE: support LeastRecentlyUsed and LeastFrequentlyUsed policies.
 	default:
-		return ErrQueryCacheConfigValidation.Wrapf("eviction policy %d not imlemented", cfg.evictionPolicy)
+		return cache.ErrQueryCacheConfigValidation.Wrapf("eviction policy %d not imlemented", cfg.evictionPolicy)
 	}
 
 	if cfg.maxVersionAge > 0 && !cfg.historical {
-		return ErrQueryCacheConfigValidation.Wrap("maxVersionAge > 0 requires historical mode to be enabled")
+		return cache.ErrQueryCacheConfigValidation.Wrap("maxVersionAge > 0 requires historical mode to be enabled")
 	}
 
 	if cfg.historical && cfg.maxVersionAge < 0 {
-		return ErrQueryCacheConfigValidation.Wrapf("maxVersionAge MUST be >= 0, got: %d", cfg.maxVersionAge)
+		return cache.ErrQueryCacheConfigValidation.Wrapf("maxVersionAge MUST be >= 0, got: %d", cfg.maxVersionAge)
 	}
 
 	return nil
