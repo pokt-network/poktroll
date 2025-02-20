@@ -75,7 +75,7 @@ func (cfg *keyValueCacheConfig) Validate() error {
 	case FirstInFirstOut:
 	// TODO_IMPROVE: support LeastRecentlyUsed and LeastFrequentlyUsed policies.
 	default:
-		return cache.ErrQueryCacheConfigValidation.Wrapf("eviction policy %d not imlemented", cfg.evictionPolicy)
+		return cache.ErrKeyValueCacheConfigValidation.Wrapf("eviction policy %d not imlemented", cfg.evictionPolicy)
 	}
 	return nil
 }
@@ -86,11 +86,11 @@ func (cfg *historicalKeyValueCacheConfig) Validate() error {
 	case FirstInFirstOut:
 	// TODO_IMPROVE: support LeastRecentlyUsed and LeastFrequentlyUsed policies.
 	default:
-		return cache.ErrQueryCacheConfigValidation.Wrapf("eviction policy %d not imlemented", cfg.evictionPolicy)
+		return cache.ErrKeyValueCacheConfigValidation.Wrapf("eviction policy %d not imlemented", cfg.evictionPolicy)
 	}
 
 	if cfg.maxVersionAge < 0 {
-		return cache.ErrQueryCacheConfigValidation.Wrapf("maxVersionAge MUST be >= 0, got: %d", cfg.maxVersionAge)
+		return cache.ErrKeyValueCacheConfigValidation.Wrapf("maxVersionAge MUST be >= 0, got: %d", cfg.maxVersionAge)
 	}
 
 	return nil

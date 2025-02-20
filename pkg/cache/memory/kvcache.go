@@ -1,6 +1,7 @@
 package memory
 
 import (
+	fmt "fmt"
 	"sync"
 	"time"
 
@@ -51,14 +52,14 @@ func NewKeyValueCache[T any](opts ...KeyValueCacheOptionFn) (*keyValueCache[T], 
 // configured for historical mode, it will return the value at the latest **known**
 // version, which is only updated on calls to SetAsOfVersion, and therefore is not
 // guaranteed to be the current version w.r.t the blockchain.
-func (c *keyValueCache[T]) Get(key string) (T, error) {
+func (c *keyValueCache[T]) Get(key string) (T, bool) {
 	var zero T
 	c.valuesMu.RLock()
 	defer c.valuesMu.RUnlock()
 
 	cachedValue, exists := c.values[key]
 	if !exists {
-		return zero, cache.ErrCacheMiss.Wrapf("key: %s", key)
+		return zero, false
 	}
 
 	isTTLEnabled := c.config.ttl > 0
@@ -69,10 +70,10 @@ func (c *keyValueCache[T]) Get(key string) (T, error) {
 		// overwritten by the next call to Set(). If usage is such that values
 		// aren't being subsequently set, maxKeys (if configured) will eventually
 		// cause the pruning of values with expired TTLs.
-		return zero, cache.ErrCacheMiss.Wrapf("key: %s", key)
+		return zero, false
 	}
 
-	return cachedValue.value, nil
+	return cachedValue.value, true
 }
 
 // Set adds or updates the value in the cache for the given key. If the cache is
@@ -89,10 +90,7 @@ func (c *keyValueCache[T]) Set(key string, value T) error {
 	}
 
 	// Evict after adding the new key/value.
-	if err := c.evict(); err != nil {
-		return err
-	}
-
+	c.evict()
 	return nil
 }
 
@@ -114,11 +112,11 @@ func (c *keyValueCache[T]) Clear() {
 
 // evict removes one item from the cache, to make space for a new one,
 // according to the configured eviction policy.
-func (c *keyValueCache[T]) evict() error {
+func (c *keyValueCache[T]) evict() {
 	isMaxKeysConfigured := c.config.maxKeys > 0
 	cacheMaxKeysReached := int64(len(c.values)) > c.config.maxKeys
 	if !isMaxKeysConfigured || !cacheMaxKeysReached {
-		return nil
+		return
 	}
 
 	switch c.config.evictionPolicy {
@@ -136,20 +134,20 @@ func (c *keyValueCache[T]) evict() error {
 			first = false
 		}
 		delete(c.values, oldestKey)
-		return nil
+		return
 
 	case LeastRecentlyUsed:
 		// TODO_IMPROVE: Implement LRU eviction
 		// This will require tracking access times
-		return cache.ErrCacheInternal.Wrap("LRU eviction not implemented")
+		panic("LRU eviction not implemented")
 
 	case LeastFrequentlyUsed:
 		// TODO_IMPROVE: Implement LFU eviction
 		// This will require tracking access times
-		return cache.ErrCacheInternal.Wrap("LFU eviction not implemented")
+		panic("LFU eviction not implemented")
 
 	default:
 		// DEV_NOTE: This SHOULD NEVER happen, QueryCacheConfig#Validate, SHOULD prevent it.
-		return cache.ErrCacheInternal.Wrapf("unsupported eviction policy: %d", c.config.evictionPolicy)
+		panic(fmt.Sprintf("unsupported eviction policy: %d", c.config.evictionPolicy))
 	}
 }

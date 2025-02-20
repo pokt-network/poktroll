@@ -7,8 +7,6 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/require"
-
-	cache2 "github.com/pokt-network/poktroll/pkg/cache"
 )
 
 // TestMemoryHistoricalKeyValueCache exercises the historical key/value cache functionality.
@@ -24,13 +22,12 @@ func TestMemoryHistoricalKeyValueCache(t *testing.T) {
 		require.NoError(t, err)
 
 		// Test getting the latest version
-		latestVersion, err := cache.getLatestVersionNumber("key")
-		require.NoError(t, err)
+		latestVersion := cache.getLatestVersionNumber("key")
 		require.Equal(t, int64(10), latestVersion)
 
 		// Test getting the latest value
-		latestValue, err := cache.GetLatestVersion("key")
-		require.NoError(t, err)
+		latestValue, isCached := cache.GetLatestVersion("key")
+		require.True(t, isCached)
 		require.Equal(t, "value1", latestValue)
 
 		// Update the latest version
@@ -38,41 +35,40 @@ func TestMemoryHistoricalKeyValueCache(t *testing.T) {
 		require.NoError(t, err)
 
 		// Test getting the latest version
-		latestVersion, err = cache.getLatestVersionNumber("key")
-		require.NoError(t, err)
+		latestVersion = cache.getLatestVersionNumber("key")
 		require.Equal(t, int64(20), latestVersion)
 
 		// Test getting the latest value
-		latestValue, err = cache.GetLatestVersion("key")
+		latestValue, isCached = cache.GetLatestVersion("key")
 		require.NoError(t, err)
 		require.Equal(t, "value2", latestValue)
 
 		// Test getting exact versions
-		val, err := cache.GetVersion("key", 10)
-		require.NoError(t, err)
+		val, isCached := cache.GetVersion("key", 10)
+		require.True(t, isCached)
 		require.Equal(t, "value1", val)
 
-		val, err = cache.GetVersion("key", 20)
-		require.NoError(t, err)
+		val, isCached = cache.GetVersion("key", 20)
+		require.True(t, isCached)
 		require.Equal(t, "value2", val)
 
 		// Test getting intermediate version (should return nearest lower version)
-		val, err = cache.GetVersion("key", 15)
-		require.NoError(t, err)
+		val, isCached = cache.GetVersion("key", 15)
+		require.True(t, isCached)
 		require.Equal(t, "value1", val)
 
 		// Test getting version before first entry
-		_, err = cache.GetVersion("key", 5)
-		require.ErrorIs(t, err, cache2.ErrCacheMiss)
+		_, isCached = cache.GetVersion("key", 5)
+		require.False(t, isCached)
 
 		// Test getting version after last entry
-		val, err = cache.GetVersion("key", 25)
-		require.NoError(t, err)
+		val, isCached = cache.GetVersion("key", 25)
+		require.True(t, isCached)
 		require.Equal(t, "value2", val)
 
 		// Test getting a version for a key that isn't cached
-		_, err = cache.GetVersion("key2", 20)
-		require.ErrorIs(t, err, cache2.ErrCacheMiss)
+		_, isCached = cache.GetVersion("key2", 20)
+		require.False(t, isCached)
 	})
 
 	t.Run("historical TTL expiration", func(t *testing.T) {
@@ -86,16 +82,16 @@ func TestMemoryHistoricalKeyValueCache(t *testing.T) {
 		require.NoError(t, err)
 
 		// Value should be available immediately
-		val, err := cache.GetVersion("key", 10)
-		require.NoError(t, err)
+		val, isCached := cache.GetVersion("key", 10)
+		require.True(t, isCached)
 		require.Equal(t, "value1", val)
 
 		// Wait for ttl to expire
 		time.Sleep(150 * time.Millisecond)
 
 		// Value should now be expired
-		_, err = cache.GetVersion("key", 10)
-		require.ErrorIs(t, err, cache2.ErrCacheMiss)
+		_, isCached = cache.GetVersion("key", 10)
+		require.False(t, isCached)
 	})
 
 	t.Run("pruning old versions", func(t *testing.T) {
@@ -117,18 +113,18 @@ func TestMemoryHistoricalKeyValueCache(t *testing.T) {
 		require.NoError(t, err)
 
 		// Entries more than 10 blocks old should be pruned
-		_, err = cache.GetVersion("key", 10)
-		require.ErrorIs(t, err, cache2.ErrCacheMiss)
-		_, err = cache.GetVersion("key", 20)
-		require.ErrorIs(t, err, cache2.ErrCacheMiss)
+		_, isCached := cache.GetVersion("key", 10)
+		require.False(t, isCached)
+		_, isCached = cache.GetVersion("key", 20)
+		require.False(t, isCached)
 
 		// Recent entries should still be available
-		val, err := cache.GetVersion("key", 30)
-		require.NoError(t, err)
+		val, isCached := cache.GetVersion("key", 30)
+		require.True(t, isCached)
 		require.Equal(t, "value3", val)
 
-		val, err = cache.GetVersion("key", 40)
-		require.NoError(t, err)
+		val, isCached = cache.GetVersion("key", 40)
+		require.True(t, isCached)
 		require.Equal(t, "value4", val)
 	})
 }

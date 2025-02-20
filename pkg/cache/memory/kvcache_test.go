@@ -7,8 +7,6 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/require"
-
-	cache2 "github.com/pokt-network/poktroll/pkg/cache"
 )
 
 // TestMemoryKeyValueCache exercises the basic cache functionality.
@@ -20,25 +18,25 @@ func TestMemoryKeyValueCache(t *testing.T) {
 		// Test Set and Get
 		err = cache.Set("key1", "value1")
 		require.NoError(t, err)
-		val, err := cache.Get("key1")
-		require.NoError(t, err)
+		val, isCached := cache.Get("key1")
+		require.True(t, isCached)
 		require.Equal(t, "value1", val)
 
 		// Test missing key
-		_, err = cache.Get("nonexistent")
-		require.ErrorIs(t, err, cache2.ErrCacheMiss)
+		_, isCached = cache.Get("nonexistent")
+		require.False(t, isCached)
 
 		// Test Delete
 		cache.Delete("key1")
-		_, err = cache.Get("key1")
-		require.ErrorIs(t, err, cache2.ErrCacheMiss)
+		_, isCached = cache.Get("key1")
+		require.False(t, isCached)
 
 		// Test Clear
 		err = cache.Set("key2", "value2")
 		require.NoError(t, err)
 		cache.Clear()
-		_, err = cache.Get("key2")
-		require.ErrorIs(t, err, cache2.ErrCacheMiss)
+		_, isCached = cache.Get("key2")
+		require.False(t, isCached)
 	})
 
 	t.Run("TTL expiration", func(t *testing.T) {
@@ -51,16 +49,16 @@ func TestMemoryKeyValueCache(t *testing.T) {
 		require.NoError(t, err)
 
 		// Value should be available immediately
-		val, err := cache.Get("key")
-		require.NoError(t, err)
+		val, isCached := cache.Get("key")
+		require.True(t, isCached)
 		require.Equal(t, "value", val)
 
 		// Wait for TTL to expire
 		time.Sleep(150 * time.Millisecond)
 
 		// Value should now be expired
-		_, err = cache.Get("key")
-		require.ErrorIs(t, err, cache2.ErrCacheMiss)
+		_, isCached = cache.Get("key")
+		require.False(t, isCached)
 	})
 
 	t.Run("max keys eviction", func(t *testing.T) {
@@ -81,16 +79,16 @@ func TestMemoryKeyValueCache(t *testing.T) {
 		require.NoError(t, err)
 
 		// First value should be evicted
-		_, err = cache.Get("key1")
-		require.ErrorIs(t, err, cache2.ErrCacheMiss)
+		_, isCached := cache.Get("key1")
+		require.False(t, isCached)
 
 		// Other values should still be present
-		val, err := cache.Get("key2")
-		require.NoError(t, err)
+		val, isCached := cache.Get("key2")
+		require.True(t, isCached)
 		require.Equal(t, "value2", val)
 
-		val, err = cache.Get("key3")
-		require.NoError(t, err)
+		val, isCached = cache.Get("key3")
+		require.True(t, isCached)
 		require.Equal(t, "value3", val)
 	})
 }
@@ -104,15 +102,15 @@ func TestKeyValueCache_ErrorCases(t *testing.T) {
 		// Test with empty key
 		err = cache.Set("", "value")
 		require.NoError(t, err)
-		val, err := cache.Get("")
-		require.NoError(t, err)
+		val, isCached := cache.Get("")
+		require.True(t, isCached)
 		require.Equal(t, "value", val)
 
 		// Test with empty value
 		err = cache.Set("key", "")
 		require.NoError(t, err)
-		val, err = cache.Get("key")
-		require.NoError(t, err)
+		val, isCached = cache.Get("key")
+		require.True(t, isCached)
 		require.Equal(t, "", val)
 	})
 }

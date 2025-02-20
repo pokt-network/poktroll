@@ -1,7 +1,7 @@
 package memory
 
 import (
-	"errors"
+	"fmt"
 	"sort"
 	"sync"
 	"time"
@@ -60,14 +60,14 @@ func NewHistoricalKeyValueCache[T any](opts ...KeyValueCacheOptionFn) (*historic
 // given version. If a value is not found for that version, the value at the nearest
 // previous version is returned. If the cache is not configured for historical mode,
 // it returns an error.
-func (c *historicalKeyValueCache[T]) GetVersion(key string, version int64) (T, error) {
+func (c *historicalKeyValueCache[T]) GetVersion(key string, version int64) (T, bool) {
 	var zero T
 	c.valuesMu.RLock()
 	defer c.valuesMu.RUnlock()
 
 	valueHistory, exists := c.valueHistories[key]
 	if !exists {
-		return zero, cache.ErrCacheMiss.Wrapf("key: %s", key)
+		return zero, false
 	}
 
 	var nearestCachedVersion int64 = -1
@@ -83,13 +83,13 @@ func (c *historicalKeyValueCache[T]) GetVersion(key string, version int64) (T, e
 	}
 
 	if nearestCachedVersion == -1 {
-		return zero, cache.ErrCacheMiss.Wrapf("key: %s, version: %d", key, version)
+		return zero, false
 	}
 
 	value, exists := valueHistory.versionToValueMap[nearestCachedVersion]
 	if !exists {
 		// DEV_NOTE: This SHOULD NEVER happen. If it does, it means that the cache has been corrupted.
-		return zero, cache.ErrCacheInternal.Wrapf("failed to load historical value for key: %s, version: %d", key, version)
+		return zero, false
 	}
 
 	isTTLEnabled := c.config.ttl > 0
@@ -101,18 +101,18 @@ func (c *historicalKeyValueCache[T]) GetVersion(key string, version int64) (T, e
 		// blocks have elapsed. If usage is such that historical values aren't being
 		// subsequently set, numHistoricalBlocks (if configured) will eventually
 		// cause the pruning of historical values with expired TTLs.
-		return zero, cache.ErrCacheMiss.Wrapf("key: %s, version: %d", key, version)
+		return zero, false
 	}
 
-	return value.value, nil
+	return value.value, true
 }
 
 // GetLatestVersion returns the value of the latest version of the given key.
-func (c *historicalKeyValueCache[T]) GetLatestVersion(key string) (T, error) {
+func (c *historicalKeyValueCache[T]) GetLatestVersion(key string) (T, bool) {
 	var zero T
-	version, err := c.getLatestVersionNumber(key)
-	if err != nil {
-		return zero, err
+	version := c.getLatestVersionNumber(key)
+	if version == -1 {
+		return zero, false
 	}
 
 	return c.GetVersion(key, version)
@@ -123,12 +123,7 @@ func (c *historicalKeyValueCache[T]) GetLatestVersion(key string) (T, error) {
 // returns an error.
 func (c *historicalKeyValueCache[T]) SetVersion(key string, value T, version int64) error {
 	// DEV_NOTE: MUST call getLatestVersionNumber() before locking valuesMu.
-	latestVersion, err := c.getLatestVersionNumber(key)
-	if err != nil {
-		if !errors.Is(err, cache.ErrCacheMiss) {
-			return err
-		}
-	}
+	latestVersion := c.getLatestVersionNumber(key)
 	if version > latestVersion {
 		latestVersion = version
 	}
@@ -182,7 +177,7 @@ func (c *historicalKeyValueCache[T]) SetVersion(key string, value T, version int
 	c.valueHistories[key] = valueHistory
 
 	// Evict after adding the new key/value.
-	if err = c.evict(); err != nil {
+	if err := c.evict(); err != nil {
 		return err
 	}
 
@@ -223,28 +218,28 @@ func (c *historicalKeyValueCache[T]) evict() error {
 	case LeastRecentlyUsed:
 		// TODO_IMPROVE: Implement LRU eviction
 		// This will require tracking access times
-		return cache.ErrCacheInternal.Wrap("LRU eviction not implemented")
+		panic("LRU eviction not implemented")
 
 	case LeastFrequentlyUsed:
 		// TODO_IMPROVE: Implement LFU eviction
 		// This will require tracking access times
-		return cache.ErrCacheInternal.Wrap("LFU eviction not implemented")
+		panic("LFU eviction not implemented")
 
 	default:
 		// DEV_NOTE: This SHOULD NEVER happen, QueryCacheConfig#Validate, SHOULD prevent it.
-		return cache.ErrCacheInternal.Wrapf("unsupported eviction policy: %d", c.config.evictionPolicy)
+		panic(fmt.Sprintf("unsupported eviction policy: %d", c.config.evictionPolicy))
 	}
 }
 
 // getLatestVersionNumber returns the latest version number (not the value) of the given key.
-func (c *historicalKeyValueCache[T]) getLatestVersionNumber(key string) (int64, error) {
+func (c *historicalKeyValueCache[T]) getLatestVersionNumber(key string) int64 {
 	c.valuesMu.Lock()
 	defer c.valuesMu.Unlock()
 
 	valueHistory, exists := c.valueHistories[key]
 	if !exists {
-		return 0, cache.ErrCacheMiss.Wrapf("key: %s", key)
+		return -1
 	}
 
-	return valueHistory.sortedDescVersions[0], nil
+	return valueHistory.sortedDescVersions[0]
 }
