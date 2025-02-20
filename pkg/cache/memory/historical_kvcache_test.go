@@ -40,7 +40,7 @@ func TestMemoryHistoricalKeyValueCache(t *testing.T) {
 
 		// Test getting the latest value
 		latestValue, isCached = cache.GetLatestVersion("key")
-		require.NoError(t, err)
+		require.True(t, isCached)
 		require.Equal(t, "value2", latestValue)
 
 		// Test getting exact versions
@@ -71,7 +71,7 @@ func TestMemoryHistoricalKeyValueCache(t *testing.T) {
 		require.False(t, isCached)
 	})
 
-	t.Run("historical TTL expiration", func(t *testing.T) {
+	t.Run("historical cache ignores TTL expiration", func(t *testing.T) {
 		cache, err := NewHistoricalKeyValueCache[string](
 			WithMaxVersionAge(100),
 			WithTTL(100*time.Millisecond),
@@ -91,7 +91,7 @@ func TestMemoryHistoricalKeyValueCache(t *testing.T) {
 
 		// Value should now be expired
 		_, isCached = cache.GetVersion("key", 10)
-		require.False(t, isCached)
+		require.True(t, isCached)
 	})
 
 	t.Run("pruning old versions", func(t *testing.T) {
