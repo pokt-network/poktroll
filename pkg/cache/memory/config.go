@@ -25,7 +25,7 @@ var DefaultQueryCacheConfig = keyValueCacheConfig{
 
 // TODO_IN_THIS_COMMIT: reconcile config(s) with splitting of the cache implementations.
 
-// keyValueCacheConfig is the configuration for query caches.
+// keyValueCacheConfig is the configuration for constructing a keyValueCache.
 // It is intended to be configured via QueryCacheOptionFn functions.
 type keyValueCacheConfig struct {
 	// maxKeys is the maximum number of key/value pairs the cache can
