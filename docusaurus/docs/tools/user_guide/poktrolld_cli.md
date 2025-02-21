@@ -3,16 +3,27 @@ title: poktrolld Installation
 sidebar_position: 1
 ---
 
-:::tip[TLDR: If you know what you're doing.]
+:::tip TL;DR If you know what you're doing
+
+If you have `brew`:
 
 ```bash
 brew tap pokt-network/poktroll
 brew install poktrolld
 ```
 
+If you don't have `brew`:
+
+1. Grab a binary from the [latest release](https://github.com/pokt-network/poktroll/releases/latest)
+2. Download the appropriate `poktroll_${OS}_${ARCH}.tar.gz` for your environment
+3. Untar the downloaded file to retrieve the `poktrolld` binary
+4. Extract the binary to `/usr/local/bin`
+
 or grab a binary from the [releases page](https://github.com/pokt-network/poktroll/releases).
 
 :::
+
+## Table of Contents <!-- omit in toc -->
 
 - [MacOS \& Linux Users](#macos--linux-users)
   - [Using Homebrew](#using-homebrew)
@@ -50,7 +61,6 @@ Read this section if you're having problems downloading or upgrading your `poktr
 </p>
 </summary>
 
-
 The source code for the Homebrew formula is available in the [homebrew-poktroll](https://github.com/pokt-network/homebrew-poktroll) repository.
 
 If you encounter any issues, like being unable to install the latest version, you can try the following:
@@ -76,6 +86,8 @@ brew install poktrolld
 
 Pre-built binaries are available on our [releases page](https://github.com/pokt-network/poktroll/releases).
 
+You can view the latest release directly by clicking [here](https://github.com/pokt-network/poktroll/releases/latest).
+
 The following snippet downloads/upgrades the binary to the latest released version:
 
 ```bash
@@ -94,9 +106,9 @@ poktrolld version
 
 ### From Source
 
-:::warning
+:::warning Do not continue unless you're a 🚀👨‍💻💎
 
-This method is only recommended for advanced users as it requires working with developer tools.
+This method is only recommended for **ADVANCED** users as it requires working with developer tools.
 
 :::
 
@@ -134,6 +146,12 @@ poktrolld --help
 ```
 
 ## Windows Users
+
+:::danger
+
+Why? 🥴 ⁉️
+
+:::
 
 Currently, we do not support native Windows installation. Windows users are encouraged
 to use [Windows Subsystem for Linux (WSL)](https://docs.microsoft.com/en-us/windows/wsl/install)
