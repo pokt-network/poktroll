@@ -76,12 +76,6 @@ func TestSupplierQueryPaginated(t *testing.T) {
 	supplierModuleKeepers, ctx := keepertest.SupplierKeeper(t)
 	suppliers := createNSuppliers(*supplierModuleKeepers.Keeper, ctx, 5)
 
-	// TODO_MAINNET(@olshansk, #1033): Newer version of the CosmosSDK doesn't support maps.
-	// Decide on a direction w.r.t maps in protos based on feedback from the CosmoSDK team.
-	for _, supplier := range suppliers {
-		supplier.ServicesActivationHeightsMap = nil
-	}
-
 	request := func(next []byte, offset, limit uint64, total bool) *types.QueryAllSuppliersRequest {
 		return &types.QueryAllSuppliersRequest{
 			Pagination: &query.PageRequest{

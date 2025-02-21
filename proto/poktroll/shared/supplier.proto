@@ -33,7 +33,5 @@ message Supplier {
   // Mapping of serviceIds to their activation heights
   // - Key: serviceId
   // - Value: Session start height when supplier becomes active for the service
-  // TODO_MAINNET(@olshansk, #1033): Look into moving this to an external repeated protobuf
-  // because maps are no longer supported for serialized types in the CosmoSDK.
   map<string, uint64> services_activation_heights_map = 6;
 }

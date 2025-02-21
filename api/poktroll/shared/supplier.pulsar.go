@@ -1088,8 +1088,6 @@ type Supplier struct {
 	// Mapping of serviceIds to their activation heights
 	// - Key: serviceId
 	// - Value: Session start height when supplier becomes active for the service
-	// TODO_MAINNET(@olshansk, #1033): Look into moving this to an external repeated protobuf
-	// because maps are no longer supported for serialized types in the CosmoSDK.
 	ServicesActivationHeightsMap map[string]uint64 `protobuf:"bytes,6,rep,name=services_activation_heights_map,json=servicesActivationHeightsMap,proto3" json:"services_activation_heights_map,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"varint,2,opt,name=value,proto3"`
 }
 
