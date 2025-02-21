@@ -16,8 +16,7 @@ func TestMemoryKeyValueCache(t *testing.T) {
 		require.NoError(t, err)
 
 		// Test Set and Get
-		err = cache.Set("key1", "value1")
-		require.NoError(t, err)
+		cache.Set("key1", "value1")
 		val, isCached := cache.Get("key1")
 		require.True(t, isCached)
 		require.Equal(t, "value1", val)
@@ -32,8 +31,7 @@ func TestMemoryKeyValueCache(t *testing.T) {
 		require.False(t, isCached)
 
 		// Test Clear
-		err = cache.Set("key2", "value2")
-		require.NoError(t, err)
+		cache.Set("key2", "value2")
 		cache.Clear()
 		_, isCached = cache.Get("key2")
 		require.False(t, isCached)
@@ -45,8 +43,7 @@ func TestMemoryKeyValueCache(t *testing.T) {
 		)
 		require.NoError(t, err)
 
-		err = cache.Set("key", "value")
-		require.NoError(t, err)
+		cache.Set("key", "value")
 
 		// Value should be available immediately
 		val, isCached := cache.Get("key")
@@ -69,14 +66,11 @@ func TestMemoryKeyValueCache(t *testing.T) {
 		require.NoError(t, err)
 
 		// Add values up to max keys
-		err = cache.Set("key1", "value1")
-		require.NoError(t, err)
-		err = cache.Set("key2", "value2")
-		require.NoError(t, err)
+		cache.Set("key1", "value1")
+		cache.Set("key2", "value2")
 
 		// Add one more value, should trigger eviction
-		err = cache.Set("key3", "value3")
-		require.NoError(t, err)
+		cache.Set("key3", "value3")
 
 		// First value should be evicted
 		_, isCached := cache.Get("key1")
@@ -100,15 +94,13 @@ func TestKeyValueCache_ErrorCases(t *testing.T) {
 		require.NoError(t, err)
 
 		// Test with empty key
-		err = cache.Set("", "value")
-		require.NoError(t, err)
+		cache.Set("", "value")
 		val, isCached := cache.Get("")
 		require.True(t, isCached)
 		require.Equal(t, "value", val)
 
 		// Test with empty value
-		err = cache.Set("key", "")
-		require.NoError(t, err)
+		cache.Set("key", "")
 		val, isCached = cache.Get("key")
 		require.True(t, isCached)
 		require.Equal(t, "", val)
@@ -139,8 +131,7 @@ func TestKeyValueCache_ConcurrentAccess(t *testing.T) {
 					return
 				default:
 					key := "key"
-					err := cache.Set(key, j)
-					require.NoError(t, err)
+					cache.Set(key, j)
 					_, _ = cache.Get(key)
 				}
 			}

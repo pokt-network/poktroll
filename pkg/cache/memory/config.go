@@ -24,7 +24,7 @@ var (
 		// by accessing onchain block times directly.
 		ttl: time.Minute,
 	}
-	DefaultHistoricialKeyValueCacheConfig = historicalKeyValueCacheConfig{
+	DefaultHistoricalKeyValueCacheConfig = historicalKeyValueCacheConfig{
 		keyValueCacheConfig: DefaultKeyValueCacheConfig,
 		maxVersionAge:       10,
 	}
@@ -62,7 +62,7 @@ type historicalKeyValueCacheConfig struct {
 	// value versions are pruned.
 	// E.g.: Given a latest version of 100, and a maxVersionAge of 10, then the
 	// oldest version that is not pruned is 90 (100 - 10).
-	// If 0, no historical pruning is performed. It ONLY applies when historical is true.
+	// If 0, no historical pruning is performed.
 	maxVersionAge int64
 }
 
@@ -82,11 +82,8 @@ func (cfg *keyValueCacheConfig) Validate() error {
 
 // Validate ensures that the historicalKeyValueCacheConfig isn't configured with incompatible options.
 func (cfg *historicalKeyValueCacheConfig) Validate() error {
-	switch cfg.evictionPolicy {
-	case FirstInFirstOut:
-	// TODO_IMPROVE: support LeastRecentlyUsed and LeastFrequentlyUsed policies.
-	default:
-		return cache.ErrKeyValueCacheConfigValidation.Wrapf("eviction policy %d not imlemented", cfg.evictionPolicy)
+	if err := cfg.keyValueCacheConfig.Validate(); err != nil {
+		return err
 	}
 
 	if cfg.maxVersionAge < 0 {

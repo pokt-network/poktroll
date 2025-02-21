@@ -16,7 +16,7 @@ type keyValueCache[T any] struct {
 
 	// valuesMu is used to protect values AND valueHistories from concurrent access.
 	valuesMu sync.RWMutex
-	// values holds the cached values in non-historical mode.
+	// values holds the cached values.
 	values map[string]cacheValue[T]
 }
 
@@ -48,10 +48,7 @@ func NewKeyValueCache[T any](opts ...KeyValueCacheOptionFn) (*keyValueCache[T], 
 	}, nil
 }
 
-// Get retrieves the value from the cache with the given key. If the cache is
-// configured for historical mode, it will return the value at the latest **known**
-// version, which is only updated on calls to SetAsOfVersion, and therefore is not
-// guaranteed to be the current version w.r.t the blockchain.
+// Get retrieves the value from the cache with the given key.
 func (c *keyValueCache[T]) Get(key string) (T, bool) {
 	var zero T
 	c.valuesMu.RLock()
@@ -65,11 +62,11 @@ func (c *keyValueCache[T]) Get(key string) (T, bool) {
 	isTTLEnabled := c.config.ttl > 0
 	isCacheValueExpired := time.Since(cachedValue.cachedAt) > c.config.ttl
 	if isTTLEnabled && isCacheValueExpired {
-		// DEV_NOTE: Intentionally not pruning here to improve concurrent speed;
-		// otherwise, the read lock would be insufficient. The value will be
-		// overwritten by the next call to Set(). If usage is such that values
-		// aren't being subsequently set, maxKeys (if configured) will eventually
-		// cause the pruning of values with expired TTLs.
+		// DEV_NOTE: Not pruning here to optimize concurrent speed:
+		// - Read lock alone would be insufficient for pruning
+		// - Next Set() call will overwrite the value
+		// - If values aren't subsequently set, maxKeys config will eventually trigger
+		//   pruning of TTL-expired values
 		return zero, false
 	}
 
@@ -77,7 +74,7 @@ func (c *keyValueCache[T]) Get(key string) (T, bool) {
 }
 
 // Set adds or updates the value in the cache for the given key.
-func (c *keyValueCache[T]) Set(key string, value T) error {
+func (c *keyValueCache[T]) Set(key string, value T) {
 	c.valuesMu.Lock()
 	defer c.valuesMu.Unlock()
 
@@ -88,7 +85,6 @@ func (c *keyValueCache[T]) Set(key string, value T) error {
 
 	// Evict after adding the new key/value.
 	c.evict()
-	return nil
 }
 
 // Delete removes a value from the cache.
@@ -133,6 +129,7 @@ func (c *keyValueCache[T]) evict() {
 		delete(c.values, oldestKey)
 		return
 
+	// DEV_NOTE: The following cases SHOULD NEVER happen, KeyValueCacheConfig#Validate, SHOULD prevent it.
 	case LeastRecentlyUsed:
 		// TODO_IMPROVE: Implement LRU eviction
 		// This will require tracking access times
@@ -144,7 +141,6 @@ func (c *keyValueCache[T]) evict() {
 		panic("LFU eviction not implemented")
 
 	default:
-		// DEV_NOTE: This SHOULD NEVER happen, QueryCacheConfig#Validate, SHOULD prevent it.
 		panic(fmt.Sprintf("unsupported eviction policy: %d", c.config.evictionPolicy))
 	}
 }
