@@ -27,6 +27,7 @@ import (
 	"github.com/pokt-network/poktroll/pkg/observable/channel"
 	"github.com/pokt-network/poktroll/pkg/polylog"
 	"github.com/pokt-network/poktroll/pkg/relayer/config"
+	"github.com/pokt-network/poktroll/pkg/relayer/relay_authenticator"
 	"github.com/pokt-network/poktroll/pkg/signer"
 	testsession "github.com/pokt-network/poktroll/testutil/session"
 	"github.com/pokt-network/poktroll/testutil/testclient/testblock"
@@ -53,6 +54,9 @@ const JSONRPCInternalErrorCode = -32000
 type TestBehavior struct {
 	ctx context.Context
 	t   *testing.T
+
+	// signingKeyNames is the list of key names that are used to sign the relay responses
+	signingKeyNames []string
 
 	// Deps is exported so it can be used by the dependency injection framework
 	// from the pkg/relayer/proxy/proxy_test.go
@@ -82,12 +86,14 @@ func init() {
 func NewRelayerProxyTestBehavior(
 	ctx context.Context,
 	t *testing.T,
+	signingKeyNames []string,
 	behaviors ...func(*TestBehavior),
 ) *TestBehavior {
 	test := &TestBehavior{
 		ctx:             ctx,
 		t:               t,
 		proxyServersMap: make(map[string]*http.Server),
+		signingKeyNames: signingKeyNames,
 	}
 
 	for _, behavior := range behaviors {
@@ -123,6 +129,19 @@ func WithRelayerProxyDependenciesForBlockHeight(
 		ringCacheDeps := depinject.Supply(accountQueryClient, applicationQueryClient, delegationClient, sharedQueryClient)
 		ringCache := testrings.NewRingCacheWithMockDependencies(test.ctx, test.t, ringCacheDeps)
 
+		relayAuthenticatorDeps := depinject.Supply(
+			logger,
+			keyring,
+			sessionQueryClient,
+			sharedQueryClient,
+			blockClient,
+			ringCache,
+		)
+
+		opts := relay_authenticator.WithSigningKeyNames(test.signingKeyNames)
+		relayAuthenticator, err := relay_authenticator.NewRelayAuthenticator(relayAuthenticatorDeps, opts)
+		require.NoError(test.t, err)
+
 		testDeps := depinject.Configs(
 			ringCacheDeps,
 			depinject.Supply(
@@ -132,6 +151,7 @@ func WithRelayerProxyDependenciesForBlockHeight(
 				sessionQueryClient,
 				supplierQueryClient,
 				keyring,
+				relayAuthenticator,
 			),
 		)
 
@@ -357,7 +377,7 @@ func GetRelayResponseError(t *testing.T, res *http.Response) (errCode int32, err
 func GetApplicationRingSignature(
 	t *testing.T,
 	req *servicetypes.RelayRequest,
-	appPrivateKey *secp256k1.PrivKey,
+	appPrivateKey cryptotypes.PrivKey,
 ) []byte {
 	publicKey := appPrivateKey.PubKey()
 	curve := ring_secp256k1.NewCurve()
