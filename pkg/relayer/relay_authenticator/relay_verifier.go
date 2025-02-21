@@ -85,7 +85,7 @@ func (ra *relayAuthenticator) VerifyRelayRequest(
 		}
 	}
 
-	return ErrRelayAuthenticatorInvalidSupplier
+	return ErrRelayAuthenticatorInvalidSessionSupplier
 }
 
 // getTargetSessionBlockHeight returns the block height at which the session

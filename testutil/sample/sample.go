@@ -12,9 +12,16 @@ import (
 
 // AccAddressAndPubKey returns a sample account address and public key
 func AccAddressAndPubKey() (string, cryptotypes.PubKey) {
-	pk := secp256k1.GenPrivKey().PubKey()
+	address, pubKey, _ := AccAddressAndKeyPair()
+	return address, pubKey
+}
+
+// AccAddressAndKeyPair returns a sample account address its public key and private key
+func AccAddressAndKeyPair() (string, cryptotypes.PubKey, cryptotypes.PrivKey) {
+	sk := secp256k1.GenPrivKey()
+	pk := sk.PubKey()
 	addr := pk.Address()
-	return cosmostypes.AccAddress(addr).String(), pk
+	return cosmostypes.AccAddress(addr).String(), pk, sk
 }
 
 // AccAddressAndKeyPair returns a sample account address its public key and private key

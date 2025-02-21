@@ -8,6 +8,10 @@ import (
 // SignRelayResponse signs the hash of a RelayResponse given the supplier operator address.
 // It uses the keyring and keyName to sign the payload and returns the signature.
 func (ra *relayAuthenticator) SignRelayResponse(relayResponse *types.RelayResponse, supplierOperatorAddr string) error {
+	if err := relayResponse.Meta.SessionHeader.ValidateBasic(); err != nil {
+		return ErrRelayAuthenticatorInvalidRelayResponse.Wrapf("invalid session header: %v", err)
+	}
+
 	// create a simple signer for the request
 	operatorKeyName, ok := ra.operatorAddressToSigningKeyNameMap[supplierOperatorAddr]
 	if !ok {

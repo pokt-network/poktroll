@@ -13,5 +13,5 @@ var (
 	ErrRelayerProxyInternalError             = sdkerrors.Register(codespace, 5, "internal error")
 	ErrRelayerProxyUnknownSession            = sdkerrors.Register(codespace, 6, "relayer proxy encountered unknown session")
 	ErrRelayerProxyRateLimited               = sdkerrors.Register(codespace, 7, "offchain rate limit hit by relayer proxy")
-	ErrRelayerProxyUnclaimRelayPrice         = sdkerrors.Register(codespace, 8, "failed to unclaim relay price")
+	ErrRelayerProxyCalculateRelayCost        = sdkerrors.Register(codespace, 8, "failed to calculate relay cost")
 )
