@@ -57,25 +57,33 @@ type RelayerProxy interface {
 	// A served relay is one whose RelayRequest's signature and session have been verified,
 	// and its RelayResponse has been signed and successfully sent to the client.
 	ServedRelays() RelaysObservable
+}
 
-	// VerifyRelayRequest is a shared method used by RelayServers to check the
-	// relay request signature and session validity.
-	// TODO_TECHDEBT(@red-0ne): This method should be moved out of the RelayerProxy interface
-	// that should not be responsible for verifying relay requests.
+type RelayerProxyOption func(RelayerProxy)
+
+// RelayAuthenticator is the interface that authenticates the relay requests and
+// responses (i.e. verifies the relay request signature and session validity, and
+// signs the relay response).
+type RelayAuthenticator interface {
+	// VerifyRelayRequest verifies the relay request signature and session validity.
 	VerifyRelayRequest(
 		ctx context.Context,
 		relayRequest *servicetypes.RelayRequest,
 		serviceId string,
 	) error
 
-	// SignRelayResponse is a shared method used by RelayServers to sign
-	// and append the signature to the RelayResponse.
-	// TODO_TECHDEBT(@red-0ne): This method should be moved out of the RelayerProxy interface
-	// that should not be responsible for signing relay responses.
+	// SignRelayResponse signs the relay response given a supplier operator address.
 	SignRelayResponse(relayResponse *servicetypes.RelayResponse, supplierOperatorAddr string) error
+
+	// GetSupplierOperatorAddresses returns the supplier operator addresses that
+	// the relay authenticator can use to sign relay responses.
+	GetSupplierOperatorAddresses() []string
+
+	// Start starts the relay authenticator and its underlying services.
+	Start(ctx context.Context)
 }
 
-type RelayerProxyOption func(RelayerProxy)
+type RelayAuthenticatorOption func(RelayAuthenticator)
 
 // RelayServer is the interface of the advertised relay servers provided by the RelayerProxy.
 type RelayServer interface {
