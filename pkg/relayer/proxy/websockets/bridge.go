@@ -13,6 +13,7 @@ import (
 	"github.com/pokt-network/poktroll/pkg/relayer"
 	"github.com/pokt-network/poktroll/pkg/relayer/config"
 	"github.com/pokt-network/poktroll/x/service/types"
+	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 )
 
 // bridge represents a websocket bridge between the gateway and the service backend.
@@ -40,7 +41,7 @@ import (
 //     when submitting to the miner. It does this by combining the most recent
 //     request with the most recent response.
 //
-// TODO_FUTURE: Currently, the RelayMiner is payed for each incoming and outgoing
+// TODO_FUTURE: Currently, the RelayMiner is paid for each incoming and outgoing
 // message transmitted.
 // While this is the most common and trivial use case, future services might have
 // different payable units of work (e.g. packet size, specific packet or data delimiter...).
@@ -93,6 +94,11 @@ type bridge struct {
 	// relaysProducer is the channel that the bridge uses to emit the relays that
 	// have been served to the miner.
 	relaysProducer chan<- *types.Relay
+
+	// session is the session that the bridge is serving.
+	// It ensures that the bridge only serves relay requests matching the session
+	// it was created for.
+	session *sessiontypes.Session
 }
 
 // NewBridge creates a new websocket bridge between the gateway and the service backend.
@@ -103,7 +109,7 @@ func NewBridge(
 	serverRelaysProducer chan<- *types.Relay,
 	blockClient client.BlockClient,
 	serviceConfig *config.RelayMinerSupplierServiceConfig,
-	serviceId string,
+	session *sessiontypes.Session,
 	gatewayWSConn *websocket.Conn,
 ) (*bridge, error) {
 	bridgeLogger := logger.With("component", "bridge")
@@ -135,7 +141,7 @@ func NewBridge(
 		serviceBackendWSConn,
 		bridgeLogger,
 		messageSourceServiceBackend,
-		serviceId,
+		session.Header.ServiceId,
 		msgChan,
 		stopChan,
 		stopBridgeObservable,
@@ -147,7 +153,7 @@ func NewBridge(
 		gatewayWSConn,
 		bridgeLogger,
 		messageSourceGateway,
-		serviceId,
+		session.Header.ServiceId,
 		msgChan,
 		stopChan,
 		stopBridgeObservable,
@@ -164,6 +170,7 @@ func NewBridge(
 		relayMeter:         relayMeter,
 		relaysProducer:     serverRelaysProducer,
 		blockClient:        blockClient,
+		session:            session,
 	}
 
 	return bridge, nil
@@ -231,6 +238,18 @@ func (b *bridge) handleGatewayIncomingMessage(msg message) {
 		)
 		return
 	}
+
+	// Ensure that the relay request is for the session that the bridge is serving.
+	if relayRequest.Meta.SessionHeader.SessionId != b.session.Header.SessionId {
+		b.serviceBackendConn.handleError(
+			ErrWebsocketsGatewayMessage.Wrapf(
+				"the relay request session id %q does not match the bridge session id %q",
+				relayRequest.Meta.SessionHeader.SessionId, b.session.Header.SessionId,
+			),
+		)
+		return
+	}
+
 	serviceId := relayRequest.Meta.SessionHeader.ServiceId
 
 	// Store the latest relay request to guarantee that there is always a request/response.

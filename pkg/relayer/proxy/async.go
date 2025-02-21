@@ -68,7 +68,7 @@ func (server *relayMinerHTTPServer) handleAsyncConnection(
 		server.servedRelaysProducer,
 		server.blockClient,
 		supplierServiceConfig,
-		serviceId,
+		session,
 		clientConn,
 	)
 	if err != nil {
