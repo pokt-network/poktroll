@@ -75,19 +75,11 @@ func TestMsgServer_ImportMorseClaimableAccounts_ErrorAlreadySet(t *testing.T) {
 	k, ctx := keepertest.MigrationKeeper(t)
 	srv := keeper.NewMsgServerImpl(k)
 
-	// Assert that the MorseAccountState is not set initially.
-	morseClaimableAccounts := k.GetAllMorseClaimableAccounts(ctx)
-	require.Equal(t, 0, len(morseClaimableAccounts))
+	// Set at least one MorseAccountState initially.
+	_, accountState := testmigration.NewMorseStateExportAndAccountState(t, 1)
+	k.SetMorseClaimableAccount(ctx, *accountState.Accounts[0])
 
-	numAccounts := 10
-	_, accountState := testmigration.NewMorseStateExportAndAccountState(t, numAccounts)
-	k.ImportFromMorseAccountState(ctx, accountState)
-
-	// Assert that the MorseAccountState have been set.
-	morseClaimableAccounts = k.GetAllMorseClaimableAccounts(ctx)
-	require.Equal(t, 10, len(morseClaimableAccounts))
-
-	// Assert that the MorseAccountState can ONLY be set once.
+	// Assert that the MsgImportMorseClaimableAccounts fails.
 	msgImportMorseClaimableAccounts, err := migrationtypes.NewMsgImportMorseClaimableAccounts(
 		authtypes.NewModuleAddress(govtypes.ModuleName).String(),
 		*accountState,
