@@ -11,6 +11,7 @@ These instructions are intended to streamline usage of `poktrolld` on Debian
 machines to **AVOID** providing a password each time.
 
 **Only follow these instructions if you know what you're doing.**
+
 :::
 
 ## Table of Contents <!-- omit in toc -->
@@ -25,6 +26,7 @@ machines to **AVOID** providing a password each time.
   - [5. Store Cosmos Keyring Password](#5-store-cosmos-keyring-password)
   - [6. Verify Password Storage](#6-verify-password-storage)
   - [7. Test Configuration](#7-test-configuration)
+  - [8. Security Reminder](#8-security-reminder)
 
 ## Prerequisites
 
@@ -40,6 +42,14 @@ what a `backend` is, see [the official docs](https://docs.cosmos.network/v0.46/r
 
 This document will focus on how to use `poktrolld` with the `os` backend without
 a password on a Debian machine, and assume you have read the Cosmos documentation.
+
+:::note Only required for non `test` keyring backends
+
+This whole page can be skipped if the `backend` in your `.poktroll/config/client.toml` is set to `test`.
+
+If it is set to `os` or other, these instructions avoid having to enter your password every time.
+
+:::
 
 ## Instructions
 
@@ -102,6 +112,12 @@ This will display your stored password
 pass cosmos-keyring
 ```
 
+:::warning IMPORTANT: RESTART REQUIRED
+
+You must rerun the command above 👆 after every restart for the keys to be available
+
+:::
+
 ### 7. Test Configuration
 
 Test if poktrolld can now access the keyring without prompting
@@ -110,6 +126,8 @@ Test if poktrolld can now access the keyring without prompting
 poktrolld keys list
 ```
 
+### 8. Security Reminder
+
 :::warning
-Note: Make sure to keep your GPG private key secure, as it's used to decrypt your stored passwords.
+Note: Make sure to keep your **GPG private key secure**, as it's used to decrypt your stored passwords.
 :::
