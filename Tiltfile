@@ -375,10 +375,10 @@ k8s_resource(
     "validator",
     labels=["pocket_network"],
     port_forwards=[
-        "26657",  # RPC
+        "26657",  # CometBFT JSON-RPC
         "9090",  # the gRPC server address
         "40004",  # use with `dlv` when it's turned on in `localnet_config.yaml`
-        "1317", # REST
+        "1317", # CosmosSDK REST API
         # Use with pprof like this: `go tool pprof -http=:3333 http://localhost:6050/debug/pprof/goroutine`
         "6050:6060",
     ],

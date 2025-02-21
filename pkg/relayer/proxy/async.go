@@ -18,8 +18,8 @@ func (server *relayMinerHTTPServer) handleAsyncConnection(
 	request *http.Request,
 ) error {
 	// Determine the service ID and application address from the request headers.
-	serviceId := request.Header.Get("target-service-id")
-	appAddress := request.Header.Get("X-App-Address")
+	serviceId := request.Header.Get("Target-Service-Id")
+	appAddress := request.Header.Get("App-Address")
 
 	logger := server.logger.With(
 		"relay_request_type", "asynchronous",
@@ -59,7 +59,7 @@ func (server *relayMinerHTTPServer) handleAsyncConnection(
 		return ErrRelayerProxyInternalError.Wrap(err.Error())
 	}
 
-	// TODO_IN_THIS_PR: Add unit and e2e tests for the websocket bridge and connection.
+	// TODO_MAINNET(@red0ne): Add unit and e2e tests for the websocket bridge and connection.
 	// Create a new websocket bridge between the gateway and the service endpoint.
 	bridge, err := proxyws.NewBridge(
 		logger,

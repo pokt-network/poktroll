@@ -93,15 +93,6 @@ func connectServiceBackend(serviceBackendUrl *url.URL, header http.Header) (*web
 		dialer = websocket.DefaultDialer
 	}
 
-	// TODO_TECHDEBT: Remove this switch statement when the service backend URL
-	// scheme is picked up from the service based on the RPCType.
-	switch serviceBackendUrl.Scheme {
-	case "http":
-		serviceBackendUrl.Scheme = "ws"
-	case "https":
-		serviceBackendUrl.Scheme = "wss"
-	}
-
 	conn, _, err := dialer.Dial(serviceBackendUrl.String(), header)
 	if err != nil {
 		return nil, err
