@@ -10,12 +10,16 @@ import (
 	migrationtypes "github.com/pokt-network/poktroll/x/migration/types"
 )
 
+// ImportMorseClaimableAccounts persists all MorseClaimableAccounts in the given
+// MorseAccountState to the KVStore.
+// This operation MAY ONLY be performed EXACTLY ONCE (per network/re-genesis),
+// and ONLY by an authorized account (i.e. PNF).
 func (k msgServer) ImportMorseClaimableAccounts(ctx context.Context, msg *migrationtypes.MsgImportMorseClaimableAccounts) (*migrationtypes.MsgImportMorseClaimableAccountsResponse, error) {
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 	logger := sdkCtx.Logger().With("method", "CreateMorseAccountState")
 
 	if msg.GetAuthority() != k.GetAuthority() {
-		err := migrationtypes.ErrUnauthorized.Wrapf("invalid authority address (%s)", msg.GetAuthority())
+		err := migrationtypes.ErrInvalidSigner.Wrapf("invalid authority address (%s)", msg.GetAuthority())
 		return nil, status.Error(codes.PermissionDenied, err.Error())
 	}
 
