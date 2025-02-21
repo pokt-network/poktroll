@@ -41,7 +41,8 @@ type relayAuthenticator struct {
 	// It is used to update the current session data.
 	blockClient client.BlockClient
 
-	// ringCache is the cache used to store the keyring keys.
+	// ringCache stores and manages rings for signing/verifying relay requests using
+	// gateway and application public keys.
 	ringCache crypto.RingCache
 
 	// operatorAddressToSigningKeyNameMap is a map with a CosmoSDK address as a key,

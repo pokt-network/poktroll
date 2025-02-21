@@ -235,7 +235,7 @@ func (rmtr *ProxyRelayMeter) SetNonApplicableRelayReward(ctx context.Context, re
 		sessionRelayMeter.serviceRelayDifficulty,
 	)
 	if err != nil {
-		return ErrRelayerProxyUnclaimRelayPrice.Wrapf("%s", err)
+		return ErrRelayerProxyCalculateRelayCost.Wrapf("%s", err)
 	}
 
 	// Decrease the consumed stake amount by relay cost.
