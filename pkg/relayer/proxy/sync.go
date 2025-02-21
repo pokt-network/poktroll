@@ -22,7 +22,6 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 	writer http.ResponseWriter,
 	request *http.Request,
 ) (*types.RelayRequest, error) {
-
 	logger := server.logger.With("relay_request_type", "synchronous")
 
 	logger.Debug().Msg("handling HTTP request")

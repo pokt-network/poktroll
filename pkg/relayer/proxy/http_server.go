@@ -137,7 +137,10 @@ func (server *relayMinerHTTPServer) ServeHTTP(writer http.ResponseWriter, reques
 
 // isWebSocketRequest checks if the request is trying to upgrade to WebSocket.
 func isWebSocketRequest(r *http.Request) bool {
-	// Check if the request is trying to upgradeHeader to WebSocket
+	// Check if the request is trying to upgrade to WebSocket as per the RFC 6455.
+	// The request must have the "Upgrade" and "Connection" headers set to
+	// "websocket" and "Upgrade" respectively.
+	// refer to: https://datatracker.ietf.org/doc/html/rfc6455#section-4.2.1
 	upgradeHeader := r.Header.Get("Upgrade")
 	connectionHeader := r.Header.Get("Connection")
 

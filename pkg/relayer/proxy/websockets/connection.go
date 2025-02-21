@@ -19,7 +19,8 @@ const (
 	// Time allowed (in seconds) to write a message to the peer.
 	writeWaitSec = 10 * time.Second
 
-	// Time allowed (in seconds) to read the next pong message from the peer.
+	// Time allowed (in seconds) to wait for the next pong message to be received
+	// from the peer before the connection closes.
 	pongWaitSec = 30 * time.Second
 
 	// Send pings to peer with this period.
@@ -46,7 +47,9 @@ type message struct {
 	// source may be either `gateay` or `service_backend`
 	source messageSource
 
-	// messageType is an int returned by the gorilla/websocket package
+	// messageType is an int returned by the gorilla/websocket package.
+	// It can be one of the following: Text: 1, Binary: 2, Close: 8, Ping: 9, Pong: 10 messages.
+	// For more information, refer to: https://www.rfc-editor.org/rfc/rfc6455.html#section-11.8
 	messageType int
 }
 

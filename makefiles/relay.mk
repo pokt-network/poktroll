@@ -23,7 +23,6 @@ send_relay_path_REST: acc_initialize_pubkeys ## Send a REST relay through PATH t
 send_relay_path_WEBSOCKET: test_e2e_env ## Send a WEBSOCKET relay through PATH to a local anvil (test ETH) node
 	@echo "Opening WebSocket connection...."
 	@echo "After the connection opens, copy & paste this to subscribe to new blocks:"
-
 	@echo '{"id":1,"jsonrpc":"2.0","method":"eth_subscribe","params":["newHeads"]}'
 	@echo "You should receive a subscription ID and subsequent block headers"
 	wscat -c ws://localhost:3000/v1/ \

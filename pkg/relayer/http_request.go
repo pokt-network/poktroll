@@ -34,25 +34,23 @@ func BuildServiceBackendRequest(
 	requestUrl.Host = serviceConfig.BackendUrl.Host
 	requestUrl.Scheme = serviceConfig.BackendUrl.Scheme
 
-	// Prepend the path of the service's backend URL to the path of the upstream request.
-	// This is done to ensure that the request complies with the service's backend URL,
-	// while preserving the path of the original request.
-	// This is particularly important for RESTful APIs where the path is used to
-	// determine the resource being accessed.
-	// For example, if the service's backend URL is "http://host:8080/api/v1",
-	// and the upstream request path is "/users", the final request path will be
-	// "http://host:8080/api/v1/users".
+	// Prepend the service's backend URL path to the upstream request path to ensure
+	// proper routing while  preserving the original request structure. For RESTful APIs,
+	// this maintains resource identification.
+	//
+	// Example:
+	// - Backend URL: http://host:8080/api/v1
+	// - Upstream path: /users
+	// - Final path: http://host:8080/api/v1/users
 	requestUrl.Path = path.Join(serviceConfig.BackendUrl.Path, requestUrl.Path)
 
-	// Merge the query parameters of the upstream request with the query parameters
-	// of the service's backend URL.
-	// This is done to ensure that the query parameters of the original request are
-	// passed and that the service's backend URL query parameters are also included.
-	// This is important for RESTful APIs where query parameters are used to filter
-	// and paginate resources.
-	// For example, if the service's backend URL is "http://host:8080/api/v1?key=abc",
-	// and the upstream request has a query parameter "page=1", the final request URL
-	// will be "http://host:8080/api/v1?key=abc&page=1".
+	// Merge query parameters from both the upstream request and service's backend URL
+	// to maintain filtering and pagination functionality.
+	//
+	// Example:
+	// - Backend URL: http://host:8080/api/v1?key=abc
+	// - Upstream params: page=1
+	// - Final URL: http://host:8080/api/v1?key=abc&page=1
 	query := requestUrl.Query()
 	for key, values := range serviceConfig.BackendUrl.Query() {
 		for _, value := range values {
@@ -66,14 +64,16 @@ func BuildServiceBackendRequest(
 	header := http.Header{}
 	poktHTTPRequest.CopyToHTTPHeader(header)
 
+	// Basic HTTP Authentication.
+	// https://developer.mozilla.org/en-US/docs/Web/HTTP/Authentication
 	if serviceConfig.Authentication != nil {
 		auth := serviceConfig.Authentication.Username + ":" + serviceConfig.Authentication.Password
-		header.Set("Authorization", "Basic "+base64.StdEncoding.EncodeToString([]byte(auth)))
+		encodedAuth := base64.StdEncoding.EncodeToString([]byte(auth))
+		header.Set("Authorization", "Basic "+encodedAuth)
 	}
 
-	// Add any service configuration specific headers to the request, such as
-	// authentication or authorization headers. These will override any upstream
-	// request headers with the same key.
+	// Add service-specific configuration headers (e.g. auth/authz),
+	// overriding any matching upstream headers (i.e. same key).
 	for key, value := range serviceConfig.Headers {
 		header.Set(key, value)
 	}
@@ -97,13 +97,6 @@ func BuildServiceBackendRequest(
 			serviceConfig.Authentication.Username,
 			serviceConfig.Authentication.Password,
 		)
-	}
-
-	// Add any service configuration specific headers to the request, such as
-	// authentication or authorization headers. These will override any upstream
-	// request headers with the same key.
-	for key, value := range serviceConfig.Headers {
-		httpRequest.Header.Set(key, value)
 	}
 
 	return httpRequest, nil
