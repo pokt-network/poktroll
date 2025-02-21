@@ -3,39 +3,26 @@ title: poktrolld Installation
 sidebar_position: 1
 ---
 
-:::tip TL;DR If you know what you're doing
-
-If you have `brew`:
+:::tip TL;DR If you have brew
 
 ```bash
 brew tap pokt-network/poktroll
 brew install poktrolld
 ```
 
-If you don't have `brew`:
-
-1. Grab a binary from the [latest release](https://github.com/pokt-network/poktroll/releases/latest)
-2. Download the appropriate `poktroll_${OS}_${ARCH}.tar.gz` for your environment
-3. Untar the downloaded file to retrieve the `poktrolld` binary
-4. Extract the binary to `/usr/local/bin`
-
-or grab a binary from the [releases page](https://github.com/pokt-network/poktroll/releases).
-
 :::
 
 ## Table of Contents <!-- omit in toc -->
 
 - [MacOS \& Linux Users](#macos--linux-users)
-  - [Using Homebrew](#using-homebrew)
-  - [Using release binaries](#using-release-binaries)
-  - [From Source](#from-source)
-    - [Installing dependencies](#installing-dependencies)
-    - [Installing poktrolld](#installing-poktrolld)
-- [Windows Users](#windows-users)
+  - [Using Homebrew (recommended)](#using-homebrew-recommended)
+  - [Using release binaries (if you don't have brew)](#using-release-binaries-if-you-dont-have-brew)
+  - [From Source (danger zone)](#from-source-danger-zone)
+- [Windows Users (why!?)](#windows-users-why)
 
 ## MacOS & Linux Users
 
-### Using Homebrew
+### Using Homebrew (recommended)
 
 Ensure you have [Homebrew](https://brew.sh/) installed.
 
@@ -82,7 +69,15 @@ brew install poktrolld
 
 </details>
 
-### Using release binaries
+### Using release binaries (if you don't have brew)
+
+:::tip tl;dr manual download
+
+1. Grab a binary from the [latest release](https://github.com/pokt-network/poktroll/releases/latest)
+2. Download the appropriate `poktroll_${OS}_${ARCH}.tar.gz` for your environment
+3. Untar the downloaded file to retrieve the `poktrolld` binary
+4. Extract the binary to `/usr/local/bin`
+   :::
 
 Pre-built binaries are available on our [releases page](https://github.com/pokt-network/poktroll/releases).
 
@@ -104,7 +99,7 @@ sudo chmod +x /usr/local/bin/poktrolld
 poktrolld version
 ```
 
-### From Source
+### From Source (danger zone)
 
 :::warning Do not continue unless you're a 🚀👨‍💻💎
 
@@ -112,7 +107,7 @@ This method is only recommended for **ADVANCED** users as it requires working wi
 
 :::
 
-#### Installing dependencies
+#### Installing dependencies <!-- omit in toc -->
 
 Ensure you have the following installed:
 
@@ -120,7 +115,7 @@ Ensure you have the following installed:
   - Make sure to add `export PATH=$PATH:$(go env GOPATH)/bin/` to your `.bashrc` or `.zshrc` file.
 - [Ignite CLI](https://docs.ignite.com/welcome/install)
 
-#### Installing poktrolld
+#### Installing poktrolld <!-- omit in toc -->
 
 Then, Retrieve the source code and build the `poktrolld` locally like so:
 
@@ -145,7 +140,7 @@ poktrolld version
 poktrolld --help
 ```
 
-## Windows Users
+## Windows Users (why!?)
 
 :::danger
 
