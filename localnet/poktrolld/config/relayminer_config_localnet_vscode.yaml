@@ -32,6 +32,12 @@ suppliers:
       backend_url: http://localhost:8547
       publicly_exposed_endpoints:
         - relayminer1
+  - service_id: anvilws
+    listen_url: http://0.0.0.0:8545
+    service_config:
+      backend_url: ws://localhost:8547
+      publicly_exposed_endpoints:
+        - relayminer1
   - service_id: ollama
     listen_url: http://0.0.0.0:8545
     service_config:
