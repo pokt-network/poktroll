@@ -8,6 +8,6 @@ import (
 
 // x/migration module sentinel errors
 var (
-	ErrInvalidSigner = sdkerrors.Register(ModuleName, 1100, "expected gov account as only signer for proposal message")
-	ErrSample        = sdkerrors.Register(ModuleName, 1101, "sample error")
+	ErrInvalidSigner     = sdkerrors.Register(ModuleName, 1100, "expected x/gov module account as the only signer for migration state import messages")
+	ErrMorseAccountState = sdkerrors.Register(ModuleName, 1101, "morse account state is invalid")
 )
