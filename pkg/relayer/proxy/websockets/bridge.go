@@ -126,11 +126,10 @@ func NewBridge(
 		return nil, ErrWebsocketsBridge.Wrapf("failed to connect to the service backend: %v", err)
 	}
 
-	// Use an observable instead of direct stopChan reads to prevent race conditions
-	// when terminating connections. Since both serviceBackendConn and gatewayConn
-	// need to read the stop signal, reading directly from stopChan could result in
-	// one connection missing the signal if both try to read simultaneously. The
-	// observable pattern ensures all components receive the termination notification.
+	// Using an observable prevents race conditions during connection termination:
+	//  - Both serviceBackendConn and gatewayConn need to read the stop signal
+	//  - Direct stopChan reads could cause one connection to miss the signal during simultaneous reads
+	//  - Observable pattern ensures all components receive termination notifications
 	stopBridgeObservable, stopChan := channel.NewObservable[error]()
 	msgChan := make(chan message)
 	ctx, cancelCtx := context.WithCancel(context.Background())
@@ -255,6 +254,7 @@ func (b *bridge) handleGatewayIncomingMessage(msg message) {
 	// Store the latest relay request to guarantee that there is always a request/response.
 	// This is to guarantee that any mined Relay will contain a request/response pair
 	// which is a requirement for the protocol's proof verification.
+	// E.g. The latest eth_subscribe RelayRequest will be mapped to multiple responses.
 	b.setLatestRelayRequest(&relayRequest)
 
 	relayer.RelaysTotal.With(
@@ -308,6 +308,7 @@ func (b *bridge) handleGatewayIncomingMessage(msg message) {
 	// Accumulate the relay reward.
 	// The asynchronous flow assumes that every inbound and outbound message is a
 	// payment-eligible relay.
+	// Recall that num inbound messages is unlikely to equal num outbound messages in a websocket.
 	if err := b.relayMeter.AccumulateRelayReward(b.ctx, relayRequest.Meta); err != nil {
 		b.serviceBackendConn.handleError(
 			ErrWebsocketsGatewayMessage.Wrapf("failed to accumulate relay reward: %v", err),
@@ -356,9 +357,10 @@ func (b *bridge) handleServiceBackendIncomingMessage(msg message) {
 
 	logger.Debug().Msg("relay response signed")
 
-	// Store the latest relay response to guarantee that there is always a request/response,
+	// Store the latest relay response to guarantee that there is always a request/response.
 	// This is to guarantee that any mined Relay will contain a request/response pair
 	// which is a requirement for the protocol's proof verification.
+	// E.g. The latest RelayResponse will be mapped to the initial eth_subscribe RelayRequest.
 	b.setLatestRelayResponse(relayResponse)
 
 	relayResponseBz, err := relayResponse.Marshal()
@@ -402,6 +404,7 @@ func (b *bridge) handleServiceBackendIncomingMessage(msg message) {
 	// Accumulate the relay reward.
 	// The asynchronous flow assumes that every inbound and outbound message is a
 	// payment-eligible relay.
+	// Recall that num inbound messages is unlikely to equal num outbound messages in a websocket.
 	if err := b.relayMeter.AccumulateRelayReward(b.ctx, b.latestRelayRequest.Meta); err != nil {
 		b.gatewayConn.handleError(
 			ErrWebsocketsServiceBackendMessage.Wrapf("failed to accumulate relay reward: %v", err),
