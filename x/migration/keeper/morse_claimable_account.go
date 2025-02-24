@@ -72,7 +72,6 @@ func (k Keeper) GetAllMorseClaimableAccounts(ctx context.Context) (list []migrat
 }
 
 // ImportFromMorseAccountState imports the MorseClaimableAccounts from the given MorseAccountState.
-// It returns the state hash of the imported MorseAccountState.
 // DEV_NOTE: It assumes that the MorseAccountState has already been validated.
 func (k Keeper) ImportFromMorseAccountState(
 	ctx context.Context,

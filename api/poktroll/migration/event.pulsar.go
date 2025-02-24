@@ -1166,10 +1166,10 @@ type EventImportMorseClaimableAccounts struct {
 
 	// The height (on Shannon) at which the MorseAccountState was created on-chain.
 	CreatedAtHeight int64 `protobuf:"varint,1,opt,name=created_at_height,json=createdAtHeight,proto3" json:"created_at_height,omitempty"`
-	// The sha256 has of the MorseAccountState.
+	// The on-chain computed sha256 hash of the entire MorseAccountState containing the MorseClaimableAccounts which were imported.
 	MorseAccountStateHash []byte `protobuf:"bytes,2,opt,name=morse_account_state_hash,json=morseAccountStateHash,proto3" json:"morse_account_state_hash,omitempty"`
-	// The number of accounts (EOAs) which were collected from the Morse state export, which may be claimed.
-	// NOTE: Application and supplier actor stakes are consolidated into their corresponding account balances.
+	// Number of claimable accounts (EOAs) collected from Morse state export
+	// NOTE: Account balances include consolidated application and supplier actor stakes
 	NumAccounts uint64 `protobuf:"varint,3,opt,name=num_accounts,json=numAccounts,proto3" json:"num_accounts,omitempty"`
 }
 

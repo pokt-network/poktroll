@@ -41,7 +41,7 @@ func (sync *synchronousRPCServer) newRelayResponse(
 	}
 
 	// Sign the relay response and add the signature to the relay response metadata
-	if err := sync.relayerProxy.SignRelayResponse(relayResponse, supplierOperatorAddr); err != nil {
+	if err := sync.relayAuthenticator.SignRelayResponse(relayResponse, supplierOperatorAddr); err != nil {
 		return nil, err
 	}
 
