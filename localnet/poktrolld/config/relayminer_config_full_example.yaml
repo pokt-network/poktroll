@@ -50,7 +50,6 @@ suppliers:
         username: user
         password: pwd
 
-      # TODO_IMPROVE: This is not implemented in code yet.
       # Authentication via a static header might be desirable for high-traffic services.
       # Example: If the service requires a header like `Authorization: Bearer <PASSWORD>`
       # Optional.

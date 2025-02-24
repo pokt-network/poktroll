@@ -103,9 +103,6 @@ func (rp *relayerProxy) initializeProxyServers() (proxyServerMap map[string]rela
 	for _, serverConfig := range rp.serverConfigs {
 		rp.logger.Info().Str("server host", serverConfig.ListenAddress).Msg("starting relay proxy server")
 
-		// TODO_TECHDEBT(@red-0ne): Implement a switch that handles all synchronous
-		// RPC types in one server type and asynchronous RPC types in another
-		// to create the appropriate RelayServer.
 		// Initialize the server according to the server type defined in the config file
 		switch serverConfig.ServerType {
 		case config.RelayMinerServerTypeHTTP:
