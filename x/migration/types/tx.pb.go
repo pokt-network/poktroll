@@ -185,6 +185,8 @@ func (m *MsgImportMorseClaimableAccounts) GetMorseAccountStateHash() []byte {
 	return nil
 }
 
+// MsgImportMorseClaimableAccountsResponse is returned from MsgImportMorseClaimableAccounts.
+// It indicates the canonical hash of the imported MorseAccountState, and the number of claimable accounts which were imported.
 type MsgImportMorseClaimableAccountsResponse struct {
 	// On-chain computed sha256 hash of the morse_account_state provided in the corresponding MsgCreateMorseAccountState.
 	StateHash []byte `protobuf:"bytes,1,opt,name=state_hash,json=stateHash,proto3" json:"state_hash"`
