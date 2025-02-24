@@ -183,10 +183,13 @@ func (m *MsgImportMorseClaimableAccounts) GetMorseAccountStateHash() []byte {
 	return nil
 }
 
-// MsgImportMorseClaimableAccountsResponse is used to execute a claim (one-time minting of tokens on Shannon),
-// of the balance of the given Morse account, according to the on-chain MorseClaimableAccounts, to the balance
-// of the given Shannon account (who MUST also be the signer of this message).
-// Authz grant(s) MAY be used to delegate the authority to create a claim on behalf of another Shannon account.
+// MsgImportMorseClaimableAccountsResponse handles the state management that enables
+// one-time token minting on Shannon for a Morse account's balance based on the on-chain MorseClaimableAccounts configuration.
+//
+// Key points:
+// - The Shannon account specified must be the message signer
+// - Claims are executed against the balance shown in MorseClaimableAccounts
+// - Authz grants can delegate claim creation authority to other Shannon accounts
 type MsgImportMorseClaimableAccountsResponse struct {
 	// On-chain computed sha256 hash of the morse_account_state provided in the corresponding MsgCreateMorseAccountState.
 	StateHash []byte `protobuf:"bytes,1,opt,name=state_hash,json=stateHash,proto3" json:"state_hash"`
@@ -240,15 +243,19 @@ func (m *MsgImportMorseClaimableAccountsResponse) GetNumAccounts() uint64 {
 	return 0
 }
 
-// MsgClaimMorseAccount is an on-chain, persisted data structure which represents the state of a claimable account.
-// It is initially created by the (one-time) MsgImportMorseClaimableAccounts message, and is subsequently updated
-// by the MsgClaimMorseAccount message, when it is claimed (also a one-time event, per claimable account).
+// MsgClaimMorseAccount represents the state of a claimable account persisted on-chain.
+//
+// Lifecycle:
+// - Created once via MsgImportMorseClaimableAccounts
+// - Updated once via MsgClaimMorseAccount during claim execution
 type MsgClaimMorseAccount struct {
 	// The bech32-encoded address of the Shannon account to which the claimed balance will be minted.
 	ShannonDestAddress string `protobuf:"bytes,1,opt,name=shannon_dest_address,json=shannonDestAddress,proto3" json:"shannon_dest_address"`
 	// The hex-encoded address of the Morse account whose balance will be claimed.
+	// E.g.: 00f9900606fa3d5c9179fc0c8513078a53a2073e
 	MorseSrcAddress string `protobuf:"bytes,2,opt,name=morse_src_address,json=morseSrcAddress,proto3" json:"morse_src_address"`
 	// The hex-encoded signature, by the Morse account, of this message (where this field is nil).
+	// I.e.: morse_signature = private_key.sign(marshal(MsgClaimMorseAccount{morse_signature: nil, ...}))
 	MorseSignature string `protobuf:"bytes,3,opt,name=morse_signature,json=morseSignature,proto3" json:"morse_signature"`
 }
 
@@ -304,6 +311,7 @@ func (m *MsgClaimMorseAccount) GetMorseSignature() string {
 
 type MsgClaimMorseAccountResponse struct {
 	// The hex-encoded address of the Morse account whose balance will be claimed.
+	// E.g.: 00f9900606fa3d5c9179fc0c8513078a53a2073e
 	MorseSrcAddress string `protobuf:"bytes,1,opt,name=morse_src_address,json=morseSrcAddress,proto3" json:"morse_src_address"`
 	// The balance which was claimed.
 	ClaimedBalance types.Coin `protobuf:"bytes,2,opt,name=claimed_balance,json=claimedBalance,proto3" json:"claimed_balance"`
