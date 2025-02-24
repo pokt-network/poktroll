@@ -80,8 +80,8 @@ func TestMsgServer_ImportMorseClaimableAccounts_ErrorAlreadySet(t *testing.T) {
 	k.SetMorseClaimableAccount(ctx, *accountState.Accounts[0])
 
 	// Set up the MsgImportMorseClaimableAccounts to fail.
-	morseClaimableAccounts = k.GetAllMorseClaimableAccounts(ctx)
-	require.Equal(t, numAccounts, len(morseClaimableAccounts))
+	morseClaimableAccounts := k.GetAllMorseClaimableAccounts(ctx)
+	require.Equal(t, 1, len(morseClaimableAccounts))
 	for _, morseClaimableAccount := range morseClaimableAccounts {
 		require.Equal(t, int64(0), morseClaimableAccount.ClaimedAtHeight)
 		require.Equal(t, "", morseClaimableAccount.ShannonDestAddress)
