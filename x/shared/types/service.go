@@ -3,9 +3,12 @@ package types
 import (
 	"net/url"
 	"regexp"
+	"slices"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
+
+var validUrlSchemes = []string{"http", "https", "ws", "wss"}
 
 const (
 	// ComputeUnitsPerRelayMax is the maximum allowed compute_units_per_relay value when adding or updating a service.
@@ -89,8 +92,8 @@ func IsValidEndpointUrl(endpoint string) bool {
 		return false
 	}
 
-	// Check if scheme is http or https
-	if u.Scheme != "http" && u.Scheme != "https" {
+	// Check if scheme is one of the valid schemes.
+	if !slices.Contains(validUrlSchemes, u.Scheme) {
 		return false
 	}
 
