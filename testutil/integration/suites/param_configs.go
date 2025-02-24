@@ -95,6 +95,7 @@ var (
 			ProofWindowCloseOffsetBlocks:       3,
 			SupplierUnbondingPeriodSessions:    9,
 			ApplicationUnbondingPeriodSessions: 9,
+			GatewayUnbondingPeriodSessions:     9,
 			ComputeUnitsToTokensMultiplier:     420,
 		},
 		DefaultParams:    sharedtypes.DefaultParams(),

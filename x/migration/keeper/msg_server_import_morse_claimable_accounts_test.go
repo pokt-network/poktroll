@@ -55,7 +55,7 @@ func TestMsgServer_ImportMorseClaimableAccounts_Success(t *testing.T) {
 
 	// Assert that the MorseAccountState was created and matches expectations.
 	morseClaimableAccounts = k.GetAllMorseClaimableAccounts(ctx)
-	require.Greater(t, len(morseClaimableAccounts), 0)
+	require.Equal(t, len(morseClaimableAccounts), numAccounts)
 	require.NoError(t, err)
 
 	// Assert that the EventCreateMorseAccountState event was emitted.
@@ -75,15 +75,11 @@ func TestMsgServer_ImportMorseClaimableAccounts_ErrorAlreadySet(t *testing.T) {
 	k, ctx := keepertest.MigrationKeeper(t)
 	srv := keeper.NewMsgServerImpl(k)
 
-	// Assert that the MorseAccountState is not set initially.
-	morseClaimableAccounts := k.GetAllMorseClaimableAccounts(ctx)
-	require.Equal(t, 0, len(morseClaimableAccounts))
+	// Set at least one MorseAccountState initially.
+	_, accountState := testmigration.NewMorseStateExportAndAccountState(t, 1)
+	k.SetMorseClaimableAccount(ctx, *accountState.Accounts[0])
 
-	numAccounts := 10
-	_, accountState := testmigration.NewMorseStateExportAndAccountState(t, numAccounts)
-	k.ImportFromMorseAccountState(ctx, accountState)
-
-	// Assert that the MorseClaimableAccounts are persisted AND unclaimed.
+	// Set up the MsgImportMorseClaimableAccounts to fail.
 	morseClaimableAccounts = k.GetAllMorseClaimableAccounts(ctx)
 	require.Equal(t, numAccounts, len(morseClaimableAccounts))
 	for _, morseClaimableAccount := range morseClaimableAccounts {
