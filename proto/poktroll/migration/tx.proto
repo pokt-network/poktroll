@@ -64,13 +64,8 @@ message MsgImportMorseClaimableAccounts {
   bytes morse_account_state_hash = 3 [(gogoproto.jsontag) = "morse_account_state_hash"];
 }
 
-// MsgImportMorseClaimableAccountsResponse handles the state management that enables
-// one-time token minting on Shannon for a Morse account's balance based on the on-chain MorseClaimableAccounts configuration.
-//
-// Key points:
-// - The Shannon account specified must be the message signer
-// - Claims are executed against the balance shown in MorseClaimableAccounts
-// - Authz grants can delegate claim creation authority to other Shannon accounts
+// MsgImportMorseClaimableAccountsResponse is returned from MsgImportMorseClaimableAccounts.
+// It indicates the canonical hash of the imported MorseAccountState, and the number of claimable accounts which were imported.
 message MsgImportMorseClaimableAccountsResponse {
   // On-chain computed sha256 hash of the morse_account_state provided in the corresponding MsgCreateMorseAccountState.
   bytes state_hash = 1 [(gogoproto.jsontag) = "state_hash"];
