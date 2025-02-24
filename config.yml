@@ -27,6 +27,10 @@ accounts:
     mnemonic: "involve clean slab term real human green immune valid swing protect talk silent unique cart few ice era right thunder again drop among bounce"
     coins:
       - 300000000upokt
+  - name: app4
+    mnemonic: "blade light diagram grocery quit orchard patient wonder usual category later want offer increase blush this business protect village top cricket laundry holiday measure"
+    coins:
+      - 300000000upokt
   - name: apptiny
     mnemonic: "worry pupil rival such jump pitch flame prosper tattoo eternal round receive cube crowd remove afraid garment brand toy nut guitar toy sausage fragile"
     coins:
