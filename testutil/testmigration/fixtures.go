@@ -15,6 +15,10 @@ import (
 	migrationtypes "github.com/pokt-network/poktroll/x/migration/types"
 )
 
+// TODO_CONSIDERATION/TODO_IMPROVE: Generate more "realistic" fixtures.
+// I.e.: Non-actor accounts, applications, and suppliers.
+// See: https://github.com/pokt-network/poktroll/pull/1072#discussion_r1961769422
+
 // NewMorseStateExportAndAccountStateBytes returns:
 //   - A serialized MorseStateExport.
 //     This is the JSON output of `pocket util export-genesis-for-reset`.
