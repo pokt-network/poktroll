@@ -62,10 +62,6 @@ func (k Keeper) AllSuppliers(
 				}
 			}
 
-			// TODO_MAINNET(@olshansk, #1033): Newer version of the CosmosSDK doesn't support maps.
-			// Decide on a direction w.r.t maps in protos based on feedback from the CosmoSDK team.
-			supplier.ServicesActivationHeightsMap = nil
-
 			suppliers = append(suppliers, supplier)
 			return nil
 		},
@@ -91,10 +87,6 @@ func (k Keeper) Supplier(
 		msg := fmt.Sprintf("supplier with address: %q", req.GetOperatorAddress())
 		return nil, status.Error(codes.NotFound, msg)
 	}
-
-	// TODO_MAINNET(@olshansk, #1033): Newer version of the CosmosSDK doesn't support maps.
-	// Decide on a direction w.r.t maps in protos based on feedback from the CosmoSDK team.
-	supplier.ServicesActivationHeightsMap = nil
 
 	return &types.QueryGetSupplierResponse{Supplier: supplier}, nil
 }
