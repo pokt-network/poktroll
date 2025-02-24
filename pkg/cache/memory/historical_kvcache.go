@@ -58,9 +58,8 @@ func NewHistoricalKeyValueCache[T any](opts ...KeyValueCacheOptionFn) (*historic
 	}, nil
 }
 
-// GetVersion retrieves the value from the cache with the given key, as of the
-// given version. If a value is not found for that version, the value at the nearest
-// previous version is returned.
+// GetVersion retrieves the value from the cache with the given key and version.
+// If a value is not found which meets these criteria, the zero value and false are returned.
 func (c *historicalKeyValueCache[T]) GetVersion(key string, version int64) (T, bool) {
 	c.valuesMu.RLock()
 	defer c.valuesMu.RUnlock()
@@ -93,14 +92,6 @@ func (c *historicalKeyValueCache[T]) GetVersionLTE(key string, maxVersion int64)
 	c.valuesMu.RLock()
 	defer c.valuesMu.RUnlock()
 
-	return c.getVersionLTE(key, maxVersion)
-}
-
-// getVersionLTE retrieves the value from the cache with the given key, as of the
-// given version. If a value is not found for that version, the value at the nearest
-// previous version is returned.
-// It is NOT safe to call concurrently; i.e., the caller MUST hold the valuesMu lock.
-func (c *historicalKeyValueCache[T]) getVersionLTE(key string, version int64) (T, bool) {
 	var zero T
 	valueHistory, exists := c.valueHistories[key]
 	if !exists {
@@ -109,7 +100,7 @@ func (c *historicalKeyValueCache[T]) getVersionLTE(key string, version int64) (T
 
 	var nearestCachedVersion int64 = -1
 	for _, cachedVersion := range valueHistory.sortedDescVersions {
-		if cachedVersion <= version {
+		if cachedVersion <= maxVersion {
 			nearestCachedVersion = cachedVersion
 			// DEV_NOTE: Since the list is sorted in descending order, once we
 			// encounter a cachedVersion that is less than or equal to version,
@@ -146,8 +137,7 @@ func (c *historicalKeyValueCache[T]) GetLatestVersion(key string) (T, bool) {
 	return c.getVersion(key, version)
 }
 
-// SetVersion adds or updates the historical value in the cache for the given key,
-// and at the version number.
+// SetVersion adds or updates the historical value in the cache for the given key and version number.
 func (c *historicalKeyValueCache[T]) SetVersion(key string, value T, version int64) error {
 	c.valuesMu.Lock()
 	defer c.valuesMu.Unlock()

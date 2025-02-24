@@ -23,7 +23,8 @@ type HistoricalKeyValueCache[T any] interface {
 	GetVersion(key string, version int64) (T, bool)
 
 	// GetVersionLTE retrieves the value at the nearest version <= maxVersion.
-	// It returns true if a value meeting the version criteria is cached, false otherwise.
+	// It returns true if a value meeting the version criteria for the given
+	// key is cached, false otherwise.
 	GetVersionLTE(key string, maxVersion int64) (T, bool)
 
 	// SetVersion adds or updates a value at a specific version number.
