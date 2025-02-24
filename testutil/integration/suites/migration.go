@@ -99,7 +99,7 @@ func (s *MigrationModuleSuite) QueryMorseClaimableAccount(
 	morseAccountQuerier := migrationtypes.NewQueryClient(s.GetApp().QueryHelper())
 	morseClaimableAcctRes, err := morseAccountQuerier.MorseClaimableAccount(
 		s.SdkCtx(),
-		&migrationtypes.QueryGetMorseClaimableAccountRequest{
+		&migrationtypes.QueryMorseClaimableAccountRequest{
 			Address: morseSrcAddr,
 		},
 	)
