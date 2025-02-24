@@ -3154,13 +3154,8 @@ func (x *MsgImportMorseClaimableAccounts) GetMorseAccountStateHash() []byte {
 	return nil
 }
 
-// MsgImportMorseClaimableAccountsResponse handles the state management that enables
-// one-time token minting on Shannon for a Morse account's balance based on the on-chain MorseClaimableAccounts configuration.
-//
-// Key points:
-// - The Shannon account specified must be the message signer
-// - Claims are executed against the balance shown in MorseClaimableAccounts
-// - Authz grants can delegate claim creation authority to other Shannon accounts
+// MsgImportMorseClaimableAccountsResponse is returned from MsgImportMorseClaimableAccounts.
+// It indicates the canonical hash of the imported MorseAccountState, and the number of claimable accounts which were imported.
 type MsgImportMorseClaimableAccountsResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -3207,11 +3202,13 @@ func (x *MsgImportMorseClaimableAccountsResponse) GetNumAccounts() uint64 {
 	return 0
 }
 
-// MsgClaimMorseAccount represents the state of a claimable account persisted on-chain.
+// MsgClaimMorseAccount is used to execute a claim (one-time minting of tokens on Shannon),
+// of the balance of the given Morse account, according to the on-chain MorseClaimableAccounts,
+// to the balance of the given Shannon account.
 //
-// Lifecycle:
-// - Created once via MsgImportMorseClaimableAccounts
-// - Updated once via MsgClaimMorseAccount during claim execution
+// NOTE:
+// - The Shannon account specified must be the message signer
+// - Authz grants MAY be used to delegate claiming authority to other Shannon accounts
 type MsgClaimMorseAccount struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -3268,6 +3265,9 @@ func (x *MsgClaimMorseAccount) GetMorseSignature() string {
 	return ""
 }
 
+// MsgClaimMorseAccountResponse is returned from MsgClaimMorseAccount.
+// It indicates the morse_src_address of the account which was claimed, the total
+// balance claimed, and the height at which the claim was committed.
 type MsgClaimMorseAccountResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
