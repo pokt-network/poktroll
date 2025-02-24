@@ -75,11 +75,13 @@ message MsgImportMorseClaimableAccountsResponse {
   uint64 num_accounts = 2 [(gogoproto.jsontag) = "num_accounts"];
 }
 
-// MsgClaimMorseAccount represents the state of a claimable account persisted on-chain.
+// MsgClaimMorseAccount is used to execute a claim (one-time minting of tokens on Shannon),
+// of the balance of the given Morse account, according to the on-chain MorseClaimableAccounts,
+// to the balance of the given Shannon account.
 //
-// Lifecycle:
-// - Created once via MsgImportMorseClaimableAccounts
-// - Updated once via MsgClaimMorseAccount during claim execution
+// NOTE:
+// - The Shannon account specified must be the message signer
+// - Authz grants MAY be used to delegate claiming authority to other Shannon accounts
 message MsgClaimMorseAccount {
   option (cosmos.msg.v1.signer) = "shannon_dest_address";
 
@@ -95,6 +97,9 @@ message MsgClaimMorseAccount {
   string morse_signature = 3 [(gogoproto.jsontag) = "morse_signature"];
 }
 
+// MsgClaimMorseAccountResponse is returned from MsgClaimMorseAccount.
+// It indicates the morse_src_address of the account which was claimed, the total
+// balance claimed, and the height at which the claim was committed.
 message MsgClaimMorseAccountResponse {
   // The hex-encoded address of the Morse account whose balance will be claimed.
   // E.g.: 00f9900606fa3d5c9179fc0c8513078a53a2073e
