@@ -84,7 +84,7 @@ func (c *keyValueCache[T]) Set(key string, value T) {
 	}
 
 	// Evict after adding the new key/value.
-	c.evict()
+	c.evictKey()
 }
 
 // Delete removes a value from the cache.
@@ -103,9 +103,9 @@ func (c *keyValueCache[T]) Clear() {
 	c.values = make(map[string]cacheValue[T])
 }
 
-// evict removes one item from the cache, to make space for a new one,
+// evictKey removes one key/value pair from the cache, to make space for a new one,
 // according to the configured eviction policy.
-func (c *keyValueCache[T]) evict() {
+func (c *keyValueCache[T]) evictKey() {
 	isMaxKeysConfigured := c.config.maxKeys > 0
 	cacheMaxKeysReached := int64(len(c.values)) > c.config.maxKeys
 	if !isMaxKeysConfigured || !cacheMaxKeysReached {

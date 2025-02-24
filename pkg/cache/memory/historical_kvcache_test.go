@@ -57,7 +57,7 @@ func TestMemoryHistoricalKeyValueCache(t *testing.T) {
 		require.Equal(t, "value2", val)
 
 		// Test getting intermediate version (should return nearest lower version)
-		val, isCached = kvcache.GetVersion("key", 15)
+		val, isCached = kvcache.GetVersionLTE("key", 15)
 		require.True(t, isCached)
 		require.Equal(t, "value1", val)
 
@@ -66,12 +66,16 @@ func TestMemoryHistoricalKeyValueCache(t *testing.T) {
 		require.False(t, isCached)
 
 		// Test getting version after last entry
-		val, isCached = kvcache.GetVersion("key", 25)
+		val, isCached = kvcache.GetVersionLTE("key", 25)
 		require.True(t, isCached)
 		require.Equal(t, "value2", val)
 
 		// Test getting a version for a key that isn't cached
 		_, isCached = kvcache.GetVersion("key2", 20)
+		require.False(t, isCached)
+
+		// Test getting a version for a key that isn't cached
+		_, isCached = kvcache.GetVersionLTE("key2", 20)
 		require.False(t, isCached)
 	})
 

@@ -7,7 +7,7 @@ import (
 	"github.com/pokt-network/poktroll/pkg/cache"
 )
 
-// EvictionPolicy determines which values are removed when number of keys in the cache reaches maxKeys.
+// EvictionPolicy determines which values to remove when the number of keys in the cache exceeds maxKeys.
 type EvictionPolicy int64
 
 const (
@@ -44,7 +44,7 @@ type keyValueCacheConfig struct {
 	// maxCacheSize is the maximum cumulative size of all keys AND values in the cache.
 	// maxCacheSize int64
 
-	// evictionPolicy determines which values are removed when number of keys in the cache reaches maxKeys.
+	// evictionPolicy determines which values to remove when number of keys in the cache exceeds maxKeys.
 	evictionPolicy EvictionPolicy
 
 	// ttl is how long values should remain valid in the cache. Items older than the
