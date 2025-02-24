@@ -4470,7 +4470,7 @@ func (*MsgUpdateParamsResponse) Descriptor() ([]byte, []int) {
 	return file_poktroll_migration_tx_proto_rawDescGZIP(), []int{1}
 }
 
-// MsgImportMorseClaimableAccounts is used to create the on-chain MorseClaimableAccounts ONLY ONCE (per network / re-genesis).
+// MsgImportMorseClaimableAccounts is used to create the on-chain MorseClaimableAccounts ONLY AND EXACTLY ONCE (per network / re-genesis).
 type MsgImportMorseClaimableAccounts struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -4480,13 +4480,17 @@ type MsgImportMorseClaimableAccounts struct {
 	Authority string `protobuf:"bytes,1,opt,name=authority,proto3" json:"authority,omitempty"`
 	// the account state derived from the Morse state export and the `poktrolld migrate collect-morse-accounts` command.
 	MorseAccountState *MorseAccountState `protobuf:"bytes,2,opt,name=morse_account_state,json=morseAccountState,proto3" json:"morse_account_state,omitempty"`
-	// expected sha256 hash of the morse_account_state. If this hash does not match the on-chain
-	// computation, the transaction will fail. Social consensus regarding the correctness of
-	// morse_account_state should have been achieved off-chain and can be verified on-chain by
-	// comparing this hash with that of a locally derived Morse state export:
-	// E.g., `poktrolld migrate collect-morse-accounts $<(pocket util export-genesis-for-reset)`.
-	// See: `pocket util export-genesis-for-migration --help` & `poktrolld migrate collect-morse-accounts --help`
-	// for more details.
+	// Validates the morse_account_state sha256 hash:
+	// - Transaction fails if hash doesn't match on-chain computation
+	// - Off-chain social consensus should be reached off-chain before verification
+	//
+	// Verification can be done by comparing with locally derived Morse state like so:
+	//
+	//	$ poktrolld migrate collect-morse-accounts $<(pocket util export-genesis-for-reset)
+	//
+	// Additional documentation:
+	// - pocket util export-genesis-for-migration --help
+	// - poktrolld migrate collect-morse-accounts --help
 	MorseAccountStateHash []byte `protobuf:"bytes,3,opt,name=morse_account_state_hash,json=morseAccountStateHash,proto3" json:"morse_account_state_hash,omitempty"`
 }
 
@@ -4531,10 +4535,8 @@ func (x *MsgImportMorseClaimableAccounts) GetMorseAccountStateHash() []byte {
 	return nil
 }
 
-// MsgImportMorseClaimableAccountsResponse is used to execute a claim (one-time minting of tokens on Shannon),
-// of the balance of the given Morse account, according to the on-chain MorseClaimableAccounts, to the balance
-// of the given Shannon account (who MUST also be the signer of this message).
-// Authz grant(s) MAY be used to delegate the authority to create a claim on behalf of another Shannon account.
+// MsgImportMorseClaimableAccountsResponse is returned from MsgImportMorseClaimableAccounts.
+// It indicates the canonical hash of the imported MorseAccountState, and the number of claimable accounts which were imported.
 type MsgImportMorseClaimableAccountsResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -4542,8 +4544,8 @@ type MsgImportMorseClaimableAccountsResponse struct {
 
 	// On-chain computed sha256 hash of the morse_account_state provided in the corresponding MsgCreateMorseAccountState.
 	StateHash []byte `protobuf:"bytes,1,opt,name=state_hash,json=stateHash,proto3" json:"state_hash,omitempty"`
-	// Number of accounts (EOAs) which were collected from the Morse state export, which may be claimed.
-	// NOTE: Application and supplier actor stakes are consolidated into their corresponding account balances.
+	// Number of claimable accounts (EOAs) collected from Morse state export.
+	// NOTE: Account balances include consolidated application and supplier actor stakes.
 	NumAccounts uint64 `protobuf:"varint,2,opt,name=num_accounts,json=numAccounts,proto3" json:"num_accounts,omitempty"`
 }
 
@@ -4581,9 +4583,13 @@ func (x *MsgImportMorseClaimableAccountsResponse) GetNumAccounts() uint64 {
 	return 0
 }
 
-// MsgClaimMorseAccount is an on-chain, persisted data structure which represents the state of a claimable account.
-// It is initially created by the (one-time) MsgImportMorseClaimableAccounts message, and is subsequently updated
-// by the MsgClaimMorseAccount message, when it is claimed (also a one-time event, per claimable account).
+// MsgClaimMorseAccount is used to execute a claim (one-time minting of tokens on Shannon),
+// of the balance of the given Morse account, according to the on-chain MorseClaimableAccounts,
+// to the balance of the given Shannon account.
+//
+// NOTE:
+// - The Shannon account specified must be the message signer
+// - Authz grants MAY be used to delegate claiming authority to other Shannon accounts
 type MsgClaimMorseAccount struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -4592,8 +4598,10 @@ type MsgClaimMorseAccount struct {
 	// The bech32-encoded address of the Shannon account to which the claimed balance will be minted.
 	ShannonDestAddress string `protobuf:"bytes,1,opt,name=shannon_dest_address,json=shannonDestAddress,proto3" json:"shannon_dest_address,omitempty"`
 	// The hex-encoded address of the Morse account whose balance will be claimed.
+	// E.g.: 00f9900606fa3d5c9179fc0c8513078a53a2073e
 	MorseSrcAddress string `protobuf:"bytes,2,opt,name=morse_src_address,json=morseSrcAddress,proto3" json:"morse_src_address,omitempty"`
 	// The hex-encoded signature, by the Morse account, of this message (where this field is nil).
+	// I.e.: morse_signature = private_key.sign(marshal(MsgClaimMorseAccount{morse_signature: nil, ...}))
 	MorseSignature string `protobuf:"bytes,3,opt,name=morse_signature,json=morseSignature,proto3" json:"morse_signature,omitempty"`
 }
 
@@ -4638,12 +4646,16 @@ func (x *MsgClaimMorseAccount) GetMorseSignature() string {
 	return ""
 }
 
+// MsgClaimMorseAccountResponse is returned from MsgClaimMorseAccount.
+// It indicates the morse_src_address of the account which was claimed, the total
+// balance claimed, and the height at which the claim was committed.
 type MsgClaimMorseAccountResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
 	// The hex-encoded address of the Morse account whose balance will be claimed.
+	// E.g.: 00f9900606fa3d5c9179fc0c8513078a53a2073e
 	MorseSrcAddress string `protobuf:"bytes,1,opt,name=morse_src_address,json=morseSrcAddress,proto3" json:"morse_src_address,omitempty"`
 	// The balance which was claimed.
 	ClaimedBalance *v1beta1.Coin `protobuf:"bytes,2,opt,name=claimed_balance,json=claimedBalance,proto3" json:"claimed_balance,omitempty"`

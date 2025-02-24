@@ -48,7 +48,8 @@ func (am AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 					Use:            "import-morse-claimable-accounts [morse-account-state]",
 					Short:          "Send a import_morse_claimable_accounts tx",
 					PositionalArgs: []*autocliv1.PositionalArgDescriptor{{ProtoField: "morseAccountState"}},
-					Skip:           true, // skipped because authority gated
+					// TODO_UPNEXT(@bryanchriswhite, #1034): Implement CLI logic.
+					Skip: true, // skipped because authority gated
 				},
 				{
 					RpcMethod:      "ClaimMorseAccount",
@@ -57,7 +58,7 @@ func (am AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 					Long:           "Claim the account balance of the given Morse account address, by signing the message with the private key of the Morse account.",
 					PositionalArgs: []*autocliv1.PositionalArgDescriptor{{ProtoField: "morse_src_address"}, {ProtoField: "morse_signature"}},
 					Skip:           true, // skipped because autoCLI cannot handle signing
-					// TODO_UPNEXT(@bryanchriswhite#1034): Add morse account claiming CLI.
+					// TODO_UPNEXT(@bryanchriswhite, #1034): Add morse account claiming CLI, incl. examples (see x/supplier/module/autocli.go).
 				},
 				{
 					RpcMethod:      "ClaimMorseApplication",

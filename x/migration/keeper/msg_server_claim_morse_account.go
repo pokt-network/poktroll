@@ -3,8 +3,8 @@ package keeper
 import (
 	"context"
 
+	"github.com/cometbft/cometbft/crypto/ed25519"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
-	cosmoserrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
@@ -18,18 +18,9 @@ func (k msgServer) ClaimMorseAccount(ctx context.Context, msg *migrationtypes.Ms
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
-	shannonAccAddr, err := cosmostypes.AccAddressFromBech32(msg.ShannonDestAddress)
-	// DEV_NOTE: This SHOULD NEVER happen as the shannonDestAddress is validated
-	// in MsgClaimMorseAccount#ValidateBasic().
-	if err != nil {
-		return nil, status.Error(
-			codes.InvalidArgument,
-			cosmoserrors.ErrInvalidAddress.Wrapf(
-				"failed to parse shannon destination address (%s): %s",
-				msg.ShannonDestAddress, err,
-			).Error(),
-		)
-	}
+	// DEV_NOTE: It is safe to use MustAccAddressFromBech32 here because the
+	// shannonDestAddress is validated in MsgClaimMorseAccount#ValidateBasic().
+	shannonAccAddr := cosmostypes.MustAccAddressFromBech32(msg.ShannonDestAddress)
 
 	// Ensure that a MorseClaimableAccount exists for the given morseSrcAddress.
 	morseClaimableAccount, isFound := k.GetMorseClaimableAccount(
@@ -59,6 +50,12 @@ func (k msgServer) ClaimMorseAccount(ctx context.Context, msg *migrationtypes.Ms
 		)
 	}
 
+	// Validate the Morse signature.
+	publicKey := ed25519.PubKey(morseClaimableAccount.GetPublicKey())
+	if err := msg.ValidateMorseSignature(publicKey); err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
+
 	// Set ShannonDestAddress & ClaimedAtHeight (claim).
 	morseClaimableAccount.ShannonDestAddress = shannonAccAddr.String()
 	morseClaimableAccount.ClaimedAtHeight = sdkCtx.BlockHeight()
@@ -76,7 +73,7 @@ func (k msgServer) ClaimMorseAccount(ctx context.Context, msg *migrationtypes.Ms
 		Add(morseClaimableAccount.SupplierStake)
 
 	// Mint the totalTokens to the shannonDestAddress account balance.
-	if err = k.MintClaimedMorseTokens(ctx, shannonAccAddr, totalTokens); err != nil {
+	if err := k.MintClaimedMorseTokens(ctx, shannonAccAddr, totalTokens); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
@@ -87,7 +84,7 @@ func (k msgServer) ClaimMorseAccount(ctx context.Context, msg *migrationtypes.Ms
 		MorseSrcAddress:    msg.MorseSrcAddress,
 		ClaimedBalance:     totalTokens,
 	}
-	if err = sdkCtx.EventManager().EmitTypedEvent(&event); err != nil {
+	if err := sdkCtx.EventManager().EmitTypedEvent(&event); err != nil {
 		return nil, status.Error(
 			codes.Internal,
 			migrationtypes.ErrMorseAccountClaim.Wrapf(

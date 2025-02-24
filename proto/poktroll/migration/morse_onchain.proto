@@ -19,9 +19,12 @@ message MorseAccountState {
 // MorseClaimableAccount is the onchain (persisted) representation of a Morse
 // account which is claimable as part of the Morse -> Shannon migration.
 // They are intended to be created during MorseAccountState import (see: MsgImportMorseClaimableAccount).
+// It is created ONLY ONCE and NEVER deleted (per morse_src_address per network / re-genesis).
+// It is updated ONLY ONCE, when it is claimed (per morse_src_address per network / re-genesis).
 message MorseClaimableAccount {
   // The bech32-encoded address of the Shannon account to which the claimed balance will be minted.
-  string shannon_dest_address = 1 [(cosmos_proto.scalar) = "cosmos.AddressString", (gogoproto.jsontag) = "shannon_dest_address"];
+  // This field is intended to remain empty until the account has been claimed.
+  string shannon_dest_address = 1 [(gogoproto.nullable) = true, (cosmos_proto.scalar) = "cosmos.AddressString", (gogoproto.jsontag) = "shannon_dest_address"];
 
   // The hex-encoded address of the Morse account whose balance will be claimed.
   string morse_src_address = 2 [(gogoproto.jsontag) = "morse_src_address"];
@@ -45,6 +48,7 @@ message MorseClaimableAccount {
   cosmos.base.v1beta1.Coin application_stake = 7 [(gogoproto.nullable) = false, (gogoproto.jsontag) = "application_stake"];
 
   // The Shannon height at which the account was claimed.
-  int64 claimed_at_height = 8 [(gogoproto.jsontag) = "claimed_at_height", (gogoproto.moretags) = "yaml:\"claimed_at_height\""];
+  // This field is intended to remain empty until the account has been claimed.
+  int64 claimed_at_height = 8 [(gogoproto.nullable) = true, (gogoproto.jsontag) = "claimed_at_height", (gogoproto.moretags) = "yaml:\"claimed_at_height\""];
 }
 
