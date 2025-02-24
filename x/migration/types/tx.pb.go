@@ -186,13 +186,8 @@ func (m *MsgImportMorseClaimableAccounts) GetMorseAccountStateHash() []byte {
 	return nil
 }
 
-// MsgImportMorseClaimableAccountsResponse handles the state management that enables
-// one-time token minting on Shannon for a Morse account's balance based on the on-chain MorseClaimableAccounts configuration.
-//
-// Key points:
-// - The Shannon account specified must be the message signer
-// - Claims are executed against the balance shown in MorseClaimableAccounts
-// - Authz grants can delegate claim creation authority to other Shannon accounts
+// MsgImportMorseClaimableAccountsResponse is returned from MsgImportMorseClaimableAccounts.
+// It indicates the canonical hash of the imported MorseAccountState, and the number of claimable accounts which were imported.
 type MsgImportMorseClaimableAccountsResponse struct {
 	// On-chain computed sha256 hash of the morse_account_state provided in the corresponding MsgCreateMorseAccountState.
 	StateHash []byte `protobuf:"bytes,1,opt,name=state_hash,json=stateHash,proto3" json:"state_hash"`
@@ -246,11 +241,13 @@ func (m *MsgImportMorseClaimableAccountsResponse) GetNumAccounts() uint64 {
 	return 0
 }
 
-// MsgClaimMorseAccount represents the state of a claimable account persisted on-chain.
+// MsgClaimMorseAccount is used to execute a claim (one-time minting of tokens on Shannon),
+// of the balance of the given Morse account, according to the on-chain MorseClaimableAccounts,
+// to the balance of the given Shannon account.
 //
-// Lifecycle:
-// - Created once via MsgImportMorseClaimableAccounts
-// - Updated once via MsgClaimMorseAccount during claim execution
+// NOTE:
+// - The Shannon account specified must be the message signer
+// - Authz grants MAY be used to delegate claiming authority to other Shannon accounts
 type MsgClaimMorseAccount struct {
 	// The bech32-encoded address of the Shannon account to which the claimed balance will be minted.
 	ShannonDestAddress string `protobuf:"bytes,1,opt,name=shannon_dest_address,json=shannonDestAddress,proto3" json:"shannon_dest_address"`
@@ -312,6 +309,9 @@ func (m *MsgClaimMorseAccount) GetMorseSignature() string {
 	return ""
 }
 
+// MsgClaimMorseAccountResponse is returned from MsgClaimMorseAccount.
+// It indicates the morse_src_address of the account which was claimed, the total
+// balance claimed, and the height at which the claim was committed.
 type MsgClaimMorseAccountResponse struct {
 	// The hex-encoded address of the Morse account whose balance will be claimed.
 	// E.g.: 00f9900606fa3d5c9179fc0c8513078a53a2073e
