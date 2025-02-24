@@ -3,9 +3,7 @@ title: poktrolld Installation
 sidebar_position: 1
 ---
 
-:::warning
-
-tl;dr IFF you know what you're doing.
+:::tip TL;DR If you have brew
 
 ```bash
 brew tap pokt-network/poktroll
@@ -14,18 +12,17 @@ brew install poktrolld
 
 :::
 
+## Table of Contents <!-- omit in toc -->
+
 - [MacOS \& Linux Users](#macos--linux-users)
-  - [Using Homebrew](#using-homebrew)
-    - [Troubleshooting Homebrew](#troubleshooting-homebrew)
-  - [From Source](#from-source)
-    - [Installing dependencies](#installing-dependencies)
-    - [Installing poktrolld](#installing-poktrolld)
-  - [Using release binaries](#using-release-binaries)
-- [Windows Users](#windows-users)
+  - [Using Homebrew (recommended)](#using-homebrew-recommended)
+  - [Using release binaries (if you don't have brew)](#using-release-binaries-if-you-dont-have-brew)
+  - [From Source (danger zone)](#from-source-danger-zone)
+- [Windows Users (why!?)](#windows-users-why)
 
 ## MacOS & Linux Users
 
-### Using Homebrew
+### Using Homebrew (recommended)
 
 Ensure you have [Homebrew](https://brew.sh/) installed.
 
@@ -43,13 +40,13 @@ poktrolld version
 poktrolld --help
 ```
 
-:::tip
-See the [homebrew-poktroll](https://github.com/pokt-network/homebrew-poktroll/)
-repository for details on how to install homebrew or other details to install
-or debug the CLI.
-:::
-
-#### Troubleshooting Homebrew
+<details>
+<summary>
+<h3>Troubleshooting Homebrew</h3>
+<p>
+Read this section if you're having problems downloading or upgrading your `poktrolld` binary using Homebrew.
+</p>
+</summary>
 
 The source code for the Homebrew formula is available in the [homebrew-poktroll](https://github.com/pokt-network/homebrew-poktroll) repository.
 
@@ -70,52 +67,21 @@ brew tap pokt-network/poktroll
 brew install poktrolld
 ```
 
-### From Source
+</details>
 
-#### Installing dependencies
+### Using release binaries (if you don't have brew)
 
-Ensure you have the following installed:
+:::tip tl;dr manual download
 
-- [Go](https://go.dev/doc/install) (version 1.18 or later)
-- [Ignite CLI](https://docs.ignite.com/welcome/install)
-
-If you're on a Linux machine, you can follow the steps below for convenience:
-
-```bash
-# Install go 1.23
-curl -o ./pkgx --compressed -f --proto '=https' https://pkgx.sh/$(uname)/$(uname -m)
-sudo install -m 755 pkgx /usr/local/bin
-pkgx install go@1.23.0
-export PATH=$PATH:$HOME/go/bin/
-
-# Install PATH Gateway required dependencies
-apt-get update && apt-get install git make build-essential
-
-# Install the ignite binary used to build the Pocket binary
-curl https://get.ignite.com/cli! | bash
-```
-
-#### Installing poktrolld
-
-Then, Retrieve the source code and build the `poktrolld` locally like so:
-
-```bash
-git clone https://github.com/pokt-network/poktroll.git
-cd poktroll
-make go_develop
-make ignite_poktrolld_build
-```
-
-And verify it worked by running:
-
-```bash
-poktrolld version
-poktrolld --help
-```
-
-### Using release binaries
+1. Grab a binary from the [latest release](https://github.com/pokt-network/poktroll/releases/latest)
+2. Download the appropriate `poktroll_${OS}_${ARCH}.tar.gz` for your environment
+3. Untar the downloaded file to retrieve the `poktrolld` binary
+4. Extract the binary to `/usr/local/bin`
+   :::
 
 Pre-built binaries are available on our [releases page](https://github.com/pokt-network/poktroll/releases).
+
+You can view the latest release directly by clicking [here](https://github.com/pokt-network/poktroll/releases/latest).
 
 The following snippet downloads/upgrades the binary to the latest released version:
 
@@ -133,7 +99,54 @@ sudo chmod +x /usr/local/bin/poktrolld
 poktrolld version
 ```
 
-## Windows Users
+### From Source (danger zone)
+
+:::warning Do not continue unless you're a 🚀👨‍💻💎
+
+This method is only recommended for **ADVANCED** users as it requires working with developer tools.
+
+:::
+
+#### Installing dependencies <!-- omit in toc -->
+
+Ensure you have the following installed:
+
+- [Go](https://go.dev/doc/install) (version 1.23 or later)
+  - Make sure to add `export PATH=$PATH:$(go env GOPATH)/bin/` to your `.bashrc` or `.zshrc` file.
+- [Ignite CLI](https://docs.ignite.com/welcome/install)
+
+#### Installing poktrolld <!-- omit in toc -->
+
+Then, Retrieve the source code and build the `poktrolld` locally like so:
+
+```bash
+# Clone the repository
+git clone https://github.com/pokt-network/poktroll.git
+cd poktroll
+
+# Optional: Switch to a specific version (recommended)
+# Replace v0.0.12 with your desired version from https://github.com/pokt-network/poktroll/releases
+git checkout v0.0.12
+
+# Build the binary
+make go_develop
+make ignite_poktrolld_build
+```
+
+And verify it worked by running:
+
+```bash
+poktrolld version
+poktrolld --help
+```
+
+## Windows Users (why!?)
+
+:::danger
+
+Why? 🥴 ⁉️
+
+:::
 
 Currently, we do not support native Windows installation. Windows users are encouraged
 to use [Windows Subsystem for Linux (WSL)](https://docs.microsoft.com/en-us/windows/wsl/install)

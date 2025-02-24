@@ -94,12 +94,12 @@ check_godoc:
 	fi; \
 	}
 
-.PHONY: check_npm
-# Internal helper target - check if npm is installed
-check_npm:
+.PHONY: check_yarn
+# Internal helper target - check if yarn is installed
+check_yarn:
 	{ \
-	if ( ! ( command -v npm >/dev/null )); then \
-		echo "Seems like you don't have npm installed. Make sure you install it before continuing"; \
+	if ( ! ( command -v yarn >/dev/null )); then \
+		echo "Seems like you don't have yarn installed. Make sure you install it before continuing"; \
 		exit 1; \
 	fi; \
 	}

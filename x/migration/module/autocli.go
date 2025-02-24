@@ -48,7 +48,8 @@ func (am AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 					Use:            "import-morse-claimable-accounts [morse-account-state]",
 					Short:          "Send a import_morse_claimable_accounts tx",
 					PositionalArgs: []*autocliv1.PositionalArgDescriptor{{ProtoField: "morseAccountState"}},
-					Skip:           true, // skipped because authority gated
+					// TODO_UPNEXT(@bryanchriswhite, #1034): Implement CLI logic.
+					Skip: true, // skipped because authority gated
 				},
 				{
 					RpcMethod:      "ClaimMorseAccount",
