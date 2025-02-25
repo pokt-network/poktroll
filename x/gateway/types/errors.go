@@ -13,4 +13,6 @@ var (
 	ErrGatewayNotFound       = sdkerrors.Register(ModuleName, 1104, "gateway not found")
 	ErrGatewayParamInvalid   = sdkerrors.Register(ModuleName, 1105, "the provided param is invalid")
 	ErrGatewayEmitEvent      = sdkerrors.Register(ModuleName, 1106, "unable to emit onchain event")
+	ErrGatewayIsUnstaking    = sdkerrors.Register(ModuleName, 1107, "gateway is in unbonding period")
+	ErrGatewayIsInactive     = sdkerrors.Register(ModuleName, 1108, "gateway is no longer active")
 )

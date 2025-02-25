@@ -28,17 +28,6 @@ check_ignite_version:
 		exit 1 ; \
 	fi
 
-.PHONY: check_mockgen
-# Internal helper target- Check if mockgen is installed
-check_mockgen:
-	{ \
-	if ( ! ( command -v mockgen >/dev/null )); then \
-		echo "Seems like you don't have `mockgen` installed. Please visit https://github.com/golang/mock#installation and follow the instructions to install `mockgen` before continuing"; \
-		exit 1; \
-	fi; \
-	}
-
-
 .PHONY: check_act
 # Internal helper target - check if `act` is installed
 check_act:
@@ -105,12 +94,12 @@ check_godoc:
 	fi; \
 	}
 
-.PHONY: check_npm
-# Internal helper target - check if npm is installed
-check_npm:
+.PHONY: check_yarn
+# Internal helper target - check if yarn is installed
+check_yarn:
 	{ \
-	if ( ! ( command -v npm >/dev/null )); then \
-		echo "Seems like you don't have npm installed. Make sure you install it before continuing"; \
+	if ( ! ( command -v yarn >/dev/null )); then \
+		echo "Seems like you don't have yarn installed. Make sure you install it before continuing"; \
 		exit 1; \
 	fi; \
 	}

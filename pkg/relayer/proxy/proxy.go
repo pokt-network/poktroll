@@ -4,11 +4,9 @@ import (
 	"context"
 
 	"cosmossdk.io/depinject"
-	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	"golang.org/x/sync/errgroup"
 
 	"github.com/pokt-network/poktroll/pkg/client"
-	"github.com/pokt-network/poktroll/pkg/crypto"
 	"github.com/pokt-network/poktroll/pkg/observable/channel"
 	"github.com/pokt-network/poktroll/pkg/polylog"
 	"github.com/pokt-network/poktroll/pkg/relayer"
@@ -25,15 +23,6 @@ var _ relayer.RelayerProxy = (*relayerProxy)(nil)
 type relayerProxy struct {
 	logger polylog.Logger
 
-	// signingKeyNames are the supplier operator key names in the Cosmos's keybase.
-	// They are used along with the keyring to get the supplier operator addresses
-	// and sign relay responses.
-	// A unique list of operator key names from all suppliers configured on RelayMiner
-	// is passed to relayerProxy, and the address for each signing key is looked up
-	// in `BuildProvidedServices`.
-	signingKeyNames []string
-	keyring         keyring.Keyring
-
 	// blockClient is the client used to get the block at the latest height from the blockchain
 	// and be notified of new incoming blocks. It is used to update the current session data.
 	blockClient client.BlockClient
@@ -42,15 +31,22 @@ type relayerProxy struct {
 	// which contains the supported services, RPC types, and endpoints, etc...
 	supplierQuerier client.SupplierQueryClient
 
-	// sessionQuerier is the query client used to get the current session & session params
-	// from the blockchain, which are needed to check if the relay proxy should be serving an
-	// incoming relay request.
-	sessionQuerier client.SessionQueryClient
-
 	// sharedQuerier is the query client used to get the current shared & shared params
 	// from the blockchain, which are needed to check if the relay proxy should be serving an
 	// incoming relay request.
 	sharedQuerier client.SharedQueryClient
+
+	// sessionQuerier is the query client used to get the current session.
+	sessionQuerier client.SessionQueryClient
+
+	// relayMeter keeps track of the total amount of stake an onchhain Application
+	// will owe an onchain Supplier (backed by this RelayMiner) once the session settles.
+	// It also configures application over-servicing allowance.
+	relayMeter relayer.RelayMeter
+
+	// relayAuthenticator is responsible for authenticating relay requests and responses.
+	// It verifies the relay request signature and session validity, and signs relay responses.
+	relayAuthenticator relayer.RelayAuthenticator
 
 	// servers is a map of listenAddress -> RelayServer provided by the relayer proxy,
 	// where listenAddress is the address of the server defined in the config file and
@@ -68,41 +64,21 @@ type relayerProxy struct {
 	// servedRelaysPublishCh is a channel that emits the relays that have been served so that the
 	// servedRelays observable can fan out the notifications to its subscribers.
 	servedRelaysPublishCh chan<- *types.Relay
-
-	// ringCache is used to obtain and store the ring for the application.
-	ringCache crypto.RingCache
-
-	// OperatorAddressToSigningKeyNameMap is a map with a CosmoSDK address as a key,
-	// and the keyring signing key name as a value.
-	// We use this map in:
-	// 1. Relay verification to check if the incoming relay matches the supplier hosted by the relay miner;
-	// 2. Relay signing to resolve which keyring key name to use for signing;
-	OperatorAddressToSigningKeyNameMap map[string]string
-
-	// relayMeter keeps track of the total amount of stake an onchhain Application
-	// will owe an onchain Supplier (backed by this RelayMiner) once the session settles.
-	// It also configures application over-servicing allowance.
-	relayMeter relayer.RelayMeter
 }
 
 // NewRelayerProxy creates a new relayer proxy with the given dependencies or returns
 // an error if the dependencies fail to resolve or the options are invalid.
 //
 // Required dependencies:
-//   - cosmosclient.Context
+//   - polylog.Logger
 //   - client.BlockClient
-//   - crypto.RingCache
 //   - client.SupplierQueryClient
+//   - client.SharedQueryClient
 //   - client.SessionQueryClient
-//   - client.SharedQueryClient
-//   - keyring.Keyring
-//   - client.SharedQueryClient
-//   - client.ApplicationQueryClient
-//   - client.ServiceQueryClient
-//   - client.EventsQueryClient
+//   - relayer.RelayMeter
+//   - relayer.RelayAuthenticator
 //
 // Available options:
-//   - WithSigningKeyNames
 //   - WithServicesConfigMap
 func NewRelayerProxy(
 	deps depinject.Config,
@@ -114,12 +90,11 @@ func NewRelayerProxy(
 		deps,
 		&rp.logger,
 		&rp.blockClient,
-		&rp.ringCache,
 		&rp.supplierQuerier,
-		&rp.sessionQuerier,
 		&rp.sharedQuerier,
-		&rp.keyring,
+		&rp.sessionQuerier,
 		&rp.relayMeter,
+		&rp.relayAuthenticator,
 	); err != nil {
 		return nil, err
 	}
@@ -152,8 +127,8 @@ func (rp *relayerProxy) Start(ctx context.Context) error {
 		return err
 	}
 
-	// Start the ring cache.
-	rp.ringCache.Start(ctx)
+	// Start the relay authenticator.
+	rp.relayAuthenticator.Start(ctx)
 
 	// Start the relay meter by subscribing to the onchain events.
 	// This function is non-blocking and the subscription cancellation is handled
@@ -196,10 +171,6 @@ func (rp *relayerProxy) ServedRelays() relayer.RelaysObservable {
 // validateConfig validates the relayer proxy's configuration options and returns an error if it is invalid.
 // TODO_TEST: Add tests for validating these configurations.
 func (rp *relayerProxy) validateConfig() error {
-	if len(rp.signingKeyNames) == 0 || rp.signingKeyNames[0] == "" {
-		return ErrRelayerProxyUndefinedSigningKeyNames
-	}
-
 	if len(rp.serverConfigs) == 0 {
 		return ErrRelayerServicesConfigsUndefined
 	}

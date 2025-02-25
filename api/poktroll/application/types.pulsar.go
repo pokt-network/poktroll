@@ -2182,7 +2182,7 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-// Application represents the on-chain definition and state of an application
+// Application represents the onchain definition and state of an application
 type Application struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache

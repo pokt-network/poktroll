@@ -27,6 +27,7 @@ import (
 	relayerconfig "github.com/pokt-network/poktroll/pkg/relayer/config"
 	"github.com/pokt-network/poktroll/pkg/relayer/miner"
 	"github.com/pokt-network/poktroll/pkg/relayer/proxy"
+	"github.com/pokt-network/poktroll/pkg/relayer/relay_authenticator"
 	"github.com/pokt-network/poktroll/pkg/relayer/session"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
@@ -242,7 +243,8 @@ func setupRelayerDependencies(
 		supplyTxFactory,
 		supplyTxContext,
 		config.NewSupplySupplierClientsFn(signingKeyNames),
-		newSupplyRelayerProxyFn(signingKeyNames, servicesConfigMap),
+		newSupplyRelayAuthenticatorFn(signingKeyNames),
+		newSupplyRelayerProxyFn(servicesConfigMap),
 		newSupplyRelayerSessionsManagerFn(smtStorePath),
 	}
 
@@ -314,11 +316,33 @@ func supplyTxContext(
 	return depinject.Configs(deps, depinject.Supply(txContext)), nil
 }
 
+// newSupplyRelayAuthenticatorFn returns a function which constructs a
+// RelayAuthenticator instance and returns a new depinject.Config which
+// is supplied with the given deps and the new RelayAuthenticator.
+func newSupplyRelayAuthenticatorFn(
+	signingKeyNames []string,
+) config.SupplierFn {
+	return func(
+		ctx context.Context,
+		deps depinject.Config,
+		_ *cobra.Command,
+	) (depinject.Config, error) {
+		relayAuthenticator, err := relay_authenticator.NewRelayAuthenticator(
+			deps,
+			relay_authenticator.WithSigningKeyNames(signingKeyNames),
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		return depinject.Configs(deps, depinject.Supply(relayAuthenticator)), nil
+	}
+}
+
 // newSupplyRelayerProxyFn returns a function which constructs a
 // RelayerProxy instance and returns a new depinject.Config which
 // is supplied with the given deps and the new RelayerProxy.
 func newSupplyRelayerProxyFn(
-	signingKeyNames []string,
 	servicesConfigMap map[string]*relayerconfig.RelayMinerServerConfig,
 ) config.SupplierFn {
 	return func(
@@ -328,7 +352,6 @@ func newSupplyRelayerProxyFn(
 	) (depinject.Config, error) {
 		relayerProxy, err := proxy.NewRelayerProxy(
 			deps,
-			proxy.WithSigningKeyNames(signingKeyNames),
 			proxy.WithServicesConfigMap(servicesConfigMap),
 		)
 		if err != nil {

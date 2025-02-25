@@ -26,6 +26,7 @@ import (
 	"github.com/spf13/viper"
 
 	"github.com/pokt-network/poktroll/app"
+	"github.com/pokt-network/poktroll/cmd/poktrolld/cmd/migrate"
 )
 
 func initRootCmd(
@@ -52,6 +53,7 @@ func initRootCmd(
 		queryCommand(),
 		txCommand(),
 		keys.Commands(),
+		migrate.MigrateCmd(),
 	)
 }
 

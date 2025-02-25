@@ -1,0 +1,47 @@
+syntax = "proto3";
+
+package poktroll.migration;
+
+import "cosmos_proto/cosmos.proto";
+import "cosmos/base/v1beta1/coin.proto";
+import "gogoproto/gogo.proto";
+
+option go_package = "github.com/pokt-network/poktroll/x/migration/types";
+option (gogoproto.stable_marshaler_all) = true;
+
+// MorseAccountState is the onchain representation of all account state to be migrated from Morse.
+// It is NEVER persisted onchain but is a dependency of the MsgImportMorseClaimableAccount handler.
+// It's main purpose is to expose the #GetHash() method for verifying the integrity of all MorseClaimableAccounts.
+message MorseAccountState {
+  repeated MorseClaimableAccount accounts = 2 [(gogoproto.jsontag) = "accounts", (gogoproto.moretags) = "yaml:\"accounts\""];
+}
+
+// MorseClaimableAccount is the onchain (persisted) representation of a Morse
+// account which is claimable as part of the Morse -> Shannon migration.
+// They are intended to be created during MorseAccountState import (see: MsgImportMorseClaimableAccount).
+message MorseClaimableAccount {
+  // A hex-encoded representation of the address corresponding to a Morse application's ed25519 public key.
+  bytes address = 1 [(gogoproto.jsontag) = "address", (gogoproto.casttype) = "github.com/cometbft/cometbft/crypto.Address"];
+
+  // The ed25519 public key of the account.
+  bytes public_key = 2 [(gogoproto.casttype) = "crypto/ed25519.PublicKey"];
+
+  // The unstaked upokt tokens (i.e. account balance) available for claiming.
+  cosmos.base.v1beta1.Coin unstaked_balance = 3 [(gogoproto.nullable) = false, (gogoproto.jsontag) = "unstaked_balance"];
+
+  // The staked tokens associated with a supplier actor which corresponds to this account address.
+  // DEV_NOTE: A few contextual notes related to Morse:
+  // - A Supplier is called a Servicer or Node (not a full node) in Morse
+  // - All Validators are Servicers, not all servicers are Validators
+  // - Automatically, the top 100 staked Servicers are validator
+  // - This only accounts for servicer stake balance transition
+  // TODO_MAINNET(@Olshansk): Develop a strategy for bootstrapping validators in Shannon by working with the cosmos ecosystem
+  cosmos.base.v1beta1.Coin supplier_stake = 4 [(gogoproto.nullable) = false, (gogoproto.jsontag) = "supplier_stake"];
+
+  // The staked tokens associated with an application actor which corresponds to this account address.
+  cosmos.base.v1beta1.Coin application_stake = 5 [(gogoproto.nullable) = false, (gogoproto.jsontag) = "application_stake"];
+
+  // The Shannon height at which the account was claimed.
+  int64 claimed_at_height = 6 [(gogoproto.jsontag) = "claimed_at_height", (gogoproto.moretags) = "yaml:\"claimed_at_height\""];
+}
+

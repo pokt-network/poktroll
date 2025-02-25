@@ -17,8 +17,8 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
-	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/mock/gomock"
 
 	"github.com/pokt-network/poktroll/testutil/application/mocks"
 	testsession "github.com/pokt-network/poktroll/testutil/session"
@@ -28,11 +28,12 @@ import (
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
-// stakedGatewayMap is used to mock whether a gateway is staked or not for use
-// in the application's mocked gateway keeper. This enables the tester to
-// control whether a gateway is "staked" or not and whether it can be delegated to
+// stakedGatewayToUnstakeSessionEndHeightMap mocks gateway staking status for tests.
+// Maps gateway addresses to their unstake session end heights, allowing tests to:
+// - Track staked gateways and their unstaking status
+// - Control gateway delegation eligibility
 // WARNING: Using this map may cause issues if running multiple tests in parallel
-var stakedGatewayMap = make(map[string]struct{})
+var stakedGatewayToUnstakeSessionEndHeightMap = make(map[string]uint64)
 
 // ApplicationModuleKeepers is a struct that contains the keepers needed for testing
 // the application module.
@@ -67,14 +68,29 @@ func NewApplicationModuleKeepers(t testing.TB) (ApplicationModuleKeepers, contex
 	mockGatewayKeeper := mocks.NewMockGatewayKeeper(ctrl)
 	mockGatewayKeeper.EXPECT().GetGateway(gomock.Any(), gomock.Any()).DoAndReturn(
 		func(_ context.Context, addr string) (gatewaytypes.Gateway, bool) {
-			if _, ok := stakedGatewayMap[addr]; !ok {
+			if _, ok := stakedGatewayToUnstakeSessionEndHeightMap[addr]; !ok {
 				return gatewaytypes.Gateway{}, false
 			}
 			stake := sdk.NewCoin("upokt", math.NewInt(10000))
 			return gatewaytypes.Gateway{
-				Address: addr,
-				Stake:   &stake,
+				Address:                 addr,
+				Stake:                   &stake,
+				UnstakeSessionEndHeight: stakedGatewayToUnstakeSessionEndHeightMap[addr],
 			}, true
+		},
+	).AnyTimes()
+	mockGatewayKeeper.EXPECT().GetAllGateways(gomock.Any()).DoAndReturn(
+		func(_ context.Context) []gatewaytypes.Gateway {
+			gateways := make([]gatewaytypes.Gateway, 0, len(stakedGatewayToUnstakeSessionEndHeightMap))
+			for addr, unstakeSessionEndHeight := range stakedGatewayToUnstakeSessionEndHeightMap {
+				stake := sdk.NewCoin("upokt", math.NewInt(10000))
+				gateways = append(gateways, gatewaytypes.Gateway{
+					Address:                 addr,
+					Stake:                   &stake,
+					UnstakeSessionEndHeight: unstakeSessionEndHeight,
+				})
+			}
+			return gateways
 		},
 	).AnyTimes()
 
@@ -128,14 +144,14 @@ func ApplicationKeeper(t testing.TB) (keeper.Keeper, context.Context) {
 	return *applicationModuleKeepers.Keeper, ctx
 }
 
-// AddGatewayToStakedGatewayMap adds the given gateway address to the staked
-// gateway map for use in the application's mocked gateway keeper and ensures
-// that it is removed from the map when the test is complete
-func AddGatewayToStakedGatewayMap(t *testing.T, gatewayAddr string) {
+// AddGatewayToStakedGatewayMap registers a gateway in the test mock map with its
+// unstake session end height.
+// It cleans up after test completion.
+func AddGatewayToStakedGatewayMap(t *testing.T, gatewayAddr string, unstakeSessionEndHeight uint64) {
 	t.Helper()
-	stakedGatewayMap[gatewayAddr] = struct{}{}
+	stakedGatewayToUnstakeSessionEndHeightMap[gatewayAddr] = unstakeSessionEndHeight
 	t.Cleanup(func() {
-		delete(stakedGatewayMap, gatewayAddr)
+		delete(stakedGatewayToUnstakeSessionEndHeightMap, gatewayAddr)
 	})
 }
 
@@ -143,5 +159,5 @@ func AddGatewayToStakedGatewayMap(t *testing.T, gatewayAddr string) {
 // staked gateway map for use in the application's mocked gateway keeper
 func RemoveGatewayFromStakedGatewayMap(t *testing.T, gatewayAddr string) {
 	t.Helper()
-	delete(stakedGatewayMap, gatewayAddr)
+	delete(stakedGatewayToUnstakeSessionEndHeightMap, gatewayAddr)
 }

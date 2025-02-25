@@ -27,6 +27,10 @@ accounts:
     mnemonic: "involve clean slab term real human green immune valid swing protect talk silent unique cart few ice era right thunder again drop among bounce"
     coins:
       - 300000000upokt
+  - name: app4
+    mnemonic: "blade light diagram grocery quit orchard patient wonder usual category later want offer increase blush this business protect village top cricket laundry holiday measure"
+    coins:
+      - 300000000upokt
   - name: apptiny
     mnemonic: "worry pupil rival such jump pitch flame prosper tattoo eternal round receive cube crowd remove afraid garment brand toy nut guitar toy sausage fragile"
     coins:
@@ -96,6 +100,8 @@ validators:
           # "high" produces a lot of timeseries.
           # ONLY suitable for small networks such as LocalNet.
           cardinality-level: high
+      api:
+        swagger: true
     config:
       moniker: "validator1"
       consensus:
@@ -208,6 +214,14 @@ genesis:
             # `application1_stake_config.yaml` so that the stake command causes a state change.
             amount: "100000068" # ~100 POKT
             denom: upokt
+        - address: pokt1lqyu4v88vp8tzc86eaqr4lq8rwhssyn6rfwzex
+          delegatee_gateway_addresses:
+            [pokt15vzxjqklzjtlz7lahe8z2dfe9nm5vxwwmscne4]
+          service_configs:
+            - service_id: anvilws
+          stake:
+            amount: "100000068" # ~100 POKT
+            denom: upokt
     supplier:
       params:
         # TODO_BETA(@bryanchriswhite): Determine realistic amount for minimum gateway stake amount.
@@ -227,6 +241,14 @@ genesis:
                 - configs: []
                   rpc_type: JSON_RPC
                   url: http://relayminer1:8545
+              rev_share:
+                - address: pokt19a3t4yunp0dlpfjrp7qwnzwlrzd5fzs2gjaaaj
+                  rev_share_percentage: 100
+            - service_id: anvilws
+              endpoints:
+                - configs: []
+                  rpc_type: WEBSOCKET
+                  url: ws://relayminer1:8545
               rev_share:
                 - address: pokt19a3t4yunp0dlpfjrp7qwnzwlrzd5fzs2gjaaaj
                   rev_share_percentage: 100
@@ -275,6 +297,10 @@ genesis:
           name: "anvil"
           compute_units_per_relay: 1
           owner_address: pokt1cwnu460557x0z78jv3hhc7356hhkrgc86c87q5
+        - id: anvilws
+          name: "anvilws"
+          compute_units_per_relay: 1
+          owner_address: pokt1cwnu460557x0z78jv3hhc7356hhkrgc86c87q5
         - id: ollama
           name: "ollama"
           compute_units_per_relay: 1
@@ -321,4 +347,5 @@ genesis:
         proof_window_close_offset_blocks: 4
         supplier_unbonding_period_sessions: 1
         application_unbonding_period_sessions: 1
+        gateway_unbonding_period_sessions: 1
         compute_units_to_tokens_multiplier: 42

@@ -14,7 +14,7 @@ import "cosmos_proto/cosmos.proto";
 
 import "poktroll/shared/service.proto";
 
-// Application represents the on-chain definition and state of an application
+// Application represents the onchain definition and state of an application
 message Application {
   // Bech32 address of the application
   string address = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];

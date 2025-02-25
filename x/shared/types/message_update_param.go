@@ -88,6 +88,11 @@ func (msg *MsgUpdateParam) ValidateBasic() error {
 			return err
 		}
 		return ValidateApplicationUnbondingPeriodSessions(msg.GetAsUint64())
+	case ParamGatewayUnbondingPeriodSessions:
+		if err := msg.paramTypeIsUint64(); err != nil {
+			return err
+		}
+		return ValidateGatewayUnbondingPeriodSessions(msg.GetAsUint64())
 	case ParamComputeUnitsToTokensMultiplier:
 		if err := msg.paramTypeIsUint64(); err != nil {
 			return err
