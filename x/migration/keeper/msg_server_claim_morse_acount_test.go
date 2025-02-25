@@ -129,7 +129,7 @@ func TestMsgServer_ClaimMorseAccount_Error(t *testing.T) {
 		expectedErr := status.Error(
 			codes.InvalidArgument,
 			migrationtypes.ErrMorseAccountClaim.Wrapf(
-				"morseSignature is invalid",
+				"invalid morseSignature length (0): %q", "",
 			).Error(),
 		)
 
