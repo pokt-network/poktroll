@@ -38,12 +38,12 @@ func TestMigrationModuleSuite(t *testing.T) {
 	suite.Run(t, &MigrationModuleTestSuite{})
 }
 
-// TestImportMorseClaimableAccounts tests claiming of morse claimable accounts.
-// It only claims account balances and does not test staking any actors as a result of claiming.
+// TestImportMorseClaimableAccounts exercises importing and persistence of morse claimable accounts.
 func (s *MigrationModuleTestSuite) TestImportMorseClaimableAccounts() {
 	s.GenerateMorseAccountState(s.T(), s.numMorseClaimableAccounts)
 	msgImportRes := s.ImportMorseClaimableAccounts(s.T())
-	morseAccountStateHash, err := s.GetAccountState(s.T()).GetHash()
+	morseAccountState := s.GetAccountState(s.T())
+	morseAccountStateHash, err := morseAccountState.GetHash()
 	require.NoError(s.T(), err)
 
 	expectedMsgImportRes := &migrationtypes.MsgImportMorseClaimableAccountsResponse{
@@ -51,9 +51,24 @@ func (s *MigrationModuleTestSuite) TestImportMorseClaimableAccounts() {
 		NumAccounts: uint64(s.numMorseClaimableAccounts),
 	}
 	require.Equal(s.T(), expectedMsgImportRes, msgImportRes)
+
+	foundMorseClaimableAccounts := s.QueryAllMorseClaimableAccounts(s.T())
+	require.Equal(s.T(), s.numMorseClaimableAccounts, len(foundMorseClaimableAccounts))
+
+	for _, expectedMorseClaimableAccount := range morseAccountState.Accounts {
+		isFound := false
+		for _, foundMorseClaimableAccount := range foundMorseClaimableAccounts {
+			if foundMorseClaimableAccount.GetMorseSrcAddress() == expectedMorseClaimableAccount.GetMorseSrcAddress() {
+				require.Equal(s.T(), *expectedMorseClaimableAccount, foundMorseClaimableAccount)
+				isFound = true
+				break
+			}
+		}
+		require.True(s.T(), isFound)
+	}
 }
 
-// TestClaimMorseAccount tests claiming of a MorseClaimableAccounts.
+// TestClaimMorseAccount exercises claiming of MorseClaimableAccounts.
 // It only exercises claiming of account balances and does not exercise
 // the staking any actors as a result of claiming.
 func (s *MigrationModuleTestSuite) TestClaimMorseAccount() {
