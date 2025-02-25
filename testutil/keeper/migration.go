@@ -1,6 +1,7 @@
 package keeper
 
 import (
+	"context"
 	"testing"
 
 	"cosmossdk.io/log"
@@ -16,13 +17,30 @@ import (
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/mock/gomock"
 
+	"github.com/pokt-network/poktroll/testutil/migration/mocks"
 	"github.com/pokt-network/poktroll/x/migration/keeper"
-	"github.com/pokt-network/poktroll/x/migration/types"
+	migrationtypes "github.com/pokt-network/poktroll/x/migration/types"
 )
 
-func MigrationKeeper(t testing.TB) (keeper.Keeper, sdk.Context) {
-	storeKey := storetypes.NewKVStoreKey(types.StoreKey)
+// MigrationKeeperConfig is a configuration struct for the MigrationKeeper testutil.
+type MigrationKeeperConfig struct {
+	bankKeeper migrationtypes.BankKeeper
+}
+
+// MigrationKeeperOptionFn is a function which receives and potentially modifies
+// the MigrationKeeperConfig during construction of the MigrationKeeper testutil.
+type MigrationKeeperOptionFn func(cfg *MigrationKeeperConfig)
+
+// MigrationKeeper returns a new migration module keeper with mocked dependencies
+// (i.e. gateway, app, & supplier keepers). Mocked dependencies are configurable
+// via the MigrationKeeperOptionFns.
+func MigrationKeeper(
+	t testing.TB,
+	opts ...MigrationKeeperOptionFn,
+) (keeper.Keeper, sdk.Context) {
+	storeKey := storetypes.NewKVStoreKey(migrationtypes.StoreKey)
 
 	db := dbm.NewMemDB()
 	stateStore := store.NewCommitMultiStore(db, log.NewNopLogger(), metrics.NewNoOpMetrics())
@@ -33,19 +51,62 @@ func MigrationKeeper(t testing.TB) (keeper.Keeper, sdk.Context) {
 	cdc := codec.NewProtoCodec(registry)
 	authority := authtypes.NewModuleAddress(govtypes.ModuleName)
 
+	ctrl := gomock.NewController(t)
+	mockAccountKeeper := mocks.NewMockAccountKeeper(ctrl)
+
+	cfg := defaultConfigWithMocks(ctrl)
+	for _, opt := range opts {
+		opt(cfg)
+	}
+
 	k := keeper.NewKeeper(
 		cdc,
 		runtime.NewKVStoreService(storeKey),
 		log.NewNopLogger(),
 		authority.String(),
+		mockAccountKeeper,
+		cfg.bankKeeper,
 	)
 
 	ctx := sdk.NewContext(stateStore, cmtproto.Header{}, false, log.NewNopLogger())
 
 	// Initialize params
-	if err := k.SetParams(ctx, types.DefaultParams()); err != nil {
+	if err := k.SetParams(ctx, migrationtypes.DefaultParams()); err != nil {
 		panic(err)
 	}
 
 	return k, ctx
+}
+
+// WithBankKeeper assigns the given BankKeeper to the MigrationKeeperConfig.
+func WithBankKeeper(bankKeeper migrationtypes.BankKeeper) MigrationKeeperOptionFn {
+	return func(cfg *MigrationKeeperConfig) {
+		cfg.bankKeeper = bankKeeper
+	}
+}
+
+func defaultConfigWithMocks(ctrl *gomock.Controller) *MigrationKeeperConfig {
+	mockBankKeeper := mocks.NewMockBankKeeper(ctrl)
+	mockBankKeeper.EXPECT().
+		SpendableCoins(gomock.Any(), gomock.Any()).
+		DoAndReturn(
+			func(ctx context.Context, addr sdk.AccAddress) sdk.Coins {
+				mapMu.RLock()
+				defer mapMu.RUnlock()
+				if coins, ok := mapAccAddrCoins[addr.String()]; ok {
+					return coins
+				}
+				return sdk.Coins{}
+			},
+		).AnyTimes()
+	mockBankKeeper.EXPECT().
+		MintCoins(gomock.Any(), gomock.Any(), gomock.Any()).
+		AnyTimes()
+	mockBankKeeper.EXPECT().
+		SendCoinsFromModuleToAccount(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
+		AnyTimes()
+
+	return &MigrationKeeperConfig{
+		bankKeeper: mockBankKeeper,
+	}
 }

@@ -24,10 +24,10 @@ type ApplicationModuleSuite struct {
 
 // GetAppQueryClient constructs and returns a query client for the application
 // module of the integration app.
-func (s *ApplicationModuleSuite) GetAppQueryClient() client.ApplicationQueryClient {
+func (s *ApplicationModuleSuite) GetAppQueryClient(t *testing.T) client.ApplicationQueryClient {
 	deps := depinject.Supply(s.GetApp().QueryHelper())
 	appQueryClient, err := query.NewApplicationQuerier(deps)
-	require.NoError(s.T(), err)
+	require.NoError(t, err)
 
 	return appQueryClient
 }
