@@ -19,7 +19,7 @@ type proofQuerier struct {
 	logger       polylog.Logger
 
 	// paramsCache caches proofQuerier.Params requests
-	paramsCache ParamsCache[prooftypes.Params]
+	paramsCache client.ParamsCache[prooftypes.Params]
 }
 
 // NewProofQuerier returns a new instance of a client.ProofQueryClient by
@@ -52,11 +52,11 @@ func (pq *proofQuerier) GetParams(
 
 	// Get the params from the cache if they exist.
 	if params, found := pq.paramsCache.Get(); found {
-		logger.Debug().Msg("cache hit")
+		logger.Debug().Msg("cache hit for proof params")
 		return &params, nil
 	}
 
-	logger.Debug().Msg("cache miss")
+	logger.Debug().Msg("cache miss proof params")
 
 	req := &prooftypes.QueryParamsRequest{}
 	res, err := pq.proofQuerier.Params(ctx, req)

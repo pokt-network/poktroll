@@ -9,8 +9,8 @@ import (
 	grpc "github.com/cosmos/gogoproto/grpc"
 
 	"github.com/pokt-network/poktroll/app/volatile"
+	"github.com/pokt-network/poktroll/pkg/cache"
 	"github.com/pokt-network/poktroll/pkg/client"
-	querytypes "github.com/pokt-network/poktroll/pkg/client/query/types"
 	"github.com/pokt-network/poktroll/pkg/polylog"
 )
 
@@ -24,7 +24,7 @@ type bankQuerier struct {
 	logger      polylog.Logger
 
 	// balancesCache caches bankQueryClient.GetBalance requests
-	balancesCache KeyValueCache[querytypes.Balance]
+	balancesCache cache.KeyValueCache[Balance]
 }
 
 // NewBankQuerier returns a new instance of a client.BankQueryClient by
@@ -58,11 +58,11 @@ func (bq *bankQuerier) GetBalance(
 
 	// Check if the account balance is present in the cache.
 	if balance, found := bq.balancesCache.Get(address); found {
-		logger.Debug().Msgf("cache hit for key: %s", address)
+		logger.Debug().Msgf("cache hit for account address key: %s", address)
 		return balance, nil
 	}
 
-	logger.Debug().Msgf("cache miss for key: %s", address)
+	logger.Debug().Msgf("cache miss for account address key: %s", address)
 
 	// Query the blockchain for the balance record
 	req := &banktypes.QueryBalanceRequest{Address: address, Denom: volatile.DenomuPOKT}

@@ -15,6 +15,7 @@
 //go:generate go run go.uber.org/mock/mockgen -destination=../../testutil/mockclient/cosmos_keyring_mock.go -package=mockclient github.com/cosmos/cosmos-sdk/crypto/keyring Keyring
 //go:generate go run go.uber.org/mock/mockgen -destination=../../testutil/mockclient/cosmos_client_mock.go -package=mockclient github.com/cosmos/cosmos-sdk/client AccountRetriever
 //go:generate go run go.uber.org/mock/mockgen -destination=../../testutil/mockclient/comet_rpc_client_mock.go -package=mockclient github.com/cosmos/cosmos-sdk/client CometRPC
+//go:generate go run go.uber.org/mock/mockgen -destination=../../testutil/mockclient/grpc_client_conn_mock.go -package=mockclient github.com/cosmos/gogoproto/grpc ClientConn
 
 package client
 
@@ -369,4 +370,12 @@ type ServiceQueryClient interface {
 type BankQueryClient interface {
 	// GetBalance queries the chain for the uPOKT balance of the account provided
 	GetBalance(ctx context.Context, address string) (*cosmostypes.Coin, error)
+}
+
+// ParamsCache is an interface for a simple in-memory cache implementation for query parameters.
+// It does not involve key-value pairs, but only stores a single value.
+type ParamsCache[T any] interface {
+	Get() (T, bool)
+	Set(T)
+	Clear()
 }

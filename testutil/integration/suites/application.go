@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/pokt-network/poktroll/app/volatile"
+	"github.com/pokt-network/poktroll/pkg/cache/memory"
 	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/client/query"
 	"github.com/pokt-network/poktroll/pkg/client/query/cache"
@@ -27,8 +28,12 @@ type ApplicationModuleSuite struct {
 // GetAppQueryClient constructs and returns a query client for the application
 // module of the integration app.
 func (s *ApplicationModuleSuite) GetAppQueryClient() client.ApplicationQueryClient {
-	appCache := cache.NewKeyValueCache[apptypes.Application]()
-	appParamsCache := cache.NewParamsCache[apptypes.Params]()
+	appCache, err := memory.NewKeyValueCache[apptypes.Application]()
+	require.NoError(s.T(), err)
+
+	appParamsCache, err := cache.NewParamsCache[apptypes.Params]()
+	require.NoError(s.T(), err)
+
 	logger := polylog.Ctx(s.GetApp().QueryHelper().Ctx)
 
 	deps := depinject.Supply(s.GetApp().QueryHelper(), appCache, appParamsCache, logger)

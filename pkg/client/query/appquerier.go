@@ -6,6 +6,7 @@ import (
 	"cosmossdk.io/depinject"
 	grpc "github.com/cosmos/gogoproto/grpc"
 
+	"github.com/pokt-network/poktroll/pkg/cache"
 	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/polylog"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
@@ -21,10 +22,10 @@ type appQuerier struct {
 	applicationQuerier apptypes.QueryClient
 	logger             polylog.Logger
 
-	// applicationsCache caches applicationQueryClient.Application requests
-	applicationsCache KeyValueCache[apptypes.Application]
-	// paramsCache caches applicationQueryClient.Params requests
-	paramsCache ParamsCache[apptypes.Params]
+	// applicationsCache caches application.Application returned from applicationQueryClient.Application requests.
+	applicationsCache cache.KeyValueCache[apptypes.Application]
+	// paramsCache caches application.Params returned from applicationQueryClient.Params requests.
+	paramsCache client.ParamsCache[apptypes.Params]
 }
 
 // NewApplicationQuerier returns a new instance of a client.ApplicationQueryClient
@@ -59,11 +60,11 @@ func (aq *appQuerier) GetApplication(
 
 	// Check if the application is present in the cache.
 	if app, found := aq.applicationsCache.Get(appAddress); found {
-		logger.Debug().Msgf("cache hit for key: %s", appAddress)
+		logger.Debug().Msgf("cache hit for application address key: %s", appAddress)
 		return app, nil
 	}
 
-	logger.Debug().Msgf("cache miss for key: %s", appAddress)
+	logger.Debug().Msgf("cache miss for application address key: %s", appAddress)
 
 	req := apptypes.QueryGetApplicationRequest{Address: appAddress}
 	res, err := aq.applicationQuerier.Application(ctx, &req)
@@ -95,11 +96,11 @@ func (aq *appQuerier) GetParams(ctx context.Context) (*apptypes.Params, error) {
 
 	// Check if the application module parameters are present in the cache.
 	if params, found := aq.paramsCache.Get(); found {
-		logger.Debug().Msg("cache hit")
+		logger.Debug().Msg("cache hit for application params")
 		return &params, nil
 	}
 
-	logger.Debug().Msg("cache miss")
+	logger.Debug().Msg("cache miss for application params")
 
 	req := apptypes.QueryParamsRequest{}
 	res, err := aq.applicationQuerier.Params(ctx, &req)

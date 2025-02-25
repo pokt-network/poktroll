@@ -6,6 +6,7 @@ import (
 	"cosmossdk.io/depinject"
 	"github.com/cosmos/gogoproto/grpc"
 
+	"github.com/pokt-network/poktroll/pkg/cache"
 	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/polylog"
 	servicetypes "github.com/pokt-network/poktroll/x/service/types"
@@ -23,9 +24,9 @@ type serviceQuerier struct {
 	logger         polylog.Logger
 
 	// servicesCache caches serviceQueryClient.Service requests
-	servicesCache KeyValueCache[sharedtypes.Service]
+	servicesCache cache.KeyValueCache[sharedtypes.Service]
 	// relayMiningDifficultyCache caches serviceQueryClient.RelayMiningDifficulty requests
-	relayMiningDifficultyCache KeyValueCache[servicetypes.RelayMiningDifficulty]
+	relayMiningDifficultyCache cache.KeyValueCache[servicetypes.RelayMiningDifficulty]
 }
 
 // NewServiceQuerier returns a new instance of a client.ServiceQueryClient by
@@ -61,11 +62,11 @@ func (servq *serviceQuerier) GetService(
 
 	// Check if the service is present in the cache.
 	if service, found := servq.servicesCache.Get(serviceId); found {
-		logger.Debug().Msgf("cache hit for key: %s", serviceId)
+		logger.Debug().Msgf("cache hit for service id key: %s", serviceId)
 		return service, nil
 	}
 
-	logger.Debug().Msgf("cache miss for key: %s", serviceId)
+	logger.Debug().Msgf("cache miss for service id key: %s", serviceId)
 
 	req := &servicetypes.QueryGetServiceRequest{
 		Id: serviceId,
@@ -94,11 +95,11 @@ func (servq *serviceQuerier) GetServiceRelayDifficulty(
 
 	// Check if the relay mining difficulty is present in the cache.
 	if relayMiningDifficulty, found := servq.relayMiningDifficultyCache.Get(serviceId); found {
-		logger.Debug().Msgf("cache hit for key: %s", serviceId)
+		logger.Debug().Msgf("cache hit for service id key: %s", serviceId)
 		return relayMiningDifficulty, nil
 	}
 
-	logger.Debug().Msgf("cache miss for key: %s", serviceId)
+	logger.Debug().Msgf("cache miss for service id key: %s", serviceId)
 
 	req := &servicetypes.QueryGetRelayMiningDifficultyRequest{
 		ServiceId: serviceId,

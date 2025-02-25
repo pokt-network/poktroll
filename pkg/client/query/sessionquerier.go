@@ -7,6 +7,7 @@ import (
 	"cosmossdk.io/depinject"
 	"github.com/cosmos/gogoproto/grpc"
 
+	"github.com/pokt-network/poktroll/pkg/cache"
 	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/polylog"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
@@ -25,9 +26,9 @@ type sessionQuerier struct {
 	logger            polylog.Logger
 
 	// sessionsCache caches sessionQueryClient.GetSession requests
-	sessionsCache KeyValueCache[*sessiontypes.Session]
+	sessionsCache cache.KeyValueCache[*sessiontypes.Session]
 	// paramsCache caches sessionQueryClient.Params requests
-	paramsCache ParamsCache[sessiontypes.Params]
+	paramsCache client.ParamsCache[sessiontypes.Params]
 }
 
 // NewSessionQuerier returns a new instance of a client.SessionQueryClient by
@@ -74,11 +75,11 @@ func (sessq *sessionQuerier) GetSession(
 
 	// Check if the session is present in the cache.
 	if session, found := sessq.sessionsCache.Get(sessionCacheKey); found {
-		logger.Debug().Msgf("cache hit for key: %s", sessionCacheKey)
+		logger.Debug().Msgf("cache hit for session key (appAddress/serviceId/sessionStartHeight): %s", sessionCacheKey)
 		return session, nil
 	}
 
-	logger.Debug().Msgf("cache miss for key: %s", sessionCacheKey)
+	logger.Debug().Msgf("cache miss for session key (appAddress/serviceId/sessionStartHeight): %s", sessionCacheKey)
 
 	req := &sessiontypes.QueryGetSessionRequest{
 		ApplicationAddress: appAddress,
@@ -104,11 +105,11 @@ func (sessq *sessionQuerier) GetParams(ctx context.Context) (*sessiontypes.Param
 
 	// Check if the params are present in the cache.
 	if params, found := sessq.paramsCache.Get(); found {
-		logger.Debug().Msg("cache hit")
+		logger.Debug().Msg("cache hit for session params")
 		return &params, nil
 	}
 
-	logger.Debug().Msg("cache miss")
+	logger.Debug().Msg("cache miss for session params")
 
 	req := &sessiontypes.QueryParamsRequest{}
 	res, err := sessq.sessionQuerier.Params(ctx, req)

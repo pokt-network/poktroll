@@ -9,6 +9,7 @@ import (
 	accounttypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	grpc "github.com/cosmos/gogoproto/grpc"
 
+	"github.com/pokt-network/poktroll/pkg/cache"
 	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/polylog"
 )
@@ -24,7 +25,7 @@ type accQuerier struct {
 	logger         polylog.Logger
 
 	// accountsCache caches accountQueryClient.Account requests
-	accountsCache KeyValueCache[types.AccountI]
+	accountsCache cache.KeyValueCache[types.AccountI]
 }
 
 // NewAccountQuerier returns a new instance of a client.AccountQueryClient by
@@ -58,11 +59,11 @@ func (aq *accQuerier) GetAccount(
 
 	// Check if the account is present in the cache.
 	if account, found := aq.accountsCache.Get(address); found {
-		logger.Debug().Msgf("cache hit for key: %s", address)
+		logger.Debug().Msgf("cache hit for account address key: %s", address)
 		return account, nil
 	}
 
-	logger.Debug().Msgf("cache miss for key: %s", address)
+	logger.Debug().Msgf("cache miss for account address key: %s", address)
 
 	// Query the blockchain for the account record
 	req := &accounttypes.QueryAccountRequest{Address: address}

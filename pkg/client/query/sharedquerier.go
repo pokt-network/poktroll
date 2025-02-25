@@ -7,8 +7,8 @@ import (
 	"cosmossdk.io/depinject"
 	"github.com/cosmos/gogoproto/grpc"
 
+	"github.com/pokt-network/poktroll/pkg/cache"
 	"github.com/pokt-network/poktroll/pkg/client"
-	querytypes "github.com/pokt-network/poktroll/pkg/client/query/types"
 	"github.com/pokt-network/poktroll/pkg/polylog"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
@@ -25,9 +25,9 @@ type sharedQuerier struct {
 	logger        polylog.Logger
 
 	// blockHashCache caches blockQuerier.Block requests
-	blockHashCache KeyValueCache[querytypes.BlockHash]
+	blockHashCache cache.KeyValueCache[BlockHash]
 	// paramsCache caches sharedQueryClient.Params requests
-	paramsCache ParamsCache[sharedtypes.Params]
+	paramsCache client.ParamsCache[sharedtypes.Params]
 }
 
 // NewSharedQuerier returns a new instance of a client.SharedQueryClient by
@@ -65,11 +65,11 @@ func (sq *sharedQuerier) GetParams(ctx context.Context) (*sharedtypes.Params, er
 
 	// Get the params from the cache if they exist.
 	if params, found := sq.paramsCache.Get(); found {
-		logger.Debug().Msg("cache hit")
+		logger.Debug().Msg("cache hit for shared params")
 		return &params, nil
 	}
 
-	logger.Debug().Msg("cache miss")
+	logger.Debug().Msg("cache miss for shared params")
 
 	req := &sharedtypes.QueryParamsRequest{}
 	res, err := sq.sharedQuerier.Params(ctx, req)
@@ -198,15 +198,16 @@ func (sq *sharedQuerier) GetEarliestSupplierProofCommitHeight(ctx context.Contex
 		return 0, err
 	}
 
-	blockHashCacheKey := getBlockHashKacheKey(queryHeight)
+	// Fetch the block at the proof window open height. Its hash is used as part
+	// of the seed to the pseudo-random number generator.
+	proofWindowOpenHeight := sharedtypes.GetProofWindowOpenHeight(sharedParams, queryHeight)
+
+	blockHashCacheKey := getBlockHashKacheKey(proofWindowOpenHeight)
 	proofWindowOpenBlockHash, found := sq.blockHashCache.Get(blockHashCacheKey)
 
 	if !found {
 		logger.Debug().Msgf("cache miss for blockHeight: %s", blockHashCacheKey)
 
-		// Fetch the block at the proof window open height. Its hash is used as part
-		// of the seed to the pseudo-random number generator.
-		proofWindowOpenHeight := sharedtypes.GetProofWindowOpenHeight(sharedParams, queryHeight)
 		proofWindowOpenBlock, err := sq.blockQuerier.Block(ctx, &proofWindowOpenHeight)
 		if err != nil {
 			return 0, err

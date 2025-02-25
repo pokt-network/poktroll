@@ -6,6 +6,7 @@ import (
 	"cosmossdk.io/depinject"
 	"github.com/cosmos/gogoproto/grpc"
 
+	"github.com/pokt-network/poktroll/pkg/cache"
 	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/polylog"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
@@ -21,7 +22,7 @@ type supplierQuerier struct {
 	logger          polylog.Logger
 
 	// suppliersCache caches supplierQueryClient.Supplier requests
-	suppliersCache KeyValueCache[sharedtypes.Supplier]
+	suppliersCache cache.KeyValueCache[sharedtypes.Supplier]
 }
 
 // NewSupplierQuerier returns a new instance of a client.SupplierQueryClient by
@@ -55,11 +56,11 @@ func (supq *supplierQuerier) GetSupplier(
 
 	// Check if the supplier is present in the cache.
 	if supplier, found := supq.suppliersCache.Get(operatorAddress); found {
-		logger.Debug().Msgf("cache hit for key: %s", operatorAddress)
+		logger.Debug().Msgf("cache hit for operator address key: %s", operatorAddress)
 		return supplier, nil
 	}
 
-	logger.Debug().Msgf("cache miss for key: %s", operatorAddress)
+	logger.Debug().Msgf("cache miss for operator address key: %s", operatorAddress)
 
 	req := &suppliertypes.QueryGetSupplierRequest{OperatorAddress: operatorAddress}
 	res, err := supq.supplierQuerier.Supplier(ctx, req)

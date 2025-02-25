@@ -13,18 +13,23 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/pokt-network/poktroll/app/volatile"
+	"github.com/pokt-network/poktroll/pkg/cache"
+	"github.com/pokt-network/poktroll/pkg/cache/memory"
+	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/client/block"
 	"github.com/pokt-network/poktroll/pkg/client/delegation"
 	"github.com/pokt-network/poktroll/pkg/client/events"
 	"github.com/pokt-network/poktroll/pkg/client/query"
-	"github.com/pokt-network/poktroll/pkg/client/query/cache"
-	querytypes "github.com/pokt-network/poktroll/pkg/client/query/types"
+	querycache "github.com/pokt-network/poktroll/pkg/client/query/cache"
 	"github.com/pokt-network/poktroll/pkg/client/supplier"
 	"github.com/pokt-network/poktroll/pkg/client/tx"
 	txtypes "github.com/pokt-network/poktroll/pkg/client/tx/types"
 	"github.com/pokt-network/poktroll/pkg/crypto/rings"
 	"github.com/pokt-network/poktroll/pkg/polylog"
 )
+
+// FlagQueryCaching is the flag name to enable or disable query caching.
+const FlagQueryCaching = "query-caching"
 
 // SupplierFn is a function that is used to supply a depinject config.
 type SupplierFn func(
@@ -153,7 +158,7 @@ func NewSupplyQueryClientContextFn(queryNodeGRPCURL *url.URL) SupplierFn {
 			return nil, err
 		}
 		deps = depinject.Configs(deps, depinject.Supply(
-			querytypes.Context(queryClientCtx),
+			query.Context(queryClientCtx),
 			grpc.ClientConn(queryClientCtx),
 			queryClientCtx.Keyring,
 		))
@@ -511,15 +516,30 @@ func newSupplyTxClientsFn(
 
 // NewSupplyKeyValueCacheFn returns a function which constructs a KeyValueCache of type T.
 // It take a list of cache options that can be used to configure the cache.
-func NewSupplyKeyValueCacheFn[T any](opts ...cache.CacheOption[query.KeyValueCache[T]]) SupplierFn {
+func NewSupplyKeyValueCacheFn[T any](opts ...querycache.CacheOption[cache.KeyValueCache[T]]) SupplierFn {
 	return func(
 		ctx context.Context,
 		deps depinject.Config,
-		_ *cobra.Command,
+		cmd *cobra.Command,
 	) (depinject.Config, error) {
-		kvCache := cache.NewKeyValueCache[T]()
+		// Check if query caching is enabled
+		queryCachingEnabled, err := cmd.Flags().GetBool(FlagQueryCaching)
+		if err != nil {
+			return nil, err
+		}
 
-		// Apply the cache options
+		// Use a NoOpKeyValueCache if query caching is disabled
+		if !queryCachingEnabled {
+			noopParamsCache := querycache.NewNoOpKeyValueCache[T]()
+			return depinject.Configs(deps, depinject.Supply(noopParamsCache)), nil
+		}
+
+		kvCache, err := memory.NewKeyValueCache[T](memory.WithTTL(0))
+		if err != nil {
+			return nil, err
+		}
+
+		// Apply the query cache options
 		for _, opt := range opts {
 			if err := opt(ctx, deps, kvCache); err != nil {
 				return nil, err
@@ -532,15 +552,30 @@ func NewSupplyKeyValueCacheFn[T any](opts ...cache.CacheOption[query.KeyValueCac
 
 // NewSupplyParamsCacheFn returns a function which constructs a ParamsCache of type T.
 // It take a list of cache options that can be used to configure the cache.
-func NewSupplyParamsCacheFn[T any](opts ...cache.CacheOption[query.ParamsCache[T]]) SupplierFn {
+func NewSupplyParamsCacheFn[T any](opts ...querycache.CacheOption[client.ParamsCache[T]]) SupplierFn {
 	return func(
 		ctx context.Context,
 		deps depinject.Config,
-		_ *cobra.Command,
+		cmd *cobra.Command,
 	) (depinject.Config, error) {
-		paramsCache := cache.NewParamsCache[T]()
+		// Check if params caching is enabled
+		queryCachingEnabled, err := cmd.Flags().GetBool(FlagQueryCaching)
+		if err != nil {
+			return nil, err
+		}
 
-		// Apply the cache options
+		// Use a NoOpParamsCache if query caching is disabled
+		if !queryCachingEnabled {
+			noopParamsCache := querycache.NewNoOpParamsCache[T]()
+			return depinject.Configs(deps, depinject.Supply(noopParamsCache)), nil
+		}
+
+		paramsCache, err := querycache.NewParamsCache[T](memory.WithTTL(0))
+		if err != nil {
+			return nil, err
+		}
+
+		// Apply the query cache options
 		for _, opt := range opts {
 			if err := opt(ctx, deps, paramsCache); err != nil {
 				return nil, err
