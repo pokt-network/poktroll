@@ -1058,7 +1058,7 @@ func (s *relaysSuite) sendRelay(iteration uint64, relayPayload string) (appAddre
 		// deprecates the X-App-Address header.
 		// This is needed by the PATH Gateway's trusted mode to identify the application
 		// that is sending the relay request.
-		req.Header.Add("X-App-Address", appAddr)
+		req.Header.Add("App-Address", appAddr)
 		req.Header.Add("target-service-id", "anvil")
 		res, err := http.DefaultClient.Do(req)
 		require.NoError(s, err)
