@@ -42,7 +42,7 @@ require (
 	github.com/cosmos/ibc-go/v8 v8.2.0
 	github.com/go-kit/kit v0.13.0
 	github.com/gogo/status v1.1.0
-	github.com/golang/mock v1.6.0
+	github.com/golang/mock v1.6.0 // indirect
 	github.com/golang/protobuf v1.5.4
 	github.com/gorilla/mux v1.8.1
 	github.com/gorilla/websocket v1.5.3

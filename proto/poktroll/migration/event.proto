@@ -1,0 +1,25 @@
+syntax = "proto3";
+package poktroll.migration;
+
+option go_package = "github.com/pokt-network/poktroll/x/migration/types";
+option (gogoproto.stable_marshaler_all) = true;
+
+import "cosmos_proto/cosmos.proto";
+import "gogoproto/gogo.proto";
+import "cosmos/base/v1beta1/coin.proto";
+
+import "poktroll/shared/service.proto";
+import "poktroll/migration/morse_onchain.proto";
+
+// EventImportMorseClaimableAccounts is emitted when the MorseClaimableAccounts are created on-chain.
+message EventImportMorseClaimableAccounts {
+  // The height (on Shannon) at which the MorseAccountState was created on-chain.
+  int64 created_at_height = 1 [(gogoproto.jsontag) = "created_at_height"];
+
+  // The onchain computed sha256 hash of the entire MorseAccountState containing the MorseClaimableAccounts which were imported.
+  bytes morse_account_state_hash = 2 [(gogoproto.jsontag) = "morse_account_state_hash"];
+
+  // Number of claimable accounts (EOAs) collected from Morse state export
+  // NOTE: Account balances include consolidated application and supplier actor stakes
+  uint64 num_accounts = 3 [(gogoproto.jsontag) = "num_accounts"];
+}
