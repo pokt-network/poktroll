@@ -2,12 +2,15 @@ package query
 
 import (
 	"context"
+	"fmt"
 
 	"cosmossdk.io/depinject"
 	"github.com/cosmos/gogoproto/grpc"
 
 	"github.com/pokt-network/poktroll/pkg/client"
+	"github.com/pokt-network/poktroll/pkg/polylog"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 var _ client.SessionQueryClient = (*sessionQuerier)(nil)
@@ -16,8 +19,15 @@ var _ client.SessionQueryClient = (*sessionQuerier)(nil)
 // querying of onchain session information through a single exposed method
 // which returns an sessiontypes.Session struct
 type sessionQuerier struct {
-	clientConn     grpc.ClientConn
-	sessionQuerier sessiontypes.QueryClient
+	clientConn        grpc.ClientConn
+	sessionQuerier    sessiontypes.QueryClient
+	sharedQueryClient client.SharedQueryClient
+	logger            polylog.Logger
+
+	// sessionsCache caches sessionQueryClient.GetSession requests
+	sessionsCache KeyValueCache[*sessiontypes.Session]
+	// paramsCache caches sessionQueryClient.Params requests
+	paramsCache ParamsCache[sessiontypes.Params]
 }
 
 // NewSessionQuerier returns a new instance of a client.SessionQueryClient by
@@ -31,6 +41,10 @@ func NewSessionQuerier(deps depinject.Config) (client.SessionQueryClient, error)
 	if err := depinject.Inject(
 		deps,
 		&sessq.clientConn,
+		&sessq.sharedQueryClient,
+		&sessq.logger,
+		&sessq.sessionsCache,
+		&sessq.paramsCache,
 	); err != nil {
 		return nil, err
 	}
@@ -48,6 +62,24 @@ func (sessq *sessionQuerier) GetSession(
 	serviceId string,
 	blockHeight int64,
 ) (*sessiontypes.Session, error) {
+	logger := sessq.logger.With("query_client", "session", "method", "GetSession")
+
+	// Get the shared parameters to calculate the session start height.
+	// Use the session start height as the canonical height to be used in the cache key.
+	sharedParams, err := sessq.sharedQueryClient.GetParams(ctx)
+	if err != nil {
+		return nil, err
+	}
+	sessionCacheKey := getSessionCacheKey(sharedParams, appAddress, serviceId, blockHeight)
+
+	// Check if the session is present in the cache.
+	if session, found := sessq.sessionsCache.Get(sessionCacheKey); found {
+		logger.Debug().Msgf("cache hit for key: %s", sessionCacheKey)
+		return session, nil
+	}
+
+	logger.Debug().Msgf("cache miss for key: %s", sessionCacheKey)
+
 	req := &sessiontypes.QueryGetSessionRequest{
 		ApplicationAddress: appAddress,
 		ServiceId:          serviceId,
@@ -60,15 +92,45 @@ func (sessq *sessionQuerier) GetSession(
 			appAddress, serviceId, blockHeight, err,
 		)
 	}
+
+	// Cache the session using the session key.
+	sessq.sessionsCache.Set(sessionCacheKey, res.Session)
 	return res.Session, nil
 }
 
 // GetParams queries & returns the session module onchain parameters.
 func (sessq *sessionQuerier) GetParams(ctx context.Context) (*sessiontypes.Params, error) {
+	logger := sessq.logger.With("query_client", "session", "method", "GetParams")
+
+	// Check if the params are present in the cache.
+	if params, found := sessq.paramsCache.Get(); found {
+		logger.Debug().Msg("cache hit")
+		return &params, nil
+	}
+
+	logger.Debug().Msg("cache miss")
+
 	req := &sessiontypes.QueryParamsRequest{}
 	res, err := sessq.sessionQuerier.Params(ctx, req)
 	if err != nil {
 		return nil, ErrQuerySessionParams.Wrapf("[%v]", err)
 	}
+
+	// Cache the params for future queries.
+	sessq.paramsCache.Set(res.Params)
 	return &res.Params, nil
+}
+
+// getSessionCacheKey constructs the cache key for a session.
+func getSessionCacheKey(
+	sharedParams *sharedtypes.Params,
+	appAddress,
+	serviceId string,
+	blockHeight int64,
+) string {
+	// Using the session start height as the canonical height ensures that the cache
+	// does not duplicate entries for the same session given different block heights
+	// of the same session.
+	sessionStartHeight := sharedtypes.GetSessionStartHeight(sharedParams, blockHeight)
+	return fmt.Sprintf("%s/%s/%d", appAddress, serviceId, sessionStartHeight)
 }
