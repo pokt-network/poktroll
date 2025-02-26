@@ -5,8 +5,8 @@
 .PHONY: send_relay_path_JSONRPC
 send_relay_path_JSONRPC: test_e2e_env ## Send a JSONRPC relay through PATH to a local anvil (test ETH) node
 	curl -X POST -H "Content-Type: application/json" \
-		-H "X-App-Address: pokt1mrqt5f7qh8uxs27cjm9t7v9e74a9vvdnq5jva4" \
-		-H "target-service-id: anvil" \
+		-H "App-Address: pokt1mrqt5f7qh8uxs27cjm9t7v9e74a9vvdnq5jva4" \
+		-H "Target-Service-Id: anvil" \
 		--data '{"jsonrpc":"2.0","method":"eth_blockNumber","params":[],"id":1}' \
 		http://localhost:3000/v1/
 
@@ -15,7 +15,7 @@ send_relay_path_JSONRPC: test_e2e_env ## Send a JSONRPC relay through PATH to a 
 .PHONY: send_relay_path_REST
 send_relay_path_REST: acc_initialize_pubkeys ## Send a REST relay through PATH to a local ollama (LLM) service
 	@echo "Not implemented yet. Check if PATH supports REST relays yet: https://github.com/buildwithgrove/path/issues/87"
-# curl -X POST -H "Content-Type: application/json" -H "X-App-Address: pokt1mrqt5f7qh8uxs27cjm9t7v9e74a9vvdnq5jva4" \
+# curl -X POST -H "Content-Type: application/json" -H "App-Address: pokt1mrqt5f7qh8uxs27cjm9t7v9e74a9vvdnq5jva4" \
 # --data '{"model": "qwen:0.5b", "stream": false, "messages": [{"role": "user", "content":"count from 1 to 10"}]}' \
 # $(subst http://,http://ollama.,$(PATH_URL))/api/chat
 
