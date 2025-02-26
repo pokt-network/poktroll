@@ -1,6 +1,9 @@
 package types
 
 const (
-	MorseAddressLengthBytes    = 20
-	MorseAddressHexLengthBytes = MorseAddressLengthBytes * 2
+	MorseAddressLengthBytes   = 20
+	MorseSignatureLengthBytes = 64
+
+	MorseAddressHexLengthBytes   = MorseAddressLengthBytes * 2
+	MorseSignatureHexLengthBytes = MorseSignatureLengthBytes * 2
 )
