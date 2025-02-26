@@ -3,12 +3,14 @@ package suites
 import (
 	"testing"
 
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 	"github.com/stretchr/testify/require"
 
 	"github.com/pokt-network/poktroll/testutil/testmigration"
 	migrationtypes "github.com/pokt-network/poktroll/x/migration/types"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 var _ IntegrationSuite = (*MigrationModuleSuite)(nil)
@@ -17,11 +19,11 @@ var _ IntegrationSuite = (*MigrationModuleSuite)(nil)
 // functionality. It is intended to be embedded in dependent integration test suites.
 type MigrationModuleSuite struct {
 	BaseIntegrationSuite
-	// TODO_UPNEXT(@bryanchriswhite, #1043): Add ApplicationModuleSuite to the suite.
-	// AppSuite ApplicationModuleSuite
+	AppSuite ApplicationModuleSuite
 
 	// accountState is the generated MorseAccountState to be imported into the migration module.
 	accountState *migrationtypes.MorseAccountState
+
 	// numMorseClaimableAccounts is the number of morse claimable accounts to generate when calling #GenerateMorseAccountState.
 	numMorseClaimableAccounts int
 }
@@ -125,4 +127,43 @@ func (s *MigrationModuleSuite) QueryAllMorseClaimableAccounts(t *testing.T) []mi
 	require.NoError(t, err)
 
 	return morseClaimableAcctRes.MorseClaimableAccount
+}
+
+// ClaimMorseApplication claims the given MorseClaimableAccount as a staked application
+// by running a MsgClaimMorseApplication message.
+// It returns the expected Morse source address and the MsgClaimMorseAccountResponse.
+// DEV_NOTE: morseAccountIdx is 1-based.
+func (s *MigrationModuleSuite) ClaimMorseApplication(
+	t *testing.T,
+	morseAccountIdx uint64,
+	shannonDestAddr string,
+	stake *sdk.Coin,
+	serviceConfig *sharedtypes.ApplicationServiceConfig,
+) (expectedMorseSrcAddr string, _ *migrationtypes.MsgClaimMorseApplicationResponse) {
+	t.Helper()
+
+	morsePrivateKey := testmigration.NewMorsePrivateKey(t, morseAccountIdx)
+	expectedMorseSrcAddr = morsePrivateKey.PubKey().Address().String()
+	require.Equal(t,
+		expectedMorseSrcAddr,
+		s.accountState.Accounts[morseAccountIdx-1].MorseSrcAddress,
+	)
+
+	morseClaimMsg, err := migrationtypes.NewMsgClaimMorseApplication(
+		shannonDestAddr,
+		expectedMorseSrcAddr,
+		morsePrivateKey,
+		stake,
+		serviceConfig,
+	)
+	require.NoError(t, err)
+
+	// Claim a Morse claimable account.
+	resAny, err := s.GetApp().RunMsg(t, morseClaimMsg)
+	require.NoError(t, err)
+
+	claimApplicationRes, ok := resAny.(*migrationtypes.MsgClaimMorseApplicationResponse)
+	require.True(t, ok)
+
+	return expectedMorseSrcAddr, claimApplicationRes
 }
