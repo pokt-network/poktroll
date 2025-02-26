@@ -157,7 +157,10 @@ func (s *suite) Before() {
 // TestFeatures runs the e2e tests specified in any .features files in this directory
 // * This test suite assumes that a LocalNet is running
 func TestFeatures(t *testing.T) {
-	gocuke.NewRunner(t, &suite{}).Path(flagFeaturesPath).Run()
+	gocuke.NewRunner(t, &suite{}).Path(flagFeaturesPath).
+		// Ignore test elements (e.g. Features, Scenarios, etc.)
+		// with the @manual tag (e.g. migration.feature).
+		Tags("not @manual").Run()
 }
 
 // TODO_TECHDEBT: rename `pocketd` to `poktrolld`.
