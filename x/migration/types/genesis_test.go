@@ -10,7 +10,7 @@ import (
 )
 
 func TestGenesisState_Validate(t *testing.T) {
-	duplicateMorseAddress := []byte(sample.MorseAddressHex())
+	duplicateMorseAddress := sample.MorseAddressHex()
 
 	tests := []struct {
 		desc     string
@@ -28,10 +28,10 @@ func TestGenesisState_Validate(t *testing.T) {
 
 				MorseClaimableAccountList: []types.MorseClaimableAccount{
 					{
-						Address: []byte(sample.MorseAddressHex()),
+						MorseSrcAddress: sample.MorseAddressHex(),
 					},
 					{
-						Address: []byte(sample.MorseAddressHex()),
+						MorseSrcAddress: sample.MorseAddressHex(),
 					},
 				},
 				// this line is used by starport scaffolding # types/genesis/validField
@@ -43,10 +43,10 @@ func TestGenesisState_Validate(t *testing.T) {
 			genState: &types.GenesisState{
 				MorseClaimableAccountList: []types.MorseClaimableAccount{
 					{
-						Address: duplicateMorseAddress,
+						MorseSrcAddress: duplicateMorseAddress,
 					},
 					{
-						Address: duplicateMorseAddress,
+						MorseSrcAddress: duplicateMorseAddress,
 					},
 				},
 			},

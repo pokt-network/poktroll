@@ -23,11 +23,11 @@ func (gs GenesisState) Validate() error {
 	morseClaimableAccountIndexMap := make(map[string]struct{})
 
 	for _, morseClaimableAccounts := range gs.MorseClaimableAccountList {
-		index := string(MorseClaimableAccountKey(morseClaimableAccounts.Address.String()))
-		if _, ok := morseClaimableAccountIndexMap[index]; ok {
-			return fmt.Errorf("duplicated index for morseClaimableAccount")
+		morseSrcAddrIdx := string(MorseClaimableAccountKey(morseClaimableAccounts.MorseSrcAddress))
+		if _, ok := morseClaimableAccountIndexMap[morseSrcAddrIdx]; ok {
+			return fmt.Errorf("duplicated morseSrcAddrIdx for morseClaimableAccount")
 		}
-		morseClaimableAccountIndexMap[index] = struct{}{}
+		morseClaimableAccountIndexMap[morseSrcAddrIdx] = struct{}{}
 	}
 	// this line is used by starport scaffolding # genesis/types/validate
 
