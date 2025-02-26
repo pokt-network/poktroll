@@ -12,7 +12,11 @@ import (
 	migrationtypes "github.com/pokt-network/poktroll/x/migration/types"
 )
 
+const mockMorseSignature = "6c0d3b25a3e53eb6739f00ac66fc70168dfbb6dfe306a50f48a5f9d732b23068be3840a7127e1d849b4b2c54f5d34c2db36c2d6da46263cc72270f8f5dfdec5f"
+
 func TestMsgClaimMorseAccount_ValidateBasic(t *testing.T) {
+	require.Len(t, mockMorseSignature, migrationtypes.MorseSignatureHexLengthBytes)
+
 	tests := []struct {
 		desc string
 		msg  migrationtypes.MsgClaimMorseAccount
@@ -23,7 +27,7 @@ func TestMsgClaimMorseAccount_ValidateBasic(t *testing.T) {
 			msg: migrationtypes.MsgClaimMorseAccount{
 				ShannonDestAddress: "invalid_address",
 				MorseSrcAddress:    sample.MorseAddressHex(),
-				MorseSignature:     "mock_signature",
+				MorseSignature:     mockMorseSignature,
 			},
 			err: sdkerrors.ErrInvalidAddress,
 		}, {
@@ -31,7 +35,15 @@ func TestMsgClaimMorseAccount_ValidateBasic(t *testing.T) {
 			msg: migrationtypes.MsgClaimMorseAccount{
 				ShannonDestAddress: sample.AccAddress(),
 				MorseSrcAddress:    "invalid_address",
-				MorseSignature:     "mock_signature",
+				MorseSignature:     mockMorseSignature,
+			},
+			err: migrationtypes.ErrMorseAccountClaim,
+		}, {
+			desc: "invalid empty MorseSignature",
+			msg: migrationtypes.MsgClaimMorseAccount{
+				ShannonDestAddress: sample.AccAddress(),
+				MorseSrcAddress:    "invalid_address",
+				MorseSignature:     "",
 			},
 			err: migrationtypes.ErrMorseAccountClaim,
 		}, {
@@ -39,7 +51,7 @@ func TestMsgClaimMorseAccount_ValidateBasic(t *testing.T) {
 			msg: migrationtypes.MsgClaimMorseAccount{
 				ShannonDestAddress: sample.AccAddress(),
 				MorseSrcAddress:    sample.MorseAddressHex(),
-				MorseSignature:     "mock_signature",
+				MorseSignature:     mockMorseSignature,
 			},
 		},
 	}
