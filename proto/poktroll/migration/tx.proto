@@ -71,7 +71,6 @@ message MsgImportMorseClaimableAccountsResponse {
   bytes state_hash = 1 [(gogoproto.jsontag) = "state_hash"];
 
   // Number of claimable accounts (EOAs) collected from Morse state export.
-  // NOTE: Account balances include consolidated application and supplier actor stakes.
   uint64 num_accounts = 2 [(gogoproto.jsontag) = "num_accounts"];
 }
 

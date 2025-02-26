@@ -3164,7 +3164,6 @@ type MsgImportMorseClaimableAccountsResponse struct {
 	// On-chain computed sha256 hash of the morse_account_state provided in the corresponding MsgCreateMorseAccountState.
 	StateHash []byte `protobuf:"bytes,1,opt,name=state_hash,json=stateHash,proto3" json:"state_hash,omitempty"`
 	// Number of claimable accounts (EOAs) collected from Morse state export.
-	// NOTE: Account balances include consolidated application and supplier actor stakes.
 	NumAccounts uint64 `protobuf:"varint,2,opt,name=num_accounts,json=numAccounts,proto3" json:"num_accounts,omitempty"`
 }
 
