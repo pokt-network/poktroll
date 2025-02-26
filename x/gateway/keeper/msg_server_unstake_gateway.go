@@ -12,7 +12,6 @@ import (
 	"github.com/pokt-network/poktroll/x/gateway/types"
 )
 
-// TODO_MAINNET(@bryanchriswhite): Implement Gateway unbonding periods
 func (k msgServer) UnstakeGateway(
 	goCtx context.Context,
 	msg *types.MsgUnstakeGateway,

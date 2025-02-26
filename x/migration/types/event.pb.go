@@ -30,7 +30,7 @@ const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 type EventImportMorseClaimableAccounts struct {
 	// The height (on Shannon) at which the MorseAccountState was created on-chain.
 	CreatedAtHeight int64 `protobuf:"varint,1,opt,name=created_at_height,json=createdAtHeight,proto3" json:"created_at_height"`
-	// The on-chain computed sha256 hash of the entire MorseAccountState containing the MorseClaimableAccounts which were imported.
+	// The onchain computed sha256 hash of the entire MorseAccountState containing the MorseClaimableAccounts which were imported.
 	MorseAccountStateHash []byte `protobuf:"bytes,2,opt,name=morse_account_state_hash,json=morseAccountStateHash,proto3" json:"morse_account_state_hash"`
 	// Number of claimable accounts (EOAs) collected from Morse state export
 	// NOTE: Account balances include consolidated application and supplier actor stakes
