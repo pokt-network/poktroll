@@ -1,72 +1,15 @@
 package migration
 
 import (
-	"testing"
-
 	"cosmossdk.io/math"
-	sdk "github.com/cosmos/cosmos-sdk/types"
+	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	"github.com/stretchr/testify/require"
-	"github.com/stretchr/testify/suite"
 
 	"github.com/pokt-network/poktroll/app/volatile"
-	"github.com/pokt-network/poktroll/testutil/integration/suites"
 	"github.com/pokt-network/poktroll/testutil/sample"
 	migrationtypes "github.com/pokt-network/poktroll/x/migration/types"
 )
-
-type MigrationModuleTestSuite struct {
-	suites.MigrationModuleSuite
-
-	// numMorseClaimableAccounts is the number of morse claimable accounts to
-	// generate when calling #GenerateMorseAccountState.
-	numMorseClaimableAccounts int
-}
-
-func (s *MigrationModuleTestSuite) SetupTest() {
-	// Initialize a new integration app for the suite.
-	s.NewApp(s.T())
-
-	s.numMorseClaimableAccounts = 10
-
-	// Assign the app to nested suites.
-	// TODO_UPNEXT(@bryanchriswhite, #1043): Initialize the app module suite.
-	// s.AppSuite.SetApp(s.GetApp())
-}
-
-func TestMigrationModuleSuite(t *testing.T) {
-	suite.Run(t, &MigrationModuleTestSuite{})
-}
-
-// TestImportMorseClaimableAccounts exercises importing and persistence of morse claimable accounts.
-func (s *MigrationModuleTestSuite) TestImportMorseClaimableAccounts() {
-	s.GenerateMorseAccountState(s.T(), s.numMorseClaimableAccounts)
-	msgImportRes := s.ImportMorseClaimableAccounts(s.T())
-	morseAccountState := s.GetAccountState(s.T())
-	morseAccountStateHash, err := morseAccountState.GetHash()
-	require.NoError(s.T(), err)
-
-	expectedMsgImportRes := &migrationtypes.MsgImportMorseClaimableAccountsResponse{
-		StateHash:   morseAccountStateHash,
-		NumAccounts: uint64(s.numMorseClaimableAccounts),
-	}
-	require.Equal(s.T(), expectedMsgImportRes, msgImportRes)
-
-	foundMorseClaimableAccounts := s.QueryAllMorseClaimableAccounts(s.T())
-	require.Equal(s.T(), s.numMorseClaimableAccounts, len(foundMorseClaimableAccounts))
-
-	for _, expectedMorseClaimableAccount := range morseAccountState.Accounts {
-		isFound := false
-		for _, foundMorseClaimableAccount := range foundMorseClaimableAccounts {
-			if foundMorseClaimableAccount.GetMorseSrcAddress() == expectedMorseClaimableAccount.GetMorseSrcAddress() {
-				require.Equal(s.T(), *expectedMorseClaimableAccount, foundMorseClaimableAccount)
-				isFound = true
-				break
-			}
-		}
-		require.True(s.T(), isFound)
-	}
-}
 
 // TestClaimMorseAccount exercises claiming of MorseClaimableAccounts.
 // It only exercises claiming of account balances and does not exercise
@@ -76,8 +19,9 @@ func (s *MigrationModuleTestSuite) TestClaimMorseAccount() {
 	s.ImportMorseClaimableAccounts(s.T())
 
 	shannonDestAddr := sample.AccAddress()
-
 	bankClient := s.GetBankQueryClient(s.T())
+
+	// Assert that the shannonDestAddr account initially has a zero balance.
 	shannonDestBalance, err := bankClient.GetBalance(s.SdkCtx(), shannonDestAddr)
 	require.NoError(s.T(), err)
 	require.True(s.T(), shannonDestBalance.IsZero())
@@ -111,5 +55,5 @@ func (s *MigrationModuleTestSuite) TestClaimMorseAccount() {
 	migrationModuleAddress := authtypes.NewModuleAddress(migrationtypes.ModuleName).String()
 	migrationModuleBalance, err := bankClient.GetBalance(s.SdkCtx(), migrationModuleAddress)
 	require.NoError(s.T(), err)
-	require.Equal(s.T(), sdk.NewCoin(volatile.DenomuPOKT, math.ZeroInt()), *migrationModuleBalance)
+	require.Equal(s.T(), cosmostypes.NewCoin(volatile.DenomuPOKT, math.ZeroInt()), *migrationModuleBalance)
 }
