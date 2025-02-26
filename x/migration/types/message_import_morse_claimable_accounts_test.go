@@ -31,7 +31,7 @@ func TestMsgImportMorseClaimableAccounts_ValidateBasic(t *testing.T) {
 		{
 			name: "invalid morse account state hash",
 			msg:  invalidMsg,
-			err:  ErrMorseAccountState,
+			err:  ErrMorseAccountsImport,
 		},
 		{
 			name: "valid address",
