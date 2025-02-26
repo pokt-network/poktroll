@@ -21,17 +21,12 @@ func NewMsgClaimMorseAccount(
 		ShannonDestAddress: shannonDestAddress,
 		MorseSrcAddress:    morseSrcAddress,
 	}
-	msgBz, err := proto.Marshal(msg)
-	if err != nil {
-		return nil, err
-	}
 
-	morseSignature, err := morsePrivateKey.Sign(msgBz)
-	if err != nil {
-		return nil, err
+	if morsePrivateKey != nil {
+		if err := msg.SignMorseSignature(morsePrivateKey); err != nil {
+			return nil, err
+		}
 	}
-
-	msg.MorseSignature = hex.EncodeToString(morseSignature)
 
 	return msg, nil
 }
