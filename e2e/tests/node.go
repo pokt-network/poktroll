@@ -216,7 +216,7 @@ func (p *pocketdBin) runCurlCmd(rpcBaseURL, service, method, path, appAddr, data
 		"-H", `Content-Type: application/json`, // HTTP headers
 		"-H", fmt.Sprintf("Host: %s", rpcUrl.Host), // Add virtual host header
 		"-H", fmt.Sprintf("App-Address: %s", appAddr),
-		"-H", fmt.Sprintf("target-service-id: %s", service),
+		"-H", fmt.Sprintf("Target-Service-Id: %s", service),
 		rpcUrl.String(),
 	}
 
