@@ -17,9 +17,8 @@ Feature: Morse Migration Success
 
   Rule: Non-actor account claims MAY reference existing Shannon accounts
     Background:
-      # TODO_INCOMPLETE: A "real" Morse snapshot IS NOT sufficient for exercising
-      # claming because it will not include any accounts with known or derivable
-      # private keys.
+      # TODO_INCOMPLETE: Ensure the liquify Morse snapshot includes known Morse
+      # private keys such that valid claim signatures can be generated for testing.
       Given an unclaimed MorseClaimableAccount with a known private key exists
       And a Shannon destination key exists in the local keyring
 
@@ -36,9 +35,8 @@ Feature: Morse Migration Success
 
   Rule: Actor re-stake claims use the Morse stake amount by default
     Background:
-      # TODO_INCOMPLETE: A "real" Morse snapshot IS NOT sufficient for exercising
-      # claming because it will not include any accounts with known or derivable
-      # private keys.
+      # TODO_INCOMPLETE: Ensure the liquify Morse snapshot includes known Morse
+      # private keys such that valid claim signatures can be generated for testing.
       Given an unclaimed MorseClaimableAccount with a known private key exists
       And a Shannon destination key exists in the local keyring
 
@@ -59,9 +57,8 @@ Feature: Morse Migration Success
 
   Rule: Actor re-stake claims MAY use custom stake amounts
     Background:
-      # TODO_INCOMPLETE: A "real" Morse snapshot IS NOT sufficient for exercising
-      # claming because it will not include any accounts with known or derivable
-      # private keys.
+      # TODO_INCOMPLETE: Ensure the liquify Morse snapshot includes known Morse
+      # private keys such that valid claim signatures can be generated for testing.
       Given an unclaimed MorseClaimableAccount with a known private key exists
       And a Shannon destination key exists in the local keyring
 
@@ -80,9 +77,8 @@ Feature: Morse Migration Success
 
   Rule: Actor re-stake claims MAY reference existing Shannon actors
     Background:
-      # TODO_INCOMPLETE: A "real" Morse snapshot IS NOT sufficient for exercising
-      # claming because it will not include any accounts with known or derivable
-      # private keys.
+      # TODO_INCOMPLETE: Ensure the liquify Morse snapshot includes known Morse
+      # private keys such that valid claim signatures can be generated for testing.
       Given an unclaimed MorseClaimableAccount with a known private key exists
       And a Shannon destination key exists in the local keyring
 
