@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	cosmoslog "cosmossdk.io/log"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -21,16 +22,44 @@ func (k msgServer) StakeApplication(ctx context.Context, msg *types.MsgStakeAppl
 	)
 
 	logger := k.Logger().With("method", "StakeApplication")
+	foundApp, err := k.Keeper.StakeApplication(ctx, logger, msg)
+	if err != nil {
+		// DEV_NOTE: StakeApplication SHOULD ALWAYS return a gRPC status error.
+		return nil, err
+	}
+
+	isSuccessful = true
+
+	return &types.MsgStakeApplicationResponse{
+		Application: foundApp,
+	}, nil
+}
+
+// StakeApplication stakes (or updates) the application according to the given msg by applying the following logic:
+//   - the msg is validated
+//   - if the application is not found, it is created (in memory) according to the valid msg
+//   - if the application is found and is not unbonding, it is updated (in memory) according to the msg
+//   - if the application is found and is unbonding, it is updated (in memory; and no longer unbonding)
+//   - additional stake validation (e.g. min stake, etc.)
+//   - the positive difference between the msg stake and any current stake is transferred
+//     from the staking application's account, to the application module's accounts.
+//   - the (new or updated) application is persisted.
+//   - an EventApplicationUnbondingCanceled event is emitted if the application was unbonding.
+//   - an EventApplicationStaked event is emitted.
+func (k Keeper) StakeApplication(
+	ctx context.Context,
+	logger cosmoslog.Logger,
+	msg *types.MsgStakeApplication,
+) (_ *types.Application, err error) {
 	logger.Info(fmt.Sprintf("About to stake application with msg: %v", msg))
 
-	if err := msg.ValidateBasic(); err != nil {
+	if err = msg.ValidateBasic(); err != nil {
 		logger.Error(fmt.Sprintf("invalid MsgStakeApplication: %v", err))
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
 	// Check if the application already exists or not
 	var (
-		err             error
 		coinsToEscrow   sdk.Coin
 		wasAppUnbonding bool
 	)
@@ -103,6 +132,7 @@ func (k msgServer) StakeApplication(ctx context.Context, msg *types.MsgStakeAppl
 	k.SetApplication(ctx, foundApp)
 	logger.Info(fmt.Sprintf("Successfully updated application stake for app: %+v", foundApp))
 
+	// Collect events for emission.
 	events := make([]sdk.Msg, 0)
 
 	// If application unbonding was canceled, emit the corresponding event.
@@ -128,14 +158,10 @@ func (k msgServer) StakeApplication(ctx context.Context, msg *types.MsgStakeAppl
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
-	isSuccessful = true
-
-	return &types.MsgStakeApplicationResponse{
-		Application: &foundApp,
-	}, nil
+	return &foundApp, nil
 }
 
-func (k msgServer) createApplication(
+func (k Keeper) createApplication(
 	_ context.Context,
 	msg *types.MsgStakeApplication,
 ) types.Application {
@@ -148,7 +174,7 @@ func (k msgServer) createApplication(
 	}
 }
 
-func (k msgServer) updateApplication(
+func (k Keeper) updateApplication(
 	_ context.Context,
 	app *types.Application,
 	msg *types.MsgStakeApplication,
