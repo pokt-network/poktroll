@@ -21,8 +21,11 @@ type (
 		// should be the x/gov module account.
 		authority string
 
-		accountKeeper types.AccountKeeper
-		bankKeeper    types.BankKeeper
+		accountKeeper  types.AccountKeeper
+		bankKeeper     types.BankKeeper
+		gatewayKeeper  types.GatewayKeeper
+		appKeeper      types.ApplicationKeeper
+		supplierKeeper types.SupplierKeeper
 	}
 )
 
@@ -33,19 +36,24 @@ func NewKeeper(
 	authority string,
 	accountKeeper types.AccountKeeper,
 	bankKeeper types.BankKeeper,
-
+	gatewayKeeper types.GatewayKeeper,
+	appKeeper types.ApplicationKeeper,
+	supplierKeeper types.SupplierKeeper,
 ) Keeper {
 	if _, err := sdk.AccAddressFromBech32(authority); err != nil {
 		panic(fmt.Sprintf("invalid authority address: %s", authority))
 	}
 
 	return Keeper{
-		cdc:           cdc,
-		storeService:  storeService,
-		authority:     authority,
-		logger:        logger,
-		accountKeeper: accountKeeper,
-		bankKeeper:    bankKeeper,
+		cdc:            cdc,
+		storeService:   storeService,
+		authority:      authority,
+		logger:         logger,
+		accountKeeper:  accountKeeper,
+		bankKeeper:     bankKeeper,
+		gatewayKeeper:  gatewayKeeper,
+		appKeeper:      appKeeper,
+		supplierKeeper: supplierKeeper,
 	}
 }
 
