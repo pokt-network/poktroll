@@ -90,7 +90,7 @@ func (k Keeper) MintClaimedMorseTokens(
 	destAddress cosmostypes.AccAddress,
 	coinToMint cosmostypes.Coin,
 ) error {
-	// Mint the sum of the account balance (coinToMint) and any actor stakes to the migration module account.
+	// Mint coinToMint to the migration module account.
 	if err := k.bankKeeper.MintCoins(
 		ctx,
 		migrationtypes.ModuleName,

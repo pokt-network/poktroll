@@ -103,18 +103,23 @@ func (rp *relayerProxy) initializeProxyServers() (proxyServerMap map[string]rela
 	for _, serverConfig := range rp.serverConfigs {
 		rp.logger.Info().Str("server host", serverConfig.ListenAddress).Msg("starting relay proxy server")
 
-		// TODO_TECHDEBT(@red-0ne): Implement a switch that handles all synchronous
-		// RPC types in one server type and asynchronous RPC types in another
-		// to create the appropriate RelayServer.
 		// Initialize the server according to the server type defined in the config file
 		switch serverConfig.ServerType {
 		case config.RelayMinerServerTypeHTTP:
-			servers[serverConfig.ListenAddress] = NewSynchronousServer(
-				rp.logger,
+			logger := rp.logger.With(
+				"server_type", "http",
+				"server_host", serverConfig.ListenAddress,
+			)
+
+			servers[serverConfig.ListenAddress] = NewHTTPServer(
+				logger,
 				serverConfig,
 				rp.servedRelaysPublishCh,
 				rp.relayAuthenticator,
 				rp.relayMeter,
+				rp.blockClient,
+				rp.sharedQuerier,
+				rp.sessionQuerier,
 			)
 		default:
 			return nil, ErrRelayerProxyUnsupportedTransportType

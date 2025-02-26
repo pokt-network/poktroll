@@ -36,6 +36,9 @@ type relayerProxy struct {
 	// incoming relay request.
 	sharedQuerier client.SharedQueryClient
 
+	// sessionQuerier is the query client used to get the current session.
+	sessionQuerier client.SessionQueryClient
+
 	// relayMeter keeps track of the total amount of stake an onchhain Application
 	// will owe an onchain Supplier (backed by this RelayMiner) once the session settles.
 	// It also configures application over-servicing allowance.
@@ -71,6 +74,7 @@ type relayerProxy struct {
 //   - client.BlockClient
 //   - client.SupplierQueryClient
 //   - client.SharedQueryClient
+//   - client.SessionQueryClient
 //   - relayer.RelayMeter
 //   - relayer.RelayAuthenticator
 //
@@ -88,6 +92,7 @@ func NewRelayerProxy(
 		&rp.blockClient,
 		&rp.supplierQuerier,
 		&rp.sharedQuerier,
+		&rp.sessionQuerier,
 		&rp.relayMeter,
 		&rp.relayAuthenticator,
 	); err != nil {

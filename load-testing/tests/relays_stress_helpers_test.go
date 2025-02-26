@@ -1054,12 +1054,10 @@ func (s *relaysSuite) sendRelay(iteration uint64, relayPayload string) (appAddre
 	sendRelayRequest := func(gatewayURL, appAddr, payload string) {
 		req, err := http.NewRequest("POST", gatewayURL, strings.NewReader(payload))
 
-		// TODO_TECHDEBT(red-0ne): Use 'app-address' instead of 'X-App-Address' once PATH Gateway
-		// deprecates the X-App-Address header.
 		// This is needed by the PATH Gateway's trusted mode to identify the application
 		// that is sending the relay request.
-		req.Header.Add("X-App-Address", appAddr)
-		req.Header.Add("target-service-id", "anvil")
+		req.Header.Add("App-Address", appAddr)
+		req.Header.Add("Target-Service-Id", "anvil")
 		res, err := http.DefaultClient.Do(req)
 		require.NoError(s, err)
 

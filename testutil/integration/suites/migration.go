@@ -89,6 +89,11 @@ func (s *MigrationModuleSuite) ClaimMorseAccount(
 	return expectedMorseSrcAddr, claimAccountRes
 }
 
+// MorseClaimableAccountQuerier returns a migration module query client for morse claimable accounts.
+func (s *MigrationModuleSuite) MorseClaimableAccountQuerier() migrationtypes.QueryClient {
+	return migrationtypes.NewQueryClient(s.GetApp().QueryHelper())
+}
+
 // QueryMorseClaimableAccount queries the migration module for the given morseSrcAddr.
 func (s *MigrationModuleSuite) QueryMorseClaimableAccount(
 	t *testing.T,
@@ -96,7 +101,7 @@ func (s *MigrationModuleSuite) QueryMorseClaimableAccount(
 ) *migrationtypes.MorseClaimableAccount {
 	t.Helper()
 
-	morseAccountQuerier := migrationtypes.NewQueryClient(s.GetApp().QueryHelper())
+	morseAccountQuerier := s.MorseClaimableAccountQuerier()
 	morseClaimableAcctRes, err := morseAccountQuerier.MorseClaimableAccount(
 		s.SdkCtx(),
 		&migrationtypes.QueryMorseClaimableAccountRequest{
@@ -106,4 +111,18 @@ func (s *MigrationModuleSuite) QueryMorseClaimableAccount(
 	require.NoError(t, err)
 
 	return &morseClaimableAcctRes.MorseClaimableAccount
+}
+
+// QueryAllMorseClaimableAccounts queries the migration module for all morse claimable accounts.
+func (s *MigrationModuleSuite) QueryAllMorseClaimableAccounts(t *testing.T) []migrationtypes.MorseClaimableAccount {
+	t.Helper()
+
+	morseAccountQuerier := s.MorseClaimableAccountQuerier()
+	morseClaimableAcctRes, err := morseAccountQuerier.MorseClaimableAccountAll(
+		s.SdkCtx(),
+		&migrationtypes.QueryAllMorseClaimableAccountRequest{},
+	)
+	require.NoError(t, err)
+
+	return morseClaimableAcctRes.MorseClaimableAccount
 }
