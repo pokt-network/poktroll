@@ -11,6 +11,12 @@ NC='\033[0m' # No Color
 # DEV_NOTE: For testing purposes, you can change the branch name before merging to master.
 POCKET_NETWORK_GENESIS_BRANCH="master"
 
+# Snapshot configuration
+# The snapshot functionality allows users to quickly sync a node from a trusted snapshot
+# instead of syncing from genesis, which can be time-consuming.
+# Snapshots are stored at https://snapshots.us-nj.poktroll.com/
+# Supports archival snapshots for all networks (testnet-alpha, testnet-beta, mainnet).
+
 # Function to print colored output
 print_color() {
     COLOR=$1
@@ -67,7 +73,7 @@ get_os_type() {
 # Function to check and install dependencies
 install_dependencies() {
     local missing_deps=0
-    local deps=("jq" "curl" "tar" "wget")
+    local deps=("jq" "curl" "tar" "wget" "zstd")
     local to_install=()
 
     print_color $YELLOW "About to start installing dependencies..."
@@ -146,6 +152,74 @@ get_user_input() {
     print_color $GREEN "Installing the $NETWORK network."
     echo ""
 
+    # Ask if user wants to use a snapshot (for all networks)
+    USE_SNAPSHOT=false
+    echo "Do you want to sync from:"
+    echo "1) Genesis (slower, but verifies the entire chain)"
+    echo "2) Snapshot (faster, but requires trusting the snapshot provider)"
+    read -p "Enter your choice (1-2): " sync_choice
+    
+    case $sync_choice in
+    2) 
+        USE_SNAPSHOT=true
+        # Set snapshot base URL
+        SNAPSHOT_BASE_URL="https://snapshots.us-nj.poktroll.com"
+        
+        # Check if the network endpoint exists
+        if ! curl --output /dev/null --silent --head --fail "$SNAPSHOT_BASE_URL/$NETWORK-latest-archival.txt"; then
+            print_color $RED "No snapshots available for $NETWORK. Falling back to genesis sync."
+            print_color $YELLOW "Snapshots may not be provided for all networks, especially new or test networks."
+            USE_SNAPSHOT=false
+        else
+            # Get latest snapshot height
+            LATEST_SNAPSHOT_HEIGHT=$(curl -s "$SNAPSHOT_BASE_URL/$NETWORK-latest-archival.txt")
+            if [ -z "$LATEST_SNAPSHOT_HEIGHT" ]; then
+                print_color $RED "Failed to fetch latest snapshot height for $NETWORK. Falling back to genesis sync."
+                print_color $YELLOW "This may happen if snapshots are not yet available for this network."
+                USE_SNAPSHOT=false
+            else
+                print_color $GREEN "Latest snapshot height for $NETWORK: $LATEST_SNAPSHOT_HEIGHT"
+                # Get version from snapshot
+                # Note: When using a snapshot, we must use the version that the snapshot was created with,
+                # not the version from genesis. This is because the snapshot may have been created with
+                # a different version than what's in the genesis file.
+                SNAPSHOT_VERSION=$(curl -s "$SNAPSHOT_BASE_URL/$NETWORK-$LATEST_SNAPSHOT_HEIGHT-version.txt")
+                if [ -z "$SNAPSHOT_VERSION" ]; then
+                    print_color $RED "Failed to fetch snapshot version. Falling back to genesis sync."
+                    USE_SNAPSHOT=false
+                else
+                    print_color $GREEN "Snapshot version: $SNAPSHOT_VERSION"
+                    
+                    # Check if the archival snapshot exists
+                    SNAPSHOT_URL="$SNAPSHOT_BASE_URL/$NETWORK-$LATEST_SNAPSHOT_HEIGHT-archival.tar.zst"
+                    if curl --output /dev/null --silent --head --fail "$SNAPSHOT_URL"; then
+                        print_color $GREEN "Found archival snapshot at: $SNAPSHOT_URL"
+                    else
+                        # Try alternative format (.tar.gz)
+                        SNAPSHOT_URL="$SNAPSHOT_BASE_URL/$NETWORK-$LATEST_SNAPSHOT_HEIGHT-archival.tar.gz"
+                        if curl --output /dev/null --silent --head --fail "$SNAPSHOT_URL"; then
+                            print_color $GREEN "Found archival snapshot at: $SNAPSHOT_URL"
+                            # Set flag for .tar.gz format
+                            SNAPSHOT_FORMAT="tar.gz"
+                        else
+                            print_color $RED "Could not find a valid snapshot for $NETWORK. Falling back to genesis sync."
+                            USE_SNAPSHOT=false
+                        fi
+                    fi
+                    
+                    if [ "$USE_SNAPSHOT" = true ]; then
+                        print_color $YELLOW "Will use snapshot from: $SNAPSHOT_URL"
+                    fi
+                fi
+            fi
+        fi
+        ;;
+    *) 
+        USE_SNAPSHOT=false
+        print_color $GREEN "Will sync from genesis."
+        ;;
+    esac
+
     print_color $YELLOW "(NOTE: If you're on a macOS, enter the name of an existing user)"
     read -p "Enter the desired username to run poktrolld (default: poktroll): " POKTROLL_USER
     POKTROLL_USER=${POKTROLL_USER:-poktroll}
@@ -174,6 +248,23 @@ get_user_input() {
     fi
     echo ""
     print_color $GREEN "Using chain_id: $CHAIN_ID from genesis file"
+
+    # Extract version from genesis.json if not using snapshot
+    if [ "$USE_SNAPSHOT" = false ]; then
+        # When syncing from genesis, we must use the version specified in the genesis file
+        # to ensure compatibility with the chain from the beginning.
+        POKTROLLD_VERSION=$(jq -r '.app_version' <"$GENESIS_FILE")
+        print_color $YELLOW "Detected version from genesis: $POKTROLLD_VERSION"
+        if [ -z "$POKTROLLD_VERSION" ]; then
+            print_color $RED "Failed to extract version information from genesis file."
+            exit 1
+        fi
+    else
+        # When using a snapshot, we must use the version that the snapshot was created with
+        # to ensure compatibility with the snapshot data.
+        POKTROLLD_VERSION=$SNAPSHOT_VERSION
+        print_color $YELLOW "Using version from snapshot: $POKTROLLD_VERSION"
+    fi
 
     # Fetch seeds from the provided URL
     SEEDS=$(curl -s "$SEEDS_URL")
@@ -262,14 +353,9 @@ setup_poktrolld() {
     ARCH=$(get_normalized_arch)
     OS_TYPE=$(get_os_type)
 
-    # Extract the version from genesis.json using jq
-    POKTROLLD_VERSION=$(jq -r '.app_version' <"$GENESIS_FILE")
-    print_color $YELLOW "Detected version from genesis: $POKTROLLD_VERSION"
-
-    if [ -z "$POKTROLLD_VERSION" ]; then
-        print_color $RED "Failed to extract version information from genesis file."
-        exit 1
-    fi
+    # Note: Version is now extracted in get_user_input() function
+    # and stored in POKTROLLD_VERSION variable
+    print_color $YELLOW "Using poktrolld version: $POKTROLLD_VERSION"
 
     # TODO_TECHDEBT(@okdas): Consolidate this business logic with what we have
     # in `user_guide/install.md` to avoid duplication and have consistency.
@@ -344,6 +430,80 @@ EOF
     fi
 }
 
+# Function to download and apply snapshot
+setup_from_snapshot() {
+    print_color $YELLOW "Setting up node from snapshot..."
+    print_color $YELLOW "Using snapshot for $NETWORK at height $LATEST_SNAPSHOT_HEIGHT"
+    print_color $YELLOW "Snapshot URL: $SNAPSHOT_URL"
+    
+    # Create a temporary directory for the snapshot
+    SNAPSHOT_DIR="/tmp/poktroll_snapshot"
+    mkdir -p "$SNAPSHOT_DIR"
+    
+    # Download and extract the snapshot
+    print_color $YELLOW "Downloading and extracting snapshot. This may take a while..."
+    print_color $YELLOW "Depending on the network, this could take several minutes to hours."
+    print_color $YELLOW "Large snapshots may require significant bandwidth and disk space."
+    
+    # Note: We're using zstd to decompress the snapshot as it's more efficient than gzip
+    # for large files. The archival snapshots can be quite large, so this is important.
+    # We extract directly to the data directory to avoid using extra disk space.
+    
+    # Print start time
+    START_TIME=$(date +"%T")
+    print_color $YELLOW "Starting snapshot extraction at: $START_TIME"
+    
+    # Download and extract directly as the POKTROLL_USER
+    sudo -u "$POKTROLL_USER" bash <<EOF
+    # Stop if any command fails
+    set -e
+    
+    # Create data directory if it doesn't exist
+    mkdir -p \$HOME/.poktroll/data
+    
+    # Download and extract the snapshot based on format
+    # The snapshot URL format is determined by the network and height
+    # For example: https://snapshots.us-nj.poktroll.com/testnet-beta-66398-archival.tar.zst
+    if [[ "$SNAPSHOT_URL" == *.tar.zst ]]; then
+        echo "Extracting .tar.zst format snapshot..."
+        curl -L "$SNAPSHOT_URL" | zstd -d | tar -xf - -C \$HOME/.poktroll/data
+    elif [[ "$SNAPSHOT_URL" == *.tar.gz ]]; then
+        echo "Extracting .tar.gz format snapshot..."
+        curl -L "$SNAPSHOT_URL" | tar -zxf - -C \$HOME/.poktroll/data
+    else
+        echo "Unknown snapshot format. Expected .tar.zst or .tar.gz"
+        exit 1
+    fi
+    
+    # Check if extraction was successful
+    if [ \$? -ne 0 ]; then
+        echo "Failed to download or extract snapshot"
+        exit 1
+    fi
+    
+    echo "Snapshot extracted successfully"
+EOF
+    
+    # Print end time
+    END_TIME=$(date +"%T")
+    print_color $YELLOW "Finished snapshot extraction at: $END_TIME"
+    
+    if [ $? -eq 0 ]; then
+        print_color $GREEN "Snapshot for $NETWORK applied successfully."
+    else
+        print_color $RED "Failed to apply snapshot for $NETWORK. Falling back to genesis sync."
+        USE_SNAPSHOT=false
+        # Clean up any partial data
+        sudo -u "$POKTROLL_USER" bash <<EOF
+        rm -rf \$HOME/.poktroll/data/*
+EOF
+    fi
+    
+    # Clean up
+    rm -rf "$SNAPSHOT_DIR"
+    echo ""
+}
+
 # TODO_IMPROVE(@okdas): Use the fields from `setup_env_vars` to maintain a single source of truth
 # for the values. Specifically, everything starting with `Environment=` is duplicated in the env var helper.
 # Function to set up systemd service
@@ -415,9 +575,24 @@ main() {
     setup_cosmovisor
     setup_poktrolld
     configure_poktrolld
+    
+    # Apply snapshot if user chose to use it
+    if [ "$USE_SNAPSHOT" = true ]; then
+        setup_from_snapshot
+    fi
+    
     setup_systemd
     configure_ufw
+    
+    # Print completion message with appropriate details
     print_color $GREEN "Poktroll Full Node installation for $NETWORK completed successfully!"
+    if [ "$USE_SNAPSHOT" = true ]; then
+        print_color $GREEN "Node was set up using snapshot at height $LATEST_SNAPSHOT_HEIGHT with version $SNAPSHOT_VERSION"
+        print_color $YELLOW "Note: The node will continue syncing from height $LATEST_SNAPSHOT_HEIGHT to the current chain height"
+    else
+        print_color $GREEN "Node was set up to sync from genesis with version $POKTROLLD_VERSION"
+        print_color $YELLOW "Note: Syncing from genesis may take a significant amount of time"
+    fi
     print_color $YELLOW "You can check the status of your node with: sudo systemctl status cosmovisor.service"
     print_color $YELLOW "View logs with: sudo journalctl -u cosmovisor.service -f"
 }
