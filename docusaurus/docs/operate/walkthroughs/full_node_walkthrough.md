@@ -44,17 +44,25 @@ to enable automatic binary upgrades.
 3. **Dedicated Server or Virtual Machine**: Any provider is acceptable.
 
 ## Instructions
-
+_This guide will walk you through Debian-based instructions._
 ### 1. Install Dependencies
 
 Update your package list and install necessary dependencies:
+
+**Install `curl`, `tar`, `wget`, `jq`**
 
 ```bash
 sudo apt-get update
 sudo apt-get install -y curl tar wget jq
 ```
 
-### 2. Create a New User
+**Install `go`**
+Follow the official `go` installation instructions [here](https://go.dev/doc/install).
+
+
+### 2. [OPTIONAL] Create a New User
+
+It is considered good practice to not run the binary as `root`. The below instructions will show you how to create a user with scope to run the node.
 
 Create a dedicated user to run `poktrolld`:
 
@@ -93,26 +101,7 @@ source ~/.profile
 
 ### 4. Install Cosmovisor
 
-**Option 1**: You can follow the official Cosmovisor installation instructions [here](https://docs.cosmos.network/main/build/tooling/cosmovisor#installation).
-
-**Option 2**: You can simply copy-paste the following commands to download and install Cosmovisor:
-
-```bash
-mkdir -p $HOME/.local/bin
-COSMOVISOR_VERSION="v1.6.0"
-
-ARCH=$(uname -m)
-if [ "$ARCH" = "x86_64" ]; then
-    ARCH="amd64"
-elif [ "$ARCH" = "aarch64" ]; then
-    ARCH="arm64"
-fi
-
-curl -L "https://github.com/cosmos/cosmos-sdk/releases/download/cosmovisor%2F${COSMOVISOR_VERSION}/cosmovisor-${COSMOVISOR_VERSION}-linux-${ARCH}.tar.gz" | tar -zxvf - -C $HOME/.local/bin
-
-echo 'export PATH=$HOME/.local/bin:$PATH' >> ~/.profile
-source ~/.profile
-```
+Follow the official Cosmovisor installation instructions [here](https://docs.cosmos.network/main/build/tooling/cosmovisor#installation).
 
 ### 5. Install `poktrolld`
 
