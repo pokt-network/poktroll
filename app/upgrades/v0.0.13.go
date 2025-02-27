@@ -28,6 +28,13 @@ var Upgrade_0_0_13 = Upgrade{
 
 			sharedParams := keepers.SharedKeeper.GetParams(ctx)
 			sharedParams.GatewayUnbondingPeriodSessions = sharedtypes.DefaultGatewayUnbondingPeriodSessions
+
+			// Ensure that the new parameters are valid
+			if err := sharedParams.ValidateBasic(); err != nil {
+				logger.Error("Failed to validate shared params", "error", err)
+				return err
+			}
+
 			err = keepers.SharedKeeper.SetParams(ctx, sharedParams)
 			if err != nil {
 				logger.Error("Failed to set shared params", "error", err)
@@ -69,6 +76,7 @@ var Upgrade_0_0_13 = Upgrade{
 	},
 	// Add the migration module KVStore in this upgrade.
 	StoreUpgrades: storetypes.StoreUpgrades{
+		// Add the new morse migration module KVStore to the upgrade plan.
 		Added: []string{migrationtypes.StoreKey},
 	},
 }
