@@ -5,11 +5,11 @@ import (
 	_ "cosmossdk.io/api/amino"
 	v1beta1 "cosmossdk.io/api/cosmos/base/v1beta1"
 	_ "cosmossdk.io/api/cosmos/msg/v1"
+	shared "github.com/pokt-network/poktroll/api/poktroll/shared"
 	fmt "fmt"
 	_ "github.com/cosmos/cosmos-proto"
 	runtime "github.com/cosmos/cosmos-proto/runtime"
 	_ "github.com/cosmos/gogoproto/gogoproto"
-	shared "github.com/pokt-network/poktroll/api/poktroll/shared"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoiface "google.golang.org/protobuf/runtime/protoiface"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
@@ -4736,7 +4736,7 @@ type MsgClaimMorseApplication struct {
 	// The hex-encoded signature, by the Morse account, of this message (where this field is nil).
 	// I.e.: morse_signature = private_key.sign(marshal(MsgClaimMorseAccount{morse_signature: nil, ...}))
 	MorseSignature string `protobuf:"bytes,3,opt,name=morse_signature,json=morseSignature,proto3" json:"morse_signature,omitempty"`
-	// The upokt which the Shannon destination account will stake for as an application.
+	// The upokt which the Shannon destination account will stake as an application.
 	Stake *v1beta1.Coin `protobuf:"bytes,4,opt,name=stake,proto3" json:"stake,omitempty"`
 	// The services this application is staked to request service for.
 	ServiceConfig *shared.ApplicationServiceConfig `protobuf:"bytes,5,opt,name=service_config,json=serviceConfig,proto3" json:"service_config,omitempty"`
@@ -4810,6 +4810,7 @@ type MsgClaimMorseApplicationResponse struct {
 	// The unstaked balance which was claimed.
 	ClaimedBalance *v1beta1.Coin `protobuf:"bytes,2,opt,name=claimed_balance,json=claimedBalance,proto3" json:"claimed_balance,omitempty"`
 	// The stake of the application which was staked as a result of the claim.
+	// If the application was already staked, this amount does not include the initial stake (i.e. only the portion which was "claimed").
 	ClaimedApplicationStake *v1beta1.Coin `protobuf:"bytes,3,opt,name=claimedApplicationStake,proto3" json:"claimedApplicationStake,omitempty"`
 	// The height (on Shannon) at which the claim was created.
 	ClaimedAtHeight int64 `protobuf:"varint,4,opt,name=claimed_at_height,json=claimedAtHeight,proto3" json:"claimed_at_height,omitempty"`

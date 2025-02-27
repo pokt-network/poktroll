@@ -131,7 +131,7 @@ message MsgClaimMorseApplication {
   // I.e.: morse_signature = private_key.sign(marshal(MsgClaimMorseAccount{morse_signature: nil, ...}))
   string morse_signature = 3 [(gogoproto.jsontag) = "morse_signature"];
 
-  // The upokt which the Shannon destination account will stake for as an application.
+  // The upokt which the Shannon destination account will stake as an application.
   cosmos.base.v1beta1.Coin stake = 4 [(gogoproto.jsontag) = "stake"];
 
   // The services this application is staked to request service for.
@@ -149,6 +149,7 @@ message MsgClaimMorseApplicationResponse {
   cosmos.base.v1beta1.Coin claimed_balance = 2 [(gogoproto.jsontag) = "claimed_balance", (gogoproto.nullable) = false];
 
   // The stake of the application which was staked as a result of the claim.
+  // If the application was already staked, this amount does not include the initial stake (i.e. only the portion which was "claimed").
   cosmos.base.v1beta1.Coin claimedApplicationStake = 3 [(gogoproto.jsontag) = "claimed_application_stake", (gogoproto.nullable) = false];
 
   // The height (on Shannon) at which the claim was created.

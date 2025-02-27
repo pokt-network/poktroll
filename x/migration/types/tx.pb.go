@@ -385,7 +385,7 @@ type MsgClaimMorseApplication struct {
 	// The hex-encoded signature, by the Morse account, of this message (where this field is nil).
 	// I.e.: morse_signature = private_key.sign(marshal(MsgClaimMorseAccount{morse_signature: nil, ...}))
 	MorseSignature string `protobuf:"bytes,3,opt,name=morse_signature,json=morseSignature,proto3" json:"morse_signature"`
-	// The upokt which the Shannon destination account will stake for as an application.
+	// The upokt which the Shannon destination account will stake as an application.
 	Stake *types.Coin `protobuf:"bytes,4,opt,name=stake,proto3" json:"stake"`
 	// The services this application is staked to request service for.
 	ServiceConfig *types1.ApplicationServiceConfig `protobuf:"bytes,5,opt,name=service_config,json=serviceConfig,proto3" json:"service_config"`
@@ -464,6 +464,7 @@ type MsgClaimMorseApplicationResponse struct {
 	// The unstaked balance which was claimed.
 	ClaimedBalance types.Coin `protobuf:"bytes,2,opt,name=claimed_balance,json=claimedBalance,proto3" json:"claimed_balance"`
 	// The stake of the application which was staked as a result of the claim.
+	// If the application was already staked, this amount does not include the initial stake (i.e. only the portion which was "claimed").
 	ClaimedApplicationStake types.Coin `protobuf:"bytes,3,opt,name=claimedApplicationStake,proto3" json:"claimed_application_stake"`
 	// The height (on Shannon) at which the claim was created.
 	ClaimedAtHeight int64 `protobuf:"varint,4,opt,name=claimed_at_height,json=claimedAtHeight,proto3" json:"claimed_at_height"`
