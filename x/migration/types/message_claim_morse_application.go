@@ -1,8 +1,6 @@
 package types
 
 import (
-	"encoding/hex"
-
 	errorsmod "cosmossdk.io/errors"
 	cometcrypto "github.com/cometbft/cometbft/crypto/ed25519"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -78,37 +76,26 @@ func (msg *MsgClaimMorseApplication) ValidateBasic() error {
 }
 
 // SignMorseSignature signs the given MsgClaimMorseApplication with the given Morse private key.
-func (msg *MsgClaimMorseApplication) SignMorseSignature(morsePrivKey cometcrypto.PrivKey) error {
+func (msg *MsgClaimMorseApplication) SignMorseSignature(morsePrivKey cometcrypto.PrivKey) (err error) {
 	signingMsgBz, err := msg.getSigningBytes()
 	if err != nil {
 		return err
 	}
 
-	signatureBz, err := morsePrivKey.Sign(signingMsgBz)
-	if err != nil {
-		return err
-	}
-
-	msg.MorseSignature = hex.EncodeToString(signatureBz)
-	return nil
+	msg.MorseSignature, err = morsePrivKey.Sign(signingMsgBz)
+	return err
 }
 
 // ValidateMorseSignature validates the signature of the given MsgClaimMorseApplication
 // matches the given Morse public key.
 func (msg *MsgClaimMorseApplication) ValidateMorseSignature(morsePublicKey cometcrypto.PubKey) error {
-	// Validate the morse signature.
-	morseSignature, err := hex.DecodeString(msg.MorseSignature)
-	if err != nil {
-		return err
-	}
-
 	signingMsgBz, err := msg.getSigningBytes()
 	if err != nil {
 		return err
 	}
 
 	// Validate the morse signature.
-	if !morsePublicKey.VerifySignature(signingMsgBz, morseSignature) {
+	if !morsePublicKey.VerifySignature(signingMsgBz, msg.MorseSignature) {
 		return ErrMorseAccountClaim.Wrapf("morseSignature is invalid")
 	}
 
@@ -121,7 +108,7 @@ func (msg *MsgClaimMorseApplication) getSigningBytes() ([]byte, error) {
 	// Copy msg and clear the morse signature field (ONLY on the copy) to prevent
 	// it from being included in the signature validation.
 	signingMsg := *msg
-	signingMsg.MorseSignature = ""
+	signingMsg.MorseSignature = nil
 
 	return proto.Marshal(&signingMsg)
 }

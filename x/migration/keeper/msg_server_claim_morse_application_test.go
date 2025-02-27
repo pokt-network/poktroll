@@ -211,9 +211,9 @@ func TestMsgServer_ClaimMorseApplication_Error(t *testing.T) {
 	require.NoError(t, err)
 
 	t.Run("invalid claim msg", func(t *testing.T) {
-		// Copy the message and set the morse signature to an empty string.
+		// Copy the message and set the morse signature to nil.
 		invalidMsgClaim := *msgClaim
-		invalidMsgClaim.MorseSignature = ""
+		invalidMsgClaim.MorseSignature = nil
 
 		expectedErr := status.Error(
 			codes.InvalidArgument,

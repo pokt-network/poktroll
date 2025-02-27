@@ -73,7 +73,7 @@ func TestMsgClaimMorseApplication_ValidateBasic(t *testing.T) {
 			msg: migrationtypes.MsgClaimMorseApplication{
 				ShannonDestAddress: sample.AccAddress(),
 				MorseSrcAddress:    sample.MorseAddressHex(),
-				MorseSignature:     "",
+				MorseSignature:     nil,
 				Stake:              nil,
 				ServiceConfig: &sharedtypes.ApplicationServiceConfig{
 					ServiceId: testServiceId,
