@@ -5,6 +5,7 @@ import (
 
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/stretchr/testify/require"
+
 	"github.com/pokt-network/poktroll/testutil/sample"
 )
 
@@ -14,6 +15,7 @@ func TestMsgClaimMorseSupplier_ValidateBasic(t *testing.T) {
 		msg  MsgClaimMorseSupplier
 		err  error
 	}{
+		// TODO_UPNEXT(@bryanchriswhite, #1034): Add coverage to match updated implementation.
 		{
 			name: "invalid address",
 			msg: MsgClaimMorseSupplier{
