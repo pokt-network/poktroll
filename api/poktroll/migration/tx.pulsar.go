@@ -1999,8 +1999,8 @@ func (x *fastReflection_MsgClaimMorseAccount) Range(f func(protoreflect.FieldDes
 			return
 		}
 	}
-	if x.MorseSignature != "" {
-		value := protoreflect.ValueOfString(x.MorseSignature)
+	if len(x.MorseSignature) != 0 {
+		value := protoreflect.ValueOfBytes(x.MorseSignature)
 		if !f(fd_MsgClaimMorseAccount_morse_signature, value) {
 			return
 		}
@@ -2025,7 +2025,7 @@ func (x *fastReflection_MsgClaimMorseAccount) Has(fd protoreflect.FieldDescripto
 	case "poktroll.migration.MsgClaimMorseAccount.morse_src_address":
 		return x.MorseSrcAddress != ""
 	case "poktroll.migration.MsgClaimMorseAccount.morse_signature":
-		return x.MorseSignature != ""
+		return len(x.MorseSignature) != 0
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.migration.MsgClaimMorseAccount"))
@@ -2047,7 +2047,7 @@ func (x *fastReflection_MsgClaimMorseAccount) Clear(fd protoreflect.FieldDescrip
 	case "poktroll.migration.MsgClaimMorseAccount.morse_src_address":
 		x.MorseSrcAddress = ""
 	case "poktroll.migration.MsgClaimMorseAccount.morse_signature":
-		x.MorseSignature = ""
+		x.MorseSignature = nil
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.migration.MsgClaimMorseAccount"))
@@ -2072,7 +2072,7 @@ func (x *fastReflection_MsgClaimMorseAccount) Get(descriptor protoreflect.FieldD
 		return protoreflect.ValueOfString(value)
 	case "poktroll.migration.MsgClaimMorseAccount.morse_signature":
 		value := x.MorseSignature
-		return protoreflect.ValueOfString(value)
+		return protoreflect.ValueOfBytes(value)
 	default:
 		if descriptor.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.migration.MsgClaimMorseAccount"))
@@ -2098,7 +2098,7 @@ func (x *fastReflection_MsgClaimMorseAccount) Set(fd protoreflect.FieldDescripto
 	case "poktroll.migration.MsgClaimMorseAccount.morse_src_address":
 		x.MorseSrcAddress = value.Interface().(string)
 	case "poktroll.migration.MsgClaimMorseAccount.morse_signature":
-		x.MorseSignature = value.Interface().(string)
+		x.MorseSignature = value.Bytes()
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.migration.MsgClaimMorseAccount"))
@@ -2143,7 +2143,7 @@ func (x *fastReflection_MsgClaimMorseAccount) NewField(fd protoreflect.FieldDesc
 	case "poktroll.migration.MsgClaimMorseAccount.morse_src_address":
 		return protoreflect.ValueOfString("")
 	case "poktroll.migration.MsgClaimMorseAccount.morse_signature":
-		return protoreflect.ValueOfString("")
+		return protoreflect.ValueOfBytes(nil)
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.migration.MsgClaimMorseAccount"))
@@ -2392,7 +2392,7 @@ func (x *fastReflection_MsgClaimMorseAccount) ProtoMethods() *protoiface.Methods
 				if wireType != 2 {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field MorseSignature", wireType)
 				}
-				var stringLen uint64
+				var byteLen int
 				for shift := uint(0); ; shift += 7 {
 					if shift >= 64 {
 						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
@@ -2402,23 +2402,25 @@ func (x *fastReflection_MsgClaimMorseAccount) ProtoMethods() *protoiface.Methods
 					}
 					b := dAtA[iNdEx]
 					iNdEx++
-					stringLen |= uint64(b&0x7F) << shift
+					byteLen |= int(b&0x7F) << shift
 					if b < 0x80 {
 						break
 					}
 				}
-				intStringLen := int(stringLen)
-				if intStringLen < 0 {
+				if byteLen < 0 {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
 				}
-				postIndex := iNdEx + intStringLen
+				postIndex := iNdEx + byteLen
 				if postIndex < 0 {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
 				}
 				if postIndex > l {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
 				}
-				x.MorseSignature = string(dAtA[iNdEx:postIndex])
+				x.MorseSignature = append(x.MorseSignature[:0], dAtA[iNdEx:postIndex]...)
+				if x.MorseSignature == nil {
+					x.MorseSignature = []byte{}
+				}
 				iNdEx = postIndex
 			default:
 				iNdEx = preIndex
@@ -4601,7 +4603,7 @@ type MsgClaimMorseAccount struct {
 	MorseSrcAddress string `protobuf:"bytes,2,opt,name=morse_src_address,json=morseSrcAddress,proto3" json:"morse_src_address,omitempty"`
 	// The hex-encoded signature, by the Morse account, of this message (where this field is nil).
 	// I.e.: morse_signature = private_key.sign(marshal(MsgClaimMorseAccount{morse_signature: nil, ...}))
-	MorseSignature string `protobuf:"bytes,3,opt,name=morse_signature,json=morseSignature,proto3" json:"morse_signature,omitempty"`
+	MorseSignature []byte `protobuf:"bytes,3,opt,name=morse_signature,json=morseSignature,proto3" json:"morse_signature,omitempty"`
 }
 
 func (x *MsgClaimMorseAccount) Reset() {
@@ -4638,11 +4640,11 @@ func (x *MsgClaimMorseAccount) GetMorseSrcAddress() string {
 	return ""
 }
 
-func (x *MsgClaimMorseAccount) GetMorseSignature() string {
+func (x *MsgClaimMorseAccount) GetMorseSignature() []byte {
 	if x != nil {
 		return x.MorseSignature
 	}
-	return ""
+	return nil
 }
 
 // MsgClaimMorseAccountResponse is returned from MsgClaimMorseAccount.
@@ -4911,7 +4913,7 @@ var file_poktroll_migration_tx_proto_rawDesc = []byte{
 	0x5f, 0x73, 0x72, 0x63, 0x5f, 0x61, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x52, 0x0f, 0x6d, 0x6f,
 	0x72, 0x73, 0x65, 0x53, 0x72, 0x63, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x12, 0x3c, 0x0a,
 	0x0f, 0x6d, 0x6f, 0x72, 0x73, 0x65, 0x5f, 0x73, 0x69, 0x67, 0x6e, 0x61, 0x74, 0x75, 0x72, 0x65,
-	0x18, 0x03, 0x20, 0x01, 0x28, 0x09, 0x42, 0x13, 0xea, 0xde, 0x1f, 0x0f, 0x6d, 0x6f, 0x72, 0x73,
+	0x18, 0x03, 0x20, 0x01, 0x28, 0x0c, 0x42, 0x13, 0xea, 0xde, 0x1f, 0x0f, 0x6d, 0x6f, 0x72, 0x73,
 	0x65, 0x5f, 0x73, 0x69, 0x67, 0x6e, 0x61, 0x74, 0x75, 0x72, 0x65, 0x52, 0x0e, 0x6d, 0x6f, 0x72,
 	0x73, 0x65, 0x53, 0x69, 0x67, 0x6e, 0x61, 0x74, 0x75, 0x72, 0x65, 0x3a, 0x19, 0x82, 0xe7, 0xb0,
 	0x2a, 0x14, 0x73, 0x68, 0x61, 0x6e, 0x6e, 0x6f, 0x6e, 0x5f, 0x64, 0x65, 0x73, 0x74, 0x5f, 0x61,
