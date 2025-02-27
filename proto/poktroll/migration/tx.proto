@@ -95,7 +95,7 @@ message MsgClaimMorseAccount {
 
   // The hex-encoded signature, by the Morse account, of this message (where this field is nil).
   // I.e.: morse_signature = private_key.sign(marshal(MsgClaimMorseAccount{morse_signature: nil, ...}))
-  string morse_signature = 3 [(gogoproto.jsontag) = "morse_signature"];
+  bytes morse_signature = 3 [(gogoproto.jsontag) = "morse_signature"];
 }
 
 // MsgClaimMorseAccountResponse is returned from MsgClaimMorseAccount.
