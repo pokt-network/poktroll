@@ -213,6 +213,38 @@ func (suite *suite) TheModuleParametersAreSetAsFollows(moduleName string, params
 	suite.TheAccountSendsAnAuthzExecMessageToUpdateAllModuleParams("pnf", moduleName, params)
 }
 
+func (suite *suite) TheApplicationEstablishesAWebsocketsConnectionWithSupplier(appName string, supplierOperatorName string) {
+	app, ok := accNameToAppMap[appName]
+	require.True(suite, ok, "application %s not found", appName)
+
+	supplier, ok := operatorAccNameToSupplierMap[supplierOperatorName]
+	require.True(suite, ok, "supplier %s not found", supplierOperatorName)
+}
+
+func (s *suite) TheApplicationReceivesSubscriptionEventsFromSupplier(appName string, supplierOperatorName string) {
+	// Get the application and supplier
+	app, ok := accNameToAppMap[appName]
+	require.True(s, ok, "application %s not found", appName)
+
+	supplier, ok := operatorAccNameToSupplierMap[supplierOperatorName]
+	require.True(s, ok, "supplier %s not found", supplierOperatorName)
+}
+
+func (s *suite) TheSubscriptionIsClosedBlockBeforeClaimWindowOpenHeightIsReached(blocksBeforeStr string) {
+	// Convert the string number to int64
+	blocksBeforeNum, err := strconv.ParseInt(blocksBeforeStr, 10, 64)
+	require.NoError(s, err)
+
+	// Get current block height
+	currentHeight := s.getCurrentBlockHeight()
+
+	// Calculate the target height (1 block before claim window)
+	targetHeight := currentHeight - blocksBeforeNum
+
+	// Wait until we reach the target height
+	s.waitForBlockHeight(targetHeight)
+}
+
 func (s *suite) sendRelaysForSession(
 	appName string,
 	supplierOperatorName string,

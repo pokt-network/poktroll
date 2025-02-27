@@ -19,6 +19,16 @@ Feature: Relay Namespace
     #    When the application "app2" sends the supplier "supplier1" a successful request for service "rest" with path "/quote"
     #    Then a "tokenomics" module "ClaimSettled" end block event is broadcast
 
+    Scenario: App can send WEBSOCKETS relays to Supplier
+        Given the user has the pocketd binary installed
+        And the application "app3" is staked for service "anvilws"
+        And the supplier "supplier1" is staked for service "anvilws"
+        And the session for application "app3" and service "anvilws" contains the supplier "supplier1"
+        When the application "app3" establishes a websockets connection with supplier "supplier1"
+        Then the application "app3" receives subscription events from supplier "supplier1"
+        And the subscription is closed "1" block before claim window open height is reached
+        And a "tokenomics" module "ClaimSettled" end block event is broadcast
+
     # TODO_TEST(@Olshansk):
     # - Successful relay through PATH's Trusted mode
     # - Successful relay through gateway app is delegation to
