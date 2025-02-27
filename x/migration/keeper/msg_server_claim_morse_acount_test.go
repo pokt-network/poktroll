@@ -52,7 +52,7 @@ func TestMsgServer_ClaimMorseAccount_Success(t *testing.T) {
 		)
 		require.NoError(t, err)
 
-		err = msgClaim.SignMorseSignature(morsePrivKey)
+		err = msgClaim.SignMsgClaimMorseAccount(morsePrivKey)
 		require.NoError(t, err)
 
 		msgClaimRes, err := srv.ClaimMorseAccount(ctx, msgClaim)
@@ -124,7 +124,7 @@ func TestMsgServer_ClaimMorseAccount_Error(t *testing.T) {
 	t.Run("invalid claim msg", func(t *testing.T) {
 		// Copy the message and set the morse signature to an empty string.
 		invalidMsgClaim := *msgClaim
-		invalidMsgClaim.MorseSignature = ""
+		invalidMsgClaim.MorseSignature = nil
 
 		expectedErr := status.Error(
 			codes.InvalidArgument,
