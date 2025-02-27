@@ -63,15 +63,17 @@ func (k Keeper) createSupplier(
 	}
 }
 
-// TODO_IN_THIS_COMMIT: check/update comment (AI generated)...
 // StakeSupplier stakes (or updates) the supplier according to the given msg by applying the following logic:
 //   - the msg is validated
 //   - if the supplier is not found, it is created (in memory) according to the valid msg
 //   - if the supplier is found and is not unbonding, it is updated (in memory) according to the msg
 //   - if the supplier is found and is unbonding, it is updated (in memory; and no longer unbonding)
 //   - additional stake validation (e.g. min stake, etc.)
-//   - the positive difference between the msg stake and any current stake is transferred
+//   - EITHER any positive difference between the msg stake and any current stake is transferred
 //     from the staking supplier's account, to the supplier module's accounts.
+//   - OR any negative difference between the msg stake and any current stake is transferred
+//     from the supplier module's account (stake escrow) to the staking supplier's account.
+//   - the supplier staking fee is deducted from the staking supplier's account balance.
 //   - the (new or updated) supplier is persisted.
 //   - an EventSupplierStaked event is emitted.
 func (k Keeper) StakeSupplier(
