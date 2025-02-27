@@ -69,12 +69,14 @@ func (am AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 					// TODO_UPNEXT(@bryanchriswhite, #1034): Add morse application claiming CLI, incl. examples (see x/supplier/module/autocli.go).
 				},
 				{
-			RpcMethod: "ClaimMorseSupplier",
-			Use: "claim-morse-supplier [morse-src-address] [morse-signature] [stake] [service-config]",
-			Short: "Send a claim_morse_supplier tx",
-			PositionalArgs: []*autocliv1.PositionalArgDescriptor{{ProtoField: "morseSrcAddress"}, {ProtoField: "morseSignature"}, {ProtoField: "stake"}, {ProtoField: "serviceConfig"},},
-		},
-		// this line is used by ignite scaffolding # autocli/tx
+					RpcMethod:      "ClaimMorseSupplier",
+					Use:            "claim-morse-supplier [morse-src-address] [morse-signature] [stake] [service-config]",
+					Short:          "Send a claim_morse_supplier tx",
+					PositionalArgs: []*autocliv1.PositionalArgDescriptor{{ProtoField: "morseSrcAddress"}, {ProtoField: "morseSignature"}, {ProtoField: "stake"}, {ProtoField: "serviceConfig"}},
+					Skip:           true, // skipped because autoCLI cannot handle signing
+					// TODO_UPNEXT(@bryanchriswhite, #1034): Add morse supplier claiming CLI, incl. examples (see x/supplier/module/autocli.go).
+				},
+				// this line is used by ignite scaffolding # autocli/tx
 			},
 		},
 	}
