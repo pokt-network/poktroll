@@ -25,9 +25,10 @@ const (
 // test which depends on a large Morse node snapshot being available locally.
 // See: https://pocket-snapshot.liquify.com/#/pruned/
 //
-// To run this test use: make test_e2e_migration
+// To run this test use:
+// 	$ make test_e2e_migration
 // OR
-// go test -v ./e2e/tests/migration_steps_test.go -tags=e2e,manual
+// 	$ go test -v ./e2e/tests/migration_steps_test.go -tags=e2e,manual
 func TestMigrationFeatures(t *testing.T) {
 	gocuke.NewRunner(t, &migrationSuite{}).Path("migration_*.feature").Run()
 }
