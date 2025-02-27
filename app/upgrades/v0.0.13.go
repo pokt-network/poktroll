@@ -30,7 +30,7 @@ var Upgrade_0_0_13 = Upgrade{
 			sharedParams.GatewayUnbondingPeriodSessions = sharedtypes.DefaultGatewayUnbondingPeriodSessions
 
 			// Ensure that the new parameters are valid
-			if err := sharedParams.ValidateBasic(); err != nil {
+			if err = sharedParams.ValidateBasic(); err != nil {
 				logger.Error("Failed to validate shared params", "error", err)
 				return err
 			}
