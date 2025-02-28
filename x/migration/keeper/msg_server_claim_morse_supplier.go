@@ -25,7 +25,7 @@ func (k msgServer) ClaimMorseSupplier(ctx context.Context, msg *migrationtypes.M
 	}
 
 	shannonAccAddr, err := cosmostypes.AccAddressFromBech32(msg.ShannonDestAddress)
-	// DEV_NOTE: This SHOULD NEVER hsupplieren as the shannonDestAddress is validated
+	// DEV_NOTE: This SHOULD NEVER happen as the shannonDestAddress is validated
 	// in MsgClaimMorseSupplier#ValidateBasic().
 	if err != nil {
 		return nil, status.Error(
@@ -72,6 +72,8 @@ func (k msgServer) ClaimMorseSupplier(ctx context.Context, msg *migrationtypes.M
 
 	// Mint the totalTokens to the shannonDestAddress account balance.
 	// The Supplier stake is subsequently escrowed from the shannonDestAddress account balance.
+	// NOTE: The current supplier module's staking fee parameter will subsequently be deducted
+	// from the claimed balance.
 	if err = k.MintClaimedMorseTokens(ctx, shannonAccAddr, morseClaimableAccount.TotalTokens()); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
@@ -106,11 +108,12 @@ func (k msgServer) ClaimMorseSupplier(ctx context.Context, msg *migrationtypes.M
 		return nil, err
 	}
 
-	// DEV_NOTE: While In the case where the claimed Shannon account is already staked
-	// as a supplier AND the MsgClaimMorseSupplier stake amount ("default" or otherwise)
-	// which is less than the current application stake amount, woule result in a negative
-	// claimedAppStake. This value is only used in event(s) and the msg response.
-	// It is set to zero in this case.
+	// DEV_NOTE: When BOTH:
+	// - the claimed Shannon account is already staked as a supplier
+	// - the MsgClaimMorseSupplier stake amount ("default" or otherwise)
+	//   is less than the current supplier stake amount
+	// then, claimedSupplierStake is set to zero as it would otherwise result in a negative amount.
+	// This value is only used in event(s) and the msg response.
 	claimedSupplierStake, err := supplier.Stake.SafeSub(initialSupplierStake)
 	if err != nil {
 		if !strings.Contains(err.Error(), "negative coin amount") {
