@@ -2,7 +2,6 @@ package migration
 
 import (
 	"strings"
-	"testing"
 
 	"cosmossdk.io/math"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
@@ -23,7 +22,7 @@ import (
 var (
 	stakeOffset = cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 9999)
 
-	testCases = []struct {
+	testMorseClaimAppCases = []struct {
 		desc     string
 		getStake func(s *MigrationModuleTestSuite) *cosmostypes.Coin
 	}{
@@ -65,15 +64,15 @@ func (s *MigrationModuleTestSuite) TestClaimMorseNewApplication() {
 	s.GenerateMorseAccountState(s.T(), s.numMorseClaimableAccounts)
 	s.ImportMorseClaimableAccounts(s.T())
 
-	for testCaseIdx, testCase := range testCases {
-		s.T().Run(testCase.desc, func(t *testing.T) {
+	for testCaseIdx, testCase := range testMorseClaimAppCases {
+		s.Run(testCase.desc, func() {
 			shannonDestAddr := sample.AccAddress()
 			bankClient := s.GetBankQueryClient(s.T())
 
 			// Assert that the shannonDestAddr account initially has a zero balance.
 			shannonDestBalance, err := bankClient.GetBalance(s.SdkCtx(), shannonDestAddr)
-			require.NoError(s.T(), err)
-			require.Equal(s.T(), int64(0), shannonDestBalance.Amount.Int64())
+			s.NoError(err)
+			s.Equal(int64(0), shannonDestBalance.Amount.Int64())
 
 			// Claim the MorseClaimableAccount as a new application.
 			morseSrcAddr, claimAppRes := s.ClaimMorseApplication(
@@ -103,24 +102,24 @@ func (s *MigrationModuleTestSuite) TestClaimMorseNewApplication() {
 				ClaimedAtHeight:         s.SdkCtx().BlockHeight() - 1,
 				ServiceId:               s.appServiceConfig.GetServiceId(),
 			}
-			require.Equal(s.T(), expectedClaimApplicationRes, claimAppRes)
+			s.Equal(expectedClaimApplicationRes, claimAppRes)
 
 			// Assert that the MorseClaimableAccount was updated on-chain.
 			expectedMorseClaimableAccount.ShannonDestAddress = shannonDestAddr
 			expectedMorseClaimableAccount.ClaimedAtHeight = s.SdkCtx().BlockHeight() - 1
 			morseClaimableAccount := s.QueryMorseClaimableAccount(s.T(), morseSrcAddr)
-			require.Equal(s.T(), expectedMorseClaimableAccount, morseClaimableAccount)
+			s.Equal(expectedMorseClaimableAccount, morseClaimableAccount)
 
 			// Assert that the shannonDestAddr account balance has been updated.
 			shannonDestBalance, err = bankClient.GetBalance(s.GetApp().GetSdkCtx(), shannonDestAddr)
-			require.NoError(s.T(), err)
-			require.Equal(s.T(), expectedBalance, *shannonDestBalance)
+			s.NoError(err)
+			s.Equal(expectedBalance, *shannonDestBalance)
 
 			// Assert that the migration module account balance returns to zero.
 			migrationModuleAddress := authtypes.NewModuleAddress(migrationtypes.ModuleName).String()
 			migrationModuleBalance, err := bankClient.GetBalance(s.SdkCtx(), migrationModuleAddress)
-			require.NoError(s.T(), err)
-			require.Equal(s.T(), cosmostypes.NewCoin(volatile.DenomuPOKT, math.ZeroInt()), *migrationModuleBalance)
+			s.NoError(err)
+			s.Equal(cosmostypes.NewCoin(volatile.DenomuPOKT, math.ZeroInt()), *migrationModuleBalance)
 
 			// Assert that the application was staked.
 			expectedApp := apptypes.Application{
@@ -130,8 +129,8 @@ func (s *MigrationModuleTestSuite) TestClaimMorseNewApplication() {
 			}
 			appClient := s.AppSuite.GetAppQueryClient(s.T())
 			app, err := appClient.GetApplication(s.SdkCtx(), shannonDestAddr)
-			require.NoError(s.T(), err)
-			require.Equal(s.T(), expectedApp, app)
+			s.NoError(err)
+			s.Equal(expectedApp, app)
 		})
 	}
 }
@@ -142,14 +141,14 @@ func (s *MigrationModuleTestSuite) TestClaimMorseExistingApplication() {
 	s.GenerateMorseAccountState(s.T(), s.numMorseClaimableAccounts)
 	s.ImportMorseClaimableAccounts(s.T())
 
-	for testCaseIdx, testCase := range testCases {
-		s.T().Run(testCase.desc, func(t *testing.T) {
+	for testCaseIdx, testCase := range testMorseClaimAppCases {
+		s.Run(testCase.desc, func() {
 			// Stake an initial application.
 			shannonDestAddr := sample.AccAddress()
 			shannonDestAccAddr := cosmostypes.MustAccAddressFromBech32(shannonDestAddr)
 			appClient := s.AppSuite.GetAppQueryClient(s.T())
 			appParams, err := appClient.GetParams(s.SdkCtx())
-			require.NoError(s.T(), err)
+			s.NoError(err)
 
 			initialAppStake := appParams.GetMinStake()
 			s.FundAddress(s.T(), shannonDestAccAddr, initialAppStake.Amount.Int64())
@@ -157,15 +156,15 @@ func (s *MigrationModuleTestSuite) TestClaimMorseExistingApplication() {
 
 			// Assert that the initial application is staked.
 			foundApp, err := appClient.GetApplication(s.SdkCtx(), shannonDestAddr)
-			require.NoError(s.T(), err)
-			require.Equal(s.T(), shannonDestAddr, foundApp.Address)
+			s.NoError(err)
+			s.Equal(shannonDestAddr, foundApp.Address)
 
 			bankClient := s.GetBankQueryClient(s.T())
 
 			// Assert that the shannonDestAddr account initially has a zero balance.
 			shannonDestBalance, err := bankClient.GetBalance(s.SdkCtx(), shannonDestAddr)
-			require.NoError(s.T(), err)
-			require.Equal(s.T(), int64(0), shannonDestBalance.Amount.Int64())
+			s.NoError(err)
+			s.Equal(int64(0), shannonDestBalance.Amount.Int64())
 
 			// Claim the MorseClaimableAccount as an existing application.
 			morseSrcAddr, claimAppRes := s.ClaimMorseApplication(
@@ -194,24 +193,24 @@ func (s *MigrationModuleTestSuite) TestClaimMorseExistingApplication() {
 				ClaimedAtHeight:         s.SdkCtx().BlockHeight() - 1,
 				ServiceId:               s.appServiceConfig.GetServiceId(),
 			}
-			require.Equal(s.T(), expectedClaimApplicationRes, claimAppRes)
+			s.Equal(expectedClaimApplicationRes, claimAppRes)
 
 			// Assert that the MorseClaimableAccount was updated on-chain.
 			expectedMorseClaimableAccount.ShannonDestAddress = shannonDestAddr
 			expectedMorseClaimableAccount.ClaimedAtHeight = s.SdkCtx().BlockHeight() - 1
 			morseClaimableAccount := s.QueryMorseClaimableAccount(s.T(), morseSrcAddr)
-			require.Equal(s.T(), expectedMorseClaimableAccount, morseClaimableAccount)
+			s.Equal(expectedMorseClaimableAccount, morseClaimableAccount)
 
 			// Assert that the shannonDestAddr account balance has been updated.
 			shannonDestBalance, err = bankClient.GetBalance(s.GetApp().GetSdkCtx(), shannonDestAddr)
-			require.NoError(s.T(), err)
-			require.Equal(s.T(), expectedBalance, *shannonDestBalance)
+			s.NoError(err)
+			s.Equal(expectedBalance, *shannonDestBalance)
 
 			// Assert that the migration module account balance returns to zero.
 			migrationModuleAddress := authtypes.NewModuleAddress(migrationtypes.ModuleName).String()
 			migrationModuleBalance, err := bankClient.GetBalance(s.SdkCtx(), migrationModuleAddress)
-			require.NoError(s.T(), err)
-			require.Equal(s.T(), cosmostypes.NewCoin(volatile.DenomuPOKT, math.ZeroInt()), *migrationModuleBalance)
+			s.NoError(err)
+			s.Equal(cosmostypes.NewCoin(volatile.DenomuPOKT, math.ZeroInt()), *migrationModuleBalance)
 
 			// Assert that the application was updated.
 			expectedApp := apptypes.Application{
@@ -220,8 +219,8 @@ func (s *MigrationModuleTestSuite) TestClaimMorseExistingApplication() {
 				ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{s.appServiceConfig},
 			}
 			app, err := appClient.GetApplication(s.SdkCtx(), shannonDestAddr)
-			require.NoError(s.T(), err)
-			require.Equal(s.T(), expectedApp, app)
+			s.NoError(err)
+			s.Equal(expectedApp, app)
 		})
 	}
 }
@@ -232,17 +231,19 @@ func (s *MigrationModuleTestSuite) TestClaimMorseApplication_ErrorMinStake() {
 
 	appClient := s.AppSuite.GetAppQueryClient(s.T())
 	appParams, err := appClient.GetParams(s.SdkCtx())
-	appMinStake := appParams.GetMinStake()
-	require.NoError(s.T(), err)
-	belowAppMinStake := appMinStake.Sub(cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 1))
+	s.NoError(err)
 
+	appMinStake := appParams.GetMinStake()
+	s.NoError(err)
+
+	belowAppMinStake := appMinStake.Sub(cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 1))
 	shannonDestAddr := sample.AccAddress()
 	bankClient := s.GetBankQueryClient(s.T())
 
 	// Assert that the shannonDestAddr account initially has a zero balance.
 	shannonDestBalance, err := bankClient.GetBalance(s.SdkCtx(), shannonDestAddr)
-	require.NoError(s.T(), err)
-	require.Equal(s.T(), int64(0), shannonDestBalance.Amount.Int64())
+	s.NoError(err)
+	s.Equal(int64(0), shannonDestBalance.Amount.Int64())
 
 	// Attempt to claim a Morse claimable account with a stake below the minimum.
 	morsePrivateKey := testmigration.NewMorsePrivateKey(s.T(), 1)
@@ -259,7 +260,7 @@ func (s *MigrationModuleTestSuite) TestClaimMorseApplication_ErrorMinStake() {
 		&belowAppMinStake,
 		s.appServiceConfig,
 	)
-	require.NoError(s.T(), err)
+	s.NoError(err)
 
 	// Claim a Morse claimable account.
 	_, err = s.GetApp().RunMsg(s.T(), morseClaimMsg)
@@ -272,19 +273,19 @@ func (s *MigrationModuleTestSuite) TestClaimMorseApplication_ErrorMinStake() {
 
 	// Assert that the MorseClaimableAccount was NOT updated on-chain.
 	morseClaimableAccount := s.QueryMorseClaimableAccount(s.T(), morseClaimMsg.GetMorseSrcAddress())
-	require.Equal(s.T(), int64(0), morseClaimableAccount.GetClaimedAtHeight())
-	require.Equal(s.T(), "", morseClaimableAccount.GetShannonDestAddress())
+	s.Equal(int64(0), morseClaimableAccount.GetClaimedAtHeight())
+	s.Equal("", morseClaimableAccount.GetShannonDestAddress())
 
 	// Assert that the shannonDestAddr account balance has NOT been updated.
 	shannonDestBalance, err = bankClient.GetBalance(s.SdkCtx(), shannonDestAddr)
-	require.NoError(s.T(), err)
-	require.Equal(s.T(), int64(0), shannonDestBalance.Amount.Int64())
+	s.NoError(err)
+	s.Equal(int64(0), shannonDestBalance.Amount.Int64())
 
 	// Assert that the migration module account balance returns to zero.
 	migrationModuleAddress := authtypes.NewModuleAddress(migrationtypes.ModuleName).String()
 	migrationModuleBalance, err := bankClient.GetBalance(s.SdkCtx(), migrationModuleAddress)
-	require.NoError(s.T(), err)
-	require.Equal(s.T(), cosmostypes.NewCoin(volatile.DenomuPOKT, math.ZeroInt()), *migrationModuleBalance)
+	s.NoError(err)
+	s.Equal(cosmostypes.NewCoin(volatile.DenomuPOKT, math.ZeroInt()), *migrationModuleBalance)
 
 	// Assert that the application was NOT staked.
 	_, err = appClient.GetApplication(s.SdkCtx(), shannonDestAddr)
@@ -301,7 +302,7 @@ func (s *MigrationModuleTestSuite) TestClaimMorseApplication_ErrorInsufficientSt
 	s.GenerateMorseAccountState(s.T(), s.numMorseClaimableAccounts)
 	s.ImportMorseClaimableAccounts(s.T())
 
-	//aboveMaxAvailableStake := appMinStake.Sub(cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 1))
+	//aboveMaxAvailableStake := minStake.Sub(cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 1))
 	expectedMorseClaimableAccount := s.GetAccountState(s.T()).Accounts[0]
 	totalTokens := expectedMorseClaimableAccount.TotalTokens()
 	aboveMaxAvailableStake := totalTokens.Add(cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 1))
@@ -311,8 +312,8 @@ func (s *MigrationModuleTestSuite) TestClaimMorseApplication_ErrorInsufficientSt
 
 	// Assert that the shannonDestAddr account initially has a zero balance.
 	shannonDestBalance, err := bankClient.GetBalance(s.SdkCtx(), shannonDestAddr)
-	require.NoError(s.T(), err)
-	require.Equal(s.T(), int64(0), shannonDestBalance.Amount.Int64())
+	s.NoError(err)
+	s.Equal(int64(0), shannonDestBalance.Amount.Int64())
 
 	// Attempt to claim a Morse claimable account with a stake below the minimum.
 	morsePrivateKey := testmigration.NewMorsePrivateKey(s.T(), 1)
@@ -329,7 +330,7 @@ func (s *MigrationModuleTestSuite) TestClaimMorseApplication_ErrorInsufficientSt
 		&aboveMaxAvailableStake,
 		s.appServiceConfig,
 	)
-	require.NoError(s.T(), err)
+	s.NoError(err)
 
 	// Claim a Morse claimable account.
 	_, err = s.GetApp().RunMsg(s.T(), morseClaimMsg)
@@ -342,19 +343,19 @@ func (s *MigrationModuleTestSuite) TestClaimMorseApplication_ErrorInsufficientSt
 
 	// Assert that the MorseClaimableAccount was NOT updated on-chain.
 	morseClaimableAccount := s.QueryMorseClaimableAccount(s.T(), morseClaimMsg.GetMorseSrcAddress())
-	require.Equal(s.T(), int64(0), morseClaimableAccount.GetClaimedAtHeight())
-	require.Equal(s.T(), "", morseClaimableAccount.GetShannonDestAddress())
+	s.Equal(int64(0), morseClaimableAccount.GetClaimedAtHeight())
+	s.Equal("", morseClaimableAccount.GetShannonDestAddress())
 
 	// Assert that the shannonDestAddr account balance has NOT been updated.
 	shannonDestBalance, err = bankClient.GetBalance(s.SdkCtx(), shannonDestAddr)
-	require.NoError(s.T(), err)
-	require.Equal(s.T(), int64(0), shannonDestBalance.Amount.Int64())
+	s.NoError(err)
+	s.Equal(int64(0), shannonDestBalance.Amount.Int64())
 
 	// Assert that the migration module account balance returns to zero.
 	migrationModuleAddress := authtypes.NewModuleAddress(migrationtypes.ModuleName).String()
 	migrationModuleBalance, err := bankClient.GetBalance(s.SdkCtx(), migrationModuleAddress)
-	require.NoError(s.T(), err)
-	require.Equal(s.T(), cosmostypes.NewCoin(volatile.DenomuPOKT, math.ZeroInt()), *migrationModuleBalance)
+	s.NoError(err)
+	s.Equal(cosmostypes.NewCoin(volatile.DenomuPOKT, math.ZeroInt()), *migrationModuleBalance)
 
 	// Assert that the application was NOT staked.
 	appClient := s.AppSuite.GetAppQueryClient(s.T())
