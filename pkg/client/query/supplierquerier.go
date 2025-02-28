@@ -47,10 +47,7 @@ func (supq *supplierQuerier) GetSupplier(
 	req := &suppliertypes.QueryGetSupplierRequest{OperatorAddress: operatorAddress}
 	res, err := supq.supplierQuerier.Supplier(ctx, req)
 	if err != nil {
-		return sharedtypes.Supplier{}, suppliertypes.ErrSupplierNotFound.Wrapf(
-			"address: %s [%v]",
-			operatorAddress, err,
-		)
+		return sharedtypes.Supplier{}, err
 	}
 	return res.Supplier, nil
 }
