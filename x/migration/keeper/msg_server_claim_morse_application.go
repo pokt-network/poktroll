@@ -2,6 +2,7 @@ package keeper
 
 import (
 	"context"
+	"strings"
 
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	cosmoserrors "github.com/cosmos/cosmos-sdk/types/errors"
@@ -24,7 +25,7 @@ func (k msgServer) ClaimMorseApplication(ctx context.Context, msg *migrationtype
 
 	shannonAccAddr, err := cosmostypes.AccAddressFromBech32(msg.ShannonDestAddress)
 	// DEV_NOTE: This SHOULD NEVER happen as the shannonDestAddress is validated
-	// in MsgClaimMorseAccount#ValidateBasic().
+	// in MsgClaimMorseApplication#ValidateBasic().
 	if err != nil {
 		return nil, status.Error(
 			codes.InvalidArgument,
@@ -63,7 +64,7 @@ func (k msgServer) ClaimMorseApplication(ctx context.Context, msg *migrationtype
 		)
 	}
 
-	// Default to the stake amount recorded in the MorseClaimableAccount.
+	// Default to the application stake amount recorded in the MorseClaimableAccount.
 	if msg.Stake == nil {
 		msg.Stake = &morseClaimableAccount.ApplicationStake
 	}
@@ -102,8 +103,20 @@ func (k msgServer) ClaimMorseApplication(ctx context.Context, msg *migrationtype
 		return nil, err
 	}
 
-	// DEV_NOTE: It is safe to use Coin#Sub() here because #StakeApplication() would error otherwise.
-	claimedAppStake := app.Stake.Sub(initialAppStake)
+	// DEV_NOTE: While "down-staking" isn't currently supported for applications,
+	// it MAY be in the future. In such case, a MsgClaimMorseApplication which claims
+	// an existing application, with a stake amount ("default" or otherwise) which is
+	// less than the current application stake amount, woule result in a negative
+	// claimedAppStake. This value is only used in event(s) and the msg response.
+	// It is set to zero in this case.
+	claimedAppStake, err := app.Stake.SafeSub(initialAppStake)
+	if err != nil {
+		if !strings.Contains(err.Error(), "negative coin amount") {
+			return nil, err
+		}
+		claimedAppStake = cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 0)
+	}
+
 	claimedUnstakedTokens := morseClaimableAccount.TotalTokens().Sub(claimedAppStake)
 
 	// Emit an event which signals that the morse account has been claimed.
