@@ -172,7 +172,7 @@ func (s *MigrationModuleSuite) ClaimMorseApplication(
 
 // ClaimMorseSupplier claims the given MorseClaimableAccount as a staked application
 // by running a MsgClaimMorseSupplier message.
-// It returns the expected Morse source address and the MsgClaimMorseAccountResponse.
+// It returns the expected Morse source address and the MsgClaimMorseSupplierResponse.
 // DEV_NOTE: morseAccountIdx is 1-based.
 func (s *MigrationModuleSuite) ClaimMorseSupplier(
 	t *testing.T,
