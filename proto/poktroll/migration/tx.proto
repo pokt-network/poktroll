@@ -1,11 +1,14 @@
 syntax = "proto3";
+
 package poktroll.migration;
 
 import "amino/amino.proto";
 import "cosmos/msg/v1/msg.proto";
 import "cosmos_proto/cosmos.proto";
 import "gogoproto/gogo.proto";
+import "poktroll/migration/morse_onchain.proto";
 import "poktroll/migration/params.proto";
+import "cosmos/base/v1beta1/coin.proto";
 
 option go_package = "github.com/pokt-network/poktroll/x/migration/types";
 option (gogoproto.stable_marshaler_all) = true;
@@ -16,26 +19,95 @@ service Msg {
 
   // UpdateParams defines a (governance) operation for updating the module
   // parameters. The authority defaults to the x/gov module account.
-  rpc UpdateParams(MsgUpdateParams) returns (MsgUpdateParamsResponse);
+  rpc UpdateParams                 (MsgUpdateParams                ) returns (MsgUpdateParamsResponse                );
+  rpc ImportMorseClaimableAccounts (MsgImportMorseClaimableAccounts) returns (MsgImportMorseClaimableAccountsResponse);
+  rpc ClaimMorseAccount            (MsgClaimMorseAccount           ) returns (MsgClaimMorseAccountResponse           );
 }
-
 // MsgUpdateParams is the Msg/UpdateParams request type.
 message MsgUpdateParams {
-  option (cosmos.msg.v1.signer) = "authority";
-  option (amino.name) = "poktroll/x/migration/MsgUpdateParams";
+  option (cosmos.msg.v1.signer) =                            "authority";
+  option           (amino.name) = "poktroll/x/migration/MsgUpdateParams";
 
   // authority is the address that controls the module (defaults to x/gov unless overwritten).
   string authority = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
 
   // params defines the module parameters to update.
-  //
+
   // NOTE: All parameters must be supplied.
-  Params params = 2 [
-    (gogoproto.nullable) = false,
-    (amino.dont_omitempty) = true
-  ];
+  Params params = 2 [(gogoproto.nullable) = false, (amino.dont_omitempty) = true];
 }
 
 // MsgUpdateParamsResponse defines the response structure for executing a
 // MsgUpdateParams message.
 message MsgUpdateParamsResponse {}
+
+// MsgImportMorseClaimableAccounts is used to create the on-chain MorseClaimableAccounts ONLY AND EXACTLY ONCE (per network / re-genesis).
+message MsgImportMorseClaimableAccounts {
+  option (cosmos.msg.v1.signer) = "authority";
+
+  // authority is the address that controls the module (defaults to x/gov unless overwritten).
+  string authority = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+
+  // the account state derived from the Morse state export and the `poktrolld migrate collect-morse-accounts` command.
+  MorseAccountState morse_account_state = 2 [(gogoproto.jsontag) = "morse_account_state", (gogoproto.nullable) = false];
+
+  // Validates the morse_account_state sha256 hash:
+  // - Transaction fails if hash doesn't match on-chain computation
+  // - Off-chain social consensus should be reached off-chain before verification
+  //
+  // Verification can be done by comparing with locally derived Morse state like so:
+  //   $ poktrolld migrate collect-morse-accounts $<(pocket util export-genesis-for-reset)
+  //
+  // Additional documentation:
+  // - pocket util export-genesis-for-migration --help
+  // - poktrolld migrate collect-morse-accounts --help
+  bytes morse_account_state_hash = 3 [(gogoproto.jsontag) = "morse_account_state_hash"];
+}
+
+// MsgImportMorseClaimableAccountsResponse is returned from MsgImportMorseClaimableAccounts.
+// It indicates the canonical hash of the imported MorseAccountState, and the number of claimable accounts which were imported.
+message MsgImportMorseClaimableAccountsResponse {
+  // On-chain computed sha256 hash of the morse_account_state provided in the corresponding MsgCreateMorseAccountState.
+  bytes state_hash = 1 [(gogoproto.jsontag) = "state_hash"];
+
+  // Number of claimable accounts (EOAs) collected from Morse state export.
+  uint64 num_accounts = 2 [(gogoproto.jsontag) = "num_accounts"];
+}
+
+// MsgClaimMorseAccount is used to execute a claim (one-time minting of tokens on Shannon),
+// of the balance of the given Morse account, according to the on-chain MorseClaimableAccounts,
+// to the balance of the given Shannon account.
+//
+// NOTE:
+// - The Shannon account specified must be the message signer
+// - Authz grants MAY be used to delegate claiming authority to other Shannon accounts
+message MsgClaimMorseAccount {
+  option (cosmos.msg.v1.signer) = "shannon_dest_address";
+
+  // The bech32-encoded address of the Shannon account to which the claimed balance will be minted.
+  string shannon_dest_address = 1 [(cosmos_proto.scalar) = "cosmos.AddressString", (gogoproto.jsontag) = "shannon_dest_address"];
+
+  // The hex-encoded address of the Morse account whose balance will be claimed.
+  // E.g.: 00f9900606fa3d5c9179fc0c8513078a53a2073e
+  string morse_src_address = 2 [(gogoproto.jsontag) = "morse_src_address"];
+
+  // The hex-encoded signature, by the Morse account, of this message (where this field is nil).
+  // I.e.: morse_signature = private_key.sign(marshal(MsgClaimMorseAccount{morse_signature: nil, ...}))
+  string morse_signature = 3 [(gogoproto.jsontag) = "morse_signature"];
+}
+
+// MsgClaimMorseAccountResponse is returned from MsgClaimMorseAccount.
+// It indicates the morse_src_address of the account which was claimed, the total
+// balance claimed, and the height at which the claim was committed.
+message MsgClaimMorseAccountResponse {
+  // The hex-encoded address of the Morse account whose balance will be claimed.
+  // E.g.: 00f9900606fa3d5c9179fc0c8513078a53a2073e
+  string morse_src_address = 1 [(gogoproto.jsontag) = "morse_src_address"];
+
+  // The balance which was claimed.
+  cosmos.base.v1beta1.Coin claimed_balance = 2 [(gogoproto.jsontag) = "claimed_balance", (gogoproto.nullable) = false];
+
+  // The height (on Shannon) at which the claim was created.
+  int64 claimed_at_height = 3;
+}
+

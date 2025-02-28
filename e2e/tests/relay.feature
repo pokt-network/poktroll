@@ -1,12 +1,12 @@
 Feature: Relay Namespace
 
     # NB: `make acc_initialize_pubkeys` must have been executed before this test is run
-    # Scenario: App can send a JSON-RPC relay to Supplier
-    #     Given the user has the pocketd binary installed
-    #     And the application "app1" is staked for service "anvil"
-    #     And the supplier "supplier1" is staked for service "anvil"
-    #     And the session for application "app1" and service "anvil" contains the supplier "supplier1"
-    #     Then the application "app1" sends the supplier "supplier1" a successful request for service "anvil" with path "" and data '{"jsonrpc":"2.0","method":"eth_blockNumber","params":[],"id":1}'
+    Scenario: App can send a JSON-RPC relay to Supplier
+        Given the user has the pocketd binary installed
+        And the application "app1" is staked for service "anvil"
+        And the supplier "supplier1" is staked for service "anvil"
+        And the session for application "app1" and service "anvil" contains the supplier "supplier1"
+        Then the application "app1" sends the supplier "supplier1" a successful request for service "anvil" with path "" and data '{"jsonrpc":"2.0","method":"eth_blockNumber","params":[],"id":1}'
 
     # TODO_MAINNET(@red-0ne): Enable this test once PATH Gateway supports REST.
     # See https://github.com/buildwithgrove/path/issues/87

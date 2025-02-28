@@ -74,7 +74,7 @@ func init() {
 	amountRe = regexp.MustCompile(`amount:\s+"(.+?)"\s+denom:\s+upokt`)
 	addrAndAmountRe = regexp.MustCompile(`(?s)address: ([\w\d]+).*?stake:\s*amount: "(\d+)"`)
 
-	flag.StringVar(&flagFeaturesPath, "features-path", "relay.feature", "Specifies glob paths for the runner to look up .feature files")
+	flag.StringVar(&flagFeaturesPath, "features-path", "*.feature", "Specifies glob paths for the runner to look up .feature files")
 
 	// If "PATH_URL" ENV variable is present, use it for pathUrl
 	if url := os.Getenv("PATH_URL"); url != "" {
@@ -88,6 +88,7 @@ func TestMain(m *testing.M) {
 	m.Run()
 }
 
+// ethSubscription is a struct to unmarshal the JSON response from the ETH subscription.
 type ethSubscription struct {
 	Method string `json:"method"`
 	Params struct {
@@ -178,7 +179,10 @@ func (s *suite) Before() {
 // TestFeatures runs the e2e tests specified in any .features files in this directory
 // * This test suite assumes that a LocalNet is running
 func TestFeatures(t *testing.T) {
-	gocuke.NewRunner(t, &suite{}).Path(flagFeaturesPath).Run()
+	gocuke.NewRunner(t, &suite{}).Path(flagFeaturesPath).
+		// Ignore test elements (e.g. Features, Scenarios, etc.)
+		// with the @manual tag (e.g. migration.feature).
+		Tags("not @manual").Run()
 }
 
 // TODO_TECHDEBT: rename `pocketd` to `poktrolld`.
