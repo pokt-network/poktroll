@@ -131,7 +131,7 @@ func (s *MigrationModuleSuite) QueryAllMorseClaimableAccounts(t *testing.T) []mi
 
 // ClaimMorseApplication claims the given MorseClaimableAccount as a staked application
 // by running a MsgClaimMorseApplication message.
-// It returns the expected Morse source address and the MsgClaimMorseAccountResponse.
+// It returns the expected Morse source address and the MsgClaimMorseApplicationResponse.
 // DEV_NOTE: morseAccountIdx is 1-based.
 func (s *MigrationModuleSuite) ClaimMorseApplication(
 	t *testing.T,
