@@ -158,7 +158,7 @@ func (s *MigrationModuleSuite) ClaimMorseApplication(
 	)
 	require.NoError(t, err)
 
-	// Claim a Morse claimable account.
+	// Claim a Morse claimable account as an application.
 	resAny, err := s.GetApp().RunMsg(t, morseClaimMsg)
 	require.NoError(t, err)
 
