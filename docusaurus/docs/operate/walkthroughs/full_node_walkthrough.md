@@ -44,17 +44,25 @@ to enable automatic binary upgrades.
 3. **Dedicated Server or Virtual Machine**: Any provider is acceptable.
 
 ## Instructions
-
+_This guide will walk you through Debian-based instructions._
 ### 1. Install Dependencies
 
 Update your package list and install necessary dependencies:
+
+**Install `curl`, `tar`, `wget`, `jq`**
 
 ```bash
 sudo apt-get update
 sudo apt-get install -y curl tar wget jq
 ```
 
-### 2. Create a New User
+**Install `go`**
+Follow the official `go` installation instructions [here](https://go.dev/doc/install).
+
+
+### 2. [OPTIONAL] Create a New User
+
+It is considered good practice to not run the binary as `root`. The below instructions will show you how to create a user with scope to run the node.
 
 Create a dedicated user to run `poktrolld`:
 
@@ -93,26 +101,21 @@ source ~/.profile
 
 ### 4. Install Cosmovisor
 
-**Option 1**: You can follow the official Cosmovisor installation instructions [here](https://docs.cosmos.network/main/build/tooling/cosmovisor#installation).
+Follow the official Cosmovisor installation instructions [here](https://docs.cosmos.network/main/build/tooling/cosmovisor#installation).
 
-**Option 2**: You can simply copy-paste the following commands to download and install Cosmovisor:
-
+Add `cosmovisor` to your `$PATH`
 ```bash
-mkdir -p $HOME/.local/bin
-COSMOVISOR_VERSION="v1.6.0"
+# This uses the default go behavior and may be different if you customize your $GOPATH or $GOBIN
+export PATH=$PATH:$HOME/go/bin
 
-ARCH=$(uname -m)
-if [ "$ARCH" = "x86_64" ]; then
-    ARCH="amd64"
-elif [ "$ARCH" = "aarch64" ]; then
-    ARCH="arm64"
-fi
-
-curl -L "https://github.com/cosmos/cosmos-sdk/releases/download/cosmovisor%2F${COSMOVISOR_VERSION}/cosmovisor-${COSMOVISOR_VERSION}-linux-${ARCH}.tar.gz" | tar -zxvf - -C $HOME/.local/bin
-
-echo 'export PATH=$HOME/.local/bin:$PATH' >> ~/.profile
-source ~/.profile
+# Verify the install
+cosmovisor version
 ```
+:::info `cosmovisor` Install Verification
+This may output an `Error` message. As long as it prints `cosmovisor version: <some_version>`, this worked correctly.
+
+:::
+
 
 ### 5. Install `poktrolld`
 
@@ -166,7 +169,7 @@ SEEDS_URL="https://raw.githubusercontent.com/pokt-network/pocket-network-genesis
 SEEDS=$(curl -s "$SEEDS_URL")
 sed -i -e "s|^seeds *=.*|seeds = \"$SEEDS\"|" $HOME/.poktroll/config/config.toml
 
-# Set External Address
+# [OPTIONAL] Set External Address. The default external address is the external IP of the host.
 EXTERNAL_IP=$(curl -s https://api.ipify.org)
 sed -i -e "s|^external_address *=.*|external_address = \"${EXTERNAL_IP}:26656\"|" $HOME/.poktroll/config/config.toml
 ```
@@ -183,7 +186,7 @@ After=network-online.target
 
 [Service]
 User=poktroll
-ExecStart=/home/poktroll/.local/bin/cosmovisor run start --home=/home/poktroll/.poktroll
+ExecStart=/home/poktroll/go/bin/cosmovisor run start --home=/home/poktroll/.poktroll
 Restart=always
 RestartSec=3
 LimitNOFILE=infinity
@@ -205,6 +208,9 @@ Enable and start the service:
 sudo systemctl daemon-reload
 sudo systemctl enable cosmovisor.service
 sudo systemctl start cosmovisor.service
+
+# Check the logs of the service
+journalctl -u cosmovisor -f
 ```
 
 ### 9. Configure your Firewall
@@ -213,21 +219,25 @@ To ensure your node can properly participate in the P2P network, you need to mak
 
 This may involve one or more of the following:
 
-1. **Configuring your firewall for UFW**:
+a. **Configuring your firewall for UFW**:
 
    ```bash
+   # [REQUIRED] Expose P2P
    sudo ufw allow 26656/tcp
+
+   # [OPTIONAL] Expose additional ports
+   sudo ufw allow 26657/tcp # Enable RPC from Internet (requires config change in .poktroll/config/config.toml
    ```
 
-2. **Configuring your firewall for iptables**:
+b. **Configuring your firewall for iptables**:
 
    ```bash
    sudo iptables -A INPUT -p tcp --dport 26656 -j ACCEPT
    ```
 
-3. **Cloud Provider Settings**: If running on a cloud provider (AWS, GCP, Azure, etc.), ensure you configure the security groups or firewall rules to allow inbound traffic on port 26656.
-4. **Router Configuration**: If running behind a router, configure port forwarding for port 26656 to your node's internal IP address.
-5. **Verify your port** is accessible using a tool like netcat or telnet from another machine:
+**Cloud Provider Settings**: If running on a cloud provider (AWS, GCP, Azure, etc.), ensure you configure the security groups or firewall rules to allow inbound traffic on port 26656.
+c. **Router Configuration**: If running behind a router, configure port forwarding for port 26656 to your node's internal IP address.
+d. **Verify your port** is accessible using a tool like netcat or telnet from another machine:
 
    ```bash
    nc -vz {EXTERNAL_IP} 26656

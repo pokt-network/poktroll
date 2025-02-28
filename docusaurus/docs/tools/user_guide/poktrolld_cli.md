@@ -14,13 +14,13 @@ brew install poktrolld
 
 ## Table of Contents <!-- omit in toc -->
 
-- [MacOS \& Linux Users](#macos--linux-users)
+- [MacOS Users](#macos-users)
   - [Using Homebrew (recommended)](#using-homebrew-recommended)
   - [Using release binaries (if you don't have brew)](#using-release-binaries-if-you-dont-have-brew)
   - [From Source (danger zone)](#from-source-danger-zone)
 - [Windows Users (why!?)](#windows-users-why)
 
-## MacOS & Linux Users
+## MacOS Users
 
 ### Using Homebrew (recommended)
 
@@ -112,7 +112,7 @@ This method is only recommended for **ADVANCED** users as it requires working wi
 Ensure you have the following installed:
 
 - [Go](https://go.dev/doc/install) (version 1.23 or later)
-  - Make sure to add `export PATH=$PATH:$(go env GOPATH)/bin/` to your `.bashrc` or `.zshrc` file.
+- [Make](https://www.gnu.org/software/make/)
 - [Ignite CLI](https://docs.ignite.com/welcome/install)
 
 #### Installing poktrolld <!-- omit in toc -->
@@ -144,10 +144,9 @@ poktrolld --help
 
 :::danger
 
-Why? 🥴 ⁉️
-
-:::
-
 Currently, we do not support native Windows installation. Windows users are encouraged
 to use [Windows Subsystem for Linux (WSL)](https://docs.microsoft.com/en-us/windows/wsl/install)
 and follow the Linux installation instructions.
+
+:::
+
