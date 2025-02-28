@@ -19,7 +19,9 @@ var _ IntegrationSuite = (*MigrationModuleSuite)(nil)
 // functionality. It is intended to be embedded in dependent integration test suites.
 type MigrationModuleSuite struct {
 	BaseIntegrationSuite
-	AppSuite ApplicationModuleSuite
+	AppSuite      ApplicationModuleSuite
+	SupplierSuite SupplierModuleSuite
+	ServiceSuite  ServiceModuleSuite
 
 	// accountState is the generated MorseAccountState to be imported into the migration module.
 	accountState *migrationtypes.MorseAccountState
@@ -166,4 +168,43 @@ func (s *MigrationModuleSuite) ClaimMorseApplication(
 	require.True(t, ok)
 
 	return expectedMorseSrcAddr, claimApplicationRes
+}
+
+// ClaimMorseSupplier claims the given MorseClaimableAccount as a staked application
+// by running a MsgClaimMorseSupplier message.
+// It returns the expected Morse source address and the MsgClaimMorseAccountResponse.
+// DEV_NOTE: morseAccountIdx is 1-based.
+func (s *MigrationModuleSuite) ClaimMorseSupplier(
+	t *testing.T,
+	morseAccountIdx uint64,
+	shannonDestAddr string,
+	stake *sdk.Coin,
+	serviceConfig *sharedtypes.SupplierServiceConfig,
+) (expectedMorseSrcAddr string, _ *migrationtypes.MsgClaimMorseSupplierResponse) {
+	t.Helper()
+
+	morsePrivateKey := testmigration.NewMorsePrivateKey(t, morseAccountIdx)
+	expectedMorseSrcAddr = morsePrivateKey.PubKey().Address().String()
+	require.Equal(t,
+		expectedMorseSrcAddr,
+		s.accountState.Accounts[morseAccountIdx-1].MorseSrcAddress,
+	)
+
+	morseClaimMsg, err := migrationtypes.NewMsgClaimMorseSupplier(
+		shannonDestAddr,
+		expectedMorseSrcAddr,
+		morsePrivateKey,
+		stake,
+		serviceConfig,
+	)
+	require.NoError(t, err)
+
+	// Claim a Morse claimable account as a supplier.
+	resAny, err := s.GetApp().RunMsg(t, morseClaimMsg)
+	require.NoError(t, err)
+
+	claimSupplierRes, ok := resAny.(*migrationtypes.MsgClaimMorseSupplierResponse)
+	require.True(t, ok)
+
+	return expectedMorseSrcAddr, claimSupplierRes
 }
