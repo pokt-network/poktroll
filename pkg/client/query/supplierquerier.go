@@ -54,3 +54,13 @@ func (supq *supplierQuerier) GetSupplier(
 	}
 	return res.Supplier, nil
 }
+
+// GetParams returns the supplier module parameters.
+func (supq *supplierQuerier) GetParams(ctx context.Context) (*suppliertypes.Params, error) {
+	req := suppliertypes.QueryParamsRequest{}
+	res, err := supq.supplierQuerier.Params(ctx, &req)
+	if err != nil {
+		return nil, err
+	}
+	return &res.Params, nil
+}

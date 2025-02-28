@@ -78,3 +78,13 @@ func (servq *serviceQuerier) GetServiceRelayDifficulty(
 
 	return res.RelayMiningDifficulty, nil
 }
+
+// GetParams returns the service module parameters.
+func (servq *serviceQuerier) GetParams(ctx context.Context) (*servicetypes.Params, error) {
+	req := servicetypes.QueryParamsRequest{}
+	res, err := servq.serviceQuerier.Params(ctx, &req)
+	if err != nil {
+		return nil, err
+	}
+	return &res.Params, nil
+}
