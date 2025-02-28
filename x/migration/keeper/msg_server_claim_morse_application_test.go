@@ -26,8 +26,8 @@ import (
 
 // Prevent strconv unused error
 var (
-	_                 = strconv.IntSize
-	testServiceConfig = sharedtypes.ApplicationServiceConfig{ServiceId: "svc1"}
+	_                    = strconv.IntSize
+	testAppServiceConfig = sharedtypes.ApplicationServiceConfig{ServiceId: "svc1"}
 )
 
 func TestMsgServer_ClaimMorseApplication_SuccessNewApplication(t *testing.T) {
@@ -43,12 +43,12 @@ func TestMsgServer_ClaimMorseApplication_SuccessNewApplication(t *testing.T) {
 	expectedMsgStakeApp := &apptypes.MsgStakeApplication{
 		Address:  shannonDestAddr,
 		Stake:    &applicationStake,
-		Services: []*sharedtypes.ApplicationServiceConfig{&testServiceConfig},
+		Services: []*sharedtypes.ApplicationServiceConfig{&testAppServiceConfig},
 	}
 	expectedApp := apptypes.Application{
 		Address:        shannonDestAddr,
 		Stake:          &applicationStake,
-		ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{&testServiceConfig},
+		ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{&testAppServiceConfig},
 	}
 
 	ctrl := gomock.NewController(t)
@@ -126,7 +126,7 @@ func TestMsgServer_ClaimMorseApplication_SuccessNewApplication(t *testing.T) {
 		morseClaimableAccount.GetMorseSrcAddress(),
 		morsePrivKey,
 		&morseAppStake,
-		&testServiceConfig,
+		&testAppServiceConfig,
 	)
 	require.NoError(t, err)
 
@@ -140,7 +140,7 @@ func TestMsgServer_ClaimMorseApplication_SuccessNewApplication(t *testing.T) {
 		ClaimedBalance: expectedClaimedUnstakedTokens.
 			Add(morseClaimableAccount.GetSupplierStake()),
 		ClaimedAtHeight: expectedClaimedAtHeight,
-		ServiceId:       testServiceConfig.GetServiceId(),
+		ServiceId:       testAppServiceConfig.GetServiceId(),
 	}
 	require.Equal(t, expectedRes, msgClaimRes)
 
@@ -156,7 +156,7 @@ func TestMsgServer_ClaimMorseApplication_SuccessNewApplication(t *testing.T) {
 	expectedEvent := &migrationtypes.EventMorseApplicationClaimed{
 		ShannonDestAddress:      msgClaim.ShannonDestAddress,
 		MorseSrcAddress:         msgClaim.MorseSrcAddress,
-		ServiceId:               testServiceConfig.GetServiceId(),
+		ServiceId:               testAppServiceConfig.GetServiceId(),
 		ClaimedBalance:          expectedClaimedUnstakedTokens,
 		ClaimedApplicationStake: applicationStake,
 		ClaimedAtHeight:         ctx.BlockHeight(),
