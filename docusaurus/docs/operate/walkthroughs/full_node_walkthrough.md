@@ -186,7 +186,7 @@ After=network-online.target
 
 [Service]
 User=poktroll
-ExecStart=/home/poktroll/.local/bin/cosmovisor run start --home=/home/poktroll/.poktroll
+ExecStart=/home/poktroll/go/bin/cosmovisor run start --home=/home/poktroll/.poktroll
 Restart=always
 RestartSec=3
 LimitNOFILE=infinity
@@ -208,6 +208,9 @@ Enable and start the service:
 sudo systemctl daemon-reload
 sudo systemctl enable cosmovisor.service
 sudo systemctl start cosmovisor.service
+
+# Check the logs of the service
+journalctl -u cosmovisor -f
 ```
 
 ### 9. Configure your Firewall
