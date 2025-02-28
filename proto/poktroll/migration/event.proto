@@ -59,3 +59,24 @@ message EventMorseApplicationClaimed {
   // The service ID of the service which the application is staked for.
   string serviceId = 6;
 }
+
+// EventMorseSupplierClaimed is emitted when a MorseAccount is claimed on-chain as a staked Supplier.
+message EventMorseSupplierClaimed {
+  // The height (on Shannon) at which the claim was executed (i.e. claimed).
+  int64 claimed_at_height = 1 [(gogoproto.jsontag) = "claimed_at_height"];
+
+  // The unstaked balance which was claimed.
+  cosmos.base.v1beta1.Coin claimed_balance = 2 [(gogoproto.jsontag) = "claimed_balance", (gogoproto.nullable) = false];
+
+  // The bech32-encoded address of the Shannon account to which the claimed balance will be minted.
+  string shannon_dest_address = 3 [(cosmos_proto.scalar) = "cosmos.AddressString", (gogoproto.jsontag) = "shannon_dest_address"];
+
+  // The hex-encoded address of the Morse account whose balance will be claimed.
+  string morse_src_address = 4 [(gogoproto.jsontag) = "morse_src_address"];
+
+  // The stake of the Supplier which was staked as a result of the claim.
+  cosmos.base.v1beta1.Coin claimedSupplierStake = 5 [(gogoproto.nullable) = false];
+
+  // The service ID of the service which the Supplier is staked for.
+  string serviceId = 6;
+}

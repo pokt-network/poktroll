@@ -4404,22 +4404,22 @@ func (x *fastReflection_MsgClaimMorseApplicationResponse) ProtoMethods() *protoi
 }
 
 var (
-	md_MsgClaimMorseSupplier                    protoreflect.MessageDescriptor
-	fd_MsgClaimMorseSupplier_shannonDestAddress protoreflect.FieldDescriptor
-	fd_MsgClaimMorseSupplier_morseSrcAddress    protoreflect.FieldDescriptor
-	fd_MsgClaimMorseSupplier_morseSignature     protoreflect.FieldDescriptor
-	fd_MsgClaimMorseSupplier_stake              protoreflect.FieldDescriptor
-	fd_MsgClaimMorseSupplier_serviceConfig      protoreflect.FieldDescriptor
+	md_MsgClaimMorseSupplier                      protoreflect.MessageDescriptor
+	fd_MsgClaimMorseSupplier_shannon_dest_address protoreflect.FieldDescriptor
+	fd_MsgClaimMorseSupplier_morse_src_address    protoreflect.FieldDescriptor
+	fd_MsgClaimMorseSupplier_morse_signature      protoreflect.FieldDescriptor
+	fd_MsgClaimMorseSupplier_stake                protoreflect.FieldDescriptor
+	fd_MsgClaimMorseSupplier_service_config       protoreflect.FieldDescriptor
 )
 
 func init() {
 	file_poktroll_migration_tx_proto_init()
 	md_MsgClaimMorseSupplier = File_poktroll_migration_tx_proto.Messages().ByName("MsgClaimMorseSupplier")
-	fd_MsgClaimMorseSupplier_shannonDestAddress = md_MsgClaimMorseSupplier.Fields().ByName("shannonDestAddress")
-	fd_MsgClaimMorseSupplier_morseSrcAddress = md_MsgClaimMorseSupplier.Fields().ByName("morseSrcAddress")
-	fd_MsgClaimMorseSupplier_morseSignature = md_MsgClaimMorseSupplier.Fields().ByName("morseSignature")
+	fd_MsgClaimMorseSupplier_shannon_dest_address = md_MsgClaimMorseSupplier.Fields().ByName("shannon_dest_address")
+	fd_MsgClaimMorseSupplier_morse_src_address = md_MsgClaimMorseSupplier.Fields().ByName("morse_src_address")
+	fd_MsgClaimMorseSupplier_morse_signature = md_MsgClaimMorseSupplier.Fields().ByName("morse_signature")
 	fd_MsgClaimMorseSupplier_stake = md_MsgClaimMorseSupplier.Fields().ByName("stake")
-	fd_MsgClaimMorseSupplier_serviceConfig = md_MsgClaimMorseSupplier.Fields().ByName("serviceConfig")
+	fd_MsgClaimMorseSupplier_service_config = md_MsgClaimMorseSupplier.Fields().ByName("service_config")
 }
 
 var _ protoreflect.Message = (*fastReflection_MsgClaimMorseSupplier)(nil)
@@ -4489,19 +4489,19 @@ func (x *fastReflection_MsgClaimMorseSupplier) Interface() protoreflect.ProtoMes
 func (x *fastReflection_MsgClaimMorseSupplier) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
 	if x.ShannonDestAddress != "" {
 		value := protoreflect.ValueOfString(x.ShannonDestAddress)
-		if !f(fd_MsgClaimMorseSupplier_shannonDestAddress, value) {
+		if !f(fd_MsgClaimMorseSupplier_shannon_dest_address, value) {
 			return
 		}
 	}
 	if x.MorseSrcAddress != "" {
 		value := protoreflect.ValueOfString(x.MorseSrcAddress)
-		if !f(fd_MsgClaimMorseSupplier_morseSrcAddress, value) {
+		if !f(fd_MsgClaimMorseSupplier_morse_src_address, value) {
 			return
 		}
 	}
-	if x.MorseSignature != "" {
-		value := protoreflect.ValueOfString(x.MorseSignature)
-		if !f(fd_MsgClaimMorseSupplier_morseSignature, value) {
+	if len(x.MorseSignature) != 0 {
+		value := protoreflect.ValueOfBytes(x.MorseSignature)
+		if !f(fd_MsgClaimMorseSupplier_morse_signature, value) {
 			return
 		}
 	}
@@ -4511,9 +4511,9 @@ func (x *fastReflection_MsgClaimMorseSupplier) Range(f func(protoreflect.FieldDe
 			return
 		}
 	}
-	if x.ServiceConfig != "" {
-		value := protoreflect.ValueOfString(x.ServiceConfig)
-		if !f(fd_MsgClaimMorseSupplier_serviceConfig, value) {
+	if x.ServiceConfig != nil {
+		value := protoreflect.ValueOfMessage(x.ServiceConfig.ProtoReflect())
+		if !f(fd_MsgClaimMorseSupplier_service_config, value) {
 			return
 		}
 	}
@@ -4532,16 +4532,16 @@ func (x *fastReflection_MsgClaimMorseSupplier) Range(f func(protoreflect.FieldDe
 // a repeated field is populated if it is non-empty.
 func (x *fastReflection_MsgClaimMorseSupplier) Has(fd protoreflect.FieldDescriptor) bool {
 	switch fd.FullName() {
-	case "poktroll.migration.MsgClaimMorseSupplier.shannonDestAddress":
+	case "poktroll.migration.MsgClaimMorseSupplier.shannon_dest_address":
 		return x.ShannonDestAddress != ""
-	case "poktroll.migration.MsgClaimMorseSupplier.morseSrcAddress":
+	case "poktroll.migration.MsgClaimMorseSupplier.morse_src_address":
 		return x.MorseSrcAddress != ""
-	case "poktroll.migration.MsgClaimMorseSupplier.morseSignature":
-		return x.MorseSignature != ""
+	case "poktroll.migration.MsgClaimMorseSupplier.morse_signature":
+		return len(x.MorseSignature) != 0
 	case "poktroll.migration.MsgClaimMorseSupplier.stake":
 		return x.Stake != nil
-	case "poktroll.migration.MsgClaimMorseSupplier.serviceConfig":
-		return x.ServiceConfig != ""
+	case "poktroll.migration.MsgClaimMorseSupplier.service_config":
+		return x.ServiceConfig != nil
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.migration.MsgClaimMorseSupplier"))
@@ -4558,16 +4558,16 @@ func (x *fastReflection_MsgClaimMorseSupplier) Has(fd protoreflect.FieldDescript
 // Clear is a mutating operation and unsafe for concurrent use.
 func (x *fastReflection_MsgClaimMorseSupplier) Clear(fd protoreflect.FieldDescriptor) {
 	switch fd.FullName() {
-	case "poktroll.migration.MsgClaimMorseSupplier.shannonDestAddress":
+	case "poktroll.migration.MsgClaimMorseSupplier.shannon_dest_address":
 		x.ShannonDestAddress = ""
-	case "poktroll.migration.MsgClaimMorseSupplier.morseSrcAddress":
+	case "poktroll.migration.MsgClaimMorseSupplier.morse_src_address":
 		x.MorseSrcAddress = ""
-	case "poktroll.migration.MsgClaimMorseSupplier.morseSignature":
-		x.MorseSignature = ""
+	case "poktroll.migration.MsgClaimMorseSupplier.morse_signature":
+		x.MorseSignature = nil
 	case "poktroll.migration.MsgClaimMorseSupplier.stake":
 		x.Stake = nil
-	case "poktroll.migration.MsgClaimMorseSupplier.serviceConfig":
-		x.ServiceConfig = ""
+	case "poktroll.migration.MsgClaimMorseSupplier.service_config":
+		x.ServiceConfig = nil
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.migration.MsgClaimMorseSupplier"))
@@ -4584,21 +4584,21 @@ func (x *fastReflection_MsgClaimMorseSupplier) Clear(fd protoreflect.FieldDescri
 // of the value; to obtain a mutable reference, use Mutable.
 func (x *fastReflection_MsgClaimMorseSupplier) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
 	switch descriptor.FullName() {
-	case "poktroll.migration.MsgClaimMorseSupplier.shannonDestAddress":
+	case "poktroll.migration.MsgClaimMorseSupplier.shannon_dest_address":
 		value := x.ShannonDestAddress
 		return protoreflect.ValueOfString(value)
-	case "poktroll.migration.MsgClaimMorseSupplier.morseSrcAddress":
+	case "poktroll.migration.MsgClaimMorseSupplier.morse_src_address":
 		value := x.MorseSrcAddress
 		return protoreflect.ValueOfString(value)
-	case "poktroll.migration.MsgClaimMorseSupplier.morseSignature":
+	case "poktroll.migration.MsgClaimMorseSupplier.morse_signature":
 		value := x.MorseSignature
-		return protoreflect.ValueOfString(value)
+		return protoreflect.ValueOfBytes(value)
 	case "poktroll.migration.MsgClaimMorseSupplier.stake":
 		value := x.Stake
 		return protoreflect.ValueOfMessage(value.ProtoReflect())
-	case "poktroll.migration.MsgClaimMorseSupplier.serviceConfig":
+	case "poktroll.migration.MsgClaimMorseSupplier.service_config":
 		value := x.ServiceConfig
-		return protoreflect.ValueOfString(value)
+		return protoreflect.ValueOfMessage(value.ProtoReflect())
 	default:
 		if descriptor.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.migration.MsgClaimMorseSupplier"))
@@ -4619,16 +4619,16 @@ func (x *fastReflection_MsgClaimMorseSupplier) Get(descriptor protoreflect.Field
 // Set is a mutating operation and unsafe for concurrent use.
 func (x *fastReflection_MsgClaimMorseSupplier) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
 	switch fd.FullName() {
-	case "poktroll.migration.MsgClaimMorseSupplier.shannonDestAddress":
+	case "poktroll.migration.MsgClaimMorseSupplier.shannon_dest_address":
 		x.ShannonDestAddress = value.Interface().(string)
-	case "poktroll.migration.MsgClaimMorseSupplier.morseSrcAddress":
+	case "poktroll.migration.MsgClaimMorseSupplier.morse_src_address":
 		x.MorseSrcAddress = value.Interface().(string)
-	case "poktroll.migration.MsgClaimMorseSupplier.morseSignature":
-		x.MorseSignature = value.Interface().(string)
+	case "poktroll.migration.MsgClaimMorseSupplier.morse_signature":
+		x.MorseSignature = value.Bytes()
 	case "poktroll.migration.MsgClaimMorseSupplier.stake":
 		x.Stake = value.Message().Interface().(*v1beta1.Coin)
-	case "poktroll.migration.MsgClaimMorseSupplier.serviceConfig":
-		x.ServiceConfig = value.Interface().(string)
+	case "poktroll.migration.MsgClaimMorseSupplier.service_config":
+		x.ServiceConfig = value.Message().Interface().(*shared.SupplierServiceConfig)
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.migration.MsgClaimMorseSupplier"))
@@ -4654,14 +4654,17 @@ func (x *fastReflection_MsgClaimMorseSupplier) Mutable(fd protoreflect.FieldDesc
 			x.Stake = new(v1beta1.Coin)
 		}
 		return protoreflect.ValueOfMessage(x.Stake.ProtoReflect())
-	case "poktroll.migration.MsgClaimMorseSupplier.shannonDestAddress":
-		panic(fmt.Errorf("field shannonDestAddress of message poktroll.migration.MsgClaimMorseSupplier is not mutable"))
-	case "poktroll.migration.MsgClaimMorseSupplier.morseSrcAddress":
-		panic(fmt.Errorf("field morseSrcAddress of message poktroll.migration.MsgClaimMorseSupplier is not mutable"))
-	case "poktroll.migration.MsgClaimMorseSupplier.morseSignature":
-		panic(fmt.Errorf("field morseSignature of message poktroll.migration.MsgClaimMorseSupplier is not mutable"))
-	case "poktroll.migration.MsgClaimMorseSupplier.serviceConfig":
-		panic(fmt.Errorf("field serviceConfig of message poktroll.migration.MsgClaimMorseSupplier is not mutable"))
+	case "poktroll.migration.MsgClaimMorseSupplier.service_config":
+		if x.ServiceConfig == nil {
+			x.ServiceConfig = new(shared.SupplierServiceConfig)
+		}
+		return protoreflect.ValueOfMessage(x.ServiceConfig.ProtoReflect())
+	case "poktroll.migration.MsgClaimMorseSupplier.shannon_dest_address":
+		panic(fmt.Errorf("field shannon_dest_address of message poktroll.migration.MsgClaimMorseSupplier is not mutable"))
+	case "poktroll.migration.MsgClaimMorseSupplier.morse_src_address":
+		panic(fmt.Errorf("field morse_src_address of message poktroll.migration.MsgClaimMorseSupplier is not mutable"))
+	case "poktroll.migration.MsgClaimMorseSupplier.morse_signature":
+		panic(fmt.Errorf("field morse_signature of message poktroll.migration.MsgClaimMorseSupplier is not mutable"))
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.migration.MsgClaimMorseSupplier"))
@@ -4675,17 +4678,18 @@ func (x *fastReflection_MsgClaimMorseSupplier) Mutable(fd protoreflect.FieldDesc
 // For lists, maps, and messages, this returns a new, empty, mutable value.
 func (x *fastReflection_MsgClaimMorseSupplier) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
-	case "poktroll.migration.MsgClaimMorseSupplier.shannonDestAddress":
+	case "poktroll.migration.MsgClaimMorseSupplier.shannon_dest_address":
 		return protoreflect.ValueOfString("")
-	case "poktroll.migration.MsgClaimMorseSupplier.morseSrcAddress":
+	case "poktroll.migration.MsgClaimMorseSupplier.morse_src_address":
 		return protoreflect.ValueOfString("")
-	case "poktroll.migration.MsgClaimMorseSupplier.morseSignature":
-		return protoreflect.ValueOfString("")
+	case "poktroll.migration.MsgClaimMorseSupplier.morse_signature":
+		return protoreflect.ValueOfBytes(nil)
 	case "poktroll.migration.MsgClaimMorseSupplier.stake":
 		m := new(v1beta1.Coin)
 		return protoreflect.ValueOfMessage(m.ProtoReflect())
-	case "poktroll.migration.MsgClaimMorseSupplier.serviceConfig":
-		return protoreflect.ValueOfString("")
+	case "poktroll.migration.MsgClaimMorseSupplier.service_config":
+		m := new(shared.SupplierServiceConfig)
+		return protoreflect.ValueOfMessage(m.ProtoReflect())
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.migration.MsgClaimMorseSupplier"))
@@ -4771,8 +4775,8 @@ func (x *fastReflection_MsgClaimMorseSupplier) ProtoMethods() *protoiface.Method
 			l = options.Size(x.Stake)
 			n += 1 + l + runtime.Sov(uint64(l))
 		}
-		l = len(x.ServiceConfig)
-		if l > 0 {
+		if x.ServiceConfig != nil {
+			l = options.Size(x.ServiceConfig)
 			n += 1 + l + runtime.Sov(uint64(l))
 		}
 		if x.unknownFields != nil {
@@ -4804,10 +4808,17 @@ func (x *fastReflection_MsgClaimMorseSupplier) ProtoMethods() *protoiface.Method
 			i -= len(x.unknownFields)
 			copy(dAtA[i:], x.unknownFields)
 		}
-		if len(x.ServiceConfig) > 0 {
-			i -= len(x.ServiceConfig)
-			copy(dAtA[i:], x.ServiceConfig)
-			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.ServiceConfig)))
+		if x.ServiceConfig != nil {
+			encoded, err := options.Marshal(x.ServiceConfig)
+			if err != nil {
+				return protoiface.MarshalOutput{
+					NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+					Buf:               input.Buf,
+				}, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(encoded)))
 			i--
 			dAtA[i] = 0x2a
 		}
@@ -4963,7 +4974,7 @@ func (x *fastReflection_MsgClaimMorseSupplier) ProtoMethods() *protoiface.Method
 				if wireType != 2 {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field MorseSignature", wireType)
 				}
-				var stringLen uint64
+				var byteLen int
 				for shift := uint(0); ; shift += 7 {
 					if shift >= 64 {
 						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
@@ -4973,23 +4984,25 @@ func (x *fastReflection_MsgClaimMorseSupplier) ProtoMethods() *protoiface.Method
 					}
 					b := dAtA[iNdEx]
 					iNdEx++
-					stringLen |= uint64(b&0x7F) << shift
+					byteLen |= int(b&0x7F) << shift
 					if b < 0x80 {
 						break
 					}
 				}
-				intStringLen := int(stringLen)
-				if intStringLen < 0 {
+				if byteLen < 0 {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
 				}
-				postIndex := iNdEx + intStringLen
+				postIndex := iNdEx + byteLen
 				if postIndex < 0 {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
 				}
 				if postIndex > l {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
 				}
-				x.MorseSignature = string(dAtA[iNdEx:postIndex])
+				x.MorseSignature = append(x.MorseSignature[:0], dAtA[iNdEx:postIndex]...)
+				if x.MorseSignature == nil {
+					x.MorseSignature = []byte{}
+				}
 				iNdEx = postIndex
 			case 4:
 				if wireType != 2 {
@@ -5031,7 +5044,7 @@ func (x *fastReflection_MsgClaimMorseSupplier) ProtoMethods() *protoiface.Method
 				if wireType != 2 {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field ServiceConfig", wireType)
 				}
-				var stringLen uint64
+				var msglen int
 				for shift := uint(0); ; shift += 7 {
 					if shift >= 64 {
 						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
@@ -5041,23 +5054,27 @@ func (x *fastReflection_MsgClaimMorseSupplier) ProtoMethods() *protoiface.Method
 					}
 					b := dAtA[iNdEx]
 					iNdEx++
-					stringLen |= uint64(b&0x7F) << shift
+					msglen |= int(b&0x7F) << shift
 					if b < 0x80 {
 						break
 					}
 				}
-				intStringLen := int(stringLen)
-				if intStringLen < 0 {
+				if msglen < 0 {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
 				}
-				postIndex := iNdEx + intStringLen
+				postIndex := iNdEx + msglen
 				if postIndex < 0 {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
 				}
 				if postIndex > l {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
 				}
-				x.ServiceConfig = string(dAtA[iNdEx:postIndex])
+				if x.ServiceConfig == nil {
+					x.ServiceConfig = &shared.SupplierServiceConfig{}
+				}
+				if err := options.Unmarshal(dAtA[iNdEx:postIndex], x.ServiceConfig); err != nil {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
+				}
 				iNdEx = postIndex
 			default:
 				iNdEx = preIndex
@@ -5095,22 +5112,22 @@ func (x *fastReflection_MsgClaimMorseSupplier) ProtoMethods() *protoiface.Method
 }
 
 var (
-	md_MsgClaimMorseSupplierResponse                      protoreflect.MessageDescriptor
-	fd_MsgClaimMorseSupplierResponse_morseSrcAddress      protoreflect.FieldDescriptor
-	fd_MsgClaimMorseSupplierResponse_claimedBalance       protoreflect.FieldDescriptor
-	fd_MsgClaimMorseSupplierResponse_serviceId            protoreflect.FieldDescriptor
-	fd_MsgClaimMorseSupplierResponse_claimedSupplierStake protoreflect.FieldDescriptor
-	fd_MsgClaimMorseSupplierResponse_claimedAtHeight      protoreflect.FieldDescriptor
+	md_MsgClaimMorseSupplierResponse                        protoreflect.MessageDescriptor
+	fd_MsgClaimMorseSupplierResponse_morse_src_address      protoreflect.FieldDescriptor
+	fd_MsgClaimMorseSupplierResponse_claimed_balance        protoreflect.FieldDescriptor
+	fd_MsgClaimMorseSupplierResponse_service_id             protoreflect.FieldDescriptor
+	fd_MsgClaimMorseSupplierResponse_claimed_supplier_stake protoreflect.FieldDescriptor
+	fd_MsgClaimMorseSupplierResponse_claimed_at_height      protoreflect.FieldDescriptor
 )
 
 func init() {
 	file_poktroll_migration_tx_proto_init()
 	md_MsgClaimMorseSupplierResponse = File_poktroll_migration_tx_proto.Messages().ByName("MsgClaimMorseSupplierResponse")
-	fd_MsgClaimMorseSupplierResponse_morseSrcAddress = md_MsgClaimMorseSupplierResponse.Fields().ByName("morseSrcAddress")
-	fd_MsgClaimMorseSupplierResponse_claimedBalance = md_MsgClaimMorseSupplierResponse.Fields().ByName("claimedBalance")
-	fd_MsgClaimMorseSupplierResponse_serviceId = md_MsgClaimMorseSupplierResponse.Fields().ByName("serviceId")
-	fd_MsgClaimMorseSupplierResponse_claimedSupplierStake = md_MsgClaimMorseSupplierResponse.Fields().ByName("claimedSupplierStake")
-	fd_MsgClaimMorseSupplierResponse_claimedAtHeight = md_MsgClaimMorseSupplierResponse.Fields().ByName("claimedAtHeight")
+	fd_MsgClaimMorseSupplierResponse_morse_src_address = md_MsgClaimMorseSupplierResponse.Fields().ByName("morse_src_address")
+	fd_MsgClaimMorseSupplierResponse_claimed_balance = md_MsgClaimMorseSupplierResponse.Fields().ByName("claimed_balance")
+	fd_MsgClaimMorseSupplierResponse_service_id = md_MsgClaimMorseSupplierResponse.Fields().ByName("service_id")
+	fd_MsgClaimMorseSupplierResponse_claimed_supplier_stake = md_MsgClaimMorseSupplierResponse.Fields().ByName("claimed_supplier_stake")
+	fd_MsgClaimMorseSupplierResponse_claimed_at_height = md_MsgClaimMorseSupplierResponse.Fields().ByName("claimed_at_height")
 }
 
 var _ protoreflect.Message = (*fastReflection_MsgClaimMorseSupplierResponse)(nil)
@@ -5180,31 +5197,31 @@ func (x *fastReflection_MsgClaimMorseSupplierResponse) Interface() protoreflect.
 func (x *fastReflection_MsgClaimMorseSupplierResponse) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
 	if x.MorseSrcAddress != "" {
 		value := protoreflect.ValueOfString(x.MorseSrcAddress)
-		if !f(fd_MsgClaimMorseSupplierResponse_morseSrcAddress, value) {
+		if !f(fd_MsgClaimMorseSupplierResponse_morse_src_address, value) {
 			return
 		}
 	}
 	if x.ClaimedBalance != nil {
 		value := protoreflect.ValueOfMessage(x.ClaimedBalance.ProtoReflect())
-		if !f(fd_MsgClaimMorseSupplierResponse_claimedBalance, value) {
+		if !f(fd_MsgClaimMorseSupplierResponse_claimed_balance, value) {
 			return
 		}
 	}
 	if x.ServiceId != "" {
 		value := protoreflect.ValueOfString(x.ServiceId)
-		if !f(fd_MsgClaimMorseSupplierResponse_serviceId, value) {
+		if !f(fd_MsgClaimMorseSupplierResponse_service_id, value) {
 			return
 		}
 	}
 	if x.ClaimedSupplierStake != nil {
 		value := protoreflect.ValueOfMessage(x.ClaimedSupplierStake.ProtoReflect())
-		if !f(fd_MsgClaimMorseSupplierResponse_claimedSupplierStake, value) {
+		if !f(fd_MsgClaimMorseSupplierResponse_claimed_supplier_stake, value) {
 			return
 		}
 	}
-	if x.ClaimedAtHeight != int32(0) {
-		value := protoreflect.ValueOfInt32(x.ClaimedAtHeight)
-		if !f(fd_MsgClaimMorseSupplierResponse_claimedAtHeight, value) {
+	if x.ClaimedAtHeight != int64(0) {
+		value := protoreflect.ValueOfInt64(x.ClaimedAtHeight)
+		if !f(fd_MsgClaimMorseSupplierResponse_claimed_at_height, value) {
 			return
 		}
 	}
@@ -5223,16 +5240,16 @@ func (x *fastReflection_MsgClaimMorseSupplierResponse) Range(f func(protoreflect
 // a repeated field is populated if it is non-empty.
 func (x *fastReflection_MsgClaimMorseSupplierResponse) Has(fd protoreflect.FieldDescriptor) bool {
 	switch fd.FullName() {
-	case "poktroll.migration.MsgClaimMorseSupplierResponse.morseSrcAddress":
+	case "poktroll.migration.MsgClaimMorseSupplierResponse.morse_src_address":
 		return x.MorseSrcAddress != ""
-	case "poktroll.migration.MsgClaimMorseSupplierResponse.claimedBalance":
+	case "poktroll.migration.MsgClaimMorseSupplierResponse.claimed_balance":
 		return x.ClaimedBalance != nil
-	case "poktroll.migration.MsgClaimMorseSupplierResponse.serviceId":
+	case "poktroll.migration.MsgClaimMorseSupplierResponse.service_id":
 		return x.ServiceId != ""
-	case "poktroll.migration.MsgClaimMorseSupplierResponse.claimedSupplierStake":
+	case "poktroll.migration.MsgClaimMorseSupplierResponse.claimed_supplier_stake":
 		return x.ClaimedSupplierStake != nil
-	case "poktroll.migration.MsgClaimMorseSupplierResponse.claimedAtHeight":
-		return x.ClaimedAtHeight != int32(0)
+	case "poktroll.migration.MsgClaimMorseSupplierResponse.claimed_at_height":
+		return x.ClaimedAtHeight != int64(0)
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.migration.MsgClaimMorseSupplierResponse"))
@@ -5249,16 +5266,16 @@ func (x *fastReflection_MsgClaimMorseSupplierResponse) Has(fd protoreflect.Field
 // Clear is a mutating operation and unsafe for concurrent use.
 func (x *fastReflection_MsgClaimMorseSupplierResponse) Clear(fd protoreflect.FieldDescriptor) {
 	switch fd.FullName() {
-	case "poktroll.migration.MsgClaimMorseSupplierResponse.morseSrcAddress":
+	case "poktroll.migration.MsgClaimMorseSupplierResponse.morse_src_address":
 		x.MorseSrcAddress = ""
-	case "poktroll.migration.MsgClaimMorseSupplierResponse.claimedBalance":
+	case "poktroll.migration.MsgClaimMorseSupplierResponse.claimed_balance":
 		x.ClaimedBalance = nil
-	case "poktroll.migration.MsgClaimMorseSupplierResponse.serviceId":
+	case "poktroll.migration.MsgClaimMorseSupplierResponse.service_id":
 		x.ServiceId = ""
-	case "poktroll.migration.MsgClaimMorseSupplierResponse.claimedSupplierStake":
+	case "poktroll.migration.MsgClaimMorseSupplierResponse.claimed_supplier_stake":
 		x.ClaimedSupplierStake = nil
-	case "poktroll.migration.MsgClaimMorseSupplierResponse.claimedAtHeight":
-		x.ClaimedAtHeight = int32(0)
+	case "poktroll.migration.MsgClaimMorseSupplierResponse.claimed_at_height":
+		x.ClaimedAtHeight = int64(0)
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.migration.MsgClaimMorseSupplierResponse"))
@@ -5275,21 +5292,21 @@ func (x *fastReflection_MsgClaimMorseSupplierResponse) Clear(fd protoreflect.Fie
 // of the value; to obtain a mutable reference, use Mutable.
 func (x *fastReflection_MsgClaimMorseSupplierResponse) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
 	switch descriptor.FullName() {
-	case "poktroll.migration.MsgClaimMorseSupplierResponse.morseSrcAddress":
+	case "poktroll.migration.MsgClaimMorseSupplierResponse.morse_src_address":
 		value := x.MorseSrcAddress
 		return protoreflect.ValueOfString(value)
-	case "poktroll.migration.MsgClaimMorseSupplierResponse.claimedBalance":
+	case "poktroll.migration.MsgClaimMorseSupplierResponse.claimed_balance":
 		value := x.ClaimedBalance
 		return protoreflect.ValueOfMessage(value.ProtoReflect())
-	case "poktroll.migration.MsgClaimMorseSupplierResponse.serviceId":
+	case "poktroll.migration.MsgClaimMorseSupplierResponse.service_id":
 		value := x.ServiceId
 		return protoreflect.ValueOfString(value)
-	case "poktroll.migration.MsgClaimMorseSupplierResponse.claimedSupplierStake":
+	case "poktroll.migration.MsgClaimMorseSupplierResponse.claimed_supplier_stake":
 		value := x.ClaimedSupplierStake
 		return protoreflect.ValueOfMessage(value.ProtoReflect())
-	case "poktroll.migration.MsgClaimMorseSupplierResponse.claimedAtHeight":
+	case "poktroll.migration.MsgClaimMorseSupplierResponse.claimed_at_height":
 		value := x.ClaimedAtHeight
-		return protoreflect.ValueOfInt32(value)
+		return protoreflect.ValueOfInt64(value)
 	default:
 		if descriptor.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.migration.MsgClaimMorseSupplierResponse"))
@@ -5310,16 +5327,16 @@ func (x *fastReflection_MsgClaimMorseSupplierResponse) Get(descriptor protorefle
 // Set is a mutating operation and unsafe for concurrent use.
 func (x *fastReflection_MsgClaimMorseSupplierResponse) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
 	switch fd.FullName() {
-	case "poktroll.migration.MsgClaimMorseSupplierResponse.morseSrcAddress":
+	case "poktroll.migration.MsgClaimMorseSupplierResponse.morse_src_address":
 		x.MorseSrcAddress = value.Interface().(string)
-	case "poktroll.migration.MsgClaimMorseSupplierResponse.claimedBalance":
+	case "poktroll.migration.MsgClaimMorseSupplierResponse.claimed_balance":
 		x.ClaimedBalance = value.Message().Interface().(*v1beta1.Coin)
-	case "poktroll.migration.MsgClaimMorseSupplierResponse.serviceId":
+	case "poktroll.migration.MsgClaimMorseSupplierResponse.service_id":
 		x.ServiceId = value.Interface().(string)
-	case "poktroll.migration.MsgClaimMorseSupplierResponse.claimedSupplierStake":
+	case "poktroll.migration.MsgClaimMorseSupplierResponse.claimed_supplier_stake":
 		x.ClaimedSupplierStake = value.Message().Interface().(*v1beta1.Coin)
-	case "poktroll.migration.MsgClaimMorseSupplierResponse.claimedAtHeight":
-		x.ClaimedAtHeight = int32(value.Int())
+	case "poktroll.migration.MsgClaimMorseSupplierResponse.claimed_at_height":
+		x.ClaimedAtHeight = value.Int()
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.migration.MsgClaimMorseSupplierResponse"))
@@ -5340,22 +5357,22 @@ func (x *fastReflection_MsgClaimMorseSupplierResponse) Set(fd protoreflect.Field
 // Mutable is a mutating operation and unsafe for concurrent use.
 func (x *fastReflection_MsgClaimMorseSupplierResponse) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
-	case "poktroll.migration.MsgClaimMorseSupplierResponse.claimedBalance":
+	case "poktroll.migration.MsgClaimMorseSupplierResponse.claimed_balance":
 		if x.ClaimedBalance == nil {
 			x.ClaimedBalance = new(v1beta1.Coin)
 		}
 		return protoreflect.ValueOfMessage(x.ClaimedBalance.ProtoReflect())
-	case "poktroll.migration.MsgClaimMorseSupplierResponse.claimedSupplierStake":
+	case "poktroll.migration.MsgClaimMorseSupplierResponse.claimed_supplier_stake":
 		if x.ClaimedSupplierStake == nil {
 			x.ClaimedSupplierStake = new(v1beta1.Coin)
 		}
 		return protoreflect.ValueOfMessage(x.ClaimedSupplierStake.ProtoReflect())
-	case "poktroll.migration.MsgClaimMorseSupplierResponse.morseSrcAddress":
-		panic(fmt.Errorf("field morseSrcAddress of message poktroll.migration.MsgClaimMorseSupplierResponse is not mutable"))
-	case "poktroll.migration.MsgClaimMorseSupplierResponse.serviceId":
-		panic(fmt.Errorf("field serviceId of message poktroll.migration.MsgClaimMorseSupplierResponse is not mutable"))
-	case "poktroll.migration.MsgClaimMorseSupplierResponse.claimedAtHeight":
-		panic(fmt.Errorf("field claimedAtHeight of message poktroll.migration.MsgClaimMorseSupplierResponse is not mutable"))
+	case "poktroll.migration.MsgClaimMorseSupplierResponse.morse_src_address":
+		panic(fmt.Errorf("field morse_src_address of message poktroll.migration.MsgClaimMorseSupplierResponse is not mutable"))
+	case "poktroll.migration.MsgClaimMorseSupplierResponse.service_id":
+		panic(fmt.Errorf("field service_id of message poktroll.migration.MsgClaimMorseSupplierResponse is not mutable"))
+	case "poktroll.migration.MsgClaimMorseSupplierResponse.claimed_at_height":
+		panic(fmt.Errorf("field claimed_at_height of message poktroll.migration.MsgClaimMorseSupplierResponse is not mutable"))
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.migration.MsgClaimMorseSupplierResponse"))
@@ -5369,18 +5386,18 @@ func (x *fastReflection_MsgClaimMorseSupplierResponse) Mutable(fd protoreflect.F
 // For lists, maps, and messages, this returns a new, empty, mutable value.
 func (x *fastReflection_MsgClaimMorseSupplierResponse) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
-	case "poktroll.migration.MsgClaimMorseSupplierResponse.morseSrcAddress":
+	case "poktroll.migration.MsgClaimMorseSupplierResponse.morse_src_address":
 		return protoreflect.ValueOfString("")
-	case "poktroll.migration.MsgClaimMorseSupplierResponse.claimedBalance":
+	case "poktroll.migration.MsgClaimMorseSupplierResponse.claimed_balance":
 		m := new(v1beta1.Coin)
 		return protoreflect.ValueOfMessage(m.ProtoReflect())
-	case "poktroll.migration.MsgClaimMorseSupplierResponse.serviceId":
+	case "poktroll.migration.MsgClaimMorseSupplierResponse.service_id":
 		return protoreflect.ValueOfString("")
-	case "poktroll.migration.MsgClaimMorseSupplierResponse.claimedSupplierStake":
+	case "poktroll.migration.MsgClaimMorseSupplierResponse.claimed_supplier_stake":
 		m := new(v1beta1.Coin)
 		return protoreflect.ValueOfMessage(m.ProtoReflect())
-	case "poktroll.migration.MsgClaimMorseSupplierResponse.claimedAtHeight":
-		return protoreflect.ValueOfInt32(int32(0))
+	case "poktroll.migration.MsgClaimMorseSupplierResponse.claimed_at_height":
+		return protoreflect.ValueOfInt64(int64(0))
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.migration.MsgClaimMorseSupplierResponse"))
@@ -5744,7 +5761,7 @@ func (x *fastReflection_MsgClaimMorseSupplierResponse) ProtoMethods() *protoifac
 					}
 					b := dAtA[iNdEx]
 					iNdEx++
-					x.ClaimedAtHeight |= int32(b&0x7F) << shift
+					x.ClaimedAtHeight |= int64(b&0x7F) << shift
 					if b < 0x80 {
 						break
 					}
@@ -6107,9 +6124,7 @@ type MsgClaimMorseApplication struct {
 	// The bech32-encoded address of the Shannon account to which the claimed tokens
 	// will be minted and from which the application will be staked.
 	ShannonDestAddress string `protobuf:"bytes,1,opt,name=shannon_dest_address,json=shannonDestAddress,proto3" json:"shannon_dest_address,omitempty"`
-	// The hex-encoded address of the Morse account whose balance will be claimed.
-	// E.g.: 00f9900606fa3d5c9179fc0c8513078a53a2073e
-	MorseSrcAddress string `protobuf:"bytes,2,opt,name=morse_src_address,json=morseSrcAddress,proto3" json:"morse_src_address,omitempty"`
+	MorseSrcAddress    string `protobuf:"bytes,2,opt,name=morse_src_address,json=morseSrcAddress,proto3" json:"morse_src_address,omitempty"`
 	// The hex-encoded signature, by the Morse account, of this message (where this field is nil).
 	// I.e.: morse_signature = private_key.sign(marshal(MsgClaimMorseAccount{morse_signature: nil, ...}))
 	MorseSignature []byte `protobuf:"bytes,3,opt,name=morse_signature,json=morseSignature,proto3" json:"morse_signature,omitempty"`
@@ -6250,16 +6265,27 @@ func (x *MsgClaimMorseApplicationResponse) GetServiceId() string {
 	return ""
 }
 
+// MsgClaimMorseSupplier is used to execute a claim (one-time minting of tokens on Shannon),
+// of the total tokens owned by the given Morse account, according to the on-chain MorseClaimableAccounts,
+// to the balance of the given Shannon account, followed by staking that Shannon account as a supplier.
 type MsgClaimMorseSupplier struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	ShannonDestAddress string        `protobuf:"bytes,1,opt,name=shannonDestAddress,proto3" json:"shannonDestAddress,omitempty"`
-	MorseSrcAddress    string        `protobuf:"bytes,2,opt,name=morseSrcAddress,proto3" json:"morseSrcAddress,omitempty"`
-	MorseSignature     string        `protobuf:"bytes,3,opt,name=morseSignature,proto3" json:"morseSignature,omitempty"`
-	Stake              *v1beta1.Coin `protobuf:"bytes,4,opt,name=stake,proto3" json:"stake,omitempty"`
-	ServiceConfig      string        `protobuf:"bytes,5,opt,name=serviceConfig,proto3" json:"serviceConfig,omitempty"`
+	// The bech32-encoded address of the Shannon account to which the claimed tokens
+	// will be minted and from which the supplier will be staked.
+	ShannonDestAddress string `protobuf:"bytes,1,opt,name=shannon_dest_address,json=shannonDestAddress,proto3" json:"shannon_dest_address,omitempty"`
+	// The hex-encoded address of the Morse account whose balance will be claimed.
+	// E.g.: 00f9900606fa3d5c9179fc0c8513078a53a2073e
+	MorseSrcAddress string `protobuf:"bytes,2,opt,name=morse_src_address,json=morseSrcAddress,proto3" json:"morse_src_address,omitempty"`
+	// The hex-encoded signature, by the Morse account, of this message (where this field is nil).
+	// I.e.: morse_signature = private_key.sign(marshal(MsgClaimMorseAccount{morse_signature: nil, ...}))
+	MorseSignature []byte `protobuf:"bytes,3,opt,name=morse_signature,json=morseSignature,proto3" json:"morse_signature,omitempty"`
+	// The upokt which the Shannon destination account will stake as an supplier.
+	Stake *v1beta1.Coin `protobuf:"bytes,4,opt,name=stake,proto3" json:"stake,omitempty"`
+	// The services this supplier is staked to request service for.
+	ServiceConfig *shared.SupplierServiceConfig `protobuf:"bytes,5,opt,name=service_config,json=serviceConfig,proto3" json:"service_config,omitempty"`
 }
 
 func (x *MsgClaimMorseSupplier) Reset() {
@@ -6296,11 +6322,11 @@ func (x *MsgClaimMorseSupplier) GetMorseSrcAddress() string {
 	return ""
 }
 
-func (x *MsgClaimMorseSupplier) GetMorseSignature() string {
+func (x *MsgClaimMorseSupplier) GetMorseSignature() []byte {
 	if x != nil {
 		return x.MorseSignature
 	}
-	return ""
+	return nil
 }
 
 func (x *MsgClaimMorseSupplier) GetStake() *v1beta1.Coin {
@@ -6310,23 +6336,32 @@ func (x *MsgClaimMorseSupplier) GetStake() *v1beta1.Coin {
 	return nil
 }
 
-func (x *MsgClaimMorseSupplier) GetServiceConfig() string {
+func (x *MsgClaimMorseSupplier) GetServiceConfig() *shared.SupplierServiceConfig {
 	if x != nil {
 		return x.ServiceConfig
 	}
-	return ""
+	return nil
 }
 
+// MsgClaimMorseSupplierResponse is returned from MsgClaimMorseSupplier.
+// It indicates the morse_src_address of the account which was claimed, the unstaked
+// balance claimed, the supplier stake, and the height at which the claim was committed.
 type MsgClaimMorseSupplierResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	MorseSrcAddress      string        `protobuf:"bytes,1,opt,name=morseSrcAddress,proto3" json:"morseSrcAddress,omitempty"`
-	ClaimedBalance       *v1beta1.Coin `protobuf:"bytes,2,opt,name=claimedBalance,proto3" json:"claimedBalance,omitempty"`
-	ServiceId            string        `protobuf:"bytes,3,opt,name=serviceId,proto3" json:"serviceId,omitempty"`
-	ClaimedSupplierStake *v1beta1.Coin `protobuf:"bytes,4,opt,name=claimedSupplierStake,proto3" json:"claimedSupplierStake,omitempty"`
-	ClaimedAtHeight      int32         `protobuf:"varint,5,opt,name=claimedAtHeight,proto3" json:"claimedAtHeight,omitempty"`
+	// The hex-encoded address of the Morse account whose balance will be claimed.
+	MorseSrcAddress string `protobuf:"bytes,1,opt,name=morse_src_address,json=morseSrcAddress,proto3" json:"morse_src_address,omitempty"`
+	// The unstaked balance which was claimed.
+	ClaimedBalance *v1beta1.Coin `protobuf:"bytes,2,opt,name=claimed_balance,json=claimedBalance,proto3" json:"claimed_balance,omitempty"`
+	// The stake of the supplier which was staked as a result of the claim.
+	// If the supplier was already staked, this amount does not include the initial stake (i.e. only the portion which was "claimed").
+	ServiceId string `protobuf:"bytes,3,opt,name=service_id,json=serviceId,proto3" json:"service_id,omitempty"`
+	// The height (on Shannon) at which the claim was created.
+	ClaimedSupplierStake *v1beta1.Coin `protobuf:"bytes,4,opt,name=claimed_supplier_stake,json=claimedSupplierStake,proto3" json:"claimed_supplier_stake,omitempty"`
+	// The service ID of the service which the supplier is staked for.
+	ClaimedAtHeight int64 `protobuf:"varint,5,opt,name=claimed_at_height,json=claimedAtHeight,proto3" json:"claimed_at_height,omitempty"`
 }
 
 func (x *MsgClaimMorseSupplierResponse) Reset() {
@@ -6377,7 +6412,7 @@ func (x *MsgClaimMorseSupplierResponse) GetClaimedSupplierStake() *v1beta1.Coin 
 	return nil
 }
 
-func (x *MsgClaimMorseSupplierResponse) GetClaimedAtHeight() int32 {
+func (x *MsgClaimMorseSupplierResponse) GetClaimedAtHeight() int64 {
 	if x != nil {
 		return x.ClaimedAtHeight
 	}
@@ -6534,93 +6569,111 @@ var file_poktroll_migration_tx_proto_rawDesc = []byte{
 	0x74, 0x12, 0x2d, 0x0a, 0x0a, 0x73, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x5f, 0x69, 0x64, 0x18,
 	0x05, 0x20, 0x01, 0x28, 0x09, 0x42, 0x0e, 0xea, 0xde, 0x1f, 0x0a, 0x73, 0x65, 0x72, 0x76, 0x69,
 	0x63, 0x65, 0x5f, 0x69, 0x64, 0x52, 0x09, 0x73, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x49, 0x64,
-	0x22, 0x8f, 0x02, 0x0a, 0x15, 0x4d, 0x73, 0x67, 0x43, 0x6c, 0x61, 0x69, 0x6d, 0x4d, 0x6f, 0x72,
-	0x73, 0x65, 0x53, 0x75, 0x70, 0x70, 0x6c, 0x69, 0x65, 0x72, 0x12, 0x2e, 0x0a, 0x12, 0x73, 0x68,
-	0x61, 0x6e, 0x6e, 0x6f, 0x6e, 0x44, 0x65, 0x73, 0x74, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73,
-	0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x12, 0x73, 0x68, 0x61, 0x6e, 0x6e, 0x6f, 0x6e, 0x44,
-	0x65, 0x73, 0x74, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x12, 0x28, 0x0a, 0x0f, 0x6d, 0x6f,
-	0x72, 0x73, 0x65, 0x53, 0x72, 0x63, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x18, 0x02, 0x20,
-	0x01, 0x28, 0x09, 0x52, 0x0f, 0x6d, 0x6f, 0x72, 0x73, 0x65, 0x53, 0x72, 0x63, 0x41, 0x64, 0x64,
-	0x72, 0x65, 0x73, 0x73, 0x12, 0x26, 0x0a, 0x0e, 0x6d, 0x6f, 0x72, 0x73, 0x65, 0x53, 0x69, 0x67,
-	0x6e, 0x61, 0x74, 0x75, 0x72, 0x65, 0x18, 0x03, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0e, 0x6d, 0x6f,
-	0x72, 0x73, 0x65, 0x53, 0x69, 0x67, 0x6e, 0x61, 0x74, 0x75, 0x72, 0x65, 0x12, 0x35, 0x0a, 0x05,
-	0x73, 0x74, 0x61, 0x6b, 0x65, 0x18, 0x04, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x19, 0x2e, 0x63, 0x6f,
-	0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x62, 0x61, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x62, 0x65, 0x74, 0x61,
-	0x31, 0x2e, 0x43, 0x6f, 0x69, 0x6e, 0x42, 0x04, 0xc8, 0xde, 0x1f, 0x00, 0x52, 0x05, 0x73, 0x74,
-	0x61, 0x6b, 0x65, 0x12, 0x24, 0x0a, 0x0d, 0x73, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x43, 0x6f,
-	0x6e, 0x66, 0x69, 0x67, 0x18, 0x05, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0d, 0x73, 0x65, 0x72, 0x76,
-	0x69, 0x63, 0x65, 0x43, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x3a, 0x17, 0x82, 0xe7, 0xb0, 0x2a, 0x12,
-	0x73, 0x68, 0x61, 0x6e, 0x6e, 0x6f, 0x6e, 0x44, 0x65, 0x73, 0x74, 0x41, 0x64, 0x64, 0x72, 0x65,
-	0x73, 0x73, 0x22, 0xaf, 0x02, 0x0a, 0x1d, 0x4d, 0x73, 0x67, 0x43, 0x6c, 0x61, 0x69, 0x6d, 0x4d,
-	0x6f, 0x72, 0x73, 0x65, 0x53, 0x75, 0x70, 0x70, 0x6c, 0x69, 0x65, 0x72, 0x52, 0x65, 0x73, 0x70,
-	0x6f, 0x6e, 0x73, 0x65, 0x12, 0x28, 0x0a, 0x0f, 0x6d, 0x6f, 0x72, 0x73, 0x65, 0x53, 0x72, 0x63,
-	0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0f, 0x6d,
-	0x6f, 0x72, 0x73, 0x65, 0x53, 0x72, 0x63, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x12, 0x47,
-	0x0a, 0x0e, 0x63, 0x6c, 0x61, 0x69, 0x6d, 0x65, 0x64, 0x42, 0x61, 0x6c, 0x61, 0x6e, 0x63, 0x65,
-	0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x19, 0x2e, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e,
-	0x62, 0x61, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x62, 0x65, 0x74, 0x61, 0x31, 0x2e, 0x43, 0x6f, 0x69,
-	0x6e, 0x42, 0x04, 0xc8, 0xde, 0x1f, 0x00, 0x52, 0x0e, 0x63, 0x6c, 0x61, 0x69, 0x6d, 0x65, 0x64,
-	0x42, 0x61, 0x6c, 0x61, 0x6e, 0x63, 0x65, 0x12, 0x1c, 0x0a, 0x09, 0x73, 0x65, 0x72, 0x76, 0x69,
-	0x63, 0x65, 0x49, 0x64, 0x18, 0x03, 0x20, 0x01, 0x28, 0x09, 0x52, 0x09, 0x73, 0x65, 0x72, 0x76,
-	0x69, 0x63, 0x65, 0x49, 0x64, 0x12, 0x53, 0x0a, 0x14, 0x63, 0x6c, 0x61, 0x69, 0x6d, 0x65, 0x64,
-	0x53, 0x75, 0x70, 0x70, 0x6c, 0x69, 0x65, 0x72, 0x53, 0x74, 0x61, 0x6b, 0x65, 0x18, 0x04, 0x20,
-	0x01, 0x28, 0x0b, 0x32, 0x19, 0x2e, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x62, 0x61, 0x73,
-	0x65, 0x2e, 0x76, 0x31, 0x62, 0x65, 0x74, 0x61, 0x31, 0x2e, 0x43, 0x6f, 0x69, 0x6e, 0x42, 0x04,
-	0xc8, 0xde, 0x1f, 0x00, 0x52, 0x14, 0x63, 0x6c, 0x61, 0x69, 0x6d, 0x65, 0x64, 0x53, 0x75, 0x70,
-	0x70, 0x6c, 0x69, 0x65, 0x72, 0x53, 0x74, 0x61, 0x6b, 0x65, 0x12, 0x28, 0x0a, 0x0f, 0x63, 0x6c,
-	0x61, 0x69, 0x6d, 0x65, 0x64, 0x41, 0x74, 0x48, 0x65, 0x69, 0x67, 0x68, 0x74, 0x18, 0x05, 0x20,
-	0x01, 0x28, 0x05, 0x52, 0x0f, 0x63, 0x6c, 0x61, 0x69, 0x6d, 0x65, 0x64, 0x41, 0x74, 0x48, 0x65,
-	0x69, 0x67, 0x68, 0x74, 0x32, 0xe3, 0x04, 0x0a, 0x03, 0x4d, 0x73, 0x67, 0x12, 0x60, 0x0a, 0x0c,
-	0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x50, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x12, 0x23, 0x2e, 0x70,
-	0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x6d, 0x69, 0x67, 0x72, 0x61, 0x74, 0x69, 0x6f,
-	0x6e, 0x2e, 0x4d, 0x73, 0x67, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x50, 0x61, 0x72, 0x61, 0x6d,
-	0x73, 0x1a, 0x2b, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x6d, 0x69, 0x67,
-	0x72, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x2e, 0x4d, 0x73, 0x67, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65,
-	0x50, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x90,
-	0x01, 0x0a, 0x1c, 0x49, 0x6d, 0x70, 0x6f, 0x72, 0x74, 0x4d, 0x6f, 0x72, 0x73, 0x65, 0x43, 0x6c,
-	0x61, 0x69, 0x6d, 0x61, 0x62, 0x6c, 0x65, 0x41, 0x63, 0x63, 0x6f, 0x75, 0x6e, 0x74, 0x73, 0x12,
-	0x33, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x6d, 0x69, 0x67, 0x72, 0x61,
-	0x74, 0x69, 0x6f, 0x6e, 0x2e, 0x4d, 0x73, 0x67, 0x49, 0x6d, 0x70, 0x6f, 0x72, 0x74, 0x4d, 0x6f,
-	0x72, 0x73, 0x65, 0x43, 0x6c, 0x61, 0x69, 0x6d, 0x61, 0x62, 0x6c, 0x65, 0x41, 0x63, 0x63, 0x6f,
-	0x75, 0x6e, 0x74, 0x73, 0x1a, 0x3b, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e,
-	0x6d, 0x69, 0x67, 0x72, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x2e, 0x4d, 0x73, 0x67, 0x49, 0x6d, 0x70,
-	0x6f, 0x72, 0x74, 0x4d, 0x6f, 0x72, 0x73, 0x65, 0x43, 0x6c, 0x61, 0x69, 0x6d, 0x61, 0x62, 0x6c,
-	0x65, 0x41, 0x63, 0x63, 0x6f, 0x75, 0x6e, 0x74, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73,
-	0x65, 0x12, 0x6f, 0x0a, 0x11, 0x43, 0x6c, 0x61, 0x69, 0x6d, 0x4d, 0x6f, 0x72, 0x73, 0x65, 0x41,
-	0x63, 0x63, 0x6f, 0x75, 0x6e, 0x74, 0x12, 0x28, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c,
-	0x6c, 0x2e, 0x6d, 0x69, 0x67, 0x72, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x2e, 0x4d, 0x73, 0x67, 0x43,
-	0x6c, 0x61, 0x69, 0x6d, 0x4d, 0x6f, 0x72, 0x73, 0x65, 0x41, 0x63, 0x63, 0x6f, 0x75, 0x6e, 0x74,
-	0x1a, 0x30, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x6d, 0x69, 0x67, 0x72,
-	0x61, 0x74, 0x69, 0x6f, 0x6e, 0x2e, 0x4d, 0x73, 0x67, 0x43, 0x6c, 0x61, 0x69, 0x6d, 0x4d, 0x6f,
-	0x72, 0x73, 0x65, 0x41, 0x63, 0x63, 0x6f, 0x75, 0x6e, 0x74, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e,
-	0x73, 0x65, 0x12, 0x7b, 0x0a, 0x15, 0x43, 0x6c, 0x61, 0x69, 0x6d, 0x4d, 0x6f, 0x72, 0x73, 0x65,
-	0x41, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x12, 0x2c, 0x2e, 0x70, 0x6f,
+	0x22, 0xb6, 0x03, 0x0a, 0x15, 0x4d, 0x73, 0x67, 0x43, 0x6c, 0x61, 0x69, 0x6d, 0x4d, 0x6f, 0x72,
+	0x73, 0x65, 0x53, 0x75, 0x70, 0x70, 0x6c, 0x69, 0x65, 0x72, 0x12, 0x62, 0x0a, 0x14, 0x73, 0x68,
+	0x61, 0x6e, 0x6e, 0x6f, 0x6e, 0x5f, 0x64, 0x65, 0x73, 0x74, 0x5f, 0x61, 0x64, 0x64, 0x72, 0x65,
+	0x73, 0x73, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x42, 0x30, 0xea, 0xde, 0x1f, 0x14, 0x73, 0x68,
+	0x61, 0x6e, 0x6e, 0x6f, 0x6e, 0x5f, 0x64, 0x65, 0x73, 0x74, 0x5f, 0x61, 0x64, 0x64, 0x72, 0x65,
+	0x73, 0x73, 0xd2, 0xb4, 0x2d, 0x14, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x41, 0x64, 0x64,
+	0x72, 0x65, 0x73, 0x73, 0x53, 0x74, 0x72, 0x69, 0x6e, 0x67, 0x52, 0x12, 0x73, 0x68, 0x61, 0x6e,
+	0x6e, 0x6f, 0x6e, 0x44, 0x65, 0x73, 0x74, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x12, 0x41,
+	0x0a, 0x11, 0x6d, 0x6f, 0x72, 0x73, 0x65, 0x5f, 0x73, 0x72, 0x63, 0x5f, 0x61, 0x64, 0x64, 0x72,
+	0x65, 0x73, 0x73, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x42, 0x15, 0xea, 0xde, 0x1f, 0x11, 0x6d,
+	0x6f, 0x72, 0x73, 0x65, 0x5f, 0x73, 0x72, 0x63, 0x5f, 0x61, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73,
+	0x52, 0x0f, 0x6d, 0x6f, 0x72, 0x73, 0x65, 0x53, 0x72, 0x63, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73,
+	0x73, 0x12, 0x3c, 0x0a, 0x0f, 0x6d, 0x6f, 0x72, 0x73, 0x65, 0x5f, 0x73, 0x69, 0x67, 0x6e, 0x61,
+	0x74, 0x75, 0x72, 0x65, 0x18, 0x03, 0x20, 0x01, 0x28, 0x0c, 0x42, 0x13, 0xea, 0xde, 0x1f, 0x0f,
+	0x6d, 0x6f, 0x72, 0x73, 0x65, 0x5f, 0x73, 0x69, 0x67, 0x6e, 0x61, 0x74, 0x75, 0x72, 0x65, 0x52,
+	0x0e, 0x6d, 0x6f, 0x72, 0x73, 0x65, 0x53, 0x69, 0x67, 0x6e, 0x61, 0x74, 0x75, 0x72, 0x65, 0x12,
+	0x3a, 0x0a, 0x05, 0x73, 0x74, 0x61, 0x6b, 0x65, 0x18, 0x04, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x19,
+	0x2e, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x62, 0x61, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x62,
+	0x65, 0x74, 0x61, 0x31, 0x2e, 0x43, 0x6f, 0x69, 0x6e, 0x42, 0x09, 0xea, 0xde, 0x1f, 0x05, 0x73,
+	0x74, 0x61, 0x6b, 0x65, 0x52, 0x05, 0x73, 0x74, 0x61, 0x6b, 0x65, 0x12, 0x61, 0x0a, 0x0e, 0x73,
+	0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x5f, 0x63, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x18, 0x05, 0x20,
+	0x01, 0x28, 0x0b, 0x32, 0x26, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x73,
+	0x68, 0x61, 0x72, 0x65, 0x64, 0x2e, 0x53, 0x75, 0x70, 0x70, 0x6c, 0x69, 0x65, 0x72, 0x53, 0x65,
+	0x72, 0x76, 0x69, 0x63, 0x65, 0x43, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x42, 0x12, 0xea, 0xde, 0x1f,
+	0x0e, 0x73, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x5f, 0x63, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x52,
+	0x0d, 0x73, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x43, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x3a, 0x19,
+	0x82, 0xe7, 0xb0, 0x2a, 0x14, 0x73, 0x68, 0x61, 0x6e, 0x6e, 0x6f, 0x6e, 0x5f, 0x64, 0x65, 0x73,
+	0x74, 0x5f, 0x61, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x22, 0xa2, 0x03, 0x0a, 0x1d, 0x4d, 0x73,
+	0x67, 0x43, 0x6c, 0x61, 0x69, 0x6d, 0x4d, 0x6f, 0x72, 0x73, 0x65, 0x53, 0x75, 0x70, 0x70, 0x6c,
+	0x69, 0x65, 0x72, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x41, 0x0a, 0x11, 0x6d,
+	0x6f, 0x72, 0x73, 0x65, 0x5f, 0x73, 0x72, 0x63, 0x5f, 0x61, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73,
+	0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x42, 0x15, 0xea, 0xde, 0x1f, 0x11, 0x6d, 0x6f, 0x72, 0x73,
+	0x65, 0x5f, 0x73, 0x72, 0x63, 0x5f, 0x61, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x52, 0x0f, 0x6d,
+	0x6f, 0x72, 0x73, 0x65, 0x53, 0x72, 0x63, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x12, 0x5b,
+	0x0a, 0x0f, 0x63, 0x6c, 0x61, 0x69, 0x6d, 0x65, 0x64, 0x5f, 0x62, 0x61, 0x6c, 0x61, 0x6e, 0x63,
+	0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x19, 0x2e, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73,
+	0x2e, 0x62, 0x61, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x62, 0x65, 0x74, 0x61, 0x31, 0x2e, 0x43, 0x6f,
+	0x69, 0x6e, 0x42, 0x17, 0xc8, 0xde, 0x1f, 0x00, 0xea, 0xde, 0x1f, 0x0f, 0x63, 0x6c, 0x61, 0x69,
+	0x6d, 0x65, 0x64, 0x5f, 0x62, 0x61, 0x6c, 0x61, 0x6e, 0x63, 0x65, 0x52, 0x0e, 0x63, 0x6c, 0x61,
+	0x69, 0x6d, 0x65, 0x64, 0x42, 0x61, 0x6c, 0x61, 0x6e, 0x63, 0x65, 0x12, 0x2d, 0x0a, 0x0a, 0x73,
+	0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x5f, 0x69, 0x64, 0x18, 0x03, 0x20, 0x01, 0x28, 0x09, 0x42,
+	0x0e, 0xea, 0xde, 0x1f, 0x0a, 0x73, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x5f, 0x69, 0x64, 0x52,
+	0x09, 0x73, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x49, 0x64, 0x12, 0x6f, 0x0a, 0x16, 0x63, 0x6c,
+	0x61, 0x69, 0x6d, 0x65, 0x64, 0x5f, 0x73, 0x75, 0x70, 0x70, 0x6c, 0x69, 0x65, 0x72, 0x5f, 0x73,
+	0x74, 0x61, 0x6b, 0x65, 0x18, 0x04, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x19, 0x2e, 0x63, 0x6f, 0x73,
+	0x6d, 0x6f, 0x73, 0x2e, 0x62, 0x61, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x62, 0x65, 0x74, 0x61, 0x31,
+	0x2e, 0x43, 0x6f, 0x69, 0x6e, 0x42, 0x1e, 0xc8, 0xde, 0x1f, 0x00, 0xea, 0xde, 0x1f, 0x16, 0x63,
+	0x6c, 0x61, 0x69, 0x6d, 0x65, 0x64, 0x5f, 0x73, 0x75, 0x70, 0x70, 0x6c, 0x69, 0x65, 0x72, 0x5f,
+	0x73, 0x74, 0x61, 0x6b, 0x65, 0x52, 0x14, 0x63, 0x6c, 0x61, 0x69, 0x6d, 0x65, 0x64, 0x53, 0x75,
+	0x70, 0x70, 0x6c, 0x69, 0x65, 0x72, 0x53, 0x74, 0x61, 0x6b, 0x65, 0x12, 0x41, 0x0a, 0x11, 0x63,
+	0x6c, 0x61, 0x69, 0x6d, 0x65, 0x64, 0x5f, 0x61, 0x74, 0x5f, 0x68, 0x65, 0x69, 0x67, 0x68, 0x74,
+	0x18, 0x05, 0x20, 0x01, 0x28, 0x03, 0x42, 0x15, 0xea, 0xde, 0x1f, 0x11, 0x63, 0x6c, 0x61, 0x69,
+	0x6d, 0x65, 0x64, 0x5f, 0x61, 0x74, 0x5f, 0x68, 0x65, 0x69, 0x67, 0x68, 0x74, 0x52, 0x0f, 0x63,
+	0x6c, 0x61, 0x69, 0x6d, 0x65, 0x64, 0x41, 0x74, 0x48, 0x65, 0x69, 0x67, 0x68, 0x74, 0x32, 0xe3,
+	0x04, 0x0a, 0x03, 0x4d, 0x73, 0x67, 0x12, 0x60, 0x0a, 0x0c, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65,
+	0x50, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x12, 0x23, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c,
+	0x6c, 0x2e, 0x6d, 0x69, 0x67, 0x72, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x2e, 0x4d, 0x73, 0x67, 0x55,
+	0x70, 0x64, 0x61, 0x74, 0x65, 0x50, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x1a, 0x2b, 0x2e, 0x70, 0x6f,
 	0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x6d, 0x69, 0x67, 0x72, 0x61, 0x74, 0x69, 0x6f, 0x6e,
-	0x2e, 0x4d, 0x73, 0x67, 0x43, 0x6c, 0x61, 0x69, 0x6d, 0x4d, 0x6f, 0x72, 0x73, 0x65, 0x41, 0x70,
-	0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x1a, 0x34, 0x2e, 0x70, 0x6f, 0x6b, 0x74,
+	0x2e, 0x4d, 0x73, 0x67, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x50, 0x61, 0x72, 0x61, 0x6d, 0x73,
+	0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x90, 0x01, 0x0a, 0x1c, 0x49, 0x6d, 0x70,
+	0x6f, 0x72, 0x74, 0x4d, 0x6f, 0x72, 0x73, 0x65, 0x43, 0x6c, 0x61, 0x69, 0x6d, 0x61, 0x62, 0x6c,
+	0x65, 0x41, 0x63, 0x63, 0x6f, 0x75, 0x6e, 0x74, 0x73, 0x12, 0x33, 0x2e, 0x70, 0x6f, 0x6b, 0x74,
 	0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x6d, 0x69, 0x67, 0x72, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x2e, 0x4d,
-	0x73, 0x67, 0x43, 0x6c, 0x61, 0x69, 0x6d, 0x4d, 0x6f, 0x72, 0x73, 0x65, 0x41, 0x70, 0x70, 0x6c,
-	0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12,
-	0x72, 0x0a, 0x12, 0x43, 0x6c, 0x61, 0x69, 0x6d, 0x4d, 0x6f, 0x72, 0x73, 0x65, 0x53, 0x75, 0x70,
-	0x70, 0x6c, 0x69, 0x65, 0x72, 0x12, 0x29, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c,
-	0x2e, 0x6d, 0x69, 0x67, 0x72, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x2e, 0x4d, 0x73, 0x67, 0x43, 0x6c,
-	0x61, 0x69, 0x6d, 0x4d, 0x6f, 0x72, 0x73, 0x65, 0x53, 0x75, 0x70, 0x70, 0x6c, 0x69, 0x65, 0x72,
-	0x1a, 0x31, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x6d, 0x69, 0x67, 0x72,
+	0x73, 0x67, 0x49, 0x6d, 0x70, 0x6f, 0x72, 0x74, 0x4d, 0x6f, 0x72, 0x73, 0x65, 0x43, 0x6c, 0x61,
+	0x69, 0x6d, 0x61, 0x62, 0x6c, 0x65, 0x41, 0x63, 0x63, 0x6f, 0x75, 0x6e, 0x74, 0x73, 0x1a, 0x3b,
+	0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x6d, 0x69, 0x67, 0x72, 0x61, 0x74,
+	0x69, 0x6f, 0x6e, 0x2e, 0x4d, 0x73, 0x67, 0x49, 0x6d, 0x70, 0x6f, 0x72, 0x74, 0x4d, 0x6f, 0x72,
+	0x73, 0x65, 0x43, 0x6c, 0x61, 0x69, 0x6d, 0x61, 0x62, 0x6c, 0x65, 0x41, 0x63, 0x63, 0x6f, 0x75,
+	0x6e, 0x74, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x6f, 0x0a, 0x11, 0x43,
+	0x6c, 0x61, 0x69, 0x6d, 0x4d, 0x6f, 0x72, 0x73, 0x65, 0x41, 0x63, 0x63, 0x6f, 0x75, 0x6e, 0x74,
+	0x12, 0x28, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x6d, 0x69, 0x67, 0x72,
 	0x61, 0x74, 0x69, 0x6f, 0x6e, 0x2e, 0x4d, 0x73, 0x67, 0x43, 0x6c, 0x61, 0x69, 0x6d, 0x4d, 0x6f,
-	0x72, 0x73, 0x65, 0x53, 0x75, 0x70, 0x70, 0x6c, 0x69, 0x65, 0x72, 0x52, 0x65, 0x73, 0x70, 0x6f,
-	0x6e, 0x73, 0x65, 0x1a, 0x05, 0x80, 0xe7, 0xb0, 0x2a, 0x01, 0x42, 0xb3, 0x01, 0xd8, 0xe2, 0x1e,
-	0x01, 0x0a, 0x16, 0x63, 0x6f, 0x6d, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e,
-	0x6d, 0x69, 0x67, 0x72, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x42, 0x07, 0x54, 0x78, 0x50, 0x72, 0x6f,
-	0x74, 0x6f, 0x50, 0x01, 0x5a, 0x23, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x73, 0x64, 0x6b, 0x2e,
-	0x69, 0x6f, 0x2f, 0x61, 0x70, 0x69, 0x2f, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2f,
-	0x6d, 0x69, 0x67, 0x72, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0xa2, 0x02, 0x03, 0x50, 0x4d, 0x58, 0xaa,
-	0x02, 0x12, 0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x4d, 0x69, 0x67, 0x72, 0x61,
-	0x74, 0x69, 0x6f, 0x6e, 0xca, 0x02, 0x12, 0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x5c,
-	0x4d, 0x69, 0x67, 0x72, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0xe2, 0x02, 0x1e, 0x50, 0x6f, 0x6b, 0x74,
-	0x72, 0x6f, 0x6c, 0x6c, 0x5c, 0x4d, 0x69, 0x67, 0x72, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x5c, 0x47,
-	0x50, 0x42, 0x4d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0xea, 0x02, 0x13, 0x50, 0x6f, 0x6b,
-	0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x3a, 0x3a, 0x4d, 0x69, 0x67, 0x72, 0x61, 0x74, 0x69, 0x6f, 0x6e,
-	0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x72, 0x73, 0x65, 0x41, 0x63, 0x63, 0x6f, 0x75, 0x6e, 0x74, 0x1a, 0x30, 0x2e, 0x70, 0x6f, 0x6b,
+	0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x6d, 0x69, 0x67, 0x72, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x2e,
+	0x4d, 0x73, 0x67, 0x43, 0x6c, 0x61, 0x69, 0x6d, 0x4d, 0x6f, 0x72, 0x73, 0x65, 0x41, 0x63, 0x63,
+	0x6f, 0x75, 0x6e, 0x74, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x7b, 0x0a, 0x15,
+	0x43, 0x6c, 0x61, 0x69, 0x6d, 0x4d, 0x6f, 0x72, 0x73, 0x65, 0x41, 0x70, 0x70, 0x6c, 0x69, 0x63,
+	0x61, 0x74, 0x69, 0x6f, 0x6e, 0x12, 0x2c, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c,
+	0x2e, 0x6d, 0x69, 0x67, 0x72, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x2e, 0x4d, 0x73, 0x67, 0x43, 0x6c,
+	0x61, 0x69, 0x6d, 0x4d, 0x6f, 0x72, 0x73, 0x65, 0x41, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74,
+	0x69, 0x6f, 0x6e, 0x1a, 0x34, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x6d,
+	0x69, 0x67, 0x72, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x2e, 0x4d, 0x73, 0x67, 0x43, 0x6c, 0x61, 0x69,
+	0x6d, 0x4d, 0x6f, 0x72, 0x73, 0x65, 0x41, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f,
+	0x6e, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x72, 0x0a, 0x12, 0x43, 0x6c, 0x61,
+	0x69, 0x6d, 0x4d, 0x6f, 0x72, 0x73, 0x65, 0x53, 0x75, 0x70, 0x70, 0x6c, 0x69, 0x65, 0x72, 0x12,
+	0x29, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x6d, 0x69, 0x67, 0x72, 0x61,
+	0x74, 0x69, 0x6f, 0x6e, 0x2e, 0x4d, 0x73, 0x67, 0x43, 0x6c, 0x61, 0x69, 0x6d, 0x4d, 0x6f, 0x72,
+	0x73, 0x65, 0x53, 0x75, 0x70, 0x70, 0x6c, 0x69, 0x65, 0x72, 0x1a, 0x31, 0x2e, 0x70, 0x6f, 0x6b,
+	0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x6d, 0x69, 0x67, 0x72, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x2e,
+	0x4d, 0x73, 0x67, 0x43, 0x6c, 0x61, 0x69, 0x6d, 0x4d, 0x6f, 0x72, 0x73, 0x65, 0x53, 0x75, 0x70,
+	0x70, 0x6c, 0x69, 0x65, 0x72, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x1a, 0x05, 0x80,
+	0xe7, 0xb0, 0x2a, 0x01, 0x42, 0xb3, 0x01, 0xd8, 0xe2, 0x1e, 0x01, 0x0a, 0x16, 0x63, 0x6f, 0x6d,
+	0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x6d, 0x69, 0x67, 0x72, 0x61, 0x74,
+	0x69, 0x6f, 0x6e, 0x42, 0x07, 0x54, 0x78, 0x50, 0x72, 0x6f, 0x74, 0x6f, 0x50, 0x01, 0x5a, 0x23,
+	0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x73, 0x64, 0x6b, 0x2e, 0x69, 0x6f, 0x2f, 0x61, 0x70, 0x69,
+	0x2f, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2f, 0x6d, 0x69, 0x67, 0x72, 0x61, 0x74,
+	0x69, 0x6f, 0x6e, 0xa2, 0x02, 0x03, 0x50, 0x4d, 0x58, 0xaa, 0x02, 0x12, 0x50, 0x6f, 0x6b, 0x74,
+	0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x4d, 0x69, 0x67, 0x72, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0xca, 0x02,
+	0x12, 0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x5c, 0x4d, 0x69, 0x67, 0x72, 0x61, 0x74,
+	0x69, 0x6f, 0x6e, 0xe2, 0x02, 0x1e, 0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x5c, 0x4d,
+	0x69, 0x67, 0x72, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x5c, 0x47, 0x50, 0x42, 0x4d, 0x65, 0x74, 0x61,
+	0x64, 0x61, 0x74, 0x61, 0xea, 0x02, 0x13, 0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x3a,
+	0x3a, 0x4d, 0x69, 0x67, 0x72, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74,
+	0x6f, 0x33,
 }
 
 var (
@@ -6651,6 +6704,7 @@ var file_poktroll_migration_tx_proto_goTypes = []interface{}{
 	(*MorseAccountState)(nil),                       // 11: poktroll.migration.MorseAccountState
 	(*v1beta1.Coin)(nil),                            // 12: cosmos.base.v1beta1.Coin
 	(*shared.ApplicationServiceConfig)(nil),         // 13: poktroll.shared.ApplicationServiceConfig
+	(*shared.SupplierServiceConfig)(nil),            // 14: poktroll.shared.SupplierServiceConfig
 }
 var file_poktroll_migration_tx_proto_depIdxs = []int32{
 	10, // 0: poktroll.migration.MsgUpdateParams.params:type_name -> poktroll.migration.Params
@@ -6661,23 +6715,24 @@ var file_poktroll_migration_tx_proto_depIdxs = []int32{
 	12, // 5: poktroll.migration.MsgClaimMorseApplicationResponse.claimed_balance:type_name -> cosmos.base.v1beta1.Coin
 	12, // 6: poktroll.migration.MsgClaimMorseApplicationResponse.claimedApplicationStake:type_name -> cosmos.base.v1beta1.Coin
 	12, // 7: poktroll.migration.MsgClaimMorseSupplier.stake:type_name -> cosmos.base.v1beta1.Coin
-	12, // 8: poktroll.migration.MsgClaimMorseSupplierResponse.claimedBalance:type_name -> cosmos.base.v1beta1.Coin
-	12, // 9: poktroll.migration.MsgClaimMorseSupplierResponse.claimedSupplierStake:type_name -> cosmos.base.v1beta1.Coin
-	0,  // 10: poktroll.migration.Msg.UpdateParams:input_type -> poktroll.migration.MsgUpdateParams
-	2,  // 11: poktroll.migration.Msg.ImportMorseClaimableAccounts:input_type -> poktroll.migration.MsgImportMorseClaimableAccounts
-	4,  // 12: poktroll.migration.Msg.ClaimMorseAccount:input_type -> poktroll.migration.MsgClaimMorseAccount
-	6,  // 13: poktroll.migration.Msg.ClaimMorseApplication:input_type -> poktroll.migration.MsgClaimMorseApplication
-	8,  // 14: poktroll.migration.Msg.ClaimMorseSupplier:input_type -> poktroll.migration.MsgClaimMorseSupplier
-	1,  // 15: poktroll.migration.Msg.UpdateParams:output_type -> poktroll.migration.MsgUpdateParamsResponse
-	3,  // 16: poktroll.migration.Msg.ImportMorseClaimableAccounts:output_type -> poktroll.migration.MsgImportMorseClaimableAccountsResponse
-	5,  // 17: poktroll.migration.Msg.ClaimMorseAccount:output_type -> poktroll.migration.MsgClaimMorseAccountResponse
-	7,  // 18: poktroll.migration.Msg.ClaimMorseApplication:output_type -> poktroll.migration.MsgClaimMorseApplicationResponse
-	9,  // 19: poktroll.migration.Msg.ClaimMorseSupplier:output_type -> poktroll.migration.MsgClaimMorseSupplierResponse
-	15, // [15:20] is the sub-list for method output_type
-	10, // [10:15] is the sub-list for method input_type
-	10, // [10:10] is the sub-list for extension type_name
-	10, // [10:10] is the sub-list for extension extendee
-	0,  // [0:10] is the sub-list for field type_name
+	14, // 8: poktroll.migration.MsgClaimMorseSupplier.service_config:type_name -> poktroll.shared.SupplierServiceConfig
+	12, // 9: poktroll.migration.MsgClaimMorseSupplierResponse.claimed_balance:type_name -> cosmos.base.v1beta1.Coin
+	12, // 10: poktroll.migration.MsgClaimMorseSupplierResponse.claimed_supplier_stake:type_name -> cosmos.base.v1beta1.Coin
+	0,  // 11: poktroll.migration.Msg.UpdateParams:input_type -> poktroll.migration.MsgUpdateParams
+	2,  // 12: poktroll.migration.Msg.ImportMorseClaimableAccounts:input_type -> poktroll.migration.MsgImportMorseClaimableAccounts
+	4,  // 13: poktroll.migration.Msg.ClaimMorseAccount:input_type -> poktroll.migration.MsgClaimMorseAccount
+	6,  // 14: poktroll.migration.Msg.ClaimMorseApplication:input_type -> poktroll.migration.MsgClaimMorseApplication
+	8,  // 15: poktroll.migration.Msg.ClaimMorseSupplier:input_type -> poktroll.migration.MsgClaimMorseSupplier
+	1,  // 16: poktroll.migration.Msg.UpdateParams:output_type -> poktroll.migration.MsgUpdateParamsResponse
+	3,  // 17: poktroll.migration.Msg.ImportMorseClaimableAccounts:output_type -> poktroll.migration.MsgImportMorseClaimableAccountsResponse
+	5,  // 18: poktroll.migration.Msg.ClaimMorseAccount:output_type -> poktroll.migration.MsgClaimMorseAccountResponse
+	7,  // 19: poktroll.migration.Msg.ClaimMorseApplication:output_type -> poktroll.migration.MsgClaimMorseApplicationResponse
+	9,  // 20: poktroll.migration.Msg.ClaimMorseSupplier:output_type -> poktroll.migration.MsgClaimMorseSupplierResponse
+	16, // [16:21] is the sub-list for method output_type
+	11, // [11:16] is the sub-list for method input_type
+	11, // [11:11] is the sub-list for extension type_name
+	11, // [11:11] is the sub-list for extension extendee
+	0,  // [0:11] is the sub-list for field type_name
 }
 
 func init() { file_poktroll_migration_tx_proto_init() }
