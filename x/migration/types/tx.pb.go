@@ -530,6 +530,8 @@ func (m *MsgClaimMorseApplicationResponse) GetServiceId() string {
 // MsgClaimMorseSupplier is used to execute a claim (one-time minting of tokens on Shannon),
 // of the total tokens owned by the given Morse account, according to the on-chain MorseClaimableAccounts,
 // to the balance of the given Shannon account, followed by staking that Shannon account as a supplier.
+// NOTE: The supplier module's staking fee parameter (at the time of claiming) is deducted from the
+// claimed balance.
 type MsgClaimMorseSupplier struct {
 	// The bech32-encoded address of the Shannon account to which the claimed tokens
 	// will be minted and from which the supplier will be staked.

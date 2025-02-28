@@ -106,7 +106,11 @@ func (k msgServer) ClaimMorseSupplier(ctx context.Context, msg *migrationtypes.M
 		return nil, err
 	}
 
-	// TODO_IN_THIS_COMMIT: comment...
+	// DEV_NOTE: While In the case where the claimed Shannon account is already staked
+	// as a supplier AND the MsgClaimMorseSupplier stake amount ("default" or otherwise)
+	// which is less than the current application stake amount, woule result in a negative
+	// claimedAppStake. This value is only used in event(s) and the msg response.
+	// It is set to zero in this case.
 	claimedSupplierStake, err := supplier.Stake.SafeSub(initialSupplierStake)
 	if err != nil {
 		if !strings.Contains(err.Error(), "negative coin amount") {

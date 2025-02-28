@@ -62,7 +62,6 @@ func (s *MigrationModuleTestSuite) SetupTest() {
 		},
 		RevShare: []*sharedtypes.ServiceRevenueShare{
 			{
-				// TODO_IN_THIS_COMMIT: this should be a specific address which is asserted against...
 				Address:            sample.AccAddress(),
 				RevSharePercentage: 100,
 			},

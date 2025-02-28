@@ -164,12 +164,9 @@ func (s *MigrationModuleTestSuite) TestClaimMorseExistingSupplier() {
 	supplierParams, err := supplierClient.GetParams(s.SdkCtx())
 	s.NoError(err)
 
-	// TODO_IN_THIS_COMMIT: update comment(s)
-	// TODO_IN_THIS_COMMIT: investigate  integration app optfn to add service(s)
-	// Create service(s)...
+	// Create a service which is different from the one which the claim re-stakes for.
 	svcOwnerAddr := cosmostypes.MustAccAddressFromBech32(sample.AccAddress())
 	s.FundAddress(s.T(), svcOwnerAddr, serviceParams.GetAddServiceFee().Amount.Int64()+1)
-	// TODO_IN_THIS_COMMIT: extract service IDs to consts
 	s.ServiceSuite.AddService(s.T(), "nosvc", svcOwnerAddr.String(), 1)
 
 	for testCaseIdx, testCase := range testMorseClaimSupplierCases {
@@ -237,12 +234,13 @@ func (s *MigrationModuleTestSuite) TestClaimMorseExistingSupplier() {
 			}
 
 			expectedClaimedBalance := expectedMorseClaimableAccount.TotalTokens().Sub(expectedClaimedStake)
-			// TODO_IN_THIS_COMMIT: comment(s) / NOTE(s) that staking fee comes out of the claimed tokens (unstaked + staked balance).
+
+			// Deduct the staking from the claimed tokens (unstaked + staked balance).
 			expectedBalance := expectedClaimedBalance.
 				Add(*shannonDestPreClaimBalance).
 				Sub(*supplierStakingFee)
 
-			// TODO_IN_THIS_COMMIT: comment... add down-stake to balance...
+			// If "down-staking", add the difference to the expected balance.
 			downStakeAmount := supplierStakeToClaim.Amount.Sub(initialSupplierStake.Amount)
 			if downStakeAmount.IsNegative() {
 				expectedBalance = expectedBalance.Add(cosmostypes.NewCoin(volatile.DenomuPOKT, downStakeAmount.Neg()))
