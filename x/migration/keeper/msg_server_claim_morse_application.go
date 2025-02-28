@@ -24,7 +24,7 @@ func (k msgServer) ClaimMorseApplication(ctx context.Context, msg *migrationtype
 
 	shannonAccAddr, err := cosmostypes.AccAddressFromBech32(msg.ShannonDestAddress)
 	// DEV_NOTE: This SHOULD NEVER happen as the shannonDestAddress is validated
-	// in MsgClaimMorseAccount#ValidateBasic().
+	// in MsgClaimMorseApplication#ValidateBasic().
 	if err != nil {
 		return nil, status.Error(
 			codes.InvalidArgument,
