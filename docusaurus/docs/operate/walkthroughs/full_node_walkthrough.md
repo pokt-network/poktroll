@@ -169,7 +169,7 @@ SEEDS_URL="https://raw.githubusercontent.com/pokt-network/pocket-network-genesis
 SEEDS=$(curl -s "$SEEDS_URL")
 sed -i -e "s|^seeds *=.*|seeds = \"$SEEDS\"|" $HOME/.poktroll/config/config.toml
 
-# Set External Address
+# [OPTIONAL] Set External Address. The default external address is the external IP of the host.
 EXTERNAL_IP=$(curl -s https://api.ipify.org)
 sed -i -e "s|^external_address *=.*|external_address = \"${EXTERNAL_IP}:26656\"|" $HOME/.poktroll/config/config.toml
 ```
@@ -216,21 +216,25 @@ To ensure your node can properly participate in the P2P network, you need to mak
 
 This may involve one or more of the following:
 
-1. **Configuring your firewall for UFW**:
+a. **Configuring your firewall for UFW**:
 
    ```bash
+   # [REQUIRED] Expose P2P
    sudo ufw allow 26656/tcp
+
+   # [OPTIONAL] Expose additional ports
+   sudo ufw allow 26657/tcp # Enable RPC from Internet (requires config change in .poktroll/config/config.toml
    ```
 
-2. **Configuring your firewall for iptables**:
+b. **Configuring your firewall for iptables**:
 
    ```bash
    sudo iptables -A INPUT -p tcp --dport 26656 -j ACCEPT
    ```
 
-3. **Cloud Provider Settings**: If running on a cloud provider (AWS, GCP, Azure, etc.), ensure you configure the security groups or firewall rules to allow inbound traffic on port 26656.
-4. **Router Configuration**: If running behind a router, configure port forwarding for port 26656 to your node's internal IP address.
-5. **Verify your port** is accessible using a tool like netcat or telnet from another machine:
+**Cloud Provider Settings**: If running on a cloud provider (AWS, GCP, Azure, etc.), ensure you configure the security groups or firewall rules to allow inbound traffic on port 26656.
+c. **Router Configuration**: If running behind a router, configure port forwarding for port 26656 to your node's internal IP address.
+d. **Verify your port** is accessible using a tool like netcat or telnet from another machine:
 
    ```bash
    nc -vz {EXTERNAL_IP} 26656
