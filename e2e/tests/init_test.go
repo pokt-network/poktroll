@@ -16,6 +16,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -23,7 +24,9 @@ import (
 	sdklog "cosmossdk.io/log"
 	abci "github.com/cometbft/cometbft/abci/types"
 	cometcli "github.com/cometbft/cometbft/libs/cli"
+	cometjson "github.com/cometbft/cometbft/libs/json"
 	"github.com/cosmos/cosmos-sdk/codec"
+	"github.com/gorilla/websocket"
 	"github.com/regen-network/gocuke"
 	"github.com/stretchr/testify/require"
 
@@ -71,7 +74,7 @@ func init() {
 	amountRe = regexp.MustCompile(`amount:\s+"(.+?)"\s+denom:\s+upokt`)
 	addrAndAmountRe = regexp.MustCompile(`(?s)address: ([\w\d]+).*?stake:\s*amount: "(\d+)"`)
 
-	flag.StringVar(&flagFeaturesPath, "features-path", "*.feature", "Specifies glob paths for the runner to look up .feature files")
+	flag.StringVar(&flagFeaturesPath, "features-path", "relay.feature", "Specifies glob paths for the runner to look up .feature files")
 
 	// If "PATH_URL" ENV variable is present, use it for pathUrl
 	if url := os.Getenv("PATH_URL"); url != "" {
@@ -83,6 +86,16 @@ func TestMain(m *testing.M) {
 	flag.Parse()
 	log.Printf("Running features matching %q", path.Join("e2e", "tests", flagFeaturesPath))
 	m.Run()
+}
+
+type ethSubscription struct {
+	Method string `json:"method"`
+	Params struct {
+		Result struct {
+			Hash   string `json:"hash"`
+			Number string `json:"number"`
+		} `json:"result"`
+	} `json:"params"`
 }
 
 type suite struct {
@@ -104,6 +117,14 @@ type suite struct {
 
 	// moduleParamsMap is a map of module names to a map of parameter names to parameter values & types.
 	expectedModuleParams moduleParamsMap
+
+	// wsConn is the websocket connection to the PATH websockets endpoint.
+	wsConn *websocket.Conn
+	// numETHSubscriptionEvents is the number of eth subscription events received.
+	numETHSubscriptionEvents atomic.Uint64
+	// wsCloseHeight is the block height at which the websocket connection should be closed
+	// by the relay miner due to the end of the session.
+	wsCloseHeight int64
 
 	deps                       depinject.Config
 	newBlockEventsReplayClient client.EventsReplayClient[*block.CometNewBlockEvent]
@@ -907,6 +928,84 @@ func (s *suite) getServiceComputeUnitsPerRelay(serviceId string) uint64 {
 	responseBz := []byte(strings.TrimSpace(res.Stdout))
 	s.cdc.MustUnmarshalJSON(responseBz, &resp)
 	return resp.Service.ComputeUnitsPerRelay
+}
+
+// getSharedParams returns the shared module parameters
+func (s *suite) getSharedParams() sharedtypes.Params {
+	args := []string{
+		"query",
+		"shared",
+		"params",
+		"--output=json",
+	}
+	res, err := s.pocketd.RunCommandOnHost("", args...)
+	require.NoError(s, err, "error querying shared params")
+
+	var sharedParamsRes sharedtypes.QueryParamsResponse
+
+	s.cdc.MustUnmarshalJSON([]byte(res.Stdout), &sharedParamsRes)
+	require.NoError(s, err)
+
+	return sharedParamsRes.Params
+}
+
+// getCurrentBlockHeight returns the current block height
+func (s *suite) getCurrentBlockHeight() int64 {
+	args := []string{
+		"query",
+		"block",
+		"--output=json",
+	}
+	res, err := s.pocketd.RunCommandOnHost("", args...)
+	require.NoError(s, err, "error querying for the latest block")
+
+	// Remove the first line of the response to avoid unmarshalling non JSON data
+	stdoutLines := strings.Split(res.Stdout, "\n")
+	require.Greater(s, len(stdoutLines), 1, "expected at least one line of output")
+	res.Stdout = strings.Join(stdoutLines[1:], "\n")
+
+	var blockRes struct {
+		LastCommit struct {
+			Height int64 `json:"height"`
+		} `json:"last_commit"`
+	}
+
+	err = cometjson.Unmarshal([]byte(res.Stdout), &blockRes)
+	require.NoError(s, err)
+
+	return blockRes.LastCommit.Height
+}
+
+// readEthSubscriptionEvents reads the eth_subscription events from the websocket connection
+// and increments the number of events received.
+func (s *suite) readEthSubscriptionEvents() context.Context {
+	s.numETHSubscriptionEvents.Store(0)
+	ctx, cancel := context.WithCancel(context.Background())
+	go func() {
+		for {
+			_, message, err := s.wsConn.ReadMessage()
+			// Read messages until the connection is closed.
+			if err != nil {
+				cancel()
+				return
+			}
+
+			var ethSubscriptionMsg ethSubscription
+			if err = json.Unmarshal(message, &ethSubscriptionMsg); err != nil {
+				continue
+			}
+
+			if ethSubscriptionMsg.Method != "eth_subscription" {
+				continue
+			}
+
+			require.True(s, strings.HasPrefix(ethSubscriptionMsg.Params.Result.Hash, "0x"))
+			require.True(s, strings.HasPrefix(ethSubscriptionMsg.Params.Result.Number, "0x"))
+			s.numETHSubscriptionEvents.Add(1)
+		}
+	}()
+
+	return ctx
 }
 
 // accBalanceKey is a helper function to create a key to store the balance

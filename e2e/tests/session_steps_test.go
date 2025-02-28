@@ -5,12 +5,15 @@ package e2e
 import (
 	"context"
 	"fmt"
+	"net/http"
+	"net/url"
 	"slices"
 	"strconv"
 	"time"
 
 	abci "github.com/cometbft/cometbft/abci/types"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
+	"github.com/gorilla/websocket"
 	"github.com/regen-network/gocuke"
 	"github.com/stretchr/testify/require"
 
@@ -19,6 +22,7 @@ import (
 	testutilevents "github.com/pokt-network/poktroll/testutil/events"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
 )
@@ -213,36 +217,55 @@ func (suite *suite) TheModuleParametersAreSetAsFollows(moduleName string, params
 	suite.TheAccountSendsAnAuthzExecMessageToUpdateAllModuleParams("pnf", moduleName, params)
 }
 
-func (suite *suite) TheApplicationEstablishesAWebsocketsConnectionWithSupplier(appName string, supplierOperatorName string) {
-	app, ok := accNameToAppMap[appName]
-	require.True(suite, ok, "application %s not found", appName)
-
-	supplier, ok := operatorAccNameToSupplierMap[supplierOperatorName]
-	require.True(suite, ok, "supplier %s not found", supplierOperatorName)
-}
-
-func (s *suite) TheApplicationReceivesSubscriptionEventsFromSupplier(appName string, supplierOperatorName string) {
-	// Get the application and supplier
+func (s *suite) TheApplicationEstablishesAWebsocketsConnectionForService(appName string, testWsServiceId string) {
 	app, ok := accNameToAppMap[appName]
 	require.True(s, ok, "application %s not found", appName)
 
-	supplier, ok := operatorAccNameToSupplierMap[supplierOperatorName]
-	require.True(s, ok, "supplier %s not found", supplierOperatorName)
-}
+	sharedParams := s.getSharedParams()
 
-func (s *suite) TheSubscriptionIsClosedBlockBeforeClaimWindowOpenHeightIsReached(blocksBeforeStr string) {
-	// Convert the string number to int64
-	blocksBeforeNum, err := strconv.ParseInt(blocksBeforeStr, 10, 64)
+	currentHeight := s.getCurrentBlockHeight()
+	nextSessionStartHeight := sharedtypes.GetNextSessionStartHeight(&sharedParams, currentHeight)
+	s.waitForBlockHeight(nextSessionStartHeight)
+
+	s.wsCloseHeight = sharedtypes.GetClaimWindowOpenHeight(&sharedParams, nextSessionStartHeight) - 1
+
+	header := http.Header{}
+	header.Add("App-Address", app.Address)
+	header.Add("Target-Service-Id", testWsServiceId)
+
+	wsUrl, err := url.Parse(pathUrl)
 	require.NoError(s, err)
 
-	// Get current block height
+	wsUrl.Scheme = "ws"
+
+	wsConn, _, err := websocket.DefaultDialer.Dial(wsUrl.String(), header)
+	require.NoError(s, err)
+
+	subscriptionMsg := `{"id":1,"jsonrpc":"2.0","method":"eth_subscribe","params":["newHeads"]}`
+	err = wsConn.WriteMessage(websocket.TextMessage, []byte(subscriptionMsg))
+	require.NoError(s, err)
+
+	s.wsConn = wsConn
+}
+
+func (s *suite) TheUserReceivesEthereumSubscriptionEvents() {
+	ctx := s.readEthSubscriptionEvents()
+
+	for {
+		select {
+		case <-time.After(eventTimeout):
+			s.Fatalf("ERROR: timed out waiting for subscription events")
+		case <-ctx.Done():
+			require.Greater(s, s.numETHSubscriptionEvents.Load(), uint64(0), "no subscription events received")
+			return
+		}
+	}
+}
+
+func (s *suite) TheSubscriptionIsClosedBeforeClaimWindowOpenHeightIsReached() {
 	currentHeight := s.getCurrentBlockHeight()
 
-	// Calculate the target height (1 block before claim window)
-	targetHeight := currentHeight - blocksBeforeNum
-
-	// Wait until we reach the target height
-	s.waitForBlockHeight(targetHeight)
+	require.Equal(s, s.wsCloseHeight, currentHeight)
 }
 
 func (s *suite) sendRelaysForSession(
