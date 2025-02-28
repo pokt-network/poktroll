@@ -103,6 +103,20 @@ source ~/.profile
 
 Follow the official Cosmovisor installation instructions [here](https://docs.cosmos.network/main/build/tooling/cosmovisor#installation).
 
+Add `cosmovisor` to your `$PATH`
+```bash
+# This uses the default go behavior and may be different if you customize your $GOPATH or $GOBIN
+export PATH=$PATH:$HOME/go/bin
+
+# Verify the install
+cosmovisor version
+```
+:::info `cosmovisor` Install Verification
+This may output an `Error` message. As long as it prints `cosmovisor version: <some_version>`, this worked correctly.
+
+:::
+
+
 ### 5. Install `poktrolld`
 
 Follow the instructions in the [poktrolld Installation Guide](../../tools/user_guide/poktrolld_cli.md) page to install `poktrolld`.
