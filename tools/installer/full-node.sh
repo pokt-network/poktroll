@@ -104,6 +104,15 @@ install_dependencies() {
     # Try to install missing dependencies
     print_color $YELLOW "Installing missing dependencies: ${to_install[*]}"
 
+    # Add debugging information
+    print_color $YELLOW "Debugging package manager detection:"
+    print_color $YELLOW "Debian version file exists: $([ -f /etc/debian_version ] && echo 'Yes' || echo 'No')"
+    print_color $YELLOW "Ubuntu version file exists: $([ -f /etc/ubuntu_version ] && echo 'Yes' || echo 'No')"
+    print_color $YELLOW "OS release file exists: $([ -f /etc/os-release ] && echo 'Yes' || echo 'No')"
+    print_color $YELLOW "apt-get command exists: $(command -v apt-get &>/dev/null && echo 'Yes' || echo 'No')"
+    print_color $YELLOW "yum command exists: $(command -v yum &>/dev/null && echo 'Yes' || echo 'No')"
+    print_color $YELLOW "dnf command exists: $(command -v dnf &>/dev/null && echo 'Yes' || echo 'No')"
+    
     # Detect package manager
     if [ -f /etc/debian_version ] || [ -f /etc/ubuntu_version ] || grep -qi ubuntu /etc/os-release 2>/dev/null || grep -qi debian /etc/os-release 2>/dev/null; then
         print_color $GREEN "Detected Debian/Ubuntu-based distribution."
@@ -194,14 +203,36 @@ install_dependencies() {
         print_color $RED "Unsupported distribution. Could not detect package manager."
         print_color $RED "Please install the following dependencies manually: ${to_install[*]}"
         print_color $RED "For aria2c, the package name is usually 'aria2'"
-        print_color $RED "After installing dependencies, run this script again."
-        exit 1
+        
+        # Provide specific installation commands for common package managers
+        print_color $YELLOW "You can try one of these commands to install aria2:"
+        print_color $YELLOW "  - For Debian/Ubuntu: sudo apt-get update && sudo apt-get install -y aria2"
+        print_color $YELLOW "  - For RHEL/CentOS/Fedora: sudo yum install -y aria2"
+        print_color $YELLOW "  - For newer Fedora: sudo dnf install -y aria2"
+        
+        # Ask if user wants to continue without all dependencies
+        read -p "Do you want to continue without all dependencies? (y/N): " continue_without_deps
+        if [[ $continue_without_deps =~ ^[Yy] ]]; then
+            print_color $YELLOW "Continuing installation without all dependencies. Some features may not work."
+            return 0
+        else
+            print_color $RED "Installation aborted. Please install the missing dependencies and run the script again."
+            exit 1
+        fi
     fi
 
     # Verify all dependencies were installed successfully
     missing_deps=0
     for dep in "${to_install[@]}"; do
         if ! command -v "$dep" &>/dev/null; then
+            # Special handling for aria2c - sometimes it's installed but not in PATH
+            if [ "$dep" = "aria2c" ] && command -v aria2 &>/dev/null; then
+                print_color $GREEN "aria2 is installed (but aria2c command not found). Creating symlink."
+                ln -sf $(command -v aria2) /usr/local/bin/aria2c
+                chmod +x /usr/local/bin/aria2c
+                continue
+            fi
+            
             print_color $RED "Failed to install $dep"
             ((missing_deps++))
         else
@@ -221,8 +252,16 @@ install_dependencies() {
                 fi
             fi
         done
-        print_color $RED "After installing dependencies, run this script again."
-        exit 1
+        
+        # Ask if user wants to continue without all dependencies
+        read -p "Do you want to continue without all dependencies? (y/N): " continue_without_deps
+        if [[ $continue_without_deps =~ ^[Yy] ]]; then
+            print_color $YELLOW "Continuing installation without all dependencies. Some features may not work."
+            return 0
+        else
+            print_color $RED "Installation aborted. Please install the missing dependencies and run the script again."
+            exit 1
+        fi
     fi
 
     print_color $GREEN "All required dependencies installed successfully."
