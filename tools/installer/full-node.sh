@@ -537,15 +537,17 @@ setup_from_snapshot() {
         # --seed-time=0: Don't seed after download completes
         # --file-allocation=none: Faster startup
         # --continue=true: Resume download if interrupted
-        # --max-connection-per-server=16: More connections for faster download
+        # --max-connection-per-server=4: Limit connections to web server to reduce load
         # --max-concurrent-downloads=16: Download multiple pieces simultaneously
         # --split=16: Split file into more segments for parallel download
         # --bt-enable-lpd=true: Enable Local Peer Discovery
-        # --bt-max-peers=0: No limit on number of peers
-        # --bt-request-peer-speed-limit=10M: Only request from peers above 10MB/s
+        # --bt-max-peers=100: High number of peers for better distribution
+        # --bt-prioritize-piece=head,tail: Download beginning and end first for verification
+        # --bt-seed-unverified: Seed without verifying to help the network
         aria2c --seed-time=0 --dir="$DOWNLOAD_DIR" --file-allocation=none --continue=true \
-               --max-connection-per-server=16 --max-concurrent-downloads=16 --split=16 \
-               --bt-enable-lpd=true --bt-max-peers=0 --bt-request-peer-speed-limit=10M \
+               --max-connection-per-server=4 --max-concurrent-downloads=16 --split=16 \
+               --bt-enable-lpd=true --bt-max-peers=100 --bt-prioritize-piece=head,tail \
+               --bt-seed-unverified \
                "$TORRENT_FILE"
         
         # Check if download was successful
