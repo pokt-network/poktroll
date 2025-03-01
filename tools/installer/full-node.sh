@@ -1,6 +1,16 @@
 #!/bin/bash
 
+# Set error handling
 set -e
+
+# Error handling function
+handle_error() {
+    print_color $RED "An error occurred during installation at line $1"
+    exit 1
+}
+
+# Set up trap to catch errors
+trap 'handle_error $LINENO' ERR
 
 # Colors for output
 RED='\033[0;31m'
@@ -104,135 +114,54 @@ install_dependencies() {
     # Try to install missing dependencies
     print_color $YELLOW "Installing missing dependencies: ${to_install[*]}"
 
-    # Add debugging information
-    print_color $YELLOW "Debugging package manager detection:"
-    print_color $YELLOW "Debian version file exists: $([ -f /etc/debian_version ] && echo 'Yes' || echo 'No')"
-    print_color $YELLOW "Ubuntu version file exists: $([ -f /etc/ubuntu_version ] && echo 'Yes' || echo 'No')"
-    print_color $YELLOW "OS release file exists: $([ -f /etc/os-release ] && echo 'Yes' || echo 'No')"
-    print_color $YELLOW "apt-get command exists: $(command -v apt-get &>/dev/null && echo 'Yes' || echo 'No')"
-    print_color $YELLOW "yum command exists: $(command -v yum &>/dev/null && echo 'Yes' || echo 'No')"
-    print_color $YELLOW "dnf command exists: $(command -v dnf &>/dev/null && echo 'Yes' || echo 'No')"
-    
-    # Detect package manager
-    if [ -f /etc/debian_version ] || [ -f /etc/ubuntu_version ] || grep -qi ubuntu /etc/os-release 2>/dev/null || grep -qi debian /etc/os-release 2>/dev/null; then
-        print_color $GREEN "Detected Debian/Ubuntu-based distribution."
+    # Simple package manager detection and installation
+    if command -v apt-get &>/dev/null; then
+        print_color $GREEN "Using apt-get to install packages."
         apt-get update
-        # Special handling for aria2 package name
-        local apt_packages=()
+        
+        # Install packages
         for dep in "${to_install[@]}"; do
             if [ "$dep" = "aria2c" ]; then
-                apt_packages+=("aria2")
+                apt-get install -y aria2
             else
-                apt_packages+=("$dep")
+                apt-get install -y "$dep"
             fi
         done
-        
-        if [ ${#apt_packages[@]} -gt 0 ]; then
-            print_color $YELLOW "Running: apt-get install -y ${apt_packages[*]}"
-            apt-get install -y "${apt_packages[@]}"
-        fi
-    elif [ -f /etc/redhat-release ] || [ -f /etc/centos-release ] || grep -qi "rhel" /etc/os-release 2>/dev/null || grep -qi "centos" /etc/os-release 2>/dev/null || grep -qi "fedora" /etc/os-release 2>/dev/null; then
-        print_color $GREEN "Detected RedHat/CentOS/Fedora-based distribution."
-        yum update -y
-        # Special handling for aria2 package name
-        local yum_packages=()
-        for dep in "${to_install[@]}"; do
-            if [ "$dep" = "aria2c" ]; then
-                yum_packages+=("aria2")
-            else
-                yum_packages+=("$dep")
-            fi
-        done
-        
-        if [ ${#yum_packages[@]} -gt 0 ]; then
-            print_color $YELLOW "Running: yum install -y ${yum_packages[*]}"
-            yum install -y "${yum_packages[@]}"
-        fi
-    elif command -v apt-get &>/dev/null; then
-        print_color $GREEN "Found apt-get package manager."
-        apt-get update
-        # Special handling for aria2 package name
-        local apt_packages=()
-        for dep in "${to_install[@]}"; do
-            if [ "$dep" = "aria2c" ]; then
-                apt_packages+=("aria2")
-            else
-                apt_packages+=("$dep")
-            fi
-        done
-        
-        if [ ${#apt_packages[@]} -gt 0 ]; then
-            print_color $YELLOW "Running: apt-get install -y ${apt_packages[*]}"
-            apt-get install -y "${apt_packages[@]}"
-        fi
     elif command -v yum &>/dev/null; then
-        print_color $GREEN "Found yum package manager."
+        print_color $GREEN "Using yum to install packages."
         yum update -y
-        # Special handling for aria2 package name
-        local yum_packages=()
+        
+        # Install packages
         for dep in "${to_install[@]}"; do
             if [ "$dep" = "aria2c" ]; then
-                yum_packages+=("aria2")
+                yum install -y aria2
             else
-                yum_packages+=("$dep")
+                yum install -y "$dep"
             fi
         done
-        
-        if [ ${#yum_packages[@]} -gt 0 ]; then
-            print_color $YELLOW "Running: yum install -y ${yum_packages[*]}"
-            yum install -y "${yum_packages[@]}"
-        fi
     elif command -v dnf &>/dev/null; then
-        print_color $GREEN "Found dnf package manager."
+        print_color $GREEN "Using dnf to install packages."
         dnf check-update
-        # Special handling for aria2 package name
-        local dnf_packages=()
+        
+        # Install packages
         for dep in "${to_install[@]}"; do
             if [ "$dep" = "aria2c" ]; then
-                dnf_packages+=("aria2")
+                dnf install -y aria2
             else
-                dnf_packages+=("$dep")
+                dnf install -y "$dep"
             fi
         done
-        
-        if [ ${#dnf_packages[@]} -gt 0 ]; then
-            print_color $YELLOW "Running: dnf install -y ${dnf_packages[*]}"
-            dnf install -y "${dnf_packages[@]}"
-        fi
     else
-        print_color $RED "Unsupported distribution. Could not detect package manager."
+        print_color $RED "Could not detect a supported package manager (apt-get, yum, or dnf)."
         print_color $RED "Please install the following dependencies manually: ${to_install[*]}"
         print_color $RED "For aria2c, the package name is usually 'aria2'"
-        
-        # Provide specific installation commands for common package managers
-        print_color $YELLOW "You can try one of these commands to install aria2:"
-        print_color $YELLOW "  - For Debian/Ubuntu: sudo apt-get update && sudo apt-get install -y aria2"
-        print_color $YELLOW "  - For RHEL/CentOS/Fedora: sudo yum install -y aria2"
-        print_color $YELLOW "  - For newer Fedora: sudo dnf install -y aria2"
-        
-        # Ask if user wants to continue without all dependencies
-        read -p "Do you want to continue without all dependencies? (y/N): " continue_without_deps
-        if [[ $continue_without_deps =~ ^[Yy] ]]; then
-            print_color $YELLOW "Continuing installation without all dependencies. Some features may not work."
-            return 0
-        else
-            print_color $RED "Installation aborted. Please install the missing dependencies and run the script again."
-            exit 1
-        fi
+        return 1
     fi
 
     # Verify all dependencies were installed successfully
     missing_deps=0
-    for dep in "${to_install[@]}"; do
+    for dep in "${deps[@]}"; do
         if ! command -v "$dep" &>/dev/null; then
-            # Special handling for aria2c - sometimes it's installed but not in PATH
-            if [ "$dep" = "aria2c" ] && command -v aria2 &>/dev/null; then
-                print_color $GREEN "aria2 is installed (but aria2c command not found). Creating symlink."
-                ln -sf $(command -v aria2) /usr/local/bin/aria2c
-                chmod +x /usr/local/bin/aria2c
-                continue
-            fi
-            
             print_color $RED "Failed to install $dep"
             ((missing_deps++))
         else
@@ -242,26 +171,8 @@ install_dependencies() {
 
     if [ $missing_deps -gt 0 ]; then
         print_color $RED "Some dependencies failed to install."
-        print_color $RED "Please install the following dependencies manually: "
-        for dep in "${to_install[@]}"; do
-            if ! command -v "$dep" &>/dev/null; then
-                if [ "$dep" = "aria2c" ]; then
-                    print_color $RED "  - aria2 (provides aria2c command)"
-                else
-                    print_color $RED "  - $dep"
-                fi
-            fi
-        done
-        
-        # Ask if user wants to continue without all dependencies
-        read -p "Do you want to continue without all dependencies? (y/N): " continue_without_deps
-        if [[ $continue_without_deps =~ ^[Yy] ]]; then
-            print_color $YELLOW "Continuing installation without all dependencies. Some features may not work."
-            return 0
-        else
-            print_color $RED "Installation aborted. Please install the missing dependencies and run the script again."
-            exit 1
-        fi
+        print_color $YELLOW "Continuing with installation, but some features may not work."
+        return 0
     fi
 
     print_color $GREEN "All required dependencies installed successfully."
@@ -748,9 +659,15 @@ configure_ufw() {
 main() {
     print_color $GREEN "Welcome to the Poktroll Full Node Install Script!"
     echo ""
+    
+    # Basic checks
     check_os
     check_root
+    
+    # Install dependencies
     install_dependencies
+    
+    # Continue with installation
     get_user_input
     create_user
     setup_env_vars
