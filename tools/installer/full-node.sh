@@ -122,6 +122,7 @@ install_dependencies() {
         # Install packages
         for dep in "${to_install[@]}"; do
             if [ "$dep" = "aria2c" ]; then
+                print_color $YELLOW "Installing aria2 package for aria2c command..."
                 apt-get install -y aria2
             else
                 apt-get install -y "$dep"
@@ -134,6 +135,7 @@ install_dependencies() {
         # Install packages
         for dep in "${to_install[@]}"; do
             if [ "$dep" = "aria2c" ]; then
+                print_color $YELLOW "Installing aria2 package for aria2c command..."
                 yum install -y aria2
             else
                 yum install -y "$dep"
@@ -146,6 +148,7 @@ install_dependencies() {
         # Install packages
         for dep in "${to_install[@]}"; do
             if [ "$dep" = "aria2c" ]; then
+                print_color $YELLOW "Installing aria2 package for aria2c command..."
                 dnf install -y aria2
             else
                 dnf install -y "$dep"
@@ -490,9 +493,9 @@ setup_from_snapshot() {
     print_color $YELLOW "Using snapshot for $NETWORK at height $LATEST_SNAPSHOT_HEIGHT"
     print_color $YELLOW "Snapshot URL: $SNAPSHOT_URL"
     
-    # Create a temporary directory for the snapshot
-    SNAPSHOT_DIR="/tmp/poktroll_snapshot"
-    mkdir -p "$SNAPSHOT_DIR"
+    # Create a temporary directory for the snapshot in the user's home directory
+    SNAPSHOT_DIR="/home/$POKTROLL_USER/poktroll_snapshot"
+    sudo -u "$POKTROLL_USER" mkdir -p "$SNAPSHOT_DIR"
     
     # Download and extract the snapshot
     print_color $YELLOW "Downloading and extracting snapshot. This may take a while..."
@@ -506,7 +509,7 @@ setup_from_snapshot() {
     
     # Download the torrent file
     TORRENT_FILE="$SNAPSHOT_DIR/snapshot.torrent"
-    curl -L -o "$TORRENT_FILE" "$SNAPSHOT_URL"
+    sudo -u "$POKTROLL_USER" curl -L -o "$TORRENT_FILE" "$SNAPSHOT_URL"
     
     if [ $? -ne 0 ]; then
         print_color $RED "Failed to download torrent file. Falling back to genesis sync."
@@ -516,7 +519,7 @@ setup_from_snapshot() {
         
         # Set the download directory
         DOWNLOAD_DIR="$SNAPSHOT_DIR/download"
-        mkdir -p "$DOWNLOAD_DIR"
+        sudo -u "$POKTROLL_USER" mkdir -p "$DOWNLOAD_DIR"
         
         # Use aria2c to download the snapshot
         print_color $YELLOW "Starting torrent download with aria2c. This may take a while..."
@@ -593,7 +596,9 @@ EOF
     fi
     
     # Clean up
-    rm -rf "$SNAPSHOT_DIR"
+    print_color $YELLOW "Cleaning up temporary snapshot files..."
+    sudo -u "$POKTROLL_USER" rm -rf "$SNAPSHOT_DIR"
+    print_color $GREEN "Cleanup completed."
     echo ""
 }
 
