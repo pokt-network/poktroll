@@ -16,6 +16,12 @@ POCKET_NETWORK_GENESIS_BRANCH="master"
 # instead of syncing from genesis, which can be time-consuming.
 # Snapshots are stored at https://snapshots.us-nj.poktroll.com/
 # Supports archival snapshots for all networks (testnet-alpha, testnet-beta, mainnet).
+#
+# This script exclusively uses torrent downloads for snapshots:
+# - Torrents provide faster, more reliable downloads for large files
+# - Distributes bandwidth load across multiple peers
+# - All torrents include web seeds, so they'll work even without peers
+# - Uses aria2c with optimized settings for maximum download performance
 
 # Function to print colored output
 print_color() {
@@ -73,7 +79,7 @@ get_os_type() {
 # Function to check and install dependencies
 install_dependencies() {
     local missing_deps=0
-    local deps=("jq" "curl" "tar" "wget" "zstd")
+    local deps=("jq" "curl" "tar" "wget" "zstd" "aria2c")
     local to_install=()
 
     print_color $YELLOW "About to start installing dependencies..."
@@ -100,10 +106,34 @@ install_dependencies() {
 
     if [ -f /etc/debian_version ]; then
         apt-get update
-        apt-get install -y "${to_install[@]}"
+        # Special handling for aria2 package name
+        local apt_packages=()
+        for dep in "${to_install[@]}"; do
+            if [ "$dep" = "aria2c" ]; then
+                apt_packages+=("aria2")
+            else
+                apt_packages+=("$dep")
+            fi
+        done
+        
+        if [ ${#apt_packages[@]} -gt 0 ]; then
+            apt-get install -y "${apt_packages[@]}"
+        fi
     elif [ -f /etc/redhat-release ]; then
         yum update -y
-        yum install -y "${to_install[@]}"
+        # Special handling for aria2 package name
+        local yum_packages=()
+        for dep in "${to_install[@]}"; do
+            if [ "$dep" = "aria2c" ]; then
+                yum_packages+=("aria2")
+            else
+                yum_packages+=("$dep")
+            fi
+        done
+        
+        if [ ${#yum_packages[@]} -gt 0 ]; then
+            yum install -y "${yum_packages[@]}"
+        fi
     else
         print_color $RED "Unsupported distribution. Please install ${to_install[*]} manually."
         return 1
@@ -125,7 +155,7 @@ install_dependencies() {
         return 1
     fi
 
-    print_color $GREEN "All dependencies installed successfully."
+    print_color $GREEN "All required dependencies installed successfully."
     return 0
 }
 
@@ -156,7 +186,7 @@ get_user_input() {
     USE_SNAPSHOT=false
     echo "Do you want to sync from:"
     echo "1) Genesis (slower, but verifies the entire chain)"
-    echo "2) Snapshot (faster, but requires trusting the snapshot provider)"
+    echo "2) Snapshot via torrent (faster, distributed download)"
     read -p "Enter your choice (1-2): " sync_choice
     
     case $sync_choice in
@@ -164,6 +194,10 @@ get_user_input() {
         USE_SNAPSHOT=true
         # Set snapshot base URL
         SNAPSHOT_BASE_URL="https://snapshots.us-nj.poktroll.com"
+        
+        # Always use torrent
+        USE_TORRENT=true
+        print_color $GREEN "Will use torrent for snapshot download (faster and more reliable)."
         
         # Check if the network endpoint exists
         if ! curl --output /dev/null --silent --head --fail "$SNAPSHOT_BASE_URL/$NETWORK-latest-archival.txt"; then
@@ -180,9 +214,6 @@ get_user_input() {
             else
                 print_color $GREEN "Latest snapshot height for $NETWORK: $LATEST_SNAPSHOT_HEIGHT"
                 # Get version from snapshot
-                # Note: When using a snapshot, we must use the version that the snapshot was created with,
-                # not the version from genesis. This is because the snapshot may have been created with
-                # a different version than what's in the genesis file.
                 SNAPSHOT_VERSION=$(curl -s "$SNAPSHOT_BASE_URL/$NETWORK-$LATEST_SNAPSHOT_HEIGHT-version.txt")
                 if [ -z "$SNAPSHOT_VERSION" ]; then
                     print_color $RED "Failed to fetch snapshot version. Falling back to genesis sync."
@@ -190,25 +221,28 @@ get_user_input() {
                 else
                     print_color $GREEN "Snapshot version: $SNAPSHOT_VERSION"
                     
-                    # Check if the archival snapshot exists
-                    SNAPSHOT_URL="$SNAPSHOT_BASE_URL/$NETWORK-$LATEST_SNAPSHOT_HEIGHT-archival.tar.zst"
-                    if curl --output /dev/null --silent --head --fail "$SNAPSHOT_URL"; then
-                        print_color $GREEN "Found archival snapshot at: $SNAPSHOT_URL"
+                    # First try latest torrent
+                    TORRENT_URL="$SNAPSHOT_BASE_URL/$NETWORK-$NETWORK-latest-archival.torrent"
+                    if curl --output /dev/null --silent --head --fail "$TORRENT_URL"; then
+                        print_color $GREEN "Found torrent file at: $TORRENT_URL"
+                        SNAPSHOT_URL="$TORRENT_URL"
                     else
-                        # Try alternative format (.tar.gz)
-                        SNAPSHOT_URL="$SNAPSHOT_BASE_URL/$NETWORK-$LATEST_SNAPSHOT_HEIGHT-archival.tar.gz"
-                        if curl --output /dev/null --silent --head --fail "$SNAPSHOT_URL"; then
-                            print_color $GREEN "Found archival snapshot at: $SNAPSHOT_URL"
-                            # Set flag for .tar.gz format
-                            SNAPSHOT_FORMAT="tar.gz"
+                        # Try specific height torrent
+                        TORRENT_URL="$SNAPSHOT_BASE_URL/$NETWORK-$NETWORK-$LATEST_SNAPSHOT_HEIGHT-archival.torrent"
+                        if curl --output /dev/null --silent --head --fail "$TORRENT_URL"; then
+                            print_color $GREEN "Found torrent file at: $TORRENT_URL"
+                            SNAPSHOT_URL="$TORRENT_URL"
                         else
-                            print_color $RED "Could not find a valid snapshot for $NETWORK. Falling back to genesis sync."
+                            print_color $RED "Could not find a valid torrent file. Falling back to genesis sync."
+                            print_color $YELLOW "This may happen if torrents are not yet available for this network."
                             USE_SNAPSHOT=false
                         fi
                     fi
                     
                     if [ "$USE_SNAPSHOT" = true ]; then
                         print_color $YELLOW "Will use snapshot from: $SNAPSHOT_URL"
+                        print_color $GREEN "Using torrent download method with aria2c (faster and more reliable)"
+                        print_color $YELLOW "Torrents include web seeds, so they'll work even without peers"
                     fi
                 fi
             fi
@@ -444,45 +478,84 @@ setup_from_snapshot() {
     print_color $YELLOW "Downloading and extracting snapshot. This may take a while..."
     print_color $YELLOW "Depending on the network, this could take several minutes to hours."
     print_color $YELLOW "Large snapshots may require significant bandwidth and disk space."
-    
-    # Note: We're using zstd to decompress the snapshot as it's more efficient than gzip
-    # for large files. The archival snapshots can be quite large, so this is important.
-    # We extract directly to the data directory to avoid using extra disk space.
+    print_color $YELLOW "Torrent downloads use web seeds, so they'll work even without peers."
     
     # Print start time
     START_TIME=$(date +"%T")
-    print_color $YELLOW "Starting snapshot extraction at: $START_TIME"
+    print_color $YELLOW "Starting snapshot download at: $START_TIME"
     
-    # Download and extract directly as the POKTROLL_USER
-    sudo -u "$POKTROLL_USER" bash <<EOF
-    # Stop if any command fails
-    set -e
+    # Download the torrent file
+    TORRENT_FILE="$SNAPSHOT_DIR/snapshot.torrent"
+    curl -L -o "$TORRENT_FILE" "$SNAPSHOT_URL"
     
-    # Create data directory if it doesn't exist
-    mkdir -p \$HOME/.poktroll/data
-    
-    # Download and extract the snapshot based on format
-    # The snapshot URL format is determined by the network and height
-    # For example: https://snapshots.us-nj.poktroll.com/testnet-beta-66398-archival.tar.zst
-    if [[ "$SNAPSHOT_URL" == *.tar.zst ]]; then
-        echo "Extracting .tar.zst format snapshot..."
-        curl -L "$SNAPSHOT_URL" | zstd -d | tar -xf - -C \$HOME/.poktroll/data
-    elif [[ "$SNAPSHOT_URL" == *.tar.gz ]]; then
-        echo "Extracting .tar.gz format snapshot..."
-        curl -L "$SNAPSHOT_URL" | tar -zxf - -C \$HOME/.poktroll/data
+    if [ $? -ne 0 ]; then
+        print_color $RED "Failed to download torrent file. Falling back to genesis sync."
+        USE_SNAPSHOT=false
     else
-        echo "Unknown snapshot format. Expected .tar.zst or .tar.gz"
-        exit 1
-    fi
-    
-    # Check if extraction was successful
-    if [ \$? -ne 0 ]; then
-        echo "Failed to download or extract snapshot"
-        exit 1
-    fi
-    
-    echo "Snapshot extracted successfully"
+        print_color $GREEN "Torrent file downloaded successfully."
+        
+        # Set the download directory
+        DOWNLOAD_DIR="$SNAPSHOT_DIR/download"
+        mkdir -p "$DOWNLOAD_DIR"
+        
+        # Use aria2c to download the snapshot
+        print_color $YELLOW "Starting torrent download with aria2c. This may take a while..."
+        print_color $YELLOW "Download progress will be shown below:"
+        
+        # Run aria2c as the POKTROLL_USER
+        sudo -u "$POKTROLL_USER" bash <<EOF
+        # Stop if any command fails
+        set -e
+        
+        # Create data directory if it doesn't exist
+        mkdir -p \$HOME/.poktroll/data
+        
+        # Download using aria2c with optimized settings
+        # --seed-time=0: Don't seed after download completes
+        # --file-allocation=none: Faster startup
+        # --continue=true: Resume download if interrupted
+        # --max-connection-per-server=16: More connections for faster download
+        # --max-concurrent-downloads=16: Download multiple pieces simultaneously
+        # --split=16: Split file into more segments for parallel download
+        # --bt-enable-lpd=true: Enable Local Peer Discovery
+        # --bt-max-peers=0: No limit on number of peers
+        # --bt-request-peer-speed-limit=10M: Only request from peers above 10MB/s
+        aria2c --seed-time=0 --dir="$DOWNLOAD_DIR" --file-allocation=none --continue=true \
+               --max-connection-per-server=16 --max-concurrent-downloads=16 --split=16 \
+               --bt-enable-lpd=true --bt-max-peers=0 --bt-request-peer-speed-limit=10M \
+               "$TORRENT_FILE"
+        
+        # Check if download was successful
+        if [ \$? -ne 0 ]; then
+            echo "Failed to download snapshot via torrent"
+            exit 1
+        fi
+        
+        # Find the downloaded file
+        DOWNLOADED_FILE=\$(find "$DOWNLOAD_DIR" -type f | head -n 1)
+        
+        if [ -z "\$DOWNLOADED_FILE" ]; then
+            echo "No files downloaded by aria2c"
+            exit 1
+        fi
+        
+        echo "Downloaded file: \$DOWNLOADED_FILE"
+        
+        # Extract the snapshot based on format
+        if [[ "\$DOWNLOADED_FILE" == *.tar.zst ]]; then
+            echo "Extracting .tar.zst format snapshot..."
+            zstd -d "\$DOWNLOADED_FILE" --stdout | tar -xf - -C \$HOME/.poktroll/data
+        elif [[ "\$DOWNLOADED_FILE" == *.tar.gz ]]; then
+            echo "Extracting .tar.gz format snapshot..."
+            tar -zxf "\$DOWNLOADED_FILE" -C \$HOME/.poktroll/data
+        else
+            echo "Unknown snapshot format. Expected .tar.zst or .tar.gz"
+            exit 1
+        fi
+        
+        echo "Snapshot extracted successfully"
 EOF
+    fi
     
     # Print end time
     END_TIME=$(date +"%T")
