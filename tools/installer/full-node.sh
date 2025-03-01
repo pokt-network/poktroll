@@ -104,7 +104,9 @@ install_dependencies() {
     # Try to install missing dependencies
     print_color $YELLOW "Installing missing dependencies: ${to_install[*]}"
 
-    if [ -f /etc/debian_version ]; then
+    # Detect package manager
+    if [ -f /etc/debian_version ] || [ -f /etc/ubuntu_version ] || grep -qi ubuntu /etc/os-release 2>/dev/null || grep -qi debian /etc/os-release 2>/dev/null; then
+        print_color $GREEN "Detected Debian/Ubuntu-based distribution."
         apt-get update
         # Special handling for aria2 package name
         local apt_packages=()
@@ -117,9 +119,11 @@ install_dependencies() {
         done
         
         if [ ${#apt_packages[@]} -gt 0 ]; then
+            print_color $YELLOW "Running: apt-get install -y ${apt_packages[*]}"
             apt-get install -y "${apt_packages[@]}"
         fi
-    elif [ -f /etc/redhat-release ]; then
+    elif [ -f /etc/redhat-release ] || [ -f /etc/centos-release ] || grep -qi "rhel" /etc/os-release 2>/dev/null || grep -qi "centos" /etc/os-release 2>/dev/null || grep -qi "fedora" /etc/os-release 2>/dev/null; then
+        print_color $GREEN "Detected RedHat/CentOS/Fedora-based distribution."
         yum update -y
         # Special handling for aria2 package name
         local yum_packages=()
@@ -132,11 +136,66 @@ install_dependencies() {
         done
         
         if [ ${#yum_packages[@]} -gt 0 ]; then
+            print_color $YELLOW "Running: yum install -y ${yum_packages[*]}"
             yum install -y "${yum_packages[@]}"
         fi
+    elif command -v apt-get &>/dev/null; then
+        print_color $GREEN "Found apt-get package manager."
+        apt-get update
+        # Special handling for aria2 package name
+        local apt_packages=()
+        for dep in "${to_install[@]}"; do
+            if [ "$dep" = "aria2c" ]; then
+                apt_packages+=("aria2")
+            else
+                apt_packages+=("$dep")
+            fi
+        done
+        
+        if [ ${#apt_packages[@]} -gt 0 ]; then
+            print_color $YELLOW "Running: apt-get install -y ${apt_packages[*]}"
+            apt-get install -y "${apt_packages[@]}"
+        fi
+    elif command -v yum &>/dev/null; then
+        print_color $GREEN "Found yum package manager."
+        yum update -y
+        # Special handling for aria2 package name
+        local yum_packages=()
+        for dep in "${to_install[@]}"; do
+            if [ "$dep" = "aria2c" ]; then
+                yum_packages+=("aria2")
+            else
+                yum_packages+=("$dep")
+            fi
+        done
+        
+        if [ ${#yum_packages[@]} -gt 0 ]; then
+            print_color $YELLOW "Running: yum install -y ${yum_packages[*]}"
+            yum install -y "${yum_packages[@]}"
+        fi
+    elif command -v dnf &>/dev/null; then
+        print_color $GREEN "Found dnf package manager."
+        dnf check-update
+        # Special handling for aria2 package name
+        local dnf_packages=()
+        for dep in "${to_install[@]}"; do
+            if [ "$dep" = "aria2c" ]; then
+                dnf_packages+=("aria2")
+            else
+                dnf_packages+=("$dep")
+            fi
+        done
+        
+        if [ ${#dnf_packages[@]} -gt 0 ]; then
+            print_color $YELLOW "Running: dnf install -y ${dnf_packages[*]}"
+            dnf install -y "${dnf_packages[@]}"
+        fi
     else
-        print_color $RED "Unsupported distribution. Please install ${to_install[*]} manually."
-        return 1
+        print_color $RED "Unsupported distribution. Could not detect package manager."
+        print_color $RED "Please install the following dependencies manually: ${to_install[*]}"
+        print_color $RED "For aria2c, the package name is usually 'aria2'"
+        print_color $RED "After installing dependencies, run this script again."
+        exit 1
     fi
 
     # Verify all dependencies were installed successfully
@@ -152,7 +211,18 @@ install_dependencies() {
 
     if [ $missing_deps -gt 0 ]; then
         print_color $RED "Some dependencies failed to install."
-        return 1
+        print_color $RED "Please install the following dependencies manually: "
+        for dep in "${to_install[@]}"; do
+            if ! command -v "$dep" &>/dev/null; then
+                if [ "$dep" = "aria2c" ]; then
+                    print_color $RED "  - aria2 (provides aria2c command)"
+                else
+                    print_color $RED "  - $dep"
+                fi
+            fi
+        done
+        print_color $RED "After installing dependencies, run this script again."
+        exit 1
     fi
 
     print_color $GREEN "All required dependencies installed successfully."
