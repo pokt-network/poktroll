@@ -5,7 +5,6 @@ import (
 	"strings"
 
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
-	cosmoserrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
@@ -23,18 +22,9 @@ func (k msgServer) ClaimMorseApplication(ctx context.Context, msg *migrationtype
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
-	shannonAccAddr, err := cosmostypes.AccAddressFromBech32(msg.ShannonDestAddress)
-	// DEV_NOTE: This SHOULD NEVER happen as the shannonDestAddress is validated
-	// in MsgClaimMorseApplication#ValidateBasic().
-	if err != nil {
-		return nil, status.Error(
-			codes.InvalidArgument,
-			cosmoserrors.ErrInvalidAddress.Wrapf(
-				"failed to parse shannon destination address (%s): %s",
-				msg.ShannonDestAddress, err,
-			).Error(),
-		)
-	}
+	// DEV_NOTE: It is safe to use MustAccAddressFromBech32 here because the
+	// shannonDestAddress is validated in MsgClaimMorseApplication#ValidateBasic().
+	shannonAccAddr := cosmostypes.MustAccAddressFromBech32(msg.ShannonDestAddress)
 
 	// Ensure that a MorseClaimableAccount exists for the given morseSrcAddress.
 	morseClaimableAccount, isFound := k.GetMorseClaimableAccount(
@@ -71,7 +61,7 @@ func (k msgServer) ClaimMorseApplication(ctx context.Context, msg *migrationtype
 
 	// Mint the totalTokens to the shannonDestAddress account balance.
 	// The application stake is subsequently escrowed from the shannonDestAddress account balance.
-	if err = k.MintClaimedMorseTokens(ctx, shannonAccAddr, morseClaimableAccount.TotalTokens()); err != nil {
+	if err := k.MintClaimedMorseTokens(ctx, shannonAccAddr, morseClaimableAccount.TotalTokens()); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
