@@ -31,7 +31,7 @@ var (
 		{
 			desc: "claim morse supplier with same staked/unstaked ratio (explicit)",
 			getStake: func(s *MigrationModuleTestSuite) *cosmostypes.Coin {
-				stake := s.GetAccountState(s.T()).Accounts[1].
+				stake := s.GetAccountState(s.T()).Accounts[0].
 					GetSupplierStake()
 				return &stake
 			},
@@ -39,7 +39,7 @@ var (
 		{
 			desc: "claim morse supplier with higher staked/unstaked ratio",
 			getStake: func(s *MigrationModuleTestSuite) *cosmostypes.Coin {
-				stake := s.GetAccountState(s.T()).Accounts[2].
+				stake := s.GetAccountState(s.T()).Accounts[1].
 					GetSupplierStake().
 					Add(stakeOffset)
 				return &stake
@@ -48,7 +48,7 @@ var (
 		{
 			desc: "claim morse supplier with lower staked/unstaked ratio",
 			getStake: func(s *MigrationModuleTestSuite) *cosmostypes.Coin {
-				stake := s.GetAccountState(s.T()).Accounts[3].
+				stake := s.GetAccountState(s.T()).Accounts[2].
 					GetSupplierStake().
 					Sub(stakeOffset)
 				return &stake
@@ -77,7 +77,7 @@ func (s *MigrationModuleTestSuite) TestClaimMorseNewSupplier() {
 
 			// Claim the MorseClaimableAccount as a new supplier.
 			morseSrcAddr, claimSupplierRes := s.ClaimMorseSupplier(
-				s.T(), uint64(testCaseIdx+1),
+				s.T(), uint64(testCaseIdx),
 				shannonDestAddr,
 				testCase.getStake(s),
 				s.supplierServiceConfig,
@@ -203,7 +203,7 @@ func (s *MigrationModuleTestSuite) TestClaimMorseExistingSupplier() {
 			// Claim the MorseClaimableAccount as an existing supplier.
 			supplierStakeToClaim := testCase.getStake(s)
 			morseSrcAddr, claimSupplierRes := s.ClaimMorseSupplier(
-				s.T(), uint64(testCaseIdx+1),
+				s.T(), uint64(testCaseIdx),
 				shannonDestAddr,
 				supplierStakeToClaim,
 				s.supplierServiceConfig,
@@ -314,7 +314,7 @@ func (s *MigrationModuleTestSuite) TestClaimMorseSupplier_ErrorMinStake() {
 	s.Equal(int64(0), shannonDestBalance.Amount.Int64())
 
 	// Attempt to claim a Morse claimable account with a stake below the minimum.
-	morsePrivateKey := testmigration.NewMorsePrivateKey(s.T(), 1)
+	morsePrivateKey := testmigration.NewMorsePrivateKey(s.T(), 0)
 	expectedMorseSrcAddr := morsePrivateKey.PubKey().Address().String()
 	require.Equal(s.T(),
 		expectedMorseSrcAddr,
@@ -384,7 +384,7 @@ func (s *MigrationModuleTestSuite) TestClaimMorseSupplier_ErrorInsufficientStake
 	s.Equal(int64(0), shannonDestBalance.Amount.Int64())
 
 	// Attempt to claim a Morse claimable account with a stake below the minimum.
-	morsePrivateKey := testmigration.NewMorsePrivateKey(s.T(), 1)
+	morsePrivateKey := testmigration.NewMorsePrivateKey(s.T(), 0)
 	expectedMorseSrcAddr := morsePrivateKey.PubKey().Address().String()
 	require.Equal(s.T(),
 		expectedMorseSrcAddr,
