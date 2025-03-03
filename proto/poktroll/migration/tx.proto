@@ -9,6 +9,7 @@ import "gogoproto/gogo.proto";
 import "poktroll/shared/service.proto";
 import "poktroll/migration/morse_onchain.proto";
 import "poktroll/migration/params.proto";
+import "poktroll/application/types.proto";
 import "cosmos/base/v1beta1/coin.proto";
 
 option go_package = "github.com/pokt-network/poktroll/x/migration/types";
@@ -161,6 +162,9 @@ message MsgClaimMorseApplicationResponse {
   
   // The service ID of the service which the application is staked for.
   string service_id = 5 [(gogoproto.jsontag) = "service_id"];
+
+  // The application which was staked as a result of the claim.
+  application.Application application = 6 [(gogoproto.jsontag) = "application"];
 }
 
 // TODO_UPNEXT(@bryanchriswhite, #1034): for messages below:
