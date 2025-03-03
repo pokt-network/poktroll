@@ -3,7 +3,6 @@ package testmigration
 import (
 	"encoding/binary"
 	"fmt"
-	"math/rand"
 
 	cometcrypto "github.com/cometbft/cometbft/crypto/ed25519"
 	cmtjson "github.com/cometbft/cometbft/libs/json"
@@ -72,15 +71,13 @@ func NewMorseStateExportAndAccountState(
 		Accounts: make([]*migrationtypes.MorseClaimableAccount, numAccounts),
 	}
 
-	for i := 1; i < numAccounts+1; i++ {
-		seedUint := rand.Uint64()
-		seedBz := make([]byte, 8)
-		binary.LittleEndian.PutUint64(seedBz, seedUint)
-		privKey := cometcrypto.GenPrivKeyFromSecret(seedBz)
+	for i := 0; i < numAccounts; i++ {
+		privKey := NewMorsePrivateKey(t, uint64(i))
 		pubKey := privKey.PubKey()
-		balanceAmount := int64(1e6*i + i)               // i_000_00i
-		appStakeAmount := int64(1e5*i + (i * 10))       //   i00_0i0
-		supplierStakeAmount := int64(1e4*i + (i * 100)) //    i0_i00
+		j := i + 1
+		balanceAmount := int64(1e6*j + j)               // j_000_00j
+		appStakeAmount := int64(1e5*j + (j * 10))       //   j00_0j0
+		supplierStakeAmount := int64(1e4*j + (j * 100)) //    j0_j00
 
 		// Add an account.
 		morseStateExport.AppState.Auth.Accounts = append(
@@ -124,14 +121,26 @@ func NewMorseStateExportAndAccountState(
 		)
 
 		// Add the account to the morseAccountState.
-		morseAccountState.Accounts[i-1] = &migrationtypes.MorseClaimableAccount{
+		morseAccountState.Accounts[i] = &migrationtypes.MorseClaimableAccount{
 			MorseSrcAddress:  pubKey.Address().String(),
+			PublicKey:        pubKey.Bytes(),
 			UnstakedBalance:  cosmostypes.NewInt64Coin(volatile.DenomuPOKT, balanceAmount),
 			SupplierStake:    cosmostypes.NewInt64Coin(volatile.DenomuPOKT, supplierStakeAmount),
 			ApplicationStake: cosmostypes.NewInt64Coin(volatile.DenomuPOKT, appStakeAmount),
-			PublicKey:        pubKey.Bytes(),
+			// ShannonDestAddress: (intentionally omitted).
+			// ClaimedAtHeight:    (intentionally omitted)
 		}
 	}
 
 	return morseStateExport, morseAccountState
+}
+
+// NewMorsePrivateKey creates a new ed25519 private key from the given seed.
+func NewMorsePrivateKey(t gocuke.TestingT, seed uint64) cometcrypto.PrivKey {
+	t.Helper()
+
+	seedBz := make([]byte, 8)
+	binary.LittleEndian.PutUint64(seedBz, seed)
+
+	return cometcrypto.GenPrivKeyFromSecret(seedBz)
 }

@@ -14,6 +14,7 @@ import (
 	"github.com/pokt-network/poktroll/testutil/cases"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	gatewaytypes "github.com/pokt-network/poktroll/x/gateway/types"
+	migrationtypes "github.com/pokt-network/poktroll/x/migration/types"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 	servicetypes "github.com/pokt-network/poktroll/x/service/types"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
@@ -45,6 +46,7 @@ var (
 		suppliertypes.ModuleName:   SupplierModuleParamConfig,
 		prooftypes.ModuleName:      ProofModuleParamConfig,
 		tokenomicstypes.ModuleName: TokenomicsModuleParamConfig,
+		migrationtypes.ModuleName:  MigrationModuleParamConfig,
 	}
 
 	// paramConfigsPath is the path, relative to the project root, to the go file
