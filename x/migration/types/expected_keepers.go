@@ -31,6 +31,7 @@ type BankKeeper interface {
 type GatewayKeeper interface {
 	GetGateway(ctx context.Context, address string) (gateway gatewaytypes.Gateway, found bool)
 	SetGateway(ctx context.Context, gateway gatewaytypes.Gateway)
+	StakeGateway(ctx context.Context, logger cosmoslog.Logger, msg *gatewaytypes.MsgStakeGateway) (*gatewaytypes.Gateway, error)
 }
 
 type ApplicationKeeper interface {
