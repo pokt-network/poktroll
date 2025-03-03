@@ -36,9 +36,16 @@ func NewMsgClaimMorseSupplier(
 	return msg, nil
 }
 
+// ValidateBasic ensures that:
+// - The morseSignature length is valid (signature validation performed elsewhere).
+// - The morseSrcAddress is valid (i.e. it is a valid hex-encoded address).
+// - The shannonDestAddress is valid (i.e. it is a valid bech32 address).
 func (msg *MsgClaimMorseSupplier) ValidateBasic() error {
-	if len(msg.MorseSignature) == 0 {
-		return ErrMorseSupplierClaim.Wrap("morseSignature is empty")
+	if len(msg.MorseSignature) != MorseSignatureLengthBytes {
+		return ErrMorseSupplierClaim.Wrapf(
+			"invalid morse signature length; expected %d, got %d",
+			MorseSignatureLengthBytes, len(msg.MorseSignature),
+		)
 	}
 
 	if len(msg.MorseSrcAddress) != MorseAddressHexLengthBytes {

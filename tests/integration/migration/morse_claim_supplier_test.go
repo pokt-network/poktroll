@@ -100,12 +100,25 @@ func (s *MigrationModuleTestSuite) TestClaimMorseNewSupplier() {
 				Sub(*expectedStake)
 			expectedBalance := expectedClaimedBalance.Sub(*supplierStakingFee)
 
+			sharedParams := sharedParamsRes.GetParams()
+			svcStartHeight := sharedtypes.GetNextSessionStartHeight(&sharedParams, s.SdkCtx().BlockHeight())
+			expectedSupplier := sharedtypes.Supplier{
+				OwnerAddress:            shannonDestAddr,
+				OperatorAddress:         shannonDestAddr,
+				Stake:                   expectedStake,
+				Services:                []*sharedtypes.SupplierServiceConfig{s.supplierServiceConfig},
+				UnstakeSessionEndHeight: 0,
+				ServicesActivationHeightsMap: map[string]uint64{
+					s.supplierServiceConfig.GetServiceId(): uint64(svcStartHeight),
+				},
+			}
 			expectedClaimSupplierRes := &migrationtypes.MsgClaimMorseSupplierResponse{
 				MorseSrcAddress:      morseSrcAddr,
 				ClaimedBalance:       expectedClaimedBalance,
 				ClaimedSupplierStake: *expectedStake,
 				ClaimedAtHeight:      s.SdkCtx().BlockHeight() - 1,
 				ServiceId:            s.supplierServiceConfig.GetServiceId(),
+				Supplier:             &expectedSupplier,
 			}
 			s.Equal(expectedClaimSupplierRes, claimSupplierRes)
 
@@ -127,18 +140,6 @@ func (s *MigrationModuleTestSuite) TestClaimMorseNewSupplier() {
 			s.Equal(cosmostypes.NewCoin(volatile.DenomuPOKT, math.ZeroInt()), *migrationModuleBalance)
 
 			// Assert that the supplier was staked.
-			sharedParams := sharedParamsRes.GetParams()
-			svcStartHeight := sharedtypes.GetNextSessionStartHeight(&sharedParams, s.SdkCtx().BlockHeight())
-			expectedSupplier := sharedtypes.Supplier{
-				OwnerAddress:            shannonDestAddr,
-				OperatorAddress:         shannonDestAddr,
-				Stake:                   expectedStake,
-				Services:                []*sharedtypes.SupplierServiceConfig{s.supplierServiceConfig},
-				UnstakeSessionEndHeight: 0,
-				ServicesActivationHeightsMap: map[string]uint64{
-					s.supplierServiceConfig.GetServiceId(): uint64(svcStartHeight),
-				},
-			}
 			supplier, err := supplierClient.GetSupplier(s.SdkCtx(), shannonDestAddr)
 			s.NoError(err)
 			s.Equal(expectedSupplier, supplier)
@@ -247,12 +248,25 @@ func (s *MigrationModuleTestSuite) TestClaimMorseExistingSupplier() {
 			}
 
 			// Assert that the claim msg response is correct.
+			sharedParams := sharedParamsRes.GetParams()
+			svcStartHeight := sharedtypes.GetNextSessionStartHeight(&sharedParams, s.SdkCtx().BlockHeight())
+			expectedSupplier := sharedtypes.Supplier{
+				OwnerAddress:    shannonDestAddr,
+				OperatorAddress: shannonDestAddr,
+				Stake:           supplierStakeToClaim,
+				Services:        []*sharedtypes.SupplierServiceConfig{s.supplierServiceConfig},
+				ServicesActivationHeightsMap: map[string]uint64{
+					s.supplierServiceConfig.GetServiceId(): uint64(svcStartHeight),
+				},
+				UnstakeSessionEndHeight: 0,
+			}
 			expectedClaimSupplierRes := &migrationtypes.MsgClaimMorseSupplierResponse{
 				MorseSrcAddress:      morseSrcAddr,
 				ClaimedBalance:       expectedClaimedBalance,
 				ClaimedSupplierStake: expectedClaimedStake,
 				ClaimedAtHeight:      s.SdkCtx().BlockHeight() - 1,
 				ServiceId:            s.supplierServiceConfig.GetServiceId(),
+				Supplier:             &expectedSupplier,
 			}
 			s.Equal(expectedClaimSupplierRes, claimSupplierRes)
 
@@ -274,18 +288,6 @@ func (s *MigrationModuleTestSuite) TestClaimMorseExistingSupplier() {
 			s.Equal(cosmostypes.NewCoin(volatile.DenomuPOKT, math.ZeroInt()), *migrationModuleBalance)
 
 			// Assert that the supplier was updated.
-			sharedParams := sharedParamsRes.GetParams()
-			svcStartHeight := sharedtypes.GetNextSessionStartHeight(&sharedParams, s.SdkCtx().BlockHeight())
-			expectedSupplier := sharedtypes.Supplier{
-				OwnerAddress:    shannonDestAddr,
-				OperatorAddress: shannonDestAddr,
-				Stake:           supplierStakeToClaim,
-				Services:        []*sharedtypes.SupplierServiceConfig{s.supplierServiceConfig},
-				ServicesActivationHeightsMap: map[string]uint64{
-					s.supplierServiceConfig.GetServiceId(): uint64(svcStartHeight),
-				},
-				UnstakeSessionEndHeight: 0,
-			}
 			supplier, err := supplierClient.GetSupplier(s.SdkCtx(), shannonDestAddr)
 			s.NoError(err)
 			s.Equal(expectedSupplier, supplier)
