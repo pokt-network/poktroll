@@ -21,7 +21,10 @@ var allUpgrades = []upgrades.Upgrade{
 	// upgrades.Upgrade_0_0_11,
 
 	// v0.0.12 - the first upgrade going live on both Alpha and Beta TestNets.
-	upgrades.Upgrade_0_0_12,
+	// upgrades.Upgrade_0_0_12,
+
+	// v0.0.13 - this upgrade introduces morse migration module and websocket service handling.
+	upgrades.Upgrade_0_0_13,
 }
 
 // setUpgrades sets upgrade handlers for all upgrades and executes KVStore migration if an upgrade plan file exists.
