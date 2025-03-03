@@ -147,15 +147,13 @@ func (s *MigrationModuleTestSuite) TestClaimMorseExistingApplication() {
 			// Stake an initial application.
 			shannonDestAddr := sample.AccAddress()
 			shannonDestAccAddr := cosmostypes.MustAccAddressFromBech32(shannonDestAddr)
-			appClient := s.AppSuite.GetAppQueryClient(s.T())
-			appParams, err := appClient.GetParams(s.SdkCtx())
-			s.NoError(err)
 
-			initialAppStake := appParams.GetMinStake()
+			initialAppStake := &s.appMinStake
 			s.FundAddress(s.T(), shannonDestAccAddr, initialAppStake.Amount.Int64())
 			s.AppSuite.StakeApp(s.T(), shannonDestAddr, initialAppStake.Amount.Int64(), []string{"nosvc"})
 
 			// Assert that the initial application is staked.
+			appClient := s.AppSuite.GetAppQueryClient(s.T())
 			foundApp, err := appClient.GetApplication(s.SdkCtx(), shannonDestAddr)
 			s.NoError(err)
 			s.Equal(shannonDestAddr, foundApp.Address)
@@ -231,14 +229,7 @@ func (s *MigrationModuleTestSuite) TestClaimMorseApplication_ErrorMinStake() {
 	s.GenerateMorseAccountState(s.T(), s.numMorseClaimableAccounts)
 	s.ImportMorseClaimableAccounts(s.T())
 
-	appClient := s.AppSuite.GetAppQueryClient(s.T())
-	appParams, err := appClient.GetParams(s.SdkCtx())
-	s.NoError(err)
-
-	appMinStake := appParams.GetMinStake()
-	s.NoError(err)
-
-	belowAppMinStake := appMinStake.Sub(cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 1))
+	belowAppMinStake := s.appMinStake.Sub(cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 1))
 	shannonDestAddr := sample.AccAddress()
 	bankClient := s.GetBankQueryClient(s.T())
 
@@ -269,7 +260,7 @@ func (s *MigrationModuleTestSuite) TestClaimMorseApplication_ErrorMinStake() {
 	require.Contains(s.T(), strings.ReplaceAll(err.Error(), `\`, ""), status.Error(
 		codes.InvalidArgument,
 		apptypes.ErrAppInvalidStake.Wrapf("application %q must stake at least %s",
-			shannonDestAddr, appMinStake,
+			shannonDestAddr, s.appMinStake,
 		).Error(),
 	).Error())
 
@@ -290,6 +281,7 @@ func (s *MigrationModuleTestSuite) TestClaimMorseApplication_ErrorMinStake() {
 	s.Equal(cosmostypes.NewCoin(volatile.DenomuPOKT, math.ZeroInt()), *migrationModuleBalance)
 
 	// Assert that the application was NOT staked.
+	appClient := s.AppSuite.GetAppQueryClient(s.T())
 	_, err = appClient.GetApplication(s.SdkCtx(), shannonDestAddr)
 	require.EqualError(s.T(), err, status.Error(
 		codes.NotFound,
