@@ -22,6 +22,7 @@ type MigrationModuleSuite struct {
 	AppSuite      ApplicationModuleSuite
 	SupplierSuite SupplierModuleSuite
 	ServiceSuite  ServiceModuleSuite
+	GatewaySuite  GatewayModuleSuite
 
 	// accountState is the generated MorseAccountState to be imported into the migration module.
 	accountState *migrationtypes.MorseAccountState
@@ -205,4 +206,40 @@ func (s *MigrationModuleSuite) ClaimMorseSupplier(
 	require.True(t, ok)
 
 	return expectedMorseSrcAddr, claimSupplierRes
+}
+
+// ClaimMorseGateway claims the given MorseClaimableAccount as a staked gateway
+// by running a MsgClaimMorseGateway message.
+// It returns the expected Morse source address and the MsgClaimMorseGatewayResponse.
+func (s *MigrationModuleSuite) ClaimMorseGateway(
+	t *testing.T,
+	morseAccountIdx uint64,
+	shannonDestAddr string,
+	stake sdk.Coin,
+) (expectedMorseSrcAddr string, _ *migrationtypes.MsgClaimMorseGatewayResponse) {
+	t.Helper()
+
+	morsePrivateKey := testmigration.NewMorsePrivateKey(t, morseAccountIdx)
+	expectedMorseSrcAddr = morsePrivateKey.PubKey().Address().String()
+	require.Equal(t,
+		expectedMorseSrcAddr,
+		s.accountState.Accounts[morseAccountIdx].MorseSrcAddress,
+	)
+
+	morseClaimMsg, err := migrationtypes.NewMsgClaimMorseGateway(
+		shannonDestAddr,
+		expectedMorseSrcAddr,
+		morsePrivateKey,
+		stake,
+	)
+	require.NoError(t, err)
+
+	// Claim a Morse claimable account as a gateway.
+	resAny, err := s.GetApp().RunMsg(t, morseClaimMsg)
+	require.NoError(t, err)
+
+	claimGatewayRes, ok := resAny.(*migrationtypes.MsgClaimMorseGatewayResponse)
+	require.True(t, ok)
+
+	return expectedMorseSrcAddr, claimGatewayRes
 }

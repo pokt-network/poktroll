@@ -33,3 +33,17 @@ func (s *GatewayModuleSuite) StakeGateway(
 
 	return txMsgRes.(*gatewaytypes.MsgStakeGatewayResponse)
 }
+
+func (s *GatewayModuleSuite) GetGateway(t *testing.T, gatewayAddr string) (*gatewaytypes.Gateway, error) {
+	t.Helper()
+
+	gatewyQueryClient := gatewaytypes.NewQueryClient(s.GetApp().QueryHelper())
+	res, err := gatewyQueryClient.Gateway(s.SdkCtx(), &gatewaytypes.QueryGetGatewayRequest{
+		Address: gatewayAddr,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return &res.Gateway, nil
+}

@@ -214,7 +214,7 @@ func (s *MigrationModuleTestSuite) TestClaimMorseExistingSupplier() {
 			// strict equality checking will fail. To work around this, we can initialize the bit.Int
 			// with a non-zero value and then set it to zero via arithmetic.
 			if claimSupplierRes.ClaimedSupplierStake.IsZero() {
-				claimSupplierRes.ClaimedSupplierStake.Amount = math.NewInt(1).SubRaw(1)
+				claimSupplierRes.ClaimedSupplierStake = zeroUpokt
 			}
 
 			// Assert that the MorseClaimableAccount was updated on-chain.
