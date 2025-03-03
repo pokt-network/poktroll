@@ -4,7 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	sdk "github.com/cosmos/cosmos-sdk/types"
+	cosmoslog "cosmossdk.io/log"
+	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
@@ -13,7 +14,7 @@ import (
 )
 
 func (k msgServer) StakeGateway(
-	goCtx context.Context,
+	ctx context.Context,
 	msg *types.MsgStakeGateway,
 ) (*types.MsgStakeGatewayResponse, error) {
 	isSuccessful := false
@@ -23,10 +24,38 @@ func (k msgServer) StakeGateway(
 		func() bool { return isSuccessful },
 	)
 
-	ctx := sdk.UnwrapSDKContext(goCtx)
-
 	logger := k.Logger().With("method", "StakeGateway")
 	logger.Info(fmt.Sprintf("about to stake gateway with msg: %v", msg))
+
+	gateway, err := k.Keeper.StakeGateway(ctx, logger, msg)
+	if err != nil {
+		// DEV_NOTE: StakeGateway SHOULD ALWAYS return a gRPC status error.
+		return nil, err
+	}
+
+	isSuccessful = true
+	return &types.MsgStakeGatewayResponse{
+		Gateway: gateway,
+	}, nil
+}
+
+// StakeGateway stakes (or updates) the gateway according to the given msg by applying the following logic:
+//   - the msg is validated
+//   - if the gateway is not found, it is created (in memory) according to the valid msg
+//   - if the gateway is found and is not unbonding, it is updated (in memory) according to the msg
+//   - if the gateway is found and is unbonding, it is updated (in memory; and no longer unbonding)
+//   - additional stake validation (e.g. min stake, etc.)
+//   - the positive difference between the msg stake and any current stake is transferred
+//     from the staking gateway's account, to the gateway module's accounts.
+//   - the (new or updated) gateway is persisted.
+//   - an EventGatewayUnbondingCanceled event is emitted if the gateway was unbonding.
+//   - an EventGatewayStaked event is emitted.
+func (k Keeper) StakeGateway(
+	ctx context.Context,
+	logger cosmoslog.Logger,
+	msg *types.MsgStakeGateway,
+) (*types.Gateway, error) {
+	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
 
 	if err := msg.ValidateBasic(); err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
@@ -35,7 +64,7 @@ func (k msgServer) StakeGateway(
 	wasGatewayUnbonding := false
 
 	// Retrieve the address of the gateway
-	gatewayAddress, err := sdk.AccAddressFromBech32(msg.Address)
+	gatewayAddress, err := cosmostypes.AccAddressFromBech32(msg.Address)
 	// NB: This SHOULD NEVER happen because msg.ValidateBasic() validates the address as bech32.
 	if err != nil {
 		// TODO_TECHDEBT(#384): determine whether to continue using cosmos logger for debug level.
@@ -44,16 +73,16 @@ func (k msgServer) StakeGateway(
 	}
 
 	// Check if the gateway already exists or not
-	var coinsToEscrow sdk.Coin
+	var coinsToEscrow cosmostypes.Coin
 	gateway, isGatewayFound := k.GetGateway(ctx, msg.Address)
 	if !isGatewayFound {
 		logger.Info(fmt.Sprintf("gateway not found; creating new gateway for address %q", msg.Address))
-		gateway = k.createGateway(ctx, msg)
+		gateway = k.createGateway(sdkCtx, msg)
 		coinsToEscrow = *msg.Stake
 	} else {
 		logger.Info(fmt.Sprintf("gateway found; about to try and update gateway for address %q", msg.Address))
 		currGatewayStake := *gateway.Stake
-		if err = k.updateGateway(ctx, &gateway, msg); err != nil {
+		if err = k.updateGateway(sdkCtx, &gateway, msg); err != nil {
 			logger.Error(fmt.Sprintf("could not update gateway for address %q due to error %v", msg.Address, err))
 			return nil, status.Error(codes.InvalidArgument, err.Error())
 		}
@@ -93,7 +122,7 @@ func (k msgServer) StakeGateway(
 	}
 
 	// Send the coins from the gateway to the staked gateway pool
-	err = k.bankKeeper.SendCoinsFromAccountToModule(ctx, gatewayAddress, types.ModuleName, []sdk.Coin{coinsToEscrow})
+	err = k.bankKeeper.SendCoinsFromAccountToModule(ctx, gatewayAddress, types.ModuleName, []cosmostypes.Coin{coinsToEscrow})
 	if err != nil {
 		// TODO_TECHDEBT(#384): determine whether to continue using cosmos logger for debug level.
 		logger.Error(fmt.Sprintf("could not escrowed %v coins from %q to %q module account due to %v", coinsToEscrow, gatewayAddress, types.ModuleName, err))
@@ -104,8 +133,8 @@ func (k msgServer) StakeGateway(
 	k.SetGateway(ctx, gateway)
 	logger.Info(fmt.Sprintf("Successfully updated stake for gateway: %+v", gateway))
 
-	sessionEndHeight := k.sharedKeeper.GetSessionEndHeight(ctx, sdk.UnwrapSDKContext(ctx).BlockHeight())
-	events := make([]sdk.Msg, 0)
+	sessionEndHeight := k.sharedKeeper.GetSessionEndHeight(ctx, cosmostypes.UnwrapSDKContext(ctx).BlockHeight())
+	events := make([]cosmostypes.Msg, 0)
 
 	// If gateway unbonding was canceled, emit the corresponding event.
 	if wasGatewayUnbonding {
@@ -121,20 +150,17 @@ func (k msgServer) StakeGateway(
 		SessionEndHeight: sessionEndHeight,
 	})
 
-	if err = ctx.EventManager().EmitTypedEvents(events...); err != nil {
+	if err = sdkCtx.EventManager().EmitTypedEvents(events...); err != nil {
 		err = types.ErrGatewayEmitEvent.Wrapf("(%+v): %s", events, err)
 		logger.Error(err.Error())
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
-	isSuccessful = true
-	return &types.MsgStakeGatewayResponse{
-		Gateway: &gateway,
-	}, nil
+	return &gateway, nil
 }
 
-func (k msgServer) createGateway(
-	_ sdk.Context,
+func (k Keeper) createGateway(
+	_ cosmostypes.Context,
 	msg *types.MsgStakeGateway,
 ) types.Gateway {
 	return types.Gateway{
@@ -143,8 +169,8 @@ func (k msgServer) createGateway(
 	}
 }
 
-func (k msgServer) updateGateway(
-	_ sdk.Context,
+func (k Keeper) updateGateway(
+	_ cosmostypes.Context,
 	gateway *types.Gateway,
 	msg *types.MsgStakeGateway,
 ) error {
