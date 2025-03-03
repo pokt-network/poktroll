@@ -42,7 +42,7 @@ func TestMsgServer_ClaimMorseAccount_Success(t *testing.T) {
 	// Claim each MorseClaimableAccount.
 	for morseAccountIdx, morseAccount := range accountState.Accounts {
 		// Generate the corresponding morse private key using the account slice index as a seed.
-		morsePrivKey := testmigration.NewMorsePrivateKey(t, uint64(morseAccountIdx+1))
+		morsePrivKey := testmigration.NewMorsePrivateKey(t, uint64(morseAccountIdx))
 
 		// Claim the MorseClaimableAccount.
 		msgClaim, err := migrationtypes.NewMsgClaimMorseAccount(
