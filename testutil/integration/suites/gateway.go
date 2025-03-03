@@ -16,6 +16,7 @@ type GatewayModuleSuite struct {
 	BaseIntegrationSuite
 }
 
+// StakeGateway stakes a gateway with the given address and stake amount.
 func (s *GatewayModuleSuite) StakeGateway(
 	t *testing.T,
 	bech32 string,
@@ -34,6 +35,7 @@ func (s *GatewayModuleSuite) StakeGateway(
 	return txMsgRes.(*gatewaytypes.MsgStakeGatewayResponse)
 }
 
+// GetGateway returns the gateway with the given address, if it exists; otherwise an error is returned.
 func (s *GatewayModuleSuite) GetGateway(t *testing.T, gatewayAddr string) (*gatewaytypes.Gateway, error) {
 	t.Helper()
 
