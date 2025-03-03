@@ -60,7 +60,6 @@ func (s *MigrationModuleSuite) ImportMorseClaimableAccounts(t *testing.T) *migra
 
 // ClaimMorseAccount claims the given MorseClaimableAccount by running a MsgClaimMorseAccount message.
 // It returns the expected Morse source address and the MsgClaimMorseAccountResponse.
-// DEV_NOTE: morseAccountIdx is 1-based.
 func (s *MigrationModuleSuite) ClaimMorseAccount(
 	t *testing.T,
 	morseAccountIdx uint64,
@@ -70,7 +69,7 @@ func (s *MigrationModuleSuite) ClaimMorseAccount(
 
 	morsePrivateKey := testmigration.NewMorsePrivateKey(t, morseAccountIdx)
 	expectedMorseSrcAddr = morsePrivateKey.PubKey().Address().String()
-	require.Equal(t, expectedMorseSrcAddr, s.accountState.Accounts[0].MorseSrcAddress)
+	require.Equal(t, expectedMorseSrcAddr, s.accountState.Accounts[morseAccountIdx].MorseSrcAddress)
 
 	morseClaimMsg, err := migrationtypes.NewMsgClaimMorseAccount(
 		shannonDestAddr,
