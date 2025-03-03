@@ -33,7 +33,7 @@ var (
 		{
 			desc: "claim morse application with same staked/unstaked ratio (explicit)",
 			getStake: func(s *MigrationModuleTestSuite) *cosmostypes.Coin {
-				stake := s.GetAccountState(s.T()).Accounts[1].
+				stake := s.GetAccountState(s.T()).Accounts[0].
 					GetApplicationStake()
 				return &stake
 			},
@@ -41,7 +41,7 @@ var (
 		{
 			desc: "claim morse application with higher staked/unstaked ratio",
 			getStake: func(s *MigrationModuleTestSuite) *cosmostypes.Coin {
-				stake := s.GetAccountState(s.T()).Accounts[2].
+				stake := s.GetAccountState(s.T()).Accounts[1].
 					GetApplicationStake().
 					Add(stakeOffset)
 				return &stake
@@ -50,7 +50,7 @@ var (
 		{
 			desc: "claim morse application with lower staked/unstaked ratio",
 			getStake: func(s *MigrationModuleTestSuite) *cosmostypes.Coin {
-				stake := s.GetAccountState(s.T()).Accounts[3].
+				stake := s.GetAccountState(s.T()).Accounts[2].
 					GetApplicationStake().
 					Sub(stakeOffset)
 				return &stake
