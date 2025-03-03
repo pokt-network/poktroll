@@ -47,10 +47,17 @@ func (supq *supplierQuerier) GetSupplier(
 	req := &suppliertypes.QueryGetSupplierRequest{OperatorAddress: operatorAddress}
 	res, err := supq.supplierQuerier.Supplier(ctx, req)
 	if err != nil {
-		return sharedtypes.Supplier{}, suppliertypes.ErrSupplierNotFound.Wrapf(
-			"address: %s [%v]",
-			operatorAddress, err,
-		)
+		return sharedtypes.Supplier{}, err
 	}
 	return res.Supplier, nil
+}
+
+// GetParams returns the supplier module parameters.
+func (supq *supplierQuerier) GetParams(ctx context.Context) (*suppliertypes.Params, error) {
+	req := suppliertypes.QueryParamsRequest{}
+	res, err := supq.supplierQuerier.Params(ctx, &req)
+	if err != nil {
+		return nil, err
+	}
+	return &res.Params, nil
 }
