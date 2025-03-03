@@ -24,6 +24,7 @@ const (
 	Msg_ClaimMorseAccount_FullMethodName            = "/poktroll.migration.Msg/ClaimMorseAccount"
 	Msg_ClaimMorseApplication_FullMethodName        = "/poktroll.migration.Msg/ClaimMorseApplication"
 	Msg_ClaimMorseSupplier_FullMethodName           = "/poktroll.migration.Msg/ClaimMorseSupplier"
+	Msg_ClaimMorseGateway_FullMethodName            = "/poktroll.migration.Msg/ClaimMorseGateway"
 )
 
 // MsgClient is the client API for Msg service.
@@ -39,6 +40,7 @@ type MsgClient interface {
 	ClaimMorseAccount(ctx context.Context, in *MsgClaimMorseAccount, opts ...grpc.CallOption) (*MsgClaimMorseAccountResponse, error)
 	ClaimMorseApplication(ctx context.Context, in *MsgClaimMorseApplication, opts ...grpc.CallOption) (*MsgClaimMorseApplicationResponse, error)
 	ClaimMorseSupplier(ctx context.Context, in *MsgClaimMorseSupplier, opts ...grpc.CallOption) (*MsgClaimMorseSupplierResponse, error)
+	ClaimMorseGateway(ctx context.Context, in *MsgClaimMorseGateway, opts ...grpc.CallOption) (*MsgClaimMorseGatewayResponse, error)
 }
 
 type msgClient struct {
@@ -99,6 +101,16 @@ func (c *msgClient) ClaimMorseSupplier(ctx context.Context, in *MsgClaimMorseSup
 	return out, nil
 }
 
+func (c *msgClient) ClaimMorseGateway(ctx context.Context, in *MsgClaimMorseGateway, opts ...grpc.CallOption) (*MsgClaimMorseGatewayResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(MsgClaimMorseGatewayResponse)
+	err := c.cc.Invoke(ctx, Msg_ClaimMorseGateway_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // MsgServer is the server API for Msg service.
 // All implementations must embed UnimplementedMsgServer
 // for forward compatibility
@@ -112,6 +124,7 @@ type MsgServer interface {
 	ClaimMorseAccount(context.Context, *MsgClaimMorseAccount) (*MsgClaimMorseAccountResponse, error)
 	ClaimMorseApplication(context.Context, *MsgClaimMorseApplication) (*MsgClaimMorseApplicationResponse, error)
 	ClaimMorseSupplier(context.Context, *MsgClaimMorseSupplier) (*MsgClaimMorseSupplierResponse, error)
+	ClaimMorseGateway(context.Context, *MsgClaimMorseGateway) (*MsgClaimMorseGatewayResponse, error)
 	mustEmbedUnimplementedMsgServer()
 }
 
@@ -133,6 +146,9 @@ func (UnimplementedMsgServer) ClaimMorseApplication(context.Context, *MsgClaimMo
 }
 func (UnimplementedMsgServer) ClaimMorseSupplier(context.Context, *MsgClaimMorseSupplier) (*MsgClaimMorseSupplierResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ClaimMorseSupplier not implemented")
+}
+func (UnimplementedMsgServer) ClaimMorseGateway(context.Context, *MsgClaimMorseGateway) (*MsgClaimMorseGatewayResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ClaimMorseGateway not implemented")
 }
 func (UnimplementedMsgServer) mustEmbedUnimplementedMsgServer() {}
 
@@ -237,6 +253,24 @@ func _Msg_ClaimMorseSupplier_Handler(srv interface{}, ctx context.Context, dec f
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Msg_ClaimMorseGateway_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(MsgClaimMorseGateway)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MsgServer).ClaimMorseGateway(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Msg_ClaimMorseGateway_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MsgServer).ClaimMorseGateway(ctx, req.(*MsgClaimMorseGateway))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Msg_ServiceDesc is the grpc.ServiceDesc for Msg service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -263,6 +297,10 @@ var Msg_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ClaimMorseSupplier",
 			Handler:    _Msg_ClaimMorseSupplier_Handler,
+		},
+		{
+			MethodName: "ClaimMorseGateway",
+			Handler:    _Msg_ClaimMorseGateway_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

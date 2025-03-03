@@ -17,25 +17,26 @@ option (gogoproto.stable_marshaler_all) = true;
 // Msg defines the Msg service.
 service Msg {
   option (cosmos.msg.v1.service) = true;
-
+  
   // UpdateParams defines a (governance) operation for updating the module
   // parameters. The authority defaults to the x/gov module account.
-  rpc UpdateParams                 (MsgUpdateParams) returns (MsgUpdateParamsResponse);
+  rpc UpdateParams                 (MsgUpdateParams                ) returns (MsgUpdateParamsResponse                );
   rpc ImportMorseClaimableAccounts (MsgImportMorseClaimableAccounts) returns (MsgImportMorseClaimableAccountsResponse);
-  rpc ClaimMorseAccount            (MsgClaimMorseAccount) returns (MsgClaimMorseAccountResponse);
-  rpc ClaimMorseApplication        (MsgClaimMorseApplication) returns (MsgClaimMorseApplicationResponse);
-  rpc ClaimMorseSupplier           (MsgClaimMorseSupplier) returns (MsgClaimMorseSupplierResponse);
+  rpc ClaimMorseAccount            (MsgClaimMorseAccount           ) returns (MsgClaimMorseAccountResponse           );
+  rpc ClaimMorseApplication        (MsgClaimMorseApplication       ) returns (MsgClaimMorseApplicationResponse       );
+  rpc ClaimMorseSupplier           (MsgClaimMorseSupplier          ) returns (MsgClaimMorseSupplierResponse          );
+  rpc ClaimMorseGateway            (MsgClaimMorseGateway           ) returns (MsgClaimMorseGatewayResponse           );
 }
 // MsgUpdateParams is the Msg/UpdateParams request type.
 message MsgUpdateParams {
-  option (cosmos.msg.v1.signer) = "authority";
+  option (cosmos.msg.v1.signer) =                            "authority";
   option           (amino.name) = "poktroll/x/migration/MsgUpdateParams";
-
+  
   // authority is the address that controls the module (defaults to x/gov unless overwritten).
   string authority = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
 
   // params defines the module parameters to update.
-
+  
   // NOTE: All parameters must be supplied.
   Params params = 2 [(gogoproto.nullable) = false, (amino.dont_omitempty) = true];
 }
@@ -47,10 +48,10 @@ message MsgUpdateParamsResponse {}
 // MsgImportMorseClaimableAccounts is used to create the on-chain MorseClaimableAccounts ONLY AND EXACTLY ONCE (per network / re-genesis).
 message MsgImportMorseClaimableAccounts {
   option (cosmos.msg.v1.signer) = "authority";
-
+  
   // authority is the address that controls the module (defaults to x/gov unless overwritten).
   string authority = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
-
+  
   // the account state derived from the Morse state export and the `poktrolld migrate collect-morse-accounts` command.
   MorseAccountState morse_account_state = 2 [(gogoproto.jsontag) = "morse_account_state", (gogoproto.nullable) = false];
 
@@ -60,7 +61,7 @@ message MsgImportMorseClaimableAccounts {
 
   // Verification can be done by comparing with locally derived Morse state like so:
   //   $ poktrolld migrate collect-morse-accounts $<(pocket util export-genesis-for-reset)
-
+  
   // Additional documentation:
   // - pocket util export-genesis-for-migration --help
   // - poktrolld migrate collect-morse-accounts --help
@@ -70,10 +71,10 @@ message MsgImportMorseClaimableAccounts {
 // MsgImportMorseClaimableAccountsResponse is returned from MsgImportMorseClaimableAccounts.
 // It indicates the canonical hash of the imported MorseAccountState, and the number of claimable accounts which were imported.
 message MsgImportMorseClaimableAccountsResponse {
-
+  
   // On-chain computed sha256 hash of the morse_account_state provided in the corresponding MsgCreateMorseAccountState.
   bytes state_hash = 1 [(gogoproto.jsontag) = "state_hash"];
-
+  
   // Number of claimable accounts (EOAs) collected from Morse state export.
   uint64 num_accounts = 2 [(gogoproto.jsontag) = "num_accounts"];
 }
@@ -87,14 +88,14 @@ message MsgImportMorseClaimableAccountsResponse {
 // - Authz grants MAY be used to delegate claiming authority to other Shannon accounts
 message MsgClaimMorseAccount {
   option (cosmos.msg.v1.signer) = "shannon_dest_address";
-
+  
   // The bech32-encoded address of the Shannon account to which the claimed balance will be minted.
   string shannon_dest_address = 1 [(cosmos_proto.scalar) = "cosmos.AddressString", (gogoproto.jsontag) = "shannon_dest_address"];
-
+  
   // The hex-encoded address of the Morse account whose balance will be claimed.
   // E.g.: 00f9900606fa3d5c9179fc0c8513078a53a2073e
   string morse_src_address = 2 [(gogoproto.jsontag) = "morse_src_address"];
-
+  
   // The hex-encoded signature, by the Morse account, of this message (where this field is nil).
   // I.e.: morse_signature = private_key.sign(marshal(MsgClaimMorseAccount{morse_signature: nil, ...}))
   bytes morse_signature = 3 [(gogoproto.jsontag) = "morse_signature"];
@@ -104,14 +105,14 @@ message MsgClaimMorseAccount {
 // It indicates the morse_src_address of the account which was claimed, the total
 // balance claimed, and the height at which the claim was committed.
 message MsgClaimMorseAccountResponse {
-
+  
   // The hex-encoded address of the Morse account whose balance will be claimed.
   // E.g.: 00f9900606fa3d5c9179fc0c8513078a53a2073e
   string morse_src_address = 1 [(gogoproto.jsontag) = "morse_src_address"];
-
+  
   // The balance which was claimed.
   cosmos.base.v1beta1.Coin claimed_balance = 2 [(gogoproto.jsontag) = "claimed_balance", (gogoproto.nullable) = false];
-
+  
   // The height (on Shannon) at which the claim was created.
   int64 claimed_at_height = 3;
 }
@@ -121,23 +122,22 @@ message MsgClaimMorseAccountResponse {
 // to the balance of the given Shannon account, followed by staking that Shannon account as an application.
 message MsgClaimMorseApplication {
   option (cosmos.msg.v1.signer) = "shannon_dest_address";
-
+  
   // The bech32-encoded address of the Shannon account to which the claimed tokens
   // will be minted and from which the application will be staked.
   string shannon_dest_address = 1 [(cosmos_proto.scalar) = "cosmos.AddressString", (gogoproto.jsontag) = "shannon_dest_address"];
-
+  
   // The hex-encoded address of the Morse account whose balance will be claimed.
   // E.g.: 00f9900606fa3d5c9179fc0c8513078a53a2073e
-
   string morse_src_address = 2 [(gogoproto.jsontag) = "morse_src_address"];
-
+  
   // The hex-encoded signature, by the Morse account, of this message (where this field is nil).
   // I.e.: morse_signature = private_key.sign(marshal(MsgClaimMorseAccount{morse_signature: nil, ...}))
   bytes morse_signature = 3 [(gogoproto.jsontag) = "morse_signature"];
-
+  
   // The upokt which the Shannon destination account will stake as an application.
   cosmos.base.v1beta1.Coin stake = 4 [(gogoproto.jsontag) = "stake"];
-
+  
   // The services this application is staked to request service for.
   shared.ApplicationServiceConfig service_config = 5 [(gogoproto.jsontag) = "service_config"];
 }
@@ -146,20 +146,20 @@ message MsgClaimMorseApplication {
 // It indicates the morse_src_address of the account which was claimed, the unstaked
 // balance claimed, the application stake, and the height at which the claim was committed.
 message MsgClaimMorseApplicationResponse {
-
+  
   // The hex-encoded address of the Morse account whose balance will be claimed.
   string morse_src_address = 1 [(gogoproto.jsontag) = "morse_src_address"];
-
+  
   // The unstaked balance which was claimed.
   cosmos.base.v1beta1.Coin claimed_balance = 2 [(gogoproto.jsontag) = "claimed_balance", (gogoproto.nullable) = false];
-
+  
   // The stake of the application which was staked as a result of the claim.
   // If the application was already staked, this amount does not include the initial stake (i.e. only the portion which was "claimed").
   cosmos.base.v1beta1.Coin claimedApplicationStake = 3 [(gogoproto.jsontag) = "claimed_application_stake", (gogoproto.nullable) = false];
-
+  
   // The height (on Shannon) at which the claim was created.
   int64 claimed_at_height = 4 [(gogoproto.jsontag) = "claimed_at_height"];
-
+  
   // The service ID of the service which the application is staked for.
   string service_id = 5 [(gogoproto.jsontag) = "service_id"];
 }
@@ -171,22 +171,22 @@ message MsgClaimMorseApplicationResponse {
 // claimed balance.
 message MsgClaimMorseSupplier {
   option (cosmos.msg.v1.signer) = "shannon_dest_address";
-
+  
   // The bech32-encoded address of the Shannon account to which the claimed tokens
   // will be minted and from which the supplier will be staked.
   string shannon_dest_address = 1 [(cosmos_proto.scalar) = "cosmos.AddressString", (gogoproto.jsontag) = "shannon_dest_address"];
-
+  
   // The hex-encoded address of the Morse account whose balance will be claimed.
   // E.g.: 00f9900606fa3d5c9179fc0c8513078a53a2073e
   string morse_src_address = 2 [(gogoproto.jsontag) = "morse_src_address"];
-
+  
   // The hex-encoded signature, by the Morse account, of this message (where this field is nil).
   // I.e.: morse_signature = private_key.sign(marshal(MsgClaimMorseAccount{morse_signature: nil, ...}))
   bytes morse_signature = 3 [(gogoproto.jsontag) = "morse_signature"];
-
+  
   // The upokt which the Shannon destination account will stake as an supplier.
   cosmos.base.v1beta1.Coin stake = 4 [(gogoproto.jsontag) = "stake"];
-
+  
   // The services this supplier is staked to request service for.
   shared.SupplierServiceConfig service_config = 5 [(gogoproto.jsontag) = "service_config"];
 }
@@ -195,21 +195,38 @@ message MsgClaimMorseSupplier {
 // It indicates the morse_src_address of the account which was claimed, the unstaked
 // balance claimed, the supplier stake, and the height at which the claim was committed.
 message MsgClaimMorseSupplierResponse {
-
+  
   // The hex-encoded address of the Morse account whose balance will be claimed.
   string morse_src_address = 1 [(gogoproto.jsontag) = "morse_src_address"];
-
+  
   // The unstaked balance which was claimed.
   cosmos.base.v1beta1.Coin claimed_balance = 2 [(gogoproto.nullable) = false, (gogoproto.jsontag) = "claimed_balance"];
-
+  
   // The stake of the supplier which was staked as a result of the claim.
   // If the supplier was already staked, this amount does not include the initial stake (i.e. only the portion which was "claimed").
   string service_id = 3 [(gogoproto.jsontag) = "service_id"];
-
+  
   // The height (on Shannon) at which the claim was created.
   cosmos.base.v1beta1.Coin claimed_supplier_stake = 4 [(gogoproto.nullable) = false, (gogoproto.jsontag) = "claimed_supplier_stake"];
-
+  
   // The service ID of the service which the supplier is staked for.
   int64 claimed_at_height = 5 [(gogoproto.jsontag) = "claimed_at_height"];
+}
+
+message MsgClaimMorseGateway {
+  option (cosmos.msg.v1.signer) = "shannonDestAddress";
+  string                   shannonDestAddress = 1;
+  string                   morseSrcAddress    = 2;
+  string                   morseSignature     = 3;
+  cosmos.base.v1beta1.Coin stake              = 4 [(gogoproto.nullable) = false];
+}
+
+message MsgClaimMorseGatewayResponse {
+  string                   morseSrcAddress         = 1;
+  cosmos.base.v1beta1.Coin claimedBalance          = 2 [(gogoproto.nullable) = false];
+  string                   serviceId               = 3;
+  cosmos.base.v1beta1.Coin claimedApplicationStake = 4 [(gogoproto.nullable) = false];
+  int32                    claimedAtHeight         = 5;
+  string                   gateway                 = 6;
 }
 
