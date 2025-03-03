@@ -61,44 +61,47 @@ func TestCollectMorseAccounts(t *testing.T) {
 	require.Equal(t, expectedMorseAccountState, actualMorseAccountState)
 }
 
+// TestNewTestMorseStateExport exercises the NewTestMorseStateExport testutil function
+// by using it to generate a MorseStateExport which contains an increasing number of
+// accounts; verifying the number of accounts and their total balances and stakes of
+// each MorseStateExport's (via transformMorseState).
 func TestNewTestMorseStateExport(t *testing.T) {
-	// DEV_NOTE: Beyond i=3, the naive method for calculating the expected Shannon accumulated actor stakes fails.
-	for i := 1; i < 4; i++ {
-		t.Run(fmt.Sprintf("num_accounts=%d", i), func(t *testing.T) {
+	for numAccounts := 1; numAccounts <= 10; numAccounts++ {
+		t.Run(fmt.Sprintf("num_accounts=%d", numAccounts), func(t *testing.T) {
 			morseStateExport := new(migrationtypes.MorseStateExport)
-			stateExportBz, _ := testmigration.NewMorseStateExportAndAccountStateBytes(t, i)
+			stateExportBz, _ := testmigration.NewMorseStateExportAndAccountStateBytes(t, numAccounts)
 			err := cmtjson.Unmarshal(stateExportBz, morseStateExport)
 			require.NoError(t, err)
 
 			exportAccounts := morseStateExport.AppState.Auth.Accounts
-			require.Equal(t, i, len(exportAccounts))
-
-			numTotalAccounts := 1
-			for k := i; k > 1; k-- {
-				numTotalAccounts += k
-			}
-
-			// i=1 -> "100000001", i=2 -> "200000002": creates scaled balance with unique ID
-			expectedShannonAccountBalance := fmt.Sprintf("%d00000%d", i, i)
-
-			// n=5 -> "5000050": scales with total accounts plus unique suffix
-			expectedShannonTotalAppStake := fmt.Sprintf("%d000%d0", numTotalAccounts, numTotalAccounts)
-
-			// n=5 -> "505000": different scaling pattern using same total accounts
-			expectedShannonTotalSupplierStake := fmt.Sprintf("%d0%d00", numTotalAccounts, numTotalAccounts)
+			require.Equal(t, numAccounts, len(exportAccounts))
 
 			morseWorkspace := newMorseImportWorkspace()
 			err = transformMorseState(morseStateExport, morseWorkspace)
 			require.NoError(t, err)
 
-			require.Equal(t, uint64(i), morseWorkspace.getNumAccounts())
-			require.Equal(t, uint64(i), morseWorkspace.numApplications)
-			require.Equal(t, uint64(i), morseWorkspace.numSuppliers)
+			require.Equal(t, uint64(numAccounts), morseWorkspace.getNumAccounts())
+			require.Equal(t, uint64(numAccounts), morseWorkspace.numApplications)
+			require.Equal(t, uint64(numAccounts), morseWorkspace.numSuppliers)
 
-			morseAccounts := morseWorkspace.accountState.Accounts[i-1]
-			require.Equal(t, expectedShannonAccountBalance, morseAccounts.UnstakedBalance.Amount.String())
-			require.Equal(t, expectedShannonTotalAppStake, morseWorkspace.accumulatedTotalAppStake.String())
-			require.Equal(t, expectedShannonTotalSupplierStake, morseWorkspace.accumulatedTotalSupplierStake.String())
+			// Sum numAccounts from previous iterations to get total number of accounts.
+			numTotalAccounts := 1
+			for k := numAccounts; k > 1; k-- {
+				numTotalAccounts += k
+			}
+
+			// numTotalAccounts=1 -> "100000001", numTotalAccounts=2 -> "200000002": creates scaled balance with unique ID
+			expectedShannonTotalUnstakedBalance := int64(1e6*numTotalAccounts + numTotalAccounts)
+
+			// numTotalAccounts=5 -> "5000050": scales with total accounts plus unique suffix
+			expectedShannonTotalAppStake := int64(1e5*numTotalAccounts + (numTotalAccounts * 10))
+
+			// numTotalAccounts=5 -> "505000": different scaling pattern using same total accounts
+			expectedShannonTotalSupplierStake := int64(1e4*numTotalAccounts + (numTotalAccounts * 100))
+
+			require.Equal(t, expectedShannonTotalUnstakedBalance, morseWorkspace.accumulatedTotalBalance.Int64())
+			require.Equal(t, expectedShannonTotalAppStake, morseWorkspace.accumulatedTotalAppStake.Int64())
+			require.Equal(t, expectedShannonTotalSupplierStake, morseWorkspace.accumulatedTotalSupplierStake.Int64())
 		})
 	}
 }

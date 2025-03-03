@@ -104,11 +104,12 @@ func (k msgServer) ClaimMorseApplication(ctx context.Context, msg *migrationtype
 	}
 
 	// DEV_NOTE: While "down-staking" isn't currently supported for applications,
-	// it MAY be in the future. In such case, a MsgClaimMorseApplication which claims
-	// an existing application, with a stake amount ("default" or otherwise) which is
-	// less than the current application stake amount, woule result in a negative
-	// claimedAppStake. This value is only used in event(s) and the msg response.
-	// It is set to zero in this case.
+	// it MAY be in the future. When BOTH:
+	// - the claimed Shannon account is already staked as an application
+	// - the MsgClaimMorseApplication stake amount ("default" or otherwise)
+	//   is less than the current application stake amount
+	// then, claimedAppStake is set to zero as it would otherwise result in a negative amount.
+	// This value is only used in event(s) and the msg response.
 	claimedAppStake, err := app.Stake.SafeSub(initialAppStake)
 	if err != nil {
 		if !strings.Contains(err.Error(), "negative coin amount") {
