@@ -55,6 +55,8 @@ An upgrade is necessary whenever there's an API, State Machine, or other Consens
    - Refer to `historical.go` for past upgrades and examples.
    - Consult Cosmos-sdk documentation on upgrades for additional guidance on [building-apps/app-upgrade](https://docs.cosmos.network/main/build/building-apps/app-upgrade) and [modules/upgrade](https://docs.cosmos.network/main/build/modules/upgrade).
 
+3. Update the `app/upgrades.go` file to include the new upgrade plan in `allUpgrades`.
+
 :::info
 
 Creating a new upgrade plan **MUST BE DONE** even if there are no state changes.
