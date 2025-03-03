@@ -128,6 +128,7 @@ func (k msgServer) ClaimMorseApplication(ctx context.Context, msg *migrationtype
 		ClaimedBalance:          claimedUnstakedTokens,
 		ClaimedApplicationStake: claimedAppStake,
 		ClaimedAtHeight:         sdkCtx.BlockHeight(),
+		Application:             app,
 	}
 	if err = sdkCtx.EventManager().EmitTypedEvent(&event); err != nil {
 		return nil, status.Error(
@@ -147,5 +148,6 @@ func (k msgServer) ClaimMorseApplication(ctx context.Context, msg *migrationtype
 		ClaimedBalance:          claimedUnstakedTokens,
 		ClaimedApplicationStake: claimedAppStake,
 		ClaimedAtHeight:         sdkCtx.BlockHeight(),
+		Application:             app,
 	}, nil
 }

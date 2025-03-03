@@ -46,9 +46,11 @@ func TestMsgServer_ClaimMorseApplication_SuccessNewApplication(t *testing.T) {
 		Services: []*sharedtypes.ApplicationServiceConfig{&testServiceConfig},
 	}
 	expectedApp := apptypes.Application{
-		Address:        shannonDestAddr,
-		Stake:          &applicationStake,
-		ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{&testServiceConfig},
+		Address:                   shannonDestAddr,
+		Stake:                     &applicationStake,
+		ServiceConfigs:            []*sharedtypes.ApplicationServiceConfig{&testServiceConfig},
+		DelegateeGatewayAddresses: make([]string, 0),
+		PendingUndelegations:      make(map[uint64]apptypes.UndelegatingGatewayList),
 	}
 
 	ctrl := gomock.NewController(t)
@@ -141,6 +143,7 @@ func TestMsgServer_ClaimMorseApplication_SuccessNewApplication(t *testing.T) {
 			Add(morseClaimableAccount.GetSupplierStake()),
 		ClaimedAtHeight: expectedClaimedAtHeight,
 		ServiceId:       testServiceConfig.GetServiceId(),
+		Application:     &expectedApp,
 	}
 	require.Equal(t, expectedRes, msgClaimRes)
 
@@ -160,6 +163,7 @@ func TestMsgServer_ClaimMorseApplication_SuccessNewApplication(t *testing.T) {
 		ClaimedBalance:          expectedClaimedUnstakedTokens,
 		ClaimedApplicationStake: applicationStake,
 		ClaimedAtHeight:         ctx.BlockHeight(),
+		Application:             &expectedApp,
 	}
 	claimEvents := events.FilterEvents[*migrationtypes.EventMorseApplicationClaimed](t, ctx.EventManager().Events())
 	require.Equal(t, 1, len(claimEvents))
