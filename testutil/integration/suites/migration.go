@@ -185,7 +185,7 @@ func (s *MigrationModuleSuite) ClaimMorseSupplier(
 	expectedMorseSrcAddr = morsePrivateKey.PubKey().Address().String()
 	require.Equal(t,
 		expectedMorseSrcAddr,
-		s.accountState.Accounts[morseAccountIdx-1].MorseSrcAddress,
+		s.accountState.Accounts[morseAccountIdx].MorseSrcAddress,
 	)
 
 	morseClaimMsg, err := migrationtypes.NewMsgClaimMorseSupplier(
