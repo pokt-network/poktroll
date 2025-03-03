@@ -299,14 +299,7 @@ func (s *MigrationModuleTestSuite) TestClaimMorseSupplier_ErrorMinStake() {
 	s.GenerateMorseAccountState(s.T(), s.numMorseClaimableAccounts)
 	s.ImportMorseClaimableAccounts(s.T())
 
-	supplierClient := s.SupplierSuite.GetSupplierQueryClient(s.T())
-	supplierParams, err := supplierClient.GetParams(s.SdkCtx())
-	s.NoError(err)
-
-	supplierMinStake := supplierParams.GetMinStake()
-	s.NoError(err)
-
-	belowSupplierMinStake := supplierMinStake.Sub(cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 1))
+	belowSupplierMinStake := s.minStake.Sub(cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 1))
 	shannonDestAddr := sample.AccAddress()
 	bankClient := s.GetBankQueryClient(s.T())
 
@@ -337,7 +330,7 @@ func (s *MigrationModuleTestSuite) TestClaimMorseSupplier_ErrorMinStake() {
 	require.Contains(s.T(), strings.ReplaceAll(err.Error(), `\`, ""), status.Error(
 		codes.InvalidArgument,
 		suppliertypes.ErrSupplierInvalidStake.Wrapf("supplier with owner %q must stake at least %s",
-			shannonDestAddr, supplierMinStake,
+			shannonDestAddr, s.minStake,
 		).Error(),
 	).Error())
 
@@ -358,6 +351,7 @@ func (s *MigrationModuleTestSuite) TestClaimMorseSupplier_ErrorMinStake() {
 	s.Equal(cosmostypes.NewCoin(volatile.DenomuPOKT, math.ZeroInt()), *migrationModuleBalance)
 
 	// Assert that the supplier was NOT staked.
+	supplierClient := s.SupplierSuite.GetSupplierQueryClient(s.T())
 	_, err = supplierClient.GetSupplier(s.SdkCtx(), shannonDestAddr)
 	require.EqualError(s.T(), err, status.Error(
 		codes.NotFound,
