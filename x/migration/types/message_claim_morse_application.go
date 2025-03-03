@@ -39,12 +39,15 @@ func NewMsgClaimMorseApplication(
 }
 
 // ValidateBasic ensures that:
-// - The morseSignature is non-empty (additional validation performed elsewhere).
+// - The morseSignature length is valid (signature validation performed elsewhere).
 // - The morseSrcAddress is valid (i.e. it is a valid hex-encoded address).
 // - The shannonDestAddress is valid (i.e. it is a valid bech32 address).
 func (msg *MsgClaimMorseApplication) ValidateBasic() error {
-	if len(msg.MorseSignature) == 0 {
-		return ErrMorseApplicationClaim.Wrap("morseSignature is empty")
+	if len(msg.MorseSignature) != MorseSignatureLengthBytes {
+		return ErrMorseApplicationClaim.Wrapf(
+			"invalid morse signature length; expected %d, got %d",
+			MorseSignatureLengthBytes, len(msg.MorseSignature),
+		)
 	}
 
 	if len(msg.MorseSrcAddress) != MorseAddressHexLengthBytes {
