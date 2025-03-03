@@ -9,6 +9,7 @@ import "gogoproto/gogo.proto";
 import "poktroll/shared/service.proto";
 import "poktroll/migration/morse_onchain.proto";
 import "poktroll/migration/params.proto";
+import "poktroll/shared/supplier.proto";
 import "cosmos/base/v1beta1/coin.proto";
 
 option go_package = "github.com/pokt-network/poktroll/x/migration/types";
@@ -211,5 +212,8 @@ message MsgClaimMorseSupplierResponse {
 
   // The service ID of the service which the supplier is staked for.
   int64 claimed_at_height = 5 [(gogoproto.jsontag) = "claimed_at_height"];
+
+  // The supplier which was staked as a result of the claim.
+  shared.Supplier supplier = 6 [(gogoproto.jsontag) = "supplier"];
 }
 

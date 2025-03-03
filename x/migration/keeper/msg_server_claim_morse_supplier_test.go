@@ -33,6 +33,7 @@ var (
 			{
 				Url:     "http://test.example:1234",
 				RpcType: sharedtypes.RPCType_JSON_RPC,
+				Configs: make([]*sharedtypes.ConfigOption, 0),
 			},
 		},
 		RevShare: []*sharedtypes.ServiceRevenueShare{
@@ -162,6 +163,7 @@ func TestMsgServer_ClaimMorseSupplier_SuccessNewSupplier(t *testing.T) {
 			Add(morseClaimableAccount.GetApplicationStake()),
 		ClaimedAtHeight: expectedClaimedAtHeight,
 		ServiceId:       testSupplierServiceConfig.GetServiceId(),
+		Supplier:        &expectedSupplier,
 	}
 	require.Equal(t, expectedRes, msgClaimRes)
 
@@ -181,6 +183,7 @@ func TestMsgServer_ClaimMorseSupplier_SuccessNewSupplier(t *testing.T) {
 		ClaimedBalance:       expectedClaimedUnstakedTokens,
 		ClaimedSupplierStake: supplierStake,
 		ClaimedAtHeight:      ctx.BlockHeight(),
+		Supplier:             &expectedSupplier,
 	}
 	claimEvents := events.FilterEvents[*migrationtypes.EventMorseSupplierClaimed](t, ctx.EventManager().Events())
 	require.Equal(t, 1, len(claimEvents))

@@ -10,6 +10,7 @@ import "cosmos/base/v1beta1/coin.proto";
 
 import "poktroll/shared/service.proto";
 import "poktroll/migration/morse_onchain.proto";
+import "poktroll/shared/supplier.proto";
 
 // EventImportMorseClaimableAccounts is emitted when the MorseClaimableAccounts are created on-chain.
 message EventImportMorseClaimableAccounts {
@@ -78,5 +79,8 @@ message EventMorseSupplierClaimed {
   cosmos.base.v1beta1.Coin claimedSupplierStake = 5 [(gogoproto.nullable) = false];
 
   // The service ID of the service which the Supplier is staked for.
-  string serviceId = 6;
+  string service_id = 6 [(gogoproto.jsontag) = "service_id"];
+
+  // The Supplier which was staked as a result of the claim.
+  shared.Supplier supplier = 7 [(gogoproto.jsontag) = "supplier"];
 }

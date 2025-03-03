@@ -132,6 +132,7 @@ func (k msgServer) ClaimMorseSupplier(ctx context.Context, msg *migrationtypes.M
 		ClaimedBalance:       claimedUnstakedTokens,
 		ClaimedSupplierStake: claimedSupplierStake,
 		ClaimedAtHeight:      sdkCtx.BlockHeight(),
+		Supplier:             supplier,
 	}
 	if err = sdkCtx.EventManager().EmitTypedEvent(&event); err != nil {
 		return nil, status.Error(
@@ -151,5 +152,6 @@ func (k msgServer) ClaimMorseSupplier(ctx context.Context, msg *migrationtypes.M
 		ClaimedBalance:       claimedUnstakedTokens,
 		ClaimedSupplierStake: claimedSupplierStake,
 		ClaimedAtHeight:      sdkCtx.BlockHeight(),
+		Supplier:             supplier,
 	}, nil
 }
