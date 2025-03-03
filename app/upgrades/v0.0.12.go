@@ -9,6 +9,7 @@ import (
 	upgradetypes "cosmossdk.io/x/upgrade/types"
 	cosmosTypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
+
 	"github.com/pokt-network/poktroll/app/keepers"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )

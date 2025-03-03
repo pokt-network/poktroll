@@ -18,6 +18,7 @@ import (
 	consensusparamtypes "github.com/cosmos/cosmos-sdk/x/consensus/types"
 
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
+
 	"github.com/pokt-network/poktroll/app/keepers"
 )
 
