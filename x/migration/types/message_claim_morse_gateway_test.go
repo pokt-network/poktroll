@@ -10,6 +10,8 @@ import (
 )
 
 func TestMsgClaimMorseGateway_ValidateBasic(t *testing.T) {
+	// TODO_UPNEXT(@bryanchriswhite, #1034): Add/update scenarios.
+
 	tests := []struct {
 		name string
 		msg  MsgClaimMorseGateway

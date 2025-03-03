@@ -80,3 +80,5 @@ message EventMorseSupplierClaimed {
   // The service ID of the service which the Supplier is staked for.
   string serviceId = 6;
 }
+
+// TODO_UPNEXT(@bryanchriswhite, #1034): Add EventMorseGatewayClaimed.

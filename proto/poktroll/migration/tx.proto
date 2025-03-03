@@ -213,6 +213,12 @@ message MsgClaimMorseSupplierResponse {
   int64 claimed_at_height = 5 [(gogoproto.jsontag) = "claimed_at_height"];
 }
 
+// TODO_UPNEXT(@bryanchriswhite, #1034): for messages below:
+// - Update field types where necessary.
+// - Rename fields to conform to best practices.
+// - Add applicable field options.
+// - Add comments to fields & messages.
+
 message MsgClaimMorseGateway {
   option (cosmos.msg.v1.signer) = "shannonDestAddress";
   string                   shannonDestAddress = 1;
