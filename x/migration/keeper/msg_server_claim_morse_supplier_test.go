@@ -238,7 +238,8 @@ func TestMsgServer_ClaimMorseSupplier_Error(t *testing.T) {
 		expectedErr := status.Error(
 			codes.InvalidArgument,
 			migrationtypes.ErrMorseSupplierClaim.Wrapf(
-				"morseSignature is empty",
+				"invalid morse signature length; expected %d, got %d",
+				migrationtypes.MorseSignatureLengthBytes, 0,
 			).Error(),
 		)
 
