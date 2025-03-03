@@ -95,12 +95,18 @@ func (s *MigrationModuleTestSuite) TestClaimMorseNewApplication() {
 				Add(expectedMorseClaimableAccount.GetSupplierStake()).
 				Sub(*expectedStake)
 
+			expectedApp := apptypes.Application{
+				Address:        shannonDestAddr,
+				Stake:          expectedStake,
+				ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{s.appServiceConfig},
+			}
 			expectedClaimApplicationRes := &migrationtypes.MsgClaimMorseApplicationResponse{
 				MorseSrcAddress:         morseSrcAddr,
 				ClaimedBalance:          expectedBalance,
 				ClaimedApplicationStake: *expectedStake,
 				ClaimedAtHeight:         s.SdkCtx().BlockHeight() - 1,
 				ServiceId:               s.appServiceConfig.GetServiceId(),
+				Application:             &expectedApp,
 			}
 			s.Equal(expectedClaimApplicationRes, claimAppRes)
 
@@ -122,11 +128,6 @@ func (s *MigrationModuleTestSuite) TestClaimMorseNewApplication() {
 			s.Equal(cosmostypes.NewCoin(volatile.DenomuPOKT, math.ZeroInt()), *migrationModuleBalance)
 
 			// Assert that the application was staked.
-			expectedApp := apptypes.Application{
-				Address:        shannonDestAddr,
-				Stake:          expectedStake,
-				ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{s.appServiceConfig},
-			}
 			appClient := s.AppSuite.GetAppQueryClient(s.T())
 			app, err := appClient.GetApplication(s.SdkCtx(), shannonDestAddr)
 			s.NoError(err)
@@ -186,12 +187,18 @@ func (s *MigrationModuleTestSuite) TestClaimMorseExistingApplication() {
 				Sub(expectedClaimedStake)
 
 			// Assert that the claim msg response is correct.
+			expectedApp := apptypes.Application{
+				Address:        shannonDestAddr,
+				Stake:          appStakeToClaim,
+				ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{s.appServiceConfig},
+			}
 			expectedClaimApplicationRes := &migrationtypes.MsgClaimMorseApplicationResponse{
 				MorseSrcAddress:         morseSrcAddr,
 				ClaimedBalance:          expectedBalance,
 				ClaimedApplicationStake: expectedClaimedStake,
 				ClaimedAtHeight:         s.SdkCtx().BlockHeight() - 1,
 				ServiceId:               s.appServiceConfig.GetServiceId(),
+				Application:             &expectedApp,
 			}
 			s.Equal(expectedClaimApplicationRes, claimAppRes)
 
@@ -213,11 +220,6 @@ func (s *MigrationModuleTestSuite) TestClaimMorseExistingApplication() {
 			s.Equal(cosmostypes.NewCoin(volatile.DenomuPOKT, math.ZeroInt()), *migrationModuleBalance)
 
 			// Assert that the application was updated.
-			expectedApp := apptypes.Application{
-				Address:        shannonDestAddr,
-				Stake:          appStakeToClaim,
-				ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{s.appServiceConfig},
-			}
 			app, err := appClient.GetApplication(s.SdkCtx(), shannonDestAddr)
 			s.NoError(err)
 			s.Equal(expectedApp, app)
