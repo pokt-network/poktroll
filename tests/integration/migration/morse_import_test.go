@@ -72,6 +72,7 @@ func (s *MigrationModuleTestSuite) SetupTest() {
 	s.ServiceSuite.SetApp(s.GetApp())
 	s.AppSuite.SetApp(s.GetApp())
 	s.SupplierSuite.SetApp(s.GetApp())
+	s.GatewaySuite.SetApp(s.GetApp())
 }
 
 func TestMigrationModuleSuite(t *testing.T) {
