@@ -35,6 +35,14 @@ func (k Keeper) GetSupplier(
 	}
 
 	k.cdc.MustUnmarshal(supplierBz, &supplier)
+	if supplier.Services == nil {
+		supplier.Services = make([]*sharedtypes.SupplierServiceConfig, 0)
+	}
+
+	if supplier.ServicesUpdateHistory == nil {
+		supplier.ServicesUpdateHistory = make([]*sharedtypes.ServicesUpdate, 0)
+	}
+
 	return supplier, true
 }
 
@@ -56,6 +64,15 @@ func (k Keeper) GetAllSuppliers(ctx context.Context) (suppliers []sharedtypes.Su
 	for ; iterator.Valid(); iterator.Next() {
 		var supplier sharedtypes.Supplier
 		k.cdc.MustUnmarshal(iterator.Value(), &supplier)
+
+		if supplier.Services == nil {
+			supplier.Services = make([]*sharedtypes.SupplierServiceConfig, 0)
+		}
+
+		if supplier.ServicesUpdateHistory == nil {
+			supplier.ServicesUpdateHistory = make([]*sharedtypes.ServicesUpdate, 0)
+		}
+
 		suppliers = append(suppliers, supplier)
 	}
 

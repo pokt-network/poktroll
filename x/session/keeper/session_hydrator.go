@@ -7,7 +7,7 @@ import (
 	"encoding/binary"
 	"encoding/hex"
 	"fmt"
-	"math/rand"
+	"slices"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	_ "golang.org/x/crypto/sha3"
@@ -170,26 +170,20 @@ func (k Keeper) hydrateSessionApplication(ctx context.Context, sh *sessionHydrat
 func (k Keeper) hydrateSessionSuppliers(ctx context.Context, sh *sessionHydrator) error {
 	logger := k.Logger().With("method", "hydrateSessionSuppliers")
 
+	// TODO_POST_MAINNET: Use the number of suppliers per session used as of the query height.
 	numSuppliersPerSession := int(k.GetParams(ctx).NumSuppliersPerSession)
+	// Get suppliers by service ID.
 	suppliers := k.supplierKeeper.GetAllSuppliers(ctx)
 
 	candidateSuppliers := make([]*sharedtypes.Supplier, 0)
-	for _, s := range suppliers {
-		// Exclude suppliers that are inactive (i.e. currently unbonding).
-		if !s.IsActive(uint64(sh.sessionHeader.SessionEndBlockHeight), sh.sessionHeader.ServiceId) {
-			continue
-		}
-
-		// NB: Allocate a new heap variable as s is a value and we're appending
-		// to a slice of  pointers; otherwise, we'd be appending new pointers to
-		// the same memory address containing the last supplier in the loop.
-		supplier := s
-		// TODO_OPTIMIZE: If `supplier.Services` was a map[string]struct{}, we could eliminate `slices.Contains()`'s loop
-		for _, supplierServiceConfig := range supplier.Services {
-			if supplierServiceConfig.ServiceId == sh.sessionHeader.ServiceId {
-				candidateSuppliers = append(candidateSuppliers, &supplier)
-				break
-			}
+	candidatesToRandomWeight := make(map[string]int)
+	for _, supplier := range suppliers {
+		if supplier.IsActive(uint64(sh.blockHeight), sh.sessionHeader.ServiceId) {
+			candidateSuppliers = append(candidateSuppliers, &supplier)
+			// generate a random weight for the supplier using the session ID and the supplier's operator address
+			candidateSeed := concatWithDelimiter(sessionIDComponentDelimiter, sh.sessionIDBz, []byte(supplier.OperatorAddress))
+			candidateSeedHash := sha3Hash(candidateSeed)
+			candidatesToRandomWeight[supplier.OperatorAddress] = int(binary.BigEndian.Uint64(candidateSeedHash[:8]))
 		}
 	}
 
@@ -204,6 +198,14 @@ func (k Keeper) hydrateSessionSuppliers(ctx context.Context, sh *sessionHydrator
 		)
 	}
 
+	slices.SortFunc(candidateSuppliers, func(i, j *sharedtypes.Supplier) int {
+		diff := candidatesToRandomWeight[i.OperatorAddress] - candidatesToRandomWeight[j.OperatorAddress]
+		if diff == 0 {
+			return bytes.Compare([]byte(i.OperatorAddress), []byte(j.OperatorAddress))
+		}
+		return diff
+	})
+
 	if len(candidateSuppliers) < numSuppliersPerSession {
 		logger.Debug(fmt.Sprintf(
 			"Number of available suppliers (%d) is less than the maximum number of possible suppliers per session (%d)",
@@ -212,57 +214,10 @@ func (k Keeper) hydrateSessionSuppliers(ctx context.Context, sh *sessionHydrator
 		))
 		sh.session.Suppliers = candidateSuppliers
 	} else {
-		sh.session.Suppliers = pseudoRandomSelection(candidateSuppliers, numSuppliersPerSession, sh.sessionIDBz)
+		sh.session.Suppliers = candidateSuppliers[:numSuppliersPerSession]
 	}
 
 	return nil
-}
-
-// TODO_MAINNET: We are using a `Go` native implementation for a pseudo-random
-// number generator. In order for it to be language agnostic, a general purpose
-// algorithm MUST be used. pseudoRandomSelection returns a random subset of the
-// candidates.
-func pseudoRandomSelection(
-	candidates []*sharedtypes.Supplier,
-	numTarget int,
-	sessionIDBz []byte,
-) []*sharedtypes.Supplier {
-	// Take the first 8 bytes of sessionId to use as the seed
-	// NB: There is specific reason why `BigEndian` was chosen over `LittleEndian` in this specific context.
-	seed := int64(binary.BigEndian.Uint64(sha3Hash(sessionIDBz)[:8]))
-
-	// Retrieve the indices for the candidates
-	actors := make([]*sharedtypes.Supplier, 0)
-	uniqueIndices := uniqueRandomIndices(seed, int64(len(candidates)), int64(numTarget))
-	for idx := range uniqueIndices {
-		actors = append(actors, candidates[idx])
-	}
-
-	return actors
-}
-
-// uniqueRandomIndices returns a map of `numIndices` unique random numbers less than `maxIndex`
-// seeded by `seed`.
-// panics if `numIndicies > maxIndex` since that code path SHOULD never be executed.
-// NB: A map pointing to empty structs is used to simulate set behavior.
-func uniqueRandomIndices(seed, maxIndex, numIndices int64) map[int64]struct{} {
-	// This should never happen
-	if numIndices > maxIndex {
-		panic(fmt.Sprintf("uniqueRandomIndices: numIndices (%d) is greater than maxIndex (%d)", numIndices, maxIndex))
-	}
-
-	// create a new random source with the seed
-	randSrc := rand.NewSource(seed)
-
-	// initialize a map to capture the indicesMap we'll return
-	indicesMap := make(map[int64]struct{}, maxIndex)
-
-	// The random source could potentially return duplicates, so while loop until we have enough unique indices
-	for int64(len(indicesMap)) < numIndices {
-		indicesMap[randSrc.Int63()%int64(maxIndex)] = struct{}{}
-	}
-
-	return indicesMap
 }
 
 func concatWithDelimiter(delimiter string, bz ...[]byte) []byte {

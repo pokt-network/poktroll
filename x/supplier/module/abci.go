@@ -19,5 +19,23 @@ func EndBlocker(ctx sdk.Context, k keeper.Keeper) error {
 		return err
 	}
 
+	if err := k.EndBlockerPruneSupplierServicesUpdateHistory(ctx); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func BeginBlocker(ctx sdk.Context, k keeper.Keeper) error {
+	// Telemetry: measure the begin-block execution time following standard cosmos-sdk practices.
+	defer cosmostelemetry.ModuleMeasureSince(types.ModuleName, cosmostelemetry.Now(), cosmostelemetry.MetricKeyBeginBlocker)
+
+	numSuppliersWithServicesActivation, err := k.BeginBlockerActivateSupplierServices(ctx)
+	if err != nil {
+		return err
+	}
+
+	k.Logger().Info("Activated services for suppliers", "num_suppliers", numSuppliersWithServicesActivation)
+
 	return nil
 }

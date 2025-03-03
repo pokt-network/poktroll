@@ -183,20 +183,22 @@ func (k msgServer) createSupplier(
 	currentHeight := sdkCtx.BlockHeight()
 	nextSessionStartHeight := sharedtypes.GetNextSessionStartHeight(&sharedParams, currentHeight)
 
-	// Register activation height for each service. Since the supplier is new,
-	// all services are activated at the end of the current session.
-	servicesActivationHeightsMap := make(map[string]uint64)
-	for _, serviceConfig := range msg.Services {
-		servicesActivationHeightsMap[serviceConfig.ServiceId] = uint64(nextSessionStartHeight)
+	supplier := sharedtypes.Supplier{
+		OwnerAddress:          msg.OwnerAddress,
+		OperatorAddress:       msg.OperatorAddress,
+		Stake:                 msg.Stake,
+		Services:              make([]*sharedtypes.SupplierServiceConfig, 0),
+		ServicesUpdateHistory: make([]*sharedtypes.ServicesUpdate, 0),
 	}
 
-	return sharedtypes.Supplier{
-		OwnerAddress:                 msg.OwnerAddress,
-		OperatorAddress:              msg.OperatorAddress,
-		Stake:                        msg.Stake,
-		Services:                     msg.Services,
-		ServicesActivationHeightsMap: servicesActivationHeightsMap,
+	servicesUpdate := &sharedtypes.ServicesUpdate{
+		Services:     msg.Services,
+		UpdateHeight: uint64(nextSessionStartHeight),
 	}
+
+	supplier.ServicesUpdateHistory = append(supplier.ServicesUpdateHistory, servicesUpdate)
+
+	return supplier
 }
 
 // updateSupplier updates the given supplier with the given message.
@@ -211,43 +213,26 @@ func (k msgServer) updateSupplier(
 	}
 
 	supplier.Stake = msg.Stake
-
 	supplier.OwnerAddress = msg.OwnerAddress
-
-	// Validate that the service configs maintain at least one service.
-	// Additional validation is done in `msg.ValidateBasic` above.
-	if len(msg.Services) == 0 {
-		return suppliertypes.ErrSupplierInvalidServiceConfig.Wrapf("must have at least one service")
-	}
 
 	sharedParams := k.sharedKeeper.GetParams(ctx)
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 	currentHeight := sdkCtx.BlockHeight()
 	nextSessionStartHeight := sharedtypes.GetNextSessionStartHeight(&sharedParams, currentHeight)
 
-	// Update activation height for services update. New services are activated at the
-	// end of the current session, while existing ones keep their activation height.
-	// TODO_MAINNET: Service removal should take effect at the beginning of the
-	// next session, otherwise sessions that are fetched at their start height may
-	// still include Suppliers that no longer provide the services they removed.
-	// For the same reason, any SupplierEndpoint change should take effect at the
-	// beginning of the next session.
-	ServicesActivationHeightMap := make(map[string]uint64)
-	for _, serviceConfig := range msg.Services {
-		ServicesActivationHeightMap[serviceConfig.ServiceId] = uint64(nextSessionStartHeight)
-		// If the service has already been staked for, keep its activation height.
-		for _, existingServiceConfig := range supplier.Services {
-			if existingServiceConfig.ServiceId == serviceConfig.ServiceId {
-				existingServiceActivationHeight := supplier.ServicesActivationHeightsMap[serviceConfig.ServiceId]
-				ServicesActivationHeightMap[serviceConfig.ServiceId] = existingServiceActivationHeight
-				break
-			}
-		}
+	servicesUpdate := &sharedtypes.ServicesUpdate{
+		Services:     msg.Services,
+		UpdateHeight: uint64(nextSessionStartHeight),
 	}
 
-	supplier.Services = msg.Services
-	supplier.ServicesActivationHeightsMap = ServicesActivationHeightMap
+	updateHistory := supplier.ServicesUpdateHistory
+	updateIdx := len(updateHistory) - 1
+	if updateIdx > 0 && updateHistory[updateIdx].UpdateHeight == uint64(nextSessionStartHeight) {
+		supplier.ServicesUpdateHistory[updateIdx] = servicesUpdate
+		return nil
+	}
 
+	supplier.ServicesUpdateHistory = append(supplier.ServicesUpdateHistory, servicesUpdate)
 	return nil
 }
 
