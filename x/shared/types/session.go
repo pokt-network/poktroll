@@ -161,6 +161,11 @@ func IsSessionEndHeight(sharedParams *Params, queryHeight int64) bool {
 	return queryHeight != GetSessionEndHeight(sharedParams, queryHeight)
 }
 
+// IsSessionStartHeight returns true if the queryHeight is the first block of the session.
+func IsSessionStartHeight(sharedParams *Params, queryHeight int64) bool {
+	return queryHeight == GetSessionStartHeight(sharedParams, queryHeight)
+}
+
 // GetSessionEndToProofWindowCloseBlocks returns the total number of blocks
 // from the moment a session ends until the proof window closes.
 func GetSessionEndToProofWindowCloseBlocks(params *Params) int64 {

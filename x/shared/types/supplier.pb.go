@@ -9,7 +9,6 @@ import (
 	types "github.com/cosmos/cosmos-sdk/types"
 	_ "github.com/cosmos/gogoproto/gogoproto"
 	proto "github.com/cosmos/gogoproto/proto"
-	github_com_cosmos_gogoproto_sortkeys "github.com/cosmos/gogoproto/sortkeys"
 	io "io"
 	math "math"
 	math_bits "math/bits"
@@ -40,11 +39,8 @@ type Supplier struct {
 	// List of service configurations supported by this supplier
 	Services []*SupplierServiceConfig `protobuf:"bytes,4,rep,name=services,proto3" json:"services,omitempty"`
 	// Session end height when supplier initiated unstaking (0 if not unstaking)
-	UnstakeSessionEndHeight uint64 `protobuf:"varint,5,opt,name=unstake_session_end_height,json=unstakeSessionEndHeight,proto3" json:"unstake_session_end_height,omitempty"`
-	// Mapping of serviceIds to their activation heights
-	// - Key: serviceId
-	// - Value: Session start height when supplier becomes active for the service
-	ServicesActivationHeightsMap map[string]uint64 `protobuf:"bytes,6,rep,name=services_activation_heights_map,json=servicesActivationHeightsMap,proto3" json:"services_activation_heights_map,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"varint,2,opt,name=value,proto3"`
+	UnstakeSessionEndHeight uint64            `protobuf:"varint,5,opt,name=unstake_session_end_height,json=unstakeSessionEndHeight,proto3" json:"unstake_session_end_height,omitempty"`
+	ServicesUpdateHistory   []*ServicesUpdate `protobuf:"bytes,6,rep,name=services_update_history,json=servicesUpdateHistory,proto3" json:"services_update_history,omitempty"`
 }
 
 func (m *Supplier) Reset()         { *m = Supplier{} }
@@ -111,51 +107,98 @@ func (m *Supplier) GetUnstakeSessionEndHeight() uint64 {
 	return 0
 }
 
-func (m *Supplier) GetServicesActivationHeightsMap() map[string]uint64 {
+func (m *Supplier) GetServicesUpdateHistory() []*ServicesUpdate {
 	if m != nil {
-		return m.ServicesActivationHeightsMap
+		return m.ServicesUpdateHistory
 	}
 	return nil
 }
 
+type ServicesUpdate struct {
+	Services     []*SupplierServiceConfig `protobuf:"bytes,1,rep,name=services,proto3" json:"services,omitempty"`
+	UpdateHeight uint64                   `protobuf:"varint,2,opt,name=updateHeight,proto3" json:"updateHeight,omitempty"`
+}
+
+func (m *ServicesUpdate) Reset()         { *m = ServicesUpdate{} }
+func (m *ServicesUpdate) String() string { return proto.CompactTextString(m) }
+func (*ServicesUpdate) ProtoMessage()    {}
+func (*ServicesUpdate) Descriptor() ([]byte, []int) {
+	return fileDescriptor_4a189b52ba503cf2, []int{1}
+}
+func (m *ServicesUpdate) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *ServicesUpdate) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	b = b[:cap(b)]
+	n, err := m.MarshalToSizedBuffer(b)
+	if err != nil {
+		return nil, err
+	}
+	return b[:n], nil
+}
+func (m *ServicesUpdate) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ServicesUpdate.Merge(m, src)
+}
+func (m *ServicesUpdate) XXX_Size() int {
+	return m.Size()
+}
+func (m *ServicesUpdate) XXX_DiscardUnknown() {
+	xxx_messageInfo_ServicesUpdate.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ServicesUpdate proto.InternalMessageInfo
+
+func (m *ServicesUpdate) GetServices() []*SupplierServiceConfig {
+	if m != nil {
+		return m.Services
+	}
+	return nil
+}
+
+func (m *ServicesUpdate) GetUpdateHeight() uint64 {
+	if m != nil {
+		return m.UpdateHeight
+	}
+	return 0
+}
+
 func init() {
 	proto.RegisterType((*Supplier)(nil), "poktroll.shared.Supplier")
-	proto.RegisterMapType((map[string]uint64)(nil), "poktroll.shared.Supplier.ServicesActivationHeightsMapEntry")
+	proto.RegisterType((*ServicesUpdate)(nil), "poktroll.shared.ServicesUpdate")
 }
 
 func init() { proto.RegisterFile("poktroll/shared/supplier.proto", fileDescriptor_4a189b52ba503cf2) }
 
 var fileDescriptor_4a189b52ba503cf2 = []byte{
-	// 453 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x84, 0x52, 0xbf, 0x6e, 0x13, 0x31,
-	0x18, 0x8f, 0x9b, 0xa4, 0x2a, 0x2e, 0xa8, 0xd5, 0x29, 0x12, 0xd7, 0x08, 0x4c, 0x60, 0x40, 0x59,
-	0x6a, 0xab, 0x65, 0x41, 0x54, 0x0c, 0x4d, 0x54, 0x89, 0xa5, 0x42, 0xba, 0x6c, 0x2c, 0x27, 0x27,
-	0x67, 0x2e, 0x56, 0x12, 0x7f, 0x27, 0x7f, 0x4e, 0x4a, 0x56, 0x9e, 0x80, 0x89, 0x27, 0xe1, 0x21,
-	0x18, 0x2b, 0xa6, 0x8e, 0x28, 0x79, 0x11, 0x74, 0x67, 0x5f, 0x90, 0x40, 0xd0, 0xcd, 0x9f, 0x7f,
-	0x7f, 0xee, 0xf7, 0x3b, 0x7f, 0x94, 0x15, 0x30, 0x73, 0x16, 0xe6, 0x73, 0x81, 0x53, 0x69, 0x55,
-	0x26, 0x70, 0x59, 0x14, 0x73, 0xad, 0x2c, 0x2f, 0x2c, 0x38, 0x88, 0x8e, 0x6a, 0x9c, 0x7b, 0xbc,
-	0x7b, 0x32, 0x01, 0x5c, 0x00, 0xa6, 0x15, 0x2c, 0xfc, 0xe0, 0xb9, 0x5d, 0xe6, 0x27, 0x31, 0x96,
-	0xa8, 0xc4, 0xea, 0x6c, 0xac, 0x9c, 0x3c, 0x13, 0x13, 0xd0, 0x26, 0xe0, 0x4f, 0xff, 0xfa, 0x96,
-	0xb2, 0x2b, 0x3d, 0x51, 0x01, 0xee, 0xe4, 0x90, 0x83, 0xb7, 0x2d, 0x4f, 0xfe, 0xf6, 0xc5, 0xd7,
-	0x16, 0x3d, 0x18, 0x85, 0x4c, 0xd1, 0x5b, 0xfa, 0x08, 0x6e, 0x8c, 0xb2, 0xa9, 0xcc, 0x32, 0xab,
-	0x10, 0x63, 0xd2, 0x23, 0xfd, 0x07, 0x83, 0xf8, 0xc7, 0xb7, 0xd3, 0x4e, 0x88, 0x72, 0xe9, 0x91,
-	0x91, 0xb3, 0xda, 0xe4, 0xc9, 0xc3, 0x8a, 0x1e, 0xee, 0xa2, 0x21, 0x3d, 0x86, 0x42, 0x59, 0xe9,
-	0xe0, 0xb7, 0xc3, 0xde, 0x3d, 0x0e, 0x47, 0xb5, 0xa2, 0x36, 0x11, 0xb4, 0x8d, 0x4e, 0xce, 0x54,
-	0xdc, 0xec, 0x91, 0xfe, 0xe1, 0xf9, 0x09, 0x0f, 0xb2, 0xb2, 0x35, 0x0f, 0xad, 0xf9, 0x10, 0xb4,
-	0x49, 0x3c, 0x2f, 0x1a, 0xd0, 0x83, 0x50, 0x14, 0xe3, 0x56, 0xaf, 0xd9, 0x3f, 0x3c, 0x7f, 0xc9,
-	0xff, 0xf8, 0xab, 0xbc, 0x6e, 0x38, 0xf2, 0xc4, 0x21, 0x98, 0x8f, 0x3a, 0x4f, 0x76, 0xba, 0xe8,
-	0x82, 0x76, 0x97, 0xa6, 0xb2, 0x4b, 0x51, 0x21, 0x6a, 0x30, 0xa9, 0x32, 0x59, 0x3a, 0x55, 0x3a,
-	0x9f, 0xba, 0xb8, 0xdd, 0x23, 0xfd, 0x56, 0xf2, 0x38, 0x30, 0x46, 0x9e, 0x70, 0x65, 0xb2, 0x77,
-	0x15, 0x1c, 0x7d, 0x26, 0xf4, 0x59, 0xed, 0x94, 0xca, 0x89, 0xd3, 0x2b, 0xe9, 0x4a, 0x07, 0xaf,
-	0xc6, 0x74, 0x21, 0x8b, 0x78, 0xbf, 0x0a, 0x76, 0xf1, 0xcf, 0x60, 0x3c, 0x24, 0xc3, 0xcb, 0x9d,
-	0xde, 0xbb, 0xe3, 0xb5, 0x2c, 0xae, 0x8c, 0xb3, 0xeb, 0xe4, 0x09, 0xfe, 0x87, 0xd2, 0x7d, 0x4f,
-	0x9f, 0xdf, 0x6b, 0x11, 0x1d, 0xd3, 0xe6, 0x4c, 0xad, 0xfd, 0xab, 0x26, 0xe5, 0x31, 0xea, 0xd0,
-	0xf6, 0x4a, 0xce, 0x97, 0xaa, 0x7a, 0xa7, 0x56, 0xe2, 0x87, 0x37, 0x7b, 0xaf, 0xc9, 0xe0, 0xfa,
-	0xfb, 0x86, 0x91, 0xdb, 0x0d, 0x23, 0x77, 0x1b, 0x46, 0x7e, 0x6e, 0x18, 0xf9, 0xb2, 0x65, 0x8d,
-	0xdb, 0x2d, 0x6b, 0xdc, 0x6d, 0x59, 0xe3, 0x83, 0xc8, 0xb5, 0x9b, 0x2e, 0xc7, 0x7c, 0x02, 0x0b,
-	0x51, 0x76, 0x3a, 0x35, 0xca, 0xdd, 0x80, 0x9d, 0x89, 0xdd, 0x0e, 0x7e, 0xaa, 0xb7, 0xd0, 0xad,
-	0x0b, 0x85, 0xe3, 0xfd, 0x6a, 0xdd, 0x5e, 0xfd, 0x0a, 0x00, 0x00, 0xff, 0xff, 0x51, 0xcd, 0x0a,
-	0x68, 0x11, 0x03, 0x00, 0x00,
+	// 434 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x9c, 0x52, 0x4d, 0x6f, 0xd3, 0x40,
+	0x10, 0xcd, 0x92, 0xb4, 0x2a, 0xdb, 0x42, 0x91, 0x55, 0x54, 0x37, 0x12, 0x4b, 0x94, 0x03, 0xca,
+	0xa5, 0xbb, 0x6a, 0x39, 0x22, 0x0e, 0x24, 0x42, 0xea, 0x85, 0x8b, 0x23, 0x84, 0xc4, 0xc5, 0x72,
+	0xe2, 0xc1, 0x5e, 0x25, 0xdd, 0xb1, 0x76, 0x37, 0xfd, 0xf8, 0x17, 0x5c, 0xf9, 0x1f, 0xfc, 0x08,
+	0x8e, 0x15, 0xa7, 0x1e, 0x91, 0xf3, 0x47, 0x50, 0x76, 0xd7, 0x45, 0x26, 0x07, 0x24, 0x6e, 0x9e,
+	0x79, 0x6f, 0xde, 0xbc, 0xe7, 0x1d, 0xca, 0x2a, 0x5c, 0x58, 0x8d, 0xcb, 0xa5, 0x30, 0x65, 0xa6,
+	0x21, 0x17, 0x66, 0x55, 0x55, 0x4b, 0x09, 0x9a, 0x57, 0x1a, 0x2d, 0x46, 0x87, 0x0d, 0xce, 0x3d,
+	0xde, 0x3f, 0x99, 0xa3, 0xb9, 0x44, 0x93, 0x3a, 0x58, 0xf8, 0xc2, 0x73, 0xfb, 0xcc, 0x57, 0x62,
+	0x96, 0x19, 0x10, 0x57, 0x67, 0x33, 0xb0, 0xd9, 0x99, 0x98, 0xa3, 0x54, 0x01, 0x7f, 0xb1, 0xb5,
+	0x0b, 0xf4, 0x95, 0x9c, 0x43, 0x80, 0x8f, 0x0a, 0x2c, 0xd0, 0xcb, 0x6e, 0xbe, 0x7c, 0x77, 0xf8,
+	0xad, 0x4b, 0xf7, 0xa6, 0xc1, 0x53, 0xf4, 0x96, 0x3e, 0xc1, 0x6b, 0x05, 0x3a, 0xcd, 0xf2, 0x5c,
+	0x83, 0x31, 0x31, 0x19, 0x90, 0xd1, 0xe3, 0x71, 0xfc, 0xf3, 0xfb, 0xe9, 0x51, 0xb0, 0xf2, 0xce,
+	0x23, 0x53, 0xab, 0xa5, 0x2a, 0x92, 0x03, 0x47, 0x0f, 0xbd, 0x68, 0x42, 0x9f, 0x61, 0x05, 0x3a,
+	0xb3, 0xf8, 0x47, 0xe1, 0xd1, 0x3f, 0x14, 0x0e, 0x9b, 0x89, 0x46, 0x44, 0xd0, 0x1d, 0x63, 0xb3,
+	0x05, 0xc4, 0xdd, 0x01, 0x19, 0xed, 0x9f, 0x9f, 0xf0, 0x30, 0xb6, 0x49, 0xcd, 0x43, 0x6a, 0x3e,
+	0x41, 0xa9, 0x12, 0xcf, 0x8b, 0xc6, 0x74, 0x2f, 0x04, 0x35, 0x71, 0x6f, 0xd0, 0x1d, 0xed, 0x9f,
+	0xbf, 0xe2, 0x7f, 0xfd, 0x55, 0xde, 0x24, 0x9c, 0x7a, 0xe2, 0x04, 0xd5, 0x17, 0x59, 0x24, 0x0f,
+	0x73, 0xd1, 0x1b, 0xda, 0x5f, 0x29, 0x27, 0x97, 0x1a, 0x30, 0x46, 0xa2, 0x4a, 0x41, 0xe5, 0x69,
+	0x09, 0xb2, 0x28, 0x6d, 0xbc, 0x33, 0x20, 0xa3, 0x5e, 0x72, 0x1c, 0x18, 0x53, 0x4f, 0x78, 0xaf,
+	0xf2, 0x0b, 0x07, 0x47, 0x9f, 0xe8, 0x71, 0x23, 0x94, 0xae, 0xaa, 0x3c, 0xb3, 0x90, 0x96, 0xd2,
+	0x58, 0xd4, 0xb7, 0xf1, 0xae, 0xf3, 0xf3, 0x72, 0xdb, 0x4f, 0xe0, 0x7f, 0x74, 0xf4, 0xe4, 0xb9,
+	0x69, 0xd5, 0x17, 0x7e, 0x7a, 0x78, 0x43, 0x9f, 0xb6, 0x89, 0xad, 0xac, 0xe4, 0x3f, 0xb3, 0x0e,
+	0xe9, 0x81, 0x77, 0xe9, 0xed, 0xbb, 0x17, 0xea, 0x25, 0xad, 0xde, 0xf8, 0xc3, 0x8f, 0x9a, 0x91,
+	0xbb, 0x9a, 0x91, 0xfb, 0x9a, 0x91, 0x5f, 0x35, 0x23, 0x5f, 0xd7, 0xac, 0x73, 0xb7, 0x66, 0x9d,
+	0xfb, 0x35, 0xeb, 0x7c, 0x16, 0x85, 0xb4, 0xe5, 0x6a, 0xc6, 0xe7, 0x78, 0x29, 0x36, 0xdb, 0x4f,
+	0x15, 0xd8, 0x6b, 0xd4, 0x0b, 0xf1, 0x70, 0x80, 0x37, 0xcd, 0x09, 0xda, 0xdb, 0x0a, 0xcc, 0x6c,
+	0xd7, 0xdd, 0xda, 0xeb, 0xdf, 0x01, 0x00, 0x00, 0xff, 0xff, 0x57, 0x77, 0xfa, 0xef, 0x0e, 0x03,
+	0x00, 0x00,
 }
 
 func (m *Supplier) Marshal() (dAtA []byte, err error) {
@@ -178,24 +221,16 @@ func (m *Supplier) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	_ = i
 	var l int
 	_ = l
-	if len(m.ServicesActivationHeightsMap) > 0 {
-		keysForServicesActivationHeightsMap := make([]string, 0, len(m.ServicesActivationHeightsMap))
-		for k := range m.ServicesActivationHeightsMap {
-			keysForServicesActivationHeightsMap = append(keysForServicesActivationHeightsMap, string(k))
-		}
-		github_com_cosmos_gogoproto_sortkeys.Strings(keysForServicesActivationHeightsMap)
-		for iNdEx := len(keysForServicesActivationHeightsMap) - 1; iNdEx >= 0; iNdEx-- {
-			v := m.ServicesActivationHeightsMap[string(keysForServicesActivationHeightsMap[iNdEx])]
-			baseI := i
-			i = encodeVarintSupplier(dAtA, i, uint64(v))
-			i--
-			dAtA[i] = 0x10
-			i -= len(keysForServicesActivationHeightsMap[iNdEx])
-			copy(dAtA[i:], keysForServicesActivationHeightsMap[iNdEx])
-			i = encodeVarintSupplier(dAtA, i, uint64(len(keysForServicesActivationHeightsMap[iNdEx])))
-			i--
-			dAtA[i] = 0xa
-			i = encodeVarintSupplier(dAtA, i, uint64(baseI-i))
+	if len(m.ServicesUpdateHistory) > 0 {
+		for iNdEx := len(m.ServicesUpdateHistory) - 1; iNdEx >= 0; iNdEx-- {
+			{
+				size, err := m.ServicesUpdateHistory[iNdEx].MarshalToSizedBuffer(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = encodeVarintSupplier(dAtA, i, uint64(size))
+			}
 			i--
 			dAtA[i] = 0x32
 		}
@@ -248,6 +283,48 @@ func (m *Supplier) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
+func (m *ServicesUpdate) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *ServicesUpdate) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *ServicesUpdate) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.UpdateHeight != 0 {
+		i = encodeVarintSupplier(dAtA, i, uint64(m.UpdateHeight))
+		i--
+		dAtA[i] = 0x10
+	}
+	if len(m.Services) > 0 {
+		for iNdEx := len(m.Services) - 1; iNdEx >= 0; iNdEx-- {
+			{
+				size, err := m.Services[iNdEx].MarshalToSizedBuffer(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = encodeVarintSupplier(dAtA, i, uint64(size))
+			}
+			i--
+			dAtA[i] = 0xa
+		}
+	}
+	return len(dAtA) - i, nil
+}
+
 func encodeVarintSupplier(dAtA []byte, offset int, v uint64) int {
 	offset -= sovSupplier(v)
 	base := offset
@@ -286,13 +363,29 @@ func (m *Supplier) Size() (n int) {
 	if m.UnstakeSessionEndHeight != 0 {
 		n += 1 + sovSupplier(uint64(m.UnstakeSessionEndHeight))
 	}
-	if len(m.ServicesActivationHeightsMap) > 0 {
-		for k, v := range m.ServicesActivationHeightsMap {
-			_ = k
-			_ = v
-			mapEntrySize := 1 + len(k) + sovSupplier(uint64(len(k))) + 1 + sovSupplier(uint64(v))
-			n += mapEntrySize + 1 + sovSupplier(uint64(mapEntrySize))
+	if len(m.ServicesUpdateHistory) > 0 {
+		for _, e := range m.ServicesUpdateHistory {
+			l = e.Size()
+			n += 1 + l + sovSupplier(uint64(l))
 		}
+	}
+	return n
+}
+
+func (m *ServicesUpdate) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if len(m.Services) > 0 {
+		for _, e := range m.Services {
+			l = e.Size()
+			n += 1 + l + sovSupplier(uint64(l))
+		}
+	}
+	if m.UpdateHeight != 0 {
+		n += 1 + sovSupplier(uint64(m.UpdateHeight))
 	}
 	return n
 }
@@ -487,7 +580,7 @@ func (m *Supplier) Unmarshal(dAtA []byte) error {
 			}
 		case 6:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ServicesActivationHeightsMap", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field ServicesUpdateHistory", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -514,90 +607,114 @@ func (m *Supplier) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			if m.ServicesActivationHeightsMap == nil {
-				m.ServicesActivationHeightsMap = make(map[string]uint64)
+			m.ServicesUpdateHistory = append(m.ServicesUpdateHistory, &ServicesUpdate{})
+			if err := m.ServicesUpdateHistory[len(m.ServicesUpdateHistory)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
 			}
-			var mapkey string
-			var mapvalue uint64
-			for iNdEx < postIndex {
-				entryPreIndex := iNdEx
-				var wire uint64
-				for shift := uint(0); ; shift += 7 {
-					if shift >= 64 {
-						return ErrIntOverflowSupplier
-					}
-					if iNdEx >= l {
-						return io.ErrUnexpectedEOF
-					}
-					b := dAtA[iNdEx]
-					iNdEx++
-					wire |= uint64(b&0x7F) << shift
-					if b < 0x80 {
-						break
-					}
-				}
-				fieldNum := int32(wire >> 3)
-				if fieldNum == 1 {
-					var stringLenmapkey uint64
-					for shift := uint(0); ; shift += 7 {
-						if shift >= 64 {
-							return ErrIntOverflowSupplier
-						}
-						if iNdEx >= l {
-							return io.ErrUnexpectedEOF
-						}
-						b := dAtA[iNdEx]
-						iNdEx++
-						stringLenmapkey |= uint64(b&0x7F) << shift
-						if b < 0x80 {
-							break
-						}
-					}
-					intStringLenmapkey := int(stringLenmapkey)
-					if intStringLenmapkey < 0 {
-						return ErrInvalidLengthSupplier
-					}
-					postStringIndexmapkey := iNdEx + intStringLenmapkey
-					if postStringIndexmapkey < 0 {
-						return ErrInvalidLengthSupplier
-					}
-					if postStringIndexmapkey > l {
-						return io.ErrUnexpectedEOF
-					}
-					mapkey = string(dAtA[iNdEx:postStringIndexmapkey])
-					iNdEx = postStringIndexmapkey
-				} else if fieldNum == 2 {
-					for shift := uint(0); ; shift += 7 {
-						if shift >= 64 {
-							return ErrIntOverflowSupplier
-						}
-						if iNdEx >= l {
-							return io.ErrUnexpectedEOF
-						}
-						b := dAtA[iNdEx]
-						iNdEx++
-						mapvalue |= uint64(b&0x7F) << shift
-						if b < 0x80 {
-							break
-						}
-					}
-				} else {
-					iNdEx = entryPreIndex
-					skippy, err := skipSupplier(dAtA[iNdEx:])
-					if err != nil {
-						return err
-					}
-					if (skippy < 0) || (iNdEx+skippy) < 0 {
-						return ErrInvalidLengthSupplier
-					}
-					if (iNdEx + skippy) > postIndex {
-						return io.ErrUnexpectedEOF
-					}
-					iNdEx += skippy
-				}
-			}
-			m.ServicesActivationHeightsMap[mapkey] = mapvalue
 			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipSupplier(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthSupplier
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *ServicesUpdate) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowSupplier
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: ServicesUpdate: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: ServicesUpdate: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Services", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowSupplier
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthSupplier
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthSupplier
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Services = append(m.Services, &SupplierServiceConfig{})
+			if err := m.Services[len(m.Services)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 2:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field UpdateHeight", wireType)
+			}
+			m.UpdateHeight = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowSupplier
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.UpdateHeight |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
 		default:
 			iNdEx = preIndex
 			skippy, err := skipSupplier(dAtA[iNdEx:])
