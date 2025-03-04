@@ -102,6 +102,7 @@ func NewRootCmd() *cobra.Command {
 				return err
 			}
 
+			// TODO_INVESTIGATE: Is there a reason why this call is duplicated?
 			if err = client.SetCmdClientContextHandler(clientCtx, cmd); err != nil {
 				return err
 			}
