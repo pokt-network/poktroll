@@ -1,4 +1,4 @@
-package migrate
+package cmd
 
 import (
 	"fmt"
@@ -22,14 +22,31 @@ var (
 	flagLogLevel            string
 	flagLogOutput           string
 	logger                  polylog.Logger
+)
 
-	// DEV_NOTE: AutoCLI does not apply here because there is no gRPC service, message, or query.
-	//
-	// The purpose of this command is to facilitate the deterministic (i.e. reproducible) transformation
-	// from Morse's export data structure (MorseStateExport) into Shannon's import data structure (MorseAccountState).
-	//
-	// It does not interact with the network directly.
-	collectMorseAccountsCmd = &cobra.Command{
+func TxCommands() *cobra.Command {
+	migrateCmd := &cobra.Command{
+		Use:   "migration",
+		Short: "Transactions commands for the migration module",
+	}
+
+	migrateCmd.AddCommand(collectMorseAccountsCmd())
+	migrateCmd.PersistentFlags().StringVar(&flagLogLevel, "log-level", "info", "The logging level (debug|info|warn|error)")
+	migrateCmd.PersistentFlags().StringVar(&flagLogOutput, "log-output", defaultLogOutput, "The logging output (file path); defaults to stdout")
+
+	return migrateCmd
+}
+
+// DEV_NOTE: AutoCLI does not apply here because there is no gRPC service, message, or query.
+// While this command does not interact with the network directly, it prepares data for the
+// use in the MsgImportMorseAccountState message.
+//
+// The purpose of this command is to facilitate the deterministic (i.e. reproducible) transformation
+// from Morse's export data structure (MorseStateExport) into Shannon's import data structure (MorseAccountState).
+//
+// It does not interact with the network directly.
+func collectMorseAccountsCmd() *cobra.Command {
+	collectMorseAcctsCmd := &cobra.Command{
 		Use:   "collect-morse-accounts [morse-state-export-path] [morse-account-state-path]",
 		Args:  cobra.ExactArgs(2),
 		Short: "Collect account balances and stakes from [morse-state-export-path] JSON file and output to [morse-account-state-path] as JSON",
@@ -66,20 +83,14 @@ var (
 		},
 		RunE: runCollectMorseAccounts,
 	}
-)
 
-func MigrateCmd() *cobra.Command {
-	migrateCmd := &cobra.Command{
-		Use:   "migrate",
-		Short: "Migration commands",
-	}
-	migrateCmd.AddCommand(collectMorseAccountsCmd)
-	migrateCmd.PersistentFlags().StringVar(&flagLogLevel, "log-level", "info", "The logging level (debug|info|warn|error)")
-	migrateCmd.PersistentFlags().StringVar(&flagLogOutput, "log-output", defaultLogOutput, "The logging output (file path); defaults to stdout")
+	collectMorseAcctsCmd.Flags().IntVar(
+		&flagDebugAccountsPerLog,
+		"debug-accounts-per-log", 0,
+		"The number of accounts to log per debug message",
+	)
 
-	collectMorseAccountsCmd.Flags().IntVar(&flagDebugAccountsPerLog, "debug-accounts-per-log", 0, "The number of accounts to log per debug message")
-
-	return migrateCmd
+	return collectMorseAcctsCmd
 }
 
 // runCollectedMorseAccounts is run via the following command:
