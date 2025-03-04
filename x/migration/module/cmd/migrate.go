@@ -31,6 +31,7 @@ func TxCommands() *cobra.Command {
 	}
 
 	migrateCmd.AddCommand(collectMorseAccountsCmd())
+	migrateCmd.AddCommand(claimAccountCmd())
 	migrateCmd.PersistentFlags().StringVar(&flagLogLevel, "log-level", "info", "The logging level (debug|info|warn|error)")
 	migrateCmd.PersistentFlags().StringVar(&flagLogOutput, "log-output", defaultLogOutput, "The logging output (file path); defaults to stdout")
 
