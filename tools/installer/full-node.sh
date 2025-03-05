@@ -88,6 +88,9 @@ get_os_type() {
 
 # Function to check and install dependencies
 install_dependencies() {
+    # Temporarily disable exit on error for dependency installation
+    set +e
+    
     local missing_deps=0
     local deps=("jq" "curl" "tar" "wget" "zstd" "aria2c")
     local to_install=()
@@ -108,6 +111,8 @@ install_dependencies() {
     # If no dependencies are missing, we're done
     if [ $missing_deps -eq 0 ]; then
         print_color $GREEN "All dependencies are already installed."
+        # Re-enable exit on error
+        set -e
         return 0
     fi
 
@@ -123,9 +128,9 @@ install_dependencies() {
         for dep in "${to_install[@]}"; do
             if [ "$dep" = "aria2c" ]; then
                 print_color $YELLOW "Installing aria2 package for aria2c command..."
-                apt-get install -y aria2
+                apt-get install -y aria2 || print_color $RED "Failed to install aria2. Will try to continue anyway."
             else
-                apt-get install -y "$dep"
+                apt-get install -y "$dep" || print_color $RED "Failed to install $dep. Will try to continue anyway."
             fi
         done
     elif command -v yum &>/dev/null; then
@@ -136,29 +141,29 @@ install_dependencies() {
         for dep in "${to_install[@]}"; do
             if [ "$dep" = "aria2c" ]; then
                 print_color $YELLOW "Installing aria2 package for aria2c command..."
-                yum install -y aria2
+                yum install -y aria2 || print_color $RED "Failed to install aria2. Will try to continue anyway."
             else
-                yum install -y "$dep"
+                yum install -y "$dep" || print_color $RED "Failed to install $dep. Will try to continue anyway."
             fi
         done
     elif command -v dnf &>/dev/null; then
         print_color $GREEN "Using dnf to install packages."
-        dnf check-update
+        dnf check-update || true  # Ignore non-zero exit code from check-update
         
         # Install packages
         for dep in "${to_install[@]}"; do
             if [ "$dep" = "aria2c" ]; then
                 print_color $YELLOW "Installing aria2 package for aria2c command..."
-                dnf install -y aria2
+                dnf install -y aria2 || print_color $RED "Failed to install aria2. Will try to continue anyway."
             else
-                dnf install -y "$dep"
+                dnf install -y "$dep" || print_color $RED "Failed to install $dep. Will try to continue anyway."
             fi
         done
     else
         print_color $RED "Could not detect a supported package manager (apt-get, yum, or dnf)."
         print_color $RED "Please install the following dependencies manually: ${to_install[*]}"
         print_color $RED "For aria2c, the package name is usually 'aria2'"
-        return 1
+        print_color $YELLOW "Continuing with installation, but some features may not work."
     fi
 
     # Verify all dependencies were installed successfully
@@ -167,6 +172,14 @@ install_dependencies() {
         if ! command -v "$dep" &>/dev/null; then
             print_color $RED "Failed to install $dep"
             ((missing_deps++))
+            
+            # Special handling for aria2c - provide clear instructions
+            if [ "$dep" = "aria2c" ]; then
+                print_color $YELLOW "aria2c is required for torrent downloads. You can install it manually with:"
+                print_color $YELLOW "  sudo apt-get install aria2    # For Debian/Ubuntu"
+                print_color $YELLOW "  sudo yum install aria2        # For RHEL/CentOS"
+                print_color $YELLOW "  sudo dnf install aria2        # For Fedora"
+            fi
         else
             print_color $GREEN "$dep installed successfully."
         fi
@@ -175,11 +188,13 @@ install_dependencies() {
     if [ $missing_deps -gt 0 ]; then
         print_color $RED "Some dependencies failed to install."
         print_color $YELLOW "Continuing with installation, but some features may not work."
-        return 0
+    else
+        print_color $GREEN "All required dependencies installed successfully."
     fi
-
-    print_color $GREEN "All required dependencies installed successfully."
-    return 0
+    
+    # Re-enable exit on error
+    set -e
+    return 0  # Always return success to continue script execution
 }
 
 # Function to get user input
@@ -245,13 +260,13 @@ get_user_input() {
                     print_color $GREEN "Snapshot version: $SNAPSHOT_VERSION"
                     
                     # First try latest torrent
-                    TORRENT_URL="$SNAPSHOT_BASE_URL/$NETWORK-$NETWORK-latest-archival.torrent"
+                    TORRENT_URL="$SNAPSHOT_BASE_URL/$NETWORK-latest-archival.torrent"
                     if curl --output /dev/null --silent --head --fail "$TORRENT_URL"; then
                         print_color $GREEN "Found torrent file at: $TORRENT_URL"
                         SNAPSHOT_URL="$TORRENT_URL"
                     else
                         # Try specific height torrent
-                        TORRENT_URL="$SNAPSHOT_BASE_URL/$NETWORK-$NETWORK-$LATEST_SNAPSHOT_HEIGHT-archival.torrent"
+                        TORRENT_URL="$SNAPSHOT_BASE_URL/$NETWORK-$LATEST_SNAPSHOT_HEIGHT-archival.torrent"
                         if curl --output /dev/null --silent --head --fail "$TORRENT_URL"; then
                             print_color $GREEN "Found torrent file at: $TORRENT_URL"
                             SNAPSHOT_URL="$TORRENT_URL"
@@ -671,8 +686,11 @@ main() {
     check_os
     check_root
     
-    # Install dependencies
+    # Install dependencies - temporarily disable error trapping for this function
+    trap - ERR
     install_dependencies
+    # Restore error trapping
+    trap 'handle_error $LINENO' ERR
     
     # Continue with installation
     get_user_input
@@ -684,7 +702,11 @@ main() {
     
     # Apply snapshot if user chose to use it
     if [ "$USE_SNAPSHOT" = true ]; then
+        # Temporarily disable error trapping for snapshot setup
+        trap - ERR
         setup_from_snapshot
+        # Restore error trapping
+        trap 'handle_error $LINENO' ERR
     fi
     
     setup_systemd
