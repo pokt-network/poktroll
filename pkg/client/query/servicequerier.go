@@ -6,7 +6,9 @@ import (
 	"cosmossdk.io/depinject"
 	"github.com/cosmos/gogoproto/grpc"
 
+	"github.com/pokt-network/poktroll/pkg/cache"
 	"github.com/pokt-network/poktroll/pkg/client"
+	"github.com/pokt-network/poktroll/pkg/polylog"
 	servicetypes "github.com/pokt-network/poktroll/x/service/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
@@ -19,6 +21,12 @@ var _ client.ServiceQueryClient = (*serviceQuerier)(nil)
 type serviceQuerier struct {
 	clientConn     grpc.ClientConn
 	serviceQuerier servicetypes.QueryClient
+	logger         polylog.Logger
+
+	// servicesCache caches serviceQueryClient.Service query requests
+	servicesCache cache.KeyValueCache[sharedtypes.Service]
+	// relayMiningDifficultyCache caches serviceQueryClient.RelayMiningDifficulty query requests
+	relayMiningDifficultyCache cache.KeyValueCache[servicetypes.RelayMiningDifficulty]
 }
 
 // NewServiceQuerier returns a new instance of a client.ServiceQueryClient by
@@ -32,6 +40,9 @@ func NewServiceQuerier(deps depinject.Config) (client.ServiceQueryClient, error)
 	if err := depinject.Inject(
 		deps,
 		&servq.clientConn,
+		&servq.logger,
+		&servq.servicesCache,
+		&servq.relayMiningDifficultyCache,
 	); err != nil {
 		return nil, err
 	}
@@ -47,6 +58,16 @@ func (servq *serviceQuerier) GetService(
 	ctx context.Context,
 	serviceId string,
 ) (sharedtypes.Service, error) {
+	logger := servq.logger.With("query_client", "service", "method", "GetService")
+
+	// Check if the service is present in the cache.
+	if service, found := servq.servicesCache.Get(serviceId); found {
+		logger.Debug().Msgf("service cache hit for service id key: %s", serviceId)
+		return service, nil
+	}
+
+	logger.Debug().Msgf("service cache miss for service id key: %s", serviceId)
+
 	req := &servicetypes.QueryGetServiceRequest{
 		Id: serviceId,
 	}
@@ -58,6 +79,9 @@ func (servq *serviceQuerier) GetService(
 			serviceId, err,
 		)
 	}
+
+	// Cache the service for future use.
+	servq.servicesCache.Set(serviceId, res.Service)
 	return res.Service, nil
 }
 
@@ -67,6 +91,16 @@ func (servq *serviceQuerier) GetServiceRelayDifficulty(
 	ctx context.Context,
 	serviceId string,
 ) (servicetypes.RelayMiningDifficulty, error) {
+	logger := servq.logger.With("query_client", "service", "method", "GetServiceRelayDifficulty")
+
+	// Check if the relay mining difficulty is present in the cache.
+	if relayMiningDifficulty, found := servq.relayMiningDifficultyCache.Get(serviceId); found {
+		logger.Debug().Msgf("relay mining difficulty cache hit for service id key: %s", serviceId)
+		return relayMiningDifficulty, nil
+	}
+
+	logger.Debug().Msgf("relay mining difficulty cache miss for service id key: %s", serviceId)
+
 	req := &servicetypes.QueryGetRelayMiningDifficultyRequest{
 		ServiceId: serviceId,
 	}
@@ -76,5 +110,7 @@ func (servq *serviceQuerier) GetServiceRelayDifficulty(
 		return servicetypes.RelayMiningDifficulty{}, err
 	}
 
+	// Cache the relay mining difficulty for future use.
+	servq.relayMiningDifficultyCache.Set(serviceId, res.RelayMiningDifficulty)
 	return res.RelayMiningDifficulty, nil
 }
