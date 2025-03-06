@@ -122,7 +122,7 @@ func (sessq *sessionQuerier) GetParams(ctx context.Context) (*sessiontypes.Param
 	return &res.Params, nil
 }
 
-// getSessionCacheKey constructs the cache key for a session.
+// getSessionCacheKey constructs the cache key for a session in the form of: appAddress/serviceId/sessionStartHeight.
 func getSessionCacheKey(
 	sharedParams *sharedtypes.Params,
 	appAddress,

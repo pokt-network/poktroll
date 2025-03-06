@@ -86,7 +86,7 @@ for such operations.`,
 	cmd.Flags().StringVar(&flagLogLevel, cosmosflags.FlagLogLevel, "debug", "The logging level (debug|info|warn|error)")
 	cmd.Flags().Float64(cosmosflags.FlagGasAdjustment, 1.5, "The adjustment factor to be multiplied by the gas estimate returned by the tx simulation")
 	cmd.Flags().String(cosmosflags.FlagGasPrices, "1upokt", "Set the gas unit price in upokt")
-	cmd.Flags().Bool(config.FlagQueryCaching, true, "Enable or disable query caching")
+	cmd.Flags().Bool(config.FlagQueryCaching, true, "Enable or disable onchain query caching")
 
 	return cmd
 }
@@ -147,6 +147,7 @@ func runRelayer(cmd *cobra.Command, _ []string) error {
 		return fmt.Errorf("failed to get query caching flag: %w", err)
 	}
 
+	// TODO_MAINNET(@red-0ne): E2E test query caching vs non-caching.
 	if queryCachingEnabled {
 		logger.Info().Msg("query caching enabled")
 	} else {

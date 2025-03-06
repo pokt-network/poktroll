@@ -156,7 +156,7 @@ func (sq *sharedQuerier) GetEarliestSupplierClaimCommitHeight(ctx context.Contex
 	claimWindowOpenHeight := sharedtypes.GetClaimWindowOpenHeight(sharedParams, queryHeight)
 
 	// Check if the block hash is already in the cache.
-	blockHashCacheKey := getBlockHashKacheKey(claimWindowOpenHeight)
+	blockHashCacheKey := getBlockHashCacheKey(claimWindowOpenHeight)
 	claimWindowOpenBlockHash, found := sq.blockHashCache.Get(blockHashCacheKey)
 	if !found {
 		logger.Debug().Msgf("cache miss for blockHeight: %s", blockHashCacheKey)
@@ -202,7 +202,7 @@ func (sq *sharedQuerier) GetEarliestSupplierProofCommitHeight(ctx context.Contex
 	// of the seed to the pseudo-random number generator.
 	proofWindowOpenHeight := sharedtypes.GetProofWindowOpenHeight(sharedParams, queryHeight)
 
-	blockHashCacheKey := getBlockHashKacheKey(proofWindowOpenHeight)
+	blockHashCacheKey := getBlockHashCacheKey(proofWindowOpenHeight)
 	proofWindowOpenBlockHash, found := sq.blockHashCache.Get(blockHashCacheKey)
 
 	if !found {
@@ -243,7 +243,7 @@ func (sq *sharedQuerier) GetComputeUnitsToTokensMultiplier(ctx context.Context) 
 	return sharedParams.GetComputeUnitsToTokensMultiplier(), nil
 }
 
-// getBlockHashKacheKey constructs the cache key for a block hash.
-func getBlockHashKacheKey(height int64) string {
+// getBlockHashCacheKey constructs the cache key for a block hash by string formatting the block height.
+func getBlockHashCacheKey(height int64) string {
 	return strconv.FormatInt(height, 10)
 }

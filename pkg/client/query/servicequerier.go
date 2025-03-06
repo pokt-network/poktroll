@@ -23,9 +23,9 @@ type serviceQuerier struct {
 	serviceQuerier servicetypes.QueryClient
 	logger         polylog.Logger
 
-	// servicesCache caches serviceQueryClient.Service requests
+	// servicesCache caches serviceQueryClient.Service query requests
 	servicesCache cache.KeyValueCache[sharedtypes.Service]
-	// relayMiningDifficultyCache caches serviceQueryClient.RelayMiningDifficulty requests
+	// relayMiningDifficultyCache caches serviceQueryClient.RelayMiningDifficulty query requests
 	relayMiningDifficultyCache cache.KeyValueCache[servicetypes.RelayMiningDifficulty]
 }
 
@@ -62,11 +62,11 @@ func (servq *serviceQuerier) GetService(
 
 	// Check if the service is present in the cache.
 	if service, found := servq.servicesCache.Get(serviceId); found {
-		logger.Debug().Msgf("cache hit for service id key: %s", serviceId)
+		logger.Debug().Msgf("service cache hit for service id key: %s", serviceId)
 		return service, nil
 	}
 
-	logger.Debug().Msgf("cache miss for service id key: %s", serviceId)
+	logger.Debug().Msgf("service cache miss for service id key: %s", serviceId)
 
 	req := &servicetypes.QueryGetServiceRequest{
 		Id: serviceId,
@@ -95,11 +95,11 @@ func (servq *serviceQuerier) GetServiceRelayDifficulty(
 
 	// Check if the relay mining difficulty is present in the cache.
 	if relayMiningDifficulty, found := servq.relayMiningDifficultyCache.Get(serviceId); found {
-		logger.Debug().Msgf("cache hit for service id key: %s", serviceId)
+		logger.Debug().Msgf("relay mining difficulty cache hit for service id key: %s", serviceId)
 		return relayMiningDifficulty, nil
 	}
 
-	logger.Debug().Msgf("cache miss for service id key: %s", serviceId)
+	logger.Debug().Msgf("relay mining difficulty cache miss for service id key: %s", serviceId)
 
 	req := &servicetypes.QueryGetRelayMiningDifficultyRequest{
 		ServiceId: serviceId,

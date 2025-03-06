@@ -10,8 +10,7 @@ var _ cache.KeyValueCache[any] = (*noOpKeyValueCache[any])(nil)
 
 // noOpParamsCache is a no-op implementation of a ParamsCache.
 // It does not store any values.
-type noOpParamsCache[T any] struct {
-}
+type noOpParamsCache[T any] struct{}
 
 // NewParamsCache returns a new instance of a ParamsCache.
 func NewNoOpParamsCache[T any]() *noOpParamsCache[T] {
@@ -39,8 +38,7 @@ func (c *noOpParamsCache[T]) Clear() {
 
 // noOpKeyValueCache is a no-op implementation of a KeyValueCache.
 // It does not store any values.
-type noOpKeyValueCache[T any] struct {
-}
+type noOpKeyValueCache[T any] struct{}
 
 // NewKeyValueCache returns a new instance of a KeyValueCache.
 func NewNoOpKeyValueCache[T any]() *noOpKeyValueCache[T] {

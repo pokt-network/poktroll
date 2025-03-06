@@ -372,7 +372,7 @@ type BankQueryClient interface {
 	GetBalance(ctx context.Context, address string) (*cosmostypes.Coin, error)
 }
 
-// ParamsCache is an interface for a simple in-memory cache implementation for query parameters.
+// ParamsCache is an interface for a simple in-memory cache implementation for onchain module parameter quueries.
 // It does not involve key-value pairs, but only stores a single value.
 type ParamsCache[T any] interface {
 	Get() (T, bool)
