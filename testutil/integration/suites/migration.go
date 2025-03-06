@@ -9,6 +9,7 @@ import (
 
 	"github.com/pokt-network/poktroll/testutil/testmigration"
 	migrationtypes "github.com/pokt-network/poktroll/x/migration/types"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 var _ IntegrationSuite = (*MigrationModuleSuite)(nil)
@@ -28,9 +29,9 @@ type MigrationModuleSuite struct {
 
 // GenerateMorseAccountState generates a MorseAccountState with the given number of MorseClaimableAccounts.
 // It updates the suite's #numMorseClaimableAccounts and #accountState fields.
-func (s *MigrationModuleSuite) GenerateMorseAccountState(t *testing.T, numAccounts int) {
+func (s *MigrationModuleSuite) GenerateMorseAccountState(t *testing.T, numAccounts int, distributionFn testmigration.MorseAccountActorTypeDistributionFn) {
 	s.numMorseClaimableAccounts = numAccounts
-	_, s.accountState = testmigration.NewMorseStateExportAndAccountState(t, s.numMorseClaimableAccounts)
+	_, s.accountState = testmigration.NewMorseStateExportAndAccountState(t, s.numMorseClaimableAccounts, distributionFn)
 }
 
 // GetAccountState returns the suite's #accountState field.
@@ -67,7 +68,7 @@ func (s *MigrationModuleSuite) ClaimMorseAccount(
 ) (expectedMorseSrcAddr string, _ *migrationtypes.MsgClaimMorseAccountResponse) {
 	t.Helper()
 
-	morsePrivateKey := testmigration.NewMorsePrivateKey(t, morseAccountIdx)
+	morsePrivateKey := testmigration.GenMorsePrivateKey(t, morseAccountIdx)
 	expectedMorseSrcAddr = morsePrivateKey.PubKey().Address().String()
 	require.Equal(t, expectedMorseSrcAddr, s.accountState.Accounts[morseAccountIdx].MorseSrcAddress)
 
@@ -124,4 +125,13 @@ func (s *MigrationModuleSuite) QueryAllMorseClaimableAccounts(t *testing.T) []mi
 	require.NoError(t, err)
 
 	return morseClaimableAcctRes.MorseClaimableAccount
+}
+
+// GetSharedParams returns the shared module params.
+func (s *MigrationModuleSuite) GetSharedParams(t *testing.T) sharedtypes.Params {
+	sharedClient := sharedtypes.NewQueryClient(s.GetApp().QueryHelper())
+	sharedParamsRes, err := sharedClient.Params(s.SdkCtx(), &sharedtypes.QueryParamsRequest{})
+	require.NoError(t, err)
+
+	return sharedParamsRes.Params
 }
