@@ -19,7 +19,7 @@ Feature: Relay Namespace
     #    When the application "app2" sends the supplier "supplier1" a successful request for service "rest" with path "/quote"
     #    Then a "tokenomics" module "ClaimSettled" end block event is broadcast
 
-    Scenario: App can send WEBSOCKETS relays to Supplier
+    Scenario: App can send WebSocket relays to Supplier
         Given the user has the pocketd binary installed
         And the application "app3" is staked for service "anvilws"
         And the supplier "supplier1" is staked for service "anvilws"
@@ -28,7 +28,7 @@ Feature: Relay Namespace
         # This is to maximize the number of responses before the session ends and the
         # websockets connection is closed.
         And the application "app3" establishes a websockets connection for service "anvilws"
-        Then the user receives ethereum subscription events
+        Then the application receives EVM subscription events until the session ends
         And the subscription is closed before claim window open height is reached
         And a "tokenomics" module "ClaimSettled" end block event is broadcast
 

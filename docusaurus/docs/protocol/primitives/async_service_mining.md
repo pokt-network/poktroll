@@ -1,6 +1,6 @@
 # Mining Asynchronous Services
 
-:::warning
+:::warning Active WIP
 
 Note: This documentation describes the behavior as of PR #1073. Implementation
 details may change as the protocol evolves.
