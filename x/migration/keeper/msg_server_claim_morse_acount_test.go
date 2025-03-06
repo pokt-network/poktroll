@@ -17,6 +17,7 @@ import (
 	"github.com/pokt-network/poktroll/testutil/testmigration"
 	"github.com/pokt-network/poktroll/x/migration/keeper"
 	migrationtypes "github.com/pokt-network/poktroll/x/migration/types"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 // Prevent strconv unused error
@@ -56,13 +57,15 @@ func TestMsgServer_ClaimMorseAccount_Success(t *testing.T) {
 		require.NoError(t, err)
 
 		// Construct and assert the expected response.
+		sharedParams := sharedtypes.DefaultParams()
+		expectedSessionEndHeight := sharedtypes.GetSessionEndHeight(&sharedParams, ctx.BlockHeight())
 		expectedClaimedBalance := morseAccount.GetUnstakedBalance().
 			Add(morseAccount.GetSupplierStake()).
 			Add(morseAccount.GetApplicationStake())
 		expectedRes := &migrationtypes.MsgClaimMorseAccountResponse{
-			MorseSrcAddress: msgClaim.MorseSrcAddress,
-			ClaimedBalance:  expectedClaimedBalance,
-			ClaimedAtHeight: ctx.BlockHeight(),
+			MorseSrcAddress:  msgClaim.MorseSrcAddress,
+			ClaimedBalance:   expectedClaimedBalance,
+			SessionEndHeight: expectedSessionEndHeight,
 		}
 		require.Equal(t, expectedRes, msgClaimRes)
 
@@ -79,7 +82,7 @@ func TestMsgServer_ClaimMorseAccount_Success(t *testing.T) {
 			ShannonDestAddress: msgClaim.ShannonDestAddress,
 			MorseSrcAddress:    msgClaim.MorseSrcAddress,
 			ClaimedBalance:     expectedClaimedBalance,
-			ClaimedAtHeight:    ctx.BlockHeight(),
+			SessionEndHeight:   expectedSessionEndHeight,
 		}
 		claimEvents := events.FilterEvents[*migrationtypes.EventMorseAccountClaimed](t, ctx.EventManager().Events())
 		require.Equal(t, 1, len(claimEvents))

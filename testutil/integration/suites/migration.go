@@ -9,6 +9,7 @@ import (
 
 	"github.com/pokt-network/poktroll/testutil/testmigration"
 	migrationtypes "github.com/pokt-network/poktroll/x/migration/types"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 var _ IntegrationSuite = (*MigrationModuleSuite)(nil)
@@ -124,4 +125,13 @@ func (s *MigrationModuleSuite) QueryAllMorseClaimableAccounts(t *testing.T) []mi
 	require.NoError(t, err)
 
 	return morseClaimableAcctRes.MorseClaimableAccount
+}
+
+// GetSharedParams returns the shared module params.
+func (s *MigrationModuleSuite) GetSharedParams(t *testing.T) sharedtypes.Params {
+	sharedClient := sharedtypes.NewQueryClient(s.GetApp().QueryHelper())
+	sharedParamsRes, err := sharedClient.Params(s.SdkCtx(), &sharedtypes.QueryParamsRequest{})
+	require.NoError(t, err)
+
+	return sharedParamsRes.Params
 }

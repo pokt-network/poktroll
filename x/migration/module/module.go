@@ -98,6 +98,7 @@ type AppModule struct {
 	keeper        keeper.Keeper
 	accountKeeper types.AccountKeeper
 	bankKeeper    types.BankKeeper
+	sharedKeeper  types.SharedKeeper
 }
 
 func NewAppModule(
@@ -105,12 +106,14 @@ func NewAppModule(
 	keeper keeper.Keeper,
 	accountKeeper types.AccountKeeper,
 	bankKeeper types.BankKeeper,
+	sharedKeeper types.SharedKeeper,
 ) AppModule {
 	return AppModule{
 		AppModuleBasic: NewAppModuleBasic(cdc),
 		keeper:         keeper,
 		accountKeeper:  accountKeeper,
 		bankKeeper:     bankKeeper,
+		sharedKeeper:   sharedKeeper,
 	}
 }
 
@@ -182,6 +185,7 @@ type ModuleInputs struct {
 
 	AccountKeeper types.AccountKeeper
 	BankKeeper    types.BankKeeper
+	SharedKeeper  types.SharedKeeper
 }
 
 type ModuleOutputs struct {
@@ -204,12 +208,14 @@ func ProvideModule(in ModuleInputs) ModuleOutputs {
 		authority.String(),
 		in.AccountKeeper,
 		in.BankKeeper,
+		in.SharedKeeper,
 	)
 	m := NewAppModule(
 		in.Cdc,
 		k,
 		in.AccountKeeper,
 		in.BankKeeper,
+		in.SharedKeeper,
 	)
 
 	return ModuleOutputs{MigrationKeeper: k, Module: m}

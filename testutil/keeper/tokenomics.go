@@ -534,6 +534,7 @@ func NewTokenomicsModuleKeepers(
 		authority.String(),
 		accountKeeper,
 		bankKeeper,
+		sharedKeeper,
 	)
 
 	require.NoError(t, migrationKeeper.SetParams(sdkCtx, migrationtypes.DefaultParams()))

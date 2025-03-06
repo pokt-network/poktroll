@@ -9,6 +9,7 @@ import (
 	"google.golang.org/grpc/status"
 
 	migrationtypes "github.com/pokt-network/poktroll/x/migration/types"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 func (k msgServer) ClaimMorseAccount(ctx context.Context, msg *migrationtypes.MsgClaimMorseAccount) (*migrationtypes.MsgClaimMorseAccountResponse, error) {
@@ -97,8 +98,10 @@ func (k msgServer) ClaimMorseAccount(ctx context.Context, msg *migrationtypes.Ms
 	}
 
 	// Emit an event which signals that the morse account has been claimed.
+	sharedParams := k.sharedKeeper.GetParams(ctx)
+	sessionEndHeight := sharedtypes.GetSessionEndHeight(&sharedParams, sdkCtx.BlockHeight())
 	event := migrationtypes.EventMorseAccountClaimed{
-		ClaimedAtHeight:    sdkCtx.BlockHeight(),
+		SessionEndHeight:   sessionEndHeight,
 		ShannonDestAddress: msg.ShannonDestAddress,
 		MorseSrcAddress:    msg.MorseSrcAddress,
 		ClaimedBalance:     unstakedBalance,
@@ -115,8 +118,8 @@ func (k msgServer) ClaimMorseAccount(ctx context.Context, msg *migrationtypes.Ms
 	}
 
 	return &migrationtypes.MsgClaimMorseAccountResponse{
-		MorseSrcAddress: msg.MorseSrcAddress,
-		ClaimedBalance:  unstakedBalance,
-		ClaimedAtHeight: sdkCtx.BlockHeight(),
+		MorseSrcAddress:  msg.MorseSrcAddress,
+		ClaimedBalance:   unstakedBalance,
+		SessionEndHeight: sessionEndHeight,
 	}, nil
 }

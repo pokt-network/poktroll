@@ -24,11 +24,13 @@ import (
 	"github.com/pokt-network/poktroll/testutil/migration/mocks"
 	"github.com/pokt-network/poktroll/x/migration/keeper"
 	migrationtypes "github.com/pokt-network/poktroll/x/migration/types"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 // MigrationKeeperConfig is a configuration struct for the MigrationKeeper testutil.
 type MigrationKeeperConfig struct {
-	bankKeeper migrationtypes.BankKeeper
+	bankKeeper   migrationtypes.BankKeeper
+	sharedKeeper migrationtypes.SharedKeeper
 }
 
 // MigrationKeeperOptionFn is a function which receives and potentially modifies
@@ -68,6 +70,7 @@ func MigrationKeeper(
 		authority.String(),
 		mockAccountKeeper,
 		cfg.bankKeeper,
+		cfg.sharedKeeper,
 	)
 
 	ctx := cosmostypes.NewContext(stateStore, cmtproto.Header{}, false, log.NewNopLogger())
@@ -87,11 +90,13 @@ func WithBankKeeper(bankKeeper migrationtypes.BankKeeper) MigrationKeeperOptionF
 	}
 }
 
-// defaultConfigWithMocks returns a MigrationKeeperConfig with a mocked bank keeper
-// which respond the following methods by updating mapAccAddrCoins accordingly:
-// - SpendableCoins
-// - MintCoins
-// - SendCoinsFromModuleToAccount
+// defaultConfigWithMocks returns a MigrationKeeperConfig with:
+// 1. A Mocked bank keeper which respond the following methods by updating mapAccAddrCoins accordingly:
+//   - SpendableCoins
+//   - MintCoins
+//   - SendCoinsFromModuleToAccount
+//
+// 2. A Mocked shared keeper which responds to the Params method with the default params.
 func defaultConfigWithMocks(ctrl *gomock.Controller) *MigrationKeeperConfig {
 	mockBankKeeper := mocks.NewMockBankKeeper(ctrl)
 	mockBankKeeper.EXPECT().
@@ -104,8 +109,15 @@ func defaultConfigWithMocks(ctrl *gomock.Controller) *MigrationKeeperConfig {
 		SendCoinsFromModuleToAccount(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
 		DoAndReturn(mockBankKeeperSendFromModuleToAccount).AnyTimes()
 
+	sharedKeeper := mocks.NewMockSharedKeeper(ctrl)
+	sharedKeeper.EXPECT().
+		GetParams(gomock.Any()).
+		Return(sharedtypes.DefaultParams()).
+		AnyTimes()
+
 	return &MigrationKeeperConfig{
-		bankKeeper: mockBankKeeper,
+		bankKeeper:   mockBankKeeper,
+		sharedKeeper: sharedKeeper,
 	}
 }
 
