@@ -153,8 +153,8 @@ message MsgClaimMorseApplicationResponse {
   // If the application was already staked, this amount does not include the initial stake (i.e. only the portion which was "claimed").
   cosmos.base.v1beta1.Coin claimedApplicationStake = 3 [(gogoproto.jsontag) = "claimed_application_stake", (gogoproto.nullable) = false];
 
-  // The height (on Shannon) at which the claim was created.
-  int64 claimed_at_height = 4 [(gogoproto.jsontag) = "claimed_at_height"];
+  // The session end height (on Shannon) in which the claim was committed (i.e. claimed).
+  int64 session_end_height = 4 [(gogoproto.jsontag) = "session_end_height"];
 
   // The service ID of the service which the application is staked for.
   string service_id = 5 [(gogoproto.jsontag) = "service_id"];

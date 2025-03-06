@@ -14,6 +14,14 @@ import (
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
+// ClaimMorseApplication performs the following steps, given msg is valid and a
+// MorseClaimableAccount exists for the given morseSrcAddress:
+//   - Mint and transfer all tokens (unstaked balance plus application stake) of the
+//     MorseClaimableAccount to the shannonDestAddress.
+//   - Mark the MorseClaimableAccount as claimed (i.e. adding the shannon_dest_address
+//     and claimed_at_height).
+//   - Stake an application for the amount specified in the MorseClaimableAccount,
+//     and the service specified in the msg.
 func (k msgServer) ClaimMorseApplication(ctx context.Context, msg *migrationtypes.MsgClaimMorseApplication) (*migrationtypes.MsgClaimMorseApplicationResponse, error) {
 	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
 	logger := k.Logger().With("method", "ClaimMorseApplication")

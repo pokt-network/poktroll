@@ -42,8 +42,8 @@ message EventMorseAccountClaimed {
 
 // EventMorseApplicationClaimed is emitted when a MorseAccount is claimed on-chain as a staked application.
 message EventMorseApplicationClaimed {
-  // The height (on Shannon) at which the claim was executed (i.e. claimed).
-  int64 claimed_at_height = 1 [(gogoproto.jsontag) = "claimed_at_height"];
+  // The session end height (on Shannon) in which the claim was committed (i.e. claimed).
+  int64 session_end_height = 1 [(gogoproto.jsontag) = "session_end_height"];
 
   // The unstaked balance which was claimed.
   cosmos.base.v1beta1.Coin claimed_balance = 2 [(gogoproto.jsontag) = "claimed_balance", (gogoproto.nullable) = false];
@@ -57,9 +57,7 @@ message EventMorseApplicationClaimed {
   // The stake of the application which was staked as a result of the claim.
   cosmos.base.v1beta1.Coin claimed_application_stake = 5 [(gogoproto.nullable) = false, (gogoproto.jsontag) = "claimed_application_stake"];
 
-  // The service ID of the service which the application is staked for.
-  string service_id = 6 [(gogoproto.jsontag) = "service_id"];
-
   // The application which was staked as a result of the claim.
+  // This is equivalent to the amount it had staked on Morse.
   application.Application application = 7 [(gogoproto.jsontag) = "application"];
 }
