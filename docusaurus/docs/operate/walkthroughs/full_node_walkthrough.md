@@ -9,6 +9,8 @@ sidebar_position: 1
 
 See the [Full Node Cheat Sheet](../cheat_sheets/full_node_cheatsheet.md) if you want to just copy-pasta a few commands.
 
+**These instructions are intended for Debian-based systems.**
+
 :::
 
 ---
@@ -19,7 +21,7 @@ See the [Full Node Cheat Sheet](../cheat_sheets/full_node_cheatsheet.md) if you 
 - [Pre-Requisites \& Requirements](#pre-requisites--requirements)
 - [Instructions](#instructions)
   - [1. Install Dependencies](#1-install-dependencies)
-  - [2. Create a New User](#2-create-a-new-user)
+  - [2. \[OPTIONAL\] Create a New User](#2-optional-create-a-new-user)
   - [3. Set Up Environment Variables for Cosmovisor](#3-set-up-environment-variables-for-cosmovisor)
   - [4. Install Cosmovisor](#4-install-cosmovisor)
   - [5. Install `poktrolld`](#5-install-poktrolld)
@@ -44,21 +46,17 @@ to enable automatic binary upgrades.
 3. **Dedicated Server or Virtual Machine**: Any provider is acceptable.
 
 ## Instructions
-_This guide will walk you through Debian-based instructions._
+
 ### 1. Install Dependencies
 
-Update your package list and install necessary dependencies:
+1. **Install `curl`, `tar`, `wget`, `jq`**
 
-**Install `curl`, `tar`, `wget`, `jq`**
+   ```bash
+   sudo apt-get update
+   sudo apt-get install -y curl tar wget jq
+   ```
 
-```bash
-sudo apt-get update
-sudo apt-get install -y curl tar wget jq
-```
-
-**Install `go`**
-Follow the official `go` installation instructions [here](https://go.dev/doc/install).
-
+2. **Install `go`** by following the official installation instructions [here](https://go.dev/doc/install).
 
 ### 2. [OPTIONAL] Create a New User
 
@@ -104,6 +102,7 @@ source ~/.profile
 Follow the official Cosmovisor installation instructions [here](https://docs.cosmos.network/main/build/tooling/cosmovisor#installation).
 
 Add `cosmovisor` to your `$PATH`
+
 ```bash
 # This uses the default go behavior and may be different if you customize your $GOPATH or $GOBIN
 export PATH=$PATH:$HOME/go/bin
@@ -111,11 +110,14 @@ export PATH=$PATH:$HOME/go/bin
 # Verify the install
 cosmovisor version
 ```
+
 :::info `cosmovisor` Install Verification
-This may output an `Error` message. As long as it prints `cosmovisor version: <some_version>`, this worked correctly.
+
+**This MAY output an `Error` message.**
+
+As long as it prints `cosmovisor version: <some_version>`, this worked correctly.
 
 :::
-
 
 ### 5. Install `poktrolld`
 
@@ -169,7 +171,8 @@ SEEDS_URL="https://raw.githubusercontent.com/pokt-network/pocket-network-genesis
 SEEDS=$(curl -s "$SEEDS_URL")
 sed -i -e "s|^seeds *=.*|seeds = \"$SEEDS\"|" $HOME/.poktroll/config/config.toml
 
-# [OPTIONAL] Set External Address. The default external address is the external IP of the host.
+# [OPTIONAL] Set External Address.
+# The default external address is the external IP of the host.
 EXTERNAL_IP=$(curl -s https://api.ipify.org)
 sed -i -e "s|^external_address *=.*|external_address = \"${EXTERNAL_IP}:26656\"|" $HOME/.poktroll/config/config.toml
 ```
@@ -221,24 +224,25 @@ This may involve one or more of the following:
 
 a. **Configuring your firewall for UFW**:
 
-   ```bash
-   # [REQUIRED] Expose P2P
-   sudo ufw allow 26656/tcp
+```bash
+# [REQUIRED] Expose P2P
+sudo ufw allow 26656/tcp
 
-   # [OPTIONAL] Expose additional ports
-   sudo ufw allow 26657/tcp # Enable RPC from Internet (requires config change in .poktroll/config/config.toml
-   ```
+# [OPTIONAL] Expose additional ports
+# Enable RPC from Internet (requires config change in .poktroll/config/config.toml)
+sudo ufw allow 26657/tcp
+```
 
 b. **Configuring your firewall for iptables**:
 
-   ```bash
-   sudo iptables -A INPUT -p tcp --dport 26656 -j ACCEPT
-   ```
+```bash
+sudo iptables -A INPUT -p tcp --dport 26656 -j ACCEPT
+```
 
 **Cloud Provider Settings**: If running on a cloud provider (AWS, GCP, Azure, etc.), ensure you configure the security groups or firewall rules to allow inbound traffic on port 26656.
 c. **Router Configuration**: If running behind a router, configure port forwarding for port 26656 to your node's internal IP address.
 d. **Verify your port** is accessible using a tool like netcat or telnet from another machine:
 
-   ```bash
-   nc -vz {EXTERNAL_IP} 26656
-   ```
+```bash
+nc -vz {EXTERNAL_IP} 26656
+```
