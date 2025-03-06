@@ -28,7 +28,7 @@ func TestMsgServer_ClaimMorseAccount_Success(t *testing.T) {
 
 	// Generate and import Morse claimable accounts.
 	numAccounts := 6
-	_, accountState := testmigration.NewMorseStateExportAndAccountState(t, numAccounts, testmigration.AllUnstakedMorseAccountStakeState)
+	_, accountState := testmigration.NewMorseStateExportAndAccountState(t, numAccounts, testmigration.AllUnstakedMorseAccountActorType)
 	accountStateHash, err := accountState.GetHash()
 	require.NoError(t, err)
 
@@ -99,7 +99,7 @@ func TestMsgServer_ClaimMorseAccount_Error(t *testing.T) {
 	// - One staked as an application
 	// - One staked as a supplier
 	numAccounts := 3
-	_, accountState := testmigration.NewMorseStateExportAndAccountState(t, numAccounts, testmigration.EquallyDistributedMorseAccountStakeState)
+	_, accountState := testmigration.NewMorseStateExportAndAccountState(t, numAccounts, testmigration.EquallyDistributedMorseAccountActorTypes)
 	accountStateHash, err := accountState.GetHash()
 	require.NoError(t, err)
 

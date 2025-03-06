@@ -32,7 +32,8 @@ func TestCollectMorseAccounts(t *testing.T) {
 	require.NoError(t, err)
 
 	// Generate and write the MorseStateExport input JSON file.
-	morseStateExportBz, morseAccountStateBz := testmigration.NewMorseStateExportAndAccountStateBytes(t, 10, testmigration.EquallyDistributedMorseAccountStakeState)
+	morseStateExportBz, morseAccountStateBz := testmigration.NewMorseStateExportAndAccountStateBytes(
+		t, 10, testmigration.EquallyDistributedMorseAccountActorTypes)
 	_, err = inputFile.Write(morseStateExportBz)
 	require.NoError(t, err)
 
@@ -69,7 +70,8 @@ func TestNewTestMorseStateExport(t *testing.T) {
 	for numAccounts := 1; numAccounts <= 10; numAccounts++ {
 		t.Run(fmt.Sprintf("num_accounts=%d", numAccounts), func(t *testing.T) {
 			morseStateExport := new(migrationtypes.MorseStateExport)
-			stateExportBz, _ := testmigration.NewMorseStateExportAndAccountStateBytes(t, numAccounts, testmigration.EquallyDistributedMorseAccountStakeState)
+			stateExportBz, _ := testmigration.NewMorseStateExportAndAccountStateBytes(
+				t, numAccounts, testmigration.EquallyDistributedMorseAccountActorTypes)
 			err := cmtjson.Unmarshal(stateExportBz, morseStateExport)
 			require.NoError(t, err)
 
@@ -81,10 +83,10 @@ func TestNewTestMorseStateExport(t *testing.T) {
 			require.NoError(t, err)
 
 			// Construct account number expectations based on equal distribution of unstaked, app, and supplier accounts.
-			expectedNumApps := numAccounts / 3
 			expectedNumSuppliers := numAccounts / 3
-			switch (numAccounts - 1) % 3 {
-			case 1:
+			expectedNumApps := numAccounts / 3
+			expectedActorType := testmigration.EquallyDistributedMorseAccountActorTypes(uint64(numAccounts - 1))
+			if expectedActorType == testmigration.MorseApplicationActor {
 				expectedNumApps++
 			}
 			t.Logf("numAccounts: %d; expectedNumApps: %d; expectedNumSuppliers: %d", numAccounts, expectedNumApps, expectedNumSuppliers)
@@ -102,8 +104,8 @@ func TestNewTestMorseStateExport(t *testing.T) {
 			for i := 0; i < numAccounts; i++ {
 				expectedShannonTotalUnstakedBalance += testmigration.GenMorseUnstakedBalanceAmount(uint64(i))
 
-				morseAccountStakeState := testmigration.EquallyDistributedMorseAccountStakeState(uint64(i))
-				switch morseAccountStakeState {
+				morseAccountType := testmigration.EquallyDistributedMorseAccountActorTypes(uint64(i))
+				switch morseAccountType {
 				case testmigration.MorseUnstakedActor:
 					// No-op.
 				case testmigration.MorseApplicationActor:
@@ -111,7 +113,7 @@ func TestNewTestMorseStateExport(t *testing.T) {
 				case testmigration.MorseSupplierActor:
 					expectedShannonTotalSupplierStake += testmigration.GenMorseSupplierStakeAmount(uint64(i))
 				default:
-					t.Fatalf("unknown morse account stake state: %q", morseAccountStakeState)
+					t.Fatalf("unknown morse account stake state: %q", morseAccountType)
 				}
 			}
 
@@ -126,7 +128,8 @@ func BenchmarkTransformMorseState(b *testing.B) {
 	for i := 0; i < 5; i++ {
 		numAccounts := int(math.Pow10(i + 1))
 		morseStateExport := new(migrationtypes.MorseStateExport)
-		morseStateExportBz, _ := testmigration.NewMorseStateExportAndAccountStateBytes(b, numAccounts, testmigration.EquallyDistributedMorseAccountStakeState)
+		morseStateExportBz, _ := testmigration.NewMorseStateExportAndAccountStateBytes(
+			b, numAccounts, testmigration.EquallyDistributedMorseAccountActorTypes)
 		err := cmtjson.Unmarshal(morseStateExportBz, morseStateExport)
 		require.NoError(b, err)
 

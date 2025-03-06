@@ -28,9 +28,9 @@ type MigrationModuleSuite struct {
 
 // GenerateMorseAccountState generates a MorseAccountState with the given number of MorseClaimableAccounts.
 // It updates the suite's #numMorseClaimableAccounts and #accountState fields.
-func (s *MigrationModuleSuite) GenerateMorseAccountState(t *testing.T, numAccounts int) {
+func (s *MigrationModuleSuite) GenerateMorseAccountState(t *testing.T, numAccounts int, distributionFn testmigration.MorseAccountActorTypeDistributionFn) {
 	s.numMorseClaimableAccounts = numAccounts
-	_, s.accountState = testmigration.NewMorseStateExportAndAccountState(t, s.numMorseClaimableAccounts, testmigration.EquallyDistributedMorseAccountStakeState)
+	_, s.accountState = testmigration.NewMorseStateExportAndAccountState(t, s.numMorseClaimableAccounts, distributionFn)
 }
 
 // GetAccountState returns the suite's #accountState field.

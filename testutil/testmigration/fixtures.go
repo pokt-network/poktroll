@@ -16,21 +16,21 @@ import (
 
 // MorseAccountActorType is an enum which represents all possible staked and
 // unstaked actor types which are considered in the migration module.
-type MorseAccountActorType string
+type MorseAccountActorType int
 
 const (
-	MorseUnstakedActor    = MorseAccountActorType("unstaked")
-	MorseApplicationActor = MorseAccountActorType("application")
-	MorseSupplierActor    = MorseAccountActorType("supplier")
+	MorseUnstakedActor = MorseAccountActorType(iota)
+	MorseApplicationActor
+	MorseSupplierActor
 )
 
-// MorseAccountStakeStateDistributionFn is a function which returns a MorseStakeState
+// MorseAccountActorTypeDistributionFn is a function which returns a MorseAccountActorType
 // derived from the given index. It is intended to be used in conjunction with
 // MorseStateExport and MorseAccountState fixture generation logic.
-type MorseAccountStakeStateDistributionFn func(index uint64) MorseAccountActorType
+type MorseAccountActorTypeDistributionFn func(index uint64) MorseAccountActorType
 
-// EquallyDistributedMorseAccountStakeState cyclically returns each MorseAccountActorType, one after the other, as the index increases.
-func EquallyDistributedMorseAccountStakeState(index uint64) MorseAccountActorType {
+// EquallyDistributedMorseAccountActorTypes cyclically returns each MorseAccountActorType, one after the other, as the index increases.
+func EquallyDistributedMorseAccountActorTypes(index uint64) MorseAccountActorType {
 	switch index % 3 {
 	case 0:
 		return MorseUnstakedActor
@@ -41,8 +41,8 @@ func EquallyDistributedMorseAccountStakeState(index uint64) MorseAccountActorTyp
 	}
 }
 
-// AllUnstakedMorseAccountStakeState returns MorseUnstakedActor for every index.
-func AllUnstakedMorseAccountStakeState(_ uint64) MorseAccountActorType {
+// AllUnstakedMorseAccountActorType returns MorseUnstakedActor for every index.
+func AllUnstakedMorseAccountActorType(_ uint64) MorseAccountActorType {
 	return MorseUnstakedActor
 }
 
@@ -61,7 +61,7 @@ func AllUnstakedMorseAccountStakeState(_ uint64) MorseAccountActorType {
 func NewMorseStateExportAndAccountStateBytes(
 	t gocuke.TestingT,
 	numAccounts int,
-	distributionFn MorseAccountStakeStateDistributionFn,
+	distributionFn MorseAccountActorTypeDistributionFn,
 ) (morseStateExportBz []byte, morseAccountStateBz []byte) {
 	morseStateExport, morseAccountState := NewMorseStateExportAndAccountState(t, numAccounts, distributionFn)
 
@@ -83,7 +83,7 @@ func NewMorseStateExportAndAccountStateBytes(
 func NewMorseStateExportAndAccountState(
 	t gocuke.TestingT,
 	numAccounts int,
-	distributionFn MorseAccountStakeStateDistributionFn,
+	distributionFn MorseAccountActorTypeDistributionFn,
 ) (export *migrationtypes.MorseStateExport, state *migrationtypes.MorseAccountState) {
 	t.Helper()
 
@@ -101,8 +101,8 @@ func NewMorseStateExportAndAccountState(
 	}
 
 	for i := 0; i < numAccounts; i++ {
-		morseAccountStakeState := distributionFn(uint64(i))
-		switch morseAccountStakeState {
+		morseAccountType := distributionFn(uint64(i))
+		switch morseAccountType {
 		case MorseUnstakedActor:
 			// No-op.
 		case MorseApplicationActor:
@@ -120,7 +120,7 @@ func NewMorseStateExportAndAccountState(
 				GenMorseValidator(t, uint64(i)),
 			)
 		default:
-			panic(fmt.Sprintf("unknown morse account stake state %q", morseAccountStakeState))
+			panic(fmt.Sprintf("unknown morse account stake state %q", morseAccountType))
 		}
 
 		// Add an account (regardless of whether it is staked or not).
@@ -153,25 +153,37 @@ func GenMorsePrivateKey(t gocuke.TestingT, seed uint64) cometcrypto.PrivKey {
 // GenMorseUnstakedBalanceAmount returns an amount by applying the given index to
 // a pattern such that the generated amount is unique to the unstaked balance
 // (as opposed to actor stake(s)) and the given index.
+// E.g.:
+// - GenMorseApplicationStakeAmount(0)  =  1000001
+// - GenMorseApplicationStakeAmount(1)  =  2000002
+// - GenMorseApplicationStakeAmount(10) = 10000010
 func GenMorseUnstakedBalanceAmount(index uint64) int64 {
 	index++
-	return int64(1e6*index + index) // idx_000_00i
+	return int64(1e6*index + index) // index_000_00index
 }
 
 // GenMorseSupplierStakeAmount returns an amount by applying the given index to
 // a pattern such that the generated amount is unique to the supplier stake
 // (as opposed to the unstaked balance or application stake) and the given index.
+// E.g.:
+// - GenMorseApplicationStakeAmount(0)  =  10100
+// - GenMorseApplicationStakeAmount(1)  =  20200
+// - GenMorseApplicationStakeAmount(10) = 101000
 func GenMorseSupplierStakeAmount(index uint64) int64 {
 	index++
-	return int64(1e4*index + (index * 100)) // idx0_j00
+	return int64(1e4*index + (index * 100)) // index0_index00
 }
 
 // GenMorseApplicationStakeAmount returns an amount by applying the given index to
 // a pattern such that the generated amount is unique to the application stake
 // (as opposed to the unstaked balance or supplier stake) and the given index.
+// E.g.:
+// - GenMorseApplicationStakeAmount(0)  =  100010
+// - GenMorseApplicationStakeAmount(1)  =  200020
+// - GenMorseApplicationStakeAmount(10) = 1000100
 func GenMorseApplicationStakeAmount(index uint64) int64 {
 	index++
-	return int64(1e5*index + (index * 10)) // j00_0j0
+	return int64(1e5*index + (index * 10)) // index00_0index0
 }
 
 // GenMorseAccount returns a new MorseAccount fixture. The given index is used
