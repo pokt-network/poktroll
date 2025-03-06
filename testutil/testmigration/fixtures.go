@@ -29,8 +29,8 @@ const (
 // MorseStateExport and MorseAccountState fixture generation logic.
 type MorseAccountActorTypeDistributionFn func(index uint64) MorseAccountActorType
 
-// EquallyDistributedMorseAccountActorTypes cyclically returns each MorseAccountActorType, one after the other, as the index increases.
-func EquallyDistributedMorseAccountActorTypes(index uint64) MorseAccountActorType {
+// RoundRobinAllMorseAccountActorTypes cyclically returns each MorseAccountActorType, one after the other, as the index increases.
+func RoundRobinAllMorseAccountActorTypes(index uint64) MorseAccountActorType {
 	switch index % 3 {
 	case 0:
 		return MorseUnstakedActor
@@ -42,8 +42,16 @@ func EquallyDistributedMorseAccountActorTypes(index uint64) MorseAccountActorTyp
 }
 
 // AllUnstakedMorseAccountActorType returns MorseUnstakedActor for every index.
-func AllUnstakedMorseAccountActorType(_ uint64) MorseAccountActorType {
-	return MorseUnstakedActor
+func AllUnstakedMorseAccountActorType(index uint64) MorseAccountActorType {
+	return NewSingleMorseAccountActorTypeFn(MorseUnstakedActor)(index)
+}
+
+// NewSingleMorseAccountActorTypeFn returns a MorseAccountActorTypeDistributionFn
+// which returns the given actor type for every index.
+func NewSingleMorseAccountActorTypeFn(actorType MorseAccountActorType) MorseAccountActorTypeDistributionFn {
+	return func(_ uint64) MorseAccountActorType {
+		return actorType
+	}
 }
 
 // NewMorseStateExportAndAccountStateBytes returns:

@@ -102,7 +102,7 @@ func TestMsgServer_ClaimMorseAccount_Error(t *testing.T) {
 	// - One staked as an application
 	// - One staked as a supplier
 	numAccounts := 3
-	_, accountState := testmigration.NewMorseStateExportAndAccountState(t, numAccounts, testmigration.EquallyDistributedMorseAccountActorTypes)
+	_, accountState := testmigration.NewMorseStateExportAndAccountState(t, numAccounts, testmigration.RoundRobinAllMorseAccountActorTypes)
 	accountStateHash, err := accountState.GetHash()
 	require.NoError(t, err)
 

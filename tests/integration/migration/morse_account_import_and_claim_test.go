@@ -42,7 +42,7 @@ func TestMigrationModuleSuite(t *testing.T) {
 
 // TestImportMorseClaimableAccounts exercises importing and persistence of morse claimable accounts.
 func (s *MigrationModuleTestSuite) TestImportMorseClaimableAccounts() {
-	s.GenerateMorseAccountState(s.T(), s.numMorseClaimableAccounts, testmigration.EquallyDistributedMorseAccountActorTypes)
+	s.GenerateMorseAccountState(s.T(), s.numMorseClaimableAccounts, testmigration.RoundRobinAllMorseAccountActorTypes)
 	msgImportRes := s.ImportMorseClaimableAccounts(s.T())
 	morseAccountState := s.GetAccountState(s.T())
 	morseAccountStateHash, err := morseAccountState.GetHash()
@@ -74,7 +74,7 @@ func (s *MigrationModuleTestSuite) TestImportMorseClaimableAccounts() {
 // It only exercises claiming of account balances and does not exercise
 // the staking any actors as a result of claiming.
 func (s *MigrationModuleTestSuite) TestClaimMorseAccount() {
-	s.GenerateMorseAccountState(s.T(), s.numMorseClaimableAccounts, testmigration.EquallyDistributedMorseAccountActorTypes)
+	s.GenerateMorseAccountState(s.T(), s.numMorseClaimableAccounts, testmigration.RoundRobinAllMorseAccountActorTypes)
 	s.ImportMorseClaimableAccounts(s.T())
 
 	shannonDestAddr := sample.AccAddress()
