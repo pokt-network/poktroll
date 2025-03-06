@@ -30,7 +30,7 @@ type MigrationModuleSuite struct {
 // It updates the suite's #numMorseClaimableAccounts and #accountState fields.
 func (s *MigrationModuleSuite) GenerateMorseAccountState(t *testing.T, numAccounts int) {
 	s.numMorseClaimableAccounts = numAccounts
-	_, s.accountState = testmigration.NewMorseStateExportAndAccountState(t, s.numMorseClaimableAccounts)
+	_, s.accountState = testmigration.NewMorseStateExportAndAccountState(t, s.numMorseClaimableAccounts, testmigration.EquallyDistributedMorseAccountStakeState)
 }
 
 // GetAccountState returns the suite's #accountState field.

@@ -133,7 +133,7 @@ func TestMsgServer_ClaimMorseAccount_Error(t *testing.T) {
 			).Error(),
 		)
 
-		_, err := srv.ClaimMorseAccount(ctx, &invalidMsgClaim)
+		_, err = srv.ClaimMorseAccount(ctx, &invalidMsgClaim)
 		require.EqualError(t, err, expectedErr.Error())
 	})
 
@@ -150,7 +150,7 @@ func TestMsgServer_ClaimMorseAccount_Error(t *testing.T) {
 			).Error(),
 		)
 
-		_, err := srv.ClaimMorseAccount(ctx, &invalidMsgClaim)
+		_, err = srv.ClaimMorseAccount(ctx, &invalidMsgClaim)
 		require.EqualError(t, err, expectedErr.Error())
 	})
 
@@ -170,7 +170,7 @@ func TestMsgServer_ClaimMorseAccount_Error(t *testing.T) {
 			).Error(),
 		)
 
-		_, err := srv.ClaimMorseAccount(ctx, msgClaim)
+		_, err = srv.ClaimMorseAccount(ctx, msgClaim)
 		require.EqualError(t, err, expectedErr.Error())
 	})
 
@@ -191,7 +191,7 @@ func TestMsgServer_ClaimMorseAccount_Error(t *testing.T) {
 			).Error(),
 		)
 
-		_, err := srv.ClaimMorseAccount(ctx, msgClaim)
+		_, err = srv.ClaimMorseAccount(ctx, msgClaim)
 		require.EqualError(t, err, expectedErr.Error())
 	})
 
@@ -219,7 +219,7 @@ func TestMsgServer_ClaimMorseAccount_Error(t *testing.T) {
 			).Error(),
 		)
 
-		_, err := srv.ClaimMorseAccount(ctx, msgClaim)
+		_, err = srv.ClaimMorseAccount(ctx, msgClaim)
 		require.EqualError(t, err, expectedErr.Error())
 	})
 
