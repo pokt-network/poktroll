@@ -115,22 +115,52 @@ message MsgClaimMorseAccountResponse {
 
 // TODO_UPNEXT(@bryanchriswhite, #1034):
 // - Refactor to consistent naming convention
-// - Add comments describing the purpose of each message/field
 
+// MsgClaimMorseApplication is used to execute a claim (one-time minting of tokens on Shannon),
+// of the total tokens owned by the given Morse account, according to the on-chain MorseClaimableAccounts,
+// to the balance of the given Shannon account, followed by staking that Shannon account as an application.
 message MsgClaimMorseApplication {
   option (cosmos.msg.v1.signer) = "shannonDestAddress";
-  string                   shannonDestAddress = 1;
-  string                   morseSrcAddress    = 2;
-  string                   morseSignature     = 3;
-  cosmos.base.v1beta1.Coin stake              = 4 [(gogoproto.nullable) = false];
-  string                   serviceConfig      = 5;
+
+  // The bech32-encoded address of the Shannon account to which the claimed tokens
+  // will be minted and from which the application will be staked.
+  string shannonDestAddress = 1;
+
+  // The hex-encoded address of the Morse account whose balance will be claimed.
+  // E.g.: 00f9900606fa3d5c9179fc0c8513078a53a2073e
+  string morseSrcAddress = 2;
+
+  // The hex-encoded signature, by the Morse account, of this message (where this field is nil).
+  // I.e.: morse_signature = private_key.sign(marshal(MsgClaimMorseAccount{morse_signature: nil, ...}))
+  string morseSignature = 3;
+
+  // The upokt which the Shannon destination account will stake as an application.
+  cosmos.base.v1beta1.Coin stake = 4 [(gogoproto.nullable) = false];
+
+  // The services this application is staked to request service for.
+  // NOTE: This is not a repeated field, as in MsgStakeApplication,
+  // because an application can only be staked for one service.
+  string serviceConfig = 5;
 }
 
+// MsgClaimMorseApplicationResponse is returned from MsgClaimMorseApplication.
+// It indicates the morse_src_address of the account which was claimed, the unstaked
+// balance claimed, the application stake, and the height at which the claim was committed.
 message MsgClaimMorseApplicationResponse {
-  string                   morseSrcAddress         = 1;
-  cosmos.base.v1beta1.Coin claimedBalance          = 2 [(gogoproto.nullable) = false];
-  string                   serviceId               = 3;
-  cosmos.base.v1beta1.Coin claimedApplicationStake = 4 [(gogoproto.nullable) = false];
-  int32                    claimedAtHeight         = 5;
+  // The hex-encoded address of the Morse account whose balance will be claimed.
+  string morseSrcAddress = 1;
+
+  // The unstaked balance which was claimed.
+  cosmos.base.v1beta1.Coin claimedBalance = 2 [(gogoproto.nullable) = false];
+
+  // The stake of the application which was staked as a result of the claim.
+  // If the application was already staked, this amount does not include the initial stake (i.e. only the portion which was "claimed").
+  cosmos.base.v1beta1.Coin claimedApplicationStake = 3 [(gogoproto.nullable) = false];
+
+  // The height (on Shannon) at which the claim was created.
+  int32 claimedAtHeight = 4;
+
+  // The application which was staked as a result of the claim.
+  application.Application application = 5 [(gogoproto.nullable) = false];
 }
 
