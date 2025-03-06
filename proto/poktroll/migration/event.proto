@@ -29,7 +29,7 @@ message EventMorseAccountClaimed {
   // The height (on Shannon) at which the claim was executed (i.e. claimed).
   int64 claimed_at_height = 1 [(gogoproto.jsontag) = "claimed_at_height"];
 
-  // The balance which was claimed.
+  // The unstaked balance which was claimed.
   cosmos.base.v1beta1.Coin claimed_balance = 2 [(gogoproto.jsontag) = "claimed_balance", (gogoproto.nullable) = false];
 
   // The bech32-encoded address of the Shannon account to which the claimed balance will be minted.

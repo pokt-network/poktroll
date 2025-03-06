@@ -52,9 +52,6 @@ func TestMsgServer_ClaimMorseAccount_Success(t *testing.T) {
 		)
 		require.NoError(t, err)
 
-		err = msgClaim.SignMsgClaimMorseAccount(morsePrivKey)
-		require.NoError(t, err)
-
 		msgClaimRes, err := srv.ClaimMorseAccount(ctx, msgClaim)
 		require.NoError(t, err)
 
@@ -191,6 +188,62 @@ func TestMsgServer_ClaimMorseAccount_Error(t *testing.T) {
 				accountState.Accounts[0].GetMorseSrcAddress(),
 				0,
 				morseClaimableAccount.ShannonDestAddress,
+			).Error(),
+		)
+
+		_, err := srv.ClaimMorseAccount(ctx, msgClaim)
+		require.EqualError(t, err, expectedErr.Error())
+	})
+
+	t.Run("account is staked as an application", func(t *testing.T) {
+		morseAccountStakedAppIdx := uint64(1)
+		morseAccount := accountState.Accounts[morseAccountStakedAppIdx]
+		morseSrcAddress := morseAccount.GetMorseSrcAddress()
+
+		// Generate a key which corresponds to the first account which is staked as an application.
+		morsePrivKey := testmigration.GenMorsePrivateKey(t, morseAccountStakedAppIdx)
+		require.False(t, morseAccount.ApplicationStake.IsZero())
+
+		msgClaim, err = migrationtypes.NewMsgClaimMorseAccount(
+			sample.AccAddress(),
+			morseAccount.GetMorseSrcAddress(),
+			morsePrivKey,
+		)
+		require.NoError(t, err)
+
+		expectedErr := status.Error(
+			codes.FailedPrecondition,
+			migrationtypes.ErrMorseAccountClaim.Wrapf(
+				"Morse account %q is staked as an application, please use `poktrolld migrate claim-application` instead",
+				morseSrcAddress,
+			).Error(),
+		)
+
+		_, err := srv.ClaimMorseAccount(ctx, msgClaim)
+		require.EqualError(t, err, expectedErr.Error())
+	})
+
+	t.Run("account is staked as a supplier", func(t *testing.T) {
+		morseAccountStakedSupplierIdx := uint64(2)
+		morseAccount := accountState.Accounts[morseAccountStakedSupplierIdx]
+		morseSrcAddress := morseAccount.GetMorseSrcAddress()
+
+		// Generate a key which corresponds to the first account which is staked as a supplier.
+		morsePrivKey := testmigration.GenMorsePrivateKey(t, morseAccountStakedSupplierIdx)
+		require.False(t, morseAccount.SupplierStake.IsZero())
+
+		msgClaim, err = migrationtypes.NewMsgClaimMorseAccount(
+			sample.AccAddress(),
+			morseSrcAddress,
+			morsePrivKey,
+		)
+		require.NoError(t, err)
+
+		expectedErr := status.Error(
+			codes.FailedPrecondition,
+			migrationtypes.ErrMorseAccountClaim.Wrapf(
+				"Morse account %q is staked as an supplier, please use `poktrolld migrate claim-supplier` instead",
+				morseSrcAddress,
 			).Error(),
 		)
 
