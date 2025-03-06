@@ -91,7 +91,7 @@ func (m *EventImportMorseClaimableAccounts) GetNumAccounts() uint64 {
 type EventMorseAccountClaimed struct {
 	// The height (on Shannon) at which the claim was executed (i.e. claimed).
 	ClaimedAtHeight int64 `protobuf:"varint,1,opt,name=claimed_at_height,json=claimedAtHeight,proto3" json:"claimed_at_height"`
-	// The balance which was claimed.
+	// The unstaked balance which was claimed.
 	ClaimedBalance types.Coin `protobuf:"bytes,2,opt,name=claimed_balance,json=claimedBalance,proto3" json:"claimed_balance"`
 	// The bech32-encoded address of the Shannon account to which the claimed balance will be minted.
 	ShannonDestAddress string `protobuf:"bytes,3,opt,name=shannon_dest_address,json=shannonDestAddress,proto3" json:"shannon_dest_address"`
