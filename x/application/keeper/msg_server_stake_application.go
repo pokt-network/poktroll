@@ -32,7 +32,7 @@ func (k msgServer) StakeApplication(ctx context.Context, msg *types.MsgStakeAppl
 	isSuccessful = true
 
 	return &types.MsgStakeApplicationResponse{
-		Application: foundApp,
+		Application: stakedApp,
 	}, nil
 }
 
