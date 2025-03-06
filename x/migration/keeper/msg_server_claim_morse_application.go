@@ -122,10 +122,9 @@ func (k msgServer) ClaimMorseApplication(ctx context.Context, msg *migrationtype
 	event := migrationtypes.EventMorseApplicationClaimed{
 		ShannonDestAddress:      msg.ShannonDestAddress,
 		MorseSrcAddress:         msg.MorseSrcAddress,
-		ServiceId:               app.GetServiceConfigs()[0].GetServiceId(),
 		ClaimedBalance:          claimedUnstakedTokens,
 		ClaimedApplicationStake: claimedAppStake,
-		ClaimedAtHeight:         sdkCtx.BlockHeight(),
+		SessionEndHeight:        sdkCtx.BlockHeight(),
 		Application:             app,
 	}
 	if err = sdkCtx.EventManager().EmitTypedEvent(&event); err != nil {
@@ -140,12 +139,14 @@ func (k msgServer) ClaimMorseApplication(ctx context.Context, msg *migrationtype
 	}
 
 	// Return the response.
+	sharedParams := k.sharedKeeper.GetParams(ctx)
+	sessionEndHeight := sharedtypes.GetSettlementSessionEndHeight(&sharedParams, sdkCtx.BlockHeight())
 	return &migrationtypes.MsgClaimMorseApplicationResponse{
 		MorseSrcAddress:         msg.MorseSrcAddress,
 		ServiceId:               app.ServiceConfigs[0].GetServiceId(),
 		ClaimedBalance:          claimedUnstakedTokens,
 		ClaimedApplicationStake: claimedAppStake,
-		ClaimedAtHeight:         sdkCtx.BlockHeight(),
+		SessionEndHeight:        sessionEndHeight,
 		Application:             app,
 	}, nil
 }
