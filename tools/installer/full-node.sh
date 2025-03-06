@@ -623,10 +623,13 @@ EOF
 # for the values. Specifically, everything starting with `Environment=` is duplicated in the env var helper.
 # Function to set up systemd service
 setup_systemd() {
-    print_color $YELLOW "Setting up systemd service..."
-    cat >/etc/systemd/system/cosmovisor.service <<EOF
+    # Create a unique service name based on user
+    SERVICE_NAME="cosmovisor-${POKTROLL_USER}"
+    print_color $YELLOW "Setting up systemd service as $SERVICE_NAME.service..."
+    
+    cat >/etc/systemd/system/$SERVICE_NAME.service <<EOF
 [Unit]
-Description=Cosmovisor daemon for poktrolld
+Description=Cosmovisor daemon for poktrolld ($POKTROLL_USER)
 After=network-online.target
 
 [Service]
@@ -647,9 +650,9 @@ WantedBy=multi-user.target
 EOF
 
     systemctl daemon-reload
-    systemctl enable cosmovisor.service
-    systemctl start cosmovisor.service
-    print_color $GREEN "Systemd service set up and started successfully."
+    systemctl enable $SERVICE_NAME.service
+    systemctl start $SERVICE_NAME.service
+    print_color $GREEN "Systemd service $SERVICE_NAME.service set up and started successfully."
 }
 
 # Function to check if ufw is installed and open port 26656. We need to open the port to keep the network healthy.
@@ -721,8 +724,8 @@ main() {
         print_color $GREEN "Node was set up to sync from genesis with version $POKTROLLD_VERSION"
         print_color $YELLOW "Note: Syncing from genesis may take a significant amount of time"
     fi
-    print_color $YELLOW "You can check the status of your node with: sudo systemctl status cosmovisor.service"
-    print_color $YELLOW "View logs with: sudo journalctl -u cosmovisor.service -f"
+    print_color $YELLOW "You can check the status of your node with: sudo systemctl status $SERVICE_NAME.service"
+    print_color $YELLOW "View logs with: sudo journalctl -u $SERVICE_NAME.service -f"
 }
 
 main
