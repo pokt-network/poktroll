@@ -67,7 +67,7 @@ func (s *MigrationModuleSuite) ClaimMorseAccount(
 ) (expectedMorseSrcAddr string, _ *migrationtypes.MsgClaimMorseAccountResponse) {
 	t.Helper()
 
-	morsePrivateKey := testmigration.NewMorsePrivateKey(t, morseAccountIdx)
+	morsePrivateKey := testmigration.GenMorsePrivateKey(t, morseAccountIdx)
 	expectedMorseSrcAddr = morsePrivateKey.PubKey().Address().String()
 	require.Equal(t, expectedMorseSrcAddr, s.accountState.Accounts[morseAccountIdx].MorseSrcAddress)
 
