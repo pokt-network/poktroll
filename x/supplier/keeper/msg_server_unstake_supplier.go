@@ -81,6 +81,26 @@ func (k msgServer) UnstakeSupplier(
 	// (e.g. a session with less than the minimum or 0 number of suppliers,
 	// offchain actors that need to listen to session supplier's change mid-session, etc).
 	supplier.UnstakeSessionEndHeight = uint64(sharedtypes.GetSessionEndHeight(&sharedParams, currentHeight))
+
+	// Update the supplier's service config history with the empty service configs
+	// to indicate that the supplier is no longer providing service after the current session.
+	nextSessionStartHeight := sharedtypes.GetNextSessionStartHeight(&sharedParams, currentHeight)
+	servicesUpdate := &sharedtypes.ServiceConfigUpdate{
+		Services:             make([]*sharedtypes.SupplierServiceConfig, 0),
+		EffectiveBlockHeight: uint64(nextSessionStartHeight),
+	}
+
+	configUpdateLog := supplier.ServiceConfigHistory
+	latestUpdateIdx := len(configUpdateLog) - 1
+	// Overwrite the latest service configuration if there is already a service
+	// config update for the same session start height.
+	if latestUpdateIdx >= 0 && configUpdateLog[latestUpdateIdx].EffectiveBlockHeight == uint64(nextSessionStartHeight) {
+		supplier.ServiceConfigHistory[latestUpdateIdx] = servicesUpdate
+	} else {
+		// Otherwise, append the new service configuration update.
+		supplier.ServiceConfigHistory = append(supplier.ServiceConfigHistory, servicesUpdate)
+	}
+
 	k.SetSupplier(ctx, supplier)
 
 	// Emit an event which signals that the supplier successfully began unbonding their stake.

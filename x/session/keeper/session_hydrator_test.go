@@ -81,16 +81,6 @@ func TestSession_HydrateSession_Metadata(t *testing.T) {
 		expectedErr                 error
 	}{
 		{
-			desc:        "blockHeight = 0",
-			blockHeight: 0,
-
-			expectedNumBlocksPerSession: 4,
-			expectedSessionNumber:       0,
-			expectedSessionStartBlock:   0,
-			expectedSessionEndBlock:     0,
-			expectedErr:                 nil,
-		},
-		{
 			desc:        "blockHeight = 1",
 			blockHeight: 1,
 

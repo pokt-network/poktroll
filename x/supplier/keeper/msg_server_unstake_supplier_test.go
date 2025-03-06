@@ -59,7 +59,9 @@ func TestMsgServer_UnstakeSupplier_Success(t *testing.T) {
 	require.True(t, isSupplierFound)
 	require.Equal(t, unstakingSupplierOperatorAddr, foundSupplier.OperatorAddress)
 	require.Equal(t, math.NewInt(initialStake), foundSupplier.Stake.Amount)
-	require.Len(t, foundSupplier.Services, 1)
+
+	latestConfigUpdate := getLatestSupplierServiceConfigUpdate(t, foundSupplier)
+	require.Len(t, latestConfigUpdate.Services, 1)
 
 	// Create and stake another supplier that will not be unstaked to assert that only the
 	// unstaking supplier is removed from the suppliers list when the unbonding period is over.
@@ -86,35 +88,47 @@ func TestMsgServer_UnstakeSupplier_Success(t *testing.T) {
 	expectedSupplier.UnstakeSessionEndHeight = uint64(sharedtypes.GetSessionEndHeight(&sharedParams, cosmostypes.UnwrapSDKContext(ctx).BlockHeight()))
 	unbondingEndHeight := sharedtypes.GetSupplierUnbondingEndHeight(&sharedParams, expectedSupplier)
 
+	// Make sure the supplier entered the unbonding period
+	foundSupplier, isSupplierFound = supplierModuleKeepers.GetSupplier(ctx, unstakingSupplierOperatorAddr)
+	require.True(t, isSupplierFound)
+	require.True(t, foundSupplier.IsUnbonding())
+
 	// Assert that the EventSupplierUnbondingBegin event is emitted.
 	events = cosmostypes.UnwrapSDKContext(ctx).EventManager().Events()
 	require.Equalf(t, 1, len(events), "expected exactly 1 event")
 
 	expectedEvent, err = cosmostypes.TypedEventToEvent(
 		&suppliertypes.EventSupplierUnbondingBegin{
-			Supplier:           expectedSupplier,
+			Supplier:           &foundSupplier,
 			Reason:             suppliertypes.SupplierUnbondingReason_SUPPLIER_UNBONDING_REASON_VOLUNTARY,
-			SessionEndHeight:   int64(expectedSupplier.GetUnstakeSessionEndHeight()),
+			SessionEndHeight:   int64(foundSupplier.GetUnstakeSessionEndHeight()),
 			UnbondingEndHeight: unbondingEndHeight,
 		},
 	)
 	require.NoError(t, err)
 	require.EqualValues(t, expectedEvent, events[0])
 
-	// Reset the events, as if a new block were created.
-	ctx, _ = testevents.ResetEventManager(ctx)
+	// Activate the latest supplier's services update.
+	ctx = setBlockHeightToNextSessionStart(ctx, supplierModuleKeepers.SharedKeeper)
+	numSuppliersWithServicesActivation, err := supplierModuleKeepers.BeginBlockerActivateSupplierServices(ctx)
+	require.NoError(t, err)
+	// Services for both suppliers are activated at the start of the session.
+	require.Equal(t, uint64(2), numSuppliersWithServicesActivation)
 
-	// Make sure the supplier entered the unbonding period
 	foundSupplier, isSupplierFound = supplierModuleKeepers.GetSupplier(ctx, unstakingSupplierOperatorAddr)
 	require.True(t, isSupplierFound)
-	require.True(t, foundSupplier.IsUnbonding())
+	require.Len(t, foundSupplier.Services, 0)
+
+	// Reset the events, as if a new block were created.
+	ctx, _ = testevents.ResetEventManager(ctx)
 
 	// Move block height to the end of the unbonding period
 	ctx = keepertest.SetBlockHeight(ctx, unbondingEndHeight)
 
 	// Run the endblocker to unbond suppliers
-	err = supplierModuleKeepers.EndBlockerUnbondSuppliers(ctx)
+	numUnbondedSuppliers, err := supplierModuleKeepers.EndBlockerUnbondSuppliers(ctx)
 	require.NoError(t, err)
+	require.Equal(t, uint64(1), numUnbondedSuppliers)
 
 	// Assert that the EventSupplierUnbondingEnd event is emitted.
 	events = cosmostypes.UnwrapSDKContext(ctx).EventManager().Events()
@@ -123,7 +137,7 @@ func TestMsgServer_UnstakeSupplier_Success(t *testing.T) {
 	sessionEndHeight = sharedtypes.GetSessionEndHeight(&sharedParams, cosmostypes.UnwrapSDKContext(ctx).BlockHeight())
 	expectedEvent, err = cosmostypes.TypedEventToEvent(
 		&suppliertypes.EventSupplierUnbondingEnd{
-			Supplier:           expectedSupplier,
+			Supplier:           &foundSupplier,
 			Reason:             suppliertypes.SupplierUnbondingReason_SUPPLIER_UNBONDING_REASON_VOLUNTARY,
 			SessionEndHeight:   sessionEndHeight,
 			UnbondingEndHeight: unbondingEndHeight,
@@ -188,13 +202,18 @@ func TestMsgServer_UnstakeSupplier_CancelUnbondingIfRestaked(t *testing.T) {
 	_, err = srv.UnstakeSupplier(ctx, unstakeMsg)
 	require.NoError(t, err)
 
-	expectedSupplier.UnstakeSessionEndHeight = uint64(sessionEndHeight)
-	unbondingEndHeight := sharedtypes.GetSupplierUnbondingEndHeight(&sharedParams, expectedSupplier)
+	// Verify that the supplier exists and is in the unbonding period
+	foundSupplier, isSupplierFound = supplierModuleKeepers.GetSupplier(ctx, supplierOperatorAddr)
+	require.True(t, isSupplierFound)
+	require.True(t, foundSupplier.IsUnbonding())
+
+	foundSupplier.UnstakeSessionEndHeight = uint64(sessionEndHeight)
+	unbondingEndHeight := sharedtypes.GetSupplierUnbondingEndHeight(&sharedParams, &foundSupplier)
 
 	// Assert that the EventSupplierUnbondingBegin event is emitted.
 	expectedEvent, err = cosmostypes.TypedEventToEvent(
 		&suppliertypes.EventSupplierUnbondingBegin{
-			Supplier:           expectedSupplier,
+			Supplier:           &foundSupplier,
 			Reason:             suppliertypes.SupplierUnbondingReason_SUPPLIER_UNBONDING_REASON_VOLUNTARY,
 			SessionEndHeight:   sessionEndHeight,
 			UnbondingEndHeight: unbondingEndHeight,
@@ -253,8 +272,9 @@ func TestMsgServer_UnstakeSupplier_CancelUnbondingIfRestaked(t *testing.T) {
 	ctx = keepertest.SetBlockHeight(ctx, unbondingEndHeight)
 
 	// Run the EndBlocker, the supplier should not be unbonding.
-	err = supplierModuleKeepers.EndBlockerUnbondSuppliers(ctx)
+	numUnbondedSuppliers, err := supplierModuleKeepers.EndBlockerUnbondSuppliers(ctx)
 	require.NoError(t, err)
+	require.Equal(t, uint64(0), numUnbondedSuppliers)
 
 	// Make sure the supplier is still in the suppliers list with an unbonding height of 0
 	foundSupplier, isSupplierFound = supplierModuleKeepers.GetSupplier(ctx, supplierOperatorAddr)
@@ -359,15 +379,16 @@ func TestMsgServer_UnstakeSupplier_OperatorCanUnstake(t *testing.T) {
 	unstakeRes, err := srv.UnstakeSupplier(ctx, unstakeMsg)
 	require.NoError(t, err)
 
+	responseSupplier := unstakeRes.GetSupplier()
 	expectedSupplier.UnstakeSessionEndHeight = uint64(sessionEndHeight)
 
 	// Assert that the MsgUnstakeSupplierResponse contains the unstaking supplier.
-	require.Equal(t, expectedSupplier, unstakeRes.GetSupplier())
+	require.Equal(t, expectedSupplier.OperatorAddress, responseSupplier.OperatorAddress)
 
 	// Assert that the EventSupplierUnbondingBegin event is emitted.
 	unbondingEndHeight := sharedtypes.GetSupplierUnbondingEndHeight(&sharedParams, expectedSupplier)
 	expectedEvent, err = cosmostypes.TypedEventToEvent(&suppliertypes.EventSupplierUnbondingBegin{
-		Supplier:           expectedSupplier,
+		Supplier:           responseSupplier,
 		Reason:             suppliertypes.SupplierUnbondingReason_SUPPLIER_UNBONDING_REASON_VOLUNTARY,
 		SessionEndHeight:   sessionEndHeight,
 		UnbondingEndHeight: unbondingEndHeight,
@@ -398,12 +419,13 @@ func TestMsgServer_UnstakeSupplier_OperatorCanUnstake(t *testing.T) {
 	require.Equal(t, -balanceDecrease, supplierModuleKeepers.SupplierBalanceMap[ownerAddr])
 
 	// Run the endblocker to unbond suppliers
-	err = supplierModuleKeepers.EndBlockerUnbondSuppliers(ctx)
+	numUnbondedSuppliers, err := supplierModuleKeepers.EndBlockerUnbondSuppliers(ctx)
 	require.NoError(t, err)
+	require.Equal(t, uint64(1), numUnbondedSuppliers)
 
 	// Assert that the EventSupplierUnbondingEnd event is emitted.
 	expectedEvent, err = cosmostypes.TypedEventToEvent(&suppliertypes.EventSupplierUnbondingEnd{
-		Supplier:           expectedSupplier,
+		Supplier:           &foundSupplier,
 		Reason:             suppliertypes.SupplierUnbondingReason_SUPPLIER_UNBONDING_REASON_VOLUNTARY,
 		SessionEndHeight:   sessionEndHeight,
 		UnbondingEndHeight: unbondingEndHeight,

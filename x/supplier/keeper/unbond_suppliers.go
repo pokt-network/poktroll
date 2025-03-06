@@ -11,14 +11,14 @@ import (
 )
 
 // EndBlockerUnbondSuppliers unbonds suppliers whose unbonding period has elapsed.
-func (k Keeper) EndBlockerUnbondSuppliers(ctx context.Context) error {
+func (k Keeper) EndBlockerUnbondSuppliers(ctx context.Context) (numUnbondedSuppliers uint64, err error) {
 	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
 	sharedParams := k.sharedKeeper.GetParams(ctx)
 	currentHeight := sdkCtx.BlockHeight()
 
 	// Only process unbonding suppliers at the end of the session.
 	if sharedtypes.IsSessionEndHeight(&sharedParams, currentHeight) {
-		return nil
+		return numUnbondedSuppliers, nil
 	}
 
 	logger := k.Logger().With("method", "UnbondSupplier")
@@ -44,14 +44,14 @@ func (k Keeper) EndBlockerUnbondSuppliers(ctx context.Context) error {
 		ownerAddress, err := cosmostypes.AccAddressFromBech32(supplier.OwnerAddress)
 		if err != nil {
 			logger.Error(fmt.Sprintf("could not parse the owner address %s", supplier.OwnerAddress))
-			return err
+			return numUnbondedSuppliers, err
 		}
 
 		// Retrieve the address of the supplier.
 		supplierOperatorAddress, err := cosmostypes.AccAddressFromBech32(supplier.OperatorAddress)
 		if err != nil {
 			logger.Error(fmt.Sprintf("could not parse the operator address %s", supplier.OperatorAddress))
-			return err
+			return numUnbondedSuppliers, err
 		}
 
 		// If the supplier stake is 0 due to slashing, then do not move 0 coins
@@ -66,7 +66,7 @@ func (k Keeper) EndBlockerUnbondSuppliers(ctx context.Context) error {
 					"could not send %s coins from module %s to account %s due to %s",
 					supplier.Stake.String(), suppliertypes.ModuleName, ownerAddress, err,
 				))
-				return err
+				return numUnbondedSuppliers, err
 			}
 		}
 
@@ -89,8 +89,11 @@ func (k Keeper) EndBlockerUnbondSuppliers(ctx context.Context) error {
 		}
 		if eventErr := sdkCtx.EventManager().EmitTypedEvent(unbondingEndEvent); eventErr != nil {
 			logger.Error(fmt.Sprintf("failed to emit event: %+v; %s", unbondingEndEvent, eventErr))
+			return numUnbondedSuppliers, eventErr
 		}
+
+		numUnbondedSuppliers += 1
 	}
 
-	return nil
+	return numUnbondedSuppliers, nil
 }

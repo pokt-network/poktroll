@@ -110,16 +110,21 @@ func (s *TestSuite) SetupTest() {
 	s.keepers.SetService(s.ctx, service)
 
 	supplierStake := types.NewCoin("upokt", math.NewInt(supplierStakeAmt))
+	supplierServiceConfigs := []*sharedtypes.SupplierServiceConfig{{
+		ServiceId: testServiceId,
+		RevShare: []*sharedtypes.ServiceRevenueShare{{
+			Address:            supplierOwnerAddr,
+			RevSharePercentage: 100,
+		}},
+	}}
 	supplier := sharedtypes.Supplier{
 		OwnerAddress:    supplierOwnerAddr,
 		OperatorAddress: supplierOwnerAddr,
 		Stake:           &supplierStake,
-		Services: []*sharedtypes.SupplierServiceConfig{{
-			ServiceId: testServiceId,
-			RevShare: []*sharedtypes.ServiceRevenueShare{{
-				Address:            supplierOwnerAddr,
-				RevSharePercentage: 100,
-			}},
+		Services:        supplierServiceConfigs,
+		ServiceConfigHistory: []*sharedtypes.ServiceConfigUpdate{{
+			Services:             supplierServiceConfigs,
+			EffectiveBlockHeight: 1,
 		}},
 	}
 	s.keepers.SetSupplier(s.ctx, supplier)
@@ -790,10 +795,12 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimExpired_SupplierUnstaked() {
 
 	// Validate the EventSupplierUnbondingBegin event.
 	unbondingEndHeight := sharedtypes.GetSupplierUnbondingEndHeight(&sharedParams, &slashedSupplier)
-	slashedSupplier.ServicesActivationHeightsMap = make(map[string]uint64)
 	for i := range slashedSupplier.GetServices() {
 		slashedSupplier.Services[i].Endpoints = make([]*sharedtypes.SupplierEndpoint, 0)
+		slashedSupplier.ServiceConfigHistory[0].Services[i].Endpoints = make([]*sharedtypes.SupplierEndpoint, 0)
 	}
+	emptyServiceConfig := make([]*sharedtypes.SupplierServiceConfig, 0)
+	slashedSupplier.ServiceConfigHistory[1].Services = emptyServiceConfig
 	expectedUnbondingBeginEvent := &suppliertypes.EventSupplierUnbondingBegin{
 		Supplier:           &slashedSupplier,
 		Reason:             suppliertypes.SupplierUnbondingReason_SUPPLIER_UNBONDING_REASON_BELOW_MIN_STAKE,

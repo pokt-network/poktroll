@@ -7,7 +7,7 @@ import (
 	"encoding/binary"
 	"encoding/hex"
 	"fmt"
-	"math/rand"
+	"slices"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	_ "golang.org/x/crypto/sha3"
@@ -170,26 +170,31 @@ func (k Keeper) hydrateSessionApplication(ctx context.Context, sh *sessionHydrat
 func (k Keeper) hydrateSessionSuppliers(ctx context.Context, sh *sessionHydrator) error {
 	logger := k.Logger().With("method", "hydrateSessionSuppliers")
 
+	// TODO_POST_MAINNET: Use the number of suppliers per session used as of the query height.
 	numSuppliersPerSession := int(k.GetParams(ctx).NumSuppliersPerSession)
+	// Get suppliers by service ID.
 	suppliers := k.supplierKeeper.GetAllSuppliers(ctx)
 
+	// Store deterministic random weights for each supplier to be used for sorting.
+	candidatesToRandomWeight := make(map[string]int)
 	candidateSuppliers := make([]*sharedtypes.Supplier, 0)
-	for _, s := range suppliers {
-		// Exclude suppliers that are inactive (i.e. currently unbonding).
-		if !s.IsActive(uint64(sh.sessionHeader.SessionEndBlockHeight), sh.sessionHeader.ServiceId) {
-			continue
-		}
 
-		// NB: Allocate a new heap variable as s is a value and we're appending
-		// to a slice of  pointers; otherwise, we'd be appending new pointers to
-		// the same memory address containing the last supplier in the loop.
-		supplier := s
-		// TODO_OPTIMIZE: If `supplier.Services` was a map[string]struct{}, we could eliminate `slices.Contains()`'s loop
-		for _, supplierServiceConfig := range supplier.Services {
-			if supplierServiceConfig.ServiceId == sh.sessionHeader.ServiceId {
-				candidateSuppliers = append(candidateSuppliers, &supplier)
-				break
-			}
+	for _, supplier := range suppliers {
+		// Check if supplier is authorized to serve this service at current block height.
+		if supplier.IsActive(uint64(sh.blockHeight), sh.sessionHeader.ServiceId) {
+			candidateSuppliers = append(candidateSuppliers, &supplier)
+
+			// Generate deterministic random weight for supplier:
+			// 1. Combine session ID and supplier's operator address to create unique seed
+			// 2. Hash the seed using SHA3-256
+			// 3. Take first 8 bytes of hash as random weight
+			candidateSeed := concatWithDelimiter(
+				sessionIDComponentDelimiter,
+				sh.sessionIDBz,
+				[]byte(supplier.OperatorAddress),
+			)
+			candidateSeedHash := sha3Hash(candidateSeed)
+			candidatesToRandomWeight[supplier.OperatorAddress] = int(binary.BigEndian.Uint64(candidateSeedHash[:8]))
 		}
 	}
 
@@ -204,6 +209,8 @@ func (k Keeper) hydrateSessionSuppliers(ctx context.Context, sh *sessionHydrator
 		)
 	}
 
+	// If the number of available suppliers is less than the maximum number of
+	// possible suppliers per session, use all available suppliers.
 	if len(candidateSuppliers) < numSuppliersPerSession {
 		logger.Debug(fmt.Sprintf(
 			"Number of available suppliers (%d) is less than the maximum number of possible suppliers per session (%d)",
@@ -211,58 +218,33 @@ func (k Keeper) hydrateSessionSuppliers(ctx context.Context, sh *sessionHydrator
 			numSuppliersPerSession,
 		))
 		sh.session.Suppliers = candidateSuppliers
-	} else {
-		sh.session.Suppliers = pseudoRandomSelection(candidateSuppliers, numSuppliersPerSession, sh.sessionIDBz)
+
+		return nil
 	}
+
+	// Sort suppliers deterministically based on their random weights.
+	// If weights are equal, sort by operator address to ensure consistent ordering.
+	weightedSupplierSortFn := func(supplierA, supplierB *sharedtypes.Supplier) int {
+		// Get the pre-calculated random weights for both suppliers
+		weightA := candidatesToRandomWeight[supplierA.OperatorAddress]
+		weightB := candidatesToRandomWeight[supplierB.OperatorAddress]
+
+		// Calculate the difference between weights.
+		weightDiff := weightA - weightB
+
+		// If weights are equal, use operator addresses as a tiebreaker
+		// to ensure deterministic ordering.
+		if weightDiff == 0 {
+			return bytes.Compare([]byte(supplierA.OperatorAddress), []byte(supplierB.OperatorAddress))
+		}
+
+		// Sort based on weight difference
+		return weightDiff
+	}
+	slices.SortFunc(candidateSuppliers, weightedSupplierSortFn)
+	sh.session.Suppliers = candidateSuppliers[:numSuppliersPerSession]
 
 	return nil
-}
-
-// TODO_MAINNET: We are using a `Go` native implementation for a pseudo-random
-// number generator. In order for it to be language agnostic, a general purpose
-// algorithm MUST be used. pseudoRandomSelection returns a random subset of the
-// candidates.
-func pseudoRandomSelection(
-	candidates []*sharedtypes.Supplier,
-	numTarget int,
-	sessionIDBz []byte,
-) []*sharedtypes.Supplier {
-	// Take the first 8 bytes of sessionId to use as the seed
-	// NB: There is specific reason why `BigEndian` was chosen over `LittleEndian` in this specific context.
-	seed := int64(binary.BigEndian.Uint64(sha3Hash(sessionIDBz)[:8]))
-
-	// Retrieve the indices for the candidates
-	actors := make([]*sharedtypes.Supplier, 0)
-	uniqueIndices := uniqueRandomIndices(seed, int64(len(candidates)), int64(numTarget))
-	for idx := range uniqueIndices {
-		actors = append(actors, candidates[idx])
-	}
-
-	return actors
-}
-
-// uniqueRandomIndices returns a map of `numIndices` unique random numbers less than `maxIndex`
-// seeded by `seed`.
-// panics if `numIndicies > maxIndex` since that code path SHOULD never be executed.
-// NB: A map pointing to empty structs is used to simulate set behavior.
-func uniqueRandomIndices(seed, maxIndex, numIndices int64) map[int64]struct{} {
-	// This should never happen
-	if numIndices > maxIndex {
-		panic(fmt.Sprintf("uniqueRandomIndices: numIndices (%d) is greater than maxIndex (%d)", numIndices, maxIndex))
-	}
-
-	// create a new random source with the seed
-	randSrc := rand.NewSource(seed)
-
-	// initialize a map to capture the indicesMap we'll return
-	indicesMap := make(map[int64]struct{}, maxIndex)
-
-	// The random source could potentially return duplicates, so while loop until we have enough unique indices
-	for int64(len(indicesMap)) < numIndices {
-		indicesMap[randSrc.Int63()%int64(maxIndex)] = struct{}{}
-	}
-
-	return indicesMap
 }
 
 func concatWithDelimiter(delimiter string, bz ...[]byte) []byte {

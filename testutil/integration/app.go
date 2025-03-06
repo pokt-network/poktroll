@@ -899,19 +899,26 @@ func (app *App) setupDefaultActorsState(
 
 	// Prepare the onchain supplier
 	supplierStake := types.NewCoin("upokt", math.NewInt(1000000))
+	supplierServiceConfigs := []*sharedtypes.SupplierServiceConfig{
+		{
+			RevShare: []*sharedtypes.ServiceRevenueShare{
+				{
+					Address:            sample.AccAddress(),
+					RevSharePercentage: uint64(100),
+				},
+			},
+			ServiceId: defaultService.Id,
+		},
+	}
 	defaultSupplier := sharedtypes.Supplier{
 		OwnerAddress:    supplierOperatorAddr.String(),
 		OperatorAddress: supplierOperatorAddr.String(),
 		Stake:           &supplierStake,
-		Services: []*sharedtypes.SupplierServiceConfig{
+		Services:        supplierServiceConfigs,
+		ServiceConfigHistory: []*sharedtypes.ServiceConfigUpdate{
 			{
-				RevShare: []*sharedtypes.ServiceRevenueShare{
-					{
-						Address:            sample.AccAddress(),
-						RevSharePercentage: uint64(100),
-					},
-				},
-				ServiceId: defaultService.Id,
+				Services:             supplierServiceConfigs,
+				EffectiveBlockHeight: 1,
 			},
 		},
 	}
