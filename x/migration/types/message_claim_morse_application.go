@@ -9,6 +9,8 @@ import (
 var _ sdk.Msg = &MsgClaimMorseApplication{}
 
 func NewMsgClaimMorseApplication(shannonDestAddress string, morseSrcAddress string, morseSignature string, stake sdk.Coin, serviceConfig string) *MsgClaimMorseApplication {
+	// TODO_MAINNET(@bryanchriswhite, #1034): Add message signing.
+
 	return &MsgClaimMorseApplication{
 		ShannonDestAddress: shannonDestAddress,
 		MorseSrcAddress:    morseSrcAddress,
@@ -19,6 +21,8 @@ func NewMsgClaimMorseApplication(shannonDestAddress string, morseSrcAddress stri
 }
 
 func (msg *MsgClaimMorseApplication) ValidateBasic() error {
+	// TODO_MAINNET(@bryanchriswhite, #1034): Add validation.
+
 	_, err := sdk.AccAddressFromBech32(msg.ShannonDestAddress)
 	if err != nil {
 		return errorsmod.Wrapf(sdkerrors.ErrInvalidAddress, "invalid shannonDestAddress address (%s)", err)

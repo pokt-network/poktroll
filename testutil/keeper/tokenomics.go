@@ -534,6 +534,7 @@ func NewTokenomicsModuleKeepers(
 		authority.String(),
 		accountKeeper,
 		bankKeeper,
+		sharedKeeper,
 		gatewayKeeper,
 		appKeeper,
 		supplierKeeper,
