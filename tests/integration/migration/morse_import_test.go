@@ -42,7 +42,7 @@ func (s *MigrationModuleTestSuite) SetupTest() {
 	s.ResetTestApp(defaultNumMorseClaimableAccounts, defaultTestMinStake)
 }
 
-// TODO_IN_THIS_COMMIT: godoc...
+// ResetTestApp re-runs the #SetupTest logic with the given parameters.
 func (s *MigrationModuleTestSuite) ResetTestApp(
 	numMorseClaimableAccounts int,
 	minStake cosmostypes.Coin,
@@ -62,8 +62,6 @@ func (s *MigrationModuleTestSuite) ResetTestApp(
 	// Assign the app to nested suites.
 	s.AppSuite.SetApp(s.GetApp())
 }
-
-// TODO_IN_THIS_COMMIT: godoc...
 
 func TestMigrationModuleSuite(t *testing.T) {
 	suite.Run(t, &MigrationModuleTestSuite{})
