@@ -201,7 +201,7 @@ Before installing poktrolld, you need to decide whether to sync from genesis or 
 
 #### Option 1: Sync from Genesis
 
-If you choose to sync from genesis, you'll use the version extracted from the genesis file. Set:
+If you choose to sync from genesis, you'll use the version extracted from the genesis file:
 
 ```bash
 POKTROLLD_VERSION=$GENESIS_VERSION
@@ -217,10 +217,6 @@ If you prefer to use a snapshot (recommended for faster setup), you need to chec
 <Tabs groupId="network">
   <TabItem value="testnet-beta" label="Testnet Beta" default>
     ```bash
-    # Create a temporary directory for snapshot information
-    mkdir -p $HOME/snapshot_info
-    cd $HOME/snapshot_info
-    
     # Base URL for snapshots
     SNAPSHOT_BASE_URL="https://snapshots.us-nj.poktroll.com"
     
@@ -232,25 +228,17 @@ If you prefer to use a snapshot (recommended for faster setup), you need to chec
     SNAPSHOT_VERSION=$(curl -s "$SNAPSHOT_BASE_URL/testnet-beta-${LATEST_SNAPSHOT_HEIGHT}-version.txt")
     echo "Snapshot version: $SNAPSHOT_VERSION"
     
-    # Save the torrent URL for later
+    # Store the torrent URL for later use
     TORRENT_URL="${SNAPSHOT_BASE_URL}/testnet-beta-latest-archival.torrent"
-    echo $TORRENT_URL > $HOME/torrent_url.txt
     
     # Set the version to use for installation
     POKTROLLD_VERSION=$SNAPSHOT_VERSION
     echo "Will use version $POKTROLLD_VERSION from snapshot"
-    
-    # Clean up
-    cd $HOME
     ```
   </TabItem>
   
   <TabItem value="testnet-alpha" label="Testnet Alpha">
     ```bash
-    # Create a temporary directory for snapshot information
-    mkdir -p $HOME/snapshot_info
-    cd $HOME/snapshot_info
-    
     # Base URL for snapshots
     SNAPSHOT_BASE_URL="https://snapshots.us-nj.poktroll.com"
     
@@ -262,25 +250,17 @@ If you prefer to use a snapshot (recommended for faster setup), you need to chec
     SNAPSHOT_VERSION=$(curl -s "$SNAPSHOT_BASE_URL/testnet-alpha-${LATEST_SNAPSHOT_HEIGHT}-version.txt")
     echo "Snapshot version: $SNAPSHOT_VERSION"
     
-    # Save the torrent URL for later
+    # Store the torrent URL for later use
     TORRENT_URL="${SNAPSHOT_BASE_URL}/testnet-alpha-latest-archival.torrent"
-    echo $TORRENT_URL > $HOME/torrent_url.txt
     
     # Set the version to use for installation
     POKTROLLD_VERSION=$SNAPSHOT_VERSION
     echo "Will use version $POKTROLLD_VERSION from snapshot"
-    
-    # Clean up
-    cd $HOME
     ```
   </TabItem>
   
   <TabItem value="mainnet" label="Mainnet">
     ```bash
-    # Create a temporary directory for snapshot information
-    mkdir -p $HOME/snapshot_info
-    cd $HOME/snapshot_info
-    
     # Base URL for snapshots
     SNAPSHOT_BASE_URL="https://snapshots.us-nj.poktroll.com"
     
@@ -292,19 +272,52 @@ If you prefer to use a snapshot (recommended for faster setup), you need to chec
     SNAPSHOT_VERSION=$(curl -s "$SNAPSHOT_BASE_URL/mainnet-${LATEST_SNAPSHOT_HEIGHT}-version.txt")
     echo "Snapshot version: $SNAPSHOT_VERSION"
     
-    # Save the torrent URL for later
+    # Store the torrent URL for later use
     TORRENT_URL="${SNAPSHOT_BASE_URL}/mainnet-latest-archival.torrent"
-    echo $TORRENT_URL > $HOME/torrent_url.txt
     
     # Set the version to use for installation
     POKTROLLD_VERSION=$SNAPSHOT_VERSION
     echo "Will use version $POKTROLLD_VERSION from snapshot"
-    
-    # Clean up
-    cd $HOME
     ```
   </TabItem>
 </Tabs>
+
+If you chose to use a snapshot, you'll need to download and apply it after configuring your node:
+
+```bash
+# Create a directory for the snapshot download
+SNAPSHOT_DIR="$HOME/poktroll_snapshot"
+mkdir -p "$SNAPSHOT_DIR"
+cd "$SNAPSHOT_DIR"
+
+# Download via torrent
+aria2c --seed-time=0 --file-allocation=none --continue=true \
+       --max-connection-per-server=4 --max-concurrent-downloads=16 --split=16 \
+       --bt-enable-lpd=true --bt-max-peers=100 --bt-prioritize-piece=head,tail \
+       --bt-seed-unverified \
+       "$TORRENT_URL"
+
+# Find the downloaded file
+DOWNLOADED_FILE=$(find . -type f -name "*.tar.*" | head -n 1)
+
+# Extract the snapshot
+if [[ "$DOWNLOADED_FILE" == *.tar.zst ]]; then
+    echo "Extracting .tar.zst snapshot..."
+    zstd -d "$DOWNLOADED_FILE" --stdout | tar -xf - -C $HOME/.poktroll/data
+elif [[ "$DOWNLOADED_FILE" == *.tar.gz ]]; then
+    echo "Extracting .tar.gz snapshot..."
+    tar -zxf "$DOWNLOADED_FILE" -C $HOME/.poktroll/data
+else
+    echo "Unknown snapshot format: $DOWNLOADED_FILE"
+    exit 1
+fi
+
+# Clean up
+cd $HOME
+rm -rf "$SNAPSHOT_DIR"
+
+echo "Snapshot applied successfully"
+```
 
 ### 7. Install `poktrolld`
 
@@ -333,7 +346,7 @@ $HOME/.poktroll/cosmovisor/genesis/bin/poktrolld version
 cosmovisor init $HOME/.poktroll/cosmovisor/genesis/bin/poktrolld
 ```
 
-> **Note:** The `cosmovisor init` command creates the necessary directory structure and symlinks, including the `current` symlink that points to the active binary. Since we've added this directory to your PATH, you can now use the `poktrolld` command directly without specifying the full path.
+> **Note:** The `cosmovisor init` command creates the necessary directory structure and symlinks and you can now use the `poktrolld` command directly.
 
 ### 8. Network Configuration
 
@@ -397,50 +410,6 @@ Initialize your node and configure it to connect to the network:
     ```
   </TabItem>
 </Tabs>
-
-If you chose to use a snapshot in step 6, you now need to download and apply it:
-
-```bash
-# Only run this if you chose to use a snapshot
-if [ -f "$HOME/torrent_url.txt" ]; then
-    # Create a directory for the snapshot download
-    SNAPSHOT_DIR="$HOME/poktroll_snapshot"
-    mkdir -p "$SNAPSHOT_DIR"
-    cd "$SNAPSHOT_DIR"
-    
-    # Get the torrent URL we saved earlier
-    TORRENT_URL=$(cat $HOME/torrent_url.txt)
-    
-    # Download via torrent
-    aria2c --seed-time=0 --file-allocation=none --continue=true \
-           --max-connection-per-server=4 --max-concurrent-downloads=16 --split=16 \
-           --bt-enable-lpd=true --bt-max-peers=100 --bt-prioritize-piece=head,tail \
-           --bt-seed-unverified \
-           "$TORRENT_URL"
-    
-    # Find the downloaded file
-    DOWNLOADED_FILE=$(find . -type f -name "*.tar.*" | head -n 1)
-    
-    # Extract the snapshot
-    if [[ "$DOWNLOADED_FILE" == *.tar.zst ]]; then
-        echo "Extracting .tar.zst snapshot..."
-        zstd -d "$DOWNLOADED_FILE" --stdout | tar -xf - -C $HOME/.poktroll/data
-    elif [[ "$DOWNLOADED_FILE" == *.tar.gz ]]; then
-        echo "Extracting .tar.gz snapshot..."
-        tar -zxf "$DOWNLOADED_FILE" -C $HOME/.poktroll/data
-    else
-        echo "Unknown snapshot format: $DOWNLOADED_FILE"
-        exit 1
-    fi
-    
-    # Clean up
-    cd $HOME
-    rm -rf "$SNAPSHOT_DIR"
-    rm $HOME/torrent_url.txt
-    
-    echo "Snapshot applied successfully"
-fi
-```
 
 ### 9. Set Up `systemd` Service
 
