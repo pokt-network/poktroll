@@ -220,6 +220,36 @@ get_user_input() {
     print_color $GREEN "Installing the $NETWORK network."
     echo ""
 
+    # Update URLs to use the branch constant
+    BASE_URL="https://raw.githubusercontent.com/pokt-network/pocket-network-genesis/${POCKET_NETWORK_GENESIS_BRANCH}/shannon/$NETWORK"
+    SEEDS_URL="$BASE_URL/seeds"
+    GENESIS_URL="$BASE_URL/genesis.json"
+
+    # Download genesis.json and store it
+    GENESIS_FILE="/tmp/genesis.json"
+    curl -s -o "$GENESIS_FILE" "$GENESIS_URL"
+    if [ $? -ne 0 ]; then
+        print_color $RED "Failed to download genesis file. Please check your internet connection and try again."
+        exit 1
+    fi
+
+    # Extract chain_id from genesis.json
+    CHAIN_ID=$(jq -r '.chain_id' <"$GENESIS_FILE")
+    if [ -z "$CHAIN_ID" ]; then
+        print_color $RED "Failed to extract chain_id from genesis file."
+        exit 1
+    fi
+    echo ""
+    print_color $GREEN "Using chain_id: $CHAIN_ID from genesis file"
+
+    # Extract version from genesis.json
+    GENESIS_VERSION=$(jq -r '.app_version' <"$GENESIS_FILE")
+    print_color $YELLOW "Detected version from genesis: $GENESIS_VERSION"
+    if [ -z "$GENESIS_VERSION" ]; then
+        print_color $RED "Failed to extract version information from genesis file."
+        exit 1
+    fi
+
     # Ask if user wants to use a snapshot (for all networks)
     USE_SNAPSHOT=false
     echo "Do you want to sync from:"
@@ -264,12 +294,18 @@ get_user_input() {
                     if curl --output /dev/null --silent --head --fail "$TORRENT_URL"; then
                         print_color $GREEN "Found torrent file at: $TORRENT_URL"
                         SNAPSHOT_URL="$TORRENT_URL"
+                        # Set the version to use for installation
+                        POKTROLLD_VERSION=$SNAPSHOT_VERSION
+                        print_color $YELLOW "Will use version $POKTROLLD_VERSION from snapshot"
                     else
                         # Try specific height torrent
                         TORRENT_URL="$SNAPSHOT_BASE_URL/$NETWORK-$LATEST_SNAPSHOT_HEIGHT-archival.torrent"
                         if curl --output /dev/null --silent --head --fail "$TORRENT_URL"; then
                             print_color $GREEN "Found torrent file at: $TORRENT_URL"
                             SNAPSHOT_URL="$TORRENT_URL"
+                            # Set the version to use for installation
+                            POKTROLLD_VERSION=$SNAPSHOT_VERSION
+                            print_color $YELLOW "Will use version $POKTROLLD_VERSION from snapshot"
                         else
                             print_color $RED "Could not find a valid torrent file. Falling back to genesis sync."
                             print_color $YELLOW "This may happen if torrents are not yet available for this network."
@@ -289,6 +325,9 @@ get_user_input() {
     *) 
         USE_SNAPSHOT=false
         print_color $GREEN "Will sync from genesis."
+        # Set the version to use for installation
+        POKTROLLD_VERSION=$GENESIS_VERSION
+        print_color $YELLOW "Will use version $POKTROLLD_VERSION from genesis file"
         ;;
     esac
 
@@ -298,45 +337,6 @@ get_user_input() {
 
     read -p "Enter the node moniker (default: $(hostname)): " NODE_MONIKER
     NODE_MONIKER=${NODE_MONIKER:-$(hostname)}
-
-    # Update URLs to use the branch constant
-    BASE_URL="https://raw.githubusercontent.com/pokt-network/pocket-network-genesis/${POCKET_NETWORK_GENESIS_BRANCH}/shannon/$NETWORK"
-    SEEDS_URL="$BASE_URL/seeds"
-    GENESIS_URL="$BASE_URL/genesis.json"
-
-    # Download genesis.json and store it
-    GENESIS_FILE="/tmp/genesis.json"
-    curl -s -o "$GENESIS_FILE" "$GENESIS_URL"
-    if [ $? -ne 0 ]; then
-        print_color $RED "Failed to download genesis file. Please check your internet connection and try again."
-        exit 1
-    fi
-
-    # Extract chain_id from genesis.json
-    CHAIN_ID=$(jq -r '.chain_id' <"$GENESIS_FILE")
-    if [ -z "$CHAIN_ID" ]; then
-        print_color $RED "Failed to extract chain_id from genesis file."
-        exit 1
-    fi
-    echo ""
-    print_color $GREEN "Using chain_id: $CHAIN_ID from genesis file"
-
-    # Extract version from genesis.json if not using snapshot
-    if [ "$USE_SNAPSHOT" = false ]; then
-        # When syncing from genesis, we must use the version specified in the genesis file
-        # to ensure compatibility with the chain from the beginning.
-        POKTROLLD_VERSION=$(jq -r '.app_version' <"$GENESIS_FILE")
-        print_color $YELLOW "Detected version from genesis: $POKTROLLD_VERSION"
-        if [ -z "$POKTROLLD_VERSION" ]; then
-            print_color $RED "Failed to extract version information from genesis file."
-            exit 1
-        fi
-    else
-        # When using a snapshot, we must use the version that the snapshot was created with
-        # to ensure compatibility with the snapshot data.
-        POKTROLLD_VERSION=$SNAPSHOT_VERSION
-        print_color $YELLOW "Using version from snapshot: $POKTROLLD_VERSION"
-    fi
 
     # Fetch seeds from the provided URL
     SEEDS=$(curl -s "$SEEDS_URL")
@@ -385,6 +385,10 @@ setup_env_vars() {
     echo "export DAEMON_RESTART_AFTER_UPGRADE=true" >> \$HOME/.profile
     echo "export DAEMON_ALLOW_DOWNLOAD_BINARIES=true" >> \$HOME/.profile
     echo "export UNSAFE_SKIP_BACKUP=false" >> \$HOME/.profile
+    
+    # Add Cosmovisor and poktrolld to PATH
+    echo "export PATH=\$HOME/.local/bin:\$HOME/.poktroll/cosmovisor/current/bin:\$PATH" >> \$HOME/.profile
+    
     source \$HOME/.profile
 EOF
     print_color $GREEN "Environment variables set up successfully."
@@ -403,15 +407,15 @@ setup_cosmovisor() {
         exit 1
     fi
 
-    COSMOVISOR_VERSION="v1.6.0"
+    COSMOVISOR_VERSION="v1.7.1"
     # Note that cosmosorvisor only support linux, which is why OS_TYPE is not used in the URL.
     COSMOVISOR_URL="https://github.com/cosmos/cosmos-sdk/releases/download/cosmovisor%2F${COSMOVISOR_VERSION}/cosmovisor-${COSMOVISOR_VERSION}-linux-${ARCH}.tar.gz"
     print_color $YELLOW "Attempting to download from: $COSMOVISOR_URL"
 
     sudo -u "$POKTROLL_USER" bash <<EOF
-    mkdir -p \$HOME/bin
-    curl -L "$COSMOVISOR_URL" | tar -zxvf - -C \$HOME/bin
-    echo 'export PATH=\$HOME/bin:\$PATH' >> \$HOME/.profile
+    mkdir -p \$HOME/.local/bin
+    curl -L "$COSMOVISOR_URL" | tar -zxvf - -C \$HOME/.local/bin
+    echo 'export PATH=\$HOME/.local/bin:\$PATH' >> \$HOME/.profile
     source \$HOME/.profile
 EOF
     print_color $GREEN "Cosmovisor set up successfully."
@@ -446,7 +450,10 @@ setup_poktrolld() {
         exit 1
     fi
     chmod +x \$HOME/.poktroll/cosmovisor/genesis/bin/poktrolld
-    ln -sf \$HOME/.poktroll/cosmovisor/genesis/bin/poktrolld \$HOME/.local/bin/poktrolld
+    
+    # Initialize Cosmovisor with the poktrolld binary
+    \$HOME/.local/bin/cosmovisor init \$HOME/.poktroll/cosmovisor/genesis/bin/poktrolld
+    
     source \$HOME/.profile
 EOF
 
@@ -486,9 +493,11 @@ configure_poktrolld() {
     source \$HOME/.profile
 
     # Check poktrolld version
+    # Now we can use poktrolld directly since Cosmovisor is initialized
     POKTROLLD_VERSION=\$(poktrolld version)
     echo "Poktrolld version: \$POKTROLLD_VERSION"
 
+    # Initialize node using poktrolld directly
     poktrolld init "$NODE_MONIKER" --chain-id="$CHAIN_ID" --home=\$HOME/.poktroll
     cp "$GENESIS_FILE" \$HOME/.poktroll/config/genesis.json
     sed -i -e "s|^seeds *=.*|seeds = \"$SEEDS\"|" \$HOME/.poktroll/config/config.toml
@@ -634,7 +643,7 @@ After=network-online.target
 
 [Service]
 User=$POKTROLL_USER
-ExecStart=/home/$POKTROLL_USER/bin/cosmovisor run start --home=/home/$POKTROLL_USER/.poktroll
+ExecStart=/home/$POKTROLL_USER/.local/bin/cosmovisor run start --home=/home/$POKTROLL_USER/.poktroll
 Restart=always
 RestartSec=3
 LimitNOFILE=infinity
@@ -696,11 +705,11 @@ main() {
     trap 'handle_error $LINENO' ERR
     
     # Continue with installation
-    get_user_input
+    get_user_input  # This now includes determining the correct poktrolld version
     create_user
     setup_env_vars
     setup_cosmovisor
-    setup_poktrolld
+    setup_poktrolld  # Now installs the correct version determined in get_user_input
     configure_poktrolld
     
     # Apply snapshot if user chose to use it
@@ -718,7 +727,7 @@ main() {
     # Print completion message with appropriate details
     print_color $GREEN "Poktroll Full Node installation for $NETWORK completed successfully!"
     if [ "$USE_SNAPSHOT" = true ]; then
-        print_color $GREEN "Node was set up using snapshot at height $LATEST_SNAPSHOT_HEIGHT with version $SNAPSHOT_VERSION"
+        print_color $GREEN "Node was set up using snapshot at height $LATEST_SNAPSHOT_HEIGHT with version $POKTROLLD_VERSION"
         print_color $YELLOW "Note: The node will continue syncing from height $LATEST_SNAPSHOT_HEIGHT to the current chain height"
     else
         print_color $GREEN "Node was set up to sync from genesis with version $POKTROLLD_VERSION"

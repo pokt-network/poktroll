@@ -26,11 +26,11 @@ See the [Full Node Cheat Sheet](../cheat_sheets/full_node_cheatsheet.md) if you 
   - [3. Set Up Environment Variables for Cosmovisor](#3-set-up-environment-variables-for-cosmovisor)
   - [4. Install Cosmovisor](#4-install-cosmovisor)
   - [5. Retrieve the Latest Genesis File](#5-retrieve-the-latest-genesis-file)
-  - [6. Install `poktrolld`](#6-install-poktrolld)
-  - [7. Network Configuration](#7-network-configuration)
-  - [8. Sync Options: Genesis vs Snapshot](#8-sync-options-genesis-vs-snapshot)
+  - [6. Choose Sync Method: Genesis vs Snapshot](#6-choose-sync-method-genesis-vs-snapshot)
     - [Option 1: Sync from Genesis](#option-1-sync-from-genesis)
-    - [Option 2: Sync from Snapshot (Faster)](#option-2-sync-from-snapshot-faster)
+    - [Option 2: Use a Snapshot (Faster)](#option-2-use-a-snapshot-faster)
+  - [7. Install `poktrolld`](#7-install-poktrolld)
+  - [8. Network Configuration](#8-network-configuration)
   - [9. Set Up `systemd` Service](#9-set-up-systemd-service)
   - [10. Configure your Firewall](#10-configure-your-firewall)
   - [11. Monitor Your Node](#11-monitor-your-node)
@@ -101,6 +101,9 @@ echo "export DAEMON_RESTART_AFTER_UPGRADE=true" >> ~/.poktrollrc
 echo "export DAEMON_ALLOW_DOWNLOAD_BINARIES=true" >> ~/.poktrollrc
 echo "export UNSAFE_SKIP_BACKUP=false" >> ~/.poktrollrc
 
+# Add Cosmovisor and poktrolld to PATH
+echo "export PATH=\$HOME/.local/bin:\$HOME/.poktroll/cosmovisor/current/bin:\$PATH" >> ~/.poktrollrc
+
 echo "source ~/.poktrollrc" >> ~/.profile
 source ~/.profile
 ```
@@ -115,7 +118,7 @@ Cosmovisor manages the binary upgrades for your node. There are two options to i
 
 ```bash
 mkdir -p $HOME/.local/bin
-COSMOVISOR_VERSION="v1.6.0"
+COSMOVISOR_VERSION="v1.7.1"
 
 ARCH=$(uname -m)
 if [ "$ARCH" = "x86_64" ]; then
@@ -139,7 +142,7 @@ Choose a network to join from the tabs below:
 <Tabs groupId="network">
   <TabItem value="testnet-beta" label="Testnet Beta" default>
     ```bash
-    # Set network to testnet-beta (recommended for most users)
+    # Set network to testnet-beta (stable testing network)
     NETWORK="testnet-beta"
     
     # Create config directory if it doesn't exist
@@ -150,11 +153,9 @@ Choose a network to join from the tabs below:
     curl -s -o $HOME/.poktroll/config/genesis.json "$GENESIS_URL"
     
     # Extract required version from genesis file
-    POKTROLLD_VERSION=$(jq -r '.app_version' < $HOME/.poktroll/config/genesis.json)
-    echo "Required poktrolld version for testnet-beta: $POKTROLLD_VERSION"
+    GENESIS_VERSION=$(jq -r '.app_version' < $HOME/.poktroll/config/genesis.json)
+    echo "Required poktrolld version for genesis sync: $GENESIS_VERSION"
     ```
-    
-    > **Note:** Testnet Beta is the recommended network for most users. It's more stable than Testnet Alpha and is used for testing features before they reach mainnet.
   </TabItem>
   
   <TabItem value="testnet-alpha" label="Testnet Alpha">
@@ -170,37 +171,144 @@ Choose a network to join from the tabs below:
     curl -s -o $HOME/.poktroll/config/genesis.json "$GENESIS_URL"
     
     # Extract required version from genesis file
-    POKTROLLD_VERSION=$(jq -r '.app_version' < $HOME/.poktroll/config/genesis.json)
-    echo "Required poktrolld version for testnet-alpha: $POKTROLLD_VERSION"
+    GENESIS_VERSION=$(jq -r '.app_version' < $HOME/.poktroll/config/genesis.json)
+    echo "Required poktrolld version for genesis sync: $GENESIS_VERSION"
     ```
-    
-    > **Warning:** Testnet Alpha is an unstable testing network. It may be reset frequently and is used for early testing of new features.
   </TabItem>
   
   <TabItem value="mainnet" label="Mainnet">
     ```bash
     # Set network to mainnet (production network)
     NETWORK="mainnet"
-    
+
     # Create config directory if it doesn't exist
     mkdir -p $HOME/.poktroll/config
-    
+
     # Download genesis file
     GENESIS_URL="https://raw.githubusercontent.com/pokt-network/pocket-network-genesis/master/shannon/${NETWORK}/genesis.json"
     curl -s -o $HOME/.poktroll/config/genesis.json "$GENESIS_URL"
     
     # Extract required version from genesis file
-    POKTROLLD_VERSION=$(jq -r '.app_version' < $HOME/.poktroll/config/genesis.json)
-    echo "Required poktrolld version for mainnet: $POKTROLLD_VERSION"
+    GENESIS_VERSION=$(jq -r '.app_version' < $HOME/.poktroll/config/genesis.json)
+    echo "Required poktrolld version for genesis sync: $GENESIS_VERSION"
     ```
-    
-    > **Note:** Mainnet is the production network. Make sure you understand the requirements and responsibilities before joining mainnet.
   </TabItem>
 </Tabs>
 
-### 6. Install `poktrolld`
+### 6. Choose Sync Method: Genesis vs Snapshot
 
-Now that we have the required version information from the genesis file, we can install the correct version of `poktrolld`:
+Before installing poktrolld, you need to decide whether to sync from genesis or use a snapshot. This decision will determine which version of poktrolld to install.
+
+#### Option 1: Sync from Genesis
+
+If you choose to sync from genesis, you'll use the version extracted from the genesis file. Set:
+
+```bash
+POKTROLLD_VERSION=$GENESIS_VERSION
+echo "Will use version $POKTROLLD_VERSION from genesis file"
+```
+
+Then proceed to the next section to install poktrolld.
+
+#### Option 2: Use a Snapshot (Faster)
+
+If you prefer to use a snapshot (recommended for faster setup), you need to check the snapshot version first:
+
+<Tabs groupId="network">
+  <TabItem value="testnet-beta" label="Testnet Beta" default>
+    ```bash
+    # Create a temporary directory for snapshot information
+    mkdir -p $HOME/snapshot_info
+    cd $HOME/snapshot_info
+    
+    # Base URL for snapshots
+    SNAPSHOT_BASE_URL="https://snapshots.us-nj.poktroll.com"
+    
+    # Get latest snapshot information for testnet-beta
+    LATEST_SNAPSHOT_HEIGHT=$(curl -s "$SNAPSHOT_BASE_URL/testnet-beta-latest-archival.txt")
+    echo "Latest snapshot height: $LATEST_SNAPSHOT_HEIGHT"
+    
+    # Get snapshot version (important for compatibility)
+    SNAPSHOT_VERSION=$(curl -s "$SNAPSHOT_BASE_URL/testnet-beta-${LATEST_SNAPSHOT_HEIGHT}-version.txt")
+    echo "Snapshot version: $SNAPSHOT_VERSION"
+    
+    # Save the torrent URL for later
+    TORRENT_URL="${SNAPSHOT_BASE_URL}/testnet-beta-latest-archival.torrent"
+    echo $TORRENT_URL > $HOME/torrent_url.txt
+    
+    # Set the version to use for installation
+    POKTROLLD_VERSION=$SNAPSHOT_VERSION
+    echo "Will use version $POKTROLLD_VERSION from snapshot"
+    
+    # Clean up
+    cd $HOME
+    ```
+  </TabItem>
+  
+  <TabItem value="testnet-alpha" label="Testnet Alpha">
+    ```bash
+    # Create a temporary directory for snapshot information
+    mkdir -p $HOME/snapshot_info
+    cd $HOME/snapshot_info
+    
+    # Base URL for snapshots
+    SNAPSHOT_BASE_URL="https://snapshots.us-nj.poktroll.com"
+    
+    # Get latest snapshot information for testnet-alpha
+    LATEST_SNAPSHOT_HEIGHT=$(curl -s "$SNAPSHOT_BASE_URL/testnet-alpha-latest-archival.txt")
+    echo "Latest snapshot height: $LATEST_SNAPSHOT_HEIGHT"
+    
+    # Get snapshot version (important for compatibility)
+    SNAPSHOT_VERSION=$(curl -s "$SNAPSHOT_BASE_URL/testnet-alpha-${LATEST_SNAPSHOT_HEIGHT}-version.txt")
+    echo "Snapshot version: $SNAPSHOT_VERSION"
+    
+    # Save the torrent URL for later
+    TORRENT_URL="${SNAPSHOT_BASE_URL}/testnet-alpha-latest-archival.torrent"
+    echo $TORRENT_URL > $HOME/torrent_url.txt
+    
+    # Set the version to use for installation
+    POKTROLLD_VERSION=$SNAPSHOT_VERSION
+    echo "Will use version $POKTROLLD_VERSION from snapshot"
+    
+    # Clean up
+    cd $HOME
+    ```
+  </TabItem>
+  
+  <TabItem value="mainnet" label="Mainnet">
+    ```bash
+    # Create a temporary directory for snapshot information
+    mkdir -p $HOME/snapshot_info
+    cd $HOME/snapshot_info
+    
+    # Base URL for snapshots
+    SNAPSHOT_BASE_URL="https://snapshots.us-nj.poktroll.com"
+    
+    # Get latest snapshot information for mainnet
+    LATEST_SNAPSHOT_HEIGHT=$(curl -s "$SNAPSHOT_BASE_URL/mainnet-latest-archival.txt")
+    echo "Latest snapshot height: $LATEST_SNAPSHOT_HEIGHT"
+    
+    # Get snapshot version (important for compatibility)
+    SNAPSHOT_VERSION=$(curl -s "$SNAPSHOT_BASE_URL/mainnet-${LATEST_SNAPSHOT_HEIGHT}-version.txt")
+    echo "Snapshot version: $SNAPSHOT_VERSION"
+    
+    # Save the torrent URL for later
+    TORRENT_URL="${SNAPSHOT_BASE_URL}/mainnet-latest-archival.torrent"
+    echo $TORRENT_URL > $HOME/torrent_url.txt
+    
+    # Set the version to use for installation
+    POKTROLLD_VERSION=$SNAPSHOT_VERSION
+    echo "Will use version $POKTROLLD_VERSION from snapshot"
+    
+    # Clean up
+    cd $HOME
+    ```
+  </TabItem>
+</Tabs>
+
+### 7. Install `poktrolld`
+
+Now that we've determined the correct version to use, we can install poktrolld:
 
 ```bash
 # Determine your OS type and architecture
@@ -212,18 +320,22 @@ elif [ "$ARCH" = "aarch64" ]; then
     ARCH="arm64"
 fi
 
-# Use the version extracted from the genesis file in the previous step
-# POKTROLLD_VERSION was already set in the previous step
-
-# Download and install poktrolld
+# Download and install poktrolld with the version determined in the previous step
 RELEASE_URL="https://github.com/pokt-network/poktroll/releases/download/v${POKTROLLD_VERSION}/poktroll_${OS_TYPE}_${ARCH}.tar.gz"
-mkdir -p $HOME/.poktroll/cosmovisor/genesis/bin $HOME/.local/bin
+mkdir -p $HOME/.poktroll/cosmovisor/genesis/bin
 curl -L "$RELEASE_URL" | tar -zxvf - -C $HOME/.poktroll/cosmovisor/genesis/bin
 chmod +x $HOME/.poktroll/cosmovisor/genesis/bin/poktrolld
-ln -sf $HOME/.poktroll/cosmovisor/genesis/bin/poktrolld $HOME/.local/bin/poktrolld
+
+# Verify the installation
+$HOME/.poktroll/cosmovisor/genesis/bin/poktrolld version
+
+# Initialize Cosmovisor with the poktrolld binary
+cosmovisor init $HOME/.poktroll/cosmovisor/genesis/bin/poktrolld
 ```
 
-### 7. Network Configuration
+> **Note:** The `cosmovisor init` command creates the necessary directory structure and symlinks, including the `current` symlink that points to the active binary. Since we've added this directory to your PATH, you can now use the `poktrolld` command directly without specifying the full path.
+
+### 8. Network Configuration
 
 Initialize your node and configure it to connect to the network:
 
@@ -270,15 +382,15 @@ Initialize your node and configure it to connect to the network:
     ```bash
     # Extract chain-id from existing genesis
     CHAIN_ID=$(jq -r '.chain_id' < $HOME/.poktroll/config/genesis.json)
-    
+
     # Initialize the node with your chosen moniker (node name)
     poktrolld init "YourNodeMoniker" --chain-id="$CHAIN_ID" --home=$HOME/.poktroll
-    
+
     # Get seeds from the official repository
     SEEDS_URL="https://raw.githubusercontent.com/pokt-network/pocket-network-genesis/master/shannon/mainnet/seeds"
     SEEDS=$(curl -s "$SEEDS_URL")
     sed -i -e "s|^seeds *=.*|seeds = \"$SEEDS\"|" $HOME/.poktroll/config/config.toml
-    
+
     # Configure external address for P2P communication
     EXTERNAL_IP=$(curl -s https://api.ipify.org)
     sed -i -e "s|^external_address *=.*|external_address = \"${EXTERNAL_IP}:26656\"|" $HOME/.poktroll/config/config.toml
@@ -286,60 +398,20 @@ Initialize your node and configure it to connect to the network:
   </TabItem>
 </Tabs>
 
-### 8. Sync Options: Genesis vs Snapshot
+If you chose to use a snapshot in step 6, you now need to download and apply it:
 
-You have two options to synchronize your node with the network:
-
-#### Option 1: Sync from Genesis
-
-Syncing from genesis validates the entire blockchain history but takes significantly longer.
-
-If you're using this method, skip to the next section.
-
-#### Option 2: Sync from Snapshot (Faster)
-
-Using a snapshot allows you to quickly get your node operational by downloading a recent copy of the blockchain data.
-
-<Tabs groupId="network">
-  <TabItem value="testnet-beta" label="Testnet Beta" default>
-    ```bash
+```bash
+# Only run this if you chose to use a snapshot
+if [ -f "$HOME/torrent_url.txt" ]; then
     # Create a directory for the snapshot download
     SNAPSHOT_DIR="$HOME/poktroll_snapshot"
     mkdir -p "$SNAPSHOT_DIR"
     cd "$SNAPSHOT_DIR"
     
-    # Base URL for snapshots
-    SNAPSHOT_BASE_URL="https://snapshots.us-nj.poktroll.com"
+    # Get the torrent URL we saved earlier
+    TORRENT_URL=$(cat $HOME/torrent_url.txt)
     
-    # Get latest snapshot information for testnet-beta
-    LATEST_SNAPSHOT_HEIGHT=$(curl -s "$SNAPSHOT_BASE_URL/testnet-beta-latest-archival.txt")
-    echo "Latest snapshot height: $LATEST_SNAPSHOT_HEIGHT"
-    
-    # Get snapshot version (important for compatibility)
-    SNAPSHOT_VERSION=$(curl -s "$SNAPSHOT_BASE_URL/testnet-beta-${LATEST_SNAPSHOT_HEIGHT}-version.txt")
-    echo "Snapshot version: $SNAPSHOT_VERSION"
-    
-    # If snapshot version is different from genesis version, you need to install that version instead
-    if [ "$SNAPSHOT_VERSION" != "$POKTROLLD_VERSION" ]; then
-        echo "Snapshot version ($SNAPSHOT_VERSION) differs from genesis version ($POKTROLLD_VERSION)"
-        echo "Need to install the snapshot version for compatibility"
-        
-        # Update the POKTROLLD_VERSION and reinstall
-        POKTROLLD_VERSION=$SNAPSHOT_VERSION
-        RELEASE_URL="https://github.com/pokt-network/poktroll/releases/download/v${POKTROLLD_VERSION}/poktroll_${OS_TYPE}_${ARCH}.tar.gz"
-        
-        mkdir -p $HOME/.poktroll/cosmovisor/genesis/bin
-        curl -L "$RELEASE_URL" | tar -zxvf - -C $HOME/.poktroll/cosmovisor/genesis/bin
-        chmod +x $HOME/.poktroll/cosmovisor/genesis/bin/poktrolld
-        ln -sf $HOME/.poktroll/cosmovisor/genesis/bin/poktrolld $HOME/.local/bin/poktrolld
-    fi
-    
-    # Make sure your installed poktrolld matches the required version
-    poktrolld version
-    echo "Installed version must match: $POKTROLLD_VERSION"
-    
-    # Download via torrent (recommended method)
-    TORRENT_URL="${SNAPSHOT_BASE_URL}/testnet-beta-latest-archival.torrent"
+    # Download via torrent
     aria2c --seed-time=0 --file-allocation=none --continue=true \
            --max-connection-per-server=4 --max-concurrent-downloads=16 --split=16 \
            --bt-enable-lpd=true --bt-max-peers=100 --bt-prioritize-piece=head,tail \
@@ -361,144 +433,14 @@ Using a snapshot allows you to quickly get your node operational by downloading 
         exit 1
     fi
     
-    # Clean up after extraction
+    # Clean up
     cd $HOME
     rm -rf "$SNAPSHOT_DIR"
-    ```
-  </TabItem>
-  
-  <TabItem value="testnet-alpha" label="Testnet Alpha">
-    ```bash
-    # Create a directory for the snapshot download
-    SNAPSHOT_DIR="$HOME/poktroll_snapshot"
-    mkdir -p "$SNAPSHOT_DIR"
-    cd "$SNAPSHOT_DIR"
+    rm $HOME/torrent_url.txt
     
-    # Base URL for snapshots
-    SNAPSHOT_BASE_URL="https://snapshots.us-nj.poktroll.com"
-    
-    # Get latest snapshot information for testnet-alpha
-    LATEST_SNAPSHOT_HEIGHT=$(curl -s "$SNAPSHOT_BASE_URL/testnet-alpha-latest-archival.txt")
-    echo "Latest snapshot height: $LATEST_SNAPSHOT_HEIGHT"
-    
-    # Get snapshot version (important for compatibility)
-    SNAPSHOT_VERSION=$(curl -s "$SNAPSHOT_BASE_URL/testnet-alpha-${LATEST_SNAPSHOT_HEIGHT}-version.txt")
-    echo "Snapshot version: $SNAPSHOT_VERSION"
-    
-    # If snapshot version is different from genesis version, you need to install that version instead
-    if [ "$SNAPSHOT_VERSION" != "$POKTROLLD_VERSION" ]; then
-        echo "Snapshot version ($SNAPSHOT_VERSION) differs from genesis version ($POKTROLLD_VERSION)"
-        echo "Need to install the snapshot version for compatibility"
-        
-        # Update the POKTROLLD_VERSION and reinstall
-        POKTROLLD_VERSION=$SNAPSHOT_VERSION
-        RELEASE_URL="https://github.com/pokt-network/poktroll/releases/download/v${POKTROLLD_VERSION}/poktroll_${OS_TYPE}_${ARCH}.tar.gz"
-        
-        mkdir -p $HOME/.poktroll/cosmovisor/genesis/bin
-        curl -L "$RELEASE_URL" | tar -zxvf - -C $HOME/.poktroll/cosmovisor/genesis/bin
-        chmod +x $HOME/.poktroll/cosmovisor/genesis/bin/poktrolld
-        ln -sf $HOME/.poktroll/cosmovisor/genesis/bin/poktrolld $HOME/.local/bin/poktrolld
-    fi
-    
-    # Make sure your installed poktrolld matches the required version
-    poktrolld version
-    echo "Installed version must match: $POKTROLLD_VERSION"
-    
-    # Download via torrent (recommended method)
-    TORRENT_URL="${SNAPSHOT_BASE_URL}/testnet-alpha-latest-archival.torrent"
-    aria2c --seed-time=0 --file-allocation=none --continue=true \
-           --max-connection-per-server=4 --max-concurrent-downloads=16 --split=16 \
-           --bt-enable-lpd=true --bt-max-peers=100 --bt-prioritize-piece=head,tail \
-           --bt-seed-unverified \
-           "$TORRENT_URL"
-    
-    # Find the downloaded file
-    DOWNLOADED_FILE=$(find . -type f -name "*.tar.*" | head -n 1)
-    
-    # Extract the snapshot
-    if [[ "$DOWNLOADED_FILE" == *.tar.zst ]]; then
-        echo "Extracting .tar.zst snapshot..."
-        zstd -d "$DOWNLOADED_FILE" --stdout | tar -xf - -C $HOME/.poktroll/data
-    elif [[ "$DOWNLOADED_FILE" == *.tar.gz ]]; then
-        echo "Extracting .tar.gz snapshot..."
-        tar -zxf "$DOWNLOADED_FILE" -C $HOME/.poktroll/data
-    else
-        echo "Unknown snapshot format: $DOWNLOADED_FILE"
-        exit 1
-    fi
-    
-    # Clean up after extraction
-    cd $HOME
-    rm -rf "$SNAPSHOT_DIR"
-    ```
-  </TabItem>
-  
-  <TabItem value="mainnet" label="Mainnet">
-    ```bash
-    # Create a directory for the snapshot download
-    SNAPSHOT_DIR="$HOME/poktroll_snapshot"
-    mkdir -p "$SNAPSHOT_DIR"
-    cd "$SNAPSHOT_DIR"
-    
-    # Base URL for snapshots
-    SNAPSHOT_BASE_URL="https://snapshots.us-nj.poktroll.com"
-    
-    # Get latest snapshot information for mainnet
-    LATEST_SNAPSHOT_HEIGHT=$(curl -s "$SNAPSHOT_BASE_URL/mainnet-latest-archival.txt")
-    echo "Latest snapshot height: $LATEST_SNAPSHOT_HEIGHT"
-    
-    # Get snapshot version (important for compatibility)
-    SNAPSHOT_VERSION=$(curl -s "$SNAPSHOT_BASE_URL/mainnet-${LATEST_SNAPSHOT_HEIGHT}-version.txt")
-    echo "Snapshot version: $SNAPSHOT_VERSION"
-    
-    # If snapshot version is different from genesis version, you need to install that version instead
-    if [ "$SNAPSHOT_VERSION" != "$POKTROLLD_VERSION" ]; then
-        echo "Snapshot version ($SNAPSHOT_VERSION) differs from genesis version ($POKTROLLD_VERSION)"
-        echo "Need to install the snapshot version for compatibility"
-        
-        # Update the POKTROLLD_VERSION and reinstall
-        POKTROLLD_VERSION=$SNAPSHOT_VERSION
-        RELEASE_URL="https://github.com/pokt-network/poktroll/releases/download/v${POKTROLLD_VERSION}/poktroll_${OS_TYPE}_${ARCH}.tar.gz"
-        
-        mkdir -p $HOME/.poktroll/cosmovisor/genesis/bin
-        curl -L "$RELEASE_URL" | tar -zxvf - -C $HOME/.poktroll/cosmovisor/genesis/bin
-        chmod +x $HOME/.poktroll/cosmovisor/genesis/bin/poktrolld
-        ln -sf $HOME/.poktroll/cosmovisor/genesis/bin/poktrolld $HOME/.local/bin/poktrolld
-    fi
-    
-    # Make sure your installed poktrolld matches the required version
-    poktrolld version
-    echo "Installed version must match: $POKTROLLD_VERSION"
-    
-    # Download via torrent (recommended method)
-    TORRENT_URL="${SNAPSHOT_BASE_URL}/mainnet-latest-archival.torrent"
-    aria2c --seed-time=0 --file-allocation=none --continue=true \
-           --max-connection-per-server=4 --max-concurrent-downloads=16 --split=16 \
-           --bt-enable-lpd=true --bt-max-peers=100 --bt-prioritize-piece=head,tail \
-           --bt-seed-unverified \
-           "$TORRENT_URL"
-    
-    # Find the downloaded file
-    DOWNLOADED_FILE=$(find . -type f -name "*.tar.*" | head -n 1)
-    
-    # Extract the snapshot
-    if [[ "$DOWNLOADED_FILE" == *.tar.zst ]]; then
-        echo "Extracting .tar.zst snapshot..."
-        zstd -d "$DOWNLOADED_FILE" --stdout | tar -xf - -C $HOME/.poktroll/data
-    elif [[ "$DOWNLOADED_FILE" == *.tar.gz ]]; then
-        echo "Extracting .tar.gz snapshot..."
-        tar -zxf "$DOWNLOADED_FILE" -C $HOME/.poktroll/data
-    else
-        echo "Unknown snapshot format: $DOWNLOADED_FILE"
-        exit 1
-    fi
-    
-    # Clean up after extraction
-    cd $HOME
-    rm -rf "$SNAPSHOT_DIR"
-    ```
-  </TabItem>
-</Tabs>
+    echo "Snapshot applied successfully"
+fi
+```
 
 ### 9. Set Up `systemd` Service
 
@@ -583,7 +525,7 @@ sudo systemctl status ${SERVICE_NAME}
 # View logs in real-time
 sudo journalctl -u ${SERVICE_NAME} -f
 
-# Check sync status
+# Check sync status using poktrolld (now in your PATH)
 poktrolld status | jq '.SyncInfo'
 ```
 
