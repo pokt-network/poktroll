@@ -22,27 +22,27 @@ func TestMorseClaimableAccountQuerySingle(t *testing.T) {
 	msgs := createNMorseClaimableAccount(keeper, ctx, 2)
 	tests := []struct {
 		desc     string
-		request  *types.QueryGetMorseClaimableAccountRequest
-		response *types.QueryGetMorseClaimableAccountResponse
+		request  *types.QueryMorseClaimableAccountRequest
+		response *types.QueryMorseClaimableAccountResponse
 		err      error
 	}{
 		{
 			desc: "First",
-			request: &types.QueryGetMorseClaimableAccountRequest{
+			request: &types.QueryMorseClaimableAccountRequest{
 				Address: msgs[0].MorseSrcAddress,
 			},
-			response: &types.QueryGetMorseClaimableAccountResponse{MorseClaimableAccount: msgs[0]},
+			response: &types.QueryMorseClaimableAccountResponse{MorseClaimableAccount: msgs[0]},
 		},
 		{
 			desc: "Second",
-			request: &types.QueryGetMorseClaimableAccountRequest{
+			request: &types.QueryMorseClaimableAccountRequest{
 				Address: msgs[1].MorseSrcAddress,
 			},
-			response: &types.QueryGetMorseClaimableAccountResponse{MorseClaimableAccount: msgs[1]},
+			response: &types.QueryMorseClaimableAccountResponse{MorseClaimableAccount: msgs[1]},
 		},
 		{
 			desc: "KeyNotFound",
-			request: &types.QueryGetMorseClaimableAccountRequest{
+			request: &types.QueryMorseClaimableAccountRequest{
 				Address: strconv.Itoa(100000),
 			},
 			err: status.Error(codes.NotFound, "not found"),

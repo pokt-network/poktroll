@@ -46,8 +46,8 @@ func (k Keeper) MorseClaimableAccountAll(
 // MorseClaimableAccount returns a MorseClaimableAccount by its hex-encoded Morse address.
 func (k Keeper) MorseClaimableAccount(
 	ctx context.Context,
-	req *types.QueryGetMorseClaimableAccountRequest,
-) (*types.QueryGetMorseClaimableAccountResponse, error) {
+	req *types.QueryMorseClaimableAccountRequest,
+) (*types.QueryMorseClaimableAccountResponse, error) {
 	if req == nil {
 		return nil, status.Error(codes.InvalidArgument, "invalid request")
 	}
@@ -60,5 +60,5 @@ func (k Keeper) MorseClaimableAccount(
 		return nil, status.Error(codes.NotFound, "not found")
 	}
 
-	return &types.QueryGetMorseClaimableAccountResponse{MorseClaimableAccount: morseClaimableAccount}, nil
+	return &types.QueryMorseClaimableAccountResponse{MorseClaimableAccount: morseClaimableAccount}, nil
 }
