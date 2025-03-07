@@ -3,7 +3,6 @@ package suites
 import (
 	"testing"
 
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 	"github.com/stretchr/testify/require"
@@ -150,7 +149,6 @@ func (s *MigrationModuleSuite) ClaimMorseApplication(
 	t *testing.T,
 	morseAccountIdx uint64,
 	shannonDestAddr string,
-	stake *sdk.Coin,
 	serviceConfig *sharedtypes.ApplicationServiceConfig,
 ) (expectedMorseSrcAddr string, _ *migrationtypes.MsgClaimMorseApplicationResponse) {
 	t.Helper()
@@ -166,7 +164,6 @@ func (s *MigrationModuleSuite) ClaimMorseApplication(
 		shannonDestAddr,
 		expectedMorseSrcAddr,
 		morsePrivateKey,
-		stake,
 		serviceConfig,
 	)
 	require.NoError(t, err)

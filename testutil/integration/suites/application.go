@@ -2,6 +2,7 @@ package suites
 
 import (
 	"testing"
+	"time"
 
 	"cosmossdk.io/depinject"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
@@ -12,7 +13,7 @@ import (
 	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/client/query"
 	"github.com/pokt-network/poktroll/pkg/client/query/cache"
-	"github.com/pokt-network/poktroll/pkg/polylog"
+	"github.com/pokt-network/poktroll/pkg/polylog/polyzero"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
@@ -28,14 +29,16 @@ type ApplicationModuleSuite struct {
 // GetAppQueryClient constructs and returns a query client for the application
 // module of the integration app.
 func (s *ApplicationModuleSuite) GetAppQueryClient(t *testing.T) client.ApplicationQueryClient {
-	appCache, err := memory.NewKeyValueCache[apptypes.Application]()
+	appCache, err := memory.NewKeyValueCache[apptypes.Application](
+		// TODO_IN_THIS_COMMIT: replace with memory.WithNoTTL() once available.
+		memory.WithTTL(time.Nanosecond),
+	)
 	require.NoError(t, err)
 
 	appParamsCache, err := cache.NewParamsCache[apptypes.Params]()
 	require.NoError(t, err)
 
-	logger := polylog.Ctx(s.GetApp().QueryHelper().Ctx)
-
+	logger := polyzero.NewLogger()
 	deps := depinject.Supply(s.GetApp().QueryHelper(), appCache, appParamsCache, logger)
 	appQueryClient, err := query.NewApplicationQuerier(deps)
 	require.NoError(t, err)

@@ -122,12 +122,10 @@ func TestMsgServer_ClaimMorseApplication_SuccessNewApplication(t *testing.T) {
 	require.NoError(t, err)
 
 	// Claim the MorseClaimableAccount.
-	morseAppStake := morseClaimableAccount.GetApplicationStake()
 	msgClaim, err := migrationtypes.NewMsgClaimMorseApplication(
 		shannonDestAddr,
 		morseClaimableAccount.GetMorseSrcAddress(),
 		morsePrivKey,
-		&morseAppStake,
 		&testServiceConfig,
 	)
 	require.NoError(t, err)
@@ -209,7 +207,6 @@ func TestMsgServer_ClaimMorseApplication_Error(t *testing.T) {
 		sample.AccAddress(),
 		accountState.Accounts[0].GetMorseSrcAddress(),
 		morsePrivKey,
-		&claimableApplicationStake,
 		expectedAppServiceConfig,
 	)
 	require.NoError(t, err)

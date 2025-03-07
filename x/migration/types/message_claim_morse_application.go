@@ -18,7 +18,6 @@ func NewMsgClaimMorseApplication(
 	shannonDestAddress string,
 	morseSrcAddress string,
 	morsePrivateKey cometcrypto.PrivKey,
-	stake *sdk.Coin,
 	serviceConfig *sharedtypes.ApplicationServiceConfig,
 ) (*MsgClaimMorseApplication, error) {
 	msg := &MsgClaimMorseApplication{

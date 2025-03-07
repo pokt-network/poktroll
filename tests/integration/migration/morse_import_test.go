@@ -17,9 +17,12 @@ import (
 )
 
 const (
-	testServiceId             = "svc1"
-	mockMorseAccountStateHash = "d7469245aabadc98330f79eef9fb544aa3df0c7cbeabfc3f994fd419b2661633"
+	testServiceId                    = "svc1"
+	mockMorseAccountStateHash        = "d7469245aabadc98330f79eef9fb544aa3df0c7cbeabfc3f994fd419b2661633"
+	defaultNumMorseClaimableAccounts = 10
 )
+
+var defaultTestMinStake = cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 100)
 
 type MigrationModuleTestSuite struct {
 	suites.MigrationModuleSuite
@@ -36,7 +39,15 @@ type MigrationModuleTestSuite struct {
 }
 
 func (s *MigrationModuleTestSuite) SetupTest() {
-	s.appMinStake = cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 100)
+	s.ResetTestApp(defaultNumMorseClaimableAccounts, defaultTestMinStake)
+}
+
+// TODO_IN_THIS_COMMIT: godoc...
+func (s *MigrationModuleTestSuite) ResetTestApp(
+	numMorseClaimableAccounts int,
+	minStake cosmostypes.Coin,
+) {
+	s.appMinStake = minStake
 
 	// Set the default application min stake.
 	// DEV_NOTE: This is simpler than modifying genesis or on-chain params.
@@ -45,12 +56,14 @@ func (s *MigrationModuleTestSuite) SetupTest() {
 	// Initialize a new integration app for the suite.
 	s.NewApp(s.T())
 
-	s.numMorseClaimableAccounts = 10
+	s.numMorseClaimableAccounts = numMorseClaimableAccounts
 	s.appServiceConfig = &sharedtypes.ApplicationServiceConfig{ServiceId: testServiceId}
 
 	// Assign the app to nested suites.
 	s.AppSuite.SetApp(s.GetApp())
 }
+
+// TODO_IN_THIS_COMMIT: godoc...
 
 func TestMigrationModuleSuite(t *testing.T) {
 	suite.Run(t, &MigrationModuleTestSuite{})

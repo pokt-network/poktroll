@@ -63,24 +63,24 @@ func (k msgServer) ClaimMorseApplication(ctx context.Context, msg *migrationtype
 	}
 
 	// ONLY allow claiming as a non-actor account if the MorseClaimableAccount
-	// was NOT staked as an application or supplier. A claim of staked POKT from
-	// Morse to Shannon SHOULD NOT allow applications or suppliers to bypass the
-	// onchain unbonding period.
-	if !morseClaimableAccount.ApplicationStake.IsZero() {
-		return nil, status.Error(
-			codes.FailedPrecondition,
-			migrationtypes.ErrMorseAccountClaim.Wrapf(
-				"Morse account %q is staked as an application, please use `poktrolld migrate claim-application` instead",
-				morseClaimableAccount.GetMorseSrcAddress(),
-			).Error(),
-		)
-	}
-
+	// WAS staked as an application AND NOT as a supplier. A claim of staked POKT
+	// from Morse to Shannon SHOULD NOT allow applications or suppliers to bypass
+	// the onchain unbonding period.
 	if !morseClaimableAccount.SupplierStake.IsZero() {
 		return nil, status.Error(
 			codes.FailedPrecondition,
 			migrationtypes.ErrMorseAccountClaim.Wrapf(
 				"Morse account %q is staked as an supplier, please use `poktrolld migrate claim-supplier` instead",
+				morseClaimableAccount.GetMorseSrcAddress(),
+			).Error(),
+		)
+	}
+
+	if !morseClaimableAccount.ApplicationStake.IsPositive() {
+		return nil, status.Error(
+			codes.FailedPrecondition,
+			migrationtypes.ErrMorseAccountClaim.Wrapf(
+				"Morse account %q is not staked as an application or supplier, please use `poktrolld migrate claim-account` instead",
 				morseClaimableAccount.GetMorseSrcAddress(),
 			).Error(),
 		)
@@ -135,6 +135,8 @@ func (k msgServer) ClaimMorseApplication(ctx context.Context, msg *migrationtype
 		claimedAppStake = cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 0)
 	}
 
+	sharedParams := k.sharedKeeper.GetParams(ctx)
+	sessionEndHeight := sharedtypes.GetSessionEndHeight(&sharedParams, sdkCtx.BlockHeight())
 	claimedUnstakedTokens := morseClaimableAccount.TotalTokens().Sub(claimedAppStake)
 
 	// Emit an event which signals that the morse account has been claimed.
@@ -143,7 +145,7 @@ func (k msgServer) ClaimMorseApplication(ctx context.Context, msg *migrationtype
 		MorseSrcAddress:         msg.MorseSrcAddress,
 		ClaimedBalance:          claimedUnstakedTokens,
 		ClaimedApplicationStake: claimedAppStake,
-		SessionEndHeight:        sdkCtx.BlockHeight(),
+		SessionEndHeight:        sessionEndHeight,
 		Application:             app,
 	}
 	if err = sdkCtx.EventManager().EmitTypedEvent(&event); err != nil {
@@ -158,8 +160,6 @@ func (k msgServer) ClaimMorseApplication(ctx context.Context, msg *migrationtype
 	}
 
 	// Return the response.
-	sharedParams := k.sharedKeeper.GetParams(ctx)
-	sessionEndHeight := sharedtypes.GetSettlementSessionEndHeight(&sharedParams, sdkCtx.BlockHeight())
 	return &migrationtypes.MsgClaimMorseApplicationResponse{
 		MorseSrcAddress:         msg.MorseSrcAddress,
 		ClaimedBalance:          claimedUnstakedTokens,
