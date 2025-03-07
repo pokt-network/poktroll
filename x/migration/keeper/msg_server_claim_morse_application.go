@@ -102,16 +102,16 @@ func (k msgServer) ClaimMorseApplication(ctx context.Context, msg *migrationtype
 	)
 
 	// Query for any existing application stake prior to staking.
-	initialAppStake := cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 0)
+	preClaimAppStake := cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 0)
 	foundApp, isFound := k.appKeeper.GetApplication(ctx, shannonAccAddr.String())
 	if isFound {
-		initialAppStake = *foundApp.Stake
+		preClaimAppStake = *foundApp.Stake
 	}
 
 	// Stake (or update) the application.
 	msgStakeApp := apptypes.NewMsgStakeApplication(
 		shannonAccAddr.String(),
-		initialAppStake.Add(morseClaimableAccount.GetApplicationStake()),
+		preClaimAppStake.Add(morseClaimableAccount.GetApplicationStake()),
 		[]*sharedtypes.ApplicationServiceConfig{msg.ServiceConfig},
 	)
 
