@@ -6,7 +6,7 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 )
 
-var _ sdk.Msg = &MsgClaimMorseApplication{}
+var _ sdk.Msg = (*MsgClaimMorseApplication)(nil)
 
 func NewMsgClaimMorseApplication(shannonDestAddress string, morseSrcAddress string, morseSignature string, stake sdk.Coin, serviceConfig string) *MsgClaimMorseApplication {
 	// TODO_MAINNET(@bryanchriswhite, #1034): Add message signing.
