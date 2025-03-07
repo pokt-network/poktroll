@@ -30,6 +30,8 @@ type supplierQuerier struct {
 //
 // Required dependencies:
 // - grpc.ClientConn
+// - polylog.Logger
+// - cache.KeyValueCache[sharedtypes.Supplier]
 func NewSupplierQuerier(deps depinject.Config) (client.SupplierQueryClient, error) {
 	supq := &supplierQuerier{}
 
@@ -65,13 +67,20 @@ func (supq *supplierQuerier) GetSupplier(
 	req := &suppliertypes.QueryGetSupplierRequest{OperatorAddress: operatorAddress}
 	res, err := supq.supplierQuerier.Supplier(ctx, req)
 	if err != nil {
-		return sharedtypes.Supplier{}, suppliertypes.ErrSupplierNotFound.Wrapf(
-			"address: %s [%v]",
-			operatorAddress, err,
-		)
+		return sharedtypes.Supplier{}, err
 	}
 
 	// Cache the supplier for future use.
 	supq.suppliersCache.Set(operatorAddress, res.Supplier)
 	return res.Supplier, nil
+}
+
+// GetParams returns the supplier module parameters.
+func (supq *supplierQuerier) GetParams(ctx context.Context) (*suppliertypes.Params, error) {
+	req := suppliertypes.QueryParamsRequest{}
+	res, err := supq.supplierQuerier.Params(ctx, &req)
+	if err != nil {
+		return nil, err
+	}
+	return &res.Params, nil
 }

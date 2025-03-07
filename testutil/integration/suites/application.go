@@ -46,7 +46,7 @@ func (s *ApplicationModuleSuite) GetAppQueryClient(t *testing.T) client.Applicat
 // stake amount, and service IDs.
 func (s *ApplicationModuleSuite) StakeApp(
 	t *testing.T,
-	bech32 string,
+	appAddress string,
 	stakeAmtUpokt int64,
 	serviceIds []string,
 ) *apptypes.MsgStakeApplicationResponse {
@@ -58,7 +58,7 @@ func (s *ApplicationModuleSuite) StakeApp(
 	}
 
 	stakeAppMsg := apptypes.NewMsgStakeApplication(
-		bech32,
+		appAddress,
 		cosmostypes.NewInt64Coin(volatile.DenomuPOKT, stakeAmtUpokt),
 		serviceConfigs,
 	)

@@ -34,6 +34,9 @@ type serviceQuerier struct {
 //
 // Required dependencies:
 // - clientCtx (grpc.ClientConn)
+// - polylog.Logger
+// - cache.KeyValueCache[sharedtypes.Service]
+// - cache.KeyValueCache[servicetypes.RelayMiningDifficulty]
 func NewServiceQuerier(deps depinject.Config) (client.ServiceQueryClient, error) {
 	servq := &serviceQuerier{}
 
@@ -113,4 +116,14 @@ func (servq *serviceQuerier) GetServiceRelayDifficulty(
 	// Cache the relay mining difficulty for future use.
 	servq.relayMiningDifficultyCache.Set(serviceId, res.RelayMiningDifficulty)
 	return res.RelayMiningDifficulty, nil
+}
+
+// GetParams returns the service module parameters.
+func (servq *serviceQuerier) GetParams(ctx context.Context) (*servicetypes.Params, error) {
+	req := servicetypes.QueryParamsRequest{}
+	res, err := servq.serviceQuerier.Params(ctx, &req)
+	if err != nil {
+		return nil, err
+	}
+	return &res.Params, nil
 }

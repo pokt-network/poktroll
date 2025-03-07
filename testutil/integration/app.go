@@ -328,6 +328,7 @@ func NewCompleteIntegrationApp(t *testing.T, opts ...IntegrationAppOptionFn) *Ap
 		suppliertypes.ModuleName:   {authtypes.Minter, authtypes.Burner, authtypes.Staking},
 		prooftypes.ModuleName:      {authtypes.Minter, authtypes.Burner},
 		migrationtypes.ModuleName:  {authtypes.Minter},
+		servicetypes.ModuleName:    {authtypes.Minter},
 	}
 
 	// Prepare the account keeper and module

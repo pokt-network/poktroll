@@ -9,8 +9,9 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
-	"github.com/pokt-network/poktroll/x/gateway/types"
+	gatewaytypes "github.com/pokt-network/poktroll/x/gateway/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
+	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 )
 
 // AccountKeeper defines the expected interface for the Account module.
@@ -28,8 +29,8 @@ type BankKeeper interface {
 }
 
 type GatewayKeeper interface {
-	GetGateway(ctx context.Context, address string) (gateway types.Gateway, found bool)
-	SetGateway(ctx context.Context, gateway types.Gateway)
+	GetGateway(ctx context.Context, address string) (gateway gatewaytypes.Gateway, found bool)
+	SetGateway(ctx context.Context, gateway gatewaytypes.Gateway)
 }
 
 type ApplicationKeeper interface {
@@ -41,6 +42,7 @@ type ApplicationKeeper interface {
 type SupplierKeeper interface {
 	GetSupplier(ctx context.Context, supplierOperatorAddr string) (supplier sharedtypes.Supplier, found bool)
 	SetSupplier(ctx context.Context, supplier sharedtypes.Supplier)
+	StakeSupplier(ctx context.Context, logger cosmoslog.Logger, msg *suppliertypes.MsgStakeSupplier) (*sharedtypes.Supplier, error)
 }
 
 // ParamSubspace defines the expected Subspace interface for parameters.

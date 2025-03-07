@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
-	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 
 	"github.com/pokt-network/poktroll/app/volatile"
@@ -35,9 +34,13 @@ type MigrationModuleTestSuite struct {
 	// minStake is used to set the on-chain min stake for the application & supplier modules.
 	minStake cosmostypes.Coin
 
-	// AppServiceConfig is the service config to be used when claiming morse accounts.
+	// appServiceConfig is the service config to be used when claiming morse accounts as applications.
 	// It is assigned in the #SetupTest method.
 	appServiceConfig *sharedtypes.ApplicationServiceConfig
+
+	// supplierServices is the service config to be used when claiming morse accounts as suppliers.
+	// It is assigned in the #SetupTest method.
+	supplierServices []*sharedtypes.SupplierServiceConfig
 }
 
 func (s *MigrationModuleTestSuite) SetupTest() {
@@ -51,7 +54,7 @@ func (s *MigrationModuleTestSuite) ResetTestApp(
 ) {
 	s.minStake = minStake
 
-	// Set the default application min stake.
+	// Set the default application & supplier min stakes.
 	// DEV_NOTE: This is simpler than modifying genesis or on-chain params.
 	apptypes.DefaultMinStake = s.minStake
 	suppliertypes.DefaultMinStake = s.minStake
@@ -61,9 +64,28 @@ func (s *MigrationModuleTestSuite) ResetTestApp(
 
 	s.numMorseClaimableAccounts = numMorseClaimableAccounts
 	s.appServiceConfig = &sharedtypes.ApplicationServiceConfig{ServiceId: testServiceId}
+	s.supplierServices = []*sharedtypes.SupplierServiceConfig{
+		{
+			ServiceId: testServiceId,
+			Endpoints: []*sharedtypes.SupplierEndpoint{
+				{
+					Url:     "http://test.example:1234",
+					RpcType: sharedtypes.RPCType_JSON_RPC,
+				},
+			},
+			RevShare: []*sharedtypes.ServiceRevenueShare{
+				{
+					Address:            sample.AccAddress(),
+					RevSharePercentage: 100,
+				},
+			},
+		},
+	}
 
 	// Assign the app to nested suites.
+	s.ServiceSuite.SetApp(s.GetApp())
 	s.AppSuite.SetApp(s.GetApp())
+	s.SupplierSuite.SetApp(s.GetApp())
 }
 
 func TestMigrationModuleSuite(t *testing.T) {
@@ -76,27 +98,27 @@ func (s *MigrationModuleTestSuite) TestImportMorseClaimableAccounts() {
 	msgImportRes := s.ImportMorseClaimableAccounts(s.T())
 	morseAccountState := s.GetAccountState(s.T())
 	morseAccountStateHash, err := morseAccountState.GetHash()
-	require.NoError(s.T(), err)
+	s.NoError(err)
 
 	expectedMsgImportRes := &migrationtypes.MsgImportMorseClaimableAccountsResponse{
 		StateHash:   morseAccountStateHash,
 		NumAccounts: uint64(s.numMorseClaimableAccounts),
 	}
-	require.Equal(s.T(), expectedMsgImportRes, msgImportRes)
+	s.Equal(expectedMsgImportRes, msgImportRes)
 
 	foundMorseClaimableAccounts := s.QueryAllMorseClaimableAccounts(s.T())
-	require.Equal(s.T(), s.numMorseClaimableAccounts, len(foundMorseClaimableAccounts))
+	s.Equal(s.numMorseClaimableAccounts, len(foundMorseClaimableAccounts))
 
 	for _, expectedMorseClaimableAccount := range morseAccountState.Accounts {
 		isFound := false
 		for _, foundMorseClaimableAccount := range foundMorseClaimableAccounts {
 			if foundMorseClaimableAccount.GetMorseSrcAddress() == expectedMorseClaimableAccount.GetMorseSrcAddress() {
-				require.Equal(s.T(), *expectedMorseClaimableAccount, foundMorseClaimableAccount)
+				s.Equal(*expectedMorseClaimableAccount, foundMorseClaimableAccount)
 				isFound = true
 				break
 			}
 		}
-		require.True(s.T(), isFound)
+		s.True(isFound)
 	}
 }
 
@@ -110,13 +132,13 @@ func (s *MigrationModuleTestSuite) TestImportMorseClaimableAccounts_ErrorInvalid
 		invalidAuthority,
 		*s.GetAccountState(s.T()),
 	)
-	require.NoError(s.T(), err)
+	s.NoError(err)
 
 	// Import Morse claimable accounts.
 	_, err = s.GetApp().RunMsg(s.T(), msgImport)
 
 	expectedErr := migrationtypes.ErrInvalidSigner.Wrapf("invalid authority address (%s)", invalidAuthority)
-	require.ErrorContains(s.T(), err, expectedErr.Error())
+	s.ErrorContains(err, expectedErr.Error())
 }
 
 // TestImportMorseClaimableAccounts_ErrorInvalidHash tests the error case when the hash is invalid.
@@ -127,7 +149,7 @@ func (s *MigrationModuleTestSuite) TestImportMorseClaimableAccounts_ErrorInvalid
 		sample.AccAddress(), // random authority address
 		*s.GetAccountState(s.T()),
 	)
-	require.NoError(s.T(), err)
+	s.NoError(err)
 
 	// Set an invalid hash.
 	msgImport.MorseAccountStateHash = []byte(mockMorseAccountStateHash)
@@ -136,5 +158,5 @@ func (s *MigrationModuleTestSuite) TestImportMorseClaimableAccounts_ErrorInvalid
 	_, err = s.GetApp().RunMsg(s.T(), msgImport)
 
 	expectedErr := migrationtypes.ErrMorseAccountsImport.Wrapf("invalid MorseAccountStateHash size")
-	require.ErrorContains(s.T(), err, expectedErr.Error())
+	s.ErrorContains(err, expectedErr.Error())
 }
