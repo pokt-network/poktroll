@@ -6,7 +6,7 @@ import (
 	"cosmossdk.io/depinject"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
-	grpc "github.com/cosmos/gogoproto/grpc"
+	"github.com/cosmos/gogoproto/grpc"
 
 	"github.com/pokt-network/poktroll/app/volatile"
 	"github.com/pokt-network/poktroll/pkg/cache"
@@ -32,6 +32,8 @@ type bankQuerier struct {
 //
 // Required dependencies:
 // - clientCtx
+// - polylog.Logger
+// - cache.KeyValueCache[Balance]
 func NewBankQuerier(deps depinject.Config) (client.BankQueryClient, error) {
 	bq := &bankQuerier{}
 

@@ -93,24 +93,18 @@ func (s *baseIntegrationSuiteTestSuite) TestFundAddressAndGetBankQueryClient() {
 	require.NoError(s.T(), err)
 
 	// Assert that the balance is zero before funding.
-	bankQueryClient := s.GetBankQueryClient()
-	balRes, err := bankQueryClient.Balance(s.SdkCtx(), &banktypes.QueryBalanceRequest{
-		Address: fundAddr.String(),
-		Denom:   volatile.DenomuPOKT,
-	})
+	bankClient := s.GetBankQueryClient(s.T())
+	balance, err := bankClient.GetBalance(s.SdkCtx(), fundAddr.String())
 	require.NoError(s.T(), err)
-	require.Equal(s.T(), int64(0), balRes.GetBalance().Amount.Int64())
+	require.Equal(s.T(), int64(0), balance.Amount.Int64())
 
 	// Fund the address.
 	s.FundAddress(s.T(), fundAddr, fundAmount)
 
 	// Assert that the balance amount is equal to fundAmount.
-	balRes, err = bankQueryClient.Balance(s.SdkCtx(), &banktypes.QueryBalanceRequest{
-		Address: fundAddr.String(),
-		Denom:   volatile.DenomuPOKT,
-	})
+	balance, err = bankClient.GetBalance(s.SdkCtx(), fundAddr.String())
 	require.NoError(s.T(), err)
-	require.Equal(s.T(), fundAmount, balRes.GetBalance().Amount.Int64())
+	require.Equal(s.T(), fundAmount, balance.Amount.Int64())
 }
 
 func (s *baseIntegrationSuiteTestSuite) TestFilterLatestEventsWithNewMsgEventMatchFn() {
