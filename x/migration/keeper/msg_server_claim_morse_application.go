@@ -2,7 +2,6 @@ package keeper
 
 import (
 	"context"
-	"strings"
 
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	"google.golang.org/grpc/codes"
@@ -102,48 +101,36 @@ func (k msgServer) ClaimMorseApplication(ctx context.Context, msg *migrationtype
 		morseClaimableAccount,
 	)
 
-	msgStakeApp := apptypes.NewMsgStakeApplication(
-		shannonAccAddr.String(),
-		morseClaimableAccount.GetApplicationStake(),
-		[]*sharedtypes.ApplicationServiceConfig{msg.ServiceConfig},
-	)
-
+	// Query for any existing application stake prior to staking.
 	initialAppStake := cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 0)
 	foundApp, isFound := k.appKeeper.GetApplication(ctx, shannonAccAddr.String())
 	if isFound {
 		initialAppStake = *foundApp.Stake
 	}
 
+	// Stake (or update) the application.
+	msgStakeApp := apptypes.NewMsgStakeApplication(
+		shannonAccAddr.String(),
+		initialAppStake.Add(morseClaimableAccount.GetApplicationStake()),
+		[]*sharedtypes.ApplicationServiceConfig{msg.ServiceConfig},
+	)
+
 	app, err := k.appKeeper.StakeApplication(ctx, logger, msgStakeApp)
 	if err != nil {
-		// DEV_NOTE: StakeApplication SHOULD ALWAYS return a gRPC status error.
+		// DEV_NOTE: If the error is non-nil, StakeApplication SHOULD ALWAYS return a gRPC status error.
 		return nil, err
 	}
 
-	// DEV_NOTE: While "down-staking" isn't currently supported for applications,
-	// it MAY be in the future. When BOTH:
-	// - the claimed Shannon account is already staked as an application
-	// - the MsgClaimMorseApplication stake amount ("default" or otherwise)
-	//   is less than the current application stake amount
-	// then, claimedAppStake is set to zero as it would otherwise result in a negative amount.
-	// This value is only used in event(s) and the msg response.
-	claimedAppStake, err := app.Stake.SafeSub(initialAppStake)
-	if err != nil {
-		if !strings.Contains(err.Error(), "negative coin amount") {
-			return nil, err
-		}
-		claimedAppStake = cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 0)
-	}
-
+	claimedAppStake := morseClaimableAccount.GetApplicationStake()
 	sharedParams := k.sharedKeeper.GetParams(ctx)
 	sessionEndHeight := sharedtypes.GetSessionEndHeight(&sharedParams, sdkCtx.BlockHeight())
-	claimedUnstakedTokens := morseClaimableAccount.TotalTokens().Sub(claimedAppStake)
+	claimedUnstakedBalance := morseClaimableAccount.GetUnstakedBalance()
 
 	// Emit an event which signals that the morse account has been claimed.
 	event := migrationtypes.EventMorseApplicationClaimed{
 		ShannonDestAddress:      msg.ShannonDestAddress,
 		MorseSrcAddress:         msg.MorseSrcAddress,
-		ClaimedBalance:          claimedUnstakedTokens,
+		ClaimedBalance:          claimedUnstakedBalance,
 		ClaimedApplicationStake: claimedAppStake,
 		SessionEndHeight:        sessionEndHeight,
 		Application:             app,
@@ -162,7 +149,7 @@ func (k msgServer) ClaimMorseApplication(ctx context.Context, msg *migrationtype
 	// Return the response.
 	return &migrationtypes.MsgClaimMorseApplicationResponse{
 		MorseSrcAddress:         msg.MorseSrcAddress,
-		ClaimedBalance:          claimedUnstakedTokens,
+		ClaimedBalance:          claimedUnstakedBalance,
 		ClaimedApplicationStake: claimedAppStake,
 		SessionEndHeight:        sessionEndHeight,
 		Application:             app,

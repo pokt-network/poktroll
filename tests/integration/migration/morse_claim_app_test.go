@@ -132,16 +132,14 @@ func (s *MigrationModuleTestSuite) TestClaimMorseExistingApplication() {
 
 			// Assert that the MorseClaimableAccount was updated on-chain.
 			expectedMorseClaimableAccount := s.GetAccountState(s.T()).Accounts[morseAccountIdx]
-			appStakeToClaim := expectedMorseClaimableAccount.GetApplicationStake()
-
-			expectedClaimedStake := appStakeToClaim.Sub(*initialAppStake)
-			expectedBalance := expectedMorseClaimableAccount.TotalTokens().
-				Sub(expectedClaimedStake)
+			expectedClaimedStake := expectedMorseClaimableAccount.GetApplicationStake()
+			expectedFinalStake := initialAppStake.Add(expectedClaimedStake)
+			expectedBalance := expectedMorseClaimableAccount.GetUnstakedBalance()
 
 			// Assert that the claim msg response is correct.
 			expectedApp := apptypes.Application{
 				Address:        shannonDestAddr,
-				Stake:          &appStakeToClaim,
+				Stake:          &expectedFinalStake,
 				ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{s.appServiceConfig},
 			}
 			expectedSessionEndHeight := s.GetSessionEndHeight(s.T(), s.SdkCtx().BlockHeight()-1)
