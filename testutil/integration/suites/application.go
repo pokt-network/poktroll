@@ -2,7 +2,6 @@ package suites
 
 import (
 	"testing"
-	"time"
 
 	"cosmossdk.io/depinject"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
@@ -29,10 +28,7 @@ type ApplicationModuleSuite struct {
 // GetAppQueryClient constructs and returns a query client for the application
 // module of the integration app.
 func (s *ApplicationModuleSuite) GetAppQueryClient(t *testing.T) client.ApplicationQueryClient {
-	appCache, err := memory.NewKeyValueCache[apptypes.Application](
-		// TODO_IN_THIS_COMMIT: replace with memory.WithNoTTL() once available.
-		memory.WithTTL(time.Nanosecond),
-	)
+	appCache, err := memory.NewKeyValueCache[apptypes.Application](memory.WithNoTTL())
 	require.NoError(t, err)
 
 	appParamsCache, err := cache.NewParamsCache[apptypes.Params]()
