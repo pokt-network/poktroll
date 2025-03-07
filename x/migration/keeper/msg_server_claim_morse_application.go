@@ -62,9 +62,28 @@ func (k msgServer) ClaimMorseApplication(ctx context.Context, msg *migrationtype
 		)
 	}
 
-	// Default to the application stake amount recorded in the MorseClaimableAccount.
-	if msg.Stake == nil {
-		msg.Stake = &morseClaimableAccount.ApplicationStake
+	// ONLY allow claiming as a non-actor account if the MorseClaimableAccount
+	// was NOT staked as an application or supplier. A claim of staked POKT from
+	// Morse to Shannon SHOULD NOT allow applications or suppliers to bypass the
+	// onchain unbonding period.
+	if !morseClaimableAccount.ApplicationStake.IsZero() {
+		return nil, status.Error(
+			codes.FailedPrecondition,
+			migrationtypes.ErrMorseAccountClaim.Wrapf(
+				"Morse account %q is staked as an application, please use `poktrolld migrate claim-application` instead",
+				morseClaimableAccount.GetMorseSrcAddress(),
+			).Error(),
+		)
+	}
+
+	if !morseClaimableAccount.SupplierStake.IsZero() {
+		return nil, status.Error(
+			codes.FailedPrecondition,
+			migrationtypes.ErrMorseAccountClaim.Wrapf(
+				"Morse account %q is staked as an supplier, please use `poktrolld migrate claim-supplier` instead",
+				morseClaimableAccount.GetMorseSrcAddress(),
+			).Error(),
+		)
 	}
 
 	// Mint the totalTokens to the shannonDestAddress account balance.
@@ -85,7 +104,7 @@ func (k msgServer) ClaimMorseApplication(ctx context.Context, msg *migrationtype
 
 	msgStakeApp := apptypes.NewMsgStakeApplication(
 		shannonAccAddr.String(),
-		*msg.Stake,
+		morseClaimableAccount.GetApplicationStake(),
 		[]*sharedtypes.ApplicationServiceConfig{msg.ServiceConfig},
 	)
 
