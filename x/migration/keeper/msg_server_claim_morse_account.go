@@ -68,9 +68,9 @@ func (k msgServer) ClaimMorseAccount(ctx context.Context, msg *migrationtypes.Ms
 	)
 
 	// ONLY allow claiming as a non-actor account if the MorseClaimableAccount
-	// was NOT staked as an application or supplier. A claim of staked POKT from
-	// Morse to Shannon SHOULD NOT allow applications or suppliers to bypass the
-	// onchain unbonding period.
+	// WAS NOT staked as an application or supplier.
+	// A claim of staked POKT from Morse to Shannon
+	// SHOULD NOT allow applications or suppliers to bypass the onchain unbonding
 	if !morseClaimableAccount.ApplicationStake.IsZero() {
 		return nil, status.Error(
 			codes.FailedPrecondition,
