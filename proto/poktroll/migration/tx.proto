@@ -110,13 +110,14 @@ message MsgClaimMorseAccountResponse {
   // The balance which was claimed.
   cosmos.base.v1beta1.Coin claimed_balance = 2 [(gogoproto.jsontag) = "claimed_balance", (gogoproto.nullable) = false];
 
-  // The height (on Shannon) at which the claim was created.
-  int64 claimed_at_height = 3;
+  // The session end height (on Shannon) in which the claim was committed (i.e. claimed).
+  int64 session_end_height = 3 [(gogoproto.jsontag) = "session_end_height"];
 }
 
 // MsgClaimMorseApplication is used to execute a claim (one-time minting of tokens on Shannon),
 // of the total tokens owned by the given Morse account, according to the on-chain MorseClaimableAccounts,
-// to the balance of the given Shannon account, followed by staking that Shannon account as an application.
+// to the balance of the given Shannon account, followed by staking that Shannon account as an application
+// for the given service_config and the same stake amount as on Morse.
 message MsgClaimMorseApplication {
   option (cosmos.msg.v1.signer) = "shannon_dest_address";
 
@@ -132,10 +133,9 @@ message MsgClaimMorseApplication {
   // I.e.: morse_signature = private_key.sign(marshal(MsgClaimMorseAccount{morse_signature: nil, ...}))
   bytes morse_signature = 3 [(gogoproto.jsontag) = "morse_signature"];
 
-  // The upokt which the Shannon destination account will stake as an application.
-  cosmos.base.v1beta1.Coin stake = 4 [(gogoproto.jsontag) = "stake"];
-
   // The services this application is staked to request service for.
+  // NOTE: This is not a repeated field, as in MsgStakeApplication,
+  // because an application can only be staked for one service.
   shared.ApplicationServiceConfig service_config = 5 [(gogoproto.jsontag) = "service_config"];
 }
 
@@ -153,11 +153,8 @@ message MsgClaimMorseApplicationResponse {
   // If the application was already staked, this amount does not include the initial stake (i.e. only the portion which was "claimed").
   cosmos.base.v1beta1.Coin claimedApplicationStake = 3 [(gogoproto.jsontag) = "claimed_application_stake", (gogoproto.nullable) = false];
 
-  // The height (on Shannon) at which the claim was created.
-  int64 claimed_at_height = 4 [(gogoproto.jsontag) = "claimed_at_height"];
-
-  // The service ID of the service which the application is staked for.
-  string service_id = 5 [(gogoproto.jsontag) = "service_id"];
+  // The session end height (on Shannon) in which the claim was committed (i.e. claimed).
+  int64 session_end_height = 4 [(gogoproto.jsontag) = "session_end_height"];
 
   // The application which was staked as a result of the claim.
   application.Application application = 6 [(gogoproto.jsontag) = "application"];

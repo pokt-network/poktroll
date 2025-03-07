@@ -7,7 +7,6 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/cosmos/gogoproto/proto"
 
-	"github.com/pokt-network/poktroll/app/volatile"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
@@ -19,13 +18,11 @@ func NewMsgClaimMorseApplication(
 	shannonDestAddress string,
 	morseSrcAddress string,
 	morsePrivateKey cometcrypto.PrivKey,
-	stake *sdk.Coin,
 	serviceConfig *sharedtypes.ApplicationServiceConfig,
 ) (*MsgClaimMorseApplication, error) {
 	msg := &MsgClaimMorseApplication{
 		ShannonDestAddress: shannonDestAddress,
 		MorseSrcAddress:    morseSrcAddress,
-		Stake:              stake,
 		ServiceConfig:      serviceConfig,
 	}
 
@@ -56,17 +53,6 @@ func (msg *MsgClaimMorseApplication) ValidateBasic() error {
 
 	if _, err := sdk.AccAddressFromBech32(msg.ShannonDestAddress); err != nil {
 		return errorsmod.Wrapf(sdkerrors.ErrInvalidAddress, "invalid shannonDestAddress address (%s)", err)
-	}
-
-	// If msg.Stake is nil, it will default to the sake amount recorded in the corresponding MorseClaimableAccount.
-	if msg.Stake != nil {
-		if msg.Stake.Denom != volatile.DenomuPOKT {
-			return ErrMorseApplicationClaim.Wrapf("invalid stake denom (%s)", msg.Stake.Denom)
-		}
-
-		if msg.Stake.IsValid() && msg.Stake.IsZero() {
-			return ErrMorseApplicationClaim.Wrapf("invalid stake amount (%s)", msg.Stake.String())
-		}
 	}
 
 	if err := sharedtypes.ValidateAppServiceConfigs([]*sharedtypes.ApplicationServiceConfig{

@@ -1,4 +1,4 @@
-//go:generate go run go.uber.org/mock/mockgen -destination ../../../testutil/migration/mocks/expected_keepers_mock.go -package mocks . AccountKeeper,BankKeeper,GatewayKeeper,ApplicationKeeper,SupplierKeeper
+//go:generate go run go.uber.org/mock/mockgen -destination ../../../testutil/migration/mocks/expected_keepers_mock.go -package mocks . AccountKeeper,BankKeeper,SharedKeeper,GatewayKeeper,ApplicationKeeper,SupplierKeeper
 
 package types
 
@@ -47,4 +47,8 @@ type SupplierKeeper interface {
 type ParamSubspace interface {
 	Get(context.Context, []byte, interface{})
 	Set(context.Context, []byte, interface{})
+}
+
+type SharedKeeper interface {
+	GetParams(ctx context.Context) sharedtypes.Params
 }
