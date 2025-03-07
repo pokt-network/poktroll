@@ -9,7 +9,6 @@ import (
 	"github.com/pokt-network/poktroll/testutil/sample"
 	migrationtypes "github.com/pokt-network/poktroll/x/migration/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
-	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 )
 
 var (
@@ -40,8 +39,7 @@ func TestMsgClaimMorseSupplier_ValidateBasic(t *testing.T) {
 				ShannonDestAddress: "invalid_address",
 				MorseSrcAddress:    sample.MorseAddressHex(),
 				MorseSignature:     mockMorseSignature,
-				Stake:              &suppliertypes.DefaultMinStake,
-				ServiceConfig: &sharedtypes.SupplierServiceConfig{
+				Services: &sharedtypes.SupplierServiceConfig{
 					ServiceId: testServiceId,
 				},
 			},
@@ -52,8 +50,7 @@ func TestMsgClaimMorseSupplier_ValidateBasic(t *testing.T) {
 				ShannonDestAddress: sample.AccAddress(),
 				MorseSrcAddress:    "invalid_address",
 				MorseSignature:     mockMorseSignature,
-				Stake:              &suppliertypes.DefaultMinStake,
-				ServiceConfig: &sharedtypes.SupplierServiceConfig{
+				Services: &sharedtypes.SupplierServiceConfig{
 					ServiceId: testServiceId,
 				},
 			},
@@ -64,8 +61,7 @@ func TestMsgClaimMorseSupplier_ValidateBasic(t *testing.T) {
 				ShannonDestAddress: sample.AccAddress(),
 				MorseSrcAddress:    sample.MorseAddressHex(),
 				MorseSignature:     mockMorseSignature,
-				Stake:              &suppliertypes.DefaultMinStake,
-				ServiceConfig: &sharedtypes.SupplierServiceConfig{
+				Services: &sharedtypes.SupplierServiceConfig{
 					ServiceId: "",
 				},
 			},
@@ -76,8 +72,7 @@ func TestMsgClaimMorseSupplier_ValidateBasic(t *testing.T) {
 				ShannonDestAddress: sample.AccAddress(),
 				MorseSrcAddress:    sample.MorseAddressHex(),
 				MorseSignature:     mockMorseSignature,
-				Stake:              &suppliertypes.DefaultMinStake,
-				ServiceConfig: &sharedtypes.SupplierServiceConfig{
+				Services: &sharedtypes.SupplierServiceConfig{
 					ServiceId: "xxxxxxxxxxxxxxxxxxxx",
 					Endpoints: testEndpoints,
 					RevShare:  testRevShare,
@@ -90,8 +85,7 @@ func TestMsgClaimMorseSupplier_ValidateBasic(t *testing.T) {
 				ShannonDestAddress: sample.AccAddress(),
 				MorseSrcAddress:    sample.MorseAddressHex(),
 				MorseSignature:     nil,
-				Stake:              nil,
-				ServiceConfig: &sharedtypes.SupplierServiceConfig{
+				Services: &sharedtypes.SupplierServiceConfig{
 					ServiceId: testServiceId,
 					Endpoints: testEndpoints,
 					RevShare:  testRevShare,
@@ -104,8 +98,7 @@ func TestMsgClaimMorseSupplier_ValidateBasic(t *testing.T) {
 				ShannonDestAddress: sample.AccAddress(),
 				MorseSrcAddress:    sample.MorseAddressHex(),
 				MorseSignature:     mockMorseSignature,
-				Stake:              nil,
-				ServiceConfig: &sharedtypes.SupplierServiceConfig{
+				Services: &sharedtypes.SupplierServiceConfig{
 					ServiceId: testServiceId,
 					Endpoints: testEndpoints,
 					RevShare:  testRevShare,
@@ -117,8 +110,7 @@ func TestMsgClaimMorseSupplier_ValidateBasic(t *testing.T) {
 				ShannonDestAddress: sample.AccAddress(),
 				MorseSrcAddress:    sample.MorseAddressHex(),
 				MorseSignature:     mockMorseSignature,
-				Stake:              &suppliertypes.DefaultMinStake,
-				ServiceConfig: &sharedtypes.SupplierServiceConfig{
+				Services: &sharedtypes.SupplierServiceConfig{
 					ServiceId: testServiceId,
 					Endpoints: testEndpoints,
 					RevShare:  testRevShare,

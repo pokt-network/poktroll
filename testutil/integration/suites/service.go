@@ -8,6 +8,8 @@ import (
 
 	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/client/query"
+	"github.com/pokt-network/poktroll/pkg/polylog/polyzero"
+	"github.com/pokt-network/poktroll/testutil/testcache"
 	servicetypes "github.com/pokt-network/poktroll/x/service/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
@@ -45,7 +47,12 @@ func (s *ServiceModuleSuite) AddService(
 func (s *ServiceModuleSuite) GetServiceQueryClient(t *testing.T) client.ServiceQueryClient {
 	t.Helper()
 
-	deps := depinject.Supply(s.GetApp().QueryHelper())
+	deps := depinject.Supply(
+		s.GetApp().QueryHelper(),
+		polyzero.NewLogger(),
+		testcache.NewNoopKeyValueCache[sharedtypes.Service](),
+		testcache.NewNoopKeyValueCache[servicetypes.RelayMiningDifficulty](),
+	)
 	serviceClient, err := query.NewServiceQuerier(deps)
 	require.NoError(t, err)
 

@@ -10,6 +10,8 @@ import (
 	"github.com/pokt-network/poktroll/app/volatile"
 	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/client/query"
+	"github.com/pokt-network/poktroll/pkg/polylog/polyzero"
+	"github.com/pokt-network/poktroll/testutil/testcache"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 )
@@ -25,7 +27,11 @@ type SupplierModuleSuite struct {
 // GetSupplierQueryClient constructs and returns a query client for the supplier
 // module of the integration app.
 func (s *SupplierModuleSuite) GetSupplierQueryClient(t *testing.T) client.SupplierQueryClient {
-	deps := depinject.Supply(s.GetApp().QueryHelper())
+	deps := depinject.Supply(
+		s.GetApp().QueryHelper(),
+		polyzero.NewLogger(),
+		testcache.NewNoopKeyValueCache[sharedtypes.Supplier](),
+	)
 	supplierQueryClient, err := query.NewSupplierQuerier(deps)
 	require.NoError(t, err)
 

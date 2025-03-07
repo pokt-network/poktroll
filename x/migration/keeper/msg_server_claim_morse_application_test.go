@@ -126,7 +126,7 @@ func TestMsgServer_ClaimMorseApplication_SuccessNewApplication(t *testing.T) {
 		shannonDestAddr,
 		morseClaimableAccount.GetMorseSrcAddress(),
 		morsePrivKey,
-		&testServiceConfig,
+		&testAppServiceConfig,
 	)
 	require.NoError(t, err)
 

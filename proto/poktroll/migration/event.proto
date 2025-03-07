@@ -65,8 +65,8 @@ message EventMorseApplicationClaimed {
 
 // EventMorseSupplierClaimed is emitted when a MorseAccount is claimed on-chain as a staked Supplier.
 message EventMorseSupplierClaimed {
-  // The height (on Shannon) at which the claim was executed (i.e. claimed).
-  int64 claimed_at_height = 1 [(gogoproto.jsontag) = "claimed_at_height"];
+  // The session end height (on Shannon) in which the claim was committed (i.e. claimed).
+  int64 session_end_height = 1 [(gogoproto.jsontag) = "session_end_height"];
 
   // The unstaked balance which was claimed.
   cosmos.base.v1beta1.Coin claimed_balance = 2 [(gogoproto.jsontag) = "claimed_balance", (gogoproto.nullable) = false];
@@ -78,11 +78,9 @@ message EventMorseSupplierClaimed {
   string morse_src_address = 4 [(gogoproto.jsontag) = "morse_src_address"];
 
   // The stake of the Supplier which was staked as a result of the claim.
-  cosmos.base.v1beta1.Coin claimedSupplierStake = 5 [(gogoproto.nullable) = false];
-
-  // The service ID of the service which the Supplier is staked for.
-  string service_id = 6 [(gogoproto.jsontag) = "service_id"];
+  // This will be equivalent to the amount it had staked on Morse.
+  cosmos.base.v1beta1.Coin claimed_supplier_stake = 5 [(gogoproto.nullable) = false, (gogoproto.jsontag) = "claimed_supplier_stake"];
 
   // The Supplier which was staked as a result of the claim.
-  shared.Supplier supplier = 7 [(gogoproto.jsontag) = "supplier"];
+  shared.Supplier supplier = 6 [(gogoproto.jsontag) = "supplier"];
 }

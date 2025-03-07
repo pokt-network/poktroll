@@ -292,7 +292,7 @@ type SupplierQueryClient interface {
 	// GetSupplier queries the chain for the details of the supplier provided
 	GetSupplier(ctx context.Context, supplierOperatorAddress string) (sharedtypes.Supplier, error)
 
-	// GetParams queries the chain for the application module parameters.
+	// GetParams queries the chain for the supplier module parameters.
 	GetParams(ctx context.Context) (*suppliertypes.Params, error)
 }
 

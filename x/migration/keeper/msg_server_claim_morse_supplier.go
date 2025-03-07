@@ -2,7 +2,6 @@ package keeper
 
 import (
 	"context"
-	"strings"
 
 	"cosmossdk.io/math"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
@@ -55,9 +54,28 @@ func (k msgServer) ClaimMorseSupplier(ctx context.Context, msg *migrationtypes.M
 		)
 	}
 
-	// Default to the supplier stake amount recorded in the MorseClaimableAccount.
-	if msg.Stake == nil {
-		msg.Stake = &morseClaimableAccount.SupplierStake
+	// ONLY allow claiming as a supplier account if the MorseClaimableAccount
+	// WAS staked as a supplier AND NOT as an application. A claim of staked POKT
+	// from Morse to Shannon SHOULD NOT allow applications or suppliers to bypass
+	// the onchain unbonding period.
+	if !morseClaimableAccount.ApplicationStake.IsZero() {
+		return nil, status.Error(
+			codes.FailedPrecondition,
+			migrationtypes.ErrMorseAccountClaim.Wrapf(
+				"Morse account %q is staked as an application, please use `poktrolld migrate claim-supplier` instead",
+				morseClaimableAccount.GetMorseSrcAddress(),
+			).Error(),
+		)
+	}
+
+	if !morseClaimableAccount.SupplierStake.IsPositive() {
+		return nil, status.Error(
+			codes.FailedPrecondition,
+			migrationtypes.ErrMorseAccountClaim.Wrapf(
+				"Morse account %q is not staked as an supplier or application, please use `poktrolld migrate claim-account` instead",
+				morseClaimableAccount.GetMorseSrcAddress(),
+			).Error(),
+		)
 	}
 
 	// Mint the totalTokens to the shannonDestAddress account balance.
@@ -78,50 +96,40 @@ func (k msgServer) ClaimMorseSupplier(ctx context.Context, msg *migrationtypes.M
 		morseClaimableAccount,
 	)
 
-	msgStakeSupplier := suppliertypes.NewMsgStakeSupplier(
-		shannonAccAddr.String(),
-		shannonAccAddr.String(),
-		shannonAccAddr.String(),
-		*msg.Stake,
-		[]*sharedtypes.SupplierServiceConfig{msg.ServiceConfig},
-	)
-
+	// Query for any existing supplier stake prior to staking.
 	initialSupplierStake := cosmostypes.NewCoin(volatile.DenomuPOKT, math.ZeroInt())
 	foundSupplier, isFound := k.supplierKeeper.GetSupplier(ctx, shannonAccAddr.String())
 	if isFound {
 		initialSupplierStake = *foundSupplier.Stake
 	}
 
+	// Stake (or update) the supplier.
+	msgStakeSupplier := suppliertypes.NewMsgStakeSupplier(
+		shannonAccAddr.String(),
+		shannonAccAddr.String(),
+		shannonAccAddr.String(),
+		initialSupplierStake.Add(morseClaimableAccount.GetSupplierStake()),
+		[]*sharedtypes.SupplierServiceConfig{msg.Services},
+	)
 	supplier, err := k.supplierKeeper.StakeSupplier(ctx, logger, msgStakeSupplier)
 	if err != nil {
 		// DEV_NOTE: StakeSupplier SHOULD ALWAYS return a gRPC status error.
 		return nil, err
 	}
 
-	// DEV_NOTE: When BOTH:
-	// - the claimed Shannon account is already staked as a supplier
-	// - the MsgClaimMorseSupplier stake amount ("default" or otherwise)
-	//   is less than the current supplier stake amount
-	// then, claimedSupplierStake is set to zero as it would otherwise result in a negative amount.
-	// This value is only used in event(s) and the msg response.
-	claimedSupplierStake, err := supplier.Stake.SafeSub(initialSupplierStake)
-	if err != nil {
-		if !strings.Contains(err.Error(), "negative coin amount") {
-			return nil, err
-		}
-		claimedSupplierStake = cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 0)
-	}
-
-	claimedUnstakedTokens := morseClaimableAccount.TotalTokens().Sub(claimedSupplierStake)
+	claimedSupplierStake := morseClaimableAccount.GetSupplierStake()
+	sharedParams := k.sharedKeeper.GetParams(sdkCtx)
+	sessionEndHeight := sharedtypes.GetSessionEndHeight(&sharedParams, sdkCtx.BlockHeight())
+	claimedUnstakedBalance := morseClaimableAccount.GetUnstakedBalance()
 
 	// Emit an event which signals that the morse account has been claimed.
 	event := migrationtypes.EventMorseSupplierClaimed{
 		ShannonDestAddress:   msg.ShannonDestAddress,
 		MorseSrcAddress:      msg.MorseSrcAddress,
 		ServiceId:            supplier.GetServices()[0].GetServiceId(),
-		ClaimedBalance:       claimedUnstakedTokens,
+		ClaimedBalance:       claimedUnstakedBalance,
 		ClaimedSupplierStake: claimedSupplierStake,
-		ClaimedAtHeight:      sdkCtx.BlockHeight(),
+		SessionEndHeight:     sessionEndHeight,
 		Supplier:             supplier,
 	}
 	if err = sdkCtx.EventManager().EmitTypedEvent(&event); err != nil {
@@ -138,10 +146,9 @@ func (k msgServer) ClaimMorseSupplier(ctx context.Context, msg *migrationtypes.M
 	// Return the response.
 	return &migrationtypes.MsgClaimMorseSupplierResponse{
 		MorseSrcAddress:      msg.MorseSrcAddress,
-		ServiceId:            supplier.Services[0].GetServiceId(),
-		ClaimedBalance:       claimedUnstakedTokens,
+		ClaimedBalance:       claimedUnstakedBalance,
 		ClaimedSupplierStake: claimedSupplierStake,
-		ClaimedAtHeight:      sdkCtx.BlockHeight(),
+		SessionEndHeight:     sessionEndHeight,
 		Supplier:             supplier,
 	}, nil
 }

@@ -34,6 +34,9 @@ type serviceQuerier struct {
 //
 // Required dependencies:
 // - clientCtx (grpc.ClientConn)
+// - polylog.Logger
+// - cache.KeyValueCache[sharedtypes.Service]
+// - cache.KeyValueCache[servicetypes.RelayMiningDifficulty]
 func NewServiceQuerier(deps depinject.Config) (client.ServiceQueryClient, error) {
 	servq := &serviceQuerier{}
 

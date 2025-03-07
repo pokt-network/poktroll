@@ -1,11 +1,11 @@
 package migration
 
 import (
+	"fmt"
 	"strings"
 
 	"cosmossdk.io/math"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/types/errors"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc/codes"
@@ -19,51 +19,14 @@ import (
 	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 )
 
-var (
-	testMorseClaimSupplierCases = []struct {
-		desc     string
-		getStake func(s *MigrationModuleTestSuite) *cosmostypes.Coin
-	}{
-		{
-			desc:     "claim morse supplier with same staked/unstaked ratio (default)",
-			getStake: func(_ *MigrationModuleTestSuite) *cosmostypes.Coin { return nil },
-		},
-		{
-			desc: "claim morse supplier with same staked/unstaked ratio (explicit)",
-			getStake: func(s *MigrationModuleTestSuite) *cosmostypes.Coin {
-				stake := s.GetAccountState(s.T()).Accounts[0].
-					GetSupplierStake()
-				return &stake
-			},
-		},
-		{
-			desc: "claim morse supplier with higher staked/unstaked ratio",
-			getStake: func(s *MigrationModuleTestSuite) *cosmostypes.Coin {
-				stake := s.GetAccountState(s.T()).Accounts[1].
-					GetSupplierStake().
-					Add(stakeOffset)
-				return &stake
-			},
-		},
-		{
-			desc: "claim morse supplier with lower staked/unstaked ratio",
-			getStake: func(s *MigrationModuleTestSuite) *cosmostypes.Coin {
-				stake := s.GetAccountState(s.T()).Accounts[2].
-					GetSupplierStake().
-					Sub(stakeOffset)
-				return &stake
-			},
-		},
-	}
-)
-
 // TestClaimMorseSupplier exercises claiming of a MorseClaimableAccount as a new staked supplier.
 func (s *MigrationModuleTestSuite) TestClaimMorseNewSupplier() {
-	s.GenerateMorseAccountState(s.T(), s.numMorseClaimableAccounts)
+	s.GenerateMorseAccountState(s.T(), s.numMorseClaimableAccounts, testmigration.AllSupplierMorseAccountActorType)
 	s.ImportMorseClaimableAccounts(s.T())
 
-	for testCaseIdx, testCase := range testMorseClaimSupplierCases {
-		s.Run(testCase.desc, func() {
+	for morseAccountIdx, _ := range s.GetAccountState(s.T()).Accounts {
+		testDesc := fmt.Sprintf("morse account %d", morseAccountIdx)
+		s.Run(testDesc, func() {
 			shannonDestAddr := sample.AccAddress()
 			bankClient := s.GetBankQueryClient(s.T())
 			sharedClient := sharedtypes.NewQueryClient(s.GetApp().QueryHelper())
@@ -77,18 +40,14 @@ func (s *MigrationModuleTestSuite) TestClaimMorseNewSupplier() {
 
 			// Claim the MorseClaimableAccount as a new supplier.
 			morseSrcAddr, claimSupplierRes := s.ClaimMorseSupplier(
-				s.T(), uint64(testCaseIdx),
+				s.T(), uint64(morseAccountIdx),
 				shannonDestAddr,
-				testCase.getStake(s),
 				s.supplierServiceConfig,
 			)
 
 			// Assert that the MorseClaimableAccount was updated on-chain.
-			expectedMorseClaimableAccount := s.GetAccountState(s.T()).Accounts[testCaseIdx]
-			expectedStake := testCase.getStake(s)
-			if expectedStake == nil {
-				expectedStake = &expectedMorseClaimableAccount.SupplierStake
-			}
+			expectedMorseClaimableAccount := s.GetAccountState(s.T()).Accounts[morseAccountIdx]
+			expectedStake := expectedMorseClaimableAccount.GetSupplierStake()
 
 			// Assert that the claim msg response is correct.
 			supplierClient := s.SupplierSuite.GetSupplierQueryClient(s.T())
@@ -96,28 +55,27 @@ func (s *MigrationModuleTestSuite) TestClaimMorseNewSupplier() {
 			s.NoError(err)
 
 			supplierStakingFee := supplierParams.GetStakingFee()
-			expectedClaimedBalance := expectedMorseClaimableAccount.TotalTokens().
-				Sub(*expectedStake)
+			expectedClaimedBalance := expectedMorseClaimableAccount.GetUnstakedBalance()
 			expectedBalance := expectedClaimedBalance.Sub(*supplierStakingFee)
 
 			sharedParams := sharedParamsRes.GetParams()
-			svcStartHeight := sharedtypes.GetNextSessionStartHeight(&sharedParams, s.SdkCtx().BlockHeight())
+			svcStartHeight := sharedtypes.GetNextSessionStartHeight(&sharedParams, s.SdkCtx().BlockHeight()-1)
 			expectedSupplier := sharedtypes.Supplier{
 				OwnerAddress:            shannonDestAddr,
 				OperatorAddress:         shannonDestAddr,
-				Stake:                   expectedStake,
+				Stake:                   &expectedStake,
 				Services:                []*sharedtypes.SupplierServiceConfig{s.supplierServiceConfig},
 				UnstakeSessionEndHeight: 0,
 				ServicesActivationHeightsMap: map[string]uint64{
 					s.supplierServiceConfig.GetServiceId(): uint64(svcStartHeight),
 				},
 			}
+			expectedSessionEndHeight := s.GetSessionEndHeight(s.T(), s.SdkCtx().BlockHeight()-1)
 			expectedClaimSupplierRes := &migrationtypes.MsgClaimMorseSupplierResponse{
 				MorseSrcAddress:      morseSrcAddr,
 				ClaimedBalance:       expectedClaimedBalance,
-				ClaimedSupplierStake: *expectedStake,
-				ClaimedAtHeight:      s.SdkCtx().BlockHeight() - 1,
-				ServiceId:            s.supplierServiceConfig.GetServiceId(),
+				ClaimedSupplierStake: expectedStake,
+				SessionEndHeight:     expectedSessionEndHeight,
 				Supplier:             &expectedSupplier,
 			}
 			s.Equal(expectedClaimSupplierRes, claimSupplierRes)
@@ -150,7 +108,7 @@ func (s *MigrationModuleTestSuite) TestClaimMorseNewSupplier() {
 // TestClaimMorseSupplier exercises claiming of a MorseClaimableAccount as an existing staked supplier.
 func (s *MigrationModuleTestSuite) TestClaimMorseExistingSupplier() {
 	// Generate and import Morse claimable accounts.
-	s.GenerateMorseAccountState(s.T(), s.numMorseClaimableAccounts)
+	s.GenerateMorseAccountState(s.T(), s.numMorseClaimableAccounts, testmigration.AllSupplierMorseAccountActorType)
 	s.ImportMorseClaimableAccounts(s.T())
 
 	sharedClient := sharedtypes.NewQueryClient(s.GetApp().QueryHelper())
@@ -170,8 +128,9 @@ func (s *MigrationModuleTestSuite) TestClaimMorseExistingSupplier() {
 	s.FundAddress(s.T(), svcOwnerAddr, serviceParams.GetAddServiceFee().Amount.Int64()+1)
 	s.ServiceSuite.AddService(s.T(), "nosvc", svcOwnerAddr.String(), 1)
 
-	for testCaseIdx, testCase := range testMorseClaimSupplierCases {
-		s.Run(testCase.desc, func() {
+	for morseAccountIdx, _ := range s.GetAccountState(s.T()).Accounts {
+		testDesc := fmt.Sprintf("morse account %d", morseAccountIdx)
+		s.Run(testDesc, func() {
 			// Stake an initial supplier.
 			shannonDestAddr := sample.AccAddress()
 			shannonDestAccAddr := cosmostypes.MustAccAddressFromBech32(shannonDestAddr)
@@ -179,7 +138,7 @@ func (s *MigrationModuleTestSuite) TestClaimMorseExistingSupplier() {
 			// Set the supplier's initial stake equal to the MorseClaimableAccount's supplier stake
 			// to ensure that the stakeOffset which is applied in the testMorseClaimSupplierCases stake
 			// calculation exercises this "existing supplier" scenario in both up- and down-stake variations.
-			initialSupplierStake := s.GetAccountState(s.T()).Accounts[testCaseIdx].GetSupplierStake() //.AddAmount(math.NewInt(1))
+			initialSupplierStake := s.GetAccountState(s.T()).Accounts[morseAccountIdx].GetSupplierStake() //.AddAmount(math.NewInt(1))
 			supplierStakingFee := supplierParams.GetStakingFee()
 			initialSupplierBalance := initialSupplierStake.Add(*supplierStakingFee)
 			s.FundAddress(s.T(), shannonDestAccAddr, initialSupplierBalance.Amount.Int64())
@@ -202,11 +161,9 @@ func (s *MigrationModuleTestSuite) TestClaimMorseExistingSupplier() {
 			s.NoError(err)
 
 			// Claim the MorseClaimableAccount as an existing supplier.
-			supplierStakeToClaim := testCase.getStake(s)
 			morseSrcAddr, claimSupplierRes := s.ClaimMorseSupplier(
-				s.T(), uint64(testCaseIdx),
+				s.T(), uint64(morseAccountIdx),
 				shannonDestAddr,
-				supplierStakeToClaim,
 				s.supplierServiceConfig,
 			)
 
@@ -218,54 +175,35 @@ func (s *MigrationModuleTestSuite) TestClaimMorseExistingSupplier() {
 			}
 
 			// Assert that the MorseClaimableAccount was updated on-chain.
-			expectedMorseClaimableAccount := s.GetAccountState(s.T()).Accounts[testCaseIdx]
-			if supplierStakeToClaim == nil {
-				supplierStakeToClaim = &expectedMorseClaimableAccount.SupplierStake
-			}
+			expectedMorseClaimableAccount := s.GetAccountState(s.T()).Accounts[morseAccountIdx]
+			expectedClaimedStake := expectedMorseClaimableAccount.GetSupplierStake()
+			expectedFinalSupplierStake := expectedMorseClaimableAccount.GetSupplierStake().Add(initialSupplierStake)
 
-			expectedClaimedStake, err := supplierStakeToClaim.SafeSub(initialSupplierStake)
-			if err != nil {
-				if !strings.Contains(err.Error(), "negative coin amount") {
-					require.NoError(s.T(), err)
-				}
-				// DEV_NOTE: If the ClaimedSupplierStake is zero, due to an optimization in big.Int,
-				// strict equality checking will fail. To work around this, we can initialize the bit.Int
-				// with a non-zero value and then set it to zero via arithmetic.
-				expectedClaimedStake = cosmostypes.NewCoin(volatile.DenomuPOKT, math.NewInt(1).SubRaw(1))
-			}
-
-			expectedClaimedBalance := expectedMorseClaimableAccount.TotalTokens().Sub(expectedClaimedStake)
-
-			// Deduct the staking from the claimed tokens (unstaked + staked balance).
-			expectedBalance := expectedClaimedBalance.
+			// Deduct the staking from the claimed tokens (unstaked + staked balance)
+			// and add any pre-existing balance to the expected balance.
+			expectedBalance := expectedMorseClaimableAccount.GetUnstakedBalance().
 				Add(*shannonDestPreClaimBalance).
 				Sub(*supplierStakingFee)
 
-			// If "down-staking", add the difference to the expected balance.
-			downStakeAmount := supplierStakeToClaim.Amount.Sub(initialSupplierStake.Amount)
-			if downStakeAmount.IsNegative() {
-				expectedBalance = expectedBalance.Add(cosmostypes.NewCoin(volatile.DenomuPOKT, downStakeAmount.Neg()))
-			}
-
 			// Assert that the claim msg response is correct.
 			sharedParams := sharedParamsRes.GetParams()
-			svcStartHeight := sharedtypes.GetNextSessionStartHeight(&sharedParams, s.SdkCtx().BlockHeight())
+			svcStartHeight := sharedtypes.GetNextSessionStartHeight(&sharedParams, s.SdkCtx().BlockHeight()-1)
 			expectedSupplier := sharedtypes.Supplier{
 				OwnerAddress:    shannonDestAddr,
 				OperatorAddress: shannonDestAddr,
-				Stake:           supplierStakeToClaim,
+				Stake:           &expectedFinalSupplierStake,
 				Services:        []*sharedtypes.SupplierServiceConfig{s.supplierServiceConfig},
 				ServicesActivationHeightsMap: map[string]uint64{
 					s.supplierServiceConfig.GetServiceId(): uint64(svcStartHeight),
 				},
 				UnstakeSessionEndHeight: 0,
 			}
+			expectedSessionEndHeight := s.GetSessionEndHeight(s.T(), s.SdkCtx().BlockHeight()-1)
 			expectedClaimSupplierRes := &migrationtypes.MsgClaimMorseSupplierResponse{
 				MorseSrcAddress:      morseSrcAddr,
-				ClaimedBalance:       expectedClaimedBalance,
+				ClaimedBalance:       expectedMorseClaimableAccount.GetUnstakedBalance(),
 				ClaimedSupplierStake: expectedClaimedStake,
-				ClaimedAtHeight:      s.SdkCtx().BlockHeight() - 1,
-				ServiceId:            s.supplierServiceConfig.GetServiceId(),
+				SessionEndHeight:     expectedSessionEndHeight,
 				Supplier:             &expectedSupplier,
 			}
 			s.Equal(expectedClaimSupplierRes, claimSupplierRes)
@@ -296,10 +234,12 @@ func (s *MigrationModuleTestSuite) TestClaimMorseExistingSupplier() {
 }
 
 func (s *MigrationModuleTestSuite) TestClaimMorseSupplier_ErrorMinStake() {
-	s.GenerateMorseAccountState(s.T(), s.numMorseClaimableAccounts)
+	// Set the min app stake param to just above the supplier stake amount.
+	minStake := cosmostypes.NewInt64Coin(volatile.DenomuPOKT, testmigration.GenMorseSupplierStakeAmount(uint64(0))+1)
+	s.ResetTestApp(1, minStake)
+	s.GenerateMorseAccountState(s.T(), 1, testmigration.AllSupplierMorseAccountActorType)
 	s.ImportMorseClaimableAccounts(s.T())
 
-	belowSupplierMinStake := s.minStake.Sub(cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 1))
 	shannonDestAddr := sample.AccAddress()
 	bankClient := s.GetBankQueryClient(s.T())
 
@@ -309,7 +249,7 @@ func (s *MigrationModuleTestSuite) TestClaimMorseSupplier_ErrorMinStake() {
 	s.Equal(int64(0), shannonDestBalance.Amount.Int64())
 
 	// Attempt to claim a Morse claimable account with a stake below the minimum.
-	morsePrivateKey := testmigration.NewMorsePrivateKey(s.T(), 0)
+	morsePrivateKey := testmigration.GenMorsePrivateKey(s.T(), 0)
 	expectedMorseSrcAddr := morsePrivateKey.PubKey().Address().String()
 	require.Equal(s.T(),
 		expectedMorseSrcAddr,
@@ -320,7 +260,6 @@ func (s *MigrationModuleTestSuite) TestClaimMorseSupplier_ErrorMinStake() {
 		shannonDestAddr,
 		expectedMorseSrcAddr,
 		morsePrivateKey,
-		&belowSupplierMinStake,
 		s.supplierServiceConfig,
 	)
 	s.NoError(err)
@@ -331,77 +270,6 @@ func (s *MigrationModuleTestSuite) TestClaimMorseSupplier_ErrorMinStake() {
 		codes.InvalidArgument,
 		suppliertypes.ErrSupplierInvalidStake.Wrapf("supplier with owner %q must stake at least %s",
 			shannonDestAddr, s.minStake,
-		).Error(),
-	).Error())
-
-	// Assert that the MorseClaimableAccount was NOT updated on-chain.
-	morseClaimableAccount := s.QueryMorseClaimableAccount(s.T(), morseClaimMsg.GetMorseSrcAddress())
-	s.Equal(int64(0), morseClaimableAccount.GetClaimedAtHeight())
-	s.Equal("", morseClaimableAccount.GetShannonDestAddress())
-
-	// Assert that the shannonDestAddr account balance has NOT been updated.
-	shannonDestBalance, err = bankClient.GetBalance(s.SdkCtx(), shannonDestAddr)
-	s.NoError(err)
-	s.Equal(int64(0), shannonDestBalance.Amount.Int64())
-
-	// Assert that the migration module account balance returns to zero.
-	migrationModuleAddress := authtypes.NewModuleAddress(migrationtypes.ModuleName).String()
-	migrationModuleBalance, err := bankClient.GetBalance(s.SdkCtx(), migrationModuleAddress)
-	s.NoError(err)
-	s.Equal(cosmostypes.NewCoin(volatile.DenomuPOKT, math.ZeroInt()), *migrationModuleBalance)
-
-	// Assert that the supplier was NOT staked.
-	supplierClient := s.SupplierSuite.GetSupplierQueryClient(s.T())
-	_, err = supplierClient.GetSupplier(s.SdkCtx(), shannonDestAddr)
-	require.EqualError(s.T(), err, status.Error(
-		codes.NotFound,
-		suppliertypes.ErrSupplierNotFound.Wrapf(
-			"supplier with operator address: %q",
-			shannonDestAddr,
-		).Error(),
-	).Error())
-}
-
-func (s *MigrationModuleTestSuite) TestClaimMorseSupplier_ErrorInsufficientStakeAvailable() {
-	s.GenerateMorseAccountState(s.T(), s.numMorseClaimableAccounts)
-	s.ImportMorseClaimableAccounts(s.T())
-
-	//aboveMaxAvailableStake := minStake.Sub(cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 1))
-	expectedMorseClaimableAccount := s.GetAccountState(s.T()).Accounts[0]
-	totalTokens := expectedMorseClaimableAccount.TotalTokens()
-	aboveMaxAvailableStake := totalTokens.Add(cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 1))
-
-	shannonDestAddr := sample.AccAddress()
-	bankClient := s.GetBankQueryClient(s.T())
-
-	// Assert that the shannonDestAddr account initially has a zero balance.
-	shannonDestBalance, err := bankClient.GetBalance(s.SdkCtx(), shannonDestAddr)
-	s.NoError(err)
-	s.Equal(int64(0), shannonDestBalance.Amount.Int64())
-
-	// Attempt to claim a Morse claimable account with a stake below the minimum.
-	morsePrivateKey := testmigration.NewMorsePrivateKey(s.T(), 0)
-	expectedMorseSrcAddr := morsePrivateKey.PubKey().Address().String()
-	require.Equal(s.T(),
-		expectedMorseSrcAddr,
-		s.GetAccountState(s.T()).Accounts[0].MorseSrcAddress,
-	)
-
-	morseClaimMsg, err := migrationtypes.NewMsgClaimMorseSupplier(
-		shannonDestAddr,
-		expectedMorseSrcAddr,
-		morsePrivateKey,
-		&aboveMaxAvailableStake,
-		s.supplierServiceConfig,
-	)
-	s.NoError(err)
-
-	// Claim a Morse claimable account.
-	_, err = s.GetApp().RunMsg(s.T(), morseClaimMsg)
-	require.ErrorContains(s.T(), err, status.Error(
-		codes.Internal,
-		errors.ErrInsufficientFunds.Wrapf("spendable balance %s is smaller than %s",
-			totalTokens, aboveMaxAvailableStake,
 		).Error(),
 	).Error())
 

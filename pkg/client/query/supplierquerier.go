@@ -30,6 +30,8 @@ type supplierQuerier struct {
 //
 // Required dependencies:
 // - grpc.ClientConn
+// - polylog.Logger
+// - cache.KeyValueCache[sharedtypes.Supplier]
 func NewSupplierQuerier(deps depinject.Config) (client.SupplierQueryClient, error) {
 	supq := &supplierQuerier{}
 
