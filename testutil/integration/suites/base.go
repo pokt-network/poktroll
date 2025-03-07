@@ -110,10 +110,10 @@ func (s *BaseIntegrationSuite) GetBankQueryClient(t *testing.T) client.BankQuery
 		testcache.NewNoopKeyValueCache[query.Balance](),
 		s.GetApp().QueryHelper(),
 	)
-	bankqueryClient, err := query.NewBankQuerier(deps)
+	bankQueryClient, err := query.NewBankQuerier(deps)
 	require.NoError(t, err)
 
-	return bankqueryClient
+	return bankQueryClient
 }
 
 // FilterEvents returns the events from the event manager which match the given
