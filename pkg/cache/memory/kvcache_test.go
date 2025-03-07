@@ -85,6 +85,16 @@ func TestMemoryKeyValueCache(t *testing.T) {
 		require.True(t, isCached)
 		require.Equal(t, "value3", val)
 	})
+
+	t.Run("no TTL", func(t *testing.T) {
+		cache, err := NewKeyValueCache[string](WithNoTTL())
+		require.NoError(t, err)
+
+		// Immediately get the same key after setting.
+		cache.Set("key1", "value1")
+		_, wasCached := cache.Get("key1")
+		require.False(t, wasCached)
+	})
 }
 
 // TestKeyValueCache_ErrorCases exercises various error conditions
