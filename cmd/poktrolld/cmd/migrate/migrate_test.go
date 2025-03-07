@@ -32,7 +32,8 @@ func TestCollectMorseAccounts(t *testing.T) {
 	require.NoError(t, err)
 
 	// Generate and write the MorseStateExport input JSON file.
-	morseStateExportBz, morseAccountStateBz := testmigration.NewMorseStateExportAndAccountStateBytes(t, 10)
+	morseStateExportBz, morseAccountStateBz := testmigration.NewMorseStateExportAndAccountStateBytes(
+		t, 10, testmigration.RoundRobinAllMorseAccountActorTypes)
 	_, err = inputFile.Write(morseStateExportBz)
 	require.NoError(t, err)
 
@@ -61,15 +62,17 @@ func TestCollectMorseAccounts(t *testing.T) {
 	require.Equal(t, expectedMorseAccountState, actualMorseAccountState)
 }
 
-// TestNewTestMorseStateExport exercises the NewTestMorseStateExport testutil function
-// by using it to generate a MorseStateExport which contains an increasing number of
-// accounts; verifying the number of accounts and their total balances and stakes of
-// each MorseStateExport's (via transformMorseState).
+// TestNewTestMorseStateExport exercises the NewTestMorseStateExport testutil function.
+// It generates MorseStateExport instances with an increasing number of accounts, then verifies:
+//   - The correct number of accounts in each export
+//   - The total balances in each export
+//   - The total stakes in each export (via transformMorseState)
 func TestNewTestMorseStateExport(t *testing.T) {
 	for numAccounts := 1; numAccounts <= 10; numAccounts++ {
 		t.Run(fmt.Sprintf("num_accounts=%d", numAccounts), func(t *testing.T) {
 			morseStateExport := new(migrationtypes.MorseStateExport)
-			stateExportBz, _ := testmigration.NewMorseStateExportAndAccountStateBytes(t, numAccounts)
+			stateExportBz, _ := testmigration.NewMorseStateExportAndAccountStateBytes(
+				t, numAccounts, testmigration.RoundRobinAllMorseAccountActorTypes)
 			err := cmtjson.Unmarshal(stateExportBz, morseStateExport)
 			require.NoError(t, err)
 
@@ -80,24 +83,40 @@ func TestNewTestMorseStateExport(t *testing.T) {
 			err = transformMorseState(morseStateExport, morseWorkspace)
 			require.NoError(t, err)
 
-			require.Equal(t, uint64(numAccounts), morseWorkspace.getNumAccounts())
-			require.Equal(t, uint64(numAccounts), morseWorkspace.numApplications)
-			require.Equal(t, uint64(numAccounts), morseWorkspace.numSuppliers)
-
-			// Sum numAccounts from previous iterations to get total number of accounts.
-			numTotalAccounts := 1
-			for k := numAccounts; k > 1; k-- {
-				numTotalAccounts += k
+			// Construct account number expectations based on equal distribution of unstaked, app, and supplier accounts.
+			expectedNumSuppliers := numAccounts / 3
+			expectedNumApps := numAccounts / 3
+			expectedActorType := testmigration.RoundRobinAllMorseAccountActorTypes(uint64(numAccounts - 1))
+			if expectedActorType == testmigration.MorseApplicationActor {
+				expectedNumApps++
 			}
+			t.Logf("numAccounts: %d; expectedNumApps: %d; expectedNumSuppliers: %d", numAccounts, expectedNumApps, expectedNumSuppliers)
 
-			// numTotalAccounts=1 -> "100000001", numTotalAccounts=2 -> "200000002": creates scaled balance with unique ID
-			expectedShannonTotalUnstakedBalance := int64(1e6*numTotalAccounts + numTotalAccounts)
+			// Assert the number of accounts and staked actors matches expectations.
+			require.Equal(t, uint64(numAccounts), morseWorkspace.getNumAccounts())
+			require.Equal(t, uint64(expectedNumApps), morseWorkspace.numApplications)
+			require.Equal(t, uint64(expectedNumSuppliers), morseWorkspace.numSuppliers)
 
-			// numTotalAccounts=5 -> "5000050": scales with total accounts plus unique suffix
-			expectedShannonTotalAppStake := int64(1e5*numTotalAccounts + (numTotalAccounts * 10))
+			// Compute expected totals for unstaked balance, application stake, and supplier stake, for all MorseClaimableAccounts.
+			var expectedShannonTotalUnstakedBalance,
+				expectedShannonTotalAppStake,
+				expectedShannonTotalSupplierStake int64
 
-			// numTotalAccounts=5 -> "505000": different scaling pattern using same total accounts
-			expectedShannonTotalSupplierStake := int64(1e4*numTotalAccounts + (numTotalAccounts * 100))
+			for i := 0; i < numAccounts; i++ {
+				expectedShannonTotalUnstakedBalance += testmigration.GenMorseUnstakedBalanceAmount(uint64(i))
+
+				morseAccountType := testmigration.RoundRobinAllMorseAccountActorTypes(uint64(i))
+				switch morseAccountType {
+				case testmigration.MorseUnstakedActor:
+					// No-op.
+				case testmigration.MorseApplicationActor:
+					expectedShannonTotalAppStake += testmigration.GenMorseApplicationStakeAmount(uint64(i))
+				case testmigration.MorseSupplierActor:
+					expectedShannonTotalSupplierStake += testmigration.GenMorseSupplierStakeAmount(uint64(i))
+				default:
+					t.Fatalf("unknown morse account stake state: %q", morseAccountType)
+				}
+			}
 
 			require.Equal(t, expectedShannonTotalUnstakedBalance, morseWorkspace.accumulatedTotalBalance.Int64())
 			require.Equal(t, expectedShannonTotalAppStake, morseWorkspace.accumulatedTotalAppStake.Int64())
@@ -110,7 +129,8 @@ func BenchmarkTransformMorseState(b *testing.B) {
 	for i := 0; i < 5; i++ {
 		numAccounts := int(math.Pow10(i + 1))
 		morseStateExport := new(migrationtypes.MorseStateExport)
-		morseStateExportBz, _ := testmigration.NewMorseStateExportAndAccountStateBytes(b, numAccounts)
+		morseStateExportBz, _ := testmigration.NewMorseStateExportAndAccountStateBytes(
+			b, numAccounts, testmigration.RoundRobinAllMorseAccountActorTypes)
 		err := cmtjson.Unmarshal(morseStateExportBz, morseStateExport)
 		require.NoError(b, err)
 

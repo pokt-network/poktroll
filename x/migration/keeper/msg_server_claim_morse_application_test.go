@@ -94,7 +94,7 @@ func TestMsgServer_ClaimMorseApplication_SuccessNewApplication(t *testing.T) {
 	ctx = ctx.WithBlockHeight(expectedClaimedAtHeight)
 	srv := keeper.NewMsgServerImpl(k)
 
-	morsePrivKey := testmigration.NewMorsePrivateKey(t, 0)
+	morsePrivKey := testmigration.GenMorsePrivateKey(t, 0)
 	morseClaimableAccount := &migrationtypes.MorseClaimableAccount{
 		MorseSrcAddress:  sample.MorseAddressHex(),
 		PublicKey:        morsePrivKey.PubKey().Bytes(),
@@ -122,12 +122,10 @@ func TestMsgServer_ClaimMorseApplication_SuccessNewApplication(t *testing.T) {
 	require.NoError(t, err)
 
 	// Claim the MorseClaimableAccount.
-	morseAppStake := morseClaimableAccount.GetApplicationStake()
 	msgClaim, err := migrationtypes.NewMsgClaimMorseApplication(
 		shannonDestAddr,
 		morseClaimableAccount.GetMorseSrcAddress(),
 		morsePrivKey,
-		&morseAppStake,
 		&testServiceConfig,
 	)
 	require.NoError(t, err)
@@ -136,14 +134,15 @@ func TestMsgServer_ClaimMorseApplication_SuccessNewApplication(t *testing.T) {
 	require.NoError(t, err)
 
 	// Construct and assert the expected response.
+	sharedParams := sharedtypes.DefaultParams()
+	expectedSessionEndHeight := sharedtypes.GetSessionEndHeight(&sharedParams, ctx.BlockHeight())
 	expectedRes := &migrationtypes.MsgClaimMorseApplicationResponse{
 		MorseSrcAddress:         msgClaim.MorseSrcAddress,
 		ClaimedApplicationStake: morseClaimableAccount.GetApplicationStake(),
 		ClaimedBalance: expectedClaimedUnstakedTokens.
 			Add(morseClaimableAccount.GetSupplierStake()),
-		ClaimedAtHeight: expectedClaimedAtHeight,
-		ServiceId:       testServiceConfig.GetServiceId(),
-		Application:     &expectedApp,
+		SessionEndHeight: expectedSessionEndHeight,
+		Application:      &expectedApp,
 	}
 	require.Equal(t, expectedRes, msgClaimRes)
 
@@ -159,10 +158,9 @@ func TestMsgServer_ClaimMorseApplication_SuccessNewApplication(t *testing.T) {
 	expectedEvent := &migrationtypes.EventMorseApplicationClaimed{
 		ShannonDestAddress:      msgClaim.ShannonDestAddress,
 		MorseSrcAddress:         msgClaim.MorseSrcAddress,
-		ServiceId:               testServiceConfig.GetServiceId(),
 		ClaimedBalance:          expectedClaimedUnstakedTokens,
 		ClaimedApplicationStake: applicationStake,
-		ClaimedAtHeight:         ctx.BlockHeight(),
+		SessionEndHeight:        expectedSessionEndHeight,
 		Application:             &expectedApp,
 	}
 	claimEvents := events.FilterEvents[*migrationtypes.EventMorseApplicationClaimed](t, ctx.EventManager().Events())
@@ -178,7 +176,7 @@ func TestMsgServer_ClaimMorseApplication_Error(t *testing.T) {
 	k, ctx := keepertest.MigrationKeeper(t)
 	srv := keeper.NewMsgServerImpl(k)
 
-	morsePrivKey := testmigration.NewMorsePrivateKey(t, 0)
+	morsePrivKey := testmigration.GenMorsePrivateKey(t, 0)
 	morseClaimableAccount := &migrationtypes.MorseClaimableAccount{
 		MorseSrcAddress:  sample.MorseAddressHex(),
 		PublicKey:        morsePrivKey.PubKey().Bytes(),
@@ -209,7 +207,6 @@ func TestMsgServer_ClaimMorseApplication_Error(t *testing.T) {
 		sample.AccAddress(),
 		accountState.Accounts[0].GetMorseSrcAddress(),
 		morsePrivKey,
-		&claimableApplicationStake,
 		expectedAppServiceConfig,
 	)
 	require.NoError(t, err)
