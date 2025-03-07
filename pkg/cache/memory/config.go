@@ -120,6 +120,14 @@ func WithTTL(ttl time.Duration) KeyValueCacheOptionFn {
 	}
 }
 
+// WithNoTTL effectively disables the cache. Useful for testing.
+func WithNoTTL() KeyValueCacheOptionFn {
+	return func(cfg keyValueConfigI) error {
+		cfg.SetTTL(0)
+		return nil
+	}
+}
+
 // WithMaxVersionAge sets the given maxVersionAge on the configuration; if 0, no historical pruning is performed.
 // It can ONLY be used in the context of a HistoricalKeyValueCache.
 func WithMaxVersionAge(numRetainedVersions int64) KeyValueCacheOptionFn {
