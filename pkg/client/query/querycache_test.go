@@ -3,6 +3,7 @@ package query_test
 import (
 	"context"
 	"testing"
+	"time"
 
 	"cosmossdk.io/depinject"
 	coretypes "github.com/cometbft/cometbft/rpc/core/types"
@@ -478,7 +479,7 @@ type queryClients struct {
 
 // supplyCacheDeps supplies all the cache dependencies required by the query clients.
 func supplyCacheDeps(t *testing.T) depinject.Config {
-	opts := memory.WithTTL(0)
+	opts := memory.WithTTL(time.Minute)
 
 	serviceCache, err := memory.NewKeyValueCache[sharedtypes.Service](opts)
 	require.NoError(t, err)
