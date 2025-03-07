@@ -48,16 +48,13 @@ message EventMorseApplicationClaimed {
   // The unstaked balance which was claimed.
   cosmos.base.v1beta1.Coin claimed_balance = 2 [(gogoproto.jsontag) = "claimed_balance", (gogoproto.nullable) = false];
 
-  // The bech32-encoded address of the Shannon account to which the claimed balance will be minted.
-  string shannon_dest_address = 3 [(cosmos_proto.scalar) = "cosmos.AddressString", (gogoproto.jsontag) = "shannon_dest_address"];
-
   // The hex-encoded address of the Morse account whose balance will be claimed.
-  string morse_src_address = 4 [(gogoproto.jsontag) = "morse_src_address"];
+  string morse_src_address = 3 [(gogoproto.jsontag) = "morse_src_address"];
 
   // The stake of the application which was staked as a result of the claim.
-  cosmos.base.v1beta1.Coin claimed_application_stake = 5 [(gogoproto.nullable) = false, (gogoproto.jsontag) = "claimed_application_stake"];
+  cosmos.base.v1beta1.Coin claimed_application_stake = 4 [(gogoproto.nullable) = false, (gogoproto.jsontag) = "claimed_application_stake"];
 
   // The application which was staked as a result of the claim.
   // This is equivalent to the amount it had staked on Morse.
-  application.Application application = 7 [(gogoproto.jsontag) = "application"];
+  application.Application application = 5 [(gogoproto.jsontag) = "application"];
 }

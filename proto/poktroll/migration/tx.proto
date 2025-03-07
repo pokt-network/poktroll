@@ -140,7 +140,7 @@ message MsgClaimMorseApplication {
   // The services this application is staked to request service for.
   // NOTE: This is not a repeated field, as in MsgStakeApplication,
   // because an application can only be staked for one service.
-  shared.ApplicationServiceConfig service_config = 5 [(gogoproto.jsontag) = "service_config"];
+  shared.ApplicationServiceConfig service_config = 4 [(gogoproto.jsontag) = "service_config"];
 }
 
 // MsgClaimMorseApplicationResponse is returned from MsgClaimMorseApplication.
@@ -162,7 +162,7 @@ message MsgClaimMorseApplicationResponse {
   int64 session_end_height = 4 [(gogoproto.jsontag) = "session_end_height"];
 
   // The application which was staked as a result of the claim.
-  application.Application application = 6 [(gogoproto.jsontag) = "application"];
+  application.Application application = 5 [(gogoproto.jsontag) = "application"];
 }
 
 // TODO_UPNEXT(@bryanchriswhite, #1034): for messages below:
