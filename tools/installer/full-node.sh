@@ -21,6 +21,12 @@ NC='\033[0m' # No Color
 # DEV_NOTE: For testing purposes, you can change the branch name before merging to master.
 POCKET_NETWORK_GENESIS_BRANCH="master"
 
+# Define environment variables for poktrolld (single source of truth)
+DAEMON_NAME="poktrolld"
+DAEMON_RESTART_AFTER_UPGRADE="true"
+DAEMON_ALLOW_DOWNLOAD_BINARIES="true"
+UNSAFE_SKIP_BACKUP="true"
+
 # Snapshot configuration
 # The snapshot functionality allows users to quickly sync a node from a trusted snapshot
 # instead of syncing from genesis, which can be time-consuming.
@@ -380,11 +386,11 @@ create_user() {
 setup_env_vars() {
     print_color $YELLOW "Setting up environment variables..."
     sudo -u "$POKTROLL_USER" bash <<EOF
-    echo "export DAEMON_NAME=poktrolld" >> \$HOME/.profile
+    echo "export DAEMON_NAME=$DAEMON_NAME" >> \$HOME/.profile
     echo "export DAEMON_HOME=\$HOME/.poktroll" >> \$HOME/.profile
-    echo "export DAEMON_RESTART_AFTER_UPGRADE=true" >> \$HOME/.profile
-    echo "export DAEMON_ALLOW_DOWNLOAD_BINARIES=true" >> \$HOME/.profile
-    echo "export UNSAFE_SKIP_BACKUP=false" >> \$HOME/.profile
+    echo "export DAEMON_RESTART_AFTER_UPGRADE=$DAEMON_RESTART_AFTER_UPGRADE" >> \$HOME/.profile
+    echo "export DAEMON_ALLOW_DOWNLOAD_BINARIES=$DAEMON_ALLOW_DOWNLOAD_BINARIES" >> \$HOME/.profile
+    echo "export UNSAFE_SKIP_BACKUP=$UNSAFE_SKIP_BACKUP" >> \$HOME/.profile
     
     # Add Cosmovisor and poktrolld to PATH
     echo "export PATH=\$HOME/.local/bin:\$HOME/.poktroll/cosmovisor/current/bin:\$PATH" >> \$HOME/.profile
@@ -628,8 +634,6 @@ EOF
     echo ""
 }
 
-# TODO_IMPROVE(@okdas): Use the fields from `setup_env_vars` to maintain a single source of truth
-# for the values. Specifically, everything starting with `Environment=` is duplicated in the env var helper.
 # Function to set up systemd service
 setup_systemd() {
     # Create a unique service name based on user
@@ -648,11 +652,11 @@ Restart=always
 RestartSec=3
 LimitNOFILE=infinity
 LimitNPROC=infinity
-Environment="DAEMON_NAME=poktrolld"
+Environment="DAEMON_NAME=$DAEMON_NAME"
 Environment="DAEMON_HOME=/home/$POKTROLL_USER/.poktroll"
-Environment="DAEMON_RESTART_AFTER_UPGRADE=true"
-Environment="DAEMON_ALLOW_DOWNLOAD_BINARIES=true"
-Environment="UNSAFE_SKIP_BACKUP=true"
+Environment="DAEMON_RESTART_AFTER_UPGRADE=$DAEMON_RESTART_AFTER_UPGRADE"
+Environment="DAEMON_ALLOW_DOWNLOAD_BINARIES=$DAEMON_ALLOW_DOWNLOAD_BINARIES"
+Environment="UNSAFE_SKIP_BACKUP=$UNSAFE_SKIP_BACKUP"
 
 [Install]
 WantedBy=multi-user.target

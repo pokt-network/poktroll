@@ -121,6 +121,16 @@ Cosmovisor manages the binary upgrades for your node. There are two options to i
 ```bash
 mkdir -p $HOME/.local/bin
 COSMOVISOR_VERSION="v1.7.1"
+# Determine your architecture
+ARCH=$(uname -m)
+if [ "$ARCH" = "x86_64" ]; then
+    ARCH="amd64"
+elif [ "$ARCH" = "aarch64" ]; then
+    ARCH="arm64"
+fi
+
+# Download and install Cosmovisor
+curl -L "https://github.com/cosmos/cosmos-sdk/releases/download/cosmovisor%2F${COSMOVISOR_VERSION}/cosmovisor-${COSMOVISOR_VERSION}-linux-${ARCH}.tar.gz" | tar -zxvf - -C $HOME/.local/bin
 
 # Verify the install
 cosmovisor version
@@ -454,25 +464,29 @@ Choose the appropriate method for your system:
 ```bash
 # [REQUIRED] Expose P2P
 sudo ufw allow 26656/tcp
+```
 
 2. **Using iptables**:
 
-b. **Configuring your firewall for iptables**:
+```bash
+sudo iptables -A INPUT -p tcp --dport 26656 -j ACCEPT
+sudo iptables-save > /etc/iptables/rules.v4  # Save rules (may require iptables-persistent package)
+```
 
 3. **Cloud Provider Settings**: If running on a cloud provider (AWS, GCP, Azure, etc.), configure security groups or firewall rules to allow inbound traffic on port 26656.
 
 4. **Verify your port** is accessible:
 
-   ```bash
-   # Install netcat if not already installed
-   sudo apt install -y netcat
-   
-   # Use an external service to check port accessibility
-   nc -zv portquiz.net 26656
-   
-   # Or have someone from outside check your port
-   # nc -zv YOUR_EXTERNAL_IP 26656
-   ```
+```bash
+# Install netcat if not already installed
+sudo apt install -y netcat
+
+# Use an external service to check port accessibility
+nc -zv portquiz.net 26656
+
+# Or have someone from outside check your port
+# nc -zv YOUR_EXTERNAL_IP 26656
+```
 
 ### 11. Monitor Your Node
 
