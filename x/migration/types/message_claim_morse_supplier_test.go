@@ -38,29 +38,39 @@ func TestMsgClaimMorseSupplier_ValidateBasic(t *testing.T) {
 		err  error
 	}{
 		{
-			name: "invalid ShannonDestAddress",
+			name: "invalid ShannonOwnerAddress",
 			msg: migrationtypes.MsgClaimMorseSupplier{
-				ShannonDestAddress: "invalid_address",
-				MorseSrcAddress:    sample.MorseAddressHex(),
-				MorseSignature:     mockMorseSignature,
-				Services:           testServices,
+				ShannonOwnerAddress: "invalid_address",
+				MorseSrcAddress:     sample.MorseAddressHex(),
+				MorseSignature:      mockMorseSignature,
+				Services:            testServices,
+			},
+			err: sdkerrors.ErrInvalidAddress,
+		}, {
+			name: "invalid ShannonOperatorAddress",
+			msg: migrationtypes.MsgClaimMorseSupplier{
+				ShannonOwnerAddress:    sample.AccAddress(),
+				ShannonOperatorAddress: "invalid_address",
+				MorseSrcAddress:        sample.MorseAddressHex(),
+				MorseSignature:         mockMorseSignature,
+				Services:               testServices,
 			},
 			err: sdkerrors.ErrInvalidAddress,
 		}, {
 			name: "invalid MorseSrcAddress",
 			msg: migrationtypes.MsgClaimMorseSupplier{
-				ShannonDestAddress: sample.AccAddress(),
-				MorseSrcAddress:    "invalid_address",
-				MorseSignature:     mockMorseSignature,
-				Services:           testServices,
+				ShannonOwnerAddress: sample.AccAddress(),
+				MorseSrcAddress:     "invalid_address",
+				MorseSignature:      mockMorseSignature,
+				Services:            testServices,
 			},
 			err: migrationtypes.ErrMorseSupplierClaim,
 		}, {
 			name: "invalid service ID (empty)",
 			msg: migrationtypes.MsgClaimMorseSupplier{
-				ShannonDestAddress: sample.AccAddress(),
-				MorseSrcAddress:    sample.MorseAddressHex(),
-				MorseSignature:     mockMorseSignature,
+				ShannonOwnerAddress: sample.AccAddress(),
+				MorseSrcAddress:     sample.MorseAddressHex(),
+				MorseSignature:      mockMorseSignature,
 				Services: []*sharedtypes.SupplierServiceConfig{
 					{ServiceId: ""},
 				},
@@ -69,9 +79,9 @@ func TestMsgClaimMorseSupplier_ValidateBasic(t *testing.T) {
 		}, {
 			name: "invalid service ID (too long)",
 			msg: migrationtypes.MsgClaimMorseSupplier{
-				ShannonDestAddress: sample.AccAddress(),
-				MorseSrcAddress:    sample.MorseAddressHex(),
-				MorseSignature:     mockMorseSignature,
+				ShannonOwnerAddress: sample.AccAddress(),
+				MorseSrcAddress:     sample.MorseAddressHex(),
+				MorseSignature:      mockMorseSignature,
 				Services: []*sharedtypes.SupplierServiceConfig{
 					{
 						ServiceId: "xxxxxxxxxxxxxxxxxxxx",
@@ -84,9 +94,9 @@ func TestMsgClaimMorseSupplier_ValidateBasic(t *testing.T) {
 		}, {
 			name: "invalid empty MorseSignature",
 			msg: migrationtypes.MsgClaimMorseSupplier{
-				ShannonDestAddress: sample.AccAddress(),
-				MorseSrcAddress:    sample.MorseAddressHex(),
-				MorseSignature:     nil,
+				ShannonOwnerAddress: sample.AccAddress(),
+				MorseSrcAddress:     sample.MorseAddressHex(),
+				MorseSignature:      nil,
 				Services: []*sharedtypes.SupplierServiceConfig{
 					{
 						ServiceId: testServiceId,
@@ -99,9 +109,9 @@ func TestMsgClaimMorseSupplier_ValidateBasic(t *testing.T) {
 		}, {
 			name: "valid nil stake",
 			msg: migrationtypes.MsgClaimMorseSupplier{
-				ShannonDestAddress: sample.AccAddress(),
-				MorseSrcAddress:    sample.MorseAddressHex(),
-				MorseSignature:     mockMorseSignature,
+				ShannonOwnerAddress: sample.AccAddress(),
+				MorseSrcAddress:     sample.MorseAddressHex(),
+				MorseSignature:      mockMorseSignature,
 				Services: []*sharedtypes.SupplierServiceConfig{
 					{
 						ServiceId: testServiceId,
@@ -113,9 +123,9 @@ func TestMsgClaimMorseSupplier_ValidateBasic(t *testing.T) {
 		}, {
 			name: "valid claim message",
 			msg: migrationtypes.MsgClaimMorseSupplier{
-				ShannonDestAddress: sample.AccAddress(),
-				MorseSrcAddress:    sample.MorseAddressHex(),
-				MorseSignature:     mockMorseSignature,
+				ShannonOwnerAddress: sample.AccAddress(),
+				MorseSrcAddress:     sample.MorseAddressHex(),
+				MorseSignature:      mockMorseSignature,
 				Services: []*sharedtypes.SupplierServiceConfig{
 					{
 						ServiceId: testServiceId,

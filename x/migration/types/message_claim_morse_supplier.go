@@ -13,15 +13,17 @@ import (
 var _ sdk.Msg = &MsgClaimMorseSupplier{}
 
 func NewMsgClaimMorseSupplier(
-	shannonDestAddress string,
+	shannonOwnerAddress string,
+	shannonOperatorAddress string,
 	morseSrcAddress string,
 	morsePrivateKey cometcrypto.PrivKey,
 	services []*sharedtypes.SupplierServiceConfig,
 ) (*MsgClaimMorseSupplier, error) {
 	msg := &MsgClaimMorseSupplier{
-		ShannonDestAddress: shannonDestAddress,
-		MorseSrcAddress:    morseSrcAddress,
-		Services:           services,
+		ShannonOwnerAddress:    shannonOwnerAddress,
+		ShannonOperatorAddress: shannonOperatorAddress,
+		MorseSrcAddress:        morseSrcAddress,
+		Services:               services,
 	}
 
 	if morsePrivateKey != nil {
@@ -49,12 +51,18 @@ func (msg *MsgClaimMorseSupplier) ValidateBasic() error {
 		return ErrMorseSupplierClaim.Wrapf("invalid morseSrcAddress length (%d)", len(msg.MorseSrcAddress))
 	}
 
-	if _, err := sdk.AccAddressFromBech32(msg.ShannonDestAddress); err != nil {
-		return errorsmod.Wrapf(sdkerrors.ErrInvalidAddress, "invalid shannonDestAddress address (%s)", err)
+	if _, err := sdk.AccAddressFromBech32(msg.ShannonOwnerAddress); err != nil {
+		return errorsmod.Wrapf(sdkerrors.ErrInvalidAddress, "invalid shannon owner address address (%s)", err)
+	}
+
+	if msg.ShannonOperatorAddress != "" {
+		if _, err := sdk.AccAddressFromBech32(msg.ShannonOperatorAddress); err != nil {
+			return errorsmod.Wrapf(sdkerrors.ErrInvalidAddress, "invalid shannon operator address address (%s)", err)
+		}
 	}
 
 	if err := sharedtypes.ValidateSupplierServiceConfigs(msg.Services); err != nil {
-		return ErrMorseSupplierClaim.Wrapf("invalid service config: %s", err)
+		return ErrMorseSupplierClaim.Wrapf("invalid service configs: %s", err)
 	}
 
 	return nil

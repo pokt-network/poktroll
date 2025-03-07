@@ -34,8 +34,14 @@ func (k msgServer) ClaimMorseSupplier(
 	}
 
 	// DEV_NOTE: It is safe to use MustAccAddressFromBech32 here because the
-	// shannonDestAddress is validated in MsgClaimMorseSupplier#ValidateBasic().
-	shannonAccAddr := cosmostypes.MustAccAddressFromBech32(msg.ShannonDestAddress)
+	// shannonOwnerAddress and shannonOperatorAddress are validated in MsgClaimMorseSupplier#ValidateBasic().
+	shannonOwnerAddr := cosmostypes.MustAccAddressFromBech32(msg.ShannonOwnerAddress)
+
+	// Default to the shannonOwnerAddr as the shannonOperatorAddr if not provided.
+	shannonOperatorAddr := shannonOwnerAddr
+	if msg.ShannonOperatorAddress != "" {
+		shannonOperatorAddr = cosmostypes.MustAccAddressFromBech32(msg.ShannonOperatorAddress)
+	}
 
 	// Ensure that a MorseClaimableAccount exists for the given morseSrcAddress.
 	morseClaimableAccount, isFound := k.GetMorseClaimableAccount(
@@ -93,12 +99,12 @@ func (k msgServer) ClaimMorseSupplier(
 	// The Supplier stake is subsequently escrowed from the shannonDestAddress account balance.
 	// NOTE: The current supplier module's staking fee parameter will subsequently be deducted
 	// from the claimed balance.
-	if err := k.MintClaimedMorseTokens(ctx, shannonAccAddr, morseClaimableAccount.TotalTokens()); err != nil {
+	if err := k.MintClaimedMorseTokens(ctx, shannonOwnerAddr, morseClaimableAccount.TotalTokens()); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
 	// Set ShannonDestAddress & ClaimedAtHeight (claim).
-	morseClaimableAccount.ShannonDestAddress = shannonAccAddr.String()
+	morseClaimableAccount.ShannonDestAddress = shannonOwnerAddr.String()
 	morseClaimableAccount.ClaimedAtHeight = sdkCtx.BlockHeight()
 
 	// Update the MorseClaimableAccount.
@@ -109,16 +115,16 @@ func (k msgServer) ClaimMorseSupplier(
 
 	// Query for any existing supplier stake prior to staking.
 	preClaimSupplierStake := cosmostypes.NewCoin(volatile.DenomuPOKT, math.ZeroInt())
-	foundSupplier, isFound := k.supplierKeeper.GetSupplier(ctx, shannonAccAddr.String())
+	foundSupplier, isFound := k.supplierKeeper.GetSupplier(ctx, shannonOwnerAddr.String())
 	if isFound {
 		preClaimSupplierStake = *foundSupplier.Stake
 	}
 
 	// Stake (or update) the supplier.
 	msgStakeSupplier := suppliertypes.NewMsgStakeSupplier(
-		shannonAccAddr.String(),
-		shannonAccAddr.String(),
-		shannonAccAddr.String(),
+		shannonOwnerAddr.String(),
+		shannonOwnerAddr.String(),
+		shannonOperatorAddr.String(),
 		preClaimSupplierStake.Add(morseClaimableAccount.GetSupplierStake()),
 		msg.Services,
 	)
@@ -135,7 +141,6 @@ func (k msgServer) ClaimMorseSupplier(
 
 	// Emit an event which signals that the morse account has been claimed.
 	event := migrationtypes.EventMorseSupplierClaimed{
-		ShannonDestAddress:   msg.ShannonDestAddress,
 		MorseSrcAddress:      msg.MorseSrcAddress,
 		ClaimedBalance:       claimedUnstakedBalance,
 		ClaimedSupplierStake: claimedSupplierStake,

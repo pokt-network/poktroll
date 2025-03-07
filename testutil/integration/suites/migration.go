@@ -201,6 +201,7 @@ func (s *MigrationModuleSuite) ClaimMorseSupplier(
 
 	morseClaimMsg, err := migrationtypes.NewMsgClaimMorseSupplier(
 		shannonDestAddr,
+		shannonDestAddr,
 		expectedMorseSrcAddr,
 		morsePrivateKey,
 		services,

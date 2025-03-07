@@ -148,6 +148,7 @@ func TestMsgServer_ClaimMorseSupplier_SuccessNewSupplier(t *testing.T) {
 	// Claim the MorseClaimableAccount.
 	msgClaim, err := migrationtypes.NewMsgClaimMorseSupplier(
 		shannonDestAddr,
+		shannonDestAddr,
 		morseClaimableAccount.GetMorseSrcAddress(),
 		morsePrivKey,
 		testSupplierServices,
@@ -180,7 +181,6 @@ func TestMsgServer_ClaimMorseSupplier_SuccessNewSupplier(t *testing.T) {
 
 	// Assert that an event is emitted for each claim.
 	expectedEvent := &migrationtypes.EventMorseSupplierClaimed{
-		ShannonDestAddress:   msgClaim.ShannonDestAddress,
 		MorseSrcAddress:      msgClaim.MorseSrcAddress,
 		ClaimedBalance:       expectedClaimedUnstakedTokens,
 		ClaimedSupplierStake: supplierStake,
@@ -225,8 +225,9 @@ func TestMsgServer_ClaimMorseSupplier_Error(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	// Claim the MorseClaimableAccount with a random Shannon address.
+	// Claim the MorseClaimableAccount with random Shannon owner & operator addresses.
 	msgClaim, err := migrationtypes.NewMsgClaimMorseSupplier(
+		sample.AccAddress(),
 		sample.AccAddress(),
 		accountState.Accounts[0].GetMorseSrcAddress(),
 		morsePrivKey,
