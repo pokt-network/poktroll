@@ -156,7 +156,6 @@ func TestMsgServer_ClaimMorseApplication_SuccessNewApplication(t *testing.T) {
 
 	// Assert that an event is emitted for each claim.
 	expectedEvent := &migrationtypes.EventMorseApplicationClaimed{
-		ShannonDestAddress:      msgClaim.ShannonDestAddress,
 		MorseSrcAddress:         msgClaim.MorseSrcAddress,
 		ClaimedBalance:          expectedClaimedUnstakedTokens,
 		ClaimedApplicationStake: applicationStake,
