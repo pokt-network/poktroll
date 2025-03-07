@@ -180,6 +180,7 @@ func defaultConfigWithMocks(ctrl *gomock.Controller) *MigrationKeeperConfig {
 func mockBankKeeperSpendableCoins(_ context.Context, addr cosmostypes.AccAddress) cosmostypes.Coins {
 	mapMu.RLock()
 	defer mapMu.RUnlock()
+
 	if coins, ok := mapAccAddrCoins[addr.String()]; ok {
 		return coins
 	}
@@ -191,7 +192,8 @@ func mockBankKeeperSpendableCoins(_ context.Context, addr cosmostypes.AccAddress
 func mockBankKeeperMintCoins(
 	_ context.Context,
 	moduleName string,
-	mintCoins cosmostypes.Coins) error {
+	mintCoins cosmostypes.Coins,
+) error {
 	mapMu.Lock()
 	defer mapMu.Unlock()
 	moduleAddr := authtypes.NewModuleAddress(moduleName)

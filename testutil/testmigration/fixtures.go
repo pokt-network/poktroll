@@ -22,6 +22,10 @@ const (
 	MorseUnstakedActor = MorseAccountActorType(iota)
 	MorseApplicationActor
 	MorseSupplierActor
+
+	// NumMorseAccountActorTypes is the number of MorseAccountActorTypes.
+	// It takes advantage of the fact that the enum is zero-indexed.
+	NumMorseAccountActorTypes
 )
 
 // MorseAccountActorTypeDistributionFn is a function which returns a MorseAccountActorType
@@ -30,15 +34,9 @@ const (
 type MorseAccountActorTypeDistributionFn func(index uint64) MorseAccountActorType
 
 // RoundRobinAllMorseAccountActorTypes cyclically returns each MorseAccountActorType, one after the other, as the index increases.
+// It is used to map a test account index to the test actor that's generated.
 func RoundRobinAllMorseAccountActorTypes(index uint64) MorseAccountActorType {
-	switch index % 3 {
-	case 0:
-		return MorseUnstakedActor
-	case 1:
-		return MorseApplicationActor
-	default:
-		return MorseSupplierActor
-	}
+	return MorseAccountActorType(index % uint64(NumMorseAccountActorTypes))
 }
 
 // AllUnstakedMorseAccountActorType returns MorseUnstakedActor for every index.
@@ -117,7 +115,7 @@ func NewMorseStateExportAndAccountState(
 		morseAccountType := distributionFn(uint64(i))
 		switch morseAccountType {
 		case MorseUnstakedActor:
-			// No-op.
+			// No-op; no staked actor to generate.
 		case MorseApplicationActor:
 			// Add an application.
 			morseStateExport.AppState.Application.Applications = append(
@@ -126,8 +124,8 @@ func NewMorseStateExportAndAccountState(
 			)
 		case MorseSupplierActor:
 			// Add a supplier.
-			// In Morse, a node (aka a Service) is a Shannon supplier.
-			// In Morse, Validators are, by default, the top 1000 staked nodes.
+			// In Morse, a Node (aka a Servicer) is a Shannon Supplier.
+			// In Morse, Validators are, by default, the top 1000 staked Nodes.
 			morseStateExport.AppState.Pos.Validators = append(
 				morseStateExport.AppState.Pos.Validators,
 				GenMorseValidator(t, uint64(i)),
