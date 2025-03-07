@@ -22,7 +22,7 @@ service Query {
   }
   
   // Queries a list of MorseClaimableAccount items.
-  rpc MorseClaimableAccount    (QueryGetMorseClaimableAccountRequest) returns (QueryGetMorseClaimableAccountResponse) {
+  rpc MorseClaimableAccount    (QueryMorseClaimableAccountRequest) returns (QueryMorseClaimableAccountResponse) {
     option (google.api.http).get = "/pokt-network/poktroll/migration/morse_claimable_account/{address}";
   
   }
@@ -41,11 +41,11 @@ message QueryParamsResponse {
   Params params = 1 [(gogoproto.nullable) = false, (amino.dont_omitempty) = true];
 }
 
-message QueryGetMorseClaimableAccountRequest {
+message QueryMorseClaimableAccountRequest {
   string address = 1;
 }
 
-message QueryGetMorseClaimableAccountResponse {
+message QueryMorseClaimableAccountResponse {
   MorseClaimableAccount morseClaimableAccount = 1 [(gogoproto.nullable) = false];
 }
 

@@ -12,6 +12,8 @@ import TabItem from '@theme/TabItem';
 
 See the [Full Node Cheat Sheet](../cheat_sheets/full_node_cheatsheet.md) if you want to just copy-pasta a few commands.
 
+**These instructions are intended for Debian-based systems.**
+
 :::
 
 ---
@@ -59,7 +61,7 @@ to enable automatic binary upgrades.
 
 ### 1. Install Dependencies
 
-Update your package list and install necessary dependencies:
+1. **Install `curl`, `tar`, `wget`, `jq`**
 
 ```bash
 sudo apt-get update
@@ -120,17 +122,8 @@ Cosmovisor manages the binary upgrades for your node. There are two options to i
 mkdir -p $HOME/.local/bin
 COSMOVISOR_VERSION="v1.7.1"
 
-ARCH=$(uname -m)
-if [ "$ARCH" = "x86_64" ]; then
-    ARCH="amd64"
-elif [ "$ARCH" = "aarch64" ]; then
-    ARCH="arm64"
-fi
-
-curl -L "https://github.com/cosmos/cosmos-sdk/releases/download/cosmovisor%2F${COSMOVISOR_VERSION}/cosmovisor-${COSMOVISOR_VERSION}-linux-${ARCH}.tar.gz" | tar -zxvf - -C $HOME/.local/bin
-
-echo 'export PATH=$HOME/.local/bin:$PATH' >> ~/.profile
-source ~/.profile
+# Verify the install
+cosmovisor version
 ```
 
 ### 5. Retrieve the Latest Genesis File
@@ -426,7 +419,7 @@ After=network-online.target
 
 [Service]
 User=poktroll
-ExecStart=/home/poktroll/.local/bin/cosmovisor run start --home=/home/poktroll/.poktroll
+ExecStart=/home/poktroll/go/bin/cosmovisor run start --home=/home/poktroll/.poktroll
 Restart=always
 RestartSec=3
 LimitNOFILE=infinity
@@ -458,15 +451,13 @@ Choose the appropriate method for your system:
 
 1. **Using UFW**:
 
-   ```bash
-   sudo ufw allow 26656/tcp
-   ```
+```bash
+# [REQUIRED] Expose P2P
+sudo ufw allow 26656/tcp
 
 2. **Using iptables**:
 
-   ```bash
-   sudo iptables -A INPUT -p tcp --dport 26656 -j ACCEPT
-   ```
+b. **Configuring your firewall for iptables**:
 
 3. **Cloud Provider Settings**: If running on a cloud provider (AWS, GCP, Azure, etc.), configure security groups or firewall rules to allow inbound traffic on port 26656.
 

@@ -50,12 +50,12 @@ func (msg *MsgImportMorseClaimableAccounts) ValidateBasic() error {
 
 	// Validate the given hash (i.e. the MorseAccountStateHash field) length.
 	if len(givenHash) != sha256.Size {
-		return ErrMorseAccountState.Wrapf("invalid MorseAccountStateHash size")
+		return ErrMorseAccountsImport.Wrapf("invalid MorseAccountStateHash size")
 	}
 
 	// Validate the given hash matches the computed hash.
 	if !bytes.Equal(computedHash, givenHash) {
-		return ErrMorseAccountState.Wrapf(
+		return ErrMorseAccountsImport.Wrapf(
 			"computed MorseAccountState hash (%s) doesn't match the given MorseAccountStateHash (%s)",
 			computedHash, givenHash,
 		)

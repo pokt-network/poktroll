@@ -33,7 +33,7 @@ type QueryClient interface {
 	// Parameters queries the parameters of the module.
 	Params(ctx context.Context, in *QueryParamsRequest, opts ...grpc.CallOption) (*QueryParamsResponse, error)
 	// Queries a list of MorseClaimableAccount items.
-	MorseClaimableAccount(ctx context.Context, in *QueryGetMorseClaimableAccountRequest, opts ...grpc.CallOption) (*QueryGetMorseClaimableAccountResponse, error)
+	MorseClaimableAccount(ctx context.Context, in *QueryMorseClaimableAccountRequest, opts ...grpc.CallOption) (*QueryMorseClaimableAccountResponse, error)
 	MorseClaimableAccountAll(ctx context.Context, in *QueryAllMorseClaimableAccountRequest, opts ...grpc.CallOption) (*QueryAllMorseClaimableAccountResponse, error)
 }
 
@@ -55,9 +55,9 @@ func (c *queryClient) Params(ctx context.Context, in *QueryParamsRequest, opts .
 	return out, nil
 }
 
-func (c *queryClient) MorseClaimableAccount(ctx context.Context, in *QueryGetMorseClaimableAccountRequest, opts ...grpc.CallOption) (*QueryGetMorseClaimableAccountResponse, error) {
+func (c *queryClient) MorseClaimableAccount(ctx context.Context, in *QueryMorseClaimableAccountRequest, opts ...grpc.CallOption) (*QueryMorseClaimableAccountResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(QueryGetMorseClaimableAccountResponse)
+	out := new(QueryMorseClaimableAccountResponse)
 	err := c.cc.Invoke(ctx, Query_MorseClaimableAccount_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -84,7 +84,7 @@ type QueryServer interface {
 	// Parameters queries the parameters of the module.
 	Params(context.Context, *QueryParamsRequest) (*QueryParamsResponse, error)
 	// Queries a list of MorseClaimableAccount items.
-	MorseClaimableAccount(context.Context, *QueryGetMorseClaimableAccountRequest) (*QueryGetMorseClaimableAccountResponse, error)
+	MorseClaimableAccount(context.Context, *QueryMorseClaimableAccountRequest) (*QueryMorseClaimableAccountResponse, error)
 	MorseClaimableAccountAll(context.Context, *QueryAllMorseClaimableAccountRequest) (*QueryAllMorseClaimableAccountResponse, error)
 	mustEmbedUnimplementedQueryServer()
 }
@@ -96,7 +96,7 @@ type UnimplementedQueryServer struct {
 func (UnimplementedQueryServer) Params(context.Context, *QueryParamsRequest) (*QueryParamsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Params not implemented")
 }
-func (UnimplementedQueryServer) MorseClaimableAccount(context.Context, *QueryGetMorseClaimableAccountRequest) (*QueryGetMorseClaimableAccountResponse, error) {
+func (UnimplementedQueryServer) MorseClaimableAccount(context.Context, *QueryMorseClaimableAccountRequest) (*QueryMorseClaimableAccountResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method MorseClaimableAccount not implemented")
 }
 func (UnimplementedQueryServer) MorseClaimableAccountAll(context.Context, *QueryAllMorseClaimableAccountRequest) (*QueryAllMorseClaimableAccountResponse, error) {
@@ -134,7 +134,7 @@ func _Query_Params_Handler(srv interface{}, ctx context.Context, dec func(interf
 }
 
 func _Query_MorseClaimableAccount_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(QueryGetMorseClaimableAccountRequest)
+	in := new(QueryMorseClaimableAccountRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -146,7 +146,7 @@ func _Query_MorseClaimableAccount_Handler(srv interface{}, ctx context.Context, 
 		FullMethod: Query_MorseClaimableAccount_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(QueryServer).MorseClaimableAccount(ctx, req.(*QueryGetMorseClaimableAccountRequest))
+		return srv.(QueryServer).MorseClaimableAccount(ctx, req.(*QueryMorseClaimableAccountRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
