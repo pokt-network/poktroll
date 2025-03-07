@@ -19,46 +19,6 @@ import (
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
-var (
-	stakeOffset = cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 9999)
-
-	testMorseClaimAppCases = []struct {
-		desc     string
-		getStake func(s *MigrationModuleTestSuite) *cosmostypes.Coin
-	}{
-		{
-			desc:     "claim morse application with same staked/unstaked ratio (default)",
-			getStake: func(_ *MigrationModuleTestSuite) *cosmostypes.Coin { return nil },
-		},
-		{
-			desc: "claim morse application with same staked/unstaked ratio (explicit)",
-			getStake: func(s *MigrationModuleTestSuite) *cosmostypes.Coin {
-				stake := s.GetAccountState(s.T()).Accounts[0].
-					GetApplicationStake()
-				return &stake
-			},
-		},
-		{
-			desc: "claim morse application with higher staked/unstaked ratio",
-			getStake: func(s *MigrationModuleTestSuite) *cosmostypes.Coin {
-				stake := s.GetAccountState(s.T()).Accounts[1].
-					GetApplicationStake().
-					Add(stakeOffset)
-				return &stake
-			},
-		},
-		{
-			desc: "claim morse application with lower staked/unstaked ratio",
-			getStake: func(s *MigrationModuleTestSuite) *cosmostypes.Coin {
-				stake := s.GetAccountState(s.T()).Accounts[2].
-					GetApplicationStake().
-					Sub(stakeOffset)
-				return &stake
-			},
-		},
-	}
-)
-
 // TestClaimMorseApplication exercises claiming of a MorseClaimableAccount as a new staked application.
 func (s *MigrationModuleTestSuite) TestClaimMorseNewApplication() {
 	s.GenerateMorseAccountState(s.T(), s.numMorseClaimableAccounts, testmigration.AllApplicationMorseAccountActorType)
