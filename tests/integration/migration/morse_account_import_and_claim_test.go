@@ -12,7 +12,9 @@ import (
 	"github.com/pokt-network/poktroll/app/volatile"
 	"github.com/pokt-network/poktroll/testutil/integration/suites"
 	"github.com/pokt-network/poktroll/testutil/sample"
+	"github.com/pokt-network/poktroll/testutil/testmigration"
 	migrationtypes "github.com/pokt-network/poktroll/x/migration/types"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 type MigrationModuleTestSuite struct {
@@ -40,7 +42,7 @@ func TestMigrationModuleSuite(t *testing.T) {
 
 // TestImportMorseClaimableAccounts exercises importing and persistence of morse claimable accounts.
 func (s *MigrationModuleTestSuite) TestImportMorseClaimableAccounts() {
-	s.GenerateMorseAccountState(s.T(), s.numMorseClaimableAccounts)
+	s.GenerateMorseAccountState(s.T(), s.numMorseClaimableAccounts, testmigration.RoundRobinAllMorseAccountActorTypes)
 	msgImportRes := s.ImportMorseClaimableAccounts(s.T())
 	morseAccountState := s.GetAccountState(s.T())
 	morseAccountStateHash, err := morseAccountState.GetHash()
@@ -72,7 +74,7 @@ func (s *MigrationModuleTestSuite) TestImportMorseClaimableAccounts() {
 // It only exercises claiming of account balances and does not exercise
 // the staking any actors as a result of claiming.
 func (s *MigrationModuleTestSuite) TestClaimMorseAccount() {
-	s.GenerateMorseAccountState(s.T(), s.numMorseClaimableAccounts)
+	s.GenerateMorseAccountState(s.T(), s.numMorseClaimableAccounts, testmigration.RoundRobinAllMorseAccountActorTypes)
 	s.ImportMorseClaimableAccounts(s.T())
 
 	shannonDestAddr := sample.AccAddress()
@@ -89,10 +91,14 @@ func (s *MigrationModuleTestSuite) TestClaimMorseAccount() {
 		Add(expectedMorseClaimableAccount.GetApplicationStake()).
 		Add(expectedMorseClaimableAccount.GetSupplierStake())
 
+	s.GetSharedParams(s.T())
+	sharedParams := s.GetSharedParams(s.T())
+	currentHeight := s.SdkCtx().BlockHeight()
+	expectedSessionEndHeight := sharedtypes.GetSessionEndHeight(&sharedParams, currentHeight)
 	expectedClaimAccountRes := &migrationtypes.MsgClaimMorseAccountResponse{
-		MorseSrcAddress: morseSrcAddr,
-		ClaimedBalance:  expectedBalance,
-		ClaimedAtHeight: s.SdkCtx().BlockHeight() - 1,
+		MorseSrcAddress:  morseSrcAddr,
+		ClaimedBalance:   expectedBalance,
+		SessionEndHeight: expectedSessionEndHeight,
 	}
 	require.Equal(s.T(), expectedClaimAccountRes, claimAccountRes)
 

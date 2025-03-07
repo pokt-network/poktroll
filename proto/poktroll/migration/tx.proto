@@ -110,8 +110,8 @@ message MsgClaimMorseAccountResponse {
   // The balance which was claimed.
   cosmos.base.v1beta1.Coin claimed_balance = 2 [(gogoproto.jsontag) = "claimed_balance", (gogoproto.nullable) = false];
 
-  // The height (on Shannon) at which the claim was created.
-  int64 claimed_at_height = 3;
+  // The session end height (on Shannon) in which the claim was committed (i.e. claimed).
+  int64 session_end_height = 3 [(gogoproto.jsontag) = "session_end_height"];
 }
 
 // TODO_UPNEXT(@bryanchriswhite, #1034):
