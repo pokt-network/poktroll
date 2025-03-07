@@ -106,7 +106,7 @@ func (s *MigrationModuleTestSuite) TestClaimMorseExistingApplication() {
 			shannonDestAddr := sample.AccAddress()
 			shannonDestAccAddr := cosmostypes.MustAccAddressFromBech32(shannonDestAddr)
 
-			initialAppStake := &s.appMinStake
+			initialAppStake := &s.minStake
 			s.FundAddress(s.T(), shannonDestAccAddr, initialAppStake.Amount.Int64())
 			s.AppSuite.StakeApp(s.T(), shannonDestAddr, initialAppStake.Amount.Int64(), []string{"nosvc"})
 
@@ -216,7 +216,7 @@ func (s *MigrationModuleTestSuite) TestClaimMorseApplication_ErrorMinStake() {
 	require.Contains(s.T(), strings.ReplaceAll(err.Error(), `\`, ""), status.Error(
 		codes.InvalidArgument,
 		apptypes.ErrAppInvalidStake.Wrapf("application %q must stake at least %s",
-			shannonDestAddr, s.appMinStake,
+			shannonDestAddr, s.minStake,
 		).Error(),
 	).Error())
 

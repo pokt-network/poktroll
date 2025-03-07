@@ -14,6 +14,7 @@ import (
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	migrationtypes "github.com/pokt-network/poktroll/x/migration/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
+	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 )
 
 const (
@@ -31,7 +32,8 @@ type MigrationModuleTestSuite struct {
 	// generate when calling #GenerateMorseAccountState.
 	numMorseClaimableAccounts int
 
-	appMinStake cosmostypes.Coin
+	// minStake is used to set the on-chain min stake for the application & supplier modules.
+	minStake cosmostypes.Coin
 
 	// AppServiceConfig is the service config to be used when claiming morse accounts.
 	// It is assigned in the #SetupTest method.
@@ -47,11 +49,12 @@ func (s *MigrationModuleTestSuite) ResetTestApp(
 	numMorseClaimableAccounts int,
 	minStake cosmostypes.Coin,
 ) {
-	s.appMinStake = minStake
+	s.minStake = minStake
 
 	// Set the default application min stake.
 	// DEV_NOTE: This is simpler than modifying genesis or on-chain params.
-	apptypes.DefaultMinStake = s.appMinStake
+	apptypes.DefaultMinStake = s.minStake
+	suppliertypes.DefaultMinStake = s.minStake
 
 	// Initialize a new integration app for the suite.
 	s.NewApp(s.T())
