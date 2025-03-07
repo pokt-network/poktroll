@@ -128,7 +128,6 @@ func (k msgServer) ClaimMorseApplication(ctx context.Context, msg *migrationtype
 
 	// Emit an event which signals that the morse account has been claimed.
 	event := migrationtypes.EventMorseApplicationClaimed{
-		ShannonDestAddress:      msg.ShannonDestAddress,
 		MorseSrcAddress:         msg.MorseSrcAddress,
 		ClaimedBalance:          claimedUnstakedBalance,
 		ClaimedApplicationStake: claimedAppStake,
