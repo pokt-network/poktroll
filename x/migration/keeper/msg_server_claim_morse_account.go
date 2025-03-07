@@ -51,22 +51,6 @@ func (k msgServer) ClaimMorseAccount(ctx context.Context, msg *migrationtypes.Ms
 		)
 	}
 
-	// Validate the Morse signature.
-	publicKey := ed25519.PubKey(morseClaimableAccount.GetPublicKey())
-	if err := msg.ValidateMorseSignature(publicKey); err != nil {
-		return nil, status.Error(codes.InvalidArgument, err.Error())
-	}
-
-	// Set ShannonDestAddress & ClaimedAtHeight (claim).
-	morseClaimableAccount.ShannonDestAddress = shannonAccAddr.String()
-	morseClaimableAccount.ClaimedAtHeight = sdkCtx.BlockHeight()
-
-	// Update the MorseClaimableAccount.
-	k.SetMorseClaimableAccount(
-		sdkCtx,
-		morseClaimableAccount,
-	)
-
 	// ONLY allow claiming as a non-actor account if the MorseClaimableAccount
 	// WAS NOT staked as an application or supplier.
 	// A claim of staked POKT from Morse to Shannon
@@ -90,6 +74,22 @@ func (k msgServer) ClaimMorseAccount(ctx context.Context, msg *migrationtypes.Ms
 			).Error(),
 		)
 	}
+
+	// Validate the Morse signature.
+	publicKey := ed25519.PubKey(morseClaimableAccount.GetPublicKey())
+	if err := msg.ValidateMorseSignature(publicKey); err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
+
+	// Set ShannonDestAddress & ClaimedAtHeight (claim).
+	morseClaimableAccount.ShannonDestAddress = shannonAccAddr.String()
+	morseClaimableAccount.ClaimedAtHeight = sdkCtx.BlockHeight()
+
+	// Update the MorseClaimableAccount.
+	k.SetMorseClaimableAccount(
+		sdkCtx,
+		morseClaimableAccount,
+	)
 
 	// Mint the totalTokens to the shannonDestAddress account balance.
 	unstakedBalance := morseClaimableAccount.UnstakedBalance
