@@ -62,10 +62,11 @@ func TestCollectMorseAccounts(t *testing.T) {
 	require.Equal(t, expectedMorseAccountState, actualMorseAccountState)
 }
 
-// TestNewTestMorseStateExport exercises the NewTestMorseStateExport testutil function
-// by using it to generate a MorseStateExport which contains an increasing number of
-// accounts; verifying the number of accounts and their total balances and stakes of
-// each MorseStateExport's (via transformMorseState).
+// TestNewTestMorseStateExport exercises the NewTestMorseStateExport testutil function.
+// It generates MorseStateExport instances with an increasing number of accounts, then verifies:
+//   - The correct number of accounts in each export
+//   - The total balances in each export
+//   - The total stakes in each export (via transformMorseState)
 func TestNewTestMorseStateExport(t *testing.T) {
 	for numAccounts := 1; numAccounts <= 10; numAccounts++ {
 		t.Run(fmt.Sprintf("num_accounts=%d", numAccounts), func(t *testing.T) {

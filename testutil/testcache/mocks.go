@@ -2,6 +2,8 @@ package testcache
 
 import "github.com/stretchr/testify/mock"
 
+// MockKeyValueCache is a mock implementation of the KeyValueCache interface.
+// DEV_NOTE: Since gomock does not support generics, we're using testify/mock instead here.
 type MockKeyValueCache[T any] struct {
 	mock.Mock
 }
@@ -9,6 +11,7 @@ type MockKeyValueCache[T any] struct {
 func NewNoopKeyValueCache[T any]() *MockKeyValueCache[T] {
 	var zeroT T
 	cache := &MockKeyValueCache[T]{}
+	// Always simulate a cache miss.
 	cache.On("Get", mock.Anything).Return(zeroT, false)
 	cache.On("Set", mock.Anything, mock.Anything)
 	cache.On("Delete", mock.Anything)
