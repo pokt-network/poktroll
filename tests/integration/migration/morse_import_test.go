@@ -9,6 +9,7 @@ import (
 	"github.com/pokt-network/poktroll/app/volatile"
 	"github.com/pokt-network/poktroll/testutil/integration/suites"
 	"github.com/pokt-network/poktroll/testutil/sample"
+	"github.com/pokt-network/poktroll/testutil/testmigration"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	migrationtypes "github.com/pokt-network/poktroll/x/migration/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
@@ -16,9 +17,12 @@ import (
 )
 
 const (
-	testServiceId             = "svc1"
-	mockMorseAccountStateHash = "d7469245aabadc98330f79eef9fb544aa3df0c7cbeabfc3f994fd419b2661633"
+	testServiceId                    = "svc1"
+	mockMorseAccountStateHash        = "d7469245aabadc98330f79eef9fb544aa3df0c7cbeabfc3f994fd419b2661633"
+	defaultNumMorseClaimableAccounts = 10
 )
+
+var defaultTestMinStake = cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 100)
 
 type MigrationModuleTestSuite struct {
 	suites.MigrationModuleSuite
@@ -27,7 +31,7 @@ type MigrationModuleTestSuite struct {
 	// generate when calling #GenerateMorseAccountState.
 	numMorseClaimableAccounts int
 
-	// minStake is used to set the on-chain min stake for the application, supplier, & gateway modules.
+	// minStake is used to set the on-chain min stake for the application & supplier modules.
 	minStake cosmostypes.Coin
 
 	// appServiceConfig is the service config to be used when claiming morse accounts as applications.
@@ -40,7 +44,15 @@ type MigrationModuleTestSuite struct {
 }
 
 func (s *MigrationModuleTestSuite) SetupTest() {
-	s.minStake = cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 100)
+	s.ResetTestApp(defaultNumMorseClaimableAccounts, defaultTestMinStake)
+}
+
+// ResetTestApp re-runs the #SetupTest logic with the given parameters.
+func (s *MigrationModuleTestSuite) ResetTestApp(
+	numMorseClaimableAccounts int,
+	minStake cosmostypes.Coin,
+) {
+	s.minStake = minStake
 
 	// Set the default application & supplier min stakes.
 	// DEV_NOTE: This is simpler than modifying genesis or on-chain params.
@@ -50,7 +62,7 @@ func (s *MigrationModuleTestSuite) SetupTest() {
 	// Initialize a new integration app for the suite.
 	s.NewApp(s.T())
 
-	s.numMorseClaimableAccounts = 10
+	s.numMorseClaimableAccounts = numMorseClaimableAccounts
 	s.appServiceConfig = &sharedtypes.ApplicationServiceConfig{ServiceId: testServiceId}
 	s.supplierServiceConfig = &sharedtypes.SupplierServiceConfig{
 		ServiceId: testServiceId,
@@ -80,7 +92,7 @@ func TestMigrationModuleSuite(t *testing.T) {
 
 // TestImportMorseClaimableAccounts exercises importing and persistence of morse claimable accounts.
 func (s *MigrationModuleTestSuite) TestImportMorseClaimableAccounts() {
-	s.GenerateMorseAccountState(s.T(), s.numMorseClaimableAccounts)
+	s.GenerateMorseAccountState(s.T(), s.numMorseClaimableAccounts, testmigration.RoundRobinAllMorseAccountActorTypes)
 	msgImportRes := s.ImportMorseClaimableAccounts(s.T())
 	morseAccountState := s.GetAccountState(s.T())
 	morseAccountStateHash, err := morseAccountState.GetHash()
@@ -110,7 +122,7 @@ func (s *MigrationModuleTestSuite) TestImportMorseClaimableAccounts() {
 
 // TestImportMorseClaimableAccounts_ErrorInvalidAuthority tests the error case when the authority address is invalid.
 func (s *MigrationModuleTestSuite) TestImportMorseClaimableAccounts_ErrorInvalidAuthority() {
-	s.GenerateMorseAccountState(s.T(), s.numMorseClaimableAccounts)
+	s.GenerateMorseAccountState(s.T(), s.numMorseClaimableAccounts, testmigration.RoundRobinAllMorseAccountActorTypes)
 
 	// random authority address
 	invalidAuthority := sample.AccAddress()
@@ -129,7 +141,7 @@ func (s *MigrationModuleTestSuite) TestImportMorseClaimableAccounts_ErrorInvalid
 
 // TestImportMorseClaimableAccounts_ErrorInvalidHash tests the error case when the hash is invalid.
 func (s *MigrationModuleTestSuite) TestImportMorseClaimableAccounts_ErrorInvalidHash() {
-	s.GenerateMorseAccountState(s.T(), s.numMorseClaimableAccounts)
+	s.GenerateMorseAccountState(s.T(), s.numMorseClaimableAccounts, testmigration.RoundRobinAllMorseAccountActorTypes)
 
 	msgImport, err := migrationtypes.NewMsgImportMorseClaimableAccounts(
 		sample.AccAddress(), // random authority address

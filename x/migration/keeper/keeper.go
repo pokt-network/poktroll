@@ -23,6 +23,7 @@ type (
 
 		accountKeeper  types.AccountKeeper
 		bankKeeper     types.BankKeeper
+		sharedKeeper   types.SharedKeeper
 		gatewayKeeper  types.GatewayKeeper
 		appKeeper      types.ApplicationKeeper
 		supplierKeeper types.SupplierKeeper
@@ -36,6 +37,7 @@ func NewKeeper(
 	authority string,
 	accountKeeper types.AccountKeeper,
 	bankKeeper types.BankKeeper,
+	sharedKeeper types.SharedKeeper,
 	gatewayKeeper types.GatewayKeeper,
 	appKeeper types.ApplicationKeeper,
 	supplierKeeper types.SupplierKeeper,
@@ -51,6 +53,7 @@ func NewKeeper(
 		logger:         logger,
 		accountKeeper:  accountKeeper,
 		bankKeeper:     bankKeeper,
+		sharedKeeper:   sharedKeeper,
 		gatewayKeeper:  gatewayKeeper,
 		appKeeper:      appKeeper,
 		supplierKeeper: supplierKeeper,

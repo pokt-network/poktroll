@@ -2192,6 +2192,7 @@ type Application struct {
 	Address string `protobuf:"bytes,1,opt,name=address,proto3" json:"address,omitempty"`
 	// Total amount of staked uPOKT
 	Stake *v1beta1.Coin `protobuf:"bytes,2,opt,name=stake,proto3" json:"stake,omitempty"`
+	// TODO_MAINNET: Refactor this to be a single service config field.
 	// CRITICAL: Must contain EXACTLY ONE service config
 	// This prevents applications from over-servicing.
 	// Kept as repeated field for legacy and future compatibility

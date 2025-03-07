@@ -26,6 +26,7 @@ func (k msgServer) StakeSupplier(ctx context.Context, msg *suppliertypes.MsgStak
 	)
 
 	logger := k.Logger().With("method", "StakeSupplier")
+	// Create or update a supplier using the configuration in the msg provided.
 	supplier, err := k.Keeper.StakeSupplier(ctx, logger, msg)
 	if err != nil {
 		return nil, err

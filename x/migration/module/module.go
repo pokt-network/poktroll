@@ -98,6 +98,7 @@ type AppModule struct {
 	keeper         keeper.Keeper
 	accountKeeper  types.AccountKeeper
 	bankKeeper     types.BankKeeper
+	sharedKeeper   types.SharedKeeper
 	appKeeper      types.ApplicationKeeper
 	supplierKeeper types.SupplierKeeper
 }
@@ -107,6 +108,7 @@ func NewAppModule(
 	keeper keeper.Keeper,
 	accountKeeper types.AccountKeeper,
 	bankKeeper types.BankKeeper,
+	sharedKeeper types.SharedKeeper,
 	appKeeper types.ApplicationKeeper,
 	supplierKeeper types.SupplierKeeper,
 ) AppModule {
@@ -115,6 +117,7 @@ func NewAppModule(
 		keeper:         keeper,
 		accountKeeper:  accountKeeper,
 		bankKeeper:     bankKeeper,
+		sharedKeeper:   sharedKeeper,
 		appKeeper:      appKeeper,
 		supplierKeeper: supplierKeeper,
 	}
@@ -188,6 +191,7 @@ type ModuleInputs struct {
 
 	AccountKeeper     types.AccountKeeper
 	BankKeeper        types.BankKeeper
+	SharedKeeper      types.SharedKeeper
 	GatewayKeeper     types.GatewayKeeper
 	ApplicationKeeper types.ApplicationKeeper
 	SupplierKeeper    types.SupplierKeeper
@@ -213,6 +217,7 @@ func ProvideModule(in ModuleInputs) ModuleOutputs {
 		authority.String(),
 		in.AccountKeeper,
 		in.BankKeeper,
+		in.SharedKeeper,
 		in.GatewayKeeper,
 		in.ApplicationKeeper,
 		in.SupplierKeeper,
@@ -222,6 +227,7 @@ func ProvideModule(in ModuleInputs) ModuleOutputs {
 		k,
 		in.AccountKeeper,
 		in.BankKeeper,
+		in.SharedKeeper,
 		in.ApplicationKeeper,
 		in.SupplierKeeper,
 	)

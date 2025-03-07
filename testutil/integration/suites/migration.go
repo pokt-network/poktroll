@@ -3,7 +3,6 @@ package suites
 import (
 	"testing"
 
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 	"github.com/stretchr/testify/require"
@@ -32,9 +31,9 @@ type MigrationModuleSuite struct {
 
 // GenerateMorseAccountState generates a MorseAccountState with the given number of MorseClaimableAccounts.
 // It updates the suite's #numMorseClaimableAccounts and #accountState fields.
-func (s *MigrationModuleSuite) GenerateMorseAccountState(t *testing.T, numAccounts int) {
+func (s *MigrationModuleSuite) GenerateMorseAccountState(t *testing.T, numAccounts int, distributionFn testmigration.MorseAccountActorTypeDistributionFn) {
 	s.numMorseClaimableAccounts = numAccounts
-	_, s.accountState = testmigration.NewMorseStateExportAndAccountState(t, s.numMorseClaimableAccounts)
+	_, s.accountState = testmigration.NewMorseStateExportAndAccountState(t, s.numMorseClaimableAccounts, distributionFn)
 }
 
 // GetAccountState returns the suite's #accountState field.
@@ -71,7 +70,7 @@ func (s *MigrationModuleSuite) ClaimMorseAccount(
 ) (expectedMorseSrcAddr string, _ *migrationtypes.MsgClaimMorseAccountResponse) {
 	t.Helper()
 
-	morsePrivateKey := testmigration.NewMorsePrivateKey(t, morseAccountIdx)
+	morsePrivateKey := testmigration.GenMorsePrivateKey(t, morseAccountIdx)
 	expectedMorseSrcAddr = morsePrivateKey.PubKey().Address().String()
 	require.Equal(t, expectedMorseSrcAddr, s.accountState.Accounts[morseAccountIdx].MorseSrcAddress)
 
@@ -130,6 +129,21 @@ func (s *MigrationModuleSuite) QueryAllMorseClaimableAccounts(t *testing.T) []mi
 	return morseClaimableAcctRes.MorseClaimableAccount
 }
 
+// GetSharedParams returns the shared module params.
+func (s *MigrationModuleSuite) GetSharedParams(t *testing.T) sharedtypes.Params {
+	sharedClient := sharedtypes.NewQueryClient(s.GetApp().QueryHelper())
+	sharedParamsRes, err := sharedClient.Params(s.SdkCtx(), &sharedtypes.QueryParamsRequest{})
+	require.NoError(t, err)
+
+	return sharedParamsRes.Params
+}
+
+// GetSessionEndHeight returns the session end height for the given query height.
+func (s *MigrationModuleSuite) GetSessionEndHeight(t *testing.T, queryHeight int64) int64 {
+	sharedParams := s.GetSharedParams(t)
+	return sharedtypes.GetSessionEndHeight(&sharedParams, queryHeight)
+}
+
 // ClaimMorseApplication claims the given MorseClaimableAccount as a staked application
 // by running a MsgClaimMorseApplication message.
 // It returns the expected Morse source address and the MsgClaimMorseApplicationResponse.
@@ -137,12 +151,11 @@ func (s *MigrationModuleSuite) ClaimMorseApplication(
 	t *testing.T,
 	morseAccountIdx uint64,
 	shannonDestAddr string,
-	stake *sdk.Coin,
 	serviceConfig *sharedtypes.ApplicationServiceConfig,
 ) (expectedMorseSrcAddr string, _ *migrationtypes.MsgClaimMorseApplicationResponse) {
 	t.Helper()
 
-	morsePrivateKey := testmigration.NewMorsePrivateKey(t, morseAccountIdx)
+	morsePrivateKey := testmigration.GenMorsePrivateKey(t, morseAccountIdx)
 	expectedMorseSrcAddr = morsePrivateKey.PubKey().Address().String()
 	require.Equal(t,
 		expectedMorseSrcAddr,
@@ -153,7 +166,6 @@ func (s *MigrationModuleSuite) ClaimMorseApplication(
 		shannonDestAddr,
 		expectedMorseSrcAddr,
 		morsePrivateKey,
-		stake,
 		serviceConfig,
 	)
 	require.NoError(t, err)
