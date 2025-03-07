@@ -44,7 +44,7 @@ func AllUnstakedMorseAccountActorType(index uint64) MorseAccountActorType {
 	return NewSingleMorseAccountActorTypeFn(MorseUnstakedActor)(index)
 }
 
-// AllApplicationMorseAccountActorType returns MorseUnstakedActor for every index.
+// AllApplicationMorseAccountActorType returns MorseApplicationActor for every index.
 func AllApplicationMorseAccountActorType(index uint64) MorseAccountActorType {
 	return NewSingleMorseAccountActorTypeFn(MorseApplicationActor)(index)
 }
