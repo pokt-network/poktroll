@@ -2,6 +2,7 @@ package keeper
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"cosmossdk.io/log"
@@ -13,20 +14,23 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	"github.com/cosmos/cosmos-sdk/runtime"
-	sdk "github.com/cosmos/cosmos-sdk/types"
+	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 
+	"github.com/pokt-network/poktroll/app/volatile"
 	"github.com/pokt-network/poktroll/testutil/migration/mocks"
 	"github.com/pokt-network/poktroll/x/migration/keeper"
 	migrationtypes "github.com/pokt-network/poktroll/x/migration/types"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 // MigrationKeeperConfig is a configuration struct for the MigrationKeeper testutil.
 type MigrationKeeperConfig struct {
 	bankKeeper     migrationtypes.BankKeeper
+	sharedKeeper   migrationtypes.SharedKeeper
 	gatewayKeeper  migrationtypes.GatewayKeeper
 	appKeeper      migrationtypes.ApplicationKeeper
 	supplierKeeper migrationtypes.SupplierKeeper
@@ -42,7 +46,7 @@ type MigrationKeeperOptionFn func(cfg *MigrationKeeperConfig)
 func MigrationKeeper(
 	t testing.TB,
 	opts ...MigrationKeeperOptionFn,
-) (keeper.Keeper, sdk.Context) {
+) (keeper.Keeper, cosmostypes.Context) {
 	storeKey := storetypes.NewKVStoreKey(migrationtypes.StoreKey)
 
 	db := dbm.NewMemDB()
@@ -69,12 +73,13 @@ func MigrationKeeper(
 		authority.String(),
 		mockAccountKeeper,
 		cfg.bankKeeper,
+		cfg.sharedKeeper,
 		cfg.gatewayKeeper,
 		cfg.appKeeper,
 		cfg.supplierKeeper,
 	)
 
-	ctx := sdk.NewContext(stateStore, cmtproto.Header{}, false, log.NewNopLogger())
+	ctx := cosmostypes.NewContext(stateStore, cmtproto.Header{}, false, log.NewNopLogger())
 
 	// Initialize params
 	if err := k.SetParams(ctx, migrationtypes.DefaultParams()); err != nil {
@@ -112,25 +117,29 @@ func WithSupplierKeeper(supplierKeeper migrationtypes.SupplierKeeper) MigrationK
 	}
 }
 
+// defaultConfigWithMocks returns a MigrationKeeperConfig with:
+// 1. A Mocked bank keeper which respond the following methods by updating mapAccAddrCoins accordingly:
+//   - SpendableCoins
+//   - MintCoins
+//   - SendCoinsFromModuleToAccount
+//
+// 2. A Mocked shared keeper which responds to the Params method with the default params.
 func defaultConfigWithMocks(ctrl *gomock.Controller) *MigrationKeeperConfig {
 	mockBankKeeper := mocks.NewMockBankKeeper(ctrl)
 	mockBankKeeper.EXPECT().
 		SpendableCoins(gomock.Any(), gomock.Any()).
-		DoAndReturn(
-			func(ctx context.Context, addr sdk.AccAddress) sdk.Coins {
-				mapMu.RLock()
-				defer mapMu.RUnlock()
-				if coins, ok := mapAccAddrCoins[addr.String()]; ok {
-					return coins
-				}
-				return sdk.Coins{}
-			},
-		).AnyTimes()
+		DoAndReturn(mockBankKeeperSpendableCoins).AnyTimes()
 	mockBankKeeper.EXPECT().
 		MintCoins(gomock.Any(), gomock.Any(), gomock.Any()).
-		AnyTimes()
+		DoAndReturn(mockBankKeeperMintCoins).AnyTimes()
 	mockBankKeeper.EXPECT().
 		SendCoinsFromModuleToAccount(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
+		DoAndReturn(mockBankKeeperSendFromModuleToAccount).AnyTimes()
+
+	sharedKeeper := mocks.NewMockSharedKeeper(ctrl)
+	sharedKeeper.EXPECT().
+		GetParams(gomock.Any()).
+		Return(sharedtypes.DefaultParams()).
 		AnyTimes()
 
 	mockGatewayKeeper := mocks.NewMockGatewayKeeper(ctrl)
@@ -159,8 +168,79 @@ func defaultConfigWithMocks(ctrl *gomock.Controller) *MigrationKeeperConfig {
 
 	return &MigrationKeeperConfig{
 		bankKeeper:     mockBankKeeper,
+		sharedKeeper:   sharedKeeper,
 		gatewayKeeper:  mockGatewayKeeper,
 		appKeeper:      mockAppKeeper,
 		supplierKeeper: mockSupplierKeeper,
 	}
+}
+
+// mockBankKeeperSpendableCoins implements a static version of the corresponding bank
+// keeper method that interacts with an in-memory map of account addresses to balances.
+func mockBankKeeperSpendableCoins(_ context.Context, addr cosmostypes.AccAddress) cosmostypes.Coins {
+	mapMu.RLock()
+	defer mapMu.RUnlock()
+	if coins, ok := mapAccAddrCoins[addr.String()]; ok {
+		return coins
+	}
+	return cosmostypes.Coins{}
+}
+
+// mockBankKeeperMintCoins implements a static version of the corresponding bank
+// keeper method that interacts with an in-memory map of account addresses to balances.
+func mockBankKeeperMintCoins(
+	_ context.Context,
+	moduleName string,
+	mintCoins cosmostypes.Coins) error {
+	mapMu.Lock()
+	defer mapMu.Unlock()
+	moduleAddr := authtypes.NewModuleAddress(moduleName)
+
+	// Check for an existing balance
+	balance, ok := mapAccAddrCoins[moduleAddr.String()]
+	if !ok {
+		balance = cosmostypes.NewCoins(cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 0))
+	}
+
+	balance = balance.Add(mintCoins...)
+
+	// Update the balance.
+	mapAccAddrCoins[moduleAddr.String()] = balance
+
+	return nil
+}
+
+// mockBankKeeperSendFromModuleToAccount implements a static version of the corresponding
+// bank keeper method that interacts with an in-memory map of account addresses to balances.
+func mockBankKeeperSendFromModuleToAccount(
+	_ context.Context,
+	senderModule string,
+	recipientAddr cosmostypes.AccAddress,
+	sendCoins cosmostypes.Coins,
+) error {
+	mapMu.Lock()
+	defer mapMu.Unlock()
+	moduleAddr := authtypes.NewModuleAddress(senderModule)
+
+	moduleBalance, ok := mapAccAddrCoins[moduleAddr.String()]
+	if !ok {
+		return fmt.Errorf("no module account for %s (address %s)", senderModule, moduleAddr)
+	}
+
+	remainingModuleBalance, isNegative := moduleBalance.SafeSub(sendCoins...)
+	if isNegative {
+		return fmt.Errorf("not enough coins to send (%s) from module account %q", sendCoins, senderModule)
+	}
+
+	recipientBalance, ok := mapAccAddrCoins[recipientAddr.String()]
+	if !ok {
+		recipientBalance = cosmostypes.NewCoins(cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 0))
+	}
+
+	recipientBalance = recipientBalance.Add(sendCoins...)
+
+	mapAccAddrCoins[moduleAddr.String()] = remainingModuleBalance
+	mapAccAddrCoins[recipientAddr.String()] = recipientBalance
+
+	return nil
 }

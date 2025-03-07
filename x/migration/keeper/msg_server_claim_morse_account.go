@@ -9,6 +9,7 @@ import (
 	"google.golang.org/grpc/status"
 
 	migrationtypes "github.com/pokt-network/poktroll/x/migration/types"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 func (k msgServer) ClaimMorseAccount(ctx context.Context, msg *migrationtypes.MsgClaimMorseAccount) (*migrationtypes.MsgClaimMorseAccountResponse, error) {
@@ -66,23 +67,44 @@ func (k msgServer) ClaimMorseAccount(ctx context.Context, msg *migrationtypes.Ms
 		morseClaimableAccount,
 	)
 
-	// Add any actor stakes to the account balance because we're not creating
-	// a shannon actor (i.e. not a re-stake claim).
-	totalTokens := morseClaimableAccount.UnstakedBalance.
-		Add(morseClaimableAccount.ApplicationStake).
-		Add(morseClaimableAccount.SupplierStake)
+	// ONLY allow claiming as a non-actor account if the MorseClaimableAccount
+	// was NOT staked as an application or supplier. A claim of staked POKT from
+	// Morse to Shannon SHOULD NOT allow applications or suppliers to bypass the
+	// onchain unbonding period.
+	if !morseClaimableAccount.ApplicationStake.IsZero() {
+		return nil, status.Error(
+			codes.FailedPrecondition,
+			migrationtypes.ErrMorseAccountClaim.Wrapf(
+				"Morse account %q is staked as an application, please use `poktrolld migrate claim-application` instead",
+				morseClaimableAccount.GetMorseSrcAddress(),
+			).Error(),
+		)
+	}
+
+	if !morseClaimableAccount.SupplierStake.IsZero() {
+		return nil, status.Error(
+			codes.FailedPrecondition,
+			migrationtypes.ErrMorseAccountClaim.Wrapf(
+				"Morse account %q is staked as an supplier, please use `poktrolld migrate claim-supplier` instead",
+				morseClaimableAccount.GetMorseSrcAddress(),
+			).Error(),
+		)
+	}
 
 	// Mint the totalTokens to the shannonDestAddress account balance.
-	if err := k.MintClaimedMorseTokens(ctx, shannonAccAddr, totalTokens); err != nil {
+	unstakedBalance := morseClaimableAccount.UnstakedBalance
+	if err := k.MintClaimedMorseTokens(ctx, shannonAccAddr, unstakedBalance); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
 	// Emit an event which signals that the morse account has been claimed.
+	sharedParams := k.sharedKeeper.GetParams(ctx)
+	sessionEndHeight := sharedtypes.GetSessionEndHeight(&sharedParams, sdkCtx.BlockHeight())
 	event := migrationtypes.EventMorseAccountClaimed{
-		ClaimedAtHeight:    sdkCtx.BlockHeight(),
+		SessionEndHeight:   sessionEndHeight,
 		ShannonDestAddress: msg.ShannonDestAddress,
 		MorseSrcAddress:    msg.MorseSrcAddress,
-		ClaimedBalance:     totalTokens,
+		ClaimedBalance:     unstakedBalance,
 	}
 	if err := sdkCtx.EventManager().EmitTypedEvent(&event); err != nil {
 		return nil, status.Error(
@@ -96,8 +118,8 @@ func (k msgServer) ClaimMorseAccount(ctx context.Context, msg *migrationtypes.Ms
 	}
 
 	return &migrationtypes.MsgClaimMorseAccountResponse{
-		MorseSrcAddress: msg.MorseSrcAddress,
-		ClaimedBalance:  totalTokens,
-		ClaimedAtHeight: sdkCtx.BlockHeight(),
+		MorseSrcAddress:  msg.MorseSrcAddress,
+		ClaimedBalance:   unstakedBalance,
+		SessionEndHeight: sessionEndHeight,
 	}, nil
 }
