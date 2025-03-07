@@ -53,7 +53,7 @@ func initRootCmd(
 		queryCommand(),
 		txCommand(),
 		keys.Commands(),
-		migrate.MigrateCmd(),
+		migrate.Commands(),
 	)
 }
 
