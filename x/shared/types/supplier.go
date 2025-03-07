@@ -1,5 +1,7 @@
 package types
 
+import "slices"
+
 // SupplierNotUnstaking is the value of `unstake_session_end_height` if the
 // supplier is not actively in the unbonding period.
 const SupplierNotUnstaking uint64 = iota
@@ -11,25 +13,36 @@ func (s *Supplier) IsUnbonding() bool {
 	return s.UnstakeSessionEndHeight != SupplierNotUnstaking
 }
 
-// IsActive returns whether the supplier is allowed to serve requests for the
-// given serviceId and query height.
-// A supplier is active for a given service starting from the session following
-// the one during which the supplier staked for that service.
-// A supplier that has submitted an unstake message is active until the end of
-// the session containing the height at which unstake message was submitted.
+// IsActive checks if the supplier is authorized to serve requests for a specific service
+// at the given block height.
 func (s *Supplier) IsActive(queryHeight uint64, serviceId string) bool {
-	// Service that has been staked for is not active yet.
-	if s.ServicesActivationHeightsMap[serviceId] > queryHeight {
+	// Keep track of the most recent set of service configs that were active
+	// before the query height.
+	var servicesAtHeight []*SupplierServiceConfig
+
+	// Iterate through the service config history chronologically
+	for _, serviceUpdate := range s.ServiceConfigHistory {
+		// If this update takes effect after our query height, stop looking.
+		// We want the last update that was active before the query height.
+		if serviceUpdate.EffectiveBlockHeight > queryHeight {
+			break
+		}
+		// Keep updating our services list as we move forward in time.
+		servicesAtHeight = serviceUpdate.Services
+	}
+
+	// If we found no service configurations active at this height, supplier is not active.
+	if servicesAtHeight == nil {
 		return false
 	}
 
-	// If the supplier is not unbonding then its UnstakeSessionEndHeight is 0,
-	// which returns true for all query heights.
-	if s.IsUnbonding() {
-		return queryHeight > s.UnstakeSessionEndHeight
+	// Define a helper function to check if a service config matches our target service ID.
+	matchesServiceIdFn := func(config *SupplierServiceConfig) bool {
+		return config.ServiceId == serviceId
 	}
 
-	return true
+	// Check if any of the active services match our target service ID
+	return slices.ContainsFunc(servicesAtHeight, matchesServiceIdFn)
 }
 
 // HasOwner returns whether the given address is the supplier's owner address.

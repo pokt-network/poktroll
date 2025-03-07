@@ -157,19 +157,26 @@ func (s *applicationMinStakeTestSuite) stakeApp() {
 
 // stakeSupplier stakes a supplier for service 1.
 func (s *applicationMinStakeTestSuite) stakeSupplier() {
+	supplierServiceConfigs := []*sharedtypes.SupplierServiceConfig{
+		{
+			ServiceId: s.serviceId,
+			RevShare: []*sharedtypes.ServiceRevenueShare{
+				{
+					Address:            s.supplierBech32,
+					RevSharePercentage: 100,
+				},
+			},
+		},
+	}
 	s.keepers.SupplierKeeper.SetSupplier(s.ctx, sharedtypes.Supplier{
 		OwnerAddress:    s.supplierBech32,
 		OperatorAddress: s.supplierBech32,
 		Stake:           &suppliertypes.DefaultMinStake,
-		Services: []*sharedtypes.SupplierServiceConfig{
+		Services:        supplierServiceConfigs,
+		ServiceConfigHistory: []*sharedtypes.ServiceConfigUpdate{
 			{
-				ServiceId: s.serviceId,
-				RevShare: []*sharedtypes.ServiceRevenueShare{
-					{
-						Address:            s.supplierBech32,
-						RevSharePercentage: 100,
-					},
-				},
+				Services:             supplierServiceConfigs,
+				EffectiveBlockHeight: 1,
 			},
 		},
 	})

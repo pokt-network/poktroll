@@ -86,23 +86,27 @@ func (s *tokenLogicModuleTestSuite) SetupTest() {
 	}
 
 	supplierBech32 := sample.AccAddress()
+	services := []*sharedtypes.SupplierServiceConfig{
+		{
+			ServiceId: s.service.GetId(),
+			RevShare: []*sharedtypes.ServiceRevenueShare{
+				{
+					Address:            supplierBech32,
+					RevSharePercentage: 100,
+				},
+			},
+		},
+	}
 	s.supplier = &sharedtypes.Supplier{
 		OwnerAddress:    supplierBech32,
 		OperatorAddress: supplierBech32,
 		Stake:           &suppliertypes.DefaultMinStake,
-		Services: []*sharedtypes.SupplierServiceConfig{
+		Services:        services,
+		ServiceConfigHistory: []*sharedtypes.ServiceConfigUpdate{
 			{
-				ServiceId: s.service.GetId(),
-				RevShare: []*sharedtypes.ServiceRevenueShare{
-					{
-						Address:            supplierBech32,
-						RevSharePercentage: 100,
-					},
-				},
+				Services:             services,
+				EffectiveBlockHeight: 0,
 			},
-		},
-		ServicesActivationHeightsMap: map[string]uint64{
-			s.service.GetId(): 0,
 		},
 	}
 }

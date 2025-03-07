@@ -51,20 +51,27 @@ func TestComputeNewDifficultyHash_RewardsReflectWorkCompleted(t *testing.T) {
 	// Prepare the test supplier.
 	supplierAddress := sample.AccAddress()
 	// TODO(#850): Update supplier stake to be min stake
+	supplierServiceConfigs := []*sharedtypes.SupplierServiceConfig{
+		{
+			ServiceId: service.Id,
+			RevShare: []*sharedtypes.ServiceRevenueShare{
+				{
+					Address:            supplierAddress,
+					RevSharePercentage: 100,
+				},
+			},
+		},
+	}
 	supplierStake := sdk.NewInt64Coin(volatile.DenomuPOKT, 1000)
 	supplier := sharedtypes.Supplier{
 		OperatorAddress: supplierAddress,
 		OwnerAddress:    supplierAddress,
 		Stake:           &supplierStake,
-		Services: []*sharedtypes.SupplierServiceConfig{
+		Services:        supplierServiceConfigs,
+		ServiceConfigHistory: []*sharedtypes.ServiceConfigUpdate{
 			{
-				ServiceId: service.Id,
-				RevShare: []*sharedtypes.ServiceRevenueShare{
-					{
-						Address:            supplierAddress,
-						RevSharePercentage: 100,
-					},
-				},
+				Services:             supplierServiceConfigs,
+				EffectiveBlockHeight: 1,
 			},
 		},
 	}

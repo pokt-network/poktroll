@@ -655,6 +655,13 @@ func (k Keeper) slashSupplierStake(
 		// inconsistent session supplier list? See the comment above for more details.
 		supplierToSlash.UnstakeSessionEndHeight = uint64(unstakeSessionEndHeight)
 
+		// Deactivate the supplier's services so he can no longer be selected for relays.
+		serviceConfigsUpdate := &sharedtypes.ServiceConfigUpdate{
+			Services:             make([]*sharedtypes.SupplierServiceConfig, 0),
+			EffectiveBlockHeight: uint64(unstakeSessionEndHeight + 1),
+		}
+		supplierToSlash.ServiceConfigHistory = append(supplierToSlash.ServiceConfigHistory, serviceConfigsUpdate)
+
 		unbondingEndHeight := sharedtypes.GetSupplierUnbondingEndHeight(&sharedParams, &supplierToSlash)
 		events = append(events, &suppliertypes.EventSupplierUnbondingBegin{
 			Supplier:           &supplierToSlash,

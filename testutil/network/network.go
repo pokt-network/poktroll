@@ -139,22 +139,28 @@ func DefaultSupplierModuleGenesisState(t *testing.T, n int) *suppliertypes.Genes
 	for i := 0; i < n; i++ {
 		svcId := fmt.Sprintf("svc%d", i)
 		stake := sdk.NewCoin("upokt", math.NewInt(int64(i)))
+		services := []*sharedtypes.SupplierServiceConfig{
+			{
+				ServiceId: svcId,
+				Endpoints: []*sharedtypes.SupplierEndpoint{
+					{
+						Url:     fmt.Sprintf("http://localhost:%d", i),
+						RpcType: sharedtypes.RPCType_JSON_RPC,
+					},
+				},
+			},
+		}
 		supplier := sharedtypes.Supplier{
 			OwnerAddress:    sample.AccAddress(),
 			OperatorAddress: sample.AccAddress(),
 			Stake:           &stake,
-			Services: []*sharedtypes.SupplierServiceConfig{
+			Services:        services,
+			ServiceConfigHistory: []*sharedtypes.ServiceConfigUpdate{
 				{
-					ServiceId: svcId,
-					Endpoints: []*sharedtypes.SupplierEndpoint{
-						{
-							Url:     fmt.Sprintf("http://localhost:%d", i),
-							RpcType: sharedtypes.RPCType_JSON_RPC,
-						},
-					},
+					Services:             services,
+					EffectiveBlockHeight: 1,
 				},
 			},
-			ServicesActivationHeightsMap: map[string]uint64{svcId: 0},
 		}
 		// TODO_CONSIDERATION: Evaluate whether we need `nullify.Fill` or if we should enforce `(gogoproto.nullable) = false` everywhere
 		// nullify.Fill(&supplier)
@@ -168,23 +174,29 @@ func DefaultSupplierModuleGenesisState(t *testing.T, n int) *suppliertypes.Genes
 func SupplierModuleGenesisStateWithAddresses(t *testing.T, addresses []string) *suppliertypes.GenesisState {
 	t.Helper()
 	state := suppliertypes.DefaultGenesis()
+	services := []*sharedtypes.SupplierServiceConfig{
+		{
+			ServiceId: "svc1",
+			Endpoints: []*sharedtypes.SupplierEndpoint{
+				{
+					Url:     "http://localhost:1",
+					RpcType: sharedtypes.RPCType_JSON_RPC,
+				},
+			},
+		},
+	}
 	for _, addr := range addresses {
 		supplier := sharedtypes.Supplier{
 			OwnerAddress:    sample.AccAddress(),
 			OperatorAddress: addr,
 			Stake:           &sdk.Coin{Denom: "upokt", Amount: math.NewInt(10000)},
-			Services: []*sharedtypes.SupplierServiceConfig{
+			Services:        services,
+			ServiceConfigHistory: []*sharedtypes.ServiceConfigUpdate{
 				{
-					ServiceId: "svc1",
-					Endpoints: []*sharedtypes.SupplierEndpoint{
-						{
-							Url:     "http://localhost:1",
-							RpcType: sharedtypes.RPCType_JSON_RPC,
-						},
-					},
+					Services:             services,
+					EffectiveBlockHeight: 1,
 				},
 			},
-			ServicesActivationHeightsMap: map[string]uint64{"svc1": 0},
 		}
 		state.SupplierList = append(state.SupplierList, supplier)
 	}

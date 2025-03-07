@@ -73,41 +73,49 @@ var (
 		},
 	}
 
+	supplierServiceConfigs = []*sharedtypes.SupplierServiceConfig{
+		{
+			ServiceId: TestServiceId1,
+			Endpoints: []*sharedtypes.SupplierEndpoint{
+				{
+					Url:     TestSupplierUrl,
+					RpcType: sharedtypes.RPCType_JSON_RPC,
+					Configs: make([]*sharedtypes.ConfigOption, 0),
+				},
+			},
+		},
+		{
+			ServiceId: TestServiceId2,
+			Endpoints: []*sharedtypes.SupplierEndpoint{
+				{
+					Url:     TestSupplierUrl,
+					RpcType: sharedtypes.RPCType_GRPC,
+					Configs: make([]*sharedtypes.ConfigOption, 0),
+				},
+			},
+		},
+		{
+			ServiceId: TestServiceId12,
+			Endpoints: []*sharedtypes.SupplierEndpoint{
+				{
+					Url:     TestSupplierUrl,
+					RpcType: sharedtypes.RPCType_GRPC,
+					Configs: make([]*sharedtypes.ConfigOption, 0),
+				},
+			},
+		},
+	}
+
 	TestSupplierUrl             = "http://olshansky.info"
 	TestSupplierOperatorAddress = sample.AccAddress()
 	TestSupplier                = sharedtypes.Supplier{
 		OperatorAddress: TestSupplierOperatorAddress,
 		Stake:           &sdk.Coin{Denom: "upokt", Amount: math.NewInt(100)},
-		Services: []*sharedtypes.SupplierServiceConfig{
+		Services:        supplierServiceConfigs,
+		ServiceConfigHistory: []*sharedtypes.ServiceConfigUpdate{
 			{
-				ServiceId: TestServiceId1,
-				Endpoints: []*sharedtypes.SupplierEndpoint{
-					{
-						Url:     TestSupplierUrl,
-						RpcType: sharedtypes.RPCType_JSON_RPC,
-						Configs: make([]*sharedtypes.ConfigOption, 0),
-					},
-				},
-			},
-			{
-				ServiceId: TestServiceId2,
-				Endpoints: []*sharedtypes.SupplierEndpoint{
-					{
-						Url:     TestSupplierUrl,
-						RpcType: sharedtypes.RPCType_GRPC,
-						Configs: make([]*sharedtypes.ConfigOption, 0),
-					},
-				},
-			},
-			{
-				ServiceId: TestServiceId12,
-				Endpoints: []*sharedtypes.SupplierEndpoint{
-					{
-						Url:     TestSupplierUrl,
-						RpcType: sharedtypes.RPCType_GRPC,
-						Configs: make([]*sharedtypes.ConfigOption, 0),
-					},
-				},
+				Services:             supplierServiceConfigs,
+				EffectiveBlockHeight: 1,
 			},
 		},
 	}
