@@ -143,7 +143,6 @@ func (k msgServer) ClaimMorseApplication(ctx context.Context, msg *migrationtype
 	sessionEndHeight := sharedtypes.GetSettlementSessionEndHeight(&sharedParams, sdkCtx.BlockHeight())
 	return &migrationtypes.MsgClaimMorseApplicationResponse{
 		MorseSrcAddress:         msg.MorseSrcAddress,
-		ServiceId:               app.ServiceConfigs[0].GetServiceId(),
 		ClaimedBalance:          claimedUnstakedTokens,
 		ClaimedApplicationStake: claimedAppStake,
 		SessionEndHeight:        sessionEndHeight,

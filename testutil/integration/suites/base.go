@@ -18,8 +18,10 @@ import (
 	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/client/query"
 	"github.com/pokt-network/poktroll/pkg/polylog"
+	"github.com/pokt-network/poktroll/pkg/polylog/polyzero"
 	_ "github.com/pokt-network/poktroll/pkg/polylog/polyzero"
 	"github.com/pokt-network/poktroll/testutil/integration"
+	"github.com/pokt-network/poktroll/testutil/testcache"
 )
 
 var _ IntegrationSuite = (*BaseIntegrationSuite)(nil)
@@ -103,7 +105,11 @@ func (s *BaseIntegrationSuite) FundAddress(
 func (s *BaseIntegrationSuite) GetBankQueryClient(t *testing.T) client.BankQueryClient {
 	t.Helper()
 
-	deps := depinject.Supply(s.GetApp().QueryHelper())
+	deps := depinject.Supply(
+		polyzero.NewLogger(),
+		testcache.NewNoopKeyValueCache[query.Balance](),
+		s.GetApp().QueryHelper(),
+	)
 	bankQueryClient, err := query.NewBankQuerier(deps)
 	require.NoError(t, err)
 

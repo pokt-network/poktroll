@@ -10,6 +10,7 @@ import (
 	"github.com/pokt-network/poktroll/app/volatile"
 	"github.com/pokt-network/poktroll/testutil/integration/suites"
 	"github.com/pokt-network/poktroll/testutil/sample"
+	"github.com/pokt-network/poktroll/testutil/testmigration"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	migrationtypes "github.com/pokt-network/poktroll/x/migration/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
@@ -57,7 +58,7 @@ func TestMigrationModuleSuite(t *testing.T) {
 
 // TestImportMorseClaimableAccounts exercises importing and persistence of morse claimable accounts.
 func (s *MigrationModuleTestSuite) TestImportMorseClaimableAccounts() {
-	s.GenerateMorseAccountState(s.T(), s.numMorseClaimableAccounts)
+	s.GenerateMorseAccountState(s.T(), s.numMorseClaimableAccounts, testmigration.RoundRobinAllMorseAccountActorTypes)
 	msgImportRes := s.ImportMorseClaimableAccounts(s.T())
 	morseAccountState := s.GetAccountState(s.T())
 	morseAccountStateHash, err := morseAccountState.GetHash()
@@ -87,7 +88,7 @@ func (s *MigrationModuleTestSuite) TestImportMorseClaimableAccounts() {
 
 // TestImportMorseClaimableAccounts_ErrorInvalidAuthority tests the error case when the authority address is invalid.
 func (s *MigrationModuleTestSuite) TestImportMorseClaimableAccounts_ErrorInvalidAuthority() {
-	s.GenerateMorseAccountState(s.T(), s.numMorseClaimableAccounts)
+	s.GenerateMorseAccountState(s.T(), s.numMorseClaimableAccounts, testmigration.RoundRobinAllMorseAccountActorTypes)
 
 	// random authority address
 	invalidAuthority := sample.AccAddress()
@@ -106,7 +107,7 @@ func (s *MigrationModuleTestSuite) TestImportMorseClaimableAccounts_ErrorInvalid
 
 // TestImportMorseClaimableAccounts_ErrorInvalidHash tests the error case when the hash is invalid.
 func (s *MigrationModuleTestSuite) TestImportMorseClaimableAccounts_ErrorInvalidHash() {
-	s.GenerateMorseAccountState(s.T(), s.numMorseClaimableAccounts)
+	s.GenerateMorseAccountState(s.T(), s.numMorseClaimableAccounts, testmigration.RoundRobinAllMorseAccountActorTypes)
 
 	msgImport, err := migrationtypes.NewMsgImportMorseClaimableAccounts(
 		sample.AccAddress(), // random authority address

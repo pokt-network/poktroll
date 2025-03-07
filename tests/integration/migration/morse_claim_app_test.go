@@ -61,7 +61,7 @@ var (
 
 // TestClaimMorseApplication exercises claiming of a MorseClaimableAccount as a new staked application.
 func (s *MigrationModuleTestSuite) TestClaimMorseNewApplication() {
-	s.GenerateMorseAccountState(s.T(), s.numMorseClaimableAccounts)
+	s.GenerateMorseAccountState(s.T(), s.numMorseClaimableAccounts, testmigration.RoundRobinAllMorseAccountActorTypes)
 	s.ImportMorseClaimableAccounts(s.T())
 
 	for testCaseIdx, testCase := range testMorseClaimAppCases {
@@ -100,12 +100,12 @@ func (s *MigrationModuleTestSuite) TestClaimMorseNewApplication() {
 				Stake:          expectedStake,
 				ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{s.appServiceConfig},
 			}
+			expectedSessionEndHeight := s.GetSessionEndHeight(s.T(), s.SdkCtx().BlockHeight()-1)
 			expectedClaimApplicationRes := &migrationtypes.MsgClaimMorseApplicationResponse{
 				MorseSrcAddress:         morseSrcAddr,
 				ClaimedBalance:          expectedBalance,
 				ClaimedApplicationStake: *expectedStake,
-				ClaimedAtHeight:         s.SdkCtx().BlockHeight() - 1,
-				ServiceId:               s.appServiceConfig.GetServiceId(),
+				SessionEndHeight:        expectedSessionEndHeight,
 				Application:             &expectedApp,
 			}
 			s.Equal(expectedClaimApplicationRes, claimAppRes)
@@ -139,7 +139,7 @@ func (s *MigrationModuleTestSuite) TestClaimMorseNewApplication() {
 // TestClaimMorseApplication exercises claiming of a MorseClaimableAccount as an existing staked application.
 func (s *MigrationModuleTestSuite) TestClaimMorseExistingApplication() {
 	// Generate and import Morse claimable accounts.
-	s.GenerateMorseAccountState(s.T(), s.numMorseClaimableAccounts)
+	s.GenerateMorseAccountState(s.T(), s.numMorseClaimableAccounts, testmigration.RoundRobinAllMorseAccountActorTypes)
 	s.ImportMorseClaimableAccounts(s.T())
 
 	for testCaseIdx, testCase := range testMorseClaimAppCases {
@@ -190,12 +190,12 @@ func (s *MigrationModuleTestSuite) TestClaimMorseExistingApplication() {
 				Stake:          appStakeToClaim,
 				ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{s.appServiceConfig},
 			}
+			expectedSessionEndHeight := s.GetSessionEndHeight(s.T(), s.SdkCtx().BlockHeight()-1)
 			expectedClaimApplicationRes := &migrationtypes.MsgClaimMorseApplicationResponse{
 				MorseSrcAddress:         morseSrcAddr,
 				ClaimedBalance:          expectedBalance,
 				ClaimedApplicationStake: expectedClaimedStake,
-				ClaimedAtHeight:         s.SdkCtx().BlockHeight() - 1,
-				ServiceId:               s.appServiceConfig.GetServiceId(),
+				SessionEndHeight:        expectedSessionEndHeight,
 				Application:             &expectedApp,
 			}
 			s.Equal(expectedClaimApplicationRes, claimAppRes)
@@ -226,7 +226,7 @@ func (s *MigrationModuleTestSuite) TestClaimMorseExistingApplication() {
 }
 
 func (s *MigrationModuleTestSuite) TestClaimMorseApplication_ErrorMinStake() {
-	s.GenerateMorseAccountState(s.T(), s.numMorseClaimableAccounts)
+	s.GenerateMorseAccountState(s.T(), s.numMorseClaimableAccounts, testmigration.RoundRobinAllMorseAccountActorTypes)
 	s.ImportMorseClaimableAccounts(s.T())
 
 	belowAppMinStake := s.appMinStake.Sub(cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 1))
@@ -239,7 +239,7 @@ func (s *MigrationModuleTestSuite) TestClaimMorseApplication_ErrorMinStake() {
 	s.Equal(int64(0), shannonDestBalance.Amount.Int64())
 
 	// Attempt to claim a Morse claimable account with a stake below the minimum.
-	morsePrivateKey := testmigration.NewMorsePrivateKey(s.T(), 0)
+	morsePrivateKey := testmigration.GenMorsePrivateKey(s.T(), 0)
 	expectedMorseSrcAddr := morsePrivateKey.PubKey().Address().String()
 	require.Equal(s.T(),
 		expectedMorseSrcAddr,
@@ -293,7 +293,7 @@ func (s *MigrationModuleTestSuite) TestClaimMorseApplication_ErrorMinStake() {
 }
 
 func (s *MigrationModuleTestSuite) TestClaimMorseApplication_ErrorInsufficientStakeAvailable() {
-	s.GenerateMorseAccountState(s.T(), s.numMorseClaimableAccounts)
+	s.GenerateMorseAccountState(s.T(), s.numMorseClaimableAccounts, testmigration.RoundRobinAllMorseAccountActorTypes)
 	s.ImportMorseClaimableAccounts(s.T())
 
 	//aboveMaxAvailableStake := minStake.Sub(cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 1))
@@ -310,7 +310,7 @@ func (s *MigrationModuleTestSuite) TestClaimMorseApplication_ErrorInsufficientSt
 	s.Equal(int64(0), shannonDestBalance.Amount.Int64())
 
 	// Attempt to claim a Morse claimable account with a stake below the minimum.
-	morsePrivateKey := testmigration.NewMorsePrivateKey(s.T(), 0)
+	morsePrivateKey := testmigration.GenMorsePrivateKey(s.T(), 0)
 	expectedMorseSrcAddr := morsePrivateKey.PubKey().Address().String()
 	require.Equal(s.T(),
 		expectedMorseSrcAddr,

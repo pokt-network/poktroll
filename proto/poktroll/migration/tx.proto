@@ -110,8 +110,8 @@ message MsgClaimMorseAccountResponse {
   // The balance which was claimed.
   cosmos.base.v1beta1.Coin claimed_balance = 2 [(gogoproto.jsontag) = "claimed_balance", (gogoproto.nullable) = false];
 
-  // The height (on Shannon) at which the claim was created.
-  int64 claimed_at_height = 3;
+  // The session end height (on Shannon) in which the claim was committed (i.e. claimed).
+  int64 session_end_height = 3 [(gogoproto.jsontag) = "session_end_height"];
 }
 
 // MsgClaimMorseApplication is used to execute a claim (one-time minting of tokens on Shannon),
@@ -136,6 +136,8 @@ message MsgClaimMorseApplication {
   cosmos.base.v1beta1.Coin stake = 4 [(gogoproto.jsontag) = "stake"];
 
   // The services this application is staked to request service for.
+  // NOTE: This is not a repeated field, as in MsgStakeApplication,
+  // because an application can only be staked for one service.
   shared.ApplicationServiceConfig service_config = 5 [(gogoproto.jsontag) = "service_config"];
 }
 
@@ -155,9 +157,6 @@ message MsgClaimMorseApplicationResponse {
 
   // The session end height (on Shannon) in which the claim was committed (i.e. claimed).
   int64 session_end_height = 4 [(gogoproto.jsontag) = "session_end_height"];
-
-  // The service ID of the service which the application is staked for.
-  string service_id = 5 [(gogoproto.jsontag) = "service_id"];
 
   // The application which was staked as a result of the claim.
   application.Application application = 6 [(gogoproto.jsontag) = "application"];
