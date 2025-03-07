@@ -8,13 +8,12 @@ import (
 
 var _ sdk.Msg = &MsgClaimMorseSupplier{}
 
-func NewMsgClaimMorseSupplier(shannonDestAddress string, morseSrcAddress string, morseSignature string, stake sdk.Coin, serviceConfig string) *MsgClaimMorseSupplier {
+func NewMsgClaimMorseSupplier(shannonDestAddress string, morseSrcAddress string, morseSignature string, serviceConfig string) *MsgClaimMorseSupplier {
 	return &MsgClaimMorseSupplier{
 		ShannonDestAddress: shannonDestAddress,
 		MorseSrcAddress:    morseSrcAddress,
 		MorseSignature:     morseSignature,
-		Stake:              stake,
-		ServiceConfig:      serviceConfig,
+		Services:           serviceConfig,
 	}
 }
 
