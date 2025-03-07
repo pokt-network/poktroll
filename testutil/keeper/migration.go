@@ -29,8 +29,11 @@ import (
 
 // MigrationKeeperConfig is a configuration struct for the MigrationKeeper testutil.
 type MigrationKeeperConfig struct {
-	bankKeeper   migrationtypes.BankKeeper
-	sharedKeeper migrationtypes.SharedKeeper
+	bankKeeper     migrationtypes.BankKeeper
+	sharedKeeper   migrationtypes.SharedKeeper
+	gatewayKeeper  migrationtypes.GatewayKeeper
+	appKeeper      migrationtypes.ApplicationKeeper
+	supplierKeeper migrationtypes.SupplierKeeper
 }
 
 // MigrationKeeperOptionFn is a function which receives and potentially modifies
@@ -71,6 +74,9 @@ func MigrationKeeper(
 		mockAccountKeeper,
 		cfg.bankKeeper,
 		cfg.sharedKeeper,
+		cfg.gatewayKeeper,
+		cfg.appKeeper,
+		cfg.supplierKeeper,
 	)
 
 	ctx := cosmostypes.NewContext(stateStore, cmtproto.Header{}, false, log.NewNopLogger())
@@ -87,6 +93,27 @@ func MigrationKeeper(
 func WithBankKeeper(bankKeeper migrationtypes.BankKeeper) MigrationKeeperOptionFn {
 	return func(cfg *MigrationKeeperConfig) {
 		cfg.bankKeeper = bankKeeper
+	}
+}
+
+// WithGatewayKeeper assigns the given GatewayKeeper to the MigrationKeeperConfig.
+func WithGatewayKeeper(gatewayKeeper migrationtypes.GatewayKeeper) MigrationKeeperOptionFn {
+	return func(cfg *MigrationKeeperConfig) {
+		cfg.gatewayKeeper = gatewayKeeper
+	}
+}
+
+// WithApplicationKeeper assigns the given ApplicationKeeper to the MigrationKeeperConfig.
+func WithApplicationKeeper(appKeeper migrationtypes.ApplicationKeeper) MigrationKeeperOptionFn {
+	return func(cfg *MigrationKeeperConfig) {
+		cfg.appKeeper = appKeeper
+	}
+}
+
+// WithSupplierKeeper assigns the given SupplierKeeper to the MigrationKeeperConfig.
+func WithSupplierKeeper(supplierKeeper migrationtypes.SupplierKeeper) MigrationKeeperOptionFn {
+	return func(cfg *MigrationKeeperConfig) {
+		cfg.supplierKeeper = supplierKeeper
 	}
 }
 
@@ -115,9 +142,36 @@ func defaultConfigWithMocks(ctrl *gomock.Controller) *MigrationKeeperConfig {
 		Return(sharedtypes.DefaultParams()).
 		AnyTimes()
 
+	mockGatewayKeeper := mocks.NewMockGatewayKeeper(ctrl)
+	mockGatewayKeeper.EXPECT().
+		GetGateway(gomock.Any(), gomock.Any()).
+		AnyTimes()
+	mockGatewayKeeper.EXPECT().
+		SetGateway(gomock.Any(), gomock.Any()).
+		AnyTimes()
+
+	mockAppKeeper := mocks.NewMockApplicationKeeper(ctrl)
+	mockAppKeeper.EXPECT().
+		GetApplication(gomock.Any(), gomock.Any()).
+		AnyTimes()
+	mockAppKeeper.EXPECT().
+		SetApplication(gomock.Any(), gomock.Any()).
+		AnyTimes()
+
+	mockSupplierKeeper := mocks.NewMockSupplierKeeper(ctrl)
+	mockSupplierKeeper.EXPECT().
+		GetSupplier(gomock.Any(), gomock.Any()).
+		AnyTimes()
+	mockSupplierKeeper.EXPECT().
+		SetSupplier(gomock.Any(), gomock.Any()).
+		AnyTimes()
+
 	return &MigrationKeeperConfig{
-		bankKeeper:   mockBankKeeper,
-		sharedKeeper: sharedKeeper,
+		bankKeeper:     mockBankKeeper,
+		sharedKeeper:   sharedKeeper,
+		gatewayKeeper:  mockGatewayKeeper,
+		appKeeper:      mockAppKeeper,
+		supplierKeeper: mockSupplierKeeper,
 	}
 }
 

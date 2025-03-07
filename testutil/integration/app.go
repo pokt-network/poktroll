@@ -527,6 +527,9 @@ func NewCompleteIntegrationApp(t *testing.T, opts ...IntegrationAppOptionFn) *Ap
 		accountKeeper,
 		bankKeeper,
 		sharedKeeper,
+		gatewayKeeper,
+		applicationKeeper,
+		supplierKeeper,
 	)
 	migrationModule := migration.NewAppModule(
 		cdc,
@@ -534,6 +537,8 @@ func NewCompleteIntegrationApp(t *testing.T, opts ...IntegrationAppOptionFn) *Ap
 		accountKeeper,
 		bankKeeper,
 		sharedKeeper,
+		applicationKeeper,
+		supplierKeeper,
 	)
 
 	// Prepare the message & query routers
