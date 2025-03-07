@@ -7,6 +7,7 @@ import (
 	upgradetypes "cosmossdk.io/x/upgrade/types"
 	cosmosTypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
+
 	"github.com/pokt-network/poktroll/app/keepers"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
