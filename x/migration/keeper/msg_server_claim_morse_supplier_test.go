@@ -24,22 +24,26 @@ import (
 	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 )
 
-// Prevent strconv unused error
 var (
-	_                         = strconv.IntSize
-	testSupplierServiceConfig = sharedtypes.SupplierServiceConfig{
-		ServiceId: "svc1",
-		Endpoints: []*sharedtypes.SupplierEndpoint{
-			{
-				Url:     "http://test.example:1234",
-				RpcType: sharedtypes.RPCType_JSON_RPC,
-				Configs: make([]*sharedtypes.ConfigOption, 0),
+	// Prevent strconv unused error
+	_ = strconv.IntSize
+
+	// Shared testing supplier service config
+	testSupplierServices = []*sharedtypes.SupplierServiceConfig{
+		{
+			ServiceId: "svc1",
+			Endpoints: []*sharedtypes.SupplierEndpoint{
+				{
+					Url:     "http://test.example:1234",
+					RpcType: sharedtypes.RPCType_JSON_RPC,
+					Configs: make([]*sharedtypes.ConfigOption, 0),
+				},
 			},
-		},
-		RevShare: []*sharedtypes.ServiceRevenueShare{
-			{
-				Address:            sample.AccAddress(),
-				RevSharePercentage: 100,
+			RevShare: []*sharedtypes.ServiceRevenueShare{
+				{
+					Address:            sample.AccAddress(),
+					RevSharePercentage: 100,
+				},
 			},
 		},
 	}
@@ -60,15 +64,15 @@ func TestMsgServer_ClaimMorseSupplier_SuccessNewSupplier(t *testing.T) {
 		OwnerAddress:    shannonDestAddr,
 		OperatorAddress: shannonDestAddr,
 		Stake:           &supplierStake,
-		Services:        []*sharedtypes.SupplierServiceConfig{&testSupplierServiceConfig},
+		Services:        testSupplierServices,
 	}
 	expectedSupplier := sharedtypes.Supplier{
 		OwnerAddress:    shannonDestAddr,
 		OperatorAddress: shannonDestAddr,
 		Stake:           &supplierStake,
-		Services:        []*sharedtypes.SupplierServiceConfig{&testSupplierServiceConfig},
+		Services:        testSupplierServices,
 		ServicesActivationHeightsMap: map[string]uint64{
-			testSupplierServiceConfig.GetServiceId(): 0,
+			testSupplierServices[0].GetServiceId(): 0,
 		},
 		UnstakeSessionEndHeight: 0,
 	}
@@ -146,7 +150,7 @@ func TestMsgServer_ClaimMorseSupplier_SuccessNewSupplier(t *testing.T) {
 		shannonDestAddr,
 		morseClaimableAccount.GetMorseSrcAddress(),
 		morsePrivKey,
-		&testSupplierServiceConfig,
+		testSupplierServices,
 	)
 	require.NoError(t, err)
 
@@ -178,7 +182,6 @@ func TestMsgServer_ClaimMorseSupplier_SuccessNewSupplier(t *testing.T) {
 	expectedEvent := &migrationtypes.EventMorseSupplierClaimed{
 		ShannonDestAddress:   msgClaim.ShannonDestAddress,
 		MorseSrcAddress:      msgClaim.MorseSrcAddress,
-		ServiceId:            testSupplierServiceConfig.GetServiceId(),
 		ClaimedBalance:       expectedClaimedUnstakedTokens,
 		ClaimedSupplierStake: supplierStake,
 		SessionEndHeight:     expectedSessionEndHeight,
@@ -227,7 +230,7 @@ func TestMsgServer_ClaimMorseSupplier_Error(t *testing.T) {
 		sample.AccAddress(),
 		accountState.Accounts[0].GetMorseSrcAddress(),
 		morsePrivKey,
-		&testSupplierServiceConfig,
+		testSupplierServices,
 	)
 	require.NoError(t, err)
 

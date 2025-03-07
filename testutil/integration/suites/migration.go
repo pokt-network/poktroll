@@ -188,7 +188,7 @@ func (s *MigrationModuleSuite) ClaimMorseSupplier(
 	t *testing.T,
 	morseAccountIdx uint64,
 	shannonDestAddr string,
-	serviceConfig *sharedtypes.SupplierServiceConfig,
+	services []*sharedtypes.SupplierServiceConfig,
 ) (expectedMorseSrcAddr string, _ *migrationtypes.MsgClaimMorseSupplierResponse) {
 	t.Helper()
 
@@ -203,7 +203,7 @@ func (s *MigrationModuleSuite) ClaimMorseSupplier(
 		shannonDestAddr,
 		expectedMorseSrcAddr,
 		morsePrivateKey,
-		serviceConfig,
+		services,
 	)
 	require.NoError(t, err)
 

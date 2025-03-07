@@ -38,9 +38,9 @@ type MigrationModuleTestSuite struct {
 	// It is assigned in the #SetupTest method.
 	appServiceConfig *sharedtypes.ApplicationServiceConfig
 
-	// supplierServiceConfig is the service config to be used when claiming morse accounts as suppliers.
+	// supplierServices is the service config to be used when claiming morse accounts as suppliers.
 	// It is assigned in the #SetupTest method.
-	supplierServiceConfig *sharedtypes.SupplierServiceConfig
+	supplierServices []*sharedtypes.SupplierServiceConfig
 }
 
 func (s *MigrationModuleTestSuite) SetupTest() {
@@ -64,18 +64,20 @@ func (s *MigrationModuleTestSuite) ResetTestApp(
 
 	s.numMorseClaimableAccounts = numMorseClaimableAccounts
 	s.appServiceConfig = &sharedtypes.ApplicationServiceConfig{ServiceId: testServiceId}
-	s.supplierServiceConfig = &sharedtypes.SupplierServiceConfig{
-		ServiceId: testServiceId,
-		Endpoints: []*sharedtypes.SupplierEndpoint{
-			{
-				Url:     "http://test.example:1234",
-				RpcType: sharedtypes.RPCType_JSON_RPC,
+	s.supplierServices = []*sharedtypes.SupplierServiceConfig{
+		{
+			ServiceId: testServiceId,
+			Endpoints: []*sharedtypes.SupplierEndpoint{
+				{
+					Url:     "http://test.example:1234",
+					RpcType: sharedtypes.RPCType_JSON_RPC,
+				},
 			},
-		},
-		RevShare: []*sharedtypes.ServiceRevenueShare{
-			{
-				Address:            sample.AccAddress(),
-				RevSharePercentage: 100,
+			RevShare: []*sharedtypes.ServiceRevenueShare{
+				{
+					Address:            sample.AccAddress(),
+					RevSharePercentage: 100,
+				},
 			},
 		},
 	}

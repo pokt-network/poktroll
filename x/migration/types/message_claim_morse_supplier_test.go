@@ -12,6 +12,10 @@ import (
 )
 
 var (
+	testServices = []*sharedtypes.SupplierServiceConfig{
+		{ServiceId: testServiceId},
+	}
+
 	testEndpoints = []*sharedtypes.SupplierEndpoint{
 		{
 			Url:     "http://test.example:1234",
@@ -39,9 +43,7 @@ func TestMsgClaimMorseSupplier_ValidateBasic(t *testing.T) {
 				ShannonDestAddress: "invalid_address",
 				MorseSrcAddress:    sample.MorseAddressHex(),
 				MorseSignature:     mockMorseSignature,
-				Services: &sharedtypes.SupplierServiceConfig{
-					ServiceId: testServiceId,
-				},
+				Services:           testServices,
 			},
 			err: sdkerrors.ErrInvalidAddress,
 		}, {
@@ -50,9 +52,7 @@ func TestMsgClaimMorseSupplier_ValidateBasic(t *testing.T) {
 				ShannonDestAddress: sample.AccAddress(),
 				MorseSrcAddress:    "invalid_address",
 				MorseSignature:     mockMorseSignature,
-				Services: &sharedtypes.SupplierServiceConfig{
-					ServiceId: testServiceId,
-				},
+				Services:           testServices,
 			},
 			err: migrationtypes.ErrMorseSupplierClaim,
 		}, {
@@ -61,8 +61,8 @@ func TestMsgClaimMorseSupplier_ValidateBasic(t *testing.T) {
 				ShannonDestAddress: sample.AccAddress(),
 				MorseSrcAddress:    sample.MorseAddressHex(),
 				MorseSignature:     mockMorseSignature,
-				Services: &sharedtypes.SupplierServiceConfig{
-					ServiceId: "",
+				Services: []*sharedtypes.SupplierServiceConfig{
+					{ServiceId: ""},
 				},
 			},
 			err: migrationtypes.ErrMorseSupplierClaim,
@@ -72,10 +72,12 @@ func TestMsgClaimMorseSupplier_ValidateBasic(t *testing.T) {
 				ShannonDestAddress: sample.AccAddress(),
 				MorseSrcAddress:    sample.MorseAddressHex(),
 				MorseSignature:     mockMorseSignature,
-				Services: &sharedtypes.SupplierServiceConfig{
-					ServiceId: "xxxxxxxxxxxxxxxxxxxx",
-					Endpoints: testEndpoints,
-					RevShare:  testRevShare,
+				Services: []*sharedtypes.SupplierServiceConfig{
+					{
+						ServiceId: "xxxxxxxxxxxxxxxxxxxx",
+						Endpoints: testEndpoints,
+						RevShare:  testRevShare,
+					},
 				},
 			},
 			err: migrationtypes.ErrMorseSupplierClaim,
@@ -85,10 +87,12 @@ func TestMsgClaimMorseSupplier_ValidateBasic(t *testing.T) {
 				ShannonDestAddress: sample.AccAddress(),
 				MorseSrcAddress:    sample.MorseAddressHex(),
 				MorseSignature:     nil,
-				Services: &sharedtypes.SupplierServiceConfig{
-					ServiceId: testServiceId,
-					Endpoints: testEndpoints,
-					RevShare:  testRevShare,
+				Services: []*sharedtypes.SupplierServiceConfig{
+					{
+						ServiceId: testServiceId,
+						Endpoints: testEndpoints,
+						RevShare:  testRevShare,
+					},
 				},
 			},
 			err: migrationtypes.ErrMorseSupplierClaim,
@@ -98,10 +102,12 @@ func TestMsgClaimMorseSupplier_ValidateBasic(t *testing.T) {
 				ShannonDestAddress: sample.AccAddress(),
 				MorseSrcAddress:    sample.MorseAddressHex(),
 				MorseSignature:     mockMorseSignature,
-				Services: &sharedtypes.SupplierServiceConfig{
-					ServiceId: testServiceId,
-					Endpoints: testEndpoints,
-					RevShare:  testRevShare,
+				Services: []*sharedtypes.SupplierServiceConfig{
+					{
+						ServiceId: testServiceId,
+						Endpoints: testEndpoints,
+						RevShare:  testRevShare,
+					},
 				},
 			},
 		}, {
@@ -110,10 +116,12 @@ func TestMsgClaimMorseSupplier_ValidateBasic(t *testing.T) {
 				ShannonDestAddress: sample.AccAddress(),
 				MorseSrcAddress:    sample.MorseAddressHex(),
 				MorseSignature:     mockMorseSignature,
-				Services: &sharedtypes.SupplierServiceConfig{
-					ServiceId: testServiceId,
-					Endpoints: testEndpoints,
-					RevShare:  testRevShare,
+				Services: []*sharedtypes.SupplierServiceConfig{
+					{
+						ServiceId: testServiceId,
+						Endpoints: testEndpoints,
+						RevShare:  testRevShare,
+					},
 				},
 			},
 		},

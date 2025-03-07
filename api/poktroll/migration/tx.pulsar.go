@@ -4340,6 +4340,57 @@ func (x *fastReflection_MsgClaimMorseApplicationResponse) ProtoMethods() *protoi
 	}
 }
 
+var _ protoreflect.List = (*_MsgClaimMorseSupplier_5_list)(nil)
+
+type _MsgClaimMorseSupplier_5_list struct {
+	list *[]*shared.SupplierServiceConfig
+}
+
+func (x *_MsgClaimMorseSupplier_5_list) Len() int {
+	if x.list == nil {
+		return 0
+	}
+	return len(*x.list)
+}
+
+func (x *_MsgClaimMorseSupplier_5_list) Get(i int) protoreflect.Value {
+	return protoreflect.ValueOfMessage((*x.list)[i].ProtoReflect())
+}
+
+func (x *_MsgClaimMorseSupplier_5_list) Set(i int, value protoreflect.Value) {
+	valueUnwrapped := value.Message()
+	concreteValue := valueUnwrapped.Interface().(*shared.SupplierServiceConfig)
+	(*x.list)[i] = concreteValue
+}
+
+func (x *_MsgClaimMorseSupplier_5_list) Append(value protoreflect.Value) {
+	valueUnwrapped := value.Message()
+	concreteValue := valueUnwrapped.Interface().(*shared.SupplierServiceConfig)
+	*x.list = append(*x.list, concreteValue)
+}
+
+func (x *_MsgClaimMorseSupplier_5_list) AppendMutable() protoreflect.Value {
+	v := new(shared.SupplierServiceConfig)
+	*x.list = append(*x.list, v)
+	return protoreflect.ValueOfMessage(v.ProtoReflect())
+}
+
+func (x *_MsgClaimMorseSupplier_5_list) Truncate(n int) {
+	for i := n; i < len(*x.list); i++ {
+		(*x.list)[i] = nil
+	}
+	*x.list = (*x.list)[:n]
+}
+
+func (x *_MsgClaimMorseSupplier_5_list) NewElement() protoreflect.Value {
+	v := new(shared.SupplierServiceConfig)
+	return protoreflect.ValueOfMessage(v.ProtoReflect())
+}
+
+func (x *_MsgClaimMorseSupplier_5_list) IsValid() bool {
+	return x.list != nil
+}
+
 var (
 	md_MsgClaimMorseSupplier                      protoreflect.MessageDescriptor
 	fd_MsgClaimMorseSupplier_shannon_dest_address protoreflect.FieldDescriptor
@@ -4440,8 +4491,8 @@ func (x *fastReflection_MsgClaimMorseSupplier) Range(f func(protoreflect.FieldDe
 			return
 		}
 	}
-	if x.Services != nil {
-		value := protoreflect.ValueOfMessage(x.Services.ProtoReflect())
+	if len(x.Services) != 0 {
+		value := protoreflect.ValueOfList(&_MsgClaimMorseSupplier_5_list{list: &x.Services})
 		if !f(fd_MsgClaimMorseSupplier_services, value) {
 			return
 		}
@@ -4468,7 +4519,7 @@ func (x *fastReflection_MsgClaimMorseSupplier) Has(fd protoreflect.FieldDescript
 	case "poktroll.migration.MsgClaimMorseSupplier.morse_signature":
 		return len(x.MorseSignature) != 0
 	case "poktroll.migration.MsgClaimMorseSupplier.services":
-		return x.Services != nil
+		return len(x.Services) != 0
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.migration.MsgClaimMorseSupplier"))
@@ -4519,8 +4570,11 @@ func (x *fastReflection_MsgClaimMorseSupplier) Get(descriptor protoreflect.Field
 		value := x.MorseSignature
 		return protoreflect.ValueOfBytes(value)
 	case "poktroll.migration.MsgClaimMorseSupplier.services":
-		value := x.Services
-		return protoreflect.ValueOfMessage(value.ProtoReflect())
+		if len(x.Services) == 0 {
+			return protoreflect.ValueOfList(&_MsgClaimMorseSupplier_5_list{})
+		}
+		listValue := &_MsgClaimMorseSupplier_5_list{list: &x.Services}
+		return protoreflect.ValueOfList(listValue)
 	default:
 		if descriptor.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.migration.MsgClaimMorseSupplier"))
@@ -4548,7 +4602,9 @@ func (x *fastReflection_MsgClaimMorseSupplier) Set(fd protoreflect.FieldDescript
 	case "poktroll.migration.MsgClaimMorseSupplier.morse_signature":
 		x.MorseSignature = value.Bytes()
 	case "poktroll.migration.MsgClaimMorseSupplier.services":
-		x.Services = value.Message().Interface().(*shared.SupplierServiceConfig)
+		lv := value.List()
+		clv := lv.(*_MsgClaimMorseSupplier_5_list)
+		x.Services = *clv.list
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.migration.MsgClaimMorseSupplier"))
@@ -4571,9 +4627,10 @@ func (x *fastReflection_MsgClaimMorseSupplier) Mutable(fd protoreflect.FieldDesc
 	switch fd.FullName() {
 	case "poktroll.migration.MsgClaimMorseSupplier.services":
 		if x.Services == nil {
-			x.Services = new(shared.SupplierServiceConfig)
+			x.Services = []*shared.SupplierServiceConfig{}
 		}
-		return protoreflect.ValueOfMessage(x.Services.ProtoReflect())
+		value := &_MsgClaimMorseSupplier_5_list{list: &x.Services}
+		return protoreflect.ValueOfList(value)
 	case "poktroll.migration.MsgClaimMorseSupplier.shannon_dest_address":
 		panic(fmt.Errorf("field shannon_dest_address of message poktroll.migration.MsgClaimMorseSupplier is not mutable"))
 	case "poktroll.migration.MsgClaimMorseSupplier.morse_src_address":
@@ -4600,8 +4657,8 @@ func (x *fastReflection_MsgClaimMorseSupplier) NewField(fd protoreflect.FieldDes
 	case "poktroll.migration.MsgClaimMorseSupplier.morse_signature":
 		return protoreflect.ValueOfBytes(nil)
 	case "poktroll.migration.MsgClaimMorseSupplier.services":
-		m := new(shared.SupplierServiceConfig)
-		return protoreflect.ValueOfMessage(m.ProtoReflect())
+		list := []*shared.SupplierServiceConfig{}
+		return protoreflect.ValueOfList(&_MsgClaimMorseSupplier_5_list{list: &list})
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.migration.MsgClaimMorseSupplier"))
@@ -4683,9 +4740,11 @@ func (x *fastReflection_MsgClaimMorseSupplier) ProtoMethods() *protoiface.Method
 		if l > 0 {
 			n += 1 + l + runtime.Sov(uint64(l))
 		}
-		if x.Services != nil {
-			l = options.Size(x.Services)
-			n += 1 + l + runtime.Sov(uint64(l))
+		if len(x.Services) > 0 {
+			for _, e := range x.Services {
+				l = options.Size(e)
+				n += 1 + l + runtime.Sov(uint64(l))
+			}
 		}
 		if x.unknownFields != nil {
 			n += len(x.unknownFields)
@@ -4716,19 +4775,21 @@ func (x *fastReflection_MsgClaimMorseSupplier) ProtoMethods() *protoiface.Method
 			i -= len(x.unknownFields)
 			copy(dAtA[i:], x.unknownFields)
 		}
-		if x.Services != nil {
-			encoded, err := options.Marshal(x.Services)
-			if err != nil {
-				return protoiface.MarshalOutput{
-					NoUnkeyedLiterals: input.NoUnkeyedLiterals,
-					Buf:               input.Buf,
-				}, err
+		if len(x.Services) > 0 {
+			for iNdEx := len(x.Services) - 1; iNdEx >= 0; iNdEx-- {
+				encoded, err := options.Marshal(x.Services[iNdEx])
+				if err != nil {
+					return protoiface.MarshalOutput{
+						NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+						Buf:               input.Buf,
+					}, err
+				}
+				i -= len(encoded)
+				copy(dAtA[i:], encoded)
+				i = runtime.EncodeVarint(dAtA, i, uint64(len(encoded)))
+				i--
+				dAtA[i] = 0x2a
 			}
-			i -= len(encoded)
-			copy(dAtA[i:], encoded)
-			i = runtime.EncodeVarint(dAtA, i, uint64(len(encoded)))
-			i--
-			dAtA[i] = 0x2a
 		}
 		if len(x.MorseSignature) > 0 {
 			i -= len(x.MorseSignature)
@@ -4927,10 +4988,8 @@ func (x *fastReflection_MsgClaimMorseSupplier) ProtoMethods() *protoiface.Method
 				if postIndex > l {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
 				}
-				if x.Services == nil {
-					x.Services = &shared.SupplierServiceConfig{}
-				}
-				if err := options.Unmarshal(dAtA[iNdEx:postIndex], x.Services); err != nil {
+				x.Services = append(x.Services, &shared.SupplierServiceConfig{})
+				if err := options.Unmarshal(dAtA[iNdEx:postIndex], x.Services[len(x.Services)-1]); err != nil {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
 				}
 				iNdEx = postIndex
@@ -6157,8 +6216,7 @@ type MsgClaimMorseSupplier struct {
 	// I.e.: morse_signature = private_key.sign(marshal(MsgClaimMorseAccount{morse_signature: nil, ...}))
 	MorseSignature []byte `protobuf:"bytes,3,opt,name=morse_signature,json=morseSignature,proto3" json:"morse_signature,omitempty"`
 	// The services this supplier is staked to provide service for.
-	// TODO_MAINNET(@bryanchriswhite, #1095): ensure this field is repeated (to match MsgStakeSupplier).
-	Services *shared.SupplierServiceConfig `protobuf:"bytes,5,opt,name=services,proto3" json:"services,omitempty"`
+	Services []*shared.SupplierServiceConfig `protobuf:"bytes,5,rep,name=services,proto3" json:"services,omitempty"`
 }
 
 func (x *MsgClaimMorseSupplier) Reset() {
@@ -6202,7 +6260,7 @@ func (x *MsgClaimMorseSupplier) GetMorseSignature() []byte {
 	return nil
 }
 
-func (x *MsgClaimMorseSupplier) GetServices() *shared.SupplierServiceConfig {
+func (x *MsgClaimMorseSupplier) GetServices() []*shared.SupplierServiceConfig {
 	if x != nil {
 		return x.Services
 	}
@@ -6458,7 +6516,7 @@ var file_poktroll_migration_tx_proto_rawDesc = []byte{
 	0x20, 0x01, 0x28, 0x0c, 0x42, 0x13, 0xea, 0xde, 0x1f, 0x0f, 0x6d, 0x6f, 0x72, 0x73, 0x65, 0x5f,
 	0x73, 0x69, 0x67, 0x6e, 0x61, 0x74, 0x75, 0x72, 0x65, 0x52, 0x0e, 0x6d, 0x6f, 0x72, 0x73, 0x65,
 	0x53, 0x69, 0x67, 0x6e, 0x61, 0x74, 0x75, 0x72, 0x65, 0x12, 0x50, 0x0a, 0x08, 0x73, 0x65, 0x72,
-	0x76, 0x69, 0x63, 0x65, 0x73, 0x18, 0x05, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x26, 0x2e, 0x70, 0x6f,
+	0x76, 0x69, 0x63, 0x65, 0x73, 0x18, 0x05, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x26, 0x2e, 0x70, 0x6f,
 	0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x73, 0x68, 0x61, 0x72, 0x65, 0x64, 0x2e, 0x53, 0x75,
 	0x70, 0x70, 0x6c, 0x69, 0x65, 0x72, 0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x43, 0x6f, 0x6e,
 	0x66, 0x69, 0x67, 0x42, 0x0c, 0xea, 0xde, 0x1f, 0x08, 0x73, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65,

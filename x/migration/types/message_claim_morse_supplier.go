@@ -16,12 +16,12 @@ func NewMsgClaimMorseSupplier(
 	shannonDestAddress string,
 	morseSrcAddress string,
 	morsePrivateKey cometcrypto.PrivKey,
-	serviceConfig *sharedtypes.SupplierServiceConfig,
+	services []*sharedtypes.SupplierServiceConfig,
 ) (*MsgClaimMorseSupplier, error) {
 	msg := &MsgClaimMorseSupplier{
 		ShannonDestAddress: shannonDestAddress,
 		MorseSrcAddress:    morseSrcAddress,
-		Services:           serviceConfig,
+		Services:           services,
 	}
 
 	if morsePrivateKey != nil {
@@ -53,9 +53,7 @@ func (msg *MsgClaimMorseSupplier) ValidateBasic() error {
 		return errorsmod.Wrapf(sdkerrors.ErrInvalidAddress, "invalid shannonDestAddress address (%s)", err)
 	}
 
-	if err := sharedtypes.ValidateSupplierServiceConfigs([]*sharedtypes.SupplierServiceConfig{
-		msg.Services,
-	}); err != nil {
+	if err := sharedtypes.ValidateSupplierServiceConfigs(msg.Services); err != nil {
 		return ErrMorseSupplierClaim.Wrapf("invalid service config: %s", err)
 	}
 

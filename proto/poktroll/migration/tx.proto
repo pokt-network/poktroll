@@ -192,8 +192,7 @@ message MsgClaimMorseSupplier {
   bytes morse_signature = 3 [(gogoproto.jsontag) = "morse_signature"];
 
   // The services this supplier is staked to provide service for.
-  // TODO_MAINNET(@bryanchriswhite, #1095): ensure this field is repeated (to match MsgStakeSupplier).
-  shared.SupplierServiceConfig services = 5 [(gogoproto.jsontag) = "services"];
+  repeated shared.SupplierServiceConfig services = 5 [(gogoproto.jsontag) = "services"];
 }
 
 // MsgClaimMorseSupplierResponse is returned from MsgClaimMorseSupplier.

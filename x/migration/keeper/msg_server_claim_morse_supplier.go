@@ -14,7 +14,18 @@ import (
 	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 )
 
-func (k msgServer) ClaimMorseSupplier(ctx context.Context, msg *migrationtypes.MsgClaimMorseSupplier) (*migrationtypes.MsgClaimMorseSupplierResponse, error) {
+// ClaimMorseSupplier performs the following steps, given msg is valid and a
+// MorseClaimableAccount exists for the given morseSrcAddress:
+//   - Mint and transfer all tokens (unstaked balance plus supplier stake) of the
+//     MorseClaimableAccount to the shannonDestAddress.
+//   - Mark the MorseClaimableAccount as claimed (i.e. adding the shannon_dest_address
+//     and claimed_at_height).
+//   - Stake a supplier for the amount specified in the MorseClaimableAccount,
+//     and the services specified in the msg.
+func (k msgServer) ClaimMorseSupplier(
+	ctx context.Context,
+	msg *migrationtypes.MsgClaimMorseSupplier,
+) (*migrationtypes.MsgClaimMorseSupplierResponse, error) {
 	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
 	logger := k.Logger().With("method", "ClaimMorseSupplier")
 
@@ -97,10 +108,10 @@ func (k msgServer) ClaimMorseSupplier(ctx context.Context, msg *migrationtypes.M
 	)
 
 	// Query for any existing supplier stake prior to staking.
-	initialSupplierStake := cosmostypes.NewCoin(volatile.DenomuPOKT, math.ZeroInt())
+	preClaimSupplierStake := cosmostypes.NewCoin(volatile.DenomuPOKT, math.ZeroInt())
 	foundSupplier, isFound := k.supplierKeeper.GetSupplier(ctx, shannonAccAddr.String())
 	if isFound {
-		initialSupplierStake = *foundSupplier.Stake
+		preClaimSupplierStake = *foundSupplier.Stake
 	}
 
 	// Stake (or update) the supplier.
@@ -108,8 +119,8 @@ func (k msgServer) ClaimMorseSupplier(ctx context.Context, msg *migrationtypes.M
 		shannonAccAddr.String(),
 		shannonAccAddr.String(),
 		shannonAccAddr.String(),
-		initialSupplierStake.Add(morseClaimableAccount.GetSupplierStake()),
-		[]*sharedtypes.SupplierServiceConfig{msg.Services},
+		preClaimSupplierStake.Add(morseClaimableAccount.GetSupplierStake()),
+		msg.Services,
 	)
 	supplier, err := k.supplierKeeper.StakeSupplier(ctx, logger, msgStakeSupplier)
 	if err != nil {
@@ -126,7 +137,6 @@ func (k msgServer) ClaimMorseSupplier(ctx context.Context, msg *migrationtypes.M
 	event := migrationtypes.EventMorseSupplierClaimed{
 		ShannonDestAddress:   msg.ShannonDestAddress,
 		MorseSrcAddress:      msg.MorseSrcAddress,
-		ServiceId:            supplier.GetServices()[0].GetServiceId(),
 		ClaimedBalance:       claimedUnstakedBalance,
 		ClaimedSupplierStake: claimedSupplierStake,
 		SessionEndHeight:     sessionEndHeight,

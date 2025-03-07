@@ -42,7 +42,7 @@ func (s *MigrationModuleTestSuite) TestClaimMorseNewSupplier() {
 			morseSrcAddr, claimSupplierRes := s.ClaimMorseSupplier(
 				s.T(), uint64(morseAccountIdx),
 				shannonDestAddr,
-				s.supplierServiceConfig,
+				s.supplierServices,
 			)
 
 			// Assert that the MorseClaimableAccount was updated on-chain.
@@ -64,10 +64,10 @@ func (s *MigrationModuleTestSuite) TestClaimMorseNewSupplier() {
 				OwnerAddress:            shannonDestAddr,
 				OperatorAddress:         shannonDestAddr,
 				Stake:                   &expectedStake,
-				Services:                []*sharedtypes.SupplierServiceConfig{s.supplierServiceConfig},
+				Services:                s.supplierServices,
 				UnstakeSessionEndHeight: 0,
 				ServicesActivationHeightsMap: map[string]uint64{
-					s.supplierServiceConfig.GetServiceId(): uint64(svcStartHeight),
+					s.supplierServices[0].GetServiceId(): uint64(svcStartHeight),
 				},
 			}
 			expectedSessionEndHeight := s.GetSessionEndHeight(s.T(), s.SdkCtx().BlockHeight()-1)
@@ -164,7 +164,7 @@ func (s *MigrationModuleTestSuite) TestClaimMorseExistingSupplier() {
 			morseSrcAddr, claimSupplierRes := s.ClaimMorseSupplier(
 				s.T(), uint64(morseAccountIdx),
 				shannonDestAddr,
-				s.supplierServiceConfig,
+				s.supplierServices,
 			)
 
 			// DEV_NOTE: If the ClaimedSupplierStake is zero, due to an optimization in big.Int,
@@ -192,9 +192,9 @@ func (s *MigrationModuleTestSuite) TestClaimMorseExistingSupplier() {
 				OwnerAddress:    shannonDestAddr,
 				OperatorAddress: shannonDestAddr,
 				Stake:           &expectedFinalSupplierStake,
-				Services:        []*sharedtypes.SupplierServiceConfig{s.supplierServiceConfig},
+				Services:        s.supplierServices,
 				ServicesActivationHeightsMap: map[string]uint64{
-					s.supplierServiceConfig.GetServiceId(): uint64(svcStartHeight),
+					s.supplierServices[0].GetServiceId(): uint64(svcStartHeight),
 				},
 				UnstakeSessionEndHeight: 0,
 			}
@@ -260,7 +260,7 @@ func (s *MigrationModuleTestSuite) TestClaimMorseSupplier_ErrorMinStake() {
 		shannonDestAddr,
 		expectedMorseSrcAddr,
 		morsePrivateKey,
-		s.supplierServiceConfig,
+		s.supplierServices,
 	)
 	s.NoError(err)
 
