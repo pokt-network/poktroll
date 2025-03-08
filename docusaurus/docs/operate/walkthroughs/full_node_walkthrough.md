@@ -27,7 +27,7 @@ See the [Full Node Cheat Sheet](../cheat_sheets/full_node_cheatsheet.md) if you 
   - [2. Create a New User](#2-create-a-new-user)
   - [3. Set Up Environment Variables for Cosmovisor](#3-set-up-environment-variables-for-cosmovisor)
   - [4. Install Cosmovisor](#4-install-cosmovisor)
-  - [5. Retrieve the Latest Genesis File](#5-retrieve-the-latest-genesis-file)
+  - [5. Retrieve the Genesis File](#5-retrieve-the-genesis-file)
   - [6. Choose Sync Method: Genesis vs Snapshot](#6-choose-sync-method-genesis-vs-snapshot)
     - [Option 1: Sync from Genesis](#option-1-sync-from-genesis)
     - [Option 2: Use a Snapshot (Faster)](#option-2-use-a-snapshot-faster)
@@ -133,10 +133,10 @@ fi
 curl -L "https://github.com/cosmos/cosmos-sdk/releases/download/cosmovisor%2F${COSMOVISOR_VERSION}/cosmovisor-${COSMOVISOR_VERSION}-linux-${ARCH}.tar.gz" | tar -zxvf - -C $HOME/.local/bin
 
 # Verify the install
-cosmovisor version
+cosmovisor help
 ```
 
-### 5. Retrieve the Latest Genesis File
+### 5. Retrieve the Genesis File
 
 Genesis files and network configuration are stored in the [pocket-network-genesis](https://github.com/pokt-network/pocket-network-genesis) repository. This repository contains the official chain information for all Pocket Network chains.
 
@@ -290,7 +290,7 @@ If you chose to use a snapshot, you'll need to download and apply it after confi
 ```bash
 # Create a directory for the snapshot download
 SNAPSHOT_DIR="$HOME/poktroll_snapshot"
-mkdir -p "$SNAPSHOT_DIR"
+mkdir -p "$SNAPSHOT_DIR" "$HOME/.poktroll/data"
 cd "$SNAPSHOT_DIR"
 
 # Download via torrent
@@ -422,20 +422,23 @@ Create a systemd service to manage your node. You can customize the service name
 # Set a service name (change if running multiple nodes)
 SERVICE_NAME="cosmovisor-poktroll"  # or another name like "cosmovisor-testnet"
 
+# Store the current username for use in the service file
+USERNAME=$(whoami)
+
 sudo tee /etc/systemd/system/${SERVICE_NAME}.service > /dev/null <<EOF
 [Unit]
 Description=Cosmovisor daemon for poktrolld
 After=network-online.target
 
 [Service]
-User=poktroll
-ExecStart=/home/poktroll/go/bin/cosmovisor run start --home=/home/poktroll/.poktroll
+User=${USERNAME}
+ExecStart=/home/${USERNAME}/.local/bin/cosmovisor run start --home=/home/${USERNAME}/.poktroll
 Restart=always
 RestartSec=3
 LimitNOFILE=infinity
 LimitNPROC=infinity
 Environment="DAEMON_NAME=poktrolld"
-Environment="DAEMON_HOME=/home/poktroll/.poktroll"
+Environment="DAEMON_HOME=/home/${USERNAME}/.poktroll"
 Environment="DAEMON_RESTART_AFTER_UPGRADE=true"
 Environment="DAEMON_ALLOW_DOWNLOAD_BINARIES=true"
 Environment="UNSAFE_SKIP_BACKUP=true"

@@ -385,7 +385,12 @@ create_user() {
 # Function to set up environment variables
 setup_env_vars() {
     print_color $YELLOW "Setting up environment variables..."
+    
+    # Create a .bashrc file if it doesn't exist
+    sudo -u "$POKTROLL_USER" bash -c "touch \$HOME/.bashrc"
+    
     sudo -u "$POKTROLL_USER" bash <<EOF
+    # Add environment variables to both .profile and .bashrc for better compatibility
     echo "export DAEMON_NAME=$DAEMON_NAME" >> \$HOME/.profile
     echo "export DAEMON_HOME=\$HOME/.poktroll" >> \$HOME/.profile
     echo "export DAEMON_RESTART_AFTER_UPGRADE=$DAEMON_RESTART_AFTER_UPGRADE" >> \$HOME/.profile
@@ -395,8 +400,27 @@ setup_env_vars() {
     # Add Cosmovisor and poktrolld to PATH
     echo "export PATH=\$HOME/.local/bin:\$HOME/.poktroll/cosmovisor/current/bin:\$PATH" >> \$HOME/.profile
     
+    # Also add to .bashrc to ensure they're available in non-login shells
+    echo "export DAEMON_NAME=$DAEMON_NAME" >> \$HOME/.bashrc
+    echo "export DAEMON_HOME=\$HOME/.poktroll" >> \$HOME/.bashrc
+    echo "export DAEMON_RESTART_AFTER_UPGRADE=$DAEMON_RESTART_AFTER_UPGRADE" >> \$HOME/.bashrc
+    echo "export DAEMON_ALLOW_DOWNLOAD_BINARIES=$DAEMON_ALLOW_DOWNLOAD_BINARIES" >> \$HOME/.bashrc
+    echo "export UNSAFE_SKIP_BACKUP=$UNSAFE_SKIP_BACKUP" >> \$HOME/.bashrc
+    
+    # Add Cosmovisor and poktrolld to PATH in .bashrc as well
+    echo "export PATH=\$HOME/.local/bin:\$HOME/.poktroll/cosmovisor/current/bin:\$PATH" >> \$HOME/.bashrc
+    
+    # Source the profile to make variables available in this session
     source \$HOME/.profile
 EOF
+
+    # Export variables for the current script session as well
+    export DAEMON_NAME=$DAEMON_NAME
+    export DAEMON_HOME=/home/$POKTROLL_USER/.poktroll
+    export DAEMON_RESTART_AFTER_UPGRADE=$DAEMON_RESTART_AFTER_UPGRADE
+    export DAEMON_ALLOW_DOWNLOAD_BINARIES=$DAEMON_ALLOW_DOWNLOAD_BINARIES
+    export UNSAFE_SKIP_BACKUP=$UNSAFE_SKIP_BACKUP
+    
     print_color $GREEN "Environment variables set up successfully."
     echo ""
 }
@@ -420,8 +444,19 @@ setup_cosmovisor() {
 
     sudo -u "$POKTROLL_USER" bash <<EOF
     mkdir -p \$HOME/.local/bin
+    mkdir -p \$HOME/.poktroll/cosmovisor/genesis/bin
+    mkdir -p \$HOME/.poktroll/cosmovisor/upgrades
+    
     curl -L "$COSMOVISOR_URL" | tar -zxvf - -C \$HOME/.local/bin
+    chmod +x \$HOME/.local/bin/cosmovisor
+    
+    # Add to PATH in this session
+    export PATH=\$HOME/.local/bin:\$PATH
+    
+    # Make sure the PATH is updated in .profile
     echo 'export PATH=\$HOME/.local/bin:\$PATH' >> \$HOME/.profile
+    
+    # Source the profile to make the PATH available in this session
     source \$HOME/.profile
 EOF
     print_color $GREEN "Cosmovisor set up successfully."
@@ -439,17 +474,18 @@ setup_poktrolld() {
     # and stored in POKTROLLD_VERSION variable
     print_color $YELLOW "Using poktrolld version: $POKTROLLD_VERSION"
 
-    # TODO_TECHDEBT(@okdas): Consolidate this business logic with what we have
-    # in `user_guide/install.md` to avoid duplication and have consistency.
-
     # Construct the release URL with proper version format
     RELEASE_URL="https://github.com/pokt-network/poktroll/releases/download/v${POKTROLLD_VERSION}/poktroll_${OS_TYPE}_${ARCH}.tar.gz"
     print_color $YELLOW "Attempting to download from: $RELEASE_URL"
 
     # Download and extract directly as the POKTROLL_USER
     sudo -u "$POKTROLL_USER" bash <<EOF
+    # Ensure directories exist
     mkdir -p \$HOME/.poktroll/cosmovisor/genesis/bin
+    mkdir -p \$HOME/.poktroll/cosmovisor/upgrades
     mkdir -p \$HOME/.local/bin
+    
+    # Download and extract the binary
     curl -L "$RELEASE_URL" | tar -zxvf - -C \$HOME/.poktroll/cosmovisor/genesis/bin
     if [ \$? -ne 0 ]; then
         echo "Failed to download or extract binary"
@@ -457,9 +493,18 @@ setup_poktrolld() {
     fi
     chmod +x \$HOME/.poktroll/cosmovisor/genesis/bin/poktrolld
     
+    # Create the current symlink manually to ensure it exists
+    ln -sf \$HOME/.poktroll/cosmovisor/genesis \$HOME/.poktroll/cosmovisor/current
+    
+    # Create a symlink to the binary in .local/bin for easier access
+    ln -sf \$HOME/.poktroll/cosmovisor/current/bin/poktrolld \$HOME/.local/bin/poktrolld
+    
     # Initialize Cosmovisor with the poktrolld binary
+    export DAEMON_NAME=$DAEMON_NAME
+    export DAEMON_HOME=\$HOME/.poktroll
     \$HOME/.local/bin/cosmovisor init \$HOME/.poktroll/cosmovisor/genesis/bin/poktrolld
     
+    # Source the profile to update the environment
     source \$HOME/.profile
 EOF
 
@@ -500,11 +545,11 @@ configure_poktrolld() {
 
     # Check poktrolld version
     # Now we can use poktrolld directly since Cosmovisor is initialized
-    POKTROLLD_VERSION=\$(poktrolld version)
+    POKTROLLD_VERSION=\$(\$HOME/.poktroll/cosmovisor/genesis/bin/poktrolld version)
     echo "Poktrolld version: \$POKTROLLD_VERSION"
 
     # Initialize node using poktrolld directly
-    poktrolld init "$NODE_MONIKER" --chain-id="$CHAIN_ID" --home=\$HOME/.poktroll
+    \$HOME/.poktroll/cosmovisor/genesis/bin/poktrolld init "$NODE_MONIKER" --chain-id="$CHAIN_ID" --home=\$HOME/.poktroll
     cp "$GENESIS_FILE" \$HOME/.poktroll/config/genesis.json
     sed -i -e "s|^seeds *=.*|seeds = \"$SEEDS\"|" \$HOME/.poktroll/config/config.toml
     sed -i -e "s|^external_address *=.*|external_address = \"$EXTERNAL_IP:26656\"|" \$HOME/.poktroll/config/config.toml
