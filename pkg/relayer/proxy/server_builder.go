@@ -4,9 +4,8 @@ import (
 	"context"
 	"fmt"
 	"net/url"
+	"slices"
 	"time"
-
-	"golang.org/x/exp/slices"
 
 	"github.com/pokt-network/poktroll/pkg/relayer"
 	"github.com/pokt-network/poktroll/pkg/relayer/config"
