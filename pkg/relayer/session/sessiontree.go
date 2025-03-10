@@ -64,9 +64,6 @@ type sessionTree struct {
 	// It is used to avoid keeping all the relays in memory alongside the SMST.
 	relayStore relayer.RelayStore
 
-	// relayStorePath is the path to the file store used to store the relays bytes.
-	relayStorePath string
-
 	isClaiming bool
 }
 
@@ -117,7 +114,7 @@ func NewSessionTree(
 		supplierOperatorAddress,
 		sessionEndBlockHeightStr,
 	)
-	if err := os.MkdirAll(relaysStoreDirPath, 0700); err != nil && !os.IsExist(err) {
+	if err = os.MkdirAll(relaysStoreDirPath, 0700); err != nil && !os.IsExist(err) {
 		return nil, ErrSessionRelaysStorePathExists.Wrapf("relaysStoreDirPath: %q", relaysStoreDirPath)
 	}
 
