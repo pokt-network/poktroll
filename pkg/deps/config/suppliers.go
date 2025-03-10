@@ -17,7 +17,6 @@ import (
 	"github.com/pokt-network/poktroll/pkg/cache/memory"
 	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/client/block"
-	"github.com/pokt-network/poktroll/pkg/client/delegation"
 	"github.com/pokt-network/poktroll/pkg/client/events"
 	"github.com/pokt-network/poktroll/pkg/client/query"
 	querycache "github.com/pokt-network/poktroll/pkg/client/query/cache"
@@ -100,25 +99,6 @@ func NewSupplyBlockClientFn(queryNodeRPCURL *url.URL) SupplierFn {
 		}
 
 		return depinject.Configs(deps, depinject.Supply(blockClient)), nil
-	}
-}
-
-// NewSupplyDelegationClientFn returns a function which constructs a
-// DelegationClient instance and returns a new depinject.Config which is
-// supplied with the given deps and the new DelegationClient.
-func NewSupplyDelegationClientFn() SupplierFn {
-	return func(
-		ctx context.Context,
-		deps depinject.Config,
-		_ *cobra.Command,
-	) (depinject.Config, error) {
-		// Requires a query client to be supplied to the deps
-		delegationClient, err := delegation.NewDelegationClient(ctx, deps)
-		if err != nil {
-			return nil, err
-		}
-
-		return depinject.Configs(deps, depinject.Supply(delegationClient)), nil
 	}
 }
 
@@ -332,21 +312,21 @@ func NewSupplySupplierQuerierFn() SupplierFn {
 	}
 }
 
-// NewSupplyRingCacheFn supplies a depinject config with a RingCache.
-func NewSupplyRingCacheFn() SupplierFn {
+// NewSupplyRingClientFn supplies a depinject config with a RingClient.
+func NewSupplyRingClientFn() SupplierFn {
 	return func(
 		_ context.Context,
 		deps depinject.Config,
 		_ *cobra.Command,
 	) (depinject.Config, error) {
-		// Create the ring cache.
-		ringCache, err := rings.NewRingCache(deps)
+		// Create the ring client.
+		ringClient, err := rings.NewRingClient(deps)
 		if err != nil {
 			return nil, err
 		}
 
 		// Supply the ring cache to the provided deps
-		return depinject.Configs(deps, depinject.Supply(ringCache)), nil
+		return depinject.Configs(deps, depinject.Supply(ringClient)), nil
 	}
 }
 

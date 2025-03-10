@@ -12,10 +12,8 @@ import (
 	"github.com/pokt-network/poktroll/pkg/polylog"
 )
 
-// NewRingCacheWithMockDependencies creates a new "real" RingCache with the given
-// mock Account and Application queriers supplied as dependencies. A Delegation
-// client is required as a dependency and depending on how it is used will
-// require a different function to generate the delegations client.
+// NewRingClientWithMockDependencies creates a new "real" RingClient with the given
+// mock Account and Application queriers supplied as dependencies.
 // The queriers are expected to maintain their respective mocked states:
 //   - Account querier: the account addresses and public keys
 //   - Application querier: the application addresses delegatee gateway addresses
@@ -27,18 +25,18 @@ import (
 //	testutil/testclient/testdelegation/client.go
 //
 // for methods to create these queriers and maintain their states.
-func NewRingCacheWithMockDependencies(
+func NewRingClientWithMockDependencies(
 	ctx context.Context,
 	t *testing.T,
 	deps depinject.Config,
-) crypto.RingCache {
+) crypto.RingClient {
 	t.Helper()
 
 	logger := polylog.Ctx(ctx)
 	deps = depinject.Configs(deps, depinject.Supply(logger))
 
-	ringCache, err := rings.NewRingCache(deps)
+	ringClient, err := rings.NewRingClient(deps)
 	require.NoError(t, err)
 
-	return ringCache
+	return ringClient
 }

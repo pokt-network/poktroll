@@ -7,7 +7,6 @@ import (
 	"path/filepath"
 	"sync"
 
-	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/pokt-network/smt"
 	"github.com/pokt-network/smt/kvstore/pebble"
 
@@ -35,7 +34,7 @@ type sessionTree struct {
 	// supplierOperatorAddress is the address of the supplier's operator that owns this sessionTree.
 	// RelayMiner can run suppliers for many supplier operator addresses at the same time,
 	// and we need a way to group the session trees by the supplier operator address for that.
-	supplierOperatorAddress *cosmostypes.AccAddress
+	supplierOperatorAddress string
 
 	// claimedRoot is the root hash of the SMST needed for submitting the claim.
 	// If it holds a non-nil value, it means that the SMST has been flushed,
@@ -69,7 +68,7 @@ type sessionTree struct {
 // It returns an error if the KVStore fails to be created.
 func NewSessionTree(
 	sessionHeader *sessiontypes.SessionHeader,
-	supplierOperatorAddress *cosmostypes.AccAddress,
+	supplierOperatorAddress string,
 	storesDirectory string,
 	logger polylog.Logger,
 ) (relayer.SessionTree, error) {
@@ -79,7 +78,7 @@ func NewSessionTree(
 	// TODO_IMPROVE(#621): instead of creating a new KV store for each session, it will be more beneficial to
 	// use one key store. KV databases are often optimized for writing into one database. They keys can
 	// use supplier address and session id as prefix. The current approach might not be RAM/IO efficient.
-	storePath := filepath.Join(storesDirectory, supplierOperatorAddress.String(), sessionHeader.SessionId)
+	storePath := filepath.Join(storesDirectory, supplierOperatorAddress, sessionHeader.SessionId)
 
 	// Make sure storePath does not exist when creating a new SessionTree
 	if _, err := os.Stat(storePath); err != nil && !os.IsNotExist(err) {
@@ -298,6 +297,6 @@ func (st *sessionTree) StartClaiming() error {
 }
 
 // GetSupplierOperatorAddress returns a CosmosSDK address of the supplier this sessionTree belongs to.
-func (st *sessionTree) GetSupplierOperatorAddress() *cosmostypes.AccAddress {
+func (st *sessionTree) GetSupplierOperatorAddress() string {
 	return st.supplierOperatorAddress
 }

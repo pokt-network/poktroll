@@ -12,17 +12,14 @@ import (
 
 	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/crypto"
-	"github.com/pokt-network/poktroll/pkg/observable/channel"
 	"github.com/pokt-network/poktroll/pkg/polylog"
 	"github.com/pokt-network/poktroll/pkg/relayer/relay_authenticator"
 	"github.com/pokt-network/poktroll/testutil/sample"
 	"github.com/pokt-network/poktroll/testutil/testclient/testblock"
-	"github.com/pokt-network/poktroll/testutil/testclient/testdelegation"
 	"github.com/pokt-network/poktroll/testutil/testclient/testkeyring"
 	"github.com/pokt-network/poktroll/testutil/testclient/testqueryclients"
 	testrings "github.com/pokt-network/poktroll/testutil/testcrypto/rings"
 	"github.com/pokt-network/poktroll/testutil/testproxy"
-	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	servicetypes "github.com/pokt-network/poktroll/x/service/types"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 )
@@ -45,7 +42,7 @@ type RelayAuthenticatorTestSuite struct {
 	sessionQuerier client.SessionQueryClient
 	sharedQuerier  client.SharedQueryClient
 	blockClient    client.BlockClient
-	ringCache      crypto.RingCache
+	ringClient     crypto.RingClient
 
 	// Test data
 	supplierKeyName string
@@ -74,8 +71,8 @@ func (s *RelayAuthenticatorTestSuite) SetupTest() {
 	// Initialize query clients
 	s.setupQueryClients()
 
-	// Set up ring cache
-	s.setupRingCache()
+	// Set up ring client
+	s.setupRingClient()
 
 	// Set up session
 	s.setupSession()
@@ -87,7 +84,7 @@ func (s *RelayAuthenticatorTestSuite) SetupTest() {
 		s.sessionQuerier,
 		s.sharedQuerier,
 		s.blockClient,
-		s.ringCache,
+		s.ringClient,
 	)
 }
 
@@ -202,21 +199,17 @@ func (s *RelayAuthenticatorTestSuite) setupQueryClients() {
 	s.blockClient = testblock.NewAnyTimeLastBlockBlockClient(s.T(), []byte{}, blockHeight)
 }
 
-// setupRingCache initializes the ring cache with its dependencies
-func (s *RelayAuthenticatorTestSuite) setupRingCache() {
-	redelegationObs, _ := channel.NewReplayObservable[*apptypes.EventRedelegation](s.ctx, 1)
-	delegationClient := testdelegation.NewAnyTimesRedelegationsSequence(s.ctx, s.T(), "", redelegationObs)
-
+// setupRingClient initializes the ring client with its dependencies
+func (s *RelayAuthenticatorTestSuite) setupRingClient() {
 	applicationQueryClient := testqueryclients.NewTestApplicationQueryClient(s.T())
 	accountQueryClient := testqueryclients.NewTestAccountQueryClient(s.T())
 
-	ringCacheDeps := depinject.Supply(
+	ringClientDeps := depinject.Supply(
 		accountQueryClient,
 		applicationQueryClient,
-		delegationClient,
 		s.sharedQuerier,
 	)
-	s.ringCache = testrings.NewRingCacheWithMockDependencies(s.ctx, s.T(), ringCacheDeps)
+	s.ringClient = testrings.NewRingClientWithMockDependencies(s.ctx, s.T(), ringClientDeps)
 }
 
 // setupSession initializes a session with a supplier

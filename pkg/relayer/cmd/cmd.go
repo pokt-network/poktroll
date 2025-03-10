@@ -219,7 +219,6 @@ func setupRelayerDependencies(
 		config.NewSupplyBlockClientFn(queryNodeRPCUrl),                    // leaf
 		config.NewSupplyQueryClientContextFn(queryNodeGRPCUrl),            // leaf
 		config.NewSupplyTxClientContextFn(queryNodeGRPCUrl, txNodeRPCUrl), // leaf
-		config.NewSupplyDelegationClientFn(),                              // leaf
 
 		// Setup the params caches and configure them to clear on new blocks.
 		// Some of the params (tokenomics and gateway) are not used in the RelayMiner
@@ -253,7 +252,7 @@ func setupRelayerDependencies(
 		config.NewSupplyBankQuerierFn(),
 		config.NewSupplySupplierQuerierFn(),
 		config.NewSupplyProofQueryClientFn(),
-		config.NewSupplyRingCacheFn(),
+		config.NewSupplyRingClientFn(),
 		supplyTxFactory,
 		supplyTxContext,
 		config.NewSupplySupplierClientsFn(signingKeyNames),

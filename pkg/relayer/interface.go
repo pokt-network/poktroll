@@ -8,7 +8,6 @@ package relayer
 import (
 	"context"
 
-	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/pokt-network/smt"
 
 	"github.com/pokt-network/poktroll/pkg/observable"
@@ -78,9 +77,6 @@ type RelayAuthenticator interface {
 	// GetSupplierOperatorAddresses returns the supplier operator addresses that
 	// the relay authenticator can use to sign relay responses.
 	GetSupplierOperatorAddresses() []string
-
-	// Start starts the relay authenticator and its underlying services.
-	Start(ctx context.Context)
 }
 
 type RelayAuthenticatorOption func(RelayAuthenticator)
@@ -166,7 +162,7 @@ type SessionTree interface {
 	StartClaiming() error
 
 	// GetSupplierOperatorAddress returns the supplier operator address building this tree.
-	GetSupplierOperatorAddress() *cosmostypes.AccAddress
+	GetSupplierOperatorAddress() string
 
 	// GetTrieSpec returns the trie spec of the SMST.
 	GetTrieSpec() smt.TrieSpec

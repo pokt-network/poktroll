@@ -216,6 +216,10 @@ func (server *relayMinerHTTPServer) sendRelayResponse(
 		return err
 	}
 
+	relayResponseBzLenStr := fmt.Sprintf("%d", len(relayResponseBz))
+
+	writer.Header().Set("Connection", "close")
+	writer.Header().Set("Content-Length", relayResponseBzLenStr)
 	_, err = writer.Write(relayResponseBz)
 	return err
 }
