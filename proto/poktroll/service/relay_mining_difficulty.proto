@@ -6,7 +6,7 @@ option (gogoproto.stable_marshaler_all) = true;
 
 import "gogoproto/gogo.proto";
 
-// RelayMiningDifficulty is a message used to store the on-chain Relay Mining
+// RelayMiningDifficulty is a message used to store the onchain Relay Mining
 // difficulty associated with a specific service ID.
 // TODO_TECHDEBT: Embed this message in the Service message.
 message RelayMiningDifficulty {

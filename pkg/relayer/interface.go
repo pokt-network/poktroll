@@ -1,7 +1,7 @@
-//go:generate mockgen -destination=../../testutil/mockrelayer/relayer_proxy_mock.go -package=mockrelayer . RelayerProxy
-//go:generate mockgen -destination=../../testutil/mockrelayer/miner_mock.go -package=mockrelayer . Miner
-//go:generate mockgen -destination=../../testutil/mockrelayer/relayer_sessions_manager_mock.go -package=mockrelayer . RelayerSessionsManager
-//go:generate mockgen -destination=../../testutil/mockrelayer/relay_meter_mock.go -package=mockrelayer . RelayMeter
+//go:generate go run go.uber.org/mock/mockgen -destination=../../testutil/mockrelayer/relayer_proxy_mock.go -package=mockrelayer . RelayerProxy
+//go:generate go run go.uber.org/mock/mockgen -destination=../../testutil/mockrelayer/miner_mock.go -package=mockrelayer . Miner
+//go:generate go run go.uber.org/mock/mockgen -destination=../../testutil/mockrelayer/relayer_sessions_manager_mock.go -package=mockrelayer . RelayerSessionsManager
+//go:generate go run go.uber.org/mock/mockgen -destination=../../testutil/mockrelayer/relay_meter_mock.go -package=mockrelayer . RelayMeter
 
 package relayer
 
@@ -57,25 +57,33 @@ type RelayerProxy interface {
 	// A served relay is one whose RelayRequest's signature and session have been verified,
 	// and its RelayResponse has been signed and successfully sent to the client.
 	ServedRelays() RelaysObservable
+}
 
-	// VerifyRelayRequest is a shared method used by RelayServers to check the
-	// relay request signature and session validity.
-	// TODO_TECHDEBT(@red-0ne): This method should be moved out of the RelayerProxy interface
-	// that should not be responsible for verifying relay requests.
+type RelayerProxyOption func(RelayerProxy)
+
+// RelayAuthenticator is the interface that authenticates the relay requests and
+// responses (i.e. verifies the relay request signature and session validity, and
+// signs the relay response).
+type RelayAuthenticator interface {
+	// VerifyRelayRequest verifies the relay request signature and session validity.
 	VerifyRelayRequest(
 		ctx context.Context,
 		relayRequest *servicetypes.RelayRequest,
 		serviceId string,
 	) error
 
-	// SignRelayResponse is a shared method used by RelayServers to sign
-	// and append the signature to the RelayResponse.
-	// TODO_TECHDEBT(@red-0ne): This method should be moved out of the RelayerProxy interface
-	// that should not be responsible for signing relay responses.
+	// SignRelayResponse signs the relay response given a supplier operator address.
 	SignRelayResponse(relayResponse *servicetypes.RelayResponse, supplierOperatorAddr string) error
+
+	// GetSupplierOperatorAddresses returns the supplier operator addresses that
+	// the relay authenticator can use to sign relay responses.
+	GetSupplierOperatorAddresses() []string
+
+	// Start starts the relay authenticator and its underlying services.
+	Start(ctx context.Context)
 }
 
-type RelayerProxyOption func(RelayerProxy)
+type RelayAuthenticatorOption func(RelayAuthenticator)
 
 // RelayServer is the interface of the advertised relay servers provided by the RelayerProxy.
 type RelayServer interface {
@@ -140,7 +148,7 @@ type SessionTree interface {
 
 	// Flush gets the root hash of the SMST needed for submitting the claim;
 	// then commits the entire tree to disk and stops the KVStore.
-	// It should be called before submitting the claim on-chain. This function frees up
+	// It should be called before submitting the claim onchain. This function frees up
 	// the in-memory resources used by the SMST that are no longer needed while waiting
 	// for the proof submission window to open.
 	Flush() (SMSTRoot []byte, err error)
@@ -149,7 +157,7 @@ type SessionTree interface {
 	// aiming to free up KVStore resources after the proof is no longer needed.
 	// Delete deletes the SMST from the KVStore.
 	// WARNING: This function should be called only after the proof has been successfully
-	// submitted on-chain and the servicer has confirmed that it has been rewarded.
+	// submitted onchain and the servicer has confirmed that it has been rewarded.
 	Delete() error
 
 	// StartClaiming marks the session tree as being picked up for claiming,

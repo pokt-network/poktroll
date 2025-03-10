@@ -14,6 +14,7 @@ import (
 	"github.com/pokt-network/poktroll/testutil/cases"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	gatewaytypes "github.com/pokt-network/poktroll/x/gateway/types"
+	migrationtypes "github.com/pokt-network/poktroll/x/migration/types"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 	servicetypes "github.com/pokt-network/poktroll/x/service/types"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
@@ -45,6 +46,7 @@ var (
 		suppliertypes.ModuleName:   SupplierModuleParamConfig,
 		prooftypes.ModuleName:      ProofModuleParamConfig,
 		tokenomicstypes.ModuleName: TokenomicsModuleParamConfig,
+		migrationtypes.ModuleName:  MigrationModuleParamConfig,
 	}
 
 	// paramConfigsPath is the path, relative to the project root, to the go file
@@ -80,7 +82,7 @@ type ParamsSuite struct {
 
 	// AuthorityAddr is the cosmos account address of the authority for the integration
 	// app. It is used as the **granter** of authz grants for parameter update messages.
-	// In practice, is an address sourced by an on-chain string and no one has the private key.
+	// In practice, is an address sourced by an onchain string and no one has the private key.
 	AuthorityAddr cosmostypes.AccAddress
 	// AuthorizedAddr is the cosmos account address which is the **grantee** of authz
 	// grants for parameter update messages.
@@ -121,7 +123,7 @@ func (s *ParamsSuite) SetupTestAuthzAccounts(t *testing.T) {
 	s.AuthorizedAddr = nextAcct.Address
 }
 
-// SetupTestAuthzGrants creates on-chain authz grants for the MsgUpdateUpdateParam and
+// SetupTestAuthzGrants creates onchain authz grants for the MsgUpdateUpdateParam and
 // MsgUpdateParams message for each module. It is expected to be called after s.NewApp()
 // as it depends on the authority and authorized addresses having been set.
 func (s *ParamsSuite) SetupTestAuthzGrants(t *testing.T) {
@@ -147,7 +149,7 @@ func (s *ParamsSuite) SetupTestAuthzGrants(t *testing.T) {
 
 // RunUpdateParams runs the given MsgUpdateParams message via an authz exec as the
 // AuthorizedAddr and returns the response bytes and error. It is expected to be called
-// after s.SetupTestAuthzGrants() as it depends on an on-chain authz grant to AuthorizedAddr
+// after s.SetupTestAuthzGrants() as it depends on an onchain authz grant to AuthorizedAddr
 // for MsgUpdateParams for the given module.
 func (s *ParamsSuite) RunUpdateParams(
 	t *testing.T,
@@ -159,7 +161,7 @@ func (s *ParamsSuite) RunUpdateParams(
 }
 
 // RunUpdateParamsAsSigner runs the given MsgUpdateParams message via an authz exec
-// as signerAddr and returns the response bytes and error. It depends on an on-chain
+// as signerAddr and returns the response bytes and error. It depends on an onchain
 // authz grant to signerAddr for MsgUpdateParams for the given module.
 func (s *ParamsSuite) RunUpdateParamsAsSigner(
 	t *testing.T,
@@ -182,7 +184,7 @@ func (s *ParamsSuite) RunUpdateParamsAsSigner(
 // RunUpdateParam constructs and runs an MsgUpdateParam message via an authz exec
 // as the AuthorizedAddr for the given module, parameter name, and value. It returns
 // the response bytes and error. It is expected to be called after s.SetupTestAuthzGrants()
-// as it depends on an on-chain authz grant to AuthorizedAddr for MsgUpdateParam for the given module.
+// as it depends on an onchain authz grant to AuthorizedAddr for MsgUpdateParam for the given module.
 func (s *ParamsSuite) RunUpdateParam(
 	t *testing.T,
 	moduleName string,
@@ -201,7 +203,7 @@ func (s *ParamsSuite) RunUpdateParam(
 
 // RunUpdateParamAsSigner constructs and runs an MsgUpdateParam message via an authz exec
 // as the given signerAddr for the given module, parameter name, and value. It returns
-// the response bytes and error. It depends on an on-chain authz grant to signerAddr for
+// the response bytes and error. It depends on an onchain authz grant to signerAddr for
 // MsgUpdateParam for the given module.
 func (s *ParamsSuite) RunUpdateParamAsSigner(
 	t *testing.T,

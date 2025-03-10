@@ -1066,29 +1066,28 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-// Supplier is the type defining the actor in Pocket Network that provides RPC services.
+// Supplier represents an actor in Pocket Network that provides RPC services
 type Supplier struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The address of the owner (i.e. staker, custodial) that owns the funds for staking.
-	// By default, this address is the one that receives all the rewards unless owtherwise specified.
-	// This property cannot be updated by the operator.
-	OwnerAddress string `protobuf:"bytes,1,opt,name=owner_address,json=ownerAddress,proto3" json:"owner_address,omitempty"` // Bech32 cosmos address
-	// The operator address of the supplier operator (i.e. the one managing the off-chain server).
-	// The operator address can update the supplier's configurations excluding the owner address.
-	// This property does not change over the supplier's lifespan, the supplier must be unstaked
-	// and re-staked to effectively update this value.
-	OperatorAddress string                   `protobuf:"bytes,2,opt,name=operator_address,json=operatorAddress,proto3" json:"operator_address,omitempty"` // Bech32 cosmos address
-	Stake           *v1beta1.Coin            `protobuf:"bytes,3,opt,name=stake,proto3" json:"stake,omitempty"`                                            // The total amount of uPOKT the supplier has staked
-	Services        []*SupplierServiceConfig `protobuf:"bytes,4,rep,name=services,proto3" json:"services,omitempty"`                                      // The service configs this supplier can support
-	// The session end height at which an actively unbonding supplier unbonds its stake.
-	// If the supplier did not unstake, this value will be 0.
+	// Owner address that controls the staked funds and receives rewards by default
+	// Cannot be updated by the operator
+	OwnerAddress string `protobuf:"bytes,1,opt,name=owner_address,json=ownerAddress,proto3" json:"owner_address,omitempty"`
+	// Operator address managing the offchain server
+	// Immutable for supplier's lifespan - requires unstake/re-stake to change.
+	// Can update supplier configs except for owner address.
+	OperatorAddress string `protobuf:"bytes,2,opt,name=operator_address,json=operatorAddress,proto3" json:"operator_address,omitempty"`
+	// Total amount of staked uPOKT
+	Stake *v1beta1.Coin `protobuf:"bytes,3,opt,name=stake,proto3" json:"stake,omitempty"`
+	// List of service configurations supported by this supplier
+	Services []*SupplierServiceConfig `protobuf:"bytes,4,rep,name=services,proto3" json:"services,omitempty"`
+	// Session end height when supplier initiated unstaking (0 if not unstaking)
 	UnstakeSessionEndHeight uint64 `protobuf:"varint,5,opt,name=unstake_session_end_height,json=unstakeSessionEndHeight,proto3" json:"unstake_session_end_height,omitempty"`
-	// services_activation_heights_map is a map of serviceIds to the height at
-	// which the staked supplier will become active for that service.
-	// Activation heights are session start heights.
+	// Mapping of serviceIds to their activation heights
+	// - Key: serviceId
+	// - Value: Session start height when supplier becomes active for the service
 	ServicesActivationHeightsMap map[string]uint64 `protobuf:"bytes,6,rep,name=services_activation_heights_map,json=servicesActivationHeightsMap,proto3" json:"services_activation_heights_map,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"varint,2,opt,name=value,proto3"`
 }
 

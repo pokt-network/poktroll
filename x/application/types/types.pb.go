@@ -27,31 +27,33 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 
-// Application defines the type used to store an on-chain definition and state for an application
+// Application represents the onchain definition and state of an application
 type Application struct {
-	Address string      `protobuf:"bytes,1,opt,name=address,proto3" json:"address,omitempty"`
-	Stake   *types.Coin `protobuf:"bytes,2,opt,name=stake,proto3" json:"stake,omitempty"`
-	// CRITICAL_DEV_NOTE: The number of service_configs must be EXACTLY ONE.
+	// Bech32 address of the application
+	Address string `protobuf:"bytes,1,opt,name=address,proto3" json:"address,omitempty"`
+	// Total amount of staked uPOKT
+	Stake *types.Coin `protobuf:"bytes,2,opt,name=stake,proto3" json:"stake,omitempty"`
+	// CRITICAL: Must contain EXACTLY ONE service config
 	// This prevents applications from over-servicing.
-	// The field is kept repeated (a list) for both legacy and future logic reaosns.
-	// References:
-	//  - https://github.com/pokt-network/poktroll/pull/750#discussion_r1735025033
-	//  - https://www.notion.so/buildwithgrove/Off-chain-Application-Stake-Tracking-6a8bebb107db4f7f9dc62cbe7ba555f7
+	// Kept as repeated field for legacy and future compatibility
+	// Refs:
+	//   - https://github.com/pokt-network/poktroll/pull/750#discussion_r1735025033
+	//   - https://www.notion.so/buildwithgrove/Off-chain-Application-Stake-Tracking-6a8bebb107db4f7f9dc62cbe7ba555f7
 	ServiceConfigs []*types1.ApplicationServiceConfig `protobuf:"bytes,3,rep,name=service_configs,json=serviceConfigs,proto3" json:"service_configs,omitempty"`
 	// TODO_BETA(@bryanchriswhite): Rename `delegatee_gateway_addresses` to `gateway_addresses_delegated_to`.
 	// Ensure to rename all relevant configs, comments, variables, function names, etc as well.
+	// Non-nullable list of Bech32 encoded delegatee Gateway addresses
 	DelegateeGatewayAddresses []string `protobuf:"bytes,4,rep,name=delegatee_gateway_addresses,json=delegateeGatewayAddresses,proto3" json:"delegatee_gateway_addresses,omitempty"`
-	// A map from sessionEndHeights to a list of Gateways.
-	// The key is the height of the last block of the session during which the
-	// respective undelegation was committed.
-	// The value is a list of gateways being undelegated from.
+	// Mapping of session end heights to gateways being undelegated from
+	// - Key: Height of the last block of the session when undelegation tx was committed
+	// - Value: List of gateways being undelegated from
 	// TODO_DOCUMENT(@red-0ne): Need to document the flow from this comment
 	// so its clear to everyone why this is necessary; https://github.com/pokt-network/poktroll/issues/476#issuecomment-2052639906.
 	PendingUndelegations map[uint64]UndelegatingGatewayList `protobuf:"bytes,5,rep,name=pending_undelegations,json=pendingUndelegations,proto3" json:"pending_undelegations" protobuf_key:"varint,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
-	// The end height of the session at which an application initiated its unstaking process.
-	// If the application did not unstake, this value will be 0.
-	UnstakeSessionEndHeight uint64                      `protobuf:"varint,6,opt,name=unstake_session_end_height,json=unstakeSessionEndHeight,proto3" json:"unstake_session_end_height,omitempty"`
-	PendingTransfer         *PendingApplicationTransfer `protobuf:"bytes,7,opt,name=pending_transfer,json=pendingTransfer,proto3" json:"pending_transfer,omitempty"`
+	// Session end height when application initiated unstaking (0 if not unstaking)
+	UnstakeSessionEndHeight uint64 `protobuf:"varint,6,opt,name=unstake_session_end_height,json=unstakeSessionEndHeight,proto3" json:"unstake_session_end_height,omitempty"`
+	// Information about pending application transfers
+	PendingTransfer *PendingApplicationTransfer `protobuf:"bytes,7,opt,name=pending_transfer,json=pendingTransfer,proto3" json:"pending_transfer,omitempty"`
 }
 
 func (m *Application) Reset()         { *m = Application{} }

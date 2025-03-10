@@ -48,7 +48,7 @@ func (s *tokenLogicModuleTestSuite) TestSettlePendingClaims_NonHaltingError() {
 		desc  string
 		setup func(*testing.T)
 	}{
-		{desc: "supplier operator pubkey not on-chain"},
+		{desc: "supplier operator pubkey not onchain"},
 		{desc: "closest merkle proof is invalid (mangled)"},
 		{desc: "closest merkle proof is invalid (non-compact)"},
 		{desc: "closest merkle proof leaf is not a relay"},

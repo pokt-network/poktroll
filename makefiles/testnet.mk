@@ -4,7 +4,7 @@
 
 .PHONY: testnet_supplier_list
 testnet_supplier_list: ## List all the staked supplier on TestNet
-	poktrolld q supplier list-supplier --node=$(TESTNET_RPC)
+	poktrolld q supplier list-suppliers --node=$(TESTNET_RPC)
 
 .PHONY: testnet_gateway_list
 testnet_gateway_list: ## List all the staked gateways on TestNet

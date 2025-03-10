@@ -11,8 +11,20 @@ import (
 // The chain upgrade can be scheduled AFTER the new version (with upgrade strategy implemented) is released,
 // so `cosmovisor` can automatically pull the binary from GitHub.
 var allUpgrades = []upgrades.Upgrade{
-	upgrades.Upgrade_0_0_4,
-	upgrades.Upgrade_0_0_10,
+	// v0.0.4 was the first upgrade we implemented and tested on network that is no longer used.
+	// upgrades.Upgrade_0_0_4,
+
+	// v0.0.10 was the first upgrade we implemented on Alpha TestNet.
+	// upgrades.Upgrade_0_0_10,
+
+	// v0.0.11 was the Alpha TestNet exclusive upgrade to bring it on par with Beta TestNet.
+	// upgrades.Upgrade_0_0_11,
+
+	// v0.0.12 - the first upgrade going live on both Alpha and Beta TestNets.
+	// upgrades.Upgrade_0_0_12,
+
+	// v0.0.13 - this upgrade introduces morse migration module and websocket service handling.
+	upgrades.Upgrade_0_0_13,
 }
 
 // setUpgrades sets upgrade handlers for all upgrades and executes KVStore migration if an upgrade plan file exists.
@@ -27,7 +39,7 @@ func (app *App) setUpgrades() error {
 	}
 
 	// Reads the upgrade info from disk.
-	// The previous binary is expected to have read the plan from on-chain and saved it locally.
+	// The previous binary is expected to have read the plan from onchain and saved it locally.
 	upgradePlan, err := app.Keepers.UpgradeKeeper.ReadUpgradeInfoFromDisk()
 	if err != nil {
 		return err

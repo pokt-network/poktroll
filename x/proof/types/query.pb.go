@@ -436,7 +436,6 @@ func (m *QueryGetProofResponse) GetProof() Proof {
 type QueryAllProofsRequest struct {
 	Pagination *query.PageRequest `protobuf:"bytes,1,opt,name=pagination,proto3" json:"pagination,omitempty"`
 	// Types that are valid to be assigned to Filter:
-	//
 	//	*QueryAllProofsRequest_SupplierOperatorAddress
 	//	*QueryAllProofsRequest_SessionId
 	//	*QueryAllProofsRequest_SessionEndHeight
@@ -851,6 +850,7 @@ func _Query_AllProofs_Handler(srv interface{}, ctx context.Context, dec func(int
 	return interceptor(ctx, in, info, handler)
 }
 
+var Query_serviceDesc = _Query_serviceDesc
 var _Query_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "poktroll.proof.Query",
 	HandlerType: (*QueryServer)(nil),

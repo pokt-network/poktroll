@@ -14,4 +14,12 @@ Feature: Loading gateway server with relays
       | gateway     | 1                | 10             | 3          |
       | supplier    | 1                | 10             | 3          |
     When a load of concurrent relay requests are sent from the applications
-    Then the correct pairs count of claim and proof messages should be committed on-chain
+    Then the number of failed relay requests is "0"
+    # TODO_FOLLOWUP(@red-0ne): Implement the following steps
+    # Then "0" over servicing events are observed
+    # And "0" slashing events are observed
+    # And "0" expired claim events are observed
+    # And there is as many reimbursement requests as the number of settled claims
+    # And the number of claims submitted and claims settled is the same
+    # And the number of proofs submitted and proofs required is the same
+    # And the actors onchain balances are as expected

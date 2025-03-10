@@ -1,20 +1,21 @@
-//go:generate mockgen -destination=../../testutil/mockclient/events_query_client_mock.go -package=mockclient . Dialer,Connection,EventsQueryClient
-//go:generate mockgen -destination=../../testutil/mockclient/block_client_mock.go -package=mockclient . Block,BlockClient
-//go:generate mockgen -destination=../../testutil/mockclient/delegation_client_mock.go -package=mockclient . DelegationClient
-//go:generate mockgen -destination=../../testutil/mockclient/tx_client_mock.go -package=mockclient . TxContext,TxClient
-//go:generate mockgen -destination=../../testutil/mockclient/supplier_client_mock.go -package=mockclient . SupplierClient
-//go:generate mockgen -destination=../../testutil/mockclient/account_query_client_mock.go -package=mockclient . AccountQueryClient
-//go:generate mockgen -destination=../../testutil/mockclient/application_query_client_mock.go -package=mockclient . ApplicationQueryClient
-//go:generate mockgen -destination=../../testutil/mockclient/supplier_query_client_mock.go -package=mockclient . SupplierQueryClient
-//go:generate mockgen -destination=../../testutil/mockclient/session_query_client_mock.go -package=mockclient . SessionQueryClient
-//go:generate mockgen -destination=../../testutil/mockclient/shared_query_client_mock.go -package=mockclient . SharedQueryClient
-//go:generate mockgen -destination=../../testutil/mockclient/proof_query_client_mock.go -package=mockclient . ProofQueryClient
-//go:generate mockgen -destination=../../testutil/mockclient/service_query_client_mock.go -package=mockclient . ServiceQueryClient
-//go:generate mockgen -destination=../../testutil/mockclient/bank_query_client_mock.go -package=mockclient . BankQueryClient
-//go:generate mockgen -destination=../../testutil/mockclient/cosmos_tx_builder_mock.go -package=mockclient github.com/cosmos/cosmos-sdk/client TxBuilder
-//go:generate mockgen -destination=../../testutil/mockclient/cosmos_keyring_mock.go -package=mockclient github.com/cosmos/cosmos-sdk/crypto/keyring Keyring
-//go:generate mockgen -destination=../../testutil/mockclient/cosmos_client_mock.go -package=mockclient github.com/cosmos/cosmos-sdk/client AccountRetriever
-//go:generate mockgen -destination=../../testutil/mockclient/comet_rpc_client_mock.go -package=mockclient github.com/cosmos/cosmos-sdk/client CometRPC
+//go:generate go run go.uber.org/mock/mockgen -destination=../../testutil/mockclient/events_query_client_mock.go -package=mockclient . Dialer,Connection,EventsQueryClient
+//go:generate go run go.uber.org/mock/mockgen -destination=../../testutil/mockclient/block_client_mock.go -package=mockclient . Block,BlockClient
+//go:generate go run go.uber.org/mock/mockgen -destination=../../testutil/mockclient/delegation_client_mock.go -package=mockclient . DelegationClient
+//go:generate go run go.uber.org/mock/mockgen -destination=../../testutil/mockclient/tx_client_mock.go -package=mockclient . TxContext,TxClient
+//go:generate go run go.uber.org/mock/mockgen -destination=../../testutil/mockclient/supplier_client_mock.go -package=mockclient . SupplierClient
+//go:generate go run go.uber.org/mock/mockgen -destination=../../testutil/mockclient/account_query_client_mock.go -package=mockclient . AccountQueryClient
+//go:generate go run go.uber.org/mock/mockgen -destination=../../testutil/mockclient/application_query_client_mock.go -package=mockclient . ApplicationQueryClient
+//go:generate go run go.uber.org/mock/mockgen -destination=../../testutil/mockclient/supplier_query_client_mock.go -package=mockclient . SupplierQueryClient
+//go:generate go run go.uber.org/mock/mockgen -destination=../../testutil/mockclient/session_query_client_mock.go -package=mockclient . SessionQueryClient
+//go:generate go run go.uber.org/mock/mockgen -destination=../../testutil/mockclient/shared_query_client_mock.go -package=mockclient . SharedQueryClient
+//go:generate go run go.uber.org/mock/mockgen -destination=../../testutil/mockclient/proof_query_client_mock.go -package=mockclient . ProofQueryClient
+//go:generate go run go.uber.org/mock/mockgen -destination=../../testutil/mockclient/service_query_client_mock.go -package=mockclient . ServiceQueryClient
+//go:generate go run go.uber.org/mock/mockgen -destination=../../testutil/mockclient/bank_query_client_mock.go -package=mockclient . BankQueryClient
+//go:generate go run go.uber.org/mock/mockgen -destination=../../testutil/mockclient/cosmos_tx_builder_mock.go -package=mockclient github.com/cosmos/cosmos-sdk/client TxBuilder
+//go:generate go run go.uber.org/mock/mockgen -destination=../../testutil/mockclient/cosmos_keyring_mock.go -package=mockclient github.com/cosmos/cosmos-sdk/crypto/keyring Keyring
+//go:generate go run go.uber.org/mock/mockgen -destination=../../testutil/mockclient/cosmos_client_mock.go -package=mockclient github.com/cosmos/cosmos-sdk/client AccountRetriever
+//go:generate go run go.uber.org/mock/mockgen -destination=../../testutil/mockclient/comet_rpc_client_mock.go -package=mockclient github.com/cosmos/cosmos-sdk/client CometRPC
+//go:generate go run go.uber.org/mock/mockgen -destination=../../testutil/mockclient/grpc_client_conn_mock.go -package=mockclient github.com/cosmos/gogoproto/grpc ClientConn
 
 package client
 
@@ -58,7 +59,7 @@ type MsgSubmitProof interface {
 // able to construct blockchain transactions from pocket protocol-specific messages
 // related to its role.
 type SupplierClient interface {
-	// CreateClaims sends claim messages which creates an on-chain commitment by
+	// CreateClaims sends claim messages which creates an onchain commitment by
 	// calling supplier to the given smt.SparseMerkleSumTree root hash of the given
 	// session's mined relays.
 	CreateClaims(
@@ -67,7 +68,7 @@ type SupplierClient interface {
 	) error
 	// SubmitProof sends proof messages which contain the smt.SparseCompactMerkleClosestProof,
 	// corresponding to some previously created claim for the same session.
-	// The proof is validated on-chain as part of the pocket protocol.
+	// The proof is validated onchain as part of the pocket protocol.
 	SubmitProofs(
 		ctx context.Context,
 		sessionProofs ...MsgSubmitProof,
@@ -126,6 +127,13 @@ type TxContext interface {
 
 	// GetClientCtx returns the cosmos-sdk client context associated with the transaction context.
 	GetClientCtx() cosmosclient.Context
+
+	// GetSimulatedTxGas returns the estimated gas for the given messages.
+	GetSimulatedTxGas(
+		ctx context.Context,
+		signingKeyName string,
+		msgs ...cosmostypes.Msg,
+	) (uint64, error)
 }
 
 // Block is an interface which abstracts the details of a block to its minimal
@@ -162,7 +170,7 @@ type BlockClient interface {
 	// CommittedBlocksSequence returns a BlockObservable that emits the
 	// latest blocks that have been committed to the chain.
 	CommittedBlocksSequence(context.Context) BlockReplayObservable
-	// LastBlock returns the latest block that has been committed on-chain.
+	// LastBlock returns the latest block that has been committed onchain.
 	LastBlock(context.Context) Block
 	// Close unsubscribes all observers of the committed block sequence
 	// observable and closes the events query client.
@@ -255,7 +263,7 @@ type BlockClientOption func(BlockClient)
 type EventsReplayClientOption[T any] func(EventsReplayClient[T])
 
 // AccountQueryClient defines an interface that enables the querying of the
-// on-chain account information
+// onchain account information
 type AccountQueryClient interface {
 	// GetAccount queries the chain for the details of the account provided
 	GetAccount(ctx context.Context, address string) (cosmostypes.AccountI, error)
@@ -265,24 +273,27 @@ type AccountQueryClient interface {
 }
 
 // ApplicationQueryClient defines an interface that enables the querying of the
-// on-chain application information
+// onchain application information
 type ApplicationQueryClient interface {
 	// GetApplication queries the chain for the details of the application provided
 	GetApplication(ctx context.Context, appAddress string) (apptypes.Application, error)
 
-	// GetAllApplications queries all on-chain applications
+	// GetAllApplications queries all onchain applications
 	GetAllApplications(ctx context.Context) ([]apptypes.Application, error)
+
+	// GetParams queries the chain for the application module parameters.
+	GetParams(ctx context.Context) (*apptypes.Params, error)
 }
 
 // SupplierQueryClient defines an interface that enables the querying of the
-// on-chain supplier information
+// onchain supplier information
 type SupplierQueryClient interface {
 	// GetSupplier queries the chain for the details of the supplier provided
 	GetSupplier(ctx context.Context, supplierOperatorAddress string) (sharedtypes.Supplier, error)
 }
 
 // SessionQueryClient defines an interface that enables the querying of the
-// on-chain session information
+// onchain session information
 type SessionQueryClient interface {
 	// GetSession queries the chain for the details of the session provided
 	GetSession(
@@ -297,7 +308,7 @@ type SessionQueryClient interface {
 }
 
 // SharedQueryClient defines an interface that enables the querying of the
-// on-chain shared module params.
+// onchain shared module params.
 type SharedQueryClient interface {
 	// GetParams queries the chain for the current shared module parameters.
 	GetParams(ctx context.Context) (*sharedtypes.Params, error)
@@ -323,7 +334,7 @@ type SharedQueryClient interface {
 }
 
 // BlockQueryClient defines an interface that enables the querying of
-// on-chain block information for a given height. If height is nil, the
+// onchain block information for a given height. If height is nil, the
 // latest block is returned.
 type BlockQueryClient interface {
 	Block(ctx context.Context, height *int64) (*cometrpctypes.ResultBlock, error)
@@ -340,14 +351,14 @@ type ProofParams interface {
 }
 
 // ProofQueryClient defines an interface that enables the querying of the
-// on-chain proof module params.
+// onchain proof module params.
 type ProofQueryClient interface {
-	// GetParams queries the chain for the current shared module parameters.
+	// GetParams queries the chain for the current proof module parameters.
 	GetParams(ctx context.Context) (ProofParams, error)
 }
 
 // ServiceQueryClient defines an interface that enables the querying of the
-// on-chain service information
+// onchain service information
 type ServiceQueryClient interface {
 	// GetService queries the chain for the details of the service provided
 	GetService(ctx context.Context, serviceId string) (sharedtypes.Service, error)
@@ -355,8 +366,16 @@ type ServiceQueryClient interface {
 }
 
 // BankQueryClient defines an interface that enables the querying of the
-// on-chain bank information
+// onchain bank information
 type BankQueryClient interface {
 	// GetBalance queries the chain for the uPOKT balance of the account provided
 	GetBalance(ctx context.Context, address string) (*cosmostypes.Coin, error)
+}
+
+// ParamsCache is an interface for a simple in-memory cache implementation for onchain module parameter quueries.
+// It does not involve key-value pairs, but only stores a single value.
+type ParamsCache[T any] interface {
+	Get() (T, bool)
+	Set(T)
+	Clear()
 }

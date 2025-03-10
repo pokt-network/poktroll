@@ -12,9 +12,9 @@ import (
 	coretypes "github.com/cometbft/cometbft/rpc/core/types"
 	cmttypes "github.com/cometbft/cometbft/types"
 	sdktypes "github.com/cosmos/cosmos-sdk/types"
-	"github.com/golang/mock/gomock"
 	"github.com/pokt-network/smt"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/mock/gomock"
 
 	"github.com/pokt-network/poktroll/app/volatile"
 	"github.com/pokt-network/poktroll/pkg/client"
@@ -74,8 +74,9 @@ func requireProofCountEqualsExpectedValueFromProofParams(t *testing.T, proofPara
 	supplierOperatorAddress := sample.AccAddress()
 	// Set the supplier operator balance to be able to submit the expected number of proofs.
 	feePerProof := prooftypes.DefaultParams().ProofSubmissionFee.Amount.Int64()
-	numExpectedProofs := int64(2)
-	supplierOperatorBalance := feePerProof * numExpectedProofs
+	gasCost := session.ClamAndProofGasCost.Amount.Int64()
+	proofCost := feePerProof + gasCost
+	supplierOperatorBalance := proofCost
 	supplierClientMap := testsupplier.NewClaimProofSupplierClientMap(ctx, t, supplierOperatorAddress, proofCount)
 	blockPublishCh, minedRelaysPublishCh := setupDependencies(t, ctx, supplierClientMap, emptyBlockHash, proofParams, supplierOperatorBalance)
 
@@ -207,8 +208,11 @@ func TestRelayerSessionsManager_InsufficientBalanceForProofSubmission(t *testing
 
 	supplierOperatorAddress := sample.AccAddress()
 	supplierOperatorAccAddress := sdktypes.MustAccAddressFromBech32(supplierOperatorAddress)
+
+	proofSubmissionFee := prooftypes.DefaultParams().ProofSubmissionFee.Amount.Int64()
+	claimAndProofGasCost := session.ClamAndProofGasCost.Amount.Int64()
 	// Set the supplier operator balance to be able to submit only a single proof.
-	supplierOperatorBalance := prooftypes.DefaultParams().ProofSubmissionFee.Amount.Int64() + 1
+	supplierOperatorBalance := proofSubmissionFee + claimAndProofGasCost + 1
 	supplierClientMock.EXPECT().
 		OperatorAddress().
 		Return(&supplierOperatorAccAddress).

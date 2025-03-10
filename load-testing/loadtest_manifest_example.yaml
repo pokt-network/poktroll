@@ -2,16 +2,16 @@
 # It is intended to target a remote environment, such as a devnet or testnet.
 is_ephemeral_chain: false
 
-# testnet_node is the URL of the node that the load test will use to query the
+# rpc_node is the URL of the RPC node that the load test will use to query the
 # chain and submit transactions.
-testnet_node: https://devnet-sophon-validator-rpc.poktroll.com
+rpc_node: https://devnet-sophon-validator-rpc.poktroll.com
 
 # The service ID to request relays from.
 service_id: "anvil"
 
 # The address of the account that will be used to fund the application accounts
-# so that they can stake on the network.
-funding_account_address: pokt1awtlw5sjmw2f5lgj8ekdkaqezphgz88rdk93sk # address for faucet account
+# so that they can stake on the local network.
+funding_account_address: pokt1eeeksh2tvkh7wzmfrljnhw4wrhs55lcuvmekkw # address for faucet account
 
 # In non-ephemeral chains, the gateways are identified by their address.
 gateways:

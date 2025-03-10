@@ -21,6 +21,6 @@ var (
 	ErrAppDuplicateAddress            = sdkerrors.Register(ModuleName, 1113, "duplicate application address")
 	ErrAppHasPendingTransfer          = sdkerrors.Register(ModuleName, 1114, "application is in transfer period")
 	ErrAppParamInvalid                = sdkerrors.Register(ModuleName, 1115, "the provided param is invalid")
-	ErrAppEmitEvent                   = sdkerrors.Register(ModuleName, 1116, "unable to emit on-chain event")
+	ErrAppEmitEvent                   = sdkerrors.Register(ModuleName, 1116, "unable to emit onchain event")
 	ErrQueryAppsInvalidGatewayAddress = sdkerrors.Register(ModuleName, 1117, "invalid gateway address querying for apps with delegatee gateway address")
 )

@@ -1,4 +1,4 @@
-//go:generate mockgen -destination ../../../testutil/tokenomics/mocks/expected_keepers_mock.go -package mocks . AccountKeeper,BankKeeper,ApplicationKeeper,ProofKeeper,SharedKeeper,SessionKeeper,SupplierKeeper,ServiceKeeper
+//go:generate go run go.uber.org/mock/mockgen -destination ../../../testutil/tokenomics/mocks/expected_keepers_mock.go -package mocks . AccountKeeper,BankKeeper,ApplicationKeeper,ProofKeeper,SharedKeeper,SessionKeeper,SupplierKeeper,ServiceKeeper
 
 package types
 
@@ -9,6 +9,7 @@ import (
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
+	migrationtypes "github.com/pokt-network/poktroll/x/migration/types"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 	servicetypes "github.com/pokt-network/poktroll/x/service/types"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
@@ -46,6 +47,7 @@ type ApplicationKeeper interface {
 	GetAllApplications(ctx context.Context) []apptypes.Application
 	UnbondApplication(ctx context.Context, app *apptypes.Application) error
 	EndBlockerUnbondApplications(ctx context.Context) error
+	GetParams(ctx context.Context) (params apptypes.Params)
 }
 
 type ProofKeeper interface {
@@ -55,10 +57,10 @@ type ProofKeeper interface {
 	RemoveProof(ctx context.Context, sessionId, supplierOperatorAddr string)
 
 	AllClaims(ctx context.Context, req *prooftypes.QueryAllClaimsRequest) (*prooftypes.QueryAllClaimsResponse, error)
-	EnsureValidProof(ctx context.Context, proof *prooftypes.Proof) error
 	ProofRequirementForClaim(ctx context.Context, claim *prooftypes.Claim) (prooftypes.ProofRequirementReason, error)
 
 	// Only used for testing & simulation
+	ValidateSubmittedProofs(ctx cosmostypes.Context) (numValidProofs, numInvalidProofs uint64, err error)
 	GetAllProofs(ctx context.Context) []prooftypes.Proof
 	UpsertClaim(ctx context.Context, claim prooftypes.Claim)
 	UpsertProof(ctx context.Context, claim prooftypes.Proof)
@@ -96,4 +98,10 @@ type ServiceKeeper interface {
 	SetService(ctx context.Context, service sharedtypes.Service)
 	GetParams(ctx context.Context) servicetypes.Params
 	SetParams(ctx context.Context, params servicetypes.Params) error
+}
+
+type MigrationKeeper interface {
+	ImportFromMorseAccountState(ctx context.Context, morseAccountState *migrationtypes.MorseAccountState)
+	GetMorseClaimableAccount(ctx context.Context, morseHexAddress string) (morseAccount migrationtypes.MorseClaimableAccount, isFound bool)
+	GetAllMorseClaimableAccounts(ctx context.Context) (morseAccounts []migrationtypes.MorseClaimableAccount)
 }

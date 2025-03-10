@@ -23,6 +23,7 @@ var (
 		ProofWindowCloseOffsetBlocks:       4,
 		SupplierUnbondingPeriodSessions:    1,
 		ApplicationUnbondingPeriodSessions: 1,
+		GatewayUnbondingPeriodSessions:     1,
 		ComputeUnitsToTokensMultiplier:     42,
 	}
 

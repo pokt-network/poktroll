@@ -93,24 +93,18 @@ func (s *baseIntegrationSuiteTestSuite) TestFundAddressAndGetBankQueryClient() {
 	require.NoError(s.T(), err)
 
 	// Assert that the balance is zero before funding.
-	bankQueryClient := s.GetBankQueryClient()
-	balRes, err := bankQueryClient.Balance(s.SdkCtx(), &banktypes.QueryBalanceRequest{
-		Address: fundAddr.String(),
-		Denom:   volatile.DenomuPOKT,
-	})
+	bankClient := s.GetBankQueryClient(s.T())
+	balance, err := bankClient.GetBalance(s.SdkCtx(), fundAddr.String())
 	require.NoError(s.T(), err)
-	require.Equal(s.T(), int64(0), balRes.GetBalance().Amount.Int64())
+	require.Equal(s.T(), int64(0), balance.Amount.Int64())
 
 	// Fund the address.
 	s.FundAddress(s.T(), fundAddr, fundAmount)
 
 	// Assert that the balance amount is equal to fundAmount.
-	balRes, err = bankQueryClient.Balance(s.SdkCtx(), &banktypes.QueryBalanceRequest{
-		Address: fundAddr.String(),
-		Denom:   volatile.DenomuPOKT,
-	})
+	balance, err = bankClient.GetBalance(s.SdkCtx(), fundAddr.String())
 	require.NoError(s.T(), err)
-	require.Equal(s.T(), fundAmount, balRes.GetBalance().Amount.Int64())
+	require.Equal(s.T(), fundAmount, balance.Amount.Int64())
 }
 
 func (s *baseIntegrationSuiteTestSuite) TestFilterLatestEventsWithNewMsgEventMatchFn() {
@@ -138,12 +132,12 @@ func (s *baseIntegrationSuiteTestSuite) TestFilterLatestEventsWithNewEventTypeMa
 	// Assert that the event manager is empty before emitting events.
 	require.Equal(s.T(), 0, len(s.SdkCtx().EventManager().Events()))
 
-	// Emit the expected number of EventGatewayUnstaked events.
-	s.emitPoktrollGatewayUnstakedEvents(expectedNumEvents)
+	// Emit the expected number of EventGatewayUnbondingBegin events.
+	s.emitPoktrollGatewayUnbondingBeginEvents(expectedNumEvents)
 
 	// Filter for the event with type equal to the EventGatewayUnstaked TypeURL.
-	eventGatewayUnstakedTypeURL := cosmostypes.MsgTypeURL(&gatewaytypes.EventGatewayUnstaked{})
-	matchedEvents := s.FilterEvents(events.NewEventTypeMatchFn(eventGatewayUnstakedTypeURL))
+	eventGatewayUnbondingBeginTypeURL := cosmostypes.MsgTypeURL(&gatewaytypes.EventGatewayUnbondingBegin{})
+	matchedEvents := s.FilterEvents(events.NewEventTypeMatchFn(eventGatewayUnbondingBeginTypeURL))
 
 	require.Equal(s.T(), expectedNumEvents, len(matchedEvents), "unexpected number of matched events")
 
@@ -198,12 +192,12 @@ func (s *baseIntegrationSuiteTestSuite) emitBankMsgSendEvents(expectedNumEvents 
 	require.NoError(s.T(), err)
 }
 
-// emitPoktrollGatewayUnstakedEvents emits the given number of EventGatewayUnstaked
+// emitPoktrollGatewayUnbondingBeginEvents emits the given number of EventGatewayUnbondingBegin
 // events to the event manager. These events are intended to be used to make
 // assertions in tests.
-func (s *baseIntegrationSuiteTestSuite) emitPoktrollGatewayUnstakedEvents(expectedNumEvents int) {
+func (s *baseIntegrationSuiteTestSuite) emitPoktrollGatewayUnbondingBeginEvents(expectedNumEvents int) {
 	for i := 0; i < expectedNumEvents; i++ {
-		err := s.SdkCtx().EventManager().EmitTypedEvent(&gatewaytypes.EventGatewayUnstaked{
+		err := s.SdkCtx().EventManager().EmitTypedEvent(&gatewaytypes.EventGatewayUnbondingBegin{
 			Gateway: &gatewaytypes.Gateway{
 				Address: sample.AccAddress(),
 			},

@@ -2,7 +2,6 @@ package session
 
 import (
 	"bytes"
-	"crypto/sha256"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -93,8 +92,8 @@ func NewSessionTree(
 	}
 
 	// Create the SMST from the KVStore and a nil value hasher so the proof would
-	// contain a non-hashed Relay that could be used to validate the proof on-chain.
-	trie := smt.NewSparseMerkleSumTrie(treeStore, protocol.NewTrieHasher(), smt.WithValueHasher(nil))
+	// contain a non-hashed Relay that could be used to validate the proof onchain.
+	trie := smt.NewSparseMerkleSumTrie(treeStore, protocol.NewTrieHasher(), protocol.SMTValueHasher())
 
 	logger = logger.With(
 		"store_path", storePath,
@@ -175,7 +174,7 @@ func (st *sessionTree) ProveClosest(path []byte) (compactProof *smt.SparseCompac
 		return nil, err
 	}
 
-	sessionSMT := smt.ImportSparseMerkleSumTrie(st.treeStore, sha256.New(), st.claimedRoot, smt.WithValueHasher(nil))
+	sessionSMT := smt.ImportSparseMerkleSumTrie(st.treeStore, protocol.NewTrieHasher(), st.claimedRoot, protocol.SMTValueHasher())
 
 	// Generate the proof and cache it along with the path for which it was generated.
 	// There is no ProveClosest variant that generates a compact proof directly.
@@ -221,7 +220,7 @@ func (st *sessionTree) GetProof() *smt.SparseCompactMerkleClosestProof {
 
 // Flush gets the root hash of the SMST needed for submitting the claim;
 // then commits the entire tree to disk and stops the KVStore.
-// It should be called before submitting the claim on-chain. This function frees up the KVStore resources.
+// It should be called before submitting the claim onchain. This function frees up the KVStore resources.
 // If the SMST has already been flushed to disk, it returns the cached root hash.
 func (st *sessionTree) Flush() (SMSTRoot []byte, err error) {
 	st.sessionMu.Lock()
@@ -257,7 +256,7 @@ func (st *sessionTree) GetClaimRoot() []byte {
 
 // Delete deletes the SMST from the KVStore and removes the sessionTree from the RelayerSessionsManager.
 // WARNING: This function deletes the KVStore associated to the session and should be
-// called only after the proof has been successfully submitted on-chain and the servicer
+// called only after the proof has been successfully submitted onchain and the servicer
 // has confirmed that it has been rewarded.
 func (st *sessionTree) Delete() error {
 	st.sessionMu.Lock()

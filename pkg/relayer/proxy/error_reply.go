@@ -4,6 +4,7 @@ import (
 	"errors"
 	"net/http"
 
+	"github.com/pokt-network/poktroll/pkg/relayer"
 	"github.com/pokt-network/poktroll/x/service/types"
 )
 
@@ -11,7 +12,7 @@ import (
 // using the passed in error and writes it to the writer.
 // NOTE: This method is used to reply with an "internal" error that is related
 // to the server itself and not to the relayed request.
-func (sync *synchronousRPCServer) replyWithError(
+func (sync *relayMinerHTTPServer) replyWithError(
 	replyError error,
 	relayRequest *types.RelayRequest,
 	writer http.ResponseWriter,
@@ -27,12 +28,12 @@ func (sync *synchronousRPCServer) replyWithError(
 	relayRequest = relayRequest.NullifyForObservability()
 	serviceId := relayRequest.Meta.SessionHeader.ServiceId
 
-	errorLogger := sync.logger.With().
-		Error().
-		Str("service_id", serviceId).
-		Str("listen_address", listenAddress)
+	errorLogger := sync.logger.With(
+		"service_id", serviceId,
+		"listen_address", listenAddress,
+	).Error()
 
-	relaysErrorsTotal.With("service_id", serviceId).Add(1)
+	relayer.RelaysErrorsTotal.With("service_id", serviceId).Add(1)
 
 	// Create an unsigned RelayResponse with the error reply as payload and the
 	// same session header as the source RelayRequest.

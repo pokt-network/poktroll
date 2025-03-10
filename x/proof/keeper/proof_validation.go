@@ -4,8 +4,8 @@ package keeper
 	TODO_MAINNET: Document these steps in the docs and link here.
 
 	## Actions (error if anything fails)
-	1. Retrieve a fully hydrated `session` from on-chain store using `msg` metadata
-	2. Retrieve a fully hydrated `claim` from on-chain store using `msg` metadata
+	1. Retrieve a fully hydrated `session` from onchain store using `msg` metadata
+	2. Retrieve a fully hydrated `claim` from onchain store using `msg` metadata
 	3. Retrieve `relay.Req` and `relay.Res` from deserializing `proof.ClosestValueHash`
 
 	## Basic Validations (metadata only)
@@ -23,7 +23,7 @@ package keeper
 	2. verify(relay.Res.Signature, supplier.pubKey)
 
 	## Relay Mining validation
-	1. verify(proof.path) is the expected path; pseudo-random variation using on-chain data
+	1. verify(proof.path) is the expected path; pseudo-random variation using onchain data
 	2. verify(proof.ValueHash, expectedDifficulty); governance based
 	3. verify(claim.Root, proof.ClosestProof); verify the closest proof is correct
 */
@@ -31,6 +31,7 @@ package keeper
 import (
 	"bytes"
 	"context"
+	"fmt"
 
 	cosmostelemetry "github.com/cosmos/cosmos-sdk/telemetry"
 	"github.com/pokt-network/smt"
@@ -42,96 +43,98 @@ import (
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 )
 
-// EnsureValidProof validates the proof submitted by the supplier is correct with
-// respect to an on-chain claim.
+// EnsureWellFormedProof validates a supplier's proof for:
+//  1. Valid session header
+//  2. Submission height within window
+//  3. Matching relay request/response headers
+//  4. Relay Mining difficulty above reward threshold
 //
-// This function should be called during session settlement (i.e. EndBlocker)
-// rather than during proof submission (i.e. SubmitProof) because:
-//  1. RPC requests should be quick, lightweight and only do basic validation
-//  2. Validators are the ones responsible for the heavy processing & validation during state transitions
-//  3. This creates an opportunity to slash suppliers who submit false proofs, whereas
-//     they can keep retrying if it takes place in the SubmitProof handler.
+// EnsureWellFormedProof does not validate computationally expensive operations like:
+//  1. Proof relay signatures
+//  2. ClosestMerkleProof
 //
-// Note that some of the validation here is redundant with the validation done in
-// SubmitProof (in the handler). The reason for this is because were are trying
-// to find a balance between preventing sybil or DoS attacks on full nodes
-// during proof submission, but being completely exhaustive in all the checks done here.
-func (k Keeper) EnsureValidProof(
-	ctx context.Context,
-	proof *types.Proof,
-) error {
-	// Telemetry: measure execution time.
-	defer cosmostelemetry.MeasureSince(cosmostelemetry.Now(), telemetry.MetricNameKeys("proof", "validation")...)
+// Additional developer context as of #1031:
+//   - This function is expected to be called from the SubmitProof messages handler
+//   - Computationally expensive operations are left to the block's EndBlocker
+//
+// NOTE: Full validation requires passing both:
+//  1. EnsureWellFormedProof (this function)
+//  2. EnsureValidProofSignaturesAndClosestPath
+func (k Keeper) EnsureWellFormedProof(ctx context.Context, proof *types.Proof) error {
+	logger := k.Logger().With("method", "EnsureWellFormedProof")
 
-	logger := k.Logger().With("method", "ValidateProof")
-
-	// Retrieve the supplier operator's public key.
 	supplierOperatorAddr := proof.SupplierOperatorAddress
-	supplierOperatorPubKey, err := k.accountQuerier.GetPubKeyFromAddress(ctx, supplierOperatorAddr)
-	if err != nil {
-		return err
-	}
 
 	// Validate the session header.
 	var onChainSession *sessiontypes.Session
-	onChainSession, err = k.queryAndValidateSessionHeader(ctx, proof.SessionHeader, supplierOperatorAddr)
+	onChainSession, err := k.queryAndValidateSessionHeader(ctx, proof.SessionHeader, supplierOperatorAddr)
 	if err != nil {
 		return err
 	}
 	logger.Info("queried and validated the session header")
 
-	// Re-hydrate message session header with the on-chain session header.
+	// Re-hydrate message session header with the onchain session header.
 	// This corrects for discrepancies between unvalidated fields in the session
 	// header which can be derived from known values (e.g. session end height).
 	sessionHeader := onChainSession.GetHeader()
 
+	logger = logger.With(
+		"session_id", sessionHeader.GetSessionId(),
+		"application_address", sessionHeader.GetApplicationAddress(),
+		"service_id", sessionHeader.GetServiceId(),
+		"session_end_height", sessionHeader.GetSessionEndBlockHeight(),
+		"supplier_operator_address", supplierOperatorAddr,
+	)
+
 	// Validate proof message commit height is within the respective session's
-	// proof submission window using the on-chain session header.
+	// proof submission window using the onchain session header.
 	if err = k.validateProofWindow(ctx, sessionHeader, supplierOperatorAddr); err != nil {
+		logger.Error(fmt.Sprintf("failed to validate proof window due to error: %v", err))
 		return err
 	}
 
 	if len(proof.ClosestMerkleProof) == 0 {
-		return types.ErrProofInvalidProof.Wrap("proof cannot be empty")
+		logger.Error("closest merkle proof cannot be empty")
+		return types.ErrProofInvalidProof.Wrap("closest merkle proof cannot be empty")
 	}
 
-	// Unmarshal the closest merkle proof from the message.
+	// Unmarshal the sparse compact closest merkle proof from the message.
 	sparseCompactMerkleClosestProof := &smt.SparseCompactMerkleClosestProof{}
 	if err = sparseCompactMerkleClosestProof.Unmarshal(proof.ClosestMerkleProof); err != nil {
-		return types.ErrProofInvalidProof.Wrapf(
-			"failed to unmarshal closest merkle proof: %s",
-			err,
-		)
+		logger.Error(fmt.Sprintf("failed to unmarshal sparse compact merkle closest proof due to error: %v", err))
+		return types.ErrProofInvalidProof.Wrapf("failed to unmarshal sparse compact merkle closest proof: %s", err)
 	}
 
 	// SparseCompactMerkeClosestProof does not implement GetValueHash, so we need to decompact it.
-	sparseMerkleClosestProof, err := smt.DecompactClosestProof(sparseCompactMerkleClosestProof, &protocol.SmtSpec)
+	sparseMerkleClosestProof, err := smt.DecompactClosestProof(sparseCompactMerkleClosestProof, protocol.NewSMTSpec())
 	if err != nil {
-		return types.ErrProofInvalidProof.Wrapf(
-			"failed to decompact closest merkle proof: %s",
-			err,
-		)
+		logger.Error(fmt.Sprintf("failed to decompact sparse merkle closest proof due to error: %v", err))
+		return types.ErrProofInvalidProof.Wrapf("failed to decompact sparse erkle closest proof: %s", err)
 	}
 
 	// Get the relay request and response from the proof.GetClosestMerkleProof.
-	relayBz := sparseMerkleClosestProof.GetValueHash(&protocol.SmtSpec)
+	relayBz := sparseMerkleClosestProof.GetValueHash(protocol.NewSMTSpec())
 	relay := &servicetypes.Relay{}
 	if err = k.cdc.Unmarshal(relayBz, relay); err != nil {
-		return types.ErrProofInvalidRelay.Wrapf(
-			"failed to unmarshal relay: %s",
-			err,
-		)
+		logger.Error(fmt.Sprintf("failed to unmarshal relay due to error: %v", err))
+		return types.ErrProofInvalidRelay.Wrapf("failed to unmarshal relay: %s", err)
 	}
 
 	// Basic validation of the relay request.
 	relayReq := relay.GetReq()
 	if err = relayReq.ValidateBasic(); err != nil {
+		logger.Error(fmt.Sprintf("failed to validate relay request due to error: %v", err))
 		return err
 	}
 	logger.Debug("successfully validated relay request")
 
 	// Make sure that the supplier operator address in the proof matches the one in the relay request.
 	if supplierOperatorAddr != relayReq.Meta.SupplierOperatorAddress {
+		logger.Error(fmt.Sprintf(
+			"supplier operator address mismatch; proof: %s, relay request: %s",
+			supplierOperatorAddr,
+			relayReq.Meta.SupplierOperatorAddress,
+		))
 		return types.ErrProofSupplierMismatch.Wrapf("supplier type mismatch")
 	}
 	logger.Debug("the proof supplier operator address matches the relay request supplier operator address")
@@ -139,33 +142,24 @@ func (k Keeper) EnsureValidProof(
 	// Basic validation of the relay response.
 	relayRes := relay.GetRes()
 	if err = relayRes.ValidateBasic(); err != nil {
+		logger.Error(fmt.Sprintf("failed to validate relay response due to error: %v", err))
 		return err
 	}
 	logger.Debug("successfully validated relay response")
 
 	// Verify that the relay request session header matches the proof session header.
 	if err = compareSessionHeaders(sessionHeader, relayReq.Meta.GetSessionHeader()); err != nil {
+		logger.Error(fmt.Sprintf("relay request and proof session header mismatch: %v", err))
 		return err
 	}
 	logger.Debug("successfully compared relay request session header")
 
 	// Verify that the relay response session header matches the proof session header.
 	if err = compareSessionHeaders(sessionHeader, relayRes.Meta.GetSessionHeader()); err != nil {
+		logger.Error(fmt.Sprintf("relay response and proof session header mismatch: %v", err))
 		return err
 	}
 	logger.Debug("successfully compared relay response session header")
-
-	// Verify the relay request's signature.
-	if err = k.ringClient.VerifyRelayRequestSignature(ctx, relayReq); err != nil {
-		return err
-	}
-	logger.Debug("successfully verified relay request signature")
-
-	// Verify the relay response's signature.
-	if err = relayRes.VerifySupplierOperatorSignature(supplierOperatorPubKey); err != nil {
-		return err
-	}
-	logger.Debug("successfully verified relay response signature")
 
 	// Get the service's relay mining difficulty.
 	serviceRelayDifficulty, _ := k.serviceKeeper.GetRelayMiningDifficulty(ctx, sessionHeader.GetServiceId())
@@ -175,36 +169,115 @@ func (k Keeper) EnsureValidProof(
 		relayBz,
 		serviceRelayDifficulty.GetTargetHash(),
 	); err != nil {
+		logger.Error(fmt.Sprintf("failed to validate relay difficulty due to error: %v", err))
 		return types.ErrProofInvalidRelayDifficulty.Wrapf("failed to validate relay difficulty for service %s due to: %v", sessionHeader.ServiceId, err)
 	}
 	logger.Debug("successfully validated relay mining difficulty")
 
+	// Retrieve the corresponding claim for the proof submitted
+	if err := k.validateSessionClaim(ctx, sessionHeader, supplierOperatorAddr); err != nil {
+		return err
+	}
+	logger.Debug("successfully retrieved and validated claim")
+
+	return nil
+}
+
+// EnsureValidProofSignaturesAndClosestPath validates:
+//  1. Proof signatures from the supplier
+//  2. Valid relay request/response signatures from the application/supplier respectively
+//  3. Closest path validation against onchain claim
+//
+// Execution requirements:
+//  1. Must run in the EndBlocker of the proof submission height
+//  2. Cannot run during SubmitProof due to computational cost
+//
+// NOTE: Full validation requires passing both:
+//  1. EnsureWellFormedProof
+//  2. EnsureValidProofSignaturesAndClosestPath (this function)
+func (k Keeper) EnsureValidProofSignaturesAndClosestPath(
+	ctx context.Context,
+	claim *types.Claim,
+	proof *types.Proof,
+) error {
+	// Telemetry: measure execution time.
+	defer cosmostelemetry.MeasureSince(cosmostelemetry.Now(), telemetry.MetricNameKeys("proof", "validation")...)
+
+	sessionHeader := proof.GetSessionHeader()
+	supplierOperatorAddr := proof.SupplierOperatorAddress
+
+	logger := k.Logger().With(
+		"method", "EnsureValidProofSignaturesAndClosestPath",
+		"session_id", sessionHeader.GetSessionId(),
+		"application_address", sessionHeader.GetApplicationAddress(),
+		"service_id", sessionHeader.GetServiceId(),
+		"session_end_height", sessionHeader.GetSessionEndBlockHeight(),
+		"supplier_operator_address", supplierOperatorAddr,
+	)
+
+	// Retrieve the supplier operator's public key.
+	supplierOperatorPubKey, err := k.accountQuerier.GetPubKeyFromAddress(ctx, supplierOperatorAddr)
+	if err != nil {
+		logger.Error(fmt.Sprintf("failed to retrieve supplier operator public key due to error: %v", err))
+		return err
+	}
+
+	// Unmarshal the sparse compact merkle closest proof from the message.
+	sparseCompactMerkleClosestProof := &smt.SparseCompactMerkleClosestProof{}
+	if err = sparseCompactMerkleClosestProof.Unmarshal(proof.ClosestMerkleProof); err != nil {
+		logger.Error(fmt.Sprintf("failed to unmarshal sparse compact merkle closest proof due to error: %v", err))
+		return types.ErrProofInvalidProof.Wrapf("failed to unmarshal sparse compact merkle closest proof: %s", err)
+	}
+
+	// SparseCompactMerkeClosestProof was intentionally compacted to reduce its onchain state size
+	// so it must be decompacted rather than just retrieving the value via GetValueHash (not implemented).
+	sparseMerkleClosestProof, err := smt.DecompactClosestProof(sparseCompactMerkleClosestProof, protocol.NewSMTSpec())
+	if err != nil {
+		logger.Error(fmt.Sprintf("failed to decompact sparse merkle closest proof due to error: %v", err))
+		return types.ErrProofInvalidProof.Wrapf("failed to decompact sparse merkle closest proof: %s", err)
+	}
+
+	// Get the relay request and response from the proof.GetClosestMerkleProof.
+	relayBz := sparseMerkleClosestProof.GetValueHash(protocol.NewSMTSpec())
+	relay := &servicetypes.Relay{}
+	if err = k.cdc.Unmarshal(relayBz, relay); err != nil {
+		logger.Error(fmt.Sprintf("failed to unmarshal relay due to error: %v", err))
+		return types.ErrProofInvalidRelay.Wrapf("failed to unmarshal relay: %s", err)
+	}
+
+	// Verify the relay request's signature.
+	if err = k.ringClient.VerifyRelayRequestSignature(ctx, relay.GetReq()); err != nil {
+		logger.Error(fmt.Sprintf("failed to verify relay request signature due to error: %v", err))
+		return err
+	}
+	logger.Debug("successfully verified relay request signature")
+
+	// Verify the relay response's signature.
+	if err = relay.GetRes().VerifySupplierOperatorSignature(supplierOperatorPubKey); err != nil {
+		logger.Error(fmt.Sprintf("failed to verify relay response signature due to error: %v", err))
+		return err
+	}
+	logger.Debug("successfully verified relay response signature")
+
 	// Validate that path the proof is submitted for matches the expected one
-	// based on the pseudo-random on-chain data associated with the header.
+	// based on the pseudo-random onchain data associated with the header.
 	if err = k.validateClosestPath(
 		ctx,
 		sparseMerkleClosestProof,
 		sessionHeader,
 		supplierOperatorAddr,
 	); err != nil {
+		logger.Error(fmt.Sprintf("failed to validate closest path due to error: %v", err))
 		return err
 	}
 	logger.Debug("successfully validated proof path")
 
-	// Retrieve the corresponding claim for the proof submitted so it can be
-	// used in the proof validation below.
-	claim, err := k.queryAndValidateClaimForProof(ctx, sessionHeader, supplierOperatorAddr)
-	if err != nil {
-		return err
-	}
-
-	logger.Debug("successfully retrieved and validated claim")
-
-	// Verify the proof's closest merkle proof.
+	// Verify the proof's sparse merkle closest proof.
 	if err = verifyClosestProof(sparseMerkleClosestProof, claim.GetRootHash()); err != nil {
+		logger.Error(fmt.Sprintf("failed to verify sparse merkle closest proof due to error: %v", err))
 		return err
 	}
-	logger.Debug("successfully verified closest merkle proof")
+	logger.Debug("successfully verified sparse merkle closest proof")
 
 	return nil
 }
@@ -249,7 +322,7 @@ func (k Keeper) validateClosestPath(
 	expectedProofPath := protocol.GetPathForProof(proofPathSeedBlockHash, sessionHeader.GetSessionId())
 	if !bytes.Equal(proof.Path, expectedProofPath) {
 		return types.ErrProofInvalidProof.Wrapf(
-			"the path of the proof provided (%x) does not match one expected by the on-chain protocol (%x)",
+			"the path of the proof provided (%x) does not match one expected by the onchain protocol (%x)",
 			proof.Path,
 			expectedProofPath,
 		)
@@ -258,21 +331,19 @@ func (k Keeper) validateClosestPath(
 	return nil
 }
 
-// queryAndValidateClaimForProof ensures that a claim corresponding to the given
-// proof's session exists & has a matching supplier operator address and session header,
-// it then returns the corresponding claim if the validation is successful.
-func (k Keeper) queryAndValidateClaimForProof(
+// validateSessionClaim ensures that the given session header and supplierOperatorAddress
+// have a corresponding claim.
+func (k Keeper) validateSessionClaim(
 	ctx context.Context,
 	sessionHeader *sessiontypes.SessionHeader,
 	supplierOperatorAddr string,
-) (*types.Claim, error) {
+) error {
 	sessionId := sessionHeader.SessionId
-	// NB: no need to assert the testSessionId or supplier operator address as it is retrieved
-	// by respective values of the given proof. I.e., if the claim exists, then these
-	// values are guaranteed to match.
+
+	// Retrieve the claim corresponding to the session ID and supplier operator address.
 	foundClaim, found := k.GetClaim(ctx, sessionId, supplierOperatorAddr)
 	if !found {
-		return nil, types.ErrProofClaimNotFound.Wrapf(
+		return types.ErrProofClaimNotFound.Wrapf(
 			"no claim found for session ID %q and supplier %q",
 			sessionId,
 			supplierOperatorAddr,
@@ -280,45 +351,44 @@ func (k Keeper) queryAndValidateClaimForProof(
 	}
 
 	claimSessionHeader := foundClaim.GetSessionHeader()
-	proofSessionHeader := sessionHeader
 
 	// Ensure session start heights match.
-	if claimSessionHeader.GetSessionStartBlockHeight() != proofSessionHeader.GetSessionStartBlockHeight() {
-		return nil, types.ErrProofInvalidSessionStartHeight.Wrapf(
+	if claimSessionHeader.GetSessionStartBlockHeight() != sessionHeader.GetSessionStartBlockHeight() {
+		return types.ErrProofInvalidSessionStartHeight.Wrapf(
 			"claim session start height %d does not match proof session start height %d",
 			claimSessionHeader.GetSessionStartBlockHeight(),
-			proofSessionHeader.GetSessionStartBlockHeight(),
+			sessionHeader.GetSessionStartBlockHeight(),
 		)
 	}
 
 	// Ensure session end heights match.
-	if claimSessionHeader.GetSessionEndBlockHeight() != proofSessionHeader.GetSessionEndBlockHeight() {
-		return nil, types.ErrProofInvalidSessionEndHeight.Wrapf(
+	if claimSessionHeader.GetSessionEndBlockHeight() != sessionHeader.GetSessionEndBlockHeight() {
+		return types.ErrProofInvalidSessionEndHeight.Wrapf(
 			"claim session end height %d does not match proof session end height %d",
 			claimSessionHeader.GetSessionEndBlockHeight(),
-			proofSessionHeader.GetSessionEndBlockHeight(),
+			sessionHeader.GetSessionEndBlockHeight(),
 		)
 	}
 
 	// Ensure application addresses match.
-	if claimSessionHeader.GetApplicationAddress() != proofSessionHeader.GetApplicationAddress() {
-		return nil, types.ErrProofInvalidAddress.Wrapf(
+	if claimSessionHeader.GetApplicationAddress() != sessionHeader.GetApplicationAddress() {
+		return types.ErrProofInvalidAddress.Wrapf(
 			"claim application address %q does not match proof application address %q",
 			claimSessionHeader.GetApplicationAddress(),
-			proofSessionHeader.GetApplicationAddress(),
+			sessionHeader.GetApplicationAddress(),
 		)
 	}
 
 	// Ensure service IDs match.
-	if claimSessionHeader.GetServiceId() != proofSessionHeader.GetServiceId() {
-		return nil, types.ErrProofInvalidService.Wrapf(
+	if claimSessionHeader.GetServiceId() != sessionHeader.GetServiceId() {
+		return types.ErrProofInvalidService.Wrapf(
 			"claim service ID %q does not match proof service ID %q",
 			claimSessionHeader.GetServiceId(),
-			proofSessionHeader.GetServiceId(),
+			sessionHeader.GetServiceId(),
 		)
 	}
 
-	return &foundClaim, nil
+	return nil
 }
 
 // compareSessionHeaders compares a session header against an expected session header.
@@ -379,7 +449,7 @@ func verifyClosestProof(
 	proof *smt.SparseMerkleClosestProof,
 	claimRootHash []byte,
 ) error {
-	valid, err := smt.VerifyClosestProof(proof, claimRootHash, &protocol.SmtSpec)
+	valid, err := smt.VerifyClosestProof(proof, claimRootHash, protocol.NewSMTSpec())
 	if err != nil {
 		return err
 	}

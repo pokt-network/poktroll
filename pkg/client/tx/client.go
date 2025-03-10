@@ -8,6 +8,7 @@ import (
 	"sync"
 
 	"cosmossdk.io/depinject"
+	"cosmossdk.io/math"
 	abci "github.com/cometbft/cometbft/abci/types"
 	"github.com/cometbft/cometbft/libs/json"
 	rpctypes "github.com/cometbft/cometbft/rpc/jsonrpc/types"
@@ -15,6 +16,7 @@ import (
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	"go.uber.org/multierr"
 
+	"github.com/pokt-network/poktroll/app/volatile"
 	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/client/events"
 	"github.com/pokt-network/poktroll/pkg/client/keyring"
@@ -102,6 +104,9 @@ type txClient struct {
 	// is used to ensure that transactions error channels receive and close in the event
 	// that they have not already by the given timeout height.
 	txTimeoutPool txTimeoutPool
+
+	// gasPrices is the gas unit prices used for sending transactions.
+	gasPrices cosmostypes.DecCoins
 
 	// connRetryLimit is the number of times the underlying replay client
 	// should retry in the event that it encounters an error or its connection is interrupted.
@@ -229,6 +234,12 @@ func (txnClient *txClient) SignAndBroadcast(
 		return either.SyncErr(validationErrs)
 	}
 
+	// Simulate the transaction to calculate the gas limit.
+	gasLimit, simErr := txnClient.txCtx.GetSimulatedTxGas(ctx, txnClient.signingKeyName, msgs...)
+	if simErr != nil {
+		return either.SyncErr(simErr)
+	}
+
 	// Construct the transactions using cosmos' transactions builder.
 	txBuilder := txnClient.txCtx.NewTxBuilder()
 	if err := txBuilder.SetMsgs(msgs...); err != nil {
@@ -240,8 +251,21 @@ func (txnClient *txClient) SignAndBroadcast(
 	timeoutHeight := txnClient.blockClient.LastBlock(ctx).
 		Height() + txnClient.commitTimeoutHeightOffset
 
-	// TODO_TECHDEBT: this should be configurable
-	txBuilder.SetGasLimit(690000042)
+	txBuilder.SetGasLimit(gasLimit)
+
+	gasLimitDec := math.LegacyNewDec(int64(gasLimit))
+	feeAmountDec := txnClient.gasPrices.MulDec(gasLimitDec)
+
+	feeCoins, changeCoins := feeAmountDec.TruncateDecimal()
+	// Ensure that any decimal remainder is added to the corresponding coin as a
+	// whole number.
+	// Since changeCoins is the result of DecCoins#TruncateDecimal, it will always
+	// be less than 1 unit of the feeCoins.
+	if !changeCoins.IsZero() {
+		feeCoins = feeCoins.Add(cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 1))
+	}
+	txBuilder.SetFeeAmount(feeCoins)
+
 	txBuilder.SetTimeoutHeight(uint64(timeoutHeight))
 
 	// sign transactions

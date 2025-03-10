@@ -15,5 +15,5 @@ TODO_DOCUMENT(@Olshansk): This is just a placeholder. Use the session part of th
 
 ## Introduction
 
-Sessions are an on-chain mechanism to pair `Application`s to `Supplier`s for a
-period of time to service relays off-chain.
+Sessions are an onchain mechanism to pair `Application`s to `Supplier`s for a
+period of time to service relays offchain.

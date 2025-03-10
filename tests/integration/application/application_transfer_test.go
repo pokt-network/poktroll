@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
-	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 
@@ -80,8 +79,8 @@ func (s *appTransferTestSuite) SetupTest() {
 		s.app2: {s.gateway1, s.gateway5},
 	})
 
-	// Assert the on-chain state shows the application 3 as NOT staked.
-	_, queryErr := s.GetAppQueryClient().GetApplication(s.SdkCtx(), s.app3)
+	// Assert the onchain state shows the application 3 as NOT staked.
+	_, queryErr := s.GetAppQueryClient(s.T()).GetApplication(s.SdkCtx(), s.app3)
 	require.ErrorContains(s.T(), queryErr, "application not found")
 	require.ErrorContains(s.T(), queryErr, s.app3)
 }
@@ -110,7 +109,7 @@ func (s *appTransferTestSuite) TestSingleSourceToNonexistentDestinationSucceeds(
 	require.EqualValues(s.T(), expectedPendingTransfer, pendingTransfer)
 
 	// Query and assert application pending transfer field updated in the store.
-	foundApp1, err := s.GetAppQueryClient().GetApplication(s.SdkCtx(), s.app1)
+	foundApp1, err := s.GetAppQueryClient(s.T()).GetApplication(s.SdkCtx(), s.app1)
 	require.NoError(s.T(), err)
 	require.EqualValues(s.T(), expectedPendingTransfer, foundApp1.GetPendingTransfer())
 
@@ -129,7 +128,7 @@ func (s *appTransferTestSuite) TestSingleSourceToNonexistentDestinationSucceeds(
 	s.GetApp().NextBlocks(s.T(), int(blocksUntilTransferEndHeight)-1)
 
 	// Assert that app1 is in transfer period.
-	foundApp1, err = s.GetAppQueryClient().GetApplication(s.SdkCtx(), s.app1)
+	foundApp1, err = s.GetAppQueryClient(s.T()).GetApplication(s.SdkCtx(), s.app1)
 	require.NoError(s.T(), err)
 
 	require.Equal(s.T(), s.app1, foundApp1.GetAddress())
@@ -139,7 +138,7 @@ func (s *appTransferTestSuite) TestSingleSourceToNonexistentDestinationSucceeds(
 	s.GetApp().NextBlock(s.T())
 
 	// Query for and assert that the destination application was created.
-	foundApp3, err := s.GetAppQueryClient().GetApplication(s.SdkCtx(), s.app3)
+	foundApp3, err := s.GetAppQueryClient(s.T()).GetApplication(s.SdkCtx(), s.app3)
 	require.NoError(s.T(), err)
 
 	// Assert that the destination application was created with the correct state.
@@ -164,21 +163,18 @@ func (s *appTransferTestSuite) TestSingleSourceToNonexistentDestinationSucceeds(
 	s.shouldObserveTransferEndEvent(&foundApp3, s.app1)
 
 	// Assert that app1 is unstaked.
-	_, err = s.GetAppQueryClient().GetApplication(s.SdkCtx(), s.app1)
+	_, err = s.GetAppQueryClient(s.T()).GetApplication(s.SdkCtx(), s.app1)
 	require.ErrorContains(s.T(), err, "application not found")
 	require.ErrorContains(s.T(), err, s.app1)
 
 	// Assert that app1's bank balance has not changed.
-	balanceRes, err := s.GetBankQueryClient().Balance(s.SdkCtx(), &banktypes.QueryBalanceRequest{
-		Address: s.app1,
-		Denom:   volatile.DenomuPOKT,
-	})
+	balance, err := s.GetBankQueryClient(s.T()).GetBalance(s.SdkCtx(), s.app1)
 	require.NoError(s.T(), err)
-	require.NotNil(s.T(), balanceRes)
+	require.NotNil(s.T(), balance)
 
 	require.EqualValues(s.T(),
 		cosmostypes.NewInt64Coin(volatile.DenomuPOKT, appFundAmount-stakeAmount),
-		*balanceRes.GetBalance(),
+		*balance,
 	)
 }
 
@@ -228,7 +224,7 @@ func (s *appTransferTestSuite) TestMultipleSourceToSameNonexistentDestinationMer
 		require.EqualValues(s.T(), expectedPendingTransfer, pendingTransfer)
 
 		// Query and assert application pending transfer field updated in the store.
-		foundSrcApp, srcAppErr := s.GetAppQueryClient().GetApplication(s.SdkCtx(), expectedSrcBech32)
+		foundSrcApp, srcAppErr := s.GetAppQueryClient(s.T()).GetApplication(s.SdkCtx(), expectedSrcBech32)
 		require.NoError(s.T(), srcAppErr)
 		require.EqualValues(s.T(), expectedPendingTransfer, foundSrcApp.GetPendingTransfer())
 
@@ -257,7 +253,7 @@ func (s *appTransferTestSuite) TestMultipleSourceToSameNonexistentDestinationMer
 	s.GetApp().NextBlocks(s.T(), int(blocksUntilTransferEndHeight)-1)
 
 	// Assert that app1 is in transfer period.
-	foundApp1, err := s.GetAppQueryClient().GetApplication(s.SdkCtx(), s.app1)
+	foundApp1, err := s.GetAppQueryClient(s.T()).GetApplication(s.SdkCtx(), s.app1)
 	require.NoError(s.T(), err)
 
 	require.Equal(s.T(), s.app1, foundApp1.GetAddress())
@@ -267,7 +263,7 @@ func (s *appTransferTestSuite) TestMultipleSourceToSameNonexistentDestinationMer
 	s.GetApp().NextBlock(s.T())
 
 	// Assert that app3 is staked with the sum amount: app1 + app2.
-	foundApp3, err := s.GetAppQueryClient().GetApplication(s.SdkCtx(), s.app3)
+	foundApp3, err := s.GetAppQueryClient(s.T()).GetApplication(s.SdkCtx(), s.app3)
 	require.NoError(s.T(), err)
 
 	require.Equal(s.T(), s.app3, foundApp3.GetAddress())
@@ -308,30 +304,24 @@ func (s *appTransferTestSuite) TestMultipleSourceToSameNonexistentDestinationMer
 	require.Equal(s.T(), len(expectedApp3ServiceIds), len(foundApp3.GetServiceConfigs()))
 
 	// Assert that app1 is unstaked.
-	foundApp1, err = s.GetAppQueryClient().GetApplication(s.SdkCtx(), s.app1)
+	foundApp1, err = s.GetAppQueryClient(s.T()).GetApplication(s.SdkCtx(), s.app1)
 	require.ErrorContains(s.T(), err, "application not found")
 	require.ErrorContains(s.T(), err, s.app1)
 
 	// Assert that app2 is unstaked.
-	_, err = s.GetAppQueryClient().GetApplication(s.SdkCtx(), s.app2)
+	_, err = s.GetAppQueryClient(s.T()).GetApplication(s.SdkCtx(), s.app2)
 	require.ErrorContains(s.T(), err, "application not found")
 	require.ErrorContains(s.T(), err, s.app2)
 
 	// Assert that app1's bank balance has not changed
-	balRes, err := s.GetBankQueryClient().Balance(s.SdkCtx(), &banktypes.QueryBalanceRequest{
-		Address: s.app1,
-		Denom:   volatile.DenomuPOKT,
-	})
+	balance, err := s.GetBankQueryClient(s.T()).GetBalance(s.SdkCtx(), s.app1)
 	require.NoError(s.T(), err)
-	require.Equal(s.T(), appFundAmount-stakeAmount, balRes.GetBalance().Amount.Int64())
+	require.Equal(s.T(), appFundAmount-stakeAmount, balance.Amount.Int64())
 
 	// Assert that app2's bank balance has not changed
-	balRes, err = s.GetBankQueryClient().Balance(s.SdkCtx(), &banktypes.QueryBalanceRequest{
-		Address: s.app2,
-		Denom:   volatile.DenomuPOKT,
-	})
+	balance, err = s.GetBankQueryClient(s.T()).GetBalance(s.SdkCtx(), s.app2)
 	require.NoError(s.T(), err)
-	require.Equal(s.T(), appFundAmount-stakeAmount, balRes.GetBalance().Amount.Int64())
+	require.Equal(s.T(), appFundAmount-stakeAmount, balance.Amount.Int64())
 }
 
 // TODO_TEST:
@@ -390,8 +380,8 @@ func (s *appTransferTestSuite) setupStakeApps(appBech32ToServiceIdsMap map[strin
 		require.Equal(s.T(), appBech32, stakeAppRes.GetApplication().GetAddress())
 		require.Equal(s.T(), stakeAmount, stakeAppRes.GetApplication().GetStake().Amount.Int64())
 
-		// Assert the on-chain state shows the application as staked.
-		foundApp, queryErr := s.GetAppQueryClient().GetApplication(s.SdkCtx(), appBech32)
+		// Assert the onchain state shows the application as staked.
+		foundApp, queryErr := s.GetAppQueryClient(s.T()).GetApplication(s.SdkCtx(), appBech32)
 		require.NoError(s.T(), queryErr)
 		require.Equal(s.T(), appBech32, foundApp.GetAddress())
 		require.Equal(s.T(), stakeAmount, foundApp.GetStake().Amount.Int64())

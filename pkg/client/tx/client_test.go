@@ -14,9 +14,9 @@ import (
 	rpctypes "github.com/cometbft/cometbft/rpc/jsonrpc/types"
 	cosmoskeyring "github.com/cosmos/cosmos-sdk/crypto/keyring"
 	"github.com/cosmos/cosmos-sdk/types"
-	"github.com/golang/mock/gomock"
 	"github.com/pokt-network/smt"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/mock/gomock"
 
 	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/client/keyring"
@@ -272,7 +272,7 @@ func TestTxClient_SignAndBroadcast_SyncError(t *testing.T) {
 	time.Sleep(10 * time.Millisecond)
 }
 
-// TODO_INCOMPLETE: add coverage for async error; i.e. insufficient gas or on-chain error
+// TODO_INCOMPLETE: add coverage for async error; i.e. insufficient gas or onchain error
 func TestTxClient_SignAndBroadcast_CheckTxError(t *testing.T) {
 	var (
 		// expectedErrMsg is the expected error message that will be returned

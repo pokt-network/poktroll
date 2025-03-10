@@ -38,7 +38,7 @@
                     "showLineNumbers": false,
                     "showMiniMap": false
                 },
-                "content": "## What does this dashboard show?\n\nAs relays flow through the network\nAppGate -> RelayMiner and RelayMiner creates proofs and claims, we can capture the whole relay cycle.\n\n1. shows the actual amount of relays on AppGate;\n2. shows the actual amount of relays processed by RelayMiner;\n3. the amount of relays from the on-chain information using `EventClaimCreated`;\n4. relays from `EventProofSubmitted`;",
+                "content": "## What does this dashboard show?\n\nAs relays flow through the network\nAppGate -> RelayMiner and RelayMiner creates proofs and claims, we can capture the whole relay cycle.\n\n1. shows the actual amount of relays on AppGate;\n2. shows the actual amount of relays processed by RelayMiner;\n3. the amount of relays from the onchain information using `EventClaimCreated`;\n4. relays from `EventProofSubmitted`;",
                 "mode": "markdown"
             },
             "pluginVersion": "11.2.2+security-01",
@@ -349,7 +349,7 @@
                     }
                 }
             ],
-            "title": "Relays (from on-chain claims)",
+            "title": "Relays (from onchain claims)",
             "type": "timeseries"
         },
         {
@@ -462,7 +462,7 @@
                     }
                 }
             ],
-            "title": "Relays (from on-chain proofs)",
+            "title": "Relays (from onchain proofs)",
             "type": "timeseries"
         }
     ],

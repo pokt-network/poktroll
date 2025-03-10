@@ -2,7 +2,6 @@ package query
 
 import (
 	"context"
-	"sync"
 
 	"cosmossdk.io/depinject"
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
@@ -10,22 +9,23 @@ import (
 	accounttypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	grpc "github.com/cosmos/gogoproto/grpc"
 
+	"github.com/pokt-network/poktroll/pkg/cache"
 	"github.com/pokt-network/poktroll/pkg/client"
+	"github.com/pokt-network/poktroll/pkg/polylog"
 )
 
 var _ client.AccountQueryClient = (*accQuerier)(nil)
 
 // accQuerier is a wrapper around the accounttypes.QueryClient that enables the
-// querying of on-chain account information through a single exposed method
+// querying of onchain account information through a single exposed method
 // which returns an accounttypes.AccountI interface
 type accQuerier struct {
 	clientConn     grpc.ClientConn
 	accountQuerier accounttypes.QueryClient
+	logger         polylog.Logger
 
-	// accountCache is a cache of accounts that have already been queried.
-	// TODO_TECHDEBT: Add a size limit to the cache and consider an LRU cache.
-	accountCache   map[string]types.AccountI
-	accountCacheMu sync.Mutex
+	// accountsCache caches accountQueryClient.Account requests
+	accountsCache cache.KeyValueCache[types.AccountI]
 }
 
 // NewAccountQuerier returns a new instance of a client.AccountQueryClient by
@@ -34,11 +34,13 @@ type accQuerier struct {
 // Required dependencies:
 // - clientCtx
 func NewAccountQuerier(deps depinject.Config) (client.AccountQueryClient, error) {
-	aq := &accQuerier{accountCache: make(map[string]types.AccountI)}
+	aq := &accQuerier{}
 
 	if err := depinject.Inject(
 		deps,
 		&aq.clientConn,
+		&aq.logger,
+		&aq.accountsCache,
 	); err != nil {
 		return nil, err
 	}
@@ -53,12 +55,15 @@ func (aq *accQuerier) GetAccount(
 	ctx context.Context,
 	address string,
 ) (types.AccountI, error) {
-	aq.accountCacheMu.Lock()
-	defer aq.accountCacheMu.Unlock()
+	logger := aq.logger.With("query_client", "account", "method", "GetAccount")
 
-	if foundAccount, isAccountFound := aq.accountCache[address]; isAccountFound {
-		return foundAccount, nil
+	// Check if the account is present in the cache.
+	if account, found := aq.accountsCache.Get(address); found {
+		logger.Debug().Msgf("cache hit for account address key: %s", address)
+		return account, nil
 	}
+
+	logger.Debug().Msgf("cache miss for account address key: %s", address)
 
 	// Query the blockchain for the account record
 	req := &accounttypes.QueryAccountRequest{Address: address}
@@ -76,13 +81,13 @@ func (aq *accQuerier) GetAccount(
 	// Fetched accounts must have their public key set. Do not cache accounts
 	// that do not have a public key set, such as the ones resulting from genesis
 	// as they may continue failing due to the caching mechanism, even after they
-	// got their public key recorded on-chain.
+	// got their public key recorded onchain.
 	if fetchedAccount.GetPubKey() == nil {
 		return nil, ErrQueryPubKeyNotFound
 	}
 
-	aq.accountCache[address] = fetchedAccount
-
+	// Cache the fetched account for future queries.
+	aq.accountsCache.Set(address, fetchedAccount)
 	return fetchedAccount, nil
 }
 

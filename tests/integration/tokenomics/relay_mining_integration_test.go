@@ -198,7 +198,7 @@ func TestComputeNewDifficultyHash_RewardsReflectWorkCompleted(t *testing.T) {
 }
 
 // prepareRealClaim prepares a claim by creating a real SMST with the given number
-// of mined relays that adhere to the actual on-chain difficulty of the test service.
+// of mined relays that adhere to the actual onchain difficulty of the test service.
 func prepareRealClaim(
 	t *testing.T,
 	numRelays uint64,
@@ -214,7 +214,7 @@ func prepareRealClaim(
 	require.NoError(t, err)
 
 	// Prepare an SMST
-	trie := smt.NewSparseMerkleSumTrie(kvStore, protocol.NewTrieHasher(), smt.WithValueHasher(nil))
+	trie := smt.NewSparseMerkleSumTrie(kvStore, protocol.NewTrieHasher(), protocol.SMTValueHasher())
 
 	// Insert the mined relays into the SMST
 	for i := uint64(0); i < numRelays; i++ {

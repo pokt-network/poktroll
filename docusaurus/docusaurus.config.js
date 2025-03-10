@@ -83,14 +83,13 @@ const config = {
     ({
       docs: {
         sidebar: {
-          hideable: false,
-          autoCollapseCategories: false,
+          hideable: true,
+          autoCollapseCategories: true,
         },
       },
-      // image: "img/docusaurus-social-card.jpg",
       style: "dark",
       navbar: {
-        title: "Pocket Network",
+        // title: "Pocket Network",
         logo: {
           alt: "Pocket Network Logo",
           src: "img/logo.png",
@@ -100,25 +99,25 @@ const config = {
             type: "docSidebar",
             position: "left",
             sidebarId: "operateSidebar",
-            label: "⚙️ Operate",
+            label: "⚙️ Guides & Deployment",
+          },
+          {
+            type: "docSidebar",
+            position: "left",
+            sidebarId: "toolsSidebar",
+            label: "🗺 Tools & Explorers",
           },
           {
             type: "docSidebar",
             position: "left",
             sidebarId: "developSidebar",
-            label: "💻 Develop",
+            label: "🧑‍💻️ Core Developers",
           },
           {
             type: "docSidebar",
             position: "left",
             sidebarId: "protocolSidebar",
-            label: "🧠 Protocol",
-          },
-          {
-            type: "docSidebar",
-            position: "left",
-            sidebarId: "exploreSidebar",
-            label: "🗺 Explore",
+            label: "🧠 Protocol Specification",
           },
         ],
       },
@@ -172,6 +171,7 @@ const config = {
           "json",
           "makefile",
           "diff",
+          "bash",
         ],
       },
     }),

@@ -26,29 +26,107 @@ check_root() {
     fi
 }
 
-# Function to install jq if not installed
-install_jq() {
-    if ! command -v jq &>/dev/null; then
-        print_color $YELLOW "Installing jq..."
-        if [ -f /etc/debian_version ]; then
-            apt-get update
-            apt-get install -y jq
-        elif [ -f /etc/redhat-release ]; then
-            yum update -y
-            yum install -y jq
-        else
-            print_color $RED "Unsupported distribution. Please install jq manually."
-            exit 1
-        fi
-        print_color $GREEN "jq installed successfully."
+# Function to get and normalize architecture
+get_normalized_arch() {
+    local arch
+    arch=$(uname -m)
+
+    if [ "$arch" = "x86_64" ]; then
+        echo "amd64"
+    elif [ "$arch" = "aarch64" ] || [ "$arch" = "arm64" ]; then
+        echo "arm64"
     else
-        print_color $YELLOW "jq is already installed."
+        print_color $RED "Unsupported architecture: $arch"
+        exit 1
     fi
+}
+
+check_os() {
+    local os
+    os=$(uname -s)
+
+    if [ "$os" = "Darwin" ]; then
+        print_color $RED "This script is not supported on macOS/Darwin."
+        print_color $RED "Please use a Linux distribution."
+        exit 1
+    fi
+}
+
+get_os_type() {
+    uname_out="$(uname -s)"
+
+    if [ "$uname_out" = "Linux" ]; then
+        echo "linux"
+    elif [ "$uname_out" = "Darwin" ]; then
+        echo "darwin"
+    else
+        echo "unsupported"
+    fi
+}
+
+# Function to check and install dependencies
+install_dependencies() {
+    local missing_deps=0
+    local deps=("jq" "curl" "tar" "wget")
+    local to_install=()
+
+    print_color $YELLOW "About to start installing dependencies..."
+
+    # Check which dependencies are missing
+    for dep in "${deps[@]}"; do
+        if ! command -v "$dep" &>/dev/null; then
+            print_color $YELLOW "$dep is not installed."
+            to_install+=("$dep")
+            ((missing_deps++))
+        else
+            print_color $GREEN "$dep is already installed."
+        fi
+    done
+
+    # If no dependencies are missing, we're done
+    if [ $missing_deps -eq 0 ]; then
+        print_color $GREEN "All dependencies are already installed."
+        return 0
+    fi
+
+    # Try to install missing dependencies
+    print_color $YELLOW "Installing missing dependencies: ${to_install[*]}"
+
+    if [ -f /etc/debian_version ]; then
+        apt-get update
+        apt-get install -y "${to_install[@]}"
+    elif [ -f /etc/redhat-release ]; then
+        yum update -y
+        yum install -y "${to_install[@]}"
+    else
+        print_color $RED "Unsupported distribution. Please install ${to_install[*]} manually."
+        return 1
+    fi
+
+    # Verify all dependencies were installed successfully
+    missing_deps=0
+    for dep in "${to_install[@]}"; do
+        if ! command -v "$dep" &>/dev/null; then
+            print_color $RED "Failed to install $dep"
+            ((missing_deps++))
+        else
+            print_color $GREEN "$dep installed successfully."
+        fi
+    done
+
+    if [ $missing_deps -gt 0 ]; then
+        print_color $RED "Some dependencies failed to install."
+        return 1
+    fi
+
+    print_color $GREEN "All dependencies installed successfully."
+    return 0
 }
 
 # Function to get user input
 get_user_input() {
     # Ask user which network to install
+    echo ""
     echo "Which network would you like to install?"
     echo "1) testnet-alpha (unstable)"
     echo "2) testnet-beta (recommended)"
@@ -66,7 +144,9 @@ get_user_input() {
     esac
 
     print_color $GREEN "Installing the $NETWORK network."
+    echo ""
 
+    print_color $YELLOW "(NOTE: If you're on a macOS, enter the name of an existing user)"
     read -p "Enter the desired username to run poktrolld (default: poktroll): " POKTROLL_USER
     POKTROLL_USER=${POKTROLL_USER:-poktroll}
 
@@ -92,6 +172,7 @@ get_user_input() {
         print_color $RED "Failed to extract chain_id from genesis file."
         exit 1
     fi
+    echo ""
     print_color $GREEN "Using chain_id: $CHAIN_ID from genesis file"
 
     # Fetch seeds from the provided URL
@@ -108,6 +189,7 @@ get_user_input() {
         read -p "Enter custom seeds: " custom_seeds
         SEEDS=${custom_seeds:-$SEEDS}
     fi
+    echo ""
 }
 
 # Function to create user
@@ -129,22 +211,6 @@ create_user() {
     fi
 }
 
-# Function to install dependencies
-install_dependencies() {
-    print_color $YELLOW "Installing dependencies..."
-    if [ -f /etc/debian_version ]; then
-        apt-get update
-        apt-get install -y curl tar wget
-    elif [ -f /etc/redhat-release ]; then
-        yum update -y
-        yum install -y curl tar wget
-    else
-        print_color $RED "Unsupported distribution. Please install curl, tar and wget manually."
-        exit 1
-    fi
-    print_color $GREEN "Dependencies installed successfully."
-}
-
 # TODO_TECHDEBT(@okdas): Use `.poktrollrc` across the board to create a clean
 # separation of concerns for pocket specific configurations and debugging.
 # Function to set up environment variables
@@ -159,23 +225,25 @@ setup_env_vars() {
     source \$HOME/.profile
 EOF
     print_color $GREEN "Environment variables set up successfully."
+    echo ""
 }
 
 # Function to download and set up Cosmovisor
 setup_cosmovisor() {
     print_color $YELLOW "Setting up Cosmovisor..."
-    ARCH=$(uname -m)
-    if [ "$ARCH" = "x86_64" ]; then
-        ARCH="amd64"
-    elif [ "$ARCH" = "aarch64" ]; then
-        ARCH="arm64"
-    else
-        print_color $RED "Unsupported architecture: $ARCH"
+
+    ARCH=$(get_normalized_arch)
+    OS_TYPE=$(get_os_type)
+
+    if [ "$OS_TYPE" = "unsupported" ]; then
+        echo "Unsupported OS: $(uname -s)"
         exit 1
     fi
 
     COSMOVISOR_VERSION="v1.6.0"
+    # Note that cosmosorvisor only support linux, which is why OS_TYPE is not used in the URL.
     COSMOVISOR_URL="https://github.com/cosmos/cosmos-sdk/releases/download/cosmovisor%2F${COSMOVISOR_VERSION}/cosmovisor-${COSMOVISOR_VERSION}-linux-${ARCH}.tar.gz"
+    print_color $YELLOW "Attempting to download from: $COSMOVISOR_URL"
 
     sudo -u "$POKTROLL_USER" bash <<EOF
     mkdir -p \$HOME/bin
@@ -184,20 +252,15 @@ setup_cosmovisor() {
     source \$HOME/.profile
 EOF
     print_color $GREEN "Cosmovisor set up successfully."
+    echo ""
 }
 
 # Function to download and set up Poktrolld
 setup_poktrolld() {
     print_color $YELLOW "Setting up Poktrolld..."
-    ARCH=$(uname -m)
-    if [ "$ARCH" = "x86_64" ]; then
-        ARCH="amd64"
-    elif [ "$ARCH" = "aarch64" ]; then
-        ARCH="arm64"
-    else
-        print_color $RED "Unsupported architecture: $ARCH"
-        exit 1
-    fi
+
+    ARCH=$(get_normalized_arch)
+    OS_TYPE=$(get_os_type)
 
     # Extract the version from genesis.json using jq
     POKTROLLD_VERSION=$(jq -r '.app_version' <"$GENESIS_FILE")
@@ -208,11 +271,11 @@ setup_poktrolld() {
         exit 1
     fi
 
-    # TODO_TECHDEBT(@okdas): Conslidate this business logic with what we have
+    # TODO_TECHDEBT(@okdas): Consolidate this business logic with what we have
     # in `user_guide/install.md` to avoid duplication and have consistency.
 
     # Construct the release URL with proper version format
-    RELEASE_URL="https://github.com/pokt-network/poktroll/releases/download/v${POKTROLLD_VERSION}/poktroll_linux_${ARCH}.tar.gz"
+    RELEASE_URL="https://github.com/pokt-network/poktroll/releases/download/v${POKTROLLD_VERSION}/poktroll_${OS_TYPE}_${ARCH}.tar.gz"
     print_color $YELLOW "Attempting to download from: $RELEASE_URL"
 
     # Download and extract directly as the POKTROLL_USER
@@ -235,6 +298,7 @@ EOF
     fi
 
     print_color $GREEN "Poktrolld set up successfully."
+    echo ""
 }
 
 # Function to configure Poktrolld
@@ -258,6 +322,7 @@ configure_poktrolld() {
         read -p "Please enter your external IP address: " custom_ip
         EXTERNAL_IP=${custom_ip:-$EXTERNAL_IP}
     fi
+    echo ""
 
     sudo -u "$POKTROLL_USER" bash <<EOF
     source \$HOME/.profile
@@ -340,11 +405,12 @@ configure_ufw() {
 # Main function
 main() {
     print_color $GREEN "Welcome to the Poktroll Full Node Install Script!"
+    echo ""
+    check_os
     check_root
-    install_jq
+    install_dependencies
     get_user_input
     create_user
-    install_dependencies
     setup_env_vars
     setup_cosmovisor
     setup_poktrolld

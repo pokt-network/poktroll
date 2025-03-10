@@ -12,9 +12,12 @@ import (
 	cosmosclient "github.com/cosmos/cosmos-sdk/client"
 	cosmosflags "github.com/cosmos/cosmos-sdk/client/flags"
 	cosmostx "github.com/cosmos/cosmos-sdk/client/tx"
+	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/spf13/cobra"
 
 	"github.com/pokt-network/poktroll/cmd/signals"
+	"github.com/pokt-network/poktroll/pkg/client/query"
+	"github.com/pokt-network/poktroll/pkg/client/query/cache"
 	"github.com/pokt-network/poktroll/pkg/client/tx"
 	txtypes "github.com/pokt-network/poktroll/pkg/client/tx/types"
 	"github.com/pokt-network/poktroll/pkg/deps/config"
@@ -24,7 +27,13 @@ import (
 	relayerconfig "github.com/pokt-network/poktroll/pkg/relayer/config"
 	"github.com/pokt-network/poktroll/pkg/relayer/miner"
 	"github.com/pokt-network/poktroll/pkg/relayer/proxy"
+	"github.com/pokt-network/poktroll/pkg/relayer/relay_authenticator"
 	"github.com/pokt-network/poktroll/pkg/relayer/session"
+	apptypes "github.com/pokt-network/poktroll/x/application/types"
+	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
+	servicetypes "github.com/pokt-network/poktroll/x/service/types"
+	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 // We're `explicitly omitting default` so the relayer crashes if these aren't specified.
@@ -48,16 +57,16 @@ func RelayerCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "relayminer",
 		Short: "Start a RelayMiner",
-		Long: `Run a RelayMiner. A RelayMiner is the off-chain complementary
+		Long: `Run a RelayMiner. A RelayMiner is the offchain complementary
 middleware that handles incoming requests for all the services a Supplier staked
-for on-chain.
+for onchain.
 
 Relay requests received by the relay servers are validated and proxied to their
-respective service endpoints, maintained by the relayer off-chain. The responses
+respective service endpoints, maintained by the relayer offchain. The responses
 are then signed and sent back to the requesting application.
 
 For each successfully served relay, the miner will hash and compare its difficulty
-against an on-chain threshold. If the difficulty is sufficient, it is applicable
+against an onchain threshold. If the difficulty is sufficient, it is applicable
 to relay volume and therefore rewards. Such relays are inserted into and persisted
 via an SMT KV store. The miner will monitor the current block height and periodically
 submit claim and proof messages according to the protocol as sessions become eligible
@@ -75,6 +84,9 @@ for such operations.`,
 	cmd.Flags().Bool(cosmosflags.FlagGRPCInsecure, true, "Used to initialize the Cosmos query context with grpc security options. It can be used to override the `QueryNodeGRPCInsecure` field in the config file if specified.")
 	cmd.Flags().String(cosmosflags.FlagChainID, "poktroll", "The network chain ID")
 	cmd.Flags().StringVar(&flagLogLevel, cosmosflags.FlagLogLevel, "debug", "The logging level (debug|info|warn|error)")
+	cmd.Flags().Float64(cosmosflags.FlagGasAdjustment, 1.5, "The adjustment factor to be multiplied by the gas estimate returned by the tx simulation")
+	cmd.Flags().String(cosmosflags.FlagGasPrices, "1upokt", "Set the gas unit price in upokt")
+	cmd.Flags().Bool(config.FlagQueryCaching, true, "Enable or disable onchain query caching")
 
 	return cmd
 }
@@ -128,6 +140,18 @@ func runRelayer(cmd *cobra.Command, _ []string) error {
 		if err != nil {
 			return fmt.Errorf("failed to start metrics endpoint: %w", err)
 		}
+	}
+
+	queryCachingEnabled, err := cmd.Flags().GetBool(config.FlagQueryCaching)
+	if err != nil {
+		return fmt.Errorf("failed to get query caching flag: %w", err)
+	}
+
+	// TODO_MAINNET(@red-0ne): E2E test query caching vs non-caching.
+	if queryCachingEnabled {
+		logger.Info().Msg("query caching enabled")
+	} else {
+		logger.Info().Msg("query caching disabled")
 	}
 
 	if relayMinerConfig.Pprof.Enabled {
@@ -196,7 +220,30 @@ func setupRelayerDependencies(
 		config.NewSupplyQueryClientContextFn(queryNodeGRPCUrl),            // leaf
 		config.NewSupplyTxClientContextFn(queryNodeGRPCUrl, txNodeRPCUrl), // leaf
 		config.NewSupplyDelegationClientFn(),                              // leaf
-		config.NewSupplySharedQueryClientFn(),                             // leaf
+
+		// Setup the params caches and configure them to clear on new blocks.
+		// Some of the params (tokenomics and gateway) are not used in the RelayMiner
+		// and don't need to have a corresponding cache.
+		config.NewSupplyParamsCacheFn[sharedtypes.Params](cache.WithNewBlockCacheClearing),  // leaf
+		config.NewSupplyParamsCacheFn[apptypes.Params](cache.WithNewBlockCacheClearing),     // leaf
+		config.NewSupplyParamsCacheFn[sessiontypes.Params](cache.WithNewBlockCacheClearing), // leaf
+		config.NewSupplyParamsCacheFn[prooftypes.Params](cache.WithNewBlockCacheClearing),   // leaf
+
+		// Setup the key-value caches for poktroll types and configure them to clear on new blocks.
+		config.NewSupplyKeyValueCacheFn[sharedtypes.Service](cache.WithNewBlockCacheClearing),                // leaf
+		config.NewSupplyKeyValueCacheFn[servicetypes.RelayMiningDifficulty](cache.WithNewBlockCacheClearing), // leaf
+		config.NewSupplyKeyValueCacheFn[apptypes.Application](cache.WithNewBlockCacheClearing),               // leaf
+		config.NewSupplyKeyValueCacheFn[sharedtypes.Supplier](cache.WithNewBlockCacheClearing),               // leaf
+		config.NewSupplyKeyValueCacheFn[query.BlockHash](cache.WithNewBlockCacheClearing),                    // leaf
+		config.NewSupplyKeyValueCacheFn[query.Balance](cache.WithNewBlockCacheClearing),                      // leaf
+		// The session querier returns *sessiontypes.Session, so its cache must also return pointers.
+		// This differs from other queriers which return value types.
+		config.NewSupplyKeyValueCacheFn[*sessiontypes.Session](cache.WithNewBlockCacheClearing), // leaf
+
+		// Setup the key-value for cosmos types and configure them to clear on new blocks.
+		config.NewSupplyKeyValueCacheFn[cosmostypes.AccountI](cache.WithNewBlockCacheClearing), // leaf
+
+		config.NewSupplySharedQueryClientFn(),
 		config.NewSupplyServiceQueryClientFn(),
 		config.NewSupplyApplicationQuerierFn(),
 		config.NewSupplySessionQuerierFn(),
@@ -210,7 +257,8 @@ func setupRelayerDependencies(
 		supplyTxFactory,
 		supplyTxContext,
 		config.NewSupplySupplierClientsFn(signingKeyNames),
-		newSupplyRelayerProxyFn(signingKeyNames, servicesConfigMap),
+		newSupplyRelayAuthenticatorFn(signingKeyNames),
+		newSupplyRelayerProxyFn(servicesConfigMap),
 		newSupplyRelayerSessionsManagerFn(smtStorePath),
 	}
 
@@ -282,11 +330,33 @@ func supplyTxContext(
 	return depinject.Configs(deps, depinject.Supply(txContext)), nil
 }
 
+// newSupplyRelayAuthenticatorFn returns a function which constructs a
+// RelayAuthenticator instance and returns a new depinject.Config which
+// is supplied with the given deps and the new RelayAuthenticator.
+func newSupplyRelayAuthenticatorFn(
+	signingKeyNames []string,
+) config.SupplierFn {
+	return func(
+		ctx context.Context,
+		deps depinject.Config,
+		_ *cobra.Command,
+	) (depinject.Config, error) {
+		relayAuthenticator, err := relay_authenticator.NewRelayAuthenticator(
+			deps,
+			relay_authenticator.WithSigningKeyNames(signingKeyNames),
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		return depinject.Configs(deps, depinject.Supply(relayAuthenticator)), nil
+	}
+}
+
 // newSupplyRelayerProxyFn returns a function which constructs a
 // RelayerProxy instance and returns a new depinject.Config which
 // is supplied with the given deps and the new RelayerProxy.
 func newSupplyRelayerProxyFn(
-	signingKeyNames []string,
 	servicesConfigMap map[string]*relayerconfig.RelayMinerServerConfig,
 ) config.SupplierFn {
 	return func(
@@ -296,7 +366,6 @@ func newSupplyRelayerProxyFn(
 	) (depinject.Config, error) {
 		relayerProxy, err := proxy.NewRelayerProxy(
 			deps,
-			proxy.WithSigningKeyNames(signingKeyNames),
 			proxy.WithServicesConfigMap(servicesConfigMap),
 		)
 		if err != nil {

@@ -23,7 +23,7 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 
-// RelayMiningDifficulty is a message used to store the on-chain Relay Mining
+// RelayMiningDifficulty is a message used to store the onchain Relay Mining
 // difficulty associated with a specific service ID.
 // TODO_TECHDEBT: Embed this message in the Service message.
 type RelayMiningDifficulty struct {

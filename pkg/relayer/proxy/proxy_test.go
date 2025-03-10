@@ -36,7 +36,7 @@ var (
 
 	// supplierEndpoints is the map of serviceName -> []SupplierEndpoint
 	// where serviceName is the name of the service the supplier staked for
-	// and SupplierEndpoint is the endpoint of the service advertised on-chain
+	// and SupplierEndpoint is the endpoint of the service advertised onchain
 	// by the supplier
 	supplierEndpoints map[string][]*sharedtypes.SupplierEndpoint
 
@@ -135,13 +135,14 @@ func init() {
 func TestRelayerProxy_StartAndStop(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.TODO())
 	defer cancel()
+
 	// Setup the RelayerProxy instrumented behavior
-	test := testproxy.NewRelayerProxyTestBehavior(ctx, t, defaultRelayerProxyBehavior...)
+	signingKeyNames := []string{supplierOperatorKeyName}
+	test := testproxy.NewRelayerProxyTestBehavior(ctx, t, signingKeyNames, defaultRelayerProxyBehavior...)
 
 	// Create a RelayerProxy
 	rp, err := proxy.NewRelayerProxy(
 		test.Deps,
-		proxy.WithSigningKeyNames([]string{supplierOperatorKeyName}),
 		proxy.WithServicesConfigMap(servicesConfigMap),
 	)
 	require.NoError(t, err)
@@ -166,54 +167,23 @@ func TestRelayerProxy_StartAndStop(t *testing.T) {
 	require.NoError(t, err)
 }
 
-// RelayerProxy should fail to start if the signing key is not found in the keyring
-func TestRelayerProxy_InvalidSupplierOperatorKeyName(t *testing.T) {
-	ctx, cancel := context.WithCancel(context.TODO())
-	defer cancel()
-	test := testproxy.NewRelayerProxyTestBehavior(ctx, t, defaultRelayerProxyBehavior...)
-
-	rp, err := proxy.NewRelayerProxy(
-		test.Deps,
-		proxy.WithSigningKeyNames([]string{"wrongKeyName"}),
-		proxy.WithServicesConfigMap(servicesConfigMap),
-	)
-	require.NoError(t, err)
-
-	err = rp.Start(ctx)
-	require.Error(t, err)
-}
-
-// RelayerProxy should fail to build if the signing key name is not provided
-func TestRelayerProxy_MissingSupplierOperatorKeyName(t *testing.T) {
-	ctx, cancel := context.WithCancel(context.TODO())
-	defer cancel()
-	test := testproxy.NewRelayerProxyTestBehavior(ctx, t, defaultRelayerProxyBehavior...)
-
-	_, err := proxy.NewRelayerProxy(
-		test.Deps,
-		proxy.WithSigningKeyNames([]string{""}),
-		proxy.WithServicesConfigMap(servicesConfigMap),
-	)
-	require.Error(t, err)
-}
-
 // RelayerProxy should fail to build if the service configs are not provided
 func TestRelayerProxy_EmptyServicesConfigMap(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.TODO())
 	defer cancel()
 
-	test := testproxy.NewRelayerProxyTestBehavior(ctx, t, defaultRelayerProxyBehavior...)
+	signingKeyNames := []string{supplierOperatorKeyName}
+	test := testproxy.NewRelayerProxyTestBehavior(ctx, t, signingKeyNames, defaultRelayerProxyBehavior...)
 
 	_, err := proxy.NewRelayerProxy(
 		test.Deps,
-		proxy.WithSigningKeyNames([]string{supplierOperatorKeyName}),
 		proxy.WithServicesConfigMap(make(map[string]*config.RelayMinerServerConfig)),
 	)
 	require.Error(t, err)
 }
 
 // RelayerProxy should fail to start if it cannot spawn a server for the
-// services it advertized on-chain.
+// services it advertized onchain.
 func TestRelayerProxy_UnsupportedRpcType(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.TODO())
 	defer cancel()
@@ -232,17 +202,17 @@ func TestRelayerProxy_UnsupportedRpcType(t *testing.T) {
 		testproxy.WithRelayerProxyDependenciesForBlockHeight(supplierOperatorKeyName, blockHeight),
 		testproxy.WithServicesConfigMap(servicesConfigMap),
 
-		// The supplier is staked on-chain but the service it provides is not supported by the proxy
+		// The supplier is staked onchain but the service it provides is not supported by the proxy
 		testproxy.WithDefaultSupplier(supplierOperatorKeyName, unsupportedSupplierEndpoint),
 		testproxy.WithDefaultApplication(appPrivateKey),
 		testproxy.WithDefaultSessionSupplier(supplierOperatorKeyName, defaultService, appPrivateKey),
 	}
 
-	test := testproxy.NewRelayerProxyTestBehavior(ctx, t, unsupportedRPCTypeBehavior...)
+	signingKeyNames := []string{supplierOperatorKeyName}
+	test := testproxy.NewRelayerProxyTestBehavior(ctx, t, signingKeyNames, unsupportedRPCTypeBehavior...)
 
 	rp, err := proxy.NewRelayerProxy(
 		test.Deps,
-		proxy.WithSigningKeyNames([]string{supplierOperatorKeyName}),
 		proxy.WithServicesConfigMap(servicesConfigMap),
 	)
 	require.NoError(t, err)
@@ -293,11 +263,11 @@ func TestRelayerProxy_UnsupportedTransportType(t *testing.T) {
 		testproxy.WithDefaultSessionSupplier(supplierOperatorKeyName, defaultService, appPrivateKey),
 	}
 
-	test := testproxy.NewRelayerProxyTestBehavior(ctx, t, unsupportedTransportTypeBehavior...)
+	signingKeyNames := []string{supplierOperatorKeyName}
+	test := testproxy.NewRelayerProxyTestBehavior(ctx, t, signingKeyNames, unsupportedTransportTypeBehavior...)
 
 	rp, err := proxy.NewRelayerProxy(
 		test.Deps,
-		proxy.WithSigningKeyNames([]string{supplierOperatorKeyName}),
 		proxy.WithServicesConfigMap(unsupportedTransportProxy),
 	)
 	require.NoError(t, err)
@@ -337,11 +307,11 @@ func TestRelayerProxy_NonConfiguredSupplierServices(t *testing.T) {
 		testproxy.WithDefaultSessionSupplier(supplierOperatorKeyName, defaultService, appPrivateKey),
 	}
 
-	test := testproxy.NewRelayerProxyTestBehavior(ctx, t, unsupportedTransportTypeBehavior...)
+	signingKeyNames := []string{supplierOperatorKeyName}
+	test := testproxy.NewRelayerProxyTestBehavior(ctx, t, signingKeyNames, unsupportedTransportTypeBehavior...)
 
 	rp, err := proxy.NewRelayerProxy(
 		test.Deps,
-		proxy.WithSigningKeyNames([]string{supplierOperatorKeyName}),
 		proxy.WithServicesConfigMap(missingServicesProxy),
 	)
 	require.NoError(t, err)
@@ -529,11 +499,12 @@ func TestRelayerProxy_Relays(t *testing.T) {
 		t.Run(test.desc, func(t *testing.T) {
 			ctx, cancel := context.WithCancel(context.TODO())
 			defer cancel()
-			testBehavior := testproxy.NewRelayerProxyTestBehavior(ctx, t, test.relayerProxyBehavior...)
+
+			signingKeyNames := []string{supplierOperatorKeyName}
+			testBehavior := testproxy.NewRelayerProxyTestBehavior(ctx, t, signingKeyNames, test.relayerProxyBehavior...)
 
 			rp, err := proxy.NewRelayerProxy(
 				testBehavior.Deps,
-				proxy.WithSigningKeyNames([]string{supplierOperatorKeyName}),
 				proxy.WithServicesConfigMap(servicesConfigMap),
 			)
 			require.NoError(t, err)

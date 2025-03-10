@@ -1,4 +1,4 @@
-//go:generate mockgen -destination=../../../testutil/proof/mocks/expected_keepers_mock.go -package=mocks . BankKeeper,SessionKeeper,ApplicationKeeper,AccountKeeper,SharedKeeper,ServiceKeeper
+//go:generate go run go.uber.org/mock/mockgen -destination=../../../testutil/proof/mocks/expected_keepers_mock.go -package=mocks . BankKeeper,SessionKeeper,ApplicationKeeper,AccountKeeper,SharedKeeper,ServiceKeeper
 
 package types
 
@@ -49,6 +49,7 @@ type ApplicationKeeper interface {
 	GetApplication(ctx context.Context, address string) (app apptypes.Application, found bool)
 	GetAllApplications(ctx context.Context) []apptypes.Application
 	SetApplication(context.Context, apptypes.Application)
+	GetParams(ctx context.Context) (params apptypes.Params)
 }
 
 // SharedKeeper defines the expected interface needed to retrieve shared information.

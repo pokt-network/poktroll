@@ -24,10 +24,17 @@ func (k Keeper) AllSuppliers(
 		return nil, status.Error(codes.InvalidArgument, "invalid request")
 	}
 
-	var suppliers []sharedtypes.Supplier
+	if err := req.ValidateBasic(); err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
 
+	// TODO_IMPROVE: Consider adding a custom onchain index (similar to proofs)
+	// based on other parameters (e.g. serviceId) if/when the performance of the
+	// flags used to filter the response becomes an issue.
 	store := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
 	supplierStore := prefix.NewStore(store, types.KeyPrefix(types.SupplierKeyOperatorPrefix))
+
+	var suppliers []sharedtypes.Supplier
 
 	pageRes, err := query.Paginate(
 		supplierStore,
@@ -38,6 +45,21 @@ func (k Keeper) AllSuppliers(
 				err = fmt.Errorf("unmarshaling supplier with key (hex): %x: %+v", key, err)
 				logger.Error(err.Error())
 				return status.Error(codes.Internal, err.Error())
+			}
+
+			serviceIdFilter := req.GetServiceId()
+			if serviceIdFilter != "" {
+				hasService := false
+				for _, supplierServiceConfig := range supplier.Services {
+					if supplierServiceConfig.ServiceId == serviceIdFilter {
+						hasService = true
+						break
+					}
+				}
+				// Do not include the current supplier in the list returned.
+				if !hasService {
+					return nil
+				}
 			}
 
 			suppliers = append(suppliers, supplier)
@@ -62,8 +84,7 @@ func (k Keeper) Supplier(
 
 	supplier, found := k.GetSupplier(ctx, req.OperatorAddress)
 	if !found {
-		// TODO_TECHDEBT(@bryanchriswhite, #384): conform to logging conventions once established
-		msg := fmt.Sprintf("supplier with address %q", req.GetOperatorAddress())
+		msg := fmt.Sprintf("supplier with address: %q", req.GetOperatorAddress())
 		return nil, status.Error(codes.NotFound, msg)
 	}
 

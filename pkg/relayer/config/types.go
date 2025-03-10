@@ -126,7 +126,7 @@ type RelayMinerSupplierConfig struct {
 	// ServerType is the transport protocol used by the supplier, it must match the
 	// type of the relay miner server it is associated with.
 	ServerType RelayMinerServerType
-	// PubliclyExposedEndpoints is a list of hosts advertised on-chain by the supplier,
+	// PubliclyExposedEndpoints is a list of hosts advertised onchain by the supplier,
 	// the corresponding relay miner server will accept relay requests for these hosts.
 	PubliclyExposedEndpoints []string
 	// ServiceConfig is the config of the service that relays will be proxied to.
@@ -148,15 +148,11 @@ type RelayMinerSupplierServiceConfig struct {
 	// request being proxied from the current relay miner server.
 	// If the service the relay requests are forwarded to requires basic auth
 	// then this field must be populated.
-	// TODO_TECHDEBT(@red-0ne): Pass the authentication to the service instance
-	// when the relay request is forwarded to it.
 	Authentication *RelayMinerSupplierServiceAuthentication
 	// Headers is a map of headers to be used for other authentication means.
 	// If the service the relay requests are forwarded to requires header based
 	// authentication then this field must be populated accordingly.
 	// For example: { "Authorization": "Bearer <token>" }
-	// TODO_TECHDEBT(@red-0ne): Add these headers to the forwarded request
-	// before sending it to the service instance.
 	Headers map[string]string
 }
 
