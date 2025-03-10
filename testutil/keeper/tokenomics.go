@@ -36,6 +36,8 @@ import (
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	gatewaykeeper "github.com/pokt-network/poktroll/x/gateway/keeper"
 	gatewaytypes "github.com/pokt-network/poktroll/x/gateway/types"
+	migrationkeeper "github.com/pokt-network/poktroll/x/migration/keeper"
+	migrationtypes "github.com/pokt-network/poktroll/x/migration/types"
 	proofkeeper "github.com/pokt-network/poktroll/x/proof/keeper"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 	servicekeeper "github.com/pokt-network/poktroll/x/service/keeper"
@@ -67,6 +69,7 @@ type TokenomicsModuleKeepers struct {
 	tokenomicstypes.SharedKeeper
 	tokenomicstypes.SessionKeeper
 	tokenomicstypes.ServiceKeeper
+	tokenomicstypes.MigrationKeeper
 
 	Codec *codec.ProtoCodec
 }
@@ -324,6 +327,7 @@ func NewTokenomicsModuleKeepers(
 		prooftypes.StoreKey,
 		sharedtypes.StoreKey,
 		servicetypes.StoreKey,
+		migrationtypes.StoreKey,
 	)
 
 	// Construct a multistore & mount store keys for each keeper that will interact with the state store.
@@ -523,6 +527,26 @@ func NewTokenomicsModuleKeepers(
 		require.NoError(t, err)
 	}
 
+	migrationKeeper := migrationkeeper.NewKeeper(
+		cdc,
+		runtime.NewKVStoreService(keys[migrationtypes.StoreKey]),
+		logger,
+		authority.String(),
+		accountKeeper,
+		bankKeeper,
+		sharedKeeper,
+		gatewayKeeper,
+		appKeeper,
+		supplierKeeper,
+	)
+
+	require.NoError(t, migrationKeeper.SetParams(sdkCtx, migrationtypes.DefaultParams()))
+
+	if params, ok := cfg.moduleParams[migrationtypes.ModuleName]; ok {
+		err := migrationKeeper.SetParams(ctx, *params.(*migrationtypes.Params))
+		require.NoError(t, err)
+	}
+
 	keepers := TokenomicsModuleKeepers{
 		Keeper:            &tokenomicsKeeper,
 		AccountKeeper:     &accountKeeper,
@@ -533,6 +557,7 @@ func NewTokenomicsModuleKeepers(
 		SharedKeeper:      &sharedKeeper,
 		SessionKeeper:     &sessionKeeper,
 		ServiceKeeper:     &serviceKeeper,
+		MigrationKeeper:   &migrationKeeper,
 
 		Codec: cdc,
 	}

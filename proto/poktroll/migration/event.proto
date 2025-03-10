@@ -23,3 +23,18 @@ message EventImportMorseClaimableAccounts {
   // NOTE: Account balances include consolidated application and supplier actor stakes
   uint64 num_accounts = 3 [(gogoproto.jsontag) = "num_accounts"];
 }
+
+// EventMorseAccountClaimed is emitted when a MorseAccount is claimed on-chain.
+message EventMorseAccountClaimed {
+  // The session end height (on Shannon) in which the claim was committed (i.e. claimed).
+  int64 session_end_height = 1 [(gogoproto.jsontag) = "session_end_height"];
+
+  // The unstaked balance which was claimed.
+  cosmos.base.v1beta1.Coin claimed_balance = 2 [(gogoproto.jsontag) = "claimed_balance", (gogoproto.nullable) = false];
+
+  // The bech32-encoded address of the Shannon account to which the claimed balance will be minted.
+  string shannon_dest_address = 3 [(cosmos_proto.scalar) = "cosmos.AddressString", (gogoproto.jsontag) = "shannon_dest_address"];
+
+  // The hex-encoded address of the Morse account whose balance will be claimed.
+  string morse_src_address = 4 [(gogoproto.jsontag) = "morse_src_address"];
+}
