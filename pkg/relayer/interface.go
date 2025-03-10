@@ -142,6 +142,10 @@ type SessionTree interface {
 	// a proof in byte format.
 	GetProofBz() []byte
 
+	// GetProofRelay returns the relay corresponding to the generated closest proof.
+	// This function should be called after ProveClosest.
+	GetProofRelay() (proofRelay []byte, err error)
+
 	// Flush gets the root hash of the SMST needed for submitting the claim;
 	// then commits the entire tree to disk and stops the KVStore.
 	// It should be called before submitting the claim onchain. This function frees up
@@ -192,4 +196,17 @@ type RelayMeter interface {
 	// The volume / reward applicability of the relay is unknown to the relay miner
 	// until the relay is served and the relay response signed.
 	SetNonApplicableRelayReward(ctx context.Context, relayRequestMeta servicetypes.RelayRequestMetadata) error
+}
+
+// RelayStore is the interface for the storage of relay data.
+// It is decoupled from the SMST storage to allow for different storage implementations.
+type RelayStore interface {
+	// Write stores the given relay bytes designated by the relay hash to the store.
+	Write(relayHash, relayBz []byte) error
+
+	// Get retrieves the relay bytes designated by the relay hash from the store.
+	Get(relayHash []byte) ([]byte, error)
+
+	// Delete removes the whole relay store from the storage when the session is claimed.
+	Delete() error
 }

@@ -14,4 +14,7 @@ var (
 	ErrSessionUpdatingTree                 = sdkerrors.Register(codespace, 8, "error updating session SMST")
 	ErrSessionRelayMetaHasNoServiceID      = sdkerrors.Register(codespace, 9, "service ID not specified in relay metadata")
 	ErrSessionRelayMetaHasInvalidServiceID = sdkerrors.Register(codespace, 10, "service specified in relay metadata not found")
+	ErrSessionPersistRelay                 = sdkerrors.Register(codespace, 11, "error persisting relay bytes")
+	ErrSessionTreeNoProof                  = sdkerrors.Register(codespace, 12, "no proof found for session tree")
+	ErrSessionRelaysStorePathExists        = sdkerrors.Register(codespace, 13, "relays store directory already exists")
 )

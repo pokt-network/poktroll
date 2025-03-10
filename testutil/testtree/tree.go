@@ -131,10 +131,14 @@ func NewProof(
 	merkleCompactProofBz, err := merkleCompactProof.Marshal()
 	require.NoError(t, err)
 
+	proofRelay, err := sessionTree.GetProofRelay()
+	require.NoError(t, err)
+
 	return &prooftypes.Proof{
 		SupplierOperatorAddress: supplierOperatorAddr,
 		SessionHeader:           sessionHeader,
 		ClosestMerkleProof:      merkleCompactProofBz,
+		ProofRelay:              proofRelay,
 	}
 }
 

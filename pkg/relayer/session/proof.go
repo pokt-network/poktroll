@@ -169,10 +169,23 @@ func (rs *relayerSessionsManager) newMapProveSessionsFn(
 		// Map key is the supplier operator address.
 		proofMsgs := make([]client.MsgSubmitProof, len(sessionTrees))
 		for idx, session := range sessionTrees {
+			// Get the relay corresponding to the generated closest proof to attach
+			// it to the proof message.
+			// This is necessary since the proof contains only the hash of the relay
+			// but the verification requires the whole relay to check supplier and ring
+			// signatures.
+			proofRelay, err := session.GetProofRelay()
+			if err != nil {
+				failedSubmitProofSessionsCh <- sessionTrees
+				rs.logger.Error().Err(err).Msg("failed to get proof relay")
+				continue
+			}
+
 			proofMsgs[idx] = &prooftypes.MsgSubmitProof{
 				SupplierOperatorAddress: session.GetSupplierOperatorAddress(),
 				SessionHeader:           session.GetSessionHeader(),
 				Proof:                   session.GetProofBz(),
+				ProofRelay:              proofRelay,
 			}
 		}
 

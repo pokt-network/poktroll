@@ -296,7 +296,8 @@ func TestEnsureValidProof_Error(t *testing.T) {
 				mangledRelaySessionTree := testtree.NewEmptySessionTree(t, ctx, validSessionHeader, supplierOperatorAddr)
 
 				// Add the mangled relay to the session tree.
-				err = mangledRelaySessionTree.Update([]byte{1}, mangledRelayBz, 1)
+				key := protocol.GetRelayHashFromBytes(mangledRelayBz)
+				err = mangledRelaySessionTree.Update(key[:], mangledRelayBz, 1)
 				require.NoError(t, err)
 
 				// Get the Merkle root for the session tree in order to construct a claim.
@@ -447,7 +448,8 @@ func TestEnsureValidProof_Error(t *testing.T) {
 				invalidRequestSignatureSessionTree := testtree.NewEmptySessionTree(t, ctx, validSessionHeader, supplierOperatorAddr)
 
 				// Add the relay to the session tree.
-				err = invalidRequestSignatureSessionTree.Update([]byte{1}, invalidRequestSignatureRelayBz, 1)
+				key := protocol.GetRelayHashFromBytes(invalidRequestSignatureRelayBz)
+				err = invalidRequestSignatureSessionTree.Update(key[:], invalidRequestSignatureRelayBz, 1)
 				require.NoError(t, err)
 
 				// Get the Merkle root for the session tree in order to construct a claim.
@@ -508,7 +510,8 @@ func TestEnsureValidProof_Error(t *testing.T) {
 				invalidResponseSignatureSessionTree := testtree.NewEmptySessionTree(t, ctx, validSessionHeader, supplierOperatorAddr)
 
 				// Add the relay to the session tree.
-				err = invalidResponseSignatureSessionTree.Update([]byte{1}, relayBz, 1)
+				key := protocol.GetRelayHashFromBytes(relayBz)
+				err = invalidResponseSignatureSessionTree.Update(key[:], relayBz, 1)
 				require.NoError(t, err)
 
 				// Get the Merkle root for the session tree in order to construct a claim.

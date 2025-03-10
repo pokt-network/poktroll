@@ -91,6 +91,11 @@ message MsgSubmitProof {
 
   // serialized version of *smt.SparseCompactMerkleClosestProof
   bytes proof = 3;
+
+  // proof_relay is the bytes representation of the relay corresponding to the proof submitted.
+  // Since the proof only contains the relay's hash, the relay is needed to verify that the
+  // supplier and ring signatures are valid.
+  bytes proof_relay = 4;
 }
 
 message MsgSubmitProofResponse {

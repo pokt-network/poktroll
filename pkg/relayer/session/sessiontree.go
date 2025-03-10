@@ -54,11 +54,18 @@ type sessionTree struct {
 	// treeStore is the KVStore used to store the SMST.
 	treeStore pebble.PebbleKVStore
 
-	// storePath is the path to the KVStore used to store the SMST.
+	// smtStorePath is the path to the KVStore used to store the SMST.
 	// It is created from the storePrefix and the session.sessionId.
 	// We keep track of it so we can use it at the end of the claim/proof lifecycle
 	// to delete the KVStore when it is no longer needed.
-	storePath string
+	smtStorePath string
+
+	// relayStore is the file store used to store the relays.
+	// It is used to avoid keeping all the relays in memory alongside the SMST.
+	relayStore relayer.RelayStore
+
+	// relayStorePath is the path to the file store used to store the relays bytes.
+	relayStorePath string
 
 	isClaiming bool
 }
@@ -72,20 +79,28 @@ func NewSessionTree(
 	storesDirectory string,
 	logger polylog.Logger,
 ) (relayer.SessionTree, error) {
-	// Join the storePrefix and the session.sessionId and supplier's operator address to
-	// create a unique storePath.
+	sessionEndBlockHeightStr := fmt.Sprintf("%d", sessionHeader.GetSessionEndBlockHeight())
+
+	// Join the storesDirectory, "smt", the supplier's operator address, the session's
+	// end height and id to create a unique storePath.
 
 	// TODO_IMPROVE(#621): instead of creating a new KV store for each session, it will be more beneficial to
 	// use one key store. KV databases are often optimized for writing into one database. They keys can
 	// use supplier address and session id as prefix. The current approach might not be RAM/IO efficient.
-	storePath := filepath.Join(storesDirectory, supplierOperatorAddress, sessionHeader.SessionId)
+	smtStorePath := filepath.Join(
+		storesDirectory,
+		"smt",
+		supplierOperatorAddress,
+		sessionEndBlockHeightStr,
+		sessionHeader.SessionId,
+	)
 
 	// Make sure storePath does not exist when creating a new SessionTree
-	if _, err := os.Stat(storePath); err != nil && !os.IsNotExist(err) {
-		return nil, ErrSessionTreeStorePathExists.Wrapf("storePath: %q", storePath)
+	if _, err := os.Stat(smtStorePath); err != nil && !os.IsNotExist(err) {
+		return nil, ErrSessionTreeStorePathExists.Wrapf("smtStorePath: %q", smtStorePath)
 	}
 
-	treeStore, err := pebble.NewKVStore(storePath)
+	treeStore, err := pebble.NewKVStore(smtStorePath)
 	if err != nil {
 		return nil, err
 	}
@@ -94,8 +109,31 @@ func NewSessionTree(
 	// contain a non-hashed Relay that could be used to validate the proof onchain.
 	trie := smt.NewSparseMerkleSumTrie(treeStore, protocol.NewTrieHasher(), protocol.SMTValueHasher())
 
+	// Create a directory to store the relays the supplier has mined during this session number.
+	// It will contain all the relays served in sessions ending at the same block height.
+	relaysStoreDirPath := filepath.Join(
+		storesDirectory,
+		"relays",
+		supplierOperatorAddress,
+		sessionEndBlockHeightStr,
+	)
+	if err := os.MkdirAll(relaysStoreDirPath, 0700); err != nil && !os.IsExist(err) {
+		return nil, ErrSessionRelaysStorePathExists.Wrapf("relaysStoreDirPath: %q", relaysStoreDirPath)
+	}
+
+	// Create a file store to store the relays served in the current session.
+	// It is located in <storeDir>/relays/<supplierAddress>/<sessionEndHeight>/<sessionID>.
+	relaysStoreFilePath := filepath.Join(
+		relaysStoreDirPath,
+		sessionHeader.SessionId,
+	)
+	relayStore, err := NewRelayStore(relaysStoreFilePath)
+	if err != nil {
+		return nil, err
+	}
+
 	logger = logger.With(
-		"store_path", storePath,
+		"store_path", smtStorePath,
 		"session_id", sessionHeader.SessionId,
 		"supplier_operator_address", supplierOperatorAddress,
 	)
@@ -103,8 +141,9 @@ func NewSessionTree(
 	sessionTree := &sessionTree{
 		logger:                  logger,
 		sessionHeader:           sessionHeader,
-		storePath:               storePath,
+		smtStorePath:            smtStorePath,
 		treeStore:               treeStore,
+		relayStore:              relayStore,
 		sessionSMT:              trie,
 		sessionMu:               &sync.Mutex{},
 		supplierOperatorAddress: supplierOperatorAddress,
@@ -131,8 +170,17 @@ func (st *sessionTree) Update(key, value []byte, weight uint64) error {
 		return ErrSessionTreeClosed
 	}
 
-	err := st.sessionSMT.Update(key, value, weight)
-	if err != nil {
+	// Save the relay in the relay store to avoid keeping all the relays in memory.
+	// The relay bytes hash will be used as the key in the relay store.
+	// Ensure that the relay is stored before updating the SMST.
+	if err := st.relayStore.Write(key, value); err != nil {
+		return ErrSessionPersistRelay.Wrapf("error: %v", err)
+	}
+
+	// Update the SMST with the relay's key and weight.
+	// The value is not stored in the SMST to avoid keeping it in memory,
+	// but will be used to generate the proof.
+	if err := st.sessionSMT.Update(key, key, weight); err != nil {
 		return ErrSessionUpdatingTree.Wrapf("error: %v", err)
 	}
 
@@ -168,7 +216,7 @@ func (st *sessionTree) ProveClosest(path []byte) (compactProof *smt.SparseCompac
 	}
 
 	// Restore the KVStore from disk since it has been closed after the claim has been generated.
-	st.treeStore, err = pebble.NewKVStore(st.storePath)
+	st.treeStore, err = pebble.NewKVStore(st.smtStorePath)
 	if err != nil {
 		return nil, err
 	}
@@ -278,7 +326,18 @@ func (st *sessionTree) Delete() error {
 	}
 
 	// Delete the KVStore from disk
-	return os.RemoveAll(st.storePath)
+	err := os.RemoveAll(st.smtStorePath)
+	if err != nil {
+		return err
+	}
+
+	// Delete all the relays corresponding to the session from the file store.
+	err = st.relayStore.Delete()
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // StartClaiming marks the session tree as being picked up for claiming,
@@ -299,4 +358,19 @@ func (st *sessionTree) StartClaiming() error {
 // GetSupplierOperatorAddress returns a CosmosSDK address of the supplier this sessionTree belongs to.
 func (st *sessionTree) GetSupplierOperatorAddress() string {
 	return st.supplierOperatorAddress
+}
+
+// GetProofRelay returns the relay corresponding to the generated closest proof.
+// This function should be called after ProveClosest.
+func (st *sessionTree) GetProofRelay() (relayBz []byte, err error) {
+	if st.compactProof == nil {
+		return nil, ErrSessionTreeNoProof.Wrapf("no proof for session tree %s", st.sessionHeader.SessionId)
+	}
+
+	// Since the ClosestValueHash is the concatenation of the relay hash, the sum, and the count,
+	// we can extract the relay hash from the ClosestValueHash to get the relay key.
+	valueHash := st.compactProof.ClosestValueHash[:protocol.RelayHasherSize]
+
+	// Get the relay from the relay store using the relay hash.
+	return st.relayStore.Get(valueHash)
 }
