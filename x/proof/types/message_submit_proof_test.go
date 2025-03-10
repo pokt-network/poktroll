@@ -15,6 +15,7 @@ const testServiceId = "svc01"
 
 func TestMsgSubmitProof_ValidateBasic(t *testing.T) {
 	testClosestMerkleProof := []byte{1, 2, 3, 4}
+	relayBz := []byte{5, 6, 7, 8}
 
 	tests := []struct {
 		desc                           string
@@ -32,7 +33,8 @@ func TestMsgSubmitProof_ValidateBasic(t *testing.T) {
 					SessionStartBlockHeight: 1,
 					SessionEndBlockHeight:   testsession.GetSessionEndHeightWithDefaultParams(1),
 				},
-				Proof: testClosestMerkleProof,
+				Proof:      testClosestMerkleProof,
+				ProofRelay: relayBz,
 			},
 			sessionHeaderToExpectedErrorFn: func(sh sessiontypes.SessionHeader) error {
 				sessionError := sessiontypes.ErrSessionInvalidAppAddress.Wrapf(
@@ -54,7 +56,8 @@ func TestMsgSubmitProof_ValidateBasic(t *testing.T) {
 					SessionStartBlockHeight: 1,
 					SessionEndBlockHeight:   testsession.GetSessionEndHeightWithDefaultParams(1),
 				},
-				Proof: testClosestMerkleProof,
+				Proof:      testClosestMerkleProof,
+				ProofRelay: relayBz,
 			},
 			sessionHeaderToExpectedErrorFn: func(sh sessiontypes.SessionHeader) error {
 				return sdkerrors.ErrInvalidAddress.Wrapf(
@@ -75,11 +78,29 @@ func TestMsgSubmitProof_ValidateBasic(t *testing.T) {
 					SessionStartBlockHeight: 1,
 					SessionEndBlockHeight:   testsession.GetSessionEndHeightWithDefaultParams(1),
 				},
-				Proof: testClosestMerkleProof,
+				Proof:      testClosestMerkleProof,
+				ProofRelay: relayBz,
 			},
 			sessionHeaderToExpectedErrorFn: func(sh sessiontypes.SessionHeader) error {
 				serviceError := sessiontypes.ErrSessionInvalidService.Wrapf("invalid service ID: %q", sh.ServiceId)
 				return ErrProofInvalidSessionHeader.Wrapf("%s", serviceError)
+			},
+		},
+		{
+			desc: "empty proof relay",
+			msg: MsgSubmitProof{
+				SupplierOperatorAddress: sample.AccAddress(),
+				SessionHeader: &sessiontypes.SessionHeader{
+					ApplicationAddress:      sample.AccAddress(),
+					ServiceId:               testServiceId,
+					SessionId:               "mock_session_id",
+					SessionStartBlockHeight: 1,
+					SessionEndBlockHeight:   testsession.GetSessionEndHeightWithDefaultParams(1),
+				},
+				Proof: testClosestMerkleProof,
+			},
+			sessionHeaderToExpectedErrorFn: func(sh sessiontypes.SessionHeader) error {
+				return ErrProofInvalidProof.Wrap("proof relay cannot be empty")
 			},
 		},
 		{
@@ -93,7 +114,8 @@ func TestMsgSubmitProof_ValidateBasic(t *testing.T) {
 					SessionStartBlockHeight: 1,
 					SessionEndBlockHeight:   testsession.GetSessionEndHeightWithDefaultParams(1),
 				},
-				Proof: testClosestMerkleProof,
+				Proof:      testClosestMerkleProof,
+				ProofRelay: relayBz,
 			},
 		},
 	}
