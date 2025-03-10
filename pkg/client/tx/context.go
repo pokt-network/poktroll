@@ -11,7 +11,7 @@ import (
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/tx"
 	authclient "github.com/cosmos/cosmos-sdk/x/auth/client"
-	grpc "google.golang.org/grpc"
+	"google.golang.org/grpc"
 
 	"github.com/pokt-network/poktroll/pkg/client"
 	txtypes "github.com/pokt-network/poktroll/pkg/client/tx/types"
