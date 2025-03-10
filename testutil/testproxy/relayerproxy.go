@@ -24,18 +24,15 @@ import (
 	sdktypes "github.com/pokt-network/shannon-sdk/types"
 	"github.com/stretchr/testify/require"
 
-	"github.com/pokt-network/poktroll/pkg/observable/channel"
 	"github.com/pokt-network/poktroll/pkg/polylog"
 	"github.com/pokt-network/poktroll/pkg/relayer/config"
 	"github.com/pokt-network/poktroll/pkg/relayer/relay_authenticator"
 	"github.com/pokt-network/poktroll/pkg/signer"
 	testsession "github.com/pokt-network/poktroll/testutil/session"
 	"github.com/pokt-network/poktroll/testutil/testclient/testblock"
-	"github.com/pokt-network/poktroll/testutil/testclient/testdelegation"
 	"github.com/pokt-network/poktroll/testutil/testclient/testkeyring"
 	"github.com/pokt-network/poktroll/testutil/testclient/testqueryclients"
 	testrings "github.com/pokt-network/poktroll/testutil/testcrypto/rings"
-	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	servicetypes "github.com/pokt-network/poktroll/x/service/types"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
@@ -123,11 +120,8 @@ func WithRelayerProxyDependenciesForBlockHeight(
 		blockClient := testblock.NewAnyTimeLastBlockBlockClient(test.t, []byte{}, blockHeight)
 		keyring, _ := testkeyring.NewTestKeyringWithKey(test.t, keyName)
 
-		redelegationObs, _ := channel.NewReplayObservable[*apptypes.EventRedelegation](test.ctx, 1)
-		delegationClient := testdelegation.NewAnyTimesRedelegationsSequence(test.ctx, test.t, "", redelegationObs)
-
-		ringCacheDeps := depinject.Supply(accountQueryClient, applicationQueryClient, delegationClient, sharedQueryClient)
-		ringCache := testrings.NewRingCacheWithMockDependencies(test.ctx, test.t, ringCacheDeps)
+		ringClientDeps := depinject.Supply(accountQueryClient, applicationQueryClient, sharedQueryClient)
+		ringClient := testrings.NewRingClientWithMockDependencies(test.ctx, test.t, ringClientDeps)
 
 		relayAuthenticatorDeps := depinject.Supply(
 			logger,
@@ -135,7 +129,7 @@ func WithRelayerProxyDependenciesForBlockHeight(
 			sessionQueryClient,
 			sharedQueryClient,
 			blockClient,
-			ringCache,
+			ringClient,
 		)
 
 		opts := relay_authenticator.WithSigningKeyNames(test.signingKeyNames)
@@ -143,10 +137,10 @@ func WithRelayerProxyDependenciesForBlockHeight(
 		require.NoError(test.t, err)
 
 		testDeps := depinject.Configs(
-			ringCacheDeps,
+			ringClientDeps,
 			depinject.Supply(
 				logger,
-				ringCache,
+				ringClient,
 				blockClient,
 				sessionQueryClient,
 				supplierQueryClient,

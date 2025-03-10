@@ -144,6 +144,8 @@ func (ro *replayObservable[V]) SubscribeFromLatestBufferedOffset(
 
 	go func() {
 		ro.replayBufferMu.RLock()
+		defer cancel()
+		defer close(ch)
 
 		// Ensure that the offset is within the bounds of the replay buffer.
 		if endOffset > len(ro.replayBuffer) {
@@ -161,11 +163,17 @@ func (ro *replayObservable[V]) SubscribeFromLatestBufferedOffset(
 		// Since bufferingObsvbl emits all buffered values in one notification
 		// and the replay buffer has already been replayed, only the most recent
 		// value needs to be published
-		for values := range bufferedValuesCh {
-			ch <- values[0]
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case values, ok := <-bufferedValuesCh:
+				if !ok {
+					return
+				}
+				ch <- values[0]
+			}
 		}
-		// Cancel the context to stop the observer when the source observable is closed.
-		cancel()
 	}()
 
 	return obs.Subscribe(ctx)
@@ -207,6 +215,7 @@ func (ro *replayObservable[V]) initBufferingObservable(
 			bufferedObsvblCh <- ro.replayBuffer
 			ro.replayBufferMu.Unlock()
 		}
+		close(bufferedObsvblCh)
 	}()
 
 	// Ensure that the source observable has been subscribed to before allowing

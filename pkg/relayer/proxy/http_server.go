@@ -2,7 +2,9 @@ package proxy
 
 import (
 	"context"
+	"net"
 	"net/http"
+	"time"
 
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 
@@ -73,9 +75,17 @@ func NewHTTPServer(
 	sharedQueryClient client.SharedQueryClient,
 	sessionQueryClient client.SessionQueryClient,
 ) relayer.RelayServer {
+	// Create the HTTP server.
+	// TODO_TECHDEBT: Make timeouts configurable.
+	httpServer := &http.Server{
+		IdleTimeout:  60 * time.Second,
+		ReadTimeout:  10 * time.Second,
+		WriteTimeout: 10 * time.Second,
+	}
+
 	return &relayMinerHTTPServer{
 		logger:               logger,
-		server:               &http.Server{Addr: serverConfig.ListenAddress},
+		server:               httpServer,
 		relayAuthenticator:   relayAuthenticator,
 		servedRelaysProducer: servedRelaysProducer,
 		serverConfig:         serverConfig,
@@ -98,7 +108,13 @@ func (server *relayMinerHTTPServer) Start(ctx context.Context) error {
 	// Set the HTTP handler.
 	server.server.Handler = server
 
-	return server.server.ListenAndServe()
+	listener, err := net.Listen("tcp", server.serverConfig.ListenAddress)
+	if err != nil {
+		server.logger.Error().Err(err).Msg("failed to create listener")
+		return err
+	}
+
+	return server.server.Serve(listener)
 }
 
 // Stop terminates the service server and returns an error if it fails.

@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
-	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 
 	"github.com/pokt-network/poktroll/pkg/crypto"
@@ -66,14 +65,12 @@ func NewEmptySessionTree(
 		_ = os.RemoveAll(testSessionTreeStoreDir)
 	})
 
-	accAddress := cosmostypes.MustAccAddressFromBech32(supplierOperatorAddr)
-
 	logger := polylog.Ctx(ctx)
 
 	// Construct a session tree to add relays to and generate a proof from.
 	sessionTree, err := session.NewSessionTree(
 		sessionTreeHeader,
-		&accAddress,
+		supplierOperatorAddr,
 		testSessionTreeStoreDir,
 		logger,
 	)

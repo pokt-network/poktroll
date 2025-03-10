@@ -6,7 +6,6 @@ import (
 	"slices"
 
 	sdktypes "github.com/cosmos/cosmos-sdk/types"
-	"github.com/pokt-network/smt"
 
 	"github.com/pokt-network/poktroll/app/volatile"
 	"github.com/pokt-network/poktroll/pkg/client"
@@ -18,6 +17,7 @@ import (
 	"github.com/pokt-network/poktroll/pkg/relayer"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
+	"github.com/pokt-network/smt"
 )
 
 // The cumulative fees of creating a single claim, followed by submitting a single proof.
@@ -145,20 +145,12 @@ func (rs *relayerSessionsManager) waitForEarliestCreateClaimsHeight(
 		failedCreateClaimsSessionsCh <- sessionTrees
 		return nil
 	}
-	claimsFlushedCh := make(chan []relayer.SessionTree)
-	defer close(claimsFlushedCh)
-	go rs.goCreateClaimRoots(
-		ctx,
-		sessionTrees,
-		failedCreateClaimsSessionsCh,
-		claimsFlushedCh,
-	)
 
 	logger = logger.With("claim_window_open_block_hash", fmt.Sprintf("%x", claimsWindowOpenBlock.Hash()))
 	logger.Info().Msg("observed earliest claim commit height offset seed block height")
 
 	// Get the earliest claim commit height for this supplier.
-	supplierOperatorAddr := sessionTrees[0].GetSupplierOperatorAddress().String()
+	supplierOperatorAddr := sessionTrees[0].GetSupplierOperatorAddress()
 	earliestSupplierClaimsCommitHeight := sharedtypes.GetEarliestSupplierClaimCommitHeight(
 		sharedParams,
 		sessionEndHeight,
@@ -170,11 +162,20 @@ func (rs *relayerSessionsManager) waitForEarliestCreateClaimsHeight(
 	logger.Info().Msg("waiting & blocking until the earliest claim commit height for this supplier")
 
 	// Wait for the earliestSupplierClaimsCommitHeight to be reached before proceeding.
-	_ = rs.waitForBlock(ctx, earliestSupplierClaimsCommitHeight)
+	blockObserved := make(chan struct{}, 1)
+	go func() {
+		_ = rs.waitForBlock(ctx, earliestSupplierClaimsCommitHeight)
+		logger.Info().Msg("observed earliest claim commit height")
+		close(blockObserved)
+	}()
 
-	logger.Info().Msg("observed earliest claim commit height")
+	claimsFlushed, failedClaims := rs.createClaimRoots(sessionTrees)
+	if len(failedClaims) > 0 {
+		failedCreateClaimsSessionsCh <- failedClaims
+	}
 
-	return <-claimsFlushedCh
+	<-blockObserved
+	return claimsFlushed
 }
 
 // newMapClaimSessionsFn returns a new MapFn that creates claims for the given
@@ -205,7 +206,7 @@ func (rs *relayerSessionsManager) newMapClaimSessionsFn(
 			claimMsgs[idx] = &prooftypes.MsgCreateClaim{
 				RootHash:                sessionTree.GetClaimRoot(),
 				SessionHeader:           sessionTree.GetSessionHeader(),
-				SupplierOperatorAddress: sessionTree.GetSupplierOperatorAddress().String(),
+				SupplierOperatorAddress: sessionTree.GetSupplierOperatorAddress(),
 			}
 		}
 
@@ -220,23 +221,11 @@ func (rs *relayerSessionsManager) newMapClaimSessionsFn(
 	}
 }
 
-// goCreateClaimRoots creates the claim roots corresponding to the given sessionTrees,
-// then sends the successful and failed claims to their respective channels.
-// This function MUST to be run as a goroutine.
-func (rs *relayerSessionsManager) goCreateClaimRoots(
-	ctx context.Context,
+// CreateClaimRoots creates the claim roots corresponding to the given sessionTrees.
+func (rs *relayerSessionsManager) createClaimRoots(
 	sessionTrees []relayer.SessionTree,
-	failSubmitProofsSessionsCh chan<- []relayer.SessionTree,
-	claimsFlushedCh chan<- []relayer.SessionTree,
-) {
-	failedClaims := []relayer.SessionTree{}
-	flushedClaims := []relayer.SessionTree{}
+) (flushedClaims []relayer.SessionTree, failedClaims []relayer.SessionTree) {
 	for _, sessionTree := range sessionTrees {
-		select {
-		case <-ctx.Done():
-			return
-		default:
-		}
 		// This session should no longer be updated
 		if _, err := sessionTree.Flush(); err != nil {
 			rs.logger.Error().Err(err).Msg("failed to flush session")
@@ -247,8 +236,7 @@ func (rs *relayerSessionsManager) goCreateClaimRoots(
 		flushedClaims = append(flushedClaims, sessionTree)
 	}
 
-	failSubmitProofsSessionsCh <- failedClaims
-	claimsFlushedCh <- flushedClaims
+	return flushedClaims, failedClaims
 }
 
 // payableProofsSessionTrees returns the session trees that the supplier operator
@@ -260,7 +248,7 @@ func (rs *relayerSessionsManager) payableProofsSessionTrees(
 	ctx context.Context,
 	sessionTrees []relayer.SessionTree,
 ) ([]relayer.SessionTree, error) {
-	supplierOpeartorAddress := sessionTrees[0].GetSupplierOperatorAddress().String()
+	supplierOpeartorAddress := sessionTrees[0].GetSupplierOperatorAddress()
 	logger := rs.logger.With(
 		"supplier_operator_address", supplierOpeartorAddress,
 	)
@@ -276,7 +264,7 @@ func (rs *relayerSessionsManager) payableProofsSessionTrees(
 
 	supplierOperatorBalanceCoin, err := rs.bankQueryClient.GetBalance(
 		ctx,
-		sessionTrees[0].GetSupplierOperatorAddress().String(),
+		sessionTrees[0].GetSupplierOperatorAddress(),
 	)
 	if err != nil {
 		return nil, err
