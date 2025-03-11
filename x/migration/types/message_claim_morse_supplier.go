@@ -6,7 +6,7 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 )
 
-var _ sdk.Msg = &MsgClaimMorseSupplier{}
+var _ sdk.Msg = (*MsgClaimMorseSupplier)(nil)
 
 func NewMsgClaimMorseSupplier(shannonDestAddress string, morseSrcAddress string, morseSignature string, serviceConfig string) *MsgClaimMorseSupplier {
 	return &MsgClaimMorseSupplier{
