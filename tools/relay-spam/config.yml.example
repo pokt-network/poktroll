@@ -1,0 +1,27 @@
+# Example config.yml for relay-spam tool
+home: ~/.poktroll
+
+tx_flags_template:
+  chain-id: poktroll
+  gas: auto
+  gas-adjustment: 1.5
+  gas-prices: 0.01upokt
+  broadcast-mode: sync
+  yes: true
+  keyring-backend: test
+
+application_defaults:
+  stake: 1000000upokt
+  service_id: svc1qjpxsjkz0kujcvdlxm2wkjv5m4g0p9k
+  gateways:
+    - http://localhost:8081
+    - http://localhost:8082
+
+# Applications will be populated by the 'populate' command
+# or you can manually add them here
+applications:
+  - name: relay_spam_app_0
+    address: pokt18wmctmhu49csyy6j0eyhmua63rvlwgc8hddg2c
+    mnemonic: certain monitor elephant guard must vacant magnet present bacon scare social cattle enact average stairs orient disorder whisper frame banner version open spray brother
+    staked: false
+    delegated: false 
