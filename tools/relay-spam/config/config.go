@@ -10,11 +10,14 @@ import (
 )
 
 type Config struct {
-	DataDir             string              `mapstructure:"data_dir"`
-	TxFlags             string              `mapstructure:"tx_flags"`
-	TxFlagsTemplate     map[string]string   `mapstructure:"tx_flags_template"`
-	Applications        []Application       `mapstructure:"applications"`
-	ApplicationDefaults ApplicationDefaults `mapstructure:"application_defaults"`
+	DataDir              string              `mapstructure:"data_dir"`
+	TxFlags              string              `mapstructure:"tx_flags"`
+	TxFlagsTemplate      map[string]string   `mapstructure:"tx_flags_template"`
+	Applications         []Application       `mapstructure:"applications"`
+	ApplicationDefaults  ApplicationDefaults `mapstructure:"application_defaults"`
+	ApplicationStakeGoal string              `mapstructure:"application_stake_goal"` // Target stake amount for applications
+	ApplicationFundGoal  string              `mapstructure:"application_fund_goal"`  // Target balance for funding applications
+	GrpcEndpoint         string              `mapstructure:"grpc_endpoint"`          // GRPC endpoint for querying balances
 }
 
 type Application struct {
