@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"strconv"
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/codec/types"
@@ -18,9 +19,10 @@ import (
 
 // populateCmd represents the populate command
 var populateCmd = &cobra.Command{
-	Use:   "populate",
+	Use:   "populate [num_accounts]",
 	Short: "Create new accounts for relay spam",
 	Long:  `Create new accounts and add them to the configuration file.`,
+	Args:  cobra.MaximumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		// Load config
 		cfg, err := config.LoadConfig()
@@ -68,8 +70,18 @@ var populateCmd = &cobra.Command{
 		// Create account manager
 		accountManager := account.NewManager(kr, cfg)
 
-		// Create accounts
-		numAccounts := viper.GetInt("num_accounts")
+		// Determine number of accounts to create
+		numAccounts := viper.GetInt("num_accounts") // Default from config
+		if len(args) > 0 {
+			// If argument is provided, use it instead
+			parsedNum, err := strconv.Atoi(args[0])
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "Invalid number of accounts: %v\n", err)
+				os.Exit(1)
+			}
+			numAccounts = parsedNum
+		}
+
 		fmt.Printf("Creating %d new accounts...\n", numAccounts)
 
 		newApps, err := accountManager.CreateAccounts(numAccounts)

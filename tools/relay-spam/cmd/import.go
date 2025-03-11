@@ -48,6 +48,7 @@ var importCmd = &cobra.Command{
 			// But we want to use our own directory structure, so we need to
 			// explicitly set the keyring directory
 			keyringDir := cfg.DataDir
+			fmt.Println("Keyring directory:", keyringDir)
 
 			// Create the keyring
 			kr, err = keyring.New(

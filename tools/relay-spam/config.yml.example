@@ -1,5 +1,5 @@
 # Example config.yml for relay-spam tool
-home: ~/.poktroll
+data_dir: ~/.poktroll
 
 tx_flags_template:
   chain-id: poktroll

@@ -1,4 +1,4 @@
-data_dir: /Users/dk/.poktroll_1
+datadir: /Users/dk/.poktroll
 txflags: ""
 txflagstemplate: {}
 applications:
@@ -94,6 +94,88 @@ applications:
   mnemonic: scare simple era february away point shine seven guess charge decline
     burger true tackle finger supply stairs assume innocent aspect volcano guide warrior
     mean
+  stakegoal: 0
+  serviceidgoal: ""
+  delegateesgoal: []
+- name: relay_spam_app_13
+  address: pokt1gqfc4uha4ntc7cucqah0cr3wnsq87f77v8g6zv
+  mnemonic: pattern reveal stereo soda pigeon unknown cause arrange among race potato
+    just bike donate grape ride fish seat hurt romance evidence liberty glass stable
+  stakegoal: 0
+  serviceidgoal: ""
+  delegateesgoal: []
+- name: relay_spam_app_14
+  address: pokt1vdqfmnyul40v2fhqu6hhpz0gznzwarvx6hs406
+  mnemonic: cool thought follow path jealous arctic inside proud catalog grant fortune
+    nephew lend core winter spirit crisp slow elite wink slim palace tenant rug
+  stakegoal: 0
+  serviceidgoal: ""
+  delegateesgoal: []
+- name: relay_spam_app_15
+  address: pokt1dwp6ld82qwed7lsh80nzaz9xf987lhcv03y0yq
+  mnemonic: awful audit kitchen story diesel manual give cloth reform engage leader
+    focus simple old kangaroo amateur box bamboo abstract victory about coach final
+    army
+  stakegoal: 0
+  serviceidgoal: ""
+  delegateesgoal: []
+- name: relay_spam_app_16
+  address: pokt1usduf6pc8vnk8sge0zmjwt3dj4xjxfae7c3fsl
+  mnemonic: found drip scrap price torch cause depth bargain future search maximum
+    slide double panel person catalog flat cancel then inner lady rather junk trash
+  stakegoal: 0
+  serviceidgoal: ""
+  delegateesgoal: []
+- name: relay_spam_app_17
+  address: pokt1l7q257tgjwny4907m09jlr9e2dmt223wfyw6qs
+  mnemonic: beauty genius arrow lamp saddle stumble reward foster field neutral discover
+    hill milk fitness burst upgrade blur weather mobile leisure thing where problem
+    under
+  stakegoal: 0
+  serviceidgoal: ""
+  delegateesgoal: []
+- name: relay_spam_app_18
+  address: pokt1l4uawssvfgguwtynlzyl0fvhfufmzpqf0l0rrg
+  mnemonic: decrease pill check grid puzzle protect multiply damp collect brass almost
+    season weather response supply elder team camp wonder rhythm vivid truth grow
+    rifle
+  stakegoal: 0
+  serviceidgoal: ""
+  delegateesgoal: []
+- name: relay_spam_app_19
+  address: pokt17g6qpu2jgskyjnaklxz7cxrzkntn5nsa6d6q4m
+  mnemonic: need busy talent collect manage vanish orient remember game tree alarm
+    casino morning spend analyst acquire physical aspect slight north museum chunk
+    beauty reward
+  stakegoal: 0
+  serviceidgoal: ""
+  delegateesgoal: []
+- name: relay_spam_app_20
+  address: pokt1ugfzppl0c5hg5j98vykafdt7cy6xpwdecd5d9a
+  mnemonic: scare enemy state only tissue unveil before divert degree wisdom electric
+    addict unfair ticket time will thunder october creek bicycle whisper innocent
+    coffee decade
+  stakegoal: 0
+  serviceidgoal: ""
+  delegateesgoal: []
+- name: relay_spam_app_21
+  address: pokt1073038ax843fcft5p58hrfps3gg0e7v4jjd0y0
+  mnemonic: fury impact vivid arctic drink luxury chat slush remain poem duck you
+    manual dizzy release upgrade junk pumpkin priority phone world cup knife update
+  stakegoal: 0
+  serviceidgoal: ""
+  delegateesgoal: []
+- name: relay_spam_app_22
+  address: pokt10njmpnqw6px423ec3rd4kdzanheawy80fh2un9
+  mnemonic: cool impact indoor address roast apart stable about initial upper feel
+    sausage abuse bomb keep horn vital pizza bus solve vocal nasty twelve enact
+  stakegoal: 0
+  serviceidgoal: ""
+  delegateesgoal: []
+- name: relay_spam_app_23
+  address: pokt1h9ss9hkmthetz3zcpm2cd3kld2rj7p8drgynfy
+  mnemonic: zebra cover absorb march toe pause any game lion dry cheese stove heart
+    cabbage mind oval life negative forget gift crash finger acid brief
   stakegoal: 0
   serviceidgoal: ""
   delegateesgoal: []

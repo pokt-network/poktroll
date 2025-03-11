@@ -12,7 +12,6 @@ var (
 	configFile     string
 	numRequests    int
 	concurrency    int
-	numAccounts    int
 	rateLimit      float64
 	keyringBackend string
 )
@@ -39,13 +38,11 @@ func init() {
 	rootCmd.PersistentFlags().StringVarP(&configFile, "config", "c", "config.yml", "Config file")
 	rootCmd.PersistentFlags().IntVarP(&numRequests, "num-requests", "n", 10, "Number of requests per application-gateway pair")
 	rootCmd.PersistentFlags().IntVarP(&concurrency, "concurrency", "p", 10, "Concurrent requests")
-	rootCmd.PersistentFlags().IntVarP(&numAccounts, "num-accounts", "a", 10, "Number of accounts to create")
 	rootCmd.PersistentFlags().Float64VarP(&rateLimit, "rate-limit", "r", 0, "Rate limit in requests per second (0 for no limit)")
 	rootCmd.PersistentFlags().StringVar(&keyringBackend, "keyring-backend", "test", "Keyring backend to use (os, file, test, inmemory)")
 
 	viper.BindPFlag("num_requests", rootCmd.PersistentFlags().Lookup("num-requests"))
 	viper.BindPFlag("concurrency", rootCmd.PersistentFlags().Lookup("concurrency"))
-	viper.BindPFlag("num_accounts", rootCmd.PersistentFlags().Lookup("num-accounts"))
 	viper.BindPFlag("rate_limit", rootCmd.PersistentFlags().Lookup("rate-limit"))
 }
 
