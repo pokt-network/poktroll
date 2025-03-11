@@ -88,8 +88,8 @@ func TestMain(m *testing.M) {
 	m.Run()
 }
 
-// ethSubscription is a struct to unmarshal the JSON response from the ETH subscription.
-type ethSubscription struct {
+// evmSubscription is a struct to unmarshal the JSON response from the EVM subscription.
+type evmSubscription struct {
 	Method string `json:"method"`
 	Params struct {
 		Result struct {
@@ -927,9 +927,9 @@ func (s *suite) getCurrentBlockHeight() int64 {
 	res, err := s.pocketd.RunCommandOnHost("", args...)
 	require.NoError(s, err, "error querying for the latest block")
 
-	// Remove the first line of the response to avoid unmarshalling non JSON data
-	// since the query block command returns "Falling back to latest block height:"
-	// as the first line when no height is provided.
+	// Remove the first line of the response to avoid unmarshalling non JSON data.
+	// This is needed because, when no height is provided, the query block command returns:
+	//   "Falling back to latest block height:"
 	stdoutLines := strings.Split(res.Stdout, "\n")
 	require.Greater(s, len(stdoutLines), 1, "expected at least one line of output")
 	res.Stdout = strings.Join(stdoutLines[1:], "\n")
@@ -960,18 +960,18 @@ func (s *suite) readEVMSubscriptionEvents() context.Context {
 				return
 			}
 
-			var ethSubscriptionMsg ethSubscription
-			if err = json.Unmarshal(message, &ethSubscriptionMsg); err != nil {
+			var evmSubscriptionMsg evmSubscription
+			if err = json.Unmarshal(message, &evmSubscriptionMsg); err != nil {
 				continue
 			}
 
-			if ethSubscriptionMsg.Method != "eth_subscription" {
+			if evmSubscriptionMsg.Method != "eth_subscription" {
 				continue
 			}
 
 			// Ensure the hash and number are populated.
-			require.True(s, strings.HasPrefix(ethSubscriptionMsg.Params.Result.Hash, "0x"))
-			require.True(s, strings.HasPrefix(ethSubscriptionMsg.Params.Result.Number, "0x"))
+			require.True(s, strings.HasPrefix(evmSubscriptionMsg.Params.Result.Hash, "0x"))
+			require.True(s, strings.HasPrefix(evmSubscriptionMsg.Params.Result.Number, "0x"))
 			s.numEVMSubscriptionEvents.Add(1)
 		}
 	}()
