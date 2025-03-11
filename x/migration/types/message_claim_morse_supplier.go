@@ -10,7 +10,7 @@ import (
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
-var _ sdk.Msg = &MsgClaimMorseSupplier{}
+var _ sdk.Msg = (*MsgClaimMorseSupplier)(nil)
 
 // NewMsgClaimMorseSupplier creates a new MsgClaimMorseSupplier.
 // If morsePrivateKey is provided (i.e. not nil), it is used to sign the message.
