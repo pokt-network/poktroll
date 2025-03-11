@@ -256,7 +256,7 @@ func (s *suite) TheApplicationEstablishesAWebsocketsConnectionForService(appName
 	s.wsConn = wsConn
 }
 
-func (s *suite) TheUserReceivesEVMSubscriptionEventsUntilTheSessionEnds() {
+func (s *suite) TheApplicationReceivesEvmSubscriptionEventsUntilTheSessionEnds() {
 	ctx := s.readEVMSubscriptionEvents()
 
 	for {
