@@ -11,6 +11,7 @@ import (
 	cosmosTypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 	"github.com/cosmos/cosmos-sdk/x/authz"
+
 	"github.com/pokt-network/poktroll/app/keepers"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 )

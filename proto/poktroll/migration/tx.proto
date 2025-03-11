@@ -10,6 +10,7 @@ import "poktroll/shared/service.proto";
 import "poktroll/migration/morse_onchain.proto";
 import "poktroll/migration/params.proto";
 import "poktroll/application/types.proto";
+import "poktroll/shared/supplier.proto";
 import "cosmos/base/v1beta1/coin.proto";
 
 option go_package = "github.com/pokt-network/poktroll/x/migration/types";
@@ -21,14 +22,15 @@ service Msg {
 
   // UpdateParams defines a (governance) operation for updating the module
   // parameters. The authority defaults to the x/gov module account.
-  rpc UpdateParams                 (MsgUpdateParams) returns (MsgUpdateParamsResponse);
+  rpc UpdateParams                 (MsgUpdateParams                ) returns (MsgUpdateParamsResponse                );
   rpc ImportMorseClaimableAccounts (MsgImportMorseClaimableAccounts) returns (MsgImportMorseClaimableAccountsResponse);
-  rpc ClaimMorseAccount            (MsgClaimMorseAccount) returns (MsgClaimMorseAccountResponse);
-  rpc ClaimMorseApplication        (MsgClaimMorseApplication) returns (MsgClaimMorseApplicationResponse);
+  rpc ClaimMorseAccount            (MsgClaimMorseAccount           ) returns (MsgClaimMorseAccountResponse           );
+  rpc ClaimMorseApplication        (MsgClaimMorseApplication       ) returns (MsgClaimMorseApplicationResponse       );
+  rpc ClaimMorseSupplier           (MsgClaimMorseSupplier          ) returns (MsgClaimMorseSupplierResponse          );
 }
 // MsgUpdateParams is the Msg/UpdateParams request type.
 message MsgUpdateParams {
-  option (cosmos.msg.v1.signer) = "authority";
+  option (cosmos.msg.v1.signer) =                            "authority";
   option           (amino.name) = "poktroll/x/migration/MsgUpdateParams";
 
   // authority is the address that controls the module (defaults to x/gov unless overwritten).
@@ -57,10 +59,10 @@ message MsgImportMorseClaimableAccounts {
   // Validates the morse_account_state sha256 hash:
   // - Transaction fails if hash doesn't match on-chain computation
   // - Off-chain social consensus should be reached off-chain before verification
-  //
+
   // Verification can be done by comparing with locally derived Morse state like so:
   //   $ poktrolld migrate collect-morse-accounts $<(pocket util export-genesis-for-reset)
-  //
+
   // Additional documentation:
   // - pocket util export-genesis-for-migration --help
   // - poktrolld migrate collect-morse-accounts --help
@@ -70,6 +72,7 @@ message MsgImportMorseClaimableAccounts {
 // MsgImportMorseClaimableAccountsResponse is returned from MsgImportMorseClaimableAccounts.
 // It indicates the canonical hash of the imported MorseAccountState, and the number of claimable accounts which were imported.
 message MsgImportMorseClaimableAccountsResponse {
+
   // On-chain computed sha256 hash of the morse_account_state provided in the corresponding MsgCreateMorseAccountState.
   bytes state_hash = 1 [(gogoproto.jsontag) = "state_hash"];
 
@@ -103,6 +106,7 @@ message MsgClaimMorseAccount {
 // It indicates the morse_src_address of the account which was claimed, the total
 // balance claimed, and the height at which the claim was committed.
 message MsgClaimMorseAccountResponse {
+
   // The hex-encoded address of the Morse account whose balance will be claimed.
   // E.g.: 00f9900606fa3d5c9179fc0c8513078a53a2073e
   string morse_src_address = 1 [(gogoproto.jsontag) = "morse_src_address"];
@@ -143,6 +147,7 @@ message MsgClaimMorseApplication {
 // It indicates the morse_src_address of the account which was claimed, the unstaked
 // balance claimed, the application stake, and the height at which the claim was committed.
 message MsgClaimMorseApplicationResponse {
+
   // The hex-encoded address of the Morse account whose balance will be claimed.
   string morse_src_address = 1 [(gogoproto.jsontag) = "morse_src_address"];
 
@@ -158,5 +163,63 @@ message MsgClaimMorseApplicationResponse {
 
   // The application which was staked as a result of the claim.
   application.Application application = 5 [(gogoproto.jsontag) = "application"];
+}
+
+// TODO_UPNEXT(@bryanchriswhite, #1034): for messages below:
+// - Update field types where necessary.
+// - Rename fields to conform to best practices.
+// - Add applicable field options.
+
+// MsgClaimMorseSupplier is used to:
+// - Execute a one-time minting of tokens on Shannon based on tokens owned by the given Morse account
+// - Use the on-chain MorseClaimableAccounts for verification
+// - Credit the minted tokens to the balance of the given Shannon account
+// - Automatically stake that Shannon account as a supplier
+//
+// NOTE: The supplier module's staking fee parameter (at the time of claiming) is deducted from the
+// claimed balance.
+message MsgClaimMorseSupplier {
+  option (cosmos.msg.v1.signer) = "shannonDestAddress";
+
+  // The bech32-encoded address of the Shannon account to which the claimed tokens
+  // will be minted and from which the supplier will be staked.
+  //
+  // TODO_MAINNET(@bryanchriswhite, #1095): split into owner and operator addresses...
+  string shannonDestAddress = 1;
+
+  // The hex-encoded address of the Morse account whose balance will be claimed.
+  // E.g.: 00f9900606fa3d5c9179fc0c8513078a53a2073e
+  string morseSrcAddress = 2;
+
+  // The hex-encoded signature, by the Morse account, of this message (where this field is nil).
+  // I.e.: morse_signature = private_key.sign(marshal(MsgClaimMorseAccount{morse_signature: nil, ...}))
+  string morseSignature = 3;
+
+  // The services this supplier is staked to provide service for.
+  // TODO_MAINNET(@bryanchriswhite, #1095): ensure this field is repeated (to match MsgStakeSupplier).
+  string services = 5;
+}
+
+// MsgClaimMorseSupplierResponse is returned from MsgClaimMorseSupplier.
+// It indicates:
+// - The morse_src_address of the claimed account
+// - The unstaked balance claimed
+// - The session end height in which the claim was committed
+// - The staked supplier
+message MsgClaimMorseSupplierResponse {
+  // The hex-encoded address of the Morse account whose balance was claimed.
+  // E.g.: 00f9900606fa3d5c9179fc0c8513078a53a2073e
+  string morseSrcAddress = 1;
+
+  // The unstaked balance which was claimed.
+  cosmos.base.v1beta1.Coin claimedBalance = 2 [(gogoproto.nullable) = false];
+
+  cosmos.base.v1beta1.Coin claimedSupplierStake = 4 [(gogoproto.nullable) = false];
+
+  // The session end height (on Shannon) in which the claim was committed (i.e. claimed).
+  int32 sessionEndHeight = 5;
+
+  // The supplier which was staked as a result of the claim.
+  shared.Supplier supplier = 6;
 }
 
