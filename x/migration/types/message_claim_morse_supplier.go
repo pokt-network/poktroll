@@ -12,6 +12,8 @@ import (
 
 var _ sdk.Msg = &MsgClaimMorseSupplier{}
 
+// NewMsgClaimMorseSupplier creates a new MsgClaimMorseSupplier.
+// If morsePrivateKey is provided (i.e. not nil), it is used to sign the message.
 func NewMsgClaimMorseSupplier(
 	shannonOwnerAddress string,
 	shannonOperatorAddress string,

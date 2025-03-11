@@ -307,4 +307,68 @@ func TestMsgServer_ClaimMorseSupplier_Error(t *testing.T) {
 		_, err := srv.ClaimMorseSupplier(ctx, msgClaim)
 		require.EqualError(t, err, expectedErr.Error())
 	})
+
+	t.Run("morse account not staked as any actor", func(t *testing.T) {
+		nonSupplierMorseClaimableAccount := migrationtypes.MorseClaimableAccount{
+			MorseSrcAddress:  sample.MorseAddressHex(),
+			PublicKey:        morsePrivKey.PubKey().Bytes(),
+			UnstakedBalance:  claimableUnstakedBalance,
+			SupplierStake:    cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 0),
+			ApplicationStake: cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 0),
+		}
+		k.SetMorseClaimableAccount(ctx, nonSupplierMorseClaimableAccount)
+
+		expectedErr := status.Error(
+			codes.FailedPrecondition,
+			migrationtypes.ErrMorseSupplierClaim.Wrapf(
+				"Morse account %q is not staked as an supplier or application, please use `poktrolld migrate claim-account` instead",
+				nonSupplierMorseClaimableAccount.GetMorseSrcAddress(),
+			).Error(),
+		)
+
+		// Claim the MorseClaimableAccount with random Shannon owner & operator addresses.
+		msgClaim, err := migrationtypes.NewMsgClaimMorseSupplier(
+			sample.AccAddress(),
+			sample.AccAddress(),
+			nonSupplierMorseClaimableAccount.GetMorseSrcAddress(),
+			morsePrivKey,
+			testSupplierServices,
+		)
+		require.NoError(t, err)
+
+		_, err = srv.ClaimMorseSupplier(ctx, msgClaim)
+		require.EqualError(t, err, expectedErr.Error())
+	})
+
+	t.Run("morse account staked as an application", func(t *testing.T) {
+		nonSupplierMorseClaimableAccount := migrationtypes.MorseClaimableAccount{
+			MorseSrcAddress:  sample.MorseAddressHex(),
+			PublicKey:        morsePrivKey.PubKey().Bytes(),
+			UnstakedBalance:  claimableUnstakedBalance,
+			SupplierStake:    cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 0),
+			ApplicationStake: cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 100),
+		}
+		k.SetMorseClaimableAccount(ctx, nonSupplierMorseClaimableAccount)
+
+		expectedErr := status.Error(
+			codes.FailedPrecondition,
+			migrationtypes.ErrMorseSupplierClaim.Wrapf(
+				"Morse account %q is staked as an application, please use `poktrolld migrate claim-application` instead",
+				nonSupplierMorseClaimableAccount.GetMorseSrcAddress(),
+			).Error(),
+		)
+
+		// Claim the MorseClaimableAccount with random Shannon owner & operator addresses.
+		msgClaim, err := migrationtypes.NewMsgClaimMorseSupplier(
+			sample.AccAddress(),
+			sample.AccAddress(),
+			nonSupplierMorseClaimableAccount.GetMorseSrcAddress(),
+			morsePrivKey,
+			testSupplierServices,
+		)
+		require.NoError(t, err)
+
+		_, err = srv.ClaimMorseSupplier(ctx, msgClaim)
+		require.EqualError(t, err, expectedErr.Error())
+	})
 }

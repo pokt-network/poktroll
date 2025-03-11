@@ -15,7 +15,7 @@ import (
 )
 
 // ClaimMorseSupplier performs the following steps, given msg is valid and a
-// MorseClaimableAccount exists for the given morseSrcAddress:
+// MorseClaimableAccount exists for the given morse_src_address:
 //   - Mint and transfer all tokens (unstaked balance plus supplier stake) of the
 //     MorseClaimableAccount to the shannonDestAddress.
 //   - Mark the MorseClaimableAccount as claimed (i.e. adding the shannon_dest_address
@@ -78,8 +78,8 @@ func (k msgServer) ClaimMorseSupplier(
 	if !morseClaimableAccount.ApplicationStake.IsZero() {
 		return nil, status.Error(
 			codes.FailedPrecondition,
-			migrationtypes.ErrMorseAccountClaim.Wrapf(
-				"Morse account %q is staked as an application, please use `poktrolld migrate claim-supplier` instead",
+			migrationtypes.ErrMorseSupplierClaim.Wrapf(
+				"Morse account %q is staked as an application, please use `poktrolld migrate claim-application` instead",
 				morseClaimableAccount.GetMorseSrcAddress(),
 			).Error(),
 		)
@@ -88,7 +88,7 @@ func (k msgServer) ClaimMorseSupplier(
 	if !morseClaimableAccount.SupplierStake.IsPositive() {
 		return nil, status.Error(
 			codes.FailedPrecondition,
-			migrationtypes.ErrMorseAccountClaim.Wrapf(
+			migrationtypes.ErrMorseSupplierClaim.Wrapf(
 				"Morse account %q is not staked as an supplier or application, please use `poktrolld migrate claim-account` instead",
 				morseClaimableAccount.GetMorseSrcAddress(),
 			).Error(),
