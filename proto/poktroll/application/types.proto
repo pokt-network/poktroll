@@ -22,7 +22,6 @@ message Application {
   // Total amount of staked uPOKT
   cosmos.base.v1beta1.Coin stake = 2;
 
-  // TODO_MAINNET: Refactor this to be a single service config field.
   // CRITICAL: Must contain EXACTLY ONE service config
   // This prevents applications from over-servicing.
   // Kept as repeated field for legacy and future compatibility

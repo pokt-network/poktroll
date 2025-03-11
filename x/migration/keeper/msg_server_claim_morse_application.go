@@ -14,7 +14,7 @@ import (
 )
 
 // ClaimMorseApplication performs the following steps, given msg is valid and a
-// MorseClaimableAccount exists for the given morseSrcAddress:
+// MorseClaimableAccount exists for the given morse_src_address:
 //   - Mint and transfer all tokens (unstaked balance plus application stake) of the
 //     MorseClaimableAccount to the shannonDestAddress.
 //   - Mark the MorseClaimableAccount as claimed (i.e. adding the shannon_dest_address
@@ -61,7 +61,7 @@ func (k msgServer) ClaimMorseApplication(ctx context.Context, msg *migrationtype
 		)
 	}
 
-	// ONLY allow claiming as a non-actor account if the MorseClaimableAccount
+	// ONLY allow claiming as an application actor account if the MorseClaimableAccount
 	// WAS staked as an application AND NOT as a supplier. A claim of staked POKT
 	// from Morse to Shannon SHOULD NOT allow applications or suppliers to bypass
 	// the onchain unbonding period.
