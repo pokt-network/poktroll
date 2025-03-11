@@ -36,7 +36,37 @@ var runCmd = &cobra.Command{
 		registry := types.NewInterfaceRegistry()
 		cryptocodec.RegisterInterfaces(registry)
 		cdc := codec.NewProtoCodec(registry)
-		kr := keyring.NewInMemory(cdc)
+
+		// Ensure data directory exists
+		if err := os.MkdirAll(cfg.DataDir, 0755); err != nil {
+			fmt.Fprintf(os.Stderr, "Failed to create data directory: %v\n", err)
+			os.Exit(1)
+		}
+
+		// Create keyring with specified backend
+		var kr keyring.Keyring
+		if keyringBackend == "inmemory" {
+			kr = keyring.NewInMemory(cdc)
+		} else {
+			// The Cosmos SDK keyring expects the directory structure to be:
+			// <home_directory>/keyring-<backend>
+			// But we want to use our own directory structure, so we need to
+			// explicitly set the keyring directory
+			keyringDir := cfg.DataDir
+
+			// Create the keyring
+			kr, err = keyring.New(
+				"poktroll",
+				keyringBackend,
+				keyringDir,
+				os.Stdin,
+				cdc,
+			)
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "Failed to initialize keyring: %v\n", err)
+				os.Exit(1)
+			}
+		}
 
 		// Create account manager and import accounts
 		accountManager := account.NewManager(kr, cfg)

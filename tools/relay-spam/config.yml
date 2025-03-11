@@ -1,0 +1,103 @@
+data_dir: /Users/dk/.poktroll_1
+txflags: ""
+txflagstemplate: {}
+applications:
+- name: relay_spam_app_0
+  address: pokt18wmctmhu49csyy6j0eyhmua63rvlwgc8hddg2c
+  mnemonic: certain monitor elephant guard must vacant magnet present bacon scare
+    social cattle enact average stairs orient disorder whisper frame banner version
+    open spray brother
+  stakegoal: 0
+  serviceidgoal: ""
+  delegateesgoal: []
+- name: relay_spam_app_1
+  address: pokt15d23cx4xsntqspag4pmn2waf2qwqlhtcnwhc3r
+  mnemonic: notice iron season hawk travel pioneer suggest say taste wave curtain
+    shock code seminar sell march layer avoid include retreat shine note element course
+  stakegoal: 0
+  serviceidgoal: ""
+  delegateesgoal: []
+- name: relay_spam_app_2
+  address: pokt12rtqqcw5qhpu2hdaetdvpq7mynxxralt6zedqm
+  mnemonic: ceiling glimpse acid celery mosquito throw slush purchase sell charge
+    kidney material switch grit flavor silly oval cube loyal donate update shop winter
+    firm
+  stakegoal: 0
+  serviceidgoal: ""
+  delegateesgoal: []
+- name: relay_spam_app_3
+  address: pokt17206pew5tec4csgvaas0zktv5nlzpdey4haddw
+  mnemonic: neutral utility expect hole universe solar gasp holiday sad guard eager
+    define audit suit dish vault hub alert utility envelope bring casual ostrich explain
+  stakegoal: 0
+  serviceidgoal: ""
+  delegateesgoal: []
+- name: relay_spam_app_4
+  address: pokt1ur4fu5rtfemnk5dllcna67js8znl9f3y0jfj40
+  mnemonic: stuff join hair foam cluster west tool spray prison birth lion reopen
+    build slight nut liar battle autumn churn kitten leader tissue female organ
+  stakegoal: 0
+  serviceidgoal: ""
+  delegateesgoal: []
+- name: relay_spam_app_5
+  address: pokt1elkk6xxqc87r3tzaduswfw9pcret9lz4djx695
+  mnemonic: hazard during loyal raccoon rich cash bargain access year horse race zebra
+    stock nest target relax wisdom enact jewel fog client observe region electric
+  stakegoal: 0
+  serviceidgoal: ""
+  delegateesgoal: []
+- name: relay_spam_app_6
+  address: pokt1f948yuyqv2rhyhts4amyk6k6cxg9j4q5h7xfpv
+  mnemonic: hello kangaroo skirt jacket eye frost glass dose path share bottom room
+    sign client box siege battle gas beef large replace cash hockey boss
+  stakegoal: 0
+  serviceidgoal: ""
+  delegateesgoal: []
+- name: relay_spam_app_7
+  address: pokt18wrva0knnsta9064r3xd520qkrxxa46slykjcf
+  mnemonic: song rather green deer amused wet top expire claw sphere kit check gasp
+    desk defy route copper ski rebel merry wait glimpse ancient guess
+  stakegoal: 0
+  serviceidgoal: ""
+  delegateesgoal: []
+- name: relay_spam_app_8
+  address: pokt1w0m673jy20t32jgpn8588q9yyjfc9de22vfl07
+  mnemonic: pigeon spice extend group glide position gorilla unfold audit leader brick
+    clever flight bitter member drip ask gate dumb shop vehicle desert betray fun
+  stakegoal: 0
+  serviceidgoal: ""
+  delegateesgoal: []
+- name: relay_spam_app_9
+  address: pokt1ku37m6mvvksn8urfg59g3vjed2gft3w5eucgka
+  mnemonic: permit lunch hour hungry broken example above loyal cover teach luxury
+    garbage mercy patch tube tilt angry where speed mass crisp good snack banana
+  stakegoal: 0
+  serviceidgoal: ""
+  delegateesgoal: []
+- name: relay_spam_app_10
+  address: pokt1kyw4n28jdpt4m6t9vv97h2xe7cgqfcg3ng5zxq
+  mnemonic: defy panda art warm sweet alert photo system peasant purpose naive try
+    maid coconut leaf captain have trash plug cancel hammer case guess combine
+  stakegoal: 0
+  serviceidgoal: ""
+  delegateesgoal: []
+- name: relay_spam_app_11
+  address: pokt1y0eztavujr3t6jtc9ghaz3p97vs5fkahnmnfan
+  mnemonic: razor twenty increase winner pistol essence glad scrap jealous unknown
+    civil confirm charge wall food give ordinary awkward gloom harsh crowd client
+    crystal crush
+  stakegoal: 0
+  serviceidgoal: ""
+  delegateesgoal: []
+- name: relay_spam_app_12
+  address: pokt1q8hvheesrljymh208s3p39wzc6flu7e42ad4dp
+  mnemonic: scare simple era february away point shine seven guess charge decline
+    burger true tackle finger supply stairs assume innocent aspect volcano guide warrior
+    mean
+  stakegoal: 0
+  serviceidgoal: ""
+  delegateesgoal: []
+applicationdefaults:
+  stake: ""
+  serviceid: ""
+  gateways: []

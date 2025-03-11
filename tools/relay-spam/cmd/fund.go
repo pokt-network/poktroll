@@ -17,8 +17,8 @@ import (
 // fundCmd represents the fund command
 var fundCmd = &cobra.Command{
 	Use:   "fund",
-	Short: "Generate funding commands for accounts",
-	Long:  `Generate commands to fund accounts in the configuration file.`,
+	Short: "Generate funding commands",
+	Long:  `Generate commands to fund accounts from the faucet.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		// Load config
 		cfg, err := config.LoadConfig()
@@ -31,20 +31,48 @@ var fundCmd = &cobra.Command{
 		registry := types.NewInterfaceRegistry()
 		cryptocodec.RegisterInterfaces(registry)
 		cdc := codec.NewProtoCodec(registry)
-		kr := keyring.NewInMemory(cdc)
+
+		// Ensure data directory exists
+		if err := os.MkdirAll(cfg.DataDir, 0755); err != nil {
+			fmt.Fprintf(os.Stderr, "Failed to create data directory: %v\n", err)
+			os.Exit(1)
+		}
+
+		// Create keyring with specified backend
+		var kr keyring.Keyring
+		if keyringBackend == "inmemory" {
+			kr = keyring.NewInMemory(cdc)
+		} else {
+			// The Cosmos SDK keyring expects the directory structure to be:
+			// <home_directory>/keyring-<backend>
+			// But we want to use our own directory structure, so we need to
+			// explicitly set the keyring directory
+			keyringDir := cfg.DataDir
+
+			// Create the keyring
+			kr, err = keyring.New(
+				"poktroll",
+				keyringBackend,
+				keyringDir,
+				os.Stdin,
+				cdc,
+			)
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "Failed to initialize keyring: %v\n", err)
+				os.Exit(1)
+			}
+		}
 
 		// Create account manager
 		accountManager := account.NewManager(kr, cfg)
 
 		// Generate funding commands
-		fmt.Println("Generating funding commands...")
 		commands, err := accountManager.GenerateFundingCommands()
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Failed to generate funding commands: %v\n", err)
 			os.Exit(1)
 		}
 
-		fmt.Println("Run the following commands to fund your accounts:")
 		for _, cmd := range commands {
 			fmt.Println(cmd)
 		}

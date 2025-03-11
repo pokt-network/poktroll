@@ -9,11 +9,12 @@ import (
 )
 
 var (
-	configFile  string
-	numRequests int
-	concurrency int
-	numAccounts int
-	rateLimit   float64
+	configFile     string
+	numRequests    int
+	concurrency    int
+	numAccounts    int
+	rateLimit      float64
+	keyringBackend string
 )
 
 // rootCmd represents the base command when called without any subcommands
@@ -40,6 +41,7 @@ func init() {
 	rootCmd.PersistentFlags().IntVarP(&concurrency, "concurrency", "p", 10, "Concurrent requests")
 	rootCmd.PersistentFlags().IntVarP(&numAccounts, "num-accounts", "a", 10, "Number of accounts to create")
 	rootCmd.PersistentFlags().Float64VarP(&rateLimit, "rate-limit", "r", 0, "Rate limit in requests per second (0 for no limit)")
+	rootCmd.PersistentFlags().StringVar(&keyringBackend, "keyring-backend", "test", "Keyring backend to use (os, file, test, inmemory)")
 
 	viper.BindPFlag("num_requests", rootCmd.PersistentFlags().Lookup("num-requests"))
 	viper.BindPFlag("concurrency", rootCmd.PersistentFlags().Lookup("concurrency"))

@@ -67,13 +67,24 @@ func (m *Manager) CreateAccounts(numAccounts int) ([]config.Application, error) 
 			return nil, err
 		}
 
+		// Parse stake goal from string to int
+		stakeGoal := 0
+		if m.config.ApplicationDefaults.Stake != "" {
+			var err error
+			stakeGoal, err = ParseStakeAmount(m.config.ApplicationDefaults.Stake)
+			if err != nil {
+				return nil, fmt.Errorf("failed to parse stake goal: %w", err)
+			}
+		}
+
 		// Create application config
 		app := config.Application{
-			Name:             name,
-			Address:          address.String(),
-			Mnemonic:         mnemonic,
-			Gateways:         m.config.ApplicationDefaults.Gateways,
-			DelegatedGateway: "",
+			Name:           name,
+			Address:        address.String(),
+			Mnemonic:       mnemonic,
+			StakeGoal:      stakeGoal,
+			ServiceIdGoal:  m.config.ApplicationDefaults.ServiceID,
+			DelegateesGoal: m.config.ApplicationDefaults.Gateways,
 		}
 
 		applications = append(applications, app)
@@ -102,6 +113,16 @@ func (m *Manager) ImportAccounts() error {
 	}
 
 	return nil
+}
+
+// ParseStakeAmount extracts the numeric part from a stake amount string (e.g., "1000000upokt" -> 1000000)
+func ParseStakeAmount(stakeStr string) (int, error) {
+	// Extract numeric part from stake amount
+	numStr := regexp.MustCompile(`[^0-9]`).ReplaceAllString(stakeStr, "")
+	if numStr == "" {
+		return 0, fmt.Errorf("no numeric part found in stake amount: %s", stakeStr)
+	}
+	return strconv.Atoi(numStr)
 }
 
 func (m *Manager) GenerateFundingCommands() ([]string, error) {

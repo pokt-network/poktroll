@@ -10,7 +10,7 @@ import (
 )
 
 type Config struct {
-	Home                string              `mapstructure:"home"`
+	DataDir             string              `mapstructure:"data_dir"`
 	TxFlags             string              `mapstructure:"tx_flags"`
 	TxFlagsTemplate     map[string]string   `mapstructure:"tx_flags_template"`
 	Applications        []Application       `mapstructure:"applications"`
@@ -66,13 +66,13 @@ func LoadConfig() (*Config, error) {
 		config.TxFlags = expandTxFlagsTemplate(config.TxFlagsTemplate)
 	}
 
-	// Set default home directory if not specified
-	if config.Home == "" {
+	// Set default data directory if not specified
+	if config.DataDir == "" {
 		homeDir, err := os.UserHomeDir()
 		if err != nil {
 			return nil, err
 		}
-		config.Home = filepath.Join(homeDir, ".poktroll")
+		config.DataDir = filepath.Join(homeDir, ".poktroll")
 	}
 
 	return &config, nil

@@ -64,7 +64,7 @@ func (s *Spammer) Run(ctx context.Context) (*Metrics, error) {
 	// Create work items
 	var workItems []WorkItem
 	for _, app := range s.config.Applications {
-		for _, gatewayURL := range app.Gateways {
+		for _, gatewayURL := range app.DelegateesGoal {
 			for i := 0; i < s.numRequests; i++ {
 				workItems = append(workItems, WorkItem{
 					AppAddress: app.Address,
