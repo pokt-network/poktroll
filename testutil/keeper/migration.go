@@ -31,7 +31,6 @@ import (
 type MigrationKeeperConfig struct {
 	bankKeeper     migrationtypes.BankKeeper
 	sharedKeeper   migrationtypes.SharedKeeper
-	gatewayKeeper  migrationtypes.GatewayKeeper
 	appKeeper      migrationtypes.ApplicationKeeper
 	supplierKeeper migrationtypes.SupplierKeeper
 }
@@ -74,7 +73,6 @@ func MigrationKeeper(
 		mockAccountKeeper,
 		cfg.bankKeeper,
 		cfg.sharedKeeper,
-		cfg.gatewayKeeper,
 		cfg.appKeeper,
 		cfg.supplierKeeper,
 	)
@@ -93,13 +91,6 @@ func MigrationKeeper(
 func WithBankKeeper(bankKeeper migrationtypes.BankKeeper) MigrationKeeperOptionFn {
 	return func(cfg *MigrationKeeperConfig) {
 		cfg.bankKeeper = bankKeeper
-	}
-}
-
-// WithGatewayKeeper assigns the given GatewayKeeper to the MigrationKeeperConfig.
-func WithGatewayKeeper(gatewayKeeper migrationtypes.GatewayKeeper) MigrationKeeperOptionFn {
-	return func(cfg *MigrationKeeperConfig) {
-		cfg.gatewayKeeper = gatewayKeeper
 	}
 }
 
@@ -124,6 +115,8 @@ func WithSupplierKeeper(supplierKeeper migrationtypes.SupplierKeeper) MigrationK
 //   - SendCoinsFromModuleToAccount
 //
 // 2. A Mocked shared keeper which responds to the Params method with the default params.
+// 3. A Mocked app keeper.
+// 4. A Mocked supplier keeper.
 func defaultConfigWithMocks(ctrl *gomock.Controller) *MigrationKeeperConfig {
 	mockBankKeeper := mocks.NewMockBankKeeper(ctrl)
 	mockBankKeeper.EXPECT().
@@ -140,14 +133,6 @@ func defaultConfigWithMocks(ctrl *gomock.Controller) *MigrationKeeperConfig {
 	sharedKeeper.EXPECT().
 		GetParams(gomock.Any()).
 		Return(sharedtypes.DefaultParams()).
-		AnyTimes()
-
-	mockGatewayKeeper := mocks.NewMockGatewayKeeper(ctrl)
-	mockGatewayKeeper.EXPECT().
-		GetGateway(gomock.Any(), gomock.Any()).
-		AnyTimes()
-	mockGatewayKeeper.EXPECT().
-		SetGateway(gomock.Any(), gomock.Any()).
 		AnyTimes()
 
 	mockAppKeeper := mocks.NewMockApplicationKeeper(ctrl)
@@ -169,7 +154,6 @@ func defaultConfigWithMocks(ctrl *gomock.Controller) *MigrationKeeperConfig {
 	return &MigrationKeeperConfig{
 		bankKeeper:     mockBankKeeper,
 		sharedKeeper:   sharedKeeper,
-		gatewayKeeper:  mockGatewayKeeper,
 		appKeeper:      mockAppKeeper,
 		supplierKeeper: mockSupplierKeeper,
 	}
