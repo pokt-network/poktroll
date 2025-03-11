@@ -4,11 +4,11 @@ import (
 	"bytes"
 	"crypto/sha256"
 
-	sdk "github.com/cosmos/cosmos-sdk/types"
+	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 )
 
-var _ sdk.Msg = (*MsgImportMorseClaimableAccounts)(nil)
+var _ cosmostypes.Msg = (*MsgImportMorseClaimableAccounts)(nil)
 
 // NewMsgImportMorseClaimableAccounts constructs a MsgImportMorseClaimableAccounts
 // from the given authority and morseAccountState.
@@ -32,7 +32,7 @@ func NewMsgImportMorseClaimableAccounts(
 // - The authority address is valid (i.e. well-formed).
 // - The MorseAccountStateHash field hash matches computed hash of the MorseAccountState field.
 func (msg *MsgImportMorseClaimableAccounts) ValidateBasic() error {
-	if _, err := sdk.AccAddressFromBech32(msg.Authority); err != nil {
+	if _, err := cosmostypes.AccAddressFromBech32(msg.Authority); err != nil {
 		return sdkerrors.ErrInvalidAddress.Wrapf("invalid authority address (%s)", err)
 	}
 
@@ -50,15 +50,22 @@ func (msg *MsgImportMorseClaimableAccounts) ValidateBasic() error {
 
 	// Validate the given hash (i.e. the MorseAccountStateHash field) length.
 	if len(givenHash) != sha256.Size {
-		return ErrMorseAccountState.Wrapf("invalid MorseAccountStateHash size")
+		return ErrMorseAccountsImport.Wrapf("invalid MorseAccountStateHash size")
 	}
 
 	// Validate the given hash matches the computed hash.
 	if !bytes.Equal(computedHash, givenHash) {
-		return ErrMorseAccountState.Wrapf(
+		return ErrMorseAccountsImport.Wrapf(
 			"computed MorseAccountState hash (%s) doesn't match the given MorseAccountStateHash (%s)",
 			computedHash, givenHash,
 		)
 	}
 	return nil
+}
+
+// TotalTokens returns the sum of the unstaked balance, application stake, and supplier stake.
+func (m MorseClaimableAccount) TotalTokens() cosmostypes.Coin {
+	return m.UnstakedBalance.
+		Add(m.ApplicationStake).
+		Add(m.SupplierStake)
 }

@@ -22,6 +22,8 @@ const (
 	Msg_UpdateParams_FullMethodName                 = "/poktroll.migration.Msg/UpdateParams"
 	Msg_ImportMorseClaimableAccounts_FullMethodName = "/poktroll.migration.Msg/ImportMorseClaimableAccounts"
 	Msg_ClaimMorseAccount_FullMethodName            = "/poktroll.migration.Msg/ClaimMorseAccount"
+	Msg_ClaimMorseApplication_FullMethodName        = "/poktroll.migration.Msg/ClaimMorseApplication"
+	Msg_ClaimMorseSupplier_FullMethodName           = "/poktroll.migration.Msg/ClaimMorseSupplier"
 )
 
 // MsgClient is the client API for Msg service.
@@ -35,6 +37,8 @@ type MsgClient interface {
 	UpdateParams(ctx context.Context, in *MsgUpdateParams, opts ...grpc.CallOption) (*MsgUpdateParamsResponse, error)
 	ImportMorseClaimableAccounts(ctx context.Context, in *MsgImportMorseClaimableAccounts, opts ...grpc.CallOption) (*MsgImportMorseClaimableAccountsResponse, error)
 	ClaimMorseAccount(ctx context.Context, in *MsgClaimMorseAccount, opts ...grpc.CallOption) (*MsgClaimMorseAccountResponse, error)
+	ClaimMorseApplication(ctx context.Context, in *MsgClaimMorseApplication, opts ...grpc.CallOption) (*MsgClaimMorseApplicationResponse, error)
+	ClaimMorseSupplier(ctx context.Context, in *MsgClaimMorseSupplier, opts ...grpc.CallOption) (*MsgClaimMorseSupplierResponse, error)
 }
 
 type msgClient struct {
@@ -75,6 +79,26 @@ func (c *msgClient) ClaimMorseAccount(ctx context.Context, in *MsgClaimMorseAcco
 	return out, nil
 }
 
+func (c *msgClient) ClaimMorseApplication(ctx context.Context, in *MsgClaimMorseApplication, opts ...grpc.CallOption) (*MsgClaimMorseApplicationResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(MsgClaimMorseApplicationResponse)
+	err := c.cc.Invoke(ctx, Msg_ClaimMorseApplication_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *msgClient) ClaimMorseSupplier(ctx context.Context, in *MsgClaimMorseSupplier, opts ...grpc.CallOption) (*MsgClaimMorseSupplierResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(MsgClaimMorseSupplierResponse)
+	err := c.cc.Invoke(ctx, Msg_ClaimMorseSupplier_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // MsgServer is the server API for Msg service.
 // All implementations must embed UnimplementedMsgServer
 // for forward compatibility
@@ -86,6 +110,8 @@ type MsgServer interface {
 	UpdateParams(context.Context, *MsgUpdateParams) (*MsgUpdateParamsResponse, error)
 	ImportMorseClaimableAccounts(context.Context, *MsgImportMorseClaimableAccounts) (*MsgImportMorseClaimableAccountsResponse, error)
 	ClaimMorseAccount(context.Context, *MsgClaimMorseAccount) (*MsgClaimMorseAccountResponse, error)
+	ClaimMorseApplication(context.Context, *MsgClaimMorseApplication) (*MsgClaimMorseApplicationResponse, error)
+	ClaimMorseSupplier(context.Context, *MsgClaimMorseSupplier) (*MsgClaimMorseSupplierResponse, error)
 	mustEmbedUnimplementedMsgServer()
 }
 
@@ -101,6 +127,12 @@ func (UnimplementedMsgServer) ImportMorseClaimableAccounts(context.Context, *Msg
 }
 func (UnimplementedMsgServer) ClaimMorseAccount(context.Context, *MsgClaimMorseAccount) (*MsgClaimMorseAccountResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ClaimMorseAccount not implemented")
+}
+func (UnimplementedMsgServer) ClaimMorseApplication(context.Context, *MsgClaimMorseApplication) (*MsgClaimMorseApplicationResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ClaimMorseApplication not implemented")
+}
+func (UnimplementedMsgServer) ClaimMorseSupplier(context.Context, *MsgClaimMorseSupplier) (*MsgClaimMorseSupplierResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ClaimMorseSupplier not implemented")
 }
 func (UnimplementedMsgServer) mustEmbedUnimplementedMsgServer() {}
 
@@ -169,6 +201,42 @@ func _Msg_ClaimMorseAccount_Handler(srv interface{}, ctx context.Context, dec fu
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Msg_ClaimMorseApplication_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(MsgClaimMorseApplication)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MsgServer).ClaimMorseApplication(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Msg_ClaimMorseApplication_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MsgServer).ClaimMorseApplication(ctx, req.(*MsgClaimMorseApplication))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Msg_ClaimMorseSupplier_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(MsgClaimMorseSupplier)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MsgServer).ClaimMorseSupplier(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Msg_ClaimMorseSupplier_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MsgServer).ClaimMorseSupplier(ctx, req.(*MsgClaimMorseSupplier))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Msg_ServiceDesc is the grpc.ServiceDesc for Msg service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -187,6 +255,14 @@ var Msg_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ClaimMorseAccount",
 			Handler:    _Msg_ClaimMorseAccount_Handler,
+		},
+		{
+			MethodName: "ClaimMorseApplication",
+			Handler:    _Msg_ClaimMorseApplication_Handler,
+		},
+		{
+			MethodName: "ClaimMorseSupplier",
+			Handler:    _Msg_ClaimMorseSupplier_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
