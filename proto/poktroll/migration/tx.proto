@@ -158,7 +158,7 @@ message MsgClaimMorseApplicationResponse {
   // If the application was already staked, this amount does not include the initial stake (i.e. only the portion which was "claimed").
   cosmos.base.v1beta1.Coin claimedApplicationStake = 3 [(gogoproto.nullable) = false];
 
-  // The height (on Shannon) at which the claim was created.
+  // The height (on Shannon) at which the morse application claim was created.
   int32 claimedAtHeight = 4;
 
   // The application which was staked as a result of the claim.
