@@ -38,6 +38,25 @@ The configuration file includes:
 - Transaction flags
 - Application defaults (stake amount, service ID, gateways)
 - List of applications
+- Gateway URLs mapping (maps gateway IDs to their URLs for relay requests)
+
+## Configuration Example
+
+```yaml
+# Map of gateway IDs to their URLs
+gateway_urls:
+  pokt1tgfhrtpxa4afeh70fk2aj6ca4mw84xqrkfgrdl: http://localhost:8081
+  pokt15vzxjqklzjtlz7lahe8z2dfe9nm5vxwwmscne4: http://anvil.localhost:3000/v1
+
+# Applications configuration
+applications:
+  - name: relay_spam_app_0
+    address: pokt18wmctmhu49csyy6j0eyhmua63rvlwgc8hddg2c
+    mnemonic: certain monitor elephant guard must vacant magnet present bacon scare social cattle enact average stairs orient disorder whisper frame banner version open spray brother
+    serviceidgoal: svc1qjpxsjkz0kujcvdlxm2wkjv5m4g0p9k
+    delegateesgoal:
+      - pokt1tgfhrtpxa4afeh70fk2aj6ca4mw84xqrkfgrdl
+```
 
 ## Usage
 

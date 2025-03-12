@@ -18,6 +18,7 @@ type Config struct {
 	ApplicationFundGoal  string            `yaml:"application_fund_goal" mapstructure:"application_fund_goal"`   // Target balance for funding applications
 	GrpcEndpoint         string            `yaml:"grpc_endpoint" mapstructure:"grpc_endpoint"`                   // GRPC endpoint for querying balances
 	RpcEndpoint          string            `yaml:"rpc_endpoint" mapstructure:"rpc_endpoint"`                     // RPC endpoint for broadcasting transactions
+	GatewayURLs          map[string]string `yaml:"gateway_urls" mapstructure:"gateway_urls"`                     // Map of gateway IDs to their URLs
 }
 
 type Application struct {
@@ -76,11 +77,17 @@ func LoadConfig(configFile string) (*Config, error) {
 		ApplicationFundGoal:  viper.GetString("application_fund_goal"),
 		GrpcEndpoint:         viper.GetString("grpc_endpoint"),
 		RpcEndpoint:          viper.GetString("rpc_endpoint"),
+		GatewayURLs:          make(map[string]string),
 	}
 
 	// Debug output
 	fmt.Printf("Viper keys: %v\n", viper.AllKeys())
 	fmt.Printf("Manual config: %+v\n", config)
+
+	// Load gateway URLs
+	if err := viper.UnmarshalKey("gateway_urls", &config.GatewayURLs); err != nil {
+		fmt.Printf("Warning: failed to unmarshal gateway_urls: %v\n", err)
+	}
 
 	// Unmarshal applications
 	var apps []map[string]interface{}

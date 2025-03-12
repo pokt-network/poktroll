@@ -13,6 +13,11 @@ grpc_endpoint: localhost:9090
 # RPC endpoint for broadcasting transactions
 rpc_endpoint: http://localhost:26657
 
+# Map of gateway IDs to their URLs
+gateway_urls:
+  pokt1tgfhrtpxa4afeh70fk2aj6ca4mw84xqrkfgrdl: http://localhost:8081
+  pokt15vzxjqklzjtlz7lahe8z2dfe9nm5vxwwmscne4: http://anvil.localhost:3000/v1
+
 tx_flags_template:
   chain-id: poktroll
   gas: auto

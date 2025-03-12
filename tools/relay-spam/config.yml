@@ -23,3 +23,5 @@ grpc_endpoint: localhost:9090
 rpc_endpoint: http://localhost:26657
 txflags: ""
 txflagstemplate: {}
+gateway_urls:
+  pokt15vzxjqklzjtlz7lahe8z2dfe9nm5vxwwmscne4: http://anvil.localhost:3000/v1

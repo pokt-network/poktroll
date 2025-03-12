@@ -7,14 +7,9 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/cosmos/cosmos-sdk/codec"
-	"github.com/cosmos/cosmos-sdk/codec/types"
-	cryptocodec "github.com/cosmos/cosmos-sdk/crypto/codec"
-	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
-	"github.com/pokt-network/poktroll/tools/relay-spam/account"
 	"github.com/pokt-network/poktroll/tools/relay-spam/config"
 	"github.com/pokt-network/poktroll/tools/relay-spam/relay"
 )
@@ -39,9 +34,9 @@ var runCmd = &cobra.Command{
 		}
 
 		// Create keyring
-		registry := types.NewInterfaceRegistry()
-		cryptocodec.RegisterInterfaces(registry)
-		cdc := codec.NewProtoCodec(registry)
+		// registry := types.NewInterfaceRegistry()
+		// cryptocodec.RegisterInterfaces(registry)
+		// cdc := codec.NewProtoCodec(registry)
 
 		// Ensure data directory exists
 		if err := os.MkdirAll(cfg.DataDir, 0755); err != nil {
@@ -50,37 +45,29 @@ var runCmd = &cobra.Command{
 		}
 
 		// Create keyring with specified backend
-		var kr keyring.Keyring
-		if keyringBackend == "inmemory" {
-			kr = keyring.NewInMemory(cdc)
-		} else {
-			// The Cosmos SDK keyring expects the directory structure to be:
-			// <home_directory>/keyring-<backend>
-			// But we want to use our own directory structure, so we need to
-			// explicitly set the keyring directory
-			keyringDir := cfg.DataDir
+		// var kr keyring.Keyring
+		// if keyringBackend == "inmemory" {
+		// 	kr = keyring.NewInMemory(cdc)
+		// } else {
+		// 	// The Cosmos SDK keyring expects the directory structure to be:
+		// 	// <home_directory>/keyring-<backend>
+		// 	// But we want to use our own directory structure, so we need to
+		// 	// explicitly set the keyring directory
+		// 	keyringDir := cfg.DataDir
 
-			// Create the keyring
-			kr, err = keyring.New(
-				"poktroll",
-				keyringBackend,
-				keyringDir,
-				os.Stdin,
-				cdc,
-			)
-			if err != nil {
-				fmt.Fprintf(os.Stderr, "Failed to initialize keyring: %v\n", err)
-				os.Exit(1)
-			}
-		}
-
-		// Create account manager and import accounts
-		accountManager := account.NewManager(kr, cfg)
-		err = accountManager.ImportAccounts()
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "Failed to import accounts: %v\n", err)
-			os.Exit(1)
-		}
+		// 	// Create the keyring
+		// 	kr, err = keyring.New(
+		// 		"poktroll",
+		// 		keyringBackend,
+		// 		keyringDir,
+		// 		os.Stdin,
+		// 		cdc,
+		// 	)
+		// 	if err != nil {
+		// 		fmt.Fprintf(os.Stderr, "Failed to initialize keyring: %v\n", err)
+		// 		os.Exit(1)
+		// 	}
+		// }
 
 		// Create relay spammer
 		numRequests := viper.GetInt("num_requests")

@@ -64,7 +64,15 @@ func (s *Spammer) Run(ctx context.Context) (*Metrics, error) {
 	// Create work items
 	var workItems []WorkItem
 	for _, app := range s.config.Applications {
-		for _, gatewayURL := range app.DelegateesGoal {
+		// For each gateway ID in DelegateesGoal, look up the corresponding URL
+		for _, gatewayID := range app.DelegateesGoal {
+			// Get the gateway URL from the mapping
+			gatewayURL, exists := s.config.GatewayURLs[gatewayID]
+			if !exists {
+				fmt.Printf("Warning: No URL found for gateway ID %s, skipping\n", gatewayID)
+				continue
+			}
+
 			for i := 0; i < s.numRequests; i++ {
 				workItems = append(workItems, WorkItem{
 					AppAddress: app.Address,
