@@ -18,7 +18,7 @@ func (s *Supplier) IsUnbonding() bool {
 func (s *Supplier) IsActive(queryHeight uint64, serviceId string) bool {
 	// Keep track of the most recent set of service configs that were active
 	// before the query height.
-	var servicesAtHeight []*SupplierServiceConfig
+	var activeServicesAtHeight []*SupplierServiceConfig
 
 	// Iterate through the service config history chronologically
 	for _, serviceUpdate := range s.ServiceConfigHistory {
@@ -28,11 +28,11 @@ func (s *Supplier) IsActive(queryHeight uint64, serviceId string) bool {
 			break
 		}
 		// Keep updating our services list as we move forward in time.
-		servicesAtHeight = serviceUpdate.Services
+		activeServicesAtHeight = serviceUpdate.Services
 	}
 
 	// If we found no service configurations active at this height, supplier is not active.
-	if servicesAtHeight == nil {
+	if activeServicesAtHeight == nil {
 		return false
 	}
 
@@ -42,7 +42,7 @@ func (s *Supplier) IsActive(queryHeight uint64, serviceId string) bool {
 	}
 
 	// Check if any of the active services match our target service ID
-	return slices.ContainsFunc(servicesAtHeight, matchesServiceIdFn)
+	return slices.ContainsFunc(activeServicesAtHeight, matchesServiceIdFn)
 }
 
 // HasOwner returns whether the given address is the supplier's owner address.

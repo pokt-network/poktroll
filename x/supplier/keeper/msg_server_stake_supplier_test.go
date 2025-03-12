@@ -107,6 +107,8 @@ func TestMsgServer_StakeSupplier_SuccessfulCreateAndUpdate(t *testing.T) {
 	require.Len(t, foundSupplier.Services, 1)
 	require.Len(t, foundSupplier.ServiceConfigHistory, 2)
 
+	// Check that the supplier config update contains the new service the supplier
+	// has staked for.
 	latestConfigUpdate = getLatestSupplierServiceConfigUpdate(t, foundSupplier)
 	require.Equal(t, "svcId2", latestConfigUpdate.Services[1].ServiceId)
 	require.Len(t, latestConfigUpdate.Services[1].Endpoints, 1)
@@ -118,6 +120,8 @@ func TestMsgServer_StakeSupplier_SuccessfulCreateAndUpdate(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, uint64(1), numSuppliersWithServicesActivation)
 
+	// Confirm that the latest service update is now active and reflected in the
+	// supplier.Services field.
 	foundSupplier, isSupplierFound = supplierModuleKeepers.GetSupplier(ctx, operatorAddr)
 	require.True(t, isSupplierFound)
 	require.Len(t, foundSupplier.Services, 2)
@@ -543,7 +547,7 @@ func TestMsgServer_StakeSupplier_UpStakeFromBelowMinStake(t *testing.T) {
 
 	stakeMsg, expectedSupplier := newSupplierStakeMsg(addr, addr, aboveMinStake.Amount.Int64(), "svcId")
 
-	// Stake (via keeper methods) a supplier with stake below min. stake.
+	// Stake (via keeper methods) a supplier with stake below min stake.
 	initialSupplier := sharedtypes.Supplier{
 		OwnerAddress:    addr,
 		OperatorAddress: addr,
@@ -557,11 +561,11 @@ func TestMsgServer_StakeSupplier_UpStakeFromBelowMinStake(t *testing.T) {
 	}
 	k.SetSupplier(ctx, initialSupplier)
 
-	// Attempt to upstake the supplier with stake above min. stake.
+	// Attempt to upstake the supplier with stake above min stake.
 	_, err := srv.StakeSupplier(ctx, stakeMsg)
 	require.NoError(t, err)
 
-	// Assert supplier is staked for above min. stake.
+	// Assert supplier is staked for above min stake.
 	supplier, isSupplierFound := k.GetSupplier(ctx, addr)
 	require.True(t, isSupplierFound)
 	require.EqualValues(t, expectedSupplier, &supplier)

@@ -9,9 +9,10 @@ import (
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
-// EndBlockerPruneSupplierServiceConfigHistory prunes the service config history
-// of suppliers that have service config history entries that are no longer needed
-// for pending claims settlement.
+// EndBlockerPruneSupplierServiceConfigHistory prunes the service config history of existing suppliers.
+// If a supplier has updated its supported set of configs, but that history is no longer needed
+// for various reasons (servicing relays, claim settlement, etc), it can be pruned.
+// This helps reduce onchain state bloat and avoid diverting attention from non-actionable metadata.
 func (k Keeper) EndBlockerPruneSupplierServiceConfigHistory(
 	ctx context.Context,
 ) (numSuppliersWithPrunedHistory uint64, err error) {
@@ -25,7 +26,8 @@ func (k Keeper) EndBlockerPruneSupplierServiceConfigHistory(
 	logger := k.Logger().With("method", "PruneSupplierServiceConfigHistory")
 
 	for _, supplier := range k.GetAllSuppliers(ctx) {
-		// Store the original history length for logging purposes.
+		// Store the original number of historical service configs.
+
 		originalHistoryLength := len(supplier.ServiceConfigHistory)
 
 		// Initialize a slice to retain service config updates that are still needed
@@ -34,7 +36,7 @@ func (k Keeper) EndBlockerPruneSupplierServiceConfigHistory(
 
 		// Iterate through each service config update to check if it is still be needed.
 		for _, configUpdate := range supplier.ServiceConfigHistory {
-			// Calculate the block height when the session corresponding to this update ends.
+			// Calculate the block height when the session corresponding to this service config update ends.
 			sessionEndBlockHeight := sharedtypes.GetSessionEndHeight(&sharedParams, int64(configUpdate.EffectiveBlockHeight))
 
 			// Calculate the final block height until which this config update needs to be retained.
@@ -52,8 +54,10 @@ func (k Keeper) EndBlockerPruneSupplierServiceConfigHistory(
 			continue
 		}
 
-		// Special case: if all configs would be pruned, retain the most recent one
-		// This is necessary to maintain the current state for session hydration.
+		// Special case: if all service historical service config updates would be pruned,
+		// retain the most recent one.
+		// This is necessary for the session hydration process that relies on the
+		// service config history to determine the current active service configuration.
 		if len(retainedServiceConfigs) == 0 {
 			retainedServiceConfigs = supplier.ServiceConfigHistory[:1]
 		}
@@ -63,8 +67,9 @@ func (k Keeper) EndBlockerPruneSupplierServiceConfigHistory(
 
 		k.SetSupplier(ctx, supplier)
 		logger.Info(fmt.Sprintf(
-			"pruned %d service config history entries for supplier %s",
+			"pruned %d out of %d service config history entries for supplier %s",
 			originalHistoryLength-len(retainedServiceConfigs),
+			originalHistoryLength,
 			supplier.OperatorAddress,
 		))
 

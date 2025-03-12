@@ -17,7 +17,6 @@ func EndBlocker(ctx sdk.Context, k keeper.Keeper) error {
 
 	logger := k.Logger().With("method", "EndBlocker")
 
-	// TODO_IMPROVE: Add logs and/or telemetry on the number of unbonded suppliers.
 	numUnbondedSuppliers, err := k.EndBlockerUnbondSuppliers(ctx)
 	if err != nil {
 		logger.Error(fmt.Sprintf("could not unbond suppliers due to error %v", err))

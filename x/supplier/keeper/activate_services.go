@@ -27,12 +27,21 @@ func (k Keeper) BeginBlockerActivateSupplierServices(
 		return numSuppliersWithServicesActivation, nil
 	}
 
+	logger.Info(fmt.Sprintf(
+		"starting session %d, about to activate services for suppliers",
+		sharedtypes.GetSessionNumber(&sharedParams, currentBlockHeight),
+	))
+
 	events := make([]proto.Message, 0)
 
 	// Iterate through all suppliers to check for pending service activations.
 	// TODO_POST_MAINNET: Optimize by using an index to track suppliers with pending activations.
 	for _, supplier := range k.GetAllSuppliers(ctx) {
 		// supplier.ServiceConfigHistory is guaranteed to contain at least one entry.
+		// This is necessary for the session hydration process that relies on the
+		// service config history to determine the current active service configuration.
+		// It is MUST be enforced by the methods that update the service config history.
+		// (e.g. StakeSupplier, UnstakeSupplier, EndBlockerPruneSupplierServiceConfigHistory...)
 		lastConfigIdx := len(supplier.ServiceConfigHistory) - 1
 		// Check if this supplier has service config scheduled to activate at current height.
 		latestConfig := supplier.ServiceConfigHistory[lastConfigIdx]

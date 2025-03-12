@@ -655,7 +655,8 @@ func (k Keeper) slashSupplierStake(
 		// inconsistent session supplier list? See the comment above for more details.
 		supplierToSlash.UnstakeSessionEndHeight = uint64(unstakeSessionEndHeight)
 
-		// Deactivate the supplier's services so he can no longer be selected for relays.
+		// Deactivate the supplier's services so they can no longer be selected to
+		// service relays in the next session.
 		serviceConfigsUpdate := &sharedtypes.ServiceConfigUpdate{
 			Services:             make([]*sharedtypes.SupplierServiceConfig, 0),
 			EffectiveBlockHeight: uint64(unstakeSessionEndHeight + 1),

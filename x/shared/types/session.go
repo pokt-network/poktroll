@@ -161,7 +161,7 @@ func IsSessionEndHeight(sharedParams *Params, queryHeight int64) bool {
 	return queryHeight != GetSessionEndHeight(sharedParams, queryHeight)
 }
 
-// IsSessionStartHeight returns true if the queryHeight is the first block of the session.
+// IsSessionStartHeight returns true if the height is the first block of the session.
 func IsSessionStartHeight(sharedParams *Params, queryHeight int64) bool {
 	return queryHeight == GetSessionStartHeight(sharedParams, queryHeight)
 }

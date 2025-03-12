@@ -171,30 +171,29 @@ func (k Keeper) hydrateSessionSuppliers(ctx context.Context, sh *sessionHydrator
 	logger := k.Logger().With("method", "hydrateSessionSuppliers")
 
 	// TODO_POST_MAINNET: Use the number of suppliers per session used as of the query height.
+	// As of now the session is hydrated with the "current" NumSuppliersPerSession param value.
+	// We need to account for NumSuppliersPerSession as of the query height to ensure
+	// that the session is hydrated with the old number of suppliers in case the param
+	// has changed between the query height and the current height.
 	numSuppliersPerSession := int(k.GetParams(ctx).NumSuppliersPerSession)
-	// Get suppliers by service ID.
+	// Get all suppliers instead of filtering by service ID.
+	// Suppliers may not be active for the session's service ID at "query height",
+	// so we cannot filter by supplier.Services which represents the services
+	// the supplier is active for at the "current height".
 	suppliers := k.supplierKeeper.GetAllSuppliers(ctx)
 
-	// Store deterministic random weights for each supplier to be used for sorting.
+	// A mapping from the supplier operator address to a random weight.
+	// This is used for sorting the suppliers.
+	// If NumCandidateSuppliers > NumSuppliersPerSession, the deterministic sorting order
+	// is used to determine which ones are available to serve requests to enable fair but
+	// random opportunity to serve Applications (i.e. do useful work).
 	candidatesToRandomWeight := make(map[string]int)
 	candidateSuppliers := make([]*sharedtypes.Supplier, 0)
 
 	for _, supplier := range suppliers {
-		// Check if supplier is authorized to serve this service at current block height.
+		// Check if supplier is authorized to serve this service at query block height.
 		if supplier.IsActive(uint64(sh.blockHeight), sh.sessionHeader.ServiceId) {
 			candidateSuppliers = append(candidateSuppliers, &supplier)
-
-			// Generate deterministic random weight for supplier:
-			// 1. Combine session ID and supplier's operator address to create unique seed
-			// 2. Hash the seed using SHA3-256
-			// 3. Take first 8 bytes of hash as random weight
-			candidateSeed := concatWithDelimiter(
-				sessionIDComponentDelimiter,
-				sh.sessionIDBz,
-				[]byte(supplier.OperatorAddress),
-			)
-			candidateSeedHash := sha3Hash(candidateSeed)
-			candidatesToRandomWeight[supplier.OperatorAddress] = int(binary.BigEndian.Uint64(candidateSeedHash[:8]))
 		}
 	}
 
@@ -222,27 +221,22 @@ func (k Keeper) hydrateSessionSuppliers(ctx context.Context, sh *sessionHydrator
 		return nil
 	}
 
-	// Sort suppliers deterministically based on their random weights.
-	// If weights are equal, sort by operator address to ensure consistent ordering.
-	weightedSupplierSortFn := func(supplierA, supplierB *sharedtypes.Supplier) int {
-		// Get the pre-calculated random weights for both suppliers
-		weightA := candidatesToRandomWeight[supplierA.OperatorAddress]
-		weightB := candidatesToRandomWeight[supplierB.OperatorAddress]
-
-		// Calculate the difference between weights.
-		weightDiff := weightA - weightB
-
-		// If weights are equal, use operator addresses as a tiebreaker
-		// to ensure deterministic ordering.
-		if weightDiff == 0 {
-			return bytes.Compare([]byte(supplierA.OperatorAddress), []byte(supplierB.OperatorAddress))
-		}
-
-		// Sort based on weight difference
-		return weightDiff
+	for _, supplier := range candidateSuppliers {
+		// Generate deterministic random weight for supplier:
+		// 1. Combine session ID and supplier's operator address to create unique seed
+		// 2. Hash the seed using SHA3-256
+		// 3. Take first 8 bytes of hash as random weight
+		candidateSeed := concatWithDelimiter(
+			sessionIDComponentDelimiter,
+			sh.sessionIDBz,
+			[]byte(supplier.OperatorAddress),
+		)
+		candidateSeedHash := sha3Hash(candidateSeed)
+		candidatesToRandomWeight[supplier.OperatorAddress] = int(binary.BigEndian.Uint64(candidateSeedHash[:8]))
 	}
-	slices.SortFunc(candidateSuppliers, weightedSupplierSortFn)
-	sh.session.Suppliers = candidateSuppliers[:numSuppliersPerSession]
+
+	sortedCandidates := sortCandidateSuppliersByHeight(candidateSuppliers, candidatesToRandomWeight)
+	sh.session.Suppliers = sortedCandidates[:numSuppliersPerSession]
 
 	return nil
 }
@@ -305,4 +299,33 @@ func getSessionStartBlockHeightBz(sharedParams *sharedtypes.Params, blockHeight 
 	sessionStartBlockHeightBz := make([]byte, 8)
 	binary.LittleEndian.PutUint64(sessionStartBlockHeightBz, uint64(sessionStartBlockHeight))
 	return sessionStartBlockHeightBz
+}
+
+// sortCandidateSuppliersByHeight sorts the given supplier list by the provided
+// random weights map.
+func sortCandidateSuppliersByHeight(
+	candidateSuppliers []*sharedtypes.Supplier,
+	candidatesToRandomWeight map[string]int,
+) []*sharedtypes.Supplier {
+	// Sort suppliers deterministically based on their random weights.
+	// If weights are equal, sort by operator address to ensure consistent ordering.
+	weightedSupplierSortFn := func(supplierA, supplierB *sharedtypes.Supplier) int {
+		// Get the pre-calculated random weights for both suppliers
+		weightA := candidatesToRandomWeight[supplierA.OperatorAddress]
+		weightB := candidatesToRandomWeight[supplierB.OperatorAddress]
+
+		// Calculate the difference between weights.
+		weightDiff := weightA - weightB
+
+		// If weights are equal, use operator addresses as a tiebreaker
+		// to ensure deterministic ordering.
+		if weightDiff == 0 {
+			return bytes.Compare([]byte(supplierA.OperatorAddress), []byte(supplierB.OperatorAddress))
+		}
+
+		// Sort based on weight difference
+		return weightDiff
+	}
+	slices.SortFunc(candidateSuppliers, weightedSupplierSortFn)
+	return candidateSuppliers
 }

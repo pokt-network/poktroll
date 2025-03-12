@@ -90,12 +90,14 @@ func (k msgServer) UnstakeSupplier(
 		EffectiveBlockHeight: uint64(nextSessionStartHeight),
 	}
 
-	configUpdateLog := supplier.ServiceConfigHistory
-	latestUpdateIdx := len(configUpdateLog) - 1
+	serviceConfigUpdateList := supplier.ServiceConfigHistory
+	serviceConfigLatestUpdateIdx := len(serviceConfigUpdateList) - 1
 	// Overwrite the latest service configuration if there is already a service
 	// config update for the same session start height.
-	if latestUpdateIdx >= 0 && configUpdateLog[latestUpdateIdx].EffectiveBlockHeight == uint64(nextSessionStartHeight) {
-		supplier.ServiceConfigHistory[latestUpdateIdx] = servicesUpdate
+	// This is to avoid having duplicate service configs with the same activation
+	// height, which is useless and potentially confusing.
+	if serviceConfigLatestUpdateIdx >= 0 && serviceConfigUpdateList[serviceConfigLatestUpdateIdx].EffectiveBlockHeight == uint64(nextSessionStartHeight) {
+		supplier.ServiceConfigHistory[serviceConfigLatestUpdateIdx] = servicesUpdate
 	} else {
 		// Otherwise, append the new service configuration update.
 		supplier.ServiceConfigHistory = append(supplier.ServiceConfigHistory, servicesUpdate)

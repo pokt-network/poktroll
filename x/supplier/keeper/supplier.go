@@ -36,22 +36,7 @@ func (k Keeper) GetSupplier(
 
 	k.cdc.MustUnmarshal(supplierBz, &supplier)
 
-	// The CosmosSDK codec treats empty slices and maps as nil, so we need to
-	// ensure that they are initialized as empty.
-	if supplier.Services == nil {
-		supplier.Services = make([]*sharedtypes.SupplierServiceConfig, 0)
-	}
-
-	// Ensure that the supplier has at least one service config history entry.
-	// This may be the case if the supplier was created at genesis.
-	if supplier.ServiceConfigHistory == nil {
-		supplier.ServiceConfigHistory = []*sharedtypes.ServiceConfigUpdate{
-			{
-				Services:             supplier.Services,
-				EffectiveBlockHeight: 1,
-			},
-		}
-	}
+	initializeNilSupplierFields(&supplier)
 	return supplier, true
 }
 
@@ -74,27 +59,32 @@ func (k Keeper) GetAllSuppliers(ctx context.Context) (suppliers []sharedtypes.Su
 		var supplier sharedtypes.Supplier
 		k.cdc.MustUnmarshal(iterator.Value(), &supplier)
 
-		// The CosmosSDK codec treats empty slices and maps as nil, so we need to
-		// ensure that they are initialized as empty.
-		if supplier.Services == nil {
-			supplier.Services = make([]*sharedtypes.SupplierServiceConfig, 0)
-		}
-
-		// Ensure that the supplier has at least one service config history entry.
-		// This may be the case if the supplier was created at genesis.
-		if supplier.ServiceConfigHistory == nil {
-			supplier.ServiceConfigHistory = []*sharedtypes.ServiceConfigUpdate{
-				{
-					Services:             supplier.Services,
-					EffectiveBlockHeight: 1,
-				},
-			}
-		}
-
+		initializeNilSupplierFields(&supplier)
 		suppliers = append(suppliers, supplier)
 	}
 
 	return
+}
+
+// initializeNilSupplierFields initializes any nil fields in the supplier object
+// to their default values.
+func initializeNilSupplierFields(supplier *sharedtypes.Supplier) {
+	// The CosmosSDK codec treats empty slices and maps as nil, so we need to
+	// ensure that they are initialized as empty.
+	if supplier.Services == nil {
+		supplier.Services = make([]*sharedtypes.SupplierServiceConfig, 0)
+	}
+
+	// Ensure that the supplier has at least one service config history entry.
+	// This may be the case if the supplier was created at genesis.
+	if supplier.ServiceConfigHistory == nil {
+		supplier.ServiceConfigHistory = []*sharedtypes.ServiceConfigUpdate{
+			{
+				Services:             supplier.Services,
+				EffectiveBlockHeight: 1,
+			},
+		}
+	}
 }
 
 // TODO_OPTIMIZE: Index suppliers by service ID
