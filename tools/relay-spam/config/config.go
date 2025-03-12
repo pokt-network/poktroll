@@ -10,24 +10,24 @@ import (
 )
 
 type Config struct {
-	DataDir              string              `mapstructure:"data_dir"`
-	TxFlags              string              `mapstructure:"tx_flags"`
-	TxFlagsTemplate      map[string]string   `mapstructure:"tx_flags_template"`
-	Applications         []Application       `mapstructure:"applications"`
-	ApplicationDefaults  ApplicationDefaults `mapstructure:"application_defaults"`
-	ApplicationStakeGoal string              `mapstructure:"application_stake_goal"` // Target stake amount for applications
-	ApplicationFundGoal  string              `mapstructure:"application_fund_goal"`  // Target balance for funding applications
-	GrpcEndpoint         string              `mapstructure:"grpc_endpoint"`          // GRPC endpoint for querying balances
-	RpcEndpoint          string              `mapstructure:"rpc_endpoint"`           // RPC endpoint for broadcasting transactions
+	DataDir              string              `yaml:"datadir" mapstructure:"datadir"`
+	TxFlags              string              `yaml:"txflags" mapstructure:"txflags"`
+	TxFlagsTemplate      map[string]string   `yaml:"txflagstemplate" mapstructure:"txflagstemplate"`
+	Applications         []Application       `yaml:"applications" mapstructure:"applications"`
+	ApplicationDefaults  ApplicationDefaults `yaml:"application_defaults" mapstructure:"application_defaults"`
+	ApplicationStakeGoal string              `yaml:"application_stake_goal" mapstructure:"application_stake_goal"` // Target stake amount for applications
+	ApplicationFundGoal  string              `yaml:"application_fund_goal" mapstructure:"application_fund_goal"`   // Target balance for funding applications
+	GrpcEndpoint         string              `yaml:"grpc_endpoint" mapstructure:"grpc_endpoint"`                   // GRPC endpoint for querying balances
+	RpcEndpoint          string              `yaml:"rpc_endpoint" mapstructure:"rpc_endpoint"`                     // RPC endpoint for broadcasting transactions
 }
 
 type Application struct {
-	Name           string   `mapstructure:"name"`
-	Address        string   `mapstructure:"address"`
-	Mnemonic       string   `mapstructure:"mnemonic"`
-	StakeGoal      int      `mapstructure:"stake_goal"`      // How much stake to maintain. Top off to this goal if less than this
-	ServiceIdGoal  string   `mapstructure:"service_id_goal"` // Which service ID to stake on
-	DelegateesGoal []string `mapstructure:"delegatees_goal"` // TO WHICH GATEWAY(s) that app should be delegated to
+	Name           string   `yaml:"name" mapstructure:"name"`
+	Address        string   `yaml:"address" mapstructure:"address"`
+	Mnemonic       string   `yaml:"mnemonic" mapstructure:"mnemonic"`
+	StakeGoal      int      `yaml:"stakegoal" mapstructure:"stakegoal"`           // How much stake to maintain. Top off to this goal if less than this
+	ServiceIdGoal  string   `yaml:"serviceidgoal" mapstructure:"serviceidgoal"`   // Which service ID to stake on
+	DelegateesGoal []string `yaml:"delegateesgoal" mapstructure:"delegateesgoal"` // TO WHICH GATEWAY(s) that app should be delegated to
 }
 
 // Example of application data returned from the API:
@@ -53,16 +53,53 @@ type Application struct {
 //   }
 
 type ApplicationDefaults struct {
-	Stake     string   `mapstructure:"stake"`
-	ServiceID string   `mapstructure:"service_id"`
-	Gateways  []string `mapstructure:"gateways"`
+	Stake     string   `yaml:"stake" mapstructure:"stake"`
+	ServiceID string   `yaml:"service_id" mapstructure:"service_id"`
+	Gateways  []string `yaml:"gateways" mapstructure:"gateways"`
 }
 
 func LoadConfig() (*Config, error) {
-	var config Config
-	err := viper.Unmarshal(&config)
-	if err != nil {
-		return nil, err
+	// Create a new config with default values
+	config := &Config{
+		DataDir:              viper.GetString("datadir"),
+		TxFlags:              viper.GetString("txflags"),
+		TxFlagsTemplate:      viper.GetStringMapString("txflagstemplate"),
+		Applications:         []Application{},
+		ApplicationDefaults:  ApplicationDefaults{},
+		ApplicationStakeGoal: viper.GetString("application_stake_goal"),
+		ApplicationFundGoal:  viper.GetString("application_fund_goal"),
+		GrpcEndpoint:         viper.GetString("grpc_endpoint"),
+		RpcEndpoint:          viper.GetString("rpc_endpoint"),
+	}
+
+	// Debug output
+	fmt.Printf("Viper keys: %v\n", viper.AllKeys())
+	fmt.Printf("Manual config: %+v\n", config)
+
+	// Unmarshal applications
+	var apps []map[string]interface{}
+	if err := viper.UnmarshalKey("applications", &apps); err == nil {
+		for _, appMap := range apps {
+			app := Application{
+				Name:           getString(appMap, "name"),
+				Address:        getString(appMap, "address"),
+				Mnemonic:       getString(appMap, "mnemonic"),
+				StakeGoal:      getInt(appMap, "stakegoal"),
+				ServiceIdGoal:  getString(appMap, "serviceidgoal"),
+				DelegateesGoal: getStringSlice(appMap, "delegateesgoal"),
+			}
+			config.Applications = append(config.Applications, app)
+		}
+	}
+
+	// Unmarshal application defaults
+	var defaults map[string]interface{}
+	if err := viper.UnmarshalKey("application_defaults", &defaults); err == nil {
+		config.ApplicationDefaults = ApplicationDefaults{
+			Stake:     getString(defaults, "stake"),
+			ServiceID: getString(defaults, "service_id"),
+			Gateways:  getStringSlice(defaults, "gateways"),
+		}
 	}
 
 	// Process config (expand templates, etc.)
@@ -79,7 +116,44 @@ func LoadConfig() (*Config, error) {
 		config.DataDir = filepath.Join(homeDir, ".poktroll")
 	}
 
-	return &config, nil
+	return config, nil
+}
+
+// Helper functions to safely get values from a map
+func getString(m map[string]interface{}, key string) string {
+	if val, ok := m[key]; ok {
+		if str, ok := val.(string); ok {
+			return str
+		}
+	}
+	return ""
+}
+
+func getInt(m map[string]interface{}, key string) int {
+	if val, ok := m[key]; ok {
+		switch v := val.(type) {
+		case int:
+			return v
+		case float64:
+			return int(v)
+		}
+	}
+	return 0
+}
+
+func getStringSlice(m map[string]interface{}, key string) []string {
+	if val, ok := m[key]; ok {
+		if slice, ok := val.([]interface{}); ok {
+			result := make([]string, 0, len(slice))
+			for _, item := range slice {
+				if str, ok := item.(string); ok {
+					result = append(result, str)
+				}
+			}
+			return result
+		}
+	}
+	return []string{}
 }
 
 func expandTxFlagsTemplate(template map[string]string) string {

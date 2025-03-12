@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
@@ -13,7 +14,6 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 
 	"cosmossdk.io/math"
-	comettypes "github.com/cometbft/cometbft/types"
 	cosmosclient "github.com/cosmos/cosmos-sdk/client"
 	cosmostx "github.com/cosmos/cosmos-sdk/client/tx"
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -25,12 +25,15 @@ import (
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 
+	"cosmossdk.io/depinject"
 	"github.com/pokt-network/poktroll/app/volatile"
 	"github.com/pokt-network/poktroll/pkg/client"
-	"github.com/pokt-network/poktroll/pkg/either"
-	"github.com/pokt-network/poktroll/pkg/observable"
-	"github.com/pokt-network/poktroll/pkg/observable/channel"
+	"github.com/pokt-network/poktroll/pkg/client/block"
+	"github.com/pokt-network/poktroll/pkg/client/events"
+	"github.com/pokt-network/poktroll/pkg/client/tx"
+	txtypes "github.com/pokt-network/poktroll/pkg/client/tx/types"
 	"github.com/pokt-network/poktroll/tools/relay-spam/config"
+	"gopkg.in/yaml.v3"
 )
 
 // Initialize SDK configuration
@@ -50,154 +53,42 @@ func init() {
 	config.SetBech32PrefixForConsensusNode(consNodeAddressPrefix, consNodePubKeyPrefix)
 }
 
-// We CANNOT use CLI TX BANK SEND! We MUST USE TXCLIENT and send MANY MSGS in ONE transaction!
-
-// Simple implementation of the Block interface
-type simpleBlock struct {
-	height int64
-	hash   []byte
-}
-
-func (b *simpleBlock) Height() int64 {
-	return b.height
-}
-
-func (b *simpleBlock) Hash() []byte {
-	return b.hash
-}
-
-func (b *simpleBlock) Txs() []comettypes.Tx {
-	return []comettypes.Tx{}
-}
-
-// Simple implementation of the BlockReplayObservable interface
-type simpleBlockReplayObservable struct {
-	block client.Block
-}
-
-func newSimpleBlockReplayObservable(block client.Block) *simpleBlockReplayObservable {
-	return &simpleBlockReplayObservable{
-		block: block,
-	}
-}
-
-func (o *simpleBlockReplayObservable) Subscribe(ctx context.Context) observable.Observer[client.Block] {
-	// Create a channel that will emit the block once and then close
-	ch := make(chan client.Block, 1)
-	ch <- o.block
-	close(ch)
-
-	// Return an observer that will read from the channel
-	// Create a no-op unsubscribe function
-	unsubscribe := func(toRemove observable.Observer[client.Block]) {}
-	return channel.NewObserver[client.Block](ctx, unsubscribe)
-}
-
-func (o *simpleBlockReplayObservable) Last(ctx context.Context, n int) []client.Block {
-	// Always return the same block regardless of n
-	return []client.Block{o.block}
-}
-
-// GetReplayBufferSize returns the number of elements in the replay buffer
-func (o *simpleBlockReplayObservable) GetReplayBufferSize() int {
-	// We always have 1 block in our simple implementation
-	return 1
-}
-
-// SubscribeFromLatestBufferedOffset returns an observer which is initially notified of
-// values in the replay buffer, starting from the latest buffered value at index 'offset'.
-func (o *simpleBlockReplayObservable) SubscribeFromLatestBufferedOffset(ctx context.Context, offset int) observable.Observer[client.Block] {
-	// For our simple implementation, we ignore the offset and just return the same as Subscribe
-	return o.Subscribe(ctx)
-}
-
-// UnsubscribeAll unsubscribes and removes all observers from the observable.
-func (o *simpleBlockReplayObservable) UnsubscribeAll() {
-	// No-op for our simple implementation as we don't maintain a list of observers
-}
-
-// Simple implementation of the BlockClient interface
-type simpleBlockClient struct {
-	block client.Block
-}
-
-func newSimpleBlockClient() *simpleBlockClient {
-	return &simpleBlockClient{
-		block: &simpleBlock{
-			height: 1,
-			hash:   []byte("simple_block_hash"),
-		},
-	}
-}
-
-func (c *simpleBlockClient) CommittedBlocksSequence(ctx context.Context) client.BlockReplayObservable {
-	// Return a simple implementation of BlockReplayObservable
-	return newSimpleBlockReplayObservable(c.block)
-}
-
-func (c *simpleBlockClient) LastBlock(ctx context.Context) client.Block {
-	return c.block
-}
-
-func (c *simpleBlockClient) Close() {
-	// Nothing to close
-}
-
-// Simple implementation of the EventsQueryClient interface
-type simpleEventsQueryClient struct{}
-
-func newSimpleEventsQueryClient() *simpleEventsQueryClient {
-	return &simpleEventsQueryClient{}
-}
-
-func (c *simpleEventsQueryClient) EventsBytes(
-	ctx context.Context,
-	query string,
-) (client.EventsBytesObservable, error) {
-	// Create a new observable that will never emit any events
-	obs, _ := channel.NewObservable[either.Bytes]()
-	return obs, nil
-}
-
-func (c *simpleEventsQueryClient) Close() {
-	// Nothing to close
-}
-
-// mockAccountRetriever is a simple implementation of the AccountRetriever interface
-// that always returns a fixed account number and sequence.
-type mockAccountRetriever struct{}
-
-// GetAccount implements the AccountRetriever interface.
-func (ar mockAccountRetriever) GetAccount(clientCtx cosmosclient.Context, addr sdk.AccAddress) (cosmosclient.Account, error) {
-	return nil, nil
-}
-
-// GetAccountWithHeight implements the AccountRetriever interface.
-func (ar mockAccountRetriever) GetAccountWithHeight(clientCtx cosmosclient.Context, addr sdk.AccAddress) (cosmosclient.Account, int64, error) {
-	return nil, 0, nil
-}
-
-// EnsureExists implements the AccountRetriever interface.
-func (ar mockAccountRetriever) EnsureExists(clientCtx cosmosclient.Context, addr sdk.AccAddress) error {
-	return nil
-}
-
-// GetAccountNumberSequence implements the AccountRetriever interface.
-func (ar mockAccountRetriever) GetAccountNumberSequence(clientCtx cosmosclient.Context, addr sdk.AccAddress) (uint64, uint64, error) {
-	return 1, 1, nil
-}
-
 // fundCmd represents the fund command
 var fundCmd = &cobra.Command{
 	Use:   "fund",
 	Short: "Fund accounts",
 	Long:  `Fund accounts by sending transactions directly, only funding the difference needed to reach the target balance.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		// Load config
-		cfg, err := config.LoadConfig()
+		// Get config file from flag
+		configFile, err := cmd.Flags().GetString("config")
+		if err != nil || configFile == "" {
+			configFile = "config.yml"
+		}
+
+		// Read config file directly
+		configData, err := os.ReadFile(configFile)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "Failed to load config: %v\n", err)
+			fmt.Fprintf(os.Stderr, "Failed to read config file: %v\n", err)
 			os.Exit(1)
+		}
+
+		// Parse YAML
+		var cfg config.Config
+		if err := yaml.Unmarshal(configData, &cfg); err != nil {
+			fmt.Fprintf(os.Stderr, "Failed to parse config file: %v\n", err)
+			os.Exit(1)
+		}
+
+		fmt.Printf("Using config file: %s\n", configFile)
+
+		// Set default data directory if not specified
+		if cfg.DataDir == "" {
+			homeDir, err := os.UserHomeDir()
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "Failed to get user home directory: %v\n", err)
+				os.Exit(1)
+			}
+			cfg.DataDir = filepath.Join(homeDir, ".poktroll")
 		}
 
 		// Ensure data directory exists
@@ -251,13 +142,13 @@ var fundCmd = &cobra.Command{
 		authtypes.RegisterInterfaces(registry)
 		banktypes.RegisterInterfaces(registry)
 
-		// Create the codec with the registry
-		cdc := codec.NewProtoCodec(registry)
-
 		// Create a legacy Amino codec for address encoding
 		amino := codec.NewLegacyAmino()
 		sdk.RegisterLegacyAminoCodec(amino)
 		cryptocodec.RegisterCrypto(amino)
+
+		// Create the codec with the registry
+		cdc := codec.NewProtoCodec(registry)
 
 		// Create a keyring
 		var kr cosmoskeyring.Keyring
@@ -328,8 +219,65 @@ var fundCmd = &cobra.Command{
 		faucetAddrStr := faucetAddrObj.String()
 		fmt.Printf("Using faucet address: %s\n", faucetAddrStr)
 
-		// Fund accounts
-		err = fundAccountsWithCosmosClient(ctx, cfg, clientCtx, txFactory, faucetAddrStr, faucetAddr)
+		// Get the debug flag
+		debug, err := cmd.Flags().GetBool("debug")
+		if err != nil {
+			debug = false
+		}
+
+		// Create real clients using depinject
+		// Create events query client
+		eventsQueryClient := events.NewEventsQueryClient(rpcEndpoint)
+
+		// Create block client
+		cometClient, err := cosmosclient.NewClientFromNode(rpcEndpoint)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Failed to create comet client: %v\n", err)
+			os.Exit(1)
+		}
+
+		// Create a BlockClient
+		blockClientDeps := depinject.Supply(
+			eventsQueryClient,
+			cometClient,
+		)
+		blockClient, err := block.NewBlockClient(ctx, blockClientDeps)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Failed to create block client: %v\n", err)
+			os.Exit(1)
+		}
+
+		// Create a TxContext using the existing clientCtx and txFactory
+		txCtx, err := tx.NewTxContext(depinject.Supply(
+			txtypes.Context(clientCtx),
+			txFactory,
+		))
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Failed to create tx context: %v\n", err)
+			os.Exit(1)
+		}
+
+		// Create depinject config with real clients
+		deps := depinject.Supply(
+			eventsQueryClient,
+			blockClient,
+			txCtx,
+		)
+
+		// Create a tx client using depinject
+		txClient, err := tx.NewTxClient(
+			ctx,
+			deps,
+			tx.WithSigningKeyName(faucetAddr),
+		)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Failed to create tx client: %v\n", err)
+			os.Exit(1)
+		}
+
+		// Fund accounts using the txClient
+		err = fundAccountsWithTxClient(ctx, &cfg, txClient, clientCtx, faucetAddrStr, debug)
+
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Failed to fund accounts: %v\n", err)
 			os.Exit(1)
@@ -337,14 +285,14 @@ var fundCmd = &cobra.Command{
 	},
 }
 
-// fundAccountsWithCosmosClient funds accounts using the Cosmos SDK client
-func fundAccountsWithCosmosClient(
+// fundAccountsWithTxClient funds accounts using the TxClient
+func fundAccountsWithTxClient(
 	ctx context.Context,
 	cfg *config.Config,
+	txClient client.TxClient,
 	clientCtx cosmosclient.Context,
-	txFactory cosmostx.Factory,
 	faucetAddrStr string,
-	faucetKeyName string,
+	debug bool,
 ) error {
 	var addressesToFund []string
 	var fundingAmounts []math.Int
@@ -400,7 +348,7 @@ func fundAccountsWithCosmosClient(
 	}
 
 	// Process addresses in batches
-	batchSize := 1000 // Smaller batch size for testing
+	batchSize := 100 // Smaller batch size for testing
 	for i := 0; i < len(addressesToFund); i += batchSize {
 		end := i + batchSize
 		if end > len(addressesToFund) {
@@ -439,7 +387,7 @@ func fundAccountsWithCosmosClient(
 		txBuilder.SetGasLimit(1000000000000)
 
 		// Set fee amount based on gas limit and gas prices
-		gasPrices := txFactory.GasPrices()
+		gasPrices := sdk.NewDecCoins(sdk.NewDecCoinFromDec(volatile.DenomuPOKT, math.LegacyNewDecWithPrec(1, 2)))
 		fees := sdk.NewCoins()
 		for _, gasPrice := range gasPrices {
 			fee := gasPrice.Amount.MulInt(math.NewInt(int64(txBuilder.GetTx().GetGas()))).RoundInt()
@@ -447,6 +395,7 @@ func fundAccountsWithCosmosClient(
 		}
 		txBuilder.SetFeeAmount(fees)
 
+		// Instead of using txClient, let's use the traditional approach which works
 		// Get account number and sequence
 		faucetAddr, err := sdk.AccAddressFromBech32(faucetAddrStr)
 		if err != nil {
@@ -458,11 +407,17 @@ func fundAccountsWithCosmosClient(
 			return fmt.Errorf("failed to get account number and sequence: %w", err)
 		}
 
-		// Set the account number and sequence
-		txFactory = txFactory.WithAccountNumber(accNum).WithSequence(accSeq)
+		// Create a transaction factory
+		txFactory := cosmostx.Factory{}.
+			WithChainID(clientCtx.ChainID).
+			WithKeybase(clientCtx.Keyring).
+			WithTxConfig(clientCtx.TxConfig).
+			WithAccountRetriever(clientCtx.AccountRetriever).
+			WithAccountNumber(accNum).
+			WithSequence(accSeq)
 
 		// Sign the transaction
-		err = cosmostx.Sign(ctx, txFactory, faucetKeyName, txBuilder, true)
+		err = cosmostx.Sign(ctx, txFactory, "faucet", txBuilder, true)
 		if err != nil {
 			return fmt.Errorf("failed to sign transaction: %w", err)
 		}
@@ -535,4 +490,10 @@ func init() {
 
 	// Add faucet flag
 	fundCmd.Flags().String("faucet", "faucet", "Name or address of the faucet account to send funds from")
+
+	// Add config flag
+	fundCmd.Flags().String("config", "", "Path to the config file")
+
+	// Add debug flag
+	fundCmd.Flags().Bool("debug", false, "Enable debug output")
 }
