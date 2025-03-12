@@ -1,6 +1,18 @@
 # Example config.yml for relay-spam tool
 data_dir: ~/.poktroll
 
+# Global application stake goal - used for all applications
+application_stake_goal: 1000000upokt
+
+# Global application fund goal - used for funding all applications
+application_fund_goal: 2000000upokt
+
+# GRPC endpoint for querying balances
+grpc_endpoint: localhost:9090
+
+# RPC endpoint for broadcasting transactions
+rpc_endpoint: http://localhost:26657
+
 tx_flags_template:
   chain-id: poktroll
   gas: auto
@@ -23,5 +35,6 @@ applications:
   - name: relay_spam_app_0
     address: pokt18wmctmhu49csyy6j0eyhmua63rvlwgc8hddg2c
     mnemonic: certain monitor elephant guard must vacant magnet present bacon scare social cattle enact average stairs orient disorder whisper frame banner version open spray brother
-    staked: false
-    delegated: false 
+    serviceidgoal: svc1qjpxsjkz0kujcvdlxm2wkjv5m4g0p9k
+    delegateesgoal:
+      - pokt1tgfhrtpxa4afeh70fk2aj6ca4mw84xqrkfgrdl 

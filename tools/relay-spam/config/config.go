@@ -25,7 +25,6 @@ type Application struct {
 	Name           string   `yaml:"name" mapstructure:"name"`
 	Address        string   `yaml:"address" mapstructure:"address"`
 	Mnemonic       string   `yaml:"mnemonic" mapstructure:"mnemonic"`
-	StakeGoal      int      `yaml:"stakegoal" mapstructure:"stakegoal"`           // How much stake to maintain. Top off to this goal if less than this
 	ServiceIdGoal  string   `yaml:"serviceidgoal" mapstructure:"serviceidgoal"`   // Which service ID to stake on
 	DelegateesGoal []string `yaml:"delegateesgoal" mapstructure:"delegateesgoal"` // TO WHICH GATEWAY(s) that app should be delegated to
 }
@@ -84,7 +83,6 @@ func LoadConfig() (*Config, error) {
 				Name:           getString(appMap, "name"),
 				Address:        getString(appMap, "address"),
 				Mnemonic:       getString(appMap, "mnemonic"),
-				StakeGoal:      getInt(appMap, "stakegoal"),
 				ServiceIdGoal:  getString(appMap, "serviceidgoal"),
 				DelegateesGoal: getStringSlice(appMap, "delegateesgoal"),
 			}
@@ -162,4 +160,19 @@ func expandTxFlagsTemplate(template map[string]string) string {
 		flags = append(flags, fmt.Sprintf("--%s=%s", k, v))
 	}
 	return strings.Join(flags, " ")
+}
+
+// ParseAmount parses a string amount like "1000000upokt" into an integer
+func ParseAmount(amount string) (int64, error) {
+	// Remove the denomination suffix
+	numStr := strings.TrimSuffix(amount, "upokt")
+
+	// Parse the numeric part
+	var result int64
+	_, err := fmt.Sscanf(numStr, "%d", &result)
+	if err != nil {
+		return 0, fmt.Errorf("failed to parse amount: %s", amount)
+	}
+
+	return result, nil
 }

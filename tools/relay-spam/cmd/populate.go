@@ -115,18 +115,22 @@ var populateCmd = &cobra.Command{
 		// Convert new applications to map format for YAML
 		for _, app := range newApps {
 			appMap := map[string]interface{}{
-				"name":            app.Name,
-				"address":         app.Address,
-				"mnemonic":        app.Mnemonic,
-				"stake_goal":      app.StakeGoal,
-				"service_id_goal": app.ServiceIdGoal,
-				"delegatees_goal": app.DelegateesGoal,
+				"name":           app.Name,
+				"address":        app.Address,
+				"mnemonic":       app.Mnemonic,
+				"serviceidgoal":  app.ServiceIdGoal,
+				"delegateesgoal": app.DelegateesGoal,
 			}
 			existingApps = append(existingApps, appMap)
 		}
 
 		// Update only the applications section in the original config
 		originalConfig["applications"] = existingApps
+
+		// Ensure the global ApplicationStakeGoal is set if not already present
+		if _, exists := originalConfig["application_stake_goal"]; !exists && cfg.ApplicationStakeGoal != "" {
+			originalConfig["application_stake_goal"] = cfg.ApplicationStakeGoal
+		}
 
 		// Marshal the updated config back to YAML
 		updatedConfigBytes, err := yaml.Marshal(originalConfig)
