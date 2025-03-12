@@ -14,6 +14,12 @@ func RegisterInterfaces(registry cdctypes.InterfaceRegistry) {
 	registry.RegisterImplementations((*sdk.Msg)(nil),
 		&MsgClaimMorseAccount{},
 	)
+	registry.RegisterImplementations((*sdk.Msg)(nil),
+		&MsgClaimMorseApplication{},
+	)
+	registry.RegisterImplementations((*sdk.Msg)(nil),
+		&MsgClaimMorseSupplier{},
+	)
 	// this line is used by starport scaffolding # 3
 
 	registry.RegisterImplementations((*sdk.Msg)(nil),

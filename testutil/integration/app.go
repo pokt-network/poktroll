@@ -527,7 +527,6 @@ func NewCompleteIntegrationApp(t *testing.T, opts ...IntegrationAppOptionFn) *Ap
 		accountKeeper,
 		bankKeeper,
 		sharedKeeper,
-		gatewayKeeper,
 		applicationKeeper,
 		supplierKeeper,
 	)
