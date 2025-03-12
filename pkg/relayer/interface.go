@@ -59,7 +59,7 @@ type RelayerProxy interface {
 	ServedRelays() RelaysObservable
 
 	// PingAll tests the connectivity between all the managed relay servers and their respective backend URLs.
-	PingAll(ctx context.Context) []error
+	PingAll(ctx context.Context) error
 }
 
 type RelayerProxyOption func(RelayerProxy)

@@ -596,11 +596,10 @@ func (t *RelayProxyPingAllSuite) TestOKPingAllWithSingleRelayServer() {
 	ctx, cancel := context.WithCancel(context.TODO())
 	defer cancel()
 
-	testBehavoirs := testproxy.NewRelayerProxyTestBehavior(ctx, t.T(), t.relayerProxyBehavior...)
+	testBehavoirs := testproxy.NewRelayerProxyTestBehavior(ctx, t.T(), []string{supplierOperatorKeyName}, t.relayerProxyBehavior...)
 
 	rp, err := proxy.NewRelayerProxy(
 		testBehavoirs.Deps,
-		proxy.WithSigningKeyNames([]string{supplierOperatorKeyName}),
 		proxy.WithServicesConfigMap(t.servicesConfigMap),
 	)
 	require.NoError(t.T(), err)
@@ -704,11 +703,10 @@ func (t *RelayProxyPingAllSuite) TestOKPingAllWithMultipleRelayServers() {
 		testproxy.WithRelayMeter(),
 	}
 
-	testBehavoirs := testproxy.NewRelayerProxyTestBehavior(ctx, t.T(), relayerProxyBehavior...)
+	testBehavoirs := testproxy.NewRelayerProxyTestBehavior(ctx, t.T(), []string{newSupplierOperatorKeyName}, relayerProxyBehavior...)
 
 	rp, err := proxy.NewRelayerProxy(
 		testBehavoirs.Deps,
-		proxy.WithSigningKeyNames([]string{newSupplierOperatorKeyName}),
 		proxy.WithServicesConfigMap(servicesConfigMap),
 	)
 	require.NoError(t.T(), err)
@@ -776,7 +774,7 @@ func (t *RelayProxyPingAllSuite) TestNOKPingAllWithPartialFailureAtStartup() {
 		testproxy.WithServicesConfigMap(cm),
 	}...)
 
-	test := testproxy.NewRelayerProxyTestBehavior(ctx, t.T(), relayProxyBehavior...)
+	test := testproxy.NewRelayerProxyTestBehavior(ctx, t.T(), []string{supplierOperatorKeyName}, relayProxyBehavior...)
 
 	// copying the default relayminer in the test service config
 	// map for the relay proxy.
@@ -786,7 +784,6 @@ func (t *RelayProxyPingAllSuite) TestNOKPingAllWithPartialFailureAtStartup() {
 
 	rp, err := proxy.NewRelayerProxy(
 		test.Deps,
-		proxy.WithSigningKeyNames([]string{supplierOperatorKeyName}),
 		proxy.WithServicesConfigMap(servicesConfigMap),
 	)
 	require.NoError(t.T(), err)
@@ -851,7 +848,7 @@ func (t *RelayProxyPingAllSuite) TestNOKPingAllWithPartialFailureAfterStartup() 
 		testproxy.WithServicesConfigMap(servicesConfigMap),
 	}...)
 
-	test := testproxy.NewRelayerProxyTestBehavior(ctx, t.T(), relayProxyBehavior...)
+	test := testproxy.NewRelayerProxyTestBehavior(ctx, t.T(), []string{supplierOperatorKeyName}, relayProxyBehavior...)
 
 	// copying the default relayminer in the test service config
 	// map for the relay proxy.
@@ -861,7 +858,6 @@ func (t *RelayProxyPingAllSuite) TestNOKPingAllWithPartialFailureAfterStartup() 
 
 	rp, err := proxy.NewRelayerProxy(
 		test.Deps,
-		proxy.WithSigningKeyNames([]string{supplierOperatorKeyName}),
 		proxy.WithServicesConfigMap(servicesConfigMap),
 	)
 	require.NoError(t.T(), err)
@@ -976,7 +972,7 @@ func (t *RelayProxyPingAllSuite) TestOKPingAllDifferentEndpoint() {
 		testproxy.WithServicesConfigMap(servicesConfigMap),
 	}...)
 
-	test := testproxy.NewRelayerProxyTestBehavior(ctx, t.T(), relayProxyBehavior...)
+	test := testproxy.NewRelayerProxyTestBehavior(ctx, t.T(), []string{supplierOperatorKeyName}, relayProxyBehavior...)
 
 	// copying the default relayminer in the test service config
 	// map for the relay proxy.
@@ -986,7 +982,6 @@ func (t *RelayProxyPingAllSuite) TestOKPingAllDifferentEndpoint() {
 
 	rp, err := proxy.NewRelayerProxy(
 		test.Deps,
-		proxy.WithSigningKeyNames([]string{supplierOperatorKeyName}),
 		proxy.WithServicesConfigMap(servicesConfigMap),
 	)
 	require.NoError(t.T(), err)
