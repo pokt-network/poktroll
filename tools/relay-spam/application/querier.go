@@ -56,8 +56,13 @@ func NewQuerier(clientConn *grpc.ClientConn) (*Querier, error) {
 func (q *Querier) IsStaked(ctx context.Context, appAddress string) (bool, error) {
 	app, err := q.appQueryClient.GetApplication(ctx, appAddress)
 	if err != nil {
-		// If the application is not found, it's not staked
-		if err.Error() == apptypes.ErrAppNotFound.Error() {
+		// Check for "application not found" error in different ways
+		errStr := err.Error()
+		if errStr == apptypes.ErrAppNotFound.Error() ||
+			errStr == "application not found" ||
+			errStr == "rpc error: code = NotFound desc = application not found" ||
+			errStr == "app address: "+appAddress+" [rpc error: code = NotFound desc = application not found]" {
+			// If the application is not found, it's not staked
 			return false, nil
 		}
 		return false, fmt.Errorf("failed to get application: %w", err)
@@ -71,6 +76,15 @@ func (q *Querier) IsStaked(ctx context.Context, appAddress string) (bool, error)
 func (q *Querier) GetStake(ctx context.Context, appAddress string) (*sdk.Coin, error) {
 	app, err := q.appQueryClient.GetApplication(ctx, appAddress)
 	if err != nil {
+		// Check for "application not found" error in different ways
+		errStr := err.Error()
+		if errStr == apptypes.ErrAppNotFound.Error() ||
+			errStr == "application not found" ||
+			errStr == "rpc error: code = NotFound desc = application not found" ||
+			errStr == "app address: "+appAddress+" [rpc error: code = NotFound desc = application not found]" {
+			// If the application is not found, return nil stake
+			return nil, nil
+		}
 		return nil, fmt.Errorf("failed to get application: %w", err)
 	}
 
@@ -91,8 +105,13 @@ func (q *Querier) IsDelegated(ctx context.Context, appAddress string) (bool, err
 func (q *Querier) GetDelegatees(ctx context.Context, appAddress string) ([]string, error) {
 	app, err := q.appQueryClient.GetApplication(ctx, appAddress)
 	if err != nil {
-		// If the application is not found, return empty list
-		if err.Error() == apptypes.ErrAppNotFound.Error() {
+		// Check for "application not found" error in different ways
+		errStr := err.Error()
+		if errStr == apptypes.ErrAppNotFound.Error() ||
+			errStr == "application not found" ||
+			errStr == "rpc error: code = NotFound desc = application not found" ||
+			errStr == "app address: "+appAddress+" [rpc error: code = NotFound desc = application not found]" {
+			// If the application is not found, return empty list
 			return []string{}, nil
 		}
 		return nil, fmt.Errorf("failed to get application: %w", err)
@@ -121,8 +140,13 @@ func (q *Querier) IsDelegatedToGateway(ctx context.Context, appAddress, gatewayA
 func (q *Querier) GetServiceIDs(ctx context.Context, appAddress string) ([]string, error) {
 	app, err := q.appQueryClient.GetApplication(ctx, appAddress)
 	if err != nil {
-		// If the application is not found, return empty list
-		if err.Error() == apptypes.ErrAppNotFound.Error() {
+		// Check for "application not found" error in different ways
+		errStr := err.Error()
+		if errStr == apptypes.ErrAppNotFound.Error() ||
+			errStr == "application not found" ||
+			errStr == "rpc error: code = NotFound desc = application not found" ||
+			errStr == "app address: "+appAddress+" [rpc error: code = NotFound desc = application not found]" {
+			// If the application is not found, return empty list
 			return []string{}, nil
 		}
 		return nil, fmt.Errorf("failed to get application: %w", err)

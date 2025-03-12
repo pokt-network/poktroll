@@ -154,12 +154,26 @@ var stakeCmd = &cobra.Command{
 		}
 		clientCtx = clientCtx.WithClient(client)
 
-		// Set the stake amount in the config
-		// This ensures the Staker uses the correct stake amount
-		cfg.ApplicationDefaults.Stake = cfg.ApplicationStakeGoal
-
 		// Create a Staker instance
-		staker := application.NewStaker(clientCtx, cfg)
+		// We need to create a new client context with the GRPC endpoint
+		// instead of the RPC endpoint for the staker to use for querying
+		stakerClientCtx := cosmosclient.Context{}.
+			WithKeyring(clientCtx.Keyring).
+			WithChainID(clientCtx.ChainID).
+			WithCodec(clientCtx.Codec).
+			WithInterfaceRegistry(clientCtx.InterfaceRegistry).
+			WithTxConfig(clientCtx.TxConfig).
+			WithAccountRetriever(clientCtx.AccountRetriever).
+			WithClient(clientCtx.Client)
+
+		// Use the GRPC endpoint for the staker's client context
+		if cfg.GrpcEndpoint != "" {
+			stakerClientCtx = stakerClientCtx.WithNodeURI(cfg.GrpcEndpoint)
+		} else {
+			fmt.Println("Warning: GRPC endpoint not specified in config, using RPC endpoint for GRPC connections")
+			stakerClientCtx = stakerClientCtx.WithNodeURI(rpcEndpoint)
+		}
+		staker := application.NewStaker(stakerClientCtx, cfg)
 
 		// Stake applications
 		fmt.Println("Staking applications...")

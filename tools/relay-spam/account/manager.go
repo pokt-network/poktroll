@@ -72,8 +72,8 @@ func (m *Manager) CreateAccounts(numAccounts int) ([]config.Application, error) 
 			Name:           name,
 			Address:        address.String(),
 			Mnemonic:       mnemonic,
-			ServiceIdGoal:  m.config.ApplicationDefaults.ServiceID,
-			DelegateesGoal: m.config.ApplicationDefaults.Gateways,
+			ServiceIdGoal:  "",         // Default service ID
+			DelegateesGoal: []string{}, // Empty delegatees by default
 		}
 
 		applications = append(applications, app)

@@ -59,16 +59,16 @@ func (s *Staker) StakeApplications() error {
 	ctx := context.Background()
 
 	for _, app := range s.config.Applications {
-		// Parse the stake amount
-		stakeAmount, err := sdk.ParseCoinNormalized(s.config.ApplicationDefaults.Stake)
+		// Parse the stake amount from the global application stake goal
+		stakeAmount, err := sdk.ParseCoinNormalized(s.config.ApplicationStakeGoal)
 		if err != nil {
 			return fmt.Errorf("failed to parse stake amount: %w", err)
 		}
 
-		// Use the service ID from the application config if specified, otherwise use the default
-		serviceID := s.config.ApplicationDefaults.ServiceID
-		if app.ServiceIdGoal != "" {
-			serviceID = app.ServiceIdGoal
+		// Use the service ID from the application's serviceidgoal
+		serviceID := app.ServiceIdGoal
+		if serviceID == "" {
+			return fmt.Errorf("serviceidgoal is required for application %s", app.Name)
 		}
 
 		// Check if the application is already staked
@@ -77,17 +77,21 @@ func (s *Staker) StakeApplications() error {
 			var err error
 			isStaked, err = s.querier.IsStaked(ctx, app.Address)
 			if err != nil {
-				fmt.Printf("Error checking if application %s is staked: %v\n", app.Name, err)
+				// If we get an error checking if the application is staked, log it but continue
+				// This is likely because the application doesn't exist yet, which means it's not staked
+				fmt.Printf("Warning: Error checking if application %s is staked: %v\n", app.Name, err)
+				fmt.Printf("Assuming application %s is not staked, proceeding with staking\n", app.Name)
+				isStaked = false
 			} else if isStaked {
 				// Check if the application is staked with the same amount
 				isStakedWithAmount, err := s.querier.IsStakedWithAmount(ctx, app.Address, stakeAmount)
 				if err != nil {
-					fmt.Printf("Error checking if application %s is staked with amount %s: %v\n", app.Name, stakeAmount.String(), err)
+					fmt.Printf("Warning: Error checking if application %s is staked with amount %s: %v\n", app.Name, stakeAmount.String(), err)
 				} else if isStakedWithAmount {
 					// Check if the application is staked for the same service
 					isStakedForService, err := s.querier.IsStakedForService(ctx, app.Address, serviceID)
 					if err != nil {
-						fmt.Printf("Error checking if application %s is staked for service %s: %v\n", app.Name, serviceID, err)
+						fmt.Printf("Warning: Error checking if application %s is staked for service %s: %v\n", app.Name, serviceID, err)
 					} else if isStakedForService {
 						fmt.Printf("Application %s is already staked with %s for service %s, skipping\n", app.Name, stakeAmount.String(), serviceID)
 						continue
@@ -204,7 +208,11 @@ func (s *Staker) DelegateToGateway() error {
 			var err error
 			isStaked, err = s.querier.IsStaked(ctx, app.Address)
 			if err != nil {
-				fmt.Printf("Error checking if application %s is staked: %v\n", app.Name, err)
+				// If we get an error checking if the application is staked, log it but continue
+				// This is likely because the application doesn't exist yet
+				fmt.Printf("Warning: Error checking if application %s is staked: %v\n", app.Name, err)
+				fmt.Printf("Application %s may not be staked yet, skipping delegation\n", app.Name)
+				continue
 			} else if !isStaked {
 				fmt.Printf("Application %s is not staked, skipping delegation\n", app.Name)
 				continue
@@ -233,7 +241,11 @@ func (s *Staker) DelegateToGateway() error {
 				var err error
 				isDelegated, err = s.querier.IsDelegatedToGateway(ctx, app.Address, gatewayAddr)
 				if err != nil {
-					fmt.Printf("Error checking if application %s is delegated to gateway %s: %v\n", app.Name, gatewayAddr, err)
+					// If we get an error checking if the application is delegated, log it but continue
+					// This is likely because the application doesn't exist yet or there's a network issue
+					fmt.Printf("Warning: Error checking if application %s is delegated to gateway %s: %v\n", app.Name, gatewayAddr, err)
+					fmt.Printf("Assuming application %s is not delegated to gateway %s, proceeding with delegation\n", app.Name, gatewayAddr)
+					isDelegated = false
 				} else if isDelegated {
 					fmt.Printf("Application %s is already delegated to gateway %s, skipping\n", app.Name, gatewayAddr)
 					continue

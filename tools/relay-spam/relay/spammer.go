@@ -150,7 +150,18 @@ func (s *Spammer) makeRequest(gatewayURL, appAddress string) RequestResult {
 
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("X-App-Address", appAddress)
-	req.Header.Set("Target-Service-ID", s.config.ApplicationDefaults.ServiceID)
+
+	// Find the application with the matching address to get its service ID
+	serviceID := ""
+	for _, app := range s.config.Applications {
+		if app.Address == appAddress {
+			serviceID = app.ServiceIdGoal
+			break
+		}
+	}
+
+	// Set the Target-Service-ID header
+	req.Header.Set("Target-Service-ID", serviceID)
 
 	resp, err := client.Do(req)
 	if err != nil {

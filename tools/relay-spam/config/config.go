@@ -10,15 +10,14 @@ import (
 )
 
 type Config struct {
-	DataDir              string              `yaml:"datadir" mapstructure:"datadir"`
-	TxFlags              string              `yaml:"txflags" mapstructure:"txflags"`
-	TxFlagsTemplate      map[string]string   `yaml:"txflagstemplate" mapstructure:"txflagstemplate"`
-	Applications         []Application       `yaml:"applications" mapstructure:"applications"`
-	ApplicationDefaults  ApplicationDefaults `yaml:"application_defaults" mapstructure:"application_defaults"`
-	ApplicationStakeGoal string              `yaml:"application_stake_goal" mapstructure:"application_stake_goal"` // Target stake amount for applications
-	ApplicationFundGoal  string              `yaml:"application_fund_goal" mapstructure:"application_fund_goal"`   // Target balance for funding applications
-	GrpcEndpoint         string              `yaml:"grpc_endpoint" mapstructure:"grpc_endpoint"`                   // GRPC endpoint for querying balances
-	RpcEndpoint          string              `yaml:"rpc_endpoint" mapstructure:"rpc_endpoint"`                     // RPC endpoint for broadcasting transactions
+	DataDir              string            `yaml:"datadir" mapstructure:"datadir"`
+	TxFlags              string            `yaml:"txflags" mapstructure:"txflags"`
+	TxFlagsTemplate      map[string]string `yaml:"txflagstemplate" mapstructure:"txflagstemplate"`
+	Applications         []Application     `yaml:"applications" mapstructure:"applications"`
+	ApplicationStakeGoal string            `yaml:"application_stake_goal" mapstructure:"application_stake_goal"` // Target stake amount for applications
+	ApplicationFundGoal  string            `yaml:"application_fund_goal" mapstructure:"application_fund_goal"`   // Target balance for funding applications
+	GrpcEndpoint         string            `yaml:"grpc_endpoint" mapstructure:"grpc_endpoint"`                   // GRPC endpoint for querying balances
+	RpcEndpoint          string            `yaml:"rpc_endpoint" mapstructure:"rpc_endpoint"`                     // RPC endpoint for broadcasting transactions
 }
 
 type Application struct {
@@ -51,12 +50,6 @@ type Application struct {
 // 	}
 //   }
 
-type ApplicationDefaults struct {
-	Stake     string   `yaml:"stake" mapstructure:"stake"`
-	ServiceID string   `yaml:"service_id" mapstructure:"service_id"`
-	Gateways  []string `yaml:"gateways" mapstructure:"gateways"`
-}
-
 func LoadConfig(configFile string) (*Config, error) {
 	// If a config file is provided, use it
 	if configFile != "" {
@@ -79,7 +72,6 @@ func LoadConfig(configFile string) (*Config, error) {
 		TxFlags:              viper.GetString("txflags"),
 		TxFlagsTemplate:      viper.GetStringMapString("txflagstemplate"),
 		Applications:         []Application{},
-		ApplicationDefaults:  ApplicationDefaults{},
 		ApplicationStakeGoal: viper.GetString("application_stake_goal"),
 		ApplicationFundGoal:  viper.GetString("application_fund_goal"),
 		GrpcEndpoint:         viper.GetString("grpc_endpoint"),
@@ -102,16 +94,6 @@ func LoadConfig(configFile string) (*Config, error) {
 				DelegateesGoal: getStringSlice(appMap, "delegateesgoal"),
 			}
 			config.Applications = append(config.Applications, app)
-		}
-	}
-
-	// Unmarshal application defaults
-	var defaults map[string]interface{}
-	if err := viper.UnmarshalKey("application_defaults", &defaults); err == nil {
-		config.ApplicationDefaults = ApplicationDefaults{
-			Stake:     getString(defaults, "stake"),
-			ServiceID: getString(defaults, "service_id"),
-			Gateways:  getStringSlice(defaults, "gateways"),
 		}
 	}
 

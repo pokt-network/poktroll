@@ -1,103 +1,23 @@
 application_fund_goal: 1000000000upokt
 application_stake_goal: 100000000upokt
 applications:
-- address: pokt18wmctmhu49csyy6j0eyhmua63rvlwgc8hddg2c
-  delegateesgoal: []
-  mnemonic: certain monitor elephant guard must vacant magnet present bacon scare
-    social cattle enact average stairs orient disorder whisper frame banner version
-    open spray brother
-  name: relay_spam_app_0
-  serviceidgoal: "anvil"
-- address: pokt1vdk6e6nqc76jlczmkffd355dft8hhq5ra4jge5
-  delegateesgoal: []
-  mnemonic: found radio fitness adjust merge analyst verb craft tornado tomato rich
-    believe fee symbol candy okay focus minor engine arm potato energy ozone double
-  name: relay_spam_app_1
-  serviceidgoal: "anvil"
-- address: pokt1k7ksa6xajkglnd7fulj9pp3w6n6rz0l79mm6ta
-  delegateesgoal: []
-  mnemonic: useless adult fresh loan drum room soup side window assist shoe volume
-    dirt steak segment eye spoon fuel boy toast mutual employ during boat
-  name: relay_spam_app_2
-  serviceidgoal: "anvil"
-- address: pokt135yh47czz7l0va2jxypvmamdhe3desry0xw4m7
-  delegateesgoal: []
-  mnemonic: question general glide hope fix mistake enact image blush lunch curve
-    deny just trap morning reopen tuna total text frog filter announce muscle enforce
-  name: relay_spam_app_3
-  serviceidgoal: "anvil"
-- address: pokt1kw7ztxlf44sydlkpd96l0vu52zael6sy43mpp6
-  delegateesgoal: []
-  mnemonic: describe they surge fetch cause bacon object host rookie spider moral
-    victory napkin truck gloom type payment entire tobacco monster service degree
-    dust toward
-  name: relay_spam_app_4
-  serviceidgoal: "anvil"
-- address: pokt1ntsp5ezsnzrswvpumfmsmkkmvzulpkvfav0j8f
-  delegateesgoal: []
-  mnemonic: fold size wild clap object tail blush season album lyrics shy pulp quarter
-    base sock average filter club pass zero kangaroo depart thrive enroll
-  name: relay_spam_app_5
-  serviceidgoal: "anvil"
-- address: pokt1slv2jqgdq3qxayyw2peutug020xdmwj74v5gvs
-  delegateesgoal: []
-  mnemonic: hurt inhale member demand equal real trap nut cereal over spirit call
-    veteran this sample net when seed hover cancel absent urge apple chunk
-  name: relay_spam_app_6
-  serviceidgoal: "anvil"
-- address: pokt1ltgm8l3n3n5cjq6m24ddch8qpzlzy8juj9hdn4
-  delegateesgoal: []
-  mnemonic: join obscure unusual hero lesson glad family sibling olympic issue pact
-    virtual build husband vendor major acid assume worry involve fatal animal hub
-    hockey
-  name: relay_spam_app_7
-  serviceidgoal: "anvil"
-- address: pokt1qzh2j27yx5w8klvm0j5fup7uuepwr7v2gtrah0
-  delegateesgoal: []
-  mnemonic: wild correct labor text train surprise valley olive letter join artefact
-    correct rib reopen shoe detect ancient shoulder side rebuild mobile game civil
-    eager
-  name: relay_spam_app_8
-  serviceidgoal: "anvil"
-- address: pokt1xjrsxl0jegl383sq854nnpu2508t40dysrqdma
-  delegateesgoal: []
-  mnemonic: behave wrestle cart exclude valley village panther title lion afford student
-    mix math vibrant fall discover axis flower garlic palace space confirm fever brief
-  name: relay_spam_app_9
-  serviceidgoal: "anvil"
-- address: pokt1q20kmax6pve8dlsmvg027p3jg52aa628k7ntx6
-  delegateesgoal: []
-  mnemonic: attitude thunder disorder obtain senior insane cool quote allow toe slam
-    angry circle route apology certain town escape law thunder gospel tourist album
-    rail
-  name: relay_spam_app_10
-  serviceidgoal: "anvil"
-- address: pokt1uvsx06vqgj95w0cjsly5ca9ve46detvchx4m4r
-  delegateesgoal: []
-  mnemonic: salt paddle symbol appear funny warfare collect level wolf anxiety erase
-    hand erosion town inside column icon meat zoo junk second sugar visit indicate
-  name: relay_spam_app_11
-  serviceidgoal: "anvil"
-- address: pokt1tevjxz3wqs56mtp95skhclkxq2hjgs97l2nuxy
-  delegateesgoal: []
-  mnemonic: immune ginger fatal aerobic emerge monkey cross story proud never cradle
-    assist insect cabbage mosquito provide poverty wrong since disorder ability exclude
-    iron radio
-  name: relay_spam_app_12
-  serviceidgoal: "anvil"
-- address: pokt1dagekh8ed4sqypwl62hvxr9l6a6stenylmx84z
-  delegateesgoal: []
-  mnemonic: scrub squeeze hover mansion one battle erupt silver clarify thrive shift
-    reform bean cake edge charge service unfold ticket badge field warrior timber
-    again
-  name: relay_spam_app_13
-  serviceidgoal: "anvil"
-- address: pokt1gvt0hrxr2x8kxx2uqfl0kxy0529ftpstjq7y9v
-  delegateesgoal: []
-  mnemonic: bottom canvas sing already aware motor candy silly expand annual cube
-    across leg fun interest uphold crash hat latin magic shield evoke patch pledge
-  name: relay_spam_app_14
-  serviceidgoal: "anvil"
+  - address: pokt18wmctmhu49csyy6j0eyhmua63rvlwgc8hddg2c
+    delegateesgoal:
+      - pokt15vzxjqklzjtlz7lahe8z2dfe9nm5vxwwmscne4
+    mnemonic:
+      certain monitor elephant guard must vacant magnet present bacon scare
+      social cattle enact average stairs orient disorder whisper frame banner version
+      open spray brother
+    name: relay_spam_test_0
+    serviceidgoal: anvil
+  - address: pokt157g94dm0katvq7a9802vplqjleqqnj96qlw69p
+    delegateesgoal: []
+    mnemonic:
+      plastic box ahead abandon check seminar crystal mirror turtle bounce word
+      artwork awkward deposit bread pause immune stomach cry essence index social twin
+      speak
+    name: relay_spam_test_1
+    serviceidgoal: "anvil"
 datadir: /Users/dk/.poktroll
 grpc_endpoint: localhost:9090
 rpc_endpoint: http://localhost:26657

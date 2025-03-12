@@ -9,13 +9,13 @@ application_stake_goal: "100000000upokt"
 applications:
   - name: "app1"
     address: "pokt1mrqt5f7qh8uxs27cjm9t7v9e74a9vvdnq5jva4"
-    service_id_goal: "anvil"
-    delegatees_goal: ["pokt15vzxjqklzjtlz7lahe8z2dfe9nm5vxwwmscne4"]
+    serviceidgoal: "anvil"
+    delegateesgoal: ["pokt15vzxjqklzjtlz7lahe8z2dfe9nm5vxwwmscne4"]
   - name: "app2"
     address: "pokt184zvylazwu4queyzpl0gyz9yf5yxm2kdhh9hpm"
-    service_id_goal: "rest"
-    delegatees_goal: ["pokt15vzxjqklzjtlz7lahe8z2dfe9nm5vxwwmscne4"]
+    serviceidgoal: "rest"
+    delegateesgoal: ["pokt15vzxjqklzjtlz7lahe8z2dfe9nm5vxwwmscne4"]
   - name: "app3"
     address: "pokt1lqyu4v88vp8tzc86eaqr4lq8rwhssyn6rfwzex"
-    service_id_goal: "anvilws"
-    delegatees_goal: ["pokt15vzxjqklzjtlz7lahe8z2dfe9nm5vxwwmscne4"] 
+    serviceidgoal: "anvilws"
+    delegateesgoal: ["pokt15vzxjqklzjtlz7lahe8z2dfe9nm5vxwwmscne4"]
