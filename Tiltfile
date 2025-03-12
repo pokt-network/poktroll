@@ -290,6 +290,12 @@ for x in range(localnet_config["relayminers"]["count"]):
     flags.append("--set=config.suppliers["+str(supplier_number)+"].service_config.publicly_exposed_endpoints[0]=relayminer"+str(actor_number))
     supplier_number = supplier_number + 1
 
+    flags.append("--set=config.suppliers["+str(supplier_number)+"].service_id=anvilws")
+    flags.append("--set=config.suppliers["+str(supplier_number)+"].listen_url=http://0.0.0.0:8545")
+    flags.append("--set=config.suppliers["+str(supplier_number)+"].service_config.backend_url=ws://anvil:8547/")
+    flags.append("--set=config.suppliers["+str(supplier_number)+"].service_config.publicly_exposed_endpoints[0]=relayminer"+str(actor_number))
+    supplier_number = supplier_number + 1
+
     if localnet_config["rest"]["enabled"]:
        flags.append("--set=config.suppliers["+str(supplier_number)+"].service_id=rest")
        flags.append("--set=config.suppliers["+str(supplier_number)+"].listen_url=http://0.0.0.0:8545")
