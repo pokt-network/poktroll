@@ -22,7 +22,7 @@ type Querier struct {
 }
 
 // NewQuerier creates a new application querier
-func NewQuerier(clientConn grpc.ClientConn) (*Querier, error) {
+func NewQuerier(clientConn *grpc.ClientConn) (*Querier, error) {
 	// Create application cache
 	appCache, err := memory.NewKeyValueCache[apptypes.Application]()
 	if err != nil {
