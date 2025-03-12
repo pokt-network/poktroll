@@ -90,17 +90,53 @@ var populateCmd = &cobra.Command{
 			os.Exit(1)
 		}
 
-		// Add new accounts to config
-		cfg.Applications = append(cfg.Applications, newApps...)
-
-		// Save updated config
-		configBytes, err := yaml.Marshal(cfg)
+		// Instead of modifying the entire config, we'll only update the applications section without changing the rest of the config structure
+		// Read the original config file to preserve its structure
+		originalConfigBytes, err := os.ReadFile(configFile)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "Failed to marshal config: %v\n", err)
+			fmt.Fprintf(os.Stderr, "Failed to read original config file: %v\n", err)
 			os.Exit(1)
 		}
 
-		err = os.WriteFile(configFile, configBytes, 0644)
+		// Parse the original config as a map to preserve structure
+		var originalConfig map[string]interface{}
+		if err := yaml.Unmarshal(originalConfigBytes, &originalConfig); err != nil {
+			fmt.Fprintf(os.Stderr, "Failed to parse original config: %v\n", err)
+			os.Exit(1)
+		}
+
+		// Get the existing applications from the original config
+		existingApps, ok := originalConfig["applications"].([]interface{})
+		if !ok {
+			// If applications key doesn't exist or is not a list, create a new list
+			existingApps = []interface{}{}
+		}
+
+		// Convert new applications to map format for YAML
+		for _, app := range newApps {
+			appMap := map[string]interface{}{
+				"name":            app.Name,
+				"address":         app.Address,
+				"mnemonic":        app.Mnemonic,
+				"stake_goal":      app.StakeGoal,
+				"service_id_goal": app.ServiceIdGoal,
+				"delegatees_goal": app.DelegateesGoal,
+			}
+			existingApps = append(existingApps, appMap)
+		}
+
+		// Update only the applications section in the original config
+		originalConfig["applications"] = existingApps
+
+		// Marshal the updated config back to YAML
+		updatedConfigBytes, err := yaml.Marshal(originalConfig)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Failed to marshal updated config: %v\n", err)
+			os.Exit(1)
+		}
+
+		// Write the updated config back to the file
+		err = os.WriteFile(configFile, updatedConfigBytes, 0644)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Failed to write config file: %v\n", err)
 			os.Exit(1)
@@ -116,8 +152,16 @@ var populateCmd = &cobra.Command{
 			os.Exit(1)
 		}
 
-		for _, cmd := range commands[len(commands)-numAccounts:] {
-			fmt.Println(cmd)
+		// Only print commands for the newly created accounts
+		if len(commands) >= numAccounts {
+			for _, cmd := range commands[len(commands)-numAccounts:] {
+				fmt.Println(cmd)
+			}
+		} else {
+			// If we have fewer commands than expected, just print all of them
+			for _, cmd := range commands {
+				fmt.Println(cmd)
+			}
 		}
 	},
 }

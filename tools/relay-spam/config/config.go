@@ -18,6 +18,7 @@ type Config struct {
 	ApplicationStakeGoal string              `mapstructure:"application_stake_goal"` // Target stake amount for applications
 	ApplicationFundGoal  string              `mapstructure:"application_fund_goal"`  // Target balance for funding applications
 	GrpcEndpoint         string              `mapstructure:"grpc_endpoint"`          // GRPC endpoint for querying balances
+	RpcEndpoint          string              `mapstructure:"rpc_endpoint"`           // RPC endpoint for broadcasting transactions
 }
 
 type Application struct {
