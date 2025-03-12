@@ -20,6 +20,10 @@ message Proof {
   poktroll.session.SessionHeader session_header = 2;
   // The serialized SMST compacted proof from the `#ClosestProof()` method.
   bytes closest_merkle_proof = 3;
+  // proof_relay is the bytes representation of the relay corresponding to the proof submitted.
+  // Since the proof only contains the relay's hash, the relay is needed to verify that the
+  // supplier and ring signatures are valid.
+  bytes proof_relay = 4;
 }
 
 // Claim is the serialized object stored onchain for claims pending to be proven

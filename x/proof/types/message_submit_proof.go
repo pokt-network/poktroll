@@ -41,6 +41,10 @@ func (msg *MsgSubmitProof) ValidateBasic() error {
 		return ErrProofInvalidProof.Wrap("proof cannot be empty")
 	}
 
+	if len(msg.GetProofRelay()) == 0 {
+		return ErrProofInvalidProof.Wrap("proof relay cannot be empty")
+	}
+
 	// TODO_MAINNET: attempt to deserialize the proof for additional validation.
 
 	return nil
