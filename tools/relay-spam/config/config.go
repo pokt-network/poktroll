@@ -57,7 +57,22 @@ type ApplicationDefaults struct {
 	Gateways  []string `yaml:"gateways" mapstructure:"gateways"`
 }
 
-func LoadConfig() (*Config, error) {
+func LoadConfig(configFile string) (*Config, error) {
+	// If a config file is provided, use it
+	if configFile != "" {
+		viper.SetConfigFile(configFile)
+	} else {
+		// Otherwise, look for config.yml in the current directory
+		viper.SetConfigName("config")
+		viper.SetConfigType("yml")
+		viper.AddConfigPath(".")
+	}
+
+	// Read the config file
+	if err := viper.ReadInConfig(); err != nil {
+		return nil, fmt.Errorf("failed to read config file: %w", err)
+	}
+
 	// Create a new config with default values
 	config := &Config{
 		DataDir:              viper.GetString("datadir"),

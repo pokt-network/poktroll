@@ -116,3 +116,54 @@ func (q *Querier) IsDelegatedToGateway(ctx context.Context, appAddress, gatewayA
 
 	return false, nil
 }
+
+// GetServiceIDs returns the list of service IDs that the application is staked for
+func (q *Querier) GetServiceIDs(ctx context.Context, appAddress string) ([]string, error) {
+	app, err := q.appQueryClient.GetApplication(ctx, appAddress)
+	if err != nil {
+		// If the application is not found, return empty list
+		if err.Error() == apptypes.ErrAppNotFound.Error() {
+			return []string{}, nil
+		}
+		return nil, fmt.Errorf("failed to get application: %w", err)
+	}
+
+	serviceIDs := make([]string, 0, len(app.ServiceConfigs))
+	for _, service := range app.ServiceConfigs {
+		serviceIDs = append(serviceIDs, service.ServiceId)
+	}
+
+	return serviceIDs, nil
+}
+
+// IsStakedForService checks if the application is staked for a specific service
+func (q *Querier) IsStakedForService(ctx context.Context, appAddress, serviceID string) (bool, error) {
+	serviceIDs, err := q.GetServiceIDs(ctx, appAddress)
+	if err != nil {
+		return false, err
+	}
+
+	for _, id := range serviceIDs {
+		if id == serviceID {
+			return true, nil
+		}
+	}
+
+	return false, nil
+}
+
+// IsStakedWithAmount checks if the application is staked with a specific amount
+func (q *Querier) IsStakedWithAmount(ctx context.Context, appAddress string, amount sdk.Coin) (bool, error) {
+	stake, err := q.GetStake(ctx, appAddress)
+	if err != nil {
+		return false, err
+	}
+
+	// If the stake is nil, the application is not staked
+	if stake == nil {
+		return false, nil
+	}
+
+	// Check if the stake amount is the same
+	return stake.Denom == amount.Denom && stake.Amount.Equal(amount.Amount), nil
+}

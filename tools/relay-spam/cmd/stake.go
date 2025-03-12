@@ -1,17 +1,13 @@
 package cmd
 
 import (
-	"context"
 	"fmt"
 	"os"
 	"path/filepath"
-	"time"
 
 	"github.com/spf13/cobra"
 
-	"cosmossdk.io/math"
 	cosmosclient "github.com/cosmos/cosmos-sdk/client"
-	cosmostx "github.com/cosmos/cosmos-sdk/client/tx"
 	"github.com/cosmos/cosmos-sdk/codec"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	cryptocodec "github.com/cosmos/cosmos-sdk/crypto/codec"
@@ -20,10 +16,9 @@ import (
 	authtx "github.com/cosmos/cosmos-sdk/x/auth/tx"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 
-	"github.com/pokt-network/poktroll/app/volatile"
+	"github.com/pokt-network/poktroll/tools/relay-spam/application"
 	"github.com/pokt-network/poktroll/tools/relay-spam/config"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
-	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 // Initialize SDK configuration
@@ -56,7 +51,7 @@ var stakeCmd = &cobra.Command{
 		}
 
 		// Load config
-		cfg, err := config.LoadConfig()
+		cfg, err := config.LoadConfig(configFile)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Failed to load config: %v\n", err)
 			os.Exit(1)
@@ -65,13 +60,6 @@ var stakeCmd = &cobra.Command{
 		// Validate required config settings
 		if cfg.ApplicationStakeGoal == "" {
 			fmt.Fprintf(os.Stderr, "ApplicationStakeGoal is required in config\n")
-			os.Exit(1)
-		}
-
-		// Parse the stake goal amount
-		stakeGoalAmount, err := config.ParseAmount(cfg.ApplicationStakeGoal)
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "Failed to parse ApplicationStakeGoal: %v\n", err)
 			os.Exit(1)
 		}
 
@@ -102,9 +90,6 @@ var stakeCmd = &cobra.Command{
 		if err != nil || chainID == "" {
 			chainID = "poktroll"
 		}
-
-		// Create a context for the transaction
-		ctx := context.Background()
 
 		// Create codec and registry for keyring
 		registry := codectypes.NewInterfaceRegistry()
@@ -169,206 +154,28 @@ var stakeCmd = &cobra.Command{
 		}
 		clientCtx = clientCtx.WithClient(client)
 
-		// Create a transaction factory
-		txFactory := cosmostx.Factory{}.
-			WithChainID(chainID).
-			WithKeybase(kr).
-			WithTxConfig(clientCtx.TxConfig).
-			WithAccountRetriever(clientCtx.AccountRetriever)
+		// Set the stake amount in the config
+		// This ensures the Staker uses the correct stake amount
+		cfg.ApplicationDefaults.Stake = cfg.ApplicationStakeGoal
 
-		// Set default gas prices (0.01 upokt per gas unit)
-		defaultGasPrice := sdk.NewDecCoinFromDec(volatile.DenomuPOKT, math.LegacyNewDecWithPrec(1, 2)) // 0.01 upokt
-		gasPrices := sdk.NewDecCoins(defaultGasPrice)
-		txFactory = txFactory.WithGasPrices(gasPrices.String())
+		// Create a Staker instance
+		staker := application.NewStaker(clientCtx, cfg)
 
-		// Process each application
+		// Stake applications
 		fmt.Println("Staking applications...")
-		for _, app := range cfg.Applications {
-			// Create stake amount using the global stake goal
-			stakeAmount := sdk.NewInt64Coin(volatile.DenomuPOKT, stakeGoalAmount)
-
-			// Create service config
-			serviceConfig := &sharedtypes.ApplicationServiceConfig{
-				ServiceId: app.ServiceIdGoal,
-			}
-
-			// Create stake message
-			stakeMsg := &apptypes.MsgStakeApplication{
-				Address:  app.Address,
-				Stake:    &stakeAmount,
-				Services: []*sharedtypes.ApplicationServiceConfig{serviceConfig},
-			}
-
-			fmt.Printf("Staking application %s with %s to service %s\n",
-				app.Address, stakeAmount.String(), app.ServiceIdGoal)
-
-			// Create a transaction builder
-			txBuilder := clientCtx.TxConfig.NewTxBuilder()
-
-			// Set the message
-			if err := txBuilder.SetMsgs(stakeMsg); err != nil {
-				fmt.Fprintf(os.Stderr, "Failed to set stake message for %s: %v\n", app.Address, err)
-				continue
-			}
-
-			// Set gas limit - using a high value to ensure it goes through
-			txBuilder.SetGasLimit(420069)
-
-			// Set fee amount based on gas limit and gas prices
-			gasPrices := sdk.NewDecCoins(sdk.NewDecCoinFromDec(volatile.DenomuPOKT, math.LegacyNewDecWithPrec(1, 2)))
-			fees := sdk.NewCoins()
-			for _, gasPrice := range gasPrices {
-				fee := gasPrice.Amount.MulInt(math.NewInt(int64(txBuilder.GetTx().GetGas()))).RoundInt()
-				fees = fees.Add(sdk.NewCoin(gasPrice.Denom, fee))
-			}
-			txBuilder.SetFeeAmount(fees)
-
-			// Get the application address
-			appAddr, err := sdk.AccAddressFromBech32(app.Address)
-			if err != nil {
-				fmt.Fprintf(os.Stderr, "Failed to parse application address %s: %v\n", app.Address, err)
-				continue
-			}
-
-			// Get account number and sequence
-			accNum, accSeq, err := clientCtx.AccountRetriever.GetAccountNumberSequence(clientCtx, appAddr)
-			if err != nil {
-				fmt.Fprintf(os.Stderr, "Failed to get account number and sequence for %s: %v\n", app.Address, err)
-				continue
-			}
-
-			// Create a transaction factory
-			txFactory := cosmostx.Factory{}.
-				WithChainID(clientCtx.ChainID).
-				WithKeybase(clientCtx.Keyring).
-				WithTxConfig(clientCtx.TxConfig).
-				WithAccountRetriever(clientCtx.AccountRetriever).
-				WithAccountNumber(accNum).
-				WithSequence(accSeq)
-
-			// Sign the transaction
-			err = cosmostx.Sign(ctx, txFactory, app.Name, txBuilder, true)
-			if err != nil {
-				fmt.Fprintf(os.Stderr, "Failed to sign transaction for %s: %v\n", app.Address, err)
-				continue
-			}
-
-			// Encode the transaction
-			txBytes, err := clientCtx.TxConfig.TxEncoder()(txBuilder.GetTx())
-			if err != nil {
-				fmt.Fprintf(os.Stderr, "Failed to encode transaction for %s: %v\n", app.Address, err)
-				continue
-			}
-
-			// Broadcast the transaction
-			res, err := clientCtx.BroadcastTxSync(txBytes)
-			if err != nil {
-				fmt.Fprintf(os.Stderr, "Failed to broadcast transaction for %s: %v\n", app.Address, err)
-				continue
-			}
-
-			// Check for errors in the response
-			if res.Code != 0 {
-				fmt.Fprintf(os.Stderr, "Transaction failed for %s: %s\n", app.Address, res.RawLog)
-				continue
-			}
-
-			fmt.Printf("Successfully staked application %s. Transaction hash: %s\n", app.Address, res.TxHash)
-
-			// Wait a bit for the transaction to be processed
-			time.Sleep(5 * time.Second)
-
-			// If delegation is needed, create and send delegation message
-			if len(app.DelegateesGoal) > 0 {
-				fmt.Printf("Delegating application %s to gateways: %v\n", app.Address, app.DelegateesGoal)
-
-				// Process each gateway delegation
-				for _, gatewayAddr := range app.DelegateesGoal {
-					delegateMsg := &apptypes.MsgDelegateToGateway{
-						AppAddress:     app.Address,
-						GatewayAddress: gatewayAddr,
-					}
-
-					// Create a transaction builder for delegation
-					txBuilder := clientCtx.TxConfig.NewTxBuilder()
-
-					// Set the delegation message
-					if err := txBuilder.SetMsgs(delegateMsg); err != nil {
-						fmt.Fprintf(os.Stderr, "Failed to set delegation message for %s to %s: %v\n",
-							app.Address, gatewayAddr, err)
-						continue
-					}
-
-					// Set gas limit - using a high value to ensure it goes through
-					txBuilder.SetGasLimit(1000000000000)
-
-					// Set fee amount based on gas limit and gas prices
-					gasPrices := sdk.NewDecCoins(sdk.NewDecCoinFromDec(volatile.DenomuPOKT, math.LegacyNewDecWithPrec(1, 2)))
-					fees := sdk.NewCoins()
-					for _, gasPrice := range gasPrices {
-						fee := gasPrice.Amount.MulInt(math.NewInt(int64(txBuilder.GetTx().GetGas()))).RoundInt()
-						fees = fees.Add(sdk.NewCoin(gasPrice.Denom, fee))
-					}
-					txBuilder.SetFeeAmount(fees)
-
-					// Get account number and sequence - need to get fresh sequence after previous transaction
-					accNum, accSeq, err := clientCtx.AccountRetriever.GetAccountNumberSequence(clientCtx, appAddr)
-					if err != nil {
-						fmt.Fprintf(os.Stderr, "Failed to get account number and sequence for %s: %v\n", app.Address, err)
-						continue
-					}
-
-					// Create a transaction factory
-					txFactory := cosmostx.Factory{}.
-						WithChainID(clientCtx.ChainID).
-						WithKeybase(clientCtx.Keyring).
-						WithTxConfig(clientCtx.TxConfig).
-						WithAccountRetriever(clientCtx.AccountRetriever).
-						WithAccountNumber(accNum).
-						WithSequence(accSeq)
-
-					// Sign the transaction
-					err = cosmostx.Sign(ctx, txFactory, app.Name, txBuilder, true)
-					if err != nil {
-						fmt.Fprintf(os.Stderr, "Failed to sign delegation transaction for %s to %s: %v\n",
-							app.Address, gatewayAddr, err)
-						continue
-					}
-
-					// Encode the transaction
-					txBytes, err := clientCtx.TxConfig.TxEncoder()(txBuilder.GetTx())
-					if err != nil {
-						fmt.Fprintf(os.Stderr, "Failed to encode delegation transaction for %s to %s: %v\n",
-							app.Address, gatewayAddr, err)
-						continue
-					}
-
-					// Broadcast the transaction
-					res, err := clientCtx.BroadcastTxSync(txBytes)
-					if err != nil {
-						fmt.Fprintf(os.Stderr, "Failed to broadcast delegation transaction for %s to %s: %v\n",
-							app.Address, gatewayAddr, err)
-						continue
-					}
-
-					// Check for errors in the response
-					if res.Code != 0 {
-						fmt.Fprintf(os.Stderr, "Delegation transaction failed for %s to %s: %s\n",
-							app.Address, gatewayAddr, res.RawLog)
-						continue
-					}
-
-					fmt.Printf("Successfully delegated application %s to gateway %s. Transaction hash: %s\n",
-						app.Address, gatewayAddr, res.TxHash)
-
-					// Add a small delay between delegations
-					time.Sleep(1 * time.Second)
-				}
-			}
-
-			// Add a small delay between applications
-			time.Sleep(2 * time.Second)
+		if err := staker.StakeApplications(); err != nil {
+			fmt.Fprintf(os.Stderr, "Failed to stake applications: %v\n", err)
+			os.Exit(1)
 		}
+
+		// Delegate applications to gateways
+		fmt.Println("Delegating applications to gateways...")
+		if err := staker.DelegateToGateway(); err != nil {
+			fmt.Fprintf(os.Stderr, "Failed to delegate applications: %v\n", err)
+			os.Exit(1)
+		}
+
+		fmt.Println("Staking and delegation completed successfully.")
 	},
 }
 

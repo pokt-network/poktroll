@@ -59,6 +59,18 @@ func (s *Staker) StakeApplications() error {
 	ctx := context.Background()
 
 	for _, app := range s.config.Applications {
+		// Parse the stake amount
+		stakeAmount, err := sdk.ParseCoinNormalized(s.config.ApplicationDefaults.Stake)
+		if err != nil {
+			return fmt.Errorf("failed to parse stake amount: %w", err)
+		}
+
+		// Use the service ID from the application config if specified, otherwise use the default
+		serviceID := s.config.ApplicationDefaults.ServiceID
+		if app.ServiceIdGoal != "" {
+			serviceID = app.ServiceIdGoal
+		}
+
 		// Check if the application is already staked
 		isStaked := false
 		if s.querier != nil {
@@ -67,8 +79,24 @@ func (s *Staker) StakeApplications() error {
 			if err != nil {
 				fmt.Printf("Error checking if application %s is staked: %v\n", app.Name, err)
 			} else if isStaked {
-				fmt.Printf("Application %s is already staked, skipping\n", app.Name)
-				continue
+				// Check if the application is staked with the same amount
+				isStakedWithAmount, err := s.querier.IsStakedWithAmount(ctx, app.Address, stakeAmount)
+				if err != nil {
+					fmt.Printf("Error checking if application %s is staked with amount %s: %v\n", app.Name, stakeAmount.String(), err)
+				} else if isStakedWithAmount {
+					// Check if the application is staked for the same service
+					isStakedForService, err := s.querier.IsStakedForService(ctx, app.Address, serviceID)
+					if err != nil {
+						fmt.Printf("Error checking if application %s is staked for service %s: %v\n", app.Name, serviceID, err)
+					} else if isStakedForService {
+						fmt.Printf("Application %s is already staked with %s for service %s, skipping\n", app.Name, stakeAmount.String(), serviceID)
+						continue
+					} else {
+						fmt.Printf("Application %s is staked with %s but not for service %s, proceeding with staking\n", app.Name, stakeAmount.String(), serviceID)
+					}
+				} else {
+					fmt.Printf("Application %s is staked but not with %s, proceeding with staking\n", app.Name, stakeAmount.String())
+				}
 			}
 		} else {
 			fmt.Printf("Querier not available, assuming application %s is not staked\n", app.Name)
@@ -86,18 +114,6 @@ func (s *Staker) StakeApplications() error {
 			return fmt.Errorf("failed to get address for %s: %w", app.Name, err)
 		}
 		fmt.Printf("Using address %s for application %s\n", addr.String(), app.Name)
-
-		// Create stake message
-		stakeAmount, err := sdk.ParseCoinNormalized(s.config.ApplicationDefaults.Stake)
-		if err != nil {
-			return fmt.Errorf("failed to parse stake amount: %w", err)
-		}
-
-		// Use the service ID from the application config if specified, otherwise use the default
-		serviceID := s.config.ApplicationDefaults.ServiceID
-		if app.ServiceIdGoal != "" {
-			serviceID = app.ServiceIdGoal
-		}
 
 		// Create service configs
 		services := []*sharedtypes.ApplicationServiceConfig{

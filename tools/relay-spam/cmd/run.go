@@ -25,8 +25,14 @@ var runCmd = &cobra.Command{
 	Short: "Run relay spam",
 	Long:  `Run relay spam with the configured applications and gateways.`,
 	Run: func(cmd *cobra.Command, args []string) {
+		// Get config file from flag
+		configFile, err := cmd.Flags().GetString("config")
+		if err != nil || configFile == "" {
+			configFile = "config.yml"
+		}
+
 		// Load config
-		cfg, err := config.LoadConfig()
+		cfg, err := config.LoadConfig(configFile)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Failed to load config: %v\n", err)
 			os.Exit(1)
@@ -122,4 +128,7 @@ var runCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(runCmd)
+
+	// Add config flag
+	runCmd.Flags().String("config", "", "Path to the config file")
 }

@@ -20,8 +20,14 @@ var importCmd = &cobra.Command{
 	Short: "Import accounts from config",
 	Long:  `Import accounts from the configuration file into the keyring.`,
 	Run: func(cmd *cobra.Command, args []string) {
+		// Get config file from flag
+		configFile, err := cmd.Flags().GetString("config")
+		if err != nil || configFile == "" {
+			configFile = "config.yml"
+		}
+
 		// Load config
-		cfg, err := config.LoadConfig()
+		cfg, err := config.LoadConfig(configFile)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Failed to load config: %v\n", err)
 			os.Exit(1)
@@ -81,4 +87,10 @@ var importCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(importCmd)
+
+	// Add keyring-backend flag
+	importCmd.Flags().String("keyring-backend", "test", "Keyring backend to use (os, file, test, inmemory)")
+
+	// Add config flag
+	importCmd.Flags().String("config", "", "Path to the config file")
 }

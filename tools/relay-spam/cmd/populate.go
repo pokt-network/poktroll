@@ -24,8 +24,14 @@ var populateCmd = &cobra.Command{
 	Long:  `Create new accounts and add them to the configuration file.`,
 	Args:  cobra.MaximumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
+		// Get config file from flag
+		configFile, err := cmd.Flags().GetString("config")
+		if err != nil || configFile == "" {
+			configFile = "config.yml"
+		}
+
 		// Load config
-		cfg, err := config.LoadConfig()
+		cfg, err := config.LoadConfig(configFile)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Failed to load config: %v\n", err)
 			os.Exit(1)
@@ -172,4 +178,7 @@ var populateCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(populateCmd)
+
+	// Add config flag
+	populateCmd.Flags().String("config", "", "Path to the config file")
 }
