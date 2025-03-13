@@ -2,13 +2,17 @@ package application
 
 import (
 	"context"
+	"crypto/tls"
 	"fmt"
+	"strings"
 	"time"
 
 	cosmosclient "github.com/cosmos/cosmos-sdk/client"
 	cosmostx "github.com/cosmos/cosmos-sdk/client/tx"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
+	"google.golang.org/grpc/credentials/insecure"
 
 	"github.com/pokt-network/poktroll/tools/relay-spam/config"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
@@ -23,10 +27,28 @@ type Staker struct {
 
 func NewStaker(clientCtx cosmosclient.Context, cfg *config.Config) *Staker {
 	// Create a gRPC client connection from the client context
-	clientConn, err := grpc.Dial(
-		clientCtx.NodeURI,
-		grpc.WithInsecure(),
-	)
+	var clientConn *grpc.ClientConn
+	var err error
+
+	// Check if the endpoint uses port 443 (HTTPS)
+	if strings.Contains(clientCtx.NodeURI, ":443") {
+		// Use secure credentials for HTTPS endpoints
+		clientConn, err = grpc.Dial(
+			clientCtx.NodeURI,
+			grpc.WithTransportCredentials(
+				credentials.NewTLS(&tls.Config{
+					InsecureSkipVerify: false,
+				}),
+			),
+		)
+	} else {
+		// Use insecure credentials for non-HTTPS endpoints
+		clientConn, err = grpc.Dial(
+			clientCtx.NodeURI,
+			grpc.WithTransportCredentials(insecure.NewCredentials()),
+		)
+	}
+
 	if err != nil {
 		fmt.Printf("Failed to create gRPC client connection: %v\n", err)
 		return &Staker{

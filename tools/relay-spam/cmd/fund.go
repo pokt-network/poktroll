@@ -9,8 +9,11 @@ import (
 	"strings"
 	"time"
 
+	"crypto/tls"
+
 	"github.com/spf13/cobra"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
 
 	"cosmossdk.io/math"
@@ -307,7 +310,21 @@ func fundAccountsWithTxClient(
 	grpcEndpoint := cfg.GrpcEndpoint
 
 	// Connect to the GRPC endpoint
-	conn, err := grpc.Dial(grpcEndpoint, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	var conn *grpc.ClientConn
+
+	// Check if the endpoint uses port 443 (HTTPS)
+	if strings.Contains(grpcEndpoint, ":443") {
+		// Use secure credentials for HTTPS endpoints
+		conn, err = grpc.Dial(grpcEndpoint, grpc.WithTransportCredentials(
+			credentials.NewTLS(&tls.Config{
+				InsecureSkipVerify: false,
+			}),
+		))
+	} else {
+		// Use insecure credentials for non-HTTPS endpoints
+		conn, err = grpc.Dial(grpcEndpoint, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	}
+
 	if err != nil {
 		return fmt.Errorf("failed to connect to GRPC endpoint: %w", err)
 	}
@@ -417,7 +434,7 @@ func fundAccountsWithTxClient(
 			WithSequence(accSeq)
 
 		// Sign the transaction
-		err = cosmostx.Sign(ctx, txFactory, "faucet", txBuilder, true)
+		err = cosmostx.Sign(ctx, txFactory, faucetAddrStr, txBuilder, true)
 		if err != nil {
 			return fmt.Errorf("failed to sign transaction: %w", err)
 		}
