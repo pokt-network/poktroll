@@ -25,13 +25,18 @@ See the [Full Node Walkthrough](../walkthroughs/full_node_walkthrough.md) if you
 
 ## Pre-Requisites & Requirements
 
-1. **Linux-based System**: Ensure you have a Debian-based Linux distribution.
-2. **Root or Sudo Access**: You need administrative privileges to run the installation script.
-3. **Dedicated Server or Virtual Machine**: Any provider should work (e.g. Vultr).
+1. **Linux-based System**: Preferably Debian-based distributions (Ubuntu, Debian).
+2. **Hardware Requirements**:
+   - 4+ CPU cores
+   - 8+ GB RAM
+   - 200+ GB SSD storage (for chain data)
+3. **Architecture Support**: Both x86_64 (amd64) and ARM64 architectures are supported.
+4. **Root or Sudo Access**: Administrative privileges are required.
+5. **Dedicated Server or Virtual Machine**: Any provider is acceptable.
 
 :::tip Vultr Playbook
 
-If you are using [Vultr](https://www.vultr.com/) for your deployment, you can following common CLI helpers at [here](../../tools/playbooks/vultr.md) to speed things up.
+If you are using [Vultr](https://www.vultr.com/) for your deployment, you can following the [CLI Playbook we put together here](../../tools/playbooks/vultr.md) to speed things up.
 
 :::
 

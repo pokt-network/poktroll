@@ -62,7 +62,7 @@ to enable automatic binary upgrades.
 
 :::tip Vultr Playbook
 
-If you are using [Vultr](https://www.vultr.com/) for your deployment, you can following common CLI helpers at [here](../../tools/playbooks/vultr.md) to speed things up.
+If you are using [Vultr](https://www.vultr.com/) for your deployment, you can following the [CLI Playbook we put together here](../../tools/playbooks/vultr.md) to speed things up.
 
 :::
 
