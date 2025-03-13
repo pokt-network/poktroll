@@ -1,9 +1,11 @@
 package cmd
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/spf13/cobra"
 
@@ -49,6 +51,9 @@ var stakeCmd = &cobra.Command{
 		if err != nil || configFile == "" {
 			configFile = "config.yml"
 		}
+
+		// Check if dry-run mode is enabled
+		dryRun, _ := cmd.Flags().GetBool("dry-run")
 
 		// Load config
 		cfg, err := config.LoadConfig(configFile)
@@ -169,21 +174,96 @@ var stakeCmd = &cobra.Command{
 		}
 		staker := application.NewStaker(stakerClientCtx, cfg)
 
-		// Stake applications
-		fmt.Println("Staking applications...")
-		if err := staker.StakeApplications(); err != nil {
-			fmt.Fprintf(os.Stderr, "Failed to stake applications: %v\n", err)
-			os.Exit(1)
-		}
+		if dryRun {
+			// In dry-run mode, just print what would be done
+			fmt.Println("DRY RUN MODE: No transactions will be broadcast")
+			fmt.Println("\n=== Applications that would be staked ===")
 
-		// Delegate applications to gateways
-		fmt.Println("Delegating applications to gateways...")
-		if err := staker.DelegateToGateway(); err != nil {
-			fmt.Fprintf(os.Stderr, "Failed to delegate applications: %v\n", err)
-			os.Exit(1)
-		}
+			// Parse the stake amount from the global application stake goal
+			stakeAmount, err := sdk.ParseCoinNormalized(cfg.ApplicationStakeGoal)
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "Failed to parse stake amount: %v\n", err)
+				os.Exit(1)
+			}
 
-		fmt.Println("Staking and delegation completed successfully.")
+			for _, app := range cfg.Applications {
+				fmt.Printf("Application: %s (%s)\n", app.Name, app.Address)
+				fmt.Printf("  - Stake Amount: %s\n", stakeAmount.String())
+				fmt.Printf("  - Service ID: %s\n", app.ServiceIdGoal)
+
+				// Check if the application is already staked (if querier is available)
+				if staker.Querier() != nil {
+					isStaked, err := staker.Querier().IsStaked(context.Background(), app.Address)
+					if err != nil {
+						fmt.Printf("  - Status: Unknown (error checking stake status: %v)\n", err)
+					} else if isStaked {
+						isStakedWithAmount, err := staker.Querier().IsStakedWithAmount(context.Background(), app.Address, stakeAmount)
+						if err != nil {
+							fmt.Printf("  - Status: Staked (error checking stake amount: %v)\n", err)
+						} else if isStakedWithAmount {
+							isStakedForService, err := staker.Querier().IsStakedForService(context.Background(), app.Address, app.ServiceIdGoal)
+							if err != nil {
+								fmt.Printf("  - Status: Staked with correct amount (error checking service: %v)\n", err)
+							} else if isStakedForService {
+								fmt.Printf("  - Status: Already staked with %s for service %s (would be skipped)\n", stakeAmount.String(), app.ServiceIdGoal)
+							} else {
+								fmt.Printf("  - Status: Staked with correct amount but for different service (would be staked)\n")
+							}
+						} else {
+							fmt.Printf("  - Status: Staked but with different amount (would be staked)\n")
+						}
+					} else {
+						fmt.Printf("  - Status: Not staked (would be staked)\n")
+					}
+				} else {
+					fmt.Printf("  - Status: Unknown (querier not available)\n")
+				}
+			}
+
+			fmt.Println("\n=== Applications that would be delegated ===")
+			for _, app := range cfg.Applications {
+				if len(app.DelegateesGoal) == 0 {
+					fmt.Printf("Application: %s (%s)\n", app.Name, app.Address)
+					fmt.Printf("  - Status: No gateways specified for delegation (would be skipped)\n")
+					continue
+				}
+
+				fmt.Printf("Application: %s (%s)\n", app.Name, app.Address)
+				fmt.Printf("  - Would be delegated to gateways: %s\n", strings.Join(app.DelegateesGoal, ", "))
+
+				// Check if the application is staked (if querier is available)
+				if staker.Querier() != nil {
+					isStaked, err := staker.Querier().IsStaked(context.Background(), app.Address)
+					if err != nil {
+						fmt.Printf("  - Status: Unknown (error checking stake status: %v)\n", err)
+					} else if !isStaked {
+						fmt.Printf("  - Status: Not staked (delegation would be skipped)\n")
+					} else {
+						fmt.Printf("  - Status: Staked (would be delegated)\n")
+					}
+				} else {
+					fmt.Printf("  - Status: Unknown (querier not available)\n")
+				}
+			}
+
+			fmt.Println("\nDRY RUN COMPLETE: No transactions were broadcast")
+		} else {
+			// Stake applications
+			fmt.Println("Staking applications...")
+			if err := staker.StakeApplications(); err != nil {
+				fmt.Fprintf(os.Stderr, "Failed to stake applications: %v\n", err)
+				os.Exit(1)
+			}
+
+			// Delegate applications to gateways
+			fmt.Println("Delegating applications to gateways...")
+			if err := staker.DelegateToGateway(); err != nil {
+				fmt.Fprintf(os.Stderr, "Failed to delegate applications: %v\n", err)
+				os.Exit(1)
+			}
+
+			fmt.Println("Staking and delegation completed successfully.")
+		}
 	},
 }
 
@@ -198,4 +278,7 @@ func init() {
 
 	// Add debug flag
 	stakeCmd.Flags().Bool("debug", false, "Enable debug output")
+
+	// Add dry-run flag
+	stakeCmd.Flags().Bool("dry-run", false, "Show what would be staked and delegated without performing transactions")
 }

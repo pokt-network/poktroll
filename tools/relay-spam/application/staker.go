@@ -360,3 +360,8 @@ func (s *Staker) DelegateToGateway() error {
 
 	return nil
 }
+
+// Querier returns the querier instance for the staker
+func (s *Staker) Querier() *Querier {
+	return s.querier
+}
