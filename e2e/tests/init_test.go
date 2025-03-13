@@ -64,6 +64,10 @@ var (
 	chainIdFlag      = "--chain-id=poktroll"
 	// pathUrl points to a local gateway using the PATH framework in centralized mode.
 	pathUrl = "http://localhost:3000/v1" // localhost is kept as the default to streamline local development & testing.
+
+	// allFeaturesTags is a tag expression that filters out features which
+	// SHOULD NOT be included in a wildcard/glob of feature files.
+	allFeaturesTags = fmt.Sprintf("not %s and not %s", manualTag, oneshotTag)
 )
 
 func init() {
@@ -159,8 +163,9 @@ func (s *suite) Before() {
 func TestFeatures(t *testing.T) {
 	gocuke.NewRunner(t, &suite{}).Path(flagFeaturesPath).
 		// Ignore test elements (e.g. Features, Scenarios, etc.)
-		// with the @manual tag (e.g. migration.feature).
-		Tags("not @manual").Run()
+		// with the @manual or @oneshot tags (e.g. migration*.feature).
+		Tags(allFeaturesTags).
+		Run()
 }
 
 // TODO_TECHDEBT: rename `pocketd` to `poktrolld`.
