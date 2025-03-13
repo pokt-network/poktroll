@@ -106,3 +106,7 @@ tmp/*
 relayminer_config.yaml
 gateway_config.yaml
 path_config.yaml
+
+# vultr
+create.json
+get.json
