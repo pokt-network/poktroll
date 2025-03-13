@@ -26,8 +26,8 @@ import (
 
 // Prevent strconv unused error
 var (
-	_                 = strconv.IntSize
-	testServiceConfig = sharedtypes.ApplicationServiceConfig{ServiceId: "svc1"}
+	_                    = strconv.IntSize
+	testAppServiceConfig = sharedtypes.ApplicationServiceConfig{ServiceId: "svc1"}
 )
 
 func TestMsgServer_ClaimMorseApplication_SuccessNewApplication(t *testing.T) {
@@ -43,12 +43,12 @@ func TestMsgServer_ClaimMorseApplication_SuccessNewApplication(t *testing.T) {
 	expectedMsgStakeApp := &apptypes.MsgStakeApplication{
 		Address:  shannonDestAddr,
 		Stake:    &applicationStake,
-		Services: []*sharedtypes.ApplicationServiceConfig{&testServiceConfig},
+		Services: []*sharedtypes.ApplicationServiceConfig{&testAppServiceConfig},
 	}
 	expectedApp := apptypes.Application{
 		Address:                   shannonDestAddr,
 		Stake:                     &applicationStake,
-		ServiceConfigs:            []*sharedtypes.ApplicationServiceConfig{&testServiceConfig},
+		ServiceConfigs:            []*sharedtypes.ApplicationServiceConfig{&testAppServiceConfig},
 		DelegateeGatewayAddresses: make([]string, 0),
 		PendingUndelegations:      make(map[uint64]apptypes.UndelegatingGatewayList),
 	}
@@ -126,7 +126,7 @@ func TestMsgServer_ClaimMorseApplication_SuccessNewApplication(t *testing.T) {
 		shannonDestAddr,
 		morseClaimableAccount.GetMorseSrcAddress(),
 		morsePrivKey,
-		&testServiceConfig,
+		&testAppServiceConfig,
 	)
 	require.NoError(t, err)
 
