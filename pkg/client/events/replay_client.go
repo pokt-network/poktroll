@@ -11,29 +11,36 @@ import (
 	"github.com/pokt-network/poktroll/pkg/either"
 	"github.com/pokt-network/poktroll/pkg/observable"
 	"github.com/pokt-network/poktroll/pkg/observable/channel"
+	"github.com/pokt-network/poktroll/pkg/polylog"
 	"github.com/pokt-network/poktroll/pkg/retry"
 )
 
 const (
 	// DefaultConnRetryLimit is used to indicate how many times the
-	// underlying replay client should attempt to retry if it encounters an error
-	// or its connection is interrupted.
-	//
-	// TODO_IMPROVE: this should be configurable but can be overridden at compile-time:
+	// EventsReplayClient should retry in the event that it encounters an error or
+	// its connection is interrupted. If DefaultConnRetryLimit is < 0, it will retry
+	// indefinitely.
+	// This value can be overridden at build time using
 	// go build -ldflags "-X github.com/pokt-network/poktroll/DefaultConnRetryLimit=value".
-	DefaultConnRetryLimit = 10
+	DefaultConnRetryLimit = -1 // Negative value means unlimited retries with exponential backoff
 
 	// eventsBytesRetryDelay is the delay between retry attempts when the events
-	// bytes observable returns an error.
+	// bytes observable encounters an error.
 	eventsBytesRetryDelay = time.Second
+
+	// eventsBytesRetryResetTimeout is the duration after which the retry count is
+	// reset if no errors are encountered.
+	eventsBytesRetryResetTimeout = 10 * time.Second
+
+	// maxRetryDelay is the maximum delay between retries
+	maxRetryDelay = 30 * time.Second
 
 	// TODO_MAINNET(@bryanchriswhite): Make this a customizable parameter in the
 	// Gateway & RelayMiner config files
 	// eventsBytesRetryLimit is the maximum number of times to attempt to
 	// re-establish the events query bytes subscription when the events bytes
 	// observable returns an error or closes.
-	eventsBytesRetryLimit        = 10
-	eventsBytesRetryResetTimeout = 10 * time.Second
+	eventsBytesRetryLimit = 10
 
 	// replayObsCacheBufferSize is the replay buffer size of the
 	// replayObsCache replay observable which is used to cache the replay
@@ -216,7 +223,7 @@ func (rClient *replayClient[T]) goPublishEvents(ctx context.Context) {
 	// React to errors by getting a new events bytes observable, re-mapping it,
 	// and send it to replayObsCachePublishCh such that
 	// replayObsCache.Last(ctx, 1) will return it.
-	publishErr := retry.OnError(
+	publishErr := retryWithBackoff(
 		ctx,
 		rClient.connRetryLimit,
 		eventsBytesRetryDelay,
@@ -226,9 +233,79 @@ func (rClient *replayClient[T]) goPublishEvents(ctx context.Context) {
 	)
 
 	// Since this function runs in a goroutine, we can't return the error to the
-	// caller. Instead, we panic.
+	// caller. Instead, we log the error and continue.
 	if publishErr != nil {
-		panic(fmt.Errorf("EventsReplayClient[%T].goPublishEvents should never reach this spot: %w", *new(T), publishErr))
+		logger := polylog.Ctx(ctx)
+		logger.Error().
+			Err(publishErr).
+			Str("event_type", fmt.Sprintf("%T", *new(T))).
+			Msg("EventsReplayClient.goPublishEvents encountered a fatal error after max retries")
+
+		// Try to recover by creating a new events observable
+		go rClient.goPublishEvents(ctx)
+	}
+}
+
+// retryWithBackoff is similar to retry.OnError but implements exponential backoff
+func retryWithBackoff(
+	ctx context.Context,
+	retryLimit int,
+	initialRetryDelay time.Duration,
+	retryResetTimeout time.Duration,
+	workName string,
+	workFn retry.RetryFunc,
+) error {
+	logger := polylog.Ctx(ctx)
+
+	var retryCount int
+	currentDelay := initialRetryDelay
+	errCh := workFn()
+	for {
+		select {
+		case <-ctx.Done():
+			return nil
+		case <-time.After(retryResetTimeout):
+			retryCount = 0
+			currentDelay = initialRetryDelay
+		case err, ok := <-errCh:
+			// Exit the retry loop if the error channel is closed.
+			if !ok {
+				logger.Warn().
+					Str("work_name", workName).
+					Msg("error channel closed, will no longer retry on error")
+				return nil
+			}
+
+			// Return error if retry limit reached
+			// A negative retryLimit allows limitless retries
+			if retryLimit >= 0 && retryCount >= retryLimit {
+				return err
+			}
+
+			// Wait with exponential backoff before retrying
+			logger.Info().
+				Str("work_name", workName).
+				Dur("retry_delay", currentDelay).
+				Err(err).
+				Msgf("retrying after error (attempt %d)", retryCount+1)
+
+			time.Sleep(currentDelay)
+
+			// Increment retryCount and retry workFn.
+			retryCount++
+			errCh = workFn()
+
+			// Exponential backoff with a maximum delay
+			currentDelay = time.Duration(float64(currentDelay) * 1.5)
+			if currentDelay > maxRetryDelay {
+				currentDelay = maxRetryDelay
+			}
+
+			logger.Error().
+				Str("work_name", workName).
+				Err(err).
+				Msgf("on retry: %d", retryCount)
+		}
 	}
 }
 

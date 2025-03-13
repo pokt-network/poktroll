@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"cosmossdk.io/math"
 	cosmosclient "github.com/cosmos/cosmos-sdk/client"
 	cosmostx "github.com/cosmos/cosmos-sdk/client/tx"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -14,6 +15,7 @@ import (
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
 
+	"github.com/pokt-network/poktroll/app/volatile"
 	"github.com/pokt-network/poktroll/tools/relay-spam/config"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
@@ -166,6 +168,15 @@ func (s *Staker) StakeApplications() error {
 		// Set gas limit - using a high value to ensure it goes through
 		txBuilder.SetGasLimit(1000000)
 
+		// Set fee amount based on gas limit and gas prices
+		gasPrices := sdk.NewDecCoins(sdk.NewDecCoinFromDec(volatile.DenomuPOKT, math.LegacyNewDecWithPrec(1, 2)))
+		fees := sdk.NewCoins()
+		for _, gasPrice := range gasPrices {
+			fee := gasPrice.Amount.MulInt(math.NewInt(int64(txBuilder.GetTx().GetGas()))).RoundInt()
+			fees = fees.Add(sdk.NewCoin(gasPrice.Denom, fee))
+		}
+		txBuilder.SetFeeAmount(fees)
+
 		// Get account number and sequence
 		accNum, accSeq, err := s.clientCtx.AccountRetriever.GetAccountNumberSequence(s.clientCtx, addr)
 		if err != nil {
@@ -292,6 +303,15 @@ func (s *Staker) DelegateToGateway() error {
 
 			// Set gas limit - using a high value to ensure it goes through
 			txBuilder.SetGasLimit(1000000)
+
+			// Set fee amount based on gas limit and gas prices
+			gasPrices := sdk.NewDecCoins(sdk.NewDecCoinFromDec(volatile.DenomuPOKT, math.LegacyNewDecWithPrec(1, 2)))
+			fees := sdk.NewCoins()
+			for _, gasPrice := range gasPrices {
+				fee := gasPrice.Amount.MulInt(math.NewInt(int64(txBuilder.GetTx().GetGas()))).RoundInt()
+				fees = fees.Add(sdk.NewCoin(gasPrice.Denom, fee))
+			}
+			txBuilder.SetFeeAmount(fees)
 
 			// Get account number and sequence
 			accNum, accSeq, err := s.clientCtx.AccountRetriever.GetAccountNumberSequence(s.clientCtx, addr)

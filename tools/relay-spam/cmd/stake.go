@@ -85,12 +85,6 @@ var stakeCmd = &cobra.Command{
 			keyringBackend = "test"
 		}
 
-		// Get chain ID from flag
-		chainID, err := cmd.Flags().GetString("chain-id")
-		if err != nil || chainID == "" {
-			chainID = "poktroll"
-		}
-
 		// Create codec and registry for keyring
 		registry := codectypes.NewInterfaceRegistry()
 		cryptocodec.RegisterInterfaces(registry)
@@ -137,7 +131,7 @@ var stakeCmd = &cobra.Command{
 		// Create a client context
 		clientCtx := cosmosclient.Context{}.
 			WithKeyring(kr).
-			WithChainID(chainID).
+			WithChainID(cfg.ChainID).
 			WithCodec(cdc).
 			WithInterfaceRegistry(registry).
 			WithTxConfig(txConfig).
@@ -198,9 +192,6 @@ func init() {
 
 	// Add keyring-backend flag
 	stakeCmd.Flags().String("keyring-backend", "test", "Keyring backend to use (os, file, test, inmemory)")
-
-	// Add chain-id flag
-	stakeCmd.Flags().String("chain-id", "poktroll", "Chain ID of the blockchain")
 
 	// Add config flag
 	stakeCmd.Flags().String("config", "", "Path to the config file")

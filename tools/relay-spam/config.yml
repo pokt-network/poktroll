@@ -1,5 +1,6 @@
 application_fund_goal: 1000000000upokt
 application_stake_goal: 100000001upokt
+chain_id: poktroll
 applications:
   - address: pokt18wmctmhu49csyy6j0eyhmua63rvlwgc8hddg2c
     delegateesgoal:

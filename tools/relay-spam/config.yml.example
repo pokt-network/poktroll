@@ -7,6 +7,9 @@ application_stake_goal: 1000000upokt
 # Global application fund goal - used for funding all applications
 application_fund_goal: 2000000upokt
 
+# Chain ID for transactions
+chain_id: poktroll
+
 # GRPC endpoint for querying balances
 grpc_endpoint: localhost:9090
 

@@ -23,6 +23,7 @@ type Config struct {
 	GrpcEndpoint         string            `yaml:"grpc_endpoint" mapstructure:"grpc_endpoint"`                   // GRPC endpoint for querying balances
 	RpcEndpoint          string            `yaml:"rpc_endpoint" mapstructure:"rpc_endpoint"`                     // RPC endpoint for broadcasting transactions
 	GatewayURLs          map[string]string `yaml:"gateway_urls" mapstructure:"gateway_urls"`                     // Map of gateway IDs to their URLs
+	ChainID              string            `yaml:"chain_id" mapstructure:"chain_id"`                             // Chain ID for transactions
 }
 
 type Application struct {
@@ -74,7 +75,19 @@ func LoadConfig(configFile string) (*Config, error) {
 		ApplicationFundGoal:  viper.GetString("application_fund_goal"),
 		GrpcEndpoint:         viper.GetString("grpc_endpoint"),
 		RpcEndpoint:          viper.GetString("rpc_endpoint"),
+		ChainID:              viper.GetString("chain_id"),
 		GatewayURLs:          make(map[string]string),
+	}
+
+	// Set default chain ID if not specified
+	if config.ChainID == "" {
+		// Check if it's in the TxFlagsTemplate
+		if chainID, ok := config.TxFlagsTemplate["chain-id"]; ok {
+			config.ChainID = chainID
+		} else {
+			// Default to "poktroll" if not specified anywhere
+			config.ChainID = "poktroll"
+		}
 	}
 
 	// Debug output

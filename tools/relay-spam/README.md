@@ -36,6 +36,7 @@ The configuration file includes:
 
 - Home directory for Pocket Network
 - Transaction flags
+- Chain ID for transactions
 - Application defaults (stake amount, service ID, gateways)
 - List of applications
 - Gateway URLs mapping (maps gateway IDs to their URLs for relay requests)
@@ -43,6 +44,9 @@ The configuration file includes:
 ## Configuration Example
 
 ```yaml
+# Chain ID for transactions
+chain_id: poktroll
+
 # Map of gateway IDs to their URLs
 gateway_urls:
   pokt1tgfhrtpxa4afeh70fk2aj6ca4mw84xqrkfgrdl: http://localhost:8081

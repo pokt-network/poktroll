@@ -129,12 +129,6 @@ var fundCmd = &cobra.Command{
 			keyringBackend = "test"
 		}
 
-		// Get chain ID from flag
-		chainID, err := cmd.Flags().GetString("chain-id")
-		if err != nil || chainID == "" {
-			chainID = "poktroll"
-		}
-
 		// Create a context for the transaction
 		ctx := context.Background()
 
@@ -178,7 +172,7 @@ var fundCmd = &cobra.Command{
 		// Create a client context
 		clientCtx := cosmosclient.Context{}.
 			WithKeyring(kr).
-			WithChainID(chainID).
+			WithChainID(cfg.ChainID).
 			WithCodec(cdc).
 			WithInterfaceRegistry(registry).
 			WithTxConfig(txConfig).
@@ -198,7 +192,7 @@ var fundCmd = &cobra.Command{
 
 		// Create a transaction factory
 		txFactory := cosmostx.Factory{}.
-			WithChainID(chainID).
+			WithChainID(cfg.ChainID).
 			WithKeybase(kr).
 			WithTxConfig(clientCtx.TxConfig).
 			WithAccountRetriever(clientCtx.AccountRetriever)
@@ -502,14 +496,11 @@ func init() {
 	// Add keyring-backend flag
 	fundCmd.Flags().String("keyring-backend", "test", "Keyring backend to use (os, file, test, inmemory)")
 
-	// Add chain-id flag
-	fundCmd.Flags().String("chain-id", "poktroll", "Chain ID of the blockchain")
+	// Add config flag
+	fundCmd.Flags().String("config", "", "Path to the config file")
 
 	// Add faucet flag
 	fundCmd.Flags().String("faucet", "faucet", "Name or address of the faucet account to send funds from")
-
-	// Add config flag
-	fundCmd.Flags().String("config", "", "Path to the config file")
 
 	// Add debug flag
 	fundCmd.Flags().Bool("debug", false, "Enable debug output")
