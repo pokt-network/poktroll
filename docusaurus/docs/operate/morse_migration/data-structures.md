@@ -3,6 +3,11 @@ title: Data Structures
 sidebar_position: 4
 ---
 
+## Table of Contents <!-- omit in toc -->
+
+- [Offchain Shannon Structure(s)](#offchain-shannon-structures)
+- [Onchain Shannon Structure(s)](#onchain-shannon-structures)
+
 ## Offchain Shannon Structure(s)
 
 ```mermaid

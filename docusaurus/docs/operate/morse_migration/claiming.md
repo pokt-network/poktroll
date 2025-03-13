@@ -3,6 +3,18 @@ title: Morse Account / Actor Claiming
 sidebar_position: 2
 ---
 
+## Table of Contents <!-- omit in toc -->
+
+- [Onchain Actors & Messages](#onchain-actors--messages)
+- [Morse & Shannon Keyrings](#morse--shannon-keyrings)
+  - [Exporting Morse Account Keys](#exporting-morse-account-keys)
+  - [Shannon Keyring CLI](#shannon-keyring-cli)
+- [Claiming Morse Accounts](#claiming-morse-accounts)
+  - [Migration Module Tx CLI](#migration-module-tx-cli)
+  - [Claim an Unstaked/non-Actor Account](#claim-an-unstakednonactor-account)
+  - [Claim an Application Staked Account](#claim-an-application-staked-account)
+  - [Claim a Supplier (Servicer) Staked Account](#claim-a-supplier-servicer-staked-account)
+
 AFTER the canonical `MorseAccountState` has been imported onchain by the authority (see: [State Export / Transform / Import](./morse-migration.md#state-export--transform--validate)), Morse account/stake-holders can "claim" their Morse accounts onchain on Shannon.
 
 ## Onchain Actors & Messages
@@ -69,7 +81,18 @@ flowchart
     classDef general fill:#87CEEB,color:#000
 ```
 
-## Exporting Morse Account Keys
+## Morse & Shannon Keyrings
+
+Both Morse and Shannon have their own keyring which they use to manage their respective account keys.
+ALL claim operations require the use of a private key from BOTH of these keyrings.
+The morse key is used to generate the `morse_signature` field which is common to all claim messages.
+The shannon key is used to sign the `MsgClaimMorse...` message which is broadcast to the Shannon network.
+
+Since the Shannon CLI (`poktrolld`) is used to broadcast the claim tx, the prerequisites are:
+1. To export the Morse key (securely) so that it can be used by `poktrolld`.
+2. Ensure that the desired Shannon destination account key exists in the Shannon keyring.
+
+### Exporting Morse Account Keys
 
 In order to claim any Morse account, the corresponding private key MUST be exported such that it can be used by `poktrolld` to sign the respective claim message's `morse_signature` field.
 This cryptographic primitive is critical as it establishes the authenticity of the claim.
@@ -97,8 +120,6 @@ This passphrase will be required in subsequent steps when using the exported key
 By default, the exported file is written to the current working directory with a name that follows the pattern `pocket-account-<morse_address>.json`.
 The exported file name and location can be changed by using the `--path` flag; see `pocket accounts export --help` for more details.
 
-## Claiming Morse Accounts
-
 ### Shannon Keyring CLI
 
 In order to claim any Morse account, a named Shannon key MUST exist in the local keyring, with respect to the environment where `poktrolld` will be used.
@@ -124,6 +145,8 @@ The key name (not address) will be required later when claiming the account to i
 :::
 
 See: `poktrolld keys add --help` for more details.
+
+## Claiming Morse Accounts
 
 ### Migration Module Tx CLI
 

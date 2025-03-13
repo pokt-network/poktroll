@@ -15,7 +15,6 @@ sidebar_position: 1
 - [State Export / Transform / Validate](#state-export--transform--validate)
     - ["Authority" (PNF) Actions](#authority-pnf-actions)
     - [Morse Account Holder Actions](#morse-account-holder-actions)
-- [Onchain Actors & Messages](#onchain-actors--messages)
 
 :::warning TODO_MAINNET(@olshanksy)
 Add FAQ and roadmap / strategy sections.
