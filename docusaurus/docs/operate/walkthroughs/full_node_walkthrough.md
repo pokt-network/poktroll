@@ -6,7 +6,7 @@ sidebar_position: 1
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
-## Full Node Binary Walkthrough <!-- omit in toc -->
+## Full Node Walkthrough via Binary <!-- omit in toc -->
 
 **🧑‍🔬 Detailed step-by-step instructions to get you up and running with a `Full Node` on Pocket Network ✅**
 
@@ -62,7 +62,7 @@ to enable automatic binary upgrades.
 
 :::tip Vultr Playbook
 
-TODO_IN_THIS_PR(@olshansky)
+If you are using [Vultr](https://www.vultr.com/) for your deployment, you can following common CLI helpers at [here](../../tools/playbooks/vultr.md) to speed things up.
 
 :::
 

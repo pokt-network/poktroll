@@ -1,7 +1,9 @@
 ---
-title: Full Node Cheat Sheet (~10 min)
+title: Full Node (~10 min)
 sidebar_position: 2
 ---
+
+## Full Node Cheat Sheet <!-- omit in toc -->
 
 **🖨 🍝 instructions to get you up and running with a `Full Node` on Pocket Network using `Systemd` and `Cosmovisor` ✅**
 
@@ -26,6 +28,12 @@ See the [Full Node Walkthrough](../walkthroughs/full_node_walkthrough.md) if you
 1. **Linux-based System**: Ensure you have a Debian-based Linux distribution.
 2. **Root or Sudo Access**: You need administrative privileges to run the installation script.
 3. **Dedicated Server or Virtual Machine**: Any provider should work (e.g. Vultr).
+
+:::tip Vultr Playbook
+
+If you are using [Vultr](https://www.vultr.com/) for your deployment, you can following common CLI helpers at [here](../../tools/playbooks/vultr.md) to speed things up.
+
+:::
 
 ## Install and Run a Full Node using Cosmovisor
 

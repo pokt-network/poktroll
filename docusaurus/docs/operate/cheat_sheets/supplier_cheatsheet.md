@@ -3,7 +3,7 @@ sidebar_position: 4
 title: Supplier & RelayMiner (~20 min)
 ---
 
-## Supplier Cheat Sheet <!-- omit in toc -->
+## Supplier & RelayMiner Cheat Sheet <!-- omit in toc -->
 
 This guide provides quick reference commands for setting up a **Supplier** and
 running a **RelayMiner** on Pocket Network.
