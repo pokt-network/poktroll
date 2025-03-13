@@ -189,10 +189,14 @@ message MsgClaimMorseSupplier {
 
   // The hex-encoded address of the Morse account whose balance will be claimed.
   // E.g.: 00f9900606fa3d5c9179fc0c8513078a53a2073e
+  //
+  // TODO_MAINNET(@bryanchriswhite, #1126): Rename to `morse_src_owner_address`.
   string morse_src_address = 3 [(gogoproto.jsontag) = "morse_src_address"];
 
   // The hex-encoded signature, by the Morse account, of this message (where this field is nil).
   // I.e.: morse_signature = private_key.sign(marshal(MsgClaimMorseAccount{morse_signature: nil, ...}))
+  //
+  // TODO_MAINNET(@bryanchriswhite, #1126): Rename to `morse_src_owner_signature`.
   bytes morse_signature = 4 [(gogoproto.jsontag) = "morse_signature"];
 
   // The services this supplier is staked to provide service for.

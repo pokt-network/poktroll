@@ -541,9 +541,13 @@ type MsgClaimMorseSupplier struct {
 	ShannonOperatorAddress string `protobuf:"bytes,2,opt,name=shannon_operator_address,json=shannonOperatorAddress,proto3" json:"shannon_operator_address"`
 	// The hex-encoded address of the Morse account whose balance will be claimed.
 	// E.g.: 00f9900606fa3d5c9179fc0c8513078a53a2073e
+	//
+	// TODO_MAINNET(@bryanchriswhite, #1126): Rename to `morse_src_owner_address`.
 	MorseSrcAddress string `protobuf:"bytes,3,opt,name=morse_src_address,json=morseSrcAddress,proto3" json:"morse_src_address"`
 	// The hex-encoded signature, by the Morse account, of this message (where this field is nil).
 	// I.e.: morse_signature = private_key.sign(marshal(MsgClaimMorseAccount{morse_signature: nil, ...}))
+	//
+	// TODO_MAINNET(@bryanchriswhite, #1126): Rename to `morse_src_owner_signature`.
 	MorseSignature []byte `protobuf:"bytes,4,opt,name=morse_signature,json=morseSignature,proto3" json:"morse_signature"`
 	// The services this supplier is staked to provide service for.
 	Services []*types1.SupplierServiceConfig `protobuf:"bytes,5,rep,name=services,proto3" json:"services"`
