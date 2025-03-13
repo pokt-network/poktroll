@@ -19,11 +19,13 @@ type Config struct {
 	TxFlags              string            `yaml:"txflags" mapstructure:"txflags"`
 	TxFlagsTemplate      map[string]string `yaml:"txflagstemplate" mapstructure:"txflagstemplate"`
 	Applications         []Application     `yaml:"applications" mapstructure:"applications"`
+	Services             []Service         `yaml:"services" mapstructure:"services"`
 	Suppliers            []Supplier        `yaml:"suppliers" mapstructure:"suppliers"`
 	ApplicationStakeGoal string            `yaml:"application_stake_goal" mapstructure:"application_stake_goal"` // Target stake amount for applications
 	SupplierStakeGoal    string            `yaml:"supplier_stake_goal" mapstructure:"supplier_stake_goal"`       // Target stake amount for suppliers
 	ServiceStakeGoal     string            `yaml:"service_stake_goal" mapstructure:"service_stake_goal"`         // Target stake amount for services
 	ApplicationFundGoal  string            `yaml:"application_fund_goal" mapstructure:"application_fund_goal"`   // Target balance for funding applications
+	ServiceFundGoal      string            `yaml:"service_fund_goal" mapstructure:"service_fund_goal"`           // Target balance for funding services
 	GrpcEndpoint         string            `yaml:"grpc_endpoint" mapstructure:"grpc_endpoint"`                   // GRPC endpoint for querying balances
 	RpcEndpoint          string            `yaml:"rpc_endpoint" mapstructure:"rpc_endpoint"`                     // RPC endpoint for broadcasting transactions
 	GatewayURLs          map[string]string `yaml:"gateway_urls" mapstructure:"gateway_urls"`                     // Map of gateway IDs to their URLs
@@ -76,8 +78,11 @@ func LoadConfig(configFile string) (*Config, error) {
 		TxFlags:              viper.GetString("txflags"),
 		TxFlagsTemplate:      viper.GetStringMapString("txflagstemplate"),
 		Applications:         []Application{},
+		Services:             []Service{},
+		Suppliers:            []Supplier{},
 		ApplicationStakeGoal: viper.GetString("application_stake_goal"),
 		ApplicationFundGoal:  viper.GetString("application_fund_goal"),
+		ServiceFundGoal:      viper.GetString("service_fund_goal"),
 		GrpcEndpoint:         viper.GetString("grpc_endpoint"),
 		RpcEndpoint:          viper.GetString("rpc_endpoint"),
 		ChainID:              viper.GetString("chain_id"),
@@ -117,6 +122,35 @@ func LoadConfig(configFile string) (*Config, error) {
 				DelegateesGoal: getStringSlice(appMap, "delegateesgoal"),
 			}
 			config.Applications = append(config.Applications, app)
+		}
+	}
+
+	// Unmarshal services
+	var services []map[string]interface{}
+	if err := viper.UnmarshalKey("services", &services); err == nil {
+		for _, serviceMap := range services {
+			service := Service{
+				Name:      getString(serviceMap, "name"),
+				Address:   getString(serviceMap, "address"),
+				Mnemonic:  getString(serviceMap, "mnemonic"),
+				ServiceId: getString(serviceMap, "service_id"),
+			}
+			config.Services = append(config.Services, service)
+		}
+	}
+
+	// Unmarshal suppliers
+	var suppliers []map[string]interface{}
+	if err := viper.UnmarshalKey("suppliers", &suppliers); err == nil {
+		for _, supplierMap := range suppliers {
+			supplier := Supplier{
+				Name:         getString(supplierMap, "name"),
+				Address:      getString(supplierMap, "address"),
+				Mnemonic:     getString(supplierMap, "mnemonic"),
+				OwnerAddress: getString(supplierMap, "owner_address"),
+				StakeConfig:  supplierconfig.YAMLStakeConfig{},
+			}
+			config.Suppliers = append(config.Suppliers, supplier)
 		}
 	}
 

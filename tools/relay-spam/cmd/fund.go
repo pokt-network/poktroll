@@ -60,10 +60,20 @@ func init() {
 
 // fundCmd represents the fund command
 var fundCmd = &cobra.Command{
-	Use:   "fund",
+	Use:   "fund [entity_type]",
 	Short: "Fund accounts",
-	Long:  `Fund accounts by sending transactions directly, only funding the difference needed to reach the target balance.`,
+	Long:  `Fund accounts by sending transactions directly, only funding the difference needed to reach the target balance. Entity type can be "application", "service", or "supplier".`,
+	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
+		// Get entity type from args
+		entityType := args[0]
+
+		// Validate entity type
+		if entityType != "application" && entityType != "service" && entityType != "supplier" {
+			fmt.Fprintf(os.Stderr, "Invalid entity type: %s. Must be 'application', 'service', or 'supplier'\n", entityType)
+			os.Exit(1)
+		}
+
 		// Get config file from flag
 		configFile, err := cmd.Flags().GetString("config")
 		if err != nil || configFile == "" {
@@ -120,9 +130,23 @@ var fundCmd = &cobra.Command{
 			rpcEndpoint = cfg.RpcEndpoint
 		}
 
-		if cfg.ApplicationFundGoal == "" {
-			fmt.Fprintf(os.Stderr, "ApplicationFundGoal is required\n")
-			os.Exit(1)
+		// Check required fund goal based on entity type
+		switch entityType {
+		case "application":
+			if cfg.ApplicationFundGoal == "" {
+				fmt.Fprintf(os.Stderr, "ApplicationFundGoal is required for funding applications\n")
+				os.Exit(1)
+			}
+		case "service":
+			if cfg.ServiceFundGoal == "" {
+				fmt.Fprintf(os.Stderr, "ServiceFundGoal is required for funding services\n")
+				os.Exit(1)
+			}
+		case "supplier":
+			if cfg.SupplierStakeGoal == "" {
+				fmt.Fprintf(os.Stderr, "SupplierStakeGoal is required for funding suppliers\n")
+				os.Exit(1)
+			}
 		}
 
 		// Get keyring backend from flag
@@ -305,7 +329,7 @@ var fundCmd = &cobra.Command{
 		}
 
 		// Fund accounts using the txClient
-		err = fundAccountsWithTxClient(ctx, &cfg, txClient, clientCtx, faucetAddrStr, debug, gasAdjustment, fixedGasLimit, cmd)
+		err = fundAccountsWithTxClient(ctx, &cfg, txClient, clientCtx, faucetAddrStr, debug, gasAdjustment, fixedGasLimit, cmd, entityType)
 
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Failed to fund accounts: %v\n", err)
@@ -325,14 +349,65 @@ func fundAccountsWithTxClient(
 	gasAdjustment float64,
 	fixedGasLimit uint64,
 	cmd *cobra.Command,
+	entityType string,
 ) error {
 	var addressesToFund []string
 	var fundingAmounts []math.Int
 
-	// Parse the target fund goal
-	targetFund, err := parseAmount(cfg.ApplicationFundGoal)
-	if err != nil {
-		return fmt.Errorf("failed to parse ApplicationFundGoal: %w", err)
+	// Parse the target fund goal based on entity type
+	var targetFund math.Int
+	var err error
+	var entitiesToFund []struct {
+		address  string
+		mnemonic string
+	}
+
+	switch entityType {
+	case "application":
+		targetFund, err = parseAmount(cfg.ApplicationFundGoal)
+		if err != nil {
+			return fmt.Errorf("failed to parse ApplicationFundGoal: %w", err)
+		}
+		// Collect application addresses
+		for _, app := range cfg.Applications {
+			entitiesToFund = append(entitiesToFund, struct {
+				address  string
+				mnemonic string
+			}{
+				address:  app.Address,
+				mnemonic: app.Mnemonic,
+			})
+		}
+	case "service":
+		targetFund, err = parseAmount(cfg.ServiceFundGoal)
+		if err != nil {
+			return fmt.Errorf("failed to parse ServiceFundGoal: %w", err)
+		}
+		// Collect service addresses
+		for _, service := range cfg.Services {
+			entitiesToFund = append(entitiesToFund, struct {
+				address  string
+				mnemonic string
+			}{
+				address:  service.Address,
+				mnemonic: service.Mnemonic,
+			})
+		}
+	case "supplier":
+		targetFund, err = parseAmount(cfg.SupplierStakeGoal)
+		if err != nil {
+			return fmt.Errorf("failed to parse SupplierStakeGoal: %w", err)
+		}
+		// Collect supplier addresses
+		for _, supplier := range cfg.Suppliers {
+			entitiesToFund = append(entitiesToFund, struct {
+				address  string
+				mnemonic string
+			}{
+				address:  supplier.Address,
+				mnemonic: supplier.Mnemonic,
+			})
+		}
 	}
 
 	// For GRPC, we should NOT add http:// prefix - use the raw endpoint
@@ -347,7 +422,7 @@ func fundAccountsWithTxClient(
 	}
 
 	// Create a channel to receive results
-	resultChan := make(chan balanceCheckResult, len(cfg.Applications))
+	resultChan := make(chan balanceCheckResult, len(entitiesToFund))
 
 	// Create a worker pool to check balances concurrently
 	// Use a semaphore to limit the number of concurrent requests
@@ -415,17 +490,17 @@ func fundAccountsWithTxClient(
 	}()
 
 	fmt.Printf("Checking balances for %d accounts concurrently (max %d at a time, %d connections)...\n",
-		len(cfg.Applications), maxConcurrent, connPoolSize)
+		len(entitiesToFund), maxConcurrent, connPoolSize)
 
 	// Start a goroutine for each application to check its balance
-	for _, app := range cfg.Applications {
-		// Make a copy of app for the goroutine
-		app := app
-
+	for _, entity := range entitiesToFund {
 		// Acquire a semaphore slot
 		sem <- struct{}{}
 
-		go func() {
+		go func(entity struct {
+			address  string
+			mnemonic string
+		}) {
 			// Release the semaphore slot when done
 			defer func() { <-sem }()
 
@@ -436,7 +511,7 @@ func fundAccountsWithTxClient(
 			defer func() { connPool <- item }()
 
 			// Check the balance using the connection from the pool
-			balance, err := getBalanceWithClient(ctx, item.bankQueryClient, app.Address)
+			balance, err := getBalanceWithClient(ctx, item.bankQueryClient, entity.address)
 
 			// Calculate amount needed if balance check was successful
 			var amountNeeded math.Int
@@ -449,16 +524,16 @@ func fundAccountsWithTxClient(
 
 			// Send the result back through the channel
 			resultChan <- balanceCheckResult{
-				address:      app.Address,
+				address:      entity.address,
 				balance:      balance,
 				amountNeeded: amountNeeded,
 				err:          err,
 			}
-		}()
+		}(entity)
 	}
 
 	// Collect results from all goroutines
-	totalAccounts := len(cfg.Applications)
+	totalAccounts := len(entitiesToFund)
 	fmt.Printf("Starting balance checks for %d accounts...\n", totalAccounts)
 
 	// Use atomic counter to track progress
@@ -854,6 +929,14 @@ func parseAmount(amount string) (math.Int, error) {
 
 func init() {
 	rootCmd.AddCommand(fundCmd)
+
+	// Add help message for entity_type argument
+	fundCmd.SetHelpTemplate(fundCmd.UsageTemplate() + `
+Entity Types:
+  application    Fund application accounts using ApplicationFundGoal
+  service        Fund service accounts using ServiceFundGoal
+  supplier       Fund supplier accounts using SupplierStakeGoal
+`)
 
 	// Add keyring-backend flag
 	fundCmd.Flags().String("keyring-backend", "test", "Keyring backend to use (os, file, test, inmemory)")
