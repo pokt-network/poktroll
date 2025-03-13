@@ -12,7 +12,7 @@ import (
 	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/client/query"
 	"github.com/pokt-network/poktroll/pkg/client/query/cache"
-	"github.com/pokt-network/poktroll/pkg/polylog"
+	"github.com/pokt-network/poktroll/pkg/polylog/polyzero"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
@@ -28,14 +28,13 @@ type ApplicationModuleSuite struct {
 // GetAppQueryClient constructs and returns a query client for the application
 // module of the integration app.
 func (s *ApplicationModuleSuite) GetAppQueryClient(t *testing.T) client.ApplicationQueryClient {
-	appCache, err := memory.NewKeyValueCache[apptypes.Application]()
-	require.NoError(s.T(), err)
+	appCache, err := memory.NewKeyValueCache[apptypes.Application](memory.WithNoTTL())
+	require.NoError(t, err)
 
 	appParamsCache, err := cache.NewParamsCache[apptypes.Params]()
-	require.NoError(s.T(), err)
+	require.NoError(t, err)
 
-	logger := polylog.Ctx(s.GetApp().QueryHelper().Ctx)
-
+	logger := polyzero.NewLogger()
 	deps := depinject.Supply(s.GetApp().QueryHelper(), appCache, appParamsCache, logger)
 	appQueryClient, err := query.NewApplicationQuerier(deps)
 	require.NoError(t, err)
@@ -47,7 +46,7 @@ func (s *ApplicationModuleSuite) GetAppQueryClient(t *testing.T) client.Applicat
 // stake amount, and service IDs.
 func (s *ApplicationModuleSuite) StakeApp(
 	t *testing.T,
-	bech32 string,
+	appAddress string,
 	stakeAmtUpokt int64,
 	serviceIds []string,
 ) *apptypes.MsgStakeApplicationResponse {
@@ -59,7 +58,7 @@ func (s *ApplicationModuleSuite) StakeApp(
 	}
 
 	stakeAppMsg := apptypes.NewMsgStakeApplication(
-		bech32,
+		appAddress,
 		cosmostypes.NewInt64Coin(volatile.DenomuPOKT, stakeAmtUpokt),
 		serviceConfigs,
 	)

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	cosmoslog "cosmossdk.io/log"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -25,6 +26,63 @@ func (k msgServer) StakeSupplier(ctx context.Context, msg *suppliertypes.MsgStak
 	)
 
 	logger := k.Logger().With("method", "StakeSupplier")
+	// Create or update a supplier using the configuration in the msg provided.
+	supplier, err := k.Keeper.StakeSupplier(ctx, logger, msg)
+	if err != nil {
+		return nil, err
+	}
+
+	isSuccessful = true
+	return &suppliertypes.MsgStakeSupplierResponse{
+		Supplier: supplier,
+	}, nil
+}
+
+// createSupplier creates a new supplier from the given message.
+func (k Keeper) createSupplier(
+	ctx context.Context,
+	msg *suppliertypes.MsgStakeSupplier,
+) sharedtypes.Supplier {
+	sharedParams := k.sharedKeeper.GetParams(ctx)
+	sdkCtx := sdk.UnwrapSDKContext(ctx)
+	currentHeight := sdkCtx.BlockHeight()
+	nextSessionStartHeight := sharedtypes.GetNextSessionStartHeight(&sharedParams, currentHeight)
+
+	// Register activation height for each service. Since the supplier is new,
+	// all services are activated at the end of the current session.
+	servicesActivationHeightsMap := make(map[string]uint64)
+	for _, serviceConfig := range msg.Services {
+		servicesActivationHeightsMap[serviceConfig.ServiceId] = uint64(nextSessionStartHeight)
+	}
+
+	return sharedtypes.Supplier{
+		OwnerAddress:                 msg.OwnerAddress,
+		OperatorAddress:              msg.OperatorAddress,
+		Stake:                        msg.Stake,
+		Services:                     msg.Services,
+		ServicesActivationHeightsMap: servicesActivationHeightsMap,
+	}
+}
+
+// StakeSupplier stakes (or updates) the supplier according to the given msg by applying the following logic:
+//   - the msg is validated
+//   - if the supplier is not found, it is created (in memory) according to the valid msg
+//   - if the supplier is found and is not unbonding, it is updated (in memory) according to the msg
+//   - if the supplier is found and is unbonding, it is updated (in memory; and no longer unbonding)
+//   - additional stake validation (e.g. min stake, etc.)
+//   - EITHER any positive difference between the msg stake and any current stake is transferred
+//     from the staking supplier's account, to the supplier module's accounts.
+//   - OR any negative difference between the msg stake and any current stake is transferred
+//     from the supplier module's account (stake escrow) to the staking supplier's account.
+//   - the supplier staking fee is deducted from the staking supplier's account balance.
+//   - the (new or updated) supplier is persisted.
+//   - an EventSupplierStaked event is emitted.
+func (k Keeper) StakeSupplier(
+	ctx context.Context,
+	logger cosmoslog.Logger,
+	msg *suppliertypes.MsgStakeSupplier,
+) (*sharedtypes.Supplier, error) {
+
 	logger.Info(fmt.Sprintf("About to stake supplier with msg: %v", msg))
 
 	// ValidateBasic also validates that the msg signer is the owner or operator of the supplier
@@ -167,40 +225,11 @@ func (k msgServer) StakeSupplier(ctx context.Context, msg *suppliertypes.MsgStak
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
-	isSuccessful = true
-	return &suppliertypes.MsgStakeSupplierResponse{
-		Supplier: &supplier,
-	}, nil
-}
-
-// createSupplier creates a new supplier from the given message.
-func (k msgServer) createSupplier(
-	ctx context.Context,
-	msg *suppliertypes.MsgStakeSupplier,
-) sharedtypes.Supplier {
-	sharedParams := k.sharedKeeper.GetParams(ctx)
-	sdkCtx := sdk.UnwrapSDKContext(ctx)
-	currentHeight := sdkCtx.BlockHeight()
-	nextSessionStartHeight := sharedtypes.GetNextSessionStartHeight(&sharedParams, currentHeight)
-
-	// Register activation height for each service. Since the supplier is new,
-	// all services are activated at the end of the current session.
-	servicesActivationHeightsMap := make(map[string]uint64)
-	for _, serviceConfig := range msg.Services {
-		servicesActivationHeightsMap[serviceConfig.ServiceId] = uint64(nextSessionStartHeight)
-	}
-
-	return sharedtypes.Supplier{
-		OwnerAddress:                 msg.OwnerAddress,
-		OperatorAddress:              msg.OperatorAddress,
-		Stake:                        msg.Stake,
-		Services:                     msg.Services,
-		ServicesActivationHeightsMap: servicesActivationHeightsMap,
-	}
+	return &supplier, nil
 }
 
 // updateSupplier updates the given supplier with the given message.
-func (k msgServer) updateSupplier(
+func (k Keeper) updateSupplier(
 	ctx context.Context,
 	supplier *sharedtypes.Supplier,
 	msg *suppliertypes.MsgStakeSupplier,
@@ -253,7 +282,7 @@ func (k msgServer) updateSupplier(
 
 // reconcileSupplierStakeDiff transfers the difference between the current and new stake
 // amounts by either escrowing, when the stake is increased, or unescrowing otherwise.
-func (k msgServer) reconcileSupplierStakeDiff(
+func (k Keeper) reconcileSupplierStakeDiff(
 	ctx context.Context,
 	signerAddr sdk.AccAddress,
 	currentStake sdk.Coin,

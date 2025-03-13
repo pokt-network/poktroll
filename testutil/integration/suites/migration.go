@@ -18,11 +18,13 @@ var _ IntegrationSuite = (*MigrationModuleSuite)(nil)
 // functionality. It is intended to be embedded in dependent integration test suites.
 type MigrationModuleSuite struct {
 	BaseIntegrationSuite
-	// TODO_UPNEXT(@bryanchriswhite, #1043): Add ApplicationModuleSuite to the suite.
-	// AppSuite ApplicationModuleSuite
+	AppSuite      ApplicationModuleSuite
+	SupplierSuite SupplierModuleSuite
+	ServiceSuite  ServiceModuleSuite
 
 	// accountState is the generated MorseAccountState to be imported into the migration module.
 	accountState *migrationtypes.MorseAccountState
+
 	// numMorseClaimableAccounts is the number of morse claimable accounts to generate when calling #GenerateMorseAccountState.
 	numMorseClaimableAccounts int
 }
@@ -134,4 +136,83 @@ func (s *MigrationModuleSuite) GetSharedParams(t *testing.T) sharedtypes.Params 
 	require.NoError(t, err)
 
 	return sharedParamsRes.Params
+}
+
+// GetSessionEndHeight returns the session end height for the given query height.
+func (s *MigrationModuleSuite) GetSessionEndHeight(t *testing.T, queryHeight int64) int64 {
+	sharedParams := s.GetSharedParams(t)
+	return sharedtypes.GetSessionEndHeight(&sharedParams, queryHeight)
+}
+
+// ClaimMorseApplication claims the given MorseClaimableAccount as a staked application
+// by running a MsgClaimMorseApplication message.
+// It returns the expected Morse source address and the MsgClaimMorseApplicationResponse.
+func (s *MigrationModuleSuite) ClaimMorseApplication(
+	t *testing.T,
+	morseAccountIdx uint64,
+	shannonDestAddr string,
+	serviceConfig *sharedtypes.ApplicationServiceConfig,
+) (expectedMorseSrcAddr string, _ *migrationtypes.MsgClaimMorseApplicationResponse) {
+	t.Helper()
+
+	morsePrivateKey := testmigration.GenMorsePrivateKey(t, morseAccountIdx)
+	expectedMorseSrcAddr = morsePrivateKey.PubKey().Address().String()
+	require.Equal(t,
+		expectedMorseSrcAddr,
+		s.accountState.Accounts[morseAccountIdx].MorseSrcAddress,
+	)
+
+	morseClaimMsg, err := migrationtypes.NewMsgClaimMorseApplication(
+		shannonDestAddr,
+		expectedMorseSrcAddr,
+		morsePrivateKey,
+		serviceConfig,
+	)
+	require.NoError(t, err)
+
+	// Claim a Morse claimable account as an application.
+	resAny, err := s.GetApp().RunMsg(t, morseClaimMsg)
+	require.NoError(t, err)
+
+	claimApplicationRes, ok := resAny.(*migrationtypes.MsgClaimMorseApplicationResponse)
+	require.True(t, ok)
+
+	return expectedMorseSrcAddr, claimApplicationRes
+}
+
+// ClaimMorseSupplier claims the given MorseClaimableAccount as a staked supplier
+// by running a MsgClaimMorseSupplier message.
+// It returns the expected Morse source address and the MsgClaimMorseSupplierResponse.
+func (s *MigrationModuleSuite) ClaimMorseSupplier(
+	t *testing.T,
+	morseAccountIdx uint64,
+	shannonDestAddr string,
+	services []*sharedtypes.SupplierServiceConfig,
+) (expectedMorseSrcAddr string, _ *migrationtypes.MsgClaimMorseSupplierResponse) {
+	t.Helper()
+
+	morsePrivateKey := testmigration.GenMorsePrivateKey(t, morseAccountIdx)
+	expectedMorseSrcAddr = morsePrivateKey.PubKey().Address().String()
+	require.Equal(t,
+		expectedMorseSrcAddr,
+		s.accountState.Accounts[morseAccountIdx].MorseSrcAddress,
+	)
+
+	morseClaimMsg, err := migrationtypes.NewMsgClaimMorseSupplier(
+		shannonDestAddr,
+		shannonDestAddr,
+		expectedMorseSrcAddr,
+		morsePrivateKey,
+		services,
+	)
+	require.NoError(t, err)
+
+	// Claim a Morse claimable account as a supplier.
+	resAny, err := s.GetApp().RunMsg(t, morseClaimMsg)
+	require.NoError(t, err)
+
+	claimSupplierRes, ok := resAny.(*migrationtypes.MsgClaimMorseSupplierResponse)
+	require.True(t, ok)
+
+	return expectedMorseSrcAddr, claimSupplierRes
 }

@@ -535,7 +535,6 @@ func NewTokenomicsModuleKeepers(
 		accountKeeper,
 		bankKeeper,
 		sharedKeeper,
-		gatewayKeeper,
 		appKeeper,
 		supplierKeeper,
 	)

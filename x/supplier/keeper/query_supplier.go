@@ -84,8 +84,13 @@ func (k Keeper) Supplier(
 
 	supplier, found := k.GetSupplier(ctx, req.OperatorAddress)
 	if !found {
-		msg := fmt.Sprintf("supplier with address: %q", req.GetOperatorAddress())
-		return nil, status.Error(codes.NotFound, msg)
+		return nil, status.Error(
+			codes.NotFound,
+			types.ErrSupplierNotFound.Wrapf(
+				"supplier with operator address: %q",
+				req.GetOperatorAddress(),
+			).Error(),
+		)
 	}
 
 	return &types.QueryGetSupplierResponse{Supplier: supplier}, nil
