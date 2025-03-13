@@ -20,7 +20,7 @@ func SimulateMsgClaimMorseSupplier(
 	) (simtypes.OperationMsg, []simtypes.FutureOperation, error) {
 		simAccount, _ := simtypes.RandomAcc(r, accs)
 		msg := &types.MsgClaimMorseSupplier{
-			ShannonDestAddress: simAccount.Address.String(),
+			ShannonOwnerAddress: simAccount.Address.String(),
 		}
 
 		// TODO: Handling the ClaimMorseSupplier simulation

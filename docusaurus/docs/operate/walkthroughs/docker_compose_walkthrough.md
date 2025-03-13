@@ -1,11 +1,11 @@
 ---
 sidebar_position: 7
-title: Docker Compose Walkthrough
+title: "[Deprecated] Docker Compose Walkthrough (> 1 hour)"
 ---
 
 import ReactPlayer from "react-player";
 
-# Docker Compose Walkthrough <!-- omit in toc -->
+## [Deprecated] Docker Compose Walkthrough <!-- omit in toc -->
 
 - [Introduction and Cheat Sheet](#introduction-and-cheat-sheet)
 - [Key Terms in Morse and Shannon](#key-terms-in-morse-and-shannon)
