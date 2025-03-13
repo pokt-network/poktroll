@@ -236,7 +236,7 @@ var fundCmd = &cobra.Command{
 			WithAccountRetriever(clientCtx.AccountRetriever)
 
 		// Set default gas prices (0.01 upokt per gas unit)
-		defaultGasPrice := sdk.NewDecCoinFromDec(volatile.DenomuPOKT, math.LegacyNewDecWithPrec(1, 2)) // 0.01 upokt
+		defaultGasPrice := sdk.NewDecCoinFromDec(volatile.DenomuPOKT, math.LegacyNewDecWithPrec(1, 4))
 		gasPrices := sdk.NewDecCoins(defaultGasPrice)
 		txFactory = txFactory.WithGasPrices(gasPrices.String())
 
@@ -305,7 +305,7 @@ var fundCmd = &cobra.Command{
 		}
 
 		// Fund accounts using the txClient
-		err = fundAccountsWithTxClient(ctx, &cfg, txClient, clientCtx, faucetAddrStr, debug, gasAdjustment, fixedGasLimit)
+		err = fundAccountsWithTxClient(ctx, &cfg, txClient, clientCtx, faucetAddrStr, debug, gasAdjustment, fixedGasLimit, cmd)
 
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Failed to fund accounts: %v\n", err)
@@ -324,6 +324,7 @@ func fundAccountsWithTxClient(
 	debug bool,
 	gasAdjustment float64,
 	fixedGasLimit uint64,
+	cmd *cobra.Command,
 ) error {
 	var addressesToFund []string
 	var fundingAmounts []math.Int
@@ -736,7 +737,9 @@ func fundAccountsWithTxClient(
 				WithGasPrices(gasPrices.String())
 
 			// Sign the transaction
-			err = cosmostx.Sign(batchCtx, txFactory, faucetAddrStr, txBuilder, true)
+			// Use the faucet key name from the command line argument instead of the address
+			faucetKeyName, _ := cmd.Flags().GetString("faucet")
+			err = cosmostx.Sign(batchCtx, txFactory, faucetKeyName, txBuilder, true)
 			if err != nil {
 				batchResults <- struct {
 					batchIndex int
