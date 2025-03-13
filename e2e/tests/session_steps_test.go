@@ -151,11 +151,18 @@ func (s *suite) TheSupplierHasServicedASessionWithRelaysForServiceForApplication
 	numRelays, err := strconv.Atoi(numRelaysStr)
 	require.NoError(s, err)
 
-	// Query for any existing claims so that we can compare against them in
-	// future assertions about changes in onchain claims.
-	allClaimsRes, err := s.proofQueryClient.AllClaims(ctx, &prooftypes.QueryAllClaimsRequest{})
-	require.NoError(s, err)
-	s.scenarioState[preExistingClaimsKey] = allClaimsRes.Claims
+	// Wait for the claims to be 0 before proceeding since claims from a previous
+	// test may still be settling, skewing the results.
+	for {
+		allClaimsRes, err := s.proofQueryClient.AllClaims(ctx, &prooftypes.QueryAllClaimsRequest{})
+		require.NoError(s, err)
+		s.scenarioState[preExistingClaimsKey] = allClaimsRes.Claims
+		if len(allClaimsRes.Claims) == 0 {
+			break
+		}
+		// Wait for a block worth of time before checking again.
+		time.Sleep(2 * time.Second)
+	}
 
 	// Query for any existing proofs so that we can compare against them in
 	// future assertions about changes in onchain proofs.
