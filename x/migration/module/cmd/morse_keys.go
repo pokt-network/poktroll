@@ -18,7 +18,7 @@ import (
 // DEV_NOTE: The following code is extracted and/or derived from Morse (pocket-core) code.
 // In order to avoid a direct code dependency on Morse, some code has been (minimally) duplicated.
 //
-// The following enables private keys which are exported by the Morse CLI can be
+// The following enables private keys which are exported by the Morse CLI to be
 // deserialized and decrypted for signing in the context of claiming Morse accounts.
 
 const (
