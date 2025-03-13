@@ -106,3 +106,6 @@ tmp/*
 relayminer_config.yaml
 gateway_config.yaml
 path_config.yaml
+
+# Ignore generated files
+tools/scripts/migrate/*.json
