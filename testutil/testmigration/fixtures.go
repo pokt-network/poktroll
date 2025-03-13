@@ -7,8 +7,6 @@ import (
 	cometcrypto "github.com/cometbft/cometbft/crypto/ed25519"
 	cmtjson "github.com/cometbft/cometbft/libs/json"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
-	"github.com/regen-network/gocuke"
-	"github.com/stretchr/testify/require"
 
 	"github.com/pokt-network/poktroll/app/volatile"
 	migrationtypes "github.com/pokt-network/poktroll/x/migration/types"
@@ -75,20 +73,25 @@ func NewSingleMorseAccountActorTypeFn(actorType MorseAccountActorType) MorseAcco
 // - Monotonically increasing balances/stakes
 // - Unstaked, application, supplier accounts are distributed according to the given distribution function.
 func NewMorseStateExportAndAccountStateBytes(
-	t gocuke.TestingT,
 	numAccounts int,
 	distributionFn MorseAccountActorTypeDistributionFn,
-) (morseStateExportBz []byte, morseAccountStateBz []byte) {
-	morseStateExport, morseAccountState := NewMorseStateExportAndAccountState(t, numAccounts, distributionFn)
+) (morseStateExportBz []byte, morseAccountStateBz []byte, err error) {
+	morseStateExport, morseAccountState, err := NewMorseStateExportAndAccountState(numAccounts, distributionFn)
+	if err != nil {
+		return nil, nil, err
+	}
 
-	var err error
 	morseStateExportBz, err = cmtjson.Marshal(morseStateExport)
-	require.NoError(t, err)
+	if err != nil {
+		return nil, nil, err
+	}
 
 	morseAccountStateBz, err = cmtjson.Marshal(morseAccountState)
-	require.NoError(t, err)
+	if err != nil {
+		return nil, nil, err
+	}
 
-	return morseStateExportBz, morseAccountStateBz
+	return morseStateExportBz, morseAccountStateBz, nil
 }
 
 // NewMorseStateExportAndAccountState returns MorseStateExport and MorseAccountState
@@ -97,12 +100,9 @@ func NewMorseStateExportAndAccountStateBytes(
 // - Monotonically increasing balances/stakes
 // - Unstaked, application, supplier accounts are distributed according to the given distribution function.
 func NewMorseStateExportAndAccountState(
-	t gocuke.TestingT,
 	numAccounts int,
 	distributionFn MorseAccountActorTypeDistributionFn,
-) (export *migrationtypes.MorseStateExport, state *migrationtypes.MorseAccountState) {
-	t.Helper()
-
+) (export *migrationtypes.MorseStateExport, state *migrationtypes.MorseAccountState, err error) {
 	morseStateExport := &migrationtypes.MorseStateExport{
 		AppHash: "",
 		AppState: &migrationtypes.MorseTendermintAppState{
@@ -125,7 +125,7 @@ func NewMorseStateExportAndAccountState(
 			// Add an application.
 			morseStateExport.AppState.Application.Applications = append(
 				morseStateExport.AppState.Application.Applications,
-				GenMorseApplication(t, uint64(i)),
+				GenMorseApplication(uint64(i)),
 			)
 		case MorseSupplierActor:
 			// Add a supplier.
@@ -133,7 +133,7 @@ func NewMorseStateExportAndAccountState(
 			// In Morse, Validators are, by default, the top 1000 staked Nodes.
 			morseStateExport.AppState.Pos.Validators = append(
 				morseStateExport.AppState.Pos.Validators,
-				GenMorseValidator(t, uint64(i)),
+				GenMorseValidator(uint64(i)),
 			)
 		default:
 			panic(fmt.Sprintf("unknown morse account stake state %q", morseAccountType))
@@ -145,21 +145,24 @@ func NewMorseStateExportAndAccountState(
 			morseStateExport.AppState.Auth.Accounts,
 			&migrationtypes.MorseAuthAccount{
 				Type:  "posmint/Account",
-				Value: GenMorseAccount(t, uint64(i)),
+				Value: GenMorseAccount(uint64(i)),
 			},
 		)
 
 		// Add the account to the morseAccountState.
-		morseAccountState.Accounts[i] = GenMorseClaimableAccount(t, uint64(i), distributionFn)
+		morseClaimableAccount, err := GenMorseClaimableAccount(uint64(i), distributionFn)
+		if err != nil {
+			return nil, nil, err
+		}
+
+		morseAccountState.Accounts[i] = morseClaimableAccount
 	}
 
-	return morseStateExport, morseAccountState
+	return morseStateExport, morseAccountState, nil
 }
 
 // GenMorsePrivateKey creates a new ed25519 private key from the given seed.
-func GenMorsePrivateKey(t gocuke.TestingT, seed uint64) cometcrypto.PrivKey {
-	t.Helper()
-
+func GenMorsePrivateKey(seed uint64) cometcrypto.PrivKey {
 	seedBz := make([]byte, 8)
 	binary.LittleEndian.PutUint64(seedBz, seed)
 
@@ -204,8 +207,8 @@ func GenMorseApplicationStakeAmount(index uint64) int64 {
 
 // GenMorseAccount returns a new MorseAccount fixture. The given index is used
 // to deterministically generate the account's address and unstaked balance.
-func GenMorseAccount(t gocuke.TestingT, index uint64) *migrationtypes.MorseAccount {
-	privKey := GenMorsePrivateKey(t, index)
+func GenMorseAccount(index uint64) *migrationtypes.MorseAccount {
+	privKey := GenMorsePrivateKey(index)
 	pubKey := privKey.PubKey()
 	unstakedBalanceAmount := GenMorseUnstakedBalanceAmount(index)
 	unstakedBalance := cosmostypes.NewInt64Coin(volatile.DenomuPOKT, unstakedBalanceAmount)
@@ -221,8 +224,8 @@ func GenMorseAccount(t gocuke.TestingT, index uint64) *migrationtypes.MorseAccou
 
 // GenMorseApplication returns a new MorseApplication fixture. The given index is used
 // to deterministically generate the application's address and staked tokens.
-func GenMorseApplication(t gocuke.TestingT, idx uint64) *migrationtypes.MorseApplication {
-	privKey := GenMorsePrivateKey(t, idx)
+func GenMorseApplication(idx uint64) *migrationtypes.MorseApplication {
+	privKey := GenMorsePrivateKey(idx)
 	pubKey := privKey.PubKey()
 	stakeAmount := GenMorseApplicationStakeAmount(idx)
 
@@ -237,8 +240,8 @@ func GenMorseApplication(t gocuke.TestingT, idx uint64) *migrationtypes.MorseApp
 
 // GenMorseValidator returns a new MorseValidator fixture. The given index is used
 // to deterministically generate the validator's address and staked tokens.
-func GenMorseValidator(t gocuke.TestingT, idx uint64) *migrationtypes.MorseValidator {
-	privKey := GenMorsePrivateKey(t, idx)
+func GenMorseValidator(idx uint64) *migrationtypes.MorseValidator {
+	privKey := GenMorsePrivateKey(idx)
 	pubKey := privKey.PubKey()
 	stakeAmount := GenMorseSupplierStakeAmount(idx)
 
@@ -255,15 +258,16 @@ func GenMorseValidator(t gocuke.TestingT, idx uint64) *migrationtypes.MorseValid
 // to deterministically generate the account's address and staked tokens. The given distribution
 // function is used to determine the account's actor type (and stake if applicable).
 func GenMorseClaimableAccount(
-	t gocuke.TestingT,
 	index uint64,
 	distributionFn func(uint64) MorseAccountActorType,
-) *migrationtypes.MorseClaimableAccount {
-	require.NotNil(t, distributionFn)
+) (*migrationtypes.MorseClaimableAccount, error) {
+	if distributionFn == nil {
+		return nil, fmt.Errorf("distributionFn cannot be nil")
+	}
 
 	var appStakeAmount,
 		supplierStakeAmount int64
-	privKey := GenMorsePrivateKey(t, index)
+	privKey := GenMorsePrivateKey(index)
 	pubKey := privKey.PubKey()
 
 	morseAccountActorType := distributionFn(index)
@@ -275,7 +279,7 @@ func GenMorseClaimableAccount(
 	case MorseSupplierActor:
 		supplierStakeAmount = GenMorseSupplierStakeAmount(index)
 	default:
-		t.Fatalf("unknown morse account stake state %q", morseAccountActorType)
+		return nil, fmt.Errorf("unknown morse account stake state %q", morseAccountActorType)
 	}
 
 	// All MorseClaimableAccount fixtures get an unstaked balance.
@@ -289,5 +293,5 @@ func GenMorseClaimableAccount(
 		ApplicationStake: cosmostypes.NewInt64Coin(volatile.DenomuPOKT, appStakeAmount),
 		// ShannonDestAddress: (intentionally omitted).
 		// ClaimedAtHeight:    (intentionally omitted)
-	}
+	}, nil
 }
