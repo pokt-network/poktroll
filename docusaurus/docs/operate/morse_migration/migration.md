@@ -17,9 +17,8 @@ sidebar_position: 1
     - [Morse Account Holder Actions](#morse-account-holder-actions)
 - [Onchain Actors & Messages](#onchain-actors--messages)
 
-:::info
-All migration documents can be found on
-notion [here](https://www.notion.so/buildwithgrove/Morse-to-Shannon-Migration-173a36edfff6809cb1cbe10827c040de?pvs=4).
+:::warning TODO_MAINNET(@olshanksy)
+Add FAQ and roadmap / strategy sections.
 :::
 
 ## Overview
@@ -34,7 +33,8 @@ The migration described in here is in the context of the migration of account st
 Specifically, this document describes the "Migration & Cutover" -> "Judgement Day" section as it relates to this
 migration of account state.
 
-:::warning TODO_MAINNET: link to higher-level Shannon MainNet launch / migration strategy docs once available.
+:::warning TODO_MAINNET(@olshanksy)
+Link to higher-level Shannon MainNet launch / migration strategy docs once available.
 :::
 
 Due to the nature of this account state migration (see "Constraints", below), this account state migration functionality
@@ -156,7 +156,7 @@ flowchart
 4. Reach a time-bounded consensus on the canonical `MorseAccountState`, reacting to any feedback offchain as necessary.
 5. Import the canonical `MorseAccountState` on Shannon:
         ```bash
-        # TODO_MAINNET(@bryanchriswhite, #1034): Reference respective make target, once available.
+        # TODO_MAINNET(@bryanchriswhite, #1034): Reference respective cmd or make target, once available.
         ```
 
 :::warning TODO_MAINNET
@@ -165,8 +165,31 @@ Replace `<published canonical export height>` with the actual height once known.
 
 ### Morse Account Holder Actions
 
-:::warning TODO_IN_THIS_COMMIT
+Since the result of the export / transform / validate process effectively determines the canonical set of claimable Morse accounts (and their balances/stakes) on Shannon, it is important that Morse account/stake-holders confirm that the proposed `MsgImportMorseClaimableAccounts` includes an accurate representation of their account(s).
+
+:::info
+It's like making sure you and your friends (your accounts) are on "the list" before it gets printed out and handed to the crypto-club bouncer.
+You'd be wise to double-check that all the names are on the list and are spelled correctly; the bouncer at crypto-club is brutally strict.
 :::
 
-  - what/how to validate?
-  - where/how to provide feedback?
+Morse account/stake-holders who wish to participate in the social consensus process for the "canonical" `MorseAccountState` can do so by:
+1. Downloading the proposed `MsgImportMorseClaimableAccounts` (which encapsulates both the `MorseAccountState` and its hash).
+    :::warning TODO_MAINNET
+    Link to latest published [`MsgImportMorseClaimableAccounts`](https://github.com/pokt-network/poktroll/blob/main/proto/poktroll/migration/tx.proto#L50) proposal.
+    :::
+2. Use the Shannon CLI to validate the proposed `MsgImportMorseClaimableAccounts` (e.g. `./msg_import_morse_claimable_accounts.json`):
+    :::note
+    Multiple Morse addresses MAY be passed to the `validate-morse-accounts` command.
+    For each, the corresponding `MorseClaimableAccount` is printed for the purpose of manual inspection and validation.
+    :::
+
+    ```bash
+    poktrolld tx migration validate-morse-accounts ./msg_import_morse_claimable_accounts.json [morse_hex_address1, ...]
+    # TODO_MAINNET(@bryanchriswhite, #1034): Complete this example once the CLI is available.
+    ```
+
+    :::important
+    Transactions which were committed after "Judgement Day" are NOT represented in the canonical `MorseAccountState` which is used in Shannon to validate claims.
+
+    **When validating Morse account balance(s)/stake(s), keep this in mind!**
+    :::
