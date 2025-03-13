@@ -22,21 +22,17 @@ var (
 	noConfirm                     bool
 )
 
-// TODO_DOCUMENT: E2E flow...
-// pocket accounts export <hex_morse_src_address> [key_export_path]
-//
-//	(prompt for passphrase)
-//
-// poktrolld migrate claim-account <key_export_path> --from <shannon_key_name> [-p <passphrase> | -n]
-//
-//	(prompt for passphrase, unless -p | --passphrase is provided)
 func claimAccountCmd() *cobra.Command {
 	claimAcctCmd := &cobra.Command{
-		Use:  "claim-account [morse_key_export_path] --from [shannon_dest_key_name]",
-		Args: cobra.ExactArgs(1),
-		// TODO_IN_THIS_COMMIT: ...
-		// Long: "",
-		// Short: "",
+		Use:   "claim-account [morse_key_export_path] --from [shannon_dest_key_name]",
+		Args:  cobra.ExactArgs(1),
+		Short: "Claim an onchain MorseClaimableAccount as an unstaked/non-actor account",
+		Long: `Claim an onchain MorseClaimableAccount as an unstaked/non-actor account.
+The unstaked balance amount of the onchain MorseClaimableAccount will be minted to the Shannon account specified by the --from flag.
+
+This will construct, sign, and broadcast a tx containing a MsgClaimMorseAccount message.
+See: https://dev.poktroll.com/operate/morse_migration/claiming for more information.
+`,
 		RunE: runClaimAccount,
 	}
 
