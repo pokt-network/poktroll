@@ -7,6 +7,8 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"sync"
+	"sync/atomic"
 	"time"
 
 	"crypto/tls"
@@ -303,54 +305,185 @@ func fundAccountsWithTxClient(
 	// For GRPC, we should NOT add http:// prefix - use the raw endpoint
 	grpcEndpoint := cfg.GrpcEndpoint
 
-	// Connect to the GRPC endpoint
-	var conn *grpc.ClientConn
-
-	// Check if the endpoint uses port 443 (HTTPS)
-	if strings.Contains(grpcEndpoint, ":443") {
-		// Use secure credentials for HTTPS endpoints
-		conn, err = grpc.Dial(grpcEndpoint, grpc.WithTransportCredentials(
-			credentials.NewTLS(&tls.Config{
-				InsecureSkipVerify: false,
-			}),
-		))
-	} else {
-		// Use insecure credentials for non-HTTPS endpoints
-		conn, err = grpc.Dial(grpcEndpoint, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	// Define a struct to hold the results of balance checking
+	type balanceCheckResult struct {
+		address      string
+		balance      *sdk.Coin
+		amountNeeded math.Int
+		err          error
 	}
 
-	if err != nil {
-		return fmt.Errorf("failed to connect to GRPC endpoint: %w", err)
+	// Create a channel to receive results
+	resultChan := make(chan balanceCheckResult, len(cfg.Applications))
+
+	// Create a worker pool to check balances concurrently
+	// Use a semaphore to limit the number of concurrent requests
+	maxConcurrent := 50 // Adjust this value based on what the server can handle
+	sem := make(chan struct{}, maxConcurrent)
+
+	// Create a connection pool for GRPC connections
+	type connPoolItem struct {
+		conn            *grpc.ClientConn
+		bankQueryClient banktypes.QueryClient
 	}
-	defer conn.Close()
 
-	// Create a bank query client
-	bankQueryClient := banktypes.NewQueryClient(conn)
+	// Create a buffered channel to serve as our connection pool
+	connPoolSize := maxConcurrent / 5 // Adjust based on your needs
+	if connPoolSize < 1 {
+		connPoolSize = 1
+	}
+	connPool := make(chan connPoolItem, connPoolSize)
 
-	// Check each application's balance
-	for _, app := range cfg.Applications {
-		balance, err := getBalance(ctx, bankQueryClient, app.Address)
+	// Initialize the connection pool
+	for i := 0; i < connPoolSize; i++ {
+		// Create a new GRPC connection
+		var conn *grpc.ClientConn
+		var err error
+
+		// Check if the endpoint uses port 443 (HTTPS)
+		if strings.Contains(grpcEndpoint, ":443") {
+			// Use secure credentials for HTTPS endpoints
+			conn, err = grpc.Dial(grpcEndpoint, grpc.WithTransportCredentials(
+				credentials.NewTLS(&tls.Config{
+					InsecureSkipVerify: false,
+				}),
+			))
+		} else {
+			// Use insecure credentials for non-HTTPS endpoints
+			conn, err = grpc.Dial(grpcEndpoint, grpc.WithTransportCredentials(insecure.NewCredentials()))
+		}
+
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "Warning: Failed to get balance for %s: %v\n", app.Address, err)
+			return fmt.Errorf("failed to connect to GRPC endpoint: %w", err)
+		}
+
+		// Create a bank query client
+		bankQueryClient := banktypes.NewQueryClient(conn)
+
+		// Add to the pool
+		connPool <- connPoolItem{
+			conn:            conn,
+			bankQueryClient: bankQueryClient,
+		}
+	}
+
+	// Make sure to close all connections when we're done
+	defer func() {
+		// Drain the pool and close all connections
+		for i := 0; i < connPoolSize; i++ {
+			select {
+			case item := <-connPool:
+				item.conn.Close()
+			default:
+				// Pool is empty
+				break
+			}
+		}
+	}()
+
+	fmt.Printf("Checking balances for %d accounts concurrently (max %d at a time, %d connections)...\n",
+		len(cfg.Applications), maxConcurrent, connPoolSize)
+
+	// Start a goroutine for each application to check its balance
+	for _, app := range cfg.Applications {
+		// Make a copy of app for the goroutine
+		app := app
+
+		// Acquire a semaphore slot
+		sem <- struct{}{}
+
+		go func() {
+			// Release the semaphore slot when done
+			defer func() { <-sem }()
+
+			// Get a connection from the pool
+			item := <-connPool
+
+			// Make sure to return the connection to the pool when done
+			defer func() { connPool <- item }()
+
+			// Check the balance using the connection from the pool
+			balance, err := getBalanceWithClient(ctx, item.bankQueryClient, app.Address)
+
+			// Calculate amount needed if balance check was successful
+			var amountNeeded math.Int
+			if err == nil && balance.Amount.LT(targetFund) {
+				amountNeeded = targetFund.Sub(balance.Amount)
+			} else if err != nil {
+				// If error, we'll fund the full amount
+				amountNeeded = targetFund
+			}
+
+			// Send the result back through the channel
+			resultChan <- balanceCheckResult{
+				address:      app.Address,
+				balance:      balance,
+				amountNeeded: amountNeeded,
+				err:          err,
+			}
+		}()
+	}
+
+	// Collect results from all goroutines
+	totalAccounts := len(cfg.Applications)
+	fmt.Printf("Starting balance checks for %d accounts...\n", totalAccounts)
+
+	// Use atomic counter to track progress
+	var completed int32
+
+	// Create a ticker to periodically update progress
+	ticker := time.NewTicker(500 * time.Millisecond)
+	defer ticker.Stop()
+
+	// Start a goroutine to display progress
+	progressDone := make(chan struct{})
+	go func() {
+		for {
+			select {
+			case <-ticker.C:
+				current := atomic.LoadInt32(&completed)
+				if current > 0 {
+					percent := float64(current) / float64(totalAccounts) * 100
+					fmt.Printf("\rProgress: %d/%d accounts checked (%.1f%%)...",
+						current, totalAccounts, percent)
+				}
+			case <-progressDone:
+				return
+			}
+		}
+	}()
+
+	for i := 0; i < totalAccounts; i++ {
+		result := <-resultChan
+
+		// Update progress counter
+		atomic.AddInt32(&completed, 1)
+
+		if result.err != nil {
+			fmt.Fprintf(os.Stderr, "\nWarning: Failed to get balance for %s: %v\n", result.address, result.err)
 			// Add to funding list with full amount if we can't check balance
-			addressesToFund = append(addressesToFund, app.Address)
-			fundingAmounts = append(fundingAmounts, targetFund)
+			addressesToFund = append(addressesToFund, result.address)
+			fundingAmounts = append(fundingAmounts, result.amountNeeded)
 			continue
 		}
 
 		// If balance is less than target, add to funding list
-		if balance.Amount.LT(targetFund) {
-			// Calculate the amount needed to reach the target
-			amountNeeded := targetFund.Sub(balance.Amount)
-			addressesToFund = append(addressesToFund, app.Address)
-			fundingAmounts = append(fundingAmounts, amountNeeded)
-			fmt.Fprintf(os.Stderr, "Account %s needs funding. Current balance: %s, Target: %s, Funding: %s\n",
-				app.Address, balance.Amount.String(), targetFund.String(), amountNeeded.String())
-		} else {
-			fmt.Fprintf(os.Stderr, "Account %s has sufficient balance. Current: %s, Target: %s\n",
-				app.Address, balance.Amount.String(), targetFund.String())
+		if result.balance.Amount.LT(targetFund) {
+			addressesToFund = append(addressesToFund, result.address)
+			fundingAmounts = append(fundingAmounts, result.amountNeeded)
+			fmt.Fprintf(os.Stderr, "\nAccount %s needs funding. Current balance: %s, Target: %s, Funding: %s\n",
+				result.address, result.balance.Amount.String(), targetFund.String(), result.amountNeeded.String())
+		} else if debug {
+			fmt.Fprintf(os.Stderr, "\nAccount %s has sufficient balance. Current: %s, Target: %s\n",
+				result.address, result.balance.Amount.String(), targetFund.String())
 		}
 	}
+
+	// Stop the progress display goroutine
+	close(progressDone)
+
+	// Print final progress and newline
+	fmt.Printf("\rProgress: %d/%d accounts checked (100.0%%)...done!\n", totalAccounts, totalAccounts)
 
 	// If no addresses need funding, return
 	if len(addressesToFund) == 0 {
@@ -359,8 +492,42 @@ func fundAccountsWithTxClient(
 	}
 
 	// Process addresses in batches
-	batchSize := 100 // Smaller batch size for testing
+	batchSize := 2000
+	numBatches := (len(addressesToFund) + batchSize - 1) / batchSize // Ceiling division
+
+	fmt.Printf("Processing %d addresses in %d batches of up to %d addresses each\n",
+		len(addressesToFund), numBatches, batchSize)
+
+	// Create a channel to track batch completion
+	batchResults := make(chan struct {
+		batchIndex int
+		txHash     string
+		err        error
+	}, numBatches)
+
+	// Create a semaphore to limit concurrent batches
+	maxConcurrentBatches := 5 // Adjust based on what the node can handle
+	batchSem := make(chan struct{}, maxConcurrentBatches)
+
+	// Create a mutex to synchronize account sequence retrieval
+	var accMutex sync.Mutex
+
+	// Get initial account number and sequence
+	faucetAddr, err := sdk.AccAddressFromBech32(faucetAddrStr)
+	if err != nil {
+		return fmt.Errorf("failed to parse faucet address: %w", err)
+	}
+
+	accNum, accSeq, err := clientCtx.AccountRetriever.GetAccountNumberSequence(clientCtx, faucetAddr)
+	if err != nil {
+		return fmt.Errorf("failed to get initial account number and sequence: %w", err)
+	}
+
+	fmt.Printf("Starting with account number %d and sequence %d\n", accNum, accSeq)
+
+	// Start processing batches concurrently
 	for i := 0; i < len(addressesToFund); i += batchSize {
+		batchIndex := i / batchSize
 		end := i + batchSize
 		if end > len(addressesToFund) {
 			end = len(addressesToFund)
@@ -369,100 +536,160 @@ func fundAccountsWithTxClient(
 		batchAddresses := addressesToFund[i:end]
 		batchAmounts := fundingAmounts[i:end]
 
-		// Create a batch of MsgSend messages
-		var msgs []sdk.Msg
-		for j, addr := range batchAddresses {
-			// Create a MsgSend
-			coinUpokt := sdk.NewCoin(volatile.DenomuPOKT, batchAmounts[j])
-			sendMsg := &banktypes.MsgSend{
-				FromAddress: faucetAddrStr,
-				ToAddress:   addr,
-				Amount:      sdk.NewCoins(coinUpokt),
+		// Acquire a semaphore slot
+		batchSem <- struct{}{}
+
+		// Process this batch in a goroutine
+		go func(batchIndex int, batchAddresses []string, batchAmounts []math.Int) {
+			// Release the semaphore slot when done
+			defer func() { <-batchSem }()
+
+			// Create a context with timeout for this batch
+			batchCtx, cancel := context.WithTimeout(ctx, 2*time.Minute)
+			defer cancel()
+
+			// Create a batch of MsgSend messages
+			var msgs []sdk.Msg
+			for j, addr := range batchAddresses {
+				// Create a MsgSend
+				coinUpokt := sdk.NewCoin(volatile.DenomuPOKT, batchAmounts[j])
+				sendMsg := &banktypes.MsgSend{
+					FromAddress: faucetAddrStr,
+					ToAddress:   addr,
+					Amount:      sdk.NewCoins(coinUpokt),
+				}
+				msgs = append(msgs, sendMsg)
 			}
-			msgs = append(msgs, sendMsg)
-			fmt.Printf("Adding message to send %s to %s\n", coinUpokt.String(), addr)
-		}
 
-		// Sign and broadcast the transaction with all messages
-		fmt.Printf("Sending batch transaction with %d messages...\n", len(msgs))
+			// Create a transaction builder
+			txBuilder := clientCtx.TxConfig.NewTxBuilder()
 
-		// Create a transaction builder
-		txBuilder := clientCtx.TxConfig.NewTxBuilder()
+			// Set the messages
+			if err := txBuilder.SetMsgs(msgs...); err != nil {
+				batchResults <- struct {
+					batchIndex int
+					txHash     string
+					err        error
+				}{batchIndex, "", fmt.Errorf("failed to set messages: %w", err)}
+				return
+			}
 
-		// Set the messages
-		if err := txBuilder.SetMsgs(msgs...); err != nil {
-			return fmt.Errorf("failed to set messages: %w", err)
-		}
+			// Set gas limit - using a high value to ensure it goes through
+			txBuilder.SetGasLimit(1000000000000)
 
-		// Set gas limit - using a high value to ensure it goes through
-		txBuilder.SetGasLimit(1000000000000)
+			// Set fee amount based on gas limit and gas prices
+			gasPrices := sdk.NewDecCoins(sdk.NewDecCoinFromDec(volatile.DenomuPOKT, math.LegacyNewDecWithPrec(1, 2)))
+			fees := sdk.NewCoins()
+			for _, gasPrice := range gasPrices {
+				fee := gasPrice.Amount.MulInt(math.NewInt(int64(txBuilder.GetTx().GetGas()))).RoundInt()
+				fees = fees.Add(sdk.NewCoin(gasPrice.Denom, fee))
+			}
+			txBuilder.SetFeeAmount(fees)
 
-		// Set fee amount based on gas limit and gas prices
-		gasPrices := sdk.NewDecCoins(sdk.NewDecCoinFromDec(volatile.DenomuPOKT, math.LegacyNewDecWithPrec(1, 2)))
-		fees := sdk.NewCoins()
-		for _, gasPrice := range gasPrices {
-			fee := gasPrice.Amount.MulInt(math.NewInt(int64(txBuilder.GetTx().GetGas()))).RoundInt()
-			fees = fees.Add(sdk.NewCoin(gasPrice.Denom, fee))
-		}
-		txBuilder.SetFeeAmount(fees)
+			// Get account number and sequence
+			// We already have faucetAddr from the outer scope
 
-		// Instead of using txClient, let's use the traditional approach which works
-		// Get account number and sequence
-		faucetAddr, err := sdk.AccAddressFromBech32(faucetAddrStr)
-		if err != nil {
-			return fmt.Errorf("failed to parse faucet address: %w", err)
-		}
+			// We need to get a fresh account number and sequence for each batch
+			// This requires synchronization to avoid sequence conflicts
+			var currentAccSeq uint64
+			accMutex.Lock()
+			// Use the pre-fetched account number, but get the current sequence
+			currentAccSeq = accSeq
+			// Increment the sequence for the next batch
+			accSeq++
+			accMutex.Unlock()
 
-		accNum, accSeq, err := clientCtx.AccountRetriever.GetAccountNumberSequence(clientCtx, faucetAddr)
-		if err != nil {
-			return fmt.Errorf("failed to get account number and sequence: %w", err)
-		}
+			// Create a transaction factory
+			txFactory := cosmostx.Factory{}.
+				WithChainID(clientCtx.ChainID).
+				WithKeybase(clientCtx.Keyring).
+				WithTxConfig(clientCtx.TxConfig).
+				WithAccountRetriever(clientCtx.AccountRetriever).
+				WithAccountNumber(accNum).
+				WithSequence(currentAccSeq)
 
-		// Create a transaction factory
-		txFactory := cosmostx.Factory{}.
-			WithChainID(clientCtx.ChainID).
-			WithKeybase(clientCtx.Keyring).
-			WithTxConfig(clientCtx.TxConfig).
-			WithAccountRetriever(clientCtx.AccountRetriever).
-			WithAccountNumber(accNum).
-			WithSequence(accSeq)
+			// Sign the transaction
+			err = cosmostx.Sign(batchCtx, txFactory, faucetAddrStr, txBuilder, true)
+			if err != nil {
+				batchResults <- struct {
+					batchIndex int
+					txHash     string
+					err        error
+				}{batchIndex, "", fmt.Errorf("failed to sign transaction: %w", err)}
+				return
+			}
 
-		// Sign the transaction
-		err = cosmostx.Sign(ctx, txFactory, faucetAddrStr, txBuilder, true)
-		if err != nil {
-			return fmt.Errorf("failed to sign transaction: %w", err)
-		}
+			// Encode the transaction
+			txBytes, err := clientCtx.TxConfig.TxEncoder()(txBuilder.GetTx())
+			if err != nil {
+				batchResults <- struct {
+					batchIndex int
+					txHash     string
+					err        error
+				}{batchIndex, "", fmt.Errorf("failed to encode transaction: %w", err)}
+				return
+			}
 
-		// Encode the transaction
-		txBytes, err := clientCtx.TxConfig.TxEncoder()(txBuilder.GetTx())
-		if err != nil {
-			return fmt.Errorf("failed to encode transaction: %w", err)
-		}
+			// Broadcast the transaction
+			res, err := clientCtx.BroadcastTxSync(txBytes)
+			if err != nil {
+				batchResults <- struct {
+					batchIndex int
+					txHash     string
+					err        error
+				}{batchIndex, "", fmt.Errorf("failed to broadcast transaction: %w", err)}
+				return
+			}
 
-		// Broadcast the transaction
-		res, err := clientCtx.BroadcastTxSync(txBytes)
-		if err != nil {
-			return fmt.Errorf("failed to broadcast transaction: %w", err)
-		}
+			// Check for errors in the response
+			if res.Code != 0 {
+				batchResults <- struct {
+					batchIndex int
+					txHash     string
+					err        error
+				}{batchIndex, "", fmt.Errorf("transaction failed: %s", res.RawLog)}
+				return
+			}
 
-		// Check for errors in the response
-		if res.Code != 0 {
-			return fmt.Errorf("transaction failed: %s", res.RawLog)
-		}
+			// Send success result
+			batchResults <- struct {
+				batchIndex int
+				txHash     string
+				err        error
+			}{batchIndex, res.TxHash, nil}
 
-		fmt.Printf("Successfully funded %d accounts in batch. Transaction hash: %s\n", len(batchAddresses), res.TxHash)
-
-		// Add a small delay between batches to avoid overwhelming the node
-		if i+batchSize < len(addressesToFund) {
-			time.Sleep(1 * time.Second)
-		}
+		}(batchIndex, batchAddresses, batchAmounts)
 	}
+
+	// Collect results from all batches
+	successCount := 0
+	failCount := 0
+
+	fmt.Printf("Waiting for %d batches to complete...\n", numBatches)
+
+	for i := 0; i < numBatches; i++ {
+		result := <-batchResults
+
+		if result.err != nil {
+			failCount++
+			fmt.Fprintf(os.Stderr, "Batch %d failed: %v\n", result.batchIndex, result.err)
+		} else {
+			successCount++
+			fmt.Printf("Batch %d succeeded. Transaction hash: %s\n", result.batchIndex, result.txHash)
+		}
+
+		// Print progress
+		fmt.Printf("Progress: %d/%d batches completed (%d succeeded, %d failed)\n",
+			i+1, numBatches, successCount, failCount)
+	}
+
+	fmt.Printf("Funding complete. %d batches succeeded, %d batches failed.\n", successCount, failCount)
 
 	return nil
 }
 
-// getBalance queries the balance of an address
-func getBalance(ctx context.Context, bankQueryClient banktypes.QueryClient, address string) (*sdk.Coin, error) {
+// getBalanceWithClient queries the balance of an address using the provided client
+func getBalanceWithClient(ctx context.Context, bankQueryClient banktypes.QueryClient, address string) (*sdk.Coin, error) {
 	req := &banktypes.QueryBalanceRequest{
 		Address: address,
 		Denom:   volatile.DenomuPOKT,
@@ -474,6 +701,11 @@ func getBalance(ctx context.Context, bankQueryClient banktypes.QueryClient, addr
 	}
 
 	return res.Balance, nil
+}
+
+// getBalance queries the balance of an address
+func getBalance(ctx context.Context, bankQueryClient banktypes.QueryClient, address string) (*sdk.Coin, error) {
+	return getBalanceWithClient(ctx, bankQueryClient, address)
 }
 
 // parseAmount parses a string amount like "1000000upokt" into an sdk.Int
