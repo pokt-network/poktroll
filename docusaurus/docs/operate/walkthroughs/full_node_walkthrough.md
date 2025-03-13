@@ -1,5 +1,5 @@
 ---
-title: Full Node Walkthrough
+title: Full Node - Binary (~30 min)
 sidebar_position: 1
 ---
 
