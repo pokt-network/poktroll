@@ -605,8 +605,8 @@ func (t *RelayProxyPingAllSuite) TestOKPingAllWithSingleRelayServer() {
 	require.NoError(t.T(), err)
 
 	go func() {
-		if err := rp.Start(ctx); !errors.Is(err, http.ErrServerClosed) {
-			require.NoError(t.T(), err)
+		if errStart := rp.Start(ctx); !errors.Is(errStart, http.ErrServerClosed) {
+			require.NoError(t.T(), errStart)
 		}
 	}()
 
@@ -628,9 +628,9 @@ func (t *RelayProxyPingAllSuite) TestOKPingAllWithMultipleRelayServers() {
 	defer cancel()
 
 	firstRelayMinerAddr := "127.0.0.1:8246"
-	firstServiceName := "firstService"
+	firstServiceName := "firstservice"
 	secondRelayMinerAddr := "127.0.0.1:8247"
-	secondServiceName := "secondService"
+	secondServiceName := "secondservice"
 
 	newSupplierOperatorKeyName := "newSupplierKeyName"
 	pingAppPrivateKey := secp256k1.GenPrivKey()
@@ -707,13 +707,13 @@ func (t *RelayProxyPingAllSuite) TestOKPingAllWithMultipleRelayServers() {
 
 	rp, err := proxy.NewRelayerProxy(
 		testBehavoirs.Deps,
-		proxy.WithServicesConfigMap(servicesConfigMap),
+		proxy.WithServicesConfigMap(cm),
 	)
 	require.NoError(t.T(), err)
 
 	go func() {
-		if err := rp.Start(ctx); !errors.Is(err, http.ErrServerClosed) {
-			require.NoError(t.T(), err)
+		if errStart := rp.Start(ctx); !errors.Is(errStart, http.ErrServerClosed) {
+			require.NoError(t.T(), errStart)
 		}
 	}()
 
@@ -779,12 +779,12 @@ func (t *RelayProxyPingAllSuite) TestNOKPingAllWithPartialFailureAtStartup() {
 	// copying the default relayminer in the test service config
 	// map for the relay proxy.
 	for k, v := range t.servicesConfigMap {
-		servicesConfigMap[k] = v
+		cm[k] = v
 	}
 
 	rp, err := proxy.NewRelayerProxy(
 		test.Deps,
-		proxy.WithServicesConfigMap(servicesConfigMap),
+		proxy.WithServicesConfigMap(cm),
 	)
 	require.NoError(t.T(), err)
 
@@ -820,7 +820,7 @@ func (t *RelayProxyPingAllSuite) TestNOKPingAllWithPartialFailureAfterStartup() 
 		},
 	}
 
-	servicesConfigMap := map[string]*config.RelayMinerServerConfig{
+	cm := map[string]*config.RelayMinerServerConfig{
 		failingRelayMinerAddr: &config.RelayMinerServerConfig{
 			ListenAddress: failingRelayMinerAddr,
 			ServerType:    config.RelayMinerServerTypeHTTP,
@@ -845,7 +845,7 @@ func (t *RelayProxyPingAllSuite) TestNOKPingAllWithPartialFailureAfterStartup() 
 
 	relayProxyBehavior := append(t.relayerProxyBehavior, []func(*testproxy.TestBehavior){
 		testproxy.WithDefaultSupplier(supplierOperatorKeyName, supplierEndpoints),
-		testproxy.WithServicesConfigMap(servicesConfigMap),
+		testproxy.WithServicesConfigMap(cm),
 	}...)
 
 	test := testproxy.NewRelayerProxyTestBehavior(ctx, t.T(), []string{supplierOperatorKeyName}, relayProxyBehavior...)
@@ -853,12 +853,12 @@ func (t *RelayProxyPingAllSuite) TestNOKPingAllWithPartialFailureAfterStartup() 
 	// copying the default relayminer in the test service config
 	// map for the relay proxy.
 	for k, v := range t.servicesConfigMap {
-		servicesConfigMap[k] = v
+		cm[k] = v
 	}
 
 	rp, err := proxy.NewRelayerProxy(
 		test.Deps,
-		proxy.WithServicesConfigMap(servicesConfigMap),
+		proxy.WithServicesConfigMap(cm),
 	)
 	require.NoError(t.T(), err)
 
@@ -924,7 +924,7 @@ func (t *RelayProxyPingAllSuite) TestOKPingAllDifferentEndpoint() {
 		},
 	}
 
-	servicesConfigMap := map[string]*config.RelayMinerServerConfig{
+	cm := map[string]*config.RelayMinerServerConfig{
 		relayminerDomainNameAddr: &config.RelayMinerServerConfig{
 			ListenAddress: relayminerDomainNameAddr,
 			ServerType:    config.RelayMinerServerTypeHTTP,
@@ -969,7 +969,7 @@ func (t *RelayProxyPingAllSuite) TestOKPingAllDifferentEndpoint() {
 
 	relayProxyBehavior := append(t.relayerProxyBehavior, []func(*testproxy.TestBehavior){
 		testproxy.WithDefaultSupplier(supplierOperatorKeyName, supplierEndpoints),
-		testproxy.WithServicesConfigMap(servicesConfigMap),
+		testproxy.WithServicesConfigMap(cm),
 	}...)
 
 	test := testproxy.NewRelayerProxyTestBehavior(ctx, t.T(), []string{supplierOperatorKeyName}, relayProxyBehavior...)
@@ -977,19 +977,18 @@ func (t *RelayProxyPingAllSuite) TestOKPingAllDifferentEndpoint() {
 	// copying the default relayminer in the test service config
 	// map for the relay proxy.
 	for k, v := range t.servicesConfigMap {
-		servicesConfigMap[k] = v
+		cm[k] = v
 	}
 
 	rp, err := proxy.NewRelayerProxy(
 		test.Deps,
-		proxy.WithServicesConfigMap(servicesConfigMap),
+		proxy.WithServicesConfigMap(cm),
 	)
 	require.NoError(t.T(), err)
 
 	go func() {
-		err := rp.Start(ctx)
-		if !errors.Is(err, http.ErrServerClosed) {
-			require.NoError(t.T(), err)
+		if errStart := rp.Start(ctx); !errors.Is(errStart, http.ErrServerClosed) {
+			require.NoError(t.T(), errStart)
 		}
 	}()
 

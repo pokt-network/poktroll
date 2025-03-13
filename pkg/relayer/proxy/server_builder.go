@@ -74,8 +74,9 @@ func (rp *relayerProxy) BuildProvidedServices(ctx context.Context) error {
 
 				if !found {
 					return ErrRelayerProxyServiceEndpointNotHandled.Wrapf(
-						"service endpoint %s not handled by the relay miner",
+						"service endpoint %s not handled by the relay miner %s",
 						endpoint.Url,
+						supplierOperatorAddress,
 					)
 				}
 			}

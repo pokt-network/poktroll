@@ -165,7 +165,7 @@ func (rel *relayMiner) ServePing(ctx context.Context, network, addr string) erro
 	return nil
 }
 
-func (rel *relayMiner) newPinghandlerFn(ctx context.Context) http.HandlerFunc {
+func (rel *relayMiner) newPinghandlerFn(ctx context.Context) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		rel.logger.Debug().Msg("pinging relay servers...")
 
