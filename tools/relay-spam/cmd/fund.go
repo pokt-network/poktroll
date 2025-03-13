@@ -131,6 +131,42 @@ var fundCmd = &cobra.Command{
 			keyringBackend = "test"
 		}
 
+		// Get the debug flag
+		debug, err := cmd.Flags().GetBool("debug")
+		if err != nil {
+			debug = false
+		}
+
+		// Get the gas-price flag
+		gasPrice, err := cmd.Flags().GetString("gas-price")
+		if err == nil && gasPrice != "" {
+			// Override the config gas price with the flag value
+			cfg.GasPrice = gasPrice
+		}
+
+		// Get the gas-adjustment flag
+		gasAdjustment, err := cmd.Flags().GetFloat64("gas-adjustment")
+		if err != nil {
+			gasAdjustment = 1.2 // Default to 20% buffer
+		}
+
+		// Get the fixed-gas-limit flag
+		fixedGasLimit, err := cmd.Flags().GetUint64("fixed-gas-limit")
+		if err != nil {
+			fixedGasLimit = 0 // Default to 0 (disabled)
+		}
+
+		// Log the gas price being used
+		if cfg.GasPrice != "" {
+			fmt.Printf("Using gas price: %s\n", cfg.GasPrice)
+		} else {
+			fmt.Printf("Using default gas price: 0.01upokt\n")
+		}
+		fmt.Printf("Using gas adjustment factor: %.2f\n", gasAdjustment)
+		if fixedGasLimit > 0 {
+			fmt.Printf("Using fixed gas limit: %d per message (simulation disabled)\n", fixedGasLimit)
+		}
+
 		// Create a context for the transaction
 		ctx := context.Background()
 
@@ -218,12 +254,6 @@ var fundCmd = &cobra.Command{
 		faucetAddrStr := faucetAddrObj.String()
 		fmt.Printf("Using faucet address: %s\n", faucetAddrStr)
 
-		// Get the debug flag
-		debug, err := cmd.Flags().GetBool("debug")
-		if err != nil {
-			debug = false
-		}
-
 		// Create real clients using depinject
 		// Create events query client
 		eventsQueryClient := events.NewEventsQueryClient(rpcEndpoint)
@@ -275,7 +305,7 @@ var fundCmd = &cobra.Command{
 		}
 
 		// Fund accounts using the txClient
-		err = fundAccountsWithTxClient(ctx, &cfg, txClient, clientCtx, faucetAddrStr, debug)
+		err = fundAccountsWithTxClient(ctx, &cfg, txClient, clientCtx, faucetAddrStr, debug, gasAdjustment, fixedGasLimit)
 
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Failed to fund accounts: %v\n", err)
@@ -292,6 +322,8 @@ func fundAccountsWithTxClient(
 	clientCtx cosmosclient.Context,
 	faucetAddrStr string,
 	debug bool,
+	gasAdjustment float64,
+	fixedGasLimit uint64,
 ) error {
 	var addressesToFund []string
 	var fundingAmounts []math.Int
@@ -492,7 +524,7 @@ func fundAccountsWithTxClient(
 	}
 
 	// Process addresses in batches
-	batchSize := 2000
+	batchSize := 4000
 	numBatches := (len(addressesToFund) + batchSize - 1) / batchSize // Ceiling division
 
 	fmt.Printf("Processing %d addresses in %d batches of up to %d addresses each\n",
@@ -540,7 +572,7 @@ func fundAccountsWithTxClient(
 		batchSem <- struct{}{}
 
 		// Process this batch in a goroutine
-		go func(batchIndex int, batchAddresses []string, batchAmounts []math.Int) {
+		go func(batchIndex int, batchAddresses []string, batchAmounts []math.Int, gasAdjustment float64, fixedGasLimit uint64) {
 			// Release the semaphore slot when done
 			defer func() { <-batchSem }()
 
@@ -574,17 +606,107 @@ func fundAccountsWithTxClient(
 				return
 			}
 
-			// Set gas limit - using a high value to ensure it goes through
-			txBuilder.SetGasLimit(1000000000000)
-
-			// Set fee amount based on gas limit and gas prices
-			gasPrices := sdk.NewDecCoins(sdk.NewDecCoinFromDec(volatile.DenomuPOKT, math.LegacyNewDecWithPrec(1, 2)))
-			fees := sdk.NewCoins()
-			for _, gasPrice := range gasPrices {
-				fee := gasPrice.Amount.MulInt(math.NewInt(int64(txBuilder.GetTx().GetGas()))).RoundInt()
-				fees = fees.Add(sdk.NewCoin(gasPrice.Denom, fee))
+			// Parse gas price from config or use default
+			gasPrices, err := config.ParseGasPrice(cfg.GasPrice)
+			if err != nil {
+				batchResults <- struct {
+					batchIndex int
+					txHash     string
+					err        error
+				}{batchIndex, "", fmt.Errorf("failed to parse gas price: %w", err)}
+				return
 			}
-			txBuilder.SetFeeAmount(fees)
+
+			// Instead of using a fixed gas estimate, simulate the transaction to get an accurate gas estimate
+			// Create a transaction factory with simulation enabled
+
+			// We need to get a fresh account number and sequence for simulation
+			// This requires synchronization to avoid sequence conflicts
+			accMutex.Lock()
+			// Use the pre-fetched account number, but get the current sequence for simulation
+			simAccSeq := accSeq
+			accMutex.Unlock()
+
+			simTxFactory := cosmostx.Factory{}.
+				WithChainID(clientCtx.ChainID).
+				WithKeybase(clientCtx.Keyring).
+				WithTxConfig(clientCtx.TxConfig).
+				WithAccountRetriever(clientCtx.AccountRetriever).
+				WithSimulateAndExecute(true).
+				WithAccountNumber(accNum).
+				WithSequence(simAccSeq).
+				WithGasPrices(gasPrices.String())
+
+			// Create a TxContext for simulation
+			simTxCtx, err := tx.NewTxContext(depinject.Supply(
+				txtypes.Context(clientCtx),
+				simTxFactory,
+			))
+			if err != nil {
+				batchResults <- struct {
+					batchIndex int
+					txHash     string
+					err        error
+				}{batchIndex, "", fmt.Errorf("failed to create simulation tx context: %w", err)}
+				return
+			}
+
+			// Try to simulate the transaction
+			var gasLimit uint64
+
+			// If fixed gas limit is set, use it instead of simulation
+			if fixedGasLimit > 0 {
+				gasLimit = fixedGasLimit * uint64(len(msgs))
+				if debug {
+					fmt.Printf("Batch %d: Using fixed gas limit: %d per message, total: %d for %d messages\n",
+						batchIndex, fixedGasLimit, gasLimit, len(msgs))
+				}
+			} else {
+				// First try with simulation
+				simGasLimit, simErr := simTxCtx.GetSimulatedTxGas(batchCtx, faucetAddrStr, msgs...)
+				if simErr == nil && simGasLimit > 0 {
+					// Simulation succeeded
+					gasLimit = uint64(float64(simGasLimit) * gasAdjustment) // Apply gas adjustment
+					if debug {
+						fmt.Printf("Batch %d: Simulation successful, estimated gas: %d for %d messages (avg: %.2f per msg)\n",
+							batchIndex, simGasLimit, len(msgs), float64(simGasLimit)/float64(len(msgs)))
+					}
+				} else {
+					// Simulation failed, use conservative estimate
+					gasLimit = uint64(200000 * len(msgs)) // Conservative estimate
+					if debug {
+						fmt.Printf("Batch %d: Simulation failed (%v), using conservative estimate: %d\n",
+							batchIndex, simErr, gasLimit)
+					}
+				}
+			}
+
+			// Ensure we have a minimum gas limit regardless of simulation results
+			minGasLimit := uint64(100000 * len(msgs))
+			if gasLimit < minGasLimit {
+				if debug {
+					fmt.Printf("Batch %d: Increasing gas limit from %d to minimum %d\n", batchIndex, gasLimit, minGasLimit)
+				}
+				gasLimit = minGasLimit
+			}
+
+			txBuilder.SetGasLimit(gasLimit)
+
+			// Calculate fees based on gas limit and gas prices
+			gasLimitDec := math.LegacyNewDec(int64(gasLimit))
+			feeAmountDec := gasPrices.MulDec(gasLimitDec)
+
+			feeCoins, changeCoins := feeAmountDec.TruncateDecimal()
+			// Ensure that any decimal remainder is added to the corresponding coin as a whole number
+			if !changeCoins.IsZero() {
+				feeCoins = feeCoins.Add(sdk.NewInt64Coin(volatile.DenomuPOKT, 1))
+			}
+			txBuilder.SetFeeAmount(feeCoins)
+
+			if debug {
+				fmt.Printf("Batch %d: Using gas limit %d for %d messages (%.2f per msg), fees: %s\n",
+					batchIndex, gasLimit, len(msgs), float64(gasLimit)/float64(len(msgs)), feeCoins.String())
+			}
 
 			// Get account number and sequence
 			// We already have faucetAddr from the outer scope
@@ -599,6 +721,10 @@ func fundAccountsWithTxClient(
 			accSeq++
 			accMutex.Unlock()
 
+			if debug {
+				fmt.Printf("Batch %d: Using account sequence %d\n", batchIndex, currentAccSeq)
+			}
+
 			// Create a transaction factory
 			txFactory := cosmostx.Factory{}.
 				WithChainID(clientCtx.ChainID).
@@ -606,7 +732,8 @@ func fundAccountsWithTxClient(
 				WithTxConfig(clientCtx.TxConfig).
 				WithAccountRetriever(clientCtx.AccountRetriever).
 				WithAccountNumber(accNum).
-				WithSequence(currentAccSeq)
+				WithSequence(currentAccSeq).
+				WithGasPrices(gasPrices.String())
 
 			// Sign the transaction
 			err = cosmostx.Sign(batchCtx, txFactory, faucetAddrStr, txBuilder, true)
@@ -658,7 +785,7 @@ func fundAccountsWithTxClient(
 				err        error
 			}{batchIndex, res.TxHash, nil}
 
-		}(batchIndex, batchAddresses, batchAmounts)
+		}(batchIndex, batchAddresses, batchAmounts, gasAdjustment, fixedGasLimit)
 	}
 
 	// Collect results from all batches
@@ -736,4 +863,13 @@ func init() {
 
 	// Add debug flag
 	fundCmd.Flags().Bool("debug", false, "Enable debug output")
+
+	// Add gas-price flag
+	fundCmd.Flags().String("gas-price", "", "Gas price to use for transactions (e.g. '0.01upokt')")
+
+	// Add gas-adjustment flag
+	fundCmd.Flags().Float64("gas-adjustment", 1.2, "Adjustment factor to apply to simulated gas (e.g. 1.2 for 20% buffer)")
+
+	// Add fixed-gas-limit flag
+	fundCmd.Flags().Uint64("fixed-gas-limit", 0, "Fixed gas limit per message (bypasses simulation if > 0)")
 }

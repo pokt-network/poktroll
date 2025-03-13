@@ -6,8 +6,12 @@ import (
 	"path/filepath"
 	"strings"
 
+	"cosmossdk.io/math"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	supplierconfig "github.com/pokt-network/poktroll/x/supplier/config"
 	"github.com/spf13/viper"
+
+	"github.com/pokt-network/poktroll/app/volatile"
 )
 
 type Config struct {
@@ -24,6 +28,7 @@ type Config struct {
 	RpcEndpoint          string            `yaml:"rpc_endpoint" mapstructure:"rpc_endpoint"`                     // RPC endpoint for broadcasting transactions
 	GatewayURLs          map[string]string `yaml:"gateway_urls" mapstructure:"gateway_urls"`                     // Map of gateway IDs to their URLs
 	ChainID              string            `yaml:"chain_id" mapstructure:"chain_id"`                             // Chain ID for transactions
+	GasPrice             string            `yaml:"gas_price" mapstructure:"gas_price"`                           // Gas price for transactions (e.g. "0.01upokt")
 }
 
 type Application struct {
@@ -76,6 +81,7 @@ func LoadConfig(configFile string) (*Config, error) {
 		GrpcEndpoint:         viper.GetString("grpc_endpoint"),
 		RpcEndpoint:          viper.GetString("rpc_endpoint"),
 		ChainID:              viper.GetString("chain_id"),
+		GasPrice:             viper.GetString("gas_price"),
 		GatewayURLs:          make(map[string]string),
 	}
 
@@ -189,4 +195,21 @@ func ParseAmount(amount string) (int64, error) {
 	}
 
 	return result, nil
+}
+
+// ParseGasPrice parses a gas price string like "0.01upokt" into sdk.DecCoins
+// If the input is empty, it returns a default gas price of 0.01upokt
+func ParseGasPrice(gasPrice string) (sdk.DecCoins, error) {
+	if gasPrice == "" {
+		// Default to 0.01upokt if not specified
+		return sdk.NewDecCoins(sdk.NewDecCoinFromDec(volatile.DenomuPOKT, math.LegacyNewDecWithPrec(1, 4))), nil
+	}
+
+	// Try to parse the gas price
+	decCoins, err := sdk.ParseDecCoins(gasPrice)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse gas price '%s': %w", gasPrice, err)
+	}
+
+	return decCoins, nil
 }
