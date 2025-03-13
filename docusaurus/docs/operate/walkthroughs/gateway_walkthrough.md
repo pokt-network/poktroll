@@ -1,5 +1,5 @@
 ---
-title: Gateway Walkthrough
+title: App & PATH Gateway (1 hour)
 sidebar_position: 6
 ---
 

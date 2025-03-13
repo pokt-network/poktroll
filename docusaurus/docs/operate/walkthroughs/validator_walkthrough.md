@@ -1,5 +1,5 @@
 ---
-title: Validator Walkthrough
+title: Validator (~30 min)
 sidebar_position: 4
 ---
 
