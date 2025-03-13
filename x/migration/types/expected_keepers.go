@@ -10,6 +10,7 @@ import (
 
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
+	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 )
 
 // AccountKeeper defines the expected interface for the Account module.
@@ -35,6 +36,7 @@ type ApplicationKeeper interface {
 type SupplierKeeper interface {
 	GetSupplier(ctx context.Context, supplierOperatorAddr string) (supplier sharedtypes.Supplier, found bool)
 	SetSupplier(ctx context.Context, supplier sharedtypes.Supplier)
+	StakeSupplier(ctx context.Context, logger cosmoslog.Logger, msg *suppliertypes.MsgStakeSupplier) (*sharedtypes.Supplier, error)
 }
 
 // ParamSubspace defines the expected Subspace interface for parameters.

@@ -12,4 +12,5 @@ var (
 	ErrMorseAccountsImport   = sdkerrors.Register(ModuleName, 1101, "unable to import morse claimable accounts")
 	ErrMorseAccountClaim     = sdkerrors.Register(ModuleName, 1102, "unable to claim morse account")
 	ErrMorseApplicationClaim = sdkerrors.Register(ModuleName, 1104, "unable to claim morse account as a staked application")
+	ErrMorseSupplierClaim    = sdkerrors.Register(ModuleName, 1105, "unable to claim morse account as a staked supplier")
 )
