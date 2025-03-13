@@ -1,5 +1,5 @@
 application_fund_goal: 1000000000upokt
-application_stake_goal: 100000000upokt
+application_stake_goal: 100000001upokt
 applications:
   - address: pokt18wmctmhu49csyy6j0eyhmua63rvlwgc8hddg2c
     delegateesgoal:
@@ -25,3 +25,5 @@ txflags: ""
 txflagstemplate: {}
 gateway_urls:
   pokt15vzxjqklzjtlz7lahe8z2dfe9nm5vxwwmscne4: http://anvil.localhost:3000/v1
+suppliers: []
+services: []

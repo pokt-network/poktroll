@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	supplierconfig "github.com/pokt-network/poktroll/x/supplier/config"
 	"github.com/spf13/viper"
 )
 
@@ -14,7 +15,10 @@ type Config struct {
 	TxFlags              string            `yaml:"txflags" mapstructure:"txflags"`
 	TxFlagsTemplate      map[string]string `yaml:"txflagstemplate" mapstructure:"txflagstemplate"`
 	Applications         []Application     `yaml:"applications" mapstructure:"applications"`
+	Suppliers            []Supplier        `yaml:"suppliers" mapstructure:"suppliers"`
 	ApplicationStakeGoal string            `yaml:"application_stake_goal" mapstructure:"application_stake_goal"` // Target stake amount for applications
+	SupplierStakeGoal    string            `yaml:"supplier_stake_goal" mapstructure:"supplier_stake_goal"`       // Target stake amount for suppliers
+	ServiceStakeGoal     string            `yaml:"service_stake_goal" mapstructure:"service_stake_goal"`         // Target stake amount for services
 	ApplicationFundGoal  string            `yaml:"application_fund_goal" mapstructure:"application_fund_goal"`   // Target balance for funding applications
 	GrpcEndpoint         string            `yaml:"grpc_endpoint" mapstructure:"grpc_endpoint"`                   // GRPC endpoint for querying balances
 	RpcEndpoint          string            `yaml:"rpc_endpoint" mapstructure:"rpc_endpoint"`                     // RPC endpoint for broadcasting transactions
@@ -29,27 +33,20 @@ type Application struct {
 	DelegateesGoal []string `yaml:"delegateesgoal" mapstructure:"delegateesgoal"` // TO WHICH GATEWAY(s) that app should be delegated to
 }
 
-// Example of application data returned from the API:
-// {
-// 	"application": {
-// 	  "address": "pokt100ta9phah2dfupn25ast25zv4q3rvyva6c9ckq",
-// 	  "stake": {
-// 		"denom": "upokt",
-// 		"amount": "99992378"
-// 	  },
-// 	  "service_configs": [
-// 		{
-// 		  "service_id": "proto-anvil"
-// 		}
-// 	  ],
-// 	  "delegatee_gateway_addresses": [
-// 		"pokt1tgfhrtpxa4afeh70fk2aj6ca4mw84xqrkfgrdl"
-// 	  ],
-// 	  "pending_undelegations": {},
-// 	  "unstake_session_end_height": "0",
-// 	  "pending_transfer": null
-// 	}
-//   }
+type Service struct {
+	Name      string `yaml:"name" mapstructure:"name"`
+	Address   string `yaml:"address" mapstructure:"address"`
+	Mnemonic  string `yaml:"mnemonic" mapstructure:"mnemonic"`
+	ServiceId string `yaml:"service_id" mapstructure:"service_id"`
+}
+
+type Supplier struct {
+	Name         string                         `yaml:"name" mapstructure:"name"`
+	Address      string                         `yaml:"address" mapstructure:"address"`
+	Mnemonic     string                         `yaml:"mnemonic" mapstructure:"mnemonic"`
+	OwnerAddress string                         `yaml:"owner_address" mapstructure:"owner_address"`
+	StakeConfig  supplierconfig.YAMLStakeConfig `yaml:"stake_config" mapstructure:"stake_config"`
+}
 
 func LoadConfig(configFile string) (*Config, error) {
 	// If a config file is provided, use it
