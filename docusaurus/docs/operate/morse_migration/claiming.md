@@ -15,7 +15,7 @@ sidebar_position: 2
   - [Claim an Application Staked Account](#claim-an-application-staked-account)
   - [Claim a Supplier (Servicer) Staked Account](#claim-a-supplier-servicer-staked-account)
 
-AFTER the canonical `MorseAccountState` has been imported onchain by the authority (see: [State Export / Transform / Import](./morse-migration.md#state-export--transform--validate)), Morse account/stake-holders can "claim" their Morse accounts onchain on Shannon.
+AFTER the canonical `MorseAccountState` has been imported onchain by the authority (see: [State Export / Transform / Import](./migration.md#state-export--transform--validate)), Morse account/stake-holders can "claim" their Morse accounts onchain on Shannon.
 
 ## Onchain Actors & Messages
 
@@ -177,7 +177,7 @@ If the Morse account is not staked as an application or supplier, it is consider
 
 Claiming an unstaked account will mint the unstaked balance of the Morse account being claimed to the Shannon account which the signer of the `MsgClaimMorseAccount`.
 
-This unstaked balance amount is retrieved from the corresponding onchain `MorseClaimableAccount` which was imported by the foundation (see: [State Export / Transform / Import](./morse-migration.md#state-export--transform--validate)).
+This unstaked balance amount is retrieved from the corresponding onchain `MorseClaimableAccount` which was imported by the foundation (see: [State Export / Transform / Import](./migration.md#state-export--transform--validate)).
 
 ```bash
 $ poktrolld migrate claim-account \
@@ -198,7 +198,7 @@ Claiming a Morse application account will:
 1. Mint the unstaked balance of the Morse account being claimed to the Shannon account which the signer of the `MsgClaimMorseAccount`.
 2. Stake the corresponding Shannon "destination" account as an application (on Shannon) for the given `<service_id>` and with the same stake amount as the Morse application being claimed had (on Morse).
 
-Both the unstaked balance and application stake amounts are retrieved from the corresponding onchain `MorseClaimableAccount` which was imported by the foundation (see: [State Export / Transform / Import](./morse-migration.md#state-export--transform--validate)).
+Both the unstaked balance and application stake amounts are retrieved from the corresponding onchain `MorseClaimableAccount` which was imported by the foundation (see: [State Export / Transform / Import](./migration.md#state-export--transform--validate)).
 
 ```bash
 $ poktrolld migrate claim-application \
@@ -234,7 +234,7 @@ Claiming a Morse supplier account will:
 1. Mint the unstaked balance of the Morse account being claimed to the Shannon account which the signer of the `MsgClaimMorseAccount`.
 2. Stake the corresponding Shannon "destination" account as a supplier (on Shannon) with the given services configuration and same stake amount as the Morse application being claimed had (on Morse).
 
-Both the unstaked balance and supplier stake amounts are retrieved from the corresponding onchain `MorseClaimableAccount` which was imported by the foundation (see: [State Export / Transform / Import](./morse-migration.md#state-export--transform--validate)).
+Both the unstaked balance and supplier stake amounts are retrieved from the corresponding onchain `MorseClaimableAccount` which was imported by the foundation (see: [State Export / Transform / Import](./migration.md#state-export--transform--validate)).
 
 ```bash
 $ poktrolld migrate claim-application \
