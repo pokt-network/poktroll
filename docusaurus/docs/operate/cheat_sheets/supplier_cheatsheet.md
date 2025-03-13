@@ -1,6 +1,6 @@
 ---
 sidebar_position: 4
-title: Supplier & ReplayMiner (~20 min)
+title: Supplier & RelayMiner (~20 min)
 ---
 
 ## Supplier Cheat Sheet <!-- omit in toc -->

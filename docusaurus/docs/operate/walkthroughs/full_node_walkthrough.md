@@ -31,13 +31,14 @@ See the [Full Node Cheat Sheet](../cheat_sheets/full_node_cheatsheet.md) if you 
   - [4. Install Cosmovisor](#4-install-cosmovisor)
   - [5. Retrieve the Genesis File](#5-retrieve-the-genesis-file)
   - [6. Choose Sync Method: Genesis vs Snapshot](#6-choose-sync-method-genesis-vs-snapshot)
-    - [6.1 \[Slow\] Sync from Genesis](#61-slow-sync-from-genesis)
+    - [6.1 \[Slow \& Not Recommended\] Sync from Genesis](#61-slow--not-recommended-sync-from-genesis)
     - [6.2 \[Fast \& Recommended\] Sync from Snapshot](#62-fast--recommended-sync-from-snapshot)
   - [7. Install `poktrolld`](#7-install-poktrolld)
   - [8. Network Configuration](#8-network-configuration)
   - [9. Set Up `systemd` Service](#9-set-up-systemd-service)
   - [10. Configure your Firewall](#10-configure-your-firewall)
   - [11. Check \& Monitor the Status of your Node](#11-check--monitor-the-status-of-your-node)
+- [Next Steps](#next-steps)
 
 ## Why run a Full Node?
 
@@ -58,6 +59,12 @@ to enable automatic binary upgrades.
 3. **Architecture Support**: Both x86_64 (amd64) and ARM64 architectures are supported.
 4. **Root or Sudo Access**: Administrative privileges are required.
 5. **Dedicated Server or Virtual Machine**: Any provider is acceptable.
+
+:::tip Vultr Playbook
+
+TODO_IN_THIS_PR(@olshansky)
+
+:::
 
 ## Instructions
 
@@ -258,7 +265,7 @@ flowchart TD
     class Current currentNode
 ```
 
-#### 6.1 [Slow] Sync from Genesis
+#### 6.1 [Slow & Not Recommended] Sync from Genesis
 
 The (static) genesis file contains the required initial version of poktrolld to start syncing from genesis.
 
@@ -281,6 +288,8 @@ If you prefer to use a snapshot (recommended for faster setup), you need to chec
   <TabItem value="testnet-beta" label="Testnet Beta" default>
 
     ```bash
+    echo "############################################"
+
     # Base URL for snapshots
     SNAPSHOT_BASE_URL="https://snapshots.us-nj.poktroll.com"
 
@@ -298,6 +307,8 @@ If you prefer to use a snapshot (recommended for faster setup), you need to chec
     # Set the version to use for installation
     POKTROLLD_VERSION=$SNAPSHOT_VERSION
     echo "Sync from snapshot will use the following version of poktrolld as a starting point: $POKTROLLD_VERSION"
+
+    echo "############################################"
     ```
 
   </TabItem>
@@ -305,6 +316,8 @@ If you prefer to use a snapshot (recommended for faster setup), you need to chec
   <TabItem value="testnet-alpha" label="Testnet Alpha">
 
     ```bash
+    echo "############################################"
+
     # Base URL for snapshots
     SNAPSHOT_BASE_URL="https://snapshots.us-nj.poktroll.com"
 
@@ -322,6 +335,8 @@ If you prefer to use a snapshot (recommended for faster setup), you need to chec
     # Set the version to use for installation
     POKTROLLD_VERSION=$SNAPSHOT_VERSION
     echo "Sync from snapshot will use the following version of poktrolld as a starting point: $POKTROLLD_VERSION"
+
+    echo "############################################"
     ```
 
   </TabItem>
@@ -329,6 +344,8 @@ If you prefer to use a snapshot (recommended for faster setup), you need to chec
   <TabItem value="mainnet" label="Mainnet">
 
     ```bash
+    echo "############################################"
+
     # Base URL for snapshots
     SNAPSHOT_BASE_URL="https://snapshots.us-nj.poktroll.com"
 
@@ -346,12 +363,22 @@ If you prefer to use a snapshot (recommended for faster setup), you need to chec
     # Set the version to use for installation
     POKTROLLD_VERSION=$SNAPSHOT_VERSION
     echo "Sync from snapshot will use the following version of poktrolld as a starting point: $POKTROLLD_VERSION"
+
+    echo "############################################"
     ```
 
   </TabItem>
 </Tabs>
 
-If you chose to use a snapshot, you'll need to download and apply it after configuring your node:
+Then download the snapshot via torrent and apply it to your node:
+
+:::warning Snapshot Download
+
+This can take 10-20 minutes depending on your network speed.
+
+Make sure you review the disk space requirements at the top of this guide before proceeding.
+
+:::
 
 ```bash
 # Create a directory for the snapshot download
@@ -385,7 +412,9 @@ fi
 cd $HOME
 rm -rf "$SNAPSHOT_DIR"
 
+echo "###"
 echo "Snapshot applied successfully"
+echo "###"
 ```
 
 ### 7. Install `poktrolld`
@@ -489,7 +518,7 @@ Initialize your node and configure it to connect to the network:
 
 ### 9. Set Up `systemd` Service
 
-Create a systemd service to manage your node. You can customize the service name if you plan to run multiple nodes:
+Create a `systemd` service to manage your node. You can customize the service name if you plan to run multiple nodes:
 
 ```bash
 # Set a service name (change if running multiple nodes)
@@ -557,6 +586,8 @@ Choose the appropriate method for your system:
 
   ```bash
   sudo apt install -y netcat
+  # OR
+  sudo apt install netcat-openbsd
   ```
 
 - Use an external service to check port accessibility
@@ -573,24 +604,37 @@ Choose the appropriate method for your system:
 
 ### 11. Check & Monitor the Status of your Node
 
-View service status
+View service status (e.g. `SERVICE_NAME=cosmovisor-poktroll`):
 
 ```bash
 sudo systemctl status ${SERVICE_NAME}
 ```
 
-View logs in real-time
+View logs in real-time (e.g. `SERVICE_NAME=cosmovisor-poktroll`):
 
 ```bash
 sudo journalctl -u ${SERVICE_NAME} -f
 ```
 
-Check sync status using poktrolld (now in your PATH)
+Check sync status using `poktrolld`:
 
 ```bash
-poktrolld status | jq '.SyncInfo'
+poktrolld status | jq '.sync_info.catching_up'
 ```
 
 Your node is fully synced when `catching_up` is `false`.
+
+:::tip
+
+Consider visiting one of our [explores](../../category/explorers-faucets-wallets-and-more) to compare their
+block height against yours, which you can query via:
+
+```bash
+poktrolld status | jq '.sync_info.latest_block_height'
+```
+
+:::
+
+## Next Steps
 
 You have now successfully set up a Full Node on the Pocket Network! This node can be used as a foundation to set up a validator, supplier, or gateway in the future.
