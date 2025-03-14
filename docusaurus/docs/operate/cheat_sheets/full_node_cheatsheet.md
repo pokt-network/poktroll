@@ -1,6 +1,6 @@
 ---
-title: Full Node Cheat Sheet
-sidebar_position: 1
+title: Full Node Cheat Sheet (~10 min)
+sidebar_position: 2
 ---
 
 **🖨 🍝 instructions to get you up and running with a `Full Node` on Pocket Network using `Systemd` and `Cosmovisor` ✅**

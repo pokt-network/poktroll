@@ -1,6 +1,6 @@
 ---
-sidebar_position: 4
-title: Gateway Cheat Sheet
+sidebar_position: 6
+title: App & PATH Gateway (~30 min)
 ---
 
 ## Gateway Cheat Sheet <!-- omit in toc -->

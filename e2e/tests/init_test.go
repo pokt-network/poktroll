@@ -16,6 +16,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -23,7 +24,9 @@ import (
 	sdklog "cosmossdk.io/log"
 	abci "github.com/cometbft/cometbft/abci/types"
 	cometcli "github.com/cometbft/cometbft/libs/cli"
+	cometjson "github.com/cometbft/cometbft/libs/json"
 	"github.com/cosmos/cosmos-sdk/codec"
+	"github.com/gorilla/websocket"
 	"github.com/regen-network/gocuke"
 	"github.com/stretchr/testify/require"
 
@@ -85,6 +88,17 @@ func TestMain(m *testing.M) {
 	m.Run()
 }
 
+// evmSubscription is a struct to unmarshal the JSON response from the EVM subscription.
+type evmSubscription struct {
+	Method string `json:"method"`
+	Params struct {
+		Result struct {
+			Hash   string `json:"hash"`
+			Number string `json:"number"`
+		} `json:"result"`
+	} `json:"params"`
+}
+
 type suite struct {
 	gocuke.TestingT
 	ctx  context.Context
@@ -104,6 +118,15 @@ type suite struct {
 
 	// moduleParamsMap is a map of module names to a map of parameter names to parameter values & types.
 	expectedModuleParams moduleParamsMap
+
+	// wsConn is the websocket connection to the PATH (i.e. gateway) websockets endpoint.
+	wsConn *websocket.Conn
+	// numEVMSubscriptionEvents is the number of eth subscription events received
+	// from the RelayMiner through the Gateway's websocket connection.
+	numEVMSubscriptionEvents atomic.Uint64
+	// wsCloseHeight is the block height at which the websocket connection should be closed
+	// by the relay miner due to the end of the session.
+	wsCloseHeight int64
 
 	deps                       depinject.Config
 	newBlockEventsReplayClient client.EventsReplayClient[*block.CometNewBlockEvent]
@@ -812,22 +835,9 @@ func (s *suite) getGatewayInfo(gatewayName string) *gatewaytypes.Gateway {
 // getSupplierUnbondingEndHeight returns the height at which the supplier will be unbonded.
 func (s *suite) getSupplierUnbondingEndHeight(accName string) int64 {
 	supplier := s.getSupplierInfo(accName)
+	sharedParams := s.getSharedParams()
 
-	args := []string{
-		"query",
-		"shared",
-		"params",
-		"--output=json",
-	}
-
-	res, err := s.pocketd.RunCommandOnHostWithRetry("", numQueryRetries, args...)
-	require.NoError(s, err, "error getting shared module params")
-
-	var resp sharedtypes.QueryParamsResponse
-	responseBz := []byte(strings.TrimSpace(res.Stdout))
-	s.cdc.MustUnmarshalJSON(responseBz, &resp)
-
-	return sharedtypes.GetSupplierUnbondingEndHeight(&resp.Params, supplier)
+	return sharedtypes.GetSupplierUnbondingEndHeight(&sharedParams, supplier)
 }
 
 // getApplicationInfo returns the application information for a given application address.
@@ -855,20 +865,8 @@ func (s *suite) getApplicationInfo(appName string) *apptypes.Application {
 func (s *suite) getApplicationUnbondingHeight(accName string) int64 {
 	application := s.getApplicationInfo(accName)
 
-	args := []string{
-		"query",
-		"shared",
-		"params",
-		"--output=json",
-	}
-
-	res, err := s.pocketd.RunCommandOnHostWithRetry("", numQueryRetries, args...)
-	require.NoError(s, err, "error getting shared module params")
-
-	var resp sharedtypes.QueryParamsResponse
-	responseBz := []byte(strings.TrimSpace(res.Stdout))
-	s.cdc.MustUnmarshalJSON(responseBz, &resp)
-	unbondingHeight := apptypes.GetApplicationUnbondingHeight(&resp.Params, application)
+	sharedParams := s.getSharedParams()
+	unbondingHeight := apptypes.GetApplicationUnbondingHeight(&sharedParams, application)
 	return unbondingHeight
 }
 
@@ -877,21 +875,9 @@ func (s *suite) getApplicationTransferEndHeight(accName string) int64 {
 	application := s.getApplicationInfo(accName)
 	require.NotNil(s, application.GetPendingTransfer())
 
-	args := []string{
-		"query",
-		"shared",
-		"params",
-		"--output=json",
-	}
+	sharedParams := s.getSharedParams()
 
-	res, err := s.pocketd.RunCommandOnHostWithRetry("", numQueryRetries, args...)
-	require.NoError(s, err, "error getting shared module params")
-
-	var resp sharedtypes.QueryParamsResponse
-	responseBz := []byte(strings.TrimSpace(res.Stdout))
-	s.cdc.MustUnmarshalJSON(responseBz, &resp)
-
-	return apptypes.GetApplicationTransferHeight(&resp.Params, application)
+	return apptypes.GetApplicationTransferHeight(&sharedParams, application)
 }
 
 // getServiceComputeUnitsPerRelay returns the compute units per relay for a given service ID
@@ -911,6 +897,87 @@ func (s *suite) getServiceComputeUnitsPerRelay(serviceId string) uint64 {
 	responseBz := []byte(strings.TrimSpace(res.Stdout))
 	s.cdc.MustUnmarshalJSON(responseBz, &resp)
 	return resp.Service.ComputeUnitsPerRelay
+}
+
+// getSharedParams returns the shared module parameters
+func (s *suite) getSharedParams() sharedtypes.Params {
+	args := []string{
+		"query",
+		"shared",
+		"params",
+		"--output=json",
+	}
+	res, err := s.pocketd.RunCommandOnHost("", args...)
+	require.NoError(s, err, "error querying shared params")
+
+	var sharedParamsRes sharedtypes.QueryParamsResponse
+
+	s.cdc.MustUnmarshalJSON([]byte(res.Stdout), &sharedParamsRes)
+	require.NoError(s, err)
+
+	return sharedParamsRes.Params
+}
+
+// getCurrentBlockHeight returns the current block height
+func (s *suite) getCurrentBlockHeight() int64 {
+	args := []string{
+		"query",
+		"block",
+		"--output=json",
+	}
+	res, err := s.pocketd.RunCommandOnHost("", args...)
+	require.NoError(s, err, "error querying for the latest block")
+
+	// Remove the first line of the response to avoid unmarshalling non JSON data.
+	// This is needed because, when no height is provided, the query block command returns:
+	//   "Falling back to latest block height:"
+	stdoutLines := strings.Split(res.Stdout, "\n")
+	require.Greater(s, len(stdoutLines), 1, "expected at least one line of output")
+	res.Stdout = strings.Join(stdoutLines[1:], "\n")
+
+	var blockRes struct {
+		LastCommit struct {
+			Height int64 `json:"height"`
+		} `json:"last_commit"`
+	}
+
+	err = cometjson.Unmarshal([]byte(res.Stdout), &blockRes)
+	require.NoError(s, err)
+
+	return blockRes.LastCommit.Height
+}
+
+// readEVMSubscriptionEvents reads the eth_subscription events from the websocket
+// connection until it gets closed and increments the number of events received.
+func (s *suite) readEVMSubscriptionEvents() context.Context {
+	s.numEVMSubscriptionEvents.Store(0)
+	ctx, cancel := context.WithCancel(context.Background())
+	go func() {
+		for {
+			_, message, err := s.wsConn.ReadMessage()
+			// Read messages until the connection is closed.
+			if err != nil {
+				cancel()
+				return
+			}
+
+			var evmSubscriptionMsg evmSubscription
+			if err = json.Unmarshal(message, &evmSubscriptionMsg); err != nil {
+				continue
+			}
+
+			if evmSubscriptionMsg.Method != "eth_subscription" {
+				continue
+			}
+
+			// Ensure the hash and number are populated.
+			require.True(s, strings.HasPrefix(evmSubscriptionMsg.Params.Result.Hash, "0x"))
+			require.True(s, strings.HasPrefix(evmSubscriptionMsg.Params.Result.Number, "0x"))
+			s.numEVMSubscriptionEvents.Add(1)
+		}
+	}()
+
+	return ctx
 }
 
 // accBalanceKey is a helper function to create a key to store the balance

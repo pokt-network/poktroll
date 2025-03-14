@@ -1,7 +1,6 @@
 package keeper_test
 
 import (
-	"fmt"
 	"strconv"
 	"testing"
 
@@ -49,7 +48,12 @@ func TestSupplierQuerySingle(t *testing.T) {
 			request: &types.QueryGetSupplierRequest{
 				OperatorAddress: supplierAddr,
 			},
-			expectedErr: status.Error(codes.NotFound, fmt.Sprintf("supplier with address: \"%s\"", supplierAddr)),
+			expectedErr: status.Error(
+				codes.NotFound,
+				types.ErrSupplierNotFound.Wrapf(
+					"supplier with operator address: \"%s\"", supplierAddr,
+				).Error(),
+			),
 		},
 		{
 			desc:        "InvalidRequest",
