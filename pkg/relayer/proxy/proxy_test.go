@@ -863,9 +863,9 @@ func (t *RelayProxyPingAllSuite) TestNOKPingAllWithPartialFailureAfterStartup() 
 	require.NoError(t.T(), err)
 
 	go func() {
-		err := rp.Start(ctx)
-		if !errors.Is(err, http.ErrServerClosed) {
-			require.NoError(t.T(), err)
+		errStart := rp.Start(ctx)
+		if !errors.Is(errStart, http.ErrServerClosed) {
+			require.NoError(t.T(), errStart)
 		}
 	}()
 
