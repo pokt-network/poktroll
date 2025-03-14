@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 
 	"github.com/spf13/cobra"
 
@@ -268,16 +269,22 @@ var stakeCmd = &cobra.Command{
 
 				fmt.Println("\nDRY RUN COMPLETE: No transactions were broadcast")
 			} else {
-				// Stake applications
-				fmt.Println("Staking applications...")
-				if err := appStaker.StakeApplications(); err != nil {
+				// Get concurrency level from flag
+				concurrency, _ := cmd.Flags().GetInt("concurrency")
+				if concurrency < 1 {
+					concurrency = 1
+				}
+
+				// Stake applications concurrently
+				fmt.Printf("Staking applications with %d concurrent workers...\n", concurrency)
+				if err := stakeApplicationsConcurrently(appStaker, concurrency); err != nil {
 					fmt.Fprintf(os.Stderr, "Failed to stake applications: %v\n", err)
 					os.Exit(1)
 				}
 
-				// Delegate applications to gateways
-				fmt.Println("Delegating applications to gateways...")
-				if err := appStaker.DelegateToGateway(); err != nil {
+				// Delegate applications to gateways concurrently
+				fmt.Printf("Delegating applications to gateways with %d concurrent workers...\n", concurrency)
+				if err := delegateApplicationsConcurrently(appStaker, concurrency); err != nil {
 					fmt.Fprintf(os.Stderr, "Failed to delegate applications: %v\n", err)
 					os.Exit(1)
 				}
@@ -314,9 +321,15 @@ var stakeCmd = &cobra.Command{
 
 				fmt.Println("\nDRY RUN COMPLETE: No transactions were broadcast")
 			} else {
-				// Add services
-				fmt.Println("Adding services...")
-				if err := serviceStaker.AddServices(); err != nil {
+				// Get concurrency level from flag
+				concurrency, _ := cmd.Flags().GetInt("concurrency")
+				if concurrency < 1 {
+					concurrency = 1
+				}
+
+				// Add services concurrently
+				fmt.Printf("Adding services with %d concurrent workers...\n", concurrency)
+				if err := addServicesConcurrently(serviceStaker, concurrency); err != nil {
 					fmt.Fprintf(os.Stderr, "Failed to add services: %v\n", err)
 					os.Exit(1)
 				}
@@ -362,9 +375,15 @@ var stakeCmd = &cobra.Command{
 
 				fmt.Println("\nDRY RUN COMPLETE: No transactions were broadcast")
 			} else {
-				// Stake suppliers
-				fmt.Println("Staking suppliers...")
-				if err := supplierStaker.StakeSuppliers(); err != nil {
+				// Get concurrency level from flag
+				concurrency, _ := cmd.Flags().GetInt("concurrency")
+				if concurrency < 1 {
+					concurrency = 1
+				}
+
+				// Stake suppliers concurrently
+				fmt.Printf("Staking suppliers with %d concurrent workers...\n", concurrency)
+				if err := stakeSuppliersConcurrently(supplierStaker, concurrency); err != nil {
 					fmt.Fprintf(os.Stderr, "Failed to stake suppliers: %v\n", err)
 					os.Exit(1)
 				}
@@ -373,6 +392,224 @@ var stakeCmd = &cobra.Command{
 			}
 		}
 	},
+}
+
+// stakeApplicationsConcurrently stakes applications concurrently using the specified number of workers
+func stakeApplicationsConcurrently(appStaker *application.Staker, concurrency int) error {
+	// Get the list of applications to stake
+	applications := appStaker.GetConfig().Applications
+	if len(applications) == 0 {
+		return nil
+	}
+
+	// Create a channel to receive applications to stake
+	appChan := make(chan config.Application, len(applications))
+
+	// Create a channel to receive errors
+	errChan := make(chan error, len(applications))
+
+	// Create a wait group to wait for all workers to finish
+	var wg sync.WaitGroup
+
+	// Start workers
+	for i := 0; i < concurrency; i++ {
+		wg.Add(1)
+		go func(workerID int) {
+			defer wg.Done()
+
+			for app := range appChan {
+				fmt.Printf("Worker %d: Staking application %s...\n", workerID, app.Name)
+				if err := appStaker.StakeApplication(app); err != nil {
+					errChan <- fmt.Errorf("failed to stake application %s: %w", app.Name, err)
+					return
+				}
+			}
+		}(i)
+	}
+
+	// Send applications to the channel
+	for _, app := range applications {
+		appChan <- app
+	}
+
+	// Close the channel to signal that no more applications will be sent
+	close(appChan)
+
+	// Wait for all workers to finish
+	wg.Wait()
+
+	// Check for errors
+	select {
+	case err := <-errChan:
+		return err
+	default:
+		return nil
+	}
+}
+
+// delegateApplicationsConcurrently delegates applications to gateways concurrently
+func delegateApplicationsConcurrently(appStaker *application.Staker, concurrency int) error {
+	// Get the list of applications to delegate
+	applications := appStaker.GetConfig().Applications
+	if len(applications) == 0 {
+		return nil
+	}
+
+	// Create a channel to receive applications to delegate
+	appChan := make(chan config.Application, len(applications))
+
+	// Create a channel to receive errors
+	errChan := make(chan error, len(applications))
+
+	// Create a wait group to wait for all workers to finish
+	var wg sync.WaitGroup
+
+	// Start workers
+	for i := 0; i < concurrency; i++ {
+		wg.Add(1)
+		go func(workerID int) {
+			defer wg.Done()
+
+			for app := range appChan {
+				// Skip if no gateways are specified for delegation
+				if len(app.DelegateesGoal) == 0 {
+					fmt.Printf("Worker %d: No gateways specified for delegation for application %s, skipping\n", workerID, app.Name)
+					continue
+				}
+
+				fmt.Printf("Worker %d: Delegating application %s to gateways...\n", workerID, app.Name)
+				if err := appStaker.DelegateApplicationToGateway(app); err != nil {
+					errChan <- fmt.Errorf("failed to delegate application %s: %w", app.Name, err)
+					return
+				}
+			}
+		}(i)
+	}
+
+	// Send applications to the channel
+	for _, app := range applications {
+		appChan <- app
+	}
+
+	// Close the channel to signal that no more applications will be sent
+	close(appChan)
+
+	// Wait for all workers to finish
+	wg.Wait()
+
+	// Check for errors
+	select {
+	case err := <-errChan:
+		return err
+	default:
+		return nil
+	}
+}
+
+// addServicesConcurrently adds services concurrently using the specified number of workers
+func addServicesConcurrently(serviceStaker *service.Staker, concurrency int) error {
+	// Get the list of services to add
+	services := serviceStaker.GetConfig().Services
+	if len(services) == 0 {
+		return nil
+	}
+
+	// Create a channel to receive services to add
+	svcChan := make(chan config.Service, len(services))
+
+	// Create a channel to receive errors
+	errChan := make(chan error, len(services))
+
+	// Create a wait group to wait for all workers to finish
+	var wg sync.WaitGroup
+
+	// Start workers
+	for i := 0; i < concurrency; i++ {
+		wg.Add(1)
+		go func(workerID int) {
+			defer wg.Done()
+
+			for svc := range svcChan {
+				fmt.Printf("Worker %d: Adding service %s with ID %s...\n", workerID, svc.Name, svc.ServiceId)
+				if err := serviceStaker.AddService(svc); err != nil {
+					errChan <- fmt.Errorf("failed to add service %s: %w", svc.Name, err)
+					return
+				}
+			}
+		}(i)
+	}
+
+	// Send services to the channel
+	for _, svc := range services {
+		svcChan <- svc
+	}
+
+	// Close the channel to signal that no more services will be sent
+	close(svcChan)
+
+	// Wait for all workers to finish
+	wg.Wait()
+
+	// Check for errors
+	select {
+	case err := <-errChan:
+		return err
+	default:
+		return nil
+	}
+}
+
+// stakeSuppliersConcurrently stakes suppliers concurrently using the specified number of workers
+func stakeSuppliersConcurrently(supplierStaker *supplier.Staker, concurrency int) error {
+	// Get the list of suppliers to stake
+	suppliers := supplierStaker.GetConfig().Suppliers
+	if len(suppliers) == 0 {
+		return nil
+	}
+
+	// Create a channel to receive suppliers to stake
+	supChan := make(chan config.Supplier, len(suppliers))
+
+	// Create a channel to receive errors
+	errChan := make(chan error, len(suppliers))
+
+	// Create a wait group to wait for all workers to finish
+	var wg sync.WaitGroup
+
+	// Start workers
+	for i := 0; i < concurrency; i++ {
+		wg.Add(1)
+		go func(workerID int) {
+			defer wg.Done()
+
+			for sup := range supChan {
+				fmt.Printf("Worker %d: Staking supplier %s...\n", workerID, sup.Name)
+				if err := supplierStaker.StakeSupplier(sup); err != nil {
+					errChan <- fmt.Errorf("failed to stake supplier %s: %w", sup.Name, err)
+					return
+				}
+			}
+		}(i)
+	}
+
+	// Send suppliers to the channel
+	for _, sup := range suppliers {
+		supChan <- sup
+	}
+
+	// Close the channel to signal that no more suppliers will be sent
+	close(supChan)
+
+	// Wait for all workers to finish
+	wg.Wait()
+
+	// Check for errors
+	select {
+	case err := <-errChan:
+		return err
+	default:
+		return nil
+	}
 }
 
 func init() {
@@ -397,4 +634,7 @@ Entity Types:
 
 	// Add dry-run flag
 	stakeCmd.Flags().Bool("dry-run", false, "Show what would be staked and delegated without performing transactions")
+
+	// Add concurrency flag
+	stakeCmd.Flags().Int("concurrency", 10, "Number of concurrent workers for staking operations")
 }
