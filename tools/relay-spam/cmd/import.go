@@ -18,7 +18,7 @@ import (
 var importCmd = &cobra.Command{
 	Use:   "import",
 	Short: "Import accounts from config",
-	Long:  `Import accounts from the configuration file into the keyring.`,
+	Long:  `Import applications, services, and suppliers from the configuration file into the keyring.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		// Get config file from flag
 		configFile, err := cmd.Flags().GetString("config")
@@ -74,14 +74,14 @@ var importCmd = &cobra.Command{
 		accountManager := account.NewManager(kr, cfg)
 
 		// Import accounts
-		fmt.Println("Importing accounts from config...")
+		fmt.Println("Importing applications, services, and suppliers from config...")
 		err = accountManager.ImportAccounts()
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Failed to import accounts: %v\n", err)
 			os.Exit(1)
 		}
 
-		fmt.Println("Successfully imported all accounts")
+		fmt.Println("Successfully imported all applications, services, and suppliers")
 	},
 }
 

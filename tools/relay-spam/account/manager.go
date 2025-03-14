@@ -83,11 +83,12 @@ func (m *Manager) CreateAccounts(numAccounts int) ([]config.Application, error) 
 }
 
 func (m *Manager) ImportAccounts() error {
+	// Import application accounts
 	for _, app := range m.config.Applications {
 		// Skip if already imported
 		_, err := m.keyring.Key(app.Name)
 		if err == nil {
-			fmt.Printf("Account %s already imported, skipping\n", app.Name)
+			fmt.Printf("Application account %s already imported, skipping\n", app.Name)
 			continue
 		}
 
@@ -95,10 +96,48 @@ func (m *Manager) ImportAccounts() error {
 		hdPath := hd.CreateHDPath(sdktypes.CoinType, 0, 0).String()
 		_, err = m.keyring.NewAccount(app.Name, app.Mnemonic, "", hdPath, hd.Secp256k1)
 		if err != nil {
-			return fmt.Errorf("failed to import account %s: %w", app.Name, err)
+			return fmt.Errorf("failed to import application account %s: %w", app.Name, err)
 		}
 
-		fmt.Printf("Successfully imported account %s with address %s\n", app.Name, app.Address)
+		fmt.Printf("Successfully imported application account %s with address %s\n", app.Name, app.Address)
+	}
+
+	// Import service accounts
+	for _, service := range m.config.Services {
+		// Skip if already imported
+		_, err := m.keyring.Key(service.Name)
+		if err == nil {
+			fmt.Printf("Service account %s already imported, skipping\n", service.Name)
+			continue
+		}
+
+		// Import account
+		hdPath := hd.CreateHDPath(sdktypes.CoinType, 0, 0).String()
+		_, err = m.keyring.NewAccount(service.Name, service.Mnemonic, "", hdPath, hd.Secp256k1)
+		if err != nil {
+			return fmt.Errorf("failed to import service account %s: %w", service.Name, err)
+		}
+
+		fmt.Printf("Successfully imported service account %s with address %s\n", service.Name, service.Address)
+	}
+
+	// Import supplier accounts
+	for _, supplier := range m.config.Suppliers {
+		// Skip if already imported
+		_, err := m.keyring.Key(supplier.Name)
+		if err == nil {
+			fmt.Printf("Supplier account %s already imported, skipping\n", supplier.Name)
+			continue
+		}
+
+		// Import account
+		hdPath := hd.CreateHDPath(sdktypes.CoinType, 0, 0).String()
+		_, err = m.keyring.NewAccount(supplier.Name, supplier.Mnemonic, "", hdPath, hd.Secp256k1)
+		if err != nil {
+			return fmt.Errorf("failed to import supplier account %s: %w", supplier.Name, err)
+		}
+
+		fmt.Printf("Successfully imported supplier account %s with address %s\n", supplier.Name, supplier.Address)
 	}
 
 	return nil
@@ -107,16 +146,96 @@ func (m *Manager) ImportAccounts() error {
 func (m *Manager) GenerateFundingCommands() ([]string, error) {
 	var commands []string
 
-	// Use the global ApplicationFundGoal if available, otherwise use a default value
-	fundAmount := "1000000upokt" // Default value
+	// Generate funding commands for applications
+	appFundAmount := "1000000upokt" // Default value
 	if m.config.ApplicationFundGoal != "" {
-		fundAmount = m.config.ApplicationFundGoal
+		appFundAmount = m.config.ApplicationFundGoal
 	}
 
 	for _, app := range m.config.Applications {
 		cmd := fmt.Sprintf("poktrolld tx bank send faucet %s %s %s",
-			app.Address, fundAmount, m.config.TxFlags)
+			app.Address, appFundAmount, m.config.TxFlags)
 		commands = append(commands, cmd)
+	}
+
+	// Generate funding commands for services
+	serviceFundAmount := "1000000upokt" // Default value
+	if m.config.ServiceFundGoal != "" {
+		serviceFundAmount = m.config.ServiceFundGoal
+	}
+
+	for _, service := range m.config.Services {
+		cmd := fmt.Sprintf("poktrolld tx bank send faucet %s %s %s",
+			service.Address, serviceFundAmount, m.config.TxFlags)
+		commands = append(commands, cmd)
+	}
+
+	// Generate funding commands for suppliers
+	supplierFundAmount := "1000000upokt" // Default value
+	if m.config.SupplierStakeGoal != "" {
+		supplierFundAmount = m.config.SupplierStakeGoal
+	}
+
+	for _, supplier := range m.config.Suppliers {
+		cmd := fmt.Sprintf("poktrolld tx bank send faucet %s %s %s",
+			supplier.Address, supplierFundAmount, m.config.TxFlags)
+		commands = append(commands, cmd)
+	}
+
+	return commands, nil
+}
+
+func (m *Manager) GenerateStakingCommands() ([]string, error) {
+	var commands []string
+
+	// Generate staking commands for applications
+	appStakeAmount := "1000000upokt" // Default value
+	if m.config.ApplicationStakeGoal != "" {
+		appStakeAmount = m.config.ApplicationStakeGoal
+	}
+
+	for _, app := range m.config.Applications {
+		if app.ServiceIdGoal == "" {
+			continue // Skip if no service ID goal
+		}
+		cmd := fmt.Sprintf("poktrolld tx application stake-application %s %s %s",
+			app.ServiceIdGoal, appStakeAmount, m.config.TxFlags)
+		commands = append(commands, cmd)
+	}
+
+	// Generate staking commands for services
+	serviceStakeAmount := "1000000upokt" // Default value
+	if m.config.ServiceStakeGoal != "" {
+		serviceStakeAmount = m.config.ServiceStakeGoal
+	}
+
+	for _, service := range m.config.Services {
+		if service.ServiceId == "" {
+			continue // Skip if no service ID
+		}
+		cmd := fmt.Sprintf("poktrolld tx service create-service %s %s %s",
+			service.ServiceId, serviceStakeAmount, m.config.TxFlags)
+		commands = append(commands, cmd)
+	}
+
+	// Generate staking commands for suppliers
+	supplierStakeAmount := "1000000upokt" // Default value
+	if m.config.SupplierStakeGoal != "" {
+		supplierStakeAmount = m.config.SupplierStakeGoal
+	}
+
+	for _, supplier := range m.config.Suppliers {
+		// Skip if no stake config or services
+		if len(supplier.StakeConfig.Services) == 0 {
+			continue
+		}
+
+		// Create a stake supplier command for each service
+		for _, serviceConfig := range supplier.StakeConfig.Services {
+			cmd := fmt.Sprintf("poktrolld tx supplier stake-supplier %s %s %s",
+				serviceConfig.ServiceId, supplierStakeAmount, m.config.TxFlags)
+			commands = append(commands, cmd)
+		}
 	}
 
 	return commands, nil
