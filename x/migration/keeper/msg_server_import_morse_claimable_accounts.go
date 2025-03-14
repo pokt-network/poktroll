@@ -38,8 +38,12 @@ func (k msgServer) ImportMorseClaimableAccounts(ctx context.Context, msg *migrat
 		return nil, status.Error(codes.FailedPrecondition, err.Error())
 	}
 
+	logger.Info("beginning importing morse claimable accounts...")
+
 	// Import MorseClaimableAccounts.
 	k.ImportFromMorseAccountState(sdkCtx, &msg.MorseAccountState)
+
+	logger.Info("done importing morse claimable accounts!")
 
 	// Emit the corresponding event.
 	if err := sdkCtx.EventManager().EmitTypedEvent(
