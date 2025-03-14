@@ -42,10 +42,11 @@ type Application struct {
 }
 
 type Service struct {
-	Name      string `yaml:"name" mapstructure:"name"`
-	Address   string `yaml:"address" mapstructure:"address"`
-	Mnemonic  string `yaml:"mnemonic" mapstructure:"mnemonic"`
-	ServiceId string `yaml:"service_id" mapstructure:"service_id"`
+	Name        string `yaml:"name" mapstructure:"name"`
+	ServiceName string `yaml:"service_name" mapstructure:"service_name"`
+	Address     string `yaml:"address" mapstructure:"address"`
+	Mnemonic    string `yaml:"mnemonic" mapstructure:"mnemonic"`
+	ServiceId   string `yaml:"service_id" mapstructure:"service_id"`
 }
 
 type Supplier struct {
