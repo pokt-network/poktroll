@@ -12,7 +12,8 @@ import (
 )
 
 // BeginBlockerActivateSupplierServices processes suppliers that have pending service activations
-// at the current block height. It returns the number of suppliers whose services were activated.
+// at the current block height.
+// It returns the number of suppliers whose services were activated.
 func (k Keeper) BeginBlockerActivateSupplierServices(
 	ctx context.Context,
 ) (numSuppliersWithServicesActivation uint64, err error) {
@@ -40,7 +41,7 @@ func (k Keeper) BeginBlockerActivateSupplierServices(
 		// supplier.ServiceConfigHistory is guaranteed to contain at least one entry.
 		// This is necessary for the session hydration process that relies on the
 		// service config history to determine the current active service configuration.
-		// It is MUST be enforced by the methods that update the service config history.
+		// It MUST be enforced by the methods that update the service config history.
 		// (e.g. StakeSupplier, UnstakeSupplier, EndBlockerPruneSupplierServiceConfigHistory...)
 		lastConfigIdx := len(supplier.ServiceConfigHistory) - 1
 		// Check if this supplier has service config scheduled to activate at current height.

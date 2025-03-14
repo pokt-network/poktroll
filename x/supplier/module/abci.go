@@ -46,19 +46,22 @@ func BeginBlocker(ctx sdk.Context, k keeper.Keeper) error {
 
 	// Service activation occurs in BeginBlocker rather than EndBlocker for two main reasons:
 	//
-	// 1. External State Consistency: When offchain clients query the suppliers at activation
-	//    block (height N), they should see the newly activated service configurations.
-	//    * If the activation occurred in the EndBlocker of block N-1, clients would
+	// 1. External State Consistency: When offchain clients query the suppliers at
+	//    pending service activation block (i.e. query height N), they should see
+	//    the newly activated service configurations.
+	//    - If the activation occurred in the EndBlocker of block N-1, clients would
 	//      observe a mismatch between the activation height and when the configurations
 	//      actually take effect.
-	//    * If the activation occurred in the EndBlocker of block N, offchain clients will
+	//    - If the activation occurred in the EndBlocker of block N, offchain clients will
 	//      have a consistent view but the internal state consistency will not be satisfied.
+
 	//
-	// 2. Internal State Consistency: All transactions within the activation block must
-	//    execute against a consistent set of service configurations. Activating in
-	//    BeginBlocker ensures all state transitions in block N operate with the new
-	//    configurations, whereas activation in EndBlocker would build the block
-	//    on the old configurations.
+	// 2. Internal State Consistency
+	//    All transactions within the activation block must execute against a consistent
+	//    set of service configurations.
+	//    Activating in BeginBlocker ensures all state transitions in block N operate
+	//    with the new configurations, whereas activation in EndBlocker would build
+	//    the block on the old configurations.
 	numSuppliersWithActivatedServices, err := k.BeginBlockerActivateSupplierServices(ctx)
 	if err != nil {
 		logger.Error(fmt.Sprintf("could not activate services for suppliers due to error %v", err))

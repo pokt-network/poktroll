@@ -27,7 +27,6 @@ func (k Keeper) EndBlockerPruneSupplierServiceConfigHistory(
 
 	for _, supplier := range k.GetAllSuppliers(ctx) {
 		// Store the original number of historical service configs.
-
 		originalHistoryLength := len(supplier.ServiceConfigHistory)
 
 		// Initialize a slice to retain service config updates that are still needed

@@ -16,7 +16,7 @@ import (
 	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 )
 
-// TODO_BETA(@red-0ne): Update supplier staking documentation to remove the upstaking requirement and introduce the staking fee.
+// TODO_POST_MAINNET(@red-0ne): Update supplier staking documentation to remove the upstaking requirement and introduce the staking fee.
 func (k msgServer) StakeSupplier(
 	ctx context.Context,
 	msg *suppliertypes.MsgStakeSupplier,
@@ -56,8 +56,13 @@ func (k Keeper) createSupplier(
 		OperatorAddress: msg.OperatorAddress,
 		Stake:           msg.Stake,
 		// The supplier won't be active until the start of the next session.
-		// This is to ensure that it doesn't pop up in session hydrations and potentially
-		// evicting another supplier.
+		// This prevents mid-session disruption to the session hydration process, which could
+		// otherwise cause unexpected eviction of existing suppliers due to:
+		//   1. The enforced maximum number of suppliers per session
+		//   2. The deterministic random selection algorithm for suppliers
+		// Note: This differs from applications, which are part of the session existence
+		// (i.e. a session doesn't exist until its corresponding application is created).
+		// Which is not the case for suppliers.
 		Services:             make([]*sharedtypes.SupplierServiceConfig, 0),
 		ServiceConfigHistory: make([]*sharedtypes.ServiceConfigUpdate, 0),
 	}

@@ -170,23 +170,25 @@ func (k Keeper) hydrateSessionApplication(ctx context.Context, sh *sessionHydrat
 func (k Keeper) hydrateSessionSuppliers(ctx context.Context, sh *sessionHydrator) error {
 	logger := k.Logger().With("method", "hydrateSessionSuppliers")
 
-	// TODO_POST_MAINNET: Use the number of suppliers per session used as of the query height.
-	// As of now the session is hydrated with the "current" NumSuppliersPerSession param value.
-	// We need to account for NumSuppliersPerSession as of the query height to ensure
-	// that the session is hydrated with the old number of suppliers in case the param
-	// has changed between the query height and the current height.
+	// TODO_MAINNET: Use the number of suppliers per session used at query height (i.e. sh.blockHeight).
+	// Currently, the session is hydrated with the "current" (i.e. latest block)
+	// NumSuppliersPerSession param value.
+	// We need to account for the value at query height to ensure:
+	// - The session is hydrated with the correct historical number of suppliers
+	// - Changes between query height and current height are properly handled
+	// Refer to the following discussion for more details:
+	// https://github.com/pokt-network/poktroll/pull/1103#discussion_r1992214953
 	numSuppliersPerSession := int(k.GetParams(ctx).NumSuppliersPerSession)
-	// Get all suppliers instead of filtering by service ID.
-	// Suppliers may not be active for the session's service ID at "query height",
-	// so we cannot filter by supplier.Services which represents the services
-	// the supplier is active for at the "current height".
+
+	// Get all suppliers without service ID filtering because:
+	// - Suppliers may not be active for the session's service ID at "query height"
+	// - We cannot filter by supplier.Services which only represents current (i.e. latest) height
 	suppliers := k.supplierKeeper.GetAllSuppliers(ctx)
 
-	// A mapping from the supplier operator address to a random weight.
-	// This is used for sorting the suppliers.
-	// If NumCandidateSuppliers > NumSuppliersPerSession, the deterministic sorting order
-	// is used to determine which ones are available to serve requests to enable fair but
-	// random opportunity to serve Applications (i.e. do useful work).
+	// Map supplier operator addresses to random weights for deterministic sorting.
+	// This ensures fair distribution when:
+	// - NumCandidateSuppliers exceeds NumSuppliersPerSession
+	// - We need to randomly but fairly determine which suppliers can serve Applications
 	candidatesToRandomWeight := make(map[string]int)
 	candidateSuppliers := make([]*sharedtypes.Supplier, 0)
 
@@ -222,23 +224,27 @@ func (k Keeper) hydrateSessionSuppliers(ctx context.Context, sh *sessionHydrator
 	}
 
 	for _, supplier := range candidateSuppliers {
-		// Generate deterministic random weight for supplier:
-		// 1. Combine session ID and supplier's operator address to create unique seed
-		// 2. Hash the seed using SHA3-256
-		// 3. Take first 8 bytes of hash as random weight
-		candidateSeed := concatWithDelimiter(
-			sessionIDComponentDelimiter,
-			sh.sessionIDBz,
-			[]byte(supplier.OperatorAddress),
-		)
-		candidateSeedHash := sha3Hash(candidateSeed)
-		candidatesToRandomWeight[supplier.OperatorAddress] = int(binary.BigEndian.Uint64(candidateSeedHash[:8]))
+		candidatesToRandomWeight[supplier.OperatorAddress] = generateSupplierRandomWeight(supplier, sh)
 	}
 
 	sortedCandidates := sortCandidateSuppliersByHeight(candidateSuppliers, candidatesToRandomWeight)
 	sh.session.Suppliers = sortedCandidates[:numSuppliersPerSession]
 
 	return nil
+}
+
+// Generate deterministic random weight for supplier:
+// 1. Combine session ID and supplier's operator address to create unique seed
+// 2. Hash the seed using SHA3-256
+// 3. Take first 8 bytes of hash as random weight
+func generateSupplierRandomWeight(supplier *sharedtypes.Supplier, sh *sessionHydrator) int {
+	candidateSeed := concatWithDelimiter(
+		sessionIDComponentDelimiter,
+		sh.sessionIDBz,
+		[]byte(supplier.OperatorAddress),
+	)
+	candidateSeedHash := sha3Hash(candidateSeed)
+	return int(binary.BigEndian.Uint64(candidateSeedHash[:8]))
 }
 
 func concatWithDelimiter(delimiter string, bz ...[]byte) []byte {
@@ -326,6 +332,7 @@ func sortCandidateSuppliersByHeight(
 		// Sort based on weight difference
 		return weightDiff
 	}
+
 	slices.SortFunc(candidateSuppliers, weightedSupplierSortFn)
 	return candidateSuppliers
 }

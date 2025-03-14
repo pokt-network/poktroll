@@ -60,6 +60,7 @@ func TestMsgServer_StakeSupplier_SuccessfulCreateAndUpdate(t *testing.T) {
 	require.True(t, isSupplierFound)
 	require.Equal(t, operatorAddr, foundSupplier.OperatorAddress)
 	require.Equal(t, int64(1000000), foundSupplier.Stake.Amount.Int64())
+	require.NotNil(t, foundSupplier.Services)
 	require.Len(t, foundSupplier.Services, 0)
 
 	latestConfigUpdate := getLatestSupplierServiceConfigUpdate(t, foundSupplier)
@@ -608,7 +609,7 @@ func newSupplierStakeMsg(
 		Services:        services,
 	}
 
-	supplier := &sharedtypes.Supplier{
+	expectedSupplier = &sharedtypes.Supplier{
 		OwnerAddress:    ownerAddr,
 		OperatorAddress: operatorAddr,
 		Stake:           &initialStake,
@@ -621,7 +622,7 @@ func newSupplierStakeMsg(
 		},
 	}
 
-	return msg, supplier
+	return msg, expectedSupplier
 }
 
 // setStakeMsgSigner sets the signer of the given MsgStakeSupplier to the given address
