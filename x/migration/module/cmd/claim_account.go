@@ -120,7 +120,7 @@ func runClaimAccount(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	deps := depinject.Supply(&clientCtx, &clientFactory)
+	deps := depinject.Supply(clientCtx, clientFactory)
 	txContext, err := tx.NewTxContext(deps)
 	if err != nil {
 		return err
