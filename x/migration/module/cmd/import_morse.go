@@ -1,7 +1,7 @@
 package cmd
 
 import (
-	"fmt"
+	"context"
 	"net/url"
 	"os"
 
@@ -16,6 +16,7 @@ import (
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 	"github.com/spf13/cobra"
 
+	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/client/tx"
 	txtypes "github.com/pokt-network/poktroll/pkg/client/tx/types"
 	"github.com/pokt-network/poktroll/pkg/deps/config"
@@ -67,72 +68,19 @@ func runImportMorseAccounts(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	queryNodeRPCUrlString, err := cmd.Flags().GetString(flags.FlagNode)
-	if err != nil {
-		return err
-	}
-
-	queryNodeRPCUrl, err := url.Parse(queryNodeRPCUrlString)
-	if err != nil {
-		return err
-	}
-
-	deps, err := config.SupplyConfig(ctx, cmd, []config.SupplierFn{
-		config.NewSupplyEventsQueryClientFn(queryNodeRPCUrl),
-		config.NewSupplyBlockQueryClientFn(queryNodeRPCUrl),
-		config.NewSupplyBlockClientFn(queryNodeRPCUrl),
-	})
-	if err != nil {
-		return err
-	}
-	//deps, err := supplyImportMorseAccountsDeps(ctx, cmd)
-	//if err != nil {
-	//	return err
-	//}
-	//
-	//// Extract the cosmos-sdk client context from the depinject config.
-	//var txClientCtx txtypes.Context
-	//if err = depinject.Inject(deps, &txClientCtx); err != nil {
-	//	return err
-	//}
-	//clientCtx := cosmosclient.Context(txClientCtx)
-
-	// Conventionally derive a cosmos-sdk client context from the cobra command.
-	fmt.Println("ONE: >>>>>>>>>>")
-	clientCtx, err := cosmosclient.GetClientTxContext(cmd)
-	if err != nil {
-		return err
-	}
-
-	// Conventionally construct a txClient and its dependencies.
-	fmt.Println("TWO: >>>>>>>>>>")
-	clientFactory, err := cosmostx.NewFactoryCLI(clientCtx, cmd.Flags())
-	if err != nil {
-		return err
-	}
-
-	fmt.Println("THREE: >>>>>>>>>>")
-	deps = depinject.Configs(deps, depinject.Supply(
-		txtypes.Context(clientCtx),
-		clientFactory,
-	))
-	txCtx, err := tx.NewTxContext(deps)
-	if err != nil {
-		return err
-	}
-
-	fmt.Println("FOUR: >>>>>>>>>>")
-	deps = depinject.Configs(deps, depinject.Supply(txCtx))
-	txClient, err := tx.NewTxClient(ctx, deps, tx.WithSigningKeyName(clientCtx.FromName))
-	if err != nil {
-		return err
-	}
+	txClient, err := getTxClient(ctx, cmd)
 
 	// Construct a MsgImportMorseAccountState message.
 	msgImportMorseAccountState, err := migrationtypes.NewMsgImportMorseClaimableAccounts(
 		authtypes.NewModuleAddress(govtypes.ModuleName).String(),
 		*morseAccountState,
 	)
+	if err != nil {
+		return err
+	}
+
+	// Conventionally derive a cosmos-sdk client context from the cobra command.
+	clientCtx, err := cosmosclient.GetClientTxContext(cmd)
 	if err != nil {
 		return err
 	}
@@ -154,10 +102,51 @@ func runImportMorseAccounts(cmd *cobra.Command, args []string) error {
 	return <-errCh
 }
 
-//// TODO_IN_THIS_COMMIT: godoc & move...
-//func supplyImportMorseAccountsDeps(
-//	ctx context.Context,
-//	cmd *cobra.Command,
-//) (depinject.Config, error) {
-//
-//}
+// TODO_IN_THIS_COMMIT: godoc & move...
+func getTxClient(ctx context.Context, cmd *cobra.Command) (client.TxClient, error) {
+	// Retrieve and parse the query node RPC URL.
+	queryNodeRPCUrlString, err := cmd.Flags().GetString(flags.FlagNode)
+	if err != nil {
+		return nil, err
+	}
+
+	queryNodeRPCUrl, err := url.Parse(queryNodeRPCUrlString)
+	if err != nil {
+		return nil, err
+	}
+
+	// Conventionally derive a cosmos-sdk client context from the cobra command.
+	clientCtx, err := cosmosclient.GetClientTxContext(cmd)
+	if err != nil {
+		return nil, err
+	}
+
+	// Conventionally construct a txClient and its dependencies.
+	clientFactory, err := cosmostx.NewFactoryCLI(clientCtx, cmd.Flags())
+	if err != nil {
+		return nil, err
+	}
+
+	// Construct dependencies for the tx client.
+	deps, err := config.SupplyConfig(ctx, cmd, []config.SupplierFn{
+		config.NewSupplyEventsQueryClientFn(queryNodeRPCUrl),
+		config.NewSupplyBlockQueryClientFn(queryNodeRPCUrl),
+		config.NewSupplyBlockClientFn(queryNodeRPCUrl),
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	deps = depinject.Configs(deps, depinject.Supply(
+		txtypes.Context(clientCtx),
+		clientFactory,
+	))
+	txCtx, err := tx.NewTxContext(deps)
+	if err != nil {
+		return nil, err
+	}
+
+	// Construct a tx client.
+	deps = depinject.Configs(deps, depinject.Supply(txCtx))
+	return tx.NewTxClient(ctx, deps, tx.WithSigningKeyName(clientCtx.FromName))
+}
