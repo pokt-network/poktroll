@@ -11,4 +11,5 @@ var (
 	ErrRelayMinerConfigEmpty                 = sdkerrors.Register(codespace, 2104, "empty RelayMiner config")
 	ErrRelayMinerConfigInvalidSupplier       = sdkerrors.Register(codespace, 2105, "invalid supplier in RelayMiner config")
 	ErrRelayMinerConfigInvalidServer         = sdkerrors.Register(codespace, 2106, "invalid server in RelayMiner config")
+	ErrRelayerMinerWrongForwardToken         = sdkerrors.Register(codespace, 2107, "wrong or empty forward.token in configuration file. (you can use 'make relayminer_forward_token_gen' command to generate a token)")
 )
