@@ -23,7 +23,6 @@ send_relay_path_WEBSOCKET: check_path_up test_e2e_env ## Send a WEBSOCKET relay 
 		-H "App-Address: pokt1lqyu4v88vp8tzc86eaqr4lq8rwhssyn6rfwzex" \
 		-H "Target-Service-Id: anvilws"
 
-
 # TODO_POST_MAINNET(@red-0ne): Re-enable this once PATH Gateway supports REST.
 # See https://github.com/buildwithgrove/path/issues/87
 .PHONY: send_relay_path_REST
@@ -50,3 +49,7 @@ test_relay_util_100: check_path_up check_relay_util  ## Test anvil PATH behind G
 		-d '{"jsonrpc":"2.0","method":"eth_blockNumber","id":1}' \
 		-x 100 \
 		-b
+
+.PHONY: relayminer_forward_token_gen
+relayminer_forward_token_gen:
+	@openssl rand -hex 32 | tr -d "\n"
