@@ -59,7 +59,7 @@ func (s *migrationSuite) Before() {
 	s.suite.TestingT = s.TestingT
 	s.suite.Before()
 
-	// Initialize the shannon key index.
+	// Initialize the morse & shannon key indices.
 	s.nextShannonKeyIdx()
 }
 
@@ -144,9 +144,12 @@ func (s *migrationSuite) runCommand(commandStr string) ([]byte, error) {
 }
 
 // TODO_IN_THIS_COMMIT: godoc and move...
-func (s *migrationSuite) writeTempFile(fileName string, content []byte) {
+func (s *migrationSuite) writeTempFile(fileName string, content []byte) string {
 	outputPath, err := os.CreateTemp("", fileName)
 	require.NoError(s, err)
+	defer func() {
+		_ = outputPath.Close()
+	}()
 
 	// Delete the temp file when the test completes.
 	s.Cleanup(func() {
@@ -155,6 +158,8 @@ func (s *migrationSuite) writeTempFile(fileName string, content []byte) {
 
 	_, err = outputPath.Write(content)
 	require.NoError(s, err)
+
+	return outputPath.Name()
 }
 
 func (s *migrationSuite) AMorsestateexportIsWrittenTo(morseStateExportFile string) {
@@ -180,7 +185,15 @@ func (s *migrationSuite) AnUnclaimedMorseclaimableaccountWithAKnownPrivateKeyExi
 
 // TODO_IN_THIS_COMMIT: godoc and move...
 func (s *migrationSuite) nextMorseKeyIdx() uint64 {
+	// DEV_NOTE: iterate at the end to include the 0 index.
+	currentIdx := s.getMorseKeyIdx()
 	s.morseKeyIdx++
+
+	return currentIdx
+}
+
+// TODO_IN_THIS_COMMIT: godoc and move...
+func (s *migrationSuite) getMorseKeyIdx() uint64 {
 	return s.morseKeyIdx
 }
 
@@ -310,9 +323,27 @@ func (s *migrationSuite) TheShannonDestinationAccountDoesNotExistOnchain() {
 
 func (s *migrationSuite) TheMorsePrivateKeyIsUsedToClaimAMorseclaimableaccountAsANonactorAccount() {
 	// generate the deterministic fixture morse private key
-	// poktrolld tx migration claim-account --from=shannon-key-xxx <morse_src_address>
+	morsePrivKey := testmigration.GenMorsePrivateKey(s.nextMorseKeyIdx())
+	privKeyArmoredJSONString, err := testmigration.EncryptArmorPrivKey(morsePrivKey, "", "")
+	require.NoError(s, err)
 
-	s.Skip("TODO_UPNEXT(@bryanchriswhite, #1034): Implement.")
+	s.Logf("XX| %s |XX", privKeyArmoredJSONString)
+
+	// TODO_IN_THIS_COMMIT: consolidate with any other temp file tracking pattern.
+	privKeyArmoredJSONPath := s.writeTempFile("morse_private_key.json", []byte(privKeyArmoredJSONString))
+
+	// poktrolld tx migration claim-account --from=shannon-key-xxx <morse_src_address>
+	res, err := s.pocketd.RunCommandOnHost("",
+		"tx", "migration", "claim-account",
+		"--from", s.getShannonKeyName(),
+		"--yes",
+		"--output=json",
+		"--no-passphrase",
+		privKeyArmoredJSONPath,
+	)
+	require.NoError(s, err)
+
+	s.Logf("RESULT: %s", res.Stdout)
 }
 
 func (s *migrationSuite) TheShannonDestinationAccountExistsOnchain() {
