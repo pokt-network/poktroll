@@ -404,7 +404,6 @@ act_reviewdog: check_act check_gh ## Run the reviewdog workflow locally like so:
 	@echo "Detected architecture: $(CONTAINER_ARCH)"
 	act -v -s GITHUB_TOKEN=$(GITHUB_TOKEN) -W .github/workflows/reviewdog.yml --container-architecture $(CONTAINER_ARCH)
 
-
 ###########################
 ###   Release Helpers   ###
 ###########################
@@ -471,3 +470,4 @@ include ./makefiles/gateways.mk
 include ./makefiles/session.mk
 include ./makefiles/claims.mk
 include ./makefiles/relay.mk
+include ./makefiles/ping.mk

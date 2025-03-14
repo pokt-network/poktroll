@@ -5,12 +5,15 @@ package e2e
 import (
 	"context"
 	"fmt"
+	"net/http"
+	"net/url"
 	"slices"
 	"strconv"
 	"time"
 
 	abci "github.com/cometbft/cometbft/abci/types"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
+	"github.com/gorilla/websocket"
 	"github.com/regen-network/gocuke"
 	"github.com/stretchr/testify/require"
 
@@ -19,6 +22,7 @@ import (
 	testutilevents "github.com/pokt-network/poktroll/testutil/events"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
 )
@@ -147,11 +151,18 @@ func (s *suite) TheSupplierHasServicedASessionWithRelaysForServiceForApplication
 	numRelays, err := strconv.Atoi(numRelaysStr)
 	require.NoError(s, err)
 
-	// Query for any existing claims so that we can compare against them in
-	// future assertions about changes in onchain claims.
-	allClaimsRes, err := s.proofQueryClient.AllClaims(ctx, &prooftypes.QueryAllClaimsRequest{})
-	require.NoError(s, err)
-	s.scenarioState[preExistingClaimsKey] = allClaimsRes.Claims
+	// Wait for the claims to be 0 before proceeding since claims from a previous
+	// test may still be settling, skewing the results.
+	for {
+		allClaimsRes, err := s.proofQueryClient.AllClaims(ctx, &prooftypes.QueryAllClaimsRequest{})
+		require.NoError(s, err)
+		s.scenarioState[preExistingClaimsKey] = allClaimsRes.Claims
+		if len(allClaimsRes.Claims) == 0 {
+			break
+		}
+		// Wait for a block worth of time before checking again.
+		time.Sleep(2 * time.Second)
+	}
 
 	// Query for any existing proofs so that we can compare against them in
 	// future assertions about changes in onchain proofs.
@@ -211,6 +222,65 @@ func (suite *suite) TheModuleParametersAreSetAsFollows(moduleName string, params
 	)
 
 	suite.TheAccountSendsAnAuthzExecMessageToUpdateAllModuleParams("pnf", moduleName, params)
+}
+
+func (s *suite) TheApplicationEstablishesAWebsocketsConnectionForService(appName string, testWsServiceId string) {
+	// Retrieve the application from the map using the app name
+	app, ok := accNameToAppMap[appName]
+	require.True(s, ok, "application %s not found", appName)
+
+	// Get shared parameters for the current test environment
+	sharedParams := s.getSharedParams()
+
+	// Calculate the next session start height and wait for that block
+	currentHeight := s.getCurrentBlockHeight()
+	nextSessionStartHeight := sharedtypes.GetNextSessionStartHeight(&sharedParams, currentHeight)
+	s.waitForBlockHeight(nextSessionStartHeight)
+
+	// Set WebSocket close height just before the claim window opens
+	s.wsCloseHeight = sharedtypes.GetClaimWindowOpenHeight(&sharedParams, nextSessionStartHeight) - 1
+
+	// Prepare HTTP headers with application address and target service ID
+	header := http.Header{}
+	header.Add("App-Address", app.Address)
+	header.Add("Target-Service-Id", testWsServiceId)
+
+	// Parse the base URL and convert to WebSocket scheme
+	wsUrl, err := url.Parse(pathUrl)
+	require.NoError(s, err)
+	wsUrl.Scheme = "ws"
+
+	// Establish the WebSocket connection with the prepared headers
+	wsConn, _, err := websocket.DefaultDialer.Dial(wsUrl.String(), header)
+	require.NoError(s, err)
+
+	// Prepare and send a subscription message for new block headers
+	subscriptionMsg := `{"id":1,"jsonrpc":"2.0","method":"eth_subscribe","params":["newHeads"]}`
+	err = wsConn.WriteMessage(websocket.TextMessage, []byte(subscriptionMsg))
+	require.NoError(s, err)
+
+	// Store the WebSocket connection in the suite for later use
+	s.wsConn = wsConn
+}
+
+func (s *suite) TheApplicationReceivesEvmSubscriptionEventsUntilTheSessionEnds() {
+	ctx := s.readEVMSubscriptionEvents()
+
+	for {
+		select {
+		case <-time.After(eventTimeout):
+			s.Fatalf("ERROR: timed out waiting for subscription events")
+		case <-ctx.Done():
+			require.Greater(s, s.numEVMSubscriptionEvents.Load(), uint64(0), "no subscription events received")
+			return
+		}
+	}
+}
+
+func (s *suite) TheSubscriptionIsClosedBeforeClaimWindowOpenHeightIsReached() {
+	currentHeight := s.getCurrentBlockHeight()
+
+	require.Equal(s, s.wsCloseHeight, currentHeight)
 }
 
 func (s *suite) sendRelaysForSession(
