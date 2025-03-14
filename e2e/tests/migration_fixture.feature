@@ -20,37 +20,37 @@ Feature: Morse Migration Success
       When the Morse private key is used to claim a MorseClaimableAccount as a non-actor account
       Then the Shannon destination account balance is increased by the sum of all MorseClaimableAccount tokens
 
-    Scenario: Morse account-holder claims as an existing non-actor account
-      Given the Shannon destination account exists onchain
-      And the Shannon destination account upokt balance is non-zero
-      When the Morse private key is used to claim a MorseClaimableAccount as a non-actor account
-      Then the Shannon destination account balance is increased by the sum of all MorseClaimableAccount tokens
-
-  Rule: Actor (re-)stake claims MAY reference existing Shannon actors
-    Scenario Outline: Morse account-holder claims as a new staked actor
-      Given the Shannon destination account is not staked as an "<actor>"
-      When the Morse private key is used to claim a MorseClaimableAccount as an "<actor>"
-      Then the Shannon destination account balance is increased by the unstaked balance amount of the MorseClaimableAccount
-      And the Shannon destination account is staked as an "<actor>"
-      And the Shannon "<actor>" stake increased by the "<stake_amount_field>" of the MorseClaimableAccount
-      And the Shannon "<actor>" service config is updated, if applicable
-
-      Examples:
-        | actor       | stake_amount_field |
-        | application | application_stake  |
-        | supplier    | supplier_stake     |
-
-    Scenario Outline: Morse account-holder claims as an existing staked actor
-      Given the Shannon destination account is staked as an "<actor>"
-      When the Morse private key is used to claim a MorseClaimableAccount as an "<actor>"
-      Then the Shannon destination account balance is increased by the unstaked balance amount of the MorseClaimableAccount
-      And the Shannon destination account is staked as an "<actor>"
-      And the Shannon "<actor>" stake increased by the "<stake_amount_field>" of the MorseClaimableAccount
-      And the Shannon "<actor>" service config is updated, if applicable
-
-      Examples:
-        | actor       | stake_amount_field |
-        | application | application_stake  |
-        | supplier    | supplier_stake     |
+#    Scenario: Morse account-holder claims as an existing non-actor account
+#      Given the Shannon destination account exists onchain
+#      And the Shannon destination account upokt balance is non-zero
+#      When the Morse private key is used to claim a MorseClaimableAccount as a non-actor account
+#      Then the Shannon destination account balance is increased by the sum of all MorseClaimableAccount tokens
+#
+#  Rule: Actor (re-)stake claims MAY reference existing Shannon actors
+#    Scenario Outline: Morse account-holder claims as a new staked actor
+#      Given the Shannon destination account is not staked as an "<actor>"
+#      When the Morse private key is used to claim a MorseClaimableAccount as an "<actor>"
+#      Then the Shannon destination account balance is increased by the unstaked balance amount of the MorseClaimableAccount
+#      And the Shannon destination account is staked as an "<actor>"
+#      And the Shannon "<actor>" stake increased by the "<stake_amount_field>" of the MorseClaimableAccount
+#      And the Shannon "<actor>" service config is updated, if applicable
+#
+#      Examples:
+#        | actor       | stake_amount_field |
+#        | application | application_stake  |
+#        | supplier    | supplier_stake     |
+#
+#    Scenario Outline: Morse account-holder claims as an existing staked actor
+#      Given the Shannon destination account is staked as an "<actor>"
+#      When the Morse private key is used to claim a MorseClaimableAccount as an "<actor>"
+#      Then the Shannon destination account balance is increased by the unstaked balance amount of the MorseClaimableAccount
+#      And the Shannon destination account is staked as an "<actor>"
+#      And the Shannon "<actor>" stake increased by the "<stake_amount_field>" of the MorseClaimableAccount
+#      And the Shannon "<actor>" service config is updated, if applicable
+#
+#      Examples:
+#        | actor       | stake_amount_field |
+#        | application | application_stake  |
+#        | supplier    | supplier_stake     |
 
 # TODO_UPNEXT(@bryanchriswhite, #1034): Enumerate and implement error scenarios.

@@ -24,6 +24,8 @@ import (
 	abci "github.com/cometbft/cometbft/abci/types"
 	cometcli "github.com/cometbft/cometbft/libs/cli"
 	"github.com/cosmos/cosmos-sdk/codec"
+	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
+	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	"github.com/regen-network/gocuke"
 	"github.com/stretchr/testify/require"
 
@@ -915,6 +917,30 @@ func (s *suite) getServiceComputeUnitsPerRelay(serviceId string) uint64 {
 	responseBz := []byte(strings.TrimSpace(res.Stdout))
 	s.cdc.MustUnmarshalJSON(responseBz, &resp)
 	return resp.Service.ComputeUnitsPerRelay
+}
+
+// TODO_IN_THIS_COMMIT: godoc...
+func (s *suite) queryAccount(accAddr string) (account *codectypes.Any, isFound bool) {
+	args := []string{
+		"query",
+		"auth",
+		"account",
+		accAddr,
+		"--output=json",
+	}
+
+	result, err := s.pocketd.RunCommandOnHost("", args...)
+	require.NotNil(s, result)
+	if strings.Contains(result.Stderr, "not found") {
+		return nil, false
+	}
+	require.NoError(s, err, "error getting account %s", accAddr)
+
+	var resp authtypes.QueryAccountResponse
+	responseBz := []byte(strings.TrimSpace(result.Stdout))
+	s.cdc.MustUnmarshalJSON(responseBz, &resp)
+
+	return resp.Account, true
 }
 
 // accBalanceKey is a helper function to create a key to store the balance

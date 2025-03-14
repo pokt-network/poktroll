@@ -13,7 +13,8 @@ Feature: MorseAccountState Import
   Scenario: Authority generates and imports MorseAccountState
     # TODO_UPNEXT(@bryanchriswhite, #1034): Print a link to the latest liquify snapshot if no local state exists.
     Given a local Morse node persisted state exists
-    When the authority executes "pocket util export-genesis-for-reset" with "stdout" written to "morse_state_export.json"
+    # TODO_MAINNET: Replace 1000 with the published "canonical" export/migration/cutover height.
+    When the authority executes "pocket util export-genesis-for-reset 1000 poktroll" with stdout written to "morse_state_export.json"
     Then a MorseStateExport is written to "morse_state_export.json"
 
     When the authority executes "poktrolld tx migration collect-morse-accounts morse_state_export.json morse_account_state.json"
@@ -21,7 +22,7 @@ Feature: MorseAccountState Import
 
     Given no MorseClaimableAccounts exist
     And the MorseAccountState in "morse_account_state.json" is valid
-    When the authority executes "make import-morse-claimable-accounts morse_account_state.json"
+    When the authority executes "poktrolld tx migration import-morse-accounts --from=pnf --grpc-addr=localhost:9090 morse_account_state.json"
     Then the MorseClaimableAccounts are persisted onchain
 
   Scenario:
