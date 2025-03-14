@@ -76,8 +76,8 @@ func NewHTTPServer(
 	sessionQueryClient client.SessionQueryClient,
 ) relayer.RelayServer {
 	// Create the HTTP server.
-	// TODO_TECHDEBT: Make timeouts configurable.
 	httpServer := &http.Server{
+		// TODO_IMPROVE: Make timeouts configurable.
 		IdleTimeout:  60 * time.Second,
 		ReadTimeout:  10 * time.Second,
 		WriteTimeout: 10 * time.Second,

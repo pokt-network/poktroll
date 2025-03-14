@@ -218,6 +218,10 @@ func (server *relayMinerHTTPServer) sendRelayResponse(
 
 	relayResponseBzLenStr := fmt.Sprintf("%d", len(relayResponseBz))
 
+	// Send the close and content length headers to the client to ensure that the
+	// connection is closed after the response is sent.
+	// This should be done automatically by the http server but they are set to
+	// ensure deterministic behavior.
 	writer.Header().Set("Connection", "close")
 	writer.Header().Set("Content-Length", relayResponseBzLenStr)
 	_, err = writer.Write(relayResponseBz)

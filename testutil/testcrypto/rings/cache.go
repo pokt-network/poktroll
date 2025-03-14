@@ -12,8 +12,8 @@ import (
 	"github.com/pokt-network/poktroll/pkg/polylog"
 )
 
-// NewRingClientWithMockDependencies creates a new "real" RingClient with the given
-// mock Account and Application queriers supplied as dependencies.
+// NewRingClientWithMockDependencies creates a new "real" RingClient with the
+// the necessary queriers injected via dependencies.
 // The queriers are expected to maintain their respective mocked states:
 //   - Account querier: the account addresses and public keys
 //   - Application querier: the application addresses delegatee gateway addresses

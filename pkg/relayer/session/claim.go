@@ -162,18 +162,31 @@ func (rs *relayerSessionsManager) waitForEarliestCreateClaimsHeight(
 	logger.Info().Msg("waiting & blocking until the earliest claim commit height for this supplier")
 
 	// Wait for the earliestSupplierClaimsCommitHeight to be reached before proceeding.
+	// This waiting is implemented using a goroutine and a buffered channel to enable
+	// concurrent processing that ensures:
+	// 1. The main process blocks until the required block height is observed.
+	// 2. During this waiting period, the system efficiently creates claims in parallel.
+	// 3. Execution continues only after both conditions are satisfied: the target block
+	//    height is reached AND the claims creation is complete.
+
+	// Concurrently wait for the target block height to be observed.
+	// This operation is non-blocking to allow for claims creation to proceed in parallel.
 	blockObserved := make(chan struct{}, 1)
 	go func() {
 		_ = rs.waitForBlock(ctx, earliestSupplierClaimsCommitHeight)
-		logger.Info().Msg("observed earliest claim commit height")
+		logger.Info().Msgf("observed earliest claim commit height %d", earliestSupplierClaimsCommitHeight)
+
 		close(blockObserved)
 	}()
 
+	// Create claims for the given sessionTrees while waiting for the target block height.
 	claimsFlushed, failedClaims := rs.createClaimRoots(sessionTrees)
 	if len(failedClaims) > 0 {
+		logger.Warn().Msgf("failed to create claims for %d session trees", len(failedClaims))
 		failedCreateClaimsSessionsCh <- failedClaims
 	}
 
+	// Block until the target block height is observed.
 	<-blockObserved
 	return claimsFlushed
 }

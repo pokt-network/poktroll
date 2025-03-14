@@ -144,6 +144,9 @@ func (ro *replayObservable[V]) SubscribeFromLatestBufferedOffset(
 
 	go func() {
 		ro.replayBufferMu.RLock()
+		// Cancel the context and close the channel to stop the subscription observable
+		// which will no longer receive any new values.
+		// Omitting this will cause a goroutine leak in the new observable created above.
 		defer cancel()
 		defer close(ch)
 
