@@ -1,6 +1,6 @@
 ---
-title: Validator Cheat Sheet
-sidebar_position: 6
+title: Validator (~15 min)
+sidebar_position: 3
 ---
 
 ## Validator Cheat Sheet <!-- omit in toc -->

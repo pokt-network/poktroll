@@ -1,5 +1,5 @@
 ---
-title: Full Node (Docker)
+title: Full Node - Docker (~30 min)
 sidebar_position: 3
 ---
 

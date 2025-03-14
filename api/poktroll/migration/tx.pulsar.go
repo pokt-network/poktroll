@@ -4340,20 +4340,73 @@ func (x *fastReflection_MsgClaimMorseApplicationResponse) ProtoMethods() *protoi
 	}
 }
 
+var _ protoreflect.List = (*_MsgClaimMorseSupplier_5_list)(nil)
+
+type _MsgClaimMorseSupplier_5_list struct {
+	list *[]*shared.SupplierServiceConfig
+}
+
+func (x *_MsgClaimMorseSupplier_5_list) Len() int {
+	if x.list == nil {
+		return 0
+	}
+	return len(*x.list)
+}
+
+func (x *_MsgClaimMorseSupplier_5_list) Get(i int) protoreflect.Value {
+	return protoreflect.ValueOfMessage((*x.list)[i].ProtoReflect())
+}
+
+func (x *_MsgClaimMorseSupplier_5_list) Set(i int, value protoreflect.Value) {
+	valueUnwrapped := value.Message()
+	concreteValue := valueUnwrapped.Interface().(*shared.SupplierServiceConfig)
+	(*x.list)[i] = concreteValue
+}
+
+func (x *_MsgClaimMorseSupplier_5_list) Append(value protoreflect.Value) {
+	valueUnwrapped := value.Message()
+	concreteValue := valueUnwrapped.Interface().(*shared.SupplierServiceConfig)
+	*x.list = append(*x.list, concreteValue)
+}
+
+func (x *_MsgClaimMorseSupplier_5_list) AppendMutable() protoreflect.Value {
+	v := new(shared.SupplierServiceConfig)
+	*x.list = append(*x.list, v)
+	return protoreflect.ValueOfMessage(v.ProtoReflect())
+}
+
+func (x *_MsgClaimMorseSupplier_5_list) Truncate(n int) {
+	for i := n; i < len(*x.list); i++ {
+		(*x.list)[i] = nil
+	}
+	*x.list = (*x.list)[:n]
+}
+
+func (x *_MsgClaimMorseSupplier_5_list) NewElement() protoreflect.Value {
+	v := new(shared.SupplierServiceConfig)
+	return protoreflect.ValueOfMessage(v.ProtoReflect())
+}
+
+func (x *_MsgClaimMorseSupplier_5_list) IsValid() bool {
+	return x.list != nil
+}
+
 var (
-	md_MsgClaimMorseSupplier                    protoreflect.MessageDescriptor
-	fd_MsgClaimMorseSupplier_shannonDestAddress protoreflect.FieldDescriptor
-	fd_MsgClaimMorseSupplier_morseSrcAddress    protoreflect.FieldDescriptor
-	fd_MsgClaimMorseSupplier_morseSignature     protoreflect.FieldDescriptor
-	fd_MsgClaimMorseSupplier_services           protoreflect.FieldDescriptor
+	md_MsgClaimMorseSupplier                          protoreflect.MessageDescriptor
+	fd_MsgClaimMorseSupplier_shannon_owner_address    protoreflect.FieldDescriptor
+	fd_MsgClaimMorseSupplier_shannon_operator_address protoreflect.FieldDescriptor
+	fd_MsgClaimMorseSupplier_morse_src_address        protoreflect.FieldDescriptor
+	fd_MsgClaimMorseSupplier_morse_signature          protoreflect.FieldDescriptor
+	fd_MsgClaimMorseSupplier_services                 protoreflect.FieldDescriptor
 )
 
 func init() {
 	file_poktroll_migration_tx_proto_init()
 	md_MsgClaimMorseSupplier = File_poktroll_migration_tx_proto.Messages().ByName("MsgClaimMorseSupplier")
-	fd_MsgClaimMorseSupplier_shannonDestAddress = md_MsgClaimMorseSupplier.Fields().ByName("shannonDestAddress")
-	fd_MsgClaimMorseSupplier_morseSrcAddress = md_MsgClaimMorseSupplier.Fields().ByName("morseSrcAddress")
-	fd_MsgClaimMorseSupplier_morseSignature = md_MsgClaimMorseSupplier.Fields().ByName("morseSignature")
+	fd_MsgClaimMorseSupplier_shannon_owner_address = md_MsgClaimMorseSupplier.Fields().ByName("shannon_owner_address")
+	fd_MsgClaimMorseSupplier_shannon_operator_address = md_MsgClaimMorseSupplier.Fields().ByName("shannon_operator_address")
+	fd_MsgClaimMorseSupplier_morse_src_address = md_MsgClaimMorseSupplier.Fields().ByName("morse_src_address")
+	fd_MsgClaimMorseSupplier_morse_signature = md_MsgClaimMorseSupplier.Fields().ByName("morse_signature")
 	fd_MsgClaimMorseSupplier_services = md_MsgClaimMorseSupplier.Fields().ByName("services")
 }
 
@@ -4422,26 +4475,32 @@ func (x *fastReflection_MsgClaimMorseSupplier) Interface() protoreflect.ProtoMes
 // While iterating, mutating operations may only be performed
 // on the current field descriptor.
 func (x *fastReflection_MsgClaimMorseSupplier) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
-	if x.ShannonDestAddress != "" {
-		value := protoreflect.ValueOfString(x.ShannonDestAddress)
-		if !f(fd_MsgClaimMorseSupplier_shannonDestAddress, value) {
+	if x.ShannonOwnerAddress != "" {
+		value := protoreflect.ValueOfString(x.ShannonOwnerAddress)
+		if !f(fd_MsgClaimMorseSupplier_shannon_owner_address, value) {
+			return
+		}
+	}
+	if x.ShannonOperatorAddress != "" {
+		value := protoreflect.ValueOfString(x.ShannonOperatorAddress)
+		if !f(fd_MsgClaimMorseSupplier_shannon_operator_address, value) {
 			return
 		}
 	}
 	if x.MorseSrcAddress != "" {
 		value := protoreflect.ValueOfString(x.MorseSrcAddress)
-		if !f(fd_MsgClaimMorseSupplier_morseSrcAddress, value) {
+		if !f(fd_MsgClaimMorseSupplier_morse_src_address, value) {
 			return
 		}
 	}
-	if x.MorseSignature != "" {
-		value := protoreflect.ValueOfString(x.MorseSignature)
-		if !f(fd_MsgClaimMorseSupplier_morseSignature, value) {
+	if len(x.MorseSignature) != 0 {
+		value := protoreflect.ValueOfBytes(x.MorseSignature)
+		if !f(fd_MsgClaimMorseSupplier_morse_signature, value) {
 			return
 		}
 	}
-	if x.Services != "" {
-		value := protoreflect.ValueOfString(x.Services)
+	if len(x.Services) != 0 {
+		value := protoreflect.ValueOfList(&_MsgClaimMorseSupplier_5_list{list: &x.Services})
 		if !f(fd_MsgClaimMorseSupplier_services, value) {
 			return
 		}
@@ -4461,14 +4520,16 @@ func (x *fastReflection_MsgClaimMorseSupplier) Range(f func(protoreflect.FieldDe
 // a repeated field is populated if it is non-empty.
 func (x *fastReflection_MsgClaimMorseSupplier) Has(fd protoreflect.FieldDescriptor) bool {
 	switch fd.FullName() {
-	case "poktroll.migration.MsgClaimMorseSupplier.shannonDestAddress":
-		return x.ShannonDestAddress != ""
-	case "poktroll.migration.MsgClaimMorseSupplier.morseSrcAddress":
+	case "poktroll.migration.MsgClaimMorseSupplier.shannon_owner_address":
+		return x.ShannonOwnerAddress != ""
+	case "poktroll.migration.MsgClaimMorseSupplier.shannon_operator_address":
+		return x.ShannonOperatorAddress != ""
+	case "poktroll.migration.MsgClaimMorseSupplier.morse_src_address":
 		return x.MorseSrcAddress != ""
-	case "poktroll.migration.MsgClaimMorseSupplier.morseSignature":
-		return x.MorseSignature != ""
+	case "poktroll.migration.MsgClaimMorseSupplier.morse_signature":
+		return len(x.MorseSignature) != 0
 	case "poktroll.migration.MsgClaimMorseSupplier.services":
-		return x.Services != ""
+		return len(x.Services) != 0
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.migration.MsgClaimMorseSupplier"))
@@ -4485,14 +4546,16 @@ func (x *fastReflection_MsgClaimMorseSupplier) Has(fd protoreflect.FieldDescript
 // Clear is a mutating operation and unsafe for concurrent use.
 func (x *fastReflection_MsgClaimMorseSupplier) Clear(fd protoreflect.FieldDescriptor) {
 	switch fd.FullName() {
-	case "poktroll.migration.MsgClaimMorseSupplier.shannonDestAddress":
-		x.ShannonDestAddress = ""
-	case "poktroll.migration.MsgClaimMorseSupplier.morseSrcAddress":
+	case "poktroll.migration.MsgClaimMorseSupplier.shannon_owner_address":
+		x.ShannonOwnerAddress = ""
+	case "poktroll.migration.MsgClaimMorseSupplier.shannon_operator_address":
+		x.ShannonOperatorAddress = ""
+	case "poktroll.migration.MsgClaimMorseSupplier.morse_src_address":
 		x.MorseSrcAddress = ""
-	case "poktroll.migration.MsgClaimMorseSupplier.morseSignature":
-		x.MorseSignature = ""
+	case "poktroll.migration.MsgClaimMorseSupplier.morse_signature":
+		x.MorseSignature = nil
 	case "poktroll.migration.MsgClaimMorseSupplier.services":
-		x.Services = ""
+		x.Services = nil
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.migration.MsgClaimMorseSupplier"))
@@ -4509,18 +4572,24 @@ func (x *fastReflection_MsgClaimMorseSupplier) Clear(fd protoreflect.FieldDescri
 // of the value; to obtain a mutable reference, use Mutable.
 func (x *fastReflection_MsgClaimMorseSupplier) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
 	switch descriptor.FullName() {
-	case "poktroll.migration.MsgClaimMorseSupplier.shannonDestAddress":
-		value := x.ShannonDestAddress
+	case "poktroll.migration.MsgClaimMorseSupplier.shannon_owner_address":
+		value := x.ShannonOwnerAddress
 		return protoreflect.ValueOfString(value)
-	case "poktroll.migration.MsgClaimMorseSupplier.morseSrcAddress":
+	case "poktroll.migration.MsgClaimMorseSupplier.shannon_operator_address":
+		value := x.ShannonOperatorAddress
+		return protoreflect.ValueOfString(value)
+	case "poktroll.migration.MsgClaimMorseSupplier.morse_src_address":
 		value := x.MorseSrcAddress
 		return protoreflect.ValueOfString(value)
-	case "poktroll.migration.MsgClaimMorseSupplier.morseSignature":
+	case "poktroll.migration.MsgClaimMorseSupplier.morse_signature":
 		value := x.MorseSignature
-		return protoreflect.ValueOfString(value)
+		return protoreflect.ValueOfBytes(value)
 	case "poktroll.migration.MsgClaimMorseSupplier.services":
-		value := x.Services
-		return protoreflect.ValueOfString(value)
+		if len(x.Services) == 0 {
+			return protoreflect.ValueOfList(&_MsgClaimMorseSupplier_5_list{})
+		}
+		listValue := &_MsgClaimMorseSupplier_5_list{list: &x.Services}
+		return protoreflect.ValueOfList(listValue)
 	default:
 		if descriptor.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.migration.MsgClaimMorseSupplier"))
@@ -4541,14 +4610,18 @@ func (x *fastReflection_MsgClaimMorseSupplier) Get(descriptor protoreflect.Field
 // Set is a mutating operation and unsafe for concurrent use.
 func (x *fastReflection_MsgClaimMorseSupplier) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
 	switch fd.FullName() {
-	case "poktroll.migration.MsgClaimMorseSupplier.shannonDestAddress":
-		x.ShannonDestAddress = value.Interface().(string)
-	case "poktroll.migration.MsgClaimMorseSupplier.morseSrcAddress":
+	case "poktroll.migration.MsgClaimMorseSupplier.shannon_owner_address":
+		x.ShannonOwnerAddress = value.Interface().(string)
+	case "poktroll.migration.MsgClaimMorseSupplier.shannon_operator_address":
+		x.ShannonOperatorAddress = value.Interface().(string)
+	case "poktroll.migration.MsgClaimMorseSupplier.morse_src_address":
 		x.MorseSrcAddress = value.Interface().(string)
-	case "poktroll.migration.MsgClaimMorseSupplier.morseSignature":
-		x.MorseSignature = value.Interface().(string)
+	case "poktroll.migration.MsgClaimMorseSupplier.morse_signature":
+		x.MorseSignature = value.Bytes()
 	case "poktroll.migration.MsgClaimMorseSupplier.services":
-		x.Services = value.Interface().(string)
+		lv := value.List()
+		clv := lv.(*_MsgClaimMorseSupplier_5_list)
+		x.Services = *clv.list
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.migration.MsgClaimMorseSupplier"))
@@ -4569,14 +4642,20 @@ func (x *fastReflection_MsgClaimMorseSupplier) Set(fd protoreflect.FieldDescript
 // Mutable is a mutating operation and unsafe for concurrent use.
 func (x *fastReflection_MsgClaimMorseSupplier) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
-	case "poktroll.migration.MsgClaimMorseSupplier.shannonDestAddress":
-		panic(fmt.Errorf("field shannonDestAddress of message poktroll.migration.MsgClaimMorseSupplier is not mutable"))
-	case "poktroll.migration.MsgClaimMorseSupplier.morseSrcAddress":
-		panic(fmt.Errorf("field morseSrcAddress of message poktroll.migration.MsgClaimMorseSupplier is not mutable"))
-	case "poktroll.migration.MsgClaimMorseSupplier.morseSignature":
-		panic(fmt.Errorf("field morseSignature of message poktroll.migration.MsgClaimMorseSupplier is not mutable"))
 	case "poktroll.migration.MsgClaimMorseSupplier.services":
-		panic(fmt.Errorf("field services of message poktroll.migration.MsgClaimMorseSupplier is not mutable"))
+		if x.Services == nil {
+			x.Services = []*shared.SupplierServiceConfig{}
+		}
+		value := &_MsgClaimMorseSupplier_5_list{list: &x.Services}
+		return protoreflect.ValueOfList(value)
+	case "poktroll.migration.MsgClaimMorseSupplier.shannon_owner_address":
+		panic(fmt.Errorf("field shannon_owner_address of message poktroll.migration.MsgClaimMorseSupplier is not mutable"))
+	case "poktroll.migration.MsgClaimMorseSupplier.shannon_operator_address":
+		panic(fmt.Errorf("field shannon_operator_address of message poktroll.migration.MsgClaimMorseSupplier is not mutable"))
+	case "poktroll.migration.MsgClaimMorseSupplier.morse_src_address":
+		panic(fmt.Errorf("field morse_src_address of message poktroll.migration.MsgClaimMorseSupplier is not mutable"))
+	case "poktroll.migration.MsgClaimMorseSupplier.morse_signature":
+		panic(fmt.Errorf("field morse_signature of message poktroll.migration.MsgClaimMorseSupplier is not mutable"))
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.migration.MsgClaimMorseSupplier"))
@@ -4590,14 +4669,17 @@ func (x *fastReflection_MsgClaimMorseSupplier) Mutable(fd protoreflect.FieldDesc
 // For lists, maps, and messages, this returns a new, empty, mutable value.
 func (x *fastReflection_MsgClaimMorseSupplier) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
-	case "poktroll.migration.MsgClaimMorseSupplier.shannonDestAddress":
+	case "poktroll.migration.MsgClaimMorseSupplier.shannon_owner_address":
 		return protoreflect.ValueOfString("")
-	case "poktroll.migration.MsgClaimMorseSupplier.morseSrcAddress":
+	case "poktroll.migration.MsgClaimMorseSupplier.shannon_operator_address":
 		return protoreflect.ValueOfString("")
-	case "poktroll.migration.MsgClaimMorseSupplier.morseSignature":
+	case "poktroll.migration.MsgClaimMorseSupplier.morse_src_address":
 		return protoreflect.ValueOfString("")
+	case "poktroll.migration.MsgClaimMorseSupplier.morse_signature":
+		return protoreflect.ValueOfBytes(nil)
 	case "poktroll.migration.MsgClaimMorseSupplier.services":
-		return protoreflect.ValueOfString("")
+		list := []*shared.SupplierServiceConfig{}
+		return protoreflect.ValueOfList(&_MsgClaimMorseSupplier_5_list{list: &list})
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.migration.MsgClaimMorseSupplier"))
@@ -4667,7 +4749,11 @@ func (x *fastReflection_MsgClaimMorseSupplier) ProtoMethods() *protoiface.Method
 		var n int
 		var l int
 		_ = l
-		l = len(x.ShannonDestAddress)
+		l = len(x.ShannonOwnerAddress)
+		if l > 0 {
+			n += 1 + l + runtime.Sov(uint64(l))
+		}
+		l = len(x.ShannonOperatorAddress)
 		if l > 0 {
 			n += 1 + l + runtime.Sov(uint64(l))
 		}
@@ -4679,9 +4765,11 @@ func (x *fastReflection_MsgClaimMorseSupplier) ProtoMethods() *protoiface.Method
 		if l > 0 {
 			n += 1 + l + runtime.Sov(uint64(l))
 		}
-		l = len(x.Services)
-		if l > 0 {
-			n += 1 + l + runtime.Sov(uint64(l))
+		if len(x.Services) > 0 {
+			for _, e := range x.Services {
+				l = options.Size(e)
+				n += 1 + l + runtime.Sov(uint64(l))
+			}
 		}
 		if x.unknownFields != nil {
 			n += len(x.unknownFields)
@@ -4713,30 +4801,46 @@ func (x *fastReflection_MsgClaimMorseSupplier) ProtoMethods() *protoiface.Method
 			copy(dAtA[i:], x.unknownFields)
 		}
 		if len(x.Services) > 0 {
-			i -= len(x.Services)
-			copy(dAtA[i:], x.Services)
-			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.Services)))
-			i--
-			dAtA[i] = 0x2a
+			for iNdEx := len(x.Services) - 1; iNdEx >= 0; iNdEx-- {
+				encoded, err := options.Marshal(x.Services[iNdEx])
+				if err != nil {
+					return protoiface.MarshalOutput{
+						NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+						Buf:               input.Buf,
+					}, err
+				}
+				i -= len(encoded)
+				copy(dAtA[i:], encoded)
+				i = runtime.EncodeVarint(dAtA, i, uint64(len(encoded)))
+				i--
+				dAtA[i] = 0x2a
+			}
 		}
 		if len(x.MorseSignature) > 0 {
 			i -= len(x.MorseSignature)
 			copy(dAtA[i:], x.MorseSignature)
 			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.MorseSignature)))
 			i--
-			dAtA[i] = 0x1a
+			dAtA[i] = 0x22
 		}
 		if len(x.MorseSrcAddress) > 0 {
 			i -= len(x.MorseSrcAddress)
 			copy(dAtA[i:], x.MorseSrcAddress)
 			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.MorseSrcAddress)))
 			i--
+			dAtA[i] = 0x1a
+		}
+		if len(x.ShannonOperatorAddress) > 0 {
+			i -= len(x.ShannonOperatorAddress)
+			copy(dAtA[i:], x.ShannonOperatorAddress)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.ShannonOperatorAddress)))
+			i--
 			dAtA[i] = 0x12
 		}
-		if len(x.ShannonDestAddress) > 0 {
-			i -= len(x.ShannonDestAddress)
-			copy(dAtA[i:], x.ShannonDestAddress)
-			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.ShannonDestAddress)))
+		if len(x.ShannonOwnerAddress) > 0 {
+			i -= len(x.ShannonOwnerAddress)
+			copy(dAtA[i:], x.ShannonOwnerAddress)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.ShannonOwnerAddress)))
 			i--
 			dAtA[i] = 0xa
 		}
@@ -4791,7 +4895,7 @@ func (x *fastReflection_MsgClaimMorseSupplier) ProtoMethods() *protoiface.Method
 			switch fieldNum {
 			case 1:
 				if wireType != 2 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field ShannonDestAddress", wireType)
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field ShannonOwnerAddress", wireType)
 				}
 				var stringLen uint64
 				for shift := uint(0); ; shift += 7 {
@@ -4819,9 +4923,41 @@ func (x *fastReflection_MsgClaimMorseSupplier) ProtoMethods() *protoiface.Method
 				if postIndex > l {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
 				}
-				x.ShannonDestAddress = string(dAtA[iNdEx:postIndex])
+				x.ShannonOwnerAddress = string(dAtA[iNdEx:postIndex])
 				iNdEx = postIndex
 			case 2:
+				if wireType != 2 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field ShannonOperatorAddress", wireType)
+				}
+				var stringLen uint64
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					stringLen |= uint64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				intStringLen := int(stringLen)
+				if intStringLen < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				postIndex := iNdEx + intStringLen
+				if postIndex < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if postIndex > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				x.ShannonOperatorAddress = string(dAtA[iNdEx:postIndex])
+				iNdEx = postIndex
+			case 3:
 				if wireType != 2 {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field MorseSrcAddress", wireType)
 				}
@@ -4853,11 +4989,11 @@ func (x *fastReflection_MsgClaimMorseSupplier) ProtoMethods() *protoiface.Method
 				}
 				x.MorseSrcAddress = string(dAtA[iNdEx:postIndex])
 				iNdEx = postIndex
-			case 3:
+			case 4:
 				if wireType != 2 {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field MorseSignature", wireType)
 				}
-				var stringLen uint64
+				var byteLen int
 				for shift := uint(0); ; shift += 7 {
 					if shift >= 64 {
 						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
@@ -4867,29 +5003,31 @@ func (x *fastReflection_MsgClaimMorseSupplier) ProtoMethods() *protoiface.Method
 					}
 					b := dAtA[iNdEx]
 					iNdEx++
-					stringLen |= uint64(b&0x7F) << shift
+					byteLen |= int(b&0x7F) << shift
 					if b < 0x80 {
 						break
 					}
 				}
-				intStringLen := int(stringLen)
-				if intStringLen < 0 {
+				if byteLen < 0 {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
 				}
-				postIndex := iNdEx + intStringLen
+				postIndex := iNdEx + byteLen
 				if postIndex < 0 {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
 				}
 				if postIndex > l {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
 				}
-				x.MorseSignature = string(dAtA[iNdEx:postIndex])
+				x.MorseSignature = append(x.MorseSignature[:0], dAtA[iNdEx:postIndex]...)
+				if x.MorseSignature == nil {
+					x.MorseSignature = []byte{}
+				}
 				iNdEx = postIndex
 			case 5:
 				if wireType != 2 {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Services", wireType)
 				}
-				var stringLen uint64
+				var msglen int
 				for shift := uint(0); ; shift += 7 {
 					if shift >= 64 {
 						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
@@ -4899,23 +5037,25 @@ func (x *fastReflection_MsgClaimMorseSupplier) ProtoMethods() *protoiface.Method
 					}
 					b := dAtA[iNdEx]
 					iNdEx++
-					stringLen |= uint64(b&0x7F) << shift
+					msglen |= int(b&0x7F) << shift
 					if b < 0x80 {
 						break
 					}
 				}
-				intStringLen := int(stringLen)
-				if intStringLen < 0 {
+				if msglen < 0 {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
 				}
-				postIndex := iNdEx + intStringLen
+				postIndex := iNdEx + msglen
 				if postIndex < 0 {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
 				}
 				if postIndex > l {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
 				}
-				x.Services = string(dAtA[iNdEx:postIndex])
+				x.Services = append(x.Services, &shared.SupplierServiceConfig{})
+				if err := options.Unmarshal(dAtA[iNdEx:postIndex], x.Services[len(x.Services)-1]); err != nil {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
+				}
 				iNdEx = postIndex
 			default:
 				iNdEx = preIndex
@@ -4953,21 +5093,21 @@ func (x *fastReflection_MsgClaimMorseSupplier) ProtoMethods() *protoiface.Method
 }
 
 var (
-	md_MsgClaimMorseSupplierResponse                      protoreflect.MessageDescriptor
-	fd_MsgClaimMorseSupplierResponse_morseSrcAddress      protoreflect.FieldDescriptor
-	fd_MsgClaimMorseSupplierResponse_claimedBalance       protoreflect.FieldDescriptor
-	fd_MsgClaimMorseSupplierResponse_claimedSupplierStake protoreflect.FieldDescriptor
-	fd_MsgClaimMorseSupplierResponse_sessionEndHeight     protoreflect.FieldDescriptor
-	fd_MsgClaimMorseSupplierResponse_supplier             protoreflect.FieldDescriptor
+	md_MsgClaimMorseSupplierResponse                        protoreflect.MessageDescriptor
+	fd_MsgClaimMorseSupplierResponse_morse_src_address      protoreflect.FieldDescriptor
+	fd_MsgClaimMorseSupplierResponse_claimed_balance        protoreflect.FieldDescriptor
+	fd_MsgClaimMorseSupplierResponse_claimed_supplier_stake protoreflect.FieldDescriptor
+	fd_MsgClaimMorseSupplierResponse_session_end_height     protoreflect.FieldDescriptor
+	fd_MsgClaimMorseSupplierResponse_supplier               protoreflect.FieldDescriptor
 )
 
 func init() {
 	file_poktroll_migration_tx_proto_init()
 	md_MsgClaimMorseSupplierResponse = File_poktroll_migration_tx_proto.Messages().ByName("MsgClaimMorseSupplierResponse")
-	fd_MsgClaimMorseSupplierResponse_morseSrcAddress = md_MsgClaimMorseSupplierResponse.Fields().ByName("morseSrcAddress")
-	fd_MsgClaimMorseSupplierResponse_claimedBalance = md_MsgClaimMorseSupplierResponse.Fields().ByName("claimedBalance")
-	fd_MsgClaimMorseSupplierResponse_claimedSupplierStake = md_MsgClaimMorseSupplierResponse.Fields().ByName("claimedSupplierStake")
-	fd_MsgClaimMorseSupplierResponse_sessionEndHeight = md_MsgClaimMorseSupplierResponse.Fields().ByName("sessionEndHeight")
+	fd_MsgClaimMorseSupplierResponse_morse_src_address = md_MsgClaimMorseSupplierResponse.Fields().ByName("morse_src_address")
+	fd_MsgClaimMorseSupplierResponse_claimed_balance = md_MsgClaimMorseSupplierResponse.Fields().ByName("claimed_balance")
+	fd_MsgClaimMorseSupplierResponse_claimed_supplier_stake = md_MsgClaimMorseSupplierResponse.Fields().ByName("claimed_supplier_stake")
+	fd_MsgClaimMorseSupplierResponse_session_end_height = md_MsgClaimMorseSupplierResponse.Fields().ByName("session_end_height")
 	fd_MsgClaimMorseSupplierResponse_supplier = md_MsgClaimMorseSupplierResponse.Fields().ByName("supplier")
 }
 
@@ -5038,25 +5178,25 @@ func (x *fastReflection_MsgClaimMorseSupplierResponse) Interface() protoreflect.
 func (x *fastReflection_MsgClaimMorseSupplierResponse) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
 	if x.MorseSrcAddress != "" {
 		value := protoreflect.ValueOfString(x.MorseSrcAddress)
-		if !f(fd_MsgClaimMorseSupplierResponse_morseSrcAddress, value) {
+		if !f(fd_MsgClaimMorseSupplierResponse_morse_src_address, value) {
 			return
 		}
 	}
 	if x.ClaimedBalance != nil {
 		value := protoreflect.ValueOfMessage(x.ClaimedBalance.ProtoReflect())
-		if !f(fd_MsgClaimMorseSupplierResponse_claimedBalance, value) {
+		if !f(fd_MsgClaimMorseSupplierResponse_claimed_balance, value) {
 			return
 		}
 	}
 	if x.ClaimedSupplierStake != nil {
 		value := protoreflect.ValueOfMessage(x.ClaimedSupplierStake.ProtoReflect())
-		if !f(fd_MsgClaimMorseSupplierResponse_claimedSupplierStake, value) {
+		if !f(fd_MsgClaimMorseSupplierResponse_claimed_supplier_stake, value) {
 			return
 		}
 	}
-	if x.SessionEndHeight != int32(0) {
-		value := protoreflect.ValueOfInt32(x.SessionEndHeight)
-		if !f(fd_MsgClaimMorseSupplierResponse_sessionEndHeight, value) {
+	if x.SessionEndHeight != int64(0) {
+		value := protoreflect.ValueOfInt64(x.SessionEndHeight)
+		if !f(fd_MsgClaimMorseSupplierResponse_session_end_height, value) {
 			return
 		}
 	}
@@ -5081,14 +5221,14 @@ func (x *fastReflection_MsgClaimMorseSupplierResponse) Range(f func(protoreflect
 // a repeated field is populated if it is non-empty.
 func (x *fastReflection_MsgClaimMorseSupplierResponse) Has(fd protoreflect.FieldDescriptor) bool {
 	switch fd.FullName() {
-	case "poktroll.migration.MsgClaimMorseSupplierResponse.morseSrcAddress":
+	case "poktroll.migration.MsgClaimMorseSupplierResponse.morse_src_address":
 		return x.MorseSrcAddress != ""
-	case "poktroll.migration.MsgClaimMorseSupplierResponse.claimedBalance":
+	case "poktroll.migration.MsgClaimMorseSupplierResponse.claimed_balance":
 		return x.ClaimedBalance != nil
-	case "poktroll.migration.MsgClaimMorseSupplierResponse.claimedSupplierStake":
+	case "poktroll.migration.MsgClaimMorseSupplierResponse.claimed_supplier_stake":
 		return x.ClaimedSupplierStake != nil
-	case "poktroll.migration.MsgClaimMorseSupplierResponse.sessionEndHeight":
-		return x.SessionEndHeight != int32(0)
+	case "poktroll.migration.MsgClaimMorseSupplierResponse.session_end_height":
+		return x.SessionEndHeight != int64(0)
 	case "poktroll.migration.MsgClaimMorseSupplierResponse.supplier":
 		return x.Supplier != nil
 	default:
@@ -5107,14 +5247,14 @@ func (x *fastReflection_MsgClaimMorseSupplierResponse) Has(fd protoreflect.Field
 // Clear is a mutating operation and unsafe for concurrent use.
 func (x *fastReflection_MsgClaimMorseSupplierResponse) Clear(fd protoreflect.FieldDescriptor) {
 	switch fd.FullName() {
-	case "poktroll.migration.MsgClaimMorseSupplierResponse.morseSrcAddress":
+	case "poktroll.migration.MsgClaimMorseSupplierResponse.morse_src_address":
 		x.MorseSrcAddress = ""
-	case "poktroll.migration.MsgClaimMorseSupplierResponse.claimedBalance":
+	case "poktroll.migration.MsgClaimMorseSupplierResponse.claimed_balance":
 		x.ClaimedBalance = nil
-	case "poktroll.migration.MsgClaimMorseSupplierResponse.claimedSupplierStake":
+	case "poktroll.migration.MsgClaimMorseSupplierResponse.claimed_supplier_stake":
 		x.ClaimedSupplierStake = nil
-	case "poktroll.migration.MsgClaimMorseSupplierResponse.sessionEndHeight":
-		x.SessionEndHeight = int32(0)
+	case "poktroll.migration.MsgClaimMorseSupplierResponse.session_end_height":
+		x.SessionEndHeight = int64(0)
 	case "poktroll.migration.MsgClaimMorseSupplierResponse.supplier":
 		x.Supplier = nil
 	default:
@@ -5133,18 +5273,18 @@ func (x *fastReflection_MsgClaimMorseSupplierResponse) Clear(fd protoreflect.Fie
 // of the value; to obtain a mutable reference, use Mutable.
 func (x *fastReflection_MsgClaimMorseSupplierResponse) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
 	switch descriptor.FullName() {
-	case "poktroll.migration.MsgClaimMorseSupplierResponse.morseSrcAddress":
+	case "poktroll.migration.MsgClaimMorseSupplierResponse.morse_src_address":
 		value := x.MorseSrcAddress
 		return protoreflect.ValueOfString(value)
-	case "poktroll.migration.MsgClaimMorseSupplierResponse.claimedBalance":
+	case "poktroll.migration.MsgClaimMorseSupplierResponse.claimed_balance":
 		value := x.ClaimedBalance
 		return protoreflect.ValueOfMessage(value.ProtoReflect())
-	case "poktroll.migration.MsgClaimMorseSupplierResponse.claimedSupplierStake":
+	case "poktroll.migration.MsgClaimMorseSupplierResponse.claimed_supplier_stake":
 		value := x.ClaimedSupplierStake
 		return protoreflect.ValueOfMessage(value.ProtoReflect())
-	case "poktroll.migration.MsgClaimMorseSupplierResponse.sessionEndHeight":
+	case "poktroll.migration.MsgClaimMorseSupplierResponse.session_end_height":
 		value := x.SessionEndHeight
-		return protoreflect.ValueOfInt32(value)
+		return protoreflect.ValueOfInt64(value)
 	case "poktroll.migration.MsgClaimMorseSupplierResponse.supplier":
 		value := x.Supplier
 		return protoreflect.ValueOfMessage(value.ProtoReflect())
@@ -5168,14 +5308,14 @@ func (x *fastReflection_MsgClaimMorseSupplierResponse) Get(descriptor protorefle
 // Set is a mutating operation and unsafe for concurrent use.
 func (x *fastReflection_MsgClaimMorseSupplierResponse) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
 	switch fd.FullName() {
-	case "poktroll.migration.MsgClaimMorseSupplierResponse.morseSrcAddress":
+	case "poktroll.migration.MsgClaimMorseSupplierResponse.morse_src_address":
 		x.MorseSrcAddress = value.Interface().(string)
-	case "poktroll.migration.MsgClaimMorseSupplierResponse.claimedBalance":
+	case "poktroll.migration.MsgClaimMorseSupplierResponse.claimed_balance":
 		x.ClaimedBalance = value.Message().Interface().(*v1beta1.Coin)
-	case "poktroll.migration.MsgClaimMorseSupplierResponse.claimedSupplierStake":
+	case "poktroll.migration.MsgClaimMorseSupplierResponse.claimed_supplier_stake":
 		x.ClaimedSupplierStake = value.Message().Interface().(*v1beta1.Coin)
-	case "poktroll.migration.MsgClaimMorseSupplierResponse.sessionEndHeight":
-		x.SessionEndHeight = int32(value.Int())
+	case "poktroll.migration.MsgClaimMorseSupplierResponse.session_end_height":
+		x.SessionEndHeight = value.Int()
 	case "poktroll.migration.MsgClaimMorseSupplierResponse.supplier":
 		x.Supplier = value.Message().Interface().(*shared.Supplier)
 	default:
@@ -5198,12 +5338,12 @@ func (x *fastReflection_MsgClaimMorseSupplierResponse) Set(fd protoreflect.Field
 // Mutable is a mutating operation and unsafe for concurrent use.
 func (x *fastReflection_MsgClaimMorseSupplierResponse) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
-	case "poktroll.migration.MsgClaimMorseSupplierResponse.claimedBalance":
+	case "poktroll.migration.MsgClaimMorseSupplierResponse.claimed_balance":
 		if x.ClaimedBalance == nil {
 			x.ClaimedBalance = new(v1beta1.Coin)
 		}
 		return protoreflect.ValueOfMessage(x.ClaimedBalance.ProtoReflect())
-	case "poktroll.migration.MsgClaimMorseSupplierResponse.claimedSupplierStake":
+	case "poktroll.migration.MsgClaimMorseSupplierResponse.claimed_supplier_stake":
 		if x.ClaimedSupplierStake == nil {
 			x.ClaimedSupplierStake = new(v1beta1.Coin)
 		}
@@ -5213,10 +5353,10 @@ func (x *fastReflection_MsgClaimMorseSupplierResponse) Mutable(fd protoreflect.F
 			x.Supplier = new(shared.Supplier)
 		}
 		return protoreflect.ValueOfMessage(x.Supplier.ProtoReflect())
-	case "poktroll.migration.MsgClaimMorseSupplierResponse.morseSrcAddress":
-		panic(fmt.Errorf("field morseSrcAddress of message poktroll.migration.MsgClaimMorseSupplierResponse is not mutable"))
-	case "poktroll.migration.MsgClaimMorseSupplierResponse.sessionEndHeight":
-		panic(fmt.Errorf("field sessionEndHeight of message poktroll.migration.MsgClaimMorseSupplierResponse is not mutable"))
+	case "poktroll.migration.MsgClaimMorseSupplierResponse.morse_src_address":
+		panic(fmt.Errorf("field morse_src_address of message poktroll.migration.MsgClaimMorseSupplierResponse is not mutable"))
+	case "poktroll.migration.MsgClaimMorseSupplierResponse.session_end_height":
+		panic(fmt.Errorf("field session_end_height of message poktroll.migration.MsgClaimMorseSupplierResponse is not mutable"))
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.migration.MsgClaimMorseSupplierResponse"))
@@ -5230,16 +5370,16 @@ func (x *fastReflection_MsgClaimMorseSupplierResponse) Mutable(fd protoreflect.F
 // For lists, maps, and messages, this returns a new, empty, mutable value.
 func (x *fastReflection_MsgClaimMorseSupplierResponse) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
-	case "poktroll.migration.MsgClaimMorseSupplierResponse.morseSrcAddress":
+	case "poktroll.migration.MsgClaimMorseSupplierResponse.morse_src_address":
 		return protoreflect.ValueOfString("")
-	case "poktroll.migration.MsgClaimMorseSupplierResponse.claimedBalance":
+	case "poktroll.migration.MsgClaimMorseSupplierResponse.claimed_balance":
 		m := new(v1beta1.Coin)
 		return protoreflect.ValueOfMessage(m.ProtoReflect())
-	case "poktroll.migration.MsgClaimMorseSupplierResponse.claimedSupplierStake":
+	case "poktroll.migration.MsgClaimMorseSupplierResponse.claimed_supplier_stake":
 		m := new(v1beta1.Coin)
 		return protoreflect.ValueOfMessage(m.ProtoReflect())
-	case "poktroll.migration.MsgClaimMorseSupplierResponse.sessionEndHeight":
-		return protoreflect.ValueOfInt32(int32(0))
+	case "poktroll.migration.MsgClaimMorseSupplierResponse.session_end_height":
+		return protoreflect.ValueOfInt64(int64(0))
 	case "poktroll.migration.MsgClaimMorseSupplierResponse.supplier":
 		m := new(shared.Supplier)
 		return protoreflect.ValueOfMessage(m.ProtoReflect())
@@ -5372,12 +5512,12 @@ func (x *fastReflection_MsgClaimMorseSupplierResponse) ProtoMethods() *protoifac
 			copy(dAtA[i:], encoded)
 			i = runtime.EncodeVarint(dAtA, i, uint64(len(encoded)))
 			i--
-			dAtA[i] = 0x32
+			dAtA[i] = 0x2a
 		}
 		if x.SessionEndHeight != 0 {
 			i = runtime.EncodeVarint(dAtA, i, uint64(x.SessionEndHeight))
 			i--
-			dAtA[i] = 0x28
+			dAtA[i] = 0x20
 		}
 		if x.ClaimedSupplierStake != nil {
 			encoded, err := options.Marshal(x.ClaimedSupplierStake)
@@ -5391,7 +5531,7 @@ func (x *fastReflection_MsgClaimMorseSupplierResponse) ProtoMethods() *protoifac
 			copy(dAtA[i:], encoded)
 			i = runtime.EncodeVarint(dAtA, i, uint64(len(encoded)))
 			i--
-			dAtA[i] = 0x22
+			dAtA[i] = 0x1a
 		}
 		if x.ClaimedBalance != nil {
 			encoded, err := options.Marshal(x.ClaimedBalance)
@@ -5531,7 +5671,7 @@ func (x *fastReflection_MsgClaimMorseSupplierResponse) ProtoMethods() *protoifac
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
 				}
 				iNdEx = postIndex
-			case 4:
+			case 3:
 				if wireType != 2 {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field ClaimedSupplierStake", wireType)
 				}
@@ -5567,7 +5707,7 @@ func (x *fastReflection_MsgClaimMorseSupplierResponse) ProtoMethods() *protoifac
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
 				}
 				iNdEx = postIndex
-			case 5:
+			case 4:
 				if wireType != 0 {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field SessionEndHeight", wireType)
 				}
@@ -5581,12 +5721,12 @@ func (x *fastReflection_MsgClaimMorseSupplierResponse) ProtoMethods() *protoifac
 					}
 					b := dAtA[iNdEx]
 					iNdEx++
-					x.SessionEndHeight |= int32(b&0x7F) << shift
+					x.SessionEndHeight |= int64(b&0x7F) << shift
 					if b < 0x80 {
 						break
 					}
 				}
-			case 6:
+			case 5:
 				if wireType != 2 {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Supplier", wireType)
 				}
@@ -5981,9 +6121,7 @@ type MsgClaimMorseApplication struct {
 	// The bech32-encoded address of the Shannon account to which the claimed tokens
 	// will be minted and from which the application will be staked.
 	ShannonDestAddress string `protobuf:"bytes,1,opt,name=shannon_dest_address,json=shannonDestAddress,proto3" json:"shannon_dest_address,omitempty"`
-	// The hex-encoded address of the Morse account whose balance will be claimed.
-	// E.g.: 00f9900606fa3d5c9179fc0c8513078a53a2073e
-	MorseSrcAddress string `protobuf:"bytes,2,opt,name=morse_src_address,json=morseSrcAddress,proto3" json:"morse_src_address,omitempty"`
+	MorseSrcAddress    string `protobuf:"bytes,2,opt,name=morse_src_address,json=morseSrcAddress,proto3" json:"morse_src_address,omitempty"`
 	// The hex-encoded signature, by the Morse account, of this message (where this field is nil).
 	// I.e.: morse_signature = private_key.sign(marshal(MsgClaimMorseAccount{morse_signature: nil, ...}))
 	MorseSignature []byte `protobuf:"bytes,3,opt,name=morse_signature,json=morseSignature,proto3" json:"morse_signature,omitempty"`
@@ -6131,19 +6269,25 @@ type MsgClaimMorseSupplier struct {
 	unknownFields protoimpl.UnknownFields
 
 	// The bech32-encoded address of the Shannon account to which the claimed tokens
-	// will be minted and from which the supplier will be staked.
-	//
-	// TODO_MAINNET(@bryanchriswhite, #1095): split into owner and operator addresses...
-	ShannonDestAddress string `protobuf:"bytes,1,opt,name=shannonDestAddress,proto3" json:"shannonDestAddress,omitempty"`
+	// will be minted and which become the supplier owner.
+	// See: https://dev.poktroll.com/operate/configs/supplier_staking_config#staking-types.
+	ShannonOwnerAddress string `protobuf:"bytes,1,opt,name=shannon_owner_address,json=shannonOwnerAddress,proto3" json:"shannon_owner_address,omitempty"`
+	// The bech32-encoded address of the Shannon account to which will become the supplier operator.
+	// If empty, the shannon_owner_address will be used.
+	// See: https://dev.poktroll.com/operate/configs/supplier_staking_config#staking-types.
+	ShannonOperatorAddress string `protobuf:"bytes,2,opt,name=shannon_operator_address,json=shannonOperatorAddress,proto3" json:"shannon_operator_address,omitempty"`
 	// The hex-encoded address of the Morse account whose balance will be claimed.
 	// E.g.: 00f9900606fa3d5c9179fc0c8513078a53a2073e
-	MorseSrcAddress string `protobuf:"bytes,2,opt,name=morseSrcAddress,proto3" json:"morseSrcAddress,omitempty"`
+	//
+	// TODO_MAINNET(@bryanchriswhite, #1126): Rename to `morse_src_owner_address`.
+	MorseSrcAddress string `protobuf:"bytes,3,opt,name=morse_src_address,json=morseSrcAddress,proto3" json:"morse_src_address,omitempty"`
 	// The hex-encoded signature, by the Morse account, of this message (where this field is nil).
 	// I.e.: morse_signature = private_key.sign(marshal(MsgClaimMorseAccount{morse_signature: nil, ...}))
-	MorseSignature string `protobuf:"bytes,3,opt,name=morseSignature,proto3" json:"morseSignature,omitempty"`
+	//
+	// TODO_MAINNET(@bryanchriswhite, #1126): Rename to `morse_src_owner_signature`.
+	MorseSignature []byte `protobuf:"bytes,4,opt,name=morse_signature,json=morseSignature,proto3" json:"morse_signature,omitempty"`
 	// The services this supplier is staked to provide service for.
-	// TODO_MAINNET(@bryanchriswhite, #1095): ensure this field is repeated (to match MsgStakeSupplier).
-	Services string `protobuf:"bytes,5,opt,name=services,proto3" json:"services,omitempty"`
+	Services []*shared.SupplierServiceConfig `protobuf:"bytes,5,rep,name=services,proto3" json:"services,omitempty"`
 }
 
 func (x *MsgClaimMorseSupplier) Reset() {
@@ -6166,9 +6310,16 @@ func (*MsgClaimMorseSupplier) Descriptor() ([]byte, []int) {
 	return file_poktroll_migration_tx_proto_rawDescGZIP(), []int{8}
 }
 
-func (x *MsgClaimMorseSupplier) GetShannonDestAddress() string {
+func (x *MsgClaimMorseSupplier) GetShannonOwnerAddress() string {
 	if x != nil {
-		return x.ShannonDestAddress
+		return x.ShannonOwnerAddress
+	}
+	return ""
+}
+
+func (x *MsgClaimMorseSupplier) GetShannonOperatorAddress() string {
+	if x != nil {
+		return x.ShannonOperatorAddress
 	}
 	return ""
 }
@@ -6180,18 +6331,18 @@ func (x *MsgClaimMorseSupplier) GetMorseSrcAddress() string {
 	return ""
 }
 
-func (x *MsgClaimMorseSupplier) GetMorseSignature() string {
+func (x *MsgClaimMorseSupplier) GetMorseSignature() []byte {
 	if x != nil {
 		return x.MorseSignature
 	}
-	return ""
+	return nil
 }
 
-func (x *MsgClaimMorseSupplier) GetServices() string {
+func (x *MsgClaimMorseSupplier) GetServices() []*shared.SupplierServiceConfig {
 	if x != nil {
 		return x.Services
 	}
-	return ""
+	return nil
 }
 
 // MsgClaimMorseSupplierResponse is returned from MsgClaimMorseSupplier.
@@ -6207,14 +6358,14 @@ type MsgClaimMorseSupplierResponse struct {
 
 	// The hex-encoded address of the Morse account whose balance was claimed.
 	// E.g.: 00f9900606fa3d5c9179fc0c8513078a53a2073e
-	MorseSrcAddress string `protobuf:"bytes,1,opt,name=morseSrcAddress,proto3" json:"morseSrcAddress,omitempty"`
+	MorseSrcAddress string `protobuf:"bytes,1,opt,name=morse_src_address,json=morseSrcAddress,proto3" json:"morse_src_address,omitempty"`
 	// The unstaked balance which was claimed.
-	ClaimedBalance       *v1beta1.Coin `protobuf:"bytes,2,opt,name=claimedBalance,proto3" json:"claimedBalance,omitempty"`
-	ClaimedSupplierStake *v1beta1.Coin `protobuf:"bytes,4,opt,name=claimedSupplierStake,proto3" json:"claimedSupplierStake,omitempty"`
+	ClaimedBalance       *v1beta1.Coin `protobuf:"bytes,2,opt,name=claimed_balance,json=claimedBalance,proto3" json:"claimed_balance,omitempty"`
+	ClaimedSupplierStake *v1beta1.Coin `protobuf:"bytes,3,opt,name=claimed_supplier_stake,json=claimedSupplierStake,proto3" json:"claimed_supplier_stake,omitempty"`
 	// The session end height (on Shannon) in which the claim was committed (i.e. claimed).
-	SessionEndHeight int32 `protobuf:"varint,5,opt,name=sessionEndHeight,proto3" json:"sessionEndHeight,omitempty"`
+	SessionEndHeight int64 `protobuf:"varint,4,opt,name=session_end_height,json=sessionEndHeight,proto3" json:"session_end_height,omitempty"`
 	// The supplier which was staked as a result of the claim.
-	Supplier *shared.Supplier `protobuf:"bytes,6,opt,name=supplier,proto3" json:"supplier,omitempty"`
+	Supplier *shared.Supplier `protobuf:"bytes,5,opt,name=supplier,proto3" json:"supplier,omitempty"`
 }
 
 func (x *MsgClaimMorseSupplierResponse) Reset() {
@@ -6258,7 +6409,7 @@ func (x *MsgClaimMorseSupplierResponse) GetClaimedSupplierStake() *v1beta1.Coin 
 	return nil
 }
 
-func (x *MsgClaimMorseSupplierResponse) GetSessionEndHeight() int32 {
+func (x *MsgClaimMorseSupplierResponse) GetSessionEndHeight() int64 {
 	if x != nil {
 		return x.SessionEndHeight
 	}
@@ -6426,40 +6577,64 @@ var file_poktroll_migration_tx_proto_rawDesc = []byte{
 	0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x61, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e,
 	0x2e, 0x41, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x42, 0x0f, 0xea, 0xde,
 	0x1f, 0x0b, 0x61, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x52, 0x0b, 0x61,
-	0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x22, 0xce, 0x01, 0x0a, 0x15, 0x4d,
+	0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x22, 0xdd, 0x03, 0x0a, 0x15, 0x4d,
 	0x73, 0x67, 0x43, 0x6c, 0x61, 0x69, 0x6d, 0x4d, 0x6f, 0x72, 0x73, 0x65, 0x53, 0x75, 0x70, 0x70,
-	0x6c, 0x69, 0x65, 0x72, 0x12, 0x2e, 0x0a, 0x12, 0x73, 0x68, 0x61, 0x6e, 0x6e, 0x6f, 0x6e, 0x44,
-	0x65, 0x73, 0x74, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09,
-	0x52, 0x12, 0x73, 0x68, 0x61, 0x6e, 0x6e, 0x6f, 0x6e, 0x44, 0x65, 0x73, 0x74, 0x41, 0x64, 0x64,
-	0x72, 0x65, 0x73, 0x73, 0x12, 0x28, 0x0a, 0x0f, 0x6d, 0x6f, 0x72, 0x73, 0x65, 0x53, 0x72, 0x63,
-	0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0f, 0x6d,
-	0x6f, 0x72, 0x73, 0x65, 0x53, 0x72, 0x63, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x12, 0x26,
-	0x0a, 0x0e, 0x6d, 0x6f, 0x72, 0x73, 0x65, 0x53, 0x69, 0x67, 0x6e, 0x61, 0x74, 0x75, 0x72, 0x65,
-	0x18, 0x03, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0e, 0x6d, 0x6f, 0x72, 0x73, 0x65, 0x53, 0x69, 0x67,
-	0x6e, 0x61, 0x74, 0x75, 0x72, 0x65, 0x12, 0x1a, 0x0a, 0x08, 0x73, 0x65, 0x72, 0x76, 0x69, 0x63,
-	0x65, 0x73, 0x18, 0x05, 0x20, 0x01, 0x28, 0x09, 0x52, 0x08, 0x73, 0x65, 0x72, 0x76, 0x69, 0x63,
-	0x65, 0x73, 0x3a, 0x17, 0x82, 0xe7, 0xb0, 0x2a, 0x12, 0x73, 0x68, 0x61, 0x6e, 0x6e, 0x6f, 0x6e,
-	0x44, 0x65, 0x73, 0x74, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x22, 0xca, 0x02, 0x0a, 0x1d,
-	0x4d, 0x73, 0x67, 0x43, 0x6c, 0x61, 0x69, 0x6d, 0x4d, 0x6f, 0x72, 0x73, 0x65, 0x53, 0x75, 0x70,
-	0x70, 0x6c, 0x69, 0x65, 0x72, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x28, 0x0a,
-	0x0f, 0x6d, 0x6f, 0x72, 0x73, 0x65, 0x53, 0x72, 0x63, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73,
-	0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0f, 0x6d, 0x6f, 0x72, 0x73, 0x65, 0x53, 0x72, 0x63,
-	0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x12, 0x47, 0x0a, 0x0e, 0x63, 0x6c, 0x61, 0x69, 0x6d,
-	0x65, 0x64, 0x42, 0x61, 0x6c, 0x61, 0x6e, 0x63, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32,
-	0x19, 0x2e, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x62, 0x61, 0x73, 0x65, 0x2e, 0x76, 0x31,
-	0x62, 0x65, 0x74, 0x61, 0x31, 0x2e, 0x43, 0x6f, 0x69, 0x6e, 0x42, 0x04, 0xc8, 0xde, 0x1f, 0x00,
-	0x52, 0x0e, 0x63, 0x6c, 0x61, 0x69, 0x6d, 0x65, 0x64, 0x42, 0x61, 0x6c, 0x61, 0x6e, 0x63, 0x65,
-	0x12, 0x53, 0x0a, 0x14, 0x63, 0x6c, 0x61, 0x69, 0x6d, 0x65, 0x64, 0x53, 0x75, 0x70, 0x70, 0x6c,
-	0x69, 0x65, 0x72, 0x53, 0x74, 0x61, 0x6b, 0x65, 0x18, 0x04, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x19,
-	0x2e, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x62, 0x61, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x62,
-	0x65, 0x74, 0x61, 0x31, 0x2e, 0x43, 0x6f, 0x69, 0x6e, 0x42, 0x04, 0xc8, 0xde, 0x1f, 0x00, 0x52,
-	0x14, 0x63, 0x6c, 0x61, 0x69, 0x6d, 0x65, 0x64, 0x53, 0x75, 0x70, 0x70, 0x6c, 0x69, 0x65, 0x72,
-	0x53, 0x74, 0x61, 0x6b, 0x65, 0x12, 0x2a, 0x0a, 0x10, 0x73, 0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e,
-	0x45, 0x6e, 0x64, 0x48, 0x65, 0x69, 0x67, 0x68, 0x74, 0x18, 0x05, 0x20, 0x01, 0x28, 0x05, 0x52,
-	0x10, 0x73, 0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x45, 0x6e, 0x64, 0x48, 0x65, 0x69, 0x67, 0x68,
-	0x74, 0x12, 0x35, 0x0a, 0x08, 0x73, 0x75, 0x70, 0x70, 0x6c, 0x69, 0x65, 0x72, 0x18, 0x06, 0x20,
-	0x01, 0x28, 0x0b, 0x32, 0x19, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x73,
-	0x68, 0x61, 0x72, 0x65, 0x64, 0x2e, 0x53, 0x75, 0x70, 0x70, 0x6c, 0x69, 0x65, 0x72, 0x52, 0x08,
+	0x6c, 0x69, 0x65, 0x72, 0x12, 0x65, 0x0a, 0x15, 0x73, 0x68, 0x61, 0x6e, 0x6e, 0x6f, 0x6e, 0x5f,
+	0x6f, 0x77, 0x6e, 0x65, 0x72, 0x5f, 0x61, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x18, 0x01, 0x20,
+	0x01, 0x28, 0x09, 0x42, 0x31, 0xea, 0xde, 0x1f, 0x15, 0x73, 0x68, 0x61, 0x6e, 0x6e, 0x6f, 0x6e,
+	0x5f, 0x6f, 0x77, 0x6e, 0x65, 0x72, 0x5f, 0x61, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0xd2, 0xb4,
+	0x2d, 0x14, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73,
+	0x53, 0x74, 0x72, 0x69, 0x6e, 0x67, 0x52, 0x13, 0x73, 0x68, 0x61, 0x6e, 0x6e, 0x6f, 0x6e, 0x4f,
+	0x77, 0x6e, 0x65, 0x72, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x12, 0x6e, 0x0a, 0x18, 0x73,
+	0x68, 0x61, 0x6e, 0x6e, 0x6f, 0x6e, 0x5f, 0x6f, 0x70, 0x65, 0x72, 0x61, 0x74, 0x6f, 0x72, 0x5f,
+	0x61, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x42, 0x34, 0xea,
+	0xde, 0x1f, 0x18, 0x73, 0x68, 0x61, 0x6e, 0x6e, 0x6f, 0x6e, 0x5f, 0x6f, 0x70, 0x65, 0x72, 0x61,
+	0x74, 0x6f, 0x72, 0x5f, 0x61, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0xd2, 0xb4, 0x2d, 0x14, 0x63,
+	0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x53, 0x74, 0x72,
+	0x69, 0x6e, 0x67, 0x52, 0x16, 0x73, 0x68, 0x61, 0x6e, 0x6e, 0x6f, 0x6e, 0x4f, 0x70, 0x65, 0x72,
+	0x61, 0x74, 0x6f, 0x72, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x12, 0x41, 0x0a, 0x11, 0x6d,
+	0x6f, 0x72, 0x73, 0x65, 0x5f, 0x73, 0x72, 0x63, 0x5f, 0x61, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73,
+	0x18, 0x03, 0x20, 0x01, 0x28, 0x09, 0x42, 0x15, 0xea, 0xde, 0x1f, 0x11, 0x6d, 0x6f, 0x72, 0x73,
+	0x65, 0x5f, 0x73, 0x72, 0x63, 0x5f, 0x61, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x52, 0x0f, 0x6d,
+	0x6f, 0x72, 0x73, 0x65, 0x53, 0x72, 0x63, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x12, 0x3c,
+	0x0a, 0x0f, 0x6d, 0x6f, 0x72, 0x73, 0x65, 0x5f, 0x73, 0x69, 0x67, 0x6e, 0x61, 0x74, 0x75, 0x72,
+	0x65, 0x18, 0x04, 0x20, 0x01, 0x28, 0x0c, 0x42, 0x13, 0xea, 0xde, 0x1f, 0x0f, 0x6d, 0x6f, 0x72,
+	0x73, 0x65, 0x5f, 0x73, 0x69, 0x67, 0x6e, 0x61, 0x74, 0x75, 0x72, 0x65, 0x52, 0x0e, 0x6d, 0x6f,
+	0x72, 0x73, 0x65, 0x53, 0x69, 0x67, 0x6e, 0x61, 0x74, 0x75, 0x72, 0x65, 0x12, 0x50, 0x0a, 0x08,
+	0x73, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x73, 0x18, 0x05, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x26,
+	0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x73, 0x68, 0x61, 0x72, 0x65, 0x64,
+	0x2e, 0x53, 0x75, 0x70, 0x70, 0x6c, 0x69, 0x65, 0x72, 0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65,
+	0x43, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x42, 0x0c, 0xea, 0xde, 0x1f, 0x08, 0x73, 0x65, 0x72, 0x76,
+	0x69, 0x63, 0x65, 0x73, 0x52, 0x08, 0x73, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x73, 0x3a, 0x1a,
+	0x82, 0xe7, 0xb0, 0x2a, 0x15, 0x73, 0x68, 0x61, 0x6e, 0x6e, 0x6f, 0x6e, 0x5f, 0x6f, 0x77, 0x6e,
+	0x65, 0x72, 0x5f, 0x61, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x22, 0xbb, 0x03, 0x0a, 0x1d, 0x4d,
+	0x73, 0x67, 0x43, 0x6c, 0x61, 0x69, 0x6d, 0x4d, 0x6f, 0x72, 0x73, 0x65, 0x53, 0x75, 0x70, 0x70,
+	0x6c, 0x69, 0x65, 0x72, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x41, 0x0a, 0x11,
+	0x6d, 0x6f, 0x72, 0x73, 0x65, 0x5f, 0x73, 0x72, 0x63, 0x5f, 0x61, 0x64, 0x64, 0x72, 0x65, 0x73,
+	0x73, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x42, 0x15, 0xea, 0xde, 0x1f, 0x11, 0x6d, 0x6f, 0x72,
+	0x73, 0x65, 0x5f, 0x73, 0x72, 0x63, 0x5f, 0x61, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x52, 0x0f,
+	0x6d, 0x6f, 0x72, 0x73, 0x65, 0x53, 0x72, 0x63, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x12,
+	0x5b, 0x0a, 0x0f, 0x63, 0x6c, 0x61, 0x69, 0x6d, 0x65, 0x64, 0x5f, 0x62, 0x61, 0x6c, 0x61, 0x6e,
+	0x63, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x19, 0x2e, 0x63, 0x6f, 0x73, 0x6d, 0x6f,
+	0x73, 0x2e, 0x62, 0x61, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x62, 0x65, 0x74, 0x61, 0x31, 0x2e, 0x43,
+	0x6f, 0x69, 0x6e, 0x42, 0x17, 0xc8, 0xde, 0x1f, 0x00, 0xea, 0xde, 0x1f, 0x0f, 0x63, 0x6c, 0x61,
+	0x69, 0x6d, 0x65, 0x64, 0x5f, 0x62, 0x61, 0x6c, 0x61, 0x6e, 0x63, 0x65, 0x52, 0x0e, 0x63, 0x6c,
+	0x61, 0x69, 0x6d, 0x65, 0x64, 0x42, 0x61, 0x6c, 0x61, 0x6e, 0x63, 0x65, 0x12, 0x6f, 0x0a, 0x16,
+	0x63, 0x6c, 0x61, 0x69, 0x6d, 0x65, 0x64, 0x5f, 0x73, 0x75, 0x70, 0x70, 0x6c, 0x69, 0x65, 0x72,
+	0x5f, 0x73, 0x74, 0x61, 0x6b, 0x65, 0x18, 0x03, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x19, 0x2e, 0x63,
+	0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x62, 0x61, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x62, 0x65, 0x74,
+	0x61, 0x31, 0x2e, 0x43, 0x6f, 0x69, 0x6e, 0x42, 0x1e, 0xc8, 0xde, 0x1f, 0x00, 0xea, 0xde, 0x1f,
+	0x16, 0x63, 0x6c, 0x61, 0x69, 0x6d, 0x65, 0x64, 0x5f, 0x73, 0x75, 0x70, 0x70, 0x6c, 0x69, 0x65,
+	0x72, 0x5f, 0x73, 0x74, 0x61, 0x6b, 0x65, 0x52, 0x14, 0x63, 0x6c, 0x61, 0x69, 0x6d, 0x65, 0x64,
+	0x53, 0x75, 0x70, 0x70, 0x6c, 0x69, 0x65, 0x72, 0x53, 0x74, 0x61, 0x6b, 0x65, 0x12, 0x44, 0x0a,
+	0x12, 0x73, 0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x5f, 0x65, 0x6e, 0x64, 0x5f, 0x68, 0x65, 0x69,
+	0x67, 0x68, 0x74, 0x18, 0x04, 0x20, 0x01, 0x28, 0x03, 0x42, 0x16, 0xea, 0xde, 0x1f, 0x12, 0x73,
+	0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x5f, 0x65, 0x6e, 0x64, 0x5f, 0x68, 0x65, 0x69, 0x67, 0x68,
+	0x74, 0x52, 0x10, 0x73, 0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x45, 0x6e, 0x64, 0x48, 0x65, 0x69,
+	0x67, 0x68, 0x74, 0x12, 0x43, 0x0a, 0x08, 0x73, 0x75, 0x70, 0x70, 0x6c, 0x69, 0x65, 0x72, 0x18,
+	0x05, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x19, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c,
+	0x2e, 0x73, 0x68, 0x61, 0x72, 0x65, 0x64, 0x2e, 0x53, 0x75, 0x70, 0x70, 0x6c, 0x69, 0x65, 0x72,
+	0x42, 0x0c, 0xea, 0xde, 0x1f, 0x08, 0x73, 0x75, 0x70, 0x70, 0x6c, 0x69, 0x65, 0x72, 0x52, 0x08,
 	0x73, 0x75, 0x70, 0x70, 0x6c, 0x69, 0x65, 0x72, 0x32, 0xe3, 0x04, 0x0a, 0x03, 0x4d, 0x73, 0x67,
 	0x12, 0x60, 0x0a, 0x0c, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x50, 0x61, 0x72, 0x61, 0x6d, 0x73,
 	0x12, 0x23, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x6d, 0x69, 0x67, 0x72,
@@ -6542,7 +6717,8 @@ var file_poktroll_migration_tx_proto_goTypes = []interface{}{
 	(*v1beta1.Coin)(nil),                            // 12: cosmos.base.v1beta1.Coin
 	(*shared.ApplicationServiceConfig)(nil),         // 13: poktroll.shared.ApplicationServiceConfig
 	(*application.Application)(nil),                 // 14: poktroll.application.Application
-	(*shared.Supplier)(nil),                         // 15: poktroll.shared.Supplier
+	(*shared.SupplierServiceConfig)(nil),            // 15: poktroll.shared.SupplierServiceConfig
+	(*shared.Supplier)(nil),                         // 16: poktroll.shared.Supplier
 }
 var file_poktroll_migration_tx_proto_depIdxs = []int32{
 	10, // 0: poktroll.migration.MsgUpdateParams.params:type_name -> poktroll.migration.Params
@@ -6552,24 +6728,25 @@ var file_poktroll_migration_tx_proto_depIdxs = []int32{
 	12, // 4: poktroll.migration.MsgClaimMorseApplicationResponse.claimed_balance:type_name -> cosmos.base.v1beta1.Coin
 	12, // 5: poktroll.migration.MsgClaimMorseApplicationResponse.claimedApplicationStake:type_name -> cosmos.base.v1beta1.Coin
 	14, // 6: poktroll.migration.MsgClaimMorseApplicationResponse.application:type_name -> poktroll.application.Application
-	12, // 7: poktroll.migration.MsgClaimMorseSupplierResponse.claimedBalance:type_name -> cosmos.base.v1beta1.Coin
-	12, // 8: poktroll.migration.MsgClaimMorseSupplierResponse.claimedSupplierStake:type_name -> cosmos.base.v1beta1.Coin
-	15, // 9: poktroll.migration.MsgClaimMorseSupplierResponse.supplier:type_name -> poktroll.shared.Supplier
-	0,  // 10: poktroll.migration.Msg.UpdateParams:input_type -> poktroll.migration.MsgUpdateParams
-	2,  // 11: poktroll.migration.Msg.ImportMorseClaimableAccounts:input_type -> poktroll.migration.MsgImportMorseClaimableAccounts
-	4,  // 12: poktroll.migration.Msg.ClaimMorseAccount:input_type -> poktroll.migration.MsgClaimMorseAccount
-	6,  // 13: poktroll.migration.Msg.ClaimMorseApplication:input_type -> poktroll.migration.MsgClaimMorseApplication
-	8,  // 14: poktroll.migration.Msg.ClaimMorseSupplier:input_type -> poktroll.migration.MsgClaimMorseSupplier
-	1,  // 15: poktroll.migration.Msg.UpdateParams:output_type -> poktroll.migration.MsgUpdateParamsResponse
-	3,  // 16: poktroll.migration.Msg.ImportMorseClaimableAccounts:output_type -> poktroll.migration.MsgImportMorseClaimableAccountsResponse
-	5,  // 17: poktroll.migration.Msg.ClaimMorseAccount:output_type -> poktroll.migration.MsgClaimMorseAccountResponse
-	7,  // 18: poktroll.migration.Msg.ClaimMorseApplication:output_type -> poktroll.migration.MsgClaimMorseApplicationResponse
-	9,  // 19: poktroll.migration.Msg.ClaimMorseSupplier:output_type -> poktroll.migration.MsgClaimMorseSupplierResponse
-	15, // [15:20] is the sub-list for method output_type
-	10, // [10:15] is the sub-list for method input_type
-	10, // [10:10] is the sub-list for extension type_name
-	10, // [10:10] is the sub-list for extension extendee
-	0,  // [0:10] is the sub-list for field type_name
+	15, // 7: poktroll.migration.MsgClaimMorseSupplier.services:type_name -> poktroll.shared.SupplierServiceConfig
+	12, // 8: poktroll.migration.MsgClaimMorseSupplierResponse.claimed_balance:type_name -> cosmos.base.v1beta1.Coin
+	12, // 9: poktroll.migration.MsgClaimMorseSupplierResponse.claimed_supplier_stake:type_name -> cosmos.base.v1beta1.Coin
+	16, // 10: poktroll.migration.MsgClaimMorseSupplierResponse.supplier:type_name -> poktroll.shared.Supplier
+	0,  // 11: poktroll.migration.Msg.UpdateParams:input_type -> poktroll.migration.MsgUpdateParams
+	2,  // 12: poktroll.migration.Msg.ImportMorseClaimableAccounts:input_type -> poktroll.migration.MsgImportMorseClaimableAccounts
+	4,  // 13: poktroll.migration.Msg.ClaimMorseAccount:input_type -> poktroll.migration.MsgClaimMorseAccount
+	6,  // 14: poktroll.migration.Msg.ClaimMorseApplication:input_type -> poktroll.migration.MsgClaimMorseApplication
+	8,  // 15: poktroll.migration.Msg.ClaimMorseSupplier:input_type -> poktroll.migration.MsgClaimMorseSupplier
+	1,  // 16: poktroll.migration.Msg.UpdateParams:output_type -> poktroll.migration.MsgUpdateParamsResponse
+	3,  // 17: poktroll.migration.Msg.ImportMorseClaimableAccounts:output_type -> poktroll.migration.MsgImportMorseClaimableAccountsResponse
+	5,  // 18: poktroll.migration.Msg.ClaimMorseAccount:output_type -> poktroll.migration.MsgClaimMorseAccountResponse
+	7,  // 19: poktroll.migration.Msg.ClaimMorseApplication:output_type -> poktroll.migration.MsgClaimMorseApplicationResponse
+	9,  // 20: poktroll.migration.Msg.ClaimMorseSupplier:output_type -> poktroll.migration.MsgClaimMorseSupplierResponse
+	16, // [16:21] is the sub-list for method output_type
+	11, // [11:16] is the sub-list for method input_type
+	11, // [11:11] is the sub-list for extension type_name
+	11, // [11:11] is the sub-list for extension extendee
+	0,  // [0:11] is the sub-list for field type_name
 }
 
 func init() { file_poktroll_migration_tx_proto_init() }

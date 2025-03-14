@@ -1,6 +1,6 @@
 ---
-sidebar_position: 2
-title: Service Cheat Sheet
+sidebar_position: 1
+title: Service Cheat Sheet (~ 5 min)
 ---
 
 ## Service Cheat Sheet <!-- omit in toc -->

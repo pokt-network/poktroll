@@ -34,6 +34,7 @@ import (
 	servicetypes "github.com/pokt-network/poktroll/x/service/types"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
+	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 )
 
 // MsgCreateClaim is an interface satisfying proof.MsgCreateClaim concrete type
@@ -267,6 +268,9 @@ type ApplicationQueryClient interface {
 type SupplierQueryClient interface {
 	// GetSupplier queries the chain for the details of the supplier provided
 	GetSupplier(ctx context.Context, supplierOperatorAddress string) (sharedtypes.Supplier, error)
+
+	// GetParams queries the chain for the supplier module parameters.
+	GetParams(ctx context.Context) (*suppliertypes.Params, error)
 }
 
 // SessionQueryClient defines an interface that enables the querying of the
@@ -340,6 +344,8 @@ type ServiceQueryClient interface {
 	// GetService queries the chain for the details of the service provided
 	GetService(ctx context.Context, serviceId string) (sharedtypes.Service, error)
 	GetServiceRelayDifficulty(ctx context.Context, serviceId string) (servicetypes.RelayMiningDifficulty, error)
+	// GetParams queries the chain for the current proof module parameters.
+	GetParams(ctx context.Context) (*servicetypes.Params, error)
 }
 
 // BankQueryClient defines an interface that enables the querying of the
