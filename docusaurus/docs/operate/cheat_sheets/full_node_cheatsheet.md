@@ -26,10 +26,7 @@ See the [Full Node Walkthrough](../walkthroughs/full_node_walkthrough.md) if you
 ## Pre-Requisites & Requirements
 
 1. **Linux-based System**: Preferably Debian-based distributions (Ubuntu, Debian).
-2. **Hardware Requirements**:
-   - 4+ CPU cores
-   - 8+ GB RAM
-   - 200+ GB SSD storage (for chain data)
+2. **Hardware Requirements**: See the [hardware requirements doc](../configs/hardware_requirements.md)
 3. **Architecture Support**: Both x86_64 (amd64) and ARM64 architectures are supported.
 4. **Root or Sudo Access**: Administrative privileges are required.
 5. **Dedicated Server or Virtual Machine**: Any provider is acceptable.
