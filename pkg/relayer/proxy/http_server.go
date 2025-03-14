@@ -2,7 +2,9 @@ package proxy
 
 import (
 	"context"
+	"errors"
 	"net/http"
+	"time"
 
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 
@@ -104,6 +106,26 @@ func (server *relayMinerHTTPServer) Start(ctx context.Context) error {
 // Stop terminates the service server and returns an error if it fails.
 func (server *relayMinerHTTPServer) Stop(ctx context.Context) error {
 	return server.server.Shutdown(ctx)
+}
+
+// Ping tries to dial the suppliers backend URLs to test the connection.
+func (server *relayMinerHTTPServer) Ping(ctx context.Context) error {
+	for _, supplierCfg := range server.serverConfig.SupplierConfigsMap {
+		c := &http.Client{Timeout: 2 * time.Second}
+
+		resp, err := c.Head(supplierCfg.ServiceConfig.BackendUrl.String())
+		if err != nil {
+			return err
+		}
+		_ = resp.Body.Close()
+
+		if resp.StatusCode >= http.StatusInternalServerError {
+			return errors.New("ping failed")
+		}
+
+	}
+
+	return nil
 }
 
 // ServeHTTP listens for incoming relay requests. It implements the respective

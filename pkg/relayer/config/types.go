@@ -24,6 +24,14 @@ type YAMLRelayMinerConfig struct {
 	Pprof                  YAMLRelayMinerPprofConfig      `yaml:"pprof"`
 	SmtStorePath           string                         `yaml:"smt_store_path"`
 	Suppliers              []YAMLRelayMinerSupplierConfig `yaml:"suppliers"`
+	Ping                   YAMLRelayMinerPingConfig       `yaml:"ping"`
+}
+
+// YAMLRelayMinerPingConfig represents the configuration to expose a ping server.
+type YAMLRelayMinerPingConfig struct {
+	Enabled bool `yaml:"enabled"`
+	// Addr is the address to bind to (format: 'hostname:port') where 'hostname' can be a DNS name or an IP
+	Addr string `yaml:"addr"`
 }
 
 // YAMLRelayMinerPocketNodeConfig is the structure used to unmarshal the pocket
@@ -83,6 +91,17 @@ type RelayMinerConfig struct {
 	Pprof                  *RelayMinerPprofConfig
 	Servers                map[string]*RelayMinerServerConfig
 	SmtStorePath           string
+	Ping                   *RelayMinerPingConfig
+}
+
+// TODO_TECHDEBT(@red-0ne): Remove this structure altogether. See the discussion here for ref:
+// https://github.com/pokt-network/poktroll/pull/1037/files#r1928599958
+// RelayMinerPingConfig is the structure resulting from parsing the ping
+// server configuration.
+type RelayMinerPingConfig struct {
+	Enabled bool
+	// Addr is the address to bind to (format: hostname:port) where 'hostname' can be a DNS name or an IP
+	Addr string
 }
 
 // RelayMinerPocketNodeConfig is the structure resulting from parsing the pocket
