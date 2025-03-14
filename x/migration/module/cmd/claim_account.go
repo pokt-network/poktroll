@@ -6,20 +6,16 @@ import (
 	"fmt"
 	"os"
 
-	"cosmossdk.io/depinject"
 	cosmosclient "github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
-	cosmostx "github.com/cosmos/cosmos-sdk/client/tx"
 	"github.com/spf13/cobra"
 
-	"github.com/pokt-network/poktroll/pkg/client/tx"
 	"github.com/pokt-network/poktroll/x/migration/types"
 )
 
 var (
 	morseKeyfileDecryptPassphrase string
 	noPassphrase                  bool
-	noConfirm                     bool
 )
 
 func claimAccountCmd() *cobra.Command {
@@ -49,13 +45,10 @@ See: https://dev.poktroll.com/operate/morse_migration/claiming for more informat
 		false,
 		flagNoPassphraseUsage,
 	)
-	claimAcctCmd.Flags().BoolVar(
-		&noConfirm,
-		flagNoConfirm,
-		false,
-		flagNoConfirmUsage,
-	)
 
+	// This command depends on the following conventional tx flags:
+	// - FlagFrom | --from
+	// - FlagSkipConfirmation | --yes
 	flags.AddTxFlagsToCmd(claimAcctCmd)
 
 	return claimAcctCmd
@@ -94,7 +87,12 @@ func runClaimAccount(cmd *cobra.Command, args []string) error {
 	fmt.Printf("MsgClaimMorseAccount %s\n", string(msgClaimMorseAcctJSON))
 
 	// Last chance for the user to bail.
-	if !noConfirm {
+	skipConfirmation, err := cmd.Flags().GetBool(flags.FlagSkipConfirmation)
+	if err != nil {
+		return err
+	}
+
+	if !skipConfirmation {
 		fmt.Printf("Confirm MsgClaimMorseAccount: y/[n]: ")
 		stdinReader := bufio.NewReader(os.Stdin)
 
@@ -114,20 +112,8 @@ func runClaimAccount(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	// Conventionally construct a txClient and its dependencies.
-	clientFactory, err := cosmostx.NewFactoryCLI(clientCtx, cmd.Flags())
-	if err != nil {
-		return err
-	}
-
-	deps := depinject.Supply(clientCtx, clientFactory)
-	txContext, err := tx.NewTxContext(deps)
-	if err != nil {
-		return err
-	}
-
-	deps = depinject.Configs(deps, depinject.Supply(txContext))
-	txClient, err := tx.NewTxClient(ctx, deps)
+	// Construct a tx client.
+	txClient, err := getTxClient(ctx, cmd)
 	if err != nil {
 		return err
 	}
