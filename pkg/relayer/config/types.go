@@ -27,6 +27,7 @@ type YAMLRelayMinerConfig struct {
 	Suppliers                    []YAMLRelayMinerSupplierConfig `yaml:"suppliers"`
 	Ping                         YAMLRelayMinerPingConfig       `yaml:"ping"`
 	EnableOverServicing          bool                           `yaml:"enable_over_servicing"`
+	Forward                      YAMLRelayMinerForwardConfig    `yaml:"forward"`
 }
 
 // YAMLRelayMinerPingConfig represents the configuration to expose a ping server.
@@ -34,6 +35,18 @@ type YAMLRelayMinerPingConfig struct {
 	Enabled bool `yaml:"enabled"`
 	// Addr is the address to bind to (format: 'hostname:port') where 'hostname' can be a DNS name or an IP
 	Addr string `yaml:"addr"`
+}
+
+// YAMLRelayMinerForwardConfig represents the configuration to expose a forward
+// request server.
+type YAMLRelayMinerForwardConfig struct {
+	Enabled bool `yaml:"enabled"`
+
+	// Addr is the address to bind to (format: 'hostname:port') where 'hostname' can be a DNS name or an IP.
+	Addr string `yaml:"addr"`
+
+	// Token must represent an 32 bytes hexadecimal string. (mandatory flag when activating forwarding capabilities)
+	Token string `yaml:"token"`
 }
 
 // YAMLRelayMinerPocketNodeConfig is the structure used to unmarshal the pocket
@@ -97,6 +110,7 @@ type RelayMinerConfig struct {
 	SmtStorePath                 string
 	Ping                         *RelayMinerPingConfig
 	EnableOverServicing          bool
+	Forward                      *RelayMinerForwardConfig
 }
 
 // TODO_TECHDEBT(@red-0ne): Remove this structure altogether. See the discussion here for ref:
@@ -107,6 +121,17 @@ type RelayMinerPingConfig struct {
 	Enabled bool
 	// Addr is the address to bind to (format: hostname:port) where 'hostname' can be a DNS name or an IP
 	Addr string
+}
+
+// RelayMinerForwardConfig is the structure resulting from parsing the
+// forward server configuration.
+type RelayMinerForwardConfig struct {
+	Enabled bool
+	// Addr is the address to bind to (format: 'hostname:port') where 'hostname' can be a DNS name or an IP.
+	Addr string
+
+	// Token must represent an 32 bytes hexadecimal string. (mandatory flag when activating forwarding capabilities).
+	Token string
 }
 
 // RelayMinerPocketNodeConfig is the structure resulting from parsing the pocket
