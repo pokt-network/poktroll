@@ -24,6 +24,12 @@ ping:
   enabled: false
   addr: localhost:8081
 
+# Forward server configuration to send request to suppliers backend URL.
+forward:
+  enabled: false
+  addr: localhost:10000
+  token: 8cc09793290cd64d8a9bc80eaae4fbeef5f7cf797b0c70e078d2a5b81d74f12c
+
 pocket_node:
   # Pocket node URL exposing the CometBFT JSON-RPC API.
   # Used by the Cosmos client SDK, event subscriptions, etc.
