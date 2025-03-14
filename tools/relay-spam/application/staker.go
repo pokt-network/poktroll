@@ -270,6 +270,25 @@ func (s *Staker) DelegateApplicationToGateway(app config.Application) error {
 
 	// Delegate to each gateway
 	for _, gatewayAddr := range app.DelegateesGoal {
+		// Check if the application is already delegated to this gateway
+		isDelegated := false
+		if s.querier != nil {
+			var err error
+			isDelegated, err = s.querier.IsDelegatedToGateway(ctx, app.Address, gatewayAddr)
+			if err != nil {
+				// If we get an error checking if the application is delegated, log it but continue
+				// This is likely because the application doesn't exist yet or there's a network issue
+				fmt.Printf("Warning: Error checking if application %s is delegated to gateway %s: %v\n", app.Name, gatewayAddr, err)
+				fmt.Printf("Assuming application %s is not delegated to gateway %s, proceeding with delegation\n", app.Name, gatewayAddr)
+				isDelegated = false
+			} else if isDelegated {
+				fmt.Printf("Application %s is already delegated to gateway %s, skipping\n", app.Name, gatewayAddr)
+				continue
+			}
+		} else {
+			fmt.Printf("Querier not available, assuming application %s is not delegated to gateway %s\n", app.Name, gatewayAddr)
+		}
+
 		// Create the delegate application message
 		msg := apptypes.NewMsgDelegateToGateway(
 			addr.String(),
