@@ -8,10 +8,12 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"net/url"
 	"os"
 	"testing"
+	"time"
 
 	"cosmossdk.io/depinject"
 	ring_secp256k1 "github.com/athanorlabs/go-dleq/secp256k1"
@@ -23,12 +25,15 @@ import (
 	"github.com/pokt-network/ring-go"
 	sdktypes "github.com/pokt-network/shannon-sdk/types"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/mock/gomock"
 
 	"github.com/pokt-network/poktroll/pkg/observable/channel"
 	"github.com/pokt-network/poktroll/pkg/polylog"
+	"github.com/pokt-network/poktroll/pkg/relayer"
 	"github.com/pokt-network/poktroll/pkg/relayer/config"
 	"github.com/pokt-network/poktroll/pkg/relayer/relay_authenticator"
 	"github.com/pokt-network/poktroll/pkg/signer"
+	"github.com/pokt-network/poktroll/testutil/mockrelayer"
 	testsession "github.com/pokt-network/poktroll/testutil/session"
 	"github.com/pokt-network/poktroll/testutil/testclient/testblock"
 	"github.com/pokt-network/poktroll/testutil/testclient/testdelegation"
@@ -103,6 +108,19 @@ func NewRelayerProxyTestBehavior(
 	return test
 }
 
+// ShutdownServiceID gracefully shuts down the http server for a given service id.
+func (t *TestBehavior) ShutdownServiceID(serviceID string) error {
+	srv, ok := t.proxyServersMap[serviceID]
+	if !ok {
+		return fmt.Errorf("shutdown service id: not found")
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+
+	return srv.Shutdown(ctx)
+}
+
 // WithRelayerProxyDependenciesForBlockHeight creates the dependencies for the relayer proxy
 // from the TestBehavior.mocks so they have the right interface and can be
 // used by the dependency injection framework.
@@ -159,10 +177,17 @@ func WithRelayerProxyDependenciesForBlockHeight(
 	}
 }
 
+// WithRelayMeter creates the dependencies mocks for the relayproxy to use a relay meter.
+func WithRelayMeter() func(*TestBehavior) {
+	return func(test *TestBehavior) {
+		relayMeter := newMockRelayMeter(test.t)
+		test.Deps = depinject.Configs(test.Deps, depinject.Supply(relayMeter))
+	}
+}
+
 // WithServicesConfigMap creates the services that the relayer proxy will
-// proxy requests to.
-// It creates an HTTP server for each service and starts listening on the
-// provided host.
+// proxy requests to. It creates an HTTP server for each service and starts
+// listening on the provided host.
 func WithServicesConfigMap(
 	servicesConfigMap map[string]*config.RelayMinerServerConfig,
 ) func(*TestBehavior) {
@@ -178,13 +203,20 @@ $ go test -v -count=1 -run TestRelayerProxy ./pkg/relayer/...`)
 		}
 		for _, serviceConfig := range servicesConfigMap {
 			for serviceId, supplierConfig := range serviceConfig.SupplierConfigsMap {
-				server := &http.Server{Addr: supplierConfig.ServiceConfig.BackendUrl.Host}
-				server.Handler = http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-					sendJSONRPCResponse(test.t, w)
-				})
+				// It is recommended to listen on the main Go routine to ensure
+				// that the HTTP servers created for each service are fully initialized
+				// and ready to receive requests before executing the test cases.
+				listener, err := net.Listen("tcp", supplierConfig.ServiceConfig.BackendUrl.Host)
+				require.NoError(test.t, err)
+
+				server := &http.Server{
+					Handler: http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+						sendJSONRPCResponse(test.t, w)
+					}),
+				}
 
 				go func() {
-					err := server.ListenAndServe()
+					err := server.Serve(listener)
 					if err != nil && !errors.Is(err, http.ErrServerClosed) {
 						require.NoError(test.t, err)
 					}
@@ -295,6 +327,15 @@ func WithSuccessiveSessions(
 			)
 		}
 	}
+}
+
+func newMockRelayMeter(t *testing.T) relayer.RelayMeter {
+	ctrl := gomock.NewController(t)
+
+	relayMeter := mockrelayer.NewMockRelayMeter(ctrl)
+	relayMeter.EXPECT().Start(gomock.Any()).Return(nil).AnyTimes()
+
+	return relayMeter
 }
 
 // MarshalAndSend marshals the request and sends it to the provided service.
