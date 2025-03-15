@@ -3,6 +3,7 @@ package proxy
 import (
 	"context"
 	"errors"
+	"net/http"
 
 	"cosmossdk.io/depinject"
 	"golang.org/x/sync/errgroup"
@@ -197,6 +198,29 @@ func (rp *relayerProxy) PingAll(ctx context.Context) error {
 		rp.logger.Error().Err(err).
 			Msg("an unexpected error occured while pinging backend URL(s)")
 		return err
+	}
+
+	return nil
+}
+
+// Forward iterates through all the relay servers, then tries to forward the given request.
+func (rp *relayerProxy) Forward(ctx context.Context, serviceID string, w http.ResponseWriter, req *http.Request) error {
+	found := false
+
+	for _, srv := range rp.servers {
+		if err := srv.Forward(ctx, serviceID, w, req); err != nil {
+			if errors.Is(err, ErrRelayerProxyServiceIDNotFound) {
+				continue
+			}
+			return err
+		} else {
+			found = true
+			break
+		}
+	}
+
+	if !found {
+		return ErrRelayerProxyServiceIDNotFound
 	}
 
 	return nil
