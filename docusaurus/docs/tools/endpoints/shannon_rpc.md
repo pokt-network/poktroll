@@ -1,6 +1,6 @@
 ---
 title: Shannon RPC Endpoints
-sidebar_position: 3
+sidebar_position: 1
 ---
 
 - [Types of RPC Endpoints](#types-of-rpc-endpoints)

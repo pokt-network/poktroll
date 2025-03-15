@@ -3,7 +3,7 @@ title: Supplier staking config
 sidebar_position: 3
 ---
 
-# Supplier staking config <!-- omit in toc -->
+## Supplier staking config <!-- omit in toc -->
 
 This document describes the configuration file used by the `Supplier` actor
 to submit a `stake` transaction, **which is a prerequisite** for it to provide
