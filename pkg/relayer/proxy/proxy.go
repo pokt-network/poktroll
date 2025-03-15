@@ -128,9 +128,6 @@ func (rp *relayerProxy) Start(ctx context.Context) error {
 		return err
 	}
 
-	// Start the relay authenticator.
-	rp.relayAuthenticator.Start(ctx)
-
 	// Start the relay meter by subscribing to the onchain events.
 	// This function is non-blocking and the subscription cancellation is handled
 	// by the context passed to the Start method.

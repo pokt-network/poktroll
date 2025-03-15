@@ -69,6 +69,7 @@ func requireProofCountEqualsExpectedValueFromProofParams(t *testing.T, proofPara
 			SessionStartBlockHeight: 1,
 			SessionEndBlockHeight:   2,
 			ServiceId:               service.Id,
+			SessionId:               "sessionId",
 		},
 	}
 	supplierOperatorAddress := sample.AccAddress()

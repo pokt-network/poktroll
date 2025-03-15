@@ -5,7 +5,6 @@ import (
 	"sync"
 
 	"cosmossdk.io/depinject"
-	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/client/supplier"
@@ -180,11 +179,7 @@ func (rs *relayerSessionsManager) ensureSessionTree(
 		sessionTreesWithEndHeight[sessionHeader.SessionId] = sessionTreeWithSessionId
 	}
 
-	supplierOperatorAccAddress, err := cosmostypes.AccAddressFromBech32(relayRequestMetadata.SupplierOperatorAddress)
-	if err != nil {
-		return nil, err
-	}
-	supplierOperatorAddress := supplierOperatorAccAddress.String()
+	supplierOperatorAddress := relayRequestMetadata.SupplierOperatorAddress
 
 	// Get the sessionTree for the supplier corresponding to the relay request.
 	sessionTree, ok := sessionTreeWithSessionId[supplierOperatorAddress]
@@ -192,7 +187,8 @@ func (rs *relayerSessionsManager) ensureSessionTree(
 	// If the sessionTree does not exist, create and assign it to the
 	// sessionTreeWithSessionId map for the given supplier operator address.
 	if !ok {
-		sessionTree, err = NewSessionTree(sessionHeader, &supplierOperatorAccAddress, rs.storesDirectory, rs.logger)
+		var err error
+		sessionTree, err = NewSessionTree(sessionHeader, supplierOperatorAddress, rs.storesDirectory, rs.logger)
 		if err != nil {
 			return nil, err
 		}
@@ -317,7 +313,7 @@ func (rs *relayerSessionsManager) removeFromRelayerSessions(sessionTree relayer.
 	defer rs.sessionsTreesMu.Unlock()
 
 	sessionHeader := sessionTree.GetSessionHeader()
-	supplierOperatorAddress := sessionTree.GetSupplierOperatorAddress().String()
+	supplierOperatorAddress := sessionTree.GetSupplierOperatorAddress()
 
 	logger := rs.logger.With("session_end_block_height", sessionHeader.SessionEndBlockHeight)
 
@@ -433,7 +429,7 @@ func (rs *relayerSessionsManager) mapAddMinedRelayToSessionTree(
 	logger := rs.logger.
 		With("session_id", smst.GetSessionHeader().GetSessionId()).
 		With("application", smst.GetSessionHeader().GetApplicationAddress()).
-		With("supplier_operator_address", smst.GetSupplierOperatorAddress().String())
+		With("supplier_operator_address", smst.GetSupplierOperatorAddress())
 
 	serviceComputeUnitsPerRelay, err := rs.getServiceComputeUnitsPerRelay(ctx, &relayMetadata)
 	if err != nil {
@@ -480,7 +476,7 @@ func (rs *relayerSessionsManager) deleteExpiredSessionTreesFn(
 					rs.logger.Error().
 						Err(err).
 						Str("session_id", sessionTree.GetSessionHeader().GetSessionId()).
-						Str("supplier_operator_address", sessionTree.GetSupplierOperatorAddress().String()).
+						Str("supplier_operator_address", sessionTree.GetSupplierOperatorAddress()).
 						Msg("failed to delete session tree")
 				}
 				continue
