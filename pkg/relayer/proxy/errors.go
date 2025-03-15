@@ -15,4 +15,5 @@ var (
 	ErrRelayerProxyRateLimited               = sdkerrors.Register(codespace, 7, "offchain rate limit hit by relayer proxy")
 	ErrRelayerProxyCalculateRelayCost        = sdkerrors.Register(codespace, 8, "failed to calculate relay cost")
 	ErrRelayerProxySupplierNotReachable      = sdkerrors.Register(codespace, 9, "supplier(s) not reachable")
+	ErrRelayerProxyServiceIDNotFound         = sdkerrors.Register(codespace, 10, "service id not found")
 )
