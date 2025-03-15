@@ -200,8 +200,8 @@ Configures a `forward` server to send request to a supplier for a given
 service name. It is intended for operational use only (e.g., a relayminer
 operator may need to send requests to suppliers to verify the correctness
 of their responses going through the relayminer proxy).
-Requests forwarded via this endpoint bypass the miner and session
-manager mechanisms.
+Requests forwarded via this endpoint bypass the miner, meter and session
+mechanisms.
 To prevent misuse by unauthorized users, this endpoint requires
 authentication. A token can be defined using a 32 bytes hexadecimal
 `token`.
