@@ -224,7 +224,7 @@ func (k Keeper) hydrateSessionSuppliers(ctx context.Context, sh *sessionHydrator
 	}
 
 	for _, supplier := range candidateSuppliers {
-		candidatesToRandomWeight[supplier.OperatorAddress] = generateSupplierRandomWeight(supplier, sh)
+		candidatesToRandomWeight[supplier.OperatorAddress] = generateSupplierRandomWeight(supplier, sh.sessionIDBz)
 	}
 
 	sortedCandidates := sortCandidateSuppliersByHeight(candidateSuppliers, candidatesToRandomWeight)
@@ -237,10 +237,10 @@ func (k Keeper) hydrateSessionSuppliers(ctx context.Context, sh *sessionHydrator
 // 1. Combine session ID and supplier's operator address to create unique seed
 // 2. Hash the seed using SHA3-256
 // 3. Take first 8 bytes of hash as random weight
-func generateSupplierRandomWeight(supplier *sharedtypes.Supplier, sh *sessionHydrator) int {
+func generateSupplierRandomWeight(supplier *sharedtypes.Supplier, sessionIDBz []byte) int {
 	candidateSeed := concatWithDelimiter(
 		sessionIDComponentDelimiter,
-		sh.sessionIDBz,
+		sessionIDBz,
 		[]byte(supplier.OperatorAddress),
 	)
 	candidateSeedHash := sha3Hash(candidateSeed)
