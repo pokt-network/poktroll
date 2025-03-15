@@ -51,7 +51,7 @@ func loadMorsePrivateKey(morseKeyExportPath, passphrase string) (ed25519.PrivKey
 		return nil, err
 	}
 
-	return unarmorDecryptPrivKey(morseArmoredKeyfileBz, passphrase)
+	return UnarmorDecryptPrivKey(morseArmoredKeyfileBz, passphrase)
 }
 
 // ensurePassphrase returns the passphrase with surrounding whitespace removed.
@@ -77,8 +77,8 @@ func ensurePassphrase(passphrase string, noPrompt bool) (string, error) {
 	return strings.TrimSpace(string(bytePassword)), nil
 }
 
-// unarmorDecryptPrivKey deserializes and decrypts the exported Morse private key file in armorStr using the passphrase.
-func unarmorDecryptPrivKey(armorStr []byte, passphrase string) (ed25519.PrivKey, error) {
+// UnarmorDecryptPrivKey deserializes and decrypts the exported Morse private key file in armorStr using the passphrase.
+func UnarmorDecryptPrivKey(armorStr []byte, passphrase string) (ed25519.PrivKey, error) {
 	var privKey ed25519.PrivKey
 	armoredJson := ArmoredJson{}
 
