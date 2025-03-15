@@ -56,3 +56,14 @@ message EventSupplierUnbondingCanceled {
   // The session end height of the session in which the supplier unbonding was canceled.
   int64 session_end_height = 2 [(gogoproto.jsontag) = "session_end_height"];
 }
+
+// EventSupplierServiceConfigActivated is emitted when a supplier service configuration
+// becomes effective at a specific block height.
+message EventSupplierServiceConfigActivated {
+  // supplier contains the complete updated supplier information including the
+  // active service configurations in supplier.Services.
+  poktroll.shared.Supplier supplier = 1 [(gogoproto.jsontag) = "supplier"];
+  // activation_height indicates the block height at which the new service
+  // configurations became active.
+  int64 activation_height = 2 [(gogoproto.jsontag) = "activation_height"];
+}

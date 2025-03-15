@@ -307,6 +307,14 @@ func (keepers *ProofModuleKeepers) AddServiceActors(
 		Services: []*sharedtypes.SupplierServiceConfig{
 			{ServiceId: service.Id},
 		},
+		ServiceConfigHistory: []*sharedtypes.ServiceConfigUpdate{
+			{
+				Services: []*sharedtypes.SupplierServiceConfig{
+					{ServiceId: service.Id},
+				},
+				EffectiveBlockHeight: 1,
+			},
+		},
 	})
 
 	keepers.SetApplication(ctx, apptypes.Application{
@@ -365,4 +373,9 @@ func WithBlockHeight(height int64) ProofKeepersOpt {
 // SetBlockHeight updates the block height for the given context and returns the updated context.
 func SetBlockHeight(ctx context.Context, height int64) context.Context {
 	return sdk.UnwrapSDKContext(ctx).WithBlockHeight(height)
+}
+
+// GetBlockHeight returns the current block height for the given context.
+func GetBlockHeight(ctx context.Context) int64 {
+	return sdk.UnwrapSDKContext(ctx).BlockHeight()
 }
