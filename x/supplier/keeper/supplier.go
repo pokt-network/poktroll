@@ -68,6 +68,16 @@ func (k Keeper) GetAllSuppliers(ctx context.Context) (suppliers []sharedtypes.Su
 
 // initializeNilSupplierFields initializes any nil fields in the supplier object
 // to their default values.
+// Adding `(gogoproto.nullable)=false` to the repeated proto fields
+// acts on the underlying type and not the slice or map type. This means that the
+// slice or map will be nil if no values are provided in the proto message.
+// This function ensures that the supplier object has all fields initialized
+// to their default values.
+// TODO_INVESTIGATE: This function is a workaround for the CosmosSDK codec treating
+// empty slices and maps as nil. We should investigate how we can make the codec
+// treat empty slices and maps as empty instead of nil.
+// Refer to the following discussion for more context:
+// https://github.com/pokt-network/poktroll/pull/1103#discussion_r1992258822
 func initializeNilSupplierFields(supplier *sharedtypes.Supplier) {
 	// The CosmosSDK codec treats empty slices and maps as nil, so we need to
 	// ensure that they are initialized as empty.
