@@ -296,7 +296,8 @@ func (st *sessionTree) StartClaiming() error {
 	return nil
 }
 
-// GetSupplierOperatorAddress returns a CosmosSDK address of the supplier this sessionTree belongs to.
+// GetSupplierOperatorAddress returns a stringified bech32 address of the supplier
+// operator this sessionTree belongs to.
 func (st *sessionTree) GetSupplierOperatorAddress() string {
 	return st.supplierOperatorAddress
 }

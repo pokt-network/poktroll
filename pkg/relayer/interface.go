@@ -161,7 +161,8 @@ type SessionTree interface {
 	// It returns an error if it has already been marked as such.
 	StartClaiming() error
 
-	// GetSupplierOperatorAddress returns the supplier operator address building this tree.
+	// GetSupplierOperatorAddress returns a stringified bech32 address of the supplier
+	// operator this sessionTree belongs to.
 	GetSupplierOperatorAddress() string
 
 	// GetTrieSpec returns the trie spec of the SMST.
