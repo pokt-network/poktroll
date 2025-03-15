@@ -23,14 +23,14 @@ func (ra *relayAuthenticator) VerifyRelayRequest(
 
 	// Verify the relayRequest metadata, signature, session header and other
 	// basic validation.
-	if err = ra.ringCache.VerifyRelayRequestSignature(ctx, relayRequest); err != nil {
+	if err = ra.ringClient.VerifyRelayRequestSignature(ctx, relayRequest); err != nil {
 		return err
 	}
 
 	meta := relayRequest.GetMeta()
 
 	// Extract the session header for usage below.
-	// ringCache.VerifyRelayRequestSignature already verified the header's validity.
+	// ringClient.VerifyRelayRequestSignature already verified the header's validity.
 	sessionHeader := meta.SessionHeader
 
 	// Application address is used to verify the relayRequest signature.

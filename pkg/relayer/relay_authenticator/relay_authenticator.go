@@ -1,8 +1,6 @@
 package relay_authenticator
 
 import (
-	"context"
-
 	"cosmossdk.io/depinject"
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 
@@ -41,9 +39,9 @@ type relayAuthenticator struct {
 	// It is used to update the current session data.
 	blockClient client.BlockClient
 
-	// ringCache stores and manages rings for signing/verifying relay requests using
+	// ringClient stores and manages rings for signing/verifying relay requests using
 	// gateway and application public keys.
-	ringCache crypto.RingCache
+	ringClient crypto.RingClient
 
 	// operatorAddressToSigningKeyNameMap is a map with a CosmoSDK address as a key,
 	// and the keyring signing key name as a value.
@@ -62,7 +60,7 @@ type relayAuthenticator struct {
 //   - client.SessionQueryClient
 //   - client.SharedQueryClient
 //   - client.BlockClient
-//   - crypto.RingCache
+//   - crypto.RingClient
 func NewRelayAuthenticator(
 	deps depinject.Config,
 	opts ...relayer.RelayAuthenticatorOption,
@@ -76,7 +74,7 @@ func NewRelayAuthenticator(
 		&ra.sessionQuerier,
 		&ra.sharedQuerier,
 		&ra.blockClient,
-		&ra.ringCache,
+		&ra.ringClient,
 	); err != nil {
 		return nil, err
 	}
@@ -94,13 +92,6 @@ func NewRelayAuthenticator(
 	}
 
 	return ra, nil
-}
-
-// Start starts the relay authenticator and its underlying services.
-// TODO_TECHDEBT: Remove this method once the ring cache no longer needs to be started.
-func (ra *relayAuthenticator) Start(ctx context.Context) {
-	// Start the ring cache.
-	ra.ringCache.Start(ctx)
 }
 
 // GetSupplierOperatorAddresses returns the supplier operator addresses that
