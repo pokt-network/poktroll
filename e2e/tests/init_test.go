@@ -934,7 +934,7 @@ func (s *suite) queryAccount(accAddr string) (account *codectypes.Any, isFound b
 	if strings.Contains(result.Stderr, "not found") {
 		return nil, false
 	}
-	require.NoError(s, err, "error getting account %s", accAddr)
+	require.NoError(s, err, "error getting account for address %s", accAddr)
 
 	var resp authtypes.QueryAccountResponse
 	responseBz := []byte(strings.TrimSpace(result.Stdout))

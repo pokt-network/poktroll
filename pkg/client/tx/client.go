@@ -295,6 +295,13 @@ func (txnClient *txClient) SignAndBroadcast(
 		return either.SyncErr(err)
 	}
 
+	//// TODO_IN_THIS_COMMIT: revert!
+	//txResponseJSON, err := json.Marshal(txResponse)
+	//if err != nil {
+	//	return either.SyncErr(err)
+	//}
+	//fmt.Printf("TxResponse: %s", txResponseJSON)
+
 	if txResponse.Code != 0 {
 		return either.SyncErr(ErrCheckTx.Wrapf("%s", txResponse.RawLog))
 	}

@@ -60,6 +60,11 @@ func NewSingleMorseAccountActorTypeFn(actorType MorseAccountActorType) MorseAcco
 	}
 }
 
+// TODO_IN_THIS_COMMIT: godoc and move...
+func GetMorseAccountActorType(idx uint64) MorseAccountActorType {
+	return MorseAccountActorType(idx % uint64(NumMorseAccountActorTypes))
+}
+
 // NewMorseStateExportAndAccountStateBytes returns:
 //   - A serialized MorseStateExport.
 //     This is the JSON output of `pocket util export-genesis-for-reset`.
