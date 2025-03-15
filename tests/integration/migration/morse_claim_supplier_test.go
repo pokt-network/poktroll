@@ -66,8 +66,11 @@ func (s *MigrationModuleTestSuite) TestClaimMorseNewSupplier() {
 				Stake:                   &expectedStake,
 				Services:                s.supplierServices,
 				UnstakeSessionEndHeight: 0,
-				ServicesActivationHeightsMap: map[string]uint64{
-					s.supplierServices[0].GetServiceId(): uint64(svcStartHeight),
+				ServiceConfigHistory: []*sharedtypes.ServiceConfigUpdate{
+					{
+						Services:             s.supplierServices,
+						EffectiveBlockHeight: uint64(svcStartHeight),
+					},
 				},
 			}
 			expectedSessionEndHeight := s.GetSessionEndHeight(s.T(), s.SdkCtx().BlockHeight()-1)
@@ -193,8 +196,11 @@ func (s *MigrationModuleTestSuite) TestClaimMorseExistingSupplier() {
 				OperatorAddress: shannonDestAddr,
 				Stake:           &expectedFinalSupplierStake,
 				Services:        s.supplierServices,
-				ServicesActivationHeightsMap: map[string]uint64{
-					s.supplierServices[0].GetServiceId(): uint64(svcStartHeight),
+				ServiceConfigHistory: []*sharedtypes.ServiceConfigUpdate{
+					{
+						Services:             s.supplierServices,
+						EffectiveBlockHeight: uint64(svcStartHeight),
+					},
 				},
 				UnstakeSessionEndHeight: 0,
 			}
