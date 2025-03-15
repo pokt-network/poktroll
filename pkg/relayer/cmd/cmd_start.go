@@ -197,7 +197,14 @@ Totals:
 		}
 	}
 
-	// --- Start the relay miner ---
+	// --- Serve forward endpoint if enabled ---
+	if relayMinerConfig.Forward.Enabled {
+		if err := relayMiner.ServeForward(ctx, "tcp", relayMinerConfig.Forward.Addr, relayMinerConfig.Forward.Token); err != nil {
+			return fmt.Errorf("serve forward: %w", err)
+		}
+	}
+
+	// Start the relay miner
 	logger.Info().Msg("Starting relay miner...")
 
 	err = relayMiner.Start(ctx)
