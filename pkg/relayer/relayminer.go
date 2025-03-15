@@ -3,12 +3,14 @@ package relayer
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net"
 	"net/http"
 	"net/http/pprof"
 	"net/url"
 
 	"cosmossdk.io/depinject"
+	"github.com/go-chi/chi/v5"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 
 	"github.com/pokt-network/poktroll/pkg/polylog"
@@ -180,5 +182,50 @@ func (rel *relayMiner) newPinghandlerFn(ctx context.Context) http.Handler {
 		}
 
 		w.WriteHeader(http.StatusNoContent)
+	})
+}
+
+// ServeForward exposes a forward HTTP server for administrators to send request to
+// specific service.
+func (rel *relayMiner) ServeForward(ctx context.Context, network, addr, token string) error {
+	ln, err := net.Listen(network, addr)
+	if err != nil {
+		return fmt.Errorf("net listen: %w", err)
+	}
+
+	muxRouter := chi.NewRouter()
+	muxRouter.Method("POST", "/services/{service_id}/forward", rel.newForwardHandlerFn(ctx, token))
+
+	go func() {
+		if err := http.Serve(ln, muxRouter); err != nil {
+			rel.logger.Error().Err(err).
+				Msg("unexpected error occured while serving forward server")
+			return
+		}
+	}()
+
+	return nil
+}
+
+func (rel *relayMiner) newForwardHandlerFn(ctx context.Context, token string) http.HandlerFunc {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		reqToken := r.Header.Get("token")
+		if reqToken != token {
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+
+		serviceID := r.Header.Get("service-id")
+		if serviceID == "" {
+			rel.logger.Error().Msg("service id not found while forwarding request")
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		rel.logger.Debug().Fields(map[string]any{
+			"service_id": serviceID,
+		}).Msg("forwarding request to supplier...")
+
+		rel.relayerProxy.Forward(ctx, serviceID, w, r)
 	})
 }
