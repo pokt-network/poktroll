@@ -128,7 +128,23 @@ func (server *relayMinerHTTPServer) Ping(ctx context.Context) error {
 	for _, supplierCfg := range server.serverConfig.SupplierConfigsMap {
 		c := &http.Client{Timeout: 2 * time.Second}
 
-		resp, err := c.Head(supplierCfg.ServiceConfig.BackendUrl.String())
+		backendUrl := *supplierCfg.ServiceConfig.BackendUrl
+		if backendUrl.Scheme == "ws" || backendUrl.Scheme == "wss" {
+			// TODO_IMPROVE: Consider testing websocket connectivity by establishing
+			// a websocket connection instead of using an HTTP connection.
+			server.logger.Warn().Msgf(
+				"backend URL %s scheme is a %s, switching to http to check connectivity",
+				backendUrl.String(),
+				backendUrl.Scheme,
+			)
+
+			if backendUrl.Scheme == "ws" {
+				backendUrl.Scheme = "http"
+			} else {
+				backendUrl.Scheme = "https"
+			}
+		}
+		resp, err := c.Head(backendUrl.String())
 		if err != nil {
 			return err
 		}

@@ -111,6 +111,12 @@ func TestMsgServer_CreateClaim_Success(t *testing.T) {
 				Services: []*sharedtypes.SupplierServiceConfig{
 					{ServiceId: service.Id},
 				},
+				ServiceConfigHistory: []*sharedtypes.ServiceConfigUpdate{
+					{
+						Services:             []*sharedtypes.SupplierServiceConfig{{ServiceId: service.Id}},
+						EffectiveBlockHeight: 1,
+					},
+				},
 			})
 
 			keepers.SetApplication(ctx, apptypes.Application{
@@ -223,6 +229,12 @@ func TestMsgServer_CreateClaim_Error_OutsideOfWindow(t *testing.T) {
 		OperatorAddress: supplierOperatorAddr,
 		Services: []*sharedtypes.SupplierServiceConfig{
 			{ServiceId: service.Id},
+		},
+		ServiceConfigHistory: []*sharedtypes.ServiceConfigUpdate{
+			{
+				Services:             []*sharedtypes.SupplierServiceConfig{{ServiceId: service.Id}},
+				EffectiveBlockHeight: 1,
+			},
 		},
 	})
 
@@ -362,6 +374,12 @@ func TestMsgServer_CreateClaim_Error(t *testing.T) {
 		Services: []*sharedtypes.SupplierServiceConfig{
 			{ServiceId: service.Id},
 		},
+		ServiceConfigHistory: []*sharedtypes.ServiceConfigUpdate{
+			{
+				Services:             []*sharedtypes.SupplierServiceConfig{{ServiceId: service.Id}},
+				EffectiveBlockHeight: 1,
+			},
+		},
 	})
 
 	// Add a supplier that is *not* expected to be in the session.
@@ -369,6 +387,12 @@ func TestMsgServer_CreateClaim_Error(t *testing.T) {
 		OperatorAddress: wrongSupplierOperatorAddr,
 		Services: []*sharedtypes.SupplierServiceConfig{
 			{ServiceId: "nosvc1"},
+		},
+		ServiceConfigHistory: []*sharedtypes.ServiceConfigUpdate{
+			{
+				Services:             []*sharedtypes.SupplierServiceConfig{{ServiceId: "nosvc1"}},
+				EffectiveBlockHeight: 1,
+			},
 		},
 	})
 
@@ -566,6 +590,12 @@ func TestMsgServer_CreateClaim_Error_ComputeUnitsMismatch(t *testing.T) {
 		OperatorAddress: supplierAddr,
 		Services: []*sharedtypes.SupplierServiceConfig{
 			{ServiceId: service.Id},
+		},
+		ServiceConfigHistory: []*sharedtypes.ServiceConfigUpdate{
+			{
+				Services:             []*sharedtypes.SupplierServiceConfig{{ServiceId: service.Id}},
+				EffectiveBlockHeight: 1,
+			},
 		},
 	})
 

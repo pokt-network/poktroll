@@ -252,22 +252,6 @@ genesis:
               rev_share:
                 - address: pokt19a3t4yunp0dlpfjrp7qwnzwlrzd5fzs2gjaaaj
                   rev_share_percentage: 100
-            - service_id: rest
-              endpoints:
-                - configs: []
-                  rpc_type: REST
-                  url: http://relayminer1:8545
-              rev_share:
-                - address: pokt19a3t4yunp0dlpfjrp7qwnzwlrzd5fzs2gjaaaj
-                  rev_share_percentage: 100
-            - service_id: ollama
-              endpoints:
-                - configs: []
-                  rpc_type: REST
-                  url: http://relayminer1:8545
-              rev_share:
-                - address: pokt19a3t4yunp0dlpfjrp7qwnzwlrzd5fzs2gjaaaj
-                  rev_share_percentage: 100
           stake:
             # NB: This value should be exactly 1upokt smaller than the value in
             # `supplier1_stake_config.yaml` so that the stake command causes a state change.
