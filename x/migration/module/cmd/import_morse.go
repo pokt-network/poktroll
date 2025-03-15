@@ -69,6 +69,9 @@ func runImportMorseAccounts(cmd *cobra.Command, args []string) error {
 	}
 
 	txClient, err := getTxClient(ctx, cmd)
+	if err != nil {
+		return err
+	}
 
 	// Construct a MsgImportMorseAccountState message.
 	msgImportMorseAccountState, err := migrationtypes.NewMsgImportMorseClaimableAccounts(

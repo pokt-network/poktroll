@@ -12,9 +12,12 @@ import (
 	"testing"
 
 	cmtjson "github.com/cometbft/cometbft/libs/json"
+	comettypes "github.com/cometbft/cometbft/types"
+	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/regen-network/gocuke"
 	"github.com/stretchr/testify/require"
 
+	"github.com/pokt-network/poktroll/app/volatile"
 	"github.com/pokt-network/poktroll/testutil/testmigration"
 	migrationtypes "github.com/pokt-network/poktroll/x/migration/types"
 )
@@ -26,12 +29,28 @@ const (
 	cmdUsagePattern = `--help" for more`
 )
 
+var (
+	// TODO_IN_THIS_COMMIT: godoc... MUST be global variables...
+	morseKeyIdx   uint64
+	shannonKeyIdx uint64
+)
+
 type migrationSuite struct {
 	gocuke.TestingT
 	suite
 
-	morseKeyIdx   uint64
-	shannonKeyIdx uint64
+	// TODO_IN_THIS_COMMIT: godoc...
+	morseClaimableAccount *migrationtypes.MorseClaimableAccount
+
+	// TODO_IN_THIS_COMMIT: godoc...
+	morseAccountClaimHeight int64
+
+	// TODO_IN_THIS_COMMIT: godoc... queried/populated in Before()...
+	existingUnstakedBalanceUpokt cosmostypes.Coin
+	// TODO_IN_THIS_COMMIT: godoc... the amount transferred by the faucet during setup/given steps...
+	faucetFundedBalanceUpokt cosmostypes.Coin
+	// TODO_IN_THIS_COMMIT: godoc...
+	expectedBalanceUpoktDiffCoin cosmostypes.Coin
 }
 
 type actorTypeEnum = string
@@ -61,6 +80,16 @@ func (s *migrationSuite) Before() {
 
 	// Initialize the morse & shannon key indices.
 	s.nextShannonKeyIdx()
+	s.nextMorseKeyIdx()
+
+	s.existingUnstakedBalanceUpokt = cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 0)
+	if shannonDestAddr, isFound := s.getShannonKeyAddress(); isFound {
+		if _, isFound = s.queryAccount(shannonDestAddr); isFound {
+			upoktBalanceInt := s.getAccBalance(s.getShannonKeyName())
+			upoktBalanceCoin := cosmostypes.NewInt64Coin(volatile.DenomuPOKT, int64(upoktBalanceInt))
+			s.existingUnstakedBalanceUpokt = upoktBalanceCoin
+		}
+	}
 }
 
 // TestMigrationWithFixtureData runs the migration_fixture.feature file ONLY.
@@ -174,27 +203,42 @@ func (s *migrationSuite) AMorsestateexportIsWrittenTo(morseStateExportFile strin
 func (s *migrationSuite) AnUnclaimedMorseclaimableaccountWithAKnownPrivateKeyExists() {
 	// assign/increment s.morseKeyIdx
 	// assign s.nextMorseAccount (MorseClaimableAccount)
-	idx := s.nextMorseKeyIdx()
+	idx := s.nextMorseUnstakedKeyIdx()
 	expectedMorseClaimableAccount, err := testmigration.GenMorseClaimableAccount(idx, testmigration.RoundRobinAllMorseAccountActorTypes)
 	require.NoError(s, err)
 
 	// ensure MorseClaimableAccount exists on-chain
 	foundMorseClaimableAccount := s.QueryShowMorseClaimableAccount(expectedMorseClaimableAccount.MorseSrcAddress)
 	require.Equal(s, expectedMorseClaimableAccount, &foundMorseClaimableAccount)
+
+	s.expectedBalanceUpoktDiffCoin = foundMorseClaimableAccount.TotalTokens()
+	s.morseClaimableAccount = &foundMorseClaimableAccount
 }
 
 // TODO_IN_THIS_COMMIT: godoc and move...
 func (s *migrationSuite) nextMorseKeyIdx() uint64 {
-	// DEV_NOTE: iterate at the end to include the 0 index.
-	currentIdx := s.getMorseKeyIdx()
-	s.morseKeyIdx++
-
-	return currentIdx
+	morseKeyIdx++
+	return morseKeyIdx
 }
 
 // TODO_IN_THIS_COMMIT: godoc and move...
 func (s *migrationSuite) getMorseKeyIdx() uint64 {
-	return s.morseKeyIdx
+	return morseKeyIdx
+}
+
+// TODO_IN_THIS_COMMIT: godoc and move...
+func (s *migrationSuite) nextMorseUnstakedKeyIdx() uint64 {
+	currentIdx := s.getMorseKeyIdx()
+	// Skip non-application account keys.
+	for {
+		if testmigration.GetMorseAccountActorType(currentIdx) ==
+			testmigration.MorseUnstakedActor {
+			break
+		}
+		currentIdx = s.nextMorseKeyIdx()
+	}
+
+	return currentIdx
 }
 
 // TODO_IN_THIS_COMMIT: godoc and move...
@@ -246,17 +290,38 @@ func (s *migrationSuite) AShannonDestinationKeyExistsInTheLocalKeyring() {
 
 // TODO_IN_THIS_COMMIT: godoc & move...
 func (s *migrationSuite) nextShannonKeyIdx() string {
-	s.shannonKeyIdx = rand.Uint64()
+	shannonKeyIdx = rand.Uint64()
 	return s.getShannonKeyName()
 }
 
 // TODO_IN_THIS_COMMIT: godoc & move...
 func (s *migrationSuite) getShannonKeyName() string {
-	return fmt.Sprintf("shannon-key-%d", s.shannonKeyIdx)
+	return fmt.Sprintf("shannon-key-%d", shannonKeyIdx)
+}
+
+// TODO_IN_THIS_COMMIT: godoc & move...
+func (s *migrationSuite) getShannonKeyAddress() (shannonAddr string, isFound bool) {
+	s.buildAddrMap()
+	shannonKeyName := s.getShannonKeyName()
+	shannonAddr, isFound = accNameToAddrMap[shannonKeyName]
+	return shannonAddr, isFound
 }
 
 func (s *migrationSuite) TheShannonDestinationAccountBalanceIsIncreasedByTheSumOfAllMorseclaimableaccountTokens() {
-	s.Skip("TODO_UPNEXT(@bryanchriswhite, #1034): Implement.")
+	currentUpoktBalanceInt := s.getAccBalance(s.getShannonKeyName())
+	currentUpoktBalanceCoin := cosmostypes.NewInt64Coin(volatile.DenomuPOKT, int64(currentUpoktBalanceInt))
+	balanceUpoktDiffCoin := currentUpoktBalanceCoin.Sub(s.existingUnstakedBalanceUpokt)
+
+	expectedBalanceUpoktDiffCoin := s.expectedBalanceUpoktDiffCoin.Add(s.faucetFundedBalanceUpokt)
+	require.Equal(s, expectedBalanceUpoktDiffCoin, balanceUpoktDiffCoin)
+
+	//// TODO_IN_THIS_COMMIT: Reconcile "balance is increased" with the fact that we're currently checking the exact balance.
+	////expectedUpoktAmount := testmigration.GenMorseUnstakedBalanceAmount(s.getMorseKeyIdx())
+	//expectedUpoktAmount := s.morseClaimableAccount.UnstakedBalance.Amount.Int64()
+	//// TODO_MAINNET: Remove this adjustment once the signer fee issue is resolved.
+	//expectedUpoktAmount = expectedUpoktAmount + 1
+	//upoktAmount := int64(s.getAccBalance(s.getShannonKeyName()))
+	//require.Equal(s, expectedUpoktAmount, upoktAmount)
 }
 
 func (s *migrationSuite) TheShannonDestinationAccountBalanceIsIncreasedByTheUnstakedBalanceAmountOfTheMorseclaimableaccount() {
@@ -305,11 +370,29 @@ func (s *migrationSuite) TheMorseaccountstateInIsValid(morseAccountStateFile str
 }
 
 func (s *migrationSuite) TheShannonDestinationAccountUpoktBalanceIsNonzero() {
-	s.Skip("TODO_UPNEXT(@bryanchriswhite, #1034): Implement.")
+	upoktBalanceAmount := s.getAccBalance(s.getShannonKeyName())
+	require.Greater(s, upoktBalanceAmount, 0)
 }
 
 func (s *migrationSuite) TheMorseclaimableaccountsArePersistedOnchain() {
 	s.Skip("TODO_UPNEXT(@bryanchriswhite, #1034): Implement.")
+}
+
+func (s *migrationSuite) TheShannonAccountIsFundedWith(fundCoinString string) {
+	fundCoin, err := cosmostypes.ParseCoinNormalized(fundCoinString)
+	require.NoError(s, err)
+
+	s.faucetFundedBalanceUpokt = fundCoin
+
+	s.buildAddrMap()
+	shannonKeyName := s.getShannonKeyName()
+	shannonAddr, isFound := accNameToAddrMap[shannonKeyName]
+	require.Truef(s, isFound, "key %q not found in poktrolld keyring", shannonKeyName)
+
+	upokt, err := cosmostypes.ParseCoinNormalized(fundCoinString)
+	require.NoErrorf(s, err, "unable to parse coin string %q", upokt)
+
+	s.fundAddress(shannonAddr, upokt)
 }
 
 func (s *migrationSuite) TheShannonDestinationAccountDoesNotExistOnchain() {
@@ -323,7 +406,10 @@ func (s *migrationSuite) TheShannonDestinationAccountDoesNotExistOnchain() {
 
 func (s *migrationSuite) TheMorsePrivateKeyIsUsedToClaimAMorseclaimableaccountAsANonactorAccount() {
 	// generate the deterministic fixture morse private key
-	morsePrivKey := testmigration.GenMorsePrivateKey(s.nextMorseKeyIdx())
+	//morsePrivKey := testmigration.GenMorsePrivateKey(s.nextMorseUnstakedKeyIdx())
+	morsePrivKey := testmigration.GenMorsePrivateKey(s.getMorseKeyIdx())
+
+	// Encrypt and write the morse private key to a file, consistent with the Morse CLI's `accounts export` command.
 	privKeyArmoredJSONString, err := testmigration.EncryptArmorPrivKey(morsePrivKey, "", "")
 	require.NoError(s, err)
 
@@ -331,6 +417,9 @@ func (s *migrationSuite) TheMorsePrivateKeyIsUsedToClaimAMorseclaimableaccountAs
 
 	// TODO_IN_THIS_COMMIT: consolidate with any other temp file tracking pattern.
 	privKeyArmoredJSONPath := s.writeTempFile("morse_private_key.json", []byte(privKeyArmoredJSONString))
+
+	// Track the height at which the morse claimable account was claimed.
+	s.morseAccountClaimHeight = s.getCurrentBlockHeight()
 
 	// poktrolld tx migration claim-account --from=shannon-key-xxx <morse_src_address>
 	res, err := s.pocketd.RunCommandOnHost("",
@@ -343,11 +432,13 @@ func (s *migrationSuite) TheMorsePrivateKeyIsUsedToClaimAMorseclaimableaccountAs
 	)
 	require.NoError(s, err)
 
+	// TODO_IN_THIS_COMMIT: zero exit code error handling...
 	s.Logf("RESULT: %s", res.Stdout)
 }
 
 func (s *migrationSuite) TheShannonDestinationAccountExistsOnchain() {
-	s.Skip("TODO_UPNEXT(@bryanchriswhite, #1034): Implement.")
+	s.faucetFundedBalanceUpokt = cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 1)
+	s.TheShannonAccountIsFundedWith(s.faucetFundedBalanceUpokt.String())
 }
 
 func (s *migrationSuite) TheShannonDestinationAccountIsNotStakedAsAn(a string) {
@@ -422,4 +513,33 @@ func (s *migrationSuite) AMorseAccountholderClaimsAsAnExistingNonactorAccount() 
 
 func (s *migrationSuite) AMorseNodeSnapshotIsAvailable() {
 	s.Skip("TODO_UPNEXT(@bryanchriswhite, #1034): Implement.")
+}
+
+func (s *migrationSuite) TheMorseClaimableAccountIsMarkedAsClaimedByTheShannonAccountAtARecentBlockHeight() {
+	var isShannonKeyFound bool
+	expectedMorseClaimableAccount := *s.morseClaimableAccount
+	expectedMorseClaimableAccount.ClaimedAtHeight = s.morseAccountClaimHeight
+	expectedMorseClaimableAccount.ShannonDestAddress, isShannonKeyFound = s.getShannonKeyAddress()
+	require.True(s, isShannonKeyFound)
+
+	*s.morseClaimableAccount = s.QueryShowMorseClaimableAccount(s.morseClaimableAccount.MorseSrcAddress)
+	require.Equal(s, &expectedMorseClaimableAccount, s.morseClaimableAccount)
+}
+
+// TODO_IN_THIS_COMMIT: godoc...
+func (s *migrationSuite) getCurrentBlockHeight() int64 {
+	res, err := s.pocketd.RunCommandOnHost("",
+		"query", "block",
+		"--output", "json",
+	)
+	require.NoError(s, err)
+
+	block := new(comettypes.Block)
+	// DEV_NOTE: The first line of the response to a block query with no flag argument is not JSON:
+	// "Falling back to latest block height:".
+	resJSON := strings.SplitN(res.Stdout, "\n", 2)[1]
+	err = cmtjson.Unmarshal([]byte(resJSON), block)
+	require.NoError(s, err)
+
+	return block.Header.Height
 }

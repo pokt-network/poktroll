@@ -94,7 +94,7 @@ func TestMsgServer_ClaimMorseApplication_SuccessNewApplication(t *testing.T) {
 	ctx = ctx.WithBlockHeight(expectedClaimedAtHeight)
 	srv := keeper.NewMsgServerImpl(k)
 
-	morsePrivKey := testmigration.GenMorsePrivateKey(t, 0)
+	morsePrivKey := testmigration.GenMorsePrivateKey(0)
 	morseClaimableAccount := &migrationtypes.MorseClaimableAccount{
 		MorseSrcAddress:  sample.MorseAddressHex(),
 		PublicKey:        morsePrivKey.PubKey().Bytes(),
@@ -175,7 +175,7 @@ func TestMsgServer_ClaimMorseApplication_Error(t *testing.T) {
 	k, ctx := keepertest.MigrationKeeper(t)
 	srv := keeper.NewMsgServerImpl(k)
 
-	morsePrivKey := testmigration.GenMorsePrivateKey(t, 0)
+	morsePrivKey := testmigration.GenMorsePrivateKey(0)
 	morseClaimableAccount := &migrationtypes.MorseClaimableAccount{
 		MorseSrcAddress:  sample.MorseAddressHex(),
 		PublicKey:        morsePrivKey.PubKey().Bytes(),

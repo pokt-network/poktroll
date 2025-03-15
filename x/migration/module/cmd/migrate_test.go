@@ -32,8 +32,10 @@ func TestCollectMorseAccounts(t *testing.T) {
 	require.NoError(t, err)
 
 	// Generate and write the MorseStateExport input JSON file.
-	morseStateExportBz, morseAccountStateBz := testmigration.NewMorseStateExportAndAccountStateBytes(
-		t, 10, testmigration.RoundRobinAllMorseAccountActorTypes)
+	morseStateExportBz, morseAccountStateBz, err := testmigration.NewMorseStateExportAndAccountStateBytes(
+		10, testmigration.RoundRobinAllMorseAccountActorTypes)
+	require.NoError(t, err)
+
 	_, err = inputFile.Write(morseStateExportBz)
 	require.NoError(t, err)
 
@@ -71,9 +73,11 @@ func TestNewTestMorseStateExport(t *testing.T) {
 	for numAccounts := 1; numAccounts <= 10; numAccounts++ {
 		t.Run(fmt.Sprintf("num_accounts=%d", numAccounts), func(t *testing.T) {
 			morseStateExport := new(migrationtypes.MorseStateExport)
-			stateExportBz, _ := testmigration.NewMorseStateExportAndAccountStateBytes(
-				t, numAccounts, testmigration.RoundRobinAllMorseAccountActorTypes)
-			err := cmtjson.Unmarshal(stateExportBz, morseStateExport)
+			stateExportBz, _, err := testmigration.NewMorseStateExportAndAccountStateBytes(
+				numAccounts, testmigration.RoundRobinAllMorseAccountActorTypes)
+			require.NoError(t, err)
+
+			err = cmtjson.Unmarshal(stateExportBz, morseStateExport)
 			require.NoError(t, err)
 
 			exportAccounts := morseStateExport.AppState.Auth.Accounts
@@ -129,9 +133,11 @@ func BenchmarkTransformMorseState(b *testing.B) {
 	for i := 0; i < 5; i++ {
 		numAccounts := int(math.Pow10(i + 1))
 		morseStateExport := new(migrationtypes.MorseStateExport)
-		morseStateExportBz, _ := testmigration.NewMorseStateExportAndAccountStateBytes(
-			b, numAccounts, testmigration.RoundRobinAllMorseAccountActorTypes)
-		err := cmtjson.Unmarshal(morseStateExportBz, morseStateExport)
+		morseStateExportBz, _, err := testmigration.NewMorseStateExportAndAccountStateBytes(
+			numAccounts, testmigration.RoundRobinAllMorseAccountActorTypes)
+		require.NoError(b, err)
+
+		err = cmtjson.Unmarshal(morseStateExportBz, morseStateExport)
 		require.NoError(b, err)
 
 		b.Run(fmt.Sprintf("num_accounts=%d", numAccounts), func(b *testing.B) {

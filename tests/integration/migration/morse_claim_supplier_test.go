@@ -249,7 +249,7 @@ func (s *MigrationModuleTestSuite) TestClaimMorseSupplier_ErrorMinStake() {
 	s.Equal(int64(0), shannonDestBalance.Amount.Int64())
 
 	// Attempt to claim a Morse claimable account with a stake below the minimum.
-	morsePrivateKey := testmigration.GenMorsePrivateKey(s.T(), 0)
+	morsePrivateKey := testmigration.GenMorsePrivateKey(0)
 	expectedMorseSrcAddr := morsePrivateKey.PubKey().Address().String()
 	require.Equal(s.T(),
 		expectedMorseSrcAddr,

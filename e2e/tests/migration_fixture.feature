@@ -4,11 +4,15 @@
 # The @oneshot tag indicates that a given feature is non-idempotent with respect
 # to its impact on the network state. In such cases, a complete network reset
 # is required before running these features again.
-@oneshot
+#
+# TODO_IN_THIS_COMMIT: uncomment this tag - it is ONLY TEMPORARILY
+# commented to simplify execution on DevNet.
+#@oneshot
 Feature: Morse Migration Success
 
   Background:
-    Given a MorseAccountState has successfully been imported with the following claimable accounts type distribution:
+    Given the user has the pocketd binary installed
+    And a MorseAccountState has successfully been imported with the following claimable accounts type distribution:
       | non-actor | application | supplier |
       | 2         | 2           | 2        |
     And an unclaimed MorseClaimableAccount with a known private key exists
@@ -17,14 +21,20 @@ Feature: Morse Migration Success
   Rule: Non-actor account claims MAY reference existing Shannon accounts
     Scenario: Morse account-holder claims as a new non-actor account
       Given the Shannon destination account does not exist onchain
+      # TODO_IN_THIS_COMMIT: Use a new token denomination and/or rephrase the step...
+      And the Shannon account is funded with "1upokt"
       When the Morse private key is used to claim a MorseClaimableAccount as a non-actor account
       Then the Shannon destination account balance is increased by the sum of all MorseClaimableAccount tokens
+       And the Morse claimable account is marked as claimed by the shannon account at a recent block height
 
-#    Scenario: Morse account-holder claims as an existing non-actor account
-#      Given the Shannon destination account exists onchain
-#      And the Shannon destination account upokt balance is non-zero
-#      When the Morse private key is used to claim a MorseClaimableAccount as a non-actor account
-#      Then the Shannon destination account balance is increased by the sum of all MorseClaimableAccount tokens
+    Scenario: Morse account-holder claims as an existing non-actor account
+      Given the Shannon destination account exists onchain
+      And the Shannon destination account upokt balance is non-zero
+      When the Morse private key is used to claim a MorseClaimableAccount as a non-actor account
+      Then the Shannon destination account balance is increased by the sum of all MorseClaimableAccount tokens
+       And the Morse claimable account is marked as claimed by the shannon account at a recent block height
+
+# TODO_MAINNET(@bryanchriswhite, #1034: Uncomment the following scenarios once application and supplier Morse account claiming is available.
 #
 #  Rule: Actor (re-)stake claims MAY reference existing Shannon actors
 #    Scenario Outline: Morse account-holder claims as a new staked actor

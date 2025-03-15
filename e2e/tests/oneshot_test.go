@@ -10,6 +10,7 @@
 package e2e
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/regen-network/gocuke"
@@ -20,6 +21,6 @@ import (
 func TestOneshotTaggedFeatures(t *testing.T) {
 	gocuke.NewRunner(t, &suite{}).Path(flagFeaturesPath).
 		// ONLY execute features tagged with the @oneshot tag.
-		Tags(oneshotTag).
+		Tags(fmt.Sprintf("%s and not %s", oneshotTag, manualTag)).
 		Run()
 }
