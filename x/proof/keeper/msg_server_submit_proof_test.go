@@ -862,10 +862,14 @@ func newTestProofMsg(
 	merkleProofBz, err := merkleProof.Marshal()
 	require.NoError(t, err)
 
+	proofRelayBz, err := sessionTree.GetProofRelay()
+	require.NoError(t, err)
+
 	return &prooftypes.MsgSubmitProof{
 		SupplierOperatorAddress: supplierOperatorAddr,
 		SessionHeader:           sessionHeader,
 		Proof:                   merkleProofBz,
+		ProofRelay:              proofRelayBz,
 	}
 }
 

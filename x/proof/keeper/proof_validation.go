@@ -105,15 +105,10 @@ func (k Keeper) EnsureWellFormedProof(ctx context.Context, proof *types.Proof) e
 		return types.ErrProofInvalidProof.Wrapf("failed to unmarshal sparse compact merkle closest proof: %s", err)
 	}
 
-	// SparseCompactMerkeClosestProof does not implement GetValueHash, so we need to decompact it.
-	sparseMerkleClosestProof, err := smt.DecompactClosestProof(sparseCompactMerkleClosestProof, protocol.NewSMTSpec())
-	if err != nil {
-		logger.Error(fmt.Sprintf("failed to decompact sparse merkle closest proof due to error: %v", err))
-		return types.ErrProofInvalidProof.Wrapf("failed to decompact sparse erkle closest proof: %s", err)
-	}
-
-	// Get the relay request and response from the proof.GetClosestMerkleProof.
-	relayBz := sparseMerkleClosestProof.GetValueHash(protocol.NewSMTSpec())
+	// Get the relay bytes from the proof to validate the relay request and response.
+	// Checking that the relayBz hash matches the SMST's closest value hash is done
+	// in the EnsureValidProofSignaturesAndClosestPath function.
+	relayBz := proof.GetProofRelay()
 	relay := &servicetypes.Relay{}
 	if err = k.cdc.Unmarshal(relayBz, relay); err != nil {
 		logger.Error(fmt.Sprintf("failed to unmarshal relay due to error: %v", err))
@@ -237,8 +232,21 @@ func (k Keeper) EnsureValidProofSignaturesAndClosestPath(
 		return types.ErrProofInvalidProof.Wrapf("failed to decompact sparse merkle closest proof: %s", err)
 	}
 
-	// Get the relay request and response from the proof.GetClosestMerkleProof.
-	relayBz := sparseMerkleClosestProof.GetValueHash(protocol.NewSMTSpec())
+	// Get the proof value hash from the proof.GetClosestMerkleProof.
+	proofValueHash := sparseMerkleClosestProof.GetValueHash(protocol.NewSMTSpec())
+
+	// Validate the relay generated hash is the same as the one extracted from the proof.
+	relayBz := proof.GetProofRelay()
+	relayBzHash := protocol.GetRelayHashFromBytes(relayBz)
+	if !bytes.Equal(proofValueHash, relayBzHash[:]) {
+		logger.Error(fmt.Sprintf(
+			"relay hash mismatch; proof: %x, proof relay: %x",
+			proofValueHash,
+			relayBzHash,
+		))
+		return types.ErrProofInvalidRelay.Wrap("relay hash mismatch")
+	}
+
 	relay := &servicetypes.Relay{}
 	if err = k.cdc.Unmarshal(relayBz, relay); err != nil {
 		logger.Error(fmt.Sprintf("failed to unmarshal relay due to error: %v", err))

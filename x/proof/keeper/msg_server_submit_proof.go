@@ -368,5 +368,6 @@ func newProofFromMsg(msg *types.MsgSubmitProof) *types.Proof {
 		SupplierOperatorAddress: msg.GetSupplierOperatorAddress(),
 		SessionHeader:           msg.GetSessionHeader(),
 		ClosestMerkleProof:      msg.GetProof(),
+		ProofRelay:              msg.GetProofRelay(),
 	}
 }
