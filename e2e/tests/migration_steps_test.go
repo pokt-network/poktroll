@@ -336,7 +336,7 @@ func (s *migrationSuite) TheAuthorityExecutes(commandStr string) {
 	)
 	switch {
 	case strings.Contains(commandStr, "collect-morse-accounts"):
-		results, err = s.pocketd.RunCommand("", "collect-morse-accounts")
+		results, err = s.pocketd.RunCommand(commandStringParts...)
 	default:
 		results, err = s.pocketd.RunCommandOnHost("", commandStringParts...)
 	}
