@@ -6,6 +6,7 @@ import (
 	"bytes"
 	"fmt"
 	"math/rand"
+	"net/url"
 	"os"
 	"os/exec"
 	"path"
@@ -229,7 +230,8 @@ func (s *migrationSuite) nextMorseUnstakedKeyIdx() uint64 {
 
 // TODO_IN_THIS_COMMIT: godoc and move...
 func (s *migrationSuite) QueryShowMorseClaimableAccount(morseSrcAddress string) migrationtypes.MorseClaimableAccount {
-	cmdResult, err := s.pocketd.RunCommand(
+	cmdResult, err := s.pocketd.RunCommandOnHost(
+		"",
 		"query",
 		"migration",
 		"show-morse-claimable-account",
@@ -335,10 +337,25 @@ func (s *migrationSuite) TheAuthorityExecutes(commandStr string) {
 		err     error
 	)
 	switch {
-	case strings.Contains(commandStr, "collect-morse-accounts"):
-		results, err = s.pocketd.RunCommand(commandStringParts...)
-	default:
+	case strings.Contains(commandStr, "import-morse-accounts"):
+		rpcURL, err := url.Parse(defaultRPCURL)
+		require.NoError(s, err)
+
+		grpcAddrFlagString := fmt.Sprintf(
+			"--grpc-addr=%s:%d",
+			rpcURL.Hostname(),
+			defaultGRPCPort,
+		)
+		grpcAddrFlagParts := strings.Split(grpcAddrFlagString, "=")
+		commandStringParts = append(commandStringParts,
+			"--from", "pnf",
+			keyRingFlag,
+			chainIdFlag,
+		)
+		commandStringParts = append(commandStringParts, grpcAddrFlagParts...)
 		results, err = s.pocketd.RunCommandOnHost("", commandStringParts...)
+	default:
+		results, err = s.pocketd.RunCommand(commandStringParts...)
 	}
 
 	require.NoError(s, err)
@@ -417,6 +434,8 @@ func (s *migrationSuite) TheMorsePrivateKeyIsUsedToClaimAMorseclaimableaccountAs
 	res, err := s.pocketd.RunCommandOnHost("",
 		"tx", "migration", "claim-account",
 		"--from", s.getShannonKeyName(),
+		keyRingFlag,
+		chainIdFlag,
 		"--yes",
 		"--output=json",
 		"--no-passphrase",
@@ -494,7 +513,7 @@ func (s *migrationSuite) AMorseaccountstateHasSuccessfullyBeenImportedWithTheFol
 	// TODO_IN_THIS_COMMIT:
 	s.NoMorseclaimableaccountsExist()
 	//s.TheMorseaccountstateInIsValid("morse_account_state.json")
-	s.TheAuthorityExecutes("poktrolld tx migration import-morse-accounts --from=pnf --grpc-addr=localhost:9090 morse_account_state.json")
+	s.TheAuthorityExecutes("poktrolld tx migration import-morse-accounts morse_account_state.json")
 	//s.TheMorseclaimableaccountsArePersistedOnchain()
 }
 
