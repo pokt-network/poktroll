@@ -1,4 +1,8 @@
-//go:build e2e && oneshot
+// TODO_IN_THIS_COMMIT: swap the build constraints - it is ONLY TEMPORARILY
+// commented to simplify execution on DevNet.
+//go:build e2e
+
+// //go:build e2e && oneshot
 
 package e2e
 
