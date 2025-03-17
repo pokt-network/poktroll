@@ -40,6 +40,7 @@ spec:
               poktrolld q supplier list-suppliers --node=$POCKET_NODE && \
               make acc_initialize_pubkeys && \
               go test -v ./e2e/tests/... -tags=e2e
+              go test -v ./e2e/tests/... -tags=e2e,oneshot -run=TestMigrationWithFixtureData
           env:
             - name: POCKET_NODE
               value: tcp://${NAMESPACE}-validator-poktrolld:26657

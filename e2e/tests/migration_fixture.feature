@@ -4,10 +4,7 @@
 # The @oneshot tag indicates that a given feature is non-idempotent with respect
 # to its impact on the network state. In such cases, a complete network reset
 # is required before running these features again.
-#
-# TODO_IN_THIS_COMMIT: uncomment this tag - it is ONLY TEMPORARILY
-# commented to simplify execution on DevNet.
-#@oneshot
+@oneshot
 Feature: Morse Migration Success
 
   Background:

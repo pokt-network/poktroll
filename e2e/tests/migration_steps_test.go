@@ -1,8 +1,4 @@
-// TODO_IN_THIS_COMMIT: swap the build constraints - it is ONLY TEMPORARILY
-// commented to simplify execution on DevNet.
-//go:build e2e
-
-// //go:build e2e && oneshot
+//go:build e2e && oneshot
 
 package e2e
 
@@ -336,7 +332,7 @@ func (s *migrationSuite) TheAuthorityExecutes(commandStr string) {
 	// s.pocketd.RunCommand() provides this part of the final command string.
 	commandStringParts = commandStringParts[1:]
 
-	results, err := s.pocketd.RunCommand(commandStringParts...)
+	results, err := s.pocketd.RunCommandOnHost("", commandStringParts...)
 	require.NoError(s, err)
 	if strings.Contains(results.Stdout, cmdUsagePattern) {
 		s.Fatalf(
