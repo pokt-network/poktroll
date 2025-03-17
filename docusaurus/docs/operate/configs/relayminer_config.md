@@ -3,7 +3,7 @@ title: RelayMiner config
 sidebar_position: 4
 ---
 
-# RelayMiner config <!-- omit in toc -->
+## RelayMiner config <!-- omit in toc -->
 
 This document describes the configuration options for the `RelayMiner`, a `Supplier`
 co-processor/sidecar that acts as the real server for querying request, building
@@ -23,6 +23,7 @@ You can find a fully featured example configuration at [relayminer_config_full_e
   - [`smt_store_path`](#smt_store_path)
   - [`metrics`](#metrics)
   - [`pprof`](#pprof)
+  - [`ping`](#ping)
 - [Pocket node connectivity](#pocket-node-connectivity)
   - [`query_node_rpc_url`](#query_node_rpc_url)
   - [`query_node_grpc_url`](#query_node_grpc_url)
@@ -172,6 +173,23 @@ pprof:
 ```
 
 You can learn how to use that endpoint on the [Performance Troubleshooting](../../develop/developer_guide/performance_troubleshooting.md) page.
+
+### `ping`
+
+_`Optional`_
+
+Configures a `ping` healh check server to test the connectivity of all backend
+URLs. If all the backend URLs are reachable, the endpoint returns a 204 HTTP
+Code. If one or more backend URLs aren't reachable, the service returns an
+appropriate HTTP error.
+
+Example configuration:
+
+```yaml
+ping:
+  enabled: true
+  addr: localhost:8081
+```
 
 ## Pocket node connectivity
 
@@ -484,13 +502,16 @@ result in `Supplier` slashing if the `Proof` is required.
 ### Recommendations for Supplier Operators
 
 - **Sufficient Balance**: Operators should regularly check their account balance
-and ensure they have enough funds to cover the submission fees for `Proofs`.
+  and ensure they have enough funds to cover the submission fees for `Proofs`.
 
 The following command can be used to check the balance of a `Supplier` operator:
+
 ```bash
 poktrolld query bank balance <supplier_operator_address> upokt --node https://shannon-testnet-grove-seed-rpc.poktroll.com
 ```
+
 Which output would look like:
+
 ```yaml
 balance:
   amount: "109999000"
@@ -498,23 +519,26 @@ balance:
 ```
 
 - **Automated Monitoring**: It is highly recommended to implement balance monitoring
-or alert systems to avoid running out of funds during critical periods.
+  or alert systems to avoid running out of funds during critical periods.
 
 <!-- TODO_POST_MAINNET(@okdas): Link to example alerts & infrastructure others can use. -->
 
 - **Cost Awareness**: Operators should familiarize themselves with the current
-`proof_submission_fee` and plan their funding accordingly, especially if they
-anticipate submitting a higher volume of `Proofs`.
+  `proof_submission_fee` and plan their funding accordingly, especially if they
+  anticipate submitting a higher volume of `Proofs`.
 
 The following command can be used to check the current `proof_submission_fee`:
+
 ```bash
 poktrolld query proof params --node https://shannon-testnet-grove-seed-rpc.poktroll.com
 ```
+
 Which output would look like:
+
 ```yaml
-  proof_submission_fee:
-    amount: "1000000"
-    denom: upokt
+proof_submission_fee:
+  amount: "1000000"
+  denom: upokt
 ```
 
 The list of `Proof` governance parameters can be found at [proto/proof/params.proto](https://github.com/pokt-network/poktroll/blob/main/proto/poktroll/proof/params.proto)

@@ -71,8 +71,11 @@ func TestMsgServer_ClaimMorseSupplier_SuccessNewSupplier(t *testing.T) {
 		OperatorAddress: shannonDestAddr,
 		Stake:           &supplierStake,
 		Services:        testSupplierServices,
-		ServicesActivationHeightsMap: map[string]uint64{
-			testSupplierServices[0].GetServiceId(): 0,
+		ServiceConfigHistory: []*sharedtypes.ServiceConfigUpdate{
+			{
+				Services:             testSupplierServices,
+				EffectiveBlockHeight: 1,
+			},
 		},
 		UnstakeSessionEndHeight: 0,
 	}

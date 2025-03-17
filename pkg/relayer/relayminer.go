@@ -2,9 +2,11 @@ package relayer
 
 import (
 	"context"
+	"errors"
 	"net"
 	"net/http"
 	"net/http/pprof"
+	"net/url"
 
 	"cosmossdk.io/depinject"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -133,4 +135,50 @@ func (rel *relayMiner) ServePprof(ctx context.Context, addr string) error {
 	}()
 
 	return nil
+}
+
+// ServePing starts an HTTP server that:
+// - Checks connectivity between relay miner and dependencies
+// - Tests reachability of relay servers and their backend URLs
+func (rel *relayMiner) ServePing(ctx context.Context, network, addr string) error {
+	ln, err := net.Listen(network, addr)
+	if err != nil {
+		return err
+	}
+
+	// Starts a go routine that:
+	// - Create a long-running HTTP server
+	// - Handles ping requests by broadcasting health checks to all backing services
+	// - Tests connectivity to all configured data nodes
+	go func() {
+		if err := http.Serve(ln, rel.newPinghandlerFn(ctx)); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			rel.logger.Error().Err(err).Msg("ping server unexpectedly closed")
+		}
+	}()
+
+	go func() {
+		<-ctx.Done() // A message a receive when we stop the relayminer.
+		rel.logger.Info().Str("endpoint", addr).Msg("stopping ping server")
+		_ = ln.Close()
+	}()
+
+	return nil
+}
+
+func (rel *relayMiner) newPinghandlerFn(ctx context.Context) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+		rel.logger.Debug().Msg("pinging relay servers...")
+
+		if err := rel.relayerProxy.PingAll(ctx); err != nil {
+			var urlError *url.Error
+			if errors.As(err, &urlError) && urlError.Temporary() {
+				w.WriteHeader(http.StatusGatewayTimeout)
+			} else {
+				w.WriteHeader(http.StatusBadGateway)
+			}
+			return
+		}
+
+		w.WriteHeader(http.StatusNoContent)
+	})
 }

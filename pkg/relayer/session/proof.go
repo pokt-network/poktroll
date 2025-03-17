@@ -125,7 +125,7 @@ func (rs *relayerSessionsManager) waitForEarliestSubmitProofsHeightAndGeneratePr
 	}
 
 	// Get the earliest proof commit height for this supplier.
-	supplierOperatorAddr := sessionTrees[0].GetSupplierOperatorAddress().String()
+	supplierOperatorAddr := sessionTrees[0].GetSupplierOperatorAddress()
 	earliestSupplierProofsCommitHeight := sharedtypes.GetEarliestSupplierProofCommitHeight(
 		sharedParams,
 		sessionEndHeight,
@@ -170,9 +170,9 @@ func (rs *relayerSessionsManager) newMapProveSessionsFn(
 		proofMsgs := make([]client.MsgSubmitProof, len(sessionTrees))
 		for idx, session := range sessionTrees {
 			proofMsgs[idx] = &prooftypes.MsgSubmitProof{
-				Proof:                   session.GetProofBz(),
+				SupplierOperatorAddress: session.GetSupplierOperatorAddress(),
 				SessionHeader:           session.GetSessionHeader(),
-				SupplierOperatorAddress: session.GetSupplierOperatorAddress().String(),
+				Proof:                   session.GetProofBz(),
 			}
 		}
 
@@ -205,7 +205,7 @@ func (rs *relayerSessionsManager) proveClaims(
 	// should be generated for.
 	proofPathSeedBlock client.Block,
 ) (successProofs []relayer.SessionTree, failedProofs []relayer.SessionTree) {
-	logger := rs.logger.With("method", "goProveClaims")
+	logger := rs.logger.With("method", "proveClaims")
 
 	// sessionTreesWithProofRequired will accumulate all the sessionTrees that
 	// will require a proof to be submitted.
@@ -218,13 +218,20 @@ func (rs *relayerSessionsManager) proveClaims(
 		// WARNING: Creating a claim and not submitting a proof (if necessary) could lead to a stake burn!!
 		if err != nil {
 			failedProofs = append(failedProofs, sessionTree)
-			rs.logger.Error().Err(err).Msg("failed to determine if proof is required, skipping claim creation")
+			logger.Error().Err(err).Msg("failed to determine if proof is required, skipping claim creation")
 			continue
 		}
 
 		// If a proof is required, add the session to the list of sessions that require a proof.
 		if isProofRequired {
 			sessionTreesWithProofRequired = append(sessionTreesWithProofRequired, sessionTree)
+		} else {
+			rs.removeFromRelayerSessions(sessionTree)
+			if err := sessionTree.Delete(); err != nil {
+				// Do not fail the entire operation if a session tree cannot be deleted
+				// as this does not affect the C&P lifecycle.
+				logger.Error().Err(err).Msg("failed to delete session tree")
+			}
 		}
 	}
 
@@ -269,7 +276,7 @@ func (rs *relayerSessionsManager) isProofRequired(
 	logger := rs.logger.With(
 		"session_id", sessionTree.GetSessionHeader().GetSessionId(),
 		"claim_root", fmt.Sprintf("%x", sessionTree.GetClaimRoot()),
-		"supplier_operator_address", sessionTree.GetSupplierOperatorAddress().String(),
+		"supplier_operator_address", sessionTree.GetSupplierOperatorAddress(),
 	)
 
 	// Create the claim object and use its methods to determine if a proof is required.
@@ -337,7 +344,7 @@ func (rs *relayerSessionsManager) isProofRequired(
 // claimFromSessionTree creates a claim object from the given SessionTree.
 func claimFromSessionTree(sessionTree relayer.SessionTree) prooftypes.Claim {
 	return prooftypes.Claim{
-		SupplierOperatorAddress: sessionTree.GetSupplierOperatorAddress().String(),
+		SupplierOperatorAddress: sessionTree.GetSupplierOperatorAddress(),
 		SessionHeader:           sessionTree.GetSessionHeader(),
 		RootHash:                sessionTree.GetClaimRoot(),
 	}

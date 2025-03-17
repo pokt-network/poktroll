@@ -264,10 +264,8 @@ helm_resource(
 actor_number = 0
 for x in range(localnet_config["relayminers"]["count"]):
     actor_number = actor_number + 1
-    helm_resource(
-        "relayminer" + str(actor_number),
-        chart_prefix + "relayminer",
-        flags=[
+
+    flags=[
             "--values=./localnet/kubernetes/values-common.yaml",
             "--values=./localnet/kubernetes/values-relayminer-common.yaml",
             "--values=./localnet/kubernetes/values-relayminer-" + str(actor_number) + ".yaml",
@@ -275,10 +273,51 @@ for x in range(localnet_config["relayminers"]["count"]):
             "--set=development.delve.enabled=" + str(localnet_config["relayminers"]["delve"]["enabled"]),
             "--set=logLevel=" + str(localnet_config["relayminers"]["logs"]["level"]),
             "--set=image.repository=poktrolld",
-        ],
+    ]
+
+    #############
+    # NOTE: To provide a proper configuration for the relayminer, we dynamically
+    # define the supplier configuration overrides for the relayminer helm chart
+    # so that every service enabled in the localnet configuration (ollama, rest)
+    # file are also declared in the relayminer.config.suppliers list.
+    #############
+
+    supplier_number = 0
+
+    flags.append("--set=config.suppliers["+str(supplier_number)+"].service_id=anvil")
+    flags.append("--set=config.suppliers["+str(supplier_number)+"].listen_url=http://0.0.0.0:8545")
+    flags.append("--set=config.suppliers["+str(supplier_number)+"].service_config.backend_url=http://anvil:8547/")
+    flags.append("--set=config.suppliers["+str(supplier_number)+"].service_config.publicly_exposed_endpoints[0]=relayminer"+str(actor_number))
+    supplier_number = supplier_number + 1
+
+    flags.append("--set=config.suppliers["+str(supplier_number)+"].service_id=anvilws")
+    flags.append("--set=config.suppliers["+str(supplier_number)+"].listen_url=http://0.0.0.0:8545")
+    flags.append("--set=config.suppliers["+str(supplier_number)+"].service_config.backend_url=ws://anvil:8547/")
+    flags.append("--set=config.suppliers["+str(supplier_number)+"].service_config.publicly_exposed_endpoints[0]=relayminer"+str(actor_number))
+    supplier_number = supplier_number + 1
+
+    if localnet_config["rest"]["enabled"]:
+       flags.append("--set=config.suppliers["+str(supplier_number)+"].service_id=rest")
+       flags.append("--set=config.suppliers["+str(supplier_number)+"].listen_url=http://0.0.0.0:8545")
+       flags.append("--set=config.suppliers["+str(supplier_number)+"].service_config.backend_url=http://rest:10000/")
+       flags.append("--set=config.suppliers["+str(supplier_number)+"].service_config.publicly_exposed_endpoints[0]=relayminer"+str(actor_number))
+       supplier_number = supplier_number + 1
+
+    if localnet_config["ollama"]["enabled"]:
+       flags.append("--set=config.suppliers["+str(supplier_number)+"].service_id=ollama")
+       flags.append("--set=config.suppliers["+str(supplier_number)+"].listen_url=http://0.0.0.0:8545")
+       flags.append("--set=config.suppliers["+str(supplier_number)+"].service_config.backend_url=http://ollama:11434/")
+       flags.append("--set=config.suppliers["+str(supplier_number)+"].service_config.publicly_exposed_endpoints[0]=relayminer"+str(actor_number))
+       supplier_number = supplier_number + 1
+
+    helm_resource(
+        "relayminer" + str(actor_number),
+        chart_prefix + "relayminer",
+        flags=flags,
         image_deps=["poktrolld"],
         image_keys=[("image.repository", "image.tag")],
     )
+
     k8s_resource(
         "relayminer" + str(actor_number),
         labels=["suppliers"],
@@ -299,6 +338,7 @@ for x in range(localnet_config["relayminers"]["count"]):
             # Use with pprof like this: `go tool pprof -http=:3333 http://localhost:6070/debug/pprof/goroutine`
             str(6069 + actor_number)
             + ":6060",  # Relayminer pprof port. relayminer1 - exposes 6070, relayminer2 exposes 6071, etc.
+            str(7000 + actor_number) + ":8081", # Relayminer ping port. relayminer1 - exposes 7001, relayminer2 exposes 7002, etc.
         ],
     )
 

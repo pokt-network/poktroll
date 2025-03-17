@@ -3,7 +3,7 @@ title: Supplier & RelayMiner (~30 min)
 sidebar_position: 5
 ---
 
-## Run a RelayMiner (Supplier) <!-- omit in toc -->
+## Supplier & RelayMiner Walkthrough <!-- omit in toc -->
 
 TODO_BETA(@olshansk): Update this page with all the details.
 

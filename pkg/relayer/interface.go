@@ -8,7 +8,6 @@ package relayer
 import (
 	"context"
 
-	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/pokt-network/smt"
 
 	"github.com/pokt-network/poktroll/pkg/observable"
@@ -57,6 +56,9 @@ type RelayerProxy interface {
 	// A served relay is one whose RelayRequest's signature and session have been verified,
 	// and its RelayResponse has been signed and successfully sent to the client.
 	ServedRelays() RelaysObservable
+
+	// PingAll tests the connectivity between all the managed relay servers and their respective backend URLs.
+	PingAll(ctx context.Context) error
 }
 
 type RelayerProxyOption func(RelayerProxy)
@@ -78,9 +80,6 @@ type RelayAuthenticator interface {
 	// GetSupplierOperatorAddresses returns the supplier operator addresses that
 	// the relay authenticator can use to sign relay responses.
 	GetSupplierOperatorAddresses() []string
-
-	// Start starts the relay authenticator and its underlying services.
-	Start(ctx context.Context)
 }
 
 type RelayAuthenticatorOption func(RelayAuthenticator)
@@ -92,7 +91,13 @@ type RelayServer interface {
 
 	// Stop terminates the service server and returns an error if it fails.
 	Stop(ctx context.Context) error
+
+	// Ping tests the connection between the relay server and its backend URL.
+	Ping(ctx context.Context) error
 }
+
+// RelayServers aggregates a slice of RelayServer interface.
+type RelayServers []RelayServer
 
 // RelayerSessionsManager is responsible for managing the relayer's session lifecycles.
 // It handles the creation and retrieval of SMSTs (trees) for a given session, as
@@ -165,8 +170,9 @@ type SessionTree interface {
 	// It returns an error if it has already been marked as such.
 	StartClaiming() error
 
-	// GetSupplierOperatorAddress returns the supplier operator address building this tree.
-	GetSupplierOperatorAddress() *cosmostypes.AccAddress
+	// GetSupplierOperatorAddress returns a stringified bech32 address of the supplier
+	// operator this sessionTree belongs to.
+	GetSupplierOperatorAddress() string
 
 	// GetTrieSpec returns the trie spec of the SMST.
 	GetTrieSpec() smt.TrieSpec
