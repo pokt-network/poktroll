@@ -320,8 +320,6 @@ func (s *migrationSuite) TheShannonServiceConfigIsUpdatedIfApplicable(actorType 
 }
 
 func (s *migrationSuite) TheAuthorityExecutes(commandStr string) {
-	// TODO_IN_THIS_COMMIT: this isn't quite right, this will need to be an authz exec command...
-
 	// DEV_NOTE: If the command doesn't start with "poktrolld"
 	commandStringParts := strings.Split(commandStr, " ")
 	if len(commandStringParts) < 0 && commandStringParts[0] != "poktrolld" {
@@ -332,7 +330,17 @@ func (s *migrationSuite) TheAuthorityExecutes(commandStr string) {
 	// s.pocketd.RunCommand() provides this part of the final command string.
 	commandStringParts = commandStringParts[1:]
 
-	results, err := s.pocketd.RunCommandOnHost("", commandStringParts...)
+	var (
+		results *commandResult
+		err     error
+	)
+	switch {
+	case strings.Contains(commandStr, "collect-morse-accounts"):
+		results, err = s.pocketd.RunCommand("", "collect-morse-accounts")
+	default:
+		results, err = s.pocketd.RunCommandOnHost("", commandStringParts...)
+	}
+
 	require.NoError(s, err)
 	if strings.Contains(results.Stdout, cmdUsagePattern) {
 		s.Fatalf(
