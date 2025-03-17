@@ -782,8 +782,8 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimExpired_SupplierUnstaked() {
 			ServiceId:          testServiceId,
 			BlockHeight:        1,
 		}
-		sessionRes, err := s.keepers.GetSession(sdkCtx, sessionReq)
-		require.NoError(t, err)
+		sessionRes, sessionErr := s.keepers.GetSession(sdkCtx, sessionReq)
+		require.NoError(t, sessionErr)
 		sessionHeader := sessionRes.Session.Header
 		merkleRoot := testproof.SmstRootWithSumAndCount(1000, 1000)
 		claim := testtree.NewClaim(t, s.claim.SupplierOperatorAddress, sessionHeader, merkleRoot)
