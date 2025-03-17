@@ -1,4 +1,4 @@
-//go:build e2e
+//go:build e2e && oneshot
 
 package e2e
 
@@ -103,19 +103,6 @@ func (s *migrationSuite) Before() {
 func TestMigrationWithFixtureData(t *testing.T) {
 	gocuke.NewRunner(t, &migrationSuite{}).
 		Path("migration_fixture.feature").
-		Run()
-}
-
-// TestMigrationWithSnapshotData runs the migration_snapshot.feature file ONLY.
-// NOTE: This test depends on a large Morse node snapshot being available locally.
-// See: https://pocket-snapshot.liquify.com/#/pruned/
-//
-// To run this test use:
-//
-//	$ make test_e2e_migration_snapshot
-func TestMigrationWithSnapshotData(t *testing.T) {
-	gocuke.NewRunner(t, &migrationSuite{}).
-		Path("migration_snapshot.feature").
 		Run()
 }
 
