@@ -6,6 +6,12 @@ on:
       - "v*.*.*"
     branches:
       - "main"
+  workflow_dispatch:
+    inputs:
+      custom_tag:
+        description: "Optional custom tag to add to the image (will be prefixed with branch name)"
+        type: string
+        required: false
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.ref_name }}
@@ -48,6 +54,7 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
+      # For version tag pushes
       - name: Docker Metadata action for tag events
         id: meta-tag
         if: startsWith(github.ref, 'refs/tags/v')
@@ -64,9 +71,10 @@ jobs:
             type=sha,suffix=-prod
             type=sha,format=long,suffix=-prod
 
+      # For main branch pushes
       - name: Docker Metadata action for main branch pushes
         id: meta-main
-        if: github.ref == 'refs/heads/main'
+        if: github.ref == 'refs/heads/main' && github.event_name != 'workflow_dispatch'
         uses: docker/metadata-action@v5
         env:
           DOCKER_METADATA_PR_HEAD_SHA: "true"
@@ -78,6 +86,25 @@ jobs:
             type=sha,suffix=-main-prod
             type=sha,format=long,suffix=-main-prod
 
+      # For manual workflow triggers
+      - name: Extract branch name
+        if: github.event_name == 'workflow_dispatch'
+        shell: bash
+        run: echo "BRANCH_NAME=${GITHUB_REF#refs/heads/}" >> $GITHUB_ENV
+
+      - name: Docker Metadata action for manual workflow_dispatch
+        id: meta-manual
+        if: github.event_name == 'workflow_dispatch'
+        uses: docker/metadata-action@v5
+        env:
+          DOCKER_METADATA_PR_HEAD_SHA: "true"
+        with:
+          images: |
+            ghcr.io/pokt-network/poktrolld
+          tags: |
+            type=raw,value=${{ env.BRANCH_NAME }}-prod${{ github.inputs.custom_tag != '' && format('-{0}', github.inputs.custom_tag) || '' }}
+            type=sha,suffix=-${{ env.BRANCH_NAME }}-prod${{ github.inputs.custom_tag != '' && format('-{0}', github.inputs.custom_tag) || '' }}
+
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v3
         with:
@@ -85,6 +112,7 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      # For version tag pushes
       - name: Build and push Docker image for tag events
         if: startsWith(github.ref, 'refs/tags/v')
         uses: docker/build-push-action@v5
@@ -98,13 +126,28 @@ jobs:
           cache-to: type=gha,mode=max
           context: .
 
+      # For main branch pushes
       - name: Build and push Docker image for main branch
-        if: github.ref == 'refs/heads/main'
+        if: github.ref == 'refs/heads/main' && github.event_name != 'workflow_dispatch'
         uses: docker/build-push-action@v5
         with:
           push: true
           tags: ${{ steps.meta-main.outputs.tags }}
           labels: ${{ steps.meta-main.outputs.labels }}
+          platforms: linux/amd64,linux/arm64
+          file: Dockerfile.release
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          context: .
+
+      # For manual workflow triggers
+      - name: Build and push Docker image for manual workflow_dispatch
+        if: github.event_name == 'workflow_dispatch'
+        uses: docker/build-push-action@v5
+        with:
+          push: true
+          tags: ${{ steps.meta-manual.outputs.tags }}
+          labels: ${{ steps.meta-manual.outputs.labels }}
           platforms: linux/amd64,linux/arm64
           file: Dockerfile.release
           cache-from: type=gha
