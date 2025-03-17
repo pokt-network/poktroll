@@ -24,8 +24,6 @@ import (
 )
 
 const (
-	oneshotTag = "@oneshot"
-	manualTag  = "@manual"
 	// TODO_IN_THIS_COMMIT: godoc...
 	cmdUsagePattern = `--help" for more`
 )

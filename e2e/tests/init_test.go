@@ -52,6 +52,8 @@ const (
 	numQueryRetries = uint8(3)
 	unbondingPeriod = "unbonding"
 	transferPeriod  = "transfer"
+	oneshotTag      = "@oneshot"
+	manualTag       = "@manual"
 )
 
 var (
