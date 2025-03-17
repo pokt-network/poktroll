@@ -22,6 +22,7 @@ import (
 	"github.com/pokt-network/poktroll/pkg/polylog/polyzero"
 	testutilevents "github.com/pokt-network/poktroll/testutil/events"
 	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
+	testproof "github.com/pokt-network/poktroll/testutil/proof"
 	testutilproof "github.com/pokt-network/poktroll/testutil/proof"
 	"github.com/pokt-network/poktroll/testutil/sample"
 	"github.com/pokt-network/poktroll/testutil/testkeyring"
@@ -731,9 +732,13 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimPendingAfterSettlement() {
 }
 
 func (s *TestSuite) TestSettlePendingClaims_ClaimExpired_SupplierUnstaked() {
+	// Number of expired claims to create
+	numExpiredClaims := 3
 	// Retrieve default values
 	t := s.T()
 	ctx := s.ctx
+	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
+	sdkCtx = sdkCtx.WithBlockHeight(1)
 	sharedParams := s.keepers.SharedKeeper.GetParams(ctx)
 
 	proofRequirementThreshold, err := s.claim.GetClaimeduPOKT(sharedParams, s.relayMiningDifficulty)
@@ -754,15 +759,44 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimExpired_SupplierUnstaked() {
 	err = s.keepers.ProofKeeper.SetParams(ctx, proofParams)
 	require.NoError(t, err)
 
-	// Upsert the claim ONLY because it should be processed without needing a proof.
-	s.keepers.UpsertClaim(ctx, s.claim)
+	// Creating multiple claims without proofs to test the claim expiration process:
+	// - We're creating exactly numExpiredClaims applications to create numExpiredClaims claims
+	// - All claims are for the same settlement period
+	// - This allows us to verify that only a single unbonding event is emitted
+	//   despite having multiple expired claims for the same supplier
+	expiredClaimsMap := make(map[string]*prooftypes.Claim, numExpiredClaims)
+	for range numExpiredClaims {
+		appStake := types.NewCoin("upokt", math.NewInt(1000000))
+		appAddr := sample.AccAddress()
+		app := apptypes.Application{
+			Address:        appAddr,
+			Stake:          &appStake,
+			ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{{ServiceId: testServiceId}},
+		}
+		s.keepers.SetApplication(s.ctx, app)
+
+		// Get the session for the application/supplier pair which is expected
+		// to be claimed and for which a valid proof would be accepted.
+		sessionReq := &sessiontypes.QueryGetSessionRequest{
+			ApplicationAddress: appAddr,
+			ServiceId:          testServiceId,
+			BlockHeight:        1,
+		}
+		sessionRes, err := s.keepers.GetSession(sdkCtx, sessionReq)
+		require.NoError(t, err)
+		sessionHeader := sessionRes.Session.Header
+		merkleRoot := testproof.SmstRootWithSumAndCount(1000, 1000)
+		claim := testtree.NewClaim(t, s.claim.SupplierOperatorAddress, sessionHeader, merkleRoot)
+		expiredClaimsMap[sessionHeader.SessionId] = claim
+		s.keepers.UpsertClaim(ctx, *claim)
+	}
 
 	// Settle pending claims after proof window closes
 	// Expectation: All (1) claims should expire.
 	// NB: proofs should be rejected when the current height equals the proof window close height.
 	sessionEndHeight := s.claim.SessionHeader.SessionEndBlockHeight
 	sessionProofWindowCloseHeight := sharedtypes.GetProofWindowCloseHeight(&sharedParams, sessionEndHeight)
-	sdkCtx := cosmostypes.UnwrapSDKContext(ctx).WithBlockHeight(sessionProofWindowCloseHeight)
+	sdkCtx = sdkCtx.WithBlockHeight(sessionProofWindowCloseHeight)
 	_, _, err = s.keepers.SettlePendingClaims(sdkCtx)
 	require.NoError(t, err)
 
@@ -779,22 +813,30 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimExpired_SupplierUnstaked() {
 
 	// Confirm that a slashing event was emitted
 	slashingEvents := testutilevents.FilterEvents[*tokenomicstypes.EventSupplierSlashed](t, events)
-	require.Equal(t, 1, len(slashingEvents))
+	// A slashing event should be emitted for each expired claim.
+	require.Equal(t, numExpiredClaims, len(slashingEvents))
 
-	// Validate the slashing event
-	proofMissingPenalty := s.keepers.ProofKeeper.GetParams(sdkCtx).ProofMissingPenalty
-	expectedSlashingEvent := &tokenomicstypes.EventSupplierSlashed{
-		Claim:               &s.claim,
-		ProofMissingPenalty: proofMissingPenalty,
+	// Validate the slashing events
+	for i, slashingEvent := range slashingEvents {
+		proofMissingPenalty := cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 0)
+		// The first slashing should burn all the supplier's stake.
+		if i == 0 {
+			proofMissingPenalty = *s.keepers.ProofKeeper.GetParams(sdkCtx).ProofMissingPenalty
+		}
+
+		sessionId := slashingEvent.GetClaim().GetSessionHeader().GetSessionId()
+		expectedSlashingEvent := &tokenomicstypes.EventSupplierSlashed{
+			Claim:               expiredClaimsMap[sessionId],
+			ProofMissingPenalty: &proofMissingPenalty,
+		}
+		require.EqualValues(t, expectedSlashingEvent, slashingEvents[i])
 	}
-	require.EqualValues(t, expectedSlashingEvent, slashingEvents[0])
 
 	// Assert that an EventSupplierUnbondingBegin event was emitted.
 	unbondingBeginEvents := testutilevents.FilterEvents[*suppliertypes.EventSupplierUnbondingBegin](t, events)
 	require.Equal(t, 1, len(unbondingBeginEvents))
 
 	// Validate the EventSupplierUnbondingBegin event.
-	unbondingEndHeight := sharedtypes.GetSupplierUnbondingEndHeight(&sharedParams, &slashedSupplier)
 	for i := range slashedSupplier.GetServices() {
 		slashedSupplier.Services[i].Endpoints = make([]*sharedtypes.SupplierEndpoint, 0)
 		slashedSupplier.ServiceConfigHistory[0].Services[i].Endpoints = make([]*sharedtypes.SupplierEndpoint, 0)
@@ -805,8 +847,11 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimExpired_SupplierUnstaked() {
 		Supplier:           &slashedSupplier,
 		Reason:             suppliertypes.SupplierUnbondingReason_SUPPLIER_UNBONDING_REASON_BELOW_MIN_STAKE,
 		SessionEndHeight:   upcomingSessionEndHeight,
-		UnbondingEndHeight: unbondingEndHeight,
+		UnbondingEndHeight: upcomingSessionEndHeight,
 	}
+	// A signle unbonding begin event corresponding to the slashed supplier should be
+	// emitted for all expired claims.
+	require.Len(t, unbondingBeginEvents, 1)
 	require.EqualValues(t, expectedUnbondingBeginEvent, unbondingBeginEvents[0])
 
 	// Advance the block height to the settlement session end height.
@@ -822,8 +867,11 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimExpired_SupplierUnstaked() {
 		Supplier:           &slashedSupplier,
 		Reason:             suppliertypes.SupplierUnbondingReason_SUPPLIER_UNBONDING_REASON_BELOW_MIN_STAKE,
 		SessionEndHeight:   upcomingSessionEndHeight,
-		UnbondingEndHeight: unbondingEndHeight,
+		UnbondingEndHeight: upcomingSessionEndHeight,
 	}
+	// A single unbonding end event corresponding to the slashed supplier should be
+	// emitted for all expired claims.
+	require.Len(t, unbondingEndEvents, 1)
 	require.EqualValues(t, expectedUnbondingEndEvent, unbondingEndEvents[0])
 }
 
