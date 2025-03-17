@@ -261,7 +261,7 @@ func (s *migrationSuite) QueryShowMorseClaimableAccount(morseSrcAddress string) 
 
 // TODO_IN_THIS_COMMIT: godoc and move...
 func (s *migrationSuite) QueryListMorseClaimableAccounts() []migrationtypes.MorseClaimableAccount {
-	cmdResult, err := s.pocketd.RunCommand(
+	cmdResult, err := s.pocketd.RunCommandOnHost(
 		"query",
 		"migration",
 		"list-morse-claimable-account",
