@@ -3,16 +3,17 @@
 package e2e
 
 import (
+	"bytes"
 	"fmt"
 	"math/rand"
 	"os"
 	"os/exec"
 	"path"
+	"strconv"
 	"strings"
 	"testing"
 
 	cmtjson "github.com/cometbft/cometbft/libs/json"
-	comettypes "github.com/cometbft/cometbft/types"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/regen-network/gocuke"
 	"github.com/stretchr/testify/require"
@@ -401,13 +402,10 @@ func (s *migrationSuite) TheMorsePrivateKeyIsUsedToClaimAMorseclaimableaccountAs
 	privKeyArmoredJSONString, err := testmigration.EncryptArmorPrivKey(morsePrivKey, "", "")
 	require.NoError(s, err)
 
-	s.Logf("XX| %s |XX", privKeyArmoredJSONString)
+	//s.Logf("XX| %s |XX", privKeyArmoredJSONString)
 
 	// TODO_IN_THIS_COMMIT: consolidate with any other temp file tracking pattern.
 	privKeyArmoredJSONPath := s.writeTempFile("morse_private_key.json", []byte(privKeyArmoredJSONString))
-
-	// Track the height at which the morse claimable account was claimed.
-	s.morseAccountClaimHeight = s.getCurrentBlockHeight()
 
 	// poktrolld tx migration claim-account --from=shannon-key-xxx <morse_src_address>
 	res, err := s.pocketd.RunCommandOnHost("",
@@ -419,6 +417,9 @@ func (s *migrationSuite) TheMorsePrivateKeyIsUsedToClaimAMorseclaimableaccountAs
 		privKeyArmoredJSONPath,
 	)
 	require.NoError(s, err)
+
+	// Track the height at which the morse claimable account was claimed.
+	s.morseAccountClaimHeight = s.getCurrentBlockHeight()
 
 	// TODO_IN_THIS_COMMIT: zero exit code error handling...
 	s.Logf("RESULT: %s", res.Stdout)
@@ -516,18 +517,33 @@ func (s *migrationSuite) TheMorseClaimableAccountIsMarkedAsClaimedByTheShannonAc
 
 // TODO_IN_THIS_COMMIT: godoc...
 func (s *migrationSuite) getCurrentBlockHeight() int64 {
-	res, err := s.pocketd.RunCommandOnHost("",
+	blockQueryRes, err := s.pocketd.RunCommandOnHost("",
 		"query", "block",
 		"--output", "json",
 	)
 	require.NoError(s, err)
 
-	block := new(comettypes.Block)
 	// DEV_NOTE: The first line of the response to a block query with no flag argument is not JSON:
 	// "Falling back to latest block height:".
-	resJSON := strings.SplitN(res.Stdout, "\n", 2)[1]
-	err = cmtjson.Unmarshal([]byte(resJSON), block)
+	resJSON := strings.SplitN(blockQueryRes.Stdout, "\n", 2)[1]
+
+	// DEV_NOTE: Using jq to parse the response because cmtjson/json.Unmarshal seems
+	// to be expecting hex encoded binary fields, whereas the CLI with --output json
+	// seems to return base64 encoded binary fields.
+	stdinBuf := new(bytes.Buffer)
+	cmd := exec.Command("jq", "-r", ".header.height")
+	cmd.Stdin = stdinBuf
+
+	stdinBuf.WriteString(resJSON)
+	stdout, err := cmd.Output()
 	require.NoError(s, err)
 
-	return block.Header.Height
+	//jqStdout, err := s.runCommand(" jq -r .header.height")
+	//require.NoError(s, err)
+
+	heightString := string(bytes.TrimSpace(stdout))
+	height, err := strconv.Atoi(heightString)
+	require.NoError(s, err)
+
+	return int64(height)
 }
