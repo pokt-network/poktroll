@@ -1,0 +1,8 @@
+{
+  "label": "Playbooks",
+  "position": 2,
+  "link": {
+    "type": "generated-index",
+    "description": "Opinionated Playbooks using the tools and practices we like"
+  }
+}

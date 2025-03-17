@@ -2,7 +2,10 @@ package proxy
 
 import (
 	"context"
+	"errors"
+	"net"
 	"net/http"
+	"time"
 
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 
@@ -73,9 +76,17 @@ func NewHTTPServer(
 	sharedQueryClient client.SharedQueryClient,
 	sessionQueryClient client.SessionQueryClient,
 ) relayer.RelayServer {
+	// Create the HTTP server.
+	httpServer := &http.Server{
+		// TODO_IMPROVE: Make timeouts configurable.
+		IdleTimeout:  60 * time.Second,
+		ReadTimeout:  10 * time.Second,
+		WriteTimeout: 10 * time.Second,
+	}
+
 	return &relayMinerHTTPServer{
 		logger:               logger,
-		server:               &http.Server{Addr: serverConfig.ListenAddress},
+		server:               httpServer,
 		relayAuthenticator:   relayAuthenticator,
 		servedRelaysProducer: servedRelaysProducer,
 		serverConfig:         serverConfig,
@@ -98,12 +109,54 @@ func (server *relayMinerHTTPServer) Start(ctx context.Context) error {
 	// Set the HTTP handler.
 	server.server.Handler = server
 
-	return server.server.ListenAndServe()
+	listener, err := net.Listen("tcp", server.serverConfig.ListenAddress)
+	if err != nil {
+		server.logger.Error().Err(err).Msg("failed to create listener")
+		return err
+	}
+
+	return server.server.Serve(listener)
 }
 
 // Stop terminates the service server and returns an error if it fails.
 func (server *relayMinerHTTPServer) Stop(ctx context.Context) error {
 	return server.server.Shutdown(ctx)
+}
+
+// Ping tries to dial the suppliers backend URLs to test the connection.
+func (server *relayMinerHTTPServer) Ping(ctx context.Context) error {
+	for _, supplierCfg := range server.serverConfig.SupplierConfigsMap {
+		c := &http.Client{Timeout: 2 * time.Second}
+
+		backendUrl := *supplierCfg.ServiceConfig.BackendUrl
+		if backendUrl.Scheme == "ws" || backendUrl.Scheme == "wss" {
+			// TODO_IMPROVE: Consider testing websocket connectivity by establishing
+			// a websocket connection instead of using an HTTP connection.
+			server.logger.Warn().Msgf(
+				"backend URL %s scheme is a %s, switching to http to check connectivity",
+				backendUrl.String(),
+				backendUrl.Scheme,
+			)
+
+			if backendUrl.Scheme == "ws" {
+				backendUrl.Scheme = "http"
+			} else {
+				backendUrl.Scheme = "https"
+			}
+		}
+		resp, err := c.Head(backendUrl.String())
+		if err != nil {
+			return err
+		}
+		_ = resp.Body.Close()
+
+		if resp.StatusCode >= http.StatusInternalServerError {
+			return errors.New("ping failed")
+		}
+
+	}
+
+	return nil
 }
 
 // ServeHTTP listens for incoming relay requests. It implements the respective

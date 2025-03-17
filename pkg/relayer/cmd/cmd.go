@@ -161,6 +161,12 @@ func runRelayer(cmd *cobra.Command, _ []string) error {
 		}
 	}
 
+	if relayMinerConfig.Ping.Enabled {
+		if err := relayMiner.ServePing(ctx, "tcp", relayMinerConfig.Ping.Addr); err != nil {
+			return fmt.Errorf("failed to start ping endpoint: %w", err)
+		}
+	}
+
 	// Start the relay miner
 	logger.Info().Msg("Starting relay miner...")
 	if err := relayMiner.Start(ctx); err != nil && !errors.Is(err, http.ErrServerClosed) {
@@ -219,7 +225,6 @@ func setupRelayerDependencies(
 		config.NewSupplyBlockClientFn(queryNodeRPCUrl),                    // leaf
 		config.NewSupplyQueryClientContextFn(queryNodeGRPCUrl),            // leaf
 		config.NewSupplyTxClientContextFn(queryNodeGRPCUrl, txNodeRPCUrl), // leaf
-		config.NewSupplyDelegationClientFn(),                              // leaf
 
 		// Setup the params caches and configure them to clear on new blocks.
 		// Some of the params (tokenomics and gateway) are not used in the RelayMiner
@@ -253,7 +258,7 @@ func setupRelayerDependencies(
 		config.NewSupplyBankQuerierFn(),
 		config.NewSupplySupplierQuerierFn(),
 		config.NewSupplyProofQueryClientFn(),
-		config.NewSupplyRingCacheFn(),
+		config.NewSupplyRingClientFn(),
 		supplyTxFactory,
 		supplyTxContext,
 		config.NewSupplySupplierClientsFn(signingKeyNames),

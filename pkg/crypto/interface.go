@@ -1,4 +1,4 @@
-//go:generate go run go.uber.org/mock/mockgen -destination=../../testutil/mockcrypto/ring_cache_mock.go -package=mockcrypto . RingCache
+//go:generate go run go.uber.org/mock/mockgen -destination=../../testutil/mockcrypto/ring_client_mock.go -package=mockcrypto . RingClient
 package crypto
 
 import (
@@ -9,25 +9,6 @@ import (
 
 	"github.com/pokt-network/poktroll/x/service/types"
 )
-
-// RingCache is used to store rings used for signing and verifying relay requests.
-// It will cache rings for future use after querying the application module for
-// the addresses of the gateways the application is delegated to, and converting
-// them into their corresponding public key points on the secp256k1 curve.
-type RingCache interface {
-	RingClient
-
-	// GetCachedAddresses returns the addresses of the applications that are
-	// currently cached in the ring cache.
-	GetCachedAddresses() []string
-	// Start starts the ring cache, it takes a cancellable context and, in a
-	// separate goroutine, listens for onchain delegation events and invalidates
-	// the cache if the redelegation event's AppAddress is stored in the cache.
-	Start(ctx context.Context)
-	// Stop stops the ring cache by unsubscribing from onchain delegation events.
-	// And clears the cache, so that it no longer contains any rings,
-	Stop()
-}
 
 // RingClient is used to construct rings by querying the application module for
 // the addresses of the gateways the application delegated to, and converting
