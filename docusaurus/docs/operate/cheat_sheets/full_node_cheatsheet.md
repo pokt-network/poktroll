@@ -3,6 +3,8 @@ title: Full Node (~10 min)
 sidebar_position: 2
 ---
 
+import ReactPlayer from "react-player";
+
 ## Full Node Cheat Sheet <!-- omit in toc -->
 
 **🖨 🍝 instructions to get you up and running with a `Full Node` on Pocket Network using `Systemd` and `Cosmovisor` ✅**
