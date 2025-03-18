@@ -69,7 +69,7 @@ The following disambiguation should be applied in the scope of this section (Mor
 
 Given that Morse account claiming will be facilitated via "re-keying", the canonical "Morse migration state" need not be coordinated with Shannon MainNet lifecycle, other than to require that Shannon MainNet has launched.
 
-Full details of the Shannon launch process can be found in [the overview](./roadmap.md), but the token migration process can be split into two main phases:
+Full details of the Shannon launch process can be found in [the overview](./roadmap.md), but the token migration process can be split into four steps:
 
 1. **Snapshot Selection**: The "authority" (i.e. Foundation / PNF) coordinates with Morse account/stake-holders **offchain** choose a height at which a snapshot will be taken.
 2. **Snapshot Migration**: The authority retrieves the Morse snapshot, validates it **offchain** as "canonical" `MorseAccountState` and uploads it **onchain** to Shannon.
