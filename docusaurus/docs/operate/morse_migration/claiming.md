@@ -274,6 +274,8 @@ Which should produce output similar to the following:
   claim-application
   claim-supplier
   collect-morse-accounts Collect account balances and stakes from [morse-state-export-path] JSON file and output to [morse-account-state-path] as JSON
+  import-morse-accounts
+  validate-morse-accounts
 ```
 
 :::important
