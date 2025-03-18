@@ -177,7 +177,7 @@ In order to claim any Morse (staked or not) account on Shannon, the correspondin
 
 It is necessary to sign the respective claim message's `morse_signature` field. This cryptographic primitive is critical as it establishes the authenticity of the claim.
 
-The Morse CLI provides a subcommand which exports a given Morse account private key as an encrypted file `pocket accounts export <morse_address>`.
+The Morse CLI provides a subcommand which exports a given Morse account private key as an encrypted file: `pocket accounts export <morse_address>`.
 
 The exported file is written to the current working directory with a name that follows the pattern `pocket-account-<morse_address>.json`.
 
