@@ -18,6 +18,7 @@ See the [Full Node Walkthrough](../walkthroughs/full_node_walkthrough.md) if you
 ## Table of Contents <!-- omit in toc -->
 
 - [Pre-Requisites \& Requirements](#pre-requisites--requirements)
+- [Video Walkthrough](#video-walkthrough)
 - [Install and Run a Full Node using Cosmovisor](#install-and-run-a-full-node-using-cosmovisor)
   - [Verify successful installation using `curl`](#verify-successful-installation-using-curl)
   - [How are automatic upgrades handled out of the box?](#how-are-automatic-upgrades-handled-out-of-the-box)
@@ -36,6 +37,15 @@ See the [Full Node Walkthrough](../walkthroughs/full_node_walkthrough.md) if you
 If you are using [Vultr](https://www.vultr.com/) for your deployment, you can following the [CLI Playbook we put together here](../../tools/playbooks/vultr.md) to speed things up.
 
 :::
+
+## Video Walkthrough
+~10 minute video walkthrough using this cheatsheet.
+
+<ReactPlayer
+  playing={false}
+  controls
+  url=""
+/>
 
 ## Install and Run a Full Node using Cosmovisor
 
