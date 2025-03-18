@@ -199,11 +199,11 @@ This playbook is an early WIP and will be updated and moved elsewhere once the p
    ```
 
 3. **Distribute** the `MorseAccountState` and its hash for verification by Morse account/stake-holders.
-4. **Wait for consensus** after an offchain time-bounded period on the `MorseAccountState`, reacting to any feedback offchain as necessary.
+4. **Wait for consensus** after an offchain time-bounded period on the `MorseAccountState`, reacting to any offchain feedback, as necessary.
 5. **Load** (i.e. import) the canonical `MorseAccountState` on Shannon
 
    ```bash
-   TODO_MAINNET(@bryanchriswhite, #1034): Reference respective cmd or make target, once available.
+poktrolld tx migrate import-morse-accounts morse_account_state.json --from <authorized-key-name> --grpc-addr=<shannon-network-grpc-endpoint>
    ```
 
 :::danger TODO_MAINNET: Select snapshot height
@@ -212,7 +212,7 @@ Replace `<published canonical export height>` with the actual height once known.
 
 :::
 
-### High-Level State Validation Playbook for Morse Account oolders
+### High-Level State Validation Playbook for Morse Account holders
 
 :::info Fun Analogy 👯
 

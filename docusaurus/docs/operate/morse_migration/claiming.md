@@ -42,20 +42,20 @@ This table illustrates how different Morse account types map to Shannon account 
 
 1. **Account Claiming:**
 
-   - A basic Morse account (unstaked) can only claim as a Shannon account
+   - A basic Morse account (unstaked) MAY ONLY claim as a Shannon account
    - Only the unstaked balance transfers over (1:1 ratio)
 
 2. **Application Claiming:**
 
-   - A Morse Application must claim as a Shannon Application
+   - A Morse Application MAY ONLY claim as a Shannon Application
    - Both unstaked balance and application stake transfer over (1:1 ratio)
-   - While stake amounts remain the same, Shannon allows for modified staking configurations
+   - While stake amounts remain the same, a Shannon service ID is required and must be provided at the time of claiming.
 
 3. **Servicer to Supplier Claiming:**
 
-   - A Morse Servicer must claim as a Shannon Supplier
+   - A Morse Servicer MAY ONLY claim as a Shannon Supplier
    - Both unstaked balance and staked amount transfer over (1:1 ratio)
-   - The stake amount is automatically determined from the Morse account's supplier stake amount
+   - While stake amounts remain the same, a Shannon supplier stake configuration is required and must be provided at the time of claiming
 
 4. **Claim Process Requirements:**
    - All claim operations require using private keys from both Morse and Shannon keyrings
@@ -168,7 +168,7 @@ Both `Morse` and `Shannon` have their own **COMPLETELY INDEPENDENT** keyrings wh
 
 Since the Shannon CLI (`poktrolld`) is used to broadcast the `ClaimTx`, the prerequisites are:
 
-1. Export the `Morse` key (securely) from your `pocket` (i.e. Morse CLI) so that it can be used by `poktrolld` (i.e. Shannon CLI).
+1. Export the `Morse` key (securely) from `pocket` (i.e. Morse CLI) so that it can be used by `poktrolld` (i.e. Shannon CLI).
 2. Ensure that the desired `Shannon` destination account key exists in the `Shannon` keyring.
 
 ### Morse Keyring CLI - Exporting Existing Account Keys
