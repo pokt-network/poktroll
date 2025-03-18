@@ -19,11 +19,17 @@ TODO_MAINNET: Update this document prior to MainNet release
 
 ### Validator / Full Node
 
-| Component   | Minimum | Recommended |
-| ----------- | ------- | ----------- |
-| CPU Cores   | 2       | 4           |
-| RAM         | 8GB     | 16GB        |
-| SSD Storage | 50GB    | 50GB        |
+| Component    | Minimum | Recommended |
+| ------------ | ------- | ----------- |
+| (v)CPU Cores | 4       | 6           |
+| RAM          | 16GB    | 32GB        |
+| SSD Storage  | 200GB   | 420GB       |
+
+:::warning In flux
+
+TODO(@okdas): Update these based on the network (Alpha, Beta, MainNet) when taking the latest snapshot.
+
+:::
 
 ### RPC Node
 

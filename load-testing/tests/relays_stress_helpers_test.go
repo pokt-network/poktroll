@@ -37,6 +37,7 @@ import (
 	"github.com/pokt-network/poktroll/load-testing/config"
 	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/client/query"
+	querycache "github.com/pokt-network/poktroll/pkg/client/query/cache"
 	"github.com/pokt-network/poktroll/pkg/observable/channel"
 	"github.com/pokt-network/poktroll/pkg/sync2"
 	testdelays "github.com/pokt-network/poktroll/testutil/delays"
@@ -46,6 +47,7 @@ import (
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	gatewaytypes "github.com/pokt-network/poktroll/x/gateway/types"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
+	servicetypes "github.com/pokt-network/poktroll/x/service/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
@@ -1415,7 +1417,15 @@ func (s *relaysSuite) forEachSettlement(ctx context.Context) {
 func (s *relaysSuite) querySharedParams(queryNodeRPCURL string) {
 	s.Helper()
 
-	deps := depinject.Supply(s.txContext.GetClientCtx())
+	sharedParamsCache := querycache.NewNoOpParamsCache[sharedtypes.Params]()
+	blockhashCache := querycache.NewNoOpKeyValueCache[query.BlockHash]()
+	deps := depinject.Supply(
+		s.txContext.GetClientCtx(),
+		logger,
+		s.blockClient,
+		sharedParamsCache,
+		blockhashCache,
+	)
 
 	blockQueryClient, err := sdkclient.NewClientFromNode(queryNodeRPCURL)
 	require.NoError(s, err)
@@ -1435,7 +1445,15 @@ func (s *relaysSuite) querySharedParams(queryNodeRPCURL string) {
 func (s *relaysSuite) queryAppParams(queryNodeRPCURL string) {
 	s.Helper()
 
-	deps := depinject.Supply(s.txContext.GetClientCtx())
+	appParmsCache := querycache.NewNoOpParamsCache[apptypes.Params]()
+	appsCache := querycache.NewNoOpKeyValueCache[apptypes.Application]()
+	deps := depinject.Supply(
+		s.txContext.GetClientCtx(),
+		logger,
+		s.blockClient,
+		appParmsCache,
+		appsCache,
+	)
 
 	blockQueryClient, err := sdkclient.NewClientFromNode(queryNodeRPCURL)
 	require.NoError(s, err)
@@ -1455,7 +1473,13 @@ func (s *relaysSuite) queryAppParams(queryNodeRPCURL string) {
 func (s *relaysSuite) queryProofParams(queryNodeRPCURL string) {
 	s.Helper()
 
-	deps := depinject.Supply(s.txContext.GetClientCtx())
+	proofParamsCache := querycache.NewNoOpParamsCache[prooftypes.Params]()
+	deps := depinject.Supply(
+		s.txContext.GetClientCtx(),
+		logger,
+		s.blockClient,
+		proofParamsCache,
+	)
 
 	blockQueryClient, err := sdkclient.NewClientFromNode(queryNodeRPCURL)
 	require.NoError(s, err)
@@ -1504,7 +1528,15 @@ func (s *relaysSuite) queryTokenomicsParams(queryNodeRPCURL string) {
 func (s *relaysSuite) queryTestedService(queryNodeRPCURL string) {
 	s.Helper()
 
-	deps := depinject.Supply(s.txContext.GetClientCtx())
+	servicesCache := querycache.NewNoOpKeyValueCache[sharedtypes.Service]()
+	relayMiningDifficultyCache := querycache.NewNoOpKeyValueCache[servicetypes.RelayMiningDifficulty]()
+	deps := depinject.Supply(
+		s.txContext.GetClientCtx(),
+		logger,
+		s.blockClient,
+		servicesCache,
+		relayMiningDifficultyCache,
+	)
 
 	blockQueryClient, err := sdkclient.NewClientFromNode(queryNodeRPCURL)
 	require.NoError(s, err)

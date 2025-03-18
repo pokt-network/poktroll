@@ -172,6 +172,10 @@ var (
 		servicemoduletypes.ModuleName,
 		gatewaymoduletypes.ModuleName,
 		applicationmoduletypes.ModuleName,
+		// The supplier begin blocker should be called before its dependent modules
+		// (session, proof, tokenomics) to ensure that the supplier module has activated
+		// any pending services before the dependent modules have a chance to interact
+		// with the supplier.
 		suppliermoduletypes.ModuleName,
 		sessionmoduletypes.ModuleName,
 		proofmoduletypes.ModuleName,
