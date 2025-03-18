@@ -376,7 +376,7 @@ The only difference between staking a new supplier on Shannon and **claiming** a
 
 :::important Omit `stake_amount`
 
-Omit the `stake_amount` field in a supplier config; providing it in when claiming a Morse supplier is an error.\*\*
+Omit the `stake_amount` field in a supplier config; providing it in when claiming a Morse supplier is an error.
 
 :::
 
