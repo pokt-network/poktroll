@@ -139,46 +139,57 @@ In order to streamline the migration process for end users, as well as expedite 
 ### ETVL High-Level Flow
 
 ```mermaid
-flowchart
-
-  subgraph OncMorse[Morse On-Chain]
-    MorseState
-  end
-
-  MorseState --> | Export | MorseStateExport
-
-  subgraph OffC[Off-Chain]
-    MorseStateExport --> | Transform | MorseAppState
-    MorseAppState --> MorseApplications:::application
-    MorseAppState --> MorseAuth:::account
-    MorseAppState --> MorsePos:::supplier
-    MorseApplications:::application --> MorseApplication:::application
-    MorseAuth:::account --> MorseAuthAccount:::account
-    MorseAuthAccount:::account --> MAOff[MorseAccount]:::account
-    MorsePos:::supplier --> MorseValidator:::supplier
-  end
-
-
-  subgraph OnC[Shannon On-Chain]
-    MorseAccountState:::general
-    MorseAccountState:::general --> |Load| MAOn
-    MAOn[MorseClaimableAccount]:::general
-  end
-
-  MorseAppState --> |Validate| MorseAccountState
-
-
-  MAOff -.Track exported <br> account unstaked balance..-> MAOn
-  MorseValidator:::supplier -.Track exported <br> Supplier stake.-> MAOn
-  MorseApplication:::application -.Track exported <br> Application stake.-> MAOn
-
-  classDef account fill:#90EE90,color:#000
-  classDef supplier fill:#FFA500,color:#000
-  classDef application fill:#FFB6C6,color:#000
-  classDef general fill:#87CEEB,color:#000
+  flowchart
+    subgraph OncMorse[Morse On-Chain]
+        MorseState
+    end
+    MorseState --> |<b>Export</b>| MorseStateExport
+    subgraph OffC[Off-Chain]
+        subgraph MorseStateExport
+            tf[/<b>Transform</b>/]:::grey
+            tf -.-> MorseAppState
+            MorseAppState --> MorseApplications:::application
+            MorseAppState --> MorseAuth:::account
+            MorseAppState --> MorsePos:::supplier
+            MorseApplications:::application --> MorseApplication:::application
+            MorseAuth:::account --> MorseAuthAccount:::account
+            MorseAuthAccount:::account --> MAccOff[MorseAccount]:::account
+            MorsePos:::supplier --> MorseValidator:::supplier
+        end
+        subgraph MASOff[MorseAccountState]
+            MAOff[MorseClaimableAccount]:::general
+        end
+        MAOnHA["MorseAccountStateHash (Authority Derived)"]:::general
+        MAOnHU["MorseAccountStateHash (User Derived)"]:::general
+        MAOnHU --> |"<b>Validate</b> (identical)"| MAOnHA
+        MAOnHU --> |"<b>Validate</b> (SHA256)"| MASOff
+    end
+    subgraph OnC[Shannon On-Chain]
+        subgraph MI[MsgImportMorseClaimableAccounts]
+            subgraph MASOn[MorseAccountState]
+                MAOn2[MorseClaimableAccount]:::general
+            end
+            MAOnH[MorseAccountStateHash]:::general
+            MAOnH --> |"<b>Validate</b> (SHA256)"| MASOn
+        end
+        subgraph MM[Migration Module State]
+            MAOn3[MorseClaimableAccount]:::general
+            MAOn2 --> |"<b>Load</b> (Onchain Persistence)"| MAOn3
+        end
+    end
+    MASOff -..-> |"<b>Load</b> (Authorized Tx)"| MASOn
+    MAOnHA -.-> MAOnH
+    MAccOff -.-> |Track exported <br> account unstaked balance| MAOff
+    MorseValidator:::supplier -.-> |Track exported <br> Supplier stake| MAOff
+    MorseApplication:::application -.-> |Track exported <br> Application stake| MAOff
+    classDef account fill:#90EE90,color:#000
+    classDef supplier fill:#FFA500,color:#000
+    classDef application fill:#FFB6C6,color:#000
+    classDef general fill:#87CEEB,color:#000
+    classDef grey fill:#EAEAE7,color:#000
 ```
 
-### High-Level State Transport Playbook for Authority (i.e. Foundation)
+### High-Level Account State Transfer Playbook for Authority (i.e. Foundation)
 
 :::warning TODO_MAINNET: This playbook is a WIP
 
