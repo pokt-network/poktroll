@@ -1,6 +1,6 @@
 ---
 title: Data Structures
-sidebar_position: 4
+sidebar_position: 6
 ---
 
 ## Table of Contents <!-- omit in toc -->
@@ -81,11 +81,11 @@ class MorsePublicKey {
 
 ```mermaid
 classDiagram
-    
+
 class MorseAccountState {
     accounts: []MorseClaimableAccount
-}    
-        
+}
+
 class MorseClaimableAccount {
     shannon_dest_address: string
     morse_src_address: string
@@ -129,5 +129,3 @@ class MsgClaimMorseSupplier {
 }
 MsgClaimMorseSupplier ..> MorseClaimableAccount: morse_src_address ref.
 ```
-
-For more info regarding onchain message usage, see [onchain actors & messages](./claiming.md#onchain-actors--messages).
