@@ -18,9 +18,9 @@ sidebar_position: 3
   - [Migration Module Tx CLI: `poktrolld tx migrate`](#migration-module-tx-cli-poktrolld-tx-migrate)
   - [Claim a Basic Morse Account (Unstaked, Non-Actor)](#claim-a-basic-morse-account-unstaked-non-actor)
   - [Claim a Morse Application (Staked, Actor)](#claim-a-morse-application-staked-actor)
-  - [Claim a Supplier (Servicer) Staked Account](#claim-a-supplier-servicer-staked-account)
+  - [Claim a Morse Supplier (Staked, Actor)](#claim-a-morse-supplier-staked-actor)
     - [Critical Analogy: Morse Servicer to Shannon Supplier](#critical-analogy-morse-servicer-to-shannon-supplier)
-    - [Claiming a Morse Supplier](#claiming-a-morse-supplier)
+    - [Instructions to Claim A Morse Servicer as a Shannon Supplier](#instructions-to-claim-a-morse-servicer-as-a-shannon-supplier)
 
 ## Overview
 
@@ -32,10 +32,10 @@ This document covers how individual Morse account/stake-holders can "claim" thei
 
 This table illustrates how different Morse account types map to Shannon account types during the migration process, including which balances transfer over.
 
-| Morse Account Type             | Shannon Account                                                                            | Shannon Application                                                               | Shannon Supplier                                                                                               |
-| ------------------------------ | ------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| Morse Account Type             | Shannon Account                                                                             | Shannon Application                                                               | Shannon Supplier                                                                                               |
+| ------------------------------ | ------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
 | **Morse Account** (Unstaked)   | ✅ Unstaked balance 1:1; E.g. 1000 uPOKT in Morse → 1000 uPOKT in Shannon                   | ❌ N/A                                                                            | ❌ N/A                                                                                                         |
-| **Morse Application** (Staked) | ✅ Unstaked balance 1:1; E.g. 500 uPOKT unstaked in Morse → 500 uPOKT unstaked in Shannon  | ✅ App stake 1:1 E.g. 15000 uPOKT staked in Morse → 15000 uPOKT staked in Shannon | ❌ N/A                                                                                                         |
+| **Morse Application** (Staked) | ✅ Unstaked balance 1:1; E.g. 500 uPOKT unstaked in Morse → 500 uPOKT unstaked in Shannon   | ✅ App stake 1:1 E.g. 15000 uPOKT staked in Morse → 15000 uPOKT staked in Shannon | ❌ N/A                                                                                                         |
 | **Morse Servicer**             | ✅ Unstaked balance 1:1; E.g. 2000 uPOKT unstaked in Morse → 2000 uPOKT unstaked in Shannon | ❌ N/A                                                                            | ✅ Servicer stake 1:1 E.g. 15000 uPOKT staked as Servicer in Morse → 15000 uPOKT staked as Supplier in Shannon |
 
 ### Summary - Important Notes
@@ -360,7 +360,7 @@ See `poktrolld tx migrate claim-application --help` for more details.
 
 :::
 
-### Claim a Supplier (Servicer) Staked Account
+### Claim a Morse Supplier (Staked, Actor)
 
 :::warning TODO_MAINNET(@bryanchriswhite, #1126)
 
@@ -382,7 +382,7 @@ Omit the `stake_amount` field in a supplier config; providing it in when claimin
 
 :::
 
-#### Claiming a Morse Supplier
+#### Instructions to Claim A Morse Servicer as a Shannon Supplier
 
 Claiming a Morse supplier account will:
 
