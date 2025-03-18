@@ -44,7 +44,7 @@ If you are using [Vultr](https://www.vultr.com/) for your deployment, you can fo
 <ReactPlayer
   playing={false}
   controls
-  url=""
+  url="https://github.com/user-attachments/assets/745cc1a4-28ee-4c02-8b22-858263e1f018"
 />
 
 ## Install and Run a Full Node using Cosmovisor
