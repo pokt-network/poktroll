@@ -15,10 +15,10 @@ If you are a member of the migration working group, you can visit the [Notion do
 - [E2E User Flow](#e2e-user-flow)
   - [Complete E2E User Sequence](#complete-e2e-user-sequence)
 - [State ETVL: Export -\> Transform -\> Validate -\> Load](#state-etvl-export---transform---validate---load)
-  - [ETFVL Technical Design Considerations \& Constraints](#etfvl-technical-design-considerations--constraints)
+  - [ETVL Technical Design Considerations \& Constraints](#etvl-technical-design-considerations--constraints)
   - [ETVL High-Level Flow](#etvl-high-level-flow)
-  - [High-Level State Transport Playbook for Authority (i.e. Foundation)](#high-level-state-transport-playbook-for-authority-ie-foundation)
-  - [High-Level State Validation Playbook for Morse Account oolders](#high-level-state-validation-playbook-for-morse-account-oolders)
+  - [High-Level Account State Transfer Playbook for Authority (i.e. Foundation)](#high-level-account-state-transfer-playbook-for-authority-ie-foundation)
+  - [High-Level State Validation Playbook for Morse Account holders](#high-level-state-validation-playbook-for-morse-account-holders)
 
 ## Overview <!-- omit in toc -->
 
@@ -61,7 +61,7 @@ The following disambiguation should be applied in the scope of this section (Mor
 
 | Morse Term           | Shannon Term | Disambiguation                                                                                                                                                                                                                                                                                                                                                                                                                                       |
 | -------------------- | ------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Servicer             | Supplier     | Refers to the onchain actor that provides services (e.g. data), as well as the APIs (i.e. RPCs) to the corresponding service provides. In Morse, this involves running the Tendermint stack alongside the Morse API. In Shannon, this MUST include the ["Relayminer"](/operate/walkthroughs/supplier_walkthrough) alongside a Full CometBFT Node that could be owned by the RelayMiner (preferable) or delegated to an external RPC provider.                     |
+| Servicer             | Supplier     | Refers to the onchain actor that provides services (e.g. data), as well as the APIs (i.e. RPCs) to the corresponding service provides. In Morse, this involves running the Tendermint stack alongside the Morse API. In Shannon, this MUST include the ["Relayminer"](/operate/walkthroughs/supplier_walkthrough) alongside a Full CometBFT Node that could be owned by the RelayMiner (preferable) or delegated to an external RPC provider.        |
 | Node                 | Full Node    | In Morse, this refers to a Tendermint full node running the Pocket Network Morse AppChain. In Shannon, this refers to a CometBFT full node running the Pocket Network Shannon AppChain. It is important to note that in Morse, in some instances, Servicers are sometimes referred to as Nodes which reflect the naming in the underlying implementation.                                                                                            |
 | Validator / Servicer | Validator    | In Morse, Validators are the top 1000 staked Servicers that participate in consensus. In Shannon, it is an independent actor that must explicitly stake and join the network as a Validator. Their role as a Supplier (if present) in Shannon is completely decoupled. Both leverage the Tendermint consensus mechanism to secure the network and propose blocks. The number of Validators in Morse is 1,000 and the number in Shannon is still TBD. |
 
@@ -116,7 +116,7 @@ sequenceDiagram
 Given that this migration involves representing the state of one network (Morse) in another (Shannon), and that the migration process is ongoing (i.e. not a re-genesis; see [constraints](#constraints)),
 there is an opportunity to optimize the exported Morse state with respect to its (very long-term) impact on Shannon.
 
-### ETFVL Technical Design Considerations & Constraints
+### ETVL Technical Design Considerations & Constraints
 
 In order to streamline the migration process for end users, as well as expedite a high quality implementation, the following design considerations were applied:
 
@@ -211,11 +211,15 @@ This playbook is an early WIP and will be updated and moved elsewhere once the p
 
 3. **Distribute** the `MorseAccountState` and its hash for verification by Morse account/stake-holders.
 4. **Wait for consensus** after an offchain time-bounded period on the `MorseAccountState`, reacting to any offchain feedback, as necessary.
-5. **Load** (i.e. import) the canonical `MorseAccountState` on Shannon
+5. **Load** (i.e. import) the canonical `MorseAccountState` on Shanno
 
    ```bash
-poktrolld tx migrate import-morse-accounts morse_account_state.json --from <authorized-key-name> --grpc-addr=<shannon-network-grpc-endpoint>
+   poktrolld tx migrate import-morse-accounts morse_account_state.json --from <authorized-key-name> --grpc-addr=<shannon-network-grpc-endpoint>
    ```
+
+   :::important
+   The `--grpc-addr` flag expects the gRPC endpoint for the Shannon network you intend to import the Morse accounts into (e.g. DevNet, TestNet, etc.). See: Shannon RPC Endpoints for more info.
+   :::
 
 :::danger TODO_MAINNET: Select snapshot height
 

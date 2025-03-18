@@ -90,3 +90,11 @@ timeline
         Future Work
             : Outside of scope of this document
 ```
+
+## Static Image
+
+You can use [mermaid.live](https://mermaid.live/) to copy, paste, edit and zoom in on the source code for the diagram above.
+
+Alternatively, you can use the following static image:
+
+![Image](https://github.com/user-attachments/assets/7a2c5406-7c03-4778-aab1-85bdbdbfffb2)
