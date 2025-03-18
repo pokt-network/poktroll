@@ -784,6 +784,7 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimExpired_SupplierUnstaked() {
 		}
 		sessionRes, sessionErr := s.keepers.GetSession(sdkCtx, sessionReq)
 		require.NoError(t, sessionErr)
+
 		sessionHeader := sessionRes.Session.Header
 		merkleRoot := testproof.SmstRootWithSumAndCount(1000, 1000)
 		claim := testtree.NewClaim(t, s.claim.SupplierOperatorAddress, sessionHeader, merkleRoot)
@@ -819,7 +820,8 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimExpired_SupplierUnstaked() {
 	// Validate the slashing events
 	for i, slashingEvent := range slashingEvents {
 		proofMissingPenalty := cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 0)
-		// The first slashing should burn all the supplier's stake.
+		// The current slashing mechanism burns the whole supplier's stake, which
+		// means that the first ocurrence will take the whole stake.
 		if i == 0 {
 			proofMissingPenalty = *s.keepers.ProofKeeper.GetParams(sdkCtx).ProofMissingPenalty
 		}
