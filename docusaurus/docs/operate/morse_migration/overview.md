@@ -48,7 +48,7 @@ This new (Shannon) key can then be used to "claim" the identity and any balance 
 
 :::tip Background on key schemes
 
-If you consider you're "**advanced**" in cryptography and are curious to learn more,
+If you consider yourself to be "**advanced**" in cryptography and are curious to learn more,
 reach out to the team at **Grove** to get access to the [Background on Key Schemes](https://www.notion.so/buildwithgrove/Background-Addresses-Key-Schemes-175a36edfff680ff8f23fc7599fd9107?pvs=25) document.
 
 :::
