@@ -3,6 +3,8 @@ title: Full Node (~10 min)
 sidebar_position: 2
 ---
 
+import ReactPlayer from "react-player";
+
 ## Full Node Cheat Sheet <!-- omit in toc -->
 
 **🖨 🍝 instructions to get you up and running with a `Full Node` on Pocket Network using `Systemd` and `Cosmovisor` ✅**
@@ -18,6 +20,7 @@ See the [Full Node Walkthrough](../walkthroughs/full_node_walkthrough.md) if you
 ## Table of Contents <!-- omit in toc -->
 
 - [Pre-Requisites \& Requirements](#pre-requisites--requirements)
+- [10 Minute Video Walkthrough](#10-minute-video-walkthrough)
 - [Install and Run a Full Node using Cosmovisor](#install-and-run-a-full-node-using-cosmovisor)
   - [Verify successful installation using `curl`](#verify-successful-installation-using-curl)
   - [How are automatic upgrades handled out of the box?](#how-are-automatic-upgrades-handled-out-of-the-box)
@@ -36,6 +39,16 @@ See the [Full Node Walkthrough](../walkthroughs/full_node_walkthrough.md) if you
 If you are using [Vultr](https://www.vultr.com/) for your deployment, you can following the [CLI Playbook we put together here](../../tools/playbooks/vultr.md) to speed things up.
 
 :::
+
+## 10 Minute Video Walkthrough
+
+The following is a ~10 minute video walkthrough using this cheatsheet.
+
+<ReactPlayer
+  playing={false}
+  controls
+  url="https://github.com/user-attachments/assets/745cc1a4-28ee-4c02-8b22-858263e1f018"
+/>
 
 ## Install and Run a Full Node using Cosmovisor
 
