@@ -12,7 +12,8 @@ applications:
     name: relay_spam_test_0
     serviceidgoal: anvil
   - address: pokt157g94dm0katvq7a9802vplqjleqqnj96qlw69p
-    delegateesgoal: []
+    delegateesgoal:
+      - pokt15vzxjqklzjtlz7lahe8z2dfe9nm5vxwwmscne4
     mnemonic:
       plastic box ahead abandon check seminar crystal mirror turtle bounce word
       artwork awkward deposit bread pause immune stomach cry essence index social twin
