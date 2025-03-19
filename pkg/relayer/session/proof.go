@@ -11,8 +11,7 @@ import (
 	"github.com/pokt-network/poktroll/pkg/either"
 	"github.com/pokt-network/poktroll/pkg/observable"
 	"github.com/pokt-network/poktroll/pkg/observable/channel"
-	"github.com/pokt-network/poktroll/pkg/observable/filter"
-	"github.com/pokt-network/poktroll/pkg/observable/logging"
+	"github.com/pokt-network/poktroll/pkg/polylog"
 	"github.com/pokt-network/poktroll/pkg/relayer"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
@@ -21,8 +20,15 @@ import (
 // TODO_IN_THIS_COMMIT: move to config...
 const (
 	maxSubmitProofsRetries = uint64(5)
-	submitProofRetryDelay  = time.Second * 5
+	//submitProofRetryDelay  = time.Second * 5
+	submitProofRetryDelay = time.Millisecond * 500
 )
+
+// TODO_IN_THIS_COMMIT: godoc & move...
+type sessionTreesOpRetry struct {
+	lastErr      error
+	sessionTrees []relayer.SessionTree
+}
 
 // submitProofs maps over the given claimedSessions observable.
 // For each session batch, it:
@@ -35,31 +41,32 @@ func (rs *relayerSessionsManager) submitProofs(
 	supplierClient client.SupplierClient,
 	claimedSessionsObs observable.Observable[[]relayer.SessionTree],
 ) {
-	failedSubmitProofsSessionsObs, failedSubmitProofsSessionsPublishCh :=
-		channel.NewObservable[[]relayer.SessionTree]()
+	logger := rs.logger.With("method", "submitProofs")
+
+	failedSubmitProofsSessionsRetryObs, failedSubmitProofsSessionsRetryPublishCh :=
+		channel.NewObservable[sessionTreesOpRetry]()
 
 	// Map claimedSessionsObs to a new observable of the same type which is notified
 	// when the sessions in the batch are eligible to be proven.
 	sessionsWithOpenProofWindowObs := channel.Map(
 		ctx, claimedSessionsObs,
-		rs.mapWaitForEarliestSubmitProofsHeight(failedSubmitProofsSessionsPublishCh),
+		rs.mapWaitForEarliestSubmitProofsHeight(failedSubmitProofsSessionsRetryPublishCh),
 	)
 
 	// Map sessionsWithOpenProofWindow to a new observable of an either type,
 	// populated with the session or an error, which is notified after the session
 	// proof has been submitted or an error has been encountered, respectively.
-	eitherProvenSessionsObs := channel.Map(
+	channel.Map(
 		ctx, sessionsWithOpenProofWindowObs,
-		rs.newMapProveSessionsFn(supplierClient, failedSubmitProofsSessionsPublishCh),
+		rs.newMapProveSessionsFn(logger, supplierClient, failedSubmitProofsSessionsRetryPublishCh),
 	)
 
 	// TODO_IN_THIS_COMMIT: comment...
-	logging.LogErrors(ctx, filter.EitherError(ctx, eitherProvenSessionsObs))
-	rs.retrySubmitProofs(ctx, supplierClient, failedSubmitProofsSessionsObs, failedSubmitProofsSessionsPublishCh)
+	rs.retrySubmitProofs(ctx, supplierClient, failedSubmitProofsSessionsRetryObs, failedSubmitProofsSessionsRetryPublishCh)
 
 	// Delete expired session trees so they don't get proven again.
 	channel.ForEach(
-		ctx, failedSubmitProofsSessionsObs,
+		ctx, failedSubmitProofsSessionsRetryObs,
 		rs.deleteExpiredSessionTreesFn(sharedtypes.GetProofWindowCloseHeight),
 	)
 }
@@ -68,63 +75,29 @@ func (rs *relayerSessionsManager) submitProofs(
 func (rs *relayerSessionsManager) retrySubmitProofs(
 	ctx context.Context,
 	supplierClient client.SupplierClient,
-	failedSubmitProofsSessionsObs observable.Observable[[]relayer.SessionTree],
-	failedSubmitProofsSessionsPublishCh chan<- []relayer.SessionTree,
+	failedSubmitProofsSessionsObs observable.Observable[sessionTreesOpRetry],
+	failedSubmitProofsSessionsPublishCh chan<- sessionTreesOpRetry,
 ) {
+	logger := rs.logger.With("method", "retrySubmitProofs")
+
 	// TODO_IN_THIS_COMMIT: map/filter out expired sessions...
 
 	// TODO_IN_THIS_COMMIT: comment...
-	retryAttemptsMu := sync.RWMutex{}
+	// TODO_IN_THIS_COMMIT: consolidate into sessionTreesOpRetry struct...
+	retryAttemptsMu := &sync.Mutex{}
 	retryAttempts := make(map[int64]uint64)
 
 	// TODO_IN_THIS_COMMIT: comment... map/filter out max retried sessions...
-	submitProofsSessionsToRetryObs := channel.Map(ctx, failedSubmitProofsSessionsObs,
-		// TODO_IN_THIS_COMMIT: factor this function out...
-		func(ctx context.Context, sessions []relayer.SessionTree) (_ []relayer.SessionTree, skip bool) {
-			retryAttemptsMu.RLock()
-			defer retryAttemptsMu.RUnlock()
-
-			if len(sessions) == 0 {
-				return nil, true
-			}
-
-			sessionStartHeight := sessions[0].GetSessionHeader().GetSessionStartBlockHeight()
-			retries, ok := retryAttempts[sessionStartHeight]
-			if !ok {
-				// TODO_IN_THIS_COMMIT: log this case...
-				return nil, true
-			}
-
-			if retries > maxSubmitProofsRetries {
-				return nil, true
-			}
-
-			return sessions, false
-		},
+	submitProofsSessionsToRetryObs := channel.Map(
+		ctx, failedSubmitProofsSessionsObs,
+		newMapDeleteExpiredSessionsRetryFn(logger, retryAttemptsMu, retryAttempts),
 	)
 
 	// TODO_IN_THIS_COMMIT: comment... no need to log errors again, reusing existing error channel...
-	mapProveSessionsFn := rs.newMapProveSessionsFn(supplierClient, failedSubmitProofsSessionsPublishCh)
+	mapProveSessions := rs.newMapProveSessionsFn(logger, supplierClient, failedSubmitProofsSessionsPublishCh)
 
 	channel.ForEach(ctx, submitProofsSessionsToRetryObs,
-		// TODO_IN_THIS_COMMIT: factor this function out...
-		func(ctx context.Context, sessions []relayer.SessionTree) {
-			retryAttemptsMu.Lock()
-			defer retryAttemptsMu.Unlock()
-
-			// TODO_IN_THIS_COMMIT: comment... using the first session header for the map key...
-			sessionStartHeight := sessions[0].GetSessionHeader().GetSessionStartBlockHeight()
-			if _, ok := retryAttempts[sessionStartHeight]; !ok {
-				retryAttempts[sessionStartHeight] = 0
-			}
-
-			// TODO_IN_THIS_COMMIT: comment - never skips...
-			eitherRetriedProvenSessions, _ := mapProveSessionsFn(ctx, sessions)
-			if eitherRetriedProvenSessions.IsError() {
-				// TODO_IN_THIS_COMMIT: add logging...
-				retryAttempts[sessionStartHeight]++
-			}
-		},
+		rs.newForEachSessionsRetryFn(mapProveSessions, retryAttemptsMu, retryAttempts),
 	)
 }
 
@@ -133,7 +106,7 @@ func (rs *relayerSessionsManager) retrySubmitProofs(
 // at which proofs can be submitted for the given session number, then emits the session
 // **at that moment**.
 func (rs *relayerSessionsManager) mapWaitForEarliestSubmitProofsHeight(
-	failSubmitProofsSessionsCh chan<- []relayer.SessionTree,
+	failSubmitProofsSessionsCh chan<- sessionTreesOpRetry,
 ) channel.MapFn[[]relayer.SessionTree, []relayer.SessionTree] {
 	return func(
 		ctx context.Context,
@@ -153,7 +126,7 @@ func (rs *relayerSessionsManager) mapWaitForEarliestSubmitProofsHeight(
 func (rs *relayerSessionsManager) waitForEarliestSubmitProofsHeightAndGenerateProofs(
 	ctx context.Context,
 	sessionTrees []relayer.SessionTree,
-	failedSubmitProofsSessionsCh chan<- []relayer.SessionTree,
+	failedSubmitProofsRetryCh chan<- sessionTreesOpRetry,
 ) []relayer.SessionTree {
 	// Given the sessionTrees are grouped by their sessionEndHeight, we can use the
 	// first one from the group to calculate the earliest height for proof submission.
@@ -169,7 +142,10 @@ func (rs *relayerSessionsManager) waitForEarliestSubmitProofsHeightAndGeneratePr
 	sharedParams, err := rs.sharedQueryClient.GetParams(ctx)
 	if err != nil {
 		logger.Error().Err(err).Msg("failed to get shared params")
-		failedSubmitProofsSessionsCh <- sessionTrees
+		failedSubmitProofsRetryCh <- sessionTreesOpRetry{
+			lastErr:      err,
+			sessionTrees: sessionTrees,
+		}
 		return nil
 	}
 
@@ -184,15 +160,23 @@ func (rs *relayerSessionsManager) waitForEarliestSubmitProofsHeightAndGeneratePr
 	proofsWindowOpenBlock := rs.waitForBlock(ctx, proofWindowOpenHeight)
 	// TODO_MAINNET: If a relayminer is cold-started with persisted but unproven ("late")
 	// sessions, the proofsWindowOpenBlock will never be observed. Where a "late" session
-	// is one whic is unclaimed and whose earliest claim commit height has already elapsed.
+	// is one which is unclaimed and whose earliest claim commit height has already elapsed.
 	//
 	// In this case, we should
 	// use a block query client to populate the block client replay observable at the time
 	// of block client construction. This check and failure branch can be removed once this
 	// is implemented.
 	if proofsWindowOpenBlock == nil {
-		logger.Warn().Msg("failed to observe earliest proof commit height offset seed block height")
-		failedSubmitProofsSessionsCh <- sessionTrees
+		err = fmt.Errorf(
+			"failed to observe earliest proof commit height offset seed block height for session end height: %d",
+			sessionTrees[0].GetSessionHeader().GetSessionEndBlockHeight(),
+		)
+		failedSubmitProofsRetryCh <- sessionTreesOpRetry{
+			lastErr:      err,
+			sessionTrees: sessionTrees,
+		}
+
+		logger.Warn().Err(err).Send()
 		return nil
 	}
 
@@ -217,8 +201,8 @@ func (rs *relayerSessionsManager) waitForEarliestSubmitProofsHeightAndGeneratePr
 	logger = logger.With("proof_path_seed_block", fmt.Sprintf("%x", proofPathSeedBlock.Hash()))
 	logger.Info().Msg("observed proof path seed block height")
 
-	successProofs, failedProofs := rs.proveClaims(ctx, sessionTrees, proofPathSeedBlock)
-	failedSubmitProofsSessionsCh <- failedProofs
+	successProofs, failedProofsRetry := rs.proveClaims(ctx, sessionTrees, proofPathSeedBlock)
+	failedSubmitProofsRetryCh <- failedProofsRetry
 
 	return successProofs
 }
@@ -227,14 +211,19 @@ func (rs *relayerSessionsManager) waitForEarliestSubmitProofsHeightAndGeneratePr
 // session number. Any session which encounters errors while submitting a proof
 // is sent on the failedSubmitProofSessions channel.
 func (rs *relayerSessionsManager) newMapProveSessionsFn(
+	logger polylog.Logger,
 	supplierClient client.SupplierClient,
-	failedSubmitProofSessionsCh chan<- []relayer.SessionTree,
+	failedSubmitProofSessionsRetryCh chan<- sessionTreesOpRetry,
 ) channel.MapFn[[]relayer.SessionTree, either.SessionTrees] {
 	return func(
 		ctx context.Context,
 		sessionTrees []relayer.SessionTree,
 	) (_ either.SessionTrees, skip bool) {
 		if len(sessionTrees) == 0 {
+			// TODO_IN_THIS_COMMIT: see if changing this breaks any tests...
+			// TODO_TECHDEBT: Is there a reason NOT to skip?
+			// We currently have to handle session tree slices with
+			// zero length downstream but wouldn't if we skipped.
 			return either.Success(sessionTrees), false
 		}
 
@@ -250,8 +239,13 @@ func (rs *relayerSessionsManager) newMapProveSessionsFn(
 
 		// Submit proofs for each supplier operator address in `sessionTrees`.
 		if err := supplierClient.SubmitProofs(ctx, proofMsgs...); err != nil {
-			failedSubmitProofSessionsCh <- sessionTrees
-			rs.logger.Error().Err(err).Msg("failed to submit proofs")
+			failedSubmitProofSessionsRetryCh <- sessionTreesOpRetry{
+				lastErr:      err,
+				sessionTrees: sessionTrees,
+			}
+
+			logger.Error().Err(err).Msg("failed to submit proofs (1)")
+
 			return either.Error[[]relayer.SessionTree](err), false
 		}
 
@@ -260,7 +254,7 @@ func (rs *relayerSessionsManager) newMapProveSessionsFn(
 			if err := sessionTree.Delete(); err != nil {
 				// Do not fail the entire operation if a session tree cannot be deleted
 				// as this does not affect the C&P lifecycle.
-				rs.logger.Error().Err(err).Msg("failed to delete session tree")
+				logger.Error().Err(err).Msg("failed to delete session tree")
 			}
 		}
 
@@ -276,7 +270,7 @@ func (rs *relayerSessionsManager) proveClaims(
 	// The hash of this block is used to determine which branch of the proof
 	// should be generated for.
 	proofPathSeedBlock client.Block,
-) (successProofs []relayer.SessionTree, failedProofs []relayer.SessionTree) {
+) (successProofs []relayer.SessionTree, failedProofsRetry sessionTreesOpRetry) {
 	logger := rs.logger.With("method", "proveClaims")
 
 	// sessionTreesWithProofRequired will accumulate all the sessionTrees that
@@ -289,7 +283,8 @@ func (rs *relayerSessionsManager) proveClaims(
 		// do not create the claim since the proof requirement is unknown.
 		// WARNING: Creating a claim and not submitting a proof (if necessary) could lead to a stake burn!!
 		if err != nil {
-			failedProofs = append(failedProofs, sessionTree)
+			failedProofsRetry.sessionTrees = append(failedProofsRetry.sessionTrees, sessionTree)
+			failedProofsRetry.lastErr = err
 			logger.Error().Err(err).Msg("failed to determine if proof is required, skipping claim creation")
 			continue
 		}
@@ -299,7 +294,7 @@ func (rs *relayerSessionsManager) proveClaims(
 			sessionTreesWithProofRequired = append(sessionTreesWithProofRequired, sessionTree)
 		} else {
 			rs.removeFromRelayerSessions(sessionTree)
-			if err := sessionTree.Delete(); err != nil {
+			if err = sessionTree.Delete(); err != nil {
 				// Do not fail the entire operation if a session tree cannot be deleted
 				// as this does not affect the C&P lifecycle.
 				logger.Error().Err(err).Msg("failed to delete session tree")
@@ -317,11 +312,12 @@ func (rs *relayerSessionsManager) proveClaims(
 			sessionTree.GetSessionHeader().GetSessionId(),
 		)
 
-		// If the proof cannot be generated, add the sessionTree to the failedProofs.
+		// If the proof cannot be generated, add the sessionTree to the failedProofsRetry.
 		if _, err := sessionTree.ProveClosest(path); err != nil {
 			logger.Error().Err(err).Msg("failed to generate proof")
 
-			failedProofs = append(failedProofs, sessionTree)
+			failedProofsRetry.sessionTrees = append(failedProofsRetry.sessionTrees, sessionTree)
+			failedProofsRetry.lastErr = err
 			continue
 		}
 
@@ -330,7 +326,7 @@ func (rs *relayerSessionsManager) proveClaims(
 		successProofs = append(successProofs, sessionTree)
 	}
 
-	return successProofs, failedProofs
+	return successProofs, failedProofsRetry
 }
 
 // isProofRequired determines whether a proof is required for the given session's
@@ -419,5 +415,78 @@ func claimFromSessionTree(sessionTree relayer.SessionTree) prooftypes.Claim {
 		SupplierOperatorAddress: sessionTree.GetSupplierOperatorAddress(),
 		SessionHeader:           sessionTree.GetSessionHeader(),
 		RootHash:                sessionTree.GetClaimRoot(),
+	}
+}
+
+// TODO_IN_THIS_COMMIT: godoc & move...
+func newMapDeleteExpiredSessionsRetryFn(
+	logger polylog.Logger,
+	retryAttemptsMu *sync.Mutex,
+	retryAttempts map[int64]uint64,
+) channel.MapFn[sessionTreesOpRetry, sessionTreesOpRetry] {
+	return func(ctx context.Context, sessionProofsRetry sessionTreesOpRetry) (_ sessionTreesOpRetry, skip bool) {
+		retryAttemptsMu.Lock()
+		defer retryAttemptsMu.Unlock()
+
+		if len(sessionProofsRetry.sessionTrees) == 0 {
+			return sessionTreesOpRetry{}, true
+		}
+
+		sessionStartHeight := sessionProofsRetry.sessionTrees[0].GetSessionHeader().GetSessionStartBlockHeight()
+		retries, ok := retryAttempts[sessionStartHeight]
+		if !ok {
+			// TODO_IN_THIS_COMMIT: log this case...
+			retryAttempts[sessionStartHeight] = 0
+		}
+
+		if retries > maxSubmitProofsRetries {
+			logger.Error().
+				Err(sessionProofsRetry.lastErr).
+				Uint64("max_retries", maxSubmitProofsRetries).
+				Int64("session_end_height", sessionProofsRetry.sessionTrees[0].GetSessionHeader().GetSessionEndBlockHeight()).
+				Msg("max retry attempts reached")
+
+			delete(retryAttempts, sessionStartHeight)
+
+			return sessionTreesOpRetry{}, true
+		}
+
+		return sessionProofsRetry, false
+	}
+}
+
+// TODO_IN_THIS_COMMIT: godoc & move...
+func (rs *relayerSessionsManager) newForEachSessionsRetryFn(
+	mapProveSessions channel.MapFn[[]relayer.SessionTree, either.SessionTrees],
+	retryAttemptsMu *sync.Mutex,
+	retryAttempts map[int64]uint64,
+) channel.ForEachFn[sessionTreesOpRetry] {
+	logger := rs.logger.With("method", "newForEachSessionsRetryFn")
+
+	return func(ctx context.Context, sessionProofsRetry sessionTreesOpRetry) {
+		// Wait the configured delay before retrying.
+		time.Sleep(submitProofRetryDelay)
+
+		retryAttemptsMu.Lock()
+		defer retryAttemptsMu.Unlock()
+
+		// TODO_IN_THIS_COMMIT: comment... using the first session header for the map key...
+		sessionStartHeight := sessionProofsRetry.sessionTrees[0].GetSessionHeader().GetSessionStartBlockHeight()
+		if _, ok := retryAttempts[sessionStartHeight]; !ok {
+			retryAttempts[sessionStartHeight] = 0
+		}
+
+		// TODO_IN_THIS_COMMIT: comment - never skips...
+		eitherRetriedProvenSessions, _ := mapProveSessions(ctx, sessionProofsRetry.sessionTrees)
+		if eitherRetriedProvenSessions.IsError() {
+			_, sessionProofsRetry.lastErr = eitherRetriedProvenSessions.ValueOrError()
+			logger.Error().Err(sessionProofsRetry.lastErr).Msg("failed to submit proofs (2)")
+
+			retryAttempts[sessionStartHeight]++
+			return
+		}
+
+		// TODO_IN_THIS_COMMIT: success - delete the session trees from the retry map...
+		delete(retryAttempts, sessionStartHeight)
 	}
 }

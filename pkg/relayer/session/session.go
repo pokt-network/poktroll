@@ -455,8 +455,8 @@ func (rs *relayerSessionsManager) mapAddMinedRelayToSessionTree(
 // that have expired.
 func (rs *relayerSessionsManager) deleteExpiredSessionTreesFn(
 	expirationHeightFn func(*sharedtypes.Params, int64) int64,
-) func(ctx context.Context, failedSessionTrees []relayer.SessionTree) {
-	return func(ctx context.Context, failedSessionTrees []relayer.SessionTree) {
+) func(ctx context.Context, failedSessionTreesRetry sessionTreesOpRetry) {
+	return func(ctx context.Context, failedSessionTreesRetry sessionTreesOpRetry) {
 		currentHeight := rs.blockClient.LastBlock(ctx).Height()
 		sharedParams, err := rs.sharedQueryClient.GetParams(ctx)
 		if err != nil {
@@ -465,17 +465,22 @@ func (rs *relayerSessionsManager) deleteExpiredSessionTreesFn(
 		}
 
 		// TODO_TEST: Add tests that cover existing expired failed session trees.
-		for _, sessionTree := range failedSessionTrees {
+		for _, sessionTree := range failedSessionTreesRetry.sessionTrees {
 			sessionEndHeight := sessionTree.GetSessionHeader().GetSessionEndBlockHeight()
 			proofWindowCloseHeight := expirationHeightFn(sharedParams, sessionEndHeight)
 
+			logger := rs.logger.
+				With("session_id", sessionTree.GetSessionHeader().GetSessionId()).
+				With("session_end_height", sessionEndHeight)
+
 			if currentHeight > proofWindowCloseHeight {
-				rs.logger.Debug().Msg("deleting expired session")
+				logger.Warn().
+					Str("last_error", failedSessionTreesRetry.lastErr.Error()).
+					Msg("deleting expired session")
 				rs.removeFromRelayerSessions(sessionTree)
 				if err := sessionTree.Delete(); err != nil {
-					rs.logger.Error().
+					logger.Error().
 						Err(err).
-						Str("session_id", sessionTree.GetSessionHeader().GetSessionId()).
 						Str("supplier_operator_address", sessionTree.GetSupplierOperatorAddress()).
 						Msg("failed to delete session tree")
 				}

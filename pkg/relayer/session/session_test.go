@@ -15,6 +15,8 @@ import (
 	"github.com/pokt-network/smt"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"github.com/pokt-network/poktroll/app/volatile"
 	"github.com/pokt-network/poktroll/pkg/client"
@@ -265,6 +267,78 @@ func TestRelayerSessionsManager_InsufficientBalanceForProofSubmission(t *testing
 	waitSimulateIO()
 
 	playClaimAndProofSubmissionBlocks(t, sessionStartHeight, sessionEndHeight, supplierOperatorAddress, emptyBlockHash, blockPublishCh)
+}
+
+func TestRelayerSessionsManager_ClaimAndProofRetrySucceeds(t *testing.T) {
+	// TODO_IN_THIS_COMMIT: reorganize... reconcile with maxRetry
+	retryCount := 2
+	proofCount := 1
+	proofParams := prooftypes.DefaultParams()
+
+	// Set proof requirement threshold to a low enough value so a proof is always requested.
+	proofParams.ProofRequirementThreshold = uPOKTCoin(1)
+
+	var (
+		_, ctx         = testpolylog.NewLoggerWithCtx(context.Background(), polyzero.DebugLevel)
+		spec           = smt.NewTrieSpec(protocol.NewTrieHasher(), true)
+		emptyBlockHash = make([]byte, spec.PathHasherSize())
+		activeSession  *sessiontypes.Session
+		service        sharedtypes.Service
+	)
+
+	service = sharedtypes.Service{
+		Id:                   "svc",
+		ComputeUnitsPerRelay: 2,
+	}
+
+	testqueryclients.SetServiceRelayDifficultyTargetHash(t, service.Id, protocol.BaseRelayDifficultyHashBz)
+	// Add the service to the existing services.
+	testqueryclients.AddToExistingServices(t, service)
+
+	activeSession = &sessiontypes.Session{
+		Header: &sessiontypes.SessionHeader{
+			SessionStartBlockHeight: 1,
+			SessionEndBlockHeight:   2,
+			ServiceId:               service.Id,
+			SessionId:               "sessionId",
+		},
+	}
+	supplierOperatorAddress := sample.AccAddress()
+	// Set the supplier operator balance to be able to submit the expected number of proofs.
+	feePerProof := prooftypes.DefaultParams().ProofSubmissionFee.Amount.Int64()
+	gasCost := session.ClamAndProofGasCost.Amount.Int64()
+	proofCost := feePerProof + gasCost
+	supplierOperatorBalance := proofCost
+	transientErr := status.Error(codes.Unavailable, "transient error")
+	supplierClientMap := testsupplier.NewClaimProofSupplierClientMapWithTransientError(
+		ctx, t,
+		supplierOperatorAddress,
+		proofCount,
+		retryCount,
+		transientErr,
+	)
+	blockPublishCh, minedRelaysPublishCh := setupDependencies(t, ctx, supplierClientMap, emptyBlockHash, proofParams, supplierOperatorBalance)
+
+	// Publish a mined relay to the minedRelaysPublishCh to insert into the session tree.
+	minedRelay := testrelayer.NewUnsignedMinedRelay(t, activeSession, supplierOperatorAddress)
+	minedRelaysPublishCh <- minedRelay
+
+	// The relayerSessionsManager should have created a session tree for the relay.
+	waitSimulateIO()
+
+	// Publish a block to the blockPublishCh to simulate non-actionable blocks.
+	sessionStartHeight := activeSession.GetHeader().GetSessionStartBlockHeight()
+	sessionEndHeight := activeSession.GetHeader().GetSessionEndBlockHeight()
+
+	playClaimAndProofSubmissionBlocks(t, sessionStartHeight, sessionEndHeight, supplierOperatorAddress, emptyBlockHash, blockPublishCh)
+
+	// TODO_IN_THIS_COMMIT: comment... wait for retry to complete...
+	time.Sleep(time.Second * 5)
+}
+
+// TODO_IN_THIS_COMMIT:
+func TestRelayerSessionsManager_RetrySubmitProofsExceedsMaxRetries(t *testing.T) {
+	// TODO_TEST
 }
 
 // waitSimulateIO sleeps for a bit to allow the relayer sessions manager to
