@@ -30,9 +30,14 @@ message Supplier {
   // Session end height when supplier initiated unstaking (0 if not unstaking)
   uint64 unstake_session_end_height = 5;
 
+  // Mapping of serviceIds to their activation heights
+  // - Key: serviceId
+  // - Value: Session start height when supplier becomes active for the service
+  map<string, uint64> services_activation_heights_map = 6;
+
   // List of historical service configuration updates, tracking the suppliers
   // services update and corresponding activation heights.
-  repeated ServiceConfigUpdate service_config_history = 6;
+  repeated ServiceConfigUpdate service_config_history = 7;
 }
 
 // ServiceConfigUpdate tracks a change in a supplier's service configurations
