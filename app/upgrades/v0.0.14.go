@@ -3,12 +3,15 @@ package upgrades
 import (
 	"context"
 
+	"cosmossdk.io/store/prefix"
 	storetypes "cosmossdk.io/store/types"
 	upgradetypes "cosmossdk.io/x/upgrade/types"
+	"github.com/cosmos/cosmos-sdk/runtime"
 	cosmosTypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 	"github.com/pokt-network/poktroll/app/keepers"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
+	"github.com/pokt-network/poktroll/x/supplier/types"
 )
 
 const Upgrade_0_0_14_PlanName = "v0.0.14"
@@ -27,57 +30,41 @@ var Upgrade_0_0_14 = Upgrade{
 			logger.Info("Starting upgrade handler", "upgrade_plan_name", Upgrade_0_0_14_PlanName)
 
 			supplierKeeper := keepers.SupplierKeeper
-			suppliers := supplierKeeper.GetAllSuppliers(ctx)
+			storeAdapter := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
+			store := prefix.NewStore(storeAdapter, types.KeyPrefix(types.SupplierKeyOperatorPrefix))
+			iterator := storetypes.KVStorePrefixIterator(store, []byte{})
 
-			logger.Info("All suppliers", "suppliers", len(suppliers))
+			defer iterator.Close()
 
-			for _, supplier := range suppliers {
-				// Only migrate if the map has data to migrate
-				if len(supplier.ServicesActivationHeightsMap) > 0 {
-					logger.Info(
-						"Migrating services activation heights",
-						"supplier_address", supplier.OperatorAddress,
-						"services_count", len(supplier.ServicesActivationHeightsMap),
-					)
-
-					// For each height in the activation heights map, create a service config update
-					heightsMap := make(map[uint64]bool)
-					for _, height := range supplier.ServicesActivationHeightsMap {
-						heightsMap[height] = true
-					}
-
-					// Convert to service config updates
-					for height := range heightsMap {
-						// Check if we already have an entry for this height
-						exists := false
-						for _, existing := range supplier.ServiceConfigHistory {
-							if existing.EffectiveBlockHeight == height {
-								exists = true
-								break
-							}
-						}
-
-						// Only add if it doesn't exist
-						if !exists {
-							configUpdate := &sharedtypes.ServiceConfigUpdate{
-								Services:             supplier.Services,
-								EffectiveBlockHeight: height,
-							}
-							supplier.ServiceConfigHistory = append(supplier.ServiceConfigHistory, configUpdate)
-						}
-					}
-
-					// Clear the activation heights map after migration
-					supplier.ServicesActivationHeightsMap = make(map[string]uint64)
-
-					// Update the supplier with the migrated data
-					supplierKeeper.SetSupplier(ctx, supplier)
-
-					logger.Info(
-						"Successfully migrated supplier data",
-						"supplier_address", supplier.OperatorAddress,
-					)
+			for ; iterator.Valid(); iterator.Next() {
+				var supplierDeprecated sharedtypes.SupplierDeprecated
+				err := supplierDeprecated.Unmarshal(iterator.Value())
+				if err != nil {
+					logger.Error("Failed to unmarshal supplier data", "upgrade_plan_name", Upgrade_0_0_14_PlanName, "error", err)
+					panic(err)
 				}
+
+				supplier := sharedtypes.Supplier{
+					OperatorAddress:         supplierDeprecated.OperatorAddress,
+					Services:                supplierDeprecated.Services,
+					OwnerAddress:            supplierDeprecated.OwnerAddress,
+					Stake:                   supplierDeprecated.Stake,
+					UnstakeSessionEndHeight: supplierDeprecated.UnstakeSessionEndHeight,
+					ServiceConfigHistory: []*sharedtypes.ServiceConfigUpdate{
+						{
+							Services:             supplierDeprecated.Services,
+							EffectiveBlockHeight: 1,
+						},
+					},
+				}
+
+				// Update the supplier with the migrated data
+				supplierKeeper.SetSupplier(ctx, supplier)
+
+				logger.Info(
+					"Successfully migrated supplier data",
+					"supplier_address", supplier.OperatorAddress,
+				)
 			}
 
 			logger.Info("Starting module migrations section", "upgrade_plan_name", Upgrade_0_0_14_PlanName)
