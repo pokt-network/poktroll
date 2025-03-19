@@ -3,15 +3,12 @@ package upgrades
 import (
 	"context"
 
-	"cosmossdk.io/store/prefix"
 	storetypes "cosmossdk.io/store/types"
 	upgradetypes "cosmossdk.io/x/upgrade/types"
-	"github.com/cosmos/cosmos-sdk/runtime"
 	cosmosTypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 	"github.com/pokt-network/poktroll/app/keepers"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
-	"github.com/pokt-network/poktroll/x/supplier/types"
 )
 
 const Upgrade_0_0_14_PlanName = "v0.0.14"
@@ -30,20 +27,11 @@ var Upgrade_0_0_14 = Upgrade{
 			logger.Info("Starting upgrade handler", "upgrade_plan_name", Upgrade_0_0_14_PlanName)
 
 			supplierKeeper := keepers.SupplierKeeper
-			storeAdapter := runtime.KVStoreAdapter(runtime.NewKVStoreService(storetypes.NewKVStoreKey(types.StoreKey)).OpenKVStore(ctx))
-			store := prefix.NewStore(storeAdapter, types.KeyPrefix(types.SupplierKeyOperatorPrefix))
-			iterator := storetypes.KVStorePrefixIterator(store, []byte{})
 
-			defer iterator.Close()
+			// Get all suppliers using the keeper method
+			suppliers := supplierKeeper.GetAllSuppliersDeprecated(ctx)
 
-			for ; iterator.Valid(); iterator.Next() {
-				var supplierDeprecated sharedtypes.SupplierDeprecated
-				err := supplierDeprecated.Unmarshal(iterator.Value())
-				if err != nil {
-					logger.Error("Failed to unmarshal supplier data", "upgrade_plan_name", Upgrade_0_0_14_PlanName, "error", err)
-					panic(err)
-				}
-
+			for _, supplierDeprecated := range suppliers {
 				supplier := sharedtypes.Supplier{
 					OperatorAddress:         supplierDeprecated.OperatorAddress,
 					Services:                supplierDeprecated.Services,
