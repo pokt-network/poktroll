@@ -30,7 +30,7 @@ var Upgrade_0_0_14 = Upgrade{
 			logger.Info("Starting upgrade handler", "upgrade_plan_name", Upgrade_0_0_14_PlanName)
 
 			supplierKeeper := keepers.SupplierKeeper
-			storeAdapter := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
+			storeAdapter := runtime.KVStoreAdapter(runtime.NewKVStoreService(storetypes.NewKVStoreKey(types.StoreKey)).OpenKVStore(ctx))
 			store := prefix.NewStore(storeAdapter, types.KeyPrefix(types.SupplierKeyOperatorPrefix))
 			iterator := storetypes.KVStorePrefixIterator(store, []byte{})
 
