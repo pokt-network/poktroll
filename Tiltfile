@@ -69,6 +69,13 @@ localnet_config_defaults = {
         "path": os.path.join("..", "helm-charts")
     },
 
+    # By default, we use the `helm_repo` function below to point to the remote repository
+    # but can update it to the locally cloned repo for testing & development
+    "grove_helm_chart_local_repo": {
+        "enabled": False,
+        "path": os.path.join("..", "grove-helm-charts")
+    },
+
     # By default, we use a pre-built PATH image, but can update it to use a local
     # repo instead.
     "path_local_repo": {
@@ -112,6 +119,13 @@ if localnet_config["helm_chart_local_repo"]["enabled"]:
 
 # Configure PATH references
 grove_chart_prefix = "buildwithgrove/"
+if localnet_config["grove_helm_chart_local_repo"]["enabled"]:
+    grove_helm_chart_local_repo = localnet_config["grove_helm_chart_local_repo"]["path"]
+    hot_reload_dirs.append(grove_helm_chart_local_repo)
+    print("Using local grove helm chart repo " + grove_helm_chart_local_repo)
+    # TODO_IMPROVE: Use os.path.join to make this more OS-agnostic.
+    grove_chart_prefix = grove_helm_chart_local_repo + "/charts/"
+
 # If using a local repo, set the path to the local repo; otherwise, use our own helm repo.
 path_local_repo = ""
 if localnet_config["path_local_repo"]["enabled"]:
