@@ -32,8 +32,6 @@ var Upgrade_0_0_14 = Upgrade{
 			logger.Info("All suppliers", "suppliers", len(suppliers))
 
 			for _, supplier := range suppliers {
-				logger.Info("Migrating supplier data", "supplier_address", supplier.OperatorAddress)
-
 				// Only migrate if the map has data to migrate
 				if len(supplier.ServicesActivationHeightsMap) > 0 {
 					logger.Info(
@@ -42,65 +40,29 @@ var Upgrade_0_0_14 = Upgrade{
 						"services_count", len(supplier.ServicesActivationHeightsMap),
 					)
 
-					// If the ServiceConfigHistory is empty, we need to initialize it
-					if len(supplier.ServiceConfigHistory) == 0 {
-						// Create an initial ServiceConfigUpdate with all current services
-						// and the earliest activation height
-						var earliestHeight uint64 = ^uint64(0) // Max uint64 value
-						for _, height := range supplier.ServicesActivationHeightsMap {
-							if height < earliestHeight {
-								earliestHeight = height
-							}
-						}
-
-						// Create a config update with all current services
-						initialConfigUpdate := &sharedtypes.ServiceConfigUpdate{
-							Services:             supplier.Services,
-							EffectiveBlockHeight: earliestHeight,
-						}
-
-						supplier.ServiceConfigHistory = append(supplier.ServiceConfigHistory, initialConfigUpdate)
+					// For each height in the activation heights map, create a service config update
+					heightsMap := make(map[uint64]bool)
+					for _, height := range supplier.ServicesActivationHeightsMap {
+						heightsMap[height] = true
 					}
 
-					// Now process each service in the activation heights map
-					// We'll convert each service activation to a service config update
-					for serviceID, activationHeight := range supplier.ServicesActivationHeightsMap {
-						// Find the service in current services list
-						var targetService *sharedtypes.SupplierServiceConfig
-						for _, svc := range supplier.Services {
-							if svc.ServiceId == serviceID {
-								targetService = svc
-								break
-							}
-						}
-
-						// Skip if we don't have this service in our current services list
-						if targetService == nil {
-							logger.Info(
-								"Service not found in current services, skipping",
-								"supplier_address", supplier.OperatorAddress,
-								"service_id", serviceID,
-							)
-							continue
-						}
-
-						// Create a ServiceConfigUpdate for this service activation
-						configUpdate := &sharedtypes.ServiceConfigUpdate{
-							// Include all current services in the update
-							Services:             supplier.Services,
-							EffectiveBlockHeight: activationHeight,
-						}
-
-						// Add to history if it doesn't already exist with that activation height
+					// Convert to service config updates
+					for height := range heightsMap {
+						// Check if we already have an entry for this height
 						exists := false
 						for _, existing := range supplier.ServiceConfigHistory {
-							if existing.EffectiveBlockHeight == activationHeight {
+							if existing.EffectiveBlockHeight == height {
 								exists = true
 								break
 							}
 						}
 
+						// Only add if it doesn't exist
 						if !exists {
+							configUpdate := &sharedtypes.ServiceConfigUpdate{
+								Services:             supplier.Services,
+								EffectiveBlockHeight: height,
+							}
 							supplier.ServiceConfigHistory = append(supplier.ServiceConfigHistory, configUpdate)
 						}
 					}
@@ -112,13 +74,7 @@ var Upgrade_0_0_14 = Upgrade{
 					supplierKeeper.SetSupplier(ctx, supplier)
 
 					logger.Info(
-						"Successfully migrated supplier services activation data",
-						"supplier_address", supplier.OperatorAddress,
-						"service_config_history_count", len(supplier.ServiceConfigHistory),
-					)
-				} else {
-					logger.Info(
-						"No services activation heights to migrate",
+						"Successfully migrated supplier data",
 						"supplier_address", supplier.OperatorAddress,
 					)
 				}
