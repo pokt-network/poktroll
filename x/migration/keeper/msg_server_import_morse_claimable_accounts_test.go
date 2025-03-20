@@ -21,7 +21,8 @@ func TestMsgServer_ImportMorseClaimableAccounts_Success(t *testing.T) {
 	srv := keeper.NewMsgServerImpl(k)
 
 	numAccounts := 10
-	_, accountState := testmigration.NewMorseStateExportAndAccountState(t, numAccounts, testmigration.RoundRobinAllMorseAccountActorTypes)
+	_, accountState, err := testmigration.NewMorseStateExportAndAccountState(numAccounts, testmigration.RoundRobinAllMorseAccountActorTypes)
+	require.NoError(t, err)
 
 	// Assert that the MorseAccountState is not set initially.
 	morseClaimableAccounts := k.GetAllMorseClaimableAccounts(ctx)
@@ -76,7 +77,9 @@ func TestMsgServer_ImportMorseClaimableAccounts_ErrorAlreadySet(t *testing.T) {
 	srv := keeper.NewMsgServerImpl(k)
 
 	// Set at least one MorseAccountState initially.
-	_, accountState := testmigration.NewMorseStateExportAndAccountState(t, 1, testmigration.RoundRobinAllMorseAccountActorTypes)
+	_, accountState, err := testmigration.NewMorseStateExportAndAccountState(1, testmigration.RoundRobinAllMorseAccountActorTypes)
+	require.NoError(t, err)
+
 	k.SetMorseClaimableAccount(ctx, *accountState.Accounts[0])
 
 	// Set up the MsgImportMorseClaimableAccounts to fail.
@@ -105,7 +108,8 @@ func TestMsgServer_ImportMorseClaimableAccounts_ErrorInvalidAuthority(t *testing
 	srv := keeper.NewMsgServerImpl(k)
 
 	numAccounts := 10
-	_, accountState := testmigration.NewMorseStateExportAndAccountState(t, numAccounts, testmigration.RoundRobinAllMorseAccountActorTypes)
+	_, accountState, err := testmigration.NewMorseStateExportAndAccountState(numAccounts, testmigration.RoundRobinAllMorseAccountActorTypes)
+	require.NoError(t, err)
 
 	msgImportMorseClaimableAccounts, err := migrationtypes.NewMsgImportMorseClaimableAccounts(
 		authtypes.NewModuleAddress("invalid_authority").String(),
