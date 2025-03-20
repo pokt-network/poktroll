@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"io"
 	"os"
 
 	cosmosmath "cosmossdk.io/math"
@@ -10,30 +9,35 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/pokt-network/poktroll/app/volatile"
-	"github.com/pokt-network/poktroll/pkg/polylog"
-	"github.com/pokt-network/poktroll/pkg/polylog/polyzero"
+	"github.com/pokt-network/poktroll/cmd/flags"
+	"github.com/pokt-network/poktroll/cmd/logger"
 	migrationtypes "github.com/pokt-network/poktroll/x/migration/types"
 )
 
-const defaultLogOutput = "-"
-
-var (
-	flagDebugAccountsPerLog int
-	flagLogLevel            string
-	flagLogOutput           string
-	logger                  polylog.Logger
+const (
+	flagDebugAccountsPerLog      = "debug-accounts-per-log"
+	flagDebugAccountsPerLogUsage = "The number of accounts to log per debug message"
 )
 
+var (
+	debugAccountsPerLog int
+)
+
+// TxCommands returns the Cobra command corresponding to migration module's tx
+// subcommands (i.e. `poktrolld tx migration`). Since autoCLI does not apply to
+// several migration CLI operations, this command MUST be manually constructed.
 func TxCommands() *cobra.Command {
 	migrateCmd := &cobra.Command{
 		Use:   "migration",
 		Short: "Transactions commands for the migration module",
+		// Set up the global logger for use in any subcommand.
+		//PersistentPreRunE: logger.PreRunESetup,
 	}
 
 	migrateCmd.AddCommand(collectMorseAccountsCmd())
 	migrateCmd.AddCommand(claimAccountCmd())
-	migrateCmd.PersistentFlags().StringVar(&flagLogLevel, "log-level", "info", "The logging level (debug|info|warn|error)")
-	migrateCmd.PersistentFlags().StringVar(&flagLogOutput, "log-output", defaultLogOutput, "The logging output (file path); defaults to stdout")
+	migrateCmd.PersistentFlags().StringVar(&logger.LogLevel, flags.FlagLogLevel, "info", flags.FlagLogLevelUsage)
+	migrateCmd.PersistentFlags().StringVar(&logger.LogOutput, flags.FlagLogOutput, flags.DefaultLogOutput, flags.FlagLogOutputUsage)
 
 	return migrateCmd
 }
@@ -59,36 +63,14 @@ func collectMorseAccountsCmd() *cobra.Command {
 
 	          Generate required input via Morse CLI:
 	          pocket util export-genesis-for-reset [height] [new-chain-id] > morse-state-export.json`,
-		PreRunE: func(cmd *cobra.Command, args []string) error {
-			var (
-				logOutput io.Writer
-				err       error
-			)
-
-			logLevel := polyzero.ParseLevel(flagLogLevel)
-			if flagLogOutput == defaultLogOutput {
-				logOutput = os.Stdout
-			} else {
-				logOutput, err = os.Open(flagLogOutput)
-				if err != nil {
-					return err
-				}
-			}
-
-			logger = polyzero.NewLogger(
-				polyzero.WithLevel(logLevel),
-				polyzero.WithOutput(logOutput),
-			).With("cmd", "migrate")
-
-			return nil
-		},
-		RunE: runCollectMorseAccounts,
+		RunE:    runCollectMorseAccounts,
+		PreRunE: logger.PreRunESetup,
 	}
 
 	collectMorseAcctsCmd.Flags().IntVar(
-		&flagDebugAccountsPerLog,
-		"debug-accounts-per-log", 0,
-		"The number of accounts to log per debug message",
+		&debugAccountsPerLog,
+		flagDebugAccountsPerLog, 0,
+		flagDebugAccountsPerLogUsage,
 	)
 
 	return collectMorseAcctsCmd
@@ -101,7 +83,7 @@ func runCollectMorseAccounts(_ *cobra.Command, args []string) error {
 	morseStateExportPath := args[0]
 	morseAccountStatePath := args[1]
 
-	logger.Info().
+	logger.Logger.Info().
 		Str("morse_state_export_path", morseStateExportPath).
 		Str("morse_account_state_path", morseAccountStatePath).
 		Msg("collecting Morse accounts...")
@@ -174,19 +156,19 @@ func transformMorseState(
 	morseWorkspace *morseImportWorkspace,
 ) error {
 	// Iterate over accounts and copy the balances.
-	logger.Info().Msg("collecting account balances...")
+	logger.Logger.Info().Msg("collecting account balances...")
 	if err := collectInputAccountBalances(inputState, morseWorkspace); err != nil {
 		return err
 	}
 
 	// Iterate over applications and add the stakes to the corresponding account balances.
-	logger.Info().Msg("collecting application stakes...")
+	logger.Logger.Info().Msg("collecting application stakes...")
 	if err := collectInputApplicationStakes(inputState, morseWorkspace); err != nil {
 		return err
 	}
 
 	// Iterate over suppliers and add the stakes to the corresponding account balances.
-	logger.Info().Msg("collecting supplier stakes...")
+	logger.Logger.Info().Msg("collecting supplier stakes...")
 	return collectInputSupplierStakes(inputState, morseWorkspace)
 }
 
@@ -198,7 +180,7 @@ func collectInputAccountBalances(inputState *migrationtypes.MorseStateExport, mo
 		// TODO_MAINNET(@olshansky): Revisit this business logic to ensure that no tokens go missing from Morse to Shannon.
 		// See: https://github.com/pokt-network/poktroll/issues/1066 regarding supply validation.
 		if exportAccount.Type != "posmint/Account" {
-			logger.Warn().
+			logger.Logger.Warn().
 				Str("type", exportAccount.Type).
 				Str("address", exportAccount.Value.Address.String()).
 				Str("coins", fmt.Sprintf("%s", exportAccount.Value.Coins)).
@@ -216,7 +198,7 @@ func collectInputAccountBalances(inputState *migrationtypes.MorseStateExport, mo
 		// If, for whatever reason, the account has no coins, skip it.
 		// DEV_NOTE: This is NEVER expected to happen, but is technically possible.
 		if len(coins) == 0 {
-			logger.Warn().Str("address", accountAddr).Msg("account has no coins; skipping")
+			logger.Logger.Warn().Str("address", accountAddr).Msg("account has no coins; skipping")
 			return nil
 		}
 
@@ -243,7 +225,7 @@ func collectInputAccountBalances(inputState *migrationtypes.MorseStateExport, mo
 		morseWorkspace.accumulatedTotalBalance = morseWorkspace.accumulatedTotalBalance.Add(coin.Amount)
 
 		if shouldDebugLogProgress(exportAccountIdx) {
-			logger.Debug().
+			logger.Logger.Debug().
 				Int("account_idx", exportAccountIdx).
 				Uint64("num_accounts", morseWorkspace.getNumAccounts()).
 				Str("total_balance", morseWorkspace.accumulatedTotalBalance.String()).
@@ -257,8 +239,8 @@ func collectInputAccountBalances(inputState *migrationtypes.MorseStateExport, mo
 // shouldDebugLogProgress returns true if the given exportAccountIdx should be logged
 // via debugLogProgress.
 func shouldDebugLogProgress(exportAccountIdx int) bool {
-	return flagDebugAccountsPerLog > 0 &&
-		exportAccountIdx%flagDebugAccountsPerLog == 0
+	return debugAccountsPerLog > 0 &&
+		exportAccountIdx%debugAccountsPerLog == 0
 }
 
 // collectInputApplicationStakes iterates over the applications in the inputState and
@@ -288,7 +270,7 @@ func collectInputApplicationStakes(inputState *migrationtypes.MorseStateExport, 
 		morseWorkspace.numApplications++
 
 		if shouldDebugLogProgress(exportApplicationIdx) {
-			logger.Debug().
+			logger.Logger.Debug().
 				Int("application_idx", exportApplicationIdx).
 				Uint64("num_accounts", morseWorkspace.getNumAccounts()).
 				Uint64("num_applications", morseWorkspace.numApplications).
@@ -327,7 +309,7 @@ func collectInputSupplierStakes(inputState *migrationtypes.MorseStateExport, mor
 		morseWorkspace.numSuppliers++
 
 		if shouldDebugLogProgress(exportSupplierIdx) {
-			logger.Debug().
+			logger.Logger.Debug().
 				Int("supplier_idx", exportSupplierIdx).
 				Uint64("num_accounts", morseWorkspace.getNumAccounts()).
 				Uint64("num_suppliers", morseWorkspace.numSuppliers).

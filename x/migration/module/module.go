@@ -89,7 +89,10 @@ func (AppModuleBasic) RegisterGRPCGatewayRoutes(clientCtx client.Context, mux *r
 	}
 }
 
-// TODO_IN_THIS_COMMIT: godoc...
+// GetTxCmd returns the Cobra command corresponding to the migration module's
+// tx subcommands (i.e. `poktrolld tx migration`).
+// By implementing this method, NONE of the migration module's tx subcommands are
+// generated automatically (i.e. via autoCLI). Instead, they are constructed here.
 func (AppModuleBasic) GetTxCmd() *cobra.Command {
 	return cmd.TxCommands()
 }

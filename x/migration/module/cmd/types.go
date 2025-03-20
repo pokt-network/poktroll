@@ -7,6 +7,7 @@ import (
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/pokt-network/poktroll/app/volatile"
+	"github.com/pokt-network/poktroll/cmd/logger"
 	migrationtypes "github.com/pokt-network/poktroll/x/migration/types"
 )
 
@@ -85,7 +86,7 @@ func (miw *morseImportWorkspace) infoLogComplete() error {
 		return err
 	}
 
-	logger.Info().
+	logger.Logger.Info().
 		Uint64("num_accounts", miw.getNumAccounts()).
 		Uint64("num_applications", miw.numApplications).
 		Uint64("num_suppliers", miw.numSuppliers).

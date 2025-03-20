@@ -7,9 +7,11 @@ import (
 	"os"
 
 	cosmosclient "github.com/cosmos/cosmos-sdk/client"
-	"github.com/cosmos/cosmos-sdk/client/flags"
+	cosmosflags "github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/spf13/cobra"
 
+	"github.com/pokt-network/poktroll/cmd/flags"
+	"github.com/pokt-network/poktroll/cmd/logger"
 	"github.com/pokt-network/poktroll/x/migration/types"
 )
 
@@ -29,27 +31,26 @@ The unstaked balance amount of the onchain MorseClaimableAccount will be minted 
 This will construct, sign, and broadcast a tx containing a MsgClaimMorseAccount message.
 See: https://dev.poktroll.com/operate/morse_migration/claiming for more information.
 `,
-		RunE: runClaimAccount,
+		RunE:    runClaimAccount,
+		PreRunE: logger.PreRunESetup,
 	}
 
 	claimAcctCmd.Flags().StringVarP(
 		&morseKeyfileDecryptPassphrase,
-		flagPassphrase,
-		flagPassphraseShort,
+		flags.FlagPassphrase,
+		flags.FlagPassphraseShort,
 		"",
-		flagPassphraseUsage,
+		flags.FlagPassphraseUsage,
 	)
 	claimAcctCmd.Flags().BoolVar(
 		&noPassphrase,
-		flagNoPassphrase,
+		flags.FlagNoPassphrase,
 		false,
-		flagNoPassphraseUsage,
+		flags.FlagNoPassphraseUsage,
 	)
 
-	// This command depends on the following conventional tx flags:
-	// - FlagFrom | --from
-	// - FlagSkipConfirmation | --yes
-	flags.AddTxFlagsToCmd(claimAcctCmd)
+	// This command depends on the conventional cosmos-sdk CLI tx flags.
+	cosmosflags.AddTxFlagsToCmd(claimAcctCmd)
 
 	return claimAcctCmd
 }
@@ -68,6 +69,7 @@ func runClaimAccount(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
+	// Construct a MsgClaimMorseAccount message.
 	shannonDestAddr := clientCtx.GetFromAddress().String()
 	msgClaimMorseAccount, err := types.NewMsgClaimMorseAccount(
 		shannonDestAddr,
@@ -86,8 +88,8 @@ func runClaimAccount(cmd *cobra.Command, args []string) error {
 
 	fmt.Printf("MsgClaimMorseAccount %s\n", string(msgClaimMorseAcctJSON))
 
-	// Last chance for the user to bail.
-	skipConfirmation, err := cmd.Flags().GetBool(flags.FlagSkipConfirmation)
+	// Last chance for the user to abort.
+	skipConfirmation, err := cmd.Flags().GetBool(cosmosflags.FlagSkipConfirmation)
 	if err != nil {
 		return err
 	}
@@ -102,9 +104,10 @@ func runClaimAccount(cmd *cobra.Command, args []string) error {
 			return err
 		}
 
+		// Terminate the confirmation prompt output line.
 		fmt.Println()
 
-		// Bail unless some affirmative confirmation is given.
+		// Abort unless some affirmative confirmation is given.
 		switch string(inputLine) {
 		case "Yes", "yes", "Y", "y":
 		default:
@@ -113,7 +116,7 @@ func runClaimAccount(cmd *cobra.Command, args []string) error {
 	}
 
 	// Construct a tx client.
-	txClient, err := getTxClient(ctx, cmd)
+	txClient, err := flags.GetTxClient(ctx, cmd)
 	if err != nil {
 		return err
 	}

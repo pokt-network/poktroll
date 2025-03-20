@@ -10,6 +10,7 @@ import (
 	cmtjson "github.com/cometbft/cometbft/libs/json"
 	"github.com/stretchr/testify/require"
 
+	"github.com/pokt-network/poktroll/cmd/logger"
 	"github.com/pokt-network/poktroll/pkg/polylog/polyzero"
 	"github.com/pokt-network/poktroll/testutil/testmigration"
 	migrationtypes "github.com/pokt-network/poktroll/x/migration/types"
@@ -21,8 +22,8 @@ import (
 // Reference: https://github.com/pokt-network/poktroll/pull/1039#discussion_r1947036729
 
 func init() {
-	logger = polyzero.NewLogger(polyzero.WithLevel(polyzero.DebugLevel))
-	flagDebugAccountsPerLog = 1
+	logger.Logger = polyzero.NewLogger(polyzero.WithLevel(polyzero.DebugLevel))
+	debugAccountsPerLog = 1
 }
 
 func TestCollectMorseAccounts(t *testing.T) {

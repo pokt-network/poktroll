@@ -1,0 +1,66 @@
+package flags
+
+import (
+	"context"
+	"net/url"
+
+	"cosmossdk.io/depinject"
+	cosmosclient "github.com/cosmos/cosmos-sdk/client"
+	cosmosflags "github.com/cosmos/cosmos-sdk/client/flags"
+	cosmostx "github.com/cosmos/cosmos-sdk/client/tx"
+	"github.com/spf13/cobra"
+
+	"github.com/pokt-network/poktroll/pkg/client"
+	"github.com/pokt-network/poktroll/pkg/client/tx"
+	"github.com/pokt-network/poktroll/pkg/client/tx/types"
+	"github.com/pokt-network/poktroll/pkg/deps/config"
+)
+
+// GetTxClient constructs a new TxClient instance using the provided command flags.
+func GetTxClient(ctx context.Context, cmd *cobra.Command) (client.TxClient, error) {
+	// Retrieve and parse the query node RPC URL.
+	queryNodeRPCUrlString, err := cmd.Flags().GetString(cosmosflags.FlagNode)
+	if err != nil {
+		return nil, err
+	}
+
+	queryNodeRPCUrl, err := url.Parse(queryNodeRPCUrlString)
+	if err != nil {
+		return nil, err
+	}
+
+	// Conventionally derive a cosmos-sdk client context from the cobra command.
+	clientCtx, err := cosmosclient.GetClientTxContext(cmd)
+	if err != nil {
+		return nil, err
+	}
+
+	// Conventionally construct a txClient and its dependencies.
+	clientFactory, err := cosmostx.NewFactoryCLI(clientCtx, cmd.Flags())
+	if err != nil {
+		return nil, err
+	}
+
+	// Construct dependencies for the tx client.
+	deps, err := config.SupplyConfig(ctx, cmd, []config.SupplierFn{
+		config.NewSupplyEventsQueryClientFn(queryNodeRPCUrl),
+		config.NewSupplyBlockQueryClientFn(queryNodeRPCUrl),
+		config.NewSupplyBlockClientFn(queryNodeRPCUrl),
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	deps = depinject.Configs(deps, depinject.Supply(
+		types.Context(clientCtx),
+		clientFactory,
+	))
+	txCtx, err := tx.NewTxContext(deps)
+	if err != nil {
+		return nil, err
+	}
+
+	// Construct a tx client.
+	deps = depinject.Configs(deps, depinject.Supply(txCtx))
+	return tx.NewTxClient(ctx, deps, tx.WithSigningKeyName(clientCtx.FromName))
+}
