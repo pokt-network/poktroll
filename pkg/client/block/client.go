@@ -193,7 +193,7 @@ func (b *blockReplayClient) queryLatestBlock(
 			return
 		}
 
-		blockResult := cometBlockResult(*queryBlockResult)
+		blockResult := CometBlockResult(*queryBlockResult)
 		blockQueryResultCh <- &blockResult
 	}()
 

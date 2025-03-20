@@ -36,10 +36,6 @@ import (
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
-func TestRelayerSessionsManager_ColdStartRelayMinerWithUnclaimedRelays(t *testing.T) {
-	t.Skip("TODO_TEST: Add a test case which simulates a cold-started relayminer with unclaimed relays.")
-}
-
 // requireProofCountEqualsExpectedValueFromProofParams sets up the session manager
 // along with its dependencies before starting it.
 // It takes in the proofParams to configure the proof requirements and the proofCount
@@ -82,7 +78,7 @@ func requireProofCountEqualsExpectedValueFromProofParams(t *testing.T, proofPara
 	blockPublishCh, minedRelaysPublishCh := setupDependencies(t, ctx, supplierClientMap, emptyBlockHash, proofParams, supplierOperatorBalance)
 
 	// Publish a mined relay to the minedRelaysPublishCh to insert into the session tree.
-	minedRelay := testrelayer.NewUnsignedMinedRelay(t, activeSession, supplierOperatorAddress)
+	minedRelay := testrelayer.NewUnsignedMinedRelay(t, activeSession.Header, supplierOperatorAddress)
 	minedRelaysPublishCh <- minedRelay
 
 	// The relayerSessionsManager should have created a session tree for the relay.
@@ -252,13 +248,13 @@ func TestRelayerSessionsManager_InsufficientBalanceForProofSubmission(t *testing
 
 	// For each service, publish a mined relay to the minedRelaysPublishCh to
 	// insert into the session tree.
-	lowCUPRMinedRelay := testrelayer.NewUnsignedMinedRelay(t, lowCUPRServiceActiveSession, supplierOperatorAddress)
+	lowCUPRMinedRelay := testrelayer.NewUnsignedMinedRelay(t, lowCUPRServiceActiveSession.Header, supplierOperatorAddress)
 	minedRelaysPublishCh <- lowCUPRMinedRelay
 
 	// The relayerSessionsManager should have created a session tree for the low CUPR relay.
 	waitSimulateIO()
 
-	highCUPRMinedRelay := testrelayer.NewUnsignedMinedRelay(t, highCUPRServiceActiveSession, supplierOperatorAddress)
+	highCUPRMinedRelay := testrelayer.NewUnsignedMinedRelay(t, highCUPRServiceActiveSession.Header, supplierOperatorAddress)
 	minedRelaysPublishCh <- highCUPRMinedRelay
 
 	// The relayerSessionsManager should have created a session tree for the high CUPR relay.
@@ -271,7 +267,7 @@ func TestRelayerSessionsManager_InsufficientBalanceForProofSubmission(t *testing
 // process asynchronously. This effectively simulates I/O delays which would
 // normally be present.
 func waitSimulateIO() {
-	time.Sleep(50 * time.Millisecond)
+	time.Sleep(100 * time.Millisecond)
 }
 
 // uPOKTCoin returns a pointer to a uPOKT denomination coin with the given amount.
@@ -335,7 +331,7 @@ func setupDependencies(
 	storesDirectoryOpt := testrelayer.WithTempStoresDirectory(t)
 
 	// Create a new relayer sessions manager.
-	relayerSessionsManager, err := session.NewRelayerSessions(ctx, deps, storesDirectoryOpt)
+	relayerSessionsManager, err := session.NewRelayerSessions(deps, storesDirectoryOpt)
 	require.NoError(t, err)
 	require.NotNil(t, relayerSessionsManager)
 

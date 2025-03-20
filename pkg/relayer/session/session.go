@@ -2,11 +2,14 @@ package session
 
 import (
 	"context"
+	"path"
 	"sync"
 
 	"cosmossdk.io/depinject"
+	"github.com/pokt-network/smt/kvstore/pebble"
 
 	"github.com/pokt-network/poktroll/pkg/client"
+	blocktypes "github.com/pokt-network/poktroll/pkg/client/block"
 	"github.com/pokt-network/poktroll/pkg/client/supplier"
 	"github.com/pokt-network/poktroll/pkg/observable"
 	"github.com/pokt-network/poktroll/pkg/observable/channel"
@@ -19,11 +22,11 @@ import (
 
 var _ relayer.RelayerSessionsManager = (*relayerSessionsManager)(nil)
 
-// sessionTreesMap is an alias type for a map of
+// SessionTreesMap is an alias type for a map of
 // sessionEndHeight->sessionId->supplierOperatorAddress->SessionTree.
 // It is used to keep track of the sessions that are created in the RelayMiner
 // by grouping them by their end block height, session id and supplier operator address.
-type sessionsTreesMap = map[int64]map[string]map[string]relayer.SessionTree
+type SessionsTreesMap = map[int64]map[string]map[string]relayer.SessionTree
 
 // relayerSessionsManager is an implementation of the RelayerSessions interface.
 // TODO_TEST: Add tests to the relayerSessionsManager.
@@ -38,17 +41,25 @@ type relayerSessionsManager struct {
 	// to check if they are ready to be closed.
 	// The sessionTrees are grouped by supplierOperatorAddress since each supplier has to
 	// claim the work it has been assigned.
-	sessionsTrees   sessionsTreesMap
+	sessionsTrees   SessionsTreesMap
 	sessionsTreesMu *sync.Mutex
 
 	// blockClient is used to get the notifications of committed blocks.
 	blockClient client.BlockClient
+
+	// blockQueryClient is used to query for blocks by height in case the blockClient
+	// does not have the block in its replay buffer.
+	blockQueryClient client.BlockQueryClient
 
 	// supplierClients is used to create claims and submit proofs for sessions.
 	supplierClients *supplier.SupplierClientMap
 
 	// storesDirectory points to a path on disk where KVStore data files are created.
 	storesDirectory string
+
+	// sessionsMetadataStore is a key-value store used to persist the metadata of
+	// sessions created in order to recover the active ones in case of a restart.
+	sessionsMetadataStore pebble.PebbleKVStore
 
 	// sharedQueryClient is used to query shared module parameters.
 	sharedQueryClient client.SharedQueryClient
@@ -71,31 +82,36 @@ type relayerSessionsManager struct {
 //
 // Required dependencies:
 //   - client.BlockClient
+//   - client.BlockQueryClient
 //   - client.SupplierClientMap
+//   - client.SharedQueryClient
+//   - client.ServiceQueryClient
 //   - client.ProofQueryClient
+//   - client.BankQueryClient
+//   - polylog.Logger
 //
 // Available options:
 //   - WithStoresDirectory
 //   - WithSigningKeyNames
 func NewRelayerSessions(
-	ctx context.Context,
 	deps depinject.Config,
 	opts ...relayer.RelayerSessionsManagerOption,
 ) (_ relayer.RelayerSessionsManager, err error) {
 	rs := &relayerSessionsManager{
-		logger:          polylog.Ctx(ctx),
-		sessionsTrees:   make(sessionsTreesMap),
+		sessionsTrees:   make(SessionsTreesMap),
 		sessionsTreesMu: &sync.Mutex{},
 	}
 
 	if err := depinject.Inject(
 		deps,
 		&rs.blockClient,
+		&rs.blockQueryClient,
 		&rs.supplierClients,
 		&rs.sharedQueryClient,
 		&rs.serviceQueryClient,
 		&rs.proofQueryClient,
 		&rs.bankQueryClient,
+		&rs.logger,
 	); err != nil {
 		return nil, err
 	}
@@ -108,6 +124,12 @@ func NewRelayerSessions(
 		return nil, err
 	}
 
+	// Initialize the session metadata store.
+	sessionRegistryDir := path.Join(rs.storesDirectory, "sessions_metadata")
+	if rs.sessionsMetadataStore, err = pebble.NewKVStore(sessionRegistryDir); err != nil {
+		return nil, err
+	}
+
 	return rs, nil
 }
 
@@ -116,7 +138,19 @@ func NewRelayerSessions(
 // them through the claim/proof lifecycle, broadcasting transactions to  the
 // network as necessary.
 // It IS NOT BLOCKING as map operations run in their own goroutines.
-func (rs *relayerSessionsManager) Start(ctx context.Context) {
+func (rs *relayerSessionsManager) Start(ctx context.Context) error {
+	// Retrieve the latest block, its height will be used as a reference point to determine
+	// which sessions are still active and which ones have expired based on their end heights.
+	block := rs.blockClient.LastBlock(ctx)
+
+	// Restore previously active sessions from persistent storage by rehydrating
+	// the session tree map. This is crucial for preserving the relayer's state across
+	// restarts, ensuring that no active sessions or accumulated work is lost when the
+	// process is interrupted.
+	if err := rs.populateSessionTreeMap(ctx, block.Height()); err != nil {
+		return err
+	}
+
 	// NB: must cast back to generic observable type to use with Map.
 	// relayer.MinedRelaysObservable cannot be an alias due to gomock's lack of
 	// support for generic types.
@@ -134,16 +168,46 @@ func (rs *relayerSessionsManager) Start(ctx context.Context) {
 		claimedSessionsObs := rs.createClaims(ctx, supplierClient, supplierSessionsToClaimObs)
 		rs.submitProofs(ctx, supplierClient, claimedSessionsObs)
 	}
+
+	// Stop the relayer sessions manager when the context is done.
+	// This is necessary to ensure that in case of a shutdown, all the sessions trees
+	// are persisted along their root hashes.
+	go func() {
+		<-ctx.Done()
+		rs.Stop()
+	}()
+
+	return nil
 }
 
-// Stop unsubscribes all observables from the InsertRelays observable which
-// will close downstream observables as they drain.
-//
-// TODO_TECHDEBT: Either add a mechanism to wait for draining to complete
-// and/or ensure that the state at each pipeline stage is persisted to disk
-// and exit as early as possible.
+// Stop performs a complete shutdown of the relayerSessionsManager by:
+// 1. Closing connections and cancelling subscriptions
+// 2. Persisting all session data to storage
+// 3. Releasing resources and clearing memory
+// This ensures no data is lost during shutdown and resources are properly cleaned up.
 func (rs *relayerSessionsManager) Stop() {
+	// Close the block client and unsubscribe from all observables to stop receiving events.
+	// While process termination would eventually clean these up, proper shutdown
+	// is important for graceful termination and testing scenarios.
+	rs.blockClient.Close()
 	rs.relayObs.UnsubscribeAll()
+
+	// Persist each active session's state to disk and properly close the associated
+	// key-value stores. This ensures that all accumulated relay data (including root
+	// hashes needed for claims) is safely stored before shutdown.
+	for _, sessionTreesAtHeight := range rs.sessionsTrees {
+		for _, supplierSessionTrees := range sessionTreesAtHeight {
+			for _, sessionTree := range supplierSessionTrees {
+				rs.persistSessionMetadata(sessionTree)
+				sessionTree.Stop()
+			}
+		}
+	}
+
+	// Close the metadata store that tracks all sessions and release its resources.
+	// Then clear the in-memory sessions map to allow for garbage collection.
+	rs.sessionsMetadataStore.Stop()
+	clear(rs.sessionsTrees)
 }
 
 // SessionsToClaim returns an observable that notifies when sessions are ready to be claimed.
@@ -194,6 +258,11 @@ func (rs *relayerSessionsManager) ensureSessionTree(
 		}
 
 		sessionTreeWithSessionId[supplierOperatorAddress] = sessionTree
+
+		// Persist the newly created session tree metadata to disk.
+		if err := rs.persistSessionMetadata(sessionTree); err != nil {
+			return nil, err
+		}
 	}
 
 	return sessionTree, nil
@@ -385,18 +454,19 @@ func (rs *relayerSessionsManager) waitForBlock(ctx context.Context, targetHeight
 	// If minNumReplayBlocks is negative, no replay is necessary and the replay buffer will be ignored.
 	minNumReplayBlocks := rs.blockClient.LastBlock(ctx).Height() - targetHeight + 1
 
-	// TODO_MAINNET: If the replay buffer size is less than minNumReplayBlocks, the target
+	// If the replay buffer size is less than minNumReplayBlocks, the target
 	// block targetHeight will never be observed. This can happen if a relayminer is cold-started
 	// with persisted but unclaimed/unproven ("late") sessions, where a "late" session is one
 	// which is unclaimed and whose earliest claim commit height has already elapsed.
-	//
-	// In this case, we should use a block query client to populate the block client replay
-	// observable at the time of block client construction.
-	// The latestBufferedOffset would be the difference between the current height and
-	// earliest unclaimed/unproven session's earliest supplier claim/proof commit height.
-	// This check and return branch can be removed once this is implemented.
 	if committedBlocksObs.GetReplayBufferSize() < int(minNumReplayBlocks) {
-		return nil
+		blockResult, err := rs.blockQueryClient.Block(ctx, &targetHeight)
+		if err != nil {
+			rs.logger.Error().Err(err).Msgf("failed to query for block block height %d", targetHeight)
+			return nil
+		}
+
+		block := blocktypes.CometBlockResult(*blockResult)
+		return &block
 	}
 
 	for block := range committedBlocksObserver.Ch() {

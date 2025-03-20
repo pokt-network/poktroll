@@ -391,7 +391,7 @@ func newSupplyRelayerSessionsManagerFn(smtStorePath string) config.SupplierFn {
 		_ *cobra.Command,
 	) (depinject.Config, error) {
 		relayerSessionsManager, err := session.NewRelayerSessions(
-			ctx, deps,
+			deps,
 			session.WithStoresDirectory(smtStorePath),
 		)
 		if err != nil {
