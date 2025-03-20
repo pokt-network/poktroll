@@ -13,6 +13,8 @@ import (
 	"github.com/cometbft/cometbft/crypto/ed25519"
 	"golang.org/x/crypto/scrypt"
 	"golang.org/x/term"
+
+	"github.com/pokt-network/poktroll/testutil/testmigration"
 )
 
 // DEV_NOTE: The following code is extracted and/or derived from Morse (pocket-core) code.
@@ -30,15 +32,6 @@ const (
 	klen = 32
 )
 
-// ArmoredJson is a data structure which is used to (de)serialize the encrypted exported Morse private key file.
-type ArmoredJson struct {
-	Kdf        string `json:"kdf" yaml:"kdf"`
-	Salt       string `json:"salt" yaml:"salt"`
-	SecParam   string `json:"secparam" yaml:"secparam"`
-	Hint       string `json:"hint" yaml:"hint"`
-	Ciphertext string `json:"ciphertext" yaml:"ciphertext"`
-}
-
 // loadMorsePrivateKey reads, deserializes, decrypts and returns an exported Morse private key from morseKeyExportPath.
 func loadMorsePrivateKey(morseKeyExportPath, passphrase string) (ed25519.PrivKey, error) {
 	morseArmoredKeyfileBz, err := os.ReadFile(morseKeyExportPath)
@@ -51,7 +44,7 @@ func loadMorsePrivateKey(morseKeyExportPath, passphrase string) (ed25519.PrivKey
 		return nil, err
 	}
 
-	return unarmorDecryptPrivKey(morseArmoredKeyfileBz, passphrase)
+	return UnarmorDecryptPrivKey(morseArmoredKeyfileBz, passphrase)
 }
 
 // ensurePassphrase returns the passphrase with surrounding whitespace removed.
@@ -77,10 +70,10 @@ func ensurePassphrase(passphrase string, noPrompt bool) (string, error) {
 	return strings.TrimSpace(string(bytePassword)), nil
 }
 
-// unarmorDecryptPrivKey deserializes and decrypts the exported Morse private key file in armorStr using the passphrase.
-func unarmorDecryptPrivKey(armorStr []byte, passphrase string) (ed25519.PrivKey, error) {
+// UnarmorDecryptPrivKey deserializes and decrypts the exported Morse private key file in armorStr using the passphrase.
+func UnarmorDecryptPrivKey(armorStr []byte, passphrase string) (ed25519.PrivKey, error) {
 	var privKey ed25519.PrivKey
-	armoredJson := ArmoredJson{}
+	armoredJson := testmigration.ArmoredJson{}
 
 	//trying to unmarshal to ArmoredJson Struct
 	err := json.Unmarshal(armorStr, &armoredJson)

@@ -26,6 +26,8 @@ import (
 	cometcli "github.com/cometbft/cometbft/libs/cli"
 	cometjson "github.com/cometbft/cometbft/libs/json"
 	"github.com/cosmos/cosmos-sdk/codec"
+	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
+	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	"github.com/gorilla/websocket"
 	"github.com/regen-network/gocuke"
 	"github.com/stretchr/testify/require"
@@ -50,6 +52,8 @@ const (
 	numQueryRetries = uint8(3)
 	unbondingPeriod = "unbonding"
 	transferPeriod  = "transfer"
+	oneshotTag      = "@oneshot"
+	manualTag       = "@manual"
 )
 
 var (
@@ -67,6 +71,10 @@ var (
 	chainIdFlag      = "--chain-id=poktroll"
 	// pathUrl points to a local gateway using the PATH framework in centralized mode.
 	pathUrl = "http://localhost:3000/v1" // localhost is kept as the default to streamline local development & testing.
+
+	// allFeaturesTags is a tag expression that filters out features which
+	// SHOULD NOT be included in a wildcard/glob of feature files.
+	allFeaturesTags = fmt.Sprintf("not %s and not %s", manualTag, oneshotTag)
 )
 
 func init() {
@@ -182,8 +190,9 @@ func (s *suite) Before() {
 func TestFeatures(t *testing.T) {
 	gocuke.NewRunner(t, &suite{}).Path(flagFeaturesPath).
 		// Ignore test elements (e.g. Features, Scenarios, etc.)
-		// with the @manual tag (e.g. migration.feature).
-		Tags("not @manual").Run()
+		// with the @manual or @oneshot tags (e.g. migration*.feature).
+		Tags(allFeaturesTags).
+		Run()
 }
 
 // TODO_TECHDEBT: rename `pocketd` to `poktrolld`.
@@ -978,6 +987,30 @@ func (s *suite) readEVMSubscriptionEvents() context.Context {
 	}()
 
 	return ctx
+}
+
+// queryAccount queries the auth module for the account associated with the given address.
+func (s *suite) queryAccount(accAddr string) (account *codectypes.Any, isFound bool) {
+	args := []string{
+		"query",
+		"auth",
+		"account",
+		accAddr,
+		"--output=json",
+	}
+
+	result, err := s.pocketd.RunCommandOnHost("", args...)
+	require.NotNil(s, result)
+	if strings.Contains(result.Stderr, "not found") {
+		return nil, false
+	}
+	require.NoError(s, err, "error getting account for address %s", accAddr)
+
+	var resp authtypes.QueryAccountResponse
+	responseBz := []byte(strings.TrimSpace(result.Stdout))
+	s.cdc.MustUnmarshalJSON(responseBz, &resp)
+
+	return resp.Account, true
 }
 
 // accBalanceKey is a helper function to create a key to store the balance
