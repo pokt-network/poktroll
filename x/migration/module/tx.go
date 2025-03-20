@@ -10,21 +10,26 @@ import (
 
 // GetTxCmd returns the Cobra command corresponding to the migration module's
 // tx subcommands (i.e. `poktrolld tx migration`).
+//
 // By implementing this method, NONE of the migration module's tx subcommands are
-// generated automatically (i.e. via autoCLI). Instead, they are constructed here.
+// generated automatically (i.e. via autoCLI).
+// Instead, they are constructed here.
 func (AppModuleBasic) GetTxCmd() *cobra.Command {
 	return TxCommands()
 }
 
 // TxCommands returns the Cobra command corresponding to migration module's tx
-// subcommands (i.e. `poktrolld tx migration`). Since autoCLI does not apply to
-// several migration CLI operations, this command MUST be manually constructed.
+// subcommands (i.e. `poktrolld tx migration`).
+//
+// Since autoCLI does not apply to several migration CLI operations, this command
+// MUST be manually constructed.
 func TxCommands() *cobra.Command {
 	migrateCmd := &cobra.Command{
 		Use:   "migration",
 		Short: "Transactions commands for the migration module",
+		// TODO_IN_THIS_PR: Fix, uncomment or add a proper TODO message.
 		// Set up the global logger for use in any subcommand.
-		//PersistentPreRunE: logger.PreRunESetup,
+		// PersistentPreRunE: logger.PreRunESetup,
 	}
 
 	migrateCmd.AddCommand(cmd.CollectMorseAccountsCmd())
