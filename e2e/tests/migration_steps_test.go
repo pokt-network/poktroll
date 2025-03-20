@@ -312,7 +312,6 @@ func (s *migrationSuite) TheShannonDestinationAccountDoesNotExistOnchain() {
 
 func (s *migrationSuite) TheMorsePrivateKeyIsUsedToClaimAMorseclaimableaccountAsANonactorAccount() {
 	// generate the deterministic fixture morse private key
-	//morsePrivKey := testmigration.GenMorsePrivateKey(s.nextMorseUnstakedKeyIdx())
 	morsePrivKey := testmigration.GenMorsePrivateKey(s.getMorseKeyIdx())
 
 	// Encrypt and write the morse private key to a file, consistent with the Morse CLI's `accounts export` command.
@@ -591,9 +590,6 @@ func (s *migrationSuite) getCurrentBlockHeight() int64 {
 	stdinBuf.WriteString(resJSON)
 	stdout, err := cmd.Output()
 	require.NoError(s, err)
-
-	//jqStdout, err := s.runCommand(" jq -r .header.height")
-	//require.NoError(s, err)
 
 	heightString := string(bytes.TrimSpace(stdout))
 	height, err := strconv.Atoi(heightString)
