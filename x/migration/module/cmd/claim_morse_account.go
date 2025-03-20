@@ -20,7 +20,7 @@ var (
 	noPassphrase                  bool
 )
 
-func claimAccountCmd() *cobra.Command {
+func ClaimAccountCmd() *cobra.Command {
 	claimAcctCmd := &cobra.Command{
 		Use:   "claim-account [morse_key_export_path] --from [shannon_dest_key_name]",
 		Args:  cobra.ExactArgs(1),
@@ -55,6 +55,11 @@ See: https://dev.poktroll.com/operate/morse_migration/claiming for more informat
 	return claimAcctCmd
 }
 
+// runClaimAccount performs the following sequence:
+// - Load the Morse private key from the morse_key_export_path argument.
+// - Construct a MsgClaimMorseAccount message from the Morse key.
+// - Sign and broadcast the MsgClaimMorseAccount message using the Shannon key named by the `--from` flag.
+// - Wait until the tx is committed onchain for either a synchronous or asynchronous error.
 func runClaimAccount(cmd *cobra.Command, args []string) error {
 	ctx := cmd.Context()
 	morseKeyExportPath := args[0]

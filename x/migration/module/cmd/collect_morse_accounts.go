@@ -9,7 +9,6 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/pokt-network/poktroll/app/volatile"
-	"github.com/pokt-network/poktroll/cmd/flags"
 	"github.com/pokt-network/poktroll/cmd/logger"
 	migrationtypes "github.com/pokt-network/poktroll/x/migration/types"
 )
@@ -19,28 +18,7 @@ const (
 	flagDebugAccountsPerLogUsage = "The number of accounts to log per debug message"
 )
 
-var (
-	debugAccountsPerLog int
-)
-
-// TxCommands returns the Cobra command corresponding to migration module's tx
-// subcommands (i.e. `poktrolld tx migration`). Since autoCLI does not apply to
-// several migration CLI operations, this command MUST be manually constructed.
-func TxCommands() *cobra.Command {
-	migrateCmd := &cobra.Command{
-		Use:   "migration",
-		Short: "Transactions commands for the migration module",
-		// Set up the global logger for use in any subcommand.
-		//PersistentPreRunE: logger.PreRunESetup,
-	}
-
-	migrateCmd.AddCommand(collectMorseAccountsCmd())
-	migrateCmd.AddCommand(claimAccountCmd())
-	migrateCmd.PersistentFlags().StringVar(&logger.LogLevel, flags.FlagLogLevel, "info", flags.FlagLogLevelUsage)
-	migrateCmd.PersistentFlags().StringVar(&logger.LogOutput, flags.FlagLogOutput, flags.DefaultLogOutput, flags.FlagLogOutputUsage)
-
-	return migrateCmd
-}
+var debugAccountsPerLog int
 
 // DEV_NOTE: AutoCLI does not apply here because there is no gRPC service, message, or query.
 // While this command does not interact with the network directly, it prepares data for the
@@ -50,7 +28,7 @@ func TxCommands() *cobra.Command {
 // from Morse's export data structure (MorseStateExport) into Shannon's import data structure (MorseAccountState).
 //
 // It does not interact with the network directly.
-func collectMorseAccountsCmd() *cobra.Command {
+func CollectMorseAccountsCmd() *cobra.Command {
 	collectMorseAcctsCmd := &cobra.Command{
 		Use:   "collect-morse-accounts [morse-state-export-path] [morse-account-state-path]",
 		Args:  cobra.ExactArgs(2),

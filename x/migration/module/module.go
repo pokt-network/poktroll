@@ -17,13 +17,10 @@ import (
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
-	"github.com/spf13/cobra"
-
 	// this line is used by starport scaffolding # 1
 
 	modulev1 "github.com/pokt-network/poktroll/api/poktroll/migration/module"
 	"github.com/pokt-network/poktroll/x/migration/keeper"
-	"github.com/pokt-network/poktroll/x/migration/module/cmd"
 	"github.com/pokt-network/poktroll/x/migration/types"
 )
 
@@ -87,14 +84,6 @@ func (AppModuleBasic) RegisterGRPCGatewayRoutes(clientCtx client.Context, mux *r
 	if err := types.RegisterQueryHandlerClient(context.Background(), mux, types.NewQueryClient(clientCtx)); err != nil {
 		panic(err)
 	}
-}
-
-// GetTxCmd returns the Cobra command corresponding to the migration module's
-// tx subcommands (i.e. `poktrolld tx migration`).
-// By implementing this method, NONE of the migration module's tx subcommands are
-// generated automatically (i.e. via autoCLI). Instead, they are constructed here.
-func (AppModuleBasic) GetTxCmd() *cobra.Command {
-	return cmd.TxCommands()
 }
 
 // ----------------------------------------------------------------------------

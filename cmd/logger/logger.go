@@ -13,7 +13,7 @@ import (
 
 var (
 	// LogLevel is a global variable that is intended to hold the value of the
-	// "--log-level" flag when a command which has called PreRunESetup is executed.
+	// "--log-level" flag when a command which has called PreRunESetup() is executed.
 	LogLevel string
 
 	// LogOutput is a global variable that is intended to hold the value of the
