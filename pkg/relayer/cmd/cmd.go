@@ -241,6 +241,7 @@ func setupRelayerDependencies(
 		config.NewSupplyKeyValueCacheFn[sharedtypes.Supplier](cache.WithNewBlockCacheClearing),               // leaf
 		config.NewSupplyKeyValueCacheFn[query.BlockHash](cache.WithNewBlockCacheClearing),                    // leaf
 		config.NewSupplyKeyValueCacheFn[query.Balance](cache.WithNewBlockCacheClearing),                      // leaf
+		config.NewSupplyKeyValueCacheFn[prooftypes.Claim](cache.WithNewBlockCacheClearing),                   // leaf
 		// The session querier returns *sessiontypes.Session, so its cache must also return pointers.
 		// This differs from other queriers which return value types.
 		config.NewSupplyKeyValueCacheFn[*sessiontypes.Session](cache.WithNewBlockCacheClearing), // leaf

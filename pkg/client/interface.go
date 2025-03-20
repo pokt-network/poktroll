@@ -333,8 +333,8 @@ type ProofParams interface {
 
 type Claim interface {
 	GetSupplierOperatorAddress() string
-	//GetSessionHeader() *sessiontypes.SessionHeader
-	//GetRootHash() []byte
+	GetSessionHeader() *sessiontypes.SessionHeader
+	GetRootHash() []byte
 }
 
 // ProofQueryClient defines an interface that enables the querying of the

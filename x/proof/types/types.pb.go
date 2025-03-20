@@ -242,6 +242,9 @@ func (m *Claim) GetProofValidationStatus() ClaimProofStatus {
 	return ClaimProofStatus_PENDING_VALIDATION
 }
 
+// PersistedSMT is the serializable session's SMST used to persist the session's
+// state offchain by the RelayMiner.
+// It is not used for any onchain logic.
 type PersistedSMT struct {
 	SessionHeader           *types.SessionHeader `protobuf:"bytes,1,opt,name=session_header,json=sessionHeader,proto3" json:"session_header,omitempty"`
 	SupplierOperatorAddress string               `protobuf:"bytes,2,opt,name=supplier_operator_address,json=supplierOperatorAddress,proto3" json:"supplier_operator_address,omitempty"`
