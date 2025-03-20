@@ -82,9 +82,8 @@ func unarmorDecryptPrivKey(armorStr []byte, passphrase string) (ed25519.PrivKey,
 	var privKey ed25519.PrivKey
 	armoredJson := ArmoredJson{}
 
-	//trying to unmarshal to ArmoredJson Struct
-	err := json.Unmarshal(armorStr, &armoredJson)
-	if err != nil {
+	// trying to unmarshal to ArmoredJson Struct
+	if err := json.Unmarshal(armorStr, &armoredJson); err != nil {
 		return privKey, err
 	}
 
@@ -96,19 +95,19 @@ func unarmorDecryptPrivKey(armorStr []byte, passphrase string) (ed25519.PrivKey,
 		return privKey, fmt.Errorf("missing salt bytes")
 	}
 
-	//decoding the salt
+	// decoding the salt
 	saltBytes, err := hex.DecodeString(armoredJson.Salt)
 	if err != nil {
 		return privKey, fmt.Errorf("error decoding salt: %w", err)
 	}
 
-	//decoding the "armored" ciphertext stored in base64
+	// decoding the "armored" ciphertext stored in base64
 	encBytes, err := base64.StdEncoding.DecodeString(armoredJson.Ciphertext)
 	if err != nil {
 		return privKey, fmt.Errorf("error decoding ciphertext: %w", err)
 	}
 
-	//decrypt the actual privkey with the parameters
+	// decrypt the actual privkey with the parameters
 	privKey, err = decryptPrivKey(saltBytes, encBytes, passphrase)
 	return privKey, err
 }
@@ -119,13 +118,12 @@ func decryptPrivKey(
 	encBytes []byte,
 	passphrase string,
 ) (privKey ed25519.PrivKey, err error) {
-
 	key, err := scrypt.Key([]byte(passphrase), saltBytes, n, r, p, klen)
 	if err != nil {
 		return nil, fmt.Errorf("error generating bcrypt key from passphrase: %w", err)
 	}
 
-	//decrypt using AES
+	// decrypt using AES
 	privKeyBytes, err := decryptAESGCM(key, encBytes)
 	if err != nil {
 		return privKey, err
