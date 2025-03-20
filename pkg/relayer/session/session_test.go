@@ -204,7 +204,6 @@ func TestRelayerSessionsManager_InsufficientBalanceForProofSubmission(t *testing
 	supplierClientMock := mockclient.NewMockSupplierClient(ctrl)
 
 	supplierOperatorAddress := sample.AccAddress()
-	supplierOperatorAccAddress := sdktypes.MustAccAddressFromBech32(supplierOperatorAddress)
 
 	proofSubmissionFee := prooftypes.DefaultParams().ProofSubmissionFee.Amount.Int64()
 	claimAndProofGasCost := session.ClamAndProofGasCost.Amount.Int64()
@@ -212,7 +211,7 @@ func TestRelayerSessionsManager_InsufficientBalanceForProofSubmission(t *testing
 	supplierOperatorBalance := proofSubmissionFee + claimAndProofGasCost + 1
 	supplierClientMock.EXPECT().
 		OperatorAddress().
-		Return(&supplierOperatorAccAddress).
+		Return(supplierOperatorAddress).
 		AnyTimes()
 
 	supplierClientMock.EXPECT().

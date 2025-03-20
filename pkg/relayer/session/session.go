@@ -102,7 +102,7 @@ func NewRelayerSessions(
 		sessionsTreesMu: &sync.Mutex{},
 	}
 
-	if err := depinject.Inject(
+	if err = depinject.Inject(
 		deps,
 		&rs.blockClient,
 		&rs.blockQueryClient,
@@ -120,7 +120,7 @@ func NewRelayerSessions(
 		opt(rs)
 	}
 
-	if err := rs.validateConfig(); err != nil {
+	if err = rs.validateConfig(); err != nil {
 		return nil, err
 	}
 
@@ -198,15 +198,28 @@ func (rs *relayerSessionsManager) Stop() {
 	for _, sessionTreesAtHeight := range rs.sessionsTrees {
 		for _, supplierSessionTrees := range sessionTreesAtHeight {
 			for _, sessionTree := range supplierSessionTrees {
-				rs.persistSessionMetadata(sessionTree)
-				sessionTree.Stop()
+				if err := rs.persistSessionMetadata(sessionTree); err != nil {
+					rs.logger.Error().Err(err).Msgf(
+						"failed to persist session metadata for sessionId %q",
+						sessionTree.GetSessionHeader().GetSessionId(),
+					)
+				}
+
+				if err := sessionTree.Stop(); err != nil {
+					rs.logger.Error().Err(err).Msgf(
+						"failed to stop session tree store for sessionId %q",
+						sessionTree.GetSessionHeader().GetSessionId(),
+					)
+				}
 			}
 		}
 	}
 
 	// Close the metadata store that tracks all sessions and release its resources.
 	// Then clear the in-memory sessions map to allow for garbage collection.
-	rs.sessionsMetadataStore.Stop()
+	if err := rs.sessionsMetadataStore.Stop(); err != nil {
+		rs.logger.Error().Err(err).Msg("failed to stop sessions metadata store")
+	}
 	clear(rs.sessionsTrees)
 }
 
