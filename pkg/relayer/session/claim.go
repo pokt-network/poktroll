@@ -7,6 +7,8 @@ import (
 
 	sdktypes "github.com/cosmos/cosmos-sdk/types"
 
+	"github.com/pokt-network/smt"
+
 	"github.com/pokt-network/poktroll/app/volatile"
 	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/either"
@@ -17,7 +19,6 @@ import (
 	"github.com/pokt-network/poktroll/pkg/relayer"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
-	"github.com/pokt-network/smt"
 )
 
 // The cumulative fees of creating a single claim, followed by submitting a single proof.
