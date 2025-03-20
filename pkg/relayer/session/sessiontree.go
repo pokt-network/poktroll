@@ -13,6 +13,7 @@ import (
 	"github.com/pokt-network/poktroll/pkg/crypto/protocol"
 	"github.com/pokt-network/poktroll/pkg/polylog"
 	"github.com/pokt-network/poktroll/pkg/relayer"
+	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 )
 
@@ -109,6 +110,66 @@ func NewSessionTree(
 		sessionMu:               &sync.Mutex{},
 		supplierOperatorAddress: supplierOperatorAddress,
 	}
+
+	return sessionTree, nil
+}
+
+// ImportSessionTree reconstructs a previously created session tree from its persisted state on disk.
+// This function handles two distinct scenarios:
+// 1. Importing a claimed session (claim != nil): The tree is in a read-only state with a fixed root hash
+// 2. Importing an unclaimed session (claim == nil): The tree is in a mutable state and can accept updates
+//
+// Returns a fully reconstructed SessionTree or an error if reconstruction fails
+func ImportSessionTree(
+	persistedSMT *prooftypes.PersistedSMT,
+	claim *prooftypes.Claim,
+	storesDirectory string,
+	logger polylog.Logger,
+) (relayer.SessionTree, error) {
+	sessionId := persistedSMT.SessionHeader.SessionId
+	supplierOperatorAddress := persistedSMT.SupplierOperatorAddress
+	smtRoot := persistedSMT.SmtRoot
+	storePath := filepath.Join(storesDirectory, supplierOperatorAddress, sessionId)
+
+	// Verify the storage path exists - if not, the session data is missing or corrupted
+	if _, err := os.Stat(storePath); err != nil {
+		logger.Error().Err(err).Msgf("session tree store path does not exist: %q", storePath)
+		return nil, err
+	}
+
+	// Initialize the basic session tree structure with metadata
+	sessionTree := &sessionTree{
+		logger:                  logger,
+		sessionHeader:           persistedSMT.SessionHeader,
+		storePath:               storePath,
+		sessionMu:               &sync.Mutex{},
+		supplierOperatorAddress: supplierOperatorAddress,
+	}
+
+	// SCENARIO 1: Session has been claimed
+	// When a claim exists, the session is in a finalized state with an immutable root hash.
+	// The tree storage is not loaded immediately as it will only be needed if proof generation is requested.
+	if claim != nil {
+		sessionTree.claimedRoot = claim.RootHash
+		return sessionTree, nil
+	}
+
+	// SCENARIO 2: Session has not been claimed
+	// The session is still active and mutable, so we need to reconstruct the full tree
+	// from the persisted storage to allow for additional relay updates.
+
+	// Open the existing KVStore that contains the session's merkle tree data
+	treeStore, err := pebble.NewKVStore(storePath)
+	if err != nil {
+		return nil, err
+	}
+
+	// Reconstruct the Sparse Merkle Sum Trie from the persisted KVStore data
+	// using the previously saved root as the starting point
+	trie := smt.ImportSparseMerkleSumTrie(treeStore, protocol.NewTrieHasher(), smtRoot, protocol.SMTValueHasher())
+
+	sessionTree.sessionSMT = trie
+	sessionTree.treeStore = treeStore
 
 	return sessionTree, nil
 }
@@ -243,12 +304,19 @@ func (st *sessionTree) Flush() (SMSTRoot []byte, err error) {
 	}
 
 	st.treeStore = nil
-	st.sessionSMT = nil
 
 	return st.claimedRoot, nil
 }
 
+// GetSMSTRoot returns the root hash of the SMST.
+// This function is used to get the root hash of the SMST at any time.
+// It is used to get the root hash of the SMST before it is flushed to disk.
+func (st *sessionTree) GetSMSTRoot() (smtRoot smt.MerkleSumRoot) {
+	return st.sessionSMT.Root()
+}
+
 // GetClaimRoot returns the root hash of the SMST needed for creating the claim.
+// It returns the root hash of the SMST only if the SMST has been flushed to disk.
 func (st *sessionTree) GetClaimRoot() []byte {
 	return st.claimedRoot
 }
@@ -300,4 +368,18 @@ func (st *sessionTree) StartClaiming() error {
 // operator this sessionTree belongs to.
 func (st *sessionTree) GetSupplierOperatorAddress() string {
 	return st.supplierOperatorAddress
+}
+
+// Stop stops the KVStore and frees up the resources used by the session tree.
+func (st *sessionTree) Stop() error {
+	if st.treeStore == nil {
+		return nil
+	}
+
+	// Commit any pending changes to the KVStore before stopping it.
+	if err := st.sessionSMT.Commit(); err != nil {
+		return err
+	}
+
+	return st.treeStore.Stop()
 }
