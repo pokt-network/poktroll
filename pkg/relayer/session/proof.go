@@ -244,6 +244,7 @@ func (rs *relayerSessionsManager) newMapProveSessionsFn(
 				sessionTrees: sessionTrees,
 			}
 
+			// TODO_IN_THIS_COMMIT: update message...
 			logger.Error().Err(err).Msg("failed to submit proofs (1)")
 
 			return either.Error[[]relayer.SessionTree](err), false
@@ -457,13 +458,13 @@ func newMapDeleteExpiredSessionsRetryFn(
 
 // TODO_IN_THIS_COMMIT: godoc & move...
 func (rs *relayerSessionsManager) newForEachSessionsRetryFn(
-	mapProveSessions channel.MapFn[[]relayer.SessionTree, either.SessionTrees],
+	mapSessionsOperation channel.MapFn[[]relayer.SessionTree, either.SessionTrees],
 	retryAttemptsMu *sync.Mutex,
 	retryAttempts map[int64]uint64,
 ) channel.ForEachFn[sessionTreesOpRetry] {
 	logger := rs.logger.With("method", "newForEachSessionsRetryFn")
 
-	return func(ctx context.Context, sessionProofsRetry sessionTreesOpRetry) {
+	return func(ctx context.Context, sessionsOpRetry sessionTreesOpRetry) {
 		// Wait the configured delay before retrying.
 		time.Sleep(submitProofRetryDelay)
 
@@ -471,16 +472,17 @@ func (rs *relayerSessionsManager) newForEachSessionsRetryFn(
 		defer retryAttemptsMu.Unlock()
 
 		// TODO_IN_THIS_COMMIT: comment... using the first session header for the map key...
-		sessionStartHeight := sessionProofsRetry.sessionTrees[0].GetSessionHeader().GetSessionStartBlockHeight()
+		sessionStartHeight := sessionsOpRetry.sessionTrees[0].GetSessionHeader().GetSessionStartBlockHeight()
 		if _, ok := retryAttempts[sessionStartHeight]; !ok {
 			retryAttempts[sessionStartHeight] = 0
 		}
 
 		// TODO_IN_THIS_COMMIT: comment - never skips...
-		eitherRetriedProvenSessions, _ := mapProveSessions(ctx, sessionProofsRetry.sessionTrees)
-		if eitherRetriedProvenSessions.IsError() {
-			_, sessionProofsRetry.lastErr = eitherRetriedProvenSessions.ValueOrError()
-			logger.Error().Err(sessionProofsRetry.lastErr).Msg("failed to submit proofs (2)")
+		eitherRetriedSessions, _ := mapSessionsOperation(ctx, sessionsOpRetry.sessionTrees)
+		if eitherRetriedSessions.IsError() {
+			_, sessionsOpRetry.lastErr = eitherRetriedSessions.ValueOrError()
+			// TODO_IN_THIS_COMMIT: update message...
+			logger.Error().Err(sessionsOpRetry.lastErr).Msg("failed to retry (2)")
 
 			retryAttempts[sessionStartHeight]++
 			return
