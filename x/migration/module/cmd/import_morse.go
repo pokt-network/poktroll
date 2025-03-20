@@ -1,25 +1,19 @@
 package cmd
 
 import (
-	"context"
-	"net/url"
 	"os"
 
-	"cosmossdk.io/depinject"
 	cmtjson "github.com/cometbft/cometbft/libs/json"
 	cosmosclient "github.com/cosmos/cosmos-sdk/client"
-	"github.com/cosmos/cosmos-sdk/client/flags"
-	cosmostx "github.com/cosmos/cosmos-sdk/client/tx"
+	cosmosflags "github.com/cosmos/cosmos-sdk/client/flags"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	"github.com/cosmos/cosmos-sdk/x/authz"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 	"github.com/spf13/cobra"
 
-	"github.com/pokt-network/poktroll/pkg/client"
-	"github.com/pokt-network/poktroll/pkg/client/tx"
-	txtypes "github.com/pokt-network/poktroll/pkg/client/tx/types"
-	"github.com/pokt-network/poktroll/pkg/deps/config"
+	"github.com/pokt-network/poktroll/cmd/flags"
+	"github.com/pokt-network/poktroll/cmd/logger"
 	migrationtypes "github.com/pokt-network/poktroll/x/migration/types"
 )
 
@@ -33,17 +27,18 @@ func ImportMorseAccountsCmd() *cobra.Command {
 		// TODO_IN_THIS_COMMIT:
 		// Short: ,
 		// Long: ,
-		Args: cobra.ExactArgs(1),
-		RunE: runImportMorseAccounts,
+		Args:    cobra.ExactArgs(1),
+		RunE:    runImportMorseAccounts,
+		PreRunE: logger.PreRunESetup,
 	}
 
-	flags.AddTxFlagsToCmd(importMorseAcctsCmd)
+	cosmosflags.AddTxFlagsToCmd(importMorseAcctsCmd)
 
 	// DEV_NOTE: This is required by the TxClient. Despite this being a "tx" command,
 	// the TxClient still "queries" for its own TxResult events.
-	importMorseAcctsCmd.Flags().String(flags.FlagGRPC, omittedDefaultFlagValue, "Register the default Cosmos node grpc flag, which is needed to initialize the Cosmos query context with grpc correctly. It can be used to override the `QueryNodeGRPCURL` field in the config file if specified.")
+	importMorseAcctsCmd.Flags().String(cosmosflags.FlagGRPC, omittedDefaultFlagValue, "Register the default Cosmos node grpc flag, which is needed to initialize the Cosmos query context with grpc correctly. It can be used to override the `QueryNodeGRPCURL` field in the config file if specified.")
 	// TODO_IN_THIS_COMMIT: explain...
-	importMorseAcctsCmd.Flags().Bool(flags.FlagGRPCInsecure, true, "Used to initialize the Cosmos query context with grpc security options. It can be used to override the `QueryNodeGRPCInsecure` field in the config file if specified.")
+	importMorseAcctsCmd.Flags().Bool(cosmosflags.FlagGRPCInsecure, true, "Used to initialize the Cosmos query context with grpc security options. It can be used to override the `QueryNodeGRPCInsecure` field in the config file if specified.")
 
 	return importMorseAcctsCmd
 }
@@ -68,7 +63,7 @@ func runImportMorseAccounts(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	txClient, err := getTxClient(ctx, cmd)
+	txClient, err := flags.GetTxClient(ctx, cmd)
 	if err != nil {
 		return err
 	}
@@ -103,53 +98,4 @@ func runImportMorseAccounts(cmd *cobra.Command, args []string) error {
 
 	// Wait for an async error, timeout, or the errCh to close on success.
 	return <-errCh
-}
-
-// TODO_IN_THIS_COMMIT: godoc & move...
-func getTxClient(ctx context.Context, cmd *cobra.Command) (client.TxClient, error) {
-	// Retrieve and parse the query node RPC URL.
-	queryNodeRPCUrlString, err := cmd.Flags().GetString(flags.FlagNode)
-	if err != nil {
-		return nil, err
-	}
-
-	queryNodeRPCUrl, err := url.Parse(queryNodeRPCUrlString)
-	if err != nil {
-		return nil, err
-	}
-
-	// Conventionally derive a cosmos-sdk client context from the cobra command.
-	clientCtx, err := cosmosclient.GetClientTxContext(cmd)
-	if err != nil {
-		return nil, err
-	}
-
-	// Conventionally construct a txClient and its dependencies.
-	clientFactory, err := cosmostx.NewFactoryCLI(clientCtx, cmd.Flags())
-	if err != nil {
-		return nil, err
-	}
-
-	// Construct dependencies for the tx client.
-	deps, err := config.SupplyConfig(ctx, cmd, []config.SupplierFn{
-		config.NewSupplyEventsQueryClientFn(queryNodeRPCUrl),
-		config.NewSupplyBlockQueryClientFn(queryNodeRPCUrl),
-		config.NewSupplyBlockClientFn(queryNodeRPCUrl),
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	deps = depinject.Configs(deps, depinject.Supply(
-		txtypes.Context(clientCtx),
-		clientFactory,
-	))
-	txCtx, err := tx.NewTxContext(deps)
-	if err != nil {
-		return nil, err
-	}
-
-	// Construct a tx client.
-	deps = depinject.Configs(deps, depinject.Supply(txCtx))
-	return tx.NewTxClient(ctx, deps, tx.WithSigningKeyName(clientCtx.FromName))
 }
