@@ -181,7 +181,7 @@ func (rs *relayerSessionsManager) Start(ctx context.Context) error {
 }
 
 // Stop performs a complete shutdown of the relayerSessionsManager by:
-// 1. Closing connections and cancelling subscriptions
+// 1. Closing connections and canceling subscriptions
 // 2. Persisting all session data to storage
 // 3. Releasing resources and clearing memory
 // This ensures no data is lost during shutdown and resources are properly cleaned up.
@@ -216,7 +216,7 @@ func (rs *relayerSessionsManager) Stop() {
 	}
 
 	// Close the metadata store that tracks all sessions and release its resources.
-	// Then clear the in-memory sessions map to allow for garbage collection.
+	// Then clear the in-memory sessions map for testing purposes.
 	if err := rs.sessionsMetadataStore.Stop(); err != nil {
 		rs.logger.Error().Err(err).Msg("failed to stop sessions metadata store")
 	}
@@ -450,7 +450,7 @@ func (rs *relayerSessionsManager) validateConfig() error {
 func (rs *relayerSessionsManager) waitForBlock(ctx context.Context, targetHeight int64) client.Block {
 	// Create a cancellable child context for managing the CommittedBlocksSequence lifecycle.
 	// Since the committedBlocksObserver is no longer needed after the block it is looking for
-	// is reached, cancelling the child context at the end of the function will stop
+	// is reached, canceling the child context at the end of the function will stop
 	// the subscriptions and close the publish channel associated with the
 	// CommittedBlocksSequence observable which is not exposing it.
 	ctx, cancel := context.WithCancel(ctx)
