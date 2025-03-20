@@ -1,7 +1,8 @@
 package flags
 
 const (
-	DefaultLogOutput = "-"
+	DefaultLogOutput        = "-"
+	OmittedDefaultFlagValue = "explicitly omitting default"
 
 	FlagLogLevel      = "log-level"
 	FlagLogLevelUsage = "The logging level (debug|info|warn|error)"
