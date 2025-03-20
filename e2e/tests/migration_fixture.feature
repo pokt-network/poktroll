@@ -9,16 +9,14 @@ Feature: Morse Migration Success
 
   Background:
     Given the user has the pocketd binary installed
-    And a MorseAccountState has successfully been imported with the following claimable accounts type distribution:
-      | non-actor | application | supplier |
-      | 2         | 2           | 2        |
+    And a MorseAccountState with "10" accounts in a "round-robin" distribution has successfully been imported
     And an unclaimed MorseClaimableAccount with a known private key exists
     And a Shannon destination key exists in the local keyring
 
   Rule: Non-actor account claims MAY reference existing Shannon accounts
     Scenario: Morse account-holder claims as a new non-actor account
       Given the Shannon destination account does not exist onchain
-      # TODO_IN_THIS_COMMIT: Use a new token denomination and/or rephrase the step...
+      # TODO_MAINNET: Use a new token denomination.
       And the Shannon account is funded with "1upokt"
       When the Morse private key is used to claim a MorseClaimableAccount as a non-actor account
       Then the Shannon destination account balance is increased by the sum of all MorseClaimableAccount tokens

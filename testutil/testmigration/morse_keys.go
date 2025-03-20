@@ -14,7 +14,10 @@ import (
 	"golang.org/x/crypto/scrypt"
 )
 
-// TODO_IN_THIS_COMMIT: DEV_NOTE: this stuff is necessary for E2E testing...
+// DEV_NOTE: This file is necessary for E2E testing the migration module CLI.
+// In particular, it is used to encrypt a Morse private key, identical to how
+// the Morse CLI does it, such that the encrypted key file can be read by the
+// Shannon CLI under test.
 
 const (
 	// Scrypt params (copied from Morse latest release)
@@ -27,7 +30,7 @@ const (
 	defaultKDF = "scrypt"
 )
 
-// Make bcrypt security parameter var, so it can be changed within the lcd test
+// BcryptSecurityParameter is a var so that it can be changed within the lcd test
 // Making the bcrypt security parameter a var shouldn't be a security issue:
 // One can't verify an invalid key by maliciously changing the bcrypt
 // parameter during a runtime vulnerability. The main security
@@ -42,7 +45,7 @@ const (
 // For further notes on security parameter choice, see README.md
 var BcryptSecurityParameter = 12
 
-// TODO_IN_THIS_COMMIT: godoc & move...
+// NewArmoredJson returns a new ArmoredJson struct with the given fields.
 func NewArmoredJson(kdf, salt, hint, ciphertext string) ArmoredJson {
 	return ArmoredJson{
 		Kdf:        kdf,
@@ -53,8 +56,9 @@ func NewArmoredJson(kdf, salt, hint, ciphertext string) ArmoredJson {
 	}
 }
 
-// TODO_IN_THIS_COMMIT: godoc & move...
-// Encrypt and armor the private key.
+// EncryptArmorPrivKey encrypts the given private key using a random salt and the
+// given passphrase with the AES-256-GCM algorithm. It then encapsulates the ciphertext,
+// salt, and hint in an ArmoredJson struct and returns it as a JSON-encoded string.
 func EncryptArmorPrivKey(privKey ed25519.PrivKey, passphrase string, hint string) (string, error) {
 	//first  encrypt the key
 	saltBytes, encBytes, err := encryptPrivKey(privKey, passphrase)
