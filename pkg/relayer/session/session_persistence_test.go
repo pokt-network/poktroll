@@ -156,13 +156,14 @@ func (s *SessionPersistenceTestSuite) TearDownTest() {
 func (s *SessionPersistenceTestSuite) TestSaveAndRetrieveSession() {
 	// Stop the current relayer sessions manager
 	s.relayerSessionsManager.Stop()
-	// Create a new relayer sessions manager which should load state from disk
+	// Create a new relayer sessions manager.
+	// Note: This does not load state from the store.
 	s.relayerSessionsManager = s.setupNewRelayerSessionsManager()
 
-	// Advance to block 2
+	// Advance to block 2 while the relayer sessions manager is stopped
 	s.forwardToBlock(2)
 
-	// Start the new relayer sessions manager
+	// Start the new relayer sessions manager and load state from the store
 	err := s.relayerSessionsManager.Start(s.ctx)
 	require.NoError(s.T(), err)
 	waitSimulateIO()
