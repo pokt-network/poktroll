@@ -123,7 +123,7 @@ func (s *SessionPersistenceTestSuite) SetupTest() {
 
 	// Initialize and start the relayer sessions manager
 	s.relayerSessionsManager = s.setupNewRelayerSessionsManager()
-	s.forwardToBlock(1)
+	s.advanceToBlock(1)
 	err = s.relayerSessionsManager.Start(s.ctx)
 	require.NoError(s.T(), err)
 
@@ -161,7 +161,7 @@ func (s *SessionPersistenceTestSuite) TestSaveAndRetrieveSession() {
 	s.relayerSessionsManager = s.setupNewRelayerSessionsManager()
 
 	// Advance to block 2 while the relayer sessions manager is stopped
-	s.forwardToBlock(2)
+	s.advanceToBlock(2)
 
 	// Start the new relayer sessions manager and load state from the store
 	err := s.relayerSessionsManager.Start(s.ctx)
@@ -181,7 +181,7 @@ func (s *SessionPersistenceTestSuite) TestSaveAndRetrieveSession() {
 	// Add a new mined relay to the session
 	s.minedRelaysPublishCh <- testrelayer.NewUnsignedMinedRelay(s.T(), s.activeSessionHeader, s.supplierOperatorAddress)
 	// Advance to block 3
-	s.forwardToBlock(3)
+	s.advanceToBlock(3)
 
 	// Verify that the new relay is added, bringing the count to 2
 	smstRoot = sessionTree.GetSMSTRoot()
@@ -201,7 +201,7 @@ func (s *SessionPersistenceTestSuite) TestRestartAfterClaimWindowOpen() {
 	// Calculate when the claim window opens for this session
 	claimWindowOpenHeight := sharedtypes.GetClaimWindowOpenHeight(&s.sharedParams, sessionEndHeight)
 	// Move to one block before the claim window opens
-	s.forwardToBlock(claimWindowOpenHeight - 1)
+	s.advanceToBlock(claimWindowOpenHeight - 1)
 
 	// Verify the session tree exists and no claims have been created yet
 	sessionTree := s.getActiveSessionTree()
@@ -212,9 +212,9 @@ func (s *SessionPersistenceTestSuite) TestRestartAfterClaimWindowOpen() {
 	s.relayerSessionsManager.Stop()
 	s.relayerSessionsManager = s.setupNewRelayerSessionsManager()
 
-	// Simulate the block where the claim window opens
+	// Advance to the block where the claim window opens while the relayer sessions manager is stopped
 	s.blockPublishCh <- testblock.NewAnyTimesBlock(s.T(), s.emptyBlockHash, claimWindowOpenHeight)
-	s.forwardToBlock(claimWindowOpenHeight)
+	s.advanceToBlock(claimWindowOpenHeight)
 
 	// Start the new relayer sessions manager
 	err := s.relayerSessionsManager.Start(s.ctx)
@@ -249,7 +249,7 @@ func (s *SessionPersistenceTestSuite) TestRestartAfterClaimSubmitted() {
 	// Calculate when the claim window opens for this session
 	claimWindowOpenHeight := sharedtypes.GetClaimWindowOpenHeight(&s.sharedParams, sessionEndHeight)
 	// Move to the block where the claim window opens (which should trigger claim creation)
-	s.forwardToBlock(claimWindowOpenHeight)
+	s.advanceToBlock(claimWindowOpenHeight)
 
 	// Verify the session tree exists and a claim has been created
 	sessionTree := s.getActiveSessionTree()
@@ -266,8 +266,8 @@ func (s *SessionPersistenceTestSuite) TestRestartAfterClaimSubmitted() {
 	s.relayerSessionsManager.Stop()
 	s.relayerSessionsManager = s.setupNewRelayerSessionsManager()
 
-	// Advance to the next block after claim window open
-	s.forwardToBlock(claimWindowOpenHeight + 1)
+	// Advance to the next block after claim window open while the relayer sessions manager is stopped
+	s.advanceToBlock(claimWindowOpenHeight + 1)
 
 	// Start the new relayer sessions manager
 	err = s.relayerSessionsManager.Start(s.ctx)
@@ -284,7 +284,7 @@ func (s *SessionPersistenceTestSuite) TestRestartAfterClaimSubmitted() {
 	// Calculate when the proof window closes for this session
 	proofWindowOpenHeight := sharedtypes.GetProofWindowCloseHeight(&s.sharedParams, sessionEndHeight)
 	// Move to one block before the proof window closes (which should trigger proof submission)
-	s.forwardToBlock(proofWindowOpenHeight - 1)
+	s.advanceToBlock(proofWindowOpenHeight - 1)
 
 	// Verify the session tree has been removed and a proof was submitted
 	require.Len(s.T(), s.sessionTrees, 0)
@@ -301,7 +301,7 @@ func (s *SessionPersistenceTestSuite) TestRestartAfterClaimWindowClose() {
 	// Calculate when the claim window opens for this session
 	claimWindowOpenHeight := sharedtypes.GetClaimWindowOpenHeight(&s.sharedParams, sessionEndHeight)
 	// Move to one block before the claim window opens
-	s.forwardToBlock(claimWindowOpenHeight - 1)
+	s.advanceToBlock(claimWindowOpenHeight - 1)
 
 	// Verify the session tree exists and no claims have been created
 	require.Len(s.T(), s.sessionTrees, 1)
@@ -314,7 +314,7 @@ func (s *SessionPersistenceTestSuite) TestRestartAfterClaimWindowClose() {
 	// Calculate when the claim window closes for this session
 	claimWindowCloseHeight := sharedtypes.GetClaimWindowCloseHeight(&s.sharedParams, sessionEndHeight)
 	// Move past the claim window close height
-	s.forwardToBlock(claimWindowCloseHeight + 1)
+	s.advanceToBlock(claimWindowCloseHeight + 1)
 
 	// Start the new relayer sessions manager
 	err := s.relayerSessionsManager.Start(s.ctx)
@@ -337,7 +337,7 @@ func (s *SessionPersistenceTestSuite) TestRestartAfterProofWindowClosed() {
 	// Calculate when the claim window closes for this session
 	claimWindowCloseHeight := sharedtypes.GetClaimWindowCloseHeight(&s.sharedParams, sessionEndHeight)
 	// Move to one block before the claim window closes (a claim should be created)
-	s.forwardToBlock(claimWindowCloseHeight - 1)
+	s.advanceToBlock(claimWindowCloseHeight - 1)
 
 	// Verify the session tree exists and a claim has been created
 	sessionTree := s.getActiveSessionTree()
@@ -352,7 +352,7 @@ func (s *SessionPersistenceTestSuite) TestRestartAfterProofWindowClosed() {
 	// Calculate when the proof window closes for this session
 	proofWinodwCloseHeight := sharedtypes.GetProofWindowCloseHeight(&s.sharedParams, sessionEndHeight)
 	// Move past the proof window close height
-	s.forwardToBlock(proofWinodwCloseHeight + 1)
+	s.advanceToBlock(proofWinodwCloseHeight + 1)
 
 	// Start the new relayer sessions manager
 	err := s.relayerSessionsManager.Start(s.ctx)
@@ -388,8 +388,8 @@ func (s *SessionPersistenceTestSuite) getActiveSessionTree() relayer.SessionTree
 	return sessionTree
 }
 
-// setupNewRelayerSessionsManager creates and configures a new relayer sessions manager
-// for testing. This is used both in the initial setup and when simulating restarts.
+// setupNewRelayerSessionsManager creates and configures a new relayer sessions manager for testing.
+// This is used both in the initial setup and when simulating restarts.
 func (s *SessionPersistenceTestSuite) setupNewRelayerSessionsManager() relayer.RelayerSessionsManager {
 	// Initialize a new session trees map
 	s.sessionTrees = make(session.SessionsTreesMap)
@@ -428,13 +428,10 @@ func (s *SessionPersistenceTestSuite) setupSessionManagerDependencies() depinjec
 	supplierClientMock := s.setupMockSupplierClient(ctrl)
 	blockQueryClientMock := s.setupMockBlockQueryClient(ctrl)
 	proofQueryClientMock := s.setupMockProofQueryClient(ctrl)
+	s.blockClient = s.setupMockBlockClient(ctrl)
 
 	// Create a new replay observable for blocks
 	s.blocksObs, s.blockPublishCh = channel.NewReplayObservable[client.Block](s.ctx, 20)
-
-	// Configure and set up mock block client
-	blockClientMock := s.setupMockBlockClient(ctrl)
-	s.blockClient = blockClientMock
 
 	// Create supplier client map and add the mock supplier client
 	supplierClientMap := supplier.NewSupplierClientMap()
@@ -583,9 +580,9 @@ func (s *SessionPersistenceTestSuite) setupMockBlockClient(ctrl *gomock.Controll
 	return blockClientMock
 }
 
-// forwardToBlock advances the test chain to the specified height by
+// advanceToBlock advances the test chain to the specified height by
 // publishing new blocks until the target height is reached.
-func (s *SessionPersistenceTestSuite) forwardToBlock(height int64) {
+func (s *SessionPersistenceTestSuite) advanceToBlock(height int64) {
 	// Get the current height
 	currentHeight := int64(0)
 	currentBlock := s.blockClient.LastBlock(s.ctx)
