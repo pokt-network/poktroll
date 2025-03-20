@@ -20,6 +20,7 @@ import (
 	"github.com/pokt-network/poktroll/pkg/observable/channel"
 	"github.com/pokt-network/poktroll/pkg/polylog"
 	"github.com/pokt-network/poktroll/pkg/relayer"
+	"github.com/pokt-network/poktroll/pkg/retry"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	servicetypes "github.com/pokt-network/poktroll/x/service/types"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
@@ -252,7 +253,7 @@ func (rmtr *ProxyRelayMeter) forEachNewBlockFn(ctx context.Context, block client
 	rmtr.relayMeterMu.Lock()
 	defer rmtr.relayMeterMu.Unlock()
 
-	sharedParams, err := rmtr.sharedQuerier.GetParams(ctx)
+	sharedParams, err := retry.GetParams(ctx, rmtr.sharedQuerier)
 	if err != nil {
 		return
 	}
@@ -306,7 +307,9 @@ func (rmtr *ProxyRelayMeter) ensureRequestSessionRelayMeter(ctx context.Context,
 	// max amount of stake the application can consume.
 	if !ok {
 		var app apptypes.Application
-		app, err := rmtr.applicationQuerier.GetApplication(ctx, appAddress)
+		app, err := retry.Call(func() (apptypes.Application, error) {
+			return rmtr.applicationQuerier.GetApplication(ctx, appAddress)
+		})
 		if err != nil {
 			return nil, err
 		}
@@ -321,22 +324,28 @@ func (rmtr *ProxyRelayMeter) ensureRequestSessionRelayMeter(ctx context.Context,
 			)
 		}
 
-		sharedParams, err := rmtr.sharedQuerier.GetParams(ctx)
+		sharedParams, err := retry.GetParams(ctx, rmtr.sharedQuerier)
 		if err != nil {
 			return nil, err
 		}
 
-		service, err := rmtr.serviceQuerier.GetService(ctx, reqMeta.SessionHeader.ServiceId)
+		service, err := retry.Call(func() (sharedtypes.Service, error) {
+			return rmtr.serviceQuerier.GetService(ctx, reqMeta.SessionHeader.ServiceId)
+		})
 		if err != nil {
 			return nil, err
 		}
 
-		serviceRelayDifficulty, err := rmtr.serviceQuerier.GetServiceRelayDifficulty(ctx, service.Id)
+		serviceRelayDifficulty, err := retry.Call(
+			func() (servicetypes.RelayMiningDifficulty, error) {
+				return rmtr.serviceQuerier.GetServiceRelayDifficulty(ctx, service.Id)
+			},
+		)
 		if err != nil {
 			return nil, err
 		}
 
-		sessionParams, err := rmtr.sessionQuerier.GetParams(ctx)
+		sessionParams, err := retry.GetParams(ctx, rmtr.sessionQuerier)
 		if err != nil {
 			return nil, err
 		}
