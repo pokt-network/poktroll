@@ -21,6 +21,7 @@ import (
 	"github.com/pokt-network/poktroll/pkg/client/supplier"
 	"github.com/pokt-network/poktroll/pkg/crypto/protocol"
 	"github.com/pokt-network/poktroll/pkg/observable/channel"
+	"github.com/pokt-network/poktroll/pkg/polylog"
 	"github.com/pokt-network/poktroll/pkg/polylog/polyzero"
 	"github.com/pokt-network/poktroll/pkg/relayer"
 	"github.com/pokt-network/poktroll/pkg/relayer/session"
@@ -44,7 +45,7 @@ import (
 // the weight of a relay when updating a session's SMT.
 func requireProofCountEqualsExpectedValueFromProofParams(t *testing.T, proofParams prooftypes.Params, proofCount int) {
 	var (
-		_, ctx         = testpolylog.NewLoggerWithCtx(context.Background(), polyzero.DebugLevel)
+		logger, ctx    = testpolylog.NewLoggerWithCtx(context.Background(), polyzero.DebugLevel)
 		spec           = smt.NewTrieSpec(protocol.NewTrieHasher(), true)
 		emptyBlockHash = make([]byte, spec.PathHasherSize())
 		activeSession  *sessiontypes.Session
@@ -75,7 +76,7 @@ func requireProofCountEqualsExpectedValueFromProofParams(t *testing.T, proofPara
 	proofCost := feePerProof + gasCost
 	supplierOperatorBalance := proofCost
 	supplierClientMap := testsupplier.NewClaimProofSupplierClientMap(ctx, t, supplierOperatorAddress, proofCount)
-	blockPublishCh, minedRelaysPublishCh := setupDependencies(t, ctx, supplierClientMap, emptyBlockHash, proofParams, supplierOperatorBalance)
+	blockPublishCh, minedRelaysPublishCh := setupDependencies(t, ctx, supplierClientMap, emptyBlockHash, proofParams, supplierOperatorBalance, logger)
 
 	// Publish a mined relay to the minedRelaysPublishCh to insert into the session tree.
 	minedRelay := testrelayer.NewUnsignedMinedRelay(t, activeSession.Header, supplierOperatorAddress)
@@ -137,7 +138,7 @@ func TestRelayerSessionsManager_ProofNotRequired(t *testing.T) {
 
 func TestRelayerSessionsManager_InsufficientBalanceForProofSubmission(t *testing.T) {
 	var (
-		_, ctx         = testpolylog.NewLoggerWithCtx(context.Background(), polyzero.DebugLevel)
+		logger, ctx    = testpolylog.NewLoggerWithCtx(context.Background(), polyzero.DebugLevel)
 		spec           = smt.NewTrieSpec(protocol.NewTrieHasher(), true)
 		emptyBlockHash = make([]byte, spec.PathHasherSize())
 	)
@@ -243,7 +244,7 @@ func TestRelayerSessionsManager_InsufficientBalanceForProofSubmission(t *testing
 	supplierClientMap := supplier.NewSupplierClientMap()
 	supplierClientMap.SupplierClients[supplierOperatorAddress] = supplierClientMock
 
-	blockPublishCh, minedRelaysPublishCh := setupDependencies(t, ctx, supplierClientMap, emptyBlockHash, proofParams, supplierOperatorBalance)
+	blockPublishCh, minedRelaysPublishCh := setupDependencies(t, ctx, supplierClientMap, emptyBlockHash, proofParams, supplierOperatorBalance, logger)
 
 	// For each service, publish a mined relay to the minedRelaysPublishCh to
 	// insert into the session tree.
@@ -281,6 +282,7 @@ func setupDependencies(
 	blockHash []byte,
 	proofParams prooftypes.Params,
 	supplierOperatorBalance int64,
+	logger polylog.Logger,
 ) (chan<- client.Block, chan<- *relayer.MinedRelay) {
 	// Set up dependencies.
 	blocksObs, blockPublishCh := channel.NewReplayObservable[client.Block](ctx, 20)
@@ -326,6 +328,7 @@ func setupDependencies(
 		serviceQueryClientMock,
 		proofQueryClientMock,
 		bankQueryClient,
+		logger,
 	)
 	storesDirectoryOpt := testrelayer.WithTempStoresDirectory(t)
 
