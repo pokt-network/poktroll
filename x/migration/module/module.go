@@ -17,6 +17,7 @@ import (
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+
 	// this line is used by starport scaffolding # 1
 
 	modulev1 "github.com/pokt-network/poktroll/api/poktroll/migration/module"
