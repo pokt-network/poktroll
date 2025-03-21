@@ -40,7 +40,7 @@ data:
 
             location / {
                 default_type application/json;
-                return 200 '{"jsonrpc":"2.0","id":1,"result":"0x2f67"}';
+                return 200 '{"jsonrpc":"2.0","id":1,"result":"0xdeadbeef"}';
             }
         }
     }

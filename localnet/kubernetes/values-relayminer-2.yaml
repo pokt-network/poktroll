@@ -8,7 +8,7 @@ config:
     - service_id: anvil
       listen_url: http://0.0.0.0:8545
       service_config:
-        backend_url: http://nginx-evm-response:8547/
+        backend_url: http://anvil:8547/ # Switch to http://nginx-evm-response:8547/ if you want a very fast backend response
         publicly_exposed_endpoints:
           - relayminer2
     - service_id: anvilws
