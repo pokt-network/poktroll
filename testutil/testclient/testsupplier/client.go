@@ -51,14 +51,14 @@ func NewClaimProofSupplierClientMap(
 ) *supplier.SupplierClientMap {
 	t.Helper()
 
-	ctrl := gomock.NewController(t)
-	supplierClientMock := mockclient.NewMockSupplierClient(ctrl)
-
-	supplierOperatorAccAddress := cosmostypes.MustAccAddressFromBech32(supplierOperatorAddress)
+	supplierClientMock := newBaseClaimProofSupplierClientMock(ctx, t, supplierOperatorAddress, proofCount)
 	supplierClientMock.EXPECT().
-		OperatorAddress().
-		Return(&supplierOperatorAccAddress).
-		AnyTimes()
+		SubmitProofs(
+			gomock.Eq(ctx),
+			gomock.AssignableToTypeOf(([]client.MsgSubmitProof)(nil)),
+		).
+		Return(nil).
+		Times(proofCount)
 
 	supplierClientMock.EXPECT().
 		CreateClaims(
@@ -68,6 +68,32 @@ func NewClaimProofSupplierClientMap(
 		Return(nil).
 		Times(1)
 
+	supplierClientMap := supplier.NewSupplierClientMap()
+	supplierClientMap.SupplierClients[supplierOperatorAddress] = supplierClientMock
+
+	return supplierClientMap
+}
+
+// TODO_IN_THIS_COMMIT: godoc...
+func NewClaimProofSupplierClientMapWithTransientError(
+	ctx context.Context,
+	t *testing.T,
+	supplierOperatorAddress string,
+	proofCount int,
+	retryCount int,
+	transientErr error,
+) *supplier.SupplierClientMap {
+	t.Helper()
+
+	supplierClientMock := newBaseClaimProofSupplierClientMock(ctx, t, supplierOperatorAddress, 1)
+	supplierClientMock.EXPECT().
+		SubmitProofs(
+			gomock.Eq(ctx),
+			gomock.AssignableToTypeOf(([]client.MsgSubmitProof)(nil)),
+		).
+		Return(transientErr).
+		Times(retryCount)
+
 	supplierClientMock.EXPECT().
 		SubmitProofs(
 			gomock.Eq(ctx),
@@ -76,8 +102,45 @@ func NewClaimProofSupplierClientMap(
 		Return(nil).
 		Times(proofCount)
 
+	supplierClientMock.EXPECT().
+		CreateClaims(
+			gomock.Eq(ctx),
+			gomock.AssignableToTypeOf(([]client.MsgCreateClaim)(nil)),
+		).
+		Return(transientErr).
+		Times(retryCount)
+
+	supplierClientMock.EXPECT().
+		CreateClaims(
+			gomock.Eq(ctx),
+			gomock.AssignableToTypeOf(([]client.MsgCreateClaim)(nil)),
+		).
+		Return(nil).
+		Times(1)
+
 	supplierClientMap := supplier.NewSupplierClientMap()
 	supplierClientMap.SupplierClients[supplierOperatorAddress] = supplierClientMock
 
 	return supplierClientMap
+}
+
+// TODO_IN_THIS_COMMIT: godoc...
+func newBaseClaimProofSupplierClientMock(
+	ctx context.Context,
+	t *testing.T,
+	supplierOperatorAddress string,
+	claimCount int,
+) *mockclient.MockSupplierClient {
+	t.Helper()
+
+	ctrl := gomock.NewController(t)
+	supplierClientMock := mockclient.NewMockSupplierClient(ctrl)
+
+	supplierOperatorAccAddress := cosmostypes.MustAccAddressFromBech32(supplierOperatorAddress)
+	supplierClientMock.EXPECT().
+		OperatorAddress().
+		Return(&supplierOperatorAccAddress).
+		AnyTimes()
+
+	return supplierClientMock
 }

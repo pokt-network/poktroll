@@ -4,8 +4,11 @@ import (
 	"context"
 	"fmt"
 	"slices"
+	"sync"
 
 	sdktypes "github.com/cosmos/cosmos-sdk/types"
+
+	"github.com/pokt-network/smt"
 
 	"github.com/pokt-network/poktroll/app/volatile"
 	"github.com/pokt-network/poktroll/pkg/client"
@@ -13,11 +16,10 @@ import (
 	"github.com/pokt-network/poktroll/pkg/observable"
 	"github.com/pokt-network/poktroll/pkg/observable/channel"
 	"github.com/pokt-network/poktroll/pkg/observable/filter"
-	"github.com/pokt-network/poktroll/pkg/observable/logging"
+	"github.com/pokt-network/poktroll/pkg/polylog"
 	"github.com/pokt-network/poktroll/pkg/relayer"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
-	"github.com/pokt-network/smt"
 )
 
 // The cumulative fees of creating a single claim, followed by submitting a single proof.
@@ -38,8 +40,10 @@ func (rs *relayerSessionsManager) createClaims(
 	supplierClient client.SupplierClient,
 	sessionsToClaimObs observable.Observable[[]relayer.SessionTree],
 ) observable.Observable[[]relayer.SessionTree] {
+	logger := rs.logger.With("method", "createClaims")
+
 	failedCreateClaimSessionsObs, failedCreateClaimSessionsPublishCh :=
-		channel.NewObservable[[]relayer.SessionTree]()
+		channel.NewObservable[sessionTreesOpRetry]()
 
 	// Map sessionsToClaimObs to a new observable of the same type which is notified
 	// when the session is eligible to be claimed.
@@ -53,15 +57,18 @@ func (rs *relayerSessionsManager) createClaims(
 	// claims have been created or an error has been encountered, respectively.
 	eitherClaimedSessionsObs := channel.Map(
 		ctx, sessionsWithOpenClaimWindowObs,
-		rs.newMapClaimSessionsFn(supplierClient, failedCreateClaimSessionsPublishCh),
+		rs.newMapClaimSessionsFn(logger, supplierClient, failedCreateClaimSessionsPublishCh),
 	)
 
-	// TODO_TECHDEBT: pass failed create claim sessions to some retry mechanism.
-	// TODO_IMPROVE: It may be useful for the retry mechanism which consumes the
-	// observable which corresponds to failSubmitProofsSessionsCh to have a
-	// reference to the error which caused the proof submission to fail.
-	// In this case, the error may not be persistent.
-	logging.LogErrors(ctx, filter.EitherError(ctx, eitherClaimedSessionsObs))
+	//// TODO_TECHDEBT: pass failed create claim sessions to some retry mechanism.
+	//// TODO_IMPROVE: It may be useful for the retry mechanism which consumes the
+	//// observable which corresponds to failSubmitProofsSessionsCh to have a
+	//// reference to the error which caused the proof submission to fail.
+	//// In this case, the error may not be persistent.
+	//logging.LogErrors(ctx, filter.EitherError(ctx, eitherClaimedSessionsObs))
+
+	// TODO_IN_THIS_COMMIT: comment...
+	rs.retryCreateClaims(ctx, supplierClient, failedCreateClaimSessionsObs, failedCreateClaimSessionsPublishCh)
 
 	// Delete expired session trees so they don't get claimed again.
 	channel.ForEach(
@@ -74,13 +81,51 @@ func (rs *relayerSessionsManager) createClaims(
 	return filter.EitherSuccess(ctx, eitherClaimedSessionsObs)
 }
 
+// TODO_IN_THIS_COMMIT: godoc & move...
+func (rs *relayerSessionsManager) retryCreateClaims(
+	ctx context.Context,
+	supplierClient client.SupplierClient,
+	failedCreateClaimsSessionsObs observable.Observable[sessionTreesOpRetry],
+	failedCreateClaimsSessionsPublishCh chan<- sessionTreesOpRetry,
+) {
+	logger := rs.logger.With("method", "retrySubmitProofs")
+
+	// TODO_IN_THIS_COMMIT: map/filter out expired sessions...
+
+	// TODO_IN_THIS_COMMIT: comment...
+	// TODO_IN_THIS_COMMIT: consolidate into sessionTreesOpRetry struct...
+	retryAttemptsMu := &sync.Mutex{}
+	retryAttempts := make(map[int64]uint64)
+
+	// TODO_IN_THIS_COMMIT: comment... map/filter out max retried sessions...
+	createClaimsSessionsToRetryObs := channel.Map(
+		ctx, failedCreateClaimsSessionsObs,
+		newMapDeleteExpiredSessionsRetryFn(logger, retryAttemptsMu, retryAttempts),
+	)
+
+	// TODO_IN_THIS_COMMIT: comment... no need to log errors again, reusing existing error channel...
+	mapClaimSessions := rs.newMapClaimSessionsFn(logger, supplierClient, failedCreateClaimsSessionsPublishCh)
+
+	// TODO_IN_THIS_COMMIT: resume here!!!
+	// TODO_IN_THIS_COMMIT: resume here!!!
+	// TODO_IN_THIS_COMMIT: resume here!!!
+	// TODO_IN_THIS_COMMIT: resume here!!!
+	//
+	// Proof retries work but claim retries don't.
+	// This is because you implemented proof retries first, which is terminal.
+	// Claim retries need to propagate successful claims through the pipeline.
+	channel.ForEach(ctx, createClaimsSessionsToRetryObs,
+		rs.newForEachSessionsRetryFn(mapClaimSessions, retryAttemptsMu, retryAttempts),
+	)
+}
+
 // mapWaitForEarliestCreateClaimsHeight returns a new MapFn that adds a delay
 // between being notified and notifying.
 // It calculates and waits for the earliest block height, allowed by the protocol,
 // at which claims can be created for the given session number, then emits the
 // session **at that moment**.
 func (rs *relayerSessionsManager) mapWaitForEarliestCreateClaimsHeight(
-	failedCreateClaimsSessionsPublishCh chan<- []relayer.SessionTree,
+	failedCreateClaimsSessionsPublishCh chan<- sessionTreesOpRetry,
 ) channel.MapFn[[]relayer.SessionTree, []relayer.SessionTree] {
 	return func(
 		ctx context.Context,
@@ -105,7 +150,7 @@ func (rs *relayerSessionsManager) mapWaitForEarliestCreateClaimsHeight(
 func (rs *relayerSessionsManager) waitForEarliestCreateClaimsHeight(
 	ctx context.Context,
 	sessionTrees []relayer.SessionTree,
-	failedCreateClaimsSessionsCh chan<- []relayer.SessionTree,
+	failedCreateClaimsSessionsRetryCh chan<- sessionTreesOpRetry,
 ) []relayer.SessionTree {
 	// Given the sessionTrees are grouped by their sessionEndHeight, we can use the
 	// first one from the group to calculate the earliest height for claim creation.
@@ -120,8 +165,12 @@ func (rs *relayerSessionsManager) waitForEarliestCreateClaimsHeight(
 	// we should be using the value that the params had for the session which includes queryHeight.
 	sharedParams, err := rs.sharedQueryClient.GetParams(ctx)
 	if err != nil {
+		failedCreateClaimsSessionsRetryCh <- sessionTreesOpRetry{
+			lastErr:      err,
+			sessionTrees: sessionTrees,
+		}
+
 		logger.Error().Err(err).Msg("failed to get shared params")
-		failedCreateClaimsSessionsCh <- sessionTrees
 		return nil
 	}
 
@@ -141,8 +190,16 @@ func (rs *relayerSessionsManager) waitForEarliestCreateClaimsHeight(
 	// of block client construction. This check and failure branch can be removed once this
 	// is implemented.
 	if claimsWindowOpenBlock == nil {
-		logger.Warn().Msg("failed to observe earliest claim commit height offset seed block height")
-		failedCreateClaimsSessionsCh <- sessionTrees
+		err = fmt.Errorf(
+			"failed to observe earliest claim commit height offset seed block height for session end height: %d",
+			sessionTrees[0].GetSessionHeader().GetSessionEndBlockHeight(),
+		)
+		failedCreateClaimsSessionsRetryCh <- sessionTreesOpRetry{
+			lastErr:      err,
+			sessionTrees: sessionTrees,
+		}
+
+		logger.Warn().Err(err).Send()
 		return nil
 	}
 
@@ -182,8 +239,15 @@ func (rs *relayerSessionsManager) waitForEarliestCreateClaimsHeight(
 	// Create claims for the given sessionTrees while waiting for the target block height.
 	claimsFlushed, failedClaims := rs.createClaimRoots(sessionTrees)
 	if len(failedClaims) > 0 {
-		logger.Warn().Msgf("failed to create claims for %d session trees", len(failedClaims))
-		failedCreateClaimsSessionsCh <- failedClaims
+		err = fmt.Errorf(
+			"failed to create claims for %d session trees with session end height %d",
+			len(failedClaims), sessionTrees[0].GetSessionHeader().GetSessionEndBlockHeight(),
+		)
+		failedCreateClaimsSessionsRetryCh <- sessionTreesOpRetry{
+			lastErr:      err,
+			sessionTrees: failedClaims,
+		}
+		logger.Warn().Err(err).Send()
 	}
 
 	// Block until the target block height is observed.
@@ -195,21 +259,29 @@ func (rs *relayerSessionsManager) waitForEarliestCreateClaimsHeight(
 // session number. Any session which encounters an error while creating a claim
 // is sent on the failedCreateClaimSessions channel.
 func (rs *relayerSessionsManager) newMapClaimSessionsFn(
+	logger polylog.Logger,
 	supplierClient client.SupplierClient,
-	failedCreateClaimsSessionsPublishCh chan<- []relayer.SessionTree,
+	failedCreateClaimsSessionsRetryPublishCh chan<- sessionTreesOpRetry,
 ) channel.MapFn[[]relayer.SessionTree, either.SessionTrees] {
 	return func(
 		ctx context.Context,
 		sessionTrees []relayer.SessionTree,
 	) (_ either.SessionTrees, skip bool) {
 		if len(sessionTrees) == 0 {
+			// TODO_IN_THIS_COMMIT: see if changing this breaks any tests...
+			// TODO_TECHDEBT: Is there a reason NOT to skip?
+			// We currently have to handle session tree slices with
+			// zero length downstream but wouldn't if we skipped.
 			return either.Success(sessionTrees), false
 		}
 
 		// Filter out the session trees that the supplier operator can afford to claim.
 		claimableSessionTrees, err := rs.payableProofsSessionTrees(ctx, sessionTrees)
 		if err != nil {
-			failedCreateClaimsSessionsPublishCh <- sessionTrees
+			failedCreateClaimsSessionsRetryPublishCh <- sessionTreesOpRetry{
+				lastErr:      err,
+				sessionTrees: sessionTrees,
+			}
 			rs.logger.Error().Err(err).Msg("failed to calculate payable proofs session trees")
 			return either.Error[[]relayer.SessionTree](err), false
 		}
@@ -224,9 +296,15 @@ func (rs *relayerSessionsManager) newMapClaimSessionsFn(
 		}
 
 		// Create claims for each supplier operator address in `sessionTrees`.
-		if err := supplierClient.CreateClaims(ctx, claimMsgs...); err != nil {
-			failedCreateClaimsSessionsPublishCh <- claimableSessionTrees
-			rs.logger.Error().Err(err).Msg("failed to create claims")
+		if err = supplierClient.CreateClaims(ctx, claimMsgs...); err != nil {
+			failedCreateClaimsSessionsRetryPublishCh <- sessionTreesOpRetry{
+				lastErr:      err,
+				sessionTrees: claimableSessionTrees,
+			}
+
+			// TODO_IN_THIS_COMMIT: update message...
+			logger.Error().Err(err).Msg("failed to create claims (1)")
+
 			return either.Error[[]relayer.SessionTree](err), false
 		}
 
