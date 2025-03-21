@@ -23,8 +23,7 @@ var (
 )
 
 const (
-	opWeightMsgUpdateParam = "op_weight_msg_update_param"
-	// TODO_TECHDEBT: Determine the simulation weight value
+	opWeightMsgUpdateParam          = "op_weight_msg_update_param"
 	defaultWeightMsgUpdateParam int = 100
 
 	// this line is used by starport scaffolding # simapp/module/const

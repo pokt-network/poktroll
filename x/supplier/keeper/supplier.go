@@ -73,7 +73,7 @@ func (k Keeper) GetAllSuppliers(ctx context.Context) (suppliers []sharedtypes.Su
 // slice or map will be nil if no values are provided in the proto message.
 // This function ensures that the supplier object has all fields initialized
 // to their default values.
-// TODO_INVESTIGATE: This function is a workaround for the CosmosSDK codec treating
+// TODO_TECHDEBT: This function is a workaround for the CosmosSDK codec treating
 // empty slices and maps as nil. We should investigate how we can make the codec
 // treat empty slices and maps as empty instead of nil.
 // Refer to the following discussion for more context:
@@ -97,5 +97,5 @@ func initializeNilSupplierFields(supplier *sharedtypes.Supplier) {
 	}
 }
 
-// TODO_OPTIMIZE: Index suppliers by service ID
+// TODO_IMPROVE: Index suppliers by service ID
 // func (k Keeper) GetAllSuppliers(ctx, sdkContext, serviceId string) (suppliers []sharedtypes.Supplier) {}

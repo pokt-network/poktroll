@@ -29,7 +29,7 @@ import (
 	relayercmd "github.com/pokt-network/poktroll/pkg/relayer/cmd"
 )
 
-// TODO_MAINNET: adjust chain ID to `pocket`, `pokt` or `shannon`
+// TODO_MAINNET_CRITICAL: adjust chain ID to `pocket`, `pokt` or `shannon`
 const DefaultChainID = "poktroll"
 
 // NewRootCmd creates a new root command for poktrolld. It is called once in the main function.
@@ -137,10 +137,6 @@ func NewRootCmd() *cobra.Command {
 	rootCmd.AddCommand(
 		relayercmd.RelayerCmd(),
 	)
-
-	// TODO_MAINNET(@commoddity): Consider adding an entrypoint to deploy a PATH
-	// gateway to the localnet to streamline it for users.
-	// For reference, see how we removed appgateserver in #879.
 
 	return rootCmd
 }

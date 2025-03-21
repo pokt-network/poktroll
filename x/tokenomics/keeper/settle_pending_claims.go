@@ -153,9 +153,8 @@ func (k Keeper) SettlePendingClaims(ctx cosmostypes.Context) (
 			}
 
 			if claim.ProofValidationStatus != prooftypes.ClaimProofStatus_VALIDATED {
-				// TODO_BETA(@red-0ne): Slash the supplier in proportion to their stake.
-				// TODO_POST_MAINNET: Consider allowing suppliers to RemoveClaim via a new
-				// message in case it was sent by accident
+				// TODO_MAINNET_MIGRATION(@red-0ne): Slash the supplier in proportion to their stake.
+				// TODO_POST_MAINNET: Consider allowing suppliers to RemoveClaim via a new message in case it was sent by accident
 
 				// Proof was required but is invalid or not found.
 				// Emit an event that a claim has expired and being removed without being settled.
@@ -210,8 +209,7 @@ func (k Keeper) SettlePendingClaims(ctx cosmostypes.Context) (
 		appAddress := claim.GetSessionHeader().GetApplicationAddress()
 		applicationInitialStake := applicationInitialStakeMap[appAddress]
 
-		// TODO_MAINNET(@red-0ne): Add tests to ensure that a zero application stake
-		// is handled correctly.
+		// Ensure that the application has a non-zero initial stake.
 		if applicationInitialStake.IsZero() {
 			logger.Error(fmt.Sprintf("application %q has a zero initial stake", appAddress))
 

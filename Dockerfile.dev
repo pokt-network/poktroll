@@ -26,7 +26,6 @@ RUN make install_cosmovisor
 
 RUN make localnet_regenesis
 
-# TODO_DOCUMENT(@okdas): Ports are not documented as they will soon be changed with a document to follow
 EXPOSE 8545
 EXPOSE 8546
 EXPOSE 8547
