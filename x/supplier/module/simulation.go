@@ -23,16 +23,13 @@ var (
 )
 
 const (
-	opWeightMsgStakeSupplier = "op_weight_msg_stake_supplier"
-	// TODO_TECHDEBT: Determine the simulation weight value
+	opWeightMsgStakeSupplier          = "op_weight_msg_stake_supplier"
 	defaultWeightMsgStakeSupplier int = 100
 
-	opWeightMsgUnstakeSupplier = "op_weight_msg_unstake_supplier"
-	// TODO_TECHDEBT: Determine the simulation weight value
+	opWeightMsgUnstakeSupplier          = "op_weight_msg_unstake_supplier"
 	defaultWeightMsgUnstakeSupplier int = 100
 
-	opWeightMsgUpdateParam = "op_weight_msg_update_param"
-	// TODO_TECHDEBT: Determine the simulation weight value
+	opWeightMsgUpdateParam          = "op_weight_msg_update_param"
 	defaultWeightMsgUpdateParam int = 100
 
 	// this line is used by starport scaffolding # simapp/module/const

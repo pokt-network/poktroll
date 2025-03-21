@@ -76,7 +76,6 @@ func checkOrInitSDKConfig() {
 
 // initCometBFTConfig helps to override default CometBFT Config (config.toml) values.
 // These values are going to be rendered into the config file on `poktrolld init`.
-// TODO_MAINNET: Reconsider values - check `config.toml` for possible options.
 func initCometBFTConfig() *cmtcfg.Config {
 	cfg := cmtcfg.DefaultConfig()
 
@@ -100,7 +99,6 @@ func initCometBFTConfig() *cmtcfg.Config {
 // initAppConfig helps to override default appConfig (app.toml) template and configs.
 // These values are going to be rendered into the config file on `poktrolld init`.
 // return "", nil if no custom configuration is required for the application.
-// TODO_MAINNET: Reconsider values - check `app.toml` for possible options.
 func initAppConfig() (string, interface{}) {
 	type CustomAppConfig struct {
 		serverconfig.Config `mapstructure:",squash"`

@@ -1,8 +1,9 @@
 Feature: Stake Supplier Namespace
 
+    # TODO_TECHDEBT_TEST: Set the supplier stake fee in a custom test.
+
     Scenario: User can stake a Supplier
         Given the user has the pocketd binary installed
-        # TODO_UPNEXT: Set the supplier stake fee once it is a param.
         And the user verifies the "supplier" for account "supplier2" is not staked
         And the account "supplier2" has a balance greater than "1000071" uPOKT
         When the user stakes a "supplier" with "1000070" uPOKT for "anvil" service from the account "supplier2"

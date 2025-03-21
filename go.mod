@@ -50,7 +50,7 @@ require (
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.20.0
 	github.com/hashicorp/go-metrics v0.5.3
 	github.com/pokt-network/ring-go v0.1.0
-	// TODO_IMPROVE: Whenever we update a protobuf in the `poktroll` repo, we need to:
+	// TODO_TECHDEBT: Whenever we update a protobuf in the `poktroll` repo, we need to:
 	// 1. Merge in the update PR (and it's generated outputs) into `poktroll` main.
 	// 2. Update the `poktroll` sha in the `shannon-sdk` to reflect the new dependency.
 	// 3. Update the `shannon-sdk` sha in the `poktroll` repo (here).

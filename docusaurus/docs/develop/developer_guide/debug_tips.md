@@ -16,8 +16,8 @@ If you have a tip you'd like to share with others, please open a PR to add it he
   - [`itest` Example](#itest-example)
 - [`poktrolld query tx` - Investigating Failed Transactions](#poktrolld-query-tx---investigating-failed-transactions)
   - [`poktrolld query tx` Example](#poktrolld-query-tx-example)
-  - [TODO_DOCUMENT: pprof](#todo_document-pprof)
-  - [TODO_DOCUMENT: dlv](#todo_document-dlv)
+  - [TODO_DOCUMENT(@okdas): pprof](#todo_documentokdas-pprof)
+  - [TODO_DOCUMENT(@okdas): dlv](#todo_documentokdas-dlv)
 
 ## `itest` - Investigating Flaky Tests
 
@@ -115,6 +115,6 @@ The above command will produce the following output:
 
 :::
 
-### TODO_DOCUMENT: pprof
+### TODO_DOCUMENT(@okdas): pprof
 
-### TODO_DOCUMENT: dlv
+### TODO_DOCUMENT(@okdas): dlv

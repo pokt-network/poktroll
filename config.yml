@@ -91,7 +91,7 @@ validators:
     app:
       # DEV_NOTE: Ignite does not carry over all defaults, so we are going to match `minimum-gas-prices` with `cmd/config.go`.
       # See the enhancement request here: https://github.com/ignite/cli/issues/4340
-      # TODO_BETA(@okdas, #794): turn on `minimum-gas-prices` back
+      # TODO_MAINNET_MIGRATION(@okdas, #794): turn on `minimum-gas-prices` back
       # minimum-gas-prices: 0.000000001upokt
       telemetry:
         enabled: true
@@ -148,7 +148,6 @@ genesis:
     staking:
       params:
         bond_denom: upokt
-        # TODO_BETA(@okdas): Update this to 10 for Beta TestNet.
         max_validators: 1
     crisis:
       constant_fee:
@@ -167,8 +166,6 @@ genesis:
         # Application module
         - address: pokt1rl3gjgzexmplmds3tq3r3yk84zlwdl6djzgsvm
           coins:
-            # TODO_MAINNET(@olshansk): Pass config.yml into ChatGPT to build a script
-            # that ensures the amounts line up
             - amount: "200000136" # MUST BE equal to the total of all app stakes below
               denom: upokt
         # Supplier module
@@ -190,7 +187,7 @@ genesis:
       params:
         max_delegated_gateways: "7"
         min_stake:
-          # TODO_BETA(@bryanchriswhite): Determine realistic amount for minimum application stake amount.
+          # TODO_MAINNET_MIGRATION(@olshansk): Determine realistic amount for minimum application stake amount.
           amount: "100000000" # 100 POKT
           denom: upokt
       applicationList:
@@ -224,11 +221,11 @@ genesis:
             denom: upokt
     supplier:
       params:
-        # TODO_BETA(@bryanchriswhite): Determine realistic amount for minimum gateway stake amount.
+        # TODO_MAINNET_MIGRATION(@olshansk): Determine realistic amount for minimum gateway stake amount.
         min_stake:
           amount: "1000000" # 1 POKT
           denom: upokt
-        # TODO_BETA(@bryanchriswhite): Determine realistic amount for supplier staking fee.
+        # TODO_MAINNET_MIGRATION(@olshansk): Determine realistic amount for supplier staking fee.
         staking_fee:
           amount: "1" # 1 uPOKT
           denom: upokt
@@ -259,7 +256,7 @@ genesis:
             denom: upokt
     gateway:
       params:
-        # TODO_BETA(@bryanchriswhite): Determine realistic amount for minimum gateway stake amount.
+        # TODO_MAINNET_MIGRATION(@olshansk): Determine realistic amount for minimum gateway stake amount.
         min_stake:
           amount: "1000000" # 1 POKT
           denom: upokt
@@ -318,7 +315,7 @@ genesis:
           application: 0.0
         # The dao reward address SHOULD match that of the "pnf" below (i.e. `make poktrolld_addr ACC_NAME=pnf`).
         # This is the address that will receive the dao/foundation rewards during claim settlement (global mint TLM).
-        # TODO_MAINNET(@olshansk): Consolidate the usage of DAO/PNF throughout the configs & codebase.
+        # TODO_MAINNET_MIGRATION(@olshansk): Consolidate the usage of DAO/PNF throughout the configs & codebase.
         dao_reward_address: "pokt1eeeksh2tvkh7wzmfrljnhw4wrhs55lcuvmekkw"
         global_inflation_per_claim: 0.1
     shared:
