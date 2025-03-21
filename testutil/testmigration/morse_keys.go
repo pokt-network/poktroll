@@ -12,6 +12,8 @@ import (
 	"github.com/cometbft/cometbft/crypto"
 	"github.com/cometbft/cometbft/crypto/ed25519"
 	"golang.org/x/crypto/scrypt"
+
+	"github.com/pokt-network/poktroll/cmd"
 )
 
 // DEV_NOTE: This file is necessary for E2E testing the migration module CLI.
@@ -46,8 +48,8 @@ const (
 var BcryptSecurityParameter = 12
 
 // NewArmoredJson returns a new ArmoredJson struct with the given fields.
-func NewArmoredJson(kdf, salt, hint, ciphertext string) ArmoredJson {
-	return ArmoredJson{
+func NewArmoredJson(kdf, salt, hint, ciphertext string) cmd.ArmoredJson {
+	return cmd.ArmoredJson{
 		Kdf:        kdf,
 		Salt:       salt,
 		SecParam:   strconv.Itoa(BcryptSecurityParameter),
@@ -116,13 +118,4 @@ func EncryptAESGCM(key []byte, src []byte) ([]byte, error) {
 	nonce := key[:12]
 	out := gcm.Seal(nil, nonce, src, nil)
 	return out, nil
-}
-
-// ArmoredJson is a data structure which is used to (de)serialize the encrypted exported Morse private key file.
-type ArmoredJson struct {
-	Kdf        string `json:"kdf" yaml:"kdf"`
-	Salt       string `json:"salt" yaml:"salt"`
-	SecParam   string `json:"secparam" yaml:"secparam"`
-	Hint       string `json:"hint" yaml:"hint"`
-	Ciphertext string `json:"ciphertext" yaml:"ciphertext"`
 }

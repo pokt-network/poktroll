@@ -14,7 +14,7 @@ import (
 	"golang.org/x/crypto/scrypt"
 	"golang.org/x/term"
 
-	"github.com/pokt-network/poktroll/testutil/testmigration"
+	"github.com/pokt-network/poktroll/cmd"
 )
 
 // DEV_NOTE: The following code is extracted and/or derived from Morse (pocket-core) code.
@@ -73,7 +73,7 @@ func ensurePassphrase(passphrase string, noPrompt bool) (string, error) {
 // UnarmorDecryptPrivKey deserializes and decrypts the exported Morse private key file in armorStr using the passphrase.
 func UnarmorDecryptPrivKey(armorStr []byte, passphrase string) (ed25519.PrivKey, error) {
 	var privKey ed25519.PrivKey
-	armoredJson := testmigration.ArmoredJson{}
+	armoredJson := cmd.ArmoredJson{}
 
 	// trying to unmarshal to ArmoredJson Struct
 	if err := json.Unmarshal(armorStr, &armoredJson); err != nil {
