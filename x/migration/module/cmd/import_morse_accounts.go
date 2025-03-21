@@ -30,7 +30,7 @@ For more help information, see:
 	$ pocket util export-genesis-for-reset -h
 	$ poktrolld tx migration collect-morse-accounts
 
-For more documentation, refer to: https://dev.poktroll.com/operate/morse_migration/overview.md`,
+For more documentation, refer to: https://dev.poktroll.com/operate/morse_migration/roadmap`,
 		Args:    cobra.ExactArgs(1),
 		RunE:    runImportMorseAccounts,
 		PreRunE: logger.PreRunESetup,
@@ -94,6 +94,13 @@ func runImportMorseAccounts(cmd *cobra.Command, args []string) error {
 	}
 
 	// Package the MsgImportMorseAccountState message into a MsgAuthzExec message.
+	// MsgImportMorseAccountState is an authority-gated message. By default, the
+	// governance module address is the configured onchain authority. In order to
+	// facilitate authorization of exeternally owned accounts (e.g. the foundation),
+	// the authz module is used.
+	// DEV_NOTE: This exec message requires a corresponding authz authorization to
+	// be present onchain.
+	// See: https://docs.cosmos.network/v0.50/build/modules/authz#authorization-and-grant.
 	msgAuthzExec := authz.NewMsgExec(
 		clientCtx.FromAddress,
 		[]cosmostypes.Msg{msgImportMorseAccountState},
