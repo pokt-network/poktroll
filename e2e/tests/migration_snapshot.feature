@@ -10,11 +10,13 @@
 @oneshot @manual
 Feature: MorseAccountState Import
 
+  # TODO_MAINNET(@bryanchriswhite, #1034): The snapshot based Morse account import feature is incomplete.
+
   Scenario: Authority generates and imports MorseAccountState
-    # TODO_UPNEXT(@bryanchriswhite, #1034): Print a link to the latest liquify snapshot if no local state exists.
+    # TODO_MAINNET(@bryanchriswhite, #1034): Print a link to the latest liquify snapshot if no local state exists.
     Given a local Morse node persisted state exists
-    # TODO_MAINNET: Replace 1000 with the published "canonical" export/migration/cutover height.
-    When the authority executes "pocket util export-genesis-for-reset 1000 poktroll" with stdout written to "morse_state_export.json"
+    # TODO_POST_JUDGEMENT_DAY: Replace current height with the published "canonical" export/migration/cutover height.
+    When the authority exports the Morse Account State at height "130000" to "morse_state_export.json"
     Then a MorseStateExport is written to "morse_state_export.json"
 
     When the authority executes "poktrolld tx migration collect-morse-accounts morse_state_export.json morse_account_state.json"
@@ -30,22 +32,40 @@ Feature: MorseAccountState Import
     And the authority sucessfully imports MorseAccountState generated from the snapshot state
     # TODO_INCOMPLETE: Ensure the liquify Morse snapshot includes known Morse
     # private keys such that valid claim signatures can be generated for testing.
-    And Morse private keys are available in the following actor type distribution:
-      | non-actor | application | supplier |
-      | 2         | 2           | 2        |
+    #
+    # Use a distinct SECRET random number to seed each private key needed.
+    # The implementation could read these out of a single new-line delimited
+    # env var (e.g. MORSE_KEY_SEED_0).
+    And "6" Morse private keys are available in a "round-robin" actor type distribution
 
     When a Morse account-holder claims as a new non-actor account
+    Then the Shannon destination account balance is increased by the sum of all MorseClaimableAccount tokens
+    And the Morse claimable account is marked as claimed by the shannon account at a recent block height
 
     When a Morse account-holder claims as an existing non-actor account
+    Then the Shannon destination account balance is increased by the MorseClaimableAccount unstaked balance
+    And the Morse claimable account is marked as claimed by the shannon account at a recent block height
 
     When a Morse account-holder claims as a new application
+    Then the Shannon destination account balance is increased by the MorseClaimableAccount unstaked balance
+    And the Morse claimable account is marked as claimed by the shannon account at a recent block height
+    And the Shannon destination account is staked as an application with the stake equal to the onchain MorseClaimableAccount
 
     Given an application is staked
     When a Morse account-holder claims as an existing application
+    Then the Shannon destination account balance is increased by the MorseClaimableAccount unstaked balance
+    And the Morse claimable account is marked as claimed by the shannon account at a recent block height
+    And the Shannon destination account application stake is increased by the MorseClaimableAccount application stake
 
     When a Morse account-holder claims as a new supplier
+    Then the Shannon destination account balance is increased by the MorseClaimableAccount unstaked balance
+    And the Morse claimable account is marked as claimed by the shannon account at a recent block height
+    And the Shannon destination account is staked as an supplier with the stake equal to the onchain MorseClaimableAccount
 
     Given a supplier is staked
     When a Morse account-holder claims as an existing supplier
+    Then the Shannon destination account balance is increased by the MorseClaimableAccount unstaked balance
+    And the Morse claimable account is marked as claimed by the shannon account at a recent block height
+    And the Shannon destination account supplier stake is increased by the MorseClaimableAccount supplier stake
 
-  # TODO_UPNEXT(@bryanchriswhite, #1034): Enumerate and implement error scenarios.
+  # TODO_MAINNET(@bryanchriswhite, #1034): Enumerate and implement error scenarios.

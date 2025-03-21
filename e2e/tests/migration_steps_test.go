@@ -32,7 +32,9 @@ const (
 
 var (
 	// The following MUST be global variables as their state MUST NOT be reset
-	// between test cases.
+	// between test cases, otherwise different scenarios will try to claim the
+	// same Morse accounts and fail unexpectedly.
+	// DEV_NOTE: Fields on gocuke suites ARE reset between scenarios.
 
 	// morseKeyIdx is the index of the "current" morse private key to be used.
 	// It is intended to be passed to testmigration.GenMorsePrivateKey() to derive
@@ -97,7 +99,9 @@ var (
 
 // Before runs prior to the suite's tests.
 func (s *migrationSuite) Before() {
-	// DEV_NOTE: MUST assign the TestingT to the embedded suite before it is called (automatically).
+	// DEV_NOTE: MUST assign the TestingT to the embedded suite before it is called,
+	// otherwise, the test will panic when calling methods on the embedded suite which
+	// pass the receiver as a gocuke.TestingT type parameter (e.g. require.NoError(s, err)).
 	s.suite.TestingT = s.TestingT
 	s.suite.Before()
 
@@ -105,6 +109,7 @@ func (s *migrationSuite) Before() {
 	s.nextShannonKeyIdx()
 	s.nextMorseKeyIdx()
 
+	// If the current Shannon key has an onchain balance, track it for later use in assertions.
 	s.existingUnstakedBalanceUpokt = cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 0)
 	if shannonDestAddr, isFound := s.getShannonKeyAddress(); isFound {
 		if _, isFound = s.queryAccount(shannonDestAddr); isFound {
@@ -118,11 +123,13 @@ func (s *migrationSuite) Before() {
 // TestMigrationWithFixtureData runs the migration_fixture.feature file ONLY.
 // To run this test use:
 //
-// The @oneshot tag indicates that a given feature is non-idempotent with respect
-// to its impact on the network state. In such cases, a complete network reset
-// is required before running these features again.
-//
 //	$ make test_e2e_migration_fixture
+//
+// This feature is non-idempotent with respect to its impact on the network state.
+// As a result, a complete network reset is required in-between test runs.
+// A localnet reset can be performed using:
+//
+//	$ make localnet_down; make localnet_up
 func TestMigrationWithFixtureData(t *testing.T) {
 	gocuke.NewRunner(t, &migrationSuite{}).
 		Path("migration_fixture.feature").

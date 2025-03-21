@@ -44,14 +44,6 @@ test_e2e_tokenomics: test_e2e_env ## Run only the E2E suite that exercises the s
 test_e2e_params: test_e2e_env ## Run only the E2E suite that exercises parameter updates for all modules
 	go test -v ./e2e/tests/... -tags=e2e,test --features-path=update_params.feature
 
-.PHONY: test_e2e_migration_fixture
-test_e2e_migration_fixture: test_e2e_env ## Run only the E2E suite that exercises the migration module using fixture data.
-	go test -v ./e2e/tests/... -tags=e2e,oneshot --run=MigrationWithFixtureData
-
-.PHONY: test_e2e_migration_snapshot
-test_e2e_migration_snapshot: test_e2e_env ## Run only the E2E suite that exercises the migration module using local snapshot data.
-	go test -v ./e2e/tests/... -tags=e2e,oneshot,manual --run=MigrationWithSnapshotData
-
 .PHONY: test_e2e_oneshot
 test_e2e_oneshot: test_e2e_env ## Run only the E2E suite that exercises the oneshot module.
 	go test -v ./e2e/tests/... -tags=e2e,oneshot --run=OneshotTaggedFeatures
