@@ -27,9 +27,6 @@ func TxCommands() *cobra.Command {
 	migrateCmd := &cobra.Command{
 		Use:   "migration",
 		Short: "Transactions commands for the migration module",
-		// TODO_IN_THIS_PR: Fix, uncomment or add a proper TODO message.
-		// Set up the global logger for use in any subcommand.
-		// PersistentPreRunE: logger.PreRunESetup,
 	}
 
 	migrateCmd.AddCommand(cmd.CollectMorseAccountsCmd())
