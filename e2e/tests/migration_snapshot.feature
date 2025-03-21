@@ -8,7 +8,7 @@
 # to its impact on the network state. In such cases, a complete network reset
 # is required before running these features again.
 @oneshot @manual
-Feature: MorseAccountState Import
+Feature: Morse account import and claim all account types (with snapshot data)
 
   # TODO_MAINNET(@bryanchriswhite, #1034): The snapshot based Morse account import feature is incomplete.
 

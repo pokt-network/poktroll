@@ -52,7 +52,7 @@ const (
 	numQueryRetries = uint8(3)
 	unbondingPeriod = "unbonding"
 	transferPeriod  = "transfer"
-	oneShotTag      = "@oneshot"
+	oneshotTag      = "@oneshot"
 	manualTag       = "@manual"
 )
 
@@ -74,7 +74,7 @@ var (
 
 	// allFeaturesTags is a tag expression that filters out features (i.e. E2E tests)
 	// which SHOULD NOT be included in a wildcard/glob of feature files.
-	allFeaturesTags = fmt.Sprintf("not %s and not %s", manualTag, oneShotTag)
+	allFeaturesTags = fmt.Sprintf("not %s and not %s", manualTag, oneshotTag)
 )
 
 func init() {
@@ -946,15 +946,15 @@ func (s *suite) getCurrentBlockHeight() int64 {
 	res.Stdout = strings.Join(stdoutLines[1:], "\n")
 
 	var blockRes struct {
-		LastCommit struct {
+		Header struct {
 			Height int64 `json:"height"`
-		} `json:"last_commit"`
+		} `json:"header"`
 	}
 
 	err = cometjson.Unmarshal([]byte(res.Stdout), &blockRes)
 	require.NoError(s, err)
 
-	return blockRes.LastCommit.Height
+	return blockRes.Header.Height
 }
 
 // readEVMSubscriptionEvents reads the eth_subscription events from the websocket

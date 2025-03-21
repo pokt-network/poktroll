@@ -4,7 +4,7 @@
 # The @oneshot tag indicates that a given feature is non-idempotent with respect to its impact on the network state.
 # In such cases, a complete network reset is required before running these features again.
 @oneshot
-Feature: Morse Migration Success
+Feature: Morse account import and claim all account types (with fixture data)
 
   Background:
     Given the user has the pocketd binary installed
@@ -19,14 +19,14 @@ Feature: Morse Migration Success
       And the Shannon account is funded with "1upokt"
       When the Morse private key is used to claim a MorseClaimableAccount as a non-actor account
       Then the Shannon destination account balance is increased by the sum of all MorseClaimableAccount tokens
-       And the Morse claimable account is marked as claimed by the shannon account at a recent block height
+      And the Morse claimable account is marked as claimed by the shannon account at a recent block height
 
     Scenario: Morse account-holder claims as an existing non-actor account
       Given the Shannon destination account exists onchain
       And the Shannon destination account upokt balance is non-zero
       When the Morse private key is used to claim a MorseClaimableAccount as a non-actor account
       Then the Shannon destination account balance is increased by the sum of all MorseClaimableAccount tokens
-       And the Morse claimable account is marked as claimed by the shannon account at a recent block height
+      And the Morse claimable account is marked as claimed by the shannon account at a recent block height
 
 # TODO_MAINNET(@bryanchriswhite, #1034: Uncomment the following scenarios once application and supplier Morse account claiming is available.
 #
@@ -57,4 +57,4 @@ Feature: Morse Migration Success
 #        | application | application_stake  |
 #        | supplier    | supplier_stake     |
 
-# TODO_UPNEXT(@bryanchriswhite, #1034): Enumerate and implement error scenarios.
+# TODO_MAINNET(@bryanchriswhite, #1034): Enumerate and implement error scenarios.

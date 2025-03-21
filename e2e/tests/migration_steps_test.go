@@ -3,7 +3,6 @@
 package e2e
 
 import (
-	"bytes"
 	"fmt"
 	"math/rand"
 	"net/url"
@@ -65,10 +64,10 @@ type migrationSuite struct {
 	// MorseClaimableAccount should be claimed.
 	morseAccountClaimHeight int64
 
-	// existingUnstakedBalanceUpokt is the upokt balance of the claiming (Shannon)
-	// account, prior to any given test scenario. It is queried and populated in the
-	// Before() method, which is called before each test case.
-	existingUnstakedBalanceUpokt cosmostypes.Coin
+	// previousUnstakedBalanceUpoktOfCurrentShannonIdx is the upokt balance of the
+	// claiming (Shannon) account, prior to any given test scenario. It is queried
+	// and populated in the Before() method, which is called before each test case.
+	previousUnstakedBalanceUpoktOfCurrentShannonIdx cosmostypes.Coin
 
 	// faucetFundedBalanceUpokt is the upokt balance that is transferred by the faucet during setup.
 	faucetFundedBalanceUpokt cosmostypes.Coin
@@ -110,12 +109,12 @@ func (s *migrationSuite) Before() {
 	s.nextMorseKeyIdx()
 
 	// If the current Shannon key has an onchain balance, track it for later use in assertions.
-	s.existingUnstakedBalanceUpokt = cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 0)
+	s.previousUnstakedBalanceUpoktOfCurrentShannonIdx = cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 0)
 	if shannonDestAddr, isFound := s.getShannonKeyAddress(); isFound {
 		if _, isFound = s.queryAccount(shannonDestAddr); isFound {
 			upoktBalanceInt := s.getAccBalance(s.getShannonKeyName())
 			upoktBalanceCoin := cosmostypes.NewInt64Coin(volatile.DenomuPOKT, int64(upoktBalanceInt))
-			s.existingUnstakedBalanceUpokt = upoktBalanceCoin
+			s.previousUnstakedBalanceUpoktOfCurrentShannonIdx = upoktBalanceCoin
 		}
 	}
 }
@@ -155,15 +154,15 @@ func (s *migrationSuite) NoMorseclaimableaccountsExist() {
 }
 
 func (s *migrationSuite) TheShannonDestinationAccountIsStakedAsAn(actorType actorTypeEnum) {
-	s.Skip("TODO_UPNEXT(@bryanchriswhite, #1034): Implement.")
+	s.Skip("TODO_MAINNET(@bryanchriswhite, #1034): Implement.")
 }
 
 func (s *migrationSuite) TheShannonStakeIncreasedByTheOfTheMorseclaimableaccount(actorType actorTypeEnum, totalTokensStakePct float64) {
-	s.Skip("TODO_UPNEXT(@bryanchriswhite, #1034): Implement.")
+	s.Skip("TODO_MAINNET(@bryanchriswhite, #1034): Implement.")
 }
 
 func (s *migrationSuite) TheMorsePrivateKeyIsUsedToClaimAMorseclaimableaccountAsAn(actorType actorTypeEnum) {
-	s.Skip("TODO_UPNEXT(@bryanchriswhite, #1034): Implement.")
+	s.Skip("TODO_MAINNET(@bryanchriswhite, #1034): Implement.")
 }
 
 func (s *migrationSuite) TheAuthorityExecutesWithStdoutWrittenTo(commandStr, outputFileName string) {
@@ -211,22 +210,22 @@ func (s *migrationSuite) AShannonDestinationKeyExistsInTheLocalKeyring() {
 func (s *migrationSuite) TheShannonDestinationAccountBalanceIsIncreasedByTheSumOfAllMorseclaimableaccountTokens() {
 	currentUpoktBalanceInt := s.getAccBalance(s.getShannonKeyName())
 	currentUpoktBalanceCoin := cosmostypes.NewInt64Coin(volatile.DenomuPOKT, int64(currentUpoktBalanceInt))
-	balanceUpoktDiffCoin := currentUpoktBalanceCoin.Sub(s.existingUnstakedBalanceUpokt)
+	balanceUpoktDiffCoin := currentUpoktBalanceCoin.Sub(s.previousUnstakedBalanceUpoktOfCurrentShannonIdx)
 
 	expectedBalanceUpoktDiffCoin := s.expectedBalanceUpoktDiffCoin.Add(s.faucetFundedBalanceUpokt)
 	require.Equal(s, expectedBalanceUpoktDiffCoin, balanceUpoktDiffCoin)
 }
 
 func (s *migrationSuite) TheShannonDestinationAccountBalanceIsIncreasedByTheUnstakedBalanceAmountOfTheMorseclaimableaccount() {
-	s.Skip("TODO_UPNEXT(@bryanchriswhite, #1034): Implement.")
+	s.Skip("TODO_MAINNET(@bryanchriswhite, #1034): Implement.")
 }
 
 func (s *migrationSuite) TheShannonServiceConfigIsUpdatedIfApplicable(actorType actorTypeEnum) {
-	s.Skip("TODO_UPNEXT(@bryanchriswhite, #1034): Implement.")
+	s.Skip("TODO_MAINNET(@bryanchriswhite, #1034): Implement.")
 }
 
 func (s *migrationSuite) TheAuthorityExecutes(commandStr string) {
-	// DEV_NOTE: If the command doesn't start with "poktrolld"
+	// DEV_NOTE: If the command doesn't start with "poktrolld" fail the test.
 	commandStringParts := strings.Split(commandStr, " ")
 	if len(commandStringParts) < 0 && commandStringParts[0] != "poktrolld" {
 		s.Fatalf("ERROR: expected a poktrolld command but got %q", commandStr)
@@ -240,6 +239,7 @@ func (s *migrationSuite) TheAuthorityExecutes(commandStr string) {
 		results *commandResult
 		err     error
 	)
+
 	switch {
 	case strings.Contains(commandStr, "import-morse-accounts"):
 		rpcURL, err := url.Parse(defaultRPCURL)
@@ -261,8 +261,9 @@ func (s *migrationSuite) TheAuthorityExecutes(commandStr string) {
 	default:
 		results, err = s.pocketd.RunCommand(commandStringParts...)
 	}
-
 	require.NoError(s, err)
+
+	// Check if the command returned an error despite having a zero exit code.
 	if strings.Contains(results.Stdout, cmdUsagePattern) {
 		s.Fatalf(
 			"unexpected command usage/help printed.\nCommand: %s\nStdout: %s",
@@ -358,39 +359,39 @@ func (s *migrationSuite) TheShannonDestinationAccountExistsOnchain() {
 }
 
 func (s *migrationSuite) TheShannonDestinationAccountIsNotStakedAsAn(a string) {
-	s.Skip("TODO_UPNEXT(@bryanchriswhite, #1034): Implement.")
+	s.Skip("TODO_MAINNET(@bryanchriswhite, #1034): Implement.")
 }
 
 func (s *migrationSuite) MorsePrivateKeysAreAvailableInTheFollowingActorTypeDistribution(a gocuke.DataTable) {
-	s.Skip("TODO_UPNEXT(@bryanchriswhite, #1034): Implement.")
+	s.Skip("TODO_MAINNET(@bryanchriswhite, #1034): Implement.")
 }
 
 func (s *migrationSuite) AMorseAccountholderClaimsAsANewApplication() {
-	s.Skip("TODO_UPNEXT(@bryanchriswhite, #1034): Implement.")
+	s.Skip("TODO_MAINNET(@bryanchriswhite, #1034): Implement.")
 }
 
 func (s *migrationSuite) AnApplicationIsStaked() {
-	s.Skip("TODO_UPNEXT(@bryanchriswhite, #1034): Implement.")
+	s.Skip("TODO_MAINNET(@bryanchriswhite, #1034): Implement.")
 }
 
 func (s *migrationSuite) AMorseAccountholderClaimsAsANewSupplier() {
-	s.Skip("TODO_UPNEXT(@bryanchriswhite, #1034): Implement.")
+	s.Skip("TODO_MAINNET(@bryanchriswhite, #1034): Implement.")
 }
 
 func (s *migrationSuite) ASupplierIsStaked() {
-	s.Skip("TODO_UPNEXT(@bryanchriswhite, #1034): Implement.")
+	s.Skip("TODO_MAINNET(@bryanchriswhite, #1034): Implement.")
 }
 
 func (s *migrationSuite) AMorseAccountholderClaimsAsANewNonactorAccount() {
-	s.Skip("TODO_UPNEXT(@bryanchriswhite, #1034): Implement.")
+	s.Skip("TODO_MAINNET(@bryanchriswhite, #1034): Implement.")
 }
 
 func (s *migrationSuite) AMorseAccountholderClaimsAsAnExistingApplication() {
-	s.Skip("TODO_UPNEXT(@bryanchriswhite, #1034): Implement.")
+	s.Skip("TODO_MAINNET(@bryanchriswhite, #1034): Implement.")
 }
 
 func (s *migrationSuite) AMorseAccountholderClaimsAsAnExistingSupplier() {
-	s.Skip("TODO_UPNEXT(@bryanchriswhite, #1034): Implement.")
+	s.Skip("TODO_MAINNET(@bryanchriswhite, #1034): Implement.")
 }
 
 func (s *migrationSuite) AMorseaccountstateWithAccountsInADistributionHasSuccessfullyBeenImported(numAccountsStr, distributionString string) {
@@ -431,15 +432,15 @@ func (s *migrationSuite) AMorseaccountstateWithAccountsInADistributionHasSuccess
 }
 
 func (s *migrationSuite) TheAuthoritySucessfullyImportsMorseaccountstateGeneratedFromTheSnapshotState() {
-	s.Skip("TODO_UPNEXT(@bryanchriswhite, #1034): Implement.")
+	s.Skip("TODO_MAINNET(@bryanchriswhite, #1034): Implement.")
 }
 
 func (s *migrationSuite) AMorseAccountholderClaimsAsAnExistingNonactorAccount() {
-	s.Skip("TODO_UPNEXT(@bryanchriswhite, #1034): Implement.")
+	s.Skip("TODO_MAINNET(@bryanchriswhite, #1034): Implement.")
 }
 
 func (s *migrationSuite) AMorseNodeSnapshotIsAvailable() {
-	s.Skip("TODO_UPNEXT(@bryanchriswhite, #1034): Implement.")
+	s.Skip("TODO_MAINNET(@bryanchriswhite, #1034): Implement.")
 }
 
 func (s *migrationSuite) TheMorseClaimableAccountIsMarkedAsClaimedByTheShannonAccountAtARecentBlockHeight() {
@@ -527,7 +528,7 @@ func (s *migrationSuite) getShannonKeyName() string {
 	return fmt.Sprintf("shannon-key-%d", shannonKeyIdx)
 }
 
-// getSShannonKeyAddress checks if the key corresponding to the current shannon key index
+// getShannonKeyAddress checks if the key corresponding to the current shannon key index
 // is present in the poktrolld keyring. If it is, it returns the address and true. Otherwise,
 // it returns an empty string and false.
 func (s *migrationSuite) getShannonKeyAddress() (shannonAddr string, isFound bool) {
@@ -573,34 +574,4 @@ func (s *migrationSuite) queryListMorseClaimableAccounts() []migrationtypes.Mors
 	require.NoError(s, err)
 
 	return res.MorseClaimableAccount
-}
-
-// getCurrentBlockHeight uses poktrolld to query for the current block height.
-func (s *migrationSuite) getCurrentBlockHeight() int64 {
-	blockQueryRes, err := s.pocketd.RunCommandOnHost("",
-		"query", "block",
-		"--output", "json",
-	)
-	require.NoError(s, err)
-
-	// DEV_NOTE: The first line of the response to a block query with no flag argument is not JSON:
-	// "Falling back to latest block height:".
-	resJSON := strings.SplitN(blockQueryRes.Stdout, "\n", 2)[1]
-
-	// DEV_NOTE: Using jq to parse the response because cmtjson/json.Unmarshal seems
-	// to be expecting hex encoded binary fields, whereas the CLI with --output json
-	// seems to return base64 encoded binary fields.
-	stdinBuf := new(bytes.Buffer)
-	cmd := exec.Command("jq", "-r", ".header.height")
-	cmd.Stdin = stdinBuf
-
-	stdinBuf.WriteString(resJSON)
-	stdout, err := cmd.Output()
-	require.NoError(s, err)
-
-	heightString := string(bytes.TrimSpace(stdout))
-	height, err := strconv.Atoi(heightString)
-	require.NoError(s, err)
-
-	return int64(height)
 }
