@@ -1,9 +1,8 @@
 # NOTE: The @oneshot tag allows this feature to be
 # excluded from any wildcard feature file execution (e.g. *.feature).
 #
-# The @oneshot tag indicates that a given feature is non-idempotent with respect
-# to its impact on the network state. In such cases, a complete network reset
-# is required before running these features again.
+# The @oneshot tag indicates that a given feature is non-idempotent with respect to its impact on the network state.
+# In such cases, a complete network reset is required before running these features again.
 @oneshot
 Feature: Morse Migration Success
 

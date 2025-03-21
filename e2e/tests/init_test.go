@@ -52,7 +52,7 @@ const (
 	numQueryRetries = uint8(3)
 	unbondingPeriod = "unbonding"
 	transferPeriod  = "transfer"
-	oneshotTag      = "@oneshot"
+	oneShotTag      = "@oneshot"
 	manualTag       = "@manual"
 )
 
@@ -72,9 +72,9 @@ var (
 	// pathUrl points to a local gateway using the PATH framework in centralized mode.
 	pathUrl = "http://localhost:3000/v1" // localhost is kept as the default to streamline local development & testing.
 
-	// allFeaturesTags is a tag expression that filters out features which
-	// SHOULD NOT be included in a wildcard/glob of feature files.
-	allFeaturesTags = fmt.Sprintf("not %s and not %s", manualTag, oneshotTag)
+	// allFeaturesTags is a tag expression that filters out features (i.e. E2E tests)
+	// which SHOULD NOT be included in a wildcard/glob of feature files.
+	allFeaturesTags = fmt.Sprintf("not %s and not %s", manualTag, oneShotTag)
 )
 
 func init() {
@@ -190,7 +190,8 @@ func (s *suite) Before() {
 func TestFeatures(t *testing.T) {
 	gocuke.NewRunner(t, &suite{}).Path(flagFeaturesPath).
 		// Ignore test elements (e.g. Features, Scenarios, etc.)
-		// with the @manual or @oneshot tags (e.g. migration*.feature).
+		// which should not be included in a wildcard/glob of feature files.
+		// For example, these include the @manual or @oneshot tags used for migration*.feature.
 		Tags(allFeaturesTags).
 		Run()
 }
