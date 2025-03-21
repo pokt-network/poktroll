@@ -17,19 +17,27 @@ export_morse_state: check_go_version ## Run the migration module export-morse-st
 
 .PHONY: collect_morse_accounts
 collect_morse_accounts: check_go_version ## Run the migration module collect-morse-accounts subcommand.
-	poktrolld migrate collect-morse-accounts "$(MORSE_STATE_EXPORT_PATH)" "$(MORSE_ACCOUNT_STATE_PATH)"
+	poktrolld tx migration collect-morse-accounts "$(MORSE_STATE_EXPORT_PATH)" "$(MORSE_ACCOUNT_STATE_PATH)"
 
 .PHONY: import_morse_accounts
 import_morse_accounts: check_go_version ## Run the migration module import-morse-accounts subcommand.
-	poktrolld migrate import-morse-accounts ./tools/scripts/morse_keys.json --from=pnf --grpc-addr=localhost:9090
+	poktrolld tx migration import-morse-accounts "$(MORSE_ACCOUNT_STATE_PATH)" --from=pnf --grpc-addr=localhost:9090
 
 #################################################
 ### Migration Account/Stake-holder Operations ###
 #################################################
 
-.PHONY: claim_morse_accounts
-claim_morse_accounts: check_go_version ## Run the migration module claim-morse-accounts subcommand.
-	poktrolld migrate claim-morse-accounts --from=pnf --grpc-addr=localhost:9090
+.PHONY: claim_morse_account
+claim_morse_account: check_go_version ## Run the migration module claim-morse-account subcommand.
+	if [[ -z "$(FROM_KEY_NAME)" ]]; then \
+		echo "ERROR: set FROM_KEY_NAME environment variable to the name of the Shannon key to use for claiming"; \
+		exit 1; \
+	fi; \
+	if [[ -z "$(MORSE_PRIVATE_KEY_PATH)" ]]; then \
+		echo "ERROR: set MORSE_PRIVATE_KEY_PATH environment variable to the path of the exported private key for the Morse account being claimed"; \
+		exit 1; \
+	fi; \
+	poktrolld tx migration claim-account "$(MORSE_PRIVATE_KEY_PATH)" --from="$(FROM_KEY_NAME)"
 
 #########################
 ### Migration Testing ###
