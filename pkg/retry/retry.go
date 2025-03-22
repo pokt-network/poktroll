@@ -178,15 +178,15 @@ func UntilNextBlock(
 
 	return func(retryCount int) bool {
 		// Channel to signal when the retry strategy has completed its delay
-		retryCh := make(chan struct{})
+		retryCh := make(chan struct{}, 10)
 		defer close(retryCh)
 
 		// Execute the retry strategy in a goroutine to avoid blocking
-		go func() {
-			retryStrategy[0](retryCount)
+		go func(retries int) {
+			retryStrategy[0](retries)
 			// Signal that the retry strategy has completed
-			retryCh <- struct{}{}
-		}()
+			<-retryCh
+		}(retryCount)
 
 		// Wait for one of three conditions: context done, new block observed, or retry strategy completed
 		for {
