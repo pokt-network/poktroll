@@ -10,6 +10,7 @@ package retry_test
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 	"sync/atomic"
@@ -18,9 +19,12 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/pokt-network/poktroll/pkg/client"
+	"github.com/pokt-network/poktroll/pkg/observable/channel"
 	"github.com/pokt-network/poktroll/pkg/polylog/polyzero"
 	_ "github.com/pokt-network/poktroll/pkg/polylog/polyzero"
 	"github.com/pokt-network/poktroll/pkg/retry"
+	"github.com/pokt-network/poktroll/testutil/testclient/testblock"
 )
 
 var testErr = fmt.Errorf("test error")
@@ -438,4 +442,72 @@ func TestOnError_NegativeRetryLimit(t *testing.T) {
 	for _, line := range logOutputLines {
 		require.Contains(t, line, expectedErrMsg)
 	}
+}
+
+// TestCallWithExponentialBackoff tests the Call function with exponential backoff
+func TestCallWithExponentialBackoff(t *testing.T) {
+	t.Run("succeeds after retries", func(t *testing.T) {
+		attempts := 0
+		maxAttempts := 3
+
+		result, err := retry.Call(
+			func() (string, error) {
+				attempts++
+				if attempts < maxAttempts {
+					return "", errors.New("not yet")
+				}
+				return "success", nil
+			},
+			retry.WithExponentialBackoffFn(5, 1, 10), // Very short delays for testing
+		)
+
+		require.NoError(t, err)
+		require.Equal(t, "success", result)
+		require.Equal(t, maxAttempts, attempts)
+	})
+
+	t.Run("fails after max retries", func(t *testing.T) {
+		attempts := 0
+		maxRetries := 3
+		expectedErr := errors.New("persistent error")
+
+		_, err := retry.Call(
+			func() (string, error) {
+				attempts++
+				return "", expectedErr
+			},
+			retry.WithExponentialBackoffFn(maxRetries, 1, 10), // Very short delays for testing
+		)
+
+		require.Error(t, err)
+		require.Equal(t, expectedErr, err)
+		require.Equal(t, maxRetries+1, attempts) // Initial attempt + retries
+	})
+}
+
+// TestCallWithUntilNextBlock tests the Call function with UntilNextBlock
+func TestCallWithUntilNextBlock(t *testing.T) {
+	t.Run("stops retrying after next block", func(t *testing.T) {
+		blockObservable, blockCh := channel.NewObservable[client.Block]()
+		attemptsBeforeBlockEmits := 3
+		attempts := 0
+		result, err := retry.Call(
+			func() (string, error) {
+				attempts++
+				fmt.Println("attempting", attempts)
+				if attempts < attemptsBeforeBlockEmits {
+					fmt.Println("not yet")
+					return "", errors.New("not yet")
+				}
+				fmt.Println("emitting block")
+				blockCh <- testblock.NewAnyTimesBlock(t, []byte{}, 1)
+				return "", errors.New("not yet")
+			},
+			retry.UntilNextBlock(context.Background(), blockObservable, retry.WithExponentialBackoffFn(100, 1, 10)),
+		)
+
+		require.Equal(t, "", result)
+		require.EqualError(t, err, "not yet")
+		require.Equal(t, attemptsBeforeBlockEmits, attempts)
+	})
 }
