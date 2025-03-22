@@ -76,7 +76,7 @@ func (txCtx cosmosTxContext) SignTx(
 ) error {
 	return authclient.SignTx(
 		txCtx.txFactory,
-		txCtx.GetClientCtx(),
+		cosmosclient.Context(txCtx.clientCtx),
 		signingKeyName,
 		txBuilder,
 		offline, overwriteSig,
@@ -114,7 +114,7 @@ func (txCtx cosmosTxContext) QueryTx(
 
 // GetClientCtx returns the cosmos-sdk client context associated with the transaction context.
 func (txCtx cosmosTxContext) GetClientCtx() cosmosclient.Context {
-	return cosmosclient.Context(txCtx.clientCtx).WithChainID("poktroll") // or pocket-beta
+	return cosmosclient.Context(txCtx.clientCtx)
 }
 
 // GetSimulatedTxGas calculates the gas for the given messages using the simulation mode.
