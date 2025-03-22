@@ -81,9 +81,9 @@ type connection struct {
 	isClosed atomic.Bool
 }
 
-// connectServiceBackend establishes a websocket connection established by the
+// ConnectServiceBackend establishes a websocket connection established by the
 // relay miner client to the service backend endpoint.
-func connectServiceBackend(serviceBackendUrl *url.URL, header http.Header) (*websocket.Conn, error) {
+func ConnectServiceBackend(serviceBackendUrl *url.URL, header http.Header) (*websocket.Conn, error) {
 	// Create a new websocket dialer according to the service backend URL scheme.
 	// If the scheme is `wss`, we need to create a new dialer with a custom TLS
 	// configuration.

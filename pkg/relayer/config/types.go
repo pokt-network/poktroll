@@ -1,6 +1,9 @@
 package config
 
-import "net/url"
+import (
+	"net/http"
+	"net/url"
+)
 
 type RelayMinerServerType int
 
@@ -198,6 +201,17 @@ type RelayMinerSupplierServiceConfig struct {
 	// authentication then this field must be populated accordingly.
 	// For example: { "Authorization": "Bearer <token>" }
 	Headers map[string]string
+}
+
+// HTTP returns the supplier's service config http header.
+func (c RelayMinerSupplierServiceConfig) HeadersHTTP() http.Header {
+	header := make(http.Header)
+
+	for k, v := range c.Headers {
+		header.Add(k, v)
+	}
+
+	return header
 }
 
 // RelayMinerSupplierServiceAuthentication is the structure resulting from parsing

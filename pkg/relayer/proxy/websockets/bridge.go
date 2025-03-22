@@ -2,7 +2,6 @@ package websockets
 
 import (
 	"context"
-	"net/http"
 	"sync"
 
 	"github.com/gorilla/websocket"
@@ -114,13 +113,8 @@ func NewBridge(
 ) (*bridge, error) {
 	bridgeLogger := logger.With("component", "bridge")
 
-	header := make(http.Header)
-	for headerKey, headerValue := range serviceConfig.Headers {
-		header.Add(headerKey, headerValue)
-	}
-
 	// Connect to the service backend.
-	serviceBackendWSConn, err := connectServiceBackend(serviceConfig.BackendUrl, header)
+	serviceBackendWSConn, err := ConnectServiceBackend(serviceConfig.BackendUrl, serviceConfig.HeadersHTTP())
 	if err != nil {
 		bridgeLogger.Error().Err(err).Msg("failed to connect to the service backend")
 		return nil, ErrWebsocketsBridge.Wrapf("failed to connect to the service backend: %v", err)

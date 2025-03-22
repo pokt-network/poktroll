@@ -2,10 +2,12 @@ package proxy
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 
 	"github.com/gorilla/websocket"
 
+	"github.com/pokt-network/poktroll/pkg/relayer/config"
 	proxyws "github.com/pokt-network/poktroll/pkg/relayer/proxy/websockets"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
@@ -93,6 +95,62 @@ func (server *relayMinerHTTPServer) handleAsyncConnection(
 	go bridge.Run(claimWindowOpenHeight)
 
 	logger.Info().Msg("websocket connection established with client")
+
+	return nil
+}
+
+func (server *relayMinerHTTPServer) forwardAsyncConnection(ctx context.Context, supplierConfig *config.RelayMinerSupplierConfig, w http.ResponseWriter, req *http.Request) error {
+	upgrader := websocket.Upgrader{
+		CheckOrigin: func(r *http.Request) bool { return true },
+	}
+
+	clientConn, err := upgrader.Upgrade(w, req, nil)
+	if err != nil {
+		fmt.Errorf("client connection upgrade client to ws: %w", err)
+	}
+
+	serviceConn, err := proxyws.ConnectServiceBackend(supplierConfig.ServiceConfig.BackendUrl, supplierConfig.ServiceConfig.HeadersHTTP())
+	if err != nil {
+		fmt.Errorf("service connection upgrade to ws: %w", err)
+	}
+
+	forwardFn := func(from, to *websocket.Conn) {
+		defer from.Close()
+		defer to.Close()
+
+		isNormalCloseConnection := func(err error) bool {
+			return websocket.IsCloseError(err,
+				websocket.CloseNormalClosure,
+				websocket.CloseGoingAway,
+				websocket.CloseAbnormalClosure)
+		}
+
+		for {
+			msgType, msg, err := from.ReadMessage()
+			if err != nil {
+				if isNormalCloseConnection(err) {
+					return
+				}
+
+				server.logger.Error().
+					Msgf("from read message: %w", err)
+				return
+			}
+
+			if err := to.WriteMessage(msgType, msg); err != nil {
+				if isNormalCloseConnection(err) {
+					return
+				}
+
+				server.logger.Error().
+					Msgf("to write message: %w", err)
+				return
+			}
+		}
+	}
+
+	go forwardFn(clientConn, serviceConn)
+	forwardFn(serviceConn, clientConn)
 
 	return nil
 }
