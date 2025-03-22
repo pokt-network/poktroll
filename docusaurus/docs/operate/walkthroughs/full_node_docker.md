@@ -1,9 +1,9 @@
 ---
-title: Full Node (Docker)
+title: Full Node - Docker (~30 min)
 sidebar_position: 3
 ---
 
-## Run a Full Node using Docker <!-- omit in toc -->
+## Full Node Walkthrough via Docker <!-- omit in toc -->
 
 - [What is a Full Node](#what-is-a-full-node)
 - [Roles \& Responsibilities](#roles--responsibilities)

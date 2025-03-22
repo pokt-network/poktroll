@@ -1,0 +1,7 @@
+{
+  "MD033": {
+    "allowed_elements": ["Tabs", "TabItem", "ReactPlayer"]
+  },
+  "MD013": false,
+  "MD046": false
+}

@@ -1,6 +1,5 @@
 //go:generate go run go.uber.org/mock/mockgen -destination=../../testutil/mockclient/events_query_client_mock.go -package=mockclient . Dialer,Connection,EventsQueryClient
 //go:generate go run go.uber.org/mock/mockgen -destination=../../testutil/mockclient/block_client_mock.go -package=mockclient . Block,BlockClient
-//go:generate go run go.uber.org/mock/mockgen -destination=../../testutil/mockclient/delegation_client_mock.go -package=mockclient . DelegationClient
 //go:generate go run go.uber.org/mock/mockgen -destination=../../testutil/mockclient/tx_client_mock.go -package=mockclient . TxContext,TxClient
 //go:generate go run go.uber.org/mock/mockgen -destination=../../testutil/mockclient/supplier_client_mock.go -package=mockclient . SupplierClient
 //go:generate go run go.uber.org/mock/mockgen -destination=../../testutil/mockclient/account_query_client_mock.go -package=mockclient . AccountQueryClient
@@ -35,6 +34,7 @@ import (
 	servicetypes "github.com/pokt-network/poktroll/x/service/types"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
+	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 )
 
 // MsgCreateClaim is an interface satisfying proof.MsgCreateClaim concrete type
@@ -177,25 +177,6 @@ type BlockClient interface {
 	Close()
 }
 
-// RedelegationReplayObservable is a defined type which is a replay observable
-// of type Redelegation.
-// NB: This cannot be an alias due to gomock's lack of support for generic types.
-type RedelegationReplayObservable EventsObservable[*apptypes.EventRedelegation]
-
-// DelegationClient is an interface that wraps the EventsReplayClient interface
-// specific for the EventsReplayClient[Redelegation] implementation
-type DelegationClient interface {
-	// RedelegationsSequence returns a Observable of Redelegations that
-	// emits the latest redelegation events that have occurred on chain.
-	RedelegationsSequence(context.Context) RedelegationReplayObservable
-	// LastNRedelegations returns the latest N redelegation events that have
-	// occurred on chain.
-	LastNRedelegations(context.Context, int) []*apptypes.EventRedelegation
-	// Close unsubscribes all observers of the committed block sequence
-	// observable and closes the events query client.
-	Close()
-}
-
 // EventsBytesObservable is an observable which is notified with an either
 // value which contains either an error or the event message bytes.
 //
@@ -253,9 +234,6 @@ type TxClientOption func(TxClient)
 // SupplierClientOption defines a function type that modifies the SupplierClient.
 type SupplierClientOption func(SupplierClient)
 
-// DelegationClientOption defines a function type that modifies the DelegationClient.
-type DelegationClientOption func(DelegationClient)
-
 // BlockClientOption defines a function type that modifies the BlockClient.
 type BlockClientOption func(BlockClient)
 
@@ -290,6 +268,9 @@ type ApplicationQueryClient interface {
 type SupplierQueryClient interface {
 	// GetSupplier queries the chain for the details of the supplier provided
 	GetSupplier(ctx context.Context, supplierOperatorAddress string) (sharedtypes.Supplier, error)
+
+	// GetParams queries the chain for the supplier module parameters.
+	GetParams(ctx context.Context) (*suppliertypes.Params, error)
 }
 
 // SessionQueryClient defines an interface that enables the querying of the
@@ -363,6 +344,8 @@ type ServiceQueryClient interface {
 	// GetService queries the chain for the details of the service provided
 	GetService(ctx context.Context, serviceId string) (sharedtypes.Service, error)
 	GetServiceRelayDifficulty(ctx context.Context, serviceId string) (servicetypes.RelayMiningDifficulty, error)
+	// GetParams queries the chain for the current proof module parameters.
+	GetParams(ctx context.Context) (*servicetypes.Params, error)
 }
 
 // BankQueryClient defines an interface that enables the querying of the

@@ -1,9 +1,9 @@
 ---
-title: Gateway Walkthrough
+title: App & PATH Gateway (1 hour)
 sidebar_position: 6
 ---
 
-# Run a Gateway <!-- omit in toc -->
+## App & PATH Gateway Walkthrough via Binary <!-- omit in toc -->
 
 - [What is PATH Gateway?](#what-is-path-gateway)
 - [PATH Gateway Operation Requirements](#path-gateway-operation-requirements)

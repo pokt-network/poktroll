@@ -10,10 +10,10 @@ import (
 	"github.com/pokt-network/poktroll/testutil/mockrelayer"
 )
 
-// NewMockOneTimeRelayerProxy creates a new mock RelayerProxy. This mock
-// RelayerProxy will expect a call to ServedRelays with the given context, and
-// when that call is made, returnedRelaysObs is returned. It also expects a call
-// to Start and Stop with the given context.
+// NewMockOneTimeRelayerProxy creates a new mock RelayerProxy that:
+// - Expects a call to ServedRelays with the given context
+// - Returns returnedRelaysObs when ServedRelays is called
+// - Expects one call each to Start, Ping, and Stop with the given context
 func NewMockOneTimeRelayerProxy(
 	ctx context.Context,
 	t *testing.T,
@@ -33,5 +33,22 @@ func NewMockOneTimeRelayerProxy(
 		ServedRelays().
 		Return(returnedRelaysObs).
 		Times(1)
+
+	return relayerProxyMock
+}
+
+// NewMockOneTimeRelayerProxyWithPing creates a new mock RelayerProxy that:
+// - Expects exactly one call to PingAll
+// - Expects all the other behaviour inherited from NewMockOneTimeRelayerProxy
+func NewMockOneTimeRelayerProxyWithPing(
+	ctx context.Context,
+	t *testing.T,
+	returnedRelaysObs relayer.RelaysObservable,
+) *mockrelayer.MockRelayerProxy {
+	relayerProxyMock := NewMockOneTimeRelayerProxy(ctx, t, returnedRelaysObs)
+	relayerProxyMock.EXPECT().
+		PingAll(gomock.Eq(ctx)).
+		Times(1)
+
 	return relayerProxyMock
 }

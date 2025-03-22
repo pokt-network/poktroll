@@ -1,11 +1,11 @@
 ---
-sidebar_position: 6
-title: Docker Compose Cheat Sheet
+sidebar_position: 7
+title: "[Deprecated] Docker Compose E2E (> 1 hour)"
 ---
 
 import ReactPlayer from "react-player";
 
-# Docker Compose Cheat Sheet <!-- omit in toc -->
+## Docker Compose E2E Cheat Sheet <!-- omit in toc -->
 
 - [Results](#results)
 - [Deploy your server](#deploy-your-server)

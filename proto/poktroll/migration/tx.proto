@@ -22,15 +22,15 @@ service Msg {
 
   // UpdateParams defines a (governance) operation for updating the module
   // parameters. The authority defaults to the x/gov module account.
-  rpc UpdateParams                 (MsgUpdateParams                ) returns (MsgUpdateParamsResponse                );
+  rpc UpdateParams                 (MsgUpdateParams) returns (MsgUpdateParamsResponse);
   rpc ImportMorseClaimableAccounts (MsgImportMorseClaimableAccounts) returns (MsgImportMorseClaimableAccountsResponse);
-  rpc ClaimMorseAccount            (MsgClaimMorseAccount           ) returns (MsgClaimMorseAccountResponse           );
-  rpc ClaimMorseApplication        (MsgClaimMorseApplication       ) returns (MsgClaimMorseApplicationResponse       );
-  rpc ClaimMorseSupplier           (MsgClaimMorseSupplier          ) returns (MsgClaimMorseSupplierResponse          );
+  rpc ClaimMorseAccount            (MsgClaimMorseAccount) returns (MsgClaimMorseAccountResponse);
+  rpc ClaimMorseApplication        (MsgClaimMorseApplication) returns (MsgClaimMorseApplicationResponse);
+  rpc ClaimMorseSupplier           (MsgClaimMorseSupplier) returns (MsgClaimMorseSupplierResponse);
 }
 // MsgUpdateParams is the Msg/UpdateParams request type.
 message MsgUpdateParams {
-  option (cosmos.msg.v1.signer) =                            "authority";
+  option (cosmos.msg.v1.signer) = "authority";
   option           (amino.name) = "poktroll/x/migration/MsgUpdateParams";
 
   // authority is the address that controls the module (defaults to x/gov unless overwritten).
@@ -131,6 +131,7 @@ message MsgClaimMorseApplication {
 
   // The hex-encoded address of the Morse account whose balance will be claimed.
   // E.g.: 00f9900606fa3d5c9179fc0c8513078a53a2073e
+
   string morse_src_address = 2 [(gogoproto.jsontag) = "morse_src_address"];
 
   // The hex-encoded signature, by the Morse account, of this message (where this field is nil).
@@ -165,11 +166,6 @@ message MsgClaimMorseApplicationResponse {
   application.Application application = 5 [(gogoproto.jsontag) = "application"];
 }
 
-// TODO_UPNEXT(@bryanchriswhite, #1034): for messages below:
-// - Update field types where necessary.
-// - Rename fields to conform to best practices.
-// - Add applicable field options.
-
 // MsgClaimMorseSupplier is used to:
 // - Execute a one-time minting of tokens on Shannon based on tokens owned by the given Morse account
 // - Use the on-chain MorseClaimableAccounts for verification
@@ -179,25 +175,32 @@ message MsgClaimMorseApplicationResponse {
 // NOTE: The supplier module's staking fee parameter (at the time of claiming) is deducted from the
 // claimed balance.
 message MsgClaimMorseSupplier {
-  option (cosmos.msg.v1.signer) = "shannonDestAddress";
+  option (cosmos.msg.v1.signer) = "shannon_owner_address";
 
   // The bech32-encoded address of the Shannon account to which the claimed tokens
-  // will be minted and from which the supplier will be staked.
-  //
-  // TODO_MAINNET(@bryanchriswhite, #1095): split into owner and operator addresses...
-  string shannonDestAddress = 1;
+  // will be minted and which become the supplier owner.
+  // See: https://dev.poktroll.com/operate/configs/supplier_staking_config#staking-types.
+  string shannon_owner_address = 1 [(cosmos_proto.scalar) = "cosmos.AddressString", (gogoproto.jsontag) = "shannon_owner_address"];
+
+  // The bech32-encoded address of the Shannon account to which will become the supplier operator.
+  // If empty, the shannon_owner_address will be used.
+  // See: https://dev.poktroll.com/operate/configs/supplier_staking_config#staking-types.
+  string shannon_operator_address = 2 [(cosmos_proto.scalar) = "cosmos.AddressString", (gogoproto.jsontag) = "shannon_operator_address"];
 
   // The hex-encoded address of the Morse account whose balance will be claimed.
   // E.g.: 00f9900606fa3d5c9179fc0c8513078a53a2073e
-  string morseSrcAddress = 2;
+  //
+  // TODO_MAINNET(@bryanchriswhite, #1126): Rename to `morse_src_owner_address`.
+  string morse_src_address = 3 [(gogoproto.jsontag) = "morse_src_address"];
 
   // The hex-encoded signature, by the Morse account, of this message (where this field is nil).
   // I.e.: morse_signature = private_key.sign(marshal(MsgClaimMorseAccount{morse_signature: nil, ...}))
-  string morseSignature = 3;
+  //
+  // TODO_MAINNET(@bryanchriswhite, #1126): Rename to `morse_src_owner_signature`.
+  bytes morse_signature = 4 [(gogoproto.jsontag) = "morse_signature"];
 
   // The services this supplier is staked to provide service for.
-  // TODO_MAINNET(@bryanchriswhite, #1095): ensure this field is repeated (to match MsgStakeSupplier).
-  string services = 5;
+  repeated shared.SupplierServiceConfig services = 5 [(gogoproto.jsontag) = "services"];
 }
 
 // MsgClaimMorseSupplierResponse is returned from MsgClaimMorseSupplier.
@@ -209,17 +212,17 @@ message MsgClaimMorseSupplier {
 message MsgClaimMorseSupplierResponse {
   // The hex-encoded address of the Morse account whose balance was claimed.
   // E.g.: 00f9900606fa3d5c9179fc0c8513078a53a2073e
-  string morseSrcAddress = 1;
+  string morse_src_address = 1 [(gogoproto.jsontag) = "morse_src_address"];
 
   // The unstaked balance which was claimed.
-  cosmos.base.v1beta1.Coin claimedBalance = 2 [(gogoproto.nullable) = false];
+  cosmos.base.v1beta1.Coin claimed_balance = 2 [(gogoproto.nullable) = false, (gogoproto.jsontag) = "claimed_balance"];
 
-  cosmos.base.v1beta1.Coin claimedSupplierStake = 4 [(gogoproto.nullable) = false];
+  cosmos.base.v1beta1.Coin claimed_supplier_stake = 3 [(gogoproto.nullable) = false, (gogoproto.jsontag) = "claimed_supplier_stake"];
 
   // The session end height (on Shannon) in which the claim was committed (i.e. claimed).
-  int32 sessionEndHeight = 5;
+  int64 session_end_height = 4 [(gogoproto.jsontag) = "session_end_height"];
 
   // The supplier which was staked as a result of the claim.
-  shared.Supplier supplier = 6;
+  shared.Supplier supplier = 5 [(gogoproto.jsontag) = "supplier"];
 }
 

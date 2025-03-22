@@ -1,9 +1,9 @@
 ---
-sidebar_position: 2
-title: Service Cheat Sheet
+sidebar_position: 1
+title: Service Creation (~ 5 min)
 ---
 
-## Service Cheat Sheet <!-- omit in toc -->
+## Service Creation Cheat Sheet <!-- omit in toc -->
 
 - [Pre-Requisites](#pre-requisites)
 - [How do I query for all existing onchain Services?](#how-do-i-query-for-all-existing-onchain-services)

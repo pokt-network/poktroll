@@ -636,7 +636,8 @@ func (k Keeper) slashSupplierStake(
 	// However, claims are only processed when sessions end.
 	// INVESTIGATION: This requires an investigation if the race condition exists
 	// at all and fixed only if it does.
-	if supplierToSlash.GetStake().IsLT(*minSupplierStakeCoin) {
+	// Ensure that a slashed supplier going below min stake is unbonded only once.
+	if supplierToSlash.GetStake().IsLT(*minSupplierStakeCoin) && !supplierToSlash.IsUnbonding() {
 		sharedParams := k.sharedKeeper.GetParams(ctx)
 		sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
 		currentHeight := sdkCtx.BlockHeight()
@@ -655,12 +656,24 @@ func (k Keeper) slashSupplierStake(
 		// inconsistent session supplier list? See the comment above for more details.
 		supplierToSlash.UnstakeSessionEndHeight = uint64(unstakeSessionEndHeight)
 
-		unbondingEndHeight := sharedtypes.GetSupplierUnbondingEndHeight(&sharedParams, &supplierToSlash)
+		// Deactivate the supplier's services so they can no longer be selected to
+		// service relays in the next session.
+		serviceConfigsUpdate := &sharedtypes.ServiceConfigUpdate{
+			Services:             make([]*sharedtypes.SupplierServiceConfig, 0),
+			EffectiveBlockHeight: uint64(unstakeSessionEndHeight + 1),
+		}
+		supplierToSlash.ServiceConfigHistory = append(supplierToSlash.ServiceConfigHistory, serviceConfigsUpdate)
+
 		events = append(events, &suppliertypes.EventSupplierUnbondingBegin{
-			Supplier:           &supplierToSlash,
-			Reason:             suppliertypes.SupplierUnbondingReason_SUPPLIER_UNBONDING_REASON_BELOW_MIN_STAKE,
-			SessionEndHeight:   unstakeSessionEndHeight,
-			UnbondingEndHeight: unbondingEndHeight,
+			Supplier:         &supplierToSlash,
+			Reason:           suppliertypes.SupplierUnbondingReason_SUPPLIER_UNBONDING_REASON_BELOW_MIN_STAKE,
+			SessionEndHeight: unstakeSessionEndHeight,
+			// Handling unbonding for slashed suppliers:
+			// - Initiate unbonding at the current session end height (earliest possible time)
+			// - Supplier remains staked during current session to preserve the active suppliers set
+			// - Supplier will still appear in current sessions but won't receive rewards in next settlement
+			// - If this settlement coincides with session end, supplier won't service further relays
+			UnbondingEndHeight: unstakeSessionEndHeight,
 		})
 	}
 

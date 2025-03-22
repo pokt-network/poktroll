@@ -10,7 +10,3 @@ services:
     endpoints:
       - publicly_exposed_url: ws://relayminer3:8545
         rpc_type: WEBSOCKET
-  - service_id: ollama
-    endpoints:
-      - publicly_exposed_url: http://relayminer3:8545
-        rpc_type: REST
