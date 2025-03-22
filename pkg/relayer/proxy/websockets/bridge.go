@@ -143,7 +143,7 @@ func NewBridge(
 	}
 
 	// Connect to the service backend.
-	serviceBackendWSConn, err := connectServiceBackend(serviceConfig.BackendUrl, header)
+	serviceBackendWSConn, err := ConnectServiceBackend(serviceConfig.BackendUrl, serviceConfig.HeadersHTTP())
 	if err != nil {
 		bridgeLogger.Error().Err(err).Msg("failed to connect to the service backend")
 		return nil, ErrWebsocketsBridge.Wrapf("failed to connect to the service backend: %v", err)
