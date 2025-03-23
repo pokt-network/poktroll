@@ -201,7 +201,7 @@ func (rel *relayMiner) ServeForward(ctx context.Context, network, addr, token st
 	go func() {
 		if err := http.Serve(ln, muxRouter); err != nil {
 			rel.logger.Error().Err(err).
-				Msg("unexpected error occured while serving forward server")
+				Msg("unexpected error occurred while serving forward server")
 			return
 		}
 	}()
