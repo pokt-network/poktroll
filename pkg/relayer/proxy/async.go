@@ -100,8 +100,8 @@ func (server *relayMinerHTTPServer) handleAsyncConnection(
 }
 
 // forwardAsyncConnection instantiates two websocket connections that:
-// - receive and foward message from the client to the supplier (backend URL).
-// - receive and forward mesage from the supplier (backend URL) to the client.
+// - receive and forward message from the client to the supplier (backend URL).
+// - receive and forward message from the supplier (backend URL) to the client.
 func (server *relayMinerHTTPServer) forwardAsyncConnection(ctx context.Context, supplierConfig *config.RelayMinerSupplierConfig, w http.ResponseWriter, req *http.Request) error {
 	upgrader := websocket.Upgrader{
 		CheckOrigin: func(r *http.Request) bool { return true },
