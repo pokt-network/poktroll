@@ -381,11 +381,11 @@ func (server *relayMinerHTTPServer) forwardHTTP(ctx context.Context, supplierCon
 	}
 
 	var payload forwardPayload
-	if err := json.Unmarshal(b, &payload); err != nil {
+	if err = json.Unmarshal(b, &payload); err != nil {
 		return err
 	}
 
-	if err := payload.Validate(); err != nil {
+	if err = payload.Validate(); err != nil {
 		return err
 	}
 
@@ -414,7 +414,7 @@ func (server *relayMinerHTTPServer) forwardHTTP(ctx context.Context, supplierCon
 		}).Err(err).Msg("failed to send forward http request")
 
 		if nErr, ok := err.(net.Error); ok && nErr.Timeout() {
-			http.Error(w, fmt.Sprintf("relayminer: foward http request timeout exceeded"), http.StatusGatewayTimeout)
+			http.Error(w, fmt.Sprintf("relayminer: foward http request timeout exceeded: %s", err.Error()), http.StatusGatewayTimeout)
 		} else {
 			http.Error(w, fmt.Sprintf("relayminer: error forward http request: %s", err.Error()), http.StatusInternalServerError)
 		}

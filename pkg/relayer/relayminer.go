@@ -227,6 +227,6 @@ func (rel *relayMiner) newForwardHandlerFn(ctx context.Context, token string) ht
 		rel.logger.Debug().Str("service_id", serviceID).
 			Msg("forwarding request to supplier...")
 
-		rel.relayerProxy.Forward(ctx, serviceID, w, r)
+		_ = rel.relayerProxy.Forward(ctx, serviceID, w, r)
 	})
 }
