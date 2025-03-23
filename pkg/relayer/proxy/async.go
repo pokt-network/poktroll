@@ -109,12 +109,12 @@ func (server *relayMinerHTTPServer) forwardAsyncConnection(ctx context.Context, 
 
 	clientConn, err := upgrader.Upgrade(w, req, nil)
 	if err != nil {
-		fmt.Errorf("client connection upgrade client to ws: %w", err)
+		return fmt.Errorf("client connection upgrade client to ws: %w", err)
 	}
 
 	serviceConn, err := proxyws.ConnectServiceBackend(supplierConfig.ServiceConfig.BackendUrl, supplierConfig.ServiceConfig.HeadersHTTP())
 	if err != nil {
-		fmt.Errorf("service connection upgrade to ws: %w", err)
+		return fmt.Errorf("service connection upgrade to ws: %w", err)
 	}
 
 	forwardFn := func(from, to *websocket.Conn) {
