@@ -159,7 +159,9 @@ func (server *relayMinerHTTPServer) Ping(ctx context.Context) error {
 	return nil
 }
 
-// Forward reads the forward payload request and sends a request to a managed service id.
+// Forward sends request to the appropriate service.
+// - It checks if the service id is managed by the relayminer.
+// - It checks wether it needs to forward a websocket connection or send a http request.
 func (server *relayMinerHTTPServer) Forward(ctx context.Context, serviceID string, w http.ResponseWriter, req *http.Request) error {
 	supplierConfig, ok := server.serverConfig.SupplierConfigsMap[serviceID]
 	if !ok {
