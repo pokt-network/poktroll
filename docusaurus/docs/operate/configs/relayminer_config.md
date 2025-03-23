@@ -215,7 +215,7 @@ forward:
   token: 8e8cff9152db92e960b00b4159b23f82084192f9d6c589337caab9705b3e0693
 ```
 
-Example query using `relayminer1` with `ollama` as supplier in Localnet environment:
+Example query to foward a request using the `relayminer1` to `ollama` service in Localnet environment:
 
 ```shell
 ?> cat data.json
@@ -224,7 +224,13 @@ Example query using `relayminer1` with `ollama` as supplier in Localnet environm
     "path": "/api/generate",
     "data": "{\"model\": \"qwen:0.5b\", \"prompt\": \"hello world.\", \"stream\": false}"
 }
-?> curl -X POST -H "token: 8e8cff9152db92e960b00b4159b23f82084192f9d6c589337caab9705b3e0693" -H "service-id: ollama" localhost:10001/services/ollama/forward --data-binary "@data.json"
+?> curl -X POST -H "token: 8e8cff9152db92e960b00b4159b23f82084192f9d6c589337caab9705b3e0693" localhost:10001/services/ollama/forward --data-binary "@data.json"
+```
+
+Example query to foward a websocket connection using the  `relayminer1` to `anvilws` service in Localnet environment:
+
+```shell
+?>  websocat -H="token: 8e8cff9152db92e960b00b4159b23f82084192f9d6c589337caab9705b3e0693" ws://localhost:10001/services/anvilws/forward
 ```
 
 Helpers to generate token in Makefile:

@@ -235,8 +235,8 @@ func (server *relayMinerHTTPServer) sendRelayResponse(
 	return err
 }
 
-// forwardPayload represents the request body format to forward a request to
-// the supplier.
+// forwardPayload represents the HTTP request body format to forward a request
+// to the supplier.
 type forwardPayload struct {
 	Method  string            `json:"method" validate:"required,oneof=GET PATCH PUT CONNECT TRACE DELETE POST HEAD OPTIONS"`
 	Path    string            `json:"path" validate:"required"`
@@ -255,7 +255,8 @@ func (p forwardPayload) toHeaders() http.Header {
 	return h
 }
 
-// Validate returns true if the payload format is correct.
+// Validate returns true if the payload format is correct based on the
+// value validation rules.
 func (p forwardPayload) Validate() error {
 	var err error
 	if structErr := validate.New().Struct(&p); structErr != nil {
@@ -267,6 +268,11 @@ func (p forwardPayload) Validate() error {
 	return err
 }
 
+// forwardHTTP forward a HTTP request:
+// - It reads the entire payload from the client.
+// - It validates the input payload.
+// - It sends the request to the supplier backend URL.
+// - It streams back the response to the client.
 func (server *relayMinerHTTPServer) forwardHTTP(ctx context.Context, supplierConfig *config.RelayMinerSupplierConfig, w http.ResponseWriter, req *http.Request) error {
 	b, err := io.ReadAll(req.Body)
 	if err != nil {
