@@ -1,1 +1,1 @@
-package application
+package migration

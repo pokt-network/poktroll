@@ -59,7 +59,7 @@ localnet_config.yaml-e
 # These are needed to ignore byproducts of `make proto_fix_self_import`
 # Since sed functions different on macOS and Linux, we need to implement
 # some workarounds by always using "sed -i'' -e" instead of just "sed -i -e".
-api/poktroll/**/*.go-E
+api/pocket/**/*.go-E
 
 # Relase artifacts produced by `ignite chain build --release`
 release
