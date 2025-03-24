@@ -8,7 +8,7 @@ import (
 	"github.com/pokt-network/poktroll/pkg/polylog"
 )
 
-var WithDefaultExponentialDelay = WithExponentialBackoffFn(5, 500, 30000)
+var WithDefaultExponentialDelay = WithExponentialBackoffFn(25, 500, 30000)
 
 type RetryFunc func() chan error
 type RetryStrategyFunc func(int) bool
