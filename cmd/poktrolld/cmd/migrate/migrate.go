@@ -183,7 +183,7 @@ func transformMorseState(
 func collectInputAccountBalances(inputState *migrationtypes.MorseStateExport, morseWorkspace *morseImportWorkspace) error {
 	for exportAccountIdx, exportAccount := range inputState.AppState.Auth.Accounts {
 		// DEV_NOTE: Ignore module accounts.
-		// TODO_MAINNET(@olshansky): Revisit this business logic to ensure that no tokens go missing from Morse to Shannon.
+		// TODO_MAINNET_MIGRATION(@olshansky): Revisit this business logic to ensure that no tokens go missing from Morse to Shannon.
 		// See: https://github.com/pokt-network/poktroll/issues/1066 regarding supply validation.
 		if exportAccount.Type != "posmint/Account" {
 			logger.Warn().

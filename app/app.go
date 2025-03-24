@@ -41,7 +41,7 @@ import (
 
 const (
 	AccountAddressPrefix = "pokt"
-	// TODO_MAINNET_MIGRATION: Rename `poktroll` to `pocketd` EVERYWHERE.
+	// TODO_MAINNET_CRITICAL: Rename `poktroll` to `pocketd` EVERYWHERE.
 	Name = "poktroll"
 )
 

@@ -85,7 +85,7 @@ func (sq *sharedQuerier) GetParams(ctx context.Context) (*sharedtypes.Params, er
 // GetClaimWindowOpenHeight returns the block height at which the claim window of
 // the session that includes queryHeight opens.
 //
-// TODO_MAINNET(#543): We don't really want to have to query the params for every method call.
+// TODO_MAINNET_MIGRATION(@bryanchriswhite, #543): We don't really want to have to query the params for every method call.
 // Once `ModuleParamsClient` is implemented, use its replay observable's `#Last()` method
 // to get the most recently (asynchronously) observed (and cached) value.
 // TODO_MAINNET(@bryanchriswhite,#543): We also don't really want to use the current value of the params. Instead,
@@ -101,7 +101,7 @@ func (sq *sharedQuerier) GetClaimWindowOpenHeight(ctx context.Context, queryHeig
 // GetProofWindowOpenHeight returns the block height at which the proof window of
 // the session that includes queryHeight opens.
 //
-// TODO_MAINNET(#543): We don't really want to have to query the params for every method call.
+// TODO_MAINNET_MIGRATION(@bryanchriswhite, #543): We don't really want to have to query the params for every method call.
 // Once `ModuleParamsClient` is implemented, use its replay observable's `#Last()` method
 // to get the most recently (asynchronously) observed (and cached) value.
 // TODO_MAINNET(@bryanchriswhite,#543): We also don't really want to use the current value of the params. Instead,
@@ -119,10 +119,10 @@ func (sq *sharedQuerier) GetProofWindowOpenHeight(ctx context.Context, queryHeig
 // The grace period is the number of blocks after the session ends during which relays
 // SHOULD be included in the session which most recently ended.
 //
-// TODO_MAINNET(#543): We don't really want to have to query the params for every method call.
+// TODO_MAINNET_MIGRATION(@bryanchriswhite, #543): We don't really want to have to query the params for every method call.
 // Once `ModuleParamsClient` is implemented, use its replay observable's `#Last()` method
 // to get the most recently (asynchronously) observed (and cached) value.
-// TODO_MAINNET(@bryanchriswhite, #543): We also don't really want to use the current value of the params.
+// TODO_MAINNET_MIGRATION(@bryanchriswhite, #543): We also don't really want to use the current value of the params.
 // Instead, we should be using the value that the params had for the session which includes queryHeight.
 func (sq *sharedQuerier) GetSessionGracePeriodEndHeight(
 	ctx context.Context,
@@ -138,10 +138,10 @@ func (sq *sharedQuerier) GetSessionGracePeriodEndHeight(
 // GetEarliestSupplierClaimCommitHeight returns the earliest block height at which a claim
 // for the session that includes queryHeight can be committed for a given supplier.
 //
-// TODO_MAINNET(#543): We don't really want to have to query the params for every method call.
+// TODO_MAINNET_MIGRATION(@bryanchriswhite, #543): We don't really want to have to query the params for every method call.
 // Once `ModuleParamsClient` is implemented, use its replay observable's `#Last()` method
 // to get the most recently (asynchronously) observed (and cached) value.
-// TODO_MAINNET(@bryanchriswhite, #543): We also don't really want to use the current value of the params.
+// TODO_MAINNET_MIGRATION(@bryanchriswhite, #543): We also don't really want to use the current value of the params.
 // Instead, we should be using the value that the params had for the session which includes queryHeight.
 func (sq *sharedQuerier) GetEarliestSupplierClaimCommitHeight(ctx context.Context, queryHeight int64, supplierOperatorAddr string) (int64, error) {
 	logger := sq.logger.With("query_client", "shared", "method", "GetEarliestSupplierClaimCommitHeight")
@@ -185,7 +185,7 @@ func (sq *sharedQuerier) GetEarliestSupplierClaimCommitHeight(ctx context.Contex
 // GetEarliestSupplierProofCommitHeight returns the earliest block height at which a proof
 // for the session that includes queryHeight can be committed for a given supplier.
 //
-// TODO_MAINNET(#543): We don't really want to have to query the params for every method call.
+// TODO_MAINNET_MIGRATION(@bryanchriswhite, #543): We don't really want to have to query the params for every method call.
 // Once `ModuleParamsClient` is implemented, use its replay observable's `#Last()` method
 // to get the most recently (asynchronously) observed (and cached) value.
 // TODO_MAINNET(@bryanchriswhite, #543): We also don't really want to use the current value of the params.
@@ -230,7 +230,7 @@ func (sq *sharedQuerier) GetEarliestSupplierProofCommitHeight(ctx context.Contex
 
 // GetComputeUnitsToTokensMultiplier returns the multiplier used to convert compute units to tokens.
 //
-// TODO_MAINNET(#543): We don't really want to have to query the params for every method call.
+// TODO_MAINNET_MIGRATION(@bryanchriswhite, #543): We don't really want to have to query the params for every method call.
 // Once `ModuleParamsClient` is implemented, use its replay observable's `#Last()` method
 // to get the most recently (asynchronously) observed (and cached) value.
 // TODO_MAINNET(@bryanchriswhite, #543): We also don't really want to use the current value of the params.
