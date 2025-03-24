@@ -7,12 +7,12 @@ import (
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 
-	testevents "github.com/pokt-network/pocket/testutil/events"
-	keepertest "github.com/pokt-network/pocket/testutil/keeper"
-	"github.com/pokt-network/pocket/testutil/sample"
-	sharedtypes "github.com/pokt-network/pocket/x/shared/types"
-	"github.com/pokt-network/pocket/x/supplier/keeper"
-	suppliertypes "github.com/pokt-network/pocket/x/supplier/types"
+	testevents "github.com/pokt-network/poktroll/testutil/events"
+	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
+	"github.com/pokt-network/poktroll/testutil/sample"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
+	"github.com/pokt-network/poktroll/x/supplier/keeper"
+	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 )
 
 const serviceID = "svcId"

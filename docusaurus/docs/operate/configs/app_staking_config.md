@@ -11,7 +11,7 @@ Pocket Network's RPC services.
 
 :::tip
 
-You can find a fully featured example configuration at [application1_stake_config.yaml](https://github.com/pokt-network/pocket/blob/main/localnet/pocketd/config/application1_stake_config.yaml).
+You can find a fully featured example configuration at [application1_stake_config.yaml](https://github.com/pokt-network/poktroll/blob/main/localnet/pocketd/config/application1_stake_config.yaml).
 
 :::
 

@@ -8,9 +8,9 @@ import (
 	cosmoslog "cosmossdk.io/log"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	apptypes "github.com/pokt-network/pocket/x/application/types"
-	sharedtypes "github.com/pokt-network/pocket/x/shared/types"
-	suppliertypes "github.com/pokt-network/pocket/x/supplier/types"
+	apptypes "github.com/pokt-network/poktroll/x/application/types"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
+	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 )
 
 // AccountKeeper defines the expected interface for the Account module.

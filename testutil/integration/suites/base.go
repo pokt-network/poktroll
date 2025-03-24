@@ -14,14 +14,14 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 
-	"github.com/pokt-network/pocket/app/volatile"
-	"github.com/pokt-network/pocket/pkg/client"
-	"github.com/pokt-network/pocket/pkg/client/query"
-	"github.com/pokt-network/pocket/pkg/polylog"
-	"github.com/pokt-network/pocket/pkg/polylog/polyzero"
-	_ "github.com/pokt-network/pocket/pkg/polylog/polyzero"
-	"github.com/pokt-network/pocket/testutil/integration"
-	"github.com/pokt-network/pocket/testutil/testcache"
+	"github.com/pokt-network/poktroll/app/volatile"
+	"github.com/pokt-network/poktroll/pkg/client"
+	"github.com/pokt-network/poktroll/pkg/client/query"
+	"github.com/pokt-network/poktroll/pkg/polylog"
+	"github.com/pokt-network/poktroll/pkg/polylog/polyzero"
+	_ "github.com/pokt-network/poktroll/pkg/polylog/polyzero"
+	"github.com/pokt-network/poktroll/testutil/integration"
+	"github.com/pokt-network/poktroll/testutil/testcache"
 )
 
 var _ IntegrationSuite = (*BaseIntegrationSuite)(nil)

@@ -6,9 +6,9 @@ import (
 
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 
-	"github.com/pokt-network/pocket/telemetry"
-	apptypes "github.com/pokt-network/pocket/x/application/types"
-	sharedtypes "github.com/pokt-network/pocket/x/shared/types"
+	"github.com/pokt-network/poktroll/telemetry"
+	apptypes "github.com/pokt-network/poktroll/x/application/types"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 // EndBlockerTransferApplication completes pending application transfers.

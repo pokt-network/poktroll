@@ -3,8 +3,8 @@ package types
 import (
 	"context"
 
-	"github.com/pokt-network/pocket/pkg/client"
-	sharedtypes "github.com/pokt-network/pocket/x/shared/types"
+	"github.com/pokt-network/poktroll/pkg/client"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 var _ client.SharedQueryClient = (*SharedKeeperQueryClient)(nil)

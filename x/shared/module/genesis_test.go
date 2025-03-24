@@ -5,10 +5,10 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	keepertest "github.com/pokt-network/pocket/testutil/keeper"
-	"github.com/pokt-network/pocket/testutil/nullify"
-	shared "github.com/pokt-network/pocket/x/shared/module"
-	"github.com/pokt-network/pocket/x/shared/types"
+	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
+	"github.com/pokt-network/poktroll/testutil/nullify"
+	shared "github.com/pokt-network/poktroll/x/shared/module"
+	"github.com/pokt-network/poktroll/x/shared/types"
 )
 
 func TestGenesis(t *testing.T) {

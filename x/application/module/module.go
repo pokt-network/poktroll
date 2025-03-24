@@ -20,9 +20,9 @@ import (
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 
-	modulev1 "github.com/pokt-network/pocket/api/pocket/application/module"
-	"github.com/pokt-network/pocket/x/application/keeper"
-	"github.com/pokt-network/pocket/x/application/types"
+	modulev1 "github.com/pokt-network/poktroll/api/pocket/application/module"
+	"github.com/pokt-network/poktroll/x/application/keeper"
+	"github.com/pokt-network/poktroll/x/application/types"
 )
 
 var (

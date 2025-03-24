@@ -12,9 +12,9 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	_ "golang.org/x/crypto/sha3"
 
-	"github.com/pokt-network/pocket/telemetry"
-	"github.com/pokt-network/pocket/x/session/types"
-	sharedtypes "github.com/pokt-network/pocket/x/shared/types"
+	"github.com/pokt-network/poktroll/telemetry"
+	"github.com/pokt-network/poktroll/x/session/types"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 var SHA3HashLen = crypto.SHA3_256.Size()
@@ -177,7 +177,7 @@ func (k Keeper) hydrateSessionSuppliers(ctx context.Context, sh *sessionHydrator
 	// - The session is hydrated with the correct historical number of suppliers
 	// - Changes between query height and current height are properly handled
 	// Refer to the following discussion for more details:
-	// https://github.com/pokt-network/pocket/pull/1103#discussion_r1992214953
+	// https://github.com/pokt-network/poktroll/pull/1103#discussion_r1992214953
 	numSuppliersPerSession := int(k.GetParams(ctx).NumSuppliersPerSession)
 
 	// Get all suppliers without service ID filtering because:

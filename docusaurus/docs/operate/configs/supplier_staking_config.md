@@ -11,7 +11,7 @@ RPC services on Pocket Network.
 
 :::tip
 
-You can find a fully featured example configuration at [supplier_staking_config.yaml](https://github.com/pokt-network/pocket/tree/main/localnet/pocketd/config/supplier1_stake_config.yaml).
+You can find a fully featured example configuration at [supplier_staking_config.yaml](https://github.com/pokt-network/poktroll/tree/main/localnet/pocketd/config/supplier1_stake_config.yaml).
 
 :::
 
@@ -329,7 +329,7 @@ endpoints:
 
 :::
 
-The `rpc_type` MUST be one of the [supported types found here](https://github.com/pokt-network/pocket/tree/main/pkg/relayer/config/types.go#L8).
+The `rpc_type` MUST be one of the [supported types found here](https://github.com/pokt-network/poktroll/tree/main/pkg/relayer/config/types.go#L8).
 
 #### `rev_share_percent`
 

@@ -7,10 +7,10 @@ import (
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 
-	"github.com/pokt-network/pocket/pkg/crypto/protocol"
-	testutilevents "github.com/pokt-network/pocket/testutil/events"
-	keepertest "github.com/pokt-network/pocket/testutil/keeper"
-	servicetypes "github.com/pokt-network/pocket/x/service/types"
+	"github.com/pokt-network/poktroll/pkg/crypto/protocol"
+	testutilevents "github.com/pokt-network/poktroll/testutil/events"
+	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
+	servicetypes "github.com/pokt-network/poktroll/x/service/types"
 )
 
 func TestComputeNewDifficultyHash_MonotonicallyIncreasingRelays(t *testing.T) {

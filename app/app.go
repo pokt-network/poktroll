@@ -34,9 +34,9 @@ import (
 	capabilitykeeper "github.com/cosmos/ibc-go/modules/capability/keeper"
 	ibckeeper "github.com/cosmos/ibc-go/v8/modules/core/keeper"
 
-	"github.com/pokt-network/pocket/app/keepers"
-	"github.com/pokt-network/pocket/docs"
-	"github.com/pokt-network/pocket/telemetry"
+	"github.com/pokt-network/poktroll/app/keepers"
+	"github.com/pokt-network/poktroll/docs"
+	"github.com/pokt-network/poktroll/telemetry"
 )
 
 const (

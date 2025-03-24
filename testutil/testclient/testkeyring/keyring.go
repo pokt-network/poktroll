@@ -9,8 +9,8 @@ import (
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	"github.com/stretchr/testify/require"
 
-	"github.com/pokt-network/pocket/app"
-	"github.com/pokt-network/pocket/testutil/testclient"
+	"github.com/pokt-network/poktroll/app"
+	"github.com/pokt-network/poktroll/testutil/testclient"
 )
 
 // NewTestKeyringWithKey creates a new in-memory keyring with a test key

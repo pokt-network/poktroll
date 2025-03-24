@@ -3,7 +3,7 @@ package polyzero_test
 import (
 	"os"
 
-	"github.com/pokt-network/pocket/pkg/polylog/polyzero"
+	"github.com/pokt-network/poktroll/pkg/polylog/polyzero"
 )
 
 func ExampleNewLogger() {

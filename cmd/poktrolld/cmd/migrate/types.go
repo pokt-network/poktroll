@@ -6,8 +6,8 @@ import (
 	cosmosmath "cosmossdk.io/math"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 
-	"github.com/pokt-network/pocket/app/volatile"
-	migrationtypes "github.com/pokt-network/pocket/x/migration/types"
+	"github.com/pokt-network/poktroll/app/volatile"
+	migrationtypes "github.com/pokt-network/poktroll/x/migration/types"
 )
 
 // newMorseImportWorkspace returns a new morseImportWorkspace with fields initialized to their zero values.

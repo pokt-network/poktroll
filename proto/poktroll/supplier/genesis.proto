@@ -1,7 +1,7 @@
 syntax = "proto3";
 package pocket.supplier;
 
-option go_package = "github.com/pokt-network/pocket/x/supplier/types";
+option go_package = "github.com/pokt-network/poktroll/x/supplier/types";
 option (gogoproto.stable_marshaler_all) = true;
 
 import "amino/amino.proto";

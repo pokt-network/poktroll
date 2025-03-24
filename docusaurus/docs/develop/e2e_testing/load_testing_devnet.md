@@ -70,7 +70,7 @@ POCKET_NODE=https://devnet-sophon-validator-rpc.pocket.com make supplier3_stake
 ```
 
 3. Update the manifest. The content of
-[loadtest_manifest_example.yaml](https://github.com/pokt-network/pocket/blob/main/load-testing/loadtest_manifest_example.yaml)
+[loadtest_manifest_example.yaml](https://github.com/pokt-network/poktroll/blob/main/load-testing/loadtest_manifest_example.yaml)
 can be modified as follows:
 
 ```yaml

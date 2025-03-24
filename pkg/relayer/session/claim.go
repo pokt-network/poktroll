@@ -7,16 +7,16 @@ import (
 
 	sdktypes "github.com/cosmos/cosmos-sdk/types"
 
-	"github.com/pokt-network/pocket/app/volatile"
-	"github.com/pokt-network/pocket/pkg/client"
-	"github.com/pokt-network/pocket/pkg/either"
-	"github.com/pokt-network/pocket/pkg/observable"
-	"github.com/pokt-network/pocket/pkg/observable/channel"
-	"github.com/pokt-network/pocket/pkg/observable/filter"
-	"github.com/pokt-network/pocket/pkg/observable/logging"
-	"github.com/pokt-network/pocket/pkg/relayer"
-	prooftypes "github.com/pokt-network/pocket/x/proof/types"
-	sharedtypes "github.com/pokt-network/pocket/x/shared/types"
+	"github.com/pokt-network/poktroll/app/volatile"
+	"github.com/pokt-network/poktroll/pkg/client"
+	"github.com/pokt-network/poktroll/pkg/either"
+	"github.com/pokt-network/poktroll/pkg/observable"
+	"github.com/pokt-network/poktroll/pkg/observable/channel"
+	"github.com/pokt-network/poktroll/pkg/observable/filter"
+	"github.com/pokt-network/poktroll/pkg/observable/logging"
+	"github.com/pokt-network/poktroll/pkg/relayer"
+	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 	"github.com/pokt-network/smt"
 )
 

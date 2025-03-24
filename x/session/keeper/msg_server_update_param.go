@@ -6,8 +6,8 @@ import (
 
 	"google.golang.org/grpc/status"
 
-	sessiontypes "github.com/pokt-network/pocket/x/session/types"
-	suppliertypes "github.com/pokt-network/pocket/x/supplier/types"
+	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
+	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 
 	"google.golang.org/grpc/codes"
 )

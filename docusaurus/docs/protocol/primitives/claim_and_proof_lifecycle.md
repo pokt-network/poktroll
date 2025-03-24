@@ -138,7 +138,7 @@ gantt
 
 #### References:
 
-- [`pocket.shared.Params` / `sharedtypes.Params`](https://github.com/pokt-network/pocket/blob/main/proto/pocket/shared/params.proto)
+- [`pocket.shared.Params` / `sharedtypes.Params`](https://github.com/pokt-network/poktroll/blob/main/proto/pocket/shared/params.proto)
 
 ### Claim Expiration
 
@@ -209,8 +209,8 @@ that were necessary to service that request.
 
 | Type                                                                                                 | Description                                             |
 | ---------------------------------------------------------------------------------------------------- | ------------------------------------------------------- |
-| [`Claim`](https://github.com/pokt-network/pocket/blob/main/proto/pocket/proof/claim.proto)       | A serialized version of the `Claim` is stored onchain. |
-| [`MsgCreateClaim`](https://github.com/pokt-network/pocket/blob/main/proto/pocket/proof/tx.proto) | Submitted by a `Supplier` to store a claim `onchain`.  |
+| [`Claim`](https://github.com/pokt-network/poktroll/blob/main/proto/pocket/proof/claim.proto)       | A serialized version of the `Claim` is stored onchain. |
+| [`MsgCreateClaim`](https://github.com/pokt-network/poktroll/blob/main/proto/pocket/proof/tx.proto) | Submitted by a `Supplier` to store a claim `onchain`.  |
 
 ### CreateClaim Validation
 
@@ -252,11 +252,11 @@ Validate_Claim --> [*]
 #### References:
 
 - Create claim message basic
-  validation ([`MsgCreateClaim#ValidateBasic()`](https://github.com/pokt-network/pocket/blob/main/x/proof/types/message_create_claim.go))
+  validation ([`MsgCreateClaim#ValidateBasic()`](https://github.com/pokt-network/poktroll/blob/main/x/proof/types/message_create_claim.go))
 - Session header
-  validation ([diagram](#session-header-validation) / [`msgServer#queryAndValidateSessionHeader()`](https://github.com/pokt-network/pocket/blob/main/x/proof/keeper/session.go))
+  validation ([diagram](#session-header-validation) / [`msgServer#queryAndValidateSessionHeader()`](https://github.com/pokt-network/poktroll/blob/main/x/proof/keeper/session.go))
 - Onchain claim window
-  validation ([diagram](#TODO) / [`msgServer#validateClaimWindow()`](https://github.com/pokt-network/pocket/blob/main/x/proof/keeper/session.go))
+  validation ([diagram](#TODO) / [`msgServer#validateClaimWindow()`](https://github.com/pokt-network/poktroll/blob/main/x/proof/keeper/session.go))
 
 ### Claim Window
 
@@ -283,8 +283,8 @@ rewarded for the work done.
 
 | Type                                                                                                 | Description                                                                                                                                                                  |
 | ---------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [`Proof`](https://github.com/pokt-network/pocket/blob/main/proto/pocket/proof/proof.proto)       | A serialized version of the `Proof` is stored onchain.                                                                                                                      |
-| [`MsgSubmitProof`](https://github.com/pokt-network/pocket/blob/main/proto/pocket/proof/tx.proto) | Submitted by a `Supplier` to store a proof `onchain`. If the `Proof` is invalid, or if there is no corresponding `Claim` for the `Proof`, the transaction will be rejected. |
+| [`Proof`](https://github.com/pokt-network/poktroll/blob/main/proto/pocket/proof/proof.proto)       | A serialized version of the `Proof` is stored onchain.                                                                                                                      |
+| [`MsgSubmitProof`](https://github.com/pokt-network/poktroll/blob/main/proto/pocket/proof/tx.proto) | Submitted by a `Supplier` to store a proof `onchain`. If the `Proof` is invalid, or if there is no corresponding `Claim` for the `Proof`, the transaction will be rejected. |
 
 ### SubmitProof Validation
 
@@ -339,17 +339,17 @@ Validate_Proof --> [*]
 #### References:
 
 - Proof basic
-  validation ([diagram](#proof-basic-validation) / [`MsgSubmitProof#ValidateBasic()`](https://github.com/pokt-network/pocket/blob/main/x/proof/types/message_submit_proof.go))
+  validation ([diagram](#proof-basic-validation) / [`MsgSubmitProof#ValidateBasic()`](https://github.com/pokt-network/poktroll/blob/main/x/proof/types/message_submit_proof.go))
 - Session header
-  validation ([diagram](#session-header-validation) / [`msgServer#queryAndValidateSessionHeader()`](https://github.com/pokt-network/pocket/blob/main/x/proof/keeper/session.go))
+  validation ([diagram](#session-header-validation) / [`msgServer#queryAndValidateSessionHeader()`](https://github.com/pokt-network/poktroll/blob/main/x/proof/keeper/session.go))
 - Proof window
-  validation ([diagram](#TODO) / [`msgServer#validateProofWindow()`](https://github.com/pokt-network/pocket/blob/main/x/proof/keeper/session.go))
+  validation ([diagram](#TODO) / [`msgServer#validateProofWindow()`](https://github.com/pokt-network/poktroll/blob/main/x/proof/keeper/session.go))
 - Proven relay request
-  validation ([diagram](#proof-submission-relay-request-validation) / [`RelayRequest#ValidateBasic()`](https://github.com/pokt-network/pocket/blob/main/x/service/types/relay.go))
+  validation ([diagram](#proof-submission-relay-request-validation) / [`RelayRequest#ValidateBasic()`](https://github.com/pokt-network/poktroll/blob/main/x/service/types/relay.go))
 - Proven relay response
-  validation ([diagram](#proof-submission-relay-response-validation) / [`RelayResponse#ValidateBasic()`](https://github.com/pokt-network/pocket/blob/main/x/service/types/relay.go))
+  validation ([diagram](#proof-submission-relay-response-validation) / [`RelayResponse#ValidateBasic()`](https://github.com/pokt-network/poktroll/blob/main/x/service/types/relay.go))
 - Proof claim
-  validation ([diagram](#proof-submission-claim-validation) / [`msgServer#queryandValidateClaimForProof()`](https://github.com/pokt-network/pocket/blob/main/x/proof/keeper/msg_server_submit_proof.go))
+  validation ([diagram](#proof-submission-claim-validation) / [`msgServer#queryandValidateClaimForProof()`](https://github.com/pokt-network/poktroll/blob/main/x/proof/keeper/msg_server_submit_proof.go))
 
 ### Proof Window
 

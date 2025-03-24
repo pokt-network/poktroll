@@ -3,7 +3,7 @@ package keeper
 import (
 	"context"
 
-	"github.com/pokt-network/pocket/x/service/types"
+	"github.com/pokt-network/poktroll/x/service/types"
 )
 
 // UpdateRelayMiningDifficulty updates the onchain relay mining difficulty

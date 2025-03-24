@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/pokt-network/pocket/pkg/cache"
+	"github.com/pokt-network/poktroll/pkg/cache"
 )
 
 // EvictionPolicy determines which values to remove when the number of keys in the cache exceeds maxKeys.

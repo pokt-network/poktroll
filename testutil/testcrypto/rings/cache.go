@@ -7,9 +7,9 @@ import (
 	"cosmossdk.io/depinject"
 	"github.com/stretchr/testify/require"
 
-	"github.com/pokt-network/pocket/pkg/crypto"
-	"github.com/pokt-network/pocket/pkg/crypto/rings"
-	"github.com/pokt-network/pocket/pkg/polylog"
+	"github.com/pokt-network/poktroll/pkg/crypto"
+	"github.com/pokt-network/poktroll/pkg/crypto/rings"
+	"github.com/pokt-network/poktroll/pkg/polylog"
 )
 
 // NewRingClientWithMockDependencies creates a new "real" RingClient with the

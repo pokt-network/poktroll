@@ -7,11 +7,11 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	keepertest "github.com/pokt-network/pocket/testutil/keeper"
-	"github.com/pokt-network/pocket/testutil/nullify"
-	"github.com/pokt-network/pocket/testutil/sample"
-	"github.com/pokt-network/pocket/x/migration/keeper"
-	"github.com/pokt-network/pocket/x/migration/types"
+	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
+	"github.com/pokt-network/poktroll/testutil/nullify"
+	"github.com/pokt-network/poktroll/testutil/sample"
+	"github.com/pokt-network/poktroll/x/migration/keeper"
+	"github.com/pokt-network/poktroll/x/migration/types"
 )
 
 // Prevent strconv unused error

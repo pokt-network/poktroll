@@ -7,10 +7,10 @@ import (
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 
-	"github.com/pokt-network/pocket/app/volatile"
-	testkeeper "github.com/pokt-network/pocket/testutil/keeper"
-	"github.com/pokt-network/pocket/x/gateway/types"
-	gatewaytypes "github.com/pokt-network/pocket/x/gateway/types"
+	"github.com/pokt-network/poktroll/app/volatile"
+	testkeeper "github.com/pokt-network/poktroll/testutil/keeper"
+	"github.com/pokt-network/poktroll/x/gateway/types"
+	gatewaytypes "github.com/pokt-network/poktroll/x/gateway/types"
 )
 
 func TestGetParams(t *testing.T) {

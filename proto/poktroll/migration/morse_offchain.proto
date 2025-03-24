@@ -26,7 +26,7 @@ import "cosmos_proto/cosmos.proto";
 import "cosmos/base/v1beta1/coin.proto";
 import "pocket/migration/morse_onchain.proto";
 
-option go_package = "github.com/pokt-network/pocket/x/migration/types";
+option go_package = "github.com/pokt-network/poktroll/x/migration/types";
 option (gogoproto.stable_marshaler_all) = true;
 
 // MorseStateExport is the data structure that is serialized and output when running:

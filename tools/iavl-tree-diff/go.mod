@@ -1,4 +1,4 @@
-module github.com/pokt-network/pocket/tools/iavl-tree-diff
+module github.com/pokt-network/poktroll/tools/iavl-tree-diff
 
 go 1.23
 

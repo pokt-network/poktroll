@@ -5,8 +5,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	testkeeper "github.com/pokt-network/pocket/testutil/keeper"
-	"github.com/pokt-network/pocket/x/gateway/types"
+	testkeeper "github.com/pokt-network/poktroll/testutil/keeper"
+	"github.com/pokt-network/poktroll/x/gateway/types"
 )
 
 func TestParamsQuery(t *testing.T) {

@@ -3,9 +3,9 @@ package logging
 import (
 	"context"
 
-	"github.com/pokt-network/pocket/pkg/observable"
-	"github.com/pokt-network/pocket/pkg/observable/channel"
-	"github.com/pokt-network/pocket/pkg/polylog"
+	"github.com/pokt-network/poktroll/pkg/observable"
+	"github.com/pokt-network/poktroll/pkg/observable/channel"
+	"github.com/pokt-network/poktroll/pkg/polylog"
 )
 
 // LogErrors operates on an observable of errors. It logs all errors received

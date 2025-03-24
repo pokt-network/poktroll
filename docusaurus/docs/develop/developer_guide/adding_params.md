@@ -41,7 +41,7 @@ Adding a new onchain module parameter involves multiple steps to ensure that the
 parameter is properly integrated into the system. This guide will walk you through
 the process using a generic approach, illustrated by adding a parameter to the `proof` module.
 
-See [pokt-network/pocket#595](https://github.com/pokt-network/pocket/pull/595) for a real-world example.
+See [pokt-network/pocket#595](https://github.com/pokt-network/poktroll/pull/595) for a real-world example.
 
 :::note
 
@@ -90,7 +90,7 @@ Try running `make proto_clean_pulsar` if you experience errors like these:
 ```bash
 ✘ Error while running command go mod tidy: go:
 ...
-go: github.com/pokt-network/pocket/api/pocket/examplemod imports
+go: github.com/pokt-network/poktroll/api/pocket/examplemod imports
         cosmossdk.io/api/pocket/shared: module cosmossdk.io/api@latest found (v0.7.6), but does not contain package cosmossdk.io/api/pocket/shared
 ```
 
@@ -602,7 +602,7 @@ This test asserts that updating was successful and that no other parameter was e
 If creating `msg_server_update_param_test.go`, be sure to:
 
 1. use the `keeper_test` package (i.e. `package keeper_test`).
-2. add the testutil keeper import: `testkeeper "github.com/pokt-network/pocket/testutil/keeper"`
+2. add the testutil keeper import: `testkeeper "github.com/pokt-network/poktroll/testutil/keeper"`
 
 :::
 
@@ -652,7 +652,7 @@ Start with the following cases and add those which cover all invalid values for 
 
 ### 6. Update the Parameter Integration Tests
 
-Integration tests which cover parameter updates utilize the `ModuleParamConfig`s defined in [`testutil/integration/params/param_configs.go`](https://github.com/pokt-network/pocket/blob/main/testutil/integration/suites/param_configs.go) to dynamically (i.e. using reflection) construct and send parameter update messages in a test environment.
+Integration tests which cover parameter updates utilize the `ModuleParamConfig`s defined in [`testutil/integration/params/param_configs.go`](https://github.com/pokt-network/poktroll/blob/main/testutil/integration/suites/param_configs.go) to dynamically (i.e. using reflection) construct and send parameter update messages in a test environment.
 When adding parameters to a module, it is necessary to update that module's `ModuleParamConfig` to include the new parameter, othwerwise it will not be covered by the integration test suite.
 
 #### 6.1 Add a valid param

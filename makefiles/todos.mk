@@ -11,7 +11,7 @@
 # 2. If there's a specific issue and/or person, include it in paranthesiss
 #
 #   e.g. TODO(@Olshansk): Automatically link to the Github user https://github.com/olshansk
-#   e.g. TODO_INVESTIGATE(#420): Automatically link this to github issue https://github.com/pokt-network/pocket/issues/420
+#   e.g. TODO_INVESTIGATE(#420): Automatically link this to github issue https://github.com/pokt-network/poktroll/issues/420
 #   e.g. TODO_DISCUSS(@Olshansk, #420): Specific individual should tend to the action item in the specific ticket
 #   e.g. TODO_CLEANUP: This is not tied to an issue, or a person, and can be done by the core team or external contributors.
 #

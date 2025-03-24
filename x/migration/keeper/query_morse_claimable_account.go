@@ -9,7 +9,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"github.com/pokt-network/pocket/x/migration/types"
+	"github.com/pokt-network/poktroll/x/migration/types"
 )
 
 // MorseClaimableAccountAll returns all MorseClaimableAccounts created as a result of MsgImportMorseClaimableAccounts.

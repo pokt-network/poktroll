@@ -10,12 +10,12 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"github.com/pokt-network/pocket/pkg/client"
-	"github.com/pokt-network/pocket/pkg/crypto"
-	"github.com/pokt-network/pocket/pkg/crypto/rings"
-	"github.com/pokt-network/pocket/pkg/polylog"
-	_ "github.com/pokt-network/pocket/pkg/polylog/polyzero"
-	"github.com/pokt-network/pocket/x/proof/types"
+	"github.com/pokt-network/poktroll/pkg/client"
+	"github.com/pokt-network/poktroll/pkg/crypto"
+	"github.com/pokt-network/poktroll/pkg/crypto/rings"
+	"github.com/pokt-network/poktroll/pkg/polylog"
+	_ "github.com/pokt-network/poktroll/pkg/polylog/polyzero"
+	"github.com/pokt-network/poktroll/x/proof/types"
 )
 
 type (

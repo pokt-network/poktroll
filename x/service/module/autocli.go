@@ -3,7 +3,7 @@ package service
 import (
 	autocliv1 "cosmossdk.io/api/cosmos/autocli/v1"
 
-	modulev1 "github.com/pokt-network/pocket/api/pocket/service"
+	modulev1 "github.com/pokt-network/poktroll/api/pocket/service"
 )
 
 // AutoCLIOptions implements the autocli.HasAutoCLIConfig interface.

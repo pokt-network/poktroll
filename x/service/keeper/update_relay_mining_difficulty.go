@@ -11,8 +11,8 @@ import (
 	"cosmossdk.io/log"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"github.com/pokt-network/pocket/pkg/crypto/protocol"
-	"github.com/pokt-network/pocket/x/service/types"
+	"github.com/pokt-network/poktroll/pkg/crypto/protocol"
+	"github.com/pokt-network/poktroll/x/service/types"
 )
 
 var (
@@ -43,7 +43,7 @@ func (k Keeper) UpdateRelayMiningDifficulty(
 
 	// Iterate over the relaysPerServiceMap deterministically by sorting the keys.
 	// This ensures that the order of the keys is consistent across different nodes.
-	// See comment: https://github.com/pokt-network/pocket/pull/840#discussion_r1796663285
+	// See comment: https://github.com/pokt-network/poktroll/pull/840#discussion_r1796663285
 	targetNumRelays := k.GetParams(ctx).TargetNumRelays
 	sortedRelayPerServiceMapKeys := getSortedMapKeys(relaysPerServiceMap)
 	for _, serviceId := range sortedRelayPerServiceMapKeys {

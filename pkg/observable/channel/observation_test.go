@@ -4,7 +4,7 @@ import (
 	"context"
 	"sync"
 
-	"github.com/pokt-network/pocket/pkg/observable"
+	"github.com/pokt-network/poktroll/pkg/observable"
 )
 
 // NOTE: this file does not contain any tests, only test helpers.

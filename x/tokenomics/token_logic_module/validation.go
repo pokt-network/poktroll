@@ -1,6 +1,6 @@
 package token_logic_module
 
-import tokenomicstypes "github.com/pokt-network/pocket/x/tokenomics/types"
+import tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
 
 // ValidateTLMConfig ensures that the global mint and global mint reimbursement request TLMs are activated or deactivated together.
 func ValidateTLMConfig(tokenLogicModules []TokenLogicModule) error {

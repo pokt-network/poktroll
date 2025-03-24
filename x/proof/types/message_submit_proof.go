@@ -4,7 +4,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
-	sessiontypes "github.com/pokt-network/pocket/x/session/types"
+	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 )
 
 var _ sdk.Msg = (*MsgSubmitProof)(nil)

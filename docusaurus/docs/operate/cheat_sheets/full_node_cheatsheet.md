@@ -62,7 +62,7 @@ Follow the instructions below to **quickly** install and set up a Full Node:
 1. **Download the Installation Script**:
 
    ```bash
-   curl -O https://raw.githubusercontent.com/pokt-network/pocket/main/tools/installer/full-node.sh
+   curl -O https://raw.githubusercontent.com/pokt-network/poktroll/main/tools/installer/full-node.sh
    ```
 
 2. **Run the Script with Sudo Privileges**:

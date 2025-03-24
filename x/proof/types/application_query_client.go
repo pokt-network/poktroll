@@ -3,8 +3,8 @@ package types
 import (
 	"context"
 
-	"github.com/pokt-network/pocket/pkg/client"
-	apptypes "github.com/pokt-network/pocket/x/application/types"
+	"github.com/pokt-network/poktroll/pkg/client"
+	apptypes "github.com/pokt-network/poktroll/x/application/types"
 )
 
 var _ client.ApplicationQueryClient = (*AppKeeperQueryClient)(nil)

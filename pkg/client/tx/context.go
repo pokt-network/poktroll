@@ -13,8 +13,8 @@ import (
 	authclient "github.com/cosmos/cosmos-sdk/x/auth/client"
 	grpc "google.golang.org/grpc"
 
-	"github.com/pokt-network/pocket/pkg/client"
-	txtypes "github.com/pokt-network/pocket/pkg/client/tx/types"
+	"github.com/pokt-network/poktroll/pkg/client"
+	txtypes "github.com/pokt-network/poktroll/pkg/client/tx/types"
 )
 
 // maxGRPCMsgSize is the maximum message size the gRPC client can send and receive.

@@ -11,15 +11,15 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/pokt-network/smt"
 
-	"github.com/pokt-network/pocket/app/volatile"
-	"github.com/pokt-network/pocket/pkg/crypto/protocol"
-	"github.com/pokt-network/pocket/pkg/encoding"
-	"github.com/pokt-network/pocket/telemetry"
-	apptypes "github.com/pokt-network/pocket/x/application/types"
-	servicekeeper "github.com/pokt-network/pocket/x/service/keeper"
-	sharedtypes "github.com/pokt-network/pocket/x/shared/types"
-	tlm "github.com/pokt-network/pocket/x/tokenomics/token_logic_module"
-	tokenomicstypes "github.com/pokt-network/pocket/x/tokenomics/types"
+	"github.com/pokt-network/poktroll/app/volatile"
+	"github.com/pokt-network/poktroll/pkg/crypto/protocol"
+	"github.com/pokt-network/poktroll/pkg/encoding"
+	"github.com/pokt-network/poktroll/telemetry"
+	apptypes "github.com/pokt-network/poktroll/x/application/types"
+	servicekeeper "github.com/pokt-network/poktroll/x/service/keeper"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
+	tlm "github.com/pokt-network/poktroll/x/tokenomics/token_logic_module"
+	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
 )
 
 // ProcessTokenLogicModules is the entrypoint for all TLM processing.

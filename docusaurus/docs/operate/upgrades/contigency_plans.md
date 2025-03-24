@@ -95,6 +95,6 @@ This should be treated as a consensus or non-determinism bug that is unrelated t
 ### MANDATORY Checklist of Documentation & Scripts to Update
 
 - [ ] The [upgrade list](./upgrade_list.md) should reflect a failed upgrade and provide a range of heights that served by each version.
-- [ ] Systemd service should include`--unsafe-skip-upgrade=$upgradeHeightNumber` argument in its start command [here](https://github.com/pokt-network/pocket/blob/main/tools/installer/full-node.sh).
+- [ ] Systemd service should include`--unsafe-skip-upgrade=$upgradeHeightNumber` argument in its start command [here](https://github.com/pokt-network/poktroll/blob/main/tools/installer/full-node.sh).
 - [ ] The [Helm chart](https://github.com/pokt-network/helm-charts/blob/main/charts/pocketd/templates/StatefulSet.yaml) should point to the latest version;consider exposing via a `values.yaml` file
 - [ ] The [docker-compose](https://github.com/pokt-network/pocket-docker-compose-example/tree/main/scripts) examples should point to the latest version

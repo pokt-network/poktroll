@@ -8,9 +8,9 @@ import (
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 	"github.com/stretchr/testify/require"
 
-	"github.com/pokt-network/pocket/app/volatile"
-	testkeeper "github.com/pokt-network/pocket/testutil/keeper"
-	apptypes "github.com/pokt-network/pocket/x/application/types"
+	"github.com/pokt-network/poktroll/app/volatile"
+	testkeeper "github.com/pokt-network/poktroll/testutil/keeper"
+	apptypes "github.com/pokt-network/poktroll/x/application/types"
 )
 
 func TestMsgUpdateParam_UpdateMaxDelegatedGatewaysOnly(t *testing.T) {

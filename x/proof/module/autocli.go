@@ -3,7 +3,7 @@ package proof
 import (
 	autocliv1 "cosmossdk.io/api/cosmos/autocli/v1"
 
-	modulev1 "github.com/pokt-network/pocket/api/pocket/proof"
+	modulev1 "github.com/pokt-network/poktroll/api/pocket/proof"
 )
 
 // AutoCLIOptions implements the autocli.HasAutoCLIConfig interface.

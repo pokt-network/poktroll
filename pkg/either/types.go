@@ -1,6 +1,6 @@
 package either
 
-import "github.com/pokt-network/pocket/pkg/relayer"
+import "github.com/pokt-network/poktroll/pkg/relayer"
 
 type (
 	// AsyncError represents a value which could either be a synchronous error or

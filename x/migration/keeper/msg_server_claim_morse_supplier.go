@@ -8,10 +8,10 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"github.com/pokt-network/pocket/app/volatile"
-	migrationtypes "github.com/pokt-network/pocket/x/migration/types"
-	sharedtypes "github.com/pokt-network/pocket/x/shared/types"
-	suppliertypes "github.com/pokt-network/pocket/x/supplier/types"
+	"github.com/pokt-network/poktroll/app/volatile"
+	migrationtypes "github.com/pokt-network/poktroll/x/migration/types"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
+	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 )
 
 // ClaimMorseSupplier performs the following steps, given msg is valid and a

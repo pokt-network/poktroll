@@ -6,11 +6,11 @@ import (
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	"github.com/stretchr/testify/require"
 
-	"github.com/pokt-network/pocket/app/volatile"
-	"github.com/pokt-network/pocket/testutil/sample"
-	"github.com/pokt-network/pocket/testutil/testmigration"
-	migrationtypes "github.com/pokt-network/pocket/x/migration/types"
-	sharedtypes "github.com/pokt-network/pocket/x/shared/types"
+	"github.com/pokt-network/poktroll/app/volatile"
+	"github.com/pokt-network/poktroll/testutil/sample"
+	"github.com/pokt-network/poktroll/testutil/testmigration"
+	migrationtypes "github.com/pokt-network/poktroll/x/migration/types"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 // TestClaimMorseAccount exercises claiming of MorseClaimableAccounts.

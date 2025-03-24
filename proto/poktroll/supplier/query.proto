@@ -1,7 +1,7 @@
 syntax = "proto3";
 package pocket.supplier;
 
-option go_package = "github.com/pokt-network/pocket/x/supplier/types";
+option go_package = "github.com/pokt-network/poktroll/x/supplier/types";
 option (gogoproto.stable_marshaler_all) = true;
 
 import "amino/amino.proto";
@@ -19,17 +19,17 @@ service Query {
 
   // Parameters queries the parameters of the module.
   rpc Params (QueryParamsRequest) returns (QueryParamsResponse) {
-    option (google.api.http).get = "/pokt-network/pocket/supplier/params";
+    option (google.api.http).get = "/pokt-network/poktroll/supplier/params";
 
   }
 
   // Queries a list of Supplier items.
   rpc Supplier    (QueryGetSupplierRequest) returns (QueryGetSupplierResponse) {
-    option (google.api.http).get = "/pokt-network/pocket/supplier/supplier/{operator_address}";
+    option (google.api.http).get = "/pokt-network/poktroll/supplier/supplier/{operator_address}";
 
   }
   rpc AllSuppliers (QueryAllSuppliersRequest) returns (QueryAllSuppliersResponse) {
-    option (google.api.http).get = "/pokt-network/pocket/supplier/supplier";
+    option (google.api.http).get = "/pokt-network/poktroll/supplier/supplier";
 
   }
 }

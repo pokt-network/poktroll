@@ -32,11 +32,11 @@ The load-testing suite is built on [Gherkin](https://cucumber.io/docs/gherkin/),
 
 ## Load Test Manifests
 
-Load test manifests are YAML files that define the network environment for test execution. These files specify properties such as blockchain account addresses for funding and staking applications, and for utilization by suppliers and gateways. The [LocalNet manifest](https://github.com/pokt-network/pocket/blob/main/load-testing/loadtest_manifest_localnet.yaml) serves as a comprehensive example, including detailed comments for each manifest property.
+Load test manifests are YAML files that define the network environment for test execution. These files specify properties such as blockchain account addresses for funding and staking applications, and for utilization by suppliers and gateways. The [LocalNet manifest](https://github.com/pokt-network/poktroll/blob/main/load-testing/loadtest_manifest_localnet.yaml) serves as a comprehensive example, including detailed comments for each manifest property.
 
 ## Test Features
 
-Test features are located in the [load-testing/tests](https://github.com/pokt-network/pocket/tree/main/load-testing/tests) directory, encompassing various scenarios.
+Test features are located in the [load-testing/tests](https://github.com/pokt-network/poktroll/tree/main/load-testing/tests) directory, encompassing various scenarios.
 
 Feature files are composed of one or more [`Scenario`](https://cucumber.io/docs/gherkin/reference/?sbsearch=Scenarios)s (or [`Scenario Outline`](https://cucumber.io/docs/gherkin/reference/?sbsearch=Scenarios#scenario-outline)s), each of which is composed of one or more [steps](https://cucumber.io/docs/gherkin/reference/#steps). For example:
 
@@ -92,7 +92,7 @@ Note: Such networks typically involve other participants, allowing load testing 
 
 #### Manifest Modification
 
-Using [loadtest_manifest_example.yaml](https://github.com/pokt-network/pocket/blob/main/load-testing/loadtest_manifest_example.yaml) as a template, modify the values to align with the test requirements.
+Using [loadtest_manifest_example.yaml](https://github.com/pokt-network/poktroll/blob/main/load-testing/loadtest_manifest_example.yaml) as a template, modify the values to align with the test requirements.
 
 #### Test Execution
 
@@ -116,4 +116,4 @@ For tests conducted against community-hosted suppliers and gateways, analysis is
 
 ## Developing Custom Tests
 
-For custom test development, refer to the [gocuke documentation](https://github.com/regen-network/gocuke?tab=readme-ov-file#quick-start). The [anvil test](https://github.com/pokt-network/pocket/blob/main/load-testing/tests/anvil_test.go) provides a small but practical reference implementation.
+For custom test development, refer to the [gocuke documentation](https://github.com/regen-network/gocuke?tab=readme-ov-file#quick-start). The [anvil test](https://github.com/pokt-network/poktroll/blob/main/load-testing/tests/anvil_test.go) provides a small but practical reference implementation.

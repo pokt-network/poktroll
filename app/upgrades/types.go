@@ -5,7 +5,7 @@ import (
 	upgradetypes "cosmossdk.io/x/upgrade/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 
-	"github.com/pokt-network/pocket/app/keepers"
+	"github.com/pokt-network/poktroll/app/keepers"
 )
 
 // TODO_MAINNET_DISCUSSION(@Olshansk): different networks should have the same gov module address, but might have different DAO addresses,

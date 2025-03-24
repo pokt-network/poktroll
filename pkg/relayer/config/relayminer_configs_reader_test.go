@@ -9,8 +9,8 @@ import (
 	"github.com/gogo/status"
 	"github.com/stretchr/testify/require"
 
-	"github.com/pokt-network/pocket/pkg/relayer/config"
-	"github.com/pokt-network/pocket/testutil/yaml"
+	"github.com/pokt-network/poktroll/pkg/relayer/config"
+	"github.com/pokt-network/poktroll/testutil/yaml"
 )
 
 func Test_ParseRelayMinerConfig_ReferenceExample(t *testing.T) {

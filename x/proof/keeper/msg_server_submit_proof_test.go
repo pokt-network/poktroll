@@ -14,25 +14,25 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"github.com/pokt-network/pocket/app/volatile"
-	"github.com/pokt-network/pocket/pkg/crypto/protocol"
-	"github.com/pokt-network/pocket/pkg/crypto/rings"
-	"github.com/pokt-network/pocket/pkg/polylog/polyzero"
-	"github.com/pokt-network/pocket/pkg/relayer"
-	testutilevents "github.com/pokt-network/pocket/testutil/events"
-	keepertest "github.com/pokt-network/pocket/testutil/keeper"
-	"github.com/pokt-network/pocket/testutil/sample"
-	"github.com/pokt-network/pocket/testutil/testkeyring"
-	"github.com/pokt-network/pocket/testutil/testtree"
-	"github.com/pokt-network/pocket/x/proof/keeper"
-	prooftypes "github.com/pokt-network/pocket/x/proof/types"
-	servicekeeper "github.com/pokt-network/pocket/x/service/keeper"
-	sessiontypes "github.com/pokt-network/pocket/x/session/types"
-	sharedtypes "github.com/pokt-network/pocket/x/shared/types"
-	suppliertypes "github.com/pokt-network/pocket/x/supplier/types"
+	"github.com/pokt-network/poktroll/app/volatile"
+	"github.com/pokt-network/poktroll/pkg/crypto/protocol"
+	"github.com/pokt-network/poktroll/pkg/crypto/rings"
+	"github.com/pokt-network/poktroll/pkg/polylog/polyzero"
+	"github.com/pokt-network/poktroll/pkg/relayer"
+	testutilevents "github.com/pokt-network/poktroll/testutil/events"
+	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
+	"github.com/pokt-network/poktroll/testutil/sample"
+	"github.com/pokt-network/poktroll/testutil/testkeyring"
+	"github.com/pokt-network/poktroll/testutil/testtree"
+	"github.com/pokt-network/poktroll/x/proof/keeper"
+	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
+	servicekeeper "github.com/pokt-network/poktroll/x/service/keeper"
+	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
+	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 )
 
-// TODO_TECHDEBT(@bryanchriswhite): Simplify this file; https://github.com/pokt-network/pocket/pull/417#pullrequestreview-1958582600
+// TODO_TECHDEBT(@bryanchriswhite): Simplify this file; https://github.com/pokt-network/poktroll/pull/417#pullrequestreview-1958582600
 
 const (
 	supplierOperatorUid = "supplier"

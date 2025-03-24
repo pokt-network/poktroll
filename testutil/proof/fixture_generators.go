@@ -8,10 +8,10 @@ import (
 	"github.com/pokt-network/smt"
 	"github.com/stretchr/testify/require"
 
-	"github.com/pokt-network/pocket/pkg/crypto/protocol"
-	testsession "github.com/pokt-network/pocket/testutil/session"
-	prooftypes "github.com/pokt-network/pocket/x/proof/types"
-	sessiontypes "github.com/pokt-network/pocket/x/session/types"
+	"github.com/pokt-network/poktroll/pkg/crypto/protocol"
+	testsession "github.com/pokt-network/poktroll/testutil/session"
+	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
+	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 )
 
 const (

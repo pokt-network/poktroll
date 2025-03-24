@@ -25,8 +25,8 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 
-	"github.com/pokt-network/pocket/app"
-	relayercmd "github.com/pokt-network/pocket/pkg/relayer/cmd"
+	"github.com/pokt-network/poktroll/app"
+	relayercmd "github.com/pokt-network/poktroll/pkg/relayer/cmd"
 )
 
 // TODO_MAINNET: adjust chain ID to `pocket`, `pokt` or `shannon`

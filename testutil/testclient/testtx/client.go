@@ -10,12 +10,12 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 
-	"github.com/pokt-network/pocket/pkg/client"
-	"github.com/pokt-network/pocket/pkg/client/tx"
-	"github.com/pokt-network/pocket/pkg/either"
-	"github.com/pokt-network/pocket/testutil/mockclient"
-	"github.com/pokt-network/pocket/testutil/testclient/testblock"
-	"github.com/pokt-network/pocket/testutil/testclient/testeventsquery"
+	"github.com/pokt-network/poktroll/pkg/client"
+	"github.com/pokt-network/poktroll/pkg/client/tx"
+	"github.com/pokt-network/poktroll/pkg/either"
+	"github.com/pokt-network/poktroll/testutil/mockclient"
+	"github.com/pokt-network/poktroll/testutil/testclient/testblock"
+	"github.com/pokt-network/poktroll/testutil/testclient/testeventsquery"
 )
 
 type signAndBroadcastFn func(context.Context, cosmostypes.Msg) either.AsyncError

@@ -11,14 +11,14 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 
-	"github.com/pokt-network/pocket/pkg/client/keyring"
-	"github.com/pokt-network/pocket/pkg/client/supplier"
-	"github.com/pokt-network/pocket/pkg/crypto/protocol"
-	"github.com/pokt-network/pocket/testutil/mockclient"
-	"github.com/pokt-network/pocket/testutil/testclient/testkeyring"
-	"github.com/pokt-network/pocket/testutil/testclient/testtx"
-	prooftypes "github.com/pokt-network/pocket/x/proof/types"
-	sessiontypes "github.com/pokt-network/pocket/x/session/types"
+	"github.com/pokt-network/poktroll/pkg/client/keyring"
+	"github.com/pokt-network/poktroll/pkg/client/supplier"
+	"github.com/pokt-network/poktroll/pkg/crypto/protocol"
+	"github.com/pokt-network/poktroll/testutil/mockclient"
+	"github.com/pokt-network/poktroll/testutil/testclient/testkeyring"
+	"github.com/pokt-network/poktroll/testutil/testclient/testtx"
+	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
+	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 )
 
 const (

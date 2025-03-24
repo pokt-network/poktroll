@@ -3,7 +3,7 @@ package tokenomics
 import (
 	autocliv1 "cosmossdk.io/api/cosmos/autocli/v1"
 
-	modulev1 "github.com/pokt-network/pocket/api/pocket/tokenomics"
+	modulev1 "github.com/pokt-network/poktroll/api/pocket/tokenomics"
 )
 
 // AutoCLIOptions implements the autocli.HasAutoCLIConfig interface.

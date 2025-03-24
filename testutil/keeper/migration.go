@@ -20,11 +20,11 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 
-	"github.com/pokt-network/pocket/app/volatile"
-	"github.com/pokt-network/pocket/testutil/migration/mocks"
-	"github.com/pokt-network/pocket/x/migration/keeper"
-	migrationtypes "github.com/pokt-network/pocket/x/migration/types"
-	sharedtypes "github.com/pokt-network/pocket/x/shared/types"
+	"github.com/pokt-network/poktroll/app/volatile"
+	"github.com/pokt-network/poktroll/testutil/migration/mocks"
+	"github.com/pokt-network/poktroll/x/migration/keeper"
+	migrationtypes "github.com/pokt-network/poktroll/x/migration/types"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 // MigrationKeeperConfig is a configuration struct for the MigrationKeeper testutil.

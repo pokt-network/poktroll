@@ -6,8 +6,8 @@ import (
 	cosmostelemetry "github.com/cosmos/cosmos-sdk/telemetry"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"github.com/pokt-network/pocket/x/proof/keeper"
-	"github.com/pokt-network/pocket/x/proof/types"
+	"github.com/pokt-network/poktroll/x/proof/keeper"
+	"github.com/pokt-network/poktroll/x/proof/types"
 )
 
 // EndBlocker is called at every block and handles proof-related operations.

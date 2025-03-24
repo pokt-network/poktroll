@@ -8,8 +8,8 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/spf13/cobra"
 
-	"github.com/pokt-network/pocket/pkg/polylog/polyzero"
-	_ "github.com/pokt-network/pocket/pkg/polylog/polyzero"
+	"github.com/pokt-network/poktroll/pkg/polylog/polyzero"
+	_ "github.com/pokt-network/poktroll/pkg/polylog/polyzero"
 )
 
 var (

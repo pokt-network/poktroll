@@ -28,13 +28,13 @@ import (
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 
-	"github.com/pokt-network/pocket/pkg/either"
-	"github.com/pokt-network/pocket/pkg/observable"
-	apptypes "github.com/pokt-network/pocket/x/application/types"
-	servicetypes "github.com/pokt-network/pocket/x/service/types"
-	sessiontypes "github.com/pokt-network/pocket/x/session/types"
-	sharedtypes "github.com/pokt-network/pocket/x/shared/types"
-	suppliertypes "github.com/pokt-network/pocket/x/supplier/types"
+	"github.com/pokt-network/poktroll/pkg/either"
+	"github.com/pokt-network/poktroll/pkg/observable"
+	apptypes "github.com/pokt-network/poktroll/x/application/types"
+	servicetypes "github.com/pokt-network/poktroll/x/service/types"
+	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
+	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 )
 
 // MsgCreateClaim is an interface satisfying proof.MsgCreateClaim concrete type
@@ -194,7 +194,7 @@ type EventsBytesObservable observable.Observable[either.Bytes]
 // (see: https://github.com/cosmos/cosmos-sdk/blob/main/client/rpc/tx.go#L114)
 //
 // NOTE: a branch which attempts this is available at:
-// https://github.com/pokt-network/pocket/pull/74
+// https://github.com/pokt-network/poktroll/pull/74
 type EventsQueryClient interface {
 	// EventsBytes returns an observable which is notified about chain event messages
 	// matching the given query. It receives an either value which contains either an

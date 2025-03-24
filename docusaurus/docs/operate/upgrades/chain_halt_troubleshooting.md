@@ -58,7 +58,7 @@ To investigate the discrepancy:
 
 ### Step 3: Analyzing Discrepancies
 
-Utilize the [iavl-tree-diff](https://github.com/pokt-network/pocket/tree/main/tools/iavl-tree-diff) tool to compare the two database snapshots:
+Utilize the [iavl-tree-diff](https://github.com/pokt-network/poktroll/tree/main/tools/iavl-tree-diff) tool to compare the two database snapshots:
 
 1. Clone the repository containing the tool.
 2. Follow the tool's documentation to set up and run the comparison.

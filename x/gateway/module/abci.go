@@ -6,8 +6,8 @@ import (
 	cosmostelemetry "github.com/cosmos/cosmos-sdk/telemetry"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"github.com/pokt-network/pocket/x/gateway/keeper"
-	"github.com/pokt-network/pocket/x/gateway/types"
+	"github.com/pokt-network/poktroll/x/gateway/keeper"
+	"github.com/pokt-network/poktroll/x/gateway/types"
 )
 
 // EndBlocker is called every block and handles gateway related updates.

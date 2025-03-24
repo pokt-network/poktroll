@@ -6,8 +6,8 @@ import (
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 
-	"github.com/pokt-network/pocket/app/volatile"
-	suppliertypes "github.com/pokt-network/pocket/x/supplier/types"
+	"github.com/pokt-network/poktroll/app/volatile"
+	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 )
 
 func TestMsgUpdateParams(t *testing.T) {

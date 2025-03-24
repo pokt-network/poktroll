@@ -8,7 +8,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"github.com/pokt-network/pocket/x/migration/types"
+	"github.com/pokt-network/poktroll/x/migration/types"
 )
 
 type (

@@ -6,8 +6,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/pokt-network/pocket/testutil/network"
-	"github.com/pokt-network/pocket/x/gateway/types"
+	"github.com/pokt-network/poktroll/testutil/network"
+	"github.com/pokt-network/poktroll/x/gateway/types"
 )
 
 // Dummy variable to avoid unused import error.

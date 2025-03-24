@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/pokt-network/pocket/pkg/polylog"
+	"github.com/pokt-network/poktroll/pkg/polylog"
 )
 
 type RetryFunc func() chan error

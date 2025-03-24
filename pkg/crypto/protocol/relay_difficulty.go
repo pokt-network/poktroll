@@ -100,7 +100,7 @@ func GetRelayDifficultyMultiplier(relayDifficultyHash []byte) *big.Rat {
 // representation of GetRelayDifficultyProbability.
 // THIS IS TO BE USED FOR TELEMETRY PURPOSES ONLY.
 // See the following discussing for why we're using a float32:
-// https://github.com/pokt-network/pocket/pull/771#discussion_r1761517063
+// https://github.com/pokt-network/poktroll/pull/771#discussion_r1761517063
 func GetRelayDifficultyMultiplierToFloat32(relayDifficultyHash []byte) float32 {
 	ratToFloat32 := func(rat *big.Rat) float32 {
 		floatValue, _ := rat.Float32()

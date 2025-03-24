@@ -10,13 +10,13 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 
-	"github.com/pokt-network/pocket/pkg/client"
-	"github.com/pokt-network/pocket/pkg/client/block"
-	"github.com/pokt-network/pocket/pkg/observable"
-	"github.com/pokt-network/pocket/pkg/observable/channel"
-	"github.com/pokt-network/pocket/testutil/mockclient"
-	"github.com/pokt-network/pocket/testutil/testclient"
-	"github.com/pokt-network/pocket/testutil/testclient/testeventsquery"
+	"github.com/pokt-network/poktroll/pkg/client"
+	"github.com/pokt-network/poktroll/pkg/client/block"
+	"github.com/pokt-network/poktroll/pkg/observable"
+	"github.com/pokt-network/poktroll/pkg/observable/channel"
+	"github.com/pokt-network/poktroll/testutil/mockclient"
+	"github.com/pokt-network/poktroll/testutil/testclient"
+	"github.com/pokt-network/poktroll/testutil/testclient/testeventsquery"
 )
 
 // NewLocalnetClient creates and returns a new BlockClient that's configured for

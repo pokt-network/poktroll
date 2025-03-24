@@ -1,7 +1,7 @@
 package keeper
 
 import (
-	"github.com/pokt-network/pocket/x/shared/types"
+	"github.com/pokt-network/poktroll/x/shared/types"
 )
 
 type msgServer struct {

@@ -8,7 +8,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/client/tx"
 	"github.com/spf13/cobra"
 
-	"github.com/pokt-network/pocket/x/application/types"
+	"github.com/pokt-network/poktroll/x/application/types"
 )
 
 var _ = strconv.Itoa(0)

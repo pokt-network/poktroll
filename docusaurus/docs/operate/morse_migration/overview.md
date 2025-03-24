@@ -246,7 +246,7 @@ Morse account/stake-holders who wish to participate in the social consensus proc
 1. **Downloading the proposed `MsgImportMorseClaimableAccounts`**: this encapsulates both the `MorseAccountState` and its hash
 
    :::warning TODO_MAINNET
-   Link to latest published [`MsgImportMorseClaimableAccounts`](https://github.com/pokt-network/pocket/blob/main/proto/pocket/migration/tx.proto#L50) proposal.
+   Link to latest published [`MsgImportMorseClaimableAccounts`](https://github.com/pokt-network/poktroll/blob/main/proto/pocket/migration/tx.proto#L50) proposal.
    :::
 
 2. **Use the Shannon CLI to validate the proposed `MsgImportMorseClaimableAccounts`**: See `./msg_import_morse_claimable_accounts.json` as an example.

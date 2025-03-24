@@ -7,8 +7,8 @@ import (
 
 	"cosmossdk.io/depinject"
 
-	"github.com/pokt-network/pocket/pkg/client/events"
-	"github.com/pokt-network/pocket/pkg/polylog"
+	"github.com/pokt-network/poktroll/pkg/client/events"
+	"github.com/pokt-network/poktroll/pkg/polylog"
 )
 
 const (
@@ -34,7 +34,7 @@ type eventType struct {
 	Name string `json:"name"`
 }
 
-// See: https://pkg.go.dev/github.com/pokt-network/pocket/pkg/client/events/#NewEventsFn
+// See: https://pkg.go.dev/github.com/pokt-network/poktroll/pkg/client/events/#NewEventsFn
 func eventTypeFactory(ctx context.Context) events.NewEventsFn[EventType] {
 	// Define a decoder function that can take the raw event bytes
 	// received from the EventsQueryClient and convert them into
@@ -63,7 +63,7 @@ func (e *eventType) GetName() string { return e.Name }
 func ExampleNewEventsReplayClient() {
 	// Create the events query client and a depinject config to supply
 	// it into the EventsReplayClient
-	// See: https://pkg.go.dev/github.com/pokt-network/pocket/pkg/client/events/#NewEventsQueryClient
+	// See: https://pkg.go.dev/github.com/pokt-network/poktroll/pkg/client/events/#NewEventsQueryClient
 	evtClient := events.NewEventsQueryClient(cometWebsocketURL)
 	depConfig := depinject.Supply(evtClient)
 
@@ -71,7 +71,7 @@ func ExampleNewEventsReplayClient() {
 	ctx, cancel := context.WithCancel(context.Background())
 
 	// Create a new instance of the EventsReplayClient
-	// See: https://pkg.go.dev/github.com/pokt-network/pocket/pkg/client/events/#NewEventsReplayClient
+	// See: https://pkg.go.dev/github.com/pokt-network/poktroll/pkg/client/events/#NewEventsReplayClient
 	client, err := events.NewEventsReplayClient[EventType](
 		ctx,
 		depConfig,

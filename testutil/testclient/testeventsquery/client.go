@@ -12,12 +12,12 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 
-	"github.com/pokt-network/pocket/pkg/client"
-	"github.com/pokt-network/pocket/pkg/client/events"
-	"github.com/pokt-network/pocket/pkg/either"
-	"github.com/pokt-network/pocket/pkg/observable/channel"
-	"github.com/pokt-network/pocket/testutil/mockclient"
-	"github.com/pokt-network/pocket/testutil/testclient"
+	"github.com/pokt-network/poktroll/pkg/client"
+	"github.com/pokt-network/poktroll/pkg/client/events"
+	"github.com/pokt-network/poktroll/pkg/either"
+	"github.com/pokt-network/poktroll/pkg/observable/channel"
+	"github.com/pokt-network/poktroll/testutil/mockclient"
+	"github.com/pokt-network/poktroll/testutil/testclient"
 )
 
 // NewLocalnetClient creates and returns a new events query client that's configured

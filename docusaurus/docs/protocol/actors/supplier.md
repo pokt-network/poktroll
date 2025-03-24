@@ -27,7 +27,7 @@ providing services as a function of volume and time.
 
 ## Schema
 
-The onchain representation of a `Supplier` can be found at [supplier.proto](https://github.com/pokt-network/pocket/blob/main/proto/pocket/shared/supplier.proto).
+The onchain representation of a `Supplier` can be found at [supplier.proto](https://github.com/pokt-network/poktroll/blob/main/proto/pocket/shared/supplier.proto).
 
 ## Configuration
 
@@ -35,8 +35,8 @@ Configurations to stake an `Supplier` can be found at [supplier_staking_config.m
 
 ## Modules
 
-The `Supplier` actor depends on both the [`supplier`](https://github.com/pokt-network/pocket/tree/main/x/supplier)
-and [`proof`](https://github.com/pokt-network/pocket/tree/main/x/proof) onchain modules.
+The `Supplier` actor depends on both the [`supplier`](https://github.com/pokt-network/poktroll/tree/main/x/supplier)
+and [`proof`](https://github.com/pokt-network/poktroll/tree/main/x/proof) onchain modules.
 These two modules' concerns are separated as follows:
 
 ### Supplier Module

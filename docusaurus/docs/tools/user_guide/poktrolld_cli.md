@@ -73,21 +73,21 @@ brew install pocketd
 
 :::tip tl;dr manual download
 
-1. Grab a binary from the [latest release](https://github.com/pokt-network/pocket/releases/latest)
+1. Grab a binary from the [latest release](https://github.com/pokt-network/poktroll/releases/latest)
 2. Download the appropriate `pocket_${OS}_${ARCH}.tar.gz` for your environment
 3. Untar the downloaded file to retrieve the `pocketd` binary
 4. Extract the binary to `/usr/local/bin`
    :::
 
-Pre-built binaries are available on our [releases page](https://github.com/pokt-network/pocket/releases).
+Pre-built binaries are available on our [releases page](https://github.com/pokt-network/poktroll/releases).
 
-You can view the latest release directly by clicking [here](https://github.com/pokt-network/pocket/releases/latest).
+You can view the latest release directly by clicking [here](https://github.com/pokt-network/poktroll/releases/latest).
 
 The following snippet downloads/upgrades the binary to the latest released version:
 
 ```bash
 # Download the correct binary based on the OS and architecture
-curl -LO "https://github.com/pokt-network/pocket/releases/latest/download/pocket_$(uname | tr '[:upper:]' '[:lower:]')_$(uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/').tar.gz"
+curl -LO "https://github.com/pokt-network/poktroll/releases/latest/download/pocket_$(uname | tr '[:upper:]' '[:lower:]')_$(uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/').tar.gz"
 
 # Extract the downloaded tarball to /usr/local/bin
 sudo tar -zxf "pocket_$(uname | tr '[:upper:]' '[:lower:]')_$(uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/').tar.gz" -C /usr/local/bin
@@ -125,7 +125,7 @@ git clone https://github.com/pokt-network/pocket.git
 cd pocket
 
 # Optional: Switch to a specific version (recommended)
-# Replace v0.0.12 with your desired version from https://github.com/pokt-network/pocket/releases
+# Replace v0.0.12 with your desired version from https://github.com/pokt-network/poktroll/releases
 git checkout v0.0.12
 
 # Build the binary

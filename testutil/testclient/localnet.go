@@ -15,8 +15,8 @@ import (
 	"github.com/spf13/pflag"
 	"github.com/stretchr/testify/require"
 
-	"github.com/pokt-network/pocket/app"
-	"github.com/pokt-network/pocket/cmd/pocketd/cmd"
+	"github.com/pokt-network/poktroll/app"
+	"github.com/pokt-network/poktroll/cmd/pocketd/cmd"
 )
 
 var (

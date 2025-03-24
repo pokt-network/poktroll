@@ -4,7 +4,7 @@ package keepers
 // This allows for passing all keepers into the upgrade handler and accessing/changing blockchain state across all modules.
 // When performing `ignite scaffold` the keeper will be added to `app.go`. Please move them here.
 //
-// For more details, refer to the comment section of this PR: https://github.com/pokt-network/pocket/pull/702
+// For more details, refer to the comment section of this PR: https://github.com/pokt-network/poktroll/pull/702
 
 import (
 	circuitkeeper "cosmossdk.io/x/circuit/keeper"
@@ -30,15 +30,15 @@ import (
 	ibctransferkeeper "github.com/cosmos/ibc-go/v8/modules/apps/transfer/keeper"
 	ibckeeper "github.com/cosmos/ibc-go/v8/modules/core/keeper"
 
-	applicationmodulekeeper "github.com/pokt-network/pocket/x/application/keeper"
-	gatewaymodulekeeper "github.com/pokt-network/pocket/x/gateway/keeper"
-	migrationmodulekeeper "github.com/pokt-network/pocket/x/migration/keeper"
-	proofmodulekeeper "github.com/pokt-network/pocket/x/proof/keeper"
-	servicemodulekeeper "github.com/pokt-network/pocket/x/service/keeper"
-	sessionmodulekeeper "github.com/pokt-network/pocket/x/session/keeper"
-	sharedmodulekeeper "github.com/pokt-network/pocket/x/shared/keeper"
-	suppliermodulekeeper "github.com/pokt-network/pocket/x/supplier/keeper"
-	tokenomicsmodulekeeper "github.com/pokt-network/pocket/x/tokenomics/keeper"
+	applicationmodulekeeper "github.com/pokt-network/poktroll/x/application/keeper"
+	gatewaymodulekeeper "github.com/pokt-network/poktroll/x/gateway/keeper"
+	migrationmodulekeeper "github.com/pokt-network/poktroll/x/migration/keeper"
+	proofmodulekeeper "github.com/pokt-network/poktroll/x/proof/keeper"
+	servicemodulekeeper "github.com/pokt-network/poktroll/x/service/keeper"
+	sessionmodulekeeper "github.com/pokt-network/poktroll/x/session/keeper"
+	sharedmodulekeeper "github.com/pokt-network/poktroll/x/shared/keeper"
+	suppliermodulekeeper "github.com/pokt-network/poktroll/x/supplier/keeper"
+	tokenomicsmodulekeeper "github.com/pokt-network/poktroll/x/tokenomics/keeper"
 )
 
 // Keepers includes all possible keepers. We separated it into a separate struct to make it easier to scaffold upgrades.

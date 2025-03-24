@@ -5,8 +5,8 @@ import (
 
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 
-	"github.com/pokt-network/pocket/pkg/client"
-	"github.com/pokt-network/pocket/testutil/integration"
+	"github.com/pokt-network/poktroll/pkg/client"
+	"github.com/pokt-network/poktroll/testutil/integration"
 )
 
 // IntegrationSuite is an interface intended to be used within test suites which

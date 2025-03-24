@@ -4,10 +4,10 @@ import (
 	"cosmossdk.io/depinject"
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 
-	"github.com/pokt-network/pocket/pkg/client"
-	"github.com/pokt-network/pocket/pkg/crypto"
-	"github.com/pokt-network/pocket/pkg/polylog"
-	"github.com/pokt-network/pocket/pkg/relayer"
+	"github.com/pokt-network/poktroll/pkg/client"
+	"github.com/pokt-network/poktroll/pkg/crypto"
+	"github.com/pokt-network/poktroll/pkg/polylog"
+	"github.com/pokt-network/poktroll/pkg/relayer"
 )
 
 var _ relayer.RelayAuthenticator = (*relayAuthenticator)(nil)

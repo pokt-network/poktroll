@@ -8,10 +8,10 @@ import (
 	"cosmossdk.io/math"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 
-	"github.com/pokt-network/pocket/app/volatile"
-	sharedtypes "github.com/pokt-network/pocket/x/shared/types"
-	suppliertypes "github.com/pokt-network/pocket/x/supplier/types"
-	tokenomicstypes "github.com/pokt-network/pocket/x/tokenomics/types"
+	"github.com/pokt-network/poktroll/app/volatile"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
+	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
+	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
 )
 
 // distributeSupplierRewardsToShareHolders distributes the supplier rewards to its

@@ -17,11 +17,11 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 
-	"github.com/pokt-network/pocket/pkg/client"
-	"github.com/pokt-network/pocket/pkg/client/tx"
-	txtypes "github.com/pokt-network/pocket/pkg/client/tx/types"
-	"github.com/pokt-network/pocket/testutil/mockclient"
-	"github.com/pokt-network/pocket/testutil/testclient"
+	"github.com/pokt-network/poktroll/pkg/client"
+	"github.com/pokt-network/poktroll/pkg/client/tx"
+	txtypes "github.com/pokt-network/poktroll/pkg/client/tx/types"
+	"github.com/pokt-network/poktroll/testutil/mockclient"
+	"github.com/pokt-network/poktroll/testutil/testclient"
 )
 
 // NewLocalnetContext creates and returns a new transaction context configured

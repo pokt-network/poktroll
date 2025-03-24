@@ -9,10 +9,10 @@ import (
 	"cosmossdk.io/math"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 
-	"github.com/pokt-network/pocket/app/volatile"
-	"github.com/pokt-network/pocket/pkg/encoding"
-	suppliertypes "github.com/pokt-network/pocket/x/supplier/types"
-	tokenomicstypes "github.com/pokt-network/pocket/x/tokenomics/types"
+	"github.com/pokt-network/poktroll/app/volatile"
+	"github.com/pokt-network/poktroll/pkg/encoding"
+	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
+	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
 )
 
 var _ TokenLogicModule = (*tlmGlobalMint)(nil)

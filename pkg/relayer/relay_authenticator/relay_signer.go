@@ -1,8 +1,8 @@
 package relay_authenticator
 
 import (
-	"github.com/pokt-network/pocket/pkg/signer"
-	"github.com/pokt-network/pocket/x/service/types"
+	"github.com/pokt-network/poktroll/pkg/signer"
+	"github.com/pokt-network/poktroll/x/service/types"
 )
 
 // SignRelayResponse signs the hash of a RelayResponse given the supplier operator address.

@@ -9,10 +9,10 @@ import (
 	cmtjson "github.com/cometbft/cometbft/libs/json"
 	"github.com/spf13/cobra"
 
-	"github.com/pokt-network/pocket/app/volatile"
-	"github.com/pokt-network/pocket/pkg/polylog"
-	"github.com/pokt-network/pocket/pkg/polylog/polyzero"
-	migrationtypes "github.com/pokt-network/pocket/x/migration/types"
+	"github.com/pokt-network/poktroll/app/volatile"
+	"github.com/pokt-network/poktroll/pkg/polylog"
+	"github.com/pokt-network/poktroll/pkg/polylog/polyzero"
+	migrationtypes "github.com/pokt-network/poktroll/x/migration/types"
 )
 
 const defaultLogOutput = "-"
@@ -184,7 +184,7 @@ func collectInputAccountBalances(inputState *migrationtypes.MorseStateExport, mo
 	for exportAccountIdx, exportAccount := range inputState.AppState.Auth.Accounts {
 		// DEV_NOTE: Ignore module accounts.
 		// TODO_MAINNET(@olshansky): Revisit this business logic to ensure that no tokens go missing from Morse to Shannon.
-		// See: https://github.com/pokt-network/pocket/issues/1066 regarding supply validation.
+		// See: https://github.com/pokt-network/poktroll/issues/1066 regarding supply validation.
 		if exportAccount.Type != "posmint/Account" {
 			logger.Warn().
 				Str("type", exportAccount.Type).

@@ -6,9 +6,9 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	testkeeper "github.com/pokt-network/pocket/testutil/keeper"
-	"github.com/pokt-network/pocket/x/tokenomics/keeper"
-	"github.com/pokt-network/pocket/x/tokenomics/types"
+	testkeeper "github.com/pokt-network/poktroll/testutil/keeper"
+	"github.com/pokt-network/poktroll/x/tokenomics/keeper"
+	"github.com/pokt-network/poktroll/x/tokenomics/types"
 )
 
 func setupMsgServer(t testing.TB) (keeper.Keeper, types.MsgServer, context.Context) {

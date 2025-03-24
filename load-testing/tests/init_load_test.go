@@ -7,8 +7,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/pokt-network/pocket/pkg/polylog"
-	"github.com/pokt-network/pocket/pkg/polylog/polyzero"
+	"github.com/pokt-network/poktroll/pkg/polylog"
+	"github.com/pokt-network/poktroll/pkg/polylog/polyzero"
 )
 
 var (

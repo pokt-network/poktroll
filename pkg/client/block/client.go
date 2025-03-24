@@ -5,10 +5,10 @@ import (
 
 	"cosmossdk.io/depinject"
 
-	"github.com/pokt-network/pocket/pkg/client"
-	"github.com/pokt-network/pocket/pkg/client/events"
-	"github.com/pokt-network/pocket/pkg/observable"
-	"github.com/pokt-network/pocket/pkg/observable/channel"
+	"github.com/pokt-network/poktroll/pkg/client"
+	"github.com/pokt-network/poktroll/pkg/client/events"
+	"github.com/pokt-network/poktroll/pkg/observable"
+	"github.com/pokt-network/poktroll/pkg/observable/channel"
 )
 
 const (

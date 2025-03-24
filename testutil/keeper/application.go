@@ -20,12 +20,12 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 
-	"github.com/pokt-network/pocket/testutil/application/mocks"
-	testsession "github.com/pokt-network/pocket/testutil/session"
-	"github.com/pokt-network/pocket/x/application/keeper"
-	"github.com/pokt-network/pocket/x/application/types"
-	gatewaytypes "github.com/pokt-network/pocket/x/gateway/types"
-	sharedtypes "github.com/pokt-network/pocket/x/shared/types"
+	"github.com/pokt-network/poktroll/testutil/application/mocks"
+	testsession "github.com/pokt-network/poktroll/testutil/session"
+	"github.com/pokt-network/poktroll/x/application/keeper"
+	"github.com/pokt-network/poktroll/x/application/types"
+	gatewaytypes "github.com/pokt-network/poktroll/x/gateway/types"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 // stakedGatewayToUnstakeSessionEndHeightMap mocks gateway staking status for tests.

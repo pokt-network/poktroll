@@ -192,7 +192,7 @@ flowchart
 ## Installation
 
 ```bash
-go get github.com/pokt-network/pocket/pkg/client/events
+go get github.com/pokt-network/poktroll/pkg/client/events
 ```
 
 ## Features
@@ -231,7 +231,7 @@ observer := observable.Subscribe(ctx)
 // Observer channel closes when the context is canceled, observer is
 // unsubscribed, or after the subscription returns an error.
 for eitherEvent := range observer.Ch() {
-    // (see either.Either: https://github.com/pokt-network/pocket/blob/main/pkg/either/either.go#L3)
+    // (see either.Either: https://github.com/pokt-network/poktroll/blob/main/pkg/either/either.go#L3)
     eventBz, err := eitherEvent.ValueOrError()
 
     // ...
@@ -251,15 +251,15 @@ var (
 cometUrl = "tcp://example.com"
 
 // Creating new EventsQueryClients with a custom tcpDialer:
-// See: https://pkg.go.dev/github.com/pokt-network/pocket/pkg/client/events/#WithDialer
+// See: https://pkg.go.dev/github.com/pokt-network/poktroll/pkg/client/events/#WithDialer
 tcpDialerOpt := events.WithDialer(tcpDialer)
-// See: https://pkg.go.dev/github.com/pokt-network/pocket/pkg/client/events/#NewEventsQueryClient
+// See: https://pkg.go.dev/github.com/pokt-network/poktroll/pkg/client/events/#NewEventsQueryClient
 tcpEvtClient := events.NewEventsQueryClient(cometUrl, tcpDialerOpt)
 
 // Alternatively, with a custom gRPC dialer:
-// See: https://pkg.go.dev/github.com/pokt-network/pocket/pkg/client/events/#WithDialer
+// See: https://pkg.go.dev/github.com/pokt-network/poktroll/pkg/client/events/#WithDialer
 gcpDialerOpt := events.WithDialer(grcpDialer)
-// See: https://pkg.go.dev/github.com/pokt-network/pocket/pkg/client/events/#NewEventsQueryClient
+// See: https://pkg.go.dev/github.com/pokt-network/poktroll/pkg/client/events/#NewEventsQueryClient
 grpcEvtClient := events.NewEventsQueryClient(cometUrl, grpcDialerOpt)
 
 // ... rest follows the same as the basic example.
@@ -300,7 +300,7 @@ func (e *eventType) GetName() string { return e.Name }
 // Define a decoder function that can take the raw event bytes
 // received from the EventsQueryClient and convert them into
 // the desired type for the EventsReplayClient
-// See: https://pkg.go.dev/github.com/pokt-network/pocket/pkg/client/events/#NewEventsFn
+// See: https://pkg.go.dev/github.com/pokt-network/poktroll/pkg/client/events/#NewEventsFn
 func eventTypeFactory(ctx context.Context) events.NewEventsFn[EventType] {
   return function(eventBz []byte) EventType {
     eventMsg := new(eventType)
@@ -322,7 +322,7 @@ func eventTypeFactory(ctx context.Context) events.NewEventsFn[EventType] {
 
 // Create the events query client and a depinject config to supply
 // it into the EventsReplayClient
-// See: https://pkg.go.dev/github.com/pokt-network/pocket/pkg/client/events/#NewEventsQueryClient
+// See: https://pkg.go.dev/github.com/pokt-network/poktroll/pkg/client/events/#NewEventsQueryClient
 evtClient := events.NewEventsQueryClient(cometWebsocketURL)
 depConfig := depinject.Supply(evtClient)
 
@@ -330,7 +330,7 @@ depConfig := depinject.Supply(evtClient)
 ctx, cancel := context.WithCancel(context.Background())
 
 // Create a new instance of the EventsReplayClient
-// See: https://pkg.go.dev/github.com/pokt-network/pocket/pkg/client/events/#NewEventsReplayClient
+// See: https://pkg.go.dev/github.com/pokt-network/poktroll/pkg/client/events/#NewEventsReplayClient
 client, err := events.NewEventsReplayClient[
   EventType,
   observable.ReplayObservable[EventType],

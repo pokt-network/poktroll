@@ -139,16 +139,16 @@ proto_ignite_gen: ## Generate protobuf artifacts using ignite
 	ignite generate proto-go --yes
 
 proto_fix_self_import: ## TODO_TECHDEBT(@bryanchriswhite): Add a proper explanation for this make target explaining why it's necessary
-	@echo "Updating all instances of cosmossdk.io/api/pocket to github.com/pokt-network/pocket/api/pocket..."
+	@echo "Updating all instances of cosmossdk.io/api/pocket to github.com/pokt-network/poktroll/api/pocket..."
 	@find ./api/pocket/ -type f | while read -r file; do \
-		$(SED) -i 's,cosmossdk.io/api/pocket,github.com/pokt-network/pocket/api/pocket,g' "$$file"; \
+		$(SED) -i 's,cosmossdk.io/api/pocket,github.com/pokt-network/poktroll/api/pocket,g' "$$file"; \
 	done
 	@for dir in $(wildcard ./api/pocket/*/); do \
 			module=$$(basename $$dir); \
 			echo "Further processing module $$module"; \
-			$(GREP) -lRP '\s+'$$module' "github.com/pokt-network/pocket/api/pocket/'$$module'"' ./api/pocket/$$module | while read -r file; do \
+			$(GREP) -lRP '\s+'$$module' "github.com/pokt-network/poktroll/api/pocket/'$$module'"' ./api/pocket/$$module | while read -r file; do \
 					echo "Modifying file: $$file"; \
-					$(SED) -i -E 's,^[[:space:]]+'$$module'[[:space:]]+"github.com/pokt-network/pocket/api/pocket/'$$module'",,' "$$file"; \
+					$(SED) -i -E 's,^[[:space:]]+'$$module'[[:space:]]+"github.com/pokt-network/poktroll/api/pocket/'$$module'",,' "$$file"; \
 					$(SED) -i 's,'$$module'\.,,g' "$$file"; \
 			done; \
 	done
@@ -161,10 +161,10 @@ proto_clean: ## Delete existing .pb.go or .pb.gw.go files
 ## TODO_TECHDEBT(@bryanchriswhite): Investigate if / how this can be integrated with `proto_regen`
 .PHONY: proto_clean_pulsar
 proto_clean_pulsar: ## TODO_TECHDEBT(@bryanchriswhite): Add a proper explanation for this make target explaining why it's necessary
-	@find ./ -name "*.go" | xargs --no-run-if-empty $(SED) -i -E 's,(^[[:space:]_[:alnum:]]+"github.com/pokt-network/pocket/api.+"),///\1,'
+	@find ./ -name "*.go" | xargs --no-run-if-empty $(SED) -i -E 's,(^[[:space:]_[:alnum:]]+"github.com/pokt-network/poktroll/api.+"),///\1,'
 	find ./ -name "*.pulsar.go" | xargs --no-run-if-empty rm
 	$(MAKE) proto_regen
-	find ./ -name "*.go" | xargs --no-run-if-empty $(SED) -i -E 's,^///([[:space:]_[:alnum:]]+"github.com/pokt-network/pocket/api.+"),\1,'
+	find ./ -name "*.go" | xargs --no-run-if-empty $(SED) -i -E 's,^///([[:space:]_[:alnum:]]+"github.com/pokt-network/poktroll/api.+"),\1,'
 
 .PHONY: proto_regen
 proto_regen: proto_clean proto_ignite_gen proto_fix_self_import ## Regenerate protobuf artifacts
@@ -306,7 +306,7 @@ process_openapi: ## Ensure OpenAPI JSON and YAML files are properly formatted
 ##################
 
 .PHONY: trigger_ci
-trigger_ci: ## Trigger the CI pipeline by submitting an empty commit; See https://github.com/pokt-network/pocket/issues/900 for details
+trigger_ci: ## Trigger the CI pipeline by submitting an empty commit; See https://github.com/pokt-network/poktroll/issues/900 for details
 	git commit --allow-empty -m "Empty commit"
 	git push
 
@@ -352,7 +352,7 @@ ignite_release_extract_binaries: ## Extracts binaries from the release archives
 
 .PHONY: go_docs
 go_docs: check_godoc ## Generate documentation for the project
-	echo "Visit http://localhost:6060/pkg/github.com/pokt-network/pocket/"
+	echo "Visit http://localhost:6060/pkg/github.com/pokt-network/poktroll/"
 	godoc -http=:6060
 
 .PHONY: docusaurus_start
@@ -420,7 +420,7 @@ release_tag_bug_fix: ## Tag a new bug fix release (e.g. v1.0.1 -> v1.0.2)
 	@echo "New bug fix version tagged: $(NEW_TAG)"
 	@echo "Run the following commands to push the new tag:"
 	@echo "  git push origin $(NEW_TAG)"
-	@echo "And draft a new release at https://github.com/pokt-network/pocket/releases/new"
+	@echo "And draft a new release at https://github.com/pokt-network/poktroll/releases/new"
 
 
 .PHONY: release_tag_minor_release
@@ -431,7 +431,7 @@ release_tag_minor_release: ## Tag a new minor release (e.g. v1.0.0 -> v1.1.0)
 	@echo "New minor release version tagged: $(NEW_TAG)"
 	@echo "Run the following commands to push the new tag:"
 	@echo "  git push origin $(NEW_TAG)"
-	@echo "And draft a new release at https://github.com/pokt-network/pocket/releases/new"
+	@echo "And draft a new release at https://github.com/pokt-network/poktroll/releases/new"
 
 ############################
 ### Grove Portal Helpers ###

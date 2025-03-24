@@ -11,7 +11,7 @@ import (
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
 
-	"github.com/pokt-network/pocket/pkg/polylog"
+	"github.com/pokt-network/poktroll/pkg/polylog"
 )
 
 type (

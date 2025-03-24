@@ -7,8 +7,8 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	sessiontypes "github.com/pokt-network/pocket/x/session/types"
-	sharedtypes "github.com/pokt-network/pocket/x/shared/types"
+	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 // AccountKeeper defines the expected interface for the Account module.

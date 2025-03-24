@@ -21,9 +21,9 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 
-	"github.com/pokt-network/pocket/testutil/service/mocks"
-	"github.com/pokt-network/pocket/x/service/keeper"
-	"github.com/pokt-network/pocket/x/service/types"
+	"github.com/pokt-network/poktroll/testutil/service/mocks"
+	"github.com/pokt-network/poktroll/x/service/keeper"
+	"github.com/pokt-network/poktroll/x/service/types"
 )
 
 var (

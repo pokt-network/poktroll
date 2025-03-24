@@ -10,10 +10,10 @@ import (
 	"github.com/stretchr/testify/require"
 	"golang.org/x/sync/errgroup"
 
-	"github.com/pokt-network/pocket/pkg/observable"
-	"github.com/pokt-network/pocket/pkg/observable/channel"
-	"github.com/pokt-network/pocket/testutil/testchannel"
-	"github.com/pokt-network/pocket/testutil/testerrors"
+	"github.com/pokt-network/poktroll/pkg/observable"
+	"github.com/pokt-network/poktroll/pkg/observable/channel"
+	"github.com/pokt-network/poktroll/testutil/testchannel"
+	"github.com/pokt-network/poktroll/testutil/testerrors"
 )
 
 const (

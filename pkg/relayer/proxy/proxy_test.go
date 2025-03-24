@@ -19,10 +19,10 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 
-	"github.com/pokt-network/pocket/pkg/relayer/config"
-	"github.com/pokt-network/pocket/pkg/relayer/proxy"
-	"github.com/pokt-network/pocket/testutil/testproxy"
-	sharedtypes "github.com/pokt-network/pocket/x/shared/types"
+	"github.com/pokt-network/poktroll/pkg/relayer/config"
+	"github.com/pokt-network/poktroll/pkg/relayer/proxy"
+	"github.com/pokt-network/poktroll/testutil/testproxy"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 const (

@@ -11,7 +11,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"github.com/pokt-network/pocket/x/proof/types"
+	"github.com/pokt-network/poktroll/x/proof/types"
 )
 
 func (k Keeper) AllClaims(ctx context.Context, req *types.QueryAllClaimsRequest) (*types.QueryAllClaimsResponse, error) {

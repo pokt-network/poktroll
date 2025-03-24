@@ -7,7 +7,7 @@ import (
 	storetypes "cosmossdk.io/store/types"
 	"github.com/cosmos/cosmos-sdk/runtime"
 
-	"github.com/pokt-network/pocket/x/application/types"
+	"github.com/pokt-network/poktroll/x/application/types"
 )
 
 // SetApplication set a specific application in the store from its index

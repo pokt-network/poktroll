@@ -105,7 +105,7 @@ The `RelayMiner` can be configured to expose a `pprof` endpoint using a configur
 <!--
 TODO_MAINNET(@okdas): Mention PATH Gateway once it has pprof support.
 This should be the same as in the following link:
-https://github.com/pokt-network/pocket/pull/484/files#diff-0ddf7b5ae8042c78166867229f8e61ded445c7048231d1de3c87f880f6d8a80fR109
+https://github.com/pokt-network/poktroll/pull/484/files#diff-0ddf7b5ae8042c78166867229f8e61ded445c7048231d1de3c87f880f6d8a80fR109
 -->
 
 ```yaml
@@ -157,4 +157,4 @@ go tool pprof -http=:3333 http://localhost:6061/debug/pprof/goroutine
 
 ### Report Issues
 
-If you believe you've found a performance problem, please [open a GitHub Issue](https://github.com/pokt-network/pocket/issues). Make sure to attach the profiling data.
+If you believe you've found a performance problem, please [open a GitHub Issue](https://github.com/pokt-network/poktroll/issues). Make sure to attach the profiling data.

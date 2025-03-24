@@ -8,9 +8,9 @@ import (
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 	"github.com/stretchr/testify/require"
 
-	"github.com/pokt-network/pocket/app/volatile"
-	testkeeper "github.com/pokt-network/pocket/testutil/keeper"
-	suppliertypes "github.com/pokt-network/pocket/x/supplier/types"
+	"github.com/pokt-network/poktroll/app/volatile"
+	testkeeper "github.com/pokt-network/poktroll/testutil/keeper"
+	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 )
 
 func TestMsgUpdateParam_UpdateMinStakeOnly(t *testing.T) {

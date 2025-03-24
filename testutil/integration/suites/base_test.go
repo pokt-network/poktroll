@@ -8,10 +8,10 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 
-	"github.com/pokt-network/pocket/app/volatile"
-	"github.com/pokt-network/pocket/testutil/events"
-	"github.com/pokt-network/pocket/testutil/sample"
-	gatewaytypes "github.com/pokt-network/pocket/x/gateway/types"
+	"github.com/pokt-network/poktroll/app/volatile"
+	"github.com/pokt-network/poktroll/testutil/events"
+	"github.com/pokt-network/poktroll/testutil/sample"
+	gatewaytypes "github.com/pokt-network/poktroll/x/gateway/types"
 )
 
 // baseIntegrationSuiteTestSuite is a test suite which embeds BaseIntegrationSuite.

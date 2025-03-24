@@ -7,9 +7,9 @@ import (
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	"google.golang.org/grpc/status"
 
-	"github.com/pokt-network/pocket/x/proof/types"
-	sessiontypes "github.com/pokt-network/pocket/x/session/types"
-	sharedtypes "github.com/pokt-network/pocket/x/shared/types"
+	"github.com/pokt-network/poktroll/x/proof/types"
+	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 // queryAndValidateSessionHeader ensures that a session with the sessionID of the given session
@@ -112,7 +112,7 @@ func (k Keeper) validateClaimWindow(
 	// TODO_MAINNET(@bryanchriswhite, @red-0ne): Enforce an additional "latest
 	// supplier claim/proof commit offset" such that all suppliers have the same
 	// "supplier claim/proof commit window" size.
-	// See: https://github.com/pokt-network/pocket/pull/620/files#r1656548473.
+	// See: https://github.com/pokt-network/poktroll/pull/620/files#r1656548473.
 	if currentHeight < earliestClaimCommitHeight {
 		return types.ErrProofClaimOutsideOfWindow.Wrapf(
 			"current block height (%d) is less than the session's earliest claim commit height (%d)",

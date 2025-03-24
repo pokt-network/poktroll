@@ -9,8 +9,8 @@ import (
 	"github.com/cosmos/cosmos-sdk/client/tx"
 	"github.com/spf13/cobra"
 
-	"github.com/pokt-network/pocket/x/gateway/module/config"
-	"github.com/pokt-network/pocket/x/gateway/types"
+	"github.com/pokt-network/poktroll/x/gateway/module/config"
+	"github.com/pokt-network/poktroll/x/gateway/types"
 )
 
 var (

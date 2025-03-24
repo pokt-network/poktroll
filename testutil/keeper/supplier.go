@@ -19,12 +19,12 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 
-	"github.com/pokt-network/pocket/testutil/supplier/mocks"
-	servicekeeper "github.com/pokt-network/pocket/x/service/keeper"
-	sharedkeeper "github.com/pokt-network/pocket/x/shared/keeper"
-	sharedtypes "github.com/pokt-network/pocket/x/shared/types"
-	"github.com/pokt-network/pocket/x/supplier/keeper"
-	"github.com/pokt-network/pocket/x/supplier/types"
+	"github.com/pokt-network/poktroll/testutil/supplier/mocks"
+	servicekeeper "github.com/pokt-network/poktroll/x/service/keeper"
+	sharedkeeper "github.com/pokt-network/poktroll/x/shared/keeper"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
+	"github.com/pokt-network/poktroll/x/supplier/keeper"
+	"github.com/pokt-network/poktroll/x/supplier/types"
 )
 
 // SupplierModuleKeepers is a struct that contains the keepers needed for testing

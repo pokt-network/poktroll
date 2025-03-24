@@ -18,16 +18,16 @@ import (
 	"github.com/regen-network/gocuke"
 	"github.com/stretchr/testify/require"
 
-	"github.com/pokt-network/pocket/cmd/signals"
-	"github.com/pokt-network/pocket/pkg/client"
-	"github.com/pokt-network/pocket/pkg/observable"
-	"github.com/pokt-network/pocket/pkg/observable/channel"
-	"github.com/pokt-network/pocket/testutil/testclient"
-	"github.com/pokt-network/pocket/testutil/testclient/testtx"
-	apptypes "github.com/pokt-network/pocket/x/application/types"
-	prooftypes "github.com/pokt-network/pocket/x/proof/types"
-	sharedtypes "github.com/pokt-network/pocket/x/shared/types"
-	tokenomicstypes "github.com/pokt-network/pocket/x/tokenomics/types"
+	"github.com/pokt-network/poktroll/cmd/signals"
+	"github.com/pokt-network/poktroll/pkg/client"
+	"github.com/pokt-network/poktroll/pkg/observable"
+	"github.com/pokt-network/poktroll/pkg/observable/channel"
+	"github.com/pokt-network/poktroll/testutil/testclient"
+	"github.com/pokt-network/poktroll/testutil/testclient/testtx"
+	apptypes "github.com/pokt-network/poktroll/x/application/types"
+	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
+	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
 )
 
 // The following constants define the expected ordering of the actors when

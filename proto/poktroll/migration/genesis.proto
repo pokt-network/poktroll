@@ -7,7 +7,7 @@ import "gogoproto/gogo.proto";
 import "pocket/migration/params.proto";
 import "pocket/migration/morse_onchain.proto";
 
-option go_package = "github.com/pokt-network/pocket/x/migration/types";
+option go_package = "github.com/pokt-network/poktroll/x/migration/types";
 option (gogoproto.stable_marshaler_all) = true;
 
 // GenesisState defines the migration module's genesis state.

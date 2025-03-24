@@ -1,8 +1,8 @@
 package cache
 
 import (
-	"github.com/pokt-network/pocket/pkg/cache"
-	"github.com/pokt-network/pocket/pkg/client"
+	"github.com/pokt-network/poktroll/pkg/cache"
+	"github.com/pokt-network/poktroll/pkg/client"
 )
 
 var _ client.ParamsCache[any] = (*noOpParamsCache[any])(nil)

@@ -3,7 +3,7 @@ package application
 import (
 	"strconv"
 
-	"github.com/pokt-network/pocket/x/application/types"
+	"github.com/pokt-network/poktroll/x/application/types"
 
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"

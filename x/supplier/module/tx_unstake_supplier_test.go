@@ -13,9 +13,9 @@ import (
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc/status"
 
-	"github.com/pokt-network/pocket/testutil/network"
-	supplier "github.com/pokt-network/pocket/x/supplier/module"
-	"github.com/pokt-network/pocket/x/supplier/types"
+	"github.com/pokt-network/poktroll/testutil/network"
+	supplier "github.com/pokt-network/poktroll/x/supplier/module"
+	"github.com/pokt-network/poktroll/x/supplier/types"
 )
 
 func TestCLI_UnstakeSupplier(t *testing.T) {

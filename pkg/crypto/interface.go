@@ -7,7 +7,7 @@ import (
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	ring "github.com/pokt-network/ring-go"
 
-	"github.com/pokt-network/pocket/x/service/types"
+	"github.com/pokt-network/poktroll/x/service/types"
 )
 
 // RingClient is used to construct rings by querying the application module for

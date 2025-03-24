@@ -3,7 +3,7 @@ package shared
 import (
 	autocliv1 "cosmossdk.io/api/cosmos/autocli/v1"
 
-	modulev1 "github.com/pokt-network/pocket/api/pocket/shared"
+	modulev1 "github.com/pokt-network/poktroll/api/pocket/shared"
 )
 
 // AutoCLIOptions implements the autocli.HasAutoCLIConfig interface.

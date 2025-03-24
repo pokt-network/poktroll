@@ -8,8 +8,8 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"github.com/pokt-network/pocket/telemetry"
-	"github.com/pokt-network/pocket/x/service/types"
+	"github.com/pokt-network/poktroll/telemetry"
+	"github.com/pokt-network/poktroll/x/service/types"
 )
 
 // AddService adds a service to the network.

@@ -384,7 +384,7 @@ func TestRelayDifficulty_EnsureRelayMiningProbabilityIsProportional(t *testing.T
 // This test ensure that a difficulty hash byte representation that is trimmed
 // of its meaningless zeros does not change its value.
 // See the discussion below for more details:
-// https://github.com/pokt-network/pocket/pull/831#discussion_r1774183541
+// https://github.com/pokt-network/poktroll/pull/831#discussion_r1774183541
 func TestRelayDifficulty_TruncateRelayDifficultyHashToBaseSizeDoesNotChangeItsValue(t *testing.T) {
 	difficultyInt := big.NewInt(256)
 	expectedDifficultyHash := []byte{0x01, 0x00}

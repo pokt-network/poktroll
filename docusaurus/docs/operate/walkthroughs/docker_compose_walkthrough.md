@@ -318,7 +318,7 @@ docker compose logs -f --tail 100
 ### Docker image updates <!-- omit in toc -->
 
 The `.env` file contains `POKTROLLD_IMAGE_TAG` which can be updated based on the
-images available on [pocket ghcr](https://github.com/pokt-network/pocket/pkgs/container/pocketd/versions)
+images available on [pocket ghcr](https://github.com/pokt-network/poktroll/pkgs/container/pocketd/versions)
 to update the version of the `full_node` deployed. As well as the `PATH_GATEWAY_IMAGE_TAG`
 which can be updated based on the `PATH Gateway` images available at
 [path ghcr](https://github.com/buildwithgrove/path/pkgs/container/path/versions)

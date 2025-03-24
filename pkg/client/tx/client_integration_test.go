@@ -11,13 +11,13 @@ import (
 	"github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 
-	"github.com/pokt-network/pocket/pkg/client"
-	"github.com/pokt-network/pocket/pkg/client/tx"
-	"github.com/pokt-network/pocket/testutil/testclient/testblock"
-	"github.com/pokt-network/pocket/testutil/testclient/testeventsquery"
-	"github.com/pokt-network/pocket/testutil/testclient/testkeyring"
-	"github.com/pokt-network/pocket/testutil/testclient/testtx"
-	apptypes "github.com/pokt-network/pocket/x/application/types"
+	"github.com/pokt-network/poktroll/pkg/client"
+	"github.com/pokt-network/poktroll/pkg/client/tx"
+	"github.com/pokt-network/poktroll/testutil/testclient/testblock"
+	"github.com/pokt-network/poktroll/testutil/testclient/testeventsquery"
+	"github.com/pokt-network/poktroll/testutil/testclient/testkeyring"
+	"github.com/pokt-network/poktroll/testutil/testclient/testtx"
+	apptypes "github.com/pokt-network/poktroll/x/application/types"
 )
 
 func TestTxClient_SignAndBroadcast_Integration(t *testing.T) {

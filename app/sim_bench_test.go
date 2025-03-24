@@ -14,7 +14,7 @@ import (
 	simcli "github.com/cosmos/cosmos-sdk/x/simulation/client/cli"
 	"github.com/stretchr/testify/require"
 
-	"github.com/pokt-network/pocket/app"
+	"github.com/pokt-network/poktroll/app"
 )
 
 // Profile with:

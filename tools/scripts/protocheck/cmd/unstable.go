@@ -13,7 +13,7 @@ import (
 	"github.com/jhump/protoreflect/desc/protoparse/ast"
 	"github.com/spf13/cobra"
 
-	"github.com/pokt-network/pocket/pkg/polylog"
+	"github.com/pokt-network/poktroll/pkg/polylog"
 )
 
 const (

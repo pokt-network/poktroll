@@ -6,7 +6,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/pokt-network/pocket/pkg/cache"
+	"github.com/pokt-network/poktroll/pkg/cache"
 )
 
 var _ cache.HistoricalKeyValueCache[any] = (*historicalKeyValueCache[any])(nil)

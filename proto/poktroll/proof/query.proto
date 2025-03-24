@@ -1,7 +1,7 @@
 syntax = "proto3";
 package pocket.proof;
 
-option go_package = "github.com/pokt-network/pocket/x/proof/types";
+option go_package = "github.com/pokt-network/poktroll/x/proof/types";
 option (gogoproto.stable_marshaler_all) = true;
 
 import "amino/amino.proto";
@@ -18,27 +18,27 @@ service Query {
 
   // Parameters queries the parameters of the module.
   rpc Params (QueryParamsRequest) returns (QueryParamsResponse) {
-    option (google.api.http).get = "/pokt-network/pocket/proof/params";
+    option (google.api.http).get = "/pokt-network/poktroll/proof/params";
 
   }
 
   // Queries a list of Claim items.
   rpc Claim     (QueryGetClaimRequest ) returns (QueryGetClaimResponse ) {
-    option (google.api.http).get = "/pokt-network/pocket/proof/claim/{session_id}/{supplier_operator_address}";
+    option (google.api.http).get = "/pokt-network/poktroll/proof/claim/{session_id}/{supplier_operator_address}";
 
   }
   rpc AllClaims (QueryAllClaimsRequest) returns (QueryAllClaimsResponse) {
-    option (google.api.http).get = "/pokt-network/pocket/proof/claim";
+    option (google.api.http).get = "/pokt-network/poktroll/proof/claim";
 
   }
 
   // Queries a list of Proof items.
   rpc Proof    (QueryGetProofRequest) returns (QueryGetProofResponse) {
-    option (google.api.http).get = "/pokt-network/pocket/proof/proof/{session_id}/{supplier_operator_address}";
+    option (google.api.http).get = "/pokt-network/poktroll/proof/proof/{session_id}/{supplier_operator_address}";
 
   }
   rpc AllProofs (QueryAllProofsRequest) returns (QueryAllProofsResponse) {
-    option (google.api.http).get = "/pokt-network/pocket/proof/proof";
+    option (google.api.http).get = "/pokt-network/poktroll/proof/proof";
 
   }
 }

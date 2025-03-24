@@ -10,8 +10,8 @@ import (
 	cosmosTypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 
-	"github.com/pokt-network/pocket/app/keepers"
-	sharedtypes "github.com/pokt-network/pocket/x/shared/types"
+	"github.com/pokt-network/poktroll/app/keepers"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 const Upgrade_0_0_12_PlanName = "v0.0.12"
@@ -27,7 +27,7 @@ var Upgrade_0_0_12 = Upgrade{
 		// Parameter configurations aligned with repository config.yml specifications.
 		// These values reflect the delta between v0.0.11 and the main branch as of #1043.
 		// Reference:
-		// - Comparison: https://github.com/pokt-network/pocket/compare/v0.0.11..7541afd6d89a12d61e2c32637b535f24fae20b58
+		// - Comparison: https://github.com/pokt-network/poktroll/compare/v0.0.11..7541afd6d89a12d61e2c32637b535f24fae20b58
 		// - Direct diff: `git diff v0.0.11..7541afd6d89a12d61e2c32637b535f24fae20b58 -- config.yml`
 		//
 		// DEV_NOTE: These parameter updates are derived from config.yml in the root directory

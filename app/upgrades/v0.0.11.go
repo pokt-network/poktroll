@@ -8,9 +8,9 @@ import (
 	cosmosTypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 
-	"github.com/pokt-network/pocket/app/keepers"
-	sessiontypes "github.com/pokt-network/pocket/x/session/types"
-	tokenomicstypes "github.com/pokt-network/pocket/x/tokenomics/types"
+	"github.com/pokt-network/poktroll/app/keepers"
+	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
+	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
 )
 
 // Upgrade_0_0_11 is the upgrade handler for v0.0.11 Alpha TestNet upgrade
@@ -24,7 +24,7 @@ var Upgrade_0_0_11 = Upgrade{
 		configurator module.Configurator,
 	) upgradetypes.UpgradeHandler {
 		// Adds new parameters using ignite's config.yml as a reference. Assuming we don't need any other parameters.
-		// https://github.com/pokt-network/pocket/compare/v0.0.10...v0.0.11-rc
+		// https://github.com/pokt-network/poktroll/compare/v0.0.10...v0.0.11-rc
 		applyNewParameters := func(ctx context.Context) (err error) {
 			logger := cosmosTypes.UnwrapSDKContext(ctx).Logger()
 			logger.Info("Starting parameter updates for v0.0.11")

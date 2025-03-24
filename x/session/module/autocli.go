@@ -3,7 +3,7 @@ package session
 import (
 	autocliv1 "cosmossdk.io/api/cosmos/autocli/v1"
 
-	modulev1 "github.com/pokt-network/pocket/api/pocket/session"
+	modulev1 "github.com/pokt-network/poktroll/api/pocket/session"
 )
 
 // AutoCLIOptions implements the autocli.HasAutoCLIConfig interface.

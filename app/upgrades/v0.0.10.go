@@ -12,8 +12,8 @@ import (
 	"github.com/cosmos/cosmos-sdk/types/module"
 	"github.com/cosmos/cosmos-sdk/x/authz"
 
-	"github.com/pokt-network/pocket/app/keepers"
-	prooftypes "github.com/pokt-network/pocket/x/proof/types"
+	"github.com/pokt-network/poktroll/app/keepers"
+	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 )
 
 // Upgrade_0_0_10 is the upgrade handler for v0.0.10 Alpha TestNet upgrade
@@ -28,7 +28,7 @@ var Upgrade_0_0_10 = Upgrade{
 	) upgradetypes.UpgradeHandler {
 
 		// Adds new parameters using ignite's config.yml as a reference. Assuming we don't need any other parameters.
-		// https://github.com/pokt-network/pocket/compare/v0.0.9-3...ff76430
+		// https://github.com/pokt-network/poktroll/compare/v0.0.9-3...ff76430
 		applyNewParameters := func(ctx context.Context) (err error) {
 			// Add application min stake
 			// Validate with: `pocketd q application params --node=https://testnet-validated-validator-rpc.pocket.com/`
@@ -91,7 +91,7 @@ var Upgrade_0_0_10 = Upgrade{
 		}
 
 		// Adds new authz authorizations from the diff:
-		// https://github.com/pokt-network/pocket/compare/v0.0.9-3...ff76430
+		// https://github.com/pokt-network/poktroll/compare/v0.0.9-3...ff76430
 		applyNewAuthorizations := func(ctx context.Context) (err error) {
 			// Validate before/after with:
 			// `pocketd q authz grants-by-granter pokt10d07y265gmmuvt4z0w9aw880jnsr700j8yv32t --node=https://testnet-validated-validator-rpc.pocket.com/`

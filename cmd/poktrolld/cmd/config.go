@@ -8,8 +8,8 @@ import (
 	serverconfig "github.com/cosmos/cosmos-sdk/server/config"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"github.com/pokt-network/pocket/app"
-	"github.com/pokt-network/pocket/telemetry"
+	"github.com/pokt-network/poktroll/app"
+	"github.com/pokt-network/poktroll/telemetry"
 )
 
 var once sync.Once

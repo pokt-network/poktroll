@@ -5,7 +5,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	sessiontypes "github.com/pokt-network/pocket/x/session/types"
+	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 )
 
 func TestMsgUpdateParams(t *testing.T) {

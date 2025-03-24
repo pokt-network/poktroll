@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Ref: https://github.com/pokt-network/pocket/pull/1092
+# Ref: https://github.com/pokt-network/poktroll/pull/1092
 # Note that there's also an internal doc (mentioned in the PR):  I also submitted the script that we use to create snapshots in the same PR. I just want to preserve it in Git, along with the index page. I added a readme so it explains why these files are there. They don't necessarily need to be saved in that repo and can go somewhere else.
 
 set -e

@@ -12,11 +12,11 @@ import (
 
 	"go.uber.org/multierr"
 
-	"github.com/pokt-network/pocket/pkg/client"
-	"github.com/pokt-network/pocket/pkg/client/events/websocket"
-	"github.com/pokt-network/pocket/pkg/either"
-	"github.com/pokt-network/pocket/pkg/observable"
-	"github.com/pokt-network/pocket/pkg/observable/channel"
+	"github.com/pokt-network/poktroll/pkg/client"
+	"github.com/pokt-network/poktroll/pkg/client/events/websocket"
+	"github.com/pokt-network/poktroll/pkg/either"
+	"github.com/pokt-network/poktroll/pkg/observable"
+	"github.com/pokt-network/poktroll/pkg/observable/channel"
 )
 
 var _ client.EventsQueryClient = (*eventsQueryClient)(nil)
@@ -28,7 +28,7 @@ var _ client.EventsQueryClient = (*eventsQueryClient)(nil)
 // - https://github.com/cometbft/cometbft/blob/main/rpc/client/http/http.go#L110
 // - https://github.com/cometbft/cometbft/blob/main/rpc/client/http/http.go#L656
 // - https://github.com/cosmos/cosmos-sdk/blob/main/client/rpc/tx.go#L114
-// - https://github.com/pokt-network/pocket/pull/64#discussion_r1372378241
+// - https://github.com/pokt-network/poktroll/pull/64#discussion_r1372378241
 
 // eventsQueryClient implements the EventsQueryClient interface.
 type eventsQueryClient struct {
@@ -161,7 +161,7 @@ func (eqc *eventsQueryClient) newEventsBytesAndConn(
 	// Publish either events bytes or an error received from the connection to
 	// the eventsBz observable.
 	// NB: intentionally not retrying on error, leaving that to the caller.
-	// (see: https://github.com/pokt-network/pocket/pull/64#discussion_r1373826542)
+	// (see: https://github.com/pokt-network/poktroll/pull/64#discussion_r1373826542)
 	go eqc.goPublishEventsBz(ctx, conn, eventsBzPublishCh)
 
 	return &eventsBytesAndConn{

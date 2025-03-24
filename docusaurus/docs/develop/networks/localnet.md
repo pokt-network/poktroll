@@ -31,7 +31,7 @@ needed to send an end-to-end relay.
 
 ### Report issues
 
-If you encounter any problems, please create a new [GitHub Issue here](https://github.com/pokt-network/pocket/issues/new/choose).
+If you encounter any problems, please create a new [GitHub Issue here](https://github.com/pokt-network/poktroll/issues/new/choose).
 
 ### TL;DR
 
@@ -85,7 +85,7 @@ Helm chart. For example, [here are the RelayMiner `values.yaml`](https://github.
 
 Local infrastructure requires some changes to the default values to properly configure the `RelayMiner`
 or `PATH Gateway`, so we override some of the values. You can find such overrides in the
-[pocket/localnet/kubernetes directory](https://github.com/pokt-network/pocket/tree/main/localnet/kubernetes).
+[pocket/localnet/kubernetes directory](https://github.com/pokt-network/poktroll/tree/main/localnet/kubernetes).
 
 **IF YOU NEED TO CHANGE LocalNet configs, 👆 is the place.**
 
@@ -163,7 +163,7 @@ components to provision a working network.
 After you execute `make localnet_up`, many things happen:
 
 1. `ignite` CLI provisions a new `genesis.json` and validator keys.
-2. `tilt` starts and runs a [Tiltfile](https://github.com/pokt-network/pocket/blob/main/Tiltfile) - a Python-like script.
+2. `tilt` starts and runs a [Tiltfile](https://github.com/pokt-network/poktroll/blob/main/Tiltfile) - a Python-like script.
 3. Subsequently, the logic described in the `Tiltfile` executes various CLI commands, communicates with the `k8s` API, and creates or reads the LocalNet configuration file:
    1. Creates a new `localnet_config.yaml` if it doesn't exist. Updates it with default values if new ones are introduced.
    2. Depending on the configuration in `localnet_config.yaml`, uses Helm charts from the local [helm-charts](https://github.com/pokt-network/helm-charts)repository or downloads Helm charts from our Helm chart repository (`https://pokt-network.github.io/helm-charts/`).

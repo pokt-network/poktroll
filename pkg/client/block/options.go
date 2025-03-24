@@ -1,6 +1,6 @@
 package block
 
-import "github.com/pokt-network/pocket/pkg/client"
+import "github.com/pokt-network/poktroll/pkg/client"
 
 // WithConnRetryLimit returns an option function which sets the number
 // of times the underlying replay client should retry in the event that it encounters

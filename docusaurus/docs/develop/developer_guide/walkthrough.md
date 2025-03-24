@@ -12,7 +12,7 @@ The goal of this document is to get you up and running with a LocalNet, some
 manually deployed local actors, and sending an end-to-end relay. It will not
 go in depth into any concepts.
 
-Create a new [GitHub issue here](https://github.com/pokt-network/pocket/issues/new/choose)
+Create a new [GitHub issue here](https://github.com/pokt-network/poktroll/issues/new/choose)
 **if you encounter any problems.**
 :::
 
@@ -125,7 +125,7 @@ cd pocket
 ### 1.2 See all the available helper commands in `Makefile`
 
 We leverage the `Makefile` to abstract the complexity of some common commands,
-but you can [view it directly](https://github.com/pokt-network/pocket/blob/main/Makefile)
+but you can [view it directly](https://github.com/pokt-network/poktroll/blob/main/Makefile)
 to see what the underlying command being executed is.
 
 :::tip `make help`

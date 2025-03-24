@@ -14,8 +14,8 @@ import (
 	"github.com/jhump/protoreflect/desc/protoparse"
 	"github.com/jhump/protoreflect/desc/protoparse/ast"
 
-	"github.com/pokt-network/pocket/pkg/polylog"
-	_ "github.com/pokt-network/pocket/pkg/polylog/polyzero"
+	"github.com/pokt-network/poktroll/pkg/polylog"
+	_ "github.com/pokt-network/poktroll/pkg/polylog/polyzero"
 )
 
 // paramField is used to hold param message field information for interpolation

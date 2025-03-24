@@ -5,8 +5,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/pokt-network/pocket/testutil/sample"
-	"github.com/pokt-network/pocket/x/migration/types"
+	"github.com/pokt-network/poktroll/testutil/sample"
+	"github.com/pokt-network/poktroll/x/migration/types"
 )
 
 func TestGenesisState_Validate(t *testing.T) {

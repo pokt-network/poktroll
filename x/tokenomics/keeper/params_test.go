@@ -5,7 +5,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	tokenomicstypes "github.com/pokt-network/pocket/x/tokenomics/types"
+	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
 )
 
 func TestParams_ValidateMintAllocationDao(t *testing.T) {

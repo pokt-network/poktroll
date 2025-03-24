@@ -7,8 +7,8 @@ import (
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	apptypes "github.com/pokt-network/pocket/x/application/types"
-	sharedtypes "github.com/pokt-network/pocket/x/shared/types"
+	apptypes "github.com/pokt-network/poktroll/x/application/types"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 // EndBlockerUnbondApplications unbonds applications whose unbonding period has elapsed.

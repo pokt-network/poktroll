@@ -1,7 +1,7 @@
 syntax = "proto3";
 package pocket.tokenomics;
 
-option go_package = "github.com/pokt-network/pocket/x/tokenomics/types";
+option go_package = "github.com/pokt-network/poktroll/x/tokenomics/types";
 option (gogoproto.stable_marshaler_all) = true;
 option (gogoproto.equal_all) = true;
 

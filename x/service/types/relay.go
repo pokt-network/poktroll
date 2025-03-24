@@ -3,8 +3,8 @@ package types
 import (
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
 
-	"github.com/pokt-network/pocket/pkg/crypto/protocol"
-	sessiontypes "github.com/pokt-network/pocket/x/session/types"
+	"github.com/pokt-network/poktroll/pkg/crypto/protocol"
+	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 )
 
 // GetHash returns the hash of the relay, which contains both the signed

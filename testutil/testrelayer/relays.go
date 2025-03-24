@@ -13,12 +13,12 @@ import (
 	signingtypes "github.com/cosmos/cosmos-sdk/types/tx/signing"
 	"github.com/stretchr/testify/require"
 
-	"github.com/pokt-network/pocket/pkg/crypto"
-	"github.com/pokt-network/pocket/pkg/crypto/protocol"
-	"github.com/pokt-network/pocket/pkg/relayer"
-	testutilkeyring "github.com/pokt-network/pocket/testutil/testkeyring"
-	servicetypes "github.com/pokt-network/pocket/x/service/types"
-	sessiontypes "github.com/pokt-network/pocket/x/session/types"
+	"github.com/pokt-network/poktroll/pkg/crypto"
+	"github.com/pokt-network/poktroll/pkg/crypto/protocol"
+	"github.com/pokt-network/poktroll/pkg/relayer"
+	testutilkeyring "github.com/pokt-network/poktroll/testutil/testkeyring"
+	servicetypes "github.com/pokt-network/poktroll/x/service/types"
+	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 )
 
 // NewUnsignedMinedRelay returns a new mined relay with the given session data,

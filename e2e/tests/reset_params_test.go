@@ -7,13 +7,13 @@ import (
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	"github.com/stretchr/testify/require"
 
-	apptypes "github.com/pokt-network/pocket/x/application/types"
-	gatewaytypes "github.com/pokt-network/pocket/x/gateway/types"
-	prooftypes "github.com/pokt-network/pocket/x/proof/types"
-	servicetypes "github.com/pokt-network/pocket/x/service/types"
-	sharedtypes "github.com/pokt-network/pocket/x/shared/types"
-	suppliertypes "github.com/pokt-network/pocket/x/supplier/types"
-	tokenomicstypes "github.com/pokt-network/pocket/x/tokenomics/types"
+	apptypes "github.com/pokt-network/poktroll/x/application/types"
+	gatewaytypes "github.com/pokt-network/poktroll/x/gateway/types"
+	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
+	servicetypes "github.com/pokt-network/poktroll/x/service/types"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
+	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
+	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
 )
 
 // resetAllModuleParamsToDefaults resets all module params to their default values using

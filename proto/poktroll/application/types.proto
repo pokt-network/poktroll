@@ -5,7 +5,7 @@
 syntax = "proto3";
 package pocket.application;
 
-option go_package = "github.com/pokt-network/pocket/x/application/types";
+option go_package = "github.com/pokt-network/poktroll/x/application/types";
 option (gogoproto.stable_marshaler_all) = true;
 
 import "gogoproto/gogo.proto";
@@ -26,7 +26,7 @@ message Application {
   // This prevents applications from over-servicing.
   // Kept as repeated field for legacy and future compatibility
   // Refs:
-  //   - https://github.com/pokt-network/pocket/pull/750#discussion_r1735025033
+  //   - https://github.com/pokt-network/poktroll/pull/750#discussion_r1735025033
   //   - https://www.notion.so/buildwithgrove/Off-chain-Application-Stake-Tracking-6a8bebb107db4f7f9dc62cbe7ba555f7
   repeated pocket.shared.ApplicationServiceConfig service_configs = 3;
 
@@ -39,7 +39,7 @@ message Application {
   // - Key: Height of the last block of the session when undelegation tx was committed
   // - Value: List of gateways being undelegated from
   // TODO_DOCUMENT(@red-0ne): Need to document the flow from this comment
-  // so its clear to everyone why this is necessary; https://github.com/pokt-network/pocket/issues/476#issuecomment-2052639906.
+  // so its clear to everyone why this is necessary; https://github.com/pokt-network/poktroll/issues/476#issuecomment-2052639906.
   map<uint64, UndelegatingGatewayList> pending_undelegations = 5 [(gogoproto.nullable) = false];
 
   // Session end height when application initiated unstaking (0 if not unstaking)

@@ -6,9 +6,9 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/stretchr/testify/require"
 
-	"github.com/pokt-network/pocket/testutil/sample"
-	testsession "github.com/pokt-network/pocket/testutil/session"
-	sessiontypes "github.com/pokt-network/pocket/x/session/types"
+	"github.com/pokt-network/poktroll/testutil/sample"
+	testsession "github.com/pokt-network/poktroll/testutil/session"
+	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 )
 
 const testServiceId = "svc01"

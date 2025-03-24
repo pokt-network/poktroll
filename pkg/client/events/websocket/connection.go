@@ -3,7 +3,7 @@ package websocket
 import (
 	gorillaws "github.com/gorilla/websocket"
 
-	"github.com/pokt-network/pocket/pkg/client"
+	"github.com/pokt-network/poktroll/pkg/client"
 )
 
 var _ client.Connection = (*websocketConn)(nil)

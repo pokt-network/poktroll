@@ -7,12 +7,12 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 
-	"github.com/pokt-network/pocket/app/volatile"
-	"github.com/pokt-network/pocket/testutil/events"
-	"github.com/pokt-network/pocket/testutil/integration/suites"
-	"github.com/pokt-network/pocket/testutil/testkeyring"
-	apptypes "github.com/pokt-network/pocket/x/application/types"
-	sharedtypes "github.com/pokt-network/pocket/x/shared/types"
+	"github.com/pokt-network/poktroll/app/volatile"
+	"github.com/pokt-network/poktroll/testutil/events"
+	"github.com/pokt-network/poktroll/testutil/integration/suites"
+	"github.com/pokt-network/poktroll/testutil/testkeyring"
+	apptypes "github.com/pokt-network/poktroll/x/application/types"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 var (

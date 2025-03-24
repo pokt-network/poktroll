@@ -1,6 +1,6 @@
 package types
 
-import sharedtypes "github.com/pokt-network/pocket/x/shared/types"
+import sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 
 // DefaultGenesis returns the default genesis state
 func DefaultGenesis() *GenesisState {

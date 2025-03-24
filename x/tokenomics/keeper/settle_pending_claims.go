@@ -9,15 +9,15 @@ import (
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/query"
 
-	"github.com/pokt-network/pocket/app/volatile"
-	"github.com/pokt-network/pocket/telemetry"
-	apptypes "github.com/pokt-network/pocket/x/application/types"
-	prooftypes "github.com/pokt-network/pocket/x/proof/types"
-	servicekeeper "github.com/pokt-network/pocket/x/service/keeper"
-	sharedtypes "github.com/pokt-network/pocket/x/shared/types"
-	suppliertypes "github.com/pokt-network/pocket/x/supplier/types"
-	tlm "github.com/pokt-network/pocket/x/tokenomics/token_logic_module"
-	tokenomicstypes "github.com/pokt-network/pocket/x/tokenomics/types"
+	"github.com/pokt-network/poktroll/app/volatile"
+	"github.com/pokt-network/poktroll/telemetry"
+	apptypes "github.com/pokt-network/poktroll/x/application/types"
+	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
+	servicekeeper "github.com/pokt-network/poktroll/x/service/keeper"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
+	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
+	tlm "github.com/pokt-network/poktroll/x/tokenomics/token_logic_module"
+	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
 )
 
 // SettlePendingClaims settles all pending (i.e. expiring) claims.

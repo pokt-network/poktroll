@@ -3,7 +3,7 @@ package keeper
 import (
 	"context"
 
-	"github.com/pokt-network/pocket/x/proof/types"
+	"github.com/pokt-network/poktroll/x/proof/types"
 )
 
 // getServiceComputeUnitsPerRelay is used to ensure that a service with the ServiceID exists.

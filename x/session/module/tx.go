@@ -7,7 +7,7 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/client"
 
-	"github.com/pokt-network/pocket/x/session/types"
+	"github.com/pokt-network/poktroll/x/session/types"
 )
 
 // GetTxCmd returns the transaction commands for this module

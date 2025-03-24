@@ -429,7 +429,7 @@ elif [ "$ARCH" = "aarch64" ]; then
 fi
 
 # Download and install pocketd with the version determined in the previous step
-RELEASE_URL="https://github.com/pokt-network/pocket/releases/download/v${POKTROLLD_VERSION}/pocket_${OS_TYPE}_${ARCH}.tar.gz"
+RELEASE_URL="https://github.com/pokt-network/poktroll/releases/download/v${POKTROLLD_VERSION}/pocket_${OS_TYPE}_${ARCH}.tar.gz"
 mkdir -p $HOME/.pocket/cosmovisor/genesis/bin
 curl -L "$RELEASE_URL" | tar -zxvf - -C $HOME/.pocket/cosmovisor/genesis/bin
 chmod +x $HOME/.pocket/cosmovisor/genesis/bin/pocketd

@@ -17,7 +17,7 @@ so if you're a highly experienced and independent developer.
 
 ## Community Tickets
 
-You can find all GitHub issues that are labeled with `community` [here](https://github.com/pokt-network/pocket/issues?q=is%3Aissue+is%3Aopen+label%3Acommunity). These were designed to be independent
+You can find all GitHub issues that are labeled with `community` [here](https://github.com/pokt-network/poktroll/issues?q=is%3Aissue+is%3Aopen+label%3Acommunity). These were designed to be independent
 and easy to pick up by anyone.
 
 ## TODOs
@@ -31,7 +31,7 @@ that peaks your interest simply:
 
 ## GitHub
 
-The best way to reach us is by opening a [GitHub Issue](https://github.com/pokt-network/pocket/issues/new/choose)
+The best way to reach us is by opening a [GitHub Issue](https://github.com/pokt-network/poktroll/issues/new/choose)
 and outline your proposal, issue or suggestion before you start doing any piece of work.
 We want to make sure it is still relevant and not being duplicated by anyone else.
 

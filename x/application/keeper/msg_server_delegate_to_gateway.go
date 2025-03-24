@@ -8,10 +8,10 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"github.com/pokt-network/pocket/telemetry"
-	apptypes "github.com/pokt-network/pocket/x/application/types"
-	gatewaytypes "github.com/pokt-network/pocket/x/gateway/types"
-	sharedtypes "github.com/pokt-network/pocket/x/shared/types"
+	"github.com/pokt-network/poktroll/telemetry"
+	apptypes "github.com/pokt-network/poktroll/x/application/types"
+	gatewaytypes "github.com/pokt-network/poktroll/x/gateway/types"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 func (k msgServer) DelegateToGateway(ctx context.Context, msg *apptypes.MsgDelegateToGateway) (*apptypes.MsgDelegateToGatewayResponse, error) {

@@ -24,14 +24,14 @@ please visit [docs.pokt.network](https://docs.pokt.network).
 
 <div>
   <a href="https://discord.gg/pokt"><img src="https://img.shields.io/discord/553741558869131266"/></a>
-  <a  href="https://github.com/pokt-network/pocket/releases"><img src="https://img.shields.io/github/release-pre/pokt-network/pocket.svg"/></a>
-  <a  href="https://github.com/pokt-network/pocket/pulse"><img src="https://img.shields.io/github/contributors/pokt-network/pocket.svg"/></a>
+  <a  href="https://github.com/pokt-network/poktroll/releases"><img src="https://img.shields.io/github/release-pre/pokt-network/pocket.svg"/></a>
+  <a  href="https://github.com/pokt-network/poktroll/pulse"><img src="https://img.shields.io/github/contributors/pokt-network/pocket.svg"/></a>
   <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/License-MIT-blue.svg"/></a>
-  <a href="https://github.com/pokt-network/pocket/pulse"><img src="https://img.shields.io/github/last-commit/pokt-network/pocket.svg"/></a>
-  <a href="https://github.com/pokt-network/pocket/pulls"><img src="https://img.shields.io/github/issues-pr/pokt-network/pocket.svg"/></a>
-  <a href="https://github.com/pokt-network/pocket/releases"><img src="https://img.shields.io/badge/platform-linux%20%7C%20macos-pink.svg"/></a>
-  <a href="https://github.com/pokt-network/pocket/issues"><img src="https://img.shields.io/github/issues/pokt-network/pocket.svg"/></a>
-  <a href="https://github.com/pokt-network/pocket/issues"><img src="https://img.shields.io/github/issues-closed/pokt-network/pocket.svg"/></a>
+  <a href="https://github.com/pokt-network/poktroll/pulse"><img src="https://img.shields.io/github/last-commit/pokt-network/pocket.svg"/></a>
+  <a href="https://github.com/pokt-network/poktroll/pulls"><img src="https://img.shields.io/github/issues-pr/pokt-network/pocket.svg"/></a>
+  <a href="https://github.com/pokt-network/poktroll/releases"><img src="https://img.shields.io/badge/platform-linux%20%7C%20macos-pink.svg"/></a>
+  <a href="https://github.com/pokt-network/poktroll/issues"><img src="https://img.shields.io/github/issues/pokt-network/pocket.svg"/></a>
+  <a href="https://github.com/pokt-network/poktroll/issues"><img src="https://img.shields.io/github/issues-closed/pokt-network/pocket.svg"/></a>
   <a href="https://godoc.org/github.com/pokt-network/pocket"><img src="https://img.shields.io/badge/godoc-reference-blue.svg"/></a>
   <a href="https://goreportcard.com/report/github.com/pokt-network/pocket"><img src="https://goreportcard.com/badge/github.com/pokt-network/pocket"/></a>
   <a href="https://golang.org"><img  src="https://img.shields.io/badge/golang-v1.23-green.svg"/></a>
@@ -99,4 +99,4 @@ The Godoc for the source code can be found at [pkg.go.dev/github.com/pokt-networ
 
 ## License
 
-This project is licensed under the MIT License; see the [LICENSE](https://github.com/pokt-network/pocket/blob/main/LICENSE) file for details.
+This project is licensed under the MIT License; see the [LICENSE](https://github.com/pokt-network/poktroll/blob/main/LICENSE) file for details.

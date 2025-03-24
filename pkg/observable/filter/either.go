@@ -3,9 +3,9 @@ package filter
 import (
 	"context"
 
-	"github.com/pokt-network/pocket/pkg/either"
-	"github.com/pokt-network/pocket/pkg/observable"
-	"github.com/pokt-network/pocket/pkg/observable/channel"
+	"github.com/pokt-network/poktroll/pkg/either"
+	"github.com/pokt-network/poktroll/pkg/observable"
+	"github.com/pokt-network/poktroll/pkg/observable/channel"
 )
 
 // EitherError operates on an observable of an either type. It filters for all

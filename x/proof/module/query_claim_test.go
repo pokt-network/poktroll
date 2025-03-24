@@ -11,12 +11,12 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"github.com/pokt-network/pocket/testutil/nullify"
-	"github.com/pokt-network/pocket/testutil/sample"
-	_ "github.com/pokt-network/pocket/testutil/testpolylog"
-	proof "github.com/pokt-network/pocket/x/proof/module"
-	"github.com/pokt-network/pocket/x/proof/types"
-	sharedtypes "github.com/pokt-network/pocket/x/shared/types"
+	"github.com/pokt-network/poktroll/testutil/nullify"
+	"github.com/pokt-network/poktroll/testutil/sample"
+	_ "github.com/pokt-network/poktroll/testutil/testpolylog"
+	proof "github.com/pokt-network/poktroll/x/proof/module"
+	"github.com/pokt-network/poktroll/x/proof/types"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 func TestClaim_Show(t *testing.T) {

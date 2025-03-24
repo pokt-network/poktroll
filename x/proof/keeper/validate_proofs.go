@@ -8,7 +8,7 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"github.com/pokt-network/pocket/x/proof/types"
+	"github.com/pokt-network/poktroll/x/proof/types"
 )
 
 // proofValidationTaskCoordinator is a helper struct to coordinate parallel proof

@@ -25,8 +25,8 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
-	"github.com/pokt-network/pocket/app"
-	"github.com/pokt-network/pocket/cmd/pocketd/cmd/migrate"
+	"github.com/pokt-network/poktroll/app"
+	"github.com/pokt-network/poktroll/cmd/pocketd/cmd/migrate"
 )
 
 func initRootCmd(

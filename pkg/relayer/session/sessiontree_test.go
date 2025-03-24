@@ -6,7 +6,7 @@ import (
 	"crypto/rand"
 	"testing"
 
-	"github.com/pokt-network/pocket/pkg/crypto/protocol"
+	"github.com/pokt-network/poktroll/pkg/crypto/protocol"
 	"github.com/pokt-network/smt"
 	"github.com/pokt-network/smt/kvstore/pebble"
 	"github.com/stretchr/testify/require"
@@ -27,7 +27,7 @@ const (
 // In fact, compact proofs appear to be less efficient than gzipped proofs, even
 // without considering the "proof closest value" compression.
 // For a sample comparison between compression and compaction ratios, see:
-// https://github.com/pokt-network/pocket/pull/823#issuecomment-2363987920
+// https://github.com/pokt-network/poktroll/pull/823#issuecomment-2363987920
 func TestSessionTree_CompactProofsAreSmallerThanNonCompactProofs(t *testing.T) {
 	// Run the test for different number of leaves.
 	for numLeafs := 10; numLeafs <= maxLeafs; numLeafs *= 10 {

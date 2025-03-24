@@ -8,10 +8,10 @@ import (
 
 	"go.uber.org/mock/gomock"
 
-	"github.com/pokt-network/pocket/testutil/mockclient"
-	testsession "github.com/pokt-network/pocket/testutil/session"
-	sessiontypes "github.com/pokt-network/pocket/x/session/types"
-	sharedtypes "github.com/pokt-network/pocket/x/shared/types"
+	"github.com/pokt-network/poktroll/testutil/mockclient"
+	testsession "github.com/pokt-network/poktroll/testutil/session"
+	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 // blockHashBz is the []byte representation of the block hash used in the tests.

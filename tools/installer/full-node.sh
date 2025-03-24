@@ -475,7 +475,7 @@ setup_pocketd() {
     print_color $YELLOW "Using pocketd version: $POKTROLLD_VERSION"
 
     # Construct the release URL with proper version format
-    RELEASE_URL="https://github.com/pokt-network/pocket/releases/download/v${POKTROLLD_VERSION}/pocket_${OS_TYPE}_${ARCH}.tar.gz"
+    RELEASE_URL="https://github.com/pokt-network/poktroll/releases/download/v${POKTROLLD_VERSION}/pocket_${OS_TYPE}_${ARCH}.tar.gz"
     print_color $YELLOW "Attempting to download from: $RELEASE_URL"
 
     # Download and extract directly as the POKTROLL_USER

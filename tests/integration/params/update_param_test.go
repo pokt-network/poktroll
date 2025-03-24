@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 
-	"github.com/pokt-network/pocket/testutil/integration/suites"
+	"github.com/pokt-network/poktroll/testutil/integration/suites"
 )
 
 // msgUpdateParamTestSuite is a test suite which exercises the MsgUpdateParam message

@@ -5,8 +5,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/pokt-network/pocket/testutil/sample"
-	sessiontypes "github.com/pokt-network/pocket/x/session/types"
+	"github.com/pokt-network/poktroll/testutil/sample"
+	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 )
 
 func TestMsgCreateClaim_ValidateBasic(t *testing.T) {

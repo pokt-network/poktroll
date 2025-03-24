@@ -10,17 +10,17 @@ import (
 	"github.com/pokt-network/smt/kvstore/pebble"
 	"github.com/stretchr/testify/require"
 
-	"github.com/pokt-network/pocket/app/volatile"
-	"github.com/pokt-network/pocket/cmd/pocketd/cmd"
-	"github.com/pokt-network/pocket/pkg/crypto/protocol"
-	testutilevents "github.com/pokt-network/pocket/testutil/events"
-	"github.com/pokt-network/pocket/testutil/integration"
-	testutil "github.com/pokt-network/pocket/testutil/integration"
-	"github.com/pokt-network/pocket/testutil/testrelayer"
-	prooftypes "github.com/pokt-network/pocket/x/proof/types"
-	servicetypes "github.com/pokt-network/pocket/x/service/types"
-	sessiontypes "github.com/pokt-network/pocket/x/session/types"
-	sharedtypes "github.com/pokt-network/pocket/x/shared/types"
+	"github.com/pokt-network/poktroll/app/volatile"
+	"github.com/pokt-network/poktroll/cmd/pocketd/cmd"
+	"github.com/pokt-network/poktroll/pkg/crypto/protocol"
+	testutilevents "github.com/pokt-network/poktroll/testutil/events"
+	"github.com/pokt-network/poktroll/testutil/integration"
+	testutil "github.com/pokt-network/poktroll/testutil/integration"
+	"github.com/pokt-network/poktroll/testutil/testrelayer"
+	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
+	servicetypes "github.com/pokt-network/poktroll/x/service/types"
+	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 func init() {

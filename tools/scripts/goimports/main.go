@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/pokt-network/pocket/tools/scripts/goimports/filters"
+	"github.com/pokt-network/poktroll/tools/scripts/goimports/filters"
 )
 
 // defaultArgs are always passed to goimports.

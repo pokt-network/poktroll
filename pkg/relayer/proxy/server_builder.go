@@ -7,10 +7,10 @@ import (
 	"slices"
 	"time"
 
-	"github.com/pokt-network/pocket/pkg/relayer"
-	"github.com/pokt-network/pocket/pkg/relayer/config"
-	sharedtypes "github.com/pokt-network/pocket/x/shared/types"
-	suppliertypes "github.com/pokt-network/pocket/x/supplier/types"
+	"github.com/pokt-network/poktroll/pkg/relayer"
+	"github.com/pokt-network/poktroll/pkg/relayer/config"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
+	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 )
 
 const (

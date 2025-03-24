@@ -17,8 +17,8 @@ import (
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 	"github.com/stretchr/testify/require"
 
-	"github.com/pokt-network/pocket/x/shared/keeper"
-	"github.com/pokt-network/pocket/x/shared/types"
+	"github.com/pokt-network/poktroll/x/shared/keeper"
+	"github.com/pokt-network/poktroll/x/shared/types"
 )
 
 func SharedKeeper(t testing.TB) (keeper.Keeper, sdk.Context) {

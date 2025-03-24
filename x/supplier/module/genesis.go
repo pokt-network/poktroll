@@ -3,8 +3,8 @@ package supplier
 import (
 	"context"
 
-	"github.com/pokt-network/pocket/x/supplier/keeper"
-	"github.com/pokt-network/pocket/x/supplier/types"
+	"github.com/pokt-network/poktroll/x/supplier/keeper"
+	"github.com/pokt-network/poktroll/x/supplier/types"
 )
 
 // InitGenesis initializes the module's state from a provided genesis state.

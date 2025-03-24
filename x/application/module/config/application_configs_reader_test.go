@@ -8,9 +8,9 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 
-	"github.com/pokt-network/pocket/testutil/yaml"
-	"github.com/pokt-network/pocket/x/application/module/config"
-	sharedtypes "github.com/pokt-network/pocket/x/shared/types"
+	"github.com/pokt-network/poktroll/testutil/yaml"
+	"github.com/pokt-network/poktroll/x/application/module/config"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 func Test_ParseApplicationConfigs(t *testing.T) {

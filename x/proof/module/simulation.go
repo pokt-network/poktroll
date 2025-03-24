@@ -8,9 +8,9 @@ import (
 	simtypes "github.com/cosmos/cosmos-sdk/types/simulation"
 	"github.com/cosmos/cosmos-sdk/x/simulation"
 
-	"github.com/pokt-network/pocket/testutil/sample"
-	proofsimulation "github.com/pokt-network/pocket/x/proof/simulation"
-	"github.com/pokt-network/pocket/x/proof/types"
+	"github.com/pokt-network/poktroll/testutil/sample"
+	proofsimulation "github.com/pokt-network/poktroll/x/proof/simulation"
+	"github.com/pokt-network/poktroll/x/proof/types"
 )
 
 // avoid unused import issue

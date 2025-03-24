@@ -18,9 +18,9 @@ import (
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 
-	modulev1 "github.com/pokt-network/pocket/api/pocket/session/module"
-	"github.com/pokt-network/pocket/x/session/keeper"
-	"github.com/pokt-network/pocket/x/session/types"
+	modulev1 "github.com/pokt-network/poktroll/api/pocket/session/module"
+	"github.com/pokt-network/poktroll/x/session/keeper"
+	"github.com/pokt-network/poktroll/x/session/types"
 )
 
 var (

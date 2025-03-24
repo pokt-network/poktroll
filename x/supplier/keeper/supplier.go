@@ -7,8 +7,8 @@ import (
 	storetypes "cosmossdk.io/store/types"
 	"github.com/cosmos/cosmos-sdk/runtime"
 
-	sharedtypes "github.com/pokt-network/pocket/x/shared/types"
-	"github.com/pokt-network/pocket/x/supplier/types"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
+	"github.com/pokt-network/poktroll/x/supplier/types"
 )
 
 // SetSupplier set a specific supplier in the store from its index
@@ -77,7 +77,7 @@ func (k Keeper) GetAllSuppliers(ctx context.Context) (suppliers []sharedtypes.Su
 // empty slices and maps as nil. We should investigate how we can make the codec
 // treat empty slices and maps as empty instead of nil.
 // Refer to the following discussion for more context:
-// https://github.com/pokt-network/pocket/pull/1103#discussion_r1992258822
+// https://github.com/pokt-network/poktroll/pull/1103#discussion_r1992258822
 func initializeNilSupplierFields(supplier *sharedtypes.Supplier) {
 	// The CosmosSDK codec treats empty slices and maps as nil, so we need to
 	// ensure that they are initialized as empty.

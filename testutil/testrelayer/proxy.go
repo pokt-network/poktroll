@@ -6,8 +6,8 @@ import (
 
 	"go.uber.org/mock/gomock"
 
-	"github.com/pokt-network/pocket/pkg/relayer"
-	"github.com/pokt-network/pocket/testutil/mockrelayer"
+	"github.com/pokt-network/poktroll/pkg/relayer"
+	"github.com/pokt-network/poktroll/testutil/mockrelayer"
 )
 
 // NewMockOneTimeRelayerProxy creates a new mock RelayerProxy that:

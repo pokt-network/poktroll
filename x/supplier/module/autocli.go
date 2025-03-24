@@ -3,7 +3,7 @@ package supplier
 import (
 	autocliv1 "cosmossdk.io/api/cosmos/autocli/v1"
 
-	modulev1 "github.com/pokt-network/pocket/api/pocket/supplier"
+	modulev1 "github.com/pokt-network/poktroll/api/pocket/supplier"
 )
 
 // AutoCLIOptions implements the autocli.HasAutoCLIConfig interface.

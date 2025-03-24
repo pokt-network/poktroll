@@ -5,7 +5,7 @@
 
 package testkeyring
 
-import "github.com/pokt-network/pocket/cmd/pocketd/cmd"
+import "github.com/pokt-network/poktroll/cmd/pocketd/cmd"
 
 var preGeneratedAccounts *PreGeneratedAccountIterator
 

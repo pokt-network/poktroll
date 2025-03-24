@@ -7,7 +7,7 @@ import (
 
 	"github.com/gorilla/websocket"
 
-	"github.com/pokt-network/pocket/pkg/client"
+	"github.com/pokt-network/poktroll/pkg/client"
 )
 
 const wssPrefix = "wss://"

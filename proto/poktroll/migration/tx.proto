@@ -13,7 +13,7 @@ import "pocket/application/types.proto";
 import "pocket/shared/supplier.proto";
 import "cosmos/base/v1beta1/coin.proto";
 
-option go_package = "github.com/pokt-network/pocket/x/migration/types";
+option go_package = "github.com/pokt-network/poktroll/x/migration/types";
 option (gogoproto.stable_marshaler_all) = true;
 
 // Msg defines the Msg service.

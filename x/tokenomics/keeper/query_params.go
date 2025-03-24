@@ -6,7 +6,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"github.com/pokt-network/pocket/x/tokenomics/types"
+	"github.com/pokt-network/poktroll/x/tokenomics/types"
 )
 
 func (k Keeper) Params(

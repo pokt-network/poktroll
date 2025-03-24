@@ -6,13 +6,13 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 
-	testevents "github.com/pokt-network/pocket/testutil/events"
-	keepertest "github.com/pokt-network/pocket/testutil/keeper"
-	"github.com/pokt-network/pocket/testutil/sample"
-	"github.com/pokt-network/pocket/x/application/keeper"
-	apptypes "github.com/pokt-network/pocket/x/application/types"
-	gatewaytypes "github.com/pokt-network/pocket/x/gateway/types"
-	sharedtypes "github.com/pokt-network/pocket/x/shared/types"
+	testevents "github.com/pokt-network/poktroll/testutil/events"
+	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
+	"github.com/pokt-network/poktroll/testutil/sample"
+	"github.com/pokt-network/poktroll/x/application/keeper"
+	apptypes "github.com/pokt-network/poktroll/x/application/types"
+	gatewaytypes "github.com/pokt-network/poktroll/x/gateway/types"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 func TestMsgServer_DelegateToGateway_SuccessfullyDelegate(t *testing.T) {

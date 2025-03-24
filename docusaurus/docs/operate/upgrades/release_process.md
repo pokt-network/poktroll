@@ -26,7 +26,7 @@ TODO(#791): The process of adding the `consensus-breaking` label is still not fo
 
 - **Find consensus breaking changes**: Review merged Pull Requests (PRs) with the `consensus-breaking` label.
   If any exist, assume the release will require an upgrade.
-  [Here is a link](https://github.com/pokt-network/pocket/pulls?q=sort%3Aupdated-desc+is%3Apr+is%3Amerged+label%3Aconsensus-breaking) for convenience.
+  [Here is a link](https://github.com/pokt-network/poktroll/pulls?q=sort%3Aupdated-desc+is%3Apr+is%3Amerged+label%3Aconsensus-breaking) for convenience.
 - **Verify a Full Node**: Deploy a Full Node on TestNet and allow it to sync and operate for a few days to verify that no accidentally introduced consensus-breaking changes affect the ability to sync. See the instructions in the [Quickstart Guide](../../operate/cheat_sheets/docker_compose_debian_cheatsheet.md for deploying a Full Node.
 - **Update Upgrade List**: If the new release includes an upgrade transaction for automatic upgrades, add the new release to the table in the [Upgrades List](./upgrade_list.md).
 
@@ -39,7 +39,7 @@ TODO(#791): The process of adding the `consensus-breaking` label is still not fo
 
 :::tip
 
-You can find an example [here](https://github.com/pokt-network/pocket/releases/tag/v0.0.7).
+You can find an example [here](https://github.com/pokt-network/poktroll/releases/tag/v0.0.7).
 
 :::
 
@@ -52,7 +52,7 @@ You can find an example [here](https://github.com/pokt-network/pocket/releases/t
 
 <!--
 IMPORTANT:If this release will be used to issue upgrade on the network, add a link to the upgrade code
-such as https://github.com/pokt-network/pocket/blob/main/app/upgrades/historical.go#L51.
+such as https://github.com/pokt-network/poktroll/blob/main/app/upgrades/historical.go#L51.
 -->
 
 - **Planned Upgrade:** ❌ Not applicable for this release.

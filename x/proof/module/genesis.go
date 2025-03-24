@@ -3,8 +3,8 @@ package proof
 import (
 	"context"
 
-	"github.com/pokt-network/pocket/x/proof/keeper"
-	"github.com/pokt-network/pocket/x/proof/types"
+	"github.com/pokt-network/poktroll/x/proof/keeper"
+	"github.com/pokt-network/poktroll/x/proof/types"
 )
 
 // InitGenesis initializes the module's state from a provided genesis state.

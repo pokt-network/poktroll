@@ -1,7 +1,7 @@
 syntax = "proto3";
 package pocket.application;
 
-option go_package = "github.com/pokt-network/pocket/x/application/types";
+option go_package = "github.com/pokt-network/poktroll/x/application/types";
 option (gogoproto.stable_marshaler_all) = true;
 
 import "amino/amino.proto";
@@ -19,17 +19,17 @@ service Query {
 
   // Parameters queries the parameters of the module.
   rpc Params (QueryParamsRequest) returns (QueryParamsResponse) {
-    option (google.api.http).get = "/pokt-network/pocket/application/params";
+    option (google.api.http).get = "/pokt-network/poktroll/application/params";
 
   }
 
   // Queries a list of Application items.
   rpc Application    (QueryGetApplicationRequest) returns (QueryGetApplicationResponse) {
-    option (google.api.http).get = "/pokt-network/pocket/application/application/{address}";
+    option (google.api.http).get = "/pokt-network/poktroll/application/application/{address}";
 
   }
   rpc AllApplications (QueryAllApplicationsRequest) returns (QueryAllApplicationsResponse) {
-    option (google.api.http).get = "/pokt-network/pocket/application/application";
+    option (google.api.http).get = "/pokt-network/poktroll/application/application";
 
   }
 }

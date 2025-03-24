@@ -69,7 +69,7 @@ func NewIntegrationApp(
 
 #### Customizing `integration.App` Configuration
 
-If the existing [`IntegrationAppConfig`](https://github.com/pokt-network/pocket/blob/main/testutil/integration/options.go#L13) is insufficient, it may be extended with additional fields, corresponding logic, and `IntegrationAppOptionFn`s to set them.
+If the existing [`IntegrationAppConfig`](https://github.com/pokt-network/poktroll/blob/main/testutil/integration/options.go#L13) is insufficient, it may be extended with additional fields, corresponding logic, and `IntegrationAppOptionFn`s to set them.
 
 ### Module Configuration
 
@@ -77,9 +77,9 @@ Integrated modules can be configured using `IntegrationAppOptionFn` typed option
 
 Example use cases include:
 
-- Setting custom genesis states one or more modules (see [`integration.WithModuleGenesisState()`](https://github.com/pokt-network/pocket/blob/main/testutil/integration/options.go#L40)).
-- Setting up a faucet account (see: [`newFaucetInitChainerFn()`](https://github.com/pokt-network/pocket/blob/main/testutil/integration/app.go#L985)).
-- Collecting module info (see: [`newInitChainerCollectModuleNames()`](https://github.com/pokt-network/pocket/blob/main/testutil/integration/suites/base.go#L157)).
+- Setting custom genesis states one or more modules (see [`integration.WithModuleGenesisState()`](https://github.com/pokt-network/poktroll/blob/main/testutil/integration/options.go#L40)).
+- Setting up a faucet account (see: [`newFaucetInitChainerFn()`](https://github.com/pokt-network/poktroll/blob/main/testutil/integration/app.go#L985)).
+- Collecting module info (see: [`newInitChainerCollectModuleNames()`](https://github.com/pokt-network/poktroll/blob/main/testutil/integration/suites/base.go#L157)).
 
 #### Setting Module Genesis State
 

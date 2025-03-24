@@ -9,8 +9,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	poktrand "github.com/pokt-network/pocket/pkg/crypto/rand"
-	prooftypes "github.com/pokt-network/pocket/x/proof/types"
+	poktrand "github.com/pokt-network/poktroll/pkg/crypto/rand"
+	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 )
 
 func TestSeededFloat64(t *testing.T) {

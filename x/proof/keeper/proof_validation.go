@@ -36,11 +36,11 @@ import (
 	cosmostelemetry "github.com/cosmos/cosmos-sdk/telemetry"
 	"github.com/pokt-network/smt"
 
-	"github.com/pokt-network/pocket/pkg/crypto/protocol"
-	"github.com/pokt-network/pocket/telemetry"
-	"github.com/pokt-network/pocket/x/proof/types"
-	servicetypes "github.com/pokt-network/pocket/x/service/types"
-	sessiontypes "github.com/pokt-network/pocket/x/session/types"
+	"github.com/pokt-network/poktroll/pkg/crypto/protocol"
+	"github.com/pokt-network/poktroll/telemetry"
+	"github.com/pokt-network/poktroll/x/proof/types"
+	servicetypes "github.com/pokt-network/poktroll/x/service/types"
+	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 )
 
 // EnsureWellFormedProof validates a supplier's proof for:

@@ -5,7 +5,7 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/runtime"
 
-	"github.com/pokt-network/pocket/x/migration/types"
+	"github.com/pokt-network/poktroll/x/migration/types"
 )
 
 // GetParams get all parameters as types.Params

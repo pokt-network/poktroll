@@ -3,8 +3,8 @@ package relay_authenticator
 import (
 	"context"
 
-	servicetypes "github.com/pokt-network/pocket/x/service/types"
-	sharedtypes "github.com/pokt-network/pocket/x/shared/types"
+	servicetypes "github.com/pokt-network/poktroll/x/service/types"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 // VerifyRelayRequest checks the relay request signature and session validity.

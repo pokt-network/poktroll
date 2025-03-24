@@ -12,9 +12,9 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"github.com/pokt-network/pocket/testutil/nullify"
-	application "github.com/pokt-network/pocket/x/application/module"
-	"github.com/pokt-network/pocket/x/application/types"
+	"github.com/pokt-network/poktroll/testutil/nullify"
+	application "github.com/pokt-network/poktroll/x/application/module"
+	"github.com/pokt-network/poktroll/x/application/types"
 )
 
 func TestShowApplication(t *testing.T) {

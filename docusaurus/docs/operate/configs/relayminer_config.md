@@ -11,7 +11,7 @@ claims and submitting proofs.
 
 :::tip
 
-You can find a fully featured example configuration at [relayminer_config_full_example.yaml](https://github.com/pokt-network/pocket/tree/main/localnet/pocketd/config/relayminer_config_full_example.yaml).
+You can find a fully featured example configuration at [relayminer_config_full_example.yaml](https://github.com/pokt-network/poktroll/tree/main/localnet/pocketd/config/relayminer_config_full_example.yaml).
 
 :::
 
@@ -473,7 +473,7 @@ flowchart
 
 ## Supported server types
 
-The list of supported server types can be found at [pkg/relayer/config/types.go](https://github.com/pokt-network/pocket/tree/main/pkg/relayer/config/types.go#L8)
+The list of supported server types can be found at [pkg/relayer/config/types.go](https://github.com/pokt-network/poktroll/tree/main/pkg/relayer/config/types.go#L8)
 
 ## Payable Proof Submissions
 
@@ -541,7 +541,7 @@ proof_submission_fee:
   denom: upokt
 ```
 
-The list of `Proof` governance parameters can be found at [proto/proof/params.proto](https://github.com/pokt-network/pocket/blob/main/proto/pocket/proof/params.proto)
+The list of `Proof` governance parameters can be found at [proto/proof/params.proto](https://github.com/pokt-network/poktroll/blob/main/proto/pocket/proof/params.proto)
 
 :::warning
 

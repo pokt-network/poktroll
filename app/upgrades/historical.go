@@ -19,7 +19,7 @@ import (
 
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 
-	"github.com/pokt-network/pocket/app/keepers"
+	"github.com/pokt-network/poktroll/app/keepers"
 )
 
 // defaultUpgradeHandler should be used for upgrades that only update the `ConsensusVersion`.

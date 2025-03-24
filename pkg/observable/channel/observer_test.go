@@ -8,7 +8,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/pokt-network/pocket/pkg/observable"
+	"github.com/pokt-network/poktroll/pkg/observable"
 )
 
 func TestObserver_Unsubscribe(t *testing.T) {

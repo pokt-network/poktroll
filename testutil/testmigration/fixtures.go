@@ -10,8 +10,8 @@ import (
 	"github.com/regen-network/gocuke"
 	"github.com/stretchr/testify/require"
 
-	"github.com/pokt-network/pocket/app/volatile"
-	migrationtypes "github.com/pokt-network/pocket/x/migration/types"
+	"github.com/pokt-network/poktroll/app/volatile"
+	migrationtypes "github.com/pokt-network/poktroll/x/migration/types"
 )
 
 // MorseAccountActorType is an enum which represents all possible staked and

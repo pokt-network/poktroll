@@ -31,7 +31,7 @@ import (
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/require"
 
-	"github.com/pokt-network/pocket/app"
+	"github.com/pokt-network/poktroll/app"
 )
 
 const (

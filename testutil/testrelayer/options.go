@@ -7,8 +7,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/pokt-network/pocket/pkg/relayer"
-	"github.com/pokt-network/pocket/pkg/relayer/session"
+	"github.com/pokt-network/poktroll/pkg/relayer"
+	"github.com/pokt-network/poktroll/pkg/relayer/session"
 )
 
 func WithTempStoresDirectory(t *testing.T) relayer.RelayerSessionsManagerOption {

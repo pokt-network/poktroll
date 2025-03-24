@@ -7,15 +7,15 @@ import (
 
 	"cosmossdk.io/depinject"
 
-	"github.com/pokt-network/pocket/pkg/client"
-	"github.com/pokt-network/pocket/pkg/crypto/protocol"
-	"github.com/pokt-network/pocket/pkg/either"
-	"github.com/pokt-network/pocket/pkg/observable"
-	"github.com/pokt-network/pocket/pkg/observable/channel"
-	"github.com/pokt-network/pocket/pkg/observable/filter"
-	"github.com/pokt-network/pocket/pkg/observable/logging"
-	"github.com/pokt-network/pocket/pkg/relayer"
-	servicetypes "github.com/pokt-network/pocket/x/service/types"
+	"github.com/pokt-network/poktroll/pkg/client"
+	"github.com/pokt-network/poktroll/pkg/crypto/protocol"
+	"github.com/pokt-network/poktroll/pkg/either"
+	"github.com/pokt-network/poktroll/pkg/observable"
+	"github.com/pokt-network/poktroll/pkg/observable/channel"
+	"github.com/pokt-network/poktroll/pkg/observable/filter"
+	"github.com/pokt-network/poktroll/pkg/observable/logging"
+	"github.com/pokt-network/poktroll/pkg/relayer"
+	servicetypes "github.com/pokt-network/poktroll/x/service/types"
 )
 
 var _ relayer.Miner = (*miner)(nil)
