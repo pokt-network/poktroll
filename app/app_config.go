@@ -1,10 +1,6 @@
 package app
 
 import (
-	migrationmodulev1 "github.com/pokt-network/poktroll/api/pocket/migration/module"
-	_ "github.com/pokt-network/poktroll/x/migration/module" // import for side-effects
-	migrationmoduletypes "github.com/pokt-network/poktroll/x/migration/types"
-
 	// this line is used by starport scaffolding # stargate/app/moduleImport
 	"time"
 
@@ -78,6 +74,7 @@ import (
 
 	applicationmodulev1 "github.com/pokt-network/poktroll/api/pocket/application/module"
 	gatewaymodulev1 "github.com/pokt-network/poktroll/api/pocket/gateway/module"
+	migrationmodulev1 "github.com/pokt-network/poktroll/api/pocket/migration/module"
 	proofmodulev1 "github.com/pokt-network/poktroll/api/pocket/proof/module"
 	servicemodulev1 "github.com/pokt-network/poktroll/api/pocket/service/module"
 	sessionmodulev1 "github.com/pokt-network/poktroll/api/pocket/session/module"
@@ -88,6 +85,8 @@ import (
 	applicationmoduletypes "github.com/pokt-network/poktroll/x/application/types"
 	_ "github.com/pokt-network/poktroll/x/gateway/module" // import for side-effects
 	gatewaymoduletypes "github.com/pokt-network/poktroll/x/gateway/types"
+	_ "github.com/pokt-network/poktroll/x/migration/module" // import for side-effects
+	migrationmoduletypes "github.com/pokt-network/poktroll/x/migration/types"
 	_ "github.com/pokt-network/poktroll/x/proof/module" // import for side-effects
 	proofmoduletypes "github.com/pokt-network/poktroll/x/proof/types"
 	_ "github.com/pokt-network/poktroll/x/service/module" // import for side-effects

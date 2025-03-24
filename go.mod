@@ -1,4 +1,4 @@
-module github.com/pokt-network/pocket
+module github.com/pokt-network/poktroll
 
 go 1.23.0
 
