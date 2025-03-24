@@ -14,15 +14,33 @@ localnet_up_quick: check_docker_ps check_kind_context ## Starts up a localnet wi
 localnet_down: ## Delete resources created by localnet
 	tilt down
 
+MOVE_DIR = $(HOME)
+OLD_DIR = .poktroll
+NEW_DIR = .pocket
+
+.PHONY: move_poktroll_to_pocket
+# Internal Helper to move the .poktroll directory to .pocket
+move_poktroll_to_pocket:
+	@echo "###############################################"
+	@echo "TODO_MAINNET_MIGRATION(@olshansky): Manually moving HOME/.poktroll to HOME/.pocket. This is a temporary fix until ignite CLI uses the project (not chain) name. Ref: https://docs.ignite.com/nightly/references/cli"
+	@echo "Creating new directory if it doesn't exist..."
+	@mkdir -p $(HOME)/.pocket
+	@echo "Moving contents from .poktroll to .pocket..."
+	@rsync -av --remove-source-files $(HOME)/.poktroll/ $(HOME)/.pocket/
+	@echo "Removing old directory..."
+	@rmdir $(HOME)/.poktroll 2>/dev/null || echo "Directory not empty, skipping removal."
+	@echo "Move completed successfully!"
+	@echo "###############################################"
+
 .PHONY: localnet_regenesis
 localnet_regenesis: check_yq warn_message_acc_initialize_pubkeys ## Regenerate the localnet genesis file
 # NOTE: intentionally not using --home <dir> flag to avoid overwriting the test keyring
 	@echo "Initializing chain..."
 	@set -e
 	@ignite chain init --skip-proto
+	$(MAKE) move_poktroll_to_pocket
 	AUTH_CONTENT=$$(cat ./tools/scripts/authz/dao_genesis_authorizations.json | jq -r tostring); \
 	$(SED) -i -E 's!^(\s*)"authorization": (\[\]|null)!\1"authorization": '$$AUTH_CONTENT'!' ${HOME}/.pocket/config/genesis.json;
-
 	@cp -r ${HOME}/.pocket/keyring-test $(POCKETD_HOME)
 	@cp -r ${HOME}/.pocket/config $(POCKETD_HOME)/
 

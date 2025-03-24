@@ -25,12 +25,12 @@ bin
 
 # Before we provision the localnet, `ignite` creates the accounts, genesis, etc. for us
 # As many of the files are dynamic, we only preserve the config files in git history.
-localnet/pocket/*
+localnet/pocketd/*
 localnet/*/config/*.json
-!localnet/pocket/config/
-!localnet/pocket/config/app.toml
-!localnet/pocket/config/client.toml
-!localnet/pocket/config/config.toml
+!localnet/pocketd/config/
+!localnet/pocketd/config/app.toml
+!localnet/pocketd/config/client.toml
+!localnet/pocketd/config/config.toml
 
 # Macos
 .DS_Store
