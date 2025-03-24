@@ -1,7 +1,7 @@
 package app
 
 import (
-	migrationmodulev1 "github.com/pokt-network/poktroll/api/poktroll/migration/module"
+	migrationmodulev1 "github.com/pokt-network/poktroll/api/pocket/migration/module"
 	_ "github.com/pokt-network/poktroll/x/migration/module" // import for side-effects
 	migrationmoduletypes "github.com/pokt-network/poktroll/x/migration/types"
 
@@ -76,14 +76,14 @@ import (
 	ibcexported "github.com/cosmos/ibc-go/v8/modules/core/exported"
 	"google.golang.org/protobuf/types/known/durationpb"
 
-	applicationmodulev1 "github.com/pokt-network/poktroll/api/poktroll/application/module"
-	gatewaymodulev1 "github.com/pokt-network/poktroll/api/poktroll/gateway/module"
-	proofmodulev1 "github.com/pokt-network/poktroll/api/poktroll/proof/module"
-	servicemodulev1 "github.com/pokt-network/poktroll/api/poktroll/service/module"
-	sessionmodulev1 "github.com/pokt-network/poktroll/api/poktroll/session/module"
-	sharedmodulev1 "github.com/pokt-network/poktroll/api/poktroll/shared/module"
-	suppliermodulev1 "github.com/pokt-network/poktroll/api/poktroll/supplier/module"
-	tokenomicsmodulev1 "github.com/pokt-network/poktroll/api/poktroll/tokenomics/module"
+	applicationmodulev1 "github.com/pokt-network/poktroll/api/pocket/application/module"
+	gatewaymodulev1 "github.com/pokt-network/poktroll/api/pocket/gateway/module"
+	proofmodulev1 "github.com/pokt-network/poktroll/api/pocket/proof/module"
+	servicemodulev1 "github.com/pokt-network/poktroll/api/pocket/service/module"
+	sessionmodulev1 "github.com/pokt-network/poktroll/api/pocket/session/module"
+	sharedmodulev1 "github.com/pokt-network/poktroll/api/pocket/shared/module"
+	suppliermodulev1 "github.com/pokt-network/poktroll/api/pocket/supplier/module"
+	tokenomicsmodulev1 "github.com/pokt-network/poktroll/api/pocket/tokenomics/module"
 	_ "github.com/pokt-network/poktroll/x/application/module" // import for side-effects
 	applicationmoduletypes "github.com/pokt-network/poktroll/x/application/types"
 	_ "github.com/pokt-network/poktroll/x/gateway/module" // import for side-effects

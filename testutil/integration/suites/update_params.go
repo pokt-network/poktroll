@@ -129,7 +129,7 @@ func (s *ParamsSuite) SetupTestAuthzAccounts(t *testing.T) {
 func (s *ParamsSuite) SetupTestAuthzGrants(t *testing.T) {
 	t.Helper()
 
-	// Create authz grants for all poktroll modules' MsgUpdateParams messages.
+	// Create authz grants for all pocket modules' MsgUpdateParams messages.
 	s.RunAuthzGrantMsgForPoktrollModules(t,
 		s.AuthorityAddr,
 		s.AuthorizedAddr,
@@ -137,7 +137,7 @@ func (s *ParamsSuite) SetupTestAuthzGrants(t *testing.T) {
 		s.GetPoktrollModuleNames()...,
 	)
 
-	// Create authz grants for all poktroll modules' MsgUpdateParam messages.
+	// Create authz grants for all pocket modules' MsgUpdateParam messages.
 	s.RunAuthzGrantMsgForPoktrollModules(t,
 		s.AuthorityAddr,
 		s.AuthorizedAddr,

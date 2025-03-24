@@ -1,13 +1,13 @@
 ---
-title: poktrolld Installation
+title: pocketd Installation
 sidebar_position: 1
 ---
 
 :::tip TL;DR If you have brew
 
 ```bash
-brew tap pokt-network/poktroll
-brew install poktrolld
+brew tap pokt-network/pocket
+brew install pocketd
 ```
 
 :::
@@ -29,42 +29,42 @@ Ensure you have [Homebrew](https://brew.sh/) installed.
 Then run the following commands:
 
 ```bash
-brew tap pokt-network/poktroll
-brew install poktrolld
+brew tap pokt-network/pocket
+brew install pocketd
 ```
 
 And verify it worked by running:
 
 ```bash
-poktrolld version
-poktrolld --help
+pocketd version
+pocketd --help
 ```
 
 <details>
 <summary>
 <h3>Troubleshooting Homebrew</h3>
 <p>
-Read this section if you're having problems downloading or upgrading your `poktrolld` binary using Homebrew.
+Read this section if you're having problems downloading or upgrading your `pocketd` binary using Homebrew.
 </p>
 </summary>
 
-The source code for the Homebrew formula is available in the [homebrew-poktroll](https://github.com/pokt-network/homebrew-poktroll) repository.
+The source code for the Homebrew formula is available in the [homebrew-pocket](https://github.com/pokt-network/homebrew-pocket) repository.
 
 If you encounter any issues, like being unable to install the latest version, you can try the following:
 
 ```bash
 brew update
-brew upgrade poktrolld
+brew upgrade pocketd
 ```
 
 Or as a last resort, you can try the following:
 
 ```bash
 brew tap --repair
-brew untap pokt-network/poktroll
-brew uninstall poktrolld
-brew tap pokt-network/poktroll
-brew install poktrolld
+brew untap pokt-network/pocket
+brew uninstall pocketd
+brew tap pokt-network/pocket
+brew install pocketd
 ```
 
 </details>
@@ -74,8 +74,8 @@ brew install poktrolld
 :::tip tl;dr manual download
 
 1. Grab a binary from the [latest release](https://github.com/pokt-network/poktroll/releases/latest)
-2. Download the appropriate `poktroll_${OS}_${ARCH}.tar.gz` for your environment
-3. Untar the downloaded file to retrieve the `poktrolld` binary
+2. Download the appropriate `pocket_${OS}_${ARCH}.tar.gz` for your environment
+3. Untar the downloaded file to retrieve the `pocketd` binary
 4. Extract the binary to `/usr/local/bin`
    :::
 
@@ -87,16 +87,16 @@ The following snippet downloads/upgrades the binary to the latest released versi
 
 ```bash
 # Download the correct binary based on the OS and architecture
-curl -LO "https://github.com/pokt-network/poktroll/releases/latest/download/poktroll_$(uname | tr '[:upper:]' '[:lower:]')_$(uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/').tar.gz"
+curl -LO "https://github.com/pokt-network/poktroll/releases/latest/download/pocket_$(uname | tr '[:upper:]' '[:lower:]')_$(uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/').tar.gz"
 
 # Extract the downloaded tarball to /usr/local/bin
-sudo tar -zxf "poktroll_$(uname | tr '[:upper:]' '[:lower:]')_$(uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/').tar.gz" -C /usr/local/bin
+sudo tar -zxf "pocket_$(uname | tr '[:upper:]' '[:lower:]')_$(uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/').tar.gz" -C /usr/local/bin
 
 # Make the binary executable
-sudo chmod +x /usr/local/bin/poktrolld
+sudo chmod +x /usr/local/bin/pocketd
 
 # Check version
-poktrolld version
+pocketd version
 ```
 
 ### From Source (danger zone)
@@ -115,14 +115,14 @@ Ensure you have the following installed:
 - [Make](https://www.gnu.org/software/make/)
 - [Ignite CLI](https://docs.ignite.com/welcome/install)
 
-#### Installing poktrolld <!-- omit in toc -->
+#### Installing pocketd <!-- omit in toc -->
 
-Then, Retrieve the source code and build the `poktrolld` locally like so:
+Then, Retrieve the source code and build the `pocketd` locally like so:
 
 ```bash
 # Clone the repository
-git clone https://github.com/pokt-network/poktroll.git
-cd poktroll
+git clone https://github.com/pokt-network/pocket.git
+cd pocket
 
 # Optional: Switch to a specific version (recommended)
 # Replace v0.0.12 with your desired version from https://github.com/pokt-network/poktroll/releases
@@ -130,14 +130,14 @@ git checkout v0.0.12
 
 # Build the binary
 make go_develop
-make ignite_poktrolld_build
+make ignite_pocketd_build
 ```
 
 And verify it worked by running:
 
 ```bash
-poktrolld version
-poktrolld --help
+pocketd version
+pocketd --help
 ```
 
 ## Windows Users (why!?)

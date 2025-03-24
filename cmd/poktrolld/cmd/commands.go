@@ -26,7 +26,7 @@ import (
 	"github.com/spf13/viper"
 
 	"github.com/pokt-network/poktroll/app"
-	"github.com/pokt-network/poktroll/cmd/poktrolld/cmd/migrate"
+	"github.com/pokt-network/poktroll/cmd/pocketd/cmd/migrate"
 )
 
 func initRootCmd(
@@ -61,7 +61,7 @@ func addModuleInitFlags(startCmd *cobra.Command) {
 	crisis.AddModuleInitFlags(startCmd)
 }
 
-// genesisCommand builds genesis-related `poktrolld genesis` command. Users may provide application specific commands as a parameter
+// genesisCommand builds genesis-related `pocketd genesis` command. Users may provide application specific commands as a parameter
 func genesisCommand(txConfig client.TxConfig, basicManager module.BasicManager, cmds ...*cobra.Command) *cobra.Command {
 	cmd := genutilcli.Commands(txConfig, basicManager, app.DefaultNodeHome)
 

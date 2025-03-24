@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/pokt-network/poktroll/app/volatile"
-	"github.com/pokt-network/poktroll/cmd/poktrolld/cmd"
+	"github.com/pokt-network/poktroll/cmd/pocketd/cmd"
 	testkeeper "github.com/pokt-network/poktroll/testutil/keeper"
 	"github.com/pokt-network/poktroll/testutil/proof"
 	"github.com/pokt-network/poktroll/testutil/sample"

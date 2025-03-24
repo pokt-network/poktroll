@@ -50,7 +50,7 @@ jobs:
           DOCKER_METADATA_PR_HEAD_SHA: "true"
         with:
           images: |
-            ghcr.io/pokt-network/poktrolld
+            ghcr.io/pokt-network/pocketd
           tags: |
             type=ref,event=branch,suffix=-dev
             type=ref,event=pr
@@ -70,7 +70,7 @@ jobs:
         run: |
           mkdir -p ./bin # Make sure the bin directory exists
           cp $(which ignite) ./bin # Copy ignite binary to the repo's bin directory
-          cp $(go env GOPATH)/bin/poktrolld ./bin # Copy the binary to the repo's bin directory
+          cp $(go env GOPATH)/bin/pocketd ./bin # Copy the binary to the repo's bin directory
           ls -la ./bin
 
       - name: Build and push Docker image
@@ -118,5 +118,5 @@ jobs:
           IMAGE_TAG: sha-${{ github.event.pull_request.head.sha || github.sha }}
           NAMESPACE: devnet-issue-${{ github.event.number }}
           JOB_NAME: e2e-test-${{ github.event.pull_request.head.sha || github.sha }}
-          POCKET_NODE: tcp://devnet-issue-${{ github.event.number }}-validator-poktrolld:26657
+          POCKET_NODE: tcp://devnet-issue-${{ github.event.number }}-validator-pocketd:26657
         run: bash .github/workflows-helpers/run-e2e-test.sh

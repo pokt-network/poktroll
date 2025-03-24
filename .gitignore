@@ -25,12 +25,12 @@ bin
 
 # Before we provision the localnet, `ignite` creates the accounts, genesis, etc. for us
 # As many of the files are dynamic, we only preserve the config files in git history.
-localnet/poktrolld/*
+localnet/pocketd/*
 localnet/*/config/*.json
-!localnet/poktrolld/config/
-!localnet/poktrolld/config/app.toml
-!localnet/poktrolld/config/client.toml
-!localnet/poktrolld/config/config.toml
+!localnet/pocketd/config/
+!localnet/pocketd/config/app.toml
+!localnet/pocketd/config/client.toml
+!localnet/pocketd/config/config.toml
 
 # Macos
 .DS_Store
@@ -59,7 +59,7 @@ localnet_config.yaml-e
 # These are needed to ignore byproducts of `make proto_fix_self_import`
 # Since sed functions different on macOS and Linux, we need to implement
 # some workarounds by always using "sed -i'' -e" instead of just "sed -i -e".
-api/poktroll/**/*.go-E
+api/pocket/**/*.go-E
 
 # Relase artifacts produced by `ignite chain build --release`
 release
@@ -94,7 +94,7 @@ shannon_supplier_config.yaml
 gentx-*.json
 
 # Binaries VSCode builds for debugging
-cmd/poktrolld/*debug_bin*
+cmd/pocketd/*debug_bin*
 
 # The temporary file created by e2e scripts
 job.yaml

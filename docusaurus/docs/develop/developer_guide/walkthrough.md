@@ -12,7 +12,7 @@ The goal of this document is to get you up and running with a LocalNet, some
 manually deployed local actors, and sending an end-to-end relay. It will not
 go in depth into any concepts.
 
-Create a new [GitHub issue here](https://github.com/pokt-network/pocket/issues/new/choose)
+Create a new [GitHub issue here](https://github.com/pokt-network/poktroll/issues/new/choose)
 **if you encounter any problems.**
 :::
 
@@ -20,7 +20,7 @@ Create a new [GitHub issue here](https://github.com/pokt-network/pocket/issues/n
 - [Video Walkthrough](#video-walkthrough)
 - [0. Install Dependencies](#0-install-dependencies)
 - [1. Launch \& Inspect LocalNet](#1-launch--inspect-localnet)
-  - [1.1 Clone the `poktroll` repository](#11-clone-the-poktroll-repository)
+  - [1.1 Clone the `pocket` repository](#11-clone-the-pocket-repository)
   - [1.2 See all the available helper commands in `Makefile`](#12-see-all-the-available-helper-commands-in-makefile)
   - [1.3 Prepare your development environment](#13-prepare-your-development-environment)
   - [1.4 Create a `k8s` cluster](#14-create-a-k8s-cluster)
@@ -53,7 +53,7 @@ Create a new [GitHub issue here](https://github.com/pokt-network/pocket/issues/n
 - [6. Dynamically Scaling LocalNet](#6-dynamically-scaling-localnet)
 - [7. Explore the tools](#7-explore-the-tools)
   - [E2E Tests](#e2e-tests)
-  - [poktrolld](#poktrolld)
+  - [pocketd](#pocketd)
   - [Makefile](#makefile)
   - [Ignite](#ignite)
 
@@ -67,11 +67,11 @@ development purposes.
 :::
 
 If you want to deploy your own Gateway and Supplier, please follow the instructions
-in our [poktroll-docker-compose-example](https://github.com/pokt-network/poktroll-docker-compose-example)
+in our [pocket-docker-compose-example](https://github.com/pokt-network/pocket-docker-compose-example)
 example.
 
 If you want to deploy a Supplier & Gateway via a copy-pasta method without understanding
-anything, see the instructions [here](https://github.com/pokt-network/poktroll-docker-compose-example/blob/main/debian_cheasheet.md).
+anything, see the instructions [here](https://github.com/pokt-network/pocket-docker-compose-example/blob/main/debian_cheasheet.md).
 
 ## Video Walkthrough
 
@@ -115,11 +115,11 @@ It should look something like this once you're past the first section:
 
 ![Tilt LocalNet View](./img/quickstart_localnet.png)
 
-### 1.1 Clone the `poktroll` repository
+### 1.1 Clone the `pocket` repository
 
 ```bash
-git clone https://github.com/pokt-network/poktroll.git
-cd poktroll
+git clone https://github.com/pokt-network/pocket.git
+cd pocket
 ```
 
 ### 1.2 See all the available helper commands in `Makefile`
@@ -195,10 +195,10 @@ you can click in the top left corner to view its [grafana dashboard](http://loca
 
 ### 1.7 Check the status of the blockchain
 
-You can query the status of the blockchain using `poktrolld` by running:
+You can query the status of the blockchain using `pocketd` by running:
 
 ```bash
-poktrolld status --node=tcp://127.0.0.1:26657 | jq
+pocketd status --node=tcp://127.0.0.1:26657 | jq
 ```
 
 Alternatively, you use the [CometBFT](https://github.com/cometbft/cometbft) status directly at:
@@ -239,7 +239,7 @@ And create a new account named `shannon_supplier` by running:
 
 ```bash
 ignite account create shannon_supplier \
-  --keyring-dir=./localnet/poktrolld \
+  --keyring-dir=./localnet/pocketd \
   --keyring-backend test
 ```
 
@@ -260,7 +260,7 @@ Let's do the same thing for a `shannon_application`:
 
 ```bash
 ignite account create shannon_application \
-  --keyring-dir=./localnet/poktrolld \
+  --keyring-dir=./localnet/pocketd \
   --keyring-backend test
 ```
 
@@ -289,17 +289,17 @@ balances: []
 pagination: {}
 ```
 
-But if you look in our genesis file (`./localnet/poktrolld/config/genesis.json`)
+But if you look in our genesis file (`./localnet/pocketd/config/genesis.json`)
 you'll find that you actually have direct access to the `faucet`!
 
 You can send some uPOKT to your `shannon_supplier` by running:
 
 ```bash
-poktrolld \
+pocketd \
   tx bank send \
   faucet $SHANNON_SUPPLIER 420000000000069upokt \
   --node tcp://127.0.0.1:26657 \
-  --home=./localnet/poktrolld
+  --home=./localnet/pocketd
 ```
 
 And you'll find that `shannon_supplier` is now rolling in `POKT`:
@@ -318,11 +318,11 @@ pagination:
 Let's do the same thing for the `shannon_application`:
 
 ```bash
-poktrolld \
+pocketd \
   tx bank send \
   faucet $SHANNON_APPLICATION 420000000000069upokt \
   --node tcp://127.0.0.1:26657 \
-  --home=./localnet/poktrolld
+  --home=./localnet/pocketd
 ```
 
 And make sure to check its balance again:
@@ -401,20 +401,20 @@ EOF
 Stake the `shannon_supplier` onchain:
 
 ```bash
-poktrolld \
+pocketd \
   tx supplier stake-supplier \
   --config shannon_supplier_config.yaml \
   --keyring-backend test \
   --from shannon_supplier \
   --node tcp://127.0.0.1:26657 \
-  --home=./localnet/poktrolld \
+  --home=./localnet/pocketd \
   --yes
 ```
 
 And verify that the supplier is now staked with:
 
 ```bash
-poktrolld query supplier show-supplier $SHANNON_SUPPLIER --node tcp://127.0.0.1:26657
+pocketd query supplier show-supplier $SHANNON_SUPPLIER --node tcp://127.0.0.1:26657
 ```
 
 ### 3.4 Prepare the RelayMiner configuration
@@ -428,7 +428,7 @@ The following is an example config to get you started:
 ```bash
 cat <<EOF >> shannon_relayminer_config.yaml
 default_signing_key_names: [ "shannon_supplier" ]
-smt_store_path: $HOME/.poktroll/smt
+smt_store_path: $HOME/.pocket/smt
 metrics:
   enabled: true
   addr: :9999 # you may need to change the metrics server port due to port conflicts.
@@ -454,10 +454,10 @@ EOF
 Start the RelayMiner locally:
 
 ```bash
-poktrolld relayminer \
+pocketd relayminer \
   --config ./shannon_relayminer_config.yaml \
   --keyring-backend test \
-  --home=./localnet/poktrolld
+  --home=./localnet/pocketd
 ```
 
 Leave it running in its own shell instance and open a new one. We'll be using it
@@ -508,7 +508,7 @@ EOF
 Stake the application onchain:
 
 ```bash
-poktrolld --home=./localnet/poktrolld \
+pocketd --home=./localnet/pocketd \
   tx application stake-application \
   --config shannon_app_config.yaml \
   --keyring-backend test \
@@ -520,7 +520,7 @@ poktrolld --home=./localnet/poktrolld \
 And verify that the application is now staked with:
 
 ```bash
-poktrolld query application show-application $SHANNON_APPLICATION --node tcp://127.0.0.1:26657
+pocketd query application show-application $SHANNON_APPLICATION --node tcp://127.0.0.1:26657
 ```
 
 You can also you re-run, `make app_list` you should see that `SHANNON_APPLICATION` is now staked as an app:
@@ -635,7 +635,7 @@ As you're ready to dive in, develop or debug, you can view or inspect logs eithe
 through Tilt or Grafana.
 
 Given that we just staked a few suppliers, you customize the query to look for
-`Supplier` either on [Grafana](http://localhost:3003/explore?schemaVersion=1&panes=%7B%22d1l%22:%7B%22datasource%22:%22P8E80F9AEF21F6940%22,%22queries%22:%5B%7B%22refId%22:%22A%22,%22expr%22:%22%7Bcontainer%3D%5C%22poktrolld-validator%5C%22%7D%20%7C%3D%20%60Supplier%60%20%7C%20json%22,%22queryType%22:%22range%22,%22datasource%22:%7B%22type%22:%22loki%22,%22uid%22:%22P8E80F9AEF21F6940%22%7D,%22editorMode%22:%22builder%22%7D%5D,%22range%22:%7B%22from%22:%22now-1h%22,%22to%22:%22now%22%7D%7D%7D&orgId=1) or [Tilt](http://localhost:10350/r/validator/overview?term=Supplier).
+`Supplier` either on [Grafana](http://localhost:3003/explore?schemaVersion=1&panes=%7B%22d1l%22:%7B%22datasource%22:%22P8E80F9AEF21F6940%22,%22queries%22:%5B%7B%22refId%22:%22A%22,%22expr%22:%22%7Bcontainer%3D%5C%22pocketd-validator%5C%22%7D%20%7C%3D%20%60Supplier%60%20%7C%20json%22,%22queryType%22:%22range%22,%22datasource%22:%7B%22type%22:%22loki%22,%22uid%22:%22P8E80F9AEF21F6940%22%7D,%22editorMode%22:%22builder%22%7D%5D,%22range%22:%7B%22from%22:%22now-1h%22,%22to%22:%22now%22%7D%7D%7D&orgId=1) or [Tilt](http://localhost:10350/r/validator/overview?term=Supplier).
 
 ![Grafana Supplier Logs](./img/quickstart_grafana_supplier.png)
 
@@ -653,7 +653,7 @@ Go to our [localnet tutorial](../networks/localnet.md) to learn more.
 
 There are three primary tools you'll use to develop and interact with the network:
 
-1. `poktrolld` - the POKT Node CLI
+1. `pocketd` - the POKT Node CLI
 2. `make` - a collection of helpers to make your life easier
 3. `ignite` - a tool to manage the local k8s cluster
 
@@ -674,10 +674,10 @@ them with:
 make test_e2e
 ```
 
-### poktrolld
+### pocketd
 
-Run `poktrolld --help` in order to explore all the different. You will likely
-spend most of your time with either `poktrolld query --help` or `poktrolld tx --help`.
+Run `pocketd --help` in order to explore all the different. You will likely
+spend most of your time with either `pocketd query --help` or `pocketd tx --help`.
 
 ### Makefile
 

@@ -11,9 +11,9 @@ import (
 )
 
 const (
-	// poktrollMsgTypeFormat is the format for a poktroll module's message type.
+	// pocketMsgTypeFormat is the format for a pocket module's message type.
 	// The first %s is the module name, and the second %s is the message name.
-	poktrollMsgTypeFormat = "/poktroll.%s.%s"
+	pocketMsgTypeFormat = "/pocket.%s.%s"
 )
 
 var defaultAuthzGrantExpiration = time.Now().Add(time.Hour)
@@ -26,7 +26,7 @@ type AuthzIntegrationSuite struct {
 }
 
 // RunAuthzGrantMsgForPoktrollModules creates an onchain authz grant for the given
-// granter and grantee addresses for the specified message name in each of the poktroll
+// granter and grantee addresses for the specified message name in each of the pocket
 // modules present in the integration app.
 func (s *AuthzIntegrationSuite) RunAuthzGrantMsgForPoktrollModules(
 	t *testing.T,
@@ -102,7 +102,7 @@ func (s *AuthzIntegrationSuite) RunAuthzExecMsg(
 	return execResAny.(*authz.MsgExecResponse).Results, nil
 }
 
-// fmtPoktrollMsgType returns the formatted message type for a poktroll module.
+// fmtPoktrollMsgType returns the formatted message type for a pocket module.
 func fmtPoktrollMsgType(moduleName, msgName string) string {
-	return fmt.Sprintf(poktrollMsgTypeFormat, moduleName, msgName)
+	return fmt.Sprintf(pocketMsgTypeFormat, moduleName, msgName)
 }

@@ -82,7 +82,7 @@ for such operations.`,
 	cmd.Flags().StringVar(&flagNodeRPCURL, cosmosflags.FlagNode, omittedDefaultFlagValue, "Register the default Cosmos node flag, which is needed to initialize the Cosmos query and tx contexts correctly. It can be used to override the `QueryNodeRPCURL` and `TxNodeRPCURL` fields in the config file if specified.")
 	cmd.Flags().StringVar(&flagNodeGRPCURL, cosmosflags.FlagGRPC, omittedDefaultFlagValue, "Register the default Cosmos node grpc flag, which is needed to initialize the Cosmos query context with grpc correctly. It can be used to override the `QueryNodeGRPCURL` field in the config file if specified.")
 	cmd.Flags().Bool(cosmosflags.FlagGRPCInsecure, true, "Used to initialize the Cosmos query context with grpc security options. It can be used to override the `QueryNodeGRPCInsecure` field in the config file if specified.")
-	cmd.Flags().String(cosmosflags.FlagChainID, "poktroll", "The network chain ID")
+	cmd.Flags().String(cosmosflags.FlagChainID, "pocket", "The network chain ID")
 	cmd.Flags().StringVar(&flagLogLevel, cosmosflags.FlagLogLevel, "debug", "The logging level (debug|info|warn|error)")
 	cmd.Flags().Float64(cosmosflags.FlagGasAdjustment, 1.5, "The adjustment factor to be multiplied by the gas estimate returned by the tx simulation")
 	cmd.Flags().String(cosmosflags.FlagGasPrices, "1upokt", "Set the gas unit price in upokt")
@@ -234,7 +234,7 @@ func setupRelayerDependencies(
 		config.NewSupplyParamsCacheFn[sessiontypes.Params](cache.WithNewBlockCacheClearing), // leaf
 		config.NewSupplyParamsCacheFn[prooftypes.Params](cache.WithNewBlockCacheClearing),   // leaf
 
-		// Setup the key-value caches for poktroll types and configure them to clear on new blocks.
+		// Setup the key-value caches for pocket types and configure them to clear on new blocks.
 		config.NewSupplyKeyValueCacheFn[sharedtypes.Service](cache.WithNewBlockCacheClearing),                // leaf
 		config.NewSupplyKeyValueCacheFn[servicetypes.RelayMiningDifficulty](cache.WithNewBlockCacheClearing), // leaf
 		config.NewSupplyKeyValueCacheFn[apptypes.Application](cache.WithNewBlockCacheClearing),               // leaf

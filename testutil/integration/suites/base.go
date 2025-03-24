@@ -32,7 +32,7 @@ type BaseIntegrationSuite struct {
 	suite.Suite
 	app *integration.App
 
-	poktrollModuleNames []string
+	pocketModuleNames []string
 	cosmosModuleNames   []string
 }
 
@@ -40,7 +40,7 @@ type BaseIntegrationSuite struct {
 func (s *BaseIntegrationSuite) NewApp(t *testing.T, opts ...integration.IntegrationAppOptionFn) *integration.App {
 	t.Helper()
 
-	s.poktrollModuleNames = nil
+	s.pocketModuleNames = nil
 	s.cosmosModuleNames = nil
 
 	defaultIntegrationAppOption := integration.WithInitChainerModuleFn(newInitChainerCollectModuleNamesFn(s))
@@ -62,10 +62,10 @@ func (s *BaseIntegrationSuite) GetApp() *integration.App {
 	return s.app
 }
 
-// GetPoktrollModuleNames returns the list of the names of all poktroll modules
+// GetPoktrollModuleNames returns the list of the names of all pocket modules
 // in the integration app.
 func (s *BaseIntegrationSuite) GetPoktrollModuleNames() []string {
-	return s.poktrollModuleNames
+	return s.pocketModuleNames
 }
 
 // GetCosmosModuleNames returns the list of the names of all cosmos-sdk modules
@@ -168,7 +168,7 @@ func (s *BaseIntegrationSuite) filterEvents(
 }
 
 // newInitChainerCollectModuleNamesFn returns an InitChainerModuleFn that collects
-// the names of cosmos and poktroll modules in their respective suite field slices.
+// the names of cosmos and pocket modules in their respective suite field slices.
 func newInitChainerCollectModuleNamesFn(suite *BaseIntegrationSuite) integration.InitChainerModuleFn {
 	return func(ctx cosmostypes.Context, cdc codec.Codec, mod appmodule.AppModule) {
 		modName, hasName := mod.(module.HasName)
@@ -177,12 +177,12 @@ func newInitChainerCollectModuleNamesFn(suite *BaseIntegrationSuite) integration
 		}
 
 		modType := reflect.TypeOf(mod)
-		if strings.Contains(modType.PkgPath(), "poktroll") {
-			suite.poktrollModuleNames = append(suite.poktrollModuleNames, modName.Name())
+		if strings.Contains(modType.PkgPath(), "pocket") {
+			suite.pocketModuleNames = append(suite.pocketModuleNames, modName.Name())
 			return
 		}
 
-		// NB: We can assume that any non-poktroll module is a cosmos-sdk module
+		// NB: We can assume that any non-pocket module is a cosmos-sdk module
 		// so long as we're not importing any third-party modules; in which case,
 		// we would have to add another check above.
 		suite.cosmosModuleNames = append(suite.cosmosModuleNames, modName.Name())

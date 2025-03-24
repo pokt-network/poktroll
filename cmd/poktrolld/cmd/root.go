@@ -30,9 +30,9 @@ import (
 )
 
 // TODO_MAINNET: adjust chain ID to `pocket`, `pokt` or `shannon`
-const DefaultChainID = "poktroll"
+const DefaultChainID = "pocket"
 
-// NewRootCmd creates a new root command for poktrolld. It is called once in the main function.
+// NewRootCmd creates a new root command for pocketd. It is called once in the main function.
 func NewRootCmd() *cobra.Command {
 	InitSDKConfig()
 
@@ -64,9 +64,9 @@ func NewRootCmd() *cobra.Command {
 	rootCmd := &cobra.Command{
 		Use:   app.Name + "d",
 		Short: "Interface with Pocket Network",
-		Long: `poktrolld is a binary that can be used to query, send transaction or start Pocket Network actors.
+		Long: `pocketd is a binary that can be used to query, send transaction or start Pocket Network actors.
 
-		For additional documentation, see https://dev.poktroll.com/tools/user_guide/poktrolld_cli
+		For additional documentation, see https://dev.pocket.com/tools/user_guide/pocketd_cli
 		`,
 		SilenceErrors: true,
 		PersistentPreRunE: func(cmd *cobra.Command, _ []string) (err error) {

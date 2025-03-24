@@ -4,7 +4,7 @@
     "grantee": "pokt1eeeksh2tvkh7wzmfrljnhw4wrhs55lcuvmekkw",
     "authorization": {
       "@type": "\/cosmos.authz.v1beta1.GenericAuthorization",
-      "msg": "\/poktroll.service.MsgUpdateParams"
+      "msg": "\/pocket.service.MsgUpdateParams"
     },
     "expiration": "2500-01-01T00:00:00Z"
   },
@@ -13,7 +13,7 @@
     "grantee": "pokt1eeeksh2tvkh7wzmfrljnhw4wrhs55lcuvmekkw",
     "authorization": {
       "@type": "\/cosmos.authz.v1beta1.GenericAuthorization",
-      "msg": "\/poktroll.session.MsgUpdateParams"
+      "msg": "\/pocket.session.MsgUpdateParams"
     },
     "expiration": "2500-01-01T00:00:00Z"
   },
@@ -22,7 +22,7 @@
     "grantee": "pokt1eeeksh2tvkh7wzmfrljnhw4wrhs55lcuvmekkw",
     "authorization": {
       "@type": "\/cosmos.authz.v1beta1.GenericAuthorization",
-      "msg": "\/poktroll.gateway.MsgUpdateParams"
+      "msg": "\/pocket.gateway.MsgUpdateParams"
     },
     "expiration": "2500-01-01T00:00:00Z"
   },
@@ -31,7 +31,7 @@
     "grantee": "pokt1eeeksh2tvkh7wzmfrljnhw4wrhs55lcuvmekkw",
     "authorization": {
       "@type": "\/cosmos.authz.v1beta1.GenericAuthorization",
-      "msg": "\/poktroll.application.MsgUpdateParams"
+      "msg": "\/pocket.application.MsgUpdateParams"
     },
     "expiration": "2500-01-01T00:00:00Z"
   },
@@ -40,7 +40,7 @@
     "grantee": "pokt1eeeksh2tvkh7wzmfrljnhw4wrhs55lcuvmekkw",
     "authorization": {
       "@type": "\/cosmos.authz.v1beta1.GenericAuthorization",
-      "msg": "\/poktroll.supplier.MsgUpdateParams"
+      "msg": "\/pocket.supplier.MsgUpdateParams"
     },
     "expiration": "2500-01-01T00:00:00Z"
   },
@@ -49,7 +49,7 @@
     "grantee": "pokt1eeeksh2tvkh7wzmfrljnhw4wrhs55lcuvmekkw",
     "authorization": {
       "@type": "\/cosmos.authz.v1beta1.GenericAuthorization",
-      "msg": "\/poktroll.proof.MsgUpdateParams"
+      "msg": "\/pocket.proof.MsgUpdateParams"
     },
     "expiration": "2500-01-01T00:00:00Z"
   },
@@ -58,7 +58,7 @@
     "grantee": "pokt1eeeksh2tvkh7wzmfrljnhw4wrhs55lcuvmekkw",
     "authorization": {
       "@type": "\/cosmos.authz.v1beta1.GenericAuthorization",
-      "msg": "\/poktroll.tokenomics.MsgUpdateParams"
+      "msg": "\/pocket.tokenomics.MsgUpdateParams"
     },
     "expiration": "2500-01-01T00:00:00Z"
   },
@@ -67,7 +67,7 @@
     "grantee": "pokt1eeeksh2tvkh7wzmfrljnhw4wrhs55lcuvmekkw",
     "authorization": {
       "@type": "\/cosmos.authz.v1beta1.GenericAuthorization",
-      "msg": "\/poktroll.shared.MsgUpdateParams"
+      "msg": "\/pocket.shared.MsgUpdateParams"
     },
     "expiration": "2500-01-01T00:00:00Z"
   },
@@ -76,7 +76,7 @@
     "grantee": "pokt1eeeksh2tvkh7wzmfrljnhw4wrhs55lcuvmekkw",
     "authorization": {
       "@type": "\/cosmos.authz.v1beta1.GenericAuthorization",
-      "msg": "\/poktroll.service.MsgUpdateParam"
+      "msg": "\/pocket.service.MsgUpdateParam"
     },
     "expiration": "2500-01-01T00:00:00Z"
   },
@@ -85,7 +85,7 @@
     "grantee": "pokt1eeeksh2tvkh7wzmfrljnhw4wrhs55lcuvmekkw",
     "authorization": {
       "@type": "\/cosmos.authz.v1beta1.GenericAuthorization",
-      "msg": "\/poktroll.session.MsgUpdateParam"
+      "msg": "\/pocket.session.MsgUpdateParam"
     },
     "expiration": "2500-01-01T00:00:00Z"
   },
@@ -94,7 +94,7 @@
     "grantee": "pokt1eeeksh2tvkh7wzmfrljnhw4wrhs55lcuvmekkw",
     "authorization": {
       "@type": "\/cosmos.authz.v1beta1.GenericAuthorization",
-      "msg": "\/poktroll.gateway.MsgUpdateParam"
+      "msg": "\/pocket.gateway.MsgUpdateParam"
     },
     "expiration": "2500-01-01T00:00:00Z"
   },
@@ -103,7 +103,7 @@
     "grantee": "pokt1eeeksh2tvkh7wzmfrljnhw4wrhs55lcuvmekkw",
     "authorization": {
       "@type": "\/cosmos.authz.v1beta1.GenericAuthorization",
-      "msg": "\/poktroll.application.MsgUpdateParam"
+      "msg": "\/pocket.application.MsgUpdateParam"
     },
     "expiration": "2500-01-01T00:00:00Z"
   },
@@ -112,7 +112,7 @@
     "grantee": "pokt1eeeksh2tvkh7wzmfrljnhw4wrhs55lcuvmekkw",
     "authorization": {
       "@type": "\/cosmos.authz.v1beta1.GenericAuthorization",
-      "msg": "\/poktroll.supplier.MsgUpdateParam"
+      "msg": "\/pocket.supplier.MsgUpdateParam"
     },
     "expiration": "2500-01-01T00:00:00Z"
   },
@@ -121,7 +121,7 @@
     "grantee": "pokt1eeeksh2tvkh7wzmfrljnhw4wrhs55lcuvmekkw",
     "authorization": {
       "@type": "\/cosmos.authz.v1beta1.GenericAuthorization",
-      "msg": "\/poktroll.proof.MsgUpdateParam"
+      "msg": "\/pocket.proof.MsgUpdateParam"
     },
     "expiration": "2500-01-01T00:00:00Z"
   },
@@ -130,7 +130,7 @@
     "grantee": "pokt1eeeksh2tvkh7wzmfrljnhw4wrhs55lcuvmekkw",
     "authorization": {
       "@type": "\/cosmos.authz.v1beta1.GenericAuthorization",
-      "msg": "\/poktroll.tokenomics.MsgUpdateParam"
+      "msg": "\/pocket.tokenomics.MsgUpdateParam"
     },
     "expiration": "2500-01-01T00:00:00Z"
   },
@@ -139,7 +139,7 @@
     "grantee": "pokt1eeeksh2tvkh7wzmfrljnhw4wrhs55lcuvmekkw",
     "authorization": {
       "@type": "\/cosmos.authz.v1beta1.GenericAuthorization",
-      "msg": "\/poktroll.shared.MsgUpdateParam"
+      "msg": "\/pocket.shared.MsgUpdateParam"
     },
     "expiration": "2500-01-01T00:00:00Z"
   },
@@ -148,7 +148,7 @@
     "grantee": "pokt1eeeksh2tvkh7wzmfrljnhw4wrhs55lcuvmekkw",
     "authorization": {
       "@type": "\/cosmos.authz.v1beta1.GenericAuthorization",
-      "msg": "\/poktroll.gateway.MsgUpdateParam"
+      "msg": "\/pocket.gateway.MsgUpdateParam"
     },
     "expiration": "2500-01-01T00:00:00Z"
   },
@@ -157,7 +157,7 @@
     "grantee": "pokt1eeeksh2tvkh7wzmfrljnhw4wrhs55lcuvmekkw",
     "authorization": {
       "@type": "\/cosmos.authz.v1beta1.GenericAuthorization",
-      "msg": "\/poktroll.application.MsgUpdateParam"
+      "msg": "\/pocket.application.MsgUpdateParam"
     },
     "expiration": "2500-01-01T00:00:00Z"
   },
@@ -166,7 +166,7 @@
     "grantee": "pokt1eeeksh2tvkh7wzmfrljnhw4wrhs55lcuvmekkw",
     "authorization": {
       "@type": "\/cosmos.authz.v1beta1.GenericAuthorization",
-      "msg": "\/poktroll.supplier.MsgUpdateParam"
+      "msg": "\/pocket.supplier.MsgUpdateParam"
     },
     "expiration": "2500-01-01T00:00:00Z"
   },
@@ -175,7 +175,7 @@
     "grantee": "pokt1eeeksh2tvkh7wzmfrljnhw4wrhs55lcuvmekkw",
     "authorization": {
       "@type": "\/cosmos.authz.v1beta1.GenericAuthorization",
-      "msg": "\/poktroll.session.MsgUpdateParam"
+      "msg": "\/pocket.session.MsgUpdateParam"
     },
     "expiration": "2500-01-01T00:00:00Z"
   },

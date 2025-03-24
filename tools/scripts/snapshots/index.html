@@ -157,11 +157,11 @@
         <h2>Installation Instructions</h2>
         <p>The easiest way to set up a new Poktroll node is to use the official installer script, which automatically handles downloading and applying snapshots:</p>
         <ol>
-            <li>Follow the <a href="https://dev.poktroll.com/operate/cheat_sheets/full_node_cheatsheet" target="_blank" class="docs-link">Full Node Cheat Sheet</a> to install a new node</li>
+            <li>Follow the <a href="https://dev.pocket.com/operate/cheat_sheets/full_node_cheatsheet" target="_blank" class="docs-link">Full Node Cheat Sheet</a> to install a new node</li>
             <li>The installer will automatically download and apply the latest snapshot</li>
             <li>No manual snapshot handling is required for new installations</li>
         </ol>
-        <p>For more detailed instructions, visit the <a href="https://dev.poktroll.com/operate/cheat_sheets/full_node_cheatsheet" target="_blank">Poktroll Documentation</a>.</p>
+        <p>For more detailed instructions, visit the <a href="https://dev.pocket.com/operate/cheat_sheets/full_node_cheatsheet" target="_blank">Poktroll Documentation</a>.</p>
     </div>
 
     <div class="card">
@@ -171,10 +171,10 @@
             <li>Stop your node (method depends on your setup - systemd, docker, etc.)</li>
             <li>Download a snapshot using the BitTorrent command above</li>
             <li>Clear your existing data directory (backup first if needed):</li>
-            <code id="clear-command">rm -rf $HOME/.poktroll/data/*</code>
+            <code id="clear-command">rm -rf $HOME/.pocket/data/*</code>
             <button class="copy-btn" data-target="clear-command">Copy</button>
             <li>Extract the snapshot to your data directory:</li>
-            <code id="extract-command">tar -xf /path/to/snapshot.tar.zst -C $HOME/.poktroll/data/</code>
+            <code id="extract-command">tar -xf /path/to/snapshot.tar.zst -C $HOME/.pocket/data/</code>
             <button class="copy-btn" data-target="extract-command">Copy</button>
             <li>Start your node again</li>
             <li>Verify your node is syncing: <code>curl -s http://localhost:26657/status | jq '.result.sync_info'</code></li>
@@ -198,13 +198,13 @@
     </div>
 
     <footer>
-        <p>Snapshots are provided by <a href="https://grove.city" target="_blank">GROVE</a> | <a href="https://dev.poktroll.com" target="_blank">Official Documentation</a></p>
+        <p>Snapshots are provided by <a href="https://grove.city" target="_blank">GROVE</a> | <a href="https://dev.pocket.com" target="_blank">Official Documentation</a></p>
     </footer>
 
     <script>
         // Current network selection
         let currentNetwork = 'testnet-beta';
-        const baseUrl = 'https://snapshots.us-nj.poktroll.com';
+        const baseUrl = 'https://snapshots.us-nj.pocket.com';
 
         // Initialize the page
         document.addEventListener('DOMContentLoaded', function() {
@@ -219,7 +219,7 @@
                     const targetId = this.getAttribute('data-target');
                     const codeElement = document.getElementById(targetId);
                     navigator.clipboard.writeText(codeElement.textContent.trim());
-                    
+
                     // Visual feedback
                     const originalText = this.textContent;
                     this.textContent = 'Copied!';
@@ -236,13 +236,13 @@
         // Switch between networks
         function switchNetwork(network) {
             currentNetwork = network;
-            
+
             // Update active button
             document.querySelectorAll('.network-selector button').forEach(btn => {
                 btn.classList.remove('active');
             });
             document.getElementById(`${network}-btn`).classList.add('active');
-            
+
             // Reload data for the selected network
             loadSnapshotData(network);
         }
@@ -254,10 +254,10 @@
             document.getElementById('archival-snapshot-info').classList.add('loading');
             document.getElementById('all-snapshots').innerHTML = 'Loading available snapshots...';
             document.getElementById('all-snapshots').classList.add('loading');
-            
+
             // Update RSS feed link
             document.getElementById('rss-feed-link').href = `${baseUrl}/${network}-torrents.xml`;
-            
+
             // Fetch archival height
             fetch(`${baseUrl}/${network}-latest-archival.txt`)
                 .then(response => {
@@ -269,7 +269,7 @@
                 .then(archivalHeight => {
                     // Update archival snapshot info section
                     updateSnapshotInfo('archival', archivalHeight.trim(), network);
-                    
+
                     // Now fetch the RSS feed for all available snapshots
                     return fetch(`${baseUrl}/${network}-torrents.xml`);
                 })
@@ -283,11 +283,11 @@
                     const parser = new DOMParser();
                     const xml = parser.parseFromString(data, 'application/xml');
                     const items = xml.querySelectorAll('item');
-                    
+
                     if (items.length === 0) {
                         throw new Error('No items found in the RSS feed');
                     }
-                    
+
                     let snapshotsHtml = '<ul>';
                     items.forEach(item => {
                         const title = item.querySelector('title').textContent;
@@ -295,19 +295,19 @@
                         snapshotsHtml += `<li><a href="${link}" target="_blank">${title}</a></li>`;
                     });
                     snapshotsHtml += '</ul>';
-                    
+
                     document.getElementById('all-snapshots').innerHTML = snapshotsHtml;
                     document.getElementById('all-snapshots').classList.remove('loading');
                 })
                 .catch(error => {
                     console.error('Error loading snapshot data:', error);
-                    
+
                     // Show error messages in the relevant sections
                     if (document.getElementById('archival-snapshot-info').classList.contains('loading')) {
                         document.getElementById('archival-snapshot-info').innerHTML = 'Error loading archival snapshot info.';
                         document.getElementById('archival-snapshot-info').classList.remove('loading');
                     }
-                    
+
                     document.getElementById('all-snapshots').innerHTML = `
                         <p>Error loading available snapshots: ${error.message}</p>
                         <p>Please try again later or contact support if the problem persists.</p>
@@ -320,11 +320,11 @@
         function updateSnapshotInfo(type, height, network) {
             const infoElement = document.getElementById(`${type}-snapshot-info`);
             const torrentElement = document.getElementById(`${type}-torrent-code`);
-            
+
             // Snapshot file URLs
             const snapshotUrl = `${baseUrl}/${network}-${height}-${type}.tar.zst`;
             const torrentUrl = `${baseUrl}/${network}-${height}-${type}.torrent`;
-            
+
             // Update info
             infoElement.innerHTML = `
                 <div class="snapshot-info">
@@ -338,13 +338,13 @@
                 <a href="${torrentUrl}" target="_blank">Download Torrent File</a>
             `;
             infoElement.classList.remove('loading');
-            
+
             // Update torrent command - simplified to a single command with seed-time=0
             torrentElement.textContent = `aria2c --seed-time=0 "${torrentUrl}"`;
-            
+
             // Update extract command with the correct file name
-            document.getElementById('extract-command').textContent = `tar -xf ${network}-${height}-${type}.tar.zst -C $HOME/.poktroll/data/`;
+            document.getElementById('extract-command').textContent = `tar -xf ${network}-${height}-${type}.tar.zst -C $HOME/.pocket/data/`;
         }
     </script>
 </body>
-</html> 
+</html>

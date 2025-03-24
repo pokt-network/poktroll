@@ -2,7 +2,7 @@
   "body": {
     "messages": [
       {
-        "@type": "/poktroll.supplier.MsgUpdateParam",
+        "@type": "/pocket.supplier.MsgUpdateParam",
         "authority": "pokt10d07y265gmmuvt4z0w9aw880jnsr700j8yv32t",
         "name": "min_stake",
         "as_coin": {

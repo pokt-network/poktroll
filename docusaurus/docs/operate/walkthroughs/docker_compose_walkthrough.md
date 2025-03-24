@@ -28,7 +28,7 @@ TODO(@okdas):
 
 ## Introduction and Cheat Sheet
 
-This document uses the [poktroll-docker-compose-example](https://github.com/pokt-network/poktroll-docker-compose-example)
+This document uses the [pocket-docker-compose-example](https://github.com/pokt-network/pocket-docker-compose-example)
 to help stake and deploy every actor in the Pocket Network ecosystem.
 
 It also provides some intuition for those already familiar with `Morse` and are
@@ -66,7 +66,7 @@ This is a text heavy walkthrough, but if all goes well, you should have somethin
   - In `Shannon` - This actor is responsible for providing the Relay services.
 - `PATH Gateway` - The offchain service that provides Relay services on behalf of an `Application` or `Gateway`.
 
-For more details, please refer to the [Shannon actors documentation](https://dev.poktroll.com/actors).
+For more details, please refer to the [Shannon actors documentation](https://dev.pocket.com/actors).
 
 ## Understanding Actors in the Shannon upgrade
 
@@ -132,12 +132,12 @@ Make sure to replace `olshansky` with your username.
 You can generally do everything as the `root` user, but it's recommended to
 create a new user and give it sudo permissions.
 
-This is necessary, in particular, if you want to use [homebrew](https://brew.sh/) [to install `poktrolld`](../../tools/user_guide/poktrolld_cli.md).
+This is necessary, in particular, if you want to use [homebrew](https://brew.sh/) [to install `pocketd`](../../tools/user_guide/pocketd_cli.md).
 
 ```bash
-adduser poktroll
-usermod -aG docker,sudo poktroll
-su - poktroll
+adduser pocket
+usermod -aG docker,sudo pocket
+su - pocket
 ```
 
 You can also avoid needing to pass in the password each time by running the following:
@@ -147,7 +147,7 @@ You can also avoid needing to pass in the password each time by running the foll
 vi /etc/sudoers
 
 # Add the following line to the end of the file
-poktroll ALL=(ALL) NOPASSWD:ALL
+pocket ALL=(ALL) NOPASSWD:ALL
 ```
 
 Then, switch to the new user:
@@ -159,8 +159,8 @@ su - $USERNAME
 ### Clone the Repository <!-- omit in toc -->
 
 ```bash
-git clone https://github.com/pokt-network/poktroll-docker-compose-example.git
-cd poktroll-docker-compose-example
+git clone https://github.com/pokt-network/pocket-docker-compose-example.git
+cd pocket-docker-compose-example
 ```
 
 ### Operational Helpers <!-- omit in toc -->
@@ -190,14 +190,14 @@ sed -i -e s/NODE_HOSTNAME=/NODE_HOSTNAME=69.42.690.420/g .env
 You can generally do everything as the `root` user, but it's recommended to
 create a new user and give it sudo permissions.
 
-This is necessary, in particular, if you want to use [homebrew](https://brew.sh/) [to install `poktrolld`](../../tools/user_guide/poktrolld_cli.md).
+This is necessary, in particular, if you want to use [homebrew](https://brew.sh/) [to install `pocketd`](../../tools/user_guide/pocketd_cli.md).
 
-You can create a new user (e.g. poktroll), provide sudo permissions and switch users like so:
+You can create a new user (e.g. pocket), provide sudo permissions and switch users like so:
 
 ```bash
-adduser poktroll
-sudo usermod -aG docker,sudo poktroll
-su - poktroll
+adduser pocket
+sudo usermod -aG docker,sudo pocket
+su - pocket
 ```
 
 In order to avoid needing to pass in the password each time by running the following:
@@ -207,7 +207,7 @@ In order to avoid needing to pass in the password each time by running the follo
 sudo vi /etc/sudoers
 
 # Add the following line to the end of the file
-poktroll ALL=(ALL) NOPASSWD:ALL
+pocket ALL=(ALL) NOPASSWD:ALL
 ```
 
 ## A. Deploying a Full Node
@@ -267,7 +267,7 @@ curl -s -X POST localhost:26657/block | jq
 watch -n 1 "curl -s -X POST localhost:26657/block | jq '.result.block.header.height'"
 ```
 
-You can compare the height relative to the [shannon testnet explorer](https://shannon.beta.testnet.pokt.network/poktroll/block).
+You can compare the height relative to the [shannon testnet explorer](https://shannon.beta.testnet.pokt.network/pocket/block).
 
 ### Get a way to fund your accounts <!-- omit in toc -->
 
@@ -284,7 +284,7 @@ If you require a larger amount of tokens or are a core contributor, you can add 
 account to fund things yourself directly.
 
 ```bash
-poktrolld keys add --recover -i faucet
+pocketd keys add --recover -i faucet
 ```
 
 When you see the `> Enter your bipmnemonic` prompt, paste the mnemonic
@@ -293,7 +293,7 @@ provided by the Pocket team for testnet.
 When you see the `> Enter your bippassphrase. This is combined with the mnemonic to derive the seed. Most users should just hit enter to use the default, ""`
 prompt, hit enter without adding a passphrase. Finish funding your account by using the command below:
 
-You can view the balance of the faucet address at [shannon.beta.testnet.pokt.network/](https://shannon.beta.testnet.pokt.network/poktroll).
+You can view the balance of the faucet address at [shannon.beta.testnet.pokt.network/](https://shannon.beta.testnet.pokt.network/pocket).
 
 ### Restarting a full node after re-genesis <!-- omit in toc -->
 
@@ -308,7 +308,7 @@ docker compose down
 docker rm $(docker ps -aq) -f
 
 # Remove existing data and renew genesis
-rm -rf poktrolld-data/config/addrbook.json poktrolld-data/config/genesis.json poktrolld-data/config/genesis.seeds poktrolld-data/data/ poktrolld-data/cosmovisor/ poktrolld-data/config/node_key.json poktrolld-data/config/priv_validator_key.json
+rm -rf pocketd-data/config/addrbook.json pocketd-data/config/genesis.json pocketd-data/config/genesis.seeds pocketd-data/data/ pocketd-data/cosmovisor/ pocketd-data/config/node_key.json pocketd-data/config/priv_validator_key.json
 
 # Re-start the node
 docker compose up -d
@@ -317,8 +317,8 @@ docker compose logs -f --tail 100
 
 ### Docker image updates <!-- omit in toc -->
 
-The `.env` file contains `POKTROLLD_IMAGE_TAG` which can be updated based on the
-images available on [poktroll ghcr](https://github.com/pokt-network/poktroll/pkgs/container/poktrolld/versions)
+The `.env` file contains `POCKETD_IMAGE_TAG` which can be updated based on the
+images available on [pocket ghcr](https://github.com/pokt-network/poktroll/pkgs/container/pocketd/versions)
 to update the version of the `full_node` deployed. As well as the `PATH_GATEWAY_IMAGE_TAG`
 which can be updated based on the `PATH Gateway` images available at
 [path ghcr](https://github.com/buildwithgrove/path/pkgs/container/path/versions)
@@ -333,7 +333,7 @@ A RelayMiner is an operator / service that provides services to offer on the Poc
 
 - **Full Node**: This RelayMiner deployment guide assumes the Full Node is
   deployed in the same `docker compose` stack; see section (A).
-- **A poktroll account with uPOKT tokens**: Tokens can be acquired by contacting
+- **A pocket account with uPOKT tokens**: Tokens can be acquired by contacting
   the team or using the faucet. You are going to need a BIPmnemonic phrase for
   an existing funded account before continuing below.
 
@@ -345,7 +345,7 @@ create your account.
 Create a new `supplier` account:
 
 ```bash
-poktrolld keys add supplier-1
+pocketd keys add supplier-1
 ```
 
 Copy the mnemonic that's printed to the screen to the `SUPPLIER_MNEMONIC`
@@ -371,28 +371,28 @@ Add funds to your supplier account by either going to the [faucet](https://fauce
 or using the `faucet` account directly if you have access to it:
 
 ```bash
-poktrolld tx bank send faucet $SUPPLIER_ADDR 10000upokt --chain-id=pocket-beta --yes
+pocketd tx bank send faucet $SUPPLIER_ADDR 10000upokt --chain-id=pocket-beta --yes
 ```
 
 You can check that your address is funded correctly by running:
 
 ```bash
-poktrolld query bank balances $SUPPLIER_ADDR
+pocketd query bank balances $SUPPLIER_ADDR
 ```
 
-_Note: You must wait until `full-node` has synced up to the [current block #](https://shannon.testnet.pokt.network/poktroll/block) before this command and the stake command below (`poktrolld tx supplier stake-supplier...`) will work successfully. Watch your node's block height [here.](https://dev.poktroll.com/operate/quickstart/docker_compose_walkthrough#watch-the-height-)_
+_Note: You must wait until `full-node` has synced up to the [current block #](https://shannon.testnet.pokt.network/pocket/block) before this command and the stake command below (`pocketd tx supplier stake-supplier...`) will work successfully. Watch your node's block height [here.](https://dev.pocket.com/operate/quickstart/docker_compose_walkthrough#watch-the-height-)_
 
 If you're waiting to see if your transaction has been included in a block, you can run:
 
 ```bash
-poktrolld query tx --type=hash <hash>
+pocketd query tx --type=hash <hash>
 ```
 
 ### Configure and stake your Supplier <!-- omit in toc -->
 
 :::tip Supplier staking config
 
-[dev.poktroll.com/operate/configs/supplier_staking_config](https://dev.poktroll.com/operate/configs/supplier_staking_config)
+[dev.pocket.com/operate/configs/supplier_staking_config](https://dev.pocket.com/operate/configs/supplier_staking_config)
 explains what supplier staking config is and how it can be used.
 
 :::
@@ -401,7 +401,7 @@ Verify that the account you're planning to use for `SUPPLIER` (created above)
 is available in your local Keyring:
 
 ```bash
-poktrolld keys list --list-names | grep "supplier-1"
+pocketd keys list --list-names | grep "supplier-1"
 ```
 
 Update the provided example supplier stake config:
@@ -414,8 +414,8 @@ sed -i -e s/YOUR_OWNER_ADDRESS/$SUPPLIER_ADDR/g ./stake_configs/supplier_stake_c
 Use the configuration to stake your supplier:
 
 ```bash
-poktrolld tx supplier stake-supplier \
-  --config=/poktroll/stake_configs/supplier_stake_config_example.yaml \
+pocketd tx supplier stake-supplier \
+  --config=/pocket/stake_configs/supplier_stake_config_example.yaml \
   --from=supplier-1 \
   --gas=auto \
   --gas-prices=1upokt \
@@ -427,14 +427,14 @@ poktrolld tx supplier stake-supplier \
 Verify your supplier is staked:
 
 ```bash
-poktrolld query supplier show-supplier $SUPPLIER_ADDR
+pocketd query supplier show-supplier $SUPPLIER_ADDR
 ```
 
 ### Configure and run your RelayMiner <!-- omit in toc -->
 
 :::tip RelayMiner operation config
 
-[dev.poktroll.com/operate/configs/relayminer_config](https://dev.poktroll.com/operate/configs/relayminer_config)
+[dev.pocket.com/operate/configs/relayminer_config](https://dev.pocket.com/operate/configs/relayminer_config)
 explains what the RelayMiner operation config is and how it can be used.
 
 :::
@@ -474,7 +474,7 @@ create your account.
 Create a new `application` account:
 
 ```bash
-poktrolld keys add application-1
+pocketd keys add application-1
 ```
 
 Copy the outputted address to the `APPLICATION_ADDR` variable in your `.env` file:
@@ -496,20 +496,20 @@ Add funds to your application account by either going to the [faucet](https://fa
 or using the `faucet` account directly if you have access to it:
 
 ```bash
-poktrolld tx bank send faucet $APPLICATION_ADDR 10000upokt --chain-id=pocket-beta --yes
+pocketd tx bank send faucet $APPLICATION_ADDR 10000upokt --chain-id=pocket-beta --yes
 ```
 
 You can check that your address is funded correctly by running:
 
 ```bash
-poktrolld query bank balances $APPLICATION_ADDR
+pocketd query bank balances $APPLICATION_ADDR
 ```
 
 ### Configure and stake your Application <!-- omit in toc -->
 
 :::tip Application staking config
 
-[dev.poktroll.com/operate/configs/application_staking_config](https://dev.poktroll.com/operate/configs/app_staking_config)
+[dev.pocket.com/operate/configs/application_staking_config](https://dev.pocket.com/operate/configs/app_staking_config)
 explains what application staking config is and how it can be used.
 
 :::
@@ -518,14 +518,14 @@ Verify that the account you're planning to use for `APPLICATION` (created above)
 is available in your local Keyring:
 
 ```bash
-poktrolld keys list --list-names | grep "application-1"
+pocketd keys list --list-names | grep "application-1"
 ```
 
 Use the configuration to stake your application:
 
 ```bash
-poktrolld tx application stake-application \
-  --config=/poktroll/stake_configs/application_stake_config_example.yaml \
+pocketd tx application stake-application \
+  --config=/pocket/stake_configs/application_stake_config_example.yaml \
   --from=application-1 \
   --gas=auto \
   --gas-prices=1upokt \
@@ -537,7 +537,7 @@ poktrolld tx application stake-application \
 Verify your application is staked
 
 ```bash
-poktrolld query application show-application $APPLICATION_ADDR
+pocketd query application show-application $APPLICATION_ADDR
 ```
 
 ### Create and fund your Gateway <!-- omit in toc -->
@@ -548,7 +548,7 @@ create your account.
 Create a new `gateway` account:
 
 ```bash
-poktrolld keys add gateway-1
+pocketd keys add gateway-1
 ```
 
 Copy the outputted address to the `GATEWAY_ADDR` variable in your `.env` file:
@@ -570,20 +570,20 @@ Add funds to your gateway account by either going to the [faucet](https://faucet
 or using the `faucet` account directly if you have access to it:
 
 ```bash
-poktrolld tx bank send faucet $GATEWAY_ADDR 10000upokt --chain-id=pocket-beta --yes
+pocketd tx bank send faucet $GATEWAY_ADDR 10000upokt --chain-id=pocket-beta --yes
 ```
 
 You can check that your address is funded correctly by running:
 
 ```bash
-poktrolld query bank balances $GATEWAY_ADDR
+pocketd query bank balances $GATEWAY_ADDR
 ```
 
 ### Configure and stake your Gateway <!-- omit in toc -->
 
 :::tip Gateway staking config
 
-[dev.poktroll.com/operate/configs/gateway_staking_config](https://dev.poktroll.com/operate/configs/gateway_staking_config)
+[dev.pocket.com/operate/configs/gateway_staking_config](https://dev.pocket.com/operate/configs/gateway_staking_config)
 explains what gateway staking config is and how it can be used.
 
 :::
@@ -592,14 +592,14 @@ Verify that the account you're planning to use for `GATEWAY` (created above)
 is available in your local Keyring:
 
 ```bash
-poktrolld keys list --list-names | grep "gateway-1"
+pocketd keys list --list-names | grep "gateway-1"
 ```
 
 Use the configuration to stake your gateway:
 
 ```bash
-poktrolld tx gateway stake-gateway \
-  --config=/poktroll/stake_configs/gateway_stake_config_example.yaml \
+pocketd tx gateway stake-gateway \
+  --config=/pocket/stake_configs/gateway_stake_config_example.yaml \
   --from=gateway-1 \
   --gas=auto \
   --gas-prices=1upokt \
@@ -611,13 +611,13 @@ poktrolld tx gateway stake-gateway \
 Verify your gateway is staked
 
 ```bash
-poktrolld query gateway show-gateway $GATEWAY_ADDR
+pocketd query gateway show-gateway $GATEWAY_ADDR
 ```
 
 ### Delegate your Application to the Gateway <!-- omit in toc -->
 
 ```bash
-poktrolld tx application delegate-to-gateway $GATEWAY_ADDR \
+pocketd tx application delegate-to-gateway $GATEWAY_ADDR \
   --from=application-1 \
   --gas=auto \
   --gas-prices=1upokt \

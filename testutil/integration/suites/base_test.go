@@ -69,7 +69,7 @@ func (s *baseIntegrationSuiteTestSuite) TestSetApp() {
 func (s *baseIntegrationSuiteTestSuite) TestGetPoktrollModuleNames() {
 	moduleNames := s.GetPoktrollModuleNames()
 	require.Greater(s.T(), len(moduleNames), 0, "expected non-empty module names")
-	require.ElementsMatch(s.T(), s.poktrollModuleNames, moduleNames)
+	require.ElementsMatch(s.T(), s.pocketModuleNames, moduleNames)
 }
 
 func (s *baseIntegrationSuiteTestSuite) TestGetCosmosModuleNames() {

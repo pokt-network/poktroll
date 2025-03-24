@@ -138,7 +138,7 @@ gantt
 
 #### References:
 
-- [`poktroll.shared.Params` / `sharedtypes.Params`](https://github.com/pokt-network/poktroll/blob/main/proto/poktroll/shared/params.proto)
+- [`pocket.shared.Params` / `sharedtypes.Params`](https://github.com/pokt-network/poktroll/blob/main/proto/pocket/shared/params.proto)
 
 ### Claim Expiration
 
@@ -209,8 +209,8 @@ that were necessary to service that request.
 
 | Type                                                                                                 | Description                                             |
 | ---------------------------------------------------------------------------------------------------- | ------------------------------------------------------- |
-| [`Claim`](https://github.com/pokt-network/poktroll/blob/main/proto/poktroll/proof/claim.proto)       | A serialized version of the `Claim` is stored onchain. |
-| [`MsgCreateClaim`](https://github.com/pokt-network/poktroll/blob/main/proto/poktroll/proof/tx.proto) | Submitted by a `Supplier` to store a claim `onchain`.  |
+| [`Claim`](https://github.com/pokt-network/poktroll/blob/main/proto/pocket/proof/claim.proto)       | A serialized version of the `Claim` is stored onchain. |
+| [`MsgCreateClaim`](https://github.com/pokt-network/poktroll/blob/main/proto/pocket/proof/tx.proto) | Submitted by a `Supplier` to store a claim `onchain`.  |
 
 ### CreateClaim Validation
 
@@ -283,8 +283,8 @@ rewarded for the work done.
 
 | Type                                                                                                 | Description                                                                                                                                                                  |
 | ---------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [`Proof`](https://github.com/pokt-network/poktroll/blob/main/proto/poktroll/proof/proof.proto)       | A serialized version of the `Proof` is stored onchain.                                                                                                                      |
-| [`MsgSubmitProof`](https://github.com/pokt-network/poktroll/blob/main/proto/poktroll/proof/tx.proto) | Submitted by a `Supplier` to store a proof `onchain`. If the `Proof` is invalid, or if there is no corresponding `Claim` for the `Proof`, the transaction will be rejected. |
+| [`Proof`](https://github.com/pokt-network/poktroll/blob/main/proto/pocket/proof/proof.proto)       | A serialized version of the `Proof` is stored onchain.                                                                                                                      |
+| [`MsgSubmitProof`](https://github.com/pokt-network/poktroll/blob/main/proto/pocket/proof/tx.proto) | Submitted by a `Supplier` to store a proof `onchain`. If the `Proof` is invalid, or if there is no corresponding `Claim` for the `Proof`, the transaction will be rejected. |
 
 ### SubmitProof Validation
 

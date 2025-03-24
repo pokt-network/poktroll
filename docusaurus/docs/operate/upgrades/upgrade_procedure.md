@@ -87,7 +87,7 @@ And looks like the following as an example:
         "plan": {
           "name": "v0.0.4",
           "height": "30",
-          "info": "{\"binaries\":{\"linux/amd64\":\"https://github.com/pokt-network/poktroll/releases/download/v0.0.4/poktroll_linux_amd64.tar.gz?checksum=sha256:49d2bcea02702f3dcb082054dc4e7fdd93c89fcd6ff04f2bf50227dacc455638\",\"linux/arm64\":\"https://github.com/pokt-network/poktroll/releases/download/v0.0.4/poktroll_linux_arm64.tar.gz?checksum=sha256:698f3fa8fa577795e330763f1dbb89a8081b552724aa154f5029d16a34baa7d8\",\"darwin/amd64\":\"https://github.com/pokt-network/poktroll/releases/download/v0.0.4/poktroll_darwin_amd64.tar.gz?checksum=sha256:5ecb351fb2f1fc06013e328e5c0f245ac5e815c0b82fb6ceed61bc71b18bf8e9\",\"darwin/arm64\":\"https://github.com/pokt-network/poktroll/releases/download/v0.0.4/poktroll_darwin_arm64.tar.gz?checksum=sha256:a935ab83cd770880b62d6aded3fc8dd37a30bfd15b30022e473e8387304e1c70\"}}"
+          "info": "{\"binaries\":{\"linux/amd64\":\"https://github.com/pokt-network/poktroll/releases/download/v0.0.4/pocket_linux_amd64.tar.gz?checksum=sha256:49d2bcea02702f3dcb082054dc4e7fdd93c89fcd6ff04f2bf50227dacc455638\",\"linux/arm64\":\"https://github.com/pokt-network/poktroll/releases/download/v0.0.4/pocket_linux_arm64.tar.gz?checksum=sha256:698f3fa8fa577795e330763f1dbb89a8081b552724aa154f5029d16a34baa7d8\",\"darwin/amd64\":\"https://github.com/pokt-network/poktroll/releases/download/v0.0.4/pocket_darwin_amd64.tar.gz?checksum=sha256:5ecb351fb2f1fc06013e328e5c0f245ac5e815c0b82fb6ceed61bc71b18bf8e9\",\"darwin/arm64\":\"https://github.com/pokt-network/poktroll/releases/download/v0.0.4/pocket_darwin_arm64.tar.gz?checksum=sha256:a935ab83cd770880b62d6aded3fc8dd37a30bfd15b30022e473e8387304e1c70\"}}"
         }
       }
     ]
@@ -141,13 +141,13 @@ go install github.com/hashicorp/go-getter/cmd/go-getter@latest
 The `MsgSoftwareUpgrade` can be submitted using the following command:
 
 ```bash
-poktrolld tx authz exec $PATH_TO_UPGRADE_TRANSACTION_JSON --from=pnf
+pocketd tx authz exec $PATH_TO_UPGRADE_TRANSACTION_JSON --from=pnf
 ```
 
 If the transaction has been accepted, the upgrade plan can be viewed with this command:
 
 ```bash
-poktrolld query upgrade plan
+pocketd query upgrade plan
 ```
 
 ## Cancelling the upgrade plan
@@ -174,7 +174,7 @@ However, **IT IS NOT NEEDED** to simulate and test the upgrade procedure.
 
 For a hypothetical scenario to upgrade from `0.1` to `0.2`:
 
-1. **Stop LocalNet** to prevent interference. Pull the `poktroll` repo into two separate directories. Let's name them `old` and `new`. It is recommended to open at least two tabs/shell panels in each directory for easier switching between directories.
+1. **Stop LocalNet** to prevent interference. Pull the `pocket` repo into two separate directories. Let's name them `old` and `new`. It is recommended to open at least two tabs/shell panels in each directory for easier switching between directories.
 
 2. **(`old` repo)** - Check out the old version. For the test to be accurate, we need to upgrade from the correct version.
 
@@ -208,7 +208,7 @@ For a hypothetical scenario to upgrade from `0.1` to `0.2`:
 5. **(`old` repo)** - Clean up and generate an empty genesis using the old version.
 
    ```bash
-   rm -rf ~/.poktroll && ./release_binaries/poktroll_darwin_arm64 comet unsafe-reset-all && make localnet_regenesis
+   rm -rf ~/.pocket && ./release_binaries/pocket_darwin_arm64 comet unsafe-reset-all && make localnet_regenesis
    ```
 
 6. **(`old` repo)** Write and save [an upgrade transaction](#writing-an-upgrade-transaction) for `v0.2`. The upgrade plan should be named after the version to which you're upgrading.
@@ -216,7 +216,7 @@ For a hypothetical scenario to upgrade from `0.1` to `0.2`:
 7. **(`old` repo)** Start the node:
 
    ```bash
-   ./release_binaries/poktroll_darwin_arm64 start
+   ./release_binaries/pocket_darwin_arm64 start
    ```
 
    The validator node should run and produce blocks as expected.
@@ -224,13 +224,13 @@ For a hypothetical scenario to upgrade from `0.1` to `0.2`:
 8. **(`old` repo)** Submit the upgrade transaction. **NOTE THAT** the upgrade height in the transaction should be higher than the current block height. Adjust and submit if necessary:
 
    ```bash
-   ./release_binaries/poktroll_darwin_arm64 tx authz exec tools/scripts/upgrades/local_test_v0.2.json --from=pnf
+   ./release_binaries/pocket_darwin_arm64 tx authz exec tools/scripts/upgrades/local_test_v0.2.json --from=pnf
    ```
 
    Replace the path to the JSON transaction with your prepared upgrade transaction. Verify the upgrade plan was submitted and accepted:
 
    ```bash
-   ./release_binaries/poktroll_darwin_arm64 query upgrade plan
+   ./release_binaries/pocket_darwin_arm64 query upgrade plan
    ```
 
 9. Wait for the upgrade height to be reached on the old version. The old version should stop working since it has no knowledge of the `v0.2` upgrade. This simulates a real-world scenario. Stop the old node, and switch to the new version.
@@ -238,7 +238,7 @@ For a hypothetical scenario to upgrade from `0.1` to `0.2`:
 10. **(`new` repo)**
 
     ```bash
-    ./release_binaries/poktroll_darwin_arm64 start
+    ./release_binaries/pocket_darwin_arm64 start
     ```
 
 11. **Observe the output:**
@@ -250,7 +250,7 @@ For a hypothetical scenario to upgrade from `0.1` to `0.2`:
 12. **(`new` repo, optional**) - If parameters were changed during the upgrade, test if these changes were applied. For example:
 
     ```bash
-    ./release_binaries/poktroll_darwin_arm64 q application params
+    ./release_binaries/pocket_darwin_arm64 q application params
     ```
 
 ### DevNet Upgrades

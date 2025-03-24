@@ -28,11 +28,11 @@ pocket_node:
   # Pocket node URL exposing the CometBFT JSON-RPC API.
   # Used by the Cosmos client SDK, event subscriptions, etc.
   # If unspecified, defaults to `tx_node_rpc_url`.
-  query_node_rpc_url: tcp://poktroll-validator:26657
+  query_node_rpc_url: tcp://pocket-validator:26657
   # Pocket node URL exposing the Cosmos gRPC service for querying purposes.
-  query_node_grpc_url: tcp://poktroll-validator:9090
+  query_node_grpc_url: tcp://pocket-validator:9090
   # Pocket node URL exposing the CometRPC service.
-  tx_node_rpc_url: tcp://poktroll-validator:9090
+  tx_node_rpc_url: tcp://pocket-validator:9090
 
 # Suppliers are different services offered on Pocket Network,
 # proxied through Relay Miner.
@@ -90,4 +90,4 @@ suppliers:
     service_config:
       backend_url: http://localhost:11434
       publicly_exposed_endpoints:
-        - mistral-7b.devnet1.poktroll.com
+        - mistral-7b.devnet1.pocket.com

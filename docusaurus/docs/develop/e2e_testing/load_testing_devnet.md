@@ -63,10 +63,10 @@ relayminers:
 :::
 
 ```bash
-POCKET_NODE=https://devnet-sophon-validator-rpc.poktroll.com make gateway2_stake
-POCKET_NODE=https://devnet-sophon-validator-rpc.poktroll.com make gateway3_stake
-POCKET_NODE=https://devnet-sophon-validator-rpc.poktroll.com make supplier2_stake
-POCKET_NODE=https://devnet-sophon-validator-rpc.poktroll.com make supplier3_stake
+POCKET_NODE=https://devnet-sophon-validator-rpc.pocket.com make gateway2_stake
+POCKET_NODE=https://devnet-sophon-validator-rpc.pocket.com make gateway3_stake
+POCKET_NODE=https://devnet-sophon-validator-rpc.pocket.com make supplier2_stake
+POCKET_NODE=https://devnet-sophon-validator-rpc.pocket.com make supplier3_stake
 ```
 
 3. Update the manifest. The content of
@@ -80,7 +80,7 @@ is_ephemeral_chain: false
 
 # testnet_node is the URL of the node that the load test will use to query the
 # chain and submit transactions.
-testnet_node: https://devnet-sophon-validator-rpc.poktroll.com
+testnet_node: https://devnet-sophon-validator-rpc.pocket.com
 
 # The service ID to request relays from.
 service_id: "anvil"
@@ -93,11 +93,11 @@ funding_account_address: pokt1awtlw5sjmw2f5lgj8ekdkaqezphgz88rdk93sk # address f
 # In non-ephemeral chains, the gateways are identified by their addresses.
 gateways:
   - address: pokt15vzxjqklzjtlz7lahe8z2dfe9nm5vxwwmscne4
-    exposed_url: https://devnet-sophon-gateway-1.poktroll.com
+    exposed_url: https://devnet-sophon-gateway-1.pocket.com
   - address: pokt15w3fhfyc0lttv7r585e2ncpf6t2kl9uh8rsnyz
-    exposed_url: https://devnet-sophon-gateway-2.poktroll.com
+    exposed_url: https://devnet-sophon-gateway-2.pocket.com
   - address: pokt1zhmkkd0rh788mc9prfq0m2h88t9ge0j83gnxya
-    exposed_url: https://devnet-sophon-gateway-3.poktroll.com
+    exposed_url: https://devnet-sophon-gateway-3.pocket.com
 ```
 
 4. Run the test:
@@ -108,6 +108,6 @@ make test_load_relays_stress_example
 
 5. Observe the results:
 
-You can see the performance of the requests on [Grafana dashboards](https://grafana.poktroll.com/d/nginx/nginx-ingress-controller).
+You can see the performance of the requests on [Grafana dashboards](https://grafana.pocket.com/d/nginx/nginx-ingress-controller).
 The DevNets have LoadBalancers which allow for more metrics about network load and latency. When looking
 at the `NGINX Ingress controller` Dashboard, make sure to change the namespace to match the DevNet name.

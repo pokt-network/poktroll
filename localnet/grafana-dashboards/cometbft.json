@@ -1369,7 +1369,7 @@
                 "uid": "P8E80F9AEF21F6940"
               },
               "editorMode": "builder",
-              "expr": "{container=\"poktrolld-validator\"} |= ``",
+              "expr": "{container=\"pocketd-validator\"} |= ``",
               "queryType": "range",
               "refId": "A"
             }

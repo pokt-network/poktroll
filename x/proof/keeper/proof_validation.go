@@ -295,7 +295,7 @@ func (k Keeper) validateClosestPath(
 	// The RelayMiner has to wait until the submit claim and proof windows is are open
 	// in order to to create the claim and submit claims and proofs, respectively.
 	// These windows are calculated as specified in the docs;
-	// see: https://dev.poktroll.com/protocol/primitives/claim_and_proof_lifecycle.
+	// see: https://dev.pocket.com/protocol/primitives/claim_and_proof_lifecycle.
 	//
 	// For reference, see relayerSessionsManager#waitForEarliest{CreateClaim,SubmitProof}Height().
 	//

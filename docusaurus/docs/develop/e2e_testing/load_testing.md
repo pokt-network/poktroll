@@ -86,7 +86,7 @@ Note: Such networks typically involve other participants, allowing load testing 
 
 #### Prerequisites
 
-- A account with sufficient tokens for application funding and staking, accessible on the local keychain (e.g., `poktrolld keys list`).
+- A account with sufficient tokens for application funding and staking, accessible on the local keychain (e.g., `pocketd keys list`).
 - A list of target gateways to which relay requests will be sent throughout the course of the test.
 - For custom service testing, ensure supplier(s') corresponding relayminer(s) and custom service process are properly configured, running, and ready to process requests.
 

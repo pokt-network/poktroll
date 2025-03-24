@@ -4,4 +4,4 @@ config:
   signing_key_name: supplier3
 
   default_signing_key_names: [supplier3]
-  suppliers: [] # suppliers list is dynamically defined in poktroll/Tiltfile.
+  suppliers: [] # suppliers list is dynamically defined in pocket/Tiltfile.

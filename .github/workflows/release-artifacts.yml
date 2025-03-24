@@ -63,7 +63,7 @@ jobs:
           DOCKER_METADATA_PR_HEAD_SHA: "true"
         with:
           images: |
-            ghcr.io/pokt-network/poktrolld
+            ghcr.io/pokt-network/pocketd
           tags: |
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
@@ -80,7 +80,7 @@ jobs:
           DOCKER_METADATA_PR_HEAD_SHA: "true"
         with:
           images: |
-            ghcr.io/pokt-network/poktrolld
+            ghcr.io/pokt-network/pocketd
           tags: |
             type=raw,value=main-prod
             type=sha,suffix=-main-prod
@@ -100,7 +100,7 @@ jobs:
           DOCKER_METADATA_PR_HEAD_SHA: "true"
         with:
           images: |
-            ghcr.io/pokt-network/poktrolld
+            ghcr.io/pokt-network/pocketd
           tags: |
             type=raw,value=${{ env.BRANCH_NAME }}-prod${{ github.inputs.custom_tag != '' && format('-{0}', github.inputs.custom_tag) || '' }}
             type=sha,suffix=-${{ env.BRANCH_NAME }}-prod${{ github.inputs.custom_tag != '' && format('-{0}', github.inputs.custom_tag) || '' }}

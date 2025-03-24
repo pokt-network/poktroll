@@ -39,7 +39,7 @@ from [PR #498](https://github.com/pokt-network/poktroll/pull/498).
 
 ## Grafana logs
 
-As an example, this [Grafana link](https://grafana.poktroll.com/explore?schemaVersion=1&panes=%7B%22TtK%22:%7B%22datasource%22:%22P8E80F9AEF21F6940%22,%22queries%22:%5B%7B%22refId%22:%22A%22,%22expr%22:%22%7Bcontainer%3D%5C%22poktrolld%5C%22,%20namespace%3D%5C%22devnet-issue-477%5C%22%7D%20%7C%3D%20%60%60%20%7C%20json%22,%22queryType%22:%22range%22,%22datasource%22:%7B%22type%22:%22loki%22,%22uid%22:%22P8E80F9AEF21F6940%22%7D,%22editorMode%22:%22builder%22%7D%5D,%22range%22:%7B%22from%22:%22now-1h%22,%22to%22:%22now%22%7D,%22panelsState%22:%7B%22logs%22:%7B%22logs%22:%7B%22visualisationType%22:%22logs%22%7D%7D%7D%7D%7D&orgId=1) links to the logs for `devnet-issue-477` from [PR #477](https://github.com/pokt-network/poktroll/pull/477)
+As an example, this [Grafana link](https://grafana.pocket.com/explore?schemaVersion=1&panes=%7B%22TtK%22:%7B%22datasource%22:%22P8E80F9AEF21F6940%22,%22queries%22:%5B%7B%22refId%22:%22A%22,%22expr%22:%22%7Bcontainer%3D%5C%22pocketd%5C%22,%20namespace%3D%5C%22devnet-issue-477%5C%22%7D%20%7C%3D%20%60%60%20%7C%20json%22,%22queryType%22:%22range%22,%22datasource%22:%7B%22type%22:%22loki%22,%22uid%22:%22P8E80F9AEF21F6940%22%7D,%22editorMode%22:%22builder%22%7D%5D,%22range%22:%7B%22from%22:%22now-1h%22,%22to%22:%22now%22%7D,%22panelsState%22:%7B%22logs%22:%7B%22logs%22:%7B%22visualisationType%22:%22logs%22%7D%7D%7D%7D%7D&orgId=1) links to the logs for `devnet-issue-477` from [PR #477](https://github.com/pokt-network/poktroll/pull/477)
 
 ![Grafana logs explorer](./grafana_explore_logs.png)
 
@@ -68,15 +68,15 @@ Each Helm chart receives a list of configuration files. For example, see the [re
 
 :::note
 Devnets are provisioned with the same mnemonc phrases as LocalNet, so it is possible to reuse the same keys
-from the keybase - the user just needs to change the `--node=` flag to point to the DevNet RPC endpoint when using the `poktrolld` CLI.
+from the keybase - the user just needs to change the `--node=` flag to point to the DevNet RPC endpoint when using the `pocketd` CLI.
 :::
 
-The DevNet RPC endpoint is exposed on `https://devnet-**NETWORK_NAME**-validator-rpc.poktroll.com`.
+The DevNet RPC endpoint is exposed on `https://devnet-**NETWORK_NAME**-validator-rpc.pocket.com`.
 
 It is possible to reuse the LocalNet make targets with DevNet endpoints. For example
 
 ```bash
-POCKET_NODE=https://devnet-issue-420-validator-rpc.poktroll.com make supplier_list
+POCKET_NODE=https://devnet-issue-420-validator-rpc.pocket.com make supplier_list
 ```
 
 ## DevNet types
@@ -111,8 +111,8 @@ New container images are automatically built on each merge to the `main` branch 
 Images named according to the following format:
 
 ```
-ghcr.io/pokt-network/poktrolld:sha-7042be3
-ghcr.io/pokt-network/poktrolld:sha-7042be3922245fb4313ee90e1f28d0f402b700a0
+ghcr.io/pokt-network/pocketd:sha-7042be3
+ghcr.io/pokt-network/pocketd:sha-7042be3922245fb4313ee90e1f28d0f402b700a0
 ```
 
 You can update the version of DevNet by changing this parameter in the devnet config file:
@@ -143,10 +143,10 @@ relayminers:
 
 ### Run e2e tests on a manually provisioned DevNet
 
-To run e2e tests on a manually provisioned DevNet, use the following command from the root of the poktroll repo:
+To run e2e tests on a manually provisioned DevNet, use the following command from the root of the pocket repo:
 
 ```bash
-IMAGE_TAG=**IMAGE TAG NAME FROM DEVNET CONFIG** NAMESPACE=devnet-**NETWORK NAME** JOB_NAME=e2e-test-**GITSHA FROM IMAGE TAG** POCKET_NODE=tcp://devnet-**NETWORK NAME**-validator-poktrolld:26657 bash .github/workflows-helpers/run-e2e-test.sh
+IMAGE_TAG=**IMAGE TAG NAME FROM DEVNET CONFIG** NAMESPACE=devnet-**NETWORK NAME** JOB_NAME=e2e-test-**GITSHA FROM IMAGE TAG** POCKET_NODE=tcp://devnet-**NETWORK NAME**-validator-pocketd:26657 bash .github/workflows-helpers/run-e2e-test.sh
 ```
 
 **Environment Variables**:
@@ -154,13 +154,13 @@ IMAGE_TAG=**IMAGE TAG NAME FROM DEVNET CONFIG** NAMESPACE=devnet-**NETWORK NAME*
 - **IMAGE_TAG**: The tag of the image from the devnet config YAML file. This tag must match the tag of the image used in the DevNet configuration.
 - **NAMESPACE**: The name of the devnet. This should be specified in the environment variables and follow the format devnet-**NETWORK NAME**.
 - **JOB_NAME**: A unique identifier for the e2e test job. It follows the format e2e-test-**GITSHA FROM IMAGE TAG**.
-- **POCKET_NODE**: The address of the pocket node, following the format tcp://devnet-**NETWORK NAME**-validator-poktrolld:26657.
+- **POCKET_NODE**: The address of the pocket node, following the format tcp://devnet-**NETWORK NAME**-validator-pocketd:26657.
 
 
 **Example**
 
 ```bash
-IMAGE_TAG=sha-7042be3 NAMESPACE=devnet-sophon JOB_NAME=e2e-test-7042be3 POCKET_NODE=tcp://devnet-sophon-validator-poktrolld:26657 bash .github/workflows-helpers/run-e2e-test.sh
+IMAGE_TAG=sha-7042be3 NAMESPACE=devnet-sophon JOB_NAME=e2e-test-7042be3 POCKET_NODE=tcp://devnet-sophon-validator-pocketd:26657 bash .github/workflows-helpers/run-e2e-test.sh
 ```
 
 :::info
@@ -179,7 +179,7 @@ DevNet. Additionally, DevNets match the hostnames with LocalNet, making it possi
 For example, this command stakes supplier2 on DevNet `devnet-sophon`:
 
 ```bash
-POCKET_NODE=https://devnet-sophon-validator-rpc.poktroll.com make supplier2_stake
+POCKET_NODE=https://devnet-sophon-validator-rpc.pocket.com make supplier2_stake
 ```
 
 :::note

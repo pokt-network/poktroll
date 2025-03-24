@@ -18,7 +18,7 @@ type IntegrationSuite interface {
 	SetApp(*integration.App)
 	// GetApp returns the integration app from the suite.
 	GetApp() *integration.App
-	// GetPoktrollModuleNames returns the list of the names of all poktroll modules
+	// GetPoktrollModuleNames returns the list of the names of all pocket modules
 	// in the integration app.
 	GetPoktrollModuleNames() []string
 	// GetCosmosModuleNames returns the list of the names of all cosmos-sdk modules
