@@ -23,8 +23,8 @@ localnet_regenesis: check_yq warn_message_acc_initialize_pubkeys ## Regenerate t
 	AUTH_CONTENT=$$(cat ./tools/scripts/authz/dao_genesis_authorizations.json | jq -r tostring); \
 	$(SED) -i -E 's!^(\s*)"authorization": (\[\]|null)!\1"authorization": '$$AUTH_CONTENT'!' ${HOME}/.pocket/config/genesis.json;
 
-	@cp -r ${HOME}/.pocket/keyring-test $(POKTROLLD_HOME)
-	@cp -r ${HOME}/.pocket/config $(POKTROLLD_HOME)/
+	@cp -r ${HOME}/.pocket/keyring-test $(POCKETD_HOME)
+	@cp -r ${HOME}/.pocket/config $(POCKETD_HOME)/
 
 .PHONY: cosmovisor_start_node
 cosmovisor_start_node: ## Starts the node using cosmovisor that waits for an upgrade plan

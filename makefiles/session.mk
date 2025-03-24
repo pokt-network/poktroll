@@ -4,7 +4,7 @@
 
 .PHONY: get_session
 get_session: ## Retrieve the session given the following env vars: (APP_ADDR, SVC, HEIGHT)
-	pocketd --home=$(POKTROLLD_HOME) q session get-session $(APP) $(SVC) $(HEIGHT) --node $(POCKET_NODE)
+	pocketd --home=$(POCKETD_HOME) q session get-session $(APP) $(SVC) $(HEIGHT) --node $(POCKET_NODE)
 
 .PHONY: get_session_app1_anvil
 get_session_app1_anvil: ## Retrieve the session for (app1, anvil, latest_height)

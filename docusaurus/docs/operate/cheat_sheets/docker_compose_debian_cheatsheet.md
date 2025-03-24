@@ -314,7 +314,7 @@ docker rm $(docker ps -aq) -f
 rm -rf pocketd-data/config/addrbook.json pocketd-data/config/genesis.json pocketd-data/config/genesis.seeds pocketd-data/data/ pocketd-data/cosmovisor/ pocketd-data/config/node_key.json pocketd-data/config/priv_validator_key.json
 ```
 
-Update `POKTROLLD_IMAGE_TAG` in `.env` based on the releases [here](https://github.com/pokt-network/poktroll/releases).
+Update `POCKETD_IMAGE_TAG` in `.env` based on the releases [here](https://github.com/pokt-network/poktroll/releases).
 
 ```bash
 # Start the full

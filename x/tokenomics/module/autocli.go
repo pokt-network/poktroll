@@ -19,7 +19,7 @@ func (am AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 				// 					Long: `Shows all the parameters related to the tokenomics module.
 				//
 				// Example:
-				// $ pocketd q tokenomics params --node $(POCKET_NODE) --home $(POKTROLLD_HOME)`,
+				// $ pocketd q tokenomics params --node $(POCKET_NODE) --home $(POCKETD_HOME)`,
 				// 				},
 				{
 					RpcMethod: "RelayMiningDifficultyAll",

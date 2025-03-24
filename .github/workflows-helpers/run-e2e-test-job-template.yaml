@@ -47,7 +47,7 @@ spec:
               value: ${NAMESPACE}-validator-pocketd:26657
             - name: E2E_DEBUG_OUTPUT
               value: "false" # Flip to true to see the command and result of the execution
-            - name: POKTROLLD_HOME
+            - name: POCKETD_HOME
               value: /root/.pocket
             - name: PATH_URL
               value: http://${NAMESPACE}-path:3069/v1

@@ -22,7 +22,7 @@ func CmdUnstakeApplication() *cobra.Command {
 the application specified by the 'from' address.
 
 Example:
-$ pocketd tx application unstake-application --keyring-backend test --from $(APP) --node $(POCKET_NODE) --home $(POKTROLLD_HOME)`,
+$ pocketd tx application unstake-application --keyring-backend test --from $(APP) --node $(POCKET_NODE) --home $(POCKETD_HOME)`,
 		Args: cobra.ExactArgs(0),
 		RunE: func(cmd *cobra.Command, args []string) (err error) {
 

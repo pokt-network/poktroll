@@ -176,7 +176,7 @@ Choose a network to join from the tabs below:
     curl -s -o $HOME/.pocket/config/genesis.json "$GENESIS_FILE_URL"
 
     # Extract initial version of pocketd to start synching from genesis
-    POKTROLLD_GENESIS_VERSION=$(jq -r '.app_version' < $HOME/.pocket/config/genesis.json)
+    POCKETD_GENESIS_VERSION=$(jq -r '.app_version' < $HOME/.pocket/config/genesis.json)
     ```
 
   </TabItem>
@@ -195,7 +195,7 @@ Choose a network to join from the tabs below:
     curl -s -o $HOME/.pocket/config/genesis.json "$GENESIS_FILE_URL"
 
     # Extract initial version of pocketd to start synching from genesis
-    POKTROLLD_GENESIS_VERSION=$(jq -r '.app_version' < $HOME/.pocket/config/genesis.json)
+    POCKETD_GENESIS_VERSION=$(jq -r '.app_version' < $HOME/.pocket/config/genesis.json)
     ```
 
   </TabItem>
@@ -214,7 +214,7 @@ Choose a network to join from the tabs below:
     curl -s -o $HOME/.pocket/config/genesis.json "$GENESIS_FILE_URL"
 
     # Extract initial version of pocketd to start synching from genesis
-    POKTROLLD_GENESIS_VERSION=$(jq -r '.app_version' < $HOME/.pocket/config/genesis.json)
+    POCKETD_GENESIS_VERSION=$(jq -r '.app_version' < $HOME/.pocket/config/genesis.json)
     ```
 
   </TabItem>
@@ -267,8 +267,8 @@ flowchart TD
 The (static) genesis file contains the required initial version of pocketd to start syncing from genesis.
 
 ```bash
-POKTROLLD_VERSION=$POKTROLLD_GENESIS_VERSION
-echo "Sync from genesis will use the following version of pocketd as a starting point: $POKTROLLD_VERSION"
+POCKETD_VERSION=$POCKETD_GENESIS_VERSION
+echo "Sync from genesis will use the following version of pocketd as a starting point: $POCKETD_VERSION"
 ```
 
 #### 6.2 [Fast & Recommended] Sync from Snapshot
@@ -302,8 +302,8 @@ If you prefer to use a snapshot (recommended for faster setup), you need to chec
     TORRENT_URL="${SNAPSHOT_BASE_URL}/testnet-beta-latest-archival.torrent"
 
     # Set the version to use for installation
-    POKTROLLD_VERSION=$SNAPSHOT_VERSION
-    echo "Sync from snapshot will use the following version of pocketd as a starting point: $POKTROLLD_VERSION"
+    POCKETD_VERSION=$SNAPSHOT_VERSION
+    echo "Sync from snapshot will use the following version of pocketd as a starting point: $POCKETD_VERSION"
 
     echo "############################################"
     ```
@@ -330,8 +330,8 @@ If you prefer to use a snapshot (recommended for faster setup), you need to chec
     TORRENT_URL="${SNAPSHOT_BASE_URL}/testnet-alpha-latest-archival.torrent"
 
     # Set the version to use for installation
-    POKTROLLD_VERSION=$SNAPSHOT_VERSION
-    echo "Sync from snapshot will use the following version of pocketd as a starting point: $POKTROLLD_VERSION"
+    POCKETD_VERSION=$SNAPSHOT_VERSION
+    echo "Sync from snapshot will use the following version of pocketd as a starting point: $POCKETD_VERSION"
 
     echo "############################################"
     ```
@@ -358,8 +358,8 @@ If you prefer to use a snapshot (recommended for faster setup), you need to chec
     TORRENT_URL="${SNAPSHOT_BASE_URL}/mainnet-latest-archival.torrent"
 
     # Set the version to use for installation
-    POKTROLLD_VERSION=$SNAPSHOT_VERSION
-    echo "Sync from snapshot will use the following version of pocketd as a starting point: $POKTROLLD_VERSION"
+    POCKETD_VERSION=$SNAPSHOT_VERSION
+    echo "Sync from snapshot will use the following version of pocketd as a starting point: $POCKETD_VERSION"
 
     echo "############################################"
     ```
@@ -429,7 +429,7 @@ elif [ "$ARCH" = "aarch64" ]; then
 fi
 
 # Download and install pocketd with the version determined in the previous step
-RELEASE_URL="https://github.com/pokt-network/poktroll/releases/download/v${POKTROLLD_VERSION}/pocket_${OS_TYPE}_${ARCH}.tar.gz"
+RELEASE_URL="https://github.com/pokt-network/poktroll/releases/download/v${POCKETD_VERSION}/pocket_${OS_TYPE}_${ARCH}.tar.gz"
 mkdir -p $HOME/.pocket/cosmovisor/genesis/bin
 curl -L "$RELEASE_URL" | tar -zxvf - -C $HOME/.pocket/cosmovisor/genesis/bin
 chmod +x $HOME/.pocket/cosmovisor/genesis/bin/pocketd

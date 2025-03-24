@@ -2,7 +2,7 @@
 
 SHELL = /bin/sh
 
-POKTROLLD_HOME ?= ./localnet/pocketd
+POCKETD_HOME ?= ./localnet/pocketd
 POCKET_NODE ?= tcp://127.0.0.1:26657 # The pocket node (validator in the localnet context)
 TESTNET_RPC ?= https://testnet-validated-validator-rpc.pocket.com/ # TestNet RPC endpoint for validator maintained by Grove. Needs to be update if there's another "primary" testnet.
 PATH_URL ?= http://localhost:3000
@@ -225,10 +225,10 @@ go_develop_and_test: go_develop test_all ## Generate protos, mocks and run all t
 .PHONY: acc_balance_query
 acc_balance_query: ## Query the balance of the account specified (make acc_balance_query ACC=pokt...)
 	@echo "~ Balances ~"
-	pocketd --home=$(POKTROLLD_HOME) q bank balances $(ACC) --node $(POCKET_NODE)
+	pocketd --home=$(POCKETD_HOME) q bank balances $(ACC) --node $(POCKET_NODE)
 	@echo "~ Spendable Balances ~"
 	@echo "Querying spendable balance for $(ACC)"
-	pocketd --home=$(POKTROLLD_HOME) q bank spendable-balances $(ACC) --node $(POCKET_NODE)
+	pocketd --home=$(POCKETD_HOME) q bank spendable-balances $(ACC) --node $(POCKET_NODE)
 
 .PHONY: acc_balance_query_modules
 acc_balance_query_modules: ## Query the balance of the network level module accounts
@@ -248,7 +248,7 @@ acc_balance_query_app1: ## Query the balance of app1
 
 .PHONY: acc_balance_total_supply
 acc_balance_total_supply: ## Query the total supply of the network
-	pocketd --home=$(POKTROLLD_HOME) q bank total --node $(POCKET_NODE)
+	pocketd --home=$(POCKETD_HOME) q bank total --node $(POCKET_NODE)
 
 # NB: Ignite does not populate `pub_key` in `accounts` within `genesis.json` leading
 # to queries like this to fail: `pocketd query account pokt1<addr> --node $(POCKET_NODE).
@@ -267,7 +267,7 @@ acc_initialize_pubkeys: ## Make sure the account keeper has public keys for all 
 		pocketd tx bank send \
 			$(addr) $(PNF_ADDRESS) 1000upokt \
 			--yes \
-			--home=$(POKTROLLD_HOME) \
+			--home=$(POCKETD_HOME) \
 			--node $(POCKET_NODE);)
 
 ######################
@@ -276,7 +276,7 @@ acc_initialize_pubkeys: ## Make sure the account keeper has public keys for all 
 
 .PHONY: ignite_acc_list
 ignite_acc_list: ## List all the accounts in LocalNet
-	ignite account list --keyring-dir=$(POKTROLLD_HOME) --keyring-backend test --address-prefix $(POCKET_ADDR_PREFIX)
+	ignite account list --keyring-dir=$(POCKETD_HOME) --keyring-backend test --address-prefix $(POCKET_ADDR_PREFIX)
 
 .PHONY: ignite_pocketd_build
 ignite_pocketd_build: check_go_version check_ignite_version ## Build the pocketd binary using Ignite
@@ -370,11 +370,11 @@ docs_update_gov_params_page: ## Update the page in Docusaurus documenting all th
 
 .PHONY: pocketd_addr
 pocketd_addr: ## Retrieve the address for an account by ACC_NAME
-	@echo $(shell pocketd --home=$(POKTROLLD_HOME) keys show -a $(ACC_NAME))
+	@echo $(shell pocketd --home=$(POCKETD_HOME) keys show -a $(ACC_NAME))
 
 .PHONY: pocketd_key
 pocketd_key: ## Retrieve the private key for an account by ACC_NAME
-	@echo $(shell pocketd --home=$(POKTROLLD_HOME) keys export --unsafe --unarmored-hex $(ACC_NAME))
+	@echo $(shell pocketd --home=$(POCKETD_HOME) keys export --unsafe --unarmored-hex $(ACC_NAME))
 
 ###################
 ### Act Helpers ###

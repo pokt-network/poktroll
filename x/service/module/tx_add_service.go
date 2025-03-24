@@ -31,7 +31,7 @@ func CmdAddService() *cobra.Command {
 gateways and suppliers to use. The service id MUST be unique but the service name doesn't have to be.
 
 Example:
-$ pocketd tx service add-service "svc1" "service_one" 1 --keyring-backend test --from $(SERVICE_OWNER) --node $(POCKET_NODE) --home $(POKTROLLD_HOME)`,
+$ pocketd tx service add-service "svc1" "service_one" 1 --keyring-backend test --from $(SERVICE_OWNER) --node $(POCKET_NODE) --home $(POCKETD_HOME)`,
 		Args: cobra.MinimumNArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) (err error) {
 			serviceIdStr := args[0]

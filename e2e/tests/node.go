@@ -22,7 +22,7 @@ var (
 	// defaultRPCHost is the default RPC host that pocketd listens on
 	defaultRPCHost = "127.0.0.1"
 	// defaultHome is the default home directory for pocketd
-	defaultHome = os.Getenv("POKTROLLD_HOME")
+	defaultHome = os.Getenv("POCKETD_HOME")
 	// defaultPathURL used by curl commands to send relay requests
 	defaultPathURL = os.Getenv("PATH_URL")
 	// defaultDebugOutput provides verbose output on manipulations with binaries (cli command, stdout, stderr)
