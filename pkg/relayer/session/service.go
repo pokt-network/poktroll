@@ -20,7 +20,6 @@ func (rs *relayerSessionsManager) getServiceComputeUnitsPerRelay(
 		func() (sharedtypes.Service, error) {
 			return rs.serviceQueryClient.GetService(ctx, sessionHeader.ServiceId)
 		},
-		retry.UntilNextBlock(ctx, rs.blockClient.CommittedBlocksSequence(ctx)),
 	)
 	if err != nil {
 		return 0, ErrSessionRelayMetaHasInvalidServiceID.Wrapf(

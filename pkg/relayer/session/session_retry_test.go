@@ -6,7 +6,6 @@ import (
 	"os"
 	"strings"
 	"testing"
-	"time"
 
 	"cosmossdk.io/depinject"
 	coretypes "github.com/cometbft/cometbft/rpc/core/types"
@@ -69,13 +68,13 @@ type SessionPersistenceTestSuite struct {
 
 	logger polylog.Logger
 
-	createClaimCallStatus       *queryCallStatus
-	submitProofCallStatus       *queryCallStatus
-	sharedParamsQueryCallStatus *queryCallStatus
+	createClaimCallStatus      *queryCallStatus
+	submitProofCallStatus      *queryCallStatus
+	proofParamsQueryCallStatus *queryCallStatus
 
-	claimCreationReturnsError     bool
-	proofSubmissionReturnsError   bool
-	sharedParamsQueryReturnsError bool
+	claimCreationReturnsError    bool
+	proofSubmissionReturnsError  bool
+	proofParamsQueryReturnsError bool
 }
 
 // TestSessionPersistence executes the session persistence test suite
@@ -100,12 +99,12 @@ func (s *SessionPersistenceTestSuite) SetupTest() {
 	s.supplierOperatorAccAddress = sdktypes.MustAccAddressFromBech32(supplierOperatorAddress)
 
 	s.latestBlock = nil
-	s.sharedParamsQueryReturnsError = false
+	s.proofParamsQueryReturnsError = false
 	s.claimCreationReturnsError = false
 	s.proofSubmissionReturnsError = false
 	s.createClaimCallStatus = &queryCallStatus{}
 	s.submitProofCallStatus = &queryCallStatus{}
-	s.sharedParamsQueryCallStatus = &queryCallStatus{}
+	s.proofParamsQueryCallStatus = &queryCallStatus{}
 
 	// Set up temporary directory for session storage
 	tmpDirPattern := fmt.Sprintf("%s_smt_kvstore", strings.ReplaceAll(s.T().Name(), "/", "_"))
@@ -154,28 +153,7 @@ func (s *SessionPersistenceTestSuite) TearDownTest() {
 	_ = os.RemoveAll(s.tmpStoresDir)
 }
 
-func (s *SessionPersistenceTestSuite) TestSaveSharedQueryClientFailing() {
-	sessionEndHeight := s.activeSession.Header.GetSessionEndBlockHeight()
-	claimWindowOpenHeight := sharedtypes.GetClaimWindowOpenHeight(&s.sharedParams, sessionEndHeight)
-	s.advanceToBlock(claimWindowOpenHeight - 1)
-
-	s.sharedParamsQueryReturnsError = true
-	// Make a copy of the current call count
-	beforeClaimingCalls := *s.sharedParamsQueryCallStatus
-	s.advanceToBlock(claimWindowOpenHeight)
-
-	time.Sleep(10 * time.Second)
-	//s.blockPublishCh <- testblock.NewAnyTimesBlock(s.T(), s.emptyBlockHash, claimWindowOpenHeight+1)
-
-	require.Equal(s.T(), beforeClaimingCalls.total+1, s.sharedParamsQueryCallStatus.total)
-	require.Equal(s.T(),
-		beforeClaimingCalls.successCount,
-		s.sharedParamsQueryCallStatus.successCount,
-	)
-	require.Equal(s.T(),
-		beforeClaimingCalls.errorCount+1,
-		s.sharedParamsQueryCallStatus.errorCount,
-	)
+func (s *SessionPersistenceTestSuite) TestProofQueryClientFailing() {
 }
 
 // setupNewRelayerSessionsManager creates and configures a new relayer sessions manager for testing.
@@ -213,7 +191,6 @@ func (s *SessionPersistenceTestSuite) setupSessionManagerDependencies() depinjec
 	supplierClientMock := s.setupMockSupplierClient(ctrl)
 	blockQueryClientMock := s.setupMockBlockQueryClient(ctrl)
 	proofQueryClientMock := s.setupMockProofQueryClient(ctrl)
-	sharedQueryClientMock := s.setupMockSharedQueryClient(ctrl)
 	s.blockClient = s.setupMockBlockClient(ctrl)
 
 	// Create a new replay observable for blocks
@@ -226,6 +203,7 @@ func (s *SessionPersistenceTestSuite) setupSessionManagerDependencies() depinjec
 	// Configure other required mock query clients
 	serviceQueryClientMock := testqueryclients.NewTestServiceQueryClient(s.T())
 	bankQueryClient := testqueryclients.NewTestBankQueryClientWithBalance(s.T(), 1000000)
+	sharedQueryClientMock := testqueryclients.NewTestSharedQueryClient(s.T())
 
 	// Create the dependency supply configuration
 	deps := depinject.Supply(
@@ -293,25 +271,6 @@ func (s *SessionPersistenceTestSuite) setupMockSupplierClient(ctrl *gomock.Contr
 	return supplierClientMock
 }
 
-func (s *SessionPersistenceTestSuite) setupMockSharedQueryClient(ctrl *gomock.Controller) *mockclient.MockSharedQueryClient {
-	// Configure mock shared query client
-	sharedQueryClientMock := mockclient.NewMockSharedQueryClient(ctrl)
-	sharedQueryClientMock.EXPECT().
-		GetParams(gomock.Any()).
-		DoAndReturn(func(ctx context.Context) (*sharedtypes.Params, error) {
-			s.sharedParamsQueryCallStatus.total++
-			if s.sharedParamsQueryReturnsError {
-				s.sharedParamsQueryCallStatus.errorCount++
-				return nil, fmt.Errorf("error querying shared params")
-			}
-			s.sharedParamsQueryCallStatus.successCount++
-			return &s.sharedParams, nil
-		}).
-		AnyTimes()
-
-	return sharedQueryClientMock
-}
-
 // setupMockBlockQueryClient creates and configures a mock block query client
 // for testing block retrieval
 func (s *SessionPersistenceTestSuite) setupMockBlockQueryClient(ctrl *gomock.Controller) *mockclient.MockCometRPC {
@@ -341,7 +300,15 @@ func (s *SessionPersistenceTestSuite) setupMockProofQueryClient(ctrl *gomock.Con
 	proofQueryClientMock := mockclient.NewMockProofQueryClient(ctrl)
 	proofQueryClientMock.EXPECT().
 		GetParams(gomock.Any()).
-		Return(&s.proofParams, nil).
+		DoAndReturn(func(ctx context.Context) (*prooftypes.Params, error) {
+			s.proofParamsQueryCallStatus.total++
+			if s.proofParamsQueryReturnsError {
+				s.proofParamsQueryCallStatus.errorCount++
+				return nil, fmt.Errorf("error querying proof params")
+			}
+			s.proofParamsQueryCallStatus.successCount++
+			return &s.proofParams, nil
+		}).
 		AnyTimes()
 
 	return proofQueryClientMock

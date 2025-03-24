@@ -5,8 +5,6 @@ import (
 	"math"
 	"time"
 
-	"github.com/pokt-network/poktroll/pkg/client"
-	"github.com/pokt-network/poktroll/pkg/observable"
 	"github.com/pokt-network/poktroll/pkg/polylog"
 )
 
@@ -95,8 +93,10 @@ func Call[T any](
 	work func() (T, error),
 	retryStrategy ...RetryStrategyFunc,
 ) (T, error) {
-	var result T
-	var err error
+	var (
+		result T
+		err    error
+	)
 	if retryStrategy == nil {
 		retryStrategy = []RetryStrategyFunc{WithDefaultExponentialDelay}
 	}
@@ -106,6 +106,7 @@ func Call[T any](
 		if err == nil {
 			return result, nil
 		}
+
 		if !retryStrategy[0](retryCount) {
 			return result, err
 		}
@@ -145,6 +146,7 @@ func WithExponentialBackoffFn(
 ) func(retryCount int) bool {
 	return func(retryCount int) bool {
 		if retryCount >= maxRetryCount {
+			time.Sleep(time.Duration(maxDelayMs) * time.Millisecond)
 			return false
 		}
 
@@ -152,56 +154,5 @@ func WithExponentialBackoffFn(
 		delay := min(backoffDelay, maxDelayMs)
 		time.Sleep(time.Duration(delay) * time.Millisecond)
 		return true
-	}
-}
-
-// UntilNextBlock creates a retry strategy function that retries until a new block
-// is observed or falls back to the provided retry strategy.
-//
-// The function subscribes to a block observable and creates a retry strategy that
-// will either retry based on the provided strategy or stop retrying when a new block
-// is observed, whichever happens first.
-func UntilNextBlock(
-	ctx context.Context,
-	blockObservable observable.Observable[client.Block],
-	retryStrategy ...RetryStrategyFunc,
-) func(retryCount int) bool {
-	// Create a context that can be canceled when a block is observed
-	ctx, cancel := context.WithCancel(ctx)
-	// Subscribe to the block observable to get notified of new blocks
-	heightReachedCh := blockObservable.Subscribe(ctx).Ch()
-
-	// Use default retry strategy if none is provided
-	if retryStrategy == nil {
-		retryStrategy = []RetryStrategyFunc{WithDefaultExponentialDelay}
-	}
-
-	return func(retryCount int) bool {
-		// Channel to signal when the retry strategy has completed its delay
-		retryCh := make(chan struct{}, 10)
-		defer close(retryCh)
-
-		// Execute the retry strategy in a goroutine to avoid blocking
-		go func(retries int) {
-			retryStrategy[0](retries)
-			// Signal that the retry strategy has completed
-			<-retryCh
-		}(retryCount)
-
-		// Wait for one of three conditions: context done, new block observed, or retry strategy completed
-		for {
-			select {
-			case <-ctx.Done():
-				// The context was canceled, don't retry
-				return false
-			case <-heightReachedCh:
-				// A new block was observed, cancel the context and don't retry
-				cancel()
-				return false
-			case <-retryCh:
-				// The retry strategy completed, signal to retry the operation
-				return true
-			}
-		}
 	}
 }

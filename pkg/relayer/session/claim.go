@@ -119,10 +119,7 @@ func (rs *relayerSessionsManager) waitForEarliestCreateClaimsHeight(
 	// to get the most recently (asynchronously) observed (and cached) value.
 	// TODO_MAINNET(@bryanchriswhite,#543): We also don't really want to use the current value of the params. Instead,
 	// we should be using the value that the params had for the session which includes queryHeight.
-	sharedParams, err := retry.GetParams(ctx,
-		rs.sharedQueryClient,
-		retry.UntilNextBlock(ctx, rs.blockClient.CommittedBlocksSequence(ctx)),
-	)
+	sharedParams, err := retry.GetParams(ctx, rs.sharedQueryClient)
 	if err != nil {
 		logger.Error().Err(err).Msg("failed to get shared params")
 		failedCreateClaimsSessionsCh <- sessionTrees
@@ -229,7 +226,6 @@ func (rs *relayerSessionsManager) newMapClaimSessionsFn(
 
 		_, err = retry.Call(
 			func() (any, error) { return nil, supplierClient.CreateClaims(ctx, claimMsgs...) },
-			retry.UntilNextBlock(ctx, rs.blockClient.CommittedBlocksSequence(ctx)),
 		)
 		// Create claims for each supplier operator address in `sessionTrees`.
 		if err != nil {
@@ -274,10 +270,7 @@ func (rs *relayerSessionsManager) payableProofsSessionTrees(
 		"supplier_operator_address", supplierOpeartorAddress,
 	)
 
-	proofParams, err := retry.GetParams(ctx,
-		rs.proofQueryClient,
-		retry.UntilNextBlock(ctx, rs.blockClient.CommittedBlocksSequence(ctx)),
-	)
+	proofParams, err := retry.GetParams(ctx, rs.proofQueryClient)
 	if err != nil {
 		return nil, err
 	}
@@ -290,7 +283,6 @@ func (rs *relayerSessionsManager) payableProofsSessionTrees(
 		func() (*sdktypes.Coin, error) {
 			return rs.bankQueryClient.GetBalance(ctx, sessionTrees[0].GetSupplierOperatorAddress())
 		},
-		retry.UntilNextBlock(ctx, rs.blockClient.CommittedBlocksSequence(ctx)),
 	)
 	if err != nil {
 		return nil, err

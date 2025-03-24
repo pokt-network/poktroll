@@ -236,13 +236,7 @@ func (rs *relayerSessionsManager) forEachBlockClaimSessionsFn(
 		// They will be emitted last, after all the late sessions have been emitted.
 		var onTimeSessions []relayer.SessionTree
 
-		// TODO_TECHDEBT(#543): We don't really want to have to query the params for every method call.
-		// Once `ModuleParamsClient` is implemented, use its replay observable's `#Last()` method
-		// to get the most recently (asynchronously) observed (and cached) value.
-		sharedParams, err := retry.GetParams(ctx,
-			rs.sharedQueryClient,
-			retry.UntilNextBlock(ctx, rs.blockClient.CommittedBlocksSequence(ctx)),
-		)
+		sharedParams, err := retry.GetParams(ctx, rs.sharedQueryClient)
 		if err != nil {
 			rs.logger.Error().Err(err).Msg("unable to query shared module params")
 			return
@@ -465,10 +459,7 @@ func (rs *relayerSessionsManager) deleteExpiredSessionTreesFn(
 ) func(ctx context.Context, failedSessionTrees []relayer.SessionTree) {
 	return func(ctx context.Context, failedSessionTrees []relayer.SessionTree) {
 		currentHeight := rs.blockClient.LastBlock(ctx).Height()
-		sharedParams, err := retry.GetParams(ctx,
-			rs.sharedQueryClient,
-			retry.UntilNextBlock(ctx, rs.blockClient.CommittedBlocksSequence(ctx)),
-		)
+		sharedParams, err := retry.GetParams(ctx, rs.sharedQueryClient)
 		if err != nil {
 			rs.logger.Error().Err(err).Msg("unable to query shared module params")
 			return

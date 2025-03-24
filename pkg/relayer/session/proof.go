@@ -96,10 +96,7 @@ func (rs *relayerSessionsManager) waitForEarliestSubmitProofsHeightAndGeneratePr
 	// to get the most recently (asynchronously) observed (and cached) value.
 	// TODO_MAINNET(@bryanchriswhite,#543): We also don't really want to use the current value of the params. Instead,
 	// we should be using the value that the params had for the session which includes queryHeight.
-	sharedParams, err := retry.GetParams(ctx,
-		rs.sharedQueryClient,
-		retry.UntilNextBlock(ctx, rs.blockClient.CommittedBlocksSequence(ctx)),
-	)
+	sharedParams, err := retry.GetParams(ctx, rs.sharedQueryClient)
 	if err != nil {
 		logger.Error().Err(err).Msg("failed to get shared params")
 		failedSubmitProofsSessionsCh <- sessionTrees
@@ -183,7 +180,6 @@ func (rs *relayerSessionsManager) newMapProveSessionsFn(
 
 		_, err := retry.Call(
 			func() (any, error) { return nil, supplierClient.SubmitProofs(ctx, proofMsgs...) },
-			retry.UntilNextBlock(ctx, rs.blockClient.CommittedBlocksSequence(ctx)),
 		)
 		// Submit proofs for each supplier operator address in `sessionTrees`.
 		if err != nil {
@@ -291,18 +287,12 @@ func (rs *relayerSessionsManager) isProofRequired(
 	// Create the claim object and use its methods to determine if a proof is required.
 	claim := claimFromSessionTree(sessionTree)
 
-	proofParams, err := retry.GetParams(ctx,
-		rs.proofQueryClient,
-		retry.UntilNextBlock(ctx, rs.blockClient.CommittedBlocksSequence(ctx)),
-	)
+	proofParams, err := retry.GetParams(ctx, rs.proofQueryClient)
 	if err != nil {
 		return false, err
 	}
 
-	sharedParams, err := retry.GetParams(ctx,
-		rs.sharedQueryClient,
-		retry.UntilNextBlock(ctx, rs.blockClient.CommittedBlocksSequence(ctx)),
-	)
+	sharedParams, err := retry.GetParams(ctx, rs.sharedQueryClient)
 	if err != nil {
 		return false, err
 	}
@@ -313,7 +303,6 @@ func (rs *relayerSessionsManager) isProofRequired(
 		func() (servicetypes.RelayMiningDifficulty, error) {
 			return rs.serviceQueryClient.GetServiceRelayDifficulty(ctx, serviceId)
 		},
-		retry.UntilNextBlock(ctx, rs.blockClient.CommittedBlocksSequence(ctx)),
 	)
 	if err != nil {
 		return false, err
