@@ -5,7 +5,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/pokt-network/poktroll/x/application/types"
+	"github.com/pokt-network/pocket/x/application/types"
 )
 
 func TestMsgUpdateParams(t *testing.T) {

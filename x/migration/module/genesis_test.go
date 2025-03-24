@@ -5,11 +5,11 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
-	"github.com/pokt-network/poktroll/testutil/nullify"
-	"github.com/pokt-network/poktroll/testutil/sample"
-	migration "github.com/pokt-network/poktroll/x/migration/module"
-	"github.com/pokt-network/poktroll/x/migration/types"
+	keepertest "github.com/pokt-network/pocket/testutil/keeper"
+	"github.com/pokt-network/pocket/testutil/nullify"
+	"github.com/pokt-network/pocket/testutil/sample"
+	migration "github.com/pokt-network/pocket/x/migration/module"
+	"github.com/pokt-network/pocket/x/migration/types"
 )
 
 func TestGenesis(t *testing.T) {

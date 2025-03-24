@@ -1,14 +1,14 @@
 syntax = "proto3";
-package poktroll.migration;
+package pocket.migration;
 
 import "amino/amino.proto";
 import "gogoproto/gogo.proto";
 
-option go_package = "github.com/pokt-network/poktroll/x/migration/types";
+option go_package = "github.com/pokt-network/pocket/x/migration/types";
 option (gogoproto.stable_marshaler_all) = true;
 
 // Params defines the parameters for the module.
 message Params {
-  option (amino.name) = "poktroll/x/migration/Params";
+  option (amino.name) = "pocket/x/migration/Params";
   option (gogoproto.equal) = true;
 }

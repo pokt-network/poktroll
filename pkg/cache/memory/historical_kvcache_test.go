@@ -10,7 +10,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/pokt-network/poktroll/pkg/cache"
+	"github.com/pokt-network/pocket/pkg/cache"
 )
 
 // TestMemoryHistoricalKeyValueCache exercises the historical key/value cache functionality.

@@ -7,7 +7,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/spf13/cobra"
 
-	"github.com/pokt-network/poktroll/x/proof/types"
+	"github.com/pokt-network/pocket/x/proof/types"
 )
 
 // AddProofFilterFlagsToCmd adds common pagination flags to cmd
@@ -26,10 +26,10 @@ func CmdListProof() *cobra.Command {
 The proofs can be optionally filtered by one of --session-end-height --session-id or --supplier-operator-address flags
 
 Example:
-$ poktrolld q proof list-proofs --node $(POCKET_NODE) --home $(POKTROLLD_HOME)
-$ poktrolld q proof list-proofs --session-id <session_id> --node $(POCKET_NODE) --home $(POKTROLLD_HOME)
-$ poktrolld q proof list-proofs --session-end-height <session_end_height> --node $(POCKET_NODE) --home $(POKTROLLD_HOME)
-$ poktrolld q proof list-proofs --supplier-operator-address <supplier_operator_address> --node $(POCKET_NODE) --home $(POKTROLLD_HOME)`,
+$ pocketd q proof list-proofs --node $(POCKET_NODE) --home $(POKTROLLD_HOME)
+$ pocketd q proof list-proofs --session-id <session_id> --node $(POCKET_NODE) --home $(POKTROLLD_HOME)
+$ pocketd q proof list-proofs --session-end-height <session_end_height> --node $(POCKET_NODE) --home $(POKTROLLD_HOME)
+$ pocketd q proof list-proofs --supplier-operator-address <supplier_operator_address> --node $(POCKET_NODE) --home $(POKTROLLD_HOME)`,
 		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			pageReq, err := client.ReadPageRequest(cmd.Flags())
@@ -78,7 +78,7 @@ func CmdShowProof() *cobra.Command {
 A unique proof can be defined via a session_id that a given supplier participated in.
 
 Example:
-$ poktrolld --home=$(POKTROLLD_HOME) q proof show-proofs <session_id> <supplier_operator_address> --node $(POCKET_NODE)`,
+$ pocketd --home=$(POKTROLLD_HOME) q proof show-proofs <session_id> <supplier_operator_address> --node $(POCKET_NODE)`,
 		Args: cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) (err error) {
 			sessionId := args[0]

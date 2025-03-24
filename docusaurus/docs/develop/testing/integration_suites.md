@@ -16,12 +16,12 @@ title: App Integration Suites
 
 ## Overview
 
-The [`suites` package](https://github.com/pokt-network/poktroll/tree/main/testutil/integration/suites) provides interfaces and base implementations for creating and managing **app integration test** suites.
+The [`suites` package](https://github.com/pokt-network/pocket/tree/main/testutil/integration/suites) provides interfaces and base implementations for creating and managing **app integration test** suites.
 
 The foundational components are:
 
-- [**`IntegrationSuite`**](https://github.com/pokt-network/poktroll/blob/main/testutil/integration/suites/interface.go#L14): An interface defining common methods for interacting with an integration app.
-- [**`BaseIntegrationSuite`**](https://github.com/pokt-network/poktroll/blob/main/testutil/integration/suites/base.go#L26): A base implementation of the `IntegrationSuite` interface that can be extended by embedding in other test suites.
+- [**`IntegrationSuite`**](https://github.com/pokt-network/pocket/blob/main/testutil/integration/suites/interface.go#L14): An interface defining common methods for interacting with an integration app.
+- [**`BaseIntegrationSuite`**](https://github.com/pokt-network/pocket/blob/main/testutil/integration/suites/base.go#L26): A base implementation of the `IntegrationSuite` interface that can be extended by embedding in other test suites.
 
 ## When to Use Test Suites
 

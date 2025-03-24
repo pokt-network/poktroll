@@ -3,7 +3,7 @@ package keeper
 import (
 	"context"
 
-	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
+	sharedtypes "github.com/pokt-network/pocket/x/shared/types"
 )
 
 // GetSessionStartHeight returns the block height at which the session containing

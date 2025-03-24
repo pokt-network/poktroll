@@ -1,8 +1,8 @@
 syntax = "proto3";
 
-package poktroll.proof;
+package pocket.proof;
 
-option go_package = "github.com/pokt-network/poktroll/x/proof/types";
+option go_package = "github.com/pokt-network/pocket/x/proof/types";
 option (gogoproto.stable_marshaler_all) = true;
 
 import "amino/amino.proto";
@@ -10,10 +10,10 @@ import "cosmos/base/v1beta1/coin.proto";
 import "cosmos/msg/v1/msg.proto";
 import "cosmos_proto/cosmos.proto";
 import "gogoproto/gogo.proto";
-import "poktroll/proof/params.proto";
-import "poktroll/proof/types.proto";
-import "poktroll/session/types.proto";
-import "poktroll/shared/service.proto";
+import "pocket/proof/params.proto";
+import "pocket/proof/types.proto";
+import "pocket/session/types.proto";
+import "pocket/shared/service.proto";
 
 // Msg defines the Msg service.
 service Msg {
@@ -30,7 +30,7 @@ service Msg {
 // MsgUpdateParams is the Msg/UpdateParams request type to update all params at once.
 message MsgUpdateParams {
   option (cosmos.msg.v1.signer) = "authority";
-  option           (amino.name) = "poktroll/x/proof/MsgUpdateParams";
+  option           (amino.name) = "pocket/x/proof/MsgUpdateParams";
 
   // authority is the address that controls the module (defaults to x/gov unless overwritten).
   string authority = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
@@ -74,25 +74,25 @@ message MsgUpdateParamResponse {
 message MsgCreateClaim {
   option (cosmos.msg.v1.signer) = "supplier_operator_address";
   string                         supplier_operator_address = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
-  poktroll.session.SessionHeader session_header = 2;
+  pocket.session.SessionHeader session_header = 2;
 
   // root returned from smt.SMST#Root()
   bytes root_hash = 3;
 }
 
 message MsgCreateClaimResponse {
-  poktroll.proof.Claim claim = 1;
+  pocket.proof.Claim claim = 1;
 }
 
 message MsgSubmitProof {
   option (cosmos.msg.v1.signer) = "supplier_operator_address";
   string                         supplier_operator_address = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
-  poktroll.session.SessionHeader session_header = 2;
+  pocket.session.SessionHeader session_header = 2;
 
   // serialized version of *smt.SparseCompactMerkleClosestProof
   bytes proof = 3;
 }
 
 message MsgSubmitProofResponse {
-  poktroll.proof.Proof proof = 1;
+  pocket.proof.Proof proof = 1;
 }

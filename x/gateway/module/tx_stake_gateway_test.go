@@ -14,10 +14,10 @@ import (
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc/status"
 
-	"github.com/pokt-network/poktroll/testutil/network"
-	"github.com/pokt-network/poktroll/testutil/yaml"
-	gateway "github.com/pokt-network/poktroll/x/gateway/module"
-	"github.com/pokt-network/poktroll/x/gateway/types"
+	"github.com/pokt-network/pocket/testutil/network"
+	"github.com/pokt-network/pocket/testutil/yaml"
+	gateway "github.com/pokt-network/pocket/x/gateway/module"
+	"github.com/pokt-network/pocket/x/gateway/types"
 )
 
 func TestCLI_StakeGateway(t *testing.T) {

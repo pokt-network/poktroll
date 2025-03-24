@@ -9,8 +9,8 @@ import (
 	"github.com/cosmos/cosmos-sdk/client/tx"
 	"github.com/spf13/cobra"
 
-	"github.com/pokt-network/poktroll/x/application/module/config"
-	"github.com/pokt-network/poktroll/x/application/types"
+	"github.com/pokt-network/pocket/x/application/module/config"
+	"github.com/pokt-network/pocket/x/application/types"
 )
 
 var (
@@ -27,7 +27,7 @@ func CmdStakeApplication() *cobra.Command {
 will stake the tokens and serviceIds and associate them with the application specified by the 'from' address.
 
 Example:
-$ poktrolld tx application stake-application --config stake_config.yaml --keyring-backend test --from $(APP) --node $(POCKET_NODE) --home $(POKTROLLD_HOME)`,
+$ pocketd tx application stake-application --config stake_config.yaml --keyring-backend test --from $(APP) --node $(POCKET_NODE) --home $(POKTROLLD_HOME)`,
 		Args: cobra.ExactArgs(0),
 		RunE: func(cmd *cobra.Command, _ []string) (err error) {
 			configContent, err := os.ReadFile(flagStakeConfig)

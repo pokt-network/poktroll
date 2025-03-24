@@ -3,9 +3,9 @@
 // issue in how cosmos-proto generates the pulsar plugin output go source code.
 
 syntax = "proto3";
-package poktroll.gateway;
+package pocket.gateway;
 
-option go_package = "github.com/pokt-network/poktroll/x/gateway/types";
+option go_package = "github.com/pokt-network/pocket/x/gateway/types";
 option (gogoproto.stable_marshaler_all) = true;
 
 import "cosmos_proto/cosmos.proto";

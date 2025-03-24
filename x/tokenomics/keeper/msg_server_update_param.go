@@ -8,7 +8,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
+	tokenomicstypes "github.com/pokt-network/pocket/x/tokenomics/types"
 )
 
 // UpdateParam updates a single parameter in the tokenomics module and returns

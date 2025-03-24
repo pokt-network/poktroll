@@ -8,13 +8,13 @@ import (
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	"github.com/stretchr/testify/require"
 
-	"github.com/pokt-network/poktroll/pkg/crypto"
-	"github.com/pokt-network/poktroll/pkg/polylog"
-	"github.com/pokt-network/poktroll/pkg/relayer"
-	"github.com/pokt-network/poktroll/pkg/relayer/session"
-	"github.com/pokt-network/poktroll/testutil/testrelayer"
-	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
-	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
+	"github.com/pokt-network/pocket/pkg/crypto"
+	"github.com/pokt-network/pocket/pkg/polylog"
+	"github.com/pokt-network/pocket/pkg/relayer"
+	"github.com/pokt-network/pocket/pkg/relayer/session"
+	"github.com/pokt-network/pocket/testutil/testrelayer"
+	prooftypes "github.com/pokt-network/pocket/x/proof/types"
+	sessiontypes "github.com/pokt-network/pocket/x/session/types"
 )
 
 // NewFilledSessionTree creates a new session tree with numRelays of relays

@@ -11,7 +11,7 @@ on behalf of `Application`s.
 
 :::tip
 
-You can find a fully featured example configuration at [gateway1_stake_config.yaml](https://github.com/pokt-network/poktroll/tree/main/localnet/poktrolld/config/gateway1_stake_config.yaml).
+You can find a fully featured example configuration at [gateway1_stake_config.yaml](https://github.com/pokt-network/pocket/tree/main/localnet/pocketd/config/gateway1_stake_config.yaml).
 
 :::
 
@@ -33,12 +33,12 @@ need to adjust the command below appropriately.
 :::
 
 ```bash
-poktrolld tx gateway stake-gateway \
-  --home=./poktroll \
+pocketd tx gateway stake-gateway \
+  --home=./pocket \
   --config ./stake_config.yaml \
   --keyring-backend test \
   --from gateway1 \
-  --node tcp://poktroll-node:26657
+  --node tcp://pocket-node:26657
 ```
 
 ## Configuration

@@ -7,8 +7,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/pokt-network/poktroll/testutil/cases"
-	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
+	"github.com/pokt-network/pocket/testutil/cases"
+	sharedtypes "github.com/pokt-network/pocket/x/shared/types"
 )
 
 func (s *suite) TheUnbondingPeriodParamIsSuccessfullySetToSessionsOfBlocks(

@@ -15,8 +15,8 @@ import (
 	"github.com/spf13/pflag"
 	"github.com/stretchr/testify/require"
 
-	"github.com/pokt-network/poktroll/app"
-	"github.com/pokt-network/poktroll/cmd/poktrolld/cmd"
+	"github.com/pokt-network/pocket/app"
+	"github.com/pokt-network/pocket/cmd/pocketd/cmd"
 )
 
 var (
@@ -103,10 +103,10 @@ func NewLocalnetFlagSet(t gocuke.TestingT) *pflag.FlagSet {
 	mockFlagSet := pflag.NewFlagSet("test", pflag.ContinueOnError)
 	// TODO_IMPROVE: It would be nice if the value could be set correctly based
 	// on whether the test using it is running in tilt or not.
-	mockFlagSet.String(flags.FlagNode, CometLocalTCPURL, "use localnet poktrolld node")
-	mockFlagSet.String(flags.FlagHome, "", "use localnet poktrolld node")
+	mockFlagSet.String(flags.FlagNode, CometLocalTCPURL, "use localnet pocketd node")
+	mockFlagSet.String(flags.FlagHome, "", "use localnet pocketd node")
 	mockFlagSet.String(flags.FlagKeyringBackend, "test", "use test keyring")
-	mockFlagSet.String(flags.FlagChainID, app.Name, "use poktroll chain-id")
+	mockFlagSet.String(flags.FlagChainID, app.Name, "use pocket chain-id")
 	err := mockFlagSet.Parse([]string{})
 	require.NoError(t, err)
 

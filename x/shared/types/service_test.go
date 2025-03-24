@@ -5,7 +5,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/pokt-network/poktroll/testutil/sample"
+	"github.com/pokt-network/pocket/testutil/sample"
 )
 
 func TestIsValidService(t *testing.T) {

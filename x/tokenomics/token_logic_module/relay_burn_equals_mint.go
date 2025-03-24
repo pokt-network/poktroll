@@ -6,10 +6,10 @@ import (
 
 	cosmoslog "cosmossdk.io/log"
 
-	"github.com/pokt-network/poktroll/telemetry"
-	apptypes "github.com/pokt-network/poktroll/x/application/types"
-	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
-	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
+	"github.com/pokt-network/pocket/telemetry"
+	apptypes "github.com/pokt-network/pocket/x/application/types"
+	suppliertypes "github.com/pokt-network/pocket/x/supplier/types"
+	tokenomicstypes "github.com/pokt-network/pocket/x/tokenomics/types"
 )
 
 var _ TokenLogicModule = (*tlmRelayBurnEqualsMint)(nil)

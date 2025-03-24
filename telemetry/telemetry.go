@@ -7,31 +7,31 @@ import (
 	"github.com/mitchellh/mapstructure"
 )
 
-// globalTelemetryConfig stores poktroll specific telemetry configurations.
+// globalTelemetryConfig stores pocket specific telemetry configurations.
 // Set once on initialization and remains constant during runtime.
 var globalTelemetryConfig PoktrollTelemetryConfig
 
-// PoktrollTelemetryConfig represents the telemetry portion of the custom poktroll config section in `app.toml`.
+// PoktrollTelemetryConfig represents the telemetry portion of the custom pocket config section in `app.toml`.
 type PoktrollTelemetryConfig struct {
 	CardinalityLevel string `mapstructure:"cardinality-level"`
 }
 
 // New sets the globalTelemetryConfig for telemetry package.
 func New(appOpts servertypes.AppOptions) error {
-	// Get the poktroll config section. If it doesn't exist, use defaults
-	poktrollConfig := appOpts.Get("poktroll")
-	if poktrollConfig == nil {
+	// Get the pocket config section. If it doesn't exist, use defaults
+	pocketConfig := appOpts.Get("pocket")
+	if pocketConfig == nil {
 		globalTelemetryConfig = DefaultConfig()
 		return nil
 	}
 
 	// Try to get the telemetry subsection
-	poktrollMap, ok := poktrollConfig.(map[string]interface{})
+	pocketMap, ok := pocketConfig.(map[string]interface{})
 	if !ok {
-		return fmt.Errorf("invalid poktroll config format: expected map[string]interface{}, got %T", poktrollConfig)
+		return fmt.Errorf("invalid pocket config format: expected map[string]interface{}, got %T", pocketConfig)
 	}
 
-	telemetryMap, ok := poktrollMap["telemetry"].(map[string]interface{})
+	telemetryMap, ok := pocketMap["telemetry"].(map[string]interface{})
 	if !ok {
 		globalTelemetryConfig = DefaultConfig()
 		return nil
@@ -39,7 +39,7 @@ func New(appOpts servertypes.AppOptions) error {
 
 	// Use mapstructure to decode the map into the struct
 	if err := mapstructure.Decode(telemetryMap, &globalTelemetryConfig); err != nil {
-		return fmt.Errorf("error decoding poktroll.telemetry config: %v", err)
+		return fmt.Errorf("error decoding pocket.telemetry config: %v", err)
 	}
 
 	return nil

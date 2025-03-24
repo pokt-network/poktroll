@@ -3,7 +3,7 @@ package tx
 import (
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 
-	"github.com/pokt-network/poktroll/pkg/client"
+	"github.com/pokt-network/pocket/pkg/client"
 )
 
 // WithCommitTimeoutBlocks sets the timeout duration in terms of number of blocks

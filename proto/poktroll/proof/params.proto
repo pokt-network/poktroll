@@ -1,7 +1,7 @@
 syntax = "proto3";
-package poktroll.proof;
+package pocket.proof;
 
-option go_package = "github.com/pokt-network/poktroll/x/proof/types";
+option go_package = "github.com/pokt-network/pocket/x/proof/types";
 option (gogoproto.stable_marshaler_all) = true;
 
 import "amino/amino.proto";
@@ -10,7 +10,7 @@ import "cosmos/base/v1beta1/coin.proto";
 
 // Params defines the parameters for the module.
 message Params {
-  option (amino.name) = "poktroll/x/proof/Params";
+  option (amino.name) = "pocket/x/proof/Params";
   option (gogoproto.equal) = true;
 
   // proof_request_probability is the probability of a session requiring a proof

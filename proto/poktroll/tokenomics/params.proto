@@ -1,7 +1,7 @@
 syntax = "proto3";
-package poktroll.tokenomics;
+package pocket.tokenomics;
 
-option go_package = "github.com/pokt-network/poktroll/x/tokenomics/types";
+option go_package = "github.com/pokt-network/pocket/x/tokenomics/types";
 option (gogoproto.stable_marshaler_all) = true;
 option (gogoproto.equal_all) = true;
 
@@ -12,7 +12,7 @@ import "cosmos_proto/cosmos.proto";
 
 // Params defines the parameters for the tokenomics module.
 message Params {
-  option (amino.name) = "poktroll/x/tokenomics/Params";
+  option (amino.name) = "pocket/x/tokenomics/Params";
   option (gogoproto.equal) = true;
 
   // mint_allocation_percentages represents the distribution of newly minted tokens,

@@ -8,9 +8,9 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"gopkg.in/yaml.v2"
 
-	"github.com/pokt-network/poktroll/pkg/polylog"
-	_ "github.com/pokt-network/poktroll/pkg/polylog/polyzero"
-	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
+	"github.com/pokt-network/pocket/pkg/polylog"
+	_ "github.com/pokt-network/pocket/pkg/polylog/polyzero"
+	sharedtypes "github.com/pokt-network/pocket/x/shared/types"
 )
 
 // YAMLStakeConfig is the structure describing the supplier stake config file.

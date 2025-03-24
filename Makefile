@@ -2,9 +2,9 @@
 
 SHELL = /bin/sh
 
-POKTROLLD_HOME ?= ./localnet/poktrolld
+POKTROLLD_HOME ?= ./localnet/pocketd
 POCKET_NODE ?= tcp://127.0.0.1:26657 # The pocket node (validator in the localnet context)
-TESTNET_RPC ?= https://testnet-validated-validator-rpc.poktroll.com/ # TestNet RPC endpoint for validator maintained by Grove. Needs to be update if there's another "primary" testnet.
+TESTNET_RPC ?= https://testnet-validated-validator-rpc.pocket.com/ # TestNet RPC endpoint for validator maintained by Grove. Needs to be update if there's another "primary" testnet.
 PATH_URL ?= http://localhost:3000
 POCKET_ADDR_PREFIX = pokt
 LOAD_TEST_CUSTOM_MANIFEST ?= loadtest_manifest_example.yaml
@@ -139,16 +139,16 @@ proto_ignite_gen: ## Generate protobuf artifacts using ignite
 	ignite generate proto-go --yes
 
 proto_fix_self_import: ## TODO_TECHDEBT(@bryanchriswhite): Add a proper explanation for this make target explaining why it's necessary
-	@echo "Updating all instances of cosmossdk.io/api/poktroll to github.com/pokt-network/poktroll/api/poktroll..."
-	@find ./api/poktroll/ -type f | while read -r file; do \
-		$(SED) -i 's,cosmossdk.io/api/poktroll,github.com/pokt-network/poktroll/api/poktroll,g' "$$file"; \
+	@echo "Updating all instances of cosmossdk.io/api/pocket to github.com/pokt-network/pocket/api/pocket..."
+	@find ./api/pocket/ -type f | while read -r file; do \
+		$(SED) -i 's,cosmossdk.io/api/pocket,github.com/pokt-network/pocket/api/pocket,g' "$$file"; \
 	done
-	@for dir in $(wildcard ./api/poktroll/*/); do \
+	@for dir in $(wildcard ./api/pocket/*/); do \
 			module=$$(basename $$dir); \
 			echo "Further processing module $$module"; \
-			$(GREP) -lRP '\s+'$$module' "github.com/pokt-network/poktroll/api/poktroll/'$$module'"' ./api/poktroll/$$module | while read -r file; do \
+			$(GREP) -lRP '\s+'$$module' "github.com/pokt-network/pocket/api/pocket/'$$module'"' ./api/pocket/$$module | while read -r file; do \
 					echo "Modifying file: $$file"; \
-					$(SED) -i -E 's,^[[:space:]]+'$$module'[[:space:]]+"github.com/pokt-network/poktroll/api/poktroll/'$$module'",,' "$$file"; \
+					$(SED) -i -E 's,^[[:space:]]+'$$module'[[:space:]]+"github.com/pokt-network/pocket/api/pocket/'$$module'",,' "$$file"; \
 					$(SED) -i 's,'$$module'\.,,g' "$$file"; \
 			done; \
 	done
@@ -161,10 +161,10 @@ proto_clean: ## Delete existing .pb.go or .pb.gw.go files
 ## TODO_TECHDEBT(@bryanchriswhite): Investigate if / how this can be integrated with `proto_regen`
 .PHONY: proto_clean_pulsar
 proto_clean_pulsar: ## TODO_TECHDEBT(@bryanchriswhite): Add a proper explanation for this make target explaining why it's necessary
-	@find ./ -name "*.go" | xargs --no-run-if-empty $(SED) -i -E 's,(^[[:space:]_[:alnum:]]+"github.com/pokt-network/poktroll/api.+"),///\1,'
+	@find ./ -name "*.go" | xargs --no-run-if-empty $(SED) -i -E 's,(^[[:space:]_[:alnum:]]+"github.com/pokt-network/pocket/api.+"),///\1,'
 	find ./ -name "*.pulsar.go" | xargs --no-run-if-empty rm
 	$(MAKE) proto_regen
-	find ./ -name "*.go" | xargs --no-run-if-empty $(SED) -i -E 's,^///([[:space:]_[:alnum:]]+"github.com/pokt-network/poktroll/api.+"),\1,'
+	find ./ -name "*.go" | xargs --no-run-if-empty $(SED) -i -E 's,^///([[:space:]_[:alnum:]]+"github.com/pokt-network/pocket/api.+"),\1,'
 
 .PHONY: proto_regen
 proto_regen: proto_clean proto_ignite_gen proto_fix_self_import ## Regenerate protobuf artifacts
@@ -225,10 +225,10 @@ go_develop_and_test: go_develop test_all ## Generate protos, mocks and run all t
 .PHONY: acc_balance_query
 acc_balance_query: ## Query the balance of the account specified (make acc_balance_query ACC=pokt...)
 	@echo "~ Balances ~"
-	poktrolld --home=$(POKTROLLD_HOME) q bank balances $(ACC) --node $(POCKET_NODE)
+	pocketd --home=$(POKTROLLD_HOME) q bank balances $(ACC) --node $(POCKET_NODE)
 	@echo "~ Spendable Balances ~"
 	@echo "Querying spendable balance for $(ACC)"
-	poktrolld --home=$(POKTROLLD_HOME) q bank spendable-balances $(ACC) --node $(POCKET_NODE)
+	pocketd --home=$(POKTROLLD_HOME) q bank spendable-balances $(ACC) --node $(POCKET_NODE)
 
 .PHONY: acc_balance_query_modules
 acc_balance_query_modules: ## Query the balance of the network level module accounts
@@ -243,15 +243,15 @@ acc_balance_query_modules: ## Query the balance of the network level module acco
 
 .PHONY: acc_balance_query_app1
 acc_balance_query_app1: ## Query the balance of app1
-	APP1=$$(make poktrolld_addr ACC_NAME=app1) && \
+	APP1=$$(make pocketd_addr ACC_NAME=app1) && \
 	make acc_balance_query ACC=$$APP1
 
 .PHONY: acc_balance_total_supply
 acc_balance_total_supply: ## Query the total supply of the network
-	poktrolld --home=$(POKTROLLD_HOME) q bank total --node $(POCKET_NODE)
+	pocketd --home=$(POKTROLLD_HOME) q bank total --node $(POCKET_NODE)
 
 # NB: Ignite does not populate `pub_key` in `accounts` within `genesis.json` leading
-# to queries like this to fail: `poktrolld query account pokt1<addr> --node $(POCKET_NODE).
+# to queries like this to fail: `pocketd query account pokt1<addr> --node $(POCKET_NODE).
 # We attempted using a `tx multi-send` from the `faucet` to all accounts, but
 # that also did not solve this problem because the account itself must sign the
 # transaction for its public key to be populated in the account keeper. As such,
@@ -264,7 +264,7 @@ acc_initialize_pubkeys: ## Make sure the account keeper has public keys for all 
 	$(eval ADDRESSES=$(shell make -s ignite_acc_list | grep pokt | awk '{printf "%s ", $$2}' | sed 's/.$$//'))
 	$(foreach addr, $(ADDRESSES),\
 		echo $(addr);\
-		poktrolld tx bank send \
+		pocketd tx bank send \
 			$(addr) $(PNF_ADDRESS) 1000upokt \
 			--yes \
 			--home=$(POKTROLLD_HOME) \
@@ -278,8 +278,8 @@ acc_initialize_pubkeys: ## Make sure the account keeper has public keys for all 
 ignite_acc_list: ## List all the accounts in LocalNet
 	ignite account list --keyring-dir=$(POKTROLLD_HOME) --keyring-backend test --address-prefix $(POCKET_ADDR_PREFIX)
 
-.PHONY: ignite_poktrolld_build
-ignite_poktrolld_build: check_go_version check_ignite_version ## Build the poktrolld binary using Ignite
+.PHONY: ignite_pocketd_build
+ignite_pocketd_build: check_go_version check_ignite_version ## Build the pocketd binary using Ignite
 	ignite chain build --skip-proto --debug -v -o $(shell go env GOPATH)/bin
 
 .PHONY: ignite_openapi_gen
@@ -342,8 +342,8 @@ ignite_release_extract_binaries: ## Extracts binaries from the release archives
 
 	for archive in release/*.tar.gz; do \
 		binary_name=$$(basename "$$archive" .tar.gz); \
-		tar -zxvf "$$archive" -C release_binaries "poktrolld"; \
-		mv release_binaries/poktrolld "release_binaries/$$binary_name"; \
+		tar -zxvf "$$archive" -C release_binaries "pocketd"; \
+		mv release_binaries/pocketd "release_binaries/$$binary_name"; \
 	done
 
 #####################
@@ -352,7 +352,7 @@ ignite_release_extract_binaries: ## Extracts binaries from the release archives
 
 .PHONY: go_docs
 go_docs: check_godoc ## Generate documentation for the project
-	echo "Visit http://localhost:6060/pkg/github.com/pokt-network/poktroll/"
+	echo "Visit http://localhost:6060/pkg/github.com/pokt-network/pocket/"
 	godoc -http=:6060
 
 .PHONY: docusaurus_start
@@ -368,13 +368,13 @@ docs_update_gov_params_page: ## Update the page in Docusaurus documenting all th
 #######################
 
 
-.PHONY: poktrolld_addr
-poktrolld_addr: ## Retrieve the address for an account by ACC_NAME
-	@echo $(shell poktrolld --home=$(POKTROLLD_HOME) keys show -a $(ACC_NAME))
+.PHONY: pocketd_addr
+pocketd_addr: ## Retrieve the address for an account by ACC_NAME
+	@echo $(shell pocketd --home=$(POKTROLLD_HOME) keys show -a $(ACC_NAME))
 
-.PHONY: poktrolld_key
-poktrolld_key: ## Retrieve the private key for an account by ACC_NAME
-	@echo $(shell poktrolld --home=$(POKTROLLD_HOME) keys export --unsafe --unarmored-hex $(ACC_NAME))
+.PHONY: pocketd_key
+pocketd_key: ## Retrieve the private key for an account by ACC_NAME
+	@echo $(shell pocketd --home=$(POKTROLLD_HOME) keys export --unsafe --unarmored-hex $(ACC_NAME))
 
 ###################
 ### Act Helpers ###
@@ -420,7 +420,7 @@ release_tag_bug_fix: ## Tag a new bug fix release (e.g. v1.0.1 -> v1.0.2)
 	@echo "New bug fix version tagged: $(NEW_TAG)"
 	@echo "Run the following commands to push the new tag:"
 	@echo "  git push origin $(NEW_TAG)"
-	@echo "And draft a new release at https://github.com/pokt-network/poktroll/releases/new"
+	@echo "And draft a new release at https://github.com/pokt-network/pocket/releases/new"
 
 
 .PHONY: release_tag_minor_release
@@ -431,7 +431,7 @@ release_tag_minor_release: ## Tag a new minor release (e.g. v1.0.0 -> v1.1.0)
 	@echo "New minor release version tagged: $(NEW_TAG)"
 	@echo "Run the following commands to push the new tag:"
 	@echo "  git push origin $(NEW_TAG)"
-	@echo "And draft a new release at https://github.com/pokt-network/poktroll/releases/new"
+	@echo "And draft a new release at https://github.com/pokt-network/pocket/releases/new"
 
 ############################
 ### Grove Portal Helpers ###

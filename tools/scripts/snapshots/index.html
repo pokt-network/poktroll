@@ -157,11 +157,11 @@
         <h2>Installation Instructions</h2>
         <p>The easiest way to set up a new Poktroll node is to use the official installer script, which automatically handles downloading and applying snapshots:</p>
         <ol>
-            <li>Follow the <a href="https://dev.poktroll.com/operate/cheat_sheets/full_node_cheatsheet" target="_blank" class="docs-link">Full Node Cheat Sheet</a> to install a new node</li>
+            <li>Follow the <a href="https://dev.pocket.com/operate/cheat_sheets/full_node_cheatsheet" target="_blank" class="docs-link">Full Node Cheat Sheet</a> to install a new node</li>
             <li>The installer will automatically download and apply the latest snapshot</li>
             <li>No manual snapshot handling is required for new installations</li>
         </ol>
-        <p>For more detailed instructions, visit the <a href="https://dev.poktroll.com/operate/cheat_sheets/full_node_cheatsheet" target="_blank">Poktroll Documentation</a>.</p>
+        <p>For more detailed instructions, visit the <a href="https://dev.pocket.com/operate/cheat_sheets/full_node_cheatsheet" target="_blank">Poktroll Documentation</a>.</p>
     </div>
 
     <div class="card">
@@ -171,10 +171,10 @@
             <li>Stop your node (method depends on your setup - systemd, docker, etc.)</li>
             <li>Download a snapshot using the BitTorrent command above</li>
             <li>Clear your existing data directory (backup first if needed):</li>
-            <code id="clear-command">rm -rf $HOME/.poktroll/data/*</code>
+            <code id="clear-command">rm -rf $HOME/.pocket/data/*</code>
             <button class="copy-btn" data-target="clear-command">Copy</button>
             <li>Extract the snapshot to your data directory:</li>
-            <code id="extract-command">tar -xf /path/to/snapshot.tar.zst -C $HOME/.poktroll/data/</code>
+            <code id="extract-command">tar -xf /path/to/snapshot.tar.zst -C $HOME/.pocket/data/</code>
             <button class="copy-btn" data-target="extract-command">Copy</button>
             <li>Start your node again</li>
             <li>Verify your node is syncing: <code>curl -s http://localhost:26657/status | jq '.result.sync_info'</code></li>
@@ -198,13 +198,13 @@
     </div>
 
     <footer>
-        <p>Snapshots are provided by <a href="https://grove.city" target="_blank">GROVE</a> | <a href="https://dev.poktroll.com" target="_blank">Official Documentation</a></p>
+        <p>Snapshots are provided by <a href="https://grove.city" target="_blank">GROVE</a> | <a href="https://dev.pocket.com" target="_blank">Official Documentation</a></p>
     </footer>
 
     <script>
         // Current network selection
         let currentNetwork = 'testnet-beta';
-        const baseUrl = 'https://snapshots.us-nj.poktroll.com';
+        const baseUrl = 'https://snapshots.us-nj.pocket.com';
 
         // Initialize the page
         document.addEventListener('DOMContentLoaded', function() {
@@ -343,7 +343,7 @@
             torrentElement.textContent = `aria2c --seed-time=0 "${torrentUrl}"`;
             
             // Update extract command with the correct file name
-            document.getElementById('extract-command').textContent = `tar -xf ${network}-${height}-${type}.tar.zst -C $HOME/.poktroll/data/`;
+            document.getElementById('extract-command').textContent = `tar -xf ${network}-${height}-${type}.tar.zst -C $HOME/.pocket/data/`;
         }
     </script>
 </body>

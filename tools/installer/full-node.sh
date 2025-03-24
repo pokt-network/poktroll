@@ -21,8 +21,8 @@ NC='\033[0m' # No Color
 # DEV_NOTE: For testing purposes, you can change the branch name before merging to master.
 POCKET_NETWORK_GENESIS_BRANCH="master"
 
-# Define environment variables for poktrolld (single source of truth)
-DAEMON_NAME="poktrolld"
+# Define environment variables for pocketd (single source of truth)
+DAEMON_NAME="pocketd"
 DAEMON_RESTART_AFTER_UPGRADE="true"
 DAEMON_ALLOW_DOWNLOAD_BINARIES="true"
 UNSAFE_SKIP_BACKUP="true"
@@ -30,7 +30,7 @@ UNSAFE_SKIP_BACKUP="true"
 # Snapshot configuration
 # The snapshot functionality allows users to quickly sync a node from a trusted snapshot
 # instead of syncing from genesis, which can be time-consuming.
-# Snapshots are stored at https://snapshots.us-nj.poktroll.com/
+# Snapshots are stored at https://snapshots.us-nj.pocket.com/
 # Supports archival snapshots for all networks (testnet-alpha, testnet-beta, mainnet).
 #
 # This script exclusively uses torrent downloads for snapshots:
@@ -267,7 +267,7 @@ get_user_input() {
     2) 
         USE_SNAPSHOT=true
         # Set snapshot base URL
-        SNAPSHOT_BASE_URL="https://snapshots.us-nj.poktroll.com"
+        SNAPSHOT_BASE_URL="https://snapshots.us-nj.pocket.com"
         
         # Always use torrent
         USE_TORRENT=true
@@ -338,8 +338,8 @@ get_user_input() {
     esac
 
     print_color $YELLOW "(NOTE: If you're on a macOS, enter the name of an existing user)"
-    read -p "Enter the desired username to run poktrolld (default: poktroll): " POKTROLL_USER
-    POKTROLL_USER=${POKTROLL_USER:-poktroll}
+    read -p "Enter the desired username to run pocketd (default: pocket): " POKTROLL_USER
+    POKTROLL_USER=${POKTROLL_USER:-pocket}
 
     read -p "Enter the node moniker (default: $(hostname)): " NODE_MONIKER
     NODE_MONIKER=${NODE_MONIKER:-$(hostname)}
@@ -380,7 +380,7 @@ create_user() {
     fi
 }
 
-# TODO_TECHDEBT(@okdas): Use `.poktrollrc` across the board to create a clean
+# TODO_TECHDEBT(@okdas): Use `.pocketrc` across the board to create a clean
 # separation of concerns for pocket specific configurations and debugging.
 # Function to set up environment variables
 setup_env_vars() {
@@ -392,23 +392,23 @@ setup_env_vars() {
     sudo -u "$POKTROLL_USER" bash <<EOF
     # Add environment variables to both .profile and .bashrc for better compatibility
     echo "export DAEMON_NAME=$DAEMON_NAME" >> \$HOME/.profile
-    echo "export DAEMON_HOME=\$HOME/.poktroll" >> \$HOME/.profile
+    echo "export DAEMON_HOME=\$HOME/.pocket" >> \$HOME/.profile
     echo "export DAEMON_RESTART_AFTER_UPGRADE=$DAEMON_RESTART_AFTER_UPGRADE" >> \$HOME/.profile
     echo "export DAEMON_ALLOW_DOWNLOAD_BINARIES=$DAEMON_ALLOW_DOWNLOAD_BINARIES" >> \$HOME/.profile
     echo "export UNSAFE_SKIP_BACKUP=$UNSAFE_SKIP_BACKUP" >> \$HOME/.profile
     
-    # Add Cosmovisor and poktrolld to PATH
-    echo "export PATH=\$HOME/.local/bin:\$HOME/.poktroll/cosmovisor/current/bin:\$PATH" >> \$HOME/.profile
+    # Add Cosmovisor and pocketd to PATH
+    echo "export PATH=\$HOME/.local/bin:\$HOME/.pocket/cosmovisor/current/bin:\$PATH" >> \$HOME/.profile
     
     # Also add to .bashrc to ensure they're available in non-login shells
     echo "export DAEMON_NAME=$DAEMON_NAME" >> \$HOME/.bashrc
-    echo "export DAEMON_HOME=\$HOME/.poktroll" >> \$HOME/.bashrc
+    echo "export DAEMON_HOME=\$HOME/.pocket" >> \$HOME/.bashrc
     echo "export DAEMON_RESTART_AFTER_UPGRADE=$DAEMON_RESTART_AFTER_UPGRADE" >> \$HOME/.bashrc
     echo "export DAEMON_ALLOW_DOWNLOAD_BINARIES=$DAEMON_ALLOW_DOWNLOAD_BINARIES" >> \$HOME/.bashrc
     echo "export UNSAFE_SKIP_BACKUP=$UNSAFE_SKIP_BACKUP" >> \$HOME/.bashrc
     
-    # Add Cosmovisor and poktrolld to PATH in .bashrc as well
-    echo "export PATH=\$HOME/.local/bin:\$HOME/.poktroll/cosmovisor/current/bin:\$PATH" >> \$HOME/.bashrc
+    # Add Cosmovisor and pocketd to PATH in .bashrc as well
+    echo "export PATH=\$HOME/.local/bin:\$HOME/.pocket/cosmovisor/current/bin:\$PATH" >> \$HOME/.bashrc
     
     # Source the profile to make variables available in this session
     source \$HOME/.profile
@@ -416,7 +416,7 @@ EOF
 
     # Export variables for the current script session as well
     export DAEMON_NAME=$DAEMON_NAME
-    export DAEMON_HOME=/home/$POKTROLL_USER/.poktroll
+    export DAEMON_HOME=/home/$POKTROLL_USER/.pocket
     export DAEMON_RESTART_AFTER_UPGRADE=$DAEMON_RESTART_AFTER_UPGRADE
     export DAEMON_ALLOW_DOWNLOAD_BINARIES=$DAEMON_ALLOW_DOWNLOAD_BINARIES
     export UNSAFE_SKIP_BACKUP=$UNSAFE_SKIP_BACKUP
@@ -444,8 +444,8 @@ setup_cosmovisor() {
 
     sudo -u "$POKTROLL_USER" bash <<EOF
     mkdir -p \$HOME/.local/bin
-    mkdir -p \$HOME/.poktroll/cosmovisor/genesis/bin
-    mkdir -p \$HOME/.poktroll/cosmovisor/upgrades
+    mkdir -p \$HOME/.pocket/cosmovisor/genesis/bin
+    mkdir -p \$HOME/.pocket/cosmovisor/upgrades
     
     curl -L "$COSMOVISOR_URL" | tar -zxvf - -C \$HOME/.local/bin
     chmod +x \$HOME/.local/bin/cosmovisor
@@ -464,7 +464,7 @@ EOF
 }
 
 # Function to download and set up Poktrolld
-setup_poktrolld() {
+setup_pocketd() {
     print_color $YELLOW "Setting up Poktrolld..."
 
     ARCH=$(get_normalized_arch)
@@ -472,37 +472,37 @@ setup_poktrolld() {
 
     # Note: Version is now extracted in get_user_input() function
     # and stored in POKTROLLD_VERSION variable
-    print_color $YELLOW "Using poktrolld version: $POKTROLLD_VERSION"
+    print_color $YELLOW "Using pocketd version: $POKTROLLD_VERSION"
 
     # Construct the release URL with proper version format
-    RELEASE_URL="https://github.com/pokt-network/poktroll/releases/download/v${POKTROLLD_VERSION}/poktroll_${OS_TYPE}_${ARCH}.tar.gz"
+    RELEASE_URL="https://github.com/pokt-network/pocket/releases/download/v${POKTROLLD_VERSION}/pocket_${OS_TYPE}_${ARCH}.tar.gz"
     print_color $YELLOW "Attempting to download from: $RELEASE_URL"
 
     # Download and extract directly as the POKTROLL_USER
     sudo -u "$POKTROLL_USER" bash <<EOF
     # Ensure directories exist
-    mkdir -p \$HOME/.poktroll/cosmovisor/genesis/bin
-    mkdir -p \$HOME/.poktroll/cosmovisor/upgrades
+    mkdir -p \$HOME/.pocket/cosmovisor/genesis/bin
+    mkdir -p \$HOME/.pocket/cosmovisor/upgrades
     mkdir -p \$HOME/.local/bin
     
     # Download and extract the binary
-    curl -L "$RELEASE_URL" | tar -zxvf - -C \$HOME/.poktroll/cosmovisor/genesis/bin
+    curl -L "$RELEASE_URL" | tar -zxvf - -C \$HOME/.pocket/cosmovisor/genesis/bin
     if [ \$? -ne 0 ]; then
         echo "Failed to download or extract binary"
         exit 1
     fi
-    chmod +x \$HOME/.poktroll/cosmovisor/genesis/bin/poktrolld
+    chmod +x \$HOME/.pocket/cosmovisor/genesis/bin/pocketd
     
     # Create the current symlink manually to ensure it exists
-    ln -sf \$HOME/.poktroll/cosmovisor/genesis \$HOME/.poktroll/cosmovisor/current
+    ln -sf \$HOME/.pocket/cosmovisor/genesis \$HOME/.pocket/cosmovisor/current
     
     # Create a symlink to the binary in .local/bin for easier access
-    ln -sf \$HOME/.poktroll/cosmovisor/current/bin/poktrolld \$HOME/.local/bin/poktrolld
+    ln -sf \$HOME/.pocket/cosmovisor/current/bin/pocketd \$HOME/.local/bin/pocketd
     
-    # Initialize Cosmovisor with the poktrolld binary
+    # Initialize Cosmovisor with the pocketd binary
     export DAEMON_NAME=$DAEMON_NAME
-    export DAEMON_HOME=\$HOME/.poktroll
-    \$HOME/.local/bin/cosmovisor init \$HOME/.poktroll/cosmovisor/genesis/bin/poktrolld
+    export DAEMON_HOME=\$HOME/.pocket
+    \$HOME/.local/bin/cosmovisor init \$HOME/.pocket/cosmovisor/genesis/bin/pocketd
     
     # Source the profile to update the environment
     source \$HOME/.profile
@@ -518,7 +518,7 @@ EOF
 }
 
 # Function to configure Poktrolld
-configure_poktrolld() {
+configure_pocketd() {
     print_color $YELLOW "Configuring Poktrolld..."
 
     # Ask for confirmation to use the downloaded genesis file
@@ -543,16 +543,16 @@ configure_poktrolld() {
     sudo -u "$POKTROLL_USER" bash <<EOF
     source \$HOME/.profile
 
-    # Check poktrolld version
-    # Now we can use poktrolld directly since Cosmovisor is initialized
-    POKTROLLD_VERSION=\$(\$HOME/.poktroll/cosmovisor/genesis/bin/poktrolld version)
+    # Check pocketd version
+    # Now we can use pocketd directly since Cosmovisor is initialized
+    POKTROLLD_VERSION=\$(\$HOME/.pocket/cosmovisor/genesis/bin/pocketd version)
     echo "Poktrolld version: \$POKTROLLD_VERSION"
 
-    # Initialize node using poktrolld directly
-    \$HOME/.poktroll/cosmovisor/genesis/bin/poktrolld init "$NODE_MONIKER" --chain-id="$CHAIN_ID" --home=\$HOME/.poktroll
-    cp "$GENESIS_FILE" \$HOME/.poktroll/config/genesis.json
-    sed -i -e "s|^seeds *=.*|seeds = \"$SEEDS\"|" \$HOME/.poktroll/config/config.toml
-    sed -i -e "s|^external_address *=.*|external_address = \"$EXTERNAL_IP:26656\"|" \$HOME/.poktroll/config/config.toml
+    # Initialize node using pocketd directly
+    \$HOME/.pocket/cosmovisor/genesis/bin/pocketd init "$NODE_MONIKER" --chain-id="$CHAIN_ID" --home=\$HOME/.pocket
+    cp "$GENESIS_FILE" \$HOME/.pocket/config/genesis.json
+    sed -i -e "s|^seeds *=.*|seeds = \"$SEEDS\"|" \$HOME/.pocket/config/config.toml
+    sed -i -e "s|^external_address *=.*|external_address = \"$EXTERNAL_IP:26656\"|" \$HOME/.pocket/config/config.toml
 EOF
     if [ $? -eq 0 ]; then
         print_color $GREEN "Poktrolld configured successfully."
@@ -569,7 +569,7 @@ setup_from_snapshot() {
     print_color $YELLOW "Snapshot URL: $SNAPSHOT_URL"
     
     # Create a temporary directory for the snapshot in the user's home directory
-    SNAPSHOT_DIR="/home/$POKTROLL_USER/poktroll_snapshot"
+    SNAPSHOT_DIR="/home/$POKTROLL_USER/pocket_snapshot"
     sudo -u "$POKTROLL_USER" mkdir -p "$SNAPSHOT_DIR"
     
     # Download and extract the snapshot
@@ -606,7 +606,7 @@ setup_from_snapshot() {
         set -e
         
         # Create data directory if it doesn't exist
-        mkdir -p \$HOME/.poktroll/data
+        mkdir -p \$HOME/.pocket/data
         
         # Download using aria2c with optimized settings
         # --seed-time=0: Don't seed after download completes
@@ -644,10 +644,10 @@ setup_from_snapshot() {
         # Extract the snapshot based on format
         if [[ "\$DOWNLOADED_FILE" == *.tar.zst ]]; then
             echo "Extracting .tar.zst format snapshot..."
-            zstd -d "\$DOWNLOADED_FILE" --stdout | tar -xf - -C \$HOME/.poktroll/data
+            zstd -d "\$DOWNLOADED_FILE" --stdout | tar -xf - -C \$HOME/.pocket/data
         elif [[ "\$DOWNLOADED_FILE" == *.tar.gz ]]; then
             echo "Extracting .tar.gz format snapshot..."
-            tar -zxf "\$DOWNLOADED_FILE" -C \$HOME/.poktroll/data
+            tar -zxf "\$DOWNLOADED_FILE" -C \$HOME/.pocket/data
         else
             echo "Unknown snapshot format. Expected .tar.zst or .tar.gz"
             exit 1
@@ -668,7 +668,7 @@ EOF
         USE_SNAPSHOT=false
         # Clean up any partial data
         sudo -u "$POKTROLL_USER" bash <<EOF
-        rm -rf \$HOME/.poktroll/data/*
+        rm -rf \$HOME/.pocket/data/*
 EOF
     fi
     
@@ -687,18 +687,18 @@ setup_systemd() {
     
     cat >/etc/systemd/system/$SERVICE_NAME.service <<EOF
 [Unit]
-Description=Cosmovisor daemon for poktrolld ($POKTROLL_USER)
+Description=Cosmovisor daemon for pocketd ($POKTROLL_USER)
 After=network-online.target
 
 [Service]
 User=$POKTROLL_USER
-ExecStart=/home/$POKTROLL_USER/.local/bin/cosmovisor run start --home=/home/$POKTROLL_USER/.poktroll
+ExecStart=/home/$POKTROLL_USER/.local/bin/cosmovisor run start --home=/home/$POKTROLL_USER/.pocket
 Restart=always
 RestartSec=3
 LimitNOFILE=infinity
 LimitNPROC=infinity
 Environment="DAEMON_NAME=$DAEMON_NAME"
-Environment="DAEMON_HOME=/home/$POKTROLL_USER/.poktroll"
+Environment="DAEMON_HOME=/home/$POKTROLL_USER/.pocket"
 Environment="DAEMON_RESTART_AFTER_UPGRADE=$DAEMON_RESTART_AFTER_UPGRADE"
 Environment="DAEMON_ALLOW_DOWNLOAD_BINARIES=$DAEMON_ALLOW_DOWNLOAD_BINARIES"
 Environment="UNSAFE_SKIP_BACKUP=$UNSAFE_SKIP_BACKUP"
@@ -754,12 +754,12 @@ main() {
     trap 'handle_error $LINENO' ERR
     
     # Continue with installation
-    get_user_input  # This now includes determining the correct poktrolld version
+    get_user_input  # This now includes determining the correct pocketd version
     create_user
     setup_env_vars
     setup_cosmovisor
-    setup_poktrolld  # Now installs the correct version determined in get_user_input
-    configure_poktrolld
+    setup_pocketd  # Now installs the correct version determined in get_user_input
+    configure_pocketd
     
     # Apply snapshot if user chose to use it
     if [ "$USE_SNAPSHOT" = true ]; then

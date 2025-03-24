@@ -1,7 +1,7 @@
 syntax = "proto3";
-package poktroll.service;
+package pocket.service;
 
-option go_package = "github.com/pokt-network/poktroll/x/service/types";
+option go_package = "github.com/pokt-network/pocket/x/service/types";
 option (gogoproto.stable_marshaler_all) = true;
 
 import "amino/amino.proto";
@@ -10,8 +10,8 @@ import "cosmos/msg/v1/msg.proto";
 import "cosmos_proto/cosmos.proto";
 import "gogoproto/gogo.proto";
 
-import "poktroll/service/params.proto";
-import "poktroll/shared/service.proto";
+import "pocket/service/params.proto";
+import "pocket/shared/service.proto";
 
 
 // Msg defines the Msg service.
@@ -27,7 +27,7 @@ service Msg {
 // MsgUpdateParams is the Msg/UpdateParams request type.
 message MsgUpdateParams {
   option (cosmos.msg.v1.signer) = "authority";
-  option           (amino.name) = "poktroll/x/service/MsgUpdateParams";
+  option           (amino.name) = "pocket/x/service/MsgUpdateParams";
 
   // authority is the address that controls the module (defaults to x/gov unless overwritten).
   string authority = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
@@ -70,10 +70,10 @@ message MsgUpdateParamResponse {
 message MsgAddService {
   option (cosmos.msg.v1.signer) = "owner_address"; // https://docs.cosmos.network/main/build/building-modules/messages-and-queries
   string owner_address = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"]; // The Bech32 address of the service owner.
-  poktroll.shared.Service service = 2 [(gogoproto.nullable) = false]; // The Service being added to the network
+  pocket.shared.Service service = 2 [(gogoproto.nullable) = false]; // The Service being added to the network
 }
 
 message MsgAddServiceResponse {
-  poktroll.shared.Service service = 1;
+  pocket.shared.Service service = 1;
 }
 

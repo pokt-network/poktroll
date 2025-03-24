@@ -16,11 +16,11 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 
-	"github.com/pokt-network/poktroll/pkg/observable/channel"
-	"github.com/pokt-network/poktroll/pkg/polylog/polyzero"
-	"github.com/pokt-network/poktroll/pkg/relayer"
-	"github.com/pokt-network/poktroll/testutil/testrelayer"
-	servicetypes "github.com/pokt-network/poktroll/x/service/types"
+	"github.com/pokt-network/pocket/pkg/observable/channel"
+	"github.com/pokt-network/pocket/pkg/polylog/polyzero"
+	"github.com/pokt-network/pocket/pkg/relayer"
+	"github.com/pokt-network/pocket/testutil/testrelayer"
+	servicetypes "github.com/pokt-network/pocket/x/service/types"
 )
 
 func TestRelayMiner_StartAndStop(t *testing.T) {

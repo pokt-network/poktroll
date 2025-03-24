@@ -6,8 +6,8 @@ import (
 
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 
-	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
-	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
+	sharedtypes "github.com/pokt-network/pocket/x/shared/types"
+	suppliertypes "github.com/pokt-network/pocket/x/supplier/types"
 )
 
 // EndBlockerUnbondSuppliers unbonds suppliers whose unbonding period has elapsed.

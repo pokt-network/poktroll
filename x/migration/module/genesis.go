@@ -3,8 +3,8 @@ package migration
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"github.com/pokt-network/poktroll/x/migration/keeper"
-	"github.com/pokt-network/poktroll/x/migration/types"
+	"github.com/pokt-network/pocket/x/migration/keeper"
+	"github.com/pokt-network/pocket/x/migration/types"
 )
 
 // InitGenesis initializes the module's state from a provided genesis state.

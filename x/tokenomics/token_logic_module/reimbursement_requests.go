@@ -7,9 +7,9 @@ import (
 	cosmoslog "cosmossdk.io/log"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 
-	"github.com/pokt-network/poktroll/pkg/encoding"
-	apptypes "github.com/pokt-network/poktroll/x/application/types"
-	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
+	"github.com/pokt-network/pocket/pkg/encoding"
+	apptypes "github.com/pokt-network/pocket/x/application/types"
+	tokenomicstypes "github.com/pokt-network/pocket/x/tokenomics/types"
 )
 
 var _ TokenLogicModule = (*tlmGlobalMintReimbursementRequest)(nil)

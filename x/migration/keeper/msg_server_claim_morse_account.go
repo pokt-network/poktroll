@@ -8,8 +8,8 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	migrationtypes "github.com/pokt-network/poktroll/x/migration/types"
-	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
+	migrationtypes "github.com/pokt-network/pocket/x/migration/types"
+	sharedtypes "github.com/pokt-network/pocket/x/shared/types"
 )
 
 func (k msgServer) ClaimMorseAccount(ctx context.Context, msg *migrationtypes.MsgClaimMorseAccount) (*migrationtypes.MsgClaimMorseAccountResponse, error) {
@@ -59,7 +59,7 @@ func (k msgServer) ClaimMorseAccount(ctx context.Context, msg *migrationtypes.Ms
 		return nil, status.Error(
 			codes.FailedPrecondition,
 			migrationtypes.ErrMorseAccountClaim.Wrapf(
-				"Morse account %q is staked as an application, please use `poktrolld migrate claim-application` instead",
+				"Morse account %q is staked as an application, please use `pocketd migrate claim-application` instead",
 				morseClaimableAccount.GetMorseSrcAddress(),
 			).Error(),
 		)
@@ -69,7 +69,7 @@ func (k msgServer) ClaimMorseAccount(ctx context.Context, msg *migrationtypes.Ms
 		return nil, status.Error(
 			codes.FailedPrecondition,
 			migrationtypes.ErrMorseAccountClaim.Wrapf(
-				"Morse account %q is staked as an supplier, please use `poktrolld migrate claim-supplier` instead",
+				"Morse account %q is staked as an supplier, please use `pocketd migrate claim-supplier` instead",
 				morseClaimableAccount.GetMorseSrcAddress(),
 			).Error(),
 		)

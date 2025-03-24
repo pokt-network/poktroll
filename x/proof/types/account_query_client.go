@@ -6,7 +6,7 @@ import (
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	"github.com/cosmos/cosmos-sdk/types"
 
-	"github.com/pokt-network/poktroll/pkg/client"
+	"github.com/pokt-network/pocket/pkg/client"
 )
 
 var _ client.AccountQueryClient = (*AccountKeeperQueryClient)(nil)

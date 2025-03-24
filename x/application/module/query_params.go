@@ -5,7 +5,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/spf13/cobra"
 
-	"github.com/pokt-network/poktroll/x/application/types"
+	"github.com/pokt-network/pocket/x/application/types"
 )
 
 func CmdQueryParams() *cobra.Command {
@@ -15,7 +15,7 @@ func CmdQueryParams() *cobra.Command {
 		Long: `Shows all the parameters related to the application module.
 
 Example:
-$ poktrolld q application params --node $(POCKET_NODE) --home $(POKTROLLD_HOME)`,
+$ pocketd q application params --node $(POCKET_NODE) --home $(POKTROLLD_HOME)`,
 		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			clientCtx, err := client.GetClientQueryContext(cmd)

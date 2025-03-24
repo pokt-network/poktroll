@@ -33,7 +33,7 @@ Feature: Relay Namespace
         And the application "app3" establishes a websockets connection for service "anvilws"
         # TODO_CONSIDERATION: Consider expand these tests to count the number
         # of events sent over a websocket per the discussion here:
-        # https://github.com/pokt-network/poktroll/pull/1099#discussion_r1978342620
+        # https://github.com/pokt-network/pocket/pull/1099#discussion_r1978342620
         Then the application receives EVM subscription events until the session ends
         And the subscription is closed before claim window open height is reached
         And a "tokenomics" module "ClaimSettled" end block event is broadcast

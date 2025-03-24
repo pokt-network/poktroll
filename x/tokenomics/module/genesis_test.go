@@ -5,10 +5,10 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
-	"github.com/pokt-network/poktroll/testutil/nullify"
-	tokenomics "github.com/pokt-network/poktroll/x/tokenomics/module"
-	"github.com/pokt-network/poktroll/x/tokenomics/types"
+	keepertest "github.com/pokt-network/pocket/testutil/keeper"
+	"github.com/pokt-network/pocket/testutil/nullify"
+	tokenomics "github.com/pokt-network/pocket/x/tokenomics/module"
+	"github.com/pokt-network/pocket/x/tokenomics/types"
 )
 
 func TestGenesis(t *testing.T) {

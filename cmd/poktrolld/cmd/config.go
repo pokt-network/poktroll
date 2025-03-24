@@ -8,21 +8,21 @@ import (
 	serverconfig "github.com/cosmos/cosmos-sdk/server/config"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"github.com/pokt-network/poktroll/app"
-	"github.com/pokt-network/poktroll/telemetry"
+	"github.com/pokt-network/pocket/app"
+	"github.com/pokt-network/pocket/telemetry"
 )
 
 var once sync.Once
 
-// PoktrollAppConfig represents a poktroll-specific part of `app.toml` file.
+// PoktrollAppConfig represents a pocket-specific part of `app.toml` file.
 // Checkout `customAppConfigTemplate()` for additional information about each setting.
 type PoktrollAppConfig struct {
 	Telemetry telemetry.PoktrollTelemetryConfig `mapstructure:"telemetry"`
 }
 
-// poktrollAppConfigDefaults sets default values to render in `app.toml`.
+// pocketAppConfigDefaults sets default values to render in `app.toml`.
 // Checkout `customAppConfigTemplate()` for additional information about each config parameter.
-func poktrollAppConfigDefaults() PoktrollAppConfig {
+func pocketAppConfigDefaults() PoktrollAppConfig {
 	return PoktrollAppConfig{
 		Telemetry: telemetry.DefaultConfig(),
 	}
@@ -63,7 +63,7 @@ func checkOrInitSDKConfig() {
 
 // The values set here become the default configuration for newly initialized nodes.
 // However, it's crucial to note that:
-// 1. These defaults only apply when a node is first initialized using `poktrolld init`.
+// 1. These defaults only apply when a node is first initialized using `pocketd init`.
 // 2. Changing these values in the code will not automatically update existing node configurations.
 // 3. Node operators can still manually override these defaults in their local config files.
 //
@@ -75,7 +75,7 @@ func checkOrInitSDKConfig() {
 // provisioned by ignite have additional overrides adjusted in ignite's `config.yml`
 
 // initCometBFTConfig helps to override default CometBFT Config (config.toml) values.
-// These values are going to be rendered into the config file on `poktrolld init`.
+// These values are going to be rendered into the config file on `pocketd init`.
 // TODO_MAINNET: Reconsider values - check `config.toml` for possible options.
 func initCometBFTConfig() *cmtcfg.Config {
 	cfg := cmtcfg.DefaultConfig()
@@ -98,13 +98,13 @@ func initCometBFTConfig() *cmtcfg.Config {
 }
 
 // initAppConfig helps to override default appConfig (app.toml) template and configs.
-// These values are going to be rendered into the config file on `poktrolld init`.
+// These values are going to be rendered into the config file on `pocketd init`.
 // return "", nil if no custom configuration is required for the application.
 // TODO_MAINNET: Reconsider values - check `app.toml` for possible options.
 func initAppConfig() (string, interface{}) {
 	type CustomAppConfig struct {
 		serverconfig.Config `mapstructure:",squash"`
-		Poktroll            PoktrollAppConfig `mapstructure:"poktroll"`
+		Poktroll            PoktrollAppConfig `mapstructure:"pocket"`
 	}
 
 	// Optionally allow the chain developer to overwrite the SDK's default
@@ -137,10 +137,10 @@ func initAppConfig() (string, interface{}) {
 	srvCfg.GRPC.Enable = true
 	srvCfg.GRPCWeb.Enable = true
 
-	// Create the custom config with both server and poktroll configs
+	// Create the custom config with both server and pocket configs
 	customAppConfig := CustomAppConfig{
 		Config:   *srvCfg,
-		Poktroll: poktrollAppConfigDefaults(),
+		Poktroll: pocketAppConfigDefaults(),
 	}
 
 	return customPoktrollAppConfigTemplate(), customAppConfig
@@ -148,7 +148,7 @@ func initAppConfig() (string, interface{}) {
 
 // customPoktrollAppConfigTemplate extends the default configuration `app.toml` file with our own configs.
 // They are going to be used by validators and full-nodes.
-// These configs are rendered using default values from `poktrollAppConfigDefaults()`.
+// These configs are rendered using default values from `pocketAppConfigDefaults()`.
 func customPoktrollAppConfigTemplate() string {
 	return serverconfig.DefaultConfigTemplate + `
 		###############################################################################
@@ -156,10 +156,10 @@ func customPoktrollAppConfigTemplate() string {
 		###############################################################################
 
 		# Poktroll-specific app configuration for Full Nodes and Validators.
-		[poktroll]
+		[pocket]
 
 		# Telemetry configuration in addition to the [telemetry] settings.
-		[poktroll.telemetry]
+		[pocket.telemetry]
 
 		# Cardinality level for telemetry metrics collection
 		# This controls the level of detail (number of unique labels) in metrics.

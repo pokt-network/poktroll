@@ -16,13 +16,13 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 
-	"github.com/pokt-network/poktroll/pkg/crypto/protocol"
-	"github.com/pokt-network/poktroll/pkg/observable/channel"
-	"github.com/pokt-network/poktroll/pkg/relayer"
-	"github.com/pokt-network/poktroll/pkg/relayer/miner"
-	"github.com/pokt-network/poktroll/testutil/mockrelayer"
-	"github.com/pokt-network/poktroll/testutil/testclient/testqueryclients"
-	servicetypes "github.com/pokt-network/poktroll/x/service/types"
+	"github.com/pokt-network/pocket/pkg/crypto/protocol"
+	"github.com/pokt-network/pocket/pkg/observable/channel"
+	"github.com/pokt-network/pocket/pkg/relayer"
+	"github.com/pokt-network/pocket/pkg/relayer/miner"
+	"github.com/pokt-network/pocket/testutil/mockrelayer"
+	"github.com/pokt-network/pocket/testutil/testclient/testqueryclients"
+	servicetypes "github.com/pokt-network/pocket/x/service/types"
 )
 
 // testSvcId is the ID of the service used in the relays. It is used to initialize the tokenomics module that

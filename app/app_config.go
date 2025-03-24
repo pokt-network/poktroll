@@ -1,9 +1,9 @@
 package app
 
 import (
-	migrationmodulev1 "github.com/pokt-network/poktroll/api/poktroll/migration/module"
-	_ "github.com/pokt-network/poktroll/x/migration/module" // import for side-effects
-	migrationmoduletypes "github.com/pokt-network/poktroll/x/migration/types"
+	migrationmodulev1 "github.com/pokt-network/pocket/api/pocket/migration/module"
+	_ "github.com/pokt-network/pocket/x/migration/module" // import for side-effects
+	migrationmoduletypes "github.com/pokt-network/pocket/x/migration/types"
 
 	// this line is used by starport scaffolding # stargate/app/moduleImport
 	"time"
@@ -76,30 +76,30 @@ import (
 	ibcexported "github.com/cosmos/ibc-go/v8/modules/core/exported"
 	"google.golang.org/protobuf/types/known/durationpb"
 
-	applicationmodulev1 "github.com/pokt-network/poktroll/api/poktroll/application/module"
-	gatewaymodulev1 "github.com/pokt-network/poktroll/api/poktroll/gateway/module"
-	proofmodulev1 "github.com/pokt-network/poktroll/api/poktroll/proof/module"
-	servicemodulev1 "github.com/pokt-network/poktroll/api/poktroll/service/module"
-	sessionmodulev1 "github.com/pokt-network/poktroll/api/poktroll/session/module"
-	sharedmodulev1 "github.com/pokt-network/poktroll/api/poktroll/shared/module"
-	suppliermodulev1 "github.com/pokt-network/poktroll/api/poktroll/supplier/module"
-	tokenomicsmodulev1 "github.com/pokt-network/poktroll/api/poktroll/tokenomics/module"
-	_ "github.com/pokt-network/poktroll/x/application/module" // import for side-effects
-	applicationmoduletypes "github.com/pokt-network/poktroll/x/application/types"
-	_ "github.com/pokt-network/poktroll/x/gateway/module" // import for side-effects
-	gatewaymoduletypes "github.com/pokt-network/poktroll/x/gateway/types"
-	_ "github.com/pokt-network/poktroll/x/proof/module" // import for side-effects
-	proofmoduletypes "github.com/pokt-network/poktroll/x/proof/types"
-	_ "github.com/pokt-network/poktroll/x/service/module" // import for side-effects
-	servicemoduletypes "github.com/pokt-network/poktroll/x/service/types"
-	_ "github.com/pokt-network/poktroll/x/session/module" // import for side-effects
-	sessionmoduletypes "github.com/pokt-network/poktroll/x/session/types"
-	_ "github.com/pokt-network/poktroll/x/shared/module" // import for side-effects
-	sharedmoduletypes "github.com/pokt-network/poktroll/x/shared/types"
-	_ "github.com/pokt-network/poktroll/x/supplier/module" // import for side-effects
-	suppliermoduletypes "github.com/pokt-network/poktroll/x/supplier/types"
-	_ "github.com/pokt-network/poktroll/x/tokenomics/module" // import for side-effects
-	tokenomicsmoduletypes "github.com/pokt-network/poktroll/x/tokenomics/types"
+	applicationmodulev1 "github.com/pokt-network/pocket/api/pocket/application/module"
+	gatewaymodulev1 "github.com/pokt-network/pocket/api/pocket/gateway/module"
+	proofmodulev1 "github.com/pokt-network/pocket/api/pocket/proof/module"
+	servicemodulev1 "github.com/pokt-network/pocket/api/pocket/service/module"
+	sessionmodulev1 "github.com/pokt-network/pocket/api/pocket/session/module"
+	sharedmodulev1 "github.com/pokt-network/pocket/api/pocket/shared/module"
+	suppliermodulev1 "github.com/pokt-network/pocket/api/pocket/supplier/module"
+	tokenomicsmodulev1 "github.com/pokt-network/pocket/api/pocket/tokenomics/module"
+	_ "github.com/pokt-network/pocket/x/application/module" // import for side-effects
+	applicationmoduletypes "github.com/pokt-network/pocket/x/application/types"
+	_ "github.com/pokt-network/pocket/x/gateway/module" // import for side-effects
+	gatewaymoduletypes "github.com/pokt-network/pocket/x/gateway/types"
+	_ "github.com/pokt-network/pocket/x/proof/module" // import for side-effects
+	proofmoduletypes "github.com/pokt-network/pocket/x/proof/types"
+	_ "github.com/pokt-network/pocket/x/service/module" // import for side-effects
+	servicemoduletypes "github.com/pokt-network/pocket/x/service/types"
+	_ "github.com/pokt-network/pocket/x/session/module" // import for side-effects
+	sessionmoduletypes "github.com/pokt-network/pocket/x/session/types"
+	_ "github.com/pokt-network/pocket/x/shared/module" // import for side-effects
+	sharedmoduletypes "github.com/pokt-network/pocket/x/shared/types"
+	_ "github.com/pokt-network/pocket/x/supplier/module" // import for side-effects
+	suppliermoduletypes "github.com/pokt-network/pocket/x/supplier/types"
+	_ "github.com/pokt-network/pocket/x/tokenomics/module" // import for side-effects
+	tokenomicsmoduletypes "github.com/pokt-network/pocket/x/tokenomics/types"
 )
 
 var (

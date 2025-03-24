@@ -8,11 +8,11 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/pokt-network/smt"
 
-	"github.com/pokt-network/poktroll/app/volatile"
-	"github.com/pokt-network/poktroll/pkg/crypto/protocol"
-	poktrand "github.com/pokt-network/poktroll/pkg/crypto/rand"
-	servicetypes "github.com/pokt-network/poktroll/x/service/types"
-	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
+	"github.com/pokt-network/pocket/app/volatile"
+	"github.com/pokt-network/pocket/pkg/crypto/protocol"
+	poktrand "github.com/pokt-network/pocket/pkg/crypto/rand"
+	servicetypes "github.com/pokt-network/pocket/x/service/types"
+	sharedtypes "github.com/pokt-network/pocket/x/shared/types"
 )
 
 // GetNumClaimedComputeUnits returns the number of compute units for a given claim

@@ -8,7 +8,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/client/tx"
 	"github.com/spf13/cobra"
 
-	"github.com/pokt-network/poktroll/x/gateway/types"
+	"github.com/pokt-network/pocket/x/gateway/types"
 )
 
 var _ = strconv.Itoa(0)
@@ -21,7 +21,7 @@ func CmdUnstakeGateway() *cobra.Command {
 		Long: `Unstake a gateway. This is a broadcast operation that will unstake the gateway specified by the 'from' address.
 
 Example:
-$ poktrolld tx gateway unstake-gateway --keyring-backend test --from $(GATEWAY) --node $(POCKET_NODE) --home $(POKTROLLD_HOME)`,
+$ pocketd tx gateway unstake-gateway --keyring-backend test --from $(GATEWAY) --node $(POCKET_NODE) --home $(POKTROLLD_HOME)`,
 		Args: cobra.ExactArgs(0),
 		RunE: func(cmd *cobra.Command, _ []string) (err error) {
 			clientCtx, err := client.GetClientTxContext(cmd)

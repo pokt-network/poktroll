@@ -10,16 +10,16 @@ import (
 	"github.com/pokt-network/smt/kvstore/pebble"
 	"github.com/stretchr/testify/require"
 
-	"github.com/pokt-network/poktroll/app/volatile"
-	"github.com/pokt-network/poktroll/pkg/crypto/protocol"
-	testkeeper "github.com/pokt-network/poktroll/testutil/keeper"
-	"github.com/pokt-network/poktroll/testutil/sample"
-	"github.com/pokt-network/poktroll/testutil/testrelayer"
-	apptypes "github.com/pokt-network/poktroll/x/application/types"
-	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
-	servicetypes "github.com/pokt-network/poktroll/x/service/types"
-	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
-	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
+	"github.com/pokt-network/pocket/app/volatile"
+	"github.com/pokt-network/pocket/pkg/crypto/protocol"
+	testkeeper "github.com/pokt-network/pocket/testutil/keeper"
+	"github.com/pokt-network/pocket/testutil/sample"
+	"github.com/pokt-network/pocket/testutil/testrelayer"
+	apptypes "github.com/pokt-network/pocket/x/application/types"
+	prooftypes "github.com/pokt-network/pocket/x/proof/types"
+	servicetypes "github.com/pokt-network/pocket/x/service/types"
+	sessiontypes "github.com/pokt-network/pocket/x/session/types"
+	sharedtypes "github.com/pokt-network/pocket/x/shared/types"
 )
 
 const (

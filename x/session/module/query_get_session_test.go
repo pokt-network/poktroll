@@ -12,8 +12,8 @@ import (
 	"github.com/gogo/status"
 	"github.com/stretchr/testify/require"
 
-	session "github.com/pokt-network/poktroll/x/session/module"
-	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
+	session "github.com/pokt-network/pocket/x/session/module"
+	sessiontypes "github.com/pokt-network/pocket/x/session/types"
 )
 
 func TestCLI_GetSession(t *testing.T) {

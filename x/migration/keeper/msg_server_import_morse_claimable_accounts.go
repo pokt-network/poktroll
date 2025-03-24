@@ -7,7 +7,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	migrationtypes "github.com/pokt-network/poktroll/x/migration/types"
+	migrationtypes "github.com/pokt-network/pocket/x/migration/types"
 )
 
 // ImportMorseClaimableAccounts persists all MorseClaimableAccounts in the given

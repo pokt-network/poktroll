@@ -26,29 +26,29 @@ spec:
               name: e2e-tests-check-services-script
       containers:
         - name: e2e-tests
-          image: ghcr.io/pokt-network/poktrolld:${IMAGE_TAG}
+          image: ghcr.io/pokt-network/pocketd:${IMAGE_TAG}
           command: ["/bin/sh"]
           args:
             - "-c"
             - |
               # Copy files from the secret to the writable directory
-              cp -Lr /tmp/keys/* /root/.poktroll/keyring-test/ && \
-              echo "Listing /root/.poktroll/keyring-test/ after copying:"
-              ls -l /root/.poktroll/keyring-test/ && \
-              poktrolld q gateway list-gateway --node=$POCKET_NODE && \
-              poktrolld q application list-application --node=$POCKET_NODE && \
-              poktrolld q supplier list-suppliers --node=$POCKET_NODE && \
+              cp -Lr /tmp/keys/* /root/.pocket/keyring-test/ && \
+              echo "Listing /root/.pocket/keyring-test/ after copying:"
+              ls -l /root/.pocket/keyring-test/ && \
+              pocketd q gateway list-gateway --node=$POCKET_NODE && \
+              pocketd q application list-application --node=$POCKET_NODE && \
+              pocketd q supplier list-suppliers --node=$POCKET_NODE && \
               make acc_initialize_pubkeys && \
               go test -v ./e2e/tests/... -tags=e2e
           env:
             - name: POCKET_NODE
-              value: tcp://${NAMESPACE}-validator-poktrolld:26657
+              value: tcp://${NAMESPACE}-validator-pocketd:26657
             - name: VALIDATOR_RPC_ENDPOINT
-              value: ${NAMESPACE}-validator-poktrolld:26657
+              value: ${NAMESPACE}-validator-pocketd:26657
             - name: E2E_DEBUG_OUTPUT
               value: "false" # Flip to true to see the command and result of the execution
             - name: POKTROLLD_HOME
-              value: /root/.poktroll
+              value: /root/.pocket
             - name: PATH_URL
               value: http://${NAMESPACE}-path:3069/v1
               # PATH relies on subdomains to get the requested service but our DevNet infra is not
@@ -58,9 +58,9 @@ spec:
             - name: PATH_HOST_OVERRIDE
               value: ${NAMESPACE}-path:3069
           volumeMounts:
-            - mountPath: /root/.poktroll/keyring-test/
+            - mountPath: /root/.pocket/keyring-test/
               name: writable-keys-volume
-            - mountPath: /root/.poktroll/config/
+            - mountPath: /root/.pocket/config/
               name: configs-volume
             - mountPath: /tmp/keys
               name: non-writable-keys-volume

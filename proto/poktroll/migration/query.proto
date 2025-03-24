@@ -1,15 +1,15 @@
 syntax = "proto3";
 
-package poktroll.migration;
+package pocket.migration;
 
 import "amino/amino.proto";
 import "gogoproto/gogo.proto";
 import "google/api/annotations.proto";
 import "cosmos/base/query/v1beta1/pagination.proto";
-import "poktroll/migration/params.proto";
-import "poktroll/migration/morse_onchain.proto";
+import "pocket/migration/params.proto";
+import "pocket/migration/morse_onchain.proto";
 
-option go_package = "github.com/pokt-network/poktroll/x/migration/types";
+option go_package = "github.com/pokt-network/pocket/x/migration/types";
 option (gogoproto.stable_marshaler_all) = true;
 
 // Query defines the gRPC querier service.
@@ -17,17 +17,17 @@ service Query {
   
   // Parameters queries the parameters of the module.
   rpc Params (QueryParamsRequest) returns (QueryParamsResponse) {
-    option (google.api.http).get = "/pokt-network/poktroll/migration/params";
+    option (google.api.http).get = "/pokt-network/pocket/migration/params";
   
   }
   
   // Queries a list of MorseClaimableAccount items.
   rpc MorseClaimableAccount    (QueryMorseClaimableAccountRequest) returns (QueryMorseClaimableAccountResponse) {
-    option (google.api.http).get = "/pokt-network/poktroll/migration/morse_claimable_account/{address}";
+    option (google.api.http).get = "/pokt-network/pocket/migration/morse_claimable_account/{address}";
   
   }
   rpc MorseClaimableAccountAll (QueryAllMorseClaimableAccountRequest) returns (QueryAllMorseClaimableAccountResponse) {
-    option (google.api.http).get = "/pokt-network/poktroll/migration/morse_claimable_account";
+    option (google.api.http).get = "/pokt-network/pocket/migration/morse_claimable_account";
   
   }
 }

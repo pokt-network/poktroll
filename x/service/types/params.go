@@ -5,7 +5,7 @@ import (
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	paramtypes "github.com/cosmos/cosmos-sdk/x/params/types"
 
-	"github.com/pokt-network/poktroll/app/volatile"
+	"github.com/pokt-network/pocket/app/volatile"
 )
 
 // DefaultAddServiceFee is the default value for the add service fee

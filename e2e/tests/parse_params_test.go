@@ -13,13 +13,13 @@ import (
 	"github.com/regen-network/gocuke"
 	"github.com/stretchr/testify/require"
 
-	"github.com/pokt-network/poktroll/app/volatile"
-	apptypes "github.com/pokt-network/poktroll/x/application/types"
-	gatewaytypes "github.com/pokt-network/poktroll/x/gateway/types"
-	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
-	servicetypes "github.com/pokt-network/poktroll/x/service/types"
-	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
-	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
+	"github.com/pokt-network/pocket/app/volatile"
+	apptypes "github.com/pokt-network/pocket/x/application/types"
+	gatewaytypes "github.com/pokt-network/pocket/x/gateway/types"
+	prooftypes "github.com/pokt-network/pocket/x/proof/types"
+	servicetypes "github.com/pokt-network/pocket/x/service/types"
+	sharedtypes "github.com/pokt-network/pocket/x/shared/types"
+	tokenomicstypes "github.com/pokt-network/pocket/x/tokenomics/types"
 )
 
 const (

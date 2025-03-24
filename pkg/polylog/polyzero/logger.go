@@ -6,7 +6,7 @@ import (
 
 	"github.com/rs/zerolog"
 
-	"github.com/pokt-network/poktroll/pkg/polylog"
+	"github.com/pokt-network/pocket/pkg/polylog"
 )
 
 // zerologLogger is a thin wrapper around a zerolog logger which implements

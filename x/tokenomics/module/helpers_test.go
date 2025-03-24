@@ -7,8 +7,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/pokt-network/poktroll/testutil/network"
-	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
+	"github.com/pokt-network/pocket/testutil/network"
+	tokenomicstypes "github.com/pokt-network/pocket/x/tokenomics/types"
 )
 
 // Dummy variable to avoid unused import error.

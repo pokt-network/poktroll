@@ -7,13 +7,13 @@ import (
 
 	"github.com/gorilla/websocket"
 
-	"github.com/pokt-network/poktroll/pkg/client"
-	"github.com/pokt-network/poktroll/pkg/observable/channel"
-	"github.com/pokt-network/poktroll/pkg/polylog"
-	"github.com/pokt-network/poktroll/pkg/relayer"
-	"github.com/pokt-network/poktroll/pkg/relayer/config"
-	"github.com/pokt-network/poktroll/x/service/types"
-	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
+	"github.com/pokt-network/pocket/pkg/client"
+	"github.com/pokt-network/pocket/pkg/observable/channel"
+	"github.com/pokt-network/pocket/pkg/polylog"
+	"github.com/pokt-network/pocket/pkg/relayer"
+	"github.com/pokt-network/pocket/pkg/relayer/config"
+	"github.com/pokt-network/pocket/x/service/types"
+	sessiontypes "github.com/pokt-network/pocket/x/session/types"
 )
 
 // bridge represents a websocket bridge between the gateway and the service backend.

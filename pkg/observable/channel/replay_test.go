@@ -10,9 +10,9 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/pokt-network/poktroll/pkg/observable"
-	"github.com/pokt-network/poktroll/pkg/observable/channel"
-	"github.com/pokt-network/poktroll/testutil/testerrors"
+	"github.com/pokt-network/pocket/pkg/observable"
+	"github.com/pokt-network/pocket/pkg/observable/channel"
+	"github.com/pokt-network/pocket/testutil/testerrors"
 )
 
 func TestReplayObservable_Overflow(t *testing.T) {

@@ -12,15 +12,15 @@ import (
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	"github.com/stretchr/testify/require"
 
-	"github.com/pokt-network/poktroll/app/volatile"
-	testkeeper "github.com/pokt-network/poktroll/testutil/keeper"
-	"github.com/pokt-network/poktroll/testutil/sample"
-	apptypes "github.com/pokt-network/poktroll/x/application/types"
-	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
-	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
-	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
-	tlm "github.com/pokt-network/poktroll/x/tokenomics/token_logic_module"
-	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
+	"github.com/pokt-network/pocket/app/volatile"
+	testkeeper "github.com/pokt-network/pocket/testutil/keeper"
+	"github.com/pokt-network/pocket/testutil/sample"
+	apptypes "github.com/pokt-network/pocket/x/application/types"
+	prooftypes "github.com/pokt-network/pocket/x/proof/types"
+	sharedtypes "github.com/pokt-network/pocket/x/shared/types"
+	suppliertypes "github.com/pokt-network/pocket/x/supplier/types"
+	tlm "github.com/pokt-network/pocket/x/tokenomics/token_logic_module"
+	tokenomicstypes "github.com/pokt-network/pocket/x/tokenomics/types"
 )
 
 // zerouPOKT is a coin with the uPOKT denom and zero amount, intended for use in test assertions.

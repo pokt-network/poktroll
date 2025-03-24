@@ -7,13 +7,13 @@ import (
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 
-	"github.com/pokt-network/poktroll/app/volatile"
-	testevents "github.com/pokt-network/poktroll/testutil/events"
-	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
-	"github.com/pokt-network/poktroll/testutil/sample"
-	"github.com/pokt-network/poktroll/x/application/keeper"
-	apptypes "github.com/pokt-network/poktroll/x/application/types"
-	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
+	"github.com/pokt-network/pocket/app/volatile"
+	testevents "github.com/pokt-network/pocket/testutil/events"
+	keepertest "github.com/pokt-network/pocket/testutil/keeper"
+	"github.com/pokt-network/pocket/testutil/sample"
+	"github.com/pokt-network/pocket/x/application/keeper"
+	apptypes "github.com/pokt-network/pocket/x/application/types"
+	sharedtypes "github.com/pokt-network/pocket/x/shared/types"
 )
 
 func TestMsgServer_StakeApplication_SuccessfulCreateAndUpdate(t *testing.T) {

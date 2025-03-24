@@ -1,17 +1,17 @@
 syntax = "proto3";
-package poktroll.migration;
+package pocket.migration;
 
-option go_package = "github.com/pokt-network/poktroll/x/migration/types";
+option go_package = "github.com/pokt-network/pocket/x/migration/types";
 option (gogoproto.stable_marshaler_all) = true;
 
 import "cosmos_proto/cosmos.proto";
 import "gogoproto/gogo.proto";
 import "cosmos/base/v1beta1/coin.proto";
 
-import "poktroll/shared/service.proto";
-import "poktroll/migration/morse_onchain.proto";
-import "poktroll/application/types.proto";
-import "poktroll/shared/supplier.proto";
+import "pocket/shared/service.proto";
+import "pocket/migration/morse_onchain.proto";
+import "pocket/application/types.proto";
+import "pocket/shared/supplier.proto";
 
 // EventImportMorseClaimableAccounts is emitted when the MorseClaimableAccounts are created on-chain.
 message EventImportMorseClaimableAccounts {

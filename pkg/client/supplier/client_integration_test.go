@@ -7,7 +7,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/pokt-network/poktroll/testutil/testclient/testsupplier"
+	"github.com/pokt-network/pocket/testutil/testclient/testsupplier"
 )
 
 func TestNewSupplierClient_Localnet(t *testing.T) {

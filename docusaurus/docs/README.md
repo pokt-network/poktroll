@@ -24,25 +24,25 @@ please visit [docs.pokt.network](https://docs.pokt.network).
 
 <div>
   <a href="https://discord.gg/pokt"><img src="https://img.shields.io/discord/553741558869131266"/></a>
-  <a  href="https://github.com/pokt-network/poktroll/releases"><img src="https://img.shields.io/github/release-pre/pokt-network/poktroll.svg"/></a>
-  <a  href="https://github.com/pokt-network/poktroll/pulse"><img src="https://img.shields.io/github/contributors/pokt-network/poktroll.svg"/></a>
+  <a  href="https://github.com/pokt-network/pocket/releases"><img src="https://img.shields.io/github/release-pre/pokt-network/pocket.svg"/></a>
+  <a  href="https://github.com/pokt-network/pocket/pulse"><img src="https://img.shields.io/github/contributors/pokt-network/pocket.svg"/></a>
   <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/License-MIT-blue.svg"/></a>
-  <a href="https://github.com/pokt-network/poktroll/pulse"><img src="https://img.shields.io/github/last-commit/pokt-network/poktroll.svg"/></a>
-  <a href="https://github.com/pokt-network/poktroll/pulls"><img src="https://img.shields.io/github/issues-pr/pokt-network/poktroll.svg"/></a>
-  <a href="https://github.com/pokt-network/poktroll/releases"><img src="https://img.shields.io/badge/platform-linux%20%7C%20macos-pink.svg"/></a>
-  <a href="https://github.com/pokt-network/poktroll/issues"><img src="https://img.shields.io/github/issues/pokt-network/poktroll.svg"/></a>
-  <a href="https://github.com/pokt-network/poktroll/issues"><img src="https://img.shields.io/github/issues-closed/pokt-network/poktroll.svg"/></a>
-  <a href="https://godoc.org/github.com/pokt-network/poktroll"><img src="https://img.shields.io/badge/godoc-reference-blue.svg"/></a>
-  <a href="https://goreportcard.com/report/github.com/pokt-network/poktroll"><img src="https://goreportcard.com/badge/github.com/pokt-network/poktroll"/></a>
+  <a href="https://github.com/pokt-network/pocket/pulse"><img src="https://img.shields.io/github/last-commit/pokt-network/pocket.svg"/></a>
+  <a href="https://github.com/pokt-network/pocket/pulls"><img src="https://img.shields.io/github/issues-pr/pokt-network/pocket.svg"/></a>
+  <a href="https://github.com/pokt-network/pocket/releases"><img src="https://img.shields.io/badge/platform-linux%20%7C%20macos-pink.svg"/></a>
+  <a href="https://github.com/pokt-network/pocket/issues"><img src="https://img.shields.io/github/issues/pokt-network/pocket.svg"/></a>
+  <a href="https://github.com/pokt-network/pocket/issues"><img src="https://img.shields.io/github/issues-closed/pokt-network/pocket.svg"/></a>
+  <a href="https://godoc.org/github.com/pokt-network/pocket"><img src="https://img.shields.io/badge/godoc-reference-blue.svg"/></a>
+  <a href="https://goreportcard.com/report/github.com/pokt-network/pocket"><img src="https://goreportcard.com/badge/github.com/pokt-network/pocket"/></a>
   <a href="https://golang.org"><img  src="https://img.shields.io/badge/golang-v1.23-green.svg"/></a>
   <a href="https://github.com/tools/godep" ><img src="https://img.shields.io/badge/godep-dependency-71a3d9.svg"/></a>
 </div>
 
-## Pocket Network Shannon Technical Docs (aka poktroll) <!-- omit in toc -->
+## Pocket Network Shannon Technical Docs (aka pocket) <!-- omit in toc -->
 
-**poktroll** is the source code and core implementation of the [Shannon upgrade](https://docs.pokt.network/pokt-protocol/the-shannon-upgrade) for [Pocket Network](https://pokt.network/).
+**pocket** is the source code and core implementation of the [Shannon upgrade](https://docs.pokt.network/pokt-protocol/the-shannon-upgrade) for [Pocket Network](https://pokt.network/).
 
-`poktroll` is built using the [Cosmos SDK](https://docs.cosmos.network), [CometBFT](https://cometbft.com/) and [Ignite CLI](https://ignite.com/cli).
+`pocket` is built using the [Cosmos SDK](https://docs.cosmos.network), [CometBFT](https://cometbft.com/) and [Ignite CLI](https://ignite.com/cli).
 
 ## What is Pocket Network? <!-- omit in toc -->
 
@@ -68,7 +68,7 @@ to get some understanding of why you need Pocket & Grove.
 ## Where do I start?
 
 1. [Guides & Deployment](./operate/cheat_sheets/full_node_cheatsheet.md): Deployment cheat sheets and config overviews for node runners, infrastructure operators and CLI users.
-2. [Tools & Explorers](./tools/user_guide/poktrolld_cli.md): Explorers, wallets, faucets and other resources to interact with the network.
+2. [Tools & Explorers](./tools/user_guide/pocketd_cli.md): Explorers, wallets, faucets and other resources to interact with the network.
 3. [Core Developers](./develop/developer_guide/walkthrough.md): Guides & walkthroughs for core or external developers looking to contribute to the core protocol or SDK.
 4. [Protocol Design](./protocol/actors/actors.md): Learn more about tokenomics design & protocol architecture.
 
@@ -93,10 +93,10 @@ The PATH Roadmap, along with all past, active and future work is tracked via [th
 
 ## GoDoc Documentation
 
-The Godoc for the source code can be found at [pkg.go.dev/github.com/pokt-network/poktroll](https://pkg.go.dev/github.com/pokt-network/poktroll).
+The Godoc for the source code can be found at [pkg.go.dev/github.com/pokt-network/pocket](https://pkg.go.dev/github.com/pokt-network/pocket).
 
 ---
 
 ## License
 
-This project is licensed under the MIT License; see the [LICENSE](https://github.com/pokt-network/poktroll/blob/main/LICENSE) file for details.
+This project is licensed under the MIT License; see the [LICENSE](https://github.com/pokt-network/pocket/blob/main/LICENSE) file for details.

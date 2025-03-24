@@ -1,8 +1,8 @@
 syntax = "proto3";
 
-package poktroll.tokenomics;
+package pocket.tokenomics;
 
-option go_package = "github.com/pokt-network/poktroll/x/tokenomics/types";
+option go_package = "github.com/pokt-network/pocket/x/tokenomics/types";
 option (gogoproto.stable_marshaler_all) = true;
 
 import "amino/amino.proto";
@@ -10,14 +10,14 @@ import "gogoproto/gogo.proto";
 import "google/api/annotations.proto";
 import "cosmos_proto/cosmos.proto";
 
-import "poktroll/tokenomics/params.proto";
+import "pocket/tokenomics/params.proto";
 
 // Query defines the gRPC querier service.
 service Query {
 
   // Parameters queries the parameters of the module.
   rpc Params (QueryParamsRequest) returns (QueryParamsResponse) {
-    option (google.api.http).get = "/pokt-network/poktroll/tokenomics/params";
+    option (google.api.http).get = "/pokt-network/pocket/tokenomics/params";
 
   }
 }

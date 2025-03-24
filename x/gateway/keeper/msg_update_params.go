@@ -8,7 +8,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"github.com/pokt-network/poktroll/x/gateway/types"
+	"github.com/pokt-network/pocket/x/gateway/types"
 )
 
 func (k msgServer) UpdateParams(

@@ -5,7 +5,7 @@ import (
 
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 
-	gatewaytypes "github.com/pokt-network/poktroll/x/gateway/types"
+	gatewaytypes "github.com/pokt-network/pocket/x/gateway/types"
 )
 
 // EndBlockerAutoUndelegateFromUnbondingGateways is called every block and handles

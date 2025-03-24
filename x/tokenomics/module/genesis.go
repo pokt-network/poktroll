@@ -3,8 +3,8 @@ package tokenomics
 import (
 	"context"
 
-	"github.com/pokt-network/poktroll/x/tokenomics/keeper"
-	"github.com/pokt-network/poktroll/x/tokenomics/types"
+	"github.com/pokt-network/pocket/x/tokenomics/keeper"
+	"github.com/pokt-network/pocket/x/tokenomics/types"
 )
 
 // InitGenesis initializes the module's state from a provided genesis state.

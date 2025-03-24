@@ -1,6 +1,6 @@
 version: 1
 build:
-  main: cmd/poktrolld
+  main: cmd/pocketd
 accounts:
   - name: faucet
     mnemonic: "baby advance work soap slow exclude blur humble lucky rough teach wide chuckle captain rack laundry butter main very cannon donate armor dress follow"
@@ -85,9 +85,9 @@ client:
 validators:
   - name: validator1
     bonded: 900000000upokt
-    # DEV_NOTE: adjust `cmd/poktrolld/cmd/config.go` to change the default options. The section below **ONLY** changes
+    # DEV_NOTE: adjust `cmd/pocketd/cmd/config.go` to change the default options. The section below **ONLY** changes
     # the values for the first validator, and the config is rendered using `ignite` cli. This is primarily used for
-    # LocalNet. Other participants of the network are relying on `poktrolld init`, which gets values from `cmd/config.go`.
+    # LocalNet. Other participants of the network are relying on `pocketd init`, which gets values from `cmd/config.go`.
     app:
       # DEV_NOTE: Ignite does not carry over all defaults, so we are going to match `minimum-gas-prices` with `cmd/config.go`.
       # See the enhancement request here: https://github.com/ignite/cli/issues/4340
@@ -95,7 +95,7 @@ validators:
       # minimum-gas-prices: 0.000000001upokt
       telemetry:
         enabled: true
-      poktroll:
+      pocket:
         telemetry:
           # "high" produces a lot of timeseries.
           # ONLY suitable for small networks such as LocalNet.
@@ -125,7 +125,7 @@ validators:
         # max_tx_bytes needs to be increased alongside max_txs_bytes as well.
         max_tx_bytes: "100000000"
     client:
-      chain-id: poktroll
+      chain-id: pocket
 
 # We can persist arbitrary genesis values via 1 to 1 mapping to genesis.json
 genesis:
@@ -316,7 +316,7 @@ genesis:
           supplier: 0.7
           source_owner: 0.15
           application: 0.0
-        # The dao reward address SHOULD match that of the "pnf" below (i.e. `make poktrolld_addr ACC_NAME=pnf`).
+        # The dao reward address SHOULD match that of the "pnf" below (i.e. `make pocketd_addr ACC_NAME=pnf`).
         # This is the address that will receive the dao/foundation rewards during claim settlement (global mint TLM).
         # TODO_MAINNET(@olshansk): Consolidate the usage of DAO/PNF throughout the configs & codebase.
         dao_reward_address: "pokt1eeeksh2tvkh7wzmfrljnhw4wrhs55lcuvmekkw"

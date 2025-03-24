@@ -7,8 +7,8 @@ import (
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 	"github.com/stretchr/testify/require"
 
-	testkeeper "github.com/pokt-network/poktroll/testutil/keeper"
-	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
+	testkeeper "github.com/pokt-network/pocket/testutil/keeper"
+	sessiontypes "github.com/pokt-network/pocket/x/session/types"
 )
 
 func TestMsgUpdateParam_UpdateNumSuppliersPerSessionOnly(t *testing.T) {

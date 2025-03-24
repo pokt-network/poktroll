@@ -8,16 +8,16 @@ import (
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	"github.com/stretchr/testify/require"
 
-	"github.com/pokt-network/poktroll/testutil/network"
-	testsession "github.com/pokt-network/poktroll/testutil/session"
-	"github.com/pokt-network/poktroll/testutil/testkeyring"
-	apptypes "github.com/pokt-network/poktroll/x/application/types"
-	"github.com/pokt-network/poktroll/x/proof/types"
-	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
-	sessionkeeper "github.com/pokt-network/poktroll/x/session/keeper"
-	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
-	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
-	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
+	"github.com/pokt-network/pocket/testutil/network"
+	testsession "github.com/pokt-network/pocket/testutil/session"
+	"github.com/pokt-network/pocket/testutil/testkeyring"
+	apptypes "github.com/pokt-network/pocket/x/application/types"
+	"github.com/pokt-network/pocket/x/proof/types"
+	prooftypes "github.com/pokt-network/pocket/x/proof/types"
+	sessionkeeper "github.com/pokt-network/pocket/x/session/keeper"
+	sessiontypes "github.com/pokt-network/pocket/x/session/types"
+	sharedtypes "github.com/pokt-network/pocket/x/shared/types"
+	suppliertypes "github.com/pokt-network/pocket/x/supplier/types"
 )
 
 const (

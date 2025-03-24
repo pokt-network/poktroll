@@ -8,8 +8,8 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"github.com/pokt-network/poktroll/telemetry"
-	apptypes "github.com/pokt-network/poktroll/x/application/types"
+	"github.com/pokt-network/pocket/telemetry"
+	apptypes "github.com/pokt-network/pocket/x/application/types"
 )
 
 // UnstakeApplication kicks off the application unbonding process, at the end

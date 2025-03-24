@@ -1,6 +1,6 @@
 package types
 
-import sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
+import sharedtypes "github.com/pokt-network/pocket/x/shared/types"
 
 // GatewayNotUnstaking is the value of `unstake_session_end_height` if the
 // gateway is not actively unbonding.

@@ -4,8 +4,8 @@ import (
 	"context"
 	"sync"
 
-	"github.com/pokt-network/poktroll/pkg/observable"
-	"github.com/pokt-network/poktroll/pkg/polylog"
+	"github.com/pokt-network/pocket/pkg/observable"
+	"github.com/pokt-network/pocket/pkg/polylog"
 )
 
 var (

@@ -14,8 +14,8 @@ import (
 	"github.com/jhump/protoreflect/desc/protoparse"
 	"github.com/jhump/protoreflect/desc/protoparse/ast"
 
-	"github.com/pokt-network/poktroll/pkg/polylog"
-	_ "github.com/pokt-network/poktroll/pkg/polylog/polyzero"
+	"github.com/pokt-network/pocket/pkg/polylog"
+	_ "github.com/pokt-network/pocket/pkg/polylog/polyzero"
 )
 
 // paramField is used to hold param message field information for interpolation
@@ -186,8 +186,8 @@ func newCollectParamsFieldNodesInFileFn(paramsFieldNodesByModule map[string][]*a
 		var moduleName string
 		pathParts := strings.Split(protoFilePath, string(filepath.Separator))
 		for idx, pathPart := range pathParts {
-			// Module name is ALWAYS the child directory of "proto/poktroll".
-			if pathPart != "poktroll" {
+			// Module name is ALWAYS the child directory of "proto/pocket".
+			if pathPart != "pocket" {
 				continue
 			}
 			moduleName = pathParts[idx+1]

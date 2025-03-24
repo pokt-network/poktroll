@@ -7,13 +7,13 @@ import (
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 
-	"github.com/pokt-network/poktroll/app/volatile"
-	"github.com/pokt-network/poktroll/pkg/client"
-	"github.com/pokt-network/poktroll/pkg/client/query"
-	"github.com/pokt-network/poktroll/pkg/polylog/polyzero"
-	"github.com/pokt-network/poktroll/testutil/testcache"
-	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
-	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
+	"github.com/pokt-network/pocket/app/volatile"
+	"github.com/pokt-network/pocket/pkg/client"
+	"github.com/pokt-network/pocket/pkg/client/query"
+	"github.com/pokt-network/pocket/pkg/polylog/polyzero"
+	"github.com/pokt-network/pocket/testutil/testcache"
+	sharedtypes "github.com/pokt-network/pocket/x/shared/types"
+	suppliertypes "github.com/pokt-network/pocket/x/supplier/types"
 )
 
 var _ IntegrationSuite = (*SupplierModuleSuite)(nil)

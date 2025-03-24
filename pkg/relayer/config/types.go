@@ -95,7 +95,7 @@ type RelayMinerConfig struct {
 }
 
 // TODO_TECHDEBT(@red-0ne): Remove this structure altogether. See the discussion here for ref:
-// https://github.com/pokt-network/poktroll/pull/1037/files#r1928599958
+// https://github.com/pokt-network/pocket/pull/1037/files#r1928599958
 // RelayMinerPingConfig is the structure resulting from parsing the ping
 // server configuration.
 type RelayMinerPingConfig struct {

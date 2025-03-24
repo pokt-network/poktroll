@@ -3,21 +3,21 @@
 // issue in how cosmos-proto generates the pulsar plugin output go source code.
 
 syntax = "proto3";
-package poktroll.proof;
+package pocket.proof;
 
-option go_package = "github.com/pokt-network/poktroll/x/proof/types";
+option go_package = "github.com/pokt-network/pocket/x/proof/types";
 option (gogoproto.stable_marshaler_all) = true;
 
 import "cosmos_proto/cosmos.proto";
 
-import "poktroll/session/types.proto";
+import "pocket/session/types.proto";
 import "gogoproto/gogo.proto";
 
 message Proof {
   // Address of the supplier's operator that submitted this proof.
   string supplier_operator_address = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
   // The session header of the session that this claim is for.
-  poktroll.session.SessionHeader session_header = 2;
+  pocket.session.SessionHeader session_header = 2;
   // The serialized SMST compacted proof from the `#ClosestProof()` method.
   bytes closest_merkle_proof = 3;
 }
@@ -28,7 +28,7 @@ message Claim {
   string supplier_operator_address = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"]; // the address of the supplier's operator that submitted this claim
 
   // Session header this claim is for.
-  poktroll.session.SessionHeader session_header = 2;
+  pocket.session.SessionHeader session_header = 2;
 
   // Root hash from smt.SMST#Root().
   bytes root_hash = 3;

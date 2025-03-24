@@ -5,8 +5,8 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"github.com/pokt-network/poktroll/x/shared/keeper"
-	"github.com/pokt-network/poktroll/x/shared/types"
+	"github.com/pokt-network/pocket/x/shared/keeper"
+	"github.com/pokt-network/pocket/x/shared/types"
 )
 
 // InitGenesis initializes the module's state from a provided genesis state.

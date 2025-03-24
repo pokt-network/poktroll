@@ -3,7 +3,7 @@ package types
 import (
 	"testing"
 
-	"github.com/pokt-network/poktroll/testutil/sample"
+	"github.com/pokt-network/pocket/testutil/sample"
 	"github.com/stretchr/testify/require"
 )
 

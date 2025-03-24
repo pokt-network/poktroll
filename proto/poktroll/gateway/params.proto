@@ -1,7 +1,7 @@
 syntax = "proto3";
-package poktroll.gateway;
+package pocket.gateway;
 
-option go_package = "github.com/pokt-network/poktroll/x/gateway/types";
+option go_package = "github.com/pokt-network/pocket/x/gateway/types";
 option (gogoproto.stable_marshaler_all) = true;
 
 import "amino/amino.proto";
@@ -10,7 +10,7 @@ import "gogoproto/gogo.proto";
 
 // Params defines the parameters for the module.
 message Params {
-  option (amino.name) = "poktroll/x/gateway/Params";
+  option (amino.name) = "pocket/x/gateway/Params";
   option (gogoproto.equal) = true;
 
   // min_stake is the minimum amount of uPOKT that a gateway must stake.

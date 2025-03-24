@@ -14,10 +14,10 @@ import (
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc/status"
 
-	"github.com/pokt-network/poktroll/testutil/network"
-	service "github.com/pokt-network/poktroll/x/service/module"
-	"github.com/pokt-network/poktroll/x/service/types"
-	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
+	"github.com/pokt-network/pocket/testutil/network"
+	service "github.com/pokt-network/pocket/x/service/module"
+	"github.com/pokt-network/pocket/x/service/types"
+	sharedtypes "github.com/pokt-network/pocket/x/shared/types"
 )
 
 func TestCLI_AddService(t *testing.T) {

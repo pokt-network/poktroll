@@ -1,5 +1,5 @@
 syntax = "proto3";
-package poktroll.shared.module;
+package pocket.shared.module;
 
 option (gogoproto.stable_marshaler_all) = true;
 
@@ -9,7 +9,7 @@ import "gogoproto/gogo.proto";
 // Module is the config object for the module.
 message Module {
   option (cosmos.app.v1alpha1.module) = {
-    go_import: "github.com/pokt-network/poktroll/x/shared"
+    go_import: "github.com/pokt-network/pocket/x/shared"
   };
 
   // authority defines the custom module authority. If not set, defaults to the governance module.

@@ -5,8 +5,8 @@ import (
 
 	"cosmossdk.io/depinject"
 
-	"github.com/pokt-network/poktroll/pkg/client"
-	"github.com/pokt-network/poktroll/pkg/observable/channel"
+	"github.com/pokt-network/pocket/pkg/client"
+	"github.com/pokt-network/pocket/pkg/observable/channel"
 )
 
 // Cache is an interface that defines the common methods for a cache object.

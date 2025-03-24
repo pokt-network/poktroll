@@ -1,6 +1,6 @@
 package polyzero
 
-import "github.com/pokt-network/poktroll/pkg/polylog"
+import "github.com/pokt-network/pocket/pkg/polylog"
 
 func init() {
 	// Set the default logger to a polyzero logger. This is the logger which will

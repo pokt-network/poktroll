@@ -14,7 +14,7 @@ title: Service Creation (~ 5 min)
 
 ### Pre-Requisites
 
-1. Make sure to [install the `poktrolld` CLI](../../tools/user_guide/poktrolld_cli.md).
+1. Make sure to [install the `pocketd` CLI](../../tools/user_guide/pocketd_cli.md).
 2. Make sure you know how to [create and fund a new account](../../tools/user_guide/create-new-wallet.md).
 
 ### How do I query for all existing onchain Services?
@@ -22,7 +22,7 @@ title: Service Creation (~ 5 min)
 You can query for all services like so:
 
 ```bash
-poktrolld query service all-services --node https://shannon-testnet-grove-rpc.beta.poktroll.com --output json | jq
+pocketd query service all-services --node https://shannon-testnet-grove-rpc.beta.pocket.com --output json | jq
 ```
 
 Here is an example of the output on Beta TestNet as of writing this document:
@@ -60,25 +60,25 @@ Here is an example of the output on Beta TestNet as of writing this document:
 You can use the `add-service` command to create a new service like so:
 
 ```bash
-poktrolld tx service add-service ${SERVICE_ID} "${SERVICE_NAME_OR_DESCRIPTION}" ${COMPUTE_UNITS_PER_RELAY} \
+pocketd tx service add-service ${SERVICE_ID} "${SERVICE_NAME_OR_DESCRIPTION}" ${COMPUTE_UNITS_PER_RELAY} \
   --fees 1upokt --from ${SERVICE_OWNER} --chain-id ${CHAIN_ID}
 ```
 
 Here is a concrete copy-pasta assuming you have created and funded a new account called `$USER`:
 
 ```bash
-poktrolld tx service add-service "svc-$USER" "service description for $USER" 13 \
-    --node https://shannon-testnet-grove-rpc.beta.poktroll.com \
+pocketd tx service add-service "svc-$USER" "service description for $USER" 13 \
+    --node https://shannon-testnet-grove-rpc.beta.pocket.com \
     --fees 1upokt --from $USER --chain-id pocket-beta
 ```
 
 Optionally, you can add some more flags to be ultra-verbose about your local environment:
 
 ```bash
-poktrolld tx service add-service "svc-$USER" "service description for $USER" 13 \
-    --node https://shannon-testnet-grove-rpc.beta.poktroll.com \
+pocketd tx service add-service "svc-$USER" "service description for $USER" 13 \
+    --node https://shannon-testnet-grove-rpc.beta.pocket.com \
     --fees 1upokt --from $USER --chain-id pocket-beta \
-    --home ~/.poktroll --keyring-backend test \
+    --home ~/.pocket --keyring-backend test \
     --yes --output json
 ```
 
@@ -87,11 +87,11 @@ poktrolld tx service add-service "svc-$USER" "service description for $USER" 13 
 #### Service Transactions
 
 ```bash
-poktrolld tx service -h
+pocketd tx service -h
 ```
 
 #### Service Queries
 
 ```bash
-poktrolld query service -h
+pocketd query service -h
 ```

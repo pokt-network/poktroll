@@ -1,7 +1,7 @@
 package relay_authenticator
 
 import (
-	"github.com/pokt-network/poktroll/pkg/relayer"
+	"github.com/pokt-network/pocket/pkg/relayer"
 )
 
 // WithSigningKeyNames sets the signing key names used by the relay authenticator

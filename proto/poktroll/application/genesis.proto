@@ -1,14 +1,14 @@
 syntax = "proto3";
-package poktroll.application;
+package pocket.application;
 
-option go_package = "github.com/pokt-network/poktroll/x/application/types";
+option go_package = "github.com/pokt-network/pocket/x/application/types";
 option (gogoproto.stable_marshaler_all) = true;
 
 import "amino/amino.proto";
 import "gogoproto/gogo.proto";
 
-import "poktroll/application/params.proto";
-import "poktroll/application/types.proto";
+import "pocket/application/params.proto";
+import "pocket/application/types.proto";
 
 // GenesisState defines the application module's genesis state.
 message GenesisState {

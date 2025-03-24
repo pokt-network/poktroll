@@ -10,9 +10,9 @@ import (
 
 	sdktypes "github.com/pokt-network/shannon-sdk/types"
 
-	"github.com/pokt-network/poktroll/pkg/relayer"
-	"github.com/pokt-network/poktroll/pkg/relayer/config"
-	"github.com/pokt-network/poktroll/x/service/types"
+	"github.com/pokt-network/pocket/pkg/relayer"
+	"github.com/pokt-network/pocket/pkg/relayer/config"
+	"github.com/pokt-network/pocket/x/service/types"
 )
 
 // serveSyncRequest serves a synchronous relay request by forwarding the request

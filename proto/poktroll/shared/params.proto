@@ -1,15 +1,15 @@
 syntax = "proto3";
-package poktroll.shared;
+package pocket.shared;
 
 import "amino/amino.proto";
 import "gogoproto/gogo.proto";
 
-option go_package = "github.com/pokt-network/poktroll/x/shared/types";
+option go_package = "github.com/pokt-network/pocket/x/shared/types";
 option (gogoproto.stable_marshaler_all) = true;
 
 // Params defines the parameters for the module.
 message Params {
-  option (amino.name) = "poktroll/x/shared/Params";
+  option (amino.name) = "pocket/x/shared/Params";
   option (gogoproto.equal) = true;
 
   // num_blocks_per_session is the number of blocks between the session start & end heights.

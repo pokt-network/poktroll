@@ -6,12 +6,12 @@ import (
 	"cosmossdk.io/depinject"
 	"github.com/stretchr/testify/require"
 
-	"github.com/pokt-network/poktroll/pkg/client"
-	"github.com/pokt-network/poktroll/pkg/client/query"
-	"github.com/pokt-network/poktroll/pkg/polylog/polyzero"
-	"github.com/pokt-network/poktroll/testutil/testcache"
-	servicetypes "github.com/pokt-network/poktroll/x/service/types"
-	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
+	"github.com/pokt-network/pocket/pkg/client"
+	"github.com/pokt-network/pocket/pkg/client/query"
+	"github.com/pokt-network/pocket/pkg/polylog/polyzero"
+	"github.com/pokt-network/pocket/testutil/testcache"
+	servicetypes "github.com/pokt-network/pocket/x/service/types"
+	sharedtypes "github.com/pokt-network/pocket/x/shared/types"
 )
 
 var _ IntegrationSuite = (*ServiceModuleSuite)(nil)

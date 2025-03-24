@@ -2,12 +2,12 @@ syntax = "proto3";
 
 // NOTE that the `shared` package is not a Cosmos module,
 // but rather a manually created package to resolve circular type dependencies.
-package poktroll.shared;
+package pocket.shared;
 
 import "cosmos_proto/cosmos.proto";
 
 import "gogoproto/gogo.proto";
-option go_package = "github.com/pokt-network/poktroll/x/shared/types";
+option go_package = "github.com/pokt-network/pocket/x/shared/types";
 option (gogoproto.stable_marshaler_all) = true;
 
 // Service message to encapsulate unique and semantic identifiers for a service on the network

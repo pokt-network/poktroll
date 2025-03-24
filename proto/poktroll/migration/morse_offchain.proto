@@ -16,17 +16,17 @@ syntax = "proto3";
 //
 // These types are used by the migration subcommand to transform
 // the Morse state export into the Shannon state import like so:
-//  $ poktrolld migrate collect-morse-accounts ...
+//  $ pocketd migrate collect-morse-accounts ...
 //
 // CRITICAL: These types are offchain and ARE NOT persisted onchain (Shannon) at any point.
-package poktroll.migration;
+package pocket.migration;
 
 import "gogoproto/gogo.proto";
 import "cosmos_proto/cosmos.proto";
 import "cosmos/base/v1beta1/coin.proto";
-import "poktroll/migration/morse_onchain.proto";
+import "pocket/migration/morse_onchain.proto";
 
-option go_package = "github.com/pokt-network/poktroll/x/migration/types";
+option go_package = "github.com/pokt-network/pocket/x/migration/types";
 option (gogoproto.stable_marshaler_all) = true;
 
 // MorseStateExport is the data structure that is serialized and output when running:

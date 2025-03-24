@@ -1,14 +1,14 @@
 syntax = "proto3";
-package poktroll.supplier;
+package pocket.supplier;
 
-option go_package = "github.com/pokt-network/poktroll/x/supplier/types";
+option go_package = "github.com/pokt-network/pocket/x/supplier/types";
 option (gogoproto.stable_marshaler_all) = true;
 
 import "cosmos_proto/cosmos.proto";
 import "gogoproto/gogo.proto";
 import "cosmos/base/v1beta1/coin.proto";
 
-import "poktroll/shared/supplier.proto";
+import "pocket/shared/supplier.proto";
 
 enum SupplierUnbondingReason {
   SUPPLIER_UNBONDING_REASON_UNSPECIFIED = 0;
@@ -18,7 +18,7 @@ enum SupplierUnbondingReason {
 
 // EventSupplierStaked is emitted when a supplier stake message is committed onchain.
 message EventSupplierStaked {
-  poktroll.shared.Supplier supplier = 1 [(gogoproto.jsontag) = "supplier"];
+  pocket.shared.Supplier supplier = 1 [(gogoproto.jsontag) = "supplier"];
   // The session end height of the last session in which the supplier was staked.
   int64 session_end_height = 2 [(gogoproto.jsontag) = "session_end_height"];
 }
@@ -26,7 +26,7 @@ message EventSupplierStaked {
 // EventSupplierUnbondingBegin is emitted when an application unstake message
 // is committed onchain, indicating that the supplier will now begin unbonding.
 message EventSupplierUnbondingBegin {
-  poktroll.shared.Supplier supplier = 1 [(gogoproto.jsontag) = "supplier"];
+  pocket.shared.Supplier supplier = 1 [(gogoproto.jsontag) = "supplier"];
   SupplierUnbondingReason reason = 2 [(gogoproto.jsontag) = "reason"];
   // The session end height of the last session in which the supplier unbonding began.
   int64 session_end_height = 3 [(gogoproto.jsontag) = "session_end_height"];
@@ -38,7 +38,7 @@ message EventSupplierUnbondingBegin {
 // unbonding. The unbonding period is determined by the shared param,
 // supplier_unbonding_period_sessions.
 message EventSupplierUnbondingEnd {
-  poktroll.shared.Supplier supplier = 1 [(gogoproto.jsontag) = "supplier"];
+  pocket.shared.Supplier supplier = 1 [(gogoproto.jsontag) = "supplier"];
   SupplierUnbondingReason reason = 2 [(gogoproto.jsontag) = "reason"];
   // The session end height of the session in which the supplier unbonding endeded.
   int64 session_end_height = 3 [(gogoproto.jsontag) = "session_end_height"];
@@ -50,7 +50,7 @@ message EventSupplierUnbondingEnd {
 // successfully (re-)stakes before the unbonding period has elapsed. An EventSupplierStaked
 // event will also be emitted immediately after this event.
 message EventSupplierUnbondingCanceled {
-  poktroll.shared.Supplier supplier = 1 [(gogoproto.jsontag) = "supplier"];
+  pocket.shared.Supplier supplier = 1 [(gogoproto.jsontag) = "supplier"];
   // The exact height at which the supplier unbonding was canceled.
   int64 height = 3 [(gogoproto.jsontag) = "height"];
   // The session end height of the session in which the supplier unbonding was canceled.
@@ -62,7 +62,7 @@ message EventSupplierUnbondingCanceled {
 message EventSupplierServiceConfigActivated {
   // supplier contains the complete updated supplier information including the
   // active service configurations in supplier.Services.
-  poktroll.shared.Supplier supplier = 1 [(gogoproto.jsontag) = "supplier"];
+  pocket.shared.Supplier supplier = 1 [(gogoproto.jsontag) = "supplier"];
   // activation_height indicates the block height at which the new service
   // configurations became active.
   int64 activation_height = 2 [(gogoproto.jsontag) = "activation_height"];

@@ -11,7 +11,7 @@ Pocket Network's RPC services.
 
 :::tip
 
-You can find a fully featured example configuration at [application1_stake_config.yaml](https://github.com/pokt-network/poktroll/blob/main/localnet/poktrolld/config/application1_stake_config.yaml).
+You can find a fully featured example configuration at [application1_stake_config.yaml](https://github.com/pokt-network/pocket/blob/main/localnet/pocketd/config/application1_stake_config.yaml).
 
 :::
 
@@ -34,12 +34,12 @@ need to adjust the command below appropriately.
 :::
 
 ```bash
-poktrolld tx application stake-application \
-  --home=./poktroll \
+pocketd tx application stake-application \
+  --home=./pocket \
   --config ./stake_config.yaml \
   --keyring-backend test \
   --from application1 \
-  --node tcp://poktroll-node:26657
+  --node tcp://pocket-node:26657
 ```
 
 ## Configuration

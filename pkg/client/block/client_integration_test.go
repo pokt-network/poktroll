@@ -10,8 +10,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/pokt-network/poktroll/pkg/client"
-	"github.com/pokt-network/poktroll/testutil/testclient/testblock"
+	"github.com/pokt-network/pocket/pkg/client"
+	"github.com/pokt-network/pocket/testutil/testclient/testblock"
 )
 
 // TODO_IMPROVE(@bryanchriswhite, #255): Refactor this integration test to use an in-memory simulated network

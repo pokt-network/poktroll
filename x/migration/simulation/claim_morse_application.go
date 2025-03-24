@@ -7,8 +7,8 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	simtypes "github.com/cosmos/cosmos-sdk/types/simulation"
 
-	"github.com/pokt-network/poktroll/x/migration/keeper"
-	"github.com/pokt-network/poktroll/x/migration/types"
+	"github.com/pokt-network/pocket/x/migration/keeper"
+	"github.com/pokt-network/pocket/x/migration/types"
 )
 
 func SimulateMsgClaimMorseApplication(

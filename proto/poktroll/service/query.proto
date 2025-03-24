@@ -1,7 +1,7 @@
 syntax = "proto3";
-package poktroll.service;
+package pocket.service;
 
-option go_package = "github.com/pokt-network/poktroll/x/service/types";
+option go_package = "github.com/pokt-network/pocket/x/service/types";
 option (gogoproto.stable_marshaler_all) = true;
 
 import "amino/amino.proto";
@@ -9,36 +9,36 @@ import "gogoproto/gogo.proto";
 import "google/api/annotations.proto";
 import "cosmos/base/query/v1beta1/pagination.proto";
 
-import "poktroll/service/params.proto";
-import "poktroll/shared/service.proto";
-import "poktroll/service/relay_mining_difficulty.proto";
+import "pocket/service/params.proto";
+import "pocket/shared/service.proto";
+import "pocket/service/relay_mining_difficulty.proto";
 
 // Query defines the gRPC querier service.
 service Query {
 
   // Parameters queries the parameters of the module.
   rpc Params (QueryParamsRequest) returns (QueryParamsResponse) {
-    option (google.api.http).get = "/pokt-network/poktroll/service/params";
+    option (google.api.http).get = "/pokt-network/pocket/service/params";
 
   }
 
   // Queries a list of Service items.
   rpc Service    (QueryGetServiceRequest) returns (QueryGetServiceResponse) {
-    option (google.api.http).get = "/pokt-network/poktroll/service/service/{id}";
+    option (google.api.http).get = "/pokt-network/pocket/service/service/{id}";
 
   }
   rpc AllServices (QueryAllServicesRequest) returns (QueryAllServicesResponse) {
-    option (google.api.http).get = "/pokt-network/poktroll/service/service";
+    option (google.api.http).get = "/pokt-network/pocket/service/service";
 
   }
 
   // Queries a list of RelayMiningDifficulty items.
   rpc RelayMiningDifficulty    (QueryGetRelayMiningDifficultyRequest) returns (QueryGetRelayMiningDifficultyResponse) {
-    option (google.api.http).get = "/pokt-network/poktroll/service/relay_mining_difficulty/{serviceId}";
+    option (google.api.http).get = "/pokt-network/pocket/service/relay_mining_difficulty/{serviceId}";
 
   }
   rpc RelayMiningDifficultyAll (QueryAllRelayMiningDifficultyRequest) returns (QueryAllRelayMiningDifficultyResponse) {
-    option (google.api.http).get = "/pokt-network/poktroll/service/relay_mining_difficulty";
+    option (google.api.http).get = "/pokt-network/pocket/service/relay_mining_difficulty";
   }
 }
 // QueryParamsRequest is request type for the Query/Params RPC method.
@@ -57,7 +57,7 @@ message QueryGetServiceRequest {
 }
 
 message QueryGetServiceResponse {
-  poktroll.shared.Service service = 1 [(gogoproto.nullable) = false];
+  pocket.shared.Service service = 1 [(gogoproto.nullable) = false];
 }
 
 message QueryAllServicesRequest {
@@ -65,7 +65,7 @@ message QueryAllServicesRequest {
 }
 
 message QueryAllServicesResponse {
-  repeated poktroll.shared.Service service = 1 [(gogoproto.nullable) = false];
+  repeated pocket.shared.Service service = 1 [(gogoproto.nullable) = false];
   cosmos.base.query.v1beta1.PageResponse pagination = 2;
 }
 

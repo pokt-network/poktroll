@@ -6,10 +6,10 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 
-	"github.com/pokt-network/poktroll/cmd/poktrolld/cmd"
-	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
-	"github.com/pokt-network/poktroll/testutil/sample"
-	"github.com/pokt-network/poktroll/x/session/types"
+	"github.com/pokt-network/pocket/cmd/pocketd/cmd"
+	keepertest "github.com/pokt-network/pocket/testutil/keeper"
+	"github.com/pokt-network/pocket/testutil/sample"
+	"github.com/pokt-network/pocket/x/session/types"
 )
 
 func init() {

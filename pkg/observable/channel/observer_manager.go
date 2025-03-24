@@ -4,7 +4,7 @@ import (
 	"context"
 	"sync"
 
-	"github.com/pokt-network/poktroll/pkg/observable"
+	"github.com/pokt-network/pocket/pkg/observable"
 )
 
 var _ observerManager[any] = (*channelObserverManager[any])(nil)

@@ -11,12 +11,12 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"github.com/pokt-network/poktroll/testutil/network"
-	"github.com/pokt-network/poktroll/testutil/nullify"
-	"github.com/pokt-network/poktroll/testutil/sample"
-	proof "github.com/pokt-network/poktroll/x/proof/module"
-	"github.com/pokt-network/poktroll/x/proof/types"
-	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
+	"github.com/pokt-network/pocket/testutil/network"
+	"github.com/pokt-network/pocket/testutil/nullify"
+	"github.com/pokt-network/pocket/testutil/sample"
+	proof "github.com/pokt-network/pocket/x/proof/module"
+	"github.com/pokt-network/pocket/x/proof/types"
+	sessiontypes "github.com/pokt-network/pocket/x/session/types"
 )
 
 func networkWithProofObjects(t *testing.T, n int) (*network.Network, []types.Proof) {

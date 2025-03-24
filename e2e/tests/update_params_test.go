@@ -15,22 +15,22 @@ import (
 	"github.com/regen-network/gocuke"
 	"github.com/stretchr/testify/require"
 
-	"github.com/pokt-network/poktroll/api/poktroll/application"
-	"github.com/pokt-network/poktroll/api/poktroll/gateway"
-	"github.com/pokt-network/poktroll/api/poktroll/proof"
-	"github.com/pokt-network/poktroll/api/poktroll/service"
-	"github.com/pokt-network/poktroll/api/poktroll/session"
-	"github.com/pokt-network/poktroll/api/poktroll/shared"
-	"github.com/pokt-network/poktroll/api/poktroll/supplier"
-	"github.com/pokt-network/poktroll/api/poktroll/tokenomics"
-	apptypes "github.com/pokt-network/poktroll/x/application/types"
-	gatewaytypes "github.com/pokt-network/poktroll/x/gateway/types"
-	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
-	servicetypes "github.com/pokt-network/poktroll/x/service/types"
-	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
-	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
-	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
-	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
+	"github.com/pokt-network/pocket/api/pocket/application"
+	"github.com/pokt-network/pocket/api/pocket/gateway"
+	"github.com/pokt-network/pocket/api/pocket/proof"
+	"github.com/pokt-network/pocket/api/pocket/service"
+	"github.com/pokt-network/pocket/api/pocket/session"
+	"github.com/pokt-network/pocket/api/pocket/shared"
+	"github.com/pokt-network/pocket/api/pocket/supplier"
+	"github.com/pokt-network/pocket/api/pocket/tokenomics"
+	apptypes "github.com/pokt-network/pocket/x/application/types"
+	gatewaytypes "github.com/pokt-network/pocket/x/gateway/types"
+	prooftypes "github.com/pokt-network/pocket/x/proof/types"
+	servicetypes "github.com/pokt-network/pocket/x/service/types"
+	sessiontypes "github.com/pokt-network/pocket/x/session/types"
+	sharedtypes "github.com/pokt-network/pocket/x/shared/types"
+	suppliertypes "github.com/pokt-network/pocket/x/supplier/types"
+	tokenomicstypes "github.com/pokt-network/pocket/x/tokenomics/types"
 )
 
 const (
@@ -297,7 +297,7 @@ func (s *suite) ensureAccountForKeyName(keyName string) {
 func (s *suite) fundAddress(addr string, coin cosmostypes.Coin) {
 	s.Helper()
 
-	// poktrolld tx bank send <from> <to> <amount> --keyring-backend test --chain-id <chain_id> --yes
+	// pocketd tx bank send <from> <to> <amount> --keyring-backend test --chain-id <chain_id> --yes
 	argsAndFlags := []string{
 		"tx",
 		"bank",

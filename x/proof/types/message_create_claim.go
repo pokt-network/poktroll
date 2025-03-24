@@ -3,7 +3,7 @@ package types
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
+	sessiontypes "github.com/pokt-network/pocket/x/session/types"
 )
 
 const TypeMsgCreateClaim = "create_claim"

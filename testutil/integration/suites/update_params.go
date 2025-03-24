@@ -11,16 +11,16 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/authz"
 	"github.com/stretchr/testify/require"
 
-	"github.com/pokt-network/poktroll/testutil/cases"
-	apptypes "github.com/pokt-network/poktroll/x/application/types"
-	gatewaytypes "github.com/pokt-network/poktroll/x/gateway/types"
-	migrationtypes "github.com/pokt-network/poktroll/x/migration/types"
-	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
-	servicetypes "github.com/pokt-network/poktroll/x/service/types"
-	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
-	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
-	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
-	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
+	"github.com/pokt-network/pocket/testutil/cases"
+	apptypes "github.com/pokt-network/pocket/x/application/types"
+	gatewaytypes "github.com/pokt-network/pocket/x/gateway/types"
+	migrationtypes "github.com/pokt-network/pocket/x/migration/types"
+	prooftypes "github.com/pokt-network/pocket/x/proof/types"
+	servicetypes "github.com/pokt-network/pocket/x/service/types"
+	sessiontypes "github.com/pokt-network/pocket/x/session/types"
+	sharedtypes "github.com/pokt-network/pocket/x/shared/types"
+	suppliertypes "github.com/pokt-network/pocket/x/supplier/types"
+	tokenomicstypes "github.com/pokt-network/pocket/x/tokenomics/types"
 )
 
 const (
@@ -129,7 +129,7 @@ func (s *ParamsSuite) SetupTestAuthzAccounts(t *testing.T) {
 func (s *ParamsSuite) SetupTestAuthzGrants(t *testing.T) {
 	t.Helper()
 
-	// Create authz grants for all poktroll modules' MsgUpdateParams messages.
+	// Create authz grants for all pocket modules' MsgUpdateParams messages.
 	s.RunAuthzGrantMsgForPoktrollModules(t,
 		s.AuthorityAddr,
 		s.AuthorizedAddr,
@@ -137,7 +137,7 @@ func (s *ParamsSuite) SetupTestAuthzGrants(t *testing.T) {
 		s.GetPoktrollModuleNames()...,
 	)
 
-	// Create authz grants for all poktroll modules' MsgUpdateParam messages.
+	// Create authz grants for all pocket modules' MsgUpdateParam messages.
 	s.RunAuthzGrantMsgForPoktrollModules(t,
 		s.AuthorityAddr,
 		s.AuthorizedAddr,

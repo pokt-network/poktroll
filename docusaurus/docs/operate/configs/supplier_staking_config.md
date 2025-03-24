@@ -11,7 +11,7 @@ RPC services on Pocket Network.
 
 :::tip
 
-You can find a fully featured example configuration at [supplier_staking_config.yaml](https://github.com/pokt-network/poktroll/tree/main/localnet/poktrolld/config/supplier1_stake_config.yaml).
+You can find a fully featured example configuration at [supplier_staking_config.yaml](https://github.com/pokt-network/pocket/tree/main/localnet/pocketd/config/supplier1_stake_config.yaml).
 
 :::
 
@@ -42,12 +42,12 @@ The following is an example command of how to stake a supplier
 in a LocalNet environment.
 
 ```bash
-poktrolld tx supplier stake-supplier \
-  --home=./poktroll \
+pocketd tx supplier stake-supplier \
+  --home=./pocket \
   --config ./stake_config.yaml \
   --keyring-backend test \
   --from supplier1 \
-  --node tcp://poktroll-node:26657
+  --node tcp://pocket-node:26657
 ```
 
 ## Staking types
@@ -329,7 +329,7 @@ endpoints:
 
 :::
 
-The `rpc_type` MUST be one of the [supported types found here](https://github.com/pokt-network/poktroll/tree/main/pkg/relayer/config/types.go#L8).
+The `rpc_type` MUST be one of the [supported types found here](https://github.com/pokt-network/pocket/tree/main/pkg/relayer/config/types.go#L8).
 
 #### `rev_share_percent`
 

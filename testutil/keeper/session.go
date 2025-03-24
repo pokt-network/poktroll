@@ -22,12 +22,12 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 
-	"github.com/pokt-network/poktroll/testutil/sample"
-	"github.com/pokt-network/poktroll/testutil/session/mocks"
-	apptypes "github.com/pokt-network/poktroll/x/application/types"
-	"github.com/pokt-network/poktroll/x/session/keeper"
-	"github.com/pokt-network/poktroll/x/session/types"
-	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
+	"github.com/pokt-network/pocket/testutil/sample"
+	"github.com/pokt-network/pocket/testutil/session/mocks"
+	apptypes "github.com/pokt-network/pocket/x/application/types"
+	"github.com/pokt-network/pocket/x/session/keeper"
+	"github.com/pokt-network/pocket/x/session/types"
+	sharedtypes "github.com/pokt-network/pocket/x/shared/types"
 )
 
 var (

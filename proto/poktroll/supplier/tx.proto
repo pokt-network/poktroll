@@ -1,8 +1,8 @@
 syntax = "proto3";
 
-package poktroll.supplier;
+package pocket.supplier;
 
-option go_package = "github.com/pokt-network/poktroll/x/supplier/types";
+option go_package = "github.com/pokt-network/pocket/x/supplier/types";
 option (gogoproto.stable_marshaler_all) = true;
 
 import "amino/amino.proto";
@@ -10,9 +10,9 @@ import "cosmos/msg/v1/msg.proto";
 import "cosmos_proto/cosmos.proto";
 import "gogoproto/gogo.proto";
 import "cosmos/base/v1beta1/coin.proto";
-import "poktroll/supplier/params.proto";
-import "poktroll/shared/service.proto";
-import "poktroll/shared/supplier.proto";
+import "pocket/supplier/params.proto";
+import "pocket/shared/service.proto";
+import "pocket/shared/supplier.proto";
 
 // Msg defines the Msg service.
 service Msg {
@@ -28,7 +28,7 @@ service Msg {
 // MsgUpdateParams is the Msg/UpdateParams request type.
 message MsgUpdateParams {
   option (cosmos.msg.v1.signer) =                           "authority";
-  option           (amino.name) = "poktroll/x/supplier/MsgUpdateParams";
+  option           (amino.name) = "pocket/x/supplier/MsgUpdateParams";
 
   // authority is the address that controls the module (defaults to x/gov unless overwritten).
   string authority = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
@@ -48,11 +48,11 @@ message MsgStakeSupplier {
            string                                owner_address    = 2 [(cosmos_proto.scalar) = "cosmos.AddressString"]; // The Bech32 address of the owner (i.e. custodial, staker)
            string                                operator_address = 3 [(cosmos_proto.scalar) = "cosmos.AddressString"]; // The Bech32 address of the operator (i.e. provider, non-custodial)
            cosmos.base.v1beta1.Coin              stake            = 4; // The total amount of uPOKT the supplier has staked. Must be ≥ to the current amount that the supplier has staked (if any)
-  repeated poktroll.shared.SupplierServiceConfig services         = 5; // The list of services this supplier is staked to provide service for
+  repeated pocket.shared.SupplierServiceConfig services         = 5; // The list of services this supplier is staked to provide service for
 }
 
 message MsgStakeSupplierResponse {
-  poktroll.shared.Supplier supplier = 1;
+  pocket.shared.Supplier supplier = 1;
 }
 
 message MsgUnstakeSupplier {
@@ -62,7 +62,7 @@ message MsgUnstakeSupplier {
 }
 
 message MsgUnstakeSupplierResponse {
-  poktroll.shared.Supplier supplier = 1;
+  pocket.shared.Supplier supplier = 1;
 }
 
 // MsgUpdateParam is the Msg/UpdateParam request type to update a single param.

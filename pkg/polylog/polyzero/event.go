@@ -5,7 +5,7 @@ import (
 
 	"github.com/rs/zerolog"
 
-	"github.com/pokt-network/poktroll/pkg/polylog"
+	"github.com/pokt-network/pocket/pkg/polylog"
 )
 
 var _ polylog.Event = (*zerologEvent)(nil)

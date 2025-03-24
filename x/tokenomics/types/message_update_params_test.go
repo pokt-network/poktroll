@@ -5,9 +5,9 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/pokt-network/poktroll/cmd/poktrolld/cmd"
-	"github.com/pokt-network/poktroll/testutil/sample"
-	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
+	"github.com/pokt-network/pocket/cmd/pocketd/cmd"
+	"github.com/pokt-network/pocket/testutil/sample"
+	tokenomicstypes "github.com/pokt-network/pocket/x/tokenomics/types"
 )
 
 func init() {

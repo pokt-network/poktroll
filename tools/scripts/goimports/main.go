@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/pokt-network/poktroll/tools/scripts/goimports/filters"
+	"github.com/pokt-network/pocket/tools/scripts/goimports/filters"
 )
 
 // defaultArgs are always passed to goimports.
@@ -15,7 +15,7 @@ import (
 // -local: put imports beginning with this string after 3rd-party packages (comma-separated list)
 // (see: goimports -h for more info)
 var (
-	defaultArgs           = []string{"-w", "-local", "github.com/pokt-network/poktroll"}
+	defaultArgs           = []string{"-w", "-local", "github.com/pokt-network/pocket"}
 	defaultIncludeFilters = []filters.FilterFn{
 		filters.PathMatchesGoExtension,
 	}

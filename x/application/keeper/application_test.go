@@ -9,11 +9,11 @@ import (
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	"github.com/stretchr/testify/require"
 
-	"github.com/pokt-network/poktroll/cmd/poktrolld/cmd"
-	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
-	"github.com/pokt-network/poktroll/testutil/nullify"
-	"github.com/pokt-network/poktroll/x/application/keeper"
-	"github.com/pokt-network/poktroll/x/application/types"
+	"github.com/pokt-network/pocket/cmd/pocketd/cmd"
+	keepertest "github.com/pokt-network/pocket/testutil/keeper"
+	"github.com/pokt-network/pocket/testutil/nullify"
+	"github.com/pokt-network/pocket/x/application/keeper"
+	"github.com/pokt-network/pocket/x/application/types"
 )
 
 // Prevent strconv unused error

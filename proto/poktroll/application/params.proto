@@ -1,7 +1,7 @@
 syntax = "proto3";
-package poktroll.application;
+package pocket.application;
 
-option go_package = "github.com/pokt-network/poktroll/x/application/types";
+option go_package = "github.com/pokt-network/pocket/x/application/types";
 option (gogoproto.stable_marshaler_all) = true;
 
 import "amino/amino.proto";
@@ -10,7 +10,7 @@ import "cosmos/base/v1beta1/coin.proto";
 
 // Params defines the parameters for the module.
 message Params {
-  option (amino.name) = "poktroll/x/application/Params";
+  option (amino.name) = "pocket/x/application/Params";
   option (gogoproto.equal) = true;
 
   // max_delegated_gateways defines the maximum number of gateways that a single

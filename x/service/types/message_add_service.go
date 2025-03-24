@@ -3,7 +3,7 @@ package types
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
+	sharedtypes "github.com/pokt-network/pocket/x/shared/types"
 )
 
 const (

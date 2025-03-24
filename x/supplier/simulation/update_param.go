@@ -7,8 +7,8 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	simtypes "github.com/cosmos/cosmos-sdk/types/simulation"
 
-	"github.com/pokt-network/poktroll/x/supplier/keeper"
-	"github.com/pokt-network/poktroll/x/supplier/types"
+	"github.com/pokt-network/pocket/x/supplier/keeper"
+	"github.com/pokt-network/pocket/x/supplier/types"
 )
 
 func SimulateMsgUpdateParam(

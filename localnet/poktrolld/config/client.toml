@@ -1,5 +1,5 @@
 broadcast-mode = "sync"
-chain-id = "poktroll"
+chain-id = "pocket"
 keyring-backend = "test"
 node = "tcp://localhost:26657"
 output = "text"

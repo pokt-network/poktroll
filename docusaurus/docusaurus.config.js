@@ -32,17 +32,17 @@ const config = {
   ],
 
   // GitHub pages deployment config.
-  url: "https://poktroll.com/",
+  url: "https://pocket.com/",
   baseUrl: "/",
 
   // Custom domain config.
-  // url: "https://docs.poktroll.com",
+  // url: "https://docs.pocket.com",
   // baseUrl: "/",
 
   // GitHub pages deployment config.
   // If you aren't using GitHub pages, you don't need these.
   organizationName: "pokt-network", // Usually your GitHub org/user name (ORGANIZATION_NAME)
-  projectName: "poktroll", // Usually your repo name. (PROJECT_NAME)
+  projectName: "pocket", // Usually your repo name. (PROJECT_NAME)
   deploymentBranch: "gh-pages", // Deployment branch (DEPLOYMENT_BRANCH)
   trailingSlash: false,
 
@@ -156,7 +156,7 @@ const config = {
             items: [
               {
                 label: "GitHub",
-                href: "https://github.com/pokt-network/poktroll",
+                href: "https://github.com/pokt-network/pocket",
               },
             ],
           },

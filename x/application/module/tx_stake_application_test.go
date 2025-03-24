@@ -14,10 +14,10 @@ import (
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc/status"
 
-	"github.com/pokt-network/poktroll/testutil/network"
-	"github.com/pokt-network/poktroll/testutil/yaml"
-	application "github.com/pokt-network/poktroll/x/application/module"
-	"github.com/pokt-network/poktroll/x/application/types"
+	"github.com/pokt-network/pocket/testutil/network"
+	"github.com/pokt-network/pocket/testutil/yaml"
+	application "github.com/pokt-network/pocket/x/application/module"
+	"github.com/pokt-network/pocket/x/application/types"
 )
 
 func TestCLI_StakeApplication(t *testing.T) {

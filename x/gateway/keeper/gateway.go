@@ -7,7 +7,7 @@ import (
 	storetypes "cosmossdk.io/store/types"
 	"github.com/cosmos/cosmos-sdk/runtime"
 
-	"github.com/pokt-network/poktroll/x/gateway/types"
+	"github.com/pokt-network/pocket/x/gateway/types"
 )
 
 // SetGateway set a specific gateway in the store from its index

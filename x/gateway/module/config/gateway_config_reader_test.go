@@ -8,8 +8,8 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 
-	"github.com/pokt-network/poktroll/testutil/yaml"
-	"github.com/pokt-network/poktroll/x/gateway/module/config"
+	"github.com/pokt-network/pocket/testutil/yaml"
+	"github.com/pokt-network/pocket/x/gateway/module/config"
 )
 
 func Test_ParseGatewayStakeConfig(t *testing.T) {

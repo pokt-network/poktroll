@@ -12,9 +12,9 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"github.com/pokt-network/poktroll/testutil/nullify"
-	gateway "github.com/pokt-network/poktroll/x/gateway/module"
-	"github.com/pokt-network/poktroll/x/gateway/types"
+	"github.com/pokt-network/pocket/testutil/nullify"
+	gateway "github.com/pokt-network/pocket/x/gateway/module"
+	"github.com/pokt-network/pocket/x/gateway/types"
 )
 
 // Prevent strconv unused error

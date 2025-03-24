@@ -6,8 +6,8 @@ import (
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 
-	"github.com/pokt-network/poktroll/app/volatile"
-	gatewaytypes "github.com/pokt-network/poktroll/x/gateway/types"
+	"github.com/pokt-network/pocket/app/volatile"
+	gatewaytypes "github.com/pokt-network/pocket/x/gateway/types"
 )
 
 var _ IntegrationSuite = (*GatewayModuleSuite)(nil)

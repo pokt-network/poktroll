@@ -8,8 +8,8 @@ import (
 	"cosmossdk.io/log"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 
-	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
-	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
+	prooftypes "github.com/pokt-network/pocket/x/proof/types"
+	tokenomicstypes "github.com/pokt-network/pocket/x/tokenomics/types"
 )
 
 // ClaimSettlementResults is a slice of ClaimSettlementResult. It implements

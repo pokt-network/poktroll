@@ -1,7 +1,7 @@
 syntax = "proto3";
-package poktroll.session;
+package pocket.session;
 
-option go_package = "github.com/pokt-network/poktroll/x/session/types";
+option go_package = "github.com/pokt-network/pocket/x/session/types";
 option (gogoproto.stable_marshaler_all) = true;
 
 import "amino/amino.proto";
@@ -9,21 +9,21 @@ import "gogoproto/gogo.proto";
 import "google/api/annotations.proto";
 import "cosmos_proto/cosmos.proto";
 
-import "poktroll/session/params.proto";
-import "poktroll/session/types.proto";
-import "poktroll/shared/service.proto";
+import "pocket/session/params.proto";
+import "pocket/session/types.proto";
+import "pocket/shared/service.proto";
 
 // Query defines the gRPC querier service.
 service Query {
 
   // Parameters queries the parameters of the module.
   rpc Params (QueryParamsRequest) returns (QueryParamsResponse) {
-    option (google.api.http).get = "/pokt-network/poktroll/session/params";
+    option (google.api.http).get = "/pokt-network/pocket/session/params";
   }
 
   // Queries the session given app_address, service and block_height.
   rpc GetSession (QueryGetSessionRequest) returns (QueryGetSessionResponse) {
-    option (google.api.http).get = "/pokt-network/poktroll/session/get_session";
+    option (google.api.http).get = "/pokt-network/pocket/session/get_session";
   }
 }
 // QueryParamsRequest is request type for the Query/Params RPC method.

@@ -9,11 +9,11 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 
-	"github.com/pokt-network/poktroll/testutil/integration/suites"
+	"github.com/pokt-network/pocket/testutil/integration/suites"
 )
 
 // msgUpdateParamsTestSuite is a test suite which exercises the MsgUpdateParams message
-// for each poktroll module via authz, as would be done in a live network in order
+// for each pocket module via authz, as would be done in a live network in order
 // to update **all** parameter values for a given module.
 // NB: Not to be confused with MsgUpdateParam (singular), which updates a single
 // parameter value for a module.

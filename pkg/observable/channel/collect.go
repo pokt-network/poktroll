@@ -4,7 +4,7 @@ import (
 	"context"
 	"sync"
 
-	"github.com/pokt-network/poktroll/pkg/observable"
+	"github.com/pokt-network/pocket/pkg/observable"
 )
 
 // Collect collects all notifications received from the observable and returns

@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/pokt-network/poktroll/pkg/sync2"
+	"github.com/pokt-network/pocket/pkg/sync2"
 )
 
 func TestLimiterLimiting(t *testing.T) {

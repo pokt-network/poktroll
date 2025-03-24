@@ -10,8 +10,8 @@ import (
 	cdctypes "github.com/cosmos/cosmos-sdk/codec/types"
 	"github.com/spf13/cobra"
 
-	"github.com/pokt-network/poktroll/x/proof/types"
-	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
+	"github.com/pokt-network/pocket/x/proof/types"
+	sessiontypes "github.com/pokt-network/pocket/x/session/types"
 )
 
 // TODO_TEST(@bryanchriswhite): Add unit tests for the CLI command when implementing the business logic.

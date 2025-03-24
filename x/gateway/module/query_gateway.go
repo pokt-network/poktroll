@@ -5,7 +5,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/spf13/cobra"
 
-	"github.com/pokt-network/poktroll/x/gateway/types"
+	"github.com/pokt-network/pocket/x/gateway/types"
 )
 
 func CmdListGateway() *cobra.Command {
@@ -15,7 +15,7 @@ func CmdListGateway() *cobra.Command {
 		Long: `List all the gateways that the node being queried has in its state.
 
 Example:
-$ poktrolld q gateway list-gateway --node $(POCKET_NODE) --home $(POKTROLLD_HOME)`,
+$ pocketd q gateway list-gateway --node $(POCKET_NODE) --home $(POKTROLLD_HOME)`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			clientCtx, err := client.GetClientQueryContext(cmd)
 			if err != nil {

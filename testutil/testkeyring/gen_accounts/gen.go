@@ -17,9 +17,9 @@ import (
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 
-	"github.com/pokt-network/poktroll/app"
-	"github.com/pokt-network/poktroll/cmd/poktrolld/cmd"
-	"github.com/pokt-network/poktroll/testutil/testkeyring"
+	"github.com/pokt-network/pocket/app"
+	"github.com/pokt-network/pocket/cmd/pocketd/cmd"
+	"github.com/pokt-network/pocket/testutil/testkeyring"
 )
 
 var (

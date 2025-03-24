@@ -1,7 +1,7 @@
 package types
 
 import (
-	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
+	sharedtypes "github.com/pokt-network/pocket/x/shared/types"
 )
 
 // ApplicationNotUnstaking is the value of `unstake_session_end_height` if the

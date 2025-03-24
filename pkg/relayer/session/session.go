@@ -6,15 +6,15 @@ import (
 
 	"cosmossdk.io/depinject"
 
-	"github.com/pokt-network/poktroll/pkg/client"
-	"github.com/pokt-network/poktroll/pkg/client/supplier"
-	"github.com/pokt-network/poktroll/pkg/observable"
-	"github.com/pokt-network/poktroll/pkg/observable/channel"
-	"github.com/pokt-network/poktroll/pkg/observable/logging"
-	"github.com/pokt-network/poktroll/pkg/polylog"
-	"github.com/pokt-network/poktroll/pkg/relayer"
-	servicetypes "github.com/pokt-network/poktroll/x/service/types"
-	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
+	"github.com/pokt-network/pocket/pkg/client"
+	"github.com/pokt-network/pocket/pkg/client/supplier"
+	"github.com/pokt-network/pocket/pkg/observable"
+	"github.com/pokt-network/pocket/pkg/observable/channel"
+	"github.com/pokt-network/pocket/pkg/observable/logging"
+	"github.com/pokt-network/pocket/pkg/polylog"
+	"github.com/pokt-network/pocket/pkg/relayer"
+	servicetypes "github.com/pokt-network/pocket/x/service/types"
+	sharedtypes "github.com/pokt-network/pocket/x/shared/types"
 )
 
 var _ relayer.RelayerSessionsManager = (*relayerSessionsManager)(nil)

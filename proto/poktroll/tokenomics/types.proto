@@ -1,17 +1,17 @@
 syntax = "proto3";
-package poktroll.tokenomics;
+package pocket.tokenomics;
 
-option go_package = "github.com/pokt-network/poktroll/x/tokenomics/types";
+option go_package = "github.com/pokt-network/pocket/x/tokenomics/types";
 option (gogoproto.stable_marshaler_all) = true;
 
 import "cosmos/base/v1beta1/coin.proto";
 import "cosmos_proto/cosmos.proto";
 import "gogoproto/gogo.proto";
-import "poktroll/proof/types.proto";
+import "pocket/proof/types.proto";
 
 // SettlementResult holds mint, burn, and transfer operations that result from a single claim settlement.
 message ClaimSettlementResult {
-  poktroll.proof.Claim claim = 1 [(gogoproto.nullable) = false, (gogoproto.jsontag) = "claim"];
+  pocket.proof.Claim claim = 1 [(gogoproto.nullable) = false, (gogoproto.jsontag) = "claim"];
   repeated MintBurnOp mints = 2 [(gogoproto.nullable) = false, (gogoproto.jsontag) = "mints"];
   repeated MintBurnOp burns = 3 [(gogoproto.nullable) = false, (gogoproto.jsontag) = "burns"];
   repeated ModToModTransfer mod_to_mod_transfers = 4 [(gogoproto.nullable) = false, (gogoproto.jsontag) = "mod_to_mod_transfers"];

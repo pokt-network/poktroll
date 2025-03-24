@@ -5,13 +5,13 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
+	sharedtypes "github.com/pokt-network/pocket/x/shared/types"
 )
 
 // NumSessionsAppToGatewayUndelegationRetention is the number of sessions for which
 // undelegation from applications to gateways are delayed before being pruned.
 // TODO_DOCUMENT(@red-0ne): Need to document the flow from this comment
-// so its clear to everyone why this is necessary; https://github.com/pokt-network/poktroll/issues/476#issuecomment-2052639906.
+// so its clear to everyone why this is necessary; https://github.com/pokt-network/pocket/issues/476#issuecomment-2052639906.
 // TODO_MAINNET(#516): Should this be configurable? Note that it should
 // likely be a function of SubmitProofCloseWindowNumBlocks once implemented.
 const NumSessionsAppToGatewayUndelegationRetention = 2

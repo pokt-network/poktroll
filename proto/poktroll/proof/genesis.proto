@@ -1,14 +1,14 @@
 syntax = "proto3";
-package poktroll.proof;
+package pocket.proof;
 
-option go_package = "github.com/pokt-network/poktroll/x/proof/types";
+option go_package = "github.com/pokt-network/pocket/x/proof/types";
 option (gogoproto.stable_marshaler_all) = true;
 
 import "amino/amino.proto";
 import "gogoproto/gogo.proto";
 
-import "poktroll/proof/params.proto";
-import "poktroll/proof/types.proto";
+import "pocket/proof/params.proto";
+import "pocket/proof/types.proto";
 
 // GenesisState defines the proof module's genesis state.
 message GenesisState {

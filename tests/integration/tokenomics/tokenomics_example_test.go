@@ -5,12 +5,12 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/pokt-network/poktroll/cmd/poktrolld/cmd"
-	"github.com/pokt-network/poktroll/testutil/integration"
-	testutilproof "github.com/pokt-network/poktroll/testutil/proof"
-	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
-	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
-	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
+	"github.com/pokt-network/pocket/cmd/pocketd/cmd"
+	"github.com/pokt-network/pocket/testutil/integration"
+	testutilproof "github.com/pokt-network/pocket/testutil/proof"
+	prooftypes "github.com/pokt-network/pocket/x/proof/types"
+	sessiontypes "github.com/pokt-network/pocket/x/session/types"
+	sharedtypes "github.com/pokt-network/pocket/x/shared/types"
 )
 
 func init() {

@@ -6,8 +6,8 @@ import (
 
 	"go.uber.org/mock/gomock"
 
-	"github.com/pokt-network/poktroll/pkg/either"
-	"github.com/pokt-network/poktroll/testutil/mockclient"
+	"github.com/pokt-network/pocket/pkg/either"
+	"github.com/pokt-network/pocket/testutil/mockclient"
 )
 
 // NewOneTimeMockConnAndDialer returns a new mock connection and mock dialer that

@@ -6,7 +6,7 @@ sidebar_position: 5
 ## Sending Tokens Between Accounts <!-- omit in toc -->
 
 This guide covers the process of sending tokens from one account to another on
-Pocket Network using the `poktrolld` command-line interface (CLI).
+Pocket Network using the `pocketd` command-line interface (CLI).
 
 - [Pre-requisites](#pre-requisites)
 - [Step 1: Preparing a Node Endpoint](#step-1-preparing-a-node-endpoint)
@@ -17,7 +17,7 @@ Pocket Network using the `poktrolld` command-line interface (CLI).
 
 ## Pre-requisites
 
-1. `poktrolld` is installed on your system; see the [installation guide](./poktrolld_cli.md) for more details
+1. `pocketd` is installed on your system; see the [installation guide](./pocketd_cli.md) for more details
 2. You have access to your wallet with sufficient tokens for the transaction and fees
 3. You have the recipient's address
 
@@ -28,18 +28,18 @@ Before initiating the transaction, you must specify the node endpoint you'll be 
 For testing purposes, you can use the provided TestNet node:
 
 ```bash
---node=https://testnet-validated-validator-rpc.poktroll.com/
+--node=https://testnet-validated-validator-rpc.pocket.com/
 ```
 
 On MainNet, ensure you're connected to a trusted full node, validator, or other client on the network.
 
 ## Step 2: Sending Tokens
 
-To send tokens, you'll use the `poktrolld tx bank send` command followed by the
+To send tokens, you'll use the `pocketd tx bank send` command followed by the
 sender's address or key name, the recipient's address, and the amount to send.
 
 ```sh
-poktrolld tx bank send [from_key_or_address] [to_address] [amount] \
+pocketd tx bank send [from_key_or_address] [to_address] [amount] \
     --node=<node_endpoint> [additional_flags]
 ```
 
@@ -51,8 +51,8 @@ poktrolld tx bank send [from_key_or_address] [to_address] [amount] \
 For example, the following command sends `1000upokt` from `myWallet` to `pokt1recipientaddress420`:
 
 ```bash
-poktrolld tx bank send myWallet pokt1recipientaddress420 1000upokt \
-    --node=https://testnet-validated-validator-rpc.poktroll.com/
+pocketd tx bank send myWallet pokt1recipientaddress420 1000upokt \
+    --node=https://testnet-validated-validator-rpc.pocket.com/
 ```
 
 ## Step 3: Confirming the Transaction
@@ -72,7 +72,7 @@ Transactions on the blockchain are irreversible.
 Once confirmed, the transaction will be broadcast to the network.
 You'll receive a transaction hash which can be used to track the status of the transaction on a blockchain explorer.
 
-**Congratulations!** You've successfully sent tokens on the poktrolld blockchain.
+**Congratulations!** You've successfully sent tokens on the pocketd blockchain.
 
 :::tip
 
@@ -87,5 +87,5 @@ your transaction. For example, you can set custom gas prices, use a specific acc
 or operate in offline mode for signing transactions.
 
 ```sh
-poktrolld tx bank send --help
+pocketd tx bank send --help
 ```

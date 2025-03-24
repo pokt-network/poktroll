@@ -5,7 +5,7 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"github.com/pokt-network/poktroll/pkg/polylog"
+	"github.com/pokt-network/pocket/pkg/polylog"
 )
 
 // NOTE: Please note that these messages are not of type `sdk.Msg`, and are therefore not a message/request

@@ -7,8 +7,8 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 
-	"github.com/pokt-network/poktroll/testutil/sample"
-	gatewaytypes "github.com/pokt-network/poktroll/x/gateway/types"
+	"github.com/pokt-network/pocket/testutil/sample"
+	gatewaytypes "github.com/pokt-network/pocket/x/gateway/types"
 )
 
 func TestGenesisState_Validate(t *testing.T) {

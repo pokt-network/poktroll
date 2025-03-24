@@ -11,10 +11,10 @@ import (
 	"cosmossdk.io/depinject"
 	"github.com/stretchr/testify/require"
 
-	"github.com/pokt-network/poktroll/pkg/client/events"
-	"github.com/pokt-network/poktroll/pkg/observable"
-	"github.com/pokt-network/poktroll/pkg/observable/channel"
-	"github.com/pokt-network/poktroll/testutil/testclient/testeventsquery"
+	"github.com/pokt-network/pocket/pkg/client/events"
+	"github.com/pokt-network/pocket/pkg/observable"
+	"github.com/pokt-network/pocket/pkg/observable/channel"
+	"github.com/pokt-network/pocket/testutil/testclient/testeventsquery"
 )
 
 // Create the generic event type and decoder for the replay client

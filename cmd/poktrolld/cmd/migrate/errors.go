@@ -2,7 +2,7 @@ package migrate
 
 import sdkerrors "cosmossdk.io/errors"
 
-const codespace = "poktrolld/migrate"
+const codespace = "pocketd/migrate"
 
 var (
 	// ErrInvalidUsage usage is returned when the CLI arguments are invalid.

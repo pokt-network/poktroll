@@ -9,8 +9,8 @@ import (
 	"github.com/cosmos/cosmos-sdk/client/tx"
 	"github.com/spf13/cobra"
 
-	"github.com/pokt-network/poktroll/x/gateway/module/config"
-	"github.com/pokt-network/poktroll/x/gateway/types"
+	"github.com/pokt-network/pocket/x/gateway/module/config"
+	"github.com/pokt-network/pocket/x/gateway/types"
 )
 
 var (
@@ -25,7 +25,7 @@ func CmdStakeGateway() *cobra.Command {
 		Long: `Stake a gateway with the provided parameters. This is a broadcast operation that
 will stake the tokens and associate them with the gateway specified by the 'from' address.
 Example:
-$ poktrolld tx gateway stake-gateway --config stake_config.yaml --keyring-backend test --from $(GATEWAY) --node $(POCKET_NODE) --home $(POKTROLLD_HOME)`,
+$ pocketd tx gateway stake-gateway --config stake_config.yaml --keyring-backend test --from $(GATEWAY) --node $(POCKET_NODE) --home $(POKTROLLD_HOME)`,
 		Args: cobra.ExactArgs(0),
 		RunE: func(cmd *cobra.Command, _ []string) (err error) {
 			configContent, err := os.ReadFile(flagStakeConfig)

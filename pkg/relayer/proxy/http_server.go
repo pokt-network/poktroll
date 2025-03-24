@@ -9,11 +9,11 @@ import (
 
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 
-	"github.com/pokt-network/poktroll/pkg/client"
-	"github.com/pokt-network/poktroll/pkg/polylog"
-	"github.com/pokt-network/poktroll/pkg/relayer"
-	"github.com/pokt-network/poktroll/pkg/relayer/config"
-	"github.com/pokt-network/poktroll/x/service/types"
+	"github.com/pokt-network/pocket/pkg/client"
+	"github.com/pokt-network/pocket/pkg/polylog"
+	"github.com/pokt-network/pocket/pkg/relayer"
+	"github.com/pokt-network/pocket/pkg/relayer/config"
+	"github.com/pokt-network/pocket/x/service/types"
 )
 
 var _ relayer.RelayServer = (*relayMinerHTTPServer)(nil)

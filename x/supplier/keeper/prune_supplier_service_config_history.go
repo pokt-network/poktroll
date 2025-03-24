@@ -6,7 +6,7 @@ import (
 
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 
-	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
+	sharedtypes "github.com/pokt-network/pocket/x/shared/types"
 )
 
 // EndBlockerPruneSupplierServiceConfigHistory prunes the service config history of existing suppliers.

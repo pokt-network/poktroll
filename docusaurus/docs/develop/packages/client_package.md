@@ -110,7 +110,7 @@ txctx -."tx query".-> chain
 ## Installation
 
 ```bash
-go get github.com/pokt-network/poktroll/pkg/client
+go get github.com/pokt-network/pocket/pkg/client
 ```
 
 ## Usage
@@ -134,7 +134,7 @@ go get github.com/pokt-network/poktroll/pkg/client
 
 ## API Reference
 
-For the complete API details, see the [godoc](https://pkg.go.dev/github.com/pokt-network/poktroll/pkg/client).
+For the complete API details, see the [godoc](https://pkg.go.dev/github.com/pokt-network/pocket/pkg/client).
 
 ## Best Practices
 

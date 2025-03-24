@@ -5,7 +5,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/pokt-network/poktroll/pkg/cache"
+	"github.com/pokt-network/pocket/pkg/cache"
 )
 
 var _ cache.KeyValueCache[any] = (*keyValueCache[any])(nil)

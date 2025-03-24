@@ -6,8 +6,8 @@ import (
 
 	svrcmd "github.com/cosmos/cosmos-sdk/server/cmd"
 
-	"github.com/pokt-network/poktroll/app"
-	"github.com/pokt-network/poktroll/cmd/poktrolld/cmd"
+	"github.com/pokt-network/pocket/app"
+	"github.com/pokt-network/pocket/cmd/pocketd/cmd"
 )
 
 func main() {

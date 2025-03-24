@@ -1,6 +1,6 @@
 package supplier
 
-import "github.com/pokt-network/poktroll/pkg/client"
+import "github.com/pokt-network/pocket/pkg/client"
 
 // SupplierClientMap is a helper struct needed to depinject multiple supplier clients.
 // The inner structure maps a supplier operator address to a list of supplier clients for that address.

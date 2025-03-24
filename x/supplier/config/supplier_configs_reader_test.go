@@ -12,12 +12,12 @@ import (
 	"github.com/gogo/status"
 	"github.com/stretchr/testify/require"
 
-	_ "github.com/pokt-network/poktroll/pkg/polylog/polyzero"
-	"github.com/pokt-network/poktroll/testutil/sample"
-	"github.com/pokt-network/poktroll/testutil/yaml"
-	"github.com/pokt-network/poktroll/x/shared/types"
-	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
-	"github.com/pokt-network/poktroll/x/supplier/config"
+	_ "github.com/pokt-network/pocket/pkg/polylog/polyzero"
+	"github.com/pokt-network/pocket/testutil/sample"
+	"github.com/pokt-network/pocket/testutil/yaml"
+	"github.com/pokt-network/pocket/x/shared/types"
+	sharedtypes "github.com/pokt-network/pocket/x/shared/types"
+	"github.com/pokt-network/pocket/x/supplier/config"
 )
 
 func Test_ParseSupplierConfigs_Services(t *testing.T) {

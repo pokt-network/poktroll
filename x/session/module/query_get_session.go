@@ -8,7 +8,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/spf13/cobra"
 
-	"github.com/pokt-network/poktroll/x/session/types"
+	"github.com/pokt-network/pocket/x/session/types"
 )
 
 var _ = strconv.Itoa(0)
@@ -22,7 +22,7 @@ func CmdGetSession() *cobra.Command {
 This is a query operation that will not result in a state transition but simply gives a view into the chain state.
 
 Example:
-$ poktrolld q session get-session pokt1mrqt5f7qh8uxs27cjm9t7v9e74a9vvdnq5jva4 svc1 42 --node $(POCKET_NODE) --home $(POKTROLLD_HOME)`,
+$ pocketd q session get-session pokt1mrqt5f7qh8uxs27cjm9t7v9e74a9vvdnq5jva4 svc1 42 --node $(POCKET_NODE) --home $(POKTROLLD_HOME)`,
 		Args: cobra.RangeArgs(2, 3),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			appAddressString := args[0]

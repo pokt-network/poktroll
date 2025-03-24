@@ -6,8 +6,8 @@ import (
 
 	"go.uber.org/mock/gomock"
 
-	"github.com/pokt-network/poktroll/testutil/mockclient"
-	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
+	"github.com/pokt-network/pocket/testutil/mockclient"
+	sharedtypes "github.com/pokt-network/pocket/x/shared/types"
 )
 
 // NewTestSharedQueryClient creates a mock of the SharedQueryClient which uses the

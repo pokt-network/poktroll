@@ -1,15 +1,15 @@
 syntax = "proto3";
 
-package poktroll.session;
+package pocket.session;
 
-option go_package = "github.com/pokt-network/poktroll/x/session/types";
+option go_package = "github.com/pokt-network/pocket/x/session/types";
 option (gogoproto.stable_marshaler_all) = true;
 
 import "amino/amino.proto";
 import "cosmos/msg/v1/msg.proto";
 import "cosmos_proto/cosmos.proto";
 import "gogoproto/gogo.proto";
-import "poktroll/session/params.proto";
+import "pocket/session/params.proto";
 
 // Msg defines the Msg service.
 service Msg {
@@ -23,7 +23,7 @@ service Msg {
 // MsgUpdateParams is the Msg/UpdateParams request type.
 message MsgUpdateParams {
   option (cosmos.msg.v1.signer) =                          "authority";
-  option           (amino.name) = "poktroll/x/session/MsgUpdateParams";
+  option           (amino.name) = "pocket/x/session/MsgUpdateParams";
 
   // authority is the address that controls the module (defaults to x/gov unless overwritten).
   string authority = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];

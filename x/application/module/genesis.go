@@ -3,8 +3,8 @@ package application
 import (
 	"context"
 
-	"github.com/pokt-network/poktroll/x/application/keeper"
-	"github.com/pokt-network/poktroll/x/application/types"
+	"github.com/pokt-network/pocket/x/application/keeper"
+	"github.com/pokt-network/pocket/x/application/types"
 )
 
 // InitGenesis initializes the module's state from a provided genesis state.

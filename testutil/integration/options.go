@@ -6,7 +6,7 @@ import (
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 
-	tlm "github.com/pokt-network/poktroll/x/tokenomics/token_logic_module"
+	tlm "github.com/pokt-network/pocket/x/tokenomics/token_logic_module"
 )
 
 // IntegrationAppConfig is a configuration struct for an integration App. Its fields

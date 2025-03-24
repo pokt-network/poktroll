@@ -3,7 +3,7 @@ package testchannel
 import (
 	"time"
 
-	"github.com/pokt-network/poktroll/pkg/observable"
+	"github.com/pokt-network/pocket/pkg/observable"
 )
 
 // DrainChannel attempts to receive from the given channel, blocking, until it is

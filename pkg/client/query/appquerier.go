@@ -6,10 +6,10 @@ import (
 	"cosmossdk.io/depinject"
 	"github.com/cosmos/gogoproto/grpc"
 
-	"github.com/pokt-network/poktroll/pkg/cache"
-	"github.com/pokt-network/poktroll/pkg/client"
-	"github.com/pokt-network/poktroll/pkg/polylog"
-	apptypes "github.com/pokt-network/poktroll/x/application/types"
+	"github.com/pokt-network/pocket/pkg/cache"
+	"github.com/pokt-network/pocket/pkg/client"
+	"github.com/pokt-network/pocket/pkg/polylog"
+	apptypes "github.com/pokt-network/pocket/x/application/types"
 )
 
 var _ client.ApplicationQueryClient = (*appQuerier)(nil)

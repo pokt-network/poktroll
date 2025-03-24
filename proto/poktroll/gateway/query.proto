@@ -1,7 +1,7 @@
 syntax = "proto3";
-package poktroll.gateway;
+package pocket.gateway;
 
-option go_package = "github.com/pokt-network/poktroll/x/gateway/types";
+option go_package = "github.com/pokt-network/pocket/x/gateway/types";
 option (gogoproto.stable_marshaler_all) = true;
 
 import "amino/amino.proto";
@@ -11,25 +11,25 @@ import "google/api/annotations.proto";
 import "cosmos/base/query/v1beta1/pagination.proto";
 import "cosmos/base/v1beta1/coin.proto";
 
-import "poktroll/gateway/params.proto";
-import "poktroll/gateway/types.proto";
+import "pocket/gateway/params.proto";
+import "pocket/gateway/types.proto";
 
 // Query defines the gRPC querier service.
 service Query {
 
   // Parameters queries the parameters of the module.
   rpc Params (QueryParamsRequest) returns (QueryParamsResponse) {
-    option (google.api.http).get = "/pokt-network/poktroll/gateway/params";
+    option (google.api.http).get = "/pokt-network/pocket/gateway/params";
 
   }
 
   // Queries a list of Gateway items.
   rpc Gateway    (QueryGetGatewayRequest) returns (QueryGetGatewayResponse) {
-    option (google.api.http).get = "/pokt-network/poktroll/gateway/gateway/{address}";
+    option (google.api.http).get = "/pokt-network/pocket/gateway/gateway/{address}";
 
   }
   rpc AllGateways (QueryAllGatewaysRequest) returns (QueryAllGatewaysResponse) {
-    option (google.api.http).get = "/pokt-network/poktroll/gateway/gateway";
+    option (google.api.http).get = "/pokt-network/pocket/gateway/gateway";
 
   }
 }

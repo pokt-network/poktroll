@@ -1,8 +1,8 @@
 package session
 
 import (
-	"github.com/pokt-network/poktroll/x/session/keeper"
-	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
+	"github.com/pokt-network/pocket/x/session/keeper"
+	sharedtypes "github.com/pokt-network/pocket/x/shared/types"
 )
 
 // GetSessionIdWithDefaultParams returns the string and bytes representation of the

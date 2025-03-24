@@ -19,10 +19,10 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 
-	"github.com/pokt-network/poktroll/testutil/gateway/mocks"
-	"github.com/pokt-network/poktroll/x/gateway/keeper"
-	"github.com/pokt-network/poktroll/x/gateway/types"
-	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
+	"github.com/pokt-network/pocket/testutil/gateway/mocks"
+	"github.com/pokt-network/pocket/x/gateway/keeper"
+	"github.com/pokt-network/pocket/x/gateway/types"
+	sharedtypes "github.com/pokt-network/pocket/x/shared/types"
 )
 
 func GatewayKeeper(t testing.TB) (keeper.Keeper, context.Context) {

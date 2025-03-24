@@ -13,11 +13,11 @@ import (
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc/status"
 
-	"github.com/pokt-network/poktroll/testutil/network"
-	"github.com/pokt-network/poktroll/testutil/sample"
-	"github.com/pokt-network/poktroll/testutil/yaml"
-	supplier "github.com/pokt-network/poktroll/x/supplier/module"
-	"github.com/pokt-network/poktroll/x/supplier/types"
+	"github.com/pokt-network/pocket/testutil/network"
+	"github.com/pokt-network/pocket/testutil/sample"
+	"github.com/pokt-network/pocket/testutil/yaml"
+	supplier "github.com/pokt-network/pocket/x/supplier/module"
+	"github.com/pokt-network/pocket/x/supplier/types"
 )
 
 func TestCLI_StakeSupplier(t *testing.T) {

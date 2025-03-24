@@ -1,8 +1,8 @@
 package proxy
 
 import (
-	"github.com/pokt-network/poktroll/pkg/relayer"
-	"github.com/pokt-network/poktroll/pkg/relayer/config"
+	"github.com/pokt-network/pocket/pkg/relayer"
+	"github.com/pokt-network/pocket/pkg/relayer/config"
 )
 
 // WithServicesConfigMap updates the configurations of all the services

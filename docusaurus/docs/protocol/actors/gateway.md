@@ -17,7 +17,7 @@ on behalf of an [Application](./application.md).
 
 ## Schema
 
-The onchain representation of a `Gateway` can be found at [gateway.proto](https://github.com/pokt-network/poktroll/blob/main/proto/poktroll/gateway/gateway.proto).
+The onchain representation of a `Gateway` can be found at [gateway.proto](https://github.com/pokt-network/pocket/blob/main/proto/pocket/gateway/gateway.proto).
 
 ## Configuration
 
@@ -29,12 +29,12 @@ All of the read (i.e. query) based operations for the `Gateway` actor can be
 viewed by running:
 
 ```bash
-poktrolld query gateway --help
+pocketd query gateway --help
 ```
 
 All of the write (i.e. tx) based operations for the `Gateway` actor can be
 viewed by running:
 
 ```bash
-poktrolld tx gateway --help
+pocketd tx gateway --help
 ```

@@ -5,8 +5,8 @@ import (
 
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 
-	"github.com/pokt-network/poktroll/pkg/client"
-	"github.com/pokt-network/poktroll/testutil/integration"
+	"github.com/pokt-network/pocket/pkg/client"
+	"github.com/pokt-network/pocket/testutil/integration"
 )
 
 // IntegrationSuite is an interface intended to be used within test suites which
@@ -18,7 +18,7 @@ type IntegrationSuite interface {
 	SetApp(*integration.App)
 	// GetApp returns the integration app from the suite.
 	GetApp() *integration.App
-	// GetPoktrollModuleNames returns the list of the names of all poktroll modules
+	// GetPoktrollModuleNames returns the list of the names of all pocket modules
 	// in the integration app.
 	GetPoktrollModuleNames() []string
 	// GetCosmosModuleNames returns the list of the names of all cosmos-sdk modules

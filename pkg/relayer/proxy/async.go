@@ -6,8 +6,8 @@ import (
 
 	"github.com/gorilla/websocket"
 
-	proxyws "github.com/pokt-network/poktroll/pkg/relayer/proxy/websockets"
-	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
+	proxyws "github.com/pokt-network/pocket/pkg/relayer/proxy/websockets"
+	sharedtypes "github.com/pokt-network/pocket/x/shared/types"
 )
 
 // handleAsyncConnection handles the asynchronous relay request by creating a

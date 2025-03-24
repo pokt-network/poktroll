@@ -7,16 +7,16 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 
-	"github.com/pokt-network/poktroll/pkg/crypto/rings"
-	testevents "github.com/pokt-network/poktroll/testutil/events"
-	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
-	"github.com/pokt-network/poktroll/testutil/sample"
-	testsession "github.com/pokt-network/poktroll/testutil/session"
-	"github.com/pokt-network/poktroll/x/application/keeper"
-	"github.com/pokt-network/poktroll/x/application/types"
-	apptypes "github.com/pokt-network/poktroll/x/application/types"
-	gwtypes "github.com/pokt-network/poktroll/x/gateway/types"
-	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
+	"github.com/pokt-network/pocket/pkg/crypto/rings"
+	testevents "github.com/pokt-network/pocket/testutil/events"
+	keepertest "github.com/pokt-network/pocket/testutil/keeper"
+	"github.com/pokt-network/pocket/testutil/sample"
+	testsession "github.com/pokt-network/pocket/testutil/session"
+	"github.com/pokt-network/pocket/x/application/keeper"
+	"github.com/pokt-network/pocket/x/application/types"
+	apptypes "github.com/pokt-network/pocket/x/application/types"
+	gwtypes "github.com/pokt-network/pocket/x/gateway/types"
+	sharedtypes "github.com/pokt-network/pocket/x/shared/types"
 )
 
 func TestMsgServer_UndelegateFromGateway_SuccessfullyUndelegate(t *testing.T) {

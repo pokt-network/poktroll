@@ -3,11 +3,11 @@ package gateway_test
 import (
 	"testing"
 
-	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
-	"github.com/pokt-network/poktroll/testutil/nullify"
-	"github.com/pokt-network/poktroll/testutil/sample"
-	gateway "github.com/pokt-network/poktroll/x/gateway/module"
-	"github.com/pokt-network/poktroll/x/gateway/types"
+	keepertest "github.com/pokt-network/pocket/testutil/keeper"
+	"github.com/pokt-network/pocket/testutil/nullify"
+	"github.com/pokt-network/pocket/testutil/sample"
+	gateway "github.com/pokt-network/pocket/x/gateway/module"
+	"github.com/pokt-network/pocket/x/gateway/types"
 	"github.com/stretchr/testify/require"
 )
 

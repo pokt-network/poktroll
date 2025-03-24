@@ -7,7 +7,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
+	suppliertypes "github.com/pokt-network/pocket/x/supplier/types"
 )
 
 // UpdateParam updates a single parameter in the proof module and returns

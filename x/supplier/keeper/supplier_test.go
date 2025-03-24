@@ -14,13 +14,13 @@ import (
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc/codes"
 
-	"github.com/pokt-network/poktroll/cmd/poktrolld/cmd"
-	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
-	"github.com/pokt-network/poktroll/testutil/nullify"
-	"github.com/pokt-network/poktroll/testutil/sample"
-	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
-	"github.com/pokt-network/poktroll/x/supplier/keeper"
-	"github.com/pokt-network/poktroll/x/supplier/types"
+	"github.com/pokt-network/pocket/cmd/pocketd/cmd"
+	keepertest "github.com/pokt-network/pocket/testutil/keeper"
+	"github.com/pokt-network/pocket/testutil/nullify"
+	"github.com/pokt-network/pocket/testutil/sample"
+	sharedtypes "github.com/pokt-network/pocket/x/shared/types"
+	"github.com/pokt-network/pocket/x/supplier/keeper"
+	"github.com/pokt-network/pocket/x/supplier/types"
 )
 
 // Prevent strconv unused error

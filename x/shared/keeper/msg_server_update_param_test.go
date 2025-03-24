@@ -9,9 +9,9 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	testkeeper "github.com/pokt-network/poktroll/testutil/keeper"
-	"github.com/pokt-network/poktroll/x/shared/keeper"
-	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
+	testkeeper "github.com/pokt-network/pocket/testutil/keeper"
+	"github.com/pokt-network/pocket/x/shared/keeper"
+	sharedtypes "github.com/pokt-network/pocket/x/shared/types"
 )
 
 var testSharedParams = sharedtypes.Params{

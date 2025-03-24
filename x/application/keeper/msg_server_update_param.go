@@ -7,7 +7,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	apptypes "github.com/pokt-network/poktroll/x/application/types"
+	apptypes "github.com/pokt-network/pocket/x/application/types"
 )
 
 func (k msgServer) UpdateParam(ctx context.Context, msg *apptypes.MsgUpdateParam) (*apptypes.MsgUpdateParamResponse, error) {

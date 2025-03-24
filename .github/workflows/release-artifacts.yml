@@ -40,7 +40,7 @@ jobs:
       # This is commented out because proto generated code is now tracked in the
       # repo so this step is skipped.
       # TODO_IMPROVE(@okdas): Have a step that regenerates the proto files and ensures
-      # if they are up to date. See https://github.com/pokt-network/poktroll/pull/544#issuecomment-2123063491
+      # if they are up to date. See https://github.com/pokt-network/pocket/pull/544#issuecomment-2123063491
       # - name: Generate protobufs
       #   run: make proto_regen
 
@@ -63,7 +63,7 @@ jobs:
           DOCKER_METADATA_PR_HEAD_SHA: "true"
         with:
           images: |
-            ghcr.io/pokt-network/poktrolld
+            ghcr.io/pokt-network/pocketd
           tags: |
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
@@ -80,7 +80,7 @@ jobs:
           DOCKER_METADATA_PR_HEAD_SHA: "true"
         with:
           images: |
-            ghcr.io/pokt-network/poktrolld
+            ghcr.io/pokt-network/pocketd
           tags: |
             type=raw,value=main-prod
             type=sha,suffix=-main-prod
@@ -100,7 +100,7 @@ jobs:
           DOCKER_METADATA_PR_HEAD_SHA: "true"
         with:
           images: |
-            ghcr.io/pokt-network/poktrolld
+            ghcr.io/pokt-network/pocketd
           tags: |
             type=raw,value=${{ env.BRANCH_NAME }}-prod${{ github.inputs.custom_tag != '' && format('-{0}', github.inputs.custom_tag) || '' }}
             type=sha,suffix=-${{ env.BRANCH_NAME }}-prod${{ github.inputs.custom_tag != '' && format('-{0}', github.inputs.custom_tag) || '' }}

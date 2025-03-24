@@ -1,12 +1,12 @@
 syntax = "proto3";
 
-package poktroll.migration;
+package pocket.migration;
 
 import "cosmos_proto/cosmos.proto";
 import "cosmos/base/v1beta1/coin.proto";
 import "gogoproto/gogo.proto";
 
-option go_package = "github.com/pokt-network/poktroll/x/migration/types";
+option go_package = "github.com/pokt-network/pocket/x/migration/types";
 option (gogoproto.stable_marshaler_all) = true;
 
 // MorseAccountState is the onchain representation of all account state to be migrated from Morse.

@@ -39,14 +39,14 @@ streamline development and reduce friction for any new potential contributor.
 
 ## Pre-Requisites
 
-1. Make sure to [install the `poktrolld` CLI](../../tools/user_guide/poktrolld_cli.md).
+1. Make sure to [install the `pocketd` CLI](../../tools/user_guide/pocketd_cli.md).
 2. Make sure you know how to [create and fund a new account](../../tools/user_guide/create-new-wallet.md).
 3. You have either [staked a new `service` or found an existing one](./service_cheatsheet.md).
 4. `[Optional]` You can run things locally or have dedicated long-running hardware. See the [Docker Compose Cheat Sheet](./docker_compose_debian_cheatsheet#deploy-your-server) if you're interested in the latter.
 
 :::warning
 
-You can append `--keyring-backend test` to all the `poktrolld` commands throughout
+You can append `--keyring-backend test` to all the `pocketd` commands throughout
 this guide to avoid entering the password each time.
 
 This is not recommended but provided for convenience for NON PRODUCTION USE ONLY.
@@ -71,7 +71,7 @@ By the end of it, you should be able to serve Relays offchain, and claim onchain
 Create a new key pair for the `Supplier`
 
 ```bash
-poktrolld keys add supplier
+pocketd keys add supplier
 ```
 
 ### Prepare your environment
@@ -82,16 +82,16 @@ the process of interacting with the Shannon network:
 We recommend you put these in your `~/.bashrc` file:
 
 ```bash
-export NODE="https://shannon-testnet-grove-rpc.beta.poktroll.com"
-export NODE_FLAGS="--node=https://shannon-testnet-grove-rpc.beta.poktroll.com"
+export NODE="https://shannon-testnet-grove-rpc.beta.pocket.com"
+export NODE_FLAGS="--node=https://shannon-testnet-grove-rpc.beta.pocket.com"
 export TX_PARAM_FLAGS="--gas=auto --gas-prices=1upokt --gas-adjustment=1.5 --chain-id=pocket-beta --yes"
-export SUPPLIER_ADDR=$(poktrolld keys show supplier -a)
+export SUPPLIER_ADDR=$(pocketd keys show supplier -a)
 ```
 
 :::tip
 
 As an alternative to appending directly to `~/.bashrc`, you can put the above
-in a special `~/.poktrollrc` and add `source ~/.poktrollrc` to
+in a special `~/.pocketrc` and add `source ~/.pocketrc` to
 your `~/.profile` (or `~/.bashrc`) file for a cleaner organization.
 
 :::
@@ -105,12 +105,12 @@ echo "Supplier address: $SUPPLIER_ADDR"
 ```
 
 Then use the [Shannon Beta TestNet faucet](https://faucet.beta.testnet.pokt.network/) to fund the (supplier owner address) account.
-See [Non-Custodial Staking](https://dev.poktroll.com/operate/configs/supplier_staking_config#non-custodial-staking) for more information about supplier owner vs operator and non-custodial staking.
+See [Non-Custodial Staking](https://dev.pocket.com/operate/configs/supplier_staking_config#non-custodial-staking) for more information about supplier owner vs operator and non-custodial staking.
 
 Afterwards, you can query the balance using the following command:
 
 ```bash
-poktrolld query bank balances $SUPPLIER_ADDR $NODE_FLAGS
+pocketd query bank balances $SUPPLIER_ADDR $NODE_FLAGS
 ```
 
 :::tip
@@ -167,13 +167,13 @@ services:
 And run the following command to stake the `Supplier`:
 
 ```bash
-poktrolld tx supplier stake-supplier --config /tmp/stake_supplier_config.yaml --from=$SUPPLIER_ADDR $TX_PARAM_FLAGS $NODE_FLAGS
+pocketd tx supplier stake-supplier --config /tmp/stake_supplier_config.yaml --from=$SUPPLIER_ADDR $TX_PARAM_FLAGS $NODE_FLAGS
 ```
 
 After about a minute, you can check the `Supplier`'s status like so:
 
 ```bash
-poktrolld query supplier show-supplier $SUPPLIER_ADDR $NODE_FLAGS
+pocketd query supplier show-supplier $SUPPLIER_ADDR $NODE_FLAGS
 ```
 
 ## RelayMiner Configuration
@@ -184,11 +184,11 @@ poktrolld query supplier show-supplier $SUPPLIER_ADDR $NODE_FLAGS
 cat <<🚀 > /tmp/relayminer_config.yaml
 default_signing_key_names:
   - supplier
-smt_store_path: /home/pocket/.poktroll/smt
+smt_store_path: /home/pocket/.pocket/smt
 pocket_node:
-  query_node_rpc_url: https://shannon-testnet-grove-rpc.beta.poktroll.com
-  query_node_grpc_url: https://shannon-testnet-grove-grpc.beta.poktroll.com:443
-  tx_node_rpc_url: https://shannon-testnet-grove-rpc.beta.poktroll.com
+  query_node_rpc_url: https://shannon-testnet-grove-rpc.beta.pocket.com
+  query_node_grpc_url: https://shannon-testnet-grove-grpc.beta.pocket.com:443
+  tx_node_rpc_url: https://shannon-testnet-grove-rpc.beta.pocket.com
 suppliers:
   - service_id: "morse"
     service_config:
@@ -208,7 +208,7 @@ pprof:
 ### Start the RelayMiner
 
 ```bash
-poktrolld \
+pocketd \
     relayminer \
     --grpc-insecure=false \
     --log_level=debug \
@@ -241,12 +241,12 @@ for Beta Testnet at `http://149.28.34.68:9090`.
 If `grpc-insecure=false`, then it **MUST** be an HTTPS port, with TLS.
 
 The Grove team exposed one such endpoint on one of our validators for Beta Testnet
-at `https://shannon-testnet-grove-grpc.beta.poktroll.com:443`.
+at `https://shannon-testnet-grove-grpc.beta.pocket.com:443`.
 
 It can be validated with:
 
 ```bash
-grpcurl shannon-testnet-grove-grpc.beta.poktroll.com:443 list
+grpcurl shannon-testnet-grove-grpc.beta.pocket.com:443 list
 ```
 
 Note that no `-plaintext` flag is required when an endpoint is TLS terminated and
@@ -263,13 +263,13 @@ You can replace both `http` and `https` with `tcp` and it should work the same w
 ### What Supplier operations are available?
 
 ```bash
-poktrolld tx supplier -h
+pocketd tx supplier -h
 ```
 
 ### What Supplier queries are available?
 
 ```bash
-poktrolld query supplier -h
+pocketd query supplier -h
 ```
 
 ### How do I query for all existing onchain Suppliers?
@@ -277,5 +277,5 @@ poktrolld query supplier -h
 Then, you can query for all services like so:
 
 ```bash
-poktrolld query supplier list-suppliers --node https://shannon-testnet-grove-rpc.beta.poktroll.com --output json | jq
+pocketd query supplier list-suppliers --node https://shannon-testnet-grove-rpc.beta.pocket.com --output json | jq
 ```

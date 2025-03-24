@@ -10,10 +10,10 @@ import (
 	"github.com/pokt-network/smt"
 	"github.com/pokt-network/smt/kvstore/pebble"
 
-	"github.com/pokt-network/poktroll/pkg/crypto/protocol"
-	"github.com/pokt-network/poktroll/pkg/polylog"
-	"github.com/pokt-network/poktroll/pkg/relayer"
-	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
+	"github.com/pokt-network/pocket/pkg/crypto/protocol"
+	"github.com/pokt-network/pocket/pkg/polylog"
+	"github.com/pokt-network/pocket/pkg/relayer"
+	sessiontypes "github.com/pokt-network/pocket/x/session/types"
 )
 
 var _ relayer.SessionTree = (*sessionTree)(nil)

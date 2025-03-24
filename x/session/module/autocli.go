@@ -3,7 +3,7 @@ package session
 import (
 	autocliv1 "cosmossdk.io/api/cosmos/autocli/v1"
 
-	modulev1 "github.com/pokt-network/poktroll/api/poktroll/session"
+	modulev1 "github.com/pokt-network/pocket/api/pocket/session"
 )
 
 // AutoCLIOptions implements the autocli.HasAutoCLIConfig interface.
@@ -26,7 +26,7 @@ func (am AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 				// This is a query operation that will not result in a state transition but simply gives a view into the chain state.
 				//
 				// Example:
-				// $ poktrolld q session get-session pokt1mrqt5f7qh8uxs27cjm9t7v9e74a9vvdnq5jva4 svc1 42 --node $(POCKET_NODE) --home $(POKTROLLD_HOME) `,
+				// $ pocketd q session get-session pokt1mrqt5f7qh8uxs27cjm9t7v9e74a9vvdnq5jva4 svc1 42 --node $(POCKET_NODE) --home $(POKTROLLD_HOME) `,
 				// 					PositionalArgs: []*autocliv1.PositionalArgDescriptor{{ProtoField: "application_address"}, {ProtoField: "service"}, {ProtoField: "block_height"}},
 				// 				},
 

@@ -18,9 +18,9 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/pokt-network/poktroll/pkg/polylog/polyzero"
-	_ "github.com/pokt-network/poktroll/pkg/polylog/polyzero"
-	"github.com/pokt-network/poktroll/pkg/retry"
+	"github.com/pokt-network/pocket/pkg/polylog/polyzero"
+	_ "github.com/pokt-network/pocket/pkg/polylog/polyzero"
+	"github.com/pokt-network/pocket/pkg/retry"
 )
 
 var testErr = fmt.Errorf("test error")

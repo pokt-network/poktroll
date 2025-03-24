@@ -11,7 +11,7 @@ import (
 	"cosmossdk.io/depinject"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 
-	"github.com/pokt-network/poktroll/pkg/polylog"
+	"github.com/pokt-network/pocket/pkg/polylog"
 )
 
 // relayMiner is the main struct that encapsulates the relayer's responsibilities (i.e. Relay Mining).
@@ -71,7 +71,7 @@ func (rel *relayMiner) Start(ctx context.Context) error {
 	// Session manager should continue to run during this time, submitting
 	// any relays that were already mined in previous sessions.
 	// Link to more context:
-	// https://github.com/pokt-network/poktroll/assets/231488/297a3889-85a4-4c13-a852-f2afc10b2be3
+	// https://github.com/pokt-network/pocket/assets/231488/297a3889-85a4-4c13-a852-f2afc10b2be3
 	if err := rel.relayerProxy.Start(ctx); err != nil {
 		return err
 	}

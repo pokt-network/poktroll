@@ -3,7 +3,7 @@ package polyzero
 import (
 	"github.com/rs/zerolog"
 
-	"github.com/pokt-network/poktroll/pkg/polylog"
+	"github.com/pokt-network/pocket/pkg/polylog"
 )
 
 // TODO_TECHDEBT: support a Disabled level.

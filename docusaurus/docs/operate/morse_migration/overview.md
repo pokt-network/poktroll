@@ -91,14 +91,14 @@ sequenceDiagram
     loop (Re-)Generate morse_account_state.json
         A ->>+ MN: $ pocket util export-geneis-for-reset
         MN ->>- A: return morse_state_export.json
-        A ->> A: $ poktrolld migrate collect-morse-accounts
+        A ->> A: $ pocketd migrate collect-morse-accounts
         note over A: morse_account_state.json generated
         A ->>+ MA: distribute for verification <br> morse_account_state.json
 
         opt Morse Stakeholders optionally do local verification
             MA ->>+ MN: $ pocket util export-geneis-for-reset
             MN ->>- MA: return for local verification <br> morse_state_export.json
-            MA ->> MA: $ poktrolld migrate collect-morse-accounts
+            MA ->> MA: $ pocketd migrate collect-morse-accounts
             note over MA: morse_account_state.json generated
             MA ->> MA: manual comparison of <br> morse_account_state.json hashes
             MA ->>- A: ** (off-chain feedback) **
@@ -109,7 +109,7 @@ sequenceDiagram
     A ->>+ SN: upload morse state<br/>(MsgCreateMorseAccountState)
     SN ->> SN: verify morse_account_state_hash field
     SN -->- A: valid / invalid
-    MA ->> SN: $ poktrolld migrate claim-...<br/>claim morse POKT balance and any actor stake<br/>(MsgClaimMorse...)
+    MA ->> SN: $ pocketd migrate claim-...<br/>claim morse POKT balance and any actor stake<br/>(MsgClaimMorse...)
 ```
 
 ## State ETVL: Export -> Transform -> Validate -> Load
@@ -124,7 +124,7 @@ In order to streamline the migration process for end users, as well as expedite 
 1. **Re-use existing Morse tooling**:
 
    - Using the Morse CLI to export the canonical `MorseStateExport` from the Morse network (`pocket util export-genesis-for-reset`).
-   - Using the Morse CLI to export (armored) Morse account keys for use with the Shannon claiming CLI (`poktrolld migrate claim-...`).
+   - Using the Morse CLI to export (armored) Morse account keys for use with the Shannon claiming CLI (`pocketd migrate claim-...`).
 
 2. **Facilitate offchain social consensus on MorseAccountState**:
 
@@ -201,13 +201,13 @@ This playbook is an early WIP and will be updated and moved elsewhere once the p
 1. **Export** the canonical `MorseStateExport` from the Morse network:
 
    ```bash
-   pocket util export-genesis-for-reset <published canonical export height> poktroll > morse_state_export.json
+   pocket util export-genesis-for-reset <published canonical export height> pocket > morse_state_export.json
    ```
 
 2. **Transform** the `MorseStateExport` into the proposed canonical `MorseAccountState`:
 
    ```bash
-   poktrolld migrate collect-morse-accounts morse_state_export.json morse_account_state.json
+   pocketd migrate collect-morse-accounts morse_state_export.json morse_account_state.json
    ```
 
 3. **Distribute** the `MorseAccountState` and its hash for verification by Morse account/stake-holders.
@@ -215,7 +215,7 @@ This playbook is an early WIP and will be updated and moved elsewhere once the p
 5. **Load** (i.e. import) the canonical `MorseAccountState` on Shanno
 
    ```bash
-   poktrolld tx migrate import-morse-accounts morse_account_state.json --from <authorized-key-name> --grpc-addr=<shannon-network-grpc-endpoint>
+   pocketd tx migrate import-morse-accounts morse_account_state.json --from <authorized-key-name> --grpc-addr=<shannon-network-grpc-endpoint>
    ```
 
    :::important
@@ -246,14 +246,14 @@ Morse account/stake-holders who wish to participate in the social consensus proc
 1. **Downloading the proposed `MsgImportMorseClaimableAccounts`**: this encapsulates both the `MorseAccountState` and its hash
 
    :::warning TODO_MAINNET
-   Link to latest published [`MsgImportMorseClaimableAccounts`](https://github.com/pokt-network/poktroll/blob/main/proto/poktroll/migration/tx.proto#L50) proposal.
+   Link to latest published [`MsgImportMorseClaimableAccounts`](https://github.com/pokt-network/pocket/blob/main/proto/pocket/migration/tx.proto#L50) proposal.
    :::
 
 2. **Use the Shannon CLI to validate the proposed `MsgImportMorseClaimableAccounts`**: See `./msg_import_morse_claimable_accounts.json` as an example.
 
    ```bash
    # TODO_MAINNET(@bryanchriswhite, #1034): Complete this example once the CLI is available.
-   poktrolld tx migration validate-morse-accounts ./msg_import_morse_claimable_accounts.json [morse_hex_address1, ...]
+   pocketd tx migration validate-morse-accounts ./msg_import_morse_claimable_accounts.json [morse_hex_address1, ...]
    ```
 
    :::note

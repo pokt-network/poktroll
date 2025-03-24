@@ -5,9 +5,9 @@ import (
 
 	"go.uber.org/mock/gomock"
 
-	"github.com/pokt-network/poktroll/pkg/client"
-	"github.com/pokt-network/poktroll/testutil/mockclient"
-	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
+	"github.com/pokt-network/pocket/pkg/client"
+	"github.com/pokt-network/pocket/testutil/mockclient"
+	prooftypes "github.com/pokt-network/pocket/x/proof/types"
 )
 
 // NewTestProofQueryClientWithParams creates a mock of the ProofQueryClient that

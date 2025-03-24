@@ -7,14 +7,14 @@ import (
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 
-	"github.com/pokt-network/poktroll/app/volatile"
-	"github.com/pokt-network/poktroll/pkg/cache/memory"
-	"github.com/pokt-network/poktroll/pkg/client"
-	"github.com/pokt-network/poktroll/pkg/client/query"
-	"github.com/pokt-network/poktroll/pkg/client/query/cache"
-	"github.com/pokt-network/poktroll/pkg/polylog/polyzero"
-	apptypes "github.com/pokt-network/poktroll/x/application/types"
-	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
+	"github.com/pokt-network/pocket/app/volatile"
+	"github.com/pokt-network/pocket/pkg/cache/memory"
+	"github.com/pokt-network/pocket/pkg/client"
+	"github.com/pokt-network/pocket/pkg/client/query"
+	"github.com/pokt-network/pocket/pkg/client/query/cache"
+	"github.com/pokt-network/pocket/pkg/polylog/polyzero"
+	apptypes "github.com/pokt-network/pocket/x/application/types"
+	sharedtypes "github.com/pokt-network/pocket/x/shared/types"
 )
 
 var _ IntegrationSuite = (*ApplicationModuleSuite)(nil)

@@ -7,11 +7,11 @@ import (
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 
-	poktrand "github.com/pokt-network/poktroll/pkg/crypto/rand"
-	"github.com/pokt-network/poktroll/testutil/keeper"
-	tetsproof "github.com/pokt-network/poktroll/testutil/proof"
-	"github.com/pokt-network/poktroll/testutil/sample"
-	"github.com/pokt-network/poktroll/x/proof/types"
+	poktrand "github.com/pokt-network/pocket/pkg/crypto/rand"
+	"github.com/pokt-network/pocket/testutil/keeper"
+	tetsproof "github.com/pokt-network/pocket/testutil/proof"
+	"github.com/pokt-network/pocket/testutil/sample"
+	"github.com/pokt-network/pocket/x/proof/types"
 )
 
 func TestKeeper_IsProofRequired(t *testing.T) {

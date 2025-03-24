@@ -1,7 +1,7 @@
 package session
 
 import (
-	"github.com/pokt-network/poktroll/pkg/relayer"
+	"github.com/pokt-network/pocket/pkg/relayer"
 )
 
 // WithStoresDirectory sets the path on disk where KVStore data files used to store

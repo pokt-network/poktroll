@@ -7,11 +7,11 @@ import (
 
 	"cosmossdk.io/depinject"
 
-	"github.com/pokt-network/poktroll/pkg/client"
-	"github.com/pokt-network/poktroll/pkg/either"
-	"github.com/pokt-network/poktroll/pkg/observable"
-	"github.com/pokt-network/poktroll/pkg/observable/channel"
-	"github.com/pokt-network/poktroll/pkg/retry"
+	"github.com/pokt-network/pocket/pkg/client"
+	"github.com/pokt-network/pocket/pkg/either"
+	"github.com/pokt-network/pocket/pkg/observable"
+	"github.com/pokt-network/pocket/pkg/observable/channel"
+	"github.com/pokt-network/pocket/pkg/retry"
 )
 
 const (
@@ -20,7 +20,7 @@ const (
 	// or its connection is interrupted.
 	//
 	// TODO_IMPROVE: this should be configurable but can be overridden at compile-time:
-	// go build -ldflags "-X github.com/pokt-network/poktroll/DefaultConnRetryLimit=value".
+	// go build -ldflags "-X github.com/pokt-network/pocket/DefaultConnRetryLimit=value".
 	DefaultConnRetryLimit = 10
 
 	// eventsBytesRetryDelay is the delay between retry attempts when the events

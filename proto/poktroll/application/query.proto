@@ -1,7 +1,7 @@
 syntax = "proto3";
-package poktroll.application;
+package pocket.application;
 
-option go_package = "github.com/pokt-network/poktroll/x/application/types";
+option go_package = "github.com/pokt-network/pocket/x/application/types";
 option (gogoproto.stable_marshaler_all) = true;
 
 import "amino/amino.proto";
@@ -10,8 +10,8 @@ import "google/api/annotations.proto";
 import "cosmos/base/query/v1beta1/pagination.proto";
 import "cosmos/base/v1beta1/coin.proto";
 
-import "poktroll/application/params.proto";
-import "poktroll/application/types.proto";
+import "pocket/application/params.proto";
+import "pocket/application/types.proto";
 
 
 // Query defines the gRPC querier service.
@@ -19,17 +19,17 @@ service Query {
 
   // Parameters queries the parameters of the module.
   rpc Params (QueryParamsRequest) returns (QueryParamsResponse) {
-    option (google.api.http).get = "/pokt-network/poktroll/application/params";
+    option (google.api.http).get = "/pokt-network/pocket/application/params";
 
   }
 
   // Queries a list of Application items.
   rpc Application    (QueryGetApplicationRequest) returns (QueryGetApplicationResponse) {
-    option (google.api.http).get = "/pokt-network/poktroll/application/application/{address}";
+    option (google.api.http).get = "/pokt-network/pocket/application/application/{address}";
 
   }
   rpc AllApplications (QueryAllApplicationsRequest) returns (QueryAllApplicationsResponse) {
-    option (google.api.http).get = "/pokt-network/poktroll/application/application";
+    option (google.api.http).get = "/pokt-network/pocket/application/application";
 
   }
 }

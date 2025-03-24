@@ -3,7 +3,7 @@ package polyzero
 import (
 	"github.com/rs/zerolog"
 
-	"github.com/pokt-network/poktroll/pkg/polylog"
+	"github.com/pokt-network/pocket/pkg/polylog"
 )
 
 // GetZerologLogger is a helper function which provides direct access to the

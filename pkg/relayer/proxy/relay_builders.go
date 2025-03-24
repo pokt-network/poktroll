@@ -4,8 +4,8 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/pokt-network/poktroll/x/service/types"
-	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
+	"github.com/pokt-network/pocket/x/service/types"
+	sessiontypes "github.com/pokt-network/pocket/x/session/types"
 )
 
 // newRelayRequest builds a RelayRequest from an http.Request.

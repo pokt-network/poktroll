@@ -14,8 +14,8 @@ Pre-requisites:
 EOF
 
 # Define paths and upgrade name
-POKTROLLD_OLD_BINARY_PATH=$HOME/pocket/pokrtoll-for-releases/poktrolld
-POKTROLLD_NEW_BINARY_PATH=$HOME/pocket/poktroll/poktrolld
+POKTROLLD_OLD_BINARY_PATH=$HOME/pocket/pokrtoll-for-releases/pocketd
+POKTROLLD_NEW_BINARY_PATH=$HOME/pocket/pocket/pocketd
 POKTROLLD_UPGRADE_PLAN_NAME=v0.0.4
 
 cat << EOF
@@ -36,8 +36,8 @@ fi
 # Cosmovisor settings:
 export DAEMON_ALLOW_DOWNLOAD_BINARIES=false 
 export DAEMON_RESTART_AFTER_UPGRADE=true
-export DAEMON_NAME=poktrolld 
-export DAEMON_HOME=$HOME/.poktroll # `localnet_regenesis` creates new genesis in this directory by default.
+export DAEMON_NAME=pocketd 
+export DAEMON_HOME=$HOME/.pocket # `localnet_regenesis` creates new genesis in this directory by default.
 
 # Cleans up old upgrade binary and home dir.
 rm -rf $DAEMON_HOME
@@ -45,10 +45,10 @@ rm -rf $DAEMON_HOME
 # Runs regenesis.
 make localnet_regenesis
 
-# Setups cosmovisor directories and poktroll binaries. On real network cosmovisor can download the binaries using onchain
+# Setups cosmovisor directories and pocket binaries. On real network cosmovisor can download the binaries using onchain
 # data when `DAEMON_ALLOW_DOWNLOAD_BINARIES=true`.
 mkdir -p $DAEMON_HOME/cosmovisor/genesis/bin/ $DAEMON_HOME/cosmovisor/upgrades/$POKTROLLD_UPGRADE_PLAN_NAME/bin/
-cp -r $POKTROLLD_OLD_BINARY_PATH $DAEMON_HOME/cosmovisor/genesis/bin/poktrolld
-cp -r $POKTROLLD_NEW_BINARY_PATH $DAEMON_HOME/cosmovisor/upgrades/$POKTROLLD_UPGRADE_PLAN_NAME/bin/poktrolld
+cp -r $POKTROLLD_OLD_BINARY_PATH $DAEMON_HOME/cosmovisor/genesis/bin/pocketd
+cp -r $POKTROLLD_NEW_BINARY_PATH $DAEMON_HOME/cosmovisor/upgrades/$POKTROLLD_UPGRADE_PLAN_NAME/bin/pocketd
 
 cosmovisor run start --home $DAEMON_HOME

@@ -13,14 +13,14 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 
-	"github.com/pokt-network/poktroll/pkg/client/events"
-	"github.com/pokt-network/poktroll/pkg/client/events/websocket"
-	"github.com/pokt-network/poktroll/pkg/either"
-	"github.com/pokt-network/poktroll/pkg/observable"
-	"github.com/pokt-network/poktroll/testutil/mockclient"
-	"github.com/pokt-network/poktroll/testutil/testchannel"
-	"github.com/pokt-network/poktroll/testutil/testclient/testeventsquery"
-	"github.com/pokt-network/poktroll/testutil/testerrors"
+	"github.com/pokt-network/pocket/pkg/client/events"
+	"github.com/pokt-network/pocket/pkg/client/events/websocket"
+	"github.com/pokt-network/pocket/pkg/either"
+	"github.com/pokt-network/pocket/pkg/observable"
+	"github.com/pokt-network/pocket/testutil/mockclient"
+	"github.com/pokt-network/pocket/testutil/testchannel"
+	"github.com/pokt-network/pocket/testutil/testclient/testeventsquery"
+	"github.com/pokt-network/pocket/testutil/testerrors"
 )
 
 func TestEventsQueryClient_Subscribe_Succeeds(t *testing.T) {

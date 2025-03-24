@@ -7,9 +7,9 @@ import (
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 	"github.com/stretchr/testify/require"
 
-	"github.com/pokt-network/poktroll/testutil/testmigration"
-	migrationtypes "github.com/pokt-network/poktroll/x/migration/types"
-	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
+	"github.com/pokt-network/pocket/testutil/testmigration"
+	migrationtypes "github.com/pokt-network/pocket/x/migration/types"
+	sharedtypes "github.com/pokt-network/pocket/x/shared/types"
 )
 
 var _ IntegrationSuite = (*MigrationModuleSuite)(nil)

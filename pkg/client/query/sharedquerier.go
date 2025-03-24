@@ -7,10 +7,10 @@ import (
 	"cosmossdk.io/depinject"
 	"github.com/cosmos/gogoproto/grpc"
 
-	"github.com/pokt-network/poktroll/pkg/cache"
-	"github.com/pokt-network/poktroll/pkg/client"
-	"github.com/pokt-network/poktroll/pkg/polylog"
-	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
+	"github.com/pokt-network/pocket/pkg/cache"
+	"github.com/pokt-network/pocket/pkg/client"
+	"github.com/pokt-network/pocket/pkg/polylog"
+	sharedtypes "github.com/pokt-network/pocket/x/shared/types"
 )
 
 var _ client.SharedQueryClient = (*sharedQuerier)(nil)

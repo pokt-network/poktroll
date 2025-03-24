@@ -6,11 +6,11 @@ import (
 	cosmoslog "cosmossdk.io/log"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 
-	apptypes "github.com/pokt-network/poktroll/x/application/types"
-	servicetypes "github.com/pokt-network/poktroll/x/service/types"
-	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
-	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
-	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
+	apptypes "github.com/pokt-network/pocket/x/application/types"
+	servicetypes "github.com/pokt-network/pocket/x/service/types"
+	sessiontypes "github.com/pokt-network/pocket/x/session/types"
+	sharedtypes "github.com/pokt-network/pocket/x/shared/types"
+	tokenomicstypes "github.com/pokt-network/pocket/x/tokenomics/types"
 )
 
 type TokenLogicModuleId int

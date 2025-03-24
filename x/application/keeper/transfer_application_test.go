@@ -7,9 +7,9 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 
-	"github.com/pokt-network/poktroll/testutil/sample"
-	apptypes "github.com/pokt-network/poktroll/x/application/types"
-	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
+	"github.com/pokt-network/pocket/testutil/sample"
+	apptypes "github.com/pokt-network/pocket/x/application/types"
+	sharedtypes "github.com/pokt-network/pocket/x/shared/types"
 )
 
 type MergeAppDelegateesSuite struct {

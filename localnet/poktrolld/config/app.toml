@@ -34,9 +34,9 @@ query-gas-limit = "0"
 [mempool]
   max-txs = 10000
 
-[poktroll]
+[pocket]
 
-  [poktroll.telemetry]
+  [pocket.telemetry]
     cardinality-level = "high"
 
 [rpc]

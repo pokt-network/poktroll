@@ -7,9 +7,9 @@ import (
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 	"github.com/stretchr/testify/require"
 
-	testkeeper "github.com/pokt-network/poktroll/testutil/keeper"
-	"github.com/pokt-network/poktroll/testutil/sample"
-	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
+	testkeeper "github.com/pokt-network/pocket/testutil/keeper"
+	"github.com/pokt-network/pocket/testutil/sample"
+	tokenomicstypes "github.com/pokt-network/pocket/x/tokenomics/types"
 )
 
 func TestMsgUpdateParam_UpdateMintAllocationPercentagesOnly(t *testing.T) {

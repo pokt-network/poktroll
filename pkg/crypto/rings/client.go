@@ -11,12 +11,12 @@ import (
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	"github.com/pokt-network/ring-go"
 
-	"github.com/pokt-network/poktroll/pkg/client"
-	"github.com/pokt-network/poktroll/pkg/crypto"
-	"github.com/pokt-network/poktroll/pkg/polylog"
-	apptypes "github.com/pokt-network/poktroll/x/application/types"
-	"github.com/pokt-network/poktroll/x/service/types"
-	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
+	"github.com/pokt-network/pocket/pkg/client"
+	"github.com/pokt-network/pocket/pkg/crypto"
+	"github.com/pokt-network/pocket/pkg/polylog"
+	apptypes "github.com/pokt-network/pocket/x/application/types"
+	"github.com/pokt-network/pocket/x/service/types"
+	sharedtypes "github.com/pokt-network/pocket/x/shared/types"
 )
 
 var _ crypto.RingClient = (*ringClient)(nil)

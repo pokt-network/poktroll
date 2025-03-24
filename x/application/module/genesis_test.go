@@ -7,12 +7,12 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 
-	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
-	"github.com/pokt-network/poktroll/testutil/nullify"
-	"github.com/pokt-network/poktroll/testutil/sample"
-	application "github.com/pokt-network/poktroll/x/application/module"
-	"github.com/pokt-network/poktroll/x/application/types"
-	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
+	keepertest "github.com/pokt-network/pocket/testutil/keeper"
+	"github.com/pokt-network/pocket/testutil/nullify"
+	"github.com/pokt-network/pocket/testutil/sample"
+	application "github.com/pokt-network/pocket/x/application/module"
+	"github.com/pokt-network/pocket/x/application/types"
+	sharedtypes "github.com/pokt-network/pocket/x/shared/types"
 )
 
 func TestGenesis(t *testing.T) {

@@ -8,10 +8,10 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"github.com/pokt-network/poktroll/pkg/client"
-	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
-	tlm "github.com/pokt-network/poktroll/x/tokenomics/token_logic_module"
-	"github.com/pokt-network/poktroll/x/tokenomics/types"
+	"github.com/pokt-network/pocket/pkg/client"
+	prooftypes "github.com/pokt-network/pocket/x/proof/types"
+	tlm "github.com/pokt-network/pocket/x/tokenomics/token_logic_module"
+	"github.com/pokt-network/pocket/x/tokenomics/types"
 )
 
 type Keeper struct {

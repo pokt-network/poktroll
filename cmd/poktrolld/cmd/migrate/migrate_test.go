@@ -10,15 +10,15 @@ import (
 	cmtjson "github.com/cometbft/cometbft/libs/json"
 	"github.com/stretchr/testify/require"
 
-	"github.com/pokt-network/poktroll/pkg/polylog/polyzero"
-	"github.com/pokt-network/poktroll/testutil/testmigration"
-	migrationtypes "github.com/pokt-network/poktroll/x/migration/types"
+	"github.com/pokt-network/pocket/pkg/polylog/polyzero"
+	"github.com/pokt-network/pocket/testutil/testmigration"
+	migrationtypes "github.com/pokt-network/pocket/x/migration/types"
 )
 
 // TODO_MAINNET(@bryanchriswhite): Add an E2E/integration test using real data.
 // Note: This test should not be included in CI due to its size (90GB).
 // Users should manually run wget to download the data and verify it on their computer.
-// Reference: https://github.com/pokt-network/poktroll/pull/1039#discussion_r1947036729
+// Reference: https://github.com/pokt-network/pocket/pull/1039#discussion_r1947036729
 
 func init() {
 	logger = polyzero.NewLogger(polyzero.WithLevel(polyzero.DebugLevel))

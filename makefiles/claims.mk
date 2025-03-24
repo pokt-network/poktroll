@@ -7,27 +7,27 @@ ENCODED_SESSION_HEADER = "eyJhcHBsaWNhdGlvbl9hZGRyZXNzIjoicG9rdDFleXJuNDUwa3JoZn
 ENCODED_ROOT_HASH = "cm9vdF9oYXNo"
 .PHONY: claim_create_dummy
 claim_create_dummy: ## Create a dummy claim by supplier1
-	poktrolld --home=$(POKTROLLD_HOME) tx supplier create-claim \
+	pocketd --home=$(POKTROLLD_HOME) tx supplier create-claim \
 	$(ENCODED_SESSION_HEADER) \
 	$(ENCODED_ROOT_HASH) \
 	--from supplier1 --node $(POCKET_NODE)
 
 .PHONY: claims_list
 claim_list: ## List all the claims
-	poktrolld --home=$(POKTROLLD_HOME) q supplier list-claims --node $(POCKET_NODE)
+	pocketd --home=$(POKTROLLD_HOME) q supplier list-claims --node $(POCKET_NODE)
 
 .PHONY: claims_list_address
 claim_list_address: ## List all the claims for a specific address (specified via ADDR variable)
-	poktrolld --home=$(POKTROLLD_HOME) q supplier list-claims --supplier-operator-address $(ADDR) --node $(POCKET_NODE)
+	pocketd --home=$(POKTROLLD_HOME) q supplier list-claims --supplier-operator-address $(ADDR) --node $(POCKET_NODE)
 
 .PHONY: claims_list_address_supplier1
 claim_list_address_supplier1: ## List all the claims for supplier1
-	SUPPLIER1=$$(make poktrolld_addr ACC_NAME=supplier1) && \
+	SUPPLIER1=$$(make pocketd_addr ACC_NAME=supplier1) && \
 	ADDR=$$SUPPLIER1 make claim_list_address
 
 .PHONY: claim_list_height
 claim_list_height: ## List all the claims ending at a specific height (specified via HEIGHT variable)
-	poktrolld --home=$(POKTROLLD_HOME) q supplier list-claims --session-end-height $(HEIGHT) --node $(POCKET_NODE)
+	pocketd --home=$(POKTROLLD_HOME) q supplier list-claims --session-end-height $(HEIGHT) --node $(POCKET_NODE)
 
 .PHONY: claim_list_height_5
 claim_list_height_5: ## List all the claims at height 5
@@ -35,4 +35,4 @@ claim_list_height_5: ## List all the claims at height 5
 
 .PHONY: claim_list_session
 claim_list_session: ## List all the claims ending at a specific session (specified via SESSION variable)
-	poktrolld --home=$(POKTROLLD_HOME) q supplier list-claims --session-id $(SESSION) --node $(POCKET_NODE)
+	pocketd --home=$(POKTROLLD_HOME) q supplier list-claims --session-id $(SESSION) --node $(POCKET_NODE)

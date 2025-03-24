@@ -6,10 +6,10 @@ import (
 
 	"go.uber.org/mock/gomock"
 
-	"github.com/pokt-network/poktroll/testutil/mockclient"
-	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
-	servicetypes "github.com/pokt-network/poktroll/x/service/types"
-	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
+	"github.com/pokt-network/pocket/testutil/mockclient"
+	prooftypes "github.com/pokt-network/pocket/x/proof/types"
+	servicetypes "github.com/pokt-network/pocket/x/service/types"
+	sharedtypes "github.com/pokt-network/pocket/x/shared/types"
 )
 
 // TODO_TECHDEBT: refactor the methods using this variable to avoid having a global scope

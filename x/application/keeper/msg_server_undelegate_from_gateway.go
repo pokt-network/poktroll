@@ -9,8 +9,8 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"github.com/pokt-network/poktroll/telemetry"
-	apptypes "github.com/pokt-network/poktroll/x/application/types"
+	"github.com/pokt-network/pocket/telemetry"
+	apptypes "github.com/pokt-network/pocket/x/application/types"
 )
 
 func (k msgServer) UndelegateFromGateway(ctx context.Context, msg *apptypes.MsgUndelegateFromGateway) (*apptypes.MsgUndelegateFromGatewayResponse, error) {

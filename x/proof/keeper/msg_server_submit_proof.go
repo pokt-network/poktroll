@@ -2,7 +2,7 @@ package keeper
 
 // TODO_TECHDEBT(@bryanchriswhite): Replace all logs in x/ from `.Info` to
 // `.Debug` when the logger is replaced close to or after MainNet launch.
-// Ref: https://github.com/pokt-network/poktroll/pull/448#discussion_r1549742985
+// Ref: https://github.com/pokt-network/pocket/pull/448#discussion_r1549742985
 
 import (
 	"context"
@@ -13,10 +13,10 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"github.com/pokt-network/poktroll/telemetry"
-	"github.com/pokt-network/poktroll/x/proof/types"
-	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
-	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
+	"github.com/pokt-network/pocket/telemetry"
+	"github.com/pokt-network/pocket/x/proof/types"
+	sessiontypes "github.com/pokt-network/pocket/x/session/types"
+	sharedtypes "github.com/pokt-network/pocket/x/shared/types"
 )
 
 // SubmitProof is the server message handler that stores a valid

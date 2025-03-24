@@ -7,9 +7,9 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/stretchr/testify/require"
 
-	"github.com/pokt-network/poktroll/testutil/sample"
-	"github.com/pokt-network/poktroll/testutil/testmigration"
-	migrationtypes "github.com/pokt-network/poktroll/x/migration/types"
+	"github.com/pokt-network/pocket/testutil/sample"
+	"github.com/pokt-network/pocket/testutil/testmigration"
+	migrationtypes "github.com/pokt-network/pocket/x/migration/types"
 )
 
 const mockMorseSignatureHex = "6c0d3b25a3e53eb6739f00ac66fc70168dfbb6dfe306a50f48a5f9d732b23068be3840a7127e1d849b4b2c54f5d34c2db36c2d6da46263cc72270f8f5dfdec5f"

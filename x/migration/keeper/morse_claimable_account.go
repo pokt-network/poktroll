@@ -8,7 +8,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/runtime"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 
-	migrationtypes "github.com/pokt-network/poktroll/x/migration/types"
+	migrationtypes "github.com/pokt-network/pocket/x/migration/types"
 )
 
 // SetMorseClaimableAccount set a specific morseClaimableAccount in the store from its index

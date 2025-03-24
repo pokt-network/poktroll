@@ -1,7 +1,7 @@
 syntax = "proto3";
-package poktroll.service;
+package pocket.service;
 
-option go_package = "github.com/pokt-network/poktroll/x/service/types";
+option go_package = "github.com/pokt-network/pocket/x/service/types";
 option (gogoproto.stable_marshaler_all) = true;
 
 import "amino/amino.proto";
@@ -11,7 +11,7 @@ import "cosmos/base/v1beta1/coin.proto";
 
 // Params defines the parameters for the module.
 message Params {
-  option (amino.name) = "poktroll/x/service/Params";
+  option (amino.name) = "pocket/x/service/Params";
   option (gogoproto.equal) = true;
 
   // The amount of uPOKT required to add a new service.

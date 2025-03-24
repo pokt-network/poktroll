@@ -6,7 +6,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	servicetypes "github.com/pokt-network/poktroll/x/service/types"
+	servicetypes "github.com/pokt-network/pocket/x/service/types"
 )
 
 // UpdateParam updates a single parameter in the service module and returns

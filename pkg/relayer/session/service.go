@@ -3,7 +3,7 @@ package session
 import (
 	"context"
 
-	"github.com/pokt-network/poktroll/x/service/types"
+	"github.com/pokt-network/pocket/x/service/types"
 )
 
 // getServiceComputeUnitsPerRelay returns the compute units per relay for the service specified in

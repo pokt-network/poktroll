@@ -11,7 +11,7 @@ claims and submitting proofs.
 
 :::tip
 
-You can find a fully featured example configuration at [relayminer_config_full_example.yaml](https://github.com/pokt-network/poktroll/tree/main/localnet/poktrolld/config/relayminer_config_full_example.yaml).
+You can find a fully featured example configuration at [relayminer_config_full_example.yaml](https://github.com/pokt-network/pocket/tree/main/localnet/pocketd/config/relayminer_config_full_example.yaml).
 
 :::
 
@@ -100,7 +100,7 @@ The `RelayMiner` start command accepts a `--config` flag that points to a config
 `yaml` file that will be used to setup the `RelayMiner` instance.
 
 ```bash
-poktrolld relayminer --config ./relayminer_config.yaml --keyring-backend test
+pocketd relayminer --config ./relayminer_config.yaml --keyring-backend test
 ```
 
 ## Structure
@@ -473,7 +473,7 @@ flowchart
 
 ## Supported server types
 
-The list of supported server types can be found at [pkg/relayer/config/types.go](https://github.com/pokt-network/poktroll/tree/main/pkg/relayer/config/types.go#L8)
+The list of supported server types can be found at [pkg/relayer/config/types.go](https://github.com/pokt-network/pocket/tree/main/pkg/relayer/config/types.go#L8)
 
 ## Payable Proof Submissions
 
@@ -507,7 +507,7 @@ result in `Supplier` slashing if the `Proof` is required.
 The following command can be used to check the balance of a `Supplier` operator:
 
 ```bash
-poktrolld query bank balance <supplier_operator_address> upokt --node https://shannon-testnet-grove-seed-rpc.poktroll.com
+pocketd query bank balance <supplier_operator_address> upokt --node https://shannon-testnet-grove-seed-rpc.pocket.com
 ```
 
 Which output would look like:
@@ -530,7 +530,7 @@ balance:
 The following command can be used to check the current `proof_submission_fee`:
 
 ```bash
-poktrolld query proof params --node https://shannon-testnet-grove-seed-rpc.poktroll.com
+pocketd query proof params --node https://shannon-testnet-grove-seed-rpc.pocket.com
 ```
 
 Which output would look like:
@@ -541,7 +541,7 @@ proof_submission_fee:
   denom: upokt
 ```
 
-The list of `Proof` governance parameters can be found at [proto/proof/params.proto](https://github.com/pokt-network/poktroll/blob/main/proto/poktroll/proof/params.proto)
+The list of `Proof` governance parameters can be found at [proto/proof/params.proto](https://github.com/pokt-network/pocket/blob/main/proto/pocket/proof/params.proto)
 
 :::warning
 

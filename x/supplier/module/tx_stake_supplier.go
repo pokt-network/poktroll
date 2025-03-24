@@ -9,8 +9,8 @@ import (
 	"github.com/cosmos/cosmos-sdk/client/tx"
 	"github.com/spf13/cobra"
 
-	"github.com/pokt-network/poktroll/x/supplier/config"
-	"github.com/pokt-network/poktroll/x/supplier/types"
+	"github.com/pokt-network/pocket/x/supplier/config"
+	"github.com/pokt-network/pocket/x/supplier/types"
 )
 
 var (
@@ -28,10 +28,10 @@ supports both custodial and non-custodial staking of the signer's tokens.
 It sources the necessary information from the provided configuration file.
 
 For more details on the staking process, please refer to the supplier staking documentation at:
-https://dev.poktroll.com/operate/configs/supplier_staking_config
+https://dev.pocket.com/operate/configs/supplier_staking_config
 
 Example:
-$ poktrolld tx supplier stake-supplier --config stake_config.yaml --keyring-backend test  --from $(OWNER_ADDRESS) --node $(POCKET_NODE) --home $(POKTROLLD_HOME)`,
+$ pocketd tx supplier stake-supplier --config stake_config.yaml --keyring-backend test  --from $(OWNER_ADDRESS) --node $(POCKET_NODE) --home $(POKTROLLD_HOME)`,
 
 		Args: cobra.ExactArgs(0),
 		RunE: func(cmd *cobra.Command, _ []string) (err error) {

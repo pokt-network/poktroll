@@ -10,8 +10,8 @@ import (
 	"github.com/regen-network/gocuke"
 	"github.com/stretchr/testify/require"
 
-	"github.com/pokt-network/poktroll/app/volatile"
-	migrationtypes "github.com/pokt-network/poktroll/x/migration/types"
+	"github.com/pokt-network/pocket/app/volatile"
+	migrationtypes "github.com/pokt-network/pocket/x/migration/types"
 )
 
 // MorseAccountActorType is an enum which represents all possible staked and
@@ -67,7 +67,7 @@ func NewSingleMorseAccountActorTypeFn(actorType MorseAccountActorType) MorseAcco
 //     This is the JSON output of `pocket util export-genesis-for-reset`.
 //     It is used to generate the MorseAccountState.
 //   - Its corresponding MorseAccountState.
-//     This is the JSON output of `poktrolld migrate collect-morse-accounts`.
+//     This is the JSON output of `pocketd migrate collect-morse-accounts`.
 //     It is used to persist the canonical Morse migration state (snapshot) from on Shannon.
 //
 // The states are populated with:

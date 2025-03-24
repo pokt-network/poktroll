@@ -1,9 +1,9 @@
 package cache
 
 import (
-	"github.com/pokt-network/poktroll/pkg/cache"
-	"github.com/pokt-network/poktroll/pkg/cache/memory"
-	"github.com/pokt-network/poktroll/pkg/client"
+	"github.com/pokt-network/pocket/pkg/cache"
+	"github.com/pokt-network/pocket/pkg/cache/memory"
+	"github.com/pokt-network/pocket/pkg/client"
 )
 
 var _ client.ParamsCache[any] = (*paramsCache[any])(nil)

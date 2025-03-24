@@ -8,8 +8,8 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 
-	"github.com/pokt-network/poktroll/testutil/mockclient"
-	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
+	"github.com/pokt-network/pocket/testutil/mockclient"
+	sharedtypes "github.com/pokt-network/pocket/x/shared/types"
 )
 
 // suppliersProvidedServicesMap is a map of maps:

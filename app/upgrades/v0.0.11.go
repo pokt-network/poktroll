@@ -8,9 +8,9 @@ import (
 	cosmosTypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 
-	"github.com/pokt-network/poktroll/app/keepers"
-	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
-	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
+	"github.com/pokt-network/pocket/app/keepers"
+	sessiontypes "github.com/pokt-network/pocket/x/session/types"
+	tokenomicstypes "github.com/pokt-network/pocket/x/tokenomics/types"
 )
 
 // Upgrade_0_0_11 is the upgrade handler for v0.0.11 Alpha TestNet upgrade
@@ -24,13 +24,13 @@ var Upgrade_0_0_11 = Upgrade{
 		configurator module.Configurator,
 	) upgradetypes.UpgradeHandler {
 		// Adds new parameters using ignite's config.yml as a reference. Assuming we don't need any other parameters.
-		// https://github.com/pokt-network/poktroll/compare/v0.0.10...v0.0.11-rc
+		// https://github.com/pokt-network/pocket/compare/v0.0.10...v0.0.11-rc
 		applyNewParameters := func(ctx context.Context) (err error) {
 			logger := cosmosTypes.UnwrapSDKContext(ctx).Logger()
 			logger.Info("Starting parameter updates for v0.0.11")
 
 			// Set num_suppliers_per_session to 15
-			// Validate with: `poktrolld q session params --node=https://testnet-validated-validator-rpc.poktroll.com/`
+			// Validate with: `pocketd q session params --node=https://testnet-validated-validator-rpc.pocket.com/`
 			sessionParams := sessiontypes.Params{
 				NumSuppliersPerSession: uint64(15),
 			}
@@ -44,7 +44,7 @@ var Upgrade_0_0_11 = Upgrade{
 			logger.Info("Successfully updated session params", "new_params", sessionParams)
 
 			// Set tokenomics params. The values are based on default values for LocalNet/Beta TestNet.
-			// Validate with: `poktrolld q tokenomics params --node=https://testnet-validated-validator-rpc.poktroll.com/`
+			// Validate with: `pocketd q tokenomics params --node=https://testnet-validated-validator-rpc.pocket.com/`
 			tokenomicsParams := tokenomicstypes.Params{
 				MintAllocationPercentages: tokenomicstypes.MintAllocationPercentages{
 					Dao:         0.1,
@@ -67,9 +67,9 @@ var Upgrade_0_0_11 = Upgrade{
 			return
 		}
 
-		// The diff shows that the only new authz authorization is for the `poktroll.session.MsgUpdateParam` message.
+		// The diff shows that the only new authz authorization is for the `pocket.session.MsgUpdateParam` message.
 		// However, this message is already authorized for the `pokt10d07y265gmmuvt4z0w9aw880jnsr700j8yv32t` address.
-		// See here: poktrolld q authz grants-by-granter pokt10d07y265gmmuvt4z0w9aw880jnsr700j8yv32t --node=https://shannon-testnet-grove-seed-rpc.alpha.poktroll.com
+		// See here: pocketd q authz grants-by-granter pokt10d07y265gmmuvt4z0w9aw880jnsr700j8yv32t --node=https://shannon-testnet-grove-seed-rpc.alpha.pocket.com
 		// If this upgrade would have been applied to other networks, we could have added a separate upgrade handler for each network.
 
 		// Returns the upgrade handler for v0.0.11

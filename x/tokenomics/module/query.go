@@ -7,7 +7,7 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/client"
 
-	"github.com/pokt-network/poktroll/x/tokenomics/types"
+	"github.com/pokt-network/pocket/x/tokenomics/types"
 )
 
 // GetQueryCmd returns the cli query commands for this module

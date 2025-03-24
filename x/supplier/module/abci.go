@@ -6,8 +6,8 @@ import (
 	cosmostelemetry "github.com/cosmos/cosmos-sdk/telemetry"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"github.com/pokt-network/poktroll/x/supplier/keeper"
-	"github.com/pokt-network/poktroll/x/supplier/types"
+	"github.com/pokt-network/pocket/x/supplier/keeper"
+	"github.com/pokt-network/pocket/x/supplier/types"
 )
 
 // EndBlocker is called every block and handles supplier related updates.

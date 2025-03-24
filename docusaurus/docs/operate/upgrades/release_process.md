@@ -26,7 +26,7 @@ TODO(#791): The process of adding the `consensus-breaking` label is still not fo
 
 - **Find consensus breaking changes**: Review merged Pull Requests (PRs) with the `consensus-breaking` label.
   If any exist, assume the release will require an upgrade.
-  [Here is a link](https://github.com/pokt-network/poktroll/pulls?q=sort%3Aupdated-desc+is%3Apr+is%3Amerged+label%3Aconsensus-breaking) for convenience.
+  [Here is a link](https://github.com/pokt-network/pocket/pulls?q=sort%3Aupdated-desc+is%3Apr+is%3Amerged+label%3Aconsensus-breaking) for convenience.
 - **Verify a Full Node**: Deploy a Full Node on TestNet and allow it to sync and operate for a few days to verify that no accidentally introduced consensus-breaking changes affect the ability to sync. See the instructions in the [Quickstart Guide](../../operate/cheat_sheets/docker_compose_debian_cheatsheet.md for deploying a Full Node.
 - **Update Upgrade List**: If the new release includes an upgrade transaction for automatic upgrades, add the new release to the table in the [Upgrades List](./upgrade_list.md).
 
@@ -39,7 +39,7 @@ TODO(#791): The process of adding the `consensus-breaking` label is still not fo
 
 :::tip
 
-You can find an example [here](https://github.com/pokt-network/poktroll/releases/tag/v0.0.7).
+You can find an example [here](https://github.com/pokt-network/pocket/releases/tag/v0.0.7).
 
 :::
 
@@ -52,12 +52,12 @@ You can find an example [here](https://github.com/pokt-network/poktroll/releases
 
 <!--
 IMPORTANT:If this release will be used to issue upgrade on the network, add a link to the upgrade code
-such as https://github.com/pokt-network/poktroll/blob/main/app/upgrades/historical.go#L51.
+such as https://github.com/pokt-network/pocket/blob/main/app/upgrades/historical.go#L51.
 -->
 
 - **Planned Upgrade:** ❌ Not applicable for this release.
 - **Breaking Change:** ❌ Not applicable for this release.
-- **Manual Intervention Required:** ✅ Yes, but only for Alpha TestNet participants. If you are participating, please follow the [instructions provided here](https://dev.poktroll.com/operate/quickstart/docker_compose_walkthrough#restarting-a-full-node-after-re-genesis-) for restarting your full node after re-genesis.
+- **Manual Intervention Required:** ✅ Yes, but only for Alpha TestNet participants. If you are participating, please follow the [instructions provided here](https://dev.pocket.com/operate/quickstart/docker_compose_walkthrough#restarting-a-full-node-after-re-genesis-) for restarting your full node after re-genesis.
 - **Upgrade Height:** ❌ Not applicable for this release.
 
 ## What's Changed
@@ -75,14 +75,14 @@ such as https://github.com/pokt-network/poktroll/blob/main/app/upgrades/historic
 ### 3. Update the homebrew-tap formula
 
 ```bash
-git clone git@github.com:pokt-network/homebrew-poktroll.git
-cd homebrew-poktroll
+git clone git@github.com:pokt-network/homebrew-pocket.git
+cd homebrew-pocket
 make tap_update_version
-git commit -am "Update poktroll tap from v.X1.Y1.Z1 to vX1.Y2.Z2
+git commit -am "Update pocket tap from v.X1.Y1.Z1 to vX1.Y2.Z2
 git push
 ```
 
-See the [poktrolld CLI docs](../../tools/user_guide/poktrolld_cli.md) for more information.
+See the [pocketd CLI docs](../../tools/user_guide/pocketd_cli.md) for more information.
 
 ### 4. Write an Upgrade Plan
 
@@ -102,7 +102,7 @@ You can use the following template as a starting point.
 
 ### 5. Issue Upgrade on TestNet
 
-- Follow the [Upgrade Procedure](./upgrade_procedure.md) to upgrade existing/running Full Nodes and Validators to the new version of `poktroll`.
+- Follow the [Upgrade Procedure](./upgrade_procedure.md) to upgrade existing/running Full Nodes and Validators to the new version of `pocket`.
 - Monitor the network's health metrics to identify any significant changes, such as the loss of many validators due to an unexpected consensus-breaking change.
 
 ### 6. Issue Upgrade on MainNet

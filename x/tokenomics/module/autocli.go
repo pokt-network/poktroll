@@ -3,7 +3,7 @@ package tokenomics
 import (
 	autocliv1 "cosmossdk.io/api/cosmos/autocli/v1"
 
-	modulev1 "github.com/pokt-network/poktroll/api/poktroll/tokenomics"
+	modulev1 "github.com/pokt-network/pocket/api/pocket/tokenomics"
 )
 
 // AutoCLIOptions implements the autocli.HasAutoCLIConfig interface.
@@ -19,7 +19,7 @@ func (am AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 				// 					Long: `Shows all the parameters related to the tokenomics module.
 				//
 				// Example:
-				// $ poktrolld q tokenomics params --node $(POCKET_NODE) --home $(POKTROLLD_HOME)`,
+				// $ pocketd q tokenomics params --node $(POCKET_NODE) --home $(POKTROLLD_HOME)`,
 				// 				},
 				{
 					RpcMethod: "RelayMiningDifficultyAll",

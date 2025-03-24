@@ -30,20 +30,20 @@ import (
 	"github.com/regen-network/gocuke"
 	"github.com/stretchr/testify/require"
 
-	"github.com/pokt-network/poktroll/app"
-	"github.com/pokt-network/poktroll/pkg/client"
-	"github.com/pokt-network/poktroll/pkg/client/block"
-	"github.com/pokt-network/poktroll/pkg/client/events"
-	"github.com/pokt-network/poktroll/pkg/client/tx"
-	"github.com/pokt-network/poktroll/testutil/testclient"
-	"github.com/pokt-network/poktroll/testutil/yaml"
-	apptypes "github.com/pokt-network/poktroll/x/application/types"
-	gatewaytypes "github.com/pokt-network/poktroll/x/gateway/types"
-	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
-	servicetypes "github.com/pokt-network/poktroll/x/service/types"
-	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
-	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
-	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
+	"github.com/pokt-network/pocket/app"
+	"github.com/pokt-network/pocket/pkg/client"
+	"github.com/pokt-network/pocket/pkg/client/block"
+	"github.com/pokt-network/pocket/pkg/client/events"
+	"github.com/pokt-network/pocket/pkg/client/tx"
+	"github.com/pokt-network/pocket/testutil/testclient"
+	"github.com/pokt-network/pocket/testutil/yaml"
+	apptypes "github.com/pokt-network/pocket/x/application/types"
+	gatewaytypes "github.com/pokt-network/pocket/x/gateway/types"
+	prooftypes "github.com/pokt-network/pocket/x/proof/types"
+	servicetypes "github.com/pokt-network/pocket/x/service/types"
+	sessiontypes "github.com/pokt-network/pocket/x/session/types"
+	sharedtypes "github.com/pokt-network/pocket/x/shared/types"
+	suppliertypes "github.com/pokt-network/pocket/x/supplier/types"
 )
 
 const (
@@ -64,7 +64,7 @@ var (
 
 	flagFeaturesPath string
 	keyRingFlag      = "--keyring-backend=test"
-	chainIdFlag      = "--chain-id=poktroll"
+	chainIdFlag      = "--chain-id=pocket"
 	// pathUrl points to a local gateway using the PATH framework in centralized mode.
 	pathUrl = "http://localhost:3000/v1" // localhost is kept as the default to streamline local development & testing.
 )
@@ -103,7 +103,7 @@ type suite struct {
 	gocuke.TestingT
 	ctx  context.Context
 	once sync.Once
-	// TODO_TECHDEBT: rename to `poktrolld`.
+	// TODO_TECHDEBT: rename to `pocketd`.
 	pocketd *pocketdBin
 
 	// TODO_IMPROVE: refactor all usages of scenarioState to be fields on the suite struct.
@@ -186,7 +186,7 @@ func TestFeatures(t *testing.T) {
 		Tags("not @manual").Run()
 }
 
-// TODO_TECHDEBT: rename `pocketd` to `poktrolld`.
+// TODO_TECHDEBT: rename `pocketd` to `pocketd`.
 func (s *suite) TheUserHasThePocketdBinaryInstalled() {
 	s.TheUserRunsTheCommand("help")
 }
@@ -750,7 +750,7 @@ func (s *suite) getSession(appName string, serviceId string) *sessiontypes.Sessi
 }
 
 // TODO_TECHDEBT(@bryanchriswhite): Cleanup & deduplicate the code related
-// to this accessors. Ref: https://github.com/pokt-network/poktroll/pull/448/files#r1547930911
+// to this accessors. Ref: https://github.com/pokt-network/pocket/pull/448/files#r1547930911
 func (s *suite) getAccBalance(accName string) int {
 	s.Helper()
 

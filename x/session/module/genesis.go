@@ -3,8 +3,8 @@ package session
 import (
 	"context"
 
-	"github.com/pokt-network/poktroll/x/session/keeper"
-	"github.com/pokt-network/poktroll/x/session/types"
+	"github.com/pokt-network/pocket/x/session/keeper"
+	"github.com/pokt-network/pocket/x/session/types"
 )
 
 // InitGenesis initializes the module's state from a provided genesis state.

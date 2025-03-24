@@ -3,8 +3,8 @@ package testpolylog
 import (
 	"context"
 
-	"github.com/pokt-network/poktroll/pkg/polylog"
-	"github.com/pokt-network/poktroll/pkg/polylog/polyzero"
+	"github.com/pokt-network/pocket/pkg/polylog"
+	"github.com/pokt-network/pocket/pkg/polylog/polyzero"
 )
 
 func NewLoggerWithCtx(

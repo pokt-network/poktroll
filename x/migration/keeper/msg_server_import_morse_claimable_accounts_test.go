@@ -9,11 +9,11 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"github.com/pokt-network/poktroll/testutil/events"
-	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
-	"github.com/pokt-network/poktroll/testutil/testmigration"
-	"github.com/pokt-network/poktroll/x/migration/keeper"
-	migrationtypes "github.com/pokt-network/poktroll/x/migration/types"
+	"github.com/pokt-network/pocket/testutil/events"
+	keepertest "github.com/pokt-network/pocket/testutil/keeper"
+	"github.com/pokt-network/pocket/testutil/testmigration"
+	"github.com/pokt-network/pocket/x/migration/keeper"
+	migrationtypes "github.com/pokt-network/pocket/x/migration/types"
 )
 
 func TestMsgServer_ImportMorseClaimableAccounts_Success(t *testing.T) {

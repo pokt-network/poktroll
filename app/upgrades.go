@@ -3,11 +3,11 @@ package app
 import (
 	upgradetypes "cosmossdk.io/x/upgrade/types"
 
-	"github.com/pokt-network/poktroll/app/upgrades"
+	"github.com/pokt-network/pocket/app/upgrades"
 )
 
 // allUpgrades includes all upgrades that have upgrade strategy implemented.
-// A new upgrade MUST be added BEFORE a new release is created; https://github.com/pokt-network/poktroll/releases).
+// A new upgrade MUST be added BEFORE a new release is created; https://github.com/pokt-network/pocket/releases).
 // The chain upgrade can be scheduled AFTER the new version (with upgrade strategy implemented) is released,
 // so `cosmovisor` can automatically pull the binary from GitHub.
 var allUpgrades = []upgrades.Upgrade{

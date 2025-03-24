@@ -3,7 +3,7 @@ package config
 import (
 	sdkerrors "cosmossdk.io/errors"
 
-	"github.com/pokt-network/poktroll/x/application/types"
+	"github.com/pokt-network/pocket/x/application/types"
 )
 
 var (

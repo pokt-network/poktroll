@@ -10,7 +10,7 @@ import (
 
 // TODO_MAINNET(@red-0ne, #897): Minted, burnt and slashd tokens values might not be completely accurate.
 // While we're keeping this metric for now consider removing in favor of utilizing the `cosmos-exporter` which uses onchain data.
-// Context: https://github.com/cosmos/cosmos-sdk/issues/21614, https://github.com/pokt-network/poktroll/pull/832
+// Context: https://github.com/cosmos/cosmos-sdk/issues/21614, https://github.com/pokt-network/pocket/pull/832
 
 // MintedTokensFromModule is a function to track token minting from a specific module.
 // The metric used is an increment counter, and the label includes the module name for context.

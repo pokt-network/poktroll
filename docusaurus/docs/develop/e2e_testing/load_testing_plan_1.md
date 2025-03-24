@@ -7,7 +7,7 @@ title: Load Testing - Plan #1
 
 _This document outlines the first load test for the Shannon upgrade. IT **IS NOT** intended to be an exhaustive evaluation of the entire system's performance. **IT IS** intended to give visibility into the business logic of the platform, and create a baseline for future load tests._
 
-- _All Poktroll `loadtest` issues on GitHub can be found [here](https://github.com/pokt-network/poktroll/issues?q=label%3Aloadtest+sort%3Aupdated-desc)._
+- _All Poktroll `loadtest` issues on GitHub can be found [here](https://github.com/pokt-network/pocket/issues?q=label%3Aloadtest+sort%3Aupdated-desc)._
 
 ## Table of Contents <!-- omit in toc -->
 
@@ -186,9 +186,9 @@ Legend:
 - `-` Synchronous request
 
 This GitHub does not render colored mermaid diagrams, you can also access the image
-[here](https://github.com/pokt-network/poktroll/assets/1892194/bf965457-bdd0-4a35-a75c-cfcddfbaab5e).
+[here](https://github.com/pokt-network/pocket/assets/1892194/bf965457-bdd0-4a35-a75c-cfcddfbaab5e).
 
-_TODO_IMPROVE: Improve the colors for readability purposes per the comment [here](https://github.com/pokt-network/poktroll/pull/286#pullrequestreview-1806384312)._
+_TODO_IMPROVE: Improve the colors for readability purposes per the comment [here](https://github.com/pokt-network/pocket/pull/286#pullrequestreview-1806384312)._
 
 ```mermaid
 flowchart TB

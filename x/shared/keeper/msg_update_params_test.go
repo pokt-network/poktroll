@@ -6,7 +6,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 
-	"github.com/pokt-network/poktroll/x/shared/types"
+	"github.com/pokt-network/pocket/x/shared/types"
 )
 
 func TestMsgUpdateParams(t *testing.T) {

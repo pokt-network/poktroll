@@ -7,8 +7,8 @@ import (
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	gatewaytypes "github.com/pokt-network/poktroll/x/gateway/types"
-	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
+	gatewaytypes "github.com/pokt-network/pocket/x/gateway/types"
+	sharedtypes "github.com/pokt-network/pocket/x/shared/types"
 )
 
 // EndBlockerUnbondGateways unbonds gateways whose unbonding period has elapsed.

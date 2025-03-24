@@ -6,12 +6,12 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 
-	testevents "github.com/pokt-network/poktroll/testutil/events"
-	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
-	"github.com/pokt-network/poktroll/testutil/sample"
-	"github.com/pokt-network/poktroll/x/application/keeper"
-	apptypes "github.com/pokt-network/poktroll/x/application/types"
-	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
+	testevents "github.com/pokt-network/pocket/testutil/events"
+	keepertest "github.com/pokt-network/pocket/testutil/keeper"
+	"github.com/pokt-network/pocket/testutil/sample"
+	"github.com/pokt-network/pocket/x/application/keeper"
+	apptypes "github.com/pokt-network/pocket/x/application/types"
+	sharedtypes "github.com/pokt-network/pocket/x/shared/types"
 )
 
 func TestMsgServer_UnstakeApplication_Success(t *testing.T) {

@@ -18,10 +18,10 @@ This is a very volatile network. We need to wipe this network frequently to keep
 
 Community members provide explorers for this testnet:
 
-- [poktroll-devnet.cryptonode.tools/](https://poktroll-devnet.cryptonode.tools)
-- [poktroll-testnet.qspider.com/](https://poktroll-testnet.qspider.com)
+- [pocket-devnet.cryptonode.tools/](https://pocket-devnet.cryptonode.tools)
+- [pocket-testnet.qspider.com/](https://pocket-testnet.qspider.com)
 
 ## Deployment Example
 
 We provide an example for the community on how to deploy the Full Node, Relay Miner,
-and PATH Gateway in the [poktroll-docker-compose-example GitHub Repo](https://github.com/pokt-network/poktroll-docker-compose-example).
+and PATH Gateway in the [pocket-docker-compose-example GitHub Repo](https://github.com/pokt-network/pocket-docker-compose-example).

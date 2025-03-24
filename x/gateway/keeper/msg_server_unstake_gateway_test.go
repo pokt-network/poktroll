@@ -7,12 +7,12 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 
-	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
-	"github.com/pokt-network/poktroll/testutil/sample"
-	testsession "github.com/pokt-network/poktroll/testutil/session"
-	"github.com/pokt-network/poktroll/x/gateway/keeper"
-	"github.com/pokt-network/poktroll/x/gateway/types"
-	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
+	keepertest "github.com/pokt-network/pocket/testutil/keeper"
+	"github.com/pokt-network/pocket/testutil/sample"
+	testsession "github.com/pokt-network/pocket/testutil/session"
+	"github.com/pokt-network/pocket/x/gateway/keeper"
+	"github.com/pokt-network/pocket/x/gateway/types"
+	sharedtypes "github.com/pokt-network/pocket/x/shared/types"
 )
 
 func TestMsgServer_UnstakeGateway_Success(t *testing.T) {

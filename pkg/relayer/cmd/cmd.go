@@ -15,25 +15,25 @@ import (
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/spf13/cobra"
 
-	"github.com/pokt-network/poktroll/cmd/signals"
-	"github.com/pokt-network/poktroll/pkg/client/query"
-	"github.com/pokt-network/poktroll/pkg/client/query/cache"
-	"github.com/pokt-network/poktroll/pkg/client/tx"
-	txtypes "github.com/pokt-network/poktroll/pkg/client/tx/types"
-	"github.com/pokt-network/poktroll/pkg/deps/config"
-	"github.com/pokt-network/poktroll/pkg/polylog"
-	"github.com/pokt-network/poktroll/pkg/polylog/polyzero"
-	"github.com/pokt-network/poktroll/pkg/relayer"
-	relayerconfig "github.com/pokt-network/poktroll/pkg/relayer/config"
-	"github.com/pokt-network/poktroll/pkg/relayer/miner"
-	"github.com/pokt-network/poktroll/pkg/relayer/proxy"
-	"github.com/pokt-network/poktroll/pkg/relayer/relay_authenticator"
-	"github.com/pokt-network/poktroll/pkg/relayer/session"
-	apptypes "github.com/pokt-network/poktroll/x/application/types"
-	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
-	servicetypes "github.com/pokt-network/poktroll/x/service/types"
-	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
-	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
+	"github.com/pokt-network/pocket/cmd/signals"
+	"github.com/pokt-network/pocket/pkg/client/query"
+	"github.com/pokt-network/pocket/pkg/client/query/cache"
+	"github.com/pokt-network/pocket/pkg/client/tx"
+	txtypes "github.com/pokt-network/pocket/pkg/client/tx/types"
+	"github.com/pokt-network/pocket/pkg/deps/config"
+	"github.com/pokt-network/pocket/pkg/polylog"
+	"github.com/pokt-network/pocket/pkg/polylog/polyzero"
+	"github.com/pokt-network/pocket/pkg/relayer"
+	relayerconfig "github.com/pokt-network/pocket/pkg/relayer/config"
+	"github.com/pokt-network/pocket/pkg/relayer/miner"
+	"github.com/pokt-network/pocket/pkg/relayer/proxy"
+	"github.com/pokt-network/pocket/pkg/relayer/relay_authenticator"
+	"github.com/pokt-network/pocket/pkg/relayer/session"
+	apptypes "github.com/pokt-network/pocket/x/application/types"
+	prooftypes "github.com/pokt-network/pocket/x/proof/types"
+	servicetypes "github.com/pokt-network/pocket/x/service/types"
+	sessiontypes "github.com/pokt-network/pocket/x/session/types"
+	sharedtypes "github.com/pokt-network/pocket/x/shared/types"
 )
 
 // We're `explicitly omitting default` so the relayer crashes if these aren't specified.
@@ -82,7 +82,7 @@ for such operations.`,
 	cmd.Flags().StringVar(&flagNodeRPCURL, cosmosflags.FlagNode, omittedDefaultFlagValue, "Register the default Cosmos node flag, which is needed to initialize the Cosmos query and tx contexts correctly. It can be used to override the `QueryNodeRPCURL` and `TxNodeRPCURL` fields in the config file if specified.")
 	cmd.Flags().StringVar(&flagNodeGRPCURL, cosmosflags.FlagGRPC, omittedDefaultFlagValue, "Register the default Cosmos node grpc flag, which is needed to initialize the Cosmos query context with grpc correctly. It can be used to override the `QueryNodeGRPCURL` field in the config file if specified.")
 	cmd.Flags().Bool(cosmosflags.FlagGRPCInsecure, true, "Used to initialize the Cosmos query context with grpc security options. It can be used to override the `QueryNodeGRPCInsecure` field in the config file if specified.")
-	cmd.Flags().String(cosmosflags.FlagChainID, "poktroll", "The network chain ID")
+	cmd.Flags().String(cosmosflags.FlagChainID, "pocket", "The network chain ID")
 	cmd.Flags().StringVar(&flagLogLevel, cosmosflags.FlagLogLevel, "debug", "The logging level (debug|info|warn|error)")
 	cmd.Flags().Float64(cosmosflags.FlagGasAdjustment, 1.5, "The adjustment factor to be multiplied by the gas estimate returned by the tx simulation")
 	cmd.Flags().String(cosmosflags.FlagGasPrices, "1upokt", "Set the gas unit price in upokt")
@@ -234,7 +234,7 @@ func setupRelayerDependencies(
 		config.NewSupplyParamsCacheFn[sessiontypes.Params](cache.WithNewBlockCacheClearing), // leaf
 		config.NewSupplyParamsCacheFn[prooftypes.Params](cache.WithNewBlockCacheClearing),   // leaf
 
-		// Setup the key-value caches for poktroll types and configure them to clear on new blocks.
+		// Setup the key-value caches for pocket types and configure them to clear on new blocks.
 		config.NewSupplyKeyValueCacheFn[sharedtypes.Service](cache.WithNewBlockCacheClearing),                // leaf
 		config.NewSupplyKeyValueCacheFn[servicetypes.RelayMiningDifficulty](cache.WithNewBlockCacheClearing), // leaf
 		config.NewSupplyKeyValueCacheFn[apptypes.Application](cache.WithNewBlockCacheClearing),               // leaf

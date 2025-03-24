@@ -10,8 +10,8 @@ import (
 	accounttypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	"go.uber.org/mock/gomock"
 
-	"github.com/pokt-network/poktroll/pkg/client/query"
-	"github.com/pokt-network/poktroll/testutil/mockclient"
+	"github.com/pokt-network/pocket/pkg/client/query"
+	"github.com/pokt-network/pocket/testutil/mockclient"
 )
 
 // addressAccountMap is a map of:

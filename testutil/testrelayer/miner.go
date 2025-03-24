@@ -6,8 +6,8 @@ import (
 
 	"go.uber.org/mock/gomock"
 
-	"github.com/pokt-network/poktroll/pkg/relayer"
-	"github.com/pokt-network/poktroll/testutil/mockrelayer"
+	"github.com/pokt-network/pocket/pkg/relayer"
+	"github.com/pokt-network/pocket/testutil/mockrelayer"
 )
 
 // NewMockOneTimeMiner creates a new mock Miner. This mock Miner will expect a

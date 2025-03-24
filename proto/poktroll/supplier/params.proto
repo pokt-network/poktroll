@@ -1,7 +1,7 @@
 syntax = "proto3";
-package poktroll.supplier;
+package pocket.supplier;
 
-option go_package = "github.com/pokt-network/poktroll/x/supplier/types";
+option go_package = "github.com/pokt-network/pocket/x/supplier/types";
 option (gogoproto.stable_marshaler_all) = true;
 
 import "amino/amino.proto";
@@ -10,7 +10,7 @@ import "cosmos/base/v1beta1/coin.proto";
 
 // Params defines the parameters for the module.
 message Params {
-  option (amino.name) = "poktroll/x/supplier/Params";
+  option (amino.name) = "pocket/x/supplier/Params";
   option (gogoproto.equal) = true;
 
   // min_stake is the minimum amount of uPOKT that a supplier must stake to be

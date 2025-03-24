@@ -7,7 +7,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/spf13/cobra"
 
-	"github.com/pokt-network/poktroll/x/proof/types"
+	"github.com/pokt-network/pocket/x/proof/types"
 )
 
 // AddPaginationFlagsToCmd adds common pagination flags to cmd
@@ -26,10 +26,10 @@ func CmdListClaims() *cobra.Command {
 The claims can be optionally filtered by one of --session-end-height --session-id or --supplier-operator-address flags
 
 Example:
-$ poktrolld q claim list-claims --node $(POCKET_NODE) --home $(POKTROLLD_HOME)
-$ poktrolld q claim list-claims --session-id <session_id> --node $(POCKET_NODE) --home $(POKTROLLD_HOME)
-$ poktrolld q claim list-claims --session-end-height <session_end_height> --node $(POCKET_NODE) --home $(POKTROLLD_HOME)
-$ poktrolld q claim list-claims --supplier-operator-address <supplier_operator_address> --node $(POCKET_NODE) --home $(POKTROLLD_HOME)`,
+$ pocketd q claim list-claims --node $(POCKET_NODE) --home $(POKTROLLD_HOME)
+$ pocketd q claim list-claims --session-id <session_id> --node $(POCKET_NODE) --home $(POKTROLLD_HOME)
+$ pocketd q claim list-claims --session-end-height <session_end_height> --node $(POCKET_NODE) --home $(POKTROLLD_HOME)
+$ pocketd q claim list-claims --supplier-operator-address <supplier_operator_address> --node $(POCKET_NODE) --home $(POKTROLLD_HOME)`,
 		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) (err error) {
 			pageReq, pageErr := client.ReadPageRequest(cmd.Flags())
@@ -81,7 +81,7 @@ A unique claim can be defined via a ` + "`session_id`" + ` that the given ` + "`
 This is done to minimize the rate at which state accumulates by eliminating claims as a long-term factor to persistence requirements.
 
 Example:
-$ poktrolld --home=$(POKTROLLD_HOME) q claim show-claims <session_id> <supplier_operator_address> --node $(POCKET_NODE)`,
+$ pocketd --home=$(POKTROLLD_HOME) q claim show-claims <session_id> <supplier_operator_address> --node $(POCKET_NODE)`,
 		Args: cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			sessionId := args[0]

@@ -8,7 +8,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/pokt-network/poktroll/pkg/observable/channel"
+	"github.com/pokt-network/pocket/pkg/observable/channel"
 )
 
 func TestMap_Word_BytesToPalindrome(t *testing.T) {

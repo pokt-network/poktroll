@@ -6,9 +6,9 @@ import (
 	"cosmossdk.io/depinject"
 	"github.com/cosmos/gogoproto/grpc"
 
-	"github.com/pokt-network/poktroll/pkg/client"
-	"github.com/pokt-network/poktroll/pkg/polylog"
-	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
+	"github.com/pokt-network/pocket/pkg/client"
+	"github.com/pokt-network/pocket/pkg/polylog"
+	prooftypes "github.com/pokt-network/pocket/x/proof/types"
 )
 
 // proofQuerier is a wrapper around the prooftypes.QueryClient that enables the
