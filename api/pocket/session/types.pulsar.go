@@ -2,8 +2,8 @@
 package session
 
 import (
-	application "cosmossdk.io/api/pocket/application"
-	shared "cosmossdk.io/api/pocket/shared"
+	application "github.com/pokt-network/poktroll/api/pocket/application"
+	shared "github.com/pokt-network/poktroll/api/pocket/shared"
 	fmt "fmt"
 	_ "github.com/cosmos/cosmos-proto"
 	runtime "github.com/cosmos/cosmos-proto/runtime"

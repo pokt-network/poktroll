@@ -155,7 +155,7 @@ proto_fix_self_import: ## TODO_TECHDEBT(@bryanchriswhite): Add a proper explanat
 
 
 .PHONY: proto_clean
-proto_clean: ## Delete existing .pb.go or .pb.gw.go files
+proto_clean: ## Delete existing .pb.go, .pb.gw.go (avoid cleaning *.pulsar.go files here)
 	find . \( -name "*.pb.go" -o -name "*.pb.gw.go" \) | xargs --no-run-if-empty rm
 
 ## TODO_TECHDEBT(@bryanchriswhite): Investigate if / how this can be integrated with `proto_regen`

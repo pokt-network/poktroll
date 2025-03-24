@@ -4,7 +4,7 @@ package service
 import (
 	_ "cosmossdk.io/api/amino"
 	v1beta1 "cosmossdk.io/api/cosmos/base/query/v1beta1"
-	shared "cosmossdk.io/api/pocket/shared"
+	shared "github.com/pokt-network/poktroll/api/pocket/shared"
 	fmt "fmt"
 	runtime "github.com/cosmos/cosmos-proto/runtime"
 	_ "github.com/cosmos/gogoproto/gogoproto"
