@@ -58,8 +58,8 @@ Run the following commands to set up your environment:
 
 ```bash
 cat << 'EOT' > ~/.pocketrc
-export NODE="https://shannon-testnet-grove-rpc.beta.pocket.com"
-export NODE_FLAGS="--node=https://shannon-testnet-grove-rpc.beta.pocket.com"
+export NODE="https://shannon-testnet-grove-rpc.beta.poktroll.com"
+export NODE_FLAGS="--node=https://shannon-testnet-grove-rpc.beta.poktroll.com"
 export TX_PARAM_FLAGS="--gas=auto --gas-prices=1upokt --gas-adjustment=1.5 --chain-id=pocket-beta --yes"
 export VALIDATOR_ADDR=$(pocketd keys show validator -a)
 EOT

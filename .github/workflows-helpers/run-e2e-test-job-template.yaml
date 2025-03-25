@@ -26,7 +26,8 @@ spec:
               name: e2e-tests-check-services-script
       containers:
         - name: e2e-tests
-          image: ghcr.io/pokt-network/pocketd:${IMAGE_TAG}
+          # TODO_MAINNET_MIGRATION(@okdas): s/poktroll/pockets
+          image: ghcr.io/pokt-network/poktrolld
           command: ["/bin/sh"]
           args:
             - "-c"

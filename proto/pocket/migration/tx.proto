@@ -179,12 +179,12 @@ message MsgClaimMorseSupplier {
 
   // The bech32-encoded address of the Shannon account to which the claimed tokens
   // will be minted and which become the supplier owner.
-  // See: https://dev.pocket.com/operate/configs/supplier_staking_config#staking-types.
+  // See: https://dev.poktroll.com/operate/configs/supplier_staking_config#staking-types.
   string shannon_owner_address = 1 [(cosmos_proto.scalar) = "cosmos.AddressString", (gogoproto.jsontag) = "shannon_owner_address"];
 
   // The bech32-encoded address of the Shannon account to which will become the supplier operator.
   // If empty, the shannon_owner_address will be used.
-  // See: https://dev.pocket.com/operate/configs/supplier_staking_config#staking-types.
+  // See: https://dev.poktroll.com/operate/configs/supplier_staking_config#staking-types.
   string shannon_operator_address = 2 [(cosmos_proto.scalar) = "cosmos.AddressString", (gogoproto.jsontag) = "shannon_operator_address"];
 
   // The hex-encoded address of the Morse account whose balance will be claimed.

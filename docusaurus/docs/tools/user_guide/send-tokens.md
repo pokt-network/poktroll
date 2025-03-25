@@ -28,7 +28,7 @@ Before initiating the transaction, you must specify the node endpoint you'll be 
 For testing purposes, you can use the provided TestNet node:
 
 ```bash
---node=https://testnet-validated-validator-rpc.pocket.com/
+--node=https://testnet-validated-validator-rpc.poktroll.com/
 ```
 
 On MainNet, ensure you're connected to a trusted full node, validator, or other client on the network.
@@ -52,7 +52,7 @@ For example, the following command sends `1000upokt` from `myWallet` to `pokt1re
 
 ```bash
 pocketd tx bank send myWallet pokt1recipientaddress420 1000upokt \
-    --node=https://testnet-validated-validator-rpc.pocket.com/
+    --node=https://testnet-validated-validator-rpc.poktroll.com/
 ```
 
 ## Step 3: Confirming the Transaction

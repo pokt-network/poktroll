@@ -28,7 +28,7 @@
 **pocket** is the source code for [Pocket Network's](https://pokt.network/)
 [Shannon upgrade](https://docs.pokt.network/pokt-protocol/the-shannon-upgrade).
 
-For technical documentation, visit [dev.pocket.com](https://dev.pocket.com).
+For technical documentation, visit [dev.poktroll.com](https://dev.poktroll.com).
 
 Documentation is maintained in the [docusaurus repo](./docusaurus) and is
 automatically deployed to the link above.

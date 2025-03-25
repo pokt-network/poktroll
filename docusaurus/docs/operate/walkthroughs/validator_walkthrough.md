@@ -76,8 +76,8 @@ the process of interacting with the Shannon network:
 We recommend you put these in your `~/.bashrc` file:
 
 ```bash
-export NODE="https://shannon-testnet-grove-rpc.beta.pocket.com"
-export NODE_FLAGS="--node=https://shannon-testnet-grove-rpc.beta.pocket.com"
+export NODE="https://shannon-testnet-grove-rpc.beta.poktroll.com"
+export NODE_FLAGS="--node=https://shannon-testnet-grove-rpc.beta.poktroll.com"
 export TX_PARAM_FLAGS="--gas=auto --gas-prices=1upokt --gas-adjustment=1.5 --chain-id=pocket-beta --yes"
 export VALIDATOR_ADDR=$(pocketd keys show validator -a)
 ```

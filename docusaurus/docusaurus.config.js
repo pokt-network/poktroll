@@ -36,7 +36,7 @@ const config = {
   baseUrl: "/",
 
   // Custom domain config.
-  // url: "https://docs.pocket.com",
+  // url: "https://docs.poktroll.com",
   // baseUrl: "/",
 
   // GitHub pages deployment config.

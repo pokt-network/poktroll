@@ -533,11 +533,11 @@ func (m *MsgClaimMorseApplicationResponse) GetApplication() *types2.Application 
 type MsgClaimMorseSupplier struct {
 	// The bech32-encoded address of the Shannon account to which the claimed tokens
 	// will be minted and which become the supplier owner.
-	// See: https://dev.pocket.com/operate/configs/supplier_staking_config#staking-types.
+	// See: https://dev.poktroll.com/operate/configs/supplier_staking_config#staking-types.
 	ShannonOwnerAddress string `protobuf:"bytes,1,opt,name=shannon_owner_address,json=shannonOwnerAddress,proto3" json:"shannon_owner_address"`
 	// The bech32-encoded address of the Shannon account to which will become the supplier operator.
 	// If empty, the shannon_owner_address will be used.
-	// See: https://dev.pocket.com/operate/configs/supplier_staking_config#staking-types.
+	// See: https://dev.poktroll.com/operate/configs/supplier_staking_config#staking-types.
 	ShannonOperatorAddress string `protobuf:"bytes,2,opt,name=shannon_operator_address,json=shannonOperatorAddress,proto3" json:"shannon_operator_address"`
 	// The hex-encoded address of the Morse account whose balance will be claimed.
 	// E.g.: 00f9900606fa3d5c9179fc0c8513078a53a2073e

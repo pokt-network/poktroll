@@ -66,7 +66,7 @@ This is a text heavy walkthrough, but if all goes well, you should have somethin
   - In `Shannon` - This actor is responsible for providing the Relay services.
 - `PATH Gateway` - The offchain service that provides Relay services on behalf of an `Application` or `Gateway`.
 
-For more details, please refer to the [Shannon actors documentation](https://dev.pocket.com/actors).
+For more details, please refer to the [Shannon actors documentation](https://dev.poktroll.com/actors).
 
 ## Understanding Actors in the Shannon upgrade
 
@@ -380,7 +380,7 @@ You can check that your address is funded correctly by running:
 pocketd query bank balances $SUPPLIER_ADDR
 ```
 
-_Note: You must wait until `full-node` has synced up to the [current block #](https://shannon.testnet.pokt.network/pocket/block) before this command and the stake command below (`pocketd tx supplier stake-supplier...`) will work successfully. Watch your node's block height [here.](https://dev.pocket.com/operate/quickstart/docker_compose_walkthrough#watch-the-height-)_
+_Note: You must wait until `full-node` has synced up to the [current block #](https://shannon.testnet.pokt.network/pocket/block) before this command and the stake command below (`pocketd tx supplier stake-supplier...`) will work successfully. Watch your node's block height [here.](https://dev.poktroll.com/operate/quickstart/docker_compose_walkthrough#watch-the-height-)_
 
 If you're waiting to see if your transaction has been included in a block, you can run:
 
@@ -392,7 +392,7 @@ pocketd query tx --type=hash <hash>
 
 :::tip Supplier staking config
 
-[dev.pocket.com/operate/configs/supplier_staking_config](https://dev.pocket.com/operate/configs/supplier_staking_config)
+[dev.poktroll.com/operate/configs/supplier_staking_config](https://dev.poktroll.com/operate/configs/supplier_staking_config)
 explains what supplier staking config is and how it can be used.
 
 :::
@@ -434,7 +434,7 @@ pocketd query supplier show-supplier $SUPPLIER_ADDR
 
 :::tip RelayMiner operation config
 
-[dev.pocket.com/operate/configs/relayminer_config](https://dev.pocket.com/operate/configs/relayminer_config)
+[dev.poktroll.com/operate/configs/relayminer_config](https://dev.poktroll.com/operate/configs/relayminer_config)
 explains what the RelayMiner operation config is and how it can be used.
 
 :::
@@ -509,7 +509,7 @@ pocketd query bank balances $APPLICATION_ADDR
 
 :::tip Application staking config
 
-[dev.pocket.com/operate/configs/application_staking_config](https://dev.pocket.com/operate/configs/app_staking_config)
+[dev.poktroll.com/operate/configs/application_staking_config](https://dev.poktroll.com/operate/configs/app_staking_config)
 explains what application staking config is and how it can be used.
 
 :::
@@ -583,7 +583,7 @@ pocketd query bank balances $GATEWAY_ADDR
 
 :::tip Gateway staking config
 
-[dev.pocket.com/operate/configs/gateway_staking_config](https://dev.pocket.com/operate/configs/gateway_staking_config)
+[dev.poktroll.com/operate/configs/gateway_staking_config](https://dev.poktroll.com/operate/configs/gateway_staking_config)
 explains what gateway staking config is and how it can be used.
 
 :::

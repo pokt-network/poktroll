@@ -31,7 +31,7 @@ var Upgrade_0_0_10 = Upgrade{
 		// https://github.com/pokt-network/poktroll/compare/v0.0.9-3...ff76430
 		applyNewParameters := func(ctx context.Context) (err error) {
 			// Add application min stake
-			// Validate with: `pocketd q application params --node=https://testnet-validated-validator-rpc.pocket.com/`
+			// Validate with: `pocketd q application params --node=https://testnet-validated-validator-rpc.poktroll.com/`
 			appParams := keepers.ApplicationKeeper.GetParams(ctx)
 			newMinStakeApp := cosmosTypes.NewCoin("upokt", math.NewInt(100000000))
 			appParams.MinStake = &newMinStakeApp
@@ -41,7 +41,7 @@ var Upgrade_0_0_10 = Upgrade{
 			}
 
 			// Add supplier min stake
-			// Validate with: `pocketd q supplier params --node=https://testnet-validated-validator-rpc.pocket.com/`
+			// Validate with: `pocketd q supplier params --node=https://testnet-validated-validator-rpc.poktroll.com/`
 			supplierParams := keepers.SupplierKeeper.GetParams(ctx)
 			newMinStakeSupplier := cosmosTypes.NewCoin("upokt", math.NewInt(1000000))
 			supplierParams.MinStake = &newMinStakeSupplier
@@ -51,7 +51,7 @@ var Upgrade_0_0_10 = Upgrade{
 			}
 
 			// Add gateway min stake
-			// Validate with: `pocketd q gateway params --node=https://testnet-validated-validator-rpc.pocket.com/`
+			// Validate with: `pocketd q gateway params --node=https://testnet-validated-validator-rpc.poktroll.com/`
 			gatewayParams := keepers.GatewayKeeper.GetParams(ctx)
 			newMinStakeGW := cosmosTypes.NewCoin("upokt", math.NewInt(1000000))
 			gatewayParams.MinStake = &newMinStakeGW
@@ -61,7 +61,7 @@ var Upgrade_0_0_10 = Upgrade{
 			}
 
 			// Adjust proof module parameters
-			// Validate with: `pocketd q proof params --node=https://testnet-validated-validator-rpc.pocket.com/`
+			// Validate with: `pocketd q proof params --node=https://testnet-validated-validator-rpc.poktroll.com/`
 			newProofRequirementThreshold := cosmosTypes.NewCoin("upokt", math.NewInt(20000000))
 			newProofMissingPenalty := cosmosTypes.NewCoin("upokt", math.NewInt(320000000))
 			newProofSubmissionFee := cosmosTypes.NewCoin("upokt", math.NewInt(1000000))
@@ -78,7 +78,7 @@ var Upgrade_0_0_10 = Upgrade{
 			}
 
 			// Add new shared module params
-			// Validate with: `pocketd q shared params --node=https://testnet-validated-validator-rpc.pocket.com/`
+			// Validate with: `pocketd q shared params --node=https://testnet-validated-validator-rpc.poktroll.com/`
 			sharedParams := keepers.SharedKeeper.GetParams(ctx)
 			sharedParams.SupplierUnbondingPeriodSessions = uint64(1)
 			sharedParams.ApplicationUnbondingPeriodSessions = uint64(1)
@@ -94,7 +94,7 @@ var Upgrade_0_0_10 = Upgrade{
 		// https://github.com/pokt-network/poktroll/compare/v0.0.9-3...ff76430
 		applyNewAuthorizations := func(ctx context.Context) (err error) {
 			// Validate before/after with:
-			// `pocketd q authz grants-by-granter pokt10d07y265gmmuvt4z0w9aw880jnsr700j8yv32t --node=https://testnet-validated-validator-rpc.pocket.com/`
+			// `pocketd q authz grants-by-granter pokt10d07y265gmmuvt4z0w9aw880jnsr700j8yv32t --node=https://testnet-validated-validator-rpc.poktroll.com/`
 			grantAuthorizationMessages := []string{
 				"/pocket.gateway.MsgUpdateParam",
 				"/pocket.application.MsgUpdateParam",

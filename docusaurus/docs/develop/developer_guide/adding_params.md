@@ -3,7 +3,7 @@ sidebar_position: 5
 title: Adding Onchain Module Parameters
 ---
 
-# Adding Onchain Module Parameters <!-- omit in toc -->
+## Adding Onchain Module Parameters <!-- omit in toc -->
 
 - [Step-by-Step Instructions](#step-by-step-instructions)
   - [0. If the Module Doesn't Already Support a `MsgUpdateParam` Message](#0-if-the-module-doesnt-already-support-a-msgupdateparam-message)
@@ -41,7 +41,7 @@ Adding a new onchain module parameter involves multiple steps to ensure that the
 parameter is properly integrated into the system. This guide will walk you through
 the process using a generic approach, illustrated by adding a parameter to the `proof` module.
 
-See [pokt-network/pocket#595](https://github.com/pokt-network/poktroll/pull/595) for a real-world example.
+See [pokt-network/poktroll#595](https://github.com/pokt-network/poktroll/pull/595) for a real-world example.
 
 :::note
 

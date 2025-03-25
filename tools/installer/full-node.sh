@@ -30,7 +30,7 @@ UNSAFE_SKIP_BACKUP="true"
 # Snapshot configuration
 # The snapshot functionality allows users to quickly sync a node from a trusted snapshot
 # instead of syncing from genesis, which can be time-consuming.
-# Snapshots are stored at https://snapshots.us-nj.pocket.com/
+# Snapshots are stored at https://snapshots.us-nj.poktroll.com/
 # Supports archival snapshots for all networks (testnet-alpha, testnet-beta, mainnet).
 #
 # This script exclusively uses torrent downloads for snapshots:
@@ -154,7 +154,7 @@ install_dependencies() {
         done
     elif command -v dnf &>/dev/null; then
         print_color $GREEN "Using dnf to install packages."
-        dnf check-update || true  # Ignore non-zero exit code from check-update
+        dnf check-update || true # Ignore non-zero exit code from check-update
 
         # Install packages
         for dep in "${to_install[@]}"; do
@@ -200,7 +200,7 @@ install_dependencies() {
 
     # Re-enable exit on error
     set -e
-    return 0  # Always return success to continue script execution
+    return 0 # Always return success to continue script execution
 }
 
 # Function to get user input
@@ -267,7 +267,7 @@ get_user_input() {
     2)
         USE_SNAPSHOT=true
         # Set snapshot base URL
-        SNAPSHOT_BASE_URL="https://snapshots.us-nj.pocket.com"
+        SNAPSHOT_BASE_URL="https://snapshots.us-nj.poktroll.com"
 
         # Always use torrent
         USE_TORRENT=true
@@ -754,11 +754,11 @@ main() {
     trap 'handle_error $LINENO' ERR
 
     # Continue with installation
-    get_user_input  # This now includes determining the correct pocketd version
+    get_user_input # This now includes determining the correct pocketd version
     create_user
     setup_env_vars
     setup_cosmovisor
-    setup_pocketd  # Now installs the correct version determined in get_user_input
+    setup_pocketd # Now installs the correct version determined in get_user_input
     configure_pocketd
 
     # Apply snapshot if user chose to use it

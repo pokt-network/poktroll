@@ -82,8 +82,8 @@ the process of interacting with the Shannon network:
 We recommend you put these in your `~/.bashrc` file:
 
 ```bash
-export NODE="https://shannon-testnet-grove-rpc.beta.pocket.com"
-export NODE_FLAGS="--node=https://shannon-testnet-grove-rpc.beta.pocket.com"
+export NODE="https://shannon-testnet-grove-rpc.beta.poktroll.com"
+export NODE_FLAGS="--node=https://shannon-testnet-grove-rpc.beta.poktroll.com"
 export TX_PARAM_FLAGS="--gas=auto --gas-prices=1upokt --gas-adjustment=1.5 --chain-id=pocket-beta --yes"
 export SUPPLIER_ADDR=$(pocketd keys show supplier -a)
 ```
@@ -105,7 +105,7 @@ echo "Supplier address: $SUPPLIER_ADDR"
 ```
 
 Then use the [Shannon Beta TestNet faucet](https://faucet.beta.testnet.pokt.network/) to fund the (supplier owner address) account.
-See [Non-Custodial Staking](https://dev.pocket.com/operate/configs/supplier_staking_config#non-custodial-staking) for more information about supplier owner vs operator and non-custodial staking.
+See [Non-Custodial Staking](https://dev.poktroll.com/operate/configs/supplier_staking_config#non-custodial-staking) for more information about supplier owner vs operator and non-custodial staking.
 
 Afterwards, you can query the balance using the following command:
 
@@ -186,9 +186,9 @@ default_signing_key_names:
   - supplier
 smt_store_path: /home/pocket/.pocket/smt
 pocket_node:
-  query_node_rpc_url: https://shannon-testnet-grove-rpc.beta.pocket.com
-  query_node_grpc_url: https://shannon-testnet-grove-grpc.beta.pocket.com:443
-  tx_node_rpc_url: https://shannon-testnet-grove-rpc.beta.pocket.com
+  query_node_rpc_url: https://shannon-testnet-grove-rpc.beta.poktroll.com
+  query_node_grpc_url: https://shannon-testnet-grove-grpc.beta.poktroll.com:443
+  tx_node_rpc_url: https://shannon-testnet-grove-rpc.beta.poktroll.com
 suppliers:
   - service_id: "morse"
     service_config:
@@ -241,12 +241,12 @@ for Beta Testnet at `http://149.28.34.68:9090`.
 If `grpc-insecure=false`, then it **MUST** be an HTTPS port, with TLS.
 
 The Grove team exposed one such endpoint on one of our validators for Beta Testnet
-at `https://shannon-testnet-grove-grpc.beta.pocket.com:443`.
+at `https://shannon-testnet-grove-grpc.beta.poktroll.com:443`.
 
 It can be validated with:
 
 ```bash
-grpcurl shannon-testnet-grove-grpc.beta.pocket.com:443 list
+grpcurl shannon-testnet-grove-grpc.beta.poktroll.com:443 list
 ```
 
 Note that no `-plaintext` flag is required when an endpoint is TLS terminated and
@@ -277,5 +277,5 @@ pocketd query supplier -h
 Then, you can query for all services like so:
 
 ```bash
-pocketd query supplier list-suppliers --node https://shannon-testnet-grove-rpc.beta.pocket.com --output json | jq
+pocketd query supplier list-suppliers --node https://shannon-testnet-grove-rpc.beta.poktroll.com --output json | jq
 ```

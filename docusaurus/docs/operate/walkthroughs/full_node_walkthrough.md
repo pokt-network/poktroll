@@ -275,7 +275,7 @@ echo "Sync from genesis will use the following version of pocketd as a starting 
 
 :::info Snapshot Explorer
 
-You can visit [snapshots.us-nj.pocket.com](https://snapshots.us-nj.pocket.com) directly in your browser to explore available snapshots.
+You can visit [snapshots.us-nj.poktroll.com](https://snapshots.us-nj.poktroll.com) directly in your browser to explore available snapshots.
 
 :::
 
@@ -288,7 +288,7 @@ If you prefer to use a snapshot (recommended for faster setup), you need to chec
     echo "############################################"
 
     # Base URL for snapshots
-    SNAPSHOT_BASE_URL="https://snapshots.us-nj.pocket.com"
+    SNAPSHOT_BASE_URL="https://snapshots.us-nj.poktroll.com"
 
     # Get latest snapshot information for testnet-beta
     LATEST_SNAPSHOT_HEIGHT=$(curl -s "$SNAPSHOT_BASE_URL/testnet-beta-latest-archival.txt")
@@ -316,7 +316,7 @@ If you prefer to use a snapshot (recommended for faster setup), you need to chec
     echo "############################################"
 
     # Base URL for snapshots
-    SNAPSHOT_BASE_URL="https://snapshots.us-nj.pocket.com"
+    SNAPSHOT_BASE_URL="https://snapshots.us-nj.poktroll.com"
 
     # Get latest snapshot information for testnet-alpha
     LATEST_SNAPSHOT_HEIGHT=$(curl -s "$SNAPSHOT_BASE_URL/testnet-alpha-latest-archival.txt")
@@ -344,7 +344,7 @@ If you prefer to use a snapshot (recommended for faster setup), you need to chec
     echo "############################################"
 
     # Base URL for snapshots
-    SNAPSHOT_BASE_URL="https://snapshots.us-nj.pocket.com"
+    SNAPSHOT_BASE_URL="https://snapshots.us-nj.poktroll.com"
 
     # Get latest snapshot information for mainnet
     LATEST_SNAPSHOT_HEIGHT=$(curl -s "$SNAPSHOT_BASE_URL/mainnet-latest-archival.txt")

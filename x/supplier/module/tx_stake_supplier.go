@@ -28,7 +28,7 @@ supports both custodial and non-custodial staking of the signer's tokens.
 It sources the necessary information from the provided configuration file.
 
 For more details on the staking process, please refer to the supplier staking documentation at:
-https://dev.pocket.com/operate/configs/supplier_staking_config
+https://dev.poktroll.com/operate/configs/supplier_staking_config
 
 Example:
 $ pocketd tx supplier stake-supplier --config stake_config.yaml --keyring-backend test  --from $(OWNER_ADDRESS) --node $(POCKET_NODE) --home $(POCKETD_HOME)`,

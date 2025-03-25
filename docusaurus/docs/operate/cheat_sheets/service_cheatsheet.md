@@ -22,7 +22,7 @@ title: Service Creation (~ 5 min)
 You can query for all services like so:
 
 ```bash
-pocketd query service all-services --node https://shannon-testnet-grove-rpc.beta.pocket.com --output json | jq
+pocketd query service all-services --node https://shannon-testnet-grove-rpc.beta.poktroll.com --output json | jq
 ```
 
 Here is an example of the output on Beta TestNet as of writing this document:
@@ -68,7 +68,7 @@ Here is a concrete copy-pasta assuming you have created and funded a new account
 
 ```bash
 pocketd tx service add-service "svc-$USER" "service description for $USER" 13 \
-    --node https://shannon-testnet-grove-rpc.beta.pocket.com \
+    --node https://shannon-testnet-grove-rpc.beta.poktroll.com \
     --fees 1upokt --from $USER --chain-id pocket-beta
 ```
 
@@ -76,7 +76,7 @@ Optionally, you can add some more flags to be ultra-verbose about your local env
 
 ```bash
 pocketd tx service add-service "svc-$USER" "service description for $USER" 13 \
-    --node https://shannon-testnet-grove-rpc.beta.pocket.com \
+    --node https://shannon-testnet-grove-rpc.beta.poktroll.com \
     --fees 1upokt --from $USER --chain-id pocket-beta \
     --home ~/.pocket --keyring-backend test \
     --yes --output json

@@ -39,7 +39,7 @@ from [PR #498](https://github.com/pokt-network/poktroll/pull/498).
 
 ## Grafana logs
 
-As an example, this [Grafana link](https://grafana.pocket.com/explore?schemaVersion=1&panes=%7B%22TtK%22:%7B%22datasource%22:%22P8E80F9AEF21F6940%22,%22queries%22:%5B%7B%22refId%22:%22A%22,%22expr%22:%22%7Bcontainer%3D%5C%22pocketd%5C%22,%20namespace%3D%5C%22devnet-issue-477%5C%22%7D%20%7C%3D%20%60%60%20%7C%20json%22,%22queryType%22:%22range%22,%22datasource%22:%7B%22type%22:%22loki%22,%22uid%22:%22P8E80F9AEF21F6940%22%7D,%22editorMode%22:%22builder%22%7D%5D,%22range%22:%7B%22from%22:%22now-1h%22,%22to%22:%22now%22%7D,%22panelsState%22:%7B%22logs%22:%7B%22logs%22:%7B%22visualisationType%22:%22logs%22%7D%7D%7D%7D%7D&orgId=1) links to the logs for `devnet-issue-477` from [PR #477](https://github.com/pokt-network/poktroll/pull/477)
+As an example, this [Grafana link](https://grafana.poktroll.com/explore?schemaVersion=1&panes=%7B%22TtK%22:%7B%22datasource%22:%22P8E80F9AEF21F6940%22,%22queries%22:%5B%7B%22refId%22:%22A%22,%22expr%22:%22%7Bcontainer%3D%5C%22pocketd%5C%22,%20namespace%3D%5C%22devnet-issue-477%5C%22%7D%20%7C%3D%20%60%60%20%7C%20json%22,%22queryType%22:%22range%22,%22datasource%22:%7B%22type%22:%22loki%22,%22uid%22:%22P8E80F9AEF21F6940%22%7D,%22editorMode%22:%22builder%22%7D%5D,%22range%22:%7B%22from%22:%22now-1h%22,%22to%22:%22now%22%7D,%22panelsState%22:%7B%22logs%22:%7B%22logs%22:%7B%22visualisationType%22:%22logs%22%7D%7D%7D%7D%7D&orgId=1) links to the logs for `devnet-issue-477` from [PR #477](https://github.com/pokt-network/poktroll/pull/477)
 
 ![Grafana logs explorer](./grafana_explore_logs.png)
 
@@ -71,23 +71,27 @@ Devnets are provisioned with the same mnemonc phrases as LocalNet, so it is poss
 from the keybase - the user just needs to change the `--node=` flag to point to the DevNet RPC endpoint when using the `pocketd` CLI.
 :::
 
-The DevNet RPC endpoint is exposed on `https://devnet-**NETWORK_NAME**-validator-rpc.pocket.com`.
+The DevNet RPC endpoint is exposed on `https://devnet-**NETWORK_NAME**-validator-rpc.poktroll.com`.
 
 It is possible to reuse the LocalNet make targets with DevNet endpoints. For example
 
 ```bash
-POCKET_NODE=https://devnet-issue-420-validator-rpc.pocket.com make supplier_list
+POCKET_NODE=https://devnet-issue-420-validator-rpc.poktroll.com make supplier_list
 ```
 
 ## DevNet types
 
 We have two types of DevNets:
+
 1. Automatically provisioned by `devnet-test-e2e` GitHub label.
-  - Their main purpose is to automatically run e2e tests for each PR this label has been assigned to.
-  - They are not easily modified and configured. E.g. we automatically provision single instance of each actor only.
+
+- Their main purpose is to automatically run e2e tests for each PR this label has been assigned to.
+- They are not easily modified and configured. E.g. we automatically provision single instance of each actor only.
+
 2. Manually provisioned by creating a file in [protocol-infra repo under `devnet-configs` directory](https://github.com/pokt-network/protocol-infra/tree/main/devnets-configs).
-  - Their main purpose is for testing new features or configurations that require more complex setups than the first type can provide.
-  - They are easily modified and configured, allowing you to add multiple instances of each actor.
+
+- Their main purpose is for testing new features or configurations that require more complex setups than the first type can provide.
+- They are easily modified and configured, allowing you to add multiple instances of each actor.
 
 ## Manually provisioned DevNets
 
@@ -110,9 +114,11 @@ team, open a pull request (PR) to delete the YAML file from the `main` branch. P
 New container images are automatically built on each merge to the `main` branch and each push to non-main branches for which there exists a PR with the `push-image` label.
 Images named according to the following format:
 
-```
-ghcr.io/pokt-network/pocketd:sha-7042be3
-ghcr.io/pokt-network/pocketd:sha-7042be3922245fb4313ee90e1f28d0f402b700a0
+TODO_MAINNET_MIGRATION(@okdas): s/poktroll/pocket
+
+```bash
+ghcr.io/pokt-network/poktrolld:sha-7042be3
+ghcr.io/pokt-network/poktrolld:sha-7042be3922245fb4313ee90e1f28d0f402b700a0
 ```
 
 You can update the version of DevNet by changing this parameter in the devnet config file:
@@ -132,7 +138,6 @@ You can modify the number of each actor by changing the devnet config file:
 :::info
 We use the same ignite `config.yaml` to provision genesis in devnet as is used in localnet. Because localnet supports a max of 3 of each actor type, any devnet deployment with more actors would also require additional corresponding genesis state to be included in `config.yaml`, or on-demand account funding and staking. General rule of thumb: don't go over `3`.
 :::
-
 
 ```yaml
 path_gateways:
@@ -156,7 +161,6 @@ IMAGE_TAG=**IMAGE TAG NAME FROM DEVNET CONFIG** NAMESPACE=devnet-**NETWORK NAME*
 - **JOB_NAME**: A unique identifier for the e2e test job. It follows the format e2e-test-**GITSHA FROM IMAGE TAG**.
 - **POCKET_NODE**: The address of the pocket node, following the format tcp://devnet-**NETWORK NAME**-validator-pocketd:26657.
 
-
 **Example**
 
 ```bash
@@ -164,13 +168,14 @@ IMAGE_TAG=sha-7042be3 NAMESPACE=devnet-sophon JOB_NAME=e2e-test-7042be3 POCKET_N
 ```
 
 :::info
+
 - The `IMAGE_TAG` must match the tag of the image from the devnet config YAML file.
 - The name of the devnet in the environment variables must be specified.
 - The Kubernetes context must be pointed to the protocol cluster. This command can be used to change context:
   ```bash
   kubectl config set-context gke_protocol-us-central1-d505_us-central1_protocol-us-central1
   ```
-:::
+  :::
 
 ### Staking actors
 
@@ -179,9 +184,9 @@ DevNet. Additionally, DevNets match the hostnames with LocalNet, making it possi
 For example, this command stakes supplier2 on DevNet `devnet-sophon`:
 
 ```bash
-POCKET_NODE=https://devnet-sophon-validator-rpc.pocket.com make supplier2_stake
+POCKET_NODE=https://devnet-sophon-validator-rpc.poktroll.com make supplier2_stake
 ```
 
 :::note
-Only manually provisioned DevNets have more than one actor to stake. 
+Only manually provisioned DevNets have more than one actor to stake.
 :::

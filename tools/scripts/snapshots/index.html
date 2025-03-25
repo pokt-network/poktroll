@@ -1,335 +1,433 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Poktroll Network Snapshots</title>
     <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            line-height: 1.6;
-            color: #333;
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 20px;
-            background-color: #f5f5f5;
-        }
-        header {
-            background-color: #27ae60;
-            color: white;
-            padding: 20px;
-            border-radius: 5px;
-            margin-bottom: 20px;
-            text-align: center;
-        }
-        h1, h2, h3 {
-            color: #2c3e50;
-        }
-        .container {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 20px;
-        }
-        .card {
-            background-color: white;
-            border-radius: 5px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-            padding: 20px;
-            margin-bottom: 20px;
-            flex: 1;
-            min-width: 300px;
-        }
-        .network-selector {
-            margin-bottom: 20px;
-            text-align: center;
-        }
-        .network-selector button {
-            background-color: #3498db;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            margin: 0 5px;
-            border-radius: 5px;
-            cursor: pointer;
-            transition: background-color 0.3s;
-        }
-        .network-selector button.active {
-            background-color: #2980b9;
-        }
-        .network-selector button:hover {
-            background-color: #2980b9;
-        }
-        code {
-            background-color: #f8f8f8;
-            border: 1px solid #ddd;
-            border-radius: 3px;
-            font-family: monospace;
-            padding: 2px 5px;
-            display: block;
-            overflow-x: auto;
-            white-space: pre;
-            padding: 10px;
-            margin: 10px 0;
-        }
-        .copy-btn {
-            background-color: #3498db;
-            color: white;
-            border: none;
-            padding: 5px 10px;
-            border-radius: 3px;
-            cursor: pointer;
-            font-size: 12px;
-            margin-top: 5px;
-        }
-        .copy-btn:hover {
-            background-color: #2980b9;
-        }
-        .loading {
-            text-align: center;
-            padding: 20px;
-            font-style: italic;
-            color: #7f8c8d;
-        }
-        .snapshot-info {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 10px;
-        }
-        .snapshot-info span {
-            font-weight: bold;
-        }
-        .rss-link {
-            display: inline-block;
-            margin-top: 10px;
-            color: #e67e22;
-            text-decoration: none;
-        }
-        .rss-link:hover {
-            text-decoration: underline;
-        }
-        footer {
-            margin-top: 30px;
-            text-align: center;
-            color: #7f8c8d;
-            font-size: 0.9em;
-        }
-        .docs-link {
-            display: inline-block;
-            background-color: #e74c3c;
-            color: white;
-            text-decoration: none;
-            padding: 10px 20px;
-            border-radius: 5px;
-            margin-top: 10px;
-            transition: background-color 0.3s;
-        }
-        .docs-link:hover {
-            background-color: #c0392b;
-        }
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        line-height: 1.6;
+        color: #333;
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 20px;
+        background-color: #f5f5f5;
+      }
+      header {
+        background-color: #27ae60;
+        color: white;
+        padding: 20px;
+        border-radius: 5px;
+        margin-bottom: 20px;
+        text-align: center;
+      }
+      h1,
+      h2,
+      h3 {
+        color: #2c3e50;
+      }
+      .container {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 20px;
+      }
+      .card {
+        background-color: white;
+        border-radius: 5px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        padding: 20px;
+        margin-bottom: 20px;
+        flex: 1;
+        min-width: 300px;
+      }
+      .network-selector {
+        margin-bottom: 20px;
+        text-align: center;
+      }
+      .network-selector button {
+        background-color: #3498db;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        margin: 0 5px;
+        border-radius: 5px;
+        cursor: pointer;
+        transition: background-color 0.3s;
+      }
+      .network-selector button.active {
+        background-color: #2980b9;
+      }
+      .network-selector button:hover {
+        background-color: #2980b9;
+      }
+      code {
+        background-color: #f8f8f8;
+        border: 1px solid #ddd;
+        border-radius: 3px;
+        font-family: monospace;
+        padding: 2px 5px;
+        display: block;
+        overflow-x: auto;
+        white-space: pre;
+        padding: 10px;
+        margin: 10px 0;
+      }
+      .copy-btn {
+        background-color: #3498db;
+        color: white;
+        border: none;
+        padding: 5px 10px;
+        border-radius: 3px;
+        cursor: pointer;
+        font-size: 12px;
+        margin-top: 5px;
+      }
+      .copy-btn:hover {
+        background-color: #2980b9;
+      }
+      .loading {
+        text-align: center;
+        padding: 20px;
+        font-style: italic;
+        color: #7f8c8d;
+      }
+      .snapshot-info {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 10px;
+      }
+      .snapshot-info span {
+        font-weight: bold;
+      }
+      .rss-link {
+        display: inline-block;
+        margin-top: 10px;
+        color: #e67e22;
+        text-decoration: none;
+      }
+      .rss-link:hover {
+        text-decoration: underline;
+      }
+      footer {
+        margin-top: 30px;
+        text-align: center;
+        color: #7f8c8d;
+        font-size: 0.9em;
+      }
+      .docs-link {
+        display: inline-block;
+        background-color: #e74c3c;
+        color: white;
+        text-decoration: none;
+        padding: 10px 20px;
+        border-radius: 5px;
+        margin-top: 10px;
+        transition: background-color 0.3s;
+      }
+      .docs-link:hover {
+        background-color: #c0392b;
+      }
     </style>
-</head>
-<body>
+  </head>
+  <body>
     <header>
-        <h1>Poktroll Network Snapshots</h1>
-        <p>Download the latest blockchain snapshots to quickly sync your node</p>
+      <h1>Poktroll Network Snapshots</h1>
+      <p>Download the latest blockchain snapshots to quickly sync your node</p>
     </header>
 
     <div class="network-selector">
-        <button id="mainnet-btn">Mainnet</button>
-        <button id="testnet-beta-btn" class="active">Testnet Beta</button>
-        <button id="testnet-alpha-btn">Testnet Alpha</button>
+      <button id="mainnet-btn">Mainnet</button>
+      <button id="testnet-beta-btn" class="active">Testnet Beta</button>
+      <button id="testnet-alpha-btn">Testnet Alpha</button>
     </div>
 
     <div class="container">
-        <div class="card">
-            <h2>Latest Archival Snapshot</h2>
-            <p><strong>Recommended for validators and full nodes.</strong> Contains complete blockchain data including historical states.</p>
-            <div id="archival-snapshot-info" class="loading">Loading latest archival snapshot info...</div>
-            <h3>Download with BitTorrent (aria2c)</h3>
-            <div id="archival-torrent-link">
-                <code id="archival-torrent-code">Loading torrent link...</code>
-                <button class="copy-btn" data-target="archival-torrent-code">Copy</button>
-            </div>
+      <div class="card">
+        <h2>Latest Archival Snapshot</h2>
+        <p>
+          <strong>Recommended for validators and full nodes.</strong> Contains
+          complete blockchain data including historical states.
+        </p>
+        <div id="archival-snapshot-info" class="loading">
+          Loading latest archival snapshot info...
         </div>
+        <h3>Download with BitTorrent (aria2c)</h3>
+        <div id="archival-torrent-link">
+          <code id="archival-torrent-code">Loading torrent link...</code>
+          <button class="copy-btn" data-target="archival-torrent-code">
+            Copy
+          </button>
+        </div>
+      </div>
     </div>
 
     <div class="card">
-        <h2>Installation Instructions</h2>
-        <p>The easiest way to set up a new Poktroll node is to use the official installer script, which automatically handles downloading and applying snapshots:</p>
-        <ol>
-            <li>Follow the <a href="https://dev.pocket.com/operate/cheat_sheets/full_node_cheatsheet" target="_blank" class="docs-link">Full Node Cheat Sheet</a> to install a new node</li>
-            <li>The installer will automatically download and apply the latest snapshot</li>
-            <li>No manual snapshot handling is required for new installations</li>
-        </ol>
-        <p>For more detailed instructions, visit the <a href="https://dev.pocket.com/operate/cheat_sheets/full_node_cheatsheet" target="_blank">Poktroll Documentation</a>.</p>
+      <h2>Installation Instructions</h2>
+      <p>
+        The easiest way to set up a new Poktroll node is to use the official
+        installer script, which automatically handles downloading and applying
+        snapshots:
+      </p>
+      <ol>
+        <li>
+          Follow the
+          <a
+            href="https://dev.poktroll.com/operate/cheat_sheets/full_node_cheatsheet"
+            target="_blank"
+            class="docs-link"
+            >Full Node Cheat Sheet</a
+          >
+          to install a new node
+        </li>
+        <li>
+          The installer will automatically download and apply the latest
+          snapshot
+        </li>
+        <li>No manual snapshot handling is required for new installations</li>
+      </ol>
+      <p>
+        For more detailed instructions, visit the
+        <a
+          href="https://dev.poktroll.com/operate/cheat_sheets/full_node_cheatsheet"
+          target="_blank"
+          >Poktroll Documentation</a
+        >.
+      </p>
     </div>
 
     <div class="card">
-        <h2>Applying Snapshots to Existing Nodes</h2>
-        <p>If you already have a node and want to apply a snapshot to speed up syncing or recover from corruption:</p>
-        <ol>
-            <li>Stop your node (method depends on your setup - systemd, docker, etc.)</li>
-            <li>Download a snapshot using the BitTorrent command above</li>
-            <li>Clear your existing data directory (backup first if needed):</li>
-            <code id="clear-command">rm -rf $HOME/.pocket/data/*</code>
-            <button class="copy-btn" data-target="clear-command">Copy</button>
-            <li>Extract the snapshot to your data directory:</li>
-            <code id="extract-command">tar -xf /path/to/snapshot.tar.zst -C $HOME/.pocket/data/</code>
-            <button class="copy-btn" data-target="extract-command">Copy</button>
-            <li>Start your node again</li>
-            <li>Verify your node is syncing: <code>curl -s http://localhost:26657/status | jq '.result.sync_info'</code></li>
-        </ol>
-        <p>Note: The archival snapshot contains the complete blockchain data.</p>
-        <p><strong>Don't have aria2c?</strong> Install it with: <code>sudo apt-get install aria2</code> (Debian/Ubuntu) or <code>brew install aria2</code> (macOS)</p>
-        <p><strong>Aria2c tips:</strong> Add <code>--max-connection-per-server=16</code> for faster downloads, or <code>--seed-ratio=1.0</code> to help seed back to the network.</p>
+      <h2>Applying Snapshots to Existing Nodes</h2>
+      <p>
+        If you already have a node and want to apply a snapshot to speed up
+        syncing or recover from corruption:
+      </p>
+      <ol>
+        <li>
+          Stop your node (method depends on your setup - systemd, docker, etc.)
+        </li>
+        <li>Download a snapshot using the BitTorrent command above</li>
+        <li>Clear your existing data directory (backup first if needed):</li>
+        <code id="clear-command">rm -rf $HOME/.pocket/data/*</code>
+        <button class="copy-btn" data-target="clear-command">Copy</button>
+        <li>Extract the snapshot to your data directory:</li>
+        <code id="extract-command"
+          >tar -xf /path/to/snapshot.tar.zst -C $HOME/.pocket/data/</code
+        >
+        <button class="copy-btn" data-target="extract-command">Copy</button>
+        <li>Start your node again</li>
+        <li>
+          Verify your node is syncing:
+          <code
+            >curl -s http://localhost:26657/status | jq
+            '.result.sync_info'</code
+          >
+        </li>
+      </ol>
+      <p>Note: The archival snapshot contains the complete blockchain data.</p>
+      <p>
+        <strong>Don't have aria2c?</strong> Install it with:
+        <code>sudo apt-get install aria2</code> (Debian/Ubuntu) or
+        <code>brew install aria2</code> (macOS)
+      </p>
+      <p>
+        <strong>Aria2c tips:</strong> Add
+        <code>--max-connection-per-server=16</code> for faster downloads, or
+        <code>--seed-ratio=1.0</code> to help seed back to the network.
+      </p>
     </div>
 
     <div class="card">
-        <h2>Available Snapshots</h2>
-        <p>We use BitTorrent to distribute snapshots because it:</p>
-        <ul>
-            <li>Reduces server load by distributing the download across peers</li>
-            <li>Provides faster downloads as you get pieces from multiple sources</li>
-            <li>Improves reliability - downloads can resume if interrupted</li>
-            <li>Helps the network by seeding to others (if you leave seed-time > 0)</li>
-        </ul>
-        <p>You can set up a torrent client to automatically download the latest snapshots from the <a id="rss-feed-link" href="#" class="rss-link">RSS Feed</a>.</p>
-        <div id="all-snapshots" class="loading">Loading available snapshots...</div>
+      <h2>Available Snapshots</h2>
+      <p>We use BitTorrent to distribute snapshots because it:</p>
+      <ul>
+        <li>Reduces server load by distributing the download across peers</li>
+        <li>
+          Provides faster downloads as you get pieces from multiple sources
+        </li>
+        <li>Improves reliability - downloads can resume if interrupted</li>
+        <li>
+          Helps the network by seeding to others (if you leave seed-time > 0)
+        </li>
+      </ul>
+      <p>
+        You can set up a torrent client to automatically download the latest
+        snapshots from the
+        <a id="rss-feed-link" href="#" class="rss-link">RSS Feed</a>.
+      </p>
+      <div id="all-snapshots" class="loading">
+        Loading available snapshots...
+      </div>
     </div>
 
     <footer>
-        <p>Snapshots are provided by <a href="https://grove.city" target="_blank">GROVE</a> | <a href="https://dev.pocket.com" target="_blank">Official Documentation</a></p>
+      <p>
+        Snapshots are provided by
+        <a href="https://grove.city" target="_blank">GROVE</a> |
+        <a href="https://dev.poktroll.com" target="_blank"
+          >Official Documentation</a
+        >
+      </p>
     </footer>
 
     <script>
-        // Current network selection
-        let currentNetwork = 'testnet-beta';
-        const baseUrl = 'https://snapshots.us-nj.pocket.com';
+      // Current network selection
+      let currentNetwork = "testnet-beta";
+      const baseUrl = "https://snapshots.us-nj.poktroll.com";
 
-        // Initialize the page
-        document.addEventListener('DOMContentLoaded', function() {
-            // Set up network selector buttons
-            document.getElementById('mainnet-btn').addEventListener('click', () => switchNetwork('mainnet'));
-            document.getElementById('testnet-beta-btn').addEventListener('click', () => switchNetwork('testnet-beta'));
-            document.getElementById('testnet-alpha-btn').addEventListener('click', () => switchNetwork('testnet-alpha'));
+      // Initialize the page
+      document.addEventListener("DOMContentLoaded", function () {
+        // Set up network selector buttons
+        document
+          .getElementById("mainnet-btn")
+          .addEventListener("click", () => switchNetwork("mainnet"));
+        document
+          .getElementById("testnet-beta-btn")
+          .addEventListener("click", () => switchNetwork("testnet-beta"));
+        document
+          .getElementById("testnet-alpha-btn")
+          .addEventListener("click", () => switchNetwork("testnet-alpha"));
 
-            // Set up copy buttons
-            document.querySelectorAll('.copy-btn').forEach(button => {
-                button.addEventListener('click', function() {
-                    const targetId = this.getAttribute('data-target');
-                    const codeElement = document.getElementById(targetId);
-                    navigator.clipboard.writeText(codeElement.textContent.trim());
-                    
-                    // Visual feedback
-                    const originalText = this.textContent;
-                    this.textContent = 'Copied!';
-                    setTimeout(() => {
-                        this.textContent = originalText;
-                    }, 2000);
-                });
-            });
+        // Set up copy buttons
+        document.querySelectorAll(".copy-btn").forEach((button) => {
+          button.addEventListener("click", function () {
+            const targetId = this.getAttribute("data-target");
+            const codeElement = document.getElementById(targetId);
+            navigator.clipboard.writeText(codeElement.textContent.trim());
 
-            // Load initial data
-            loadSnapshotData('testnet-beta');
+            // Visual feedback
+            const originalText = this.textContent;
+            this.textContent = "Copied!";
+            setTimeout(() => {
+              this.textContent = originalText;
+            }, 2000);
+          });
         });
 
-        // Switch between networks
-        function switchNetwork(network) {
-            currentNetwork = network;
-            
-            // Update active button
-            document.querySelectorAll('.network-selector button').forEach(btn => {
-                btn.classList.remove('active');
-            });
-            document.getElementById(`${network}-btn`).classList.add('active');
-            
-            // Reload data for the selected network
-            loadSnapshotData(network);
-        }
+        // Load initial data
+        loadSnapshotData("testnet-beta");
+      });
 
-        // Load snapshot data for the selected network
-        function loadSnapshotData(network) {
-            // Reset loading states
-            document.getElementById('archival-snapshot-info').innerHTML = 'Loading latest archival snapshot info...';
-            document.getElementById('archival-snapshot-info').classList.add('loading');
-            document.getElementById('all-snapshots').innerHTML = 'Loading available snapshots...';
-            document.getElementById('all-snapshots').classList.add('loading');
-            
-            // Update RSS feed link
-            document.getElementById('rss-feed-link').href = `${baseUrl}/${network}-torrents.xml`;
-            
-            // Fetch archival height
-            fetch(`${baseUrl}/${network}-latest-archival.txt`)
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error(`Failed to fetch archival height: ${response.status} ${response.statusText}`);
-                    }
-                    return response.text();
-                })
-                .then(archivalHeight => {
-                    // Update archival snapshot info section
-                    updateSnapshotInfo('archival', archivalHeight.trim(), network);
-                    
-                    // Now fetch the RSS feed for all available snapshots
-                    return fetch(`${baseUrl}/${network}-torrents.xml`);
-                })
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error(`Failed to fetch RSS feed: ${response.status} ${response.statusText}`);
-                    }
-                    return response.text();
-                })
-                .then(data => {
-                    const parser = new DOMParser();
-                    const xml = parser.parseFromString(data, 'application/xml');
-                    const items = xml.querySelectorAll('item');
-                    
-                    if (items.length === 0) {
-                        throw new Error('No items found in the RSS feed');
-                    }
-                    
-                    let snapshotsHtml = '<ul>';
-                    items.forEach(item => {
-                        const title = item.querySelector('title').textContent;
-                        const link = item.querySelector('enclosure').getAttribute('url');
-                        snapshotsHtml += `<li><a href="${link}" target="_blank">${title}</a></li>`;
-                    });
-                    snapshotsHtml += '</ul>';
-                    
-                    document.getElementById('all-snapshots').innerHTML = snapshotsHtml;
-                    document.getElementById('all-snapshots').classList.remove('loading');
-                })
-                .catch(error => {
-                    console.error('Error loading snapshot data:', error);
-                    
-                    // Show error messages in the relevant sections
-                    if (document.getElementById('archival-snapshot-info').classList.contains('loading')) {
-                        document.getElementById('archival-snapshot-info').innerHTML = 'Error loading archival snapshot info.';
-                        document.getElementById('archival-snapshot-info').classList.remove('loading');
-                    }
-                    
-                    document.getElementById('all-snapshots').innerHTML = `
+      // Switch between networks
+      function switchNetwork(network) {
+        currentNetwork = network;
+
+        // Update active button
+        document.querySelectorAll(".network-selector button").forEach((btn) => {
+          btn.classList.remove("active");
+        });
+        document.getElementById(`${network}-btn`).classList.add("active");
+
+        // Reload data for the selected network
+        loadSnapshotData(network);
+      }
+
+      // Load snapshot data for the selected network
+      function loadSnapshotData(network) {
+        // Reset loading states
+        document.getElementById("archival-snapshot-info").innerHTML =
+          "Loading latest archival snapshot info...";
+        document
+          .getElementById("archival-snapshot-info")
+          .classList.add("loading");
+        document.getElementById("all-snapshots").innerHTML =
+          "Loading available snapshots...";
+        document.getElementById("all-snapshots").classList.add("loading");
+
+        // Update RSS feed link
+        document.getElementById(
+          "rss-feed-link"
+        ).href = `${baseUrl}/${network}-torrents.xml`;
+
+        // Fetch archival height
+        fetch(`${baseUrl}/${network}-latest-archival.txt`)
+          .then((response) => {
+            if (!response.ok) {
+              throw new Error(
+                `Failed to fetch archival height: ${response.status} ${response.statusText}`
+              );
+            }
+            return response.text();
+          })
+          .then((archivalHeight) => {
+            // Update archival snapshot info section
+            updateSnapshotInfo("archival", archivalHeight.trim(), network);
+
+            // Now fetch the RSS feed for all available snapshots
+            return fetch(`${baseUrl}/${network}-torrents.xml`);
+          })
+          .then((response) => {
+            if (!response.ok) {
+              throw new Error(
+                `Failed to fetch RSS feed: ${response.status} ${response.statusText}`
+              );
+            }
+            return response.text();
+          })
+          .then((data) => {
+            const parser = new DOMParser();
+            const xml = parser.parseFromString(data, "application/xml");
+            const items = xml.querySelectorAll("item");
+
+            if (items.length === 0) {
+              throw new Error("No items found in the RSS feed");
+            }
+
+            let snapshotsHtml = "<ul>";
+            items.forEach((item) => {
+              const title = item.querySelector("title").textContent;
+              const link = item.querySelector("enclosure").getAttribute("url");
+              snapshotsHtml += `<li><a href="${link}" target="_blank">${title}</a></li>`;
+            });
+            snapshotsHtml += "</ul>";
+
+            document.getElementById("all-snapshots").innerHTML = snapshotsHtml;
+            document
+              .getElementById("all-snapshots")
+              .classList.remove("loading");
+          })
+          .catch((error) => {
+            console.error("Error loading snapshot data:", error);
+
+            // Show error messages in the relevant sections
+            if (
+              document
+                .getElementById("archival-snapshot-info")
+                .classList.contains("loading")
+            ) {
+              document.getElementById("archival-snapshot-info").innerHTML =
+                "Error loading archival snapshot info.";
+              document
+                .getElementById("archival-snapshot-info")
+                .classList.remove("loading");
+            }
+
+            document.getElementById("all-snapshots").innerHTML = `
                         <p>Error loading available snapshots: ${error.message}</p>
                         <p>Please try again later or contact support if the problem persists.</p>
                     `;
-                    document.getElementById('all-snapshots').classList.remove('loading');
-                });
-        }
+            document
+              .getElementById("all-snapshots")
+              .classList.remove("loading");
+          });
+      }
 
-        // Update snapshot info and download commands
-        function updateSnapshotInfo(type, height, network) {
-            const infoElement = document.getElementById(`${type}-snapshot-info`);
-            const torrentElement = document.getElementById(`${type}-torrent-code`);
-            
-            // Snapshot file URLs
-            const snapshotUrl = `${baseUrl}/${network}-${height}-${type}.tar.zst`;
-            const torrentUrl = `${baseUrl}/${network}-${height}-${type}.torrent`;
-            
-            // Update info
-            infoElement.innerHTML = `
+      // Update snapshot info and download commands
+      function updateSnapshotInfo(type, height, network) {
+        const infoElement = document.getElementById(`${type}-snapshot-info`);
+        const torrentElement = document.getElementById(`${type}-torrent-code`);
+
+        // Snapshot file URLs
+        const snapshotUrl = `${baseUrl}/${network}-${height}-${type}.tar.zst`;
+        const torrentUrl = `${baseUrl}/${network}-${height}-${type}.torrent`;
+
+        // Update info
+        infoElement.innerHTML = `
                 <div class="snapshot-info">
                     <div>Height: <span>${height}</span></div>
-                    <div>Type: <span>${type.charAt(0).toUpperCase() + type.slice(1)}</span></div>
+                    <div>Type: <span>${
+                      type.charAt(0).toUpperCase() + type.slice(1)
+                    }</span></div>
                 </div>
                 <div class="snapshot-info">
                     <div>Network: <span>${network}</span></div>
@@ -337,14 +435,16 @@
                 </div>
                 <a href="${torrentUrl}" target="_blank">Download Torrent File</a>
             `;
-            infoElement.classList.remove('loading');
-            
-            // Update torrent command - simplified to a single command with seed-time=0
-            torrentElement.textContent = `aria2c --seed-time=0 "${torrentUrl}"`;
-            
-            // Update extract command with the correct file name
-            document.getElementById('extract-command').textContent = `tar -xf ${network}-${height}-${type}.tar.zst -C $HOME/.pocket/data/`;
-        }
+        infoElement.classList.remove("loading");
+
+        // Update torrent command - simplified to a single command with seed-time=0
+        torrentElement.textContent = `aria2c --seed-time=0 "${torrentUrl}"`;
+
+        // Update extract command with the correct file name
+        document.getElementById(
+          "extract-command"
+        ).textContent = `tar -xf ${network}-${height}-${type}.tar.zst -C $HOME/.pocket/data/`;
+      }
     </script>
-</body>
-</html> 
+  </body>
+</html>

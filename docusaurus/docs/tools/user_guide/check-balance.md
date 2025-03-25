@@ -72,5 +72,5 @@ For example, to check a balance on TestNet, you would use the following command:
 
 ```sh
 pocketd query bank balance [address] upokt \
-  --node=https://testnet-validated-validator-rpc.pocket.com
+  --node=https://testnet-validated-validator-rpc.poktroll.com
 ```

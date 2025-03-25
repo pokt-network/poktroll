@@ -50,7 +50,8 @@ jobs:
           DOCKER_METADATA_PR_HEAD_SHA: "true"
         with:
           images: |
-            ghcr.io/pokt-network/pocketd
+            ghcr.io/pokt-network/poktrolld
+          # TODO_MAINNET_MIGRATION(@okdas): s/poktroll/pocket
           tags: |
             type=ref,event=branch,suffix=-dev
             type=ref,event=pr
@@ -118,5 +119,6 @@ jobs:
           IMAGE_TAG: sha-${{ github.event.pull_request.head.sha || github.sha }}
           NAMESPACE: devnet-issue-${{ github.event.number }}
           JOB_NAME: e2e-test-${{ github.event.pull_request.head.sha || github.sha }}
-          POCKET_NODE: tcp://devnet-issue-${{ github.event.number }}-validator-pocketd:26657
+          # TODO_MAINNET_MIGRATION(@okdas): s/poktroll/pocket
+          POCKET_NODE: tcp://devnet-issue-${{ github.event.number }}-validator-poktrolld:26657
         run: bash .github/workflows-helpers/run-e2e-test.sh

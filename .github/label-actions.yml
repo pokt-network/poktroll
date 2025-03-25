@@ -1,4 +1,5 @@
 # When `devnet-test-e2e` is added, also assign `devnet` and `push-image` to the PR.
+# TODO_MAINNET_MIGRATION(@okdas): s/poktroll/pocket
 devnet-test-e2e:
   prs:
     comment: |
@@ -7,7 +8,7 @@ devnet-test-e2e:
       You may need to run `make trigger_ci` to submit an empty commit that'll trigger the tests.
 
       [GCP workloads (requires changing the namespace to {issue-id})](https://console.cloud.google.com/kubernetes/workload/overview?project=protocol-us-central1-d505&pageState=(%22savedViews%22:(%22c%22:%5B%5D,%22n%22:%5B%22devnet-issue-{issue-id}%22%5D)))
-      [Grafana network dashboard for devnet-issue-{issue-id}](https://grafana.pocket.com/d/b799a130-3789-416d-aa7f-de5f4599cf03/network-overview?orgId=1&var-namespace=devnet-issue-{issue-id})
+      [Grafana network dashboard for devnet-issue-{issue-id}](https://grafana.poktroll.com/d/b799a130-3789-416d-aa7f-de5f4599cf03/network-overview?orgId=1&var-namespace=devnet-issue-{issue-id})
 
     label:
       - devnet

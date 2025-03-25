@@ -32,8 +32,8 @@ YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
 # Replace the Vultr variables with WebDAV configuration
-WEBDAV_UPLOAD_URL="https://upload-snapshots.us-nj.pocket.com"
-SNAPSHOT_URL="https://snapshots.us-nj.pocket.com"
+WEBDAV_UPLOAD_URL="https://upload-snapshots.us-nj.poktroll.com"
+SNAPSHOT_URL="https://snapshots.us-nj.poktroll.com"
 WEBDAV_USER="xxx"
 WEBDAV_PASS="xxx"                   # This should be passed as an environment variable in production
 NETWORK="testnet-beta"              # This should be passed as an environment variable: mainnet, testnet-beta, etc.

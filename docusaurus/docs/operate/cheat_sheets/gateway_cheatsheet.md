@@ -77,7 +77,7 @@ the process of interacting with the Shannon network:
 We recommend you put these in your `~/.bashrc` file:
 
 ```bash
-export POCKET_NODE="https://shannon-testnet-grove-rpc.beta.pocket.com"
+export POCKET_NODE="https://shannon-testnet-grove-rpc.beta.poktroll.com"
 export NODE_FLAGS="--node=$POCKET_NODE"
 export TX_PARAM_FLAGS="--gas=auto --gas-prices=1upokt --gas-adjustment=1.5 --chain-id=pocket-beta --yes"
 export GATEWAY_ADDR=$(pocketd keys show gateway -a)
@@ -218,7 +218,7 @@ make copy_shannon_config
 
 # Replace the endpoints as needed
 sed -i "s|rpc_url: ".*"|rpc_url: $NODE|" config/.config.yaml
-sed -i "s|host_port: ".*"|host_port: shannon-testnet-grove-grpc.beta.pocket.com:443|" config/.config.yaml
+sed -i "s|host_port: ".*"|host_port: shannon-testnet-grove-grpc.beta.poktroll.com:443|" config/.config.yaml
 
 # Update the gateway and application addresses
 sed -i "s|gateway_address: .*|gateway_address: $GATEWAY_ADDR|" config/.config.yaml

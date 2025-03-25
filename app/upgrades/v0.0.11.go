@@ -30,7 +30,7 @@ var Upgrade_0_0_11 = Upgrade{
 			logger.Info("Starting parameter updates for v0.0.11")
 
 			// Set num_suppliers_per_session to 15
-			// Validate with: `pocketd q session params --node=https://testnet-validated-validator-rpc.pocket.com/`
+			// Validate with: `pocketd q session params --node=https://testnet-validated-validator-rpc.poktroll.com/`
 			sessionParams := sessiontypes.Params{
 				NumSuppliersPerSession: uint64(15),
 			}
@@ -44,7 +44,7 @@ var Upgrade_0_0_11 = Upgrade{
 			logger.Info("Successfully updated session params", "new_params", sessionParams)
 
 			// Set tokenomics params. The values are based on default values for LocalNet/Beta TestNet.
-			// Validate with: `pocketd q tokenomics params --node=https://testnet-validated-validator-rpc.pocket.com/`
+			// Validate with: `pocketd q tokenomics params --node=https://testnet-validated-validator-rpc.poktroll.com/`
 			tokenomicsParams := tokenomicstypes.Params{
 				MintAllocationPercentages: tokenomicstypes.MintAllocationPercentages{
 					Dao:         0.1,
@@ -69,7 +69,7 @@ var Upgrade_0_0_11 = Upgrade{
 
 		// The diff shows that the only new authz authorization is for the `pocket.session.MsgUpdateParam` message.
 		// However, this message is already authorized for the `pokt10d07y265gmmuvt4z0w9aw880jnsr700j8yv32t` address.
-		// See here: pocketd q authz grants-by-granter pokt10d07y265gmmuvt4z0w9aw880jnsr700j8yv32t --node=https://shannon-testnet-grove-seed-rpc.alpha.pocket.com
+		// See here: pocketd q authz grants-by-granter pokt10d07y265gmmuvt4z0w9aw880jnsr700j8yv32t --node=https://shannon-testnet-grove-seed-rpc.alpha.poktroll.com
 		// If this upgrade would have been applied to other networks, we could have added a separate upgrade handler for each network.
 
 		// Returns the upgrade handler for v0.0.11

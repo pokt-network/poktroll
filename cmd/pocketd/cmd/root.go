@@ -66,7 +66,7 @@ func NewRootCmd() *cobra.Command {
 		Short: "Interface with Pocket Network",
 		Long: `pocketd is a binary that can be used to query, send transaction or start Pocket Network actors.
 
-		For additional documentation, see https://dev.pocket.com/tools/user_guide/pocketd_cli
+		For additional documentation, see https://dev.poktroll.com/tools/user_guide/pocketd_cli
 		`,
 		SilenceErrors: true,
 		PersistentPreRunE: func(cmd *cobra.Command, _ []string) (err error) {
