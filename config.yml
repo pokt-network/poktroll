@@ -91,6 +91,10 @@ validators:
 # We can persist arbitrary genesis values via 1 to 1 mapping to genesis.json
 genesis:
   app_state:
+    consensus:
+      params:
+        block:
+          max_bytes: "22020096" # TODO_IN_THIS_PR: what should we set this to? Note that on BETA we somehow have larger blocks even when this value is the same.
     # https://docs.cosmos.network/main/build/modules/mint
     mint:
       params:
@@ -110,15 +114,17 @@ genesis:
       params:
         bond_denom: upokt
         max_validators: 10
-    crisis: # TODO_IN_THIS_PR: look into this, I think x/crisis is deprecated
+    crisis: # TODO_IN_THIS_PR: look into this, I think x/crisis is deprecated. NVM, will be gone in v0.53: https://github.com/cosmos/cosmos-sdk/pull/23722/files
       constant_fee:
         amount: "10000"
         denom: upokt
-    gov: # TODO_IN_THIS_PR: since we have an off-chain DAO, turn off x/gov OR make deposits too expensive to submit proposals on chain
+    gov:
+      # This module allows to submit and vote on proposals, and when they are passed - they can be implemented automatically. E.g. upgrade is one of these proposal types.
+      # TODO_IN_THIS_PR: since we have an off-chain DAO, we need to turn off x/gov OR make deposits too expensive to submit proposals on chain.
       params:
-        # TODO_IN_THIS_PR: add an authz authorization to change
+        # We have an authz to adjust this if necessary.
         min_deposit:
-          - amount: "10000"
+          - amount: "42069420694206942069420694206942069420694206942069"
             denom: upokt
     bank:
       supply:
