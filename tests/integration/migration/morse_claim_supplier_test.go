@@ -125,17 +125,19 @@ func (s *MigrationModuleTestSuite) TestClaimMorseExistingSupplier() {
 	supplierParams, err := supplierClient.GetParams(s.SdkCtx())
 	s.NoError(err)
 
-	// Create a service which is different from the one which the claim re-stakes for.
-	svcOwnerAddr := cosmostypes.MustAccAddressFromBech32(sample.AccAddress())
-	s.FundAddress(s.T(), svcOwnerAddr, serviceParams.GetAddServiceFee().Amount.Int64()+1)
-	s.ServiceSuite.AddService(s.T(), "nosvc", svcOwnerAddr.String(), 1)
-
 	for morseAccountIdx, _ := range s.GetAccountState(s.T()).Accounts {
 		testDesc := fmt.Sprintf("morse account %d", morseAccountIdx)
 		s.Run(testDesc, func() {
 			// Stake an initial supplier.
 			shannonDestAddr := sample.AccAddress()
 			shannonDestAccAddr := cosmostypes.MustAccAddressFromBech32(shannonDestAddr)
+
+			serviceName := fmt.Sprintf("nosvc%d", morseAccountIdx)
+
+			// Create a service which is different from the one which the claim re-stakes for.
+			svcOwnerAddr := cosmostypes.MustAccAddressFromBech32(sample.AccAddress())
+			s.FundAddress(s.T(), svcOwnerAddr, serviceParams.GetAddServiceFee().Amount.Int64()+1)
+			s.ServiceSuite.AddService(s.T(), serviceName, svcOwnerAddr.String(), 1)
 
 			// Set the supplier's initial stake equal to the MorseClaimableAccount's supplier stake
 			// to ensure that the stakeOffset which is applied in the testMorseClaimSupplierCases stake
@@ -147,7 +149,7 @@ func (s *MigrationModuleTestSuite) TestClaimMorseExistingSupplier() {
 			s.SupplierSuite.StakeSupplier(
 				s.T(), shannonDestAddr,
 				initialSupplierStake.Amount.Int64(),
-				[]string{"nosvc"},
+				[]string{serviceName},
 			)
 
 			// Assert that the initial supplier is staked.
@@ -168,13 +170,6 @@ func (s *MigrationModuleTestSuite) TestClaimMorseExistingSupplier() {
 				shannonDestAddr,
 				s.supplierServices,
 			)
-
-			// TODO_HACK: Supplier service config history is unstable making the supplier
-			// retain the old nosvc service config history morseAccountIdx==1.
-			// Remove the nosvc history entry when found.
-			if len(claimSupplierRes.Supplier.ServiceConfigHistory) > 1 {
-				claimSupplierRes.Supplier.ServiceConfigHistory = claimSupplierRes.Supplier.ServiceConfigHistory[1:]
-			}
 
 			// DEV_NOTE: If the ClaimedSupplierStake is zero, due to an optimization in big.Int,
 			// strict equality checking will fail. To work around this, we can initialize the bit.Int
@@ -203,7 +198,7 @@ func (s *MigrationModuleTestSuite) TestClaimMorseExistingSupplier() {
 				Stake:           &expectedFinalSupplierStake,
 				ServiceConfigHistory: []*sharedtypes.ServiceConfigUpdate{
 					{
-						Services:             s.supplierServices[0:1],
+						Services:             s.supplierServices,
 						EffectiveBlockHeight: uint64(svcStartHeight),
 					},
 				},
@@ -238,12 +233,6 @@ func (s *MigrationModuleTestSuite) TestClaimMorseExistingSupplier() {
 
 			// Assert that the supplier was updated.
 			supplier, err := supplierClient.GetSupplier(s.SdkCtx(), shannonDestAddr)
-			// TODO_HACK: Supplier service config history is unstable making the supplier
-			// retain the old nosvc service config history morseAccountIdx==1.
-			// Remove the nosvc history entry when found.
-			if len(supplier.ServiceConfigHistory) > 1 {
-				supplier.ServiceConfigHistory = supplier.ServiceConfigHistory[1:]
-			}
 			s.NoError(err)
 			s.Equal(expectedSupplier, supplier)
 		})

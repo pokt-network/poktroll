@@ -24,7 +24,7 @@ Feature: Morse account import and claim all account types (with snapshot data)
 
     Given no MorseClaimableAccounts exist
     And the MorseAccountState in "morse_account_state.json" is valid
-    When the authority executes "poktrolld tx migration import-morse-accounts --from=pnf --grpc-addr=localhost:9090 morse_account_state.json"
+    When the authority executes "poktrolld tx migration import-morse-accounts morse_account_state.json"
     Then the MorseClaimableAccounts are persisted onchain
 
   Scenario:
