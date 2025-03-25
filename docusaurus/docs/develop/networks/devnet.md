@@ -114,11 +114,9 @@ team, open a pull request (PR) to delete the YAML file from the `main` branch. P
 New container images are automatically built on each merge to the `main` branch and each push to non-main branches for which there exists a PR with the `push-image` label.
 Images named according to the following format:
 
-TODO_MAINNET_MIGRATION(@okdas): s/poktroll/pocket
-
 ```bash
-ghcr.io/pokt-network/poktrolld:sha-7042be3
-ghcr.io/pokt-network/poktrolld:sha-7042be3922245fb4313ee90e1f28d0f402b700a0
+ghcr.io/pokt-network/pocketd:sha-7042be3
+ghcr.io/pokt-network/pocketd:sha-7042be3922245fb4313ee90e1f28d0f402b700a0
 ```
 
 You can update the version of DevNet by changing this parameter in the devnet config file:

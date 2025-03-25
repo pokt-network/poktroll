@@ -465,7 +465,7 @@ EOF
 
 # Function to download and set up pocketd
 setup_pocketd() {
-    print_color $YELLOW "Setting up poktrolld..."
+    print_color $YELLOW "Setting up pocketd..."
 
     ARCH=$(get_normalized_arch)
     OS_TYPE=$(get_os_type)

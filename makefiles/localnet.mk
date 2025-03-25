@@ -23,13 +23,13 @@ NEW_DIR = .pocket
 move_poktroll_to_pocket:
 	@echo "###############################################"
 	@echo "TODO_MAINNET_MIGRATION(@olshansky): Manually moving HOME/.poktroll to HOME/.pocket. This is a temporary fix until ignite CLI uses the project (not chain) name. Ref: https://docs.ignite.com/nightly/references/cli"
-	@echo "Creating new directory if it doesn't exist..."
+	@echo "Creating new .pocket directory if it doesn't exist..."
 	@mkdir -p $(HOME)/.pocket
 	@echo "Moving contents from .poktroll to .pocket..."
-	@rsync -av --remove-source-files $(HOME)/.poktroll/ $(HOME)/.pocket/
-	@echo "Removing old directory..."
+	@rsync -av --quiet --remove-source-files $(HOME)/.poktroll/ $(HOME)/.pocket/
+	@echo "Removing old .poktroll directory..."
 	@rmdir $(HOME)/.poktroll 2>/dev/null || echo "Directory not empty, skipping removal."
-	@echo "Move completed successfully!"
+	@echo "Move completed successfully from .poktroll to .pocket!"
 	@echo "###############################################"
 
 .PHONY: localnet_regenesis

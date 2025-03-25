@@ -62,9 +62,10 @@ jobs:
         env:
           DOCKER_METADATA_PR_HEAD_SHA: "true"
         with:
+          # TODO_MAINNET_MIGRATION(@okdas): Remove poktrolld
           images: |
+            ghcr.io/pokt-network/pocketd
             ghcr.io/pokt-network/poktrolld
-          # TODO_MAINNET_MIGRATION(@okdas): s/poktroll/pocket
           tags: |
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
@@ -80,9 +81,10 @@ jobs:
         env:
           DOCKER_METADATA_PR_HEAD_SHA: "true"
         with:
+          # TODO_MAINNET_MIGRATION(@okdas): Remove poktrolld
           images: |
+            ghcr.io/pokt-network/pocketd
             ghcr.io/pokt-network/poktrolld
-          # TODO_MAINNET_MIGRATION(@okdas): s/poktroll/pocket
           tags: |
             type=raw,value=main-prod
             type=sha,suffix=-main-prod
@@ -101,9 +103,10 @@ jobs:
         env:
           DOCKER_METADATA_PR_HEAD_SHA: "true"
         with:
+          # TODO_MAINNET_MIGRATION(@okdas): Remove poktrolld
           images: |
+            ghcr.io/pokt-network/pocketd
             ghcr.io/pokt-network/poktrolld
-          # TODO_MAINNET_MIGRATION(@okdas): s/poktroll/pocket
           tags: |
             type=raw,value=${{ env.BRANCH_NAME }}-prod${{ github.inputs.custom_tag != '' && format('-{0}', github.inputs.custom_tag) || '' }}
             type=sha,suffix=-${{ env.BRANCH_NAME }}-prod${{ github.inputs.custom_tag != '' && format('-{0}', github.inputs.custom_tag) || '' }}
