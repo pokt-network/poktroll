@@ -31,6 +31,9 @@ For more help information, see:
 	$ poktrolld tx migration collect-morse-accounts
 
 For more documentation, refer to: https://dev.poktroll.com/operate/morse_migration/roadmap`,
+		Example: `	poktrolld tx migration import-morse-accounts ./tools/scripts/morse_account_state.json --from=pnf --grpc-addr=localhost:9090
+	poktrolld tx migration import-morse-accounts ./tools/scripts/morse_account_state.json --from=pnf --grpc-addr=https://shannon-testnet-grove-grpc.beta.poktroll.com
+	poktrolld tx migration import-morse-accounts ./tools/scripts/morse_account_state.json --from=pnf --grpc-addr=https://shannon-testnet-grove-grpc.alpha.poktroll.com`,
 		Args:    cobra.ExactArgs(1),
 		RunE:    runImportMorseAccounts,
 		PreRunE: logger.PreRunESetup,
@@ -96,7 +99,7 @@ func runImportMorseAccounts(cmd *cobra.Command, args []string) error {
 	// Package the MsgImportMorseAccountState message into a MsgAuthzExec message.
 	// MsgImportMorseAccountState is an authority-gated message. By default, the
 	// governance module address is the configured onchain authority. In order to
-	// facilitate authorization of exeternally owned accounts (e.g. the foundation),
+	// facilitate authorization of externally owned accounts (e.g. the foundation),
 	// the authz module is used.
 	// DEV_NOTE: This exec message requires a corresponding authz authorization to
 	// be present onchain.
