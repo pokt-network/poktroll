@@ -31,6 +31,9 @@ For more help information, see:
 	$ poktrolld tx migration collect-morse-accounts
 
 For more documentation, refer to: https://dev.poktroll.com/operate/morse_migration/roadmap`,
+		Example: `	poktrolld tx migration import-morse-accounts ./tools/scripts/morse_account_state.json --from=pnf --grpc-addr=localhost:9090
+	poktrolld tx migration import-morse-accounts ./tools/scripts/morse_account_state.json --from=pnf --grpc-addr=https://shannon-testnet-grove-grpc.beta.poktroll.com
+	poktrolld tx migration import-morse-accounts ./tools/scripts/morse_account_state.json --from=pnf --grpc-addr=https://shannon-testnet-grove-grpc.alpha.poktroll.com`,
 		Args:    cobra.ExactArgs(1),
 		RunE:    runImportMorseAccounts,
 		PreRunE: logger.PreRunESetup,
