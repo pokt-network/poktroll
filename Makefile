@@ -329,6 +329,7 @@ ignite_install: ## Install ignite. Used by CI and heighliner.
 	ignite version
 
 .PHONY: ignite_update_ldflags
+## Artifact release h
 ignite_update_ldflags:
 	yq eval '.build.ldflags = ["-X main.Version=$(VERSION)", "-X main.Date=$(shell date -u +%Y-%m-%dT%H:%M:%SZ)"]' -i config.yml
 

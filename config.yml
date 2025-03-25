@@ -1,6 +1,7 @@
 version: 1
 build:
   main: cmd/pocketd
+  binary: pocketd
 accounts:
   - name: faucet
     mnemonic: "baby advance work soap slow exclude blur humble lucky rough teach wide chuckle captain rack laundry butter main very cannon donate armor dress follow"
