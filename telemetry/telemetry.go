@@ -9,10 +9,10 @@ import (
 
 // globalTelemetryConfig stores pocket specific telemetry configurations.
 // Set once on initialization and remains constant during runtime.
-var globalTelemetryConfig PoktrollTelemetryConfig
+var globalTelemetryConfig PocketTelemetryConfig
 
-// PoktrollTelemetryConfig represents the telemetry portion of the custom pocket config section in `app.toml`.
-type PoktrollTelemetryConfig struct {
+// PocketTelemetryConfig represents the telemetry portion of the custom pocket config section in `app.toml`.
+type PocketTelemetryConfig struct {
 	CardinalityLevel string `mapstructure:"cardinality-level"`
 }
 

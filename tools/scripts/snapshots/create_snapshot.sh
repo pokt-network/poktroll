@@ -263,9 +263,9 @@ create_rss_feed() {
 <?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
-    <title>Poktroll ${NETWORK} Snapshots</title>
+    <title>Pocket ${NETWORK} Snapshots</title>
     <link>${SNAPSHOT_URL}/</link>
-    <description>Torrent files for Poktroll ${NETWORK} blockchain snapshots</description>
+    <description>Torrent files for Pocket ${NETWORK} blockchain snapshots</description>
     <language>en-us</language>
     <pubDate>${timestamp}</pubDate>
     <lastBuildDate>${timestamp}</lastBuildDate>
@@ -275,15 +275,15 @@ EOF
     # Add current snapshot torrents as items
     cat >>"$rss_file" <<EOF
     <item>
-      <title>Poktroll ${NETWORK} Archival Snapshot (Height: ${height})</title>
-      <description>Archival snapshot of Poktroll ${NETWORK} at block height ${height}</description>
+      <title>Pocket ${NETWORK} Archival Snapshot (Height: ${height})</title>
+      <description>Archival snapshot of Pocket ${NETWORK} at block height ${height}</description>
       <pubDate>${timestamp}</pubDate>
       <guid>${SNAPSHOT_URL}/${NETWORK}-${height}-archival.torrent</guid>
       <enclosure url="${SNAPSHOT_URL}/${NETWORK}-${height}-archival.torrent" type="application/x-bittorrent" />
     </item>
     <item>
-      <title>Poktroll ${NETWORK} Pruned Snapshot (Height: ${height})</title>
-      <description>Pruned snapshot of Poktroll ${NETWORK} at block height ${height}</description>
+      <title>Pocket ${NETWORK} Pruned Snapshot (Height: ${height})</title>
+      <description>Pruned snapshot of Pocket ${NETWORK} at block height ${height}</description>
       <pubDate>${timestamp}</pubDate>
       <guid>${SNAPSHOT_URL}/${NETWORK}-${height}-pruned.torrent</guid>
       <enclosure url="${SNAPSHOT_URL}/${NETWORK}-${height}-pruned.torrent" type="application/x-bittorrent" />
@@ -315,8 +315,8 @@ EOF
                 print_color $GREEN "Adding torrent to RSS feed: $torrent"
                 cat >>"$rss_file" <<EOF
     <item>
-      <title>Poktroll ${NETWORK} ${t_type^} Snapshot (Height: ${t_height})</title>
-      <description>${t_type^} snapshot of Poktroll ${NETWORK} at block height ${t_height}</description>
+      <title>Pocket ${NETWORK} ${t_type^} Snapshot (Height: ${t_height})</title>
+      <description>${t_type^} snapshot of Pocket ${NETWORK} at block height ${t_height}</description>
       <pubDate>${t_timestamp}</pubDate>
       <guid>${SNAPSHOT_URL}/${torrent}</guid>
       <enclosure url="${SNAPSHOT_URL}/${torrent}" type="application/x-bittorrent" />
@@ -370,7 +370,7 @@ clean_old_snapshots() {
             fi
         fi
     done
-    print_color $GREEN "Poktrolld snapshots cleaned"
+    print_color $GREEN "pocketd snapshots cleaned"
 
     # Clean remote snapshots
     print_color $YELLOW "Cleaning old snapshots from WebDAV server..."

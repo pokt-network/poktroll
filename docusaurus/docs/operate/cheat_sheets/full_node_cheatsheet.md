@@ -194,7 +194,7 @@ If you're interested in understanding what just got installed, keep reading...
    - **Purpose**: Manages different versions of `pocketd` and handles chain upgrades
    - **Configuration**: Set up to automatically download and switch to new binaries during upgrades
 
-3. **Poktrolld**: The core node software:
+3. **pocketd**: The core node software:
 
    - **Location**: `/home/pocket/.pocket/cosmovisor/genesis/bin/pocketd`
    - **Configuration**: `/home/pocket/.pocket/config/`

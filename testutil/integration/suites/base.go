@@ -62,9 +62,9 @@ func (s *BaseIntegrationSuite) GetApp() *integration.App {
 	return s.app
 }
 
-// GetPoktrollModuleNames returns the list of the names of all pocket modules
+// GetPocketModuleNames returns the list of the names of all pocket modules
 // in the integration app.
-func (s *BaseIntegrationSuite) GetPoktrollModuleNames() []string {
+func (s *BaseIntegrationSuite) GetPocketModuleNames() []string {
 	return s.pocketModuleNames
 }
 

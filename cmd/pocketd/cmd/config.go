@@ -14,16 +14,16 @@ import (
 
 var once sync.Once
 
-// PoktrollAppConfig represents a pocket-specific part of `app.toml` file.
+// PocketAppConfig represents a pocket-specific part of `app.toml` file.
 // Checkout `customAppConfigTemplate()` for additional information about each setting.
-type PoktrollAppConfig struct {
-	Telemetry telemetry.PoktrollTelemetryConfig `mapstructure:"telemetry"`
+type PocketAppConfig struct {
+	Telemetry telemetry.PocketTelemetryConfig `mapstructure:"telemetry"`
 }
 
 // pocketAppConfigDefaults sets default values to render in `app.toml`.
 // Checkout `customAppConfigTemplate()` for additional information about each config parameter.
-func pocketAppConfigDefaults() PoktrollAppConfig {
-	return PoktrollAppConfig{
+func pocketAppConfigDefaults() PocketAppConfig {
+	return PocketAppConfig{
 		Telemetry: telemetry.DefaultConfig(),
 	}
 }
@@ -104,7 +104,7 @@ func initCometBFTConfig() *cmtcfg.Config {
 func initAppConfig() (string, interface{}) {
 	type CustomAppConfig struct {
 		serverconfig.Config `mapstructure:",squash"`
-		Poktroll            PoktrollAppConfig `mapstructure:"pocket"`
+		Pocket              PocketAppConfig `mapstructure:"pocket"`
 	}
 
 	// Optionally allow the chain developer to overwrite the SDK's default
@@ -139,23 +139,23 @@ func initAppConfig() (string, interface{}) {
 
 	// Create the custom config with both server and pocket configs
 	customAppConfig := CustomAppConfig{
-		Config:   *srvCfg,
-		Poktroll: pocketAppConfigDefaults(),
+		Config: *srvCfg,
+		Pocket: pocketAppConfigDefaults(),
 	}
 
-	return customPoktrollAppConfigTemplate(), customAppConfig
+	return customPocketAppConfigTemplate(), customAppConfig
 }
 
-// customPoktrollAppConfigTemplate extends the default configuration `app.toml` file with our own configs.
+// customPocketAppConfigTemplate extends the default configuration `app.toml` file with our own configs.
 // They are going to be used by validators and full-nodes.
 // These configs are rendered using default values from `pocketAppConfigDefaults()`.
-func customPoktrollAppConfigTemplate() string {
+func customPocketAppConfigTemplate() string {
 	return serverconfig.DefaultConfigTemplate + `
-		###############################################################################
-		###                               Poktroll                                  ###
-		###############################################################################
+		#############################################################################
+		###                               Pocket                                  ###
+		#############################################################################
 
-		# Poktroll-specific app configuration for Full Nodes and Validators.
+		# Pocket-specific app configuration for Full Nodes and Validators.
 		[pocket]
 
 		# Telemetry configuration in addition to the [telemetry] settings.
@@ -171,6 +171,6 @@ func customPoktrollAppConfigTemplate() string {
 		#   - "high":   WARNING: WILL CAUSE STRESS TO YOUR MONITORING ENVIRONMENT! Collects detailed metrics with high
 		#              cardinality, including labels with many unique values (e.g., application_id, session_id).
 		#              Recommended for debugging or testing environments.
-		cardinality-level = "{{ .Poktroll.Telemetry.CardinalityLevel }}"
+		cardinality-level = "{{ .Pocket.Telemetry.CardinalityLevel }}"
 		`
 }

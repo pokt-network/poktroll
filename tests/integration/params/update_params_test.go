@@ -47,7 +47,7 @@ func (s *msgUpdateParamsTestSuite) SetupTest() {
 }
 
 func (s *msgUpdateParamsTestSuite) TestUnauthorizedMsgUpdateParamsFails() {
-	for _, moduleName := range s.GetPoktrollModuleNames() {
+	for _, moduleName := range s.GetPocketModuleNames() {
 		moduleCfg := suites.ModuleParamConfigMap[moduleName]
 
 		s.T().Run(moduleName, func(t *testing.T) {
@@ -70,7 +70,7 @@ func (s *msgUpdateParamsTestSuite) TestUnauthorizedMsgUpdateParamsFails() {
 }
 
 func (s *msgUpdateParamsTestSuite) TestAuthorizedMsgUpdateParamsSucceeds() {
-	for _, moduleName := range s.GetPoktrollModuleNames() {
+	for _, moduleName := range s.GetPocketModuleNames() {
 		moduleCfg := suites.ModuleParamConfigMap[moduleName]
 
 		s.T().Run(moduleName, func(t *testing.T) {

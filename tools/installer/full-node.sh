@@ -463,9 +463,9 @@ EOF
     echo ""
 }
 
-# Function to download and set up Poktrolld
+# Function to download and set up pocketd
 setup_pocketd() {
-    print_color $YELLOW "Setting up Poktrolld..."
+    print_color $YELLOW "Setting up poktrolld..."
 
     ARCH=$(get_normalized_arch)
     OS_TYPE=$(get_os_type)
@@ -509,17 +509,17 @@ setup_pocketd() {
 EOF
 
     if [ $? -ne 0 ]; then
-        print_color $RED "Failed to set up Poktrolld"
+        print_color $RED "Failed to set up pocketd"
         exit 1
     fi
 
-    print_color $GREEN "Poktrolld set up successfully."
+    print_color $GREEN "pocketd set up successfully."
     echo ""
 }
 
-# Function to configure Poktrolld
+# Function to configure pocketd
 configure_pocketd() {
-    print_color $YELLOW "Configuring Poktrolld..."
+    print_color $YELLOW "Configuring pocketd..."
 
     # Ask for confirmation to use the downloaded genesis file
     print_color $YELLOW "The script has downloaded the genesis file from:"
@@ -546,7 +546,7 @@ configure_pocketd() {
     # Check pocketd version
     # Now we can use pocketd directly since Cosmovisor is initialized
     POCKETD_VERSION=\$(\$HOME/.pocket/cosmovisor/genesis/bin/pocketd version)
-    echo "Poktrolld version: \$POCKETD_VERSION"
+    echo "pocketd version: \$POCKETD_VERSION"
 
     # Initialize node using pocketd directly
     \$HOME/.pocket/cosmovisor/genesis/bin/pocketd init "$NODE_MONIKER" --chain-id="$CHAIN_ID" --home=\$HOME/.pocket
@@ -555,9 +555,9 @@ configure_pocketd() {
     sed -i -e "s|^external_address *=.*|external_address = \"$EXTERNAL_IP:26656\"|" \$HOME/.pocket/config/config.toml
 EOF
     if [ $? -eq 0 ]; then
-        print_color $GREEN "Poktrolld configured successfully."
+        print_color $GREEN "pocketd configured successfully."
     else
-        print_color $RED "Failed to configure Poktrolld. Please check the error messages above."
+        print_color $RED "Failed to configure pocketd. Please check the error messages above."
         exit 1
     fi
 }
@@ -740,7 +740,7 @@ configure_ufw() {
 
 # Main function
 main() {
-    print_color $GREEN "Welcome to the Poktroll Full Node Install Script!"
+    print_color $GREEN "Welcome to the Pocket Full Node Install Script!"
     echo ""
 
     # Basic checks
@@ -774,7 +774,7 @@ main() {
     configure_ufw
 
     # Print completion message with appropriate details
-    print_color $GREEN "Poktroll Full Node installation for $NETWORK completed successfully!"
+    print_color $GREEN "Pocket Full Node installation for $NETWORK completed successfully!"
     if [ "$USE_SNAPSHOT" = true ]; then
         print_color $GREEN "Node was set up using snapshot at height $LATEST_SNAPSHOT_HEIGHT with version $POCKETD_VERSION"
         print_color $YELLOW "Note: The node will continue syncing from height $LATEST_SNAPSHOT_HEIGHT to the current chain height"

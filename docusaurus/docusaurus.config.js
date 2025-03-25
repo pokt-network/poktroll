@@ -8,8 +8,8 @@ import { themes as prismThemes } from "prism-react-renderer";
 
 /** @type {import('@docusaurus/types').Config} */
 const config = {
-  title: "Poktroll",
-  tagline: "Roll the POKT",
+  title: "Pocket",
+  tagline: "Permissionless APIs",
   favicon: "img/logo.png",
 
   markdown: {
@@ -129,7 +129,7 @@ const config = {
             title: "Documentation",
             items: [
               {
-                label: "Poktroll",
+                label: "Pocket",
                 to: "/",
               },
               {

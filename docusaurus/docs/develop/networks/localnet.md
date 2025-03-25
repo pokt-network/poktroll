@@ -3,7 +3,7 @@ sidebar_position: 2
 title: LocalNet
 ---
 
-# LocalNet <!-- omit in toc -->
+## LocalNet <!-- omit in toc -->
 
 ## Background <!-- omit in toc -->
 
@@ -11,7 +11,7 @@ This document walks you through launching a LocalNet that brings up a k8s cluste
 with a Data Availability network, a validator, Pocket actors and everything else
 needed to send an end-to-end relay.
 
-- [Run Poktroll locally](#run-pocket-locally)
+- [Run Pocket Network locally](#run-pocket-network-locally)
   - [Report issues](#report-issues)
   - [TL;DR](#tldr)
 - [Developing with LocalNet](#developing-with-localnet)
@@ -27,7 +27,7 @@ needed to send an end-to-end relay.
 - [Troubleshooting](#troubleshooting)
   - [Clean Slate (Nuclear Option)](#clean-slate-nuclear-option)
 
-## Run Poktroll locally
+## Run Pocket Network locally
 
 ### Report issues
 

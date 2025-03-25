@@ -130,15 +130,15 @@ func (s *ParamsSuite) SetupTestAuthzGrants(t *testing.T) {
 	t.Helper()
 
 	// Create authz grants for all pocket modules' MsgUpdateParams messages.
-	s.RunAuthzGrantMsgForPoktrollModules(t,
+	s.RunAuthzGrantMsgForPocketModules(t,
 		s.AuthorityAddr,
 		s.AuthorizedAddr,
 		MsgUpdateParamsName,
-		s.GetPoktrollModuleNames()...,
+		s.GetPocketModuleNames()...,
 	)
 
 	// Create authz grants for all pocket modules' MsgUpdateParam messages.
-	s.RunAuthzGrantMsgForPoktrollModules(t,
+	s.RunAuthzGrantMsgForPocketModules(t,
 		s.AuthorityAddr,
 		s.AuthorizedAddr,
 		MsgUpdateParamName,

@@ -1,6 +1,6 @@
 ---
 sidebar_position: 1
-title: Poktroll
+title: PoktrolPocketl
 id: home-doc
 slug: /
 ---

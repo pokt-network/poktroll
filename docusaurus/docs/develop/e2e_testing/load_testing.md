@@ -3,9 +3,9 @@ sidebar_position: 1
 title: Load Testing
 ---
 
-# Load Testing <!-- omit in toc -->
+## Load Testing <!-- omit in toc -->
 
-Poktroll load-testing suite.
+Pocket Network load-testing suite.
 
 - [Overview](#overview)
 - [Dependencies](#dependencies)
