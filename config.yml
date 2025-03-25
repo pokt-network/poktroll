@@ -20,38 +20,34 @@ accounts:
       - 69000000000000000000042upokt # TODO_IN_THIS_PR: how much is needed?
   - name: groveval1
     coins:
-      - 900000000000000upokt
+      - 1000000000000upokt # 10000000000000upokt is already bonded below
   - name: groveval2
     # TODO_IN_THIS_PR: use `address` if key should be created by third-party. Otherwise, it is generated randomly.
     # address: "pokt111"
     coins:
-      - 900000000000000upokt
+      - 11000000000000upokt # 10000000000000upokt to bond and 1000000000000upokt "just in case" (fees, etc..)
   - name: groveval3
     # TODO_IN_THIS_PR: use `address` if key should be created by third-party. Otherwise, it is generated randomly.
     # address: "pokt111"
     coins:
-      - 900000000000000upokt
+      - 11000000000000upokt # 10000000000000upokt to bond and 1000000000000upokt "just in case" (fees, etc..)
   - name: groveval4
     # TODO_IN_THIS_PR: use `address` if key should be created by third-party. Otherwise, it is generated randomly.
     # address: "pokt111"
     coins:
-      - 900000000000000upokt
+      - 11000000000000upokt # 10000000000000upokt to bond and 1000000000000upokt "just in case" (fees, etc..)
   - name: groveval5
     # TODO_IN_THIS_PR: use `address` if key should be created by third-party. Otherwise, it is generated randomly.
     # address: "pokt111"
     coins:
-      - 900000000000000upokt
+      - 11000000000000upokt # 10000000000000upokt to bond and 1000000000000upokt "just in case" (fees, etc..)
 validators:
   - name: groveval1
-    bonded: 1000000000upokt
-    # DEV_NOTE: adjust `cmd/poktrolld/cmd/config.go` to change the default options. The section below **ONLY** changes
-    # the values for the first validator, and the config is rendered using `ignite` cli. This is primarily used for
-    # LocalNet. Other participants of the network are relying on `poktrolld init`, which gets values from `cmd/config.go`.
+    bonded: 10000000000000upokt
+    # TODO_IN_THIS_PR: check defaults in `cmd/poktrolld/cmd/config.go` - as this is THE spot for default values, not below.
+    # Values below will only change config for the first validator.
     app:
-      # DEV_NOTE: Ignite does not carry over all defaults, so we are going to match `minimum-gas-prices` with `cmd/config.go`.
-      # See the enhancement request here: https://github.com/ignite/cli/issues/4340
-      # TODO_BETA(@okdas, #794): turn on `minimum-gas-prices` back
-      # minimum-gas-prices: 0.000000001upokt
+      minimum-gas-prices: 0.000001upokt
       telemetry:
         enabled: true
       poktroll:
@@ -64,6 +60,7 @@ validators:
     config:
       moniker: "groveval1"
       consensus:
+        # TODO_IN_THIS_PR: keep morse 15m or lower to 10m?
         timeout_commit: "10m"
         timeout_propose: "10m"
       instrumentation:
@@ -73,6 +70,7 @@ validators:
       # DEV_NOTE: These values were selected arbitrarily, but chosen to be large,
       # as a result of load testing and seeing large proof messages during the
       # Claim & Proof lifecycle.
+      # TODO_IN_THIS_PR: check what we've got on beta.
       rpc:
         # Controls how large any single RPC request accepted by the CometBFT
         # server (offchain) can be.
@@ -85,8 +83,6 @@ validators:
         max_tx_bytes: "100000000"
     client:
       chain-id: pocket # TODO_IN_THIS_PR: is this correct?
-  - name: groveval2
-    bonded: 1000000000upokt
 
 # We can persist arbitrary genesis values via 1 to 1 mapping to genesis.json
 genesis:
@@ -114,15 +110,15 @@ genesis:
       params:
         bond_denom: upokt
         max_validators: 10
-    crisis: # TODO_IN_THIS_PR: look into this, I think x/crisis is deprecated. NVM, will be gone in v0.53: https://github.com/cosmos/cosmos-sdk/pull/23722/files
+    crisis: # TODO_IN_THIS_PR: look into this, I think x/crisis is deprecated. NVM, will be gone in v0.53: https://github.com/cosmos/cosmos-sdk/pull/23722/files. What the value should this be?
       constant_fee:
         amount: "10000"
         denom: upokt
     gov:
-      # This module allows to submit and vote on proposals, and when they are passed - they can be implemented automatically. E.g. upgrade is one of these proposal types.
+      # This module allows to submit and vote on proposals, and when they are passed - they can be Messages can be executed automatically. E.g. upgrade is one of these proposal types.
       # TODO_IN_THIS_PR: since we have an off-chain DAO, we need to turn off x/gov OR make deposits too expensive to submit proposals on chain.
       params:
-        # We have an authz to adjust this if necessary.
+        # We have an authz authorization to adjust this if necessary.
         min_deposit:
           - amount: "42069420694206942069420694206942069420694206942069"
             denom: upokt
@@ -133,7 +129,7 @@ genesis:
         #   denom: upokt
       balances:
         []
-        # # As we don't pre-stake any actors, we shouldn't need to add balances here.
+        # # TODO_IN_THIS_PR: As we don't pre-stake any actors, we shouldn't need to add balances here. Correct?
         # # # Application module
         # - address: pokt1rl3gjgzexmplmds3tq3r3yk84zlwdl6djzgsvm
         #   coins:
@@ -206,7 +202,7 @@ genesis:
           amount: "1000000"
           denom: upokt
     session:
-      # TODO_IN_THIS_PR: verify parameters.
+      # TODO_IN_THIS_PR: verify parameters. Keeping morse value?
       params:
         num_suppliers_per_session: 15
     tokenomics:
