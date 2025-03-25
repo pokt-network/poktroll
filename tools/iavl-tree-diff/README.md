@@ -28,7 +28,8 @@ It identifies differences between two IAVL tree versions across multiple prefixe
 Ensure you're in the `iavl-tree-diff` directory:
 
 ```bash
-git clone https://github.com/pokt-network/pocket.git && cd pocket
+git clone https://github.com/pokt-network/poktroll.git
+cd pocket
 cd tools/iavl-tree-diff
 ```
 

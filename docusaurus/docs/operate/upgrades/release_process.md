@@ -74,8 +74,12 @@ such as https://github.com/pokt-network/poktroll/blob/main/app/upgrades/historic
 
 ### 3. Update the homebrew-tap formula
 
+:::warning TODO
+TODO_MAINNET_MIGRATION(@olshansk): Ensure this works with `pocketd`
+:::
+
 ```bash
-git clone git@github.com:pokt-network/homebrew-pocket.git
+git clone git@github.com:pokt-network/homebrew-poktroll.git
 cd homebrew-pocket
 make tap_update_version
 git commit -am "Update pocket tap from v.X1.Y1.Z1 to vX1.Y2.Z2

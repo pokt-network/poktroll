@@ -28,7 +28,7 @@ TODO(@okdas):
 
 ## Introduction and Cheat Sheet
 
-This document uses the [pocket-docker-compose-example](https://github.com/pokt-network/pocket-docker-compose-example)
+This document uses the [poktroll-docker-compose-example](https://github.com/pokt-network/poktroll-docker-compose-example)
 to help stake and deploy every actor in the Pocket Network ecosystem.
 
 It also provides some intuition for those already familiar with `Morse` and are
@@ -159,8 +159,8 @@ su - $USERNAME
 ### Clone the Repository <!-- omit in toc -->
 
 ```bash
-git clone https://github.com/pokt-network/pocket-docker-compose-example.git
-cd pocket-docker-compose-example
+git clone https://github.com/pokt-network/poktroll-docker-compose-example.git
+cd poktroll-docker-compose-example
 ```
 
 ### Operational Helpers <!-- omit in toc -->

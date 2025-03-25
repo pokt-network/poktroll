@@ -93,7 +93,7 @@ validators:
       # DEV_NOTE: Ignite does not carry over all defaults, so we are going to match `minimum-gas-prices` with `cmd/config.go`.
       # See the enhancement request here: https://github.com/ignite/cli/issues/4340
       # TODO_BETA(@okdas, #794): turn on `minimum-gas-prices` back
-      # minimum-gas-prices: 0.000000001upokt
+      minimum-gas-prices: 0.000000001upokt
       telemetry:
         enabled: true
       pocket:

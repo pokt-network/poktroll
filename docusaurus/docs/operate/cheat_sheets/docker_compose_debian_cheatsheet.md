@@ -100,8 +100,8 @@ Then pull the github repo
 
 ```bash
 mkdir ~/workspace && cd ~/workspace
-git clone https://github.com/pokt-network/pocket-docker-compose-example.git
-cd pocket-docker-compose-example
+git clone https://github.com/pokt-network/poktroll-docker-compose-example.git
+cd poktroll-docker-compose-example
 ```
 
 ## Update your environment

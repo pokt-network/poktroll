@@ -121,7 +121,7 @@ Then, Retrieve the source code and build the `pocketd` locally like so:
 
 ```bash
 # Clone the repository
-git clone https://github.com/pokt-network/pocket.git
+git clone https://github.com/pokt-network/poktroll.git pocket
 cd pocket
 
 # Optional: Switch to a specific version (recommended)

@@ -20,7 +20,7 @@ Create a new [GitHub issue here](https://github.com/pokt-network/poktroll/issues
 - [Video Walkthrough](#video-walkthrough)
 - [0. Install Dependencies](#0-install-dependencies)
 - [1. Launch \& Inspect LocalNet](#1-launch--inspect-localnet)
-  - [1.1 Clone the `pocket` repository](#11-clone-the-pocket-repository)
+  - [1.1 Clone the `poktroll` repository](#11-clone-the-poktroll-repository)
   - [1.2 See all the available helper commands in `Makefile`](#12-see-all-the-available-helper-commands-in-makefile)
   - [1.3 Prepare your development environment](#13-prepare-your-development-environment)
   - [1.4 Create a `k8s` cluster](#14-create-a-k8s-cluster)
@@ -67,11 +67,11 @@ development purposes.
 :::
 
 If you want to deploy your own Gateway and Supplier, please follow the instructions
-in our [pocket-docker-compose-example](https://github.com/pokt-network/pocket-docker-compose-example)
+in our [poktroll-docker-compose-example](https://github.com/pokt-network/poktroll-docker-compose-example)
 example.
 
 If you want to deploy a Supplier & Gateway via a copy-pasta method without understanding
-anything, see the instructions [here](https://github.com/pokt-network/pocket-docker-compose-example/blob/main/debian_cheasheet.md).
+anything, see the instructions [here](https://github.com/pokt-network/poktroll-docker-compose-example/blob/main/debian_cheasheet.md).
 
 ## Video Walkthrough
 
@@ -115,10 +115,10 @@ It should look something like this once you're past the first section:
 
 ![Tilt LocalNet View](./img/quickstart_localnet.png)
 
-### 1.1 Clone the `pocket` repository
+### 1.1 Clone the `poktroll` repository
 
 ```bash
-git clone https://github.com/pokt-network/pocket.git
+git clone https://github.com/pokt-network/poktroll.git pocket
 cd pocket
 ```
 

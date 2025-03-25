@@ -159,7 +159,7 @@ IMAGE_TAG=**IMAGE TAG NAME FROM DEVNET CONFIG** NAMESPACE=devnet-**NETWORK NAME*
 - **JOB_NAME**: A unique identifier for the e2e test job. It follows the format e2e-test-**GITSHA FROM IMAGE TAG**.
 - **POCKET_NODE**: The address of the pocket node, following the format tcp://devnet-**NETWORK NAME**-validator-pocketd:26657.
 
-**Example**
+**Example**:
 
 ```bash
 IMAGE_TAG=sha-7042be3 NAMESPACE=devnet-sophon JOB_NAME=e2e-test-7042be3 POCKET_NODE=tcp://devnet-sophon-validator-pocketd:26657 bash .github/workflows-helpers/run-e2e-test.sh
@@ -169,11 +169,15 @@ IMAGE_TAG=sha-7042be3 NAMESPACE=devnet-sophon JOB_NAME=e2e-test-7042be3 POCKET_N
 
 - The `IMAGE_TAG` must match the tag of the image from the devnet config YAML file.
 - The name of the devnet in the environment variables must be specified.
-- The Kubernetes context must be pointed to the protocol cluster. This command can be used to change context:
-  ```bash
-  kubectl config set-context gke_protocol-us-central1-d505_us-central1_protocol-us-central1
-  ```
-  :::
+- The Kubernetes context must be pointed to the protocol cluster.
+
+This command can be used to change context:
+
+```bash
+kubectl config set-context gke_protocol-us-central1-d505_us-central1_protocol-us-central1
+```
+
+:::
 
 ### Staking actors
 
