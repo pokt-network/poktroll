@@ -33,7 +33,7 @@ type BaseIntegrationSuite struct {
 	app *integration.App
 
 	pocketModuleNames []string
-	cosmosModuleNames   []string
+	cosmosModuleNames []string
 }
 
 // NewApp constructs a new integration app and sets it on the suite.
