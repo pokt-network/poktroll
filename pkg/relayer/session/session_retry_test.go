@@ -6,6 +6,7 @@ import (
 	"os"
 	"strings"
 	"testing"
+	"time"
 
 	"cosmossdk.io/depinject"
 	coretypes "github.com/cometbft/cometbft/rpc/core/types"
@@ -154,6 +155,106 @@ func (s *SessionPersistenceTestSuite) TearDownTest() {
 }
 
 func (s *SessionPersistenceTestSuite) TestProofQueryClientFailing() {
+	sessionEndHeight := s.activeSession.Header.SessionEndBlockHeight
+	claimWindowOpenHeight := sharedtypes.GetClaimWindowOpenHeight(&s.sharedParams, sessionEndHeight)
+
+	s.advanceToBlock(claimWindowOpenHeight - 1)
+
+	// Instruct the proof query client to return an error when querying proof params.
+	s.proofParamsQueryReturnsError = true
+	s.advanceToBlock(claimWindowOpenHeight)
+	// Wait for 5 seconds to allow the retry strategy to perform retries.
+	time.Sleep(4 * time.Second)
+	// Given the exponential backoff strategy configuration with 0.5 second as the initial delay,
+	// the expected number of error calls is 4 which given 5 seconds of waiting time
+	// should have (1) initial try, and (3) retries corresponding to 0.5, 1, and 2 seconds
+	// of the exponential backoff strategy; totaling a duration of 3.5 seconds.
+	expectedNumErrorCalls := 4
+
+	// All attempts should have failed.
+	require.Equal(s.T(), expectedNumErrorCalls, s.proofParamsQueryCallStatus.total)
+	require.Equal(s.T(), expectedNumErrorCalls, s.proofParamsQueryCallStatus.errorCount)
+	// There should be no successful attempts.
+	require.Equal(s.T(), 0, s.proofParamsQueryCallStatus.successCount)
+
+	// Instruct the proof query client to return a successful response when querying proof params.
+	s.proofParamsQueryReturnsError = false
+	// Wait for 5 seconds to allow the retry strategy to perform a last retry after
+	// 4 seconds of waiting time.
+	time.Sleep(5 * time.Second)
+
+	// The total attempts should increase by 1.
+	require.Equal(s.T(), expectedNumErrorCalls+1, s.proofParamsQueryCallStatus.total)
+	// The error count should remain the same.
+	require.Equal(s.T(), expectedNumErrorCalls, s.proofParamsQueryCallStatus.errorCount)
+	// There should be one successful attempt.
+	require.Equal(s.T(), 1, s.proofParamsQueryCallStatus.successCount)
+}
+
+func (s *SessionPersistenceTestSuite) TestSupplierClientFailingToCreateAClaim() {
+	sessionEndHeight := s.activeSession.Header.SessionEndBlockHeight
+	claimWindowOpenHeight := sharedtypes.GetClaimWindowOpenHeight(&s.sharedParams, sessionEndHeight)
+
+	s.advanceToBlock(claimWindowOpenHeight - 1)
+
+	// Instruct the supplier client to return an error when submitting a claim transaction.
+	s.claimCreationReturnsError = true
+	s.advanceToBlock(claimWindowOpenHeight)
+	// Wait for 5 seconds to allow the retry strategy to perform 4 failing retries.
+	time.Sleep(4 * time.Second)
+	expectedNumErrorCalls := 4
+
+	// All attempts should have failed.
+	require.Equal(s.T(), expectedNumErrorCalls, s.createClaimCallStatus.total)
+	require.Equal(s.T(), expectedNumErrorCalls, s.createClaimCallStatus.errorCount)
+	// There should be no successful attempts.
+	require.Equal(s.T(), 0, s.createClaimCallStatus.successCount)
+
+	// Instruct the proof query client to return a successful response when querying proof params.
+	s.claimCreationReturnsError = false
+	// Wait for 5 seconds to allow the retry strategy to perform a last retry after
+	// 4 seconds of waiting time.
+	time.Sleep(5 * time.Second)
+
+	// The total attempts should increase by 1.
+	require.Equal(s.T(), expectedNumErrorCalls+1, s.createClaimCallStatus.total)
+	// The error count should remain the same.
+	require.Equal(s.T(), expectedNumErrorCalls, s.createClaimCallStatus.errorCount)
+	// There should be one successful attempt.
+	require.Equal(s.T(), 1, s.createClaimCallStatus.successCount)
+}
+
+func (s *SessionPersistenceTestSuite) TestSupplierClientFailingToSubmitAProof() {
+	sessionEndHeight := s.activeSession.Header.SessionEndBlockHeight
+	proofWindowOpenHeight := sharedtypes.GetProofWindowOpenHeight(&s.sharedParams, sessionEndHeight)
+
+	s.advanceToBlock(proofWindowOpenHeight - 1)
+
+	// Instruct the supplier client to return an error when submitting a proof transaction.
+	s.proofSubmissionReturnsError = true
+	s.advanceToBlock(proofWindowOpenHeight)
+	// Wait for 5 seconds to allow the retry strategy to perform 4 failing retries.
+	time.Sleep(4 * time.Second)
+	expectedNumErrorCalls := 4
+
+	// All attempts should have failed.
+	require.Equal(s.T(), expectedNumErrorCalls, s.submitProofCallStatus.total)
+	require.Equal(s.T(), expectedNumErrorCalls, s.submitProofCallStatus.errorCount)
+	// There should be no successful attempts.
+	require.Equal(s.T(), 0, s.submitProofCallStatus.successCount)
+
+	// Instruct the proof query client to return a successful response when querying proof params.
+	s.proofSubmissionReturnsError = false
+	// Wait for 5 seconds to allow the retry strategy to perform a last retry after
+	// 4 seconds of waiting time.
+	time.Sleep(5 * time.Second)
+
+	// The total attempts should increase by 1.
+	require.Equal(s.T(), expectedNumErrorCalls+1, s.submitProofCallStatus.total)
+	// The error count should remain the same.
+	require.Equal(s.T(), expectedNumErrorCalls, s.submitProofCallStatus.errorCount)
+	// There should be one successful attempt.
+	require.Equal(s.T(), 1, s.submitProofCallStatus.successCount)
 }
 
 // setupNewRelayerSessionsManager creates and configures a new relayer sessions manager for testing.
