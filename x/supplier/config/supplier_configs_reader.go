@@ -61,119 +61,30 @@ func ParseSupplierConfigs(ctx context.Context, configContent []byte) (*SupplierS
 		return nil, ErrSupplierConfigUnmarshalYAML.Wrapf("%s", err)
 	}
 
-	// Validate required owner address.
-	if _, err := sdk.AccAddressFromBech32(stakeConfig.OwnerAddress); err != nil {
-		return nil, ErrSupplierConfigInvalidOwnerAddress.Wrap("invalid owner address")
+	if err := stakeConfig.ValidateAndNormalizeAddresses(logger); err != nil {
+		return nil, err
 	}
 
-	// If the operator address is not set, default it to the owner address.
-	if stakeConfig.OperatorAddress == "" {
-		stakeConfig.OperatorAddress = stakeConfig.OwnerAddress
-		logger.Info().Msg("operator address not set, defaulting to owner address")
-	}
-
-	// Validate operator address.
-	if _, err := sdk.AccAddressFromBech32(stakeConfig.OperatorAddress); err != nil {
-		return nil, ErrSupplierConfigInvalidOperatorAddress.Wrap("invalid operator address")
-	}
-
-	// Validate the stake amount
-	if len(stakeConfig.StakeAmount) == 0 {
-		return nil, ErrSupplierConfigInvalidStake.Wrap("stake amount cannot be empty")
-	}
-
-	stakeAmount, err := sdk.ParseCoinNormalized(stakeConfig.StakeAmount)
+	stakeAmount, err := stakeConfig.ParseAndValidateStakeAmount()
 	if err != nil {
-		return nil, ErrSupplierConfigInvalidStake.Wrap(err.Error())
+		return nil, err
 	}
 
-	if err := stakeAmount.Validate(); err != nil {
-		return nil, ErrSupplierConfigInvalidStake.Wrap(err.Error())
+	defaultRevShareMap, err := stakeConfig.ValidateAndNormalizeDefaultRevShare()
+	if err != nil {
+		return nil, err
 	}
 
-	if stakeAmount.IsZero() {
-		return nil, ErrSupplierConfigInvalidStake.Wrap("stake amount cannot be zero")
-	}
-
-	if stakeAmount.Denom != "upokt" {
-		return nil, ErrSupplierConfigInvalidStake.Wrapf(
-			"invalid stake denom, expecting: upokt, got: %s",
-			stakeAmount.Denom,
-		)
-	}
-
-	defaultRevSharePercent := map[string]uint64{}
-	if len(stakeConfig.DefaultRevSharePercent) == 0 {
-		// Ensure that if no default rev share is provided, the owner address is set
-		// to 100% rev share.
-		if stakeConfig.OwnerAddress == "" {
-			return nil, ErrSupplierConfigInvalidOwnerAddress.Wrap("owner address cannot be empty")
-		}
-		defaultRevSharePercent[stakeConfig.OwnerAddress] = 100
-	} else {
-		defaultRevSharePercent = stakeConfig.DefaultRevSharePercent
-	}
-
-	// Validate the services
-	if len(stakeConfig.Services) == 0 {
-		return nil, ErrSupplierConfigInvalidServiceId.Wrap("serviceIds cannot be empty")
-	}
-
-	// Prepare the supplierServiceConfig
-	supplierServiceConfig := make([]*sharedtypes.SupplierServiceConfig, 0, len(stakeConfig.Services))
-
-	// Populate the services slice
-	for _, svc := range stakeConfig.Services {
-		// Validate the serviceId
-		if !sharedtypes.IsValidServiceId(svc.ServiceId) {
-			return nil, ErrSupplierConfigInvalidServiceId.Wrapf("%s", svc.ServiceId)
-		}
-
-		if len(svc.Endpoints) == 0 {
-			return nil, ErrSupplierConfigNoEndpoints.Wrapf("%s", svc.ServiceId)
-		}
-
-		// Create a supplied service config with the serviceId
-		service := &sharedtypes.SupplierServiceConfig{
-			ServiceId: svc.ServiceId,
-			RevShare:  []*sharedtypes.ServiceRevenueShare{},
-			Endpoints: []*sharedtypes.SupplierEndpoint{},
-		}
-
-		// Iterate over the service endpoints and add their parsed representation to the supplied service config
-		for _, endpoint := range svc.Endpoints {
-			parsedEndpointEntry, err := parseEndpointEntry(endpoint)
-			if err != nil {
-				return nil, err
-			}
-			service.Endpoints = append(service.Endpoints, parsedEndpointEntry)
-		}
-
-		serviceConfigRevShare := svc.RevSharePercent
-		// If the service does not have a rev share, use the default one.
-		if serviceConfigRevShare == nil {
-			serviceConfigRevShare = defaultRevSharePercent
-		}
-
-		for address, revSharePercent := range serviceConfigRevShare {
-			service.RevShare = append(service.RevShare, &sharedtypes.ServiceRevenueShare{
-				Address:            address,
-				RevSharePercentage: revSharePercent,
-			})
-		}
-
-		if err := sharedtypes.ValidateServiceRevShare(service.RevShare); err != nil {
-			return nil, err
-		}
-
-		supplierServiceConfig = append(supplierServiceConfig, service)
+	supplierServiceConfigs, err := stakeConfig.ValidateAndParseServiceConfigs(defaultRevShareMap)
+	if err != nil {
+		return nil, err
 	}
 
 	return &SupplierStakeConfig{
 		OwnerAddress:    stakeConfig.OwnerAddress,
 		OperatorAddress: stakeConfig.OperatorAddress,
-		StakeAmount:     stakeAmount,
-		Services:        supplierServiceConfig,
+		StakeAmount:     *stakeAmount,
+		Services:        supplierServiceConfigs,
 	}, nil
 }
 
@@ -253,4 +164,141 @@ func validateEndpointURL(endpoint YAMLServiceEndpoint) (string, error) {
 	}
 
 	return endpoint.PubliclyExposedUrl, nil
+}
+
+// ValidateAndNormalizeAddresses validates the configured owner and operator addresses
+// as bech32-encoded pokt addresses. If the operator address is empty, the owner address
+// is set as the operator address as well.
+func (yamlStakeConfig *YAMLStakeConfig) ValidateAndNormalizeAddresses(logger polylog.Logger) error {
+	// Validate required owner address.
+	if _, err := sdk.AccAddressFromBech32(yamlStakeConfig.OwnerAddress); err != nil {
+		return ErrSupplierConfigInvalidOwnerAddress.Wrap("invalid owner address")
+	}
+
+	// If the operator address is not set, default it to the owner address.
+	if yamlStakeConfig.OperatorAddress == "" {
+		yamlStakeConfig.OperatorAddress = yamlStakeConfig.OwnerAddress
+		logger.Info().Msg("operator address not set, defaulting to owner address")
+	}
+
+	// Validate operator address.
+	if _, err := sdk.AccAddressFromBech32(yamlStakeConfig.OperatorAddress); err != nil {
+		return ErrSupplierConfigInvalidOperatorAddress.Wrap("invalid operator address")
+	}
+	return nil
+}
+
+// ParseAndValidateStakeAmount validates that the configured stake amount is non-zero
+// and has the upokt denomination. The parsed stake amount is returned.
+func (yamlStakeConfig *YAMLStakeConfig) ParseAndValidateStakeAmount() (*sdk.Coin, error) {
+	// Validate the stake amount
+	if len(yamlStakeConfig.StakeAmount) == 0 {
+		return nil, ErrSupplierConfigInvalidStake.Wrap("stake amount cannot be empty")
+	}
+
+	stakeAmount, err := sdk.ParseCoinNormalized(yamlStakeConfig.StakeAmount)
+	if err != nil {
+		return nil, ErrSupplierConfigInvalidStake.Wrap(err.Error())
+	}
+
+	if err = stakeAmount.Validate(); err != nil {
+		return nil, ErrSupplierConfigInvalidStake.Wrap(err.Error())
+	}
+
+	if stakeAmount.IsZero() {
+		return nil, ErrSupplierConfigInvalidStake.Wrap("stake amount cannot be zero")
+	}
+
+	if stakeAmount.Denom != "upokt" {
+		return nil, ErrSupplierConfigInvalidStake.Wrapf(
+			"invalid stake denom, expecting: upokt, got: %s",
+			stakeAmount.Denom,
+		)
+	}
+
+	return &stakeAmount, nil
+}
+
+// ValidateAndNormalizeDefaultRevShare sets the default rev share for the owner to 100%.
+func (yamlStakeConfig *YAMLStakeConfig) ValidateAndNormalizeDefaultRevShare() (map[string]uint64, error) {
+	defaultRevSharePercent := map[string]uint64{}
+	if len(yamlStakeConfig.DefaultRevSharePercent) != 0 {
+		defaultRevSharePercent = yamlStakeConfig.DefaultRevSharePercent
+		return defaultRevSharePercent, nil
+	}
+
+	// Ensure that if no default rev share is provided, the owner address is set
+	// to 100% rev share.
+	if yamlStakeConfig.OwnerAddress == "" {
+		return nil, ErrSupplierConfigInvalidOwnerAddress.Wrap("owner address cannot be empty")
+	}
+	defaultRevSharePercent[yamlStakeConfig.OwnerAddress] = 100
+
+	return defaultRevSharePercent, nil
+}
+
+// ValidateAndParseServiceConfigs performs the following:
+//   - Validate that at least one service is configured
+//   - Validate the configured service IDs
+//   - Parse the configured endpoints
+//   - Validates that the sum of all configured service rev shares total to 100%
+//   - If the configured rev share for any service is empty, defaultRevSharePercent
+//     is configured for that service
+//   - The resulting supplier service configs are returned
+func (stakeConfig *YAMLStakeConfig) ValidateAndParseServiceConfigs(defaultRevSharePercent map[string]uint64) ([]*sharedtypes.SupplierServiceConfig, error) {
+	// Validate the services
+	if len(stakeConfig.Services) == 0 {
+		return nil, ErrSupplierConfigInvalidServiceId.Wrap("serviceIds cannot be empty")
+	}
+
+	// Prepare the supplierServiceConfigs
+	supplierServiceConfigs := make([]*sharedtypes.SupplierServiceConfig, 0, len(stakeConfig.Services))
+
+	// Populate the services slice
+	for _, svc := range stakeConfig.Services {
+		// Validate the serviceId
+		if !sharedtypes.IsValidServiceId(svc.ServiceId) {
+			return nil, ErrSupplierConfigInvalidServiceId.Wrapf("%s", svc.ServiceId)
+		}
+
+		if len(svc.Endpoints) == 0 {
+			return nil, ErrSupplierConfigNoEndpoints.Wrapf("%s", svc.ServiceId)
+		}
+
+		// Create a supplied service config with the serviceId
+		service := &sharedtypes.SupplierServiceConfig{
+			ServiceId: svc.ServiceId,
+			RevShare:  []*sharedtypes.ServiceRevenueShare{},
+			Endpoints: []*sharedtypes.SupplierEndpoint{},
+		}
+
+		// Iterate over the service endpoints and add their parsed representation to the supplied service config
+		for _, endpoint := range svc.Endpoints {
+			parsedEndpointEntry, err := parseEndpointEntry(endpoint)
+			if err != nil {
+				return nil, err
+			}
+			service.Endpoints = append(service.Endpoints, parsedEndpointEntry)
+		}
+
+		serviceConfigRevShare := svc.RevSharePercent
+		// If the service does not have a rev share, use the default one.
+		if len(serviceConfigRevShare) == 0 {
+			serviceConfigRevShare = defaultRevSharePercent
+		}
+
+		for address, revSharePercent := range serviceConfigRevShare {
+			service.RevShare = append(service.RevShare, &sharedtypes.ServiceRevenueShare{
+				Address:            address,
+				RevSharePercentage: revSharePercent,
+			})
+		}
+
+		if err := sharedtypes.ValidateServiceRevShare(service.RevShare); err != nil {
+			return nil, err
+		}
+
+		supplierServiceConfigs = append(supplierServiceConfigs, service)
+	}
+	return supplierServiceConfigs, nil
 }
