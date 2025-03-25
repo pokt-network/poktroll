@@ -7,7 +7,6 @@ import (
 	"math/rand"
 	"net/url"
 	"os"
-	"os/exec"
 	"path"
 	"strconv"
 	"strings"
@@ -27,6 +26,9 @@ const (
 	// cmdUsagePattern is a substring to search for in the output of a CLI command
 	// to determine whether it was unsuccessful, despite returning a zero exit code.
 	cmdUsagePattern = `--help" for more`
+
+	defaultMorseStateExportJSONFilename  = "morse_state_export.json"
+	defaultMorseAccountStateJSONFilename = "morse_account_state.json"
 )
 
 var (
@@ -165,13 +167,6 @@ func (s *migrationSuite) TheMorsePrivateKeyIsUsedToClaimAMorseclaimableaccountAs
 	s.Skip("TODO_MAINNET(@bryanchriswhite, #1034): Implement.")
 }
 
-func (s *migrationSuite) TheAuthorityExecutesWithStdoutWrittenTo(commandStr, outputFileName string) {
-	output, err := s.runCommand(commandStr)
-	require.NoError(s, err, commandStr)
-
-	s.writeTempFile(outputFileName, output)
-}
-
 func (s *migrationSuite) AMorsestateexportIsWrittenTo(morseStateExportFile string) {
 	morseStateExportBz, err := os.ReadFile(morseStateExportFile)
 	require.NoError(s, err)
@@ -225,9 +220,8 @@ func (s *migrationSuite) TheShannonServiceConfigIsUpdatedIfApplicable(actorType 
 }
 
 func (s *migrationSuite) TheAuthorityExecutes(commandStr string) {
-	// DEV_NOTE: If the command doesn't start with "poktrolld" fail the test.
 	commandStringParts := strings.Split(commandStr, " ")
-	if len(commandStringParts) < 0 && commandStringParts[0] != "poktrolld" {
+	if len(commandStringParts) < 1 || commandStringParts[0] != "poktrolld" {
 		s.Fatalf("ERROR: expected a poktrolld command but got %q", commandStr)
 	}
 
@@ -241,6 +235,8 @@ func (s *migrationSuite) TheAuthorityExecutes(commandStr string) {
 	)
 
 	switch {
+	// DEV_NOTE: The `import-morse-accounts` subcommand requires additional flags
+	// whose values are environment specific: --grpc-addr and --from.
 	case strings.Contains(commandStr, "import-morse-accounts"):
 		rpcURL, err := url.Parse(defaultRPCURL)
 		require.NoError(s, err)
@@ -264,6 +260,8 @@ func (s *migrationSuite) TheAuthorityExecutes(commandStr string) {
 	require.NoError(s, err)
 
 	// Check if the command returned an error despite having a zero exit code.
+	// This behavior is expected from cosmos-sdk CLIs and is generally not
+	// configurable (i.e. out of our control).
 	if strings.Contains(results.Stdout, cmdUsagePattern) {
 		s.Fatalf(
 			"unexpected command usage/help printed.\nCommand: %s\nStdout: %s",
@@ -294,7 +292,7 @@ func (s *migrationSuite) TheMorseclaimableaccountsArePersistedOnchain() {
 
 func (s *migrationSuite) TheShannonAccountIsFundedWith(fundCoinString string) {
 	fundCoin, err := cosmostypes.ParseCoinNormalized(fundCoinString)
-	require.NoError(s, err)
+	require.NoErrorf(s, err, "unable to parse coin string %q", fundCoinString)
 
 	s.faucetFundedBalanceUpokt = fundCoin
 
@@ -303,10 +301,7 @@ func (s *migrationSuite) TheShannonAccountIsFundedWith(fundCoinString string) {
 	shannonAddr, isFound := accNameToAddrMap[shannonKeyName]
 	require.Truef(s, isFound, "key %q not found in poktrolld keyring", shannonKeyName)
 
-	upokt, err := cosmostypes.ParseCoinNormalized(fundCoinString)
-	require.NoErrorf(s, err, "unable to parse coin string %q", upokt)
-
-	s.fundAddress(shannonAddr, upokt)
+	s.fundAddress(shannonAddr, s.faucetFundedBalanceUpokt)
 }
 
 func (s *migrationSuite) TheShannonDestinationAccountDoesNotExistOnchain() {
@@ -424,10 +419,21 @@ func (s *migrationSuite) AMorseaccountstateWithAccountsInADistributionHasSuccess
 	err = os.WriteFile("morse_state_export.json", morseStateExportBz, 0644)
 	require.NoError(s, err)
 
-	s.TheAuthorityExecutes("poktrolld tx migration collect-morse-accounts morse_state_export.json morse_account_state.json")
-	s.AMorseaccountstateIsWrittenTo("morse_account_state.json")
+	collectMorseAccountsCmdString := strings.Join([]string{
+		"poktrolld", "tx",
+		"migration", "collect-morse-accounts",
+		defaultMorseStateExportJSONFilename,
+		defaultMorseAccountStateJSONFilename,
+	}, " ")
+	s.TheAuthorityExecutes(collectMorseAccountsCmdString)
+	s.AMorseaccountstateIsWrittenTo(defaultMorseAccountStateJSONFilename)
 
-	s.TheAuthorityExecutes("poktrolld tx migration import-morse-accounts morse_account_state.json")
+	importMorseAccountsCmdString := strings.Join([]string{
+		"poktrolld", "tx",
+		"migration", "import-morse-accounts",
+		defaultMorseAccountStateJSONFilename,
+	}, " ")
+	s.TheAuthorityExecutes(importMorseAccountsCmdString)
 	s.TheMorseclaimableaccountsArePersistedOnchain()
 }
 
@@ -452,16 +458,6 @@ func (s *migrationSuite) TheMorseClaimableAccountIsMarkedAsClaimedByTheShannonAc
 
 	*s.morseClaimableAccount = s.queryShowMorseClaimableAccount(s.morseClaimableAccount.MorseSrcAddress)
 	require.Equal(s, &expectedMorseClaimableAccount, s.morseClaimableAccount)
-}
-
-// runCommand executes the given command string and returns the output and any error.
-func (s *migrationSuite) runCommand(commandStr string) ([]byte, error) {
-	commandStringParts := strings.Split(commandStr, " ")
-
-	cmd := exec.Command(commandStringParts[0], commandStringParts[1:]...)
-	output, err := cmd.CombinedOutput()
-
-	return output, err
 }
 
 // writeTempFile creates a temporary file with the given fileName and content.
