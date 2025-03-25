@@ -89,7 +89,7 @@ func unarmorDecryptPrivKey(armorStr []byte, passphrase string) (ed25519.PrivKey,
 
 	// check the ArmoredJson for the correct parameters on kdf and salt
 	if armoredJson.Kdf != "scrypt" {
-		return privKey, fmt.Errorf("unrecognized KDF type: %v", armoredJson.Kdf)
+		return privKey, fmt.Errorf("unrecognized KDF type: %s, expected scrypt", armoredJson.Kdf)
 	}
 	if armoredJson.Salt == "" {
 		return privKey, fmt.Errorf("missing salt bytes")
@@ -124,33 +124,31 @@ func decryptPrivKey(
 	}
 
 	// decrypt using AES
-	privKeyBytes, err := decryptAESGCM(key, encBytes)
+	privKeyHexBz, err := decryptAESGCM(key, encBytes)
 	if err != nil {
 		return privKey, err
 	}
 
-	privKeyBytes, _ = hex.DecodeString(string(privKeyBytes))
-	pk := ed25519.PrivKey(privKeyBytes)
+	privKeyHexBz, _ = hex.DecodeString(string(privKeyHexBz))
+	pk := ed25519.PrivKey(privKeyHexBz)
 
 	return pk, err
 }
 
-// decryptAESGCM decrypts enBytes using the given key bytes.
-func decryptAESGCM(key []byte, enBytes []byte) ([]byte, error) {
+// decryptAESGCM decrypts encBytes using the given key bytes.
+func decryptAESGCM(key []byte, encBytes []byte) ([]byte, error) {
 	block, err := aes.NewCipher(key)
 	if err != nil {
-		fmt.Println(err)
-		return nil, err
+		return nil, fmt.Errorf("unable to create a new AES cipher block: %w", err)
 	}
 
 	gcm, err := cipher.NewGCM(block)
 	if err != nil {
-		fmt.Println(err)
-		return nil, err
+		return nil, fmt.Errorf("unable to create a new GCM cipher: %w", err)
 	}
 
 	nonce := key[:12]
-	result, err := gcm.Open(nil, nonce, enBytes, nil)
+	result, err := gcm.Open(nil, nonce, encBytes, nil)
 	if err != nil {
 		return nil, fmt.Errorf("can't Decrypt Using AES: %w", err)
 	}
