@@ -336,6 +336,7 @@ ignite_update_ldflags:
 .PHONY: ignite_release
 ignite_release: ## Builds production binaries
 	ignite chain build --release -t linux:amd64 -t linux:arm64 -t darwin:amd64 -t darwin:arm64
+	cd release && for f in poktroll_*.tar.gz; do mv "$$f" "$${f/poktroll_/pocket_}"; done
 
 .PHONY: ignite_release_extract_binaries
 ignite_release_extract_binaries: ## Extracts binaries from the release archives
