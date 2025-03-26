@@ -3,6 +3,18 @@ version: 1
 build:
   main: cmd/poktrolld
 
+# Pocket Network Shadow MainNet Genesis Account Balances
+#
+# | Account    | Balance           | Explanation                   |
+# |------------|-------------------|-------------------------------|
+# | pnf        | 10,000,000 POKT   | [Explanation placeholder]     |
+# | grove      | 10,000,000 POKT   | [Explanation placeholder]     |
+# | groveval1  | 100,000 POKT      | [Explanation placeholder]     |
+# | groveval2  | 100,000 POKT      | [Explanation placeholder]     |
+# | groveval3  | 100,000 POKT      | [Explanation placeholder]     |
+# | groveval4  | 100,000 POKT      | [Explanation placeholder]     |
+# | groveval5  | 100,000 POKT      | [Explanation placeholder]     |
+
 accounts:
   ####### PNF Account #######
   # pnf is the account of the Pocket Network Foundation managing governance and
@@ -34,95 +46,75 @@ accounts:
   # Grove team members will be responsible for capturing the mnemonic seed phrase
   # validators groveval1...groveval5 during the genesis.json creation process.
 
-  # groveval1 is the first genesis validator of Pocket Network's Shadow MainNet operated by Grove.
+  # groveval1 is the first genesis validator of Pocket Network's Shadow MainNet genesis operated by Grove.
   - name: groveval1
     # address: explicitly omitted; see comment above.
     coins:
       - 100000000000upokt # 100K POKT (15K bonded below 85K remaining for tx fees, slashing, etc...)
 
-  # groveval2 is the first genesis validator of Pocket Network's Shadow MainNet operated by Grove.
+  # groveval2 is the second genesis validator of Pocket Network's Shadow MainNet genesis  operated by Grove.
   - name: groveval2
     # address: explicitly omitted; see comment above.
     coins:
       - 100000000000upokt # 100K POKT (15K bonded below 85K remaining for tx fees, slashing, etc...)
 
-  # groveval3 is the first genesis validator of Pocket Network's Shadow MainNet operated by Grove.
+  # groveval3 is the third genesis validator of Pocket Network's Shadow MainNet genesis operated by Grove.
   - name: groveval3
     # address: explicitly omitted; see comment above.
     coins:
       - 100000000000upokt # 100K POKT (15K bonded below 85K remaining for tx fees, slashing, etc...)
 
-  # groveval4 is the first genesis validator of Pocket Network's Shadow MainNet operated by Grove.
+  # groveval4 is the fourth genesis validator of Pocket Network's Shadow MainNet genesis  operated by Grove.
   - name: groveval4
     # address: explicitly omitted; see comment above.
     coins:
       - 100000000000upokt # 100K POKT (15K bonded below 85K remaining for tx fees, slashing, etc...)
 
-  # groveval5 is the first genesis validator of Pocket Network's Shadow MainNet operated by Grove.
+  # groveval5 is the fifth genesis validator of Pocket Network's Shadow MainNet genesis  operated by Grove.
   - name: groveval5
     # address: explicitly omitted; see comment above.
     coins:
       - 100000000000upokt # 100K POKT (15K bonded below 85K remaining for tx fees, slashing, etc...)
 
 ####### Validator Configs ######
+# See `cmd/poktrolld/cmd/config.go` for default CometBFT and AppChain values.
 validators:
   - name: groveval1
-    bonded: 15000000000upokt
-    # TODO_IN_THIS_PR: check defaults in `cmd/poktrolld/cmd/config.go` - as this is THE spot for default values, not below.
-    # Values below will only change config for the first validator.
-    app:
-      minimum-gas-prices: 0.000001upokt
-      telemetry:
-        enabled: true
-      poktroll:
-        telemetry:
-          # "high" produces a lot of timeseries.
-          # ONLY suitable for small networks such as LocalNet.
-          cardinality-level: medium
-      api:
-        swagger: true
-    config:
-      moniker: "groveval1"
-      consensus:
-        # TODO_IN_THIS_PR: keep morse 15m or lower to 10m?
-        timeout_commit: "10m"
-        timeout_propose: "10m"
-      instrumentation:
-        prometheus: true
-      log_level: "info"
-      # Increase the rpc and mempool max bytes to support large transactions.
-      # DEV_NOTE: These values were selected arbitrarily, but chosen to be large,
-      # as a result of load testing and seeing large proof messages during the
-      # Claim & Proof lifecycle.
-      # TODO_IN_THIS_PR: check what we've got on beta.
-      rpc:
-        # Controls how large any single RPC request accepted by the CometBFT
-        # server (offchain) can be.
-        max_body_bytes: "100000000"
-      mempool:
-        # Control how big any single transaction accepted by the CometBFT server
-        # (offchain) can be.
-        # Since multiple messages are bundled into a single transaction,
-        # max_tx_bytes needs to be increased alongside max_txs_bytes as well.
-        max_tx_bytes: "100000000"
-    client:
-      chain-id: pocket # TODO_IN_THIS_PR: is this correct?
+    bonded: 15000000000upokt # 15K POKT (bonded)
+  - name: groveval2
+    bonded: 15000000000upokt # 15K POKT (bonded)
+  - name: groveval3
+    bonded: 15000000000upokt # 15K POKT (bonded)
+  - name: groveval4
+    bonded: 15000000000upokt # 15K POKT (bonded)
+  - name: groveval5
+    bonded: 15000000000upokt # 15K POKT (bonded)
 
 # We can persist arbitrary genesis values via 1 to 1 mapping to genesis.json
 genesis:
+  app_name: poktroll
+  chain_id: poktroll
+
   app_state:
+    # See the consensus module for all other relevant parameters.
+    # Ignite generate defaults in genesis.json with the values as explicit overrides.
+    # https://docs.cosmos.network/main/build/modules/consensus
     consensus:
       params:
         block:
-          max_bytes: "22020096" # TODO_IN_THIS_PR: what should we set this to? Note that on BETA we somehow have larger blocks even when this value is the same.
+          max_bytes: "22020096" # 21MB per block is the max using txs from the mempool; onchain events may lead to larger blocks.
+          unbonding_time: "362880s" # 4.2 days
+
+    # See the mint module for all other relevant parameters.
+    # Ignite generate defaults in genesis.json with the values as explicit overrides.
     # https://docs.cosmos.network/main/build/modules/mint
     mint:
       params:
         mint_denom: upokt
-        # Note that in Pocket Network, the majority of the inflation/deflation
-        # comes from the utility of network, not just the validators that
-        # secure it. Therefore, the inflation params of x/mint are set to 0.
-        # See x/tokenomics for all details related to token inflation.
+        # In Pocket Network, majority of inflation/deflation comes from the utility of the network.
+        # Validators (i.e. proposers) are rewarded by the x/tokenomics module based on network utility.
+        # Block rewards, independent of network utility, are set to 0 at genesis.
+        # See x/tokenomics module for more details.
         inflation_rate_change: "0.0"
         inflation_max: "0.0"
         inflation_min: "0.0"
@@ -130,64 +122,50 @@ genesis:
         # goal_bonded: "NA"
         # blocks_per_year: "NA"
         # max_supply: "NA"
+
+    # See the mint module for all other relevant parameters.
+    # Ignite generate defaults in genesis.json with the values as explicit overrides.
+    # https://docs.cosmos.network/main/build/modules/staking
     staking:
       params:
         bond_denom: upokt
+        # This file configures Pocket Network Shadow MainNet to have 5 Grove validators out of a total of 10.
+        #
+        # Prior to the snapshot claim event: In order for other Validators to join the network,
+        # either Grove or PNF (the only actors with tokens) will need to distribute tokens to them.
+        #
+        # After the snapshot claim event: Validators can join the network by claiming tokens from the Morse
+        # snapshot, and do with them as they wish. At that point, the number of max validators will be increased
+        # as well.
         max_validators: 10
-    crisis: # TODO_IN_THIS_PR: look into this, I think x/crisis is deprecated. NVM, will be gone in v0.53: https://github.com/cosmos/cosmos-sdk/pull/23722/files. What the value should this be?
-      constant_fee:
-        amount: "10000"
-        denom: upokt
+
+    # See the gov module for all other relevant parameters.
+    # Ignite generate defaults in genesis.json with the values as explicit overrides.
+    # https://docs.cosmos.network/main/build/modules/gov
     gov:
-      # This module allows to submit and vote on proposals, and when they are passed - they can be Messages can be executed automatically. E.g. upgrade is one of these proposal types.
-      # TODO_IN_THIS_PR: since we have an off-chain DAO, we need to turn off x/gov OR make deposits too expensive to submit proposals on chain.
+      # At the time of Pocket Network's Shadow MainNet genesis, onchain voting is not used.
+      # PNF (an offchain entity) acts on behalf of the DAO (an offchain entity) to perform onchain governance transactions.
+      #
+      # To prevent onchain governance transactions from interfering with the chain, an extremely high deposit is set.
+      #
+      # When the network is ready for onchain governance, these and other parameters will need to be adjusted via authz transactions.
       params:
-        # We have an authz authorization to adjust this if necessary.
         min_deposit:
-          - amount: "42069420694206942069420694206942069420694206942069"
+          - amount: "42069420694206942069420694206942069420694206942069" # Very high deposit (not possible based on supply) to prevent onchain governance at time of genesis.
             denom: upokt
-    bank:
-      supply:
-        []
-        # - amount: "1000000000" # TODO_IN_THIS_PR: should be empty if we don't pre-stake any actors?
-        #   denom: upokt
-      balances:
-        []
-        # # TODO_IN_THIS_PR: As we don't pre-stake any actors, we shouldn't need to add balances here. Correct?
-        # # # Application module
-        # - address: pokt1rl3gjgzexmplmds3tq3r3yk84zlwdl6djzgsvm
-        #   coins:
-        #     # TODO_MAINNET(@olshansk): Pass config.yml into ChatGPT to build a script
-        #     # that ensures the amounts line up
-        #     - amount: "0" # MUST BE equal to the total of all app stakes below
-        #       denom: upokt
-        # # Supplier module
-        # - address: pokt1j40dzzmn6cn9kxku7a5tjnud6hv37vesr5ccaa
-        #   coins:
-        #     - amount: "0" # MUST BE equal to the total of all supplier stakes below
-        #       denom: upokt
-        # # Gateway module
-        # - address: pokt1f6j7u6875p2cvyrgjr0d2uecyzah0kget9vlpl
-        #   coins:
-        #     - amount: "0" # MUST BE equal to the total of all gateway stakes below
-        #       denom: upokt
-        # # Service module
-        # - address: pokt1nhmtqf4gcmpxu0p6e53hpgtwj0llmsqpxtumcf
-        #   coins:
-        #     - amount: "1000000000" # MUST BE equal to one add_service_fee below - TODO_IN_THIS_PR: is this correct if we don't have any service?
-        #       denom: upokt
+
+    # TODO_IN_THIS_PR: verify parameters.
     application:
-      # TODO_IN_THIS_PR: verify parameters.
       params:
         max_delegated_gateways: "7"
         min_stake:
           amount: "100000000" # 100 POKT
           denom: upokt
-      applicationList: []
+      applicationList: [] # Intentionally omitted; no applications pre-staked at genesis.
+
+    # TODO_IN_THIS_PR: verify parameters.
     supplier:
-      # TODO_IN_THIS_PR: verify parameters.
       params:
-        # TODO_BETA(@bryanchriswhite): Determine realistic amount for minimum gateway stake amount.
         min_stake:
           amount: "1000000" # 1 POKT
           denom: upokt
@@ -195,25 +173,28 @@ genesis:
         staking_fee:
           amount: "1" # 1 uPOKT
           denom: upokt
-      supplierList: []
+      supplierList: [] # Intentionally omitted; no suppliers pre-staked at genesis.
+
+    # TODO_IN_THIS_PR: verify parameters.
     gateway:
-      # TODO_IN_THIS_PR: verify parameters.
       params:
         # TODO_BETA(@bryanchriswhite): Determine realistic amount for minimum gateway stake amount.
         min_stake:
           amount: "1000000" # 1 POKT
           denom: upokt
-      gatewayList: []
+      gatewayList: [] # Intentionally omitted; no gateways pre-staked at genesis.
+
+    # TODO_IN_THIS_PR: verify parameters.
     service:
-      # TODO_IN_THIS_PR: verify parameters.
       params:
         add_service_fee:
           amount: "1000000000"
           denom: upokt
         target_num_relays: 100000
-      serviceList: []
+      serviceList: [] # Intentionally omitted; no services pre-staked at genesis.
+
+    # TODO_IN_THIS_PR: verify parameters.
     proof:
-      # TODO_IN_THIS_PR: verify parameters.
       params:
         proof_request_probability: "0.25"
         proof_requirement_threshold:
@@ -225,27 +206,14 @@ genesis:
         proof_submission_fee:
           amount: "1000000"
           denom: upokt
+
+    # TODO_IN_THIS_PR: verify parameters. Keeping morse value?
     session:
-      # TODO_IN_THIS_PR: verify parameters. Keeping morse value?
       params:
         num_suppliers_per_session: 15
-    tokenomics:
-      # TODO_IN_THIS_PR: verify parameters.
-      params:
-        mint_allocation_percentages:
-          dao: 0.1
-          proposer: 0.05
-          supplier: 0.7
-          source_owner: 0.15
-          application: 0.0
-        # The dao reward address SHOULD match that of the "pnf" below (i.e. `make poktrolld_addr ACC_NAME=pnf`).
-        # This is the address that will receive the dao/foundation rewards during claim settlement (global mint TLM).
-        # TODO_MAINNET(@olshansk): Consolidate the usage of DAO/PNF throughout the configs & codebase.
-        # TODO_IN_THIS_PR: change address to PNF address.
-        dao_reward_address: "pokt1eeeksh2tvkh7wzmfrljnhw4wrhs55lcuvmekkw"
-        global_inflation_per_claim: 0.1
+
+    # TODO_IN_THIS_PR: verify parameters.
     shared:
-      # TODO_IN_THIS_PR: verify parameters.
       params:
         num_blocks_per_session: 10
         grace_period_end_offset_blocks: 1
@@ -257,3 +225,16 @@ genesis:
         application_unbonding_period_sessions: 1
         gateway_unbonding_period_sessions: 1
         compute_units_to_tokens_multiplier: 42
+
+    # TODO_IN_THIS_PR: verify parameters.
+    tokenomics:
+      params:
+        # TODO_IN_THIS_PR: Make this the x/gov address and ensure PNF can send funds on its behalf.
+        dao_reward_address: "pokt1eeeksh2tvkh7wzmfrljnhw4wrhs55lcuvmekkw"
+        global_inflation_per_claim: 0
+        mint_allocation_percentages:
+          dao: 0.1
+          proposer: 0.1
+          supplier: 0.7
+          source_owner: 0.1
+          application: 0.0
