@@ -5,6 +5,16 @@ build:
 
 # Pocket Network Shadow MainNet Genesis Account Balances
 #
+# The values below amount to a total of 25M POKT for Pocket Network Shadow MainNet Genesis.
+#
+# They will be reconciled accordingly during the snapshot from Morse to Shannon.
+#
+# They are in place today to enable the launching of the new network, testing and onboarding
+# of new validators, suppliers, and applications without being limited for faucet-like funds.
+#
+# Note that all inflation & deflation in the modules below is set to zero to mimic a burn=mint
+# like network at maturity.
+#
 # | Account    | Balance           | Explanation                   |
 # |------------|-------------------|-------------------------------|
 # | pnf        | 10,000,000 POKT   | [Explanation placeholder]     |
@@ -35,7 +45,7 @@ accounts:
 
   ####### Grove Validator Accounts ######
   #
-  # The addresses for groveval1...groveval5 are explicitly omitted since they'll
+  # The addresses for groveval1...groveval5 are intentionally omitted since they'll
   # be randomly generated during the conversion of this config.yml to a genesis.json
   # using the ignite CLI; https://github.com/ignite/cli.
   #
@@ -48,31 +58,31 @@ accounts:
 
   # groveval1 is the first genesis validator of Pocket Network's Shadow MainNet genesis operated by Grove.
   - name: groveval1
-    # address: explicitly omitted; see comment above.
+    # address: intentionally omitted; see comment above.
     coins:
       - 100000000000upokt # 100K POKT (15K bonded below 85K remaining for tx fees, slashing, etc...)
 
   # groveval2 is the second genesis validator of Pocket Network's Shadow MainNet genesis  operated by Grove.
   - name: groveval2
-    # address: explicitly omitted; see comment above.
+    # address: intentionally omitted; see comment above.
     coins:
       - 100000000000upokt # 100K POKT (15K bonded below 85K remaining for tx fees, slashing, etc...)
 
   # groveval3 is the third genesis validator of Pocket Network's Shadow MainNet genesis operated by Grove.
   - name: groveval3
-    # address: explicitly omitted; see comment above.
+    # address: intentionally omitted; see comment above.
     coins:
       - 100000000000upokt # 100K POKT (15K bonded below 85K remaining for tx fees, slashing, etc...)
 
   # groveval4 is the fourth genesis validator of Pocket Network's Shadow MainNet genesis  operated by Grove.
   - name: groveval4
-    # address: explicitly omitted; see comment above.
+    # address: intentionally omitted; see comment above.
     coins:
       - 100000000000upokt # 100K POKT (15K bonded below 85K remaining for tx fees, slashing, etc...)
 
   # groveval5 is the fifth genesis validator of Pocket Network's Shadow MainNet genesis  operated by Grove.
   - name: groveval5
-    # address: explicitly omitted; see comment above.
+    # address: intentionally omitted; see comment above.
     coins:
       - 100000000000upokt # 100K POKT (15K bonded below 85K remaining for tx fees, slashing, etc...)
 
@@ -96,6 +106,8 @@ genesis:
   chain_id: poktroll
 
   app_state:
+    ####### CometBFT Configs & Cosmos SDK Module Configs ######
+
     # See the consensus module for all other relevant parameters.
     # Ignite generate defaults in genesis.json with the values as explicit overrides.
     # https://docs.cosmos.network/main/build/modules/consensus
@@ -154,87 +166,99 @@ genesis:
           - amount: "42069420694206942069420694206942069420694206942069" # Very high deposit (not possible based on supply) to prevent onchain governance at time of genesis.
             denom: upokt
 
-    # TODO_IN_THIS_PR: verify parameters.
+    ####### Pocket Network Specific Configs ######
+    # For documentation, see docusaurus/docs/protocol/governance/params.md
+
+    # For ref, see proto/poktroll/application/params.proto
     application:
       params:
-        max_delegated_gateways: "7"
+        # 6 was arbitrarily selected taking into consideration two factors:
+        # - The number of Gateways users usually round robin through.
+        # - Potential performance impacts on ring signatures.
+        max_delegated_gateways: "6"
         min_stake:
-          amount: "100000000" # 100 POKT
+          amount: "100000000" # 100 POKT; arbitrary value for for MainNet Shadow Genesis.
           denom: upokt
       applicationList: [] # Intentionally omitted; no applications pre-staked at genesis.
 
-    # TODO_IN_THIS_PR: verify parameters.
-    supplier:
-      params:
-        min_stake:
-          amount: "1000000" # 1 POKT
-          denom: upokt
-        # TODO_BETA(@bryanchriswhite): Determine realistic amount for supplier staking fee.
-        staking_fee:
-          amount: "1" # 1 uPOKT
-          denom: upokt
-      supplierList: [] # Intentionally omitted; no suppliers pre-staked at genesis.
-
-    # TODO_IN_THIS_PR: verify parameters.
+    # For ref, see proto/poktroll/gateway/params.proto
     gateway:
       params:
         # TODO_BETA(@bryanchriswhite): Determine realistic amount for minimum gateway stake amount.
         min_stake:
-          amount: "1000000" # 1 POKT
+          amount: "100000000" # 100 POKT; arbitrary value for for MainNet Shadow Genesis.
           denom: upokt
       gatewayList: [] # Intentionally omitted; no gateways pre-staked at genesis.
 
-    # TODO_IN_THIS_PR: verify parameters.
+    # For ref, see proto/poktroll/supplier/params.proto
+    supplier:
+      params:
+        min_stake:
+          amount: "15000000000" # 15K POKT; arbitrary value for for MainNet Shadow Genesis that aligns with Morse snapshot.
+          denom: upokt
+        # TODO_BETA(@bryanchriswhite): Determine realistic amount for supplier staking fee.
+        staking_fee:
+          amount: "0" # 0 POKT; set to zero for MainNet Shadow Genesis to avoid loss during testing & onboarding.
+          denom: upokt
+      supplierList: [] # Intentionally omitted; no suppliers pre-staked at genesis.
+
+    # For ref, see proto/poktroll/service/params.proto
     service:
       params:
         add_service_fee:
-          amount: "1000000000"
+          amount: "0" # 0 POKT; set to zero for MainNet Shadow Genesis to avoid loss during testing & onboarding.
           denom: upokt
-        target_num_relays: 100000
+        target_num_relays: 100000 # 100K; arbitrary value for MainNet Shadow Genesis that aligns with "reputable" volume.
       serviceList: [] # Intentionally omitted; no services pre-staked at genesis.
 
-    # TODO_IN_THIS_PR: verify parameters.
+    # For ref, see proto/poktroll/proof/params.proto
     proof:
       params:
         proof_request_probability: "0.25"
         proof_requirement_threshold:
-          amount: "20000000"
+          amount: "100000000" # 100 POKT; arbitrary value for for MainNet Shadow Genesis that balances cost and security.
           denom: upokt
         proof_missing_penalty:
-          amount: "320000000"
+          amount: "0" # 0 POKT; set to zero for MainNet Shadow Genesis to avoid loss during testing & onboarding.
           denom: upokt
         proof_submission_fee:
-          amount: "1000000"
+          amount: "0" # 0 POKT; set to zero for MainNet Shadow Genesis to avoid loss during testing & onboarding.
           denom: upokt
 
-    # TODO_IN_THIS_PR: verify parameters. Keeping morse value?
+    # For ref, see proto/poktroll/session/params.proto
     session:
       params:
-        num_suppliers_per_session: 15
+        num_suppliers_per_session: 24 # 24 suppliers per session is an arbitrary value for MainNet Shadow Genesis that aligns with Morse snapshot.
 
-    # TODO_IN_THIS_PR: verify parameters.
+    # For ref, see proto/poktroll/shared/params.proto
     shared:
       params:
-        num_blocks_per_session: 10
-        grace_period_end_offset_blocks: 1
-        claim_window_open_offset_blocks: 1
-        claim_window_close_offset_blocks: 4
-        proof_window_open_offset_blocks: 0
-        proof_window_close_offset_blocks: 4
-        supplier_unbonding_period_sessions: 1
-        application_unbonding_period_sessions: 1
-        gateway_unbonding_period_sessions: 1
-        compute_units_to_tokens_multiplier: 42
+        num_blocks_per_session: 10 # At 1 minute blocks, this will lead to a new session every 10 minutes. Arbitrarily selected.
+        grace_period_end_offset_blocks: 1 # Small value to smooth out session rollovers.
 
-    # TODO_IN_THIS_PR: verify parameters.
+        claim_window_open_offset_blocks: 1 # Small (for speed) non-zero (for security) value to balance speed and security.
+        claim_window_close_offset_blocks: 4 # Small (for speed) non-zero (for security) value to balance speed and security but must be larger than claim_window_open_offset_blocks.
+
+        proof_window_open_offset_blocks: 0 # Set to zero to allow for immediate proof submission after the claim window closes.
+        proof_window_close_offset_blocks: 4 # Small (for speed) non-zero (for security) value to balance speed and security but must be larger than proof_window_open_offset_blocks.
+
+        compute_units_to_tokens_multiplier: 42 # Arbitrary value for MainNet Shadow Genesis that acts as the answer to everything.
+
+        supplier_unbonding_period_sessions: 1 # Small value to enable for quick testing & onboarding during MainNet Shadow Genesis.
+        application_unbonding_period_sessions: 1 # Small value to enable for quick testing & onboarding during MainNet Shadow Genesis.
+        gateway_unbonding_period_sessions: 1 # Small value to enable for quick testing & onboarding during MainNet Shadow Genesis.
+
+    # For ref, see proto/poktroll/tokenomics/params.proto
     tokenomics:
       params:
-        # TODO_IN_THIS_PR: Make this the x/gov address and ensure PNF can send funds on its behalf.
-        dao_reward_address: "pokt1eeeksh2tvkh7wzmfrljnhw4wrhs55lcuvmekkw"
-        global_inflation_per_claim: 0
+        # This is the onchain x/gov module address that no one has the key for.
+        # The pnd address above has authz authorizations to act on its behalf and represent the DAO.
+        dao_reward_address: "pokt10d07y265gmmuvt4z0w9aw880jnsr700j8yv32t"
+        global_inflation_per_claim: 0 # Set to zero to prevent inflation or deflation at MainNet Shadow Genesis.
+        # The following parameters are all going to be zero because global_inflation_per_claim is zero but are in place for future-reference.
         mint_allocation_percentages:
-          dao: 0.1
-          proposer: 0.1
-          supplier: 0.7
-          source_owner: 0.1
-          application: 0.0
+          dao: 0.1 # DAO earns 10% of the global inflation during all claim settlements across all services.
+          proposer: 0.1 # Block proposers earn 10% of the global inflation during all claim settlements across all services.
+          supplier: 0.7 # Suppliers earn 70% of the global inflation during all claim settlements associated with the service they provide.
+          source_owner: 0.1 # Service owners earn 10% of the global inflation during all claim settlements associated with their service.
+          application: 0.0 # Application earns nothing from global inflation during all claim settlements.

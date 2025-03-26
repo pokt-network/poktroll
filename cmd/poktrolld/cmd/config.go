@@ -28,13 +28,17 @@ import (
 //
 // ### Default App Genesis Configs ###
 // - MinGasPrices: "0.000000001upokt"
-// - Mempool.MaxTxs: 10000
+// - Mempool.MaxTxs: 100000
 // - Telemetry.Enabled: true
 // - Telemetry.PrometheusRetentionTime: 86400s (24h)
 // - Telemetry.MetricsSink: "mem"
 // - Pruning: "nothing" (archiving node)
 // - API.Enable: true
+// - API.Swagger: true
+// - API.RPCMaxBodyBytes: 100000000 (95MB)
+// - API.RPCReadTimeout: 60s (1 minute)
 // - GRPC.Enable: true
+// - GRPC.MaxRecvMsgSize: 100000000 (95MB)
 // - GRPCWeb.Enable: true
 //
 // For other default configurations used, see:
