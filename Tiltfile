@@ -80,7 +80,7 @@ localnet_config_defaults = {
     # repo instead.
     "path_local_repo": {
         "enabled": False,
-        "path": "../path"
+        "path": os.path.join("..", "path")
     },
 
     "indexer": {
