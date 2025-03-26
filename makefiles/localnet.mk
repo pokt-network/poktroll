@@ -15,7 +15,7 @@ localnet_down: ## Delete resources created by localnet
 	tilt down
 
 .PHONY: localnet_regenesis
-localnet_regenesis: check_yq warn_message_acc_initialize_pubkeys ## Regenerate the localnet genesis file
+localnet_regenesis: check_yq warn_message_acc_initialize_pubkeys warn_message_grove_helm_charts ## Regenerate the localnet genesis file
 # NOTE: intentionally not using --home <dir> flag to avoid overwriting the test keyring
 	@echo "Initializing chain..."
 	@set -e

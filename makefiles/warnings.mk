@@ -43,3 +43,19 @@ warn_flaky_tests: ## Print a warning message that some unit tests may be flaky
 .PHONY: warn_destructive
 warn_destructive: ## Print WARNING to the user
 	@echo "This is a destructive action that will affect docker resources outside the scope of this repo!"
+
+.PHONY: warn_message_grove_helm_charts
+warn_message_grove_helm_charts: ## Print a warning message about cloning Grove Helm charts - TODO_TECHDEBT: Fix this to avoid manual steps
+	@echo "+-----------------------------------------------------------------------------------+"
+	@echo "|                                                                                   |"
+	@echo "|     IMPORTANT: Please run the following commands to set up Grove Helm charts:     |"
+	@echo "|                                                                                   |"
+	@echo "|     git clone https://github.com/buildwithgrove/helm-charts grove-helm-charts     |"
+	@echo "|     cd grove-helm-charts && git checkout d8ac9df02af7a258dfaaa044580ff21f0412cc33 |"
+	@echo "|                                                                                   |"
+	@echo "|     Then update localnet_config_yaml with:                                        |"
+	@echo "|     grove_helm_chart_local_repo:                                                  |"
+	@echo "|       enabled: true                                                               |"
+	@echo "|       path: ../grove-helm-charts                                                  |"
+	@echo "|                                                                                   |"
+	@echo "+-----------------------------------------------------------------------------------+"
