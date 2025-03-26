@@ -6,7 +6,7 @@ FROM golang:1.23.0 as base
 RUN apt update && \
     apt-get install -y \
     ca-certificates net-tools kubernetes-client \
-    curl jq yq make vim less dnsutils
+    curl jq yq make vim less dnsutils rsync
 
 # enable faster module downloading.
 ENV GOPROXY https://proxy.golang.org
