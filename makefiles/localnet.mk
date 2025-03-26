@@ -15,6 +15,17 @@ localnet_up_quick: check_docker_ps check_kind_context ## Starts up a localnet wi
 localnet_down: ## Delete resources created by localnet
 	tilt down
 
+
+# Optional context for 'move_poktroll_to_pocket' to answer this question:
+# https://github.com/pokt-network/poktroll/pull/1151#discussion_r2013801486
+#
+# When running 'ignite chain --help', it states:
+# > By default the validator node will be initialized in your $HOME directory in a hidden directory that matches the name of your project.
+# This DOES NOT reference: chain-id, app-id, or other "logical" things we expect it to be.
+# This DOES reference: the project name (i.e. the basename of the directory).
+# Until the `poktroll` repository is renamed to `pocket`, the following will be required.
+# TODO_TECHDEBT: Once this repository is renamed from `poktroll` to `pocket, remove the helper below.
+
 .PHONY: move_poktroll_to_pocket
 # Internal Helper to move the .poktroll directory to .pocket
 move_poktroll_to_pocket:
@@ -35,6 +46,7 @@ localnet_regenesis: check_yq warn_message_acc_initialize_pubkeys ## Regenerate t
 	@echo "Initializing chain..."
 	@set -e
 	@ignite chain init --skip-proto
+# DEV_NOTE: We want the following command to run every time localnet is spun up (i.e. localnet re-genesis)
 	$(MAKE) move_poktroll_to_pocket
 	AUTH_CONTENT=$$(cat ./tools/scripts/authz/dao_genesis_authorizations.json | jq -r tostring); \
 	$(SED) -i -E 's!^(\s*)"authorization": (\[\]|null)!\1"authorization": '$$AUTH_CONTENT'!' ${HOME}/.pocket/config/genesis.json;
