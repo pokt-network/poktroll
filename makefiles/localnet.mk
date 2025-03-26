@@ -15,10 +15,6 @@ localnet_up_quick: check_docker_ps check_kind_context ## Starts up a localnet wi
 localnet_down: ## Delete resources created by localnet
 	tilt down
 
-MOVE_DIR = $(HOME)
-OLD_DIR = .poktroll
-NEW_DIR = .pocket
-
 .PHONY: move_poktroll_to_pocket
 # Internal Helper to move the .poktroll directory to .pocket
 move_poktroll_to_pocket:

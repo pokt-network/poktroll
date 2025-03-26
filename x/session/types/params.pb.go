@@ -26,8 +26,8 @@ const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 
 // Params defines the parameters for the module.
 type Params struct {
-	// num_suppliers_per_session is the maximun number of suppliers per session
-	// (applicaiton:supplier pair for a given session number).
+	// num_suppliers_per_session is the maximum number of suppliers per session
+	// (application:supplier pair for a given session number).
 	NumSuppliersPerSession uint64 `protobuf:"varint,3,opt,name=num_suppliers_per_session,json=numSuppliersPerSession,proto3" json:"num_suppliers_per_session" yaml:"num_suppliers_per_session"`
 }
 

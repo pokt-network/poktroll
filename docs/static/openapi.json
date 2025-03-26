@@ -24460,7 +24460,7 @@
       "type": "object",
       "properties": {
         "num_suppliers_per_session": {
-          "description": "num_suppliers_per_session is the maximun number of suppliers per session\n(applicaiton:supplier pair for a given session number).",
+          "description": "num_suppliers_per_session is the maximum number of suppliers per session\n(application:supplier pair for a given session number).",
           "type": "string",
           "format": "uint64"
         }

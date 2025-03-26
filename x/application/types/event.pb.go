@@ -387,7 +387,7 @@ func (m *EventTransferError) GetError() string {
 }
 
 // EventApplicationUnbondingBegin is emitted when an application begins unbonding.
-// This can be triggered by the commitment of an unstake message or by the applicaiton's
+// This can be triggered by the commitment of an unstake message or by the application's
 // stake dropping below the minimum. This event signals that an application has begun
 // unbonding. The unbonding period is determined by the shared param,
 // application_unbonding_period_sessions.

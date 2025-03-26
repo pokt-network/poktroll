@@ -437,8 +437,8 @@ type Params struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// num_suppliers_per_session is the maximun number of suppliers per session
-	// (applicaiton:supplier pair for a given session number).
+	// num_suppliers_per_session is the maximum number of suppliers per session
+	// (application:supplier pair for a given session number).
 	NumSuppliersPerSession uint64 `protobuf:"varint,3,opt,name=num_suppliers_per_session,json=numSuppliersPerSession,proto3" json:"num_suppliers_per_session,omitempty"`
 }
 
