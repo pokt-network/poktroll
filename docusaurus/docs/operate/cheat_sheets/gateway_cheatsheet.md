@@ -149,7 +149,7 @@ Create an Application stake configuration file:
 cat <<🚀 > /tmp/stake_app_config.yaml
 stake_amount: 100000000upokt
 service_ids:
-  - "F00C"
+  - "anvil"
 🚀
 ```
 
