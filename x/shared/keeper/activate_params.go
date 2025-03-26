@@ -22,11 +22,11 @@ func (k Keeper) BeginBlockerActivateSharedParams(
 	// Get the shared params prior to the activation to determine the session start height.
 	// If the NumBlocksPerSession will be updated, it will determine the session start height
 	// of the future sessions only.
-	previousSharedParams := k.sharedKeeper.GetParams(ctx)
+	previousSharedParams := k.GetParams(ctx)
 
 	// Only activate params at the start of a session.
 	if !sharedtypes.IsSessionStartHeight(&previousSharedParams, currentBlockHeight) {
-		return &sharedtypes.ParamsUpdate, nil
+		return activatedSharedParamsUpdate, nil
 	}
 
 	logger.Info(fmt.Sprintf(
@@ -38,21 +38,21 @@ func (k Keeper) BeginBlockerActivateSharedParams(
 		// Skip updates that are not scheduled to be effective at the current block height.
 		// EffectiveBlockHeight is set by UpdateParams and UpdateParam keeper methods
 		// to be a session start height.
-		if sharedParamsUpdate.EffectiveBlockHeight != currentBlockHeight {
+		if sharedParamsUpdate.EffectiveBlockHeight != uint64(currentBlockHeight) {
 			continue
 		}
 
-		// Update the shared params.
+		// Effectively update the shared params.
 		k.SetParams(ctx, sharedParamsUpdate.Params)
 		activatedSharedParamsUpdate = &sharedParamsUpdate
 
-		// Emit service activation events.
-		eventSharedParamsUpdated := &sharedtypes.EventSharedParamsUpdated{
+		// Emit params update event.
+		eventParamsUpdated := &sharedtypes.EventParamsUpdated{
 			Params:               sharedParamsUpdate.Params,
 			EffectiveBlockHeight: sharedParamsUpdate.EffectiveBlockHeight,
 		}
-		if err := sdkCtx.EventManager().EmitTypedEvent(eventSharedParamsUpdated); err != nil {
-			logger.Error(fmt.Sprintf("could not emit event %v", eventSharedParamsUpdated))
+		if err := sdkCtx.EventManager().EmitTypedEvent(eventParamsUpdated); err != nil {
+			logger.Error(fmt.Sprintf("could not emit event %v", eventParamsUpdated))
 			return activatedSharedParamsUpdate, err
 		}
 

@@ -32,6 +32,9 @@ func (k msgServer) UpdateParams(goCtx context.Context, req *types.MsgUpdateParam
 	currentParams := k.GetParams(ctx)
 	nextSessionStartHeight := types.GetNextSessionStartHeight(&currentParams, committedHeight)
 
+	// Do not directly update the params, instead, create a new params update object
+	// and set it in the store. This will allow the new params to take effect at the
+	// next session start height.
 	paramsUpdate := types.ParamsUpdate{
 		Params:               req.Params,
 		EffectiveBlockHeight: uint64(nextSessionStartHeight),

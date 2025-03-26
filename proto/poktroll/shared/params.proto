@@ -63,7 +63,7 @@ message ParamsUpdate {
   Params params = 1 [
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true,
-    (gogoproto.customname) = "Params"
+    (gogoproto.jsontag) = "params"
   ];
-  uint64 effective_block_height = 2 [(gogoproto.customname) = "EffectiveBlockHeight"];
+  uint64 effective_block_height = 2 [(gogoproto.jsontag) = "effective_block_height"];
 }

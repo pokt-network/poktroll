@@ -60,6 +60,8 @@ func (k msgServer) UpdateParam(ctx context.Context, msg *types.MsgUpdateParam) (
 		)
 	}
 
+	// Reconstruct a full params update request and rely on the UpdateParams method to handle
+	// the authority check and setting the params.
 	msgUpdateParams := &types.MsgUpdateParams{
 		Authority: k.GetAuthority(),
 		Params:    params,

@@ -37,6 +37,7 @@ func (sqc *SharedKeeperQueryClient) GetParams(
 	return &sharedParams, nil
 }
 
+// GetParamsAtHeight queries & returns the shared module onchain parameters at a given height.
 func (sqc *SharedKeeperQueryClient) GetParamsAtHeight(
 	ctx context.Context,
 	height int64,
