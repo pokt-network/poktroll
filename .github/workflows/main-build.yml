@@ -51,7 +51,7 @@ jobs:
         with:
           images: |
             ghcr.io/pokt-network/poktrolld
-          # TODO_MAINNET_MIGRATION(@okdas): s/poktroll/pocket
+            ghcr.io/pokt-network/pocketd
           tags: |
             type=ref,event=branch,suffix=-dev
             type=ref,event=pr
