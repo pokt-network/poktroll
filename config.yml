@@ -17,9 +17,9 @@ build:
 #
 # | Account    | Balance           | Explanation                   |
 # |------------|-------------------|-------------------------------|
-# | pnf        | 10,000,000 POKT   | [Explanation placeholder]     |
+# | pnf        | 10,000,000 POKT   | Explanation placeholder[Explanation placeholder]     |
 # | grove      | 10,000,000 POKT   | [Explanation placeholder]     |
-# | groveval1  | 100,000 POKT      | [Explanation placeholder]     |
+# | groveval1  | 100,000 POKT      | 15K Bonded + 85K for TxFees[Explanation placeholder]     |
 # | groveval2  | 100,000 POKT      | [Explanation placeholder]     |
 # | groveval3  | 100,000 POKT      | [Explanation placeholder]     |
 # | groveval4  | 100,000 POKT      | [Explanation placeholder]     |
