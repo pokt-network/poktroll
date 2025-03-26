@@ -118,11 +118,11 @@ export GROVE_ADDRESS=pokt_GROVE_ADDRESS
 sed -i'' -e "s/ADD_PNF_ADDRESS_HERE/$PNF_ADDRESS/g" authorizations/pnf_authorizations.json
 sed -i'' -e "s/ADD_GROVE_ADDRESS_HERE/$GROVE_ADDRESS/g" authorizations/grove_authorizations.json
 
-jq --argjson authz "$(cat pnf_authorizations.json)" \
+jq --argjson authz "$(cat authorizations/pnf_authorizations.json)" \
    '.app_state.authz.authorization = $authz' \
    "$MAINNET_DIR/config/genesis.json" > tmp.json
 
-jq --argjson authz "$(cat grove_authorizations.json)" \
+jq --argjson authz "$(cat authorizations/grove_authorizations.json)" \
    '.app_state.authz.authorization += $authz' \
    tmp.json > tmp2.json
 
