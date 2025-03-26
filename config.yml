@@ -15,15 +15,15 @@ build:
 # Note that all inflation & deflation in the modules below is set to zero to mimic a burn=mint
 # like network at maturity.
 #
-# | Account    | Balance           | Explanation                   |
-# |------------|-------------------|-------------------------------|
-# | pnf        | 10,000,000 POKT   | Explanation placeholder[Explanation placeholder]     |
-# | grove      | 10,000,000 POKT   | [Explanation placeholder]     |
-# | groveval1  | 100,000 POKT      | 15K Bonded + 85K for TxFees[Explanation placeholder]     |
-# | groveval2  | 100,000 POKT      | [Explanation placeholder]     |
-# | groveval3  | 100,000 POKT      | [Explanation placeholder]     |
-# | groveval4  | 100,000 POKT      | [Explanation placeholder]     |
-# | groveval5  | 100,000 POKT      | [Explanation placeholder]     |
+# | Account   | Balance         | Explanation                                                                                                      |
+# | --------- | --------------- | ---------------------------------------------------------------------------------------------------------------- |
+# | pnf       | 10,000,000 POKT | 10M POKT to onboard community validators, suppliers, applications, gateways and services.                        |
+# | grove     | 10,000,000 POKT | 10M POKT to manage migration and load testing across validators, suppliers, applications, gateways and services. |
+# | groveval1 | 100,000 POKT    | 15K Bonded + 85K for fees, slashes, security, upstaking, etc...                                                  |
+# | groveval2 | 100,000 POKT    | 15K Bonded + 85K for fees, slashes, security, upstaking, etc...                                                  |
+# | groveval3 | 100,000 POKT    | 15K Bonded + 85K for fees, slashes, security, upstaking, etc...                                                  |
+# | groveval4 | 100,000 POKT    | 15K Bonded + 85K for fees, slashes, security, upstaking, etc...                                                  |
+# | groveval5 | 100,000 POKT    | 15K Bonded + 85K for fees, slashes, security, upstaking, etc...                                                  |
 
 accounts:
   ####### PNF Account #######

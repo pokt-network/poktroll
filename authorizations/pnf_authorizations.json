@@ -295,5 +295,41 @@
       "msg": "\/cosmos.authz.v1beta1.MsgRevoke"
     },
     "expiration": "2500-01-01T00:00:00Z"
+  },
+  {
+    "granter": "pokt10d07y265gmmuvt4z0w9aw880jnsr700j8yv32t",
+    "grantee": "ADD_PNF_ADDRESS_HERE",
+    "authorization": {
+      "@type": "\/cosmos.authz.v1beta1.GenericAuthorization",
+      "msg": "\/poktroll.migration.MsgUpdateParams"
+    },
+    "expiration": "2500-01-01T00:00:00Z"
+  },
+  {
+    "granter": "pokt10d07y265gmmuvt4z0w9aw880jnsr700j8yv32t",
+    "grantee": "ADD_PNF_ADDRESS_HERE",
+    "authorization": {
+      "@type": "\/cosmos.authz.v1beta1.GenericAuthorization",
+      "msg": "\/cosmos.authz.v1beta1.MsgExec"
+    },
+    "expiration": "2500-01-01T00:00:00Z"
+  },
+  {
+    "granter": "pokt10d07y265gmmuvt4z0w9aw880jnsr700j8yv32t",
+    "grantee": "ADD_PNF_ADDRESS_HERE",
+    "authorization": {
+      "@type": "\/cosmos.authz.v1beta1.GenericAuthorization",
+      "msg": "\/cosmos.authz.v1beta1.MsgRevokeAll"
+    },
+    "expiration": "2500-01-01T00:00:00Z"
+  },
+  {
+    "granter": "pokt10d07y265gmmuvt4z0w9aw880jnsr700j8yv32t",
+    "grantee": "ADD_PNF_ADDRESS_HERE",
+    "authorization": {
+      "@type": "\/cosmos.authz.v1beta1.GenericAuthorization",
+      "msg": "\/cosmos.authz.v1beta1.MsgPruneExpiredGrants"
+    },
+    "expiration": "2500-01-01T00:00:00Z"
   }
 ]

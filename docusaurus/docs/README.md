@@ -100,3 +100,13 @@ The Godoc for the source code can be found at [pkg.go.dev/github.com/pokt-networ
 ## License
 
 This project is licensed under the MIT License; see the [LICENSE](https://github.com/pokt-network/poktroll/blob/main/LICENSE) file for details.
+
+| Account   | Balance         | Explanation                                                                                                      |
+| --------- | --------------- | ---------------------------------------------------------------------------------------------------------------- |
+| pnf       | 10,000,000 POKT | 10M POKT to onboard community validators, suppliers, applications, gateways and services.                        |
+| grove     | 10,000,000 POKT | 10M POKT to manage migration and load testing across validators, suppliers, applications, gateways and services. |
+| groveval1 | 100,000 POKT    | 15K Bonded + 85K for fees, slashes, security, upstaking, etc...                                                  |
+| groveval2 | 100,000 POKT    | 15K Bonded + 85K for fees, slashes, security, upstaking, etc...                                                  |
+| groveval3 | 100,000 POKT    | 15K Bonded + 85K for fees, slashes, security, upstaking, etc...                                                  |
+| groveval4 | 100,000 POKT    | 15K Bonded + 85K for fees, slashes, security, upstaking, etc...                                                  |
+| groveval5 | 100,000 POKT    | 15K Bonded + 85K for fees, slashes, security, upstaking, etc...                                                  |
