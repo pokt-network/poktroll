@@ -160,7 +160,8 @@ func initAppConfig() (string, interface{}) {
 	// - if you set srvCfg.MinGasPrices non-empty, validators CAN tweak their own app.toml to override OR use this default value.
 
 	// Default Application configuration settings
-	srvCfg.MinGasPrices = "0.000000001upokt"
+	// MingGasPrices set to the minimal value of the smallest denomination
+	srvCfg.MinGasPrices = "1upokt"
 	srvCfg.Mempool.MaxTxs = 100000 // 100k max transactions per block
 
 	// Positive non-zero value turns on Prometheus support.
