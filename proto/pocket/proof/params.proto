@@ -42,3 +42,13 @@ message Params {
   // Try the following grep to find all related places: `grep -r compute_units_to_tokens_multiplier`
   // TODO_IMPROVE: Look into an opportunity to use an enum to avoid using strings throughout the codebase.
 }
+
+// ParamsUpdate defines the parameters update along the block height at which the update is effective.
+message ParamsUpdate {
+  Params params = 1 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true,
+    (gogoproto.jsontag) = "params"
+  ];
+  uint64 effective_block_height = 2 [(gogoproto.jsontag) = "effective_block_height"];
+}

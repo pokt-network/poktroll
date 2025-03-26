@@ -82,6 +82,7 @@ func SupplierKeeper(t testing.TB) (SupplierModuleKeepers, context.Context) {
 		runtime.NewKVStoreService(storeKey),
 		log.NewNopLogger(),
 		authority.String(),
+		sharedKeeper,
 		mockBankKeeper,
 	)
 

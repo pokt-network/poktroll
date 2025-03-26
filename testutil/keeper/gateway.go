@@ -45,6 +45,12 @@ func GatewayKeeper(t testing.TB) (keeper.Keeper, context.Context) {
 
 	mockSharedKeeper := mocks.NewMockSharedKeeper(ctrl)
 	mockSharedKeeper.EXPECT().GetParams(gomock.Any()).Return(sharedtypes.DefaultParams()).AnyTimes()
+	mockSharedKeeper.EXPECT().GetParamsUpdates(gomock.Any()).Return([]*sharedtypes.ParamsUpdate{
+		{
+			Params:               sharedtypes.DefaultParams(),
+			EffectiveBlockHeight: 1,
+		},
+	}).AnyTimes()
 	mockSharedKeeper.EXPECT().GetSessionEndHeight(gomock.Any(), gomock.Any()).Return(int64(sharedtypes.DefaultNumBlocksPerSession)).AnyTimes()
 
 	k := keeper.NewKeeper(

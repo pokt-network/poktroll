@@ -125,6 +125,20 @@ func (s *tokenLogicModuleTestSuite) getSharedParams() *sharedtypes.Params {
 	return &sharedParams
 }
 
+// getSharedParamsUpdates returns the default shared params with the CUTTM set to 1.
+func (s *tokenLogicModuleTestSuite) getSharedParamsUpdates() []*sharedtypes.ParamsUpdate {
+	sharedParams := sharedtypes.DefaultParams()
+	sharedParams.ComputeUnitsToTokensMultiplier = 1
+	sharedParamsUpdates := []*sharedtypes.ParamsUpdate{
+		{
+			Params:               sharedParams,
+			EffectiveBlockHeight: 1,
+		},
+	}
+
+	return sharedParamsUpdates
+}
+
 // getTokenomicsParams returns the default tokenomics params with the dao_reward_address set to s.daoRewardAddr.
 func (s *tokenLogicModuleTestSuite) getTokenomicsParams() *tokenomicstypes.Params {
 	tokenomicsParams := tokenomicstypes.DefaultParams()
@@ -165,7 +179,7 @@ func (s *tokenLogicModuleTestSuite) createClaims(
 // session and triggers the settlement of all pending claims.
 func (s *tokenLogicModuleTestSuite) settleClaims(t *testing.T) (settledResults, expiredResults tlm.ClaimSettlementResults) {
 	// Increment the block height to the settlement height.
-	settlementHeight := sharedtypes.GetSettlementSessionEndHeight(s.getSharedParams(), 1)
+	settlementHeight := sharedtypes.GetSettlementSessionEndHeight(s.getSharedParamsUpdates(), 1)
 	s.setBlockHeight(settlementHeight)
 
 	settledPendingResults, expiredPendingResults, err := s.keepers.SettlePendingClaims(cosmostypes.UnwrapSDKContext(s.ctx))

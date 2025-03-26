@@ -38,7 +38,7 @@ func TestMsgUpdateParam_UpdateAddServiceFeeOnly(t *testing.T) {
 	require.Equal(t, expectedAddServiceFee, res.Params.AddServiceFee)
 
 	// Ensure the other parameters are unchanged
-	testkeeper.AssertDefaultParamsEqualExceptFields(t, &defaultParams, res.Params, "AddServiceFee")
+	testkeeper.AssertDefaultParamsEqualExceptFields(t, &defaultParams, &res.Params, "AddServiceFee")
 }
 
 func TestMsgUpdateParam_UpdateTargetNumRelaysOnly(t *testing.T) {
@@ -65,5 +65,5 @@ func TestMsgUpdateParam_UpdateTargetNumRelaysOnly(t *testing.T) {
 	require.Equal(t, expectedTargetNumRelays, res.Params.TargetNumRelays)
 
 	// Ensure the other parameters are unchanged
-	testkeeper.AssertDefaultParamsEqualExceptFields(t, &defaultParams, res.Params, "TargetNumRelays")
+	testkeeper.AssertDefaultParamsEqualExceptFields(t, &defaultParams, &res.Params, "TargetNumRelays")
 }

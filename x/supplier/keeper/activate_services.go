@@ -19,17 +19,18 @@ func (k Keeper) BeginBlockerActivateSupplierServices(
 	logger := k.Logger().With("method", "ActivateSupplierServices")
 
 	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
-	sharedParams := k.sharedKeeper.GetParams(ctx)
 	currentHeight := sdkCtx.BlockHeight()
+	sharedParamsUpdates := k.sharedKeeper.GetParamsUpdates(ctx)
+	currentBlockHeight := sdkCtx.BlockHeight()
 
 	// Only activate supplier services at the start of a session.
-	if !sharedtypes.IsSessionStartHeight(&sharedParams, currentHeight) {
+	if !sharedtypes.IsSessionStartHeight(sharedParamsUpdates, currentBlockHeight) {
 		return numSuppliersWithServicesActivation, nil
 	}
 
 	logger.Info(fmt.Sprintf(
 		"starting session %d, about to activate services for suppliers",
-		sharedtypes.GetSessionNumber(&sharedParams, currentHeight),
+		sharedtypes.GetSessionNumber(sharedParamsUpdates, currentBlockHeight),
 	))
 
 	activatedConfigsSuppliers := make(map[string]struct{})

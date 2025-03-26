@@ -33,5 +33,5 @@ func TestMsgUpdateParam_UpdateNumSuppliersPerSessionOnly(t *testing.T) {
 	require.Equal(t, expectedNumSuppliersPerSession, res.Params.NumSuppliersPerSession)
 
 	// Ensure the other parameters are unchanged
-	testkeeper.AssertDefaultParamsEqualExceptFields(t, &defaultParams, res.Params, string(sessiontypes.KeyNumSuppliersPerSession))
+	testkeeper.AssertDefaultParamsEqualExceptFields(t, &defaultParams, &res.Params, string(sessiontypes.KeyNumSuppliersPerSession))
 }

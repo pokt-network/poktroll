@@ -40,6 +40,10 @@ type appQuerier struct {
 //
 // Required dependencies:
 // - clientCtx
+// - polylog.Logger
+// - client.BlockQueryClient
+// - cache.KeyValueCache[apptypes.Application]
+// - client.ParamsCache[apptypes.Params]
 func NewApplicationQuerier(deps depinject.Config) (client.ApplicationQueryClient, error) {
 	aq := &appQuerier{}
 
@@ -116,7 +120,7 @@ func (aq *appQuerier) GetParams(ctx context.Context) (*apptypes.Params, error) {
 	logger := aq.logger.With("query_client", "application", "method", "GetParams")
 
 	// Check if the application module parameters are present in the cache.
-	if params, found := aq.paramsCache.Get(); found {
+	if params, found := aq.paramsCache.GetLatest(); found {
 		logger.Debug().Msg("cache HIT for application params")
 		return &params, nil
 	}
@@ -126,7 +130,7 @@ func (aq *appQuerier) GetParams(ctx context.Context) (*apptypes.Params, error) {
 	defer aq.paramsMutex.Unlock()
 
 	// Double-check cache after acquiring lock (follows standard double-checked locking pattern)
-	if params, found := aq.paramsCache.Get(); found {
+	if params, found := aq.paramsCache.GetLatest(); found {
 		logger.Debug().Msg("cache HIT for application params after lock")
 		return &params, nil
 	}
@@ -142,6 +146,6 @@ func (aq *appQuerier) GetParams(ctx context.Context) (*apptypes.Params, error) {
 	}
 
 	// Update the cache with the newly retrieved application module parameters.
-	aq.paramsCache.Set(res.Params)
+	aq.paramsCache.SetAtHeight(res.Params, int64(res.EffectiveBlockHeight))
 	return &res.Params, nil
 }

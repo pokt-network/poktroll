@@ -25,6 +25,7 @@ func (k Keeper) EndBlockerPruneAppToGatewayPendingUndelegation(ctx sdk.Context) 
 	currentHeight := ctx.BlockHeight()
 
 	// Calculate the block height at which undelegations should be pruned
+	// TODO_IN_THIS_PR: Revisit how to get numBlocksUndelegationRetention based on undelegation height
 	numBlocksUndelegationRetention := k.GetNumBlocksUndelegationRetention(ctx)
 	// Skip pruning when current height is less than retention pTargeteriod to prevent
 	// looking up negative or zero block heights.

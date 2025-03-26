@@ -125,7 +125,7 @@ func TestMsgUpdateParams(t *testing.T) {
 				require.Error(t, err)
 				require.ErrorContains(t, err, test.expectedErrMsg)
 			} else {
-				require.Equal(t, &test.req.Params, updateRes.GetParams())
+				require.Equal(t, test.req.Params, updateRes.GetParams())
 				require.Nil(t, err)
 			}
 		})

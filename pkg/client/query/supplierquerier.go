@@ -102,7 +102,7 @@ func (supq *supplierQuerier) GetParams(ctx context.Context) (*suppliertypes.Para
 	logger := supq.logger.With("query_client", "supplier", "method", "GetParams")
 
 	// Check if the supplier module parameters are present in the cache.
-	if params, found := supq.paramsCache.Get(); found {
+	if params, found := supq.paramsCache.GetLatest(); found {
 		logger.Debug().Msg("cache HIT for supplier params")
 		return &params, nil
 	}
@@ -112,7 +112,7 @@ func (supq *supplierQuerier) GetParams(ctx context.Context) (*suppliertypes.Para
 	defer supq.paramsMutex.Unlock()
 
 	// Double-check cache after acquiring lock (follows standard double-checked locking pattern)
-	if params, found := supq.paramsCache.Get(); found {
+	if params, found := supq.paramsCache.GetLatest(); found {
 		logger.Debug().Msg("cache HIT for supplier params after lock")
 		return &params, nil
 	}
@@ -128,6 +128,6 @@ func (supq *supplierQuerier) GetParams(ctx context.Context) (*suppliertypes.Para
 	}
 
 	// Update the cache with the newly retrieved supplier module parameters.
-	supq.paramsCache.Set(res.Params)
+	supq.paramsCache.SetAtHeight(res.Params, int64(res.EffectiveBlockHeight))
 	return &res.Params, nil
 }

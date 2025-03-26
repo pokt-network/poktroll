@@ -300,8 +300,6 @@ func TestSession_HydrateSession_Application(t *testing.T) {
 
 // TODO_MAINNET_MIGRATION(@red-0ne): Expand these tests to account for supplier joining/leaving the network at different heights as well changing the services they support
 func TestSession_HydrateSession_Suppliers(t *testing.T) {
-	// TODO_MAINNET_MIGRATION(@red-0ne, #543): Extend these tests once `NumBlocksPerSession` is configurable.
-	// Currently assumes NumSupplierPerSession=15
 	tests := []struct {
 		// Description
 		desc string

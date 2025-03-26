@@ -24,6 +24,7 @@ import (
 	"github.com/pokt-network/poktroll/pkg/polylog"
 	"github.com/pokt-network/poktroll/testutil/mockclient"
 	"github.com/pokt-network/poktroll/testutil/sample"
+	"github.com/pokt-network/poktroll/testutil/testclient/testblock"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 	servicetypes "github.com/pokt-network/poktroll/x/service/types"
@@ -212,7 +213,7 @@ func (s *QueryCacheTestSuite) TestKeyValueCache_SharedQuerier_Params() {
 	// Call the GetSessionBlockFrequency method numCalls times and assert that the server
 	// is not reached again.
 	for range numCalls {
-		_, err := s.queryClients.shared.GetComputeUnitsToTokensMultiplier(ctx)
+		_, err := s.queryClients.shared.GetComputeUnitsToTokensMultiplier(ctx, 1)
 		require.NoError(s.T(), err)
 	}
 	require.Equal(s.T(), 1, s.rpcCallCount.sharedParams)
@@ -295,11 +296,13 @@ func (s *QueryCacheTestSuite) createQueryClients(t *testing.T, deps depinject.Co
 	ctx := context.Background()
 	logger := polylog.Ctx(ctx)
 
+	blockClient := testblock.NewAnyTimeLastBlockBlockClient(t, []byte{}, 1)
+
 	// Create the CometRPC and GRPCClientConn mocks.
 	cometClientMock := s.NewCometRPC()
 	grpcClientConn := s.NewGRPCClientConn()
 
-	deps = depinject.Configs(deps, depinject.Supply(cometClientMock, logger, grpcClientConn))
+	deps = depinject.Configs(deps, depinject.Supply(cometClientMock, logger, grpcClientConn, blockClient))
 
 	queryClients.service, err = query.NewServiceQuerier(deps)
 	require.NoError(t, err)
@@ -366,19 +369,57 @@ func (s *QueryCacheTestSuite) NewGRPCClientConn() grpc.ClientConn {
 		"/pocket.shared.Query/Params",
 		gomock.Any(),
 		gomock.Any(),
-	).
-		Do(func(_ context.Context, _ string, _ any, reply any, _ ...any) {
-			// Increment the call count each time the Invoke method is called.
-			s.rpcCallCount.sharedParams++
+	).Do(func(_ context.Context, _ string, _ any, reply any, _ ...any) {
+		// Increment the call count each time the Invoke method is called.
+		s.rpcCallCount.sharedParams++
 
-			// Return the default shared params.
-			params := sharedtypes.DefaultParams()
+		// Return the default shared params.
+		params := sharedtypes.DefaultParams()
 
-			response, ok := reply.(*sharedtypes.QueryParamsResponse)
-			require.True(s.T(), ok)
+		response, ok := reply.(*sharedtypes.QueryParamsResponse)
+		require.True(s.T(), ok)
 
-			response.Params = params
-		}).AnyTimes()
+		response.Params = params
+	}).AnyTimes()
+	grpcClientConn.EXPECT().Invoke(
+		gomock.Any(), // ctx
+		"/pocket.shared.Query/ParamsAtHeight",
+		gomock.Any(),
+		gomock.Any(),
+	).Do(func(_ context.Context, _ string, _ any, reply any, _ ...any) {
+		// Increment the call count each time the Invoke method is called.
+		s.rpcCallCount.sharedParams++
+
+		// Return the default shared params.
+		params := sharedtypes.DefaultParams()
+
+		response, ok := reply.(*sharedtypes.QueryParamsAtHeightResponse)
+		require.True(s.T(), ok)
+
+		response.Params = params
+		response.EffectiveBlockHeight = 1
+	}).AnyTimes()
+
+	grpcClientConn.EXPECT().Invoke(
+		gomock.Any(), // ctx
+		"/pocket.shared.Query/ParamsUpdates",
+		gomock.Any(),
+		gomock.Any(),
+	).Do(func(_ context.Context, _ string, _ any, reply any, _ ...any) {
+		// Increment the call count each time the Invoke method is called.
+		s.rpcCallCount.sharedParams++
+
+		// Return the default shared params.
+		params := sharedtypes.DefaultParams()
+		response, ok := reply.(*sharedtypes.QueryParamsUpdatesResponse)
+		require.True(s.T(), ok)
+		response.ParamsUpdates = []*sharedtypes.ParamsUpdate{
+			{
+				Params:               params,
+				EffectiveBlockHeight: 1,
+			},
+		}
+	}).AnyTimes()
 
 	// Mock the Invoke method of the GRPCClientConn.
 	// This method needs to return a valid codec.Any response that will be unmarshalled
@@ -422,6 +463,8 @@ func (s *QueryCacheTestSuite) NewGRPCClientConn() grpc.ClientConn {
 				s.rpcCallCount.proofParams++
 			case "/pocket.session.Query/Params":
 				s.rpcCallCount.sessionParams++
+			case "/pocket.shared.Query/ParamsUpdates":
+				s.rpcCallCount.sharedParams++
 			case "/pocket.service.Query/Service":
 				s.rpcCallCount.services++
 			case "/pocket.service.Query/RelayMiningDifficulty":
@@ -435,7 +478,7 @@ func (s *QueryCacheTestSuite) NewGRPCClientConn() grpc.ClientConn {
 			case "/cosmos.bank.v1beta1.Query/Balance":
 				s.rpcCallCount.balances++
 			default:
-				require.Failf(s.T(), "unexpected method: %s", method)
+				require.Failf(s.T(), "", "unexpected method: %s", method)
 			}
 
 		}).AnyTimes()

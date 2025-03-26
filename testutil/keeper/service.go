@@ -24,6 +24,8 @@ import (
 	"github.com/pokt-network/poktroll/testutil/service/mocks"
 	"github.com/pokt-network/poktroll/x/service/keeper"
 	"github.com/pokt-network/poktroll/x/service/types"
+	sharedkeeper "github.com/pokt-network/poktroll/x/shared/keeper"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 var (
@@ -47,6 +49,7 @@ func ServiceKeeper(t testing.TB) (keeper.Keeper, context.Context) {
 	authority := authtypes.NewModuleAddress(govtypes.ModuleName)
 
 	ctrl := gomock.NewController(t)
+
 	mockBankKeeper := mocks.NewMockBankKeeper(ctrl)
 	mockBankKeeper.EXPECT().
 		SpendableCoins(gomock.Any(), gomock.Any()).
@@ -75,11 +78,24 @@ func ServiceKeeper(t testing.TB) (keeper.Keeper, context.Context) {
 			},
 		).AnyTimes()
 
+	logger := log.NewTestLogger(t)
+	sdkCtx := sdk.NewContext(stateStore, cmtproto.Header{}, false, logger)
+
+	// Construct a real shared keeper.
+	sharedKeeper := sharedkeeper.NewKeeper(
+		cdc,
+		runtime.NewKVStoreService(storeKey),
+		logger,
+		authority.String(),
+	)
+	require.NoError(t, sharedKeeper.SetParams(sdkCtx, sharedtypes.DefaultParams()))
+
 	k := keeper.NewKeeper(
 		cdc,
 		runtime.NewKVStoreService(storeKey),
 		log.NewNopLogger(),
 		authority.String(),
+		sharedKeeper,
 		mockBankKeeper,
 	)
 
