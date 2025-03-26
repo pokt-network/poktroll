@@ -29,8 +29,8 @@ move_poktroll_to_pocket:
 	@echo "Moving contents from .poktroll to .pocket..."
 	@rsync -av --quiet --remove-source-files $(HOME)/.poktroll/ $(HOME)/.pocket/
 	@echo "Removing old .poktroll directory..."
-	@rmdir $(HOME)/.poktroll 2>/dev/null || echo "Directory not empty, skipping removal."
-	@echo "Move completed successfully from .poktroll to .pocket!"
+	@rm -rf $(HOME)/.poktroll
+	@echo "Move completed successfully: .poktroll to .pocket!"
 	@echo "###############################################"
 
 .PHONY: localnet_regenesis

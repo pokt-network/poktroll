@@ -1,6 +1,6 @@
 #!/bin/bash
 
-cat << EOF
+cat <<EOF
 This script runs the full node using cosmovisor and performs an upgrade after the upgrade plan is submitted on chain.
 It simulates a real network upgrade. For consensus-breaking changes, ensure the 'old' binary doesn't have these changes.
 
@@ -14,11 +14,11 @@ Pre-requisites:
 EOF
 
 # Define paths and upgrade name
-POCKETD_OLD_BINARY_PATH=$HOME/pocket/pokrtoll-for-releases/pocketd
+POCKETD_OLD_BINARY_PATH=$HOME/pocket/pocket-for-releases/pocketd
 POCKETD_NEW_BINARY_PATH=$HOME/pocket/pocket/pocketd
 POCKETD_UPGRADE_PLAN_NAME=v0.0.4
 
-cat << EOF
+cat <<EOF
 
 The script will use the following:
 Old binary: $POCKETD_OLD_BINARY_PATH
