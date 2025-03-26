@@ -12,6 +12,33 @@ import (
 	"github.com/pokt-network/poktroll/telemetry"
 )
 
+// ### DO NOT DELETE - DEFAULT GENESIS CONFIGS FOR REFERENCE ###
+//
+// ### Default CometBFT Genesis Configs ###
+// - Consensus.TimeoutPropose: 60s
+// - Consensus.TimeoutProposeDelta: 5s
+// - Consensus.TimeoutPrevote: 10s
+// - Consensus.TimeoutPrevoteDelta: 5s
+// - Consensus.TimeoutPrecommit: 10s
+// - Consensus.TimeoutPrecommitDelta: 5s
+// - Consensus.TimeoutCommit: 60s
+// - Instrumentation.Prometheus: true
+// - LogLevel: "info"
+// - BlockTime: 1 minute (dictated by TimeoutCommit, more details below)
+
+// ### Default App Genesis Configs ###
+// - MinGasPrices: "0.000000001upokt"
+// - Mempool.MaxTxs: 10000
+// - Telemetry.Enabled: true
+// - Telemetry.PrometheusRetentionTime: 86400s (24h)
+// - Telemetry.MetricsSink: "mem"
+// - Pruning: "nothing" (archiving node)
+// - API.Enable: true
+// - GRPC.Enable: true
+// - GRPCWeb.Enable: true
+//
+// ### DO NOT DELETE - DEFAULT GENESIS CONFIGS FOR REFERENCE ###
+
 var once sync.Once
 
 // PoktrollAppConfig represents a poktroll-specific part of `app.toml` file.
@@ -76,7 +103,6 @@ func checkOrInitSDKConfig() {
 
 // initCometBFTConfig helps to override default CometBFT Config (config.toml) values.
 // These values are going to be rendered into the config file on `poktrolld init`.
-// TODO_MAINNET: Reconsider values - check `config.toml` for possible options.
 func initCometBFTConfig() *cmtcfg.Config {
 	cfg := cmtcfg.DefaultConfig()
 
@@ -84,6 +110,9 @@ func initCometBFTConfig() *cmtcfg.Config {
 	// cfg.P2P.MaxNumInboundPeers = 100
 	// cfg.P2P.MaxNumOutboundPeers = 40
 
+	// BlockTime is 1 minute.
+	// BlockTime is a function of all of these parameters but ultimately dictated by TimeoutCommit.
+	// TimeoutCommit is the **minimum** time between blocks establishing a baseline.
 	cfg.Consensus.TimeoutPropose = 60 * time.Second
 	cfg.Consensus.TimeoutProposeDelta = 5 * time.Second
 	cfg.Consensus.TimeoutPrevote = 10 * time.Second
