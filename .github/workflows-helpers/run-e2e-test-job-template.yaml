@@ -26,7 +26,7 @@ spec:
               name: e2e-tests-check-services-script
       containers:
         - name: e2e-tests
-          image: ghcr.io/pokt-network/pocketd
+          image: ghcr.io/pokt-network/pocketd:${IMAGE_TAG}
           command: ["/bin/sh"]
           args:
             - "-c"
