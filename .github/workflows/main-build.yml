@@ -120,5 +120,5 @@ jobs:
           NAMESPACE: devnet-issue-${{ github.event.number }}
           JOB_NAME: e2e-test-${{ github.event.pull_request.head.sha || github.sha }}
           # TODO_MAINNET_MIGRATION(@okdas): s/poktroll/pocket
-          POCKET_NODE: tcp://devnet-issue-${{ github.event.number }}-validator-poktrolld:26657
+          POCKET_NODE: tcp://devnet-issue-${{ github.event.number }}-validator-pocketd:26657
         run: bash .github/workflows-helpers/run-e2e-test.sh
