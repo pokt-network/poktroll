@@ -162,7 +162,7 @@ func ValidateMintAllocationPercentages(mintAllocationPercentagesAny any) error {
 func ValidateMintAllocationSum(mintAllocationPercentage MintAllocationPercentages) error {
 	const epsilon = 1e-10 // Small epsilon value for floating-point comparison
 	sum := mintAllocationPercentage.Sum()
-	// TODO_IN_THIS_PR: is this safe to do? Added due to `mint allocation percentages do not add to 1.0: got 1.000000: the provided param is invalid`.
+	// TODO_MAINNET_CRITICAL(@red-0ne): I prefer using big.Rat and have a strict 1.0 sum. These might add up or skew our tokenomics a bit.
 	if math.Abs(sum-1) > epsilon {
 		return ErrTokenomicsParamInvalid.Wrapf("mint allocation percentages do not add to 1.0: got %f", sum)
 	}

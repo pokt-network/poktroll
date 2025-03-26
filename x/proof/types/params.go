@@ -35,8 +35,8 @@ var (
 	KeyProofSubmissionFee   = []byte("ProofSubmissionFee")
 	ParamProofSubmissionFee = "proof_submission_fee"
 	// TODO_MAINNET: Determine a sensible default value for the proof submission fee.
-	// MinProofSubmissionFee is the default and minimum fee for submitting a proof.
-	MinProofSubmissionFee = cosmostypes.NewCoin(volatile.DenomuPOKT, math.NewInt(0)) // TODO_IN_THIS_PR: any issues with having this as 0?
+	// DefaultMinProofSubmissionFee is the default and minimum fee for submitting a proof.
+	DefaultMinProofSubmissionFee = cosmostypes.NewCoin(volatile.DenomuPOKT, math.NewInt(0))
 )
 
 // ParamKeyTable the param key table for launch module
@@ -65,7 +65,7 @@ func DefaultParams() Params {
 		DefaultProofRequestProbability,
 		&DefaultProofRequirementThreshold,
 		&DefaultProofMissingPenalty,
-		&MinProofSubmissionFee,
+		&DefaultMinProofSubmissionFee,
 	)
 }
 
@@ -170,7 +170,6 @@ func ValidateProofMissingPenalty(proofMissingPenaltyAny any) error {
 		return ErrProofParamInvalid.Wrapf("invalid proof_missing_penalty denom: %s", proofMissingPenaltyCoin.Denom)
 	}
 
-	// TODO_IN_THIS_PR: any issues with removing the check for IsZero()?
 	if proofMissingPenaltyCoin.IsNegative() {
 		return ErrProofParamInvalid.Wrapf("invalid proof_missing_penalty amount: %s <= 0", proofMissingPenaltyCoin)
 	}
@@ -194,10 +193,10 @@ func ValidateProofSubmissionFee(proofSubmissionFeeAny any) error {
 		return ErrProofParamInvalid.Wrapf("invalid proof_submission_fee denom: %s", submissionFeeCoin.Denom)
 	}
 
-	if submissionFeeCoin.Amount.LT(MinProofSubmissionFee.Amount) {
+	if submissionFeeCoin.Amount.LT(DefaultMinProofSubmissionFee.Amount) {
 		return ErrProofParamInvalid.Wrapf(
 			"proof_submission_fee is below minimum value %s: got %s",
-			MinProofSubmissionFee,
+			DefaultMinProofSubmissionFee,
 			submissionFeeCoin,
 		)
 	}

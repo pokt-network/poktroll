@@ -18,7 +18,7 @@ var (
 
 	KeyAddServiceFee       = []byte("AddServiceFee")
 	ParamAddServiceFee     = "add_service_fee"
-	MinAddServiceFee       = cosmostypes.NewCoin(volatile.DenomuPOKT, math.NewInt(0)) // TODO_IN_THIS_PR: any issues with having this as 0?
+	MinAddServiceFee       = cosmostypes.NewCoin(volatile.DenomuPOKT, math.NewInt(0))
 	KeyTargetNumRelays     = []byte("TargetNumRelays")
 	ParamTargetNumRelays   = "target_num_relays"
 	DefaultTargetNumRelays = uint64(10e4)

@@ -139,7 +139,7 @@ func TestParams_ValidateProofMissingPenalty(t *testing.T) {
 
 func TestParams_ValidateProofSubmissionFee(t *testing.T) {
 	invalidDenomCoin := cosmostypes.NewCoin("invalid_denom", math.NewInt(1))
-	belowMinProofSubmissionFee := prooftypes.MinProofSubmissionFee.
+	belowMinProofSubmissionFee := prooftypes.DefaultMinProofSubmissionFee.
 		Sub(cosmostypes.NewCoin(volatile.DenomuPOKT, math.NewInt(1)))
 
 	tests := []struct {
@@ -172,13 +172,13 @@ func TestParams_ValidateProofSubmissionFee(t *testing.T) {
 			proofSubmissionFee: &belowMinProofSubmissionFee,
 			expectedErr: prooftypes.ErrProofParamInvalid.Wrapf(
 				"proof_submission_fee is below minimum value %s: got %s",
-				prooftypes.MinProofSubmissionFee,
+				prooftypes.DefaultMinProofSubmissionFee,
 				belowMinProofSubmissionFee,
 			),
 		},
 		{
 			desc:               "valid",
-			proofSubmissionFee: &prooftypes.MinProofSubmissionFee,
+			proofSubmissionFee: &prooftypes.DefaultMinProofSubmissionFee,
 		},
 	}
 

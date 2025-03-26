@@ -172,7 +172,6 @@ func initAppConfig() (string, interface{}) {
 
 	srvCfg.Pruning = "nothing" // archiving node by default
 
-	// TODO_IN_THIS_PR: Align `RPCMaxBodyBytes` with Beta TestNet
 	// Controls how large any single RPC request accepted by the CometBFT server (offchain) can be.
 	srvCfg.API.RPCMaxBodyBytes = 100000000 // 95MB
 	srvCfg.API.RPCReadTimeout = 60         // 1 minute
