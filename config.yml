@@ -1,49 +1,73 @@
 version: 1
+
 build:
   main: cmd/poktrolld
+
 accounts:
-  - name: faucet # Faucet - initial funds we need to test the network and bootstrap the migration from Morse.
-    # TODO_IN_THIS_PR: use `address` if key should be created by third-party. Otherwise, it is generated randomly.
-    # address: "pokt111"
-    coins:
-      - 999999999999999999upokt # TODO_IN_THIS_PR: how much is needed?
-  # PNF represents the DAO address
+  ####### PNF Account #######
+  # pnf is the account of the Pocket Network Foundation managing governance and
+  # acting on behalf of the DAO.
   - name: pnf
-    # TODO_IN_THIS_PR: use `address` if key should be created by third-party. Otherwise, it is generated randomly.
-    # address: "pokt111"
+    # address: "pokt_UPDATE_TODO_IN_THIS_PR_UPDATE_SO_ITS_NOT_RANDOMLY_GENERATED"
     coins:
-      - 69000000000000000000042upokt # TODO_IN_THIS_PR: how much is needed?
+      - 10000000000000upokt # 10M POKT (unbonded)
+
+  ####### Grove Account #######
+  # grove is the account of GROVE Inc, acting as a close partner of PNF during
+  # the research, development, deployment, migration, operation, maintenance, and
+  # continuous iteration of Pocket Network.
   - name: grove
-    # TODO_IN_THIS_PR: use `address` if key should be created by third-party. Otherwise, it is generated randomly.
-    # address: "pokt111"
+    # address: "pokt_UPDATE_TODO_IN_THIS_PR_UPDATE_SO_ITS_NOT_RANDOMLY_GENERATED"
     coins:
-      - 69000000000000000000042upokt # TODO_IN_THIS_PR: how much is needed?
+      - 10000000000000upokt # 10M POKT (unbonded)
+
+  ####### Grove Validator Accounts ######
+  #
+  # The addresses for groveval1...groveval5 are explicitly omitted since they'll
+  # be randomly generated during the conversion of this config.yml to a genesis.json
+  # using the ignite CLI; https://github.com/ignite/cli.
+  #
+  # This enables streamlining and automating the process of the genesis creation
+  # for reproducibility and testing while maintaining the two accounts above (grove & pnf)
+  # hard-coded for security.
+  #
+  # Grove team members will be responsible for capturing the mnemonic seed phrase
+  # validators groveval1...groveval5 during the genesis.json creation process.
+
+  # groveval1 is the first genesis validator of Pocket Network's Shadow MainNet operated by Grove.
   - name: groveval1
+    # address: explicitly omitted; see comment above.
     coins:
-      - 1000000000000upokt # 10000000000000upokt is already bonded below
+      - 100000000000upokt # 100K POKT (15K bonded below 85K remaining for tx fees, slashing, etc...)
+
+  # groveval2 is the first genesis validator of Pocket Network's Shadow MainNet operated by Grove.
   - name: groveval2
-    # TODO_IN_THIS_PR: use `address` if key should be created by third-party. Otherwise, it is generated randomly.
-    # address: "pokt111"
+    # address: explicitly omitted; see comment above.
     coins:
-      - 11000000000000upokt # 10000000000000upokt to bond and 1000000000000upokt "just in case" (fees, etc..)
+      - 100000000000upokt # 100K POKT (15K bonded below 85K remaining for tx fees, slashing, etc...)
+
+  # groveval3 is the first genesis validator of Pocket Network's Shadow MainNet operated by Grove.
   - name: groveval3
-    # TODO_IN_THIS_PR: use `address` if key should be created by third-party. Otherwise, it is generated randomly.
-    # address: "pokt111"
+    # address: explicitly omitted; see comment above.
     coins:
-      - 11000000000000upokt # 10000000000000upokt to bond and 1000000000000upokt "just in case" (fees, etc..)
+      - 100000000000upokt # 100K POKT (15K bonded below 85K remaining for tx fees, slashing, etc...)
+
+  # groveval4 is the first genesis validator of Pocket Network's Shadow MainNet operated by Grove.
   - name: groveval4
-    # TODO_IN_THIS_PR: use `address` if key should be created by third-party. Otherwise, it is generated randomly.
-    # address: "pokt111"
+    # address: explicitly omitted; see comment above.
     coins:
-      - 11000000000000upokt # 10000000000000upokt to bond and 1000000000000upokt "just in case" (fees, etc..)
+      - 100000000000upokt # 100K POKT (15K bonded below 85K remaining for tx fees, slashing, etc...)
+
+  # groveval5 is the first genesis validator of Pocket Network's Shadow MainNet operated by Grove.
   - name: groveval5
-    # TODO_IN_THIS_PR: use `address` if key should be created by third-party. Otherwise, it is generated randomly.
-    # address: "pokt111"
+    # address: explicitly omitted; see comment above.
     coins:
-      - 11000000000000upokt # 10000000000000upokt to bond and 1000000000000upokt "just in case" (fees, etc..)
+      - 100000000000upokt # 100K POKT (15K bonded below 85K remaining for tx fees, slashing, etc...)
+
+####### Validator Configs ######
 validators:
   - name: groveval1
-    bonded: 10000000000000upokt
+    bonded: 15000000000upokt
     # TODO_IN_THIS_PR: check defaults in `cmd/poktrolld/cmd/config.go` - as this is THE spot for default values, not below.
     # Values below will only change config for the first validator.
     app:
