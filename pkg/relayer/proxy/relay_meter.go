@@ -53,7 +53,6 @@ type sessionRelayMeter struct {
 	// sharedParams, service and serviceRelayDifficulty are used to calculate the relay cost
 	// that increments the consumedAmount.
 	// They are cached at each session to avoid querying the blockchain for each relay.
-	// TODO_TECHDEBT(#543): Remove once the query clients start handling caching and invalidation.
 	sharedParams           *sharedtypes.Params
 	service                *sharedtypes.Service
 	serviceRelayDifficulty servicetypes.RelayMiningDifficulty

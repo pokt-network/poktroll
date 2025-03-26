@@ -23,3 +23,13 @@ message Params {
   // Per service, onchain relay mining difficulty will be adjusted to maintain this target.
   uint64 target_num_relays = 2 [(gogoproto.jsontag) = "target_num_relays", (gogoproto.moretags) = "yaml:\"target_num_relays\""];
 }
+
+// ParamsUpdate defines the parameters update along the block height at which the update is effective.
+message ParamsUpdate {
+  Params params = 1 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true,
+    (gogoproto.jsontag) = "params"
+  ];
+  uint64 effective_block_height = 2 [(gogoproto.jsontag) = "effective_block_height"];
+}

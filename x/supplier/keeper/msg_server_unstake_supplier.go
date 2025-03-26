@@ -71,7 +71,7 @@ func (k msgServer) UnstakeSupplier(
 
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 	currentHeight := sdkCtx.BlockHeight()
-	sharedParams := k.sharedKeeper.GetParams(ctx)
+	sharedParamsUpdates := k.sharedKeeper.GetParamsUpdates(ctx)
 
 	// Mark the supplier as unstaking by recording the height at which it should stop
 	// providing service.
@@ -80,11 +80,11 @@ func (k msgServer) UnstakeSupplier(
 	// Removing it right away could have undesired effects on the network
 	// (e.g. a session with less than the minimum or 0 number of suppliers,
 	// offchain actors that need to listen to session supplier's change mid-session, etc).
-	supplier.UnstakeSessionEndHeight = uint64(sharedtypes.GetSessionEndHeight(&sharedParams, currentHeight))
+	supplier.UnstakeSessionEndHeight = uint64(sharedtypes.GetSessionEndHeight(sharedParamsUpdates, currentHeight))
 
 	// Update the supplier's service config history with the empty service configs
 	// to indicate that the supplier is no longer providing service after the current session.
-	nextSessionStartHeight := sharedtypes.GetNextSessionStartHeight(&sharedParams, currentHeight)
+	nextSessionStartHeight := sharedtypes.GetNextSessionStartHeight(sharedParamsUpdates, currentHeight)
 	servicesUpdate := &sharedtypes.ServiceConfigUpdate{
 		Services:             make([]*sharedtypes.SupplierServiceConfig, 0),
 		EffectiveBlockHeight: uint64(nextSessionStartHeight),
@@ -106,7 +106,7 @@ func (k msgServer) UnstakeSupplier(
 	k.SetSupplier(ctx, supplier)
 
 	// Emit an event which signals that the supplier successfully began unbonding their stake.
-	unbondingEndHeight := sharedtypes.GetSupplierUnbondingEndHeight(&sharedParams, &supplier)
+	unbondingEndHeight := sharedtypes.GetSupplierUnbondingEndHeight(sharedParamsUpdates, &supplier)
 	event := &suppliertypes.EventSupplierUnbondingBegin{
 		Supplier:           &supplier,
 		Reason:             suppliertypes.SupplierUnbondingReason_SUPPLIER_UNBONDING_REASON_VOLUNTARY,

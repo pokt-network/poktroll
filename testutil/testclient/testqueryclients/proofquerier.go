@@ -20,6 +20,11 @@ func NewTestProofQueryClientWithParams(t *testing.T, params client.ProofParams) 
 		Return(params, nil).
 		AnyTimes()
 
+	proofQueryClientMock.EXPECT().
+		GetParamsAtHeight(gomock.Any(), gomock.Any()).
+		Return(params, nil).
+		AnyTimes()
+
 	return proofQueryClientMock
 }
 

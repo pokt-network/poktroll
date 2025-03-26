@@ -37,7 +37,7 @@ func networkWithClaimObjects(
 	numSessions int,
 	numSuppliers int,
 	numApps int,
-	sharedParams *sharedtypes.Params,
+	sharedParamsUpdates []*sharedtypes.ParamsUpdate,
 ) (net *network.Network, claims []types.Claim, clientCtx cosmosclient.Context) {
 	t.Helper()
 
@@ -90,7 +90,7 @@ func networkWithClaimObjects(
 		for _, appAcct := range appAccts {
 			for _, supplierOperatorAcct := range supplierOperatorAccts {
 				claim := newTestClaim(
-					t, sharedParams,
+					t, sharedParamsUpdates,
 					supplierOperatorAcct.Address.String(),
 					testsession.GetSessionStartHeightWithDefaultParams(1),
 					appAcct.Address.String(),
@@ -137,7 +137,7 @@ func networkWithClaimObjects(
 // and application address. It uses mock byte slices for the root hash and block hash.
 func newTestClaim(
 	t *testing.T,
-	sharedParams *sharedtypes.Params,
+	sharedParamsUpdates []*sharedtypes.ParamsUpdate,
 	supplierOperatorAddr string,
 	sessionStartHeight int64,
 	appAddr string,
@@ -150,7 +150,7 @@ func newTestClaim(
 	blockHashBz := []byte("genesis_session__mock_block_hash")
 
 	sessionId, _ := sessionkeeper.GetSessionId(
-		sharedParams,
+		sharedParamsUpdates,
 		appAddr,
 		testServiceId,
 		blockHashBz,

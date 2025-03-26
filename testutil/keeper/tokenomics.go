@@ -239,11 +239,28 @@ func TokenomicsKeeperWithActorAddrs(t testing.TB) (
 		GetParams(gomock.Any()).
 		Return(sharedtypes.DefaultParams()).
 		AnyTimes()
+	mockSharedKeeper.EXPECT().
+		GetParamsAtHeight(gomock.Any(), gomock.Any()).
+		Return(sharedtypes.DefaultParams()).
+		AnyTimes()
+	mockSharedKeeper.EXPECT().
+		GetParamsUpdates(gomock.Any()).
+		Return([]*sharedtypes.ParamsUpdate{
+			{
+				Params:               sharedtypes.DefaultParams(),
+				EffectiveBlockHeight: 1,
+			},
+		}).
+		AnyTimes()
 
 	// Mock the session keeper
 	mockSessionKeeper := mocks.NewMockSessionKeeper(ctrl)
 	mockSessionKeeper.EXPECT().
 		GetParams(gomock.Any()).
+		Return(sessiontypes.DefaultParams()).
+		AnyTimes()
+	mockSessionKeeper.EXPECT().
+		GetParamsAtHeight(gomock.Any(), gomock.Any()).
 		Return(sessiontypes.DefaultParams()).
 		AnyTimes()
 
@@ -292,6 +309,9 @@ func TokenomicsKeeperWithActorAddrs(t testing.TB) (
 
 	// Add a block proposer address to the context
 	sdkCtx = sdkCtx.WithProposer(sample.ConsAddress())
+
+	// Set the block height to 1
+	sdkCtx = sdkCtx.WithBlockHeight(1)
 
 	// Initialize params
 	require.NoError(t, k.SetParams(sdkCtx, tokenomicstypes.DefaultParams()))
@@ -439,6 +459,7 @@ func NewTokenomicsModuleKeepers(
 		runtime.NewKVStoreService(keys[servicetypes.StoreKey]),
 		log.NewNopLogger(),
 		authority.String(),
+		sharedKeeper,
 		bankKeeper,
 	)
 

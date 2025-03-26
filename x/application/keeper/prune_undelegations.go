@@ -21,17 +21,17 @@ const NumSessionsAppToGatewayUndelegationRetention = 2
 func (k Keeper) EndBlockerPruneAppToGatewayPendingUndelegation(ctx sdk.Context) error {
 	currentHeight := ctx.BlockHeight()
 
-	// Calculate the block height at which undelegations should be pruned
-	numBlocksUndelegationRetention := k.GetNumBlocksUndelegationRetention(ctx)
-	if currentHeight <= numBlocksUndelegationRetention {
-		return nil
-	}
-	earliestUnprunedUndelegationHeight := uint64(currentHeight - numBlocksUndelegationRetention)
-
 	// Iterate over all applications and prune undelegations that are older than
 	// the retention period.
 	for _, application := range k.GetAllApplications(ctx) {
 		for undelegationSessionEndHeight := range application.PendingUndelegations {
+			// Calculate the block height at which undelegations should be pruned
+			numBlocksUndelegationRetention := k.GetNumBlocksUndelegationRetention(ctx, int64(undelegationSessionEndHeight))
+			if currentHeight <= numBlocksUndelegationRetention {
+				return nil
+			}
+			earliestUnprunedUndelegationHeight := uint64(currentHeight - numBlocksUndelegationRetention)
+
 			if undelegationSessionEndHeight < earliestUnprunedUndelegationHeight {
 				// prune undelegations
 				delete(application.PendingUndelegations, undelegationSessionEndHeight)
@@ -47,8 +47,8 @@ func (k Keeper) EndBlockerPruneAppToGatewayPendingUndelegation(ctx sdk.Context) 
 // GetNumBlocksUndelegationRetention returns the number of blocks for which
 // undelegations should be kept before being pruned, given the current onchain
 // shared module parameters.
-func (k Keeper) GetNumBlocksUndelegationRetention(ctx context.Context) int64 {
-	sharedParams := k.sharedKeeper.GetParams(ctx)
+func (k Keeper) GetNumBlocksUndelegationRetention(ctx context.Context, queryHeight int64) int64 {
+	sharedParams := k.sharedKeeper.GetParamsAtHeight(ctx, queryHeight)
 	return GetNumBlocksUndelegationRetention(&sharedParams)
 }
 

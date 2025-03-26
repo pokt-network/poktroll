@@ -15,7 +15,6 @@ import (
 	"github.com/pokt-network/poktroll/app/volatile"
 	"github.com/pokt-network/poktroll/pkg/cache"
 	"github.com/pokt-network/poktroll/pkg/cache/memory"
-	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/client/block"
 	"github.com/pokt-network/poktroll/pkg/client/events"
 	"github.com/pokt-network/poktroll/pkg/client/query"
@@ -531,7 +530,7 @@ func NewSupplyKeyValueCacheFn[T any](opts ...querycache.CacheOption[cache.KeyVal
 
 // NewSupplyParamsCacheFn returns a function which constructs a ParamsCache of type T.
 // It take a list of cache options that can be used to configure the cache.
-func NewSupplyParamsCacheFn[T any](opts ...querycache.CacheOption[client.ParamsCache[T]]) SupplierFn {
+func NewSupplyParamsCacheFn[T any]() SupplierFn {
 	return func(
 		ctx context.Context,
 		deps depinject.Config,
@@ -552,13 +551,6 @@ func NewSupplyParamsCacheFn[T any](opts ...querycache.CacheOption[client.ParamsC
 		paramsCache, err := querycache.NewParamsCache[T](memory.WithTTL(0))
 		if err != nil {
 			return nil, err
-		}
-
-		// Apply the query cache options
-		for _, opt := range opts {
-			if err := opt(ctx, deps, paramsCache); err != nil {
-				return nil, err
-			}
 		}
 
 		return depinject.Configs(deps, depinject.Supply(paramsCache)), nil

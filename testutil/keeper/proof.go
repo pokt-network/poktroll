@@ -99,10 +99,18 @@ func ProofKeeper(t testing.TB) (keeper.Keeper, context.Context) {
 			},
 		).AnyTimes()
 
+	mockSharedKeeper := mocks.NewMockSharedKeeper(ctrl)
+	mockSharedKeeper.EXPECT().
+		GetParamsUpdates(gomock.Any()).
+		Return([]*sharedtypes.ParamsUpdate{
+			{
+				Params:               sharedtypes.DefaultParams(),
+				EffectiveBlockHeight: 1,
+			},
+		}).AnyTimes()
 	mockSessionKeeper := mocks.NewMockSessionKeeper(ctrl)
 	mockAppKeeper := mocks.NewMockApplicationKeeper(ctrl)
 	mockAccountKeeper := mocks.NewMockAccountKeeper(ctrl)
-	mockSharedKeeper := mocks.NewMockSharedKeeper(ctrl)
 	mockServiceKeeper := mocks.NewMockServiceKeeper(ctrl)
 
 	k := keeper.NewKeeper(
@@ -222,6 +230,7 @@ func NewProofModuleKeepers(t testing.TB, opts ...ProofKeepersOpt) (_ *ProofModul
 		runtime.NewKVStoreService(keys[types.StoreKey]),
 		log.NewNopLogger(),
 		authority.String(),
+		sharedKeeper,
 		bankKeeper,
 	)
 

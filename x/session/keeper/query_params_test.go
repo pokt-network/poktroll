@@ -3,6 +3,7 @@ package keeper_test
 import (
 	"testing"
 
+	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 
 	testkeeper "github.com/pokt-network/poktroll/testutil/keeper"
@@ -14,7 +15,15 @@ func TestParamsQuery(t *testing.T) {
 	params := types.DefaultParams()
 	require.NoError(t, keeper.SetParams(ctx, params))
 
-	response, err := keeper.Params(ctx, &types.QueryParamsRequest{})
+	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
+	sdkCtx = sdkCtx.WithBlockHeight(1)
+
+	response, err := keeper.Params(sdkCtx, &types.QueryParamsRequest{})
 	require.NoError(t, err)
-	require.Equal(t, &types.QueryParamsResponse{Params: params}, response)
+
+	expectedParamsRes := &types.QueryParamsResponse{
+		Params:               params,
+		EffectiveBlockHeight: 1,
+	}
+	require.Equal(t, expectedParamsRes, response)
 }

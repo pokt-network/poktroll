@@ -28,13 +28,13 @@ func TestTokenomicsIntegrationExample(t *testing.T) {
 
 	// Query and validate the default shared params
 	sharedQueryClient := sharedtypes.NewQueryClient(integrationApp.QueryHelper())
-	sharedParamsReq := sharedtypes.QueryParamsRequest{}
-	sharedQueryRes, err := sharedQueryClient.Params(integrationApp.GetSdkCtx(), &sharedParamsReq)
+	sharedParamsUpdatesReq := sharedtypes.QueryParamsUpdatesRequest{}
+	sharedQueryRes, err := sharedQueryClient.ParamsUpdates(integrationApp.GetSdkCtx(), &sharedParamsUpdatesReq)
 	require.NoError(t, err)
 	require.NotNil(t, sharedQueryRes, "unexpected nil params query response")
-	require.EqualValues(t, sharedtypes.DefaultParams(), sharedQueryRes.GetParams())
+	require.EqualValues(t, sharedtypes.DefaultParams(), sharedQueryRes.GetParamsUpdates()[0].Params)
 
-	sharedParams := sharedQueryRes.GetParams()
+	sharedParamsUpdates := sharedQueryRes.GetParamsUpdates()
 
 	// Prepare a request to query a session so it can be used to create a claim.
 	sessionQueryClient := sessiontypes.NewQueryClient(integrationApp.QueryHelper())
@@ -55,7 +55,7 @@ func TestTokenomicsIntegrationExample(t *testing.T) {
 	// Query and validate the default shared params
 	var claimWindowOpenBlockHash []byte
 	earliestClaimCommitHeight := sharedtypes.GetEarliestSupplierClaimCommitHeight(
-		&sharedParams,
+		sharedParamsUpdates,
 		session.GetHeader().GetSessionEndBlockHeight(),
 		claimWindowOpenBlockHash,
 		integrationApp.DefaultSupplier.GetOperatorAddress(),

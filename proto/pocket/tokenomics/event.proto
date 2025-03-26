@@ -5,10 +5,12 @@ option go_package = "github.com/pokt-network/poktroll/x/tokenomics/types";
 option (gogoproto.stable_marshaler_all) = true;
 
 import "cosmos/base/v1beta1/coin.proto";
+import "amino/amino.proto";
 import "gogoproto/gogo.proto";
 import "pocket/proof/types.proto";
 
 import "pocket/tokenomics/types.proto";
+import "pocket/tokenomics/params.proto";
 
 enum ClaimExpirationReason {
   EXPIRATION_REASON_UNSPECIFIED = 0; // Default value, means may be valid
@@ -92,4 +94,15 @@ message EventApplicationReimbursementRequest {
     string service_id = 4;
     string session_id = 5;
     cosmos.base.v1beta1.Coin amount = 6;
+}
+
+// EventParamsUpdate is emitted when the module params update becomes effective.
+message EventParamsUpdated {
+  pocket.tokenomics.Params params = 1 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true,
+    (gogoproto.jsontag) = "params"
+  ];
+  // The start height of the session at which the param is activated.
+  uint64 effective_block_height = 2 [(gogoproto.jsontag) = "effective_block_height"];
 }
