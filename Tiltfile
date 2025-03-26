@@ -256,11 +256,10 @@ k8s_yaml(
     ["localnet/kubernetes/anvil.yaml", "localnet/kubernetes/rest.yaml", "localnet/kubernetes/validator-volume.yaml"]
 )
 
-# TODO_MAINNET_MIGRATION(@okdas): Update helm charts from poktroll to pocket
 # Provision validator
 helm_resource(
     "validator",
-    chart_prefix + "poktroll-validator",
+    chart_prefix + "pocket-validator",
     flags=[
         "--values=./localnet/kubernetes/values-common.yaml",
         "--values=./localnet/kubernetes/values-validator.yaml",
