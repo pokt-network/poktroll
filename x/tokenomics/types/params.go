@@ -1,6 +1,8 @@
 package types
 
 import (
+	"math"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	paramtypes "github.com/cosmos/cosmos-sdk/x/params/types"
 )
@@ -158,8 +160,10 @@ func ValidateMintAllocationPercentages(mintAllocationPercentagesAny any) error {
 
 // ValidateMintAllocationSum validates that the sum of all actor mint allocation percentages is exactly 1.
 func ValidateMintAllocationSum(mintAllocationPercentage MintAllocationPercentages) error {
+	const epsilon = 1e-10 // Small epsilon value for floating-point comparison
 	sum := mintAllocationPercentage.Sum()
-	if sum != 1 {
+	// TODO_IN_THIS_PR: is this safe to do? Added due to `mint allocation percentages do not add to 1.0: got 1.000000: the provided param is invalid`.
+	if math.Abs(sum-1) > epsilon {
 		return ErrTokenomicsParamInvalid.Wrapf("mint allocation percentages do not add to 1.0: got %f", sum)
 	}
 
