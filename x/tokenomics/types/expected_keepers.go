@@ -70,6 +70,7 @@ type ProofKeeper interface {
 
 type SharedKeeper interface {
 	GetParams(ctx context.Context) sharedtypes.Params
+	GetParamsAtHeight(ctx context.Context, queryHeight int64) sharedtypes.Params
 	SetParams(ctx context.Context, params sharedtypes.Params) error
 
 	GetSessionEndHeight(ctx context.Context, queryHeight int64) int64

@@ -27,11 +27,24 @@ func (k msgServer) UpdateParams(goCtx context.Context, req *types.MsgUpdateParam
 		)
 	}
 	ctx := sdk.UnwrapSDKContext(goCtx)
-	if err := k.SetParams(ctx, req.Params); err != nil {
+	committedHeight := ctx.BlockHeight()
+
+	currentParams := k.GetParams(ctx)
+	nextSessionStartHeight := types.GetNextSessionStartHeight(&currentParams, committedHeight)
+
+	paramsUpdate := types.ParamsUpdate{
+		Params:               req.Params,
+		EffectiveBlockHeight: uint64(nextSessionStartHeight),
+	}
+
+	if err := k.SetParamsUpdate(ctx, paramsUpdate); err != nil {
 		err = types.ErrSharedParamInvalid.Wrapf("unable to set params: %v", err)
 		logger.Error(err.Error())
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
-	return &types.MsgUpdateParamsResponse{}, nil
+	return &types.MsgUpdateParamsResponse{
+		Params:               paramsUpdate.Params,
+		EffectiveBlockHeight: paramsUpdate.EffectiveBlockHeight,
+	}, nil
 }

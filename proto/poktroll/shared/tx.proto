@@ -36,7 +36,10 @@ message MsgUpdateParams {
 
 // MsgUpdateParamsResponse defines the response structure for executing a
 // MsgUpdateParams message.
-message MsgUpdateParamsResponse {}
+message MsgUpdateParamsResponse {
+  Params params = 1 [(gogoproto.nullable) = false, (amino.dont_omitempty) = true];
+  uint64 effective_block_height = 2;
+}
 
 // MsgUpdateParam is the Msg/UpdateParam request type to update a single param.
 message MsgUpdateParam {
@@ -56,6 +59,7 @@ message MsgUpdateParam {
 // MsgUpdateParamResponse defines the response structure for executing a
 // MsgUpdateParam message after a single param update.
 message MsgUpdateParamResponse {
-  Params params = 1;
+  Params params = 1 [(gogoproto.nullable) = false, (amino.dont_omitempty) = true];
+  uint64 effective_block_height = 2;
 }
 

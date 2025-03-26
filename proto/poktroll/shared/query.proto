@@ -16,6 +16,10 @@ service Query {
   rpc Params(QueryParamsRequest) returns (QueryParamsResponse) {
     option (google.api.http).get = "/pokt-network/poktroll/shared/params";
   }
+
+  rpc ParamsAtHeight(QueryParamsAtHeightRequest) returns (QueryParamsAtHeightResponse) {
+    option (google.api.http).get = "/pokt-network/poktroll/shared/params/{height}";
+  }
 }
 
 // QueryParamsRequest is request type for the Query/Params RPC method.
@@ -28,4 +32,19 @@ message QueryParamsResponse {
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
   ];
+
+  uint64 effective_block_height = 2;
+}
+
+message QueryParamsAtHeightRequest {
+  uint64 height = 1;
+}
+
+message QueryParamsAtHeightResponse {
+  Params params = 1 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+
+  uint64 effective_block_height = 2;
 }

@@ -1,0 +1,16 @@
+syntax = "proto3";
+package poktroll.shared;
+
+option go_package = "github.com/pokt-network/poktroll/x/shared/types";
+option (gogoproto.stable_marshaler_all) = true;
+
+import "gogoproto/gogo.proto";
+
+import "poktroll/shared/params.proto";
+
+// EventSharedParamsUpdate is emitted when a shared module params becomes effective.
+message EventSharedParamsUpdated {
+  poktroll.shared.Params params = 1 [(gogoproto.jsontag) = "params"];
+  // The start height of the session at which the param is activated.
+  uint64 effective_block_height = 2 [(gogoproto.jsontag) = "effective_block_height"];
+}

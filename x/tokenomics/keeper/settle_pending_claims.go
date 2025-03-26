@@ -65,6 +65,7 @@ func (k Keeper) SettlePendingClaims(ctx cosmostypes.Context) (
 			numEstimatedComputeUnits uint64
 		)
 
+		sessionEndHeight := claim.GetSessionHeader().SessionEndBlockHeight
 		sessionId := claim.GetSessionHeader().GetSessionId()
 
 		// NB: Not every (Req, Res) pair in the session is inserted into the tree due
@@ -103,7 +104,7 @@ func (k Keeper) SettlePendingClaims(ctx cosmostypes.Context) (
 			return settledResults, expiredResults, err
 		}
 
-		sharedParams := k.sharedKeeper.GetParams(ctx)
+		sharedParams := k.sharedKeeper.GetParamsAtHeight(ctx, sessionEndHeight)
 		// claimeduPOKT is the amount of uPOKT that the supplier would receive if the
 		// claim is settled. It is derived from the claimed number of relays, the current
 		// service mining difficulty and the global network parameters.
@@ -504,6 +505,11 @@ func (k Keeper) GetExpiringClaims(ctx cosmostypes.Context) (expiringClaims []pro
 	//   2. Ensure that claims are only settled or expired on a session end height.
 	//     2a. This likely also requires adding validation to the shared module params.
 	blockHeight := ctx.BlockHeight()
+
+	// TODO_IN_THIS_PR: Iterate over all claims and use the sharedParams as of the
+	// session end height to determine if the claim is expiring.
+	// This is necessary because the sharedParams can change between the session end
+	// height and the current block height.
 
 	// NB: This error can be safely ignored as onchain SharedQueryClient implementation cannot return an error.
 	sharedParams, _ := k.sharedQuerier.GetParams(ctx)
