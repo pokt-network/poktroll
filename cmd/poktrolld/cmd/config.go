@@ -25,7 +25,7 @@ import (
 // - Instrumentation.Prometheus: true
 // - LogLevel: "info"
 // - BlockTime: 1 minute (dictated by TimeoutCommit, more details below)
-
+//
 // ### Default App Genesis Configs ###
 // - MinGasPrices: "0.000000001upokt"
 // - Mempool.MaxTxs: 10000
@@ -90,14 +90,14 @@ func checkOrInitSDKConfig() {
 
 // The values set here become the default configuration for newly initialized nodes.
 // However, it's crucial to note that:
-// 1. These defaults only apply when a node is first initialized using `poktrolld init`.
-// 2. Changing these values in the code will not automatically update existing node configurations.
-// 3. Node operators can still manually override these defaults in their local config files.
+// - These defaults only apply when a node is first initialized using `poktrolld init`.
+// - Changing these values in the code will not automatically update existing node configurations.
+// - Node operators can still manually override these defaults in their local config files.
 //
 // Therefore, it's critical to choose sensible default values carefully, as they will form
 // the baseline configuration for most network participants. Any future changes to these
 // defaults will only affect newly initialized nodes, not existing ones.
-
+//
 // As we use `ignite` CLI to provision the first validator it is important to note that the configuration files
 // provisioned by ignite have additional overrides adjusted in ignite's `config.yml`
 
@@ -110,6 +110,7 @@ func initCometBFTConfig() *cmtcfg.Config {
 	// cfg.P2P.MaxNumInboundPeers = 100
 	// cfg.P2P.MaxNumOutboundPeers = 40
 
+	// BlockTime configuration
 	// BlockTime is 1 minute.
 	// BlockTime is a function of all of these parameters but ultimately dictated by TimeoutCommit.
 	// TimeoutCommit is the **minimum** time between blocks establishing a baseline.
@@ -120,6 +121,7 @@ func initCometBFTConfig() *cmtcfg.Config {
 	cfg.Consensus.TimeoutPrecommit = 10 * time.Second
 	cfg.Consensus.TimeoutPrecommitDelta = 5 * time.Second
 	cfg.Consensus.TimeoutCommit = 60 * time.Second
+
 	cfg.Instrumentation.Prometheus = true
 	cfg.LogLevel = "info"
 
@@ -136,24 +138,23 @@ func initAppConfig() (string, interface{}) {
 		Poktroll            PoktrollAppConfig `mapstructure:"poktroll"`
 	}
 
-	// Optionally allow the chain developer to overwrite the SDK's default
-	// server config.
+	// Optionally allow the chain developer to overwrite the SDK's default server config.
 	srvCfg := serverconfig.DefaultConfig()
-	// The SDK's default minimum gas price is set to "" (empty value) inside
-	// app.toml. If left empty by validators, the node will halt on startup.
-	// However, the chain developer can set a default app.toml value for their
-	// validators here.
+
+	// The SDK's default minimum gas price is set to "" (empty value) inside app.toml.
+	// If left empty by validators, the node will halt on startup.
+	// However, the chain developer can set a default app.toml value for their validators here.
 	//
 	// In summary:
-	// - if you leave srvCfg.MinGasPrices = "", all validators MUST tweak their
-	//   own app.toml config,
-	// - if you set srvCfg.MinGasPrices non-empty, validators CAN tweak their
-	//   own app.toml to override, or use this default value.
+	// - if you leave srvCfg.MinGasPrices = "", all validators MUST tweak their own app.toml config
+	// - if you set srvCfg.MinGasPrices non-empty, validators CAN tweak their own app.toml to override,
+	//   or use this default value.
 	//
 	// In tests, we set the min gas prices to 0.
 	// srvCfg.MinGasPrices = "0stake"
 	// srvCfg.BaseConfig.IAVLDisableFastNode = true // disable fastnode by default
 
+	// Default configuration settings
 	srvCfg.MinGasPrices = "0.000000001upokt" // Also adjust ignite's `config.yml`.
 	srvCfg.Mempool.MaxTxs = 10000
 	srvCfg.Telemetry.Enabled = true
