@@ -76,7 +76,7 @@ require (
 	google.golang.org/genproto/googleapis/api v0.0.0-20240814211410-ddb44dafa142
 	google.golang.org/grpc v1.67.1
 	google.golang.org/grpc/cmd/protoc-gen-go-grpc v1.4.0
-	google.golang.org/protobuf v1.35.1
+	google.golang.org/protobuf v1.35.2
 	gopkg.in/yaml.v2 v2.4.0
 )
 
@@ -135,7 +135,7 @@ require (
 	github.com/cockroachdb/redact v1.1.5 // indirect
 	github.com/cockroachdb/tokenbucket v0.0.0-20230807174530-cc333fc44b06 // indirect
 	github.com/cometbft/cometbft-db v0.11.0 // indirect
-	github.com/containerd/continuity v0.4.2 // indirect
+	github.com/containerd/continuity v0.4.4 // indirect
 	github.com/containerd/stargz-snapshotter/estargz v0.15.1 // indirect
 	github.com/cosmos/btcutil v1.0.5 // indirect
 	github.com/cosmos/go-bip39 v1.0.0 // indirect
