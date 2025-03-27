@@ -62,7 +62,7 @@ check_morse_private_key_path: ## Checks that the MORSE_PRIVATE_KEY_PATH environm
 		exit 1; \
 	fi
 
-# TODO_IN_THIS_COMMIT: test that this works...
+# TODO_IN_THIS_COMMIT: fix - this doesn't set the default as expected.
 .PHONY: check_shannon_grpc_addr
 check_shannon_grpc_addr: ## Checks that the SHANNON_GRPC_ADDR environment variable is set and logs a warning if not.
 	if [[ -z "$(SHANNON_GRPC_ADDR)" ]]; then \
