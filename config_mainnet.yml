@@ -4,7 +4,7 @@
 version: 1
 
 build:
-  main: cmd/poktrolld
+  main: cmd/pocketd
 
 # Pocket Network Shadow MainNet Genesis Account Balances
 #
@@ -90,7 +90,7 @@ accounts:
       - 100000000000upokt # 100K POKT (15K bonded below 85K remaining for tx fees, slashing, etc...)
 
 ####### Validator Configs ######
-# See `cmd/poktrolld/cmd/config.go` for default CometBFT and AppChain values.
+# See `cmd/pocketd/cmd/config.go` for default CometBFT and AppChain values.
 validators:
   - name: groveval1
     bonded: 15000000000upokt # 15K POKT (bonded)
@@ -105,8 +105,8 @@ validators:
 
 # We can persist arbitrary genesis values via 1 to 1 mapping to genesis.json
 genesis:
-  app_name: poktroll
-  chain_id: poktroll
+  app_name: pocket
+  chain_id: pocket
 
   app_state:
     ####### CometBFT Configs & Cosmos SDK Module Configs ######
