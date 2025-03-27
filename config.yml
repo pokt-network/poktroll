@@ -133,6 +133,8 @@ genesis:
   app_name: pocket
   chain_id: pocket
   app_state:
+    # See the mint module for all other relevant parameters.
+    # Ignite generate defaults in genesis.json with the values as explicit overrides.
     # https://docs.cosmos.network/main/build/modules/mint
     mint:
       params:
@@ -189,8 +191,12 @@ genesis:
           coins:
             - amount: "1000000000" # MUST BE equal to one add_service_fee below
               denom: upokt
+    # For ref, see proto/poktroll/application/params.proto
     application:
       params:
+        # 6 was arbitrarily selected taking into consideration two factors:
+        # - The number of Gateways users usually round robin through.
+        # - Potential performance impacts on ring signatures.
         max_delegated_gateways: "7"
         min_stake:
           # TODO_BETA(@bryanchriswhite): Determine realistic amount for minimum application stake amount.
@@ -225,6 +231,7 @@ genesis:
           stake:
             amount: "100000068" # ~100 POKT
             denom: upokt
+    # For ref, see proto/poktroll/supplier/params.proto
     supplier:
       params:
         # TODO_BETA(@bryanchriswhite): Determine realistic amount for minimum gateway stake amount.
@@ -260,6 +267,7 @@ genesis:
             # `supplier1_stake_config.yaml` so that the stake command causes a state change.
             amount: "1000068"
             denom: upokt
+    # For ref, see proto/poktroll/gateway/params.proto
     gateway:
       params:
         # TODO_BETA(@bryanchriswhite): Determine realistic amount for minimum gateway stake amount.
@@ -273,12 +281,13 @@ genesis:
             # `gateway1_stake_config.yaml` so that the stake command causes a state change.
             amount: "1000068"
             denom: upokt
+    # For ref, see proto/poktroll/service/params.proto
     service:
       params:
         add_service_fee:
           amount: "1000000000"
           denom: upokt
-        target_num_relays: 100000
+        target_num_relays: 100000 # 100K; arbitrary value that aligns with "reputable" volume.
       serviceList:
         - id: anvil
           name: "anvil"
@@ -296,6 +305,7 @@ genesis:
           name: "rest"
           compute_units_per_relay: 1
           owner_address: pokt1mx0klkkrj6v3dw8gs4nzlq0cq8lsktmx35t03e
+    # For ref, see proto/poktroll/proof/params.proto
     proof:
       params:
         proof_request_probability: "0.25"
@@ -308,31 +318,34 @@ genesis:
         proof_submission_fee:
           amount: "1000000"
           denom: upokt
+    # For ref, see proto/poktroll/session/params.proto
     session:
       params:
         num_suppliers_per_session: 15
+    # For ref, see proto/poktroll/tokenomics/params.proto
     tokenomics:
       params:
         mint_allocation_percentages:
-          dao: 0.1
-          proposer: 0.05
-          supplier: 0.7
-          source_owner: 0.15
-          application: 0.0
-        # The dao reward address SHOULD match that of the "pnf" below (i.e. `make pocketd_addr ACC_NAME=pnf`).
+          dao: 0.1 # DAO earns 10% of the global inflation during all claim settlements across all services.
+          proposer: 0.05 # Block proposers earn 5% of the global inflation during all claim settlements across all services.
+          supplier: 0.7 # Suppliers earn 70% of the global inflation during all claim settlements associated with the service they provide.
+          source_owner: 0.15 # Service owners earn 15% of the global inflation during all claim settlements associated with their service.
+          application: 0.0 # Application earns nothing from global inflation during all claim settlements.
+        # The dao reward address SHOULD match that of the "pnf" below (i.e. `make poktrolld_addr ACC_NAME=pnf`).
         # This is the address that will receive the dao/foundation rewards during claim settlement (global mint TLM).
         # TODO_MAINNET(@olshansk): Consolidate the usage of DAO/PNF throughout the configs & codebase.
         dao_reward_address: "pokt1eeeksh2tvkh7wzmfrljnhw4wrhs55lcuvmekkw"
         global_inflation_per_claim: 0.1
+    # For ref, see proto/poktroll/shared/params.proto
     shared:
       params:
-        num_blocks_per_session: 10
-        grace_period_end_offset_blocks: 1
-        claim_window_open_offset_blocks: 1
-        claim_window_close_offset_blocks: 4
-        proof_window_open_offset_blocks: 0
-        proof_window_close_offset_blocks: 4
-        supplier_unbonding_period_sessions: 1
-        application_unbonding_period_sessions: 1
-        gateway_unbonding_period_sessions: 1
-        compute_units_to_tokens_multiplier: 42
+        num_blocks_per_session: 10 # At 1 minute blocks, this will lead to a new session every 10 minutes. Arbitrarily selected.
+        grace_period_end_offset_blocks: 1 # Small value to smooth out session rollovers.
+        claim_window_open_offset_blocks: 1 # Small (for speed) non-zero (for security) value to balance speed and security.
+        claim_window_close_offset_blocks: 4 # Small (for speed) non-zero (for security) value to balance speed and security but must be larger than claim_window_open_offset_blocks.
+        proof_window_open_offset_blocks: 0 # Set to zero to allow for immediate proof submission after the claim window closes.
+        proof_window_close_offset_blocks: 4 # Small (for speed) non-zero (for security) value to balance speed and security but must be larger than proof_window_open_offset_blocks.
+        supplier_unbonding_period_sessions: 1 # Small value to enable for quick testing & onboarding during LocalNet.
+        application_unbonding_period_sessions: 1 # Small value to enable for quick testing & onboarding during LocalNet.
+        gateway_unbonding_period_sessions: 1 # Small value to enable for quick testing & onboarding during LocalNet.
+        compute_units_to_tokens_multiplier: 42 # Arbitrary value that acts as the answer to everything.
