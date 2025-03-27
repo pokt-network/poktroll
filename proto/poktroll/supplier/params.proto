@@ -20,3 +20,13 @@ message Params {
   // staking_fee is the fee charged by the protocol for staking a supplier.
   cosmos.base.v1beta1.Coin staking_fee = 2 [(gogoproto.jsontag) = "staking_fee", (gogoproto.moretags) = "yaml:\"staking_fee\""];
 }
+
+// ParamsUpdate defines the parameters update along the block height at which the update is effective.
+message ParamsUpdate {
+  Params params = 1 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true,
+    (gogoproto.jsontag) = "params"
+  ];
+  uint64 effective_block_height = 2 [(gogoproto.jsontag) = "effective_block_height"];
+}

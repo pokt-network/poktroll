@@ -19,11 +19,12 @@ import (
 const _ = grpc.SupportPackageIsVersion8
 
 const (
-	Query_Params_FullMethodName    = "/poktroll.proof.Query/Params"
-	Query_Claim_FullMethodName     = "/poktroll.proof.Query/Claim"
-	Query_AllClaims_FullMethodName = "/poktroll.proof.Query/AllClaims"
-	Query_Proof_FullMethodName     = "/poktroll.proof.Query/Proof"
-	Query_AllProofs_FullMethodName = "/poktroll.proof.Query/AllProofs"
+	Query_Params_FullMethodName         = "/poktroll.proof.Query/Params"
+	Query_ParamsAtHeight_FullMethodName = "/poktroll.proof.Query/ParamsAtHeight"
+	Query_Claim_FullMethodName          = "/poktroll.proof.Query/Claim"
+	Query_AllClaims_FullMethodName      = "/poktroll.proof.Query/AllClaims"
+	Query_Proof_FullMethodName          = "/poktroll.proof.Query/Proof"
+	Query_AllProofs_FullMethodName      = "/poktroll.proof.Query/AllProofs"
 )
 
 // QueryClient is the client API for Query service.
@@ -32,8 +33,10 @@ const (
 //
 // Query defines the gRPC querier service.
 type QueryClient interface {
-	// Parameters queries the parameters of the module.
+	// Params queries the parameters of the module.
 	Params(ctx context.Context, in *QueryParamsRequest, opts ...grpc.CallOption) (*QueryParamsResponse, error)
+	// ParamsAtHeight queries the parameters of the module at a given height.
+	ParamsAtHeight(ctx context.Context, in *QueryParamsAtHeightRequest, opts ...grpc.CallOption) (*QueryParamsAtHeightResponse, error)
 	// Queries a list of Claim items.
 	Claim(ctx context.Context, in *QueryGetClaimRequest, opts ...grpc.CallOption) (*QueryGetClaimResponse, error)
 	AllClaims(ctx context.Context, in *QueryAllClaimsRequest, opts ...grpc.CallOption) (*QueryAllClaimsResponse, error)
@@ -54,6 +57,16 @@ func (c *queryClient) Params(ctx context.Context, in *QueryParamsRequest, opts .
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(QueryParamsResponse)
 	err := c.cc.Invoke(ctx, Query_Params_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *queryClient) ParamsAtHeight(ctx context.Context, in *QueryParamsAtHeightRequest, opts ...grpc.CallOption) (*QueryParamsAtHeightResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(QueryParamsAtHeightResponse)
+	err := c.cc.Invoke(ctx, Query_ParamsAtHeight_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -106,8 +119,10 @@ func (c *queryClient) AllProofs(ctx context.Context, in *QueryAllProofsRequest, 
 //
 // Query defines the gRPC querier service.
 type QueryServer interface {
-	// Parameters queries the parameters of the module.
+	// Params queries the parameters of the module.
 	Params(context.Context, *QueryParamsRequest) (*QueryParamsResponse, error)
+	// ParamsAtHeight queries the parameters of the module at a given height.
+	ParamsAtHeight(context.Context, *QueryParamsAtHeightRequest) (*QueryParamsAtHeightResponse, error)
 	// Queries a list of Claim items.
 	Claim(context.Context, *QueryGetClaimRequest) (*QueryGetClaimResponse, error)
 	AllClaims(context.Context, *QueryAllClaimsRequest) (*QueryAllClaimsResponse, error)
@@ -123,6 +138,9 @@ type UnimplementedQueryServer struct {
 
 func (UnimplementedQueryServer) Params(context.Context, *QueryParamsRequest) (*QueryParamsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Params not implemented")
+}
+func (UnimplementedQueryServer) ParamsAtHeight(context.Context, *QueryParamsAtHeightRequest) (*QueryParamsAtHeightResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ParamsAtHeight not implemented")
 }
 func (UnimplementedQueryServer) Claim(context.Context, *QueryGetClaimRequest) (*QueryGetClaimResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Claim not implemented")
@@ -163,6 +181,24 @@ func _Query_Params_Handler(srv interface{}, ctx context.Context, dec func(interf
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(QueryServer).Params(ctx, req.(*QueryParamsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Query_ParamsAtHeight_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(QueryParamsAtHeightRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(QueryServer).ParamsAtHeight(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Query_ParamsAtHeight_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(QueryServer).ParamsAtHeight(ctx, req.(*QueryParamsAtHeightRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -249,6 +285,10 @@ var Query_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Params",
 			Handler:    _Query_Params_Handler,
+		},
+		{
+			MethodName: "ParamsAtHeight",
+			Handler:    _Query_ParamsAtHeight_Handler,
 		},
 		{
 			MethodName: "Claim",

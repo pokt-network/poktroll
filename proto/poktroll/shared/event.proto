@@ -9,7 +9,7 @@ import "gogoproto/gogo.proto";
 
 import "poktroll/shared/params.proto";
 
-// EventSharedParamsUpdate is emitted when a shared module params becomes effective.
+// EventParamsUpdate is emitted when the module params update becomes effective.
 message EventParamsUpdated {
   poktroll.shared.Params params = 1 [
     (gogoproto.nullable) = false,

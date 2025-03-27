@@ -1,0 +1,21 @@
+syntax = "proto3";
+package poktroll.session;
+
+option go_package = "github.com/pokt-network/poktroll/x/session/types";
+option (gogoproto.stable_marshaler_all) = true;
+
+import "amino/amino.proto";
+import "gogoproto/gogo.proto";
+
+import "poktroll/session/params.proto";
+
+// EventParamsUpdate is emitted when the module params update becomes effective.
+message EventParamsUpdated {
+  poktroll.session.Params params = 1 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true,
+    (gogoproto.jsontag) = "params"
+  ];
+  // The start height of the session at which the param is activated.
+  uint64 effective_block_height = 2 [(gogoproto.jsontag) = "effective_block_height"];
+}

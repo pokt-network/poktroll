@@ -19,22 +19,19 @@ func (k Keeper) BeginBlockerActivateSharedParams(
 
 	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
 	currentBlockHeight := sdkCtx.BlockHeight()
-	// Get the shared params prior to the activation to determine the session start height.
-	// If the NumBlocksPerSession will be updated, it will determine the session start height
-	// of the future sessions only.
-	previousSharedParams := k.GetParams(ctx)
+	sharedParamsUpdates := k.GetParamsUpdates(ctx)
 
 	// Only activate params at the start of a session.
-	if !sharedtypes.IsSessionStartHeight(&previousSharedParams, currentBlockHeight) {
+	if !sharedtypes.IsSessionStartHeight(sharedParamsUpdates, currentBlockHeight) {
 		return activatedSharedParamsUpdate, nil
 	}
 
 	logger.Info(fmt.Sprintf(
 		"starting session %d, about to activate new shared params",
-		sharedtypes.GetSessionNumber(&previousSharedParams, currentBlockHeight),
+		sharedtypes.GetSessionNumber(sharedParamsUpdates, currentBlockHeight),
 	))
 
-	for _, sharedParamsUpdate := range k.GetParamsUpdates(ctx) {
+	for _, sharedParamsUpdate := range sharedParamsUpdates {
 		// Skip updates that are not scheduled to be effective at the current block height.
 		// EffectiveBlockHeight is set by UpdateParams and UpdateParam keeper methods
 		// to be a session start height.

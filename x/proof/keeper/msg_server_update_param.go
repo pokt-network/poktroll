@@ -7,15 +7,15 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"github.com/pokt-network/poktroll/x/proof/types"
+	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 )
 
 // UpdateParam updates a single parameter in the proof module and returns
 // all active parameters.
 func (k msgServer) UpdateParam(
 	ctx context.Context,
-	msg *types.MsgUpdateParam,
-) (*types.MsgUpdateParamResponse, error) {
+	msg *prooftypes.MsgUpdateParam,
+) (*prooftypes.MsgUpdateParamResponse, error) {
 	logger := k.logger.With(
 		"method", "UpdateParam",
 		"param_name", msg.Name,
@@ -25,51 +25,43 @@ func (k msgServer) UpdateParam(
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
-	if k.GetAuthority() != msg.Authority {
-		return nil, status.Error(
-			codes.InvalidArgument,
-			types.ErrProofInvalidSigner.Wrapf(
-				"invalid authority; expected %s, got %s",
-				k.GetAuthority(), msg.Authority,
-			).Error(),
-		)
-	}
-
 	params := k.GetParams(ctx)
 
 	switch msg.Name {
-	case types.ParamProofRequestProbability:
-		logger = logger.With("param_value", msg.GetAsFloat())
+	case prooftypes.ParamProofRequestProbability:
+		logger = logger.With("proof_request_probability", msg.GetAsFloat())
 		params.ProofRequestProbability = msg.GetAsFloat()
-	case types.ParamProofRequirementThreshold:
-		logger = logger.With("param_value", msg.GetAsCoin())
+	case prooftypes.ParamProofRequirementThreshold:
+		logger = logger.With("proof_requirement_threshold", msg.GetAsCoin())
 		params.ProofRequirementThreshold = msg.GetAsCoin()
-	case types.ParamProofMissingPenalty:
-		logger = logger.With("param_value", msg.GetAsCoin())
+	case prooftypes.ParamProofMissingPenalty:
+		logger = logger.With("proof_missing_penalty", msg.GetAsCoin())
 		params.ProofMissingPenalty = msg.GetAsCoin()
-	case types.ParamProofSubmissionFee:
-		logger = logger.With("param_value", msg.GetAsCoin())
+	case prooftypes.ParamProofSubmissionFee:
+		logger = logger.With("proof_submission_fee", msg.GetAsCoin())
 		params.ProofSubmissionFee = msg.GetAsCoin()
 	default:
 		return nil, status.Error(
 			codes.InvalidArgument,
-			types.ErrProofParamInvalid.Wrapf("unsupported param %q", msg.Name).Error(),
+			prooftypes.ErrProofParamInvalid.Wrapf("unsupported param %q", msg.Name).Error(),
 		)
 	}
 
-	if err := params.ValidateBasic(); err != nil {
-		return nil, status.Error(codes.InvalidArgument, err.Error())
+	// Reconstruct a full params update request and rely on the UpdateParams method
+	// to handle the authority and basic validation checks of the params.
+	msgUpdateParams := &prooftypes.MsgUpdateParams{
+		Authority: k.GetAuthority(),
+		Params:    params,
 	}
-
-	if err := k.SetParams(ctx, params); err != nil {
+	response, err := k.UpdateParams(ctx, msgUpdateParams)
+	if err != nil {
 		err = fmt.Errorf("unable to set params: %w", err)
 		logger.Error(fmt.Sprintf("ERROR: %s", err))
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
-	updatedParams := k.GetParams(ctx)
-
-	return &types.MsgUpdateParamResponse{
-		Params: &updatedParams,
+	return &prooftypes.MsgUpdateParamResponse{
+		Params:               response.Params,
+		EffectiveBlockHeight: response.EffectiveBlockHeight,
 	}, nil
 }

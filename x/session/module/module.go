@@ -93,7 +93,7 @@ func (AppModuleBasic) RegisterGRPCGatewayRoutes(clientCtx client.Context, mux *r
 type AppModule struct {
 	AppModuleBasic
 
-	keeper        keeper.Keeper
+	sessionKeeper keeper.Keeper
 	accountKeeper types.AccountKeeper
 	bankKeeper    types.BankKeeper
 }
@@ -106,7 +106,7 @@ func NewAppModule(
 ) AppModule {
 	return AppModule{
 		AppModuleBasic: NewAppModuleBasic(cdc),
-		keeper:         keeper,
+		sessionKeeper:  keeper,
 		accountKeeper:  accountKeeper,
 		bankKeeper:     bankKeeper,
 	}
@@ -114,8 +114,8 @@ func NewAppModule(
 
 // RegisterServices registers a gRPC query service to respond to the module-specific gRPC queries
 func (am AppModule) RegisterServices(cfg module.Configurator) {
-	types.RegisterMsgServer(cfg.MsgServer(), keeper.NewMsgServerImpl(am.keeper))
-	types.RegisterQueryServer(cfg.QueryServer(), am.keeper)
+	types.RegisterMsgServer(cfg.MsgServer(), keeper.NewMsgServerImpl(am.sessionKeeper))
+	types.RegisterQueryServer(cfg.QueryServer(), am.sessionKeeper)
 }
 
 // RegisterInvariants registers the invariants of the module. If an invariant deviates from its predicted value, the InvariantRegistry triggers appropriate logic (most often the chain will be halted)
@@ -127,12 +127,12 @@ func (am AppModule) InitGenesis(ctx sdk.Context, cdc codec.JSONCodec, gs json.Ra
 	// Initialize global index to index in genesis state
 	cdc.MustUnmarshalJSON(gs, &genState)
 
-	InitGenesis(ctx, am.keeper, genState)
+	InitGenesis(ctx, am.sessionKeeper, genState)
 }
 
 // ExportGenesis returns the module's exported genesis state as raw JSON bytes.
 func (am AppModule) ExportGenesis(ctx sdk.Context, cdc codec.JSONCodec) json.RawMessage {
-	genState := ExportGenesis(ctx, am.keeper)
+	genState := ExportGenesis(ctx, am.sessionKeeper)
 	return cdc.MustMarshalJSON(genState)
 }
 
@@ -143,15 +143,16 @@ func (AppModule) ConsensusVersion() uint64 { return 1 }
 
 // BeginBlock contains the logic that is automatically triggered at the beginning of each block.
 // The begin block implementation is optional.
-func (am AppModule) BeginBlock(_ context.Context) error {
-	return nil
+func (am AppModule) BeginBlock(goCtx context.Context) error {
+	ctx := sdk.UnwrapSDKContext(goCtx)
+	return BeginBlocker(ctx, am.sessionKeeper)
 }
 
 // EndBlock contains the logic that is automatically triggered at the end of each block.
 // The end block implementation is optional.
 // TODO_TEST( @red-0ne): Add unit/integration tests for this.
 func (am AppModule) EndBlock(ctx context.Context) error {
-	logger := am.keeper.Logger().With("EndBlock", "SessionModuleEndBlock")
+	logger := am.sessionKeeper.Logger().With("EndBlock", "SessionModuleEndBlock")
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 	blockHeight := sdkCtx.BlockHeight()
 
@@ -159,7 +160,7 @@ func (am AppModule) EndBlock(ctx context.Context) error {
 	// This is necessary to correctly and pseudo-randomly construct a SessionID.
 	// EndBlock is preferred over BeginBlock to avoid wasting resources if the block
 	// does not get committed.
-	am.keeper.StoreBlockHash(ctx)
+	am.sessionKeeper.StoreBlockHash(ctx)
 	logger.Info(fmt.Sprintf("Stored block hash at height %d", blockHeight))
 	return nil
 }

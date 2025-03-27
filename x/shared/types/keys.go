@@ -12,8 +12,9 @@ const (
 	// MemStoreKey defines the in-memory store key
 	MemStoreKey = "mem_shared"
 
-	// HistoricalParamsKeyPrefix is the prefix for historical params
-	HistoricalParamsKeyPrefix = "historical_shared_params/effective_height/"
+	// ParamsUpdateKeyPrefix defines the prefix for params updates.
+	// This is used to store params updates at a specific height.
+	ParamsUpdateKeyPrefix = "shared_params_update/effective_height/"
 )
 
 var (
@@ -24,8 +25,8 @@ func KeyPrefix(p string) []byte {
 	return []byte(p)
 }
 
-// ParamsUpdateKey returns the key for the params update at the given height
+// ParamsUpdateKey returns the key for the params update at the given height.
 func ParamsUpdateKey(height uint64) []byte {
 	heightStr := strconv.FormatUint(height, 10)
-	return []byte(HistoricalParamsKeyPrefix + heightStr)
+	return []byte(ParamsUpdateKeyPrefix + heightStr)
 }

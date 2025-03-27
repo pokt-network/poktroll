@@ -39,7 +39,13 @@ message MsgUpdateParams {
 
 // MsgUpdateParamsResponse defines the response structure for executing a
 // MsgUpdateParams message.
-message MsgUpdateParamsResponse {}
+message MsgUpdateParamsResponse {
+  // params holds all the parameters of this module.
+  Params params = 1 [(gogoproto.nullable) = false, (amino.dont_omitempty) = true];
+
+  // effective_block_height is the block height at which the params will become effective.
+  uint64 effective_block_height = 2;
+}
 
 message MsgUpdateParam {
   option (cosmos.msg.v1.signer) = "authority";
@@ -53,6 +59,10 @@ message MsgUpdateParam {
   }}
 
 message MsgUpdateParamResponse {
-  Params params = 1;
+  // params holds all the parameters of this module.
+  Params params = 1 [(gogoproto.nullable) = false, (amino.dont_omitempty) = true];
+
+  // effective_block_height is the block height at which the params will become effective.
+  uint64 effective_block_height = 2;
 }
 

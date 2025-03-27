@@ -47,7 +47,8 @@ type ApplicationKeeper interface {
 	GetAllApplications(ctx context.Context) []apptypes.Application
 	UnbondApplication(ctx context.Context, app *apptypes.Application) error
 	EndBlockerUnbondApplications(ctx context.Context) error
-	GetParams(ctx context.Context) (params apptypes.Params)
+	GetParams(ctx context.Context) apptypes.Params
+	GetParamsAtHeight(ctx context.Context, queryHeight int64) apptypes.Params
 }
 
 type ProofKeeper interface {
@@ -65,12 +66,14 @@ type ProofKeeper interface {
 	UpsertClaim(ctx context.Context, claim prooftypes.Claim)
 	UpsertProof(ctx context.Context, claim prooftypes.Proof)
 	GetParams(ctx context.Context) prooftypes.Params
+	GetParamsAtHeight(ctx context.Context, queryHeight int64) prooftypes.Params
 	SetParams(ctx context.Context, params prooftypes.Params) error
 }
 
 type SharedKeeper interface {
 	GetParams(ctx context.Context) sharedtypes.Params
 	GetParamsAtHeight(ctx context.Context, queryHeight int64) sharedtypes.Params
+	GetParamsUpdates(ctx context.Context) []sharedtypes.ParamsUpdate
 	SetParams(ctx context.Context, params sharedtypes.Params) error
 
 	GetSessionEndHeight(ctx context.Context, queryHeight int64) int64
@@ -82,10 +85,12 @@ type SessionKeeper interface {
 	GetBlockHash(ctx context.Context, height int64) []byte
 	StoreBlockHash(ctx context.Context)
 	GetParams(ctx context.Context) sessiontypes.Params
+	GetParamsAtHeight(ctx context.Context, queryHeight int64) sessiontypes.Params
 }
 
 type SupplierKeeper interface {
 	GetParams(ctx context.Context) suppliertypes.Params
+	GetParamsAtHeight(ctx context.Context, queryHeight int64) suppliertypes.Params
 	GetSupplier(ctx context.Context, supplierOperatorAddr string) (supplier sharedtypes.Supplier, found bool)
 	GetAllSuppliers(ctx context.Context) (suppliers []sharedtypes.Supplier)
 	SetSupplier(ctx context.Context, supplier sharedtypes.Supplier)
@@ -98,6 +103,7 @@ type ServiceKeeper interface {
 	// Only used for testing & simulation
 	SetService(ctx context.Context, service sharedtypes.Service)
 	GetParams(ctx context.Context) servicetypes.Params
+	GetParamsAtHeight(ctx context.Context, queryHeight int64) servicetypes.Params
 	SetParams(ctx context.Context, params servicetypes.Params) error
 }
 

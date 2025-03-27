@@ -2,6 +2,7 @@ package keeper
 
 import (
 	"context"
+	"fmt"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -24,24 +25,14 @@ func (k msgServer) UpdateParam(
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
-	if k.GetAuthority() != msg.Authority {
-		return nil, status.Error(
-			codes.InvalidArgument,
-			servicetypes.ErrServiceInvalidSigner.Wrapf(
-				"invalid authority; expected %s, got %s",
-				k.GetAuthority(), msg.Authority,
-			).Error(),
-		)
-	}
-
 	params := k.GetParams(ctx)
 
 	switch msg.Name {
 	case servicetypes.ParamAddServiceFee:
-		logger = logger.With("param_value", msg.GetAsCoin())
+		logger = logger.With("add_service_fee", msg.GetAsCoin())
 		params.AddServiceFee = msg.GetAsCoin()
 	case servicetypes.ParamTargetNumRelays:
-		logger = logger.With("param_value", msg.GetAsUint64())
+		logger = logger.With("target_num_relays", msg.GetAsUint64())
 		params.TargetNumRelays = msg.GetAsUint64()
 	default:
 		return nil, status.Error(
@@ -50,20 +41,21 @@ func (k msgServer) UpdateParam(
 		)
 	}
 
-	// Perform a global validation on all params, which includes the updated param.
-	// This is needed to ensure that the updated param is valid in the context of all other params.
-	if err := params.ValidateBasic(); err != nil {
-		return nil, status.Error(codes.InvalidArgument, err.Error())
+	// Reconstruct a full params update request and rely on the UpdateParams method
+	// to handle the authority and basic validation checks of the params.
+	msgUpdateParams := &servicetypes.MsgUpdateParams{
+		Authority: k.GetAuthority(),
+		Params:    params,
 	}
-
-	if err := k.SetParams(ctx, params); err != nil {
-		logger.Info("ERROR: %s", err)
+	response, err := k.UpdateParams(ctx, msgUpdateParams)
+	if err != nil {
+		err = fmt.Errorf("unable to set params: %w", err)
+		logger.Error(fmt.Sprintf("ERROR: %s", err))
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
-	updatedParams := k.GetParams(ctx)
-
 	return &servicetypes.MsgUpdateParamResponse{
-		Params: &updatedParams,
+		Params:               response.Params,
+		EffectiveBlockHeight: response.EffectiveBlockHeight,
 	}, nil
 }

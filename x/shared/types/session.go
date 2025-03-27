@@ -4,7 +4,7 @@ package types
 // queryHeight starts, given the passed shared onchain parameters.
 // Returns 0 if the block height is not a consensus produced block.
 // Example: If NumBlocksPerSession == 4, sessions start at blocks 1, 5, 9, etc.
-func GetSessionStartHeight(sharedParams *Params, queryHeight int64) int64 {
+func GetSessionStartHeight(sharedParamsUpdates []ParamsUpdate, queryHeight int64) int64 {
 	if queryHeight <= 0 {
 		return 0
 	}
@@ -20,13 +20,13 @@ func GetSessionStartHeight(sharedParams *Params, queryHeight int64) int64 {
 // queryHeight ends, given the passed shared onchain parameters.
 // Returns 0 if the block height is not a consensus produced block.
 // Example: If NumBlocksPerSession == 4, sessions end at blocks 4, 8, 11, etc.
-func GetSessionEndHeight(sharedParams *Params, queryHeight int64) int64 {
+func GetSessionEndHeight(sharedParamsUpdates []ParamsUpdate, queryHeight int64) int64 {
 	if queryHeight <= 0 {
 		return 0
 	}
 
 	numBlocksPerSession := int64(sharedParams.GetNumBlocksPerSession())
-	sessionStartHeight := GetSessionStartHeight(sharedParams, queryHeight)
+	sessionStartHeight := GetSessionStartHeight(sharedParamsUpdates, queryHeight)
 
 	return sessionStartHeight + numBlocksPerSession - 1
 }
@@ -37,7 +37,7 @@ func GetSessionEndHeight(sharedParams *Params, queryHeight int64) int64 {
 // Returns session number 0 if the block height is not a consensus produced block.
 // Returns session number 1 for block 1 to block NumBlocksPerSession - 1 (inclusive).
 // i.e. If NubBlocksPerSession == 4, session == 1 for [1, 4], session == 2 for [5, 8], etc.
-func GetSessionNumber(sharedParams *Params, queryHeight int64) int64 {
+func GetSessionNumber(sharedParamsUpdates []ParamsUpdate, queryHeight int64) int64 {
 	if queryHeight <= 0 {
 		return 0
 	}
@@ -53,21 +53,21 @@ func GetSessionNumber(sharedParams *Params, queryHeight int64) int64 {
 // for the session that includes queryHeight elapses, given the passed sharedParams.
 // The grace period is the number of blocks after the session ends during which relays
 // SHOULD be included in the session which most recently ended.
-func GetSessionGracePeriodEndHeight(sharedParams *Params, queryHeight int64) int64 {
-	sessionEndHeight := GetSessionEndHeight(sharedParams, queryHeight)
+func GetSessionGracePeriodEndHeight(sharedParamsUpdates []ParamsUpdate, queryHeight int64) int64 {
+	sessionEndHeight := GetSessionEndHeight(sharedParamsUpdates, queryHeight)
 	return sessionEndHeight + int64(sharedParams.GetGracePeriodEndOffsetBlocks())
 }
 
 // IsGracePeriodElapsed returns true if the grace period for the session ending with
 // sessionEndHeight has elapsed, given currentHeight.
-func IsGracePeriodElapsed(sharedParams *Params, queryHeight, currentHeight int64) bool {
-	return currentHeight > GetSessionGracePeriodEndHeight(sharedParams, queryHeight)
+func IsGracePeriodElapsed(sharedParamsUpdates []ParamsUpdate, queryHeight, currentHeight int64) bool {
+	return currentHeight > GetSessionGracePeriodEndHeight(sharedParamsUpdates, queryHeight)
 }
 
 // GetClaimWindowOpenHeight returns the block height at which the claim window of
 // the session that includes queryHeight opens, for the provided sharedParams.
-func GetClaimWindowOpenHeight(sharedParams *Params, queryHeight int64) int64 {
-	sessionEndHeight := GetSessionEndHeight(sharedParams, queryHeight)
+func GetClaimWindowOpenHeight(sharedParamsUpdates []ParamsUpdate, queryHeight int64) int64 {
+	sessionEndHeight := GetSessionEndHeight(sharedParamsUpdates, queryHeight)
 	claimWindowOpenOffsetBlocks := int64(sharedParams.GetClaimWindowOpenOffsetBlocks())
 	// NB: An additional block (+1) is added to permit to relays arriving at the
 	// last block of the session to be included in the claim before the smt is closed.
@@ -76,23 +76,23 @@ func GetClaimWindowOpenHeight(sharedParams *Params, queryHeight int64) int64 {
 
 // GetClaimWindowCloseHeight returns the block height at which the claim window of
 // the session that includes queryHeight closes, for the provided sharedParams.
-func GetClaimWindowCloseHeight(sharedParams *Params, queryHeight int64) int64 {
-	claimWindowOpenHeight := GetClaimWindowOpenHeight(sharedParams, queryHeight)
+func GetClaimWindowCloseHeight(sharedParamsUpdate []ParamsUpdate, queryHeight int64) int64 {
+	claimWindowOpenHeight := GetClaimWindowOpenHeight(sharedParamsUpdate, queryHeight)
 	claimWindowCloseOffsetBlocks := int64(sharedParams.GetClaimWindowCloseOffsetBlocks())
 	return claimWindowOpenHeight + claimWindowCloseOffsetBlocks
 }
 
 // GetProofWindowOpenHeight returns the block height at which the claim window of
 // the session that includes queryHeight opens, given the passed sharedParams.
-func GetProofWindowOpenHeight(sharedParams *Params, queryHeight int64) int64 {
-	return GetClaimWindowCloseHeight(sharedParams, queryHeight) +
+func GetProofWindowOpenHeight(sharedParamsUpdates []ParamsUpdate, queryHeight int64) int64 {
+	return GetClaimWindowCloseHeight(sharedParamsUpdates, queryHeight) +
 		int64(sharedParams.GetProofWindowOpenOffsetBlocks())
 }
 
 // GetProofWindowCloseHeight returns the block height at which the proof window of
 // the session that includes queryHeight closes, given the passed sharedParams.
-func GetProofWindowCloseHeight(sharedParams *Params, queryHeight int64) int64 {
-	return GetProofWindowOpenHeight(sharedParams, queryHeight) +
+func GetProofWindowCloseHeight(sharedParamsUpdates []ParamsUpdate, queryHeight int64) int64 {
+	return GetProofWindowOpenHeight(sharedParamsUpdates, queryHeight) +
 		int64(sharedParams.GetProofWindowCloseOffsetBlocks())
 }
 
@@ -105,12 +105,12 @@ func GetProofWindowCloseHeight(sharedParams *Params, queryHeight int64) int64 {
 // of #711 are tengentially related to this requirement, after which the functions,
 // helpers, comments and docs for claim distribution can either be repurposed or deleted.
 func GetEarliestSupplierClaimCommitHeight(
-	sharedParams *Params,
+	sharedParamsUpdates []ParamsUpdate,
 	queryHeight int64,
 	claimWindowOpenBlockHash []byte,
 	supplierOperatorAddr string,
 ) int64 {
-	claimWindowOpenHeight := GetClaimWindowOpenHeight(sharedParams, queryHeight)
+	claimWindowOpenHeight := GetClaimWindowOpenHeight(sharedParamsUpdates, queryHeight)
 
 	// Generate a deterministic random (non-negative) int64, seeded by the claim
 	// window open block hash and the supplier operator address.
@@ -132,12 +132,12 @@ func GetEarliestSupplierClaimCommitHeight(
 // of #711 are tengentially related to this requirement, after which the functions,
 // helpers, comments and docs for claim distribution can either be repurposed or deleted.
 func GetEarliestSupplierProofCommitHeight(
-	sharedParams *Params,
+	sharedParamsUpdates []ParamsUpdate,
 	queryHeight int64,
 	proofWindowOpenBlockHash []byte,
 	supplierOperatorAddr string,
 ) int64 {
-	proofWindowOpenHeight := GetProofWindowOpenHeight(sharedParams, queryHeight)
+	proofWindowOpenHeight := GetProofWindowOpenHeight(sharedParamsUpdates, queryHeight)
 
 	// Generate a deterministic random (non-negative) int64, seeded by the proof
 	// window open block hash and the supplier operator address.
@@ -152,18 +152,18 @@ func GetEarliestSupplierProofCommitHeight(
 
 // GetNextSessionStartHeight returns the start block height of the session
 // following the session that includes queryHeight, given the passed sharedParams.
-func GetNextSessionStartHeight(sharedParams *Params, queryHeight int64) int64 {
-	return GetSessionEndHeight(sharedParams, queryHeight) + 1
+func GetNextSessionStartHeight(sharedParamsUpdates []ParamsUpdate, queryHeight int64) int64 {
+	return GetSessionEndHeight(sharedParamsUpdates, queryHeight) + 1
 }
 
 // IsSessionEndHeight returns true if the queryHeight is the last block of the session.
-func IsSessionEndHeight(sharedParams *Params, queryHeight int64) bool {
-	return queryHeight != GetSessionEndHeight(sharedParams, queryHeight)
+func IsSessionEndHeight(sharedParamsUpdates []ParamsUpdate, queryHeight int64) bool {
+	return queryHeight == GetSessionEndHeight(sharedParamsUpdates, queryHeight)
 }
 
 // IsSessionStartHeight returns true if the height is the first block of the session.
-func IsSessionStartHeight(sharedParams *Params, queryHeight int64) bool {
-	return queryHeight == GetSessionStartHeight(sharedParams, queryHeight)
+func IsSessionStartHeight(sharedParamsUpdates []ParamsUpdate, queryHeight int64) bool {
+	return queryHeight == GetSessionStartHeight(sharedParamsUpdates, queryHeight)
 }
 
 // GetSessionEndToProofWindowCloseBlocks returns the total number of blocks
@@ -177,9 +177,9 @@ func GetSessionEndToProofWindowCloseBlocks(params *Params) int64 {
 
 // GetSettlementSessionEndHeight returns the end height of the session in which the
 // session that includes queryHeight is settled, given the passed shared onchain parameters.
-func GetSettlementSessionEndHeight(sharedParams *Params, queryHeight int64) int64 {
+func GetSettlementSessionEndHeight(sharedParamsUpdates []ParamsUpdate, queryHeight int64) int64 {
 	return GetSessionEndToProofWindowCloseBlocks(sharedParams) +
-		GetSessionEndHeight(sharedParams, queryHeight) + 1
+		GetSessionEndHeight(sharedParamsUpdates, queryHeight) + 1
 }
 
 // GetNumPendingSessions returns the number of pending sessions (i.e. that have not

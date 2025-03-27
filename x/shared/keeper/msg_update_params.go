@@ -2,6 +2,7 @@ package keeper
 
 import (
 	"context"
+	"fmt"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"google.golang.org/grpc/codes"
@@ -10,6 +11,8 @@ import (
 	"github.com/pokt-network/poktroll/x/shared/types"
 )
 
+// UpdateParams schedules a params update for the next session start height.
+// It does not update the params immediately.
 func (k msgServer) UpdateParams(goCtx context.Context, req *types.MsgUpdateParams) (*types.MsgUpdateParamsResponse, error) {
 	logger := k.Logger().With("method", "UpdateParams")
 
@@ -26,15 +29,23 @@ func (k msgServer) UpdateParams(goCtx context.Context, req *types.MsgUpdateParam
 			).Error(),
 		)
 	}
+
 	ctx := sdk.UnwrapSDKContext(goCtx)
 	committedHeight := ctx.BlockHeight()
 
 	currentParams := k.GetParams(ctx)
 	nextSessionStartHeight := types.GetNextSessionStartHeight(&currentParams, committedHeight)
 
+	logger.Info(fmt.Sprintf(
+		"About to schedule params update from [%v] to [%v] to be effective at block height %d",
+		k.GetParams(ctx),
+		req.Params,
+		nextSessionStartHeight,
+	))
+
 	// Do not directly update the params, instead, create a new params update object
 	// and set it in the store. This will allow the new params to take effect at the
-	// next session start height.
+	// next session start height when the BeginBlockerActivateSharedParams method is called.
 	paramsUpdate := types.ParamsUpdate{
 		Params:               req.Params,
 		EffectiveBlockHeight: uint64(nextSessionStartHeight),

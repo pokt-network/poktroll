@@ -15,6 +15,7 @@ func (k Keeper) ParamsAtHeight(goCtx context.Context, req *types.QueryParamsAtHe
 	if req == nil {
 		return nil, status.Error(codes.InvalidArgument, "invalid request")
 	}
+
 	ctx := sdk.UnwrapSDKContext(goCtx)
 
 	paramsAtHeight := k.GetParamsAtHeight(ctx, int64(req.Height))
@@ -25,10 +26,13 @@ func (k Keeper) ParamsAtHeight(goCtx context.Context, req *types.QueryParamsAtHe
 	}, nil
 }
 
+// Params queries the current params.
+// This is the params that are effective at the current block height.
 func (k Keeper) Params(goCtx context.Context, req *types.QueryParamsRequest) (*types.QueryParamsResponse, error) {
 	if req == nil {
 		return nil, status.Error(codes.InvalidArgument, "invalid request")
 	}
+
 	ctx := sdk.UnwrapSDKContext(goCtx)
 	lastCommitHeight := ctx.BlockHeight()
 

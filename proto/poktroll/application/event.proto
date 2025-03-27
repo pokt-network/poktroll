@@ -5,11 +5,13 @@ option go_package = "github.com/pokt-network/poktroll/x/application/types";
 option (gogoproto.stable_marshaler_all) = true;
 
 import "cosmos_proto/cosmos.proto";
+import "amino/amino.proto";
 import "gogoproto/gogo.proto";
 import "cosmos/base/v1beta1/coin.proto";
 
 import "poktroll/shared/service.proto";
 import "poktroll/application/types.proto";
+import "poktroll/application/params.proto";
 
 enum ApplicationUnbondingReason {
   APPLICATION_UNBONDING_REASON_ELECTIVE = 0;
@@ -106,4 +108,15 @@ message EventApplicationUnbondingCanceled {
   poktroll.application.Application application = 1 [(gogoproto.jsontag) = "application"];
   // The end height of the session in which the unbonding was canceled.
   int64 session_end_height = 2 [(gogoproto.jsontag) = "session_end_height"];
+}
+
+// EventParamsUpdate is emitted when the module params update becomes effective.
+message EventParamsUpdated {
+  poktroll.application.Params params = 1 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true,
+    (gogoproto.jsontag) = "params"
+  ];
+  // The start height of the session at which the param is activated.
+  uint64 effective_block_height = 2 [(gogoproto.jsontag) = "effective_block_height"];
 }

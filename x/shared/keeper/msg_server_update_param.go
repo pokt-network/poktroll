@@ -7,10 +7,15 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"github.com/pokt-network/poktroll/x/shared/types"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
-func (k msgServer) UpdateParam(ctx context.Context, msg *types.MsgUpdateParam) (*types.MsgUpdateParamResponse, error) {
+// UpdateParam updates a single parameter in the shared module and returns
+// all active parameters.
+func (k msgServer) UpdateParam(
+	ctx context.Context,
+	msg *sharedtypes.MsgUpdateParam,
+) (*sharedtypes.MsgUpdateParamResponse, error) {
 	logger := k.logger.With(
 		"method", "UpdateParam",
 		"param_name", msg.Name,
@@ -23,46 +28,46 @@ func (k msgServer) UpdateParam(ctx context.Context, msg *types.MsgUpdateParam) (
 	params := k.GetParams(ctx)
 
 	switch msg.Name {
-	case types.ParamNumBlocksPerSession:
-		logger = logger.With("param_value", msg.GetAsUint64())
+	case sharedtypes.ParamNumBlocksPerSession:
+		logger = logger.With("num_blocks_per_session", msg.GetAsUint64())
 		params.NumBlocksPerSession = msg.GetAsUint64()
-	case types.ParamGracePeriodEndOffsetBlocks:
-		logger = logger.With("param_value", msg.GetAsUint64())
+	case sharedtypes.ParamGracePeriodEndOffsetBlocks:
+		logger = logger.With("grace_period_end_offset_blocks", msg.GetAsUint64())
 		params.GracePeriodEndOffsetBlocks = msg.GetAsUint64()
-	case types.ParamClaimWindowOpenOffsetBlocks:
-		logger = logger.With("param_value", msg.GetAsUint64())
+	case sharedtypes.ParamClaimWindowOpenOffsetBlocks:
+		logger = logger.With("claim_window_open_offset_blocks", msg.GetAsUint64())
 		params.ClaimWindowOpenOffsetBlocks = msg.GetAsUint64()
-	case types.ParamClaimWindowCloseOffsetBlocks:
-		logger = logger.With("param_value", msg.GetAsUint64())
+	case sharedtypes.ParamClaimWindowCloseOffsetBlocks:
+		logger = logger.With("claim_window_close_offset_blocks", msg.GetAsUint64())
 		params.ClaimWindowCloseOffsetBlocks = msg.GetAsUint64()
-	case types.ParamProofWindowOpenOffsetBlocks:
-		logger = logger.With("param_value", msg.GetAsUint64())
+	case sharedtypes.ParamProofWindowOpenOffsetBlocks:
+		logger = logger.With("proof_window_open_offset_blocks", msg.GetAsUint64())
 		params.ProofWindowOpenOffsetBlocks = msg.GetAsUint64()
-	case types.ParamProofWindowCloseOffsetBlocks:
-		logger = logger.With("param_value", msg.GetAsUint64())
+	case sharedtypes.ParamProofWindowCloseOffsetBlocks:
+		logger = logger.With("proof_window_close_offset_blocks", msg.GetAsUint64())
 		params.ProofWindowCloseOffsetBlocks = msg.GetAsUint64()
-	case types.ParamSupplierUnbondingPeriodSessions:
-		logger = logger.With("param_value", msg.GetAsUint64())
+	case sharedtypes.ParamSupplierUnbondingPeriodSessions:
+		logger = logger.With("supplier_unbonding_period_sessions", msg.GetAsUint64())
 		params.SupplierUnbondingPeriodSessions = msg.GetAsUint64()
-	case types.ParamApplicationUnbondingPeriodSessions:
-		logger = logger.With("param_value", msg.GetAsUint64())
+	case sharedtypes.ParamApplicationUnbondingPeriodSessions:
+		logger = logger.With("application_unbonding_period_sessions", msg.GetAsUint64())
 		params.ApplicationUnbondingPeriodSessions = msg.GetAsUint64()
-	case types.ParamGatewayUnbondingPeriodSessions:
-		logger = logger.With("param_value", msg.GetAsUint64())
+	case sharedtypes.ParamGatewayUnbondingPeriodSessions:
+		logger = logger.With("gateway_unbonding_period_sessions", msg.GetAsUint64())
 		params.GatewayUnbondingPeriodSessions = msg.GetAsUint64()
-	case types.ParamComputeUnitsToTokensMultiplier:
-		logger = logger.With("param_value", msg.GetAsUint64())
+	case sharedtypes.ParamComputeUnitsToTokensMultiplier:
+		logger = logger.With("compute_units_to_tokens_multiplier", msg.GetAsUint64())
 		params.ComputeUnitsToTokensMultiplier = msg.GetAsUint64()
 	default:
 		return nil, status.Error(
 			codes.InvalidArgument,
-			types.ErrSharedParamInvalid.Wrapf("unsupported param %q", msg.Name).Error(),
+			sharedtypes.ErrSharedParamInvalid.Wrapf("unsupported param %q", msg.Name).Error(),
 		)
 	}
 
-	// Reconstruct a full params update request and rely on the UpdateParams method to handle
-	// the authority check and setting the params.
-	msgUpdateParams := &types.MsgUpdateParams{
+	// Reconstruct a full params update request and rely on the UpdateParams method
+	// to handle the authority and basic validation checks of the params.
+	msgUpdateParams := &sharedtypes.MsgUpdateParams{
 		Authority: k.GetAuthority(),
 		Params:    params,
 	}
@@ -73,7 +78,7 @@ func (k msgServer) UpdateParam(ctx context.Context, msg *types.MsgUpdateParam) (
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
-	return &types.MsgUpdateParamResponse{
+	return &sharedtypes.MsgUpdateParamResponse{
 		Params:               response.Params,
 		EffectiveBlockHeight: response.EffectiveBlockHeight,
 	}, nil

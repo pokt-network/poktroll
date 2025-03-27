@@ -99,7 +99,7 @@ func (k Keeper) hydrateSessionMetadata(ctx context.Context, sh *sessionHydrator)
 
 	// TODO_MAINNET(@bryanchriswhite, #543): If the num_blocks_per_session param
 	// has ever been changed, this function may cause unexpected behavior for historical sessions.
-	sharedParams := k.sharedKeeper.GetParams(ctx)
+	sharedParams := k.sharedKeeper.GetParamsAtHeight(ctx, sh.blockHeight)
 	sh.session.NumBlocksPerSession = int64(sharedParams.NumBlocksPerSession)
 	sh.session.SessionNumber = sharedtypes.GetSessionNumber(&sharedParams, sh.blockHeight)
 
@@ -267,7 +267,7 @@ func (k Keeper) GetSessionId(
 	blockHashBz []byte,
 	blockHeight int64,
 ) (sessionId string, sessionIdBz []byte) {
-	sharedParams := k.sharedKeeper.GetParams(ctx)
+	sharedParams := k.sharedKeeper.GetParamsAtHeight(ctx, blockHeight)
 	return GetSessionId(&sharedParams, appAddr, serviceId, blockHashBz, blockHeight)
 }
 
