@@ -23,6 +23,8 @@ import (
 // - Consensus.TimeoutPrecommitDelta: 5s
 // - Consensus.TimeoutCommit: 60s
 // - Instrumentation.Prometheus: true
+// - P2P.SendRate: 5120000 // 5MB/s
+// - P2P.RecvRate: 5120000 // 5MB/s
 // - LogLevel: "info"
 // - BlockTime: 1 minute (dictated by TimeoutCommit, more details below)
 //
@@ -130,6 +132,9 @@ func initCometBFTConfig() *cmtcfg.Config {
 	// These values put a higher strain on node memory
 	// cfg.P2P.MaxNumInboundPeers = 100
 	// cfg.P2P.MaxNumOutboundPeers = 40
+
+	cfg.P2P.SendRate = 25600000 // 25MB/s
+	cfg.P2P.RecvRate = 25600000 // 25MB/s
 
 	// CometBFT instrumentation and logging configuration.
 	cfg.Instrumentation.Prometheus = true
