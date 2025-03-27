@@ -20,8 +20,10 @@ streamline development and reduce friction for any new potential contributor.
 
 :::
 
+- [System Requirements](#system-requirements)
 - [Pre-Requisites](#pre-requisites)
   - [Context](#context)
+- [Video Walkthrough](#20-minute-video-walkthrough)
 - [Account Setup](#account-setup)
   - [Create the `Supplier` account](#create-the-supplier-account)
   - [Prepare your environment](#prepare-your-environment)
@@ -36,6 +38,23 @@ streamline development and reduce friction for any new potential contributor.
   - [What Supplier operations are available?](#what-supplier-operations-are-available)
   - [What Supplier queries are available?](#what-supplier-queries-are-available)
   - [How do I query for all existing onchain Suppliers?](#how-do-i-query-for-all-existing-onchain-suppliers)
+
+## System Requirements
+
+CPU: 2 Cores/4 Threads
+RAM: 4 GB
+Disk: 50GB NVMe
+OS: Linux (Debian 12 x64 Recommended)
+
+## 20 Minute Video Walkthrough
+
+The following is a ~20 minute video walkthrough using this cheatsheet.
+
+<ReactPlayer
+  playing={false}
+  controls
+  url="REPLACE_ME"
+/>
 
 ## Pre-Requisites
 
