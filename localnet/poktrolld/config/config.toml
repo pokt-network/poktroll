@@ -242,10 +242,10 @@ flush_throttle_timeout = "100ms"
 max_packet_msg_payload_size = 1024
 
 # Rate at which packets can be sent, in bytes/second
-send_rate = 5120000
+send_rate = 25600000
 
 # Rate at which packets can be received, in bytes/second
-recv_rate = 5120000
+recv_rate = 25600000
 
 # Set true to enable the peer-exchange reactor
 pex = true
