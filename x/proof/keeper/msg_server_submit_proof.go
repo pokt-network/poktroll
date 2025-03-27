@@ -124,7 +124,7 @@ func (k msgServer) SubmitProof(
 
 	// Get the service ID relayMiningDifficulty to calculate the claimed uPOKT.
 	serviceId := sessionHeader.GetServiceId()
-	sharedParams := k.sharedKeeper.GetParams(ctx)
+	sharedParams := k.sharedKeeper.GetParamsAtHeight(ctx, sessionHeader.SessionEndBlockHeight)
 	relayMiningDifficulty, _ := k.serviceKeeper.GetRelayMiningDifficulty(ctx, serviceId)
 
 	claimedUPOKT, err := claim.GetClaimeduPOKT(sharedParams, relayMiningDifficulty)
@@ -228,8 +228,9 @@ func (k Keeper) ProofRequirementForClaim(ctx context.Context, claim *types.Claim
 	// Defer telemetry calls so that they reference the final values the relevant variables.
 	defer k.finalizeProofRequirementTelemetry(requirementReason, claim, err)
 
+	sessionEndHeight := claim.GetSessionHeader().GetSessionEndBlockHeight()
+	sharedParams := k.sharedKeeper.GetParamsAtHeight(ctx, sessionEndHeight)
 	proofParams := k.GetParams(ctx)
-	sharedParams := k.sharedKeeper.GetParams(ctx)
 
 	serviceId := claim.GetSessionHeader().GetServiceId()
 	relayMiningDifficulty, _ := k.serviceKeeper.GetRelayMiningDifficulty(ctx, serviceId)
@@ -299,13 +300,13 @@ func (k Keeper) getProofRequirementSeedBlockHash(
 	ctx context.Context,
 	claim *types.Claim,
 ) (blockHash []byte, err error) {
-	sharedParams, err := k.sharedQuerier.GetParams(ctx)
+	sessionEndHeight := claim.GetSessionHeader().GetSessionEndBlockHeight()
+	supplierOperatorAddress := claim.GetSupplierOperatorAddress()
+
+	sharedParams, err := k.sharedQuerier.GetParamsAtHeight(ctx, sessionEndHeight)
 	if err != nil {
 		return nil, err
 	}
-
-	sessionEndHeight := claim.GetSessionHeader().GetSessionEndBlockHeight()
-	supplierOperatorAddress := claim.GetSupplierOperatorAddress()
 
 	proofWindowOpenHeight := sharedtypes.GetProofWindowOpenHeight(sharedParams, sessionEndHeight)
 	proofWindowOpenBlockHash := k.sessionKeeper.GetBlockHash(ctx, proofWindowOpenHeight)

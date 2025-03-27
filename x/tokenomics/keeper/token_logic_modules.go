@@ -160,7 +160,7 @@ func (k Keeper) ProcessTokenLogicModules(
 			targetNumRelays,
 		)
 	}
-	sharedParams := k.sharedKeeper.GetParams(ctx)
+	sharedParams := k.sharedKeeper.GetParamsAtHeight(ctx, sessionHeader.SessionEndBlockHeight)
 
 	// Determine the total number of tokens being claimed (i.e. for the work completed)
 	// by the supplier for the amount of work they did to service the application

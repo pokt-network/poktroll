@@ -55,6 +55,7 @@ type ApplicationKeeper interface {
 // SharedKeeper defines the expected interface needed to retrieve shared information.
 type SharedKeeper interface {
 	GetParams(ctx context.Context) sharedtypes.Params
+	GetParamsAtHeight(ctx context.Context, queryHeight int64) sharedtypes.Params
 }
 
 // ServiceKeeper defines the expected interface for the Service module.
