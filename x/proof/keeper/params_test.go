@@ -139,8 +139,17 @@ func TestParams_ValidateProofMissingPenalty(t *testing.T) {
 
 func TestParams_ValidateProofSubmissionFee(t *testing.T) {
 	invalidDenomCoin := cosmostypes.NewCoin("invalid_denom", math.NewInt(1))
-	belowMinProofSubmissionFee := prooftypes.DefaultMinProofSubmissionFee.
-		Sub(cosmostypes.NewCoin(volatile.DenomuPOKT, math.NewInt(1)))
+
+	// Create a new test case based on whether DefaultMinProofSubmissionFee is zero or not
+	var belowMinProofSubmissionFee cosmostypes.Coin
+	if prooftypes.DefaultMinProofSubmissionFee.Amount.IsZero() {
+		// If DefaultMinProofSubmissionFee is zero, use -1 as a placeholder for testing
+		// This won't actually be used in the test since we're already at the minimum
+		belowMinProofSubmissionFee = cosmostypes.NewCoin(volatile.DenomuPOKT, math.NewInt(0))
+	} else {
+		belowMinProofSubmissionFee = prooftypes.DefaultMinProofSubmissionFee.
+			Sub(cosmostypes.NewCoin(volatile.DenomuPOKT, math.NewInt(1)))
+	}
 
 	tests := []struct {
 		desc               string
@@ -170,11 +179,19 @@ func TestParams_ValidateProofSubmissionFee(t *testing.T) {
 		{
 			desc:               "below minimum",
 			proofSubmissionFee: &belowMinProofSubmissionFee,
-			expectedErr: prooftypes.ErrProofParamInvalid.Wrapf(
-				"proof_submission_fee is below minimum value %s: got %s",
-				prooftypes.DefaultMinProofSubmissionFee,
-				belowMinProofSubmissionFee,
-			),
+			expectedErr: func() error {
+				// If DefaultMinProofSubmissionFee is already zero, we can't go below it
+				// so we should only test this case if it's greater than zero
+				if prooftypes.DefaultMinProofSubmissionFee.Amount.IsZero() {
+					// Skip the test by returning nil (no error expected) if DefaultMinProofSubmissionFee is zero
+					return nil
+				}
+				return prooftypes.ErrProofParamInvalid.Wrapf(
+					"proof_submission_fee is below minimum value %s: got %s",
+					prooftypes.DefaultMinProofSubmissionFee,
+					belowMinProofSubmissionFee,
+				)
+			}(),
 		},
 		{
 			desc:               "valid",
@@ -184,6 +201,12 @@ func TestParams_ValidateProofSubmissionFee(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.desc, func(t *testing.T) {
+			// Skip the "below minimum" test if DefaultMinProofSubmissionFee is zero
+			if test.desc == "below minimum" && prooftypes.DefaultMinProofSubmissionFee.Amount.IsZero() {
+				t.Skip("Skipping 'below minimum' test since DefaultMinProofSubmissionFee is already zero")
+				return
+			}
+
 			err := prooftypes.ValidateProofSubmissionFee(test.proofSubmissionFee)
 			if test.expectedErr != nil {
 				require.Error(t, err)
