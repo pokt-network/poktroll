@@ -53,7 +53,7 @@ The following is a ~20 minute video walkthrough using this cheatsheet.
 <ReactPlayer
   playing={false}
   controls
-  url="REPLACE_ME"
+  url="https://github.com/user-attachments/assets/bafd0b3e-4968-4e92-ba8a-41b618633455"
 />
 
 ## Pre-Requisites
