@@ -5,7 +5,7 @@ sidebar_position: 5
 
 :::warning Coming soon...
 
-TODO_MAINNET(@olshanksy): Migrate the [Notion FAQ](https://www.notion.so/buildwithgrove/Shannon-Launch-Strategy-1ada36edfff68011ab53ebdb4ba4a306?pvs=4) here.
+TODO_MAINNET_MIGRATION(@olshanksy): Migrate the [Notion FAQ](https://www.notion.so/buildwithgrove/Shannon-Launch-Strategy-1ada36edfff68011ab53ebdb4ba4a306?pvs=4) here.
 
 :::
 

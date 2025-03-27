@@ -199,8 +199,6 @@ cd path
 
 ### Generate a `PATH Gateway` config file for the Shannon network
 
-<!-- TODO_MAINNET(red-0ne): Link to PATH Gateway modes documentation once available -->
-
 :::note
 
 The instructions below show how to setup a `PATH` in `Centralized Mode` (i.e. The operator owns

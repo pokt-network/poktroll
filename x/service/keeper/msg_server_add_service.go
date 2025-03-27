@@ -53,7 +53,7 @@ func (k msgServer) AddService(
 		return nil, status.Error(
 			codes.FailedPrecondition,
 			types.ErrServiceAlreadyExists.Wrapf(
-				"TODO_MAINNET(@red-0ne): This is an ephemeral state of the code. Once we s/AddService/UpdateService/g, add the business logic here for updates here.",
+				"TODO_MAINNET_MIGRATION(@red-0ne): This is an ephemeral state of the code. Once we s/AddService/UpdateService/g, add the business logic here for updates here.",
 			).Error(),
 		)
 	}

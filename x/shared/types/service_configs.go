@@ -72,7 +72,7 @@ func ValidateSupplierServiceConfigs(services []*SupplierServiceConfig) error {
 				return fmt.Errorf("endpoint.RpcType is not a valid RPCType: %v", serviceConfig)
 			}
 
-			// TODO_MAINNET(@okdas): Either add validation for `endpoint.Configs` (can be a part of
+			// TODO_POST_MAINNET(@okdas): Either add validation for `endpoint.Configs` (can be a part of
 			// `parseEndpointConfigs`), or change the config structure to be more clear about what is expected here
 			// as currently, this is just a map[string]string, when values can be other types.
 			// if endpoint.Configs == nil {

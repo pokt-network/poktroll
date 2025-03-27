@@ -30,7 +30,7 @@ func (k msgServer) ImportMorseClaimableAccounts(ctx context.Context, msg *migrat
 	}
 
 	// Check if MorseClaimableAccounts have already been imported.
-	// TODO_MAINNET(@bryanchriswhite): Use the MultiStore more directly to more
+	// TODO_MAINNET_MIGRATION(@bryanchriswhite): Use the MultiStore more directly to more
 	// efficiently test for the existence of ANY MorseClaimableAccounts.
 	if morseClaimableAccounts := k.GetAllMorseClaimableAccounts(sdkCtx); len(morseClaimableAccounts) > 0 {
 		err := migrationtypes.ErrMorseAccountsImport.Wrap("Morse claimable accounts already imported")

@@ -362,7 +362,7 @@ See `poktrolld tx migrate claim-application --help` for more details.
 
 ### Claim a Morse Supplier (Staked, Actor)
 
-:::warning TODO_MAINNET(@bryanchriswhite, #1126)
+:::warning TODO_MAINNET_MIGRATION(@bryanchriswhite, #1126)
 
 Update with respect to owner/operator custodia/non-custodial addresses.
 

@@ -48,6 +48,3 @@ issues:
     - path: _test\.go$
       linters:
         - errcheck
-  # TODO_IMPROVE: see https://golangci-lint.run/usage/configuration/#issues-configuration
-  #new: true,
-  #fix: true,

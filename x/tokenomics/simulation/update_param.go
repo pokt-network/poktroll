@@ -23,8 +23,6 @@ func SimulateMsgUpdateParam(
 			Authority: simAccount.Address.String(),
 		}
 
-		// TODO_TECHDEBT: Handling the UpdateParam simulation
-
 		return simtypes.NoOpMsg(types.ModuleName, sdk.MsgTypeURL(msg), "UpdateParam simulation not implemented"), nil, nil
 	}
 }

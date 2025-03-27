@@ -153,9 +153,8 @@ func (k Keeper) SettlePendingClaims(ctx cosmostypes.Context) (
 			}
 
 			if claim.ProofValidationStatus != prooftypes.ClaimProofStatus_VALIDATED {
-				// TODO_BETA(@red-0ne): Slash the supplier in proportion to their stake.
-				// TODO_POST_MAINNET: Consider allowing suppliers to RemoveClaim via a new
-				// message in case it was sent by accident
+				// TODO_MAINNET_MIGRATION_MIGRATION(@red-0ne): Slash the supplier in proportion to their stake.
+				// TODO_POST_MAINNET: Consider allowing suppliers to RemoveClaim via a new message in case it was sent by accident
 
 				// Proof was required but is invalid or not found.
 				// Emit an event that a claim has expired and being removed without being settled.
@@ -210,8 +209,7 @@ func (k Keeper) SettlePendingClaims(ctx cosmostypes.Context) (
 		appAddress := claim.GetSessionHeader().GetApplicationAddress()
 		applicationInitialStake := applicationInitialStakeMap[appAddress]
 
-		// TODO_MAINNET(@red-0ne): Add tests to ensure that a zero application stake
-		// is handled correctly.
+		// Ensure that the application has a non-zero initial stake.
 		if applicationInitialStake.IsZero() {
 			logger.Error(fmt.Sprintf("application %q has a zero initial stake", appAddress))
 
@@ -317,7 +315,7 @@ func (k Keeper) ExecutePendingExpiredResults(ctx cosmostypes.Context, expiredRes
 // IMPORTANT: If the execution of any pending operation fails, the chain will halt.
 // In this case, the state is left how it was immediately prior to the execution of
 // the operation which failed.
-// TODO_MAINNET(@bryanchriswhite): Make this more "atomic", such that it reverts the state back to just prior
+// TODO_MAINNET_MIGRATION(@bryanchriswhite): Make this more "atomic", such that it reverts the state back to just prior
 // to settling the offending claim.
 func (k Keeper) ExecutePendingSettledResults(ctx cosmostypes.Context, settledResults tlm.ClaimSettlementResults) error {
 	logger := k.logger.With("method", "ExecutePendingSettledResults")
@@ -568,7 +566,7 @@ func (k Keeper) slashSupplierStake(
 	if slashedSupplierInitialStakeCoin.IsGTE(slashingCoin) {
 		remainingStakeCoin = slashedSupplierInitialStakeCoin.Sub(slashingCoin)
 	} else {
-		// TODO_MAINNET: Consider emitting an event for this case.
+		// TODO_MAINNET_MIGRATION: Consider emitting an event for this case.
 		logger.Warn(fmt.Sprintf(
 			"total slashing amount (%s) is greater than supplier %q stake (%s)",
 			slashingCoin,
@@ -630,7 +628,7 @@ func (k Keeper) slashSupplierStake(
 
 	// Check if the supplier's stake is below the minimum and unstake it if necessary.
 	minSupplierStakeCoin := k.supplierKeeper.GetParams(ctx).MinStake
-	// TODO_MAINNET(@red-0ne): SettlePendingClaims is called at the end of every block,
+	// TODO_MAINNET_MIGRATION(@red-0ne): SettlePendingClaims is called at the end of every block,
 	// but not every block corresponds to the end of a session. This may lead to a situation
 	// where a force unstaked supplier may still be able to interact with a Gateway or Application.
 	// However, claims are only processed when sessions end.
@@ -651,7 +649,7 @@ func (k Keeper) slashSupplierStake(
 			minSupplierStakeCoin,
 		))
 
-		// TODO_MAINNET: Should we just remove the supplier if the stake is
+		// TODO_MAINNET_MIGRATION: Should we just remove the supplier if the stake is
 		// below the minimum, at the risk of making the offchain actors have an
 		// inconsistent session supplier list? See the comment above for more details.
 		supplierToSlash.UnstakeSessionEndHeight = uint64(unstakeSessionEndHeight)
