@@ -3,7 +3,7 @@
 ########################
 
 .PHONY: localnet_up
-localnet_up: check_docker_ps check_kind_context proto_regen localnet_regenesis ## Starts up a clean localnet
+localnet_up: warn_message_grove_helm_charts check_docker_ps check_kind_context proto_regen localnet_regenesis ## Starts up a clean localnet
 	tilt up
 
 .PHONY: localnet_up_quick
