@@ -31,3 +31,7 @@ send_relay_path_WEBSOCKET: test_e2e_env ## Send a WEBSOCKET relay through PATH t
 
 # TODO_MAINNET(@olshansk): Add all the permissionless/delegated/centralized variations once
 # the following documentation is ready: https://www.notion.so/buildwithgrove/Different-Modes-of-Operation-PATH-LocalNet-Discussions-122a36edfff6805e9090c9a14f72f3b5?pvs=4#151a36edfff680d681a2dd7f4e5fee55
+
+.PHONY: relayminer_forward_token_gen
+relayminer_forward_token_gen:
+	@openssl rand -hex 32 | tr -d "\n"
