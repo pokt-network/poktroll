@@ -29,7 +29,7 @@ Ensure you're in the `iavl-tree-diff` directory:
 
 ```bash
 git clone https://github.com/pokt-network/poktroll.git
-cd pocket
+cd poktroll
 cd tools/iavl-tree-diff
 ```
 
