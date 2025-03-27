@@ -8,9 +8,9 @@ import (
 	"github.com/pokt-network/poktroll/pkg/polylog"
 )
 
-var WithDefaultExponentialDelay = WithExponentialBackoffFn(25, 500, 30000)
-
 const retryStrategyCtxKey = "retry_strategy"
+
+var WithDefaultExponentialDelay = WithExponentialBackoffFn(25, 500, 30000)
 
 type RetryFunc func() chan error
 type RetryStrategyFunc func(int) bool
@@ -134,6 +134,9 @@ func WithExponentialBackoffFn(
 	maxDelayMs int,
 ) func(retryCount int) bool {
 	return func(retryCount int) bool {
+		// Higher level strategies (e.g. retry until height reached) could use this
+		// one while ignoring the maxRetryCount.
+		// Capping the delay to maxDelayMs to prevent excessive wait times.
 		if retryCount >= maxRetryCount {
 			time.Sleep(time.Duration(maxDelayMs) * time.Millisecond)
 			return false
