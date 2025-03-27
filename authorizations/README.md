@@ -13,11 +13,11 @@
 
 ## Identifying the necessary authorizations
 
-Use the following commands see all the transactions available in the `Cosmos SDK` and `Pocket Network` modules.
+Use the following commands **to** see all the transactions available in the `Cosmos SDK` and `Pocket Network` modules.
 
 Identify the functions you need and update [pnf_authorizations.json](./pnf_authorizations.json) and [grove_authorizations.json](./grove_authorizations.json) with the necessary authorizations.
 
-The above requires a deep understanding of the protocol and out of scope for this document.
+The above requires a deep understanding of the protocol **which is** out of scope for this document.
 
 ### Cosmos SDK Messages
 
@@ -65,7 +65,7 @@ poktroll.application.MsgUpdateParams
 
 ### Update the authorizations
 
-For each authorization you need, make sure to include a json object like so:
+For each authorization you need, make sure to include a JSON object with the following structure:
 
 ```json
   {
@@ -79,12 +79,12 @@ For each authorization you need, make sure to include a json object like so:
   },
 ```
 
-The above object does the following:
+The above object contains the following fields:
 
-- Uses the onchain `x/gov` module address (`pokt10d07y265gmmuvt4z0w9aw880jnsr700j8yv32t`)
-- Grants permission to `poktREPLACE_THIS_WITH_THE_ADDRESS_THAT_SHOULD_GET_PERMISSION`
-- Enables authorization for `poktroll.service.MsgUpdateParams`
-- Expires in the year `2500`
+- `granter`: The onchain `x/gov` module address (`pokt10d07y265gmmuvt4z0w9aw880jnsr700j8yv32t`)
+- `grantee`: The address that should get permission
+- `authorization`: Enables authorization for `poktroll.service.MsgUpdateParams`
+- `expiration`: Expires in the year `2500`
 
 :::tip Recommended authorizations
 
@@ -105,7 +105,7 @@ mkdir -p $MAINNET_DIR
 
 # Make a note of the git sha you're on
 
-# Generate the most important file ❤️ along with other important files (first validator key, configs..)
+# Generate the genesis file and other important configuration files (first validator key, configs..)
 ignite chain init --skip-proto --check-dependencies --clear-cache --home=$MAINNET_DIR
 ```
 
