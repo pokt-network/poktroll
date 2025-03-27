@@ -306,7 +306,7 @@ process_openapi: ## Ensure OpenAPI JSON and YAML files are properly formatted
 ##################
 
 .PHONY: trigger_ci
-trigger_ci: ## Trigger the CI pipeline by submitting an empty commit; See https://github.com/pokt-network/poktroll/issues/900 for details
+trigger_ci: ## Trigger the CI pipeline by submitting an empty commit; See https://github.com/pokt-network/pocket/issues/900 for details
 	git commit --allow-empty -m "Empty commit"
 	git push
 
@@ -329,7 +329,7 @@ ignite_install: ## Install ignite. Used by CI and heighliner.
 	ignite version
 
 .PHONY: ignite_update_ldflags
-## Artifact release h
+## Artifact release helper - sets version/datetime of the build
 ignite_update_ldflags:
 	yq eval '.build.ldflags = ["-X main.Version=$(VERSION)", "-X main.Date=$(shell date -u +%Y-%m-%dT%H:%M:%SZ)"]' -i config.yml
 

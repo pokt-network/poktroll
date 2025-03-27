@@ -1,5 +1,4 @@
 # When `devnet-test-e2e` is added, also assign `devnet` and `push-image` to the PR.
-# TODO_MAINNET_MIGRATION(@okdas): s/poktroll/pocket
 devnet-test-e2e:
   prs:
     comment: |
