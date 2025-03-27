@@ -1,0 +1,84 @@
+syntax = "proto3";
+
+package pocket.supplier;
+
+option go_package = "github.com/pokt-network/poktroll/x/supplier/types";
+option (gogoproto.stable_marshaler_all) = true;
+
+import "amino/amino.proto";
+import "cosmos/msg/v1/msg.proto";
+import "cosmos_proto/cosmos.proto";
+import "gogoproto/gogo.proto";
+import "cosmos/base/v1beta1/coin.proto";
+import "pocket/supplier/params.proto";
+import "pocket/shared/service.proto";
+import "pocket/shared/supplier.proto";
+
+// Msg defines the Msg service.
+service Msg {
+  option (cosmos.msg.v1.service) = true;
+
+  // UpdateParams defines a (governance) operation for updating the module
+  // parameters. The authority defaults to the x/gov module account.
+  rpc UpdateParams    (MsgUpdateParams   ) returns (MsgUpdateParamsResponse   );
+  rpc StakeSupplier   (MsgStakeSupplier  ) returns (MsgStakeSupplierResponse  );
+  rpc UnstakeSupplier (MsgUnstakeSupplier) returns (MsgUnstakeSupplierResponse);
+  rpc UpdateParam     (MsgUpdateParam    ) returns (MsgUpdateParamResponse    );
+}
+// MsgUpdateParams is the Msg/UpdateParams request type.
+message MsgUpdateParams {
+  option (cosmos.msg.v1.signer) =                           "authority";
+  option           (amino.name) = "pocket/x/supplier/MsgUpdateParams";
+
+  // authority is the address that controls the module (defaults to x/gov unless overwritten).
+  string authority = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+
+  // params defines the x/supplier parameters to update.
+  // NOTE: All parameters must be supplied.
+  Params params = 2 [(gogoproto.nullable) = false, (amino.dont_omitempty) = true];
+}
+
+// MsgUpdateParamsResponse defines the response structure for executing a
+// MsgUpdateParams message.
+message MsgUpdateParamsResponse {}
+
+message MsgStakeSupplier {
+  option (cosmos.msg.v1.signer) = "signer"; // https://docs.cosmos.network/main/build/building-modules/messages-and-queries
+           string                                signer           = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"]; // The Bech32 address of the message signer (i.e. owner or operator)
+           string                                owner_address    = 2 [(cosmos_proto.scalar) = "cosmos.AddressString"]; // The Bech32 address of the owner (i.e. custodial, staker)
+           string                                operator_address = 3 [(cosmos_proto.scalar) = "cosmos.AddressString"]; // The Bech32 address of the operator (i.e. provider, non-custodial)
+           cosmos.base.v1beta1.Coin              stake            = 4; // The total amount of uPOKT the supplier has staked. Must be ≥ to the current amount that the supplier has staked (if any)
+  repeated pocket.shared.SupplierServiceConfig services         = 5; // The list of services this supplier is staked to provide service for
+}
+
+message MsgStakeSupplierResponse {
+  pocket.shared.Supplier supplier = 1;
+}
+
+message MsgUnstakeSupplier {
+  option (cosmos.msg.v1.signer) = "signer";
+  string signer           = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"]; // The Bech32 address of the message signer (i.e. owner or operator)
+  string operator_address = 2 [(cosmos_proto.scalar) = "cosmos.AddressString"]; // The Bech32 address of the operator (i.e. provider, non-custodial)
+}
+
+message MsgUnstakeSupplierResponse {
+  pocket.shared.Supplier supplier = 1;
+}
+
+// MsgUpdateParam is the Msg/UpdateParam request type to update a single param.
+message MsgUpdateParam {
+  option (cosmos.msg.v1.signer) = "authority";
+
+  // authority is the address that controls the module (defaults to x/gov unless overwritten).
+  string authority = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+
+  string name      = 2;
+  oneof asType {
+    cosmos.base.v1beta1.Coin as_coin = 3;
+  }
+}
+
+message MsgUpdateParamResponse {
+  Params params = 1;
+}
+

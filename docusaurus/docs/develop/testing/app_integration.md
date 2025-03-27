@@ -18,9 +18,9 @@ title: App Integration Tests
 
 ## Overview
 
-[**App integration level**](testing_levels#app-integration-tests) tests leverage a custom construction of the poktroll appchain (for testing only).
+[**App integration level**](testing_levels#app-integration-tests) tests leverage a custom construction of the pocket appchain (for testing only).
 
-This construction integrates all the poktroll modules (and their cosmos-sdk dependencies) and exercises the appchain's message routing/handling and transaction processing logic.
+This construction integrates all the pocket modules (and their cosmos-sdk dependencies) and exercises the appchain's message routing/handling and transaction processing logic.
 
 Tests in this level conventionally use the `testutil/integration` package's `App` structure and constructors to set up the appchain, execute messages, and make assertions against the resulting appchain state.
 

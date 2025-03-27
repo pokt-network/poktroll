@@ -64,7 +64,7 @@ var (
 
 	flagFeaturesPath string
 	keyRingFlag      = "--keyring-backend=test"
-	chainIdFlag      = "--chain-id=poktroll"
+	chainIdFlag      = "--chain-id=pocket"
 	// pathUrl points to a local gateway using the PATH framework in centralized mode.
 	pathUrl = "http://localhost:3000/v1" // localhost is kept as the default to streamline local development & testing.
 )
@@ -103,7 +103,7 @@ type suite struct {
 	gocuke.TestingT
 	ctx  context.Context
 	once sync.Once
-	// TODO_TECHDEBT: rename to `poktrolld`.
+	// TODO_TECHDEBT: rename to `pocketd`.
 	pocketd *pocketdBin
 
 	// TODO_IMPROVE: refactor all usages of scenarioState to be fields on the suite struct.
@@ -186,7 +186,7 @@ func TestFeatures(t *testing.T) {
 		Tags("not @manual").Run()
 }
 
-// TODO_TECHDEBT: rename `pocketd` to `poktrolld`.
+// TODO_TECHDEBT: rename `pocketd` to `pocketd`.
 func (s *suite) TheUserHasThePocketdBinaryInstalled() {
 	s.TheUserRunsTheCommand("help")
 }

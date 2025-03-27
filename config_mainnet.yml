@@ -4,7 +4,7 @@
 version: 1
 
 build:
-  main: cmd/poktrolld
+  main: cmd/pocketd
 
 # Pocket Network Shadow MainNet Genesis Account Balances
 #
@@ -33,7 +33,7 @@ accounts:
   # pnf is the account of the Pocket Network Foundation managing governance and
   # acting on behalf of the DAO.
   - name: pnf
-    # address: "pokt_TODO_MAINNET_CRITICAL_ADD_PNFADDRESS"
+    # address: "pokt_TODO_MAINNET_CRITICAL_ADD_PNF_ADDRESS"
     coins:
       - 10000000000000upokt # 10M POKT (unbonded)
 
@@ -90,7 +90,7 @@ accounts:
       - 100000000000upokt # 100K POKT (15K bonded below 85K remaining for tx fees, slashing, etc...)
 
 ####### Validator Configs ######
-# See `cmd/poktrolld/cmd/config.go` for default CometBFT and AppChain values.
+# See `cmd/pocketd/cmd/config.go` for default CometBFT and AppChain values.
 validators:
   - name: groveval1
     bonded: 15000000000upokt # 15K POKT (bonded)
@@ -105,8 +105,8 @@ validators:
 
 # We can persist arbitrary genesis values via 1 to 1 mapping to genesis.json
 genesis:
-  app_name: poktroll
-  chain_id: poktroll
+  app_name: pocket
+  chain_id: pocket
 
   app_state:
     ####### CometBFT Configs & Cosmos SDK Module Configs ######
@@ -187,7 +187,6 @@ genesis:
     # For ref, see proto/poktroll/gateway/params.proto
     gateway:
       params:
-        # TODO_BETA(@bryanchriswhite): Determine realistic amount for minimum gateway stake amount.
         min_stake:
           amount: "100000000" # 100 POKT; arbitrary value for for MainNet Shadow Genesis.
           denom: upokt
@@ -199,7 +198,6 @@ genesis:
         min_stake:
           amount: "15000000000" # 15K POKT; arbitrary value for for MainNet Shadow Genesis that aligns with Morse snapshot.
           denom: upokt
-        # TODO_BETA(@bryanchriswhite): Determine realistic amount for supplier staking fee.
         staking_fee:
           amount: "0" # 0 POKT; set to zero for MainNet Shadow Genesis to avoid loss during testing & onboarding.
           denom: upokt

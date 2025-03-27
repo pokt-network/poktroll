@@ -321,7 +321,7 @@ type BlockQueryClient interface {
 	Block(ctx context.Context, height *int64) (*cometrpctypes.ResultBlock, error)
 }
 
-// ProofParams is a go interface type which corresponds to the poktroll.proof.Params
+// ProofParams is a go interface type which corresponds to the pocket.proof.Params
 // protobuf message. Since the generated go types don't include interface types, this
 // is necessary to prevent dependency cycles.
 type ProofParams interface {

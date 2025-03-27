@@ -67,7 +67,7 @@ func NewSingleMorseAccountActorTypeFn(actorType MorseAccountActorType) MorseAcco
 //     This is the JSON output of `pocket util export-genesis-for-reset`.
 //     It is used to generate the MorseAccountState.
 //   - Its corresponding MorseAccountState.
-//     This is the JSON output of `poktrolld migrate collect-morse-accounts`.
+//     This is the JSON output of `pocketd migrate collect-morse-accounts`.
 //     It is used to persist the canonical Morse migration state (snapshot) from on Shannon.
 //
 // The states are populated with:
