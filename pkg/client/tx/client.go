@@ -22,6 +22,7 @@ import (
 	"github.com/pokt-network/poktroll/pkg/client/keyring"
 	"github.com/pokt-network/poktroll/pkg/either"
 	"github.com/pokt-network/poktroll/pkg/encoding"
+	"github.com/pokt-network/poktroll/pkg/retry"
 )
 
 const (
@@ -290,7 +291,9 @@ func (txnClient *txClient) SignAndBroadcast(
 		return either.SyncErr(err)
 	}
 
-	txResponse, err := txnClient.txCtx.BroadcastTx(txBz)
+	txResponse, err := retry.Call(func() (*cosmostypes.TxResponse, error) {
+		return txnClient.txCtx.BroadcastTx(txBz)
+	}, retry.GetStrategy(ctx))
 	if err != nil {
 		return either.SyncErr(err)
 	}

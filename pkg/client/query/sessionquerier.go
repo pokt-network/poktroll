@@ -10,6 +10,7 @@ import (
 	"github.com/pokt-network/poktroll/pkg/cache"
 	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/polylog"
+	"github.com/pokt-network/poktroll/pkg/retry"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
@@ -86,7 +87,9 @@ func (sessq *sessionQuerier) GetSession(
 		ServiceId:          serviceId,
 		BlockHeight:        blockHeight,
 	}
-	res, err := sessq.sessionQuerier.GetSession(ctx, req)
+	res, err := retry.Call(func() (*sessiontypes.QueryGetSessionResponse, error) {
+		return sessq.sessionQuerier.GetSession(ctx, req)
+	}, retry.GetStrategy(ctx))
 	if err != nil {
 		return nil, ErrQueryRetrieveSession.Wrapf(
 			"address: %s; serviceId: %s; block height: %d; error: [%v]",
@@ -112,7 +115,9 @@ func (sessq *sessionQuerier) GetParams(ctx context.Context) (*sessiontypes.Param
 	logger.Debug().Msg("cache miss for session params")
 
 	req := &sessiontypes.QueryParamsRequest{}
-	res, err := sessq.sessionQuerier.Params(ctx, req)
+	res, err := retry.Call(func() (*sessiontypes.QueryParamsResponse, error) {
+		return sessq.sessionQuerier.Params(ctx, req)
+	}, retry.GetStrategy(ctx))
 	if err != nil {
 		return nil, ErrQuerySessionParams.Wrapf("[%v]", err)
 	}

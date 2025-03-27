@@ -3,9 +3,7 @@ package relay_authenticator
 import (
 	"context"
 
-	"github.com/pokt-network/poktroll/pkg/retry"
 	servicetypes "github.com/pokt-network/poktroll/x/service/types"
-	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
@@ -50,14 +48,12 @@ func (ra *relayAuthenticator) VerifyRelayRequest(
 		Msg("verifying relay request session")
 
 	// Query for the current session to check if relayRequest sessionId matches the current session.
-	session, err := retry.Call(func() (*sessiontypes.Session, error) {
-		return ra.sessionQuerier.GetSession(
-			ctx,
-			appAddress,
-			supplierServiceId,
-			sessionBlockHeight,
-		)
-	})
+	session, err := ra.sessionQuerier.GetSession(
+		ctx,
+		appAddress,
+		supplierServiceId,
+		sessionBlockHeight,
+	)
 	if err != nil {
 		return err
 	}
@@ -104,7 +100,7 @@ func (ra *relayAuthenticator) getTargetSessionBlockHeight(
 	currentHeight := ra.blockClient.LastBlock(ctx).Height()
 	sessionEndHeight := relayRequest.Meta.SessionHeader.GetSessionEndBlockHeight()
 
-	sharedParams, err := retry.GetParams(ctx, ra.sharedQuerier)
+	sharedParams, err := ra.sharedQuerier.GetParams(ctx)
 	if err != nil {
 		return 0, err
 	}

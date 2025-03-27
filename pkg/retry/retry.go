@@ -10,6 +10,8 @@ import (
 
 var WithDefaultExponentialDelay = WithExponentialBackoffFn(25, 500, 30000)
 
+const retryStrategyCtxKey = "retry_strategy"
+
 type RetryFunc func() chan error
 type RetryStrategyFunc func(int) bool
 
@@ -113,29 +115,16 @@ func Call[T any](
 	}
 }
 
-// paramsGetter defines an interface for types that can retrieve parameters of type T.
-// Implementations must provide a GetParams method that accepts a context and returns
-// the retrieved parameters along with any error that occurred during retrieval.
-type paramsGetter[T any] interface {
-	GetParams(ctx context.Context) (T, error)
-}
-
-// GetParams retrieves parameters from a paramsGetter with automatic retry handling.
-//
-// This function wraps the GetParams method of the provided paramsGetter with retry
-// logic using the Call function. If the initial attempt to get parameters fails,
-// subsequent attempts will be made according to the provided retry strategy.
-func GetParams[T any](
-	ctx context.Context,
-	paramsGetter paramsGetter[T],
-	retryStrategy ...RetryStrategyFunc,
-) (T, error) {
-	// Wrap the GetParams call in a function that matches the signature expected by Call
-	// This adapts the paramsGetter.GetParams method to be used with our retry mechanism
-	return Call(
-		func() (T, error) { return paramsGetter.GetParams(ctx) },
-		retryStrategy...,
-	)
+// GetStrategy retrieves the retry strategy from the context.
+// If no strategy is found, it defaults to the default exponential delay strategy.
+// This function is useful for setting a custom retry strategy in the context
+// and retrieving it later in the code execution.
+func GetStrategy(ctx context.Context) RetryStrategyFunc {
+	strategy, ok := ctx.Value(retryStrategyCtxKey).(RetryStrategyFunc)
+	if !ok {
+		return WithDefaultExponentialDelay
+	}
+	return strategy
 }
 
 // WithExponentialBackoffFn creates a retry strategy with exponential backoff.

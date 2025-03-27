@@ -12,7 +12,6 @@ import (
 
 	"github.com/pokt-network/poktroll/pkg/relayer"
 	"github.com/pokt-network/poktroll/pkg/relayer/config"
-	"github.com/pokt-network/poktroll/pkg/retry"
 	"github.com/pokt-network/poktroll/x/service/types"
 )
 
@@ -154,9 +153,7 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 	}
 
 	// Send the relay request to the native service.
-	httpResponse, err := retry.Call(func() (*http.Response, error) {
-		return client.Do(httpRequest)
-	})
+	httpResponse, err := client.Do(httpRequest)
 	if err != nil {
 		// Do not expose connection errors with the backend service to the client.
 		return relayRequest, ErrRelayerProxyInternalError.Wrap(err.Error())
@@ -227,6 +224,6 @@ func (server *relayMinerHTTPServer) sendRelayResponse(
 	// ensure deterministic behavior.
 	writer.Header().Set("Connection", "close")
 	writer.Header().Set("Content-Length", relayResponseBzLenStr)
-	_, err = retry.Call(func() (int, error) { return writer.Write(relayResponseBz) })
+	_, err = writer.Write(relayResponseBz)
 	return err
 }

@@ -7,8 +7,6 @@ import (
 	"github.com/gorilla/websocket"
 
 	proxyws "github.com/pokt-network/poktroll/pkg/relayer/proxy/websockets"
-	"github.com/pokt-network/poktroll/pkg/retry"
-	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
@@ -31,9 +29,7 @@ func (server *relayMinerHTTPServer) handleAsyncConnection(
 
 	// Get the current height session to determine the session parameters.
 	block := server.blockClient.LastBlock(ctx)
-	session, err := retry.Call(func() (*sessiontypes.Session, error) {
-		return server.sessionQueryClient.GetSession(ctx, appAddress, serviceId, block.Height())
-	})
+	session, err := server.sessionQueryClient.GetSession(ctx, appAddress, serviceId, block.Height())
 	if err != nil {
 		return ErrRelayerProxyInternalError.Wrapf("error getting session: %v", err)
 	}

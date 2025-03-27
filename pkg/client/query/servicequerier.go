@@ -9,6 +9,7 @@ import (
 	"github.com/pokt-network/poktroll/pkg/cache"
 	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/polylog"
+	"github.com/pokt-network/poktroll/pkg/retry"
 	servicetypes "github.com/pokt-network/poktroll/x/service/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
@@ -75,7 +76,9 @@ func (servq *serviceQuerier) GetService(
 		Id: serviceId,
 	}
 
-	res, err := servq.serviceQuerier.Service(ctx, req)
+	res, err := retry.Call(func() (*servicetypes.QueryGetServiceResponse, error) {
+		return servq.serviceQuerier.Service(ctx, req)
+	}, retry.GetStrategy(ctx))
 	if err != nil {
 		return sharedtypes.Service{}, ErrQueryRetrieveService.Wrapf(
 			"serviceId: %s; error: [%v]",
@@ -108,7 +111,9 @@ func (servq *serviceQuerier) GetServiceRelayDifficulty(
 		ServiceId: serviceId,
 	}
 
-	res, err := servq.serviceQuerier.RelayMiningDifficulty(ctx, req)
+	res, err := retry.Call(func() (*servicetypes.QueryGetRelayMiningDifficultyResponse, error) {
+		return servq.serviceQuerier.RelayMiningDifficulty(ctx, req)
+	}, retry.GetStrategy(ctx))
 	if err != nil {
 		return servicetypes.RelayMiningDifficulty{}, err
 	}
@@ -121,7 +126,9 @@ func (servq *serviceQuerier) GetServiceRelayDifficulty(
 // GetParams returns the service module parameters.
 func (servq *serviceQuerier) GetParams(ctx context.Context) (*servicetypes.Params, error) {
 	req := servicetypes.QueryParamsRequest{}
-	res, err := servq.serviceQuerier.Params(ctx, &req)
+	res, err := retry.Call(func() (*servicetypes.QueryParamsResponse, error) {
+		return servq.serviceQuerier.Params(ctx, &req)
+	}, retry.GetStrategy(ctx))
 	if err != nil {
 		return nil, err
 	}

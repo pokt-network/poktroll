@@ -13,7 +13,6 @@ import (
 	"github.com/pokt-network/poktroll/pkg/observable/logging"
 	"github.com/pokt-network/poktroll/pkg/polylog"
 	"github.com/pokt-network/poktroll/pkg/relayer"
-	"github.com/pokt-network/poktroll/pkg/retry"
 	servicetypes "github.com/pokt-network/poktroll/x/service/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
@@ -236,7 +235,7 @@ func (rs *relayerSessionsManager) forEachBlockClaimSessionsFn(
 		// They will be emitted last, after all the late sessions have been emitted.
 		var onTimeSessions []relayer.SessionTree
 
-		sharedParams, err := retry.GetParams(ctx, rs.sharedQueryClient)
+		sharedParams, err := rs.sharedQueryClient.GetParams(ctx)
 		if err != nil {
 			rs.logger.Error().Err(err).Msg("unable to query shared module params")
 			return
@@ -459,7 +458,7 @@ func (rs *relayerSessionsManager) deleteExpiredSessionTreesFn(
 ) func(ctx context.Context, failedSessionTrees []relayer.SessionTree) {
 	return func(ctx context.Context, failedSessionTrees []relayer.SessionTree) {
 		currentHeight := rs.blockClient.LastBlock(ctx).Height()
-		sharedParams, err := retry.GetParams(ctx, rs.sharedQueryClient)
+		sharedParams, err := rs.sharedQueryClient.GetParams(ctx)
 		if err != nil {
 			rs.logger.Error().Err(err).Msg("unable to query shared module params")
 			return

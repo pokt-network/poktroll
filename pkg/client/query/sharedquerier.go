@@ -5,11 +5,13 @@ import (
 	"strconv"
 
 	"cosmossdk.io/depinject"
+	cometrpctypes "github.com/cometbft/cometbft/rpc/core/types"
 	"github.com/cosmos/gogoproto/grpc"
 
 	"github.com/pokt-network/poktroll/pkg/cache"
 	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/polylog"
+	"github.com/pokt-network/poktroll/pkg/retry"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
@@ -72,7 +74,9 @@ func (sq *sharedQuerier) GetParams(ctx context.Context) (*sharedtypes.Params, er
 	logger.Debug().Msg("cache miss for shared params")
 
 	req := &sharedtypes.QueryParamsRequest{}
-	res, err := sq.sharedQuerier.Params(ctx, req)
+	res, err := retry.Call(func() (*sharedtypes.QueryParamsResponse, error) {
+		return sq.sharedQuerier.Params(ctx, req)
+	}, retry.GetStrategy(ctx))
 	if err != nil {
 		return nil, ErrQuerySessionParams.Wrapf("[%v]", err)
 	}
@@ -161,7 +165,9 @@ func (sq *sharedQuerier) GetEarliestSupplierClaimCommitHeight(ctx context.Contex
 	if !found {
 		logger.Debug().Msgf("cache miss for blockHeight: %s", blockHashCacheKey)
 
-		claimWindowOpenBlock, err := sq.blockQuerier.Block(ctx, &claimWindowOpenHeight)
+		claimWindowOpenBlock, err := retry.Call(func() (*cometrpctypes.ResultBlock, error) {
+			return sq.blockQuerier.Block(ctx, &claimWindowOpenHeight)
+		}, retry.GetStrategy(ctx))
 		if err != nil {
 			return 0, err
 		}
@@ -208,7 +214,9 @@ func (sq *sharedQuerier) GetEarliestSupplierProofCommitHeight(ctx context.Contex
 	if !found {
 		logger.Debug().Msgf("cache miss for blockHeight: %s", blockHashCacheKey)
 
-		proofWindowOpenBlock, err := sq.blockQuerier.Block(ctx, &proofWindowOpenHeight)
+		proofWindowOpenBlock, err := retry.Call(func() (*cometrpctypes.ResultBlock, error) {
+			return sq.blockQuerier.Block(ctx, &proofWindowOpenHeight)
+		}, retry.GetStrategy(ctx))
 		if err != nil {
 			return 0, err
 		}

@@ -15,7 +15,6 @@ import (
 	"github.com/pokt-network/poktroll/pkg/observable/filter"
 	"github.com/pokt-network/poktroll/pkg/observable/logging"
 	"github.com/pokt-network/poktroll/pkg/relayer"
-	"github.com/pokt-network/poktroll/pkg/retry"
 	servicetypes "github.com/pokt-network/poktroll/x/service/types"
 )
 
@@ -139,9 +138,7 @@ func (mnr *miner) getServiceRelayDifficultyTargetHash(ctx context.Context, req *
 		return nil, fmt.Errorf("invalid session header: %w", err)
 	}
 
-	serviceRelayDifficulty, err := retry.Call(func() (servicetypes.RelayMiningDifficulty, error) {
-		return mnr.serviceQueryClient.GetServiceRelayDifficulty(ctx, sessionHeader.ServiceId)
-	})
+	serviceRelayDifficulty, err := mnr.serviceQueryClient.GetServiceRelayDifficulty(ctx, sessionHeader.ServiceId)
 	if err != nil {
 		return nil, err
 	}

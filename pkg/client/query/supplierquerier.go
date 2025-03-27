@@ -9,6 +9,7 @@ import (
 	"github.com/pokt-network/poktroll/pkg/cache"
 	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/polylog"
+	"github.com/pokt-network/poktroll/pkg/retry"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 )
@@ -65,7 +66,9 @@ func (supq *supplierQuerier) GetSupplier(
 	logger.Debug().Msgf("cache miss for operator address key: %s", operatorAddress)
 
 	req := &suppliertypes.QueryGetSupplierRequest{OperatorAddress: operatorAddress}
-	res, err := supq.supplierQuerier.Supplier(ctx, req)
+	res, err := retry.Call(func() (*suppliertypes.QueryGetSupplierResponse, error) {
+		return supq.supplierQuerier.Supplier(ctx, req)
+	}, retry.GetStrategy(ctx))
 	if err != nil {
 		return sharedtypes.Supplier{}, err
 	}
@@ -78,7 +81,9 @@ func (supq *supplierQuerier) GetSupplier(
 // GetParams returns the supplier module parameters.
 func (supq *supplierQuerier) GetParams(ctx context.Context) (*suppliertypes.Params, error) {
 	req := suppliertypes.QueryParamsRequest{}
-	res, err := supq.supplierQuerier.Params(ctx, &req)
+	res, err := retry.Call(func() (*suppliertypes.QueryParamsResponse, error) {
+		return supq.supplierQuerier.Params(ctx, &req)
+	}, retry.GetStrategy(ctx))
 	if err != nil {
 		return nil, err
 	}
