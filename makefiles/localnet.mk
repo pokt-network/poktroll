@@ -3,7 +3,7 @@
 ########################
 
 .PHONY: localnet_up
-localnet_up: check_docker_ps check_kind_context proto_regen localnet_regenesis ## Starts up a clean localnet
+localnet_up: warn_message_grove_helm_charts check_docker_ps check_kind_context proto_regen localnet_regenesis ## Starts up a clean localnet
 	tilt up
 
 .PHONY: localnet_up_quick
@@ -15,7 +15,7 @@ localnet_down: ## Delete resources created by localnet
 	tilt down
 
 .PHONY: localnet_regenesis
-localnet_regenesis: check_yq warn_message_acc_initialize_pubkeys warn_message_grove_helm_charts ## Regenerate the localnet genesis file
+localnet_regenesis: check_yq warn_message_acc_initialize_pubkeys ## Regenerate the localnet genesis file
 # NOTE: intentionally not using --home <dir> flag to avoid overwriting the test keyring
 	@echo "Initializing chain..."
 	@set -e
