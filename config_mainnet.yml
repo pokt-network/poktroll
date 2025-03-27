@@ -33,7 +33,7 @@ accounts:
   # pnf is the account of the Pocket Network Foundation managing governance and
   # acting on behalf of the DAO.
   - name: pnf
-    # address: "pokt_TODO_MAINNET_CRITICAL_ADD_PNFADDRESS"
+    # address: "pokt_TODO_MAINNET_CRITICAL_ADD_PNF_ADDRESS"
     coins:
       - 10000000000000upokt # 10M POKT (unbonded)
 
@@ -187,7 +187,6 @@ genesis:
     # For ref, see proto/poktroll/gateway/params.proto
     gateway:
       params:
-        # TODO_BETA(@bryanchriswhite): Determine realistic amount for minimum gateway stake amount.
         min_stake:
           amount: "100000000" # 100 POKT; arbitrary value for for MainNet Shadow Genesis.
           denom: upokt
@@ -199,7 +198,6 @@ genesis:
         min_stake:
           amount: "15000000000" # 15K POKT; arbitrary value for for MainNet Shadow Genesis that aligns with Morse snapshot.
           denom: upokt
-        # TODO_BETA(@bryanchriswhite): Determine realistic amount for supplier staking fee.
         staking_fee:
           amount: "0" # 0 POKT; set to zero for MainNet Shadow Genesis to avoid loss during testing & onboarding.
           denom: upokt
