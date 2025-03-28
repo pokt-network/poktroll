@@ -1,6 +1,10 @@
 package flags
 
 const (
+	// OmittedDefaultFlagValue is used whenever a flag is required but no
+	// reasonable default value can be provided.
+	OmittedDefaultFlagValue = "explicitly omitting default"
+
 	DefaultLogOutput = "-"
 
 	FlagLogLevel      = "log-level"
