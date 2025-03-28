@@ -238,7 +238,7 @@ func (s *suite) TheApplicationEstablishesAWebsocketsConnectionForService(appName
 	s.waitForBlockHeight(nextSessionStartHeight)
 
 	// Set WebSocket close height just before the claim window opens
-	s.wsCloseHeight = sharedtypes.GetClaimWindowOpenHeight(&sharedParams, nextSessionStartHeight) - 1
+	s.wsCloseHeight = sharedtypes.GetClaimWindowOpenHeight(&sharedParams, nextSessionStartHeight)
 
 	// Prepare HTTP headers with application address and target service ID
 	header := http.Header{}

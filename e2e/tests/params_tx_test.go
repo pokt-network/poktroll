@@ -14,9 +14,9 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// updateParamsTxJSONTemplate is a text template for a tx JSON file which is
+// execTxJSONTemplate is a text template for a tx JSON file which is
 // intended to be used with the `authz exec` CLI subcommand: `pocketd tx authz exec <tx_json_file>`.
-var updateParamsTxJSONTemplate = template.Must(
+var execTxJSONTemplate = template.Must(
 	template.New("txJSON").Parse(`{ "body": {{.}} }`),
 )
 
@@ -141,7 +141,7 @@ func (s *suite) newTempTxJSONFile(anyMsgs []*types.Any) *os.File {
 	})
 
 	// Interpolate txBodyJSON into the tx JSON template.
-	err = updateParamsTxJSONTemplate.Execute(tempFile, string(txBodyJSON))
+	err = execTxJSONTemplate.Execute(tempFile, string(txBodyJSON))
 	require.NoError(s, err)
 
 	return tempFile

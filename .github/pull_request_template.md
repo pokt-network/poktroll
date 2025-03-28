@@ -29,4 +29,5 @@ Select one or more from the following:
 - [ ] For code, I have run `make go_develop_and_test` and `make test_e2e`
 - [ ] For code, I have added the `devnet-test-e2e` label to run E2E tests in CI
 - [ ] For configurations, I have update the documentation
+- [ ] For code covered by @oneshot E2E tests, `make test_e2e_oneshot` passes on localnet
 - [ ] I added TODOs where applicable

@@ -33,7 +33,9 @@ type MigrationModuleSuite struct {
 // It updates the suite's #numMorseClaimableAccounts and #accountState fields.
 func (s *MigrationModuleSuite) GenerateMorseAccountState(t *testing.T, numAccounts int, distributionFn testmigration.MorseAccountActorTypeDistributionFn) {
 	s.numMorseClaimableAccounts = numAccounts
-	_, s.accountState = testmigration.NewMorseStateExportAndAccountState(t, s.numMorseClaimableAccounts, distributionFn)
+	var err error
+	_, s.accountState, err = testmigration.NewMorseStateExportAndAccountState(s.numMorseClaimableAccounts, distributionFn)
+	require.NoError(t, err)
 }
 
 // GetAccountState returns the suite's #accountState field.
@@ -70,7 +72,7 @@ func (s *MigrationModuleSuite) ClaimMorseAccount(
 ) (expectedMorseSrcAddr string, _ *migrationtypes.MsgClaimMorseAccountResponse) {
 	t.Helper()
 
-	morsePrivateKey := testmigration.GenMorsePrivateKey(t, morseAccountIdx)
+	morsePrivateKey := testmigration.GenMorsePrivateKey(morseAccountIdx)
 	expectedMorseSrcAddr = morsePrivateKey.PubKey().Address().String()
 	require.Equal(t, expectedMorseSrcAddr, s.accountState.Accounts[morseAccountIdx].MorseSrcAddress)
 
@@ -155,7 +157,7 @@ func (s *MigrationModuleSuite) ClaimMorseApplication(
 ) (expectedMorseSrcAddr string, _ *migrationtypes.MsgClaimMorseApplicationResponse) {
 	t.Helper()
 
-	morsePrivateKey := testmigration.GenMorsePrivateKey(t, morseAccountIdx)
+	morsePrivateKey := testmigration.GenMorsePrivateKey(morseAccountIdx)
 	expectedMorseSrcAddr = morsePrivateKey.PubKey().Address().String()
 	require.Equal(t,
 		expectedMorseSrcAddr,
@@ -191,7 +193,7 @@ func (s *MigrationModuleSuite) ClaimMorseSupplier(
 ) (expectedMorseSrcAddr string, _ *migrationtypes.MsgClaimMorseSupplierResponse) {
 	t.Helper()
 
-	morsePrivateKey := testmigration.GenMorsePrivateKey(t, morseAccountIdx)
+	morsePrivateKey := testmigration.GenMorsePrivateKey(morseAccountIdx)
 	expectedMorseSrcAddr = morsePrivateKey.PubKey().Address().String()
 	require.Equal(t,
 		expectedMorseSrcAddr,

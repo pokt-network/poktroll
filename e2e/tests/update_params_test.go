@@ -305,6 +305,8 @@ func (s *suite) fundAddress(addr string, coin cosmostypes.Coin) {
 		pnfKeyName,
 		addr,
 		coin.String(),
+		keyRingFlag,
+		chainIdFlag,
 		"--yes",
 	}
 
