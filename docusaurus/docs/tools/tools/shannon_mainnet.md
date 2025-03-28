@@ -7,8 +7,8 @@ sidebar_position: 1
 
 Update this once the community support MainNet
 
-- 🗺️ [TODO - Explorer]()
-- 🗺️ [TODO - Soothe's Explorer]()
-- 👨‍💻 [TODO - Soothe's GraphQL Playground]()
+- 🗺️ [TODO - Explorer](http://todo.com)
+- 🗺️ [TODO - Soothe's Explorer](http://todo.com)
+- 👨‍💻 [TODO - Soothe's GraphQL Playground](http://todo.com)
 
 :::
