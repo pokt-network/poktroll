@@ -15,7 +15,7 @@ func CmdListApplication() *cobra.Command {
 		Long: `List all the applications that staked in the network.
 
 Example:
-$ poktrolld q application list-application --node $(POCKET_NODE) --home $(POKTROLLD_HOME)`,
+$ pocketd q application list-application --node $(POCKET_NODE) --home $(POCKETD_HOME)`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			clientCtx, err := client.GetClientQueryContext(cmd)
 			if err != nil {
@@ -55,7 +55,7 @@ func CmdShowApplication() *cobra.Command {
 		Long: `Finds a staked application given its address.
 
 Example:
-$ poktrolld q application show-application $(APP_ADDRESS) --node $(POCKET_NODE) --home $(POKTROLLD_HOME)`,
+$ pocketd q application show-application $(APP_ADDRESS) --node $(POCKET_NODE) --home $(POCKETD_HOME)`,
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) (err error) {
 			clientCtx, err := client.GetClientQueryContext(cmd)

@@ -11,9 +11,9 @@ tl;dr IFF you know what you're doing.
 
 ```bash
 # Add a new wallet
-poktrolld keys add $USER
+pocketd keys add $USER
 # Retrieve the address
-poktrolld keys show $USER -a
+pocketd keys show $USER -a
 ```
 
 Use the `address` and go to the [Beta TestNet Faucet](https://faucet.beta.testnet.pokt.network/) to fund your account.
@@ -23,7 +23,7 @@ Use the `address` and go to the [Beta TestNet Faucet](https://faucet.beta.testne
 This guide will walk you through creating a new wallet on the Pocket Network.
 
 - [What is a keyring backend?](#what-is-a-keyring-backend)
-- [Step 1: Install poktrolld](#step-1-install-poktrolld)
+- [Step 1: Install pocketd](#step-1-install-pocketd)
 - [Step 2: Creating the Wallet](#step-2-creating-the-wallet)
 - [Step 3: Backing Up Your Wallet](#step-3-backing-up-your-wallet)
 
@@ -47,19 +47,19 @@ In production, operators should consider using a more secure keyring backend
 such as `os`, `file`, or `kwallet`. For more information on keyring backends,
 refer to the [Cosmos SDK Keyring documentation](https://docs.cosmos.network/main/user/run-node/keyring).
 
-## Step 1: Install poktrolld
+## Step 1: Install pocketd
 
-Ensure you have `poktrolld` installed on your system.
+Ensure you have `pocketd` installed on your system.
 
-Follow the [installation guide](./poktrolld_cli.md) specific to your operating system.
+Follow the [installation guide](./pocketd_cli.md) specific to your operating system.
 
 ## Step 2: Creating the Wallet
 
-To create a new wallet, use the `poktrolld keys add` command followed by your
+To create a new wallet, use the `pocketd keys add` command followed by your
 desired wallet name. This will generate a new address and mnemonic phrase for your wallet.
 
 ```bash
-poktrolld keys add <insert-your-desired-wallet-name-here>
+pocketd keys add <insert-your-desired-wallet-name-here>
 ```
 
 After running the command, you'll receive an output similar to the following:

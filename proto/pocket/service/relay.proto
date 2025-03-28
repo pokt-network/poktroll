@@ -1,0 +1,58 @@
+syntax = "proto3";
+package pocket.service;
+
+option go_package = "github.com/pokt-network/poktroll/x/service/types";
+option (gogoproto.stable_marshaler_all) = true;
+
+import "cosmos_proto/cosmos.proto";
+import "gogoproto/gogo.proto";
+
+import "pocket/session/types.proto";
+
+// Relay contains both the RelayRequest (signed by the Application) and the RelayResponse (signed by the Supplier).
+// The serialized tuple is inserted into the SMST leaves as values in the Claim/Proof lifecycle.
+message Relay {
+  RelayRequest req = 1;
+  RelayResponse res = 2;
+}
+
+// RelayRequestMetadata contains the metadata for a RelayRequest.
+message RelayRequestMetadata {
+  session.SessionHeader session_header = 1; // Session header associated with the relay.
+  // The request signature is a serialized ring signature that may have been
+  // by either the application itself or one of the gateways that the
+  // application has delegated to. The signature is made using the ring of the
+  // application in both cases.
+  bytes signature = 2;
+
+  // TODO_MAINNET: make sure we're checking/verifying this address onchain (if needed).
+  // Relevant conversation: https://github.com/pokt-network/poktroll/pull/567#discussion_r1628722168
+  //
+  // The supplier operator address the relay is sent to. It is being used on the
+  // RelayMiner to route to the correct supplier.
+  string supplier_operator_address = 3 [(cosmos_proto.scalar) = "cosmos.AddressString"]; // The Bech32 address of the application.
+}
+
+// RelayRequest holds the request details for a relay.
+message RelayRequest {
+  RelayRequestMetadata meta = 1 [(gogoproto.nullable) = false];
+  // payload is the serialized payload for the request.
+  // The payload is passed directly to the service and as such can be any
+  // format that the service supports: JSON-RPC, REST, gRPC, etc.
+  bytes payload = 2;
+}
+
+// RelayResponse contains the response details for a RelayRequest.
+message RelayResponse {
+  RelayResponseMetadata meta = 1 [(gogoproto.nullable) = false];
+  // payload is the serialized payload for the response.
+  // The payload is passed directly from the service and as such can be any
+  // format the service responds with: JSON-RPC, REST, gRPC, etc.
+  bytes payload = 2;
+}
+
+// RelayResponseMetadata contains the metadata for a RelayResponse.
+message RelayResponseMetadata {
+  session.SessionHeader session_header = 1; // Session header associated with the relay.
+  bytes supplier_operator_signature = 2; // Signature of the supplier's operator on the response.
+}

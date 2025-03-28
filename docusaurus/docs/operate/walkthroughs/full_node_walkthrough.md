@@ -33,7 +33,7 @@ See the [Full Node Cheat Sheet](../cheat_sheets/full_node_cheatsheet.md) if you 
   - [6. Choose Sync Method: Genesis vs Snapshot](#6-choose-sync-method-genesis-vs-snapshot)
     - [6.1 \[Slow \& Not Recommended\] Sync from Genesis](#61-slow--not-recommended-sync-from-genesis)
     - [6.2 \[Fast \& Recommended\] Sync from Snapshot](#62-fast--recommended-sync-from-snapshot)
-  - [7. Install `poktrolld`](#7-install-poktrolld)
+  - [7. Install `pocketd`](#7-install-pocketd)
   - [8. Network Configuration](#8-network-configuration)
   - [9. Set Up `systemd` Service](#9-set-up-systemd-service)
   - [10. Configure your Firewall](#10-configure-your-firewall)
@@ -84,39 +84,39 @@ sudo apt-get install -y curl tar wget jq zstd aria2
 
 ### 2. Create a New User
 
-Create a dedicated user to run `poktrolld`:
+Create a dedicated user to run `pocketd`:
 
 ```bash
-sudo adduser poktroll
+sudo adduser pocket
 ```
 
 Set a password when prompted, and add the user to the sudo group:
 
 ```bash
-sudo usermod -aG sudo poktroll
+sudo usermod -aG sudo pocket
 ```
 
-And switch to the `poktroll` user:
+And switch to the `pocket` user:
 
 ```bash
-sudo su - poktroll
+sudo su - pocket
 ```
 
 ### 3. Set Up Environment Variables for Cosmovisor
 
-Create a `.poktrollrc` file and set the following environment variables:
+Create a `.pocketrc` file and set the following environment variables:
 
 ```bash
-cat > ~/.poktrollrc << 'EOF'
-export DAEMON_NAME=poktrolld
-export DAEMON_HOME=$HOME/.poktroll
+cat > ~/.pocketrc << 'EOF'
+export DAEMON_NAME=pocketd
+export DAEMON_HOME=$HOME/.pocket
 export DAEMON_RESTART_AFTER_UPGRADE=true
 export DAEMON_ALLOW_DOWNLOAD_BINARIES=true
 export UNSAFE_SKIP_BACKUP=false
-export PATH=$HOME/.local/bin:$HOME/.poktroll/cosmovisor/current/bin:$PATH
+export PATH=$HOME/.local/bin:$HOME/.pocket/cosmovisor/current/bin:$PATH
 EOF
 
-echo "source ~/.poktrollrc" >> ~/.profile
+echo "source ~/.pocketrc" >> ~/.profile
 source ~/.profile
 ```
 
@@ -169,14 +169,14 @@ Choose a network to join from the tabs below:
     NETWORK="testnet-beta"
 
     # Create config directory if it doesn't exist
-    mkdir -p $HOME/.poktroll/config
+    mkdir -p $HOME/.pocket/config
 
     # Download genesis file from URL
     GENESIS_FILE_URL="https://raw.githubusercontent.com/pokt-network/pocket-network-genesis/master/shannon/${NETWORK}/genesis.json"
-    curl -s -o $HOME/.poktroll/config/genesis.json "$GENESIS_FILE_URL"
+    curl -s -o $HOME/.pocket/config/genesis.json "$GENESIS_FILE_URL"
 
-    # Extract initial version of poktrolld to start synching from genesis
-    POKTROLLD_GENESIS_VERSION=$(jq -r '.app_version' < $HOME/.poktroll/config/genesis.json)
+    # Extract initial version of pocketd to start synching from genesis
+    POCKETD_GENESIS_VERSION=$(jq -r '.app_version' < $HOME/.pocket/config/genesis.json)
     ```
 
   </TabItem>
@@ -188,14 +188,14 @@ Choose a network to join from the tabs below:
     NETWORK="testnet-alpha"
 
     # Create config directory if it doesn't exist
-    mkdir -p $HOME/.poktroll/config
+    mkdir -p $HOME/.pocket/config
 
     # Download genesis file from URL
     GENESIS_FILE_URL="https://raw.githubusercontent.com/pokt-network/pocket-network-genesis/master/shannon/${NETWORK}/genesis.json"
-    curl -s -o $HOME/.poktroll/config/genesis.json "$GENESIS_FILE_URL"
+    curl -s -o $HOME/.pocket/config/genesis.json "$GENESIS_FILE_URL"
 
-    # Extract initial version of poktrolld to start synching from genesis
-    POKTROLLD_GENESIS_VERSION=$(jq -r '.app_version' < $HOME/.poktroll/config/genesis.json)
+    # Extract initial version of pocketd to start synching from genesis
+    POCKETD_GENESIS_VERSION=$(jq -r '.app_version' < $HOME/.pocket/config/genesis.json)
     ```
 
   </TabItem>
@@ -207,14 +207,14 @@ Choose a network to join from the tabs below:
     NETWORK="mainnet"
 
     # Create config directory if it doesn't exist
-    mkdir -p $HOME/.poktroll/config
+    mkdir -p $HOME/.pocket/config
 
     # Download genesis file from URL
     GENESIS_FILE_URL="https://raw.githubusercontent.com/pokt-network/pocket-network-genesis/master/shannon/${NETWORK}/genesis.json"
-    curl -s -o $HOME/.poktroll/config/genesis.json "$GENESIS_FILE_URL"
+    curl -s -o $HOME/.pocket/config/genesis.json "$GENESIS_FILE_URL"
 
-    # Extract initial version of poktrolld to start synching from genesis
-    POKTROLLD_GENESIS_VERSION=$(jq -r '.app_version' < $HOME/.poktroll/config/genesis.json)
+    # Extract initial version of pocketd to start synching from genesis
+    POCKETD_GENESIS_VERSION=$(jq -r '.app_version' < $HOME/.pocket/config/genesis.json)
     ```
 
   </TabItem>
@@ -222,9 +222,9 @@ Choose a network to join from the tabs below:
 
 ### 6. Choose Sync Method: Genesis vs Snapshot
 
-Before installing `poktrolld`, you need to decide whether to sync from genesis or use a snapshot. This decision will determine which version of `poktrolld` to install.
+Before installing `pocketd`, you need to decide whether to sync from genesis or use a snapshot. This decision will determine which version of `pocketd` to install.
 
-As the sync progresses from genesis (i.e. block zero) to the latest (i.e. current) height, Cosmosvisor automatically updates the `poktrolld` binary to the latest/necessary version at each particular height as a function of the network’s upgrade plan
+As the sync progresses from genesis (i.e. block zero) to the latest (i.e. current) height, Cosmosvisor automatically updates the `pocketd` binary to the latest/necessary version at each particular height as a function of the network’s upgrade plan
 
 The following diagram illustrates the two sync path with arbitrary version and height numbers:
 
@@ -241,18 +241,18 @@ flowchart TD
     Decision{"Choose Sync Method"}
 
     %% Genesis path
-    Decision -->|"Sync from Genesis"| Genesis["Genesis Start <br> poktrolld v0.1.0 <br> Height: 0"]
+    Decision -->|"Sync from Genesis"| Genesis["Genesis Start <br> pocketd v0.1.0 <br> Height: 0"]
     Genesis --> Upgrade1["Upgrade v0.2.0 <br> Height: 10,000"]
     Upgrade1 --> Upgrade2["Upgrade v0.3.0 <br> Height: 50,000"]
 
     %% Snapshot path
-    Decision -->|"Sync from Snapshot"| Snapshot["Snapshot Start <br> poktrolld v0.3.0 <br> Height: 50,000"]
+    Decision -->|"Sync from Snapshot"| Snapshot["Snapshot Start <br> pocketd v0.3.0 <br> Height: 50,000"]
 
     %% Canonical path
     Upgrade2 --> CommonPath["Shared Sync Path"]
     Snapshot --> CommonPath
     CommonPath --> Upgrade3["Upgrade v0.4.0 <br> Height: 100,000"]
-    Upgrade3 --> Current["Current Chain State <br> poktrolld v0.4.0 <br> Height: 150,000"]
+    Upgrade3 --> Current["Current Chain State <br> pocketd v0.4.0 <br> Height: 150,000"]
 
     %% Apply styles
     class Decision decisionNode
@@ -264,11 +264,11 @@ flowchart TD
 
 #### 6.1 [Slow & Not Recommended] Sync from Genesis
 
-The (static) genesis file contains the required initial version of poktrolld to start syncing from genesis.
+The (static) genesis file contains the required initial version of pocketd to start syncing from genesis.
 
 ```bash
-POKTROLLD_VERSION=$POKTROLLD_GENESIS_VERSION
-echo "Sync from genesis will use the following version of poktrolld as a starting point: $POKTROLLD_VERSION"
+POCKETD_VERSION=$POCKETD_GENESIS_VERSION
+echo "Sync from genesis will use the following version of pocketd as a starting point: $POCKETD_VERSION"
 ```
 
 #### 6.2 [Fast & Recommended] Sync from Snapshot
@@ -302,8 +302,8 @@ If you prefer to use a snapshot (recommended for faster setup), you need to chec
     TORRENT_URL="${SNAPSHOT_BASE_URL}/testnet-beta-latest-archival.torrent"
 
     # Set the version to use for installation
-    POKTROLLD_VERSION=$SNAPSHOT_VERSION
-    echo "Sync from snapshot will use the following version of poktrolld as a starting point: $POKTROLLD_VERSION"
+    POCKETD_VERSION=$SNAPSHOT_VERSION
+    echo "Sync from snapshot will use the following version of pocketd as a starting point: $POCKETD_VERSION"
 
     echo "############################################"
     ```
@@ -330,8 +330,8 @@ If you prefer to use a snapshot (recommended for faster setup), you need to chec
     TORRENT_URL="${SNAPSHOT_BASE_URL}/testnet-alpha-latest-archival.torrent"
 
     # Set the version to use for installation
-    POKTROLLD_VERSION=$SNAPSHOT_VERSION
-    echo "Sync from snapshot will use the following version of poktrolld as a starting point: $POKTROLLD_VERSION"
+    POCKETD_VERSION=$SNAPSHOT_VERSION
+    echo "Sync from snapshot will use the following version of pocketd as a starting point: $POCKETD_VERSION"
 
     echo "############################################"
     ```
@@ -358,8 +358,8 @@ If you prefer to use a snapshot (recommended for faster setup), you need to chec
     TORRENT_URL="${SNAPSHOT_BASE_URL}/mainnet-latest-archival.torrent"
 
     # Set the version to use for installation
-    POKTROLLD_VERSION=$SNAPSHOT_VERSION
-    echo "Sync from snapshot will use the following version of poktrolld as a starting point: $POKTROLLD_VERSION"
+    POCKETD_VERSION=$SNAPSHOT_VERSION
+    echo "Sync from snapshot will use the following version of pocketd as a starting point: $POCKETD_VERSION"
 
     echo "############################################"
     ```
@@ -379,8 +379,8 @@ Make sure you review the disk space requirements at the top of this guide before
 
 ```bash
 # Create a directory for the snapshot download
-SNAPSHOT_DIR="$HOME/poktroll_snapshot"
-mkdir -p "$SNAPSHOT_DIR" "$HOME/.poktroll/data"
+SNAPSHOT_DIR="$HOME/pocket_snapshot"
+mkdir -p "$SNAPSHOT_DIR" "$HOME/.pocket/data"
 cd "$SNAPSHOT_DIR"
 
 # Download via torrent
@@ -396,10 +396,10 @@ DOWNLOADED_FILE=$(find . -type f -name "*.tar.*" | head -n 1)
 # Extract the snapshot
 if [[ "$DOWNLOADED_FILE" == *.tar.zst ]]; then
     echo "Extracting .tar.zst snapshot..."
-    zstd -d "$DOWNLOADED_FILE" --stdout | tar -xf - -C $HOME/.poktroll/data
+    zstd -d "$DOWNLOADED_FILE" --stdout | tar -xf - -C $HOME/.pocket/data
 elif [[ "$DOWNLOADED_FILE" == *.tar.gz ]]; then
     echo "Extracting .tar.gz snapshot..."
-    tar -zxf "$DOWNLOADED_FILE" -C $HOME/.poktroll/data
+    tar -zxf "$DOWNLOADED_FILE" -C $HOME/.pocket/data
 else
     echo "Unknown snapshot format: $DOWNLOADED_FILE"
     exit 1
@@ -414,9 +414,9 @@ echo "Snapshot applied successfully"
 echo "###"
 ```
 
-### 7. Install `poktrolld`
+### 7. Install `pocketd`
 
-Now that we've determined the correct version to use, we can install `poktrolld`:
+Now that we've determined the correct version to use, we can install `pocketd`:
 
 ```bash
 # Determine your OS type and architecture
@@ -428,22 +428,22 @@ elif [ "$ARCH" = "aarch64" ]; then
     ARCH="arm64"
 fi
 
-# Download and install poktrolld with the version determined in the previous step
-RELEASE_URL="https://github.com/pokt-network/poktroll/releases/download/v${POKTROLLD_VERSION}/poktroll_${OS_TYPE}_${ARCH}.tar.gz"
-mkdir -p $HOME/.poktroll/cosmovisor/genesis/bin
-curl -L "$RELEASE_URL" | tar -zxvf - -C $HOME/.poktroll/cosmovisor/genesis/bin
-chmod +x $HOME/.poktroll/cosmovisor/genesis/bin/poktrolld
+# Download and install pocketd with the version determined in the previous step
+RELEASE_URL="https://github.com/pokt-network/poktroll/releases/download/v${POCKETD_VERSION}/pocket_${OS_TYPE}_${ARCH}.tar.gz"
+mkdir -p $HOME/.pocket/cosmovisor/genesis/bin
+curl -L "$RELEASE_URL" | tar -zxvf - -C $HOME/.pocket/cosmovisor/genesis/bin
+chmod +x $HOME/.pocket/cosmovisor/genesis/bin/pocketd
 
 # Verify the installation
-$HOME/.poktroll/cosmovisor/genesis/bin/poktrolld version
+$HOME/.pocket/cosmovisor/genesis/bin/pocketd version
 
-# Initialize Cosmovisor with the poktrolld binary
-cosmovisor init $HOME/.poktroll/cosmovisor/genesis/bin/poktrolld
+# Initialize Cosmovisor with the pocketd binary
+cosmovisor init $HOME/.pocket/cosmovisor/genesis/bin/pocketd
 ```
 
-:::note Cosmosvisor poktrolld symlinks
+:::note Cosmosvisor pocketd symlinks
 
-The `cosmovisor init` command creates the necessary directory structure and symlinks and you can now use the `poktrolld` command directly.
+The `cosmovisor init` command creates the necessary directory structure and symlinks and you can now use the `pocketd` command directly.
 
 :::
 
@@ -455,19 +455,19 @@ Initialize your node and configure it to connect to the network:
   <TabItem value="testnet-beta" label="Testnet Beta" default>
     ```bash
     # Extract chain-id from existing genesis
-    CHAIN_ID=$(jq -r '.chain_id' < $HOME/.poktroll/config/genesis.json)
+    CHAIN_ID=$(jq -r '.chain_id' < $HOME/.pocket/config/genesis.json)
 
     # Initialize the node with your chosen moniker (node name)
-    poktrolld init "YourNodeMoniker" --chain-id="$CHAIN_ID" --home=$HOME/.poktroll
+    pocketd init "YourNodeMoniker" --chain-id="$CHAIN_ID" --home=$HOME/.pocket
 
     # Get seeds from the official repository
     SEEDS_URL="https://raw.githubusercontent.com/pokt-network/pocket-network-genesis/master/shannon/testnet-beta/seeds"
     SEEDS=$(curl -s "$SEEDS_URL")
-    sed -i -e "s|^seeds *=.*|seeds = \"$SEEDS\"|" $HOME/.poktroll/config/config.toml
+    sed -i -e "s|^seeds *=.*|seeds = \"$SEEDS\"|" $HOME/.pocket/config/config.toml
 
     # Configure external address for P2P communication
     EXTERNAL_IP=$(curl -s https://api.ipify.org)
-    sed -i -e "s|^external_address *=.*|external_address = \"${EXTERNAL_IP}:26656\"|" $HOME/.poktroll/config/config.toml
+    sed -i -e "s|^external_address *=.*|external_address = \"${EXTERNAL_IP}:26656\"|" $HOME/.pocket/config/config.toml
     ```
 
   </TabItem>
@@ -475,19 +475,19 @@ Initialize your node and configure it to connect to the network:
   <TabItem value="testnet-alpha" label="Testnet Alpha">
     ```bash
     # Extract chain-id from existing genesis
-    CHAIN_ID=$(jq -r '.chain_id' < $HOME/.poktroll/config/genesis.json)
+    CHAIN_ID=$(jq -r '.chain_id' < $HOME/.pocket/config/genesis.json)
 
     # Initialize the node with your chosen moniker (node name)
-    poktrolld init "YourNodeMoniker" --chain-id="$CHAIN_ID" --home=$HOME/.poktroll
+    pocketd init "YourNodeMoniker" --chain-id="$CHAIN_ID" --home=$HOME/.pocket
 
     # Get seeds from the official repository
     SEEDS_URL="https://raw.githubusercontent.com/pokt-network/pocket-network-genesis/master/shannon/testnet-alpha/seeds"
     SEEDS=$(curl -s "$SEEDS_URL")
-    sed -i -e "s|^seeds *=.*|seeds = \"$SEEDS\"|" $HOME/.poktroll/config/config.toml
+    sed -i -e "s|^seeds *=.*|seeds = \"$SEEDS\"|" $HOME/.pocket/config/config.toml
 
     # Configure external address for P2P communication
     EXTERNAL_IP=$(curl -s https://api.ipify.org)
-    sed -i -e "s|^external_address *=.*|external_address = \"${EXTERNAL_IP}:26656\"|" $HOME/.poktroll/config/config.toml
+    sed -i -e "s|^external_address *=.*|external_address = \"${EXTERNAL_IP}:26656\"|" $HOME/.pocket/config/config.toml
     ```
 
   </TabItem>
@@ -495,19 +495,19 @@ Initialize your node and configure it to connect to the network:
   <TabItem value="mainnet" label="Mainnet">
     ```bash
     # Extract chain-id from existing genesis
-    CHAIN_ID=$(jq -r '.chain_id' < $HOME/.poktroll/config/genesis.json)
+    CHAIN_ID=$(jq -r '.chain_id' < $HOME/.pocket/config/genesis.json)
 
     # Initialize the node with your chosen moniker (node name)
-    poktrolld init "YourNodeMoniker" --chain-id="$CHAIN_ID" --home=$HOME/.poktroll
+    pocketd init "YourNodeMoniker" --chain-id="$CHAIN_ID" --home=$HOME/.pocket
 
     # Get seeds from the official repository
     SEEDS_URL="https://raw.githubusercontent.com/pokt-network/pocket-network-genesis/master/shannon/mainnet/seeds"
     SEEDS=$(curl -s "$SEEDS_URL")
-    sed -i -e "s|^seeds *=.*|seeds = \"$SEEDS\"|" $HOME/.poktroll/config/config.toml
+    sed -i -e "s|^seeds *=.*|seeds = \"$SEEDS\"|" $HOME/.pocket/config/config.toml
 
     # Configure external address for P2P communication
     EXTERNAL_IP=$(curl -s https://api.ipify.org)
-    sed -i -e "s|^external_address *=.*|external_address = \"${EXTERNAL_IP}:26656\"|" $HOME/.poktroll/config/config.toml
+    sed -i -e "s|^external_address *=.*|external_address = \"${EXTERNAL_IP}:26656\"|" $HOME/.pocket/config/config.toml
     ```
 
   </TabItem>
@@ -519,25 +519,25 @@ Create a `systemd` service to manage your node. You can customize the service na
 
 ```bash
 # Set a service name (change if running multiple nodes)
-SERVICE_NAME="cosmovisor-poktroll"  # or another name like "cosmovisor-testnet"
+SERVICE_NAME="cosmovisor-pocket"  # or another name like "cosmovisor-testnet"
 
 # Store the current username for use in the service file
 USERNAME=$(whoami)
 
 sudo tee /etc/systemd/system/${SERVICE_NAME}.service > /dev/null <<EOF
 [Unit]
-Description=Cosmovisor daemon for poktrolld
+Description=Cosmovisor daemon for pocketd
 After=network-online.target
 
 [Service]
 User=${USERNAME}
-ExecStart=/home/${USERNAME}/.local/bin/cosmovisor run start --home=/home/${USERNAME}/.poktroll
+ExecStart=/home/${USERNAME}/.local/bin/cosmovisor run start --home=/home/${USERNAME}/.pocket
 Restart=always
 RestartSec=3
 LimitNOFILE=infinity
 LimitNPROC=infinity
-Environment="DAEMON_NAME=poktrolld"
-Environment="DAEMON_HOME=/home/${USERNAME}/.poktroll"
+Environment="DAEMON_NAME=pocketd"
+Environment="DAEMON_HOME=/home/${USERNAME}/.pocket"
 Environment="DAEMON_RESTART_AFTER_UPGRADE=true"
 Environment="DAEMON_ALLOW_DOWNLOAD_BINARIES=true"
 Environment="UNSAFE_SKIP_BACKUP=true"
@@ -601,22 +601,22 @@ Choose the appropriate method for your system:
 
 ### 11. Check & Monitor the Status of your Node
 
-View service status (e.g. `SERVICE_NAME=cosmovisor-poktroll`):
+View service status (e.g. `SERVICE_NAME=cosmovisor-pocket`):
 
 ```bash
 sudo systemctl status ${SERVICE_NAME}
 ```
 
-View logs in real-time (e.g. `SERVICE_NAME=cosmovisor-poktroll`):
+View logs in real-time (e.g. `SERVICE_NAME=cosmovisor-pocket`):
 
 ```bash
 sudo journalctl -u ${SERVICE_NAME} -f
 ```
 
-Check sync status using `poktrolld`:
+Check sync status using `pocketd`:
 
 ```bash
-poktrolld status | jq '.sync_info.catching_up'
+pocketd status | jq '.sync_info.catching_up'
 ```
 
 Your node is fully synced when `catching_up` is `false`.
@@ -627,7 +627,7 @@ Consider visiting one of our [explores](../../category/explorers-faucets-wallets
 block height against yours, which you can query via:
 
 ```bash
-poktrolld status | jq '.sync_info.latest_block_height'
+pocketd status | jq '.sync_info.latest_block_height'
 ```
 
 :::
