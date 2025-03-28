@@ -10,6 +10,7 @@
   - [Generate Genesis](#generate-genesis)
 - [Generation `authz` authorizations](#generation-authz-authorizations)
   - [Update DAO Reward Address](#update-dao-reward-address)
+  - [Export the genesis configuration](#export-the-genesis-configuration)
 
 ## Identifying the necessary authorizations
 
@@ -106,15 +107,10 @@ mkdir -p $MAINNET_DIR
 # Make a note of the git sha you're on
 
 # Generate the genesis file and other important configuration files (first validator key, configs..)
-ignite chain init --skip-proto --check-dependencies --clear-cache --home=$MAINNET_DIR
+ignite chain init --skip-proto --check-dependencies --clear-cache --config=config_mainnet.yml --home=$MAINNET_DIR
 ```
 
 ## Generation `authz` authorizations
-
-TODO:
-- Update: ignite chain init --skip-proto --check-dependencies --clear-cache --config=config_mainnet.yml --home=$MAINNET_DIR
-- Skip the export
-- tar -czvf mainnet_backup.tar.gz $MAINNET_DIR
 
 ```bash
 export PNF_ADDRESS=pokt_PNF_ADDRESS
@@ -143,4 +139,10 @@ jq --arg addr "$PNF_ADDRESS" \
    '.app_state.tokenomics.params.dao_reward_address = $addr' \
    "$MAINNET_DIR/config/genesis.json" > tmp.json && \
    mv tmp.json "$MAINNET_DIR/config/genesis.json"
+```
+
+### Export the genesis configuration
+
+```bash
+tar -czvf mainnet_backup.tar.gz $MAINNET_DIR
 ```
