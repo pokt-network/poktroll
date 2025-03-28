@@ -71,7 +71,7 @@ In this document, we will refer to two CLI tools:
    - This CLI was "rolled in house" but heavily inspired by the Cosmos SDK circa 2020
    - This CLI acts as a keyring for Morse accounts (i.e. ed25519)
 
-2. `pocketd`: The Shannon CLI which can be downloaded using `homebrew` form the [`pokt-network/homebrew-pocket` tap](https://github.com/pokt-network/homebrew-pocket).
+2. `pocketd`: The Shannon CLI which can be downloaded using `homebrew` form the [`pokt-network/homebrew-pocketd` tap](https://github.com/pokt-network/homebrew-pocketd).
 
    - This CLI is compliant with the latest Cosmos SDK (circa 2025) but modified to account for Pocket specific operations
    - This CLI acts as a keyring for Shannon accounts (i.e. secp256k1) and more (outside the scope of this document)

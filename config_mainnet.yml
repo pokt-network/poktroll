@@ -33,7 +33,7 @@ accounts:
   # pnf is the account of the Pocket Network Foundation managing governance and
   # acting on behalf of the DAO.
   - name: pnf
-    # address: "pokt_TODO_MAINNET_CRITICAL_ADD_PNF_ADDRESS"
+    address: "pokt1hv3xrylxvwd7hfv03j50ql0ttp3s5hqqelegmv"
     coins:
       - 10000000000000upokt # 10M POKT (unbonded)
 
@@ -42,7 +42,7 @@ accounts:
   # the research, development, deployment, migration, operation, maintenance, and
   # continuous iteration of Pocket Network.
   - name: grove
-    # address: "pokt_TODO_MAINNET_CRITICAL_ADD_GROVE_ADDRESS"
+    address: "pokt18808wvw0h4t450t06uvauny8lvscsxjfyua7vh"
     coins:
       - 10000000000000upokt # 10M POKT (unbonded)
 
