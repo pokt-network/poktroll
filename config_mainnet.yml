@@ -5,6 +5,7 @@ version: 1
 
 build:
   main: cmd/pocketd
+  binary: pocketd
 
 # Pocket Network Shadow MainNet Genesis Account Balances
 #
