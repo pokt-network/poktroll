@@ -1,0 +1,80 @@
+syntax = "proto3";
+package pocket.migration;
+
+option go_package = "github.com/pokt-network/poktroll/x/migration/types";
+option (gogoproto.stable_marshaler_all) = true;
+
+import "cosmos_proto/cosmos.proto";
+import "gogoproto/gogo.proto";
+import "cosmos/base/v1beta1/coin.proto";
+
+import "pocket/shared/service.proto";
+import "pocket/migration/morse_onchain.proto";
+import "pocket/application/types.proto";
+import "pocket/shared/supplier.proto";
+
+// EventImportMorseClaimableAccounts is emitted when the MorseClaimableAccounts are created on-chain.
+message EventImportMorseClaimableAccounts {
+  // The height (on Shannon) at which the MorseAccountState was created on-chain.
+  int64 created_at_height = 1 [(gogoproto.jsontag) = "created_at_height"];
+
+  // The onchain computed sha256 hash of the entire MorseAccountState containing the MorseClaimableAccounts which were imported.
+  bytes morse_account_state_hash = 2 [(gogoproto.jsontag) = "morse_account_state_hash"];
+
+  // Number of claimable accounts (EOAs) collected from Morse state export
+  // NOTE: Account balances include consolidated application and supplier actor stakes
+  uint64 num_accounts = 3 [(gogoproto.jsontag) = "num_accounts"];
+}
+
+// EventMorseAccountClaimed is emitted when a MorseAccount is claimed on-chain.
+message EventMorseAccountClaimed {
+  // The session end height (on Shannon) in which the claim was committed (i.e. claimed).
+  int64 session_end_height = 1 [(gogoproto.jsontag) = "session_end_height"];
+
+  // The unstaked balance which was claimed.
+  cosmos.base.v1beta1.Coin claimed_balance = 2 [(gogoproto.jsontag) = "claimed_balance", (gogoproto.nullable) = false];
+
+  // The bech32-encoded address of the Shannon account to which the claimed balance will be minted.
+  string shannon_dest_address = 3 [(cosmos_proto.scalar) = "cosmos.AddressString", (gogoproto.jsontag) = "shannon_dest_address"];
+
+  // The hex-encoded address of the Morse account whose balance will be claimed.
+  string morse_src_address = 4 [(gogoproto.jsontag) = "morse_src_address"];
+}
+
+// EventMorseApplicationClaimed is emitted when a MorseAccount is claimed on-chain as a staked application.
+message EventMorseApplicationClaimed {
+  // The session end height (on Shannon) in which the claim was committed (i.e. claimed).
+  int64 session_end_height = 1 [(gogoproto.jsontag) = "session_end_height"];
+
+  // The unstaked balance which was claimed.
+  cosmos.base.v1beta1.Coin claimed_balance = 2 [(gogoproto.jsontag) = "claimed_balance", (gogoproto.nullable) = false];
+
+  // The hex-encoded address of the Morse account whose balance will be claimed.
+  string morse_src_address = 3 [(gogoproto.jsontag) = "morse_src_address"];
+
+  // The stake of the application which was staked as a result of the claim.
+  cosmos.base.v1beta1.Coin claimed_application_stake = 4 [(gogoproto.nullable) = false, (gogoproto.jsontag) = "claimed_application_stake"];
+
+  // The application which was staked as a result of the claim.
+  // This is equivalent to the amount it had staked on Morse.
+  application.Application application = 5 [(gogoproto.jsontag) = "application"];
+}
+
+// EventMorseSupplierClaimed is emitted when a MorseAccount is claimed on-chain as a staked Supplier.
+message EventMorseSupplierClaimed {
+  // The session end height (on Shannon) in which the claim was committed (i.e. claimed).
+  int64 session_end_height = 1 [(gogoproto.jsontag) = "session_end_height"];
+
+  // The unstaked balance which was claimed.
+  cosmos.base.v1beta1.Coin claimed_balance = 2 [(gogoproto.jsontag) = "claimed_balance", (gogoproto.nullable) = false];
+
+  // The hex-encoded address of the Morse account whose balance will be claimed.
+  string morse_src_address = 3 [(gogoproto.jsontag) = "morse_src_address"];
+
+  // The stake of the Supplier which was staked as a result of the claim.
+  // This will be equivalent to the amount it had staked on Morse.
+  cosmos.base.v1beta1.Coin claimed_supplier_stake = 4 [(gogoproto.nullable) = false, (gogoproto.jsontag) = "claimed_supplier_stake"];
+
+  // The Supplier which was staked as a result of the claim.
+  shared.Supplier supplier = 5 [(gogoproto.jsontag) = "supplier"];
+}

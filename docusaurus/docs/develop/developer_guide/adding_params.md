@@ -3,7 +3,7 @@ sidebar_position: 5
 title: Adding Onchain Module Parameters
 ---
 
-# Adding Onchain Module Parameters <!-- omit in toc -->
+## Adding Onchain Module Parameters <!-- omit in toc -->
 
 - [Step-by-Step Instructions](#step-by-step-instructions)
   - [0. If the Module Doesn't Already Support a `MsgUpdateParam` Message](#0-if-the-module-doesnt-already-support-a-msgupdateparam-message)
@@ -90,18 +90,18 @@ Try running `make proto_clean_pulsar` if you experience errors like these:
 ```bash
 ✘ Error while running command go mod tidy: go:
 ...
-go: github.com/pokt-network/poktroll/api/poktroll/examplemod imports
-        cosmossdk.io/api/poktroll/shared: module cosmossdk.io/api@latest found (v0.7.6), but does not contain package cosmossdk.io/api/poktroll/shared
+go: github.com/pokt-network/poktroll/api/pocket/examplemod imports
+        cosmossdk.io/api/pocket/shared: module cosmossdk.io/api@latest found (v0.7.6), but does not contain package cosmossdk.io/api/pocket/shared
 ```
 
 ```bash
-✘ Error while running command /home/bwhite/go/bin/buf dep update /home/bwhite/Projects/pokt/poktroll/proto: Failure: decode proto/buf.lock: no digest specified for module buf.build/cosmos/ics23
+✘ Error while running command /home/bwhite/go/bin/buf dep update /home/bwhite/Projects/pokt/pocket/proto: Failure: decode proto/buf.lock: no digest specified for module buf.build/cosmos/ics23
 : exit status 1
 ```
 
 #### 0.2. Update `MsgUpdateParam` and `MsgUpdateParamResponse` Fields
 
-Update the `MsgUpdateParam` message fields in the module's `tx.proto` file (e.g. `proto/poktroll/examplemod/tx.proto`) to include the following comments and protobuf options:
+Update the `MsgUpdateParam` message fields in the module's `tx.proto` file (e.g. `proto/pocket/examplemod/tx.proto`) to include the following comments and protobuf options:
 
 ```diff
 + // MsgUpdateParam is the Msg/UpdateParam request type to update a single param.
@@ -137,7 +137,7 @@ Update the `MsgUpdateParamResponse` message field (`params`) in the same `tx.pro
 #### 0.3 Comment Out AutoCLI
 
 When scaffolding the `MsgUpdateParam` message, generated code is added to `x/examplemod/module/autocli.go`.
-Since governance parameters aren't updated via `poktrolld` CLI, comment out these new lines:
+Since governance parameters aren't updated via `pocketd` CLI, comment out these new lines:
 
 ```diff
   // ...
@@ -168,7 +168,7 @@ Add a grant (array element) to `tools/scripts/authz/dao_genesis_authorizations.j
 +   "grantee": "pokt1eeeksh2tvkh7wzmfrljnhw4wrhs55lcuvmekkw",
 +   "authorization": {
 +     "@type": "\/cosmos.authz.v1beta1.GenericAuthorization",
-+     "msg": "\/poktroll.examplemod.MsgUpdateParam" // Replace examplemod with the module name
++     "msg": "\/pocket.examplemod.MsgUpdateParam" // Replace examplemod with the module name
 +   },
 +   "expiration": "2500-01-01T00:00:00Z"
 + },
@@ -301,7 +301,7 @@ Add `MsgUpdateParam` & `MsgUpdateParamResponse` to the module's `ModuleParamConf
 
 ### 1. Define the Parameter in the Protocol Buffers File
 
-Define the new parameter in the module's `params.proto` file (e.g., `proto/poktroll/examplemod/params.proto`):
+Define the new parameter in the module's `params.proto` file (e.g., `proto/pocket/examplemod/params.proto`):
 
 ```diff
   message Params {
@@ -657,7 +657,7 @@ When adding parameters to a module, it is necessary to update that module's `Mod
 
 #### 6.1 Add a valid param
 
-Update `ModuleParamConfig#ValidParams` to include a valid and non-default value for the new parameter in the module's `tx.proto` file (e.g. `proto/poktroll/examplemod/tx.proto`):
+Update `ModuleParamConfig#ValidParams` to include a valid and non-default value for the new parameter in the module's `tx.proto` file (e.g. `proto/pocket/examplemod/tx.proto`):
 
 ```diff
   ExamplemodModuleParamConfig = ModuleParamConfig{
@@ -671,7 +671,7 @@ Update `ModuleParamConfig#ValidParams` to include a valid and non-default value 
 
 #### 6.2 Check for `as_<type>` on `MsgUpdateParam`
 
-Ensure an `as_<type>` field exists on `MsgUpdateParam` corresponding to the type of the new parameter (`proto/poktroll/examplemod/tx.proto`):
+Ensure an `as_<type>` field exists on `MsgUpdateParam` corresponding to the type of the new parameter (`proto/pocket/examplemod/tx.proto`):
 
 ```diff
  message MsgUpdateParam {
@@ -708,7 +708,7 @@ Add a new target in `makefiles/params.mk` to update the new parameter:
 ```makefile
 .PHONY: params_update_examplemod_new_parameter
 params_update_examplemod_new_parameter: ## Update the examplemod module new_parameter param
-  poktrolld tx authz exec ./tools/scripts/params/examplemod_new_parameter.json $(PARAM_FLAGS)
+  pocketd tx authz exec ./tools/scripts/params/examplemod_new_parameter.json $(PARAM_FLAGS)
 ```
 
 :::warning
@@ -724,7 +724,7 @@ Create a new JSON file (e.g., `proof_new_parameter_name.json`) in the tools/scri
   "body": {
     "messages": [
       {
-        "@type": "/poktroll.examplemod.MsgUpdateParam", // Replace module name
+        "@type": "/pocket.examplemod.MsgUpdateParam", // Replace module name
         "authority": "pokt10d07y265gmmuvt4z0w9aw880jnsr700j8yv32t",
         "name": "new_parameter", // Replace new parameter name
         "as_int64": "42" // Replace default value
@@ -744,7 +744,7 @@ with the default value for the new parameter.
     "body": {
       "messages": [
         {
-          "@type": "/poktroll.examplemod.MsgUpdateParams", // Replace module name
+          "@type": "/pocket.examplemod.MsgUpdateParams", // Replace module name
           "authority": "pokt10d07y265gmmuvt4z0w9aw880jnsr700j8yv32t",
           "params": {
             // Other existing parameters...

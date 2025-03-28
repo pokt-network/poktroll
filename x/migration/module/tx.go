@@ -9,7 +9,7 @@ import (
 )
 
 // GetTxCmd returns the Cobra command corresponding to the migration module's
-// tx subcommands (i.e. `poktrolld tx migration`).
+// tx subcommands (i.e. `pocketd tx migration`).
 //
 // By implementing this method, NONE of the migration module's tx subcommands are
 // generated automatically (i.e. via autoCLI).
@@ -19,7 +19,7 @@ func (AppModuleBasic) GetTxCmd() *cobra.Command {
 }
 
 // TxCommands returns the Cobra command corresponding to migration module's tx
-// subcommands (i.e. `poktrolld tx migration`).
+// subcommands (i.e. `pocketd tx migration`).
 //
 // Since autoCLI does not apply to several migration CLI operations, this command
 // MUST be manually constructed.

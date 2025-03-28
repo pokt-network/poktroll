@@ -60,7 +60,7 @@ func ConsAddressBech32() string {
 // AccAddressFromConsBech32 returns an account address (with the Bech32PrefixForAccount prefix)
 // from a given consensus address (with the Bech32PrefixForConsensus prefix).
 //
-// Reference: see initSDKConfig in  `cmd/poktrolld/cmd`.
+// Reference: see initSDKConfig in  `cmd/pocketd/cmd`.
 //
 // Use case: in the native cosmos SDK mint module, we set inflation_rate_change to 0
 // because Pocket Network has a custom inflation mechanism. Data availability and

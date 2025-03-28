@@ -34,10 +34,10 @@ Using `curl`:
 curl -X POST https://shannon-testnet-grove-seed-rpc.poktroll.com/block
 ```
 
-Using the `poktrolld` binary:
+Using the `pocketd` binary:
 
 ```bash
-poktrolld query block --type=height 0 --node https://shannon-testnet-grove-seed-rpc.poktroll.com
+pocketd query block --type=height 0 --node https://shannon-testnet-grove-seed-rpc.poktroll.com
 ```
 
 ## Alpha TestNet
@@ -58,10 +58,10 @@ Using `curl`:
 curl -X POST https://shannon-testnet-grove-seed-rpc.alpha.poktroll.com/block
 ```
 
-Using the `poktrolld` binary:
+Using the `pocketd` binary:
 
 ```bash
-poktrolld query block --type=height 1 --node https://shannon-testnet-grove-seed-rpc.alpha.poktroll.com
+pocketd query block --type=height 1 --node https://shannon-testnet-grove-seed-rpc.alpha.poktroll.com
 ```
 
 ## Genesis

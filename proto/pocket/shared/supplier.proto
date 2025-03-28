@@ -1,0 +1,47 @@
+syntax = "proto3";
+package pocket.shared;
+
+option go_package = "github.com/pokt-network/poktroll/x/shared/types";
+option (gogoproto.stable_marshaler_all) = true;
+
+import "cosmos_proto/cosmos.proto";
+import "cosmos/base/v1beta1/coin.proto";
+
+import "pocket/shared/service.proto";
+import "gogoproto/gogo.proto";
+
+// Supplier represents an actor in Pocket Network that provides RPC services
+message Supplier {
+  // Owner address that controls the staked funds and receives rewards by default
+  // Cannot be updated by the operator
+  string owner_address = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+
+  // Operator address managing the offchain server
+  // Immutable for supplier's lifespan - requires unstake/re-stake to change.
+  // Can update supplier configs except for owner address.
+  string operator_address = 2 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+
+  // Total amount of staked uPOKT
+  cosmos.base.v1beta1.Coin stake = 3;
+
+  // List of service configurations supported by this supplier
+  repeated SupplierServiceConfig services = 4;
+
+  // Session end height when supplier initiated unstaking (0 if not unstaking)
+  uint64 unstake_session_end_height = 5;
+
+  // List of historical service configuration updates, tracking the suppliers
+  // services update and corresponding activation heights.
+  repeated ServiceConfigUpdate service_config_history = 6;
+}
+
+// ServiceConfigUpdate tracks a change in a supplier's service configurations
+// at a specific block height, enabling tracking of configuration changes over time.
+message ServiceConfigUpdate {
+  // List of service configurations after the update was applied.
+  repeated SupplierServiceConfig services = 1;
+
+  // Block height at which this service configuration update takes effect,
+  // aligned with the session start height.
+  uint64 effective_block_height = 2;
+}

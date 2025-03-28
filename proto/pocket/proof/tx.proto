@@ -1,0 +1,98 @@
+syntax = "proto3";
+
+package pocket.proof;
+
+option go_package = "github.com/pokt-network/poktroll/x/proof/types";
+option (gogoproto.stable_marshaler_all) = true;
+
+import "amino/amino.proto";
+import "cosmos/base/v1beta1/coin.proto";
+import "cosmos/msg/v1/msg.proto";
+import "cosmos_proto/cosmos.proto";
+import "gogoproto/gogo.proto";
+import "pocket/proof/params.proto";
+import "pocket/proof/types.proto";
+import "pocket/session/types.proto";
+import "pocket/shared/service.proto";
+
+// Msg defines the Msg service.
+service Msg {
+  option (cosmos.msg.v1.service) = true;
+
+  // UpdateParams defines a (governance) operation for updating the module
+  // parameters. The authority defaults to the x/gov module account.
+  rpc UpdateParams (MsgUpdateParams) returns (MsgUpdateParamsResponse);
+  rpc CreateClaim  (MsgCreateClaim) returns (MsgCreateClaimResponse);
+  rpc SubmitProof  (MsgSubmitProof) returns (MsgSubmitProofResponse);
+  rpc UpdateParam  (MsgUpdateParam) returns (MsgUpdateParamResponse);
+}
+
+// MsgUpdateParams is the Msg/UpdateParams request type to update all params at once.
+message MsgUpdateParams {
+  option (cosmos.msg.v1.signer) = "authority";
+  option           (amino.name) = "pocket/x/proof/MsgUpdateParams";
+
+  // authority is the address that controls the module (defaults to x/gov unless overwritten).
+  string authority = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+
+  // TODO_IMPROVE(#322): The requirement to provide all params is adopted from the
+  // latest Cosmos SDK version. We should look into either improving this ourselves
+  // or seeing if it is on their roadmap.
+
+  // params defines the x/proof parameters to update.
+  // NOTE: All parameters must be supplied.
+  Params params = 2 [(gogoproto.nullable) = false, (amino.dont_omitempty) = true];
+}
+
+// MsgUpdateParamsResponse defines the response structure for executing a
+// MsgUpdateParams message.
+message MsgUpdateParamsResponse {}
+
+// MsgUpdateParam is the Msg/UpdateParam request type to update a single param.
+message MsgUpdateParam {
+  option (cosmos.msg.v1.signer) = "authority";
+
+  // authority is the address that controls the module (defaults to x/gov unless overwritten).
+  string authority = 1  [(cosmos_proto.scalar) = "cosmos.AddressString"];
+
+  // The (name, as_type) tuple must match the corresponding name and type as
+  // specified in the `Params`` message in `proof/params.proto.`
+  string name = 2;
+  oneof as_type {
+    bytes as_bytes = 7 [(gogoproto.jsontag) = "as_bytes"];
+    double as_float = 8 [(gogoproto.jsontag) = "as_float"];
+    cosmos.base.v1beta1.Coin as_coin = 9 [(gogoproto.jsontag) = "as_coin"];
+  }
+}
+
+// MsgUpdateParamResponse defines the response structure for executing a
+// MsgUpdateParam message after a single param update.
+message MsgUpdateParamResponse {
+  Params params = 1;
+}
+
+message MsgCreateClaim {
+  option (cosmos.msg.v1.signer) = "supplier_operator_address";
+  string                         supplier_operator_address = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+  pocket.session.SessionHeader session_header = 2;
+
+  // root returned from smt.SMST#Root()
+  bytes root_hash = 3;
+}
+
+message MsgCreateClaimResponse {
+  pocket.proof.Claim claim = 1;
+}
+
+message MsgSubmitProof {
+  option (cosmos.msg.v1.signer) = "supplier_operator_address";
+  string                         supplier_operator_address = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+  pocket.session.SessionHeader session_header = 2;
+
+  // serialized version of *smt.SparseCompactMerkleClosestProof
+  bytes proof = 3;
+}
+
+message MsgSubmitProofResponse {
+  pocket.proof.Proof proof = 1;
+}

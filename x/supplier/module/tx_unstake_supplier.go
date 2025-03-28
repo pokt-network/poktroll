@@ -17,7 +17,7 @@ func CmdUnstakeSupplier() *cobra.Command {
 		Long: `Unstake an supplier with the provided parameters. This is a broadcast operation that will unstake the supplier specified by the <operator_address> and owned by 'from' address.
 
 Example:
-$ poktrolld tx supplier unstake-supplier $(OPERATOR_ADDRESS) --keyring-backend test --from $(SIGNER_ADDRESS) --node $(POCKET_NODE) --home $(POKTROLLD_HOME)`,
+$ pocketd tx supplier unstake-supplier $(OPERATOR_ADDRESS) --keyring-backend test --from $(SIGNER_ADDRESS) --node $(POCKET_NODE) --home $(POCKETD_HOME)`,
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) (err error) {
 
