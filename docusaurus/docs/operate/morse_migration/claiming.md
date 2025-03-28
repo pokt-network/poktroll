@@ -338,20 +338,23 @@ For example, running the following command:
 ```bash
 pocketd migrate claim-application \
   ./pocket-account-8b257c7f4e884e49bafc540d874f33f91436e1dc.json \
-  svc1 \
+  anvil \
   --from app1
 ```
 
 Should prompt for a passphrase and produce output similar to the following:
 
 ```shell
-Enter Decrypt Passphrase:
-MsgClaimMorseAccount {
+Enter Decrypt Passphrase: 
+MsgClaimMorseApplication {
   "shannon_dest_address": "pokt1mrqt5f7qh8uxs27cjm9t7v9e74a9vvdnq5jva4",
-  "morse_src_address": "8B257C7F4E884E49BAFC540D874F33F91436E1DC",
-  "morse_signature": "hLGhLRjP6jgP6wgOIaYFxIxT3z4jb4IBDKovMkX5AqUsOqdF+rEIO5aofOKnmYW9BkqL0v2DfUfE3nj25FNhBA=="
+  "morse_src_address": "1A0BB8623F40D2A9BEAC099A0BAFDCAE3C5D8288",
+  "morse_signature": "6kax1TKdvP1sIGrz8lW8jH/jQxv5OiPiFq0/BG5sEfLwVyVNVXihDhJNXd0cQtwDiMPB88PCkvWZOdY/WMY4Dg==",
+  "service_config": {
+    "service_id": "anvil"
+  }
 }
-Confirm MsgClaimMorseAccount: y/[n]:
+Confirm MsgClaimMorseApplication: y/[n]: 
 ```
 
 :::tip
