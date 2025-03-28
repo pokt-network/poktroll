@@ -55,7 +55,7 @@ func CollectMorseAccountsCmd() *cobra.Command {
 }
 
 // runCollectedMorseAccounts is run via the following command:
-// $ poktrolld migrate collect-morse-accounts
+// $ pocketd migrate collect-morse-accounts
 func runCollectMorseAccounts(_ *cobra.Command, args []string) error {
 	// DEV_NOTE: No need to check args length due to cobra.ExactArgs(2).
 	morseStateExportPath := args[0]

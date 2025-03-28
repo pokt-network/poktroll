@@ -5,7 +5,7 @@ sidebar_position: 5
 
 :::tip
 
-This documentation covers failed upgrade contingency for `poktroll` - a `cosmos-sdk` based chain.
+This documentation covers failed upgrade contingency for `pocket` - a `cosmos-sdk` based chain.
 
 While this can be helpful for other blockchain networks, it is not guaranteed to work for other chains.
 
@@ -71,10 +71,10 @@ In such a case, we need:
 
 - **All full nodes and validators**: skip the upgrade
 
-  - Add the `--unsafe-skip-upgrade=$upgradeHeightNumber` argument to `poktroll start` command like so:
+  - Add the `--unsafe-skip-upgrade=$upgradeHeightNumber` argument to `pocket start` command like so:
 
     ```bash
-    poktrolld start --unsafe-skip-upgrade=$upgradeHeightNumber # ... the rest of the arguments
+    pocketd start --unsafe-skip-upgrade=$upgradeHeightNumber # ... the rest of the arguments
     ```
 
 - **Protocol team**: Resolve the issue with an upgrade and schedule a new plan.
@@ -96,5 +96,5 @@ This should be treated as a consensus or non-determinism bug that is unrelated t
 
 - [ ] The [upgrade list](./upgrade_list.md) should reflect a failed upgrade and provide a range of heights that served by each version.
 - [ ] Systemd service should include`--unsafe-skip-upgrade=$upgradeHeightNumber` argument in its start command [here](https://github.com/pokt-network/poktroll/blob/main/tools/installer/full-node.sh).
-- [ ] The [Helm chart](https://github.com/pokt-network/helm-charts/blob/main/charts/poktrolld/templates/StatefulSet.yaml) should point to the latest version;consider exposing via a `values.yaml` file
+- [ ] The [Helm chart](https://github.com/pokt-network/helm-charts/blob/main/charts/pocketd/templates/StatefulSet.yaml) should point to the latest version;consider exposing via a `values.yaml` file
 - [ ] The [docker-compose](https://github.com/pokt-network/poktroll-docker-compose-example/tree/main/scripts) examples should point to the latest version

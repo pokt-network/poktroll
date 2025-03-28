@@ -89,9 +89,9 @@ sudo apt-get install docker-ce docker-ce-cli containerd.io docker-buildx-plugin 
 You can optionally create a new user and give it sudo permissions instead of using `root`.
 
 ```bash
-adduser poktroll
-usermod -aG docker,sudo poktroll
-su - poktroll
+adduser pocket
+usermod -aG docker,sudo pocket
+su - pocket
 ```
 
 ## Retrieve the source code
@@ -148,7 +148,7 @@ watch_height
 Supplier:
 
 ```bash
-poktrolld keys add supplier > /tmp/supplier
+pocketd keys add supplier > /tmp/supplier
 
 mnemonic=$(tail -n 1 /tmp/supplier | tr -d '\r'); sed -i "s|SUPPLIER_MNEMONIC=\".*\"|SUPPLIER_MNEMONIC=\"$mnemonic\"|" .env
 
@@ -158,21 +158,21 @@ address=$(awk '/address:/{print $3; exit}' /tmp/supplier | tr -d '\r'); sed -i "
 Application:
 
 ```bash
-poktrolld keys add application
+pocketd keys add application
 
 privKey=$(export_priv_key_hex application); sed -i "s|APPLICATION_PRIV_KEY_HEX=\".*\"|APPLICATION_PRIV_KEY_HEX=\"$privKey\"|" .env
 
-address=$(poktrolld keys show application -a | tr -d '\r'); sed -i "s|APPLICATION_ADDR=\".*\"|APPLICATION_ADDR=\"$address\"|g" .env
+address=$(pocketd keys show application -a | tr -d '\r'); sed -i "s|APPLICATION_ADDR=\".*\"|APPLICATION_ADDR=\"$address\"|g" .env
 ```
 
 Gateway:
 
 ```bash
-poktrolld keys add gateway
+pocketd keys add gateway
 
 privKey=$(export_priv_key_hex gateway); sed -i "s|GATEWAY_PRIV_KEY_HEX=\".*\"|GATEWAY_PRIV_KEY_HEX=\"$privKey\"|" .env
 
-address=$(poktrolld keys show gateway -a | tr -d '\r'); sed -i "s|GATEWAY_ADDR=\".*\"|GATEWAY_ADDR=\"$address\"|g" .env
+address=$(pocketd keys show gateway -a | tr -d '\r'); sed -i "s|GATEWAY_ADDR=\".*\"|GATEWAY_ADDR=\"$address\"|g" .env
 ```
 
 FINALLY, update your environment:
@@ -209,10 +209,10 @@ Stake the supplier:
 ```bash
 sed -i -e s/YOUR_NODE_IP_OR_HOST/$NODE_HOSTNAME/g ./stake_configs/supplier_stake_config_example.yaml
 sed -i -e s/YOUR_OWNER_ADDRESS/$SUPPLIER_ADDR/g ./stake_configs/supplier_stake_config_example.yaml
-poktrolld tx supplier stake-supplier --config=/poktroll/stake_configs/supplier_stake_config_example.yaml --from=supplier $TX_PARAM_FLAGS_BETA
+pocketd tx supplier stake-supplier --config=/pocket/stake_configs/supplier_stake_config_example.yaml --from=supplier $TX_PARAM_FLAGS_BETA
 
 # OPTIONALLY check the supplier's status
-poktrolld query supplier show-supplier $SUPPLIER_ADDR
+pocketd query supplier show-supplier $SUPPLIER_ADDR
 
 # Start the relay miner (please update the grove app ID if you can)
 sudo sed -i -e s/YOUR_NODE_IP_OR_HOST/$NODE_HOSTNAME/g relayminer/config/relayminer_config.yaml
@@ -232,28 +232,28 @@ docker logs -f --tail 100 relayminer
 Stake the application:
 
 ```bash
-poktrolld tx application stake-application --config=/poktroll/stake_configs/application_stake_config_example.yaml --from=application $TX_PARAM_FLAGS_BETA
+pocketd tx application stake-application --config=/pocket/stake_configs/application_stake_config_example.yaml --from=application $TX_PARAM_FLAGS_BETA
 
 # OPTIONALLY check the application's status
-poktrolld query application show-application $APPLICATION_ADDR
+pocketd query application show-application $APPLICATION_ADDR
 ```
 
 Stake the gateway:
 
 ```bash
-poktrolld tx gateway stake-gateway --config=/poktroll/stake_configs/gateway_stake_config_example.yaml --from=gateway $TX_PARAM_FLAGS_BETA
+pocketd tx gateway stake-gateway --config=/pocket/stake_configs/gateway_stake_config_example.yaml --from=gateway $TX_PARAM_FLAGS_BETA
 
 # OPTIONALLY check the application's status
-poktrolld query gateway show-gateway $GATEWAY_ADDR
+pocketd query gateway show-gateway $GATEWAY_ADDR
 ```
 
 Delegate the application to the gateway:
 
 ```bash
-poktrolld tx application delegate-to-gateway $GATEWAY_ADDR --from=application $TX_PARAM_FLAGS_BETA
+pocketd tx application delegate-to-gateway $GATEWAY_ADDR --from=application $TX_PARAM_FLAGS_BETA
 
 # OPTIONALLY check the application's delegation status
-poktrolld query application show-application $APPLICATION_ADDR
+pocketd query application show-application $APPLICATION_ADDR
 ```
 
 ## Deploy a PATH Gateway
@@ -311,10 +311,10 @@ docker compose down
 docker rm $(docker ps -aq) -f
 
 # Remove existing data
-rm -rf poktrolld-data/config/addrbook.json poktrolld-data/config/genesis.json poktrolld-data/config/genesis.seeds poktrolld-data/data/ poktrolld-data/cosmovisor/ poktrolld-data/config/node_key.json poktrolld-data/config/priv_validator_key.json
+rm -rf pocketd-data/config/addrbook.json pocketd-data/config/genesis.json pocketd-data/config/genesis.seeds pocketd-data/data/ pocketd-data/cosmovisor/ pocketd-data/config/node_key.json pocketd-data/config/priv_validator_key.json
 ```
 
-Update `POKTROLLD_IMAGE_TAG` in `.env` based on the releases [here](https://github.com/pokt-network/poktroll/releases).
+Update `POCKETD_IMAGE_TAG` in `.env` based on the releases [here](https://github.com/pokt-network/poktroll/releases).
 
 ```bash
 # Start the full
@@ -338,17 +338,17 @@ echo $SUPPLIER_ADDR
 
 ```bash
 # Import the faucet using the mnemonic
-poktrolld keys add --recover -i faucet
-poktrolld tx bank multi-send faucet $APPLICATION_ADDR $GATEWAY_ADDR $SUPPLIER_ADDR 100000upokt $TX_PARAM_FLAGS_BETA
+pocketd keys add --recover -i faucet
+pocketd tx bank multi-send faucet $APPLICATION_ADDR $GATEWAY_ADDR $SUPPLIER_ADDR 100000upokt $TX_PARAM_FLAGS_BETA
 ```
 
 ### Start the RelayMiner
 
 ```bash
 # Stake
-poktrolld tx supplier stake-supplier --config=/poktroll/stake_configs/supplier_stake_config_example.yaml --from=supplier $TX_PARAM_FLAGS_BETA
+pocketd tx supplier stake-supplier --config=/pocket/stake_configs/supplier_stake_config_example.yaml --from=supplier $TX_PARAM_FLAGS_BETA
 # Check
-poktrolld query supplier show-supplier $SUPPLIER_ADDR
+pocketd query supplier show-supplier $SUPPLIER_ADDR
 # Start
 docker compose up -d relayminer
 # View
@@ -359,9 +359,9 @@ docker logs -f --tail 100 relayminer
 
 ```bash
 # Stake
-poktrolld tx application stake-application --config=/poktroll/stake_configs/application_stake_config_example.yaml --from=application $TX_PARAM_FLAGS_BETA
+pocketd tx application stake-application --config=/pocket/stake_configs/application_stake_config_example.yaml --from=application $TX_PARAM_FLAGS_BETA
 # Check
-poktrolld query application show-application $APPLICATION_ADDR
+pocketd query application show-application $APPLICATION_ADDR
 # Start
 docker compose up -d gateway
 # View

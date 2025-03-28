@@ -1,12 +1,14 @@
+chainId: "pocket"
+grpcInsecure: true
 config:
-  smt_store_path: /root/.poktroll/smt
+  smt_store_path: /root/.pocket/smt
   metrics:
     enabled: true
     addr: :9090
   pocket_node:
-    query_node_rpc_url: tcp://validator-poktroll-validator:26657
-    query_node_grpc_url: tcp://validator-poktroll-validator:9090
-    tx_node_rpc_url: tcp://validator-poktroll-validator:26657
+    query_node_rpc_url: tcp://validator-pocket-validator:26657
+    query_node_grpc_url: tcp://validator-pocket-validator:9090
+    tx_node_rpc_url: tcp://validator-pocket-validator:26657
   suppliers: []
   pprof:
     enabled: true
