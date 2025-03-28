@@ -2,6 +2,7 @@ package tx_test
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"sync"
 	"testing"
@@ -14,10 +15,13 @@ import (
 	rpctypes "github.com/cometbft/cometbft/rpc/jsonrpc/types"
 	cosmoskeyring "github.com/cosmos/cosmos-sdk/crypto/keyring"
 	"github.com/cosmos/cosmos-sdk/types"
+	cosmostypes "github.com/cosmos/cosmos-sdk/types"
+	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/pokt-network/smt"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 
+	"github.com/pokt-network/poktroll/app/volatile"
 	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/client/keyring"
 	"github.com/pokt-network/poktroll/pkg/client/tx"
@@ -446,7 +450,153 @@ func TestTxClient_SignAndBroadcast_Timeout(t *testing.T) {
 	}
 }
 
+func TestTxClient_SignAndBroadcast_Retry(t *testing.T) {
+	var (
+		// expectedTx is the expected transactions bytes that will be signed and broadcast
+		// by the transaction client. It is computed and assigned in the
+		// testtx.NewOneTimeTxTxContext helper function. The same reference needs
+		// to be used across the expectations that are set on the transactions context mock.
+		expectedTx cometbytes.HexBytes
+		// txResultsBzPublishChMu is a mutex that protects txResultsBzPublishCh from concurrent access
+		// as it is expected to be updated in a mock method but is also sent on in the test.
+		txResultsBzPublishChMu = new(sync.Mutex)
+		// txResultsBzPublishCh is the channel that the mock events query client
+		// will use to publish the transactions event bytes. It is not used in
+		// this test but is required to use the NewOneTimeTxEventsQueryClient
+		// helper.
+		txResultsBzPublishCh chan<- either.Bytes
+		// blocksPublishCh is the channel that the mock block client will use
+		// to publish the latest block. It is not used in this test but is
+		// required to use the NewOneTimeCommittedBlocksSequenceBlockClient
+		// helper.
+		blocksPublishCh chan client.Block
+		ctx             = context.Background()
+	)
+
+	keyring, signingKey := testkeyring.NewTestKeyringWithKey(t, testSigningKeyName)
+
+	// Construct a new mock events query client. Since we expect the
+	// NewTxClient call to fail, we don't need to set any expectations
+	// on this mock.
+	eventsQueryClient := testeventsquery.NewOneTimeTxEventsQueryClient(
+		ctx, t, signingKey, txResultsBzPublishChMu, &txResultsBzPublishCh,
+	)
+
+	// Instruct the tx client to return an error when submitting a transaction.
+	callStatus := &callStatus{
+		errorToReturn: fmt.Errorf("test error"),
+	}
+	txCtxMock := newTxContext(t, ctx,
+		testSigningKeyName, keyring, &expectedTx, callStatus,
+	)
+
+	// Construct a new mock block client because it is a required dependency.
+	// Since we're not exercising transactions timeouts in this test, we don't need to
+	// set any particular expectations on it, nor do we care about the contents
+	// of the latest block.
+	blockClientMock := testblock.NewOneTimeCommittedBlocksSequenceBlockClient(
+		t, blocksPublishCh,
+	)
+
+	// Construct a new depinject config with the mocks we created above.
+	txClientDeps := depinject.Supply(
+		eventsQueryClient,
+		txCtxMock,
+		blockClientMock,
+	)
+
+	// Construct the transaction client.
+	txClient, err := tx.NewTxClient(
+		ctx, txClientDeps, tx.WithSigningKeyName(testSigningKeyName),
+	)
+	require.NoError(t, err)
+
+	// Construct an arbitrary message to sign, encode, and broadcast.
+	signingAddr, err := signingKey.GetAddress()
+	require.NoError(t, err)
+
+	appStake := types.NewCoin(volatile.DenomuPOKT, math.NewInt(1000000))
+	appStakeMsg := &apptypes.MsgStakeApplication{
+		// Providing address to avoid panic from #GetSigners().
+		Address:  signingAddr.String(),
+		Stake:    &appStake,
+		Services: client.NewTestApplicationServiceConfig(testServiceIdPrefix, 1),
+	}
+
+	// Sing and broadcast the message.
+	go txClient.SignAndBroadcast(ctx, appStakeMsg)
+
+	// Wait for 5 seconds to allow the retry strategy to perform 4 failing retries.
+	time.Sleep(5 * time.Second)
+
+	// All attempts should have failed.
+	require.Equal(t, 4, callStatus.errorCount)
+	require.Equal(t, 0, callStatus.successCount)
+
+	// Instruct the tx client to return a successful response when submitting the transaction.
+	callStatus.errorToReturn = nil
+	// Wait for 5 seconds to allow the retry strategy to perform a last retry after
+	// 4 seconds of waiting time.
+	time.Sleep(5 * time.Second)
+
+	// The error count should remain the same.
+	require.Equal(t, 4, callStatus.errorCount)
+	// There should be one successful attempt.
+	require.Equal(t, 1, callStatus.successCount)
+
+	// Instruct the tx client to return a non-retryable error when submitting the transaction.
+	// This will cause the transaction client to stop retrying and return the error.
+	callStatus.errorToReturn = sdkerrors.ErrTxTimeoutHeight.Wrap(fmt.Errorf("test error").Error())
+
+	// Sing and broadcast the message.
+	go txClient.SignAndBroadcast(ctx, appStakeMsg)
+
+	// Wait the same amount of time and assert that only one failing attempt was made.
+	time.Sleep(5 * time.Second)
+
+	// There should be only one non-retryable error.
+	require.Equal(t, 5, callStatus.errorCount)
+	require.Equal(t, 1, callStatus.successCount)
+}
+
 // TODO_TECHDEBT: add coverage for sending multiple messages simultaneously
 func TestTxClient_SignAndBroadcast_MultipleMsgs(t *testing.T) {
 	t.SkipNow()
+}
+
+func newTxContext(
+	t *testing.T,
+	ctx context.Context,
+	signingKeyName string,
+	keyring cosmoskeyring.Keyring,
+	expectedTx *cometbytes.HexBytes,
+	callStatus *callStatus,
+) *mockclient.MockTxContext {
+	t.Helper()
+
+	// Construct a new mock transactions context.
+	txCtxMock := testtx.NewBaseTxContext(t, signingKeyName, keyring, expectedTx)
+
+	txCtxMock.EXPECT().GetSimulatedTxGas(gomock.Any(), gomock.Any(), gomock.Any()).
+		Return(uint64(1), nil).
+		AnyTimes()
+
+	txCtxMock.EXPECT().BroadcastTx(gomock.Any()).DoAndReturn(
+		func(txBytes []byte) (*cosmostypes.TxResponse, error) {
+			if callStatus.errorToReturn != nil {
+				callStatus.errorCount++
+				return nil, callStatus.errorToReturn
+			}
+			callStatus.successCount++
+			return &cosmostypes.TxResponse{}, nil
+		},
+	).AnyTimes()
+
+	return txCtxMock
+}
+
+type callStatus struct {
+	successCount  int
+	errorCount    int
+	errorToReturn error
 }

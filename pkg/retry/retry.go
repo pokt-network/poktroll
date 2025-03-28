@@ -8,9 +8,9 @@ import (
 	"github.com/pokt-network/poktroll/pkg/polylog"
 )
 
-const retryStrategyCtxKey = "retry_strategy"
+const RetryStrategyCtxKey = "retry_strategy"
 
-var WithDefaultExponentialDelay = WithExponentialBackoffFn(25, 500, 30000)
+var DefaultExponentialDelay = WithExponentialBackoffFn(25, 500, 30000)
 
 type RetryFunc func() chan error
 type RetryStrategyFunc func(int) bool
@@ -100,13 +100,15 @@ func Call[T any](
 		err    error
 	)
 	if retryStrategy == nil {
-		retryStrategy = []RetryStrategyFunc{WithDefaultExponentialDelay}
+		retryStrategy = []RetryStrategyFunc{DefaultExponentialDelay}
 	}
 
 	for retryCount := 0; ; retryCount++ {
 		result, err = work()
-		if err == nil {
-			return result, nil
+
+		// Retrun the result if no error occurred or if the error is non-retryable.
+		if err == nil || ErrNonRetryable.Is(err) {
+			return result, err
 		}
 
 		if !retryStrategy[0](retryCount) {
@@ -120,9 +122,9 @@ func Call[T any](
 // This function is useful for setting a custom retry strategy in the context
 // and retrieving it later in the code execution.
 func GetStrategy(ctx context.Context) RetryStrategyFunc {
-	strategy, ok := ctx.Value(retryStrategyCtxKey).(RetryStrategyFunc)
+	strategy, ok := ctx.Value(RetryStrategyCtxKey).(RetryStrategyFunc)
 	if !ok {
-		return WithDefaultExponentialDelay
+		return DefaultExponentialDelay
 	}
 	return strategy
 }

@@ -14,6 +14,7 @@ import (
 	rpctypes "github.com/cometbft/cometbft/rpc/jsonrpc/types"
 	comettypes "github.com/cometbft/cometbft/types"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
+	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"go.uber.org/multierr"
 
 	"github.com/pokt-network/poktroll/app/volatile"
@@ -292,7 +293,13 @@ func (txnClient *txClient) SignAndBroadcast(
 	}
 
 	txResponse, err := retry.Call(func() (*cosmostypes.TxResponse, error) {
-		return txnClient.txCtx.BroadcastTx(txBz)
+		response, txErr := txnClient.txCtx.BroadcastTx(txBz)
+		// Wrap timeout height error to make it non-retryable.
+		if txErr != nil && sdkerrors.ErrTxTimeoutHeight.Is(txErr) {
+			txErr = retry.ErrNonRetryable.Wrap(txErr.Error())
+		}
+
+		return response, txErr
 	}, retry.GetStrategy(ctx))
 	if err != nil {
 		return either.SyncErr(err)
