@@ -29,6 +29,28 @@ func (k msgServer) ClaimMorseSupplier(
 	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
 	logger := k.Logger().With("method", "ClaimMorseSupplier")
 
+	// Ensure that gas fees are NOT waived if the claim is invalid.
+	// This restores the disincentive for Shannon account holders to spam invalid
+	// Morse claim txs BUT ONLY if the spanner is using a funded account.
+	// In cases where the tx contains ONLY one or more Morse claim messages, the
+	// validators which consider the tx WILL do slightly more work than the typical
+	// message, which would've been rejected prior to the message handler during CheckTx.
+	var (
+		morseClaimableAccount              migrationtypes.MorseClaimableAccount
+		isFound, isValid, isAlreadyClaimed bool
+	)
+	defer func() {
+		if !isFound || !isValid || isAlreadyClaimed {
+			// Attempt to charge the waived gas fee for invalid claims.
+			sdkCtx.GasMeter()
+			// DEV_NOTE: Assuming that the tx containing this message was signed
+			// by a non-multisig externally owned account (EOA); i.e. secp256k1,
+			// conventionally.
+			gas := k.accountKeeper.GetParams(ctx).SigVerifyCostSecp256k1
+			sdkCtx.GasMeter().ConsumeGas(gas, "ante verify: secp256k1")
+		}
+	}()
+
 	if err := msg.ValidateBasic(); err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
@@ -44,7 +66,7 @@ func (k msgServer) ClaimMorseSupplier(
 	}
 
 	// Ensure that a MorseClaimableAccount exists for the given morseSrcAddress.
-	morseClaimableAccount, isFound := k.GetMorseClaimableAccount(
+	morseClaimableAccount, isFound = k.GetMorseClaimableAccount(
 		sdkCtx,
 		msg.MorseSrcAddress,
 	)
@@ -60,6 +82,7 @@ func (k msgServer) ClaimMorseSupplier(
 
 	// Ensure that the given MorseClaimableAccount has not already been claimed.
 	if morseClaimableAccount.IsClaimed() {
+		isAlreadyClaimed = true
 		return nil, status.Error(
 			codes.FailedPrecondition,
 			migrationtypes.ErrMorseSupplierClaim.Wrapf(
