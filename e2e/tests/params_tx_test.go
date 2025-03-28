@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/cometbft/cometbft/libs/cli"
+	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/codec/types"
 	"github.com/cosmos/cosmos-sdk/types/tx"
 	"github.com/stretchr/testify/require"
@@ -35,6 +36,8 @@ func (s *suite) sendAuthzExecTx(signingKeyName, txJSONFilePath string) {
 		keyRingFlag,
 		fmt.Sprintf("--%s=json", cli.OutputFlag),
 		"--yes",
+		// TODO_IN_THIS_COMMIT: revert!
+		fmt.Sprintf("--%s=%s", flags.FlagChainID, "poktroll"),
 	}
 	_, err := s.pocketd.RunCommandOnHost("", argsAndFlags...)
 	require.NoError(s, err)
