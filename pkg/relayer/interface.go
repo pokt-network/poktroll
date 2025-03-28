@@ -144,9 +144,9 @@ type SessionTree interface {
 	// This function should be called several blocks after a session has been claimed and needs to be proven.
 	ProveClosest(path []byte) (proof *smt.SparseCompactMerkleClosestProof, err error)
 
-	// GetSMST returns the the current root hash of the SMST.
+	// GetSMSTRoot returns the the current root hash of the SMST.
 	// It differs from GetClaimRoot in that it always returns the latest root hash
-	// of the SMST, while GetClaimRoot returns the root hash when the session tree
+	// of the SMST, while GetClaimRoot returns the root hash after the session tree
 	// has been flushed to create the claim.
 	GetSMSTRoot() smt.MerkleSumRoot
 
@@ -185,6 +185,7 @@ type SessionTree interface {
 	GetTrieSpec() smt.TrieSpec
 
 	// Stop stops the session tree and closes the KVStore.
+	// Calling Stop does not calculate the root hash of the SMST.
 	Stop() error
 }
 

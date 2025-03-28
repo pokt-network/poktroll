@@ -154,7 +154,7 @@ func (sClient *supplierClient) CreateClaims(
 	return <-errCh
 }
 
-// Address returns the bech32 string representation of the supplier operator address.
+// OperatorAddress returns the bech32 string representation of the supplier operator address.
 func (sClient *supplierClient) OperatorAddress() string {
 	return sClient.signingKeyAddr
 }

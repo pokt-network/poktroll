@@ -293,13 +293,7 @@ func (st *sessionTree) Flush() (SMSTRoot []byte, err error) {
 
 	st.claimedRoot = st.sessionSMT.Root()
 
-	// Commit the tree to disk
-	if err := st.sessionSMT.Commit(); err != nil {
-		return nil, err
-	}
-
-	// Stop the KVStore
-	if err := st.treeStore.Stop(); err != nil {
+	if err := st.Stop(); err != nil {
 		return nil, err
 	}
 
@@ -371,6 +365,7 @@ func (st *sessionTree) GetSupplierOperatorAddress() string {
 }
 
 // Stop stops the KVStore and frees up the resources used by the session tree.
+// Calling Stop does not calculate the root hash of the SMST.
 func (st *sessionTree) Stop() error {
 	if st.treeStore == nil {
 		return nil

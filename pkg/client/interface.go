@@ -331,6 +331,9 @@ type ProofParams interface {
 	GetProofSubmissionFee() *cosmostypes.Coin
 }
 
+// Claim is a go interface type which corresponds to the pocket.proof.Claim protobuf
+// message. Since the generated go types don't include interface types, this
+// is necessary to prevent dependency cycles.
 type Claim interface {
 	GetSupplierOperatorAddress() string
 	GetSessionHeader() *sessiontypes.SessionHeader

@@ -10,10 +10,12 @@ import (
 	"cosmossdk.io/depinject"
 	coretypes "github.com/cometbft/cometbft/rpc/core/types"
 	cmttypes "github.com/cometbft/cometbft/types"
+	"github.com/gogo/status"
 	"github.com/pokt-network/smt"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
+	"google.golang.org/grpc/codes"
 
 	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/client/supplier"
@@ -539,7 +541,7 @@ func (s *SessionPersistenceTestSuite) setupMockProofQueryClient(ctrl *gomock.Con
 		DoAndReturn(
 			func(_ any, _ any, _ any) (*prooftypes.Claim, error) {
 				if s.claimToReturn == nil {
-					return nil, fmt.Errorf("claim not found")
+					return nil, status.Error(codes.NotFound, "claim not found")
 				}
 				return s.claimToReturn, nil
 			},
