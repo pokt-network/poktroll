@@ -1,6 +1,6 @@
 ---
 sidebar_position: 1
-title: PoktrolPocketl
+title: Pocket
 id: home-doc
 slug: /
 ---
