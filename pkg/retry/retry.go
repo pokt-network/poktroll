@@ -5,6 +5,8 @@ import (
 	"math"
 	"time"
 
+	"google.golang.org/grpc/status"
+
 	"github.com/pokt-network/poktroll/pkg/polylog"
 )
 
@@ -106,8 +108,18 @@ func Call[T any](
 	for retryCount := 0; ; retryCount++ {
 		result, err = work()
 
-		// Retrun the result if no error occurred or if the error is non-retryable.
-		if err == nil || ErrNonRetryable.Is(err) {
+		// Stop retrying and return the result if no error occurred
+		if err == nil {
+			return result, err
+		}
+
+		// Stop retrying and return the result if the error is non-retryable
+		if ErrNonRetryable.Is(err) {
+			return result, err
+		}
+
+		// Stop retrying and return if the error is a gRPC error
+		if _, isGRPCError := status.FromError(err); isGRPCError {
 			return result, err
 		}
 

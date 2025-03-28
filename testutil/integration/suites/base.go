@@ -177,7 +177,7 @@ func newInitChainerCollectModuleNamesFn(suite *BaseIntegrationSuite) integration
 		}
 
 		modType := reflect.TypeOf(mod)
-		if strings.Contains(modType.PkgPath(), "pocket") {
+		if strings.Contains(modType.PkgPath(), "poktroll") {
 			suite.pocketModuleNames = append(suite.pocketModuleNames, modName.Name())
 			return
 		}
