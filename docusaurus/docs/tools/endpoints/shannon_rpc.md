@@ -27,7 +27,7 @@ We provide `gRPC`, `JSON-RPC` and `REST` endpoints, which are available here:
 
 - **RPC**: `https://shannon-grove-rpc.mainnet.poktroll.com`
 - **gRPC**: `https://shannon-grove-grpc.mainnet.poktroll.com`
-- **REST**: `https://shannon-grove-rpc.mainnet.poktroll.com`
+- **REST**: `https://shannon-grove-api.mainnet.poktroll.com`
 
 ### MainNet JSON-RPC Example
 
