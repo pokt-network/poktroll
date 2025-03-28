@@ -46,7 +46,7 @@ test_e2e_params: test_e2e_env ## Run only the E2E suite that exercises parameter
 
 .PHONY: test_e2e_oneshot
 test_e2e_oneshot: test_e2e_env ## Run only the E2E suite that exercises the oneshot module.
-	go test -v ./e2e/tests/... -tags=e2e,oneshot --run=OneshotTaggedFeatures
+	go test -v -count=1 ./e2e/tests/... -tags=e2e,oneshot --run=OneshotTaggedFeatures
 
 .PHONY: test_load_relays_stress_custom
 test_load_relays_stress_custom: ## Run the stress test for E2E relays using custom manifest. "loadtest_manifest_example.yaml" manifest is used by default. Set `LOAD_TEST_CUSTOM_MANIFEST` environment variable to use the different manifest.
