@@ -223,8 +223,7 @@ func (yamlStakeConfig *YAMLStakeConfig) ParseAndValidateStakeAmount() (*sdk.Coin
 func (yamlStakeConfig *YAMLStakeConfig) ValidateAndNormalizeDefaultRevShare() (map[string]uint64, error) {
 	defaultRevSharePercent := map[string]uint64{}
 	if len(yamlStakeConfig.DefaultRevSharePercent) != 0 {
-		defaultRevSharePercent = yamlStakeConfig.DefaultRevSharePercent
-		return defaultRevSharePercent, nil
+		return yamlStakeConfig.DefaultRevSharePercent, nil
 	}
 
 	// Ensure that if no default rev share is provided, the owner address is set
