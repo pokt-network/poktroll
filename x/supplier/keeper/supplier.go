@@ -66,6 +66,24 @@ func (k Keeper) GetAllSuppliers(ctx context.Context) (suppliers []sharedtypes.Su
 	return
 }
 
+// GetAllSuppliers returns all supplier
+// TODO_NEXT_RELEASE: Remove this and other deprecated methods prior to v0.0.15 release
+func (k Keeper) GetAllSuppliersDeprecated(ctx context.Context) (suppliers []sharedtypes.SupplierDeprecated) {
+	storeAdapter := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
+	store := prefix.NewStore(storeAdapter, types.KeyPrefix(types.SupplierKeyOperatorPrefix))
+	iterator := storetypes.KVStorePrefixIterator(store, []byte{})
+
+	defer iterator.Close()
+
+	for ; iterator.Valid(); iterator.Next() {
+		var supplier sharedtypes.SupplierDeprecated
+		k.cdc.MustUnmarshal(iterator.Value(), &supplier)
+		suppliers = append(suppliers, supplier)
+	}
+
+	return
+}
+
 // initializeNilSupplierFields initializes any nil fields in the supplier object
 // to their default values.
 // Adding `(gogoproto.nullable)=false` to the repeated proto fields
