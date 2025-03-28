@@ -111,6 +111,11 @@ ignite chain init --skip-proto --check-dependencies --clear-cache --home=$MAINNE
 
 ## Generation `authz` authorizations
 
+TODO:
+- Update: ignite chain init --skip-proto --check-dependencies --clear-cache --config=config_mainnet.yml --home=$MAINNET_DIR
+- Skip the export
+- tar -czvf mainnet_backup.tar.gz $MAINNET_DIR
+
 ```bash
 export PNF_ADDRESS=pokt_PNF_ADDRESS
 export GROVE_ADDRESS=pokt_GROVE_ADDRESS
@@ -127,7 +132,7 @@ jq --argjson authz "$(cat authorizations/grove_authorizations.json)" \
    tmp.json > tmp2.json
 
 mv tmp2.json "$MAINNET_DIR/config/genesis.json"
-rm tmp.json
+`rm tmp.json`
 ```
 
 ### Update DAO Reward Address
