@@ -21,7 +21,11 @@ collect_morse_accounts: check_go_version ## Run the migration module collect-mor
 	poktrolld tx migration collect-morse-accounts "$(MORSE_STATE_EXPORT_PATH)" "$(MORSE_ACCOUNT_STATE_PATH)"
 
 .PHONY: import_morse_accounts
-import_morse_accounts: check_go_version check_from_key_name check_shannon_grpc_addr ## Run the migration module import-morse-accounts subcommand.
+import_morse_accounts: check_go_version check_from_key_name ## Run the migration module import-morse-accounts subcommand.
+	if [[ -z "$$SHANNON_GRPC_ADDR" ]]; then \
+		echo "WARNING: SHANNON_GRPC_ADDR environment variable is not set. Defaulting to $(DEFAULT_SHANNON_GRPC_ADDR)"; \
+		export SHANNON_GRPC_ADDR=$(DEFAULT_SHANNON_GRPC_ADDR); \
+	fi; \
 	poktrolld tx migration import-morse-accounts "$(MORSE_ACCOUNT_STATE_PATH)" --from=$(FROM_KEY_NAME) --grpc-addr=$(SHANNON_GRPC_ADDR)
 
 #################################################
@@ -60,12 +64,4 @@ check_morse_private_key_path: ## Checks that the MORSE_PRIVATE_KEY_PATH environm
 	if [[ -z "$(MORSE_PRIVATE_KEY_PATH)" ]]; then \
 		echo "ERROR: set MORSE_PRIVATE_KEY_PATH environment variable to the path of the exported private key for the Morse account being claimed"; \
 		exit 1; \
-	fi
-
-# TODO_IN_THIS_COMMIT: fix - this doesn't set the default as expected.
-.PHONY: check_shannon_grpc_addr
-check_shannon_grpc_addr: ## Checks that the SHANNON_GRPC_ADDR environment variable is set and logs a warning if not.
-	if [[ -z "$(SHANNON_GRPC_ADDR)" ]]; then \
-		echo "WARNING: SHANNON_GRPC_ADDR environment variable is not set. Defaulting to $(DEFAULT_SHANNON_GRPC_ADDR)"; \
-		SHANNON_GRPC_ADDR=DEFAULT_SHANNON_GRPC_ADDR; \
 	fi
