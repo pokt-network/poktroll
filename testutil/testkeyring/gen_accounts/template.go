@@ -15,7 +15,7 @@ var (
 
 package testkeyring
 
-import "github.com/pokt-network/poktroll/cmd/poktrolld/cmd"
+import "github.com/pokt-network/poktroll/cmd/pocketd/cmd"
 
 var preGeneratedAccounts *PreGeneratedAccountIterator
 

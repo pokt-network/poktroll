@@ -14,7 +14,7 @@ import (
 )
 
 func Test_ParseRelayMinerConfig_ReferenceExample(t *testing.T) {
-	configContent, err := os.ReadFile("../../../localnet/poktrolld/config/relayminer_config_full_example.yaml")
+	configContent, err := os.ReadFile("../../../localnet/pocketd/config/relayminer_config_full_example.yaml")
 	require.NoError(t, err)
 
 	_, err = config.ParseRelayMinerConfigs(configContent)

@@ -39,12 +39,12 @@ streamline development and reduce friction for any new potential contributor.
 
 ## Pre-Requisites
 
-1. Make sure to [install the `poktrolld` CLI](../../tools/user_guide/poktrolld_cli.md).
+1. Make sure to [install the `pocketd` CLI](../../tools/user_guide/pocketd_cli.md).
 2. Make sure you know how to [create and fund a new account](../../tools/user_guide/create-new-wallet.md).
 
 :::warning
 
-You can append `--keyring-backend test` to all the `poktrolld` commands throughout
+You can append `--keyring-backend test` to all the `pocketd` commands throughout
 this guide to avoid entering the password each time.
 
 This is not recommended but provided for convenience for NON PRODUCTION USE ONLY.
@@ -60,13 +60,13 @@ This is not recommended but provided for convenience for NON PRODUCTION USE ONLY
 Create a new key pair for the delegating `Application`:
 
 ```bash
-poktrolld keys add application
+pocketd keys add application
 ```
 
 Create a new key pair for the `Gateway`:
 
 ```bash
-poktrolld keys add gateway
+pocketd keys add gateway
 ```
 
 ### Prepare your environment
@@ -80,14 +80,14 @@ We recommend you put these in your `~/.bashrc` file:
 export POCKET_NODE="https://shannon-testnet-grove-rpc.beta.poktroll.com"
 export NODE_FLAGS="--node=$POCKET_NODE"
 export TX_PARAM_FLAGS="--gas=auto --gas-prices=1upokt --gas-adjustment=1.5 --chain-id=pocket-beta --yes"
-export GATEWAY_ADDR=$(poktrolld keys show gateway -a)
-export APP_ADDR=$(poktrolld keys show application -a)
+export GATEWAY_ADDR=$(pocketd keys show gateway -a)
+export APP_ADDR=$(pocketd keys show application -a)
 ```
 
 :::tip
 
 As an alternative to appending directly to `~/.bashrc`, you can put the above
-in a special `~/.poktrollrc` and add `source ~/.poktrollrc` to
+in a special `~/.pocketrc` and add `source ~/.pocketrc` to
 your `~/.profile` (or `~/.bashrc`) file for a cleaner organization.
 
 :::
@@ -107,8 +107,8 @@ and `Application` accounts respectively.
 Afterwards, you can query their balances using the following command:
 
 ```bash
-poktrolld query bank balances $GATEWAY_ADDR $NODE_FLAGS
-poktrolld query bank balances $APP_ADDR $NODE_FLAGS
+pocketd query bank balances $GATEWAY_ADDR $NODE_FLAGS
+pocketd query bank balances $APP_ADDR $NODE_FLAGS
 ```
 
 :::tip
@@ -132,13 +132,13 @@ stake_amount: 1000000upokt
 And run the following command to stake the `Gateway`:
 
 ```bash
-poktrolld tx gateway stake-gateway --config=/tmp/stake_gateway_config.yaml --from=$GATEWAY_ADDR $TX_PARAM_FLAGS $NODE_FLAGS
+pocketd tx gateway stake-gateway --config=/tmp/stake_gateway_config.yaml --from=$GATEWAY_ADDR $TX_PARAM_FLAGS $NODE_FLAGS
 ```
 
 After about a minute, you can check the `Gateway`'s status like so:
 
 ```bash
-poktrolld query gateway show-gateway $GATEWAY_ADDR $NODE_FLAGS
+pocketd query gateway show-gateway $GATEWAY_ADDR $NODE_FLAGS
 ```
 
 ### Stake the delegating `Application`
@@ -156,25 +156,25 @@ service_ids:
 And run the following command to stake the `Application`:
 
 ```bash
-poktrolld tx application stake-application --config=/tmp/stake_app_config.yaml --from=$APP_ADDR $TX_PARAM_FLAGS $NODE_FLAGS
+pocketd tx application stake-application --config=/tmp/stake_app_config.yaml --from=$APP_ADDR $TX_PARAM_FLAGS $NODE_FLAGS
 ```
 
 After about a minute, you can check the `Application`'s status like so:
 
 ```bash
-poktrolld query application show-application $APP_ADDR $NODE_FLAGS
+pocketd query application show-application $APP_ADDR $NODE_FLAGS
 ```
 
 ### Delegate the `Application` to the `Gateway`
 
 ```bash
-poktrolld tx application delegate-to-gateway $GATEWAY_ADDR --from=$APP_ADDR $TX_PARAM_FLAGS $NODE_FLAGS
+pocketd tx application delegate-to-gateway $GATEWAY_ADDR --from=$APP_ADDR $TX_PARAM_FLAGS $NODE_FLAGS
 ```
 
 After about a minute, you can check the `Application`'s status like so:
 
 ```bash
-poktrolld query application show-application $APP_ADDR $NODE_FLAGS
+pocketd query application show-application $APP_ADDR $NODE_FLAGS
 ```
 
 ## `PATH` Setup

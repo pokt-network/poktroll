@@ -66,10 +66,10 @@ func (s *baseIntegrationSuiteTestSuite) TestSetApp() {
 	require.Same(s.T(), app, s.app)
 }
 
-func (s *baseIntegrationSuiteTestSuite) TestGetPoktrollModuleNames() {
-	moduleNames := s.GetPoktrollModuleNames()
+func (s *baseIntegrationSuiteTestSuite) TestGetPocketModuleNames() {
+	moduleNames := s.GetPocketModuleNames()
 	require.Greater(s.T(), len(moduleNames), 0, "expected non-empty module names")
-	require.ElementsMatch(s.T(), s.poktrollModuleNames, moduleNames)
+	require.ElementsMatch(s.T(), s.pocketModuleNames, moduleNames)
 }
 
 func (s *baseIntegrationSuiteTestSuite) TestGetCosmosModuleNames() {
@@ -133,7 +133,7 @@ func (s *baseIntegrationSuiteTestSuite) TestFilterLatestEventsWithNewEventTypeMa
 	require.Equal(s.T(), 0, len(s.SdkCtx().EventManager().Events()))
 
 	// Emit the expected number of EventGatewayUnbondingBegin events.
-	s.emitPoktrollGatewayUnbondingBeginEvents(expectedNumEvents)
+	s.emitPocketGatewayUnbondingBeginEvents(expectedNumEvents)
 
 	// Filter for the event with type equal to the EventGatewayUnstaked TypeURL.
 	eventGatewayUnbondingBeginTypeURL := cosmostypes.MsgTypeURL(&gatewaytypes.EventGatewayUnbondingBegin{})
@@ -192,10 +192,10 @@ func (s *baseIntegrationSuiteTestSuite) emitBankMsgSendEvents(expectedNumEvents 
 	require.NoError(s.T(), err)
 }
 
-// emitPoktrollGatewayUnbondingBeginEvents emits the given number of EventGatewayUnbondingBegin
+// emitPocketGatewayUnbondingBeginEvents emits the given number of EventGatewayUnbondingBegin
 // events to the event manager. These events are intended to be used to make
 // assertions in tests.
-func (s *baseIntegrationSuiteTestSuite) emitPoktrollGatewayUnbondingBeginEvents(expectedNumEvents int) {
+func (s *baseIntegrationSuiteTestSuite) emitPocketGatewayUnbondingBeginEvents(expectedNumEvents int) {
 	for i := 0; i < expectedNumEvents; i++ {
 		err := s.SdkCtx().EventManager().EmitTypedEvent(&gatewaytypes.EventGatewayUnbondingBegin{
 			Gateway: &gatewaytypes.Gateway{

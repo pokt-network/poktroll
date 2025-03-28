@@ -151,7 +151,7 @@ func (rel *relayMiner) ServePing(ctx context.Context, network, addr string) erro
 	// - Handles ping requests by broadcasting health checks to all backing services
 	// - Tests connectivity to all configured data nodes
 	go func() {
-		if err := http.Serve(ln, rel.newPinghandlerFn(ctx)); err != nil && !errors.Is(err, http.ErrServerClosed) {
+		if err := http.Serve(ln, rel.newPingHandlerFn(ctx)); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			rel.logger.Error().Err(err).Msg("ping server unexpectedly closed")
 		}
 	}()
@@ -165,7 +165,7 @@ func (rel *relayMiner) ServePing(ctx context.Context, network, addr string) erro
 	return nil
 }
 
-func (rel *relayMiner) newPinghandlerFn(ctx context.Context) http.Handler {
+func (rel *relayMiner) newPingHandlerFn(ctx context.Context) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		rel.logger.Debug().Msg("pinging relay servers...")
 

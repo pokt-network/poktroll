@@ -1,0 +1,23 @@
+syntax = "proto3";
+package pocket.service;
+
+option go_package = "github.com/pokt-network/poktroll/x/service/types";
+option (gogoproto.stable_marshaler_all) = true;
+
+import "amino/amino.proto";
+import "gogoproto/gogo.proto";
+
+import "pocket/service/params.proto";
+import "pocket/shared/service.proto";
+import "pocket/service/relay_mining_difficulty.proto";
+
+
+// GenesisState defines the service module's genesis state.
+message GenesisState {
+
+  // params defines all the parameters of the module.
+  Params  params = 1 [(gogoproto.nullable) = false, (amino.dont_omitempty) = true];
+  repeated pocket.shared.Service service_list = 2 [(gogoproto.nullable) = false] ;
+  repeated RelayMiningDifficulty relayMiningDifficultyList = 3 [(gogoproto.nullable) = false] ;
+}
+
