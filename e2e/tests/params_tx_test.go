@@ -15,13 +15,13 @@ import (
 )
 
 // execTxJSONTemplate is a text template for a tx JSON file which is
-// intended to be used with the `authz exec` CLI subcommand: `poktrolld tx authz exec <tx_json_file>`.
+// intended to be used with the `authz exec` CLI subcommand: `pocketd tx authz exec <tx_json_file>`.
 var execTxJSONTemplate = template.Must(
 	template.New("txJSON").Parse(`{ "body": {{.}} }`),
 )
 
 // sendAuthzExecTx sends an authz exec tx using the `authz exec` CLI subcommand:
-// `poktrolld tx authz exec <tx_json_file>`.
+// `pocketd tx authz exec <tx_json_file>`.
 // It returns before the tx has been committed but after it has been broadcast.
 // It ensures that all module params are reset to their default values after the
 // test completes.
@@ -63,7 +63,7 @@ func (s *suite) sendAuthzExecTx(signingKeyName, txJSONFilePath string) {
 // newTempUpdateParamsTxJSONFile creates & returns a new temp file with the JSON representation of a tx
 // which contains a MsgUpdateParams to update **all module params** for each module & paramsAnyMap
 // in the given moduleParamsMap. The returned file is intended for use with the `authz exec` CLI
-// subcommand: `poktrolld tx authz exec <tx_json_file>`.
+// subcommand: `pocketd tx authz exec <tx_json_file>`.
 func (s *suite) newTempUpdateParamsTxJSONFile(moduleParams moduleParamsMap) *os.File {
 	s.Helper()
 
@@ -88,7 +88,7 @@ func (s *suite) newTempUpdateParamsTxJSONFile(moduleParams moduleParamsMap) *os.
 // newTempUpdateParamTxJSONFile creates & returns a new temp file with the JSON representation of a tx
 // which contains a MsgUpdateParam to update params **individually** for each module & paramsAnyMap in the
 // given moduleParamsMap. The returned file is intended for use with the `authz exec` CLI subcommand:
-// `poktrolld tx authz exec <tx_json_file>`.
+// `pocketd tx authz exec <tx_json_file>`.
 func (s *suite) newTempUpdateParamTxJSONFile(moduleParams moduleParamsMap) *os.File {
 	s.Helper()
 

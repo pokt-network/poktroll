@@ -187,7 +187,7 @@ func (s *suite) TheClaimCreatedBySupplierForServiceForApplicationShouldBeSuccess
 	require.True(s, ok, "supplier %s not found", supplierOperatorName)
 
 	isValidClaimSettledEvent := func(event *abci.Event) bool {
-		if event.Type != "poktroll.tokenomics.EventClaimSettled" {
+		if event.Type != "pocket.tokenomics.EventClaimSettled" {
 			return false
 		}
 
@@ -218,7 +218,7 @@ func (suite *suite) TheModuleParametersAreSetAsFollows(moduleName string, params
 		"module",
 		"pnf",
 		"user",
-		fmt.Sprintf("/poktroll.%s.MsgUpdateParams", moduleName),
+		fmt.Sprintf("/pocket.%s.MsgUpdateParams", moduleName),
 	)
 
 	suite.TheAccountSendsAnAuthzExecMessageToUpdateAllModuleParams("pnf", moduleName, params)
@@ -425,9 +425,9 @@ func (s *suite) forEachTxResult(
 // field. The type URL is constructed from the given module and eventType arguments
 // where module is the module name and eventType is the protobuf message type name
 // without the "Event" prefix; e.g., pass "tokenomics" and "ClaimSettled" to match
-// the "poktroll.tokenomics.EventClaimSettled" event.
+// the "pocket.tokenomics.EventClaimSettled" event.
 func newEventTypeMatchFn(module, eventType string) func(*abci.Event) bool {
-	targetEventType := fmt.Sprintf("poktroll.%s.Event%s", module, eventType)
+	targetEventType := fmt.Sprintf("pocket.%s.Event%s", module, eventType)
 	return func(event *abci.Event) bool {
 		if event == nil {
 			return false
@@ -445,9 +445,9 @@ func newEventTypeMatchFn(module, eventType string) func(*abci.Event) bool {
 // type URL of the message to which a given event corresponds. The target action
 // is constructed from the given module and msgType arguments where module is the
 // module name and msgType is the protobuf message type name without the "Msg" prefix;
-// e.g., pass "proof" and "CreateClaim" to match the "poktroll.proof.MsgCreateClaim" message.
+// e.g., pass "proof" and "CreateClaim" to match the "pocket.proof.MsgCreateClaim" message.
 func newEventMsgTypeMatchFn(module, msgType string) func(event *abci.Event) bool {
-	targetMsgType := fmt.Sprintf("/poktroll.%s.Msg%s", module, msgType)
+	targetMsgType := fmt.Sprintf("/pocket.%s.Msg%s", module, msgType)
 	return newEventAttributeMatchFn("action", targetMsgType)
 }
 

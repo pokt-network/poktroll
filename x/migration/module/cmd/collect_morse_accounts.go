@@ -55,7 +55,7 @@ func CollectMorseAccountsCmd() *cobra.Command {
 }
 
 // runCollectedMorseAccounts is run via the following command:
-// $ poktrolld migrate collect-morse-accounts
+// $ pocketd migrate collect-morse-accounts
 func runCollectMorseAccounts(_ *cobra.Command, args []string) error {
 	// DEV_NOTE: No need to check args length due to cobra.ExactArgs(2).
 	morseStateExportPath := args[0]
@@ -177,7 +177,7 @@ func collectInputAccountBalances(inputState *migrationtypes.MorseStateExport, mo
 		// DEV_NOTE: This is NEVER expected to happen, but is technically possible.
 		if len(coins) == 0 {
 			logger.Logger.Warn().Str("address", accountAddr).Msg("account has no coins; skipping")
-			return nil
+			continue
 		}
 
 		// DEV_NOTE: SHOULD ONLY be one denom (upokt).

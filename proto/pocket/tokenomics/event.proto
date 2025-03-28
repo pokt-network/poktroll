@@ -1,0 +1,95 @@
+syntax = "proto3";
+package pocket.tokenomics;
+
+option go_package = "github.com/pokt-network/poktroll/x/tokenomics/types";
+option (gogoproto.stable_marshaler_all) = true;
+
+import "cosmos/base/v1beta1/coin.proto";
+import "gogoproto/gogo.proto";
+import "pocket/proof/types.proto";
+
+import "pocket/tokenomics/types.proto";
+
+enum ClaimExpirationReason {
+  EXPIRATION_REASON_UNSPECIFIED = 0; // Default value, means may be valid
+  PROOF_MISSING = 1;
+  PROOF_INVALID = 2;
+}
+
+// EventClaimExpired is an event emitted during settlement whenever a claim requiring
+// an onchain proof doesn't have one. The claim cannot be settled, leading to that work
+// never being rewarded.
+message EventClaimExpired {
+    pocket.proof.Claim claim = 1 [(gogoproto.jsontag) = "claim"];
+    // The reason why the claim expired, leading to a Supplier being penalized (i.e. burn).
+    ClaimExpirationReason expiration_reason = 2 [(gogoproto.jsontag) = "expiration_reason"];
+    //Number of relays claimed to be in the session tree.
+    uint64 num_relays = 3 [(gogoproto.jsontag) = "num_relays"];
+    // Number of compute units claimed as a function of the number of relays
+    // and the compute units per relay for the particular service.
+    uint64 num_claimed_compute_units = 4 [(gogoproto.jsontag) = "num_claimed_compute_units"];
+    // Number of estimated compute units claimed as a function of the number of claimed
+    // compute units and the relay difficulty multiplier for the particular service.
+    uint64 num_estimated_compute_units = 5 [(gogoproto.jsontag) = "num_estimated_compute_units"];
+    // The uPOKT coin claimed to be rewarded for the work done as a function of
+    // the number of estimated compute units and the compute uints to token multiplier.
+    cosmos.base.v1beta1.Coin claimed_upokt = 6 [(gogoproto.jsontag) = "claimed_upokt"];
+}
+
+// EventClaimSettled is an event emitted whenever a claim is settled.
+// The proof_required determines whether the claim requires a proof that has been submitted or not
+message EventClaimSettled {
+    pocket.proof.Claim claim = 1 [(gogoproto.jsontag) = "claim"];
+    // The reason why the claim was settled, leading to a Supplier being rewarded (i.e. mint).
+    pocket.proof.ProofRequirementReason proof_requirement = 2 [(gogoproto.jsontag) = "proof_requirement"];
+    // Number of relays claimed to be in the session tree.
+    uint64 num_relays = 3 [(gogoproto.jsontag) = "num_relays"];
+    // Number of compute units claimed as a function of the number of relays
+    // and the compute units per relay for the particular service.
+    uint64 num_claimed_compute_units = 4 [(gogoproto.jsontag) = "num_claimed_compute_units"];
+    // Number of estimated compute units claimed as a function of the number of claimed
+    // compute units and the relay difficulty multiplier for the particular service.
+    uint64 num_estimated_compute_units = 5 [(gogoproto.jsontag) = "num_estimated_compute_units"];
+    // The uPOKT coin claimed to be rewarded for the work done as a function of
+    // the number of estimated compute units and the compute uints to token multiplier.
+    cosmos.base.v1beta1.Coin claimed_upokt = 6 [(gogoproto.jsontag) = "claimed_upokt"];
+    // SettlementResult holds mint, burn, and transfer operations on a per-claim basis.
+    ClaimSettlementResult settlement_result = 7 [(gogoproto.nullable) = false, (gogoproto.jsontag) = "settlement_result"];
+}
+
+// EventApplicationOverserviced is emitted when an application has less stake than
+// what a supplier is claiming (i.e. amount available for burning is insufficient).
+// This means the following will ALWAYS be strictly true: effective_burn < expected_burn.
+message EventApplicationOverserviced {
+    string application_addr = 1;
+    string supplier_operator_addr = 2;
+    // Expected burn is the amount the supplier is claiming for work done
+    // to service the application during the session.
+    // This is usually the amount in the Claim submitted.
+    cosmos.base.v1beta1.Coin expected_burn  = 3;
+    // Effective burn is the amount that is actually being paid to the supplier
+    // for the work done. It is less than the expected burn (claim amount) and
+    // is a function of the relay mining algorithm.
+    // E.g. The application's stake divided by the number of suppliers in a session.
+    cosmos.base.v1beta1.Coin effective_burn  = 4;
+}
+
+// EventSupplierSlashed is emitted when a supplier is slashed for not providing,
+// or provided invalid required proofs for claims.
+message EventSupplierSlashed {
+    pocket.proof.Claim claim = 1;
+    // Amount slashed from the supplier's stake due to the expired claims.
+    // This is a function of the number of expired claims and proof missing penalty.
+    cosmos.base.v1beta1.Coin proof_missing_penalty = 2;
+}
+
+// EventApplicationReimbursementRequest is emitted when an application requests
+// a reimbursement.
+message EventApplicationReimbursementRequest {
+    string application_addr = 1;
+    string supplier_operator_addr = 2;
+    string supplier_owner_addr = 3;
+    string service_id = 4;
+    string session_id = 5;
+    cosmos.base.v1beta1.Coin amount = 6;
+}
