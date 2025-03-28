@@ -20,8 +20,11 @@ import (
 	"github.com/cosmos/cosmos-sdk/server/config"
 	servertypes "github.com/cosmos/cosmos-sdk/server/types"
 	testdata_pulsar "github.com/cosmos/cosmos-sdk/testutil/testdata/testpb"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
+	"github.com/cosmos/cosmos-sdk/types/tx/signing"
 	"github.com/cosmos/cosmos-sdk/x/auth"
+	"github.com/cosmos/cosmos-sdk/x/auth/ante"
 	authsims "github.com/cosmos/cosmos-sdk/x/auth/simulation"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	"github.com/cosmos/cosmos-sdk/x/genutil"
@@ -37,6 +40,7 @@ import (
 	"github.com/pokt-network/poktroll/app/keepers"
 	"github.com/pokt-network/poktroll/docs"
 	"github.com/pokt-network/poktroll/telemetry"
+	migrationtypes "github.com/pokt-network/poktroll/x/migration/types"
 )
 
 const (
@@ -48,6 +52,10 @@ const (
 var (
 	// DefaultNodeHome default home directories for the application daemon
 	DefaultNodeHome string
+
+	claimMorseAcctMsgTypeUrl     = sdk.MsgTypeURL(&migrationtypes.MsgClaimMorseAccount{})
+	claimMorseAppMsgTypeUrl      = sdk.MsgTypeURL(&migrationtypes.MsgClaimMorseApplication{})
+	claimMorseSupplierMsgTypeUrl = sdk.MsgTypeURL(&migrationtypes.MsgClaimMorseSupplier{})
 )
 
 var (
@@ -261,6 +269,25 @@ func New(
 
 	app.App = appBuilder.Build(db, traceStore, baseAppOptions...)
 
+	// TODO_IN_THIS_COMMIT: refactor/move & godoc...
+	app.App.BaseApp.SetAnteHandler(func(ctx sdk.Context, tx sdk.Tx, simulate bool) (sdk.Context, error) {
+		anteHandlerFn, err := ante.NewAnteHandler(ante.HandlerOptions{
+			AccountKeeper:          &app.Keepers.AccountKeeper,
+			BankKeeper:             app.Keepers.BankKeeper,
+			ExtensionOptionChecker: nil,
+			FeegrantKeeper:         app.Keepers.FeeGrantKeeper,
+			SignModeHandler:        app.txConfig.SignModeHandler(),
+			SigGasConsumer:         newSigVerificationGasConsumer(tx),
+			// TxFeeChecker:        (intentionally omitted),
+			// defaults to `checkTxFeeWithValidatorMinGasPrices`
+		})
+		if err != nil {
+			return ctx, err
+		}
+
+		return anteHandlerFn(ctx, tx, simulate)
+	})
+
 	// Register legacy modules
 	app.registerIBCModules()
 
@@ -420,4 +447,37 @@ func BlockedAddresses() map[string]bool {
 		}
 	}
 	return blockedAddressSet
+}
+
+// TODO_IN_THIS_COMMIT: godoc & move...
+func newSigVerificationGasConsumer(tx sdk.Tx) ante.SignatureVerificationGasConsumer {
+	msgs := tx.GetMsgs()
+	for _, msg := range msgs {
+		msgTypeUrl := sdk.MsgTypeURL(msg)
+		switch msgTypeUrl {
+		case claimMorseAcctMsgTypeUrl,
+			claimMorseAppMsgTypeUrl,
+			claimMorseSupplierMsgTypeUrl:
+			// check the remaining messages...
+			continue
+		default:
+			// Use the default signature verification gas consumer if ANY
+			// non-morse-claim message type is included in the tx.
+			return ante.DefaultSigVerificationGasConsumer
+		}
+	}
+
+	// The tx consists of ONLY Morse claim message(s), use the freeSigGasConsumer.
+	return freeSigGasConsumer
+}
+
+// freeSigGasConsumer is a signature verification gas consumer that does not
+// consume any gas for signature verification. It is intended to ONLY be applied
+// to txs that consist of ONLY Morse claim messages.
+func freeSigGasConsumer(
+	_ storetypes.GasMeter,
+	_ signing.SignatureV2,
+	_ authtypes.Params,
+) error {
+	return nil
 }
