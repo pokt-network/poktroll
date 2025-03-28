@@ -26,7 +26,7 @@ You can review the difference between them in the [Cosmos SDK docs](https://docs
 We provide `gRPC`, `JSON-RPC` and `REST` endpoints, which are available here:
 
 - **RPC**: `https://shannon-grove-rpc.mainnet.poktroll.com`
-- **gRPC**: `https://shannon-grove-rpc.mainnet.poktroll.com`
+- **gRPC**: `https://shannon-grove-grpc.mainnet.poktroll.com`
 - **REST**: `https://shannon-grove-rpc.mainnet.poktroll.com`
 
 ### MainNet JSON-RPC Example
