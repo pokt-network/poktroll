@@ -1,0 +1,63 @@
+syntax = "proto3";
+package pocket.tokenomics;
+
+option go_package = "github.com/pokt-network/poktroll/x/tokenomics/types";
+option (gogoproto.stable_marshaler_all) = true;
+option (gogoproto.equal_all) = true;
+
+import "amino/amino.proto";
+import "gogoproto/gogo.proto";
+import "cosmos_proto/cosmos.proto";
+
+
+// Params defines the parameters for the tokenomics module.
+message Params {
+  option (amino.name) = "pocket/x/tokenomics/Params";
+  option (gogoproto.equal) = true;
+
+  // mint_allocation_percentages represents the distribution of newly minted tokens,
+  // at the end of claim settlement, as a result of the Global Mint TLM.
+  MintAllocationPercentages mint_allocation_percentages = 1 [(gogoproto.nullable) = false, (gogoproto.jsontag) = "mint_allocation_proposer", (gogoproto.moretags) = "yaml:\"mint_allocation_percentages\""];
+
+  // dao_reward_address is the address to which mint_allocation_dao percentage of the
+  // minted tokens are at the end of claim settlement.
+  string dao_reward_address = 6 [(cosmos_proto.scalar) = "cosmos.AddressString", (gogoproto.jsontag) = "dao_reward_address", (gogoproto.moretags) = "yaml:\"dao_reward_address\""]; // Bech32 cosmos address
+
+  // global_inflation_per_claim is the percentage of a claim's claimable uPOKT amount which will be minted on settlement.
+  double global_inflation_per_claim = 7 [(gogoproto.jsontag) = "global_inflation_per_claim", (gogoproto.moretags) = "yaml:\"global_inflation_per_claim\""];
+
+  // IMPORTANT: Make sure to update all related files if you're modifying or adding a new parameter.
+  // Try the following grep to find all related places: `grep -r compute_units_to_tokens_multiplier`
+  // TODO_IMPROVE: Look into an opportunity to use an enum to avoid using strings throughout the codebase.
+
+  // TODO_ADD: Some parameters we should consider adding next:
+  //   - Service.computeUnitsToTokensMultiplierMap
+  //   - Application.MaxuPOKTPerRelay
+  //   - Application.MinuPOKTPerRelay
+  //   - Suppler.MaxuPOKTPerRelay
+  //   - Suppler.MinuPOKTPerRelay
+  //   - RevDistr.PercentageToSupploer
+  //   - RevDistr.PercentageToDAO
+  //   - RevDistr.PercentageToPNF
+  //   - RevDistr.PercentageToDelegators
+}
+
+// MintAllocationPercentages represents the distribution of newly minted tokens,
+// at the end of claim settlement, as a result of the Global Mint TLM.
+message MintAllocationPercentages {
+  // dao is the percentage of the minted tokens which are sent
+  // to the DAO reward address during claim settlement.
+  double dao = 1 [(gogoproto.jsontag) = "dao", (gogoproto.moretags) = "yaml:\"dao\""];
+  // proposer is the percentage of the minted tokens which are sent
+  // to the block proposer account address during claim settlement.
+  double proposer = 2 [(gogoproto.jsontag) = "proposer", (gogoproto.moretags) = "yaml:\"proposer\""];
+  // supplier is the percentage of the minted tokens which are sent
+  // to the block supplier account address during claim settlement.
+  double supplier = 3 [(gogoproto.jsontag) = "supplier", (gogoproto.moretags) = "yaml:\"supplier\""];
+  // source_owner is the percentage of the minted tokens which are sent
+  // to the service source owner account address during claim settlement.
+  double source_owner = 4 [(gogoproto.jsontag) = "source_owner", (gogoproto.moretags) = "yaml:\"source_owner\""];
+  // allocation_application is the percentage of the minted tokens which are sent
+  // to the application account address during claim settlement.
+  double application = 5 [(gogoproto.jsontag) = "application", (gogoproto.moretags) = "yaml:\"application\""];
+}

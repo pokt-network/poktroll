@@ -13,7 +13,7 @@ import (
 )
 
 // msgUpdateParamsTestSuite is a test suite which exercises the MsgUpdateParams message
-// for each poktroll module via authz, as would be done in a live network in order
+// for each pocket module via authz, as would be done in a live network in order
 // to update **all** parameter values for a given module.
 // NB: Not to be confused with MsgUpdateParam (singular), which updates a single
 // parameter value for a module.
@@ -47,7 +47,7 @@ func (s *msgUpdateParamsTestSuite) SetupTest() {
 }
 
 func (s *msgUpdateParamsTestSuite) TestUnauthorizedMsgUpdateParamsFails() {
-	for _, moduleName := range s.GetPoktrollModuleNames() {
+	for _, moduleName := range s.GetPocketModuleNames() {
 		moduleCfg := suites.ModuleParamConfigMap[moduleName]
 
 		s.T().Run(moduleName, func(t *testing.T) {
@@ -70,7 +70,7 @@ func (s *msgUpdateParamsTestSuite) TestUnauthorizedMsgUpdateParamsFails() {
 }
 
 func (s *msgUpdateParamsTestSuite) TestAuthorizedMsgUpdateParamsSucceeds() {
-	for _, moduleName := range s.GetPoktrollModuleNames() {
+	for _, moduleName := range s.GetPocketModuleNames() {
 		moduleCfg := suites.ModuleParamConfigMap[moduleName]
 
 		s.T().Run(moduleName, func(t *testing.T) {

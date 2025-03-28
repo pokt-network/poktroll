@@ -5,7 +5,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/pokt-network/poktroll/cmd/poktrolld/cmd"
+	"github.com/pokt-network/poktroll/cmd/pocketd/cmd"
 	"github.com/pokt-network/poktroll/testutil/integration"
 	testutilproof "github.com/pokt-network/poktroll/testutil/proof"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"

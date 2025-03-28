@@ -41,10 +41,10 @@ sudo systemctl restart cosmovisor.service
 
 ## How do I query the latest block (i.e. check the node height)?
 
-Using poktrolld:
+Using pocketd:
 
 ```bash
-poktrolld query block --type=height --node http://localhost:26657
+pocketd query block --type=height --node http://localhost:26657
 ```
 
 Or, using curl:
@@ -68,8 +68,8 @@ sudo ufw allow 26657/tcp
 sudo iptables -A INPUT -p tcp --dport 26657 -j ACCEPT
 
 # Update your Cosmovisor config
-sed -i 's|laddr = "tcp://127.0.0.1:26657"|laddr = "tcp://0.0.0.0:26657"|' $HOME/.poktroll/config/config.toml
-sed -i 's|cors_allowed_origins = \[\]|cors_allowed_origins = ["*"]|' $HOME/.poktroll/config/config.toml
+sed -i 's|laddr = "tcp://127.0.0.1:26657"|laddr = "tcp://0.0.0.0:26657"|' $HOME/.pocket/config/config.toml
+sed -i 's|cors_allowed_origins = \[\]|cors_allowed_origins = ["*"]|' $HOME/.pocket/config/config.toml
 
 # Restart the service
 sudo systemctl restart cosmovisor.service
@@ -89,23 +89,23 @@ Be careful about making this public as adversarial actors may try to DDoS your n
 ## How do I check the node version?
 
 ```bash
-poktrolld version
+pocketd version
 ```
 
 ## How do I check the Cosmosvisor directory structure?
 
 ```bash
-ls -la /home/poktroll/.poktroll/cosmovisor/
+ls -la /home/pocket/.pocket/cosmovisor/
 ```
 
 ## How do I check if an upgrade is available?
 
 ```bash
-ls -la /home/poktroll/.poktroll/cosmovisor/upgrades/
+ls -la /home/pocket/.pocket/cosmovisor/upgrades/
 ```
 
 ## How do I view node configuration?
 
 ```bash
-cat /home/poktroll/.poktroll/config/config.toml
+cat /home/pocket/.pocket/config/config.toml
 ```

@@ -1,0 +1,69 @@
+syntax = "proto3";
+
+package pocket.tokenomics;
+
+option go_package = "github.com/pokt-network/poktroll/x/tokenomics/types";
+option (gogoproto.stable_marshaler_all) = true;
+
+import "amino/amino.proto";
+import "cosmos/msg/v1/msg.proto";
+import "cosmos_proto/cosmos.proto";
+import "gogoproto/gogo.proto";
+import "pocket/tokenomics/params.proto";
+
+// Msg defines the Msg service.
+service Msg {
+  option (cosmos.msg.v1.service) = true;
+
+  // UpdateParams defines a (governance) operation for updating the module
+  // parameters. The authority defaults to the x/gov module account.
+  rpc UpdateParams (MsgUpdateParams) returns (MsgUpdateParamsResponse);
+  rpc UpdateParam  (MsgUpdateParam ) returns (MsgUpdateParamResponse );
+}
+
+// MsgUpdateParams is the Msg/UpdateParams request type to update all params at once.
+message MsgUpdateParams {
+  option (cosmos.msg.v1.signer) =                             "authority";
+  option           (amino.name) = "pocket/x/tokenomics/MsgUpdateParams";
+
+  // authority is the address that controls the module (defaults to x/gov unless overwritten).
+  string authority = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+
+  // TODO_IMPROVE(#322): The requirement to provide all params is adopted from the
+  // latest Cosmos SDK version. We should look into either improving this ourselves
+  // or seeing if it is on their roadmap.
+
+  // params defines the x/tokenomics parameters to update.
+  // NOTE: All parameters must be supplied.
+  Params params = 2 [(gogoproto.nullable) = false, (amino.dont_omitempty) = true];
+}
+
+// MsgUpdateParamsResponse defines the response structure for executing a
+// MsgUpdateParams message.
+message MsgUpdateParamsResponse {
+  Params params = 1;
+}
+
+// MsgUpdateParam is the Msg/UpdateParam request type to update a single param.
+message MsgUpdateParam {
+  option (cosmos.msg.v1.signer) = "authority";
+
+  // authority is the address that controls the module (defaults to x/gov unless overwritten).
+  string authority = 1  [(cosmos_proto.scalar) = "cosmos.AddressString"];
+
+  // The (name, as_type) tuple must match the corresponding name and type as
+  // specified in the `Params` message in `proof/params.proto.`
+  string name = 2;
+  oneof as_type {
+    MintAllocationPercentages as_mint_allocation_percentages = 3 [(gogoproto.jsontag) = "as_mint_allocation_percentages", (gogoproto.moretags) = "yaml:\"as_mint_allocation_percentages\""];
+    string as_string = 4 [(gogoproto.jsontag) = "as_string"];
+    double as_float = 5 [(gogoproto.jsontag) = "as_float"];
+  }
+}
+
+// MsgUpdateParamResponse defines the response structure for executing a
+// MsgUpdateParam message after a single param update.
+message MsgUpdateParamResponse {
+  Params params = 1;
+}
+
