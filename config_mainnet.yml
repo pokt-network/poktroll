@@ -27,6 +27,16 @@ build:
 # | groveval3 | 100,000 POKT    | 15K Bonded + 85K for fees, slashes, security, upstaking, etc...                                                  |
 # | groveval4 | 100,000 POKT    | 15K Bonded + 85K for fees, slashes, security, upstaking, etc...                                                  |
 # | groveval5 | 100,000 POKT    | 15K Bonded + 85K for fees, slashes, security, upstaking, etc...                                                  |
+#
+#
+# Meta Note: If you are reading this and wondering "why are these numbers so large" or "why are these numbers so small",
+# in reality, it doesn't matter. They will be reconciled through social consensus during the Morse -> Shannon
+# snapshot event. For now, making them sufficiently large enables the development team to test, stress and iterate
+# on the shadow mainnet without being limited by faucet-like funds.
+#
+# For example, imagine if a load test (before migration) identifies an onchain issue, causes a chain halt,
+# leads to some lost keys, etc... There's no reason to be limited by operational overhead for issues like this
+# given that funds will be reconciled during the snapshot event regardless.
 
 accounts:
   ####### PNF Account #######
