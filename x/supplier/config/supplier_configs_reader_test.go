@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	sdkerrors "cosmossdk.io/errors"
-	math "cosmossdk.io/math"
+	"cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/gogo/status"
 	"github.com/stretchr/testify/require"
@@ -353,6 +353,50 @@ func Test_ParseSupplierConfigs_Services(t *testing.T) {
 			},
 		},
 		{
+			desc: "valid with only default rev share",
+			inputConfig: fmt.Sprintf(`
+				owner_address: %s
+				operator_address: %s
+				default_rev_share_percent:
+					%s: 51
+					%s: 49
+				stake_amount: 1000upokt
+				services:
+					# Service with default rev share
+				  - service_id: svc
+				    endpoints:
+				    - publicly_exposed_url: http://pokt.network:8081
+				      rpc_type: json_rpc
+				`, ownerAddress, operatorAddress, firstShareHolderAddress, secondShareHolderAddress),
+			expectedError: nil,
+			expectedConfig: &config.SupplierStakeConfig{
+				OwnerAddress:    ownerAddress,
+				OperatorAddress: operatorAddress,
+				StakeAmount:     sdk.NewCoin("upokt", math.NewInt(1000)),
+				Services: []*types.SupplierServiceConfig{
+					{
+						ServiceId: "svc",
+						Endpoints: []*types.SupplierEndpoint{
+							{
+								Url:     "http://pokt.network:8081",
+								RpcType: types.RPCType_JSON_RPC,
+							},
+						},
+						RevShare: []*types.ServiceRevenueShare{
+							{
+								Address:            firstShareHolderAddress,
+								RevSharePercentage: 51,
+							},
+							{
+								Address:            secondShareHolderAddress,
+								RevSharePercentage: 49,
+							},
+						},
+					},
+				},
+			},
+		},
+		{
 			desc: "valid omitted operator address",
 			inputConfig: fmt.Sprintf(`
 				owner_address: %s
@@ -428,6 +472,42 @@ func Test_ParseSupplierConfigs_Services(t *testing.T) {
 										Value: "10",
 									},
 								},
+							},
+						},
+						RevShare: []*types.ServiceRevenueShare{
+							{
+								Address:            ownerAddress,
+								RevSharePercentage: 100,
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			desc: "valid missing default and specific service rev share config defaults to 100% owner rev share",
+			inputConfig: fmt.Sprintf(`
+				owner_address: %s
+				operator_address: %s
+				stake_amount: 1000upokt
+				services:
+				  - service_id: svc
+				    endpoints:
+				    - publicly_exposed_url: http://pokt.network:8081
+				      rpc_type: json_rpc
+				`, ownerAddress, ownerAddress),
+			expectedError: nil,
+			expectedConfig: &config.SupplierStakeConfig{
+				OwnerAddress:    ownerAddress,
+				OperatorAddress: operatorAddress,
+				StakeAmount:     sdk.NewCoin("upokt", math.NewInt(1000)),
+				Services: []*types.SupplierServiceConfig{
+					{
+						ServiceId: "svc",
+						Endpoints: []*types.SupplierEndpoint{
+							{
+								Url:     "http://pokt.network:8081",
+								RpcType: types.RPCType_JSON_RPC,
 							},
 						},
 						RevShare: []*types.ServiceRevenueShare{
@@ -728,23 +808,6 @@ func Test_ParseSupplierConfigs_Services(t *testing.T) {
 				`, ownerAddress, operatorAddress, firstShareHolderAddress, ""),
 			expectedError: config.ErrSupplierConfigUnmarshalYAML,
 		},
-		{
-			desc: "errors when the rev share config is empty",
-			inputConfig: fmt.Sprintf(`
-				owner_address: %s
-				operator_address: %s
-				stake_amount: 1000upokt
-				services:
-				  - service_id: svc
-				    endpoints:
-				    - publicly_exposed_url: http://pokt.network:8081
-				      rpc_type: json_rpc
-				      config:
-				        timeout: 10
-						rev_share_percent: {}
-				`, ownerAddress, ownerAddress),
-			expectedError: sharedtypes.ErrSharedInvalidRevShare,
-		},
 	}
 
 	ctx := context.Background()
@@ -754,7 +817,6 @@ func Test_ParseSupplierConfigs_Services(t *testing.T) {
 			supplierServiceConfig, err := config.ParseSupplierConfigs(ctx, []byte(normalizedConfig))
 
 			if tt.expectedError != nil {
-				require.Error(t, err)
 				require.ErrorIs(t, err, tt.expectedError)
 				stat, ok := status.FromError(tt.expectedError)
 				require.True(t, ok)
@@ -795,7 +857,7 @@ func Test_ParseSupplierConfigs_Services(t *testing.T) {
 					revShareIdx := slices.IndexFunc(service.RevShare, func(revShare *sharedtypes.ServiceRevenueShare) bool {
 						return revShare.Address == expectedRevShare.Address
 					})
-					require.NotEqual(t, -1, revShareIdx)
+					require.NotEqualf(t, -1, revShareIdx, "expected a revshare entry with address %s for service ID %s", expectedRevShare.Address, service.ServiceId)
 
 					require.Equal(t, expectedRevShare.Address, service.RevShare[revShareIdx].Address)
 					require.Equal(t, expectedRevShare.RevSharePercentage, service.RevShare[revShareIdx].RevSharePercentage)
