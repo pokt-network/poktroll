@@ -26,7 +26,6 @@ import (
 	cometcli "github.com/cometbft/cometbft/libs/cli"
 	cometjson "github.com/cometbft/cometbft/libs/json"
 	"github.com/cosmos/cosmos-sdk/codec"
-	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	"github.com/gorilla/websocket"
 	"github.com/regen-network/gocuke"
@@ -76,6 +75,15 @@ var (
 	// which SHOULD NOT be included in a wildcard/glob of feature files.
 	allFeaturesTags = fmt.Sprintf("not %s and not %s", manualTag, oneshotTag)
 )
+
+// cliAccountQueryResopnse is a data structure that matches the serialized account
+// when querying for onchain accounts via the CLI.
+type cliAccountQueryResponse struct {
+	Type  string `json:"type"`
+	Value struct {
+		Account authtypes.BaseAccount `json:"account"`
+	} `json:"value"`
+}
 
 func init() {
 	addrRe = regexp.MustCompile(`address:\s+(\S+)\s+name:\s+(\S+)`)
@@ -338,6 +346,11 @@ func (s *suite) TheUserStakesAWithUpoktForServiceFromTheAccount(actorType string
 		chainIdFlag,
 		"-y",
 	}
+	switch actorType {
+	case actorTypeApp:
+		args = append(args)
+	}
+
 	res, err := s.pocketd.RunCommandOnHost("", args...)
 	require.NoError(s, err, "error staking %s for service %s due to: %v", actorType, serviceId, err)
 
@@ -928,6 +941,25 @@ func (s *suite) getSharedParams() sharedtypes.Params {
 	return sharedParamsRes.Params
 }
 
+// getSupplierParams returns the supplier module parameters
+func (s *suite) getSupplierParams() suppliertypes.Params {
+	args := []string{
+		"query",
+		"supplier",
+		"params",
+		"--output=json",
+	}
+	res, err := s.pocketd.RunCommandOnHost("", args...)
+	require.NoError(s, err, "error querying supplier params")
+
+	var supplierParamsRes suppliertypes.QueryParamsResponse
+
+	s.cdc.MustUnmarshalJSON([]byte(res.Stdout), &supplierParamsRes)
+	require.NoError(s, err)
+
+	return supplierParamsRes.Params
+}
+
 // getCurrentBlockHeight returns the current block height
 func (s *suite) getCurrentBlockHeight() int64 {
 	args := []string{
@@ -991,7 +1023,7 @@ func (s *suite) readEVMSubscriptionEvents() context.Context {
 }
 
 // queryAccount queries the auth module for the account associated with the given address.
-func (s *suite) queryAccount(accAddr string) (account *codectypes.Any, isFound bool) {
+func (s *suite) queryAccount(accAddr string) (account *authtypes.BaseAccount, isFound bool) {
 	args := []string{
 		"query",
 		"auth",
@@ -1007,11 +1039,13 @@ func (s *suite) queryAccount(accAddr string) (account *codectypes.Any, isFound b
 	}
 	require.NoError(s, err, "error getting account for address %s", accAddr)
 
-	var resp authtypes.QueryAccountResponse
+	var resp cliAccountQueryResponse
 	responseBz := []byte(strings.TrimSpace(result.Stdout))
-	s.cdc.MustUnmarshalJSON(responseBz, &resp)
 
-	return resp.Account, true
+	err = cometjson.Unmarshal(responseBz, &resp)
+	require.NoError(s, err)
+
+	return &resp.Value.Account, true
 }
 
 // accBalanceKey is a helper function to create a key to store the balance

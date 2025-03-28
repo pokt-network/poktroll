@@ -8,9 +8,19 @@ Feature: Morse account import and claim all account types (with fixture data)
 
   Background:
     Given the user has the pocketd binary installed
-    And a MorseAccountState with "20" accounts in a "round-robin" distribution has successfully been imported
+    And a MorseAccountState with "30" accounts in a "round-robin" distribution has successfully been imported
     And an unclaimed MorseClaimableAccount with a known private key exists
     And a Shannon destination key exists in the local keyring
+    And the "application" module parameters are set as follows
+      | name                   | value | type   |
+      | min_stake              | 100   | coin   |
+      | max_delegated_gateways | 7     | uint64 |
+    And all "application" module params should be updated
+    And the "supplier" module parameters are set as follows
+      | name        | value | type |
+      | min_stake   | 100   | coin |
+      | staking_fee | 1     | coin |
+    And all "supplier" module params should be updated
 
   Rule: Non-actor account claims MAY reference existing Shannon accounts
     Scenario: Morse account-holder claims as a new non-actor account
@@ -42,12 +52,11 @@ Feature: Morse account import and claim all account types (with fixture data)
       Examples:
         | actor       |
         | application |
-      # TODO_MAINNET(@bryanchriswhite, #1034: Uncomment the following example once supplier Morse account claiming is available.
-      # | supplier    |
+        | supplier    |
 
     Scenario Outline: Morse account-holder claims as an existing staked actor
       Given the Shannon account is funded with "1234567upokt"
-      And the Shannon destination account is staked as an "<actor>" with "1234567" uPOKT for "anvil" service
+      And the Shannon destination account is staked as an "<actor>" with "1230000" uPOKT for "anvil" service
       When the Morse private key is used to claim a MorseClaimableAccount as an "<actor>" for "ollama" service
       Then the Shannon destination account balance is increased by the unstaked balance amount of the MorseClaimableAccount
       And the Shannon destination account is staked as an "<actor>"
@@ -57,8 +66,7 @@ Feature: Morse account import and claim all account types (with fixture data)
       Examples:
         | actor       |
         | application |
-      # TODO_MAINNET(@bryanchriswhite, #1034: Uncomment the following example once supplier Morse account claiming is available.
-      # | supplier    |
+        | supplier    |
 
 # TODO_MAINNET(@bryanchriswhite, #1034): Enumerate and implement error scenarios.
 # TODO_POST_MAINNET(@bryanchriswhite, #1034): Scenario: Morse account-holder claims with a stake below the minimum
