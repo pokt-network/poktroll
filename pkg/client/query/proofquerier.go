@@ -8,6 +8,7 @@ import (
 
 	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/polylog"
+	"github.com/pokt-network/poktroll/pkg/retry"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 )
 
@@ -59,7 +60,9 @@ func (pq *proofQuerier) GetParams(
 	logger.Debug().Msg("cache miss proof params")
 
 	req := &prooftypes.QueryParamsRequest{}
-	res, err := pq.proofQuerier.Params(ctx, req)
+	res, err := retry.Call(ctx, func() (*prooftypes.QueryParamsResponse, error) {
+		return pq.proofQuerier.Params(ctx, req)
+	}, retry.GetStrategy(ctx))
 	if err != nil {
 		return nil, err
 	}

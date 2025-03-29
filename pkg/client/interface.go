@@ -64,6 +64,7 @@ type SupplierClient interface {
 	// session's mined relays.
 	CreateClaims(
 		ctx context.Context,
+		timeoutHeight int64,
 		claimMsgs ...MsgCreateClaim,
 	) error
 	// SubmitProof sends proof messages which contain the smt.SparseCompactMerkleClosestProof,
@@ -71,6 +72,7 @@ type SupplierClient interface {
 	// The proof is validated onchain as part of the pocket protocol.
 	SubmitProofs(
 		ctx context.Context,
+		timeoutHeight int64,
 		sessionProofs ...MsgSubmitProof,
 	) error
 	// Address returns the operator address of the SupplierClient that will be submitting proofs & claims.
@@ -82,6 +84,7 @@ type SupplierClient interface {
 type TxClient interface {
 	SignAndBroadcast(
 		ctx context.Context,
+		timeoutHeight int64,
 		msgs ...cosmostypes.Msg,
 	) either.AsyncError
 }

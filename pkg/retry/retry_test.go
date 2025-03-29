@@ -10,6 +10,7 @@ package retry_test
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 	"sync/atomic"
@@ -438,4 +439,49 @@ func TestOnError_NegativeRetryLimit(t *testing.T) {
 	for _, line := range logOutputLines {
 		require.Contains(t, line, expectedErrMsg)
 	}
+}
+
+// TestCallWithExponentialBackoff tests the Call function with exponential backoff
+func TestCallWithExponentialBackoff(t *testing.T) {
+	t.Run("succeeds after retries", func(t *testing.T) {
+		attempts := 0
+		maxAttempts := 3
+		ctx := context.Background()
+
+		result, err := retry.Call(
+			ctx,
+			func() (string, error) {
+				attempts++
+				if attempts < maxAttempts {
+					return "", errors.New("not yet")
+				}
+				return "success", nil
+			},
+			retry.WithExponentialBackoffFn(5, 1, 10), // Very short delays for testing
+		)
+
+		require.NoError(t, err)
+		require.Equal(t, "success", result)
+		require.Equal(t, maxAttempts, attempts)
+	})
+
+	t.Run("fails after max retries", func(t *testing.T) {
+		attempts := 0
+		maxRetries := 3
+		expectedErr := errors.New("persistent error")
+		ctx := context.Background()
+
+		_, err := retry.Call(
+			ctx,
+			func() (string, error) {
+				attempts++
+				return "", expectedErr
+			},
+			retry.WithExponentialBackoffFn(maxRetries, 1, 10), // Very short delays for testing
+		)
+
+		require.Error(t, err)
+		require.Equal(t, expectedErr, err)
+		require.Equal(t, maxRetries+1, attempts) // Initial attempt + retries
+	})
 }

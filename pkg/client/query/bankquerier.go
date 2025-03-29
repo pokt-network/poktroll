@@ -12,6 +12,7 @@ import (
 	"github.com/pokt-network/poktroll/pkg/cache"
 	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/polylog"
+	"github.com/pokt-network/poktroll/pkg/retry"
 )
 
 var _ client.BankQueryClient = (*bankQuerier)(nil)
@@ -68,7 +69,9 @@ func (bq *bankQuerier) GetBalance(
 
 	// Query the blockchain for the balance record
 	req := &banktypes.QueryBalanceRequest{Address: address, Denom: volatile.DenomuPOKT}
-	res, err := bq.bankQuerier.Balance(ctx, req)
+	res, err := retry.Call(ctx, func() (*banktypes.QueryBalanceResponse, error) {
+		return bq.bankQuerier.Balance(ctx, req)
+	}, retry.GetStrategy(ctx))
 	if err != nil {
 		return nil, ErrQueryBalanceNotFound.Wrapf("address: %s [%s]", address, err)
 	}
