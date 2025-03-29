@@ -223,8 +223,21 @@ func (rs *relayerSessionsManager) newMapClaimSessionsFn(
 			}
 		}
 
+		// All session trees in the batch have the same sessionEndHeight, so we can
+		// use the first one to calculate the proof window close height.
+		// TODO_REFACTOR: Pass a richer type to the function instead of []SessionTrees
+		// to avoid this kind of assumptions and constant queries for sharedParams.
+		sessionEndHeight := sessionTrees[0].GetSessionHeader().GetSessionEndBlockHeight()
+		sharedParms, err := rs.sharedQueryClient.GetParams(ctx)
+		if err != nil {
+			failedCreateClaimsSessionsPublishCh <- sessionTrees
+			rs.logger.Error().Err(err).Msg("failed to get shared params")
+			return either.Error[[]relayer.SessionTree](err), false
+		}
+		claimWindowCloseHeight := sharedtypes.GetClaimWindowCloseHeight(sharedParms, sessionEndHeight)
+
 		// Create claims for each supplier operator address in `sessionTrees`.
-		if err := supplierClient.CreateClaims(ctx, claimMsgs...); err != nil {
+		if err := supplierClient.CreateClaims(ctx, claimWindowCloseHeight, claimMsgs...); err != nil {
 			failedCreateClaimsSessionsPublishCh <- claimableSessionTrees
 			rs.logger.Error().Err(err).Msg("failed to create claims")
 			return either.Error[[]relayer.SessionTree](err), false

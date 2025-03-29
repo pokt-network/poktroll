@@ -27,12 +27,6 @@ import (
 )
 
 const (
-	// DefaultCommitTimeoutHeightOffset is the default number of blocks after the
-	// latest block (when broadcasting) that a transactions should be considered
-	// errored if it has not been committed.
-	// TODO_TECHDEBT: populate this from the config file.
-	DefaultCommitTimeoutHeightOffset = 5
-
 	// defaultTxReplayLimit is the number of comettypes.EventDataTx events that the replay
 	// observable returned by LastNBlocks() will be able to replay.
 	// TODO_TECHDEBT/TODO_FUTURE: add a `blocksReplayLimit` field to the blockClient
@@ -71,15 +65,10 @@ type CometTxEvent struct {
 // regarding their status.
 // It also depends on the BlockClient as a timer, synchronized to block height,
 // to facilitate transaction timeout logic. If a transaction doesn't appear to
-// have been committed by commitTimeoutHeightOffset number of blocks have elapsed,
-// it is considered as timed out. Upon timeout, the client queries the network for
-// the last status of the transaction, which is used to derive the asynchronous
-// error that's populated in the either.AsyncError.
+// have been committed by timeoutHeight, it is considered as timed out.
+// Upon timeout, the client queries the network for the last status of the transaction,
+// which is used to derive the asynchronous error that's populated in the either.AsyncError.
 type txClient struct {
-	// TODO_TECHDEBT: this should be configurable & integrated w/ viper, flags, etc.
-	// commitTimeoutHeightOffset is the number of blocks after the latest block
-	// that a transactions should be considered errored if it has not been committed.
-	commitTimeoutHeightOffset int64
 	// signingKeyName is the name of the key in the keyring to use for signing
 	// transactions.
 	signingKeyName string
@@ -127,8 +116,8 @@ type (
 // and options.
 //
 // It performs the following steps:
-//  1. Initializes a default txClient with the default commit timeout height
-//     offset, an empty error channel map, and an empty transaction timeout pool.
+//  1. Initializes a default txClient with an empty error channel map, and an
+//     empty transaction timeout pool.
 //  2. Injects the necessary dependencies using depinject.
 //  3. Applies any provided options to customize the client.
 //  4. Validates and sets any missing default configurations using the
@@ -143,16 +132,16 @@ type (
 //
 // Available options:
 //   - WithSigningKeyName
-//   - WithCommitTimeoutHeightOffset
+//   - WithConnRetryLimit
+//   - WithGasPrices
 func NewTxClient(
 	ctx context.Context,
 	deps depinject.Config,
 	opts ...client.TxClientOption,
 ) (_ client.TxClient, err error) {
 	txnClient := &txClient{
-		commitTimeoutHeightOffset: DefaultCommitTimeoutHeightOffset,
-		txErrorChans:              make(txErrorChansByHash),
-		txTimeoutPool:             make(txTimeoutPool),
+		txErrorChans:  make(txErrorChansByHash),
+		txTimeoutPool: make(txTimeoutPool),
 	}
 
 	if err = depinject.Inject(
@@ -205,7 +194,7 @@ func NewTxClient(
 //
 //  1. Validates each message in the provided set.
 //  2. Constructs the transaction using the Cosmos SDK's transaction builder.
-//  3. Calculates and sets the transaction's timeout height.
+//  3. Sets the transaction's timeout height.
 //  4. Sets a default gas limit (note: this will be made configurable in the future).
 //  5. Signs the transaction.
 //  6. Validates the constructed transaction.
@@ -220,6 +209,7 @@ func NewTxClient(
 // transaction results in an asynchronous error or times out.
 func (txnClient *txClient) SignAndBroadcast(
 	ctx context.Context,
+	timeoutHeight int64,
 	msgs ...cosmostypes.Msg,
 ) either.AsyncError {
 	var validationErrs error
@@ -248,10 +238,6 @@ func (txnClient *txClient) SignAndBroadcast(
 		// return synchronous error
 		return either.SyncErr(err)
 	}
-
-	// Calculate timeout height
-	timeoutHeight := txnClient.blockClient.LastBlock(ctx).
-		Height() + txnClient.commitTimeoutHeightOffset
 
 	txBuilder.SetGasLimit(gasLimit)
 
@@ -319,8 +305,6 @@ func (txnClient *txClient) SignAndBroadcast(
 //  2. It then retrieves the key record from the keyring using the signing key name
 //     and checks its existence.
 //  3. The address of the signing key is computed and assigned to txClient#signgingAddr.
-//  4. Lastly, it ensures that commitTimeoutHeightOffset has a valid value, setting
-//     it to DefaultCommitTimeoutHeightOffset if it's zero or negative.
 //
 // Returns:
 // - ErrEmptySigningKeyName if the signing key name is not provided.
@@ -338,9 +322,6 @@ func (txnClient *txClient) validateConfigAndSetDefaults() error {
 
 	txnClient.signingAddr = signingAddr
 
-	if txnClient.commitTimeoutHeightOffset <= 0 {
-		txnClient.commitTimeoutHeightOffset = DefaultCommitTimeoutHeightOffset
-	}
 	return nil
 }
 

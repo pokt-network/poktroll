@@ -110,7 +110,7 @@ func TestTxClient_SignAndBroadcast_Succeeds(t *testing.T) {
 	}
 
 	// Sign and broadcast the message.
-	eitherErr := txClient.SignAndBroadcast(ctx, appStakeMsg)
+	eitherErr := txClient.SignAndBroadcast(ctx, 0, appStakeMsg)
 	err, errCh := eitherErr.SyncOrAsyncError()
 	require.NoError(t, err)
 
@@ -269,7 +269,7 @@ func TestTxClient_SignAndBroadcast_SyncError(t *testing.T) {
 		// NB: explicitly omitting required fields
 	}
 
-	eitherErr := txClient.SignAndBroadcast(ctx, appStakeMsg)
+	eitherErr := txClient.SignAndBroadcast(ctx, 0, appStakeMsg)
 	err, _ = eitherErr.SyncOrAsyncError()
 	require.ErrorIs(t, err, tx.ErrInvalidMsg)
 
@@ -347,7 +347,7 @@ $ go test -v -count=1 -run TestTxClient_SignAndBroadcast_CheckTxError ./pkg/clie
 	}
 
 	// Sign and broadcast the message.
-	eitherErr := txClient.SignAndBroadcast(ctx, appStakeMsg)
+	eitherErr := txClient.SignAndBroadcast(ctx, 0, appStakeMsg)
 	err, _ = eitherErr.SyncOrAsyncError()
 	require.ErrorIs(t, err, tx.ErrCheckTx)
 	require.ErrorContains(t, err, expectedErrMsg)
@@ -355,6 +355,7 @@ $ go test -v -count=1 -run TestTxClient_SignAndBroadcast_CheckTxError ./pkg/clie
 
 func TestTxClient_SignAndBroadcast_Timeout(t *testing.T) {
 	var (
+		timeoutHeight = int64(5)
 		// expectedErrMsg is the expected error message that will be returned
 		// by the transaction client. It is computed and assigned in the
 		// testtx.NewOneTimeErrCheckTxTxContext helper function.
@@ -366,7 +367,7 @@ func TestTxClient_SignAndBroadcast_Timeout(t *testing.T) {
 		// will use to publish the transaction event bytes. It is used near the end of
 		// the test to mock the network signaling that the transaction was committed.
 		txResultsBzPublishCh chan<- either.Bytes
-		blocksPublishCh      = make(chan client.Block, tx.DefaultCommitTimeoutHeightOffset)
+		blocksPublishCh      = make(chan client.Block, timeoutHeight)
 		ctx                  = context.Background()
 
 		// Trie related variables
@@ -419,11 +420,11 @@ func TestTxClient_SignAndBroadcast_Timeout(t *testing.T) {
 	}
 
 	// Sign and broadcast the message in a transaction.
-	eitherErr := txClient.SignAndBroadcast(ctx, appStakeMsg)
+	eitherErr := txClient.SignAndBroadcast(ctx, timeoutHeight, appStakeMsg)
 	err, errCh := eitherErr.SyncOrAsyncError()
 	require.NoError(t, err)
 
-	for i := 0; i < tx.DefaultCommitTimeoutHeightOffset; i++ {
+	for i := int64(0); i < timeoutHeight; i++ {
 		blocksPublishCh <- testblock.NewAnyTimesBlock(t, emptyBlockHash, int64(i+1))
 	}
 
@@ -523,8 +524,8 @@ func TestTxClient_SignAndBroadcast_Retry(t *testing.T) {
 		Services: client.NewTestApplicationServiceConfig(testServiceIdPrefix, 1),
 	}
 
-	// Sing and broadcast the message.
-	go txClient.SignAndBroadcast(ctx, appStakeMsg)
+	// Sign and broadcast the message.
+	go txClient.SignAndBroadcast(ctx, 0, appStakeMsg)
 
 	// Wait for 5 seconds to allow the retry strategy to perform 4 failing retries.
 	time.Sleep(5 * time.Second)
@@ -548,8 +549,8 @@ func TestTxClient_SignAndBroadcast_Retry(t *testing.T) {
 	// This will cause the transaction client to stop retrying and return the error.
 	callStatus.errorToReturn = sdkerrors.ErrTxTimeoutHeight.Wrap(fmt.Errorf("test error").Error())
 
-	// Sing and broadcast the message.
-	go txClient.SignAndBroadcast(ctx, appStakeMsg)
+	// Sign and broadcast the message.
+	go txClient.SignAndBroadcast(ctx, 0, appStakeMsg)
 
 	// Wait the same amount of time and assert that only one failing attempt was made.
 	time.Sleep(5 * time.Second)

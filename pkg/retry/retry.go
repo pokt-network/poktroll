@@ -3,8 +3,10 @@ package retry
 import (
 	"context"
 	"math"
+	"slices"
 	"time"
 
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
 	"github.com/pokt-network/poktroll/pkg/polylog"
@@ -12,7 +14,34 @@ import (
 
 const RetryStrategyCtxKey = "retry_strategy"
 
-var DefaultExponentialDelay = WithExponentialBackoffFn(25, 500, 30000)
+var (
+	DefaultExponentialDelay = WithExponentialBackoffFn(25, 500, 30000)
+
+	// transientGRPCErrorCodes is a list of gRPC error codes that are considered transient.
+	// These errors are retried by default.
+	transientGRPCErrorCodes = []codes.Code{
+		// This is most likely a transient condition and may be corrected by retrying with a backoff
+		// Occurs during server shutdowns or network connectivity issues
+		codes.Unavailable,
+
+		// Indicates temporary resource limitations (quotas, memory, server overload)
+		// Resources may become available after some time
+		codes.ResourceExhausted,
+
+		// Often indicates temporary slowness or timeouts
+		// May succeed on retry when system load decreases
+		codes.DeadlineExceeded,
+
+		// Typically caused by concurrency issues like transaction conflicts
+		codes.Aborted,
+
+		// May be transient, but cause is unclear
+		codes.Unknown,
+
+		// Server-side errors that might occasionally resolve with retry
+		codes.Internal,
+	}
+)
 
 type RetryFunc func() chan error
 type RetryStrategyFunc func(int) bool
@@ -86,11 +115,12 @@ func OnError(
 	}
 }
 
-// Call executes a function repeatedly until it succeeds or the retry strategy
-// indicates that no more retries should be attempted.
+// Call executes a function repeatedly, according to the retry strategy until
+// it succeeds or returns an `ErrNonRetryable`, which indicates that no more
+// retries should be attempted.
 //
 // If no retry strategy is provided, it defaults to an exponential backoff strategy
-// with 5 max retries, 1000ms initial delay, and 16000ms max delay.
+// with 25 max retries, 500ms initial delay, and 30000ms max delay.
 //
 // Returns the result from the work function and any error that occurred if retries are exhausted.
 func Call[T any](
@@ -118,8 +148,9 @@ func Call[T any](
 			return result, err
 		}
 
-		// Stop retrying and return if the error is a gRPC error
-		if _, isGRPCError := status.FromError(err); isGRPCError {
+		// Stop retrying and return if the error is a non-transient gRPC error
+		status, isGRPCError := status.FromError(err)
+		if isGRPCError && !slices.Contains(transientGRPCErrorCodes, status.Code()) {
 			return result, err
 		}
 
@@ -142,14 +173,16 @@ func GetStrategy(ctx context.Context) RetryStrategyFunc {
 }
 
 // WithExponentialBackoffFn creates a retry strategy with exponential backoff.
+// It sleeps when when retryCount >= maxRetryCount to allow higher-level retry
+// mechanisms (e.g., retry until specific blockchain height is reached) to build
+// on this function while maintaining predictable delay patterns, regardless of
+// whether the maxRetryCount boundary is reached.
 func WithExponentialBackoffFn(
 	maxRetryCount int,
 	initialDelayMs int,
 	maxDelayMs int,
 ) func(retryCount int) bool {
 	return func(retryCount int) bool {
-		// Higher level strategies (e.g. retry until height reached) could use this
-		// one while ignoring the maxRetryCount.
 		// Capping the delay to maxDelayMs to prevent excessive wait times.
 		if retryCount >= maxRetryCount {
 			time.Sleep(time.Duration(maxDelayMs) * time.Millisecond)
