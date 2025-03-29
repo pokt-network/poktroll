@@ -46,7 +46,6 @@ func (rs *relayerSessionsManager) submitProofs(
 	)
 
 	// TODO_TECHDEBT: pass failed submit proof sessions to some retry mechanism.
-	_ = failedSubmitProofsSessionsObs
 	logging.LogErrors(ctx, filter.EitherError(ctx, eitherProvenSessionsObs))
 
 	// Delete expired session trees so they don't get proven again.

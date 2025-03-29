@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 
 	"github.com/gogo/status"
+	"github.com/pokt-network/poktroll/pkg/observable/channel"
 	"github.com/pokt-network/poktroll/pkg/relayer"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
@@ -125,6 +126,8 @@ func (rs *relayerSessionsManager) populateSessionTreeMap(ctx context.Context, he
 		}
 	}
 
+	rs.proveClaimedSessions(ctx)
+
 	return nil
 }
 
@@ -157,7 +160,7 @@ func (rs *relayerSessionsManager) deletePersistedSessionTree(persistedSMT *proof
 		return err
 	}
 
-	delete(rs.sessionsTrees[sessionEndHeight][supplierOperatorAddress], sessionId)
+	delete(rs.sessionsTrees[supplierOperatorAddress][sessionEndHeight], sessionId)
 
 	return nil
 }
@@ -197,33 +200,62 @@ func (rs *relayerSessionsManager) persistSessionMetadata(sessionTree relayer.Ses
 }
 
 // insertSessionTree adds the given session to the sessionTrees map of
-// blockHeight->sessionId->supplierOperatorAddress->sessionTree
+// supplierOperatorAddress->blockHeight->sessionId->sessionTree
 func (rs *relayerSessionsManager) insertSessionTree(sessionTree relayer.SessionTree) bool {
 	sessionEndHeight := sessionTree.GetSessionHeader().SessionEndBlockHeight
 	sessionId := sessionTree.GetSessionHeader().SessionId
 	supplierOperatorAddress := sessionTree.GetSupplierOperatorAddress()
 
-	sessionTreesWithEndHeight, ok := rs.sessionsTrees[sessionEndHeight]
+	// Get the suppliersSessionTrees for the given supplier.
+	supplierSessionTrees, ok := rs.sessionsTrees[supplierOperatorAddress]
+
+	// If there is no map for session trees with the supplier operator address, create one.
+	if !ok {
+		supplierSessionTrees = make(map[int64]map[string]relayer.SessionTree)
+		rs.sessionsTrees[supplierOperatorAddress] = supplierSessionTrees
+	}
+
+	// Get the session trees for the given sessionEndHeight.
+	sessionTreesWithEndHeight, ok := supplierSessionTrees[sessionEndHeight]
 
 	// If there is no map for sessions at the sessionEndHeight, create one.
 	if !ok {
-		sessionTreesWithEndHeight = make(map[string]map[string]relayer.SessionTree)
-		rs.sessionsTrees[sessionEndHeight] = sessionTreesWithEndHeight
+		sessionTreesWithEndHeight = make(map[string]relayer.SessionTree)
+		supplierSessionTrees[sessionEndHeight] = sessionTreesWithEndHeight
 	}
 
-	// Get the sessionTreeWithSessionId for the given session.
-	sessionTreeWithSessionId, ok := sessionTreesWithEndHeight[sessionId]
-
-	// If there is no map for session trees with the session id, create one.
-	if !ok {
-		sessionTreeWithSessionId = make(map[string]relayer.SessionTree)
-		sessionTreesWithEndHeight[sessionId] = sessionTreeWithSessionId
-	}
-
-	if _, ok = sessionTreeWithSessionId[supplierOperatorAddress]; ok {
+	// Get the sessionTree for the given session id.
+	if _, ok = sessionTreesWithEndHeight[sessionId]; ok {
 		return false
 	}
 
-	sessionTreeWithSessionId[supplierOperatorAddress] = sessionTree
+	sessionTreesWithEndHeight[sessionId] = sessionTree
 	return true
+}
+
+// proveClaimedSessions processes the claimed sessions and sends them to the
+// relayer for proof submission without going through the whole pipeline.
+func (rs *relayerSessionsManager) proveClaimedSessions(ctx context.Context) {
+	// Send all the claimed sessions to the proof submission pipeline.
+	for supplierOpeartorAddress, supplierClient := range rs.supplierClients.SupplierClients {
+		// TODO_TECHDEBT: Figure out a way to close the channel when all the sessions
+		// have been processed.
+		sessionsToProveObs, sessionsToProvePublishCh := channel.NewObservable[[]relayer.SessionTree]()
+		rs.submitProofs(ctx, supplierClient, sessionsToProveObs)
+
+		for _, sessionTreesWithEndHeight := range rs.sessionsTrees[supplierOpeartorAddress] {
+			sessionsToProve := make([]relayer.SessionTree, 0)
+			for _, sessionTree := range sessionTreesWithEndHeight {
+				// If the session has its claim root generated, it means that the session
+				// has been claimed and is ready to go through the proof submission pipeline.
+				if sessionTree.GetClaimRoot() != nil {
+					sessionsToProve = append(sessionsToProve, sessionTree)
+				}
+			}
+
+			if len(sessionsToProve) > 0 {
+				sessionsToProvePublishCh <- sessionsToProve
+			}
+		}
+	}
 }

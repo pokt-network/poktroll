@@ -151,6 +151,7 @@ func ImportSessionTree(
 	// The tree storage is not loaded immediately as it will only be needed if proof generation is requested.
 	if claim != nil {
 		sessionTree.claimedRoot = claim.RootHash
+		sessionTree.isClaiming = true
 		return sessionTree, nil
 	}
 
@@ -306,6 +307,9 @@ func (st *sessionTree) Flush() (SMSTRoot []byte, err error) {
 // This function is used to get the root hash of the SMST at any time.
 // It is used to get the root hash of the SMST before it is flushed to disk.
 func (st *sessionTree) GetSMSTRoot() (smtRoot smt.MerkleSumRoot) {
+	if st.sessionSMT == nil {
+		return nil
+	}
 	return st.sessionSMT.Root()
 }
 

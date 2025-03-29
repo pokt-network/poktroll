@@ -286,7 +286,7 @@ func (s *SessionPersistenceTestSuite) TestRestartAfterClaimSubmitted() {
 	// Calculate when the proof window closes for this session
 	proofWindowOpenHeight := sharedtypes.GetProofWindowCloseHeight(&s.sharedParams, sessionEndHeight)
 	// Move to one block before the proof window closes (which should trigger proof submission)
-	s.advanceToBlock(proofWindowOpenHeight - 1)
+	s.advanceToBlock(proofWindowOpenHeight)
 
 	// Verify the session tree has been removed and a proof was submitted
 	require.Len(s.T(), s.sessionTrees, 0)
@@ -375,16 +375,16 @@ func (s *SessionPersistenceTestSuite) getActiveSessionTree() relayer.SessionTree
 	sessionEndHeight := s.activeSessionHeader.GetSessionEndBlockHeight()
 	sessionId := s.activeSessionHeader.GetSessionId()
 
+	// Get the specific session tree for this supplier
+	supplierSessionTrees, ok := s.sessionTrees[s.supplierOperatorAddress]
+	require.True(s.T(), ok)
+
 	// Get all session trees for this session end height
-	sessionTreesWithEndHeight, ok := s.sessionTrees[sessionEndHeight]
+	sessionTreesWithEndHeight, ok := supplierSessionTrees[sessionEndHeight]
 	require.True(s.T(), ok)
 
 	// Get all session trees for this session ID
-	sessionTreeWithSessionId, ok := sessionTreesWithEndHeight[sessionId]
-	require.True(s.T(), ok)
-
-	// Get the specific session tree for this supplier
-	sessionTree, ok := sessionTreeWithSessionId[s.supplierOperatorAddress]
+	sessionTree, ok := sessionTreesWithEndHeight[sessionId]
 	require.True(s.T(), ok)
 
 	return sessionTree
@@ -479,7 +479,11 @@ func (s *SessionPersistenceTestSuite) setupMockSupplierClient(ctrl *gomock.Contr
 		).
 		DoAndReturn(func(ctx context.Context, claimMsgs ...*prooftypes.MsgCreateClaim) error {
 			require.Len(s.T(), claimMsgs, 1)
-			s.claimToReturn = &prooftypes.Claim{}
+			s.claimToReturn = &prooftypes.Claim{
+				SupplierOperatorAddress: s.supplierOperatorAddress,
+				SessionHeader:           s.activeSessionHeader,
+				RootHash:                claimMsgs[0].GetRootHash(),
+			}
 			s.createClaimCallCount++
 			return nil
 		}).

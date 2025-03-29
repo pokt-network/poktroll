@@ -23,10 +23,10 @@ import (
 var _ relayer.RelayerSessionsManager = (*relayerSessionsManager)(nil)
 
 // SessionTreesMap is an alias type for a map of
-// sessionEndHeight->sessionId->supplierOperatorAddress->SessionTree.
+// supplierOperatorAddress->sessionEndHeight->sessionId->SessionTree.
 // It is used to keep track of the sessions that are created in the RelayMiner
 // by grouping them by their end block height, session id and supplier operator address.
-type SessionsTreesMap = map[int64]map[string]map[string]relayer.SessionTree
+type SessionsTreesMap = map[string]map[int64]map[string]relayer.SessionTree
 
 // relayerSessionsManager is an implementation of the RelayerSessions interface.
 // TODO_TEST: Add tests to the relayerSessionsManager.
@@ -35,7 +35,7 @@ type relayerSessionsManager struct {
 
 	relayObs relayer.MinedRelaysObservable
 
-	// sessionTrees is a map of blockHeight->sessionId->supplierOperatorAddress->sessionTree.
+	// sessionTrees is a map of supplierOperatorAddress->blockHeight->sessionId->sessionTree.
 	// The block height index is used to know when the sessions contained in the
 	// entry should be closed, this helps to avoid iterating over all sessionsTrees
 	// to check if they are ready to be closed.
@@ -195,9 +195,9 @@ func (rs *relayerSessionsManager) Stop() {
 	// Persist each active session's state to disk and properly close the associated
 	// key-value stores. This ensures that all accumulated relay data (including root
 	// hashes needed for claims) is safely stored before shutdown.
-	for _, sessionTreesAtHeight := range rs.sessionsTrees {
-		for _, supplierSessionTrees := range sessionTreesAtHeight {
-			for _, sessionTree := range supplierSessionTrees {
+	for _, supplierSessionTrees := range rs.sessionsTrees {
+		for _, sessionTreesAtHeight := range supplierSessionTrees {
+			for _, sessionTree := range sessionTreesAtHeight {
 				if err := rs.persistSessionMetadata(sessionTree); err != nil {
 					rs.logger.Error().Err(err).Msgf(
 						"failed to persist session metadata for sessionId %q",
@@ -237,29 +237,27 @@ func (rs *relayerSessionsManager) ensureSessionTree(
 	rs.sessionsTreesMu.Lock()
 	defer rs.sessionsTreesMu.Unlock()
 
+	// Get the supplier session trees for the supplierOperatorAddress.
+	supplierOperatorAddress := relayRequestMetadata.SupplierOperatorAddress
+	supplierSessionTrees, ok := rs.sessionsTrees[supplierOperatorAddress]
+
+	// If there is no map for session trees with the supplier operator address, create one.
+	if !ok {
+		supplierSessionTrees = make(map[int64]map[string]relayer.SessionTree)
+		rs.sessionsTrees[supplierOperatorAddress] = supplierSessionTrees
+	}
+
 	// Get the sessions that end at the relay request's sessionEndHeight.
 	sessionHeader := relayRequestMetadata.SessionHeader
-	sessionTreesWithEndHeight, ok := rs.sessionsTrees[sessionHeader.SessionEndBlockHeight]
+	sessionTreesWithEndHeight, ok := supplierSessionTrees[sessionHeader.SessionEndBlockHeight]
 
-	// If there is no map for sessions at the sessionEndHeight, create one.
+	// If there is no map for sessions with sessionEndHeight, create one.
 	if !ok {
-		sessionTreesWithEndHeight = make(map[string]map[string]relayer.SessionTree)
-		rs.sessionsTrees[sessionHeader.SessionEndBlockHeight] = sessionTreesWithEndHeight
+		sessionTreesWithEndHeight = make(map[string]relayer.SessionTree)
+		supplierSessionTrees[sessionHeader.SessionEndBlockHeight] = sessionTreesWithEndHeight
 	}
 
-	// Get the sessionTreeWithSessionId for the given session.
-	sessionTreeWithSessionId, ok := sessionTreesWithEndHeight[sessionHeader.SessionId]
-
-	// If there is no map for session trees with the session id, create one.
-	if !ok {
-		sessionTreeWithSessionId = make(map[string]relayer.SessionTree)
-		sessionTreesWithEndHeight[sessionHeader.SessionId] = sessionTreeWithSessionId
-	}
-
-	supplierOperatorAddress := relayRequestMetadata.SupplierOperatorAddress
-
-	// Get the sessionTree for the supplier corresponding to the relay request.
-	sessionTree, ok := sessionTreeWithSessionId[supplierOperatorAddress]
+	sessionTree, ok := sessionTreesWithEndHeight[sessionHeader.SessionId]
 
 	// If the sessionTree does not exist, create and assign it to the
 	// sessionTreeWithSessionId map for the given supplier operator address.
@@ -270,7 +268,7 @@ func (rs *relayerSessionsManager) ensureSessionTree(
 			return nil, err
 		}
 
-		sessionTreeWithSessionId[supplierOperatorAddress] = sessionTree
+		sessionTreesWithEndHeight[sessionHeader.SessionId] = sessionTree
 
 		// Persist the newly created session tree metadata to disk.
 		if err := rs.persistSessionMetadata(sessionTree); err != nil {
@@ -323,11 +321,14 @@ func (rs *relayerSessionsManager) forEachBlockClaimSessionsFn(
 			return
 		}
 
+		// Get the sessions trees for the supplier matching the sessionsSupplier.
+		supplierSessionTress := rs.sessionsTrees[sessionsSupplier]
+
 		// Check if there are sessions that need to enter the claim/proof phase as their
 		// end block height was the one before the last committed block or earlier.
-		// Iterate over the sessionsTrees map to get the ones that end at a block height
-		// lower than the current block height.
-		for sessionEndHeight, sessionsTreesEndingAtBlockHeight := range rs.sessionsTrees {
+		// Iterate over the supplier sessionsTrees map to get the ones that end at a
+		// block height lower than the current block height.
+		for sessionEndHeight, sessionsTreesEndingAtBlockHeight := range supplierSessionTress {
 			// Late sessions are the ones that have their session grace period elapsed
 			// and should already have been claimed.
 			// Group them by their end block height and emit each group separately
@@ -344,15 +345,9 @@ func (rs *relayerSessionsManager) forEachBlockClaimSessionsFn(
 			// Once claim window closing is implemented, they will be filtered out
 			// downstream at the waitForEarliestCreateClaimsHeight step.
 			if claimWindowOpenHeight <= block.Height() {
-				// Iterate over the suppliers' sessionsTrees that have grace period ending at
-				// this block height and add them to the list of sessionTrees to be published.
-				for _, supplierSessionTrees := range sessionsTreesEndingAtBlockHeight {
-					// Skip the supplier if it has no sessions to claim.
-					sessionTree, ok := supplierSessionTrees[sessionsSupplier]
-					if !ok {
-						continue
-					}
-
+				// Iterate over the sessionsTrees that have grace period ending at this
+				// block height and add them to the list of sessionTrees to be published.
+				for _, sessionTree := range sessionsTreesEndingAtBlockHeight {
 					// Mark the session as claimed and add it to the list of sessionTrees to be published.
 					// If the session has already been claimed, it will be skipped.
 					// Appending the sessionTree to the list of sessionTrees is protected
@@ -397,9 +392,17 @@ func (rs *relayerSessionsManager) removeFromRelayerSessions(sessionTree relayer.
 	sessionHeader := sessionTree.GetSessionHeader()
 	supplierOperatorAddress := sessionTree.GetSupplierOperatorAddress()
 
-	logger := rs.logger.With("session_end_block_height", sessionHeader.SessionEndBlockHeight)
+	logger := rs.logger.With("supplier_operator_address", supplierOperatorAddress)
 
-	sessionsTreesEndingAtBlockHeight, ok := rs.sessionsTrees[sessionHeader.SessionEndBlockHeight]
+	supplierSessionTrees, ok := rs.sessionsTrees[supplierOperatorAddress]
+	if !ok {
+		logger.Debug().Msg("no session tree found for the supplier operator address")
+		return
+	}
+
+	logger = logger.With("session_end_block_height", sessionHeader.SessionEndBlockHeight)
+
+	sessionsTreesEndingAtBlockHeight, ok := supplierSessionTrees[sessionHeader.SessionEndBlockHeight]
 	if !ok {
 		logger.Debug().Msg("no session trees found for the session end height")
 		return
@@ -407,31 +410,23 @@ func (rs *relayerSessionsManager) removeFromRelayerSessions(sessionTree relayer.
 
 	logger = logger.With("session_id", sessionHeader.SessionId)
 
-	suppliersSessionTrees, ok := sessionsTreesEndingAtBlockHeight[sessionHeader.SessionId]
+	_, ok = sessionsTreesEndingAtBlockHeight[sessionHeader.SessionId]
 	if !ok {
 		logger.Debug().Msg("no session trees found for the session id")
 		return
 	}
 
-	logger = logger.With("supplier_operator_address", supplierOperatorAddress)
-
-	_, ok = suppliersSessionTrees[supplierOperatorAddress]
-	if !ok {
-		logger.Debug().Msg("no session tree found for the supplier operator address")
-		return
-	}
-
-	delete(suppliersSessionTrees, supplierOperatorAddress)
+	delete(sessionsTreesEndingAtBlockHeight, sessionHeader.SessionId)
 
 	// Check if the suppliersSessionTrees map is empty and delete it if so.
-	if len(suppliersSessionTrees) == 0 {
-		delete(sessionsTreesEndingAtBlockHeight, sessionHeader.SessionId)
+	if len(sessionsTreesEndingAtBlockHeight) == 0 {
+		delete(supplierSessionTrees, sessionHeader.SessionEndBlockHeight)
 	}
 
 	// Check if the sessionsTreesEndingAtBlockHeight map is empty and delete it if so.
 	// This is an optimization done to save memory by avoiding an endlessly growing sessionsTrees map.
-	if len(sessionsTreesEndingAtBlockHeight) == 0 {
-		delete(rs.sessionsTrees, sessionHeader.SessionEndBlockHeight)
+	if len(supplierSessionTrees) == 0 {
+		delete(rs.sessionsTrees, supplierOperatorAddress)
 	}
 }
 
