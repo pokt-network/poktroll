@@ -87,7 +87,7 @@ func (sessq *sessionQuerier) GetSession(
 		ServiceId:          serviceId,
 		BlockHeight:        blockHeight,
 	}
-	res, err := retry.Call(func() (*sessiontypes.QueryGetSessionResponse, error) {
+	res, err := retry.Call(ctx, func() (*sessiontypes.QueryGetSessionResponse, error) {
 		return sessq.sessionQuerier.GetSession(ctx, req)
 	}, retry.GetStrategy(ctx))
 	if err != nil {
@@ -115,7 +115,7 @@ func (sessq *sessionQuerier) GetParams(ctx context.Context) (*sessiontypes.Param
 	logger.Debug().Msg("cache miss for session params")
 
 	req := &sessiontypes.QueryParamsRequest{}
-	res, err := retry.Call(func() (*sessiontypes.QueryParamsResponse, error) {
+	res, err := retry.Call(ctx, func() (*sessiontypes.QueryParamsResponse, error) {
 		return sessq.sessionQuerier.Params(ctx, req)
 	}, retry.GetStrategy(ctx))
 	if err != nil {

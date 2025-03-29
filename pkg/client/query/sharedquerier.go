@@ -74,7 +74,7 @@ func (sq *sharedQuerier) GetParams(ctx context.Context) (*sharedtypes.Params, er
 	logger.Debug().Msg("cache miss for shared params")
 
 	req := &sharedtypes.QueryParamsRequest{}
-	res, err := retry.Call(func() (*sharedtypes.QueryParamsResponse, error) {
+	res, err := retry.Call(ctx, func() (*sharedtypes.QueryParamsResponse, error) {
 		return sq.sharedQuerier.Params(ctx, req)
 	}, retry.GetStrategy(ctx))
 	if err != nil {
@@ -165,7 +165,7 @@ func (sq *sharedQuerier) GetEarliestSupplierClaimCommitHeight(ctx context.Contex
 	if !found {
 		logger.Debug().Msgf("cache miss for blockHeight: %s", blockHashCacheKey)
 
-		claimWindowOpenBlock, err := retry.Call(func() (*cometrpctypes.ResultBlock, error) {
+		claimWindowOpenBlock, err := retry.Call(ctx, func() (*cometrpctypes.ResultBlock, error) {
 			return sq.blockQuerier.Block(ctx, &claimWindowOpenHeight)
 		}, retry.GetStrategy(ctx))
 		if err != nil {
@@ -214,7 +214,7 @@ func (sq *sharedQuerier) GetEarliestSupplierProofCommitHeight(ctx context.Contex
 	if !found {
 		logger.Debug().Msgf("cache miss for blockHeight: %s", blockHashCacheKey)
 
-		proofWindowOpenBlock, err := retry.Call(func() (*cometrpctypes.ResultBlock, error) {
+		proofWindowOpenBlock, err := retry.Call(ctx, func() (*cometrpctypes.ResultBlock, error) {
 			return sq.blockQuerier.Block(ctx, &proofWindowOpenHeight)
 		}, retry.GetStrategy(ctx))
 		if err != nil {

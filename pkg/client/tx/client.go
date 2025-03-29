@@ -278,7 +278,7 @@ func (txnClient *txClient) SignAndBroadcast(
 		return either.SyncErr(err)
 	}
 
-	txResponse, err := retry.Call(func() (*cosmostypes.TxResponse, error) {
+	txResponse, err := retry.Call(ctx, func() (*cosmostypes.TxResponse, error) {
 		response, txErr := txnClient.txCtx.BroadcastTx(txBz)
 		// Wrap timeout height error to make it non-retryable.
 		if txErr != nil && sdkerrors.ErrTxTimeoutHeight.Is(txErr) {

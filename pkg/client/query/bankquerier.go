@@ -69,7 +69,7 @@ func (bq *bankQuerier) GetBalance(
 
 	// Query the blockchain for the balance record
 	req := &banktypes.QueryBalanceRequest{Address: address, Denom: volatile.DenomuPOKT}
-	res, err := retry.Call(func() (*banktypes.QueryBalanceResponse, error) {
+	res, err := retry.Call(ctx, func() (*banktypes.QueryBalanceResponse, error) {
 		return bq.bankQuerier.Balance(ctx, req)
 	}, retry.GetStrategy(ctx))
 	if err != nil {

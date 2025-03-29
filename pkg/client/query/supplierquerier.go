@@ -66,7 +66,7 @@ func (supq *supplierQuerier) GetSupplier(
 	logger.Debug().Msgf("cache miss for operator address key: %s", operatorAddress)
 
 	req := &suppliertypes.QueryGetSupplierRequest{OperatorAddress: operatorAddress}
-	res, err := retry.Call(func() (*suppliertypes.QueryGetSupplierResponse, error) {
+	res, err := retry.Call(ctx, func() (*suppliertypes.QueryGetSupplierResponse, error) {
 		return supq.supplierQuerier.Supplier(ctx, req)
 	}, retry.GetStrategy(ctx))
 	if err != nil {
@@ -81,7 +81,7 @@ func (supq *supplierQuerier) GetSupplier(
 // GetParams returns the supplier module parameters.
 func (supq *supplierQuerier) GetParams(ctx context.Context) (*suppliertypes.Params, error) {
 	req := suppliertypes.QueryParamsRequest{}
-	res, err := retry.Call(func() (*suppliertypes.QueryParamsResponse, error) {
+	res, err := retry.Call(ctx, func() (*suppliertypes.QueryParamsResponse, error) {
 		return supq.supplierQuerier.Params(ctx, &req)
 	}, retry.GetStrategy(ctx))
 	if err != nil {

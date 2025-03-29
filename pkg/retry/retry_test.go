@@ -446,8 +446,10 @@ func TestCallWithExponentialBackoff(t *testing.T) {
 	t.Run("succeeds after retries", func(t *testing.T) {
 		attempts := 0
 		maxAttempts := 3
+		ctx := context.Background()
 
 		result, err := retry.Call(
+			ctx,
 			func() (string, error) {
 				attempts++
 				if attempts < maxAttempts {
@@ -467,8 +469,10 @@ func TestCallWithExponentialBackoff(t *testing.T) {
 		attempts := 0
 		maxRetries := 3
 		expectedErr := errors.New("persistent error")
+		ctx := context.Background()
 
 		_, err := retry.Call(
+			ctx,
 			func() (string, error) {
 				attempts++
 				return "", expectedErr

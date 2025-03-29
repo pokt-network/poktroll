@@ -44,7 +44,7 @@ var (
 )
 
 type RetryFunc func() chan error
-type RetryStrategyFunc func(int) bool
+type RetryStrategyFunc func(context.Context, int) bool
 
 // OnError continuously invokes the provided work function (workFn) until either the context (ctx)
 // is canceled or the error channel returned by workFn is closed. If workFn encounters an error,
@@ -124,6 +124,7 @@ func OnError(
 //
 // Returns the result from the work function and any error that occurred if retries are exhausted.
 func Call[T any](
+	ctx context.Context,
 	work func() (T, error),
 	retryStrategy ...RetryStrategyFunc,
 ) (T, error) {
@@ -154,7 +155,7 @@ func Call[T any](
 			return result, err
 		}
 
-		if !retryStrategy[0](retryCount) {
+		if !retryStrategy[0](ctx, retryCount) {
 			return result, err
 		}
 	}
@@ -173,25 +174,26 @@ func GetStrategy(ctx context.Context) RetryStrategyFunc {
 }
 
 // WithExponentialBackoffFn creates a retry strategy with exponential backoff.
-// It sleeps when when retryCount >= maxRetryCount to allow higher-level retry
-// mechanisms (e.g., retry until specific blockchain height is reached) to build
-// on this function while maintaining predictable delay patterns, regardless of
-// whether the maxRetryCount boundary is reached.
 func WithExponentialBackoffFn(
 	maxRetryCount int,
 	initialDelayMs int,
 	maxDelayMs int,
-) func(retryCount int) bool {
-	return func(retryCount int) bool {
-		// Capping the delay to maxDelayMs to prevent excessive wait times.
+) RetryStrategyFunc {
+	return func(ctx context.Context, retryCount int) bool {
 		if retryCount >= maxRetryCount {
-			time.Sleep(time.Duration(maxDelayMs) * time.Millisecond)
 			return false
 		}
 
 		backoffDelay := initialDelayMs * int(math.Pow(2, float64(retryCount)))
-		delay := min(backoffDelay, maxDelayMs)
-		time.Sleep(time.Duration(delay) * time.Millisecond)
-		return true
+		delayMs := min(backoffDelay, maxDelayMs)
+		delayCh := time.After(time.Duration(delayMs) * time.Millisecond)
+		for {
+			select {
+			case <-ctx.Done():
+				return false
+			case <-delayCh:
+				return true
+			}
+		}
 	}
 }

@@ -76,7 +76,7 @@ func (servq *serviceQuerier) GetService(
 		Id: serviceId,
 	}
 
-	res, err := retry.Call(func() (*servicetypes.QueryGetServiceResponse, error) {
+	res, err := retry.Call(ctx, func() (*servicetypes.QueryGetServiceResponse, error) {
 		return servq.serviceQuerier.Service(ctx, req)
 	}, retry.GetStrategy(ctx))
 	if err != nil {
@@ -111,7 +111,7 @@ func (servq *serviceQuerier) GetServiceRelayDifficulty(
 		ServiceId: serviceId,
 	}
 
-	res, err := retry.Call(func() (*servicetypes.QueryGetRelayMiningDifficultyResponse, error) {
+	res, err := retry.Call(ctx, func() (*servicetypes.QueryGetRelayMiningDifficultyResponse, error) {
 		return servq.serviceQuerier.RelayMiningDifficulty(ctx, req)
 	}, retry.GetStrategy(ctx))
 	if err != nil {
@@ -126,7 +126,7 @@ func (servq *serviceQuerier) GetServiceRelayDifficulty(
 // GetParams returns the service module parameters.
 func (servq *serviceQuerier) GetParams(ctx context.Context) (*servicetypes.Params, error) {
 	req := servicetypes.QueryParamsRequest{}
-	res, err := retry.Call(func() (*servicetypes.QueryParamsResponse, error) {
+	res, err := retry.Call(ctx, func() (*servicetypes.QueryParamsResponse, error) {
 		return servq.serviceQuerier.Params(ctx, &req)
 	}, retry.GetStrategy(ctx))
 	if err != nil {

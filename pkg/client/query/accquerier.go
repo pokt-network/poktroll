@@ -68,7 +68,7 @@ func (aq *accQuerier) GetAccount(
 
 	// Query the blockchain for the account record
 	req := &accounttypes.QueryAccountRequest{Address: address}
-	res, err := retry.Call(func() (*accounttypes.QueryAccountResponse, error) {
+	res, err := retry.Call(ctx, func() (*accounttypes.QueryAccountResponse, error) {
 		return aq.accountQuerier.Account(ctx, req)
 	}, retry.GetStrategy(ctx))
 	if err != nil {

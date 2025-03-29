@@ -68,7 +68,7 @@ func (aq *appQuerier) GetApplication(
 	logger.Debug().Msgf("cache miss for application address key: %s", appAddress)
 
 	req := apptypes.QueryGetApplicationRequest{Address: appAddress}
-	res, err := retry.Call(func() (*apptypes.QueryGetApplicationResponse, error) {
+	res, err := retry.Call(ctx, func() (*apptypes.QueryGetApplicationResponse, error) {
 		return aq.applicationQuerier.Application(ctx, &req)
 	}, retry.GetStrategy(ctx))
 	if err != nil {
@@ -86,7 +86,7 @@ func (aq *appQuerier) GetAllApplications(ctx context.Context) ([]apptypes.Applic
 	// TODO_OPTIMIZE: Fill the cache with all applications and mark it as
 	// having been filled, such that subsequent calls to this function will
 	// return the cached value.
-	res, err := retry.Call(func() (*apptypes.QueryAllApplicationsResponse, error) {
+	res, err := retry.Call(ctx, func() (*apptypes.QueryAllApplicationsResponse, error) {
 		return aq.applicationQuerier.AllApplications(ctx, &req)
 	}, retry.GetStrategy(ctx))
 	if err != nil {
@@ -108,7 +108,7 @@ func (aq *appQuerier) GetParams(ctx context.Context) (*apptypes.Params, error) {
 	logger.Debug().Msg("cache miss for application params")
 
 	req := apptypes.QueryParamsRequest{}
-	res, err := retry.Call(func() (*apptypes.QueryParamsResponse, error) {
+	res, err := retry.Call(ctx, func() (*apptypes.QueryParamsResponse, error) {
 		return aq.applicationQuerier.Params(ctx, &req)
 	}, retry.GetStrategy(ctx))
 	if err != nil {

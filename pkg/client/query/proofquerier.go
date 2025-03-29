@@ -60,7 +60,7 @@ func (pq *proofQuerier) GetParams(
 	logger.Debug().Msg("cache miss proof params")
 
 	req := &prooftypes.QueryParamsRequest{}
-	res, err := retry.Call(func() (*prooftypes.QueryParamsResponse, error) {
+	res, err := retry.Call(ctx, func() (*prooftypes.QueryParamsResponse, error) {
 		return pq.proofQuerier.Params(ctx, req)
 	}, retry.GetStrategy(ctx))
 	if err != nil {
