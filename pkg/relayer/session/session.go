@@ -2,11 +2,14 @@ package session
 
 import (
 	"context"
+	"path"
 	"sync"
 
 	"cosmossdk.io/depinject"
+	"github.com/pokt-network/smt/kvstore/pebble"
 
 	"github.com/pokt-network/poktroll/pkg/client"
+	blocktypes "github.com/pokt-network/poktroll/pkg/client/block"
 	"github.com/pokt-network/poktroll/pkg/client/supplier"
 	"github.com/pokt-network/poktroll/pkg/observable"
 	"github.com/pokt-network/poktroll/pkg/observable/channel"
@@ -19,11 +22,11 @@ import (
 
 var _ relayer.RelayerSessionsManager = (*relayerSessionsManager)(nil)
 
-// sessionTreesMap is an alias type for a map of
-// sessionEndHeight->sessionId->supplierOperatorAddress->SessionTree.
+// SessionTreesMap is an alias type for a map of
+// supplierOperatorAddress->sessionEndHeight->sessionId->SessionTree.
 // It is used to keep track of the sessions that are created in the RelayMiner
 // by grouping them by their end block height, session id and supplier operator address.
-type sessionsTreesMap = map[int64]map[string]map[string]relayer.SessionTree
+type SessionsTreesMap = map[string]map[int64]map[string]relayer.SessionTree
 
 // relayerSessionsManager is an implementation of the RelayerSessions interface.
 // TODO_TEST: Add tests to the relayerSessionsManager.
@@ -32,23 +35,31 @@ type relayerSessionsManager struct {
 
 	relayObs relayer.MinedRelaysObservable
 
-	// sessionTrees is a map of blockHeight->sessionId->supplierOperatorAddress->sessionTree.
+	// sessionTrees is a map of supplierOperatorAddress->blockHeight->sessionId->sessionTree.
 	// The block height index is used to know when the sessions contained in the
 	// entry should be closed, this helps to avoid iterating over all sessionsTrees
 	// to check if they are ready to be closed.
 	// The sessionTrees are grouped by supplierOperatorAddress since each supplier has to
 	// claim the work it has been assigned.
-	sessionsTrees   sessionsTreesMap
+	sessionsTrees   SessionsTreesMap
 	sessionsTreesMu *sync.Mutex
 
 	// blockClient is used to get the notifications of committed blocks.
 	blockClient client.BlockClient
+
+	// blockQueryClient is used to query for blocks by height in case the blockClient
+	// does not have the block in its replay buffer.
+	blockQueryClient client.BlockQueryClient
 
 	// supplierClients is used to create claims and submit proofs for sessions.
 	supplierClients *supplier.SupplierClientMap
 
 	// storesDirectory points to a path on disk where KVStore data files are created.
 	storesDirectory string
+
+	// sessionsMetadataStore is a key-value store used to persist the metadata of
+	// sessions created in order to recover the active ones in case of a restart.
+	sessionsMetadataStore pebble.PebbleKVStore
 
 	// sharedQueryClient is used to query shared module parameters.
 	sharedQueryClient client.SharedQueryClient
@@ -71,31 +82,36 @@ type relayerSessionsManager struct {
 //
 // Required dependencies:
 //   - client.BlockClient
+//   - client.BlockQueryClient
 //   - client.SupplierClientMap
+//   - client.SharedQueryClient
+//   - client.ServiceQueryClient
 //   - client.ProofQueryClient
+//   - client.BankQueryClient
+//   - polylog.Logger
 //
 // Available options:
 //   - WithStoresDirectory
 //   - WithSigningKeyNames
 func NewRelayerSessions(
-	ctx context.Context,
 	deps depinject.Config,
 	opts ...relayer.RelayerSessionsManagerOption,
 ) (_ relayer.RelayerSessionsManager, err error) {
 	rs := &relayerSessionsManager{
-		logger:          polylog.Ctx(ctx),
-		sessionsTrees:   make(sessionsTreesMap),
+		sessionsTrees:   make(SessionsTreesMap),
 		sessionsTreesMu: &sync.Mutex{},
 	}
 
-	if err := depinject.Inject(
+	if err = depinject.Inject(
 		deps,
 		&rs.blockClient,
+		&rs.blockQueryClient,
 		&rs.supplierClients,
 		&rs.sharedQueryClient,
 		&rs.serviceQueryClient,
 		&rs.proofQueryClient,
 		&rs.bankQueryClient,
+		&rs.logger,
 	); err != nil {
 		return nil, err
 	}
@@ -104,7 +120,13 @@ func NewRelayerSessions(
 		opt(rs)
 	}
 
-	if err := rs.validateConfig(); err != nil {
+	if err = rs.validateConfig(); err != nil {
+		return nil, err
+	}
+
+	// Initialize the session metadata store.
+	sessionRegistryDir := path.Join(rs.storesDirectory, "sessions_metadata")
+	if rs.sessionsMetadataStore, err = pebble.NewKVStore(sessionRegistryDir); err != nil {
 		return nil, err
 	}
 
@@ -116,7 +138,19 @@ func NewRelayerSessions(
 // them through the claim/proof lifecycle, broadcasting transactions to  the
 // network as necessary.
 // It IS NOT BLOCKING as map operations run in their own goroutines.
-func (rs *relayerSessionsManager) Start(ctx context.Context) {
+func (rs *relayerSessionsManager) Start(ctx context.Context) error {
+	// Retrieve the latest block, its height will be used as a reference point to determine
+	// which sessions are still active and which ones have expired based on their end heights.
+	block := rs.blockClient.LastBlock(ctx)
+
+	// Restore previously active sessions from persistent storage by rehydrating
+	// the session tree map. This is crucial for preserving the relayer's state across
+	// restarts, ensuring that no active sessions or accumulated work is lost when the
+	// process is interrupted.
+	if err := rs.populateSessionTreeMap(ctx, block.Height()); err != nil {
+		return err
+	}
+
 	// NB: must cast back to generic observable type to use with Map.
 	// relayer.MinedRelaysObservable cannot be an alias due to gomock's lack of
 	// support for generic types.
@@ -134,16 +168,59 @@ func (rs *relayerSessionsManager) Start(ctx context.Context) {
 		claimedSessionsObs := rs.createClaims(ctx, supplierClient, supplierSessionsToClaimObs)
 		rs.submitProofs(ctx, supplierClient, claimedSessionsObs)
 	}
+
+	// Stop the relayer sessions manager when the context is done.
+	// This is necessary to ensure that in case of a shutdown, all the sessions trees
+	// are persisted along their root hashes.
+	go func() {
+		<-ctx.Done()
+		rs.Stop()
+	}()
+
+	return nil
 }
 
-// Stop unsubscribes all observables from the InsertRelays observable which
-// will close downstream observables as they drain.
-//
-// TODO_TECHDEBT: Either add a mechanism to wait for draining to complete
-// and/or ensure that the state at each pipeline stage is persisted to disk
-// and exit as early as possible.
+// Stop performs a complete shutdown of the relayerSessionsManager by:
+// 1. Closing connections and canceling subscriptions
+// 2. Persisting all session data to storage
+// 3. Releasing resources and clearing memory
+// This ensures no data is lost during shutdown and resources are properly cleaned up.
 func (rs *relayerSessionsManager) Stop() {
+	// Close the block client and unsubscribe from all observables to stop receiving events.
+	// While process termination would eventually clean these up, proper shutdown
+	// is important for graceful termination and testing scenarios.
+	rs.blockClient.Close()
 	rs.relayObs.UnsubscribeAll()
+
+	// Persist each active session's state to disk and properly close the associated
+	// key-value stores. This ensures that all accumulated relay data (including root
+	// hashes needed for claims) is safely stored before shutdown.
+	for _, supplierSessionTrees := range rs.sessionsTrees {
+		for _, sessionTreesAtHeight := range supplierSessionTrees {
+			for _, sessionTree := range sessionTreesAtHeight {
+				if err := rs.persistSessionMetadata(sessionTree); err != nil {
+					rs.logger.Error().Err(err).Msgf(
+						"failed to persist session metadata for sessionId %q",
+						sessionTree.GetSessionHeader().GetSessionId(),
+					)
+				}
+
+				if err := sessionTree.Stop(); err != nil {
+					rs.logger.Error().Err(err).Msgf(
+						"failed to stop session tree store for sessionId %q",
+						sessionTree.GetSessionHeader().GetSessionId(),
+					)
+				}
+			}
+		}
+	}
+
+	// Close the metadata store that tracks all sessions and release its resources.
+	// Then clear the in-memory sessions map for testing purposes.
+	if err := rs.sessionsMetadataStore.Stop(); err != nil {
+		rs.logger.Error().Err(err).Msg("failed to stop sessions metadata store")
+	}
+	clear(rs.sessionsTrees)
 }
 
 // SessionsToClaim returns an observable that notifies when sessions are ready to be claimed.
@@ -160,29 +237,27 @@ func (rs *relayerSessionsManager) ensureSessionTree(
 	rs.sessionsTreesMu.Lock()
 	defer rs.sessionsTreesMu.Unlock()
 
+	// Get the supplier session trees for the supplierOperatorAddress.
+	supplierOperatorAddress := relayRequestMetadata.SupplierOperatorAddress
+	supplierSessionTrees, ok := rs.sessionsTrees[supplierOperatorAddress]
+
+	// If there is no map for session trees with the supplier operator address, create one.
+	if !ok {
+		supplierSessionTrees = make(map[int64]map[string]relayer.SessionTree)
+		rs.sessionsTrees[supplierOperatorAddress] = supplierSessionTrees
+	}
+
 	// Get the sessions that end at the relay request's sessionEndHeight.
 	sessionHeader := relayRequestMetadata.SessionHeader
-	sessionTreesWithEndHeight, ok := rs.sessionsTrees[sessionHeader.SessionEndBlockHeight]
+	sessionTreesWithEndHeight, ok := supplierSessionTrees[sessionHeader.SessionEndBlockHeight]
 
-	// If there is no map for sessions at the sessionEndHeight, create one.
+	// If there is no map for sessions with sessionEndHeight, create one.
 	if !ok {
-		sessionTreesWithEndHeight = make(map[string]map[string]relayer.SessionTree)
-		rs.sessionsTrees[sessionHeader.SessionEndBlockHeight] = sessionTreesWithEndHeight
+		sessionTreesWithEndHeight = make(map[string]relayer.SessionTree)
+		supplierSessionTrees[sessionHeader.SessionEndBlockHeight] = sessionTreesWithEndHeight
 	}
 
-	// Get the sessionTreeWithSessionId for the given session.
-	sessionTreeWithSessionId, ok := sessionTreesWithEndHeight[sessionHeader.SessionId]
-
-	// If there is no map for session trees with the session id, create one.
-	if !ok {
-		sessionTreeWithSessionId = make(map[string]relayer.SessionTree)
-		sessionTreesWithEndHeight[sessionHeader.SessionId] = sessionTreeWithSessionId
-	}
-
-	supplierOperatorAddress := relayRequestMetadata.SupplierOperatorAddress
-
-	// Get the sessionTree for the supplier corresponding to the relay request.
-	sessionTree, ok := sessionTreeWithSessionId[supplierOperatorAddress]
+	sessionTree, ok := sessionTreesWithEndHeight[sessionHeader.SessionId]
 
 	// If the sessionTree does not exist, create and assign it to the
 	// sessionTreeWithSessionId map for the given supplier operator address.
@@ -193,7 +268,12 @@ func (rs *relayerSessionsManager) ensureSessionTree(
 			return nil, err
 		}
 
-		sessionTreeWithSessionId[supplierOperatorAddress] = sessionTree
+		sessionTreesWithEndHeight[sessionHeader.SessionId] = sessionTree
+
+		// Persist the newly created session tree metadata to disk.
+		if err := rs.persistSessionMetadata(sessionTree); err != nil {
+			return nil, err
+		}
 	}
 
 	return sessionTree, nil
@@ -241,11 +321,14 @@ func (rs *relayerSessionsManager) forEachBlockClaimSessionsFn(
 			return
 		}
 
+		// Get the sessions trees for the supplier matching the sessionsSupplier.
+		supplierSessionTress := rs.sessionsTrees[sessionsSupplier]
+
 		// Check if there are sessions that need to enter the claim/proof phase as their
 		// end block height was the one before the last committed block or earlier.
-		// Iterate over the sessionsTrees map to get the ones that end at a block height
-		// lower than the current block height.
-		for sessionEndHeight, sessionsTreesEndingAtBlockHeight := range rs.sessionsTrees {
+		// Iterate over the supplier sessionsTrees map to get the ones that end at a
+		// block height lower than the current block height.
+		for sessionEndHeight, sessionsTreesEndingAtBlockHeight := range supplierSessionTress {
 			// Late sessions are the ones that have their session grace period elapsed
 			// and should already have been claimed.
 			// Group them by their end block height and emit each group separately
@@ -262,15 +345,9 @@ func (rs *relayerSessionsManager) forEachBlockClaimSessionsFn(
 			// Once claim window closing is implemented, they will be filtered out
 			// downstream at the waitForEarliestCreateClaimsHeight step.
 			if claimWindowOpenHeight <= block.Height() {
-				// Iterate over the suppliers' sessionsTrees that have grace period ending at
-				// this block height and add them to the list of sessionTrees to be published.
-				for _, supplierSessionTrees := range sessionsTreesEndingAtBlockHeight {
-					// Skip the supplier if it has no sessions to claim.
-					sessionTree, ok := supplierSessionTrees[sessionsSupplier]
-					if !ok {
-						continue
-					}
-
+				// Iterate over the sessionsTrees that have grace period ending at this
+				// block height and add them to the list of sessionTrees to be published.
+				for _, sessionTree := range sessionsTreesEndingAtBlockHeight {
 					// Mark the session as claimed and add it to the list of sessionTrees to be published.
 					// If the session has already been claimed, it will be skipped.
 					// Appending the sessionTree to the list of sessionTrees is protected
@@ -315,9 +392,17 @@ func (rs *relayerSessionsManager) removeFromRelayerSessions(sessionTree relayer.
 	sessionHeader := sessionTree.GetSessionHeader()
 	supplierOperatorAddress := sessionTree.GetSupplierOperatorAddress()
 
-	logger := rs.logger.With("session_end_block_height", sessionHeader.SessionEndBlockHeight)
+	logger := rs.logger.With("supplier_operator_address", supplierOperatorAddress)
 
-	sessionsTreesEndingAtBlockHeight, ok := rs.sessionsTrees[sessionHeader.SessionEndBlockHeight]
+	supplierSessionTrees, ok := rs.sessionsTrees[supplierOperatorAddress]
+	if !ok {
+		logger.Debug().Msg("no session tree found for the supplier operator address")
+		return
+	}
+
+	logger = logger.With("session_end_block_height", sessionHeader.SessionEndBlockHeight)
+
+	sessionsTreesEndingAtBlockHeight, ok := supplierSessionTrees[sessionHeader.SessionEndBlockHeight]
 	if !ok {
 		logger.Debug().Msg("no session trees found for the session end height")
 		return
@@ -325,31 +410,23 @@ func (rs *relayerSessionsManager) removeFromRelayerSessions(sessionTree relayer.
 
 	logger = logger.With("session_id", sessionHeader.SessionId)
 
-	suppliersSessionTrees, ok := sessionsTreesEndingAtBlockHeight[sessionHeader.SessionId]
+	_, ok = sessionsTreesEndingAtBlockHeight[sessionHeader.SessionId]
 	if !ok {
 		logger.Debug().Msg("no session trees found for the session id")
 		return
 	}
 
-	logger = logger.With("supplier_operator_address", supplierOperatorAddress)
-
-	_, ok = suppliersSessionTrees[supplierOperatorAddress]
-	if !ok {
-		logger.Debug().Msg("no session tree found for the supplier operator address")
-		return
-	}
-
-	delete(suppliersSessionTrees, supplierOperatorAddress)
+	delete(sessionsTreesEndingAtBlockHeight, sessionHeader.SessionId)
 
 	// Check if the suppliersSessionTrees map is empty and delete it if so.
-	if len(suppliersSessionTrees) == 0 {
-		delete(sessionsTreesEndingAtBlockHeight, sessionHeader.SessionId)
+	if len(sessionsTreesEndingAtBlockHeight) == 0 {
+		delete(supplierSessionTrees, sessionHeader.SessionEndBlockHeight)
 	}
 
 	// Check if the sessionsTreesEndingAtBlockHeight map is empty and delete it if so.
 	// This is an optimization done to save memory by avoiding an endlessly growing sessionsTrees map.
-	if len(sessionsTreesEndingAtBlockHeight) == 0 {
-		delete(rs.sessionsTrees, sessionHeader.SessionEndBlockHeight)
+	if len(supplierSessionTrees) == 0 {
+		delete(rs.sessionsTrees, supplierOperatorAddress)
 	}
 }
 
@@ -368,7 +445,7 @@ func (rs *relayerSessionsManager) validateConfig() error {
 func (rs *relayerSessionsManager) waitForBlock(ctx context.Context, targetHeight int64) client.Block {
 	// Create a cancellable child context for managing the CommittedBlocksSequence lifecycle.
 	// Since the committedBlocksObserver is no longer needed after the block it is looking for
-	// is reached, cancelling the child context at the end of the function will stop
+	// is reached, canceling the child context at the end of the function will stop
 	// the subscriptions and close the publish channel associated with the
 	// CommittedBlocksSequence observable which is not exposing it.
 	ctx, cancel := context.WithCancel(ctx)
@@ -385,18 +462,19 @@ func (rs *relayerSessionsManager) waitForBlock(ctx context.Context, targetHeight
 	// If minNumReplayBlocks is negative, no replay is necessary and the replay buffer will be ignored.
 	minNumReplayBlocks := rs.blockClient.LastBlock(ctx).Height() - targetHeight + 1
 
-	// TODO_MAINNET: If the replay buffer size is less than minNumReplayBlocks, the target
+	// If the replay buffer size is less than minNumReplayBlocks, the target
 	// block targetHeight will never be observed. This can happen if a relayminer is cold-started
 	// with persisted but unclaimed/unproven ("late") sessions, where a "late" session is one
 	// which is unclaimed and whose earliest claim commit height has already elapsed.
-	//
-	// In this case, we should use a block query client to populate the block client replay
-	// observable at the time of block client construction.
-	// The latestBufferedOffset would be the difference between the current height and
-	// earliest unclaimed/unproven session's earliest supplier claim/proof commit height.
-	// This check and return branch can be removed once this is implemented.
 	if committedBlocksObs.GetReplayBufferSize() < int(minNumReplayBlocks) {
-		return nil
+		blockResult, err := rs.blockQueryClient.Block(ctx, &targetHeight)
+		if err != nil {
+			rs.logger.Error().Err(err).Msgf("failed to query for block block height %d", targetHeight)
+			return nil
+		}
+
+		block := blocktypes.CometBlockResult(*blockResult)
+		return &block
 	}
 
 	for block := range committedBlocksObserver.Ch() {

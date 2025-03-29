@@ -73,8 +73,8 @@ type SupplierClient interface {
 		ctx context.Context,
 		sessionProofs ...MsgSubmitProof,
 	) error
-	// Address returns the operator address of the SupplierClient that will be submitting proofs & claims.
-	OperatorAddress() *cosmostypes.AccAddress
+	// OperatorAddress returns the bech32 string representation of the supplier operator address.
+	OperatorAddress() string
 }
 
 // TxClient provides a synchronous interface initiating and waiting for transactions
@@ -331,11 +331,24 @@ type ProofParams interface {
 	GetProofSubmissionFee() *cosmostypes.Coin
 }
 
+// Claim is a go interface type which corresponds to the pocket.proof.Claim protobuf
+// message. Since the generated go types don't include interface types, this
+// is necessary to prevent dependency cycles.
+type Claim interface {
+	GetSupplierOperatorAddress() string
+	GetSessionHeader() *sessiontypes.SessionHeader
+	GetRootHash() []byte
+}
+
 // ProofQueryClient defines an interface that enables the querying of the
 // onchain proof module params.
 type ProofQueryClient interface {
 	// GetParams queries the chain for the current proof module parameters.
 	GetParams(ctx context.Context) (ProofParams, error)
+
+	// GetClaim queries the chain for the details of the claim corresponding to the
+	// given supplier and session id
+	GetClaim(ctx context.Context, supplierOperatorAddress string, sessionId string) (Claim, error)
 }
 
 // ServiceQueryClient defines an interface that enables the querying of the

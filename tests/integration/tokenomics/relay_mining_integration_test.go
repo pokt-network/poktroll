@@ -228,7 +228,7 @@ func prepareRealClaim(
 		// DEV_NOTE: Unsigned relays are mined instead of signed relays to avoid calling
 		// the application querier and signature logic which make the test very slow
 		// given the large number of iterations involved.
-		minedRelay := testrelayer.NewUnsignedMinedRelay(t, session, supplierAddress)
+		minedRelay := testrelayer.NewUnsignedMinedRelay(t, session.Header, supplierAddress)
 		// Ensure that the relay is applicable to the relay mining difficulty
 		if protocol.IsRelayVolumeApplicable(minedRelay.Hash, relayMiningDifficulty.TargetHash) {
 			err = trie.Update(minedRelay.Hash, minedRelay.Bytes, service.ComputeUnitsPerRelay)

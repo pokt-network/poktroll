@@ -116,7 +116,7 @@ type RelayerSessionsManager interface {
 	// The session trees are piped through a series of map operations which progress
 	// them through the claim/proof lifecycle, broadcasting transactions to  the
 	// network as necessary.
-	Start(ctx context.Context)
+	Start(ctx context.Context) error
 
 	// Stop unsubscribes all observables from the InsertRelays observable which
 	// will close downstream observables as they drain.
@@ -144,7 +144,14 @@ type SessionTree interface {
 	// This function should be called several blocks after a session has been claimed and needs to be proven.
 	ProveClosest(path []byte) (proof *smt.SparseCompactMerkleClosestProof, err error)
 
+	// GetSMSTRoot returns the the current root hash of the SMST.
+	// It differs from GetClaimRoot in that it always returns the latest root hash
+	// of the SMST, while GetClaimRoot returns the root hash after the session tree
+	// has been flushed to create the claim.
+	GetSMSTRoot() smt.MerkleSumRoot
+
 	// GetClaimRoot returns the root hash of the SMST needed for creating the claim.
+	// It returns nil if the session tree has not been flushed yet.
 	GetClaimRoot() []byte
 
 	// GetProofBz returns the proof created by ProveClosest needed for submitting
@@ -176,6 +183,10 @@ type SessionTree interface {
 
 	// GetTrieSpec returns the trie spec of the SMST.
 	GetTrieSpec() smt.TrieSpec
+
+	// Stop stops the session tree and closes the KVStore.
+	// Calling Stop does not calculate the root hash of the SMST.
+	Stop() error
 }
 
 // RelayMeter is an interface that keeps track of the amount of stake consumed between
