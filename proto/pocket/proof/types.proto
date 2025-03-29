@@ -41,7 +41,7 @@ message Claim {
 // state offchain by the RelayMiner.
 // It is not used for any onchain logic.
 message PersistedSMT {
-  poktroll.session.SessionHeader session_header = 1;
+  pocket.session.SessionHeader session_header = 1;
   string supplier_operator_address = 2 [(cosmos_proto.scalar) = "cosmos.AddressString"];
   bytes smt_root = 3;
 }
