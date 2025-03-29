@@ -56,7 +56,7 @@ Important: When submitting changes, you must include all parameters, even if you
 To check the current consensus parameters (before and after the change), use this command:
 
 ```bash
-poktrolld query consensus params
+pocketd query consensus params
 ```
 
 Before the upgrade:
@@ -71,7 +71,7 @@ params:
 To submit the transaction that increases the block size:
 
 ```bash
-poktrolld tx authz exec tools/scripts/params/consensus_increase_block_size.json --from pnf --yes
+pocketd tx authz exec tools/scripts/params/consensus_increase_block_size.json --from pnf --yes
 ```
 
 After the upgrade:

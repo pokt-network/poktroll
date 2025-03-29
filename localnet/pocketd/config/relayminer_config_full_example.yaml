@@ -1,0 +1,93 @@
+# Names of the key (in the keyring) used to run the suppliers for.
+# These keys must correspond to the operator addresses of the suppliers.
+default_signing_key_names: [supplier1]
+
+# Relative path (on the relayminer's machine) to the SMT KV store data on disk.
+smt_store_path: ./path/to/smt_stores
+
+# Prometheus exporter configuration
+metrics:
+  # Enable or disable the metrics exporter
+  enabled: true
+  # The address (host:port or just port) for the metrics exporter to listen on.
+  addr: :9090
+
+# Pprof endpoint configuration. More information:
+# https://pkg.go.dev/github.com/google/pprof#section-readme
+pprof:
+  enabled: false
+  addr: localhost:6060
+
+# Ping server configuration to test the connectivity of every
+# suppliers.[].service_config.backend_url
+ping:
+  enabled: false
+  addr: localhost:8081
+
+pocket_node:
+  # Pocket node URL exposing the CometBFT JSON-RPC API.
+  # Used by the Cosmos client SDK, event subscriptions, etc.
+  # If unspecified, defaults to `tx_node_rpc_url`.
+  query_node_rpc_url: tcp://pocket-validator:26657
+  # Pocket node URL exposing the Cosmos gRPC service for querying purposes.
+  query_node_grpc_url: tcp://pocket-validator:9090
+  # Pocket node URL exposing the CometRPC service.
+  tx_node_rpc_url: tcp://pocket-validator:9090
+
+# Suppliers are different services offered on Pocket Network,
+# proxied through Relay Miner.
+suppliers:
+  # The `service_id` of the service offered on the network.
+  # Must match the Service.Id of the staked service.
+  # Must be unique in the `suppliers` array.
+  # Required.
+  - service_id: ethereum
+    listen_url: http://0.0.0.0:80
+    # Configuration of the service offered through RelayMiner.
+    service_config:
+      # Backend URL is the endpoint that the RelayMiner proxies the requests to.
+      # Also known as the data node or service node.
+      # Required.
+      backend_url: http://anvil.servicer:8545
+
+      # Authentication for the service (HTTP Basic Auth).
+      # Optional.
+      authentication:
+        username: user
+        password: pwd
+
+      # Authentication via a static header might be desirable for high-traffic services.
+      # Example: If the service requires a header like `Authorization: Bearer <PASSWORD>`
+      # Optional.
+      headers: {}
+
+      # A list of addresses that the RelayMiner accepts requests from.
+      #
+      # 1. Multiple hosts can be configured per supplier.
+      # 2. Must be unique per listen_address to avoid conflicts.
+      # 3. Host must be reachable from the internet if staked on the network.
+      # 4. A supplier must be staked on this endpoint for traffic to be routed.
+      #
+      # In most scenarios, only one host is specified. Multiple hosts might be useful for:
+      # - Migrating from one domain to another (accepting requests on both old and new domains).
+      # - Having a different domain for internal requests.
+      #
+      # Required.
+      publicly_exposed_endpoints:
+        # Note: No schema or port is specified.
+        # - HTTPS/TLS termination can be handled by a separate layer (e.g., nginx or HAproxy).
+        # - Port can differ from the staked port (e.g., Relay Miner on port 80, TLS on port 443).
+        - ethereum.devnet1.relayminer.com
+
+    # Listen url, usually `http://0.0.0.0:80` (all network interfaces, port `80`).
+    # The scheme in the URL is required in order to infer the server type.
+    # Multiple suppliers can share one listen address.
+    # Required.
+
+  # Example of exposing an ollama LLM endpoint.
+  - service_id: ollama:mistral:7b
+    listen_url: http://0.0.0.0:80
+    service_config:
+      backend_url: http://localhost:11434
+      publicly_exposed_endpoints:
+        - mistral-7b.devnet1.poktroll.com

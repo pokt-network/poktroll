@@ -80,7 +80,7 @@ localnet_config_defaults = {
     # repo instead.
     "path_local_repo": {
         "enabled": False,
-        "path": "../path"
+        "path": os.path.join("..", "path")
     },
 
     "indexer": {
@@ -192,22 +192,22 @@ if localnet_config["observability"]["enabled"]:
     )
 
 # Import keyring/keybase files into Kubernetes ConfigMap
-configmap_create("poktrolld-keys", from_file=listdir("localnet/poktrolld/keyring-test/"))
+configmap_create("pocketd-keys", from_file=listdir("localnet/pocketd/keyring-test/"))
 
 # Import keyring/keybase files into Kubernetes Secret
-secret_create_generic("poktrolld-keys", from_file=listdir("localnet/poktrolld/keyring-test/"))
+secret_create_generic("pocketd-keys", from_file=listdir("localnet/pocketd/keyring-test/"))
 
-# Import validator keys for the poktrolld helm chart to consume
+# Import validator keys for the pocketd helm chart to consume
 secret_create_generic(
-    "poktrolld-validator-keys",
+    "pocketd-validator-keys",
     from_file=[
-        "localnet/poktrolld/config/node_key.json",
-        "localnet/poktrolld/config/priv_validator_key.json",
+        "localnet/pocketd/config/node_key.json",
+        "localnet/pocketd/config/priv_validator_key.json",
     ],
 )
 
 # Import configuration files into Kubernetes ConfigMap
-configmap_create("poktrolld-configs", from_file=listdir("localnet/poktrolld/config/"), watch=True)
+configmap_create("pocketd-configs", from_file=listdir("localnet/pocketd/config/"), watch=True)
 
 if localnet_config["hot-reloading"]:
     # Hot reload protobuf changes
@@ -217,38 +217,38 @@ if localnet_config["hot-reloading"]:
         deps=["proto"],
         labels=["hot-reloading"],
     )
-    # Hot reload the poktrolld binary used by the k8s cluster
+    # Hot reload the pocketd binary used by the k8s cluster
     local_resource(
-        "hot-reload: poktrolld",
+        "hot-reload: pocketd",
         "GOOS=linux ignite chain build --skip-proto --output=./bin --debug -v",
         deps=hot_reload_dirs,
         labels=["hot-reloading"],
         resource_deps=["hot-reload: generate protobufs"],
     )
-    # Hot reload the local poktrolld binary used by the CLI
+    # Hot reload the local pocketd binary used by the CLI
     local_resource(
-        "hot-reload: poktrolld - local cli",
+        "hot-reload: pocketd - local cli",
         "ignite chain build --skip-proto --debug -v -o $(go env GOPATH)/bin",
         deps=hot_reload_dirs,
         labels=["hot-reloading"],
         resource_deps=["hot-reload: generate protobufs"],
     )
 
-# Build an image with a poktrolld binary
+# Build an image with a pocketd binary
 docker_build_with_restart(
-    "poktrolld",
+    "pocketd",
     ".",
     dockerfile_contents="""FROM golang:1.23.0
 RUN apt-get -q update && apt-get install -qyy curl jq less
 RUN go install github.com/go-delve/delve/cmd/dlv@latest
-COPY bin/poktrolld /usr/local/bin/poktrolld
+COPY bin/pocketd /usr/local/bin/pocketd
 WORKDIR /
 """,
-    only=["./bin/poktrolld"],
+    only=["./bin/pocketd"],
     entrypoint=[
-        "poktrolld",
+        "pocketd",
     ],
-    live_update=[sync("bin/poktrolld", "/usr/local/bin/poktrolld")],
+    live_update=[sync("bin/pocketd", "/usr/local/bin/pocketd")],
 )
 
 # Run data nodes & validators
@@ -259,7 +259,7 @@ k8s_yaml(
 # Provision validator
 helm_resource(
     "validator",
-    chart_prefix + "poktroll-validator",
+    chart_prefix + "pocket-validator",
     flags=[
         "--values=./localnet/kubernetes/values-common.yaml",
         "--values=./localnet/kubernetes/values-validator.yaml",
@@ -268,9 +268,9 @@ helm_resource(
         "--set=logs.format=" + str(localnet_config["validator"]["logs"]["format"]),
         "--set=serviceMonitor.enabled=" + str(localnet_config["observability"]["enabled"]),
         "--set=development.delve.enabled=" + str(localnet_config["validator"]["delve"]["enabled"]),
-        "--set=image.repository=poktrolld",
+        "--set=image.repository=pocketd",
     ],
-    image_deps=["poktrolld"],
+    image_deps=["pocketd"],
     image_keys=[("image.repository", "image.tag")],
 )
 
@@ -286,7 +286,7 @@ for x in range(localnet_config["relayminers"]["count"]):
             "--set=metrics.serviceMonitor.enabled=" + str(localnet_config["observability"]["enabled"]),
             "--set=development.delve.enabled=" + str(localnet_config["relayminers"]["delve"]["enabled"]),
             "--set=logLevel=" + str(localnet_config["relayminers"]["logs"]["level"]),
-            "--set=image.repository=poktrolld",
+            "--set=image.repository=pocketd",
     ]
 
     #############
@@ -328,7 +328,7 @@ for x in range(localnet_config["relayminers"]["count"]):
         "relayminer" + str(actor_number),
         chart_prefix + "relayminer",
         flags=flags,
-        image_deps=["poktrolld"],
+        image_deps=["pocketd"],
         image_keys=[("image.repository", "image.tag")],
     )
 

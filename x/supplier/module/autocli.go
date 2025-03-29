@@ -3,7 +3,7 @@ package supplier
 import (
 	autocliv1 "cosmossdk.io/api/cosmos/autocli/v1"
 
-	modulev1 "github.com/pokt-network/poktroll/api/poktroll/supplier"
+	modulev1 "github.com/pokt-network/poktroll/api/pocket/supplier"
 )
 
 // AutoCLIOptions implements the autocli.HasAutoCLIConfig interface.
@@ -28,10 +28,10 @@ func (am AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 The command supports optional filtering by service ID and pagination parameters.
 Returns supplier addresses, staked amounts, service details, and current status.`,
 
-					Example: `	poktrolld query supplier list-suppliers
-	poktrolld query supplier list-suppliers --service-id anvil
-	poktrolld query supplier list-suppliers --page 2 --limit 50
-	poktrolld query supplier list-suppliers --service-id anvil --page 1 --limit 100`,
+					Example: `	pocketd query supplier list-suppliers
+	pocketd query supplier list-suppliers --service-id anvil
+	pocketd query supplier list-suppliers --page 2 --limit 50
+	pocketd query supplier list-suppliers --service-id anvil --page 1 --limit 100`,
 					FlagOptions: map[string]*autocliv1.FlagOptions{
 						"service_id": {Name: "service-id", Shorthand: "s", Usage: "service id to filter by", Hidden: false},
 					},
@@ -47,9 +47,9 @@ Returns details include things like:
 - Supplier's staked amount and status
 - List of services they provide`,
 
-					Example: `	poktrolld query supplier show-supplier pokt1abc...xyz
-	poktrolld query supplier show-supplier pokt1abc...xyz --output json
-	poktrolld query supplier show-supplier pokt1abc...xyz --height 100`,
+					Example: `	pocketd query supplier show-supplier pokt1abc...xyz
+	pocketd query supplier show-supplier pokt1abc...xyz --output json
+	pocketd query supplier show-supplier pokt1abc...xyz --height 100`,
 					PositionalArgs: []*autocliv1.PositionalArgDescriptor{
 						{
 							ProtoField: "operator_address",

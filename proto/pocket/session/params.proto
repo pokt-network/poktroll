@@ -1,0 +1,18 @@
+syntax = "proto3";
+package pocket.session;
+
+option go_package = "github.com/pokt-network/poktroll/x/session/types";
+option (gogoproto.stable_marshaler_all) = true;
+
+import "amino/amino.proto";
+import "gogoproto/gogo.proto";
+
+// Params defines the parameters for the module.
+message Params {
+  option (amino.name) = "pocket/x/session/Params";
+  option (gogoproto.equal) = true;
+
+  // num_suppliers_per_session is the maximum number of suppliers per session
+  // (application:supplier pair for a given session number).
+  uint64 num_suppliers_per_session = 3 [(gogoproto.jsontag) = "num_suppliers_per_session", (gogoproto.moretags) = "yaml:\"num_suppliers_per_session\""];
+}
