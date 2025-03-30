@@ -180,7 +180,7 @@ func newInitChainerCollectModuleNamesFn(suite *BaseIntegrationSuite) integration
 		// TODO_INCOMPLETE: replace "poktroll" with "pocket" once the repo rename is complete.
 		// This is correlated to the go package path which will only change when the go module is
 		// renamed (i.e. go.mod line 1).
-		if strings.Contains(modType.PkgPath(), "pocket") {
+		if strings.Contains(modType.PkgPath(), "poktroll") {
 			suite.pocketModuleNames = append(suite.pocketModuleNames, modName.Name())
 			return
 		}
