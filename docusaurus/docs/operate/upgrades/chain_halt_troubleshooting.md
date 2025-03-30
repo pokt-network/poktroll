@@ -52,7 +52,7 @@ When a chain halt occurs, the first step is to identify the specific error messa
 
 To investigate the discrepancy:
 
-1. Locate the database directory on the affected node (typically `$HOME/.poktroll/data`).
+1. Locate the database directory on the affected node (typically `$HOME/.pocket/data`).
 2. Obtain the same directory from a healthy full node or one with a different `Block.Header.AppHash`.
 3. Ensure you have appropriate permissions to access and copy this data.
 

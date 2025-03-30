@@ -50,10 +50,10 @@ require (
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.20.0
 	github.com/hashicorp/go-metrics v0.5.3
 	github.com/pokt-network/ring-go v0.1.0
-	// TODO_IMPROVE: Whenever we update a protobuf in the `poktroll` repo, we need to:
-	// 1. Merge in the update PR (and it's generated outputs) into `poktroll` main.
-	// 2. Update the `poktroll` sha in the `shannon-sdk` to reflect the new dependency.
-	// 3. Update the `shannon-sdk` sha in the `poktroll` repo (here).
+	// TODO_IMPROVE: Whenever we update a protobuf in the `pocket` repo, we need to:
+	// 1. Merge in the update PR (and it's generated outputs) into `pocket` main.
+	// 2. Update the `pocket` sha in the `shannon-sdk` to reflect the new dependency.
+	// 3. Update the `shannon-sdk` sha in the `pocket` repo (here).
 	// This is creating a circular dependency whereby exporting the protobufs into a separate
 	// repo is the first obvious idea, but has to be carefully considered, automated, and is not
 	// a hard blocker.

@@ -186,8 +186,8 @@ func newCollectParamsFieldNodesInFileFn(paramsFieldNodesByModule map[string][]*a
 		var moduleName string
 		pathParts := strings.Split(protoFilePath, string(filepath.Separator))
 		for idx, pathPart := range pathParts {
-			// Module name is ALWAYS the child directory of "proto/poktroll".
-			if pathPart != "poktroll" {
+			// Module name is ALWAYS the child directory of "proto/pocket".
+			if pathPart != "pocket" {
 				continue
 			}
 			moduleName = pathParts[idx+1]

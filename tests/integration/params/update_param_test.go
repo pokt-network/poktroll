@@ -14,7 +14,7 @@ import (
 )
 
 // msgUpdateParamTestSuite is a test suite which exercises the MsgUpdateParam message
-// for each poktroll module via authz, as would be done in a live network in order
+// for each pocket module via authz, as would be done in a live network in order
 // to update **individual** parameter values for a given module.
 // NB: Not to be confused with MsgUpdateParams (plural), which updates all parameter
 // values for a module.

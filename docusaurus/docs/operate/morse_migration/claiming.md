@@ -15,7 +15,7 @@ sidebar_position: 3
   - [Morse Keyring CLI - Exporting Existing Account Keys](#morse-keyring-cli---exporting-existing-account-keys)
   - [Shannon Keyring CLI - Create New Account Keys](#shannon-keyring-cli---create-new-account-keys)
 - [Claiming Morse Accounts](#claiming-morse-accounts)
-  - [Migration Module Tx CLI: `poktrolld tx migrate`](#migration-module-tx-cli-poktrolld-tx-migrate)
+  - [Migration Module Tx CLI: `pocketd tx migrate`](#migration-module-tx-cli-pocketd-tx-migrate)
   - [Claim a Basic Morse Account (Unstaked, Non-Actor)](#claim-a-basic-morse-account-unstaked-non-actor)
   - [Claim a Morse Application (Staked, Actor)](#claim-a-morse-application-staked-actor)
   - [Claim a Morse Supplier (Staked, Actor)](#claim-a-morse-supplier-staked-actor)
@@ -71,11 +71,11 @@ In this document, we will refer to two CLI tools:
    - This CLI was "rolled in house" but heavily inspired by the Cosmos SDK circa 2020
    - This CLI acts as a keyring for Morse accounts (i.e. ed25519)
 
-2. `poktrolld`: The Shannon CLI which can be downloaded using `homebrew` form the [`pokt-network/homebrew-poktroll` tap](https://github.com/pokt-network/homebrew-poktroll).
+2. `pocketd`: The Shannon CLI which can be downloaded using `homebrew` form the [`pokt-network/homebrew-pocketd` tap](https://github.com/pokt-network/homebrew-pocketd).
 
    - This CLI is compliant with the latest Cosmos SDK (circa 2025) but modified to account for Pocket specific operations
    - This CLI acts as a keyring for Shannon accounts (i.e. secp256k1) and more (outside the scope of this document)
-   - Additional documentation can be found [here](../../tools/user_guide/poktrolld_cli.md).
+   - Additional documentation can be found [here](../../tools/user_guide/pocketd_cli.md).
 
 ## Onchain Actors & Messages for Claiming
 
@@ -166,14 +166,14 @@ Both `Morse` and `Shannon` have their own **COMPLETELY INDEPENDENT** keyrings wh
 - The `Morse` key is used to generate the `morse_signature` field which is common to all claim messages.
 - The `Shannon` key is used to sign the `MsgClaimMorse...` message which is broadcast to the Shannon network.
 
-Since the Shannon CLI (`poktrolld`) is used to broadcast the `ClaimTx`, the prerequisites are:
+Since the Shannon CLI (`pocketd`) is used to broadcast the `ClaimTx`, the prerequisites are:
 
-1. Export the `Morse` key (securely) from `pocket` (i.e. Morse CLI) so that it can be used by `poktrolld` (i.e. Shannon CLI).
+1. Export the `Morse` key (securely) from `pocket` (i.e. Morse CLI) so that it can be used by `pocketd` (i.e. Shannon CLI).
 2. Ensure that the desired `Shannon` destination account key exists in the `Shannon` keyring.
 
 ### Morse Keyring CLI - Exporting Existing Account Keys
 
-In order to claim any Morse (staked or not) account on Shannon, the corresponding private key MUST be exported from the `pocket` CLI such that it can be used by `poktrolld` CLI.
+In order to claim any Morse (staked or not) account on Shannon, the corresponding private key MUST be exported from the `pocket` CLI such that it can be used by `pocketd` CLI.
 
 It is necessary to sign the respective claim message's `morse_signature` field. This cryptographic primitive is critical as it establishes the authenticity of the claim.
 
@@ -211,7 +211,7 @@ Export Completed
 
 The exported file is encrypted using the "encrypt passphrase" provided when the key was exported.
 
-This passphrase will be required in subsequent steps when using the exported key with `poktrolld`.
+This passphrase will be required in subsequent steps when using the exported key with `pocketd`.
 
 :::
 
@@ -219,16 +219,16 @@ This passphrase will be required in subsequent steps when using the exported key
 
 :::tip
 
-See the [poktrolld CLI section](../../category/poktrolld-cli) for more information on the Shannon CLI.
+See the [pocketd CLI section](../../category/pocketd-cli) for more information on the Shannon CLI.
 
 :::
 
-In order to claim any Morse account, a named Shannon key MUST exist in the local keyring with respect to the environment where `poktrolld` will be used.
+In order to claim any Morse account, a named Shannon key MUST exist in the local keyring with respect to the environment where `pocketd` will be used.
 
-To create a new key, use the `poktrolld keys add <name>` subcommand:
+To create a new key, use the `pocketd keys add <name>` subcommand:
 
 ```shell
-poktrolld keys add examplekey
+pocketd keys add examplekey
 ```
 
 Should produce output similar to the following:
@@ -255,16 +255,16 @@ The key name (not address) will be required later when claiming the account to i
 
 ## Claiming Morse Accounts
 
-### Migration Module Tx CLI: `poktrolld tx migrate`
+### Migration Module Tx CLI: `pocketd tx migrate`
 
-The `poktrolld` CLI provides a set of subcommands which can be used to claim Morse accounts on Shannon.
+The `pocketd` CLI provides a set of subcommands which can be used to claim Morse accounts on Shannon.
 
 These subcommands map 1:1 to the different claim messages (see image above) which are used, depending on whether the Morse account being claimed is staked, and if so, as what actor type.
 
 You can run the following command to see all available subcommands:
 
 ```shell
-poktrolld tx migrate --help
+pocketd tx migrate --help
 ```
 
 Which should produce output similar to the following:
@@ -280,7 +280,7 @@ Which should produce output similar to the following:
 
 :::important
 
-The **`--from=<shannon_key_name>`** flag is used to specify which key in the `poktrolld` keyring is used to sign any given Morse claim message.
+The **`--from=<shannon_key_name>`** flag is used to specify which key in the `pocketd` keyring is used to sign any given Morse claim message.
 
 **This determines and corresponds to the Shannon "destination" address; i.e., where the Morse account balance will be minted/transferred to.**
 
@@ -301,7 +301,7 @@ This unstaked balance amount is retrieved from the corresponding onchain `MorseC
 For example, running the following command:
 
 ```bash
-poktrolld migrate claim-account \
+pocketd migrate claim-account \
   ./pocket-account-8b257c7f4e884e49bafc540d874f33f91436e1dc.json \
   --from app1
 ```
@@ -336,7 +336,7 @@ Recall that the unstaked balance and application stake amounts are retrieved fro
 For example, running the following command:
 
 ```bash
-poktrolld migrate claim-application \
+pocketd migrate claim-application \
   ./pocket-account-8b257c7f4e884e49bafc540d874f33f91436e1dc.json \
   svc1 \
   --from app1
@@ -356,7 +356,7 @@ Confirm MsgClaimMorseAccount: y/[n]:
 
 :::tip
 
-See `poktrolld tx migrate claim-application --help` for more details.
+See `pocketd tx migrate claim-application --help` for more details.
 
 :::
 
@@ -394,7 +394,7 @@ Both the unstaked balance and supplier stake amounts are retrieved from the corr
 For example, running the following command:
 
 ```bash
-poktrolld migrate claim-application \
+pocketd migrate claim-application \
   ./pocket-account-8b257c7f4e884e49bafc540d874f33f91436e1dc.json \
   ./supplier_service_configs.yaml \
   --from app1
@@ -414,6 +414,6 @@ Confirm MsgClaimMorseAccount: y/[n]:
 
 :::tip
 
-See: `poktrolld tx migrate claim-supplier --help` for more details.
+See: `pocketd tx migrate claim-supplier --help` for more details.
 
 :::

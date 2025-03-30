@@ -7,7 +7,7 @@ Feature: Morse Migration Success
     When the authority executes "pocket util export-genesis-for-reset" with "stdout" written to "morse_state_export.json"
     Then a MorseStateExport is written to "morse_state_export.json"
 
-    When the authority executes "poktrolld migrate collect-morse-accounts morse_state_export.json morse_account_state.json"
+    When the authority executes "pocketd migrate collect-morse-accounts morse_state_export.json morse_account_state.json"
     Then a MorseAccountState is written to "morse_account_state.json"
 
     Given no MorseClaimableAccounts exist

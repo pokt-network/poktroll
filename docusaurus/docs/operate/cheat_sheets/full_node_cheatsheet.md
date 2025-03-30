@@ -54,7 +54,7 @@ The following is a ~10 minute video walkthrough using this cheatsheet.
 
 :::info
 This section's script will handle the installation of dependencies, user creation,
-environment variable setup, and configuration of Cosmovisor and `poktrolld`.
+environment variable setup, and configuration of Cosmovisor and `pocketd`.
 :::
 
 Follow the instructions below to **quickly** install and set up a Full Node:
@@ -74,7 +74,7 @@ Follow the instructions below to **quickly** install and set up a Full Node:
 3. **Follow the Prompts**:
 
    1. **Choose the Network**: Select `testnet-alpha`, `testnet-beta`, or `mainnet`.
-   2. **Set Username**: Input the desired username to run `poktrolld` (default: `poktroll`).
+   2. **Set Username**: Input the desired username to run `pocketd` (default: `pocket`).
    3. **Set Node Moniker**: Input the node moniker (default: your `hostname`).
    4. **Confirm Seeds and Genesis File**: The script fetches seeds and the genesis file automatically.
    5. **External IP Address**: The script detects your external IP address. Confirm or input manually if incorrect.
@@ -186,19 +186,19 @@ This section is optional and for informational purposes only.
 
 If you're interested in understanding what just got installed, keep reading...
 
-1. **System User**: A dedicated user (default: `poktroll`) is created to run the node securely.
+1. **System User**: A dedicated user (default: `pocket`) is created to run the node securely.
 
 2. **Cosmovisor**: A binary manager that handles chain upgrades automatically:
 
-   - **Location**: `/home/poktroll/bin/cosmovisor`
-   - **Purpose**: Manages different versions of `poktrolld` and handles chain upgrades
+   - **Location**: `/home/pocket/bin/cosmovisor`
+   - **Purpose**: Manages different versions of `pocketd` and handles chain upgrades
    - **Configuration**: Set up to automatically download and switch to new binaries during upgrades
 
-3. **Poktrolld**: The core node software:
+3. **pocketd**: The core node software:
 
-   - **Location**: `/home/poktroll/.poktroll/cosmovisor/genesis/bin/poktrolld`
-   - **Configuration**: `/home/poktroll/.poktroll/config/`
-   - **Data**: `/home/poktroll/.poktroll/data/`
+   - **Location**: `/home/pocket/.pocket/cosmovisor/genesis/bin/pocketd`
+   - **Configuration**: `/home/pocket/.pocket/config/`
+   - **Data**: `/home/pocket/.pocket/data/`
 
 4. **Systemd Service**: A service that manages the node:
    - **Name**: `cosmovisor.service`

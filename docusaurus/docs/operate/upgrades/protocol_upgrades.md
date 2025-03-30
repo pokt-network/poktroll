@@ -26,7 +26,7 @@ Not every GitHub release will become a protocol upgrade.
 
 ## List of Upgrades
 
-While you can find a comprehensive list of [poktroll releases](https://github.com/pokt-network/poktroll/releases) on our GitHub, we also maintain a [list of upgrades](./upgrade_list.md) in our documentation. This list provides valuable information, including whether an upgrade involves breaking changes and if manual intervention is required from operators.
+While you can find a comprehensive list of [pocket releases](https://github.com/pokt-network/poktroll/releases) on our GitHub, we also maintain a [list of upgrades](./upgrade_list.md) in our documentation. This list provides valuable information, including whether an upgrade involves breaking changes and if manual intervention is required from operators.
 
 ## Upgrade Types
 

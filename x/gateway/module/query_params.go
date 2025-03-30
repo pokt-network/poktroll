@@ -15,7 +15,7 @@ func CmdQueryParams() *cobra.Command {
 		Long: `Shows all the parameters related to the Gateway module.
 
 Example:
-$ poktrolld q gateway params --node $(POCKET_NODE) --home $(POKTROLLD_HOME)`,
+$ pocketd q gateway params --node $(POCKET_NODE) --home $(POCKETD_HOME)`,
 		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			clientCtx, err := client.GetClientQueryContext(cmd)

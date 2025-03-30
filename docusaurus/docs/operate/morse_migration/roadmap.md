@@ -97,4 +97,6 @@ You can use [mermaid.live](https://mermaid.live/) to copy, paste, edit and zoom 
 
 Alternatively, you can use the following static image:
 
-![Image](https://github.com/user-attachments/assets/7a2c5406-7c03-4778-aab1-85bdbdbfffb2)
+![Roadmap Static Image](https://github-production-user-asset-6210df.s3.amazonaws.com/1892194/424207448-7a2c5406-7c03-4778-aab1-85bdbdbfffb2.png?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAVCODYLSA53PQK4ZA%2F20250328%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20250328T184539Z&X-Amz-Expires=300&X-Amz-Signature=dd7165946c35a3c8a598bf233eb2d3127efb371588afa6bf3bdfe2667ed35f20&X-Amz-SignedHeaders=host)
+
+<!-- Source for image above: https://github.com/user-attachments/assets/7a2c5406-7c03-4778-aab1-85bdbdbfffb2 -->

@@ -44,7 +44,7 @@ var Upgrade_0_0_12 = Upgrade{
 
 			// Set supplier module staking_fee to 1000000upokt, in line with the config.yml in the repo.
 			// Verify via:
-			// $ poktrolld q supplier params --node=...
+			// $ pocketd q supplier params --node=...
 			supplierParams := keepers.SupplierKeeper.GetParams(ctx)
 			supplierParams.MinStake = &cosmosTypes.Coin{
 				Denom:  "upokt",
@@ -59,7 +59,7 @@ var Upgrade_0_0_12 = Upgrade{
 
 			// Add service module `target_num_relays` parameter, in line with the config.yml in the repo.
 			// Verify via:
-			// $ poktrolld q service params --node=...
+			// $ pocketd q service params --node=...
 			serviceParams := keepers.ServiceKeeper.GetParams(ctx)
 			serviceParams.TargetNumRelays = serviceTargetNumRelays
 			err = keepers.ServiceKeeper.SetParams(ctx, serviceParams)
@@ -71,7 +71,7 @@ var Upgrade_0_0_12 = Upgrade{
 
 			// Add tokenomics module `global_inflation_per_claim` parameter, in line with the config.yml in the repo.
 			// Verify via:
-			// $ poktrolld q tokenomics params --node=...
+			// $ pocketd q tokenomics params --node=...
 			tokenomicsParams := keepers.TokenomicsKeeper.GetParams(ctx)
 			tokenomicsParams.GlobalInflationPerClaim = tokenomicsGlobalInflationPerClaim
 			err = keepers.TokenomicsKeeper.SetParams(ctx, tokenomicsParams)

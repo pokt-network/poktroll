@@ -24,7 +24,7 @@ seed phrase, recovering your account is straightforward!
 ## Pre-requisites
 
 - You have the mnemonic seed phrase of the wallet you wish to recover
-- `poktrolld` is installed on your system; see the [installation guide](./poktrolld_cli.md) for more details
+- `pocketd` is installed on your system; see the [installation guide](./pocketd_cli.md) for more details
 
 ## Step 1: Prepare to Recover Your Wallet
 
@@ -33,17 +33,17 @@ The mnemonic seed phrase is the key to your wallet, and exposing it can lead to 
 
 ## Step 2: Recovering the Wallet
 
-To recover your wallet, use the `poktrolld keys add` command with the `--recover` flag.
+To recover your wallet, use the `pocketd keys add` command with the `--recover` flag.
 You will be prompted to enter the mnemonic seed phrase and optionally, a BIP39 passphrase if you've set one.
 
 ```bash
-poktrolld keys add <insert-your-wallet-name-here> --recover
+pocketd keys add <insert-your-wallet-name-here> --recover
 ```
 
 Example:
 
 ```bash
-poktrolld keys add myRecoveredWallet --recover
+pocketd keys add myRecoveredWallet --recover
 ```
 
 After entering the mnemonic seed phrase, the command will recover your wallet,
@@ -53,12 +53,12 @@ No mnemonic will be shown since the wallet is being recovered, not created anew.
 
 ## Step 3: Verify Wallet Recovery
 
-After recovery, you can use the `poktrolld keys list` command to list all wallets in your keyring.
+After recovery, you can use the `pocketd keys list` command to list all wallets in your keyring.
 
 Verify that the recovered wallet appears in the list with the correct address.
 
 ```sh
-poktrolld keys list
+pocketd keys list
 ```
 
 **Congratulations!** You have successfully recovered your Pocket Network wallet!

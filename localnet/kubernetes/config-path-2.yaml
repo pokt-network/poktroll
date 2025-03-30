@@ -1,8 +1,8 @@
 shannon_config:
   full_node_config:
-    rpc_url: tcp://validator-poktroll-validator:26657
+    rpc_url: tcp://validator-pocket-validator:26657
     grpc_config:
-      host_port: validator-poktroll-validator:9090
+      host_port: validator-pocket-validator:9090
       insecure: true
     lazy_mode: true
   gateway_config:

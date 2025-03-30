@@ -3,7 +3,7 @@ title: Private TestNet
 sidebar_position: 5
 ---
 
-# Private TestNet <!-- omit in toc -->
+## Private TestNet <!-- omit in toc -->
 
 The Pocket team onboards select participants to join and test the network before we announce a public testnet.
 
@@ -15,6 +15,10 @@ This is a very volatile network. We need to wipe this network frequently to keep
 - [Deployment Example](#deployment-example)
 
 ## Visibility
+
+:::warning TODO
+TODO_MAINNET_MIGRATION: Ask the community to s/poktroll/pocket
+:::
 
 Community members provide explorers for this testnet:
 

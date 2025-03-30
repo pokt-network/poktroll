@@ -3,11 +3,11 @@ title: Password-less Keyring
 sidebar_position: 6
 ---
 
-## Setting up a password-less `poktrolld` <!-- omit in toc -->
+## Setting up a password-less `pocketd` <!-- omit in toc -->
 
 :::danger No password
 
-These instructions are intended to streamline usage of `poktrolld` on Debian
+These instructions are intended to streamline usage of `pocketd` on Debian
 machines to **AVOID** providing a password each time.
 
 **Only follow these instructions if you know what you're doing.**
@@ -31,21 +31,21 @@ machines to **AVOID** providing a password each time.
 ## Prerequisites
 
 1. You are running any Shannon service on a `Debian` machine.
-2. You have installed the [poktrolld CLI](./poktrolld_cli.md).
-3. You have created a `poktroll` user following one of the guides in the docs.
+2. You have installed the [pocketd CLI](./pocketd_cli.md).
+3. You have created a `pocket` user following one of the guides in the docs.
 4. ⚠️ You are annoyed about having to enter your password every time ⚠️
 
 ## Background
 
-`poktrolld` uses the Cosmos SDK keyring. For details on how it works, and understanding
+`pocketd` uses the Cosmos SDK keyring. For details on how it works, and understanding
 what a `backend` is, see [the official docs](https://docs.cosmos.network/v0.46/run-node/keyring.html).
 
-This document will focus on how to use `poktrolld` with the `os` backend without
+This document will focus on how to use `pocketd` with the `os` backend without
 a password on a Debian machine, and assume you have read the Cosmos documentation.
 
 :::note Only required for non `test` keyring backends
 
-This whole page can be skipped if the `backend` in your `.poktroll/config/client.toml` is set to `test`.
+This whole page can be skipped if the `backend` in your `.pocket/config/client.toml` is set to `test`.
 
 If it is set to `os` or other, these instructions avoid having to enter your password every time.
 
@@ -120,10 +120,10 @@ You must rerun the command above 👆 after every restart for the keys to be ava
 
 ### 7. Test Configuration
 
-Test if poktrolld can now access the keyring without prompting
+Test if pocketd can now access the keyring without prompting
 
 ```bash
-poktrolld keys list
+pocketd keys list
 ```
 
 ### 8. Security Reminder

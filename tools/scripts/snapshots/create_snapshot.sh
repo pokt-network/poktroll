@@ -6,10 +6,10 @@
 set -e
 
 # Prerequisites:
-# 1. This script must be run as the poktroll user
-# 2. The poktroll user must have passwordless sudo access to systemctl commands for cosmovisor service
-#    Add the following line to /etc/sudoers.d/poktroll-cosmovisor (using visudo):
-#    poktroll ALL=(ALL) NOPASSWD: /bin/systemctl stop cosmovisor, /bin/systemctl start cosmovisor
+# 1. This script must be run as the pocket user
+# 2. The pocket user must have passwordless sudo access to systemctl commands for cosmovisor service
+#    Add the following line to /etc/sudoers.d/pocket-cosmovisor (using visudo):
+#    pocket ALL=(ALL) NOPASSWD: /bin/systemctl stop cosmovisor, /bin/systemctl start cosmovisor
 # 3. curl must be installed (usually installed by default)
 #    If not: sudo apt-get update && sudo apt-get install -y curl
 # 4. zstd must be installed for compression
@@ -52,11 +52,11 @@ print_color() {
     echo -e "${COLOR}${MESSAGE}${NC}"
 }
 
-# Check if running as poktroll user
+# Check if running as pocket user
 check_user() {
-    if [[ $USER != "poktroll" ]]; then
-        print_color $RED "This script must be run as the poktroll user."
-        print_color $YELLOW "Please switch to the poktroll user with: su - poktroll"
+    if [[ $USER != "pocket" ]]; then
+        print_color $RED "This script must be run as the pocket user."
+        print_color $YELLOW "Please switch to the pocket user with: su - pocket"
         exit 1
     fi
 }
@@ -64,12 +64,12 @@ check_user() {
 # Function to stop the node
 stop_node() {
     # We need to stop the node before taking snapshots to ensure data consistency
-    print_color $YELLOW "Stopping poktrolld node..."
+    print_color $YELLOW "Stopping pocketd node..."
     sudo systemctl stop cosmovisor
 
     # Important: Wait for process to fully stop to ensure clean shutdown
-    while pgrep poktrolld >/dev/null; do
-        print_color $YELLOW "Waiting for poktrolld to stop..."
+    while pgrep pocketd >/dev/null; do
+        print_color $YELLOW "Waiting for pocketd to stop..."
         sleep 5
     done
 
@@ -93,26 +93,26 @@ create_snapshots() {
     cd "$HOME"
 
     # First check if snapshots directory exists and is writable
-    if [ ! -d "$HOME/.poktroll/snapshots" ]; then
+    if [ ! -d "$HOME/.pocket/snapshots" ]; then
         print_color $YELLOW "Creating snapshots directory..."
-        mkdir -p "$HOME/.poktroll/snapshots"
+        mkdir -p "$HOME/.pocket/snapshots"
     fi
 
     # List and delete any existing snapshots
-    EXISTING_SNAPSHOTS=$(~/.poktroll/cosmovisor/current/bin/poktrolld snapshots list)
+    EXISTING_SNAPSHOTS=$(~/.pocket/cosmovisor/current/bin/pocketd snapshots list)
     if [ -n "$EXISTING_SNAPSHOTS" ]; then
         while read -r line; do
             if [ -n "$line" ]; then
                 HEIGHT=$(echo "$line" | grep -o 'height: [0-9]*' | grep -o '[0-9]*')
                 print_color $YELLOW "Deleting existing snapshot at height $HEIGHT..."
-                ~/.poktroll/cosmovisor/current/bin/poktrolld snapshots delete "$HEIGHT" 3
+                ~/.pocket/cosmovisor/current/bin/pocketd snapshots delete "$HEIGHT" 3
                 # Wait a moment for deletion to complete
                 sleep 2
             fi
         done <<<"$EXISTING_SNAPSHOTS"
 
         # Verify snapshots are deleted
-        VERIFY_EMPTY=$(~/.poktroll/cosmovisor/current/bin/poktrolld snapshots list)
+        VERIFY_EMPTY=$(~/.pocket/cosmovisor/current/bin/pocketd snapshots list)
         if [ -n "$VERIFY_EMPTY" ]; then
             print_color $RED "Failed to delete existing snapshots"
             exit 1
@@ -121,11 +121,11 @@ create_snapshots() {
 
     # Try to create new snapshot
     print_color $YELLOW "Creating new pruned snapshot..."
-    EXPORT_OUTPUT=$(~/.poktroll/cosmovisor/current/bin/poktrolld snapshots export 2>&1)
+    EXPORT_OUTPUT=$(~/.pocket/cosmovisor/current/bin/pocketd snapshots export 2>&1)
     EXPORT_STATUS=$?
 
     if [ $EXPORT_STATUS -eq 0 ]; then
-        CURRENT_HEIGHT=$(~/.poktroll/cosmovisor/current/bin/poktrolld snapshots list | tail -1 | grep -o 'height: [0-9]*' | grep -o '[0-9]*')
+        CURRENT_HEIGHT=$(~/.pocket/cosmovisor/current/bin/pocketd snapshots list | tail -1 | grep -o 'height: [0-9]*' | grep -o '[0-9]*')
         print_color $GREEN "Successfully exported snapshot at height $CURRENT_HEIGHT"
     else
         # If snapshot already exists, extract the height from the error message
@@ -140,10 +140,10 @@ create_snapshots() {
     fi
 
     # Create both pruned and archival snapshots
-    # Pruned snapshot: Created by poktrolld, contains only the latest state
-    # Archival snapshot: Full copy of .poktroll directory, contains all historical data
+    # Pruned snapshot: Created by pocketd, contains only the latest state
+    # Archival snapshot: Full copy of .pocket directory, contains all historical data
     print_color $YELLOW "Creating pruned snapshot archive..."
-    if ! ~/.poktroll/cosmovisor/current/bin/poktrolld snapshots dump "$CURRENT_HEIGHT" 3 \
+    if ! ~/.pocket/cosmovisor/current/bin/pocketd snapshots dump "$CURRENT_HEIGHT" 3 \
         --output "$SNAPSHOT_DIR/${CURRENT_HEIGHT}-pruned.tar.gz"; then
         print_color $RED "Failed to dump snapshot"
         exit 1
@@ -151,12 +151,12 @@ create_snapshots() {
 
     print_color $YELLOW "Creating archival snapshot..."
     # Use zstd for better compression ratio and speed compared to gzip
-    cd "$HOME/.poktroll/data"
+    cd "$HOME/.pocket/data"
     tar --zstd -cf "$SNAPSHOT_DIR/${CURRENT_HEIGHT}-archival.tar.zst" .
     cd "$HOME"
 
     # Store version information for compatibility checking
-    BINARY_VERSION=$(~/.poktroll/cosmovisor/current/bin/poktrolld version)
+    BINARY_VERSION=$(~/.pocket/cosmovisor/current/bin/pocketd version)
     echo "$BINARY_VERSION" >"$SNAPSHOT_DIR/${CURRENT_HEIGHT}-version.txt"
 
     print_color $GREEN "Snapshots created successfully in $SNAPSHOT_DIR:"
@@ -263,9 +263,9 @@ create_rss_feed() {
 <?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
-    <title>Poktroll ${NETWORK} Snapshots</title>
+    <title>Pocket ${NETWORK} Snapshots</title>
     <link>${SNAPSHOT_URL}/</link>
-    <description>Torrent files for Poktroll ${NETWORK} blockchain snapshots</description>
+    <description>Torrent files for Pocket ${NETWORK} blockchain snapshots</description>
     <language>en-us</language>
     <pubDate>${timestamp}</pubDate>
     <lastBuildDate>${timestamp}</lastBuildDate>
@@ -275,15 +275,15 @@ EOF
     # Add current snapshot torrents as items
     cat >>"$rss_file" <<EOF
     <item>
-      <title>Poktroll ${NETWORK} Archival Snapshot (Height: ${height})</title>
-      <description>Archival snapshot of Poktroll ${NETWORK} at block height ${height}</description>
+      <title>Pocket ${NETWORK} Archival Snapshot (Height: ${height})</title>
+      <description>Archival snapshot of Pocket ${NETWORK} at block height ${height}</description>
       <pubDate>${timestamp}</pubDate>
       <guid>${SNAPSHOT_URL}/${NETWORK}-${height}-archival.torrent</guid>
       <enclosure url="${SNAPSHOT_URL}/${NETWORK}-${height}-archival.torrent" type="application/x-bittorrent" />
     </item>
     <item>
-      <title>Poktroll ${NETWORK} Pruned Snapshot (Height: ${height})</title>
-      <description>Pruned snapshot of Poktroll ${NETWORK} at block height ${height}</description>
+      <title>Pocket ${NETWORK} Pruned Snapshot (Height: ${height})</title>
+      <description>Pruned snapshot of Pocket ${NETWORK} at block height ${height}</description>
       <pubDate>${timestamp}</pubDate>
       <guid>${SNAPSHOT_URL}/${NETWORK}-${height}-pruned.torrent</guid>
       <enclosure url="${SNAPSHOT_URL}/${NETWORK}-${height}-pruned.torrent" type="application/x-bittorrent" />
@@ -315,8 +315,8 @@ EOF
                 print_color $GREEN "Adding torrent to RSS feed: $torrent"
                 cat >>"$rss_file" <<EOF
     <item>
-      <title>Poktroll ${NETWORK} ${t_type^} Snapshot (Height: ${t_height})</title>
-      <description>${t_type^} snapshot of Poktroll ${NETWORK} at block height ${t_height}</description>
+      <title>Pocket ${NETWORK} ${t_type^} Snapshot (Height: ${t_height})</title>
+      <description>${t_type^} snapshot of Pocket ${NETWORK} at block height ${t_height}</description>
       <pubDate>${t_timestamp}</pubDate>
       <guid>${SNAPSHOT_URL}/${torrent}</guid>
       <enclosure url="${SNAPSHOT_URL}/${torrent}" type="application/x-bittorrent" />
@@ -338,7 +338,7 @@ EOF
 
 # Function to start the node
 start_node() {
-    print_color $YELLOW "Starting poktrolld node..."
+    print_color $YELLOW "Starting pocketd node..."
     sudo systemctl start cosmovisor
     print_color $GREEN "Node started successfully"
 }
@@ -353,9 +353,9 @@ clean_old_snapshots() {
     rm -rf "$SNAPSHOT_DIR"/*
     print_color $GREEN "Local snapshot files cleaned"
 
-    # Clean snapshots from poktrolld store
-    print_color $YELLOW "Cleaning snapshots from poktrolld store..."
-    SNAPSHOTS_LIST=$(~/.poktroll/cosmovisor/current/bin/poktrolld snapshots list)
+    # Clean snapshots from pocketd store
+    print_color $YELLOW "Cleaning snapshots from pocketd store..."
+    SNAPSHOTS_LIST=$(~/.pocket/cosmovisor/current/bin/pocketd snapshots list)
 
     # Parse and delete old snapshots, keeping only the latest
     echo "$SNAPSHOTS_LIST" | while read -r line; do
@@ -366,11 +366,11 @@ clean_old_snapshots() {
             # Don't delete the current height
             if [ "$HEIGHT" != "$CURRENT_HEIGHT" ]; then
                 print_color $YELLOW "Deleting snapshot at height $HEIGHT format $FORMAT"
-                ~/.poktroll/cosmovisor/current/bin/poktrolld snapshots delete "$HEIGHT" "$FORMAT"
+                ~/.pocket/cosmovisor/current/bin/pocketd snapshots delete "$HEIGHT" "$FORMAT"
             fi
         fi
     done
-    print_color $GREEN "Poktrolld snapshots cleaned"
+    print_color $GREEN "pocketd snapshots cleaned"
 
     # Clean remote snapshots
     print_color $YELLOW "Cleaning old snapshots from WebDAV server..."

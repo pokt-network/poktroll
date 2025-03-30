@@ -7,7 +7,7 @@ title: Load Testing - Plan #1
 
 _This document outlines the first load test for the Shannon upgrade. IT **IS NOT** intended to be an exhaustive evaluation of the entire system's performance. **IT IS** intended to give visibility into the business logic of the platform, and create a baseline for future load tests._
 
-- _All Poktroll `loadtest` issues on GitHub can be found [here](https://github.com/pokt-network/poktroll/issues?q=label%3Aloadtest+sort%3Aupdated-desc)._
+- _All Pocket `loadtest` issues on GitHub can be found [here](https://github.com/pokt-network/poktroll/issues?q=label%3Aloadtest+sort%3Aupdated-desc)._
 
 ## Table of Contents <!-- omit in toc -->
 
@@ -126,10 +126,10 @@ pie showData
 
 |                         | RAM | CPU | Network | Disk | Time |
 | ----------------------- | --- | --- | ------- | ---- | ---- |
-| Proof Validation        | ❓   | ❓   |         |      | ❓    |
-| Block Generation        | ❓   |     |         |      |      |
-| Block Publishing        |     |     | ❓       |      |      |
-| Data Availability State |     |     |         | ❓    |      |
+| Proof Validation        | ❓  | ❓  |         |      | ❓   |
+| Block Generation        | ❓  |     |         |      |      |
+| Block Publishing        |     |     | ❓      |      |      |
+| Data Availability State |     |     |         | ❓   |      |
 
 #### 3. PATH Gateway (Application, Gateway, etc…)
 
@@ -144,10 +144,10 @@ pie showData
 
 |                    | RAM | CPU | Network | Disk | Time |
 | ------------------ | --- | --- | ------- | ---- | ---- |
-| Relay Proxies      |     |     | ❓       |      | ❓    |
-| Caches & State     | ❓   | ❓   |         |      |      |
-| Request Processing |     |     |         |      | ❓    |
-| ???                |     |     |         | ❓    |      |
+| Relay Proxies      |     |     | ❓      |      | ❓   |
+| Caches & State     | ❓  | ❓  |         |      |      |
+| Request Processing |     |     |         |      | ❓   |
+| ???                |     |     |         | ❓   |      |
 
 #### 4. RelayMiner (Supplier, SMT, etc..)
 
@@ -162,10 +162,10 @@ pie showData
 
 |                     | RAM | CPU | Network | Disk | Time |
 | ------------------- | --- | --- | ------- | ---- | ---- |
-| SMT                 | ❓   | ❓   |         | ❓    | ❓    |
-| Caches & State      | ❓   |     |         |      |      |
-| Request Processing  |     |     |         |      | ❓    |
-| Response Generation |     | ❓   | ❓       |      | ❓    |
+| SMT                 | ❓  | ❓  |         | ❓   | ❓   |
+| Caches & State      | ❓  |     |         |      |      |
+| Request Processing  |     |     |         |      | ❓   |
+| Response Generation |     | ❓  | ❓      |      | ❓   |
 
 ### Out-of-scope
 

@@ -3,7 +3,7 @@ sidebar_position: 2
 title: LocalNet
 ---
 
-# LocalNet <!-- omit in toc -->
+## LocalNet <!-- omit in toc -->
 
 ## Background <!-- omit in toc -->
 
@@ -11,7 +11,7 @@ This document walks you through launching a LocalNet that brings up a k8s cluste
 with a Data Availability network, a validator, Pocket actors and everything else
 needed to send an end-to-end relay.
 
-- [Run Poktroll locally](#run-poktroll-locally)
+- [Run Pocket Network locally](#run-pocket-network-locally)
   - [Report issues](#report-issues)
   - [TL;DR](#tldr)
 - [Developing with LocalNet](#developing-with-localnet)
@@ -27,11 +27,11 @@ needed to send an end-to-end relay.
 - [Troubleshooting](#troubleshooting)
   - [Clean Slate (Nuclear Option)](#clean-slate-nuclear-option)
 
-## Run Poktroll locally
+## Run Pocket Network locally
 
 ### Report issues
 
-If you encounter any problems, please create a new [GitHub Issue here](https://github.com/pokt-network/pocket/issues/new/choose).
+If you encounter any problems, please create a new [GitHub Issue here](https://github.com/pokt-network/poktroll/issues/new/choose).
 
 ### TL;DR
 
@@ -85,7 +85,7 @@ Helm chart. For example, [here are the RelayMiner `values.yaml`](https://github.
 
 Local infrastructure requires some changes to the default values to properly configure the `RelayMiner`
 or `PATH Gateway`, so we override some of the values. You can find such overrides in the
-[poktroll/localnet/kubernetes directory](https://github.com/pokt-network/poktroll/tree/main/localnet/kubernetes).
+[pocket/localnet/kubernetes directory](https://github.com/pokt-network/poktroll/tree/main/localnet/kubernetes).
 
 **IF YOU NEED TO CHANGE LocalNet configs, 👆 is the place.**
 
@@ -167,7 +167,7 @@ After you execute `make localnet_up`, many things happen:
 3. Subsequently, the logic described in the `Tiltfile` executes various CLI commands, communicates with the `k8s` API, and creates or reads the LocalNet configuration file:
    1. Creates a new `localnet_config.yaml` if it doesn't exist. Updates it with default values if new ones are introduced.
    2. Depending on the configuration in `localnet_config.yaml`, uses Helm charts from the local [helm-charts](https://github.com/pokt-network/helm-charts)repository or downloads Helm charts from our Helm chart repository (`https://pokt-network.github.io/helm-charts/`).
-   3. Compiles the `poktrolld` binary from the source code.
+   3. Compiles the `pocketd` binary from the source code.
    4. Using values from `localnet_config.yaml`, provisions an observability stack (Grafana, Prometheus, Loki), a validator, PATH Gateways, RelayMiners, etc.
 4. With `make localnet_up` continually running in the background, `tilt` monitors for code changes and re-compiles the binary when a code change is detected. After the new binary is built, it is pushed to the containers and all processes restart.
 

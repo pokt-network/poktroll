@@ -17,7 +17,7 @@ This document is a living WIP and assumes you are familiar with the LocalNet env
 
 ## Pocketdex <!-- omit in toc -->
 
-[Pocketdex](https://github.com/pokt-network/pocketdex/), the poktroll indexer starts up as part of the default LocalNet.
+[Pocketdex](https://github.com/pokt-network/pocketdex/), the pocket indexer starts up as part of the default LocalNet.
 
 ### Usage
 

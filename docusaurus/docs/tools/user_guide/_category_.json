@@ -1,8 +1,8 @@
 {
-  "label": "poktrolld CLI",
+  "label": "pocketd CLI",
   "position": 1,
   "link": {
     "type": "generated-index",
-    "description": "User Guide for the poktrolld CLI"
+    "description": "User Guide for the pocketd CLI"
   }
 }

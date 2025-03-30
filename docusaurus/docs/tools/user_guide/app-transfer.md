@@ -16,11 +16,11 @@ sidebar_position: 6
 
 ## How to Transfer an Application
 
-See `poktrolld tx application transfer --help`:
+See `pocketd tx application transfer --help`:
 
 ```bash
 Usage:
-    poktrolld tx application transfer [source app address] [destination app address] [flags]
+    pocketd tx application transfer [source app address] [destination app address] [flags]
 ```
 
 ## How it Works
@@ -110,7 +110,7 @@ If you've mistakenly transferred an application the wrong destination, **so long
 1. **Note the destination application's current configuration**
 
    ```bash
-   poktrolld query application show-application <app_address>
+   pocketd query application show-application <app_address>
    ```
 
    Example output:
@@ -134,17 +134,17 @@ If you've mistakenly transferred an application the wrong destination, **so long
 2. **Unstake the destination application**
 
    ```bash
-   poktrolld tx application unstake <app_address> --from <key_name>
+   pocketd tx application unstake <app_address> --from <key_name>
    ```
 
    The application's `unstake_session_end_height` will be set to the current session end height and can be queried with the same command:
 
    ```bash
-   poktrolld query application show-application <app_address>
+   pocketd query application show-application <app_address>
 
    # OR More specifically, using `jq` or `yq`
-   poktrolld query application show-application <app_address> | yq .application.unstake_session_end_height
-   poktrolld query application show-application <app_address> -o json | jq .application.unstake_session_end_height
+   pocketd query application show-application <app_address> | yq .application.unstake_session_end_height
+   pocketd query application show-application <app_address> -o json | jq .application.unstake_session_end_height
    ```
 
 3. **Wait for the application unbonding period to elapse**
@@ -153,31 +153,31 @@ If you've mistakenly transferred an application the wrong destination, **so long
    Its value can be queried with:
 
    ```bash
-   poktrolld query shared params
+   pocketd query shared params
 
    # OR More specifically, using `jq` or `yq`
-   poktrolld query shared params | yq .params.application_unbonding_period_sessions
-   poktrolld query shared params -o json | jq .params.application_unbonding_period_sessions
+   pocketd query shared params | yq .params.application_unbonding_period_sessions
+   pocketd query shared params -o json | jq .params.application_unbonding_period_sessions
    ```
 
    The current height can be queried with:
 
    ```bash
-   poktrolld query block
+   pocketd query block
 
    # OR More specifically, using `jq` or `yq`
-   poktrolld query block | yq .header.height
-   poktrolld query block -o json | tail -n -1 | jq .header.height
+   pocketd query block | yq .header.height
+   pocketd query block -o json | tail -n -1 | jq .header.height
    ```
 
 4. **Re-stake the destination application** with its original or expected configuration and stake
 
    ```bash
-   poktrolld tx application stake <app_address> --config <wrong_destination_restore_config_path> --from <key_name>
+   pocketd tx application stake <app_address> --config <wrong_destination_restore_config_path> --from <key_name>
    ```
 
 5. **Stake the correct/intended destination application** with the transferred sources configuration and stake
 
    ```bash
-   poktrolld tx application stake <app_address> --config <intended_destination_config_path> --from <key_name>
+   pocketd tx application stake <app_address> --config <intended_destination_config_path> --from <key_name>
    ```

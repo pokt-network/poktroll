@@ -4,8 +4,8 @@ port: 3000
 env:
   NODE_ENV: development
   # LocalNet
-  ENDPOINT: "http://validator-poktroll-validator:26657"
-  CHAIN_ID: "poktroll"
+  ENDPOINT: "http://validator-pocket-validator:26657"
+  CHAIN_ID: "pocket"
   # db schema name
   DB_SCHEMA: "localnet"
 

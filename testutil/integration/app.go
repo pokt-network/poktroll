@@ -85,7 +85,7 @@ import (
 	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
 )
 
-const appName = "poktroll-integration-app"
+const appName = "pocket-integration-app"
 
 var (
 	// faucetAmountUpokt is the number of upokt coins that the faucet account

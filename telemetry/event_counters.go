@@ -13,8 +13,8 @@ import (
 )
 
 const (
-	// Prefix all metric names with "poktroll" for easier search
-	metricNamePrefix = "poktroll"
+	// Prefix all metric names with "pocket" for easier search
+	metricNamePrefix = "pocket"
 
 	// Label Names
 	applicationAddressLabelName      = "app_addr"

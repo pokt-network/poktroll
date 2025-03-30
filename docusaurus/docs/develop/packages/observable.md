@@ -150,7 +150,7 @@ import (
 	"fmt"
 	"time"
 
-	"poktroll/pkg/observable/channel"
+	"pocket/pkg/observable/channel"
 )
 
 func main() {

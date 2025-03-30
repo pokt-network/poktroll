@@ -5,8 +5,8 @@ import (
 	"github.com/hashicorp/go-metrics"
 )
 
-// MetricNameKeys prefixes metrics with `poktroll` for easy identification.
-// E.g., `("hodlers", "regret_level")` yields `poktroll_hodlers_regret_level` — great for tracking FOMO as hodlers rethink choices.
+// MetricNameKeys prefixes metrics with `pocket` for easy identification.
+// E.g., `("hodlers", "regret_level")` yields `pocket_hodlers_regret_level` — great for tracking FOMO as hodlers rethink choices.
 // Returns a slice of strings as `go-metric`, the underlying metrics library, expects.
 func MetricNameKeys(metrics ...string) []string {
 	result := make([]string, 0, len(metrics)+1)
@@ -26,7 +26,7 @@ func isTelemetyEnabled() bool {
 //   - It is dependenon the permissionless nature of the network and can grow unbounded
 //   - We're keeping an option to turn off such labels to avoid metric bloat
 //
-// Configuration option is exposed in app.toml under the `poktroll.telemetry` section.
+// Configuration option is exposed in app.toml under the `pocket.telemetry` section.
 func appendMediumCardinalityLabels(labels []metrics.Label, labelPairs ...metrics.Label) []metrics.Label {
 	if globalTelemetryConfig.CardinalityLevel == "medium" || globalTelemetryConfig.CardinalityLevel == "high" {
 		return append(labels, labelPairs...)
@@ -40,7 +40,7 @@ func appendMediumCardinalityLabels(labels []metrics.Label, labelPairs ...metrics
 //   - These labels need to be exposed for local development, debugging and performance troubleshooting.
 //
 // Additional references on cardinality: https://www.robustperception.io/cardinality-is-key/
-// Configuration option is exposed in app.toml under the `poktroll.telemetry` section.
+// Configuration option is exposed in app.toml under the `pocket.telemetry` section.
 func appendHighCardinalityLabels(labels []metrics.Label, labelPairs ...metrics.Label) []metrics.Label {
 	if globalTelemetryConfig.CardinalityLevel == "high" {
 		return append(labels, labelPairs...)

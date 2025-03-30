@@ -1,0 +1,31 @@
+syntax = "proto3";
+package pocket.service;
+
+option go_package = "github.com/pokt-network/poktroll/x/service/types";
+option (gogoproto.stable_marshaler_all) = true;
+
+import "amino/amino.proto";
+import "gogoproto/gogo.proto";
+
+import "pocket/service/params.proto";
+
+// EventRelayMiningDifficultyUpdated is an event emitted whenever the relay mining difficulty is updated
+// for a given service.
+message EventRelayMiningDifficultyUpdated {
+    string service_id = 1;
+    string prev_target_hash_hex_encoded = 2;
+    string new_target_hash_hex_encoded = 3;
+    uint64 prev_num_relays_ema = 4;
+    uint64 new_num_relays_ema = 5;
+}
+
+// EventParamsUpdate is emitted when the module params update becomes effective.
+message EventParamsUpdated {
+  pocket.service.Params params = 1 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true,
+    (gogoproto.jsontag) = "params"
+  ];
+  // The start height of the session at which the param is activated.
+  uint64 effective_block_height = 2 [(gogoproto.jsontag) = "effective_block_height"];
+}

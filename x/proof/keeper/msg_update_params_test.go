@@ -44,7 +44,7 @@ func TestMsgUpdateParams(t *testing.T) {
 				Params: types.Params{
 					ProofRequirementThreshold: &types.DefaultProofRequirementThreshold,
 					ProofMissingPenalty:       &types.DefaultProofMissingPenalty,
-					ProofSubmissionFee:        &types.MinProofSubmissionFee,
+					ProofSubmissionFee:        &types.DefaultMinProofSubmissionFee,
 				},
 			},
 			shouldError: false,

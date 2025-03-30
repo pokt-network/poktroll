@@ -13,7 +13,7 @@ import (
 )
 
 // TODO_TECHDEBT(https://github.com/ignite/cli/issues/3737): We're using a combination
-// of `pocketd` (legacy) and `poktrolld` (current) because of an issue of how ignite works.
+// of `pocketd` (legacy) and `pocketd` (current) because of an issue of how ignite works.
 var (
 	// defaultRPCURL used by pocketdBin to run remote commands
 	defaultRPCURL = os.Getenv("POCKET_NODE")
@@ -22,7 +22,7 @@ var (
 	// defaultRPCHost is the default RPC host that pocketd listens on
 	defaultRPCHost = "127.0.0.1"
 	// defaultHome is the default home directory for pocketd
-	defaultHome = os.Getenv("POKTROLLD_HOME")
+	defaultHome = os.Getenv("POCKETD_HOME")
 	// defaultPathURL used by curl commands to send relay requests
 	defaultPathURL = os.Getenv("PATH_URL")
 	// defaultDebugOutput provides verbose output on manipulations with binaries (cli command, stdout, stderr)
@@ -38,7 +38,7 @@ func init() {
 		defaultRPCURL = fmt.Sprintf("tcp://%s:%d", defaultRPCHost, defaultRPCPort)
 	}
 	if defaultHome == "" {
-		defaultHome = "../../localnet/poktrolld"
+		defaultHome = "../../localnet/pocketd"
 	}
 }
 
@@ -159,8 +159,8 @@ func (p *pocketdBin) RunCurlWithRetry(rpcUrl, service, method, path, appAddr, da
 func (p *pocketdBin) runPocketCmd(args ...string) (*commandResult, error) {
 	base := []string{"--home", defaultHome}
 	args = append(base, args...)
-	commandStr := "poktrolld " + strings.Join(args, " ") // Create a string representation of the command
-	cmd := exec.Command("poktrolld", args...)
+	commandStr := "pocketd " + strings.Join(args, " ") // Create a string representation of the command
+	cmd := exec.Command("pocketd", args...)
 
 	var stdoutBuf, stderrBuf bytes.Buffer
 	cmd.Stdout = &stdoutBuf

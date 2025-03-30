@@ -8,13 +8,13 @@ title: Validator FAQ
 To increase your self-delegation or allow others to delegate to your Validator, use:
 
 ```bash
-poktrolld tx staking delegate $VALIDATOR_ADDR <amount> --from <delegator_account> $TX_PARAM_FLAGS $NODE_FLAGS
+pocketd tx staking delegate $VALIDATOR_ADDR <amount> --from <delegator_account> $TX_PARAM_FLAGS $NODE_FLAGS
 ```
 
 Example with specific parameters:
 
 ```bash
-poktrolld tx staking delegate $VALIDATOR_ADDR 1000000upokt --from your_account --chain-id=pocket-beta --gas=auto --gas-adjustment=1.5 --gas-prices=1upokt
+pocketd tx staking delegate $VALIDATOR_ADDR 1000000upokt --from your_account --chain-id=pocket-beta --gas=auto --gas-adjustment=1.5 --gas-prices=1upokt
 ```
 
 ## How do I unbond (undelegate) tokens from my Validator?
@@ -22,13 +22,13 @@ poktrolld tx staking delegate $VALIDATOR_ADDR 1000000upokt --from your_account -
 To unbond a portion of your staked tokens:
 
 ```bash
-poktrolld tx staking unbond $VALIDATOR_ADDR <amount> --from <delegator_account> $TX_PARAM_FLAGS $NODE_FLAGS
+pocketd tx staking unbond $VALIDATOR_ADDR <amount> --from <delegator_account> $TX_PARAM_FLAGS $NODE_FLAGS
 ```
 
 Example with specific parameters:
 
 ```bash
-poktrolld tx staking unbond $VALIDATOR_ADDR 500000upokt --from your_account --chain-id=pocket-beta --gas=auto --gas-adjustment=1.5 --gas-prices=1upokt
+pocketd tx staking unbond $VALIDATOR_ADDR 500000upokt --from your_account --chain-id=pocket-beta --gas=auto --gas-adjustment=1.5 --gas-prices=1upokt
 ```
 
 :::note Unbonding lock period
@@ -42,7 +42,7 @@ Unbonding initiates a lock period during which tokens cannot be transferred. The
 Use the following command to check your node's synchronization status:
 
 ```bash
-poktrolld status
+pocketd status
 ```
 
 :::note Synchronization status

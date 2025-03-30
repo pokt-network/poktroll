@@ -20,7 +20,7 @@ import (
 
 	// this line is used by starport scaffolding # 1
 
-	modulev1 "github.com/pokt-network/poktroll/api/poktroll/supplier/module"
+	modulev1 "github.com/pokt-network/poktroll/api/pocket/supplier/module"
 	"github.com/pokt-network/poktroll/x/supplier/keeper"
 	"github.com/pokt-network/poktroll/x/supplier/types"
 )

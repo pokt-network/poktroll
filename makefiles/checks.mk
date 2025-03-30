@@ -83,7 +83,6 @@ check_kind_context: check_kind
 		exit 1; \
 	fi
 
-
 .PHONY: check_godoc
 # Internal helper target - check if godoc is installed
 check_godoc:

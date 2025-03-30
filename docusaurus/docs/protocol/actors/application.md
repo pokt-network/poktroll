@@ -17,7 +17,7 @@ services available on Pocket Network as a function of volume and time.
 
 ## Schema
 
-The onchain representation of an `Application` can be found at [application.proto](https://github.com/pokt-network/poktroll/blob/main/proto/poktroll/application/application.proto).
+The onchain representation of an `Application` can be found at [application.proto](https://github.com/pokt-network/poktroll/blob/main/proto/pocket/application/application.proto).
 
 ## Configuration
 
@@ -29,12 +29,12 @@ All of the read (i.e. query) based operations for the `Application` actor can be
 viewed by running:
 
 ```bash
-poktrolld query application --help
+pocketd query application --help
 ```
 
 All of the write (i.e. tx) based operations for the `Application` actor can be
 viewed by running:
 
 ```bash
-poktrolld tx application --help
+pocketd tx application --help
 ```

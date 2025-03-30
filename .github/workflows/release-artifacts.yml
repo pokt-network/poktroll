@@ -62,7 +62,9 @@ jobs:
         env:
           DOCKER_METADATA_PR_HEAD_SHA: "true"
         with:
+          # TODO_MAINNET_MIGRATION(@okdas): Remove poktrolld
           images: |
+            ghcr.io/pokt-network/pocketd
             ghcr.io/pokt-network/poktrolld
           tags: |
             type=semver,pattern={{version}}
@@ -79,7 +81,9 @@ jobs:
         env:
           DOCKER_METADATA_PR_HEAD_SHA: "true"
         with:
+          # TODO_MAINNET_MIGRATION(@okdas): Remove poktrolld
           images: |
+            ghcr.io/pokt-network/pocketd
             ghcr.io/pokt-network/poktrolld
           tags: |
             type=raw,value=main-prod
@@ -99,7 +103,9 @@ jobs:
         env:
           DOCKER_METADATA_PR_HEAD_SHA: "true"
         with:
+          # TODO_MAINNET_MIGRATION(@okdas): Remove poktrolld
           images: |
+            ghcr.io/pokt-network/pocketd
             ghcr.io/pokt-network/poktrolld
           tags: |
             type=raw,value=${{ env.BRANCH_NAME }}-prod${{ github.inputs.custom_tag != '' && format('-{0}', github.inputs.custom_tag) || '' }}

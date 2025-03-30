@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/pokt-network/poktroll/app/volatile"
-	"github.com/pokt-network/poktroll/cmd/poktrolld/cmd"
+	"github.com/pokt-network/poktroll/cmd/pocketd/cmd"
 	"github.com/pokt-network/poktroll/pkg/encoding"
 	_ "github.com/pokt-network/poktroll/pkg/polylog/polyzero"
 	testevents "github.com/pokt-network/poktroll/testutil/events"
