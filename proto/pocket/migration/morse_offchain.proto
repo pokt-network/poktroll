@@ -1,0 +1,152 @@
+syntax = "proto3";
+
+// Types in this file are ONLY present to facilitate the verifiability of the
+// migration state from Morse to Shannon.
+//
+// These types reproduce a 1:1 de/serialization for the corresponding Morse data structures
+// but are not completely identical to their Morse counterparts, not all of which are defined
+// as protobuf types in the Morse codebase.
+//
+// Morse leverages pb.Any types, as well as the gogoproto.casttype option in several places.
+// All usages of pb.Any have been replaced with equivalent protobuf types
+// (i.e. an interstitial type with `type` and/or `value` field(s)).
+// All usages of gogoproto.casttype which previously referenced Morse data structures have been removed.
+// A few specific fields have retained this option where the type is changed to the underlying
+// external lib type that the Morse type was wrapping (e.g. address and public key fields).
+//
+// These types are used by the migration subcommand to transform
+// the Morse state export into the Shannon state import like so:
+//  $ pocketd migrate collect-morse-accounts ...
+//
+// CRITICAL: These types are offchain and ARE NOT persisted onchain (Shannon) at any point.
+package pocket.migration;
+
+import "gogoproto/gogo.proto";
+import "cosmos_proto/cosmos.proto";
+import "cosmos/base/v1beta1/coin.proto";
+import "pocket/migration/morse_onchain.proto";
+
+option go_package = "github.com/pokt-network/poktroll/x/migration/types";
+option (gogoproto.stable_marshaler_all) = true;
+
+// MorseStateExport is the data structure that is serialized and output when running:
+//  $ pocket utils export-genesis-for-reset ...
+//
+// Ref: https://editor.swagger.io/?url=https://raw.githubusercontent.com/pokt-network/pocket-core/staging/doc/specs/rpc-spec.yaml#operations-query-post_query_state
+message MorseStateExport {
+  // app_hash is the Morse tendermint state hash.
+  string app_hash = 1 [(gogoproto.jsontag) = "app_hash"];
+
+  // app_state is the entire Morse tendermint application state.
+  MorseTendermintAppState app_state = 2 [(gogoproto.jsontag) = "app_state"];
+}
+
+// MorseTendermintAppState is the tendermint application state for the Morse tendermint
+// application; not to be confused with the pokt protocol actor.
+// It is constructed in Morse via `PocketCoreApp#ExportAppState()`.
+//
+// See: https://github.com/pokt-network/pocket-core/blob/5fa61920aa9d45ca6bf9e01e863134e242c95fa7/app/pocket.go#L142
+message MorseTendermintAppState {
+  MorseApplications application = 1 [(gogoproto.jsontag) = "application"];
+  MorseAuth auth = 2 [(gogoproto.jsontag) = "auth"];
+  MorsePos pos = 3 [(gogoproto.jsontag) = "pos"];
+}
+
+// A wrapper around the list of MorseApplications, necessary in order to conform to the Morse genesis structure.
+// It encapsulates the minimum information required to import Morse applications.
+//
+// See: https://github.com/pokt-network/pocket-core/blob/staging/x/apps/types/genesis.go#L4
+message MorseApplications {
+  repeated MorseApplication applications = 1 [(gogoproto.jsontag) = "applications"];
+}
+
+// A wrapper around a list of MorseAuthAccount.
+// It encapsulates the minimum information required to import Morse accounts.
+//
+// See: https://github.com/pokt-network/pocket-core/blob/staging/x/auth/types/genesis.go#L9
+message MorseAuth {
+  repeated MorseAuthAccount accounts = 1 [(gogoproto.jsontag) = "accounts"];
+}
+
+// MorseAccount:
+// * Wraps MorseAuthAccount information to conform to Morse genesis structure
+// * Represents only externally owned accounts (not module accounts)
+// * Avoids pb.Any serialization since only external accounts needed for migration
+message MorseAuthAccount {
+  string type = 1 [(gogoproto.jsontag) = "type"];
+  MorseAccount value = 2 [(gogoproto.jsontag) = "value"];
+}
+
+// A wrapper around the list of Morse suppliers (aka "validators", "nodes", of "servicers").
+// It is necessary to conform to the Morse genesis structure.
+//
+// See: https://github.com/pokt-network/pocket-core/blob/staging/x/nodes/types/genesis.go#L8
+message MorsePos {
+  repeated MorseValidator validators = 1 [(gogoproto.jsontag) = "validators"];
+}
+
+// MorseApplication is a subset of the Morse ProtoApplication type.
+// It encapsulates the minimum information required to import Morse applications.
+//
+// See: https://github.com/pokt-network/pocket-core/blob/staging/proto/x/apps/apps.proto#L16
+message MorseApplication {
+  option (gogoproto.equal) = true;
+  option (gogoproto.goproto_getters) = false;
+
+  // Address is a binary representation of the address corresponding
+  // to a Morse application's ed25519 public key.
+  bytes address = 1 [(gogoproto.casttype) = "github.com/cometbft/cometbft/crypto.Address", (gogoproto.jsontag) = "address", (gogoproto.moretags) = "yaml:\"address\""];
+  // PublicKey is the binary representation of a Morse application's ed25519 public key.
+  bytes public_key = 2 [(gogoproto.jsontag) = "public_key", (gogoproto.moretags) = "yaml:\"public_key\""];
+  // TODO_MAINNET_MIGRATION(@Olshansk):  Should status and/or jailed be considered during the migration, and if so, how?
+  bool   jailed = 3[(gogoproto.jsontag) = "jailed", (gogoproto.moretags) = "yaml:\"jailed\""];
+  int32  status = 4 [(gogoproto.jsontag) = "status", (gogoproto.moretags) = "yaml:\"status\""];
+  // The string representation of the BigInt amount of upokt.
+  string staked_tokens = 6 [(gogoproto.jsontag) = "tokens"];
+}
+
+// MorseValidator is a subset of the Morse ProtoValidator type.
+// It encapsulates the minimum information required to import Morse suppliers (aka "servicers" or "validators").
+//
+// See: https://github.com/pokt-network/pocket-core/blob/staging/proto/x/pos/types.proto#L16
+message MorseValidator {
+  option (gogoproto.equal) = true;
+  option (gogoproto.goproto_stringer) = true;
+  option (gogoproto.goproto_getters) = false;
+
+  // A binary representation of the address corresponding to a Morse application's ed25519 public key.
+  bytes address = 1 [(gogoproto.casttype) = "github.com/cometbft/cometbft/crypto.Address", (gogoproto.moretags) = "yaml:\"address\"", (gogoproto.jsontag) = "address"];
+  // The binary representation of a Morse application's ed25519 public key.
+  bytes public_key = 2 [(gogoproto.moretags) = "yaml:\"public_key\"", (gogoproto.jsontag) = "public_key"];
+  // TODO_MAINNET_MIGRATION(@Olshansk):  Should status and/or jailed be considered during the migration, and if so, how?
+  bool jailed = 3 [(gogoproto.jsontag) = "jailed"];
+  int32 status = 4 [(gogoproto.jsontag) = "status"];
+  // The string representation of the BigInt amount of upokt.
+  string staked_tokens = 7 [(gogoproto.jsontag) = "tokens"];
+}
+
+// MorseAccount is an analog of the Morse ProtoBaseAccount type.
+// It encapsulates the minimum information required to import accounts.
+//
+// See: https://github.com/pokt-network/pocket-core/blob/staging/proto/x/auth/auth.proto#L14.
+message MorseAccount {
+  option (gogoproto.messagename) = true;
+  option (gogoproto.goproto_getters) = false;
+  option (gogoproto.goproto_stringer) = true;
+  option (cosmos_proto.implements_interface) = "Account";
+
+  // A hex-encoded representation of the address corresponding to a Morse application's ed25519 public key.
+  bytes address = 1 [(gogoproto.jsontag) = "address", (gogoproto.casttype) = "github.com/cometbft/cometbft/crypto.Address"];
+
+  // The ed25519 public key of the account.
+  MorsePublicKey pub_key = 2 [(gogoproto.jsontag) = "public_key", (gogoproto.moretags) = "yaml:\"public_key\""];
+
+  // The account balance; this does not include any actor stakes.
+  repeated cosmos.base.v1beta1.Coin coins = 3 [(gogoproto.nullable) = false, (gogoproto.jsontag) = "coins"];
+}
+
+// MorsePublicKey is required to conform to the encoding of the Morse state export.
+// NB: All Morse account public keys will be ed25519 keys by definition.
+message MorsePublicKey {
+  bytes value = 2 [(gogoproto.casttype) = "crypto/ed25519.PublicKey"];
+}

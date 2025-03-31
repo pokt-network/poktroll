@@ -1,0 +1,63 @@
+// TODO_AUTOMATE: Add a CI workflow which detects .proto files with incompatible names (i.e. same as the package).
+// NB: This file CANNOT be named "application.proto" due to an as of yet unidentified
+// issue in how cosmos-proto generates the pulsar plugin output go source code.
+
+syntax = "proto3";
+package pocket.application;
+
+option go_package = "github.com/pokt-network/poktroll/x/application/types";
+option (gogoproto.stable_marshaler_all) = true;
+
+import "gogoproto/gogo.proto";
+import "cosmos/base/v1beta1/coin.proto";
+import "cosmos_proto/cosmos.proto";
+
+import "pocket/shared/service.proto";
+
+// Application represents the onchain definition and state of an application
+message Application {
+  // Bech32 address of the application
+  string address = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+
+  // Total amount of staked uPOKT
+  cosmos.base.v1beta1.Coin stake = 2;
+
+  // CRITICAL: Must contain EXACTLY ONE service config
+  // This prevents applications from over-servicing.
+  // Kept as repeated field for legacy and future compatibility
+  // Refs:
+  //   - https://github.com/pokt-network/poktroll/pull/750#discussion_r1735025033
+  //   - https://www.notion.so/buildwithgrove/Off-chain-Application-Stake-Tracking-6a8bebb107db4f7f9dc62cbe7ba555f7
+  repeated pocket.shared.ApplicationServiceConfig service_configs = 3;
+
+  // TODO_MAINNET_MIGRATION(@bryanchriswhite): Rename `delegatee_gateway_addresses` to `gateway_addresses_delegated_to`.
+  // Ensure to rename all relevant configs, comments, variables, function names, etc as well.
+  // Non-nullable list of Bech32 encoded delegatee Gateway addresses
+  repeated string delegatee_gateway_addresses = 4 [(cosmos_proto.scalar) = "cosmos.AddressString", (gogoproto.nullable) = false];
+
+  // Mapping of session end heights to gateways being undelegated from
+  // - Key: Height of the last block of the session when undelegation tx was committed
+  // - Value: List of gateways being undelegated from
+  // TODO_DOCUMENT(@red-0ne): Need to document the flow from this comment
+  // so its clear to everyone why this is necessary; https://github.com/pokt-network/poktroll/issues/476#issuecomment-2052639906.
+  map<uint64, UndelegatingGatewayList> pending_undelegations = 5 [(gogoproto.nullable) = false];
+
+  // Session end height when application initiated unstaking (0 if not unstaking)
+  uint64 unstake_session_end_height = 6;
+
+  // Information about pending application transfers
+  PendingApplicationTransfer pending_transfer = 7;
+}
+
+// UndelegatingGatewayList is used as the Value of `pending_undelegations`.
+// It is required to store a repeated list of strings as a map value.
+message UndelegatingGatewayList {
+  repeated string gateway_addresses = 2 [(cosmos_proto.scalar) = "cosmos.AddressString", (gogoproto.nullable) = false];
+}
+
+// PendingTransfer is used to store the details of a pending transfer.
+// It is only intended to be used inside of an Application object.
+message PendingApplicationTransfer {
+  string destination_address = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+  uint64 session_end_height = 2;
+}

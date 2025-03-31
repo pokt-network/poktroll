@@ -175,16 +175,16 @@ There are two ways to get a snapshot from a prior height:
 1. Execute
 
    ```bash
-   poktrolld rollback --hard
+   pocketd rollback --hard
    ```
 
    repeately, until the command responds with the desired block number.
 
 2. Use a snapshot from below the halt height (e.g. `100`) and start the node with `--halt-height=100` parameter so it only syncs up to certain height and then
-   gracefully shuts down. Add this argument to `poktrolld start` like this:
+   gracefully shuts down. Add this argument to `pocketd start` like this:
 
    ```bash
-   poktrolld start --halt-height=100
+   pocketd start --halt-height=100
    ```
 
 #### Validator Isolation - risks (step 6)

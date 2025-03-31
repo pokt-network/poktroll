@@ -1,0 +1,44 @@
+syntax = "proto3";
+package pocket.proof;
+
+option go_package = "github.com/pokt-network/poktroll/x/proof/types";
+option (gogoproto.stable_marshaler_all) = true;
+
+import "amino/amino.proto";
+import "gogoproto/gogo.proto";
+import "cosmos/base/v1beta1/coin.proto";
+
+// Params defines the parameters for the module.
+message Params {
+  option (amino.name) = "pocket/x/proof/Params";
+  option (gogoproto.equal) = true;
+
+  // proof_request_probability is the probability of a session requiring a proof
+  // if it's cost (i.e. compute unit consumption) is below the ProofRequirementThreshold.
+  double proof_request_probability = 2 [(gogoproto.jsontag) = "proof_request_probability"];
+
+  // proof_requirement_threshold is the session cost (i.e. compute unit consumption)
+  // threshold which asserts that a session MUST have a corresponding proof when its cost
+  // is equal to or above the threshold. This is in contrast to the this requirement
+  // being determined probabilistically via ProofRequestProbability.
+  //
+  // TODO_MAINNET_MIGRATION: Consider renaming this to `proof_requirement_threshold_upokt`.
+  cosmos.base.v1beta1.Coin proof_requirement_threshold = 3 [(gogoproto.jsontag) = "proof_requirement_threshold"];
+
+  // proof_missing_penalty is the number of tokens (uPOKT) which should be slashed from a supplier
+  // when a proof is required (either via proof_requirement_threshold or proof_missing_penalty)
+  // but is not provided.
+  // TODO_MAINNET_MIGRATION: Consider renaming this to `proof_missing_penalty_upokt`.
+  cosmos.base.v1beta1.Coin proof_missing_penalty = 4 [(gogoproto.jsontag) = "proof_missing_penalty"];
+
+  // proof_submission_fee is the number of tokens (uPOKT) which should be paid by
+  // the supplier operator when submitting a proof.
+  // This is needed to account for the cost of storing proofs onchain and prevent
+  // spamming (i.e. sybil bloat attacks) the network with non-required proofs.
+  // TODO_MAINNET_MIGRATION: Consider renaming this to `proof_submission_fee_upokt`.
+  cosmos.base.v1beta1.Coin proof_submission_fee = 5 [(gogoproto.jsontag) = "proof_submission_fee"];
+
+  // IMPORTANT: Make sure to update all related files if you're modifying or adding a new parameter.
+  // Try the following grep to find all related places: `grep -r compute_units_to_tokens_multiplier`
+  // TODO_IMPROVE: Look into an opportunity to use an enum to avoid using strings throughout the codebase.
+}

@@ -1,0 +1,91 @@
+syntax = "proto3";
+
+// NOTE that the `shared` package is not a Cosmos module,
+// but rather a manually created package to resolve circular type dependencies.
+package pocket.shared;
+
+import "cosmos_proto/cosmos.proto";
+
+import "gogoproto/gogo.proto";
+option go_package = "github.com/pokt-network/poktroll/x/shared/types";
+option (gogoproto.stable_marshaler_all) = true;
+
+// Service message to encapsulate unique and semantic identifiers for a service on the network
+message Service {
+  // For example, what if we want to request a session for a certain service but with some additional configs that identify it?
+  string id = 1; // Unique identifier for the service
+
+  // TODO_MAINNET_MIGRATION(@bryanchriswhite): Either remove this or rename it to alias.
+  string name = 2; // (Optional) Semantic human readable name for the service
+
+  // The cost of a single relay for this service in terms of compute units.
+  // Must be used alongside the global 'compute_units_to_tokens_multipler' to calculate the cost of a relay for this service.
+  // cost_per_relay_for_specific_service = compute_units_per_relay_for_specific_service * compute_units_to_tokens_multipler_global_value
+  uint64 compute_units_per_relay = 3; // Compute units required per relay for this service
+
+  // The owner address that created the service.
+  // It is the address that receives rewards based on the Service's onchain usage
+  // It is the only address that can update the service configuration (e.g. compute_units_per_relay),
+  // or make other updates to it.
+  string owner_address = 4 [(cosmos_proto.scalar) = "cosmos.AddressString"]; // The Bech32 address of the service owner / creator
+}
+
+// ApplicationServiceConfig holds the service configuration the application stakes for
+message ApplicationServiceConfig {
+  string service_id = 1; // The Service ID for which the application is configured
+
+  // TODO_POST_MAINNET: There is an opportunity for applications to advertise the max
+  // they're willing to pay for a certain configuration/price, but this is outside of scope.
+  // RPCConfig rpc_configs = 2; // List of endpoints for the service
+}
+
+// SupplierServiceConfig holds the service configuration the supplier stakes for
+message SupplierServiceConfig {
+  string service_id = 1; // The Service ID for which the supplier is configured
+  repeated SupplierEndpoint endpoints = 2; // List of endpoints for the service
+  repeated ServiceRevenueShare rev_share = 3; // List of revenue share configurations for the service
+  // TODO_POST_MAINNET: There is an opportunity for supplier to advertise the min
+  // they're willing to earn for a certain configuration/price, but this is outside of scope.
+}
+
+// SupplierEndpoint message to hold service configuration details
+message SupplierEndpoint {
+  string url = 1; // URL of the endpoint
+  RPCType rpc_type = 2; // Type of RPC exposed on the url above
+  repeated ConfigOption configs = 3; // Additional configuration options for the endpoint
+}
+
+// ServiceRevenueShare message to hold revenue share configuration details
+message ServiceRevenueShare {
+  // 2 was reserved in #1028 during the change of rev_share_percentage from float to uint64
+  // TODO_POST_MAINNET: Investigate if we can use a double instead.
+  reserved 2;
+
+  string address = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"]; // The Bech32 address of the revenue share recipient
+  uint64 rev_share_percentage = 3; // The percentage of revenue share the recipient will receive
+}
+
+// Enum to define RPC types
+enum RPCType {
+  UNKNOWN_RPC = 0; // Undefined RPC type
+  GRPC = 1; // gRPC
+  WEBSOCKET = 2; // WebSocket
+  JSON_RPC = 3; // JSON-RPC
+  REST = 4; // REST
+// Add new RPC types here as needed
+}
+
+// Enum to define configuration options
+// TODO_RESEARCH: Should these be configs, SLAs or something else? There will be more discussion once we get closer to implementing onchain QoS.
+enum ConfigOptions {
+  UNKNOWN_CONFIG = 0; // Undefined config option
+  TIMEOUT = 1; // Timeout setting
+  // Add new config options here as needed
+}
+
+// Key-value wrapper for config options, as proto maps can't be keyed by enums
+message ConfigOption {
+  ConfigOptions key = 1; // Config option key
+  string value = 2; // Config option value
+}
+

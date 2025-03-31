@@ -8,8 +8,8 @@ import { themes as prismThemes } from "prism-react-renderer";
 
 /** @type {import('@docusaurus/types').Config} */
 const config = {
-  title: "Poktroll",
-  tagline: "Roll the POKT",
+  title: "Pocket",
+  tagline: "Permissionless APIs",
   favicon: "img/logo.png",
 
   markdown: {
@@ -32,7 +32,7 @@ const config = {
   ],
 
   // GitHub pages deployment config.
-  url: "https://poktroll.com/",
+  url: "https://pocket.com/",
   baseUrl: "/",
 
   // Custom domain config.
@@ -42,7 +42,7 @@ const config = {
   // GitHub pages deployment config.
   // If you aren't using GitHub pages, you don't need these.
   organizationName: "pokt-network", // Usually your GitHub org/user name (ORGANIZATION_NAME)
-  projectName: "poktroll", // Usually your repo name. (PROJECT_NAME)
+  projectName: "pocket", // Usually your repo name. (PROJECT_NAME)
   deploymentBranch: "gh-pages", // Deployment branch (DEPLOYMENT_BRANCH)
   trailingSlash: false,
 
@@ -129,7 +129,7 @@ const config = {
             title: "Documentation",
             items: [
               {
-                label: "Poktroll",
+                label: "Pocket",
                 to: "/",
               },
               {
@@ -156,7 +156,7 @@ const config = {
             items: [
               {
                 label: "GitHub",
-                href: "https://github.com/pokt-network/poktroll",
+                href: "https://github.com/pokt-network/pocket",
               },
             ],
           },

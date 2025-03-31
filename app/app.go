@@ -41,8 +41,7 @@ import (
 
 const (
 	AccountAddressPrefix = "pokt"
-	// TODO_MAINNET_CRITICAL: Rename `poktroll` to `pocketd` EVERYWHERE.
-	Name = "poktroll"
+	Name                 = "pocket"
 )
 
 var (
@@ -306,7 +305,7 @@ func New(
 		return nil, err
 	}
 
-	// Set up poktroll telemetry using `app.toml` configuration options (in addition to cosmos-sdk telemetry config).
+	// Set up pocket telemetry using `app.toml` configuration options (in addition to cosmos-sdk telemetry config).
 	if err := telemetry.New(appOpts); err != nil {
 		return nil, err
 	}
