@@ -184,7 +184,7 @@
     "grantee": "pokt1eeeksh2tvkh7wzmfrljnhw4wrhs55lcuvmekkw",
     "authorization": {
       "@type": "\/cosmos.authz.v1beta1.GenericAuthorization",
-      "msg": "\/poktroll.migration.MsgImportMorseClaimableAccounts"
+      "msg": "\/pocket.migration.MsgImportMorseClaimableAccounts"
     },
     "expiration": "2500-01-01T00:00:00Z"
   },
