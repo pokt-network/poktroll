@@ -159,6 +159,21 @@ func (p *pocketdBin) RunCurlWithRetry(rpcUrl, service, method, path, appAddr, da
 
 // runPocketCmd is a helper to run a command using the local pocketd binary with the flags provided
 func (p *pocketdBin) runPocketCmd(args ...string) (*commandResult, error) {
+	// TODO_IN_THIS_COMMIT: revert!
+	for i, arg := range args {
+		if arg == "tx" && !strings.Contains(args[i+2], "collect-morse-accounts") {
+			args = append(args[:i+4],
+				append([]string{
+					"--fees=1upokt",
+					//"--gas=auto",
+				},
+					args[i+4:]...)...,
+			)
+			break
+		}
+	}
+	// ---
+
 	base := []string{"--home", defaultHome}
 	args = append(base, args...)
 	commandStr := "pocketd " + strings.Join(args, " ") // Create a string representation of the command
