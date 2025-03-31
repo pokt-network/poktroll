@@ -77,6 +77,11 @@ func runImportMorseAccounts(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
+	txClient, err := flags.GetTxClient(ctx, cmd, true)
+	if err != nil {
+		return err
+	}
+
 	// Construct a MsgImportMorseAccountState message.
 	msgImportMorseAccountState, err := migrationtypes.NewMsgImportMorseClaimableAccounts(
 		authtypes.NewModuleAddress(govtypes.ModuleName).String(),

@@ -5,11 +5,14 @@ import (
 	"net/url"
 
 	"cosmossdk.io/depinject"
+	"cosmossdk.io/math"
 	cosmosclient "github.com/cosmos/cosmos-sdk/client"
 	cosmosflags "github.com/cosmos/cosmos-sdk/client/flags"
 	cosmostx "github.com/cosmos/cosmos-sdk/client/tx"
+	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/spf13/cobra"
 
+	"github.com/pokt-network/poktroll/app/volatile"
 	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/client/tx"
 	"github.com/pokt-network/poktroll/pkg/client/tx/types"
@@ -17,7 +20,7 @@ import (
 )
 
 // GetTxClient constructs a new TxClient instance using the provided command flags.
-func GetTxClient(ctx context.Context, cmd *cobra.Command) (client.TxClient, error) {
+func GetTxClient(ctx context.Context, cmd *cobra.Command, useGas bool) (client.TxClient, error) {
 	// Retrieve the query node RPC URL
 	queryNodeRPCUrlString, err := cmd.Flags().GetString(cosmosflags.FlagNode)
 	if err != nil {
@@ -61,8 +64,20 @@ func GetTxClient(ctx context.Context, cmd *cobra.Command) (client.TxClient, erro
 	if err != nil {
 		return nil, err
 	}
-	deps = depinject.Configs(deps, depinject.Supply(txCtx))
 
-	// Return a new TxClient instance
-	return tx.NewTxClient(ctx, deps, tx.WithSigningKeyName(clientCtx.FromName))
+	// TODO_IN_HTIS_COMMIT: keeep signing key name opt...
+	opts := []client.TxClientOption{
+		tx.WithSigningKeyName(clientCtx.FromName),
+	}
+
+	// TODO_IN_THIS_COMMIT: refactor...
+	if useGas {
+		gasPrices := cosmostypes.NewDecCoins(cosmostypes.NewDecCoin(volatile.DenomuPOKT, math.NewInt(1)))
+		opts = append(opts, tx.WithGasPrices(gasPrices))
+	}
+	// ---
+
+	// Construct and return a new TxClient instance
+	deps = depinject.Configs(deps, depinject.Supply(txCtx))
+	return tx.NewTxClient(ctx, deps, opts...)
 }
