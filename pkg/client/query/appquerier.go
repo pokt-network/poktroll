@@ -22,6 +22,7 @@ type appQuerier struct {
 	applicationQuerier apptypes.QueryClient
 	logger             polylog.Logger
 
+	blockClient client.BlockClient
 	// applicationsCache caches application.Application returned from applicationQueryClient.Application requests.
 	applicationsCache cache.KeyValueCache[apptypes.Application]
 	// paramsCache caches application.Params returned from applicationQueryClient.Params requests.
@@ -33,6 +34,10 @@ type appQuerier struct {
 //
 // Required dependencies:
 // - clientCtx
+// - polylog.Logger
+// - client.BlockQueryClient
+// - cache.KeyValueCache[apptypes.Application]
+// - client.ParamsCache[apptypes.Params]
 func NewApplicationQuerier(deps depinject.Config) (client.ApplicationQueryClient, error) {
 	aq := &appQuerier{}
 
@@ -40,6 +45,7 @@ func NewApplicationQuerier(deps depinject.Config) (client.ApplicationQueryClient
 		deps,
 		&aq.clientConn,
 		&aq.logger,
+		&aq.blockClient,
 		&aq.applicationsCache,
 		&aq.paramsCache,
 	); err != nil {
@@ -95,20 +101,23 @@ func (aq *appQuerier) GetParams(ctx context.Context) (*apptypes.Params, error) {
 	logger := aq.logger.With("query_client", "application", "method", "GetParams")
 
 	// Check if the application module parameters are present in the cache.
-	if params, found := aq.paramsCache.Get(); found {
+	if params, found := aq.paramsCache.GetLatest(); found {
 		logger.Debug().Msg("cache hit for application params")
 		return &params, nil
 	}
 
 	logger.Debug().Msg("cache miss for application params")
 
-	req := apptypes.QueryParamsRequest{}
-	res, err := aq.applicationQuerier.Params(ctx, &req)
+	lastBlock := aq.blockClient.LastBlock(ctx)
+	req := apptypes.QueryParamsAtHeightRequest{
+		Height: uint64(lastBlock.Height()),
+	}
+	res, err := aq.applicationQuerier.ParamsAtHeight(ctx, &req)
 	if err != nil {
 		return nil, err
 	}
 
 	// Update the cache with the newly retrieved application module parameters.
-	aq.paramsCache.Set(res.Params)
+	aq.paramsCache.SetAtHeight(res.Params, int64(res.EffectiveBlockHeight))
 	return &res.Params, nil
 }

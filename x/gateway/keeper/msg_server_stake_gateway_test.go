@@ -47,8 +47,13 @@ func TestMsgServer_StakeGateway_SuccessfulCreateAndUpdate(t *testing.T) {
 	require.Equal(t, stakeMsg.GetStake(), gateway.GetStake())
 
 	// Assert that the EventGatewayStaked event is emitted.
-	sharedParams := sharedtypes.DefaultParams()
-	sessionEndHeight := sharedtypes.GetSessionEndHeight(&sharedParams, sdkCtx.BlockHeight())
+	sharedParamsUpdates := []*sharedtypes.ParamsUpdate{
+		{
+			Params:               sharedtypes.DefaultParams(),
+			EffectiveBlockHeight: 1,
+		},
+	}
+	sessionEndHeight := sharedtypes.GetSessionEndHeight(sharedParamsUpdates, sdkCtx.BlockHeight())
 	expectedEvent, err := cosmostypes.TypedEventToEvent(
 		&gatewaytypes.EventGatewayStaked{
 			Gateway:          gateway,

@@ -44,3 +44,8 @@ func (c *paramsCache[T]) GetAtHeight(height int64) (value T, found bool) {
 func (c *paramsCache[T]) SetAtHeight(value T, height int64) {
 	c.historicalKeyValueCache.SetVersion(singleValueCache, value, height)
 }
+
+// Get all versions of a value stored in the cache.
+func (c *paramsCache[T]) GetAllUpdates() (cache.CacheValueHistory[T], bool) {
+	return c.historicalKeyValueCache.GetAllVersions(singleValueCache)
+}

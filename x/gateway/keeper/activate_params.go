@@ -23,13 +23,13 @@ func (k Keeper) BeginBlockerActivateGatewayParams(
 	sharedParamsUpdates := k.sharedKeeper.GetParamsUpdates(ctx)
 
 	// Only activate params at the start of a session.
-	if !sharedtypes.IsSessionStartHeight(&sharedParamsUpdates, currentBlockHeight) {
+	if !sharedtypes.IsSessionStartHeight(sharedParamsUpdates, currentBlockHeight) {
 		return activatedGatewayParamsUpdate, nil
 	}
 
 	logger.Info(fmt.Sprintf(
 		"starting session %d, about to activate new gateway params",
-		sharedtypes.GetSessionNumber(&sharedParamsUpdates, currentBlockHeight),
+		sharedtypes.GetSessionNumber(sharedParamsUpdates, currentBlockHeight),
 	))
 
 	for _, gatewayParamsUpdate := range k.GetParamsUpdates(ctx) {

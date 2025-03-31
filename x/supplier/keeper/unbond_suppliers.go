@@ -13,11 +13,11 @@ import (
 // EndBlockerUnbondSuppliers unbonds suppliers whose unbonding period has elapsed.
 func (k Keeper) EndBlockerUnbondSuppliers(ctx context.Context) (numUnbondedSuppliers uint64, err error) {
 	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
-	sharedParams := k.sharedKeeper.GetParams(ctx)
+	sharedParamsUpdates := k.sharedKeeper.GetParamsUpdates(ctx)
 	currentHeight := sdkCtx.BlockHeight()
 
 	// Only process unbonding suppliers at the end of the session.
-	if sharedtypes.IsSessionEndHeight(&sharedParams, currentHeight) {
+	if sharedtypes.IsSessionEndHeight(sharedParamsUpdates, currentHeight) {
 		return numUnbondedSuppliers, nil
 	}
 
@@ -32,7 +32,7 @@ func (k Keeper) EndBlockerUnbondSuppliers(ctx context.Context) (numUnbondedSuppl
 			continue
 		}
 
-		unbondingEndHeight := sharedtypes.GetSupplierUnbondingEndHeight(&sharedParams, &supplier)
+		unbondingEndHeight := sharedtypes.GetSupplierUnbondingEndHeight(sharedParamsUpdates, &supplier)
 
 		// If the unbonding height is ahead of the current height, the supplier
 		// stays in the unbonding state.
@@ -80,7 +80,7 @@ func (k Keeper) EndBlockerUnbondSuppliers(ctx context.Context) (numUnbondedSuppl
 		}
 
 		// Emit an event which signals that the supplier has sucessfully unbonded.
-		sessionEndHeight := sharedtypes.GetSessionEndHeight(&sharedParams, currentHeight)
+		sessionEndHeight := sharedtypes.GetSessionEndHeight(sharedParamsUpdates, currentHeight)
 		unbondingEndEvent := &suppliertypes.EventSupplierUnbondingEnd{
 			Supplier:           &supplier,
 			Reason:             unbondingReason,

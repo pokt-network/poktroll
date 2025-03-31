@@ -211,7 +211,7 @@ func (s *QueryCacheTestSuite) TestKeyValueCache_SharedQuerier_Params() {
 	// Call the GetSessionBlockFrequency method numCalls times and assert that the server
 	// is not reached again.
 	for range numCalls {
-		_, err := s.queryClients.shared.GetComputeUnitsToTokensMultiplier(ctx)
+		_, err := s.queryClients.shared.GetComputeUnitsToTokensMultiplier(ctx, 1)
 		require.NoError(s.T(), err)
 	}
 	require.Equal(s.T(), 1, s.rpcCallCount.sharedParams)

@@ -29,8 +29,13 @@ func NewTestSharedQueryClient(
 		GetClaimWindowOpenHeight(gomock.Any(), gomock.Any()).
 		DoAndReturn(
 			func(ctx context.Context, queryHeight int64) (int64, error) {
-				sharedParams := sharedtypes.DefaultParams()
-				return sharedtypes.GetClaimWindowOpenHeight(&sharedParams, queryHeight), nil
+				sharedParamsUpdates := []*sharedtypes.ParamsUpdate{
+					{
+						Params:               sharedtypes.DefaultParams(),
+						EffectiveBlockHeight: 1,
+					},
+				}
+				return sharedtypes.GetClaimWindowOpenHeight(sharedParamsUpdates, queryHeight), nil
 			},
 		).
 		AnyTimes()
@@ -39,8 +44,13 @@ func NewTestSharedQueryClient(
 		GetProofWindowOpenHeight(gomock.Any(), gomock.Any()).
 		DoAndReturn(
 			func(ctx context.Context, queryHeight int64) (int64, error) {
-				sharedParams := sharedtypes.DefaultParams()
-				return sharedtypes.GetProofWindowOpenHeight(&sharedParams, queryHeight), nil
+				sharedParamsUpdates := []*sharedtypes.ParamsUpdate{
+					{
+						Params:               sharedtypes.DefaultParams(),
+						EffectiveBlockHeight: 1,
+					},
+				}
+				return sharedtypes.GetProofWindowOpenHeight(sharedParamsUpdates, queryHeight), nil
 			},
 		).
 		AnyTimes()
@@ -49,8 +59,13 @@ func NewTestSharedQueryClient(
 		GetSessionGracePeriodEndHeight(gomock.Any(), gomock.Any()).
 		DoAndReturn(
 			func(ctx context.Context, queryHeight int64) (int64, error) {
-				sharedParams := sharedtypes.DefaultParams()
-				return sharedtypes.GetSessionGracePeriodEndHeight(&sharedParams, queryHeight), nil
+				sharedParamsUpdates := []*sharedtypes.ParamsUpdate{
+					{
+						Params:               sharedtypes.DefaultParams(),
+						EffectiveBlockHeight: 1,
+					},
+				}
+				return sharedtypes.GetSessionGracePeriodEndHeight(sharedParamsUpdates, queryHeight), nil
 			},
 		).
 		AnyTimes()
@@ -63,9 +78,14 @@ func NewTestSharedQueryClient(
 				sessionEndHeight int64,
 				supplierOperatorAddr string,
 			) (int64, error) {
-				sharedParams := sharedtypes.DefaultParams()
+				sharedParamsUpdates := []*sharedtypes.ParamsUpdate{
+					{
+						Params:               sharedtypes.DefaultParams(),
+						EffectiveBlockHeight: 1,
+					},
+				}
 				return sharedtypes.GetEarliestSupplierClaimCommitHeight(
-					&sharedParams,
+					sharedParamsUpdates,
 					sessionEndHeight,
 					[]byte{},
 					supplierOperatorAddr,
@@ -82,9 +102,14 @@ func NewTestSharedQueryClient(
 				sessionEndHeight int64,
 				supplierOperatorAddr string,
 			) (int64, error) {
-				sharedParams := sharedtypes.DefaultParams()
+				sharedParamsUpdates := []*sharedtypes.ParamsUpdate{
+					{
+						Params:               sharedtypes.DefaultParams(),
+						EffectiveBlockHeight: 1,
+					},
+				}
 				return sharedtypes.GetEarliestSupplierProofCommitHeight(
-					&sharedParams,
+					sharedParamsUpdates,
 					sessionEndHeight,
 					[]byte{},
 					supplierOperatorAddr,

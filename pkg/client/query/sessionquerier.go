@@ -25,6 +25,7 @@ type sessionQuerier struct {
 	sharedQueryClient client.SharedQueryClient
 	logger            polylog.Logger
 
+	blockClient client.BlockClient
 	// sessionsCache caches sessionQueryClient.GetSession requests
 	sessionsCache cache.KeyValueCache[*sessiontypes.Session]
 	// paramsCache caches sessionQueryClient.Params requests
@@ -44,6 +45,7 @@ func NewSessionQuerier(deps depinject.Config) (client.SessionQueryClient, error)
 		&sessq.clientConn,
 		&sessq.sharedQueryClient,
 		&sessq.logger,
+		&sessq.blockClient,
 		&sessq.sessionsCache,
 		&sessq.paramsCache,
 	); err != nil {
@@ -67,11 +69,11 @@ func (sessq *sessionQuerier) GetSession(
 
 	// Get the shared parameters to calculate the session start height.
 	// Use the session start height as the canonical height to be used in the cache key.
-	sharedParams, err := sessq.sharedQueryClient.GetParams(ctx)
+	sharedParamsUpdates, err := sessq.sharedQueryClient.GetParamsUpdates(ctx)
 	if err != nil {
 		return nil, err
 	}
-	sessionCacheKey := getSessionCacheKey(sharedParams, appAddress, serviceId, blockHeight)
+	sessionCacheKey := getSessionCacheKey(sharedParamsUpdates, appAddress, serviceId, blockHeight)
 
 	// Check if the session is present in the cache.
 	if session, found := sessq.sessionsCache.Get(sessionCacheKey); found {
@@ -104,27 +106,31 @@ func (sessq *sessionQuerier) GetParams(ctx context.Context) (*sessiontypes.Param
 	logger := sessq.logger.With("query_client", "session", "method", "GetParams")
 
 	// Check if the params are present in the cache.
-	if params, found := sessq.paramsCache.Get(); found {
+	if params, found := sessq.paramsCache.GetLatest(); found {
 		logger.Debug().Msg("cache hit for session params")
 		return &params, nil
 	}
 
 	logger.Debug().Msg("cache miss for session params")
 
-	req := &sessiontypes.QueryParamsRequest{}
-	res, err := sessq.sessionQuerier.Params(ctx, req)
+	lastBlock := sessq.blockClient.LastBlock(ctx)
+
+	req := &sessiontypes.QueryParamsAtHeightRequest{
+		Height: uint64(lastBlock.Height()),
+	}
+	res, err := sessq.sessionQuerier.ParamsAtHeight(ctx, req)
 	if err != nil {
 		return nil, ErrQuerySessionParams.Wrapf("[%v]", err)
 	}
 
 	// Cache the params for future queries.
-	sessq.paramsCache.Set(res.Params)
+	sessq.paramsCache.SetAtHeight(res.Params, int64(res.EffectiveBlockHeight))
 	return &res.Params, nil
 }
 
 // getSessionCacheKey constructs the cache key for a session in the form of: appAddress/serviceId/sessionStartHeight.
 func getSessionCacheKey(
-	sharedParams *sharedtypes.Params,
+	sharedParamsUpdate []*sharedtypes.ParamsUpdate,
 	appAddress,
 	serviceId string,
 	blockHeight int64,
@@ -132,6 +138,6 @@ func getSessionCacheKey(
 	// Using the session start height as the canonical height ensures that the cache
 	// does not duplicate entries for the same session given different block heights
 	// of the same session.
-	sessionStartHeight := sharedtypes.GetSessionStartHeight(sharedParams, blockHeight)
+	sessionStartHeight := sharedtypes.GetSessionStartHeight(sharedParamsUpdate, blockHeight)
 	return fmt.Sprintf("%s/%s/%d", appAddress, serviceId, sessionStartHeight)
 }

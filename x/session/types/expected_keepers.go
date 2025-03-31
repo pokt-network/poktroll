@@ -35,5 +35,5 @@ type SupplierKeeper interface {
 type SharedKeeper interface {
 	GetParams(ctx context.Context) (params sharedtypes.Params)
 	GetParamsAtHeight(ctx context.Context, queryHeight int64) sharedtypes.Params
-	GetParamsUpdates(ctx context.Context) []sharedtypes.ParamsUpdate
+	GetParamsUpdates(ctx context.Context) []*sharedtypes.ParamsUpdate
 }

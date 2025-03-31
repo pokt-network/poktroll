@@ -41,7 +41,7 @@ func (k Keeper) BeginBlockerActivateSharedParams(
 
 		// Effectively update the shared params.
 		k.SetParams(ctx, sharedParamsUpdate.Params)
-		activatedSharedParamsUpdate = &sharedParamsUpdate
+		activatedSharedParamsUpdate = sharedParamsUpdate
 
 		// Emit params update event.
 		eventParamsUpdated := &sharedtypes.EventParamsUpdated{

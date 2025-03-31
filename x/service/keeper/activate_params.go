@@ -23,13 +23,13 @@ func (k Keeper) BeginBlockerActivateServiceParams(
 	sharedParamsUpdates := k.sharedKeeper.GetParamsUpdates(ctx)
 
 	// Only activate params at the start of a session.
-	if !sharedtypes.IsSessionStartHeight(&sharedParamsUpdates, currentBlockHeight) {
+	if !sharedtypes.IsSessionStartHeight(sharedParamsUpdates, currentBlockHeight) {
 		return activatedServiceParamsUpdate, nil
 	}
 
 	logger.Info(fmt.Sprintf(
 		"starting session %d, about to activate new service params",
-		sharedtypes.GetSessionNumber(&sharedParamsUpdates, currentBlockHeight),
+		sharedtypes.GetSessionNumber(sharedParamsUpdates, currentBlockHeight),
 	))
 
 	for _, serviceParamsUpdate := range k.GetParamsUpdates(ctx) {

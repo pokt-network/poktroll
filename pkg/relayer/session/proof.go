@@ -94,14 +94,14 @@ func (rs *relayerSessionsManager) waitForEarliestSubmitProofsHeightAndGeneratePr
 	// to get the most recently (asynchronously) observed (and cached) value.
 	// TODO_MAINNET(@bryanchriswhite,#543): We also don't really want to use the current value of the params. Instead,
 	// we should be using the value that the params had for the session which includes queryHeight.
-	sharedParams, err := rs.sharedQueryClient.GetParams(ctx)
+	sharedParamsUpdates, err := rs.sharedQueryClient.GetParamsUpdates(ctx)
 	if err != nil {
 		logger.Error().Err(err).Msg("failed to get shared params")
 		failedSubmitProofsSessionsCh <- sessionTrees
 		return nil
 	}
 
-	proofWindowOpenHeight := sharedtypes.GetProofWindowOpenHeight(sharedParams, sessionEndHeight)
+	proofWindowOpenHeight := sharedtypes.GetProofWindowOpenHeight(sharedParamsUpdates, sessionEndHeight)
 
 	// we wait for proofWindowOpenHeight to be received before proceeding since we need
 	// its hash to seed the pseudo-random number generator for the proof submission
@@ -127,7 +127,7 @@ func (rs *relayerSessionsManager) waitForEarliestSubmitProofsHeightAndGeneratePr
 	// Get the earliest proof commit height for this supplier.
 	supplierOperatorAddr := sessionTrees[0].GetSupplierOperatorAddress()
 	earliestSupplierProofsCommitHeight := sharedtypes.GetEarliestSupplierProofCommitHeight(
-		sharedParams,
+		sharedParamsUpdates,
 		sessionEndHeight,
 		proofsWindowOpenBlock.Hash(),
 		supplierOperatorAddr,

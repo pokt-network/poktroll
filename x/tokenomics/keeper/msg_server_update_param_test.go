@@ -47,7 +47,7 @@ func TestMsgUpdateParam_UpdateMintAllocationPercentagesOnly(t *testing.T) {
 	require.Equal(t, expectedMintAllocationPercentages, params.MintAllocationPercentages)
 
 	// Ensure the other parameters are unchanged
-	testkeeper.AssertDefaultParamsEqualExceptFields(t, &defaultParams, res.Params, string(tokenomicstypes.KeyMintAllocationPercentages))
+	testkeeper.AssertDefaultParamsEqualExceptFields(t, &defaultParams, &res.Params, string(tokenomicstypes.KeyMintAllocationPercentages))
 }
 
 func TestMsgUpdateParam_UpdateDaoRewardAddressOnly(t *testing.T) {
@@ -79,7 +79,7 @@ func TestMsgUpdateParam_UpdateDaoRewardAddressOnly(t *testing.T) {
 	require.Equal(t, expectedDaoRewardAddress, params.DaoRewardAddress)
 
 	// Ensure the other parameters are unchanged
-	testkeeper.AssertDefaultParamsEqualExceptFields(t, &defaultParams, res.Params, string(tokenomicstypes.KeyDaoRewardAddress))
+	testkeeper.AssertDefaultParamsEqualExceptFields(t, &defaultParams, &res.Params, string(tokenomicstypes.KeyDaoRewardAddress))
 }
 
 func TestMsgUpdateParam_UpdateGlobalInflationPerClaimOnly(t *testing.T) {
@@ -111,5 +111,5 @@ func TestMsgUpdateParam_UpdateGlobalInflationPerClaimOnly(t *testing.T) {
 	require.Equal(t, expectedGlobalInflationPerClaim, params.GlobalInflationPerClaim)
 
 	// Ensure the other parameters are unchanged
-	testkeeper.AssertDefaultParamsEqualExceptFields(t, &defaultParams, res.Params, string(tokenomicstypes.KeyGlobalInflationPerClaim))
+	testkeeper.AssertDefaultParamsEqualExceptFields(t, &defaultParams, &res.Params, string(tokenomicstypes.KeyGlobalInflationPerClaim))
 }

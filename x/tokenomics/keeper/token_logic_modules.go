@@ -225,12 +225,13 @@ func (k Keeper) ProcessTokenLogicModules(
 		logger.Info(fmt.Sprintf("Finished processing TLM: %q", tlmName))
 	}
 
+	sharedParamsUpdates := k.sharedKeeper.GetParamsUpdates(ctx)
 	// TODO_POST_MAINNET: If we support multiple native tokens, we will need to start checking the denom here.
-	sessionEndHeight := sharedtypes.GetSessionEndHeight(&sharedParams, cosmostypes.UnwrapSDKContext(ctx).BlockHeight())
+	sessionEndHeight := sharedtypes.GetSessionEndHeight(sharedParamsUpdates, cosmostypes.UnwrapSDKContext(ctx).BlockHeight())
 	if application.Stake.Amount.LT(apptypes.DefaultMinStake.Amount) {
 		// Mark the application as unbonding if it has less than the minimum stake.
 		application.UnstakeSessionEndHeight = uint64(sessionEndHeight)
-		unbondingEndHeight := apptypes.GetApplicationUnbondingHeight(&sharedParams, &application)
+		unbondingEndHeight := apptypes.GetApplicationUnbondingHeight(sharedParamsUpdates, &application)
 
 		appUnbondingBeginEvent := &apptypes.EventApplicationUnbondingBegin{
 			Application:        &application,

@@ -46,7 +46,7 @@ func TestMsgServer_CreateClaim_Success(t *testing.T) {
 	tests := []struct {
 		desc              string
 		getClaimMsgHeight func(
-			sharedParams *sharedtypes.Params,
+			sharedParamsUpdates []*sharedtypes.ParamsUpdate,
 			queryHeight int64,
 		) int64
 		merkleRoot smt.MerkleSumRoot
@@ -56,9 +56,9 @@ func TestMsgServer_CreateClaim_Success(t *testing.T) {
 	}{
 		{
 			desc: "claim message height equals supplier's earliest claim commit height",
-			getClaimMsgHeight: func(sharedParams *sharedtypes.Params, queryHeight int64) int64 {
+			getClaimMsgHeight: func(sharedParamsUpdates []*sharedtypes.ParamsUpdate, queryHeight int64) int64 {
 				return sharedtypes.GetEarliestSupplierClaimCommitHeight(
-					sharedParams,
+					sharedParamsUpdates,
 					queryHeight,
 					claimWindowOpenBlockHash,
 					supplierOperatorAddr,
@@ -141,8 +141,8 @@ func TestMsgServer_CreateClaim_Success(t *testing.T) {
 			sessionHeader := sessionRes.GetSession().GetHeader()
 
 			// Increment the block height to the test claim height.
-			sharedParams := keepers.SharedKeeper.GetParams(ctx)
-			testClaimHeight := test.getClaimMsgHeight(&sharedParams, sessionHeader.GetSessionEndBlockHeight())
+			sharedParamsUpdates := keepers.SharedKeeper.GetParamsUpdates(ctx)
+			testClaimHeight := test.getClaimMsgHeight(sharedParamsUpdates, sessionHeader.GetSessionEndBlockHeight())
 			sdkCtx = sdkCtx.WithBlockHeight(testClaimHeight)
 			ctx = sdkCtx
 
@@ -192,7 +192,8 @@ func TestMsgServer_CreateClaim_Success(t *testing.T) {
 			numEstimatedComputUnits, err := claim.GetNumEstimatedComputeUnits(relayMiningDifficulty)
 			require.NoError(t, err)
 
-			claimedUPOKT, err := claim.GetClaimeduPOKT(sharedParams, relayMiningDifficulty)
+			sharedParamsUpdate := sharedtypes.GetEffectiveParamsUpdate(sharedParamsUpdates, sessionStartHeight)
+			claimedUPOKT, err := claim.GetClaimeduPOKT(sharedParamsUpdate.Params, relayMiningDifficulty)
 			require.NoError(t, err)
 
 			require.EqualValues(t, &claim, claimCreatedEvents[0].GetClaim())
@@ -212,7 +213,7 @@ func TestMsgServer_CreateClaim_Error_OutsideOfWindow(t *testing.T) {
 	keepers, ctx := keepertest.NewProofModuleKeepers(t, blockHeightOpt)
 	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
 	srv := keeper.NewMsgServerImpl(*keepers.Keeper)
-	sharedParams := keepers.SharedKeeper.GetParams(ctx)
+	sharedParamsUpdates := keepers.SharedKeeper.GetParamsUpdates(ctx)
 
 	// The base session start height used for testing
 	sessionStartHeight := int64(1)
@@ -258,12 +259,12 @@ func TestMsgServer_CreateClaim_Error_OutsideOfWindow(t *testing.T) {
 	sessionHeader := sessionRes.GetSession().GetHeader()
 
 	claimWindowCloseHeight := sharedtypes.GetClaimWindowCloseHeight(
-		&sharedParams,
+		sharedParamsUpdates,
 		sessionHeader.GetSessionEndBlockHeight(),
 	)
 
 	earliestClaimCommitHeight := sharedtypes.GetEarliestSupplierClaimCommitHeight(
-		&sharedParams,
+		sharedParamsUpdates,
 		sessionHeader.GetSessionEndBlockHeight(),
 		claimWindowOpenBlockHash,
 		supplierOperatorAddr,
@@ -283,7 +284,7 @@ func TestMsgServer_CreateClaim_Error_OutsideOfWindow(t *testing.T) {
 					"current block height (%d) is less than the session's earliest claim commit height (%d)",
 					earliestClaimCommitHeight-1,
 					sharedtypes.GetEarliestSupplierClaimCommitHeight(
-						&sharedParams,
+						sharedParamsUpdates,
 						sessionHeader.GetSessionEndBlockHeight(),
 						claimWindowOpenBlockHash,
 						supplierOperatorAddr,
@@ -629,8 +630,8 @@ func TestMsgServer_CreateClaim_Error_ComputeUnitsMismatch(t *testing.T) {
 
 	// Increment the block height to the test claim height.
 	sessionHeader := sessionRes.GetSession().GetHeader()
-	sharedParams := keepers.SharedKeeper.GetParams(ctx)
-	testClaimHeight := sharedtypes.GetClaimWindowCloseHeight(&sharedParams, sessionHeader.GetSessionEndBlockHeight())
+	sharedParamsUpdates := keepers.SharedKeeper.GetParamsUpdates(ctx)
+	testClaimHeight := sharedtypes.GetClaimWindowCloseHeight(sharedParamsUpdates, sessionHeader.GetSessionEndBlockHeight())
 	sdkCtx = sdkCtx.WithBlockHeight(testClaimHeight)
 	ctx = sdkCtx
 

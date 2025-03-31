@@ -46,6 +46,14 @@ func (sqc *SharedKeeperQueryClient) GetParamsAtHeight(
 	return &sharedParams, nil
 }
 
+// GetParamsUpdates queries & returns all the shared module onchain parameters updates.
+func (sqc *SharedKeeperQueryClient) GetParamsUpdates(
+	ctx context.Context,
+) ([]*sharedtypes.ParamsUpdate, error) {
+	sharedParamsUpdates := sqc.sharedKeeper.GetParamsUpdates(ctx)
+	return sharedParamsUpdates, nil
+}
+
 // GetSessionGracePeriodEndHeight returns the block height at which the grace period
 // for the session which includes queryHeight elapses.
 // The grace period is the number of blocks after the session ends during which relays
@@ -57,8 +65,8 @@ func (sqc *SharedKeeperQueryClient) GetSessionGracePeriodEndHeight(
 	ctx context.Context,
 	queryHeight int64,
 ) (int64, error) {
-	sharedParams := sqc.sharedKeeper.GetParamsAtHeight(ctx, queryHeight)
-	return sharedtypes.GetSessionGracePeriodEndHeight(&sharedParams, queryHeight), nil
+	sharedParamsUpdates := sqc.sharedKeeper.GetParamsUpdates(ctx)
+	return sharedtypes.GetSessionGracePeriodEndHeight(sharedParamsUpdates, queryHeight), nil
 }
 
 // GetClaimWindowOpenHeight returns the block height at which the claim window of
@@ -70,8 +78,8 @@ func (sqc *SharedKeeperQueryClient) GetClaimWindowOpenHeight(
 	ctx context.Context,
 	queryHeight int64,
 ) (int64, error) {
-	sharedParams := sqc.sharedKeeper.GetParamsAtHeight(ctx, queryHeight)
-	return sharedtypes.GetClaimWindowOpenHeight(&sharedParams, queryHeight), nil
+	sharedParamsUpdates := sqc.sharedKeeper.GetParamsUpdates(ctx)
+	return sharedtypes.GetClaimWindowOpenHeight(sharedParamsUpdates, queryHeight), nil
 }
 
 // GetProofWindowOpenHeight returns the block height at which the proof window of
@@ -83,8 +91,8 @@ func (sqc *SharedKeeperQueryClient) GetProofWindowOpenHeight(
 	ctx context.Context,
 	queryHeight int64,
 ) (int64, error) {
-	sharedParams := sqc.sharedKeeper.GetParamsAtHeight(ctx, queryHeight)
-	return sharedtypes.GetProofWindowOpenHeight(&sharedParams, queryHeight), nil
+	sharedParamsUpdates := sqc.sharedKeeper.GetParamsUpdates(ctx)
+	return sharedtypes.GetProofWindowOpenHeight(sharedParamsUpdates, queryHeight), nil
 }
 
 // GetEarliestSupplierClaimCommitHeight returns the earliest block height at which a claim
@@ -94,8 +102,8 @@ func (sqc *SharedKeeperQueryClient) GetEarliestSupplierClaimCommitHeight(
 	queryHeight int64,
 	supplierOperatorAddr string,
 ) (int64, error) {
-	sharedParams := sqc.sharedKeeper.GetParamsAtHeight(ctx, queryHeight)
-	claimWindowOpenHeight := sharedtypes.GetClaimWindowOpenHeight(&sharedParams, queryHeight)
+	sharedParamsUpdates := sqc.sharedKeeper.GetParamsUpdates(ctx)
+	claimWindowOpenHeight := sharedtypes.GetClaimWindowOpenHeight(sharedParamsUpdates, queryHeight)
 
 	// Fetch the claim window open block hash so that it can be used as part of the
 	// pseudo-random seed for generating the claim distribution offset.
@@ -104,7 +112,7 @@ func (sqc *SharedKeeperQueryClient) GetEarliestSupplierClaimCommitHeight(
 
 	// Get the earliest claim commit height for the given supplier.
 	return sharedtypes.GetEarliestSupplierClaimCommitHeight(
-		&sharedParams,
+		sharedParamsUpdates,
 		queryHeight,
 		claimWindowOpenBlockHashBz,
 		supplierOperatorAddr,
@@ -118,8 +126,8 @@ func (sqc *SharedKeeperQueryClient) GetEarliestSupplierProofCommitHeight(
 	queryHeight int64,
 	supplierOperatorAddr string,
 ) (int64, error) {
-	sharedParams := sqc.sharedKeeper.GetParamsAtHeight(ctx, queryHeight)
-	proofWindowOpenHeight := sharedtypes.GetProofWindowOpenHeight(&sharedParams, queryHeight)
+	sharedParams := sqc.sharedKeeper.GetParamsUpdates(ctx)
+	proofWindowOpenHeight := sharedtypes.GetProofWindowOpenHeight(sharedParams, queryHeight)
 
 	// Fetch the proof window open block hash so that it can be used as part of the
 	// pseudo-random seed for generating the proof distribution offset.
@@ -128,7 +136,7 @@ func (sqc *SharedKeeperQueryClient) GetEarliestSupplierProofCommitHeight(
 
 	// Get the earliest proof commit height for the given supplier.
 	return sharedtypes.GetEarliestSupplierProofCommitHeight(
-		&sharedParams,
+		sharedParams,
 		queryHeight,
 		proofWindowOpenBlockHash,
 		supplierOperatorAddr,

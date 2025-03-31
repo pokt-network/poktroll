@@ -28,6 +28,7 @@ import (
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 
+	"github.com/pokt-network/poktroll/pkg/cache"
 	"github.com/pokt-network/poktroll/pkg/either"
 	"github.com/pokt-network/poktroll/pkg/observable"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
@@ -295,6 +296,8 @@ type SharedQueryClient interface {
 	GetParams(ctx context.Context) (*sharedtypes.Params, error)
 	// GetParamsAtHeight queries the chain for the shared module parameters at a given height.
 	GetParamsAtHeight(ctx context.Context, queryHeight int64) (*sharedtypes.Params, error)
+	// GetParamsUpdates queries the chain for all the params updates that of the shared module.
+	GetParamsUpdates(ctx context.Context) ([]*sharedtypes.ParamsUpdate, error)
 	// GetSessionGracePeriodEndHeight returns the block height at which the grace period
 	// for the session that includes queryHeight elapses.
 	// The grace period is the number of blocks after the session ends during which relays
@@ -363,5 +366,6 @@ type BankQueryClient interface {
 type ParamsCache[T any] interface {
 	GetLatest() (T, bool)
 	GetAtHeight(height int64) (T, bool)
+	GetAllUpdates() (cache.CacheValueHistory[T], bool)
 	SetAtHeight(value T, height int64)
 }

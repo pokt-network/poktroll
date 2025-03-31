@@ -51,7 +51,7 @@ func TestMsgUpdateParam_UpdateNumBlocksPerSession(t *testing.T) {
 	require.Equal(t, expectedNumBlocksPerSession, res.Params.NumBlocksPerSession)
 
 	// Ensure the other parameters are unchanged
-	testkeeper.AssertDefaultParamsEqualExceptFields(t, &testSharedParams, res.Params, string(sharedtypes.KeyNumBlocksPerSession))
+	testkeeper.AssertDefaultParamsEqualExceptFields(t, &testSharedParams, &res.Params, string(sharedtypes.KeyNumBlocksPerSession))
 }
 
 func TestMsgUpdateParam_UpdateClaimWindowOpenOffsetBlocks(t *testing.T) {
@@ -96,7 +96,7 @@ func TestMsgUpdateParam_UpdateClaimWindowOpenOffsetBlocks(t *testing.T) {
 	require.Equal(t, expectedClaimWindowOpenOffestBlocks, res.Params.ClaimWindowOpenOffsetBlocks)
 
 	// Ensure the other parameters are unchanged
-	testkeeper.AssertDefaultParamsEqualExceptFields(t, &sharedParams, res.Params, string(sharedtypes.KeyClaimWindowOpenOffsetBlocks))
+	testkeeper.AssertDefaultParamsEqualExceptFields(t, &sharedParams, &res.Params, string(sharedtypes.KeyClaimWindowOpenOffsetBlocks))
 }
 
 func TestMsgUpdateParam_UpdateClaimWindowCloseOffsetBlocks(t *testing.T) {
@@ -141,7 +141,7 @@ func TestMsgUpdateParam_UpdateClaimWindowCloseOffsetBlocks(t *testing.T) {
 	require.Equal(t, expectedClaimWindowCloseOffestBlocks, res.Params.ClaimWindowCloseOffsetBlocks)
 
 	// Ensure the other parameters are unchanged
-	testkeeper.AssertDefaultParamsEqualExceptFields(t, &sharedParams, res.Params, string(sharedtypes.KeyClaimWindowCloseOffsetBlocks))
+	testkeeper.AssertDefaultParamsEqualExceptFields(t, &sharedParams, &res.Params, string(sharedtypes.KeyClaimWindowCloseOffsetBlocks))
 }
 
 func TestMsgUpdateParam_UpdateProofWindowOpenOffsetBlocks(t *testing.T) {
@@ -190,7 +190,7 @@ func TestMsgUpdateParam_UpdateProofWindowOpenOffsetBlocks(t *testing.T) {
 	require.Equal(t, expectedProofWindowOpenOffestBlocks, res.Params.ProofWindowOpenOffsetBlocks)
 
 	// Ensure the other parameters are unchanged
-	testkeeper.AssertDefaultParamsEqualExceptFields(t, &sharedParams, res.Params, string(sharedtypes.KeyProofWindowOpenOffsetBlocks))
+	testkeeper.AssertDefaultParamsEqualExceptFields(t, &sharedParams, &res.Params, string(sharedtypes.KeyProofWindowOpenOffsetBlocks))
 }
 
 func TestMsgUpdateParam_UpdateProofWindowCloseOffsetBlocks(t *testing.T) {
@@ -235,7 +235,7 @@ func TestMsgUpdateParam_UpdateProofWindowCloseOffsetBlocks(t *testing.T) {
 	require.Equal(t, expectedProofWindowCloseOffestBlocks, res.Params.ProofWindowCloseOffsetBlocks)
 
 	// Ensure the other parameters are unchanged
-	testkeeper.AssertDefaultParamsEqualExceptFields(t, &sharedParams, res.Params, string(sharedtypes.KeyProofWindowCloseOffsetBlocks))
+	testkeeper.AssertDefaultParamsEqualExceptFields(t, &sharedParams, &res.Params, string(sharedtypes.KeyProofWindowCloseOffsetBlocks))
 }
 
 func TestMsgUpdateParam_UpdateGracePeriodEndOffsetBlocks(t *testing.T) {
@@ -268,7 +268,7 @@ func TestMsgUpdateParam_UpdateGracePeriodEndOffsetBlocks(t *testing.T) {
 	require.Equal(t, expectedGracePeriodEndOffestBlocks, res.Params.GetGracePeriodEndOffsetBlocks())
 
 	// Ensure the other parameters are unchanged
-	testkeeper.AssertDefaultParamsEqualExceptFields(t, &sharedParams, res.Params, string(sharedtypes.KeyGracePeriodEndOffsetBlocks))
+	testkeeper.AssertDefaultParamsEqualExceptFields(t, &sharedParams, &res.Params, string(sharedtypes.KeyGracePeriodEndOffsetBlocks))
 }
 
 func TestMsgUpdateParam_UpdateSupplierUnbondingPeriodSessions(t *testing.T) {
@@ -295,7 +295,7 @@ func TestMsgUpdateParam_UpdateSupplierUnbondingPeriodSessions(t *testing.T) {
 	require.Equal(t, expectedSupplierUnbondingPeriod, res.Params.GetSupplierUnbondingPeriodSessions())
 
 	// Ensure the other parameters are unchanged
-	testkeeper.AssertDefaultParamsEqualExceptFields(t, &testSharedParams, res.Params, string(sharedtypes.KeySupplierUnbondingPeriodSessions))
+	testkeeper.AssertDefaultParamsEqualExceptFields(t, &testSharedParams, &res.Params, string(sharedtypes.KeySupplierUnbondingPeriodSessions))
 
 	// Ensure that a supplier unbonding period that is less than the cumulative
 	// proof window close blocks is not allowed.
@@ -338,7 +338,7 @@ func TestMsgUpdateParam_UpdateApplicationUnbondingPeriodSessions(t *testing.T) {
 	require.Equal(t, expectedApplicationUnbondingPerid, res.Params.GetApplicationUnbondingPeriodSessions())
 
 	// Ensure the other parameters are unchanged
-	testkeeper.AssertDefaultParamsEqualExceptFields(t, &testSharedParams, res.Params, string(sharedtypes.KeyApplicationUnbondingPeriodSessions))
+	testkeeper.AssertDefaultParamsEqualExceptFields(t, &testSharedParams, &res.Params, string(sharedtypes.KeyApplicationUnbondingPeriodSessions))
 
 	// Ensure that a application unbonding period that is less than the cumulative
 	// proof window close blocks is not allowed.
@@ -381,7 +381,7 @@ func TestMsgUpdateParam_ComputeUnitsToTokenMultiplier(t *testing.T) {
 	require.Equal(t, expectedComputeUnitsToTokenMultiplier, res.Params.GetComputeUnitsToTokensMultiplier())
 
 	// Ensure the other parameters are unchanged
-	testkeeper.AssertDefaultParamsEqualExceptFields(t, &testSharedParams, res.Params, string(sharedtypes.KeyComputeUnitsToTokensMultiplier))
+	testkeeper.AssertDefaultParamsEqualExceptFields(t, &testSharedParams, &res.Params, string(sharedtypes.KeyComputeUnitsToTokensMultiplier))
 
 	// Ensure that compute units to token multiplier that is less than 1 is not allowed.
 	updateParamMsg = &sharedtypes.MsgUpdateParam{

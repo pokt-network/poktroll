@@ -24,6 +24,10 @@ func (c *noOpParamsCache[T]) GetLatest() (value T, found bool) {
 	return zeroValue, false
 }
 
+func (c *noOpParamsCache[T]) GetAllUpdates() (valueHistory cache.CacheValueHistory[T], found bool) {
+	return nil, false
+}
+
 // GetAtHeight returns the value stored in the cache at the given height.
 func (c *noOpParamsCache[T]) GetAtHeight(height int64) (value T, found bool) {
 	var zeroValue T

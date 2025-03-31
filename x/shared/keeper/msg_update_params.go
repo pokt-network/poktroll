@@ -31,10 +31,10 @@ func (k msgServer) UpdateParams(goCtx context.Context, req *types.MsgUpdateParam
 	}
 
 	ctx := sdk.UnwrapSDKContext(goCtx)
-	committedHeight := ctx.BlockHeight()
+	currentHeight := ctx.BlockHeight()
 
-	currentParams := k.GetParams(ctx)
-	nextSessionStartHeight := types.GetNextSessionStartHeight(&currentParams, committedHeight)
+	sharedParamsUpdates := k.GetParamsUpdates(ctx)
+	nextSessionStartHeight := types.GetNextSessionStartHeight(sharedParamsUpdates, currentHeight)
 
 	logger.Info(fmt.Sprintf(
 		"About to schedule params update from [%v] to [%v] to be effective at block height %d",
@@ -42,6 +42,25 @@ func (k msgServer) UpdateParams(goCtx context.Context, req *types.MsgUpdateParam
 		req.Params,
 		nextSessionStartHeight,
 	))
+
+	// If it is the first params are updated, then create a genesis params update
+	// record with an effective block height of 1.
+	// This is to keep track of the genesis params in history and as of when they
+	// no longer became effective.
+	paramsUpdates := k.GetParamsUpdates(ctx)
+	if len(paramsUpdates) == 1 {
+		params := k.GetParams(ctx)
+		genesisParamsUpdate := types.ParamsUpdate{
+			Params:               params,
+			EffectiveBlockHeight: 1,
+		}
+
+		if err := k.SetParamsUpdate(ctx, genesisParamsUpdate); err != nil {
+			err = types.ErrSharedParamInvalid.Wrapf("unable to set params: %v", err)
+			logger.Error(err.Error())
+			return nil, status.Error(codes.Internal, err.Error())
+		}
+	}
 
 	// Do not directly update the params, instead, create a new params update object
 	// and set it in the store. This will allow the new params to take effect at the

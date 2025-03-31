@@ -53,7 +53,7 @@ func (k Keeper) GetParamsUpdates(ctx context.Context) []types.ParamsUpdate {
 }
 
 // GetParamsAtHeight get the module params that are effective at a specific height.
-func (k Keeper) GetParamsAtHeight(ctx context.Context, height int64) types.ParamsUpdate {
+func (k Keeper) GetParamsAtHeight(ctx context.Context, height int64) types.Params {
 	storeAdapter := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
 	store := prefix.NewStore(storeAdapter, types.KeyPrefix(types.ParamsUpdateKeyPrefix))
 	iterator := storetypes.KVStorePrefixIterator(store, []byte{})
@@ -84,17 +84,17 @@ func (k Keeper) GetParamsAtHeight(ctx context.Context, height int64) types.Param
 		}
 	}
 
-	// In case there are no params updates at all (i.e. genesis params), then set
-	// the params to the current one.
+	// In case there are no params updates at all (i.e. only genesis params),
+	// then set the params to the current ones.
 	if paramsAtHeight == nil {
 		currentParams := k.GetParams(ctx)
 		paramsAtHeight = &types.ParamsUpdate{
 			Params:               currentParams,
-			EffectiveBlockHeight: uint64(0),
+			EffectiveBlockHeight: 1,
 		}
 	}
 
-	return *paramsAtHeight
+	return paramsAtHeight.Params
 }
 
 // SetParamsUpdate stores a params update that will be effective at a specific block height.

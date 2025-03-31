@@ -644,10 +644,10 @@ func (k Keeper) slashSupplierStake(
 	// at all and fixed only if it does.
 	// Ensure that a slashed supplier going below min stake is unbonded only once.
 	if supplierToSlash.GetStake().IsLT(*minSupplierStakeCoin) && !supplierToSlash.IsUnbonding() {
-		sharedParams := k.sharedKeeper.GetParams(ctx)
+		sharedParamsUpdates := k.sharedKeeper.GetParamsUpdates(ctx)
 		sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
 		currentHeight := sdkCtx.BlockHeight()
-		unstakeSessionEndHeight := sharedtypes.GetSessionEndHeight(&sharedParams, currentHeight)
+		unstakeSessionEndHeight := sharedtypes.GetSessionEndHeight(sharedParamsUpdates, currentHeight)
 
 		logger.Warn(fmt.Sprintf(
 			"unstaking supplier %q owned by %q due to stake (%s) below the minimum (%s)",

@@ -22,7 +22,6 @@ type sharedQuerier struct {
 	clientConn    grpc.ClientConn
 	sharedQuerier sharedtypes.QueryClient
 	blockQuerier  client.BlockQueryClient
-	blockClient   client.BlockClient
 	logger        polylog.Logger
 
 	// blockHashCache caches blockQuerier.Block requests
@@ -38,7 +37,6 @@ type sharedQuerier struct {
 // - clientCtx (grpc.ClientConn)
 // - polylog.Logger
 // - client.BlockQueryClient
-// - client.BlockClient
 // - cache.KeyValueCache[BlockHash]
 // - client.ParamsCache[sharedtypes.Params]
 func NewSharedQuerier(deps depinject.Config) (client.SharedQueryClient, error) {
@@ -49,7 +47,6 @@ func NewSharedQuerier(deps depinject.Config) (client.SharedQueryClient, error) {
 		&querier.clientConn,
 		&querier.logger,
 		&querier.blockQuerier,
-		&querier.blockClient,
 		&querier.blockHashCache,
 		&querier.paramsCache,
 	); err != nil {
@@ -114,21 +111,21 @@ func (sq *sharedQuerier) GetParamsAtHeight(ctx context.Context, height int64) (*
 // GetClaimWindowOpenHeight returns the block height at which the claim window of
 // the session that includes queryHeight opens.
 func (sq *sharedQuerier) GetClaimWindowOpenHeight(ctx context.Context, queryHeight int64) (int64, error) {
-	sharedParams, err := sq.GetParamsAtHeight(ctx, queryHeight)
+	sharedParamsUpdates, err := sq.GetParamsUpdates(ctx)
 	if err != nil {
 		return 0, err
 	}
-	return sharedtypes.GetClaimWindowOpenHeight(sharedParams, queryHeight), nil
+	return sharedtypes.GetClaimWindowOpenHeight(sharedParamsUpdates, queryHeight), nil
 }
 
 // GetProofWindowOpenHeight returns the block height at which the proof window of
 // the session that includes queryHeight opens.
 func (sq *sharedQuerier) GetProofWindowOpenHeight(ctx context.Context, queryHeight int64) (int64, error) {
-	sharedParams, err := sq.GetParamsAtHeight(ctx, queryHeight)
+	sharedParamsUpdates, err := sq.GetParamsUpdates(ctx)
 	if err != nil {
 		return 0, err
 	}
-	return sharedtypes.GetProofWindowOpenHeight(sharedParams, queryHeight), nil
+	return sharedtypes.GetProofWindowOpenHeight(sharedParamsUpdates, queryHeight), nil
 }
 
 // GetSessionGracePeriodEndHeight returns the block height at which the grace period
@@ -139,11 +136,11 @@ func (sq *sharedQuerier) GetSessionGracePeriodEndHeight(
 	ctx context.Context,
 	queryHeight int64,
 ) (int64, error) {
-	sharedParams, err := sq.GetParamsAtHeight(ctx, queryHeight)
+	sharedParamsUpdates, err := sq.GetParamsUpdates(ctx)
 	if err != nil {
 		return 0, err
 	}
-	return sharedtypes.GetSessionGracePeriodEndHeight(sharedParams, queryHeight), nil
+	return sharedtypes.GetSessionGracePeriodEndHeight(sharedParamsUpdates, queryHeight), nil
 }
 
 // GetEarliestSupplierClaimCommitHeight returns the earliest block height at which a claim
@@ -151,14 +148,14 @@ func (sq *sharedQuerier) GetSessionGracePeriodEndHeight(
 func (sq *sharedQuerier) GetEarliestSupplierClaimCommitHeight(ctx context.Context, queryHeight int64, supplierOperatorAddr string) (int64, error) {
 	logger := sq.logger.With("query_client", "shared", "method", "GetEarliestSupplierClaimCommitHeight")
 
-	sharedParams, err := sq.GetParamsAtHeight(ctx, queryHeight)
+	sharedParamsUpdates, err := sq.GetParamsUpdates(ctx)
 	if err != nil {
 		return 0, err
 	}
 
 	// Fetch the block at the proof window open height. Its hash is used as part
 	// of the seed to the pseudo-random number generator.
-	claimWindowOpenHeight := sharedtypes.GetClaimWindowOpenHeight(sharedParams, queryHeight)
+	claimWindowOpenHeight := sharedtypes.GetClaimWindowOpenHeight(sharedParamsUpdates, queryHeight)
 
 	// Check if the block hash is already in the cache.
 	blockHashCacheKey := getBlockHashCacheKey(claimWindowOpenHeight)
@@ -180,7 +177,7 @@ func (sq *sharedQuerier) GetEarliestSupplierClaimCommitHeight(ctx context.Contex
 	}
 
 	return sharedtypes.GetEarliestSupplierClaimCommitHeight(
-		sharedParams,
+		sharedParamsUpdates,
 		queryHeight,
 		claimWindowOpenBlockHash,
 		supplierOperatorAddr,
@@ -192,14 +189,14 @@ func (sq *sharedQuerier) GetEarliestSupplierClaimCommitHeight(ctx context.Contex
 func (sq *sharedQuerier) GetEarliestSupplierProofCommitHeight(ctx context.Context, queryHeight int64, supplierOperatorAddr string) (int64, error) {
 	logger := sq.logger.With("query_client", "shared", "method", "GetEarliestSupplierProofCommitHeight")
 
-	sharedParams, err := sq.GetParamsAtHeight(ctx, queryHeight)
+	sharedParamsUpdates, err := sq.GetParamsUpdates(ctx)
 	if err != nil {
 		return 0, err
 	}
 
 	// Fetch the block at the proof window open height. Its hash is used as part
 	// of the seed to the pseudo-random number generator.
-	proofWindowOpenHeight := sharedtypes.GetProofWindowOpenHeight(sharedParams, queryHeight)
+	proofWindowOpenHeight := sharedtypes.GetProofWindowOpenHeight(sharedParamsUpdates, queryHeight)
 
 	blockHashCacheKey := getBlockHashCacheKey(proofWindowOpenHeight)
 	proofWindowOpenBlockHash, found := sq.blockHashCache.Get(blockHashCacheKey)
@@ -220,7 +217,7 @@ func (sq *sharedQuerier) GetEarliestSupplierProofCommitHeight(ctx context.Contex
 	}
 
 	return sharedtypes.GetEarliestSupplierProofCommitHeight(
-		sharedParams,
+		sharedParamsUpdates,
 		queryHeight,
 		proofWindowOpenBlockHash,
 		supplierOperatorAddr,
@@ -239,7 +236,51 @@ func (sq *sharedQuerier) GetComputeUnitsToTokensMultiplier(
 	return sharedParams.GetComputeUnitsToTokensMultiplier(), nil
 }
 
+func (sq *sharedQuerier) GetParamsUpdates(ctx context.Context) ([]*sharedtypes.ParamsUpdate, error) {
+	cacheValueVersions, _ := sq.paramsCache.GetAllUpdates()
+	latestVersions := cacheValueVersions.GetSortedDescVersions()
+
+	// Get all the params versions from the cache
+	if latestVersions == nil {
+		return sq.populateParamsCache(ctx)
+	}
+
+	return sq.buildParamsUpdatesFromCache(cacheValueVersions), nil
+}
+
 // getBlockHashCacheKey constructs the cache key for a block hash by string formatting the block height.
 func getBlockHashCacheKey(height int64) string {
 	return strconv.FormatInt(height, 10)
+}
+
+func (sq *sharedQuerier) populateParamsCache(ctx context.Context) ([]*sharedtypes.ParamsUpdate, error) {
+	response, err := sq.sharedQuerier.ParamsUpdates(ctx, &sharedtypes.QueryParamsUpdatesRequest{})
+	if err != nil {
+		return nil, err
+	}
+
+	for _, paramsUpdate := range response.ParamsUpdates {
+		sq.paramsCache.SetAtHeight(paramsUpdate.Params, int64(paramsUpdate.EffectiveBlockHeight))
+	}
+
+	return response.ParamsUpdates, nil
+}
+
+func (sq *sharedQuerier) buildParamsUpdatesFromCache(
+	cacheValueVersions cache.CacheValueHistory[sharedtypes.Params],
+) []*sharedtypes.ParamsUpdate {
+	latestVersions := cacheValueVersions.GetSortedDescVersions()
+	versionToValueMap := cacheValueVersions.GetVersionToValueMap()
+
+	paramsUpdate := make([]*sharedtypes.ParamsUpdate, 0, len(latestVersions))
+	for i := len(latestVersions) - 1; i >= 0; i-- {
+		version := latestVersions[i]
+		cacheValue := versionToValueMap[version]
+		paramsUpdate = append(paramsUpdate, &sharedtypes.ParamsUpdate{
+			Params:               cacheValue.Value(),
+			EffectiveBlockHeight: uint64(version),
+		})
+	}
+
+	return paramsUpdate
 }

@@ -18,7 +18,8 @@ func (k Keeper) ParamsAtHeight(goCtx context.Context, req *types.QueryParamsAtHe
 
 	ctx := sdk.UnwrapSDKContext(goCtx)
 
-	paramsAtHeight := k.GetParamsAtHeight(ctx, int64(req.Height))
+	paramsUpdates := k.GetParamsUpdates(ctx)
+	paramsAtHeight := types.GetEffectiveParamsUpdate(paramsUpdates, int64(req.Height))
 
 	return &types.QueryParamsAtHeightResponse{
 		Params:               paramsAtHeight.Params,
@@ -36,10 +37,25 @@ func (k Keeper) Params(goCtx context.Context, req *types.QueryParamsRequest) (*t
 	ctx := sdk.UnwrapSDKContext(goCtx)
 	lastCommitHeight := ctx.BlockHeight()
 
-	paramsAtHeight := k.GetParamsAtHeight(ctx, lastCommitHeight)
+	paramsUpdates := k.GetParamsUpdates(ctx)
+	paramsAtHeight := types.GetEffectiveParamsUpdate(paramsUpdates, lastCommitHeight)
 
 	return &types.QueryParamsResponse{
 		Params:               paramsAtHeight.Params,
 		EffectiveBlockHeight: paramsAtHeight.EffectiveBlockHeight,
+	}, nil
+}
+
+func (k Keeper) ParamsUpdates(goCtx context.Context, req *types.QueryParamsUpdatesRequest) (*types.QueryParamsUpdatesResponse, error) {
+	if req == nil {
+		return nil, status.Error(codes.InvalidArgument, "invalid request")
+	}
+
+	ctx := sdk.UnwrapSDKContext(goCtx)
+
+	paramsUpdates := k.GetParamsUpdates(ctx)
+
+	return &types.QueryParamsUpdatesResponse{
+		ParamsUpdates: paramsUpdates,
 	}, nil
 }

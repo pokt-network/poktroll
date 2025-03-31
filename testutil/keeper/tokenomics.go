@@ -439,6 +439,7 @@ func NewTokenomicsModuleKeepers(
 		runtime.NewKVStoreService(keys[servicetypes.StoreKey]),
 		log.NewNopLogger(),
 		authority.String(),
+		sharedKeeper,
 		bankKeeper,
 	)
 
