@@ -116,7 +116,7 @@ By default, the `.env` file uses `testnet-beta`. If you want to use a different 
 
 - `testnet-alpha`: Unstable testnet (use at your own risk)
 - `testnet-beta`: Stable testnet (default)
-- `mainnet`: Production network (not launched yet)
+- `mainnet`: Production network (soft-launched as of 03/2025)
 
 Then set your external IP and source the environment:
 

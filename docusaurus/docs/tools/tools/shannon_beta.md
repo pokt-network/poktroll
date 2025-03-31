@@ -1,6 +1,6 @@
 ---
 title: Beta TestNet
-sidebar_position: 1
+sidebar_position: 2
 ---
 
 - 🪙 [Token Faucet](https://faucet.beta.testnet.pokt.network/)
