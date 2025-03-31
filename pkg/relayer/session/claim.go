@@ -6,6 +6,7 @@ import (
 	"slices"
 
 	sdktypes "github.com/cosmos/cosmos-sdk/types"
+	"github.com/pokt-network/smt"
 
 	"github.com/pokt-network/poktroll/app/volatile"
 	"github.com/pokt-network/poktroll/pkg/client"
@@ -17,7 +18,6 @@ import (
 	"github.com/pokt-network/poktroll/pkg/relayer"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
-	"github.com/pokt-network/smt"
 )
 
 // The cumulative fees of creating a single claim, followed by submitting a single proof.
@@ -223,18 +223,20 @@ func (rs *relayerSessionsManager) newMapClaimSessionsFn(
 			}
 		}
 
-		// All session trees in the batch have the same sessionEndHeight, so we can
-		// use the first one to calculate the proof window close height.
-		// TODO_REFACTOR: Pass a richer type to the function instead of []SessionTrees
-		// to avoid this kind of assumptions and constant queries for sharedParams.
+		// All session trees in the batch share the same sessionEndHeight, so we
+		// can use the first one to calculate the proof window close height.
+		//
+		// TODO_REFACTOR(@red-0ne): Pass a richer type to the function instead of []SessionTrees to:
+		// - Avoid making assumptions about shared properties
+		// - Eliminate constant queries for sharedParams
 		sessionEndHeight := sessionTrees[0].GetSessionHeader().GetSessionEndBlockHeight()
-		sharedParms, err := rs.sharedQueryClient.GetParams(ctx)
+		sharedParams, err := rs.sharedQueryClient.GetParams(ctx)
 		if err != nil {
 			failedCreateClaimsSessionsPublishCh <- sessionTrees
 			rs.logger.Error().Err(err).Msg("failed to get shared params")
 			return either.Error[[]relayer.SessionTree](err), false
 		}
-		claimWindowCloseHeight := sharedtypes.GetClaimWindowCloseHeight(sharedParms, sessionEndHeight)
+		claimWindowCloseHeight := sharedtypes.GetClaimWindowCloseHeight(sharedParams, sessionEndHeight)
 
 		// Create claims for each supplier operator address in `sessionTrees`.
 		if err := supplierClient.CreateClaims(ctx, claimWindowCloseHeight, claimMsgs...); err != nil {

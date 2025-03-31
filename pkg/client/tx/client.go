@@ -59,15 +59,18 @@ type CometTxEvent struct {
 	} `json:"data"`
 }
 
-// txClient orchestrates building, signing, broadcasting, and querying of
-// transactions. It maintains a single events query subscription to its own
-// transactions (via the EventsQueryClient) in order to receive notifications
-// regarding their status.
-// It also depends on the BlockClient as a timer, synchronized to block height,
-// to facilitate transaction timeout logic. If a transaction doesn't appear to
-// have been committed by timeoutHeight, it is considered as timed out.
-// Upon timeout, the client queries the network for the last status of the transaction,
-// which is used to derive the asynchronous error that's populated in the either.AsyncError.
+// txClient orchestrates building, signing, broadcasting, and querying of transactions.
+//
+// It maintains a single events query subscription to its own transactions (via the
+// EventsQueryClient) to receive status notifications.
+//
+// Dependencies:
+// - Uses BlockClient as a synchronized block-height timer for transaction timeout logic
+// - If a transaction isn't committed by timeoutHeight, it's considered timed out
+//
+// Timeout handling:
+// - Upon timeout, the client queries the network for the transaction's last status
+// - This status is used to derive the asynchronous error populated in either.AsyncError
 type txClient struct {
 	// signingKeyName is the name of the key in the keyring to use for signing
 	// transactions.
@@ -83,7 +86,7 @@ type txClient struct {
 	// to transactions which it has constructed, signed, and broadcast.
 	eventsReplayClient client.EventsReplayClient[*abci.TxResult]
 	// blockClient is the client used to query for the latest block height.
-	// It is used to implement timout logic for transactions which weren't committed.
+	// It is used to implement timeout logic for transactions which weren't committed.
 	blockClient client.BlockClient
 
 	// txsMutex protects txErrorChans and txTimeoutPool maps.
@@ -116,8 +119,9 @@ type (
 // and options.
 //
 // It performs the following steps:
-//  1. Initializes a default txClient with an empty error channel map, and an
-//     empty transaction timeout pool.
+//  1. Initializes a default txClient with:
+//     - An empty error channel map
+//     - An empty transaction timeout pool
 //  2. Injects the necessary dependencies using depinject.
 //  3. Applies any provided options to customize the client.
 //  4. Validates and sets any missing default configurations using the

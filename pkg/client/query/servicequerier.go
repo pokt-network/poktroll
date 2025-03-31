@@ -75,7 +75,6 @@ func (servq *serviceQuerier) GetService(
 	req := &servicetypes.QueryGetServiceRequest{
 		Id: serviceId,
 	}
-
 	res, err := retry.Call(ctx, func() (*servicetypes.QueryGetServiceResponse, error) {
 		return servq.serviceQuerier.Service(ctx, req)
 	}, retry.GetStrategy(ctx))
@@ -110,7 +109,6 @@ func (servq *serviceQuerier) GetServiceRelayDifficulty(
 	req := &servicetypes.QueryGetRelayMiningDifficultyRequest{
 		ServiceId: serviceId,
 	}
-
 	res, err := retry.Call(ctx, func() (*servicetypes.QueryGetRelayMiningDifficultyResponse, error) {
 		return servq.serviceQuerier.RelayMiningDifficulty(ctx, req)
 	}, retry.GetStrategy(ctx))

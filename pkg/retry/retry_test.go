@@ -443,7 +443,7 @@ func TestOnError_NegativeRetryLimit(t *testing.T) {
 
 // TestCallWithExponentialBackoff tests the Call function with exponential backoff
 func TestCallWithExponentialBackoff(t *testing.T) {
-	t.Run("succeeds after retries", func(t *testing.T) {
+	t.Run("succeeds with num retries is less than mx retries", func(t *testing.T) {
 		attempts := 0
 		maxAttempts := 3
 		ctx := context.Background()
@@ -465,7 +465,7 @@ func TestCallWithExponentialBackoff(t *testing.T) {
 		require.Equal(t, maxAttempts, attempts)
 	})
 
-	t.Run("fails after max retries", func(t *testing.T) {
+	t.Run("fails after num retries exceeds max retries", func(t *testing.T) {
 		attempts := 0
 		maxRetries := 3
 		expectedErr := errors.New("persistent error")
