@@ -23,7 +23,7 @@ import (
 
 func init() {
 	logger.Logger = polyzero.NewLogger(polyzero.WithLevel(polyzero.DebugLevel))
-	debugAccountsPerLog = 1
+	numAccountsPerDebugLog = 1
 }
 
 func TestCollectMorseAccounts(t *testing.T) {
