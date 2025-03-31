@@ -75,7 +75,8 @@ func (k Keeper) EndBlockerUnbondSuppliers(ctx context.Context) (numUnbondedSuppl
 		logger.Info(fmt.Sprintf("Successfully removed the supplier: %+v", supplier))
 
 		unbondingReason := suppliertypes.SupplierUnbondingReason_SUPPLIER_UNBONDING_REASON_VOLUNTARY
-		if supplier.GetStake().Amount.LT(k.GetParams(ctx).MinStake.Amount) {
+		supplierParams := k.GetParamsAtHeight(ctx, int64(supplier.UnstakeSessionEndHeight))
+		if supplier.GetStake().Amount.LT(supplierParams.MinStake.Amount) {
 			unbondingReason = suppliertypes.SupplierUnbondingReason_SUPPLIER_UNBONDING_REASON_BELOW_MIN_STAKE
 		}
 

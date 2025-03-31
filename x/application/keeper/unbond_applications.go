@@ -48,7 +48,8 @@ func (k Keeper) EndBlockerUnbondApplications(ctx context.Context) error {
 		sdkCtx = sdk.UnwrapSDKContext(ctx)
 
 		unbondingReason := apptypes.ApplicationUnbondingReason_APPLICATION_UNBONDING_REASON_ELECTIVE
-		if application.GetStake().Amount.LT(k.GetParams(ctx).MinStake.Amount) {
+		minStake := k.GetParamsAtHeight(ctx, int64(application.UnstakeSessionEndHeight)).MinStake
+		if application.GetStake().Amount.LT(minStake.Amount) {
 			unbondingReason = apptypes.ApplicationUnbondingReason_APPLICATION_UNBONDING_REASON_BELOW_MIN_STAKE
 		}
 

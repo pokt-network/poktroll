@@ -262,11 +262,12 @@ func (rs *relayerSessionsManager) payableProofsSessionTrees(
 	sessionTrees []relayer.SessionTree,
 ) ([]relayer.SessionTree, error) {
 	supplierOpeartorAddress := sessionTrees[0].GetSupplierOperatorAddress()
+	sessionEndHeight := sessionTrees[0].GetSessionHeader().GetSessionEndBlockHeight()
 	logger := rs.logger.With(
 		"supplier_operator_address", supplierOpeartorAddress,
 	)
 
-	proofParams, err := rs.proofQueryClient.GetParams(ctx)
+	proofParams, err := rs.proofQueryClient.GetParamsAtHeight(ctx, sessionEndHeight)
 	if err != nil {
 		return nil, err
 	}

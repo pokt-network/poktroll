@@ -95,7 +95,7 @@ func (k msgServer) SubmitProof(
 
 	claim = &foundClaim
 
-	if err = k.deductProofSubmissionFee(ctx, supplierOperatorAddress); err != nil {
+	if err = k.deductProofSubmissionFee(ctx, supplierOperatorAddress, sessionHeader.SessionEndBlockHeight); err != nil {
 		logger.Error(fmt.Sprintf("failed to deduct proof submission fee: %v", err))
 		return nil, status.Error(codes.FailedPrecondition, err.Error())
 	}
@@ -181,8 +181,12 @@ func (k msgServer) SubmitProof(
 }
 
 // deductProofSubmissionFee deducts the proof submission fee from the supplier operator's account balance.
-func (k Keeper) deductProofSubmissionFee(ctx context.Context, supplierOperatorAddress string) error {
-	proofSubmissionFee := k.GetParams(ctx).ProofSubmissionFee
+func (k Keeper) deductProofSubmissionFee(
+	ctx context.Context,
+	supplierOperatorAddress string,
+	queryHeight int64,
+) error {
+	proofSubmissionFee := k.GetParamsAtHeight(ctx, queryHeight).ProofSubmissionFee
 	supplierOperatorAccAddress, err := cosmostypes.AccAddressFromBech32(supplierOperatorAddress)
 	if err != nil {
 		return err
@@ -230,7 +234,7 @@ func (k Keeper) ProofRequirementForClaim(ctx context.Context, claim *types.Claim
 
 	sessionEndHeight := claim.GetSessionHeader().GetSessionEndBlockHeight()
 	sharedParams := k.sharedKeeper.GetParamsAtHeight(ctx, sessionEndHeight)
-	proofParams := k.GetParams(ctx)
+	proofParams := k.GetParamsAtHeight(ctx, sessionEndHeight)
 
 	serviceId := claim.GetSessionHeader().GetServiceId()
 	relayMiningDifficulty, _ := k.serviceKeeper.GetRelayMiningDifficulty(ctx, serviceId)

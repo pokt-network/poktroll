@@ -86,8 +86,8 @@ func (k Keeper) validateClaimWindow(
 	supplierOperatorAddr string,
 ) error {
 	logger := k.Logger().With("method", "validateClaimWindow")
-	sharedParamsUpdates := k.sharedKeeper.GetParamsUpdates(ctx)
 
+	sharedParamsUpdates := k.sharedKeeper.GetParamsUpdates(ctx)
 	sessionEndHeight := sessionHeader.GetSessionEndBlockHeight()
 
 	// Get the claim window open and close heights for the given session header.

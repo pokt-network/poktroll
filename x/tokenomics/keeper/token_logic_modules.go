@@ -17,6 +17,7 @@ import (
 	"github.com/pokt-network/poktroll/telemetry"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	servicekeeper "github.com/pokt-network/poktroll/x/service/keeper"
+	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 	tlm "github.com/pokt-network/poktroll/x/tokenomics/token_logic_module"
 	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
@@ -185,7 +186,14 @@ func (k Keeper) ProcessTokenLogicModules(
 	// If not, update the settlement amount and emit relevant events.
 	// TODO_MAINNET(@red-0ne): Consider pulling this out of Keeper#ProcessTokenLogicModules
 	// and ensure claim amount limits are enforced before TLM processing.
-	actualSettlementCoin, err := k.ensureClaimAmountLimits(ctx, logger, &sharedParams, &application, &supplier, claimSettlementCoin, applicationInitialStake)
+	actualSettlementCoin, err := k.ensureClaimAmountLimits(ctx, logger,
+		sessionHeader,
+		&sharedParams,
+		&application,
+		&supplier,
+		claimSettlementCoin,
+		applicationInitialStake,
+	)
 	if err != nil {
 		return err
 	}
@@ -203,7 +211,7 @@ func (k Keeper) ProcessTokenLogicModules(
 	}
 
 	tlmCtx := tlm.TLMContext{
-		TokenomicsParams:      k.GetParams(ctx),
+		TokenomicsParams:      k.GetParamsAtHeight(ctx, sessionHeader.SessionEndBlockHeight),
 		SettlementCoin:        actualSettlementCoin,
 		SessionHeader:         pendingResult.Claim.GetSessionHeader(),
 		Result:                pendingResult,
@@ -277,6 +285,7 @@ func (k Keeper) ProcessTokenLogicModules(
 func (k Keeper) ensureClaimAmountLimits(
 	ctx context.Context,
 	logger log.Logger,
+	sessionHeader *sessiontypes.SessionHeader,
 	sharedParams *sharedtypes.Params,
 	application *apptypes.Application,
 	supplier *sharedtypes.Supplier,
@@ -295,7 +304,8 @@ func (k Keeper) ensureClaimAmountLimits(
 
 	// The application should have enough stake to cover for the global mint reimbursement.
 	// This amount is deducted from the maximum claimable amount.
-	globalInflationPerClaim := k.GetParams(ctx).GlobalInflationPerClaim
+	tokenomicsParams := k.GetParamsAtHeight(ctx, sessionHeader.SessionEndBlockHeight)
+	globalInflationPerClaim := tokenomicsParams.GlobalInflationPerClaim
 	globalInflationPerClaimRat, err := encoding.Float64ToRat(globalInflationPerClaim)
 	if err != nil {
 		logger.Error(fmt.Sprintf("error calculating claim amount limits due to: %v", err))
@@ -317,7 +327,8 @@ func (k Keeper) ensureClaimAmountLimits(
 	// Re costs - This is an easy way to split the stake evenly.
 	// TODO_FUTURE: See if there's a way to let the application prefer (the best)
 	// supplier(s) in a session while maintaining a simple solution to implement this.
-	numSuppliersPerSession := int64(k.sessionKeeper.GetParams(ctx).NumSuppliersPerSession)
+	sessionParams := k.sessionKeeper.GetParamsAtHeight(ctx, sessionHeader.SessionEndBlockHeight)
+	numSuppliersPerSession := int64(sessionParams.NumSuppliersPerSession)
 	maxClaimableAmt := appStake.Amount.
 		Quo(math.NewInt(numSuppliersPerSession)).
 		Quo(math.NewInt(numPendingSessions))

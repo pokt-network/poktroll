@@ -282,12 +282,13 @@ func (rs *relayerSessionsManager) isProofRequired(
 	// Create the claim object and use its methods to determine if a proof is required.
 	claim := claimFromSessionTree(sessionTree)
 
-	proofParams, err := rs.proofQueryClient.GetParams(ctx)
+	sessionEndHeight := claim.GetSessionHeader().GetSessionEndBlockHeight()
+	proofParams, err := rs.proofQueryClient.GetParamsAtHeight(ctx, sessionEndHeight)
 	if err != nil {
 		return false, err
 	}
 
-	sharedParams, err := rs.sharedQueryClient.GetParams(ctx)
+	sharedParams, err := rs.sharedQueryClient.GetParamsAtHeight(ctx, sessionEndHeight)
 	if err != nil {
 		return false, err
 	}

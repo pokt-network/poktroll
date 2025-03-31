@@ -552,12 +552,13 @@ func (k Keeper) GetExpiringClaims(ctx cosmostypes.Context) (expiringClaims []pro
 // slashing amount from the supplier bank module to the tokenomics module account.
 func (k Keeper) slashSupplierStake(
 	ctx cosmostypes.Context,
-	ClaimSettlementResult *tokenomicstypes.ClaimSettlementResult,
+	claimSettlementResult *tokenomicstypes.ClaimSettlementResult,
 ) error {
 	logger := k.logger.With("method", "slashSupplierStake")
 
-	supplierOperatorAddress := ClaimSettlementResult.GetClaim().SupplierOperatorAddress
-	proofParams := k.proofKeeper.GetParams(ctx)
+	sessionEndHEight := claimSettlementResult.GetSessionEndHeight()
+	supplierOperatorAddress := claimSettlementResult.GetClaim().SupplierOperatorAddress
+	proofParams := k.proofKeeper.GetParamsAtHeight(ctx, sessionEndHEight)
 	slashingCoin := *proofParams.GetProofMissingPenalty()
 
 	supplierToSlash, isSupplierFound := k.supplierKeeper.GetSupplier(ctx, supplierOperatorAddress)
@@ -635,7 +636,8 @@ func (k Keeper) slashSupplierStake(
 	events := make([]cosmostypes.Msg, 0)
 
 	// Check if the supplier's stake is below the minimum and unstake it if necessary.
-	minSupplierStakeCoin := k.supplierKeeper.GetParams(ctx).MinStake
+	supplierParams := k.supplierKeeper.GetParamsAtHeight(ctx, sessionEndHEight)
+	minSupplierStakeCoin := supplierParams.MinStake
 	// TODO_MAINNET(@red-0ne): SettlePendingClaims is called at the end of every block,
 	// but not every block corresponds to the end of a session. This may lead to a situation
 	// where a force unstaked supplier may still be able to interact with a Gateway or Application.
@@ -685,7 +687,7 @@ func (k Keeper) slashSupplierStake(
 
 	k.supplierKeeper.SetSupplier(ctx, supplierToSlash)
 
-	claim := ClaimSettlementResult.GetClaim()
+	claim := claimSettlementResult.GetClaim()
 
 	// Emit an event that a supplier has been slashed.
 	events = append(events, &tokenomicstypes.EventSupplierSlashed{

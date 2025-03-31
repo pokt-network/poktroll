@@ -341,6 +341,7 @@ type ProofParams interface {
 type ProofQueryClient interface {
 	// GetParams queries the chain for the current proof module parameters.
 	GetParams(ctx context.Context) (ProofParams, error)
+	GetParamsAtHeight(ctx context.Context, queryHeight int64) (ProofParams, error)
 }
 
 // ServiceQueryClient defines an interface that enables the querying of the

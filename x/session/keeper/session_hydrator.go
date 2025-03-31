@@ -177,7 +177,8 @@ func (k Keeper) hydrateSessionSuppliers(ctx context.Context, sh *sessionHydrator
 	// - Changes between query height and current height are properly handled
 	// Refer to the following discussion for more details:
 	// https://github.com/pokt-network/poktroll/pull/1103#discussion_r1992214953
-	numSuppliersPerSession := int(k.GetParams(ctx).NumSuppliersPerSession)
+	sessionParams := k.GetParamsAtHeight(ctx, sh.blockHeight)
+	numSuppliersPerSession := int(sessionParams.NumSuppliersPerSession)
 
 	// Get all suppliers without service ID filtering because:
 	// - Suppliers may not be active for the session's service ID at "query height"
