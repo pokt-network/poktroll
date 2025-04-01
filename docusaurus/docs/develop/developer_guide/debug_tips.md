@@ -3,7 +3,7 @@ sidebar_position: 2
 title: Debugging Tips
 ---
 
-# Debugging Tips <!-- omit in toc -->
+## Debugging Tips <!-- omit in toc -->
 
 :::note
 This is a living document and will be updated as the ecosystem matures & grows.

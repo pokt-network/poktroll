@@ -1,0 +1,60 @@
+# Git related files
+.git/
+.gitignore
+.claudeignore
+.github/
+pre-commit*
+.pre-commit*
+
+# Development files
+_.tgz
+_.tar.gz
+Makefile
+makefiles/
+
+# Documentation
+\_.md
+README.md
+LICENSE
+docs/
+**/img/
+**/docs/img/
+
+# Editor configs
+.vscode/
+.idea/
+_.swp
+_.swo
+.markdownlint.json
+
+# Generated files
+**/generated/
+**/crds/generated/
+
+# OS generated files
+.DS*Store
+.DS_Store?
+.*\*
+
+# Chart package files
+guard-_.tgz
+path-_.tgz
+watch-\*.tgz
+
+# Claude
+.claudesync
+
+# Tooling
+.tool-versions
+
+# DevOps
+Dockerfile
+Dockerfile.*
+localnet
+
+# Environment files
+
+# Golang
+go.mod
+.golangci.yml
+go.sum
