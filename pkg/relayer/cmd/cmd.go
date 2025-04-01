@@ -37,6 +37,8 @@ import (
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
+TODO_IN_THIS_PR(@bryanchriswhite): Use the diff from this PR to update this documentation by providing both as context and reviewing+updating the output.
+
 // TODO_CONSIDERATION: Consider moving all flags defined in `/pkg` to the cmd/flags package.
 var (
 	// flagRelayMinerConfig is the variable containing the relay miner config filepath
