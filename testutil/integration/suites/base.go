@@ -177,7 +177,7 @@ func newInitChainerCollectModuleNamesFn(suite *BaseIntegrationSuite) integration
 		}
 
 		modType := reflect.TypeOf(mod)
-		// TODO_INCOMPLETE: replace "poktroll" with "pocket" once the repo rename is complete.
+		// TODO_POST_MAINNET: replace "poktroll" with "pocket" once the repo rename is complete.
 		if strings.Contains(modType.PkgPath(), "poktroll") {
 			suite.pocketModuleNames = append(suite.pocketModuleNames, modName.Name())
 			return

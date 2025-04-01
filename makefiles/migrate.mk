@@ -1,17 +1,18 @@
+
+MORSE_STATE_EXPORT_PATH ?= "./tools/scripts/migration/morse_state_export.json"
+MORSE_ACCOUNT_STATE_PATH ?= "./tools/scripts/migration/morse_account_state.json"
+MORSE_POCKET_PROD_RPC_ADDR ?= "https://pocket-rpc.liquify.com/"
+
+
 ######################################
 ### Migration Authority Operations ###
 ######################################
 
-MORSE_STATE_EXPORT_PATH ?= "./tools/scripts/migration/morse_state_export.json"
-MORSE_ACCOUNT_STATE_PATH ?= "./tools/scripts/migration/morse_account_state.json"
-DEFAULT_SHANNON_GRPC_ADDR ?= "localhost:9090"
-
-.PNONY: export_morse_state
+.PHONY: export_morse_state
 export_morse_state: check_go_version ## Run the migration module export-morse-state subcommand.
-	# Default to the latest height if no height is provided. \
+# Default to the latest height if no height is provided.
 	if [[ -z "$$MORSE_EXPORT_HEIGHT" ]]; then \
-		# Query the latest Morse height from liquify. \
-		export MORSE_EXPORT_HEIGHT=$$(curl -X POST https://pocket-rpc.liquify.com/v1/query/block -d '{"opts": {"page":1,"per_page":1}}' | jq -r ".block.header.height"); \
+		export MORSE_EXPORT_HEIGHT=$$(curl -X POST $$MORSE_POCKET_PROD_RPC_ADDR/v1/query/block -d '{"opts": {"page":1,"per_page":1}}' | jq -r ".block.header.height"); \
 	fi; \
 	echo Exporting Morse state at height "$$MORSE_EXPORT_HEIGHT" to "$(MORSE_STATE_EXPORT_PATH)"; \
 	pocket util export-genesis-for-reset "$$MORSE_EXPORT_HEIGHT" poktroll > "$(MORSE_STATE_EXPORT_PATH)"
@@ -23,8 +24,8 @@ collect_morse_accounts: check_go_version ## Run the migration module collect-mor
 .PHONY: import_morse_accounts
 import_morse_accounts: check_go_version check_from_key_name ## Run the migration module import-morse-accounts subcommand.
 	if [[ -z "$$SHANNON_GRPC_ADDR" ]]; then \
-		echo "WARNING: SHANNON_GRPC_ADDR environment variable is not set. Defaulting to $(DEFAULT_SHANNON_GRPC_ADDR)"; \
-		export SHANNON_GRPC_ADDR=$(DEFAULT_SHANNON_GRPC_ADDR); \
+		echo "WARNING: SHANNON_GRPC_ADDR environment variable is not set. Defaulting to $(DEFAULT_POCKET_NODE_GRPC_ADDR)"; \
+		export SHANNON_GRPC_ADDR=$(DEFAULT_POCKET_NODE_GRPC_ADDR); \
 	fi; \
 	poktrolld tx migration import-morse-accounts "$(MORSE_ACCOUNT_STATE_PATH)" --from=$(FROM_KEY_NAME) --grpc-addr=$(SHANNON_GRPC_ADDR)
 
@@ -53,14 +54,16 @@ test_e2e_migration_snapshot: test_e2e_env ## Run only the E2E suite that exercis
 #########################
 
 .PHONY: check_from_key_name
-check_from_key_name: ## Checks that the FROM_KEY_NAME environment variable is set
+## Internal helper to check that the FROM_KEY_NAME environment variable is set
+check_from_key_name:
 	if [[ -z "$(FROM_KEY_NAME)" ]]; then \
 		echo "ERROR: set FROM_KEY_NAME environment variable to the name of the Shannon key to use for claiming"; \
 		exit 1; \
 	fi
 
 .PHONY: check_morse_private_key_path
-check_morse_private_key_path: ## Checks that the MORSE_PRIVATE_KEY_PATH environment variable is set
+## Internal helper to check that the MORSE_PRIVATE_KEY_PATH environment variable is set
+check_morse_private_key_path:
 	if [[ -z "$(MORSE_PRIVATE_KEY_PATH)" ]]; then \
 		echo "ERROR: set MORSE_PRIVATE_KEY_PATH environment variable to the path of the exported private key for the Morse account being claimed"; \
 		exit 1; \
