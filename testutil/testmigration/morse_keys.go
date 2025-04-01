@@ -1,5 +1,8 @@
 package testmigration
 
+// TODO_TECHDEBT: This file is not part of pkg/crypto because it is intended to be removed after the migration.
+// See this discussion as to why we copy-pasted and left it as is: https://github.com/pokt-network/poktroll/pull/1133/files#r2006773475
+
 import (
 	"crypto/aes"
 	"crypto/cipher"

@@ -15,7 +15,7 @@ Feature: Morse account import and claim all account types (with fixture data)
   Rule: Non-actor account claims MAY reference existing Shannon accounts
     Scenario: Morse account-holder claims as a new non-actor account
       Given the Shannon destination account does not exist onchain
-      # TODO_MAINNET: Use a new token denomination.
+      # TODO_MAINNET_CRITICAL(@bryanchriswhite): Use a new token denomination.
       And the Shannon account is funded with "1upokt"
       When the Morse private key is used to claim a MorseClaimableAccount as a non-actor account
       Then the Shannon destination account balance is increased by the sum of all MorseClaimableAccount tokens
@@ -28,7 +28,7 @@ Feature: Morse account import and claim all account types (with fixture data)
       Then the Shannon destination account balance is increased by the sum of all MorseClaimableAccount tokens
       And the Morse claimable account is marked as claimed by the shannon account at a recent block height
 
-# TODO_MAINNET(@bryanchriswhite, #1034: Uncomment the following scenarios once application and supplier Morse account claiming is available.
+# TODO_MAINNET_CRITICAL(@bryanchriswhite, #1034: Uncomment the following scenarios once application and supplier Morse account claiming is available.
 #
 #  Rule: Actor (re-)stake claims MAY reference existing Shannon actors
 #    Scenario Outline: Morse account-holder claims as a new staked actor
@@ -57,4 +57,4 @@ Feature: Morse account import and claim all account types (with fixture data)
 #        | application | application_stake  |
 #        | supplier    | supplier_stake     |
 
-# TODO_MAINNET(@bryanchriswhite, #1034): Enumerate and implement error scenarios.
+# TODO_MAINNET_CRITICAL(@bryanchriswhite, #1034): Enumerate and implement error scenarios.
