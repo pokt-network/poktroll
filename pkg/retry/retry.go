@@ -173,7 +173,6 @@ func Call[T any](
 			return result, err
 		}
 
-		// TODO_IN_THIS_PR: #PUC
 		if !retryStrategy(ctx, retryCount) {
 			return result, err
 		}
