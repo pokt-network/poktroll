@@ -85,7 +85,9 @@ require (
 	github.com/foxcpp/go-mockdns v1.1.0
 	github.com/jhump/protoreflect v1.16.0
 	github.com/mitchellh/mapstructure v1.5.0
+	github.com/tyler-smith/go-bip39 v1.1.0
 	go.uber.org/mock v0.5.0
+	gopkg.in/yaml.v3 v3.0.1
 )
 
 require (
@@ -295,7 +297,6 @@ require (
 	google.golang.org/genproto v0.0.0-20240701130421-f6361c86f094 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20240930140551-af27646dc61f // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
-	gopkg.in/yaml.v3 v3.0.1 // indirect
 	gotest.tools/v3 v3.5.1 // indirect
 	nhooyr.io/websocket v1.8.7 // indirect
 	pgregory.net/rapid v1.1.0 // indirect

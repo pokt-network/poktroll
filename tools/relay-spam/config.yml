@@ -1,0 +1,31 @@
+application_fund_goal: 1000000000upokt
+application_stake_goal: 100000001upokt
+chain_id: poktroll
+applications:
+  - address: pokt18wmctmhu49csyy6j0eyhmua63rvlwgc8hddg2c
+    delegateesgoal:
+      - pokt15vzxjqklzjtlz7lahe8z2dfe9nm5vxwwmscne4
+    mnemonic:
+      certain monitor elephant guard must vacant magnet present bacon scare
+      social cattle enact average stairs orient disorder whisper frame banner version
+      open spray brother
+    name: relay_spam_test_0
+    serviceidgoal: anvil
+  - address: pokt157g94dm0katvq7a9802vplqjleqqnj96qlw69p
+    delegateesgoal:
+      - pokt15vzxjqklzjtlz7lahe8z2dfe9nm5vxwwmscne4
+    mnemonic:
+      plastic box ahead abandon check seminar crystal mirror turtle bounce word
+      artwork awkward deposit bread pause immune stomach cry essence index social twin
+      speak
+    name: relay_spam_test_1
+    serviceidgoal: "anvil"
+datadir: /Users/dk/.poktroll
+grpc_endpoint: localhost:9090
+rpc_endpoint: http://localhost:26657
+txflags: ""
+txflagstemplate: {}
+gateway_urls:
+  pokt15vzxjqklzjtlz7lahe8z2dfe9nm5vxwwmscne4: http://anvil.localhost:3000/v1
+suppliers: []
+services: []
