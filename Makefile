@@ -473,3 +473,4 @@ include ./makefiles/session.mk
 include ./makefiles/claims.mk
 include ./makefiles/relay.mk
 include ./makefiles/ping.mk
+include ./makefiles/claude.mk
