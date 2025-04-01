@@ -18,30 +18,31 @@ import (
 
 // GetTxClient constructs a new TxClient instance using the provided command flags.
 func GetTxClient(ctx context.Context, cmd *cobra.Command) (client.TxClient, error) {
-	// Retrieve and parse the query node RPC URL.
+	// Retrieve the query node RPC URL
 	queryNodeRPCUrlString, err := cmd.Flags().GetString(cosmosflags.FlagNode)
 	if err != nil {
 		return nil, err
 	}
 
+	// Parse the query node RPC URL
 	queryNodeRPCUrl, err := url.Parse(queryNodeRPCUrlString)
 	if err != nil {
 		return nil, err
 	}
 
-	// Conventionally derive a cosmos-sdk client context from the cobra command.
+	// Conventionally derive a cosmos-sdk client context from the cobra command
 	clientCtx, err := cosmosclient.GetClientTxContext(cmd)
 	if err != nil {
 		return nil, err
 	}
 
-	// Conventionally construct a txClient and its dependencies.
+	// Conventionally construct a txClient and its dependencies
 	clientFactory, err := cosmostx.NewFactoryCLI(clientCtx, cmd.Flags())
 	if err != nil {
 		return nil, err
 	}
 
-	// Construct dependencies for the tx client.
+	// Construct dependencies for the tx client
 	deps, err := config.SupplyConfig(ctx, cmd, []config.SupplierFn{
 		config.NewSupplyEventsQueryClientFn(queryNodeRPCUrl),
 		config.NewSupplyBlockQueryClientFn(queryNodeRPCUrl),
@@ -50,17 +51,18 @@ func GetTxClient(ctx context.Context, cmd *cobra.Command) (client.TxClient, erro
 	if err != nil {
 		return nil, err
 	}
-
 	deps = depinject.Configs(deps, depinject.Supply(
 		types.Context(clientCtx),
 		clientFactory,
 	))
+
+	// Construct a tx client and inject its dependencies
 	txCtx, err := tx.NewTxContext(deps)
 	if err != nil {
 		return nil, err
 	}
-
-	// Construct a tx client.
 	deps = depinject.Configs(deps, depinject.Supply(txCtx))
+
+	// Return a new TxClient instance
 	return tx.NewTxClient(ctx, deps, tx.WithSigningKeyName(clientCtx.FromName))
 }

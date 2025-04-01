@@ -89,8 +89,8 @@ type migrationSuite struct {
 	previousUnstakedBalanceUpoktOfCurrentShannonIdx cosmostypes.Coin
 
 	// previousStakedApplicationUpokt is the upokt which is staked in scenarios where an account
-	// is already staked. It is initialized in the Before() method and the updated
-	// in relevant subsequent steps.
+	// is already staked.
+	// It is initialized in the Before() method and the updated in relevant subsequent steps.
 	previousStakedApplicationUpokt cosmostypes.Coin
 
 	// faucetFundedBalanceUpokt is the upokt balance that is transferred by the faucet during setup.
@@ -326,7 +326,7 @@ func (s *migrationSuite) TheShannonServiceConfigMatchesTheOneProvidedWhenClaimin
 		foundApp := s.getApplicationInfo(s.getShannonKeyName())
 		require.Equal(s, s.claimedActorServiceId, foundApp.GetServiceConfigs()[0].GetServiceId())
 	case actorTypeSupplier:
-		s.Skip("TODO_MAINNET(@bryanchriswhite, #1034): Implement.")
+		s.Skip("TODO_MAINNET_CRITICAL(@bryanchriswhite, #1034): Implement.")
 	default:
 		s.Fatal("unexpected actor type %q", actorType)
 	}
@@ -474,43 +474,43 @@ func (s *migrationSuite) TheShannonDestinationAccountIsNotStakedAsAn(actorType a
 	case actorTypeApp:
 		s.TheUserVerifiesTheForAccountIsNotStaked(actorType, s.getShannonKeyName())
 	case actorTypeSupplier:
-		s.Skip("TODO_MAINNET(@bryanchriswhite, #1034): Implement.")
+		s.Skip("TODO_MAINNET_CRITICAL(@bryanchriswhite, #1034): Implement.")
 	default:
 		s.Fatalf("unknown actor type %q", actorType)
 	}
 }
 
 func (s *migrationSuite) MorsePrivateKeysAreAvailableInTheFollowingActorTypeDistribution(a gocuke.DataTable) {
-	s.Skip("TODO_MAINNET(@bryanchriswhite, #1034): Implement.")
+	s.Skip("TODO_MAINNET_CRITICAL(@bryanchriswhite, #1034): Implement.")
 }
 
 func (s *migrationSuite) AMorseAccountholderClaimsAsANewApplication() {
-	s.Skip("TODO_MAINNET(@bryanchriswhite, #1034): Implement.")
+	s.Skip("TODO_MAINNET_CRITICAL(@bryanchriswhite, #1034): Implement.")
 }
 
 func (s *migrationSuite) AnApplicationIsStaked() {
-	s.Skip("TODO_MAINNET(@bryanchriswhite, #1034): Implement.")
+	s.Skip("TODO_MAINNET_CRITICAL(@bryanchriswhite, #1034): Implement.")
 	//s.TheForAccountIsStakedWithUpokt("application", s.getShannonKeyName(), s.unstakedMorseClaimableAccount.GetApplicationStake().Amount.Int64())
 }
 
 func (s *migrationSuite) AMorseAccountholderClaimsAsANewSupplier() {
-	s.Skip("TODO_MAINNET(@bryanchriswhite, #1034): Implement.")
+	s.Skip("TODO_MAINNET_CRITICAL(@bryanchriswhite, #1034): Implement.")
 }
 
 func (s *migrationSuite) ASupplierIsStaked() {
-	s.Skip("TODO_MAINNET(@bryanchriswhite, #1034): Implement.")
+	s.Skip("TODO_MAINNET_CRITICAL(@bryanchriswhite, #1034): Implement.")
 }
 
 func (s *migrationSuite) AMorseAccountholderClaimsAsANewNonactorAccount() {
-	s.Skip("TODO_MAINNET(@bryanchriswhite, #1034): Implement.")
+	s.Skip("TODO_MAINNET_CRITICAL(@bryanchriswhite, #1034): Implement.")
 }
 
 func (s *migrationSuite) AMorseAccountholderClaimsAsAnExistingApplication() {
-	s.Skip("TODO_MAINNET(@bryanchriswhite, #1034): Implement.")
+	s.Skip("TODO_MAINNET_CRITICAL(@bryanchriswhite, #1034): Implement.")
 }
 
 func (s *migrationSuite) AMorseAccountholderClaimsAsAnExistingSupplier() {
-	s.Skip("TODO_MAINNET(@bryanchriswhite, #1034): Implement.")
+	s.Skip("TODO_MAINNET_CRITICAL(@bryanchriswhite, #1034): Implement.")
 }
 
 func (s *migrationSuite) AMorseaccountstateWithAccountsInADistributionHasSuccessfullyBeenImported(numAccountsStr, distributionString string) {
@@ -562,15 +562,15 @@ func (s *migrationSuite) AMorseaccountstateWithAccountsInADistributionHasSuccess
 }
 
 func (s *migrationSuite) TheAuthoritySucessfullyImportsMorseaccountstateGeneratedFromTheSnapshotState() {
-	s.Skip("TODO_MAINNET(@bryanchriswhite, #1034): Implement.")
+	s.Skip("TODO_MAINNET_CRITICAL(@bryanchriswhite, #1034): Implement.")
 }
 
 func (s *migrationSuite) AMorseAccountholderClaimsAsAnExistingNonactorAccount() {
-	s.Skip("TODO_MAINNET(@bryanchriswhite, #1034): Implement.")
+	s.Skip("TODO_MAINNET_CRITICAL(@bryanchriswhite, #1034): Implement.")
 }
 
 func (s *migrationSuite) AMorseNodeSnapshotIsAvailable() {
-	s.Skip("TODO_MAINNET(@bryanchriswhite, #1034): Implement.")
+	s.Skip("TODO_MAINNET_CRITICAL(@bryanchriswhite, #1034): Implement.")
 }
 
 func (s *migrationSuite) TheMorseClaimableAccountIsMarkedAsClaimedByTheShannonAccountAtARecentBlockHeight() {
@@ -618,26 +618,33 @@ func (s *migrationSuite) getMorseKeyIdx() uint64 {
 }
 
 // nextMorseUnstakedKeyIdx returns the next morse private key index which is
-// intended to be used for unstaked morse accounts. If the current morseKeyIdx
-// is not an unstaked morse account, morseKeyIdx is incremented until the next
-// Morse key index which should be an unstaked account, given the round-robin
-// distribution of morse account actor types.
+// intended to be used for unstaked morse accounts.
+//
+// If the current morseKeyIdx is not an unstaked morse account:
+// • morseKeyIdx is incremented until reaching the next Morse key index
+// • This next index should be an unstaked account
+// • Selection follows the round-robin distribution of morse account actor types
 func (s *migrationSuite) nextMorseUnstakedKeyIdx() uint64 {
 	return s.nextMorseActorKeyIdx(testmigration.MorseUnstakedActor)
 }
 
 // nextMorseApplicationKeyIdx returns the next morse private key index which is
-// intended to be used for staked application morse accounts. If the current
-// morseKeyIdx is not a staked application morse account, morseKeyIdx is incremented
-// until the next Morse key index which should be a staked application account,
-// given the round-robin distribution of morse account actor types.
+// intended to be used for staked application morse accounts.
+//
+// If the current morseKeyIdx is not a staked application morse account:
+// • morseKeyIdx is incremented until reaching the next Morse key index
+// • This next index should be a staked application account
+// • Selection follows the round-robin distribution of morse account actor types
 func (s *migrationSuite) nextMorseApplicationKeyIdx() uint64 {
 	return s.nextMorseActorKeyIdx(testmigration.MorseApplicationActor)
 }
 
 // nextMorseActorKeyIdx returns the next morse private key index which matches
-// the given actor type. If the current morseKeyIdx does not match, morseKeyIdx
-// is incremented until the next Morse key index which does.
+// the given actor type.
+//
+// If the current morseKeyIdx does not match:
+// • morseKeyIdx is incremented until reaching the next Morse key index
+// • This next index should match the specified actor type
 func (s *migrationSuite) nextMorseActorKeyIdx(actorType testmigration.MorseAccountActorType) uint64 {
 	currentIdx := s.getMorseKeyIdx()
 	// Skip non-matching account keys.

@@ -31,19 +31,20 @@ For more help information, see:
 	$ poktrolld tx migration collect-morse-accounts
 
 For more documentation, refer to: https://dev.poktroll.com/operate/morse_migration/roadmap`,
-		Example: `	poktrolld tx migration import-morse-accounts ./tools/scripts/morse_account_state.json --from=pnf --grpc-addr=localhost:9090
-	poktrolld tx migration import-morse-accounts ./tools/scripts/morse_account_state.json --from=pnf --grpc-addr=https://shannon-testnet-grove-grpc.beta.poktroll.com
-	poktrolld tx migration import-morse-accounts ./tools/scripts/morse_account_state.json --from=pnf --grpc-addr=https://shannon-testnet-grove-grpc.alpha.poktroll.com`,
+		Example: `A few examples of how to use this command:
+poktrolld tx migration import-morse-accounts ./tools/scripts/morse_account_state.json --from=pnf --grpc-addr=localhost:9090
+poktrolld tx migration import-morse-accounts ./tools/scripts/morse_account_state.json --from=pnf --grpc-addr=https://shannon-testnet-grove-grpc.beta.poktroll.com`,
 		Args:    cobra.ExactArgs(1),
 		RunE:    runImportMorseAccounts,
 		PreRunE: logger.PreRunESetup,
 	}
 
+	// Add Cosmos SDK standard flags to the command
 	cosmosflags.AddTxFlagsToCmd(importMorseAcctsCmd)
 
 	// DEV_NOTE: This is required by the TxClient.
 	// Despite this being a "tx" command, the TxClient still "queries" for its own TxResult events.
-	// We're `explicitly omitting default` so the user is forced to specify it correctly due to the importance of the command.
+	// We're intentionally omitting a default so the user is forced to specify it correctly due to the importance of the command.
 	importMorseAcctsCmd.Flags().String(cosmosflags.FlagGRPC, flags.OmittedDefaultFlagValue, "Register the default Cosmos node grpc flag, which is needed to initialize the Cosmos query context with grpc correctly. It can be used to override the `QueryNodeGRPCURL` field in the config file if specified.")
 	importMorseAcctsCmd.Flags().Bool(cosmosflags.FlagGRPCInsecure, true, "Used to initialize the Cosmos query context with grpc security options. It can be used to override the `QueryNodeGRPCInsecure` field in the config file if specified.")
 
@@ -59,25 +60,20 @@ func runImportMorseAccounts(cmd *cobra.Command, args []string) error {
 	ctx := cmd.Context()
 
 	// Ensure the morse account state file exists.
-	accountStatePath := args[0]
-	if _, err := os.Stat(accountStatePath); err != nil {
+	morseAccountsStateJSONPath := args[0]
+	if _, err := os.Stat(morseAccountsStateJSONPath); err != nil {
 		return err
 	}
 
 	// Read and deserialize it the Morse account state file.
-	morseAccountStateBz, err := os.ReadFile(accountStatePath)
+	morseAccountStateBz, err := os.ReadFile(morseAccountsStateJSONPath)
 	if err != nil {
 		return err
 	}
 
+	// Unmarshal the Morse account state
 	morseAccountState := new(migrationtypes.MorseAccountState)
-	err = cmtjson.Unmarshal(morseAccountStateBz, morseAccountState)
-	if err != nil {
-		return err
-	}
-
-	txClient, err := flags.GetTxClient(ctx, cmd)
-	if err != nil {
+	if err = cmtjson.Unmarshal(morseAccountStateBz, morseAccountState); err != nil {
 		return err
 	}
 
@@ -97,17 +93,26 @@ func runImportMorseAccounts(cmd *cobra.Command, args []string) error {
 	}
 
 	// Package the MsgImportMorseAccountState message into a MsgAuthzExec message.
-	// MsgImportMorseAccountState is an authority-gated message. By default, the
-	// governance module address is the configured onchain authority. In order to
-	// facilitate authorization of externally owned accounts (e.g. the foundation),
+	//
+	// MsgImportMorseAccountState is an authority-gated message.
+	// By default, the governance module address is the configured onchain authority.
+	// In order to facilitate authorization of externally owned accounts (e.g. the foundation),
 	// the authz module is used.
+	//
 	// DEV_NOTE: This exec message requires a corresponding authz authorization to
 	// be present onchain.
+	//
 	// See: https://docs.cosmos.network/v0.50/build/modules/authz#authorization-and-grant.
 	msgAuthzExec := authz.NewMsgExec(
 		clientCtx.FromAddress,
 		[]cosmostypes.Msg{msgImportMorseAccountState},
 	)
+
+	// Initialize the tx client.
+	txClient, err := flags.GetTxClient(ctx, cmd)
+	if err != nil {
+		return err
+	}
 
 	// Sign and broadcast the claim Morse account message.
 	eitherErr := txClient.SignAndBroadcast(ctx, &msgAuthzExec)

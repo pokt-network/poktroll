@@ -210,7 +210,7 @@ get_user_input() {
     echo "Which network would you like to install?"
     echo "1) testnet-alpha (unstable)"
     echo "2) testnet-beta (recommended)"
-    echo "3) mainnet (not launched yet)"
+    echo "3) mainnet (soft launched as of 03/2028)"
     read -p "Enter your choice (1-3): " network_choice
 
     case $network_choice in
@@ -784,6 +784,7 @@ main() {
     fi
     print_color $YELLOW "You can check the status of your node with: sudo systemctl status $SERVICE_NAME.service"
     print_color $YELLOW "View logs with: sudo journalctl -u $SERVICE_NAME.service -f"
+    print_color $YELLOW "Visit the Full Node FAQ here: https://dev.poktroll.com/operate/faq/full_node_faq"
 }
 
 main

@@ -1,5 +1,7 @@
 package cmd
 
+// TODO_TECHDEBT: This file is not part of pkg/crypto because it is intended to be removed after the migration.
+
 import (
 	"crypto/aes"
 	"crypto/cipher"

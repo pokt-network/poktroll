@@ -1,6 +1,6 @@
 ---
 title: Source Code
-sidebar_position: 1
+sidebar_position: 5
 ---
 
 - 🧑‍💻 [Shannon SDK](https://github.com/pokt-network/shannon-sdk)
