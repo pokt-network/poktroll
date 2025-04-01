@@ -24,3 +24,15 @@ claudesync_init: claudesync_check ## Initializes a new ClaudeSync project
 .PHONY: claudesync_push
 claudesync_push: claudesync_check ## Pushes the current project to the ClaudeSync project
 	@claudesync push
+
+
+# TODO:
+- Have one base .claudeignore file
+- Have multiple .claudeignore files
+- Create multiple "claudesync_push_*"  targets that updates the .claudeignore file and pushes  the appropriat one
+- Need to tailor it specifically to different things:
+	- Testing
+	- Onchain
+	- Offchain
+	- Devops
+	- Etc...
