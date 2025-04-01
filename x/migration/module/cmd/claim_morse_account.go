@@ -31,6 +31,7 @@ The unstaked balance amount of the onchain MorseClaimableAccount will be minted 
 This will construct, sign, and broadcast a tx containing a MsgClaimMorseAccount message.
 
 For more information, see: https://dev.poktroll.com/operate/morse_migration/claiming`,
+		// Example: TODO_MAINNET_CRITICAL(@bryanchriswhite): Add a few examples,
 		RunE:    runClaimAccount,
 		PreRunE: logger.PreRunESetup,
 	}
