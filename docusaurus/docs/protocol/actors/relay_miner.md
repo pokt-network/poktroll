@@ -30,5 +30,5 @@ All of the operations needed to start and operate a `RelayMiner` can be viewed
 by running:
 
 ```bash
-poktrolld relayminer --help
+pocketd relayminer --help
 ```

@@ -11,9 +11,9 @@ import (
 )
 
 const (
-	// poktrollMsgTypeFormat is the format for a poktroll module's message type.
+	// pocketMsgTypeFormat is the format for a pocket module's message type.
 	// The first %s is the module name, and the second %s is the message name.
-	poktrollMsgTypeFormat = "/poktroll.%s.%s"
+	pocketMsgTypeFormat = "/pocket.%s.%s"
 )
 
 var defaultAuthzGrantExpiration = time.Now().Add(time.Hour)
@@ -25,10 +25,10 @@ type AuthzIntegrationSuite struct {
 	BaseIntegrationSuite
 }
 
-// RunAuthzGrantMsgForPoktrollModules creates an onchain authz grant for the given
-// granter and grantee addresses for the specified message name in each of the poktroll
+// RunAuthzGrantMsgForPocketModules creates an onchain authz grant for the given
+// granter and grantee addresses for the specified message name in each of the pocket
 // modules present in the integration app.
-func (s *AuthzIntegrationSuite) RunAuthzGrantMsgForPoktrollModules(
+func (s *AuthzIntegrationSuite) RunAuthzGrantMsgForPocketModules(
 	t *testing.T,
 	granterAddr, granteeAddr cosmostypes.AccAddress,
 	msgName string,
@@ -38,7 +38,7 @@ func (s *AuthzIntegrationSuite) RunAuthzGrantMsgForPoktrollModules(
 
 	var foundModuleGrants = make(map[string]int)
 	for _, moduleName := range moduleNames {
-		msgType := fmtPoktrollMsgType(moduleName, msgName)
+		msgType := fmtPocketMsgType(moduleName, msgName)
 		authorization := &authz.GenericAuthorization{Msg: msgType}
 		s.RunAuthzGrantMsg(t, granterAddr, granteeAddr, authorization)
 
@@ -102,7 +102,7 @@ func (s *AuthzIntegrationSuite) RunAuthzExecMsg(
 	return execResAny.(*authz.MsgExecResponse).Results, nil
 }
 
-// fmtPoktrollMsgType returns the formatted message type for a poktroll module.
-func fmtPoktrollMsgType(moduleName, msgName string) string {
-	return fmt.Sprintf(poktrollMsgTypeFormat, moduleName, msgName)
+// fmtPocketMsgType returns the formatted message type for a pocket module.
+func fmtPocketMsgType(moduleName, msgName string) string {
+	return fmt.Sprintf(pocketMsgTypeFormat, moduleName, msgName)
 }

@@ -1,6 +1,6 @@
 ---
 title: Alpha TestNet
-sidebar_position: 1
+sidebar_position: 3
 ---
 
 - 🪙 [Token Faucet](https://faucet.alpha.testnet.pokt.network/)

@@ -470,7 +470,7 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "sum(poktroll_proof_validation{job=\"$job\"}) by (quantile)",
+          "expr": "sum(pocket_proof_validation{job=\"$job\"}) by (quantile)",
           "instant": false,
           "legendFormat": " q{{quantile}}",
           "range": true,
@@ -482,7 +482,7 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "sum(poktroll_proof_validation_sum{job=\"$job\"}) / sum(poktroll_proof_validation_count{job=\"$job\"})",
+          "expr": "sum(pocket_proof_validation_sum{job=\"$job\"}) / sum(pocket_proof_validation_count{job=\"$job\"})",
           "hide": false,
           "instant": false,
           "legendFormat": "avg",
@@ -593,7 +593,7 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "sum(poktroll_relay_ema{job=\"$job\",service_id=~\"$service_id\"}) by (service_id)",
+          "expr": "sum(pocket_relay_ema{job=\"$job\",service_id=~\"$service_id\"}) by (service_id)",
           "instant": false,
           "legendFormat": "__auto",
           "range": true,
@@ -690,7 +690,7 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "sum(poktroll_relay_mining_difficulty{job=\"$job\",service_id=~\"$service_id\"}) by (service_id)",
+          "expr": "sum(pocket_relay_mining_difficulty{job=\"$job\",service_id=~\"$service_id\"}) by (service_id)",
           "instant": false,
           "legendFormat": "__auto",
           "range": true,
@@ -787,7 +787,7 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "sum(increase(poktroll_relays{job=\"$job\",service_id=~\"$service_id\"}[1m])) by (service_id, claim_proof_stage)",
+          "expr": "sum(increase(pocket_relays{job=\"$job\",service_id=~\"$service_id\"}[1m])) by (service_id, claim_proof_stage)",
           "instant": false,
           "legendFormat": "{{service_id}}-{{claim_proof_stage}}",
           "range": true,
@@ -884,7 +884,7 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "sum(increase(poktroll_compute_units{job=\"$job\",service_id=~\"$service_id\"}[1m])) by (service_id, claim_proof_stage)",
+          "expr": "sum(increase(pocket_compute_units{job=\"$job\",service_id=~\"$service_id\"}[1m])) by (service_id, claim_proof_stage)",
           "instant": false,
           "legendFormat": "{{service_id}}-{{claim_proof_stage}}",
           "range": true,
@@ -981,7 +981,7 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "sum(increase(poktroll_proof_requirements{job=\"$job\",service_id=~\"$service_id\"}[1m])) by (service_id, reason)",
+          "expr": "sum(increase(pocket_proof_requirements{job=\"$job\",service_id=~\"$service_id\"}[1m])) by (service_id, reason)",
           "instant": false,
           "legendFormat": "{{service_id}}-{{reason}}",
           "range": true,
@@ -1091,7 +1091,7 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "sum(increase(poktroll_minted_tokens{job=\"$job\"}[1m])) by (module)",
+          "expr": "sum(increase(pocket_minted_tokens{job=\"$job\"}[1m])) by (module)",
           "instant": false,
           "legendFormat": "minted by {{module}}",
           "range": true,
@@ -1103,7 +1103,7 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "sum(increase(poktroll_burned_tokens{job=\"$job\"}[1m])) by (module)",
+          "expr": "sum(increase(pocket_burned_tokens{job=\"$job\"}[1m])) by (module)",
           "hide": false,
           "instant": false,
           "legendFormat": "burned by {{module}}",
@@ -1116,7 +1116,7 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "sum(increase(poktroll_slashed_tokens{job=\"$job\"}[1m])) by (module)",
+          "expr": "sum(increase(pocket_slashed_tokens{job=\"$job\"}[1m])) by (module)",
           "hide": false,
           "instant": false,
           "legendFormat": "slashed by {{module}}",
@@ -1129,7 +1129,7 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "sum(increase(poktroll_minted_tokens{job=\"$job\"}[1m])) - sum(increase(poktroll_burned_tokens{job=\"$job\"}[1m]))",
+          "expr": "sum(increase(pocket_minted_tokens{job=\"$job\"}[1m])) - sum(increase(pocket_burned_tokens{job=\"$job\"}[1m]))",
           "hide": false,
           "instant": false,
           "legendFormat": "Minted total (minus burned)",
@@ -1227,7 +1227,7 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "sum(increase(poktroll_claims{job=\"$job\",service_id=~\"$service_id\"}[1m])) by (service_id, claim_proof_stage)",
+          "expr": "sum(increase(pocket_claims{job=\"$job\",service_id=~\"$service_id\"}[1m])) by (service_id, claim_proof_stage)",
           "instant": false,
           "legendFormat": "{{service_id}}-{{claim_proof_stage}}",
           "range": true,
@@ -1246,8 +1246,8 @@
       {
         "current": {
           "selected": false,
-          "text": "validator-poktroll-validator",
-          "value": "validator-poktroll-validator"
+          "text": "validator-pocket-validator",
+          "value": "validator-pocket-validator"
         },
         "datasource": {
           "type": "prometheus",
@@ -1285,7 +1285,7 @@
           "type": "prometheus",
           "uid": "prometheus"
         },
-        "definition": "label_values(poktroll_proof_requirements,service_id)",
+        "definition": "label_values(pocket_proof_requirements,service_id)",
         "hide": 0,
         "includeAll": true,
         "label": "Service ID",
@@ -1294,7 +1294,7 @@
         "options": [],
         "query": {
           "qryType": 1,
-          "query": "label_values(poktroll_proof_requirements,service_id)",
+          "query": "label_values(pocket_proof_requirements,service_id)",
           "refId": "PrometheusVariableQueryEditor-VariableQuery"
         },
         "refresh": 1,

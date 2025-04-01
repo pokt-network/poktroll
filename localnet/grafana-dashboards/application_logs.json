@@ -50,7 +50,7 @@
             "uid": "P8E80F9AEF21F6940"
           },
           "editorMode": "builder",
-          "expr": "{container=\"poktrolld-validator\"} | json | method = `StakeApplication`",
+          "expr": "{container=\"pocketd-validator\"} | json | method = `StakeApplication`",
           "queryType": "range",
           "refId": "Application Staking"
         }
@@ -88,7 +88,7 @@
             "uid": "P8E80F9AEF21F6940"
           },
           "editorMode": "builder",
-          "expr": "{container=\"poktrolld-validator\"} | json | method = `UnstakeApplication`",
+          "expr": "{container=\"pocketd-validator\"} | json | method = `UnstakeApplication`",
           "queryType": "range",
           "refId": "Application Unstaking"
         }
@@ -125,7 +125,7 @@
             "uid": "P8E80F9AEF21F6940"
           },
           "editorMode": "builder",
-          "expr": "{container=\"poktrolld-validator\"} | json | method = `DelegateToGateway`",
+          "expr": "{container=\"pocketd-validator\"} | json | method = `DelegateToGateway`",
           "queryType": "range",
           "refId": "Gateway Delegation"
         }
@@ -162,7 +162,7 @@
             "uid": "P8E80F9AEF21F6940"
           },
           "editorMode": "builder",
-          "expr": "{container=\"poktrolld-validator\"} | json | method = `UndelegateFromGateway`",
+          "expr": "{container=\"pocketd-validator\"} | json | method = `UndelegateFromGateway`",
           "queryType": "range",
           "refId": "Gateway Unelegation"
         }

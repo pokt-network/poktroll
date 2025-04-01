@@ -362,7 +362,7 @@ func (s *QueryCacheTestSuite) NewGRPCClientConn() grpc.ClientConn {
 	// This method needs to return a valid shared params response.
 	grpcClientConn.EXPECT().Invoke(
 		gomock.Any(), // ctx
-		"/poktroll.shared.Query/Params",
+		"/pocket.shared.Query/Params",
 		gomock.Any(),
 		gomock.Any(),
 	).
@@ -415,21 +415,21 @@ func (s *QueryCacheTestSuite) NewGRPCClientConn() grpc.ClientConn {
 		Do(func(_ context.Context, method string, _ any, _ any, _ ...any) {
 			// Increment the corresponding call count each time the Invoke method is called.
 			switch method {
-			case "/poktroll.application.Query/Params":
+			case "/pocket.application.Query/Params":
 				s.rpcCallCount.appParams++
-			case "/poktroll.proof.Query/Params":
+			case "/pocket.proof.Query/Params":
 				s.rpcCallCount.proofParams++
-			case "/poktroll.session.Query/Params":
+			case "/pocket.session.Query/Params":
 				s.rpcCallCount.sessionParams++
-			case "/poktroll.service.Query/Service":
+			case "/pocket.service.Query/Service":
 				s.rpcCallCount.services++
-			case "/poktroll.service.Query/RelayMiningDifficulty":
+			case "/pocket.service.Query/RelayMiningDifficulty":
 				s.rpcCallCount.difficulty++
-			case "/poktroll.supplier.Query/Supplier":
+			case "/pocket.supplier.Query/Supplier":
 				s.rpcCallCount.suppliers++
-			case "/poktroll.application.Query/Application":
+			case "/pocket.application.Query/Application":
 				s.rpcCallCount.apps++
-			case "/poktroll.session.Query/GetSession":
+			case "/pocket.session.Query/GetSession":
 				s.rpcCallCount.sessions++
 			case "/cosmos.bank.v1beta1.Query/Balance":
 				s.rpcCallCount.balances++
@@ -444,14 +444,14 @@ func (s *QueryCacheTestSuite) NewGRPCClientConn() grpc.ClientConn {
 
 // rpcCallCount is a struct that keeps track of the number of times each RPC method is called.
 type rpcCallCount struct {
-	// poktroll key value calls
+	// pocket key value calls
 	services   int
 	difficulty int
 	apps       int
 	suppliers  int
 	sessions   int
 
-	// poktroll params calls
+	// pocket params calls
 	appParams     int
 	sessionParams int
 	sharedParams  int
