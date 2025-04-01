@@ -15,6 +15,10 @@ import (
 const (
 	RetryStrategyCtxKey = "retry_strategy"
 
+	// Exponential backoff factor used in the retry strategy formula:
+	// initial * exponentialBackOffFactor^retryCount
+	exponentialBackOffFactor = 2.0
+
 	// TODO_IMPROVE: Make these configurable via flags, configs or env vars.
 	DefaultMaxRetryCount  = 25
 	DefaultInitialDelayMs = 500
@@ -136,7 +140,7 @@ func OnError(
 func Call[T any](
 	ctx context.Context,
 	work func() (T, error),
-	retryStrategy ...RetryStrategyFunc,
+	retryStrategy RetryStrategyFunc,
 ) (T, error) {
 	var (
 		result T
@@ -145,7 +149,7 @@ func Call[T any](
 
 	// Fallback to the default exponential backoff strategy if none is provided
 	if retryStrategy == nil {
-		retryStrategy = []RetryStrategyFunc{DefaultExponentialDelay}
+		retryStrategy = GetStrategy(ctx)
 	}
 
 	// Start the retry loop
@@ -170,7 +174,7 @@ func Call[T any](
 		}
 
 		// TODO_IN_THIS_PR: #PUC
-		if !retryStrategy[0](ctx, retryCount) {
+		if !retryStrategy(ctx, retryCount) {
 			return result, err
 		}
 	}
@@ -214,7 +218,7 @@ func WithExponentialBackoffFn(
 		}
 
 		// Calculate delay using exponential backoff formula: initial * 2^retryCount
-		backoffDelay := initialDelayMs * int(math.Pow(2, float64(retryCount)))
+		backoffDelay := initialDelayMs * int(math.Pow(exponentialBackOffFactor, float64(retryCount)))
 
 		// Cap the delay at the maximum allowed value
 		delayMs := min(backoffDelay, maxDelayMs)

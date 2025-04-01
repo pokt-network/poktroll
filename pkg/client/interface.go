@@ -62,6 +62,8 @@ type SupplierClient interface {
 	// CreateClaims sends claim messages which creates an onchain commitment by
 	// calling supplier to the given smt.SparseMerkleSumTree root hash of the given
 	// session's mined relays.
+	// a timeoutHeight is provided to ensure that the claim is not created after
+	// the claim window has closed.
 	CreateClaims(
 		ctx context.Context,
 		timeoutHeight int64,
@@ -70,6 +72,8 @@ type SupplierClient interface {
 	// SubmitProof sends proof messages which contain the smt.SparseCompactMerkleClosestProof,
 	// corresponding to some previously created claim for the same session.
 	// The proof is validated onchain as part of the pocket protocol.
+	// a timeoutHeight is provided to ensure that the proof is not submitted after
+	// the proof window has closed.
 	SubmitProofs(
 		ctx context.Context,
 		timeoutHeight int64,

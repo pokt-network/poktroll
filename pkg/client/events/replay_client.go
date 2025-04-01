@@ -22,7 +22,8 @@ const (
 	//
 	// TODO_IMPROVE: this should be configurable but can be overridden at compile-time:
 	// go build -ldflags "-X github.com/pokt-network/poktroll/DefaultConnRetryLimit=value".
-	// The websocket client should always keep trying to reconnect.
+	// This is set to max int because the websocket client should always keep trying to reconnect.
+	// Note that this parameter is only used by the websockets client.
 	DefaultConnRetryLimit = math.MaxInt
 
 	// eventsBytesRetryDelay is the delay between retry attempts when the events
