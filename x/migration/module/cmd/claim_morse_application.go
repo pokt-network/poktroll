@@ -22,16 +22,19 @@ func ClaimApplicationCmd() *cobra.Command {
 		Args:  cobra.ExactArgs(2),
 		Short: "Claim an onchain MorseClaimableAccount as a staked application account",
 		Long: `Claim an onchain MorseClaimableAccount as a staked application account.
+
 The unstaked balance amount of the onchain MorseClaimableAccount will be minted to the Shannon account specified by the --from flag.
 The Shannon account will also be staked as an application with a stake equal to the application stake the MorseClaimableAccount had on Morse.
 
 This will construct, sign, and broadcast a tx containing a MsgClaimMorseApplication message.
-See: https://dev.poktroll.com/operate/morse_migration/claiming for more information.
-`,
+
+For more information, see: https://dev.poktroll.com/operate/morse_migration/claiming`,
+		// Example: TODO_MAINNET_CRITICAL(@bryanchriswhite): Add a few examples,
 		RunE:    runClaimApplication,
 		PreRunE: logger.PreRunESetup,
 	}
 
+	// Add a string flag for providing a passphrase to decrypt the Morse keyfile.
 	claimAppCmd.Flags().StringVarP(
 		&morseKeyfileDecryptPassphrase,
 		flags.FlagPassphrase,
@@ -39,6 +42,8 @@ See: https://dev.poktroll.com/operate/morse_migration/claiming for more informat
 		"",
 		flags.FlagPassphraseUsage,
 	)
+
+	// Add a bool flag indicating whether to skip the passphrase prompt.
 	claimAppCmd.Flags().BoolVar(
 		&noPassphrase,
 		flags.FlagNoPassphrase,
@@ -53,18 +58,22 @@ See: https://dev.poktroll.com/operate/morse_migration/claiming for more informat
 }
 
 // runClaimApplication performs the following sequence:
-// - Load the Morse private key from the morse_key_export_path argument.
+// - Load the Morse private key from the morse_key_export_path argument (arg 0).
+// - Load and validate the service ID from the shannon_service_id argument (arg 1).
 // - Construct a MsgClaimMorseApplication message from the Morse key and the service ID.
 // - Sign and broadcast the MsgClaimMorseApplication message using the Shannon key named by the `--from` flag.
 // - Wait until the tx is committed onchain for either a synchronous or asynchronous error.
 func runClaimApplication(cmd *cobra.Command, args []string) error {
 	ctx := cmd.Context()
+
+	// Retrieve and validate the morse key based on the first argument provided.
 	morseKeyExportPath := args[0]
 	morsePrivKey, err := loadMorsePrivateKey(morseKeyExportPath, morseKeyfileDecryptPassphrase)
 	if err != nil {
 		return err
 	}
 
+	// Retrieve and validate the service ID based on the second argument provided.
 	serviceID := args[1]
 	if !sharedtypes.IsValidServiceId(serviceID) {
 		return ErrInvalidUsage.Wrapf("invalid service ID: %q", serviceID)
@@ -82,6 +91,7 @@ func runClaimApplication(cmd *cobra.Command, args []string) error {
 		shannonDestAddr,
 		morsePrivKey.PubKey().Address().String(),
 		morsePrivKey,
+		// Construct a new staked application service config with the service ID.
 		&sharedtypes.ApplicationServiceConfig{
 			ServiceId: serviceID,
 		},

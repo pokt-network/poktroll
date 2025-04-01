@@ -2,5 +2,5 @@
 // re-organized or removed in future work.
 package volatile
 
-// TODO_TECHDEBT: Find a way to centralize the use of `upokt` throughout the codebase
+// TODO_TECHDEBT: Do a global grep for upokt and ensure this constant is used everywhere
 const DenomuPOKT = "upokt"

@@ -37,6 +37,8 @@ import (
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
+TODO_IN_THIS_PR(@bryanchriswhite): Use the diff from this PR to update this documentation by providing both as context and reviewing+updating the output.
+
 // TODO_CONSIDERATION: Consider moving all flags defined in `/pkg` to the cmd/flags package.
 var (
 	// flagRelayMinerConfig is the variable containing the relay miner config filepath
@@ -77,7 +79,7 @@ for such operations.`,
 	// Cosmos flags
 	// TODO_TECHDEBT(#256): Remove unneeded cosmos flags.
 	cmd.Flags().String(cosmosflags.FlagKeyringBackend, "", "Select keyring's backend (os|file|kwallet|pass|test)")
-	// We're `explicitly omitting default` so the relayer crashes if these aren't specified.
+	// We're intentionally omitting a default value so the relayer crashes if these aren't specified.
 	cmd.Flags().StringVar(&flagNodeRPCURL, cosmosflags.FlagNode, flags.OmittedDefaultFlagValue, "Register the default Cosmos node flag, which is needed to initialize the Cosmos query and tx contexts correctly. It can be used to override the `QueryNodeRPCURL` and `TxNodeRPCURL` fields in the config file if specified.")
 	cmd.Flags().StringVar(&flagNodeGRPCURL, cosmosflags.FlagGRPC, flags.OmittedDefaultFlagValue, "Register the default Cosmos node grpc flag, which is needed to initialize the Cosmos query context with grpc correctly. It can be used to override the `QueryNodeGRPCURL` field in the config file if specified.")
 	cmd.Flags().Bool(cosmosflags.FlagGRPCInsecure, true, "Used to initialize the Cosmos query context with grpc security options. It can be used to override the `QueryNodeGRPCInsecure` field in the config file if specified.")
