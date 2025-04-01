@@ -572,8 +572,9 @@ func TestTxClient_SignAndBroadcast_MultipleMsgs(t *testing.T) {
 // newTxContext creates a new mock transactions context for testing.
 // It sets up the necessary expectations for signing and broadcasting transactions.
 //
-// The callStatus parameter is used to instrument and track the number of successful
-// and failed calls to the BroadcastTx method.
+// The callStatus parameter is used to instrument and track the number of:
+// - Successful calls to the BroadcastTx method
+// - Failed calls to the BroadcastTx method
 func newTxContext(
 	t *testing.T,
 	_ context.Context,
@@ -605,8 +606,8 @@ func newTxContext(
 	return txCtxMock
 }
 
-// callStatus is a struct that instrument the TxContext mock to whether the
-// BroadcastTx method was called successfully or not.
+// callStatus is a struct that instruments the TxContext mock to track whether
+// the BroadcastTx method was called successfully or not.
 // It tracks the number of successful and failed calls to the BroadcastTx method.
 type callStatus struct {
 	successCount  int
