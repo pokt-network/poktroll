@@ -41,10 +41,7 @@ streamline development and reduce friction for any new potential contributor.
 
 ## System Requirements
 
-CPU: 2 Cores/4 Threads
-RAM: 4 GB
-Disk: 50GB NVMe
-OS: Linux (Debian 12 x64 Recommended)
+Please see the [Hardware Requirements](../configs/hardware_requirements.md#relayminer) page.
 
 ## 20 Minute Video Walkthrough
 
