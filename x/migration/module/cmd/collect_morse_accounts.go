@@ -14,41 +14,45 @@ import (
 )
 
 const (
-	flagDebugAccountsPerLog      = "debug-accounts-per-log"
-	flagDebugAccountsPerLogUsage = "The number of accounts to log per debug message"
+	flagNumAccountsPerDebugLog      = "num-accounts-per-debug-log"
+	flagNumAccountsPerDebugLogUsage = "The number of accounts to iterate over for every debug log message that's printed."
 )
 
-var debugAccountsPerLog int
+// A global variable to control the number of accounts to iterate over for every debug log message.
+// Used to prevent excessive logging during the account collection process.
+var numAccountsPerDebugLog int
 
 // DEV_NOTE: AutoCLI does not apply here because there is no gRPC service, message, or query.
-// While this command does not interact with the network directly, it prepares data for the
-// use in the MsgImportMorseAccountState message.
 //
-// The purpose of this command is to facilitate the deterministic (i.e. reproducible) transformation
-// from Morse's export data structure (MorseStateExport) into Shannon's import data structure (MorseAccountState).
+// Purpose:
+//   - Facilitate deterministic (reproducible) transformation from Morse's export data structure
+//     (MorseStateExport) into Shannon's import data structure (MorseAccountState)
+//   - Prepare data for use in the MsgImportMorseAccountState message
 //
-// It does not interact with the network directly.
+// Note:
+// - Does not interact with the network directly
 func CollectMorseAccountsCmd() *cobra.Command {
 	collectMorseAcctsCmd := &cobra.Command{
 		Use:   "collect-morse-accounts [morse-state-export-path] [morse-account-state-path]",
 		Args:  cobra.ExactArgs(2),
 		Short: "Collect account balances and stakes from [morse-state-export-path] JSON file and output to [morse-account-state-path] as JSON",
 		Long: `Processes Morse state for Shannon migration:
-	          * Reads MorseStateExport JSON from [morse-state-export-path]
-	          * Contains account balances and associated stakes
-	          * Outputs MorseAccountState JSON to [morse-account-state-path]
-	          * Integrates with Shannon's MsgUploadMorseState
+- Reads MorseStateExport JSON from [morse-state-export-path]
+- Contains account balances and associated stakes
+- Outputs MorseAccountState JSON to [morse-account-state-path]
+- Integrates with Shannon's MsgUploadMorseState
 
-	          Generate required input via Morse CLI:
-	          pocket util export-genesis-for-reset [height] [new-chain-id] > morse-state-export.json`,
+Generate required input via Morse CLI like so:
+
+	pocket util export-genesis-for-reset [height] [new-chain-id] > morse-state-export.json`,
 		RunE:    runCollectMorseAccounts,
 		PreRunE: logger.PreRunESetup,
 	}
 
 	collectMorseAcctsCmd.Flags().IntVar(
-		&debugAccountsPerLog,
-		flagDebugAccountsPerLog, 0,
-		flagDebugAccountsPerLogUsage,
+		&numAccountsPerDebugLog,
+		flagNumAccountsPerDebugLog, 0,
+		flagNumAccountsPerDebugLogUsage,
 	)
 
 	return collectMorseAcctsCmd
@@ -217,8 +221,8 @@ func collectInputAccountBalances(inputState *migrationtypes.MorseStateExport, mo
 // shouldDebugLogProgress returns true if the given exportAccountIdx should be logged
 // via debugLogProgress.
 func shouldDebugLogProgress(exportAccountIdx int) bool {
-	return debugAccountsPerLog > 0 &&
-		exportAccountIdx%debugAccountsPerLog == 0
+	return numAccountsPerDebugLog > 0 &&
+		exportAccountIdx%numAccountsPerDebugLog == 0
 }
 
 // collectInputApplicationStakes iterates over the applications in the inputState and

@@ -15,6 +15,8 @@ import (
 // To run this test use:
 //
 //	$ make test_e2e_migration_snapshot
+//
+// TODO_MAINNET_CRITICAL(@bryanchriswhite): Add an example of how to get the snapshot (e.g. wget ...)
 func TestMigrationWithSnapshotData(t *testing.T) {
 	gocuke.NewRunner(t, &migrationSuite{}).
 		Path("migration_snapshot.feature").

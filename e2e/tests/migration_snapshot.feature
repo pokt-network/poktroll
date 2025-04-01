@@ -10,12 +10,12 @@
 @oneshot @manual
 Feature: Morse account import and claim all account types (with snapshot data)
 
-  # TODO_MAINNET(@bryanchriswhite, #1034): The snapshot based Morse account import feature is incomplete.
+  # TODO_MAINNET_CRITICAL(@bryanchriswhite, #1034): The snapshot based Morse account import feature is incomplete.
 
   Scenario: Authority generates and imports MorseAccountState
-    # TODO_MAINNET(@bryanchriswhite, #1034): Print a link to the latest liquify snapshot if no local state exists.
+    # TODO_MAINNET_CRITICAL(@bryanchriswhite, #1034): Print a link to the latest liquify snapshot if no local state exists.
     Given a local Morse node persisted state exists
-    # TODO_POST_JUDGEMENT_DAY: Replace current height with the published "canonical" export/migration/cutover height.
+    # TODO_POST_MAINNET: Replace current height with the published "canonical" export/migration/cutover height.
     When the authority exports the Morse Account State at height "130000" to "morse_state_export.json"
     Then a MorseStateExport is written to "morse_state_export.json"
 
@@ -29,8 +29,8 @@ Feature: Morse account import and claim all account types (with snapshot data)
 
   Scenario:
     Given a Morse node snapshot is available
-    And the authority sucessfully imports MorseAccountState generated from the snapshot state
-    # TODO_INCOMPLETE: Ensure the liquify Morse snapshot includes known Morse
+    And the authority successfully imports MorseAccountState generated from the snapshot state
+    # TODO_MAINNET_CRITICAL(@bryanchriswhite): Ensure the liquify Morse snapshot includes known Morse
     # private keys such that valid claim signatures can be generated for testing.
     #
     # Use a distinct SECRET random number to seed each private key needed.
@@ -68,4 +68,4 @@ Feature: Morse account import and claim all account types (with snapshot data)
     And the Morse claimable account is marked as claimed by the shannon account at a recent block height
     And the Shannon destination account supplier stake is increased by the MorseClaimableAccount supplier stake
 
-  # TODO_MAINNET(@bryanchriswhite, #1034): Enumerate and implement error scenarios.
+  # TODO_MAINNET_CRITICAL(@bryanchriswhite, #1034): Enumerate and implement error scenarios.

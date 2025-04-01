@@ -1,9 +1,9 @@
 package flags
 
 const (
-	// OmittedDefaultFlagValue is used whenever a flag is required but no
-	// reasonable default value can be provided.
-	OmittedDefaultFlagValue = "explicitly omitting default"
+	// OmittedDefaultFlagValue is used whenever a flag is required but no reasonable default value can be provided.
+	// In most cases, this forces the user to specify the flag value to avoid unintended behavior.
+	OmittedDefaultFlagValue = "intentionally omitting default"
 
 	DefaultLogOutput = "-"
 

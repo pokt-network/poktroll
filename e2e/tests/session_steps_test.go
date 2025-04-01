@@ -238,7 +238,9 @@ func (s *suite) TheApplicationEstablishesAWebsocketsConnectionForService(appName
 	s.waitForBlockHeight(nextSessionStartHeight)
 
 	// Set WebSocket close height just before the claim window opens
-	s.wsCloseHeight = sharedtypes.GetClaimWindowOpenHeight(&sharedParams, nextSessionStartHeight)
+	// TODO_TECHDEBT(@red-0ne): Re-evaluate if the -1 is needed here or not.
+	// See the discussion here: https://github.com/pokt-network/poktroll/pull/1133/files#r2016150360
+	s.wsCloseHeight = sharedtypes.GetClaimWindowOpenHeight(&sharedParams, nextSessionStartHeight) - 1
 
 	// Prepare HTTP headers with application address and target service ID
 	header := http.Header{}
