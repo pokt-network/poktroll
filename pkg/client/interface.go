@@ -90,9 +90,14 @@ type SupplierClient interface {
 // TxClient provides a synchronous interface initiating and waiting for transactions
 // derived from cosmos-sdk messages, in a cosmos-sdk based blockchain network.
 type TxClient interface {
-	SignAndBroadcast(
+	SignAndBroadcastWithTimeoutHeight(
 		ctx context.Context,
 		timeoutHeight int64,
+		msgs ...cosmostypes.Msg,
+	) either.AsyncError
+
+	SignAndBroadcast(
+		ctx context.Context,
 		msgs ...cosmostypes.Msg,
 	) either.AsyncError
 }

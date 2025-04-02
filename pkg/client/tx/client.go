@@ -27,6 +27,12 @@ import (
 )
 
 const (
+	// DefaultCommitTimeoutHeightOffset is the default number of blocks after the
+	// latest block (when broadcasting) that a transactions should be considered
+	// errored if it has not been committed.
+	// TODO_TECHDEBT: populate this from the config file.
+	DefaultCommitTimeoutHeightOffset = 5
+
 	// defaultTxReplayLimit is the number of comettypes.EventDataTx events that the replay
 	// observable returned by LastNBlocks() will be able to replay.
 	// TODO_TECHDEBT/TODO_FUTURE: add a `blocksReplayLimit` field to the blockClient
@@ -72,6 +78,10 @@ type CometTxEvent struct {
 // - Upon timeout, the client queries the network for the transaction's last status
 // - This status is used to derive the asynchronous error populated in either.AsyncError
 type txClient struct {
+	// TODO_TECHDEBT: this should be configurable & integrated w/ viper, flags, etc.
+	// commitTimeoutHeightOffset is the number of blocks after the latest block
+	// that a transactions should be considered errored if it has not been committed.
+	commitTimeoutHeightOffset int64
 	// signingKeyName is the name of the key in the keyring to use for signing
 	// transactions.
 	signingKeyName string
@@ -144,8 +154,9 @@ func NewTxClient(
 	opts ...client.TxClientOption,
 ) (_ client.TxClient, err error) {
 	txnClient := &txClient{
-		txErrorChans:  make(txErrorChansByHash),
-		txTimeoutPool: make(txTimeoutPool),
+		commitTimeoutHeightOffset: DefaultCommitTimeoutHeightOffset,
+		txErrorChans:              make(txErrorChansByHash),
+		txTimeoutPool:             make(txTimeoutPool),
 	}
 
 	if err = depinject.Inject(
@@ -192,9 +203,9 @@ func NewTxClient(
 	return txnClient, nil
 }
 
-// SignAndBroadcast signs a set of Cosmos SDK messages, constructs a transaction,
-// and broadcasts it to the network. The function performs several steps to
-// ensure the messages and the resultant transaction are valid:
+// SignAndBroadcastWithTimeoutHeight signs a set of Cosmos SDK messages, constructs
+// a transaction, and broadcasts it to the network. The function performs several
+// steps to ensure the messages and the resultant transaction are valid:
 //
 //  1. Validates each message in the provided set.
 //  2. Constructs the transaction using the Cosmos SDK's transaction builder.
@@ -211,7 +222,7 @@ func NewTxClient(
 // the synchronous error. If the function completes successfully, it returns an
 // either.AsyncError populated with the error channel which will receive if the
 // transaction results in an asynchronous error or times out.
-func (txnClient *txClient) SignAndBroadcast(
+func (txnClient *txClient) SignAndBroadcastWithTimeoutHeight(
 	ctx context.Context,
 	timeoutHeight int64,
 	msgs ...cosmostypes.Msg,
@@ -300,6 +311,39 @@ func (txnClient *txClient) SignAndBroadcast(
 	}
 
 	return txnClient.addPendingTransactions(encoding.NormalizeTxHashHex(txResponse.TxHash), timeoutHeight)
+}
+
+// SignAndBroadcast signs a set of Cosmos SDK messages, constructs a transaction,
+// and broadcasts it to the network. The function performs several steps to ensure
+// the messages and the resultant transaction are valid:
+//
+//  1. Validates each message in the provided set.
+//  2. Constructs the transaction using the Cosmos SDK's transaction builder.
+//  3. Sets the transaction's timeout to the DefaultCommitTimeoutHeightOffset
+//  4. Sets a default gas limit (note: this will be made configurable in the future).
+//  5. Signs the transaction.
+//  6. Validates the constructed transaction.
+//  7. Serializes and broadcasts the transaction.
+//  8. Checks the broadcast response for errors.
+//  9. If all the above steps are successful, the function registers the
+//     transaction as pending.
+//
+// If any step encounters an error, it returns an either.AsyncError populated with
+// the synchronous error. If the function completes successfully, it returns an
+// either.AsyncError populated with the error channel which will receive if the
+// transaction results in an asynchronous error or times out.
+func (txnClient *txClient) SignAndBroadcast(
+	ctx context.Context,
+	msgs ...cosmostypes.Msg,
+) either.AsyncError {
+	timeoutHeight := txnClient.blockClient.LastBlock(ctx).
+		Height() + txnClient.commitTimeoutHeightOffset
+
+	return txnClient.SignAndBroadcastWithTimeoutHeight(
+		ctx,
+		timeoutHeight,
+		msgs...,
+	)
 }
 
 // validateConfigAndSetDefaults ensures that the necessary configurations for the
