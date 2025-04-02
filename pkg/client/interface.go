@@ -59,21 +59,31 @@ type MsgSubmitProof interface {
 // able to construct blockchain transactions from pocket protocol-specific messages
 // related to its role.
 type SupplierClient interface {
-	// CreateClaims sends claim messages which creates an onchain commitment by
-	// calling supplier to the given smt.SparseMerkleSumTree root hash of the given
-	// session's mined relays.
+	// CreateClaims sends claim messages which creates an onchain commitment by calling supplier
+	// to the given smt.SparseMerkleSumTree root hash of the given session's mined relays.
+	//
+	// A timeoutHeight is provided to ensure that the claim is not created after the claim
+	// window has closed.
 	CreateClaims(
 		ctx context.Context,
+		timeoutHeight int64,
 		claimMsgs ...MsgCreateClaim,
 	) error
+
 	// SubmitProof sends proof messages which contain the smt.SparseCompactMerkleClosestProof,
 	// corresponding to some previously created claim for the same session.
 	// The proof is validated onchain as part of the pocket protocol.
+	//
+	// A timeoutHeight is provided to ensure that the proof is not submitted after
+	// the proof window has closed.
 	SubmitProofs(
 		ctx context.Context,
+		timeoutHeight int64,
 		sessionProofs ...MsgSubmitProof,
 	) error
-	// Address returns the operator address of the SupplierClient that will be submitting proofs & claims.
+
+	// OperatorAddress returns the operator address of the SupplierClient that will be
+	// submitting proofs & claims.
 	OperatorAddress() *cosmostypes.AccAddress
 }
 
@@ -82,6 +92,7 @@ type SupplierClient interface {
 type TxClient interface {
 	SignAndBroadcast(
 		ctx context.Context,
+		timeoutHeight int64,
 		msgs ...cosmostypes.Msg,
 	) either.AsyncError
 }

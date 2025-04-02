@@ -72,7 +72,10 @@ type relayerSessionsManager struct {
 // Required dependencies:
 //   - client.BlockClient
 //   - client.SupplierClientMap
+//   - client.SharedQueryClient
+//   - client.ServiceQueryClient
 //   - client.ProofQueryClient
+//   - client.BankQueryClient
 //
 // Available options:
 //   - WithStoresDirectory
