@@ -203,13 +203,13 @@ func NewTxClient(
 	return txnClient, nil
 }
 
-// SignAndBroadcast signs a set of Cosmos SDK messages, constructs a transaction,
-// and broadcasts it to the network. The function performs several steps to
-// ensure the messages and the resultant transaction are valid:
+// SignAndBroadcastWithTimeoutHeight signs a set of Cosmos SDK messages, constructs
+// a transaction, and broadcasts it to the network. The function performs several
+// steps to ensure the messages and the resultant transaction are valid:
 //
 //  1. Validates each message in the provided set.
 //  2. Constructs the transaction using the Cosmos SDK's transaction builder.
-//  3. Sets (or calculates if 0) the transaction's timeout height.
+//  3. Sets the transaction's timeout height.
 //  4. Sets a default gas limit (note: this will be made configurable in the future).
 //  5. Signs the transaction.
 //  6. Validates the constructed transaction.
@@ -222,7 +222,7 @@ func NewTxClient(
 // the synchronous error. If the function completes successfully, it returns an
 // either.AsyncError populated with the error channel which will receive if the
 // transaction results in an asynchronous error or times out.
-func (txnClient *txClient) SignAndBroadcast(
+func (txnClient *txClient) SignAndBroadcastWithTimeoutHeight(
 	ctx context.Context,
 	timeoutHeight int64,
 	msgs ...cosmostypes.Msg,
@@ -269,12 +269,6 @@ func (txnClient *txClient) SignAndBroadcast(
 	}
 	txBuilder.SetFeeAmount(feeCoins)
 
-	// Calculate timeout height if not provided (i.e. zero).
-	if timeoutHeight == 0 {
-		timeoutHeight = txnClient.blockClient.LastBlock(ctx).
-			Height() + txnClient.commitTimeoutHeightOffset
-	}
-
 	txBuilder.SetTimeoutHeight(uint64(timeoutHeight))
 
 	// sign transactions
@@ -317,6 +311,39 @@ func (txnClient *txClient) SignAndBroadcast(
 	}
 
 	return txnClient.addPendingTransactions(encoding.NormalizeTxHashHex(txResponse.TxHash), timeoutHeight)
+}
+
+// SignAndBroadcast signs a set of Cosmos SDK messages, constructs a transaction,
+// and broadcasts it to the network. The function performs several steps to ensure
+// the messages and the resultant transaction are valid:
+//
+//  1. Validates each message in the provided set.
+//  2. Constructs the transaction using the Cosmos SDK's transaction builder.
+//  3. Sets the transaction's timeout to the DefaultCommitTimeoutHeightOffset
+//  4. Sets a default gas limit (note: this will be made configurable in the future).
+//  5. Signs the transaction.
+//  6. Validates the constructed transaction.
+//  7. Serializes and broadcasts the transaction.
+//  8. Checks the broadcast response for errors.
+//  9. If all the above steps are successful, the function registers the
+//     transaction as pending.
+//
+// If any step encounters an error, it returns an either.AsyncError populated with
+// the synchronous error. If the function completes successfully, it returns an
+// either.AsyncError populated with the error channel which will receive if the
+// transaction results in an asynchronous error or times out.
+func (txnClient *txClient) SignAndBroadcast(
+	ctx context.Context,
+	msgs ...cosmostypes.Msg,
+) either.AsyncError {
+	timeoutHeight := txnClient.blockClient.LastBlock(ctx).
+		Height() + txnClient.commitTimeoutHeightOffset
+
+	return txnClient.SignAndBroadcastWithTimeoutHeight(
+		ctx,
+		timeoutHeight,
+		msgs...,
+	)
 }
 
 // validateConfigAndSetDefaults ensures that the necessary configurations for the
