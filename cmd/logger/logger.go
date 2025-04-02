@@ -28,6 +28,8 @@ var (
 // PreRunESetup sets up the global cmd logger (Logger) for use in any subcommand.
 // This function is intended to be passed as (or called by) a `PreRunE` function
 // of a Cobra command.
+//
+// TODO_CONSIDERATION: Apply this pattern to all CLI commands.
 func PreRunESetup(_ *cobra.Command, _ []string) error {
 	var (
 		logWriter io.Writer
