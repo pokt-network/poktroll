@@ -25,12 +25,13 @@ func (k msgServer) ClaimMorseApplication(ctx context.Context, msg *migrationtype
 	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
 	logger := k.Logger().With("method", "ClaimMorseApplication")
 
-	// Ensure that gas fees are NOT waived if the claim is invalid.
-	// This restores the disincentive for Shannon account holders to spam invalid
-	// Morse claim txs BUT ONLY if the spanner is using a funded account.
-	// In cases where the tx contains ONLY one or more Morse claim messages, the
-	// validators which consider the tx WILL do slightly more work than the typical
-	// message, which would've been rejected prior to the message handler during CheckTx.
+	// Ensure that gas fees are NOT waived if the claim is invalid OR if the given
+	// Morse account has already been claimed. This partially restores the disincentive
+	// for Shannon account holders to spam invalid Morse claim txs BUT ONLY if the
+	// spammer is using a funded account. In cases where the tx contains ONLY one or
+	// more Morse claim messages, the validators which consider the tx WILL do slightly
+	// more work than the typical message, which would've been rejected prior to the
+	// message handler during CheckTx.
 	var (
 		morseClaimableAccount              migrationtypes.MorseClaimableAccount
 		isFound, isValid, isAlreadyClaimed bool
@@ -41,7 +42,8 @@ func (k msgServer) ClaimMorseApplication(ctx context.Context, msg *migrationtype
 			sdkCtx.GasMeter()
 			// DEV_NOTE: Assuming that the tx containing this message was signed
 			// by a non-multisig externally owned account (EOA); i.e. secp256k1,
-			// conventionally.
+			// conventionally. If this assumption is violated, the "wrong" gas
+			// cost will be charged for the given key type.
 			gas := k.accountKeeper.GetParams(ctx).SigVerifyCostSecp256k1
 			sdkCtx.GasMeter().ConsumeGas(gas, "ante verify: secp256k1")
 		}

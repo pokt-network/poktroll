@@ -29,12 +29,22 @@ func (k msgServer) ClaimMorseSupplier(
 	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
 	logger := k.Logger().With("method", "ClaimMorseSupplier")
 
-	// Ensure that gas fees are NOT waived if the claim is invalid.
-	// This restores the disincentive for Shannon account holders to spam invalid
-	// Morse claim txs BUT ONLY if the spanner is using a funded account.
-	// In cases where the tx contains ONLY one or more Morse claim messages, the
-	// validators which consider the tx WILL do slightly more work than the typical
-	// message, which would've been rejected prior to the message handler during CheckTx.
+	// Ensure that gas fees are NOT waived if the claim is invalid OR if the given
+	// Morse account has already been claimed.
+	// TODO_MAINNET_MIGRATION(@bryanchriswhite): Make this conditional once the WaiveMorseClaimGasFees param is available.
+	//
+	// Rationale:
+	// 1. Morse claim txs MAY be signed by Shannon accounts which have 0upokt balances.
+	//    For this reason, gas fees are waived (in the ante handler) for txs which
+	//    contain ONLY (one or more) Morse claim messages.
+	// 2. This exposes a potential resource exhaustion vector (or at least extends the
+	//    attack surface area) where an attacker would be able to take advantage of
+	//    the fact that tx signature verification gas costs MAY be avoided under
+	//    certain conditions.
+	// 3. ALL Morse account claim message handlers therefore SHOULD ensure that
+	//    tx signature verification gas costs ARE applied if the claim is EITHER
+	//    invalid OR if the given Morse account has already been claimed. The latter
+	//    is necessary to mitigate a replay attack vector.
 	var (
 		morseClaimableAccount              migrationtypes.MorseClaimableAccount
 		isFound, isValid, isAlreadyClaimed bool
@@ -45,7 +55,8 @@ func (k msgServer) ClaimMorseSupplier(
 			sdkCtx.GasMeter()
 			// DEV_NOTE: Assuming that the tx containing this message was signed
 			// by a non-multisig externally owned account (EOA); i.e. secp256k1,
-			// conventionally.
+			// conventionally. If this assumption is violated, the "wrong" gas
+			// cost will be charged for the given key type.
 			gas := k.accountKeeper.GetParams(ctx).SigVerifyCostSecp256k1
 			sdkCtx.GasMeter().ConsumeGas(gas, "ante verify: secp256k1")
 		}
