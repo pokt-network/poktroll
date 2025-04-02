@@ -114,7 +114,7 @@ func TestTxClient_SignAndBroadcast_Succeeds(t *testing.T) {
 	}
 
 	// Sign and broadcast the message.
-	eitherErr := txClient.SignAndBroadcast(ctx, 0, appStakeMsg)
+	eitherErr := txClient.SignAndBroadcast(ctx, appStakeMsg)
 	err, errCh := eitherErr.SyncOrAsyncError()
 	require.NoError(t, err)
 
@@ -270,7 +270,7 @@ func TestTxClient_SignAndBroadcast_SyncError(t *testing.T) {
 		// NB: explicitly omitting required fields
 	}
 
-	eitherErr := txClient.SignAndBroadcast(ctx, 0, appStakeMsg)
+	eitherErr := txClient.SignAndBroadcast(ctx, appStakeMsg)
 	err, _ = eitherErr.SyncOrAsyncError()
 	require.ErrorIs(t, err, tx.ErrInvalidMsg)
 
@@ -348,7 +348,7 @@ $ go test -v -count=1 -run TestTxClient_SignAndBroadcast_CheckTxError ./pkg/clie
 	}
 
 	// Sign and broadcast the message.
-	eitherErr := txClient.SignAndBroadcast(ctx, 0, appStakeMsg)
+	eitherErr := txClient.SignAndBroadcast(ctx, appStakeMsg)
 	err, _ = eitherErr.SyncOrAsyncError()
 	require.ErrorIs(t, err, tx.ErrCheckTx)
 	require.ErrorContains(t, err, expectedErrMsg)
@@ -421,7 +421,7 @@ func TestTxClient_SignAndBroadcast_Timeout(t *testing.T) {
 	}
 
 	// Sign and broadcast the message in a transaction.
-	eitherErr := txClient.SignAndBroadcast(ctx, timeoutHeight, appStakeMsg)
+	eitherErr := txClient.SignAndBroadcast(ctx, appStakeMsg)
 	err, errCh := eitherErr.SyncOrAsyncError()
 	require.NoError(t, err)
 
@@ -529,7 +529,7 @@ func TestTxClient_SignAndBroadcast_Retry(t *testing.T) {
 	}
 
 	// Sign and broadcast the message.
-	go txClient.SignAndBroadcast(ctx, 0, appStakeMsg)
+	go txClient.SignAndBroadcast(ctx, appStakeMsg)
 
 	// Wait for 5 seconds to allow the retry strategy to perform 4 failing retries.
 	time.Sleep(5 * time.Second)
@@ -554,7 +554,7 @@ func TestTxClient_SignAndBroadcast_Retry(t *testing.T) {
 	callStatus.errorToReturn = sdkerrors.ErrTxTimeoutHeight.Wrap(fmt.Errorf("test error").Error())
 
 	// Sign and broadcast the message.
-	go txClient.SignAndBroadcast(ctx, 0, appStakeMsg)
+	go txClient.SignAndBroadcast(ctx, appStakeMsg)
 
 	// Wait the same amount of time and assert that only one failing attempt was made.
 	time.Sleep(5 * time.Second)

@@ -8,8 +8,6 @@ import (
 	sdktypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/pokt-network/smt"
 
-	"github.com/pokt-network/smt"
-
 	"github.com/pokt-network/poktroll/app/volatile"
 	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/either"
