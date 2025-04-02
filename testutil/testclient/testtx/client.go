@@ -18,7 +18,7 @@ import (
 	"github.com/pokt-network/poktroll/testutil/testclient/testeventsquery"
 )
 
-type signAndBroadcastFn func(context.Context, cosmostypes.Msg) either.AsyncError
+type signAndBroadcastFn func(context.Context, int64, cosmostypes.Msg) either.AsyncError
 
 // TODO_CONSIDERATION: functions like these (NewLocalnetXXX) could probably accept
 // and return depinject.Config arguments to support shared dependencies.
@@ -73,6 +73,7 @@ func NewOneTimeSignAndBroadcastTxClient(
 	txClient.EXPECT().SignAndBroadcast(
 		gomock.Eq(ctx),
 		gomock.Any(),
+		gomock.Any(),
 	).DoAndReturn(signAndBroadcast).Times(1)
 
 	return txClient
@@ -81,7 +82,7 @@ func NewOneTimeSignAndBroadcastTxClient(
 // newSignAndBroadcastSucceedsDelayed returns a signAndBroadcastFn that succeeds
 // after the given delay.
 func newSignAndBroadcastSucceedsDelayed(delay time.Duration) signAndBroadcastFn {
-	return func(ctx context.Context, msg cosmostypes.Msg) either.AsyncError {
+	return func(ctx context.Context, timeoutHeight int64, msg cosmostypes.Msg) either.AsyncError {
 		errCh := make(chan error)
 
 		go func() {

@@ -62,7 +62,7 @@ func TestTxClient_SignAndBroadcast_Integration(t *testing.T) {
 	}
 
 	// Sign and broadcast the message.
-	eitherErr := txClient.SignAndBroadcast(ctx, appStakeMsg)
+	eitherErr := txClient.SignAndBroadcast(ctx, 0, appStakeMsg)
 	err, _ = eitherErr.SyncOrAsyncError()
 	require.NoError(t, err)
 }

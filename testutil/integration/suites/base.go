@@ -177,7 +177,10 @@ func newInitChainerCollectModuleNamesFn(suite *BaseIntegrationSuite) integration
 		}
 
 		modType := reflect.TypeOf(mod)
-		if strings.Contains(modType.PkgPath(), "pocket") {
+		// TODO_POST_MAINNET: s/poktroll/pocket/g once the repo rename is complete.
+		// This is correlated to the go package path which will only change when the go module is
+		// renamed (i.e. go.mod line 1).
+		if strings.Contains(modType.PkgPath(), "poktroll") {
 			suite.pocketModuleNames = append(suite.pocketModuleNames, modName.Name())
 			return
 		}

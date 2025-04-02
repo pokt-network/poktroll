@@ -69,6 +69,7 @@ func NewSupplierClient(
 // the transaction is included in a block or times out.
 func (sClient *supplierClient) SubmitProofs(
 	ctx context.Context,
+	timeoutHeight int64,
 	proofMsgs ...client.MsgSubmitProof,
 ) error {
 	sClient.pendingTxMu.Lock()
@@ -82,7 +83,7 @@ func (sClient *supplierClient) SubmitProofs(
 
 	// TODO(@bryanchriswhite): reconcile splitting of supplier & proof modules
 	//  with offchain pkgs/nomenclature.
-	eitherErr := sClient.txClient.SignAndBroadcast(ctx, msgs...)
+	eitherErr := sClient.txClient.SignAndBroadcast(ctx, timeoutHeight, msgs...)
 	err, errCh := eitherErr.SyncOrAsyncError()
 	if err != nil {
 		return err
@@ -113,6 +114,7 @@ func (sClient *supplierClient) SubmitProofs(
 // the transaction is included in a block or times out.
 func (sClient *supplierClient) CreateClaims(
 	ctx context.Context,
+	timeoutHeight int64,
 	claimMsgs ...client.MsgCreateClaim,
 ) error {
 	// Prevent concurrent txs with the same sequence number.
@@ -128,7 +130,7 @@ func (sClient *supplierClient) CreateClaims(
 
 	// TODO(@bryanchriswhite): reconcile splitting of supplier & proof modules
 	//  with offchain pkgs/nomenclature.
-	eitherErr := sClient.txClient.SignAndBroadcast(ctx, msgs...)
+	eitherErr := sClient.txClient.SignAndBroadcast(ctx, timeoutHeight, msgs...)
 	err, errCh := eitherErr.SyncOrAsyncError()
 	if err != nil {
 		return err
