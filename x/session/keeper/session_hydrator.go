@@ -97,7 +97,7 @@ func (k Keeper) hydrateSessionMetadata(ctx context.Context, sh *sessionHydrator)
 		)
 	}
 
-	// TODO_MAINNET(@bryanchriswhite, #543): If the num_blocks_per_session param
+	// TODO_MAINNET_MIGRATION(@red-0ne, #543): If the num_blocks_per_session param
 	// has ever been changed, this function may cause unexpected behavior for historical sessions.
 	sharedParams := k.sharedKeeper.GetParams(ctx)
 	sh.session.NumBlocksPerSession = int64(sharedParams.NumBlocksPerSession)
@@ -112,7 +112,7 @@ func (k Keeper) hydrateSessionMetadata(ctx context.Context, sh *sessionHydrator)
 func (k Keeper) hydrateSessionID(ctx context.Context, sh *sessionHydrator) error {
 	prevHashBz := k.GetBlockHash(ctx, sh.sessionHeader.SessionStartBlockHeight)
 
-	// TODO_MAINNET: In the future, we will need to validate that the Service is
+	// TODO_TECHDEBT: In the future, we will need to validate that the Service is
 	// a valid service depending on whether or not its permissioned or permissionless
 
 	if !sharedtypes.IsValidServiceId(sh.sessionHeader.ServiceId) {

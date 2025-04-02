@@ -488,7 +488,7 @@ by discouraging invalid or unnecessary `Proofs`.
 Since `Proofs` are the most block space-consuming primitive in the Pocket Network,
 this fee plays a crucial role in maintaining the integrity of the network.
 
-<!-- TODO_MAINNET(@red-0ne): Add a link to a block in our explorer showcasing this. -->
+<!-- TODO_DOCUMENT(@red-0ne): Add a link to a block in our explorer showcasing this. -->
 
 ### Key Requirements for Operators
 

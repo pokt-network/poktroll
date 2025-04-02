@@ -77,7 +77,7 @@ endif
 ### Dependencies ###
 ####################
 
-# TODO_IMPROVE(@okdas): Add other dependencies (ignite, docker, k8s, etc) here
+# TODO_TECHDEBT(@okdas): Add other dependencies (ignite, docker, k8s, etc) here
 .PHONY: install_ci_deps
 install_ci_deps: ## Installs `golangci-lint` and other go tools
 	go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.60.3 && golangci-lint --version
@@ -257,9 +257,7 @@ acc_balance_total_supply: ## Query the total supply of the network
 # that also did not solve this problem because the account itself must sign the
 # transaction for its public key to be populated in the account keeper. As such,
 # the solution is to send funds from every account in genesis to some address
-# (PNF was selected ambigously) to make sure their public keys are populated.
-# TODO_TECHDEBT: One of the accounts involved in this command always errors
-# so we need to understand why and fix it.
+# (PNF was selected ambiguously) to make sure their public keys are populated.
 .PHONY: acc_initialize_pubkeys
 acc_initialize_pubkeys: ## Make sure the account keeper has public keys for all available accounts
 	$(eval ADDRESSES=$(shell make -s ignite_acc_list | grep pokt | awk '{printf "%s ", $$2}' | sed 's/.$$//'))
