@@ -27,6 +27,12 @@ import (
 )
 
 const (
+	// DefaultCommitTimeoutHeightOffset is the default number of blocks after the
+	// latest block (when broadcasting) that a transactions should be considered
+	// errored if it has not been committed.
+	// TODO_TECHDEBT: populate this from the config file.
+	DefaultCommitTimeoutHeightOffset = 5
+
 	// defaultTxReplayLimit is the number of comettypes.EventDataTx events that the replay
 	// observable returned by LastNBlocks() will be able to replay.
 	// TODO_TECHDEBT/TODO_FUTURE: add a `blocksReplayLimit` field to the blockClient
@@ -72,6 +78,10 @@ type CometTxEvent struct {
 // - Upon timeout, the client queries the network for the transaction's last status
 // - This status is used to derive the asynchronous error populated in either.AsyncError
 type txClient struct {
+	// TODO_TECHDEBT: this should be configurable & integrated w/ viper, flags, etc.
+	// commitTimeoutHeightOffset is the number of blocks after the latest block
+	// that a transactions should be considered errored if it has not been committed.
+	commitTimeoutHeightOffset int64
 	// signingKeyName is the name of the key in the keyring to use for signing
 	// transactions.
 	signingKeyName string
@@ -144,8 +154,9 @@ func NewTxClient(
 	opts ...client.TxClientOption,
 ) (_ client.TxClient, err error) {
 	txnClient := &txClient{
-		txErrorChans:  make(txErrorChansByHash),
-		txTimeoutPool: make(txTimeoutPool),
+		commitTimeoutHeightOffset: DefaultCommitTimeoutHeightOffset,
+		txErrorChans:              make(txErrorChansByHash),
+		txTimeoutPool:             make(txTimeoutPool),
 	}
 
 	if err = depinject.Inject(
@@ -198,7 +209,7 @@ func NewTxClient(
 //
 //  1. Validates each message in the provided set.
 //  2. Constructs the transaction using the Cosmos SDK's transaction builder.
-//  3. Sets the transaction's timeout height.
+//  3. Sets (or calculates if 0) the transaction's timeout height.
 //  4. Sets a default gas limit (note: this will be made configurable in the future).
 //  5. Signs the transaction.
 //  6. Validates the constructed transaction.
@@ -257,6 +268,12 @@ func (txnClient *txClient) SignAndBroadcast(
 		feeCoins = feeCoins.Add(cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 1))
 	}
 	txBuilder.SetFeeAmount(feeCoins)
+
+	// Calculate timeout height if not provided (i.e. zero).
+	if timeoutHeight == 0 {
+		timeoutHeight = txnClient.blockClient.LastBlock(ctx).
+			Height() + txnClient.commitTimeoutHeightOffset
+	}
 
 	txBuilder.SetTimeoutHeight(uint64(timeoutHeight))
 
