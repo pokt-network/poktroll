@@ -29,7 +29,7 @@ type accQuerier struct {
 }
 
 // NewAccountQuerier returns a new instance of a client.AccountQueryClient by
-// injecting the dependecies provided by the depinject.Config.
+// injecting the dependencies provided by the depinject.Config.
 //
 // Required dependencies:
 // - clientCtx

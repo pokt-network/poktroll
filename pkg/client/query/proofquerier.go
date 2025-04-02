@@ -13,7 +13,7 @@ import (
 )
 
 // proofQuerier is a wrapper around the prooftypes.QueryClient that enables the
-// querying of onchain proof module params.
+// querying and caching th onchain proof module.
 type proofQuerier struct {
 	clientConn   grpc.ClientConn
 	proofQuerier prooftypes.QueryClient
@@ -23,11 +23,15 @@ type proofQuerier struct {
 	paramsCache client.ParamsCache[prooftypes.Params]
 
 	// claimsCache caches proofQuerier.Claim requests
+	// It keys the Claims by sessionId.
+	// DEV_NOTE: A unique claim can be queried onchain by providing two values: (sessionId, supplierOperatorAddress).
+	// However, since this query client exists in the scope of a single process (e.g. RelayMiner),
+	// the operator address is implicit.
 	claimsCache cache.KeyValueCache[prooftypes.Claim]
 }
 
 // NewProofQuerier returns a new instance of a client.ProofQueryClient by
-// injecting the dependecies provided by the depinject.Config.
+// injecting the dependencies provided by the depinject.Config.
 //
 // Required dependencies:
 // - grpc.ClientConn
@@ -77,7 +81,8 @@ func (pq *proofQuerier) GetParams(
 	return &res.Params, nil
 }
 
-// GetClaim queries the chain for the claim associated with the given session and supplier operator address.
+// GetClaim queries the chain for the claim associated with the given session id and supplier operator address.
+// If a claim is available in the cache, it is returned instead.
 func (pq *proofQuerier) GetClaim(
 	ctx context.Context,
 	supplierOperatorAddress string,
@@ -87,11 +92,11 @@ func (pq *proofQuerier) GetClaim(
 
 	// Get the claim from the cache if it exists.
 	if claim, found := pq.claimsCache.Get(sessionId); found {
-		logger.Debug().Msgf("claim cache hit for claim with sessionId %q", sessionId)
+		logger.Debug().Msgf("claim cache HIT for claim with sessionId %q", sessionId)
 		return &claim, nil
 	}
 
-	logger.Debug().Msgf("claim cache miss for claim with sessionId %q", sessionId)
+	logger.Debug().Msgf("claim cache MISS for claim with sessionId %q", sessionId)
 
 	req := &prooftypes.QueryGetClaimRequest{
 		SupplierOperatorAddress: supplierOperatorAddress,
@@ -104,5 +109,7 @@ func (pq *proofQuerier) GetClaim(
 
 	// Update the cache with the newly retrieved claim.
 	pq.claimsCache.Set(sessionId, res.Claim)
+
+	// Return the query claim
 	return &res.Claim, nil
 }

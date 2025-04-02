@@ -20,27 +20,27 @@ import (
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
+// Ensure the relayerSessionsManager implements the RelayerSessions interface.
 var _ relayer.RelayerSessionsManager = (*relayerSessionsManager)(nil)
 
 // SessionTreesMap is an alias type for a map of
-// supplierOperatorAddress->sessionEndHeight->sessionId->SessionTree.
-// It is used to keep track of the sessions that are created in the RelayMiner
-// by grouping them by their end block height, session id and supplier operator address.
+// supplierOperatorAddress ->  sessionEndHeight -> sessionId -> SessionTree.
+//
+// It keeps track of the sessions created by RelayMiner in memory.
+// The sessions are group by their end block height, session id and supplier operator address.
 type SessionsTreesMap = map[string]map[int64]map[string]relayer.SessionTree
 
 // relayerSessionsManager is an implementation of the RelayerSessions interface.
-// TODO_TEST: Add tests to the relayerSessionsManager.
 type relayerSessionsManager struct {
 	logger polylog.Logger
 
 	relayObs relayer.MinedRelaysObservable
 
-	// sessionTrees is a map of supplierOperatorAddress->blockHeight->sessionId->sessionTree.
-	// The block height index is used to know when the sessions contained in the
-	// entry should be closed, this helps to avoid iterating over all sessionsTrees
-	// to check if they are ready to be closed.
-	// The sessionTrees are grouped by supplierOperatorAddress since each supplier has to
-	// claim the work it has been assigned.
+	// sessionTrees is a SessionsTreesMap (see type alias above).
+	//
+	// - The block height index is used to know when the sessions contained in the entry should be closed.
+	// - This helps to avoid iterating over all sessionsTrees every time when closing sessions.
+	// - The sessionTrees are grouped by supplierOperatorAddress since each supplier has to claim its work done.
 	sessionsTrees   SessionsTreesMap
 	sessionsTreesMu *sync.Mutex
 
@@ -133,32 +133,36 @@ func NewRelayerSessions(
 	return rs, nil
 }
 
-// Start maps over the session trees at the end of each, respective, session.
-// The session trees are piped through a series of map operations which progress
-// them through the claim/proof lifecycle, broadcasting transactions to  the
-// network as necessary.
+// Start maps over the session trees at the end of each respective session.
+//
+// The session trees are piped through a series of map operations which:
+//   - Progress them through the claim/proof lifecycle
+//   - Broadcast transactions to the network as necessary
+//
 // It IS NOT BLOCKING as map operations run in their own goroutines.
 func (rs *relayerSessionsManager) Start(ctx context.Context) error {
-	// Retrieve the latest block, its height will be used as a reference point to determine
-	// which sessions are still active and which ones have expired based on their end heights.
+	// Retrieve the latest block, which provides a reference height to:
+	//   - Determine which sessions are still active
+	//   - Identify which sessions have expired based on their end heights
 	block := rs.blockClient.LastBlock(ctx)
 
 	// Restore previously active sessions from persistent storage by rehydrating
-	// the session tree map. This is crucial for preserving the relayer's state across
-	// restarts, ensuring that no active sessions or accumulated work is lost when the
-	// process is interrupted.
+	// the session tree map.
+	// This is crucial for:
+	//   - Preserving the relayer's state across restarts
+	//   - Ensuring no active sessions are lost when the process is interrupted
+	//   - Maintaining accumulated work when interruptions occur
 	if err := rs.populateSessionTreeMap(ctx, block.Height()); err != nil {
 		return err
 	}
 
-	// NB: must cast back to generic observable type to use with Map.
+	// DEV_NOTE: must cast back to generic observable type to use with Map.
 	// relayer.MinedRelaysObservable cannot be an alias due to gomock's lack of
 	// support for generic types.
 	relayObs := observable.Observable[*relayer.MinedRelay](rs.relayObs)
 
 	// Map eitherMinedRelays to a new observable of an error type which is
-	// notified if an error was encountered while attempting to add the relay to
-	// the session tree.
+	// notified if an error occurs when attempting to add the relay to the session tree.
 	miningErrorsObs := channel.Map(ctx, relayObs, rs.mapAddMinedRelayToSessionTree)
 	logging.LogErrors(ctx, miningErrorsObs)
 
@@ -170,8 +174,9 @@ func (rs *relayerSessionsManager) Start(ctx context.Context) error {
 	}
 
 	// Stop the relayer sessions manager when the context is done.
-	// This is necessary to ensure that in case of a shutdown, all the sessions trees
-	// are persisted along their root hashes.
+	// This is necessary to ensure that during shutdown:
+	//   - All session trees are persisted
+	//   - Their root hashes are preserved
 	go func() {
 		<-ctx.Done()
 		rs.Stop()
@@ -181,14 +186,17 @@ func (rs *relayerSessionsManager) Start(ctx context.Context) error {
 }
 
 // Stop performs a complete shutdown of the relayerSessionsManager by:
-// 1. Closing connections and canceling subscriptions
-// 2. Persisting all session data to storage
-// 3. Releasing resources and clearing memory
+//   - Closing connections and canceling subscriptions
+//   - Persisting all session data to storage
+//   - Releasing resources and clearing memory
+//
 // This ensures no data is lost during shutdown and resources are properly cleaned up.
 func (rs *relayerSessionsManager) Stop() {
 	// Close the block client and unsubscribe from all observables to stop receiving events.
-	// While process termination would eventually clean these up, proper shutdown
-	// is important for graceful termination and testing scenarios.
+	// Proper shutdown is important for:
+	//   - Graceful termination
+	//   - Testing scenarios
+	// While process termination would eventually clean these up, explicit cleanup is preferred.
 	rs.blockClient.Close()
 	rs.relayObs.UnsubscribeAll()
 
@@ -198,19 +206,24 @@ func (rs *relayerSessionsManager) Stop() {
 	for _, supplierSessionTrees := range rs.sessionsTrees {
 		for _, sessionTreesAtHeight := range supplierSessionTrees {
 			for _, sessionTree := range sessionTreesAtHeight {
+				sessionId := sessionTree.GetSessionHeader().GetSessionId()
+				// Store the session tee to disk
 				if err := rs.persistSessionMetadata(sessionTree); err != nil {
 					rs.logger.Error().Err(err).Msgf(
 						"failed to persist session metadata for sessionId %q",
-						sessionTree.GetSessionHeader().GetSessionId(),
+						sessionId,
 					)
 				}
 
+				// Stop the session tree process and underlying key-value store.
 				if err := sessionTree.Stop(); err != nil {
 					rs.logger.Error().Err(err).Msgf(
 						"failed to stop session tree store for sessionId %q",
-						sessionTree.GetSessionHeader().GetSessionId(),
+						sessionId,
 					)
 				}
+
+				rs.logger.Debug().Msgf("Successfully stored session tree for sessionId %q on disk", sessionId)
 			}
 		}
 	}
@@ -220,6 +233,7 @@ func (rs *relayerSessionsManager) Stop() {
 	if err := rs.sessionsMetadataStore.Stop(); err != nil {
 		rs.logger.Error().Err(err).Msg("failed to stop sessions metadata store")
 	}
+
 	clear(rs.sessionsTrees)
 }
 

@@ -114,13 +114,13 @@ func NewSessionTree(
 	return sessionTree, nil
 }
 
-// ImportSessionTree reconstructs a previously created session tree from its persisted state on disk.
+// importSessionTree reconstructs a previously created session tree from its persisted state on disk.
 // This function handles two distinct scenarios:
 // 1. Importing a claimed session (claim != nil): The tree is in a read-only state with a fixed root hash
 // 2. Importing an unclaimed session (claim == nil): The tree is in a mutable state and can accept updates
 //
 // Returns a fully reconstructed SessionTree or an error if reconstruction fails
-func ImportSessionTree(
+func importSessionTree(
 	persistedSMT *prooftypes.PersistedSMT,
 	claim *prooftypes.Claim,
 	storesDirectory string,
@@ -165,12 +165,13 @@ func ImportSessionTree(
 		return nil, err
 	}
 
-	// Reconstruct the Sparse Merkle Sum Trie from the persisted KVStore data
-	// using the previously saved root as the starting point
+	// Reconstruct the SMST from the persisted KVStore data using the previously saved root as the starting point
 	trie := smt.ImportSparseMerkleSumTrie(treeStore, protocol.NewTrieHasher(), smtRoot, protocol.SMTValueHasher())
 
 	sessionTree.sessionSMT = trie
 	sessionTree.treeStore = treeStore
+	sessionTree.claimedRoot = nil  // explicitly set for posterity
+	sessionTree.isClaiming = false // explicitly set for posterity
 
 	return sessionTree, nil
 }
@@ -305,7 +306,8 @@ func (st *sessionTree) Flush() (SMSTRoot []byte, err error) {
 
 // GetSMSTRoot returns the root hash of the SMST.
 // This function is used to get the root hash of the SMST at any time.
-// It is used to get the root hash of the SMST before it is flushed to disk.
+// In particular, it is used to get the root hash of the SMST before it is flushed to disk
+// for use-cases like restarting the relayer and resuming ongoing sessions.
 func (st *sessionTree) GetSMSTRoot() (smtRoot smt.MerkleSumRoot) {
 	if st.sessionSMT == nil {
 		return nil
@@ -368,8 +370,10 @@ func (st *sessionTree) GetSupplierOperatorAddress() string {
 	return st.supplierOperatorAddress
 }
 
-// Stop stops the KVStore and frees up the resources used by the session tree.
-// Calling Stop does not calculate the root hash of the SMST.
+// Stop the KVStore and free up the in-memory resources used by the session tree.
+// Calling Stop:
+// - DOES NOT calculate the root hash of the SMST.
+// - DOES commit the latest (current state) of the SMT to on-state storage.
 func (st *sessionTree) Stop() error {
 	if st.treeStore == nil {
 		return nil
@@ -380,5 +384,6 @@ func (st *sessionTree) Stop() error {
 		return err
 	}
 
+	// Store the underlying key-value store in the session tree
 	return st.treeStore.Stop()
 }

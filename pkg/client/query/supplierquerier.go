@@ -26,7 +26,7 @@ type supplierQuerier struct {
 }
 
 // NewSupplierQuerier returns a new instance of a client.SupplierQueryClient by
-// injecting the dependecies provided by the depinject.Config.
+// injecting the dependencies provided by the depinject.Config.
 //
 // Required dependencies:
 // - grpc.ClientConn

@@ -12,8 +12,10 @@ func WithStoresDirectory(storesDirectory string) relayer.RelayerSessionsManagerO
 	}
 }
 
-// WithSessionTreesInspector exposes the session trees map so that it can be inspected.
-// This is useful for testing purposes, as it allows inspecting the session trees present in memory.
+// WithSessionTreesInspector allows setting the relay session manager's session tree map via a pointer.
+// In other words, it exposes the session trees map for testing purposes.
+// This shouldn't be used in production, but useful for testing so internal structures
+// can be accessed and validated for expected state.
 func WithSessionTreesInspector(sessionTreeMap *SessionsTreesMap) relayer.RelayerSessionsManagerOption {
 	return func(relSessionMgr relayer.RelayerSessionsManager) {
 		*sessionTreeMap = relSessionMgr.(*relayerSessionsManager).sessionsTrees

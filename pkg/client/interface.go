@@ -321,9 +321,8 @@ type BlockQueryClient interface {
 	Block(ctx context.Context, height *int64) (*cometrpctypes.ResultBlock, error)
 }
 
-// ProofParams is a go interface type which corresponds to the pocket.proof.Params
-// protobuf message. Since the generated go types don't include interface types, this
-// is necessary to prevent dependency cycles.
+// Claim is a go interface type reflecting the pocket.proof.Params protobuf.
+// This is necessary since to prevent dependency cycles since generated go types don't interface types.
 type ProofParams interface {
 	GetProofRequestProbability() float64
 	GetProofRequirementThreshold() *cosmostypes.Coin
@@ -331,9 +330,8 @@ type ProofParams interface {
 	GetProofSubmissionFee() *cosmostypes.Coin
 }
 
-// Claim is a go interface type which corresponds to the pocket.proof.Claim protobuf
-// message. Since the generated go types don't include interface types, this
-// is necessary to prevent dependency cycles.
+// Claim is a go interface type reflecting the pocket.proof.Claim protobuf.
+// This is necessary since to prevent dependency cycles since generated go types don't interface types.
 type Claim interface {
 	GetSupplierOperatorAddress() string
 	GetSessionHeader() *sessiontypes.SessionHeader
@@ -346,8 +344,7 @@ type ProofQueryClient interface {
 	// GetParams queries the chain for the current proof module parameters.
 	GetParams(ctx context.Context) (ProofParams, error)
 
-	// GetClaim queries the chain for the details of the claim corresponding to the
-	// given supplier and session id
+	// GetClaim queries the chain for the full claim associatd with the (supplier, sessionId).
 	GetClaim(ctx context.Context, supplierOperatorAddress string, sessionId string) (Claim, error)
 }
 

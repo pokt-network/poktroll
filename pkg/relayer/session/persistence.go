@@ -6,22 +6,30 @@ import (
 	"path/filepath"
 
 	"github.com/gogo/status"
+	"google.golang.org/grpc/codes"
+
 	"github.com/pokt-network/poktroll/pkg/observable/channel"
 	"github.com/pokt-network/poktroll/pkg/relayer"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
-	"google.golang.org/grpc/codes"
 )
 
 // populateSessionTreeMap reconstructs the in-memory session tree map from previously persisted sessions.
+//
+// It was implemented in #1140 to ensure that RelayMiner can recover from restarts
+// and crashes and account for the following:
+// - Submit a proof if a prior claim was created before the crash
+// - Continue earning rewards for an existing claim that already mined relays
+//
 // This method:
-// 1. Retrieves all persisted session metadata from storage
-// 2. Validates each session against current blockchain height to determine its lifecycle state
+// 1. Retrieves all persisted session metadata from storage (i.e. from disk)
+// 2. Validates each session against current blockchain height to determine its lifecycle state (i.e. active, expired, etc.)
 // 3. Deletes expired sessions whose proof submission window has elapsed
 // 4. Deletes unclaimed sessions whose claim creation window has elapsed
 func (rs *relayerSessionsManager) populateSessionTreeMap(ctx context.Context, height int64) error {
 	logger := rs.logger.With("method", "populateSessionTreeMap", "height", height)
 
+	// Retrieve the shared onchain parameters
 	sharedParams, err := rs.sharedQueryClient.GetParams(ctx)
 	if err != nil {
 		logger.Error().Err(err).Msg("failed to get shared params")
@@ -35,19 +43,24 @@ func (rs *relayerSessionsManager) populateSessionTreeMap(ctx context.Context, he
 		return err
 	}
 
+	logger.Info().Msgf("about to load %d persisted sessions into memory", len(persistedSessions))
+
 	for _, persistedSession := range persistedSessions {
 		// Unmarshal the persisted session metadata for processing
+		// TODO_IN_THIS_PR(@red-0ne): If we rename `PersistedSMT` to `SessionSMT`, need to update variables and comments too.
 		persistedSMT := &prooftypes.PersistedSMT{}
 		if err := persistedSMT.Unmarshal(persistedSession); err != nil {
 			logger.Error().Err(err).Msg("failed to unmarshal persisted session metadata, skipping")
 			continue
 		}
 
+		// Extract the session metadata from the persisted session
 		sessionEndHeight := persistedSMT.SessionHeader.SessionEndBlockHeight
 		sessionId := persistedSMT.SessionHeader.SessionId
 		supplierOperatorAddress := persistedSMT.SupplierOperatorAddress
 
-		// Session lifecycle states and corresponding actions:
+		// There are 5 session lifecycle states/scenarios.
+		// The following outlines what action should be done in each one.
 		// 1. Active and accepting relays: Retain session for processing new relays
 		// 2. Within claim window: Retain session as it's in the process of creating a claim
 		// 3. Past claim window with onchain claim: Retain for proof submission
@@ -69,6 +82,10 @@ func (rs *relayerSessionsManager) populateSessionTreeMap(ctx context.Context, he
 		)
 
 		var claim *prooftypes.Claim
+
+		// Scenario 2: The claim window has opened.
+		// A claim may already exist or may still be created.
+		// Try to retrieve the claim (from the chain or cache) associated with the session id and supplier.
 		if height >= claimWindowOpenHeight {
 			foundClaim, err := rs.proofQueryClient.GetClaim(ctx, supplierOperatorAddress, sessionId)
 			if err != nil && status.Convert(err).Code() != codes.NotFound {
@@ -79,15 +96,17 @@ func (rs *relayerSessionsManager) populateSessionTreeMap(ctx context.Context, he
 			}
 		}
 
-		// Check if session is expired (past proof submission window)
-		// These sessions can no longer reach settlement and should be deleted
+		// Scenario 5: The proof window has closed.
+		// If a claim were to be created and a proof were to be submitted, both must already exist onchain.
+		// Check if the session is expired (proof submission window has closed) and prune those sessions from memory an the store.
 		if height > proofWindowCloseHeight {
-			// A claim was created onchain, but the session is outdated.
+			// A claim was created onchain (i.e. available), but the session is outdated.
 			if claim != nil {
 				sessionLogger.Warn().
 					Msg("Session is outdated, but a claim exists onchain, expecting the supplier to be slashed")
 			}
 
+			// Clean up by delete the session tree from the store.
 			if storeErr := rs.deletePersistedSessionTree(persistedSMT); storeErr != nil {
 				sessionLogger.Error().Err(storeErr).Msg("failed to delete outdated session tree, skipping")
 				continue
@@ -98,29 +117,34 @@ func (rs *relayerSessionsManager) populateSessionTreeMap(ctx context.Context, he
 			continue
 		}
 
-		// For sessions past the claim window, check if a claim exists onchain
-		// If no claim exists, the session can't progress to settlement and should be deleted
+		// Scenarios 3 & 4: The claim window has closed.
+		// Check if a claim was created to ensure a proof is submitted (if required) so the RelayMiner earns rewards!
+		// If no claim exists onchain, the session can't progress to settlement and should be deleted.
 		if height > claimWindowCloseHeight {
+			// Scenario 4: The claim window has closed and no claim exists onchain.
 			// No claim was created onchain, delete the session from the store.
 			if claim == nil {
 				if storeErr := rs.deletePersistedSessionTree(persistedSMT); storeErr != nil {
-					sessionLogger.Error().Err(storeErr).Msg("failed to delete outdated session without claim, skipping")
+					sessionLogger.Error().Err(storeErr).Msg("failed to delete session WITHOUT onchain claim, skipping")
 					continue
 				}
 
-				sessionLogger.Info().Msg("deleting session has no claim created onchain, deleting session metadata")
+				sessionLogger.Info().Msg("deleting session WITHOUT onchain claim")
 				continue
 			}
+			// Scenario 3: The claim window has closed and a claim exists onchain -> may or may not need to submit a proof.
 		}
 
-		// The session has still a chance to reach settlement.
-		sessionTree, treeErr := ImportSessionTree(persistedSMT, claim, rs.storesDirectory, rs.logger)
+		// Scenarios 2: The claim window is still open.
+		// The session has still a chance to reach settlement by creating the claim and submitting the proof.
+		sessionTree, treeErr := importSessionTree(persistedSMT, claim, rs.storesDirectory, rs.logger)
 		if treeErr != nil {
 			sessionLogger.Error().Err(treeErr).Msg("failed to import session tree")
 			continue
 		}
 
 		// Insert the session tree into the in-memory map to be processed by the observable pipeline.
+		// This ensures that Claim Creation & Proof Submissions are processed in the correct order.
 		if ok := rs.insertSessionTree(sessionTree); !ok {
 			sessionLogger.Error().Msg("the session tree already exists, skipping")
 		}
@@ -131,15 +155,19 @@ func (rs *relayerSessionsManager) populateSessionTreeMap(ctx context.Context, he
 	return nil
 }
 
-// deletePersistedSessionTree deletes the persisted session tree key/value store and its metadata.
+// deletePersistedSessionTree deletes:
+// - The full persisted session tree on-disk key/value store
+// - The session tree metadata entry from the in-memory store
 func (rs *relayerSessionsManager) deletePersistedSessionTree(persistedSMT *prooftypes.PersistedSMT) error {
 	supplierOperatorAddress := persistedSMT.SupplierOperatorAddress
 	sessionId := persistedSMT.SessionHeader.SessionId
 	sessionEndHeight := persistedSMT.SessionHeader.SessionEndBlockHeight
+
 	logger := rs.logger.With(
 		"method", "deletePersistedSessionTree",
 		"supplier_operator_address", supplierOperatorAddress,
 		"session_id", sessionId,
+		"session_end_height", sessionEndHeight,
 	)
 
 	// Delete the corresponding kv store for the session tree.
@@ -165,13 +193,15 @@ func (rs *relayerSessionsManager) deletePersistedSessionTree(persistedSMT *proof
 	return nil
 }
 
+// TODO_IN_THIS_PR(@red-0ne): If we rename persistedSMT, make sure everything is updated. Otherwise, remove this line.
+
 // persistSessionMetadata persists the session metadata to the store.
 // It is used to persist the session metadata using the sessionId as key,
 // after a session has been created.
 func (rs *relayerSessionsManager) persistSessionMetadata(sessionTree relayer.SessionTree) error {
+	supplierOperatorAddress := sessionTree.GetSupplierOperatorAddress()
 	sessionId := sessionTree.GetSessionHeader().SessionId
 	sessionEndHeight := sessionTree.GetSessionHeader().SessionEndBlockHeight
-	supplierOperatorAddress := sessionTree.GetSupplierOperatorAddress()
 
 	persistedSMT := &prooftypes.PersistedSMT{
 		SessionHeader:           sessionTree.GetSessionHeader(),
@@ -185,13 +215,13 @@ func (rs *relayerSessionsManager) persistSessionMetadata(sessionTree relayer.Ses
 		"session_end_height", sessionEndHeight,
 	)
 
-	metadataBz, err := persistedSMT.Marshal()
+	persistedSMTBz, err := persistedSMT.Marshal()
 	if err != nil {
 		logger.Error().Err(err).Msg("failed to marshal metadata")
 		return err
 	}
 
-	if err := rs.sessionsMetadataStore.Set([]byte(sessionId), metadataBz); err != nil {
+	if err := rs.sessionsMetadataStore.Set([]byte(sessionId), persistedSMTBz); err != nil {
 		logger.Error().Err(err).Msg("failed to persist session metadata")
 		return err
 	}
@@ -200,13 +230,14 @@ func (rs *relayerSessionsManager) persistSessionMetadata(sessionTree relayer.Ses
 }
 
 // insertSessionTree adds the given session to the sessionTrees map of
-// supplierOperatorAddress->blockHeight->sessionId->sessionTree
+// supplierOperatorAddress->blockHeight->sessionId->sessionTree.
+// Return true if the session was inserted, false if it already exists.
 func (rs *relayerSessionsManager) insertSessionTree(sessionTree relayer.SessionTree) bool {
-	sessionEndHeight := sessionTree.GetSessionHeader().SessionEndBlockHeight
-	sessionId := sessionTree.GetSessionHeader().SessionId
 	supplierOperatorAddress := sessionTree.GetSupplierOperatorAddress()
+	sessionId := sessionTree.GetSessionHeader().SessionId
+	sessionEndHeight := sessionTree.GetSessionHeader().SessionEndBlockHeight
 
-	// Get the suppliersSessionTrees for the given supplier.
+	// Get all the suppliersSessionTrees for the given supplier operator
 	supplierSessionTrees, ok := rs.sessionsTrees[supplierOperatorAddress]
 
 	// If there is no map for session trees with the supplier operator address, create one.
@@ -230,21 +261,27 @@ func (rs *relayerSessionsManager) insertSessionTree(sessionTree relayer.SessionT
 	}
 
 	sessionTreesWithEndHeight[sessionId] = sessionTree
+
 	return true
 }
 
 // proveClaimedSessions processes the claimed sessions and sends them to the
 // relayer for proof submission without going through the whole pipeline.
 func (rs *relayerSessionsManager) proveClaimedSessions(ctx context.Context) {
-	// Send all the claimed sessions to the proof submission pipeline.
-	for supplierOpeartorAddress, supplierClient := range rs.supplierClients.SupplierClients {
-		// TODO_TECHDEBT: Figure out a way to close the channel when all the sessions
-		// have been processed.
+	// Iterate over all supplier clients so we can submit proofs for all claimed sessions.
+	for supplierOperatorAddress, supplierClient := range rs.supplierClients.SupplierClients {
+		// TODO_TECHDEBT(@bryanchriswhite): Close the channel when all the sessions have been processed.
 		sessionsToProveObs, sessionsToProvePublishCh := channel.NewObservable[[]relayer.SessionTree]()
+
+		// Start an observable that'll be listening on incoming proofs that can be submitted Submit all the proofs for the current supplier client
 		rs.submitProofs(ctx, supplierClient, sessionsToProveObs)
 
-		for _, sessionTreesWithEndHeight := range rs.sessionsTrees[supplierOpeartorAddress] {
+		// Find all the sessions that have a proof ready to be submitted and publish them to the channel
+		// that the observable above is listening on.
+		for _, sessionTreesWithEndHeight := range rs.sessionsTrees[supplierOperatorAddress] {
 			sessionsToProve := make([]relayer.SessionTree, 0)
+
+			// Loop through all session trees whose session end height is now.
 			for _, sessionTree := range sessionTreesWithEndHeight {
 				// If the session has its claim root generated, it means that the session
 				// has been claimed and is ready to go through the proof submission pipeline.
@@ -253,6 +290,7 @@ func (rs *relayerSessionsManager) proveClaimedSessions(ctx context.Context) {
 				}
 			}
 
+			// Publish the sessions to the channel so that the observable can process them.
 			if len(sessionsToProve) > 0 {
 				sessionsToProvePublishCh <- sessionsToProve
 			}
