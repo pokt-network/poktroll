@@ -59,7 +59,7 @@ For more information, see: https://dev.poktroll.com/operate/morse_migration/clai
 
 // runClaimSupplier performs the following sequence:
 // - Load the Morse private key from the morse_key_export_path argument (arg 0).
-// - Load and validate the supplier service staking config from the shannon_service_id argument (arg 1).
+// - Load and validate the supplier service staking config from the path_to_supplier_stake_config argument pointing to a local config file (arg 1).
 // - Sign and broadcast the MsgClaimMorseSupplier message using the Shannon key named by the `--from` flag.
 // - Wait until the tx is committed onchain for either a synchronous or asynchronous error.
 func runClaimSupplier(cmd *cobra.Command, args []string) error {
@@ -166,29 +166,35 @@ func runClaimSupplier(cmd *cobra.Command, args []string) error {
 // loadSupplierStakeConfigYAML loads, parses, and validates the supplier stake
 // config from configYAMLPath.
 func loadSupplierStakeConfigYAML(configYAMLPath string) (*config.SupplierStakeConfig, error) {
+	// Read the YAML file from the provided path.
 	yamlStakeConfigBz, err := os.ReadFile(configYAMLPath)
 	if err != nil {
 		return nil, err
 	}
 
+	// Unmarshal the YAML into a config.YAMLStakeConfig struct.
 	var yamlStakeConfig config.YAMLStakeConfig
 	if err = yaml.Unmarshal(yamlStakeConfigBz, &yamlStakeConfig); err != nil {
 		return nil, err
 	}
 
+	// Validate the stake amount is non-zero and not set in the YAML.
 	if len(yamlStakeConfig.StakeAmount) != 0 {
 		return nil, config.ErrSupplierConfigInvalidStake.Wrapf("stake_amount MUST NOT be set in the supplier config YAML; it is automatically determined by the onchain MorseClaimableAccount state")
 	}
 
+	// Validate the owner and operator addresses.
 	if err = yamlStakeConfig.ValidateAndNormalizeAddresses(logger.Logger); err != nil {
 		return nil, err
 	}
 
+	// Validate the default revenue share map.
 	defaultRevShareMap, err := yamlStakeConfig.ValidateAndNormalizeDefaultRevShare()
 	if err != nil {
 		return nil, err
 	}
 
+	// Validate and parse the service configs.
 	supplierServiceConfigs, err := yamlStakeConfig.ValidateAndParseServiceConfigs(defaultRevShareMap)
 	if err != nil {
 		return nil, err
