@@ -190,6 +190,9 @@ func (s *migrationSuite) ALocalMorseNodePersistedStateExists() {
 // updatePreviousUnstakedBalanceUpoktOfCurrentShannonIdx queries for the current
 // balance of the current Shannon account and updates s.previousUnstakedBalanceUpoktOfCurrentShannonIdx
 // for later assertions.
+// It is updated:
+//   - In the Before(), at the beginning of the scenario
+//   - In the "shannon destination account is staked as an <actor> with <amount> upokt for <service_id> service step", after staking
 func (s *migrationSuite) updatePreviousUnstakedBalanceUpoktOfCurrentShannonIdx() {
 	s.previousUnstakedBalanceUpoktOfCurrentShannonIdx = cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 0)
 	if shannonDestAddr, isFound := s.getShannonKeyAddress(); isFound {
@@ -400,9 +403,9 @@ func (s *migrationSuite) TheShannonServiceConfigMatchesTheOneProvidedWhenClaimin
 		s.waitForBlockHeight(effectiveServiceHeight)
 		foundSupplier := s.getSupplierInfo(s.getShannonKeyName())
 
-		// TODO_IN_THIS_PR: What is the expected behavior?
-		// Currently, the existing supplier configs are REPLACED by those provided
-		// when claiming.
+		// TODO_IN_THIS_PR: Ensure that the provided staking configs reflect what's onchain
+		// TODO_IN_THIS_PR: Ensure that if --from is already a staked supplier, onchain returns an error if claiming for the same account
+		// Let's discuss this in discord if not clear.
 		require.Equal(s, s.claimedActorServiceId, foundSupplier.GetServices()[0].GetServiceId())
 	default:
 		s.Fatal("unexpected actor type %q", actorType)
