@@ -16,10 +16,6 @@ import (
 	migrationtypes "github.com/pokt-network/poktroll/x/migration/types"
 )
 
-// Note: This test should not be included in CI due to its size (90GB).
-// Users should manually run wget to download the data and verify it on their computer.
-// Reference: https://github.com/pokt-network/poktroll/pull/1039#discussion_r1947036729
-
 func init() {
 	logger.Logger = polyzero.NewLogger(polyzero.WithLevel(polyzero.DebugLevel))
 	numAccountsPerDebugLog = 1
