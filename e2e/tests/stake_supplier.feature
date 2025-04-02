@@ -1,6 +1,11 @@
 Feature: Stake Supplier Namespace
 
     # TODO_TECHDEBT_TEST: Set the supplier stake fee in a custom test.
+    # This can be done by converting the "scenario" into a "scenario outline",
+    # where the "examples" are the different stake fee amounts.
+    # See gherkin/cucumber docs:
+    #   - "Scenario Outline": https://cucumber.io/docs/gherkin/reference/#scenario-outline
+    #   - "Examples": https://cucumber.io/docs/gherkin/reference/#examples
 
     Scenario: User can stake a Supplier
         Given the user has the pocketd binary installed
