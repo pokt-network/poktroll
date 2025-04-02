@@ -26,12 +26,21 @@ func (k msgServer) ClaimMorseApplication(ctx context.Context, msg *migrationtype
 	logger := k.Logger().With("method", "ClaimMorseApplication")
 
 	// Ensure that gas fees are NOT waived if the claim is invalid OR if the given
-	// Morse account has already been claimed. This partially restores the disincentive
-	// for Shannon account holders to spam invalid Morse claim txs BUT ONLY if the
-	// spammer is using a funded account. In cases where the tx contains ONLY one or
-	// more Morse claim messages, the validators which consider the tx WILL do slightly
-	// more work than the typical message, which would've been rejected prior to the
-	// message handler during CheckTx.
+	// Morse account has already been claimed.
+	// TODO_MAINNET_MIGRATION(@bryanchriswhite): Make this conditional once the WaiveMorseClaimGasFees param is available.
+	//
+	// Rationale:
+	// 1. Morse claim txs MAY be signed by Shannon accounts which have 0upokt balances.
+	//    For this reason, gas fees are waived (in the ante handler) for txs which
+	//    contain ONLY (one or more) Morse claim messages.
+	// 2. This exposes a potential resource exhaustion vector (or at least extends the
+	//    attack surface area) where an attacker would be able to take advantage of
+	//    the fact that tx signature verification gas costs MAY be avoided under
+	//    certain conditions.
+	// 3. ALL Morse account claim message handlers therefore SHOULD ensure that
+	//    tx signature verification gas costs ARE applied if the claim is EITHER
+	//    invalid OR if the given Morse account has already been claimed. The latter
+	//    is necessary to mitigate a replay attack vector.
 	var (
 		morseClaimableAccount              migrationtypes.MorseClaimableAccount
 		isFound, isValid, isAlreadyClaimed bool
