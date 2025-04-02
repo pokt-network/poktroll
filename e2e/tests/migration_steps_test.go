@@ -190,6 +190,9 @@ func (s *migrationSuite) ALocalMorseNodePersistedStateExists() {
 // updatePreviousUnstakedBalanceUpoktOfCurrentShannonIdx queries for the current
 // balance of the current Shannon account and updates s.previousUnstakedBalanceUpoktOfCurrentShannonIdx
 // for later assertions.
+// It is updated:
+//   - In the Before(), at the beginning of the scenario
+//   - In the "shannon destination account is staked as an <actor> with <amount> upokt for <service_id> service step", after staking
 func (s *migrationSuite) updatePreviousUnstakedBalanceUpoktOfCurrentShannonIdx() {
 	s.previousUnstakedBalanceUpoktOfCurrentShannonIdx = cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 0)
 	if shannonDestAddr, isFound := s.getShannonKeyAddress(); isFound {
