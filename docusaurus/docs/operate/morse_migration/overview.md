@@ -252,7 +252,7 @@ Morse account/stake-holders who wish to participate in the social consensus proc
 2. **Use the Shannon CLI to validate the proposed `MsgImportMorseClaimableAccounts`**: See `./msg_import_morse_claimable_accounts.json` as an example.
 
    ```bash
-   # TODO_MAINNET_MIGRATION(@bryanchriswhite, #1034): Complete this example once the CLI is available.
+   # TODO_MAINNET_CRITICAL(@bryanchriswhite, #1034): Complete this example once the CLI is available.
    pocketd tx migration validate-morse-accounts ./msg_import_morse_claimable_accounts.json [morse_hex_address1, ...]
    ```
 

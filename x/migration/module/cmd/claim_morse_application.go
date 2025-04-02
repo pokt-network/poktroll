@@ -13,31 +13,29 @@ import (
 	"github.com/pokt-network/poktroll/cmd/flags"
 	"github.com/pokt-network/poktroll/cmd/logger"
 	"github.com/pokt-network/poktroll/x/migration/types"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
-var (
-	morseKeyfileDecryptPassphrase string
-	noPassphrase                  bool
-)
-
-func ClaimAccountCmd() *cobra.Command {
-	claimAcctCmd := &cobra.Command{
-		Use:   "claim-account [morse_key_export_path] --from [shannon_dest_key_name]",
-		Args:  cobra.ExactArgs(1),
-		Short: "Claim an onchain MorseClaimableAccount as an unstaked/non-actor account",
-		Long: `Claim an onchain MorseClaimableAccount as an unstaked/non-actor account.
+func ClaimApplicationCmd() *cobra.Command {
+	claimAppCmd := &cobra.Command{
+		Use:   "claim-application [morse_key_export_path] [shannon_service_id] --from [shannon_dest_key_name]",
+		Args:  cobra.ExactArgs(2),
+		Short: "Claim an onchain MorseClaimableAccount as a staked application account",
+		Long: `Claim an onchain MorseClaimableAccount as a staked application account.
 
 The unstaked balance amount of the onchain MorseClaimableAccount will be minted to the Shannon account specified by the --from flag.
-This will construct, sign, and broadcast a tx containing a MsgClaimMorseAccount message.
+The Shannon account will also be staked as an application with a stake equal to the application stake the MorseClaimableAccount had on Morse.
+
+This will construct, sign, and broadcast a tx containing a MsgClaimMorseApplication message.
 
 For more information, see: https://dev.poktroll.com/operate/morse_migration/claiming`,
 		// Example: TODO_MAINNET_CRITICAL(@bryanchriswhite): Add a few examples,
-		RunE:    runClaimAccount,
+		RunE:    runClaimApplication,
 		PreRunE: logger.PreRunESetup,
 	}
 
 	// Add a string flag for providing a passphrase to decrypt the Morse keyfile.
-	claimAcctCmd.Flags().StringVarP(
+	claimAppCmd.Flags().StringVarP(
 		&morseKeyfileDecryptPassphrase,
 		flags.FlagPassphrase,
 		flags.FlagPassphraseShort,
@@ -46,7 +44,7 @@ For more information, see: https://dev.poktroll.com/operate/morse_migration/clai
 	)
 
 	// Add a bool flag indicating whether to skip the passphrase prompt.
-	claimAcctCmd.Flags().BoolVar(
+	claimAppCmd.Flags().BoolVar(
 		&noPassphrase,
 		flags.FlagNoPassphrase,
 		false,
@@ -54,22 +52,31 @@ For more information, see: https://dev.poktroll.com/operate/morse_migration/clai
 	)
 
 	// This command depends on the conventional cosmos-sdk CLI tx flags.
-	cosmosflags.AddTxFlagsToCmd(claimAcctCmd)
+	cosmosflags.AddTxFlagsToCmd(claimAppCmd)
 
-	return claimAcctCmd
+	return claimAppCmd
 }
 
-// runClaimAccount performs the following sequence:
-// - Load the Morse private key from the morse_key_export_path argument.
-// - Construct a MsgClaimMorseAccount message from the Morse key.
-// - Sign and broadcast the MsgClaimMorseAccount message using the Shannon key named by the `--from` flag.
+// runClaimApplication performs the following sequence:
+// - Load the Morse private key from the morse_key_export_path argument (arg 0).
+// - Load and validate the service ID from the shannon_service_id argument (arg 1).
+// - Construct a MsgClaimMorseApplication message from the Morse key and the service ID.
+// - Sign and broadcast the MsgClaimMorseApplication message using the Shannon key named by the `--from` flag.
 // - Wait until the tx is committed onchain for either a synchronous or asynchronous error.
-func runClaimAccount(cmd *cobra.Command, args []string) error {
+func runClaimApplication(cmd *cobra.Command, args []string) error {
 	ctx := cmd.Context()
+
+	// Retrieve and validate the morse key based on the first argument provided.
 	morseKeyExportPath := args[0]
 	morsePrivKey, err := loadMorsePrivateKey(morseKeyExportPath, morseKeyfileDecryptPassphrase)
 	if err != nil {
 		return err
+	}
+
+	// Retrieve and validate the service ID based on the second argument provided.
+	serviceID := args[1]
+	if !sharedtypes.IsValidServiceId(serviceID) {
+		return ErrInvalidUsage.Wrapf("invalid service ID: %q", serviceID)
 	}
 
 	// Conventionally derive a cosmos-sdk client context from the cobra command.
@@ -78,24 +85,28 @@ func runClaimAccount(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	// Construct a MsgClaimMorseAccount message.
+	// Construct a MsgClaimMorseApplication message.
 	shannonDestAddr := clientCtx.GetFromAddress().String()
-	msgClaimMorseAccount, err := types.NewMsgClaimMorseAccount(
+	msgClaimMorseApplication, err := types.NewMsgClaimMorseApplication(
 		shannonDestAddr,
 		morsePrivKey.PubKey().Address().String(),
 		morsePrivKey,
+		// Construct a new staked application service config with the service ID.
+		&sharedtypes.ApplicationServiceConfig{
+			ServiceId: serviceID,
+		},
 	)
 	if err != nil {
 		return err
 	}
 
-	// Serialize, as JSON, and print the MsgClaimMorseAccount for posterity and/or confirmation.
-	msgClaimMorseAcctJSON, err := json.MarshalIndent(msgClaimMorseAccount, "", "  ")
+	// Serialize, as JSON, and print the MsgClaimMorseApplication for posterity and/or confirmation.
+	msgClaimMorseAppJSON, err := json.MarshalIndent(msgClaimMorseApplication, "", "  ")
 	if err != nil {
 		return err
 	}
 
-	fmt.Printf("MsgClaimMorseAccount %s\n", string(msgClaimMorseAcctJSON))
+	fmt.Printf("MsgClaimMorseApplication %s\n", string(msgClaimMorseAppJSON))
 
 	// Last chance for the user to abort.
 	skipConfirmation, err := cmd.Flags().GetBool(cosmosflags.FlagSkipConfirmation)
@@ -103,9 +114,8 @@ func runClaimAccount(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	// If the user has not set the --skip-confirmation flag, prompt for confirmation.
 	if !skipConfirmation {
-		fmt.Printf("Confirm MsgClaimMorseAccount: y/[n]: ")
+		fmt.Printf("Confirm MsgClaimMorseApplication: y/[n]: ")
 		stdinReader := bufio.NewReader(os.Stdin)
 
 		// This call to ReadLine() will block until the user sends a new line to stdin.
@@ -132,7 +142,7 @@ func runClaimAccount(cmd *cobra.Command, args []string) error {
 	}
 
 	// Sign and broadcast the claim Morse account message.
-	eitherErr := txClient.SignAndBroadcast(ctx, msgClaimMorseAccount)
+	eitherErr := txClient.SignAndBroadcast(ctx, msgClaimMorseApplication)
 	err, errCh := eitherErr.SyncOrAsyncError()
 	if err != nil {
 		return err
