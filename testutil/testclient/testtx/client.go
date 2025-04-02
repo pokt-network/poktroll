@@ -70,7 +70,7 @@ func NewOneTimeSignAndBroadcastTxClient(
 	ctrl := gomock.NewController(t)
 
 	txClient := mockclient.NewMockTxClient(ctrl)
-	txClient.EXPECT().SignAndBroadcast(
+	txClient.EXPECT().SignAndBroadcastWithTimeoutHeight(
 		gomock.Eq(ctx),
 		gomock.Any(),
 		gomock.Any(),
