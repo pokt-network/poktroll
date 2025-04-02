@@ -78,7 +78,7 @@ func TestMsgClaimMorseAccount_ValidateBasic(t *testing.T) {
 }
 
 func TestMsgClaimMorseAccount_ValidateMorseSignature(t *testing.T) {
-	morsePrivKey := testmigration.GenMorsePrivateKey(t, 0)
+	morsePrivKey := testmigration.GenMorsePrivateKey(0)
 	morsePublicKey := morsePrivKey.PubKey()
 
 	t.Run("invalid Morse signature", func(t *testing.T) {

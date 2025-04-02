@@ -4,6 +4,7 @@ SHELL = /bin/sh
 
 POCKETD_HOME ?= ./localnet/pocketd
 POCKET_NODE ?= tcp://127.0.0.1:26657 # The pocket node (validator in the localnet context)
+DEFAULT_POCKET_NODE_GRPC_ADDR ?= "localhost:9090"
 TESTNET_RPC ?= https://testnet-validated-validator-rpc.poktroll.com/ # TestNet RPC endpoint for validator maintained by Grove. Needs to be update if there's another "primary" testnet.
 PATH_URL ?= http://localhost:3000
 POCKET_ADDR_PREFIX = pokt
@@ -471,3 +472,4 @@ include ./makefiles/session.mk
 include ./makefiles/claims.mk
 include ./makefiles/relay.mk
 include ./makefiles/ping.mk
+include ./makefiles/migrate.mk

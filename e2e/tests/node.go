@@ -19,6 +19,8 @@ var (
 	defaultRPCURL = os.Getenv("POCKET_NODE")
 	// defaultRPCPort is the default RPC port that pocketd listens on
 	defaultRPCPort = 26657
+	// defaultRPCPort is the default RPC port that pocketd listens on
+	defaultGRPCPort = 9090
 	// defaultRPCHost is the default RPC host that pocketd listens on
 	defaultRPCHost = "127.0.0.1"
 	// defaultHome is the default home directory for pocketd

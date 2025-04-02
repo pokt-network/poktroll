@@ -108,3 +108,6 @@ path_config.yaml
 
 # vultr files created during creation and deletion of new instances that may contain sensitive information
 vultr_*.json
+
+# Ignore Morse migration state working files
+tools/scripts/migration/*.json
