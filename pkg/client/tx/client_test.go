@@ -2,6 +2,7 @@ package tx_test
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"sync"
 	"testing"
@@ -14,10 +15,13 @@ import (
 	rpctypes "github.com/cometbft/cometbft/rpc/jsonrpc/types"
 	cosmoskeyring "github.com/cosmos/cosmos-sdk/crypto/keyring"
 	"github.com/cosmos/cosmos-sdk/types"
+	cosmostypes "github.com/cosmos/cosmos-sdk/types"
+	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/pokt-network/smt"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 
+	"github.com/pokt-network/poktroll/app/volatile"
 	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/client/keyring"
 	"github.com/pokt-network/poktroll/pkg/client/tx"
@@ -61,22 +65,24 @@ func TestTxClient_SignAndBroadcast_Succeeds(t *testing.T) {
 		ctx                  = context.Background()
 	)
 
+	// Prepare a new test keyring with a test signing key.
 	keyring, signingKey := testkeyring.NewTestKeyringWithKey(t, testSigningKeyName)
 
+	// Construct a new mock events query client
 	eventsQueryClient := testeventsquery.NewOneTimeTxEventsQueryClient(
 		ctx, t, signingKey, txResultsBzPublishChMu, &txResultsBzPublishCh,
 	)
 
+	// Construct a new mock transactions context
 	txCtxMock := testtx.NewOneTimeTxTxContext(
 		t, keyring,
 		testSigningKeyName,
 		&expectedTx,
 	)
 
-	// Construct a new mock block client because it is a required dependency.
-	// Since we're not exercising transactions timeouts in this test, we don't need to
-	// set any particular expectations on it, nor do we care about the contents
-	// of the latest block.
+	// Construct a new mock block client (required dependency)
+	// - No need to set particular expectations
+	// - Contents of the latest block are not relevant
 	blockClientMock := testblock.NewOneTimeCommittedBlocksSequenceBlockClient(
 		t, blocksPublishCh,
 	)
@@ -94,10 +100,12 @@ func TestTxClient_SignAndBroadcast_Succeeds(t *testing.T) {
 	)
 	require.NoError(t, err)
 
+	// Get the signing key address.
 	signingKeyAddr, err := signingKey.GetAddress()
 	require.NoError(t, err)
 
 	// Construct a valid (arbitrary) message to sign, encode, and broadcast.
+	// We're using StakeApplication but it could have been any other message type.
 	appStake := types.NewCoin("upokt", math.NewInt(1000000))
 	appStakeMsg := &apptypes.MsgStakeApplication{
 		Address:  signingKeyAddr.String(),
@@ -106,21 +114,18 @@ func TestTxClient_SignAndBroadcast_Succeeds(t *testing.T) {
 	}
 
 	// Sign and broadcast the message.
-	eitherErr := txClient.SignAndBroadcast(ctx, appStakeMsg)
+	eitherErr := txClient.SignAndBroadcast(ctx, 0, appStakeMsg)
 	err, errCh := eitherErr.SyncOrAsyncError()
 	require.NoError(t, err)
 
-	// Construct the expected transaction event bytes from the expected transaction bytes.
+	// Construct the expected RPC response from the expected transaction bytes.
 	txResultEvent := &tx.CometTxEvent{}
 	txResultEvent.Data.Value.TxResult.Tx = expectedTx
-
 	txResultBz, err := json.Marshal(txResultEvent)
 	require.NoError(t, err)
-
 	rpcResult := &rpctypes.RPCResponse{
 		Result: txResultBz,
 	}
-
 	rpcResultBz, err := json.Marshal(rpcResult)
 	require.NoError(t, err)
 
@@ -265,7 +270,7 @@ func TestTxClient_SignAndBroadcast_SyncError(t *testing.T) {
 		// NB: explicitly omitting required fields
 	}
 
-	eitherErr := txClient.SignAndBroadcast(ctx, appStakeMsg)
+	eitherErr := txClient.SignAndBroadcast(ctx, 0, appStakeMsg)
 	err, _ = eitherErr.SyncOrAsyncError()
 	require.ErrorIs(t, err, tx.ErrInvalidMsg)
 
@@ -343,7 +348,7 @@ $ go test -v -count=1 -run TestTxClient_SignAndBroadcast_CheckTxError ./pkg/clie
 	}
 
 	// Sign and broadcast the message.
-	eitherErr := txClient.SignAndBroadcast(ctx, appStakeMsg)
+	eitherErr := txClient.SignAndBroadcast(ctx, 0, appStakeMsg)
 	err, _ = eitherErr.SyncOrAsyncError()
 	require.ErrorIs(t, err, tx.ErrCheckTx)
 	require.ErrorContains(t, err, expectedErrMsg)
@@ -351,6 +356,7 @@ $ go test -v -count=1 -run TestTxClient_SignAndBroadcast_CheckTxError ./pkg/clie
 
 func TestTxClient_SignAndBroadcast_Timeout(t *testing.T) {
 	var (
+		timeoutHeight = int64(5)
 		// expectedErrMsg is the expected error message that will be returned
 		// by the transaction client. It is computed and assigned in the
 		// testtx.NewOneTimeErrCheckTxTxContext helper function.
@@ -362,7 +368,7 @@ func TestTxClient_SignAndBroadcast_Timeout(t *testing.T) {
 		// will use to publish the transaction event bytes. It is used near the end of
 		// the test to mock the network signaling that the transaction was committed.
 		txResultsBzPublishCh chan<- either.Bytes
-		blocksPublishCh      = make(chan client.Block, tx.DefaultCommitTimeoutHeightOffset)
+		blocksPublishCh      = make(chan client.Block, timeoutHeight)
 		ctx                  = context.Background()
 
 		// Trie related variables
@@ -415,11 +421,11 @@ func TestTxClient_SignAndBroadcast_Timeout(t *testing.T) {
 	}
 
 	// Sign and broadcast the message in a transaction.
-	eitherErr := txClient.SignAndBroadcast(ctx, appStakeMsg)
+	eitherErr := txClient.SignAndBroadcast(ctx, timeoutHeight, appStakeMsg)
 	err, errCh := eitherErr.SyncOrAsyncError()
 	require.NoError(t, err)
 
-	for i := 0; i < tx.DefaultCommitTimeoutHeightOffset; i++ {
+	for i := int64(0); i < timeoutHeight; i++ {
 		blocksPublishCh <- testblock.NewAnyTimesBlock(t, emptyBlockHash, int64(i+1))
 	}
 
@@ -446,7 +452,165 @@ func TestTxClient_SignAndBroadcast_Timeout(t *testing.T) {
 	}
 }
 
+func TestTxClient_SignAndBroadcast_Retry(t *testing.T) {
+	var (
+		// expectedTxBz is the expected transaction bytes that will be signed and broadcast
+		// by the transaction client.
+		// - Computed and assigned in the testtx.NewOneTimeTxTxContext helper function
+		// - Same reference needs to be used across expectations set on the transactions context mock
+		expectedTxBz cometbytes.HexBytes
+
+		// txResultsBzPublishCh is the channel for mock events query client to publish transaction event bytes
+		// - Not used in this test
+		// - Required to use the NewOneTimeTxEventsQueryClient helper
+		txResultsBzPublishCh chan<- either.Bytes
+
+		// txResultsBzPublishChMu protects txResultsBzPublishCh from concurrent access
+		// - Expected to be updated in a mock method but also sent on in the test
+		txResultsBzPublishChMu = new(sync.Mutex)
+
+		// blocksPublishCh is the channel for mock block client to publish the latest block
+		// - Not used in this test
+		// - Required to use the NewOneTimeCommittedBlocksSequenceBlockClient helper
+		blocksPublishCh chan client.Block
+
+		ctx = context.Background()
+	)
+
+	keyring, signingKey := testkeyring.NewTestKeyringWithKey(t, testSigningKeyName)
+
+	// Construct a new mock events query client. Since we expect the
+	// NewTxClient call to fail, we don't need to set any expectations
+	// on this mock.
+	eventsQueryClient := testeventsquery.NewOneTimeTxEventsQueryClient(
+		ctx, t, signingKey, txResultsBzPublishChMu, &txResultsBzPublishCh,
+	)
+
+	// Instruct the tx client to return an error when submitting a transaction.
+	callStatus := &callStatus{
+		errorToReturn: fmt.Errorf("test error"),
+	}
+	txCtxMock := newTxContext(t, ctx,
+		testSigningKeyName, keyring, &expectedTxBz, callStatus,
+	)
+
+	// Construct a new mock block client (required dependency)
+	// - Not exercising transaction timeouts in this test
+	// - No need to set particular expectations
+	// - Contents of the latest block are not relevant
+	blockClientMock := testblock.NewOneTimeCommittedBlocksSequenceBlockClient(
+		t, blocksPublishCh,
+	)
+
+	// Construct a new depinject config with the mocks we created above.
+	txClientDeps := depinject.Supply(
+		eventsQueryClient,
+		txCtxMock,
+		blockClientMock,
+	)
+
+	// Construct the transaction client.
+	txClient, err := tx.NewTxClient(
+		ctx, txClientDeps, tx.WithSigningKeyName(testSigningKeyName),
+	)
+	require.NoError(t, err)
+
+	// Construct an arbitrary message to sign, encode, and broadcast.
+	signingAddr, err := signingKey.GetAddress()
+	require.NoError(t, err)
+
+	// Construct a valid (arbitrary) message to sign, encode, and broadcast.
+	// We're using StakeApplication but it could have been any other message type.
+	appStake := types.NewCoin(volatile.DenomuPOKT, math.NewInt(1000000))
+	appStakeMsg := &apptypes.MsgStakeApplication{
+		Address:  signingAddr.String(), // Providing address to avoid panic from #GetSigners().
+		Stake:    &appStake,
+		Services: client.NewTestApplicationServiceConfig(testServiceIdPrefix, 1),
+	}
+
+	// Sign and broadcast the message.
+	go txClient.SignAndBroadcast(ctx, 0, appStakeMsg)
+
+	// Wait for 5 seconds to allow the retry strategy to perform 4 failing retries.
+	time.Sleep(5 * time.Second)
+
+	// All attempts should have failed and zero successful attempts.
+	require.Equal(t, 4, callStatus.errorCount)
+	require.Equal(t, 0, callStatus.successCount)
+
+	// Instruct the tx client to return a successful response when submitting the transaction
+	callStatus.errorToReturn = nil
+
+	// Wait for 5 seconds
+	// - Allows the retry strategy to perform a last retry after 4 seconds of waiting time
+	time.Sleep(5 * time.Second)
+
+	// The error count should remain the same but the success count should be 1
+	require.Equal(t, 4, callStatus.errorCount)
+	require.Equal(t, 1, callStatus.successCount)
+
+	// Instruct the tx client to return a non-retryable error when submitting the transaction.
+	// This will cause the transaction client to stop retrying and return the error.
+	callStatus.errorToReturn = sdkerrors.ErrTxTimeoutHeight.Wrap(fmt.Errorf("test error").Error())
+
+	// Sign and broadcast the message.
+	go txClient.SignAndBroadcast(ctx, 0, appStakeMsg)
+
+	// Wait the same amount of time and assert that only one failing attempt was made.
+	time.Sleep(5 * time.Second)
+
+	// There should be only one non-retryable error.
+	require.Equal(t, 5, callStatus.errorCount)
+	require.Equal(t, 1, callStatus.successCount)
+}
+
 // TODO_TECHDEBT: add coverage for sending multiple messages simultaneously
 func TestTxClient_SignAndBroadcast_MultipleMsgs(t *testing.T) {
 	t.SkipNow()
+}
+
+// newTxContext creates a new mock transactions context for testing.
+// It sets up the necessary expectations for signing and broadcasting transactions.
+//
+// The callStatus parameter is used to instrument and track the number of:
+// - Successful calls to the BroadcastTx method
+// - Failed calls to the BroadcastTx method
+func newTxContext(
+	t *testing.T,
+	_ context.Context,
+	signingKeyName string,
+	keyring cosmoskeyring.Keyring,
+	expectedTx *cometbytes.HexBytes,
+	callStatus *callStatus,
+) *mockclient.MockTxContext {
+	t.Helper()
+
+	// Construct a new mock transactions context.
+	txCtxMock := testtx.NewBaseTxContext(t, signingKeyName, keyring, expectedTx)
+
+	txCtxMock.EXPECT().GetSimulatedTxGas(gomock.Any(), gomock.Any(), gomock.Any()).
+		Return(uint64(1), nil).
+		AnyTimes()
+
+	txCtxMock.EXPECT().BroadcastTx(gomock.Any()).DoAndReturn(
+		func(txBytes []byte) (*cosmostypes.TxResponse, error) {
+			if callStatus.errorToReturn != nil {
+				callStatus.errorCount++
+				return nil, callStatus.errorToReturn
+			}
+			callStatus.successCount++
+			return &cosmostypes.TxResponse{}, nil
+		},
+	).AnyTimes()
+
+	return txCtxMock
+}
+
+// callStatus is a struct that instruments the TxContext mock to track whether
+// the BroadcastTx method was called successfully or not.
+// It tracks the number of successful and failed calls to the BroadcastTx method.
+type callStatus struct {
+	successCount  int
+	errorCount    int
+	errorToReturn error
 }
