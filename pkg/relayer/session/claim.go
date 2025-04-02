@@ -6,7 +6,6 @@ import (
 	"slices"
 
 	sdktypes "github.com/cosmos/cosmos-sdk/types"
-
 	"github.com/pokt-network/smt"
 
 	"github.com/pokt-network/poktroll/app/volatile"
@@ -224,8 +223,23 @@ func (rs *relayerSessionsManager) newMapClaimSessionsFn(
 			}
 		}
 
+		// All session trees in the batch share the same sessionEndHeight, so we
+		// can use the first one to calculate the proof window close height.
+		//
+		// TODO_REFACTOR(@red-0ne): Pass a richer type to the function instead of []SessionTrees to:
+		// - Avoid making assumptions about shared properties
+		// - Eliminate constant queries for sharedParams
+		sessionEndHeight := sessionTrees[0].GetSessionHeader().GetSessionEndBlockHeight()
+		sharedParams, err := rs.sharedQueryClient.GetParams(ctx)
+		if err != nil {
+			failedCreateClaimsSessionsPublishCh <- sessionTrees
+			rs.logger.Error().Err(err).Msg("failed to get shared params")
+			return either.Error[[]relayer.SessionTree](err), false
+		}
+		claimWindowCloseHeight := sharedtypes.GetClaimWindowCloseHeight(sharedParams, sessionEndHeight)
+
 		// Create claims for each supplier operator address in `sessionTrees`.
-		if err := supplierClient.CreateClaims(ctx, claimMsgs...); err != nil {
+		if err := supplierClient.CreateClaims(ctx, claimWindowCloseHeight, claimMsgs...); err != nil {
 			failedCreateClaimsSessionsPublishCh <- claimableSessionTrees
 			rs.logger.Error().Err(err).Msg("failed to create claims")
 			return either.Error[[]relayer.SessionTree](err), false

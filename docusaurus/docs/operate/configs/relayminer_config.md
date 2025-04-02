@@ -3,8 +3,6 @@ title: RelayMiner config
 sidebar_position: 4
 ---
 
-TODO_IN_THIS_PR(@bryanchriswhite): Use the diff from this PR to update this documentation by providing both as context and reviewing+updating the output.
-
 ## RelayMiner config <!-- omit in toc -->
 
 This document describes the configuration options for the `RelayMiner`, a `Supplier`
