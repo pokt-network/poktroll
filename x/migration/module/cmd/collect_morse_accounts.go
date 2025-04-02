@@ -181,7 +181,7 @@ func collectInputAccountBalances(inputState *migrationtypes.MorseStateExport, mo
 		// DEV_NOTE: This is NEVER expected to happen, but is technically possible.
 		if len(coins) == 0 {
 			logger.Logger.Warn().Str("address", accountAddr).Msg("account has no coins; skipping")
-			return nil
+			continue
 		}
 
 		// DEV_NOTE: SHOULD ONLY be one denom (upokt).
