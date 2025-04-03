@@ -115,13 +115,6 @@ type migrationSuite struct {
 	expectedSupplierEffectiveServiceHeight int64
 }
 
-type actorTypeEnum = string
-
-const (
-	actorTypeApp      actorTypeEnum = "application"
-	actorTypeSupplier actorTypeEnum = "supplier"
-)
-
 var (
 	defaultMorseDataDir    = path.Join(".pocket", "data")
 	morseDatabaseFileNames = []string{

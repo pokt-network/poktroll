@@ -76,6 +76,13 @@ var (
 	allFeaturesTags = fmt.Sprintf("not %s and not %s", manualTag, oneshotTag)
 )
 
+type actorTypeEnum = string
+
+const (
+	actorTypeApp      actorTypeEnum = "application"
+	actorTypeSupplier actorTypeEnum = "supplier"
+)
+
 // cliAccountQueryResopnse is a data structure that matches the serialized account
 // when querying for onchain accounts via the CLI.
 type cliAccountQueryResponse struct {
