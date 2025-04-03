@@ -76,7 +76,7 @@ func requireProofCountEqualsExpectedValueFromProofParams(t *testing.T, proofPara
 	proofCost := feePerProof + gasCost
 	supplierOperatorBalance := proofCost
 	supplierClientMap := testsupplier.NewClaimProofSupplierClientMap(ctx, t, supplierOperatorAddress, proofCount)
-	blockPublishCh, minedRelaysPublishCh := setupDependencies(t, ctx, supplierClientMap, emptyBlockHash, proofParams, supplierOperatorBalance, logger)
+	blockPublishCh, minedRelaysPublishCh := setupDependencies(t, ctx, logger, supplierClientMap, emptyBlockHash, proofParams, supplierOperatorBalance)
 
 	// Publish a mined relay to the minedRelaysPublishCh to insert into the session tree.
 	minedRelay := testrelayer.NewUnsignedMinedRelay(t, activeSession.Header, supplierOperatorAddress)
@@ -244,7 +244,7 @@ func TestRelayerSessionsManager_InsufficientBalanceForProofSubmission(t *testing
 	supplierClientMap := supplier.NewSupplierClientMap()
 	supplierClientMap.SupplierClients[supplierOperatorAddress] = supplierClientMock
 
-	blockPublishCh, minedRelaysPublishCh := setupDependencies(t, ctx, supplierClientMap, emptyBlockHash, proofParams, supplierOperatorBalance, logger)
+	blockPublishCh, minedRelaysPublishCh := setupDependencies(t, ctx, logger, supplierClientMap, emptyBlockHash, proofParams, supplierOperatorBalance)
 
 	// For each service, publish a mined relay to the minedRelaysPublishCh to
 	// insert into the session tree.
@@ -278,11 +278,11 @@ func uPOKTCoin(amount int64) *sdktypes.Coin {
 func setupDependencies(
 	t *testing.T,
 	ctx context.Context,
+	logger polylog.Logger,
 	supplierClientMap *supplier.SupplierClientMap,
 	blockHash []byte,
 	proofParams prooftypes.Params,
 	supplierOperatorBalance int64,
-	logger polylog.Logger,
 ) (chan<- client.Block, chan<- *relayer.MinedRelay) {
 	// Set up dependencies.
 	blocksObs, blockPublishCh := channel.NewReplayObservable[client.Block](ctx, 20)

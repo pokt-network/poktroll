@@ -57,9 +57,9 @@ type relayerSessionsManager struct {
 	// storesDirectory points to a path on disk where KVStore data files are created.
 	storesDirectory string
 
-	// sessionsMetadataStore is a key-value store used to persist the metadata of
+	// sessionSMTStore is a key-value store used to persist the metadata of
 	// sessions created in order to recover the active ones in case of a restart.
-	sessionsMetadataStore pebble.PebbleKVStore
+	sessionSMTStore pebble.PebbleKVStore
 
 	// sharedQueryClient is used to query shared module parameters.
 	sharedQueryClient client.SharedQueryClient
@@ -125,8 +125,8 @@ func NewRelayerSessions(
 	}
 
 	// Initialize the session metadata store.
-	sessionRegistryDir := path.Join(rs.storesDirectory, "sessions_metadata")
-	if rs.sessionsMetadataStore, err = pebble.NewKVStore(sessionRegistryDir); err != nil {
+	sessionSMTDir := path.Join(rs.storesDirectory, "sessions_metadata")
+	if rs.sessionSMTStore, err = pebble.NewKVStore(sessionSMTDir); err != nil {
 		return nil, err
 	}
 
@@ -152,7 +152,7 @@ func (rs *relayerSessionsManager) Start(ctx context.Context) error {
 	//   - Preserving the relayer's state across restarts
 	//   - Ensuring no active sessions are lost when the process is interrupted
 	//   - Maintaining accumulated work when interruptions occur
-	if err := rs.populateSessionTreeMap(ctx, block.Height()); err != nil {
+	if err := rs.loadSessionTreeMap(ctx, block.Height()); err != nil {
 		return err
 	}
 
@@ -203,6 +203,7 @@ func (rs *relayerSessionsManager) Stop() {
 	// Persist each active session's state to disk and properly close the associated
 	// key-value stores. This ensures that all accumulated relay data (including root
 	// hashes needed for claims) is safely stored before shutdown.
+	numSessionTrees := 0
 	for _, supplierSessionTrees := range rs.sessionsTrees {
 		for _, sessionTreesAtHeight := range supplierSessionTrees {
 			for _, sessionTree := range sessionTreesAtHeight {
@@ -224,17 +225,18 @@ func (rs *relayerSessionsManager) Stop() {
 				}
 
 				rs.logger.Debug().Msgf("Successfully stored session tree for sessionId %q on disk", sessionId)
+				numSessionTrees++
 			}
 		}
 	}
 
 	// Close the metadata store that tracks all sessions and release its resources.
-	// Then clear the in-memory sessions map for testing purposes.
-	if err := rs.sessionsMetadataStore.Stop(); err != nil {
+	if err := rs.sessionSMTStore.Stop(); err != nil {
 		rs.logger.Error().Err(err).Msg("failed to stop sessions metadata store")
 	}
 
 	clear(rs.sessionsTrees)
+	rs.logger.Info().Msgf("Successfully cleared %d session trees from memory", numSessionTrees)
 }
 
 // SessionsToClaim returns an observable that notifies when sessions are ready to be claimed.

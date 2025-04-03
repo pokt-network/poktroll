@@ -321,7 +321,7 @@ type BlockQueryClient interface {
 	Block(ctx context.Context, height *int64) (*cometrpctypes.ResultBlock, error)
 }
 
-// Claim is a go interface type reflecting the pocket.proof.Params protobuf.
+// ProofParams is a go interface type reflecting the pocket.proof.Params protobuf.
 // This is necessary since to prevent dependency cycles since generated go types don't interface types.
 type ProofParams interface {
 	GetProofRequestProbability() float64

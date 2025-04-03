@@ -121,14 +121,14 @@ func NewSessionTree(
 //
 // Returns a fully reconstructed SessionTree or an error if reconstruction fails
 func importSessionTree(
-	persistedSMT *prooftypes.PersistedSMT,
+	sessionSMT *prooftypes.SessionSMT,
 	claim *prooftypes.Claim,
 	storesDirectory string,
 	logger polylog.Logger,
 ) (relayer.SessionTree, error) {
-	sessionId := persistedSMT.SessionHeader.SessionId
-	supplierOperatorAddress := persistedSMT.SupplierOperatorAddress
-	smtRoot := persistedSMT.SmtRoot
+	sessionId := sessionSMT.SessionHeader.SessionId
+	supplierOperatorAddress := sessionSMT.SupplierOperatorAddress
+	smtRoot := sessionSMT.SmtRoot
 	storePath := filepath.Join(storesDirectory, supplierOperatorAddress, sessionId)
 
 	// Verify the storage path exists - if not, the session data is missing or corrupted
@@ -140,18 +140,27 @@ func importSessionTree(
 	// Initialize the basic session tree structure with metadata
 	sessionTree := &sessionTree{
 		logger:                  logger,
-		sessionHeader:           persistedSMT.SessionHeader,
+		sessionHeader:           sessionSMT.SessionHeader,
 		storePath:               storePath,
 		sessionMu:               &sync.Mutex{},
 		supplierOperatorAddress: supplierOperatorAddress,
 	}
 
+	logger = logger.With(
+		"session_id", sessionId,
+		"supplier_operator_address", supplierOperatorAddress,
+	)
+
 	// SCENARIO 1: Session has been claimed
-	// When a claim exists, the session is in a finalized state with an immutable root hash.
+	// When a claim exists, the session tree is ready to be processed by the proof submission step.
 	// The tree storage is not loaded immediately as it will only be needed if proof generation is requested.
 	if claim != nil {
 		sessionTree.claimedRoot = claim.RootHash
 		sessionTree.isClaiming = true
+		logger.Info().Msgf(
+			"imported session tree with committed onchain claim - root hash: %x",
+			claim.RootHash,
+		)
 		return sessionTree, nil
 	}
 
@@ -172,6 +181,8 @@ func importSessionTree(
 	sessionTree.treeStore = treeStore
 	sessionTree.claimedRoot = nil  // explicitly set for posterity
 	sessionTree.isClaiming = false // explicitly set for posterity
+
+	logger.Info().Msg("the imported session tree with no committed onchain claim")
 
 	return sessionTree, nil
 }

@@ -2,6 +2,7 @@ package query
 
 import (
 	"context"
+	"fmt"
 
 	"cosmossdk.io/depinject"
 	"github.com/cosmos/gogoproto/grpc"
@@ -13,7 +14,7 @@ import (
 )
 
 // proofQuerier is a wrapper around the prooftypes.QueryClient that enables the
-// querying and caching th onchain proof module.
+// querying and caching the onchain proof module.
 type proofQuerier struct {
 	clientConn   grpc.ClientConn
 	proofQuerier prooftypes.QueryClient
@@ -23,10 +24,7 @@ type proofQuerier struct {
 	paramsCache client.ParamsCache[prooftypes.Params]
 
 	// claimsCache caches proofQuerier.Claim requests
-	// It keys the Claims by sessionId.
-	// DEV_NOTE: A unique claim can be queried onchain by providing two values: (sessionId, supplierOperatorAddress).
-	// However, since this query client exists in the scope of a single process (e.g. RelayMiner),
-	// the operator address is implicit.
+	// It keys the Claims by sessionId and supplierOperatorAddress
 	claimsCache cache.KeyValueCache[prooftypes.Claim]
 }
 
@@ -91,7 +89,8 @@ func (pq *proofQuerier) GetClaim(
 	logger := pq.logger.With("query_client", "proof", "method", "GetClaim")
 
 	// Get the claim from the cache if it exists.
-	if claim, found := pq.claimsCache.Get(sessionId); found {
+	claimCacheKey := getClaimCacheKey(supplierOperatorAddress, sessionId)
+	if claim, found := pq.claimsCache.Get(claimCacheKey); found {
 		logger.Debug().Msgf("claim cache HIT for claim with sessionId %q", sessionId)
 		return &claim, nil
 	}
@@ -108,8 +107,13 @@ func (pq *proofQuerier) GetClaim(
 	}
 
 	// Update the cache with the newly retrieved claim.
-	pq.claimsCache.Set(sessionId, res.Claim)
+	pq.claimsCache.Set(claimCacheKey, res.Claim)
 
 	// Return the query claim
 	return &res.Claim, nil
+}
+
+// getClaimCacheKey constructs the cache key for a claim in the form of: supplierOperatorAddress/sessionId.
+func getClaimCacheKey(supplierOperatorAddress, sessionId string) string {
+	return fmt.Sprintf("%s/%s", supplierOperatorAddress, sessionId)
 }
