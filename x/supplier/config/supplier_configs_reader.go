@@ -62,7 +62,7 @@ func ParseSupplierConfigs(ctx context.Context, configContent []byte) (*SupplierS
 		return nil, ErrSupplierConfigUnmarshalYAML.Wrapf("%s", err)
 	}
 
-	if err := stakeConfig.validateAndNormalizeAddresses(logger); err != nil {
+	if err := stakeConfig.ValidateAndNormalizeAddresses(logger); err != nil {
 		return nil, err
 	}
 
@@ -71,12 +71,12 @@ func ParseSupplierConfigs(ctx context.Context, configContent []byte) (*SupplierS
 		return nil, err
 	}
 
-	defaultRevShareMap, err := stakeConfig.validateAndNormalizeDefaultRevShare()
+	defaultRevShareMap, err := stakeConfig.ValidateAndNormalizeDefaultRevShare()
 	if err != nil {
 		return nil, err
 	}
 
-	supplierServiceConfigs, err := stakeConfig.validateAndParseServiceConfigs(defaultRevShareMap)
+	supplierServiceConfigs, err := stakeConfig.ValidateAndParseServiceConfigs(defaultRevShareMap)
 	if err != nil {
 		return nil, err
 	}
@@ -167,12 +167,12 @@ func validateEndpointURL(endpoint YAMLServiceEndpoint) (string, error) {
 	return endpoint.PubliclyExposedUrl, nil
 }
 
-// validateAndNormalizeAddresses validates the configured owner and operator addresses
+// ValidateAndNormalizeAddresses validates the configured owner and operator addresses
 // as bech32-encoded pokt addresses.
 //
 // If the operator address is empty:
 // • The owner address is set as the operator address as well
-func (yamlStakeConfig *YAMLStakeConfig) validateAndNormalizeAddresses(logger polylog.Logger) error {
+func (yamlStakeConfig *YAMLStakeConfig) ValidateAndNormalizeAddresses(logger polylog.Logger) error {
 	// Validate required owner address.
 	if _, err := sdk.AccAddressFromBech32(yamlStakeConfig.OwnerAddress); err != nil {
 		return ErrSupplierConfigInvalidOwnerAddress.Wrap("invalid owner address")
@@ -236,7 +236,7 @@ func (yamlStakeConfig *YAMLStakeConfig) ParseAndValidateStakeAmount() (*sdk.Coin
 // • If DefaultRevSharePercent is not specified:
 //   - Require a valid owner address
 //   - Automatically assigns 100% revenue share to the owner
-func (yamlStakeConfig *YAMLStakeConfig) validateAndNormalizeDefaultRevShare() (map[string]uint64, error) {
+func (yamlStakeConfig *YAMLStakeConfig) ValidateAndNormalizeDefaultRevShare() (map[string]uint64, error) {
 	defaultRevSharePercent := map[string]uint64{}
 
 	// Check if the default rev share is already configured and return if so
@@ -254,7 +254,7 @@ func (yamlStakeConfig *YAMLStakeConfig) validateAndNormalizeDefaultRevShare() (m
 	return defaultRevSharePercent, nil
 }
 
-// validateAndParseServiceConfigs performs the following:
+// ValidateAndParseServiceConfigs performs the following:
 //   - Validate that at least one service is configured
 //   - Validate the configured service IDs
 //   - Parse the configured endpoints
@@ -263,7 +263,7 @@ func (yamlStakeConfig *YAMLStakeConfig) validateAndNormalizeDefaultRevShare() (m
 //   - If the configured rev share for any service is empty, defaultRevSharePercent is configured for that service
 //
 // Returns the resulting supplier service configs.
-func (stakeConfig *YAMLStakeConfig) validateAndParseServiceConfigs(defaultRevSharePercent map[string]uint64) ([]*sharedtypes.SupplierServiceConfig, error) {
+func (stakeConfig *YAMLStakeConfig) ValidateAndParseServiceConfigs(defaultRevSharePercent map[string]uint64) ([]*sharedtypes.SupplierServiceConfig, error) {
 	// Validate at least one service is specified
 	if len(stakeConfig.Services) == 0 {
 		return nil, ErrSupplierConfigInvalidServiceId.Wrap("serviceIds cannot be empty")
