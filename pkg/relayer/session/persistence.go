@@ -44,7 +44,9 @@ func (rs *relayerSessionsManager) loadSessionTreeMap(ctx context.Context, height
 		return err
 	}
 
-	logger.Info().Msgf("about to load %d persisted sessions into memory", len(persistedSessions))
+	if len(persistedSessions) > 0 {
+		logger.Info().Msgf("about to load %d persisted sessions into memory", len(persistedSessions))
+	}
 
 	for _, persistedSession := range persistedSessions {
 		// Unmarshal the persisted session metadata for processing

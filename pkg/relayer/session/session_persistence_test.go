@@ -475,9 +475,10 @@ func (s *SessionPersistenceTestSuite) setupMockSupplierClient(ctrl *gomock.Contr
 	supplierClientMock.EXPECT().
 		CreateClaims(
 			gomock.Any(),
+			gomock.Any(),
 			gomock.AssignableToTypeOf(([]client.MsgCreateClaim)(nil)),
 		).
-		DoAndReturn(func(ctx context.Context, claimMsgs ...*prooftypes.MsgCreateClaim) error {
+		DoAndReturn(func(ctx context.Context, timeoutHeight int64, claimMsgs ...*prooftypes.MsgCreateClaim) error {
 			require.Len(s.T(), claimMsgs, 1)
 			s.claimToReturn = &prooftypes.Claim{
 				SupplierOperatorAddress: s.supplierOperatorAddress,
@@ -493,9 +494,10 @@ func (s *SessionPersistenceTestSuite) setupMockSupplierClient(ctrl *gomock.Contr
 	supplierClientMock.EXPECT().
 		SubmitProofs(
 			gomock.Any(),
+			gomock.Any(),
 			gomock.AssignableToTypeOf(([]client.MsgSubmitProof)(nil)),
 		).
-		DoAndReturn(func(ctx context.Context, proofMsgs ...*prooftypes.MsgSubmitProof) error {
+		DoAndReturn(func(ctx context.Context, timeoutHeight int64, proofMsgs ...*prooftypes.MsgSubmitProof) error {
 			require.Len(s.T(), proofMsgs, 1)
 			s.submitProofCallCount++
 			return nil
