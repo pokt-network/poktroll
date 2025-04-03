@@ -50,7 +50,7 @@ require (
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.20.0
 	github.com/hashicorp/go-metrics v0.5.3
 	github.com/pokt-network/ring-go v0.1.0
-	// TODO_IMPROVE: Whenever we update a protobuf in the `pocket` repo, we need to:
+	// TODO_TECHDEBT: Whenever we update a protobuf in the `pocket` repo, we need to:
 	// 1. Merge in the update PR (and it's generated outputs) into `pocket` main.
 	// 2. Update the `pocket` sha in the `shannon-sdk` to reflect the new dependency.
 	// 3. Update the `shannon-sdk` sha in the `pocket` repo (here).
@@ -86,6 +86,7 @@ require (
 	github.com/jhump/protoreflect v1.16.0
 	github.com/mitchellh/mapstructure v1.5.0
 	go.uber.org/mock v0.5.0
+	golang.org/x/term v0.29.0
 )
 
 require (
@@ -289,7 +290,6 @@ require (
 	golang.org/x/net v0.36.0 // indirect
 	golang.org/x/oauth2 v0.22.0 // indirect
 	golang.org/x/sys v0.30.0 // indirect
-	golang.org/x/term v0.29.0 // indirect
 	golang.org/x/time v0.5.0 // indirect
 	google.golang.org/api v0.186.0 // indirect
 	google.golang.org/genproto v0.0.0-20240701130421-f6361c86f094 // indirect

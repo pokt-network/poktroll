@@ -218,9 +218,10 @@ func TestRelayerSessionsManager_InsufficientBalanceForProofSubmission(t *testing
 	supplierClientMock.EXPECT().
 		CreateClaims(
 			gomock.Eq(ctx),
+			gomock.Any(),
 			gomock.AssignableToTypeOf(([]client.MsgCreateClaim)(nil)),
 		).
-		DoAndReturn(func(ctx context.Context, claimMsgs ...*prooftypes.MsgCreateClaim) error {
+		DoAndReturn(func(ctx context.Context, timeoutHeight int64, claimMsgs ...*prooftypes.MsgCreateClaim) error {
 			// Assert that only the claim of the highest CUPR service is created.
 			require.Len(t, claimMsgs, 1)
 			require.Equal(t, claimMsgs[0].SessionHeader.ServiceId, highCUPRService.Id)
@@ -231,9 +232,10 @@ func TestRelayerSessionsManager_InsufficientBalanceForProofSubmission(t *testing
 	supplierClientMock.EXPECT().
 		SubmitProofs(
 			gomock.Eq(ctx),
+			gomock.Any(),
 			gomock.AssignableToTypeOf(([]client.MsgSubmitProof)(nil)),
 		).
-		DoAndReturn(func(ctx context.Context, proofMsgs ...*prooftypes.MsgSubmitProof) error {
+		DoAndReturn(func(ctx context.Context, timeoutHeight int64, proofMsgs ...*prooftypes.MsgSubmitProof) error {
 			// Assert that only the proof of the highest CUPR service is created.
 			require.Len(t, proofMsgs, 1)
 			require.Equal(t, proofMsgs[0].SessionHeader.ServiceId, highCUPRService.Id)

@@ -1,4 +1,4 @@
-package migrate
+package cmd
 
 import (
 	"fmt"
@@ -10,19 +10,19 @@ import (
 	cmtjson "github.com/cometbft/cometbft/libs/json"
 	"github.com/stretchr/testify/require"
 
+	"github.com/pokt-network/poktroll/cmd/logger"
 	"github.com/pokt-network/poktroll/pkg/polylog/polyzero"
 	"github.com/pokt-network/poktroll/testutil/testmigration"
 	migrationtypes "github.com/pokt-network/poktroll/x/migration/types"
 )
 
-// TODO_MAINNET(@bryanchriswhite): Add an E2E/integration test using real data.
 // Note: This test should not be included in CI due to its size (90GB).
 // Users should manually run wget to download the data and verify it on their computer.
 // Reference: https://github.com/pokt-network/poktroll/pull/1039#discussion_r1947036729
 
 func init() {
-	logger = polyzero.NewLogger(polyzero.WithLevel(polyzero.DebugLevel))
-	flagDebugAccountsPerLog = 1
+	logger.Logger = polyzero.NewLogger(polyzero.WithLevel(polyzero.DebugLevel))
+	numAccountsPerDebugLog = 1
 }
 
 func TestCollectMorseAccounts(t *testing.T) {
@@ -32,8 +32,10 @@ func TestCollectMorseAccounts(t *testing.T) {
 	require.NoError(t, err)
 
 	// Generate and write the MorseStateExport input JSON file.
-	morseStateExportBz, morseAccountStateBz := testmigration.NewMorseStateExportAndAccountStateBytes(
-		t, 10, testmigration.RoundRobinAllMorseAccountActorTypes)
+	morseStateExportBz, morseAccountStateBz, err := testmigration.NewMorseStateExportAndAccountStateBytes(
+		10, testmigration.RoundRobinAllMorseAccountActorTypes)
+	require.NoError(t, err)
+
 	_, err = inputFile.Write(morseStateExportBz)
 	require.NoError(t, err)
 
@@ -71,9 +73,11 @@ func TestNewTestMorseStateExport(t *testing.T) {
 	for numAccounts := 1; numAccounts <= 10; numAccounts++ {
 		t.Run(fmt.Sprintf("num_accounts=%d", numAccounts), func(t *testing.T) {
 			morseStateExport := new(migrationtypes.MorseStateExport)
-			stateExportBz, _ := testmigration.NewMorseStateExportAndAccountStateBytes(
-				t, numAccounts, testmigration.RoundRobinAllMorseAccountActorTypes)
-			err := cmtjson.Unmarshal(stateExportBz, morseStateExport)
+			stateExportBz, _, err := testmigration.NewMorseStateExportAndAccountStateBytes(
+				numAccounts, testmigration.RoundRobinAllMorseAccountActorTypes)
+			require.NoError(t, err)
+
+			err = cmtjson.Unmarshal(stateExportBz, morseStateExport)
 			require.NoError(t, err)
 
 			exportAccounts := morseStateExport.AppState.Auth.Accounts
@@ -129,9 +133,11 @@ func BenchmarkTransformMorseState(b *testing.B) {
 	for i := 0; i < 5; i++ {
 		numAccounts := int(math.Pow10(i + 1))
 		morseStateExport := new(migrationtypes.MorseStateExport)
-		morseStateExportBz, _ := testmigration.NewMorseStateExportAndAccountStateBytes(
-			b, numAccounts, testmigration.RoundRobinAllMorseAccountActorTypes)
-		err := cmtjson.Unmarshal(morseStateExportBz, morseStateExport)
+		morseStateExportBz, _, err := testmigration.NewMorseStateExportAndAccountStateBytes(
+			numAccounts, testmigration.RoundRobinAllMorseAccountActorTypes)
+		require.NoError(b, err)
+
+		err = cmtjson.Unmarshal(morseStateExportBz, morseStateExport)
 		require.NoError(b, err)
 
 		b.Run(fmt.Sprintf("num_accounts=%d", numAccounts), func(b *testing.B) {

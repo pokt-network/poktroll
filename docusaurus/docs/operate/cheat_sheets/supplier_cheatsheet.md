@@ -3,6 +3,8 @@ sidebar_position: 4
 title: Supplier & RelayMiner (~20 min)
 ---
 
+import ReactPlayer from "react-player";
+
 ## Supplier & RelayMiner Cheat Sheet <!-- omit in toc -->
 
 This guide provides quick reference commands for setting up a **Supplier** and
@@ -20,8 +22,10 @@ streamline development and reduce friction for any new potential contributor.
 
 :::
 
+- [System Requirements](#system-requirements)
 - [Pre-Requisites](#pre-requisites)
   - [Context](#context)
+- [Video Walkthrough](#20-minute-video-walkthrough)
 - [Account Setup](#account-setup)
   - [Create the `Supplier` account](#create-the-supplier-account)
   - [Prepare your environment](#prepare-your-environment)
@@ -36,6 +40,20 @@ streamline development and reduce friction for any new potential contributor.
   - [What Supplier operations are available?](#what-supplier-operations-are-available)
   - [What Supplier queries are available?](#what-supplier-queries-are-available)
   - [How do I query for all existing onchain Suppliers?](#how-do-i-query-for-all-existing-onchain-suppliers)
+
+## System Requirements
+
+Please see the [Hardware Requirements](../configs/hardware_requirements.md#relayminer) page.
+
+## 20 Minute Video Walkthrough
+
+The following is a ~20 minute video walkthrough using this cheatsheet.
+
+<ReactPlayer
+  playing={false}
+  controls
+  url="https://github.com/user-attachments/assets/bafd0b3e-4968-4e92-ba8a-41b618633455"
+/>
 
 ## Pre-Requisites
 
