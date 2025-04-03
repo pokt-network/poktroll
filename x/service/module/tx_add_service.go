@@ -18,7 +18,7 @@ import (
 
 var _ = strconv.Itoa(0)
 
-// TODO_MAINNET(@red-0ne): Change `add-service` to `update-service` so the source owner can
+// TODO_POST_MAINNET(@red-0ne): Change `add-service` to `update-service` so the source owner can
 // update the compute units per relay for an existing service. Make it possible
 // to update a service (e.g. update # of compute units per relay). This will require
 // search for all variations of `AddService` in the codebase (filenames, helpers, etc...),

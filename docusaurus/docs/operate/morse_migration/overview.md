@@ -73,7 +73,7 @@ Full details of the Shannon launch process can be found in [the overview](./road
 
 1. **Snapshot Selection**: The "authority" (i.e. Foundation / PNF) coordinates with Morse account/stake-holders **offchain** choose a height at which a snapshot will be taken.
 2. **MorseAccountState proposal**: The "authority" retrieves the Morse snapshot and uses it to derive the "canonical" MorseAccountState for offchain validation by Morse account/stake-holders.
-3. **MorseAccountState validation**: Morse account/stake-holders retrieve the Morse snapshot and use it to validate the proposed "canonical" MorseAccountState, providing offchain feedback (TODO_MAINNET(@Olshansk): where/how?) if necessary.
+3. **MorseAccountState validation**: Morse account/stake-holders retrieve the Morse snapshot and use it to validate the proposed "canonical" MorseAccountState, providing offchain feedback (TODO_MAINNET_MIGRATION(@Olshansk): where/how?) if necessary.
 4. **MorseAccountState import**: The "authority" imports the "canonical" MorseAccountState onchain (on Shannon).
 
 ### Complete E2E User Sequence

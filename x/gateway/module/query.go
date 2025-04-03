@@ -10,7 +10,7 @@ import (
 )
 
 // GetQueryCmd returns the cli query commands for this module
-// TODO_MAINNET(#370): remove if custom query commands are consolidated into AutoCLI.
+// TODO_TECHDEBT(#370): remove if custom query commands are consolidated into AutoCLI.
 func (am AppModule) GetQueryCmd() *cobra.Command {
 	// Group gateway queries under a subcommand
 	cmd := &cobra.Command{
