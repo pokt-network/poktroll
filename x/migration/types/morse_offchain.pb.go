@@ -358,7 +358,7 @@ type MorseApplication struct {
 	Address github_com_cometbft_cometbft_crypto.Address `protobuf:"bytes,1,opt,name=address,proto3,casttype=github.com/cometbft/cometbft/crypto.Address" json:"address" yaml:"address"`
 	// PublicKey is the binary representation of a Morse application's ed25519 public key.
 	PublicKey []byte `protobuf:"bytes,2,opt,name=public_key,json=publicKey,proto3" json:"public_key" yaml:"public_key"`
-	// TODO_MAINNET(@Olshansk):  Should status and/or jailed be considered during the migration, and if so, how?
+	// TODO_MAINNET_MIGRATION(@Olshansk):  Should status and/or jailed be considered during the migration, and if so, how?
 	Jailed bool  `protobuf:"varint,3,opt,name=jailed,proto3" json:"jailed" yaml:"jailed"`
 	Status int32 `protobuf:"varint,4,opt,name=status,proto3" json:"status" yaml:"status"`
 	// The string representation of the BigInt amount of upokt.
@@ -403,7 +403,7 @@ type MorseValidator struct {
 	Address github_com_cometbft_cometbft_crypto.Address `protobuf:"bytes,1,opt,name=address,proto3,casttype=github.com/cometbft/cometbft/crypto.Address" json:"address" yaml:"address"`
 	// The binary representation of a Morse application's ed25519 public key.
 	PublicKey []byte `protobuf:"bytes,2,opt,name=public_key,json=publicKey,proto3" json:"public_key" yaml:"public_key"`
-	// TODO_MAINNET(@Olshansk):  Should status and/or jailed be considered during the migration, and if so, how?
+	// TODO_MAINNET_MIGRATION(@Olshansk):  Should status and/or jailed be considered during the migration, and if so, how?
 	Jailed bool  `protobuf:"varint,3,opt,name=jailed,proto3" json:"jailed"`
 	Status int32 `protobuf:"varint,4,opt,name=status,proto3" json:"status"`
 	// The string representation of the BigInt amount of upokt.
