@@ -21,11 +21,7 @@ var (
 	// Large alpha -> more weight on recent data; less smoothing and fast response.
 	// Small alpha -> more weight on past data; more smoothing and slow response.
 	//
-	// TODO_MAINNET: Use a language agnostic float implementation or arithmetic library
-	// to ensure deterministic results across different language implementations of the
-	// protocol.
-	//
-	// TODO_MAINNET(@olshansk, @rawthil): Play around with the value N for EMA to
+	// TODO_MAINNET_MIGRATION(@olshansk, @rawthil): Play around with the value N for EMA to
 	// capture what the memory should be.
 	emaSmoothingFactor = new(big.Float).SetFloat64(0.1)
 )

@@ -25,7 +25,6 @@ func (query *QueryGetSupplierRequest) ValidateBasic() error {
 
 // ValidateBasic performs basic (non-state-dependant) validation on a QueryAllSuppliersRequest.
 func (query *QueryAllSuppliersRequest) ValidateBasic() error {
-	// TODO_TECHDEBT: update function signature to receive a context.
 	logger := polylog.Ctx(context.TODO())
 
 	switch filter := query.Filter.(type) {

@@ -50,7 +50,7 @@ For example, when a consensus-breaking issue occurs on a node that is synching f
 to manually replace the binary with the new one. There are efforts underway to mitigate this issue, including
 configuration for `cosmovisor` that could automate the process.
 
-<!-- TODO_MAINNET(@okdas): Add links to Cosmovisor documentation on how the new UX can be used to automate syncing from genesis without human input. -->
+<!-- TODO_IMPROVE(@okdas): Add links to Cosmovisor documentation on how the new UX can be used to automate syncing from genesis without human input. -->
 
 :::
 
@@ -66,7 +66,7 @@ The steps to doing so are:
 
 :::warning
 
-TODO_MAINNET(@okdas):
+TODO_IMPROVE(@okdas):
 
 1. **For step 2**: Investigate if the CometBFT rounds/steps need to be aligned as in Morse chain halts. See [this ref](https://docs.cometbft.com/v1.0/spec/consensus/consensus).
 2. **For step 3**: Add `cosmovisor` documentation so its configured to automatically replace the binary when synching from genesis.

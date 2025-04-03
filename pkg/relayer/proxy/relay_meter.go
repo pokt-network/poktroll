@@ -118,7 +118,7 @@ func NewRelayMeter(deps depinject.Config) (relayer.RelayMeter, error) {
 // Start starts the relay meter by observing application staked events and new sessions.
 func (rmtr *ProxyRelayMeter) Start(ctx context.Context) error {
 	// Listen to transaction events to filter application staked events.
-	// TODO_BETA(@red-0ne): refactor this listener to be shared across all query clients
+	// TODO_TECHDEBT(@red-0ne): refactor this listener to be shared across all query clients
 	// and remove the need to listen to events in the relay meter.
 	eventsObs, err := rmtr.eventsQueryClient.EventsBytes(ctx, "tm.event = 'Tx'")
 	if err != nil {
