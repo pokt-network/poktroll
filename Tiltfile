@@ -19,11 +19,11 @@ def merge_dicts(base, updates):
             # Replace or set the value
             base[k] = v
 
+# TODO_IMPROVE: Non urgent requirement, but we need to find a way to ensure that the Tiltfile works (e.g. through config checks)
+# so that if we merge something that passes E2E tests but was not manually validated by the developer, the developer
+# environment is not broken for future engineers.
 
 # Create a localnet config file from defaults, and if a default configuration doesn't exist, populate it with default values
-# TODO_TEST: Non urgent requirement, but we need to find a way to ensure that the Tiltfile works (e.g. through config checks)
-#            so that if we merge something that passes E2E tests but was not manually validated by the developer, the developer
-#            environment is not broken for future engineers.
 localnet_config_path = "localnet_config.yaml"
 localnet_config_defaults = {
     "hot-reloading": True,
@@ -359,7 +359,7 @@ for x in range(localnet_config["relayminers"]["count"]):
 if localnet_config["path_local_repo"]["enabled"]:
     docker_build("path-local", path_local_repo)
 
-# TODO_MAINNET(@okdas): Find and replace all `appgateserver` in ./localnet/grafana-dashboards`
+# TODO_TECHDEBT(@okdas): Find and replace all `appgateserver` in ./localnet/grafana-dashboards`
 # with PATH metrics (see the .json files)
 # Ref: https://github.com/buildwithgrove/path/pull/72
 

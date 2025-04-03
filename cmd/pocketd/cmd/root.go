@@ -140,10 +140,6 @@ For additional documentation, see https://dev.poktroll.com/tools/user_guide/pock
 		relayercmd.RelayerCmd(),
 	)
 
-	// TODO_MAINNET(@commoddity): Consider adding an entrypoint to deploy a PATH
-	// gateway to the localnet to streamline it for users.
-	// For reference, see how we removed appgateserver in #879.
-
 	return rootCmd
 }
 

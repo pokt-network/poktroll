@@ -43,8 +43,7 @@ import (
 
 const (
 	AccountAddressPrefix = "pokt"
-	// TODO_MAINNET: Rename `pocket` to `pocket` EVERYWHERE.
-	Name = "pocket"
+	Name                 = "pocket"
 )
 
 var (
