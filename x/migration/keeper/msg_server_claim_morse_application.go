@@ -25,8 +25,11 @@ func (k msgServer) ClaimMorseApplication(ctx context.Context, msg *migrationtype
 	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
 	logger := k.Logger().With("method", "ClaimMorseApplication")
 
-	// Ensure that gas fees are NOT waived if the claim is invalid OR if the given
-	// Morse account has already been claimed.
+	// Ensure that gas fees are NOT waived if one of the following is true:
+	// - The claim is invalid
+	// - Morse account has already been claimed
+	// Claiming gas fees in the cases above ensures that we prevent spamming.
+	//
 	// TODO_MAINNET_MIGRATION(@bryanchriswhite): Make this conditional once the WaiveMorseClaimGasFees param is available.
 	//
 	// Rationale:
