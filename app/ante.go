@@ -52,7 +52,7 @@ func newSigVerificationGasConsumer(
 	// - Has ONLY one signer
 	// - Contains at least one message
 	// - Contains ONLY Morse claim message(s)
-	if txHasOneSecp256k1Signature(sdkCtx, app, tx) &&
+	if txHasOneSecp256k1Signature(tx) &&
 		txHasOnlyMorseClaimMsgs(tx) {
 		return freeSigGasConsumer
 	}
@@ -70,7 +70,7 @@ func newTxFeeChecker(
 	app *App,
 	tx cosmostypes.Tx,
 ) ante.TxFeeChecker {
-	if txHasOneSecp256k1Signature(sdkCtx, app, tx) &&
+	if txHasOneSecp256k1Signature(tx) &&
 		txHasOnlyMorseClaimMsgs(tx) {
 		return freeTxFeeChecker
 	}
@@ -86,32 +86,24 @@ func newTxFeeChecker(
 // txHasOneSecp256k1Signature returns true if the given transaction contains
 // only one secp256k1 signature. If an error occurs while parsing the tx, or
 // retrieving the signer public key, it returns false (to fail safely).
-func txHasOneSecp256k1Signature(sdkCtx cosmostypes.Context, app *App, tx cosmostypes.Tx) bool {
-	accountKeeper := app.Keepers.AccountKeeper
-
+func txHasOneSecp256k1Signature(tx cosmostypes.Tx) bool {
 	sigTx, ok := tx.(authsigning.SigVerifiableTx)
 	if !ok {
 		return false
 	}
 
-	signers, err := sigTx.GetSigners()
+	pubKeys, err := sigTx.GetPubKeys()
 	if err != nil {
 		return false
 	}
 
 	// Ensure that the transaction has only one signer.
-	if len(signers) != 1 {
-		return false
-	}
-
-	// Retrieve the signer account from the account keeper.
-	signerAcc, err := ante.GetSignerAcc(sdkCtx, accountKeeper, signers[0])
-	if err != nil {
+	if len(pubKeys) != 1 {
 		return false
 	}
 
 	// Check if the signer's public key  is a secp256k1 public key.
-	switch signerAcc.GetPubKey().(type) {
+	switch pubKeys[0].(type) {
 	case *secp256k1.PubKey:
 		return true
 	default:
