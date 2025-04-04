@@ -161,7 +161,9 @@ func (p *pocketdBin) RunCurlWithRetry(rpcUrl, service, method, path, appAddr, da
 func (p *pocketdBin) runPocketCmd(args ...string) (*commandResult, error) {
 	// TODO_IN_THIS_COMMIT: revert!
 	for i, arg := range args {
-		if arg == "tx" && !strings.Contains(args[i+2], "collect-morse-accounts") {
+		if arg == "tx" &&
+			!strings.Contains(args[i+2], "collect-morse-accounts") &&
+			!strings.Contains(args[i+2], "claim-") {
 			args = append(args[:i+4],
 				append([]string{
 					"--fees=1upokt",
