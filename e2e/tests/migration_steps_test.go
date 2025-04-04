@@ -13,6 +13,7 @@ import (
 	"testing"
 
 	cmtjson "github.com/cometbft/cometbft/libs/json"
+	"github.com/cosmos/cosmos-sdk/client/flags"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/regen-network/gocuke"
 	"github.com/stretchr/testify/require"
@@ -28,7 +29,7 @@ import (
 const (
 	// cmdUsagePattern is a substring to search for in the output of a CLI command
 	// to determine whether it was unsuccessful, despite returning a zero exit code.
-	cmdUsagePattern = `--help" for more`
+	cmdUsagePattern = `Usage:`
 
 	defaultMorseStateExportJSONFilename    = "morse_state_export.json"
 	defaultMorseAccountStateJSONFilename   = "morse_account_state.json"
@@ -282,7 +283,7 @@ func (s *migrationSuite) TheMorsePrivateKeyIsUsedToClaimAMorseclaimableaccountAs
 	privKeyArmoredJSONPath := s.writeTempFile("morse_private_key.json", []byte(privKeyArmoredJSONString))
 	commandStringParts := []string{
 		"tx", "migration", fmt.Sprintf("claim-%s", actorType),
-		"--from", s.getShannonKeyName(),
+		fmt.Sprintf("--%s=%s", flags.FlagFrom, s.getShannonKeyName()),
 		keyRingFlag,
 		chainIdFlag,
 		"--yes",
@@ -425,7 +426,8 @@ func (s *migrationSuite) TheAuthorityExecutes(commandStr string) {
 		require.NoError(s, err)
 
 		grpcAddrFlagString := fmt.Sprintf(
-			"--grpc-addr=%s:%d",
+			"--%s=%s:%d",
+			flags.FlagGRPC,
 			rpcURL.Hostname(),
 			defaultGRPCPort,
 		)
@@ -442,14 +444,21 @@ func (s *migrationSuite) TheAuthorityExecutes(commandStr string) {
 	}
 	require.NoError(s, err)
 
+	// TODO_IN_THIS_COMMIT: revert!
+	s.Logf("command: %s: ", results.Command)
+	s.Logf("stdout: %s: ", results.Stdout)
+	s.Logf("stderr: %s: ", results.Stderr)
+	// ---
+
 	// Check if the command returned an error despite having a zero exit code.
 	// This behavior is expected from cosmos-sdk CLIs and is generally not
 	// configurable (i.e. out of our control).
-	if strings.Contains(results.Stdout, cmdUsagePattern) {
+	if strings.Contains(results.Stderr, cmdUsagePattern) {
 		s.Fatalf(
-			"unexpected command usage/help printed.\nCommand: %s\nStdout: %s",
+			"unexpected command usage/help printed.\nCommand: %s\nStdout: %s\nStderr: %s",
 			results.Command,
 			results.Stdout,
+			results.Stderr,
 		)
 	}
 }
@@ -512,7 +521,7 @@ func (s *migrationSuite) TheMorsePrivateKeyIsUsedToClaimAMorseclaimableaccountAs
 	// poktrolld tx migration claim-account --from=shannon-key-xxx <morse_src_address>
 	res, err := s.pocketd.RunCommandOnHost("",
 		"tx", "migration", "claim-account",
-		"--from", s.getShannonKeyName(),
+		fmt.Sprintf("--%s=%s", flags.FlagFrom, s.getShannonKeyName()),
 		keyRingFlag,
 		chainIdFlag,
 		"--yes",
@@ -521,6 +530,12 @@ func (s *migrationSuite) TheMorsePrivateKeyIsUsedToClaimAMorseclaimableaccountAs
 		privKeyArmoredJSONPath,
 	)
 	require.NoError(s, err)
+
+	// TODO_IN_THIS_COMMIT: revert!
+	s.Logf("command: %s", res.Command)
+	s.Logf("stdout: %s", res.Stdout)
+	s.Logf("stderr: %s", res.Stderr)
+	// ---
 
 	// Track the height at which the morse claimable account was claimed.
 	s.morseAccountClaimHeight = s.getCurrentBlockHeight()

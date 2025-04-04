@@ -23,6 +23,7 @@ import (
 	"github.com/pokt-network/poktroll/pkg/client/keyring"
 	"github.com/pokt-network/poktroll/pkg/either"
 	"github.com/pokt-network/poktroll/pkg/encoding"
+	"github.com/pokt-network/poktroll/pkg/polylog"
 	"github.com/pokt-network/poktroll/pkg/retry"
 )
 
@@ -247,6 +248,10 @@ func (txnClient *txClient) SignAndBroadcastWithTimeoutHeight(
 		return either.SyncErr(simErr)
 	}
 
+	// TODO_IN_THIS_COMMIT: revert!
+	gasLimit = 350000
+	// ---
+
 	// Construct the transactions using cosmos' transactions builder.
 	txBuilder := txnClient.txCtx.NewTxBuilder()
 	if err := txBuilder.SetMsgs(msgs...); err != nil {
@@ -309,6 +314,10 @@ func (txnClient *txClient) SignAndBroadcastWithTimeoutHeight(
 	if txResponse.Code != 0 {
 		return either.SyncErr(ErrCheckTx.Wrapf("%s", txResponse.RawLog))
 	}
+
+	// TODO_IN_THIS_COMMIT: add some config option or something that logs the tx hash!
+	logger := polylog.Ctx(ctx)
+	logger.Info().Str("tx_hash", txResponse.TxHash).Send()
 
 	return txnClient.addPendingTransactions(encoding.NormalizeTxHashHex(txResponse.TxHash), timeoutHeight)
 }
