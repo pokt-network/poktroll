@@ -7,6 +7,7 @@ import (
 
 	cosmoslog "cosmossdk.io/log"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
@@ -16,7 +17,7 @@ import (
 // AccountKeeper defines the expected interface for the Account module.
 type AccountKeeper interface {
 	GetAccount(context.Context, sdk.AccAddress) sdk.AccountI // only used for simulation
-	// Methods imported from account should be defined here
+	GetParams(context.Context) authtypes.Params
 }
 
 // BankKeeper defines the expected interface for the Bank module.

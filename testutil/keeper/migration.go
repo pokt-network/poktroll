@@ -59,6 +59,10 @@ func MigrationKeeper(
 
 	ctrl := gomock.NewController(t)
 	mockAccountKeeper := mocks.NewMockAccountKeeper(ctrl)
+	mockAccountKeeper.EXPECT().
+		GetParams(gomock.Any()).
+		Return(authtypes.DefaultParams()).
+		AnyTimes()
 
 	cfg := defaultConfigWithMocks(ctrl)
 	for _, opt := range opts {

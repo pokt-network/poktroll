@@ -20,6 +20,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/server/config"
 	servertypes "github.com/cosmos/cosmos-sdk/server/types"
 	testdata_pulsar "github.com/cosmos/cosmos-sdk/testutil/testdata/testpb"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 	"github.com/cosmos/cosmos-sdk/x/auth"
 	authsims "github.com/cosmos/cosmos-sdk/x/auth/simulation"
@@ -37,6 +38,7 @@ import (
 	"github.com/pokt-network/poktroll/app/keepers"
 	"github.com/pokt-network/poktroll/docs"
 	"github.com/pokt-network/poktroll/telemetry"
+	migrationtypes "github.com/pokt-network/poktroll/x/migration/types"
 )
 
 const (
@@ -47,6 +49,10 @@ const (
 var (
 	// DefaultNodeHome default home directories for the application daemon
 	DefaultNodeHome string
+
+	claimMorseAcctMsgTypeUrl     = sdk.MsgTypeURL(&migrationtypes.MsgClaimMorseAccount{})
+	claimMorseAppMsgTypeUrl      = sdk.MsgTypeURL(&migrationtypes.MsgClaimMorseApplication{})
+	claimMorseSupplierMsgTypeUrl = sdk.MsgTypeURL(&migrationtypes.MsgClaimMorseSupplier{})
 )
 
 var (
@@ -259,6 +265,11 @@ func New(
 	baseAppOptions = append(baseAppOptions, telemetry.InitBlockMetrics)
 
 	app.App = appBuilder.Build(db, traceStore, baseAppOptions...)
+
+	// Set a custom ante handler to waive minimum gas/fees for transactions
+	// that contain ONLY morse claim messages (i.e. MsgClaimMorseAccount,
+	// MsgClaimMorseApplication, and MsgClaimMorseSupplier).
+	app.App.BaseApp.SetAnteHandler(newAnteHandlerFn(app))
 
 	// Register legacy modules
 	app.registerIBCModules()
