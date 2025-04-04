@@ -3,7 +3,7 @@ title: RelayMiner
 sidebar_position: 5
 ---
 
-# RelayMiner <!-- omit in toc -->
+## RelayMiner <!-- omit in toc -->
 
 - [Overview](#overview)
 - [Configuration](#configuration)

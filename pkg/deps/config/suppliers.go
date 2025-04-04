@@ -483,7 +483,6 @@ func newSupplyTxClientsFn(
 		ctx,
 		deps,
 		tx.WithSigningKeyName(signingKeyName),
-		tx.WithCommitTimeoutBlocks(tx.DefaultCommitTimeoutHeightOffset),
 		tx.WithGasPrices(gasPrices),
 	)
 	if err != nil {

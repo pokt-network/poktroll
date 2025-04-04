@@ -5,8 +5,6 @@ sidebar_position: 5
 
 ## Supplier & RelayMiner Walkthrough <!-- omit in toc -->
 
-TODO_BETA(@olshansk): Update this page with all the details.
-
 - [What is a RelayMiner](#what-is-a-relayminer)
 - [RelayMiner Operation Requirements](#relayminer-operation-requirements)
 - [Hardware requirements](#hardware-requirements)

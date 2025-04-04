@@ -63,6 +63,7 @@ func NewClaimProofSupplierClientMap(
 	supplierClientMock.EXPECT().
 		CreateClaims(
 			gomock.Eq(ctx),
+			gomock.Any(),
 			gomock.AssignableToTypeOf(([]client.MsgCreateClaim)(nil)),
 		).
 		Return(nil).
@@ -71,6 +72,7 @@ func NewClaimProofSupplierClientMap(
 	supplierClientMock.EXPECT().
 		SubmitProofs(
 			gomock.Eq(ctx),
+			gomock.Any(),
 			gomock.AssignableToTypeOf(([]client.MsgSubmitProof)(nil)),
 		).
 		Return(nil).

@@ -111,7 +111,7 @@ func (k Keeper) hydrateSessionMetadata(ctx context.Context, sh *sessionHydrator)
 func (k Keeper) hydrateSessionID(ctx context.Context, sh *sessionHydrator) error {
 	prevHashBz := k.GetBlockHash(ctx, sh.sessionHeader.SessionStartBlockHeight)
 
-	// TODO_MAINNET: In the future, we will need to validate that the Service is
+	// TODO_TECHDEBT: In the future, we will need to validate that the Service is
 	// a valid service depending on whether or not its permissioned or permissionless
 
 	if !sharedtypes.IsValidServiceId(sh.sessionHeader.ServiceId) {

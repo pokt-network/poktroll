@@ -12,6 +12,7 @@ import (
 	"github.com/pokt-network/poktroll/pkg/cache"
 	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/polylog"
+	"github.com/pokt-network/poktroll/pkg/retry"
 )
 
 var _ client.AccountQueryClient = (*accQuerier)(nil)
@@ -67,7 +68,9 @@ func (aq *accQuerier) GetAccount(
 
 	// Query the blockchain for the account record
 	req := &accounttypes.QueryAccountRequest{Address: address}
-	res, err := aq.accountQuerier.Account(ctx, req)
+	res, err := retry.Call(ctx, func() (*accounttypes.QueryAccountResponse, error) {
+		return aq.accountQuerier.Account(ctx, req)
+	}, retry.GetStrategy(ctx))
 	if err != nil {
 		return nil, ErrQueryAccountNotFound.Wrapf("address: %s [%v]", address, err)
 	}

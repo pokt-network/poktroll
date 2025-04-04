@@ -102,6 +102,8 @@ For additional documentation, see https://dev.poktroll.com/tools/user_guide/pock
 				return err
 			}
 
+			// TODO_TECHDEBT: Investigate if the call below is duplicated intentionally
+			// or if it can be deleted.
 			if err = client.SetCmdClientContextHandler(clientCtx, cmd); err != nil {
 				return err
 			}
@@ -137,10 +139,6 @@ For additional documentation, see https://dev.poktroll.com/tools/user_guide/pock
 	rootCmd.AddCommand(
 		relayercmd.RelayerCmd(),
 	)
-
-	// TODO_MAINNET(@commoddity): Consider adding an entrypoint to deploy a PATH
-	// gateway to the localnet to streamline it for users.
-	// For reference, see how we removed appgateserver in #879.
 
 	return rootCmd
 }

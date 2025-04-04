@@ -8,6 +8,7 @@ import (
 
 	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/polylog"
+	"github.com/pokt-network/poktroll/pkg/retry"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 )
 
@@ -63,12 +64,14 @@ func (pq *proofQuerier) GetParams(
 
 	logger.Debug().Msg("cache miss proof params")
 
-	lastBlock := pq.blockClient.LastBlock(ctx)
+	res, err := retry.Call(ctx, func() (*prooftypes.QueryParamsAtHeightResponse, error) {
+		lastBlock := pq.blockClient.LastBlock(ctx)
 
-	req := &prooftypes.QueryParamsAtHeightRequest{
-		Height: uint64(lastBlock.Height()),
-	}
-	res, err := pq.proofQuerier.ParamsAtHeight(ctx, req)
+		req := &prooftypes.QueryParamsAtHeightRequest{
+			Height: uint64(lastBlock.Height()),
+		}
+		return pq.proofQuerier.ParamsAtHeight(ctx, req)
+	}, retry.GetStrategy(ctx))
 	if err != nil {
 		return nil, err
 	}
