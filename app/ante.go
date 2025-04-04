@@ -13,8 +13,8 @@ import (
 )
 
 // newAnteHandlerFn returns an AnteHandler that waives minimum gas/fees for transactions
-// that contain ONLY morse claim messages (i.e. MsgClaimMorseAccount, MsgClaimMorseApplication,
-// and MsgClaimMorseSupplier).
+// that contain ONLY morse claim messages.
+// I.e. MsgClaimMorseAccount, MsgClaimMorseApplication and MsgClaimMorseSupplier
 //
 // TODO_MAINNET_CRITICAL(@bryanchriswhite):
 // - Add a migration module param, `WaiveMorseClaimFees`.
@@ -40,16 +40,16 @@ func newAnteHandlerFn(app *App) cosmostypes.AnteHandler {
 
 // newSigVerificationGasConsumer returns a SignatureVerificationGasConsumer that
 // returns zero gas fees for transactions which meet the following criteria:
-// - Has ONLY one signer
-// - Contains at least one message
+// - Has EXACTLY one signer
+// - Contains AT LEAST one message
 // - Contains ONLY morse claim messages (i.e. MsgClaimMorseAccount, MsgClaimMorseApplication, and MsgClaimMorseSupplier)
 func newSigVerificationGasConsumer(
-	sdkCtx cosmostypes.Context,
-	app *App,
+	_ cosmostypes.Context,
+	_ *App,
 	tx cosmostypes.Tx,
 ) ante.SignatureVerificationGasConsumer {
 	// Use the freeSecp256k1SigGasConsumer if the tx:
-	// - Has ONLY one signer
+	// - Has EXACTLY one signer
 	// - Contains at least one message
 	// - Contains ONLY Morse claim message(s)
 	if txHasOneSecp256k1Signature(tx) &&
@@ -63,11 +63,11 @@ func newSigVerificationGasConsumer(
 }
 
 // newTxFeeChecker returns a TxFeeChecker that returns zero gas fees for
-// transactions that contain ONLY morse claim messages (i.e. MsgClaimMorseAccount,
-// MsgClaimMorseApplication, and MsgClaimMorseSupplier).
+// transactions that contain ONLY morse claim messages.
+// I.e. MsgClaimMorseAccount, MsgClaimMorseApplication and MsgClaimMorseSupplier
 func newTxFeeChecker(
-	sdkCtx cosmostypes.Context,
-	app *App,
+	_ cosmostypes.Context,
+	_ *App,
 	tx cosmostypes.Tx,
 ) ante.TxFeeChecker {
 	if txHasOneSecp256k1Signature(tx) &&
@@ -83,9 +83,8 @@ func newTxFeeChecker(
 	return nil
 }
 
-// txHasOneSecp256k1Signature returns true if the given transaction contains
-// only one secp256k1 signature. If an error occurs while parsing the tx, or
-// retrieving the signer public key, it returns false (to fail safely).
+// txHasOneSecp256k1Signature returns true if the given tx contains EXACTLY ONE secp256k1 signature.
+// Returns false if an error occurs while parsing the tx, or retrieving the signer public key, it returns false (to fail safely).
 func txHasOneSecp256k1Signature(tx cosmostypes.Tx) bool {
 	sigTx, ok := tx.(authsigning.SigVerifiableTx)
 	if !ok {
@@ -97,30 +96,29 @@ func txHasOneSecp256k1Signature(tx cosmostypes.Tx) bool {
 		return false
 	}
 
-	// Ensure that the transaction has only one signer.
+	// Ensure that the transaction has exactly one signer.
 	if len(pubKeys) != 1 {
 		return false
 	}
 
 	// Check if the signer's public key  is a secp256k1 public key.
-	switch pubKeys[0].(type) {
-	case *secp256k1.PubKey:
-		return true
-	default:
-	}
-
-	return false
+	_, isSecp256k1 := pubKeys[0].(*secp256k1.PubKey)
+	return isSecp256k1
 }
 
 // txHasOnlyMorseClaimMsgs returns true if the given transaction contains ONLY
-// morse claim messages (i.e. MsgClaimMorseAccount, MsgClaimMorseApplication, and
-// MsgClaimMorseSupplier).
+// morse claim messages.
+// I.e. MsgClaimMorseAccount, MsgClaimMorseApplication and MsgClaimMorseSupplier
 func txHasOnlyMorseClaimMsgs(tx cosmostypes.Tx) bool {
 	msgs := tx.GetMsgs()
+
+	// At least one message must be present in the transaction.
 	if len(msgs) == 0 {
 		return false
 	}
 
+	// Iterate through all messages in the transaction and check if they are
+	// all morse claim messages.
 	for _, msg := range msgs {
 		msgTypeUrl := cosmostypes.MsgTypeURL(msg)
 		switch msgTypeUrl {
@@ -130,6 +128,7 @@ func txHasOnlyMorseClaimMsgs(tx cosmostypes.Tx) bool {
 			// check the remaining messages...
 			continue
 		default:
+			// At least one message is not a morse claim message.
 			return false
 		}
 	}
