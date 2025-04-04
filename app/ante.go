@@ -12,29 +12,25 @@ import (
 	"github.com/pokt-network/poktroll/app/volatile"
 )
 
-// newAnteHandlerFn returns an AnteHandler that waives minimum gas/fees for transactions
-// that contain ONLY morse claim messages (i.e. MsgClaimMorseAccount, MsgClaimMorseApplication,
-// and MsgClaimMorseSupplier).
-//
-// TODO_MAINNET_CRITICAL(@bryanchriswhite):
-// - Add a migration module param, `WaiveMorseClaimFees`.
-// - Return the default antehandler if it is false.
-func newAnteHandlerFn(app *App) cosmostypes.AnteHandler {
-	return func(ctx cosmostypes.Context, tx cosmostypes.Tx, simulate bool) (cosmostypes.Context, error) {
+// newMorseClaimGasFeesWaiverAnteHandlerFn returns an AnteHandler that waives
+// minimum gas/fees for transactions that contain ONLY morse claim messages
+// (i.e. MsgClaimMorseAccount, MsgClaimMorseApplication, and MsgClaimMorseSupplier).
+func newMorseClaimGasFeesWaiverAnteHandlerFn(app *App) cosmostypes.AnteHandler {
+	return func(sdkCtx cosmostypes.Context, tx cosmostypes.Tx, simulate bool) (cosmostypes.Context, error) {
 		anteHandlerFn, err := ante.NewAnteHandler(ante.HandlerOptions{
 			AccountKeeper:          &app.Keepers.AccountKeeper,
 			BankKeeper:             app.Keepers.BankKeeper,
 			ExtensionOptionChecker: nil,
 			FeegrantKeeper:         app.Keepers.FeeGrantKeeper,
 			SignModeHandler:        app.txConfig.SignModeHandler(),
-			SigGasConsumer:         newSigVerificationGasConsumer(ctx, app, tx),
-			TxFeeChecker:           newTxFeeChecker(ctx, app, tx),
+			SigGasConsumer:         newSigVerificationGasConsumer(sdkCtx, app, tx),
+			TxFeeChecker:           newTxFeeChecker(sdkCtx, app, tx),
 		})
 		if err != nil {
-			return ctx, err
+			return sdkCtx, err
 		}
 
-		return anteHandlerFn(ctx, tx, simulate)
+		return anteHandlerFn(sdkCtx, tx, simulate)
 	}
 }
 
@@ -48,11 +44,15 @@ func newSigVerificationGasConsumer(
 	app *App,
 	tx cosmostypes.Tx,
 ) ante.SignatureVerificationGasConsumer {
-	// Use the freeSecp256k1SigGasConsumer if the tx:
+	migrationParams := app.Keepers.MigrationKeeper.GetParams(sdkCtx)
+
+	// Use the freeSecp256k1SigGasConsumer if the waive_morse_claim_gas_fees
+	// migration module param is true AND the tx:
 	// - Has ONLY one signer
 	// - Contains at least one message
 	// - Contains ONLY Morse claim message(s)
-	if txHasOneSecp256k1Signature(tx) &&
+	if migrationParams.WaiveMorseClaimGasFees &&
+		txHasOneSecp256k1Signature(tx) &&
 		txHasOnlyMorseClaimMsgs(tx) {
 		return freeSigGasConsumer
 	}
@@ -70,7 +70,10 @@ func newTxFeeChecker(
 	app *App,
 	tx cosmostypes.Tx,
 ) ante.TxFeeChecker {
-	if txHasOneSecp256k1Signature(tx) &&
+	migrationParams := app.Keepers.MigrationKeeper.GetParams(sdkCtx)
+
+	if migrationParams.WaiveMorseClaimGasFees &&
+		txHasOneSecp256k1Signature(tx) &&
 		txHasOnlyMorseClaimMsgs(tx) {
 		return freeTxFeeChecker
 	}
