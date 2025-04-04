@@ -280,9 +280,8 @@ func (s *suite) TheApplicationReceivesEvmSubscriptionEventsUntilTheSessionEnds()
 }
 
 func (s *suite) TheSubscriptionIsClosedBeforeClaimWindowOpenHeightIsReached() {
-	currentHeight := s.getCurrentBlockHeight()
-
-	require.Equal(s, s.wsCloseHeight, currentHeight)
+	lastCommitHeight := s.getLastCommitBlockHeight()
+	require.Equal(s, s.wsCloseHeight, lastCommitHeight)
 }
 
 func (s *suite) sendRelaysForSession(

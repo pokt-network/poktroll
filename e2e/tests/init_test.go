@@ -84,12 +84,23 @@ const (
 )
 
 // cliAccountQueryResopnse is a data structure that matches the serialized account
-// when querying for onchain accounts via the CLI.
+// which is returned when querying for onchain accounts via the CLI.
 type cliAccountQueryResponse struct {
 	Type  string `json:"type"`
 	Value struct {
 		Account authtypes.BaseAccount `json:"account"`
 	} `json:"value"`
+}
+
+// cliBlockQueryResponse is a data structure that matches the serialized block
+// which is returned when querying for the current block via the CLI.
+type cliBlockQueryResponse struct {
+	Header struct {
+		Height int64 `json:"height"`
+	} `json:"header"`
+	LastCommit struct {
+		Height int64 `json:"height"`
+	} `json:"last_commit"`
 }
 
 func init() {
@@ -967,8 +978,20 @@ func (s *suite) getSupplierParams() suppliertypes.Params {
 	return supplierParamsRes.Params
 }
 
-// getCurrentBlockHeight returns the current block height
+// getCurrentBlockHeight returns the current (uncommitted) block height.
 func (s *suite) getCurrentBlockHeight() int64 {
+	blockRes := s.queryBlockResponse()
+	return blockRes.Header.Height
+}
+
+// getLastCommitBlockHeight returns the block height of the most recently committed block.
+func (s *suite) getLastCommitBlockHeight() int64 {
+	blockRes := s.queryBlockResponse()
+	return blockRes.LastCommit.Height
+}
+
+// queryBlock queries for the current block information.
+func (s *suite) queryBlockResponse() cliBlockQueryResponse {
 	args := []string{
 		"query",
 		"block",
@@ -984,16 +1007,11 @@ func (s *suite) getCurrentBlockHeight() int64 {
 	require.Greater(s, len(stdoutLines), 1, "expected at least one line of output")
 	res.Stdout = strings.Join(stdoutLines[1:], "\n")
 
-	var blockRes struct {
-		Header struct {
-			Height int64 `json:"height"`
-		} `json:"header"`
-	}
-
+	var blockRes cliBlockQueryResponse
 	err = cometjson.Unmarshal([]byte(res.Stdout), &blockRes)
 	require.NoError(s, err)
 
-	return blockRes.Header.Height
+	return blockRes
 }
 
 // readEVMSubscriptionEvents reads the eth_subscription events from the websocket
