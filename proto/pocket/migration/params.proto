@@ -11,4 +11,9 @@ option (gogoproto.stable_marshaler_all) = true;
 message Params {
   option (amino.name) = "pocket/x/migration/Params";
   option (gogoproto.equal) = true;
+
+  // waive_morse_claim_gas_fees is used to enable/disable the waiving of gas fees
+  // associated with txs which ONLY contain Morse account/actor claim messages
+  // AND have one secp256k1 signer.
+  bool waive_morse_claim_gas_fees = 1 [(gogoproto.jsontag) = "waive_morse_claim_gas_fees", (gogoproto.moretags) = "yaml:\"waive_morse_claim_gas_fees\""];
 }
