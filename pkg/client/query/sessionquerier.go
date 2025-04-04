@@ -33,7 +33,7 @@ type sessionQuerier struct {
 }
 
 // NewSessionQuerier returns a new instance of a client.SessionQueryClient by
-// injecting the dependecies provided by the depinject.Config.
+// injecting the dependencies provided by the depinject.Config.
 //
 // Required dependencies:
 // - clientCtx (grpc.ClientConn)

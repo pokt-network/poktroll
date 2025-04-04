@@ -21,6 +21,7 @@ import (
 	"github.com/pokt-network/poktroll/pkg/client/supplier"
 	"github.com/pokt-network/poktroll/pkg/crypto/protocol"
 	"github.com/pokt-network/poktroll/pkg/observable/channel"
+	"github.com/pokt-network/poktroll/pkg/polylog"
 	"github.com/pokt-network/poktroll/pkg/polylog/polyzero"
 	"github.com/pokt-network/poktroll/pkg/relayer"
 	"github.com/pokt-network/poktroll/pkg/relayer/session"
@@ -36,10 +37,6 @@ import (
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
-func TestRelayerSessionsManager_ColdStartRelayMinerWithUnclaimedRelays(t *testing.T) {
-	t.Skip("TODO_TEST: Add a test case which simulates a cold-started relayminer with unclaimed relays.")
-}
-
 // requireProofCountEqualsExpectedValueFromProofParams sets up the session manager
 // along with its dependencies before starting it.
 // It takes in the proofParams to configure the proof requirements and the proofCount
@@ -48,7 +45,7 @@ func TestRelayerSessionsManager_ColdStartRelayMinerWithUnclaimedRelays(t *testin
 // the weight of a relay when updating a session's SMT.
 func requireProofCountEqualsExpectedValueFromProofParams(t *testing.T, proofParams prooftypes.Params, proofCount int) {
 	var (
-		_, ctx         = testpolylog.NewLoggerWithCtx(context.Background(), polyzero.DebugLevel)
+		logger, ctx    = testpolylog.NewLoggerWithCtx(context.Background(), polyzero.DebugLevel)
 		spec           = smt.NewTrieSpec(protocol.NewTrieHasher(), true)
 		emptyBlockHash = make([]byte, spec.PathHasherSize())
 		activeSession  *sessiontypes.Session
@@ -79,10 +76,10 @@ func requireProofCountEqualsExpectedValueFromProofParams(t *testing.T, proofPara
 	proofCost := feePerProof + gasCost
 	supplierOperatorBalance := proofCost
 	supplierClientMap := testsupplier.NewClaimProofSupplierClientMap(ctx, t, supplierOperatorAddress, proofCount)
-	blockPublishCh, minedRelaysPublishCh := setupDependencies(t, ctx, supplierClientMap, emptyBlockHash, proofParams, supplierOperatorBalance)
+	blockPublishCh, minedRelaysPublishCh := setupDependencies(t, ctx, logger, supplierClientMap, emptyBlockHash, proofParams, supplierOperatorBalance)
 
 	// Publish a mined relay to the minedRelaysPublishCh to insert into the session tree.
-	minedRelay := testrelayer.NewUnsignedMinedRelay(t, activeSession, supplierOperatorAddress)
+	minedRelay := testrelayer.NewUnsignedMinedRelay(t, activeSession.Header, supplierOperatorAddress)
 	minedRelaysPublishCh <- minedRelay
 
 	// The relayerSessionsManager should have created a session tree for the relay.
@@ -141,7 +138,7 @@ func TestRelayerSessionsManager_ProofNotRequired(t *testing.T) {
 
 func TestRelayerSessionsManager_InsufficientBalanceForProofSubmission(t *testing.T) {
 	var (
-		_, ctx         = testpolylog.NewLoggerWithCtx(context.Background(), polyzero.DebugLevel)
+		logger, ctx    = testpolylog.NewLoggerWithCtx(context.Background(), polyzero.DebugLevel)
 		spec           = smt.NewTrieSpec(protocol.NewTrieHasher(), true)
 		emptyBlockHash = make([]byte, spec.PathHasherSize())
 	)
@@ -208,7 +205,6 @@ func TestRelayerSessionsManager_InsufficientBalanceForProofSubmission(t *testing
 	supplierClientMock := mockclient.NewMockSupplierClient(ctrl)
 
 	supplierOperatorAddress := sample.AccAddress()
-	supplierOperatorAccAddress := sdktypes.MustAccAddressFromBech32(supplierOperatorAddress)
 
 	proofSubmissionFee := prooftypes.DefaultParams().ProofSubmissionFee.Amount.Int64()
 	claimAndProofGasCost := session.ClamAndProofGasCost.Amount.Int64()
@@ -216,7 +212,7 @@ func TestRelayerSessionsManager_InsufficientBalanceForProofSubmission(t *testing
 	supplierOperatorBalance := proofSubmissionFee + claimAndProofGasCost + 1
 	supplierClientMock.EXPECT().
 		OperatorAddress().
-		Return(&supplierOperatorAccAddress).
+		Return(supplierOperatorAddress).
 		AnyTimes()
 
 	supplierClientMock.EXPECT().
@@ -250,17 +246,17 @@ func TestRelayerSessionsManager_InsufficientBalanceForProofSubmission(t *testing
 	supplierClientMap := supplier.NewSupplierClientMap()
 	supplierClientMap.SupplierClients[supplierOperatorAddress] = supplierClientMock
 
-	blockPublishCh, minedRelaysPublishCh := setupDependencies(t, ctx, supplierClientMap, emptyBlockHash, proofParams, supplierOperatorBalance)
+	blockPublishCh, minedRelaysPublishCh := setupDependencies(t, ctx, logger, supplierClientMap, emptyBlockHash, proofParams, supplierOperatorBalance)
 
 	// For each service, publish a mined relay to the minedRelaysPublishCh to
 	// insert into the session tree.
-	lowCUPRMinedRelay := testrelayer.NewUnsignedMinedRelay(t, lowCUPRServiceActiveSession, supplierOperatorAddress)
+	lowCUPRMinedRelay := testrelayer.NewUnsignedMinedRelay(t, lowCUPRServiceActiveSession.Header, supplierOperatorAddress)
 	minedRelaysPublishCh <- lowCUPRMinedRelay
 
 	// The relayerSessionsManager should have created a session tree for the low CUPR relay.
 	waitSimulateIO()
 
-	highCUPRMinedRelay := testrelayer.NewUnsignedMinedRelay(t, highCUPRServiceActiveSession, supplierOperatorAddress)
+	highCUPRMinedRelay := testrelayer.NewUnsignedMinedRelay(t, highCUPRServiceActiveSession.Header, supplierOperatorAddress)
 	minedRelaysPublishCh <- highCUPRMinedRelay
 
 	// The relayerSessionsManager should have created a session tree for the high CUPR relay.
@@ -273,7 +269,7 @@ func TestRelayerSessionsManager_InsufficientBalanceForProofSubmission(t *testing
 // process asynchronously. This effectively simulates I/O delays which would
 // normally be present.
 func waitSimulateIO() {
-	time.Sleep(50 * time.Millisecond)
+	time.Sleep(100 * time.Millisecond)
 }
 
 // uPOKTCoin returns a pointer to a uPOKT denomination coin with the given amount.
@@ -284,6 +280,7 @@ func uPOKTCoin(amount int64) *sdktypes.Coin {
 func setupDependencies(
 	t *testing.T,
 	ctx context.Context,
+	logger polylog.Logger,
 	supplierClientMap *supplier.SupplierClientMap,
 	blockHash []byte,
 	proofParams prooftypes.Params,
@@ -333,11 +330,12 @@ func setupDependencies(
 		serviceQueryClientMock,
 		proofQueryClientMock,
 		bankQueryClient,
+		logger,
 	)
 	storesDirectoryOpt := testrelayer.WithTempStoresDirectory(t)
 
 	// Create a new relayer sessions manager.
-	relayerSessionsManager, err := session.NewRelayerSessions(ctx, deps, storesDirectoryOpt)
+	relayerSessionsManager, err := session.NewRelayerSessions(deps, storesDirectoryOpt)
 	require.NoError(t, err)
 	require.NotNil(t, relayerSessionsManager)
 

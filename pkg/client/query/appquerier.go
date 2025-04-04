@@ -30,7 +30,7 @@ type appQuerier struct {
 }
 
 // NewApplicationQuerier returns a new instance of a client.ApplicationQueryClient
-// by injecting the dependecies provided by the depinject.Config
+// by injecting the dependencies provided by the depinject.Config
 //
 // Required dependencies:
 // - clientCtx

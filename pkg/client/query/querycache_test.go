@@ -502,6 +502,9 @@ func supplyCacheDeps(t *testing.T) depinject.Config {
 	blockHashCache, err := memory.NewKeyValueCache[query.BlockHash](opts)
 	require.NoError(t, err)
 
+	claimsCache, err := memory.NewKeyValueCache[prooftypes.Claim](opts)
+	require.NoError(t, err)
+
 	sharedParamsCache, err := querycache.NewParamsCache[sharedtypes.Params](opts)
 	require.NoError(t, err)
 
@@ -525,6 +528,7 @@ func supplyCacheDeps(t *testing.T) depinject.Config {
 		sessionCache,
 		balanceCache,
 		blockHashCache,
+		claimsCache,
 
 		sharedParamsCache,
 		appParamsCache,

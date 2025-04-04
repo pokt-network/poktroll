@@ -29,7 +29,7 @@ type bankQuerier struct {
 }
 
 // NewBankQuerier returns a new instance of a client.BankQueryClient by
-// injecting the dependecies provided by the depinject.Config.
+// injecting the dependencies provided by the depinject.Config.
 //
 // Required dependencies:
 // - clientCtx

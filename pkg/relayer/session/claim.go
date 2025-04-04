@@ -135,11 +135,6 @@ func (rs *relayerSessionsManager) waitForEarliestCreateClaimsHeight(
 	// The block that'll be used as a source of entropy for which branch(es) to
 	// prove should be deterministic and use onchain governance params.
 	claimsWindowOpenBlock := rs.waitForBlock(ctx, claimWindowOpenHeight)
-	// TODO_MAINNET: If a relayminer is cold-started with persisted but unclaimed ("late")
-	// sessions, the claimsWindowOpenBlock will never be observed. In this case, we should
-	// use a block query client to populate the block client replay observable at the time
-	// of block client construction. This check and failure branch can be removed once this
-	// is implemented.
 	if claimsWindowOpenBlock == nil {
 		logger.Warn().Msg("failed to observe earliest claim commit height offset seed block height")
 		failedCreateClaimsSessionsCh <- sessionTrees
@@ -180,6 +175,8 @@ func (rs *relayerSessionsManager) waitForEarliestCreateClaimsHeight(
 	}()
 
 	// Create claims for the given sessionTrees while waiting for the target block height.
+	// TODO_POST_MAINNET(red-0ne): Support skipping sessionTrees that have already their
+	// claim created and are ready to be proven.
 	claimsFlushed, failedClaims := rs.createClaimRoots(sessionTrees)
 	if len(failedClaims) > 0 {
 		logger.Warn().Msgf("failed to create claims for %d session trees", len(failedClaims))
@@ -202,6 +199,8 @@ func (rs *relayerSessionsManager) newMapClaimSessionsFn(
 		ctx context.Context,
 		sessionTrees []relayer.SessionTree,
 	) (_ either.SessionTrees, skip bool) {
+		// TODO_POST_MAINNET(red-0ne): Support skipping sessionTrees that have already their
+		// claim created and are ready to be proven.
 		if len(sessionTrees) == 0 {
 			return either.Success(sessionTrees), false
 		}
