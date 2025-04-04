@@ -333,6 +333,10 @@ genesis:
         # TODO_MAINNET_MIGRATION(@olshansk): Consolidate the usage of DAO/PNF throughout the configs & codebase.
         dao_reward_address: "pokt1eeeksh2tvkh7wzmfrljnhw4wrhs55lcuvmekkw"
         global_inflation_per_claim: 0.1
+    # For ref, see proto/poktroll/migration/params.proto
+    migration:
+      params:
+        waive_morse_claim_gas_fees: true
     # For ref, see proto/poktroll/shared/params.proto
     shared:
       params:
