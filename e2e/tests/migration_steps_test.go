@@ -115,13 +115,6 @@ type migrationSuite struct {
 	expectedSupplierEffectiveServiceHeight int64
 }
 
-type actorTypeEnum = string
-
-const (
-	actorTypeApp      actorTypeEnum = "application"
-	actorTypeSupplier actorTypeEnum = "supplier"
-)
-
 var (
 	defaultMorseDataDir    = path.Join(".pocket", "data")
 	morseDatabaseFileNames = []string{
@@ -403,9 +396,6 @@ func (s *migrationSuite) TheShannonServiceConfigMatchesTheOneProvidedWhenClaimin
 		s.waitForBlockHeight(effectiveServiceHeight)
 		foundSupplier := s.getSupplierInfo(s.getShannonKeyName())
 
-		// TODO_IN_THIS_PR: Ensure that the provided staking configs reflect what's onchain
-		// TODO_IN_THIS_PR: Ensure that if --from is already a staked supplier, onchain returns an error if claiming for the same account
-		// Let's discuss this in discord if not clear.
 		require.Equal(s, s.claimedActorServiceId, foundSupplier.GetServices()[0].GetServiceId())
 	default:
 		s.Fatal("unexpected actor type %q", actorType)

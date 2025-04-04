@@ -179,7 +179,7 @@ func loadSupplierStakeConfigYAML(configYAMLPath string) (*config.SupplierStakeCo
 	}
 
 	// Validate that the stake amount is not set in the YAML config.
-	if len(yamlStakeConfig.StakeAmount) == 0 {
+	if len(yamlStakeConfig.StakeAmount) != 0 {
 		return nil, config.ErrSupplierConfigInvalidStake.Wrapf("stake_amount MUST NOT be set in the supplier config YAML; it is automatically determined by the onchain MorseClaimableAccount state")
 	}
 
