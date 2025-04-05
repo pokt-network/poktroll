@@ -16,10 +16,13 @@ import (
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/regen-network/gocuke"
 	"github.com/stretchr/testify/require"
+	"gopkg.in/yaml.v2"
 
 	"github.com/pokt-network/poktroll/app/volatile"
 	"github.com/pokt-network/poktroll/testutil/testmigration"
 	migrationtypes "github.com/pokt-network/poktroll/x/migration/types"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
+	"github.com/pokt-network/poktroll/x/supplier/config"
 )
 
 const (
@@ -27,8 +30,9 @@ const (
 	// to determine whether it was unsuccessful, despite returning a zero exit code.
 	cmdUsagePattern = `--help" for more`
 
-	defaultMorseStateExportJSONFilename  = "morse_state_export.json"
-	defaultMorseAccountStateJSONFilename = "morse_account_state.json"
+	defaultMorseStateExportJSONFilename    = "morse_state_export.json"
+	defaultMorseAccountStateJSONFilename   = "morse_account_state.json"
+	defaultSupplierStakeConfigYAMLFileName = "supplier_stake_config.yaml"
 )
 
 var (
@@ -75,6 +79,10 @@ type migrationSuite struct {
 	// application staked MorseClaimableAccount in consideration.
 	appMorseClaimableAccount *migrationtypes.MorseClaimableAccount
 
+	// supplierMorseClaimableAccount is used to hold the query result for the current
+	// supplier staked MorseClaimableAccount in consideration.
+	supplierMorseClaimableAccount *migrationtypes.MorseClaimableAccount
+
 	// expectedMorseClaimableAccount is used to hold the query result for the
 	// current expected MorseClaimableAccount in consideration.
 	expectedMorseClaimableAccount *migrationtypes.MorseClaimableAccount
@@ -88,21 +96,24 @@ type migrationSuite struct {
 	// and populated in the Before() method, which is called before each test case.
 	previousUnstakedBalanceUpoktOfCurrentShannonIdx cosmostypes.Coin
 
-	// previousStakedApplicationUpokt is the upokt which is staked in scenarios where an account
-	// is already staked.
+	// previousStakedActorUpokt is the upokt amount if the actor was already staked in Morse.
 	// It is initialized in the Before() method and the updated in relevant subsequent steps.
-	previousStakedApplicationUpokt cosmostypes.Coin
+	previousStakedActorUpokt cosmostypes.Coin
 
 	// faucetFundedBalanceUpokt is the upokt balance that is transferred by the faucet during setup.
 	faucetFundedBalanceUpokt cosmostypes.Coin
+
+	// supplierStakingFeeIfApplicable is used to make arithmetic corrections to
+	// the account balance expectations when staking a supplier. This is necessary
+	// in order to account for the fee incurred by suppliers when staking.
+	supplierStakingFeeIfApplicable cosmostypes.Coin
+
+	// expectedSupplierEffectiveServiceHeight is used to indicate when it is safe
+	// to make assertions regarding the respective supplier's services state.
+	// This is necessary when claiming a supplier Morse account with an existing
+	// Shannon supplier account.
+	expectedSupplierEffectiveServiceHeight int64
 }
-
-type actorTypeEnum = string
-
-const (
-	actorTypeApp      actorTypeEnum = "application"
-	actorTypeSupplier actorTypeEnum = "supplier"
-)
 
 var (
 	defaultMorseDataDir    = path.Join(".pocket", "data")
@@ -128,17 +139,16 @@ func (s *migrationSuite) Before() {
 	s.nextMorseKeyIdx()
 
 	// If the current Shannon key has an onchain balance, track it for later use in assertions.
-	s.previousUnstakedBalanceUpoktOfCurrentShannonIdx = cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 0)
-	if shannonDestAddr, isFound := s.getShannonKeyAddress(); isFound {
-		if _, isFound = s.queryAccount(shannonDestAddr); isFound {
-			upoktBalanceInt := s.getAccBalance(s.getShannonKeyName())
-			upoktBalanceCoin := cosmostypes.NewInt64Coin(volatile.DenomuPOKT, int64(upoktBalanceInt))
-			s.previousUnstakedBalanceUpoktOfCurrentShannonIdx = upoktBalanceCoin
-		}
-	}
+	s.updatePreviousUnstakedBalanceUpoktOfCurrentShannonIdx()
 
 	// Initialize the previous actor stake here. It is updated in a relevant subsequent step.
-	s.previousStakedApplicationUpokt = cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 0)
+	s.previousStakedActorUpokt = cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 0)
+
+	// Initialize the fauced funded balance to zero upokt.
+	s.faucetFundedBalanceUpokt = cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 0)
+
+	// Initialize the supplier staking fee to zero upokt, non-supplier for cases.
+	s.supplierStakingFeeIfApplicable = cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 0)
 }
 
 // TestMigrationWithFixtureData runs the migration_fixture.feature file ONLY.
@@ -170,34 +180,57 @@ func (s *migrationSuite) ALocalMorseNodePersistedStateExists() {
 	}
 }
 
+// updatePreviousUnstakedBalanceUpoktOfCurrentShannonIdx queries for the current
+// balance of the current Shannon account and updates s.previousUnstakedBalanceUpoktOfCurrentShannonIdx
+// for later assertions.
+// It is updated:
+//   - In the Before(), at the beginning of the scenario
+//   - In the "shannon destination account is staked as an <actor> with <amount> upokt for <service_id> service step", after staking
+func (s *migrationSuite) updatePreviousUnstakedBalanceUpoktOfCurrentShannonIdx() {
+	s.previousUnstakedBalanceUpoktOfCurrentShannonIdx = cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 0)
+	if shannonDestAddr, isFound := s.getShannonKeyAddress(); isFound {
+		if _, isFound = s.queryAccount(shannonDestAddr); isFound {
+			upoktBalanceInt := s.getAccBalance(s.getShannonKeyName())
+			upoktBalanceCoin := cosmostypes.NewInt64Coin(volatile.DenomuPOKT, int64(upoktBalanceInt))
+			s.previousUnstakedBalanceUpoktOfCurrentShannonIdx = upoktBalanceCoin
+		}
+	}
+}
+
 func (s *migrationSuite) NoMorseclaimableaccountsExist() {
 	morseClaimableAccounts := s.queryListMorseClaimableAccounts()
 	require.Lessf(s, len(morseClaimableAccounts), 1, "expected 0 morse claimable accounts, got %d", len(morseClaimableAccounts))
 }
 
 func (s *migrationSuite) TheShannonDestinationAccountIsStakedAsAnWithUpoktForService(actorType actorTypeEnum, upoktAmount int64, serviceId string) {
-	s.previousStakedApplicationUpokt = cosmostypes.NewInt64Coin(volatile.DenomuPOKT, upoktAmount)
+	s.previousStakedActorUpokt = cosmostypes.NewInt64Coin(volatile.DenomuPOKT, upoktAmount)
 
-	s.TheUserStakesAWithUpoktForServiceFromTheAccount(actorType, s.previousStakedApplicationUpokt.Amount.Int64(), serviceId, s.getShannonKeyName())
+	s.TheUserStakesAWithUpoktForServiceFromTheAccount(actorType, s.previousStakedActorUpokt.Amount.Int64(), serviceId, s.getShannonKeyName())
 	s.TheUserShouldBeAbleToSeeStandardOutputContaining("txhash:")
 	s.TheUserShouldBeAbleToSeeStandardOutputContaining("code: 0")
 	s.ThePocketdBinaryShouldExitWithoutError()
 	s.TheUserShouldWaitForSeconds(3)
 
-	s.TheForAccountIsStakedWithUpokt(actorType, s.getShannonKeyName(), s.previousStakedApplicationUpokt.Amount.Int64())
+	s.TheForAccountIsStakedWithUpokt(actorType, s.getShannonKeyName(), s.previousStakedActorUpokt.Amount.Int64())
+
+	s.updatePreviousUnstakedBalanceUpoktOfCurrentShannonIdx()
 }
 
 func (s *migrationSuite) TheShannonDestinationAccountIsStakedAsAn(actorType actorTypeEnum) {
+	var expectedActorStake cosmostypes.Coin
+
 	switch actorType {
 	case actorTypeApp:
-		expectedAppStake := s.appMorseClaimableAccount.GetApplicationStake().Add(s.previousStakedApplicationUpokt)
-		s.TheForAccountIsStakedWithUpokt(actorType, s.getShannonKeyName(), expectedAppStake.Amount.Int64())
-	//case actorTypeSupplier:
-	//  expectedSupplierStake := s.supplierMorseClaimableAccount.GetSupplierStake().Add(s.previousSupplierStakeOfCurrentShannonIdx)
-	//	s.TheForAccountIsStakedWithUpokt(actorType, s.getShannonKeyName(), s.supplierMorseClaimableAccount.GetSupplierStake().Amount.Int64())
+		expectedActorStake = s.expectedMorseClaimableAccount.GetApplicationStake().Add(s.previousStakedActorUpokt)
+	case actorTypeSupplier:
+		expectedActorStake = s.supplierMorseClaimableAccount.GetSupplierStake().Add(s.previousStakedActorUpokt)
+		sharedParams := s.getSharedParams()
+		s.expectedSupplierEffectiveServiceHeight = sharedtypes.GetNextSessionStartHeight(&sharedParams, s.getCurrentBlockHeight())
 	default:
 		s.Fatal("unexpected actor type %q", actorType)
 	}
+
+	s.TheForAccountIsStakedWithUpokt(actorType, s.getShannonKeyName(), expectedActorStake.Amount.Int64())
 }
 
 func (s *migrationSuite) TheShannonStakeIncreasedByTheCorrespondingActorStakeAmountOfTheMorseclaimableaccount(actorType actorTypeEnum) {
@@ -207,10 +240,12 @@ func (s *migrationSuite) TheShannonStakeIncreasedByTheCorrespondingActorStakeAmo
 	switch actorType {
 	case actorTypeApp:
 		currentActorStake := s.getApplicationInfo(s.getShannonKeyName()).GetStake()
-		*actorStakeDiff = currentActorStake.Sub(s.previousUnstakedBalanceUpoktOfCurrentShannonIdx)
-		*expectedStakeDiff = s.expectedMorseClaimableAccount.GetApplicationStake().
-			Add(s.previousStakedApplicationUpokt)
-	//case actorTypeSupplier:
+		*actorStakeDiff = currentActorStake.Sub(s.previousStakedActorUpokt)
+		*expectedStakeDiff = s.expectedMorseClaimableAccount.GetApplicationStake()
+	case actorTypeSupplier:
+		currentActorStake := s.getSupplierInfo(s.getShannonKeyName()).GetStake()
+		*actorStakeDiff = currentActorStake.Sub(s.previousStakedActorUpokt)
+		*expectedStakeDiff = s.expectedMorseClaimableAccount.GetSupplierStake()
 	default:
 		s.Fatal("unexpected actor type %q", actorType)
 	}
@@ -227,6 +262,13 @@ func (s *migrationSuite) TheMorsePrivateKeyIsUsedToClaimAMorseclaimableaccountAs
 		// Assign the expected claimable account for the current scenario.
 		s.expectedMorseClaimableAccount = s.appMorseClaimableAccount
 		morseKeyIdx = s.appAccountIdx
+	case actorTypeSupplier:
+		sharedParams := s.getSharedParams()
+		s.expectedSupplierEffectiveServiceHeight = sharedtypes.GetNextSessionStartHeight(&sharedParams, s.getCurrentBlockHeight())
+
+		s.expectedMorseClaimableAccount = s.supplierMorseClaimableAccount
+		s.supplierStakingFeeIfApplicable = *s.getSupplierParams().StakingFee
+		morseKeyIdx = s.supplierAccountIdx
 	default:
 		s.Fatal("unexpected actor type %q", actorType)
 	}
@@ -238,10 +280,8 @@ func (s *migrationSuite) TheMorsePrivateKeyIsUsedToClaimAMorseclaimableaccountAs
 	require.NoError(s, err)
 
 	privKeyArmoredJSONPath := s.writeTempFile("morse_private_key.json", []byte(privKeyArmoredJSONString))
-
-	// poktrolld tx migration claim-application --from=shannon-key-xxx <morse_src_address> <service_id>
-	res, err := s.pocketd.RunCommandOnHost("",
-		"tx", "migration", "claim-application",
+	commandStringParts := []string{
+		"tx", "migration", fmt.Sprintf("claim-%s", actorType),
 		"--from", s.getShannonKeyName(),
 		keyRingFlag,
 		chainIdFlag,
@@ -249,8 +289,17 @@ func (s *migrationSuite) TheMorsePrivateKeyIsUsedToClaimAMorseclaimableaccountAs
 		"--output=json",
 		"--no-passphrase",
 		privKeyArmoredJSONPath,
-		serviceId,
-	)
+	}
+
+	switch actorType {
+	case actorTypeApp:
+		commandStringParts = append(commandStringParts, serviceId)
+	case actorTypeSupplier:
+		supplierStakeConfigPath := s.writeTempSupplierStakeConfig(serviceId, "")
+		commandStringParts = append(commandStringParts, supplierStakeConfigPath)
+	}
+
+	res, err := s.pocketd.RunCommandOnHost("", commandStringParts...)
 	require.NoError(s, err)
 
 	// Track the height at which the morse claimable account was claimed.
@@ -277,12 +326,14 @@ func (s *migrationSuite) AMorsestateexportIsWrittenTo(morseStateExportFile strin
 func (s *migrationSuite) AnUnclaimedMorseclaimableaccountWithAKnownPrivateKeyExists() {
 	s.unstakedAccountIdx = s.nextMorseUnstakedKeyIdx()
 	s.appAccountIdx = s.nextMorseApplicationKeyIdx()
+	s.supplierAccountIdx = s.nextMorseSupplierKeyIdx()
 
 	// Since this is a step which is common to usage across multiple actor types,
 	// we must store the next available account index for each actor type for use
 	// in subsequent steps.
 	s.unstakedMorseClaimableAccount = s.getMorseClaimableAccountByIdx(s.unstakedAccountIdx)
 	s.appMorseClaimableAccount = s.getMorseClaimableAccountByIdx(s.appAccountIdx)
+	s.supplierMorseClaimableAccount = s.getMorseClaimableAccountByIdx(s.supplierAccountIdx)
 }
 
 // getMorseClaimableAccountByIdx returns a MorseClaimableAccount for the given index.
@@ -316,7 +367,21 @@ func (s *migrationSuite) TheShannonDestinationAccountBalanceIsIncreasedByTheUnst
 
 	expectedBalanceUpoktDiffCoin := s.expectedMorseClaimableAccount.GetUnstakedBalance().
 		Add(s.faucetFundedBalanceUpokt).
-		Sub(s.previousStakedApplicationUpokt)
+		// s.supplierStakingFeeIfApplicable is subtracted to account
+		// for the staking fee incurred during the action under test;
+		// e.g., claiming the Morse supplier account.
+		Sub(s.supplierStakingFeeIfApplicable).
+		Sub(s.previousStakedActorUpokt)
+
+	if !s.previousUnstakedBalanceUpoktOfCurrentShannonIdx.IsZero() {
+		expectedBalanceUpoktDiffCoin = expectedBalanceUpoktDiffCoin.
+			Sub(s.previousUnstakedBalanceUpoktOfCurrentShannonIdx).
+			// s.previousUnstakedBalanceUpoktOfCurrentShannonIdx will be missing
+			// s.supplierStakingFeeIfApplicable upokt due to the staking fee
+			// incurred during scenario setup.
+			Sub(s.supplierStakingFeeIfApplicable)
+	}
+
 	require.Equal(s, expectedBalanceUpoktDiffCoin, balanceUpoktDiffCoin)
 }
 
@@ -326,7 +391,12 @@ func (s *migrationSuite) TheShannonServiceConfigMatchesTheOneProvidedWhenClaimin
 		foundApp := s.getApplicationInfo(s.getShannonKeyName())
 		require.Equal(s, s.claimedActorServiceId, foundApp.GetServiceConfigs()[0].GetServiceId())
 	case actorTypeSupplier:
-		s.Skip("TODO_MAINNET_CRITICAL(@bryanchriswhite, #1034): Implement.")
+		effectiveServiceHeight := s.expectedSupplierEffectiveServiceHeight
+		s.Logf("waiting for effective service height: %d", effectiveServiceHeight)
+		s.waitForBlockHeight(effectiveServiceHeight)
+		foundSupplier := s.getSupplierInfo(s.getShannonKeyName())
+
+		require.Equal(s, s.claimedActorServiceId, foundSupplier.GetServices()[0].GetServiceId())
 	default:
 		s.Fatal("unexpected actor type %q", actorType)
 	}
@@ -470,14 +540,7 @@ func (s *migrationSuite) TheShannonDestinationAccountExistsOnchain() {
 }
 
 func (s *migrationSuite) TheShannonDestinationAccountIsNotStakedAsAn(actorType actorTypeEnum) {
-	switch actorType {
-	case actorTypeApp:
-		s.TheUserVerifiesTheForAccountIsNotStaked(actorType, s.getShannonKeyName())
-	case actorTypeSupplier:
-		s.Skip("TODO_MAINNET_CRITICAL(@bryanchriswhite, #1034): Implement.")
-	default:
-		s.Fatalf("unknown actor type %q", actorType)
-	}
+	s.TheUserVerifiesTheForAccountIsNotStaked(actorType, s.getShannonKeyName())
 }
 
 func (s *migrationSuite) MorsePrivateKeysAreAvailableInTheFollowingActorTypeDistribution(a gocuke.DataTable) {
@@ -639,6 +702,15 @@ func (s *migrationSuite) nextMorseApplicationKeyIdx() uint64 {
 	return s.nextMorseActorKeyIdx(testmigration.MorseApplicationActor)
 }
 
+// nextMorseSupplierKeyIdx returns the next morse private key index which is
+// intended to be used for staked supplier morse accounts. If the current
+// morseKeyIdx is not a staked supplier morse account, morseKeyIdx is incremented
+// until the next Morse key index which should be a staked supplier account,
+// given the round-robin distribution of morse account actor types.
+func (s *migrationSuite) nextMorseSupplierKeyIdx() uint64 {
+	return s.nextMorseActorKeyIdx(testmigration.MorseSupplierActor)
+}
+
 // nextMorseActorKeyIdx returns the next morse private key index which matches
 // the given actor type.
 //
@@ -717,4 +789,44 @@ func (s *migrationSuite) queryListMorseClaimableAccounts() []migrationtypes.Mors
 	require.NoError(s, err)
 
 	return res.MorseClaimableAccount
+}
+
+// writeTempSupplierStakeConfig writes a supplier stake config with the given
+// serviceID and optional operatorAddress to a temporary file which is deleted
+// when the test completes. If operatorAddress is empty, the current shannon
+// address is used.
+func (s *migrationSuite) writeTempSupplierStakeConfig(serviceId, operatorAddress string) string {
+	ownerAddress, isFound := s.getShannonKeyAddress()
+	require.True(s, isFound)
+
+	if operatorAddress == "" {
+		operatorAddress = ownerAddress
+	}
+
+	supplierStakeConfig := config.YAMLStakeConfig{
+		OwnerAddress:    ownerAddress,
+		OperatorAddress: operatorAddress,
+		Services: []*config.YAMLStakeService{
+			{
+				ServiceId: serviceId,
+				Endpoints: []config.YAMLServiceEndpoint{
+					{
+						PubliclyExposedUrl: "http://relayminer1:8545",
+						RPCType:            "JSON_RPC",
+					},
+				},
+				// RevSharePercent: (intentionally omitted;
+				// the default rev share will be applied),
+			},
+		},
+		DefaultRevSharePercent: map[string]uint64{
+			ownerAddress: 100,
+		},
+		// StakeAmount: 		(explicitly omitted),
+		// see https://dev.poktroll.com/operate/morse_migration/claiming#claim-a-morse-supplier-staked-actor
+	}
+	supplierStakeConfigBz, err := yaml.Marshal(supplierStakeConfig)
+	require.NoError(s, err)
+
+	return s.writeTempFile(defaultSupplierStakeConfigYAMLFileName, supplierStakeConfigBz)
 }
