@@ -17,8 +17,8 @@ import (
 func TestMsgServer_UnstakeApplication_Success(t *testing.T) {
 	applicationModuleKeepers, ctx := keepertest.NewApplicationModuleKeepers(t)
 	srv := keeper.NewMsgServerImpl(*applicationModuleKeepers.Keeper)
-	sharedParams := applicationModuleKeepers.SharedKeeper.GetParams(ctx)
-	sessionEndHeight := sharedtypes.GetSessionEndHeight(&sharedParams, sdk.UnwrapSDKContext(ctx).BlockHeight())
+	sharedParamsUpdates := applicationModuleKeepers.SharedKeeper.GetParamsUpdates(ctx)
+	sessionEndHeight := sharedtypes.GetSessionEndHeight(sharedParamsUpdates, sdk.UnwrapSDKContext(ctx).BlockHeight())
 
 	// Generate an address for the application
 	unstakingAppAddr := sample.AccAddress()
@@ -64,7 +64,7 @@ func TestMsgServer_UnstakeApplication_Success(t *testing.T) {
 
 	// Assert that the EventApplicationUnbondingBegin event is emitted.
 	foundApp.UnstakeSessionEndHeight = uint64(sessionEndHeight)
-	unbondingEndHeight := apptypes.GetApplicationUnbondingHeight(&sharedParams, &foundApp)
+	unbondingEndHeight := apptypes.GetApplicationUnbondingHeight(sharedParamsUpdates, &foundApp)
 	expectedEvent, err := sdk.TypedEventToEvent(
 		&apptypes.EventApplicationUnbondingBegin{
 			Application:        &foundApp,
@@ -89,7 +89,7 @@ func TestMsgServer_UnstakeApplication_Success(t *testing.T) {
 
 	// Move block height to the end of the unbonding period
 	ctx = keepertest.SetBlockHeight(ctx, unbondingEndHeight)
-	unbondingSessionEndHeight := sharedtypes.GetSessionEndHeight(&sharedParams, unbondingEndHeight)
+	unbondingSessionEndHeight := sharedtypes.GetSessionEndHeight(sharedParamsUpdates, unbondingEndHeight)
 
 	// Run the endblocker to unbond applications
 	err = applicationModuleKeepers.EndBlockerUnbondApplications(ctx)
@@ -127,8 +127,8 @@ func TestMsgServer_UnstakeApplication_Success(t *testing.T) {
 func TestMsgServer_UnstakeApplication_CancelUnbondingIfRestaked(t *testing.T) {
 	applicationModuleKeepers, ctx := keepertest.NewApplicationModuleKeepers(t)
 	srv := keeper.NewMsgServerImpl(*applicationModuleKeepers.Keeper)
-	sharedParams := applicationModuleKeepers.SharedKeeper.GetParams(ctx)
-	sessionEndHeight := sharedtypes.GetSessionEndHeight(&sharedParams, sdk.UnwrapSDKContext(ctx).BlockHeight())
+	sharedParamsUpdates := applicationModuleKeepers.SharedKeeper.GetParamsUpdates(ctx)
+	sessionEndHeight := sharedtypes.GetSessionEndHeight(sharedParamsUpdates, sdk.UnwrapSDKContext(ctx).BlockHeight())
 
 	// Generate an address for the application
 	appAddr := sample.AccAddress()
@@ -154,7 +154,7 @@ func TestMsgServer_UnstakeApplication_CancelUnbondingIfRestaked(t *testing.T) {
 	require.Equal(t, &foundApp, unstakeRes.GetApplication())
 
 	// Assert that the EventApplicationUnbondingBegin event is emitted.
-	unbondingEndHeight := apptypes.GetApplicationUnbondingHeight(&sharedParams, &foundApp)
+	unbondingEndHeight := apptypes.GetApplicationUnbondingHeight(sharedParamsUpdates, &foundApp)
 	expectedAppUnbondingBeginEvent := &apptypes.EventApplicationUnbondingBegin{
 		Application:        &foundApp,
 		Reason:             apptypes.ApplicationUnbondingReason_APPLICATION_UNBONDING_REASON_ELECTIVE,

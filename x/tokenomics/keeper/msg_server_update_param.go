@@ -26,27 +26,17 @@ func (k msgServer) UpdateParam(
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
-	if k.GetAuthority() != msg.Authority {
-		return nil, status.Error(
-			codes.PermissionDenied,
-			tokenomicstypes.ErrTokenomicsInvalidSigner.Wrapf(
-				"invalid authority; expected %s, got %s",
-				k.GetAuthority(), msg.Authority,
-			).Error(),
-		)
-	}
-
 	params := k.GetParams(ctx)
 
 	switch msg.Name {
 	case tokenomicstypes.ParamMintAllocationPercentages:
-		logger = logger.With("param_value", msg.GetAsMintAllocationPercentages())
+		logger = logger.With("mint_allocation_percentages", msg.GetAsMintAllocationPercentages())
 		params.MintAllocationPercentages = *msg.GetAsMintAllocationPercentages()
 	case tokenomicstypes.ParamDaoRewardAddress:
-		logger = logger.With("param_value", msg.GetAsString())
+		logger = logger.With("dao_reward_address", msg.GetAsString())
 		params.DaoRewardAddress = msg.GetAsString()
 	case tokenomicstypes.ParamGlobalInflationPerClaim:
-		logger = logger.With("param_value", msg.GetAsFloat())
+		logger = logger.With("global_inflation_per_claim", msg.GetAsFloat())
 		params.GlobalInflationPerClaim = msg.GetAsFloat()
 	default:
 		return nil, status.Error(
@@ -55,18 +45,20 @@ func (k msgServer) UpdateParam(
 		)
 	}
 
-	if err := params.ValidateBasic(); err != nil {
-		return nil, status.Error(codes.InvalidArgument, err.Error())
+	// Reconstruct a full params update request and rely on the UpdateParams method
+	// to handle the authority and basic validation checks of the params.
+	msgUpdateParams := &tokenomicstypes.MsgUpdateParams{
+		Authority: k.GetAuthority(),
+		Params:    params,
+	}
+	response, err := k.UpdateParams(ctx, msgUpdateParams)
+	if err != nil {
+		logger.Error(fmt.Sprintf("ERROR: %s", err))
+		return nil, err
 	}
 
-	if err := k.SetParams(ctx, params); err != nil {
-		err = fmt.Errorf("unable to set params: %w", err)
-		logger.Error(err.Error())
-		return nil, status.Error(codes.Internal, err.Error())
-	}
-
-	updatedParams := k.GetParams(ctx)
 	return &tokenomicstypes.MsgUpdateParamResponse{
-		Params: &updatedParams,
+		Params:               response.Params,
+		EffectiveBlockHeight: response.EffectiveBlockHeight,
 	}, nil
 }

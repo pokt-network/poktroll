@@ -274,11 +274,11 @@ func (rc *ringClient) GetRingAddressesAtBlock(
 	// to get the most recently (asynchronously) observed (and cached) value.
 	// TODO_MAINNET(@red-0ne, #543): We also don't really want to use the current value of the params.
 	// Instead, we should be using the value that the params had for the session given by blockHeight.
-	sharedParams, err := rc.sharedQuerier.GetParams(ctx)
+	sharedParamsUpdates, err := rc.sharedQuerier.GetParamsUpdates(ctx)
 	if err != nil {
 		return nil, err
 	}
-	return GetRingAddressesAtBlock(sharedParams, app, blockHeight), nil
+	return GetRingAddressesAtBlock(sharedParamsUpdates, app, blockHeight), nil
 }
 
 // GetRingAddressesAtBlock returns the active gateway addresses that need to be
@@ -288,12 +288,12 @@ func (rc *ringClient) GetRingAddressesAtBlock(
 // The ring addresses slice is reconstructed by adding back the past delegated
 // gateways that have been undelegated after the target session end height.
 func GetRingAddressesAtBlock(
-	sharedParams *sharedtypes.Params,
+	sharedParamsUpdates []*sharedtypes.ParamsUpdate,
 	app *apptypes.Application,
 	blockHeight int64,
 ) []string {
 	// Get the target session end height at which we want to get the active delegations.
-	targetSessionEndHeight := uint64(sharedtypes.GetSessionEndHeight(sharedParams, blockHeight))
+	targetSessionEndHeight := uint64(sharedtypes.GetSessionEndHeight(sharedParamsUpdates, blockHeight))
 
 	return GetRingAddressesAtSessionEndHeight(app, targetSessionEndHeight)
 }

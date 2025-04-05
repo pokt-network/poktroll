@@ -15,10 +15,14 @@ import "pocket/tokenomics/params.proto";
 // Query defines the gRPC querier service.
 service Query {
 
-  // Parameters queries the parameters of the module.
+  // Params queries the parameters of the module.
   rpc Params (QueryParamsRequest) returns (QueryParamsResponse) {
     option (google.api.http).get = "/pokt-network/poktroll/tokenomics/params";
+  }
 
+  // ParamsAtHeight queries the parameters of the module at a given height.
+  rpc ParamsAtHeight(QueryParamsAtHeightRequest) returns (QueryParamsAtHeightResponse) {
+    option (google.api.http).get = "/pokt-network/poktroll/tokenomics/params/{height}";
   }
 }
 // QueryParamsRequest is request type for the Query/Params RPC method.
@@ -26,7 +30,27 @@ message QueryParamsRequest {}
 
 // QueryParamsResponse is response type for the Query/Params RPC method.
 message QueryParamsResponse {
-
   // params holds all the parameters of this module.
+  Params params = 1 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+
+  // effective_block_height is the block height at which the params are effective.
+  uint64 effective_block_height = 2;
+}
+
+// QueryParamsAtHeightRequest is request type for the Query/ParamsAtHeight RPC method.
+message QueryParamsAtHeightRequest {
+  // height is used to query the params values at a given block height.
+  uint64 height = 1;
+}
+
+// QueryParamsAtHeightResponse is response type for the Query/ParamsAtHeight RPC method.
+message QueryParamsAtHeightResponse {
+  // params holds all the parameters values of this module at a given block height.
   Params params = 1 [(gogoproto.nullable) = false, (amino.dont_omitempty) = true];
+
+  // effective_block_height is the block height at which the params are effective.
+  uint64 effective_block_height = 2;
 }

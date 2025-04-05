@@ -186,15 +186,16 @@ func (s *TestSuite) SetupTest() {
 	s.numEstimatedComputeUnits = getEstimatedComputeUnits(s.numClaimedComputeUnits, s.relayMiningDifficulty)
 
 	// Calculate the claimed amount in uPOKT.
-	sharedParams := s.keepers.SharedKeeper.GetParams(sdkCtx)
-	s.claimedUpokt = getClaimedUpokt(sharedParams, s.numEstimatedComputeUnits, s.relayMiningDifficulty)
+	sharedParamsUpdates := s.keepers.SharedKeeper.GetParamsUpdates(sdkCtx)
+	sharedParamsUpdate := sharedtypes.GetEffectiveParamsUpdate(sharedParamsUpdates, sessionHeader.SessionEndBlockHeight)
+	s.claimedUpokt = getClaimedUpokt(sharedParamsUpdate.Params, s.numEstimatedComputeUnits, s.relayMiningDifficulty)
 
 	blockHeaderHash := make([]byte, 0)
 	expectedMerkleProofPath := protocol.GetPathForProof(blockHeaderHash, sessionHeader.SessionId)
 
 	// Advance the block height to the earliest claim commit height.
 	claimMsgHeight := sharedtypes.GetEarliestSupplierClaimCommitHeight(
-		&sharedParams,
+		sharedParamsUpdates,
 		sessionHeader.GetSessionEndBlockHeight(),
 		blockHeaderHash,
 		supplierOwnerAddr,
@@ -221,7 +222,7 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimPendingBeforeSettlement() {
 	// Retrieve default values
 	t := s.T()
 	ctx := s.ctx
-	sharedParams := s.keepers.SharedKeeper.GetParams(ctx)
+	sharedParamsUpdates := s.keepers.SharedKeeper.GetParamsUpdates(ctx)
 
 	// Upsert the claim only
 	s.keepers.UpsertClaim(ctx, s.claim)
@@ -247,10 +248,10 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimPendingBeforeSettlement() {
 
 	// Calculate a block height which is within the proof window.
 	proofWindowOpenHeight := sharedtypes.GetProofWindowOpenHeight(
-		&sharedParams, s.claim.SessionHeader.SessionEndBlockHeight,
+		sharedParamsUpdates, s.claim.SessionHeader.SessionEndBlockHeight,
 	)
 	proofWindowCloseHeight := sharedtypes.GetProofWindowCloseHeight(
-		&sharedParams, s.claim.SessionHeader.SessionEndBlockHeight,
+		sharedParamsUpdates, s.claim.SessionHeader.SessionEndBlockHeight,
 	)
 	blockHeight = (proofWindowCloseHeight - proofWindowOpenHeight) / 2
 
@@ -273,9 +274,10 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimExpired_ProofRequiredAndNotProv
 	// Retrieve default values
 	t := s.T()
 	ctx := s.ctx
-	sharedParams := s.keepers.SharedKeeper.GetParams(ctx)
+	sharedParamsUpdates := s.keepers.SharedKeeper.GetParamsUpdates(ctx)
 
-	proofRequirementThreshold, err := s.claim.GetClaimeduPOKT(sharedParams, s.relayMiningDifficulty)
+	sharedParamsUpdate := sharedtypes.GetEffectiveParamsUpdate(sharedParamsUpdates, s.claim.SessionHeader.SessionEndBlockHeight)
+	proofRequirementThreshold, err := s.claim.GetClaimeduPOKT(sharedParamsUpdate.Params, s.relayMiningDifficulty)
 	require.NoError(t, err)
 
 	// -1 to push threshold below s.claim's compute units
@@ -302,7 +304,7 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimExpired_ProofRequiredAndNotProv
 	// Expectation: All (1) claims should be expired.
 	// NB: proofs should be rejected when the current height equals the proof window close height.
 	sessionEndHeight := s.claim.SessionHeader.SessionEndBlockHeight
-	blockHeight := sharedtypes.GetProofWindowCloseHeight(&sharedParams, sessionEndHeight)
+	blockHeight := sharedtypes.GetProofWindowCloseHeight(sharedParamsUpdates, sessionEndHeight)
 	sdkCtx := cosmostypes.UnwrapSDKContext(ctx).WithBlockHeight(blockHeight)
 	settledResults, expiredResults, err := s.keepers.SettlePendingClaims(sdkCtx)
 	require.NoError(t, err)
@@ -369,9 +371,10 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimSettled_ProofRequiredAndProvide
 	// Retrieve default values
 	t := s.T()
 	ctx := s.ctx
-	sharedParams := s.keepers.SharedKeeper.GetParams(ctx)
+	sharedParamsUpdates := s.keepers.SharedKeeper.GetParamsUpdates(ctx)
 
-	proofRequirementThreshold, err := s.claim.GetClaimeduPOKT(sharedParams, s.relayMiningDifficulty)
+	sharedParamsUpdate := sharedtypes.GetEffectiveParamsUpdate(sharedParamsUpdates, s.claim.SessionHeader.SessionEndBlockHeight)
+	proofRequirementThreshold, err := s.claim.GetClaimeduPOKT(sharedParamsUpdate.Params, s.relayMiningDifficulty)
 	require.NoError(t, err)
 
 	// -1 to push threshold below s.claim's compute units
@@ -397,7 +400,7 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimSettled_ProofRequiredAndProvide
 	// Expectation: All (1) claims should be claimed.
 	// NB: proofs should be rejected when the current height equals the proof window close height.
 	sessionEndHeight := s.claim.SessionHeader.SessionEndBlockHeight
-	blockHeight := sharedtypes.GetProofWindowCloseHeight(&sharedParams, sessionEndHeight)
+	blockHeight := sharedtypes.GetProofWindowCloseHeight(sharedParamsUpdates, sessionEndHeight)
 	sdkCtx = cosmostypes.UnwrapSDKContext(ctx).WithBlockHeight(blockHeight)
 	settledResult, expiredResult, err := s.keepers.SettlePendingClaims(sdkCtx)
 	require.NoError(t, err)
@@ -428,7 +431,7 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimExpired_ProofRequired_InvalidOn
 	// Retrieve default values
 	t := s.T()
 	ctx := s.ctx
-	sharedParams := s.keepers.SharedKeeper.GetParams(ctx)
+	sharedParamsUpdates := s.keepers.SharedKeeper.GetParamsUpdates(ctx)
 
 	proofParams := s.keepers.ProofKeeper.GetParams(ctx)
 	// Set the proof parameters such that s.claim DOES NOT require a proof because:
@@ -456,7 +459,7 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimExpired_ProofRequired_InvalidOn
 	// Expectation: All (1) claims should be expired.
 	// NB: proofs should be rejected when the current height equals the proof window close height.
 	sessionEndHeight := s.claim.SessionHeader.SessionEndBlockHeight
-	blockHeight := sharedtypes.GetProofWindowCloseHeight(&sharedParams, sessionEndHeight)
+	blockHeight := sharedtypes.GetProofWindowCloseHeight(sharedParamsUpdates, sessionEndHeight)
 	sdkCtx = sdkCtx.WithBlockHeight(blockHeight)
 	settledResults, expiredResults, err := s.keepers.SettlePendingClaims(sdkCtx)
 	require.NoError(t, err)
@@ -515,9 +518,10 @@ func (s *TestSuite) TestClaimSettlement_ClaimSettled_ProofRequiredAndProvided_Vi
 	// Retrieve default values
 	t := s.T()
 	ctx := s.ctx
-	sharedParams := s.keepers.SharedKeeper.GetParams(ctx)
+	sharedParamsUpdates := s.keepers.SharedKeeper.GetParamsUpdates(ctx)
 
-	proofRequirementThreshold, err := s.claim.GetClaimeduPOKT(sharedParams, s.relayMiningDifficulty)
+	sharedParamsUpdate := sharedtypes.GetEffectiveParamsUpdate(sharedParamsUpdates, s.claim.SessionHeader.SessionEndBlockHeight)
+	proofRequirementThreshold, err := s.claim.GetClaimeduPOKT(sharedParamsUpdate.Params, s.relayMiningDifficulty)
 	require.NoError(t, err)
 
 	// +1 so it's not required via probability
@@ -543,7 +547,7 @@ func (s *TestSuite) TestClaimSettlement_ClaimSettled_ProofRequiredAndProvided_Vi
 	// Expectation: All (1) claims should be claimed.
 	// NB: proof window has definitely closed at this point
 	sessionEndHeight := s.claim.SessionHeader.SessionEndBlockHeight
-	blockHeight := sharedtypes.GetProofWindowCloseHeight(&sharedParams, sessionEndHeight)
+	blockHeight := sharedtypes.GetProofWindowCloseHeight(sharedParamsUpdates, sessionEndHeight)
 	sdkCtx = cosmostypes.UnwrapSDKContext(ctx).WithBlockHeight(blockHeight)
 	settledResults, expiredResults, err := s.keepers.SettlePendingClaims(sdkCtx)
 	require.NoError(t, err)
@@ -574,9 +578,10 @@ func (s *TestSuite) TestSettlePendingClaims_Settles_WhenAProofIsNotRequired() {
 	// Retrieve default values
 	t := s.T()
 	ctx := s.ctx
-	sharedParams := s.keepers.SharedKeeper.GetParams(ctx)
+	sharedParamsUpdates := s.keepers.SharedKeeper.GetParamsUpdates(ctx)
 
-	proofRequirementThreshold, err := s.claim.GetClaimeduPOKT(sharedParams, s.relayMiningDifficulty)
+	sharedParamsUpdate := sharedtypes.GetEffectiveParamsUpdate(sharedParamsUpdates, s.claim.SessionHeader.SessionEndBlockHeight)
+	proofRequirementThreshold, err := s.claim.GetClaimeduPOKT(sharedParamsUpdate.Params, s.relayMiningDifficulty)
 	require.NoError(t, err)
 
 	// +1 to push threshold above s.claim's compute units
@@ -601,7 +606,7 @@ func (s *TestSuite) TestSettlePendingClaims_Settles_WhenAProofIsNotRequired() {
 	// Expectation: All (1) claims should be claimed.
 	// NB: proofs should be rejected when the current height equals the proof window close height.
 	sessionEndHeight := s.claim.SessionHeader.SessionEndBlockHeight
-	blockHeight := sharedtypes.GetProofWindowCloseHeight(&sharedParams, sessionEndHeight)
+	blockHeight := sharedtypes.GetProofWindowCloseHeight(sharedParamsUpdates, sessionEndHeight)
 	sdkCtx = cosmostypes.UnwrapSDKContext(ctx).WithBlockHeight(blockHeight)
 	settledResults, expiredResults, err := s.keepers.SettlePendingClaims(sdkCtx)
 	require.NoError(t, err)
@@ -649,9 +654,10 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimPendingAfterSettlement() {
 	t := s.T()
 	ctx := s.ctx
 	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
-	sharedParams := s.keepers.SharedKeeper.GetParams(ctx)
+	sharedParamsUpdates := s.keepers.SharedKeeper.GetParamsUpdates(ctx)
 
-	proofRequirementThreshold, err := s.claim.GetClaimeduPOKT(sharedParams, s.relayMiningDifficulty)
+	sharedParamsUpdate := sharedtypes.GetEffectiveParamsUpdate(sharedParamsUpdates, s.claim.SessionHeader.SessionEndBlockHeight)
+	proofRequirementThreshold, err := s.claim.GetClaimeduPOKT(sharedParamsUpdate.Params, s.relayMiningDifficulty)
 	require.NoError(t, err)
 
 	// +1 to push threshold above s.claim's compute units
@@ -680,16 +686,16 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimPendingAfterSettlement() {
 		s.numRelays,
 	)
 
-	sessionOneProofWindowCloseHeight := sharedtypes.GetProofWindowCloseHeight(&sharedParams, sessionOneEndHeight)
-	sessionTwoStartHeight := sharedtypes.GetSessionStartHeight(&sharedParams, sessionOneProofWindowCloseHeight+1)
-	sessionTwoProofWindowCloseHeight := sharedtypes.GetProofWindowCloseHeight(&sharedParams, sessionTwoStartHeight)
+	sessionOneProofWindowCloseHeight := sharedtypes.GetProofWindowCloseHeight(sharedParamsUpdates, sessionOneEndHeight)
+	sessionTwoStartHeight := sharedtypes.GetSessionStartHeight(sharedParamsUpdates, sessionOneProofWindowCloseHeight+1)
+	sessionTwoProofWindowCloseHeight := sharedtypes.GetProofWindowCloseHeight(sharedParamsUpdates, sessionTwoStartHeight)
 
 	sessionTwoClaim.SessionHeader = &sessiontypes.SessionHeader{
 		ApplicationAddress:      sessionOneClaim.GetSessionHeader().GetApplicationAddress(),
 		ServiceId:               s.claim.GetSessionHeader().GetServiceId(),
 		SessionId:               "session_two_id",
 		SessionStartBlockHeight: sessionTwoStartHeight,
-		SessionEndBlockHeight:   sharedtypes.GetSessionEndHeight(&sharedParams, sessionTwoStartHeight),
+		SessionEndBlockHeight:   sharedtypes.GetSessionEndHeight(sharedParamsUpdates, sessionTwoStartHeight),
 	}
 	s.keepers.UpsertClaim(ctx, sessionTwoClaim)
 
@@ -698,7 +704,7 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimPendingAfterSettlement() {
 
 	// 1. Settle pending claims while the session is still active.
 	// Expectations: No claims should be settled because the session is still ongoing
-	blockHeight := sharedtypes.GetProofWindowCloseHeight(&sharedParams, sessionOneEndHeight)
+	blockHeight := sharedtypes.GetProofWindowCloseHeight(sharedParamsUpdates, sessionOneEndHeight)
 	sdkCtx = sdkCtx.WithBlockHeight(blockHeight)
 	settledResults, expiredResults, err := s.keepers.SettlePendingClaims(sdkCtx)
 	require.NoError(t, err)
@@ -739,9 +745,10 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimExpired_SupplierUnstaked() {
 	ctx := s.ctx
 	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
 	sdkCtx = sdkCtx.WithBlockHeight(1)
-	sharedParams := s.keepers.SharedKeeper.GetParams(ctx)
+	sharedParamsUpdates := s.keepers.SharedKeeper.GetParamsUpdates(ctx)
 
-	proofRequirementThreshold, err := s.claim.GetClaimeduPOKT(sharedParams, s.relayMiningDifficulty)
+	sharedParamsUpdate := sharedtypes.GetEffectiveParamsUpdate(sharedParamsUpdates, s.claim.SessionHeader.SessionEndBlockHeight)
+	proofRequirementThreshold, err := s.claim.GetClaimeduPOKT(sharedParamsUpdate.Params, s.relayMiningDifficulty)
 	require.NoError(t, err)
 
 	// -1 to push threshold below s.claim's compute units
@@ -796,12 +803,12 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimExpired_SupplierUnstaked() {
 	// Expectation: All (1) claims should expire.
 	// NB: proofs should be rejected when the current height equals the proof window close height.
 	sessionEndHeight := s.claim.SessionHeader.SessionEndBlockHeight
-	sessionProofWindowCloseHeight := sharedtypes.GetProofWindowCloseHeight(&sharedParams, sessionEndHeight)
+	sessionProofWindowCloseHeight := sharedtypes.GetProofWindowCloseHeight(sharedParamsUpdates, sessionEndHeight)
 	sdkCtx = sdkCtx.WithBlockHeight(sessionProofWindowCloseHeight)
 	_, _, err = s.keepers.SettlePendingClaims(sdkCtx)
 	require.NoError(t, err)
 
-	upcomingSessionEndHeight := sharedtypes.GetNextSessionStartHeight(&sharedParams, sessionProofWindowCloseHeight) - 1
+	upcomingSessionEndHeight := sharedtypes.GetNextSessionStartHeight(sharedParamsUpdates, sessionProofWindowCloseHeight) - 1
 
 	// Slashing should have occurred and the supplier is unstaked but still unbonding.
 	slashedSupplier, supplierFound := s.keepers.GetSupplier(sdkCtx, s.claim.SupplierOperatorAddress)
@@ -857,7 +864,7 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimExpired_SupplierUnstaked() {
 	require.EqualValues(t, expectedUnbondingBeginEvent, unbondingBeginEvents[0])
 
 	// Advance the block height to the settlement session end height.
-	settlementHeight := sharedtypes.GetSettlementSessionEndHeight(&sharedParams, sdkCtx.BlockHeight())
+	settlementHeight := sharedtypes.GetSettlementSessionEndHeight(sharedParamsUpdates, sdkCtx.BlockHeight())
 	sdkCtx.WithBlockHeight(settlementHeight)
 
 	// Assert that the EventSupplierUnbondingEnd event is emitted.

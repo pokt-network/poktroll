@@ -57,10 +57,16 @@ func (s *Supplier) HasOperator(address string) bool {
 
 // GetSupplierUnbondingEndHeight returns the session end height at which the given
 // supplier finishes unbonding.
+// It uses the shared params effective at the time of the unstaking to determine
+// when the transfer will complete.
 func GetSupplierUnbondingEndHeight(
-	sharedParams *Params,
+	sharedParamsUpdates []*ParamsUpdate,
 	supplier *Supplier,
 ) int64 {
+	// Get the shared params effective at the time of the unstake.
+	sharedParamsUpdate := GetEffectiveParamsUpdate(sharedParamsUpdates, int64(supplier.UnstakeSessionEndHeight))
+	sharedParams := sharedParamsUpdate.Params
+
 	supplierUnbondingPeriodBlocks := sharedParams.GetSupplierUnbondingPeriodSessions() * sharedParams.GetNumBlocksPerSession()
 
 	return int64(supplier.GetUnstakeSessionEndHeight() + supplierUnbondingPeriodBlocks)

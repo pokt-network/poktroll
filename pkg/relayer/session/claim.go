@@ -118,14 +118,14 @@ func (rs *relayerSessionsManager) waitForEarliestCreateClaimsHeight(
 	// to get the most recently (asynchronously) observed (and cached) value.
 	// TODO_MAINNET(@bryanchriswhite,#543): We also don't really want to use the current value of the params. Instead,
 	// we should be using the value that the params had for the session which includes queryHeight.
-	sharedParams, err := rs.sharedQueryClient.GetParams(ctx)
+	sharedParamsUpdates, err := rs.sharedQueryClient.GetParamsUpdates(ctx)
 	if err != nil {
 		logger.Error().Err(err).Msg("failed to get shared params")
 		failedCreateClaimsSessionsCh <- sessionTrees
 		return nil
 	}
 
-	claimWindowOpenHeight := sharedtypes.GetClaimWindowOpenHeight(sharedParams, sessionEndHeight)
+	claimWindowOpenHeight := sharedtypes.GetClaimWindowOpenHeight(sharedParamsUpdates, sessionEndHeight)
 
 	// we wait for claimWindowOpenHeight to be received before proceeding since we need its hash
 	// to know where this servicer's claim submission window opens.
@@ -152,7 +152,7 @@ func (rs *relayerSessionsManager) waitForEarliestCreateClaimsHeight(
 	// Get the earliest claim commit height for this supplier.
 	supplierOperatorAddr := sessionTrees[0].GetSupplierOperatorAddress()
 	earliestSupplierClaimsCommitHeight := sharedtypes.GetEarliestSupplierClaimCommitHeight(
-		sharedParams,
+		sharedParamsUpdates,
 		sessionEndHeight,
 		claimsWindowOpenBlock.Hash(),
 		supplierOperatorAddr,
@@ -230,13 +230,13 @@ func (rs *relayerSessionsManager) newMapClaimSessionsFn(
 		// - Avoid making assumptions about shared properties
 		// - Eliminate constant queries for sharedParams
 		sessionEndHeight := sessionTrees[0].GetSessionHeader().GetSessionEndBlockHeight()
-		sharedParams, err := rs.sharedQueryClient.GetParams(ctx)
+		sharedParamsUpdates, err := rs.sharedQueryClient.GetParamsUpdates(ctx)
 		if err != nil {
 			failedCreateClaimsSessionsPublishCh <- sessionTrees
 			rs.logger.Error().Err(err).Msg("failed to get shared params")
 			return either.Error[[]relayer.SessionTree](err), false
 		}
-		claimWindowCloseHeight := sharedtypes.GetClaimWindowCloseHeight(sharedParams, sessionEndHeight)
+		claimWindowCloseHeight := sharedtypes.GetClaimWindowCloseHeight(sharedParamsUpdates, sessionEndHeight)
 
 		// Create claims for each supplier operator address in `sessionTrees`.
 		if err := supplierClient.CreateClaims(ctx, claimWindowCloseHeight, claimMsgs...); err != nil {
@@ -277,11 +277,12 @@ func (rs *relayerSessionsManager) payableProofsSessionTrees(
 	sessionTrees []relayer.SessionTree,
 ) ([]relayer.SessionTree, error) {
 	supplierOpeartorAddress := sessionTrees[0].GetSupplierOperatorAddress()
+	sessionEndHeight := sessionTrees[0].GetSessionHeader().GetSessionEndBlockHeight()
 	logger := rs.logger.With(
 		"supplier_operator_address", supplierOpeartorAddress,
 	)
 
-	proofParams, err := rs.proofQueryClient.GetParams(ctx)
+	proofParams, err := rs.proofQueryClient.GetParamsAtHeight(ctx, sessionEndHeight)
 	if err != nil {
 		return nil, err
 	}

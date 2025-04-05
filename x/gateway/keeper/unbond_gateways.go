@@ -16,11 +16,11 @@ func (k Keeper) EndBlockerUnbondGateways(ctx context.Context) (numUnbondedGatewa
 	logger := k.Logger().With("method", "EndBlockerUnbondGateways")
 
 	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
-	sharedParams := k.sharedKeeper.GetParams(sdkCtx)
+	sharedParamsUpdates := k.sharedKeeper.GetParamsUpdates(sdkCtx)
 	currentHeight := sdkCtx.BlockHeight()
 
 	// Only process unbonding gateways at the end of the session.
-	if sharedtypes.IsSessionEndHeight(&sharedParams, currentHeight) {
+	if !sharedtypes.IsSessionEndHeight(sharedParamsUpdates, currentHeight) {
 		return numUnbondedGateways, nil
 	}
 
@@ -33,7 +33,7 @@ func (k Keeper) EndBlockerUnbondGateways(ctx context.Context) (numUnbondedGatewa
 			continue
 		}
 
-		unbondingEndHeight := gatewaytypes.GetGatewayUnbondingHeight(&sharedParams, &gateway)
+		unbondingEndHeight := gatewaytypes.GetGatewayUnbondingHeight(sharedParamsUpdates, &gateway)
 
 		// If the unbonding height is ahead of the current height, the gateway
 		// stays in the unbonding state.
@@ -47,7 +47,7 @@ func (k Keeper) EndBlockerUnbondGateways(ctx context.Context) (numUnbondedGatewa
 			return numUnbondedGateways, err
 		}
 
-		sessionEndHeight := sharedtypes.GetSessionEndHeight(&sharedParams, currentHeight)
+		sessionEndHeight := sharedtypes.GetSessionEndHeight(sharedParamsUpdates, currentHeight)
 		unbondingEndEvent := &gatewaytypes.EventGatewayUnbondingEnd{
 			Gateway:            &gateway,
 			SessionEndHeight:   sessionEndHeight,

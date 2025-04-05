@@ -876,9 +876,9 @@ func (s *suite) getGatewayInfo(gatewayName string) *gatewaytypes.Gateway {
 // getSupplierUnbondingEndHeight returns the height at which the supplier will be unbonded.
 func (s *suite) getSupplierUnbondingEndHeight(accName string) int64 {
 	supplier := s.getSupplierInfo(accName)
-	sharedParams := s.getSharedParams()
+	sharedParamsUpdates := s.getSharedParamsUpdates()
 
-	return sharedtypes.GetSupplierUnbondingEndHeight(&sharedParams, supplier)
+	return sharedtypes.GetSupplierUnbondingEndHeight(sharedParamsUpdates, supplier)
 }
 
 // getApplicationInfo returns the application information for a given application address.
@@ -906,8 +906,8 @@ func (s *suite) getApplicationInfo(appName string) *apptypes.Application {
 func (s *suite) getApplicationUnbondingHeight(accName string) int64 {
 	application := s.getApplicationInfo(accName)
 
-	sharedParams := s.getSharedParams()
-	unbondingHeight := apptypes.GetApplicationUnbondingHeight(&sharedParams, application)
+	sharedParamsUpdates := s.getSharedParamsUpdates()
+	unbondingHeight := apptypes.GetApplicationUnbondingHeight(sharedParamsUpdates, application)
 	return unbondingHeight
 }
 
@@ -916,9 +916,9 @@ func (s *suite) getApplicationTransferEndHeight(accName string) int64 {
 	application := s.getApplicationInfo(accName)
 	require.NotNil(s, application.GetPendingTransfer())
 
-	sharedParams := s.getSharedParams()
+	sharedParamsUpdates := s.getSharedParamsUpdates()
 
-	return apptypes.GetApplicationTransferHeight(&sharedParams, application)
+	return apptypes.GetApplicationTransferHeight(sharedParamsUpdates, application)
 }
 
 // getServiceComputeUnitsPerRelay returns the compute units per relay for a given service ID
@@ -941,22 +941,22 @@ func (s *suite) getServiceComputeUnitsPerRelay(serviceId string) uint64 {
 }
 
 // getSharedParams returns the shared module parameters
-func (s *suite) getSharedParams() sharedtypes.Params {
+func (s *suite) getSharedParamsUpdates() []*sharedtypes.ParamsUpdate {
 	args := []string{
 		"query",
 		"shared",
-		"params",
+		"params_updates",
 		"--output=json",
 	}
 	res, err := s.pocketd.RunCommandOnHost("", args...)
 	require.NoError(s, err, "error querying shared params")
 
-	var sharedParamsRes sharedtypes.QueryParamsResponse
+	var sharedParamsUpdatesRes sharedtypes.QueryParamsUpdatesResponse
 
-	s.cdc.MustUnmarshalJSON([]byte(res.Stdout), &sharedParamsRes)
+	s.cdc.MustUnmarshalJSON([]byte(res.Stdout), &sharedParamsUpdatesRes)
 	require.NoError(s, err)
 
-	return sharedParamsRes.Params
+	return sharedParamsUpdatesRes.ParamsUpdates
 }
 
 // getSupplierParams returns the supplier module parameters

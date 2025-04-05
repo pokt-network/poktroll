@@ -134,6 +134,15 @@ func defaultConfigWithMocks(ctrl *gomock.Controller) *MigrationKeeperConfig {
 		GetParams(gomock.Any()).
 		Return(sharedtypes.DefaultParams()).
 		AnyTimes()
+	sharedKeeper.EXPECT().
+		GetParamsUpdates(gomock.Any()).
+		Return([]*sharedtypes.ParamsUpdate{
+			{
+				Params:               sharedtypes.DefaultParams(),
+				EffectiveBlockHeight: 1,
+			},
+		}).
+		AnyTimes()
 
 	mockAppKeeper := mocks.NewMockApplicationKeeper(ctrl)
 	mockAppKeeper.EXPECT().

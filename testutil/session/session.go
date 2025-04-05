@@ -14,8 +14,13 @@ func GetSessionIdWithDefaultParams(
 	blockHashBz []byte,
 	blockHeight int64,
 ) (sessionId string, sessionIdBz []byte) {
-	sharedParams := sharedtypes.DefaultParams()
-	return keeper.GetSessionId(&sharedParams, appPubKey, serviceId, blockHashBz, blockHeight)
+	sharedParamsUpdates := []*sharedtypes.ParamsUpdate{
+		{
+			Params:               sharedtypes.DefaultParams(),
+			EffectiveBlockHeight: 1,
+		},
+	}
+	return keeper.GetSessionId(sharedParamsUpdates, appPubKey, serviceId, blockHashBz, blockHeight)
 }
 
 // GetSessionStartHeightWithDefaultParams returns the block height at which the
@@ -23,22 +28,37 @@ func GetSessionIdWithDefaultParams(
 // parameters.
 // See shared.GetSessionStartHeight for more details.
 func GetSessionStartHeightWithDefaultParams(queryHeight int64) int64 {
-	sharedParams := sharedtypes.DefaultParams()
-	return sharedtypes.GetSessionStartHeight(&sharedParams, queryHeight)
+	sharedParamsUpdates := []*sharedtypes.ParamsUpdate{
+		{
+			Params:               sharedtypes.DefaultParams(),
+			EffectiveBlockHeight: 1,
+		},
+	}
+	return sharedtypes.GetSessionStartHeight(sharedParamsUpdates, queryHeight)
 }
 
 // GetSessionEndHeightWithDefaultParams returns the block height at which the session
 // containing queryHeight ends, given the default shared onchain parameters.
 // See shared.GetSessionEndHeight for more details.
 func GetSessionEndHeightWithDefaultParams(queryHeight int64) int64 {
-	sharedParams := sharedtypes.DefaultParams()
-	return sharedtypes.GetSessionEndHeight(&sharedParams, queryHeight)
+	sharedParamsUpdates := []*sharedtypes.ParamsUpdate{
+		{
+			Params:               sharedtypes.DefaultParams(),
+			EffectiveBlockHeight: 1,
+		},
+	}
+	return sharedtypes.GetSessionEndHeight(sharedParamsUpdates, queryHeight)
 }
 
 // GetSessionNumberWithDefaultParams returns the session number of the session
 // containing queryHeight, given the default onchain shared parameters.
 // See shared.GetSessionNumber for more details.
 func GetSessionNumberWithDefaultParams(queryHeight int64) int64 {
-	sharedParams := sharedtypes.DefaultParams()
-	return sharedtypes.GetSessionNumber(&sharedParams, queryHeight)
+	sharedParamsUpdates := []*sharedtypes.ParamsUpdate{
+		{
+			Params:               sharedtypes.DefaultParams(),
+			EffectiveBlockHeight: 1,
+		},
+	}
+	return sharedtypes.GetSessionNumber(sharedParamsUpdates, queryHeight)
 }

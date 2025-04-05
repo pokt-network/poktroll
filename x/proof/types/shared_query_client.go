@@ -37,6 +37,23 @@ func (sqc *SharedKeeperQueryClient) GetParams(
 	return &sharedParams, nil
 }
 
+// GetParamsAtHeight queries & returns the shared module onchain parameters at a given height.
+func (sqc *SharedKeeperQueryClient) GetParamsAtHeight(
+	ctx context.Context,
+	height int64,
+) (params *sharedtypes.Params, err error) {
+	sharedParams := sqc.sharedKeeper.GetParamsAtHeight(ctx, height)
+	return &sharedParams, nil
+}
+
+// GetParamsUpdates queries & returns all the shared module onchain parameters updates.
+func (sqc *SharedKeeperQueryClient) GetParamsUpdates(
+	ctx context.Context,
+) ([]*sharedtypes.ParamsUpdate, error) {
+	sharedParamsUpdates := sqc.sharedKeeper.GetParamsUpdates(ctx)
+	return sharedParamsUpdates, nil
+}
+
 // GetSessionGracePeriodEndHeight returns the block height at which the grace period
 // for the session which includes queryHeight elapses.
 // The grace period is the number of blocks after the session ends during which relays
@@ -48,8 +65,8 @@ func (sqc *SharedKeeperQueryClient) GetSessionGracePeriodEndHeight(
 	ctx context.Context,
 	queryHeight int64,
 ) (int64, error) {
-	sharedParams := sqc.sharedKeeper.GetParams(ctx)
-	return sharedtypes.GetSessionGracePeriodEndHeight(&sharedParams, queryHeight), nil
+	sharedParamsUpdates := sqc.sharedKeeper.GetParamsUpdates(ctx)
+	return sharedtypes.GetSessionGracePeriodEndHeight(sharedParamsUpdates, queryHeight), nil
 }
 
 // GetClaimWindowOpenHeight returns the block height at which the claim window of
@@ -61,8 +78,8 @@ func (sqc *SharedKeeperQueryClient) GetClaimWindowOpenHeight(
 	ctx context.Context,
 	queryHeight int64,
 ) (int64, error) {
-	sharedParams := sqc.sharedKeeper.GetParams(ctx)
-	return sharedtypes.GetClaimWindowOpenHeight(&sharedParams, queryHeight), nil
+	sharedParamsUpdates := sqc.sharedKeeper.GetParamsUpdates(ctx)
+	return sharedtypes.GetClaimWindowOpenHeight(sharedParamsUpdates, queryHeight), nil
 }
 
 // GetProofWindowOpenHeight returns the block height at which the proof window of
@@ -74,8 +91,8 @@ func (sqc *SharedKeeperQueryClient) GetProofWindowOpenHeight(
 	ctx context.Context,
 	queryHeight int64,
 ) (int64, error) {
-	sharedParams := sqc.sharedKeeper.GetParams(ctx)
-	return sharedtypes.GetProofWindowOpenHeight(&sharedParams, queryHeight), nil
+	sharedParamsUpdates := sqc.sharedKeeper.GetParamsUpdates(ctx)
+	return sharedtypes.GetProofWindowOpenHeight(sharedParamsUpdates, queryHeight), nil
 }
 
 // GetEarliestSupplierClaimCommitHeight returns the earliest block height at which a claim
@@ -85,8 +102,8 @@ func (sqc *SharedKeeperQueryClient) GetEarliestSupplierClaimCommitHeight(
 	queryHeight int64,
 	supplierOperatorAddr string,
 ) (int64, error) {
-	sharedParams := sqc.sharedKeeper.GetParams(ctx)
-	claimWindowOpenHeight := sharedtypes.GetClaimWindowOpenHeight(&sharedParams, queryHeight)
+	sharedParamsUpdates := sqc.sharedKeeper.GetParamsUpdates(ctx)
+	claimWindowOpenHeight := sharedtypes.GetClaimWindowOpenHeight(sharedParamsUpdates, queryHeight)
 
 	// Fetch the claim window open block hash so that it can be used as part of the
 	// pseudo-random seed for generating the claim distribution offset.
@@ -95,7 +112,7 @@ func (sqc *SharedKeeperQueryClient) GetEarliestSupplierClaimCommitHeight(
 
 	// Get the earliest claim commit height for the given supplier.
 	return sharedtypes.GetEarliestSupplierClaimCommitHeight(
-		&sharedParams,
+		sharedParamsUpdates,
 		queryHeight,
 		claimWindowOpenBlockHashBz,
 		supplierOperatorAddr,
@@ -109,8 +126,8 @@ func (sqc *SharedKeeperQueryClient) GetEarliestSupplierProofCommitHeight(
 	queryHeight int64,
 	supplierOperatorAddr string,
 ) (int64, error) {
-	sharedParams := sqc.sharedKeeper.GetParams(ctx)
-	proofWindowOpenHeight := sharedtypes.GetProofWindowOpenHeight(&sharedParams, queryHeight)
+	sharedParams := sqc.sharedKeeper.GetParamsUpdates(ctx)
+	proofWindowOpenHeight := sharedtypes.GetProofWindowOpenHeight(sharedParams, queryHeight)
 
 	// Fetch the proof window open block hash so that it can be used as part of the
 	// pseudo-random seed for generating the proof distribution offset.
@@ -119,7 +136,7 @@ func (sqc *SharedKeeperQueryClient) GetEarliestSupplierProofCommitHeight(
 
 	// Get the earliest proof commit height for the given supplier.
 	return sharedtypes.GetEarliestSupplierProofCommitHeight(
-		&sharedParams,
+		sharedParams,
 		queryHeight,
 		proofWindowOpenBlockHash,
 		supplierOperatorAddr,
@@ -127,12 +144,10 @@ func (sqc *SharedKeeperQueryClient) GetEarliestSupplierProofCommitHeight(
 }
 
 // GetComputeUnitsToTokensMultiplier returns the multiplier used to convert compute units to tokens.
-//
-// TODO_POST_MAINNNET: If this changes mid-session, the cost of the relays at the
-// end of the session may differ from what was anticipated at the beginning.
-// Since this will be a non-frequent occurrence, accounting for this edge case is
-// not an immediate blocker.
-func (sqc *SharedKeeperQueryClient) GetComputeUnitsToTokensMultiplier(ctx context.Context) (uint64, error) {
-	sharedParams := sqc.sharedKeeper.GetParams(ctx)
+func (sqc *SharedKeeperQueryClient) GetComputeUnitsToTokensMultiplier(
+	ctx context.Context,
+	queryHeight int64,
+) (uint64, error) {
+	sharedParams := sqc.sharedKeeper.GetParamsAtHeight(ctx, queryHeight)
 	return sharedParams.GetComputeUnitsToTokensMultiplier(), nil
 }

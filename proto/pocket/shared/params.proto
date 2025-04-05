@@ -57,3 +57,13 @@ message Params {
   // unstaking before their staked assets are moved to its account balance.
   uint64 gateway_unbonding_period_sessions = 10 [(gogoproto.jsontag) = "gateway_unbonding_period_sessions"];
 }
+
+// ParamsUpdate defines the parameters update along the block height at which the update is effective.
+message ParamsUpdate {
+  Params params = 1 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true,
+    (gogoproto.jsontag) = "params"
+  ];
+  uint64 effective_block_height = 2 [(gogoproto.jsontag) = "effective_block_height"];
+}

@@ -28,6 +28,9 @@ type proofQuerier struct {
 //
 // Required dependencies:
 // - grpc.ClientConn
+// - polylog.Logger
+// - client.BlockClient
+// - client.ParamsCache[prooftypes.Params]
 func NewProofQuerier(deps depinject.Config) (client.ProofQueryClient, error) {
 	querier := &proofQuerier{}
 
@@ -52,7 +55,7 @@ func (pq *proofQuerier) GetParams(
 	logger := pq.logger.With("query_client", "proof", "method", "GetParams")
 
 	// Get the params from the cache if they exist.
-	if params, found := pq.paramsCache.Get(); found {
+	if params, found := pq.paramsCache.GetLatest(); found {
 		logger.Debug().Msg("cache hit for proof params")
 		return &params, nil
 	}
@@ -68,6 +71,30 @@ func (pq *proofQuerier) GetParams(
 	}
 
 	// Update the cache with the newly retrieved params.
-	pq.paramsCache.Set(res.Params)
+	pq.paramsCache.SetAtHeight(res.Params, int64(res.EffectiveBlockHeight))
+	return &res.Params, nil
+}
+
+// GetParamsAtHeight queries & returns the proof module onchain parameters
+// that were in effect at the given block height.
+func (sq *proofQuerier) GetParamsAtHeight(ctx context.Context, height int64) (client.ProofParams, error) {
+	logger := sq.logger.With("query_client", "proof", "method", "GetParamsAtHeight")
+
+	// Get the params from the cache if they exist.
+	if params, found := sq.paramsCache.GetAtHeight(height); found {
+		logger.Debug().Msgf("cache hit for proof params at height: %d", height)
+		return &params, nil
+	}
+
+	logger.Debug().Msgf("cache miss for proof params at height: %d", height)
+
+	req := &prooftypes.QueryParamsAtHeightRequest{Height: uint64(height)}
+	res, err := sq.proofQuerier.ParamsAtHeight(ctx, req)
+	if err != nil {
+		return nil, ErrQueryProofParams.Wrapf("[%v]", err)
+	}
+
+	// Update the cache with the newly retrieved params.
+	sq.paramsCache.SetAtHeight(res.Params, int64(res.EffectiveBlockHeight))
 	return &res.Params, nil
 }

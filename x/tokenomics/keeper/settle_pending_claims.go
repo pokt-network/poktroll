@@ -65,6 +65,7 @@ func (k Keeper) SettlePendingClaims(ctx cosmostypes.Context) (
 			numEstimatedComputeUnits uint64
 		)
 
+		sessionEndHeight := claim.GetSessionHeader().SessionEndBlockHeight
 		sessionId := claim.GetSessionHeader().GetSessionId()
 
 		// NB: Not every (Req, Res) pair in the session is inserted into the tree due
@@ -103,7 +104,7 @@ func (k Keeper) SettlePendingClaims(ctx cosmostypes.Context) (
 			return settledResults, expiredResults, err
 		}
 
-		sharedParams := k.sharedKeeper.GetParams(ctx)
+		sharedParams := k.sharedKeeper.GetParamsAtHeight(ctx, sessionEndHeight)
 		// claimeduPOKT is the amount of uPOKT that the supplier would receive if the
 		// claim is settled. It is derived from the claimed number of relays, the current
 		// service mining difficulty and the global network parameters.
@@ -503,6 +504,11 @@ func (k Keeper) GetExpiringClaims(ctx cosmostypes.Context) (expiringClaims []pro
 	//     2a. This likely also requires adding validation to the shared module params.
 	blockHeight := ctx.BlockHeight()
 
+	// TODO_IN_THIS_PR: Iterate over all claims and use the sharedParams as of the
+	// session end height to determine if the claim is expiring.
+	// This is necessary because the sharedParams can change between the session end
+	// height and the current block height.
+
 	// NB: This error can be safely ignored as onchain SharedQueryClient implementation cannot return an error.
 	sharedParams, _ := k.sharedQuerier.GetParams(ctx)
 
@@ -544,12 +550,13 @@ func (k Keeper) GetExpiringClaims(ctx cosmostypes.Context) (expiringClaims []pro
 // slashing amount from the supplier bank module to the tokenomics module account.
 func (k Keeper) slashSupplierStake(
 	ctx cosmostypes.Context,
-	ClaimSettlementResult *tokenomicstypes.ClaimSettlementResult,
+	claimSettlementResult *tokenomicstypes.ClaimSettlementResult,
 ) error {
 	logger := k.logger.With("method", "slashSupplierStake")
 
-	supplierOperatorAddress := ClaimSettlementResult.GetClaim().SupplierOperatorAddress
-	proofParams := k.proofKeeper.GetParams(ctx)
+	sessionEndHEight := claimSettlementResult.GetSessionEndHeight()
+	supplierOperatorAddress := claimSettlementResult.GetClaim().SupplierOperatorAddress
+	proofParams := k.proofKeeper.GetParamsAtHeight(ctx, sessionEndHEight)
 	slashingCoin := *proofParams.GetProofMissingPenalty()
 
 	supplierToSlash, isSupplierFound := k.supplierKeeper.GetSupplier(ctx, supplierOperatorAddress)
@@ -627,7 +634,8 @@ func (k Keeper) slashSupplierStake(
 	events := make([]cosmostypes.Msg, 0)
 
 	// Check if the supplier's stake is below the minimum and unstake it if necessary.
-	minSupplierStakeCoin := k.supplierKeeper.GetParams(ctx).MinStake
+	supplierParams := k.supplierKeeper.GetParamsAtHeight(ctx, sessionEndHEight)
+	minSupplierStakeCoin := supplierParams.MinStake
 	// TODO_MAINNET_MIGRATION(@red-0ne): SettlePendingClaims is called at the end of every block,
 	// but not every block corresponds to the end of a session. This may lead to a situation
 	// where a force unstaked supplier may still be able to interact with a Gateway or Application.
@@ -636,10 +644,10 @@ func (k Keeper) slashSupplierStake(
 	// at all and fixed only if it does.
 	// Ensure that a slashed supplier going below min stake is unbonded only once.
 	if supplierToSlash.GetStake().IsLT(*minSupplierStakeCoin) && !supplierToSlash.IsUnbonding() {
-		sharedParams := k.sharedKeeper.GetParams(ctx)
+		sharedParamsUpdates := k.sharedKeeper.GetParamsUpdates(ctx)
 		sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
 		currentHeight := sdkCtx.BlockHeight()
-		unstakeSessionEndHeight := sharedtypes.GetSessionEndHeight(&sharedParams, currentHeight)
+		unstakeSessionEndHeight := sharedtypes.GetSessionEndHeight(sharedParamsUpdates, currentHeight)
 
 		logger.Warn(fmt.Sprintf(
 			"unstaking supplier %q owned by %q due to stake (%s) below the minimum (%s)",
@@ -677,7 +685,7 @@ func (k Keeper) slashSupplierStake(
 
 	k.supplierKeeper.SetSupplier(ctx, supplierToSlash)
 
-	claim := ClaimSettlementResult.GetClaim()
+	claim := claimSettlementResult.GetClaim()
 
 	// Emit an event that a supplier has been slashed.
 	events = append(events, &tokenomicstypes.EventSupplierSlashed{

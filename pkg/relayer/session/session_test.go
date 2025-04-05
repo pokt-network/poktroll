@@ -375,10 +375,15 @@ func playClaimAndProofSubmissionBlocks(
 
 	// Calculate the session grace period end block height to emit that block height
 	// to the blockPublishCh to trigger session trees processing for the session number.
-	sharedParams := sharedtypes.DefaultParams()
-	claimWindowOpenHeight := sharedtypes.GetClaimWindowOpenHeight(&sharedParams, sessionEndHeight)
+	sharedParamsUpdates := []*sharedtypes.ParamsUpdate{
+		{
+			Params:               sharedtypes.DefaultParams(),
+			EffectiveBlockHeight: 1,
+		},
+	}
+	claimWindowOpenHeight := sharedtypes.GetClaimWindowOpenHeight(sharedParamsUpdates, sessionEndHeight)
 	earliestSupplierClaimCommitHeight := sharedtypes.GetEarliestSupplierClaimCommitHeight(
-		&sharedParams,
+		sharedParamsUpdates,
 		sessionEndHeight,
 		blockHash,
 		supplierOperatorAddress,
@@ -395,7 +400,7 @@ func playClaimAndProofSubmissionBlocks(
 
 	waitSimulateIO()
 
-	proofWindowOpenHeight := sharedtypes.GetProofWindowOpenHeight(&sharedParams, sessionEndHeight)
+	proofWindowOpenHeight := sharedtypes.GetProofWindowOpenHeight(sharedParamsUpdates, sessionEndHeight)
 	proofPathSeedBlock := testblock.NewAnyTimesBlock(t, blockHash, proofWindowOpenHeight)
 	blockPublishCh <- proofPathSeedBlock
 
@@ -403,7 +408,7 @@ func playClaimAndProofSubmissionBlocks(
 
 	// Publish a block to the blockPublishCh to trigger proof submission for the session.
 	earliestSupplierProofCommitHeight := sharedtypes.GetEarliestSupplierProofCommitHeight(
-		&sharedParams,
+		sharedParamsUpdates,
 		sessionEndHeight,
 		blockHash,
 		supplierOperatorAddress,
