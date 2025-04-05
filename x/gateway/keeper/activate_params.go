@@ -42,7 +42,7 @@ func (k Keeper) BeginBlockerActivateGatewayParams(
 
 		// Effectively update the gateway params.
 		k.SetParams(ctx, gatewayParamsUpdate.Params)
-		activatedGatewayParamsUpdate = &gatewayParamsUpdate
+		activatedGatewayParamsUpdate = gatewayParamsUpdate
 
 		// Emit params update event.
 		eventParamsUpdated := &gatewaytypes.EventParamsUpdated{

@@ -42,7 +42,7 @@ func (k Keeper) BeginBlockerActivateServiceParams(
 
 		// Effectively update the service params.
 		k.SetParams(ctx, serviceParamsUpdate.Params)
-		activatedServiceParamsUpdate = &serviceParamsUpdate
+		activatedServiceParamsUpdate = serviceParamsUpdate
 
 		// Emit params update event.
 		eventParamsUpdated := &servicetypes.EventParamsUpdated{

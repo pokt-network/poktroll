@@ -42,7 +42,7 @@ func (k Keeper) BeginBlockerActivateSessionParams(
 
 		// Effectively update the shared params.
 		k.SetParams(ctx, sessionParamsUpdate.Params)
-		activatedSessionParamsUpdate = &sessionParamsUpdate
+		activatedSessionParamsUpdate = sessionParamsUpdate
 
 		// Emit params update event.
 		eventParamsUpdated := &sessiontypes.EventParamsUpdated{

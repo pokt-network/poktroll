@@ -8,6 +8,7 @@ import (
 	"google.golang.org/grpc/status"
 
 	"github.com/pokt-network/poktroll/x/service/types"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 // ParamsAtHeight queries the params at a specific height.
@@ -18,7 +19,7 @@ func (k Keeper) ParamsAtHeight(goCtx context.Context, req *types.QueryParamsAtHe
 	ctx := sdk.UnwrapSDKContext(goCtx)
 
 	paramsUpdates := k.GetParamsUpdates(ctx)
-	paramsAtHeight := getEffectiveParamsUpdate(paramsUpdates, int64(req.Height))
+	paramsAtHeight := sharedtypes.GetEffectiveParamsUpdate(paramsUpdates, int64(req.Height))
 
 	return &types.QueryParamsAtHeightResponse{
 		Params:               paramsAtHeight.Params,
@@ -37,27 +38,10 @@ func (k Keeper) Params(goCtx context.Context, req *types.QueryParamsRequest) (*t
 	lastCommitHeight := ctx.BlockHeight()
 
 	paramsUpdates := k.GetParamsUpdates(ctx)
-	paramsAtHeight := getEffectiveParamsUpdate(paramsUpdates, int64(lastCommitHeight))
+	paramsAtHeight := sharedtypes.GetEffectiveParamsUpdate(paramsUpdates, int64(lastCommitHeight))
 
 	return &types.QueryParamsResponse{
 		Params:               paramsAtHeight.Params,
 		EffectiveBlockHeight: paramsAtHeight.EffectiveBlockHeight,
 	}, nil
-}
-
-// getEffectiveParamsUpdate returns the effective params update as of the query height.
-func getEffectiveParamsUpdate(sharedParamsUpdates []types.ParamsUpdate, queryHeight int64) types.ParamsUpdate {
-	var effectiveParamsUpdate types.ParamsUpdate
-	for _, update := range sharedParamsUpdates {
-		// The params updates are chronologically ordered from the oldest to the most recent.
-		// We can stop iterating when we find the first params update that is effective
-		// after the query height.
-		if update.EffectiveBlockHeight > uint64(queryHeight) {
-			break
-		}
-
-		effectiveParamsUpdate = update
-	}
-
-	return effectiveParamsUpdate
 }

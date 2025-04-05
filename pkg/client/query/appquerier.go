@@ -23,7 +23,6 @@ type appQuerier struct {
 	applicationQuerier apptypes.QueryClient
 	logger             polylog.Logger
 
-	blockClient client.BlockClient
 	// applicationsCache caches application.Application returned from applicationQueryClient.Application requests.
 	applicationsCache cache.KeyValueCache[apptypes.Application]
 	// paramsCache caches application.Params returned from applicationQueryClient.Params requests.
@@ -46,7 +45,6 @@ func NewApplicationQuerier(deps depinject.Config) (client.ApplicationQueryClient
 		deps,
 		&aq.clientConn,
 		&aq.logger,
-		&aq.blockClient,
 		&aq.applicationsCache,
 		&aq.paramsCache,
 	); err != nil {
@@ -113,12 +111,9 @@ func (aq *appQuerier) GetParams(ctx context.Context) (*apptypes.Params, error) {
 
 	logger.Debug().Msg("cache miss for application params")
 
-	res, err := retry.Call(ctx, func() (*apptypes.QueryParamsAtHeightResponse, error) {
-		lastBlock := aq.blockClient.LastBlock(ctx)
-		req := apptypes.QueryParamsAtHeightRequest{
-			Height: uint64(lastBlock.Height()),
-		}
-		return aq.applicationQuerier.ParamsAtHeight(ctx, &req)
+	req := apptypes.QueryParamsRequest{}
+	res, err := retry.Call(ctx, func() (*apptypes.QueryParamsResponse, error) {
+		return aq.applicationQuerier.Params(ctx, &req)
 	}, retry.GetStrategy(ctx))
 	if err != nil {
 		return nil, err

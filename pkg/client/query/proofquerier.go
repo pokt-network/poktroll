@@ -19,7 +19,6 @@ type proofQuerier struct {
 	proofQuerier prooftypes.QueryClient
 	logger       polylog.Logger
 
-	blockClient client.BlockClient
 	// paramsCache caches proofQuerier.Params requests
 	paramsCache client.ParamsCache[prooftypes.Params]
 }
@@ -39,7 +38,6 @@ func NewProofQuerier(deps depinject.Config) (client.ProofQueryClient, error) {
 		deps,
 		&querier.clientConn,
 		&querier.logger,
-		&querier.blockClient,
 		&querier.paramsCache,
 	); err != nil {
 		return nil, err
@@ -64,13 +62,9 @@ func (pq *proofQuerier) GetParams(
 
 	logger.Debug().Msg("cache miss proof params")
 
-	res, err := retry.Call(ctx, func() (*prooftypes.QueryParamsAtHeightResponse, error) {
-		lastBlock := pq.blockClient.LastBlock(ctx)
-
-		req := &prooftypes.QueryParamsAtHeightRequest{
-			Height: uint64(lastBlock.Height()),
-		}
-		return pq.proofQuerier.ParamsAtHeight(ctx, req)
+	req := &prooftypes.QueryParamsRequest{}
+	res, err := retry.Call(ctx, func() (*prooftypes.QueryParamsResponse, error) {
+		return pq.proofQuerier.Params(ctx, req)
 	}, retry.GetStrategy(ctx))
 	if err != nil {
 		return nil, err

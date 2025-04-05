@@ -26,7 +26,6 @@ type sessionQuerier struct {
 	sharedQueryClient client.SharedQueryClient
 	logger            polylog.Logger
 
-	blockClient client.BlockClient
 	// sessionsCache caches sessionQueryClient.GetSession requests
 	sessionsCache cache.KeyValueCache[*sessiontypes.Session]
 	// paramsCache caches sessionQueryClient.Params requests
@@ -46,7 +45,6 @@ func NewSessionQuerier(deps depinject.Config) (client.SessionQueryClient, error)
 		&sessq.clientConn,
 		&sessq.sharedQueryClient,
 		&sessq.logger,
-		&sessq.blockClient,
 		&sessq.sessionsCache,
 		&sessq.paramsCache,
 	); err != nil {
@@ -116,13 +114,9 @@ func (sessq *sessionQuerier) GetParams(ctx context.Context) (*sessiontypes.Param
 
 	logger.Debug().Msg("cache miss for session params")
 
-	res, err := retry.Call(ctx, func() (*sessiontypes.QueryParamsAtHeightResponse, error) {
-		lastBlock := sessq.blockClient.LastBlock(ctx)
-
-		req := &sessiontypes.QueryParamsAtHeightRequest{
-			Height: uint64(lastBlock.Height()),
-		}
-		return sessq.sessionQuerier.ParamsAtHeight(ctx, req)
+	req := &sessiontypes.QueryParamsRequest{}
+	res, err := retry.Call(ctx, func() (*sessiontypes.QueryParamsResponse, error) {
+		return sessq.sessionQuerier.Params(ctx, req)
 	}, retry.GetStrategy(ctx))
 	if err != nil {
 		return nil, ErrQuerySessionParams.Wrapf("[%v]", err)

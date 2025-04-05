@@ -42,7 +42,7 @@ func (k Keeper) BeginBlockerActivateProofParams(
 
 		// Effectively update the proof params.
 		k.SetParams(ctx, proofParamsUpdate.Params)
-		activatedProofParamsUpdate = &proofParamsUpdate
+		activatedProofParamsUpdate = proofParamsUpdate
 
 		// Emit params update event.
 		eventParamsUpdated := &prooftypes.EventParamsUpdated{

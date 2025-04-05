@@ -245,10 +245,12 @@ func (sq *sharedQuerier) GetComputeUnitsToTokensMultiplier(
 }
 
 func (sq *sharedQuerier) GetParamsUpdates(ctx context.Context) ([]*sharedtypes.ParamsUpdate, error) {
-	cacheValueVersions, _ := sq.paramsCache.GetAllUpdates()
-	latestVersions := cacheValueVersions.GetSortedDescVersions()
+	cacheValueVersions, found := sq.paramsCache.GetAllUpdates()
+	if !found {
+		return sq.populateParamsCache(ctx)
+	}
 
-	// Get all the params versions from the cache
+	latestVersions := cacheValueVersions.GetSortedDescVersions()
 	if latestVersions == nil {
 		return sq.populateParamsCache(ctx)
 	}

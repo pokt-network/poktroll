@@ -3,12 +3,14 @@ package keeper_test
 import (
 	"testing"
 
+	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 	"github.com/stretchr/testify/require"
 
 	testkeeper "github.com/pokt-network/poktroll/testutil/keeper"
 	"github.com/pokt-network/poktroll/testutil/sample"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
 )
 
@@ -42,8 +44,22 @@ func TestMsgUpdateParam_UpdateMintAllocationPercentagesOnly(t *testing.T) {
 	require.NotEqual(t, defaultParams.MintAllocationPercentages, res.Params.MintAllocationPercentages)
 	require.Equal(t, expectedMintAllocationPercentages, res.Params.MintAllocationPercentages)
 
-	// Assert that the onchain mint allocation percentages is updated.
+	// Assert that the onchain mint allocation percentages is not updated yet.
 	params := k.GetParams(ctx)
+	require.NotEqual(t, expectedMintAllocationPercentages, params.MintAllocationPercentages)
+
+	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
+	currentHeight := sdkCtx.BlockHeight()
+
+	sharedParams := sharedtypes.DefaultParams()
+	nextSessionStartHeight := currentHeight + int64(sharedParams.NumBlocksPerSession)
+	sdkCtx = sdkCtx.WithBlockHeight(nextSessionStartHeight)
+
+	_, err = k.BeginBlockerActivateTokenomicsParams(sdkCtx)
+	require.NoError(t, err)
+
+	// Assert that the onchain mint allocation percentages is updated.
+	params = k.GetParams(ctx)
 	require.Equal(t, expectedMintAllocationPercentages, params.MintAllocationPercentages)
 
 	// Ensure the other parameters are unchanged
@@ -74,8 +90,22 @@ func TestMsgUpdateParam_UpdateDaoRewardAddressOnly(t *testing.T) {
 	require.NotEqual(t, defaultParams.DaoRewardAddress, res.Params.DaoRewardAddress)
 	require.Equal(t, expectedDaoRewardAddress, res.Params.DaoRewardAddress)
 
-	// Assert that the onchain dao reward address is updated.
+	// Assert that the onchain dao reward address is not updated yet.
 	params := k.GetParams(ctx)
+	require.NotEqual(t, expectedDaoRewardAddress, params.DaoRewardAddress)
+
+	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
+	currentHeight := sdkCtx.BlockHeight()
+
+	sharedParams := sharedtypes.DefaultParams()
+	nextSessionStartHeight := currentHeight + int64(sharedParams.NumBlocksPerSession)
+	sdkCtx = sdkCtx.WithBlockHeight(nextSessionStartHeight)
+
+	_, err = k.BeginBlockerActivateTokenomicsParams(sdkCtx)
+	require.NoError(t, err)
+
+	// Assert that the onchain dao reward address is updated.
+	params = k.GetParams(ctx)
 	require.Equal(t, expectedDaoRewardAddress, params.DaoRewardAddress)
 
 	// Ensure the other parameters are unchanged
@@ -93,7 +123,7 @@ func TestMsgUpdateParam_UpdateGlobalInflationPerClaimOnly(t *testing.T) {
 	// Ensure the default values are different from the new values we want to set
 	require.NotEqual(t, expectedGlobalInflationPerClaim, defaultParams.GlobalInflationPerClaim)
 
-	// Update the dao reward address.
+	// Update the global inflation per claim.
 	updateParamMsg := &tokenomicstypes.MsgUpdateParam{
 		Authority: authtypes.NewModuleAddress(govtypes.ModuleName).String(),
 		Name:      tokenomicstypes.ParamGlobalInflationPerClaim,
@@ -102,12 +132,26 @@ func TestMsgUpdateParam_UpdateGlobalInflationPerClaimOnly(t *testing.T) {
 	res, err := msgSrv.UpdateParam(ctx, updateParamMsg)
 	require.NoError(t, err)
 
-	// Assert that the response contains the expected dao reward address.
+	// Assert that the response contains the expected global inflation per claim.
 	require.NotEqual(t, defaultParams.GlobalInflationPerClaim, res.Params.GlobalInflationPerClaim)
 	require.Equal(t, expectedGlobalInflationPerClaim, res.Params.GlobalInflationPerClaim)
 
-	// Assert that the onchain dao reward address is updated.
+	// Assert that the onchain global inflation per claim is not yet updated.
 	params := k.GetParams(ctx)
+	require.NotEqual(t, expectedGlobalInflationPerClaim, params.GlobalInflationPerClaim)
+
+	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
+	currentHeight := sdkCtx.BlockHeight()
+
+	sharedParams := sharedtypes.DefaultParams()
+	nextSessionStartHeight := currentHeight + int64(sharedParams.NumBlocksPerSession)
+	sdkCtx = sdkCtx.WithBlockHeight(nextSessionStartHeight)
+
+	_, err = k.BeginBlockerActivateTokenomicsParams(sdkCtx)
+	require.NoError(t, err)
+
+	// Assert that the onchain global inflation per claim is updated.
+	params = k.GetParams(ctx)
 	require.Equal(t, expectedGlobalInflationPerClaim, params.GlobalInflationPerClaim)
 
 	// Ensure the other parameters are unchanged

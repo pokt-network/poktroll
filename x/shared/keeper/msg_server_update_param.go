@@ -73,9 +73,8 @@ func (k msgServer) UpdateParam(
 	}
 	response, err := k.UpdateParams(ctx, msgUpdateParams)
 	if err != nil {
-		err = fmt.Errorf("unable to set params: %w", err)
 		logger.Error(fmt.Sprintf("ERROR: %s", err))
-		return nil, status.Error(codes.Internal, err.Error())
+		return nil, err
 	}
 
 	return &sharedtypes.MsgUpdateParamResponse{

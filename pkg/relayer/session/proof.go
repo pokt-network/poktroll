@@ -183,13 +183,13 @@ func (rs *relayerSessionsManager) newMapProveSessionsFn(
 		// - Avoid making assumptions about shared properties
 		// - Eliminate constant queries for sharedParams
 		sessionEndHeight := sessionTrees[0].GetSessionHeader().GetSessionEndBlockHeight()
-		sharedParams, err := rs.sharedQueryClient.GetParams(ctx)
+		sharedParamsUpdates, err := rs.sharedQueryClient.GetParamsUpdates(ctx)
 		if err != nil {
 			failedSubmitProofSessionsCh <- sessionTrees
 			rs.logger.Error().Err(err).Msg("failed to get shared params")
 			return either.Error[[]relayer.SessionTree](err), false
 		}
-		proofWindowCloseHeight := sharedtypes.GetProofWindowCloseHeight(sharedParams, sessionEndHeight)
+		proofWindowCloseHeight := sharedtypes.GetProofWindowCloseHeight(sharedParamsUpdates, sessionEndHeight)
 
 		// Submit proofs for each supplier operator address in `sessionTrees`.
 		if err := supplierClient.SubmitProofs(ctx, proofWindowCloseHeight, proofMsgs...); err != nil {

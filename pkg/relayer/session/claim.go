@@ -230,13 +230,13 @@ func (rs *relayerSessionsManager) newMapClaimSessionsFn(
 		// - Avoid making assumptions about shared properties
 		// - Eliminate constant queries for sharedParams
 		sessionEndHeight := sessionTrees[0].GetSessionHeader().GetSessionEndBlockHeight()
-		sharedParams, err := rs.sharedQueryClient.GetParams(ctx)
+		sharedParamsUpdates, err := rs.sharedQueryClient.GetParamsUpdates(ctx)
 		if err != nil {
 			failedCreateClaimsSessionsPublishCh <- sessionTrees
 			rs.logger.Error().Err(err).Msg("failed to get shared params")
 			return either.Error[[]relayer.SessionTree](err), false
 		}
-		claimWindowCloseHeight := sharedtypes.GetClaimWindowCloseHeight(sharedParams, sessionEndHeight)
+		claimWindowCloseHeight := sharedtypes.GetClaimWindowCloseHeight(sharedParamsUpdates, sessionEndHeight)
 
 		// Create claims for each supplier operator address in `sessionTrees`.
 		if err := supplierClient.CreateClaims(ctx, claimWindowCloseHeight, claimMsgs...); err != nil {

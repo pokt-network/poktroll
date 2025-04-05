@@ -42,11 +42,21 @@ func (k Keeper) GetParamsUpdates(ctx context.Context) []*types.ParamsUpdate {
 
 	defer iterator.Close()
 
-	var paramsUpdates []*types.ParamsUpdate
+	paramsUpdates := make([]*types.ParamsUpdate, 0)
 	for ; iterator.Valid(); iterator.Next() {
-		var paramsUpdate *types.ParamsUpdate
-		k.cdc.MustUnmarshal(iterator.Value(), paramsUpdate)
-		paramsUpdates = append(paramsUpdates, paramsUpdate)
+		var paramsUpdate types.ParamsUpdate
+		k.cdc.MustUnmarshal(iterator.Value(), &paramsUpdate)
+		paramsUpdates = append(paramsUpdates, &paramsUpdate)
+	}
+
+	if len(paramsUpdates) == 0 {
+		currentParams := k.GetParams(ctx)
+		paramsUpdates = []*types.ParamsUpdate{
+			{
+				Params:               currentParams,
+				EffectiveBlockHeight: 1,
+			},
+		}
 	}
 
 	return paramsUpdates

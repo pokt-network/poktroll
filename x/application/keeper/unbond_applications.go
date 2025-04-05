@@ -20,7 +20,7 @@ func (k Keeper) EndBlockerUnbondApplications(ctx context.Context) error {
 	currentHeight := sdkCtx.BlockHeight()
 
 	// Only process unbonding applications at the end of the session.
-	if sharedtypes.IsSessionEndHeight(sharedParamsUpdates, currentHeight) {
+	if !sharedtypes.IsSessionEndHeight(sharedParamsUpdates, currentHeight) {
 		return nil
 	}
 

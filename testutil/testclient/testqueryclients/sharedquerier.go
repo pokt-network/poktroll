@@ -118,5 +118,23 @@ func NewTestSharedQueryClient(
 		).
 		AnyTimes()
 
+	sharedQuerier.EXPECT().
+		GetParamsAtHeight(gomock.Any(), gomock.Any()).
+		Return(&params, nil).
+		AnyTimes()
+
+	sharedQuerier.EXPECT().
+		GetParamsUpdates(gomock.Any()).
+		DoAndReturn(func(ctx context.Context) ([]*sharedtypes.ParamsUpdate, error) {
+			sharedParamsUpdates := []*sharedtypes.ParamsUpdate{
+				{
+					Params:               sharedtypes.DefaultParams(),
+					EffectiveBlockHeight: 1,
+				},
+			}
+			return sharedParamsUpdates, nil
+		}).
+		AnyTimes()
+
 	return sharedQuerier
 }

@@ -17,7 +17,7 @@ func (k Keeper) EndBlockerUnbondSuppliers(ctx context.Context) (numUnbondedSuppl
 	currentHeight := sdkCtx.BlockHeight()
 
 	// Only process unbonding suppliers at the end of the session.
-	if sharedtypes.IsSessionEndHeight(sharedParamsUpdates, currentHeight) {
+	if !sharedtypes.IsSessionEndHeight(sharedParamsUpdates, currentHeight) {
 		return numUnbondedSuppliers, nil
 	}
 

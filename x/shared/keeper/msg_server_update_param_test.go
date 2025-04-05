@@ -342,17 +342,20 @@ func TestMsgUpdateParam_UpdateApplicationUnbondingPeriodSessions(t *testing.T) {
 
 	// Ensure that a application unbonding period that is less than the cumulative
 	// proof window close blocks is not allowed.
+	invalidAppUnbondingPeriodSessions := 1
 	updateParamMsg = &sharedtypes.MsgUpdateParam{
 		Authority: authtypes.NewModuleAddress(govtypes.ModuleName).String(),
 		Name:      sharedtypes.ParamApplicationUnbondingPeriodSessions,
-		AsType:    &sharedtypes.MsgUpdateParam_AsUint64{AsUint64: 1},
+		AsType:    &sharedtypes.MsgUpdateParam_AsUint64{AsUint64: uint64(invalidAppUnbondingPeriodSessions)},
 	}
 	_, err = msgSrv.UpdateParam(ctx, updateParamMsg)
 	require.EqualError(t, err, status.Error(
 		codes.InvalidArgument,
 		sharedtypes.ErrSharedParamInvalid.Wrapf(
 			"ApplicationUnbondingPeriodSessions (%v session) (%v blocks) must be greater than the cumulative ProofWindowCloseOffsetBlocks (%v)",
-			1, 4, 10,
+			invalidAppUnbondingPeriodSessions,
+			testSharedParams.NumBlocksPerSession,
+			sharedtypes.GetSessionEndToProofWindowCloseBlocks(&testSharedParams),
 		).Error(),
 	).Error())
 }

@@ -42,7 +42,7 @@ func (k Keeper) BeginBlockerActivateTokenomicsParams(
 
 		// Effectively update the tokenomics params.
 		k.SetParams(ctx, tokenomicsParamsUpdate.Params)
-		activatedTokenomicsParamsUpdate = &tokenomicsParamsUpdate
+		activatedTokenomicsParamsUpdate = tokenomicsParamsUpdate
 
 		// Emit a params update event.
 		eventParamsUpdated := &tokenomicstypes.EventParamsUpdated{
