@@ -32,8 +32,8 @@ func WithGasPrices(gasPrices *cosmostypes.DecCoins) client.TxClientOption {
 	}
 }
 
-// WithGas sets the gas setting to be used when constructing transactions.
-func WithGas(gasSetting *flags.GasSetting) client.TxClientOption {
+// WithGasSetting sets the gas setting to be used when constructing transactions.
+func WithGasSetting(gasSetting *flags.GasSetting) client.TxClientOption {
 	return func(client client.TxClient) {
 		client.(*txClient).gasSetting = gasSetting
 	}

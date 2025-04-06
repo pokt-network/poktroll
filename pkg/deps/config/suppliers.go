@@ -526,7 +526,7 @@ func newSupplyTxClientsFn(
 		tx.WithSigningKeyName(signingKeyName),
 		tx.WithGasPrices(gasPrices),
 		tx.WithGasAdjustment(gasAdjustment),
-		tx.WithGas(gasSetting),
+		tx.WithGasSetting(gasSetting),
 		tx.WithFeeAmount(feeAmount),
 	)
 	if err != nil {
