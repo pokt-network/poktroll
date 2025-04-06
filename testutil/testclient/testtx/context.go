@@ -13,9 +13,12 @@ import (
 	cosmosclient "github.com/cosmos/cosmos-sdk/client"
 	cosmostx "github.com/cosmos/cosmos-sdk/client/tx"
 	cosmoskeyring "github.com/cosmos/cosmos-sdk/crypto/keyring"
+	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
+	txsigning "github.com/cosmos/cosmos-sdk/types/tx/signing"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
+	"google.golang.org/protobuf/proto"
 
 	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/client/tx"
@@ -276,4 +279,108 @@ func NewAnyTimesTxTxContext(
 	txCtxMock.EXPECT().GetKeyring().Return(keyring).AnyTimes()
 
 	return txCtxMock, txCtx
+}
+
+// NewMockTxBuilder creates a new mock TxBuilder for testing purposes.
+// This mock can be used to verify transaction building operations.
+func NewMockTxBuilder(ctrl *gomock.Controller) *mockclient.MockTxBuilder {
+	txBuilder := mockclient.NewMockTxBuilder(ctrl)
+
+	// Create a var to store the fee for validation
+	var storedFee cosmostypes.Coins
+
+	// Setup necessary mock methods for tx building
+	txBuilder.EXPECT().SetMsgs(gomock.Any()).Return(nil).AnyTimes()
+
+	// When SetFeeAmount is called, store the fee
+	txBuilder.EXPECT().SetFeeAmount(gomock.Any()).DoAndReturn(func(fee cosmostypes.Coins) {
+		storedFee = fee
+	}).AnyTimes()
+
+	// When GetTx is called, return a mock with the stored fee
+	txBuilder.EXPECT().GetTx().DoAndReturn(func() cosmostypes.Tx {
+		return NewMockTx(storedFee)
+	}).AnyTimes()
+
+	txBuilder.EXPECT().SetTimeoutHeight(gomock.Any()).AnyTimes()
+	txBuilder.EXPECT().SetGasLimit(gomock.Any()).AnyTimes()
+
+	return txBuilder
+}
+
+// MockTx is a test implementation of the signing.Tx interface
+type MockTx struct {
+	FeeCoins cosmostypes.Coins
+}
+
+// GetFee returns the fee coins set when creating the MockTx.
+func (m *MockTx) GetFee() cosmostypes.Coins {
+	return m.FeeCoins
+}
+
+// GetGas returns a default gas value of 0 for the MockTx.
+func (m *MockTx) GetGas() uint64 {
+	return 0
+}
+
+// FeePayer returns a default fee payer address for the MockTx.
+func (m *MockTx) FeePayer() []byte {
+	return []byte{}
+}
+
+func (m *MockTx) FeeGranter() []byte {
+	return []byte{}
+}
+
+// GetMsgs returns an empty slice of messages for the MockTx.
+func (m *MockTx) GetMsgs() []cosmostypes.Msg {
+	return []cosmostypes.Msg{}
+}
+
+// GetMsgsV2 returns an empty slice of protov2 messages for the MockTx.
+func (m *MockTx) GetMsgsV2() ([]proto.Message, error) {
+	return []proto.Message{}, nil
+}
+
+// ValidateBasic performs basic validation on the transaction
+func (m *MockTx) ValidateBasic() error {
+	return nil
+}
+
+// GetSigners returns the signers of the transaction
+func (m *MockTx) GetSigners() ([][]byte, error) {
+	return [][]byte{}, nil
+}
+
+// GetPubKeys returns the public keys of the signers
+func (m *MockTx) GetPubKeys() ([]cryptotypes.PubKey, error) {
+	return []cryptotypes.PubKey{}, nil
+}
+
+// GetSignaturesV2 returns the signatures of the transaction
+func (m *MockTx) GetSignaturesV2() ([]txsigning.SignatureV2, error) {
+	return []txsigning.SignatureV2{}, nil
+}
+
+// GetTimeoutHeight returns the timeout height of the transaction
+func (m *MockTx) GetTimeoutHeight() uint64 {
+	return 0
+}
+
+// GetMemo returns the memo of the transaction
+func (m *MockTx) GetMemo() string {
+	return ""
+}
+
+// GetSignBytes returns the sign bytes of the transaction for the given index
+func (m *MockTx) GetSignBytes(chainID string, acc cosmostypes.AccountI, sequence uint64, index int) ([]byte, error) {
+	return []byte{}, nil
+}
+
+// NewMockTx creates a new mock Tx with the specified fee coins.
+// This mock is primarily used for testing fee-related functionality.
+func NewMockTx(feeCoins cosmostypes.Coins) cosmostypes.Tx {
+	return &MockTx{
+		FeeCoins: feeCoins,
+	}
 }

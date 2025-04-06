@@ -7,6 +7,7 @@ import (
 
 	"cosmossdk.io/depinject"
 	sdkclient "github.com/cosmos/cosmos-sdk/client"
+	"github.com/cosmos/cosmos-sdk/client/flags"
 	cosmosflags "github.com/cosmos/cosmos-sdk/client/flags"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/gogoproto/grpc"
@@ -351,9 +352,45 @@ func NewSupplySupplierClientsFn(signingKeyNames []string) SupplierFn {
 			return nil, err
 		}
 
+		gasAdjustment, err := cmd.Flags().GetFloat64(cosmosflags.FlagGasAdjustment)
+		if err != nil {
+			return nil, err
+		}
+
+		gasStr, err := cmd.Flags().GetString(cosmosflags.FlagGas)
+		if err != nil {
+			return nil, err
+		}
+
+		gasSetting, err := flags.ParseGasSetting(gasStr)
+		if err != nil {
+			return nil, err
+		}
+
+		feeAmountStr, err := cmd.Flags().GetString(cosmosflags.FlagFees)
+		if err != nil {
+			return nil, err
+		}
+
+		var feeAmount cosmostypes.DecCoins
+		if feeAmountStr != "" {
+			feeAmount, err = cosmostypes.ParseDecCoins(feeAmountStr)
+			if err != nil {
+				return nil, err
+			}
+		}
+
 		suppliers := supplier.NewSupplierClientMap()
 		for _, signingKeyName := range signingKeyNames {
-			txClientDepinjectConfig, err := newSupplyTxClientsFn(ctx, deps, signingKeyName, gasPrices)
+			txClientDepinjectConfig, err := newSupplyTxClientsFn(
+				ctx,
+				deps,
+				signingKeyName,
+				&gasPrices,
+				gasAdjustment,
+				&gasSetting,
+				&feeAmount,
+			)
 			if err != nil {
 				return nil, err
 			}
@@ -469,10 +506,13 @@ func newSupplyTxClientsFn(
 	ctx context.Context,
 	deps depinject.Config,
 	signingKeyName string,
-	gasPrices cosmostypes.DecCoins,
+	gasPrices *cosmostypes.DecCoins,
+	gasAdjustment float64,
+	gasSetting *flags.GasSetting,
+	feeAmount *cosmostypes.DecCoins,
 ) (depinject.Config, error) {
 	// Ensure that the gas prices include upokt
-	for _, gasPrice := range gasPrices {
+	for _, gasPrice := range *gasPrices {
 		if gasPrice.Denom != volatile.DenomuPOKT {
 			// TODO_TECHDEBT(red-0ne): Allow other gas prices denominations once supported (e.g. mPOKT, POKT)
 			// See https://docs.cosmos.network/main/build/architecture/adr-024-coin-metadata#decision
@@ -485,6 +525,9 @@ func newSupplyTxClientsFn(
 		deps,
 		tx.WithSigningKeyName(signingKeyName),
 		tx.WithGasPrices(gasPrices),
+		tx.WithGasAdjustment(gasAdjustment),
+		tx.WithGas(gasSetting),
+		tx.WithFeeAmount(feeAmount),
 	)
 	if err != nil {
 		return nil, err
