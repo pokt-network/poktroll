@@ -417,7 +417,7 @@ func NewSupplySupplierClientsFn(signingKeyNames []string) SupplierFn {
 			}
 
 			// Making sure we use addresses as keys.
-			suppliers.SupplierClients[supplierClient.OperatorAddress().String()] = supplierClient
+			suppliers.SupplierClients[supplierClient.OperatorAddress()] = supplierClient
 		}
 		return depinject.Configs(deps, depinject.Supply(suppliers)), nil
 	}

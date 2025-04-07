@@ -59,7 +59,9 @@ func (rel *relayMiner) Start(ctx context.Context) error {
 	// relayerSessionsManager.Start does not block.
 	// Set up the session (proof/claim) lifecycle pipeline.
 	rel.logger.Info().Msg("starting relayer sessions manager")
-	rel.relayerSessionsManager.Start(ctx)
+	if err := rel.relayerSessionsManager.Start(ctx); err != nil {
+		return err
+	}
 
 	// Start the flow of relays by starting relayer proxy.
 	// This is a blocking call as it waits for the waitgroup in relayerProxy.Start()
