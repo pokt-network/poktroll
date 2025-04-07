@@ -240,6 +240,7 @@ func setupRelayerDependencies(
 		config.NewSupplyKeyValueCacheFn[sharedtypes.Supplier](cache.WithNewBlockCacheClearing),               // leaf
 		config.NewSupplyKeyValueCacheFn[query.BlockHash](cache.WithNewBlockCacheClearing),                    // leaf
 		config.NewSupplyKeyValueCacheFn[query.Balance](cache.WithNewBlockCacheClearing),                      // leaf
+		config.NewSupplyKeyValueCacheFn[prooftypes.Claim](cache.WithNewBlockCacheClearing),                   // leaf
 		// The session querier returns *sessiontypes.Session, so its cache must also return pointers.
 		// This differs from other queriers which return value types.
 		config.NewSupplyKeyValueCacheFn[*sessiontypes.Session](cache.WithNewBlockCacheClearing), // leaf
@@ -390,7 +391,7 @@ func newSupplyRelayerSessionsManagerFn(smtStorePath string) config.SupplierFn {
 		_ *cobra.Command,
 	) (depinject.Config, error) {
 		relayerSessionsManager, err := session.NewRelayerSessions(
-			ctx, deps,
+			deps,
 			session.WithStoresDirectory(smtStorePath),
 		)
 		if err != nil {

@@ -34,7 +34,7 @@ import (
 // to 'testutil', making any necessary adjustments the utils or docs as well.
 func NewUnsignedMinedRelay(
 	t *testing.T,
-	session *sessiontypes.Session,
+	sessionHeader *sessiontypes.SessionHeader,
 	supplierOperatorAddress string,
 ) *relayer.MinedRelay {
 	t.Helper()
@@ -42,14 +42,14 @@ func NewUnsignedMinedRelay(
 	relay := servicetypes.Relay{
 		Req: &servicetypes.RelayRequest{
 			Meta: servicetypes.RelayRequestMetadata{
-				SessionHeader:           session.Header,
+				SessionHeader:           sessionHeader,
 				SupplierOperatorAddress: supplierOperatorAddress,
 			},
 			Payload: randomPayload(),
 		},
 		Res: &servicetypes.RelayResponse{
 			Meta: servicetypes.RelayResponseMetadata{
-				SessionHeader: session.Header,
+				SessionHeader: sessionHeader,
 			},
 			Payload: randomPayload(),
 		},

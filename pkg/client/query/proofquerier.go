@@ -2,10 +2,12 @@ package query
 
 import (
 	"context"
+	"fmt"
 
 	"cosmossdk.io/depinject"
 	"github.com/cosmos/gogoproto/grpc"
 
+	"github.com/pokt-network/poktroll/pkg/cache"
 	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/polylog"
 	"github.com/pokt-network/poktroll/pkg/retry"
@@ -13,7 +15,7 @@ import (
 )
 
 // proofQuerier is a wrapper around the prooftypes.QueryClient that enables the
-// querying of onchain proof module params.
+// querying and caching the onchain proof module.
 type proofQuerier struct {
 	clientConn   grpc.ClientConn
 	proofQuerier prooftypes.QueryClient
@@ -21,13 +23,20 @@ type proofQuerier struct {
 
 	// paramsCache caches proofQuerier.Params requests
 	paramsCache client.ParamsCache[prooftypes.Params]
+
+	// claimsCache caches proofQuerier.Claim requests
+	// It keys the Claims by sessionId and supplierOperatorAddress
+	claimsCache cache.KeyValueCache[prooftypes.Claim]
 }
 
 // NewProofQuerier returns a new instance of a client.ProofQueryClient by
-// injecting the dependecies provided by the depinject.Config.
+// injecting the dependencies provided by the depinject.Config.
 //
 // Required dependencies:
 // - grpc.ClientConn
+// - polylog.Logger
+// - client.ParamsCache[prooftypes.Params]
+// - cache.KeyValueCache[prooftypes.Claim]
 func NewProofQuerier(deps depinject.Config) (client.ProofQueryClient, error) {
 	querier := &proofQuerier{}
 
@@ -36,6 +45,7 @@ func NewProofQuerier(deps depinject.Config) (client.ProofQueryClient, error) {
 		&querier.clientConn,
 		&querier.logger,
 		&querier.paramsCache,
+		&querier.claimsCache,
 	); err != nil {
 		return nil, err
 	}
@@ -70,4 +80,43 @@ func (pq *proofQuerier) GetParams(
 	// Update the cache with the newly retrieved params.
 	pq.paramsCache.Set(res.Params)
 	return &res.Params, nil
+}
+
+// GetClaim queries the chain for the claim associated with the given session id and supplier operator address.
+// If a claim is available in the cache, it is returned instead.
+func (pq *proofQuerier) GetClaim(
+	ctx context.Context,
+	supplierOperatorAddress string,
+	sessionId string,
+) (client.Claim, error) {
+	logger := pq.logger.With("query_client", "proof", "method", "GetClaim")
+
+	// Get the claim from the cache if it exists.
+	claimCacheKey := getClaimCacheKey(supplierOperatorAddress, sessionId)
+	if claim, found := pq.claimsCache.Get(claimCacheKey); found {
+		logger.Debug().Msgf("claim cache HIT for claim with sessionId %q", sessionId)
+		return &claim, nil
+	}
+
+	logger.Debug().Msgf("claim cache MISS for claim with sessionId %q", sessionId)
+
+	req := &prooftypes.QueryGetClaimRequest{
+		SupplierOperatorAddress: supplierOperatorAddress,
+		SessionId:               sessionId,
+	}
+	res, err := pq.proofQuerier.Claim(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+
+	// Update the cache with the newly retrieved claim.
+	pq.claimsCache.Set(claimCacheKey, res.Claim)
+
+	// Return the query claim
+	return &res.Claim, nil
+}
+
+// getClaimCacheKey constructs the cache key for a claim in the form of: supplierOperatorAddress/sessionId.
+func getClaimCacheKey(supplierOperatorAddress, sessionId string) string {
+	return fmt.Sprintf("%s/%s", supplierOperatorAddress, sessionId)
 }
