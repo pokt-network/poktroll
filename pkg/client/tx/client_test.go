@@ -98,17 +98,12 @@ func TestTxClient_SignAndBroadcast_Succeeds(t *testing.T) {
 	)
 
 	// Define gas settings for the transaction.
-	gasPrices := cosmostypes.NewDecCoins(cosmostypes.NewDecCoin("upokt", math.NewInt(1)))
-	gasSetting, err := flags.ParseGasSetting("auto")
-	require.NoError(t, err)
 
 	// Construct the transaction client.
 	txClient, err := tx.NewTxClient(
 		ctx,
 		txClientDeps,
-		tx.WithSigningKeyName(testSigningKeyName),
-		tx.WithGasPrices(&gasPrices),
-		tx.WithGasSetting(&gasSetting),
+		testtx.WithDefaultTxClientOptions(t, testSigningKeyName)...,
 	)
 	require.NoError(t, err)
 
@@ -210,19 +205,8 @@ func TestTxClient_NewTxClient_Error(t *testing.T) {
 				blockClientMock,
 			)
 
-			// Construct a signing key option using the test signing key name.
-			signingKeyOpt := tx.WithSigningKeyName(test.signingKeyName)
-
-			// Define gas settings for the transaction.
-			gasPrices := cosmostypes.NewDecCoins(cosmostypes.NewDecCoin("upokt", math.NewInt(1)))
-			gasSetting, err := flags.ParseGasSetting("auto")
-			require.NoError(t, err)
-
-			gasPricesOpt := tx.WithGasPrices(&gasPrices)
-			gasSettingOpt := tx.WithGasSetting(&gasSetting)
-
 			// Attempt to create the transactions client.
-			txClient, err := tx.NewTxClient(ctx, txClientDeps, signingKeyOpt, gasPricesOpt, gasSettingOpt)
+			txClient, err := tx.NewTxClient(ctx, txClientDeps, testtx.WithDefaultTxClientOptions(t, test.signingKeyName)...)
 			require.ErrorIs(t, err, test.expectedErr)
 			require.Nil(t, txClient)
 		})
@@ -274,18 +258,11 @@ func TestTxClient_SignAndBroadcast_SyncError(t *testing.T) {
 		blockClientMock,
 	)
 
-	// Define gas settings for the transaction.
-	gasPrices := cosmostypes.NewDecCoins(cosmostypes.NewDecCoin("upokt", math.NewInt(1)))
-	gasSetting, err := flags.ParseGasSetting("auto")
-	require.NoError(t, err)
-
 	// Construct the transaction client.
 	txClient, err := tx.NewTxClient(
 		ctx,
 		txClientDeps,
-		tx.WithSigningKeyName(testSigningKeyName),
-		tx.WithGasPrices(&gasPrices),
-		tx.WithGasSetting(&gasSetting),
+		testtx.WithDefaultTxClientOptions(t, testSigningKeyName)...,
 	)
 	require.NoError(t, err)
 
@@ -362,7 +339,7 @@ $ go test -v -count=1 -run TestTxClient_SignAndBroadcast_CheckTxError ./pkg/clie
 	)
 
 	// Construct the transaction client.
-	txClient, err := tx.NewTxClient(ctx, txClientDeps, tx.WithSigningKeyName(testSigningKeyName))
+	txClient, err := tx.NewTxClient(ctx, txClientDeps, testtx.WithDefaultTxClientOptions(t, testSigningKeyName)...)
 	require.NoError(t, err)
 
 	signingKeyAddr, err := signingKey.GetAddress()
@@ -432,18 +409,11 @@ func TestTxClient_SignAndBroadcast_Timeout(t *testing.T) {
 		blockClientMock,
 	)
 
-	// Define gas settings for the transaction.
-	gasPrices := cosmostypes.NewDecCoins(cosmostypes.NewDecCoin("upokt", math.NewInt(1)))
-	gasSetting, err := flags.ParseGasSetting("auto")
-	require.NoError(t, err)
-
 	// Construct the transaction client.
 	txClient, err := tx.NewTxClient(
 		ctx,
 		txClientDeps,
-		tx.WithSigningKeyName(testSigningKeyName),
-		tx.WithGasPrices(&gasPrices),
-		tx.WithGasSetting(&gasSetting),
+		testtx.WithDefaultTxClientOptions(t, testSigningKeyName)...,
 	)
 	require.NoError(t, err)
 
@@ -547,18 +517,11 @@ func TestTxClient_SignAndBroadcast_Retry(t *testing.T) {
 		blockClientMock,
 	)
 
-	// Define gas settings for the transaction.
-	gasPrices := cosmostypes.NewDecCoins(cosmostypes.NewDecCoin("upokt", math.NewInt(1)))
-	gasSetting, err := flags.ParseGasSetting("auto")
-	require.NoError(t, err)
-
 	// Construct the transaction client.
 	txClient, err := tx.NewTxClient(
 		ctx,
 		txClientDeps,
-		tx.WithSigningKeyName(testSigningKeyName),
-		tx.WithGasPrices(&gasPrices),
-		tx.WithGasSetting(&gasSetting),
+		testtx.WithDefaultTxClientOptions(t, testSigningKeyName)...,
 	)
 	require.NoError(t, err)
 
@@ -679,6 +642,8 @@ func TestTxClient_GasConfig(t *testing.T) {
 			options: []client.TxClientOption{
 				tx.WithSigningKeyName(testSigningKeyName),
 				tx.WithGasPrices(&standardGasPrices),
+				// Note: This is for testing purposes only. In production code,
+				// use flags.ParseGasSetting("auto") instead if gas simulation is needed.
 				tx.WithGasSetting(&flags.GasSetting{Gas: 200000, Simulate: true}),
 				tx.WithGasAdjustment(1.5),
 			},
@@ -693,7 +658,7 @@ func TestTxClient_GasConfig(t *testing.T) {
 			},
 		},
 		{
-			name: "decimal remainder in fee - should round up",
+			name: "decimal remainder in calculated fee - should round up",
 			options: []client.TxClientOption{
 				tx.WithSigningKeyName(testSigningKeyName),
 				tx.WithGasPrices(&cosmostypes.DecCoins{
@@ -711,7 +676,7 @@ func TestTxClient_GasConfig(t *testing.T) {
 			},
 		},
 		{
-			name: "fee amount with decimal - should round up",
+			name: "given fee amount with decimal - should round up",
 			options: []client.TxClientOption{
 				tx.WithSigningKeyName(testSigningKeyName),
 				tx.WithFeeAmount(&cosmostypes.DecCoins{

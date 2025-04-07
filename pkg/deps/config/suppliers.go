@@ -380,16 +380,29 @@ func NewSupplySupplierClientsFn(signingKeyNames []string) SupplierFn {
 			}
 		}
 
+		// Ensure that the gas prices include upokt
+		for _, gasPrice := range gasPrices {
+			if gasPrice.Denom != volatile.DenomuPOKT {
+				// TODO_TECHDEBT(red-0ne): Allow other gas prices denominations once supported (e.g. mPOKT, POKT)
+				// See https://docs.cosmos.network/main/build/architecture/adr-024-coin-metadata#decision
+				return nil, fmt.Errorf("only gas prices with %s denom are supported", volatile.DenomuPOKT)
+			}
+		}
+
+		// Setup the tx client options for the suppliers.
+		txClientOptions := make([]client.TxClientOption, 0)
+		txClientOptions = append(txClientOptions, tx.WithGasPrices(&gasPrices))
+		txClientOptions = append(txClientOptions, tx.WithGasAdjustment(gasAdjustment))
+		txClientOptions = append(txClientOptions, tx.WithGasSetting(&gasSetting))
+		txClientOptions = append(txClientOptions, tx.WithFeeAmount(&feeAmount))
+
 		suppliers := supplier.NewSupplierClientMap()
 		for _, signingKeyName := range signingKeyNames {
+			txClientOptions = append(txClientOptions, tx.WithSigningKeyName(signingKeyName))
 			txClientDepinjectConfig, err := newSupplyTxClientsFn(
 				ctx,
 				deps,
-				signingKeyName,
-				&gasPrices,
-				gasAdjustment,
-				&gasSetting,
-				&feeAmount,
+				txClientOptions...,
 			)
 			if err != nil {
 				return nil, err
@@ -505,29 +518,13 @@ func NewSupplyBankQuerierFn() SupplierFn {
 func newSupplyTxClientsFn(
 	ctx context.Context,
 	deps depinject.Config,
-	signingKeyName string,
-	gasPrices *cosmostypes.DecCoins,
-	gasAdjustment float64,
-	gasSetting *flags.GasSetting,
-	feeAmount *cosmostypes.DecCoins,
+	txClientOptions ...client.TxClientOption,
 ) (depinject.Config, error) {
-	// Ensure that the gas prices include upokt
-	for _, gasPrice := range *gasPrices {
-		if gasPrice.Denom != volatile.DenomuPOKT {
-			// TODO_TECHDEBT(red-0ne): Allow other gas prices denominations once supported (e.g. mPOKT, POKT)
-			// See https://docs.cosmos.network/main/build/architecture/adr-024-coin-metadata#decision
-			return nil, fmt.Errorf("only gas prices with %s denom are supported", volatile.DenomuPOKT)
-		}
-	}
 
 	txClient, err := tx.NewTxClient(
 		ctx,
 		deps,
-		tx.WithSigningKeyName(signingKeyName),
-		tx.WithGasPrices(gasPrices),
-		tx.WithGasAdjustment(gasAdjustment),
-		tx.WithGasSetting(gasSetting),
-		tx.WithFeeAmount(feeAmount),
+		txClientOptions...,
 	)
 	if err != nil {
 		return nil, err

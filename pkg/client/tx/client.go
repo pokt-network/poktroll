@@ -364,9 +364,14 @@ func (txnClient *txClient) validateConfigAndSetDefaults() error {
 		return err
 	}
 
+	hasGasSettings := txnClient.gasSetting != nil || txnClient.gasPrices != nil || txnClient.gasAdjustment != 0
+	if txnClient.feeAmount != nil && hasGasSettings {
+		return fmt.Errorf("cannot set both fee amount and gas settings")
+	}
+
 	// Validate gas-related parameters
 	if txnClient.feeAmount == nil {
-		// If no fee amount is explicitly provided, we need valid gas settings
+		// If no fee amount is explicitly configured, we need valid gas settings
 		if txnClient.gasSetting == nil {
 			// Create default gas settings if not provided
 			txnClient.gasSetting = &flags.GasSetting{
@@ -615,8 +620,8 @@ func (txnClient *txClient) getFeeAmount(
 		// Set the fee amount if provided.
 		feeCoins, changeCoins := txnClient.feeAmount.TruncateDecimal()
 
-		// Ensure that any decimal remainder is added to the corresponding coin as a
-		// whole number.
+		// Ensure that any decimal remainder is added to the corresponding coin as an
+		// integer amount of the minimal denomination (1upokt).
 		// Since changeCoins is the result of DecCoins#TruncateDecimal, it will always
 		// be less than 1 unit of the feeCoins.
 		if !changeCoins.IsZero() {
@@ -646,8 +651,8 @@ func (txnClient *txClient) getFeeAmount(
 	feeAmountDec := txnClient.gasPrices.MulDec(gasLimitDec)
 
 	feeCoins, changeCoins := feeAmountDec.TruncateDecimal()
-	// Ensure that any decimal remainder is added to the corresponding coin as a
-	// whole number.
+	// Ensure that any decimal remainder is added to the corresponding coin as an
+	// integer amount of the minimal denomination (1upokt).
 	// Since changeCoins is the result of DecCoins#TruncateDecimal, it will always
 	// be less than 1 unit of the feeCoins.
 	if !changeCoins.IsZero() {
