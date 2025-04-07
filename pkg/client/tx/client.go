@@ -244,7 +244,7 @@ func (txnClient *txClient) SignAndBroadcastWithTimeoutHeight(
 	// Simulate the transaction to calculate the gas limit.
 	gasLimit, simErr := txnClient.txCtx.GetSimulatedTxGas(ctx, txnClient.signingKeyName, msgs...)
 	if simErr != nil {
-		return either.SyncErr(simErr)
+		return nil, either.SyncErr(simErr)
 	}
 
 	// Construct the transactions using cosmos' transactions builder.
