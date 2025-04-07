@@ -24,11 +24,16 @@ type morseClaimMessage interface {
 // validateMorseAddress validates that the morseSrcAddress matches
 // the Morse public key of the given Morse claim message.
 func validateMorseAddress(msg morseClaimMessage) error {
-	publicKey := cmted25519.PubKey(msg.GetMorsePublicKey())
+	publicKeyBz := msg.GetMorsePublicKey()
+	if publicKeyBz == nil {
+		return ErrMorseAccountClaim.Wrapf("morsePublicKey is nil")
+	}
+
+	publicKey := cmted25519.PubKey(publicKeyBz)
 
 	if msg.GetMorseSrcAddress() != publicKey.Address().String() {
-		return ErrMorseAccountClaim.Wrapf(
-			" morseSrcAddress (%s) does not match morsePublicKey address (%s)",
+		return ErrMorseSrcAddress.Wrapf(
+			"morseSrcAddress (%s) does not match morsePublicKey address (%s)",
 			msg.GetMorseSrcAddress(),
 			publicKey.Address().String(),
 		)
@@ -48,10 +53,9 @@ func validateMorseSignature(msg morseClaimMessage) error {
 	// Validate the morse signature.
 	if !morsePublicKey.VerifySignature(signingMsgBz, msg.GetMorseSignature()) {
 		return ErrMorseSignature.Wrapf(
-			"morseSignature (%x) is invalid for Morse address %s and msg signing data: %s",
+			"morseSignature (%x) is invalid for Morse address (%s)",
 			msg.GetMorseSignature(),
 			msg.GetMorseSrcAddress(),
-			string(signingMsgBz),
 		)
 	}
 

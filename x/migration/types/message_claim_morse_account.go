@@ -1,7 +1,6 @@
 package types
 
 import (
-	errorsmod "cosmossdk.io/errors"
 	cometcrypto "github.com/cometbft/cometbft/crypto"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
@@ -37,8 +36,11 @@ func NewMsgClaimMorseAccount(
 // - The morseSignature is valid.
 func (msg *MsgClaimMorseAccount) ValidateBasic() error {
 	// Validate the shannonDestAddress is a valid bech32 address.
-	if _, err := sdk.AccAddressFromBech32(msg.ShannonDestAddress); err != nil {
-		return errorsmod.Wrapf(sdkerrors.ErrInvalidAddress, "invalid shannonDestAddress address (%s): %s", msg.ShannonDestAddress, err)
+	if _, err := sdk.AccAddressFromBech32(msg.GetShannonDestAddress()); err != nil {
+		return sdkerrors.ErrInvalidAddress.Wrapf(
+			"invalid shannonDestAddress address (%s): %s",
+			msg.GetShannonDestAddress(), err,
+		)
 	}
 
 	// Validate the Morse source address matches the public key
@@ -57,12 +59,12 @@ func (msg *MsgClaimMorseAccount) ValidateBasic() error {
 func (msg *MsgClaimMorseAccount) SignMsgClaimMorseAccount(morsePrivKey cometcrypto.PrivKey) (err error) {
 	signingMsgBz, err := msg.getSigningBytes()
 	if err != nil {
-		return err
+		return ErrMorseSignature.Wrapf("unable to get signing bytes: %s", err)
 	}
 
 	msg.MorseSignature, err = morsePrivKey.Sign(signingMsgBz)
 	if err != nil {
-		return ErrMorseAccountClaim.Wrapf("unable to sign message: %s", err)
+		return ErrMorseSignature.Wrapf("unable to sign message: %s", err)
 	}
 	return nil
 }

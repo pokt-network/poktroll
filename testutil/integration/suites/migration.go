@@ -78,7 +78,6 @@ func (s *MigrationModuleSuite) ClaimMorseAccount(
 
 	morseClaimMsg, err := migrationtypes.NewMsgClaimMorseAccount(
 		shannonDestAddr,
-		expectedMorseSrcAddr,
 		morsePrivateKey,
 	)
 	require.NoError(t, err)
@@ -166,7 +165,6 @@ func (s *MigrationModuleSuite) ClaimMorseApplication(
 
 	morseClaimMsg, err := migrationtypes.NewMsgClaimMorseApplication(
 		shannonDestAddr,
-		expectedMorseSrcAddr,
 		morsePrivateKey,
 		serviceConfig,
 	)
@@ -203,7 +201,6 @@ func (s *MigrationModuleSuite) ClaimMorseSupplier(
 	morseClaimMsg, err := migrationtypes.NewMsgClaimMorseSupplier(
 		shannonDestAddr,
 		shannonDestAddr,
-		expectedMorseSrcAddr,
 		morsePrivateKey,
 		services,
 	)

@@ -46,8 +46,11 @@ func NewMsgClaimMorseSupplier(
 // - The morseSrcAddress matches the public key.
 // - The morseSignature is valid.
 func (msg *MsgClaimMorseSupplier) ValidateBasic() error {
-	if _, err := sdk.AccAddressFromBech32(msg.ShannonOwnerAddress); err != nil {
-		return errorsmod.Wrapf(sdkerrors.ErrInvalidAddress, "invalid shannon owner address address (%s)", err)
+	if _, err := sdk.AccAddressFromBech32(msg.GetShannonOwnerAddress()); err != nil {
+		return sdkerrors.ErrInvalidAddress.Wrapf(
+			"invalid shannon owner address address (%s): %s",
+			msg.GetShannonOwnerAddress(), err,
+		)
 	}
 
 	if msg.ShannonOperatorAddress != "" {
@@ -77,11 +80,11 @@ func (msg *MsgClaimMorseSupplier) ValidateBasic() error {
 func (msg *MsgClaimMorseSupplier) SignMorseSignature(morsePrivKey cometcrypto.PrivKey) (err error) {
 	signingMsgBz, err := msg.getSigningBytes()
 	if err != nil {
-		return err
+		return ErrMorseSignature.Wrapf("unable to get signing bytes: %s", err)
 	}
 
 	msg.MorseSignature, err = morsePrivKey.Sign(signingMsgBz)
-	return err
+	return ErrMorseSignature.Wrapf("unable to sign message: %s", err)
 }
 
 // ValidateMorseAddress validates that the Morse source address matches the public key.

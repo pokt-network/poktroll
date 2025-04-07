@@ -1,7 +1,6 @@
 package types
 
 import (
-	errorsmod "cosmossdk.io/errors"
 	cometcrypto "github.com/cometbft/cometbft/crypto/ed25519"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
@@ -44,8 +43,11 @@ func NewMsgClaimMorseApplication(
 // - The morseSignature is valid.
 func (msg *MsgClaimMorseApplication) ValidateBasic() error {
 	// Validate the shannonDestAddress is a valid bech32 address.
-	if _, err := sdk.AccAddressFromBech32(msg.ShannonDestAddress); err != nil {
-		return errorsmod.Wrapf(sdkerrors.ErrInvalidAddress, "invalid shannonDestAddress address (%s)", err)
+	if _, err := sdk.AccAddressFromBech32(msg.GetShannonDestAddress()); err != nil {
+		return sdkerrors.ErrInvalidAddress.Wrapf(
+			"invalid shannonDestAddress address (%s): %s",
+			msg.GetShannonDestAddress(), err,
+		)
 	}
 
 	// Validate the application service config.
@@ -56,7 +58,7 @@ func (msg *MsgClaimMorseApplication) ValidateBasic() error {
 	}
 
 	if len(msg.MorseSignature) != MorseSignatureLengthBytes {
-		return ErrMorseApplicationClaim.Wrapf(
+		return ErrMorseSignature.Wrapf(
 			"invalid morse signature length; expected %d, got %d",
 			MorseSignatureLengthBytes, len(msg.MorseSignature),
 		)
