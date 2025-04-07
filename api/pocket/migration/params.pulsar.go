@@ -443,9 +443,10 @@ type Params struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// waive_morse_claim_gas_fees is used to enable/disable the waiving of gas fees
-	// associated with txs which ONLY contain Morse account/actor claim messages
-	// AND have one secp256k1 signer.
+	// waive_morse_claim_gas_fees is a feature flag used to enable/disable the waiving of gas fees for txs that:
+	// - Contain exactly one secp256k1 signer
+	// - Contain at least one Morse account/actor claim messages
+	// - Do not contain any other messages other than Morse account/actor claim messages
 	WaiveMorseClaimGasFees bool `protobuf:"varint,1,opt,name=waive_morse_claim_gas_fees,json=waiveMorseClaimGasFees,proto3" json:"waive_morse_claim_gas_fees,omitempty"`
 }
 
