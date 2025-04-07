@@ -12,13 +12,6 @@ import (
 	"github.com/pokt-network/poktroll/app/volatile"
 )
 
-<<<<<<< HEAD
-// newMorseClaimGasFeesWaiverAnteHandlerFn returns an AnteHandler that waives
-// minimum gas/fees for transactions that contain ONLY morse claim messages
-// (i.e. MsgClaimMorseAccount, MsgClaimMorseApplication, and MsgClaimMorseSupplier).
-func newMorseClaimGasFeesWaiverAnteHandlerFn(app *App) cosmostypes.AnteHandler {
-	return func(sdkCtx cosmostypes.Context, tx cosmostypes.Tx, simulate bool) (cosmostypes.Context, error) {
-=======
 // newAnteHandlerFn returns an AnteHandler that waives minimum gas/fees for transactions
 // that contain ONLY morse claim messages.
 // I.e. MsgClaimMorseAccount, MsgClaimMorseApplication and MsgClaimMorseSupplier
@@ -26,9 +19,8 @@ func newMorseClaimGasFeesWaiverAnteHandlerFn(app *App) cosmostypes.AnteHandler {
 // TODO_MAINNET_CRITICAL(@bryanchriswhite):
 // - Add a migration module param, `WaiveMorseClaimFees`.
 // - Return the default antehandler if it is false.
-func newAnteHandlerFn(app *App) cosmostypes.AnteHandler {
-	return func(ctx cosmostypes.Context, tx cosmostypes.Tx, simulate bool) (cosmostypes.Context, error) {
->>>>>>> issues/1149/wip
+func newMorseClaimGasFeesWaiverAnteHandlerFn(app *App) cosmostypes.AnteHandler {
+	return func(sdkCtx cosmostypes.Context, tx cosmostypes.Tx, simulate bool) (cosmostypes.Context, error) {
 		anteHandlerFn, err := ante.NewAnteHandler(ante.HandlerOptions{
 			AccountKeeper:          &app.Keepers.AccountKeeper,
 			BankKeeper:             app.Keepers.BankKeeper,
@@ -52,8 +44,8 @@ func newAnteHandlerFn(app *App) cosmostypes.AnteHandler {
 // - Contains AT LEAST one message
 // - Contains ONLY morse claim messages (i.e. MsgClaimMorseAccount, MsgClaimMorseApplication, and MsgClaimMorseSupplier)
 func newSigVerificationGasConsumer(
-	_ cosmostypes.Context,
-	_ *App,
+	sdkCtx cosmostypes.Context,
+	app *App,
 	tx cosmostypes.Tx,
 ) ante.SignatureVerificationGasConsumer {
 	migrationParams := app.Keepers.MigrationKeeper.GetParams(sdkCtx)
@@ -78,8 +70,8 @@ func newSigVerificationGasConsumer(
 // transactions that contain ONLY morse claim messages.
 // I.e. MsgClaimMorseAccount, MsgClaimMorseApplication and MsgClaimMorseSupplier
 func newTxFeeChecker(
-	_ cosmostypes.Context,
-	_ *App,
+	sdkCtx cosmostypes.Context,
+	app *App,
 	tx cosmostypes.Tx,
 ) ante.TxFeeChecker {
 	migrationParams := app.Keepers.MigrationKeeper.GetParams(sdkCtx)
