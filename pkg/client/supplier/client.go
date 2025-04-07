@@ -20,8 +20,8 @@ type supplierClient struct {
 	// signingKeyName is the name of the operator key in the keyring that will be
 	// used to sign transactions.
 	signingKeyName string
-	// signingKeyAddr is the account address of the operator key in the keyring.
-	signingKeyAddr cosmostypes.AccAddress
+	// signingKeyAddr is the bech32 address representation of the operator key in the keyring.
+	signingKeyAddr string
 
 	// pendingTxMu is used to prevent concurrent txs with the same sequence number.
 	pendingTxMu sync.Mutex
@@ -156,9 +156,9 @@ func (sClient *supplierClient) CreateClaims(
 	return <-errCh
 }
 
-// Address returns an address of the supplier client.
-func (sClient *supplierClient) OperatorAddress() *cosmostypes.AccAddress {
-	return &sClient.signingKeyAddr
+// OperatorAddress returns the bech32 string representation of the supplier operator address.
+func (sClient *supplierClient) OperatorAddress() string {
+	return sClient.signingKeyAddr
 }
 
 // validateConfigAndSetDefaults attempts to get the address from the keyring
@@ -174,7 +174,7 @@ func (sClient *supplierClient) validateConfigAndSetDefaults() error {
 		return err
 	}
 
-	sClient.signingKeyAddr = signingAddr
+	sClient.signingKeyAddr = signingAddr.String()
 
 	return nil
 }
