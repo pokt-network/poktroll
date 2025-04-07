@@ -50,7 +50,7 @@ func newSigVerificationGasConsumer(
 ) ante.SignatureVerificationGasConsumer {
 	migrationParams := app.Keepers.MigrationKeeper.GetParams(sdkCtx)
 
-	// Use freeSecp256k1SigGasConsumer if:
+	// Use the freeSecp256k1SigGasConsumer if:
 	// - The waive_morse_claim_gas_fees migration module param is true AND the tx:
 	// - Has EXACTLY one signer
 	// - Contains at least one message
