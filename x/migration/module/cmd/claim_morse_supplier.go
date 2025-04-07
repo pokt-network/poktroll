@@ -85,7 +85,7 @@ func runClaimSupplier(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	// Ensure that the signing account matches either the configured owner or operator address.
+	// Check and warn if the signing account doesn't match either the configured owner or operator address.
 	signingAddr := clientCtx.GetFromAddress().String()
 	ownerAddr := supplierStakeConfig.OwnerAddress
 	operatorAddr := supplierStakeConfig.OperatorAddress
@@ -93,10 +93,11 @@ func runClaimSupplier(cmd *cobra.Command, args []string) error {
 	case ownerAddr, operatorAddr:
 		// All good.
 	default:
-		return fmt.Errorf(
-			"signer address %s does not match owner address %s or supplier operator address %s",
-			signingAddr, ownerAddr, operatorAddr,
-		)
+		logger.Logger.Warn().
+			Str("signer_address", signingAddr).
+			Str("owner_address", ownerAddr).
+			Str("operator_address", operatorAddr).
+			Msg("signer address matches NEITHER owner NOR operator address")
 	}
 
 	// Construct a MsgClaimMorseSupplier message.
@@ -117,7 +118,7 @@ func runClaimSupplier(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	fmt.Printf("MsgClaimMorseSupplier %s\n", string(msgClaimMorseSupplierJSON))
+	logger.Logger.Info().Msgf("MsgClaimMorseSupplier %s\n", string(msgClaimMorseSupplierJSON))
 
 	// Last chance for the user to abort.
 	skipConfirmation, err := cmd.Flags().GetBool(cosmosflags.FlagSkipConfirmation)
@@ -126,6 +127,7 @@ func runClaimSupplier(cmd *cobra.Command, args []string) error {
 	}
 
 	if !skipConfirmation {
+		// DEV_NOTE: Intentionally using fmt instead of logger.Logger to receive user input on the same line.
 		fmt.Printf("Confirm MsgClaimMorseSupplier: y/[n]: ")
 		stdinReader := bufio.NewReader(os.Stdin)
 
