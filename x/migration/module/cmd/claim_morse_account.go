@@ -82,7 +82,6 @@ func runClaimAccount(cmd *cobra.Command, args []string) error {
 	shannonDestAddr := clientCtx.GetFromAddress().String()
 	msgClaimMorseAccount, err := types.NewMsgClaimMorseAccount(
 		shannonDestAddr,
-		morsePrivKey.PubKey().Address().String(),
 		morsePrivKey,
 	)
 	if err != nil {

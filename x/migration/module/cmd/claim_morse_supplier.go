@@ -103,7 +103,6 @@ func runClaimSupplier(cmd *cobra.Command, args []string) error {
 	msgClaimMorseSupplier, err := types.NewMsgClaimMorseSupplier(
 		ownerAddr,
 		operatorAddr,
-		morsePrivKey.PubKey().Address().String(),
 		morsePrivKey,
 		supplierStakeConfig.Services,
 	)

@@ -89,7 +89,6 @@ func runClaimApplication(cmd *cobra.Command, args []string) error {
 	shannonDestAddr := clientCtx.GetFromAddress().String()
 	msgClaimMorseApplication, err := types.NewMsgClaimMorseApplication(
 		shannonDestAddr,
-		morsePrivKey.PubKey().Address().String(),
 		morsePrivKey,
 		// Construct a new staked application service config with the service ID.
 		&sharedtypes.ApplicationServiceConfig{

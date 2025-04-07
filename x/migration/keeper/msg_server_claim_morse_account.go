@@ -3,7 +3,6 @@ package keeper
 import (
 	"context"
 
-	"github.com/cometbft/cometbft/crypto/ed25519"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -110,12 +109,6 @@ func (k msgServer) ClaimMorseAccount(ctx context.Context, msg *migrationtypes.Ms
 				morseClaimableAccount.GetMorseSrcAddress(),
 			).Error(),
 		)
-	}
-
-	// Validate the Morse signature.
-	publicKey := ed25519.PubKey(morseClaimableAccount.GetPublicKey())
-	if err := msg.ValidateMorseSignature(publicKey); err != nil {
-		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
 	// Set ShannonDestAddress & ClaimedAtHeight (claim).
