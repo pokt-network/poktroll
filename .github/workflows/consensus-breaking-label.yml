@@ -1,19 +1,19 @@
-name: Consensus Breaking Check
-
 # Ensure that the `consensus-breaking` label is added to PRs that modify files in the `x/` directory or `.proto` files.
 # This is to make it easier to track changes affecting protocol upgrades.
 # See #791 for detail
 
+name: Consensus Breaking Check
+
+# TODO_IMPROVE: Future improvements to consider:
+# - Only add the label if parameters in proto files are updated (not just any proto change)
+# - Account for changes in dependencies imported by x/ modules
+# - Add more sophisticated detection for state machine changes vs API-only changes
+# - Consider different labeling for different severity levels of consensus changes
+# - Add automated checks for gas usage changes that might affect consensus
+
 on:
   pull_request:
     types: [opened, synchronize, reopened]
-    paths:
-      - "x/**"
-      - "**/*.proto"
-  push:
-    paths:
-      - "x/**"
-      - "**/*.proto"
   workflow_dispatch: # Enables manual trigger
 
 jobs:
@@ -32,8 +32,19 @@ jobs:
       - name: Check for consensus-breaking changes
         id: check_changes
         run: |
+          # Get the base branch or use the target branch for PRs
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            BASE_SHA="${{ github.event.pull_request.base.sha }}"
+            HEAD_SHA="${{ github.event.pull_request.head.sha }}"
+          else
+            # For manual triggers, use the default branch as base
+            git fetch origin ${GITHUB_BASE_REF:-main}
+            BASE_SHA="origin/${GITHUB_BASE_REF:-main}"
+            HEAD_SHA="${{ github.sha }}"
+          fi
+
           # Check if files under x/ or .proto files have been modified
-          CHANGED_FILES=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep -E '^x/|\.proto$' || true)
+          CHANGED_FILES=$(git diff --name-only $BASE_SHA $HEAD_SHA | grep -E '^x/|\.proto$' || true)
 
           if [ -n "$CHANGED_FILES" ]; then
             echo "CONSENSUS_BREAKING=true" >> $GITHUB_ENV
@@ -47,6 +58,13 @@ jobs:
       - name: Add consensus-breaking label
         if: env.CONSENSUS_BREAKING == 'true' && github.event_name == 'pull_request'
         uses: actions-ecosystem/action-add-labels@v1
+        with:
+          labels: consensus-breaking
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Remove consensus-breaking label
+        if: env.CONSENSUS_BREAKING == 'false' && github.event_name == 'pull_request'
+        uses: actions-ecosystem/action-remove-labels@v1
         with:
           labels: consensus-breaking
           github_token: ${{ secrets.GITHUB_TOKEN }}
