@@ -32,7 +32,7 @@ TODO(#791): The process of adding the `consensus-breaking` label is still not fo
 
 :::danger
 
-**UPDATE THE INFORMATION IN THE [UPGRADES LIST](./upgrade_list.md) DURING THE FOLLOWING STEPS IF ANYTHING CHANGES.** If we plan to schedule an upgrade at a specific height, update the height. If the upgrade becomes consensus-breaking, ensure the table remains up-to-date.
+**UPDATE THE INFORMATION IN THE [UPGRADES LIST](1_upgrade_list.md) DURING THE FOLLOWING STEPS IF ANYTHING CHANGES.** If we plan to schedule an upgrade at a specific height, update the height. If the upgrade becomes consensus-breaking, ensure the table remains up-to-date.
 :::
 
 ### 2. Create a GitHub Release
@@ -97,7 +97,7 @@ You can use the following template as a starting point.
 ```bash
 - [ ] Determine the block height at which the upgrade should occur.
   - Selected height: `INSERT_BLOCK_HEIGHT`
-- [ ] Update the information in the [Upgrades List](./upgrade_list.md) and the GitHub Release.
+- [ ] Update the information in the [Upgrades List](1_upgrade_list.md) and the GitHub Release.
   - Upgrade details: `INSERT_LINK_TO_UPGRADE`
 - [ ] Inform the community about the planned upgrade.
   - Announcement: `INSERT_LINK_TO_ANNOUNCEMENT`
@@ -106,7 +106,7 @@ You can use the following template as a starting point.
 
 ### 5. Issue Upgrade on TestNet
 
-- Follow the [Upgrade Procedure](./upgrade_procedure.md) to upgrade existing/running Full Nodes and Validators to the new version of `pocket`.
+- Follow the [Upgrade Procedure](2_upgrade_procedure.md) to upgrade existing/running Full Nodes and Validators to the new version of `pocket`.
 - Monitor the network's health metrics to identify any significant changes, such as the loss of many validators due to an unexpected consensus-breaking change.
 
 ### 6. Issue Upgrade on MainNet
