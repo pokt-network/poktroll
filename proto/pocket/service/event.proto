@@ -15,3 +15,5 @@ message EventRelayMiningDifficultyUpdated {
     uint64 prev_num_relays_ema = 4;
     uint64 new_num_relays_ema = 5;
 }
+
+# Test

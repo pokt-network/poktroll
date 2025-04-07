@@ -1,5 +1,9 @@
 name: Consensus Breaking Check
 
+# Ensure that the `consensus-breaking` label is added to PRs that modify files in the `x/` directory or `.proto` files.
+# This is to make it easier to track changes affecting protocol upgrades.
+# See #791 for detail
+
 on:
   pull_request:
     types: [opened, synchronize, reopened]
