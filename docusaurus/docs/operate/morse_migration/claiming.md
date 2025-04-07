@@ -365,12 +365,6 @@ See `pocketd tx migrate claim-application --help` for more details.
 
 ### Claim a Morse Supplier (Staked, Actor)
 
-:::warning TODO_MAINNET_MIGRATION(@bryanchriswhite, #1126)
-
-Update with respect to owner/operator custodia/non-custodial addresses.
-
-:::
-
 #### Critical Analogy: Morse Servicer to Shannon Supplier
 
 _tl;dr Claiming a Morse Servicer as a Shannon Supplier is like staking a new Shannon Supplier without explicitly specifying the `stake_amount`_
@@ -382,6 +376,16 @@ The only difference between staking a new supplier on Shannon and **claiming** a
 :::important Omit `stake_amount`
 
 Omit the `stake_amount` field in a supplier config; providing it in when claiming a Morse supplier is an error.
+
+:::
+
+:::important (optional) Non-custodial staking
+
+If you would like to claim a Morse supplier with distinct "owner" and "operator" addresses, you MAY do so by specifying both in the [supplier staking config](../configs/supplier_staking_config.md#staking-types).
+
+This delegates the permission of signing claims and proofs to the "operator" address, while the "owner" address retains sole ownership over the supplier stake and rewards.
+
+See the ["Supplier staking config" > "Staking types"](../configs/supplier_staking_config.md#staking-types).
 
 :::
 
@@ -397,10 +401,33 @@ Both the unstaked balance and supplier stake amounts are retrieved from the corr
 For example, running the following command:
 
 ```bash
-pocketd migrate claim-application \
-  ./pocket-account-8b257c7f4e884e49bafc540d874f33f91436e1dc.json \
-  ./supplier_service_configs.yaml \
-  --from app1
+Enter Decrypt Passphrase: 
+MsgClaimMorseSupplier {
+  "shannon_owner_address": "pokt1chn2mglfxqcp52znqk8jq2rww73qffxczz3jph",
+  "shannon_operator_address": "pokt1chn2mglfxqcp52znqk8jq2rww73qffxczz3jph",
+  "morse_src_address": "44892C8AB52396BA016ADDD0221783E3BD29A400",
+  "morse_signature": "rYyN2mnjyMMrYdDhuw+Hrs98b/svn38ixdSWye3Gr66aAJ9CQhdiaYB8Lta8tiwWIteIM8rmWYUh0QkNdpkNDQ==",
+  "services": [
+    {
+      "service_id": "anvil",
+      "endpoints": [
+        {
+          "url": "http://relayminer1:8545",
+          "rpc_type": 3
+        }
+      ],
+      "rev_share": [
+        {
+          "address": "pokt1chn2mglfxqcp52znqk8jq2rww73qffxczz3jph",
+          "rev_share_percentage": 100
+        }
+      ]
+    }
+  ]
+}
+
+Confirm MsgClaimMorseSupplier: y/[n]: y
+
 ```
 
 Should prompt for a passphrase and produce output similar to the following:
