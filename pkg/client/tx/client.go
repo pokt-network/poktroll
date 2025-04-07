@@ -226,7 +226,7 @@ func (txnClient *txClient) SignAndBroadcastWithTimeoutHeight(
 	ctx context.Context,
 	timeoutHeight int64,
 	msgs ...cosmostypes.Msg,
-) either.AsyncError {
+) (execTxResult *cosmostypes.TxResponse, eitherErr either.AsyncError) {
 	var validationErrs error
 	for i, msg := range msgs {
 		validatableMsg, ok := msg.(cosmostypes.HasValidateBasic)
@@ -238,7 +238,7 @@ func (txnClient *txClient) SignAndBroadcastWithTimeoutHeight(
 		}
 	}
 	if validationErrs != nil {
-		return either.SyncErr(validationErrs)
+		return nil, either.SyncErr(validationErrs)
 	}
 
 	// Simulate the transaction to calculate the gas limit.
@@ -251,7 +251,7 @@ func (txnClient *txClient) SignAndBroadcastWithTimeoutHeight(
 	txBuilder := txnClient.txCtx.NewTxBuilder()
 	if err := txBuilder.SetMsgs(msgs...); err != nil {
 		// return synchronous error
-		return either.SyncErr(err)
+		return nil, either.SyncErr(err)
 	}
 
 	txBuilder.SetGasLimit(gasLimit)
@@ -278,19 +278,19 @@ func (txnClient *txClient) SignAndBroadcastWithTimeoutHeight(
 		false, false,
 	)
 	if err != nil {
-		return either.SyncErr(err)
+		return nil, either.SyncErr(err)
 	}
 
 	// ensure transactions is valid
 	// NOTE: this makes the transactions valid; i.e. it is *REQUIRED*
 	if err = txBuilder.GetTx().ValidateBasic(); err != nil {
-		return either.SyncErr(err)
+		return nil, either.SyncErr(err)
 	}
 
 	// serialize transactions
 	txBz, err := txnClient.txCtx.EncodeTx(txBuilder)
 	if err != nil {
-		return either.SyncErr(err)
+		return nil, either.SyncErr(err)
 	}
 
 	txResponse, err := retry.Call(ctx, func() (*cosmostypes.TxResponse, error) {
@@ -303,14 +303,14 @@ func (txnClient *txClient) SignAndBroadcastWithTimeoutHeight(
 		return response, txErr
 	}, retry.GetStrategy(ctx))
 	if err != nil {
-		return either.SyncErr(err)
+		return nil, either.SyncErr(err)
 	}
 
 	if txResponse.Code != 0 {
-		return either.SyncErr(ErrCheckTx.Wrapf("%s", txResponse.RawLog))
+		return txResponse, either.SyncErr(ErrCheckTx.Wrapf("%s", txResponse.RawLog))
 	}
 
-	return txnClient.addPendingTransactions(encoding.NormalizeTxHashHex(txResponse.TxHash), timeoutHeight)
+	return txResponse, txnClient.addPendingTransactions(encoding.NormalizeTxHashHex(txResponse.TxHash), timeoutHeight)
 }
 
 // SignAndBroadcast signs a set of Cosmos SDK messages, constructs a transaction,
@@ -335,7 +335,7 @@ func (txnClient *txClient) SignAndBroadcastWithTimeoutHeight(
 func (txnClient *txClient) SignAndBroadcast(
 	ctx context.Context,
 	msgs ...cosmostypes.Msg,
-) either.AsyncError {
+) (txResponse *cosmostypes.TxResponse, eitherErr either.AsyncError) {
 	timeoutHeight := txnClient.blockClient.LastBlock(ctx).
 		Height() + txnClient.commitTimeoutHeightOffset
 

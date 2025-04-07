@@ -92,12 +92,12 @@ type TxClient interface {
 		ctx context.Context,
 		timeoutHeight int64,
 		msgs ...cosmostypes.Msg,
-	) either.AsyncError
+	) (txResponse *cosmostypes.TxResponse, eitherErr either.AsyncError)
 
 	SignAndBroadcast(
 		ctx context.Context,
 		msgs ...cosmostypes.Msg,
-	) either.AsyncError
+	) (txResponse *cosmostypes.TxResponse, eitherErr either.AsyncError)
 }
 
 // TxContext provides an interface which consolidates the operational dependencies
