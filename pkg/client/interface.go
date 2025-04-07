@@ -81,10 +81,8 @@ type SupplierClient interface {
 		timeoutHeight int64,
 		sessionProofs ...MsgSubmitProof,
 	) error
-
-	// OperatorAddress returns the operator address of the SupplierClient that will be
-	// submitting proofs & claims.
-	OperatorAddress() *cosmostypes.AccAddress
+	// OperatorAddress returns the bech32 string representation of the supplier operator address.
+	OperatorAddress() string
 }
 
 // TxClient provides a synchronous interface initiating and waiting for transactions
@@ -337,9 +335,8 @@ type BlockQueryClient interface {
 	Block(ctx context.Context, height *int64) (*cometrpctypes.ResultBlock, error)
 }
 
-// ProofParams is a go interface type which corresponds to the pocket.proof.Params
-// protobuf message. Since the generated go types don't include interface types, this
-// is necessary to prevent dependency cycles.
+// ProofParams is a go interface type reflecting the pocket.proof.Params protobuf.
+// This is necessary since to prevent dependency cycles since generated go types don't interface types.
 type ProofParams interface {
 	GetProofRequestProbability() float64
 	GetProofRequirementThreshold() *cosmostypes.Coin
@@ -347,11 +344,22 @@ type ProofParams interface {
 	GetProofSubmissionFee() *cosmostypes.Coin
 }
 
+// Claim is a go interface type reflecting the pocket.proof.Claim protobuf.
+// This is necessary since to prevent dependency cycles since generated go types don't interface types.
+type Claim interface {
+	GetSupplierOperatorAddress() string
+	GetSessionHeader() *sessiontypes.SessionHeader
+	GetRootHash() []byte
+}
+
 // ProofQueryClient defines an interface that enables the querying of the
 // onchain proof module params.
 type ProofQueryClient interface {
 	// GetParams queries the chain for the current proof module parameters.
 	GetParams(ctx context.Context) (ProofParams, error)
+
+	// GetClaim queries the chain for the full claim associatd with the (supplier, sessionId).
+	GetClaim(ctx context.Context, supplierOperatorAddress string, sessionId string) (Claim, error)
 }
 
 // ServiceQueryClient defines an interface that enables the querying of the
