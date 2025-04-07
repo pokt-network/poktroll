@@ -26,6 +26,7 @@ import (
 	cometcli "github.com/cometbft/cometbft/libs/cli"
 	cometjson "github.com/cometbft/cometbft/libs/json"
 	"github.com/cosmos/cosmos-sdk/codec"
+	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	"github.com/gorilla/websocket"
 	"github.com/regen-network/gocuke"
 	"github.com/stretchr/testify/require"
@@ -50,6 +51,8 @@ const (
 	numQueryRetries = uint8(3)
 	unbondingPeriod = "unbonding"
 	transferPeriod  = "transfer"
+	oneshotTag      = "@oneshot"
+	manualTag       = "@manual"
 )
 
 var (
@@ -67,7 +70,38 @@ var (
 	chainIdFlag      = "--chain-id=pocket"
 	// pathUrl points to a local gateway using the PATH framework in centralized mode.
 	pathUrl = "http://localhost:3000/v1" // localhost is kept as the default to streamline local development & testing.
+
+	// allFeaturesTags is a tag expression that filters out features (i.e. E2E tests)
+	// which SHOULD NOT be included in a wildcard/glob of feature files.
+	allFeaturesTags = fmt.Sprintf("not %s and not %s", manualTag, oneshotTag)
 )
+
+type actorTypeEnum = string
+
+const (
+	actorTypeApp      actorTypeEnum = "application"
+	actorTypeSupplier actorTypeEnum = "supplier"
+)
+
+// cliAccountQueryResopnse is a data structure that matches the serialized account
+// which is returned when querying for onchain accounts via the CLI.
+type cliAccountQueryResponse struct {
+	Type  string `json:"type"`
+	Value struct {
+		Account authtypes.BaseAccount `json:"account"`
+	} `json:"value"`
+}
+
+// cliBlockQueryResponse is a data structure that matches the serialized block
+// which is returned when querying for the current block via the CLI.
+type cliBlockQueryResponse struct {
+	Header struct {
+		Height int64 `json:"height"`
+	} `json:"header"`
+	LastCommit struct {
+		Height int64 `json:"height"`
+	} `json:"last_commit"`
+}
 
 func init() {
 	addrRe = regexp.MustCompile(`address:\s+(\S+)\s+name:\s+(\S+)`)
@@ -182,8 +216,10 @@ func (s *suite) Before() {
 func TestFeatures(t *testing.T) {
 	gocuke.NewRunner(t, &suite{}).Path(flagFeaturesPath).
 		// Ignore test elements (e.g. Features, Scenarios, etc.)
-		// with the @manual tag (e.g. migration.feature).
-		Tags("not @manual").Run()
+		// which should not be included in a wildcard/glob of feature files.
+		// For example, these include the @manual or @oneshot tags used for migration*.feature.
+		Tags(allFeaturesTags).
+		Run()
 }
 
 // TODO_TECHDEBT: rename `pocketd` to `pocketd`.
@@ -328,6 +364,11 @@ func (s *suite) TheUserStakesAWithUpoktForServiceFromTheAccount(actorType string
 		chainIdFlag,
 		"-y",
 	}
+	switch actorType {
+	case actorTypeApp:
+		args = append(args)
+	}
+
 	res, err := s.pocketd.RunCommandOnHost("", args...)
 	require.NoError(s, err, "error staking %s for service %s due to: %v", actorType, serviceId, err)
 
@@ -918,8 +959,39 @@ func (s *suite) getSharedParams() sharedtypes.Params {
 	return sharedParamsRes.Params
 }
 
-// getCurrentBlockHeight returns the current block height
+// getSupplierParams returns the supplier module parameters
+func (s *suite) getSupplierParams() suppliertypes.Params {
+	args := []string{
+		"query",
+		"supplier",
+		"params",
+		"--output=json",
+	}
+	res, err := s.pocketd.RunCommandOnHost("", args...)
+	require.NoError(s, err, "error querying supplier params")
+
+	var supplierParamsRes suppliertypes.QueryParamsResponse
+
+	s.cdc.MustUnmarshalJSON([]byte(res.Stdout), &supplierParamsRes)
+	require.NoError(s, err)
+
+	return supplierParamsRes.Params
+}
+
+// getCurrentBlockHeight returns the current (uncommitted) block height.
 func (s *suite) getCurrentBlockHeight() int64 {
+	blockRes := s.queryBlockResponse()
+	return blockRes.Header.Height
+}
+
+// getLastCommitBlockHeight returns the block height of the most recently committed block.
+func (s *suite) getLastCommitBlockHeight() int64 {
+	blockRes := s.queryBlockResponse()
+	return blockRes.LastCommit.Height
+}
+
+// queryBlock queries for the current block information.
+func (s *suite) queryBlockResponse() cliBlockQueryResponse {
 	args := []string{
 		"query",
 		"block",
@@ -935,16 +1007,11 @@ func (s *suite) getCurrentBlockHeight() int64 {
 	require.Greater(s, len(stdoutLines), 1, "expected at least one line of output")
 	res.Stdout = strings.Join(stdoutLines[1:], "\n")
 
-	var blockRes struct {
-		LastCommit struct {
-			Height int64 `json:"height"`
-		} `json:"last_commit"`
-	}
-
+	var blockRes cliBlockQueryResponse
 	err = cometjson.Unmarshal([]byte(res.Stdout), &blockRes)
 	require.NoError(s, err)
 
-	return blockRes.LastCommit.Height
+	return blockRes
 }
 
 // readEVMSubscriptionEvents reads the eth_subscription events from the websocket
@@ -978,6 +1045,32 @@ func (s *suite) readEVMSubscriptionEvents() context.Context {
 	}()
 
 	return ctx
+}
+
+// queryAccount queries the auth module for the account associated with the given address.
+func (s *suite) queryAccount(accAddr string) (account *authtypes.BaseAccount, isFound bool) {
+	args := []string{
+		"query",
+		"auth",
+		"account",
+		accAddr,
+		"--output=json",
+	}
+
+	result, err := s.pocketd.RunCommandOnHost("", args...)
+	require.NotNil(s, result)
+	if strings.Contains(result.Stderr, "not found") {
+		return nil, false
+	}
+	require.NoError(s, err, "error getting account for address %s", accAddr)
+
+	var resp cliAccountQueryResponse
+	responseBz := []byte(strings.TrimSpace(result.Stdout))
+
+	err = cometjson.Unmarshal(responseBz, &resp)
+	require.NoError(s, err)
+
+	return &resp.Value.Account, true
 }
 
 // accBalanceKey is a helper function to create a key to store the balance

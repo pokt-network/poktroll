@@ -60,7 +60,7 @@ Some terminology has been refined and update from Morse to Shannon.
 The following disambiguation should be applied in the scope of this section (Morse -> Shannon Migration) of documentation.
 
 | Morse Term           | Shannon Term | Disambiguation                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
-| -------------------- | ------------ |---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| -------------------- | ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Servicer             | Supplier     | Refers to the onchain actor that provides services (e.g. data), as well as the APIs (i.e. RPCs) to the corresponding service provides. In Morse, this involves running the Tendermint stack alongside the Morse API. In Shannon, this MUST include the ["Relayminer"](/operate/walkthroughs/supplier_walkthrough) alongside a Full CometBFT Node that could be owned by the RelayMiner (preferable) or delegated to an external RPC provider.                                                                                                     |
 | Node                 | Full Node    | In Morse, this refers to a Tendermint full node running the Pocket Network Morse AppChain. In Shannon, this refers to a CometBFT full node running the Pocket Network Shannon AppChain. It is important to note that in Morse, in some instances, Servicers are sometimes referred to as Nodes which reflect the naming in the underlying implementation.                                                                                                                                                                                         |
 | Validator / Servicer | Validator    | In Morse, staked Servicers are also Validators (in onchain data structure terms), where only the top 1000 (by stake) make up the active consensus set (potential block proposers). In Shannon, it is an independent actor that must explicitly stake and join the network as a Validator. Their role as a Supplier (if present) in Shannon is completely decoupled. Both leverage the Tendermint consensus mechanism to secure the network and propose blocks. The number of Validators in Morse is 1,000 and the number in Shannon is still TBD. |
@@ -73,7 +73,7 @@ Full details of the Shannon launch process can be found in [the overview](./road
 
 1. **Snapshot Selection**: The "authority" (i.e. Foundation / PNF) coordinates with Morse account/stake-holders **offchain** choose a height at which a snapshot will be taken.
 2. **MorseAccountState proposal**: The "authority" retrieves the Morse snapshot and uses it to derive the "canonical" MorseAccountState for offchain validation by Morse account/stake-holders.
-3. **MorseAccountState validation**: Morse account/stake-holders retrieve the Morse snapshot and use it to validate the proposed "canonical" MorseAccountState, providing offchain feedback (TODO_MAINNET(@Olshansk): where/how?) if necessary.
+3. **MorseAccountState validation**: Morse account/stake-holders retrieve the Morse snapshot and use it to validate the proposed "canonical" MorseAccountState, providing offchain feedback (TODO_MAINNET_MIGRATION(@Olshansk): where/how?) if necessary.
 4. **MorseAccountState import**: The "authority" imports the "canonical" MorseAccountState onchain (on Shannon).
 
 ### Complete E2E User Sequence
@@ -252,7 +252,7 @@ Morse account/stake-holders who wish to participate in the social consensus proc
 2. **Use the Shannon CLI to validate the proposed `MsgImportMorseClaimableAccounts`**: See `./msg_import_morse_claimable_accounts.json` as an example.
 
    ```bash
-   # TODO_MAINNET(@bryanchriswhite, #1034): Complete this example once the CLI is available.
+   # TODO_MAINNET_CRITICAL(@bryanchriswhite, #1034): Complete this example once the CLI is available.
    pocketd tx migration validate-morse-accounts ./msg_import_morse_claimable_accounts.json [morse_hex_address1, ...]
    ```
 

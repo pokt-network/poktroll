@@ -238,6 +238,8 @@ func (s *suite) TheApplicationEstablishesAWebsocketsConnectionForService(appName
 	s.waitForBlockHeight(nextSessionStartHeight)
 
 	// Set WebSocket close height just before the claim window opens
+	// TODO_TECHDEBT(@red-0ne): Re-evaluate if the -1 is needed here or not.
+	// See the discussion here: https://github.com/pokt-network/poktroll/pull/1133/files#r2016150360
 	s.wsCloseHeight = sharedtypes.GetClaimWindowOpenHeight(&sharedParams, nextSessionStartHeight) - 1
 
 	// Prepare HTTP headers with application address and target service ID
@@ -278,9 +280,8 @@ func (s *suite) TheApplicationReceivesEvmSubscriptionEventsUntilTheSessionEnds()
 }
 
 func (s *suite) TheSubscriptionIsClosedBeforeClaimWindowOpenHeightIsReached() {
-	currentHeight := s.getCurrentBlockHeight()
-
-	require.Equal(s, s.wsCloseHeight, currentHeight)
+	lastCommitHeight := s.getLastCommitBlockHeight()
+	require.Equal(s, s.wsCloseHeight, lastCommitHeight)
 }
 
 func (s *suite) sendRelaysForSession(

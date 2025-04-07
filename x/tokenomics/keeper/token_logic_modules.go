@@ -82,7 +82,7 @@ func (k Keeper) ProcessTokenLogicModules(
 	if err != nil {
 		return tokenomicstypes.ErrTokenomicsRootHashInvalid.Wrapf("failed to retrieve numClaimComputeUnits: %s", err)
 	}
-	// TODO_MAINNET(@bryanchriswhite, @red-0ne): Fix the low-volume exploit here.
+	// TODO_MAINNET_MIGRATION_MIGRATION(@bryanchriswhite, @red-0ne): Fix the low-volume exploit here.
 	// https://www.notion.so/buildwithgrove/RelayMiningDifficulty-and-low-volume-7aab3edf6f324786933af369c2fa5f01?pvs=4
 	if numClaimComputeUnits == 0 {
 		return tokenomicstypes.ErrTokenomicsRootHashInvalid.Wrap("root hash has zero relays")
@@ -183,7 +183,7 @@ func (k Keeper) ProcessTokenLogicModules(
 
 	// Ensure the claim amount is within the limits set by Relay Mining.
 	// If not, update the settlement amount and emit relevant events.
-	// TODO_MAINNET(@red-0ne): Consider pulling this out of Keeper#ProcessTokenLogicModules
+	// TODO_MAINNET_MIGRATION_MIGRATION(@red-0ne): Consider pulling this out of Keeper#ProcessTokenLogicModules
 	// and ensure claim amount limits are enforced before TLM processing.
 	actualSettlementCoin, err := k.ensureClaimAmountLimits(ctx, logger, &sharedParams, &application, &supplier, claimSettlementCoin, applicationInitialStake)
 	if err != nil {
@@ -192,8 +192,6 @@ func (k Keeper) ProcessTokenLogicModules(
 	logger = logger.With("actual_settlement_upokt", actualSettlementCoin)
 	logger.Info(fmt.Sprintf("About to start processing TLMs for (%d) compute units, equal to (%s) claimed", numClaimComputeUnits, actualSettlementCoin))
 
-	// TODO_MAINNET(@red-0ne): Add tests to ensure that a zero settlement coin
-	// due to integer division rounding is handled correctly.
 	if actualSettlementCoin.Amount.IsZero() {
 		logger.Warn(fmt.Sprintf(
 			"actual settlement coin is zero, skipping TLM processing, application %q stake %s",
@@ -225,7 +223,7 @@ func (k Keeper) ProcessTokenLogicModules(
 		logger.Info(fmt.Sprintf("Finished processing TLM: %q", tlmName))
 	}
 
-	// TODO_POST_MAINNET: If we support multiple native tokens, we will need to start checking the denom here.
+	// Unbond the application if it has less than the minimum stake.
 	sessionEndHeight := sharedtypes.GetSessionEndHeight(&sharedParams, cosmostypes.UnwrapSDKContext(ctx).BlockHeight())
 	if application.Stake.Amount.LT(apptypes.DefaultMinStake.Amount) {
 		// Mark the application as unbonding if it has less than the minimum stake.
@@ -251,7 +249,7 @@ func (k Keeper) ProcessTokenLogicModules(
 	k.applicationKeeper.SetApplication(ctx, application)
 	logger.Info(fmt.Sprintf("updated onchain application record with address %q", application.Address))
 
-	// TODO_MAINNET(@bryanchriswhite): If the application stake has dropped to (near?) zero:
+	// TODO_MAINNET_MIGRATION(@bryanchriswhite): If the application stake has dropped to (near?) zero:
 	// - Unstake it
 	// - Emit an event
 	// - Ensure this doesn't happen

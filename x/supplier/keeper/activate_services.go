@@ -36,7 +36,7 @@ func (k Keeper) BeginBlockerActivateSupplierServices(
 	events := make([]proto.Message, 0)
 
 	// Iterate through all suppliers to check for pending service activations.
-	// TODO_POST_MAINNET: Optimize by using an index to track suppliers with pending activations.
+	// TODO_POST_MAINNET(@red-0ne): Optimize by using an index to track suppliers with pending activations.
 	for _, supplier := range k.GetAllSuppliers(ctx) {
 		// supplier.ServiceConfigHistory is guaranteed to contain at least one entry.
 		// This is necessary for the session hydration process that relies on the

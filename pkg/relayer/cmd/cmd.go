@@ -15,6 +15,7 @@ import (
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/spf13/cobra"
 
+	"github.com/pokt-network/poktroll/cmd/flags"
 	"github.com/pokt-network/poktroll/cmd/signals"
 	"github.com/pokt-network/poktroll/pkg/client/query"
 	"github.com/pokt-network/poktroll/pkg/client/query/cache"
@@ -36,10 +37,7 @@ import (
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
-// We're `explicitly omitting default` so the relayer crashes if these aren't specified.
-const omittedDefaultFlagValue = "explicitly omitting default"
-
-// TODO_CONSIDERATION: Consider moving all flags defined in `/pkg` to a `flags.go` file.
+// TODO_CONSIDERATION: Consider moving all flags defined in `/pkg` to the cmd/flags package.
 var (
 	// flagRelayMinerConfig is the variable containing the relay miner config filepath
 	// sourced from the `--config` flag.
@@ -79,8 +77,9 @@ for such operations.`,
 	// Cosmos flags
 	// TODO_TECHDEBT(#256): Remove unneeded cosmos flags.
 	cmd.Flags().String(cosmosflags.FlagKeyringBackend, "", "Select keyring's backend (os|file|kwallet|pass|test)")
-	cmd.Flags().StringVar(&flagNodeRPCURL, cosmosflags.FlagNode, omittedDefaultFlagValue, "Register the default Cosmos node flag, which is needed to initialize the Cosmos query and tx contexts correctly. It can be used to override the `QueryNodeRPCURL` and `TxNodeRPCURL` fields in the config file if specified.")
-	cmd.Flags().StringVar(&flagNodeGRPCURL, cosmosflags.FlagGRPC, omittedDefaultFlagValue, "Register the default Cosmos node grpc flag, which is needed to initialize the Cosmos query context with grpc correctly. It can be used to override the `QueryNodeGRPCURL` field in the config file if specified.")
+	// We're intentionally omitting a default value so the relayer crashes if these aren't specified.
+	cmd.Flags().StringVar(&flagNodeRPCURL, cosmosflags.FlagNode, flags.OmittedDefaultFlagValue, "Register the default Cosmos node flag, which is needed to initialize the Cosmos query and tx contexts correctly. It can be used to override the `QueryNodeRPCURL` and `TxNodeRPCURL` fields in the config file if specified.")
+	cmd.Flags().StringVar(&flagNodeGRPCURL, cosmosflags.FlagGRPC, flags.OmittedDefaultFlagValue, "Register the default Cosmos node grpc flag, which is needed to initialize the Cosmos query context with grpc correctly. It can be used to override the `QueryNodeGRPCURL` field in the config file if specified.")
 	cmd.Flags().Bool(cosmosflags.FlagGRPCInsecure, true, "Used to initialize the Cosmos query context with grpc security options. It can be used to override the `QueryNodeGRPCInsecure` field in the config file if specified.")
 	cmd.Flags().String(cosmosflags.FlagChainID, "pocket", "The network chain ID")
 	cmd.Flags().StringVar(&flagLogLevel, cosmosflags.FlagLogLevel, "debug", "The logging level (debug|info|warn|error)")
@@ -194,7 +193,7 @@ func setupRelayerDependencies(
 	// Override the config file's `QueryNodeGRPCUrl` fields
 	// with the `--grpc-addr` flag if it was specified.
 	// TODO(#223) Remove this check once viper is used as SoT for overridable config values.
-	if flagNodeGRPCURL != omittedDefaultFlagValue {
+	if flagNodeGRPCURL != flags.OmittedDefaultFlagValue {
 		parsedFlagNodeGRPCUrl, err := url.Parse(flagNodeGRPCURL)
 		if err != nil {
 			return nil, fmt.Errorf("failed to parse grpc query URL: %w", err)
@@ -205,7 +204,7 @@ func setupRelayerDependencies(
 	// Override the config file's `QueryNodeUrl` and `txNodeRPCUrl` fields
 	// with the `--node` flag if it was specified.
 	// TODO(#223) Remove this check once viper is used as SoT for overridable config values.
-	if flagNodeRPCURL != omittedDefaultFlagValue {
+	if flagNodeRPCURL != flags.OmittedDefaultFlagValue {
 		parsedFlagNodeRPCUrl, err := url.Parse(flagNodeRPCURL)
 		if err != nil {
 			return nil, fmt.Errorf("failed to parse rpc query URL: %w", err)

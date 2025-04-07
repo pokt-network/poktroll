@@ -54,7 +54,7 @@ to the scripts so the next time somebody tries to sync the network from genesis,
 they will automatically skip the failed upgrade.
 [Documentation and scripts to update](#documentation-and-scripts-to-update)
 
-<!-- TODO_MAINNET(@okdas): new cosmovisor UX can simplify this -->
+<!-- TODO_IMPROVE(@okdas): new cosmovisor UX can simplify this -->
 
 :::
 
@@ -86,7 +86,7 @@ In such a case, we need:
   - Document and add `--unsafe-skip-upgrade=$upgradeHeightNumber` to the scripts (such as docker-compose and cosmovisor installer)
   - The next time somebody tries to sync the network from genesis they will automatically skip the failed upgrade; see [documentation and scripts to update](#documentation-and-scripts-to-update)
 
-<!-- TODO_MAINNET(@okdas): new cosmovisor UX can simplify this -->
+<!-- TODO_IMPROVE(@okdas): new cosmovisor UX can simplify this -->
 
 ### Option 3: The migration succeed but the network is stuck (i.e. migration had a bug)
 
