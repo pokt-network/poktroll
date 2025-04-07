@@ -1,0 +1,48 @@
+name: Consensus Breaking Check
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    paths:
+      - "x/**"
+      - "**/*.proto"
+  push:
+    paths:
+      - "x/**"
+      - "**/*.proto"
+  workflow_dispatch: # Enables manual trigger
+
+jobs:
+  check-consensus-breaking:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0 # Fetch all history to check changes
+
+      - name: Check for consensus-breaking changes
+        id: check_changes
+        run: |
+          # Check if files under x/ or .proto files have been modified
+          CHANGED_FILES=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep -E '^x/|\.proto$' || true)
+
+          if [ -n "$CHANGED_FILES" ]; then
+            echo "CONSENSUS_BREAKING=true" >> $GITHUB_ENV
+            echo "Found potential consensus-breaking changes:"
+            echo "$CHANGED_FILES"
+          else
+            echo "CONSENSUS_BREAKING=false" >> $GITHUB_ENV
+            echo "No consensus-breaking changes detected."
+          fi
+
+      - name: Add consensus-breaking label
+        if: env.CONSENSUS_BREAKING == 'true' && github.event_name == 'pull_request'
+        uses: actions-ecosystem/action-add-labels@v1
+        with:
+          labels: consensus-breaking
+          github_token: ${{ secrets.GITHUB_TOKEN }}
