@@ -226,7 +226,7 @@ func (txnClient *txClient) SignAndBroadcastWithTimeoutHeight(
 	ctx context.Context,
 	timeoutHeight int64,
 	msgs ...cosmostypes.Msg,
-) (execTxResult *cosmostypes.TxResponse, eitherErr either.AsyncError) {
+) (txResponse *cosmostypes.TxResponse, eitherErr either.AsyncError) {
 	var validationErrs error
 	for i, msg := range msgs {
 		validatableMsg, ok := msg.(cosmostypes.HasValidateBasic)
@@ -293,7 +293,7 @@ func (txnClient *txClient) SignAndBroadcastWithTimeoutHeight(
 		return nil, either.SyncErr(err)
 	}
 
-	txResponse, err := retry.Call(ctx, func() (*cosmostypes.TxResponse, error) {
+	txResponse, err = retry.Call(ctx, func() (*cosmostypes.TxResponse, error) {
 		response, txErr := txnClient.txCtx.BroadcastTx(txBz)
 		// Wrap timeout height error to make it non-retryable.
 		if txErr != nil && sdkerrors.ErrTxTimeoutHeight.Is(txErr) {
