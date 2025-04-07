@@ -132,7 +132,7 @@ func txHasOnlyMorseClaimMsgs(tx cosmostypes.Tx) bool {
 		case claimMorseAcctMsgTypeUrl,
 			claimMorseAppMsgTypeUrl,
 			claimMorseSupplierMsgTypeUrl:
-			// check the remaining messages...
+			// check the remaining msgs type URLs...
 			continue
 		default:
 			// At least one message is not a morse claim message.
@@ -152,6 +152,7 @@ func freeSigGasConsumer(
 	_ signing.SignatureV2,
 	_ authtypes.Params,
 ) error {
+	// Intentionally not consuming any gas; no-op.
 	return nil
 }
 
