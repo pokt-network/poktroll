@@ -30,7 +30,7 @@ all parameters in the module even if just modifying one.
 |                | MsgUpdateParams    | MsgUpdateParam     |
 | -------------- | ------------------ | ------------------ |
 | **Cosmos SDK** | ✅ (All params)    | ❌ (Not available) |
-| **Poktroll**   | ❌ (Not available) | ✅ (Single param)  |
+| **Pocket**   | ✅ (All params) | ✅ (Single param)  |
 
 **Summary of Key Differences:**
 
@@ -54,7 +54,7 @@ pocketd query session params --node https://shannon-grove-rpc.mainnet.poktroll.c
 To update the number of suppliers per session, you needs to create a new file with the transaction like so:
 
 ```bash
-cat << 'EOF' > /tmp/update_suppliers_per_session
+cat << 🚀 > /tmp/update_suppliers_per_session
 {
   "body": {
     "messages": [
@@ -67,7 +67,7 @@ cat << 'EOF' > /tmp/update_suppliers_per_session
     ]
   }
 }
-EOF
+🚀
 ```
 
 Followed by running:
