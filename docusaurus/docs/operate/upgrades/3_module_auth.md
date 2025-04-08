@@ -24,7 +24,7 @@ The list of authorizations enabled on MainNet genesis can be found at [pokt-netw
 
 #### `x/gov` Module Account
 
-The `x/gov` module granter is tied to address `pokt10d07y265gmmuvt4z0w9aw880jnsr700j8yv32t`.
+The `x/gov` module account is deterministically tied to address `pokt10d07y265gmmuvt4z0w9aw880jnsr700j8yv32t`. This will be true for any "pocket" network; e.g., LocalNet, TestNet, MainNet, etc.
 
 No one has access to this address, but the grants it has provided to other accounts can be queried like so:
 
