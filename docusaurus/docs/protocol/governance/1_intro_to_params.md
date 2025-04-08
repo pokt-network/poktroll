@@ -20,7 +20,7 @@ Visit [this page](../../develop/developer_guide/adding_params.md) for implementa
 
 ### MsgUpdateParams vs MsgUpdateParam
 
-:::critical READ THIS
+:::danger READ THIS
 This is a critical distinction that can impact all onchain parameters.
 :::
 
