@@ -15,10 +15,6 @@ import (
 // newAnteHandlerFn returns an AnteHandler that waives minimum gas/fees for transactions
 // that contain ONLY morse claim messages.
 // I.e. MsgClaimMorseAccount, MsgClaimMorseApplication and MsgClaimMorseSupplier
-//
-// TODO_MAINNET_CRITICAL(@bryanchriswhite):
-// - Add a migration module param, `WaiveMorseClaimFees`.
-// - Return the default antehandler if it is false.
 func newMorseClaimGasFeesWaiverAnteHandlerFn(app *App) cosmostypes.AnteHandler {
 	return func(sdkCtx cosmostypes.Context, tx cosmostypes.Tx, simulate bool) (cosmostypes.Context, error) {
 		anteHandlerFn, err := ante.NewAnteHandler(ante.HandlerOptions{
@@ -48,16 +44,12 @@ func newSigVerificationGasConsumer(
 	app *App,
 	tx cosmostypes.Tx,
 ) ante.SignatureVerificationGasConsumer {
-	migrationParams := app.Keepers.MigrationKeeper.GetParams(sdkCtx)
-
 	// Use the freeSecp256k1SigGasConsumer if:
 	// - The waive_morse_claim_gas_fees migration module param is true AND the tx:
 	// - Has EXACTLY one signer
 	// - Contains at least one message
 	// - Contains ONLY Morse claim message(s)
-	if migrationParams.WaiveMorseClaimGasFees &&
-		txHasOneSecp256k1Signature(tx) &&
-		txHasOnlyMorseClaimMsgs(tx) {
+	if shouldWaiveMorseClaimGasFees(sdkCtx, app, tx) {
 		return freeSigGasConsumer
 	}
 
@@ -74,11 +66,7 @@ func newTxFeeChecker(
 	app *App,
 	tx cosmostypes.Tx,
 ) ante.TxFeeChecker {
-	migrationParams := app.Keepers.MigrationKeeper.GetParams(sdkCtx)
-
-	if migrationParams.WaiveMorseClaimGasFees &&
-		txHasOneSecp256k1Signature(tx) &&
-		txHasOnlyMorseClaimMsgs(tx) {
+	if shouldWaiveMorseClaimGasFees(sdkCtx, app, tx) {
 		return freeTxFeeChecker
 	}
 
@@ -88,6 +76,19 @@ func newTxFeeChecker(
 	// - https://github.com/cosmos/cosmos-sdk/blob/v0.50.13/x/auth/ante/fee.go#L31
 	// - https://github.com/cosmos/cosmos-sdk/blob/v0.50.13/x/auth/ante/ante.go#L48
 	return nil
+}
+
+// shouldWaiveMorseClaimGasFees returns true if:
+//   - The waive_morse_claim_gas_fees migration module param is true
+//   - The tx contains EXACTLY ONE secp256k1 signature
+//   - The tx contains ONLY morse claim messages
+//     I.e., MsgClaimMorseAccount, MsgClaimMorseApplication, and MsgClaimMorseSupplier
+func shouldWaiveMorseClaimGasFees(sdkCtx cosmostypes.Context, app *App, tx cosmostypes.Tx) bool {
+	migrationParams := app.Keepers.MigrationKeeper.GetParams(sdkCtx)
+
+	return migrationParams.WaiveMorseClaimGasFees &&
+		txHasOneSecp256k1Signature(tx) &&
+		txHasOnlyMorseClaimMsgs(tx)
 }
 
 // txHasOneSecp256k1Signature returns true if the given tx contains EXACTLY ONE secp256k1 signature.
