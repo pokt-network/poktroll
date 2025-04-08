@@ -133,7 +133,7 @@ source ~/.bashrc
 
 :::warning
 The Alpha TestNet currently requires manual steps to sync the node to the latest block. Please find the affected block(s)
-in [this document](../upgrades/upgrade_list.md), which leads to the manual upgrade instructions.
+in [this document](../upgrades/1_upgrade_list.md), which leads to the manual upgrade instructions.
 :::
 
 ```bash

@@ -3,7 +3,7 @@ title: Upgrade procedure
 sidebar_position: 2
 ---
 
-# Upgrade procedure <!-- omit in toc -->
+## Upgrade procedure <!-- omit in toc -->
 
 :::warning
 
@@ -37,7 +37,7 @@ This process involves several key steps:
 2. **Implementation**: The proposed changes are implemented in the codebase.
 3. **Testing**: Thorough testing of the proposed changes is conducted in devnet and testnet environments before mainnet deployment.
 4. **Announcement**: Upon successful testing, we announce the upgrade through our social media channels and community forums.
-5. **Deployment**: An upgrade transaction is sent to the network, allowing node operators using [Cosmovisor](../../operate/walkthroughs/full_node_walkthrough.md) to automatically upgrade their nodes at the specified block height.
+5. **Deployment**: An upgrade transaction is sent to the network, allowing node operators using [Cosmovisor](../walkthroughs/full_node_walkthrough.md) to automatically upgrade their nodes at the specified block height.
 6. **Monitoring**: Post-deployment, we closely monitor the network to ensure everything functions as expected.
 
 ## When is an Upgrade Warranted?
@@ -263,7 +263,7 @@ We use Kubernetes to manage software versions, including validators. Introducing
 
 ### TestNet Upgrades
 
-We currently deploy TestNet validators using Kubernetes with helm charts, which prevents us from managing the validator with `cosmovisor`. We do not control what other TestNet participants are running. However, if participants have deployed their nodes using the [cosmovisor guide](../../operate/walkthroughs/full_node_walkthrough.md), their nodes will upgrade automatically.
+We currently deploy TestNet validators using Kubernetes with helm charts, which prevents us from managing the validator with `cosmovisor`. We do not control what other TestNet participants are running. However, if participants have deployed their nodes using the [cosmovisor guide](../walkthroughs/full_node_walkthrough.md), their nodes will upgrade automatically.
 
 Until we transition to [cosmos-operator](https://github.com/strangelove-ventures/cosmos-operator), which supports scheduled upgrades (although not fully automatic like `cosmovisor`), we need to manually manage the process:
 
