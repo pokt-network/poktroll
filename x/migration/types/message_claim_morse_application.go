@@ -73,11 +73,14 @@ func (msg *MsgClaimMorseApplication) ValidateBasic() error {
 func (msg *MsgClaimMorseApplication) SignMorseSignature(morsePrivKey cometcrypto.PrivKey) (err error) {
 	signingMsgBz, err := msg.getSigningBytes()
 	if err != nil {
-		return err
+		return ErrMorseSignature.Wrapf("unable to get signing bytes: %s", err)
 	}
 
 	msg.MorseSignature, err = morsePrivKey.Sign(signingMsgBz)
-	return err
+	if err != nil {
+		return ErrMorseSignature.Wrapf("unable to sign message: %s", err)
+	}
+	return nil
 }
 
 // ValidateMorseAddress validates that the Morse source address matches the public key.
