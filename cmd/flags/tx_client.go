@@ -17,7 +17,11 @@ import (
 )
 
 // GetTxClient constructs a new TxClient instance using the provided command flags.
-func GetTxClient(ctx context.Context, cmd *cobra.Command) (client.TxClient, error) {
+func GetTxClient(
+	ctx context.Context,
+	cmd *cobra.Command,
+	txClientOpts ...client.TxClientOption,
+) (client.TxClient, error) {
 	// Retrieve the query node RPC URL
 	queryNodeRPCUrlString, err := cmd.Flags().GetString(cosmosflags.FlagNode)
 	if err != nil {
@@ -63,6 +67,21 @@ func GetTxClient(ctx context.Context, cmd *cobra.Command) (client.TxClient, erro
 	}
 	deps = depinject.Configs(deps, depinject.Supply(txCtx))
 
+	// Prepare default tx client options.
+	gasAndFeesOptions, err := config.GetTxClientGasAndFeesOptions(cmd)
+	if err != nil {
+		return nil, err
+	}
+
+	defaultTxClientOpts := append(
+		gasAndFeesOptions,
+		tx.WithSigningKeyName(clientCtx.FromName),
+	)
+
+	// Prepend the default options such that are provided but can
+	// be overridden with a subsequent options of the same kind.
+	txClientOpts = append(defaultTxClientOpts, txClientOpts...)
+
 	// Return a new TxClient instance
-	return tx.NewTxClient(ctx, deps, tx.WithSigningKeyName(clientCtx.FromName))
+	return tx.NewTxClient(ctx, deps, txClientOpts...)
 }

@@ -2,18 +2,14 @@ package config
 
 import (
 	"context"
-	"fmt"
 	"net/url"
 
 	"cosmossdk.io/depinject"
 	sdkclient "github.com/cosmos/cosmos-sdk/client"
-	"github.com/cosmos/cosmos-sdk/client/flags"
 	cosmosflags "github.com/cosmos/cosmos-sdk/client/flags"
-	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/gogoproto/grpc"
 	"github.com/spf13/cobra"
 
-	"github.com/pokt-network/poktroll/app/volatile"
 	"github.com/pokt-network/poktroll/pkg/cache"
 	"github.com/pokt-network/poktroll/pkg/cache/memory"
 	"github.com/pokt-network/poktroll/pkg/client"
@@ -342,43 +338,11 @@ func NewSupplySupplierClientsFn(signingKeyNames []string) SupplierFn {
 		deps depinject.Config,
 		cmd *cobra.Command,
 	) (depinject.Config, error) {
-		gasPriceStr, err := cmd.Flags().GetString(cosmosflags.FlagGasPrices)
+		// Set up the tx client options for the suppliers.
+		txClientOptions, err := GetTxClientGasAndFeesOptions(cmd)
 		if err != nil {
 			return nil, err
 		}
-
-		gasPrices, err := cosmostypes.ParseDecCoins(gasPriceStr)
-		if err != nil {
-			return nil, err
-		}
-
-		gasAdjustment, err := cmd.Flags().GetFloat64(cosmosflags.FlagGasAdjustment)
-		if err != nil {
-			return nil, err
-		}
-
-		// The RelayMiner always uses tx simulation to estimate the gas since this
-		// will be variable depending on the tx being sent.
-		// Always use the "auto" gas setting for the RelayMiner.
-		gasSetting, err := flags.ParseGasSetting("auto")
-		if err != nil {
-			return nil, err
-		}
-
-		// Ensure that the gas prices include upokt
-		for _, gasPrice := range gasPrices {
-			if gasPrice.Denom != volatile.DenomuPOKT {
-				// TODO_TECHDEBT(red-0ne): Allow other gas prices denominations once supported (e.g. mPOKT, POKT)
-				// See https://docs.cosmos.network/main/build/architecture/adr-024-coin-metadata#decision
-				return nil, fmt.Errorf("only gas prices with %s denom are supported", volatile.DenomuPOKT)
-			}
-		}
-
-		// Setup the tx client options for the suppliers.
-		txClientOptions := make([]client.TxClientOption, 0)
-		txClientOptions = append(txClientOptions, tx.WithGasPrices(&gasPrices))
-		txClientOptions = append(txClientOptions, tx.WithGasAdjustment(gasAdjustment))
-		txClientOptions = append(txClientOptions, tx.WithGasSetting(&gasSetting))
 
 		suppliers := supplier.NewSupplierClientMap()
 		for _, signingKeyName := range signingKeyNames {
