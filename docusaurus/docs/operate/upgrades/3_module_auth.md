@@ -26,6 +26,8 @@ The list of authorizations enabled on MainNet genesis can be found at [pokt-netw
 
 The `x/gov` module account is deterministically tied to address `pokt10d07y265gmmuvt4z0w9aw880jnsr700j8yv32t`. This will be true for any "pocket" network; e.g., LocalNet, TestNet, MainNet, etc.
 
+The `x/gov` module account is the default configured "authority" for all cosmos-sdk modules. Each module references its own configured "authority" when executing messages which require authorization (e.g. MsgUpdateParams messages).
+
 No one has access to this address, but the grants it has provided to other accounts can be queried like so:
 
 ```bash
@@ -60,7 +62,7 @@ In [this PR](https://github.com/pokt-network/poktroll/pull/1173/files), the foll
 
 In order to enable it on an already deployed network, we need to submit the following transaction:
 
-```json
+```bash
 pocket tx authz grant \
   pokt1eeeksh2tvkh7wzmfrljnhw4wrhs55lcuvmekkw \
   "pocket.migration.MsgUpdateParams" \
