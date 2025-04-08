@@ -5,9 +5,9 @@ sidebar_position: 3
 
 ## Module Authorizations <!-- omit in toc -->
 
-Pocket Network utilizes an offchain governance mechanism that enables the community to vote on proposals.
+Pocket Network utilizes an onchain governance mechanism that enables the community to vote on proposals.
 
-Once a proposal passes, or a decision by PNF is made on behalf of the DAO, PNF adjust the parameters necessary for the protocol's operation.
+Once a proposal passes, or a decision by PNF is made on behalf of the DAO, the parameters updates are applied.
 
 - [Access Control](#access-control)
   - [MainNet Authorizations](#mainnet-authorizations)
@@ -22,7 +22,7 @@ Once a proposal passes, or a decision by PNF is made on behalf of the DAO, PNF a
 
 The list of authorizations enabled on MainNet genesis can be found at [pokt-network/pocket-network-genesis/tree/master/shannon/mainnet](https://github.com/pokt-network/pocket-network-genesis/tree/master/shannon/mainnet).
 
-#### `x/gov` Module Granter
+#### `x/gov` Module Account
 
 The `x/gov` module granter is tied to address `pokt10d07y265gmmuvt4z0w9aw880jnsr700j8yv32t`.
 
@@ -34,7 +34,7 @@ pocketd query authz grants-by-granter pokt10d07y265gmmuvt4z0w9aw880jnsr700j8yv32
 
 #### `PNF` Account Grantee
 
-The grants the `x/gov` module granter has provided to the `PNF` account can be queried like so:
+The authorizations which the `x/gov` module account has granted to the `PNF` account can be queried like so:
 
 ```bash
 pocketd query authz grants-by-grantee pokt1hv3xrylxvwd7hfv03j50ql0ttp3s5hqqelegmv --node https://shannon-grove-rpc.mainnet.poktroll.com
