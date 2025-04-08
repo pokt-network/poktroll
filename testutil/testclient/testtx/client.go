@@ -6,6 +6,8 @@ import (
 	"time"
 
 	"cosmossdk.io/depinject"
+	"cosmossdk.io/math"
+	"github.com/cosmos/cosmos-sdk/client/flags"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
@@ -92,4 +94,18 @@ func newSignAndBroadcastSucceedsDelayed(delay time.Duration) signAndBroadcastFn 
 
 		return either.AsyncErr(errCh)
 	}
+}
+
+// WithDefaultTxClientOptions returns a slice of TxClientOptions with default values
+func WithDefaultTxClientOptions(t *testing.T, testSigningKeyName string) []client.TxClientOption {
+	gasPrices := cosmostypes.NewDecCoins(cosmostypes.NewDecCoin("upokt", math.NewInt(1)))
+	gasSetting, err := flags.ParseGasSetting("auto")
+	require.NoError(t, err)
+	txClientOptions := make([]client.TxClientOption, 0)
+
+	txClientOptions = append(txClientOptions, tx.WithSigningKeyName(testSigningKeyName))
+	txClientOptions = append(txClientOptions, tx.WithGasPrices(&gasPrices))
+	txClientOptions = append(txClientOptions, tx.WithGasSetting(&gasSetting))
+
+	return txClientOptions
 }
