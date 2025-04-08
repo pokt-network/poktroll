@@ -30,8 +30,8 @@ func GetTxClientGasAndFeesOptions(cmd *cobra.Command) ([]client.TxClientOption, 
 
 	// If a fee is specified, it overrides all gas settings.
 	if feesStr != "" {
-		feeAmount, err := types.ParseDecCoins(feesStr)
-		if err != nil {
+		feeAmount, parseErr := types.ParseDecCoins(feesStr)
+		if parseErr != nil {
 			return nil, err
 		}
 
