@@ -68,7 +68,7 @@ to get some understanding of why you need Pocket & Grove.
 ## Where do I start?
 
 1. [Guides & Deployment](./operate/cheat_sheets/full_node_cheatsheet.md): Deployment cheat sheets and config overviews for node runners, infrastructure operators and CLI users.
-2. [Tools & Explorers](./tools/user_guide/pocketd_cli.md): Explorers, wallets, faucets and other resources to interact with the network.
+2. [Tools & Explorers](./tools/user_guide/1_pocketd_cli.md): Explorers, wallets, faucets and other resources to interact with the network.
 3. [Core Developers](./develop/developer_guide/walkthrough.md): Guides & walkthroughs for core or external developers looking to contribute to the core protocol or SDK.
 4. [Protocol Design](./protocol/actors/actors.md): Learn more about tokenomics design & protocol architecture.
 

@@ -26,7 +26,7 @@ balance using the `pocketd` command-line interface (CLI).
 
 ## Pre-requisites
 
-1. `pocketd` is installed on your system; see the [installation guide](./pocketd_cli.md) for more details
+1. `pocketd` is installed on your system; see the [installation guide](./1_pocketd_cli.md) for more details
 2. You have the address of the wallet you wish to check
 3. You know the token denomination you wish to check; `upokt` for POKT tokens
 

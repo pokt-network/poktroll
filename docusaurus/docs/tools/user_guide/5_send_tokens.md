@@ -17,7 +17,7 @@ Pocket Network using the `pocketd` command-line interface (CLI).
 
 ## Pre-requisites
 
-1. `pocketd` is installed on your system; see the [installation guide](./pocketd_cli.md) for more details
+1. `pocketd` is installed on your system; see the [installation guide](./1_pocketd_cli.md) for more details
 2. You have access to your wallet with sufficient tokens for the transaction and fees
 3. You have the recipient's address
 

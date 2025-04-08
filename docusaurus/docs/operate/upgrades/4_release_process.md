@@ -86,7 +86,7 @@ git commit -am "Update pocket tap from v.X1.Y1.Z1 to vX1.Y2.Z2
 git push
 ```
 
-See the [pocketd CLI docs](../../tools/user_guide/pocketd_cli.md) for more information.
+See the [pocketd CLI docs](../../tools/user_guide/1_pocketd_cli.md) for more information.
 
 ### 4. Write an Upgrade Plan
 

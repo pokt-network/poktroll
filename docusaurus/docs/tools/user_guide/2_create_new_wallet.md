@@ -51,7 +51,7 @@ refer to the [Cosmos SDK Keyring documentation](https://docs.cosmos.network/main
 
 Ensure you have `pocketd` installed on your system.
 
-Follow the [installation guide](./pocketd_cli.md) specific to your operating system.
+Follow the [installation guide](./1_pocketd_cli.md) specific to your operating system.
 
 ## Step 2: Creating the Wallet
 

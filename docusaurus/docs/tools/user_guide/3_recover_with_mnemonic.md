@@ -24,7 +24,7 @@ seed phrase, recovering your account is straightforward!
 ## Pre-requisites
 
 - You have the mnemonic seed phrase of the wallet you wish to recover
-- `pocketd` is installed on your system; see the [installation guide](./pocketd_cli.md) for more details
+- `pocketd` is installed on your system; see the [installation guide](./1_pocketd_cli.md) for more details
 
 ## Step 1: Prepare to Recover Your Wallet
 

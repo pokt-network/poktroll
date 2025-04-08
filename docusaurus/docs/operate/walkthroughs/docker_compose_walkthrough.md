@@ -132,7 +132,7 @@ Make sure to replace `olshansky` with your username.
 You can generally do everything as the `root` user, but it's recommended to
 create a new user and give it sudo permissions.
 
-This is necessary, in particular, if you want to use [homebrew](https://brew.sh/) [to install `pocketd`](../../tools/user_guide/pocketd_cli.md).
+This is necessary, in particular, if you want to use [homebrew](https://brew.sh/) [to install `pocketd`](../../tools/user_guide/1_pocketd_cli.md).
 
 ```bash
 adduser pocket
@@ -190,7 +190,7 @@ sed -i -e s/NODE_HOSTNAME=/NODE_HOSTNAME=69.42.690.420/g .env
 You can generally do everything as the `root` user, but it's recommended to
 create a new user and give it sudo permissions.
 
-This is necessary, in particular, if you want to use [homebrew](https://brew.sh/) [to install `pocketd`](../../tools/user_guide/pocketd_cli.md).
+This is necessary, in particular, if you want to use [homebrew](https://brew.sh/) [to install `pocketd`](../../tools/user_guide/1_pocketd_cli.md).
 
 You can create a new user (e.g. pocket), provide sudo permissions and switch users like so:
 
