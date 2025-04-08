@@ -202,7 +202,6 @@ func (s *MigrationModuleTestSuite) TestClaimMorseApplication_ErrorMinStake() {
 
 	morseClaimMsg, err := migrationtypes.NewMsgClaimMorseApplication(
 		shannonDestAddr,
-		expectedMorseSrcAddr,
 		morsePrivateKey,
 		s.appServiceConfig,
 	)

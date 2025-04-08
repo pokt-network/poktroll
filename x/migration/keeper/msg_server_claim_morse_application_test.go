@@ -219,7 +219,7 @@ func TestMsgServer_ClaimMorseApplication_Error(t *testing.T) {
 		invalidMsgClaim.MorseSignature = nil
 		expectedErr := status.Error(
 			codes.InvalidArgument,
-			migrationtypes.ErrMorseApplicationClaim.Wrapf(
+			migrationtypes.ErrMorseSignature.Wrapf(
 				"invalid morse signature length; expected %d, got %d",
 				migrationtypes.MorseSignatureLengthBytes, 0,
 			).Error(),

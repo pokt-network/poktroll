@@ -251,9 +251,8 @@ func TestMsgServer_ClaimMorseSupplier_Error(t *testing.T) {
 		expectedErr := status.Error(
 			codes.InvalidArgument,
 			migrationtypes.ErrMorseSignature.Wrapf(
-				"morseSignature (%x) is invalid for Morse address (%s)",
-				invalidClaimMsg.GetMorseSignature(),
-				invalidClaimMsg.GetMorseSrcAddress(),
+				"invalid morse signature length; expected %d, got %d",
+				migrationtypes.MorseSignatureLengthBytes, 0,
 			).Error(),
 		)
 

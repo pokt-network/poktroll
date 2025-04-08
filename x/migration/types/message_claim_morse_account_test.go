@@ -44,9 +44,9 @@ func TestMsgClaimMorseAccount_ValidateBasic(t *testing.T) {
 		msg.MorseSignature = []byte("invalid_signature")
 
 		expectedErr := migrationtypes.ErrMorseSignature.Wrapf(
-			"morseSignature (%x) is invalid for Morse address (%s)",
-			msg.GetMorseSignature(),
-			msg.GetMorseSrcAddress(),
+			"invalid morse signature length; expected %d, got %d",
+			migrationtypes.MorseSignatureLengthBytes,
+			len(msg.GetMorseSignature()),
 		)
 
 		err = msg.ValidateBasic()

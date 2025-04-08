@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"testing"
 
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/stretchr/testify/require"
 
 	"github.com/pokt-network/poktroll/testutil/sample"
@@ -16,93 +15,6 @@ import (
 const testServiceId = "svc1"
 
 var testAppServiceConfig = sharedtypes.ApplicationServiceConfig{ServiceId: testServiceId}
-
-func TestMsgClaimMorseApplication_ValidateBasic_XXX(t *testing.T) {
-	t.SkipNow()
-
-	tests := []struct {
-		name string
-		msg  migrationtypes.MsgClaimMorseApplication
-		err  error
-	}{
-		{
-			name: "invalid ShannonDestAddress",
-			msg: migrationtypes.MsgClaimMorseApplication{
-				ShannonDestAddress: "invalid_address",
-				MorseSrcAddress:    sample.MorseAddressHex(),
-				MorseSignature:     mockMorseSignature,
-				ServiceConfig: &sharedtypes.ApplicationServiceConfig{
-					ServiceId: testServiceId,
-				},
-			},
-			err: sdkerrors.ErrInvalidAddress,
-		}, {
-			name: "invalid MorseSrcAddress",
-			msg: migrationtypes.MsgClaimMorseApplication{
-				ShannonDestAddress: sample.AccAddress(),
-				MorseSrcAddress:    "invalid_address",
-				MorseSignature:     mockMorseSignature,
-				ServiceConfig: &sharedtypes.ApplicationServiceConfig{
-					ServiceId: testServiceId,
-				},
-			},
-			err: migrationtypes.ErrMorseApplicationClaim,
-		}, {
-			name: "invalid service ID (empty)",
-			msg: migrationtypes.MsgClaimMorseApplication{
-				ShannonDestAddress: sample.AccAddress(),
-				MorseSrcAddress:    sample.MorseAddressHex(),
-				MorseSignature:     mockMorseSignature,
-				ServiceConfig: &sharedtypes.ApplicationServiceConfig{
-					ServiceId: "",
-				},
-			},
-			err: migrationtypes.ErrMorseApplicationClaim,
-		}, {
-			name: "invalid service ID (too long)",
-			msg: migrationtypes.MsgClaimMorseApplication{
-				ShannonDestAddress: sample.AccAddress(),
-				MorseSrcAddress:    sample.MorseAddressHex(),
-				MorseSignature:     mockMorseSignature,
-				ServiceConfig: &sharedtypes.ApplicationServiceConfig{
-					ServiceId: "xxxxxxxxxxxxxxxxxxxx",
-				},
-			},
-			err: migrationtypes.ErrMorseApplicationClaim,
-		}, {
-			name: "invalid empty MorseSignature",
-			msg: migrationtypes.MsgClaimMorseApplication{
-				ShannonDestAddress: sample.AccAddress(),
-				MorseSrcAddress:    sample.MorseAddressHex(),
-				MorseSignature:     nil,
-				ServiceConfig: &sharedtypes.ApplicationServiceConfig{
-					ServiceId: testServiceId,
-				},
-			},
-			err: migrationtypes.ErrMorseApplicationClaim,
-		}, {
-			name: "valid claim message",
-			msg: migrationtypes.MsgClaimMorseApplication{
-				ShannonDestAddress: sample.AccAddress(),
-				MorseSrcAddress:    sample.MorseAddressHex(),
-				MorseSignature:     mockMorseSignature,
-				ServiceConfig: &sharedtypes.ApplicationServiceConfig{
-					ServiceId: testServiceId,
-				},
-			},
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			err := tt.msg.ValidateBasic()
-			if tt.err != nil {
-				require.ErrorIs(t, err, tt.err)
-				return
-			}
-			require.NoError(t, err)
-		})
-	}
-}
 
 func TestMsgClaimMorseApplication_ValidateBasic(t *testing.T) {
 	morsePrivKey := testmigration.GenMorsePrivateKey(0)
@@ -132,9 +44,9 @@ func TestMsgClaimMorseApplication_ValidateBasic(t *testing.T) {
 		msg.MorseSignature = []byte("invalid_signature")
 
 		expectedErr := migrationtypes.ErrMorseSignature.Wrapf(
-			"morseSignature (%x) is invalid for Morse address (%s)",
-			msg.GetMorseSignature(),
-			msg.GetMorseSrcAddress(),
+			"invalid morse signature length; expected %d, got %d",
+			migrationtypes.MorseSignatureLengthBytes,
+			len(msg.GetMorseSignature()),
 		)
 
 		err = msg.ValidateBasic()
@@ -147,7 +59,7 @@ func TestMsgClaimMorseApplication_ValidateBasic(t *testing.T) {
 		// but corresponding to the wrong key and address.
 		msg, err := migrationtypes.NewMsgClaimMorseApplication(
 			sample.AccAddress(),
-			morsePrivKey,
+			wrongMorsePrivKey,
 			&testAppServiceConfig,
 		)
 		require.NoError(t, err)
@@ -203,6 +115,29 @@ func TestMsgClaimMorseApplication_ValidateBasic(t *testing.T) {
 			"morseSrcAddress (%s) does not match morsePublicKey address (%s)",
 			msg.GetMorseSrcAddress(),
 			morsePrivKey.PubKey().Address().String(),
+		)
+
+		err = msg.ValidateBasic()
+		require.EqualError(t, err, expectedErr.Error())
+	})
+
+	t.Run("invalid service ID", func(t *testing.T) {
+		msg, err := migrationtypes.NewMsgClaimMorseApplication(
+			sample.AccAddress(),
+			morsePrivKey,
+			&sharedtypes.ApplicationServiceConfig{ServiceId: "invalid_service_id"},
+		)
+		require.NoError(t, err)
+
+		// Set the morseSrcAddress to the wrong address.
+		msg.MorseSrcAddress = wrongMorsePrivKey.PubKey().Address().String()
+
+		expectedErr := migrationtypes.ErrMorseApplicationClaim.Wrapf(
+			"invalid service config: %s",
+			sharedtypes.ErrSharedInvalidService.Wrapf(
+				"invalid service ID: %q",
+				msg.GetServiceConfig().GetServiceId(),
+			),
 		)
 
 		err = msg.ValidateBasic()
