@@ -507,7 +507,7 @@ result in `Supplier` slashing if the `Proof` is required.
 The following command can be used to check the balance of a `Supplier` operator:
 
 ```bash
-pocketd query bank balance <supplier_operator_address> upokt --node https://shannon-testnet-grove-seed-rpc.poktroll.com
+pocketd query bank balance <supplier_operator_address> upokt --node https://shannon-testnet-grove-rpc.beta.poktroll.com
 ```
 
 Which output would look like:
@@ -530,7 +530,7 @@ balance:
 The following command can be used to check the current `proof_submission_fee`:
 
 ```bash
-pocketd query proof params --node https://shannon-testnet-grove-seed-rpc.poktroll.com
+pocketd query proof params --node https://shannon-testnet-grove-rpc.beta.poktroll.com
 ```
 
 Which output would look like:
