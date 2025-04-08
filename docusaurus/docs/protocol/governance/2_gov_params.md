@@ -27,7 +27,6 @@ Please follow the instructions in [this guide](../../develop/developer_guide/add
 
 | Module | Field Type | Field Name | Comment |
 | ------ | ---------- | ---------- | ------- |
-
 | `application` | `uint64` | `max_delegated_gateways` | max_delegated_gateways defines the maximum number of gateways that a single application can delegate to. This is used to prevent performance issues in case the relay ring signature becomes too large. |
 | `application` | `cosmos.base.v1beta1.Coin` | `min_stake` | min_stake is the minimum stake in upokt that an application must have to remain staked. |
 | `gateway` | `cosmos.base.v1beta1.Coin` | `min_stake` | min_stake is the minimum amount of uPOKT that a gateway must stake. |
