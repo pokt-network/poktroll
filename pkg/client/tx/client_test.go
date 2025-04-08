@@ -13,6 +13,8 @@ import (
 	cometbytes "github.com/cometbft/cometbft/libs/bytes"
 	"github.com/cometbft/cometbft/libs/json"
 	rpctypes "github.com/cometbft/cometbft/rpc/jsonrpc/types"
+	cosmosclient "github.com/cosmos/cosmos-sdk/client"
+	"github.com/cosmos/cosmos-sdk/client/flags"
 	cosmoskeyring "github.com/cosmos/cosmos-sdk/crypto/keyring"
 	"github.com/cosmos/cosmos-sdk/types"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
@@ -27,6 +29,7 @@ import (
 	"github.com/pokt-network/poktroll/pkg/client/tx"
 	"github.com/pokt-network/poktroll/pkg/crypto/protocol"
 	"github.com/pokt-network/poktroll/pkg/either"
+	"github.com/pokt-network/poktroll/pkg/observable/channel"
 	"github.com/pokt-network/poktroll/testutil/mockclient"
 	"github.com/pokt-network/poktroll/testutil/testclient"
 	"github.com/pokt-network/poktroll/testutil/testclient/testblock"
@@ -94,9 +97,13 @@ func TestTxClient_SignAndBroadcast_Succeeds(t *testing.T) {
 		blockClientMock,
 	)
 
+	// Define gas settings for the transaction.
+
 	// Construct the transaction client.
 	txClient, err := tx.NewTxClient(
-		ctx, txClientDeps, tx.WithSigningKeyName(testSigningKeyName),
+		ctx,
+		txClientDeps,
+		testtx.WithDefaultTxClientOptions(t, testSigningKeyName)...,
 	)
 	require.NoError(t, err)
 
@@ -114,7 +121,7 @@ func TestTxClient_SignAndBroadcast_Succeeds(t *testing.T) {
 	}
 
 	// Sign and broadcast the message.
-	eitherErr := txClient.SignAndBroadcast(ctx, appStakeMsg)
+	_, eitherErr := txClient.SignAndBroadcast(ctx, appStakeMsg)
 	err, errCh := eitherErr.SyncOrAsyncError()
 	require.NoError(t, err)
 
@@ -198,11 +205,8 @@ func TestTxClient_NewTxClient_Error(t *testing.T) {
 				blockClientMock,
 			)
 
-			// Construct a signing key option using the test signing key name.
-			signingKeyOpt := tx.WithSigningKeyName(test.signingKeyName)
-
 			// Attempt to create the transactions client.
-			txClient, err := tx.NewTxClient(ctx, txClientDeps, signingKeyOpt)
+			txClient, err := tx.NewTxClient(ctx, txClientDeps, testtx.WithDefaultTxClientOptions(t, test.signingKeyName)...)
 			require.ErrorIs(t, err, test.expectedErr)
 			require.Nil(t, txClient)
 		})
@@ -256,7 +260,9 @@ func TestTxClient_SignAndBroadcast_SyncError(t *testing.T) {
 
 	// Construct the transaction client.
 	txClient, err := tx.NewTxClient(
-		ctx, txClientDeps, tx.WithSigningKeyName(testSigningKeyName),
+		ctx,
+		txClientDeps,
+		testtx.WithDefaultTxClientOptions(t, testSigningKeyName)...,
 	)
 	require.NoError(t, err)
 
@@ -270,7 +276,7 @@ func TestTxClient_SignAndBroadcast_SyncError(t *testing.T) {
 		// NB: explicitly omitting required fields
 	}
 
-	eitherErr := txClient.SignAndBroadcast(ctx, appStakeMsg)
+	_, eitherErr := txClient.SignAndBroadcast(ctx, appStakeMsg)
 	err, _ = eitherErr.SyncOrAsyncError()
 	require.ErrorIs(t, err, tx.ErrInvalidMsg)
 
@@ -333,7 +339,7 @@ $ go test -v -count=1 -run TestTxClient_SignAndBroadcast_CheckTxError ./pkg/clie
 	)
 
 	// Construct the transaction client.
-	txClient, err := tx.NewTxClient(ctx, txClientDeps, tx.WithSigningKeyName(testSigningKeyName))
+	txClient, err := tx.NewTxClient(ctx, txClientDeps, testtx.WithDefaultTxClientOptions(t, testSigningKeyName)...)
 	require.NoError(t, err)
 
 	signingKeyAddr, err := signingKey.GetAddress()
@@ -348,7 +354,7 @@ $ go test -v -count=1 -run TestTxClient_SignAndBroadcast_CheckTxError ./pkg/clie
 	}
 
 	// Sign and broadcast the message.
-	eitherErr := txClient.SignAndBroadcast(ctx, appStakeMsg)
+	_, eitherErr := txClient.SignAndBroadcast(ctx, appStakeMsg)
 	err, _ = eitherErr.SyncOrAsyncError()
 	require.ErrorIs(t, err, tx.ErrCheckTx)
 	require.ErrorContains(t, err, expectedErrMsg)
@@ -405,7 +411,9 @@ func TestTxClient_SignAndBroadcast_Timeout(t *testing.T) {
 
 	// Construct the transaction client.
 	txClient, err := tx.NewTxClient(
-		ctx, txClientDeps, tx.WithSigningKeyName(testSigningKeyName),
+		ctx,
+		txClientDeps,
+		testtx.WithDefaultTxClientOptions(t, testSigningKeyName)...,
 	)
 	require.NoError(t, err)
 
@@ -421,7 +429,7 @@ func TestTxClient_SignAndBroadcast_Timeout(t *testing.T) {
 	}
 
 	// Sign and broadcast the message in a transaction.
-	eitherErr := txClient.SignAndBroadcast(ctx, appStakeMsg)
+	_, eitherErr := txClient.SignAndBroadcast(ctx, appStakeMsg)
 	err, errCh := eitherErr.SyncOrAsyncError()
 	require.NoError(t, err)
 
@@ -511,7 +519,9 @@ func TestTxClient_SignAndBroadcast_Retry(t *testing.T) {
 
 	// Construct the transaction client.
 	txClient, err := tx.NewTxClient(
-		ctx, txClientDeps, tx.WithSigningKeyName(testSigningKeyName),
+		ctx,
+		txClientDeps,
+		testtx.WithDefaultTxClientOptions(t, testSigningKeyName)...,
 	)
 	require.NoError(t, err)
 
@@ -567,6 +577,224 @@ func TestTxClient_SignAndBroadcast_Retry(t *testing.T) {
 // TODO_TECHDEBT: add coverage for sending multiple messages simultaneously
 func TestTxClient_SignAndBroadcast_MultipleMsgs(t *testing.T) {
 	t.SkipNow()
+}
+
+func TestTxClient_GasConfig(t *testing.T) {
+	var (
+		ctx             = context.Background()
+		blocksPublishCh = make(chan client.Block, 1)
+
+		// Standard test values
+		standardGasPrices = cosmostypes.NewDecCoins(
+			cosmostypes.NewDecCoin(volatile.DenomuPOKT, math.NewInt(1000)),
+		)
+		standardFeeAmount = cosmostypes.NewDecCoins(
+			cosmostypes.NewDecCoin(volatile.DenomuPOKT, math.NewInt(10000)),
+		)
+	)
+
+	tests := []struct {
+		name          string
+		options       []client.TxClientOption
+		expectError   bool
+		errorContains string
+		validateFee   func(t *testing.T, txBuilder cosmosclient.TxBuilder)
+	}{
+		{
+			name: "no gas params - should fail with error",
+			options: []client.TxClientOption{
+				tx.WithSigningKeyName(testSigningKeyName),
+			},
+			expectError:   true,
+			errorContains: "gas prices must be set",
+		},
+		{
+			name: "only gas prices provided - should use default gas settings",
+			options: []client.TxClientOption{
+				tx.WithSigningKeyName(testSigningKeyName),
+				tx.WithGasPrices(&standardGasPrices),
+			},
+			expectError: false,
+			validateFee: func(t *testing.T, txBuilder cosmosclient.TxBuilder) {
+				// Default gas * gas price = 200000 * 1000 = 200000000
+				feeCoins := txBuilder.GetTx().GetFee()
+				require.Equal(t, 1, len(feeCoins))
+				require.Equal(t, "200000000", feeCoins[0].Amount.String())
+				require.Equal(t, volatile.DenomuPOKT, feeCoins[0].Denom)
+			},
+		},
+		{
+			name: "fee amount provided - should override gas settings",
+			options: []client.TxClientOption{
+				tx.WithSigningKeyName(testSigningKeyName),
+				tx.WithFeeAmount(&standardFeeAmount),
+			},
+			expectError: false,
+			validateFee: func(t *testing.T, txBuilder cosmosclient.TxBuilder) {
+				feeCoins := txBuilder.GetTx().GetFee()
+				require.Equal(t, 1, len(feeCoins))
+				require.Equal(t, "10000", feeCoins[0].Amount.String())
+				require.Equal(t, volatile.DenomuPOKT, feeCoins[0].Denom)
+			},
+		},
+		{
+			name: "gas simulation enabled - should calculate gas dynamically",
+			options: []client.TxClientOption{
+				tx.WithSigningKeyName(testSigningKeyName),
+				tx.WithGasPrices(&standardGasPrices),
+				// Note: This is for testing purposes only. In production code,
+				// use flags.ParseGasSetting("auto") instead if gas simulation is needed.
+				tx.WithGasSetting(&flags.GasSetting{Gas: 200000, Simulate: true}),
+				tx.WithGasAdjustment(1.5),
+			},
+			expectError: false,
+			validateFee: func(t *testing.T, txBuilder cosmosclient.TxBuilder) {
+				// Simulated gas (will be 100000 in our mock) * adjustment * price
+				// 100000 * 1.5 * 1000 = 150000000
+				feeCoins := txBuilder.GetTx().GetFee()
+				require.Equal(t, 1, len(feeCoins))
+				require.Equal(t, "150000000", feeCoins[0].Amount.String())
+				require.Equal(t, volatile.DenomuPOKT, feeCoins[0].Denom)
+			},
+		},
+		{
+			name: "decimal remainder in calculated fee - should round up",
+			options: []client.TxClientOption{
+				tx.WithSigningKeyName(testSigningKeyName),
+				tx.WithGasPrices(&cosmostypes.DecCoins{
+					cosmostypes.NewDecCoinFromDec(volatile.DenomuPOKT, math.LegacyNewDecWithPrec(15001, 4)), // 1.5001 uPOKT
+				}),
+				tx.WithGasSetting(&flags.GasSetting{Gas: 1000, Simulate: false}),
+			},
+			expectError: false,
+			validateFee: func(t *testing.T, txBuilder cosmosclient.TxBuilder) {
+				// 1.5001 * 1000 = 1500.1 with decimal rounding to 1501
+				feeCoins := txBuilder.GetTx().GetFee()
+				require.Equal(t, 1, len(feeCoins))
+				require.Equal(t, "1501", feeCoins[0].Amount.String())
+				require.Equal(t, volatile.DenomuPOKT, feeCoins[0].Denom)
+			},
+		},
+		{
+			name: "given fee amount with decimal - should round up",
+			options: []client.TxClientOption{
+				tx.WithSigningKeyName(testSigningKeyName),
+				tx.WithFeeAmount(&cosmostypes.DecCoins{
+					cosmostypes.NewDecCoinFromDec(volatile.DenomuPOKT, math.LegacyNewDecWithPrec(1005, 1)), // 100.5 uPOKT
+				}),
+			},
+			expectError: false,
+			validateFee: func(t *testing.T, txBuilder cosmosclient.TxBuilder) {
+				feeCoins := txBuilder.GetTx().GetFee()
+				require.Equal(t, 1, len(feeCoins))
+				require.Equal(t, "101", feeCoins[0].Amount.String())
+				require.Equal(t, volatile.DenomuPOKT, feeCoins[0].Denom)
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Prepare a new test keyring with a test signing key
+			keyring, signingKey := testkeyring.NewTestKeyringWithKey(t, testSigningKeyName)
+			ctrl := gomock.NewController(t)
+
+			// Create a mock tx context that will capture the tx builder for inspection
+			txCtxMock, _ := testtx.NewAnyTimesTxTxContext(t, keyring)
+			var txBuilder cosmosclient.TxBuilder
+
+			// Special handling for inspection
+			if tt.validateFee != nil {
+				txCtxMock.EXPECT().NewTxBuilder().DoAndReturn(func() cosmosclient.TxBuilder {
+					txBuilder = testtx.NewMockTxBuilder(ctrl)
+					return txBuilder
+				}).AnyTimes()
+
+				// For simulation tests
+				txCtxMock.EXPECT().GetSimulatedTxGas(gomock.Any(), gomock.Any(), gomock.Any()).
+					Return(uint64(100000), nil).AnyTimes()
+
+				// Other required methods to pass validation
+				txCtxMock.EXPECT().SignTx(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
+					Return(nil).AnyTimes()
+				txCtxMock.EXPECT().EncodeTx(gomock.Any()).
+					Return([]byte("test-tx"), nil).AnyTimes()
+				txCtxMock.EXPECT().BroadcastTx(gomock.Any()).
+					Return(&cosmostypes.TxResponse{Code: 0, TxHash: "test-hash"}, nil).AnyTimes()
+			}
+
+			// Set up events query client mock
+			eventsQueryClient := mockclient.NewMockEventsQueryClient(ctrl)
+
+			// Add expectation for EventsBytes
+			eventsQueryClient.EXPECT().EventsBytes(
+				gomock.Any(),
+				gomock.Any(),
+			).DoAndReturn(func(ctx context.Context, query string) (client.EventsBytesObservable, error) {
+				obs, _ := channel.NewObservable[either.Bytes]()
+				return obs, nil
+			}).AnyTimes()
+
+			// Add expectation for Close
+			eventsQueryClient.EXPECT().Close().AnyTimes()
+
+			// Set up block client mock with CommittedBlocksSequence expectation
+			blockClientMock := mockclient.NewMockBlockClient(ctrl)
+
+			// Setup CommittedBlocksSequence expectation
+			blockClientMock.EXPECT().CommittedBlocksSequence(gomock.Any()).DoAndReturn(
+				func(ctx context.Context) client.BlockReplayObservable {
+					obs, _ := channel.NewReplayObservable[client.Block](ctx, 1,
+						channel.WithPublisher(blocksPublishCh))
+					return obs
+				}).AnyTimes()
+
+			// Create a mock block
+			mockBlock := testblock.NewAnyTimesBlock(t, nil, 100)
+
+			// Setup LastBlock expectation
+			blockClientMock.EXPECT().LastBlock(gomock.Any()).Return(mockBlock).AnyTimes()
+
+			// Create dependency injection config
+			deps := depinject.Supply(
+				eventsQueryClient,
+				txCtxMock,
+				blockClientMock,
+			)
+
+			// Create the client
+			txClient, err := tx.NewTxClient(ctx, deps, tt.options...)
+
+			if tt.expectError {
+				require.Error(t, err)
+				if tt.errorContains != "" {
+					require.Contains(t, err.Error(), tt.errorContains)
+				}
+				return
+			}
+
+			require.NoError(t, err)
+			require.NotNil(t, txClient)
+
+			// If test includes fee validation
+			if tt.validateFee != nil {
+				// Create a test message to trigger fee calculation
+				signingAddr, _ := signingKey.GetAddress()
+				appStake := cosmostypes.NewCoin(volatile.DenomuPOKT, math.NewInt(1000000))
+				msg := &apptypes.MsgStakeApplication{
+					Address:  signingAddr.String(),
+					Stake:    &appStake,
+					Services: client.NewTestApplicationServiceConfig(testServiceIdPrefix, 1),
+				}
+
+				// Call SignAndBroadcast to trigger fee calculation
+				txClient.SignAndBroadcast(ctx, msg)
+
+				// Validate the fee that was set
+				tt.validateFee(t, txBuilder)
+			}
+		})
+	}
 }
 
 // newTxContext creates a new mock transactions context for testing.

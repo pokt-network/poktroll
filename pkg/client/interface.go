@@ -15,6 +15,7 @@
 //go:generate go run go.uber.org/mock/mockgen -destination=../../testutil/mockclient/cosmos_client_mock.go -package=mockclient github.com/cosmos/cosmos-sdk/client AccountRetriever
 //go:generate go run go.uber.org/mock/mockgen -destination=../../testutil/mockclient/comet_rpc_client_mock.go -package=mockclient github.com/cosmos/cosmos-sdk/client CometRPC
 //go:generate go run go.uber.org/mock/mockgen -destination=../../testutil/mockclient/grpc_client_conn_mock.go -package=mockclient github.com/cosmos/gogoproto/grpc ClientConn
+//go:generate go run go.uber.org/mock/mockgen -destination=../../testutil/mockclient/signing_tx.go -package=mockclient github.com/cosmos/cosmos-sdk/x/auth/signing Tx
 
 package client
 
@@ -92,12 +93,12 @@ type TxClient interface {
 		ctx context.Context,
 		timeoutHeight int64,
 		msgs ...cosmostypes.Msg,
-	) either.AsyncError
+	) (txResponse *cosmostypes.TxResponse, eitherErr either.AsyncError)
 
 	SignAndBroadcast(
 		ctx context.Context,
 		msgs ...cosmostypes.Msg,
-	) either.AsyncError
+	) (txResponse *cosmostypes.TxResponse, eitherErr either.AsyncError)
 }
 
 // TxContext provides an interface which consolidates the operational dependencies
