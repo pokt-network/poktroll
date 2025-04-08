@@ -267,9 +267,11 @@ func New(
 	app.App = appBuilder.Build(db, traceStore, baseAppOptions...)
 
 	// Set a custom ante handler to waive minimum gas/fees for transactions
-	// that contain ONLY morse claim messages (i.e. MsgClaimMorseAccount,
-	// MsgClaimMorseApplication, and MsgClaimMorseSupplier).
-	app.App.BaseApp.SetAnteHandler(newAnteHandlerFn(app))
+	// IF the migration module's `waive_morse_claim_gas_fees` param is true.
+	// The ante handler waives fees for txs which contain ONLY morse claim
+	// messages (i.e. MsgClaimMorseAccount, MsgClaimMorseApplication, and
+	// MsgClaimMorseSupplier), and is signed by a single secp256k1 signer.
+	app.App.BaseApp.SetAnteHandler(newMorseClaimGasFeesWaiverAnteHandlerFn(app))
 
 	// Register legacy modules
 	app.registerIBCModules()
