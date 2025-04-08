@@ -1,0 +1,13 @@
+{
+  "body": {
+    "messages": [
+      {
+        "@type": "/pocket.migration.MsgUpdateParams",
+        "authority": "pokt10d07y265gmmuvt4z0w9aw880jnsr700j8yv32t",
+        "params": {
+          "waive_morse_claim_gas_fees": true
+        }
+      }
+    ]
+  }
+}
