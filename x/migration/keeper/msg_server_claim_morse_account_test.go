@@ -148,8 +148,8 @@ func TestMsgServer_ClaimMorseAccount_Error(t *testing.T) {
 
 		// Generate a Morse account claim message for the same Shannon
 		// address with a nonexistent Morse source account.
-		invalidMsgClaim, err := migrationtypes.NewMsgClaimMorseAccount(msgClaim.GetShannonDestAddress(), wrongMorsePrivKey)
-		require.NoError(t, err)
+		invalidMsgClaim, claimErr := migrationtypes.NewMsgClaimMorseAccount(msgClaim.GetShannonDestAddress(), wrongMorsePrivKey)
+		require.NoError(t, claimErr)
 
 		expectedErr := status.Error(
 			codes.NotFound,

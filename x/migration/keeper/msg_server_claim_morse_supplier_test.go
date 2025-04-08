@@ -267,6 +267,7 @@ func TestMsgServer_ClaimMorseSupplier_Error(t *testing.T) {
 			wrongMorsePrivKey,
 			testSupplierServices,
 		)
+		require.NoError(t, err)
 
 		expectedErr := status.Error(
 			codes.NotFound,
