@@ -57,13 +57,6 @@ func (msg *MsgClaimMorseApplication) ValidateBasic() error {
 		return ErrMorseApplicationClaim.Wrapf("invalid service config: %s", err)
 	}
 
-	if len(msg.MorseSignature) != MorseSignatureLengthBytes {
-		return ErrMorseSignature.Wrapf(
-			"invalid morse signature length; expected %d, got %d",
-			MorseSignatureLengthBytes, len(msg.MorseSignature),
-		)
-	}
-
 	// Validate the Morse source address matches the public key
 	if err := msg.ValidateMorseAddress(); err != nil {
 		return err

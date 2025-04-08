@@ -1,7 +1,6 @@
 package types
 
 import (
-	errorsmod "cosmossdk.io/errors"
 	cometcrypto "github.com/cometbft/cometbft/crypto/ed25519"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
@@ -55,7 +54,10 @@ func (msg *MsgClaimMorseSupplier) ValidateBasic() error {
 
 	if msg.ShannonOperatorAddress != "" {
 		if _, err := sdk.AccAddressFromBech32(msg.ShannonOperatorAddress); err != nil {
-			return errorsmod.Wrapf(sdkerrors.ErrInvalidAddress, "invalid shannon operator address address (%s)", err)
+			return sdkerrors.ErrInvalidAddress.Wrapf(
+				"invalid shannon operator address address (%s): %s",
+				msg.GetShannonOperatorAddress(), err,
+			)
 		}
 	}
 
@@ -84,7 +86,11 @@ func (msg *MsgClaimMorseSupplier) SignMorseSignature(morsePrivKey cometcrypto.Pr
 	}
 
 	msg.MorseSignature, err = morsePrivKey.Sign(signingMsgBz)
-	return ErrMorseSignature.Wrapf("unable to sign message: %s", err)
+	if err != nil {
+		return ErrMorseSignature.Wrapf("unable to sign message: %s", err)
+	}
+
+	return nil
 }
 
 // ValidateMorseAddress validates that the Morse source address matches the public key.

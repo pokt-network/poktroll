@@ -43,6 +43,13 @@ func validateMorseAddress(msg morseClaimMessage) error {
 
 // validateMorseSignature validates the morseSignature of the given morseClaimMessage.
 func validateMorseSignature(msg morseClaimMessage) error {
+	if len(msg.GetMorseSignature()) != MorseSignatureLengthBytes {
+		return ErrMorseSignature.Wrapf(
+			"invalid morse signature length; expected %d, got %d",
+			MorseSignatureLengthBytes, len(msg.GetMorseSignature()),
+		)
+	}
+
 	morsePublicKey := cmted25519.PubKey(msg.GetMorsePublicKey())
 
 	signingMsgBz, err := msg.getSigningBytes()
