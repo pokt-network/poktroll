@@ -29,7 +29,7 @@ Ensure you have [Homebrew](https://brew.sh/) installed.
 Then run the following commands:
 
 ```bash
-brew tap pokt-network/pocket
+brew tap pokt-network/poktroll
 brew install pocketd
 ```
 

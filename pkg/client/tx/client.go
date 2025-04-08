@@ -13,6 +13,8 @@ import (
 	"github.com/cometbft/cometbft/libs/json"
 	rpctypes "github.com/cometbft/cometbft/rpc/jsonrpc/types"
 	comettypes "github.com/cometbft/cometbft/types"
+	cosmosclient "github.com/cosmos/cosmos-sdk/client"
+	"github.com/cosmos/cosmos-sdk/client/flags"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"go.uber.org/multierr"
@@ -110,7 +112,16 @@ type txClient struct {
 	txTimeoutPool txTimeoutPool
 
 	// gasPrices is the gas unit prices used for sending transactions.
-	gasPrices cosmostypes.DecCoins
+	gasPrices *cosmostypes.DecCoins
+
+	// gasAdjustment is the gas adjustment factor used for sending transactions.
+	gasAdjustment float64
+
+	// gasSetting is the gas setting used for sending transactions.
+	gasSetting *flags.GasSetting
+
+	// feeAmount is the fee amount used for sending transactions.
+	feeAmount *cosmostypes.DecCoins
 
 	// connRetryLimit is the number of times the underlying replay client
 	// should retry in the event that it encounters an error or its connection is interrupted.
@@ -241,12 +252,6 @@ func (txnClient *txClient) SignAndBroadcastWithTimeoutHeight(
 		return either.SyncErr(validationErrs)
 	}
 
-	// Simulate the transaction to calculate the gas limit.
-	gasLimit, simErr := txnClient.txCtx.GetSimulatedTxGas(ctx, txnClient.signingKeyName, msgs...)
-	if simErr != nil {
-		return either.SyncErr(simErr)
-	}
-
 	// Construct the transactions using cosmos' transactions builder.
 	txBuilder := txnClient.txCtx.NewTxBuilder()
 	if err := txBuilder.SetMsgs(msgs...); err != nil {
@@ -254,25 +259,16 @@ func (txnClient *txClient) SignAndBroadcastWithTimeoutHeight(
 		return either.SyncErr(err)
 	}
 
-	txBuilder.SetGasLimit(gasLimit)
-
-	gasLimitDec := math.LegacyNewDec(int64(gasLimit))
-	feeAmountDec := txnClient.gasPrices.MulDec(gasLimitDec)
-
-	feeCoins, changeCoins := feeAmountDec.TruncateDecimal()
-	// Ensure that any decimal remainder is added to the corresponding coin as a
-	// whole number.
-	// Since changeCoins is the result of DecCoins#TruncateDecimal, it will always
-	// be less than 1 unit of the feeCoins.
-	if !changeCoins.IsZero() {
-		feeCoins = feeCoins.Add(cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 1))
+	feeAmount, err := txnClient.getFeeAmount(ctx, txBuilder, msgs...)
+	if err != nil {
+		return either.SyncErr(err)
 	}
-	txBuilder.SetFeeAmount(feeCoins)
+	txBuilder.SetFeeAmount(feeAmount)
 
 	txBuilder.SetTimeoutHeight(uint64(timeoutHeight))
 
 	// sign transactions
-	err := txnClient.txCtx.SignTx(
+	err = txnClient.txCtx.SignTx(
 		txnClient.signingKeyName,
 		txBuilder,
 		false, false,
@@ -366,6 +362,32 @@ func (txnClient *txClient) validateConfigAndSetDefaults() error {
 	)
 	if err != nil {
 		return err
+	}
+
+	hasGasSettings := txnClient.gasSetting != nil || txnClient.gasPrices != nil || txnClient.gasAdjustment != 0
+	if txnClient.feeAmount != nil && hasGasSettings {
+		return fmt.Errorf("cannot set both fee amount and gas settings")
+	}
+
+	// Validate gas-related parameters
+	if txnClient.feeAmount == nil {
+		// If no fee amount is explicitly configured, we need valid gas settings
+		if txnClient.gasSetting == nil {
+			// Create default gas settings if not provided
+			txnClient.gasSetting = &flags.GasSetting{
+				Gas:      flags.DefaultGasLimit, // Default gas limit
+				Simulate: false,                 // Don't simulate by default
+			}
+		}
+
+		if txnClient.gasPrices == nil {
+			return fmt.Errorf("gas prices must be set when fee amount is not provided")
+		}
+
+		// Set the default gas adjustment if simulation is enabled
+		if txnClient.gasSetting.Simulate && txnClient.gasAdjustment <= 0 {
+			txnClient.gasAdjustment = flags.DefaultGasAdjustment // Common default value
+		}
 	}
 
 	txnClient.signingAddr = signingAddr
@@ -576,6 +598,68 @@ func (txnClient *txClient) getTxTimeoutError(ctx context.Context, txHashHex stri
 
 	// Return a timeout error with details about the transaction.
 	return ErrTxTimeout.Wrapf("with hash %s: %s", txHashHex, txResponse.TxResult.Log)
+}
+
+// getFeeAmount calculates the transaction fee amount based on client settings.
+//
+// This method determines the transaction fee using one of two approaches:
+// 1. If a fee amount is explicitly set on the client (txnClient.feeAmount), it uses that amount.
+// 2. Otherwise, it calculates the fee based on gas limit and gas prices, where:
+//   - If simulation is enabled, it estimates gas by simulating the transaction and applies the gas adjustment.
+//   - If simulation is disabled, it uses the predefined gas limit from the gas settings.
+func (txnClient *txClient) getFeeAmount(
+	ctx context.Context,
+	txBuilder cosmosclient.TxBuilder,
+	msgs ...cosmostypes.Msg,
+) (cosmostypes.Coins, error) {
+	if ctx.Err() != nil {
+		return nil, ctx.Err()
+	}
+
+	if txnClient.feeAmount != nil {
+		// Set the fee amount if provided.
+		feeCoins, changeCoins := txnClient.feeAmount.TruncateDecimal()
+
+		// Ensure that any decimal remainder is added to the corresponding coin as an
+		// integer amount of the minimal denomination (1upokt).
+		// Since changeCoins is the result of DecCoins#TruncateDecimal, it will always
+		// be less than 1 unit of the feeCoins.
+		if !changeCoins.IsZero() {
+			feeCoins = feeCoins.Add(cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 1))
+		}
+
+		return feeCoins, nil
+	}
+
+	var gasLimit uint64
+	if txnClient.gasSetting.Simulate {
+		// If the gas setting is set to simulate, we need to calculate the gas limit
+		// based on the messages.
+		simulatedGas, err := txnClient.txCtx.GetSimulatedTxGas(ctx, txnClient.signingKeyName, msgs...)
+		if err != nil {
+			return nil, err
+		}
+		gasLimit = uint64(float64(simulatedGas) * txnClient.gasAdjustment)
+	} else {
+		// Otherwise, we use the gas limit from the gas setting.
+		gasLimit = txnClient.gasSetting.Gas
+	}
+
+	txBuilder.SetGasLimit(gasLimit)
+
+	gasLimitDec := math.LegacyNewDec(int64(gasLimit))
+	feeAmountDec := txnClient.gasPrices.MulDec(gasLimitDec)
+
+	feeCoins, changeCoins := feeAmountDec.TruncateDecimal()
+	// Ensure that any decimal remainder is added to the corresponding coin as an
+	// integer amount of the minimal denomination (1upokt).
+	// Since changeCoins is the result of DecCoins#TruncateDecimal, it will always
+	// be less than 1 unit of the feeCoins.
+	if !changeCoins.IsZero() {
+		feeCoins = feeCoins.Add(cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 1))
+	}
+
+	return feeCoins, nil
 }
 
 // UnmarshalTxResult attempts to deserialize a slice of bytes into a TxResult

@@ -7,6 +7,7 @@ import (
 
 	"cosmossdk.io/depinject"
 	sdkclient "github.com/cosmos/cosmos-sdk/client"
+	"github.com/cosmos/cosmos-sdk/client/flags"
 	cosmosflags "github.com/cosmos/cosmos-sdk/client/flags"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/gogoproto/grpc"
@@ -351,9 +352,42 @@ func NewSupplySupplierClientsFn(signingKeyNames []string) SupplierFn {
 			return nil, err
 		}
 
+		gasAdjustment, err := cmd.Flags().GetFloat64(cosmosflags.FlagGasAdjustment)
+		if err != nil {
+			return nil, err
+		}
+
+		// The RelayMiner always uses tx simulation to estimate the gas since this
+		// will be variable depending on the tx being sent.
+		// Always use the "auto" gas setting for the RelayMiner.
+		gasSetting, err := flags.ParseGasSetting("auto")
+		if err != nil {
+			return nil, err
+		}
+
+		// Ensure that the gas prices include upokt
+		for _, gasPrice := range gasPrices {
+			if gasPrice.Denom != volatile.DenomuPOKT {
+				// TODO_TECHDEBT(red-0ne): Allow other gas prices denominations once supported (e.g. mPOKT, POKT)
+				// See https://docs.cosmos.network/main/build/architecture/adr-024-coin-metadata#decision
+				return nil, fmt.Errorf("only gas prices with %s denom are supported", volatile.DenomuPOKT)
+			}
+		}
+
+		// Setup the tx client options for the suppliers.
+		txClientOptions := make([]client.TxClientOption, 0)
+		txClientOptions = append(txClientOptions, tx.WithGasPrices(&gasPrices))
+		txClientOptions = append(txClientOptions, tx.WithGasAdjustment(gasAdjustment))
+		txClientOptions = append(txClientOptions, tx.WithGasSetting(&gasSetting))
+
 		suppliers := supplier.NewSupplierClientMap()
 		for _, signingKeyName := range signingKeyNames {
-			txClientDepinjectConfig, err := newSupplyTxClientsFn(ctx, deps, signingKeyName, gasPrices)
+			txClientOptions = append(txClientOptions, tx.WithSigningKeyName(signingKeyName))
+			txClientDepinjectConfig, err := newSupplyTxClientsFn(
+				ctx,
+				deps,
+				txClientOptions...,
+			)
 			if err != nil {
 				return nil, err
 			}
@@ -367,7 +401,7 @@ func NewSupplySupplierClientsFn(signingKeyNames []string) SupplierFn {
 			}
 
 			// Making sure we use addresses as keys.
-			suppliers.SupplierClients[supplierClient.OperatorAddress().String()] = supplierClient
+			suppliers.SupplierClients[supplierClient.OperatorAddress()] = supplierClient
 		}
 		return depinject.Configs(deps, depinject.Supply(suppliers)), nil
 	}
@@ -468,23 +502,13 @@ func NewSupplyBankQuerierFn() SupplierFn {
 func newSupplyTxClientsFn(
 	ctx context.Context,
 	deps depinject.Config,
-	signingKeyName string,
-	gasPrices cosmostypes.DecCoins,
+	txClientOptions ...client.TxClientOption,
 ) (depinject.Config, error) {
-	// Ensure that the gas prices include upokt
-	for _, gasPrice := range gasPrices {
-		if gasPrice.Denom != volatile.DenomuPOKT {
-			// TODO_TECHDEBT(red-0ne): Allow other gas prices denominations once supported (e.g. mPOKT, POKT)
-			// See https://docs.cosmos.network/main/build/architecture/adr-024-coin-metadata#decision
-			return nil, fmt.Errorf("only gas prices with %s denom are supported", volatile.DenomuPOKT)
-		}
-	}
 
 	txClient, err := tx.NewTxClient(
 		ctx,
 		deps,
-		tx.WithSigningKeyName(signingKeyName),
-		tx.WithGasPrices(gasPrices),
+		txClientOptions...,
 	)
 	if err != nil {
 		return nil, err
