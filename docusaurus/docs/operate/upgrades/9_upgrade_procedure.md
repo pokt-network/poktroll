@@ -1,6 +1,6 @@
 ---
-title: Upgrade procedure
-sidebar_position: 2
+title: Upgrade Procedure
+sidebar_position: 9
 ---
 
 ## Upgrade procedure <!-- omit in toc -->
@@ -50,7 +50,7 @@ An upgrade is necessary whenever there's an API, State Machine, or other Consens
 
    - If there's a change to a specific module -> bump that module's consensus version.
    - Note any potential parameter changes to include in the upgrade.
-   - If modifying protobuf definitions, consider using [protobuf deprecation](./protobuf_upgrades.md) for backward compatibility.
+   - If modifying protobuf definitions, consider using the approach in [protobuf deprecation](4_protobuf_upgrades.md) for backward compatibility.
 
 2. Create a new upgrade in `app/upgrades`:
 

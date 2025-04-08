@@ -61,7 +61,7 @@ The steps to doing so are:
 
 1. Prepare and verify a new binary that addresses the consensus-breaking issue.
 2. Reach out to the community and validators so they can upgrade the binary manually.
-3. Update [the documentation](1_upgrade_list.md) to include a range a height when the binary needs
+3. Update [the documentation](2_upgrade_list.md) to include a range a height when the binary needs
    to be replaced.
 
 :::warning
@@ -115,8 +115,8 @@ propagating the existing blocks signed by the Validators, making it hard to roll
 However, if necessary, the instructions to follow are:
 
 1. Prepare & verify a new binary that addresses the consensus-breaking issue.
-2. [Create a release](4_release_process.md).
-3. [Prepare an upgrade transaction](2_upgrade_procedure.md#writing-an-upgrade-transaction) to the new version.
+2. [Create a release](5_release_process.md).
+3. [Prepare an upgrade transaction](4_upgrade_procedure.md#writing-an-upgrade-transaction) to the new version.
 4. Disconnect the `Validator set` from the rest of the network **3 blocks** prior to the height of the chain halt. For example:
    - Assume an issue at height `103`.
    - Revert the `validator set` to height `100`.
