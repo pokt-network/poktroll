@@ -357,27 +357,12 @@ func NewSupplySupplierClientsFn(signingKeyNames []string) SupplierFn {
 			return nil, err
 		}
 
-		gasStr, err := cmd.Flags().GetString(cosmosflags.FlagGas)
+		// The RelayMiner always uses tx simulation to estimate the gas since this
+		// will be variable depending on the tx being sent.
+		// Always use the "auto" gas setting for the RelayMiner.
+		gasSetting, err := flags.ParseGasSetting("auto")
 		if err != nil {
 			return nil, err
-		}
-
-		gasSetting, err := flags.ParseGasSetting(gasStr)
-		if err != nil {
-			return nil, err
-		}
-
-		feeAmountStr, err := cmd.Flags().GetString(cosmosflags.FlagFees)
-		if err != nil {
-			return nil, err
-		}
-
-		var feeAmount cosmostypes.DecCoins
-		if feeAmountStr != "" {
-			feeAmount, err = cosmostypes.ParseDecCoins(feeAmountStr)
-			if err != nil {
-				return nil, err
-			}
 		}
 
 		// Ensure that the gas prices include upokt
@@ -394,7 +379,6 @@ func NewSupplySupplierClientsFn(signingKeyNames []string) SupplierFn {
 		txClientOptions = append(txClientOptions, tx.WithGasPrices(&gasPrices))
 		txClientOptions = append(txClientOptions, tx.WithGasAdjustment(gasAdjustment))
 		txClientOptions = append(txClientOptions, tx.WithGasSetting(&gasSetting))
-		txClientOptions = append(txClientOptions, tx.WithFeeAmount(&feeAmount))
 
 		suppliers := supplier.NewSupplierClientMap()
 		for _, signingKeyName := range signingKeyNames {
