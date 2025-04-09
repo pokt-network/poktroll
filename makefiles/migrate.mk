@@ -19,7 +19,7 @@ export_morse_state: check_go_version ## Run the migration module export-morse-st
 
 .PHONY: collect_morse_accounts
 collect_morse_accounts: check_go_version ## Run the migration module collect-morse-accounts subcommand.
-	poktrolld tx migration collect-morse-accounts "$(MORSE_STATE_EXPORT_PATH)" "$(MORSE_ACCOUNT_STATE_PATH)"
+	pocketd tx migration collect-morse-accounts "$(MORSE_STATE_EXPORT_PATH)" "$(MORSE_ACCOUNT_STATE_PATH)"
 
 .PHONY: import_morse_accounts
 import_morse_accounts: check_go_version check_from_key_name ## Run the migration module import-morse-accounts subcommand.
@@ -27,7 +27,7 @@ import_morse_accounts: check_go_version check_from_key_name ## Run the migration
 		echo "WARNING: SHANNON_GRPC_ADDR environment variable is not set. Defaulting to $(DEFAULT_POCKET_NODE_GRPC_ADDR)"; \
 		export SHANNON_GRPC_ADDR=$(DEFAULT_POCKET_NODE_GRPC_ADDR); \
 	fi; \
-	poktrolld tx migration import-morse-accounts "$(MORSE_ACCOUNT_STATE_PATH)" --from=$(FROM_KEY_NAME) --grpc-addr=$(SHANNON_GRPC_ADDR)
+	pocketd tx migration import-morse-accounts "$(MORSE_ACCOUNT_STATE_PATH)" --from=$(FROM_KEY_NAME) --grpc-addr=$(SHANNON_GRPC_ADDR)
 
 #################################################
 ### Migration Account/Stake-holder Operations ###
@@ -35,7 +35,7 @@ import_morse_accounts: check_go_version check_from_key_name ## Run the migration
 
 .PHONY: claim_morse_account
 claim_morse_account: check_go_version check_from_key_name check_morse_private_key_path ## Run the migration module claim-morse-account subcommand.
-	poktrolld tx migration claim-account "$(MORSE_PRIVATE_KEY_PATH)" --from="$(FROM_KEY_NAME)"
+	pocketd tx migration claim-account "$(MORSE_PRIVATE_KEY_PATH)" --from="$(FROM_KEY_NAME)"
 
 #########################
 ### Migration Testing ###
