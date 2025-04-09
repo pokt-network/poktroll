@@ -63,6 +63,7 @@ func PreRunESetup(_ *cobra.Command, _ []string) error {
 // zerolog logger in a ConsoleWriter, for prettier output. The console writer is
 // configured to exclude the timestamp field, and to exclude the log level output
 // for the info level to reduce output verbosity.
+// See: https://github.com/rs/zerolog/?tab=readme-ov-file#pretty-logging.
 func NewSetupConsoleWriter(logWriter io.Writer) func(zlog *zerolog.Logger) {
 	return func(zlog *zerolog.Logger) {
 		*zlog = zlog.Output(zerolog.ConsoleWriter{
