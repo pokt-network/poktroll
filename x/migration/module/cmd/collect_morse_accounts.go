@@ -6,6 +6,7 @@ import (
 
 	cosmosmath "cosmossdk.io/math"
 	cmtjson "github.com/cometbft/cometbft/libs/json"
+	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/spf13/cobra"
 
 	"github.com/pokt-network/poktroll/app/volatile"
@@ -233,23 +234,42 @@ func collectInputApplicationStakes(inputState *migrationtypes.MorseStateExport, 
 
 		// DEV_NOTE: An account SHOULD exist for each actor.
 		if !morseWorkspace.hasAccount(appAddr) {
-			return ErrMorseExportState.Wrapf("account not found corresponding to application with address %q", appAddr)
+			logger.Logger.Warn().
+				Str("app_address", appAddr).
+				Msg("no account found for application")
+
+			// TODO_IN_THIS_COMMIT: comment... explain - no auth account was found for this application... create a stup account
+			newAppAccount := &migrationtypes.MorseAuthAccount{
+				Type: "posmint/Account",
+				Value: &migrationtypes.MorseAccount{
+					Address: exportApplication.Address,
+					Coins:   []cosmostypes.Coin{},
+				},
+			}
+			if _, _, err := morseWorkspace.addAccount(appAddr, newAppAccount); err != nil {
+				return fmt.Errorf(
+					"adding application account to account balance of address %q: %w",
+					appAddr, err,
+				)
+			}
 		}
 
-		appStakeAmtUpokt, ok := cosmosmath.NewIntFromString(exportApplication.StakedTokens)
-		if !ok {
-			return ErrMorseExportState.Wrapf("failed to parse application stake amount %q", exportApplication.StakedTokens)
-		}
+		if exportApplication.StakedTokens != "" {
+			appStakeAmtUpokt, ok := cosmosmath.NewIntFromString(exportApplication.StakedTokens)
+			if !ok {
+				return ErrMorseExportState.Wrapf("failed to parse application stake amount %q", exportApplication.StakedTokens)
+			}
 
-		if err := morseWorkspace.addAppStake(appAddr, appStakeAmtUpokt); err != nil {
-			return fmt.Errorf(
-				"adding application stake amount to account balance of address %q: %w",
-				appAddr, err,
-			)
-		}
+			if err := morseWorkspace.addAppStake(appAddr, appStakeAmtUpokt); err != nil {
+				return fmt.Errorf(
+					"adding application stake amount to account balance of address %q: %w",
+					appAddr, err,
+				)
+			}
 
-		morseWorkspace.accumulatedTotalAppStake = morseWorkspace.accumulatedTotalAppStake.Add(appStakeAmtUpokt)
-		morseWorkspace.numApplications++
+			morseWorkspace.accumulatedTotalAppStake = morseWorkspace.accumulatedTotalAppStake.Add(appStakeAmtUpokt)
+			morseWorkspace.numApplications++
+		}
 
 		if shouldDebugLogProgress(exportApplicationIdx) {
 			logger.Logger.Debug().
@@ -272,7 +292,24 @@ func collectInputSupplierStakes(inputState *migrationtypes.MorseStateExport, mor
 
 		// DEV_NOTE: An account SHOULD exist for each actor.
 		if !morseWorkspace.hasAccount(supplierAddr) {
-			return ErrMorseExportState.Wrapf("account not found corresponding to supplier with address %q", supplierAddr)
+			logger.Logger.Warn().
+				Str("supplier_address", supplierAddr).
+				Msg("no account found for supplier")
+
+			// TODO_IN_THIS_COMMIT: comment... explain - no auth account was found for this supplierlication... create a stup account
+			newSupplierAccount := &migrationtypes.MorseAuthAccount{
+				Type: "posmint/Account",
+				Value: &migrationtypes.MorseAccount{
+					Address: exportSupplier.Address,
+					Coins:   []cosmostypes.Coin{},
+				},
+			}
+			if _, _, err := morseWorkspace.addAccount(supplierAddr, newSupplierAccount); err != nil {
+				return fmt.Errorf(
+					"adding supplier account to account balance of address %q: %w",
+					supplierAddr, err,
+				)
+			}
 		}
 
 		supplierStakeAmtUpokt, ok := cosmosmath.NewIntFromString(exportSupplier.StakedTokens)
