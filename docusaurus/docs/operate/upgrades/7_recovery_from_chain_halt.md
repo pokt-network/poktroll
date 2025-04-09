@@ -12,7 +12,7 @@ new release has been created and verified to function correctly.
 
 :::tip
 
-See [Chain Halt Troubleshooting](chain_halt_troubleshooting.md) for more information on identifying the cause of a chain halt.
+See [Chain Halt Troubleshooting](6_chain_halt_troubleshooting.md) for more information on identifying the cause of a chain halt.
 
 :::
 
@@ -37,7 +37,7 @@ and use the same version of the software.
 If the halt is caused by the network upgrade, it is possible the solution can be as simple as
 skipping an upgrade (i.e. `unsafe-skip-upgrade`) and creating a new (fixed) upgrade.
 
-Read more about [upgrade contingency plans](contigency_plans.md).
+Read more about [upgrade contingency plans](5_contigency_plans.md).
 
 ### Manual binary replacement (preferred)
 
@@ -61,7 +61,7 @@ The steps to doing so are:
 
 1. Prepare and verify a new binary that addresses the consensus-breaking issue.
 2. Reach out to the community and validators so they can upgrade the binary manually.
-3. Update [the documentation](upgrade_list.md) to include a range a height when the binary needs
+3. Update [the documentation](1_upgrade_list.md) to include a range a height when the binary needs
    to be replaced.
 
 :::warning
@@ -115,8 +115,8 @@ propagating the existing blocks signed by the Validators, making it hard to roll
 However, if necessary, the instructions to follow are:
 
 1. Prepare & verify a new binary that addresses the consensus-breaking issue.
-2. [Create a release](release_process.md).
-3. [Prepare an upgrade transaction](upgrade_procedure.md#writing-an-upgrade-transaction) to the new version.
+2. [Create a release](4_release_process.md).
+3. [Prepare an upgrade transaction](2_upgrade_procedure.md#writing-an-upgrade-transaction) to the new version.
 4. Disconnect the `Validator set` from the rest of the network **3 blocks** prior to the height of the chain halt. For example:
    - Assume an issue at height `103`.
    - Revert the `validator set` to height `100`.
