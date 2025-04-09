@@ -30,7 +30,7 @@ type paramField struct {
 const (
 	paramsDocTemplatePath     = "./tools/scripts/docusaurus/params_doc_template.md"
 	paramFieldRowTemplatePath = "./tools/scripts/docusaurus/param_field_row_template.md"
-	destinationPath           = "docusaurus/docs/protocol/governance/params.md"
+	destinationPath           = "docusaurus/docs/protocol/governance/2_gov_params.md"
 )
 
 var (

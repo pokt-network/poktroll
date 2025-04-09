@@ -5,7 +5,7 @@ sidebar_position: 1
 
 ## Introduction to Protocol Upgrades <!-- omit in toc -->
 
-Pocket Network is continuously evolving through regular protocol upgrades. We implement software upgrades via a DAO process, allowing validator nodes to incorporate consensus-breaking changes. These upgrades can be automatically applied when using [Cosmovisor](../../operate/walkthroughs/full_node_walkthrough.md), or manually if not using `cosmovisor`.
+Pocket Network is continuously evolving through regular protocol upgrades. We implement software upgrades via a DAO process, allowing validator nodes to incorporate consensus-breaking changes. These upgrades can be automatically applied when using [Cosmovisor](../walkthroughs/full_node_walkthrough.md), or manually if not using `cosmovisor`.
 
 - [What is a Protocol Upgrade?](#what-is-a-protocol-upgrade)
 - [List of Upgrades](#list-of-upgrades)
@@ -26,7 +26,7 @@ Not every GitHub release will become a protocol upgrade.
 
 ## List of Upgrades
 
-While you can find a comprehensive list of [pocket releases](https://github.com/pokt-network/poktroll/releases) on our GitHub, we also maintain a [list of upgrades](./upgrade_list.md) in our documentation. This list provides valuable information, including whether an upgrade involves breaking changes and if manual intervention is required from operators.
+While you can find a comprehensive list of [pocket releases](https://github.com/pokt-network/poktroll/releases) on our GitHub, we also maintain a [list of upgrades](1_upgrade_list.md) in our documentation. This list provides valuable information, including whether an upgrade involves breaking changes and if manual intervention is required from operators.
 
 ## Upgrade Types
 

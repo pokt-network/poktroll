@@ -1,6 +1,6 @@
 ---
 title: Governance Params
-sidebar_position: 1
+sidebar_position: 2
 ---
 
 ## Governance Parameters <!-- omit in toc -->
@@ -27,5 +27,4 @@ Please follow the instructions in [this guide](../../develop/developer_guide/add
 
 | Module | Field Type | Field Name | Comment |
 | ------ | ---------- | ---------- | ------- |
-
 {{.}}
