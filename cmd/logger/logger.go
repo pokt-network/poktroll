@@ -54,17 +54,17 @@ func PreRunESetup(_ *cobra.Command, _ []string) error {
 	Logger = polyzero.NewLogger(
 		polyzero.WithLevel(logLevel),
 		polyzero.WithOutput(logWriter),
-		polyzero.WithSetupFn(newSetupConsoleWriter(logWriter)),
+		polyzero.WithSetupFn(NewSetupConsoleWriter(logWriter)),
 	)
 
 	return nil
 }
 
-// newSetupConsoleWriter returns a polylog setup function which wraps the underlying
+// NewSetupConsoleWriter returns a polylog setup function which wraps the underlying
 // zerolog logger in a ConsoleWriter, for prettier output. The console writer is
 // configured to exclude the timestamp field, and to exclude the log level output
 // for the info level to reduce output verbosity.
-func newSetupConsoleWriter(logWriter io.Writer) func(zlog *zerolog.Logger) {
+func NewSetupConsoleWriter(logWriter io.Writer) func(zlog *zerolog.Logger) {
 	return func(zlog *zerolog.Logger) {
 		*zlog = zlog.Output(zerolog.ConsoleWriter{
 			Out:          logWriter,
