@@ -74,8 +74,8 @@ func (k Keeper) RemoveClaim(ctx context.Context, sessionId, supplierOperatorAddr
 	logger.Info(fmt.Sprintf("deleted claim with primary key %s for supplier %s and session %s", primaryKey, supplierOperatorAddr, sessionId))
 }
 
-// GetClaimsBySessionEndHeightIterator returns an iterator over all claims indexed by session end height
-// The iterator will return all claims that have the same session end height
+// GetSessionEndHeightClaimsIterator returns an iterator over all claims corresponding
+// to the given session end height.
 func (k Keeper) GetSessionEndHeightClaimsIterator(ctx context.Context, sessionEndHeight int64) *types.ClaimsIterator {
 	storeAdapter := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
 
