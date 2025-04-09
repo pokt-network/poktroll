@@ -6,10 +6,13 @@ import (
 )
 
 // ClaimsIterator provides iteration functionality over claims stored in the blockchain state.
-// It wraps the underlying store iterator and codec to provide convenient access to Claim objects.
+// It wraps the underlying store iterator, primary store, and codec to provide convenient access to Claim objects.
+// The iterator uses a two-level storage approach where the main iterator provides keys that reference the actual
+// claim data in the primary store.
 type ClaimsIterator struct {
-	iterator storetypes.Iterator
-	cdc      codec.BinaryCodec
+	primaryStore storetypes.KVStore
+	iterator     storetypes.Iterator
+	cdc          codec.BinaryCodec
 }
 
 // Next advances the iterator to the next position.
@@ -18,10 +21,14 @@ func (ci *ClaimsIterator) Next() {
 }
 
 // Value returns the current Claim that the iterator is pointing to.
-// It unmarshals the raw bytes from the store into a Claim object.
+// It retrieves the primary key from the iterator's current value,
+// uses this key to fetch the actual claim data from the primary store,
+// and then unmarshals the data into a Claim object.
 func (ci *ClaimsIterator) Value() *Claim {
+	primaryKey := ci.iterator.Value()
+	claimBz := ci.primaryStore.Get(primaryKey)
 	var claim Claim
-	ci.cdc.MustUnmarshal(ci.iterator.Value(), &claim)
+	ci.cdc.MustUnmarshal(claimBz, &claim)
 	return &claim
 }
 
@@ -38,9 +45,14 @@ func (ci *ClaimsIterator) Valid() bool {
 }
 
 // NewClaimsIterator creates a new ClaimsIterator instance.
-func NewClaimsIterator(iterator storetypes.Iterator, cdc codec.BinaryCodec) *ClaimsIterator {
+func NewClaimsIterator(
+	iterator storetypes.Iterator,
+	primaryStore storetypes.KVStore,
+	cdc codec.BinaryCodec,
+) *ClaimsIterator {
 	return &ClaimsIterator{
-		iterator: iterator,
-		cdc:      cdc,
+		iterator:     iterator,
+		primaryStore: primaryStore,
+		cdc:          cdc,
 	}
 }

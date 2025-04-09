@@ -78,11 +78,14 @@ func (k Keeper) RemoveClaim(ctx context.Context, sessionId, supplierOperatorAddr
 // The iterator will return all claims that have the same session end height
 func (k Keeper) GetSessionEndHeightClaimsIterator(ctx context.Context, sessionEndHeight int64) *types.ClaimsIterator {
 	storeAdapter := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
+
+	primaryStore := prefix.NewStore(storeAdapter, types.KeyPrefix(types.ClaimPrimaryKeyPrefix))
 	sessionEndHeightStore := prefix.NewStore(storeAdapter, types.KeyPrefix(types.ClaimSessionEndHeightPrefix))
+
 	sessionEndHeightPrefix := types.ClaimSupplierEndSessionHeightKey(sessionEndHeight, []byte{})
 	iterator := storetypes.KVStorePrefixIterator(sessionEndHeightStore, sessionEndHeightPrefix)
 
-	claimsIterator := types.NewClaimsIterator(iterator, k.cdc)
+	claimsIterator := types.NewClaimsIterator(iterator, primaryStore, k.cdc)
 
 	return claimsIterator
 }

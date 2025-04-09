@@ -55,7 +55,7 @@ func (k Keeper) SettlePendingClaims(ctx cosmostypes.Context) (
 
 		// Cache the initial stake for the application which will be used instead of
 		// the updated stake at each claim settlement.
-		if err := k.cacheApplicationInitialStake(ctx, applicationInitialStakeMap, claim); err != nil {
+		if err = k.cacheApplicationInitialStake(ctx, applicationInitialStakeMap, claim); err != nil {
 			return settledResults, expiredResults, err
 		}
 
