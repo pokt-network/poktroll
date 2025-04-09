@@ -94,7 +94,7 @@ func runClaimAccount(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	fmt.Printf("MsgClaimMorseAccount %s\n", string(msgClaimMorseAcctJSON))
+	logger.Logger.Info().Msgf("MsgClaimMorseAccount %s\n", string(msgClaimMorseAcctJSON))
 
 	// Last chance for the user to abort.
 	skipConfirmation, err := cmd.Flags().GetBool(cosmosflags.FlagSkipConfirmation)
@@ -104,6 +104,7 @@ func runClaimAccount(cmd *cobra.Command, args []string) error {
 
 	// If the user has not set the --skip-confirmation flag, prompt for confirmation.
 	if !skipConfirmation {
+		// DEV_NOTE: Intentionally using fmt instead of logger.Logger to receive user input on the same line.
 		fmt.Printf("Confirm MsgClaimMorseAccount: y/[n]: ")
 		stdinReader := bufio.NewReader(os.Stdin)
 
