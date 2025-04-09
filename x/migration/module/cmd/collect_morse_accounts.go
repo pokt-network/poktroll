@@ -232,13 +232,12 @@ func collectInputApplicationStakes(inputState *migrationtypes.MorseStateExport, 
 	for exportApplicationIdx, exportApplication := range inputState.AppState.Application.Applications {
 		appAddr := exportApplication.Address.String()
 
-		// DEV_NOTE: An account SHOULD exist for each actor.
 		if !morseWorkspace.hasAccount(appAddr) {
 			logger.Logger.Warn().
 				Str("app_address", appAddr).
 				Msg("no account found for application")
 
-			// TODO_IN_THIS_COMMIT: comment... explain - no auth account was found for this application... create a stup account
+			// DEV_NOTE: If no auth account was found for this application, create a new one.
 			newAppAccount := &migrationtypes.MorseAuthAccount{
 				Type: "posmint/Account",
 				Value: &migrationtypes.MorseAccount{
@@ -290,13 +289,12 @@ func collectInputSupplierStakes(inputState *migrationtypes.MorseStateExport, mor
 	for exportSupplierIdx, exportSupplier := range inputState.AppState.Pos.Validators {
 		supplierAddr := exportSupplier.Address.String()
 
-		// DEV_NOTE: An account SHOULD exist for each actor.
 		if !morseWorkspace.hasAccount(supplierAddr) {
 			logger.Logger.Warn().
 				Str("supplier_address", supplierAddr).
 				Msg("no account found for supplier")
 
-			// TODO_IN_THIS_COMMIT: comment... explain - no auth account was found for this supplierlication... create a stup account
+			// DEV_NOTE: If no auth account was found for this supplier, create a new one.
 			newSupplierAccount := &migrationtypes.MorseAuthAccount{
 				Type: "posmint/Account",
 				Value: &migrationtypes.MorseAccount{
