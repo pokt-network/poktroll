@@ -7,7 +7,6 @@ import (
 	cosmoslog "cosmossdk.io/log"
 	"cosmossdk.io/math"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/types/query"
 
 	"github.com/pokt-network/poktroll/app/volatile"
 	"github.com/pokt-network/poktroll/telemetry"
@@ -33,30 +32,33 @@ func (k Keeper) SettlePendingClaims(ctx cosmostypes.Context) (
 ) {
 	logger := k.Logger().With("method", "SettlePendingClaims")
 
-	expiringClaims, err := k.GetExpiringClaims(ctx)
-	if err != nil {
-		return settledResults, expiredResults, err
-	}
+	// Use an iterator to get all claims that are expiring at the current block height
+	// instead of getting them all at once to improve scalability.
+	expiringClaimsIterator := k.GetExpiringClaimsIterator(ctx)
+	defer expiringClaimsIterator.Close()
 
 	// Capture the applications initial stake which will be used to calculate the
 	// max share any claim could burn from the application stake.
 	// This ensures that each supplier can calculate the maximum amount it can take
 	// from an application's stake.
-	applicationInitialStakeMap, err := k.getApplicationInitialStakeMap(ctx, expiringClaims)
-	if err != nil {
-		return settledResults, expiredResults, err
-	}
-
 	blockHeight := ctx.BlockHeight()
-
-	logger.Info(fmt.Sprintf("found %d expiring claims at block height %d", len(expiringClaims), blockHeight))
+	//logger.Info(fmt.Sprintf("found %d expiring claims at block height %d", len(expiringClaims), blockHeight))
 
 	// Initialize results structs.
 	settledResults = make(tlm.ClaimSettlementResults, 0)
 	expiredResults = make(tlm.ClaimSettlementResults, 0)
+	applicationInitialStakeMap := make(map[string]cosmostypes.Coin)
 
 	logger.Debug("settling expiring claims")
-	for _, claim := range expiringClaims {
+	for ; expiringClaimsIterator.Valid(); expiringClaimsIterator.Next() {
+		claim := expiringClaimsIterator.Value()
+
+		// Cache the initial stake for the application which will be used instead of
+		// the updated stake at each claim settlement.
+		if err := k.cacheApplicationInitialStake(ctx, applicationInitialStakeMap, claim); err != nil {
+			return settledResults, expiredResults, err
+		}
+
 		var (
 			proofRequirement prooftypes.ProofRequirementReason
 			claimeduPOKT     cosmostypes.Coin
@@ -114,7 +116,7 @@ func (k Keeper) SettlePendingClaims(ctx cosmostypes.Context) (
 
 		// Using the probabilistic proofs approach, determine if this expiring
 		// claim required an onchain proof
-		proofRequirement, err = k.proofKeeper.ProofRequirementForClaim(ctx, &claim)
+		proofRequirement, err = k.proofKeeper.ProofRequirementForClaim(ctx, claim)
 		if err != nil {
 			return settledResults, expiredResults, err
 		}
@@ -130,7 +132,7 @@ func (k Keeper) SettlePendingClaims(ctx cosmostypes.Context) (
 		)
 
 		// Initialize a ClaimSettlementResult to accumulate the results prior to executing state transitions.
-		ClaimSettlementResult := tlm.NewClaimSettlementResult(claim)
+		ClaimSettlementResult := tlm.NewClaimSettlementResult(*claim)
 
 		proofIsRequired := proofRequirement != prooftypes.ProofRequirementReason_NOT_REQUIRED
 		if proofIsRequired {
@@ -159,7 +161,7 @@ func (k Keeper) SettlePendingClaims(ctx cosmostypes.Context) (
 				// Proof was required but is invalid or not found.
 				// Emit an event that a claim has expired and being removed without being settled.
 				claimExpiredEvent := tokenomicstypes.EventClaimExpired{
-					Claim:                    &claim,
+					Claim:                    claim,
 					ExpirationReason:         expirationReason,
 					NumRelays:                numClaimRelays,
 					NumClaimedComputeUnits:   numClaimComputeUnits,
@@ -226,7 +228,7 @@ func (k Keeper) SettlePendingClaims(ctx cosmostypes.Context) (
 		settledResults.Append(ClaimSettlementResult)
 
 		claimSettledEvent := tokenomicstypes.EventClaimSettled{
-			Claim:                    &claim,
+			Claim:                    claim,
 			NumRelays:                numClaimRelays,
 			NumClaimedComputeUnits:   numClaimComputeUnits,
 			NumEstimatedComputeUnits: numEstimatedComputeUnits,
@@ -491,12 +493,13 @@ func (k Keeper) executePendingModToAcctTransfers(
 	return nil
 }
 
-// GetExpiringClaims returns all claims that are expiring at the current block height.
+// GetExpiringClaimsIterator returns an iterator of all claims that are expiring
+// at the current block height.
 // This is the height at which the proof window closes.
 // If the proof window closes and a proof IS NOT required -> settle the claim.
 // If the proof window closes and a proof IS required -> only settle it if a proof is available.
 // DEV_NOTE: It is exported for testing purposes.
-func (k Keeper) GetExpiringClaims(ctx cosmostypes.Context) (expiringClaims []prooftypes.Claim, _ error) {
+func (k Keeper) GetExpiringClaimsIterator(ctx cosmostypes.Context) (expiringClaimsIterator *prooftypes.ClaimsIterator) {
 	// TODO_IMPROVE(@bryanchriswhite):
 	//   1. Move height logic up to SettlePendingClaims.
 	//   2. Ensure that claims are only settled or expired on a session end height.
@@ -511,33 +514,7 @@ func (k Keeper) GetExpiringClaims(ctx cosmostypes.Context) (expiringClaims []pro
 	sessionEndToProofWindowCloseNumBlocks := sharedtypes.GetSessionEndToProofWindowCloseBlocks(sharedParams)
 	expiringSessionEndHeight := blockHeight - (sessionEndToProofWindowCloseNumBlocks + 1)
 
-	var nextKey []byte
-	for {
-		claimsRes, err := k.proofKeeper.AllClaims(ctx, &prooftypes.QueryAllClaimsRequest{
-			Pagination: &query.PageRequest{
-				Key: nextKey,
-			},
-			Filter: &prooftypes.QueryAllClaimsRequest_SessionEndHeight{
-				SessionEndHeight: uint64(expiringSessionEndHeight),
-			},
-		})
-		if err != nil {
-			return nil, err
-		}
-
-		expiringClaims = append(expiringClaims, claimsRes.GetClaims()...)
-
-		// Continue if there are more claims to fetch.
-		nextKey = claimsRes.Pagination.GetNextKey()
-		if nextKey != nil {
-			continue
-		}
-
-		break
-	}
-
-	// Return the actually expiring claims
-	return expiringClaims, nil
+	return k.proofKeeper.GetSessionEndHeightClaimsIterator(ctx, expiringSessionEndHeight)
 }
 
 // slashSupplierStake slashes the stake of a supplier and transfers the total
@@ -696,35 +673,30 @@ func (k Keeper) slashSupplierStake(
 	return nil
 }
 
-// getApplicationInitialStakeMap returns a map from an application address to the
-// initial stake of the application. This is used to calculate the maximum share
-// any claim could burn from the application stake.
-func (k Keeper) getApplicationInitialStakeMap(
+// cacheApplicationInitialStake retrieves an application's initial stake and caches it in the provided map.
+func (k Keeper) cacheApplicationInitialStake(
 	ctx context.Context,
-	expiringClaims []prooftypes.Claim,
-) (applicationInitialStakeMap map[string]cosmostypes.Coin, err error) {
-	applicationInitialStakeMap = make(map[string]cosmostypes.Coin)
-	for _, claim := range expiringClaims {
-		appAddress := claim.SessionHeader.ApplicationAddress
-		// The same application is participating in other claims being settled,
-		// so we already capture its initial stake.
-		if _, isAppFound := applicationInitialStakeMap[appAddress]; isAppFound {
-			continue
-		}
+	applicationInitialStakeMap map[string]cosmostypes.Coin,
+	expiringClaim *prooftypes.Claim,
+) error {
+	appAddress := expiringClaim.SessionHeader.ApplicationAddress
 
-		app, isAppFound := k.applicationKeeper.GetApplication(ctx, appAddress)
-		if !isAppFound {
-			err := apptypes.ErrAppNotFound.Wrapf(
-				"trying to settle a claim for an application that does not exist (which should never happen) with address: %q",
-				appAddress,
-			)
-			return nil, err
-		}
-
-		applicationInitialStakeMap[appAddress] = *app.GetStake()
+	if _, ok := applicationInitialStakeMap[appAddress]; ok {
+		return nil
 	}
 
-	return applicationInitialStakeMap, nil
+	app, isAppFound := k.applicationKeeper.GetApplication(ctx, appAddress)
+	if !isAppFound {
+		err := apptypes.ErrAppNotFound.Wrapf(
+			"trying to settle a claim for an application that does not exist (which should never happen) with address: %q",
+			appAddress,
+		)
+		return err
+	}
+
+	applicationInitialStakeMap[appAddress] = *app.GetStake()
+
+	return nil
 }
 
 // finalizeTelemetry logs telemetry metrics for a claim based on its stage (e.g., EXPIRED, SETTLED).
