@@ -29,6 +29,13 @@ message MorseClaimableAccount {
   // The hex-encoded address of the Morse account whose balance will be claimed.
   string morse_src_address = 2 [(gogoproto.jsontag) = "morse_src_address"];
 
+  // This field was momentarily used to hold the Morse public key; however, an
+  // optimization eliminates the need for this. Reserved for backwards compatibility.
+  //
+  // The ed25519 public key of the account.
+  // bytes public_key = 4 [(gogoproto.casttype) = "crypto/ed25519.PublicKey"];
+  reserved 4;
+
   // The unstaked upokt tokens (i.e. account balance) available for claiming.
   cosmos.base.v1beta1.Coin unstaked_balance = 5 [(gogoproto.nullable) = false, (gogoproto.jsontag) = "unstaked_balance"];
 
