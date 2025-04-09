@@ -3,9 +3,9 @@ title: List of Protocol Upgrades
 sidebar_position: 1
 ---
 
-# List of Protocol Upgrades <!-- omit in toc -->
+## List of Protocol Upgrades <!-- omit in toc -->
 
-The tables below provide a list of past and upcoming protocol upgrades. For more detailed information about what upgrades are, how they work, and what changes they bring to the protocol, please refer to our [upgrade overview page](./protocol_upgrades.md).
+The tables below provide a list of past and upcoming protocol upgrades. For more detailed information about what upgrades are, how they work, and what changes they bring to the protocol, please refer to our [upgrade overview page](1_protocol_upgrades.md).
 
 - [Legend](#legend)
 - [MainNet](#mainnet)
