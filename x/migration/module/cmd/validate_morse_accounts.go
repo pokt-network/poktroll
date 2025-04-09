@@ -38,8 +38,99 @@ The JSON serialization of each found morse_src_address is printed following the 
 > Found MorseClaimableAccount <morse_src_address>
 
 This output is intended to be used for manual inspection of each Morse account to ensure that it matches the expected state (as of the export height).`,
-		Example: `pocketd tx migration validate-morse-accounts 1A0BB8623F40D2A9BEAC099A0BAFDCAE3C5D8288 9B4508816AC8627B364D2EA4FC1B1FEE498D5684 
-pocketd tx migration validate-morse-accounts 1a0bb8623f40d2a9beac099a0bafdcae3c5d8288 9b4508816ac8627b364d2ea4fc1b1fee498d5684`,
+		Example: `## Uppercase hex and multiple MorseSrcAddresses
+$ pocketd tx migration validate-morse-accounts ./msg_import_morse_claimable_accounts.json 1A0BB8623F40D2A9BEAC099A0BAFDCAE3C5D8288 9B4508816AC8627B364D2EA4FC1B1FEE498D5684 
+🎉 Morse account state hash matches: BE89A43098CA8C37612491DA674FC26F1F4314AA82EB466A777F1E2BA6C2FBA8 🎉
+        Found MorseClaimableAccount 1A0BB8623F40D2A9BEAC099A0BAFDCAE3C5D8288 {
+          "shannon_dest_address": "",
+          "morse_src_address": "1A0BB8623F40D2A9BEAC099A0BAFDCAE3C5D8288",
+          "public_key": "M2vbX4RIBJYU8Bm/R6Fz55SFixNmbImz5Oll0cf2nQs=",
+          "unstaked_balance": {
+            "denom": "upokt",
+            "amount": "1000001"
+          },
+          "supplier_stake": {
+            "denom": "upokt",
+            "amount": "0"
+          },
+          "application_stake": {
+            "denom": "upokt",
+            "amount": "0"
+          },
+          "claimed_at_height": 0
+        }
+        Found MorseClaimableAccount 9B4508816AC8627B364D2EA4FC1B1FEE498D5684 {
+          "shannon_dest_address": "",
+          "morse_src_address": "9B4508816AC8627B364D2EA4FC1B1FEE498D5684",
+          "public_key": "i05T5/bfYVt/KN65wyzOCnQ1exRG4F1IDsAAbTEs7fg=",
+          "unstaked_balance": {
+            "denom": "upokt",
+            "amount": "2000002"
+          },
+          "supplier_stake": {
+            "denom": "upokt",
+            "amount": "0"
+          },
+          "application_stake": {
+            "denom": "upokt",
+            "amount": "200020"
+          },
+          "claimed_at_height": 0
+        }
+
+## Lowercase hex MorseSrcAddresses
+$ pocketd tx migration validate-morse-accounts ./msg_import_morse_claimable_accounts.json 1a0bb8623f40d2a9beac099a0bafdcae3c5d8288
+🎉 Morse account state hash matches: BE89A43098CA8C37612491DA674FC26F1F4314AA82EB466A777F1E2BA6C2FBA8 🎉
+        Found MorseClaimableAccount 1A0BB8623F40D2A9BEAC099A0BAFDCAE3C5D8288 {
+          "shannon_dest_address": "",
+          "morse_src_address": "1A0BB8623F40D2A9BEAC099A0BAFDCAE3C5D8288",
+          "public_key": "M2vbX4RIBJYU8Bm/R6Fz55SFixNmbImz5Oll0cf2nQs=",
+          "unstaked_balance": {
+            "denom": "upokt",
+            "amount": "1000001"
+          },
+          "supplier_stake": {
+            "denom": "upokt",
+            "amount": "0"
+          },
+          "application_stake": {
+            "denom": "upokt",
+            "amount": "0"
+          },
+          "claimed_at_height": 0
+        }
+
+## Missing MorseSrcAddresses
+$ pocketd tx migration validate-morse-accounts ./msg_import_morse_claimable_accounts.json 6629E4DEAE5AAC5EFA5C6CBCFDA5A289C825EC73 C81FBB2361A72CFAF8C1FAF3A4C439EF1EA5F8E3 0256531919A13334088737667636CBB603982E46
+🎉 Morse account state hash matches: BE89A43098CA8C37612491DA674FC26F1F4314AA82EB466A777F1E2BA6C2FBA8 🎉
+        WRN 🚨 3 Morse address(es) not found: 🚨
+        WRN   - 6629E4DEAE5AAC5EFA5C6CBCFDA5A289C825EC73
+        WRN   - C81FBB2361A72CFAF8C1FAF3A4C439EF1EA5F8E3
+        WRN   - 0256531919A13334088737667636CBB603982E46
+
+## Invalid MorseAccountStateHash
+$ pocketd tx migration validate-morse-accounts ./invalid_msg_import_morse_claimable_accounts.json 1A0BB8623F40D2A9BEAC099A0BAFDCAE3C5D8288
+WRN 🚨 Invalid morse account state hash! 🚨
+        WRN Given (expected): 696E76616C69645F68617368
+        WRN Computed (actual): BE89A43098CA8C37612491DA674FC26F1F4314AA82EB466A777F1E2BA6C2FBA8
+        Found MorseClaimableAccount 1A0BB8623F40D2A9BEAC099A0BAFDCAE3C5D8288 {
+          "shannon_dest_address": "",
+          "morse_src_address": "1A0BB8623F40D2A9BEAC099A0BAFDCAE3C5D8288",
+          "public_key": "M2vbX4RIBJYU8Bm/R6Fz55SFixNmbImz5Oll0cf2nQs=",
+          "unstaked_balance": {
+            "denom": "upokt",
+            "amount": "1000001"
+          },
+          "supplier_stake": {
+            "denom": "upokt",
+            "amount": "0"
+          },
+          "application_stake": {
+            "denom": "upokt",
+            "amount": "0"
+          },
+          "claimed_at_height": 0
+        }`,
 		PreRunE: logger.PreRunESetup,
 		RunE:    runValidateMorseAccounts,
 		PostRun: signals.ExitWithCodeIfNonZero,
