@@ -27,7 +27,7 @@ This document is intended to help you recover without significant downtime.
 
 **Cancel the upgrade plan!**
 
-See the instructions of [how to do that here](./upgrade_procedure.md#cancelling-the-upgrade-plan).
+See the instructions of [how to do that here](2_upgrade_procedure.md#cancelling-the-upgrade-plan).
 
 ### Option 1: The migration didn't start (i.e. migration halt)
 
@@ -90,11 +90,11 @@ In such a case, we need:
 
 ### Option 3: The migration succeed but the network is stuck (i.e. migration had a bug)
 
-This should be treated as a consensus or non-determinism bug that is unrelated to the upgrade. See [Recovery From Chain Halt](recovery_from_chain_halt.md) for more information on how to handle such issues.
+This should be treated as a consensus or non-determinism bug that is unrelated to the upgrade. See [Recovery From Chain Halt](7_recovery_from_chain_halt.md) for more information on how to handle such issues.
 
 ### MANDATORY Checklist of Documentation & Scripts to Update
 
-- [ ] The [upgrade list](./upgrade_list.md) should reflect a failed upgrade and provide a range of heights that served by each version.
+- [ ] The [upgrade list](1_upgrade_list.md) should reflect a failed upgrade and provide a range of heights that served by each version.
 - [ ] Systemd service should include`--unsafe-skip-upgrade=$upgradeHeightNumber` argument in its start command [here](https://github.com/pokt-network/poktroll/blob/main/tools/installer/full-node.sh).
 - [ ] The [Helm chart](https://github.com/pokt-network/helm-charts/blob/main/charts/pocketd/templates/StatefulSet.yaml) should point to the latest version;consider exposing via a `values.yaml` file
 - [ ] The [docker-compose](https://github.com/pokt-network/poktroll-docker-compose-example/tree/main/scripts) examples should point to the latest version
