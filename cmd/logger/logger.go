@@ -53,7 +53,6 @@ func PreRunESetup(_ *cobra.Command, _ []string) error {
 
 	Logger = polyzero.NewLogger(
 		polyzero.WithLevel(logLevel),
-		polyzero.WithOutput(logWriter),
 		polyzero.WithSetupFn(NewSetupConsoleWriter(logWriter)),
 	)
 
