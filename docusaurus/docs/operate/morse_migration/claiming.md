@@ -401,6 +401,7 @@ Both the unstaked balance and supplier stake amounts are retrieved from the corr
 For example, running the following command:
 
 ```bash
+pocketd tx migration claim-supplier \
 Enter Decrypt Passphrase: 
 MsgClaimMorseSupplier {
   "shannon_owner_address": "pokt1chn2mglfxqcp52znqk8jq2rww73qffxczz3jph",
