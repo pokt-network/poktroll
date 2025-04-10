@@ -345,7 +345,7 @@ pocketd migrate claim-application \
 Should prompt for a passphrase and produce output similar to the following:
 
 ```shell
-Enter Decrypt Passphrase: 
+Enter Decrypt Passphrase:
 MsgClaimMorseApplication {
   "shannon_dest_address": "pokt1mrqt5f7qh8uxs27cjm9t7v9e74a9vvdnq5jva4",
   "morse_src_address": "1A0BB8623F40D2A9BEAC099A0BAFDCAE3C5D8288",
@@ -354,7 +354,7 @@ MsgClaimMorseApplication {
     "service_id": "anvil"
   }
 }
-Confirm MsgClaimMorseApplication: y/[n]: 
+Confirm MsgClaimMorseApplication: y/[n]:
 ```
 
 :::tip
@@ -381,9 +381,10 @@ Omit the `stake_amount` field in a supplier config; providing it in when claimin
 
 :::important (optional) Non-custodial staking
 
-If you would like to claim a Morse supplier with distinct "owner" and "operator" addresses, you MAY do so by specifying both in the [supplier staking config](../configs/supplier_staking_config.md#staking-types).
+If you would like to claim a Morse supplier with distinct `owner` and `operator` addresses,
+you MAY do so by specifying both in the [supplier staking config](../configs/supplier_staking_config.md).
 
-This delegates the permission of signing claims and proofs to the "operator" address, while the "owner" address retains sole ownership over the supplier stake and rewards.
+This delegates signing claims and proofs to the `operator` address, while the `owner` address retains sole ownership over the supplier stake and rewards.
 
 See the ["Supplier staking config" > "Staking types"](../configs/supplier_staking_config.md#staking-types).
 
@@ -402,7 +403,7 @@ For example, running the following command:
 
 ```bash
 pocketd tx migration claim-supplier \
-Enter Decrypt Passphrase: 
+Enter Decrypt Passphrase:
 MsgClaimMorseSupplier {
   "shannon_owner_address": "pokt1chn2mglfxqcp52znqk8jq2rww73qffxczz3jph",
   "shannon_operator_address": "pokt1chn2mglfxqcp52znqk8jq2rww73qffxczz3jph",
