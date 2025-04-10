@@ -12,8 +12,16 @@ import (
 // hold the current exit code and subsequently used in ExitWithCodeIfNonZero.
 var ExitCode int
 
-// GoOnExitSignal calls the given callback when the process receives an interrupt
-// or terminate signal.
+// ExitWithCodeIfNonZero is a helper function that is intended to be used as a PostRun function for a cobra command.
+// It checks if the exitCode variable is non-zero and exits the program with the global ExitCode value.
+func ExitWithCodeIfNonZero(_ *cobra.Command, _ []string) {
+	if ExitCode != 0 {
+		os.Exit(ExitCode)
+	}
+}
+
+// GoOnExitSignal calls the given callback when the process receives an interrupt or terminate signal.
+// It sets up a goroutine that listens for OS signals and invokes the callback
 func GoOnExitSignal(onInterrupt func()) {
 	go func() {
 		// Set up sigCh to receive when this process receives an interrupt or
@@ -27,13 +35,4 @@ func GoOnExitSignal(onInterrupt func()) {
 		// Call the onInterrupt callback.
 		onInterrupt()
 	}()
-}
-
-// ExitWithCodeIfNonZero is a helper function that is intended to be used as a
-// PostRun function for a cobra command. It checks if the exitCode variable is
-// non-zero and exits the program with the exitCode value.
-func ExitWithCodeIfNonZero(_ *cobra.Command, _ []string) {
-	if ExitCode != 0 {
-		os.Exit(ExitCode)
-	}
 }

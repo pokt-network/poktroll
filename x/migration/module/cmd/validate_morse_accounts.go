@@ -26,20 +26,36 @@ type sortDirection int
 
 func ValidateMorseAccountsCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "validate-morse-accounts [msg_import_morse_claimable_accounts_json_path] [morse_src_address_to_check, ...]",
-		Args:  cobra.MinimumNArgs(1),
-		Short: "Validate and inspect the morse account state contained within a given MsgImportMorseClaimableAccount JSON file",
+		Use:     "validate-morse-accounts [msg_import_morse_claimable_accounts_json_path] [morse_src_address_to_check, ...]",
+		Args:    cobra.MinimumNArgs(1),
+		PreRunE: logger.PreRunESetup,
+		RunE:    runValidateMorseAccounts,
+		PostRun: signals.ExitWithCodeIfNonZero,
+		Short:   "Validate and inspect the morse account state contained within a given MsgImportMorseClaimableAccount JSON file",
 		Long: `Validate and inspect the morse account state contained within a given MsgImportMorseClaimableAccount JSON file.
-Validation consists of calculating the sha256 hash of the the (serialized) morse_account_state field and comparing it to the hash given in by the morse_account_state_hash field.
-If a discrepancy in the Morse account state hash is detected, a warning is printed, found Morse source accounts are printed, and a non-zero exit code is returned.
-If any given morse_src_address is not found in the Morse account state, found Morse source accounts are printed, a warning is printed for each missing morse_src_address, and a non-zero exit code is returned.
 
-The JSON serialization of each found morse_src_address is printed following the line:
-> Found MorseClaimableAccount <morse_src_address>
+This output is intended to be used for manual inspection of each Morse account to ensure that it matches the expected state (as of the export height).
 
-This output is intended to be used for manual inspection of each Morse account to ensure that it matches the expected state (as of the export height).`,
-		Example: `## Uppercase hex and multiple MorseSrcAddresses
-$ pocketd tx migration validate-morse-accounts ./msg_import_morse_claimable_accounts.json 1A0BB8623F40D2A9BEAC099A0BAFDCAE3C5D8288 9B4508816AC8627B364D2EA4FC1B1FEE498D5684 
+Validation consists of:
+	1. Calculating the sha256 hash of the (serialized) 'morse_account_state' field
+	2. Comparing it to the hash given in by the 'morse_account_state_hash' field.
+
+If a discrepancy in the Morse account state hash is detected:
+	1. A warning is printed
+	2. Found Morse source accounts are printed
+	3. A non-zero exit code is returned.
+
+If any given 'morse_src_address' is not found in the Morse account state:
+	1. Found Morse source accounts are printed
+	2. A warning is printed for each missing 'morse_src_address'
+	3. A non-zero exit code is returned.
+
+The JSON serialization of each found 'morse_src_address' is printed following the line:
+
+	> Found MorseClaimableAccount <morse_src_address>`,
+		Example: `## Example 1: Uppercase hex and multiple MorseSrcAddresses
+	$ pocketd tx migration validate-morse-accounts ./msg_import_morse_claimable_accounts.json 1A0BB8623F40D2A9BEAC099A0BAFDCAE3C5D8288 9B4508816AC8627B364D2EA4FC1B1FEE498D5684
+
 🎉 Morse account state hash matches: BE89A43098CA8C37612491DA674FC26F1F4314AA82EB466A777F1E2BA6C2FBA8 🎉
         Found MorseClaimableAccount 1A0BB8623F40D2A9BEAC099A0BAFDCAE3C5D8288 {
           "shannon_dest_address": "",
@@ -78,8 +94,9 @@ $ pocketd tx migration validate-morse-accounts ./msg_import_morse_claimable_acco
           "claimed_at_height": 0
         }
 
-## Lowercase hex MorseSrcAddresses
-$ pocketd tx migration validate-morse-accounts ./msg_import_morse_claimable_accounts.json 1a0bb8623f40d2a9beac099a0bafdcae3c5d8288
+## Example 2: Lowercase hex MorseSrcAddresses
+	$ pocketd tx migration validate-morse-accounts ./msg_import_morse_claimable_accounts.json 1a0bb8623f40d2a9beac099a0bafdcae3c5d8288
+
 🎉 Morse account state hash matches: BE89A43098CA8C37612491DA674FC26F1F4314AA82EB466A777F1E2BA6C2FBA8 🎉
         Found MorseClaimableAccount 1A0BB8623F40D2A9BEAC099A0BAFDCAE3C5D8288 {
           "shannon_dest_address": "",
@@ -100,16 +117,18 @@ $ pocketd tx migration validate-morse-accounts ./msg_import_morse_claimable_acco
           "claimed_at_height": 0
         }
 
-## Missing MorseSrcAddresses
-$ pocketd tx migration validate-morse-accounts ./msg_import_morse_claimable_accounts.json 6629E4DEAE5AAC5EFA5C6CBCFDA5A289C825EC73 C81FBB2361A72CFAF8C1FAF3A4C439EF1EA5F8E3 0256531919A13334088737667636CBB603982E46
+## Example 3: Missing MorseSrcAddresses
+	$ pocketd tx migration validate-morse-accounts ./msg_import_morse_claimable_accounts.json 6629E4DEAE5AAC5EFA5C6CBCFDA5A289C825EC73 C81FBB2361A72CFAF8C1FAF3A4C439EF1EA5F8E3 0256531919A13334088737667636CBB603982E46
+
 🎉 Morse account state hash matches: BE89A43098CA8C37612491DA674FC26F1F4314AA82EB466A777F1E2BA6C2FBA8 🎉
         WRN 🚨 3 Morse address(es) not found: 🚨
         WRN   - 6629E4DEAE5AAC5EFA5C6CBCFDA5A289C825EC73
         WRN   - C81FBB2361A72CFAF8C1FAF3A4C439EF1EA5F8E3
         WRN   - 0256531919A13334088737667636CBB603982E46
 
-## Invalid MorseAccountStateHash
-$ pocketd tx migration validate-morse-accounts ./invalid_msg_import_morse_claimable_accounts.json 1A0BB8623F40D2A9BEAC099A0BAFDCAE3C5D8288
+## Example 4: Invalid MorseAccountStateHash
+	$ pocketd tx migration validate-morse-accounts ./invalid_msg_import_morse_claimable_accounts.json 1A0BB8623F40D2A9BEAC099A0BAFDCAE3C5D8288
+
 WRN 🚨 Invalid morse account state hash! 🚨
         WRN Given (expected): 696E76616C69645F68617368
         WRN Computed (actual): BE89A43098CA8C37612491DA674FC26F1F4314AA82EB466A777F1E2BA6C2FBA8
@@ -131,9 +150,6 @@ WRN 🚨 Invalid morse account state hash! 🚨
           },
           "claimed_at_height": 0
         }`,
-		PreRunE: logger.PreRunESetup,
-		RunE:    runValidateMorseAccounts,
-		PostRun: signals.ExitWithCodeIfNonZero,
 	}
 	return cmd
 }
@@ -151,26 +167,29 @@ WRN 🚨 Invalid morse account state hash! 🚨
 func runValidateMorseAccounts(_ *cobra.Command, args []string) error {
 	// Load and parse the MsgImportMorseClaimableAccounts JSON.
 	msgImportMorseClaimableAccountsJSONPath := args[0]
+
+	// Retrieve the morse addresses to check from the command line arguments.
 	morseAddresses := args[1:]
 
+	// Read the MsgImportMorseClaimableAccounts JSON file.
 	msgImportMorseClaimableAccountsJSONBz, err := os.ReadFile(msgImportMorseClaimableAccountsJSONPath)
 	if err != nil {
 		return err
 	}
 
+	// Unmarshal the MsgImportMorseClaimableAccounts JSON into a MsgImportMorseClaimableAccounts struct.
 	msgImportMorseClaimableAccounts := new(migrationtypes.MsgImportMorseClaimableAccounts)
 	if err = cmtjson.Unmarshal(msgImportMorseClaimableAccountsJSONBz, msgImportMorseClaimableAccounts); err != nil {
 		return err
 	}
 
-	// Compute and validate the morse account state hash.
+	// Compute and validate the morse account state hash in the file provided.
 	morseAccountState := msgImportMorseClaimableAccounts.GetMorseAccountState()
+	givenMorseAccountStateHash := msgImportMorseClaimableAccounts.GetMorseAccountStateHash()
 	computedMorseAccountStateHash, err := morseAccountState.GetHash()
 	if err != nil {
 		return err
 	}
-
-	givenMorseAccountStateHash := msgImportMorseClaimableAccounts.GetMorseAccountStateHash()
 	if !bytes.Equal(givenMorseAccountStateHash, computedMorseAccountStateHash) {
 		signals.ExitCode += 1
 		logger.Logger.Warn().Msg("🚨 Invalid morse account state hash! 🚨")
@@ -182,33 +201,31 @@ func runValidateMorseAccounts(_ *cobra.Command, args []string) error {
 
 	// Sort the morse claimable accounts for use in binary search.
 	sortedMorseClaimableAccounts := msgImportMorseClaimableAccounts.MorseAccountState.Accounts
+	numSortedMorseClaimableAccounts := len(sortedMorseClaimableAccounts)
 	sortMorseClaimableAccounts(msgImportMorseClaimableAccounts.MorseAccountState.Accounts)
 
-	// Check that each given morse address exists in the morse account state
-	// and print each for inspection.
+	// Check that each given morse address exists in the morse account state and print each for inspection.
 	missingMorseAddresses := make([]string, 0)
 	for _, targetMorseAddress := range morseAddresses {
 		// Normalize the morse address to uppercase hex.
 		targetMorseAddress = strings.ToUpper(targetMorseAddress)
 
 		// Use binary search to find the index of the target morse address efficiently.
-		morseAccountIdx := sort.Search(len(sortedMorseClaimableAccounts), func(i int) bool {
+		morseAccountIdx := sort.Search(numSortedMorseClaimableAccounts, func(i int) bool {
 			ithMorseSrcAddress := sortedMorseClaimableAccounts[i].GetMorseSrcAddress()
 			return ithMorseSrcAddress >= targetMorseAddress
 		})
 
 		// DEV_NOTE: The index returned when the target is not found is the length of the slice.
-		if morseAccountIdx >= len(sortedMorseClaimableAccounts) {
+		if morseAccountIdx >= numSortedMorseClaimableAccounts {
 			missingMorseAddresses = append(missingMorseAddresses, targetMorseAddress)
-
-			// Morse address not found, move on to the next one.
+			logger.Logger.Warn().Msgf("Morse address %s not found in the morse account state. Moving on to the next one.", targetMorseAddress)
 			continue
 		}
 
 		if sortedMorseClaimableAccounts[morseAccountIdx].GetMorseSrcAddress() != targetMorseAddress {
 			missingMorseAddresses = append(missingMorseAddresses, targetMorseAddress)
-
-			// Morse address found, move on to the next one.
+			logger.Logger.Warn().Msgf("Morse address %s not found in the morse account state. Moving on to the next one.", targetMorseAddress)
 			continue
 		}
 
@@ -242,9 +259,8 @@ func sortMorseClaimableAccounts(morseClaimableAccounts []*migrationtypes.MorseCl
 	sort.Slice(morseClaimableAccounts, sortByMorseSrcAddress)
 }
 
-// newMorseClaimableAccountOrderByMorseSrcAddress returns a function that can be
-// used with the `sort.Slice` function to sort the given morse claimable accounts
-// in ascending or descending order by morseSrcAddress.
+// newMorseClaimableAccountOrderByMorseSrcAddress returns a function that can be used with
+// `sort.Slice` to sort the given morse claimable accounts in ascending or descending order by morseSrcAddress.
 func newMorseClaimableAccountOrderByMorseSrcAddress(
 	morseClaimableAccounts []*migrationtypes.MorseClaimableAccount,
 	direction sortDirection,
