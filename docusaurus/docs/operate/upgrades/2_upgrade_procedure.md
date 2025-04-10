@@ -175,21 +175,33 @@ However, **IT IS NOT NEEDED** to simulate and test the upgrade procedure.
 
 For a hypothetical scenario to upgrade from `0.1` to `0.2`:
 
-1. **Stop LocalNet** to prevent interference. Pull the `pocket` repo into two separate directories. Let's name them `old` and `new`. It is recommended to open at least two tabs/shell panels in each directory for easier switching between directories.
+1. **Stop LocalNet** to prevent interference. Use `git worktree` to check out the `pocket` repo to a different branch/tag in a separate directory. Let's refer to them as `old` and `new`. It is recommended to open at least two tabs/shell panels in each directory for easier switching between directories.
 
-2. **(`old` repo)** - Check out the old version. For the test to be accurate, we need to upgrade from the correct version.
+2. **(`old` branch)** - Use `git worktree` to check out the old version in a new directory. For the test to be accurate, we need to upgrade from the correct version.
 
    ```bash
-   git checkout v0.1
+   git worktree add ../poktroll-old v0.1
    ```
+   
+:::tip Cleaning Up
 
-3. **(`new` repo)**
+When you're finished and ready to remove the `old` worktree (the new directory associated with the old branch):
+
+```bash
+git worktree remove ../poktroll-old
+```
+
+This won't have any effect on the git repo itself, nor on the default worktree (unstaged/uncommitted changes, stash, etc.).
+
+:::
+
+3. **(`new` branch)**
 
    ```bash
    git checkout -b branch_to_test
    ```
 
-   Replace `branch_to_test` with the actual branch you want to test.
+   Replace `branch_to_test` with the actual branch or tag that you want to test.
 
    :::note
    This branch should have an upgrade implemented per the docs in [Implementing the Upgrade](#implementing-the-upgrade).
