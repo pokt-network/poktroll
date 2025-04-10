@@ -52,6 +52,7 @@ func TestMsgServer_ClaimMorseAccount_Success(t *testing.T) {
 			sample.AccAddress(),
 			morseAccount.GetMorseSrcAddress(),
 			morsePrivKey,
+			sample.AccAddress(),
 		)
 		require.NoError(t, err)
 
@@ -125,6 +126,7 @@ func TestMsgServer_ClaimMorseAccount_Error(t *testing.T) {
 		sample.AccAddress(),
 		accountState.Accounts[0].GetMorseSrcAddress(),
 		morsePrivKey,
+		sample.AccAddress(),
 	)
 	require.NoError(t, err)
 
@@ -215,6 +217,7 @@ func TestMsgServer_ClaimMorseAccount_Error(t *testing.T) {
 			sample.AccAddress(),
 			morseAccount.GetMorseSrcAddress(),
 			morsePrivKey,
+			sample.AccAddress(),
 		)
 		require.NoError(t, err)
 
@@ -243,6 +246,7 @@ func TestMsgServer_ClaimMorseAccount_Error(t *testing.T) {
 			sample.AccAddress(),
 			morseSrcAddress,
 			morsePrivKey,
+			sample.AccAddress(),
 		)
 		require.NoError(t, err)
 
