@@ -49,7 +49,7 @@ var (
 
 	// shannonKeyIdx is the index of the "current" shannon private key to be used.
 	// It is used to interpolate a Shannon key name string, which is used with the
-	// `poktrolld keys add` command to generate a unique key which can be used to
+	// `pocketd keys add` command to generate a unique key which can be used to
 	// sign test transactions (via the `--from` flag)
 	shannonKeyIdx uint64
 )
@@ -405,7 +405,7 @@ func (s *migrationSuite) TheShannonServiceConfigMatchesTheOneProvidedWhenClaimin
 func (s *migrationSuite) TheAuthorityExecutes(commandStr string) {
 	commandStringParts := strings.Split(commandStr, " ")
 	if len(commandStringParts) < 1 || commandStringParts[0] != "poktrolld" {
-		s.Fatalf("ERROR: expected a poktrolld command but got %q", commandStr)
+		s.Fatalf("ERROR: expected a pocketdcommand but got %q", commandStr)
 	}
 
 	// Remove the "poktrolld" part of the command string because
@@ -482,7 +482,7 @@ func (s *migrationSuite) TheShannonAccountIsFundedWith(fundCoinString string) {
 	s.buildAddrMap()
 	shannonKeyName := s.getShannonKeyName()
 	shannonAddr, isFound := accNameToAddrMap[shannonKeyName]
-	require.Truef(s, isFound, "key %q not found in poktrolld keyring", shannonKeyName)
+	require.Truef(s, isFound, "key %q not found in pocketdkeyring", shannonKeyName)
 
 	s.fundAddress(shannonAddr, s.faucetFundedBalanceUpokt)
 }
@@ -490,7 +490,7 @@ func (s *migrationSuite) TheShannonAccountIsFundedWith(fundCoinString string) {
 func (s *migrationSuite) TheShannonDestinationAccountDoesNotExistOnchain() {
 	s.buildAddrMap()
 	shannonDestAddr, isFound := accNameToAddrMap[s.getShannonKeyName()]
-	require.Truef(s, isFound, "key %q not found in poktrolld keyring", s.getShannonKeyName())
+	require.Truef(s, isFound, "key %q not found in pocketdkeyring", s.getShannonKeyName())
 
 	_, isFound = s.queryAccount(shannonDestAddr)
 	require.False(s, isFound)
@@ -509,7 +509,7 @@ func (s *migrationSuite) TheMorsePrivateKeyIsUsedToClaimAMorseclaimableaccountAs
 
 	privKeyArmoredJSONPath := s.writeTempFile("morse_private_key.json", []byte(privKeyArmoredJSONString))
 
-	// poktrolld tx migration claim-account --from=shannon-key-xxx <morse_src_address>
+	// pocketdtx migration claim-account --from=shannon-key-xxx <morse_src_address>
 	res, err := s.pocketd.RunCommandOnHost("",
 		"tx", "migration", "claim-account",
 		"--from", s.getShannonKeyName(),
@@ -744,7 +744,7 @@ func (s *migrationSuite) getShannonKeyName() string {
 }
 
 // getShannonKeyAddress checks if the key corresponding to the current shannon key index
-// is present in the poktrolld keyring. If it is, it returns the address and true. Otherwise,
+// is present in the pocketdkeyring. If it is, it returns the address and true. Otherwise,
 // it returns an empty string and false.
 func (s *migrationSuite) getShannonKeyAddress() (shannonAddr string, isFound bool) {
 	s.buildAddrMap()

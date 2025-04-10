@@ -331,7 +331,7 @@ func NewSupplyRingClientFn() SupplierFn {
 // SupplierClientMap and returns a new depinject.Config which is
 // supplied with the given deps and the new SupplierClientMap.
 // - signingKeyNames is a list of operators signing key name corresponding to
-// the staked suppliers operator addresess.
+// the staked suppliers operator addresses.
 func NewSupplySupplierClientsFn(signingKeyNames []string) SupplierFn {
 	return func(
 		ctx context.Context,

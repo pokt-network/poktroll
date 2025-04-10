@@ -72,7 +72,6 @@ func GetTxClient(
 	if err != nil {
 		return nil, err
 	}
-
 	defaultTxClientOpts := append(
 		gasAndFeesOptions,
 		tx.WithSigningKeyName(clientCtx.FromName),

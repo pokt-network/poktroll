@@ -41,7 +41,10 @@ func validateMorseAddress(msg morseClaimMessage) error {
 	return nil
 }
 
-// validateMorseSignature validates the morseSignature of the given morseClaimMessage.
+// validateMorseSignature validates the msg.morseSignature of the given morseClaimMessage.
+// It checks that:
+// - the morseSignature is the correct length
+// - the morseSignature is valid for the signing bytes of the message associated with the public key
 func validateMorseSignature(msg morseClaimMessage) error {
 	if len(msg.GetMorseSignature()) != MorseSignatureLengthBytes {
 		return ErrMorseSignature.Wrapf(

@@ -15,6 +15,7 @@ import (
 // GetTxClientGasAndFeesOptions returns a slice of TxClientOptions which
 // are derived from the provided command flags and/or config, using the
 // following precedence:
+//
 // 1. If a fee is specified, it overrides all gas settings, only returns:
 //   - WithFeeAmount
 //
@@ -23,12 +24,13 @@ import (
 //   - WithGasAdjustment
 //   - WithGasSetting
 func GetTxClientGasAndFeesOptions(cmd *cobra.Command) ([]client.TxClientOption, error) {
+	// Retrieve the explicitly specified fee amount from the command flags.
 	feesStr, err := cmd.Flags().GetString(flags.FlagFees)
 	if err != nil {
 		return nil, err
 	}
 
-	// If a fee is specified, it overrides all gas settings.
+	// If a fee is specified, it overrides all gas settings and returns immediately.
 	if feesStr != "" {
 		feeAmount, parseErr := types.ParseDecCoins(feesStr)
 		if parseErr != nil {
@@ -40,16 +42,15 @@ func GetTxClientGasAndFeesOptions(cmd *cobra.Command) ([]client.TxClientOption, 
 		}, nil
 	}
 
+	// Retrieve all gas related options from the command flags.
 	gasPriceStr, err := cmd.Flags().GetString(flags.FlagGasPrices)
 	if err != nil {
 		return nil, err
 	}
-
 	gasPrices, err := types.ParseDecCoins(gasPriceStr)
 	if err != nil {
 		return nil, err
 	}
-
 	gasAdjustment, err := cmd.Flags().GetFloat64(flags.FlagGasAdjustment)
 	if err != nil {
 		return nil, err
@@ -63,7 +64,7 @@ func GetTxClientGasAndFeesOptions(cmd *cobra.Command) ([]client.TxClientOption, 
 		return nil, err
 	}
 
-	// Ensure that the gas prices include upokt
+	// Onchain fees (i.e. gas) can only be paid in upokt.
 	for _, gasPrice := range gasPrices {
 		if gasPrice.Denom != volatile.DenomuPOKT {
 			// TODO_TECHDEBT(red-0ne): Allow other gas prices denominations once supported (e.g. mPOKT, POKT)
