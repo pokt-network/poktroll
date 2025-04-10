@@ -23,13 +23,13 @@ We provide `gRPC`, `JSON-RPC` and `REST` endpoints, which are available here:
 Using `curl`:
 
 ```bash
-curl -X POST https://shannon-testnet-grove-seed-rpc.poktroll.com/block
+curl -X POST https://shannon-testnet-grove-rpc.beta.poktroll.com/block
 ```
 
 Using the `pocketd` binary:
 
 ```bash
-pocketd query block --type=height 0 --node https://shannon-testnet-grove-seed-rpc.poktroll.com
+pocketd query block --type=height 0 --node https://shannon-testnet-grove-rpc.beta.poktroll.com
 ```
 
 ## Alpha Genesis

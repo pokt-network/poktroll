@@ -106,7 +106,7 @@ func runClaimApplication(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	fmt.Printf("MsgClaimMorseApplication %s\n", string(msgClaimMorseAppJSON))
+	logger.Logger.Info().Msgf("MsgClaimMorseApplication %s\n", string(msgClaimMorseAppJSON))
 
 	// Last chance for the user to abort.
 	skipConfirmation, err := cmd.Flags().GetBool(cosmosflags.FlagSkipConfirmation)
@@ -115,6 +115,7 @@ func runClaimApplication(cmd *cobra.Command, args []string) error {
 	}
 
 	if !skipConfirmation {
+		// DEV_NOTE: Intentionally using fmt instead of logger.Logger to receive user input on the same line.
 		fmt.Printf("Confirm MsgClaimMorseApplication: y/[n]: ")
 		stdinReader := bufio.NewReader(os.Stdin)
 
@@ -142,7 +143,7 @@ func runClaimApplication(cmd *cobra.Command, args []string) error {
 	}
 
 	// Sign and broadcast the claim Morse account message.
-	eitherErr := txClient.SignAndBroadcast(ctx, msgClaimMorseApplication)
+	_, eitherErr := txClient.SignAndBroadcast(ctx, msgClaimMorseApplication)
 	err, errCh := eitherErr.SyncOrAsyncError()
 	if err != nil {
 		return err

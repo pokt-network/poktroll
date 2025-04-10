@@ -6,6 +6,8 @@ import (
 	"time"
 
 	"cosmossdk.io/depinject"
+	"cosmossdk.io/math"
+	"github.com/cosmos/cosmos-sdk/client/flags"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
@@ -18,7 +20,7 @@ import (
 	"github.com/pokt-network/poktroll/testutil/testclient/testeventsquery"
 )
 
-type signAndBroadcastFn func(context.Context, int64, cosmostypes.Msg) either.AsyncError
+type signAndBroadcastFn func(context.Context, int64, cosmostypes.Msg) (*cosmostypes.TxResponse, either.AsyncError)
 
 // TODO_CONSIDERATION: functions like these (NewLocalnetXXX) could probably accept
 // and return depinject.Config arguments to support shared dependencies.
@@ -82,7 +84,11 @@ func NewOneTimeSignAndBroadcastTxClient(
 // newSignAndBroadcastSucceedsDelayed returns a signAndBroadcastFn that succeeds
 // after the given delay.
 func newSignAndBroadcastSucceedsDelayed(delay time.Duration) signAndBroadcastFn {
-	return func(ctx context.Context, timeoutHeight int64, msg cosmostypes.Msg) either.AsyncError {
+	return func(
+		ctx context.Context,
+		timeoutHeight int64,
+		msg cosmostypes.Msg,
+	) (*cosmostypes.TxResponse, either.AsyncError) {
 		errCh := make(chan error)
 
 		go func() {
@@ -90,6 +96,20 @@ func newSignAndBroadcastSucceedsDelayed(delay time.Duration) signAndBroadcastFn 
 			close(errCh)
 		}()
 
-		return either.AsyncErr(errCh)
+		return &cosmostypes.TxResponse{}, either.AsyncErr(errCh)
 	}
+}
+
+// WithDefaultTxClientOptions returns a slice of TxClientOptions with default values
+func WithDefaultTxClientOptions(t *testing.T, testSigningKeyName string) []client.TxClientOption {
+	gasPrices := cosmostypes.NewDecCoins(cosmostypes.NewDecCoin("upokt", math.NewInt(1)))
+	gasSetting, err := flags.ParseGasSetting("auto")
+	require.NoError(t, err)
+	txClientOptions := make([]client.TxClientOption, 0)
+
+	txClientOptions = append(txClientOptions, tx.WithSigningKeyName(testSigningKeyName))
+	txClientOptions = append(txClientOptions, tx.WithGasPrices(&gasPrices))
+	txClientOptions = append(txClientOptions, tx.WithGasSetting(&gasSetting))
+
+	return txClientOptions
 }
