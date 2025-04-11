@@ -20,14 +20,23 @@ const (
 	// The default PNF/DAO address in the genesis file for Beta TestNet. Used to create new authz authorizations.
 	BetaTestNetPnfAddress = "pokt1f0c9y7mahf2ya8tymy8g4rr75ezh3pkklu4c3e"
 
-	MainNetPnfAddress = "pokt18808wvw0h4t450t06uvauny8lvscsxjfyua7vh"
+	// The PNF/DAO address in the genesis file for MainNet.
+	// Will be used to create new authz authorizations in the future.
+	MainNetPnfAddress = "pokt1hv3xrylxvwd7hfv03j50ql0ttp3s5hqqelegmv"
+
+	// The Grove address in the genesis file for MainNet.
+	// This is the current address that is used to create new authz authorizations for the time being.
+	MainnetGroveAddress = "pokt18808wvw0h4t450t06uvauny8lvscsxjfyua7vh"
 )
 
-// NetworkPNFAddress is a map of network names (i.e chain-id) to their respective PNF addresses.
-var NetworkPNFAddress = map[string]string{
+// NetworkAuthzGranteeAddress is a map of network names (i.e chain-id) to their respective PNF addresses.
+var NetworkAuthzGranteeAddress = map[string]string{
 	"pocket-alpha": AlphaTestNetPnfAddress,
 	"pocket-beta":  BetaTestNetPnfAddress,
-	"pocket":       MainNetPnfAddress,
+	// Currently grove address is the one being authorized to update mainnet parameters.
+	// TODO_POST_MAINNET: This needs to be updated to the PNF address once it becomes the
+	// entity that will be updating parameters on mainnet.
+	"pocket": MainnetGroveAddress,
 }
 
 // Upgrade represents a protocol upgrade in code.

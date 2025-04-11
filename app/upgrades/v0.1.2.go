@@ -75,8 +75,8 @@ var Upgrade_0_1_2 = Upgrade{
 			}
 			authorityAddress := response.GetAddress()
 
-			// Get the PNF address for the current network..
-			pnfAddress := NetworkPNFAddress[cosmosTypes.UnwrapSDKContext(ctx).ChainID()]
+			// Get the grantee address for the current network.
+			pnfAddress := NetworkAuthzGranteeAddress[cosmosTypes.UnwrapSDKContext(ctx).ChainID()]
 
 			for _, msg := range grantAuthorizationMessages {
 				err = keepers.AuthzKeeper.SaveGrant(
