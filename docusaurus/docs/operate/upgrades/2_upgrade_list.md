@@ -1,6 +1,6 @@
 ---
 title: List of Protocol Upgrades
-sidebar_position: 1
+sidebar_position: 2
 ---
 
 ## List of Protocol Upgrades <!-- omit in toc -->

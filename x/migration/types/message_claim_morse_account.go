@@ -14,10 +14,12 @@ func NewMsgClaimMorseAccount(
 	shannonDestAddress string,
 	morseSrcAddress string,
 	morsePrivateKey cometcrypto.PrivKey,
+	shannonSigningAddr string,
 ) (*MsgClaimMorseAccount, error) {
 	msg := &MsgClaimMorseAccount{
-		ShannonDestAddress: shannonDestAddress,
-		MorseSrcAddress:    morseSrcAddress,
+		ShannonDestAddress:    shannonDestAddress,
+		MorseSrcAddress:       morseSrcAddress,
+		ShannonSigningAddress: shannonSigningAddr,
 	}
 
 	if morsePrivateKey != nil {
