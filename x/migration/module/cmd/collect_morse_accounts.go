@@ -1,15 +1,18 @@
 package cmd
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 
 	cosmosmath "cosmossdk.io/math"
 	cmtjson "github.com/cometbft/cometbft/libs/json"
+	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/spf13/cobra"
 
 	"github.com/pokt-network/poktroll/app/volatile"
 	"github.com/pokt-network/poktroll/cmd/logger"
+	"github.com/pokt-network/poktroll/cmd/signals"
 	migrationtypes "github.com/pokt-network/poktroll/x/migration/types"
 )
 
@@ -47,6 +50,7 @@ Generate required input via Morse CLI like so:
 	pocket util export-genesis-for-reset [height] [new-chain-id] > morse-state-export.json`,
 		RunE:    runCollectMorseAccounts,
 		PreRunE: logger.PreRunESetup,
+		PostRun: signals.ExitWithCodeIfNonZero,
 	}
 
 	collectMorseAcctsCmd.Flags().IntVar(
@@ -158,14 +162,18 @@ func transformMorseState(
 // adds the balances to the corresponding account balances in the morseWorkspace.
 func collectInputAccountBalances(inputState *migrationtypes.MorseStateExport, morseWorkspace *morseImportWorkspace) error {
 	for exportAccountIdx, exportAccount := range inputState.AppState.Auth.Accounts {
+		exportAccountValueJSONBz, err := json.MarshalIndent(exportAccount.Value, "", "  ")
+		if err != nil {
+			return fmt.Errorf("failed to marshal export account: %w", err)
+		}
+
 		// DEV_NOTE: Ignore module accounts.
 		// TODO_MAINNET_MIGRATION(@olshansky): Revisit this business logic to ensure that no tokens go missing from Morse to Shannon.
 		// See: https://github.com/pokt-network/poktroll/issues/1066 regarding supply validation.
 		if exportAccount.Type != "posmint/Account" {
 			logger.Logger.Warn().
 				Str("type", exportAccount.Type).
-				Str("address", exportAccount.Value.Address.String()).
-				Str("coins", fmt.Sprintf("%s", exportAccount.Value.Coins)).
+				Str("account_json", string(exportAccountValueJSONBz)).
 				Msg("ignoring non-EOA account")
 			continue
 		}
@@ -231,25 +239,58 @@ func collectInputApplicationStakes(inputState *migrationtypes.MorseStateExport, 
 	for exportApplicationIdx, exportApplication := range inputState.AppState.Application.Applications {
 		appAddr := exportApplication.Address.String()
 
-		// DEV_NOTE: An account SHOULD exist for each actor.
+		// TODO_MAINNET_MIGRATION(@bryanchriswhite, @olshansk): There are applications
+		// present in snapshot data that stakes but no "auth" accounts. Determine:
+		// 1. Whether this case is expected or not.
+		// 2. What to do about it, if anything.
 		if !morseWorkspace.hasAccount(appAddr) {
-			return ErrMorseExportState.Wrapf("account not found corresponding to application with address %q", appAddr)
+			logger.Logger.Warn().
+				Str("app_address", appAddr).
+				Msg("no account found for application")
+
+			// DEV_NOTE: If no auth account was found for this application, create a new one.
+			newMorseAppAuthAccount := &migrationtypes.MorseAuthAccount{
+				Type: "posmint/Account",
+				Value: &migrationtypes.MorseAccount{
+					Address: exportApplication.Address,
+					Coins:   []cosmostypes.Coin{},
+				},
+			}
+			if _, _, err := morseWorkspace.addAccount(appAddr, newMorseAppAuthAccount); err != nil {
+				return fmt.Errorf(
+					"adding application account to account balance of address %q: %w",
+					appAddr, err,
+				)
+			}
 		}
 
-		appStakeAmtUpokt, ok := cosmosmath.NewIntFromString(exportApplication.StakedTokens)
-		if !ok {
-			return ErrMorseExportState.Wrapf("failed to parse application stake amount %q", exportApplication.StakedTokens)
-		}
+		if exportApplication.StakedTokens != "" {
+			appStakeAmtUpokt, ok := cosmosmath.NewIntFromString(exportApplication.StakedTokens)
+			if !ok {
+				return ErrMorseExportState.Wrapf("failed to parse application stake amount %q", exportApplication.StakedTokens)
+			}
 
-		if err := morseWorkspace.addAppStake(appAddr, appStakeAmtUpokt); err != nil {
-			return fmt.Errorf(
-				"adding application stake amount to account balance of address %q: %w",
-				appAddr, err,
-			)
-		}
+			if err := morseWorkspace.addAppStake(appAddr, appStakeAmtUpokt); err != nil {
+				return fmt.Errorf(
+					"adding application stake amount to account balance of address %q: %w",
+					appAddr, err,
+				)
+			}
 
-		morseWorkspace.accumulatedTotalAppStake = morseWorkspace.accumulatedTotalAppStake.Add(appStakeAmtUpokt)
-		morseWorkspace.numApplications++
+			morseWorkspace.accumulatedTotalAppStake = morseWorkspace.accumulatedTotalAppStake.Add(appStakeAmtUpokt)
+			morseWorkspace.numApplications++
+		} else {
+			exportApplicationJSONBz, err := json.MarshalIndent(exportApplication, "", "  ")
+			if err != nil {
+				return fmt.Errorf("failed to marshal export supplier: %w", err)
+			}
+
+			// CRITICAL: This SHOULD NEVER happen; is indicative of an issue with data deserialization!
+			signals.ExitCode += 1
+			logger.Logger.Error().
+				Str("app_address", appAddr).
+				Msgf("account staked as a application but has no stake: %s", string(exportApplicationJSONBz))
+		}
 
 		if shouldDebugLogProgress(exportApplicationIdx) {
 			logger.Logger.Debug().
@@ -270,25 +311,61 @@ func collectInputSupplierStakes(inputState *migrationtypes.MorseStateExport, mor
 	for exportSupplierIdx, exportSupplier := range inputState.AppState.Pos.Validators {
 		supplierAddr := exportSupplier.Address.String()
 
-		// DEV_NOTE: An account SHOULD exist for each actor.
+		// TODO_MAINNET_MIGRATION(@bryanchriswhite, @olshansk): There are suppliers
+		// present in snapshot data that stakes but no "auth" accounts. Determine:
+		// 1. Whether this case is expected or not.
+		// 2. What to do about it, if anything.
+		//
+		// HYPOTHESIS: One potential explanation for this could be non-custodial
+		// supplier stakes, depending on how Morse implemented this feature.
 		if !morseWorkspace.hasAccount(supplierAddr) {
-			return ErrMorseExportState.Wrapf("account not found corresponding to supplier with address %q", supplierAddr)
+			logger.Logger.Warn().
+				Str("supplier_address", supplierAddr).
+				Msg("no account found for supplier")
+
+			// DEV_NOTE: If no auth account was found for this supplier, create a new one.
+			newSupplierAccount := &migrationtypes.MorseAuthAccount{
+				Type: "posmint/Account",
+				Value: &migrationtypes.MorseAccount{
+					Address: exportSupplier.Address,
+					Coins:   []cosmostypes.Coin{},
+				},
+			}
+			if _, _, err := morseWorkspace.addAccount(supplierAddr, newSupplierAccount); err != nil {
+				return fmt.Errorf(
+					"adding supplier account to account balance of address %q: %w",
+					supplierAddr, err,
+				)
+			}
 		}
 
-		supplierStakeAmtUpokt, ok := cosmosmath.NewIntFromString(exportSupplier.StakedTokens)
-		if !ok {
-			return ErrMorseExportState.Wrapf("failed to parse supplier stake amount %q", exportSupplier.StakedTokens)
-		}
+		if exportSupplier.StakedTokens != "" {
+			supplierStakeAmtUpokt, ok := cosmosmath.NewIntFromString(exportSupplier.StakedTokens)
+			if !ok {
+				return ErrMorseExportState.Wrapf("failed to parse supplier stake amount %q", exportSupplier.StakedTokens)
+			}
 
-		if err := morseWorkspace.addSupplierStake(supplierAddr, supplierStakeAmtUpokt); err != nil {
-			return fmt.Errorf(
-				"adding supplier stake amount to account balance of address %q: %w",
-				supplierAddr, err,
-			)
-		}
+			if err := morseWorkspace.addSupplierStake(supplierAddr, supplierStakeAmtUpokt); err != nil {
+				return fmt.Errorf(
+					"adding supplier stake amount to account balance of address %q: %w",
+					supplierAddr, err,
+				)
+			}
 
-		morseWorkspace.accumulatedTotalSupplierStake = morseWorkspace.accumulatedTotalSupplierStake.Add(supplierStakeAmtUpokt)
-		morseWorkspace.numSuppliers++
+			morseWorkspace.accumulatedTotalSupplierStake = morseWorkspace.accumulatedTotalSupplierStake.Add(supplierStakeAmtUpokt)
+			morseWorkspace.numSuppliers++
+		} else {
+			exportSupplierJSONBz, err := json.MarshalIndent(exportSupplier, "", "  ")
+			if err != nil {
+				return fmt.Errorf("failed to marshal export supplier: %w", err)
+			}
+
+			// CRITICAL: This SHOULD NEVER happen; is indicative of an issue with data deserialization!
+			signals.ExitCode += 1
+			logger.Logger.Error().
+				Str("supplier_address", supplierAddr).
+				Msgf("account staked as a supplier but has no stake: %s", string(exportSupplierJSONBz))
+		}
 
 		if shouldDebugLogProgress(exportSupplierIdx) {
 			logger.Logger.Debug().

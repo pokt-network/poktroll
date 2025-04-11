@@ -27,15 +27,15 @@ This is a critical distinction that can impact all onchain parameters.
 When submitting changes using `MsgUpdateParams` (note the **s**), you must specify
 all parameters in the module even if just modifying one.
 
-|                | MsgUpdateParams    | MsgUpdateParam     |
-| -------------- | ------------------ | ------------------ |
-| **Cosmos SDK** | ✅ (All params)    | ❌ (Not available) |
-| **Pocket**   | ✅ (All params) | ✅ (Single param)  |
+|                | MsgUpdateParams | MsgUpdateParam     |
+| -------------- | --------------- | ------------------ |
+| **Cosmos SDK** | ✅ (All params) | ❌ (Not available) |
+| **Pocket**     | ✅ (All params) | ✅ (Single param)  |
 
 **Summary of Key Differences:**
 
 - Cosmos SDK uses `MsgUpdateParams` (with **s**) which requires specifying **all** parameters in the module, even when modifying just one
-- Poktroll implemented `MsgUpdateParam` (no **s**) allowing updates to **one** parameter at a time
+- This repo implemented `MsgUpdateParam` (no **s**) allowing updates to **one** parameter at a time
 - More details on the Cosmos SDK `MsgUpdateParams` can be found [here](https://hub.cosmos.network/main/governance/proposal-types/param-change).
 - More details on poktroll's `MsgUpdateParam` can be found [here](https://github.com/search?q=repo%3Apokt-network%2Fpoktroll+%22message+MsgUpdateParam+%7B%22&type=code).
 

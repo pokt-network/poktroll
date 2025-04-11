@@ -79,7 +79,6 @@ func (s *MigrationModuleSuite) ClaimMorseAccount(
 
 	morseClaimMsg, err := migrationtypes.NewMsgClaimMorseAccount(
 		shannonDestAddr,
-		expectedMorseSrcAddr,
 		morsePrivateKey,
 		signerAddr,
 	)
@@ -169,7 +168,6 @@ func (s *MigrationModuleSuite) ClaimMorseApplication(
 
 	morseClaimMsg, err := migrationtypes.NewMsgClaimMorseApplication(
 		shannonDestAddr,
-		expectedMorseSrcAddr,
 		morsePrivateKey,
 		serviceConfig,
 		signingAddr,
@@ -208,7 +206,6 @@ func (s *MigrationModuleSuite) ClaimMorseSupplier(
 	morseClaimMsg, err := migrationtypes.NewMsgClaimMorseSupplier(
 		shannonDestAddr,
 		shannonDestAddr,
-		expectedMorseSrcAddr,
 		morsePrivateKey,
 		services,
 		signingAddr,

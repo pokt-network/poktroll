@@ -228,7 +228,11 @@ func (s *suite) TheUserHasThePocketdBinaryInstalled() {
 }
 
 func (s *suite) ThePocketdBinaryShouldExitWithoutError() {
-	require.NoError(s, s.pocketd.result.Err)
+	require.NoErrorf(s, s.pocketd.result.Err, fmt.Sprintf(
+		"error: %s\nstderr: %s",
+		s.pocketd.result.Err,
+		s.pocketd.result.Stderr,
+	))
 }
 
 func (s *suite) TheUserRunsTheCommand(cmd string) {

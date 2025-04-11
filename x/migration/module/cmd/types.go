@@ -127,7 +127,6 @@ func (miw *morseImportWorkspace) addAccount(
 	accountIdx = miw.nextIdx()
 	importAccount := &migrationtypes.MorseClaimableAccount{
 		MorseSrcAddress:  exportAccount.Value.Address.String(),
-		PublicKey:        exportAccount.Value.PubKey.Value,
 		UnstakedBalance:  cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 0),
 		SupplierStake:    cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 0),
 		ApplicationStake: cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 0),

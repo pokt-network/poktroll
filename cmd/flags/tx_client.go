@@ -16,8 +16,12 @@ import (
 	"github.com/pokt-network/poktroll/pkg/deps/config"
 )
 
-// GetTxClient constructs a new TxClient instance using the provided command flags.
-func GetTxClient(ctx context.Context, cmd *cobra.Command) (client.TxClient, error) {
+// GetTxClientFromFlags constructs a new TxClient instance using the provided command flags.
+func GetTxClientFromFlags(
+	ctx context.Context,
+	cmd *cobra.Command,
+	txClientOpts ...client.TxClientOption,
+) (client.TxClient, error) {
 	// Retrieve the query node RPC URL
 	queryNodeRPCUrlString, err := cmd.Flags().GetString(cosmosflags.FlagNode)
 	if err != nil {
@@ -63,6 +67,26 @@ func GetTxClient(ctx context.Context, cmd *cobra.Command) (client.TxClient, erro
 	}
 	deps = depinject.Configs(deps, depinject.Supply(txCtx))
 
+	// Prepare default tx client options.
+	gasSettingStr, err := cmd.Flags().GetString(cosmosflags.FlagGas)
+	if err != nil {
+		return nil, err
+	}
+
+	gasAndFeesOptions, err := config.GetTxClientGasAndFeesOptionsFromFlags(cmd, gasSettingStr)
+	if err != nil {
+		return nil, err
+	}
+
+	flagProvidedOpts := append(
+		gasAndFeesOptions,
+		tx.WithSigningKeyName(clientCtx.FromName),
+	)
+
+	// Prepend the default options such that are provided but can
+	// be overridden with a subsequent options of the same kind.
+	txClientOpts = append(flagProvidedOpts, txClientOpts...)
+
 	// Return a new TxClient instance
-	return tx.NewTxClient(ctx, deps, tx.WithSigningKeyName(clientCtx.FromName))
+	return tx.NewTxClient(ctx, deps, txClientOpts...)
 }

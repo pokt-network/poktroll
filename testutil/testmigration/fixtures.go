@@ -293,7 +293,6 @@ func GenMorseClaimableAccount(
 
 	return &migrationtypes.MorseClaimableAccount{
 		MorseSrcAddress:  pubKey.Address().String(),
-		PublicKey:        pubKey.Bytes(),
 		UnstakedBalance:  cosmostypes.NewInt64Coin(volatile.DenomuPOKT, unstakedBalanceAmount),
 		SupplierStake:    cosmostypes.NewInt64Coin(volatile.DenomuPOKT, supplierStakeAmount),
 		ApplicationStake: cosmostypes.NewInt64Coin(volatile.DenomuPOKT, appStakeAmount),
