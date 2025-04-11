@@ -67,7 +67,7 @@ For more information, see: https://dev.poktroll.com/operate/morse_migration/clai
 func runClaimAccount(cmd *cobra.Command, args []string) error {
 	ctx := cmd.Context()
 	morseKeyExportPath := args[0]
-	morsePrivKey, err := loadMorsePrivateKey(morseKeyExportPath, morseKeyfileDecryptPassphrase)
+	morsePrivKey, err := LoadMorsePrivateKey(morseKeyExportPath, morseKeyfileDecryptPassphrase, noPassphrase)
 	if err != nil {
 		return err
 	}
