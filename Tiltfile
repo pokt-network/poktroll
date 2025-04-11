@@ -72,6 +72,7 @@ localnet_config_defaults = {
 
     # By default, we use the `helm_repo` function below to point to the remote repository
     # but can update it to the locally cloned repo for testing & development
+    # TODO_MAINNET_MIGRATION(@olshansky): Revert this to `False` when `PATH` helm charts are finalized.
     "grove_helm_chart_local_repo": {
         "enabled": True,
         "path": os.path.join("..", "grove-helm-charts")
