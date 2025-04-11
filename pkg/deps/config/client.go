@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/types"
@@ -27,7 +28,13 @@ func GetTxClientGasAndFeesOptions(cmd *cobra.Command) ([]client.TxClientOption, 
 	// Retrieve the explicitly specified fee amount from the command flags.
 	feesStr, err := cmd.Flags().GetString(flags.FlagFees)
 	if err != nil {
-		return nil, err
+		if !strings.Contains(err.Error(), "flag accessed but not defined") {
+			return nil, err
+		}
+
+		// This error indicates that the fees flag not registered and can be safely ignored.
+		// Explicitly setting feesStr to an empty string to guarantee correct conditional branching.
+		feesStr = ""
 	}
 
 	// If a fee is specified, it overrides all gas settings and returns immediately.

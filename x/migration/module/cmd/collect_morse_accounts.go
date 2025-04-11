@@ -238,14 +238,14 @@ func collectInputApplicationStakes(inputState *migrationtypes.MorseStateExport, 
 				Msg("no account found for application")
 
 			// DEV_NOTE: If no auth account was found for this application, create a new one.
-			newAppAccount := &migrationtypes.MorseAuthAccount{
+			newMorseAppAuthAccount := &migrationtypes.MorseAuthAccount{
 				Type: "posmint/Account",
 				Value: &migrationtypes.MorseAccount{
 					Address: exportApplication.Address,
 					Coins:   []cosmostypes.Coin{},
 				},
 			}
-			if _, _, err := morseWorkspace.addAccount(appAddr, newAppAccount); err != nil {
+			if _, _, err := morseWorkspace.addAccount(appAddr, newMorseAppAuthAccount); err != nil {
 				return fmt.Errorf(
 					"adding application account to account balance of address %q: %w",
 					appAddr, err,
@@ -268,6 +268,10 @@ func collectInputApplicationStakes(inputState *migrationtypes.MorseStateExport, 
 
 			morseWorkspace.accumulatedTotalAppStake = morseWorkspace.accumulatedTotalAppStake.Add(appStakeAmtUpokt)
 			morseWorkspace.numApplications++
+		} else {
+			logger.Logger.Warn().
+				Str("app_address", appAddr).
+				Msg("account stakes as BOTH an application AND a supplier; this account will be unclaimable")
 		}
 
 		if shouldDebugLogProgress(exportApplicationIdx) {
@@ -310,20 +314,26 @@ func collectInputSupplierStakes(inputState *migrationtypes.MorseStateExport, mor
 			}
 		}
 
-		supplierStakeAmtUpokt, ok := cosmosmath.NewIntFromString(exportSupplier.StakedTokens)
-		if !ok {
-			return ErrMorseExportState.Wrapf("failed to parse supplier stake amount %q", exportSupplier.StakedTokens)
-		}
+		if exportSupplier.StakedTokens != "" {
+			supplierStakeAmtUpokt, ok := cosmosmath.NewIntFromString(exportSupplier.StakedTokens)
+			if !ok {
+				return ErrMorseExportState.Wrapf("failed to parse supplier stake amount %q", exportSupplier.StakedTokens)
+			}
 
-		if err := morseWorkspace.addSupplierStake(supplierAddr, supplierStakeAmtUpokt); err != nil {
-			return fmt.Errorf(
-				"adding supplier stake amount to account balance of address %q: %w",
-				supplierAddr, err,
-			)
-		}
+			if err := morseWorkspace.addSupplierStake(supplierAddr, supplierStakeAmtUpokt); err != nil {
+				return fmt.Errorf(
+					"adding supplier stake amount to account balance of address %q: %w",
+					supplierAddr, err,
+				)
+			}
 
-		morseWorkspace.accumulatedTotalSupplierStake = morseWorkspace.accumulatedTotalSupplierStake.Add(supplierStakeAmtUpokt)
-		morseWorkspace.numSuppliers++
+			morseWorkspace.accumulatedTotalSupplierStake = morseWorkspace.accumulatedTotalSupplierStake.Add(supplierStakeAmtUpokt)
+			morseWorkspace.numSuppliers++
+		} else {
+			logger.Logger.Warn().
+				Str("supplier_address", supplierAddr).
+				Msg("account stakes as BOTH an application AND a supplier; this account will be unclaimable")
+		}
 
 		if shouldDebugLogProgress(exportSupplierIdx) {
 			logger.Logger.Debug().

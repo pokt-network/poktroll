@@ -72,14 +72,15 @@ func GetTxClient(
 	if err != nil {
 		return nil, err
 	}
-	defaultTxClientOpts := append(
+
+	flagProvidedOpts := append(
 		gasAndFeesOptions,
 		tx.WithSigningKeyName(clientCtx.FromName),
 	)
 
 	// Prepend the default options such that are provided but can
 	// be overridden with a subsequent options of the same kind.
-	txClientOpts = append(defaultTxClientOpts, txClientOpts...)
+	txClientOpts = append(flagProvidedOpts, txClientOpts...)
 
 	// Return a new TxClient instance
 	return tx.NewTxClient(ctx, deps, txClientOpts...)

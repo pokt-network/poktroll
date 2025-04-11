@@ -109,7 +109,7 @@ func runImportMorseAccounts(cmd *cobra.Command, args []string) error {
 	)
 
 	// Initialize the tx client.
-	txClient, err := flags.GetTxClient(ctx, cmd)
+	txClient, err := flags.GetTxClientFromFlags(ctx, cmd)
 	if err != nil {
 		return err
 	}
