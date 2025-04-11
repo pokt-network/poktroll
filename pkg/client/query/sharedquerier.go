@@ -37,7 +37,10 @@ type sharedQuerier struct {
 //
 // Required dependencies:
 // - clientCtx (grpc.ClientConn)
+// - polylog.Logger
 // - client.BlockQueryClient
+// - cache.KeyValueCache[BlockHash]
+// - client.ParamsCache[sharedtypes.Params]
 func NewSharedQuerier(deps depinject.Config) (client.SharedQueryClient, error) {
 	querier := &sharedQuerier{}
 
@@ -58,15 +61,14 @@ func NewSharedQuerier(deps depinject.Config) (client.SharedQueryClient, error) {
 }
 
 // GetParams queries & returns the shared module onchain parameters.
-//
-// TODO_TECHDEBT(#543): We don't really want to have to query the params for every method call.
-// Once `ModuleParamsClient` is implemented, use its replay observable's `#Last()` method
-// to get the most recently (asynchronously) observed (and cached) value.
 func (sq *sharedQuerier) GetParams(ctx context.Context) (*sharedtypes.Params, error) {
 	logger := sq.logger.With("query_client", "shared", "method", "GetParams")
 
+	// TODO_IN_THIS_PR: Ensure that the latest cached version of the shared module
+	// parameters is indeed the latest one, by subscribing to params update events.
+
 	// Get the params from the cache if they exist.
-	if params, found := sq.paramsCache.Get(); found {
+	if params, found := sq.paramsCache.GetLatest(); found {
 		logger.Debug().Msg("cache hit for shared params")
 		return &params, nil
 	}
@@ -82,82 +84,82 @@ func (sq *sharedQuerier) GetParams(ctx context.Context) (*sharedtypes.Params, er
 	}
 
 	// Update the cache with the newly retrieved params.
-	sq.paramsCache.Set(res.Params)
+	sq.paramsCache.SetAtHeight(res.Params, int64(res.EffectiveBlockHeight))
+	return &res.Params, nil
+}
+
+// GetParamsAtHeight queries & returns the shared module onchain parameters
+// that were in effect at the given block height.
+func (sq *sharedQuerier) GetParamsAtHeight(ctx context.Context, height int64) (*sharedtypes.Params, error) {
+	logger := sq.logger.With("query_client", "shared", "method", "GetParamsAtHeight")
+
+	// Get the params from the cache if they exist.
+	if params, found := sq.paramsCache.GetAtHeight(height); found {
+		logger.Debug().Msgf("cache hit for shared params at height: %d", height)
+		return &params, nil
+	}
+
+	logger.Debug().Msgf("cache miss for shared params at height: %d", height)
+
+	req := &sharedtypes.QueryParamsAtHeightRequest{AtHeight: uint64(height)}
+	res, err := sq.sharedQuerier.ParamsAtHeight(ctx, req)
+	if err != nil {
+		return nil, ErrQuerySessionParams.Wrapf("[%v]", err)
+	}
+
+	// Update the cache with the newly retrieved params.
+	sq.paramsCache.SetAtHeight(res.Params, int64(res.EffectiveBlockHeight))
 	return &res.Params, nil
 }
 
 // GetClaimWindowOpenHeight returns the block height at which the claim window of
 // the session that includes queryHeight opens.
-//
-// TODO_MAINNET_MIGRATION(@red-0ne, #543): We don't really want to have to query the params for every method call.
-// Once `ModuleParamsClient` is implemented, use its replay observable's `#Last()` method
-// to get the most recently (asynchronously) observed (and cached) value.
-// TODO_MAINNET(@bryanchriswhite,#543): We also don't really want to use the current value of the params. Instead,
-// we should be using the value that the params had for the session which includes queryHeight.
 func (sq *sharedQuerier) GetClaimWindowOpenHeight(ctx context.Context, queryHeight int64) (int64, error) {
-	sharedParams, err := sq.GetParams(ctx)
+	sharedParamsUpdates, err := sq.GetParamsUpdates(ctx)
 	if err != nil {
 		return 0, err
 	}
-	return sharedtypes.GetClaimWindowOpenHeight(sharedParams, queryHeight), nil
+	return sharedtypes.GetClaimWindowOpenHeight(sharedParamsUpdates, queryHeight), nil
 }
 
 // GetProofWindowOpenHeight returns the block height at which the proof window of
 // the session that includes queryHeight opens.
-//
-// TODO_MAINNET_MIGRATION(@red-0ne, #543): We don't really want to have to query the params for every method call.
-// Once `ModuleParamsClient` is implemented, use its replay observable's `#Last()` method
-// to get the most recently (asynchronously) observed (and cached) value.
-// TODO_MAINNET(@bryanchriswhite,#543): We also don't really want to use the current value of the params. Instead,
-// we should be using the value that the params had for the session which includes queryHeight.
 func (sq *sharedQuerier) GetProofWindowOpenHeight(ctx context.Context, queryHeight int64) (int64, error) {
-	sharedParams, err := sq.GetParams(ctx)
+	sharedParamsUpdates, err := sq.GetParamsUpdates(ctx)
 	if err != nil {
 		return 0, err
 	}
-	return sharedtypes.GetProofWindowOpenHeight(sharedParams, queryHeight), nil
+	return sharedtypes.GetProofWindowOpenHeight(sharedParamsUpdates, queryHeight), nil
 }
 
 // GetSessionGracePeriodEndHeight returns the block height at which the grace period
 // for the session which includes queryHeight elapses.
 // The grace period is the number of blocks after the session ends during which relays
 // SHOULD be included in the session which most recently ended.
-//
-// TODO_MAINNET_MIGRATION(@red-0ne, #543): We don't really want to have to query the params for every method call.
-// Once `ModuleParamsClient` is implemented, use its replay observable's `#Last()` method
-// to get the most recently (asynchronously) observed (and cached) value.
-// TODO_MAINNET_MIGRATION(@red-0ne, #543): We also don't really want to use the current value of the params.
-// Instead, we should be using the value that the params had for the session which includes queryHeight.
 func (sq *sharedQuerier) GetSessionGracePeriodEndHeight(
 	ctx context.Context,
 	queryHeight int64,
 ) (int64, error) {
-	sharedParams, err := sq.GetParams(ctx)
+	sharedParamsUpdates, err := sq.GetParamsUpdates(ctx)
 	if err != nil {
 		return 0, err
 	}
-	return sharedtypes.GetSessionGracePeriodEndHeight(sharedParams, queryHeight), nil
+	return sharedtypes.GetSessionGracePeriodEndHeight(sharedParamsUpdates, queryHeight), nil
 }
 
 // GetEarliestSupplierClaimCommitHeight returns the earliest block height at which a claim
 // for the session that includes queryHeight can be committed for a given supplier.
-//
-// TODO_MAINNET_MIGRATION(@red-0ne, #543): We don't really want to have to query the params for every method call.
-// Once `ModuleParamsClient` is implemented, use its replay observable's `#Last()` method
-// to get the most recently (asynchronously) observed (and cached) value.
-// TODO_MAINNET_MIGRATION(@red-0ne, #543): We also don't really want to use the current value of the params.
-// Instead, we should be using the value that the params had for the session which includes queryHeight.
 func (sq *sharedQuerier) GetEarliestSupplierClaimCommitHeight(ctx context.Context, queryHeight int64, supplierOperatorAddr string) (int64, error) {
 	logger := sq.logger.With("query_client", "shared", "method", "GetEarliestSupplierClaimCommitHeight")
 
-	sharedParams, err := sq.GetParams(ctx)
+	sharedParamsUpdates, err := sq.GetParamsUpdates(ctx)
 	if err != nil {
 		return 0, err
 	}
 
 	// Fetch the block at the proof window open height. Its hash is used as part
 	// of the seed to the pseudo-random number generator.
-	claimWindowOpenHeight := sharedtypes.GetClaimWindowOpenHeight(sharedParams, queryHeight)
+	claimWindowOpenHeight := sharedtypes.GetClaimWindowOpenHeight(sharedParamsUpdates, queryHeight)
 
 	// Check if the block hash is already in the cache.
 	blockHashCacheKey := getBlockHashCacheKey(claimWindowOpenHeight)
@@ -181,7 +183,7 @@ func (sq *sharedQuerier) GetEarliestSupplierClaimCommitHeight(ctx context.Contex
 	}
 
 	return sharedtypes.GetEarliestSupplierClaimCommitHeight(
-		sharedParams,
+		sharedParamsUpdates,
 		queryHeight,
 		claimWindowOpenBlockHash,
 		supplierOperatorAddr,
@@ -190,23 +192,17 @@ func (sq *sharedQuerier) GetEarliestSupplierClaimCommitHeight(ctx context.Contex
 
 // GetEarliestSupplierProofCommitHeight returns the earliest block height at which a proof
 // for the session that includes queryHeight can be committed for a given supplier.
-//
-// TODO_MAINNET_MIGRATION(@red-0ne, #543): We don't really want to have to query the params for every method call.
-// Once `ModuleParamsClient` is implemented, use its replay observable's `#Last()` method
-// to get the most recently (asynchronously) observed (and cached) value.
-// TODO_MAINNET(@red-0ne, #543): We also don't really want to use the current value of the params.
-// Instead, we should be using the value that the params had for the session which includes queryHeight.
 func (sq *sharedQuerier) GetEarliestSupplierProofCommitHeight(ctx context.Context, queryHeight int64, supplierOperatorAddr string) (int64, error) {
 	logger := sq.logger.With("query_client", "shared", "method", "GetEarliestSupplierProofCommitHeight")
 
-	sharedParams, err := sq.GetParams(ctx)
+	sharedParamsUpdates, err := sq.GetParamsUpdates(ctx)
 	if err != nil {
 		return 0, err
 	}
 
 	// Fetch the block at the proof window open height. Its hash is used as part
 	// of the seed to the pseudo-random number generator.
-	proofWindowOpenHeight := sharedtypes.GetProofWindowOpenHeight(sharedParams, queryHeight)
+	proofWindowOpenHeight := sharedtypes.GetProofWindowOpenHeight(sharedParamsUpdates, queryHeight)
 
 	blockHashCacheKey := getBlockHashCacheKey(proofWindowOpenHeight)
 	proofWindowOpenBlockHash, found := sq.blockHashCache.Get(blockHashCacheKey)
@@ -229,7 +225,7 @@ func (sq *sharedQuerier) GetEarliestSupplierProofCommitHeight(ctx context.Contex
 	}
 
 	return sharedtypes.GetEarliestSupplierProofCommitHeight(
-		sharedParams,
+		sharedParamsUpdates,
 		queryHeight,
 		proofWindowOpenBlockHash,
 		supplierOperatorAddr,
@@ -237,21 +233,64 @@ func (sq *sharedQuerier) GetEarliestSupplierProofCommitHeight(ctx context.Contex
 }
 
 // GetComputeUnitsToTokensMultiplier returns the multiplier used to convert compute units to tokens.
-//
-// TODO_MAINNET_MIGRATION(@red-0ne, #543): We don't really want to have to query the params for every method call.
-// Once `ModuleParamsClient` is implemented, use its replay observable's `#Last()` method
-// to get the most recently (asynchronously) observed (and cached) value.
-// TODO_MAINNET(@red-0ne, #543): We also don't really want to use the current value of the params.
-// Instead, we should be using the value that the params had for the session which includes queryHeight.
-func (sq *sharedQuerier) GetComputeUnitsToTokensMultiplier(ctx context.Context) (uint64, error) {
-	sharedParams, err := sq.GetParams(ctx)
+func (sq *sharedQuerier) GetComputeUnitsToTokensMultiplier(
+	ctx context.Context,
+	queryHeight int64,
+) (uint64, error) {
+	sharedParams, err := sq.GetParamsAtHeight(ctx, queryHeight)
 	if err != nil {
 		return 0, err
 	}
 	return sharedParams.GetComputeUnitsToTokensMultiplier(), nil
 }
 
+func (sq *sharedQuerier) GetParamsUpdates(ctx context.Context) ([]*sharedtypes.ParamsUpdate, error) {
+	cacheValueVersions, found := sq.paramsCache.GetAllUpdates()
+	if !found {
+		return sq.populateParamsCache(ctx)
+	}
+
+	latestVersions := cacheValueVersions.GetSortedDescVersions()
+	if latestVersions == nil {
+		return sq.populateParamsCache(ctx)
+	}
+
+	return sq.buildParamsUpdatesFromCache(cacheValueVersions), nil
+}
+
 // getBlockHashCacheKey constructs the cache key for a block hash by string formatting the block height.
 func getBlockHashCacheKey(height int64) string {
 	return strconv.FormatInt(height, 10)
+}
+
+func (sq *sharedQuerier) populateParamsCache(ctx context.Context) ([]*sharedtypes.ParamsUpdate, error) {
+	response, err := sq.sharedQuerier.ParamsUpdates(ctx, &sharedtypes.QueryParamsUpdatesRequest{})
+	if err != nil {
+		return nil, err
+	}
+
+	for _, paramsUpdate := range response.ParamsUpdates {
+		sq.paramsCache.SetAtHeight(paramsUpdate.Params, int64(paramsUpdate.EffectiveBlockHeight))
+	}
+
+	return response.ParamsUpdates, nil
+}
+
+func (sq *sharedQuerier) buildParamsUpdatesFromCache(
+	cacheValueVersions cache.CacheValueHistory[sharedtypes.Params],
+) []*sharedtypes.ParamsUpdate {
+	latestVersions := cacheValueVersions.GetSortedDescVersions()
+	versionToValueMap := cacheValueVersions.GetVersionToValueMap()
+
+	paramsUpdate := make([]*sharedtypes.ParamsUpdate, 0, len(latestVersions))
+	for i := len(latestVersions) - 1; i >= 0; i-- {
+		version := latestVersions[i]
+		cacheValue := versionToValueMap[version]
+		paramsUpdate = append(paramsUpdate, &sharedtypes.ParamsUpdate{
+			Params:               cacheValue.Value(),
+			EffectiveBlockHeight: uint64(version),
+		})
+	}
+
+	return paramsUpdate
 }

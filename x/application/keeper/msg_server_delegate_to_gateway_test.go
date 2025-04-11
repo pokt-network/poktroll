@@ -68,8 +68,13 @@ func TestMsgServer_DelegateToGateway_SuccessfullyDelegate(t *testing.T) {
 
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 	currentHeight := sdkCtx.BlockHeight()
-	sharedParams := sharedtypes.DefaultParams()
-	sessionEndHeight := sharedtypes.GetSessionEndHeight(&sharedParams, currentHeight)
+	sharedParamsUpdates := []*sharedtypes.ParamsUpdate{
+		{
+			Params:               sharedtypes.DefaultParams(),
+			EffectiveBlockHeight: 1,
+		},
+	}
+	sessionEndHeight := sharedtypes.GetSessionEndHeight(sharedParamsUpdates, currentHeight)
 	expectedEvent := &apptypes.EventRedelegation{
 		Application:      expectedApp,
 		SessionEndHeight: sessionEndHeight,
@@ -146,8 +151,13 @@ func TestMsgServer_DelegateToGateway_FailDuplicate(t *testing.T) {
 
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 	currentHeight := sdkCtx.BlockHeight()
-	sharedParams := sharedtypes.DefaultParams()
-	sessionEndHeight := sharedtypes.GetSessionEndHeight(&sharedParams, currentHeight)
+	sharedParamsUpdates := []*sharedtypes.ParamsUpdate{
+		{
+			Params:               sharedtypes.DefaultParams(),
+			EffectiveBlockHeight: 1,
+		},
+	}
+	sessionEndHeight := sharedtypes.GetSessionEndHeight(sharedParamsUpdates, currentHeight)
 	expectedApp := &apptypes.Application{
 		Address:                   stakeMsg.GetAddress(),
 		Stake:                     stakeMsg.GetStake(),
@@ -276,8 +286,13 @@ func TestMsgServer_DelegateToGateway_FailMaxReached(t *testing.T) {
 
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 	currentHeight := sdkCtx.BlockHeight()
-	sharedParams := sharedtypes.DefaultParams()
-	sessionEndHeight := sharedtypes.GetSessionEndHeight(&sharedParams, currentHeight)
+	sharedParamsUpdates := []*sharedtypes.ParamsUpdate{
+		{
+			Params:               sharedtypes.DefaultParams(),
+			EffectiveBlockHeight: 1,
+		},
+	}
+	sessionEndHeight := sharedtypes.GetSessionEndHeight(sharedParamsUpdates, currentHeight)
 
 	events := sdkCtx.EventManager().Events()
 	filteredEvents := testevents.FilterEvents[*apptypes.EventRedelegation](t, events)
@@ -336,8 +351,13 @@ func TestMsgServer_DelegateToGateway_FailGatewayInactive(t *testing.T) {
 	sdkCtx = sdkCtx.WithBlockHeight(1)
 
 	currentHeight := sdkCtx.BlockHeight()
-	sharedParams := sharedtypes.DefaultParams()
-	sessionEndHeight := sharedtypes.GetSessionEndHeight(&sharedParams, currentHeight)
+	sharedParamsUpdates := []*sharedtypes.ParamsUpdate{
+		{
+			Params:               sharedtypes.DefaultParams(),
+			EffectiveBlockHeight: 1,
+		},
+	}
+	sessionEndHeight := sharedtypes.GetSessionEndHeight(sharedParamsUpdates, currentHeight)
 
 	// Mock the gateway being staked and unbonding via the staked gateway map.
 	keepertest.AddGatewayToStakedGatewayMap(t, gatewayAddr, uint64(sessionEndHeight))
@@ -390,8 +410,13 @@ func TestMsgServer_DelegateToGateway_UnbondingButActive_Success(t *testing.T) {
 	sdkCtx = sdkCtx.WithBlockHeight(1)
 
 	currentHeight := sdkCtx.BlockHeight()
-	sharedParams := sharedtypes.DefaultParams()
-	sessionEndHeight := sharedtypes.GetSessionEndHeight(&sharedParams, currentHeight)
+	sharedParamsUpdates := []*sharedtypes.ParamsUpdate{
+		{
+			Params:               sharedtypes.DefaultParams(),
+			EffectiveBlockHeight: 1,
+		},
+	}
+	sessionEndHeight := sharedtypes.GetSessionEndHeight(sharedParamsUpdates, currentHeight)
 
 	// Mock the gateway being staked and unbonding via the staked gateway map.
 	keepertest.AddGatewayToStakedGatewayMap(t, gatewayAddr, uint64(sessionEndHeight))

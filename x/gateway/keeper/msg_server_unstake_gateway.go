@@ -68,8 +68,8 @@ func (k msgServer) UnstakeGateway(
 	gateway.UnstakeSessionEndHeight = uint64(sessionEndHeight)
 	k.SetGateway(ctx, gateway)
 
-	sharedParams := k.sharedKeeper.GetParams(ctx)
-	unbondingEndHeight := types.GetGatewayUnbondingHeight(&sharedParams, &gateway)
+	sharedParamsUpdates := k.sharedKeeper.GetParamsUpdates(ctx)
+	unbondingEndHeight := types.GetGatewayUnbondingHeight(sharedParamsUpdates, &gateway)
 	unbondingBeginEvent := &types.EventGatewayUnbondingBegin{
 		Gateway:            &gateway,
 		SessionEndHeight:   sessionEndHeight,

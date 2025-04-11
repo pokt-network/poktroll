@@ -59,8 +59,13 @@ func TestMsgServer_ClaimMorseAccount_Success(t *testing.T) {
 		require.NoError(t, err)
 
 		// Construct and assert the expected response.
-		sharedParams := sharedtypes.DefaultParams()
-		expectedSessionEndHeight := sharedtypes.GetSessionEndHeight(&sharedParams, ctx.BlockHeight())
+		sharedParamsUpdates := []*sharedtypes.ParamsUpdate{
+			{
+				Params:               sharedtypes.DefaultParams(),
+				EffectiveBlockHeight: 1,
+			},
+		}
+		expectedSessionEndHeight := sharedtypes.GetSessionEndHeight(sharedParamsUpdates, ctx.BlockHeight())
 		expectedClaimedBalance := morseAccount.GetUnstakedBalance().
 			Add(morseAccount.GetSupplierStake()).
 			Add(morseAccount.GetApplicationStake())

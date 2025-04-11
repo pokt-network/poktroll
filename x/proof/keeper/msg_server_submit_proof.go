@@ -95,7 +95,7 @@ func (k msgServer) SubmitProof(
 
 	claim = &foundClaim
 
-	if err = k.deductProofSubmissionFee(ctx, supplierOperatorAddress); err != nil {
+	if err = k.deductProofSubmissionFee(ctx, supplierOperatorAddress, sessionHeader.SessionEndBlockHeight); err != nil {
 		logger.Error(fmt.Sprintf("failed to deduct proof submission fee: %v", err))
 		return nil, status.Error(codes.FailedPrecondition, err.Error())
 	}
@@ -124,7 +124,7 @@ func (k msgServer) SubmitProof(
 
 	// Get the service ID relayMiningDifficulty to calculate the claimed uPOKT.
 	serviceId := sessionHeader.GetServiceId()
-	sharedParams := k.sharedKeeper.GetParams(ctx)
+	sharedParams := k.sharedKeeper.GetParamsAtHeight(ctx, sessionHeader.SessionEndBlockHeight)
 	relayMiningDifficulty, _ := k.serviceKeeper.GetRelayMiningDifficulty(ctx, serviceId)
 
 	claimedUPOKT, err := claim.GetClaimeduPOKT(sharedParams, relayMiningDifficulty)
@@ -181,8 +181,12 @@ func (k msgServer) SubmitProof(
 }
 
 // deductProofSubmissionFee deducts the proof submission fee from the supplier operator's account balance.
-func (k Keeper) deductProofSubmissionFee(ctx context.Context, supplierOperatorAddress string) error {
-	proofSubmissionFee := k.GetParams(ctx).ProofSubmissionFee
+func (k Keeper) deductProofSubmissionFee(
+	ctx context.Context,
+	supplierOperatorAddress string,
+	queryHeight int64,
+) error {
+	proofSubmissionFee := k.GetParamsAtHeight(ctx, queryHeight).ProofSubmissionFee
 	supplierOperatorAccAddress, err := cosmostypes.AccAddressFromBech32(supplierOperatorAddress)
 	if err != nil {
 		return err
@@ -228,8 +232,9 @@ func (k Keeper) ProofRequirementForClaim(ctx context.Context, claim *types.Claim
 	// Defer telemetry calls so that they reference the final values the relevant variables.
 	defer k.finalizeProofRequirementTelemetry(requirementReason, claim, err)
 
-	proofParams := k.GetParams(ctx)
-	sharedParams := k.sharedKeeper.GetParams(ctx)
+	sessionEndHeight := claim.GetSessionHeader().GetSessionEndBlockHeight()
+	sharedParams := k.sharedKeeper.GetParamsAtHeight(ctx, sessionEndHeight)
+	proofParams := k.GetParamsAtHeight(ctx, sessionEndHeight)
 
 	serviceId := claim.GetSessionHeader().GetServiceId()
 	relayMiningDifficulty, _ := k.serviceKeeper.GetRelayMiningDifficulty(ctx, serviceId)
@@ -299,21 +304,21 @@ func (k Keeper) getProofRequirementSeedBlockHash(
 	ctx context.Context,
 	claim *types.Claim,
 ) (blockHash []byte, err error) {
-	sharedParams, err := k.sharedQuerier.GetParams(ctx)
+	sessionEndHeight := claim.GetSessionHeader().GetSessionEndBlockHeight()
+	supplierOperatorAddress := claim.GetSupplierOperatorAddress()
+
+	sharedParamsUpdates, err := k.sharedQuerier.GetParamsUpdates(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	sessionEndHeight := claim.GetSessionHeader().GetSessionEndBlockHeight()
-	supplierOperatorAddress := claim.GetSupplierOperatorAddress()
-
-	proofWindowOpenHeight := sharedtypes.GetProofWindowOpenHeight(sharedParams, sessionEndHeight)
+	proofWindowOpenHeight := sharedtypes.GetProofWindowOpenHeight(sharedParamsUpdates, sessionEndHeight)
 	proofWindowOpenBlockHash := k.sessionKeeper.GetBlockHash(ctx, proofWindowOpenHeight)
 
 	// TODO_TECHDEBT(@red-0ne): Update the method header of this function to accept (sharedParams, claim, BlockHash).
 	// After doing so, please review all calling sites and simplify them accordingly.
 	earliestSupplierProofCommitHeight := sharedtypes.GetEarliestSupplierProofCommitHeight(
-		sharedParams,
+		sharedParamsUpdates,
 		sessionEndHeight,
 		proofWindowOpenBlockHash,
 		supplierOperatorAddress,

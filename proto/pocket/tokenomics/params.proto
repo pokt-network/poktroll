@@ -61,3 +61,13 @@ message MintAllocationPercentages {
   // to the application account address during claim settlement.
   double application = 5 [(gogoproto.jsontag) = "application", (gogoproto.moretags) = "yaml:\"application\""];
 }
+
+// ParamsUpdate defines the parameters update along the block height at which the update is effective.
+message ParamsUpdate {
+  Params params = 1 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true,
+    (gogoproto.jsontag) = "params"
+  ];
+  uint64 effective_block_height = 2 [(gogoproto.jsontag) = "effective_block_height"];
+}

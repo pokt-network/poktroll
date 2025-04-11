@@ -389,6 +389,7 @@ func NewCompleteIntegrationApp(t *testing.T, opts ...IntegrationAppOptionFn) *Ap
 		logger,
 		authority.String(),
 
+		sharedKeeper,
 		bankKeeper,
 	)
 	serviceModule := service.NewAppModule(

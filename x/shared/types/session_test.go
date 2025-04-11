@@ -15,9 +15,14 @@ import (
 
 func TestGetEarliestSupplierClaimCommitHeight_IsDeterministic(t *testing.T) {
 	var (
-		sharedParams = sharedtypes.DefaultParams()
-		ctx, cancel  = context.WithCancel(context.Background())
-		wg           = sync.WaitGroup{}
+		sharedParamsUpdates = []*sharedtypes.ParamsUpdate{
+			{
+				Params:               sharedtypes.DefaultParams(),
+				EffectiveBlockHeight: 1,
+			},
+		}
+		ctx, cancel = context.WithCancel(context.Background())
+		wg          = sync.WaitGroup{}
 	)
 
 	// Randomize queryHeight, claimWindowOpenBlockHash, and supplierOperatorAddr.
@@ -41,7 +46,7 @@ func TestGetEarliestSupplierClaimCommitHeight_IsDeterministic(t *testing.T) {
 			require.NoError(t, err)
 
 			expected := sharedtypes.GetEarliestSupplierClaimCommitHeight(
-				&sharedParams,
+				sharedParamsUpdates,
 				queryHeight,
 				claimWindowOpenBlockHash[:],
 				supplierOperatorAddr,
@@ -59,7 +64,7 @@ func TestGetEarliestSupplierClaimCommitHeight_IsDeterministic(t *testing.T) {
 				wg.Add(1)
 				go func(deterministicIdx int) {
 					actual := sharedtypes.GetEarliestSupplierClaimCommitHeight(
-						&sharedParams,
+						sharedParamsUpdates,
 						queryHeight,
 						claimWindowOpenBlockHash[:],
 						supplierOperatorAddr,
@@ -78,9 +83,14 @@ func TestGetEarliestSupplierClaimCommitHeight_IsDeterministic(t *testing.T) {
 
 func TestGetEarliestSupplierProofCommitHeight_IsDeterministic(t *testing.T) {
 	var (
-		sharedParams = sharedtypes.DefaultParams()
-		ctx, cancel  = context.WithCancel(context.Background())
-		wg           = sync.WaitGroup{}
+		sharedParamsUpdates = []*sharedtypes.ParamsUpdate{
+			{
+				Params:               sharedtypes.DefaultParams(),
+				EffectiveBlockHeight: 1,
+			},
+		}
+		ctx, cancel = context.WithCancel(context.Background())
+		wg          = sync.WaitGroup{}
 	)
 
 	for randomizeIdx := 0; randomizeIdx < 100; randomizeIdx++ {
@@ -108,7 +118,7 @@ func TestGetEarliestSupplierProofCommitHeight_IsDeterministic(t *testing.T) {
 
 			// Compute expected value.
 			expected := sharedtypes.GetEarliestSupplierProofCommitHeight(
-				&sharedParams,
+				sharedParamsUpdates,
 				queryHeight,
 				proofWindowOpenBlockHash[:],
 				supplierOperatorAddr,
@@ -127,7 +137,7 @@ func TestGetEarliestSupplierProofCommitHeight_IsDeterministic(t *testing.T) {
 				// NB: sample concurrently to save time.
 				go func(deterministicIdx int) {
 					actual := sharedtypes.GetEarliestSupplierProofCommitHeight(
-						&sharedParams,
+						sharedParamsUpdates,
 						queryHeight,
 						proofWindowOpenBlockHash[:],
 						supplierOperatorAddr,
@@ -154,23 +164,33 @@ func TestClaimProofWindows(t *testing.T) {
 	sampleSize := 15000
 
 	tests := []struct {
-		desc         string
-		sharedParams sharedtypes.Params
-		queryHeight  int64
+		desc                string
+		sharedParamsUpdates []*sharedtypes.ParamsUpdate
+		queryHeight         int64
 	}{
 		{
-			desc:         "default params",
-			sharedParams: sharedtypes.DefaultParams(),
-			queryHeight:  int64(1),
+			desc: "default params",
+			sharedParamsUpdates: []*sharedtypes.ParamsUpdate{
+				{
+					Params:               sharedtypes.DefaultParams(),
+					EffectiveBlockHeight: 1,
+				},
+			},
+			queryHeight: int64(1),
 		},
 		{
 			desc: "minimal windows",
-			sharedParams: sharedtypes.Params{
-				NumBlocksPerSession:          1,
-				ClaimWindowOpenOffsetBlocks:  0,
-				ClaimWindowCloseOffsetBlocks: 1,
-				ProofWindowOpenOffsetBlocks:  0,
-				ProofWindowCloseOffsetBlocks: 1,
+			sharedParamsUpdates: []*sharedtypes.ParamsUpdate{
+				{
+					Params: sharedtypes.Params{
+						NumBlocksPerSession:          1,
+						ClaimWindowOpenOffsetBlocks:  0,
+						ClaimWindowCloseOffsetBlocks: 1,
+						ProofWindowOpenOffsetBlocks:  0,
+						ProofWindowCloseOffsetBlocks: 1,
+					},
+					EffectiveBlockHeight: 1,
+				},
 			},
 			queryHeight: int64(1),
 		},
@@ -187,19 +207,19 @@ func TestClaimProofWindows(t *testing.T) {
 					// This will produce different randomized earliest claim & proof offsets.
 					supplierOperatorAddr := sample.AccAddress()
 
-					claimWindowOpenHeight := sharedtypes.GetClaimWindowOpenHeight(&test.sharedParams, test.queryHeight)
-					claimWindowCloseHeight := sharedtypes.GetClaimWindowCloseHeight(&test.sharedParams, test.queryHeight)
+					claimWindowOpenHeight := sharedtypes.GetClaimWindowOpenHeight(test.sharedParamsUpdates, test.queryHeight)
+					claimWindowCloseHeight := sharedtypes.GetClaimWindowCloseHeight(test.sharedParamsUpdates, test.queryHeight)
 
 					require.Greater(t, claimWindowCloseHeight, claimWindowOpenHeight)
 
-					proofWindowOpenHeight := sharedtypes.GetProofWindowOpenHeight(&test.sharedParams, test.queryHeight)
-					proofWindowCloseHeight := sharedtypes.GetProofWindowCloseHeight(&test.sharedParams, test.queryHeight)
+					proofWindowOpenHeight := sharedtypes.GetProofWindowOpenHeight(test.sharedParamsUpdates, test.queryHeight)
+					proofWindowCloseHeight := sharedtypes.GetProofWindowCloseHeight(test.sharedParamsUpdates, test.queryHeight)
 
 					require.GreaterOrEqual(t, proofWindowOpenHeight, claimWindowCloseHeight)
 					require.Greater(t, proofWindowCloseHeight, proofWindowOpenHeight)
 
 					earliestClaimCommitHeight := sharedtypes.GetEarliestSupplierClaimCommitHeight(
-						&test.sharedParams,
+						test.sharedParamsUpdates,
 						test.queryHeight,
 						blockHash,
 						supplierOperatorAddr,
@@ -208,7 +228,7 @@ func TestClaimProofWindows(t *testing.T) {
 					require.Greater(t, claimWindowCloseHeight, earliestClaimCommitHeight)
 
 					earliestProofCommitHeight := sharedtypes.GetEarliestSupplierProofCommitHeight(
-						&test.sharedParams,
+						test.sharedParamsUpdates,
 						test.queryHeight,
 						blockHash,
 						supplierOperatorAddr,
@@ -217,10 +237,16 @@ func TestClaimProofWindows(t *testing.T) {
 					require.GreaterOrEqual(t, earliestProofCommitHeight, claimWindowCloseHeight)
 					require.Greater(t, proofWindowCloseHeight, earliestProofCommitHeight)
 
-					claimWindowSizeBlocks := test.sharedParams.GetClaimWindowCloseOffsetBlocks()
+					sharedParamsUpdate := sharedtypes.GetEffectiveParamsUpdate(
+						test.sharedParamsUpdates,
+						test.queryHeight,
+					)
+					sharedParams := sharedParamsUpdate.Params
+
+					claimWindowSizeBlocks := sharedParams.GetClaimWindowCloseOffsetBlocks()
 					require.Greater(t, claimWindowSizeBlocks, uint64(0))
 
-					proofWindowSizeBlocks := test.sharedParams.GetProofWindowCloseOffsetBlocks()
+					proofWindowSizeBlocks := sharedParams.GetProofWindowCloseOffsetBlocks()
 					require.Greater(t, proofWindowSizeBlocks, uint64(0))
 
 					wg.Done()

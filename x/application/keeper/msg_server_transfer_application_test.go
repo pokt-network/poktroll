@@ -17,7 +17,12 @@ import (
 func TestMsgServer_TransferApplication_Success(t *testing.T) {
 	k, ctx := keepertest.ApplicationKeeper(t)
 	srv := appkeeper.NewMsgServerImpl(k)
-	sharedParams := sharedtypes.DefaultParams()
+	sharedParamsUpdates := []*sharedtypes.ParamsUpdate{
+		{
+			Params:               sharedtypes.DefaultParams(),
+			EffectiveBlockHeight: 1,
+		},
+	}
 
 	// Generate an address for the source and destination applications.
 	srcBech32 := sample.AccAddress()
@@ -53,7 +58,7 @@ func TestMsgServer_TransferApplication_Success(t *testing.T) {
 	require.Equal(t, "svc1", srcApp.GetServiceConfigs()[0].GetServiceId())
 
 	transferBeginHeight := cosmostypes.UnwrapSDKContext(ctx).BlockHeight()
-	transferBeginSessionEndHeight := sharedtypes.GetSessionEndHeight(&sharedParams, transferBeginHeight)
+	transferBeginSessionEndHeight := sharedtypes.GetSessionEndHeight(sharedParamsUpdates, transferBeginHeight)
 	expectedPendingTransfer := &apptypes.PendingApplicationTransfer{
 		DestinationAddress: dstBech32,
 		SessionEndHeight:   uint64(transferBeginSessionEndHeight),
@@ -77,7 +82,7 @@ func TestMsgServer_TransferApplication_Success(t *testing.T) {
 		DestinationAddress: dstBech32,
 		SessionEndHeight:   uint64(transferBeginSessionEndHeight),
 	}
-	transferEndHeight := apptypes.GetApplicationTransferHeight(&sharedParams, transferResApp)
+	transferEndHeight := apptypes.GetApplicationTransferHeight(sharedParamsUpdates, transferResApp)
 	expectedTransferBeginEvent := &apptypes.EventTransferBegin{
 		SourceAddress:      srcBech32,
 		DestinationAddress: dstBech32,
@@ -124,7 +129,7 @@ func TestMsgServer_TransferApplication_Success(t *testing.T) {
 	require.Equal(t, "svc1", dstApp.GetServiceConfigs()[0].GetServiceId())
 
 	// Assert that the EventTransferEnd event was emitted.
-	transferEndSessionEndHeight := sharedtypes.GetSessionEndHeight(&sharedParams, transferEndHeight)
+	transferEndSessionEndHeight := sharedtypes.GetSessionEndHeight(sharedParamsUpdates, transferEndHeight)
 	expectedTransferEndEvent := &apptypes.EventTransferEnd{
 		SourceAddress:          srcBech32,
 		DestinationAddress:     dstBech32,

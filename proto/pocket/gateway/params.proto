@@ -16,3 +16,13 @@ message Params {
   // min_stake is the minimum amount of uPOKT that a gateway must stake.
   cosmos.base.v1beta1.Coin min_stake  = 1 [(gogoproto.jsontag) = "min_stake"];
 }
+
+// ParamsUpdate defines the parameters update along the block height at which the update is effective.
+message ParamsUpdate {
+  Params params = 1 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true,
+    (gogoproto.jsontag) = "params"
+  ];
+  uint64 effective_block_height = 2 [(gogoproto.jsontag) = "effective_block_height"];
+}

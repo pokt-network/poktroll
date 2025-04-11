@@ -17,11 +17,8 @@ func (k Keeper) EndBlockerPruneSupplierServiceConfigHistory(
 	ctx context.Context,
 ) (numSuppliersWithPrunedHistory uint64, err error) {
 	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
-	sharedParams := k.sharedKeeper.GetParams(ctx)
+	sharedParamsUpdates := k.sharedKeeper.GetParamsUpdates(ctx)
 	currentHeight := sdkCtx.BlockHeight()
-	// The number of blocks from the end of a session to the end of the proof window close.
-	// It is needed to determine how long to retain service config updates for pending claims settlement.
-	sessionEndToProofWindowCloseNumBlocks := sharedtypes.GetSessionEndToProofWindowCloseBlocks(&sharedParams)
 
 	logger := k.Logger().With("method", "PruneSupplierServiceConfigHistory")
 
@@ -36,7 +33,14 @@ func (k Keeper) EndBlockerPruneSupplierServiceConfigHistory(
 		// Iterate through each service config update to check if it is still be needed.
 		for _, configUpdate := range supplier.ServiceConfigHistory {
 			// Calculate the block height when the session corresponding to this service config update ends.
-			sessionEndBlockHeight := sharedtypes.GetSessionEndHeight(&sharedParams, int64(configUpdate.EffectiveBlockHeight))
+			sessionEndBlockHeight := sharedtypes.GetSessionEndHeight(sharedParamsUpdates, int64(configUpdate.EffectiveBlockHeight))
+
+			effectiveSharedParamsUpdate := sharedtypes.GetEffectiveParamsUpdate(sharedParamsUpdates, int64(configUpdate.EffectiveBlockHeight))
+			effectiveSharedParams := effectiveSharedParamsUpdate.Params
+
+			// The number of blocks from the end of a session to the end of the proof window close.
+			// It is needed to determine how long to retain service config updates for pending claims settlement.
+			sessionEndToProofWindowCloseNumBlocks := sharedtypes.GetSessionEndToProofWindowCloseBlocks(&effectiveSharedParams)
 
 			// Calculate the final block height until which this config update needs to be retained.
 			// This includes the proof window close period after the session ends.
