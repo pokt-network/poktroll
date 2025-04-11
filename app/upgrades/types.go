@@ -14,7 +14,7 @@ const (
 
 	// This is the authority address used to create new authz authorizations. Defaults to x/gov module account address.
 	// DEV_NOTE: This hard-coded address is kept for record-keeping historical purposes.
-	// Use `keepers.UpgradeKeeper.Authority(ctx, &upgradetypes.QueryAuthorityRequest{})` to query the authority address of the current Alpha Network.
+	// Use `keepers.<target_module>.GetAuthority()` to get the authority address for the module.
 	AlphaTestNetAuthorityAddress = "pokt10d07y265gmmuvt4z0w9aw880jnsr700j8yv32t"
 
 	// The default PNF/DAO address in the genesis file for Beta TestNet. Used to create new authz authorizations.
