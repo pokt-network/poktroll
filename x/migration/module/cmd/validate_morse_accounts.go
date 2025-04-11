@@ -42,11 +42,11 @@ Validation consists of:
 
 If a discrepancy in the Morse account state hash is detected:
 	1. A warning is printed
-	2. Found Morse source accounts are printed
+	2. Morse source accounts matching those given by the args are printed
 	3. A non-zero exit code is returned.
 
 If any given 'morse_src_address' is not found in the Morse account state:
-	1. Found Morse source accounts are printed
+	1. Morse source accounts matching those given by the args are printed
 	2. A warning is printed for each missing 'morse_src_address'
 	3. A non-zero exit code is returned.
 
@@ -225,7 +225,7 @@ func runValidateMorseAccounts(_ *cobra.Command, args []string) error {
 
 		if sortedMorseClaimableAccounts[morseAccountIdx].GetMorseSrcAddress() != targetMorseAddress {
 			missingMorseAddresses = append(missingMorseAddresses, targetMorseAddress)
-			logger.Logger.Warn().Msgf("Morse address %s not found in the morse account state. Moving on to the next one.", targetMorseAddress)
+			// Morse address not found, move on to the next one.
 			continue
 		}
 
@@ -246,7 +246,7 @@ func runValidateMorseAccounts(_ *cobra.Command, args []string) error {
 		logger.Logger.Warn().Msgf("🚨 %d Morse address(es) not found: 🚨", len(missingMorseAddresses))
 	}
 	for _, missingMorseAddress := range missingMorseAddresses {
-		logger.Logger.Warn().Msgf("  - %s", strings.ToUpper(missingMorseAddress))
+		logger.Logger.Warn().Msgf("  - %s", missingMorseAddress)
 	}
 
 	return nil
