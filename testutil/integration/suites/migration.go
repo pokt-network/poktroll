@@ -69,6 +69,7 @@ func (s *MigrationModuleSuite) ClaimMorseAccount(
 	t *testing.T,
 	morseAccountIdx uint64,
 	shannonDestAddr string,
+	signerAddr string,
 ) (expectedMorseSrcAddr string, _ *migrationtypes.MsgClaimMorseAccountResponse) {
 	t.Helper()
 
@@ -80,6 +81,7 @@ func (s *MigrationModuleSuite) ClaimMorseAccount(
 		shannonDestAddr,
 		expectedMorseSrcAddr,
 		morsePrivateKey,
+		signerAddr,
 	)
 	require.NoError(t, err)
 
@@ -154,6 +156,7 @@ func (s *MigrationModuleSuite) ClaimMorseApplication(
 	morseAccountIdx uint64,
 	shannonDestAddr string,
 	serviceConfig *sharedtypes.ApplicationServiceConfig,
+	signingAddr string,
 ) (expectedMorseSrcAddr string, _ *migrationtypes.MsgClaimMorseApplicationResponse) {
 	t.Helper()
 
@@ -169,6 +172,7 @@ func (s *MigrationModuleSuite) ClaimMorseApplication(
 		expectedMorseSrcAddr,
 		morsePrivateKey,
 		serviceConfig,
+		signingAddr,
 	)
 	require.NoError(t, err)
 
@@ -190,6 +194,7 @@ func (s *MigrationModuleSuite) ClaimMorseSupplier(
 	morseAccountIdx uint64,
 	shannonDestAddr string,
 	services []*sharedtypes.SupplierServiceConfig,
+	signingAddr string,
 ) (expectedMorseSrcAddr string, _ *migrationtypes.MsgClaimMorseSupplierResponse) {
 	t.Helper()
 
@@ -206,6 +211,7 @@ func (s *MigrationModuleSuite) ClaimMorseSupplier(
 		expectedMorseSrcAddr,
 		morsePrivateKey,
 		services,
+		signingAddr,
 	)
 	require.NoError(t, err)
 

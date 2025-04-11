@@ -28,7 +28,7 @@ func (s *MigrationModuleTestSuite) TestClaimMorseAccount() {
 	require.NoError(s.T(), err)
 	require.True(s.T(), shannonDestBalance.IsZero())
 
-	morseSrcAddr, claimAccountRes := s.ClaimMorseAccount(s.T(), 0, shannonDestAddr)
+	morseSrcAddr, claimAccountRes := s.ClaimMorseAccount(s.T(), 0, shannonDestAddr, sample.AccAddress())
 
 	expectedMorseClaimableAccount := s.GetAccountState(s.T()).Accounts[0]
 	expectedBalance := expectedMorseClaimableAccount.GetUnstakedBalance().

@@ -61,7 +61,7 @@ localnet_config.yaml-e
 # some workarounds by always using "sed -i'' -e" instead of just "sed -i -e".
 api/pocket/**/*.go-E
 
-# Relase artifacts produced by `ignite chain build --release`
+# Release artifacts produced by `ignite chain build --release`
 release
 release_binaries
 
