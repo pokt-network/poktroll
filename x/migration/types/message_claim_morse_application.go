@@ -19,11 +19,13 @@ func NewMsgClaimMorseApplication(
 	morseSrcAddress string,
 	morsePrivateKey cometcrypto.PrivKey,
 	serviceConfig *sharedtypes.ApplicationServiceConfig,
+	shannonSigningAddr string,
 ) (*MsgClaimMorseApplication, error) {
 	msg := &MsgClaimMorseApplication{
-		ShannonDestAddress: shannonDestAddress,
-		MorseSrcAddress:    morseSrcAddress,
-		ServiceConfig:      serviceConfig,
+		ShannonDestAddress:    shannonDestAddress,
+		MorseSrcAddress:       morseSrcAddress,
+		ServiceConfig:         serviceConfig,
+		ShannonSigningAddress: shannonSigningAddr,
 	}
 
 	if morsePrivateKey != nil {
