@@ -85,6 +85,8 @@ func runClaimApplication(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
+	shannonSigningAddr := clientCtx.GetFromAddress().String()
+
 	// Construct a MsgClaimMorseApplication message.
 	shannonDestAddr := clientCtx.GetFromAddress().String()
 	msgClaimMorseApplication, err := types.NewMsgClaimMorseApplication(
@@ -95,6 +97,7 @@ func runClaimApplication(cmd *cobra.Command, args []string) error {
 		&sharedtypes.ApplicationServiceConfig{
 			ServiceId: serviceID,
 		},
+		shannonSigningAddr,
 	)
 	if err != nil {
 		return err

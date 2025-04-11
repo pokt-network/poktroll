@@ -155,6 +155,7 @@ func TestMsgServer_ClaimMorseSupplier_SuccessNewSupplier(t *testing.T) {
 		morseClaimableAccount.GetMorseSrcAddress(),
 		morsePrivKey,
 		testSupplierServices,
+		sample.AccAddress(),
 	)
 	require.NoError(t, err)
 
@@ -235,6 +236,7 @@ func TestMsgServer_ClaimMorseSupplier_Error(t *testing.T) {
 		accountState.Accounts[0].GetMorseSrcAddress(),
 		morsePrivKey,
 		testSupplierServices,
+		sample.AccAddress(),
 	)
 	require.NoError(t, err)
 
@@ -336,6 +338,7 @@ func TestMsgServer_ClaimMorseSupplier_Error(t *testing.T) {
 			nonSupplierMorseClaimableAccount.GetMorseSrcAddress(),
 			morsePrivKey,
 			testSupplierServices,
+			sample.AccAddress(),
 		)
 		require.NoError(t, err)
 
@@ -368,6 +371,7 @@ func TestMsgServer_ClaimMorseSupplier_Error(t *testing.T) {
 			nonSupplierMorseClaimableAccount.GetMorseSrcAddress(),
 			morsePrivKey,
 			testSupplierServices,
+			sample.AccAddress(),
 		)
 		require.NoError(t, err)
 
