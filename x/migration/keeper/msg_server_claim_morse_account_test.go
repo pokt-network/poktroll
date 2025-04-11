@@ -65,7 +65,7 @@ func TestMsgServer_ClaimMorseAccount_Success(t *testing.T) {
 			Add(morseAccount.GetSupplierStake()).
 			Add(morseAccount.GetApplicationStake())
 		expectedRes := &migrationtypes.MsgClaimMorseAccountResponse{
-			MorseSrcAddress:  msgClaim.MorseSrcAddress,
+			MorseSrcAddress:  msgClaim.GetMorseSrcAddress(),
 			ClaimedBalance:   expectedClaimedBalance,
 			SessionEndHeight: expectedSessionEndHeight,
 		}
@@ -75,14 +75,14 @@ func TestMsgServer_ClaimMorseAccount_Success(t *testing.T) {
 		expectedMorseAccount := morseAccount
 		expectedMorseAccount.ShannonDestAddress = msgClaim.GetShannonDestAddress()
 		expectedMorseAccount.ClaimedAtHeight = ctx.BlockHeight()
-		foundMorseAccount, found := k.GetMorseClaimableAccount(ctx, msgClaim.MorseSrcAddress)
+		foundMorseAccount, found := k.GetMorseClaimableAccount(ctx, msgClaim.GetMorseSrcAddress())
 		require.True(t, found)
 		require.Equal(t, *expectedMorseAccount, foundMorseAccount)
 
 		// Assert that an event is emitted for each claim.
 		expectedEvent := &migrationtypes.EventMorseAccountClaimed{
 			ShannonDestAddress: msgClaim.ShannonDestAddress,
-			MorseSrcAddress:    msgClaim.MorseSrcAddress,
+			MorseSrcAddress:    msgClaim.GetMorseSrcAddress(),
 			ClaimedBalance:     expectedClaimedBalance,
 			SessionEndHeight:   expectedSessionEndHeight,
 		}

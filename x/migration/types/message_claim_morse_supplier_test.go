@@ -104,61 +104,12 @@ func TestMsgClaimMorseSupplier_ValidateBasic(t *testing.T) {
 		)
 		require.NoError(t, err)
 
-		// Reset the morseSrcAddress and morsePublicKey fields, leaving
-		// the "wrong" signature in place. The address MUST match the
-		// key to pass validation such that this case can be covered.
-		msg.MorseSrcAddress = morsePrivKey.PubKey().Address().String()
+		// Reset the morsePublicKey fields, leaving the "wrong" signature in place.
 		msg.MorsePublicKey = morsePrivKey.PubKey().Bytes()
 		expectedErr := migrationtypes.ErrMorseSignature.Wrapf(
 			"morseSignature (%x) is invalid for Morse address (%s)",
 			msg.GetMorseSignature(),
 			msg.GetMorseSrcAddress(),
-		)
-
-		err = msg.ValidateBasic()
-		require.EqualError(t, err, expectedErr.Error())
-	})
-
-	t.Run("invalid Morse address", func(t *testing.T) {
-		msg, err := migrationtypes.NewMsgClaimMorseSupplier(
-			sample.AccAddress(),
-			sample.AccAddress(),
-			morsePrivKey,
-			testSupplierServiceConfigs,
-			sample.AccAddress(),
-		)
-		require.NoError(t, err)
-
-		// Set the morseSrcAddress to an invalid (non-bech32) address.
-		msg.MorseSrcAddress = "invalid_address"
-
-		expectedErr := migrationtypes.ErrMorseSrcAddress.Wrapf(
-			"morseSrcAddress (%s) does not match morsePublicKey address (%s)",
-			msg.GetMorseSrcAddress(),
-			morsePrivKey.PubKey().Address().String(),
-		)
-
-		err = msg.ValidateBasic()
-		require.EqualError(t, err, expectedErr.Error())
-	})
-
-	t.Run("wrong Morse address", func(t *testing.T) {
-		msg, err := migrationtypes.NewMsgClaimMorseSupplier(
-			sample.AccAddress(),
-			sample.AccAddress(),
-			morsePrivKey,
-			testSupplierServiceConfigs,
-			sample.AccAddress(),
-		)
-		require.NoError(t, err)
-
-		// Set the morseSrcAddress to the wrong address.
-		msg.MorseSrcAddress = wrongMorsePrivKey.PubKey().Address().String()
-
-		expectedErr := migrationtypes.ErrMorseSrcAddress.Wrapf(
-			"morseSrcAddress (%s) does not match morsePublicKey address (%s)",
-			msg.GetMorseSrcAddress(),
-			morsePrivKey.PubKey().Address().String(),
 		)
 
 		err = msg.ValidateBasic()
@@ -176,9 +127,6 @@ func TestMsgClaimMorseSupplier_ValidateBasic(t *testing.T) {
 			sample.AccAddress(),
 		)
 		require.NoError(t, err)
-
-		// Set the morseSrcAddress to the wrong address.
-		msg.MorseSrcAddress = wrongMorsePrivKey.PubKey().Address().String()
 
 		expectedErr := migrationtypes.ErrMorseSupplierClaim.Wrapf(
 			"invalid service configs: %s",

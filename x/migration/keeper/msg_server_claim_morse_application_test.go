@@ -136,7 +136,7 @@ func TestMsgServer_ClaimMorseApplication_SuccessNewApplication(t *testing.T) {
 	sharedParams := sharedtypes.DefaultParams()
 	expectedSessionEndHeight := sharedtypes.GetSessionEndHeight(&sharedParams, ctx.BlockHeight())
 	expectedRes := &migrationtypes.MsgClaimMorseApplicationResponse{
-		MorseSrcAddress:         msgClaim.MorseSrcAddress,
+		MorseSrcAddress:         msgClaim.GetMorseSrcAddress(),
 		ClaimedApplicationStake: morseClaimableAccount.GetApplicationStake(),
 		ClaimedBalance: expectedClaimedUnstakedTokens.
 			Add(morseClaimableAccount.GetSupplierStake()),
@@ -149,13 +149,13 @@ func TestMsgServer_ClaimMorseApplication_SuccessNewApplication(t *testing.T) {
 	expectedMorseAccount := morseClaimableAccount
 	expectedMorseAccount.ShannonDestAddress = shannonDestAddr
 	expectedMorseAccount.ClaimedAtHeight = ctx.BlockHeight()
-	foundMorseAccount, found := k.GetMorseClaimableAccount(ctx, msgClaim.MorseSrcAddress)
+	foundMorseAccount, found := k.GetMorseClaimableAccount(ctx, msgClaim.GetMorseSrcAddress())
 	require.True(t, found)
 	require.Equal(t, *expectedMorseAccount, foundMorseAccount)
 
 	// Assert that an event is emitted for each claim.
 	expectedEvent := &migrationtypes.EventMorseApplicationClaimed{
-		MorseSrcAddress:         msgClaim.MorseSrcAddress,
+		MorseSrcAddress:         msgClaim.GetMorseSrcAddress(),
 		ClaimedBalance:          expectedClaimedUnstakedTokens,
 		ClaimedApplicationStake: applicationStake,
 		SessionEndHeight:        expectedSessionEndHeight,

@@ -72,14 +72,14 @@ func (k msgServer) ClaimMorseApplication(ctx context.Context, msg *migrationtype
 	// Ensure that a MorseClaimableAccount exists for the given morseSrcAddress.
 	morseClaimableAccount, isFound = k.GetMorseClaimableAccount(
 		sdkCtx,
-		msg.MorseSrcAddress,
+		msg.GetMorseSrcAddress(),
 	)
 	if !isFound {
 		return nil, status.Error(
 			codes.NotFound,
 			migrationtypes.ErrMorseApplicationClaim.Wrapf(
 				"no morse claimable account exists with address %q",
-				msg.MorseSrcAddress,
+				msg.GetMorseSrcAddress(),
 			).Error(),
 		)
 	}
@@ -91,7 +91,7 @@ func (k msgServer) ClaimMorseApplication(ctx context.Context, msg *migrationtype
 			codes.FailedPrecondition,
 			migrationtypes.ErrMorseApplicationClaim.Wrapf(
 				"morse address %q has already been claimed at height %d by shannon address %q",
-				msg.MorseSrcAddress,
+				msg.GetMorseSrcAddress(),
 				morseClaimableAccount.ClaimedAtHeight,
 				morseClaimableAccount.ShannonDestAddress,
 			).Error(),
@@ -165,7 +165,7 @@ func (k msgServer) ClaimMorseApplication(ctx context.Context, msg *migrationtype
 
 	// Emit an event which signals that the morse account has been claimed.
 	event := migrationtypes.EventMorseApplicationClaimed{
-		MorseSrcAddress:         msg.MorseSrcAddress,
+		MorseSrcAddress:         msg.GetMorseSrcAddress(),
 		ClaimedBalance:          claimedUnstakedBalance,
 		ClaimedApplicationStake: claimedAppStake,
 		SessionEndHeight:        sessionEndHeight,
@@ -184,7 +184,7 @@ func (k msgServer) ClaimMorseApplication(ctx context.Context, msg *migrationtype
 
 	// Return the response.
 	return &migrationtypes.MsgClaimMorseApplicationResponse{
-		MorseSrcAddress:         msg.MorseSrcAddress,
+		MorseSrcAddress:         msg.GetMorseSrcAddress(),
 		ClaimedBalance:          claimedUnstakedBalance,
 		ClaimedApplicationStake: claimedAppStake,
 		SessionEndHeight:        sessionEndHeight,

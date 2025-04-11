@@ -100,17 +100,22 @@ message MsgClaimMorseAccount {
   // This account is liable for any fees incurred by violating the constraints of Morse
   // account/actor claim message fee waiving; the tx contains ONE OR MORE Morse account/actor
   // claim messages AND has EXACTLY ONE signer.
-  string shannon_signing_address = 5 [(cosmos_proto.scalar) = "cosmos.AddressString", (gogoproto.jsontag) = "shannon_signing_address"];
+  string shannon_signing_address = 4 [(cosmos_proto.scalar) = "cosmos.AddressString", (gogoproto.jsontag) = "shannon_signing_address"];
 
   // The bech32-encoded address of the Shannon account to which the claimed balance will be minted.
   string shannon_dest_address = 1 [(cosmos_proto.scalar) = "cosmos.AddressString", (gogoproto.jsontag) = "shannon_dest_address"];
 
+  // DEV_NOTE: This field was momentarily used to hold the Morse source
+  // address; however, an optimization eliminates the need for this.
+  // Reserved for backwards compatibility.
+  //
   // The hex-encoded address of the Morse account whose balance will be claimed.
   // E.g.: 00f9900606fa3d5c9179fc0c8513078a53a2073e
-  string morse_src_address = 2 [(gogoproto.jsontag) = "morse_src_address"];
+  // string morse_src_address = 2 [(gogoproto.jsontag) = "morse_src_address"];
+  reserved 2;
 
   // The ed25519 public key of the morse account with morse_src_address.
-  bytes morse_public_key = 4 [(gogoproto.casttype) = "crypto/ed25519.PublicKey"];
+  bytes morse_public_key = 5 [(gogoproto.casttype) = "github.com/cometbft/cometbft/crypto/ed25519.PubKey"];
 
   // The hex-encoded signature, by the Morse account, of this message (where this field is nil).
   // I.e.: morse_signature = private_key.sign(marshal(MsgClaimMorseAccount{morse_signature: nil, ...}))
@@ -123,7 +128,6 @@ message MsgClaimMorseAccount {
 // It indicates the morse_src_address of the account which was claimed, the total
 // balance claimed, and the height at which the claim was committed.
 message MsgClaimMorseAccountResponse {
-
   // The hex-encoded address of the Morse account whose balance will be claimed.
   // E.g.: 00f9900606fa3d5c9179fc0c8513078a53a2073e
   string morse_src_address = 1 [(gogoproto.jsontag) = "morse_src_address"];
@@ -148,18 +152,23 @@ message MsgClaimMorseApplication {
   // This account is liable for any fees incurred by violating the constraints of Morse
   // account/actor claim message fee waiving; the tx contains ONE OR MORE Morse account/actor
   // claim messages AND has EXACTLY ONE signer.
-  string shannon_signing_address = 6 [(cosmos_proto.scalar) = "cosmos.AddressString", (gogoproto.jsontag) = "shannon_signing_address"];
+  string shannon_signing_address = 5 [(cosmos_proto.scalar) = "cosmos.AddressString", (gogoproto.jsontag) = "shannon_signing_address"];
 
   // The bech32-encoded address of the Shannon account to which the claimed tokens
   // will be minted and from which the application will be staked.
   string shannon_dest_address = 1 [(cosmos_proto.scalar) = "cosmos.AddressString", (gogoproto.jsontag) = "shannon_dest_address"];
 
+  // DEV_NOTE: This field was momentarily used to hold the Morse source
+  // address; however, an optimization eliminates the need for this.
+  // Reserved for backwards compatibility.
+  //
   // The hex-encoded address of the Morse account whose balance will be claimed.
   // E.g.: 00f9900606fa3d5c9179fc0c8513078a53a2073e
-  string morse_src_address = 2 [(gogoproto.jsontag) = "morse_src_address"];
+  // string morse_src_address = 2 [(gogoproto.jsontag) = "morse_src_address"];
+  reserved 2;
 
   // The ed25519 public key of the morse account with morse_src_address.
-  bytes morse_public_key = 5 [(gogoproto.casttype) = "crypto/ed25519.PublicKey"];
+  bytes morse_public_key = 6 [(gogoproto.casttype) = "github.com/cometbft/cometbft/crypto/ed25519.PubKey"];
 
   // The hex-encoded signature, by the Morse account, of this message (where this field is nil).
   // I.e.: morse_signature = private_key.sign(marshal(MsgClaimMorseAccount{morse_signature: nil, ...}))
@@ -212,7 +221,7 @@ message MsgClaimMorseSupplier {
   // This account is liable for any fees incurred by violating the constraints of Morse
   // account/actor claim message fee waiving; the tx contains ONE OR MORE Morse account/actor
   // claim messages AND has EXACTLY ONE signer.
-  string shannon_signing_address = 7 [(cosmos_proto.scalar) = "cosmos.AddressString", (gogoproto.jsontag) = "shannon_signing_address"];
+  string shannon_signing_address = 6 [(cosmos_proto.scalar) = "cosmos.AddressString", (gogoproto.jsontag) = "shannon_signing_address"];
 
   // The bech32-encoded address of the Shannon account to which the claimed tokens
   // will be minted and which become the supplier owner.
@@ -225,13 +234,16 @@ message MsgClaimMorseSupplier {
   string shannon_operator_address = 2 [(cosmos_proto.scalar) = "cosmos.AddressString", (gogoproto.jsontag) = "shannon_operator_address"];
 
   // The ed25519 public key of the morse account with morse_src_address.
-  bytes morse_public_key = 6 [(gogoproto.casttype) = "crypto/ed25519.PublicKey"];
+  bytes morse_public_key = 7 [(gogoproto.casttype) = "github.com/cometbft/cometbft/crypto/ed25519.PubKey"];
 
+  // DEV_NOTE: This field was momentarily used to hold the Morse source
+  // address; however, an optimization eliminates the need for this.
+  // Reserved for backwards compatibility.
+  //
   // The hex-encoded address of the Morse account whose balance will be claimed.
   // E.g.: 00f9900606fa3d5c9179fc0c8513078a53a2073e
-  //
-  // TODO_MAINNET(@bryanchriswhite, #1126): Rename to `morse_src_owner_address`.
-  string morse_src_address = 3 [(gogoproto.jsontag) = "morse_src_address"];
+  // string morse_src_address = 3 [(gogoproto.jsontag) = "morse_src_address"];
+  reserved 3;
 
   // The hex-encoded signature, by the Morse account, of this message (where this field is nil).
   // I.e.: morse_signature = private_key.sign(marshal(MsgClaimMorseAccount{morse_signature: nil, ...}))

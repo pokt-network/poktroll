@@ -31,7 +31,6 @@ func NewMsgClaimMorseSupplier(
 	}
 
 	if morsePrivateKey != nil {
-		msg.MorseSrcAddress = morsePrivateKey.PubKey().Address().String()
 		msg.MorsePublicKey = morsePrivateKey.PubKey().Bytes()
 
 		if err := msg.SignMorseSignature(morsePrivateKey); err != nil {
@@ -68,11 +67,6 @@ func (msg *MsgClaimMorseSupplier) ValidateBasic() error {
 		return ErrMorseSupplierClaim.Wrapf("invalid service configs: %s", err)
 	}
 
-	// Validate the Morse source address matches the public key
-	if err := msg.ValidateMorseAddress(); err != nil {
-		return err
-	}
-
 	// Validate the Morse signature.
 	if err := msg.ValidateMorseSignature(); err != nil {
 		return err
@@ -96,11 +90,6 @@ func (msg *MsgClaimMorseSupplier) SignMorseSignature(morsePrivKey cometcrypto.Pr
 	return nil
 }
 
-// ValidateMorseAddress validates that the Morse source address matches the public key.
-func (msg *MsgClaimMorseSupplier) ValidateMorseAddress() error {
-	return validateMorseAddress(msg)
-}
-
 // ValidateMorseSignature validates the signature of the given MsgClaimMorseSupplier
 // matches the given Morse public key.
 func (msg *MsgClaimMorseSupplier) ValidateMorseSignature() error {
@@ -116,4 +105,10 @@ func (msg *MsgClaimMorseSupplier) getSigningBytes() ([]byte, error) {
 	signingMsg.MorseSignature = nil
 
 	return proto.Marshal(&signingMsg)
+}
+
+// GetMorseSrcAddress returns the morse source address associated with
+// the Morse public key of the given message.
+func (msg *MsgClaimMorseSupplier) GetMorseSrcAddress() string {
+	return msg.GetMorsePublicKey().Address().String()
 }
