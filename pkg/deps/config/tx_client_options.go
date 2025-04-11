@@ -75,9 +75,6 @@ func GetTxClientGasAndFeesOptionsFromFlags(cmd *cobra.Command, gasSettingStr str
 		return nil, err
 	}
 
-	// The RelayMiner always uses tx simulation to estimate the gas since this
-	// will be variable depending on the tx being sent.
-	// Always use the "auto" gas setting for the RelayMiner.
 	gasSetting, err := flags.ParseGasSetting(gasSettingStr)
 	if err != nil {
 		return nil, err
