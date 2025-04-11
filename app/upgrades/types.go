@@ -20,8 +20,7 @@ const (
 	// The default PNF/DAO address in the genesis file for Beta TestNet. Used to create new authz authorizations.
 	BetaTestNetPnfAddress = "pokt1f0c9y7mahf2ya8tymy8g4rr75ezh3pkklu4c3e"
 
-	// TODO_IN_THIS_PR: Get the PNF address for MainNet and add it here.
-	MainNetPnfAddress = ""
+	MainNetPnfAddress = "pokt18808wvw0h4t450t06uvauny8lvscsxjfyua7vh"
 )
 
 // NetworkPNFAddress is a map of network names (i.e chain-id) to their respective PNF addresses.
