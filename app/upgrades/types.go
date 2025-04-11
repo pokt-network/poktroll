@@ -12,7 +12,6 @@ const (
 	// The default PNF/DAO address in the genesis file for Alpha TestNet. Used to create new authz authorizations.
 	AlphaTestNetPnfAddress = "pokt1r6ja6rz6rpae58njfrsgs5n5sp3r36r2q9j04h"
 
-	// TECHDEBT: DO NOT use AlphaTestNetAuthorityAddress.
 	// This is the authority address used to create new authz authorizations. Defaults to x/gov module account address.
 	// Use `keepers.UpgradeKeeper.Authority(ctx, &upgradetypes.QueryAuthorityRequest{})` to query the authority address of the current Alpha Network.
 	// NOTE: This hard-coded address is kept for record-keeping historical purposes.
@@ -20,7 +19,17 @@ const (
 
 	// The default PNF/DAO address in the genesis file for Beta TestNet. Used to create new authz authorizations.
 	BetaTestNetPnfAddress = "pokt1f0c9y7mahf2ya8tymy8g4rr75ezh3pkklu4c3e"
+
+	// TODO_IN_THIS_PR: Get the PNF address for MainNet and add it here.
+	MainNetPnfAddress = ""
 )
+
+// NetworkPNFAddress is a map of network names (i.e chain-id) to their respective PNF addresses.
+var NetworkPNFAddress = map[string]string{
+	"pocket-alpha": AlphaTestNetPnfAddress,
+	"pocket-beta":  BetaTestNetPnfAddress,
+	"pocket":       MainNetPnfAddress,
+}
 
 // Upgrade represents a protocol upgrade in code.
 // Once a `MsgSoftwareUpgrade` is submitted onchain, and `Upgrade.PlanName` matches the `Plan.Name`,
