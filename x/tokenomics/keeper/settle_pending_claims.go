@@ -37,12 +37,7 @@ func (k Keeper) SettlePendingClaims(ctx cosmostypes.Context) (
 	expiringClaimsIterator := k.GetExpiringClaimsIterator(ctx)
 	defer expiringClaimsIterator.Close()
 
-	// Capture the applications initial stake which will be used to calculate the
-	// max share any claim could burn from the application stake.
-	// This ensures that each supplier can calculate the maximum amount it can take
-	// from an application's stake.
 	blockHeight := ctx.BlockHeight()
-	//logger.Info(fmt.Sprintf("found %d expiring claims at block height %d", len(expiringClaims), blockHeight))
 
 	// Initialize results structs.
 	settledResults = make(tlm.ClaimSettlementResults, 0)
@@ -50,8 +45,10 @@ func (k Keeper) SettlePendingClaims(ctx cosmostypes.Context) (
 	applicationInitialStakeMap := make(map[string]cosmostypes.Coin)
 
 	logger.Debug("settling expiring claims")
+	numExpiringClaims := 0
 	for ; expiringClaimsIterator.Valid(); expiringClaimsIterator.Next() {
 		claim := expiringClaimsIterator.Value()
+		numExpiringClaims++
 
 		// Cache the initial stake for the application which will be used instead of
 		// the updated stake at each claim settlement.
@@ -209,6 +206,8 @@ func (k Keeper) SettlePendingClaims(ctx cosmostypes.Context) (
 		// 2. The claim requires a proof and a valid proof was found.
 
 		appAddress := claim.GetSessionHeader().GetApplicationAddress()
+		// Capture the initial stake for the application which will to ensure that
+		// claim amount limits are not exceeded.
 		applicationInitialStake := applicationInitialStakeMap[appAddress]
 
 		// Ensure that the application has a non-zero initial stake.
@@ -260,6 +259,9 @@ func (k Keeper) SettlePendingClaims(ctx cosmostypes.Context) (
 			err,
 		)
 	}
+
+	logger.Info(fmt.Sprintf("found %d expiring claims at block height %d", numExpiringClaims, blockHeight))
+
 	// Execute all the pending mint, burn, and transfer operations.
 	if err = k.ExecutePendingSettledResults(ctx, settledResults); err != nil {
 		return settledResults, expiredResults, err
@@ -673,7 +675,8 @@ func (k Keeper) slashSupplierStake(
 	return nil
 }
 
-// cacheApplicationInitialStake retrieves an application's initial stake and caches it in the provided map.
+// cacheApplicationInitialStake retrieves an application's initial stake and caches
+// it in the provided map for the whole settlement process.
 func (k Keeper) cacheApplicationInitialStake(
 	ctx context.Context,
 	applicationInitialStakeMap map[string]cosmostypes.Coin,
