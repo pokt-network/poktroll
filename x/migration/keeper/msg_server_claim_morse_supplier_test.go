@@ -234,7 +234,8 @@ func TestMsgServer_ClaimMorseSupplier_Error(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	wrongMorsePrivKey := testmigration.GenMorsePrivateKey(99)
+	// Generate a Morse private key for an account which is not in the Morse account state.
+	nonExistentMorsePrivKey := testmigration.GenMorsePrivateKey(99)
 
 	t.Run("invalid claim msg", func(t *testing.T) {
 		invalidClaimMsg, err := migrationtypes.NewMsgClaimMorseSupplier(
@@ -264,7 +265,7 @@ func TestMsgServer_ClaimMorseSupplier_Error(t *testing.T) {
 		invalidMsgClaim, err := migrationtypes.NewMsgClaimMorseSupplier(
 			sample.AccAddress(),
 			sample.AccAddress(),
-			wrongMorsePrivKey,
+			nonExistentMorsePrivKey,
 			testSupplierServices,
 		)
 		require.NoError(t, err)

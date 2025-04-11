@@ -16,8 +16,8 @@ import (
 	"github.com/pokt-network/poktroll/pkg/deps/config"
 )
 
-// GetTxClient constructs a new TxClient instance using the provided command flags.
-func GetTxClient(
+// GetTxClientFromFlags constructs a new TxClient instance using the provided command flags.
+func GetTxClientFromFlags(
 	ctx context.Context,
 	cmd *cobra.Command,
 	txClientOpts ...client.TxClientOption,
@@ -68,7 +68,12 @@ func GetTxClient(
 	deps = depinject.Configs(deps, depinject.Supply(txCtx))
 
 	// Prepare default tx client options.
-	gasAndFeesOptions, err := config.GetTxClientGasAndFeesOptions(cmd)
+	gasSettingStr, err := cmd.Flags().GetString(cosmosflags.FlagGas)
+	if err != nil {
+		return nil, err
+	}
+
+	gasAndFeesOptions, err := config.GetTxClientGasAndFeesOptionsFromFlags(cmd, gasSettingStr)
 	if err != nil {
 		return nil, err
 	}

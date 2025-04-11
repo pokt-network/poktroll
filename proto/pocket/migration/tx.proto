@@ -40,6 +40,8 @@ message MsgUpdateParams {
 
   // NOTE: All parameters must be supplied.
   Params params = 2 [(gogoproto.nullable) = false, (amino.dont_omitempty) = true];
+
+  // Next free index: 3
 }
 
 // MsgUpdateParamsResponse defines the response structure for executing a
@@ -67,6 +69,8 @@ message MsgImportMorseClaimableAccounts {
   // - pocket util export-genesis-for-migration --help
   // - pocketd migrate collect-morse-accounts --help
   bytes morse_account_state_hash = 3 [(gogoproto.jsontag) = "morse_account_state_hash"];
+
+  // Next free index: 4
 }
 
 // MsgImportMorseClaimableAccountsResponse is returned from MsgImportMorseClaimableAccounts.
@@ -78,6 +82,8 @@ message MsgImportMorseClaimableAccountsResponse {
 
   // Number of claimable accounts (EOAs) collected from Morse state export.
   uint64 num_accounts = 2 [(gogoproto.jsontag) = "num_accounts"];
+
+  // Next free index: 3
 }
 
 // MsgClaimMorseAccount is used to execute a claim (one-time minting of tokens on Shannon),
@@ -103,6 +109,8 @@ message MsgClaimMorseAccount {
   // The hex-encoded signature, by the Morse account, of this message (where this field is nil).
   // I.e.: morse_signature = private_key.sign(marshal(MsgClaimMorseAccount{morse_signature: nil, ...}))
   bytes morse_signature = 3 [(gogoproto.jsontag) = "morse_signature"];
+
+  // Next free index: 5
 }
 
 // MsgClaimMorseAccountResponse is returned from MsgClaimMorseAccount.
@@ -119,6 +127,8 @@ message MsgClaimMorseAccountResponse {
 
   // The session end height (on Shannon) in which the claim was committed (i.e. claimed).
   int64 session_end_height = 3 [(gogoproto.jsontag) = "session_end_height"];
+
+  // Next free index: 4
 }
 
 // MsgClaimMorseApplication is used to execute a claim (one-time minting of tokens on Shannon),
@@ -147,6 +157,8 @@ message MsgClaimMorseApplication {
   // NOTE: This is not a repeated field, as in MsgStakeApplication,
   // because an application can only be staked for one service.
   shared.ApplicationServiceConfig service_config = 4 [(gogoproto.jsontag) = "service_config"];
+
+  // Next free index: 6
 }
 
 // MsgClaimMorseApplicationResponse is returned from MsgClaimMorseApplication.
@@ -169,6 +181,8 @@ message MsgClaimMorseApplicationResponse {
 
   // The application which was staked as a result of the claim.
   application.Application application = 5 [(gogoproto.jsontag) = "application"];
+
+  // Next free index: 6
 }
 
 // MsgClaimMorseSupplier is used to:
@@ -209,6 +223,8 @@ message MsgClaimMorseSupplier {
 
   // The services this supplier is staked to provide service for.
   repeated shared.SupplierServiceConfig services = 5 [(gogoproto.jsontag) = "services"];
+
+  // Next free index: 7
 }
 
 // MsgClaimMorseSupplierResponse is returned from MsgClaimMorseSupplier.
@@ -232,5 +248,7 @@ message MsgClaimMorseSupplierResponse {
 
   // The supplier which was staked as a result of the claim.
   shared.Supplier supplier = 5 [(gogoproto.jsontag) = "supplier"];
+
+  // Next free index: 6
 }
 

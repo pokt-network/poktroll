@@ -330,16 +330,19 @@ func NewSupplyRingClientFn() SupplierFn {
 // NewSupplySupplierClientsFn returns a function which constructs a
 // SupplierClientMap and returns a new depinject.Config which is
 // supplied with the given deps and the new SupplierClientMap.
-// - signingKeyNames is a list of operators signing key name corresponding to
-// the staked suppliers operator addresses.
-func NewSupplySupplierClientsFn(signingKeyNames []string) SupplierFn {
+//   - signingKeyNames is a list of operators signing key name corresponding to
+//     the staked suppliers operator addresses.
+//   - gasSettingStr is the gas setting to use for the tx client.
+//     Options are "auto", "<integer>", or "".
+//     See: config.GetTxClientGasAndFeesOptionsFromFlags.
+func NewSupplySupplierClientsFn(signingKeyNames []string, gasSettingStr string) SupplierFn {
 	return func(
 		ctx context.Context,
 		deps depinject.Config,
 		cmd *cobra.Command,
 	) (depinject.Config, error) {
 		// Set up the tx client options for the suppliers.
-		txClientOptions, err := GetTxClientGasAndFeesOptions(cmd)
+		txClientOptions, err := GetTxClientGasAndFeesOptionsFromFlags(cmd, gasSettingStr)
 		if err != nil {
 			return nil, err
 		}

@@ -29,7 +29,7 @@ func TestMsgClaimMorseAccount_ValidateBasic(t *testing.T) {
 	wrongMorsePrivKey := testmigration.GenMorsePrivateKey(99)
 
 	t.Run("invalid Shannon destination address", func(t *testing.T) {
-		msg, err := migrationtypes.NewMsgClaimMorseAccount("invalid_address", morsePrivKey)
+		msg, err := migrationtypes.NewMsgClaimMorseAccount("invalid_shannon_address", morsePrivKey)
 		require.NoError(t, err)
 
 		err = msg.ValidateBasic()

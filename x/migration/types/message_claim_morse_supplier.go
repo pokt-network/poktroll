@@ -9,7 +9,10 @@ import (
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
-var _ sdk.Msg = (*MsgClaimMorseSupplier)(nil)
+var (
+	_ sdk.Msg           = (*MsgClaimMorseSupplier)(nil)
+	_ morseClaimMessage = (*MsgClaimMorseSupplier)(nil)
+)
 
 // NewMsgClaimMorseSupplier creates a new MsgClaimMorseSupplier.
 // If morsePrivateKey is provided (i.e. not nil), it is used to sign the message.
@@ -52,13 +55,11 @@ func (msg *MsgClaimMorseSupplier) ValidateBasic() error {
 		)
 	}
 
-	if msg.ShannonOperatorAddress != "" {
-		if _, err := sdk.AccAddressFromBech32(msg.ShannonOperatorAddress); err != nil {
-			return sdkerrors.ErrInvalidAddress.Wrapf(
-				"invalid shannon operator address address (%s): %s",
-				msg.GetShannonOperatorAddress(), err,
-			)
-		}
+	if _, err := sdk.AccAddressFromBech32(msg.ShannonOperatorAddress); err != nil {
+		return sdkerrors.ErrInvalidAddress.Wrapf(
+			"invalid shannon operator address address (%s): %s",
+			msg.GetShannonOperatorAddress(), err,
+		)
 	}
 
 	if err := sharedtypes.ValidateSupplierServiceConfigs(msg.Services); err != nil {

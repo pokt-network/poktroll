@@ -9,6 +9,11 @@ import (
 
 // morseClaimMessage is an interface that all Morse account/actor claim messages
 // implement which allows for a non-generic implementations of common behavior.
+//
+// Morse account/actor claim messages:
+// - MsgClaimMorseAccount
+// - MsgClaimMorseApplication
+// - MsgClaimMorseSupplier
 type morseClaimMessage interface {
 	cosmostypes.Msg
 
@@ -71,3 +76,5 @@ func validateMorseSignature(msg morseClaimMessage) error {
 
 	return nil
 }
+
+const MorseSignatureLengthBytes = 64

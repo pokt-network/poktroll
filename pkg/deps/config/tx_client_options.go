@@ -13,18 +13,30 @@ import (
 	"github.com/pokt-network/poktroll/pkg/client/tx"
 )
 
-// GetTxClientGasAndFeesOptions returns a slice of TxClientOptions which
+// GetTxClientGasAndFeesOptionsFromFlags returns a slice of TxClientOptions which
 // are derived from the provided command flags and/or config, using the
 // following precedence:
 //
 // 1. If a fee is specified, it overrides all gas settings, only returns:
 //   - WithFeeAmount
+//     In this case, the fee amount is explicitly set (by the tx author);
+//     therefore, while the gas limit will still be respected by the CheckTx
+//     ABCI method, the gas limit, adjustment, and prices are NOT used to
+//     calculate the fee.
 //
 // 2. Otherwise, the following gas related options are returned:
 //   - WithGasPrices
 //   - WithGasAdjustment
 //   - WithGasSetting
-func GetTxClientGasAndFeesOptions(cmd *cobra.Command) ([]client.TxClientOption, error) {
+//     In this case, the fee is calculated, given by: `fees = gas_limit * gas_adjustment * gas_prices`.
+//
+// gasSettingStr is expected to be either "auto", empty string, or a string integer:
+//   - "auto": The gas limit will be determined by simulating the transaction
+//     and multiplying by the gas adjustment.
+//   - "<integer>": The gas limit will be set to the integer amount represented
+//     by the string.
+//   - "": The gas limit will be set to flags.DefaultGasLimit (200000).
+func GetTxClientGasAndFeesOptionsFromFlags(cmd *cobra.Command, gasSettingStr string) ([]client.TxClientOption, error) {
 	// Retrieve the explicitly specified fee amount from the command flags.
 	feesStr, err := cmd.Flags().GetString(flags.FlagFees)
 	if err != nil {
@@ -66,7 +78,7 @@ func GetTxClientGasAndFeesOptions(cmd *cobra.Command) ([]client.TxClientOption, 
 	// The RelayMiner always uses tx simulation to estimate the gas since this
 	// will be variable depending on the tx being sent.
 	// Always use the "auto" gas setting for the RelayMiner.
-	gasSetting, err := flags.ParseGasSetting("auto")
+	gasSetting, err := flags.ParseGasSetting(gasSettingStr)
 	if err != nil {
 		return nil, err
 	}

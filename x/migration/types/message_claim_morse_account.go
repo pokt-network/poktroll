@@ -7,7 +7,10 @@ import (
 	"github.com/cosmos/gogoproto/proto"
 )
 
-var _ sdk.Msg = (*MsgClaimMorseAccount)(nil)
+var (
+	_ sdk.Msg           = (*MsgClaimMorseAccount)(nil)
+	_ morseClaimMessage = (*MsgClaimMorseAccount)(nil)
+)
 
 func NewMsgClaimMorseAccount(
 	shannonDestAddress string,

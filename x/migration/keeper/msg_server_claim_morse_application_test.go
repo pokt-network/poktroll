@@ -206,7 +206,8 @@ func TestMsgServer_ClaimMorseApplication_Error(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	wrongMorsePrivKey := testmigration.GenMorsePrivateKey(99)
+	// Generate a Morse private key for an account which is not in the Morse account state.
+	nonExistentMorsePrivKey := testmigration.GenMorsePrivateKey(99)
 
 	t.Run("invalid claim msg", func(t *testing.T) {
 		invalidMsgClaim, err := migrationtypes.NewMsgClaimMorseApplication(
@@ -232,7 +233,7 @@ func TestMsgServer_ClaimMorseApplication_Error(t *testing.T) {
 	t.Run("account not found", func(t *testing.T) {
 		invalidMsgClaim, err := migrationtypes.NewMsgClaimMorseApplication(
 			msgClaim.GetShannonDestAddress(),
-			wrongMorsePrivKey,
+			nonExistentMorsePrivKey,
 			&testAppServiceConfig,
 		)
 		require.NoError(t, err)
