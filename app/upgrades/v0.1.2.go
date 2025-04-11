@@ -69,11 +69,8 @@ var Upgrade_0_1_2 = Upgrade{
 				return fmt.Errorf("failed to parse time: %w", err)
 			}
 
-			response, err := keepers.UpgradeKeeper.Authority(ctx, &upgradetypes.QueryAuthorityRequest{})
-			if err != nil {
-				return fmt.Errorf("failed to query authority address: %w", err)
-			}
-			authorityAddress := response.GetAddress()
+			// Get the authority address of the migration module.
+			authorityAddress := keepers.MigrationKeeper.GetAuthority()
 
 			// Get the grantee address for the current network.
 			pnfAddress := NetworkAuthzGranteeAddress[cosmosTypes.UnwrapSDKContext(ctx).ChainID()]
