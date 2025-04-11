@@ -109,3 +109,15 @@ ls -la /home/pocket/.pocket/cosmovisor/upgrades/
 ```bash
 cat /home/pocket/.pocket/config/config.toml
 ```
+
+## How do I check the version of a Full Node?
+
+```bash
+curl -s ${POCKET_RPC_ENDPONT}/abci_info | jq '.result.response.version'
+```
+
+For example, for Beta TestNet, we got the RPC endpoint from [here](../../tools/tools/shannon_beta.md) and ran:
+
+```bash
+curl -s https://shannon-testnet-grove-rpc.beta.poktroll.com/abci_info | jq '.result.response.version'
+```
