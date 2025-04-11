@@ -1,28 +1,30 @@
 package types
 
 import (
-	errorsmod "cosmossdk.io/errors"
 	cometcrypto "github.com/cometbft/cometbft/crypto"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/cosmos/gogoproto/proto"
 )
 
-var _ sdk.Msg = (*MsgClaimMorseAccount)(nil)
+var (
+	_ sdk.Msg           = (*MsgClaimMorseAccount)(nil)
+	_ morseClaimMessage = (*MsgClaimMorseAccount)(nil)
+)
 
 func NewMsgClaimMorseAccount(
 	shannonDestAddress string,
-	morseSrcAddress string,
 	morsePrivateKey cometcrypto.PrivKey,
 	shannonSigningAddr string,
 ) (*MsgClaimMorseAccount, error) {
 	msg := &MsgClaimMorseAccount{
 		ShannonDestAddress:    shannonDestAddress,
-		MorseSrcAddress:       morseSrcAddress,
 		ShannonSigningAddress: shannonSigningAddr,
 	}
 
 	if morsePrivateKey != nil {
+		msg.MorsePublicKey = morsePrivateKey.PubKey().Bytes()
+
 		if err := msg.SignMsgClaimMorseAccount(morsePrivateKey); err != nil {
 			return nil, err
 		}
@@ -31,17 +33,23 @@ func NewMsgClaimMorseAccount(
 	return msg, nil
 }
 
+// ValidateBasic ensures that:
+// - The shannonDestAddress is valid (i.e. it is a valid bech32 address).
+// - The morsePublicKey is valid.
+// - The morseSrcAddress matches the public key.
+// - The morseSignature is valid.
 func (msg *MsgClaimMorseAccount) ValidateBasic() error {
-	if len(msg.MorseSrcAddress) != MorseAddressHexLengthBytes {
-		return ErrMorseAccountClaim.Wrapf("invalid morseSrcAddress length (%d): %q", len(msg.MorseSrcAddress), msg.MorseSrcAddress)
+	// Validate the shannonDestAddress is a valid bech32 address.
+	if _, err := sdk.AccAddressFromBech32(msg.GetShannonDestAddress()); err != nil {
+		return sdkerrors.ErrInvalidAddress.Wrapf(
+			"invalid shannonDestAddress address (%s): %s",
+			msg.GetShannonDestAddress(), err,
+		)
 	}
 
-	if len(msg.MorseSignature) != MorseSignatureLengthBytes {
-		return ErrMorseAccountClaim.Wrapf("invalid morseSignature length (%d): %q", len(msg.MorseSignature), msg.MorseSignature)
-	}
-
-	if _, err := sdk.AccAddressFromBech32(msg.ShannonDestAddress); err != nil {
-		return errorsmod.Wrapf(sdkerrors.ErrInvalidAddress, "invalid shannonDestAddress address (%s): %s", msg.ShannonDestAddress, err)
+	// Validate the Morse signature.
+	if err := msg.ValidateMorseSignature(); err != nil {
+		return err
 	}
 	return nil
 }
@@ -50,27 +58,20 @@ func (msg *MsgClaimMorseAccount) ValidateBasic() error {
 func (msg *MsgClaimMorseAccount) SignMsgClaimMorseAccount(morsePrivKey cometcrypto.PrivKey) (err error) {
 	signingMsgBz, err := msg.getSigningBytes()
 	if err != nil {
-		return err
+		return ErrMorseSignature.Wrapf("unable to get signing bytes: %s", err)
 	}
 
 	msg.MorseSignature, err = morsePrivKey.Sign(signingMsgBz)
-	return err
+	if err != nil {
+		return ErrMorseSignature.Wrapf("unable to sign message: %s", err)
+	}
+	return nil
 }
 
 // ValidateMorseSignature validates the signature of the given MsgClaimMorseAccount
 // matches the given Morse public key.
-func (msg *MsgClaimMorseAccount) ValidateMorseSignature(morsePublicKey cometcrypto.PubKey) error {
-	signingMsgBz, err := msg.getSigningBytes()
-	if err != nil {
-		return err
-	}
-
-	// Validate the morse signature.
-	if !morsePublicKey.VerifySignature(signingMsgBz, msg.MorseSignature) {
-		return ErrMorseAccountClaim.Wrapf("morseSignature is invalid")
-	}
-
-	return nil
+func (msg *MsgClaimMorseAccount) ValidateMorseSignature() error {
+	return validateMorseSignature(msg)
 }
 
 // getSigningBytes returns the canonical byte representation of the MsgClaimMorseAccount
@@ -82,4 +83,10 @@ func (msg *MsgClaimMorseAccount) getSigningBytes() ([]byte, error) {
 	signingMsg.MorseSignature = nil
 
 	return proto.Marshal(&signingMsg)
+}
+
+// GetMorseSrcAddress returns the morse source address associated with
+// the Morse public key of the given message.
+func (msg *MsgClaimMorseAccount) GetMorseSrcAddress() string {
+	return msg.GetMorsePublicKey().Address().String()
 }

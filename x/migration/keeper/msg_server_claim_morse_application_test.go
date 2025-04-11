@@ -96,8 +96,7 @@ func TestMsgServer_ClaimMorseApplication_SuccessNewApplication(t *testing.T) {
 
 	morsePrivKey := testmigration.GenMorsePrivateKey(0)
 	morseClaimableAccount := &migrationtypes.MorseClaimableAccount{
-		MorseSrcAddress:  sample.MorseAddressHex(),
-		PublicKey:        morsePrivKey.PubKey().Bytes(),
+		MorseSrcAddress:  morsePrivKey.PubKey().Address().String(),
 		UnstakedBalance:  unstakedBalance,
 		ApplicationStake: applicationStake,
 		SupplierStake:    sdk.NewInt64Coin(volatile.DenomuPOKT, 0),
@@ -124,7 +123,6 @@ func TestMsgServer_ClaimMorseApplication_SuccessNewApplication(t *testing.T) {
 	// Claim the MorseClaimableAccount.
 	msgClaim, err := migrationtypes.NewMsgClaimMorseApplication(
 		shannonDestAddr,
-		morseClaimableAccount.GetMorseSrcAddress(),
 		morsePrivKey,
 		&testAppServiceConfig,
 		sample.AccAddress(),
@@ -138,7 +136,7 @@ func TestMsgServer_ClaimMorseApplication_SuccessNewApplication(t *testing.T) {
 	sharedParams := sharedtypes.DefaultParams()
 	expectedSessionEndHeight := sharedtypes.GetSessionEndHeight(&sharedParams, ctx.BlockHeight())
 	expectedRes := &migrationtypes.MsgClaimMorseApplicationResponse{
-		MorseSrcAddress:         msgClaim.MorseSrcAddress,
+		MorseSrcAddress:         msgClaim.GetMorseSrcAddress(),
 		ClaimedApplicationStake: morseClaimableAccount.GetApplicationStake(),
 		ClaimedBalance: expectedClaimedUnstakedTokens.
 			Add(morseClaimableAccount.GetSupplierStake()),
@@ -151,13 +149,13 @@ func TestMsgServer_ClaimMorseApplication_SuccessNewApplication(t *testing.T) {
 	expectedMorseAccount := morseClaimableAccount
 	expectedMorseAccount.ShannonDestAddress = shannonDestAddr
 	expectedMorseAccount.ClaimedAtHeight = ctx.BlockHeight()
-	foundMorseAccount, found := k.GetMorseClaimableAccount(ctx, msgClaim.MorseSrcAddress)
+	foundMorseAccount, found := k.GetMorseClaimableAccount(ctx, msgClaim.GetMorseSrcAddress())
 	require.True(t, found)
 	require.Equal(t, *expectedMorseAccount, foundMorseAccount)
 
 	// Assert that an event is emitted for each claim.
 	expectedEvent := &migrationtypes.EventMorseApplicationClaimed{
-		MorseSrcAddress:         msgClaim.MorseSrcAddress,
+		MorseSrcAddress:         msgClaim.GetMorseSrcAddress(),
 		ClaimedBalance:          expectedClaimedUnstakedTokens,
 		ClaimedApplicationStake: applicationStake,
 		SessionEndHeight:        expectedSessionEndHeight,
@@ -178,8 +176,7 @@ func TestMsgServer_ClaimMorseApplication_Error(t *testing.T) {
 
 	morsePrivKey := testmigration.GenMorsePrivateKey(0)
 	morseClaimableAccount := &migrationtypes.MorseClaimableAccount{
-		MorseSrcAddress:  sample.MorseAddressHex(),
-		PublicKey:        morsePrivKey.PubKey().Bytes(),
+		MorseSrcAddress:  morsePrivKey.PubKey().Address().String(),
 		UnstakedBalance:  claimableUnstakedBalance,
 		ApplicationStake: claimableApplicationStake,
 		SupplierStake:    sdk.NewInt64Coin(volatile.DenomuPOKT, 0),
@@ -205,34 +202,45 @@ func TestMsgServer_ClaimMorseApplication_Error(t *testing.T) {
 	// Claim the MorseClaimableAccount with a random Shannon address.
 	msgClaim, err := migrationtypes.NewMsgClaimMorseApplication(
 		sample.AccAddress(),
-		accountState.Accounts[0].GetMorseSrcAddress(),
 		morsePrivKey,
 		expectedAppServiceConfig,
 		sample.AccAddress(),
 	)
 	require.NoError(t, err)
 
-	t.Run("invalid claim msg", func(t *testing.T) {
-		// Copy the message and set the morse signature to nil.
-		invalidMsgClaim := *msgClaim
-		invalidMsgClaim.MorseSignature = nil
+	// Generate a Morse private key for an account which is not in the Morse account state.
+	nonExistentMorsePrivKey := testmigration.GenMorsePrivateKey(99)
 
+	t.Run("invalid claim msg", func(t *testing.T) {
+		invalidMsgClaim, err := migrationtypes.NewMsgClaimMorseApplication(
+			msgClaim.GetShannonDestAddress(),
+			morsePrivKey,
+			&testAppServiceConfig,
+			sample.AccAddress(),
+		)
+		require.NoError(t, err)
+
+		invalidMsgClaim.MorseSignature = nil
 		expectedErr := status.Error(
 			codes.InvalidArgument,
-			migrationtypes.ErrMorseApplicationClaim.Wrapf(
+			migrationtypes.ErrMorseSignature.Wrapf(
 				"invalid morse signature length; expected %d, got %d",
 				migrationtypes.MorseSignatureLengthBytes, 0,
 			).Error(),
 		)
 
-		_, err := srv.ClaimMorseApplication(ctx, &invalidMsgClaim)
+		_, err = srv.ClaimMorseApplication(ctx, invalidMsgClaim)
 		require.EqualError(t, err, expectedErr.Error())
 	})
 
 	t.Run("account not found", func(t *testing.T) {
-		// Copy the message and set the morse src address to a valid but incorrect address.
-		invalidMsgClaim := *msgClaim
-		invalidMsgClaim.MorseSrcAddress = sample.MorseAddressHex()
+		invalidMsgClaim, err := migrationtypes.NewMsgClaimMorseApplication(
+			msgClaim.GetShannonDestAddress(),
+			nonExistentMorsePrivKey,
+			&testAppServiceConfig,
+			sample.AccAddress(),
+		)
+		require.NoError(t, err)
 
 		expectedErr := status.Error(
 			codes.NotFound,
@@ -242,7 +250,7 @@ func TestMsgServer_ClaimMorseApplication_Error(t *testing.T) {
 			).Error(),
 		)
 
-		_, err := srv.ClaimMorseApplication(ctx, &invalidMsgClaim)
+		_, err = srv.ClaimMorseApplication(ctx, invalidMsgClaim)
 		require.EqualError(t, err, expectedErr.Error())
 	})
 

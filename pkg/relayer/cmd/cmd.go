@@ -261,7 +261,10 @@ func setupRelayerDependencies(
 		config.NewSupplyRingClientFn(),
 		supplyTxFactory,
 		supplyTxContext,
-		config.NewSupplySupplierClientsFn(signingKeyNames),
+		// The RelayMiner always uses tx simulation to estimate the gas since this
+		// will be variable depending on the tx being sent.
+		// Always use the "auto" gas setting for the RelayMiner.
+		config.NewSupplySupplierClientsFn(signingKeyNames, cosmosflags.GasFlagAuto),
 		newSupplyRelayAuthenticatorFn(signingKeyNames),
 		newSupplyRelayerProxyFn(servicesConfigMap),
 		newSupplyRelayerSessionsManagerFn(smtStorePath),

@@ -2,9 +2,9 @@ package types_test
 
 import (
 	"encoding/hex"
+	"fmt"
 	"testing"
 
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/stretchr/testify/require"
 
 	"github.com/pokt-network/poktroll/testutil/sample"
@@ -25,84 +25,74 @@ func init() {
 }
 
 func TestMsgClaimMorseAccount_ValidateBasic(t *testing.T) {
-	require.Len(t, mockMorseSignature, migrationtypes.MorseSignatureLengthBytes)
-
-	tests := []struct {
-		desc string
-		msg  migrationtypes.MsgClaimMorseAccount
-		err  error
-	}{
-		{
-			desc: "invalid ShannonDestAddress",
-			msg: migrationtypes.MsgClaimMorseAccount{
-				ShannonDestAddress: "invalid_address",
-				MorseSrcAddress:    sample.MorseAddressHex(),
-				MorseSignature:     mockMorseSignature,
-			},
-			err: sdkerrors.ErrInvalidAddress,
-		}, {
-			desc: "invalid MorseSrcAddress",
-			msg: migrationtypes.MsgClaimMorseAccount{
-				ShannonDestAddress: sample.AccAddress(),
-				MorseSrcAddress:    "invalid_address",
-				MorseSignature:     mockMorseSignature,
-			},
-			err: migrationtypes.ErrMorseAccountClaim,
-		}, {
-			desc: "invalid empty MorseSignature",
-			msg: migrationtypes.MsgClaimMorseAccount{
-				ShannonDestAddress: sample.AccAddress(),
-				MorseSrcAddress:    "invalid_address",
-				MorseSignature:     nil,
-			},
-			err: migrationtypes.ErrMorseAccountClaim,
-		}, {
-			desc: "valid claim message",
-			msg: migrationtypes.MsgClaimMorseAccount{
-				ShannonDestAddress: sample.AccAddress(),
-				MorseSrcAddress:    sample.MorseAddressHex(),
-				MorseSignature:     mockMorseSignature,
-			},
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.desc, func(t *testing.T) {
-			err := tt.msg.ValidateBasic()
-			if tt.err != nil {
-				require.ErrorIs(t, err, tt.err)
-				return
-			}
-			require.NoError(t, err)
-		})
-	}
-}
-
-func TestMsgClaimMorseAccount_ValidateMorseSignature(t *testing.T) {
 	morsePrivKey := testmigration.GenMorsePrivateKey(0)
-	morsePublicKey := morsePrivKey.PubKey()
+	wrongMorsePrivKey := testmigration.GenMorsePrivateKey(99)
+
+	t.Run("invalid Shannon destination address", func(t *testing.T) {
+		msg, err := migrationtypes.NewMsgClaimMorseAccount(
+			"invalid_shannon_address",
+			morsePrivKey,
+			sample.AccAddress(),
+		)
+		require.NoError(t, err)
+
+		err = msg.ValidateBasic()
+		require.ErrorContains(t, err, fmt.Sprintf("invalid shannonDestAddress address (%s)", msg.GetShannonDestAddress()))
+	})
 
 	t.Run("invalid Morse signature", func(t *testing.T) {
-		msg := migrationtypes.MsgClaimMorseAccount{
-			ShannonDestAddress: sample.AccAddress(),
-			MorseSrcAddress:    sample.MorseAddressHex(),
-			MorseSignature:     []byte("invalid_signature"),
-		}
+		msg, err := migrationtypes.NewMsgClaimMorseAccount(
+			sample.AccAddress(),
+			morsePrivKey,
+			sample.AccAddress(),
+		)
+		require.NoError(t, err)
 
-		expectedErr := migrationtypes.ErrMorseAccountClaim.Wrapf("morseSignature is invalid")
-		err := msg.ValidateMorseSignature(morsePublicKey)
+		// Set the Morse signature to a non-hex string to simulate a corrupt signature.
+		msg.MorseSignature = []byte("invalid_signature")
+
+		expectedErr := migrationtypes.ErrMorseSignature.Wrapf(
+			"invalid morse signature length; expected %d, got %d",
+			migrationtypes.MorseSignatureLengthBytes,
+			len(msg.GetMorseSignature()),
+		)
+
+		err = msg.ValidateBasic()
 		require.EqualError(t, err, expectedErr.Error())
 	})
 
-	t.Run("valid Morse signature", func(t *testing.T) {
-		msg := migrationtypes.MsgClaimMorseAccount{
-			ShannonDestAddress: sample.AccAddress(),
-			MorseSrcAddress:    sample.MorseAddressHex(),
-			// MorseSignature:  (intenionally omitted; set in #SignMsgClaimMorseAccount)
-		}
-		err := msg.SignMsgClaimMorseAccount(morsePrivKey)
+	t.Run("wrong Morse signature", func(t *testing.T) {
+		// Construct a valid MsgClaimMorseAccount message using the "wrong" Morse
+		// private key. This populates the signature with a valid signature, but
+		// corresponding to the wrong key and address.
+		msg, err := migrationtypes.NewMsgClaimMorseAccount(
+			sample.AccAddress(),
+			wrongMorsePrivKey,
+			sample.AccAddress(),
+		)
 		require.NoError(t, err)
 
-		err = msg.ValidateMorseSignature(morsePublicKey)
+		// Reset the morsePublicKey fields, leaving the "wrong" signature in place.
+		msg.MorsePublicKey = morsePrivKey.PubKey().Bytes()
+		expectedErr := migrationtypes.ErrMorseSignature.Wrapf(
+			"morseSignature (%x) is invalid for Morse address (%s)",
+			msg.GetMorseSignature(),
+			msg.GetMorseSrcAddress(),
+		)
+
+		err = msg.ValidateBasic()
+		require.EqualError(t, err, expectedErr.Error())
+	})
+
+	t.Run("valid Morse claim account message", func(t *testing.T) {
+		msg, err := migrationtypes.NewMsgClaimMorseAccount(
+			sample.AccAddress(),
+			morsePrivKey,
+			sample.AccAddress(),
+		)
+		require.NoError(t, err)
+
+		err = msg.ValidateBasic()
 		require.NoError(t, err)
 	})
 }
