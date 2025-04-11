@@ -434,6 +434,7 @@ func (s *migrationSuite) TheAuthorityExecutes(commandStr string) {
 			"--from", "pnf",
 			keyRingFlag,
 			chainIdFlag,
+			"--gas", "1000000",
 		)
 		commandStringParts = append(commandStringParts, grpcAddrFlagParts...)
 		results, err = s.pocketd.RunCommandOnHost("", commandStringParts...)
@@ -613,6 +614,7 @@ func (s *migrationSuite) AMorseaccountstateWithAccountsInADistributionHasSuccess
 		defaultMorseAccountStateJSONFilename,
 	}, " ")
 	s.TheAuthorityExecutes(collectMorseAccountsCmdString)
+	s.ThePocketdBinaryShouldExitWithoutError()
 	s.AMorseaccountstateIsWrittenTo(defaultMorseAccountStateJSONFilename)
 
 	importMorseAccountsCmdString := strings.Join([]string{
@@ -621,6 +623,7 @@ func (s *migrationSuite) AMorseaccountstateWithAccountsInADistributionHasSuccess
 		defaultMorseAccountStateJSONFilename,
 	}, " ")
 	s.TheAuthorityExecutes(importMorseAccountsCmdString)
+	s.ThePocketdBinaryShouldExitWithoutError()
 	s.TheMorseclaimableaccountsArePersistedOnchain()
 }
 
