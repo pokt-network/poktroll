@@ -28,7 +28,7 @@ TODO(#791): The process of adding the `consensus-breaking` label is still not fo
   If any exist, assume the release will require an upgrade.
   [Here is a link](https://github.com/pokt-network/poktroll/pulls?q=sort%3Aupdated-desc+is%3Apr+is%3Amerged+label%3Aconsensus-breaking) for convenience.
 - **Verify a Full Node**: Deploy a Full Node on TestNet and allow it to sync and operate for a few days to verify that no accidentally introduced consensus-breaking changes affect the ability to sync. See the instructions in the [Quickstart Guide](../../operate/cheat_sheets/docker_compose_debian_cheatsheet.md for deploying a Full Node.
-- **Update Upgrade List**: If the new release includes an upgrade transaction for automatic upgrades, add the new release to the table in the [Upgrades List](./1_upgrade_list.md).
+- **Update Upgrade List**: If the new release includes an upgrade transaction for automatic upgrades, add the new release to the table in the [Upgrades List](./2_upgrade_list.md).
 
 :::danger
 
@@ -106,7 +106,7 @@ You can use the following template as a starting point.
 
 ### 5. Issue Upgrade on TestNet
 
-- Follow the [Upgrade Procedure](4_upgrade_procedure.md) to upgrade existing/running Full Nodes and Validators to the new version of `pocket`.
+- Follow the [Upgrade Procedure](9_upgrade_procedure.md) to upgrade existing/running Full Nodes and Validators to the new version of `pocket`.
 - Monitor the network's health metrics to identify any significant changes, such as the loss of many validators due to an unexpected consensus-breaking change.
 
 ### 6. Issue Upgrade on MainNet

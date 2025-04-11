@@ -27,7 +27,7 @@ This document is intended to help you recover without significant downtime.
 
 **Cancel the upgrade plan!**
 
-See the instructions of [how to do that here](4_upgrade_procedure.md#cancelling-the-upgrade-plan).
+See the instructions of [how to do that here](9_upgrade_procedure.md#cancelling-the-upgrade-plan).
 
 ### Option 1: The migration didn't start (i.e. migration halt)
 
