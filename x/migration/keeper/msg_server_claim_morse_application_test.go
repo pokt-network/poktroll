@@ -216,6 +216,7 @@ func TestMsgServer_ClaimMorseApplication_Error(t *testing.T) {
 			msgClaim.GetShannonDestAddress(),
 			morsePrivKey,
 			&testAppServiceConfig,
+			sample.AccAddress(),
 		)
 		require.NoError(t, err)
 
@@ -237,6 +238,7 @@ func TestMsgServer_ClaimMorseApplication_Error(t *testing.T) {
 			msgClaim.GetShannonDestAddress(),
 			nonExistentMorsePrivKey,
 			&testAppServiceConfig,
+			sample.AccAddress(),
 		)
 		require.NoError(t, err)
 

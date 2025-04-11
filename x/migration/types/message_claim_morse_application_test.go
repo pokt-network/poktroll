@@ -25,6 +25,7 @@ func TestMsgClaimMorseApplication_ValidateBasic(t *testing.T) {
 			"invalid_address",
 			morsePrivKey,
 			&testAppServiceConfig,
+			sample.AccAddress(),
 		)
 		require.NoError(t, err)
 
@@ -37,6 +38,7 @@ func TestMsgClaimMorseApplication_ValidateBasic(t *testing.T) {
 			sample.AccAddress(),
 			morsePrivKey,
 			&testAppServiceConfig,
+			sample.AccAddress(),
 		)
 		require.NoError(t, err)
 
@@ -61,6 +63,7 @@ func TestMsgClaimMorseApplication_ValidateBasic(t *testing.T) {
 			sample.AccAddress(),
 			wrongMorsePrivKey,
 			&testAppServiceConfig,
+			sample.AccAddress(),
 		)
 		require.NoError(t, err)
 
@@ -84,6 +87,7 @@ func TestMsgClaimMorseApplication_ValidateBasic(t *testing.T) {
 			sample.AccAddress(),
 			morsePrivKey,
 			&testAppServiceConfig,
+			sample.AccAddress(),
 		)
 		require.NoError(t, err)
 
@@ -105,6 +109,7 @@ func TestMsgClaimMorseApplication_ValidateBasic(t *testing.T) {
 			sample.AccAddress(),
 			morsePrivKey,
 			&testAppServiceConfig,
+			sample.AccAddress(),
 		)
 		require.NoError(t, err)
 
@@ -126,6 +131,7 @@ func TestMsgClaimMorseApplication_ValidateBasic(t *testing.T) {
 			sample.AccAddress(),
 			morsePrivKey,
 			&sharedtypes.ApplicationServiceConfig{ServiceId: "invalid_service_id"},
+			sample.AccAddress(),
 		)
 		require.NoError(t, err)
 
@@ -149,6 +155,7 @@ func TestMsgClaimMorseApplication_ValidateBasic(t *testing.T) {
 			sample.AccAddress(),
 			morsePrivKey,
 			&testAppServiceConfig,
+			sample.AccAddress(),
 		)
 		require.NoError(t, err)
 

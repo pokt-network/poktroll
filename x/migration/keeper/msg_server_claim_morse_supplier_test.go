@@ -245,6 +245,7 @@ func TestMsgServer_ClaimMorseSupplier_Error(t *testing.T) {
 			sample.AccAddress(),
 			morsePrivKey,
 			testSupplierServices,
+			sample.AccAddress(),
 		)
 		require.NoError(t, err)
 
@@ -269,6 +270,7 @@ func TestMsgServer_ClaimMorseSupplier_Error(t *testing.T) {
 			sample.AccAddress(),
 			nonExistentMorsePrivKey,
 			testSupplierServices,
+			sample.AccAddress(),
 		)
 		require.NoError(t, err)
 
