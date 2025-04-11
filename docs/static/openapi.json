@@ -15,8 +15,2165 @@
         },
         "version": "version not set"
     },
-    "paths": {},
+    "paths": {
+        "/pocket.application.Msg/DelegateToGateway": {
+            "post": {
+                "tags": [
+                    "Msg"
+                ],
+                "operationId": "GithubCompoktNetworkpoktrollMsg_DelegateToGateway",
+                "parameters": [
+                    {
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/pocket.application.MsgDelegateToGateway"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "A successful response.",
+                        "schema": {
+                            "$ref": "#/definitions/pocket.application.MsgDelegateToGatewayResponse"
+                        }
+                    },
+                    "default": {
+                        "description": "An unexpected error response.",
+                        "schema": {
+                            "$ref": "#/definitions/google.rpc.Status"
+                        }
+                    }
+                }
+            }
+        },
+        "/pocket.application.Msg/StakeApplication": {
+            "post": {
+                "tags": [
+                    "Msg"
+                ],
+                "operationId": "GithubCompoktNetworkpoktrollMsg_StakeApplication",
+                "parameters": [
+                    {
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/pocket.application.MsgStakeApplication"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "A successful response.",
+                        "schema": {
+                            "$ref": "#/definitions/pocket.application.MsgStakeApplicationResponse"
+                        }
+                    },
+                    "default": {
+                        "description": "An unexpected error response.",
+                        "schema": {
+                            "$ref": "#/definitions/google.rpc.Status"
+                        }
+                    }
+                }
+            }
+        },
+        "/pocket.application.Msg/TransferApplication": {
+            "post": {
+                "tags": [
+                    "Msg"
+                ],
+                "operationId": "GithubCompoktNetworkpoktrollMsg_TransferApplication",
+                "parameters": [
+                    {
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/pocket.application.MsgTransferApplication"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "A successful response.",
+                        "schema": {
+                            "$ref": "#/definitions/pocket.application.MsgTransferApplicationResponse"
+                        }
+                    },
+                    "default": {
+                        "description": "An unexpected error response.",
+                        "schema": {
+                            "$ref": "#/definitions/google.rpc.Status"
+                        }
+                    }
+                }
+            }
+        },
+        "/pocket.application.Msg/UndelegateFromGateway": {
+            "post": {
+                "tags": [
+                    "Msg"
+                ],
+                "operationId": "GithubCompoktNetworkpoktrollMsg_UndelegateFromGateway",
+                "parameters": [
+                    {
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/pocket.application.MsgUndelegateFromGateway"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "A successful response.",
+                        "schema": {
+                            "$ref": "#/definitions/pocket.application.MsgUndelegateFromGatewayResponse"
+                        }
+                    },
+                    "default": {
+                        "description": "An unexpected error response.",
+                        "schema": {
+                            "$ref": "#/definitions/google.rpc.Status"
+                        }
+                    }
+                }
+            }
+        },
+        "/pocket.application.Msg/UnstakeApplication": {
+            "post": {
+                "tags": [
+                    "Msg"
+                ],
+                "operationId": "GithubCompoktNetworkpoktrollMsg_UnstakeApplication",
+                "parameters": [
+                    {
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/pocket.application.MsgUnstakeApplication"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "A successful response.",
+                        "schema": {
+                            "$ref": "#/definitions/pocket.application.MsgUnstakeApplicationResponse"
+                        }
+                    },
+                    "default": {
+                        "description": "An unexpected error response.",
+                        "schema": {
+                            "$ref": "#/definitions/google.rpc.Status"
+                        }
+                    }
+                }
+            }
+        },
+        "/pocket.application.Msg/UpdateParam": {
+            "post": {
+                "tags": [
+                    "Msg"
+                ],
+                "operationId": "GithubCompoktNetworkpoktrollMsg_UpdateParam",
+                "parameters": [
+                    {
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/pocket.application.MsgUpdateParam"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "A successful response.",
+                        "schema": {
+                            "$ref": "#/definitions/pocket.application.MsgUpdateParamResponse"
+                        }
+                    },
+                    "default": {
+                        "description": "An unexpected error response.",
+                        "schema": {
+                            "$ref": "#/definitions/google.rpc.Status"
+                        }
+                    }
+                }
+            }
+        },
+        "/pocket.application.Msg/UpdateParams": {
+            "post": {
+                "tags": [
+                    "Msg"
+                ],
+                "summary": "UpdateParams defines a (governance) operation for updating the module\nparameters. The authority defaults to the x/gov module account.",
+                "operationId": "GithubCompoktNetworkpoktrollMsg_UpdateParams",
+                "parameters": [
+                    {
+                        "description": "MsgUpdateParams is the Msg/UpdateParams request type.",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/pocket.application.MsgUpdateParams"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "A successful response.",
+                        "schema": {
+                            "$ref": "#/definitions/pocket.application.MsgUpdateParamsResponse"
+                        }
+                    },
+                    "default": {
+                        "description": "An unexpected error response.",
+                        "schema": {
+                            "$ref": "#/definitions/google.rpc.Status"
+                        }
+                    }
+                }
+            }
+        },
+        "/pocket.gateway.Msg/StakeGateway": {
+            "post": {
+                "tags": [
+                    "Msg"
+                ],
+                "operationId": "GithubCompoktNetworkpoktrollMsg_StakeGateway",
+                "parameters": [
+                    {
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/pocket.gateway.MsgStakeGateway"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "A successful response.",
+                        "schema": {
+                            "$ref": "#/definitions/pocket.gateway.MsgStakeGatewayResponse"
+                        }
+                    },
+                    "default": {
+                        "description": "An unexpected error response.",
+                        "schema": {
+                            "$ref": "#/definitions/google.rpc.Status"
+                        }
+                    }
+                }
+            }
+        },
+        "/pocket.gateway.Msg/UnstakeGateway": {
+            "post": {
+                "tags": [
+                    "Msg"
+                ],
+                "operationId": "GithubCompoktNetworkpoktrollMsg_UnstakeGateway",
+                "parameters": [
+                    {
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/pocket.gateway.MsgUnstakeGateway"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "A successful response.",
+                        "schema": {
+                            "$ref": "#/definitions/pocket.gateway.MsgUnstakeGatewayResponse"
+                        }
+                    },
+                    "default": {
+                        "description": "An unexpected error response.",
+                        "schema": {
+                            "$ref": "#/definitions/google.rpc.Status"
+                        }
+                    }
+                }
+            }
+        },
+        "/pocket.gateway.Msg/UpdateParam": {
+            "post": {
+                "tags": [
+                    "Msg"
+                ],
+                "operationId": "GithubCompoktNetworkpoktrollMsg_UpdateParamMixin10",
+                "parameters": [
+                    {
+                        "description": "MsgUpdateParam is the Msg/UpdateParam request type to update a single param.",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/pocket.gateway.MsgUpdateParam"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "A successful response.",
+                        "schema": {
+                            "$ref": "#/definitions/pocket.gateway.MsgUpdateParamResponse"
+                        }
+                    },
+                    "default": {
+                        "description": "An unexpected error response.",
+                        "schema": {
+                            "$ref": "#/definitions/google.rpc.Status"
+                        }
+                    }
+                }
+            }
+        },
+        "/pocket.gateway.Msg/UpdateParams": {
+            "post": {
+                "tags": [
+                    "Msg"
+                ],
+                "summary": "UpdateParams defines a (governance) operation for updating the module\nparameters. The authority defaults to the x/gov module account.",
+                "operationId": "GithubCompoktNetworkpoktrollMsg_UpdateParamsMixin10",
+                "parameters": [
+                    {
+                        "description": "MsgUpdateParams is the Msg/UpdateParams request type.",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/pocket.gateway.MsgUpdateParams"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "A successful response.",
+                        "schema": {
+                            "$ref": "#/definitions/pocket.gateway.MsgUpdateParamsResponse"
+                        }
+                    },
+                    "default": {
+                        "description": "An unexpected error response.",
+                        "schema": {
+                            "$ref": "#/definitions/google.rpc.Status"
+                        }
+                    }
+                }
+            }
+        },
+        "/pocket.migration.Msg/ClaimMorseAccount": {
+            "post": {
+                "tags": [
+                    "Msg"
+                ],
+                "operationId": "GithubCompoktNetworkpoktrollMsg_ClaimMorseAccount",
+                "parameters": [
+                    {
+                        "description": "MsgClaimMorseAccount is used to execute a claim (one-time minting of tokens on Shannon),\nof the balance of the given Morse account, according to the on-chain MorseClaimableAccounts,\nto the balance of the given Shannon account.\n\nNOTE:\n- The Shannon account specified must be the message signer\n- Authz grants MAY be used to delegate claiming authority to other Shannon accounts",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/pocket.migration.MsgClaimMorseAccount"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "A successful response.",
+                        "schema": {
+                            "$ref": "#/definitions/pocket.migration.MsgClaimMorseAccountResponse"
+                        }
+                    },
+                    "default": {
+                        "description": "An unexpected error response.",
+                        "schema": {
+                            "$ref": "#/definitions/google.rpc.Status"
+                        }
+                    }
+                }
+            }
+        },
+        "/pocket.migration.Msg/ClaimMorseApplication": {
+            "post": {
+                "tags": [
+                    "Msg"
+                ],
+                "operationId": "GithubCompoktNetworkpoktrollMsg_ClaimMorseApplication",
+                "parameters": [
+                    {
+                        "description": "MsgClaimMorseApplication is used to execute a claim (one-time minting of tokens on Shannon),\nof the total tokens owned by the given Morse account, according to the on-chain MorseClaimableAccounts,\nto the balance of the given Shannon account, followed by staking that Shannon account as an application\nfor the given service_config and the same stake amount as on Morse.",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/pocket.migration.MsgClaimMorseApplication"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "A successful response.",
+                        "schema": {
+                            "$ref": "#/definitions/pocket.migration.MsgClaimMorseApplicationResponse"
+                        }
+                    },
+                    "default": {
+                        "description": "An unexpected error response.",
+                        "schema": {
+                            "$ref": "#/definitions/google.rpc.Status"
+                        }
+                    }
+                }
+            }
+        },
+        "/pocket.migration.Msg/ClaimMorseSupplier": {
+            "post": {
+                "tags": [
+                    "Msg"
+                ],
+                "operationId": "GithubCompoktNetworkpoktrollMsg_ClaimMorseSupplier",
+                "parameters": [
+                    {
+                        "description": "NOTE: The supplier module's staking fee parameter (at the time of claiming) is deducted from the\nclaimed balance.",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/pocket.migration.MsgClaimMorseSupplier"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "A successful response.",
+                        "schema": {
+                            "$ref": "#/definitions/pocket.migration.MsgClaimMorseSupplierResponse"
+                        }
+                    },
+                    "default": {
+                        "description": "An unexpected error response.",
+                        "schema": {
+                            "$ref": "#/definitions/google.rpc.Status"
+                        }
+                    }
+                }
+            }
+        },
+        "/pocket.migration.Msg/ImportMorseClaimableAccounts": {
+            "post": {
+                "tags": [
+                    "Msg"
+                ],
+                "operationId": "GithubCompoktNetworkpoktrollMsg_ImportMorseClaimableAccounts",
+                "parameters": [
+                    {
+                        "description": "MsgImportMorseClaimableAccounts is used to create the on-chain MorseClaimableAccounts ONLY AND EXACTLY ONCE (per network / re-genesis).",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/pocket.migration.MsgImportMorseClaimableAccounts"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "A successful response.",
+                        "schema": {
+                            "$ref": "#/definitions/pocket.migration.MsgImportMorseClaimableAccountsResponse"
+                        }
+                    },
+                    "default": {
+                        "description": "An unexpected error response.",
+                        "schema": {
+                            "$ref": "#/definitions/google.rpc.Status"
+                        }
+                    }
+                }
+            }
+        },
+        "/pocket.migration.Msg/UpdateParams": {
+            "post": {
+                "tags": [
+                    "Msg"
+                ],
+                "summary": "UpdateParams defines a (governance) operation for updating the module\nparameters. The authority defaults to the x/gov module account.",
+                "operationId": "GithubCompoktNetworkpoktrollMsg_UpdateParamsMixin18",
+                "parameters": [
+                    {
+                        "description": "MsgUpdateParams is the Msg/UpdateParams request type.",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/pocket.migration.MsgUpdateParams"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "A successful response.",
+                        "schema": {
+                            "$ref": "#/definitions/pocket.migration.MsgUpdateParamsResponse"
+                        }
+                    },
+                    "default": {
+                        "description": "An unexpected error response.",
+                        "schema": {
+                            "$ref": "#/definitions/google.rpc.Status"
+                        }
+                    }
+                }
+            }
+        },
+        "/pocket.proof.Msg/CreateClaim": {
+            "post": {
+                "tags": [
+                    "Msg"
+                ],
+                "operationId": "GithubCompoktNetworkpoktrollMsg_CreateClaim",
+                "parameters": [
+                    {
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/pocket.proof.MsgCreateClaim"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "A successful response.",
+                        "schema": {
+                            "$ref": "#/definitions/pocket.proof.MsgCreateClaimResponse"
+                        }
+                    },
+                    "default": {
+                        "description": "An unexpected error response.",
+                        "schema": {
+                            "$ref": "#/definitions/google.rpc.Status"
+                        }
+                    }
+                }
+            }
+        },
+        "/pocket.proof.Msg/SubmitProof": {
+            "post": {
+                "tags": [
+                    "Msg"
+                ],
+                "operationId": "GithubCompoktNetworkpoktrollMsg_SubmitProof",
+                "parameters": [
+                    {
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/pocket.proof.MsgSubmitProof"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "A successful response.",
+                        "schema": {
+                            "$ref": "#/definitions/pocket.proof.MsgSubmitProofResponse"
+                        }
+                    },
+                    "default": {
+                        "description": "An unexpected error response.",
+                        "schema": {
+                            "$ref": "#/definitions/google.rpc.Status"
+                        }
+                    }
+                }
+            }
+        },
+        "/pocket.proof.Msg/UpdateParam": {
+            "post": {
+                "tags": [
+                    "Msg"
+                ],
+                "operationId": "GithubCompoktNetworkpoktrollMsg_UpdateParamMixin23",
+                "parameters": [
+                    {
+                        "description": "MsgUpdateParam is the Msg/UpdateParam request type to update a single param.",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/pocket.proof.MsgUpdateParam"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "A successful response.",
+                        "schema": {
+                            "$ref": "#/definitions/pocket.proof.MsgUpdateParamResponse"
+                        }
+                    },
+                    "default": {
+                        "description": "An unexpected error response.",
+                        "schema": {
+                            "$ref": "#/definitions/google.rpc.Status"
+                        }
+                    }
+                }
+            }
+        },
+        "/pocket.proof.Msg/UpdateParams": {
+            "post": {
+                "tags": [
+                    "Msg"
+                ],
+                "summary": "UpdateParams defines a (governance) operation for updating the module\nparameters. The authority defaults to the x/gov module account.",
+                "operationId": "GithubCompoktNetworkpoktrollMsg_UpdateParamsMixin23",
+                "parameters": [
+                    {
+                        "description": "MsgUpdateParams is the Msg/UpdateParams request type to update all params at once.",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/pocket.proof.MsgUpdateParams"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "A successful response.",
+                        "schema": {
+                            "$ref": "#/definitions/pocket.proof.MsgUpdateParamsResponse"
+                        }
+                    },
+                    "default": {
+                        "description": "An unexpected error response.",
+                        "schema": {
+                            "$ref": "#/definitions/google.rpc.Status"
+                        }
+                    }
+                }
+            }
+        },
+        "/pocket.service.Msg/AddService": {
+            "post": {
+                "tags": [
+                    "Msg"
+                ],
+                "operationId": "GithubCompoktNetworkpoktrollMsg_AddService",
+                "parameters": [
+                    {
+                        "description": "MsgAddService defines a message for adding a new message to the network.\nServices can be added by any actor in the network making them truly\npermissionless.",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/pocket.service.MsgAddService"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "A successful response.",
+                        "schema": {
+                            "$ref": "#/definitions/pocket.service.MsgAddServiceResponse"
+                        }
+                    },
+                    "default": {
+                        "description": "An unexpected error response.",
+                        "schema": {
+                            "$ref": "#/definitions/google.rpc.Status"
+                        }
+                    }
+                }
+            }
+        },
+        "/pocket.service.Msg/UpdateParam": {
+            "post": {
+                "tags": [
+                    "Msg"
+                ],
+                "operationId": "GithubCompoktNetworkpoktrollMsg_UpdateParamMixin31",
+                "parameters": [
+                    {
+                        "description": "MsgUpdateParam is the Msg/UpdateParam request type to update a single param.",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/pocket.service.MsgUpdateParam"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "A successful response.",
+                        "schema": {
+                            "$ref": "#/definitions/pocket.service.MsgUpdateParamResponse"
+                        }
+                    },
+                    "default": {
+                        "description": "An unexpected error response.",
+                        "schema": {
+                            "$ref": "#/definitions/google.rpc.Status"
+                        }
+                    }
+                }
+            }
+        },
+        "/pocket.service.Msg/UpdateParams": {
+            "post": {
+                "tags": [
+                    "Msg"
+                ],
+                "summary": "UpdateParams defines a (governance) operation for updating the module\nparameters. The authority defaults to the x/gov module account.",
+                "operationId": "GithubCompoktNetworkpoktrollMsg_UpdateParamsMixin31",
+                "parameters": [
+                    {
+                        "description": "MsgUpdateParams is the Msg/UpdateParams request type.",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/pocket.service.MsgUpdateParams"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "A successful response.",
+                        "schema": {
+                            "$ref": "#/definitions/pocket.service.MsgUpdateParamsResponse"
+                        }
+                    },
+                    "default": {
+                        "description": "An unexpected error response.",
+                        "schema": {
+                            "$ref": "#/definitions/google.rpc.Status"
+                        }
+                    }
+                }
+            }
+        },
+        "/pocket.session.Msg/UpdateParam": {
+            "post": {
+                "tags": [
+                    "Msg"
+                ],
+                "operationId": "GithubCompoktNetworkpoktrollMsg_UpdateParamMixin35",
+                "parameters": [
+                    {
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/pocket.session.MsgUpdateParam"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "A successful response.",
+                        "schema": {
+                            "$ref": "#/definitions/pocket.session.MsgUpdateParamResponse"
+                        }
+                    },
+                    "default": {
+                        "description": "An unexpected error response.",
+                        "schema": {
+                            "$ref": "#/definitions/google.rpc.Status"
+                        }
+                    }
+                }
+            }
+        },
+        "/pocket.session.Msg/UpdateParams": {
+            "post": {
+                "tags": [
+                    "Msg"
+                ],
+                "summary": "UpdateParams defines a (governance) operation for updating the module\nparameters. The authority defaults to the x/gov module account.",
+                "operationId": "GithubCompoktNetworkpoktrollMsg_UpdateParamsMixin35",
+                "parameters": [
+                    {
+                        "description": "MsgUpdateParams is the Msg/UpdateParams request type.",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/pocket.session.MsgUpdateParams"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "A successful response.",
+                        "schema": {
+                            "$ref": "#/definitions/pocket.session.MsgUpdateParamsResponse"
+                        }
+                    },
+                    "default": {
+                        "description": "An unexpected error response.",
+                        "schema": {
+                            "$ref": "#/definitions/google.rpc.Status"
+                        }
+                    }
+                }
+            }
+        },
+        "/pocket.shared.Msg/UpdateParam": {
+            "post": {
+                "tags": [
+                    "Msg"
+                ],
+                "operationId": "GithubCompoktNetworkpoktrollMsg_UpdateParamMixin42",
+                "parameters": [
+                    {
+                        "description": "MsgUpdateParam is the Msg/UpdateParam request type to update a single param.",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/pocket.shared.MsgUpdateParam"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "A successful response.",
+                        "schema": {
+                            "$ref": "#/definitions/pocket.shared.MsgUpdateParamResponse"
+                        }
+                    },
+                    "default": {
+                        "description": "An unexpected error response.",
+                        "schema": {
+                            "$ref": "#/definitions/google.rpc.Status"
+                        }
+                    }
+                }
+            }
+        },
+        "/pocket.shared.Msg/UpdateParams": {
+            "post": {
+                "tags": [
+                    "Msg"
+                ],
+                "summary": "UpdateParams defines a (governance) operation for updating the module\nparameters. The authority defaults to the x/gov module account.",
+                "operationId": "GithubCompoktNetworkpoktrollMsg_UpdateParamsMixin42",
+                "parameters": [
+                    {
+                        "description": "MsgUpdateParams is the Msg/UpdateParams request type.",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/pocket.shared.MsgUpdateParams"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "A successful response.",
+                        "schema": {
+                            "$ref": "#/definitions/pocket.shared.MsgUpdateParamsResponse"
+                        }
+                    },
+                    "default": {
+                        "description": "An unexpected error response.",
+                        "schema": {
+                            "$ref": "#/definitions/google.rpc.Status"
+                        }
+                    }
+                }
+            }
+        },
+        "/pocket.supplier.Msg/StakeSupplier": {
+            "post": {
+                "tags": [
+                    "Msg"
+                ],
+                "operationId": "GithubCompoktNetworkpoktrollMsg_StakeSupplier",
+                "parameters": [
+                    {
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/pocket.supplier.MsgStakeSupplier"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "A successful response.",
+                        "schema": {
+                            "$ref": "#/definitions/pocket.supplier.MsgStakeSupplierResponse"
+                        }
+                    },
+                    "default": {
+                        "description": "An unexpected error response.",
+                        "schema": {
+                            "$ref": "#/definitions/google.rpc.Status"
+                        }
+                    }
+                }
+            }
+        },
+        "/pocket.supplier.Msg/UnstakeSupplier": {
+            "post": {
+                "tags": [
+                    "Msg"
+                ],
+                "operationId": "GithubCompoktNetworkpoktrollMsg_UnstakeSupplier",
+                "parameters": [
+                    {
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/pocket.supplier.MsgUnstakeSupplier"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "A successful response.",
+                        "schema": {
+                            "$ref": "#/definitions/pocket.supplier.MsgUnstakeSupplierResponse"
+                        }
+                    },
+                    "default": {
+                        "description": "An unexpected error response.",
+                        "schema": {
+                            "$ref": "#/definitions/google.rpc.Status"
+                        }
+                    }
+                }
+            }
+        },
+        "/pocket.supplier.Msg/UpdateParam": {
+            "post": {
+                "tags": [
+                    "Msg"
+                ],
+                "operationId": "GithubCompoktNetworkpoktrollMsg_UpdateParamMixin47",
+                "parameters": [
+                    {
+                        "description": "MsgUpdateParam is the Msg/UpdateParam request type to update a single param.",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/pocket.supplier.MsgUpdateParam"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "A successful response.",
+                        "schema": {
+                            "$ref": "#/definitions/pocket.supplier.MsgUpdateParamResponse"
+                        }
+                    },
+                    "default": {
+                        "description": "An unexpected error response.",
+                        "schema": {
+                            "$ref": "#/definitions/google.rpc.Status"
+                        }
+                    }
+                }
+            }
+        },
+        "/pocket.supplier.Msg/UpdateParams": {
+            "post": {
+                "tags": [
+                    "Msg"
+                ],
+                "summary": "UpdateParams defines a (governance) operation for updating the module\nparameters. The authority defaults to the x/gov module account.",
+                "operationId": "GithubCompoktNetworkpoktrollMsg_UpdateParamsMixin47",
+                "parameters": [
+                    {
+                        "description": "MsgUpdateParams is the Msg/UpdateParams request type.",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/pocket.supplier.MsgUpdateParams"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "A successful response.",
+                        "schema": {
+                            "$ref": "#/definitions/pocket.supplier.MsgUpdateParamsResponse"
+                        }
+                    },
+                    "default": {
+                        "description": "An unexpected error response.",
+                        "schema": {
+                            "$ref": "#/definitions/google.rpc.Status"
+                        }
+                    }
+                }
+            }
+        },
+        "/pocket.tokenomics.Msg/UpdateParam": {
+            "post": {
+                "tags": [
+                    "Msg"
+                ],
+                "operationId": "GithubCompoktNetworkpoktrollMsg_UpdateParamMixin52",
+                "parameters": [
+                    {
+                        "description": "MsgUpdateParam is the Msg/UpdateParam request type to update a single param.",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/pocket.tokenomics.MsgUpdateParam"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "A successful response.",
+                        "schema": {
+                            "$ref": "#/definitions/pocket.tokenomics.MsgUpdateParamResponse"
+                        }
+                    },
+                    "default": {
+                        "description": "An unexpected error response.",
+                        "schema": {
+                            "$ref": "#/definitions/google.rpc.Status"
+                        }
+                    }
+                }
+            }
+        },
+        "/pocket.tokenomics.Msg/UpdateParams": {
+            "post": {
+                "tags": [
+                    "Msg"
+                ],
+                "summary": "UpdateParams defines a (governance) operation for updating the module\nparameters. The authority defaults to the x/gov module account.",
+                "operationId": "GithubCompoktNetworkpoktrollMsg_UpdateParamsMixin52",
+                "parameters": [
+                    {
+                        "description": "MsgUpdateParams is the Msg/UpdateParams request type to update all params at once.",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/pocket.tokenomics.MsgUpdateParams"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "A successful response.",
+                        "schema": {
+                            "$ref": "#/definitions/pocket.tokenomics.MsgUpdateParamsResponse"
+                        }
+                    },
+                    "default": {
+                        "description": "An unexpected error response.",
+                        "schema": {
+                            "$ref": "#/definitions/google.rpc.Status"
+                        }
+                    }
+                }
+            }
+        },
+        "/pokt-network/poktroll/application/application": {
+            "get": {
+                "tags": [
+                    "Query"
+                ],
+                "operationId": "GithubCompoktNetworkpoktrollQuery_AllApplications",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "format": "byte",
+                        "description": "key is a value returned in PageResponse.next_key to begin\nquerying the next page most efficiently. Only one of offset or key\nshould be set.",
+                        "name": "pagination.key",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "format": "uint64",
+                        "description": "offset is a numeric offset that can be used when key is unavailable.\nIt is less efficient than using key. Only one of offset or key should\nbe set.",
+                        "name": "pagination.offset",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "format": "uint64",
+                        "description": "limit is the total number of results to be returned in the result page.\nIf left empty it will default to a value to be set by each app.",
+                        "name": "pagination.limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "count_total is set to true  to indicate that the result set should include\na count of the total number of items available for pagination in UIs.\ncount_total is only respected when offset is used. It is ignored when key\nis set.",
+                        "name": "pagination.count_total",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "reverse is set to true if results are to be returned in the descending order.\n\nSince: cosmos-sdk 0.43",
+                        "name": "pagination.reverse",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "TODO_MAINNET(@adshmh): rename this field to `gateway_address_delegated_to`\ndelegatee_gateway_address, if specified, filters the application list to only include those with delegation to the specified gateway address.",
+                        "name": "delegatee_gateway_address",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "A successful response.",
+                        "schema": {
+                            "$ref": "#/definitions/pocket.application.QueryAllApplicationsResponse"
+                        }
+                    },
+                    "default": {
+                        "description": "An unexpected error response.",
+                        "schema": {
+                            "$ref": "#/definitions/google.rpc.Status"
+                        }
+                    }
+                }
+            }
+        },
+        "/pokt-network/poktroll/application/application/{address}": {
+            "get": {
+                "tags": [
+                    "Query"
+                ],
+                "summary": "Queries a list of Application items.",
+                "operationId": "GithubCompoktNetworkpoktrollQuery_Application",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "name": "address",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "A successful response.",
+                        "schema": {
+                            "$ref": "#/definitions/pocket.application.QueryGetApplicationResponse"
+                        }
+                    },
+                    "default": {
+                        "description": "An unexpected error response.",
+                        "schema": {
+                            "$ref": "#/definitions/google.rpc.Status"
+                        }
+                    }
+                }
+            }
+        },
+        "/pokt-network/poktroll/application/params": {
+            "get": {
+                "tags": [
+                    "Query"
+                ],
+                "summary": "Parameters queries the parameters of the module.",
+                "operationId": "GithubCompoktNetworkpoktrollQuery_Params",
+                "responses": {
+                    "200": {
+                        "description": "A successful response.",
+                        "schema": {
+                            "$ref": "#/definitions/pocket.application.QueryParamsResponse"
+                        }
+                    },
+                    "default": {
+                        "description": "An unexpected error response.",
+                        "schema": {
+                            "$ref": "#/definitions/google.rpc.Status"
+                        }
+                    }
+                }
+            }
+        },
+        "/pokt-network/poktroll/gateway/gateway": {
+            "get": {
+                "tags": [
+                    "Query"
+                ],
+                "operationId": "GithubCompoktNetworkpoktrollQuery_AllGateways",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "format": "byte",
+                        "description": "key is a value returned in PageResponse.next_key to begin\nquerying the next page most efficiently. Only one of offset or key\nshould be set.",
+                        "name": "pagination.key",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "format": "uint64",
+                        "description": "offset is a numeric offset that can be used when key is unavailable.\nIt is less efficient than using key. Only one of offset or key should\nbe set.",
+                        "name": "pagination.offset",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "format": "uint64",
+                        "description": "limit is the total number of results to be returned in the result page.\nIf left empty it will default to a value to be set by each app.",
+                        "name": "pagination.limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "count_total is set to true  to indicate that the result set should include\na count of the total number of items available for pagination in UIs.\ncount_total is only respected when offset is used. It is ignored when key\nis set.",
+                        "name": "pagination.count_total",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "reverse is set to true if results are to be returned in the descending order.\n\nSince: cosmos-sdk 0.43",
+                        "name": "pagination.reverse",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "A successful response.",
+                        "schema": {
+                            "$ref": "#/definitions/pocket.gateway.QueryAllGatewaysResponse"
+                        }
+                    },
+                    "default": {
+                        "description": "An unexpected error response.",
+                        "schema": {
+                            "$ref": "#/definitions/google.rpc.Status"
+                        }
+                    }
+                }
+            }
+        },
+        "/pokt-network/poktroll/gateway/gateway/{address}": {
+            "get": {
+                "tags": [
+                    "Query"
+                ],
+                "summary": "Queries a list of Gateway items.",
+                "operationId": "GithubCompoktNetworkpoktrollQuery_Gateway",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "name": "address",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "A successful response.",
+                        "schema": {
+                            "$ref": "#/definitions/pocket.gateway.QueryGetGatewayResponse"
+                        }
+                    },
+                    "default": {
+                        "description": "An unexpected error response.",
+                        "schema": {
+                            "$ref": "#/definitions/google.rpc.Status"
+                        }
+                    }
+                }
+            }
+        },
+        "/pokt-network/poktroll/gateway/params": {
+            "get": {
+                "tags": [
+                    "Query"
+                ],
+                "summary": "Parameters queries the parameters of the module.",
+                "operationId": "GithubCompoktNetworkpoktrollQuery_ParamsMixin9",
+                "responses": {
+                    "200": {
+                        "description": "A successful response.",
+                        "schema": {
+                            "$ref": "#/definitions/pocket.gateway.QueryParamsResponse"
+                        }
+                    },
+                    "default": {
+                        "description": "An unexpected error response.",
+                        "schema": {
+                            "$ref": "#/definitions/google.rpc.Status"
+                        }
+                    }
+                }
+            }
+        },
+        "/pokt-network/poktroll/migration/morse_claimable_account": {
+            "get": {
+                "tags": [
+                    "Query"
+                ],
+                "operationId": "GithubCompoktNetworkpoktrollQuery_MorseClaimableAccountAll",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "format": "byte",
+                        "description": "key is a value returned in PageResponse.next_key to begin\nquerying the next page most efficiently. Only one of offset or key\nshould be set.",
+                        "name": "pagination.key",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "format": "uint64",
+                        "description": "offset is a numeric offset that can be used when key is unavailable.\nIt is less efficient than using key. Only one of offset or key should\nbe set.",
+                        "name": "pagination.offset",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "format": "uint64",
+                        "description": "limit is the total number of results to be returned in the result page.\nIf left empty it will default to a value to be set by each app.",
+                        "name": "pagination.limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "count_total is set to true  to indicate that the result set should include\na count of the total number of items available for pagination in UIs.\ncount_total is only respected when offset is used. It is ignored when key\nis set.",
+                        "name": "pagination.count_total",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "reverse is set to true if results are to be returned in the descending order.\n\nSince: cosmos-sdk 0.43",
+                        "name": "pagination.reverse",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "A successful response.",
+                        "schema": {
+                            "$ref": "#/definitions/pocket.migration.QueryAllMorseClaimableAccountResponse"
+                        }
+                    },
+                    "default": {
+                        "description": "An unexpected error response.",
+                        "schema": {
+                            "$ref": "#/definitions/google.rpc.Status"
+                        }
+                    }
+                }
+            }
+        },
+        "/pokt-network/poktroll/migration/morse_claimable_account/{address}": {
+            "get": {
+                "tags": [
+                    "Query"
+                ],
+                "summary": "Queries a list of MorseClaimableAccount items.",
+                "operationId": "GithubCompoktNetworkpoktrollQuery_MorseClaimableAccount",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "name": "address",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "A successful response.",
+                        "schema": {
+                            "$ref": "#/definitions/pocket.migration.QueryMorseClaimableAccountResponse"
+                        }
+                    },
+                    "default": {
+                        "description": "An unexpected error response.",
+                        "schema": {
+                            "$ref": "#/definitions/google.rpc.Status"
+                        }
+                    }
+                }
+            }
+        },
+        "/pokt-network/poktroll/migration/params": {
+            "get": {
+                "tags": [
+                    "Query"
+                ],
+                "summary": "Parameters queries the parameters of the module.",
+                "operationId": "GithubCompoktNetworkpoktrollQuery_ParamsMixin17",
+                "responses": {
+                    "200": {
+                        "description": "A successful response.",
+                        "schema": {
+                            "$ref": "#/definitions/pocket.migration.QueryParamsResponse"
+                        }
+                    },
+                    "default": {
+                        "description": "An unexpected error response.",
+                        "schema": {
+                            "$ref": "#/definitions/google.rpc.Status"
+                        }
+                    }
+                }
+            }
+        },
+        "/pokt-network/poktroll/proof/claim": {
+            "get": {
+                "tags": [
+                    "Query"
+                ],
+                "operationId": "GithubCompoktNetworkpoktrollQuery_AllClaims",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "format": "byte",
+                        "description": "key is a value returned in PageResponse.next_key to begin\nquerying the next page most efficiently. Only one of offset or key\nshould be set.",
+                        "name": "pagination.key",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "format": "uint64",
+                        "description": "offset is a numeric offset that can be used when key is unavailable.\nIt is less efficient than using key. Only one of offset or key should\nbe set.",
+                        "name": "pagination.offset",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "format": "uint64",
+                        "description": "limit is the total number of results to be returned in the result page.\nIf left empty it will default to a value to be set by each app.",
+                        "name": "pagination.limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "count_total is set to true  to indicate that the result set should include\na count of the total number of items available for pagination in UIs.\ncount_total is only respected when offset is used. It is ignored when key\nis set.",
+                        "name": "pagination.count_total",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "reverse is set to true if results are to be returned in the descending order.\n\nSince: cosmos-sdk 0.43",
+                        "name": "pagination.reverse",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "name": "supplier_operator_address",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "name": "session_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "format": "uint64",
+                        "name": "session_end_height",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "A successful response.",
+                        "schema": {
+                            "$ref": "#/definitions/pocket.proof.QueryAllClaimsResponse"
+                        }
+                    },
+                    "default": {
+                        "description": "An unexpected error response.",
+                        "schema": {
+                            "$ref": "#/definitions/google.rpc.Status"
+                        }
+                    }
+                }
+            }
+        },
+        "/pokt-network/poktroll/proof/claim/{session_id}/{supplier_operator_address}": {
+            "get": {
+                "tags": [
+                    "Query"
+                ],
+                "summary": "Queries a list of Claim items.",
+                "operationId": "GithubCompoktNetworkpoktrollQuery_Claim",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "name": "session_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "name": "supplier_operator_address",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "A successful response.",
+                        "schema": {
+                            "$ref": "#/definitions/pocket.proof.QueryGetClaimResponse"
+                        }
+                    },
+                    "default": {
+                        "description": "An unexpected error response.",
+                        "schema": {
+                            "$ref": "#/definitions/google.rpc.Status"
+                        }
+                    }
+                }
+            }
+        },
+        "/pokt-network/poktroll/proof/params": {
+            "get": {
+                "tags": [
+                    "Query"
+                ],
+                "summary": "Parameters queries the parameters of the module.",
+                "operationId": "GithubCompoktNetworkpoktrollQuery_ParamsMixin22",
+                "responses": {
+                    "200": {
+                        "description": "A successful response.",
+                        "schema": {
+                            "$ref": "#/definitions/pocket.proof.QueryParamsResponse"
+                        }
+                    },
+                    "default": {
+                        "description": "An unexpected error response.",
+                        "schema": {
+                            "$ref": "#/definitions/google.rpc.Status"
+                        }
+                    }
+                }
+            }
+        },
+        "/pokt-network/poktroll/proof/proof": {
+            "get": {
+                "tags": [
+                    "Query"
+                ],
+                "operationId": "GithubCompoktNetworkpoktrollQuery_AllProofs",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "format": "byte",
+                        "description": "key is a value returned in PageResponse.next_key to begin\nquerying the next page most efficiently. Only one of offset or key\nshould be set.",
+                        "name": "pagination.key",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "format": "uint64",
+                        "description": "offset is a numeric offset that can be used when key is unavailable.\nIt is less efficient than using key. Only one of offset or key should\nbe set.",
+                        "name": "pagination.offset",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "format": "uint64",
+                        "description": "limit is the total number of results to be returned in the result page.\nIf left empty it will default to a value to be set by each app.",
+                        "name": "pagination.limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "count_total is set to true  to indicate that the result set should include\na count of the total number of items available for pagination in UIs.\ncount_total is only respected when offset is used. It is ignored when key\nis set.",
+                        "name": "pagination.count_total",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "reverse is set to true if results are to be returned in the descending order.\n\nSince: cosmos-sdk 0.43",
+                        "name": "pagination.reverse",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "name": "supplier_operator_address",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "name": "session_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "format": "uint64",
+                        "name": "session_end_height",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "A successful response.",
+                        "schema": {
+                            "$ref": "#/definitions/pocket.proof.QueryAllProofsResponse"
+                        }
+                    },
+                    "default": {
+                        "description": "An unexpected error response.",
+                        "schema": {
+                            "$ref": "#/definitions/google.rpc.Status"
+                        }
+                    }
+                }
+            }
+        },
+        "/pokt-network/poktroll/proof/proof/{session_id}/{supplier_operator_address}": {
+            "get": {
+                "tags": [
+                    "Query"
+                ],
+                "summary": "Queries a list of Proof items.",
+                "operationId": "GithubCompoktNetworkpoktrollQuery_Proof",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "name": "session_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "name": "supplier_operator_address",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "A successful response.",
+                        "schema": {
+                            "$ref": "#/definitions/pocket.proof.QueryGetProofResponse"
+                        }
+                    },
+                    "default": {
+                        "description": "An unexpected error response.",
+                        "schema": {
+                            "$ref": "#/definitions/google.rpc.Status"
+                        }
+                    }
+                }
+            }
+        },
+        "/pokt-network/poktroll/service/params": {
+            "get": {
+                "tags": [
+                    "Query"
+                ],
+                "summary": "Parameters queries the parameters of the module.",
+                "operationId": "GithubCompoktNetworkpoktrollQuery_ParamsMixin28",
+                "responses": {
+                    "200": {
+                        "description": "A successful response.",
+                        "schema": {
+                            "$ref": "#/definitions/pocket.service.QueryParamsResponse"
+                        }
+                    },
+                    "default": {
+                        "description": "An unexpected error response.",
+                        "schema": {
+                            "$ref": "#/definitions/google.rpc.Status"
+                        }
+                    }
+                }
+            }
+        },
+        "/pokt-network/poktroll/service/relay_mining_difficulty": {
+            "get": {
+                "tags": [
+                    "Query"
+                ],
+                "operationId": "GithubCompoktNetworkpoktrollQuery_RelayMiningDifficultyAll",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "format": "byte",
+                        "description": "key is a value returned in PageResponse.next_key to begin\nquerying the next page most efficiently. Only one of offset or key\nshould be set.",
+                        "name": "pagination.key",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "format": "uint64",
+                        "description": "offset is a numeric offset that can be used when key is unavailable.\nIt is less efficient than using key. Only one of offset or key should\nbe set.",
+                        "name": "pagination.offset",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "format": "uint64",
+                        "description": "limit is the total number of results to be returned in the result page.\nIf left empty it will default to a value to be set by each app.",
+                        "name": "pagination.limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "count_total is set to true  to indicate that the result set should include\na count of the total number of items available for pagination in UIs.\ncount_total is only respected when offset is used. It is ignored when key\nis set.",
+                        "name": "pagination.count_total",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "reverse is set to true if results are to be returned in the descending order.\n\nSince: cosmos-sdk 0.43",
+                        "name": "pagination.reverse",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "A successful response.",
+                        "schema": {
+                            "$ref": "#/definitions/pocket.service.QueryAllRelayMiningDifficultyResponse"
+                        }
+                    },
+                    "default": {
+                        "description": "An unexpected error response.",
+                        "schema": {
+                            "$ref": "#/definitions/google.rpc.Status"
+                        }
+                    }
+                }
+            }
+        },
+        "/pokt-network/poktroll/service/relay_mining_difficulty/{serviceId}": {
+            "get": {
+                "tags": [
+                    "Query"
+                ],
+                "summary": "Queries a list of RelayMiningDifficulty items.",
+                "operationId": "GithubCompoktNetworkpoktrollQuery_RelayMiningDifficulty",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "name": "serviceId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "A successful response.",
+                        "schema": {
+                            "$ref": "#/definitions/pocket.service.QueryGetRelayMiningDifficultyResponse"
+                        }
+                    },
+                    "default": {
+                        "description": "An unexpected error response.",
+                        "schema": {
+                            "$ref": "#/definitions/google.rpc.Status"
+                        }
+                    }
+                }
+            }
+        },
+        "/pokt-network/poktroll/service/service": {
+            "get": {
+                "tags": [
+                    "Query"
+                ],
+                "operationId": "GithubCompoktNetworkpoktrollQuery_AllServices",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "format": "byte",
+                        "description": "key is a value returned in PageResponse.next_key to begin\nquerying the next page most efficiently. Only one of offset or key\nshould be set.",
+                        "name": "pagination.key",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "format": "uint64",
+                        "description": "offset is a numeric offset that can be used when key is unavailable.\nIt is less efficient than using key. Only one of offset or key should\nbe set.",
+                        "name": "pagination.offset",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "format": "uint64",
+                        "description": "limit is the total number of results to be returned in the result page.\nIf left empty it will default to a value to be set by each app.",
+                        "name": "pagination.limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "count_total is set to true  to indicate that the result set should include\na count of the total number of items available for pagination in UIs.\ncount_total is only respected when offset is used. It is ignored when key\nis set.",
+                        "name": "pagination.count_total",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "reverse is set to true if results are to be returned in the descending order.\n\nSince: cosmos-sdk 0.43",
+                        "name": "pagination.reverse",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "A successful response.",
+                        "schema": {
+                            "$ref": "#/definitions/pocket.service.QueryAllServicesResponse"
+                        }
+                    },
+                    "default": {
+                        "description": "An unexpected error response.",
+                        "schema": {
+                            "$ref": "#/definitions/google.rpc.Status"
+                        }
+                    }
+                }
+            }
+        },
+        "/pokt-network/poktroll/service/service/{id}": {
+            "get": {
+                "tags": [
+                    "Query"
+                ],
+                "summary": "Queries a list of Service items.",
+                "operationId": "GithubCompoktNetworkpoktrollQuery_Service",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "TODO_IMPROVE: We could support getting services by name.",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "A successful response.",
+                        "schema": {
+                            "$ref": "#/definitions/pocket.service.QueryGetServiceResponse"
+                        }
+                    },
+                    "default": {
+                        "description": "An unexpected error response.",
+                        "schema": {
+                            "$ref": "#/definitions/google.rpc.Status"
+                        }
+                    }
+                }
+            }
+        },
+        "/pokt-network/poktroll/session/get_session": {
+            "get": {
+                "tags": [
+                    "Query"
+                ],
+                "summary": "Queries the session given app_address, service and block_height.",
+                "operationId": "GithubCompoktNetworkpoktrollQuery_GetSession",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "The Bech32 address of the application.",
+                        "name": "application_address",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "The service ID to query the session for",
+                        "name": "service_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "format": "int64",
+                        "description": "The block height to query the session for",
+                        "name": "block_height",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "A successful response.",
+                        "schema": {
+                            "$ref": "#/definitions/pocket.session.QueryGetSessionResponse"
+                        }
+                    },
+                    "default": {
+                        "description": "An unexpected error response.",
+                        "schema": {
+                            "$ref": "#/definitions/google.rpc.Status"
+                        }
+                    }
+                }
+            }
+        },
+        "/pokt-network/poktroll/session/params": {
+            "get": {
+                "tags": [
+                    "Query"
+                ],
+                "summary": "Parameters queries the parameters of the module.",
+                "operationId": "GithubCompoktNetworkpoktrollQuery_ParamsMixin34",
+                "responses": {
+                    "200": {
+                        "description": "A successful response.",
+                        "schema": {
+                            "$ref": "#/definitions/pocket.session.QueryParamsResponse"
+                        }
+                    },
+                    "default": {
+                        "description": "An unexpected error response.",
+                        "schema": {
+                            "$ref": "#/definitions/google.rpc.Status"
+                        }
+                    }
+                }
+            }
+        },
+        "/pokt-network/poktroll/shared/params": {
+            "get": {
+                "tags": [
+                    "Query"
+                ],
+                "summary": "Parameters queries the parameters of the module.",
+                "operationId": "GithubCompoktNetworkpoktrollQuery_ParamsMixin39",
+                "responses": {
+                    "200": {
+                        "description": "A successful response.",
+                        "schema": {
+                            "$ref": "#/definitions/pocket.shared.QueryParamsResponse"
+                        }
+                    },
+                    "default": {
+                        "description": "An unexpected error response.",
+                        "schema": {
+                            "$ref": "#/definitions/google.rpc.Status"
+                        }
+                    }
+                }
+            }
+        },
+        "/pokt-network/poktroll/supplier/params": {
+            "get": {
+                "tags": [
+                    "Query"
+                ],
+                "summary": "Parameters queries the parameters of the module.",
+                "operationId": "GithubCompoktNetworkpoktrollQuery_ParamsMixin46",
+                "responses": {
+                    "200": {
+                        "description": "A successful response.",
+                        "schema": {
+                            "$ref": "#/definitions/pocket.supplier.QueryParamsResponse"
+                        }
+                    },
+                    "default": {
+                        "description": "An unexpected error response.",
+                        "schema": {
+                            "$ref": "#/definitions/google.rpc.Status"
+                        }
+                    }
+                }
+            }
+        },
+        "/pokt-network/poktroll/supplier/supplier": {
+            "get": {
+                "tags": [
+                    "Query"
+                ],
+                "operationId": "GithubCompoktNetworkpoktrollQuery_AllSuppliers",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "format": "byte",
+                        "description": "key is a value returned in PageResponse.next_key to begin\nquerying the next page most efficiently. Only one of offset or key\nshould be set.",
+                        "name": "pagination.key",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "format": "uint64",
+                        "description": "offset is a numeric offset that can be used when key is unavailable.\nIt is less efficient than using key. Only one of offset or key should\nbe set.",
+                        "name": "pagination.offset",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "format": "uint64",
+                        "description": "limit is the total number of results to be returned in the result page.\nIf left empty it will default to a value to be set by each app.",
+                        "name": "pagination.limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "count_total is set to true  to indicate that the result set should include\na count of the total number of items available for pagination in UIs.\ncount_total is only respected when offset is used. It is ignored when key\nis set.",
+                        "name": "pagination.count_total",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "reverse is set to true if results are to be returned in the descending order.\n\nSince: cosmos-sdk 0.43",
+                        "name": "pagination.reverse",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "unique service identifier to filter by",
+                        "name": "service_id",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "A successful response.",
+                        "schema": {
+                            "$ref": "#/definitions/pocket.supplier.QueryAllSuppliersResponse"
+                        }
+                    },
+                    "default": {
+                        "description": "An unexpected error response.",
+                        "schema": {
+                            "$ref": "#/definitions/google.rpc.Status"
+                        }
+                    }
+                }
+            }
+        },
+        "/pokt-network/poktroll/supplier/supplier/{operator_address}": {
+            "get": {
+                "tags": [
+                    "Query"
+                ],
+                "summary": "Queries a list of Supplier items.",
+                "operationId": "GithubCompoktNetworkpoktrollQuery_Supplier",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "TODO_TECHDEBT: Add the ability to query for a supplier by owner_id",
+                        "name": "operator_address",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "A successful response.",
+                        "schema": {
+                            "$ref": "#/definitions/pocket.supplier.QueryGetSupplierResponse"
+                        }
+                    },
+                    "default": {
+                        "description": "An unexpected error response.",
+                        "schema": {
+                            "$ref": "#/definitions/google.rpc.Status"
+                        }
+                    }
+                }
+            }
+        },
+        "/pokt-network/poktroll/tokenomics/params": {
+            "get": {
+                "tags": [
+                    "Query"
+                ],
+                "summary": "Parameters queries the parameters of the module.",
+                "operationId": "GithubCompoktNetworkpoktrollQuery_ParamsMixin51",
+                "responses": {
+                    "200": {
+                        "description": "A successful response.",
+                        "schema": {
+                            "$ref": "#/definitions/pocket.tokenomics.QueryParamsResponse"
+                        }
+                    },
+                    "default": {
+                        "description": "An unexpected error response.",
+                        "schema": {
+                            "$ref": "#/definitions/google.rpc.Status"
+                        }
+                    }
+                }
+            }
+        }
+    },
     "definitions": {
+        "cosmos.base.query.v1beta1.PageRequest": {
+            "description": "message SomeRequest {\n         Foo some_parameter = 1;\n         PageRequest pagination = 2;\n }",
+            "type": "object",
+            "title": "PageRequest is to be embedded in gRPC request messages for efficient\npagination. Ex:",
+            "properties": {
+                "count_total": {
+                    "description": "count_total is set to true  to indicate that the result set should include\na count of the total number of items available for pagination in UIs.\ncount_total is only respected when offset is used. It is ignored when key\nis set.",
+                    "type": "boolean"
+                },
+                "key": {
+                    "description": "key is a value returned in PageResponse.next_key to begin\nquerying the next page most efficiently. Only one of offset or key\nshould be set.",
+                    "type": "string",
+                    "format": "byte"
+                },
+                "limit": {
+                    "description": "limit is the total number of results to be returned in the result page.\nIf left empty it will default to a value to be set by each app.",
+                    "type": "string",
+                    "format": "uint64"
+                },
+                "offset": {
+                    "description": "offset is a numeric offset that can be used when key is unavailable.\nIt is less efficient than using key. Only one of offset or key should\nbe set.",
+                    "type": "string",
+                    "format": "uint64"
+                },
+                "reverse": {
+                    "description": "reverse is set to true if results are to be returned in the descending order.\n\nSince: cosmos-sdk 0.43",
+                    "type": "boolean"
+                }
+            }
+        },
+        "cosmos.base.query.v1beta1.PageResponse": {
+            "description": "PageResponse is to be embedded in gRPC response messages where the\ncorresponding request message has used PageRequest.\n\n message SomeResponse {\n         repeated Bar results = 1;\n         PageResponse page = 2;\n }",
+            "type": "object",
+            "properties": {
+                "next_key": {
+                    "description": "next_key is the key to be passed to PageRequest.key to\nquery the next page most efficiently. It will be empty if\nthere are no more results.",
+                    "type": "string",
+                    "format": "byte"
+                },
+                "total": {
+                    "type": "string",
+                    "format": "uint64",
+                    "title": "total is total number of results available if PageRequest.count_total\nwas set, its value is undefined otherwise"
+                }
+            }
+        },
+        "cosmos.base.v1beta1.Coin": {
+            "description": "Coin defines a token with a denomination and an amount.\n\nNOTE: The amount field is an Int which implements the custom method\nsignatures required by gogoproto.",
+            "type": "object",
+            "properties": {
+                "amount": {
+                    "type": "string"
+                },
+                "denom": {
+                    "type": "string"
+                }
+            }
+        },
         "google.protobuf.Any": {
             "type": "object",
             "properties": {
@@ -44,6 +2201,1830 @@
                     "type": "string"
                 }
             }
+        },
+        "pocket.application.Application": {
+            "type": "object",
+            "title": "Application represents the onchain definition and state of an application",
+            "properties": {
+                "address": {
+                    "type": "string",
+                    "title": "Bech32 address of the application"
+                },
+                "delegatee_gateway_addresses": {
+                    "type": "array",
+                    "title": "TODO_MAINNET_MIGRATION(@bryanchriswhite): Rename `delegatee_gateway_addresses` to `gateway_addresses_delegated_to`.\nEnsure to rename all relevant configs, comments, variables, function names, etc as well.\nNon-nullable list of Bech32 encoded delegatee Gateway addresses",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "pending_transfer": {
+                    "title": "Information about pending application transfers",
+                    "$ref": "#/definitions/pocket.application.PendingApplicationTransfer"
+                },
+                "pending_undelegations": {
+                    "description": "Mapping of session end heights to gateways being undelegated from\n- Key: Height of the last block of the session when undelegation tx was committed\n- Value: List of gateways being undelegated from\nTODO_DOCUMENT(@red-0ne): Need to document the flow from this comment\nso its clear to everyone why this is necessary; https://github.com/pokt-network/poktroll/issues/476#issuecomment-2052639906.",
+                    "type": "object",
+                    "additionalProperties": {
+                        "$ref": "#/definitions/pocket.application.UndelegatingGatewayList"
+                    }
+                },
+                "service_configs": {
+                    "type": "array",
+                    "title": "CRITICAL: Must contain EXACTLY ONE service config\nThis prevents applications from over-servicing.\nKept as repeated field for legacy and future compatibility\nRefs:\n  - https://github.com/pokt-network/poktroll/pull/750#discussion_r1735025033\n  - https://www.notion.so/buildwithgrove/Off-chain-Application-Stake-Tracking-6a8bebb107db4f7f9dc62cbe7ba555f7",
+                    "items": {
+                        "type": "object",
+                        "$ref": "#/definitions/pocket.shared.ApplicationServiceConfig"
+                    }
+                },
+                "stake": {
+                    "title": "Total amount of staked uPOKT",
+                    "$ref": "#/definitions/cosmos.base.v1beta1.Coin"
+                },
+                "unstake_session_end_height": {
+                    "type": "string",
+                    "format": "uint64",
+                    "title": "Session end height when application initiated unstaking (0 if not unstaking)"
+                }
+            }
+        },
+        "pocket.application.MsgDelegateToGateway": {
+            "type": "object",
+            "properties": {
+                "app_address": {
+                    "description": "The Bech32 address of the application.",
+                    "type": "string"
+                },
+                "gateway_address": {
+                    "description": "The Bech32 address of the gateway the application wants to delegate to.",
+                    "type": "string"
+                }
+            }
+        },
+        "pocket.application.MsgDelegateToGatewayResponse": {
+            "type": "object",
+            "properties": {
+                "application": {
+                    "$ref": "#/definitions/pocket.application.Application"
+                }
+            }
+        },
+        "pocket.application.MsgStakeApplication": {
+            "type": "object",
+            "properties": {
+                "address": {
+                    "description": "The Bech32 address of the application.",
+                    "type": "string"
+                },
+                "services": {
+                    "type": "array",
+                    "title": "The list of services this application is staked to request service for",
+                    "items": {
+                        "type": "object",
+                        "$ref": "#/definitions/pocket.shared.ApplicationServiceConfig"
+                    }
+                },
+                "stake": {
+                    "title": "The total amount of uPOKT the application has staked. Must be ≥ to the current amount that the application has staked (if any)",
+                    "$ref": "#/definitions/cosmos.base.v1beta1.Coin"
+                }
+            }
+        },
+        "pocket.application.MsgStakeApplicationResponse": {
+            "type": "object",
+            "properties": {
+                "application": {
+                    "$ref": "#/definitions/pocket.application.Application"
+                }
+            }
+        },
+        "pocket.application.MsgTransferApplication": {
+            "type": "object",
+            "properties": {
+                "destination_address": {
+                    "type": "string"
+                },
+                "source_address": {
+                    "type": "string"
+                }
+            }
+        },
+        "pocket.application.MsgTransferApplicationResponse": {
+            "type": "object",
+            "properties": {
+                "application": {
+                    "$ref": "#/definitions/pocket.application.Application"
+                }
+            }
+        },
+        "pocket.application.MsgUndelegateFromGateway": {
+            "type": "object",
+            "properties": {
+                "app_address": {
+                    "description": "The Bech32 address of the application.",
+                    "type": "string"
+                },
+                "gateway_address": {
+                    "description": "The Bech32 address of the gateway the application wants to undelegate from.",
+                    "type": "string"
+                }
+            }
+        },
+        "pocket.application.MsgUndelegateFromGatewayResponse": {
+            "type": "object",
+            "properties": {
+                "application": {
+                    "$ref": "#/definitions/pocket.application.Application"
+                }
+            }
+        },
+        "pocket.application.MsgUnstakeApplication": {
+            "type": "object",
+            "properties": {
+                "address": {
+                    "type": "string"
+                }
+            }
+        },
+        "pocket.application.MsgUnstakeApplicationResponse": {
+            "type": "object",
+            "properties": {
+                "application": {
+                    "$ref": "#/definitions/pocket.application.Application"
+                }
+            }
+        },
+        "pocket.application.MsgUpdateParam": {
+            "type": "object",
+            "properties": {
+                "as_coin": {
+                    "$ref": "#/definitions/cosmos.base.v1beta1.Coin"
+                },
+                "as_uint64": {
+                    "type": "string",
+                    "format": "uint64"
+                },
+                "authority": {
+                    "description": "authority is the address that controls the module (defaults to x/gov unless overwritten).",
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "pocket.application.MsgUpdateParamResponse": {
+            "type": "object",
+            "properties": {
+                "params": {
+                    "$ref": "#/definitions/pocket.application.Params"
+                }
+            }
+        },
+        "pocket.application.MsgUpdateParams": {
+            "description": "MsgUpdateParams is the Msg/UpdateParams request type.",
+            "type": "object",
+            "properties": {
+                "authority": {
+                    "description": "authority is the address that controls the module (defaults to x/gov unless overwritten).",
+                    "type": "string"
+                },
+                "params": {
+                    "description": "params defines the x/application parameters to update.\nNOTE: All parameters must be supplied.",
+                    "$ref": "#/definitions/pocket.application.Params"
+                }
+            }
+        },
+        "pocket.application.MsgUpdateParamsResponse": {
+            "description": "MsgUpdateParamsResponse defines the response structure for executing a\nMsgUpdateParams message.",
+            "type": "object"
+        },
+        "pocket.application.Params": {
+            "description": "Params defines the parameters for the module.",
+            "type": "object",
+            "properties": {
+                "max_delegated_gateways": {
+                    "description": "max_delegated_gateways defines the maximum number of gateways that a single\napplication can delegate to. This is used to prevent performance issues\nin case the relay ring signature becomes too large.",
+                    "type": "string",
+                    "format": "uint64"
+                },
+                "min_stake": {
+                    "description": "min_stake is the minimum stake in upokt that an application must have to remain staked.",
+                    "$ref": "#/definitions/cosmos.base.v1beta1.Coin"
+                }
+            }
+        },
+        "pocket.application.PendingApplicationTransfer": {
+            "description": "PendingTransfer is used to store the details of a pending transfer.\nIt is only intended to be used inside of an Application object.",
+            "type": "object",
+            "properties": {
+                "destination_address": {
+                    "type": "string"
+                },
+                "session_end_height": {
+                    "type": "string",
+                    "format": "uint64"
+                }
+            }
+        },
+        "pocket.application.QueryAllApplicationsResponse": {
+            "type": "object",
+            "properties": {
+                "applications": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "$ref": "#/definitions/pocket.application.Application"
+                    }
+                },
+                "pagination": {
+                    "$ref": "#/definitions/cosmos.base.query.v1beta1.PageResponse"
+                }
+            }
+        },
+        "pocket.application.QueryGetApplicationResponse": {
+            "type": "object",
+            "properties": {
+                "application": {
+                    "$ref": "#/definitions/pocket.application.Application"
+                }
+            }
+        },
+        "pocket.application.QueryParamsResponse": {
+            "description": "QueryParamsResponse is response type for the Query/Params RPC method.",
+            "type": "object",
+            "properties": {
+                "params": {
+                    "description": "params holds all the parameters of this module.",
+                    "$ref": "#/definitions/pocket.application.Params"
+                }
+            }
+        },
+        "pocket.application.UndelegatingGatewayList": {
+            "description": "UndelegatingGatewayList is used as the Value of `pending_undelegations`.\nIt is required to store a repeated list of strings as a map value.",
+            "type": "object",
+            "properties": {
+                "gateway_addresses": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "pocket.gateway.Gateway": {
+            "type": "object",
+            "properties": {
+                "address": {
+                    "type": "string",
+                    "title": "The Bech32 address of the gateway"
+                },
+                "stake": {
+                    "title": "The total amount of uPOKT the gateway has staked",
+                    "$ref": "#/definitions/cosmos.base.v1beta1.Coin"
+                },
+                "unstake_session_end_height": {
+                    "type": "string",
+                    "format": "uint64",
+                    "title": "Session end height at which the gateway initiated unstaking (0 if not unstaking)"
+                }
+            }
+        },
+        "pocket.gateway.MsgStakeGateway": {
+            "type": "object",
+            "properties": {
+                "address": {
+                    "type": "string",
+                    "title": "The Bech32 address of the gateway"
+                },
+                "stake": {
+                    "title": "The total amount of uPOKT the gateway is staking. Must be ≥ to the current amount that the gateway has staked (if any)",
+                    "$ref": "#/definitions/cosmos.base.v1beta1.Coin"
+                }
+            }
+        },
+        "pocket.gateway.MsgStakeGatewayResponse": {
+            "type": "object",
+            "properties": {
+                "gateway": {
+                    "$ref": "#/definitions/pocket.gateway.Gateway"
+                }
+            }
+        },
+        "pocket.gateway.MsgUnstakeGateway": {
+            "type": "object",
+            "properties": {
+                "address": {
+                    "type": "string",
+                    "title": "The Bech32 address of the gateway"
+                }
+            }
+        },
+        "pocket.gateway.MsgUnstakeGatewayResponse": {
+            "type": "object",
+            "properties": {
+                "gateway": {
+                    "$ref": "#/definitions/pocket.gateway.Gateway"
+                }
+            }
+        },
+        "pocket.gateway.MsgUpdateParam": {
+            "description": "MsgUpdateParam is the Msg/UpdateParam request type to update a single param.",
+            "type": "object",
+            "properties": {
+                "as_coin": {
+                    "$ref": "#/definitions/cosmos.base.v1beta1.Coin"
+                },
+                "authority": {
+                    "description": "authority is the address that controls the module (defaults to x/gov unless overwritten).",
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "pocket.gateway.MsgUpdateParamResponse": {
+            "type": "object",
+            "properties": {
+                "params": {
+                    "$ref": "#/definitions/pocket.gateway.Params"
+                }
+            }
+        },
+        "pocket.gateway.MsgUpdateParams": {
+            "description": "MsgUpdateParams is the Msg/UpdateParams request type.",
+            "type": "object",
+            "properties": {
+                "authority": {
+                    "description": "authority is the address that controls the module (defaults to x/gov unless overwritten).",
+                    "type": "string"
+                },
+                "params": {
+                    "description": "params defines the x/gateway parameters to update.\nNOTE: All parameters must be supplied.",
+                    "$ref": "#/definitions/pocket.gateway.Params"
+                }
+            }
+        },
+        "pocket.gateway.MsgUpdateParamsResponse": {
+            "description": "MsgUpdateParamsResponse defines the response structure for executing a\nMsgUpdateParams message.",
+            "type": "object"
+        },
+        "pocket.gateway.Params": {
+            "description": "Params defines the parameters for the module.",
+            "type": "object",
+            "properties": {
+                "min_stake": {
+                    "description": "min_stake is the minimum amount of uPOKT that a gateway must stake.",
+                    "$ref": "#/definitions/cosmos.base.v1beta1.Coin"
+                }
+            }
+        },
+        "pocket.gateway.QueryAllGatewaysResponse": {
+            "type": "object",
+            "properties": {
+                "gateways": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "$ref": "#/definitions/pocket.gateway.Gateway"
+                    }
+                },
+                "pagination": {
+                    "$ref": "#/definitions/cosmos.base.query.v1beta1.PageResponse"
+                }
+            }
+        },
+        "pocket.gateway.QueryGetGatewayResponse": {
+            "type": "object",
+            "properties": {
+                "gateway": {
+                    "$ref": "#/definitions/pocket.gateway.Gateway"
+                }
+            }
+        },
+        "pocket.gateway.QueryParamsResponse": {
+            "description": "QueryParamsResponse is response type for the Query/Params RPC method.",
+            "type": "object",
+            "properties": {
+                "params": {
+                    "description": "params holds all the parameters of this module.",
+                    "$ref": "#/definitions/pocket.gateway.Params"
+                }
+            }
+        },
+        "pocket.migration.MorseAccountState": {
+            "description": "MorseAccountState is the onchain representation of all account state to be migrated from Morse.\nIt is NEVER persisted onchain but is a dependency of the MsgImportMorseClaimableAccount handler.\nIt's main purpose is to expose the #GetHash() method for verifying the integrity of all MorseClaimableAccounts.",
+            "type": "object",
+            "properties": {
+                "accounts": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "$ref": "#/definitions/pocket.migration.MorseClaimableAccount"
+                    }
+                }
+            }
+        },
+        "pocket.migration.MorseClaimableAccount": {
+            "description": "MorseClaimableAccount is the onchain (persisted) representation of a Morse\naccount which is claimable as part of the Morse -> Shannon migration.\nThey are intended to be created during MorseAccountState import (see: MsgImportMorseClaimableAccount).\nIt is created ONLY ONCE and NEVER deleted (per morse_src_address per network / re-genesis).\nIt is updated ONLY ONCE, when it is claimed (per morse_src_address per network / re-genesis).",
+            "type": "object",
+            "properties": {
+                "application_stake": {
+                    "description": "The staked tokens associated with an application actor which corresponds to this account address.",
+                    "$ref": "#/definitions/cosmos.base.v1beta1.Coin"
+                },
+                "claimed_at_height": {
+                    "description": "The Shannon height at which the account was claimed.\nThis field is intended to remain empty until the account has been claimed.",
+                    "type": "string",
+                    "format": "int64"
+                },
+                "morse_src_address": {
+                    "description": "The hex-encoded address of the Morse account whose balance will be claimed.",
+                    "type": "string"
+                },
+                "shannon_dest_address": {
+                    "description": "The bech32-encoded address of the Shannon account to which the claimed balance will be minted.\nThis field is intended to remain empty until the account has been claimed.",
+                    "type": "string"
+                },
+                "supplier_stake": {
+                    "title": "The staked tokens associated with a supplier actor which corresponds to this account address.\nDEV_NOTE: A few contextual notes related to Morse:\n- A Supplier is called a Servicer or Node (not a full node) in Morse\n- All Validators are Servicers, not all servicers are Validators\n- Automatically, the top 100 staked Servicers are validator\n- This only accounts for servicer stake balance transition\nTODO_MAINNET(@Olshansk): Develop a strategy for bootstrapping validators in Shannon by working with the cosmos ecosystem",
+                    "$ref": "#/definitions/cosmos.base.v1beta1.Coin"
+                },
+                "unstaked_balance": {
+                    "description": "The unstaked upokt tokens (i.e. account balance) available for claiming.",
+                    "$ref": "#/definitions/cosmos.base.v1beta1.Coin"
+                }
+            }
+        },
+        "pocket.migration.MsgClaimMorseAccount": {
+            "description": "MsgClaimMorseAccount is used to execute a claim (one-time minting of tokens on Shannon),\nof the balance of the given Morse account, according to the on-chain MorseClaimableAccounts,\nto the balance of the given Shannon account.\n\nNOTE:\n- The Shannon account specified must be the message signer\n- Authz grants MAY be used to delegate claiming authority to other Shannon accounts",
+            "type": "object",
+            "properties": {
+                "morse_public_key": {
+                    "description": "The ed25519 public key of the morse account with morse_src_address.",
+                    "type": "string",
+                    "format": "byte"
+                },
+                "morse_signature": {
+                    "type": "string",
+                    "format": "byte",
+                    "title": "The hex-encoded signature, by the Morse account, of this message (where this field is nil).\nI.e.: morse_signature = private_key.sign(marshal(MsgClaimMorseAccount{morse_signature: nil, ...}))"
+                },
+                "shannon_dest_address": {
+                    "description": "The bech32-encoded address of the Shannon account to which the claimed balance will be minted.",
+                    "type": "string"
+                },
+                "shannon_signing_address": {
+                    "description": "The bech32-encoded address of the Shannon account which is signing for this message.\nThis account is liable for any fees incurred by violating the constraints of Morse\naccount/actor claim message fee waiving; the tx contains ONE OR MORE Morse account/actor\nclaim messages AND has EXACTLY ONE signer.",
+                    "type": "string"
+                }
+            }
+        },
+        "pocket.migration.MsgClaimMorseAccountResponse": {
+            "description": "MsgClaimMorseAccountResponse is returned from MsgClaimMorseAccount.\nIt indicates the morse_src_address of the account which was claimed, the total\nbalance claimed, and the height at which the claim was committed.",
+            "type": "object",
+            "properties": {
+                "claimed_balance": {
+                    "description": "The balance which was claimed.",
+                    "$ref": "#/definitions/cosmos.base.v1beta1.Coin"
+                },
+                "morse_src_address": {
+                    "type": "string",
+                    "title": "The hex-encoded address of the Morse account whose balance will be claimed.\nE.g.: 00f9900606fa3d5c9179fc0c8513078a53a2073e"
+                },
+                "session_end_height": {
+                    "description": "The session end height (on Shannon) in which the claim was committed (i.e. claimed).",
+                    "type": "string",
+                    "format": "int64"
+                }
+            }
+        },
+        "pocket.migration.MsgClaimMorseApplication": {
+            "description": "MsgClaimMorseApplication is used to execute a claim (one-time minting of tokens on Shannon),\nof the total tokens owned by the given Morse account, according to the on-chain MorseClaimableAccounts,\nto the balance of the given Shannon account, followed by staking that Shannon account as an application\nfor the given service_config and the same stake amount as on Morse.",
+            "type": "object",
+            "properties": {
+                "morse_public_key": {
+                    "description": "The ed25519 public key of the morse account with morse_src_address.",
+                    "type": "string",
+                    "format": "byte"
+                },
+                "morse_signature": {
+                    "type": "string",
+                    "format": "byte",
+                    "title": "The hex-encoded signature, by the Morse account, of this message (where this field is nil).\nI.e.: morse_signature = private_key.sign(marshal(MsgClaimMorseAccount{morse_signature: nil, ...}))"
+                },
+                "service_config": {
+                    "description": "The services this application is staked to request service for.\nNOTE: This is not a repeated field, as in MsgStakeApplication,\nbecause an application can only be staked for one service.",
+                    "$ref": "#/definitions/pocket.shared.ApplicationServiceConfig"
+                },
+                "shannon_dest_address": {
+                    "description": "The bech32-encoded address of the Shannon account to which the claimed tokens\nwill be minted and from which the application will be staked.",
+                    "type": "string"
+                },
+                "shannon_signing_address": {
+                    "description": "The bech32-encoded address of the Shannon account which is signing for this message.\nThis account is liable for any fees incurred by violating the constraints of Morse\naccount/actor claim message fee waiving; the tx contains ONE OR MORE Morse account/actor\nclaim messages AND has EXACTLY ONE signer.",
+                    "type": "string"
+                }
+            }
+        },
+        "pocket.migration.MsgClaimMorseApplicationResponse": {
+            "description": "MsgClaimMorseApplicationResponse is returned from MsgClaimMorseApplication.\nIt indicates the morse_src_address of the account which was claimed, the unstaked\nbalance claimed, the application stake, and the height at which the claim was committed.",
+            "type": "object",
+            "properties": {
+                "application": {
+                    "description": "The application which was staked as a result of the claim.",
+                    "$ref": "#/definitions/pocket.application.Application"
+                },
+                "claimedApplicationStake": {
+                    "description": "The stake of the application which was staked as a result of the claim.\nIf the application was already staked, this amount does not include the initial stake (i.e. only the portion which was \"claimed\").",
+                    "$ref": "#/definitions/cosmos.base.v1beta1.Coin"
+                },
+                "claimed_balance": {
+                    "description": "The unstaked balance which was claimed.",
+                    "$ref": "#/definitions/cosmos.base.v1beta1.Coin"
+                },
+                "morse_src_address": {
+                    "description": "The hex-encoded address of the Morse account whose balance will be claimed.",
+                    "type": "string"
+                },
+                "session_end_height": {
+                    "description": "The session end height (on Shannon) in which the claim was committed (i.e. claimed).",
+                    "type": "string",
+                    "format": "int64"
+                }
+            }
+        },
+        "pocket.migration.MsgClaimMorseSupplier": {
+            "description": "NOTE: The supplier module's staking fee parameter (at the time of claiming) is deducted from the\nclaimed balance.",
+            "type": "object",
+            "title": "MsgClaimMorseSupplier is used to:\n- Execute a one-time minting of tokens on Shannon based on tokens owned by the given Morse account\n- Use the on-chain MorseClaimableAccounts for verification\n- Credit the minted tokens to the balance of the given Shannon account\n- Automatically stake that Shannon account as a supplier",
+            "properties": {
+                "morse_public_key": {
+                    "description": "The ed25519 public key of the morse account with morse_src_address.",
+                    "type": "string",
+                    "format": "byte"
+                },
+                "morse_signature": {
+                    "description": "TODO_MAINNET(@bryanchriswhite, #1126): Rename to `morse_src_owner_signature`.",
+                    "type": "string",
+                    "format": "byte",
+                    "title": "The hex-encoded signature, by the Morse account, of this message (where this field is nil).\nI.e.: morse_signature = private_key.sign(marshal(MsgClaimMorseAccount{morse_signature: nil, ...}))"
+                },
+                "services": {
+                    "description": "The services this supplier is staked to provide service for.",
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "$ref": "#/definitions/pocket.shared.SupplierServiceConfig"
+                    }
+                },
+                "shannon_operator_address": {
+                    "description": "The bech32-encoded address of the Shannon account to which will become the supplier operator.\nIf empty, the shannon_owner_address will be used.\nSee: https://dev.poktroll.com/operate/configs/supplier_staking_config#staking-types.",
+                    "type": "string"
+                },
+                "shannon_owner_address": {
+                    "description": "The bech32-encoded address of the Shannon account to which the claimed tokens\nwill be minted and which become the supplier owner.\nSee: https://dev.poktroll.com/operate/configs/supplier_staking_config#staking-types.",
+                    "type": "string"
+                },
+                "shannon_signing_address": {
+                    "description": "The bech32-encoded address of the Shannon account which is signing for this message.\nThis account is liable for any fees incurred by violating the constraints of Morse\naccount/actor claim message fee waiving; the tx contains ONE OR MORE Morse account/actor\nclaim messages AND has EXACTLY ONE signer.",
+                    "type": "string"
+                }
+            }
+        },
+        "pocket.migration.MsgClaimMorseSupplierResponse": {
+            "type": "object",
+            "title": "MsgClaimMorseSupplierResponse is returned from MsgClaimMorseSupplier.\nIt indicates:\n- The morse_src_address of the claimed account\n- The unstaked balance claimed\n- The session end height in which the claim was committed\n- The staked supplier",
+            "properties": {
+                "claimed_balance": {
+                    "description": "The unstaked balance which was claimed.",
+                    "$ref": "#/definitions/cosmos.base.v1beta1.Coin"
+                },
+                "claimed_supplier_stake": {
+                    "$ref": "#/definitions/cosmos.base.v1beta1.Coin"
+                },
+                "morse_src_address": {
+                    "type": "string",
+                    "title": "The hex-encoded address of the Morse account whose balance was claimed.\nE.g.: 00f9900606fa3d5c9179fc0c8513078a53a2073e"
+                },
+                "session_end_height": {
+                    "description": "The session end height (on Shannon) in which the claim was committed (i.e. claimed).",
+                    "type": "string",
+                    "format": "int64"
+                },
+                "supplier": {
+                    "description": "The supplier which was staked as a result of the claim.",
+                    "$ref": "#/definitions/pocket.shared.Supplier"
+                }
+            }
+        },
+        "pocket.migration.MsgImportMorseClaimableAccounts": {
+            "description": "MsgImportMorseClaimableAccounts is used to create the on-chain MorseClaimableAccounts ONLY AND EXACTLY ONCE (per network / re-genesis).",
+            "type": "object",
+            "properties": {
+                "authority": {
+                    "description": "authority is the address that controls the module (defaults to x/gov unless overwritten).",
+                    "type": "string"
+                },
+                "morse_account_state": {
+                    "description": "the account state derived from the Morse state export and the `pocketd migrate collect-morse-accounts` command.",
+                    "$ref": "#/definitions/pocket.migration.MorseAccountState"
+                },
+                "morse_account_state_hash": {
+                    "type": "string",
+                    "format": "byte",
+                    "title": "Additional documentation:\n- pocket util export-genesis-for-migration --help\n- pocketd migrate collect-morse-accounts --help"
+                }
+            }
+        },
+        "pocket.migration.MsgImportMorseClaimableAccountsResponse": {
+            "description": "MsgImportMorseClaimableAccountsResponse is returned from MsgImportMorseClaimableAccounts.\nIt indicates the canonical hash of the imported MorseAccountState, and the number of claimable accounts which were imported.",
+            "type": "object",
+            "properties": {
+                "num_accounts": {
+                    "description": "Number of claimable accounts (EOAs) collected from Morse state export.",
+                    "type": "string",
+                    "format": "uint64"
+                },
+                "state_hash": {
+                    "description": "On-chain computed sha256 hash of the morse_account_state provided in the corresponding MsgCreateMorseAccountState.",
+                    "type": "string",
+                    "format": "byte"
+                }
+            }
+        },
+        "pocket.migration.MsgUpdateParams": {
+            "description": "MsgUpdateParams is the Msg/UpdateParams request type.",
+            "type": "object",
+            "properties": {
+                "authority": {
+                    "description": "authority is the address that controls the module (defaults to x/gov unless overwritten).",
+                    "type": "string"
+                },
+                "params": {
+                    "description": "NOTE: All parameters must be supplied.",
+                    "$ref": "#/definitions/pocket.migration.Params"
+                }
+            }
+        },
+        "pocket.migration.MsgUpdateParamsResponse": {
+            "description": "MsgUpdateParamsResponse defines the response structure for executing a\nMsgUpdateParams message.",
+            "type": "object"
+        },
+        "pocket.migration.Params": {
+            "description": "Params defines the parameters for the module.",
+            "type": "object",
+            "properties": {
+                "waive_morse_claim_gas_fees": {
+                    "type": "boolean",
+                    "title": "waive_morse_claim_gas_fees is a feature flag used to enable/disable the waiving of gas fees for txs that:\n- Contain exactly one secp256k1 signer\n- Contain at least one Morse account/actor claim messages\n- Do not contain any other messages other than Morse account/actor claim messages"
+                }
+            }
+        },
+        "pocket.migration.QueryAllMorseClaimableAccountResponse": {
+            "type": "object",
+            "properties": {
+                "morseClaimableAccount": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "$ref": "#/definitions/pocket.migration.MorseClaimableAccount"
+                    }
+                },
+                "pagination": {
+                    "$ref": "#/definitions/cosmos.base.query.v1beta1.PageResponse"
+                }
+            }
+        },
+        "pocket.migration.QueryMorseClaimableAccountResponse": {
+            "type": "object",
+            "properties": {
+                "morseClaimableAccount": {
+                    "$ref": "#/definitions/pocket.migration.MorseClaimableAccount"
+                }
+            }
+        },
+        "pocket.migration.QueryParamsResponse": {
+            "description": "QueryParamsResponse is response type for the Query/Params RPC method.",
+            "type": "object",
+            "properties": {
+                "params": {
+                    "description": "params holds all the parameters of this module.",
+                    "$ref": "#/definitions/pocket.migration.Params"
+                }
+            }
+        },
+        "pocket.proof.Claim": {
+            "type": "object",
+            "title": "Claim is the serialized object stored onchain for claims pending to be proven",
+            "properties": {
+                "proof_validation_status": {
+                    "title": "Important: This field MUST only be set by proofKeeper#EnsureValidProofSignaturesAndClosestPath",
+                    "$ref": "#/definitions/pocket.proof.ClaimProofStatus"
+                },
+                "root_hash": {
+                    "description": "Root hash from smt.SMST#Root().",
+                    "type": "string",
+                    "format": "byte"
+                },
+                "session_header": {
+                    "description": "Session header this claim is for.",
+                    "$ref": "#/definitions/pocket.session.SessionHeader"
+                },
+                "supplier_operator_address": {
+                    "description": "Address of the supplier's operator that submitted this claim.\n\nthe address of the supplier's operator that submitted this claim",
+                    "type": "string"
+                }
+            }
+        },
+        "pocket.proof.ClaimProofStatus": {
+            "type": "string",
+            "title": "Status of proof validation for a claim\nDefault is PENDING_VALIDATION regardless of proof requirement",
+            "default": "PENDING_VALIDATION",
+            "enum": [
+                "PENDING_VALIDATION",
+                "VALIDATED",
+                "INVALID"
+            ]
+        },
+        "pocket.proof.MsgCreateClaim": {
+            "type": "object",
+            "properties": {
+                "root_hash": {
+                    "type": "string",
+                    "format": "byte",
+                    "title": "root returned from smt.SMST#Root()"
+                },
+                "session_header": {
+                    "$ref": "#/definitions/pocket.session.SessionHeader"
+                },
+                "supplier_operator_address": {
+                    "type": "string"
+                }
+            }
+        },
+        "pocket.proof.MsgCreateClaimResponse": {
+            "type": "object",
+            "properties": {
+                "claim": {
+                    "$ref": "#/definitions/pocket.proof.Claim"
+                }
+            }
+        },
+        "pocket.proof.MsgSubmitProof": {
+            "type": "object",
+            "properties": {
+                "proof": {
+                    "type": "string",
+                    "format": "byte",
+                    "title": "serialized version of *smt.SparseCompactMerkleClosestProof"
+                },
+                "session_header": {
+                    "$ref": "#/definitions/pocket.session.SessionHeader"
+                },
+                "supplier_operator_address": {
+                    "type": "string"
+                }
+            }
+        },
+        "pocket.proof.MsgSubmitProofResponse": {
+            "type": "object",
+            "properties": {
+                "proof": {
+                    "$ref": "#/definitions/pocket.proof.Proof"
+                }
+            }
+        },
+        "pocket.proof.MsgUpdateParam": {
+            "description": "MsgUpdateParam is the Msg/UpdateParam request type to update a single param.",
+            "type": "object",
+            "properties": {
+                "as_bytes": {
+                    "type": "string",
+                    "format": "byte"
+                },
+                "as_coin": {
+                    "$ref": "#/definitions/cosmos.base.v1beta1.Coin"
+                },
+                "as_float": {
+                    "type": "number",
+                    "format": "double"
+                },
+                "authority": {
+                    "description": "authority is the address that controls the module (defaults to x/gov unless overwritten).",
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string",
+                    "title": "The (name, as_type) tuple must match the corresponding name and type as\nspecified in the `Params`` message in `proof/params.proto.`"
+                }
+            }
+        },
+        "pocket.proof.MsgUpdateParamResponse": {
+            "description": "MsgUpdateParamResponse defines the response structure for executing a\nMsgUpdateParam message after a single param update.",
+            "type": "object",
+            "properties": {
+                "params": {
+                    "$ref": "#/definitions/pocket.proof.Params"
+                }
+            }
+        },
+        "pocket.proof.MsgUpdateParams": {
+            "description": "MsgUpdateParams is the Msg/UpdateParams request type to update all params at once.",
+            "type": "object",
+            "properties": {
+                "authority": {
+                    "description": "authority is the address that controls the module (defaults to x/gov unless overwritten).",
+                    "type": "string"
+                },
+                "params": {
+                    "description": "params defines the x/proof parameters to update.\nNOTE: All parameters must be supplied.",
+                    "$ref": "#/definitions/pocket.proof.Params"
+                }
+            }
+        },
+        "pocket.proof.MsgUpdateParamsResponse": {
+            "description": "MsgUpdateParamsResponse defines the response structure for executing a\nMsgUpdateParams message.",
+            "type": "object"
+        },
+        "pocket.proof.Params": {
+            "description": "Params defines the parameters for the module.",
+            "type": "object",
+            "properties": {
+                "proof_missing_penalty": {
+                    "description": "proof_missing_penalty is the number of tokens (uPOKT) which should be slashed from a supplier\nwhen a proof is required (either via proof_requirement_threshold or proof_missing_penalty)\nbut is not provided.\nTODO_MAINNET_MIGRATION: Consider renaming this to `proof_missing_penalty_upokt`.",
+                    "$ref": "#/definitions/cosmos.base.v1beta1.Coin"
+                },
+                "proof_request_probability": {
+                    "description": "proof_request_probability is the probability of a session requiring a proof\nif it's cost (i.e. compute unit consumption) is below the ProofRequirementThreshold.",
+                    "type": "number",
+                    "format": "double"
+                },
+                "proof_requirement_threshold": {
+                    "description": "proof_requirement_threshold is the session cost (i.e. compute unit consumption)\nthreshold which asserts that a session MUST have a corresponding proof when its cost\nis equal to or above the threshold. This is in contrast to the this requirement\nbeing determined probabilistically via ProofRequestProbability.\n\nTODO_MAINNET_MIGRATION: Consider renaming this to `proof_requirement_threshold_upokt`.",
+                    "$ref": "#/definitions/cosmos.base.v1beta1.Coin"
+                },
+                "proof_submission_fee": {
+                    "description": "proof_submission_fee is the number of tokens (uPOKT) which should be paid by\nthe supplier operator when submitting a proof.\nThis is needed to account for the cost of storing proofs onchain and prevent\nspamming (i.e. sybil bloat attacks) the network with non-required proofs.\nTODO_MAINNET_MIGRATION: Consider renaming this to `proof_submission_fee_upokt`.",
+                    "$ref": "#/definitions/cosmos.base.v1beta1.Coin"
+                }
+            }
+        },
+        "pocket.proof.Proof": {
+            "type": "object",
+            "properties": {
+                "closest_merkle_proof": {
+                    "description": "The serialized SMST compacted proof from the `#ClosestProof()` method.",
+                    "type": "string",
+                    "format": "byte"
+                },
+                "session_header": {
+                    "description": "The session header of the session that this claim is for.",
+                    "$ref": "#/definitions/pocket.session.SessionHeader"
+                },
+                "supplier_operator_address": {
+                    "description": "Address of the supplier's operator that submitted this proof.",
+                    "type": "string"
+                }
+            }
+        },
+        "pocket.proof.QueryAllClaimsResponse": {
+            "type": "object",
+            "properties": {
+                "claims": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "$ref": "#/definitions/pocket.proof.Claim"
+                    }
+                },
+                "pagination": {
+                    "$ref": "#/definitions/cosmos.base.query.v1beta1.PageResponse"
+                }
+            }
+        },
+        "pocket.proof.QueryAllProofsResponse": {
+            "type": "object",
+            "properties": {
+                "pagination": {
+                    "$ref": "#/definitions/cosmos.base.query.v1beta1.PageResponse"
+                },
+                "proofs": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "$ref": "#/definitions/pocket.proof.Proof"
+                    }
+                }
+            }
+        },
+        "pocket.proof.QueryGetClaimResponse": {
+            "type": "object",
+            "properties": {
+                "claim": {
+                    "$ref": "#/definitions/pocket.proof.Claim"
+                }
+            }
+        },
+        "pocket.proof.QueryGetProofResponse": {
+            "type": "object",
+            "properties": {
+                "proof": {
+                    "$ref": "#/definitions/pocket.proof.Proof"
+                }
+            }
+        },
+        "pocket.proof.QueryParamsResponse": {
+            "description": "QueryParamsResponse is response type for the Query/Params RPC method.",
+            "type": "object",
+            "properties": {
+                "params": {
+                    "description": "params holds all the parameters of this module.",
+                    "$ref": "#/definitions/pocket.proof.Params"
+                }
+            }
+        },
+        "pocket.service.MsgAddService": {
+            "description": "MsgAddService defines a message for adding a new message to the network.\nServices can be added by any actor in the network making them truly\npermissionless.",
+            "type": "object",
+            "properties": {
+                "owner_address": {
+                    "description": "The Bech32 address of the service owner.",
+                    "type": "string"
+                },
+                "service": {
+                    "title": "The Service being added to the network",
+                    "$ref": "#/definitions/pocket.shared.Service"
+                }
+            }
+        },
+        "pocket.service.MsgAddServiceResponse": {
+            "type": "object",
+            "properties": {
+                "service": {
+                    "$ref": "#/definitions/pocket.shared.Service"
+                }
+            }
+        },
+        "pocket.service.MsgUpdateParam": {
+            "description": "MsgUpdateParam is the Msg/UpdateParam request type to update a single param.",
+            "type": "object",
+            "properties": {
+                "as_coin": {
+                    "$ref": "#/definitions/cosmos.base.v1beta1.Coin"
+                },
+                "as_uint64": {
+                    "type": "string",
+                    "format": "uint64"
+                },
+                "authority": {
+                    "description": "authority is the address that controls the module (defaults to x/gov unless overwritten).",
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string",
+                    "title": "The (name, as_type) tuple must match the corresponding name and type as\nspecified in the `Params` message in `proof/params.proto.`"
+                }
+            }
+        },
+        "pocket.service.MsgUpdateParamResponse": {
+            "description": "MsgUpdateParamResponse defines the response structure for executing a\nMsgUpdateParam message after a single param update.",
+            "type": "object",
+            "properties": {
+                "params": {
+                    "$ref": "#/definitions/pocket.service.Params"
+                }
+            }
+        },
+        "pocket.service.MsgUpdateParams": {
+            "description": "MsgUpdateParams is the Msg/UpdateParams request type.",
+            "type": "object",
+            "properties": {
+                "authority": {
+                    "description": "authority is the address that controls the module (defaults to x/gov unless overwritten).",
+                    "type": "string"
+                },
+                "params": {
+                    "description": "params defines the x/service parameters to update.\nNOTE: All parameters must be supplied.",
+                    "$ref": "#/definitions/pocket.service.Params"
+                }
+            }
+        },
+        "pocket.service.MsgUpdateParamsResponse": {
+            "description": "MsgUpdateParamsResponse defines the response structure for executing a\nMsgUpdateParams message.",
+            "type": "object"
+        },
+        "pocket.service.Params": {
+            "description": "Params defines the parameters for the module.",
+            "type": "object",
+            "properties": {
+                "add_service_fee": {
+                    "description": "The amount of uPOKT required to add a new service.\nThis will be deducted from the signer's account balance,\nand transferred to the pocket network foundation.",
+                    "$ref": "#/definitions/cosmos.base.v1beta1.Coin"
+                },
+                "target_num_relays": {
+                    "description": "target_num_relays is the target for the EMA of the number of relays per session.\nPer service, onchain relay mining difficulty will be adjusted to maintain this target.",
+                    "type": "string",
+                    "format": "uint64"
+                }
+            }
+        },
+        "pocket.service.QueryAllRelayMiningDifficultyResponse": {
+            "type": "object",
+            "properties": {
+                "pagination": {
+                    "$ref": "#/definitions/cosmos.base.query.v1beta1.PageResponse"
+                },
+                "relayMiningDifficulty": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "$ref": "#/definitions/pocket.service.RelayMiningDifficulty"
+                    }
+                }
+            }
+        },
+        "pocket.service.QueryAllServicesResponse": {
+            "type": "object",
+            "properties": {
+                "pagination": {
+                    "$ref": "#/definitions/cosmos.base.query.v1beta1.PageResponse"
+                },
+                "service": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "$ref": "#/definitions/pocket.shared.Service"
+                    }
+                }
+            }
+        },
+        "pocket.service.QueryGetRelayMiningDifficultyResponse": {
+            "type": "object",
+            "properties": {
+                "relayMiningDifficulty": {
+                    "$ref": "#/definitions/pocket.service.RelayMiningDifficulty"
+                }
+            }
+        },
+        "pocket.service.QueryGetServiceResponse": {
+            "type": "object",
+            "properties": {
+                "service": {
+                    "$ref": "#/definitions/pocket.shared.Service"
+                }
+            }
+        },
+        "pocket.service.QueryParamsResponse": {
+            "description": "QueryParamsResponse is response type for the Query/Params RPC method.",
+            "type": "object",
+            "properties": {
+                "params": {
+                    "description": "params holds all the parameters of this module.",
+                    "$ref": "#/definitions/pocket.service.Params"
+                }
+            }
+        },
+        "pocket.service.RelayMiningDifficulty": {
+            "description": "RelayMiningDifficulty is a message used to store the onchain Relay Mining\ndifficulty associated with a specific service ID.\nTODO_TECHDEBT: Embed this message in the Service message.",
+            "type": "object",
+            "properties": {
+                "block_height": {
+                    "description": "The block height at which this relay mining difficulty was computed.\nThis is needed to determine how much time has passed since the last time\nthe exponential moving average was computed.",
+                    "type": "string",
+                    "format": "int64"
+                },
+                "num_relays_ema": {
+                    "description": "The exponential moving average of the number of relays for this service.",
+                    "type": "string",
+                    "format": "uint64"
+                },
+                "service_id": {
+                    "description": "The service ID the relay mining difficulty is associated with.",
+                    "type": "string"
+                },
+                "target_hash": {
+                    "description": "The target hash determining the difficulty to mine relays for this service.\nFor example, if we use sha256 to hash the (RelayRequest,ReqlayResponse) tuple,\nand the difficulty has 4 leading zero bits, then the target hash would be:\n0b0000111... (until 32 bytes are filled up).",
+                    "type": "string",
+                    "format": "byte"
+                }
+            }
+        },
+        "pocket.session.MsgUpdateParam": {
+            "type": "object",
+            "properties": {
+                "as_uint64": {
+                    "type": "string",
+                    "format": "uint64"
+                },
+                "authority": {
+                    "description": "authority is the address that controls the module (defaults to x/gov unless overwritten).",
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "pocket.session.MsgUpdateParamResponse": {
+            "type": "object",
+            "properties": {
+                "params": {
+                    "$ref": "#/definitions/pocket.session.Params"
+                }
+            }
+        },
+        "pocket.session.MsgUpdateParams": {
+            "description": "MsgUpdateParams is the Msg/UpdateParams request type.",
+            "type": "object",
+            "properties": {
+                "authority": {
+                    "description": "authority is the address that controls the module (defaults to x/gov unless overwritten).",
+                    "type": "string"
+                },
+                "params": {
+                    "description": "params defines the x/session parameters to update.\nNOTE: All parameters must be supplied.",
+                    "$ref": "#/definitions/pocket.session.Params"
+                }
+            }
+        },
+        "pocket.session.MsgUpdateParamsResponse": {
+            "description": "MsgUpdateParamsResponse defines the response structure for executing a\nMsgUpdateParams message.",
+            "type": "object"
+        },
+        "pocket.session.Params": {
+            "description": "Params defines the parameters for the module.",
+            "type": "object",
+            "properties": {
+                "num_suppliers_per_session": {
+                    "description": "num_suppliers_per_session is the maximum number of suppliers per session\n(application:supplier pair for a given session number).",
+                    "type": "string",
+                    "format": "uint64"
+                }
+            }
+        },
+        "pocket.session.QueryGetSessionResponse": {
+            "type": "object",
+            "properties": {
+                "session": {
+                    "$ref": "#/definitions/pocket.session.Session"
+                }
+            }
+        },
+        "pocket.session.QueryParamsResponse": {
+            "description": "QueryParamsResponse is response type for the Query/Params RPC method.",
+            "type": "object",
+            "properties": {
+                "params": {
+                    "description": "params holds all the parameters of this module.",
+                    "$ref": "#/definitions/pocket.session.Params"
+                }
+            }
+        },
+        "pocket.session.Session": {
+            "description": "Session is a fully hydrated session object that contains all the information for the Session\nand its parcipants.",
+            "type": "object",
+            "properties": {
+                "application": {
+                    "title": "A fully hydrated application object this session is for",
+                    "$ref": "#/definitions/pocket.application.Application"
+                },
+                "header": {
+                    "title": "The header of the session containing lightweight data",
+                    "$ref": "#/definitions/pocket.session.SessionHeader"
+                },
+                "num_blocks_per_session": {
+                    "type": "string",
+                    "format": "int64",
+                    "title": "The number of blocks per session when this session started"
+                },
+                "session_id": {
+                    "type": "string",
+                    "title": "A unique pseudoranom ID for this session"
+                },
+                "session_number": {
+                    "type": "string",
+                    "format": "int64",
+                    "title": "The session number since genesis"
+                },
+                "suppliers": {
+                    "type": "array",
+                    "title": "A fully hydrated set of servicers that are serving the application",
+                    "items": {
+                        "type": "object",
+                        "$ref": "#/definitions/pocket.shared.Supplier"
+                    }
+                }
+            }
+        },
+        "pocket.session.SessionHeader": {
+            "description": "SessionHeader is a lightweight header for a session that can be passed around.\nIt is the minimal amount of data required to hydrate & retrieve all data relevant to the session.",
+            "type": "object",
+            "properties": {
+                "application_address": {
+                    "description": "The Bech32 address of the application.",
+                    "type": "string"
+                },
+                "service_id": {
+                    "type": "string",
+                    "title": "The service id this session is for"
+                },
+                "session_end_block_height": {
+                    "description": "Note that`session_end_block_height` is a derivative of (`start` + `num_blocks_per_session`)\nas goverened by onchain params at the time of the session start.\nIt is stored as an additional field to simplofy business logic in case\nthe number of blocks_per_session changes during the session.\n\nThe height at which this session ended, this is the last block of the session",
+                    "type": "string",
+                    "format": "int64"
+                },
+                "session_id": {
+                    "description": "A unique pseudoranom ID for this session",
+                    "type": "string",
+                    "title": "NOTE: session_id can be derived from the above values using onchain but is included in the header for convenience"
+                },
+                "session_start_block_height": {
+                    "type": "string",
+                    "format": "int64",
+                    "title": "The height at which this session started"
+                }
+            }
+        },
+        "pocket.shared.ApplicationServiceConfig": {
+            "type": "object",
+            "title": "ApplicationServiceConfig holds the service configuration the application stakes for",
+            "properties": {
+                "service_id": {
+                    "type": "string",
+                    "title": "The Service ID for which the application is configured"
+                }
+            }
+        },
+        "pocket.shared.ConfigOption": {
+            "type": "object",
+            "title": "Key-value wrapper for config options, as proto maps can't be keyed by enums",
+            "properties": {
+                "key": {
+                    "title": "Config option key",
+                    "$ref": "#/definitions/pocket.shared.ConfigOptions"
+                },
+                "value": {
+                    "type": "string",
+                    "title": "Config option value"
+                }
+            }
+        },
+        "pocket.shared.ConfigOptions": {
+            "description": "Enum to define configuration options\nTODO_RESEARCH: Should these be configs, SLAs or something else? There will be more discussion once we get closer to implementing onchain QoS.\n\n - UNKNOWN_CONFIG: Undefined config option\n - TIMEOUT: Timeout setting",
+            "type": "string",
+            "default": "UNKNOWN_CONFIG",
+            "enum": [
+                "UNKNOWN_CONFIG",
+                "TIMEOUT"
+            ]
+        },
+        "pocket.shared.MsgUpdateParam": {
+            "description": "MsgUpdateParam is the Msg/UpdateParam request type to update a single param.",
+            "type": "object",
+            "properties": {
+                "as_bytes": {
+                    "type": "string",
+                    "format": "byte"
+                },
+                "as_string": {
+                    "type": "string"
+                },
+                "as_uint64": {
+                    "type": "string",
+                    "format": "uint64"
+                },
+                "authority": {
+                    "description": "authority is the address that controls the module (defaults to x/gov unless overwritten).",
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "pocket.shared.MsgUpdateParamResponse": {
+            "description": "MsgUpdateParamResponse defines the response structure for executing a\nMsgUpdateParam message after a single param update.",
+            "type": "object",
+            "properties": {
+                "params": {
+                    "$ref": "#/definitions/pocket.shared.Params"
+                }
+            }
+        },
+        "pocket.shared.MsgUpdateParams": {
+            "description": "MsgUpdateParams is the Msg/UpdateParams request type.",
+            "type": "object",
+            "properties": {
+                "authority": {
+                    "description": "authority is the address that controls the module (defaults to x/gov unless overwritten).",
+                    "type": "string"
+                },
+                "params": {
+                    "description": "NOTE: All parameters must be supplied.",
+                    "$ref": "#/definitions/pocket.shared.Params"
+                }
+            }
+        },
+        "pocket.shared.MsgUpdateParamsResponse": {
+            "description": "MsgUpdateParamsResponse defines the response structure for executing a\nMsgUpdateParams message.",
+            "type": "object"
+        },
+        "pocket.shared.Params": {
+            "description": "Params defines the parameters for the module.",
+            "type": "object",
+            "properties": {
+                "application_unbonding_period_sessions": {
+                    "description": "application_unbonding_period_sessions is the number of sessions that an application must wait after\nunstaking before their staked assets are moved to their account balance.\nOnchain business logic requires, and ensures, that the corresponding block count of the\napplication unbonding period will exceed the end of its corresponding proof window close height.",
+                    "type": "string",
+                    "format": "uint64"
+                },
+                "claim_window_close_offset_blocks": {
+                    "description": "claim_window_close_offset_blocks is the number of blocks after the claim window\nopen height, at which the claim window closes.",
+                    "type": "string",
+                    "format": "uint64"
+                },
+                "claim_window_open_offset_blocks": {
+                    "description": "claim_window_open_offset_blocks is the number of blocks after the session grace\nperiod height, at which the claim window opens.",
+                    "type": "string",
+                    "format": "uint64"
+                },
+                "compute_units_to_tokens_multiplier": {
+                    "description": "The amount of upokt that a compute unit should translate to when settling a session.\nDEV_NOTE: This used to be under x/tokenomics but has been moved here to avoid cyclic dependencies.",
+                    "type": "string",
+                    "format": "uint64"
+                },
+                "gateway_unbonding_period_sessions": {
+                    "description": "gateway_unbonding_period_sessions is the number of sessions that a gateway must wait after\nunstaking before their staked assets are moved to its account balance.",
+                    "type": "string",
+                    "format": "uint64"
+                },
+                "grace_period_end_offset_blocks": {
+                    "description": "grace_period_end_offset_blocks is the number of blocks, after the session end height,\nduring which the supplier can still service payable relays.\nSuppliers will need to recreate a claim for the previous session (if already created) to\nget paid for the additional relays.",
+                    "type": "string",
+                    "format": "uint64"
+                },
+                "num_blocks_per_session": {
+                    "description": "num_blocks_per_session is the number of blocks between the session start & end heights.",
+                    "type": "string",
+                    "format": "uint64"
+                },
+                "proof_window_close_offset_blocks": {
+                    "description": "proof_window_close_offset_blocks is the number of blocks after the proof window\nopen height, at which the proof window closes.",
+                    "type": "string",
+                    "format": "uint64"
+                },
+                "proof_window_open_offset_blocks": {
+                    "description": "proof_window_open_offset_blocks is the number of blocks after the claim window\nclose height, at which the proof window opens.",
+                    "type": "string",
+                    "format": "uint64"
+                },
+                "supplier_unbonding_period_sessions": {
+                    "description": "supplier_unbonding_period_sessions is the number of sessions that a supplier must wait after\nunstaking before their staked assets are moved to their account balance.\nOnchain business logic requires, and ensures, that the corresponding block count of the unbonding\nperiod will exceed the end of any active claim & proof lifecycles.",
+                    "type": "string",
+                    "format": "uint64"
+                }
+            }
+        },
+        "pocket.shared.QueryParamsResponse": {
+            "description": "QueryParamsResponse is response type for the Query/Params RPC method.",
+            "type": "object",
+            "properties": {
+                "params": {
+                    "description": "params holds all the parameters of this module.",
+                    "$ref": "#/definitions/pocket.shared.Params"
+                }
+            }
+        },
+        "pocket.shared.RPCType": {
+            "description": "- UNKNOWN_RPC: Undefined RPC type\n - GRPC: gRPC\n - WEBSOCKET: WebSocket\n - JSON_RPC: JSON-RPC\n - REST: REST",
+            "type": "string",
+            "title": "Enum to define RPC types",
+            "default": "UNKNOWN_RPC",
+            "enum": [
+                "UNKNOWN_RPC",
+                "GRPC",
+                "WEBSOCKET",
+                "JSON_RPC",
+                "REST"
+            ]
+        },
+        "pocket.shared.Service": {
+            "type": "object",
+            "title": "Service message to encapsulate unique and semantic identifiers for a service on the network",
+            "properties": {
+                "compute_units_per_relay": {
+                    "description": "Compute units required per relay for this service",
+                    "type": "string",
+                    "format": "uint64",
+                    "title": "The cost of a single relay for this service in terms of compute units.\nMust be used alongside the global 'compute_units_to_tokens_multipler' to calculate the cost of a relay for this service.\ncost_per_relay_for_specific_service = compute_units_per_relay_for_specific_service * compute_units_to_tokens_multipler_global_value"
+                },
+                "id": {
+                    "description": "Unique identifier for the service",
+                    "type": "string",
+                    "title": "For example, what if we want to request a session for a certain service but with some additional configs that identify it?"
+                },
+                "name": {
+                    "description": "TODO_MAINNET_MIGRATION(@bryanchriswhite): Either remove this or rename it to alias.\n\n(Optional) Semantic human readable name for the service",
+                    "type": "string"
+                },
+                "owner_address": {
+                    "description": "The owner address that created the service.\nIt is the address that receives rewards based on the Service's onchain usage\nIt is the only address that can update the service configuration (e.g. compute_units_per_relay),\nor make other updates to it.\n\nThe Bech32 address of the service owner / creator",
+                    "type": "string"
+                }
+            }
+        },
+        "pocket.shared.ServiceConfigUpdate": {
+            "description": "ServiceConfigUpdate tracks a change in a supplier's service configurations\nat a specific block height, enabling tracking of configuration changes over time.",
+            "type": "object",
+            "properties": {
+                "effective_block_height": {
+                    "description": "Block height at which this service configuration update takes effect,\naligned with the session start height.",
+                    "type": "string",
+                    "format": "uint64"
+                },
+                "services": {
+                    "description": "List of service configurations after the update was applied.",
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "$ref": "#/definitions/pocket.shared.SupplierServiceConfig"
+                    }
+                }
+            }
+        },
+        "pocket.shared.ServiceRevenueShare": {
+            "type": "object",
+            "title": "ServiceRevenueShare message to hold revenue share configuration details",
+            "properties": {
+                "address": {
+                    "type": "string",
+                    "title": "The Bech32 address of the revenue share recipient"
+                },
+                "rev_share_percentage": {
+                    "type": "string",
+                    "format": "uint64",
+                    "title": "The percentage of revenue share the recipient will receive"
+                }
+            }
+        },
+        "pocket.shared.Supplier": {
+            "type": "object",
+            "title": "Supplier represents an actor in Pocket Network that provides RPC services",
+            "properties": {
+                "operator_address": {
+                    "description": "Operator address managing the offchain server\nImmutable for supplier's lifespan - requires unstake/re-stake to change.\nCan update supplier configs except for owner address.",
+                    "type": "string"
+                },
+                "owner_address": {
+                    "type": "string",
+                    "title": "Owner address that controls the staked funds and receives rewards by default\nCannot be updated by the operator"
+                },
+                "service_config_history": {
+                    "description": "List of historical service configuration updates, tracking the suppliers\nservices update and corresponding activation heights.",
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "$ref": "#/definitions/pocket.shared.ServiceConfigUpdate"
+                    }
+                },
+                "services": {
+                    "type": "array",
+                    "title": "List of service configurations supported by this supplier",
+                    "items": {
+                        "type": "object",
+                        "$ref": "#/definitions/pocket.shared.SupplierServiceConfig"
+                    }
+                },
+                "stake": {
+                    "title": "Total amount of staked uPOKT",
+                    "$ref": "#/definitions/cosmos.base.v1beta1.Coin"
+                },
+                "unstake_session_end_height": {
+                    "type": "string",
+                    "format": "uint64",
+                    "title": "Session end height when supplier initiated unstaking (0 if not unstaking)"
+                }
+            }
+        },
+        "pocket.shared.SupplierEndpoint": {
+            "type": "object",
+            "title": "SupplierEndpoint message to hold service configuration details",
+            "properties": {
+                "configs": {
+                    "type": "array",
+                    "title": "Additional configuration options for the endpoint",
+                    "items": {
+                        "type": "object",
+                        "$ref": "#/definitions/pocket.shared.ConfigOption"
+                    }
+                },
+                "rpc_type": {
+                    "title": "Type of RPC exposed on the url above",
+                    "$ref": "#/definitions/pocket.shared.RPCType"
+                },
+                "url": {
+                    "type": "string",
+                    "title": "URL of the endpoint"
+                }
+            }
+        },
+        "pocket.shared.SupplierServiceConfig": {
+            "type": "object",
+            "title": "SupplierServiceConfig holds the service configuration the supplier stakes for",
+            "properties": {
+                "endpoints": {
+                    "type": "array",
+                    "title": "List of endpoints for the service",
+                    "items": {
+                        "type": "object",
+                        "$ref": "#/definitions/pocket.shared.SupplierEndpoint"
+                    }
+                },
+                "rev_share": {
+                    "type": "array",
+                    "title": "List of revenue share configurations for the service",
+                    "items": {
+                        "type": "object",
+                        "$ref": "#/definitions/pocket.shared.ServiceRevenueShare"
+                    }
+                },
+                "service_id": {
+                    "type": "string",
+                    "title": "The Service ID for which the supplier is configured"
+                }
+            }
+        },
+        "pocket.supplier.MsgStakeSupplier": {
+            "type": "object",
+            "properties": {
+                "operator_address": {
+                    "type": "string",
+                    "title": "The Bech32 address of the operator (i.e. provider, non-custodial)"
+                },
+                "owner_address": {
+                    "type": "string",
+                    "title": "The Bech32 address of the owner (i.e. custodial, staker)"
+                },
+                "services": {
+                    "type": "array",
+                    "title": "The list of services this supplier is staked to provide service for",
+                    "items": {
+                        "type": "object",
+                        "$ref": "#/definitions/pocket.shared.SupplierServiceConfig"
+                    }
+                },
+                "signer": {
+                    "type": "string",
+                    "title": "The Bech32 address of the message signer (i.e. owner or operator)"
+                },
+                "stake": {
+                    "title": "The total amount of uPOKT the supplier has staked. Must be ≥ to the current amount that the supplier has staked (if any)",
+                    "$ref": "#/definitions/cosmos.base.v1beta1.Coin"
+                }
+            }
+        },
+        "pocket.supplier.MsgStakeSupplierResponse": {
+            "type": "object",
+            "properties": {
+                "supplier": {
+                    "$ref": "#/definitions/pocket.shared.Supplier"
+                }
+            }
+        },
+        "pocket.supplier.MsgUnstakeSupplier": {
+            "type": "object",
+            "properties": {
+                "operator_address": {
+                    "type": "string",
+                    "title": "The Bech32 address of the operator (i.e. provider, non-custodial)"
+                },
+                "signer": {
+                    "type": "string",
+                    "title": "The Bech32 address of the message signer (i.e. owner or operator)"
+                }
+            }
+        },
+        "pocket.supplier.MsgUnstakeSupplierResponse": {
+            "type": "object",
+            "properties": {
+                "supplier": {
+                    "$ref": "#/definitions/pocket.shared.Supplier"
+                }
+            }
+        },
+        "pocket.supplier.MsgUpdateParam": {
+            "description": "MsgUpdateParam is the Msg/UpdateParam request type to update a single param.",
+            "type": "object",
+            "properties": {
+                "as_coin": {
+                    "$ref": "#/definitions/cosmos.base.v1beta1.Coin"
+                },
+                "authority": {
+                    "description": "authority is the address that controls the module (defaults to x/gov unless overwritten).",
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "pocket.supplier.MsgUpdateParamResponse": {
+            "type": "object",
+            "properties": {
+                "params": {
+                    "$ref": "#/definitions/pocket.supplier.Params"
+                }
+            }
+        },
+        "pocket.supplier.MsgUpdateParams": {
+            "description": "MsgUpdateParams is the Msg/UpdateParams request type.",
+            "type": "object",
+            "properties": {
+                "authority": {
+                    "description": "authority is the address that controls the module (defaults to x/gov unless overwritten).",
+                    "type": "string"
+                },
+                "params": {
+                    "description": "params defines the x/supplier parameters to update.\nNOTE: All parameters must be supplied.",
+                    "$ref": "#/definitions/pocket.supplier.Params"
+                }
+            }
+        },
+        "pocket.supplier.MsgUpdateParamsResponse": {
+            "description": "MsgUpdateParamsResponse defines the response structure for executing a\nMsgUpdateParams message.",
+            "type": "object"
+        },
+        "pocket.supplier.Params": {
+            "description": "Params defines the parameters for the module.",
+            "type": "object",
+            "properties": {
+                "min_stake": {
+                    "description": "min_stake is the minimum amount of uPOKT that a supplier must stake to be\nincluded in network sessions and remain staked.",
+                    "$ref": "#/definitions/cosmos.base.v1beta1.Coin"
+                },
+                "staking_fee": {
+                    "description": "staking_fee is the fee charged by the protocol for staking a supplier.",
+                    "$ref": "#/definitions/cosmos.base.v1beta1.Coin"
+                }
+            }
+        },
+        "pocket.supplier.QueryAllSuppliersResponse": {
+            "type": "object",
+            "properties": {
+                "pagination": {
+                    "$ref": "#/definitions/cosmos.base.query.v1beta1.PageResponse"
+                },
+                "supplier": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "$ref": "#/definitions/pocket.shared.Supplier"
+                    }
+                }
+            }
+        },
+        "pocket.supplier.QueryGetSupplierResponse": {
+            "type": "object",
+            "properties": {
+                "supplier": {
+                    "$ref": "#/definitions/pocket.shared.Supplier"
+                }
+            }
+        },
+        "pocket.supplier.QueryParamsResponse": {
+            "description": "QueryParamsResponse is response type for the Query/Params RPC method.",
+            "type": "object",
+            "properties": {
+                "params": {
+                    "description": "params holds all the parameters of this module.",
+                    "$ref": "#/definitions/pocket.supplier.Params"
+                }
+            }
+        },
+        "pocket.tokenomics.MintAllocationPercentages": {
+            "description": "MintAllocationPercentages represents the distribution of newly minted tokens,\nat the end of claim settlement, as a result of the Global Mint TLM.",
+            "type": "object",
+            "properties": {
+                "application": {
+                    "description": "allocation_application is the percentage of the minted tokens which are sent\nto the application account address during claim settlement.",
+                    "type": "number",
+                    "format": "double"
+                },
+                "dao": {
+                    "description": "dao is the percentage of the minted tokens which are sent\nto the DAO reward address during claim settlement.",
+                    "type": "number",
+                    "format": "double"
+                },
+                "proposer": {
+                    "description": "proposer is the percentage of the minted tokens which are sent\nto the block proposer account address during claim settlement.",
+                    "type": "number",
+                    "format": "double"
+                },
+                "source_owner": {
+                    "description": "source_owner is the percentage of the minted tokens which are sent\nto the service source owner account address during claim settlement.",
+                    "type": "number",
+                    "format": "double"
+                },
+                "supplier": {
+                    "description": "supplier is the percentage of the minted tokens which are sent\nto the block supplier account address during claim settlement.",
+                    "type": "number",
+                    "format": "double"
+                }
+            }
+        },
+        "pocket.tokenomics.MsgUpdateParam": {
+            "description": "MsgUpdateParam is the Msg/UpdateParam request type to update a single param.",
+            "type": "object",
+            "properties": {
+                "as_float": {
+                    "type": "number",
+                    "format": "double"
+                },
+                "as_mint_allocation_percentages": {
+                    "$ref": "#/definitions/pocket.tokenomics.MintAllocationPercentages"
+                },
+                "as_string": {
+                    "type": "string"
+                },
+                "authority": {
+                    "description": "authority is the address that controls the module (defaults to x/gov unless overwritten).",
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string",
+                    "title": "The (name, as_type) tuple must match the corresponding name and type as\nspecified in the `Params` message in `proof/params.proto.`"
+                }
+            }
+        },
+        "pocket.tokenomics.MsgUpdateParamResponse": {
+            "description": "MsgUpdateParamResponse defines the response structure for executing a\nMsgUpdateParam message after a single param update.",
+            "type": "object",
+            "properties": {
+                "params": {
+                    "$ref": "#/definitions/pocket.tokenomics.Params"
+                }
+            }
+        },
+        "pocket.tokenomics.MsgUpdateParams": {
+            "description": "MsgUpdateParams is the Msg/UpdateParams request type to update all params at once.",
+            "type": "object",
+            "properties": {
+                "authority": {
+                    "description": "authority is the address that controls the module (defaults to x/gov unless overwritten).",
+                    "type": "string"
+                },
+                "params": {
+                    "description": "params defines the x/tokenomics parameters to update.\nNOTE: All parameters must be supplied.",
+                    "$ref": "#/definitions/pocket.tokenomics.Params"
+                }
+            }
+        },
+        "pocket.tokenomics.MsgUpdateParamsResponse": {
+            "description": "MsgUpdateParamsResponse defines the response structure for executing a\nMsgUpdateParams message.",
+            "type": "object",
+            "properties": {
+                "params": {
+                    "$ref": "#/definitions/pocket.tokenomics.Params"
+                }
+            }
+        },
+        "pocket.tokenomics.Params": {
+            "description": "Params defines the parameters for the tokenomics module.",
+            "type": "object",
+            "properties": {
+                "dao_reward_address": {
+                    "description": "dao_reward_address is the address to which mint_allocation_dao percentage of the\nminted tokens are at the end of claim settlement.\n\nBech32 cosmos address",
+                    "type": "string"
+                },
+                "global_inflation_per_claim": {
+                    "description": "global_inflation_per_claim is the percentage of a claim's claimable uPOKT amount which will be minted on settlement.",
+                    "type": "number",
+                    "format": "double"
+                },
+                "mint_allocation_percentages": {
+                    "description": "mint_allocation_percentages represents the distribution of newly minted tokens,\nat the end of claim settlement, as a result of the Global Mint TLM.",
+                    "$ref": "#/definitions/pocket.tokenomics.MintAllocationPercentages"
+                }
+            }
+        },
+        "pocket.tokenomics.QueryParamsResponse": {
+            "description": "QueryParamsResponse is response type for the Query/Params RPC method.",
+            "type": "object",
+            "properties": {
+                "params": {
+                    "description": "params holds all the parameters of this module.",
+                    "$ref": "#/definitions/pocket.tokenomics.Params"
+                }
+            }
         }
-    }
+    },
+    "tags": [
+        {
+            "name": "Query"
+        },
+        {
+            "name": "Msg"
+        }
+    ]
 }
