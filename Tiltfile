@@ -73,7 +73,7 @@ localnet_config_defaults = {
     # By default, we use the `helm_repo` function below to point to the remote repository
     # but can update it to the locally cloned repo for testing & development
     "grove_helm_chart_local_repo": {
-        "enabled": False,
+        "enabled": True,
         "path": os.path.join("..", "grove-helm-charts")
     },
 
@@ -86,7 +86,7 @@ localnet_config_defaults = {
 
     "indexer": {
         "repo_path": os.path.join("..", "pocketdex"),
-        "enabled": True,
+        "enabled": False,
         "clone_if_not_present": False,
     },
 }
