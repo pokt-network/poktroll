@@ -102,7 +102,7 @@ message MorseApplication {
   bool   jailed = 3[(gogoproto.jsontag) = "jailed", (gogoproto.moretags) = "yaml:\"jailed\""];
   int32  status = 4 [(gogoproto.jsontag) = "status", (gogoproto.moretags) = "yaml:\"status\""];
   // The string representation of the BigInt amount of upokt.
-  string staked_tokens = 6 [(gogoproto.jsontag) = "tokens"];
+  string staked_tokens = 6 [(gogoproto.jsontag) = "staked_tokens"];
 }
 
 // MorseValidator is a subset of the Morse ProtoValidator type.

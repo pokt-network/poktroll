@@ -19,12 +19,12 @@ Feature: Morse account import and claim all account types (with snapshot data)
     When the authority exports the Morse Account State at height "130000" to "morse_state_export.json"
     Then a MorseStateExport is written to "morse_state_export.json"
 
-    When the authority executes "poktrolld tx migration collect-morse-accounts morse_state_export.json morse_account_state.json"
+    When the authority executes "pocketd tx migration collect-morse-accounts morse_state_export.json morse_account_state.json"
     Then a MorseAccountState is written to "morse_account_state.json"
 
     Given no MorseClaimableAccounts exist
     And the MorseAccountState in "morse_account_state.json" is valid
-    When the authority executes "poktrolld tx migration import-morse-accounts morse_account_state.json"
+    When the authority executes "pocketd tx migration import-morse-accounts morse_account_state.json"
     Then the MorseClaimableAccounts are persisted onchain
 
   Scenario:
