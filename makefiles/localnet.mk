@@ -4,7 +4,7 @@
 
 # TODO_TECHDEBT(@olshansk): Look at `make dev_up` in the `path` repo and port it here.
 .PHONY: localnet_up
-localnet_up: warn_message_grove_helm_charts check_docker_ps check_kind_context proto_regen localnet_regenesis ## Starts up a clean localnet
+localnet_up: check_docker_ps check_kind_context proto_regen localnet_regenesis ## Starts up a clean localnet
 	tilt up
 
 .PHONY: localnet_up_quick
