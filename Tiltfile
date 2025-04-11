@@ -9,6 +9,7 @@ load("ext://execute_in_pod", "execute_in_pod")
 hot_reload_dirs = ["app", "cmd", "tools", "x", "pkg", "telemetry"]
 
 
+# merge_dicts updates the base dictionary with the updates dictionary.
 def merge_dicts(base, updates):
     for k, v in updates.items():
         if k in base and type(base[k]) == "dict" and type(v) == "dict":
@@ -89,7 +90,7 @@ localnet_config_defaults = {
         "clone_if_not_present": False,
     },
 }
-localnet_config_file = read_yaml(localnet_config_path, default=localnet_config_defaults)
+
 # Initial empty config
 localnet_config = {}
 # Load the existing config file, if it exists, or use an empty dict as fallback
@@ -245,9 +246,7 @@ COPY bin/pocketd /usr/local/bin/pocketd
 WORKDIR /
 """,
     only=["./bin/pocketd"],
-    entrypoint=[
-        "pocketd",
-    ],
+    entrypoint=["pocketd"],
     live_update=[sync("bin/pocketd", "/usr/local/bin/pocketd")],
 )
 
