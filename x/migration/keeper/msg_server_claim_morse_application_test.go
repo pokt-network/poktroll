@@ -125,6 +125,7 @@ func TestMsgServer_ClaimMorseApplication_SuccessNewApplication(t *testing.T) {
 		shannonDestAddr,
 		morsePrivKey,
 		&testAppServiceConfig,
+		sample.AccAddress(),
 	)
 	require.NoError(t, err)
 
@@ -203,6 +204,7 @@ func TestMsgServer_ClaimMorseApplication_Error(t *testing.T) {
 		sample.AccAddress(),
 		morsePrivKey,
 		expectedAppServiceConfig,
+		sample.AccAddress(),
 	)
 	require.NoError(t, err)
 

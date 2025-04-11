@@ -11,7 +11,7 @@ Once a proposal passes, or a decision by PNF is made on behalf of the DAO, the p
 
 - [Access Control](#access-control)
   - [MainNet Authorizations](#mainnet-authorizations)
-    - [`x/gov` Module Granter](#xgov-module-granter)
+    - [`x/gov` Module Account](#xgov-module-account)
     - [`PNF` Account Grantee](#pnf-account-grantee)
 - [Examples](#examples)
   - [Example: Adding a new Authorization](#example-adding-a-new-authorization)

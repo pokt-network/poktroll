@@ -86,15 +86,15 @@ func runClaimSupplier(cmd *cobra.Command, args []string) error {
 	}
 
 	// Check and warn if the signing account doesn't match either the configured owner or operator address.
-	signingAddr := clientCtx.GetFromAddress().String()
+	shannonSigningAddr := clientCtx.GetFromAddress().String()
 	ownerAddr := supplierStakeConfig.OwnerAddress
 	operatorAddr := supplierStakeConfig.OperatorAddress
-	switch signingAddr {
+	switch shannonSigningAddr {
 	case ownerAddr, operatorAddr:
 		// All good.
 	default:
 		logger.Logger.Warn().
-			Str("signer_address", signingAddr).
+			Str("signer_address", shannonSigningAddr).
 			Str("owner_address", ownerAddr).
 			Str("operator_address", operatorAddr).
 			Msg("signer address matches NEITHER owner NOR operator address")
@@ -106,6 +106,7 @@ func runClaimSupplier(cmd *cobra.Command, args []string) error {
 		operatorAddr,
 		morsePrivKey,
 		supplierStakeConfig.Services,
+		shannonSigningAddr,
 	)
 	if err != nil {
 		return err

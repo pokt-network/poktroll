@@ -51,6 +51,7 @@ func TestMsgServer_ClaimMorseAccount_Success(t *testing.T) {
 		msgClaim, err := migrationtypes.NewMsgClaimMorseAccount(
 			sample.AccAddress(),
 			morsePrivKey,
+			sample.AccAddress(),
 		)
 		require.NoError(t, err)
 
@@ -123,6 +124,7 @@ func TestMsgServer_ClaimMorseAccount_Error(t *testing.T) {
 	msgClaim, err := migrationtypes.NewMsgClaimMorseAccount(
 		sample.AccAddress(),
 		morsePrivKey,
+		sample.AccAddress(),
 	)
 	require.NoError(t, err)
 
@@ -216,6 +218,7 @@ func TestMsgServer_ClaimMorseAccount_Error(t *testing.T) {
 		msgClaim, err = migrationtypes.NewMsgClaimMorseAccount(
 			sample.AccAddress(),
 			morsePrivKey,
+			sample.AccAddress(),
 		)
 		require.NoError(t, err)
 
@@ -243,6 +246,7 @@ func TestMsgServer_ClaimMorseAccount_Error(t *testing.T) {
 		msgClaim, err = migrationtypes.NewMsgClaimMorseAccount(
 			sample.AccAddress(),
 			morsePrivKey,
+			sample.AccAddress(),
 		)
 		require.NoError(t, err)
 

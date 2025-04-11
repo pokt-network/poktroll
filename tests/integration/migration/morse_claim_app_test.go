@@ -40,6 +40,7 @@ func (s *MigrationModuleTestSuite) TestClaimMorseNewApplication() {
 				s.T(), uint64(morseAccountIdx),
 				shannonDestAddr,
 				s.appServiceConfig,
+				sample.AccAddress(),
 			)
 
 			// Assert that the MorseClaimableAccount was updated on-chain.
@@ -128,6 +129,7 @@ func (s *MigrationModuleTestSuite) TestClaimMorseExistingApplication() {
 				s.T(), uint64(morseAccountIdx),
 				shannonDestAddr,
 				s.appServiceConfig,
+				sample.AccAddress(),
 			)
 
 			// Assert that the MorseClaimableAccount was updated on-chain.
@@ -204,6 +206,7 @@ func (s *MigrationModuleTestSuite) TestClaimMorseApplication_ErrorMinStake() {
 		shannonDestAddr,
 		morsePrivateKey,
 		s.appServiceConfig,
+		sample.AccAddress(),
 	)
 	s.NoError(err)
 

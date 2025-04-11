@@ -43,6 +43,7 @@ func (s *MigrationModuleTestSuite) TestClaimMorseNewSupplier() {
 				s.T(), uint64(morseAccountIdx),
 				shannonDestAddr,
 				s.supplierServices,
+				sample.AccAddress(),
 			)
 
 			// Assert that the MorseClaimableAccount was updated on-chain.
@@ -169,6 +170,7 @@ func (s *MigrationModuleTestSuite) TestClaimMorseExistingSupplier() {
 				s.T(), uint64(morseAccountIdx),
 				shannonDestAddr,
 				s.supplierServices,
+				sample.AccAddress(),
 			)
 
 			// DEV_NOTE: If the ClaimedSupplierStake is zero, due to an optimization in big.Int,
@@ -267,6 +269,7 @@ func (s *MigrationModuleTestSuite) TestClaimMorseSupplier_ErrorMinStake() {
 		shannonDestAddr,
 		morsePrivateKey,
 		s.supplierServices,
+		sample.AccAddress(),
 	)
 	s.NoError(err)
 

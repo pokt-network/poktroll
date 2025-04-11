@@ -21,11 +21,13 @@ func NewMsgClaimMorseSupplier(
 	shannonOperatorAddress string,
 	morsePrivateKey cometcrypto.PrivKey,
 	services []*sharedtypes.SupplierServiceConfig,
+	shannonSigningAddr string,
 ) (*MsgClaimMorseSupplier, error) {
 	msg := &MsgClaimMorseSupplier{
 		ShannonOwnerAddress:    shannonOwnerAddress,
 		ShannonOperatorAddress: shannonOperatorAddress,
 		Services:               services,
+		ShannonSigningAddress:  shannonSigningAddr,
 	}
 
 	if morsePrivateKey != nil {

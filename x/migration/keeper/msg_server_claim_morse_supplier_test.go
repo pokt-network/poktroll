@@ -153,6 +153,7 @@ func TestMsgServer_ClaimMorseSupplier_SuccessNewSupplier(t *testing.T) {
 		shannonDestAddr,
 		morsePrivKey,
 		testSupplierServices,
+		sample.AccAddress(),
 	)
 	require.NoError(t, err)
 
@@ -231,6 +232,7 @@ func TestMsgServer_ClaimMorseSupplier_Error(t *testing.T) {
 		sample.AccAddress(),
 		morsePrivKey,
 		testSupplierServices,
+		sample.AccAddress(),
 	)
 	require.NoError(t, err)
 
@@ -344,6 +346,7 @@ func TestMsgServer_ClaimMorseSupplier_Error(t *testing.T) {
 			sample.AccAddress(),
 			morsePrivKey,
 			testSupplierServices,
+			sample.AccAddress(),
 		)
 		require.NoError(t, err)
 
@@ -374,6 +377,7 @@ func TestMsgServer_ClaimMorseSupplier_Error(t *testing.T) {
 			sample.AccAddress(),
 			morsePrivKey,
 			testSupplierServices,
+			sample.AccAddress(),
 		)
 		require.NoError(t, err)
 
