@@ -57,7 +57,7 @@ The following is a ~20 minute video walkthrough using this cheatsheet.
 
 ## Pre-Requisites
 
-1. Make sure to [install the `pocketd` CLI](../../tools/user_guide/pocketd_cli.md).
+1. Make sure to [install the `pocketd` CLI](../../tools/user_guide/1_pocketd_cli.md).
 2. Make sure you know how to [create and fund a new account](../../tools/user_guide/create-new-wallet.md).
 3. You have either [staked a new `service` or found an existing one](./service_cheatsheet.md).
 4. `[Optional]` You can run things locally or have dedicated long-running hardware. See the [Docker Compose Cheat Sheet](./docker_compose_debian_cheatsheet#deploy-your-server) if you're interested in the latter.

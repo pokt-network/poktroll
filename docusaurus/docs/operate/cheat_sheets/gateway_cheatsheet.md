@@ -39,7 +39,7 @@ streamline development and reduce friction for any new potential contributor.
 
 ## Pre-Requisites
 
-1. Make sure to [install the `pocketd` CLI](../../tools/user_guide/pocketd_cli.md).
+1. Make sure to [install the `pocketd` CLI](../../tools/user_guide/1_pocketd_cli.md).
 2. Make sure you know how to [create and fund a new account](../../tools/user_guide/create-new-wallet.md).
 
 :::warning

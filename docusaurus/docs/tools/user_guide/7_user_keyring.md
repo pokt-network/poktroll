@@ -1,6 +1,6 @@
 ---
 title: Password-less Keyring
-sidebar_position: 6
+sidebar_position: 7
 ---
 
 ## Setting up a password-less `pocketd` <!-- omit in toc -->
@@ -31,7 +31,7 @@ machines to **AVOID** providing a password each time.
 ## Prerequisites
 
 1. You are running any Shannon service on a `Debian` machine.
-2. You have installed the [pocketd CLI](./pocketd_cli.md).
+2. You have installed the [pocketd CLI](./1_pocketd_cli.md).
 3. You have created a `pocket` user following one of the guides in the docs.
 4. ⚠️ You are annoyed about having to enter your password every time ⚠️
 

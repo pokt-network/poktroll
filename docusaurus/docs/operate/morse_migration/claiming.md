@@ -75,7 +75,7 @@ In this document, we will refer to two CLI tools:
 
    - This CLI is compliant with the latest Cosmos SDK (circa 2025) but modified to account for Pocket specific operations
    - This CLI acts as a keyring for Shannon accounts (i.e. secp256k1) and more (outside the scope of this document)
-   - Additional documentation can be found [here](../../tools/user_guide/pocketd_cli.md).
+   - Additional documentation can be found [here](../../tools/user_guide/1_pocketd_cli.md).
 
 ## Onchain Actors & Messages for Claiming
 
