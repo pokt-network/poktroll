@@ -112,4 +112,4 @@ to sync a node from genesis by automatically using the appropriate binary for ea
 
 ## Syncing from genesis
 
-If you're encountering any of the errors mentioned above while trying to sync the historical blocks - make sure you're running the correct version of the binary in accordance with this table [Upgrade List](1_upgrade_list.md).
+If you're encountering any of the errors mentioned above while trying to sync the historical blocks - make sure you're running the correct version of the binary in accordance with this table [Upgrade List](2_upgrade_list.md).
