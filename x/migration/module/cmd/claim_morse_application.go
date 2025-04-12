@@ -68,7 +68,7 @@ func runClaimApplication(cmd *cobra.Command, args []string) error {
 
 	// Retrieve and validate the morse key based on the first argument provided.
 	morseKeyExportPath := args[0]
-	morsePrivKey, err := loadMorsePrivateKey(morseKeyExportPath, morseKeyfileDecryptPassphrase)
+	morsePrivKey, err := LoadMorsePrivateKey(morseKeyExportPath, morseKeyfileDecryptPassphrase, noPassphrase)
 	if err != nil {
 		return err
 	}

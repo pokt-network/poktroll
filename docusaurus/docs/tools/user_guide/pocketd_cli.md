@@ -6,7 +6,7 @@ sidebar_position: 1
 :::tip TL;DR If you have brew
 
 ```bash
-brew tap pokt-network/pocket
+brew tap pokt-network/poktroll
 brew install pocketd
 ```
 
@@ -61,9 +61,9 @@ Or as a last resort, you can try the following:
 
 ```bash
 brew tap --repair
-brew untap pokt-network/pocket
+brew untap pokt-network/poktroll
 brew uninstall pocketd
-brew tap pokt-network/pocket
+brew tap pokt-network/poktroll
 brew install pocketd
 ```
 
