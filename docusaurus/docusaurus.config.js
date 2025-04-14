@@ -16,6 +16,12 @@ const config = {
     mermaid: true,
   },
 
+  // Custom fields for configuration
+  customFields: {
+    // Configuration that might be used by plugins or themes
+    hotReload: true,
+  },
+
   themes: [
     "@docusaurus/theme-mermaid",
     [
@@ -59,12 +65,10 @@ const config = {
 
   presets: [
     [
-      // "classic",
-      "@docusaurus/preset-classic",
+      "classic",
       /** @type {import('@docusaurus/preset-classic').Options} */
       ({
         docs: {
-          // path: "docs",
           routeBasePath: "/",
           sidebarPath: "./sidebars.js",
           sidebarCollapsible: false,
@@ -88,6 +92,11 @@ const config = {
           autoCollapseCategories: true,
         },
       },
+      // Add cache control and auto-refresh
+      metadata: [
+        { name: "cache-control", content: "no-cache" },
+        { name: "refresh", content: "3" },
+      ],
       style: "dark",
       navbar: {
         // title: "Pocket Network",

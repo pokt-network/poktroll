@@ -358,7 +358,7 @@ go_docs: check_godoc ## Generate documentation for the project
 
 .PHONY: docusaurus_start
 docusaurus_start: check_yarn check_node ## Start the Docusaurus server
-	(cd docusaurus && yarn install && yarn start)
+	(cd docusaurus && yarn install && BROWSER=none yarn start)
 
 .PHONY: docs_update_gov_params_page
 docs_update_gov_params_page: ## Update the page in Docusaurus documenting all the governance parameters
@@ -473,3 +473,4 @@ include ./makefiles/claims.mk
 include ./makefiles/relay.mk
 include ./makefiles/ping.mk
 include ./makefiles/migrate.mk
+include ./makefiles/claudesync.mk
