@@ -67,7 +67,7 @@ For more information, see: https://dev.poktroll.com/operate/morse_migration/clai
 func runClaimAccount(cmd *cobra.Command, args []string) error {
 	ctx := cmd.Context()
 	morseKeyExportPath := args[0]
-	morsePrivKey, err := loadMorsePrivateKey(morseKeyExportPath, morseKeyfileDecryptPassphrase)
+	morsePrivKey, err := LoadMorsePrivateKey(morseKeyExportPath, morseKeyfileDecryptPassphrase, noPassphrase)
 	if err != nil {
 		return err
 	}
@@ -84,7 +84,6 @@ func runClaimAccount(cmd *cobra.Command, args []string) error {
 	shannonDestAddr := clientCtx.GetFromAddress().String()
 	msgClaimMorseAccount, err := types.NewMsgClaimMorseAccount(
 		shannonDestAddr,
-		morsePrivKey.PubKey().Address().String(),
 		morsePrivKey,
 		shannonSigningAddr,
 	)
@@ -130,7 +129,7 @@ func runClaimAccount(cmd *cobra.Command, args []string) error {
 	}
 
 	// Construct a tx client.
-	txClient, err := flags.GetTxClient(ctx, cmd)
+	txClient, err := flags.GetTxClientFromFlags(ctx, cmd)
 	if err != nil {
 		return err
 	}

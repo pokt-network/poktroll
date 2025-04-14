@@ -34,14 +34,15 @@ const (
 	klen = 32
 )
 
-// loadMorsePrivateKey reads, deserializes, decrypts and returns an exported Morse private key from morseKeyExportPath.
-func loadMorsePrivateKey(morseKeyExportPath, passphrase string) (ed25519.PrivKey, error) {
+// LoadMorsePrivateKey reads, deserializes, decrypts and returns an exported Morse private key from morseKeyExportPath.
+func LoadMorsePrivateKey(morseKeyExportPath, passphrase string, noPrompt bool) (ed25519.PrivKey, error) {
 	morseArmoredKeyfileBz, err := os.ReadFile(morseKeyExportPath)
 	if err != nil {
 		return nil, err
 	}
 
-	passphrase, err = ensurePassphrase(passphrase, noPassphrase)
+	// Support overriding via the noPassphrase flag.
+	passphrase, err = ensurePassphrase(passphrase, noPrompt)
 	if err != nil {
 		return nil, err
 	}

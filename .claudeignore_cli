@@ -1,0 +1,36 @@
+# Docusaurus project files
+docusaurus/*.js
+docusaurus/*.json
+docusaurus/*.lock
+docusaurus/node_modules
+docusaurus/scripts
+docusaurus/src
+docusaurus/static
+docusaurus/yarn.lock
+
+# Test files
+**/*_test.go
+
+# Non-relevant markdown files
+*.md
+# Keep important markdown files
+!docusaurus/docs/**/*.md
+!docusaurus/README.md
+!README.md
+!**/README.md
+
+# Generated files
+docusaurus/.docusaurus
+docusaurus/.cache-loader
+docusaurus/build
+
+# Misc
+.DS_Store
+.env*
+.idea
+.vscode
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*

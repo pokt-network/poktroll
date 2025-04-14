@@ -14,4 +14,6 @@ var (
 	ErrMorseApplicationClaim = sdkerrors.Register(ModuleName, 1104, "unable to claim morse account as a staked application")
 	ErrMorseSupplierClaim    = sdkerrors.Register(ModuleName, 1105, "unable to claim morse account as a staked supplier")
 	ErrMigrationParamInvalid = sdkerrors.Register(ModuleName, 1106, "the provided param is invalid")
+	ErrMorseSrcAddress       = sdkerrors.Register(ModuleName, 1107, "invalid Morse source account address")
+	ErrMorseSignature        = sdkerrors.Register(ModuleName, 1108, "invalid morse signature")
 )

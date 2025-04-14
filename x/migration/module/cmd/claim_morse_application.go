@@ -68,7 +68,7 @@ func runClaimApplication(cmd *cobra.Command, args []string) error {
 
 	// Retrieve and validate the morse key based on the first argument provided.
 	morseKeyExportPath := args[0]
-	morsePrivKey, err := loadMorsePrivateKey(morseKeyExportPath, morseKeyfileDecryptPassphrase)
+	morsePrivKey, err := LoadMorsePrivateKey(morseKeyExportPath, morseKeyfileDecryptPassphrase, noPassphrase)
 	if err != nil {
 		return err
 	}
@@ -91,7 +91,6 @@ func runClaimApplication(cmd *cobra.Command, args []string) error {
 	shannonDestAddr := clientCtx.GetFromAddress().String()
 	msgClaimMorseApplication, err := types.NewMsgClaimMorseApplication(
 		shannonDestAddr,
-		morsePrivKey.PubKey().Address().String(),
 		morsePrivKey,
 		// Construct a new staked application service config with the service ID.
 		&sharedtypes.ApplicationServiceConfig{
@@ -140,7 +139,7 @@ func runClaimApplication(cmd *cobra.Command, args []string) error {
 	}
 
 	// Construct a tx client.
-	txClient, err := flags.GetTxClient(ctx, cmd)
+	txClient, err := flags.GetTxClientFromFlags(ctx, cmd)
 	if err != nil {
 		return err
 	}

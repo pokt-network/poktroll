@@ -67,7 +67,7 @@ func runClaimSupplier(cmd *cobra.Command, args []string) error {
 
 	// Retrieve and validate the morse key based on the first argument provided.
 	morseKeyExportPath := args[0]
-	morsePrivKey, err := loadMorsePrivateKey(morseKeyExportPath, morseKeyfileDecryptPassphrase)
+	morsePrivKey, err := LoadMorsePrivateKey(morseKeyExportPath, morseKeyfileDecryptPassphrase, noPassphrase)
 	if err != nil {
 		return err
 	}
@@ -104,7 +104,6 @@ func runClaimSupplier(cmd *cobra.Command, args []string) error {
 	msgClaimMorseSupplier, err := types.NewMsgClaimMorseSupplier(
 		ownerAddr,
 		operatorAddr,
-		morsePrivKey.PubKey().Address().String(),
 		morsePrivKey,
 		supplierStakeConfig.Services,
 		shannonSigningAddr,
@@ -150,7 +149,7 @@ func runClaimSupplier(cmd *cobra.Command, args []string) error {
 	}
 
 	// Construct a tx client.
-	txClient, err := flags.GetTxClient(ctx, cmd)
+	txClient, err := flags.GetTxClientFromFlags(ctx, cmd)
 	if err != nil {
 		return err
 	}
