@@ -32,8 +32,8 @@ func (k Keeper) SettlePendingClaims(ctx cosmostypes.Context) (
 ) {
 	logger := k.Logger().With("method", "SettlePendingClaims")
 
-	// Use an iterator to get all claims that are expiring at the current block height
-	// instead of getting them all at once to improve scalability.
+	// Retrieve all expiring claims as an iterator.
+	// DEV_NOTE: This previously retrieve a list but has been change to account for large claim counts.
 	expiringClaimsIterator := k.GetExpiringClaimsIterator(ctx)
 	defer expiringClaimsIterator.Close()
 
@@ -50,8 +50,11 @@ func (k Keeper) SettlePendingClaims(ctx cosmostypes.Context) (
 		claim := expiringClaimsIterator.Value()
 		numExpiringClaims++
 
-		// Cache the initial stake for the application which will be used instead of
-		// the updated stake at each claim settlement.
+		// Cache the initial stake for the application at the beginning of settlement to:
+		// - Ensure the claim amount limits are not exceeded by the Suppliers.
+		// - Use a consistent reference value for all claims involving this application.
+		// - Prevent accounting issues that would occur if we used the continuously changing stake value
+		//   during the settlement process.
 		if err = k.cacheApplicationInitialStake(ctx, applicationInitialStakeMap, claim); err != nil {
 			return settledResults, expiredResults, err
 		}
@@ -128,8 +131,8 @@ func (k Keeper) SettlePendingClaims(ctx cosmostypes.Context) (
 			"proof_requirement", proofRequirement,
 		)
 
-		// Initialize a ClaimSettlementResult to accumulate the results prior to executing state transitions.
-		ClaimSettlementResult := tlm.NewClaimSettlementResult(*claim)
+		// Initialize a claimSettlementResult to accumulate the results prior to executing state transitions.
+		claimSettlementResult := tlm.NewClaimSettlementResult(*claim)
 
 		proofIsRequired := proofRequirement != prooftypes.ProofRequirementReason_NOT_REQUIRED
 		if proofIsRequired {
@@ -184,7 +187,7 @@ func (k Keeper) SettlePendingClaims(ctx cosmostypes.Context) (
 				k.proofKeeper.RemoveClaim(ctx, sessionId, claim.SupplierOperatorAddress)
 
 				// Append the settlement result to the expired results.
-				expiredResults.Append(ClaimSettlementResult)
+				expiredResults.Append(claimSettlementResult)
 
 				// Telemetry - defer telemetry calls so that they reference the final values the relevant variables.
 				defer k.finalizeTelemetry(
@@ -206,8 +209,7 @@ func (k Keeper) SettlePendingClaims(ctx cosmostypes.Context) (
 		// 2. The claim requires a proof and a valid proof was found.
 
 		appAddress := claim.GetSessionHeader().GetApplicationAddress()
-		// Capture the initial stake for the application which will to ensure that
-		// claim amount limits are not exceeded.
+		// Capture the application's initial stake to ensure the claim amount limits are not exceeded.
 		applicationInitialStake := applicationInitialStakeMap[appAddress]
 
 		// Ensure that the application has a non-zero initial stake.
@@ -218,13 +220,13 @@ func (k Keeper) SettlePendingClaims(ctx cosmostypes.Context) (
 		}
 
 		// Manage the mint & burn accounting for the claim.
-		if err = k.ProcessTokenLogicModules(ctx, ClaimSettlementResult, applicationInitialStake); err != nil {
+		if err = k.ProcessTokenLogicModules(ctx, claimSettlementResult, applicationInitialStake); err != nil {
 			logger.Error(fmt.Sprintf("error processing token logic modules for claim %q: %v", claim.SessionHeader.SessionId, err))
 			return settledResults, expiredResults, err
 		}
 
 		// Append the token logic module processing ClaimSettlementResult to the settled results.
-		settledResults.Append(ClaimSettlementResult)
+		settledResults.Append(claimSettlementResult)
 
 		claimSettledEvent := tokenomicstypes.EventClaimSettled{
 			Claim:                    claim,
@@ -233,7 +235,7 @@ func (k Keeper) SettlePendingClaims(ctx cosmostypes.Context) (
 			NumEstimatedComputeUnits: numEstimatedComputeUnits,
 			ClaimedUpokt:             &claimeduPOKT,
 			ProofRequirement:         proofRequirement,
-			SettlementResult:         *ClaimSettlementResult,
+			SettlementResult:         *claimSettlementResult,
 		}
 
 		if err = ctx.EventManager().EmitTypedEvent(&claimSettledEvent); err != nil {
@@ -495,8 +497,7 @@ func (k Keeper) executePendingModToAcctTransfers(
 	return nil
 }
 
-// GetExpiringClaimsIterator returns an iterator of all claims that are expiring
-// at the current block height.
+// GetExpiringClaimsIterator returns an iterator of all claims expiring at the current (i.e the context's) block height.
 // This is the height at which the proof window closes.
 // If the proof window closes and a proof IS NOT required -> settle the claim.
 // If the proof window closes and a proof IS required -> only settle it if a proof is available.
