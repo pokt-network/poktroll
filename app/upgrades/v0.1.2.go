@@ -20,14 +20,23 @@ const Upgrade_0_1_2_PlanName = "v0.1.2"
 // Upgrade_0_1_2 handles the upgrade to release `v0.1.2`.
 // This is planned to be issued on both Pocket Network's Shannon Alpha & Beta TestNets as well as Mainnet.
 var Upgrade_0_1_2 = Upgrade{
+	// Plan Name
 	PlanName: Upgrade_0_1_2_PlanName,
-	// No state changes in this upgrade.
+
+	// No migrations or state changes in this upgrade.
+	StoreUpgrades: storetypes.StoreUpgrades{},
+
+	// Upgrade Handler
 	CreateUpgradeHandler: func(mm *module.Manager,
 		keepers *keepers.Keepers,
 		configurator module.Configurator,
 	) upgradetypes.UpgradeHandler {
-		// Adds new parameters using ignite's config.yml as a reference.
-		// https://github.com/pokt-network/poktroll/compare/v0.1.1...f1d354d
+
+		// Add new parameters by:
+		// 1. Inspecting the diff between v0.1.1...f1d354d
+		// 2. Manually inspect changes in ignite's config.yml
+		// 3. Update the upgrade handler here accordingly
+		// Ref: https://github.com/pokt-network/poktroll/compare/v0.1.1...f1d354d
 		applyNewParameters := func(ctx context.Context) (err error) {
 			logger := cosmosTypes.UnwrapSDKContext(ctx).Logger()
 			logger.Info("Starting parameter updates", "upgrade_plan_name", Upgrade_0_1_2_PlanName)
@@ -43,7 +52,8 @@ var Upgrade_0_1_2 = Upgrade{
 				return err
 			}
 
-			// ALL parameters must be present when setting params.
+			// ALL parameters in the migration module must be specified when
+			// setting parameters, even if just one is being CRUDed.
 			err = keepers.MigrationKeeper.SetParams(ctx, migrationParams)
 			if err != nil {
 				logger.Error("Failed to set migration params", "error", err)
@@ -58,7 +68,8 @@ var Upgrade_0_1_2 = Upgrade{
 		// https://github.com/pokt-network/poktroll/compare/v0.1.1...f1d354d
 		applyNewAuthorizations := func(ctx context.Context) (err error) {
 			// Validate before/after with:
-			// `pocketd q authz grants-by-granter pokt10d07y265gmmuvt4z0w9aw880jnsr700j8yv32t --node=<netsork_rpc_url>`
+			// 	pocketd q authz grants-by-granter pokt10d07y265gmmuvt4z0w9aw880jnsr700j8yv32t --node=<network_rpc_url>
+			// Find a network RPC URL here: https://dev.poktroll.com/category/explorers-faucets-wallets-and-more
 			grantAuthorizationMessages := []string{
 				"/pocket.migration.MsgUpdateParam",
 				"/pocket.migration.MsgImportMorseClaimableAccounts",
@@ -69,17 +80,17 @@ var Upgrade_0_1_2 = Upgrade{
 				return fmt.Errorf("failed to parse time: %w", err)
 			}
 
-			// Get the authority address of the migration module.
-			authorityAddress := keepers.MigrationKeeper.GetAuthority()
+			// Get the granter address of the migration module (i.e. authority)
+			granterAddr := keepers.MigrationKeeper.GetAuthority()
 
-			// Get the grantee address for the current network.
-			pnfAddress := NetworkAuthzGranteeAddress[cosmosTypes.UnwrapSDKContext(ctx).ChainID()]
+			// Get the grantee address for the current network (i.e. pnf or grove)
+			granteeAddr := NetworkAuthzGranteeAddress[cosmosTypes.UnwrapSDKContext(ctx).ChainID()]
 
 			for _, msg := range grantAuthorizationMessages {
 				err = keepers.AuthzKeeper.SaveGrant(
 					ctx,
-					cosmosTypes.AccAddress(pnfAddress),
-					cosmosTypes.AccAddress(authorityAddress),
+					cosmosTypes.AccAddress(granteeAddr),
+					cosmosTypes.AccAddress(granterAddr),
 					authz.NewGenericAuthorization(msg),
 					&expiration,
 				)
@@ -95,6 +106,7 @@ var Upgrade_0_1_2 = Upgrade{
 			logger := cosmosTypes.UnwrapSDKContext(ctx).Logger()
 			logger.Info("Starting upgrade handler", "upgrade_plan_name", Upgrade_0_1_2_PlanName)
 
+			// Apply parameter changes
 			err := applyNewParameters(ctx)
 			if err != nil {
 				logger.Error("Failed to apply new parameters",
@@ -103,6 +115,7 @@ var Upgrade_0_1_2 = Upgrade{
 				return vm, err
 			}
 
+			// Apply authorization changes
 			err = applyNewAuthorizations(ctx)
 			if err != nil {
 				logger.Error("Failed to apply new authorizations",
@@ -124,6 +137,4 @@ var Upgrade_0_1_2 = Upgrade{
 			return vm, nil
 		}
 	},
-	// No migrations in this upgrade.
-	StoreUpgrades: storetypes.StoreUpgrades{},
 }

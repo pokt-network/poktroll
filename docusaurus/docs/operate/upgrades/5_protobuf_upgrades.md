@@ -1,10 +1,8 @@
 ---
 title: Handling Protobufs Upgrades
 description: How to handle protobuf upgrades in a backwards compatible way
-sidebar_position: 4
+sidebar_position: 5
 ---
-
-## Handling Protobufs Upgrades <!-- omit in toc -->
 
 When upgrading a blockchain network, it's crucial to ensure that the new version is compatible with the previous one.
 

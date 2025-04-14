@@ -8,6 +8,8 @@ import (
 	"github.com/pokt-network/poktroll/app/keepers"
 )
 
+// Visit the pocket-network-genesis repo for the source of truth for these addresses.
+// https://github.com/pokt-network/pocket-network-genesis/tree/master/shannon
 const (
 	// The default PNF/DAO address in the genesis file for Alpha TestNet. Used to create new authz authorizations.
 	AlphaTestNetPnfAddress = "pokt1r6ja6rz6rpae58njfrsgs5n5sp3r36r2q9j04h"
@@ -20,22 +22,22 @@ const (
 	// The default PNF/DAO address in the genesis file for Beta TestNet. Used to create new authz authorizations.
 	BetaTestNetPnfAddress = "pokt1f0c9y7mahf2ya8tymy8g4rr75ezh3pkklu4c3e"
 
-	// The PNF/DAO address in the genesis file for MainNet.
-	// Will be used to create new authz authorizations in the future.
+	// PNF/DAO address specified in MainNet genesis.
+	// Used to create new authz authorizations after migration is complete.
 	MainNetPnfAddress = "pokt1hv3xrylxvwd7hfv03j50ql0ttp3s5hqqelegmv"
 
-	// The Grove address in the genesis file for MainNet.
-	// This is the current address that is used to create new authz authorizations for the time being.
+	// Grove address specified in MainNet genesis.
+	// Used to create new authz authorizations throughout the migration process.
 	MainnetGroveAddress = "pokt18808wvw0h4t450t06uvauny8lvscsxjfyua7vh"
 )
 
-// NetworkAuthzGranteeAddress is a map of network names (i.e chain-id) to their respective PNF addresses.
+// NetworkAuthzGranteeAddress is a map of network names (i.e chain-id) to their
+// respective authorization (i.e. PNF/DAO) addresses.
 var NetworkAuthzGranteeAddress = map[string]string{
 	"pocket-alpha": AlphaTestNetPnfAddress,
 	"pocket-beta":  BetaTestNetPnfAddress,
-	// Currently grove address is the one being authorized to update mainnet parameters.
-	// TODO_POST_MAINNET: This needs to be updated to the PNF address once it becomes the
-	// entity that will be updating parameters on mainnet.
+	// Grove's address is used as of #1191 to authorize updates to mainnet parameters.
+	// TODO_POST_MAINNET: Update to PNF address once the migration is complete.
 	"pocket": MainnetGroveAddress,
 }
 
