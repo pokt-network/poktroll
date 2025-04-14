@@ -3,13 +3,35 @@ title: Protocol Upgrade Procedure
 sidebar_position: 3
 ---
 
-## Upgrade procedure <!-- omit in toc -->
-
-:::info
+:::warning
 This document is intended for core protocol developers.
+
+We recommend reviewing the `Testing An Upgrade` section below to ensure that the upgrade process is completed successfully.
 :::
 
-- [When is an Protocol Upgrade Warranted?](#when-is-an-protocol-upgrade-warranted)
+## When is an Protocol Upgrade Warranted? <!-- omit in toc -->
+
+A protocol upgrade is **required** if there are `consensus-breaking` changes. _For example, changes to protobufs._
+
+A protocol upgrade is **optional but recommended** if there are changes to node software but are not `consensus-breaking` changes. _For examples, performance improvements._
+
+A software release **can be made** with or without a protocol upgrade. _For example, new utilities in the CLI._
+
+**Identify consensus breaking changes** by:
+
+1. Reviewing merged [Pull Requests (PRs) with the `consensus-breaking` label](https://github.com/pokt-network/poktroll/issues?q=label%3Aconsensus-breaking+) since the last release. It is not a source of truth, but directionality correct.
+2. Looking for breaking changes in `.proto` files
+3. Looking for breaking changes in the `x/` directories
+4. Identifying new onchain parameters or authorizations
+
+:::info Non-exhaustive list
+
+Note that the above is a non-exhaustive list and requires protocol expertise to identify all potential `consensus-breaking` changes.
+:::
+
+## Table of Contents <!-- omit in toc -->
+
+- [Process Overview](#process-overview)
 - [A. Implementing the Upgrade](#a-implementing-the-upgrade)
   - [1. Bump Module Consensus Version](#1-bump-module-consensus-version)
   - [2. Prepare a New Upgrade](#2-prepare-a-new-upgrade)
@@ -21,8 +43,10 @@ This document is intended for core protocol developers.
   - [LocalNet Upgrades](#localnet-upgrades)
   - [DevNet Upgrades](#devnet-upgrades)
   - [TestNet Upgrades](#testnet-upgrades)
+    - [TestNet Management - Grove Employees](#testnet-management---grove-employees)
+    - [Alpha TestNet](#alpha-testnet)
 
-## Process Overview <!-- omit in toc -->
+## Process Overview
 
 When a `consensus-breaking` change is made to the protocol, we must carefully evaluate and implement an upgrade path that
 allows existing nodes to transition safely from one software version to another without disruption.
@@ -35,24 +59,6 @@ This process involves several key steps:
 4. **Announcement**: Upon successful testing, we announce the upgrade through our social media channels and community forums.
 5. **Deployment**: An upgrade transaction is sent to the network, allowing node operators using [Cosmovisor](../walkthroughs/full_node_walkthrough.md) to automatically upgrade their nodes at the specified block height.
 6. **Monitoring**: Post-deployment, we closely monitor the network to ensure everything functions as expected.
-
-## When is an Protocol Upgrade Warranted?
-
-A protocol upgrade is necessary whenever there's an API, State Machine, or other `consensus-breaking` change in the version we're about to release.
-
-The following is a non-exhaustive list of potential `consensus-breaking` changes:
-
-1. [Pull Requests (PRs) with the `consensus-breaking` label](https://github.com/pokt-network/poktroll/issues?q=label%3Aconsensus-breaking+) since the last release as a signal (not source of truth)
-2. Potential changes in `.proto` files
-3. Potential changes in the `x/` directories
-4. New onchain parameters
-5. New onchain authorizations
-
-:::warning
-
-We recommend reviewing the `Testing An Upgrade` section below to ensure that the upgrade process is completed successfully.
-
-:::
 
 ## A. Implementing the Upgrade
 
@@ -235,8 +241,6 @@ Below is a set of instructions for a hypothetical upgrade from `0.1` to `0.2`:
    rm -rf ~/.pocket && ./release_binaries/pocket_darwin_arm64 comet unsafe-reset-all && make localnet_regenesis
    ```
 
-[an upgrade transaction](#-write-an-upgrade-transaction)
-
 6. **(`old` repo)** Start the node:
 
    ```bash
@@ -293,14 +297,24 @@ Participants who do not use `cosmosvisor` will need to manually manage the proce
 2. When validator node(s) stop due to an upgrade, manually perform an update (e.g. ArgoCD apply and clean up old resources)
 3. Monitor full & validator node(s) as they start and begin producing blocks.
 
-:::tip Grove Infrastructure
-
-If you are a member of Grove, you can find the instructions to access the infrastructure [on notion](https://www.notion.so/buildwithgrove/How-to-re-genesis-a-Shannon-TestNet-a6230dd8869149c3a4c21613e3cfad15?pvs=4).
-
-:::
-
 :::note TODO: Cosmos Operator
 
 [cosmos-operator](https://github.com/strangelove-ventures/cosmos-operator) supports scheduled upgrades and is also an option if not using `cosmovisor`
 
 :::
+
+#### TestNet Management - Grove Employees
+
+:::warning
+
+This section is intended for Grove employees only who help manage & maintain TestNet Infrastructure.
+
+:::
+
+#### Alpha TestNet
+
+There are two validators in linode. Three on vultr. One seed on vultr. No TestNet infra on GCP.
+
+I think the only gotcha is as upgrade happens, cosmovisor backs up data dir on all nodes. So it might take a few minutes to finish that process before starting the node after upgrade.
+
+There’s only dashboard for beta testnet. No one place to see the health of alpha.. logs are shipped to victoria logs but I always used k8s client instead.

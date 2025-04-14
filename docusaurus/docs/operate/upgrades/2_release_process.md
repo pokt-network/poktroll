@@ -1,5 +1,5 @@
 ---
-title: Release Process
+title: E2E Release Process
 sidebar_position: 2
 ---
 
@@ -7,31 +7,17 @@ sidebar_position: 2
 This document is intended for core protocol developers.
 :::
 
-## Release Process <!-- omit in toc -->
+## Table of Contents <!-- omit in toc -->
 
 - [1. Determine if the Release is Consensus-Breaking](#1-determine-if-the-release-is-consensus-breaking)
 - [2. Create a GitHub Release](#2-create-a-github-release)
 - [3. Update the `homebrew-tap` formula](#3-update-the-homebrew-tap-formula)
 - [4. Follow the Protocol Upgrade Procedure](#4-follow-the-protocol-upgrade-procedure)
-- [5. Issue the Upgrade](#5-issue-the-upgrade)
+- [5. Issue the Upgrade on All Networks](#5-issue-the-upgrade-on-all-networks)
 
 ### 1. Determine if the Release is Consensus-Breaking
 
-A protocol upgrade is only necessary if there are `consensus-breaking` changes.
-
-A release can still be made without `consensus-breaking` changes, but it will not require a protocol upgrade.
-
-**Identify consensus breaking changes** by:
-
-1. Reviewing merged [Pull Requests (PRs) with the `consensus-breaking` label](https://github.com/pokt-network/poktroll/issues?q=label%3Aconsensus-breaking+) since the last release. It is not a source of truth, but directionality correct.
-2. Looking for breaking changes in `.proto` files
-3. Looking for breaking changes in the `x/` directories
-4. Identifying new onchain parameters or authorizations
-
-:::info Non-exhaustive list
-
-Note that the above is a non-exhaustive list and requires protocol expertise to identify all potential `consensus-breaking` changes.
-:::
+**See the [When is an Protocol Upgrade Warranted?](./3_upgrade_procedure.md#when-is-an-protocol-upgrade-warranted) section for details.**
 
 ### 2. Create a GitHub Release
 
@@ -96,12 +82,12 @@ If a release is `consensus-breaking`, you'll need to:
 3. Update the [**Upgrade List**](./4_upgrade_list.md)
 4. **Deploy a Full Node on TestNet** and allow it to sync and operate for a few days to verify that no accidentally introduced `consensus-breaking` changes affect the ability to sync; [Full Node Quickstart Guide](../../operate/cheat_sheets/full_node_cheatsheet.md).
 
-If a release is not `consensus-breaking`, it is still recommended to issue an upgrade transaction in order to:
+If a release is not `consensus-breaking` but changes to node software were made, you should still issue an upgrade transaction to:
 
 1. Require Full Nodes and Validators to use a new version of the software
 2. Increase visibility of the software running on the network
 
-### 5. Issue the Upgrade
+### 5. Issue the Upgrade on All Networks
 
 The [Upgrade Procedure](./3_upgrade_procedure.md) should be tested and verified on:
 
