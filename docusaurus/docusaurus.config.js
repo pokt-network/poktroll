@@ -59,12 +59,10 @@ const config = {
 
   presets: [
     [
-      // "classic",
-      "@docusaurus/preset-classic",
+      "classic",
       /** @type {import('@docusaurus/preset-classic').Options} */
       ({
         docs: {
-          // path: "docs",
           routeBasePath: "/",
           sidebarPath: "./sidebars.js",
           sidebarCollapsible: false,
