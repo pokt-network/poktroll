@@ -111,3 +111,6 @@ vultr_*.json
 
 # Ignore Morse migration state working files
 tools/scripts/migration/*.json
+
+# Claude
+.claudesync/
