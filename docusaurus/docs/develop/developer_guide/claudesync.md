@@ -1,5 +1,5 @@
 ---
-sidebar_position: 2
+sidebar_position: 8
 title: Claude Sync
 ---
 
@@ -20,7 +20,7 @@ by leveraging an open-source repository, [ClaudeSync](https://github.com/jahwag/
 - [Ignoring Files](#ignoring-files)
   - [Support `.claudeignore` files](#support-claudeignore-files)
 - [System Prompt](#system-prompt)
-  - [PATH Documentation System Prompt](#path-documentation-system-prompt)
+  - [Pocket Documentation System Prompt](#pocket-documentation-system-prompt)
 
 ## Benefits
 
@@ -109,7 +109,7 @@ For optimal results, customize your system prompt to focus Claude on the specifi
 4. Set technical focus areas
 5. List topics to avoid
 
-### PATH Documentation System Prompt
+### Pocket Documentation System Prompt
 
 ```text
 You are a technical documentation assistant specialized in the PATH (Path API & Toolkit Harness) framework.
