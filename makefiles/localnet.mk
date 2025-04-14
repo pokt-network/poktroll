@@ -17,7 +17,7 @@ localnet_down: ## Delete resources created by localnet
 
 
 # Optional context for 'move_poktroll_to_pocket' to answer this question:
-# https://github.com/pokt-network/poktroll/pull/1151#discussion_r2013801486
+# https://github.com/pokt-network/poktroll/pull/1151#discussion_r2013801486 
 #
 # When running 'ignite chain --help', it states:
 # > By default the validator node will be initialized in your $HOME directory in a hidden directory that matches the name of your project.
