@@ -37,7 +37,7 @@ and use the same version of the software.
 If the halt is caused by the network upgrade, it is possible the solution can be as simple as
 skipping an upgrade (i.e. `unsafe-skip-upgrade`) and creating a new (fixed) upgrade.
 
-Read more about [upgrade contingency plans](6_contigency_plans.md).
+Read more about [upgrade contingency plans](8_contigency_plans.md).
 
 ### Manual binary replacement (preferred)
 

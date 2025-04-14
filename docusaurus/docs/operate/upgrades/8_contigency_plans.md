@@ -78,7 +78,7 @@ In such a case, we need:
 
 **tl;dr This should be treated as a consensus or non-determinism bug that is unrelated to the upgrade.**
 
-See [Recovery From Chain Halt](8_recovery_from_chain_halt.md) for more information on how to handle such issues.
+See [Recovery From Chain Halt](9_recovery_from_chain_halt.md) for more information on how to handle such issues.
 
 ### Failed Upgrade Checklist
 
