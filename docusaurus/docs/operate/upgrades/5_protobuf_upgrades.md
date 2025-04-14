@@ -1,6 +1,6 @@
 ---
-title: Handling Protobufs Upgrades
-description: How to handle protobuf upgrades in a backwards compatible way
+title: Protocol Protobufs Upgrades
+description: Handling protobuf changes in protocol upgrades
 sidebar_position: 5
 ---
 

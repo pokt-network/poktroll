@@ -12,25 +12,25 @@ This document is intended for core protocol developers.
 - [1. Determine if the Release is Consensus-Breaking](#1-determine-if-the-release-is-consensus-breaking)
 - [2. Create a GitHub Release](#2-create-a-github-release)
 - [3. Update the `homebrew-tap` formula](#3-update-the-homebrew-tap-formula)
-- [4. Write an Upgrade Plan](#4-write-an-upgrade-plan)
-- [5. Issue Upgrade on TestNet](#5-issue-upgrade-on-testnet)
-- [6. Issue Upgrade on MainNet](#6-issue-upgrade-on-mainnet)
+- [4. Follow the Protocol Upgrade Procedure](#4-follow-the-protocol-upgrade-procedure)
+- [5. Issue the Upgrade](#5-issue-the-upgrade)
 
 ### 1. Determine if the Release is Consensus-Breaking
 
-Determining if a release is consensus-breaking and documenting it is a 3 step process:
+A protocol upgrade is only necessary if there are `consensus-breaking` changes.
 
-1. **Find consensus breaking changes**: Review merged [Pull Requests (PRs) with the `consensus-breaking` label](https://github.com/pokt-network/poktroll/issues?q=label%3Aconsensus-breaking+) since the last release. It is not a source of truth, but directionality correct.
-2. **Update Upgrade List**: If the new release includes an upgrade transaction for automatic upgrades, add the new release to the table in the [Upgrades List](./4_upgrade_list.md).
-3. **Verify a Full Node**: Deploy a Full Node on TestNet and allow it to sync and operate for a few days to verify that no accidentally introduced `consensus-breaking` changes affect the ability to sync. See the instructions in the [Quickstart Guide](../../operate/cheat_sheets/full_node_cheatsheet.md) for deploying a Full Node.
+A release can still be made without `consensus-breaking` changes, but it will not require a protocol upgrade.
 
-:::danger DO NOT SKIP ME
+**Identify consensus breaking changes** by:
 
-**UPDATE THE INFORMATION IN THE [UPGRADES LIST](./4_upgrade_list.md) DURING THE FOLLOWING STEPS IF ANYTHING CHANGES.**
+1. Reviewing merged [Pull Requests (PRs) with the `consensus-breaking` label](https://github.com/pokt-network/poktroll/issues?q=label%3Aconsensus-breaking+) since the last release. It is not a source of truth, but directionality correct.
+2. Looking for breaking changes in `.proto` files
+3. Looking for breaking changes in the `x/` directories
+4. Identifying new onchain parameters or authorizations
 
-If we plan to schedule an upgrade at a specific height, update the height.
+:::info Non-exhaustive list
 
-If the upgrade becomes consensus-breaking, ensure the table remains up-to-date.
+Note that the above is a non-exhaustive list and requires protocol expertise to identify all potential `consensus-breaking` changes.
 :::
 
 ### 2. Create a GitHub Release
@@ -45,22 +45,17 @@ Creating a GitHub release is a 3 step process:
 
 1. **Tag the release**: Create a new tag using either `make release_tag_bug_fix` or `make release_tag_minor_release` commands.
 2. **Publish the release**: Create a new release in GitHub using the [Draft a new release button](https://github.com/pokt-network/poktroll/releases/new) feature.
-3. **Document the release**: Append and complete the following section above the auto-generated GitHub release notes:
+3. **Document the release**: Append and complete the following section above the auto-generated GitHub release notes. For example:
 
    ```markdown
    ## Protocol Upgrades
 
-   <!--
-   IMPORTANT:If this release will be used to issue upgrade on the network, add a link to the upgrade code
-   such as https://github.com/pokt-network/poktroll/blob/main/app/upgrades/historical.go#L51.
-   -->
-
-   | Category                     | Applicable | Notes                                                                                                                                                                                                                                 |
-   | ---------------------------- | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-   | Planned Upgrade              | ❌         | Not applicable for this release.                                                                                                                                                                                                      |
-   | Breaking Change              | ❌         | Not applicable for this release.                                                                                                                                                                                                      |
-   | Manual Intervention Required | ✅         | Yes, but only for Alpha TestNet participants. [Follow instructions here](https://dev.poktroll.com/operate/quickstart/docker_compose_walkthrough#restarting-a-full-node-after-re-genesis-) to restart your full node after re-genesis. |
-   | Upgrade Height               | ❌         | Not applicable for this release.                                                                                                                                                                                                      |
+   | Category                     | Applicable | Notes                                                                                  |
+   | ---------------------------- | ---------- | -------------------------------------------------------------------------------------- |
+   | Planned Upgrade              | ✅         | New features.                                                                          |
+   | Consensus Breaking Change    | ✅         | Yes, see upgrade here: https://github.com/pokt-network/poktroll/tree/main/app/upgrades |
+   | Manual Intervention Required | ❌         | Cosmosvisor managed everything well .                                                  |
+   | Upgrade Height               | ✅         | Planned upgrade height at 69420 (update with actual height once complete) release.     |
 
    **Legend**:
 
@@ -80,41 +75,42 @@ Creating a GitHub release is a 3 step process:
 git clone git@github.com:pokt-network/homebrew-pocketd.git
 cd homebrew-pocket
 make tap_update_version
-git commit -am "Update pocket tap from v.X1.Y1.Z1 to vX1.Y2.Z2
+git commit -am "Update pocket tap from v.X1.Y1.Z1 to v.X1.Y2.Z2
 git push
 ```
 
 See the [pocketd CLI docs](../../tools/user_guide/pocketd_cli.md) for more information.
 
-### 4. Write an Upgrade Plan
+### 4. Follow the Protocol Upgrade Procedure
 
-Protocol upgrades are only necessary for `consensus-breaking` changes. However, we can still issue an upgrade transaction to require Full Nodes and Validators to use a new version.
+:::info
 
-You can use the following template as a starting point.
-
-```bash
-- [ ] Determine the block height at which the upgrade should occur.
-  - Selected height: `INSERT_BLOCK_HEIGHT`
-- [ ] Update the information in the [Upgrades List](4_upgrade_list.md) and the GitHub Release.
-  - Upgrade details: `INSERT_LINK_TO_UPGRADE`
-- [ ] Inform the community about the planned upgrade.
-  - Announcement: `INSERT_LINK_TO_ANNOUNCEMENT`
-- [ ] Prepare a contingency plan to address potential issues.
-```
-
-### 5. Issue Upgrade on TestNet
-
-- Follow the [Upgrade Procedure](3_upgrade_procedure.md) to upgrade existing/running Full Nodes and Validators to the new version of `pocket`.
-- Monitor the network's health metrics to identify any significant changes, such as the loss of many validators due to an unexpected consensus-breaking change.
-
-### 6. Issue Upgrade on MainNet
-
-- Repeat the upgrade process on the MainNet, following the same steps as on the TestNet.
-- Ensure that the upgrade height is set correctly and communicated to the community.
-- Monitor the network closely during and after the upgrade to ensure a smooth transition.
-
-:::note
-
-TODO_IMPROVE(@olshansk, @okdas): Link to real notion docs after we've iterated on this process a few times:
+_tl;dr Follow the protocol upgrade procedure in both cases_
 
 :::
+
+If a release is `consensus-breaking`, you'll need to:
+
+1. Follow the instructions in [**Protocol Upgrade Procedure**](./3_upgrade_procedure.md)
+2. If applicable, review [**Protobuf Upgrade Procedure**](./5_protobuf_upgrades.md)
+3. Update the [**Upgrade List**](./4_upgrade_list.md)
+4. **Deploy a Full Node on TestNet** and allow it to sync and operate for a few days to verify that no accidentally introduced `consensus-breaking` changes affect the ability to sync; [Full Node Quickstart Guide](../../operate/cheat_sheets/full_node_cheatsheet.md).
+
+If a release is not `consensus-breaking`, it is still recommended to issue an upgrade transaction in order to:
+
+1. Require Full Nodes and Validators to use a new version of the software
+2. Increase visibility of the software running on the network
+
+### 5. Issue the Upgrade
+
+The [Upgrade Procedure](./3_upgrade_procedure.md) should be tested and verified on:
+
+1. LocalNet
+2. Alpha TestNet
+3. Beta TestNet
+4. MainNet
+
+At each step along the way:
+
+- Monitor the network's health metrics to identify any significant changes
+- Communicate upgrades heights and status updates with the community

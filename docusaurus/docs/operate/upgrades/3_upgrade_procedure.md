@@ -1,34 +1,30 @@
 ---
-title: Upgrade Procedure
+title: Protocol Upgrade Procedure
 sidebar_position: 3
 ---
 
 ## Upgrade procedure <!-- omit in toc -->
 
-:::warning
-
-This page describes the protocol upgrade process, intended for the protocol team's internal use.
-
-If you're interested in upgrading your Pocket Network node, please check our [releases page](https://github.com/pokt-network/poktroll/releases) for upgrade instructions and changelogs.
-
+:::info
+This document is intended for core protocol developers.
 :::
 
-- [When is an Upgrade Warranted?](#when-is-an-upgrade-warranted)
-- [Implementing the Upgrade](#implementing-the-upgrade)
-- [Writing an Upgrade Transaction](#writing-an-upgrade-transaction)
-  - [Validate the URLs (live network only)](#validate-the-urls-live-network-only)
-- [Submitting the upgrade onchain](#submitting-the-upgrade-onchain)
-- [Cancelling the upgrade plan](#cancelling-the-upgrade-plan)
-- [Testing the Upgrade](#testing-the-upgrade)
+- [When is an Protocol Upgrade Warranted?](#when-is-an-protocol-upgrade-warranted)
+- [A. Implementing the Upgrade](#a-implementing-the-upgrade)
+  - [1. Bump Module Consensus Version](#1-bump-module-consensus-version)
+  - [2. Prepare a New Upgrade](#2-prepare-a-new-upgrade)
+  - [3. Write an Upgrade Transaction](#3-write-an-upgrade-transaction)
+  - [4. Validate the Binary URLs (live network only)](#4-validate-the-binary-urls-live-network-only)
+  - [5. Submit the Upgrade Onchain](#5-submit-the-upgrade-onchain)
+  - [6. \[Optional\] Cancel the Upgrade Plan (if needed)](#6-optional-cancel-the-upgrade-plan-if-needed)
+- [B. Testing the Upgrade](#b-testing-the-upgrade)
   - [LocalNet Upgrades](#localnet-upgrades)
-    - [LocalNet Upgrade Cheat Sheet](#localnet-upgrade-cheat-sheet)
   - [DevNet Upgrades](#devnet-upgrades)
   - [TestNet Upgrades](#testnet-upgrades)
-  - [Mainnet Upgrades](#mainnet-upgrades)
 
-## Overview <!-- omit in toc -->
+## Process Overview <!-- omit in toc -->
 
-When a consensus-breaking change is made to the protocol, we must carefully evaluate and implement an upgrade path that
+When a `consensus-breaking` change is made to the protocol, we must carefully evaluate and implement an upgrade path that
 allows existing nodes to transition safely from one software version to another without disruption.
 
 This process involves several key steps:
@@ -40,32 +36,46 @@ This process involves several key steps:
 5. **Deployment**: An upgrade transaction is sent to the network, allowing node operators using [Cosmovisor](../walkthroughs/full_node_walkthrough.md) to automatically upgrade their nodes at the specified block height.
 6. **Monitoring**: Post-deployment, we closely monitor the network to ensure everything functions as expected.
 
-## When is an Upgrade Warranted?
+## When is an Protocol Upgrade Warranted?
 
-An upgrade is necessary whenever there's an API, State Machine, or other Consensus breaking change in the version we're about to release.
+A protocol upgrade is necessary whenever there's an API, State Machine, or other `consensus-breaking` change in the version we're about to release.
 
-## Implementing the Upgrade
+The following is a non-exhaustive list of potential `consensus-breaking` changes:
 
-1. When a new version includes a `consensus-breaking` change, plan for the next protocol upgrade:
+1. [Pull Requests (PRs) with the `consensus-breaking` label](https://github.com/pokt-network/poktroll/issues?q=label%3Aconsensus-breaking+) since the last release as a signal (not source of truth)
+2. Potential changes in `.proto` files
+3. Potential changes in the `x/` directories
+4. New onchain parameters
+5. New onchain authorizations
 
-   - If there's a change to a specific module -> bump that module's consensus version.
-   - Note any potential parameter changes to include in the upgrade.
-   - If modifying protobuf definitions, consider using the approach in [protobuf deprecation](5_protobuf_upgrades.md) for backward compatibility.
+:::warning
 
-2. Create a new upgrade in `app/upgrades`:
+We recommend reviewing the `Testing An Upgrade` section below to ensure that the upgrade process is completed successfully.
 
-   - Refer to `historical.go` for past upgrades and examples.
-   - Consult Cosmos-sdk documentation on upgrades for additional guidance on [building-apps/app-upgrade](https://docs.cosmos.network/main/build/building-apps/app-upgrade) and [modules/upgrade](https://docs.cosmos.network/main/build/modules/upgrade).
+:::
 
-3. Update the `app/upgrades.go` file to include the new upgrade plan in `allUpgrades`.
+## A. Implementing the Upgrade
 
-:::info
+### 1. Bump Module Consensus Version
+
+If there's a change to a specific module, bump that module's [ConsensusVersion](https://github.com/search?q=repo%3Apokt-network%2Fpoktroll%20ConsensusVersion&type=code).
+
+### 2. Prepare a New Upgrade
+
+:::warning MUST BE DONE
 
 Creating a new upgrade plan **MUST BE DONE** even if there are no state changes.
 
 :::
 
-## Writing an Upgrade Transaction
+1. Review all [previous upgrades](https://github.com/pokt-network/poktroll/tree/main/app/upgrades) for reference.
+   - Refer to `historical.go` for past upgrades and examples.
+   - Consult Cosmos-sdk documentation on upgrades for additional guidance on [building-apps/app-upgrade](https://docs.cosmos.network/main/build/building-apps/app-upgrade) and [modules/upgrade](https://docs.cosmos.network/main/build/
+2. Note any parameter changes, authorizations, functions or other state changes.
+3. If modifying protobuf definitions, consider using the approach in [protobuf deprecation](5_protobuf_upgrades.md) for backward compatibility.
+4. Update the `app/upgrades.go` file to include the new upgrade plan in `allUpgrades`.
+
+### 3. Write an Upgrade Transaction
 
 An upgrade transaction includes a [Plan](https://github.com/cosmos/cosmos-sdk/blob/0fda53f265de4bcf4be1a13ea9fad450fc2e66d4/x/upgrade/proto/cosmos/upgrade/v1beta1/upgrade.proto#L14) with specific details about the upgrade.
 
@@ -77,7 +87,7 @@ A typical upgrade transaction includes:
 - `height`: The height at which an upgrade should be executed and the node will be restarted.
 - `info`: Can be empty. **Only needed for live networks where we want cosmovisor to upgrade nodes automatically**.
 
-And looks like the following as an example:
+Here is an example for reference:
 
 ```json
 {
@@ -100,16 +110,16 @@ And looks like the following as an example:
 :::tip
 
 When `cosmovisor` is configured to automatically download binaries, it will pull the binary from the link provided in
-the object about and perform a hash verification (which is also optional).
+the upgrade object and perform a hash verification (optional).
 
 **NOTE THAT** we only know the hashes **AFTER** the release has been cut and CI created artifacts for this version.
 
 :::
 
-### Validate the URLs (live network only)
+### 4. Validate the Binary URLs (live network only)
 
 The URLs of the binaries contain checksums. It is critical to ensure they are correct.
-Otherwise Cosmovisor won't be able to download the binaries and go through the upgrade.
+**Otherwise, Cosmovisor won't be able to download the binaries and go through the upgrade.**
 
 The command below (using tools build by the authors of Cosmosvisor) can be used to achieve the above:
 
@@ -138,7 +148,7 @@ go install github.com/hashicorp/go-getter/cmd/go-getter@latest
 
 :::
 
-## Submitting the upgrade onchain
+### 5. Submit the Upgrade Onchain
 
 The `MsgSoftwareUpgrade` can be submitted using the following command:
 
@@ -152,31 +162,31 @@ If the transaction has been accepted, the upgrade plan can be viewed with this c
 pocketd query upgrade plan
 ```
 
-## Cancelling the upgrade plan
+### 6. [Optional] Cancel the Upgrade Plan (if needed)
 
-It is possible to cancel the upgrade before the upgrade plan height is reached. To do so, execute the following make target:
+It is possible to cancel the upgrade before the upgrade plan height is reached.
+
+To do so, execute the following make target:
 
 ```bash
 make localnet_cancel_upgrade
 ```
 
-## Testing the Upgrade
-
-:::warning
-Note that for local testing, `cosmovisor` won't pull the binary from the upgrade Plan's info field.
-:::
+## B. Testing the Upgrade
 
 ### LocalNet Upgrades
 
-LocalNet **DOES NOT** support `cosmovisor` and automatic upgrades at the moment.
+:::warning
+
+LocalNet **DOES NOT** support `cosmovisor` and automatic upgrades at the moment. `cosmosvisor` doesn't pull the binary from the upgrade Plan's info field.
 
 However, **IT IS NOT NEEDED** to simulate and test the upgrade procedure.
 
-#### LocalNet Upgrade Cheat Sheet
+:::
 
-For a hypothetical scenario to upgrade from `0.1` to `0.2`:
+Below is a set of instructions for a hypothetical upgrade from `0.1` to `0.2`:
 
-1. **Stop LocalNet** to prevent interference. Use `git worktree` to check out the `pocket` repo to a different branch/tag in a separate directory. Let's refer to them as `old` and `new`. It is recommended to open at least two tabs/shell panels in each directory for easier switching between directories.
+1. **Stop LocalNet** to prevent interference. Use `git worktree` to check out the `poktroll` repo to a different branch/tag in a separate directory. We'll refer to the old and new branches as `old` and `new` respectively. It is recommended to open at least two tabs/shell panels in each directory for easier switching between directories.
 
 2. **(`old` branch)** - Use `git worktree` to check out the old version in a new directory. For the test to be accurate, we need to upgrade from the correct version.
 
@@ -184,17 +194,17 @@ For a hypothetical scenario to upgrade from `0.1` to `0.2`:
    git worktree add ../poktroll-old v0.1
    ```
 
-:::tip Cleaning Up
+   :::tip Cleaning Up
 
-When you're finished and ready to remove the `old` worktree (the new directory associated with the old branch):
+   When you're finished and ready to remove the `old` worktree (the new directory associated with the old branch):
 
-```bash
-git worktree remove ../poktroll-old
-```
+   ```bash
+   git worktree remove ../poktroll-old
+   ```
 
-This won't have any effect on the git repo itself, nor on the default worktree (unstaged/uncommitted changes, stash, etc.).
+   This won't have any effect on the git repo itself, nor on the default worktree (unstaged/uncommitted changes, stash, etc.).
 
-:::
+   :::
 
 3. **(`new` branch)**
 
@@ -225,9 +235,9 @@ This won't have any effect on the git repo itself, nor on the default worktree (
    rm -rf ~/.pocket && ./release_binaries/pocket_darwin_arm64 comet unsafe-reset-all && make localnet_regenesis
    ```
 
-6. **(`old` repo)** Write and save [an upgrade transaction](#writing-an-upgrade-transaction) for `v0.2`. The upgrade plan should be named after the version to which you're upgrading.
+[an upgrade transaction](#-write-an-upgrade-transaction)
 
-7. **(`old` repo)** Start the node:
+6. **(`old` repo)** Start the node:
 
    ```bash
    ./release_binaries/pocket_darwin_arm64 start
@@ -235,7 +245,7 @@ This won't have any effect on the git repo itself, nor on the default worktree (
 
    The validator node should run and produce blocks as expected.
 
-8. **(`old` repo)** Submit the upgrade transaction. **NOTE THAT** the upgrade height in the transaction should be higher than the current block height. Adjust and submit if necessary:
+7. **(`old` repo)** Submit the upgrade transaction. **NOTE THAT** the upgrade height in the transaction should be higher than the current block height. Adjust and submit if necessary:
 
    ```bash
    ./release_binaries/pocket_darwin_arm64 tx authz exec tools/scripts/upgrades/local_test_v0.2.json --from=pnf
@@ -247,21 +257,21 @@ This won't have any effect on the git repo itself, nor on the default worktree (
    ./release_binaries/pocket_darwin_arm64 query upgrade plan
    ```
 
-9. Wait for the upgrade height to be reached on the old version. The old version should stop working since it has no knowledge of the `v0.2` upgrade. This simulates a real-world scenario. Stop the old node, and switch to the new version.
+8. **(`old` repo)** - Wait for the upgrade height to be reached on the old version. The old version should stop working since it has no knowledge of the `v0.2` upgrade. This simulates a real-world scenario. Stop the old node, and switch to the new version.
 
-10. **(`new` repo)**
+9. **(`new` repo)**
 
-    ```bash
-    ./release_binaries/pocket_darwin_arm64 start
-    ```
+   ```bash
+   ./release_binaries/pocket_darwin_arm64 start
+   ```
 
-11. **Observe the output:**
+10. **(`new` repo)** - Observe the output:
 
     - A successful upgrade should output `applying upgrade "v0.2" at height: 20 module=x/upgrade`.
     - The node on the new version should continue producing blocks.
     - If there were errors during the upgrade, investigate and address them.
 
-12. **(`new` repo, optional**) - If parameters were changed during the upgrade, test if these changes were applied. For example:
+11. **(`new` repo, optional**) - If parameters were changed during the upgrade, test if these changes were applied. For example:
 
     ```bash
     ./release_binaries/pocket_darwin_arm64 q application params
@@ -269,26 +279,28 @@ This won't have any effect on the git repo itself, nor on the default worktree (
 
 ### DevNet Upgrades
 
-DevNets currently do not support `cosmovisor`.
+**DevNets do not currently support `cosmovisor`.**
 
 We use Kubernetes to manage software versions, including validators. Introducing another component to manage versions would be complex, requiring a re-architecture of our current solution to accommodate this change.
 
 ### TestNet Upgrades
 
-We currently deploy TestNet validators using Kubernetes with helm charts, which prevents us from managing the validator with `cosmovisor`. We do not control what other TestNet participants are running. However, if participants have deployed their nodes using the [cosmovisor guide](../walkthroughs/full_node_walkthrough.md), their nodes will upgrade automatically.
+Participants have deployed their full nodes using the [cosmovisor guide](../walkthroughs/full_node_walkthrough.md) will have upgrade automatically.
 
-Until we transition to [cosmos-operator](https://github.com/strangelove-ventures/cosmos-operator), which supports scheduled upgrades (although not fully automatic like `cosmovisor`), we need to manually manage the process:
+Participants who do not use `cosmosvisor` will need to manually manage the process by:
 
-1. Estimate when the upgrade height will be reached.
-2. When validator node(s) stop due to an upgrade, manually perform an ArgoCD apply and clean up old resources.
-3. Monitor validator node(s) as they start and begin producing blocks.
+1. Estimating when the upgrade height will be reached
+2. When validator node(s) stop due to an upgrade, manually perform an update (e.g. ArgoCD apply and clean up old resources)
+3. Monitor full & validator node(s) as they start and begin producing blocks.
 
-:::tip
+:::tip Grove Infrastructure
 
 If you are a member of Grove, you can find the instructions to access the infrastructure [on notion](https://www.notion.so/buildwithgrove/How-to-re-genesis-a-Shannon-TestNet-a6230dd8869149c3a4c21613e3cfad15?pvs=4).
 
 :::
 
-### Mainnet Upgrades
+:::note TODO: Cosmos Operator
 
-The Mainnet upgrade process is to be determined. We aim to develop and implement improved tooling for this environment.
+[cosmos-operator](https://github.com/strangelove-ventures/cosmos-operator) supports scheduled upgrades and is also an option if not using `cosmovisor`
+
+:::

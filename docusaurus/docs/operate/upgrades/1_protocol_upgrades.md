@@ -3,7 +3,7 @@ title: Introduction to Protocol Upgrades
 sidebar_position: 1
 ---
 
-:::info
+:::info GitHub Release vs Protocol Upgrade
 
 Not every [GitHub release](https://github.com/pokt-network/poktroll/releases) will become a protocol upgrade.
 
