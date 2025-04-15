@@ -2,26 +2,8 @@
 ##          Configuration variables        ##
 #############################################
 
-# VERSION ?= $(shell git describe --tags --always)
-# DATE ?= $(shell date -u +%Y-%m-%dT%H:%M:%SZ)
-# BINARY_NAME ?= path
-# Supported build platforms
-# PLATFORMS ?= linux/amd64 linux/arm64 darwin/amd64 darwin/arm64
-# Build flags
-# LDFLAGS := -ldflags="-X main.Version=$(VERSION) -X main.Date=$(DATE)"
-# Path to GitHub Actions workflows
 GH_WORKFLOWS := .github/workflows
-# Output directories
-# RELEASE_DIR := release
-# BIN_DIR := bin
-# # Architecture detection for M-series Macs
-# ARCH := $(shell uname -m)
-# ifeq ($(ARCH),arm64)
-#   # Check if running on macOS
-#   ifeq ($(shell uname),Darwin)
-#     ACT_ARCH_FLAG := --container-architecture linux/amd64
-#   endif
-# endif
+
 #####################################
 ##       CI/CD Workflow Testing    ##
 #####################################
