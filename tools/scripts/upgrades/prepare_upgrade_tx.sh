@@ -32,10 +32,10 @@ CHECKSUMS=$(cat "$TEMP_CHECKSUM")
 rm -f "$TEMP_CHECKSUM"
 
 # Extract checksums with correct filenames
-LINUX_AMD64_CHECKSUM=$(echo "$CHECKSUMS" | grep "poktroll_linux_amd64.tar.gz" | awk '{print $1}')
-LINUX_ARM64_CHECKSUM=$(echo "$CHECKSUMS" | grep "poktroll_linux_arm64.tar.gz" | awk '{print $1}')
-DARWIN_AMD64_CHECKSUM=$(echo "$CHECKSUMS" | grep "poktroll_darwin_amd64.tar.gz" | awk '{print $1}')
-DARWIN_ARM64_CHECKSUM=$(echo "$CHECKSUMS" | grep "poktroll_darwin_arm64.tar.gz" | awk '{print $1}')
+LINUX_AMD64_CHECKSUM=$(echo "$CHECKSUMS" | grep "pocket_linux_amd64.tar.gz" | awk '{print $1}')
+LINUX_ARM64_CHECKSUM=$(echo "$CHECKSUMS" | grep "pocket_linux_arm64.tar.gz" | awk '{print $1}')
+DARWIN_AMD64_CHECKSUM=$(echo "$CHECKSUMS" | grep "pocket_darwin_amd64.tar.gz" | awk '{print $1}')
+DARWIN_ARM64_CHECKSUM=$(echo "$CHECKSUMS" | grep "pocket_darwin_arm64.tar.gz" | awk '{print $1}')
 
 # Check if any checksum is missing
 if [ -z "$LINUX_AMD64_CHECKSUM" ] || [ -z "$LINUX_ARM64_CHECKSUM" ] ||
@@ -68,7 +68,7 @@ generate_json_file() {
         "plan": {
           "name": "$VERSION",
           "height": "UPDATE_ME",
-          "info": "{\"binaries\":{\"linux/amd64\":\"$RELEASE_URL/poktroll_linux_amd64.tar.gz?checksum=sha256:$LINUX_AMD64_CHECKSUM\",\"linux/arm64\":\"$RELEASE_URL/poktroll_linux_arm64.tar.gz?checksum=sha256:$LINUX_ARM64_CHECKSUM\",\"darwin/amd64\":\"$RELEASE_URL/poktroll_darwin_amd64.tar.gz?checksum=sha256:$DARWIN_AMD64_CHECKSUM\",\"darwin/arm64\":\"$RELEASE_URL/poktroll_darwin_arm64.tar.gz?checksum=sha256:$DARWIN_ARM64_CHECKSUM\"}}"
+          "info": "{\"binaries\":{\"linux/amd64\":\"$RELEASE_URL/pocket_linux_amd64.tar.gz?checksum=sha256:$LINUX_AMD64_CHECKSUM\",\"linux/arm64\":\"$RELEASE_URL/pocket_linux_arm64.tar.gz?checksum=sha256:$LINUX_ARM64_CHECKSUM\",\"darwin/amd64\":\"$RELEASE_URL/pocket_darwin_amd64.tar.gz?checksum=sha256:$DARWIN_AMD64_CHECKSUM\",\"darwin/arm64\":\"$RELEASE_URL/pocket_darwin_arm64.tar.gz?checksum=sha256:$DARWIN_ARM64_CHECKSUM\"}}"
         }
       }
     ]
