@@ -1,5 +1,5 @@
 ---
-title: Protocol Upgrade Procedure
+title: Testing Protocol Upgrades
 sidebar_position: 3
 ---
 
@@ -11,142 +11,15 @@ We recommend reviewing the `Testing An Upgrade` section below to ensure that the
 
 ## Table of Contents <!-- omit in toc -->
 
-- [A. Implementing the Upgrade](#a-implementing-the-upgrade)
-  - [1. Bump Module Consensus Version](#1-bump-module-consensus-version)
-  - [2. Prepare a New Upgrade](#2-prepare-a-new-upgrade)
-  - [3. Write an Upgrade Transaction](#3-write-an-upgrade-transaction)
-  - [4. Validate the Binary URLs (live network only)](#4-validate-the-binary-urls-live-network-only)
-  - [5. Submit the Upgrade Onchain](#5-submit-the-upgrade-onchain)
-  - [6. \[Optional\] Cancel the Upgrade Plan (if needed)](#6-optional-cancel-the-upgrade-plan-if-needed)
-- [B. Testing the Upgrade](#b-testing-the-upgrade)
-  - [7. Testing the Upgrade](#7-testing-the-upgrade)
-  - [LocalNet Upgrades](#localnet-upgrades)
-  - [DevNet Upgrades](#devnet-upgrades)
-  - [TestNet Upgrades](#testnet-upgrades)
-    - [TestNet Management - Grove Employees](#testnet-management---grove-employees)
-    - [Alpha TestNet](#alpha-testnet)
+- [TestNet Upgrades](#testnet-upgrades)
+  - [TestNet Management - Grove Employees](#testnet-management---grove-employees)
+  - [Alpha TestNet](#alpha-testnet)
 
-## A. Implementing the Upgrade
-
-### 1. Bump Module Consensus Version
-
-If there's a change to a specific module, bump that module's [ConsensusVersion](https://github.com/search?q=repo%3Apokt-network%2Fpoktroll%20ConsensusVersion&type=code).
-
-### 2. Prepare a New Upgrade
-
-:::warning MUST BE DONE
-
-Creating a new upgrade plan **MUST BE DONE** even if there are no state changes.
-
-:::
-
-1. Review all [previous upgrades](https://github.com/pokt-network/poktroll/tree/main/app/upgrades) for reference.
-   - Refer to `historical.go` for past upgrades and examples.
-   - Consult Cosmos-sdk documentation on upgrades for additional guidance on [building-apps/app-upgrade](https://docs.cosmos.network/main/build/building-apps/app-upgrade) and [modules/upgrade](https://docs.cosmos.network/main/build/
-2. Note any parameter changes, authorizations, functions or other state changes.
-3. If modifying protobuf definitions, consider using the approach in [protobuf deprecation](5_protobuf_upgrades.md) for backward compatibility.
-4. Update the `app/upgrades.go` file to include the new upgrade plan in `allUpgrades`.
-
-### 3. Write an Upgrade Transaction
-
-An upgrade transaction includes a [Plan](https://github.com/cosmos/cosmos-sdk/blob/0fda53f265de4bcf4be1a13ea9fad450fc2e66d4/x/upgrade/proto/cosmos/upgrade/v1beta1/upgrade.proto#L14) with specific details about the upgrade.
-
-This information helps schedule the upgrade on the network and provides necessary data for automatic upgrades via `Cosmovisor`.
-
-A typical upgrade transaction includes:
-
-- `name`: Name of the upgrade. It should match the `VersionName` of `upgrades.Upgrade`.
-- `height`: The height at which an upgrade should be executed and the node will be restarted.
-- `info`: Can be empty. **Only needed for live networks where we want cosmovisor to upgrade nodes automatically**.
-
-Here is an example for reference:
-
-```json
-{
-  "body": {
-    "messages": [
-      {
-        "@type": "/cosmos.upgrade.v1beta1.MsgSoftwareUpgrade",
-        "authority": "pokt10d07y265gmmuvt4z0w9aw880jnsr700j8yv32t",
-        "plan": {
-          "name": "v0.0.4",
-          "height": "30",
-          "info": "{\"binaries\":{\"linux/amd64\":\"https://github.com/pokt-network/poktroll/releases/download/v0.0.4/poktroll_linux_amd64.tar.gz?checksum=sha256:49d2bcea02702f3dcb082054dc4e7fdd93c89fcd6ff04f2bf50227dacc455638\",\"linux/arm64\":\"https://github.com/pokt-network/poktroll/releases/download/v0.0.4/poktroll_linux_arm64.tar.gz?checksum=sha256:698f3fa8fa577795e330763f1dbb89a8081b552724aa154f5029d16a34baa7d8\",\"darwin/amd64\":\"https://github.com/pokt-network/poktroll/releases/download/v0.0.4/pocket_darwin_amd64.tar.gz?checksum=sha256:5ecb351fb2f1fc06013e328e5c0f245ac5e815c0b82fb6ceed61bc71b18bf8e9\",\"darwin/arm64\":\"https://github.com/pokt-network/poktroll/releases/download/v0.0.4/pocket_darwin_arm64.tar.gz?checksum=sha256:a935ab83cd770880b62d6aded3fc8dd37a30bfd15b30022e473e8387304e1c70\"}}"
-        }
-      }
-    ]
-  }
-}
-```
-
-:::tip
-
-When `cosmovisor` is configured to automatically download binaries, it will pull the binary from the link provided in
-the upgrade object and perform a hash verification (optional).
-
-**NOTE THAT** we only know the hashes **AFTER** the release has been cut and CI created artifacts for this version.
-
-:::
-
-### 4. Validate the Binary URLs (live network only)
-
-The URLs of the binaries contain checksums. It is critical to ensure they are correct.
-**Otherwise, Cosmovisor won't be able to download the binaries and go through the upgrade.**
-
-The command below (using tools build by the authors of Cosmosvisor) can be used to achieve the above:
-
-```bash
-jq -r '.body.messages[0].plan.info | fromjson | .binaries[]' $PATH_TO_UPGRADE_TRANSACTION_JSON | while IFS= read -r url; do
-  go-getter "$url" .
-done
-```
-
-The output should look like this:
-
-```text
-2024/09/24 12:40:40 success!
-2024/09/24 12:40:42 success!
-2024/09/24 12:40:44 success!
-2024/09/24 12:40:46 success!
-```
-
-:::tip
-
-`go-getter` can be installed using the following command:
-
-```bash
-go install github.com/hashicorp/go-getter/cmd/go-getter@latest
-```
-
-:::
-
-### 5. Submit the Upgrade Onchain
-
-The `MsgSoftwareUpgrade` can be submitted using the following command:
-
-```bash
-pocketd tx authz exec $PATH_TO_UPGRADE_TRANSACTION_JSON --from=pnf
-```
-
-If the transaction has been accepted, the upgrade plan can be viewed with this command:
-
-```bash
-pocketd query upgrade plan
-```
-
-### 6. [Optional] Cancel the Upgrade Plan (if needed)
-
-It is possible to cancel the upgrade before the upgrade plan height is reached.
-
-To do so, execute the following make target:
+### Testing the Upgrade
 
 ```bash
 make localnet_cancel_upgrade
 ```
-
-## B. Testing the Upgrade
-
-### 7. Testing the Upgrade
 
 We are using the `upgrade/migration` branch as an example, but make sure to update
 it in the example below with your own branch
@@ -280,7 +153,7 @@ Below is a set of instructions for a hypothetical upgrade from `0.1` to `0.2`:
 
 We use Kubernetes to manage software versions, including validators. Introducing another component to manage versions would be complex, requiring a re-architecture of our current solution to accommodate this change.
 
-### TestNet Upgrades
+## TestNet Upgrades
 
 Participants have deployed their full nodes using the [cosmovisor guide](../walkthroughs/full_node_walkthrough.md) will have upgrade automatically.
 
@@ -296,7 +169,7 @@ Participants who do not use `cosmosvisor` will need to manually manage the proce
 
 :::
 
-#### TestNet Management - Grove Employees
+### TestNet Management - Grove Employees
 
 :::warning
 
@@ -304,7 +177,7 @@ This section is intended for Grove employees only who help manage & maintain Tes
 
 :::
 
-#### Alpha TestNet
+### Alpha TestNet
 
 There are two validators in linode. Three on vultr. One seed on vultr. No TestNet infra on GCP.
 
