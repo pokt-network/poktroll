@@ -16,9 +16,9 @@ This document is intended for core protocol developers.
 - [2. Start a node running the new software (from where the upgrade will be issued)](#2-start-a-node-running-the-new-software-from-where-the-upgrade-will-be-issued)
 - [3. Prepare the upgrade transaction in `poktroll_old`](#3-prepare-the-upgrade-transaction-in-poktroll_old)
 - [4. Submit \& Verify the upgrade transaction in `poktroll_old`](#4-submit--verify-the-upgrade-transaction-in-poktroll_old)
-- [5. Observe the upgrade output](#5-observe-the-upgrade-output)
-- [6. Verify Node Software](#6-verify-node-software)
-- [7. (If Applicable) Test Consensus Breaking Changes](#7-if-applicable-test-consensus-breaking-changes)
+- [5. Observe the upgrade output in `poktroll_old`](#5-observe-the-upgrade-output-in-poktroll_old)
+- [6. Stop `poktroll_old` and start `poktroll_new`](#6-stop-poktroll_old-and-start-poktroll_new)
+- [7. Sanity Checks](#7-sanity-checks)
 
 ### Local Upgrade Verification By Example
 
@@ -101,20 +101,50 @@ Submit the upgrade transaction like so:
 ./release_binaries/pocket_darwin_arm64 tx authz exec tools/scripts/upgrades/upgrade_tx_v0.1.2_local.json --yes --from=pnf
 ```
 
-And verify that the upgrade plan is onchain:
+And verify that the upgrade plan is planned onchain:
 
 ```bash
 ./release_binaries/pocket_darwin_arm64 query upgrade plan
 ```
 
-### 5. Observe the upgrade output
+### 5. Observe the upgrade output in `poktroll_old`
 
-1. **(`new` repo)** - Observe the output:
+Once the `UPGRADE_HEIGHT` is reached, you should see the following output containing `ERR` in your terminal:
 
-   - A successful upgrade should output `applying upgrade "v0.2" at height: 20 module=x/upgrade`.
-   - The node on the new version should continue producing blocks.
-   - If there were errors during the upgrade, investigate and address them.
+```bash
+4:33PM ERR UPGRADE "v0.1.2" NEEDED at height: 30: ...
+```
 
-### 6. Verify Node Software
+The validator should stop working.
 
-### 7. (If Applicable) Test Consensus Breaking Changes
+### 6. Stop `poktroll_old` and start `poktroll_new`
+
+In `poktroll_old`, stop the (non-functional) validator (i.e.`cmd + c` on `darwin`).
+
+In `poktroll_new`, start the (presumably-functional) validator:
+
+```bash
+./release_binaries/pocket_darwin_arm64 start
+```
+
+:::warning Expertise required
+
+If the new validator does not start, this will require expert protocol development hands-on debugging.
+
+:::
+
+### 7. Sanity Checks
+
+Verify that the new validator is on the latest version like so:
+
+```bash
+curl -s http://localhost:26657/abci_info | jq '.result.response.version'
+```
+
+Which should output `v0.1.2`.
+
+:::warning TODO: Business logic
+
+Query the node for business logic changes
+
+:::
