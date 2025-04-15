@@ -5,9 +5,11 @@ sidebar_position: 3
 
 :::warning
 This document is intended for core protocol developers.
-
-We recommend reviewing the `Testing An Upgrade` section below to ensure that the upgrade process is completed successfully.
 :::
+
+This document describes how to test a protocol upgrade on LocalNet.
+
+**It assumes you have followed steps 1 through 4 in the [Release Procedure](./2_release_procedure.md).**
 
 ## Table of Contents <!-- omit in toc -->
 
@@ -15,9 +17,34 @@ We recommend reviewing the `Testing An Upgrade` section below to ensure that the
   - [TestNet Management - Grove Employees](#testnet-management---grove-employees)
   - [Alpha TestNet](#alpha-testnet)
 
-### Testing the Upgrade (Before Merging)
+### Test By Example
 
+The instructions below will show how to validate the upgrade from `v0.1.1` to `v0.1.2` by example.
+
+In one shell, run the following commands to check out the old version:
+
+```bash
+git clone git@github.com:pokt-network/poktroll.git poktroll_t1
+cd poktroll_t1
+gco v0.1.1 # Checkout tag of last release
+make go_develop ignite_release ignite_release_extract_binaries
+./release_binaries/pocket_darwin_arm64 start
 ```
+
+In another shell, run the following commands to check out the new version:
+
+```bash
+git clone git@github.com:pokt-network/poktroll.git poktroll_t2
+cd poktroll_t2
+gco v0.1.2 # Checkout tag of new release
+make go_develop ignite_release ignite_release_extract_binaries
+./release_binaries/pocket_darwin_arm64 comet unsafe-reset-all && make localnet_regenesis
+./release_binaries/pocket_darwin_arm64 start
+```
+
+<!-- ### Testing the Upgrade (Before Merging) -->
+
+````
 **Shell #1: Old software (that will listen on the upgrade)**
 
 ```bash
@@ -26,7 +53,7 @@ cd poktroll_t2
 gco v0.1.1 # Checkout tag of last release
 make go_develop ignite_release ignite_release_extract_binaries
 ./release_binaries/pocket_darwin_arm64 start
-```
+````
 
 ```bash
 make localnet_cancel_upgrade
@@ -37,7 +64,7 @@ it in the example below with your own branch
 
 **Shell #1: New software (from where the upgrade will be issued)**
 
-```bash
+````bash
 git clone git@github.com:pokt-network/poktroll.git poktroll_t1
 cd poktroll_t1
 git checkout -b upgrade/upgrade_v_0_1_2 origin/upgrade_v_0_1_2 # Checkout branch of new release
@@ -64,19 +91,19 @@ Below is a set of instructions for a hypothetical upgrade from `0.1` to `0.2`:
 
    ```bash
    git worktree add ../poktroll-old v0.1
-   ```
+````
 
-   :::tip Cleaning Up
+:::tip Cleaning Up
 
-   When you're finished and ready to remove the `old` worktree (the new directory associated with the old branch):
+When you're finished and ready to remove the `old` worktree (the new directory associated with the old branch):
 
-   ```bash
-   git worktree remove ../poktroll-old
-   ```
+```bash
+git worktree remove ../poktroll-old
+```
 
-   This won't have any effect on the git repo itself, nor on the default worktree (unstaged/uncommitted changes, stash, etc.).
+This won't have any effect on the git repo itself, nor on the default worktree (unstaged/uncommitted changes, stash, etc.).
 
-   :::
+:::
 
 3. **(`new` branch)**
 
@@ -146,41 +173,3 @@ Below is a set of instructions for a hypothetical upgrade from `0.1` to `0.2`:
     ```bash
     ./release_binaries/pocket_darwin_arm64 q application params
     ```
-
-### DevNet Upgrades
-
-**DevNets do not currently support `cosmovisor`.**
-
-We use Kubernetes to manage software versions, including validators. Introducing another component to manage versions would be complex, requiring a re-architecture of our current solution to accommodate this change.
-
-## TestNet Upgrades
-
-Participants have deployed their full nodes using the [cosmovisor guide](../walkthroughs/full_node_walkthrough.md) will have upgrade automatically.
-
-Participants who do not use `cosmosvisor` will need to manually manage the process by:
-
-1. Estimating when the upgrade height will be reached
-2. When validator node(s) stop due to an upgrade, manually perform an update (e.g. ArgoCD apply and clean up old resources)
-3. Monitor full & validator node(s) as they start and begin producing blocks.
-
-:::note TODO: Cosmos Operator
-
-[cosmos-operator](https://github.com/strangelove-ventures/cosmos-operator) supports scheduled upgrades and is also an option if not using `cosmovisor`
-
-:::
-
-### TestNet Management - Grove Employees
-
-:::warning
-
-This section is intended for Grove employees only who help manage & maintain TestNet Infrastructure.
-
-:::
-
-### Alpha TestNet
-
-There are two validators in linode. Three on vultr. One seed on vultr. No TestNet infra on GCP.
-
-I think the only gotcha is as upgrade happens, cosmovisor backs up data dir on all nodes. So it might take a few minutes to finish that process before starting the node after upgrade.
-
-There’s only dashboard for beta testnet. No one place to see the health of alpha.. logs are shipped to victoria logs but I always used k8s client instead.
