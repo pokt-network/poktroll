@@ -23,10 +23,9 @@ Create a new [GitHub issue here](https://github.com/pokt-network/poktroll/issues
   - [1.1 Clone the `poktroll` repository](#11-clone-the-poktroll-repository)
   - [1.2 See all the available helper commands in `Makefile`](#12-see-all-the-available-helper-commands-in-makefile)
   - [1.3 Prepare your development environment](#13-prepare-your-development-environment)
-  - [1.4 Create a `k8s` cluster](#14-create-a-k8s-cluster)
-  - [1.5 Start up LocalNet](#15-start-up-localnet)
-  - [1.6 View Grafana Logs](#16-view-grafana-logs)
-  - [1.7 Check the status of the blockchain](#17-check-the-status-of-the-blockchain)
+  - [1.4 Start up LocalNet](#14-start-up-localnet)
+  - [1.5 View Grafana Logs](#15-view-grafana-logs)
+  - [1.6 Check the status of the blockchain](#16-check-the-status-of-the-blockchain)
 - [2. Fund New Accounts](#2-fund-new-accounts)
   - [2.1 Create a Shannon `Supplier` Account](#21-create-a-shannon-supplier-account)
   - [2.2 Create a Shannon `Application` Account](#22-create-a-shannon-application-account)
@@ -156,21 +155,7 @@ needing to regenerate the mocks and types:
 make test_all
 ```
 
-### 1.4 Create a `k8s` cluster
-
-Create a new `k8s` cluster for your LocalNet:
-
-```bash
-kind create cluster
-```
-
-If you use `k8s` for other things, you may need to switch your context as well:
-
-```bash
-kubectl config use-context kind-kind
-```
-
-### 1.5 Start up LocalNet
+### 1.4 Start up LocalNet
 
 Bring up your LocalNet and wait a few minutes:
 
@@ -178,11 +163,28 @@ Bring up your LocalNet and wait a few minutes:
 make localnet_up
 ```
 
+:::info
+
+The `make localnet_up` command will run the `make dev_up` target, which:
+
+- Creates a new `kind` cluster
+- Creates all namespaces required by the PATH Helm Charts
+
+:::tip 
+
+To fully stop your LocalNet:
+
+- Exit the Tilt shell by pressing `Ctrl+C`
+- Run `make localnet_down` to stop Tilt
+- Run `kind delete cluster` to delete the `kind` cluster
+
+:::
+
 Visit [localhost:10350](<http://localhost:10350/r/(all)/overview>) and wait until all the containers are 🟢
 
 If everything worked as expected, your screen should look similar to the following:
 
-### 1.6 View Grafana Logs
+### 1.5 View Grafana Logs
 
 Every actor has a local grafana dashboard associated with it.
 
@@ -193,7 +195,7 @@ you can click in the top left corner to view its [grafana dashboard](http://loca
 
 ![Grafana RelayMiner](./img/quickstart_relayminer_grafana.png)
 
-### 1.7 Check the status of the blockchain
+### 1.6 Check the status of the blockchain
 
 You can query the status of the blockchain using `pocketd` by running:
 
@@ -551,9 +553,11 @@ information on how public keys are stored and accessible onchain.
 You can use `curl`
 
 ```bash
-curl -X POST -H "Content-Type: application/json" \
-  --data '{"jsonrpc":"2.0","method":"eth_blockNumber","params":[],"id":1}' \
-  http://anvil.localhost:3000/v1
+curl http://localhost:3070/v1 \
+    -H "Authorization: test_api_key" \
+    -H "Target-Service-Id: anvil" \
+    -H "App-Address: pokt1mrqt5f7qh8uxs27cjm9t7v9e74a9vvdnq5jva4" \
+    -d '{"jsonrpc":"2.0","method":"eth_blockNumber","id":1}
 ```
 
 If everything worked as expected, you should see output similar to the following:
