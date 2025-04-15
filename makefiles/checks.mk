@@ -85,12 +85,12 @@ check_docker_ps: check_docker
 ## Internal helper target - checks if the kind-kind context exists and is set
 check_kind_context: check_kind
 	@if ! kubectl config get-contexts | grep -q 'kind-kind'; then \
-		echo "kind-kind context does not exist. Please create it or switch to it."; \
-		exit 1; \
+		echo "WARNING: kind-kind context does not exist. Please consider creating it or switch to it."; \
+		echo "WARNING: Using default cluster to deploy Localnet."; \
 	fi
 	@if ! kubectl config current-context | grep -q 'kind-kind'; then \
-		echo "kind-kind context is not currently set. Use 'kubectl config use-context kind-kind' to set it."; \
-		exit 1; \
+		echo "WARNING: kind-kind context is not currently set. Please consider to use 'kubectl config use-context kind-kind' to set it."; \
+		echo "WARNING: Using default cluster to deploy Localnet."; \
 	fi
 
 .PHONY: check_godoc
