@@ -1,0 +1,15 @@
+{
+  "body": {
+    "messages": [
+      {
+        "@type": "/cosmos.upgrade.v1beta1.MsgSoftwareUpgrade",
+        "authority": "pokt1r6ja6rz6rpae58njfrsgs5n5sp3r36r2q9j04h",
+        "plan": {
+          "name": "v0.1.2",
+          "height": "UPDATE_ME",
+          "info": "{\"binaries\":{\"linux/amd64\":\"https://github.com/pokt-network/poktroll/releases/download/v0.1.2/pocket_linux_amd64.tar.gz\",\"linux/arm64\":\"https://github.com/pokt-network/poktroll/releases/download/v0.1.2/pocket_linux_arm64.tar.gz\",\"darwin/amd64\":\"https://github.com/pokt-network/poktroll/releases/download/v0.1.2/pocket_darwin_amd64.tar.gz\",\"darwin/arm64\":\"https://github.com/pokt-network/poktroll/releases/download/v0.1.2/pocket_darwin_arm64.tar.gz\"}}"
+        }
+      }
+    ]
+  }
+}

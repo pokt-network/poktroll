@@ -114,3 +114,6 @@ tools/scripts/migration/*.json
 
 # Claude
 .claudesync/
+
+# GitHub
+.secrets
