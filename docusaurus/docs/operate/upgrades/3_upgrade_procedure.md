@@ -9,29 +9,8 @@ This document is intended for core protocol developers.
 We recommend reviewing the `Testing An Upgrade` section below to ensure that the upgrade process is completed successfully.
 :::
 
-## When is an Protocol Upgrade Warranted? <!-- omit in toc -->
-
-A protocol upgrade is **required** if there are `consensus-breaking` changes. _For example, changes to protobufs._
-
-A protocol upgrade is **optional but recommended** if there are changes to node software but are not `consensus-breaking` changes. _For examples, performance improvements._
-
-A software release **can be made** with or without a protocol upgrade. _For example, new utilities in the CLI._
-
-**Identify consensus breaking changes** by:
-
-1. Reviewing merged [Pull Requests (PRs) with the `consensus-breaking` label](https://github.com/pokt-network/poktroll/issues?q=label%3Aconsensus-breaking+) since the last release. It is not a source of truth, but directionality correct.
-2. Looking for breaking changes in `.proto` files
-3. Looking for breaking changes in the `x/` directories
-4. Identifying new onchain parameters or authorizations
-
-:::info Non-exhaustive list
-
-Note that the above is a non-exhaustive list and requires protocol expertise to identify all potential `consensus-breaking` changes.
-:::
-
 ## Table of Contents <!-- omit in toc -->
 
-- [Process Overview](#process-overview)
 - [A. Implementing the Upgrade](#a-implementing-the-upgrade)
   - [1. Bump Module Consensus Version](#1-bump-module-consensus-version)
   - [2. Prepare a New Upgrade](#2-prepare-a-new-upgrade)
@@ -46,20 +25,6 @@ Note that the above is a non-exhaustive list and requires protocol expertise to 
   - [TestNet Upgrades](#testnet-upgrades)
     - [TestNet Management - Grove Employees](#testnet-management---grove-employees)
     - [Alpha TestNet](#alpha-testnet)
-
-## Process Overview
-
-When a `consensus-breaking` change is made to the protocol, we must carefully evaluate and implement an upgrade path that
-allows existing nodes to transition safely from one software version to another without disruption.
-
-This process involves several key steps:
-
-1. **Proposal**: The DAO drafts an upgrade proposal using our offchain governance system.
-2. **Implementation**: The proposed changes are implemented in the codebase.
-3. **Testing**: Thorough testing of the proposed changes is conducted in devnet and testnet environments before mainnet deployment.
-4. **Announcement**: Upon successful testing, we announce the upgrade through our social media channels and community forums.
-5. **Deployment**: An upgrade transaction is sent to the network, allowing node operators using [Cosmovisor](../walkthroughs/full_node_walkthrough.md) to automatically upgrade their nodes at the specified block height.
-6. **Monitoring**: Post-deployment, we closely monitor the network to ensure everything functions as expected.
 
 ## A. Implementing the Upgrade
 

@@ -9,19 +9,30 @@ This document is intended for core protocol developers.
 
 ## Table of Contents <!-- omit in toc -->
 
-- [1. Determine if the Release is Consensus-Breaking](#1-determine-if-the-release-is-consensus-breaking)
+- [1. Identify the `sha` of the new release](#1-identify-the-sha-of-the-new-release)
 - [2. Create a GitHub Release](#2-create-a-github-release)
 - [3. Update the `homebrew-tap` formula](#3-update-the-homebrew-tap-formula)
 - [4. Follow the Protocol Upgrade Procedure](#4-follow-the-protocol-upgrade-procedure)
 - [5. Issue the Upgrade on All Networks](#5-issue-the-upgrade-on-all-networks)
 
-### 1. Determine if the Release is Consensus-Breaking
+### 1. Identify the `sha` of the new release
 
-**See the [When is an Protocol Upgrade Warranted?](./3_upgrade_procedure.md#when-is-an-protocol-upgrade-warranted) section for details.**
+Identify all changes since the last release by:
+
+1. Identify the `sha` of the public [release](https://github.com/pokt-network/poktroll/releases/).
+2. Choose the `sha` of new release, which will likely be [main](https://github.com/pokt-network/poktroll/commits/main/).
+3. Compare the diff between the two shas like so: `https://github.com/pokt-network/poktroll/compare/v<LAST_RELEASE>..<YOUR_SHA>`; ([example](https://github.com/pokt-network/poktroll/compare/v0.0.11..7541afd6d89a12d61e2c32637b535f24fae20b58)).
+4. Ensure the [ConsensusVersion](https://github.com/search?q=repo%3Apokt-network%2Fpoktroll%20ConsensusVersion&type=code) is bumped for all modules with `state-breaking` (i.e. not just `consensus-breaking`) changes.
+
+:::tip
+
+Read [When is an Protocol Upgrade Warranted?](./1_protocol_upgrades.md#when-is-an-protocol-upgrade-warranted) for more details on `consensus-breaking` changes.
+
+:::
 
 ### 2. Create a GitHub Release
 
-:::tip GitHub Releases
+:::note GitHub Releases
 
 You can find all existing releases [here](https://github.com/pokt-network/poktroll/releases).
 
