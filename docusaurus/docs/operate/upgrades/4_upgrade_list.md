@@ -1,16 +1,19 @@
 ---
-title: List of Protocol Upgrades
-sidebar_position: 2
+title: Protocol Upgrade List
+sidebar_position: 4
 ---
 
-## List of Protocol Upgrades <!-- omit in toc -->
+The tables below provide a list of past and upcoming protocol upgrades.
 
-The tables below provide a list of past and upcoming protocol upgrades. For more detailed information about what upgrades are, how they work, and what changes they bring to the protocol, please refer to our [upgrade overview page](1_protocol_upgrades.md).
+For more detailed information about what upgrades are, how they work, and what changes they bring to the protocol, please refer to our [upgrade overview page](1_protocol_upgrades.md).
 
+## Table of Contents
+
+- [Table of Contents](#table-of-contents)
 - [Legend](#legend)
-- [MainNet](#mainnet)
-- [Beta TestNet](#beta-testnet)
-- [Alpha TestNet](#alpha-testnet)
+- [MainNet Protocol Upgrades](#mainnet-protocol-upgrades)
+- [Beta TestNet Protocol Upgrades](#beta-testnet-protocol-upgrades)
+- [Alpha TestNet Protocol Upgrades](#alpha-testnet-protocol-upgrades)
   - [Syncing from genesis - manual steps](#syncing-from-genesis---manual-steps)
 
 ## Legend
@@ -20,30 +23,35 @@ The tables below provide a list of past and upcoming protocol upgrades. For more
 - ❓ - Unknown/To Be Determined
 - ⚠️ - Warning/Caution Required
 
-## MainNet
+## MainNet Protocol Upgrades
 
 | Version                                                                  | Planned | Breaking | Requires Manual Intervention | Upgrade Height |
 | ------------------------------------------------------------------------ | :-----: | :------: | :--------------------------: | -------------- |
+| [`v0.1.2`](https://github.com/pokt-network/poktroll/releases/tag/v0.1.2) |   ✅    |    ✅    |              ❓              | TBA            |
 | [`v0.1.1`](https://github.com/pokt-network/poktroll/releases/tag/v0.1.1) |   ✅    |    ✅    |              ❌              | 0              |
 
-## Beta TestNet
+## Beta TestNet Protocol Upgrades
 
 | Version                                                                          | Planned | Breaking | Requires Manual Intervention | Upgrade Height |
 | -------------------------------------------------------------------------------- | :-----: | :------: | :--------------------------: | -------------- |
-| [`v0.0.12`](https://github.com/pokt-network/poktroll/releases/tag/v0.0.12)       |   ✅    |    ✅    |              ❌              | TBA            |
-| [`v0.0.11-rc`](https://github.com/pokt-network/poktroll/releases/tag/v0.0.11-rc) |   N/A   |   N/A    |      ❌ genesis version      | N/A            |
+| [`v0.1.2`](https://github.com/pokt-network/poktroll/releases/tag/v0.1.2)         |   ✅    |    ✅    |              ❓              | TBA            |
+| [`v0.1.1`](https://github.com/pokt-network/poktroll/releases/tag/v0.1.1)         |   ✅    |    ✅    |              ❌              | TODO(@okdas)   |
+| [`v0.0.12`](https://github.com/pokt-network/poktroll/releases/tag/v0.0.12)       |   ✅    |    ✅    |              ❌              | TODO(@okdas)   |
+| [`v0.0.11-rc`](https://github.com/pokt-network/poktroll/releases/tag/v0.0.11-rc) |   N/A   |   N/A    |      ❌ genesis version      | 0              |
 
-## Alpha TestNet
+## Alpha TestNet Protocol Upgrades
 
-:::warning
-Some manual steps are currently required to sync to the latest block. Please follow instructions below.
+:::warning TODO_TECHDEBT(@okdas)
+
+Review this section and the one below it to remove/update accordingly.
+
 :::
-
-<!-- DEVELOPER: if important information about the release is changing (e.g. upgrade height is changed) - make sure to update the information in GitHub release as well. -->
 
 | Version                                                                      | Planned | Breaking |                                                          Requires Manual Intervention                                                           | Upgrade Height                                                                                                                  |
 | ---------------------------------------------------------------------------- | :-----: | :------: | :---------------------------------------------------------------------------------------------------------------------------------------------: | ------------------------------------------------------------------------------------------------------------------------------- |
-| [`v0.0.12`](https://github.com/pokt-network/poktroll/releases/tag/v0.0.12)   |   ✅    |    ✅    |                                                                       ❌                                                                        | TBA                                                                                                                             |
+| [`v0.1.2`](https://github.com/pokt-network/poktroll/releases/tag/v0.1.2)     |   ✅    |    ✅    |                                                                       ❓                                                                        | TBA                                                                                                                             |
+| [`v0.1.1`](https://github.com/pokt-network/poktroll/releases/tag/v0.1.1)     |   ✅    |    ✅    |                                                                       ❌                                                                        | TODO(@okdas)                                                                                                                    |
+| [`v0.0.12`](https://github.com/pokt-network/poktroll/releases/tag/v0.0.12)   |   ✅    |    ✅    |                                                                       ❌                                                                        | TODO(@okdas)                                                                                                                    |
 | [`v0.0.11`](https://github.com/pokt-network/poktroll/releases/tag/v0.0.11)   |   ✅    |    ✅    |                                                             ❌ (automatic upgrade)                                                              | [156245](https://shannon.alpha.testnet.pokt.network/pocket/tx/EE72B1D0744872CFFF4AC34DA9573B0BC2E32FFF998A8F25BF817FBE44F53543) |
 | [`v0.0.10`](https://github.com/pokt-network/poktroll/releases/tag/v0.0.10)   |   ✅    |    ✅    |                                                             ❌ (automatic upgrade)                                                              | [56860](https://shannon.alpha.testnet.pokt.network/pocket/tx/4E201E5C397AB881F417266154C907D38404BE00BE9A443DE28E44A2B09C5CFB)  |
 | [`v0.0.9-4`](https://github.com/pokt-network/poktroll/releases/tag/v0.0.9-4) |   ❌    |    ✅    |                   ⚠️ [follow manual upgrade instructions](https://github.com/pokt-network/poktroll/releases/tag/v0.0.9-4) ⚠️                    | `46329`                                                                                                                         |
