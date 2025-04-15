@@ -8,38 +8,19 @@ import (
 	"github.com/pokt-network/poktroll/app/keepers"
 )
 
-// Visit the pocket-network-genesis repo for the source of truth for these addresses.
-// https://github.com/pokt-network/pocket-network-genesis/tree/master/shannon
 const (
 	// The default PNF/DAO address in the genesis file for Alpha TestNet. Used to create new authz authorizations.
 	AlphaTestNetPnfAddress = "pokt1r6ja6rz6rpae58njfrsgs5n5sp3r36r2q9j04h"
 
+	// TECHDEBT: DO NOT use AlphaTestNetAuthorityAddress.
 	// This is the authority address used to create new authz authorizations. Defaults to x/gov module account address.
-	// DEV_NOTE: This hard-coded address is kept for record-keeping historical purposes.
-	// Use `keepers.<target_module>.GetAuthority()` to get the authority address for the module.
+	// Use `keepers.UpgradeKeeper.Authority(ctx, &upgradetypes.QueryAuthorityRequest{})` to query the authority address of the current Alpha Network.
+	// NOTE: This hard-coded address is kept for record-keeping historical purposes.
 	AlphaTestNetAuthorityAddress = "pokt10d07y265gmmuvt4z0w9aw880jnsr700j8yv32t"
 
 	// The default PNF/DAO address in the genesis file for Beta TestNet. Used to create new authz authorizations.
 	BetaTestNetPnfAddress = "pokt1f0c9y7mahf2ya8tymy8g4rr75ezh3pkklu4c3e"
-
-	// PNF/DAO address specified in MainNet genesis.
-	// Used to create new authz authorizations after migration is complete.
-	MainNetPnfAddress = "pokt1hv3xrylxvwd7hfv03j50ql0ttp3s5hqqelegmv"
-
-	// Grove address specified in MainNet genesis.
-	// Used to create new authz authorizations throughout the migration process.
-	MainnetGroveAddress = "pokt18808wvw0h4t450t06uvauny8lvscsxjfyua7vh"
 )
-
-// NetworkAuthzGranteeAddress is a map of network names (i.e chain-id) to their
-// respective authorization (i.e. PNF/DAO) addresses.
-var NetworkAuthzGranteeAddress = map[string]string{
-	"pocket-alpha": AlphaTestNetPnfAddress,
-	"pocket-beta":  BetaTestNetPnfAddress,
-	// Grove's address is used as of #1191 to authorize updates to mainnet parameters.
-	// TODO_POST_MAINNET: Update to PNF address once the migration is complete.
-	"pocket": MainnetGroveAddress,
-}
 
 // Upgrade represents a protocol upgrade in code.
 // Once a `MsgSoftwareUpgrade` is submitted onchain, and `Upgrade.PlanName` matches the `Plan.Name`,
