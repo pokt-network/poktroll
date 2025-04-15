@@ -1,14 +1,15 @@
 ---
 title: Module Authorizations
-sidebar_position: 3
+sidebar_position: 6
 ---
-
-## Module Authorizations <!-- omit in toc -->
 
 Pocket Network utilizes an onchain governance mechanism that enables the community to vote on proposals.
 
 Once a proposal passes, or a decision by PNF is made on behalf of the DAO, the parameters updates are applied.
 
+## Table of Contents
+
+- [Table of Contents](#table-of-contents)
 - [Access Control](#access-control)
   - [MainNet Authorizations](#mainnet-authorizations)
     - [`x/gov` Module Account](#xgov-module-account)
