@@ -164,7 +164,7 @@ Create a new `k8s` cluster for your LocalNet:
 kind create cluster
 ```
 
-If you use `k8s` for other things, you may need to switch your context as well:
+If you use `k8s` for other things, you may (optionally) need to switch your context as well:
 
 ```bash
 kubectl config use-context kind-kind
@@ -179,6 +179,11 @@ make localnet_up
 ```
 
 Visit [localhost:10350](<http://localhost:10350/r/(all)/overview>) and wait until all the containers are 🟢
+
+:::note
+You wont be able to send a relay yet! Keep on reading the guide!
+If you are in a hurry, specifically look for the `acc_initialize_pubkeys` step.
+:::
 
 If everything worked as expected, your screen should look similar to the following:
 
@@ -540,6 +545,7 @@ a `Supplier`, and are running a `RelayMiner`, we can send a relay!
 
 You must run `make acc_initialize_pubkeys` before sending a relay in order for
 the public keys to be initialized correctly.
+This is requiered for the Shannon SDK to be able to query account information, part of the relay signing process.
 
 See the [x/auth](https://docs.cosmos.network/main/build/modules/auth) for more
 information on how public keys are stored and accessible onchain.
