@@ -5,171 +5,115 @@ sidebar_position: 3
 
 :::warning
 This document is intended for core protocol developers.
-:::
-
-This document describes how to test a protocol upgrade on LocalNet.
 
 **It assumes you have followed steps 1 through 4 in the [Release Procedure](./2_release_procedure.md).**
+:::
 
 ## Table of Contents <!-- omit in toc -->
 
-- [TestNet Upgrades](#testnet-upgrades)
-  - [TestNet Management - Grove Employees](#testnet-management---grove-employees)
-  - [Alpha TestNet](#alpha-testnet)
+- [Local Upgrade Verification By Example](#local-upgrade-verification-by-example)
+- [1. Start a node running the new software (from where the upgrade will be issued)](#1-start-a-node-running-the-new-software-from-where-the-upgrade-will-be-issued)
+- [2. Start a node running the old software (that will listen on the upgrade)](#2-start-a-node-running-the-old-software-that-will-listen-on-the-upgrade)
+- [3. Prepare the upgrade transaction in `poktroll_new`](#3-prepare-the-upgrade-transaction-in-poktroll_new)
+- [4. Submit \& Verify the upgrade transaction](#4-submit--verify-the-upgrade-transaction)
+- [5. Observe the upgrade output](#5-observe-the-upgrade-output)
+- [6. Verify Node Software](#6-verify-node-software)
+- [7. (If Applicable) Test Consensus Breaking Changes](#7-if-applicable-test-consensus-breaking-changes)
 
-### Test By Example
+### Local Upgrade Verification By Example
 
-The instructions below will show how to validate the upgrade from `v0.1.1` to `v0.1.2` by example.
+The instructions on this page will show how to validate the upgrade from `v0.1.1` to `v0.1.2` by example on `darwin` (macOS) using an `arm64` architecture.
 
-In one shell, run the following commands to check out the old version:
+:::warning TODO(@olshansk): Iterate & Improve
 
-```bash
-git clone git@github.com:pokt-network/poktroll.git poktroll_t1
-cd poktroll_t1
-gco v0.1.1 # Checkout tag of last release
-make go_develop ignite_release ignite_release_extract_binaries
-./release_binaries/pocket_darwin_arm64 start
-```
+Update this page to use `v0.1.2` to `v0.1.3` because the `v0.1.1` tag had a lot of outdated tooling.
 
-In another shell, run the following commands to check out the new version:
+Streamline it during the next upgrade & release.
 
-```bash
-git clone git@github.com:pokt-network/poktroll.git poktroll_t2
-cd poktroll_t2
-gco v0.1.2 # Checkout tag of new release
-make go_develop ignite_release ignite_release_extract_binaries
-./release_binaries/pocket_darwin_arm64 comet unsafe-reset-all && make localnet_regenesis
-./release_binaries/pocket_darwin_arm64 start
-```
+:::
 
-<!-- ### Testing the Upgrade (Before Merging) -->
-
-````
-**Shell #1: Old software (that will listen on the upgrade)**
-
-```bash
-git clone git@github.com:pokt-network/poktroll.git poktroll_t2
-cd poktroll_t2
-gco v0.1.1 # Checkout tag of last release
-make go_develop ignite_release ignite_release_extract_binaries
-./release_binaries/pocket_darwin_arm64 start
-````
-
-```bash
-make localnet_cancel_upgrade
-```
-
-We are using the `upgrade/migration` branch as an example, but make sure to update
-it in the example below with your own branch
-
-**Shell #1: New software (from where the upgrade will be issued)**
-
-````bash
-git clone git@github.com:pokt-network/poktroll.git poktroll_t1
-cd poktroll_t1
-git checkout -b upgrade/upgrade_v_0_1_2 origin/upgrade_v_0_1_2 # Checkout branch of new release
-make go_develop ignite_release ignite_release_extract_binaries
-./release_binaries/pocket_darwin_arm64 comet unsafe-reset-all && make localnet_regenesis
-./release_binaries/pocket_darwin_arm64 start
-./release_binaries/pocket_darwin_arm64 tx authz exec tools/scripts/upgrades/local_test_v1.0.2.json --from=pnf
-
-### LocalNet Upgrades
-
-:::warning
-
-LocalNet **DOES NOT** support `cosmovisor` and automatic upgrades at the moment. `cosmosvisor` doesn't pull the binary from the upgrade Plan's info field.
+Note that LocalNet **DOES NOT** support `cosmovisor` and automatic upgrades at the moment. `cosmosvisor` doesn't pull the binary from the upgrade Plan's info field.
 
 However, **IT IS NOT NEEDED** to simulate and test the upgrade procedure.
 
-:::
+### 1. Start a node running the new software (from where the upgrade will be issued)
 
-Below is a set of instructions for a hypothetical upgrade from `0.1` to `0.2`:
-
-1. **Stop LocalNet** to prevent interference. Use `git worktree` to check out the `poktroll` repo to a different branch/tag in a separate directory. We'll refer to the old and new branches as `old` and `new` respectively. It is recommended to open at least two tabs/shell panels in each directory for easier switching between directories.
-
-2. **(`old` branch)** - Use `git worktree` to check out the old version in a new directory. For the test to be accurate, we need to upgrade from the correct version.
-
-   ```bash
-   git worktree add ../poktroll-old v0.1
-````
-
-:::tip Cleaning Up
-
-When you're finished and ready to remove the `old` worktree (the new directory associated with the old branch):
+In one shell, run the following commands to check out the new version (`v0.1.2`)
 
 ```bash
-git worktree remove ../poktroll-old
+git clone git@github.com:pokt-network/poktroll.git poktroll_new
+cd poktroll_new
+gco v0.1.2
+make go_develop ignite_release ignite_release_extract_binaries
+./release_binaries/pocket_darwin_arm64 comet unsafe-reset-all && make localnet_regenesis
+./release_binaries/pocket_darwin_arm64 start
 ```
 
-This won't have any effect on the git repo itself, nor on the default worktree (unstaged/uncommitted changes, stash, etc.).
+### 2. Start a node running the old software (that will listen on the upgrade)
 
-:::
+In another shell, run the following commands to check out the old version (`v0.1.1`)
 
-3. **(`new` branch)**
+```bash
+git clone git@github.com:pokt-network/poktroll.git poktroll_old
+cd poktroll_old
+gco v0.1.1
+make go_develop ignite_release ignite_release_extract_binaries
+./release_binaries/pocket_darwin_arm64 start
+```
 
-   ```bash
-   git checkout -b branch_to_test
-   ```
+### 3. Prepare the upgrade transaction in `poktroll_new`
 
-   Replace `branch_to_test` with the actual branch or tag that you want to test.
+Run the following command to prepare the upgrade transaction:
 
-   :::note
-   This branch should have an upgrade implemented per the docs in [Implementing the Upgrade].
-   Here, the upgrade should be named `v0.2`.
-   :::
+```bash
+./tools/scripts/upgrades/prepare_upgrade_tx.sh v0.1.
+```
 
-4. **(BOTH repos)** - We'll use binaries from both versions - old and new.
+**Note that this was (likely) already committed to `main` but was not available in the `v0.1.2` tag because it happened afterwards.**
 
-   ```bash
-   make go_develop ignite_release ignite_release_extract_binaries
-   ```
+Update the `height` in `tools/scripts/upgrades/upgrade_tx_v0.1.2_local.json`:
 
-   :::note
-   The binary produced by these commands in the old repo should result in the same binary as it was downloaded from [production releases](https://github.com/pokt-network/poktroll/releases). You can use them as an alternative to building the binary from source.
-   :::
-
-5. **(`old` repo)** - Clean up and generate an empty genesis using the old version.
+1. Query the height, increment by 20, and assign to an environment variable
 
    ```bash
-   rm -rf ~/.pocket && ./release_binaries/pocket_darwin_arm64 comet unsafe-reset-all && make localnet_regenesis
+   CURRENT_HEIGHT=$(./release_binaries/pocket_darwin_arm64 q consensus comet block-latest -o json | jq '.sdk_block.last_commit.height' | tr -d '"')
+   UPGRADE_HEIGHT=$((CURRENT_HEIGHT + 20))
    ```
 
-6. **(`old` repo)** Start the node:
+2. Update the JSON file with the new height
 
    ```bash
-   ./release_binaries/pocket_darwin_arm64 start
+   sed -i.bak "s/\"height\": \"UPDATE_ME\"/\"height\": \"$UPGRADE_HEIGHT\"/" tools/scripts/upgrades/upgrade_tx_v0.1.2_local.json
    ```
 
-   The validator node should run and produce blocks as expected.
-
-7. **(`old` repo)** Submit the upgrade transaction. **NOTE THAT** the upgrade height in the transaction should be higher than the current block height. Adjust and submit if necessary:
+3. Verify the upgrade transaction
 
    ```bash
-   ./release_binaries/pocket_darwin_arm64 tx authz exec tools/scripts/upgrades/local_test_v0.2.json --from=pnf
+   cat ./tools/scripts/upgrades/upgrade_tx_v0.1.2_local.json
    ```
 
-   Replace the path to the JSON transaction with your prepared upgrade transaction. Verify the upgrade plan was submitted and accepted:
+### 4. Submit & Verify the upgrade transaction
 
-   ```bash
-   ./release_binaries/pocket_darwin_arm64 query upgrade plan
-   ```
+Submit the upgrade transaction like so:
 
-8. **(`old` repo)** - Wait for the upgrade height to be reached on the old version. The old version should stop working since it has no knowledge of the `v0.2` upgrade. This simulates a real-world scenario. Stop the old node, and switch to the new version.
+```bash
+./release_binaries/pocket_darwin_arm64 tx authz exec tools/scripts/upgrades/local_test_v1.0.2.json --from=pnf
+```
 
-9. **(`new` repo)**
+And verify that the upgrade plan is onchain:
 
-   ```bash
-   ./release_binaries/pocket_darwin_arm64 start
-   ```
+```bash
+./release_binaries/pocket_darwin_arm64 query upgrade plan
+```
 
-10. **(`new` repo)** - Observe the output:
+### 5. Observe the upgrade output
 
-    - A successful upgrade should output `applying upgrade "v0.2" at height: 20 module=x/upgrade`.
-    - The node on the new version should continue producing blocks.
-    - If there were errors during the upgrade, investigate and address them.
+1. **(`new` repo)** - Observe the output:
 
-11. **(`new` repo, optional**) - If parameters were changed during the upgrade, test if these changes were applied. For example:
+   - A successful upgrade should output `applying upgrade "v0.2" at height: 20 module=x/upgrade`.
+   - The node on the new version should continue producing blocks.
+   - If there were errors during the upgrade, investigate and address them.
 
-    ```bash
-    ./release_binaries/pocket_darwin_arm64 q application params
-    ```
+### 6. Verify Node Software
+
+### 7. (If Applicable) Test Consensus Breaking Changes
