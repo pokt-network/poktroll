@@ -1,0 +1,121 @@
+#############################################
+##          Configuration variables        ##
+#############################################
+
+# VERSION ?= $(shell git describe --tags --always)
+# DATE ?= $(shell date -u +%Y-%m-%dT%H:%M:%SZ)
+# BINARY_NAME ?= path
+# Supported build platforms
+# PLATFORMS ?= linux/amd64 linux/arm64 darwin/amd64 darwin/arm64
+# Build flags
+# LDFLAGS := -ldflags="-X main.Version=$(VERSION) -X main.Date=$(DATE)"
+# Path to GitHub Actions workflows
+GH_WORKFLOWS := .github/workflows
+# Output directories
+# RELEASE_DIR := release
+# BIN_DIR := bin
+# # Architecture detection for M-series Macs
+# ARCH := $(shell uname -m)
+# ifeq ($(ARCH),arm64)
+#   # Check if running on macOS
+#   ifeq ($(shell uname),Darwin)
+#     ACT_ARCH_FLAG := --container-architecture linux/amd64
+#   endif
+# endif
+#####################################
+##       CI/CD Workflow Testing    ##
+#####################################
+
+.PHONY: check_secrets
+# Internal helper: Check if .secrets file exists with valid GITHUB_TOKEN
+check_secrets:
+	@if [ ! -f .secrets ]; then \
+		echo "❌ .secrets file not found!"; \
+		echo "Please create a .secrets file with your GitHub token:"; \
+		echo "GITHUB_TOKEN=your_github_token"; \
+		exit 1; \
+	fi
+	@if ! grep -q "GITHUB_TOKEN=" .secrets; then \
+		echo "❌ GITHUB_TOKEN not found in .secrets file!"; \
+		echo "Please add GITHUB_TOKEN to your .secrets file:"; \
+		echo "GITHUB_TOKEN=your_github_token"; \
+		echo "You can create a token at: https://github.com/settings/tokens"; \
+		exit 1; \
+	fi
+	@if grep -q "GITHUB_TOKEN=$$" .secrets || grep -q "GITHUB_TOKEN=\"\"" .secrets || grep -q "GITHUB_TOKEN=''" .secrets; then \
+		echo "❌ GITHUB_TOKEN is empty in .secrets file!"; \
+		echo "Please set a valid GitHub token:"; \
+		echo "GITHUB_TOKEN=your_github_token"; \
+		echo "You can create a token at: https://github.com/settings/tokens"; \
+		exit 1; \
+	fi
+
+.PHONY: install_act
+install_act: ## Install act for local GitHub Actions testing
+	@echo "Installing act..."
+	@if [ "$$(uname)" = "Darwin" ]; then \
+		brew install act; \
+	else \
+		curl -s https://raw.githubusercontent.com/nektos/act/master/install.sh | sudo bash; \
+	fi
+	@echo "✅ act installed successfully"
+
+###########################
+###   Release Helpers   ###
+###########################
+
+# List tags: git tag
+# Delete tag locally: git tag -d v1.2.3
+# Delete tag remotely: git push --delete origin v1.2.3
+
+.PHONY: release_tag_bug_fix
+release_tag_bug_fix: ## Tag a new bug fix release (e.g. v1.0.1 -> v1.0.2)
+	@$(eval LATEST_TAG=$(shell git tag --sort=-v:refname | head -n 1))
+	@$(eval NEW_TAG=$(shell echo $(LATEST_TAG) | awk -F. -v OFS=. '{ $$NF = sprintf("%d", $$NF + 1); print }'))
+	@git tag $(NEW_TAG)
+	@echo "New bug fix version tagged: $(NEW_TAG)"
+	@echo "Run the following commands to push the new tag:"
+	@echo "  git push origin $(NEW_TAG)"
+	@echo "And draft a new release at https://github.com/pokt-network/poktroll/releases/new"
+
+
+.PHONY: release_tag_minor_release
+release_tag_minor_release: ## Tag a new minor release (e.g. v1.0.0 -> v1.1.0)
+	@$(eval LATEST_TAG=$(shell git tag --sort=-v:refname | head -n 1))
+	@$(eval NEW_TAG=$(shell echo $(LATEST_TAG) | awk -F. '{$$2 += 1; $$3 = 0; print $$1 "." $$2 "." $$3}'))
+	@git tag $(NEW_TAG)
+	@echo "New minor release version tagged: $(NEW_TAG)"
+	@echo "Run the following commands to push the new tag:"
+	@echo "  git push origin $(NEW_TAG)"
+	@echo "And draft a new release at https://github.com/pokt-network/poktroll/releases/new"
+
+
+.PHONY: ignite_update_ldflags
+## Artifact release helper - sets version/datetime of the build
+ignite_update_ldflags:
+	yq eval '.build.ldflags = ["-X main.Version=$(VERSION)", "-X main.Date=$(shell date -u +%Y-%m-%dT%H:%M:%SZ)"]' -i config.yml
+
+.PHONY: ignite_release
+ignite_release: ## Builds production binaries for all architectures and outputs them in the
+	ignite chain build --release -t linux:amd64 -t linux:arm64 -t darwin:amd64 -t darwin:arm64 -o pocket
+
+.PHONY: ignite_release_extract_binaries
+ignite_release_extract_binaries: ## Extracts binaries from the release archives
+	mkdir -p release_binaries
+
+	for archive in pocket/*.tar.gz; do \
+		binary_name=$$(basename "$$archive" .tar.gz); \
+		mkdir -p "release_binaries/tmp_$$binary_name"; \
+		tar -zxvf "$$archive" -C "release_binaries/tmp_$$binary_name"; \
+		find "release_binaries/tmp_$$binary_name" -name "pocketd" -type f -exec cp {} "release_binaries/$$binary_name" \; ; \
+		rm -rf "release_binaries/tmp_$$binary_name"; \
+	done
+
+########################
+###   Act Triggers   ###
+########################
+
+.PHONY: workflow_test_release_artifacts
+workflow_test_release_artifacts: check_act check_secrets ## Test the release artifacts GitHub workflow
+	@echo "Testing release artifacts workflow..."
+	@act -W $(GH_WORKFLOWS)/release-artifacts.yml workflow_dispatch $(ACT_ARCH_FLAG) -v --secret-file .secrets
