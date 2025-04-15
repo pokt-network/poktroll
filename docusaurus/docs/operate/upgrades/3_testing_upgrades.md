@@ -1,5 +1,5 @@
 ---
-title: Testing Protocol Upgrades
+title: Testing Protocol Upgrades (Local Environment)
 sidebar_position: 3
 ---
 
@@ -12,10 +12,10 @@ This document is intended for core protocol developers.
 ## Table of Contents <!-- omit in toc -->
 
 - [Local Upgrade Verification By Example](#local-upgrade-verification-by-example)
-- [1. Start a node running the new software (from where the upgrade will be issued)](#1-start-a-node-running-the-new-software-from-where-the-upgrade-will-be-issued)
-- [2. Start a node running the old software (that will listen on the upgrade)](#2-start-a-node-running-the-old-software-that-will-listen-on-the-upgrade)
-- [3. Prepare the upgrade transaction in `poktroll_new`](#3-prepare-the-upgrade-transaction-in-poktroll_new)
-- [4. Submit \& Verify the upgrade transaction](#4-submit--verify-the-upgrade-transaction)
+- [1. Start a node running the old software (that will listen on the upgrade)](#1-start-a-node-running-the-old-software-that-will-listen-on-the-upgrade)
+- [2. Start a node running the new software (from where the upgrade will be issued)](#2-start-a-node-running-the-new-software-from-where-the-upgrade-will-be-issued)
+- [3. Prepare the upgrade transaction in `poktroll_old`](#3-prepare-the-upgrade-transaction-in-poktroll_old)
+- [4. Submit \& Verify the upgrade transaction in `poktroll_old`](#4-submit--verify-the-upgrade-transaction-in-poktroll_old)
 - [5. Observe the upgrade output](#5-observe-the-upgrade-output)
 - [6. Verify Node Software](#6-verify-node-software)
 - [7. (If Applicable) Test Consensus Breaking Changes](#7-if-applicable-test-consensus-breaking-changes)
@@ -32,11 +32,24 @@ Streamline it during the next upgrade & release.
 
 :::
 
-Note that LocalNet **DOES NOT** support `cosmovisor` and automatic upgrades at the moment. `cosmosvisor` doesn't pull the binary from the upgrade Plan's info field.
+Note that local environments **DO NOT** support `cosmovisor` and automatic upgrades at the moment. `cosmosvisor` doesn't pull the binary from the upgrade Plan's info field.
 
 However, **IT IS NOT NEEDED** to simulate and test the upgrade procedure.
 
-### 1. Start a node running the new software (from where the upgrade will be issued)
+### 1. Start a node running the old software (that will listen on the upgrade)
+
+In one shell, run the following commands to check out the old version (`v0.1.1`)
+
+```bash
+git clone git@github.com:pokt-network/poktroll.git poktroll_old
+cd poktroll_old
+gco v0.1.1
+make go_develop ignite_release ignite_release_extract_binaries
+./release_binaries/pocket_darwin_arm64 comet unsafe-reset-all && make localnet_regenesis
+./release_binaries/pocket_darwin_arm64 start
+```
+
+### 2. Start a node running the new software (from where the upgrade will be issued)
 
 In one shell, run the following commands to check out the new version (`v0.1.2`)
 
@@ -45,59 +58,47 @@ git clone git@github.com:pokt-network/poktroll.git poktroll_new
 cd poktroll_new
 gco v0.1.2
 make go_develop ignite_release ignite_release_extract_binaries
-./release_binaries/pocket_darwin_arm64 comet unsafe-reset-all && make localnet_regenesis
 ./release_binaries/pocket_darwin_arm64 start
 ```
 
-### 2. Start a node running the old software (that will listen on the upgrade)
+### 3. Prepare the upgrade transaction in `poktroll_old`
 
-In another shell, run the following commands to check out the old version (`v0.1.1`)
+:::note Nuanced order of operations
 
-```bash
-git clone git@github.com:pokt-network/poktroll.git poktroll_old
-cd poktroll_old
-gco v0.1.1
-make go_develop ignite_release ignite_release_extract_binaries
-./release_binaries/pocket_darwin_arm64 start
-```
+Note that this was (likely) already committed to `main` but was not available in the `v0.1.2` tag because it happened afterwards.
 
-### 3. Prepare the upgrade transaction in `poktroll_new`
+:::
 
 Run the following command to prepare the upgrade transaction:
 
 ```bash
-./tools/scripts/upgrades/prepare_upgrade_tx.sh v0.1.
+./tools/scripts/upgrades/prepare_upgrade_tx.sh v0.1.2
 ```
-
-**Note that this was (likely) already committed to `main` but was not available in the `v0.1.2` tag because it happened afterwards.**
 
 Update the `height` in `tools/scripts/upgrades/upgrade_tx_v0.1.2_local.json`:
 
-1. Query the height, increment by 20, and assign to an environment variable
-
-   ```bash
-   CURRENT_HEIGHT=$(./release_binaries/pocket_darwin_arm64 q consensus comet block-latest -o json | jq '.sdk_block.last_commit.height' | tr -d '"')
-   UPGRADE_HEIGHT=$((CURRENT_HEIGHT + 20))
-   ```
-
+1. Query the height, increment by 20 (arbitrary value), and assign to an environment variable
 2. Update the JSON file with the new height
-
-   ```bash
-   sed -i.bak "s/\"height\": \"UPDATE_ME\"/\"height\": \"$UPGRADE_HEIGHT\"/" tools/scripts/upgrades/upgrade_tx_v0.1.2_local.json
-   ```
-
 3. Verify the upgrade transaction
 
-   ```bash
-   cat ./tools/scripts/upgrades/upgrade_tx_v0.1.2_local.json
-   ```
+You can copy-paste the following to execute all three steps at once:
 
-### 4. Submit & Verify the upgrade transaction
+```bash
+# Step 1
+CURRENT_HEIGHT=$(./release_binaries/pocket_darwin_arm64 q consensus comet block-latest -o json | jq '.sdk_block.last_commit.height' | tr -d '"')
+UPGRADE_HEIGHT=$((CURRENT_HEIGHT + 20))
+# Step 2
+sed -i.bak "s/\"height\": \"[^\"]*\"/\"height\": \"$UPGRADE_HEIGHT\"/" tools/scripts/upgrades/upgrade_tx_v0.1.2_local.json
+# Step 3
+cat ./tools/scripts/upgrades/upgrade_tx_v0.1.2_local.json
+```
+
+### 4. Submit & Verify the upgrade transaction in `poktroll_old`
 
 Submit the upgrade transaction like so:
 
 ```bash
-./release_binaries/pocket_darwin_arm64 tx authz exec tools/scripts/upgrades/local_test_v1.0.2.json --from=pnf
+./release_binaries/pocket_darwin_arm64 tx authz exec tools/scripts/upgrades/upgrade_tx_v0.1.2_local.json --yes --from=pnf
 ```
 
 And verify that the upgrade plan is onchain:
