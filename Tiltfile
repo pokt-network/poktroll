@@ -399,6 +399,14 @@ for x in range(localnet_config["path_gateways"]["count"]):
         from_file=".config.yaml=./localnet/kubernetes/config-path-" + str(actor_number) + ".yaml"
     )
 
+    # Start a Tilt resource to patch the Envoy Gateway LoadBalancer resource
+    # to ensure it is reachable from outside the cluster at "localhost:3070".
+    local_resource(
+        "patch-envoy-gateway",
+        "./localnet/scripts/patch_envoy_gateway.sh",
+        resource_deps=["path-stack"],
+    )
+
     helm_resource(
         "path" + str(actor_number),
         grove_chart_prefix + "path",
