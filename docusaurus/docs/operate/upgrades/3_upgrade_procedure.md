@@ -180,6 +180,33 @@ make localnet_cancel_upgrade
 
 ## B. Testing the Upgrade
 
+We are using `upgrade/migration` as an example, but make sure to update that in your own testing
+
+**Shell #1: New software (from where the upgrade will be issued)**
+
+```bash
+git clone git@github.com:pokt-network/poktroll.git poktroll_t1
+cd poktroll_t1
+git checkout -b upgrade/migration origin/upgrade/migration
+make go_develop ignite_release ignite_release_extract_binaries
+./release_binaries/pocket_darwin_arm64 comet unsafe-reset-all && make localnet_regenesis
+./release_binaries/pocket_darwin_arm64 start
+./release_binaries/pocket_darwin_arm64 tx authz exec tools/scripts/upgrades/local_test_v0.2.json --from=pnf
+
+
+
+
+```
+
+**Shell #1: Old software (that will listen on the upgrade)**
+
+```bash
+git clone git@github.com:pokt-network/poktroll.git poktroll_t2
+cd poktroll_t2
+make go_develop ignite_release ignite_release_extract_binaries
+./release_binaries/pocket_darwin_arm64 start
+```
+
 ### LocalNet Upgrades
 
 :::warning
@@ -221,7 +248,7 @@ Below is a set of instructions for a hypothetical upgrade from `0.1` to `0.2`:
    Replace `branch_to_test` with the actual branch or tag that you want to test.
 
    :::note
-   This branch should have an upgrade implemented per the docs in [Implementing the Upgrade](#implementing-the-upgrade).
+   This branch should have an upgrade implemented per the docs in [Implementing the Upgrade].
    Here, the upgrade should be named `v0.2`.
    :::
 
