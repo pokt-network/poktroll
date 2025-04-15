@@ -189,7 +189,13 @@ func (s *tokenLogicModuleTestSuite) setBlockHeight(height int64) {
 // assertNoPendingClaims asserts that no pending claims exist.
 func (s *tokenLogicModuleTestSuite) assertNoPendingClaims(t *testing.T) {
 	sdkCtx := cosmostypes.UnwrapSDKContext(s.ctx)
-	pendingClaims, err := s.keepers.Keeper.GetExpiringClaims(sdkCtx)
-	require.NoError(t, err)
-	require.Zero(t, len(pendingClaims))
+	pendingClaimsIterator := s.keepers.Keeper.GetExpiringClaimsIterator(sdkCtx)
+	defer pendingClaimsIterator.Close()
+
+	numExpiringClaims := 0
+	for pendingClaimsIterator.Valid() {
+		numExpiringClaims++
+		pendingClaimsIterator.Next()
+	}
+	require.Zero(t, numExpiringClaims)
 }
