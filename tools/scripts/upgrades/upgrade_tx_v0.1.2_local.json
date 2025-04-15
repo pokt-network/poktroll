@@ -6,8 +6,8 @@
         "authority": "pokt1eeeksh2tvkh7wzmfrljnhw4wrhs55lcuvmekkw",
         "plan": {
           "name": "v0.1.2",
-          "height": "UPDATE",
-          "info": "{\"binaries\":{\"linux/amd64\":\"https://github.com/pokt-network/poktroll/releases/download/v0.1.2/poktroll_linux_amd64.tar.gz?checksum=sha256:ab5b99ca0bc4bfbdd7031378d5a01c2a9f040ff310b745866a4dee7e62321c94\",\"linux/arm64\":\"https://github.com/pokt-network/poktroll/releases/download/v0.1.2/poktroll_linux_arm64.tar.gz?checksum=sha256:4b68c2ad326da055d43af1ad1a580158cec0f229d2ec6d9e18280d065260b622\",\"darwin/amd64\":\"https://github.com/pokt-network/poktroll/releases/download/v0.1.2/pocket_darwin_amd64.tar.gz?checksum=sha256:c81aabddeb190044b979412e5a518bbf5c88305272f72a47e32e13aa765c3330\",\"darwin/arm64\":\"https://github.com/pokt-network/poktroll/releases/download/v0.1.2/pocket_darwin_arm64.tar.gz?checksum=sha256:e683c55ac13902d107d7a726ed4a5c5affb2af1be3c67dd131ec2072a2cfbcb2\"}}"
+          "height": "UPDATE_ME",
+          "info": "{\"binaries\":{\"linux/amd64\":\"https://github.com/pokt-network/poktroll/releases/download/v0.1.2/poktroll_linux_amd64.tar.gz?checksum=sha256:cf6c0dcdbb48d4d146e6d95c06fe75a4bc9e2ada976f0185bd679ae11b5b6f37\",\"linux/arm64\":\"https://github.com/pokt-network/poktroll/releases/download/v0.1.2/poktroll_linux_arm64.tar.gz?checksum=sha256:f1d3df287cfd7ff562ee9d833c5902b5f497584056b95ce8b200c7d8a817e85f\",\"darwin/amd64\":\"https://github.com/pokt-network/poktroll/releases/download/v0.1.2/poktroll_darwin_amd64.tar.gz?checksum=sha256:8a265c8abfeeda333579ec531c04f90ee1ff2c6da931db2cc11b9527e8077f52\",\"darwin/arm64\":\"https://github.com/pokt-network/poktroll/releases/download/v0.1.2/poktroll_darwin_arm64.tar.gz?checksum=sha256:8cd8fd7e5c468fd152b450a646d16455f1594412766dd767bb0dc4bbfb44eb0a\"}}"
         }
       }
     ]
