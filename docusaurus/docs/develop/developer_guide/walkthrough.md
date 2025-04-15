@@ -538,7 +538,7 @@ You can learn more about our [PATH Gateway configs here](https://path.grove.city
 Now that we've staked an `Application`, are running a `PATH Gateway`, staked
 a `Supplier`, and are running a `RelayMiner`, we can send a relay!
 
-:::note Initialize Public Keys
+:::note 🚨 Initialize Public Keys 🚨
 
 You must run `make acc_initialize_pubkeys` before sending a relay in order for
 the public keys to be initialized correctly.

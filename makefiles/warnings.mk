@@ -4,14 +4,16 @@
 
 .PHONY: warn_message_acc_initialize_pubkeys
 warn_message_acc_initialize_pubkeys: ## Print a warning message about the need to run `make acc_initialize_pubkeys`
-	@echo "+----------------------------------------------------------------------------------+"
-	@echo "|                                                                                  |"
-	@echo "|     IMPORTANT: Please run the following command once to initialize               |"
-	@echo "|                E2E tests after the network has started:                          |"
-	@echo "|                                                                                  |"
-	@echo "|     make acc_initialize_pubkeys                                                  |"
-	@echo "|                                                                                  |"
-	@echo "+----------------------------------------------------------------------------------+"
+	@echo "+---------------------------------------------------------------------------------------+"
+	@echo "|                                                                                       |"
+	@echo "| 🚨 IMPORTANT: Please run the following command once after the network has started. 🚨 |"
+	@echo "|     This is required for the following scenarios:                                     |"
+	@echo "|       - Running E2E tests                                                             |"
+	@echo "|       - Running Localnet                                                              |"
+	@echo "|                                                                                       |"
+	@echo "|     make acc_initialize_pubkeys                                                       |"
+	@echo "|                                                                                       |"
+	@echo "+---------------------------------------------------------------------------------------+"
 
 .PHONY: warn_message_local_stress_test
 warn_message_local_stress_test: ## Print a warning message when kicking off a local E2E relay stress test

@@ -4,7 +4,7 @@
 
 # TODO_TECHDEBT(@olshansk): Look at `make dev_up` in the `path` repo and port it here.
 .PHONY: localnet_up
-localnet_up: check_pocketd check_docker_ps proto_regen localnet_regenesis dev_up check_kind_context ## Starts up a clean localnet
+localnet_up: check_pocketd check_docker_ps proto_regen localnet_regenesis dev_up check_kind_context warn_message_acc_initialize_pubkeys ## Starts up a clean localnet
 	tilt up
 
 .PHONY: localnet_up_quick
@@ -49,7 +49,7 @@ move_poktroll_to_pocket:
 	@echo "###############################################"
 
 .PHONY: localnet_regenesis
-localnet_regenesis: check_yq warn_message_acc_initialize_pubkeys ## Regenerate the localnet genesis file
+localnet_regenesis: check_yq ## Regenerate the localnet genesis file
 # NOTE: intentionally not using --home <dir> flag to avoid overwriting the test keyring
 	@echo "Initializing chain..."
 	@set -e
