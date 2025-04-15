@@ -79,13 +79,14 @@ ignite_update_ldflags:
 
 .PHONY: ignite_release
 ignite_release: ## Builds production binaries for all architectures and outputs them in the
-	ignite chain build --release -t linux:amd64 -t linux:arm64 -t darwin:amd64 -t darwin:arm64 -o pocket
+	ignite chain build --release -t linux:amd64 -t linux:arm64 -t darwin:amd64 -t darwin:arm64 -o release
+	cd release && for f in poktroll_*.tar.gz; do mv "$$f" "pocket_$${f#poktroll_}"; done
 
 .PHONY: ignite_release_extract_binaries
 ignite_release_extract_binaries: ## Extracts binaries from the release archives
 	mkdir -p release_binaries
 
-	for archive in pocket/*.tar.gz; do \
+	for archive in release/*.tar.gz; do \
 		binary_name=$$(basename "$$archive" .tar.gz); \
 		mkdir -p "release_binaries/tmp_$$binary_name"; \
 		tar -zxvf "$$archive" -C "release_binaries/tmp_$$binary_name"; \
