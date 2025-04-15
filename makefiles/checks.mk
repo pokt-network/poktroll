@@ -29,14 +29,12 @@ check_ignite_version:
 	fi
 
 .PHONY: check_act
-# Internal helper target - check if `act` is installed
+# Internal helper: Check if act is installed
 check_act:
-	{ \
-	if ( ! ( command -v act >/dev/null )); then \
-		echo "Seems like you don't have `act` installed. Please visit https://github.com/nektos/act before continuing"; \
+	@if ! command -v act >/dev/null 2>&1; then \
+		echo "❌ Please install act first with 'make install_act'"; \
 		exit 1; \
-	fi; \
-	}
+	fi;
 
 .PHONY: check_pocketd
 # Internal helper target - check if `pocketd` is installed in the correct location
