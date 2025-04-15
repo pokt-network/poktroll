@@ -15,7 +15,18 @@ We recommend reviewing the `Testing An Upgrade` section below to ensure that the
   - [TestNet Management - Grove Employees](#testnet-management---grove-employees)
   - [Alpha TestNet](#alpha-testnet)
 
-### Testing the Upgrade
+### Testing the Upgrade (Before Merging)
+
+```
+**Shell #1: Old software (that will listen on the upgrade)**
+
+```bash
+git clone git@github.com:pokt-network/poktroll.git poktroll_t2
+cd poktroll_t2
+gco v0.1.1 # Checkout tag of last release
+make go_develop ignite_release ignite_release_extract_binaries
+./release_binaries/pocket_darwin_arm64 start
+```
 
 ```bash
 make localnet_cancel_upgrade
@@ -29,22 +40,11 @@ it in the example below with your own branch
 ```bash
 git clone git@github.com:pokt-network/poktroll.git poktroll_t1
 cd poktroll_t1
-git checkout -b upgrade/migration origin/upgrade/migration
+git checkout -b upgrade/upgrade_v_0_1_2 origin/upgrade_v_0_1_2 # Checkout branch of new release
 make go_develop ignite_release ignite_release_extract_binaries
 ./release_binaries/pocket_darwin_arm64 comet unsafe-reset-all && make localnet_regenesis
 ./release_binaries/pocket_darwin_arm64 start
 ./release_binaries/pocket_darwin_arm64 tx authz exec tools/scripts/upgrades/local_test_v1.0.2.json --from=pnf
-
-```
-
-**Shell #1: Old software (that will listen on the upgrade)**
-
-```bash
-git clone git@github.com:pokt-network/poktroll.git poktroll_t2
-cd poktroll_t2
-make go_develop ignite_release ignite_release_extract_binaries
-./release_binaries/pocket_darwin_arm64 start
-```
 
 ### LocalNet Upgrades
 

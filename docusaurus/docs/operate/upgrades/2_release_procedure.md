@@ -3,15 +3,16 @@ title: Protocol Upgrade Release Procedure
 sidebar_position: 2
 ---
 
-:::info
-This document is intended for core protocol developers.
+:::warning Technical expertise required
+This document is intended for core protocol developers and may contain complex technical details.
+
+Make sure to read [When is an Protocol Upgrade Warranted?](./1_protocol_upgrades.md#when-is-an-protocol-upgrade-warranted) for more details.
 :::
 
 ## Table of Contents <!-- omit in toc -->
 
 - [1. Ensure `ConsensusVersion` is updated](#1-ensure-consensusversion-is-updated)
 - [2. Prepare a New Upgrade Plan](#2-prepare-a-new-upgrade-plan)
-- [3. Identify the `sha` of the new release](#3-identify-the-sha-of-the-new-release)
 - [4. Create a GitHub Release](#4-create-a-github-release)
 - [5. Write an Upgrade Transaction (json file)](#5-write-an-upgrade-transaction-json-file)
   - [5.1 Validate the Binary URLs (live network only)](#51-validate-the-binary-urls-live-network-only)
@@ -25,52 +26,60 @@ This document is intended for core protocol developers.
 
 Ensure the [ConsensusVersion](https://github.com/search?q=repo%3Apokt-network%2Fpoktroll%20ConsensusVersion&type=code) is bumped for all modules with `state-breaking` (i.e. not just `consensus-breaking`) changes.
 
+This will require manual code inspection and understanding of the changes.
+
 ⚠️ **Merge in these changes before proceeding.** ⚠️
 
 ### 2. Prepare a New Upgrade Plan
 
-:::tip
+:::tip Reference examples
 
-Read [When is an Protocol Upgrade Warranted?](./1_protocol_upgrades.md#when-is-an-protocol-upgrade-warranted) for more details on `consensus-breaking` changes.
+Review all [previous upgrades](https://github.com/pokt-network/poktroll/tree/main/app/upgrades) for reference.
+
+- Refer to `historical.go` for past upgrades and examples.
+- Consult the [Cosmos SDK](https://docs.cosmos.network/) documentation on upgrades for additional guidance on [building-apps/app-upgrade](https://docs.cosmos.network/main/build/building-apps/app-upgrade) and [modules/upgrade](https://docs.cosmos.network/main/build/).
 
 :::
 
-1. Review all [previous upgrades](https://github.com/pokt-network/poktroll/tree/main/app/upgrades) for reference.
-   - Refer to `historical.go` for past upgrades and examples.
-   - Consult Cosmos-sdk documentation on upgrades for additional guidance on [building-apps/app-upgrade](https://docs.cosmos.network/main/build/building-apps/app-upgrade) and [modules/upgrade](https://docs.cosmos.network/main/build/
-2. Note any parameter changes, authorizations, functions or other state changes.
-3. If modifying protobuf definitions, consider using the approach in [protobuf deprecation](./5_protobuf_upgrades.md) for backward compatibility.
-4. Update the `app/upgrades.go` file to include the new upgrade plan in `allUpgrades`.
+1. `sha` selection
+   - Identify the `sha` of the last public [release](https://github.com/pokt-network/poktroll/releases/)
+   - Choose the `sha` of new release, which will likely be [main](https://github.com/pokt-network/poktroll/commits/main/)
+   - Compare the diff between the two shas like so: `https://github.com/pokt-network/poktroll/compare/v<LAST_RELEASE>..<YOUR_SHA>`; [_example_](https://github.com/pokt-network/poktroll/compare/v0.0.11..7541afd6d89a12d61e2c32637b535f24fae20b58)
+2. Breaking change identification
+   - Between the two `sha`s above, identify any parameter changes, authorizations, functions or other state changes.
+   - _This will require manual code inspection and understanding of the changes._
+3. Upgrade Plan
+   - Update `app/upgrades.go` file to include the new upgrade plan in `allUpgrades`
+   - See [this PR](https://github.com/pokt-network/poktroll/pull/1202/files) for an example.
+   - If modifying protobuf definitions, reference the approach in [protobuf deprecation](./5_protobuf_upgrades.md) for backward compatibility.
 
 ⚠️ **Merge in these changes before proceeding.** ⚠️
 
-:::warning TODO
+:::warning Testing before merging (for seasoned upgraders only)
 
-TODO_DOCUMENT(@olshansk): Add a link with an example
+Changes should be tested before they are merged. When it comes to upgrades, this is even more important but is nuanced and requires experience.
+
+If this is your first time managing an upgrade, we recommend following the instructions
+in this document verbatim. This will require publishing minor releases as you find issues
+in the upgrade plan prepared above.
+
+If you are a seasoned protocol upgrader, consider going to the [Testing Upgrades](./3_testing_upgrades.md) section first.
 
 :::
-
-### 3. Identify the `sha` of the new release
-
-Identify all changes since the last release by:
-
-1. Identify the `sha` of the public [release](https://github.com/pokt-network/poktroll/releases/).
-2. Choose the `sha` of new release, which will likely be [main](https://github.com/pokt-network/poktroll/commits/main/).
-3. Compare the diff between the two shas like so: `https://github.com/pokt-network/poktroll/compare/v<LAST_RELEASE>..<YOUR_SHA>`; ([example](https://github.com/pokt-network/poktroll/compare/v0.0.11..7541afd6d89a12d61e2c32637b535f24fae20b58)).
 
 ### 4. Create a GitHub Release
 
 :::note GitHub Releases
 
-You can find all existing releases [here](https://github.com/pokt-network/poktroll/releases).
+You can find all existing GitHub releases [here](https://github.com/pokt-network/poktroll/releases).
 
 :::
 
 Creating a GitHub release is a 3 step process:
 
-1. **Tag the release**: Create a new tag using either `make release_tag_bug_fix` or `make release_tag_minor_release` commands.
+1. **Tag the release**: Create a new tag using either `make release_tag_bug_fix` or `make release_tag_minor_release` commands and following the on screen instructions.
 2. **Publish the release**: Create a new release in GitHub using the [Draft a new release button](https://github.com/pokt-network/poktroll/releases/new) feature.
-3. **Document the release**: Append and complete the following section above the auto-generated GitHub release notes. For example:
+3. **Document the release**: Click `Generate release notes` in the GitHub UI and append the following section above the auto-generated GitHub release notes. For example:
 
    ```markdown
    ## Protocol Upgrades
@@ -80,7 +89,7 @@ Creating a GitHub release is a 3 step process:
    | Planned Upgrade              | ✅         | New features.                                                                          |
    | Consensus Breaking Change    | ✅         | Yes, see upgrade here: https://github.com/pokt-network/poktroll/tree/main/app/upgrades |
    | Manual Intervention Required | ❌         | Cosmosvisor managed everything well .                                                  |
-   | Upgrade Height               | ✅         | Planned upgrade height at 69420 (update with actual height once complete) release.     |
+   | Upgrade Height               | ❓         | TBD                                                                                    |
 
    **Legend**:
 
@@ -94,7 +103,8 @@ Creating a GitHub release is a 3 step process:
    <!-- Auto-generated GitHub Release Notes continue here -->
    ```
 
-⚠️ **Publish this release before proceeding.** ⚠️
+4. Use ❓ and `TBD` for unknown values. These will be edited and filled out after
+5. Publish the release as `Set as a pre-release`. This will be changed to `latest release` after the upgrade is completed.
 
 ### 5. Write an Upgrade Transaction (json file)
 

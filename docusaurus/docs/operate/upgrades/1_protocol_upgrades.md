@@ -11,10 +11,10 @@ Not every [GitHub release](https://github.com/pokt-network/poktroll/releases) wi
 
 Pocket Network is continuously evolving through regular protocol upgrades.
 
-We support software upgrades via an off-chain DAO process, allowing validator nodes
-to incorporate `consensus-breaking` changes. Upgrades are executed by PNF on behalf of the DAO.
+The DAO leads offchain governance and comes to agreement on upgrades through social consensus.
 
-These upgrades can be automatically applied when using [Cosmovisor](../walkthroughs/full_node_walkthrough.md),
+Validators support onchain `consensus-breaking` changes that were agreed on bye the DAO
+offchain and triggered by PNF onchain. These upgrades can be automatically applied when using [Cosmovisor](../walkthroughs/full_node_walkthrough.md),
 or manually if not using `cosmovisor`.
 
 ## Table of Contents <!-- omit in toc -->
@@ -30,35 +30,38 @@ or manually if not using `cosmovisor`.
 
 ## What is a Protocol Upgrade?
 
-A protocol upgrade is a process of updating Pocket Network on-chain software to
+A protocol upgrade is a process of updating Pocket Network's onchain software to
 introduce new features, improve existing functionalities, or address critical issues.
 
-These upgrades ensure the network remains secure, efficient, and up-to-date with the latest technological advancements.
+These upgrades ensure the network remains secure, efficient, and up-to-date with the latest technological advancements and feature set.
 
 ## List of Upgrades
 
-While you can find a comprehensive list of [pocket releases](https://github.com/pokt-network/poktroll/releases) on our GitHub, we also maintain a [list of upgrades](4_upgrade_list.md) in our documentation. This list provides valuable information, including whether an upgrade involves breaking changes and if manual intervention is required from operators.
+Software releases and protocol are documented and available in two places:
+
+1. [GitHub Releases](https://github.com/pokt-network/poktroll/releases) - Artifacts and release notes for each software update.
+2. [Upgrade List](4_upgrade_list.md) - Documentation containing information about each upgrade, including breaking changes and manual intervention requirements.
 
 ## When is an Protocol Upgrade Warranted?
 
 :::warning TODO
 
-TODO(@red-0ne): Document what a `state breaking` change is.
+TODO(@red-0ne): Document how `state breaking` changes differ from `consensus-breaking` changes.
 
 :::
 
-There are three types of update
+There are three types of updates:
 
-1. **`consensus-breaking` changes**: Protocol Upgrade & GitHub Release Required. _For example, changes to protobufs._
-2. **Node Software changes**: GitHub Release Required and Protocol Upgrade Optional but Highly Recommended. _For examples, performance improvements._
-3. **Software Release**: GitHub Release Required and no Protocol Upgrade Required. _For example, new utilities in the CLI._
+1. **Consensus-breaking changes**: Protocol upgrade & GitHub release required. _For example, changes to protobufs affected core tokenomic business logic._
+2. **Node Software changes**: Protocol upgrade is optional but highly recommended & GitHub release required. _For examples, performance improvements affecting nodes but not consensus logic._
+3. **Software Release**: Protocol upgrade not needed GitHub Release Required and no Protocol Upgrade Required. _For example, new utilities in the CLI._
 
 **Identify consensus breaking changes** by:
 
-1. Reviewing merged [Pull Requests (PRs) with the `consensus-breaking` label](https://github.com/pokt-network/poktroll/issues?q=label%3Aconsensus-breaking+) since the last release. It is not a source of truth, but directionality correct.
-2. Looking for breaking changes in `.proto` files
-3. Looking for breaking changes in the `x/` directories
-4. Identifying new onchain parameters or authorizations
+1. `consensus-breaking` label - Reviewing merged [Pull Requests (PRs) with the `consensus-breaking` label](https://github.com/pokt-network/poktroll/issues?q=label%3Aconsensus-breaking+) since the last release. It is not a source of truth, but directionality correct.
+2. `.proto` files - Looking for breaking changes in protobufs
+3. `x/` directories - Looking for breaking changes in the source code
+4. `Parameters` - Identify new onchain parameters or authorizations
 
 :::info Non-exhaustive list
 
@@ -80,6 +83,12 @@ This process involves several key steps:
 6. **Monitoring**: Post-deployment, we closely monitor the network to ensure everything functions as expected.
 
 ## Upgrade Types
+
+:::warning TODO
+
+TODO_TECHDEBT(@red-0ne): Consolidate this section with the documentation above.
+
+:::
 
 ### Planned vs. Unplanned Upgrades
 
