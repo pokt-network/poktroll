@@ -40,6 +40,7 @@ Note that the above is a non-exhaustive list and requires protocol expertise to 
   - [5. Submit the Upgrade Onchain](#5-submit-the-upgrade-onchain)
   - [6. \[Optional\] Cancel the Upgrade Plan (if needed)](#6-optional-cancel-the-upgrade-plan-if-needed)
 - [B. Testing the Upgrade](#b-testing-the-upgrade)
+  - [7. Testing the Upgrade](#7-testing-the-upgrade)
   - [LocalNet Upgrades](#localnet-upgrades)
   - [DevNet Upgrades](#devnet-upgrades)
   - [TestNet Upgrades](#testnet-upgrades)
@@ -180,7 +181,10 @@ make localnet_cancel_upgrade
 
 ## B. Testing the Upgrade
 
-We are using `upgrade/migration` as an example, but make sure to update that in your own testing
+### 7. Testing the Upgrade
+
+We are using the `upgrade/migration` branch as an example, but make sure to update
+it in the example below with your own branch
 
 **Shell #1: New software (from where the upgrade will be issued)**
 
@@ -191,10 +195,7 @@ git checkout -b upgrade/migration origin/upgrade/migration
 make go_develop ignite_release ignite_release_extract_binaries
 ./release_binaries/pocket_darwin_arm64 comet unsafe-reset-all && make localnet_regenesis
 ./release_binaries/pocket_darwin_arm64 start
-./release_binaries/pocket_darwin_arm64 tx authz exec tools/scripts/upgrades/local_test_v0.2.json --from=pnf
-
-
-
+./release_binaries/pocket_darwin_arm64 tx authz exec tools/scripts/upgrades/local_test_v1.0.2.json --from=pnf
 
 ```
 
