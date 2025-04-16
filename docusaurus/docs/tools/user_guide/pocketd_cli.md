@@ -3,26 +3,43 @@ title: pocketd Installation
 sidebar_position: 1
 ---
 
-:::tip TL;DR If you have brew
+:::tip TL;DR To install `pocketd` run:
 
 ```bash
-brew tap pokt-network/poktroll
-brew install pocketd
+curl -sSL https://raw.githubusercontent.com/pokt-network/poktroll/main/scripts/install.sh | bash
 ```
 
 :::
 
 ## Table of Contents <!-- omit in toc -->
 
-- [MacOS Users](#macos-users)
-  - [Using Homebrew (recommended)](#using-homebrew-recommended)
-  - [Using release binaries (if you don't have brew)](#using-release-binaries-if-you-dont-have-brew)
-  - [From Source (danger zone)](#from-source-danger-zone)
-- [Windows Users (why!?)](#windows-users-why)
+- [Linux](#linux)
+- [MacOS](#macos)
+  - [1. Homebrew](#1-homebrew)
+  - [2. Install Script](#2-install-script)
+- [Alternative Methods](#alternative-methods)
+  - [1. Using release binaries](#1-using-release-binaries)
+  - [2. From Source (danger zone)](#2-from-source-danger-zone)
+- [Windows (why!?)](#windows-why)
 
-## MacOS Users
+## Linux
 
-### Using Homebrew (recommended)
+Run the following command:
+
+```bash
+curl -sSL https://raw.githubusercontent.com/pokt-network/poktroll/main/scripts/install.sh | bash
+```
+
+And verify it worked by running:
+
+```bash
+pocketd version
+pocketd --help
+```
+
+## MacOS
+
+### 1. Homebrew
 
 Ensure you have [Homebrew](https://brew.sh/) installed.
 
@@ -31,13 +48,6 @@ Then run the following commands:
 ```bash
 brew tap pokt-network/poktroll
 brew install pocketd
-```
-
-And verify it worked by running:
-
-```bash
-pocketd version
-pocketd --help
 ```
 
 <details>
@@ -69,7 +79,24 @@ brew install pocketd
 
 </details>
 
-### Using release binaries (if you don't have brew)
+### 2. Install Script
+
+You may also run the following command to install `pocketd` without using Homebrew:
+
+```bash
+curl -sSL https://raw.githubusercontent.com/pokt-network/poktroll/main/scripts/install.sh | bash
+```
+
+And verify it worked by running:
+
+```bash
+pocketd version
+pocketd --help
+```
+
+## Alternative Methods
+
+### 1. Using release binaries
 
 :::tip tl;dr manual download
 
@@ -99,7 +126,7 @@ sudo chmod +x /usr/local/bin/pocketd
 pocketd version
 ```
 
-### From Source (danger zone)
+### 2. From Source (danger zone)
 
 :::warning Do not continue unless you're a 🚀👨‍💻💎
 
@@ -107,7 +134,7 @@ This method is only recommended for **ADVANCED** users as it requires working wi
 
 :::
 
-#### Installing dependencies <!-- omit in toc -->
+### Installing dependencies <!-- omit in toc -->
 
 Ensure you have the following installed:
 
@@ -140,7 +167,7 @@ pocketd version
 pocketd --help
 ```
 
-## Windows Users (why!?)
+## Windows (why!?)
 
 :::danger
 
