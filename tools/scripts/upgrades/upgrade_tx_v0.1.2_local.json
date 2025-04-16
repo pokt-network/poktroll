@@ -3,7 +3,7 @@
     "messages": [
       {
         "@type": "/cosmos.upgrade.v1beta1.MsgSoftwareUpgrade",
-        "authority": "pokt1eeeksh2tvkh7wzmfrljnhw4wrhs55lcuvmekkw",
+        "authority": "pokt10d07y265gmmuvt4z0w9aw880jnsr700j8yv32t",
         "plan": {
           "name": "v0.1.2",
           "height": "UPDATE_ME",
