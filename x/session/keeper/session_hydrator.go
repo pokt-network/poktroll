@@ -211,7 +211,8 @@ func (k Keeper) hydrateSessionSuppliers(ctx context.Context, sh *sessionHydrator
 			//   - OperatorAddress
 			//   - Stake
 			//   - SessionServiceConfig
-			supplier.Services = supplier.Services[:sessionServiceConfigIdx+1]
+			serviceConfig := supplier.Services[sessionServiceConfigIdx]
+			supplier.Services = []*sharedtypes.SupplierServiceConfig{serviceConfig}
 			supplier.ServiceConfigHistory = nil
 
 			candidateSuppliers = append(candidateSuppliers, &supplier)
