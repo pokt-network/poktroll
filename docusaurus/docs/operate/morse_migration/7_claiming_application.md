@@ -1,6 +1,6 @@
 ---
 title: Claiming Morse Applications
-sidebar_position: 3
+sidebar_position: 7
 ---
 
 ### Claim a Morse Application (Staked, Actor)

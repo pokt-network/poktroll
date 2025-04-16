@@ -3,40 +3,56 @@ title: ETVL Overview
 sidebar_position: 3
 ---
 
-ETVL stands for Export -> Transform -> Validate -> Load.
+**ETVL = Export → Transform → Validate → Load**
+
+---
 
 ## Table of Contents <!-- omit in toc -->
 
-- [ETVL Overview](#etvl-overview)
-- [ETVL Technical Design Considerations \& Constraints](#etvl-technical-design-considerations--constraints)
+- [What is ETVL?](#what-is-etvl)
+- [Design Considerations \& Constraints](#design-considerations--constraints)
 - [ETVL High-Level Flow](#etvl-high-level-flow)
 
-### ETVL Overview
+---
 
-Given that this migration involves representing the state of one network (Morse) in another (Shannon), and that the migration process is ongoing (i.e. not a re-genesis; see [constraints](#constraints)),
-there is an opportunity to optimize the exported Morse state with respect to its (very long-term) impact on Shannon.
+## What is ETVL?
 
-### ETVL Technical Design Considerations & Constraints
+- ETVL is the process for migrating state from the Morse network to the Shannon network.
+- This is **not** a full restart (not a re-genesis).
+- Goal: Optimize the exported Morse state for long-term impact on Shannon.
 
-In order to streamline the migration process for end users, as well as expedite a high quality implementation, the following design considerations were applied:
+---
 
-1. **Re-use existing Morse tooling**:
+## Design Considerations & Constraints
 
-   - Using the Morse CLI to export the canonical `MorseStateExport` from the Morse network (`pocket util export-genesis-for-reset`).
-   - Using the Morse CLI to export (armored) Morse account keys for use with the Shannon claiming CLI (`pocketd migrate claim-...`).
+1. **Re-use Morse CLI tooling**
 
-2. **Facilitate offchain social consensus on MorseAccountState**:
+- Export Morse state:
 
-   - Using social consensus and cryptographic hash verification
-   - Offchain agreement (i.e. feedback loop) on the "canonical" `MorseAccountState`
+  ```bash
+  pocket util export-genesis-for-reset
+  ```
 
-3. Minimize Shannon onchain state bloat
+- Export Morse account keys for Shannon claims:
 
-   - Minimize the size & optimize performance of (Shannon) persisted onchain data
-   - Transform (offchain) the `MorseStateExport` into a `MorseAccountState`
-   - Persist minimal Morse account representations as individual `MorseClaimableAccount`s
+  ```bash
+  pocketd migrate claim-...
+  ```
 
-### ETVL High-Level Flow
+2. **Offchain social consensus**
+
+- Use cryptographic hash verification
+- Community agrees offchain on the canonical `MorseAccountState`
+
+3. **Minimize Shannon onchain state bloat**
+
+- Keep onchain data small and fast
+- Transform Morse export into minimal `MorseClaimableAccount` objects
+- Only store what’s needed for claims
+
+---
+
+## ETVL High-Level Flow
 
 ```mermaid
   flowchart
