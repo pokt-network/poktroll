@@ -13,65 +13,52 @@ Pocket Network is continuously evolving through regular protocol upgrades.
 
 The DAO leads offchain governance and comes to agreement on upgrades through social consensus.
 
-Validators support onchain `consensus-breaking` changes that were agreed on bye the DAO
-offchain and triggered by PNF onchain. These upgrades can be automatically applied when using [Cosmovisor](../walkthroughs/full_node_walkthrough.md),
-or manually if not using `cosmovisor`.
+Validators support onchain `consensus-breaking` changes that were agreed on by the DAO offchain and triggered by PNF onchain. These upgrades can be automatically applied when using [Cosmovisor](../walkthroughs/full_node_walkthrough.md), or manually if not using `cosmovisor`.
 
 ## Table of Contents <!-- omit in toc -->
 
 - [What is a Protocol Upgrade?](#what-is-a-protocol-upgrade)
-- [List of Upgrades](#list-of-upgrades)
-- [When is an Protocol Upgrade Warranted?](#when-is-an-protocol-upgrade-warranted)
+- [Where to Find Upgrade Info](#where-to-find-upgrade-info)
+- [When is a Protocol Upgrade Needed?](#when-is-a-protocol-upgrade-needed)
 - [Protocol \& Software Process Overview](#protocol--software-process-overview)
-- [Upgrade Types](#upgrade-types)
-  - [Planned vs. Unplanned Upgrades](#planned-vs-unplanned-upgrades)
-  - [Breaking vs. Non-breaking Upgrades](#breaking-vs-non-breaking-upgrades)
+- [Types of Upgrades](#types-of-upgrades)
+  - [Planned vs. Unplanned](#planned-vs-unplanned)
+  - [Breaking vs. Non-breaking](#breaking-vs-non-breaking)
   - [Manual Interventions](#manual-interventions)
+- [Identifying Consensus-Breaking Changes](#identifying-consensus-breaking-changes)
 
 ## What is a Protocol Upgrade?
 
-A protocol upgrade is a process of updating Pocket Network's onchain software to
-introduce new features, improve existing functionalities, or address critical issues.
+A protocol upgrade updates Pocket Network's onchain software to:
 
-These upgrades ensure the network remains secure, efficient, and up-to-date with the latest technological advancements and feature set.
+- Add new features
+- Improve existing functionality
+- Fix critical issues
 
-## List of Upgrades
+These keep the network secure, efficient, and up-to-date.
 
-Software releases and protocol are documented and available in two places:
+## Where to Find Upgrade Info
 
-1. [GitHub Releases](https://github.com/pokt-network/poktroll/releases) - Artifacts and release notes for each software update.
-2. [Upgrade List](4_upgrade_list.md) - Documentation containing information about each upgrade, including breaking changes and manual intervention requirements.
+- [GitHub Releases](https://github.com/pokt-network/poktroll/releases): Artifacts and release notes for every software update
+- [Upgrade List](4_upgrade_list.md): Info on each upgrade, including breaking changes and manual intervention requirements
 
-## When is an Protocol Upgrade Warranted?
-
-:::warning TODO
-
-TODO(@red-0ne): Document how `state breaking` changes differ from `consensus-breaking` changes.
-
-:::
+## When is a Protocol Upgrade Needed?
 
 There are three types of updates:
 
-1. **Consensus-breaking changes**: Protocol upgrade & GitHub release required. _For example, changes to protobufs affected core tokenomic business logic._
-2. **Node Software changes**: Protocol upgrade is optional but highly recommended & GitHub release required. _For examples, performance improvements affecting nodes but not consensus logic._
-3. **Software Release**: Protocol upgrade not needed GitHub Release Required and no Protocol Upgrade Required. _For example, new utilities in the CLI._
-
-**Identify consensus breaking changes** by:
-
-1. `consensus-breaking` label - Reviewing merged [Pull Requests (PRs) with the `consensus-breaking` label](https://github.com/pokt-network/poktroll/issues?q=label%3Aconsensus-breaking+) since the last release. It is not a source of truth, but directionality correct.
-2. `.proto` files - Looking for breaking changes in protobufs
-3. `x/` directories - Looking for breaking changes in the source code
-4. `Parameters` - Identify new onchain parameters or authorizations
-
-:::info Non-exhaustive list
-
-Note that the above is a non-exhaustive list and requires protocol expertise to identify all potential `consensus-breaking` changes.
-:::
+1. **Consensus-breaking changes**
+   - Protocol upgrade & GitHub release required
+   - Example: changes to protobufs affecting core tokenomic business logic
+2. **Node Software changes**
+   - Protocol upgrade optional (but highly recommended); GitHub release required
+   - Example: performance improvements that don't affect consensus
+3. **Software Release**
+   - Protocol upgrade NOT needed; GitHub release only
+   - Example: new CLI utilities
 
 ## Protocol & Software Process Overview
 
-When a `consensus-breaking` change is made to the protocol, we must carefully evaluate and implement an upgrade path that
-allows existing nodes to transition safely from one software version to another without disruption.
+When a `consensus-breaking` change is made to the protocol, we must carefully evaluate and implement an upgrade path that allows existing nodes to transition safely from one software version to another without disruption.
 
 This process involves several key steps:
 
@@ -82,32 +69,34 @@ This process involves several key steps:
 5. **Deployment**: An upgrade transaction is sent to the network, allowing node operators using [Cosmovisor](../walkthroughs/full_node_walkthrough.md) to automatically upgrade their nodes at the specified block height.
 6. **Monitoring**: Post-deployment, we closely monitor the network to ensure everything functions as expected.
 
-## Upgrade Types
+## Types of Upgrades
 
-:::warning TODO
+### Planned vs. Unplanned
 
-TODO_TECHDEBT(@red-0ne): Consolidate this section with the documentation above.
+- **Planned:** Scheduled, communicated in advance (features, improvements, maintenance)
+- **Unplanned:** Urgent, in response to bugs/security issues/chain halts/network congestion when no other mitigation is possible. May require manual intervention and can result in a hard fork.
 
-:::
+### Breaking vs. Non-breaking
 
-### Planned vs. Unplanned Upgrades
-
-**Planned upgrades** are those that our team has been developing for some time and have been announced in advance.
-These typically include new features, improvements to existing functionalities, or optimizations.
-
-**Unplanned upgrades** may occur at any time without prior notice.
-These are often necessary due to unforeseen circumstances such as bugs, security issues, chain halts, or network congestion when no other mitigation is possible.
-Such upgrades may require manual intervention from users and/or validators, potentially resulting in a hard fork.
-
-### Breaking vs. Non-breaking Upgrades
-
-**Breaking changes** are those that may affect existing APIs, State Machine logic, or other critical components.
-They usually require some form of migration process for network participants.
-Our protocol team strives to minimize the need for manual interventions in these cases.
-
-**Non-breaking changes** do not have such implications and can be applied without significant disruption to the current state of the system.
+- **Breaking:** All validators must upgrade to maintain consensus. Not upgrading may cause a chain split.
+- **Non-breaking:** Backward compatible. No immediate validator action required.
 
 ### Manual Interventions
 
-While the risk is low, it's possible that the blockchain may encounter unexpected issues.
+- Some upgrades require manual steps from node operators/validators.
+- Always check upgrade notes for manual intervention requirements.
+
+## Identifying Consensus-Breaking Changes
+
+To identify `consensus-breaking` changes, review:
+
+1. `consensus-breaking` label - Reviewing merged [Pull Requests (PRs) with the `consensus-breaking` label](https://github.com/pokt-network/poktroll/issues?q=label%3Aconsensus-breaking+) since the last release.
+2. `.proto` files - Looking for breaking changes in protobufs
+3. `x/` directories - Looking for breaking changes in the source code
+4. `Parameters` - Identify new onchain parameters or authorizations
+
+:::info Non-exhaustive list
+
+Note that the above is a non-exhaustive list and requires protocol expertise to identify all potential `consensus-breaking` changes.
+:::
 In situations where forking the network becomes necessary (such as in cases of non-deterministic chain state), we will issue an upgrade notice requiring manual intervention from users and/or validators to ensure the network's health and integrity.
