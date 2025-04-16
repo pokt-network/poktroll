@@ -195,6 +195,18 @@ func (k Keeper) hydrateSessionSuppliers(ctx context.Context, sh *sessionHydrator
 	for _, supplier := range suppliers {
 		// Check if supplier is authorized to serve this service at query block height.
 		if supplier.IsActive(uint64(sh.blockHeight), sh.sessionHeader.ServiceId) {
+			// DEV_NOTE: Performance optimization for session data:
+			// - Suppliers often have multiple service configs for various services
+			// - Include only the service config relevant to this specific session
+			// - Remove all other service configs from the Supplier object to reduce its size
+			// - Minimize data transfer overhead when sending sessions over the network
+
+			// Do not check if sessionServiceConfigIdx is -1 since IsActive is already doing that.
+			sessionServiceConfigIdx := getSupplierSessionServiceConfigIdx(&supplier, sh.sessionHeader.ServiceId)
+
+			supplier.Services = supplier.Services[:sessionServiceConfigIdx+1]
+			supplier.ServiceConfigHistory = nil
+
 			candidateSuppliers = append(candidateSuppliers, &supplier)
 		}
 	}
@@ -335,4 +347,18 @@ func sortCandidateSuppliersByHeight(
 
 	slices.SortFunc(candidateSuppliers, weightedSupplierSortFn)
 	return candidateSuppliers
+}
+
+// getSupplierSessionServiceConfigIdx returns the index of the session service
+// config for the given service ID in the supplier's service config.
+func getSupplierSessionServiceConfigIdx(
+	supplier *sharedtypes.Supplier,
+	serviceId string,
+) int {
+	return slices.IndexFunc(
+		supplier.Services,
+		func(s *sharedtypes.SupplierServiceConfig) bool {
+			return s.ServiceId == serviceId
+		},
+	)
 }
