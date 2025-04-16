@@ -239,7 +239,36 @@ the steps above including:
 3. Preparing new upgrade transactions
 4. Etc...
 
-### 6. Update the `homebrew-tap` formula
+### 6. Submit the Upgrade on Alpha TestNet
+
+Get the RPC endpoint for a node on Alpha TestNet from [here](https://dev.poktroll.com/tools/tools/shannon_alpha).
+
+Then, update the `height` in `tools/scripts/upgrades/upgrade_tx_v0.1.2_alpha.json`:
+
+```bash
+# Get the current height
+CURRENT_HEIGHT=$(./release_binaries/pocket_darwin_arm64 q consensus comet block-latest -o json | jq '.sdk_block.last_commit.height' | tr -d '"')
+
+# Increase the height by 5 blocks (arbitrary value)
+UPGRADE_HEIGHT=$((CURRENT_HEIGHT + 5))
+
+# Update the JSON file with the new height
+sed -i.bak "s/\"height\": \"[^\"]*\"/\"height\": \"$UPGRADE_HEIGHT\"/" tools/scripts/upgrades/upgrade_tx_v0.1.2_alpha.json
+```
+
+The `MsgSoftwareUpgrade` can be submitted using the following command:
+
+```bash
+pocketd tx authz exec $PATH_TO_UPGRADE_TRANSACTION_JSON --from=pnf
+```
+
+If the transaction has been accepted, the upgrade plan can be viewed with this command:
+
+```bash
+pocketd query upgrade plan
+```
+
+### 7. Update the `homebrew-tap` formula
 
 Once you've validated the upgrade, update the `homebrew-tap` formula so all users can easily download the new CLI.
 
@@ -268,7 +297,7 @@ brew install pocketd
 
 See the [pocketd CLI docs](../../tools/user_guide/pocketd_cli.md) for more information.
 
-### 7. Submit the Upgrade Onchain
+### 7. Submit the Upgrade on Beta TestNet
 
 The `MsgSoftwareUpgrade` can be submitted using the following command:
 
@@ -282,7 +311,22 @@ If the transaction has been accepted, the upgrade plan can be viewed with this c
 pocketd query upgrade plan
 ```
 
-#### 7.1 [Optional] Cancel the Upgrade Plan (if needed)
+## Next Steps: Champion the Upgrade on All Networks
+
+As you're deploying changes to the networks, you should:
+
+1. Monitor the network's health metrics to identify any significant changes
+2. Communicate upgrades heights and status updates with the community
+
+:::warning TODO(@okdas): Links to Validators
+
+Document how to observe logs & monitor the network's health metrics on Alpha, Beta & MainNet.
+
+:::
+
+## Troubleshooting
+
+### Cancel the Upgrade Plan (if needed)
 
 It is possible to cancel the upgrade before the upgrade plan height is reached.
 
@@ -293,17 +337,3 @@ To do so, execute the following make target:
 1. Follow the instructions in [**Protocol Upgrade Procedure**](3_testing_upgrades.md)
 2. Update the [**Upgrade List**](./4_upgrade_list.md)
 3. **Deploy a Full Node on TestNet** and allow it to sync and operate for a few days to verify that no accidentally introduced `consensus-breaking` changes affect the ability to sync; [Full Node Quickstart Guide](../cheat_sheets/full_node_cheatsheet.md).
-
-### 8. Test & Champion the Upgrade on All Networks
-
-The [Upgrade Procedure](3_testing_upgrades.md) should be tested and verified on:
-
-1. LocalNet
-2. Alpha TestNet
-3. Beta TestNet
-4. MainNet
-
-At each step along the way:
-
-- Monitor the network's health metrics to identify any significant changes
-- Communicate upgrades heights and status updates with the community
