@@ -38,14 +38,17 @@ INCLUDE_CHECKSUM_MAIN=true
 
 # Parse optional arguments for skipping checksums
 while [[ "$#" -gt 0 ]]; do
-    case $1 in
-        --no-checksum-alpha) INCLUDE_CHECKSUM_ALPHA=false ;;
-        --no-checksum-beta) INCLUDE_CHECKSUM_BETA=false ;;
-        --no-checksum-local) INCLUDE_CHECKSUM_LOCAL=false ;;
-        --no-checksum-main) INCLUDE_CHECKSUM_MAIN=false ;;
-        *) echo "Unknown parameter passed: $1"; exit 1 ;;
-    esac
-    shift
+  case $1 in
+  --no-checksum-alpha) INCLUDE_CHECKSUM_ALPHA=false ;;
+  --no-checksum-beta) INCLUDE_CHECKSUM_BETA=false ;;
+  --no-checksum-local) INCLUDE_CHECKSUM_LOCAL=false ;;
+  --no-checksum-main) INCLUDE_CHECKSUM_MAIN=false ;;
+  *)
+    echo "Unknown parameter passed: $1"
+    exit 1
+    ;;
+  esac
+  shift
 done
 
 # Create output directory if it doesn't exist
@@ -84,10 +87,10 @@ if [ -z "$LINUX_AMD64_CHECKSUM" ] || [ -z "$LINUX_ARM64_CHECKSUM" ] ||
 fi
 
 # Define authorities for each environment
-ALPHA_AUTHORITY="pokt1r6ja6rz6rpae58njfrsgs5n5sp3r36r2q9j04h"
-BETA_AUTHORITY="pokt1f0c9y7mahf2ya8tymy8g4rr75ezh3pkklu4c3e"
-LOCAL_AUTHORITY="pokt1eeeksh2tvkh7wzmfrljnhw4wrhs55lcuvmekkw"
-MAIN_AUTHORITY="pokt18808wvw0h4t450t06uvauny8lvscsxjfyua7vh"
+LOCAL_AUTHORITY="pokt10d07y265gmmuvt4z0w9aw880jnsr700j8yv32t"
+ALPHA_AUTHORITY="pokt10d07y265gmmuvt4z0w9aw880jnsr700j8yv32t"
+BETA_AUTHORITY="pokt10d07y265gmmuvt4z0w9aw880jnsr700j8yv32t"
+MAIN_AUTHORITY="pokt10d07y265gmmuvt4z0w9aw880jnsr700j8yv32t"
 
 # Function to generate JSON file for a specific environment
 generate_json_file() {
