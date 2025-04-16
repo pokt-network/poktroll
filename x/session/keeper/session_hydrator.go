@@ -195,6 +195,11 @@ func (k Keeper) hydrateSessionSuppliers(ctx context.Context, sh *sessionHydrator
 	for _, supplier := range suppliers {
 		// Check if supplier is authorized to serve this service at query block height.
 		if supplier.IsActive(uint64(sh.blockHeight), sh.sessionHeader.ServiceId) {
+			// Do not check if sessionServiceConfigIdx is -1 since IsActive is already doing that.
+			sessionServiceConfigIdx := getSupplierServiceConfigIdx(&supplier, sh.sessionHeader.ServiceId)
+			// Reduce the size of the Supplier object for performance reasons.
+			dehydrateSupplierServiceConfigs(&supplier, sessionServiceConfigIdx)
+			// Add the supplier to the candidate list.
 			candidateSuppliers = append(candidateSuppliers, &supplier)
 		}
 	}
@@ -335,4 +340,40 @@ func sortCandidateSuppliersByHeight(
 
 	slices.SortFunc(candidateSuppliers, weightedSupplierSortFn)
 	return candidateSuppliers
+}
+
+// dehydrateSupplierServiceConfigs removes all service configs from the Supplier
+// that do not match the given service ID.
+//
+// DEV_NOTE: This is done purely for performance due to the following reasons:
+// - Suppliers usually have multiple service configs
+// - The above consumes more bandwidth and more memory
+// - Filtering the configs for the serviceId we need (e.g. a particular session) is much more efficient
+// - This minimize data transfer overhead when sending sessions over the network
+// - This minimizes memory usage when hydrating sessions
+func dehydrateSupplierServiceConfigs(supplier *sharedtypes.Supplier, sessionServiceConfigIdx int) {
+	// TODO_POST_MAINNET_OPTIMIZATION: Consider having dedicated proto type for session suppliers hydration.
+	// * Create a distinct supplier proto type specific for session hydration
+	// * Avoid confusion between full supplier records and session supplier records
+	// * Include only data relevant to the session:
+	//   - OperatorAddress
+	//   - Stake
+	//   - SessionServiceConfig
+	serviceConfig := supplier.Services[sessionServiceConfigIdx]
+	supplier.Services = []*sharedtypes.SupplierServiceConfig{serviceConfig}
+	supplier.ServiceConfigHistory = nil
+}
+
+// getSupplierServiceConfigIdx returns the index of the service config
+// from the Supplier's services list that matches the given service ID.
+func getSupplierServiceConfigIdx(
+	supplier *sharedtypes.Supplier,
+	serviceId string,
+) int {
+	return slices.IndexFunc(
+		supplier.Services,
+		func(s *sharedtypes.SupplierServiceConfig) bool {
+			return s.ServiceId == serviceId
+		},
+	)
 }
