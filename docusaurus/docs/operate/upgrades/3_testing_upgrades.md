@@ -4,41 +4,45 @@ sidebar_position: 3
 ---
 
 :::warning
-This document is intended for core protocol developers.
+**For core protocol developers only!**
 
-**It assumes you have followed steps 1 through 4 in the [Release Procedure](./2_release_procedure.md).**
-:::
+- Complete steps 1–4 in [Release Procedure](./2_release_procedure.md) before starting.
+  :::
 
-## Table of Contents <!-- omit in toc -->
+## 📠🍝 Local Upgrade Testing – Step-by-Step
 
-- [Local Upgrade Verification By Example](#local-upgrade-verification-by-example)
-- [1. Start a node running the old software (that will listen on the upgrade)](#1-start-a-node-running-the-old-software-that-will-listen-on-the-upgrade)
-- [2. Start a node running the new software (from where the upgrade will be issued)](#2-start-a-node-running-the-new-software-from-where-the-upgrade-will-be-issued)
-- [3. Prepare the upgrade transaction in `poktroll_old`](#3-prepare-the-upgrade-transaction-in-poktroll_old)
-- [4. Submit \& Verify the upgrade transaction in `poktroll_old`](#4-submit--verify-the-upgrade-transaction-in-poktroll_old)
-- [5. Observe the upgrade output in `poktroll_old`](#5-observe-the-upgrade-output-in-poktroll_old)
-- [6. Stop `poktroll_old` and start `poktroll_new`](#6-stop-poktroll_old-and-start-poktroll_new)
-- [7. Sanity Checks](#7-sanity-checks)
+**This is a copy/paste-ready checklist for validating protocol upgrades locally.**
 
-### Local Upgrade Verification By Example
+- Every step is numbered and must be completed in order.
+- All commands are ready to copy/paste.
+- If you get stuck, ask for help.
 
-The instructions on this page will show how to validate the upgrade from `v0.1.1` to `v0.1.2` by example on `darwin` (macOS) using an `arm64` architecture.
+---
 
-:::warning TODO(@olshansk): Iterate & Improve
+## Table of Contents
 
-Update this page to use `v0.1.2` to `v0.1.3` because the `v0.1.1` tag had a lot of outdated tooling.
+- [📠🍝 Local Upgrade Testing – Step-by-Step](#-local-upgrade-testing--step-by-step)
+- [Table of Contents](#table-of-contents)
+- [0. Notes \& Prerequisites](#0-notes--prerequisites)
+- [1. Start node with old version](#1-start-node-with-old-version)
+- [2. Start node with new version](#2-start-node-with-new-version)
+- [3. Prepare the upgrade transaction](#3-prepare-the-upgrade-transaction)
+- [4. Submit \& verify the upgrade transaction](#4-submit--verify-the-upgrade-transaction)
+- [5. Observe the upgrade output](#5-observe-the-upgrade-output)
+- [6. Stop old node \& start new node](#6-stop-old-node--start-new-node)
+- [7. Sanity checks](#7-sanity-checks)
 
-Streamline it during the next upgrade & release.
+---
 
-:::
+## 0. Notes & Prerequisites
 
-Note that local environments **DO NOT** support `cosmovisor` and automatic upgrades at the moment. `cosmosvisor` doesn't pull the binary from the upgrade Plan's info field.
+- Example upgrade: `v0.1.1` → `v0.1.2` (macOS, arm64)
+- Local environments **do not** support `cosmovisor`/automatic upgrades. This is fine for testing.
+- Update this doc for each new upgrade (see TODOs).
 
-However, **IT IS NOT NEEDED** to simulate and test the upgrade procedure.
+---
 
-### 1. Start a node running the old software (that will listen on the upgrade)
-
-In one shell, run the following commands to check out the old version (`v0.1.1`)
+## 1. Start node with old version
 
 ```bash
 git clone git@github.com:pokt-network/poktroll.git poktroll_old
@@ -49,9 +53,9 @@ make go_develop ignite_release ignite_release_extract_binaries
 ./release_binaries/pocket_darwin_arm64 start
 ```
 
-### 2. Start a node running the new software (from where the upgrade will be issued)
+---
 
-In one shell, run the following commands to check out the new version (`v0.1.2`)
+## 2. Start node with new version
 
 ```bash
 git clone git@github.com:pokt-network/poktroll.git poktroll_new
@@ -61,90 +65,81 @@ make go_develop ignite_release ignite_release_extract_binaries
 ./release_binaries/pocket_darwin_arm64 start
 ```
 
-### 3. Prepare the upgrade transaction in `poktroll_old`
+---
 
-:::note Nuanced order of operations
+## 3. Prepare the upgrade transaction
 
-Note that this was (likely) already committed to `main` but was not available in the `v0.1.2` tag because it happened afterwards.
-
-:::
-
-Run the following command to prepare the upgrade transaction:
+- In `poktroll_old`, run:
 
 ```bash
 ./tools/scripts/upgrades/prepare_upgrade_tx.sh v0.1.2
 ```
 
-Update the `height` in `tools/scripts/upgrades/upgrade_tx_v0.1.2_local.json`:
-
-1. Query the height, increment by 20 (arbitrary value), and assign to an environment variable
-2. Update the JSON file with the new height
-3. Verify the upgrade transaction
-
-You can copy-paste the following to execute all three steps at once:
+- Update the `height` in `tools/scripts/upgrades/upgrade_tx_v0.1.2_local.json`:
 
 ```bash
-# Step 1
+# Get current height, add 20 (buffer)
 CURRENT_HEIGHT=$(./release_binaries/pocket_darwin_arm64 q consensus comet block-latest -o json | jq '.sdk_block.last_commit.height' | tr -d '"')
 UPGRADE_HEIGHT=$((CURRENT_HEIGHT + 20))
-# Step 2
 sed -i.bak "s/\"height\": \"[^\"]*\"/\"height\": \"$UPGRADE_HEIGHT\"/" tools/scripts/upgrades/upgrade_tx_v0.1.2_local.json
-# Step 3
 cat ./tools/scripts/upgrades/upgrade_tx_v0.1.2_local.json
 ```
 
-### 4. Submit & Verify the upgrade transaction in `poktroll_old`
+---
 
-Submit the upgrade transaction like so:
+## 4. Submit & verify the upgrade transaction
+
+- In `poktroll_old`, submit:
 
 ```bash
 ./release_binaries/pocket_darwin_arm64 tx authz exec tools/scripts/upgrades/upgrade_tx_v0.1.2_local.json --yes --from=pnf
 ```
 
-And verify that the upgrade plan is planned onchain:
+- Verify onchain:
 
 ```bash
 ./release_binaries/pocket_darwin_arm64 query upgrade plan
 ```
 
-### 5. Observe the upgrade output in `poktroll_old`
+---
 
-Once the `UPGRADE_HEIGHT` is reached, you should see the following output containing `ERR` in your terminal:
+## 5. Observe the upgrade output
+
+- When `UPGRADE_HEIGHT` is reached, you should see output like:
 
 ```bash
-4:33PM ERR UPGRADE "v0.1.2" NEEDED at height: 30: ...
+ERR UPGRADE "v0.1.2" NEEDED at height: <height>: ...
 ```
 
-The validator should stop working.
+- The validator should stop.
 
-### 6. Stop `poktroll_old` and start `poktroll_new`
+---
 
-In `poktroll_old`, stop the (non-functional) validator (i.e.`cmd + c` on `darwin`).
+## 6. Stop old node & start new node
 
-In `poktroll_new`, start the (presumably-functional) validator:
+- In `poktroll_old`, stop the validator (`cmd + c` on macOS).
+- In `poktroll_new`, start the validator:
 
 ```bash
 ./release_binaries/pocket_darwin_arm64 start
 ```
 
-:::warning Expertise required
-
-If the new validator does not start, this will require expert protocol development hands-on debugging.
-
+:::warning
+If the new validator does not start, expert debugging is required.
 :::
 
-### 7. Sanity Checks
+---
 
-Verify that the new validator is on the latest version like so:
+## 7. Sanity checks
+
+- Check the new validator version:
 
 ```bash
 curl -s http://localhost:26657/abci_info | jq '.result.response.version'
 ```
 
-Which should output `v0.1.2`.
+- Should output: `v0.1.2`
 
-:::warning TODO: Business logic
-
-Query the node for business logic changes
-
+:::note
+Query the node for business logic changes as needed.
 :::
