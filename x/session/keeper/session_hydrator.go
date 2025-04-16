@@ -204,6 +204,13 @@ func (k Keeper) hydrateSessionSuppliers(ctx context.Context, sh *sessionHydrator
 			// Do not check if sessionServiceConfigIdx is -1 since IsActive is already doing that.
 			sessionServiceConfigIdx := getSupplierSessionServiceConfigIdx(&supplier, sh.sessionHeader.ServiceId)
 
+			// TODO_POST_MAINNET: Have dedicated proto type for session suppliers hydration.
+			// * Create a distinct supplier proto type specific for session hydration
+			// * Avoid confusion between full supplier records and session supplier records
+			// * Include only data relevant to the session:
+			//   - OperatorAddress
+			//   - Stake
+			//   - SessionServiceConfig
 			supplier.Services = supplier.Services[:sessionServiceConfigIdx+1]
 			supplier.ServiceConfigHistory = nil
 
