@@ -1,5 +1,5 @@
 ---
-title: Protocol Upgrade Release Procedure (Idiot-Proof)
+title: Protocol Upgrade Release Procedure
 sidebar_position: 2
 ---
 
