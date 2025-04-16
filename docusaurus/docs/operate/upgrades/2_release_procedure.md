@@ -29,16 +29,13 @@ sidebar_position: 2
 - [1. Ensure `ConsensusVersion` is updated](#1-ensure-consensusversion-is-updated)
 - [2. Prepare a New Upgrade Plan](#2-prepare-a-new-upgrade-plan)
 - [3. Create a GitHub Release](#3-create-a-github-release)
-  - [Steps:](#steps)
 - [4. Write an Upgrade Transaction (JSON file)](#4-write-an-upgrade-transaction-json-file)
 - [5. Validate the Upgrade Binary URLs (Live Network Only)](#5-validate-the-upgrade-binary-urls-live-network-only)
 - [6. Test the New Release](#6-test-the-new-release)
-- [7. Update the `homebrew-tap` Formula](#7-update-the-homebrew-tap-formula)
-- [8. Submit the Upgrade Onchain](#8-submit-the-upgrade-onchain)
-  - [Alpha TestNet Example](#alpha-testnet-example)
-- [9. Champion the Upgrade on All Networks](#9-champion-the-upgrade-on-all-networks)
+- [7. Submit the Upgrade Onchain (Alpha)](#7-submit-the-upgrade-onchain-alpha)
+- [8. Update the `homebrew-tap` Formula](#8-update-the-homebrew-tap-formula)
+- [9. Submit the Upgrade on Beta \& MainNet](#9-submit-the-upgrade-on-beta--mainnet)
 - [10. Troubleshooting \& Canceling an Upgrade](#10-troubleshooting--canceling-an-upgrade)
-  - [Cancel the Upgrade Plan (before upgrade height)](#cancel-the-upgrade-plan-before-upgrade-height)
 - [Before You Finish](#before-you-finish)
 
 ---
@@ -106,8 +103,6 @@ Before you start:
 :::note
 See [all releases](https://github.com/pokt-network/poktroll/releases).
 :::
-
-### Steps:
 
 1. **Tag the release:**
 
@@ -250,7 +245,82 @@ success!
 
 ---
 
-## 7. Update the `homebrew-tap` Formula
+## 7. Submit the Upgrade Onchain (Alpha)
+
+This step is parameterized so you can use it for any network (Alpha, Beta, or MainNet). Substitute the variables below as needed.
+
+**Variables:**
+
+- `NETWORK`: one of `pocket-alpha`, `pocket-beta`, or `pocket`
+- `RPC_ENDPOINT`: The RPC endpoint for the network (e.g., `https://shannon-testnet-grove-rpc.alpha.poktroll.com`)
+- `UPGRADE_TX_JSON`: Path to the upgrade transaction JSON (e.g., `tools/scripts/upgrades/upgrade_tx_v0.1.2_alpha.json`)
+- `FROM_ACCOUNT`: The account submitting the transaction (e.g., `pnf_alpha`)
+- `TX_HASH`: The hash of the submitted transaction (for monitoring)
+
+**Step-by-step:**
+
+1. Get the RPC endpoint for `<NETWORK>`. Example for Alpha [here](https://dev.poktroll.com/tools/tools/shannon_alpha).
+2. Update the `height` in your upgrade transaction JSON:
+
+   ```bash
+   # Get the current height
+   CURRENT_HEIGHT=$(pocketd status --node <RPC_ENDPOINT> | jq '.sync_info.latest_block_height' | tr -d '"')
+   # Add 5 blocks (arbitrary, adjust as needed)
+   UPGRADE_HEIGHT=$((CURRENT_HEIGHT + 5))
+   # Update the JSON
+   sed -i.bak "s/\"height\": \"[^\"]*\"/\"height\": \"$UPGRADE_HEIGHT\"/" <UPGRADE_TX_JSON>
+   ```
+
+3. Submit the transaction:
+
+   ```bash
+   pocketd \
+     --keyring-backend="test" --home="~/.pocket" \
+     --fees=300upokt --chain-id="<NETWORK>" --node <RPC_ENDPOINT> \
+     tx authz exec <UPGRADE_TX_JSON> --from=<FROM_ACCOUNT>
+   ```
+
+   :::tip Grove Employees 🌿
+
+   If you're a Grove Employee, you can use the helpers [here](https://www.notion.so/buildwithgrove/Playbook-Streamlining-rc-helpers-for-Shannon-Alpha-Beta-Main-Network-Environments-152a36edfff680019314d468fad88864?pvs=4) to use this wrapper:
+
+   ```bash
+   pkd_<NETWORK>_tx authz exec <UPGRADE_TX_JSON> --from=<FROM_ACCOUNT>
+   ```
+
+   :::
+
+4. Verify the upgrade is planned onchain:
+
+   ```bash
+   pocketd query upgrade plan --node <RPC_ENDPOINT>
+   ```
+
+5. (Optional) Watch the transaction (using the TX_HASH from step 3):
+
+   ```bash
+   watch -n 5 "pocketd query tx --type=hash <TX_HASH> --node <RPC_ENDPOINT>"
+   ```
+
+6. After upgrade, verify node version aligns with what's in `<UPGRADE_TX_JSON>`:
+
+   ```bash
+   curl -s <RPC_ENDPOINT>/abci_info | jq '.result.response.version'
+   ```
+
+:::tip Grove Employees 🌿
+
+- Use logging/observability tools to monitor full nodes & validators.
+- Only proceed to Beta/MainNet after Alpha is successful.
+- [Connect to our cluster](https://www.notion.so/buildwithgrove/Playbook-Connecting-to-Vultr-Protocol-k8s-cluster-protocol-nj-162a36edfff680608c30ff9eebd3e605?pvs=4) to inspect logs and pod status
+
+:::
+
+**⚠️ DO NOT PROCEED until the changes from step (2) are merged assuming the upgrade suceeded⚠️**
+
+---
+
+## 8. Update the `homebrew-tap` Formula
 
 Once the upgrade is validated, update the tap so users can install the new CLI.
 
@@ -281,66 +351,23 @@ See [pocketd CLI docs](../../tools/user_guide/pocketd_cli.md) for more info.
 
 ---
 
-## 8. Submit the Upgrade Onchain
+## 9. Submit the Upgrade on Beta & MainNet
 
-### Alpha TestNet Example
+Repeat [Step 7: Submit the Upgrade Onchain](#7-submit-the-upgrade-onchain-alpha) with the appropriate parameters for Beta and MainNet:
 
-1. Get the Alpha TestNet RPC endpoint: [here](https://dev.poktroll.com/tools/tools/shannon_alpha)
-2. Update the `height` in `tools/scripts/upgrades/upgrade_tx_v0.1.2_alpha.json`:
+- Use the correct `<RPC_ENDPOINT>` for Beta or MainNet
+- Use the correct `<UPGRADE_TX_JSON>` (e.g., `upgrade_tx_v0.1.2_beta.json` or `upgrade_tx_v0.1.2_main.json`)
+- Use the correct sender account for each network
 
-   ```bash
-   # Get the current height
-   CURRENT_HEIGHT=$(pocketd status --node https://shannon-testnet-grove-rpc.alpha.poktroll.com | jq '.sync_info.latest_block_height' | tr -d '"')
-   # Add 5 blocks (arbitrary)
-   UPGRADE_HEIGHT=$((CURRENT_HEIGHT + 5))
-   # Update the JSON
-   sed -i.bak "s/\"height\": \"[^\"]*\"/\"height\": \"$UPGRADE_HEIGHT\"/" tools/scripts/upgrades/upgrade_tx_v0.1.2_alpha.json
-   ```
+This ensures a single, copy-pasta-friendly process for all networks.
 
-3. Submit the transaction:
-
-```bash
-pocketd tx authz exec tools/scripts/upgrades/upgrade_tx_v0.1.2_alpha.json --from=UPDATE_ME --node https://shannon-testnet-grove-rpc.alpha.poktroll.com
-# or
-pkd_alpha_tx authz exec tools/scripts/upgrades/upgrade_tx_v0.1.2_alpha.json --from pnf_alpha
-```
-
-4. Verify the upgrade is planned:
-
-   ```bash
-   pocketd query upgrade plan --node https://shannon-testnet-grove-rpc.alpha.poktroll.com
-   ```
-
-5. (Optional) Watch the transaction:
-
-   ```bash
-   watch -n 5 "pocketd query tx --type=hash <TX_HASH> --node https://shannon-testnet-grove-rpc.alpha.poktroll.com"
-   ```
-
-6. After upgrade, verify node version:
-
-   ```bash
-   curl -s https://shannon-testnet-grove-rpc.alpha.poktroll.com/abci_info | jq '.result.response.version'
-   ```
-
-- Use logging/observability tools to monitor full nodes & validators.
-- Only proceed to Beta/MainNet after Alpha is successful.
-
----
-
-## 9. Champion the Upgrade on All Networks
-
-- Repeat the onchain submission steps for Beta & MainNet.
-- Monitor network health and communicate upgrade status to the community.
-- [Full Node Quickstart Guide](../cheat_sheets/full_node_cheatsheet.md)
+**⚠️ DO NOT PROCEED until the changes from step (2) are merged assuming the upgrade succeeded⚠️**
 
 ---
 
 ## 10. Troubleshooting & Canceling an Upgrade
 
-### Cancel the Upgrade Plan (before upgrade height)
-
-If you need to cancel, see:
+**If you need to cancel, see:**
 
 - [Chain Halt Troubleshooting](./7_chain_halt_troubleshooting.md)
 - [Failed upgrade contingency plan](./8_contigency_plans.md)
@@ -358,13 +385,6 @@ If you need to cancel, see:
 
 - [ ] All steps above are checked off
 - [ ] All releases, plans, and transactions are published and tested
+- [ ] The upgrade transaction json files with the updated height are merged in
 - [ ] You have communicated upgrade details to the team/community
 - [ ] You have prepared for rollback/troubleshooting if needed
-
----
-
-**If you encounter any issues, STOP and consult the troubleshooting links above or ask for help in the team channel.**
-
-```
-
-```
