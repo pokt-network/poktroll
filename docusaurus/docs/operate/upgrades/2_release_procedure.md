@@ -246,8 +246,8 @@ Get the RPC endpoint for a node on Alpha TestNet from [here](https://dev.poktrol
 Then, update the `height` in `tools/scripts/upgrades/upgrade_tx_v0.1.2_alpha.json`:
 
 ```bash
-# Get the current height
-CURRENT_HEIGHT=$(./release_binaries/pocket_darwin_arm64 q consensus comet block-latest -o json | jq '.sdk_block.last_commit.height' | tr -d '"')
+# Get the current height on Alpha TestNet
+CURRENT_HEIGHT=$(pocketd status --node https://shannon-testnet-grove-rpc.alpha.poktroll.com | jq '.sync_info.latest_block_height' | tr -d '"')
 
 # Increase the height by 5 blocks (arbitrary value)
 UPGRADE_HEIGHT=$((CURRENT_HEIGHT + 5))
@@ -256,17 +256,37 @@ UPGRADE_HEIGHT=$((CURRENT_HEIGHT + 5))
 sed -i.bak "s/\"height\": \"[^\"]*\"/\"height\": \"$UPGRADE_HEIGHT\"/" tools/scripts/upgrades/upgrade_tx_v0.1.2_alpha.json
 ```
 
-The `MsgSoftwareUpgrade` can be submitted using the following command:
+Then, submit the upgrade transaction like so:
 
 ```bash
-pocketd tx authz exec $PATH_TO_UPGRADE_TRANSACTION_JSON --from=pnf
+pocketd tx authz exec tools/scripts/upgrades/upgrade_tx_v0.1.2_alpha.json --from=UPDATE_ME --node https://shannon-testnet-grove-rpc.alpha.poktroll.com
 ```
-
-If the transaction has been accepted, the upgrade plan can be viewed with this command:
 
 ```bash
-pocketd query upgrade plan
+pkd_alpha_tx authz exec tools/scripts/upgrades/upgrade_tx_v0.1.2_alpha.json --from pnf_alpha
 ```
+
+Wait for the next block to get committed and then verify that the upgrade is planned like so:
+
+```bash
+pocketd query upgrade plan --node https://shannon-testnet-grove-rpc.alpha.poktroll.com
+```
+
+```bash
+watch -n 5 "pocketd query tx --type=hash 91466B199D985D1FE8F2447D09DE2C864C349BEE6CDE444EF4B8DF95BFB40CAB --node https://shannon-testnet-grove-rpc.alpha.poktroll.com"
+```
+
+Use any logging or observability tools you have to track full nodes & validators on alpha TestNet.
+
+Once the upgrade has succeeded, you should be able to verify that the node is on a new version like so:
+
+```bash
+curl -s https://shannon-testnet-grove-rpc.alpha.poktroll.com/abci_info | jq '.result.response.version'
+```
+
+⚠️ **Merge in these changes before proceeding.** ⚠️
+
+https://www.notion.so/buildwithgrove/Vultr-Connecting-to-the-protocol-nj-k8s-cluster-162a36edfff680608c30ff9eebd3e605?pvs=4
 
 ### 7. Update the `homebrew-tap` formula
 
@@ -297,19 +317,11 @@ brew install pocketd
 
 See the [pocketd CLI docs](../../tools/user_guide/pocketd_cli.md) for more information.
 
-### 7. Submit the Upgrade on Beta TestNet
+### 8. Submit the Upgrade on Beta TestNet & MainNet
 
-The `MsgSoftwareUpgrade` can be submitted using the following command:
+Repeat the steps from (6) for Beta & MainNet.
 
-```bash
-pocketd tx authz exec $PATH_TO_UPGRADE_TRANSACTION_JSON --from=pnf
-```
-
-If the transaction has been accepted, the upgrade plan can be viewed with this command:
-
-```bash
-pocketd query upgrade plan
-```
+TODO(@olshansk): Make this idiot proof.
 
 ## Next Steps: Champion the Upgrade on All Networks
 
