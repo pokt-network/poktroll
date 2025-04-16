@@ -1,135 +1,184 @@
 ---
-title: Protocol Upgrade Release Procedure
+title: Protocol Upgrade Release Procedure (Idiot-Proof)
 sidebar_position: 2
 ---
 
-:::warning Technical expertise required
-This document is intended for core protocol developers and may contain complex technical details.
+:::warning
+**This guide is for core protocol developers.**
 
-Make sure to read [When is an Protocol Upgrade Warranted?](./1_protocol_upgrades.md#when-is-an-protocol-upgrade-warranted) for more details.
+- If you are not comfortable with git, GitHub releases, or scripting, STOP and get help.
+- Read [When is a Protocol Upgrade Warranted?](./1_protocol_upgrades.md#when-is-an-protocol-upgrade-warranted) before starting.
+  :::
+
+# Protocol Upgrade Release – Step-by-Step
+
+**This is a complete, copy-pasta-ready checklist for releasing protocol upgrades.**
+
+- Every step is numbered and must be completed in order.
+- All commands are ready to copy/paste.
+- If you get stuck or something fails, see the Troubleshooting section at the end.
+
+---
+
+## Table of Contents
+
+- [Protocol Upgrade Release – Step-by-Step](#protocol-upgrade-release--step-by-step)
+  - [Table of Contents](#table-of-contents)
+  - [0. Prerequisites \& Sanity Checks](#0-prerequisites--sanity-checks)
+  - [1. Ensure `ConsensusVersion` is updated](#1-ensure-consensusversion-is-updated)
+  - [2. Prepare a New Upgrade Plan](#2-prepare-a-new-upgrade-plan)
+  - [3. Create a GitHub Release](#3-create-a-github-release)
+    - [Steps:](#steps)
+  - [4. Write an Upgrade Transaction (JSON file)](#4-write-an-upgrade-transaction-json-file)
+  - [5. Validate the Upgrade Binary URLs (Live Network Only)](#5-validate-the-upgrade-binary-urls-live-network-only)
+  - [6. Test the New Release](#6-test-the-new-release)
+  - [7. Update the `homebrew-tap` Formula](#7-update-the-homebrew-tap-formula)
+  - [8. Submit the Upgrade Onchain](#8-submit-the-upgrade-onchain)
+    - [Alpha TestNet Example](#alpha-testnet-example)
+  - [9. Champion the Upgrade on All Networks](#9-champion-the-upgrade-on-all-networks)
+  - [10. Troubleshooting \& Canceling an Upgrade](#10-troubleshooting--canceling-an-upgrade)
+    - [Cancel the Upgrade Plan (before upgrade height)](#cancel-the-upgrade-plan-before-upgrade-height)
+  - [Before You Finish](#before-you-finish)
+
+---
+
+## 0. Prerequisites & Sanity Checks
+
+Before you start:
+
+- [ ] You have push/publish access to the repo and GitHub releases
+- [ ] You have CLI tools: `git`, `make`, `jq`, `sed`, `curl`, `go`, `brew`, `pocketd`, etc.
+- [ ] You have reviewed [previous upgrades](https://github.com/pokt-network/poktroll/tree/main/app/upgrades) for reference
+- [ ] You have read the full [Protocol Upgrade Procedure](./1_protocol_upgrades.md)
+- [ ] You understand the difference between `state-breaking` and `consensus-breaking` changes
+- [ ] You have tested your changes locally (see [Testing Upgrades](./3_testing_upgrades.md))
+
+---
+
+## 1. Ensure `ConsensusVersion` is updated
+
+**DO NOT PROCEED until you have completed this.**
+
+- Bump the `ConsensusVersion` for all modules with `state-breaking` changes.
+- This requires manual inspection and understanding of your changes.
+- Merge these changes to `main` before continuing.
+
+🔗 [Find all ConsensusVersion uses](https://github.com/search?q=repo%3Apokt-network%2Fpoktroll+ConsensusVersion&type=code)
+
+---
+
+## 2. Prepare a New Upgrade Plan
+
+:::tip Reference
+
+- Review [historical.go](https://github.com/pokt-network/poktroll/tree/main/app/upgrades) for past upgrades.
+- See [Cosmos SDK upgrade docs](https://docs.cosmos.network/main/build/building-apps/app-upgrade).
+  :::
+
+**Checklist:**
+
+1. **Select SHAs**
+   - Find the SHA of the last public [release](https://github.com/pokt-network/poktroll/releases/)
+   - Find the SHA for the new release (usually `main`)
+   - Compare them:
+     ```
+     https://github.com/pokt-network/poktroll/compare/v<LAST_RELEASE>..<YOUR_SHA>
+     ```
+2. **Identify Breaking Changes**
+   - Manually inspect the diff for parameter/authorization/state changes
+3. **Update Upgrade Plan**
+   - Edit `app/upgrades.go` and add your upgrade to `allUpgrades`
+   - If you change protobufs, see [protobuf deprecation](./5_protobuf_upgrades.md)
+   - Example PR: [#1202](https://github.com/pokt-network/poktroll/pull/1202/files)
+
+**DO NOT PROCEED until these changes are merged.**
+
+---
+
+## 3. Create a GitHub Release
+
+:::note
+See [all releases](https://github.com/pokt-network/poktroll/releases).
 :::
 
-## Table of Contents <!-- omit in toc -->
+### Steps:
 
-- [1. Ensure `ConsensusVersion` is updated](#1-ensure-consensusversion-is-updated)
-- [2. Prepare a New Upgrade Plan](#2-prepare-a-new-upgrade-plan)
-  - [2.1 Testing before merging (for seasoned upgraders only)](#21-testing-before-merging-for-seasoned-upgraders-only)
-- [3. Create a GitHub Release](#3-create-a-github-release)
-- [4. Write an Upgrade Transaction (json file)](#4-write-an-upgrade-transaction-json-file)
-  - [4.1 Validate the Upgrade Binary URLs (live network only)](#41-validate-the-upgrade-binary-urls-live-network-only)
-  - [4.2 Release Order of Operations](#42-release-order-of-operations)
-- [5. Test the New Release](#5-test-the-new-release)
-- [6. Update the `homebrew-tap` formula](#6-update-the-homebrew-tap-formula)
-- [7. Submit the Upgrade Onchain](#7-submit-the-upgrade-onchain)
-  - [7.1 \[Optional\] Cancel the Upgrade Plan (if needed)](#71-optional-cancel-the-upgrade-plan-if-needed)
-- [8. Test \& Champion the Upgrade on All Networks](#8-test--champion-the-upgrade-on-all-networks)
+1. **Tag the release:**
+   - Use one of:
+     ```bash
+     make release_tag_bug_fix
+     # or
+     make release_tag_minor_release
+     ```
+   - Follow on-screen prompts.
+2. **Publish the release:**
+   - [Draft a new release](https://github.com/pokt-network/poktroll/releases/new)
+   - Use the tag from above.
+3. **Document the release:**
 
-### 1. Ensure `ConsensusVersion` is updated
+   - Click `Generate release notes` in the GitHub UI.
+   - Add this section ABOVE the auto-generated notes:
 
-Ensure the [ConsensusVersion](https://github.com/search?q=repo%3Apokt-network%2Fpoktroll%20ConsensusVersion&type=code) is bumped for all modules with `state-breaking` (i.e. not just `consensus-breaking`) changes.
+     ```markdown
+     ## Protocol Upgrades
 
-This will require manual code inspection and understanding of the changes.
+     | Category                     | Applicable | Notes                                                                                  |
+     | ---------------------------- | ---------- | -------------------------------------------------------------------------------------- |
+     | Planned Upgrade              | ✅         | New features.                                                                          |
+     | Consensus Breaking Change    | ✅         | Yes, see upgrade here: https://github.com/pokt-network/poktroll/tree/main/app/upgrades |
+     | Manual Intervention Required | ❌         | Cosmosvisor managed everything well .                                                  |
+     | Upgrade Height               | ❓         | TBD                                                                                    |
 
-⚠️ **Merge in these changes before proceeding.** ⚠️
+     **Legend**:
 
-### 2. Prepare a New Upgrade Plan
+     - ✅ - Yes
+     - ❌ - No
+     - ❓ - Unknown/To Be Determined
+     - ⚠️ - Warning/Caution Required
 
-:::tip Reference examples
+     ## What's Changed
 
-Review all [previous upgrades](https://github.com/pokt-network/poktroll/tree/main/app/upgrades) for reference.
+     <!-- Auto-generated GitHub Release Notes continue here -->
+     ```
 
-- Refer to `historical.go` for past upgrades and examples.
-- Consult the [Cosmos SDK](https://docs.cosmos.network/) documentation on upgrades for additional guidance on [building-apps/app-upgrade](https://docs.cosmos.network/main/build/building-apps/app-upgrade) and [modules/upgrade](https://docs.cosmos.network/main/build/).
+   - Use ❓ and `TBD` for unknowns; fill these in after testing.
 
-:::
+4. **Set as a pre-release** (change to `latest release` after upgrade completes).
 
-1. `sha` selection
-   - Identify the `sha` of the last public [release](https://github.com/pokt-network/poktroll/releases/)
-   - Choose the `sha` of new release, which will likely be [main](https://github.com/pokt-network/poktroll/commits/main/)
-   - Compare the diff between the two shas like so: `https://github.com/pokt-network/poktroll/compare/v<LAST_RELEASE>..<YOUR_SHA>`; [_example_](https://github.com/pokt-network/poktroll/compare/v0.0.11..7541afd6d89a12d61e2c32637b535f24fae20b58)
-2. Breaking change identification
-   - Between the two `sha`s above, identify any parameter changes, authorizations, functions or other state changes.
-   - _This will require manual code inspection and understanding of the changes._
-3. Upgrade Plan
-   - Update `app/upgrades.go` file to include the new upgrade plan in `allUpgrades`
-   - See [this PR](https://github.com/pokt-network/poktroll/pull/1202/files) for an example.
-   - If modifying protobuf definitions, reference the approach in [protobuf deprecation](./5_protobuf_upgrades.md) for backward compatibility.
+---
 
-⚠️ **Merge in these changes before proceeding.** ⚠️
-
-#### 2.1 Testing before merging (for seasoned upgraders only)
-
-Changes should be tested before they are merged. When it comes to upgrades, this is even more important but is nuanced and requires experience.
-
-If this is your first time managing an upgrade, we recommend following the instructions
-in this document verbatim. You will be prompted to test the upgrade on LocalNet by
-following the instructions in [Testing Upgrades](./3_testing_upgrades.md) after you publish the release.
-
-If you are a seasoned protocol upgrader, consider testing the changes first before publishing the release.
-
-### 3. Create a GitHub Release
-
-:::note GitHub Releases
-
-You can find all existing GitHub releases [here](https://github.com/pokt-network/poktroll/releases).
-
-:::
-
-Creating a GitHub release is a 3 step process:
-
-1. **Tag the release**: Create a new tag using either `make release_tag_bug_fix` or `make release_tag_minor_release` commands and following the on screen instructions.
-2. **Publish the release**: Create a new release in GitHub using the [Draft a new release button](https://github.com/pokt-network/poktroll/releases/new) feature.
-3. **Document the release**: Click `Generate release notes` in the GitHub UI and append the following section above the auto-generated GitHub release notes. For example:
-
-   ```markdown
-   ## Protocol Upgrades
-
-   | Category                     | Applicable | Notes                                                                                  |
-   | ---------------------------- | ---------- | -------------------------------------------------------------------------------------- |
-   | Planned Upgrade              | ✅         | New features.                                                                          |
-   | Consensus Breaking Change    | ✅         | Yes, see upgrade here: https://github.com/pokt-network/poktroll/tree/main/app/upgrades |
-   | Manual Intervention Required | ❌         | Cosmosvisor managed everything well .                                                  |
-   | Upgrade Height               | ❓         | TBD                                                                                    |
-
-   **Legend**:
-
-   - ✅ - Yes
-   - ❌ - No
-   - ❓ - Unknown/To Be Determined
-   - ⚠️ - Warning/Caution Required
-
-   ## What's Changed
-
-   <!-- Auto-generated GitHub Release Notes continue here -->
-   ```
-
-4. Use ❓ and `TBD` for unknown values. These will be edited and filled out after
-5. Publish the release as `Set as a pre-release`. This will be changed to `latest release` after the upgrade is completed.
-
-### 4. Write an Upgrade Transaction (json file)
+## 4. Write an Upgrade Transaction (JSON file)
 
 :::tip
-
-See the upgrade transactions for `v0.1.2` [here](https://github.com/pokt-network/poktroll/pull/1204) as an example.
-
-It must reference the release URLs and checksums from the [v0.1.2 release](https://github.com/pokt-network/poktroll/releases/tag/v0.1.2) published on GitHub.
-
+See [v0.1.2 upgrade transactions](https://github.com/pokt-network/poktroll/pull/1204) for examples.
 :::
 
-An upgrade transaction includes a [Plan](https://github.com/cosmos/cosmos-sdk/blob/0fda53f265de4bcf4be1a13ea9fad450fc2e66d4/x/upgrade/proto/cosmos/upgrade/v1beta1/upgrade.proto#L14) with specific details about the upgrade.
+**How to generate:**
 
-This information helps schedule the upgrade on the network and provides necessary data for automatic upgrades via `Cosmovisor`.
+```bash
+./tools/scripts/upgrades/prepare_upgrade_tx.sh v<YOUR_VERSION>.<YOUR_RELEASE>.<YOUR_PATCH>
+```
 
-A typical upgrade transaction includes:
+Example:
 
-- `name`: Name of the upgrade. It should match the `VersionName` of `upgrades.Upgrade`.
-- `height`: The height at which an upgrade should be executed and the node will be restarted.
-- `info`: Can be empty. **Only needed for live networks where we want cosmovisor to upgrade nodes automatically**.
+```bash
+./tools/scripts/upgrades/prepare_upgrade_tx.sh v0.1.2
+```
 
-When `cosmovisor` is configured to automatically download binaries, it will pull the binary from the link provided in
-the upgrade object and perform a hash verification (optional).
+This will create:
 
-Here is an example for reference:
+```
+tools/scripts/upgrades/upgrade_tx_vX.Y.Z_alpha.json
+tools/scripts/upgrades/upgrade_tx_vX.Y.Z_beta.json
+tools/scripts/upgrades/upgrade_tx_vX.Y.Z_local.json
+tools/scripts/upgrades/upgrade_tx_vX.Y.Z_main.json
+```
+
+:::info
+Update the `height` in each file before submitting.
+:::
+
+**Example JSON snippet:**
 
 ```json
 {
@@ -141,7 +190,7 @@ Here is an example for reference:
         "plan": {
           "name": "v0.0.4",
           "height": "30",
-          "info": "{\"binaries\":{\"linux/amd64\":\"https://github.com/pokt-network/poktroll/releases/download/v0.0.4/poktroll_linux_amd64.tar.gz?checksum=sha256:49d2bcea02702f3dcb082054dc4e7fdd93c89fcd6ff04f2bf50227dacc455638\",\"linux/arm64\":\"https://github.com/pokt-network/poktroll/releases/download/v0.0.4/poktroll_linux_arm64.tar.gz?checksum=sha256:698f3fa8fa577795e330763f1dbb89a8081b552724aa154f5029d16a34baa7d8\",\"darwin/amd64\":\"https://github.com/pokt-network/poktroll/releases/download/v0.0.4/pocket_darwin_amd64.tar.gz?checksum=sha256:5ecb351fb2f1fc06013e328e5c0f245ac5e815c0b82fb6ceed61bc71b18bf8e9\",\"darwin/arm64\":\"https://github.com/pokt-network/poktroll/releases/download/v0.0.4/pocket_darwin_arm64.tar.gz?checksum=sha256:a935ab83cd770880b62d6aded3fc8dd37a30bfd15b30022e473e8387304e1c70\"}}"
+          "info": "{\"binaries\":{...}}"
         }
       }
     ]
@@ -149,39 +198,19 @@ Here is an example for reference:
 }
 ```
 
-You can generate the upgrade transaction JSON files for your release with this command:
+---
+
+## 5. Validate the Upgrade Binary URLs (Live Network Only)
+
+**Critical: The binary URLs must be correct, or Cosmovisor will fail.**
+
+**Install `go-getter` if you don't have it:**
 
 ```bash
-./tools/scripts/upgrades/prepare_upgrade_tx.sh v<YOUR_VERSION>.<YOUR_RELEASE>.<YOUR_PATCH>
+go install github.com/hashicorp/go-getter/cmd/go-getter@latest
 ```
 
-For example, replacing `v<YOUR_VERSION>.<YOUR_RELEASE>.<YOUR_PATCH>` with `vX.Y.Z`, running this:
-
-```bash
-./tools/scripts/upgrades/prepare_upgrade_tx.sh v0.1.2
-```
-
-Will generate 4 files:
-
-```bash
-tools/scripts/upgrades/upgrade_tx_vX.Y.Z_alpha.json
-tools/scripts/upgrades/upgrade_tx_vX.Y.Z_beta.json
-tools/scripts/upgrades/upgrade_tx_vX.Y.Z_local.json
-tools/scripts/upgrades/upgrade_tx_vX.Y.Z_main.json
-```
-
-:::info
-
-Note that you'll need update the `height` in each of them independently before submitting each upgrade.
-
-:::
-
-#### 4.1 Validate the Upgrade Binary URLs (live network only)
-
-The URLs of the binaries contain checksums. It is critical to ensure they are correct.
-**Otherwise, Cosmovisor won't be able to download the binaries and go through the upgrade.**
-
-The command below (using tools build by the authors of Cosmosvisor) can be used to achieve the above:
+**Check all binary URLs:**
 
 ```bash
 jq -r '.body.messages[0].plan.info | fromjson | .binaries[]' $PATH_TO_UPGRADE_TRANSACTION_JSON | while IFS= read -r url; do
@@ -189,163 +218,137 @@ jq -r '.body.messages[0].plan.info | fromjson | .binaries[]' $PATH_TO_UPGRADE_TR
 done
 ```
 
-The output should look like this:
+Expected output:
 
-```text
-2024/09/24 12:40:40 success!
-2024/09/24 12:40:42 success!
-2024/09/24 12:40:44 success!
-2024/09/24 12:40:46 success!
+```
+success!
+success!
+success!
+success!
 ```
 
-:::tip
+**DO NOT PROCEED until all URLs validate.**
 
-`go-getter` can be installed using the following command:
+---
 
-```bash
-go install github.com/hashicorp/go-getter/cmd/go-getter@latest
-```
+## 6. Test the New Release
 
-:::
+- Follow [Testing Protocol Upgrades](./3_testing_upgrades.md) **before** submitting any transactions.
+- If you find an issue, repeat steps 2–5 as needed (update plan, release, transactions, etc.).
 
-⚠️ **Merge in these changes before proceeding AND note that this IS NOT part of the release sha.** ⚠️
+---
 
-#### 4.2 Release Order of Operations
+## 7. Update the `homebrew-tap` Formula
 
-We only know the hashes **AFTER** the release has been cut and CI created artifacts for this version.
+Once the upgrade is validated, update the tap so users can install the new CLI.
 
-If you are an experienced protocol upgrader, you should know what to do.
-
-Otherwise, you will need to either:
-
-- Cut multiple releases and update the transactions each time to streamline the process
-- Delete and re-release the same tag
-
-:::warning TODO
-
-**Improve the documents for this section so anyone can follow it.**
-
-:::
-
-### 5. Test the New Release
-
-Follow the instructions in [Testing Protocol Upgrades](./3_testing_upgrades.md) before proceeding to the next step.
-
-If an issue is identified in the upgrade plan you prepare in [step 2](#2-prepare-a-new-upgrade-plan), you may need repeat
-the steps above including:
-
-1. Update the source code of the upgrade plan
-2. Cutting a new release
-3. Preparing new upgrade transactions
-4. Etc...
-
-### 6. Submit the Upgrade on Alpha TestNet
-
-Get the RPC endpoint for a node on Alpha TestNet from [here](https://dev.poktroll.com/tools/tools/shannon_alpha).
-
-Then, update the `height` in `tools/scripts/upgrades/upgrade_tx_v0.1.2_alpha.json`:
-
-```bash
-# Get the current height on Alpha TestNet
-CURRENT_HEIGHT=$(pocketd status --node https://shannon-testnet-grove-rpc.alpha.poktroll.com | jq '.sync_info.latest_block_height' | tr -d '"')
-
-# Increase the height by 5 blocks (arbitrary value)
-UPGRADE_HEIGHT=$((CURRENT_HEIGHT + 5))
-
-# Update the JSON file with the new height
-sed -i.bak "s/\"height\": \"[^\"]*\"/\"height\": \"$UPGRADE_HEIGHT\"/" tools/scripts/upgrades/upgrade_tx_v0.1.2_alpha.json
-```
-
-Then, submit the upgrade transaction like so:
-
-```bash
-pocketd tx authz exec tools/scripts/upgrades/upgrade_tx_v0.1.2_alpha.json --from=UPDATE_ME --node https://shannon-testnet-grove-rpc.alpha.poktroll.com
-```
-
-```bash
-pkd_alpha_tx authz exec tools/scripts/upgrades/upgrade_tx_v0.1.2_alpha.json --from pnf_alpha
-```
-
-Wait for the next block to get committed and then verify that the upgrade is planned like so:
-
-```bash
-pocketd query upgrade plan --node https://shannon-testnet-grove-rpc.alpha.poktroll.com
-```
-
-```bash
-watch -n 5 "pocketd query tx --type=hash 91466B199D985D1FE8F2447D09DE2C864C349BEE6CDE444EF4B8DF95BFB40CAB --node https://shannon-testnet-grove-rpc.alpha.poktroll.com"
-```
-
-Use any logging or observability tools you have to track full nodes & validators on alpha TestNet.
-
-Once the upgrade has succeeded, you should be able to verify that the node is on a new version like so:
-
-```bash
-curl -s https://shannon-testnet-grove-rpc.alpha.poktroll.com/abci_info | jq '.result.response.version'
-```
-
-⚠️ **Merge in these changes before proceeding.** ⚠️
-
-https://www.notion.so/buildwithgrove/Vultr-Connecting-to-the-protocol-nj-k8s-cluster-162a36edfff680608c30ff9eebd3e605?pvs=4
-
-### 7. Update the `homebrew-tap` formula
-
-Once you've validated the upgrade, update the `homebrew-tap` formula so all users can easily download the new CLI.
-
-Update the tap:
+**Steps:**
 
 ```bash
 git clone git@github.com:pokt-network/homebrew-pocketd.git
-cd homebrew-pocket
+cd homebrew-pocketd
 make tap_update_version
-git commit -am "Update pocket tap from v.X1.Y1.Z1 to v.X1.Y2.Z2
+git commit -am "Update pocket tap from v.X1.Y1.Z1 to v.X1.Y2.Z2"
 git push
 ```
 
-Reinstall the CLI yourself:
+**Reinstall the CLI:**
 
 ```bash
 brew reinstall pocketd
 ```
 
-Or install it for the first time:
+**Or install for the first time:**
 
 ```bash
 brew tap pocket-network/homebrew-pocketd
 brew install pocketd
 ```
 
-See the [pocketd CLI docs](../../tools/user_guide/pocketd_cli.md) for more information.
+See [pocketd CLI docs](../../tools/user_guide/pocketd_cli.md) for more info.
 
-### 8. Submit the Upgrade on Beta TestNet & MainNet
+---
 
-Repeat the steps from (6) for Beta & MainNet.
+## 8. Submit the Upgrade Onchain
 
-TODO(@olshansk): Make this idiot proof.
+### Alpha TestNet Example
 
-## Next Steps: Champion the Upgrade on All Networks
+1. Get the Alpha TestNet RPC endpoint: [here](https://dev.poktroll.com/tools/tools/shannon_alpha)
+2. Update the `height` in `tools/scripts/upgrades/upgrade_tx_v0.1.2_alpha.json`:
 
-As you're deploying changes to the networks, you should:
+```bash
+# Get the current height
+CURRENT_HEIGHT=$(pocketd status --node https://shannon-testnet-grove-rpc.alpha.poktroll.com | jq '.sync_info.latest_block_height' | tr -d '"')
+# Add 5 blocks (arbitrary)
+UPGRADE_HEIGHT=$((CURRENT_HEIGHT + 5))
+# Update the JSON
+sed -i.bak "s/\"height\": \"[^\"]*\"/\"height\": \"$UPGRADE_HEIGHT\"/" tools/scripts/upgrades/upgrade_tx_v0.1.2_alpha.json
+```
 
-1. Monitor the network's health metrics to identify any significant changes
-2. Communicate upgrades heights and status updates with the community
+3. Submit the transaction:
 
-:::warning TODO(@okdas): Links to Validators
+```bash
+pocketd tx authz exec tools/scripts/upgrades/upgrade_tx_v0.1.2_alpha.json --from=UPDATE_ME --node https://shannon-testnet-grove-rpc.alpha.poktroll.com
+# or
+pkd_alpha_tx authz exec tools/scripts/upgrades/upgrade_tx_v0.1.2_alpha.json --from pnf_alpha
+```
 
-Document how to observe logs & monitor the network's health metrics on Alpha, Beta & MainNet.
+4. Verify the upgrade is planned:
 
-:::
+```bash
+pocketd query upgrade plan --node https://shannon-testnet-grove-rpc.alpha.poktroll.com
+```
 
-## Troubleshooting
+5. (Optional) Watch the transaction:
 
-### Cancel the Upgrade Plan (if needed)
+```bash
+watch -n 5 "pocketd query tx --type=hash <TX_HASH> --node https://shannon-testnet-grove-rpc.alpha.poktroll.com"
+```
 
-It is possible to cancel the upgrade before the upgrade plan height is reached.
+6. After upgrade, verify node version:
 
-See [Chain Halt Troubleshooting](./7_chain_halt_troubleshooting.md), [Failed upgrade contigency plan](./8_contigency_plans.md) and [Chain Halt Recovery](./9_recovery_from_chain_halt.md) for more details.
+```bash
+curl -s https://shannon-testnet-grove-rpc.alpha.poktroll.com/abci_info | jq '.result.response.version'
+```
 
-To do so, execute the following make target:
+- Use logging/observability tools to monitor full nodes & validators.
+- Only proceed to Beta/MainNet after Alpha is successful.
 
-1. Follow the instructions in [**Protocol Upgrade Procedure**](3_testing_upgrades.md)
-2. Update the [**Upgrade List**](./4_upgrade_list.md)
-3. **Deploy a Full Node on TestNet** and allow it to sync and operate for a few days to verify that no accidentally introduced `consensus-breaking` changes affect the ability to sync; [Full Node Quickstart Guide](../cheat_sheets/full_node_cheatsheet.md).
+---
+
+## 9. Champion the Upgrade on All Networks
+
+- Repeat the onchain submission steps for Beta & MainNet.
+- Monitor network health and communicate upgrade status to the community.
+- [Full Node Quickstart Guide](../cheat_sheets/full_node_cheatsheet.md)
+
+---
+
+## 10. Troubleshooting & Canceling an Upgrade
+
+### Cancel the Upgrade Plan (before upgrade height)
+
+If you need to cancel, see:
+
+- [Chain Halt Troubleshooting](./7_chain_halt_troubleshooting.md)
+- [Failed upgrade contingency plan](./8_contigency_plans.md)
+- [Chain Halt Recovery](./9_recovery_from_chain_halt.md)
+
+**Checklist:**
+
+1. Follow [Protocol Upgrade Procedure](3_testing_upgrades.md)
+2. Update the [Upgrade List](./4_upgrade_list.md)
+3. Deploy a full node on TestNet and verify sync (see [Full Node Quickstart Guide](../cheat_sheets/full_node_cheatsheet.md))
+
+---
+
+## Before You Finish
+
+- [ ] All steps above are checked off
+- [ ] All releases, plans, and transactions are published and tested
+- [ ] You have communicated upgrade details to the team/community
+- [ ] You have prepared for rollback/troubleshooting if needed
+
+---
+
+**If you encounter any issues, STOP and consult the troubleshooting links above or ask for help in the team channel.**
