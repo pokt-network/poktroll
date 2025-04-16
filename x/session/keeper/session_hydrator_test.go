@@ -64,7 +64,11 @@ func TestSession_HydrateSession_Success_BaseCase(t *testing.T) {
 
 	supplier := suppliers[0]
 	require.Equal(t, keepertest.TestSupplierOperatorAddress, supplier.OperatorAddress)
-	require.Len(t, supplier.Services, 3)
+
+	// supplier.Services should only contain the service corresponding to the
+	// session's serviceId
+	require.Len(t, supplier.Services, 1)
+	require.Equal(t, keepertest.TestServiceId1, supplier.Services[0].ServiceId)
 }
 
 func TestSession_HydrateSession_Metadata(t *testing.T) {
