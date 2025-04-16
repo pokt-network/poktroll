@@ -3,7 +3,8 @@ title: pocketd Installation
 sidebar_position: 1
 ---
 
-:::tip TL;DR To install `pocketd` run:
+:::tip TL;DR
+To install `pocketd` on Linux or MacOS, run:
 
 ```bash
 curl -sSL https://raw.githubusercontent.com/pokt-network/poktroll/main/scripts/install.sh | bash
@@ -13,61 +14,58 @@ curl -sSL https://raw.githubusercontent.com/pokt-network/poktroll/main/scripts/i
 
 ## Table of Contents <!-- omit in toc -->
 
-- [Linux](#linux)
-- [MacOS](#macos)
-  - [1. Homebrew](#1-homebrew)
-  - [2. Install Script](#2-install-script)
-- [Alternative Methods](#alternative-methods)
-  - [1. Using release binaries](#1-using-release-binaries)
-  - [2. From Source (danger zone)](#2-from-source-danger-zone)
-- [Windows (why!?)](#windows-why)
+- [1. Install Script (Linux \& MacOS)](#1-install-script-linux--macos)
+- [2. Homebrew (MacOS)](#2-homebrew-macos)
+  - [Troubleshooting Homebrew](#troubleshooting-homebrew)
+- [3. Alternative Methods](#3-alternative-methods)
+  - [Using release binaries](#using-release-binaries)
+  - [From Source (danger zone)](#from-source-danger-zone)
+    - [Installing dependencies](#installing-dependencies)
+    - [Build from source](#build-from-source)
+- [4. Windows (why!?)](#4-windows-why)
 
-## Linux
+---
 
-Run the following command:
+## 1. Install Script (Linux & MacOS)
+
+- Works on both Linux and MacOS.
+- Easiest, fastest way to get started.
 
 ```bash
 curl -sSL https://raw.githubusercontent.com/pokt-network/poktroll/main/scripts/install.sh | bash
 ```
 
-And verify it worked by running:
+**Verify installation:**
 
 ```bash
 pocketd version
 pocketd --help
 ```
 
-## MacOS
+---
 
-### 1. Homebrew
+## 2. Homebrew (MacOS)
 
-Ensure you have [Homebrew](https://brew.sh/) installed.
+- For MacOS users who prefer Homebrew.
 
-Then run the following commands:
+**Prerequisite:**
+Make sure you have [Homebrew](https://brew.sh/) installed.
 
 ```bash
 brew tap pokt-network/poktroll
 brew install pocketd
 ```
 
-<details>
-<summary>
-<h3>Troubleshooting Homebrew</h3>
-<p>
-Read this section if you're having problems downloading or upgrading your `pocketd` binary using Homebrew.
-</p>
-</summary>
+### Troubleshooting Homebrew
 
-The source code for the Homebrew formula is available in the [homebrew-pocket](https://github.com/pokt-network/homebrew-pocket) repository.
-
-If you encounter any issues, like being unable to install the latest version, you can try the following:
+- If you have problems installing or upgrading `pocketd` via Homebrew:
 
 ```bash
 brew update
 brew upgrade pocketd
 ```
 
-Or as a last resort, you can try the following:
+- If still not working, try:
 
 ```bash
 brew tap --repair
@@ -77,81 +75,63 @@ brew tap pokt-network/poktroll
 brew install pocketd
 ```
 
-</details>
+- Source code for the Homebrew formula: [homebrew-pocket](https://github.com/pokt-network/homebrew-pocket)
 
-### 2. Install Script
+---
 
-You may also run the following command to install `pocketd` without using Homebrew:
+## 3. Alternative Methods
 
-```bash
-curl -sSL https://raw.githubusercontent.com/pokt-network/poktroll/main/scripts/install.sh | bash
-```
+### Using release binaries
 
-And verify it worked by running:
+:::tip TL;DR manual download
 
-```bash
-pocketd version
-pocketd --help
-```
+- Download the binary from the [latest release](https://github.com/pokt-network/poktroll/releases/latest)
+- Choose the correct `pocket_${OS}_${ARCH}.tar.gz` for your system
+- Untar and move the binary to `/usr/local/bin`
 
-## Alternative Methods
-
-### 1. Using release binaries
-
-:::tip tl;dr manual download
-
-1. Grab a binary from the [latest release](https://github.com/pokt-network/poktroll/releases/latest)
-2. Download the appropriate `pocket_${OS}_${ARCH}.tar.gz` for your environment
-3. Untar the downloaded file to retrieve the `pocketd` binary
-4. Extract the binary to `/usr/local/bin`
-   :::
-
-Pre-built binaries are available on our [releases page](https://github.com/pokt-network/poktroll/releases).
-
-You can view the latest release directly by clicking [here](https://github.com/pokt-network/poktroll/releases/latest).
-
-The following snippet downloads/upgrades the binary to the latest released version:
+:::
 
 ```bash
-# Download the correct binary based on the OS and architecture
+# Download the correct binary for your OS and architecture
 curl -LO "https://github.com/pokt-network/poktroll/releases/latest/download/pocket_$(uname | tr '[:upper:]' '[:lower:]')_$(uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/').tar.gz"
 
-# Extract the downloaded tarball to /usr/local/bin
+# Extract to /usr/local/bin
 sudo tar -zxf "pocket_$(uname | tr '[:upper:]' '[:lower:]')_$(uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/').tar.gz" -C /usr/local/bin
 
-# Make the binary executable
+# Make it executable
 sudo chmod +x /usr/local/bin/pocketd
 
 # Check version
 pocketd version
 ```
 
-### 2. From Source (danger zone)
+- Pre-built binaries: [releases page](https://github.com/pokt-network/poktroll/releases)
+- Latest release: [here](https://github.com/pokt-network/poktroll/releases/latest)
 
-:::warning Do not continue unless you're a 🚀👨‍💻💎
+---
 
-This method is only recommended for **ADVANCED** users as it requires working with developer tools.
+### From Source (danger zone)
 
+:::warning
+Do not continue unless you're a 🚀👨‍💻💎
+
+For **ADVANCED** users only. Requires developer tools.
 :::
 
-### Installing dependencies <!-- omit in toc -->
+#### Installing dependencies
 
-Ensure you have the following installed:
-
-- [Go](https://go.dev/doc/install) (version 1.23 or later)
+- [Go](https://go.dev/doc/install) (v1.23+)
 - [Make](https://www.gnu.org/software/make/)
 - [Ignite CLI](https://docs.ignite.com/welcome/install)
 
-#### Installing pocketd <!-- omit in toc -->
-
-Then, Retrieve the source code and build the `pocketd` locally like so:
+#### Build from source
 
 ```bash
 # Clone the repository
 git clone https://github.com/pokt-network/poktroll.git pocket
 cd pocket
 
-# Optional: Switch to a specific version (recommended)
+# Optional: Checkout a specific version (recommended)
 # Replace v0.0.12 with your desired version from https://github.com/pokt-network/poktroll/releases
 git checkout v0.0.12
 
@@ -160,19 +140,22 @@ make go_develop
 make ignite_pocketd_build
 ```
 
-And verify it worked by running:
+**Verify installation:**
 
 ```bash
 pocketd version
 pocketd --help
 ```
 
-## Windows (why!?)
+---
+
+## 4. Windows (why!?)
 
 :::danger
 
-Currently, we do not support native Windows installation. Windows users are encouraged
-to use [Windows Subsystem for Linux (WSL)](https://docs.microsoft.com/en-us/windows/wsl/install)
-and follow the Linux installation instructions.
+- Native Windows installation is **not supported**.
+- Use [Windows Subsystem for Linux (WSL)](https://docs.microsoft.com/en-us/windows/wsl/install)
+- Follow the Linux install instructions above.
+  :::
 
-:::
+---
