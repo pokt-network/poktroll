@@ -40,8 +40,8 @@ check_act:
 # Internal helper target - check if `pocketd` is installed in the correct location
 check_pocketd:
 	{ \
-	if ( ! ( command -v pocketd >/dev/null && whereis pocketd | grep -q "$(HOME)/go/bin/pocketd" )); then \
-		echo "Error: \`pocketd\` was not found in \$(HOME)/go/bin/. Please ensure it's properly installed in this specific location before proceeding."; \
+	if ( ! ( command -v pocketd >/dev/null )); then \
+		echo "Error: \`pocketd\` was not found in your PATH. Please ensure it's installed before proceeding."; \
 		exit 1; \
 	fi; \
 	}
