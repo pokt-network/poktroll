@@ -72,9 +72,8 @@ localnet_config_defaults = {
 
     # By default, we use the `helm_repo` function below to point to the remote repository
     # but can update it to the locally cloned repo for testing & development
-    # TODO_MAINNET_MIGRATION(@olshansky): Revert this to `False` when `PATH` helm charts are finalized.
     "grove_helm_chart_local_repo": {
-        "enabled": True,
+        "enabled": False,
         "path": os.path.join("..", "grove-helm-charts")
     },
 
@@ -370,13 +369,19 @@ for x in range(localnet_config["path_gateways"]["count"]):
     actor_number += 1
 
     resource_flags = [
-        "--values=./localnet/kubernetes/values-common.yaml",
-        "--set=metrics.serviceMonitor.enabled=" + str(localnet_config["observability"]["enabled"]),
-        "--set=path.mountConfigMaps[0].name=path-config-" + str(actor_number),
-        "--set=path.mountConfigMaps[0].mountPath=/app/config/",
+        # PATH global values
         "--set=fullnameOverride=path" + str(actor_number),
         "--set=nameOverride=path" + str(actor_number),
         "--set=global.serviceAccount.name=path" + str(actor_number),
+        "--set=metrics.serviceMonitor.enabled=" + str(localnet_config["observability"]["enabled"]),
+        # PATH config values
+        "--set=config.fromConfigMap.enabled=true",
+        "--set=config.fromConfigMap.name=path-config-" + str(actor_number),
+        "--set=config.fromConfigMap.key=.config.yaml",
+        # GUARD values
+        "--set=guard.global.namespace=default", # Ensure GUARD runs in the default namespace
+        "--set=guard.global.serviceName=path" + str(actor_number) + "-http", # Override the default service name
+        "--set=guard.services[0].serviceId=anvil", # Ensure HTTPRoute resources are created for Anvil
     ]
 
     if localnet_config["path_local_repo"]["enabled"]:
@@ -392,6 +397,14 @@ for x in range(localnet_config["path_gateways"]["count"]):
     configmap_create(
         "path-config-" + str(actor_number),
         from_file=".config.yaml=./localnet/kubernetes/config-path-" + str(actor_number) + ".yaml"
+    )
+
+    # Start a Tilt resource to patch the Envoy Gateway LoadBalancer resource
+    # to ensure it is reachable from outside the cluster at "localhost:3070".
+    local_resource(
+        "patch-envoy-gateway",
+        "./localnet/scripts/patch_envoy_gateway.sh",
+        resource_deps=["path-stack"],
     )
 
     helm_resource(
