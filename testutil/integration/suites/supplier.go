@@ -31,6 +31,7 @@ func (s *SupplierModuleSuite) GetSupplierQueryClient(t *testing.T) client.Suppli
 		s.GetApp().QueryHelper(),
 		polyzero.NewLogger(),
 		testcache.NewNoopKeyValueCache[sharedtypes.Supplier](),
+		testcache.NewNoopParamsCache[suppliertypes.Params](),
 	)
 	supplierQueryClient, err := query.NewSupplierQuerier(deps)
 	require.NoError(t, err)

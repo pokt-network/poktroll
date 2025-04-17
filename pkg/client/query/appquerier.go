@@ -2,6 +2,7 @@ package query
 
 import (
 	"context"
+	"sync"
 
 	"cosmossdk.io/depinject"
 	"github.com/cosmos/gogoproto/grpc"
@@ -27,6 +28,10 @@ type appQuerier struct {
 	applicationsCache cache.KeyValueCache[apptypes.Application]
 	// paramsCache caches application.Params returned from applicationQueryClient.Params requests.
 	paramsCache client.ParamsCache[apptypes.Params]
+
+	// Mutex to protect cache access patterns
+	applicationsMutex sync.Mutex
+	paramsMutex       sync.Mutex
 }
 
 // NewApplicationQuerier returns a new instance of a client.ApplicationQueryClient
@@ -62,6 +67,16 @@ func (aq *appQuerier) GetApplication(
 	// Check if the application is present in the cache.
 	if app, found := aq.applicationsCache.Get(appAddress); found {
 		logger.Debug().Msgf("cache hit for application address key: %s", appAddress)
+		return app, nil
+	}
+
+	// Use mutex to prevent multiple concurrent cache updates
+	aq.applicationsMutex.Lock()
+	defer aq.applicationsMutex.Unlock()
+
+	// Double-check cache after acquiring lock
+	if app, found := aq.applicationsCache.Get(appAddress); found {
+		logger.Debug().Msgf("cache hit for application address key after lock: %s", appAddress)
 		return app, nil
 	}
 
@@ -102,6 +117,16 @@ func (aq *appQuerier) GetParams(ctx context.Context) (*apptypes.Params, error) {
 	// Check if the application module parameters are present in the cache.
 	if params, found := aq.paramsCache.Get(); found {
 		logger.Debug().Msg("cache hit for application params")
+		return &params, nil
+	}
+
+	// Use mutex to prevent multiple concurrent cache updates
+	aq.paramsMutex.Lock()
+	defer aq.paramsMutex.Unlock()
+
+	// Double-check cache after acquiring lock
+	if params, found := aq.paramsCache.Get(); found {
+		logger.Debug().Msg("cache hit for application params after lock")
 		return &params, nil
 	}
 

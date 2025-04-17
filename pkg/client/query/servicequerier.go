@@ -2,6 +2,7 @@ package query
 
 import (
 	"context"
+	"sync"
 
 	"cosmossdk.io/depinject"
 	"github.com/cosmos/gogoproto/grpc"
@@ -28,6 +29,12 @@ type serviceQuerier struct {
 	servicesCache cache.KeyValueCache[sharedtypes.Service]
 	// relayMiningDifficultyCache caches serviceQueryClient.RelayMiningDifficulty query requests
 	relayMiningDifficultyCache cache.KeyValueCache[servicetypes.RelayMiningDifficulty]
+	// paramsCache caches serviceQueryClient.Params query requests
+	paramsCache client.ParamsCache[servicetypes.Params]
+
+	// Mutex to protect cache access patterns
+	servicesMutex sync.Mutex
+	paramsMutex   sync.Mutex
 }
 
 // NewServiceQuerier returns a new instance of a client.ServiceQueryClient by
@@ -47,6 +54,7 @@ func NewServiceQuerier(deps depinject.Config) (client.ServiceQueryClient, error)
 		&servq.logger,
 		&servq.servicesCache,
 		&servq.relayMiningDifficultyCache,
+		&servq.paramsCache,
 	); err != nil {
 		return nil, err
 	}
@@ -67,6 +75,16 @@ func (servq *serviceQuerier) GetService(
 	// Check if the service is present in the cache.
 	if service, found := servq.servicesCache.Get(serviceId); found {
 		logger.Debug().Msgf("service cache hit for service id key: %s", serviceId)
+		return service, nil
+	}
+
+	// Use mutex to prevent multiple concurrent cache updates
+	servq.servicesMutex.Lock()
+	defer servq.servicesMutex.Unlock()
+
+	// Double-check cache after acquiring lock
+	if service, found := servq.servicesCache.Get(serviceId); found {
+		logger.Debug().Msgf("service cache hit for service id key after lock: %s", serviceId)
 		return service, nil
 	}
 
@@ -104,6 +122,16 @@ func (servq *serviceQuerier) GetServiceRelayDifficulty(
 		return relayMiningDifficulty, nil
 	}
 
+	// Use mutex to prevent multiple concurrent cache updates
+	servq.servicesMutex.Lock()
+	defer servq.servicesMutex.Unlock()
+
+	// Double-check cache after acquiring lock
+	if relayMiningDifficulty, found := servq.relayMiningDifficultyCache.Get(serviceId); found {
+		logger.Debug().Msgf("relay mining difficulty cache hit for service id key after lock: %s", serviceId)
+		return relayMiningDifficulty, nil
+	}
+
 	logger.Debug().Msgf("relay mining difficulty cache miss for service id key: %s", serviceId)
 
 	req := &servicetypes.QueryGetRelayMiningDifficultyRequest{
@@ -123,6 +151,26 @@ func (servq *serviceQuerier) GetServiceRelayDifficulty(
 
 // GetParams returns the service module parameters.
 func (servq *serviceQuerier) GetParams(ctx context.Context) (*servicetypes.Params, error) {
+	logger := servq.logger.With("query_client", "service", "method", "GetParams")
+
+	// Check if the service module parameters are present in the cache.
+	if params, found := servq.paramsCache.Get(); found {
+		logger.Debug().Msg("cache hit for service params")
+		return &params, nil
+	}
+
+	// Use mutex to prevent multiple concurrent cache updates
+	servq.paramsMutex.Lock()
+	defer servq.paramsMutex.Unlock()
+
+	// Double-check cache after acquiring lock
+	if params, found := servq.paramsCache.Get(); found {
+		logger.Debug().Msg("cache hit for service params after lock")
+		return &params, nil
+	}
+
+	logger.Debug().Msg("cache miss for service params")
+
 	req := servicetypes.QueryParamsRequest{}
 	res, err := retry.Call(ctx, func() (*servicetypes.QueryParamsResponse, error) {
 		return servq.serviceQuerier.Params(ctx, &req)
@@ -130,5 +178,8 @@ func (servq *serviceQuerier) GetParams(ctx context.Context) (*servicetypes.Param
 	if err != nil {
 		return nil, err
 	}
+
+	// Cache the parameters for future queries.
+	servq.paramsCache.Set(res.Params)
 	return &res.Params, nil
 }
