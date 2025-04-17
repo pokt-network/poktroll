@@ -2,27 +2,35 @@
 ### Localnet Helpers ###
 ########################
 
-# TODO_TECHDEBT(@olshansk): Look at `make dev_up` in the `path` repo and port it here.
 .PHONY: localnet_up
-localnet_up: check_pocketd check_docker_ps proto_regen localnet_regenesis dev_up check_kind_context warn_message_acc_initialize_pubkeys ## Starts up a clean localnet
+localnet_up: check_pocketd check_kubectl check_docker_ps proto_regen localnet_regenesis dev_up check_kind_context warn_message_acc_initialize_pubkeys ## Starts up a clean localnet
 	tilt up
 
 .PHONY: localnet_up_quick
-localnet_up_quick: check_docker_ps dev_up check_kind_context ## Starts up a localnet without regenerating fixtures
+localnet_up_quick: check_kubectl check_docker_ps dev_up check_kind_context ## Starts up a localnet without regenerating fixtures
 	tilt up
 
 .PHONY: localnet_down
 localnet_down: ## Delete resources created by localnet
 	tilt down
+	kind delete cluster --name kind
 
 .PHONY: dev_up
 dev_up: check_kind # Internal helper: Spins up Kind cluster if it doesn't already exist
-	echo "[INFO] Creating kind cluster..."; \
-	kind create cluster --config ./localnet/kubernetes/kind-config.yaml; \
-	kubectl config use-context kind-kind; \
-	kubectl create namespace path; \
-	kubectl create namespace monitoring; \
-	kubectl create namespace middleware; \
+	echo "[INFO] Creating kind cluster...";
+	kind create cluster --config ./localnet/kubernetes/kind-config.yaml;
+	@kubectl config use-context kind-kind;
+	# DEV_NOTE: These namespaces are here to satisfy the requirements of the `path` helm charts.
+	# 			The requirement for these namespaces to exist may be removed in the future.
+	# 			For reference see repo:
+	# 				https://github.com/buildwithgrove/helm-charts/tree/main/charts/path
+	@kubectl create namespace path;
+	@kubectl create namespace monitoring;
+	@kubectl create namespace middleware;
+
+.PHONY: dev_down
+dev_down: # Internal helper: Delete resources created by dev
+	kind delete cluster --name kind
 
 # Optional context for 'move_poktroll_to_pocket' to answer this question:
 # https://github.com/pokt-network/poktroll/pull/1151#discussion_r2013801486 

@@ -547,7 +547,11 @@ a `Supplier`, and are running a `RelayMiner`, we can send a relay!
 
 You must run `make acc_initialize_pubkeys` before sending a relay in order for
 the public keys to be initialized correctly.
-This is requiered for the Shannon SDK to be able to query account information, part of the relay signing process.
+
+This is required for the Shannon SDK to be able to query account information, part of the relay signing process.
+
+:::tip
+_Ensure that the `POCKET_NODE` environment variable in your shell is set to `http://localhost:26657`._
 
 See the [x/auth](https://docs.cosmos.network/main/build/modules/auth) for more
 information on how public keys are stored and accessible onchain.
@@ -571,6 +575,28 @@ If everything worked as expected, you should see output similar to the following
 ```json
 {"jsonrpc":"2.0","id":1,"result":"0x61"}%
 ```
+
+:::tip
+
+If you receive the following error response when sending a relay:
+
+```json
+{
+  "id": 1,
+  "jsonrpc": "2.0",
+  "error": {
+    "code": -32000,
+    "message": "Failed to receive any response from endpoints. This could be due to network issues or high load. Please try again.",
+    "data": {
+      "retryable": "true"
+    }
+  }
+}
+```
+
+You probably forgot to run `make acc_initialize_pubkeys`.
+
+:::
 
 ![quickstart_full_relay](./img/quickstart_full_relay.png)
 

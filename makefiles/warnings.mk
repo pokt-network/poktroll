@@ -6,13 +6,19 @@
 warn_message_acc_initialize_pubkeys: ## Print a warning message about the need to run `make acc_initialize_pubkeys`
 	@echo "+---------------------------------------------------------------------------------------+"
 	@echo "|                                                                                       |"
-	@echo "| 🚨 IMPORTANT: Please run the following command once after the network has started. 🚨 |"
+	@echo "| 🚨 IMPORTANT: Please run the following make command after the network has started. 🚨 |"
 	@echo "|     This is required for the following scenarios:                                     |"
 	@echo "|       - Running E2E tests                                                             |"
 	@echo "|       - Running Localnet                                                              |"
 	@echo "|                                                                                       |"
-	@echo "|     make acc_initialize_pubkeys                                                       |"
+	@echo "|     POCKET_NODE=http://localhost:26657 make acc_initialize_pubkeys                    |"
 	@echo "|                                                                                       |"
+	@echo "|     💡 If you receive the following error response when sending a relay:              |"
+	@echo "|                                                                                       |"
+	@echo "|     'Failed to receive any response from endpoints. This could be due to              |"
+	@echo "|     network issues or high load. Please try again.'                                   |"
+	@echo "|                                                                                       |"
+	@echo "|     You probably forgot to run 'make acc_initialize_pubkeys'.                         |"
 	@echo "+---------------------------------------------------------------------------------------+"
 
 .PHONY: warn_message_local_stress_test
