@@ -8,18 +8,22 @@ This page is intended for the Foundation (Authority) or whoever is managing the 
 ## Table of Contents <!-- omit in toc -->
 
 - [1. Retrieve a Pruned Morse Snapshot](#1-retrieve-a-pruned-morse-snapshot)
-- [2. Export Morse State](#2-export-morse-state)
-- [3. Transform Export to Canonical Account State](#3-transform-export-to-canonical-account-state)
-- [4. Distribute Account State](#4-distribute-account-state)
-- [5. Align on Social Consensus](#5-align-on-social-consensus)
+- [2. Export Morse Snapshot State](#2-export-morse-snapshot-state)
+- [3. Transform Morse Export to a Canonical Account State](#3-transform-morse-export-to-a-canonical-account-state)
+- [4. Distribute Canonical Account State](#4-distribute-canonical-account-state)
+- [5. Align on Account State via Social Consensus](#5-align-on-account-state-via-social-consensus)
 - [6. Import Canonical State into Shannon](#6-import-canonical-state-into-shannon)
+- [7. Query Canonical State in Shannon](#7-query-canonical-state-in-shannon)
 - [State Validation: Morse Account Holders](#state-validation-morse-account-holders)
   - [Why Validate?](#why-validate)
   - [How to Validate](#how-to-validate)
+- [Troubleshooting](#troubleshooting)
+  - [I don't have a real snapshot on my machine](#i-dont-have-a-real-snapshot-on-my-machine)
+  - [`invalid character at start of key`](#invalid-character-at-start-of-key)
 
 ---
 
-### 1. Retrieve a Pruned Morse Snapshot
+## 1. Retrieve a Pruned Morse Snapshot
 
 Go to [Liquify's Snapshot Explorer](https://pocket-snapshot-uk.liquify.com/#/pruned/) and download the latest pruned snapshot.
 
@@ -32,7 +36,7 @@ tar -xvf <snapshot-file>.tar.gz -C $HOME/morse-snapshot
 
 **⚠️ Note the height and date of the snapshot⚠️**
 
-### 2. Export Morse State
+## 2. Export Morse Snapshot State
 
 Choose the snapshot height, which must be less than or equal to the snapshot height retrieved above. **This will be the published canonical export height.**
 
@@ -40,45 +44,30 @@ Choose the snapshot height, which must be less than or equal to the snapshot hei
 pocket util export-genesis-for-reset <HEIGHT> pocket --datadir $HOME/morse-snapshot > morse_state_export.json
 ```
 
-:::tip Testing Workaround (for core developers only)
-
-If you don't have a real snapshot (yet), you can generate a test `morse_state_export.json` file via the
-following end-to-end test:
-
-```bash
-# make localnet_up # expectation that you are familiar with this process
-make test_e2e_migration_fixture
-mv e2e/tests/morse_state_export.json morse_state_export.json
-```
-
-:::
-
-### 3. Transform Export to Canonical Account State
+## 3. Transform Morse Export to a Canonical Account State
 
 ```bash
 pocketd tx migration collect-morse-accounts morse_state_export.json morse_account_state.json
 ```
 
-:::warning Troubleshooting
-
-Ensure your `--home` flag points to a Shannon directory if you see this error:
-
-```bash
-failed to read in /Users/olshansky/.pocket/config/config.toml: While parsing config: toml: invalid character at start of key: {
-```
-
-:::
-
-### 4. Distribute Account State
+## 4. Distribute Canonical Account State
 
 Distribute the `morse_account_state.json` and its hash for public verification by Morse account/stake-holders.
 
-### 5. Align on Social Consensus
+## 5. Align on Account State via Social Consensus
 
 - Wait for consensus (offchain, time-bounded).
 - React to feedback as needed.
 
-### 6. Import Canonical State into Shannon
+## 6. Import Canonical State into Shannon
+
+:::danger
+
+This can **ONLY BE DONE ONCE** per network.
+
+:::
+
+The following `import-morse-accounts` command can be used to import the canonical account state into Shannon:
 
 ```bash
 pocketd tx migration \
@@ -90,7 +79,8 @@ pocketd tx migration \
   --gas=auto --gas-prices=1upokt --gas-adjustment=1.5
 ```
 
-For example, to run the above on different networks (replacing `--home`):
+<details>
+  <summary>Convenience functions for `import-morse-accounts` by network</summary>
 
 ```bash
 # LocalNet
@@ -106,9 +96,48 @@ pocketd tx migration import-morse-accounts morse_account_state.json --from <auth
 pocketd tx migration import-morse-accounts morse_account_state.json --from <authorized-key-name> --grpc-addr=https://shannon-grove-grpc.mainnet.poktroll.com --home=~/.pocket_prod --chain-id=pocket-mainnet --gas=auto --gas-prices=1upokt --gas-adjustment=1.5
 ```
 
-### State Validation: Morse Account Holders
+</details>
 
-**The output in `morse_account_state.json` MUST be validated before step 6.**
+## 7. Query Canonical State in Shannon
+
+The list of all claimable Morse accounts (balances/stakes) on Shannon can be retrieved using the following command:
+
+```bash
+pocketd query migration list-morse-claimable-account
+```
+
+A specific Morse address can be retrieved using the following command:
+
+```bash
+pocketd query migration show-morse-claimable-account <morse-address>
+```
+
+<details>
+  <summary>Convenience functions for `list-morse-claimable-account` by network</summary>
+
+```bash
+# LocalNet
+pocketd query migration list-morse-claimable-account --node http://localhost:26657
+
+# Alpha TestNet
+pocketd query migration list-morse-claimable-account --node https://shannon-grove-rpc.alpha.poktroll.com
+
+# Beta TestNet
+pocketd query migration list-morse-claimable-account --node https://shannon-grove-rpc.beta.poktroll.com
+
+# MainNet
+pocketd query migration list-morse-claimable-account --node https://shannon-grove-rpc.mainnet.poktroll.com
+```
+
+</details>
+
+## State Validation: Morse Account Holders
+
+:::warning TODO(@bryanchriswhite): Incomplete
+
+Show how to generate `msg_import_morse_claimable_accounts.json`.
+
+:::
 
 :::info Fun Analogy 👯
 
@@ -117,12 +146,15 @@ pocketd tx migration import-morse-accounts morse_account_state.json --from <auth
 
 :::
 
-#### Why Validate?
+### Why Validate?
 
-- The [ETVL](3_state_transfer_overview.md) process determines the _official_ set of claimable Morse accounts (balances/stakes) on Shannon.
-- It's **critical** for Morse account/stake-holders to confirm their account(s) are included and correct in the proposed `msg_import_morse_claimable_accounts.json`.
+**The output in `morse_account_state.json` MUST be validated before step 6.**
 
-#### How to Validate
+The [State Transfer Overview](3_state_transfer_overview.md) process determines the _official_ set of claimable Morse accounts (balances/stakes) on Shannon.
+
+It's **critical** for Morse account/stake-holders to confirm their account(s) are included and correct in the proposed `msg_import_morse_claimable_accounts.json`.
+
+### How to Validate
 
 Firstly, **Retrieve** the latest proposed `msg_import_morse_claimable_accounts.json` (contains both the state and its hash).
 
@@ -134,3 +166,25 @@ pocketd tx migration validate-morse-accounts ./msg_import_morse_claimable_accoun
 
 - You can pass multiple Morse addresses to the command
 - For each address, the corresponding `MorseClaimableAccount` is printed for manual inspection and validation
+
+## Troubleshooting
+
+### I don't have a real snapshot on my machine
+
+Intended for core developer who need a `morse_state_export.json` for testing.
+
+Use the following E2E test:
+
+```bash
+# make localnet_up # expectation that you are familiar with this process
+make test_e2e_migration_fixture
+mv e2e/tests/morse_state_export.json morse_state_export.json
+```
+
+### `invalid character at start of key`
+
+If you're getting this error, make sure your `--home` flag points to a Shannon (not Morese) directory:
+
+```bash
+failed to read in /Users/olshansky/.pocket/config/config.toml: While parsing config: toml: invalid character at start of key: {
+```

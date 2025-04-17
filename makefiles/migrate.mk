@@ -37,9 +37,9 @@ import_morse_accounts: check_go_version check_from_key_name ## Run the migration
 claim_morse_account: check_go_version check_from_key_name check_morse_private_key_path ## Run the migration module claim-morse-account subcommand.
 	pocketd tx migration claim-account "$(MORSE_PRIVATE_KEY_PATH)" --from="$(FROM_KEY_NAME)"
 
-#########################
-### Migration Testing ###
-#########################
+#############################
+### Migration E2E Testing ###
+#############################
 
 .PHONY: test_e2e_migration_fixture
 test_e2e_migration_fixture: ## Run ONLY the migration E2E suite using hard-coded fixture data (i.e. generates new morse_state_export.json)

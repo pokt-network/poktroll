@@ -5,8 +5,6 @@ sidebar_position: 3
 
 State Transfer is the process of migrating state from the Morse network to the Shannon network.
 
-We use ETVL as an abbreviation for the State Transfer process including Export, Transform, Validate, and Load.
-
 ---
 
 ## Table of Contents <!-- omit in toc -->
@@ -18,6 +16,8 @@ We use ETVL as an abbreviation for the State Transfer process including Export, 
 ---
 
 ## What is ETVL?
+
+ETVL as an abbreviation for the State Transfer process including Export, Transform, Validate, and Load.
 
 - ETVL is the process for migrating state from the Morse network to the Shannon network.
 - This is **not** a full restart (not a re-genesis).
