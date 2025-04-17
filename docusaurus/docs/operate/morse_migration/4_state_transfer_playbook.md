@@ -20,6 +20,7 @@ This page is intended for the Foundation (Authority) or whoever is managing the 
 - [Troubleshooting](#troubleshooting)
   - [I don't have a real snapshot on my machine](#i-dont-have-a-real-snapshot-on-my-machine)
   - [`invalid character at start of key`](#invalid-character-at-start-of-key)
+  - [`failed to get grant with given granter: ..., grantee: ... & msgType: /pocket.migration.MsgImportMorseClaimableAccounts`](#failed-to-get-grant-with-given-granter--grantee---msgtype-pocketmigrationmsgimportmorseclaimableaccounts)
 
 ---
 
@@ -31,7 +32,14 @@ Export the snapshot into a new directory on your local machine.
 
 ```bash
 mkdir -p $HOME/morse-snapshot
-tar -xvf <snapshot-file>.tar.gz -C $HOME/morse-snapshot
+# 1. Untar the snapshot file
+tar -xvf <snapshot-file>.tar -C $HOME/morse-snapshot
+# 2. Change directory to the extracted snapshot folder
+$HOME/morse-snapshot
+# 3. Create the data directory
+mkdir data
+# 4. Move all *.db files to the data directory
+mv *.db data
 ```
 
 **⚠️ Note the height and date of the snapshot⚠️**
@@ -188,3 +196,39 @@ If you're getting this error, make sure your `--home` flag points to a Shannon (
 ```bash
 failed to read in /Users/olshansky/.pocket/config/config.toml: While parsing config: toml: invalid character at start of key: {
 ```
+
+### `failed to get grant with given granter: ..., grantee: ... & msgType: /pocket.migration.MsgImportMorseClaimableAccounts`
+
+You can query all grants by a given granter (i.e. `pokt10d07y265gmmuvt4z0w9aw880jnsr700j8yv32t`) like so:
+
+```bash
+pocketd query authz grants-by-granter pokt10d07y265gmmuvt4z0w9aw880jnsr700j8yv32t
+```
+
+And if one is missing, simply execute it like so:
+
+```bash
+pocketd tx authz grant \
+  pokt1eeeksh2tvkh7wzmfrljnhw4wrhs55lcuvmekkw \
+  generic \
+  --msg-type="/pocket.migration.MsgImportMorseClaimableAccounts" \
+  --from pnf_alpha \
+  --expiration 16725225600 \
+  --chain-id pocket-alpha \
+  --gas auto --gas-prices 1upokt --gas-adjustment 1.5 \
+  --node=http://localhost:26657 \
+  --home=$HOME/.pocket_prod
+```
+
+pocketd tx migration import-morse-accounts morse_account_state.json --from pnf_alpha --grpc-addr=localhost:9090 --home=$HOME/.pocket_prod --chain-id=pocket-alpha --gas=auto --gas-prices=1upokt --gas-adjustment=1.5
+
+5006* pocketd query authz grants-by-granter pokt10d07y265gmmuvt4z0w9aw880jnsr700j8yv32t --node=http://localhost:26657
+5007 pocketd tx authz revoke \\n pokt1nk0580rxv2x7n072syz052l92q50ke425adl9d \\n --msg-type-url="//cosmos.authz.v1beta1.MsgGrant" \\n --from pnf_alpha \\n --expiration 16725225600 \\n --chain-id pocket-alpha \\n --gas auto --gas-prices 1upokt --gas-adjustment 1.5 \\n --node=http://localhost:26657 \\n --home=$HOME/.pocket_prod
+5008* pkd keys list
+5009 pocketd tx authz grant \\n pokt1nk0580rxv2x7n072syz052l92q50ke425adl9d \\n generic \\n --msg-type="/cosmos.authz.v1beta1.MsgGrant" \\n --from pnf_alpha \\n --expiration 16725225600 \\n --chain-id pocket-alpha \\n --gas auto --gas-prices 1upokt --gas-adjustment 1.5 \\n --node=http://localhost:26657 \\n --home=$HOME/.pocket_prod
+ 5011  pocketd tx bank send \\n  pokt1nk0580rxv2x7n072syz052l92q50ke425adl9d \\n  1000000000upokt \\n  --from pnf_alpha \\n  --chain-id pocket-alpha \\n  --gas auto --gas-prices 1upokt --gas-adjustment 1.5 \\n  --node=http://localhost:26657 \\n  --home=$HOME/.pocket_prod
+5012 pocketd tx bank send \\n pnf_alpha pokt1nk0580rxv2x7n072syz052l92q50ke425adl9d \\n 1000000000upokt \\n --from pnf_alpha \\n --chain-id pocket-alpha \\n --gas auto --gas-prices 1upokt --gas-adjustment 1.5 \\n --node=http://localhost:26657 \\n --home=$HOME/.pocket_prod
+ 5013  pocketd tx authz grant \\n  pokt1r6ja6rz6rpae58njfrsgs5n5sp3r36r2q9j04h \\n  generic \\n  --msg-type="/pocket.migration.MsgImportMorseClaimableAccounts" \\n  --from pnf_alpha_bak \\n  --expiration 16725225600 \\n  --chain-id pocket-alpha \\n  --gas auto --gas-prices 1upokt --gas-adjustment 1.5 \\n  --node=http://localhost:26657 \\n  --home=$HOME/.pocket_prode
+5014 pocketd tx authz grant \\n pokt1r6ja6rz6rpae58njfrsgs5n5sp3r36r2q9j04h \\n generic \\n --msg-type="/pocket.migration.MsgImportMorseClaimableAccounts" \\n --from pnf_alpha_bak \\n --expiration 16725225600 \\n --chain-id pocket-alpha \\n --gas auto --gas-prices 1upokt --gas-adjustment 1.5 \\n --node=http://localhost:26657 \\n --home=$HOME/.pocket_prod
+ 5017* pocketd query authz grants-by-grantee pokt1r6ja6rz6rpae58njfrsgs5n5sp3r36r2q9j04h --node=http://localhost:26657
+ 5018* pocketd tx migration import-morse-accounts morse_account_state.json --from pnf_alpha --grpc-addr=localhost:9090 --home=$HOME/.pocket_prod --chain-id=pocket-alpha --gas=auto --gas-prices=1upokt --gas-adjustment=1.5
