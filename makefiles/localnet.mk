@@ -13,6 +13,7 @@ localnet_up_quick: check_kubectl check_docker_ps dev_up check_kind_context ## St
 .PHONY: localnet_down
 localnet_down: ## Delete resources created by localnet
 	tilt down
+	@echo "poktroll localnet shut down. To remove the kind cluster run `kind delete cluster --name kind`"
 
 # DEV_NOTE: the "create namespace" commands in 'dev_up' are here to satisfy the 
 # requirements of the `path` helm charts. The requirement for these namespaces 
