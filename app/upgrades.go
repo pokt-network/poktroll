@@ -27,7 +27,13 @@ var allUpgrades = []upgrades.Upgrade{
 	// upgrades.Upgrade_0_0_13,
 
 	// v0.0.14 - upgrade to release latest features on TestNets to perform more load testing prior to MainNet launch.
-	upgrades.Upgrade_0_0_14,
+	// upgrades.Upgrade_0_0_14,
+
+	// v0.1.2 - upgrade to release morse migration capabilities
+	upgrades.Upgrade_0_1_2,
+
+	// v0.1.3 - upgrade to reduce network and memory footprint of session suppliers
+	upgrades.Upgrade_0_1_3,
 }
 
 // setUpgrades sets upgrade handlers for all upgrades and executes KVStore migration if an upgrade plan file exists.

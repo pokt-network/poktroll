@@ -327,30 +327,9 @@ ignite_install: ## Install ignite. Used by CI and heighliner.
 	rm ignite_28.3.0_$(OS)_$(ARCH).tar.gz; \
 	ignite version
 
-.PHONY: ignite_update_ldflags
-## Artifact release helper - sets version/datetime of the build
-ignite_update_ldflags:
-	yq eval '.build.ldflags = ["-X main.Version=$(VERSION)", "-X main.Date=$(shell date -u +%Y-%m-%dT%H:%M:%SZ)"]' -i config.yml
-
-.PHONY: ignite_release
-ignite_release: ## Builds production binaries
-	ignite chain build --release -t linux:amd64 -t linux:arm64 -t darwin:amd64 -t darwin:arm64
-	cd release && for f in poktroll_*.tar.gz; do mv "$$f" "pocket_$${f#poktroll_}"; done
-
-.PHONY: ignite_release_extract_binaries
-ignite_release_extract_binaries: ## Extracts binaries from the release archives
-	mkdir -p release_binaries
-
-	for archive in release/*.tar.gz; do \
-		binary_name=$$(basename "$$archive" .tar.gz); \
-		tar -zxvf "$$archive" -C release_binaries "pocketd"; \
-		mv release_binaries/pocketd "release_binaries/$$binary_name"; \
-	done
-
 #######################
 ### Keyring Helpers ###
 #######################
-
 
 .PHONY: pocketd_addr
 pocketd_addr: ## Retrieve the address for an account by ACC_NAME
@@ -387,35 +366,6 @@ act_reviewdog: check_act check_gh ## Run the reviewdog workflow locally like so:
 	$(eval CONTAINER_ARCH := $(shell make -s detect_arch))
 	@echo "Detected architecture: $(CONTAINER_ARCH)"
 	act -v -s GITHUB_TOKEN=$(GITHUB_TOKEN) -W .github/workflows/reviewdog.yml --container-architecture $(CONTAINER_ARCH)
-
-###########################
-###   Release Helpers   ###
-###########################
-
-# List tags: git tag
-# Delete tag locally: git tag -d v1.2.3
-# Delete tag remotely: git push --delete origin v1.2.3
-
-.PHONY: release_tag_bug_fix
-release_tag_bug_fix: ## Tag a new bug fix release (e.g. v1.0.1 -> v1.0.2)
-	@$(eval LATEST_TAG=$(shell git tag --sort=-v:refname | head -n 1))
-	@$(eval NEW_TAG=$(shell echo $(LATEST_TAG) | awk -F. -v OFS=. '{ $$NF = sprintf("%d", $$NF + 1); print }'))
-	@git tag $(NEW_TAG)
-	@echo "New bug fix version tagged: $(NEW_TAG)"
-	@echo "Run the following commands to push the new tag:"
-	@echo "  git push origin $(NEW_TAG)"
-	@echo "And draft a new release at https://github.com/pokt-network/poktroll/releases/new"
-
-
-.PHONY: release_tag_minor_release
-release_tag_minor_release: ## Tag a new minor release (e.g. v1.0.0 -> v1.1.0)
-	@$(eval LATEST_TAG=$(shell git tag --sort=-v:refname | head -n 1))
-	@$(eval NEW_TAG=$(shell echo $(LATEST_TAG) | awk -F. '{$$2 += 1; $$3 = 0; print $$1 "." $$2 "." $$3}'))
-	@git tag $(NEW_TAG)
-	@echo "New minor release version tagged: $(NEW_TAG)"
-	@echo "Run the following commands to push the new tag:"
-	@echo "  git push origin $(NEW_TAG)"
-	@echo "And draft a new release at https://github.com/pokt-network/poktroll/releases/new"
 
 ############################
 ### Grove Portal Helpers ###
@@ -458,3 +408,4 @@ include ./makefiles/ping.mk
 include ./makefiles/migrate.mk
 include ./makefiles/claudesync.mk
 include ./makefiles/docs.mk
+include ./makefiles/release.mk

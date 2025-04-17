@@ -58,7 +58,7 @@ Your Full Node must be fully synchronized before creating a Validator.
 **Monitor and follow**:
 
 - Upgrade notifications in [Pocket Network's Discord](https://discord.com/invite/pocket-network)
-- The [latest recommended version](../upgrades/2_upgrade_list.md) documentation
+- The [latest recommended version](../upgrades/4_upgrade_list.md) documentation
 
 ## What security practices should I follow?
 
