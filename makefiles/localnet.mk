@@ -16,7 +16,8 @@ localnet_down: ## Delete resources created by localnet
 	tilt down
 
 .PHONY: dev_up
-dev_up: check_kind # Internal helper: Spins up Kind cluster if it doesn't already exist
+# Internal helper: Spins up Kind cluster if it doesn't already exist
+dev_up: check_kind
 	echo "[INFO] Creating kind cluster..."; \
 	kind create cluster --config ./localnet/kubernetes/kind-config.yaml; \
 	kubectl config use-context kind-kind; \
