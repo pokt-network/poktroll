@@ -33,7 +33,7 @@ var allUpgrades = []upgrades.Upgrade{
 	// upgrades.Upgrade_0_1_2,
 
 	// v0.1.3 - upgrade to reduce network and memory footprint of session suppliers
-	upgrades.Upgrade_0_1_3,
+	// upgrades.Upgrade_0_1_3,
 
 	// v0.1.4 - upgrade to reduce network and memory footprint of session suppliers
 	upgrades.Upgrade_0_1_4,
