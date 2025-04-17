@@ -30,7 +30,7 @@ var allUpgrades = []upgrades.Upgrade{
 	// upgrades.Upgrade_0_0_14,
 
 	// v0.1.2 - upgrade to release morse migration capabilities
-	upgrades.Upgrade_0_1_2,
+	// upgrades.Upgrade_0_1_2,
 
 	// v0.1.3 - upgrade to reduce network and memory footprint of session suppliers
 	upgrades.Upgrade_0_1_3,
