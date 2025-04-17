@@ -1,29 +1,29 @@
 ---
-title: Testing Protocol Upgrades (Local Environment)
+title: Protocol Upgrades Local Testing
 sidebar_position: 3
 ---
 
 :::warning
 **For core protocol developers only!**
 
-- Complete steps 1–4 in [Release Procedure](./2_release_procedure.md) before starting.
-  :::
+Make sure to complete steps 1–4 in [Release Procedure](./2_release_procedure.md) before starting.
 
-## 📠🍝 Local Upgrade Testing – Step-by-Step
+:::
 
-**This is a copy/paste-ready checklist for validating protocol upgrades locally.**
+## 📠🍝 Testing Protocol Upgrades Locally: Step-by-Step <!-- omit in toc -->
+
+**This contains step-by-step instructions for testing & validating protocol upgrades locally.**
 
 - Every step is numbered and must be completed in order.
 - All commands are ready to copy/paste.
 - If you get stuck, ask for help.
+- If you find improvements, please update this doc.
 
 ---
 
-## Table of Contents
+## Table of Contents <!-- omit in toc -->
 
-- [📠🍝 Local Upgrade Testing – Step-by-Step](#-local-upgrade-testing--step-by-step)
-- [Table of Contents](#table-of-contents)
-- [0. Notes \& Prerequisites](#0-notes--prerequisites)
+- [0. Prerequisite Notes](#0-prerequisite-notes)
 - [1. Start node with old version](#1-start-node-with-old-version)
 - [2. Start node with new version](#2-start-node-with-new-version)
 - [3. Prepare the upgrade transaction](#3-prepare-the-upgrade-transaction)
@@ -34,11 +34,11 @@ sidebar_position: 3
 
 ---
 
-## 0. Notes & Prerequisites
+## 0. Prerequisite Notes
 
-- Example upgrade: `v0.1.1` → `v0.1.2` (macOS, arm64)
 - Local environments **do not** support `cosmovisor`/automatic upgrades. This is fine for testing.
-- Update this doc for each new upgrade (see TODOs).
+- This document shows how to test an upgrade locally using the `pocket_darwin_arm64` binary on a `macOS` machine with an `arm64` architecture. Adapt this to your environment.
+- The example shows how to test an upgrade from `v0.1.1` → `v0.1.2` assuming both of them already exist. Adapt this to your needs.
 
 ---
 
