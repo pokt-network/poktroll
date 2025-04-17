@@ -14,6 +14,10 @@ localnet_up_quick: check_kubectl check_docker_ps dev_up check_kind_context ## St
 localnet_down: ## Delete resources created by localnet
 	tilt down
 
+# DEV_NOTE: the "create namespace" commands in 'dev_up' are here to satisfy the 
+# requirements of the `path` helm charts. The requirement for these namespaces 
+# to exist may be removed in the future. For reference see repo:
+# https://github.com/buildwithgrove/helm-charts/tree/main/charts/path
 .PHONY: dev_up
 # Internal helper: Spins up Kind cluster if it doesn't already exist
 dev_up: check_kind
@@ -21,10 +25,6 @@ dev_up: check_kind
 		echo "[INFO] Creating kind cluster..."; \
 		kind create cluster --config ./localnet/kubernetes/kind-config.yaml; \
 		kubectl config use-context kind-kind; \
-		# DEV_NOTE: These namespaces are here to satisfy the requirements of the `path` helm charts.
-		# 			The requirement for these namespaces to exist may be removed in the future.
-		# 			For reference see repo:
-		# 				https://github.com/buildwithgrove/helm-charts/tree/main/charts/path
 		kubectl create namespace path; \
 		kubectl create namespace monitoring; \
 		kubectl create namespace middleware; \
