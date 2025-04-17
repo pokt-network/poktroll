@@ -52,16 +52,19 @@ install_act: ## Install act for local GitHub Actions testing
 
 .PHONY: release_tag_local_testing
 release_tag_local_testing: ## Tag a new local testing release (e.g. v1.0.1 -> v1.0.2-test1, v1.0.2-test1 -> v1.0.2-test2)
-	@$(eval LATEST_TAG=$(shell git tag --sort=-v:refname | head -n 1))
-	@\
-	if echo $(LATEST_TAG) | grep -q -- '-test'; then \
-	  BASE_TAG=$(echo $(LATEST_TAG) | sed 's/-test[0-9]*//'); \
-	  LAST_TEST_NUM=$(echo $(LATEST_TAG) | sed -E 's/.*-test([0-9]+)/\1/'); \
-	  NEXT_TEST_NUM=$$(($$LAST_TEST_NUM + 1)); \
-	  NEW_TAG=$${BASE_TAG}-test$${NEXT_TEST_NUM}; \
+	@LATEST_TAG=$$(git tag --sort=-v:refname | head -n 1 | xargs); \
+	if [ -z "$$LATEST_TAG" ]; then \
+	  NEW_TAG=v0.1.0-test1; \
 	else \
-	  BASE_TAG=$(echo $(LATEST_TAG) | awk -F. -v OFS=. '{$$NF = sprintf("%d", $$NF + 1); print}'); \
-	  NEW_TAG=$${BASE_TAG}-test1; \
+	  if echo "$$LATEST_TAG" | grep -q -- '-test'; then \
+	    BASE_TAG=$$(echo "$$LATEST_TAG" | sed 's/-test[0-9]*//'); \
+	    LAST_TEST_NUM=$$(echo "$$LATEST_TAG" | sed -E 's/.*-test([0-9]+)/\1/'); \
+	    NEXT_TEST_NUM=$$(($$LAST_TEST_NUM + 1)); \
+	    NEW_TAG=$${BASE_TAG}-test$${NEXT_TEST_NUM}; \
+	  else \
+	    BASE_TAG=$$(echo "$$LATEST_TAG" | awk -F. -v OFS=. '{$$NF = sprintf("%d", $$NF + 1); print}'); \
+	    NEW_TAG=$${BASE_TAG}-test1; \
+	  fi; \
 	fi; \
 	git tag $$NEW_TAG; \
 	echo "New local testing version tagged: $$NEW_TAG"; \
