@@ -51,17 +51,23 @@ install_act: ## Install act for local GitHub Actions testing
 # Delete tag remotely: git push --delete origin v1.2.3
 
 .PHONY: release_tag_local_testing
-release_tag_local_testing: ## Tag a new local testing release (e.g. v1.0.1 -> v1.0.1-test1, v1.0.1-test1 -> v1.0.1-test2)
+release_tag_local_testing: ## Tag a new local testing release (e.g. v1.0.1 -> v1.0.2-test1, v1.0.2-test1 -> v1.0.2-test2)
 	@$(eval LATEST_TAG=$(shell git tag --sort=-v:refname | head -n 1))
-	@$(eval BASE_TAG=$(shell echo $(LATEST_TAG) | sed 's/-test[0-9]*//'))
-	@$(eval NEXT_TEST_NUM=$(shell git tag -l "$(BASE_TAG)-test*" | sed -E 's/.*-test([0-9]+)/\1/' | sort -n | tail -n 1 | awk '{print ($$1==""?1:$$1+1)}'))
-	@$(eval NEW_TAG=$(BASE_TAG)-test$(NEXT_TEST_NUM))
-	@git tag $(NEW_TAG)
-	@echo "New local testing version tagged: $(NEW_TAG)"
-	@echo "Run the following commands to push the new tag:"
-	@echo "  git push origin $(NEW_TAG)"
-	@echo "And draft a new release at https://github.com/pokt-network/poktroll/releases/new"
-
+	@\
+	if echo $(LATEST_TAG) | grep -q -- '-test'; then \
+	  BASE_TAG=$(echo $(LATEST_TAG) | sed 's/-test[0-9]*//'); \
+	  LAST_TEST_NUM=$(echo $(LATEST_TAG) | sed -E 's/.*-test([0-9]+)/\1/'); \
+	  NEXT_TEST_NUM=$$(($$LAST_TEST_NUM + 1)); \
+	  NEW_TAG=$${BASE_TAG}-test$${NEXT_TEST_NUM}; \
+	else \
+	  BASE_TAG=$(echo $(LATEST_TAG) | awk -F. -v OFS=. '{$$NF = sprintf("%d", $$NF + 1); print}'); \
+	  NEW_TAG=$${BASE_TAG}-test1; \
+	fi; \
+	git tag $$NEW_TAG; \
+	echo "New local testing version tagged: $$NEW_TAG"; \
+	echo "Run the following commands to push the new tag:"; \
+	echo "  git push origin $$NEW_TAG"; \
+	echo "And draft a new release at https://github.com/pokt-network/poktroll/releases/new";
 
 .PHONY: release_tag_bug_fix
 release_tag_bug_fix: ## Tag a new bug fix release (e.g. v1.0.1 -> v1.0.2)
