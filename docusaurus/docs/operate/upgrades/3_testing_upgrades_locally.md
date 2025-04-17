@@ -31,6 +31,7 @@ Make sure to complete steps 1–4 in [Release Procedure](./2_release_procedure.m
 - [5. Observe the upgrade output](#5-observe-the-upgrade-output)
 - [6. Stop old node \& start new node](#6-stop-old-node--start-new-node)
 - [7. Sanity checks](#7-sanity-checks)
+- [Pro](#pro)
 
 ---
 
@@ -69,13 +70,19 @@ make go_develop ignite_release ignite_release_extract_binaries
 
 ## 3. Prepare the upgrade transaction
 
-- In `poktroll_old`, run:
+In `poktroll_old`, the following file should already exist if you have completed the [Release Procedure](2_release_procedure.md):
+
+```bash
+tools/scripts/upgrades/upgrade_tx_v0.1.2_local.json
+```
+
+It was created by running:
 
 ```bash
 ./tools/scripts/upgrades/prepare_upgrade_tx.sh v0.1.2
 ```
 
-- Update the `height` in `tools/scripts/upgrades/upgrade_tx_v0.1.2_local.json`:
+Open up a second shell in `poktroll_old` and update the `height` in `tools/scripts/upgrades/upgrade_tx_v0.1.2_local.json`:
 
 ```bash
 # Get current height, add 20 (buffer)
@@ -89,13 +96,13 @@ cat ./tools/scripts/upgrades/upgrade_tx_v0.1.2_local.json
 
 ## 4. Submit & verify the upgrade transaction
 
-- In `poktroll_old`, submit:
+In `poktroll_old`, submit the upgrade transaction:
 
 ```bash
 ./release_binaries/pocket_darwin_arm64 tx authz exec tools/scripts/upgrades/upgrade_tx_v0.1.2_local.json --yes --from=pnf
 ```
 
-- Verify onchain:
+Verify it was submitted onchain:
 
 ```bash
 ./release_binaries/pocket_darwin_arm64 query upgrade plan
@@ -105,19 +112,19 @@ cat ./tools/scripts/upgrades/upgrade_tx_v0.1.2_local.json
 
 ## 5. Observe the upgrade output
 
-- When `UPGRADE_HEIGHT` is reached, you should see output like:
+When `UPGRADE_HEIGHT` is reached, you should see output like:
 
 ```bash
 ERR UPGRADE "v0.1.2" NEEDED at height: <height>: ...
 ```
 
-- The validator should stop.
+**🛑 The validator should stop 🛑**
 
 ---
 
 ## 6. Stop old node & start new node
 
-- In `poktroll_old`, stop the validator (`cmd + c` on macOS).
+- In `poktroll_old`, stop the validator (`cmd/ctrl + c` on macOS).
 - In `poktroll_new`, start the validator:
 
 ```bash
@@ -143,3 +150,7 @@ curl -s http://localhost:26657/abci_info | jq '.result.response.version'
 :::note
 Query the node for business logic changes as needed.
 :::
+
+## Pro
+
+migrate local testing notes here
