@@ -13,24 +13,23 @@ localnet_up_quick: check_kubectl check_docker_ps dev_up check_kind_context ## St
 .PHONY: localnet_down
 localnet_down: ## Delete resources created by localnet
 	tilt down
-	kind delete cluster --name kind
 
 .PHONY: dev_up
 dev_up: check_kind # Internal helper: Spins up Kind cluster if it doesn't already exist
-	echo "[INFO] Creating kind cluster...";
-	kind create cluster --config ./localnet/kubernetes/kind-config.yaml;
-	@kubectl config use-context kind-kind;
-	# DEV_NOTE: These namespaces are here to satisfy the requirements of the `path` helm charts.
-	# 			The requirement for these namespaces to exist may be removed in the future.
-	# 			For reference see repo:
-	# 				https://github.com/buildwithgrove/helm-charts/tree/main/charts/path
-	@kubectl create namespace path;
-	@kubectl create namespace monitoring;
-	@kubectl create namespace middleware;
-
-.PHONY: dev_down
-dev_down: # Internal helper: Delete resources created by dev
-	kind delete cluster --name kind
+	@if ! kind get clusters | grep -q "^kind$$"; then \
+		echo "[INFO] Creating kind cluster...";
+		kind create cluster --config ./localnet/kubernetes/kind-config.yaml;
+		@kubectl config use-context kind-kind;
+# DEV_NOTE: These namespaces are here to satisfy the requirements of the `path` helm charts.
+# 			The requirement for these namespaces to exist may be removed in the future.
+# 			For reference see repo:
+# 				https://github.com/buildwithgrove/helm-charts/tree/main/charts/path
+		@kubectl create namespace path;
+		@kubectl create namespace monitoring;
+		@kubectl create namespace middleware;
+	else \
+		echo "[INFO] Kind cluster already exists. Skipping creation."; \
+	fi
 
 # Optional context for 'move_poktroll_to_pocket' to answer this question:
 # https://github.com/pokt-network/poktroll/pull/1151#discussion_r2013801486 
