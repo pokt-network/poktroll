@@ -3,17 +3,27 @@ title: Claiming Morse Accounts
 sidebar_position: 6
 ---
 
-### Claim a Basic Morse Account (Unstaked, Non-Actor)
+- [Account Definition](#account-definition)
+- [How do I claim my Morse POKT?](#how-do-i-claim-my-morse-pokt)
+  - [1. Prerequisite - Create a new Shannon key](#1-prerequisite---create-a-new-shannon-key)
+  - [2. Claim Shannon Claim Tokens](#2-claim-shannon-claim-tokens)
+  - [3. Submit Claim Transaction](#3-submit-claim-transaction)
+- [How does it work?](#how-does-it-work)
 
-:::note
+## Account Definition
 
-If the Morse account is not staked as an Application or Supplier, it is considered an "unstaked" or "non-actor" account.
+This page describes how to claim a Morse "Account" on Shannon.
 
-:::
+This covers accounts which:
 
-Claiming an unstaked account will mint the unstaked balance of the Morse account being claimed to the Shannon account which the signer of the `MsgClaimMorseAccount`.
+- **ARE NOT** staked as an Application
+- **ARE NOT** staked as a Supplier
+- **DO NOT** have any POKT staked
+- **DO** have a non-zero POKT balance
 
-This unstaked balance amount is retrieved from the corresponding onchain `MorseClaimableAccount` which was imported by the foundation.
+## How do I claim my Morse POKT?
+
+### 1. Prerequisite - Create a new Shannon key
 
 For example, running the following command:
 
@@ -22,6 +32,10 @@ pocketd tx migration claim-account \
   ./pocket-account-8b257c7f4e884e49bafc540d874f33f91436e1dc.json \
   --from app1
 ```
+
+### 2. Claim Shannon Claim Tokens
+
+### 3. Submit Claim Transaction
 
 Should prompt for a passphrase and produce output similar to the following:
 
@@ -34,3 +48,9 @@ MsgClaimMorseAccount {
 }
 Confirm MsgClaimMorseAccount: y/[n]:
 ```
+
+## How does it work?
+
+Claiming an unstaked account will mint the unstaked balance of the Morse account being claimed to the Shannon account which the signer of the `MsgClaimMorseAccount`.
+
+This unstaked balance amount is retrieved from the corresponding onchain `MorseClaimableAccount` which was imported by the foundation.

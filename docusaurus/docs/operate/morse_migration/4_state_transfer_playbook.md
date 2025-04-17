@@ -9,13 +9,13 @@ This page is intended for the Foundation (Authority) or whoever is managing the 
 
 - [1. Retrieve a Pruned Morse Snapshot](#1-retrieve-a-pruned-morse-snapshot)
 - [2. Export Morse State](#2-export-morse-state)
-- [2. Transform Export to Canonical Account State](#2-transform-export-to-canonical-account-state)
-- [3. Distribute Account State](#3-distribute-account-state)
-- [4. Align on Social Consensus](#4-align-on-social-consensus)
-- [5. Import Canonical State into Shannon](#5-import-canonical-state-into-shannon)
+- [3. Transform Export to Canonical Account State](#3-transform-export-to-canonical-account-state)
+- [4. Distribute Account State](#4-distribute-account-state)
+- [5. Align on Social Consensus](#5-align-on-social-consensus)
+- [6. Import Canonical State into Shannon](#6-import-canonical-state-into-shannon)
 - [State Validation: Morse Account Holders](#state-validation-morse-account-holders)
   - [Why Validate?](#why-validate)
-  - [How to Validate (Copy-pasta)](#how-to-validate-copy-pasta)
+  - [How to Validate](#how-to-validate)
 
 ---
 
@@ -53,7 +53,7 @@ mv e2e/tests/morse_state_export.json morse_state_export.json
 
 :::
 
-### 2. Transform Export to Canonical Account State
+### 3. Transform Export to Canonical Account State
 
 ```bash
 pocketd tx migration collect-morse-accounts morse_state_export.json morse_account_state.json
@@ -69,63 +69,68 @@ failed to read in /Users/olshansky/.pocket/config/config.toml: While parsing con
 
 :::
 
-### 3. Distribute Account State
+### 4. Distribute Account State
 
 Distribute the `morse_account_state.json` and its hash for public verification by Morse account/stake-holders.
 
-### 4. Align on Social Consensus
+### 5. Align on Social Consensus
 
 - Wait for consensus (offchain, time-bounded).
 - React to feedback as needed.
 
-### 5. Import Canonical State into Shannon
+### 6. Import Canonical State into Shannon
 
 ```bash
-pocketd tx migration import-morse-accounts morse_account_state.json --from <authorized-key-name> --grpc-addr=<shannon-network-grpc-endpoint>
+pocketd tx migration \
+  import-morse-accounts morse_account_state.json \
+  --from <authorized-key-name> \
+  --grpc-addr=<shannon-network-grpc-endpoint> \
+  --home <shannon-home-directory> \
+  --chain-id=<shannon-chain-id> \
+  --gas=auto --gas-prices=1upokt --gas-adjustment=1.5
 ```
 
-For example, to run the above on different networks:
+For example, to run the above on different networks (replacing `--home`):
 
 ```bash
 # LocalNet
-pocketd tx migration import-morse-accounts morse_account_state.json --from <authorized-key-name> --grpc-addr=https://shannon-grove-grpc.alpha.poktroll.com
+pocketd tx migration import-morse-accounts morse_account_state.json --from pnf --grpc-addr=localhost:9090 --home=./localnet/pocketd --chain-id=pocket --gas=auto --gas-prices=1upokt --gas-adjustment=1.5
 
 # Alpha TestNet
-pocketd tx migration import-morse-accounts morse_account_state.json --from <authorized-key-name> --grpc-addr=https://shannon-grove-grpc.alpha.poktroll.com
+pocketd tx migration import-morse-accounts morse_account_state.json --from <authorized-key-name> --grpc-addr=https://shannon-grove-grpc.alpha.poktroll.com --home=~/.pocket_prod --chain-id=pocket-alpha --gas=auto --gas-prices=1upokt --gas-adjustment=1.5
 
 # Beta TestNet
-pocketd tx migration import-morse-accounts morse_account_state.json --from <authorized-key-name> --grpc-addr=https://shannon-grove-grpc.beta.poktroll.com
+pocketd tx migration import-morse-accounts morse_account_state.json --from <authorized-key-name> --grpc-addr=https://shannon-grove-grpc.beta.poktroll.com --home=~/.pocket_prod --chain-id=pocket-beta --gas=auto --gas-prices=1upokt --gas-adjustment=1.5
 
 # MainNet
-pocketd tx migration import-morse-accounts morse_account_state.json --from <authorized-key-name> --grpc-addr=https://shannon-grove-grpc.mainnet.poktroll.com
+pocketd tx migration import-morse-accounts morse_account_state.json --from <authorized-key-name> --grpc-addr=https://shannon-grove-grpc.mainnet.poktroll.com --home=~/.pocket_prod --chain-id=pocket-mainnet --gas=auto --gas-prices=1upokt --gas-adjustment=1.5
 ```
 
 ### State Validation: Morse Account Holders
+
+**The output in `morse_account_state.json` MUST be validated before step 6.**
 
 :::info Fun Analogy 👯
 
 - It's like making sure you and your friends (your accounts) are on "the list" before it gets printed out and handed to the crypto-club bouncer.
 - Double-check that all names are on the list and spelled correctly; **the bouncer at crypto-club is brutally strict**.
-  :::
+
+:::
 
 #### Why Validate?
 
-- The ETVL process determines the _official_ set of claimable Morse accounts (balances/stakes) on Shannon.
-- It's **critical** for Morse account/stake-holders to confirm their account(s) are included and correct in the proposed `MsgImportMorseClaimableAccounts`.
+- The [ETVL](3_state_transfer_overview.md) process determines the _official_ set of claimable Morse accounts (balances/stakes) on Shannon.
+- It's **critical** for Morse account/stake-holders to confirm their account(s) are included and correct in the proposed `msg_import_morse_claimable_accounts.json`.
 
-#### How to Validate (Copy-pasta)
+#### How to Validate
 
-- **Download** the latest proposed `MsgImportMorseClaimableAccounts` (contains both the state and its hash):
-  :::warning TODO_MAINNET
-  Link to latest published [`MsgImportMorseClaimableAccounts`](https://github.com/pokt-network/poktroll/blob/main/proto/pocket/migration/tx.proto#L50) proposal.
-  :::
+Firstly, **Retrieve** the latest proposed `msg_import_morse_claimable_accounts.json` (contains both the state and its hash).
 
-- **Validate** using the Shannon CLI:
-  - Example file: `./msg_import_morse_claimable_accounts.json`
-  - Run:
-    ```bash
-    # TODO_MAINNET_CRITICAL(@bryanchriswhite, #1034): Complete this example once the CLI is available.
-    pocketd tx migration validate-morse-accounts ./msg_import_morse_claimable_accounts.json [morse_hex_address1, ...]
-    ```
-  - You can pass multiple Morse addresses to the command.
-  - For each address, the corresponding `MorseClaimableAccount` is printed for manual inspection and validation.
+Then, **Validate** using the Shannon CLI like so:
+
+```bash
+pocketd tx migration validate-morse-accounts ./msg_import_morse_claimable_accounts.json [morse_hex_address1, ...]
+```
+
+- You can pass multiple Morse addresses to the command
+- For each address, the corresponding `MorseClaimableAccount` is printed for manual inspection and validation

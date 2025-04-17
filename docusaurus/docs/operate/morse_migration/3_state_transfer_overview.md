@@ -1,9 +1,11 @@
 ---
-title: ETVL Overview
+title: State Transfer Overview
 sidebar_position: 3
 ---
 
-**ETVL = Export → Transform → Validate → Load**
+State Transfer is the process of migrating state from the Morse network to the Shannon network.
+
+We use ETVL as an abbreviation for the State Transfer process including Export, Transform, Validate, and Load.
 
 ---
 
