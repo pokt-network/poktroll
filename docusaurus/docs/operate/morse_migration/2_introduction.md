@@ -100,14 +100,14 @@ sequenceDiagram
     loop (Re-)Generate morse_account_state.json
         A ->>+ MN: $ pocket util export-geneis-for-reset
         MN ->>- A: return morse_state_export.json
-        A ->> A: $ pocketd migrate collect-morse-accounts
+        A ->> A: $ pocketd tx migration collect-morse-accounts
         note over A: morse_account_state.json generated
         A ->>+ MA: distribute for verification <br> morse_account_state.json
 
         opt Morse Stakeholders optionally do local verification
             MA ->>+ MN: $ pocket util export-geneis-for-reset
             MN ->>- MA: return for local verification <br> morse_state_export.json
-            MA ->> MA: $ pocketd migrate collect-morse-accounts
+            MA ->> MA: $ pocketd tx migration collect-morse-accounts
             note over MA: morse_account_state.json generated
             MA ->> MA: manual comparison of <br> morse_account_state.json hashes
             MA ->>- A: ** (off-chain feedback) **
@@ -118,5 +118,5 @@ sequenceDiagram
     A ->>+ SN: upload morse state<br/>(MsgCreateMorseAccountState)
     SN ->> SN: verify morse_account_state_hash field
     SN -->- A: valid / invalid
-    MA ->> SN: $ pocketd migrate claim-...<br/>claim morse POKT balance and any actor stake<br/>(MsgClaimMorse...)
+    MA ->> SN: $ pocketd tx migration claim-...<br/>claim morse POKT balance and any actor stake<br/>(MsgClaimMorse...)
 ```

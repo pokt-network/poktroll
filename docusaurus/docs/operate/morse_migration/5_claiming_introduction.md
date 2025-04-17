@@ -256,7 +256,7 @@ These subcommands map 1:1 to the different claim messages (see image above) whic
 You can run the following command to see all available subcommands:
 
 ```shell
-pocketd tx migrate --help
+pocketd tx migration--help
 ```
 
 Which should produce output similar to the following:

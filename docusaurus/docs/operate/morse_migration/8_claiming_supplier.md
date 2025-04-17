@@ -84,6 +84,6 @@ Confirm MsgClaimMorseAccount: y/[n]:
 
 :::tip
 
-See: `pocketd tx migrate claim-supplier --help` for more details.
+See: `pocketd tx migrationclaim-supplier --help` for more details.
 
 :::

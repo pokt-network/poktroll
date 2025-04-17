@@ -27,28 +27,28 @@ sidebar_position: 3
 
 1. **Re-use Morse CLI tooling**
 
-- Export Morse state:
+   - Export Morse state:
 
-  ```bash
-  pocket util export-genesis-for-reset
-  ```
+     ```bash
+     pocket util export-genesis-for-reset ...
+     ```
 
-- Export Morse account keys for Shannon claims:
+   - Export Morse account keys for Shannon claims:
 
-  ```bash
-  pocketd migrate claim-...
-  ```
+     ```bash
+     pocketd txmigrate claim-...
+     ```
 
 2. **Offchain social consensus**
 
-- Use cryptographic hash verification
-- Community agrees offchain on the canonical `MorseAccountState`
+   - Use cryptographic hash verification
+   - Community agrees offchain on the canonical `MorseAccountState`
 
 3. **Minimize Shannon onchain state bloat**
 
-- Keep onchain data small and fast
-- Transform Morse export into minimal `MorseClaimableAccount` objects
-- Only store what’s needed for claims
+   - Keep onchain data small and fast
+   - Transform Morse export into minimal `MorseClaimableAccount` objects
+   - Only store what’s needed for claims
 
 ---
 

@@ -18,7 +18,7 @@ This unstaked balance amount is retrieved from the corresponding onchain `MorseC
 For example, running the following command:
 
 ```bash
-pocketd migrate claim-account \
+pocketd tx migration claim-account \
   ./pocket-account-8b257c7f4e884e49bafc540d874f33f91436e1dc.json \
   --from app1
 ```

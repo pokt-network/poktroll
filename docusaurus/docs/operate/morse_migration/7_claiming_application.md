@@ -21,7 +21,7 @@ Recall that the unstaked balance and application stake amounts are retrieved fro
 For example, running the following command:
 
 ```bash
-pocketd migrate claim-application \
+pocketd tx migration claim-application \
   ./pocket-account-8b257c7f4e884e49bafc540d874f33f91436e1dc.json \
   anvil \
   --from app1
@@ -44,6 +44,6 @@ Confirm MsgClaimMorseApplication: y/[n]:
 
 :::tip
 
-See `pocketd tx migrate claim-application --help` for more details.
+See `pocketd tx migrationclaim-application --help` for more details.
 
 :::
