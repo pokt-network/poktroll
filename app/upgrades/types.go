@@ -39,11 +39,15 @@ const (
 var NetworkAuthzGranteeAddress = map[string]string{
 	"pocket-alpha": AlphaTestNetPnfAddress,
 	"pocket-beta":  BetaTestNetPnfAddress,
+
 	// Grove's address is used as of #1191 to authorize updates to mainnet parameters.
 	// TODO_POST_MAINNET: Update to PNF address once the migration is complete.
-	// "pocket": MainnetGroveAddress,
-	"pocket": LocalNetPnfAddress,
-	// TODO_POST_MAINNET: Streamline using `pocket-local` for the localnet
+	"pocket": MainnetGroveAddress,
+
+	// TODO_TECHDEBT: We currently use "pocket" for the local network environment,
+	// which interferes with the mainnet address. Streamline using `pocket-local` for the localnet
+	// and uncomment the line below in the meantime during testing.
+	// "pocket": LocalNetPnfAddress,
 	// "pocket-local": LocalNetPnfAddress,
 }
 
@@ -60,4 +64,21 @@ type Upgrade struct {
 
 	// StoreUpgrades adds, renames and deletes KVStores in the state to prepare for a protocol upgrade.
 	StoreUpgrades storetypes.StoreUpgrades
+}
+
+// An example of an upgrade that uses the default upgrade handler and also performs additional state changes.
+// For example, even if `ConsensusVersion` is not modified for any modules, it still might be beneficial to create
+// an upgrade so node runners are signaled to start utilizing `Cosmovisor` for new binaries.
+var UpgradeExample = Upgrade{
+	// PlanName can be any string.
+	// This code is executed when the upgrade with this plan name is submitted to the network.
+	// This does not necessarily need to be a version, but it's usually the case with consensus-breaking changes.
+	PlanName:             "v0.0.0-Example",
+	CreateUpgradeHandler: defaultUpgradeHandler,
+
+	// We can also add, rename and delete KVStores.
+	// More info in cosmos-sdk docs: https://docs.cosmos.network/v0.50/learn/advanced/upgrade#add-storeupgrades-for-new-modules
+	StoreUpgrades: storetypes.StoreUpgrades{
+		// Added: []string{"wowsuchrelay"},
+	},
 }
