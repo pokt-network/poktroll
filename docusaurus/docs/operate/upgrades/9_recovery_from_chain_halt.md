@@ -116,7 +116,7 @@ However, if necessary, the instructions to follow are:
 
 1. Prepare & verify a new binary that addresses the consensus-breaking issue.
 2. [Create a release](2_release_procedure.md).
-3. [Prepare an upgrade transaction](3_testing_upgrades.md#writing-an-upgrade-transaction) to the new version.
+3. [Prepare an upgrade transaction](3_testing_upgrades_locally.md#writing-an-upgrade-transaction) to the new version.
 4. Disconnect the `Validator set` from the rest of the network **3 blocks** prior to the height of the chain halt. For example:
    - Assume an issue at height `103`.
    - Revert the `validator set` to height `100`.
