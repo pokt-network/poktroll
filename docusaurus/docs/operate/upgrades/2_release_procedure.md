@@ -31,12 +31,13 @@ sidebar_position: 2
 - [3. Create a GitHub Release](#3-create-a-github-release)
 - [4. Write an Upgrade Transaction (JSON file)](#4-write-an-upgrade-transaction-json-file)
 - [5. Validate the Upgrade Binary URLs (Live Network Only)](#5-validate-the-upgrade-binary-urls-live-network-only)
-- [6. Test the New Release](#6-test-the-new-release)
-- [7. Submit the Upgrade Onchain (Alpha)](#7-submit-the-upgrade-onchain-alpha)
+- [6. Test the New Release Locally](#6-test-the-new-release-locally)
+- [7. Submit the Upgrade on Alpha TestNet](#7-submit-the-upgrade-on-alpha-testnet)
 - [8. Update the `homebrew-tap` Formula](#8-update-the-homebrew-tap-formula)
 - [9. Submit the Upgrade on Beta \& MainNet](#9-submit-the-upgrade-on-beta--mainnet)
 - [10. Troubleshooting \& Canceling an Upgrade](#10-troubleshooting--canceling-an-upgrade)
 - [Before You Finish](#before-you-finish)
+- [TODO](#todo)
 
 ---
 
@@ -239,14 +240,14 @@ Expected output should look like the following:
 
 ---
 
-## 6. Test the New Release
+## 6. Test the New Release Locally
 
 - Follow [Testing Protocol Upgrades](3_testing_upgrades_locally.md) **before** submitting any transactions.
 - If you find an issue, you'll need to repeat the steps as needed (update plan, release, transactions, etc.).
 
 ---
 
-## 7. Submit the Upgrade Onchain (Alpha)
+## 7. Submit the Upgrade on Alpha TestNet
 
 This step is parameterized so you can use it for any network (Alpha, Beta, or MainNet). Substitute the variables below as needed.
 
@@ -261,7 +262,7 @@ This step is parameterized so you can use it for any network (Alpha, Beta, or Ma
 **Step-by-Step instructions:**
 
 1. Get the RPC endpoint for `NETWORK`. Example for Alpha [here](https://dev.poktroll.com/tools/tools/shannon_alpha).
-2. Update the `height` in your upgrade transaction JSON:
+2. Update the `height` in your upgrade transaction JSON ():
 
    ```bash
    # Get the current height
@@ -270,7 +271,18 @@ This step is parameterized so you can use it for any network (Alpha, Beta, or Ma
    UPGRADE_HEIGHT=$((CURRENT_HEIGHT + 5))
    # Update the JSON
    sed -i.bak "s/\"height\": \"[^\"]*\"/\"height\": \"$UPGRADE_HEIGHT\"/" ${UPGRADE_TX_JSON}
+   # Cat the output file
+   cat ${UPGRADE_TX_JSON}
    ```
+
+   :::tip Export `UPGRADE_TX_JSON` and `RPC_ENDPOINT` first
+
+   ```bash
+   export RPC_ENDPOINT=https://shannon-testnet-grove-rpc.alpha.poktroll.com
+   export UPGRADE_TX_JSON="tools/scripts/upgrades/upgrade_tx_v0.1.4_alpha.json"
+   ```
+
+   :::
 
 3. Submit the transaction:
 
@@ -281,7 +293,7 @@ This step is parameterized so you can use it for any network (Alpha, Beta, or Ma
      tx authz exec ${UPGRADE_TX_JSON} --from=${FROM_ACCOUNT}
    ```
 
-   :::tip Grove Employees 🌿
+   :::tip Grove Employee Helpers 🌿
 
    If you're a Grove Employee, you can use the helpers [here](https://www.notion.so/buildwithgrove/Playbook-Streamlining-rc-helpers-for-Shannon-Alpha-Beta-Main-Network-Environments-152a36edfff680019314d468fad88864?pvs=4) to use this wrapper:
 
@@ -289,25 +301,27 @@ This step is parameterized so you can use it for any network (Alpha, Beta, or Ma
    pkd_<NETWORK>_tx authz exec ${UPGRADE_TX_JSON} --from=${FROM_ACCOUNT}
    ```
 
-   :::
-
 4. Verify the upgrade is planned onchain:
 
    ```bash
    pocketd query upgrade plan --node ${RPC_ENDPOINT}
    ```
 
-5. (Optional) Watch the transaction (using the TX_HASH from step 3):
+5. Watch the transaction (using the TX_HASH from step 3):
 
    ```bash
    watch -n 5 "pocketd query tx --type=hash ${TX_HASH} --node ${RPC_ENDPOINT}"
    ```
 
-6. After upgrade, verify node version aligns with what's in `<UPGRADE_TX_JSON>`:
+6. Verify node version aligns with what's in `<UPGRADE_TX_JSON>`:
 
    ```bash
    curl -s ${RPC_ENDPOINT}/abci_info | jq '.result.response.version'
    ```
+
+7. Once the upgrade is complete, make sure to:
+   - Record the upgrade `height` and `tx_hash` in the [GitHub Release](https://github.com/pokt-network/poktroll/releases)
+   - Commit the `{UPGRADE_TX_JSON}` file with the final height to `main`
 
 :::tip Grove Employees 🌿
 
@@ -354,7 +368,7 @@ See [pocketd CLI docs](../../tools/user_guide/pocketd_cli.md) for more info.
 
 ## 9. Submit the Upgrade on Beta & MainNet
 
-Repeat [Step 7: Submit the Upgrade Onchain](#7-submit-the-upgrade-onchain-alpha) with the appropriate parameters for Beta and MainNet:
+Repeat [Step 7: Submit the Upgrade Onchain](#7-submit-the-upgrade-on-alpha-testnet) with the appropriate parameters for Beta and MainNet:
 
 - Use the correct `<RPC_ENDPOINT>` for Beta or MainNet
 - Use the correct `<UPGRADE_TX_JSON>` (e.g., `upgrade_tx_v0.1.2_beta.json` or `upgrade_tx_v0.1.2_main.json`)
@@ -399,3 +413,10 @@ commands on how `v0.1.3` was submitted on Alpha & Beta.
 - [ ] You have communicated upgrade details to the team/community
 - [ ] You have prepared for rollback/troubleshooting if needed
 - [ ] You have updated the published release with the final upgrade height on each network
+
+## TODO
+
+The following improvements will streamline this process further
+
+- [ ] Concrete examples of PR examples & descriptions along the way
+- [ ] Additional helpers (not automation) for some of the commands throughout
