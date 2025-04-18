@@ -21,6 +21,7 @@ This page is intended for the Foundation (Authority) or whoever is managing the 
   - [I don't have a real snapshot on my machine](#i-dont-have-a-real-snapshot-on-my-machine)
   - [`invalid character at start of key`](#invalid-character-at-start-of-key)
   - [`failed to get grant with given granter: ..., grantee: ... & msgType: /pocket.migration.MsgImportMorseClaimableAccounts`](#failed-to-get-grant-with-given-granter--grantee---msgtype-pocketmigrationmsgimportmorseclaimableaccounts)
+  - [`http2 frame too large`](#http2-frame-too-large)
 
 ---
 
@@ -220,6 +221,34 @@ pocketd tx authz grant \
   --home=$HOME/.pocket_prod
 ```
 
+### `http2 frame too large`
+
+If you're seeing the following issue:
+
+```bash
+rpc error: code = Unavailable desc = connection error: desc = "error reading server preface: http2: frame too large"
+```
+
+The http/grpc configs of the `RPC_ENDPOINT` you're using may need to be configured.
+
+If you're running it yourself in `k8s`, a workaround can be to replace this command:
+
+```
+pocketd tx migration import-morse-accounts ./tools/scripts/migration/morse_account_state_alpha.json  --from pnf_alpha  --home=$HOME/.pocket_prod --chain-id=pocket-alpha --gas=auto --gas-prices=1upokt --gas-adjustment=1.5 --grpc-addr=shannon-testnet-grove-grpc.alpha.poktroll.com:443 --node=https://shannon-testnet-grove-rpc.alpha.poktroll.com
+```
+
+with
+
+```bash
+
+kubectl port-forward pods/alpha-validator1-pocketd-0 26657:26657 9090:9090 -n testnet-alpha --address 0.0.0.0
+
+pocketd tx migration import-morse-accounts ./tools/scripts/migration/morse_account_state_alpha.json  --from pnf_alpha  --home=$HOME/.pocket_prod --chain-id=pocket-alpha --gas=auto --gas-prices=1upokt --gas-adjustment=1.5 --grpc-addr=localhost:9090 --node=localhost:26657
+```
+
+```
+pocketd tx migration import-morse-accounts ./tools/scripts/migration/morse_account_state_alpha.json  --from pnf_alpha  --home=$HOME/.pocket_prod --chain-id=pocket-alpha --gas=auto --gas-prices=1upokt --gas-adjustment=1.5 --grpc-addr=localhost:9090 --node=http://localhost:26657
+
 pocketd tx migration import-morse-accounts morse_account_state.json --from pnf_alpha --grpc-addr=localhost:9090 --home=$HOME/.pocket_prod --chain-id=pocket-alpha --gas=auto --gas-prices=1upokt --gas-adjustment=1.5
 
 5006* pocketd query authz grants-by-granter pokt10d07y265gmmuvt4z0w9aw880jnsr700j8yv32t --node=http://localhost:26657
@@ -232,3 +261,4 @@ pocketd tx migration import-morse-accounts morse_account_state.json --from pnf_a
 5014 pocketd tx authz grant \\n pokt1r6ja6rz6rpae58njfrsgs5n5sp3r36r2q9j04h \\n generic \\n --msg-type="/pocket.migration.MsgImportMorseClaimableAccounts" \\n --from pnf_alpha_bak \\n --expiration 16725225600 \\n --chain-id pocket-alpha \\n --gas auto --gas-prices 1upokt --gas-adjustment 1.5 \\n --node=http://localhost:26657 \\n --home=$HOME/.pocket_prod
  5017* pocketd query authz grants-by-grantee pokt1r6ja6rz6rpae58njfrsgs5n5sp3r36r2q9j04h --node=http://localhost:26657
  5018* pocketd tx migration import-morse-accounts morse_account_state.json --from pnf_alpha --grpc-addr=localhost:9090 --home=$HOME/.pocket_prod --chain-id=pocket-alpha --gas=auto --gas-prices=1upokt --gas-adjustment=1.5
+```
