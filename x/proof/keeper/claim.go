@@ -131,7 +131,7 @@ func (k Keeper) getClaimByPrimaryKey(ctx context.Context, primaryKey []byte) (cl
 func getClaimFromSessionEndHeightStoreIteratorKeysFn(
 	primaryStore prefix.Store,
 	cdc codec.BinaryCodec,
-) sharedtypes.IteratorRecordRetriever[*types.Claim] {
+) sharedtypes.DataRecordAccessor[*types.Claim] {
 	return func(key []byte) (*types.Claim, error) {
 		claimBz := primaryStore.Get(key)
 		var claim types.Claim

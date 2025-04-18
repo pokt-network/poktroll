@@ -116,7 +116,7 @@ func (k Keeper) GetAllSuppliersIterator(ctx context.Context) sharedtypes.RecordI
 // unmarshals it into a Supplier object.
 func getSupplierFromPrimaryStoreIteratorFn(
 	cdc codec.BinaryCodec,
-) sharedtypes.IteratorRecordRetriever[*sharedtypes.Supplier] {
+) sharedtypes.DataRecordAccessor[*sharedtypes.Supplier] {
 	return func(supplierBz []byte) (*sharedtypes.Supplier, error) {
 		if supplierBz == nil {
 			return nil, nil
