@@ -31,7 +31,7 @@ Make sure to complete steps 1–4 in [Release Procedure](./2_release_procedure.m
 - [5. Observe the upgrade output](#5-observe-the-upgrade-output)
 - [6. Stop old node \& start new node](#6-stop-old-node--start-new-node)
 - [7. Sanity checks](#7-sanity-checks)
-- [Pro](#pro)
+- [Pro Mode](#pro-mode)
 
 ---
 
@@ -151,6 +151,77 @@ curl -s http://localhost:26657/abci_info | jq '.result.response.version'
 Query the node for business logic changes as needed.
 :::
 
-## Pro
+## Pro Mode
 
-migrate local testing notes here
+```
+Old repo:
+1. Checkout out latest release
+2. Followed instrucitons
+3. Ensure it’s running
+
+New repo:
+1. Checked out new branch
+2. Updated allUpgrades
+3. Created new upgrades/.go file
+    1. Added the changes I need
+4. Ran the new make target
+5. Drafted a new release
+    1. Wait for release artifacts to run: https://github.com/pokt-network/poktroll/actions
+    2. Binaries will get attached
+    3. Get the tag
+
+Old repo:
+1. Generate transactionw with the old release: ./tools/scripts/upgrades/prepare_upgrade_tx.sh v0.1.4-test1 —test
+    1. Make sure to include the testing flag
+2. Update the height
+3. CRITICAL:
+    1.  cp tools/scripts/upgrades/upgrade_tx_v0.1.4-test1_local.json ../poktroll/tools/scripts/upgrades
+4. Submit the tx
+5. Follow logs
+
+New repo:
+1. Update “v0.1.4” to “"v0.1.4-test1" in v0.1.4.go
+2. Compile the binaries
+3. Run the binary
+
+
+The loop:
+1. New repo
+    1. Update business logic
+    2. Update upgrade
+    3. Start recompiling
+2. Old repo
+    1. Optionall: Update code & recompile
+    2. Run regeneis
+    3. Start the miner
+    4. Update height
+    5. Submit upgrade
+    6. Query upgrade
+    7. Wait for it to break
+3. New repo
+    1. Start the relay miner
+    2. Observe logs
+    3. Validate upgrade
+
+
+Use `ignite_release_local` instead of `ignite_release`
+
+
+—
+
+Quick turnaround
+
+Old repo:
+1. Shell 1:
+    1. ./release_binaries/pocket_darwin_arm64 comet unsafe-reset-all && make localnet_regenesis
+    2. ./release_binaries/pocket_darwin_arm64 start
+2. Shell 2:
+    1. Get height and update -> local.json
+    2. ./release_binaries/pocket_darwin_arm64 tx authz exec tools/scripts/upgrades/upgrade_tx_v0.1.4-test1_local.json --yes --from=pnf
+
+New repo:
+
+1. make go_develop ignite_release_local ignite_release_extract_binaries
+2. ./release_binaries/pocket_darwin_arm64 start
+3. Logic for sucstom validation of your changes
+```

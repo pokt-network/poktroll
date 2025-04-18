@@ -179,24 +179,24 @@
     },
     "expiration": "2500-01-01T00:00:00Z"
   },
-  // {
-  //   "granter": "pokt10d07y265gmmuvt4z0w9aw880jnsr700j8yv32t",
-  //   "grantee": "pokt1eeeksh2tvkh7wzmfrljnhw4wrhs55lcuvmekkw",
-  //   "authorization": {
-  //     "@type": "/cosmos.authz.v1beta1.GenericAuthorization",
-  //     "msg": "/pocket.migration.MsgImportMorseClaimableAccounts"
-  //   },
-  //   "expiration": "2500-01-01T00:00:00Z"
-  // },
-  // {
-  //   "granter": "pokt10d07y265gmmuvt4z0w9aw880jnsr700j8yv32t",
-  //   "grantee": "pokt1eeeksh2tvkh7wzmfrljnhw4wrhs55lcuvmekkw",
-  //   "authorization": {
-  //     "@type": "/cosmos.authz.v1beta1.GenericAuthorization",
-  //     "msg": "/pocket.migration.MsgUpdateParams"
-  //   },
-  //   "expiration": "2500-01-01T00:00:00Z"
-  // },
+  {
+    "granter": "pokt10d07y265gmmuvt4z0w9aw880jnsr700j8yv32t",
+    "grantee": "pokt1eeeksh2tvkh7wzmfrljnhw4wrhs55lcuvmekkw",
+    "authorization": {
+      "@type": "/cosmos.authz.v1beta1.GenericAuthorization",
+      "msg": "/pocket.migration.MsgImportMorseClaimableAccounts"
+    },
+    "expiration": "2500-01-01T00:00:00Z"
+  },
+  {
+    "granter": "pokt10d07y265gmmuvt4z0w9aw880jnsr700j8yv32t",
+    "grantee": "pokt1eeeksh2tvkh7wzmfrljnhw4wrhs55lcuvmekkw",
+    "authorization": {
+      "@type": "/cosmos.authz.v1beta1.GenericAuthorization",
+      "msg": "/pocket.migration.MsgUpdateParams"
+    },
+    "expiration": "2500-01-01T00:00:00Z"
+  },
   {
     "granter": "pokt10d07y265gmmuvt4z0w9aw880jnsr700j8yv32t",
     "grantee": "pokt1eeeksh2tvkh7wzmfrljnhw4wrhs55lcuvmekkw",
