@@ -53,22 +53,28 @@ var Upgrade_0_1_4 = Upgrade{
 			// }
 
 			// Get the granter address of the migration module (i.e. authority)
-			granterAddr := "pokt10d07y265gmmuvt4z0w9aw880jnsr700j8yv32t" //keepers.MigrationKeeper.GetAuthority()
+			// granterAddr := "pokt10d07y265gmmuvt4z0w9aw880jnsr700j8yv32t" //keepers.MigrationKeeper.GetAuthority()
 
-			// Get the grantee address for the current network (i.e. pnf or grove)
-			granteeAddr := "pokt1eeeksh2tvkh7wzmfrljnhw4wrhs55lcuvmekkw" //NetworkAuthzGranteeAddress[cosmosTypes.UnwrapSDKContext(ctx).ChainID()]
+			// // Get the grantee address for the current network (i.e. pnf or grove)
+			// granteeAddr := "pokt1eeeksh2tvkh7wzmfrljnhw4wrhs55lcuvmekkw" //NetworkAuthzGranteeAddress[cosmosTypes.UnwrapSDKContext(ctx).ChainID()]
 
-			logger.Info(fmt.Sprintf("OLSH2222  AUTHZ KEEPER: %p", &keepers.AuthzKeeper))
+			// logger.Info(fmt.Sprintf("OLSH2222  AUTHZ KEEPER: %p", &keepers.AuthzKeeper))
 
-			authorizations, err := keepers.AuthzKeeper.GetAuthorizations(ctx, cosmosTypes.AccAddress(granteeAddr), cosmosTypes.AccAddress(granterAddr))
-			if err != nil {
-				return fmt.Errorf("failed to get authorizations: %w", err)
-			}
-			logger.Info(fmt.Sprintf("CURRENT number of authorizations: %d", len(authorizations)))
+			// authorizations, err := keepers.AuthzKeeper.GetAuthorizations(ctx, cosmosTypes.AccAddress(granteeAddr), cosmosTypes.AccAddress(granterAddr))
+			// if err != nil {
+			// 	return fmt.Errorf("failed to get authorizations: %w", err)
+			// }
+			// logger.Info(fmt.Sprintf("CURRENT number of authorizations: %d", len(authorizations)))
 
 			// if entry.Expiration != nil && entry.Expiration.Before(now) {
 			// 	continue
 			// }
+
+			// Get the granter address of the migration module (i.e. authority)
+			granterAddr := keepers.MigrationKeeper.GetAuthority()
+
+			// Get the grantee address for the current network (i.e. pnf or grove)
+			granteeAddr := NetworkAuthzGranteeAddress[cosmosTypes.UnwrapSDKContext(ctx).ChainID()]
 
 			granteeCosmosAddr, err := keepers.AccountKeeper.AddressCodec().StringToBytes(granteeAddr)
 			if err != nil {
@@ -102,12 +108,12 @@ var Upgrade_0_1_4 = Upgrade{
 				logger.Info(fmt.Sprintf("Generic authorization granted for message %s from %s to %s", msg, granterAddr, granteeAddr))
 			}
 
-			authorizations, err = keepers.AuthzKeeper.GetAuthorizations(ctx, cosmosTypes.AccAddress(granteeAddr), cosmosTypes.AccAddress(granterAddr))
-			if err != nil {
-				return fmt.Errorf("failed to get authorizations: %w", err)
-			}
-			logger.Info(fmt.Sprintf("NEW number of authorizations: %d", len(authorizations)))
-			logger.Info("Successfully finished authorization updates")
+			// authorizations, err = keepers.AuthzKeeper.GetAuthorizations(ctx, cosmosTypes.AccAddress(granteeAddr), cosmosTypes.AccAddress(granterAddr))
+			// if err != nil {
+			// 	return fmt.Errorf("failed to get authorizations: %w", err)
+			// }
+			// logger.Info(fmt.Sprintf("NEW number of authorizations: %d", len(authorizations)))
+			// logger.Info("Successfully finished authorization updates")
 			return
 		}
 
