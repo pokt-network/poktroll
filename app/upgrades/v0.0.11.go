@@ -5,7 +5,7 @@ import (
 
 	storetypes "cosmossdk.io/store/types"
 	upgradetypes "cosmossdk.io/x/upgrade/types"
-	cosmosTypes "github.com/cosmos/cosmos-sdk/types"
+	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 
 	"github.com/pokt-network/poktroll/app/keepers"
@@ -26,7 +26,7 @@ var Upgrade_0_0_11 = Upgrade{
 		// Adds new parameters using ignite's config.yml as a reference. Assuming we don't need any other parameters.
 		// https://github.com/pokt-network/poktroll/compare/v0.0.10...v0.0.11-rc
 		applyNewParameters := func(ctx context.Context) (err error) {
-			logger := cosmosTypes.UnwrapSDKContext(ctx).Logger()
+			logger := cosmostypes.UnwrapSDKContext(ctx).Logger()
 			logger.Info("Starting parameter updates for v0.0.11")
 
 			// Set num_suppliers_per_session to 15
@@ -74,7 +74,7 @@ var Upgrade_0_0_11 = Upgrade{
 
 		// Returns the upgrade handler for v0.0.11
 		return func(ctx context.Context, plan upgradetypes.Plan, vm module.VersionMap) (module.VersionMap, error) {
-			logger := cosmosTypes.UnwrapSDKContext(ctx).Logger()
+			logger := cosmostypes.UnwrapSDKContext(ctx).Logger()
 			logger.Info("Starting v0.0.11 upgrade handler")
 
 			err := applyNewParameters(ctx)
