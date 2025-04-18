@@ -4,14 +4,23 @@
 
 .PHONY: warn_message_acc_initialize_pubkeys
 warn_message_acc_initialize_pubkeys: ## Print a warning message about the need to run `make acc_initialize_pubkeys`
-	@echo "+----------------------------------------------------------------------------------+"
-	@echo "|                                                                                  |"
-	@echo "|     IMPORTANT: Please run the following command once to initialize               |"
-	@echo "|                E2E tests after the network has started:                          |"
-	@echo "|                                                                                  |"
-	@echo "|     make acc_initialize_pubkeys                                                  |"
-	@echo "|                                                                                  |"
-	@echo "+----------------------------------------------------------------------------------+"
+	@echo "+---------------------------------------------------------------------------------------+"
+	@echo "|                                                                                       |"
+	@echo "| 🚨 IMPORTANT: Please run the following make command after the network has started: 🚨 |"
+	@echo "|                                                                                       |"
+	@echo "|     make acc_initialize_pubkeys POCKET_NODE=http://localhost:26657                    |"
+	@echo "|                                                                                       |"
+	@echo "|     This is required for the following scenarios:                                     |"
+	@echo "|       - Running Localnet                                                              |"
+	@echo "|       - Running E2E tests                                                             |"
+	@echo "|                                                                                       |"
+	@echo "|     💡 If you receive the following error response when sending a relay:              |"
+	@echo "|                                                                                       |"
+	@echo "|     'Failed to receive any response from endpoints. This could be due to              |"
+	@echo "|     network issues or high load. Please try again.'                                   |"
+	@echo "|                                                                                       |"
+	@echo "|     You probably forgot to run 'make acc_initialize_pubkeys'.                         |"
+	@echo "+---------------------------------------------------------------------------------------+"
 
 .PHONY: warn_message_local_stress_test
 warn_message_local_stress_test: ## Print a warning message when kicking off a local E2E relay stress test
@@ -43,21 +52,3 @@ warn_flaky_tests: ## Print a warning message that some unit tests may be flaky
 .PHONY: warn_destructive
 warn_destructive: ## Print WARNING to the user
 	@echo "This is a destructive action that will affect docker resources outside the scope of this repo!"
-
-.PHONY: warn_message_grove_helm_charts
-warn_message_grove_helm_charts: ## Print a temporary message about using local PATH helm charts while the codebase is in flux.
-	@echo "+-----------------------------------------------------------------------------------+"
-	@echo "|     TODO_MAINNET_MIGRATION(@olshansky): Remove this check after poktroll & path   |"
-	@echo "|     align                                                                         |"
-	@echo "|                                                                                   |"
-	@echo "|     IMPORTANT: Please run the following commands to set up Grove Helm charts:     |"
-	@echo "|                                                                                   |"
-	@echo "|     git clone https://github.com/buildwithgrove/helm-charts grove-helm-charts     |"
-	@echo "|     cd grove-helm-charts && git checkout d8ac9df02af7a258dfaaa044580ff21f0412cc33 |"
-	@echo "|                                                                                   |"
-	@echo "|     Then update localnet_config_yaml with:                                        |"
-	@echo "|     grove_helm_chart_local_repo:                                                  |"
-	@echo "|       enabled: true                                                               |"
-	@echo "|       path: ../grove-helm-charts                                                  |"
-	@echo "|                                                                                   |"
-	@echo "+-----------------------------------------------------------------------------------+"

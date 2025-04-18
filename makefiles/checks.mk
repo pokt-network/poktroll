@@ -65,11 +65,20 @@ check_docker:
 		exit 1; \
 	fi; \
 	}
+
 .PHONY: check_kind
 # Internal helper target - check if kind is installed
 check_kind:
 	@if ! command -v kind >/dev/null 2>&1; then \
 		echo "kind is not installed. Make sure you review build/localnet/README.md and docs/development/README.md  before continuing"; \
+		exit 1; \
+	fi
+
+.PHONY: check_kubectl
+# Internal helper target - check if kubectl is installed
+check_kubectl:
+	@if ! command -v kubectl >/dev/null 2>&1; then \
+		echo "kubectl is not installed. Make sure you review build/localnet/README.md and docs/development/README.md  before continuing"; \
 		exit 1; \
 	fi
 
