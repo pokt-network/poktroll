@@ -37,7 +37,21 @@ func (k Keeper) BeginBlockerActivateSupplierServices(
 
 	// Iterate through all suppliers to check for pending service activations.
 	// TODO_POST_MAINNET(@red-0ne): Optimize by using an index to track suppliers with pending activations.
-	for _, supplier := range k.GetAllSuppliers(ctx) {
+	allSuppliersIterator := k.GetAllSuppliersIterator(ctx)
+	defer allSuppliersIterator.Close()
+
+	for ; allSuppliersIterator.Valid(); allSuppliersIterator.Next() {
+		supplier, err := allSuppliersIterator.Value()
+		if err != nil {
+			logger.Error(fmt.Sprintf("could not get supplier from iterator: %v", err))
+			return 0, err
+		}
+
+		if supplier == nil {
+			logger.Error(fmt.Sprintf("unexpected nil supplier in iterator at %s", allSuppliersIterator.Key()))
+			continue
+		}
+
 		// supplier.ServiceConfigHistory is guaranteed to contain at least one entry.
 		// This is necessary for the session hydration process that relies on the
 		// service config history to determine the current active service configuration.
@@ -56,12 +70,12 @@ func (k Keeper) BeginBlockerActivateSupplierServices(
 			supplier.Services = latestConfig.Services
 
 			// Save the updated supplier.
-			k.SetSupplier(ctx, supplier)
+			k.SetSupplier(ctx, *supplier)
 			numSuppliersWithServicesActivation += 1
 
 			// Collect the event for the activated service configuration.
 			event := &suppliertypes.EventSupplierServiceConfigActivated{
-				Supplier:         &supplier,
+				Supplier:         supplier,
 				ActivationHeight: currentBlockHeight,
 			}
 			events = append(events, event)

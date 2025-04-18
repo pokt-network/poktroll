@@ -24,6 +24,7 @@ import (
 
 	"github.com/pokt-network/poktroll/testutil/sample"
 	"github.com/pokt-network/poktroll/testutil/session/mocks"
+	sharedmocks "github.com/pokt-network/poktroll/testutil/shared"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	"github.com/pokt-network/poktroll/x/session/keeper"
 	"github.com/pokt-network/poktroll/x/session/types"
@@ -246,10 +247,14 @@ func defaultSupplierKeeperMock(t testing.TB) types.SupplierKeeper {
 	t.Helper()
 	ctrl := gomock.NewController(t)
 
-	allSuppliers := []sharedtypes.Supplier{TestSupplier}
-
 	mockSupplierKeeper := mocks.NewMockSupplierKeeper(ctrl)
-	mockSupplierKeeper.EXPECT().GetAllSuppliers(gomock.Any()).AnyTimes().Return(allSuppliers)
+	mockSupplierKeeper.EXPECT().GetAllSuppliersIterator(gomock.Any()).
+		DoAndReturn(func(ctx context.Context) sharedtypes.RecordIterator[*sharedtypes.Supplier] {
+			testSupplier := TestSupplier
+			allSuppliers := []*sharedtypes.Supplier{&testSupplier}
+
+			return sharedmocks.NewMockRecordIterator(allSuppliers)
+		}).AnyTimes()
 
 	return mockSupplierKeeper
 }

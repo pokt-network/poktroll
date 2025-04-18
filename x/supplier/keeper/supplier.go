@@ -5,6 +5,7 @@ import (
 
 	"cosmossdk.io/store/prefix"
 	storetypes "cosmossdk.io/store/types"
+	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/runtime"
 
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
@@ -97,5 +98,33 @@ func initializeNilSupplierFields(supplier *sharedtypes.Supplier) {
 	}
 }
 
+// GetAllSuppliersIterator returns an iterator over all supplier records.
+func (k Keeper) GetAllSuppliersIterator(ctx context.Context) sharedtypes.RecordIterator[*sharedtypes.Supplier] {
+	storeAdapter := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
+	store := prefix.NewStore(storeAdapter, types.KeyPrefix(types.SupplierKeyOperatorPrefix))
+	iterator := storetypes.KVStorePrefixIterator(store, []byte{})
+
+	supplierRetriever := getSupplierFromPrimaryStoreIteratorFn(k.cdc)
+	return sharedtypes.NewRecordIterator(iterator, supplierRetriever)
+}
+
 // TODO_IMPROVE: Index suppliers by service ID
-// func (k Keeper) GetAllSuppliers(ctx, sdkContext, serviceId string) (suppliers []sharedtypes.Supplier) {}
+//func (k Keeper) GetAllSuppliersByServiceIDIterator(ctx, sdkContext, serviceId string) (suppliers []*sharedtypes.Supplier) {}
+
+// getSupplierFromPrimaryStoreIteratorFn is a helper function that constructs
+// a IteratorRecordRetriever function which receives a Supplier value bytes and
+// unmarshals it into a Supplier object.
+func getSupplierFromPrimaryStoreIteratorFn(
+	cdc codec.BinaryCodec,
+) sharedtypes.IteratorRecordRetriever[*sharedtypes.Supplier] {
+	return func(supplierBz []byte) (*sharedtypes.Supplier, error) {
+		if supplierBz == nil {
+			return nil, nil
+		}
+
+		var supplier sharedtypes.Supplier
+		cdc.MustUnmarshal(supplierBz, &supplier)
+		initializeNilSupplierFields(&supplier)
+		return &supplier, nil
+	}
+}

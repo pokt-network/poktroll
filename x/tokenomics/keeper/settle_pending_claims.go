@@ -47,7 +47,10 @@ func (k Keeper) SettlePendingClaims(ctx cosmostypes.Context) (
 	logger.Debug("settling expiring claims")
 	numExpiringClaims := 0
 	for ; expiringClaimsIterator.Valid(); expiringClaimsIterator.Next() {
-		claim := expiringClaimsIterator.Value()
+		claim, err := expiringClaimsIterator.Value()
+		if err != nil {
+			return settledResults, expiredResults, err
+		}
 		numExpiringClaims++
 
 		// Cache the initial stake for the application at the beginning of settlement to:
@@ -502,7 +505,7 @@ func (k Keeper) executePendingModToAcctTransfers(
 // If the proof window closes and a proof IS NOT required -> settle the claim.
 // If the proof window closes and a proof IS required -> only settle it if a proof is available.
 // DEV_NOTE: It is exported for testing purposes.
-func (k Keeper) GetExpiringClaimsIterator(ctx cosmostypes.Context) (expiringClaimsIterator *prooftypes.ClaimsIterator) {
+func (k Keeper) GetExpiringClaimsIterator(ctx cosmostypes.Context) (expiringClaimsIterator sharedtypes.RecordIterator[*prooftypes.Claim]) {
 	// TODO_IMPROVE(@bryanchriswhite):
 	//   1. Move height logic up to SettlePendingClaims.
 	//   2. Ensure that claims are only settled or expired on a session end height.

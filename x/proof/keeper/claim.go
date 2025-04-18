@@ -6,9 +6,11 @@ import (
 
 	"cosmossdk.io/store/prefix"
 	storetypes "cosmossdk.io/store/types"
+	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/runtime"
 
 	"github.com/pokt-network/poktroll/x/proof/types"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 // UpsertClaim set a specific claim in the store from its index
@@ -76,7 +78,9 @@ func (k Keeper) RemoveClaim(ctx context.Context, sessionId, supplierOperatorAddr
 
 // GetSessionEndHeightClaimsIterator returns an iterator over all claims corresponding
 // to the given session end height.
-func (k Keeper) GetSessionEndHeightClaimsIterator(ctx context.Context, sessionEndHeight int64) *types.ClaimsIterator {
+func (k Keeper) GetSessionEndHeightClaimsIterator(
+	ctx context.Context, sessionEndHeight int64,
+) sharedtypes.RecordIterator[*types.Claim] {
 	storeAdapter := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
 
 	primaryStore := prefix.NewStore(storeAdapter, types.KeyPrefix(types.ClaimPrimaryKeyPrefix))
@@ -85,9 +89,8 @@ func (k Keeper) GetSessionEndHeightClaimsIterator(ctx context.Context, sessionEn
 	sessionEndHeightPrefix := types.ClaimSupplierEndSessionHeightKey(sessionEndHeight, []byte{})
 	iterator := storetypes.KVStorePrefixIterator(sessionEndHeightStore, sessionEndHeightPrefix)
 
-	claimsIterator := types.NewClaimsIterator(iterator, primaryStore, k.cdc)
-
-	return claimsIterator
+	claimRetriever := getClaimFromSessionEndHeightStoreIteratorKeysFn(primaryStore, k.cdc)
+	return sharedtypes.NewRecordIterator(iterator, claimRetriever)
 }
 
 // GetAllClaims returns all claim
@@ -120,4 +123,22 @@ func (k Keeper) getClaimByPrimaryKey(ctx context.Context, primaryKey []byte) (cl
 	k.cdc.MustUnmarshal(claimBz, &claim)
 
 	return claim, true
+}
+
+// getClaimFromSessionEndHeightStoreIteratorKeysFn is a helper function that constructs
+// a IteratorRecordRetriever function which receives a session end height
+// iterator key and retrieves the corresponding Claim from the primary store.
+func getClaimFromSessionEndHeightStoreIteratorKeysFn(
+	primaryStore prefix.Store,
+	cdc codec.BinaryCodec,
+) sharedtypes.IteratorRecordRetriever[*types.Claim] {
+	return func(key []byte) (*types.Claim, error) {
+		claimBz := primaryStore.Get(key)
+		var claim types.Claim
+		if claimBz == nil {
+			return nil, fmt.Errorf("claim not found for key: %v", key)
+		}
+		cdc.MustUnmarshal(claimBz, &claim)
+		return &claim, nil
+	}
 }
