@@ -27,7 +27,8 @@ var Upgrade_0_1_4 = Upgrade{
 	StoreUpgrades: storetypes.StoreUpgrades{},
 
 	// Upgrade Handler
-	CreateUpgradeHandler: func(mm *module.Manager,
+	CreateUpgradeHandler: func(
+		mm *module.Manager,
 		keepers *keepers.Keepers,
 		configurator module.Configurator,
 	) upgradetypes.UpgradeHandler {
@@ -41,26 +42,57 @@ var Upgrade_0_1_4 = Upgrade{
 			// 	pocketd q authz grants-by-granter pokt10d07y265gmmuvt4z0w9aw880jnsr700j8yv32t --node=<network_rpc_url>
 			// Find a network RPC URL here: https://dev.poktroll.com/category/explorers-faucets-wallets-and-more
 			grantAuthorizationMessages := []string{
-				"/pocket.migration.MsgUpdateParam",
+				"/pocket.migration.MsgUpdateParams",
 				"/pocket.migration.MsgImportMorseClaimableAccounts",
 			}
 
-			expiration, err := time.Parse(time.RFC3339, "2500-01-01T00:00:00Z")
-			if err != nil {
-				return fmt.Errorf("failed to parse time: %w", err)
-			}
+			// expiration, err := time.Parse(time.RFC3339, "2500-01-01T00:00:00Z")
+			expiration := time.Now().AddDate(100, 0, 0)
+			// if err != nil {
+			// 	return fmt.Errorf("failed to parse time: %w", err)
+			// }
 
 			// Get the granter address of the migration module (i.e. authority)
-			granterAddr := keepers.MigrationKeeper.GetAuthority()
+			granterAddr := "pokt10d07y265gmmuvt4z0w9aw880jnsr700j8yv32t" //keepers.MigrationKeeper.GetAuthority()
 
 			// Get the grantee address for the current network (i.e. pnf or grove)
-			granteeAddr := NetworkAuthzGranteeAddress[cosmosTypes.UnwrapSDKContext(ctx).ChainID()]
+			granteeAddr := "pokt1eeeksh2tvkh7wzmfrljnhw4wrhs55lcuvmekkw" //NetworkAuthzGranteeAddress[cosmosTypes.UnwrapSDKContext(ctx).ChainID()]
+
+			logger.Info(fmt.Sprintf("OLSH2222  AUTHZ KEEPER: %p", &keepers.AuthzKeeper))
+
+			authorizations, err := keepers.AuthzKeeper.GetAuthorizations(ctx, cosmosTypes.AccAddress(granteeAddr), cosmosTypes.AccAddress(granterAddr))
+			if err != nil {
+				return fmt.Errorf("failed to get authorizations: %w", err)
+			}
+			logger.Info(fmt.Sprintf("CURRENT number of authorizations: %d", len(authorizations)))
+
+			// if entry.Expiration != nil && entry.Expiration.Before(now) {
+			// 	continue
+			// }
+
+			granteeCosmosAddr, err := keepers.AccountKeeper.AddressCodec().StringToBytes(granteeAddr)
+			if err != nil {
+				panic(err)
+			}
+			granterCosmosAddr, err := keepers.AccountKeeper.AddressCodec().StringToBytes(granterAddr)
+			if err != nil {
+				panic(err)
+			}
+
+			// a := authz.NewGenericAuthorization(msg)
+
+			// err = keepers.AuthzKeeper.SaveGrant(ctx, cosmosTypes.AccAddress(granteeCosmosAddr), cosmosTypes.AccAddress(granter), a, &expiration)
+			// if err != nil {
+			// 	panic(err)
+			// }
 
 			for _, msg := range grantAuthorizationMessages {
 				err = keepers.AuthzKeeper.SaveGrant(
 					ctx,
-					cosmosTypes.AccAddress(granteeAddr),
-					cosmosTypes.AccAddress(granterAddr),
+					granteeCosmosAddr,
+					granterCosmosAddr,
+					// cosmosTypes.AccAddress(granteeCosmosAddr),
+					// cosmosTypes.AccAddress(granterAddr),
 					authz.NewGenericAuthorization(msg),
 					&expiration,
 				)
@@ -70,6 +102,11 @@ var Upgrade_0_1_4 = Upgrade{
 				logger.Info(fmt.Sprintf("Generic authorization granted for message %s from %s to %s", msg, granterAddr, granteeAddr))
 			}
 
+			authorizations, err = keepers.AuthzKeeper.GetAuthorizations(ctx, cosmosTypes.AccAddress(granteeAddr), cosmosTypes.AccAddress(granterAddr))
+			if err != nil {
+				return fmt.Errorf("failed to get authorizations: %w", err)
+			}
+			logger.Info(fmt.Sprintf("NEW number of authorizations: %d", len(authorizations)))
 			logger.Info("Successfully finished authorization updates")
 			return
 		}
@@ -80,11 +117,13 @@ var Upgrade_0_1_4 = Upgrade{
 			logger.Info("Starting upgrade handler")
 
 			// Apply authorization changes
+			logger.Info("Starting authorization updates")
 			err := applyNewAuthorizations(ctx, logger)
 			if err != nil {
 				logger.Error("Failed to apply new authorizations", "error", err)
 				return vm, err
 			}
+			logger.Info("Successfully completed authorization updates")
 
 			logger.Info("Starting module migrations section")
 			vm, err = mm.RunMigrations(ctx, configurator, vm)
@@ -92,6 +131,7 @@ var Upgrade_0_1_4 = Upgrade{
 				logger.Error("Failed to run migrations", "error", err)
 				return vm, err
 			}
+			logger.Info("Successfully completed module migrations")
 
 			logger.Info("Successfully completed upgrade")
 			return vm, nil

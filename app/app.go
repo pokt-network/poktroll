@@ -2,6 +2,7 @@ package app
 
 import (
 	// this line is used by starport scaffolding # stargate/app/moduleImport
+	"fmt"
 	"io"
 	"os"
 	"path/filepath"
@@ -228,6 +229,8 @@ func New(
 		panic(err)
 	}
 
+	logger.Info(fmt.Sprintf("OLSH1111 AUTHZ KEEPER: %p", &app.Keepers.AuthzKeeper))
+
 	// Below we could construct and set an application specific mempool and
 	// ABCI 1.0 PrepareProposal and ProcessProposal handlers. These defaults are
 	// already set in the SDK's BaseApp, this shows an example of how to override
@@ -249,7 +252,7 @@ func New(
 	// Example:
 	//
 	// prepareOpt = func(app *baseapp.BaseApp) {
-	// 	abciPropHandler := baseapp.NewDefaultProposalHandler(nonceMempool, app)
+	// 	abciPropHandler := baseapp.NewDefaultProposalHandler(nonceMempool, app)FAutF
 	// 	app.SetPrepareProposal(abciPropHandler.PrepareProposalHandler())
 	// }
 	// baseAppOptions = append(baseAppOptions, prepareOpt)

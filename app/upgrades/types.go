@@ -11,6 +11,9 @@ import (
 // Visit the pocket-network-genesis repo for the source of truth for these addresses.
 // https://github.com/pokt-network/pocket-network-genesis/tree/master/shannon
 const (
+	// Useful for local testing & development
+	LocalNetPnfAddress = "pokt1eeeksh2tvkh7wzmfrljnhw4wrhs55lcuvmekkw"
+
 	// The default PNF/DAO address in the genesis file for Alpha TestNet. Used to create new authz authorizations.
 	AlphaTestNetPnfAddress = "pokt1r6ja6rz6rpae58njfrsgs5n5sp3r36r2q9j04h"
 
@@ -38,7 +41,10 @@ var NetworkAuthzGranteeAddress = map[string]string{
 	"pocket-beta":  BetaTestNetPnfAddress,
 	// Grove's address is used as of #1191 to authorize updates to mainnet parameters.
 	// TODO_POST_MAINNET: Update to PNF address once the migration is complete.
-	"pocket": MainnetGroveAddress,
+	// "pocket": MainnetGroveAddress,
+	"pocket": LocalNetPnfAddress,
+	// TODO_POST_MAINNET: Streamline using `pocket-local` for the localnet
+	// "pocket-local": LocalNetPnfAddress,
 }
 
 // Upgrade represents a protocol upgrade in code.

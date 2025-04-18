@@ -26,6 +26,7 @@ type (
 		sharedKeeper   types.SharedKeeper
 		appKeeper      types.ApplicationKeeper
 		supplierKeeper types.SupplierKeeper
+		authzKeeper    types.AuthzKeeper
 	}
 )
 
@@ -39,6 +40,7 @@ func NewKeeper(
 	sharedKeeper types.SharedKeeper,
 	appKeeper types.ApplicationKeeper,
 	supplierKeeper types.SupplierKeeper,
+	authzKeeper types.AuthzKeeper,
 ) Keeper {
 	if _, err := sdk.AccAddressFromBech32(authority); err != nil {
 		panic(fmt.Sprintf("invalid authority address: %s", authority))
@@ -54,6 +56,7 @@ func NewKeeper(
 		sharedKeeper:   sharedKeeper,
 		appKeeper:      appKeeper,
 		supplierKeeper: supplierKeeper,
+		authzKeeper:    authzKeeper,
 	}
 }
 

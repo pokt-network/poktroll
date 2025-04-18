@@ -8,6 +8,8 @@ import (
 	cosmoslog "cosmossdk.io/log"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
+	"github.com/cosmos/cosmos-sdk/x/authz"
+	authztypes "github.com/cosmos/cosmos-sdk/x/authz"
 
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
@@ -48,4 +50,11 @@ type ParamSubspace interface {
 
 type SharedKeeper interface {
 	GetParams(ctx context.Context) sharedtypes.Params
+}
+
+type AuthzKeeper interface {
+	GetAuthorizations(ctx context.Context, grantee, granter sdk.AccAddress) ([]authztypes.Authorization, error)
+	IterateGrants(ctx context.Context,
+		handler func(granterAddr, granteeAddr sdk.AccAddress, grant authz.Grant) bool,
+	)
 }
