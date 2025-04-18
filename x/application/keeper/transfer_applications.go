@@ -43,7 +43,20 @@ func (k Keeper) EndBlockerTransferApplication(ctx context.Context) error {
 	// Iterate over all applications and transfer the ones that have finished the transfer period.
 	// TODO_MAINNET(@bryanchriswhite, #854): Use an index to iterate over the applications that have initiated
 	// the transfer action instead of iterating over all of them.
-	for _, srcApp := range k.GetAllApplications(ctx) {
+	allApplicationsIterator := k.GetAllApplicationsIterator(ctx)
+	defer allApplicationsIterator.Close()
+
+	for ; allApplicationsIterator.Valid(); allApplicationsIterator.Next() {
+		srcApp, err := allApplicationsIterator.Value()
+		if err != nil {
+			logger.Error(fmt.Sprintf("could not get application from iterator: %v", err))
+			return err
+		}
+
+		if srcApp == nil {
+			logger.Error(fmt.Sprintf("unexpected nil application in iterator at %s", allApplicationsIterator.Key()))
+			continue
+		}
 		// Ignore applications that have not initiated the transfer action.
 		if !srcApp.HasPendingTransfer() {
 			continue
@@ -52,25 +65,25 @@ func (k Keeper) EndBlockerTransferApplication(ctx context.Context) error {
 		// Ignore applications that have initiated a transfer but still active.
 		// This spans the period from the end of the session in which the transfer
 		// began to the end of settlement for that session.
-		transferEndHeight := apptypes.GetApplicationTransferHeight(&sharedParams, &srcApp)
+		transferEndHeight := apptypes.GetApplicationTransferHeight(&sharedParams, srcApp)
 		if currentHeight < transferEndHeight {
 			continue
 		}
 
 		// Transfer the stake of the source application to the destination application and
 		// merge their gateway delegations and service configs.
-		if err := k.transferApplication(ctx, srcApp); err != nil {
+		if err := k.transferApplication(ctx, *srcApp); err != nil {
 			logger.Warn(err.Error())
 
 			// Application transfer failed, removing the pending transfer from the source application.
 			dstBech32 := srcApp.GetPendingTransfer().GetDestinationAddress()
 			srcApp.PendingTransfer = nil
-			k.SetApplication(ctx, srcApp)
+			k.SetApplication(ctx, *srcApp)
 
 			transferErrorEvent := &apptypes.EventTransferError{
 				SourceAddress:      srcApp.GetAddress(),
 				DestinationAddress: dstBech32,
-				SourceApplication:  &srcApp,
+				SourceApplication:  srcApp,
 				SessionEndHeight:   sessionEndHeight,
 				Error:              err.Error(),
 			}

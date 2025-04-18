@@ -5,9 +5,11 @@ import (
 
 	"cosmossdk.io/store/prefix"
 	storetypes "cosmossdk.io/store/types"
+	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/runtime"
 
 	"github.com/pokt-network/poktroll/x/application/types"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 // SetApplication set a specific application in the store from its index
@@ -77,4 +79,36 @@ func (k Keeper) GetAllApplications(ctx context.Context) (apps []types.Applicatio
 	}
 
 	return
+}
+
+// GetAllApplicationsIterator returns an iterator over all application records.
+func (k Keeper) GetAllApplicationsIterator(ctx context.Context) sharedtypes.RecordIterator[*types.Application] {
+	storeAdapter := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
+	store := prefix.NewStore(storeAdapter, types.KeyPrefix(types.ApplicationKeyPrefix))
+	iterator := storetypes.KVStorePrefixIterator(store, []byte{})
+
+	appRetriever := getApplicationFromPrimaryStoreIteratorFn(k.cdc)
+	return sharedtypes.NewRecordIterator(iterator, appRetriever)
+}
+
+// getApplicationFromPrimaryStoreIteratorFn is a helper function that constructs
+// a IteratorRecordRetriever function which receives an Application value bytes and
+// unmarshals it into a Application object.
+func getApplicationFromPrimaryStoreIteratorFn(
+	cdc codec.BinaryCodec,
+) sharedtypes.DataRecordAccessor[*types.Application] {
+	return func(applicationBz []byte) (*types.Application, error) {
+		if applicationBz == nil {
+			return nil, nil
+		}
+
+		var application types.Application
+		cdc.MustUnmarshal(applicationBz, &application)
+		// Ensure that the PendingUndelegations is an empty map and not nil when
+		// unmarshalling an app that has no pending undelegations.
+		if application.PendingUndelegations == nil {
+			application.PendingUndelegations = make(map[uint64]types.UndelegatingGatewayList)
+		}
+		return &application, nil
+	}
 }

@@ -89,3 +89,22 @@ func TestApplicationGetAll(t *testing.T) {
 		nullify.Fill(keeper.GetAllApplications(ctx)),
 	)
 }
+
+func TestApplicationGetAllIterator(t *testing.T) {
+	keeper, ctx := keepertest.ApplicationKeeper(t)
+	apps := createNApplications(keeper, ctx, 10)
+	allAppsIterator := keeper.GetAllApplicationsIterator(ctx)
+	defer allAppsIterator.Close()
+
+	retrievedApps := make([]types.Application, 0)
+	for ; allAppsIterator.Valid(); allAppsIterator.Next() {
+		app, err := allAppsIterator.Value()
+		require.NoError(t, err)
+		retrievedApps = append(retrievedApps, *app)
+	}
+
+	require.ElementsMatch(t,
+		nullify.Fill(apps),
+		nullify.Fill(retrievedApps),
+	)
+}
