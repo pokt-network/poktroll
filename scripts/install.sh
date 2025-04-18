@@ -1,9 +1,22 @@
 #!/usr/bin/env bash
 
 # This script installs the pocketd binary if not already installed.
+# Use with -u or --upgrade flag to force reinstallation of the latest version.
 
 # Example Usage:
 # curl -sSL https://raw.githubusercontent.com/pokt-network/poktroll/main/scripts/install.sh | bash
+# curl -sSL https://raw.githubusercontent.com/pokt-network/poktroll/main/scripts/install.sh | bash -s -- --upgrade
+
+UPGRADE=false
+
+# Process command line arguments
+while [[ "$#" -gt 0 ]]; do
+    case $1 in
+        -u|--upgrade) UPGRADE=true ;;
+        *) echo "Unknown parameter: $1"; exit 1 ;;
+    esac
+    shift
+done
 
 command_exists() {
     command -v "$1" >/dev/null 2>&1
@@ -15,10 +28,15 @@ command_exists() {
 install_pocketd() {
     echo "🛠️  Starting pocketd installation script..."
 
-    if command_exists pocketd; then
-        echo "✅ pocketd already installed."
+    if command_exists pocketd && [ "$UPGRADE" = false ]; then
+        echo "✅ pocketd already installed. To upgrade to the latest version, use the --upgrade flag."
     else
-        echo "🚀 Installing pocketd..."
+        if command_exists pocketd && [ "$UPGRADE" = true ]; then
+            echo "🔄 Upgrading pocketd..."
+            sudo rm -f $(which pocketd)
+        else
+            echo "🚀 Installing pocketd..."
+        fi
         
         # Detect OS (darwin for macOS, linux for Linux)
         OS=$(uname | tr '[:upper:]' '[:lower:]')
