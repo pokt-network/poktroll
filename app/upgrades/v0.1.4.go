@@ -5,7 +5,7 @@ import (
 
 	storetypes "cosmossdk.io/store/types"
 	upgradetypes "cosmossdk.io/x/upgrade/types"
-	cosmosTypes "github.com/cosmos/cosmos-sdk/types"
+	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 
 	"github.com/pokt-network/poktroll/app/keepers"
@@ -31,7 +31,7 @@ var Upgrade_0_1_4 = Upgrade{
 
 		// Returns the upgrade handler for v0.1.4
 		return func(ctx context.Context, plan upgradetypes.Plan, vm module.VersionMap) (module.VersionMap, error) {
-			logger := cosmosTypes.UnwrapSDKContext(ctx).Logger().With("upgrade_plan_name", Upgrade_0_1_4_PlanName)
+			logger := cosmostypes.UnwrapSDKContext(ctx).Logger().With("upgrade_plan_name", Upgrade_0_1_4_PlanName)
 			logger.Info("Starting upgrade handler")
 
 			// *** Apply authorization changes ***

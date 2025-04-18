@@ -31,7 +31,7 @@ func applyNewAuthorizations(
 	granterCosmosAddr := cosmostypes.MustAccAddressFromBech32(granterAddr)
 
 	// Get the grantee address for the current network (i.e. pnf or grove)
-	granteeAddr := NetworkAuthzGranteeAddress[cosmosTypes.UnwrapSDKContext(ctx).ChainID()]
+	granteeAddr := NetworkAuthzGranteeAddress[cosmostypes.UnwrapSDKContext(ctx).ChainID()]
 	granteeCosmosAddr := cosmostypes.MustAccAddressFromBech32(granteeAddr)
 
 	// Save a separate grant for each new authorization
