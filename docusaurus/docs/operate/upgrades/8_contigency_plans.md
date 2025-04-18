@@ -19,7 +19,7 @@ This document is intended to help you recover with minimal downtime.
 
 **tl;dr cancel the upgrade plan!**
 
-See the instructions of [how to do that here](3_testing_upgrades.md#cancelling-the-upgrade-plan).
+See the instructions of [how to do that here](3_testing_upgrades_locally.md#cancelling-the-upgrade-plan).
 
 ### Option 1: The migration didn't start (i.e. migration halt)
 

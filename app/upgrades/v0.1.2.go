@@ -7,7 +7,7 @@ import (
 
 	storetypes "cosmossdk.io/store/types"
 	upgradetypes "cosmossdk.io/x/upgrade/types"
-	cosmosTypes "github.com/cosmos/cosmos-sdk/types"
+	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 	"github.com/cosmos/cosmos-sdk/x/authz"
 
@@ -38,7 +38,7 @@ var Upgrade_0_1_2 = Upgrade{
 		// 3. Update the upgrade handler here accordingly
 		// Ref: https://github.com/pokt-network/poktroll/compare/v0.1.1...f1d354d
 		applyNewParameters := func(ctx context.Context) (err error) {
-			logger := cosmosTypes.UnwrapSDKContext(ctx).Logger()
+			logger := cosmostypes.UnwrapSDKContext(ctx).Logger()
 			logger.Info("Starting parameter updates", "upgrade_plan_name", Upgrade_0_1_2_PlanName)
 
 			// Set waive_morse_claim_gas_fees to true
@@ -84,13 +84,13 @@ var Upgrade_0_1_2 = Upgrade{
 			granterAddr := keepers.MigrationKeeper.GetAuthority()
 
 			// Get the grantee address for the current network (i.e. pnf or grove)
-			granteeAddr := NetworkAuthzGranteeAddress[cosmosTypes.UnwrapSDKContext(ctx).ChainID()]
+			granteeAddr := NetworkAuthzGranteeAddress[cosmostypes.UnwrapSDKContext(ctx).ChainID()]
 
 			for _, msg := range grantAuthorizationMessages {
 				err = keepers.AuthzKeeper.SaveGrant(
 					ctx,
-					cosmosTypes.AccAddress(granteeAddr),
-					cosmosTypes.AccAddress(granterAddr),
+					cosmostypes.AccAddress(granteeAddr),
+					cosmostypes.AccAddress(granterAddr),
 					authz.NewGenericAuthorization(msg),
 					&expiration,
 				)
@@ -103,7 +103,7 @@ var Upgrade_0_1_2 = Upgrade{
 
 		// Returns the upgrade handler for v0.1.2
 		return func(ctx context.Context, plan upgradetypes.Plan, vm module.VersionMap) (module.VersionMap, error) {
-			logger := cosmosTypes.UnwrapSDKContext(ctx).Logger()
+			logger := cosmostypes.UnwrapSDKContext(ctx).Logger()
 			logger.Info("Starting upgrade handler", "upgrade_plan_name", Upgrade_0_1_2_PlanName)
 
 			// Apply parameter changes
