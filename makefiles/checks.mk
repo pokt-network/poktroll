@@ -37,11 +37,11 @@ check_act:
 	fi;
 
 .PHONY: check_pocketd
-# Internal helper target - check if `pocketd` is installed in the correct location
+# Internal helper target - check if `pocketd` is installed
 check_pocketd:
 	{ \
-	if ( ! ( command -v pocketd >/dev/null && whereis pocketd | grep -q "$(HOME)/go/bin/pocketd" )); then \
-		echo "Error: \`pocketd\` was not found in \$(HOME)/go/bin/. Please ensure it's properly installed in this specific location before proceeding."; \
+	if ( ! command -v pocketd >/dev/null ); then \
+		echo "Error: \`pocketd\` was not found. Please ensure it's properly installed and available in your PATH before proceeding."; \
 		exit 1; \
 	fi; \
 	}
