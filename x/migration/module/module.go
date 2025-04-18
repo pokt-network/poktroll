@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+
 	// this line is used by starport scaffolding # 1
 
 	"cosmossdk.io/core/appmodule"
@@ -13,11 +14,9 @@ import (
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/codec"
 	cdctypes "github.com/cosmos/cosmos-sdk/codec/types"
-	cosmosTypes "github.com/cosmos/cosmos-sdk/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
-	"github.com/cosmos/cosmos-sdk/x/authz"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 
@@ -102,7 +101,6 @@ type AppModule struct {
 	sharedKeeper   types.SharedKeeper
 	appKeeper      types.ApplicationKeeper
 	supplierKeeper types.SupplierKeeper
-	authzKeeper    types.AuthzKeeper
 }
 
 func NewAppModule(
@@ -113,7 +111,6 @@ func NewAppModule(
 	sharedKeeper types.SharedKeeper,
 	appKeeper types.ApplicationKeeper,
 	supplierKeeper types.SupplierKeeper,
-	authzKeeper types.AuthzKeeper,
 ) AppModule {
 	return AppModule{
 		AppModuleBasic: NewAppModuleBasic(cdc),
@@ -123,7 +120,6 @@ func NewAppModule(
 		sharedKeeper:   sharedKeeper,
 		appKeeper:      appKeeper,
 		supplierKeeper: supplierKeeper,
-		authzKeeper:    authzKeeper,
 	}
 }
 
@@ -158,38 +154,7 @@ func (AppModule) ConsensusVersion() uint64 { return 1 }
 
 // BeginBlock contains the logic that is automatically triggered at the beginning of each block.
 // The begin block implementation is optional.
-func (am AppModule) BeginBlock(ctx context.Context) error {
-	granteeAddrStr := "pokt1eeeksh2tvkh7wzmfrljnhw4wrhs55lcuvmekkw" //NetworkAuthzGranteeAddress[cosmosTypes.UnwrapSDKContext(ctx).ChainID()]
-	granterAddrStr := "pokt10d07y265gmmuvt4z0w9aw880jnsr700j8yv32t" //keepers.MigrationKeeper.GetAuthority()
-
-	granteeAddr := cosmosTypes.AccAddress(granteeAddrStr)
-	granterAddr := cosmosTypes.AccAddress(granterAddrStr)
-
-	authorizations, _ := am.authzKeeper.GetAuthorizations(ctx, granteeAddr, granterAddr)
-	for _, auth := range authorizations {
-		am.keeper.Logger().Info(fmt.Sprintf("OLSH000: Found authorization for %s from %s to %s", auth.MsgTypeURL(), granteeAddrStr, granterAddrStr))
-	}
-
-	var grants []authz.GrantAuthorization
-	am.authzKeeper.IterateGrants(ctx, func(granter, grantee sdk.AccAddress, grant authz.Grant) bool {
-		grants = append(grants, authz.GrantAuthorization{
-			Granter:       granter.String(),
-			Grantee:       grantee.String(),
-			Expiration:    grant.Expiration,
-			Authorization: grant.Authorization,
-		})
-		return false
-	})
-	logger := am.keeper.Logger()
-	for _, entry := range grants {
-		logger.Info(fmt.Sprintf("OLSH000: Found grant for %s from %s to %s", entry.Authorization.TypeUrl, entry.Grantee, entry.Granter))
-		logger.Info(fmt.Sprintf("Grantee equal: %t", entry.Grantee == granteeAddrStr))
-		logger.Info(fmt.Sprintf("Granter equal: %t", entry.Granter == granterAddrStr))
-	}
-
-	logger.Info(fmt.Sprintf("OLSH - Number of authorizations: %d", len(authorizations)))
-	logger.Info(fmt.Sprintf("OLSH - Number of grants: %d", len(grants)))
-
+func (am AppModule) BeginBlock(_ context.Context) error {
 	return nil
 }
 
@@ -229,7 +194,6 @@ type ModuleInputs struct {
 	SharedKeeper      types.SharedKeeper
 	ApplicationKeeper types.ApplicationKeeper
 	SupplierKeeper    types.SupplierKeeper
-	AuthzKeeper       types.AuthzKeeper
 }
 
 type ModuleOutputs struct {
@@ -255,7 +219,6 @@ func ProvideModule(in ModuleInputs) ModuleOutputs {
 		in.SharedKeeper,
 		in.ApplicationKeeper,
 		in.SupplierKeeper,
-		in.AuthzKeeper,
 	)
 	m := NewAppModule(
 		in.Cdc,
@@ -265,7 +228,6 @@ func ProvideModule(in ModuleInputs) ModuleOutputs {
 		in.SharedKeeper,
 		in.ApplicationKeeper,
 		in.SupplierKeeper,
-		in.AuthzKeeper,
 	)
 
 	return ModuleOutputs{MigrationKeeper: k, Module: m}
