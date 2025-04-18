@@ -28,10 +28,7 @@ func applyNewAuthorizations(
 
 	// Get the granter address of the migration module (i.e. authority)
 	granterAddr := keepers.MigrationKeeper.GetAuthority()
-	granterCosmosAddr, err := keepers.AccountKeeper.AddressCodec().StringToBytes(granterAddr)
-	if err != nil {
-		panic(err)
-	}
+	granterCosmosAddr := cosmostypes.MustAccAddressFromBech32(granterAddr)
 
 	// Get the grantee address for the current network (i.e. pnf or grove)
 	granteeAddr := NetworkAuthzGranteeAddress[cosmosTypes.UnwrapSDKContext(ctx).ChainID()]
