@@ -21,7 +21,6 @@ func applyNewAuthorizations(
 	logger := upgradeLogger.With("method", "applyNewAuthorizations")
 	logger.Info("Starting authorization updates")
 
-
 	expiration, err := time.Parse(time.RFC3339, "2500-01-01T00:00:00Z")
 	if err != nil {
 		return fmt.Errorf("failed to parse time: %w", err)
