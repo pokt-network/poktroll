@@ -89,20 +89,20 @@ pocketd tx migration \
 ```
 
 <details>
-  <summary>Convenience functions for `import-morse-accounts` by network</summary>
+<summary>Convenience functions for `import-morse-accounts` by network</summary>
 
 ```bash
 # LocalNet
 pocketd tx migration import-morse-accounts morse_account_state.json --from pnf --grpc-addr=localhost:9090 --home=./localnet/pocketd --chain-id=pocket --gas=auto --gas-prices=1upokt --gas-adjustment=1.5
 
 # Alpha TestNet
-pocketd tx migration import-morse-accounts morse_account_state.json --from <authorized-key-name> --grpc-addr=https://shannon-grove-grpc.alpha.poktroll.com --home=~/.pocket_prod --chain-id=pocket-alpha --gas=auto --gas-prices=1upokt --gas-adjustment=1.5
+pocketd tx migration import-morse-accounts morse_account_state.json --from pokt1r6ja6rz6rpae58njfrsgs5n5sp3r36r2q9j04h --home=~/.pocket_prod --chain-id=pocket-alpha --gas=auto --gas-prices=1upokt --gas-adjustment=1.5 --node=http://shannon-grove-rpc.alpha.poktroll.com --grpc-addr=https://shannon-grove-grpc.alpha.poktroll.com
 
 # Beta TestNet
-pocketd tx migration import-morse-accounts morse_account_state.json --from <authorized-key-name> --grpc-addr=https://shannon-grove-grpc.beta.poktroll.com --home=~/.pocket_prod --chain-id=pocket-beta --gas=auto --gas-prices=1upokt --gas-adjustment=1.5
+  pocketd tx migration import-morse-accounts morse_account_state.json --from pokt1f0c9y7mahf2ya8tymy8g4rr75ezh3pkklu4c3e --home=~/.pocket_prod --chain-id=pocket-beta --gas=auto --gas-prices=1upokt --gas-adjustment=1.5 --node=http://shannon-grove-rpc.beta.poktroll.com --grpc-addr=https://shannon-grove-grpc.beta.poktroll.com
 
 # MainNet
-pocketd tx migration import-morse-accounts morse_account_state.json --from <authorized-key-name> --grpc-addr=https://shannon-grove-grpc.mainnet.poktroll.com --home=~/.pocket_prod --chain-id=pocket-mainnet --gas=auto --gas-prices=1upokt --gas-adjustment=1.5
+pocketd tx migration import-morse-accounts morse_account_state.json --from pokt18808wvw0h4t450t06uvauny8lvscsxjfyua7vh --home=~/.pocket_prod --chain-id=pocket-mainnet --gas=auto --gas-prices=1upokt --gas-adjustment=1.5 --node=http://shannon-grove-rpc.mainnet.poktroll.com --grpc-addr=https://shannon-grove-grpc.mainnet.poktroll.com
 ```
 
 </details>
@@ -122,7 +122,7 @@ pocketd query migration show-morse-claimable-account <morse-address>
 ```
 
 <details>
-  <summary>Convenience functions for `list-morse-claimable-account` by network</summary>
+<summary>Convenience functions for `list-morse-claimable-account` by network</summary>
 
 ```bash
 # LocalNet
@@ -244,21 +244,4 @@ with
 kubectl port-forward pods/alpha-validator1-pocketd-0 26657:26657 9090:9090 -n testnet-alpha --address 0.0.0.0
 
 pocketd tx migration import-morse-accounts ./tools/scripts/migration/morse_account_state_alpha.json  --from pnf_alpha  --home=$HOME/.pocket_prod --chain-id=pocket-alpha --gas=auto --gas-prices=1upokt --gas-adjustment=1.5 --grpc-addr=localhost:9090 --node=localhost:26657
-```
-
-```
-pocketd tx migration import-morse-accounts ./tools/scripts/migration/morse_account_state_alpha.json  --from pnf_alpha  --home=$HOME/.pocket_prod --chain-id=pocket-alpha --gas=auto --gas-prices=1upokt --gas-adjustment=1.5 --grpc-addr=localhost:9090 --node=http://localhost:26657
-
-pocketd tx migration import-morse-accounts morse_account_state.json --from pnf_alpha --grpc-addr=localhost:9090 --home=$HOME/.pocket_prod --chain-id=pocket-alpha --gas=auto --gas-prices=1upokt --gas-adjustment=1.5
-
-5006* pocketd query authz grants-by-granter pokt10d07y265gmmuvt4z0w9aw880jnsr700j8yv32t --node=http://localhost:26657
-5007 pocketd tx authz revoke \\n pokt1nk0580rxv2x7n072syz052l92q50ke425adl9d \\n --msg-type-url="//cosmos.authz.v1beta1.MsgGrant" \\n --from pnf_alpha \\n --expiration 16725225600 \\n --chain-id pocket-alpha \\n --gas auto --gas-prices 1upokt --gas-adjustment 1.5 \\n --node=http://localhost:26657 \\n --home=$HOME/.pocket_prod
-5008* pkd keys list
-5009 pocketd tx authz grant \\n pokt1nk0580rxv2x7n072syz052l92q50ke425adl9d \\n generic \\n --msg-type="/cosmos.authz.v1beta1.MsgGrant" \\n --from pnf_alpha \\n --expiration 16725225600 \\n --chain-id pocket-alpha \\n --gas auto --gas-prices 1upokt --gas-adjustment 1.5 \\n --node=http://localhost:26657 \\n --home=$HOME/.pocket_prod
- 5011  pocketd tx bank send \\n  pokt1nk0580rxv2x7n072syz052l92q50ke425adl9d \\n  1000000000upokt \\n  --from pnf_alpha \\n  --chain-id pocket-alpha \\n  --gas auto --gas-prices 1upokt --gas-adjustment 1.5 \\n  --node=http://localhost:26657 \\n  --home=$HOME/.pocket_prod
-5012 pocketd tx bank send \\n pnf_alpha pokt1nk0580rxv2x7n072syz052l92q50ke425adl9d \\n 1000000000upokt \\n --from pnf_alpha \\n --chain-id pocket-alpha \\n --gas auto --gas-prices 1upokt --gas-adjustment 1.5 \\n --node=http://localhost:26657 \\n --home=$HOME/.pocket_prod
- 5013  pocketd tx authz grant \\n  pokt1r6ja6rz6rpae58njfrsgs5n5sp3r36r2q9j04h \\n  generic \\n  --msg-type="/pocket.migration.MsgImportMorseClaimableAccounts" \\n  --from pnf_alpha_bak \\n  --expiration 16725225600 \\n  --chain-id pocket-alpha \\n  --gas auto --gas-prices 1upokt --gas-adjustment 1.5 \\n  --node=http://localhost:26657 \\n  --home=$HOME/.pocket_prode
-5014 pocketd tx authz grant \\n pokt1r6ja6rz6rpae58njfrsgs5n5sp3r36r2q9j04h \\n generic \\n --msg-type="/pocket.migration.MsgImportMorseClaimableAccounts" \\n --from pnf_alpha_bak \\n --expiration 16725225600 \\n --chain-id pocket-alpha \\n --gas auto --gas-prices 1upokt --gas-adjustment 1.5 \\n --node=http://localhost:26657 \\n --home=$HOME/.pocket_prod
- 5017* pocketd query authz grants-by-grantee pokt1r6ja6rz6rpae58njfrsgs5n5sp3r36r2q9j04h --node=http://localhost:26657
- 5018* pocketd tx migration import-morse-accounts morse_account_state.json --from pnf_alpha --grpc-addr=localhost:9090 --home=$HOME/.pocket_prod --chain-id=pocket-alpha --gas=auto --gas-prices=1upokt --gas-adjustment=1.5
 ```
