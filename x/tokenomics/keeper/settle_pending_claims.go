@@ -47,9 +47,9 @@ func (k Keeper) SettlePendingClaims(ctx cosmostypes.Context) (
 	logger.Debug("settling expiring claims")
 	numExpiringClaims := 0
 	for ; expiringClaimsIterator.Valid(); expiringClaimsIterator.Next() {
-		claim, err := expiringClaimsIterator.Value()
-		if err != nil {
-			return settledResults, expiredResults, err
+		claim, iterErr := expiringClaimsIterator.Value()
+		if iterErr != nil {
+			return settledResults, expiredResults, iterErr
 		}
 		numExpiringClaims++
 
