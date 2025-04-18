@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"cosmossdk.io/log"
-	cosmosTypes "github.com/cosmos/cosmos-sdk/types"
+	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/authz"
 
 	"github.com/pokt-network/poktroll/app/keepers"
