@@ -149,10 +149,10 @@ Shannon inherits mature keyring from the [Cosmos SDK](https://docs.cosmos.networ
 
 ### How to export a Morse Key?
 
-- You **must** export your Morse private key (from `pocket`) to use with `pocketd`
-- This is needed for the `morse_signature` field
+You **must** export your Morse private key (from `pocket`) to use with `pocketd`.
+It is needed for the `morse_signature` field.
 
-The following command will export your Morse key:
+Assuming your `pocket` CLI is installed and configured, the following command will export your Morse key:
 
 ```bash
 ./pocket accounts export ${MORSE_HEX_ADDRESS}
