@@ -113,9 +113,10 @@ Running the following command:
 
 ```bash
 pocketd tx migration claim-account \
-  pocket-account-4af3d26695b802652aa9ad7b71c328accf145512.json \
-  --from=pokt1ek60wku3j47jpyv6eregc4phr5s7hujnm384c9  \
-  --node=${RPC_ENDPOINT} --chain-id=pocket-alpha --home=~/.pocket_prod --keyring-backend=test --no-passphrase
+  pocket-account-<morse-keyfile-export>.json \
+  --from=<your_shannon_address> \
+  --node=${RPC_ENDPOINT} --chain-id=pocket-<network> \
+  --home=~/.pocketd --keyring-backend=test --no-passphrase
   # --gas=auto --gas-prices=1upokt --gas-adjustment=1.5
 ```
 
@@ -151,11 +152,10 @@ the following flags based on your environment and keyring config
 ### Onchain Fee Requirement
 
 ```bash
-pocketd query migration params --node=${RPC_ENDPOINT} --home=~/.
+pocketd query migration params --node=${RPC_ENDPOINT} --home=~/.pocketd
 ```
 
 ```yaml
-pocket_prod
 params:
   waive_morse_claim_gas_fees: true
 ```

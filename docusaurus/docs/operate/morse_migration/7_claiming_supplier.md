@@ -61,7 +61,12 @@ Make sure to **omit `stake_amount`**.
 ### 3. Claim your Morse Supplier
 
 ```bash
-pocketd tx migration claim-supplier <path-to-your-supplier-config.json> --from=<your_shannon_address> --node=${RPC_ENDPOINT} --chain-id=pocket-alpha --home=~/.pocket_prod --keyring-backend=test --no-passphrase
+pocketd tx migration claim-supplier \
+  pocket-account-<morse-keyfile-export>.json \
+  <path-to-your-supplier-config>.yaml \
+  --from=<your_shannon_address> \
+  --node=${RPC_ENDPOINT} --chain-id=pocket-<network> \
+  --home=~/.pocketd --keyring-backend=test --no-passphrase
 # --gas=auto --gas-prices=1upokt --gas-adjustment=1.5 (optional)
 ```
 

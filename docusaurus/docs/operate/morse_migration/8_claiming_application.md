@@ -3,31 +3,66 @@ title: Claiming Morse Applications
 sidebar_position: 8
 ---
 
-### Claim a Morse Application (Staked, Actor)
+## Table of Contents <!-- omit in toc -->
 
-Claiming a Morse Application account will:
+- [What is this?](#what-is-this)
+- [How do I claim my Morse Application as a Shannon Application?](#how-do-i-claim-my-morse-application-as-a-shannon-application)
+  - [0. Prerequisites](#0-prerequisites)
+  - [1. Prepare your Morse and Shannon Keys and Accounts](#1-prepare-your-morse-and-shannon-keys-and-accounts)
+  - [2. Prepare your application config](#2-prepare-your-application-config)
+  - [3. Claim your Morse Application](#3-claim-your-morse-application)
+  - [4. Example output](#4-example-output)
+  - [5. Verify your Shannon application](#5-verify-your-shannon-application)
+  - [6. What happened?](#6-what-happened)
+- [Troubleshooting](#troubleshooting)
 
-1. **Mint Unstaked Balance**: The unstaked balance of the Morse Account being claimed will transfer to the unstaked balance of the Shannon account (i.e. signer of `MsgClaimMorseAccount`).
-2. **Stake a new Application**: The staked balance of the Morse Application being claimed will stake the corresponding Shannon "destination" account as an Application.
+## What is this?
 
-:::note Same Balance, New Configurations
+- Claim your Morse Application as a Shannon Application
+- This is like staking a new Shannon Application, but you **don't specify `stake_amount`**
+- All config is the same as [staking an application](../configs/application_staking_config.md) **except** omit `stake_amount`
 
-Note that even though the staked & unstaked balance map identically from Morse to Shannon, Shannon actors can modify the actual staking configurations (e.g. `service_id`).
+## How do I claim my Morse Application as a Shannon Application?
+
+### 0. Prerequisites
+
+- You have read the [Claiming Introduction](./5_claiming_introduction.md)
+- You have installed the Morse `pocket` CLI
+- You have installed the Shannon `pocketd` CLI
+- You have imported your Morse key into a keyring
+- You have a valid RPC endpoint
+- You are familiar with how to stake a native Shannon Application (see [application staking config](../configs/application_staking_config.md))
+
+### 1. Prepare your Morse and Shannon Keys and Accounts
+
+Follow steps 1-5 from [Claiming Morse Account](./6_claiming_account.md)
+
+### 2. Prepare your application config
+
+Use the same format as for staking an application. See [Application staking config](../configs/app_staking_config.md) for details.
+
+Make sure to **omit `stake_amount`**.
+
+:::danger CRITICAL: Omit `stake_amount`
+
+- **DO NOT** include `stake_amount` in your application config when claiming
+- If you include it, the claim will fail
 
 :::
 
-Recall that the unstaked balance and application stake amounts are retrieved from the corresponding onchain `MorseClaimableAccount` imported by the foundation.
-
-For example, running the following command:
+### 3. Claim your Morse Application
 
 ```bash
 pocketd tx migration claim-application \
-  ./pocket-account-8b257c7f4e884e49bafc540d874f33f91436e1dc.json \
-  anvil \
-  --from app1
+  pocket-account-<morse-keyfile-export>.json \
+  <service_id> \
+  --from=<your_shannon_address> \
+  --node=${RPC_ENDPOINT} --chain-id=pocket-<network> \
+  --home=~/.pocketd --keyring-backend=test --no-passphrase
+# --gas=auto --gas-prices=1upokt --gas-adjustment=1.5 (optional)
 ```
 
-Should prompt for a passphrase and produce output similar to the following:
+### 4. Example output
 
 ```shell
 Enter Decrypt Passphrase:
@@ -39,11 +74,22 @@ MsgClaimMorseApplication {
     "service_id": "anvil"
   }
 }
-Confirm MsgClaimMorseApplication: y/[n]:
+Confirm MsgClaimMorseApplication: y/[n]: y
 ```
 
-:::tip
+### 5. Verify your Shannon application
 
-See `pocketd tx migrationclaim-application --help` for more details.
+```bash
+pocketd query application <your_shannon_address> --node=${RPC_ENDPOINT}
+```
 
-:::
+### 6. What happened?
+
+- **Unstaked balance** of Morse account is minted to your Shannon account
+- **Stake** is set on Shannon using the onchain Morse application's stake amount
+- Both values come from the onchain `MorseClaimableAccount`
+- Shannon actors can modify staking configurations (e.g. `service_id`)
+
+## Troubleshooting
+
+See: `pocketd tx migration claim-application --help` for more details.
