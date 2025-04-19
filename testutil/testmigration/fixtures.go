@@ -71,7 +71,7 @@ func GetRoundRobinMorseAccountActorType(idx uint64) MorseAccountActorType {
 //     This is the JSON output of `pocket util export-genesis-for-reset`.
 //     It is used to generate the MorseAccountState.
 //   - Its corresponding MorseAccountState.
-//     This is the JSON output of `pocketd migrate collect-morse-accounts`.
+//     This is the JSON output of `pocketd tx migration collect-morse-accounts`.
 //     It is used to persist the canonical Morse migration state (snapshot) from on Shannon.
 //
 // The states are populated with:

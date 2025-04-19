@@ -229,7 +229,7 @@ func TestMsgServer_ClaimMorseAccount_Error(t *testing.T) {
 		expectedErr := status.Error(
 			codes.FailedPrecondition,
 			migrationtypes.ErrMorseAccountClaim.Wrapf(
-				"Morse account %q is staked as an application, please use `pocketd migrate claim-application` instead",
+				"Morse account %q is staked as an application, please use `pocketd tx migration claim-application` instead",
 				morseSrcAddress,
 			).Error(),
 		)
@@ -257,7 +257,7 @@ func TestMsgServer_ClaimMorseAccount_Error(t *testing.T) {
 		expectedErr := status.Error(
 			codes.FailedPrecondition,
 			migrationtypes.ErrMorseAccountClaim.Wrapf(
-				"Morse account %q is staked as an supplier, please use `pocketd migrate claim-supplier` instead",
+				"Morse account %q is staked as an supplier, please use `pocketd tx migration claim-supplier` instead",
 				morseSrcAddress,
 			).Error(),
 		)
