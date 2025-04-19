@@ -39,15 +39,18 @@ func CollectMorseAccountsCmd() *cobra.Command {
 		Use:   "collect-morse-accounts [morse-state-export-path] [morse-account-state-path]",
 		Args:  cobra.ExactArgs(2),
 		Short: "Collect account balances and stakes from [morse-state-export-path] JSON file and output to [morse-account-state-path] as JSON",
-		Long: `Processes Morse state for Shannon migration:
-- Reads MorseStateExport JSON from [morse-state-export-path]
-- Contains account balances and associated stakes
-- Outputs MorseAccountState JSON to [morse-account-state-path]
-- Integrates with Shannon's MsgUploadMorseState
+		Long: `Processes Morse state for Shannon migration.
 
-Generate required input via Morse CLI like so:
+This process involves:
+	- Reads MorseStateExport JSON from [morse-state-export-path]
+	- Contains account balances and associated stakes
+	- Outputs MorseAccountState JSON to [morse-account-state-path]
+	- Integrates with Shannon's MsgUploadMorseState
 
-	pocket util export-genesis-for-reset [height] [new-chain-id] > morse-state-export.json`,
+The required input MUST be generated via the Morse CLI like so:
+
+	pocket util export-genesis-for-reset [height] pocket > morse-state-export.json
+`,
 		RunE:    runCollectMorseAccounts,
 		PreRunE: logger.PreRunESetup,
 		PostRun: signals.ExitWithCodeIfNonZero,
@@ -63,7 +66,7 @@ Generate required input via Morse CLI like so:
 }
 
 // runCollectedMorseAccounts is run via the following command:
-// $ pocketd migrate collect-morse-accounts
+// $ pocketd tx migration collect-morse-accounts
 func runCollectMorseAccounts(_ *cobra.Command, args []string) error {
 	// DEV_NOTE: No need to check args length due to cobra.ExactArgs(2).
 	morseStateExportPath := args[0]

@@ -37,20 +37,20 @@ import_morse_accounts: check_go_version check_from_key_name ## Run the migration
 claim_morse_account: check_go_version check_from_key_name check_morse_private_key_path ## Run the migration module claim-morse-account subcommand.
 	pocketd tx migration claim-account "$(MORSE_PRIVATE_KEY_PATH)" --from="$(FROM_KEY_NAME)"
 
-#########################
-### Migration Testing ###
-#########################
+#############################
+### Migration E2E Testing ###
+#############################
 
 .PHONY: test_e2e_migration_fixture
-test_e2e_migration_fixture: ## Run only the E2E suite that exercises the migration module using fixture data.
+test_e2e_migration_fixture: ## Run ONLY the migration E2E suite using hard-coded fixture data (i.e. generates new morse_state_export.json)
 	go test -v ./e2e/tests/... -count=1 -tags=e2e,oneshot --run=MigrationWithFixtureData
 
 .PHONY: test_e2e_migration_snapshot
-test_e2e_migration_snapshot: ## Run only the E2E suite that exercises the migration module using local snapshot data.
+test_e2e_migration_snapshot: ## Run ONLY the migration E2E suite using snapshot data (i.e. requires existing morse_state_export.json)
 	go test -v ./e2e/tests/... -count=1 -tags=e2e,oneshot,manual --run=MigrationWithSnapshotData
 
 .PHONY: test_e2e_migration_validation_fixture
-test_e2e_migration_validation_fixture: ## Run only the E2E suite that exercises the migration module using fixture data.
+test_e2e_migration_validation_fixture: ## Run ONLY the migration E2E suite using fixture data (i.e. generates new morse_state_export.json)
 	go test -v ./e2e/tests/... -tags=e2e,test --features-path=migration_validation_fixture.feature
 
 #########################

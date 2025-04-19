@@ -17,7 +17,7 @@
 //
 // These types are used by the migration subcommand to transform
 // the Morse state export into the Shannon state import like so:
-//  $ pocketd migrate collect-morse-accounts ...
+//  $ pocketd tx migration collect-morse-accounts ...
 //
 // CRITICAL: These types are offchain and ARE NOT persisted onchain (Shannon) at any point.
 
