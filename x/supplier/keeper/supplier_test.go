@@ -100,6 +100,24 @@ func TestSupplier_GetAll(t *testing.T) {
 	)
 }
 
+func TestSupplier_GetAllSuppliersIterator(t *testing.T) {
+	supplierModuleKeepers, ctx := keepertest.SupplierKeeper(t)
+	suppliers := createNSuppliers(*supplierModuleKeepers.Keeper, ctx, 10)
+	iterator := supplierModuleKeepers.GetAllSuppliersIterator(ctx)
+	defer iterator.Close()
+
+	retrievedSuppliers := make([]sharedtypes.Supplier, 0)
+	for ; iterator.Valid(); iterator.Next() {
+		supplier, err := iterator.Value()
+		require.NoError(t, err)
+		retrievedSuppliers = append(retrievedSuppliers, *supplier)
+	}
+	require.ElementsMatch(t,
+		nullify.Fill(suppliers),
+		nullify.Fill(retrievedSuppliers),
+	)
+}
+
 func TestSupplier_Query(t *testing.T) {
 	keeper, ctx := keepertest.SupplierKeeper(t)
 	suppliers := createNSuppliers(*keeper.Keeper, ctx, 2)

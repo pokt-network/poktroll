@@ -180,11 +180,6 @@ func (k Keeper) hydrateSessionSuppliers(ctx context.Context, sh *sessionHydrator
 	// https://github.com/pokt-network/poktroll/pull/1103#discussion_r1992214953
 	numSuppliersPerSession := int(k.GetParams(ctx).NumSuppliersPerSession)
 
-	// Get all suppliers without service ID filtering because:
-	// - Suppliers may not be active for the session's service ID at "query height"
-	// - We cannot filter by supplier.Services which only represents current (i.e. latest) height
-	suppliers := k.supplierKeeper.GetAllSuppliers(ctx)
-
 	// Map supplier operator addresses to random weights for deterministic sorting.
 	// This ensures fair distribution when:
 	// - NumCandidateSuppliers exceeds NumSuppliersPerSession
@@ -192,15 +187,31 @@ func (k Keeper) hydrateSessionSuppliers(ctx context.Context, sh *sessionHydrator
 	candidatesToRandomWeight := make(map[string]int)
 	candidateSuppliers := make([]*sharedtypes.Supplier, 0)
 
-	for _, supplier := range suppliers {
+	// Get all suppliers without service ID filtering because:
+	// - Suppliers may not be active for the session's service ID at "query height"
+	// - We cannot filter by supplier.Services which only represents current (i.e. latest) height
+	allSuppliersIterator := k.supplierKeeper.GetAllSuppliersIterator(ctx)
+	defer allSuppliersIterator.Close()
+
+	for ; allSuppliersIterator.Valid(); allSuppliersIterator.Next() {
+		supplier, err := allSuppliersIterator.Value()
+		if err != nil {
+			logger.Error(fmt.Sprintf("could not get supplier from iterator: %v", err))
+			return err
+		}
+		if supplier == nil {
+			logger.Error(fmt.Sprintf("unexpected nil supplier in iterator at %s", allSuppliersIterator.Key()))
+			continue
+		}
+
 		// Check if supplier is authorized to serve this service at query block height.
 		if supplier.IsActive(uint64(sh.blockHeight), sh.sessionHeader.ServiceId) {
 			// Do not check if sessionServiceConfigIdx is -1 since IsActive is already doing that.
-			sessionServiceConfigIdx := getSupplierServiceConfigIdx(&supplier, sh.sessionHeader.ServiceId)
+			sessionServiceConfigIdx := getSupplierServiceConfigIdx(supplier, sh.sessionHeader.ServiceId)
 			// Reduce the size of the Supplier object for performance reasons.
-			dehydrateSupplierServiceConfigs(&supplier, sessionServiceConfigIdx)
+			dehydrateSupplierServiceConfigs(supplier, sessionServiceConfigIdx)
 			// Add the supplier to the candidate list.
-			candidateSuppliers = append(candidateSuppliers, &supplier)
+			candidateSuppliers = append(candidateSuppliers, supplier)
 		}
 	}
 
