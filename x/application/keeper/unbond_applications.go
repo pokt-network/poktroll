@@ -27,13 +27,27 @@ func (k Keeper) EndBlockerUnbondApplications(ctx context.Context) error {
 	// Iterate over all applications and unbond the ones that have finished the unbonding period.
 	// TODO_POST_MAINNET: Use an index to iterate over the applications that have initiated
 	// the unbonding action instead of iterating over all of them.
-	for _, application := range k.GetAllApplications(ctx) {
+	allApplicationsIterator := k.GetAllApplicationsIterator(ctx)
+	defer allApplicationsIterator.Close()
+
+	for ; allApplicationsIterator.Valid(); allApplicationsIterator.Next() {
+		application, err := allApplicationsIterator.Value()
+		if err != nil {
+			logger.Error(fmt.Sprintf("could not get application from iterator: %v", err))
+			return err
+		}
+
+		if application == nil {
+			logger.Error(fmt.Sprintf("unexpected nil application in iterator at %s", allApplicationsIterator.Key()))
+			continue
+		}
+
 		// Ignore applications that have not initiated the unbonding action.
 		if !application.IsUnbonding() {
 			continue
 		}
 
-		unbondingEndHeight := apptypes.GetApplicationUnbondingHeight(&sharedParams, &application)
+		unbondingEndHeight := apptypes.GetApplicationUnbondingHeight(&sharedParams, application)
 
 		// If the unbonding height is ahead of the current height, the application
 		// stays in the unbonding state.
@@ -41,7 +55,7 @@ func (k Keeper) EndBlockerUnbondApplications(ctx context.Context) error {
 			continue
 		}
 
-		if err := k.UnbondApplication(ctx, &application); err != nil {
+		if err := k.UnbondApplication(ctx, application); err != nil {
 			return err
 		}
 
@@ -54,7 +68,7 @@ func (k Keeper) EndBlockerUnbondApplications(ctx context.Context) error {
 
 		sessionEndHeight := sharedtypes.GetSessionEndHeight(&sharedParams, currentHeight)
 		unbondingEndEvent := &apptypes.EventApplicationUnbondingEnd{
-			Application:        &application,
+			Application:        application,
 			Reason:             unbondingReason,
 			SessionEndHeight:   sessionEndHeight,
 			UnbondingEndHeight: unbondingEndHeight,

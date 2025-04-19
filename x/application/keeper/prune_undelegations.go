@@ -2,6 +2,7 @@ package keeper
 
 import (
 	"context"
+	"fmt"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
@@ -19,6 +20,8 @@ const NumSessionsAppToGatewayUndelegationRetention = 2
 // EndBlockerPruneAppToGatewayPendingUndelegation runs at the end of each block
 // and prunes app to gateway undelegations that have exceeded the retention delay.
 func (k Keeper) EndBlockerPruneAppToGatewayPendingUndelegation(ctx sdk.Context) error {
+	logger := k.Logger().With("method", "PruneAppToGatewayPendingUndelegation")
+
 	currentHeight := ctx.BlockHeight()
 
 	// Calculate the block height at which undelegations should be pruned
@@ -30,7 +33,21 @@ func (k Keeper) EndBlockerPruneAppToGatewayPendingUndelegation(ctx sdk.Context) 
 
 	// Iterate over all applications and prune undelegations that are older than
 	// the retention period.
-	for _, application := range k.GetAllApplications(ctx) {
+	allApplicationsIterator := k.GetAllApplicationsIterator(ctx)
+	defer allApplicationsIterator.Close()
+
+	for ; allApplicationsIterator.Valid(); allApplicationsIterator.Next() {
+		application, err := allApplicationsIterator.Value()
+		if err != nil {
+			logger.Error(fmt.Sprintf("could not get application from iterator: %v", err))
+			return err
+		}
+
+		if application == nil {
+			logger.Error(fmt.Sprintf("unexpected nil application in iterator at %s", allApplicationsIterator.Key()))
+			continue
+		}
+
 		for undelegationSessionEndHeight := range application.PendingUndelegations {
 			if undelegationSessionEndHeight < earliestUnprunedUndelegationHeight {
 				// prune undelegations
@@ -38,7 +55,7 @@ func (k Keeper) EndBlockerPruneAppToGatewayPendingUndelegation(ctx sdk.Context) 
 			}
 		}
 
-		k.SetApplication(ctx, application)
+		k.SetApplication(ctx, *application)
 	}
 
 	return nil
