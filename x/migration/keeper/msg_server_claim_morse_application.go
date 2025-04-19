@@ -106,7 +106,7 @@ func (k msgServer) ClaimMorseApplication(ctx context.Context, msg *migrationtype
 		return nil, status.Error(
 			codes.FailedPrecondition,
 			migrationtypes.ErrMorseAccountClaim.Wrapf(
-				"Morse account %q is staked as an supplier, please use `pocketd migrate claim-supplier` instead",
+				"Morse account %q is staked as an supplier, please use `pocketd tx migration claim-supplier` instead",
 				morseClaimableAccount.GetMorseSrcAddress(),
 			).Error(),
 		)
@@ -116,7 +116,7 @@ func (k msgServer) ClaimMorseApplication(ctx context.Context, msg *migrationtype
 		return nil, status.Error(
 			codes.FailedPrecondition,
 			migrationtypes.ErrMorseAccountClaim.Wrapf(
-				"Morse account %q is not staked as an application or supplier, please use `pocketd migrate claim-account` instead",
+				"Morse account %q is not staked as an application or supplier, please use `pocketd tx migration claim-account` instead",
 				morseClaimableAccount.GetMorseSrcAddress(),
 			).Error(),
 		)
