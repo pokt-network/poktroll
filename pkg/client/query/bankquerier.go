@@ -2,6 +2,7 @@ package query
 
 import (
 	"context"
+	"sync"
 
 	"cosmossdk.io/depinject"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -26,6 +27,9 @@ type bankQuerier struct {
 
 	// balancesCache caches bankQueryClient.GetBalance requests
 	balancesCache cache.KeyValueCache[Balance]
+
+	// Mutex to protect cache access
+	balancesMutex sync.Mutex
 }
 
 // NewBankQuerier returns a new instance of a client.BankQueryClient by
@@ -62,6 +66,16 @@ func (bq *bankQuerier) GetBalance(
 	// Check if the account balance is present in the cache.
 	if balance, found := bq.balancesCache.Get(address); found {
 		logger.Debug().Msgf("cache hit for account address key: %s", address)
+		return balance, nil
+	}
+
+	// Use mutex to prevent multiple concurrent cache updates
+	bq.balancesMutex.Lock()
+	defer bq.balancesMutex.Unlock()
+
+	// Double-check cache after acquiring lock
+	if balance, found := bq.balancesCache.Get(address); found {
+		logger.Debug().Msgf("cache hit for account address key after lock: %s", address)
 		return balance, nil
 	}
 

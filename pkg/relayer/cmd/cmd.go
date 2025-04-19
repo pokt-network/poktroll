@@ -35,6 +35,7 @@ import (
 	servicetypes "github.com/pokt-network/poktroll/x/service/types"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
+	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 )
 
 // TODO_CONSIDERATION: Consider moving all flags defined in `/pkg` to the cmd/flags package.
@@ -228,10 +229,12 @@ func setupRelayerDependencies(
 		// Setup the params caches and configure them to clear on new blocks.
 		// Some of the params (tokenomics and gateway) are not used in the RelayMiner
 		// and don't need to have a corresponding cache.
-		config.NewSupplyParamsCacheFn[sharedtypes.Params](cache.WithNewBlockCacheClearing),  // leaf
-		config.NewSupplyParamsCacheFn[apptypes.Params](cache.WithNewBlockCacheClearing),     // leaf
-		config.NewSupplyParamsCacheFn[sessiontypes.Params](cache.WithNewBlockCacheClearing), // leaf
-		config.NewSupplyParamsCacheFn[prooftypes.Params](cache.WithNewBlockCacheClearing),   // leaf
+		config.NewSupplyParamsCacheFn[sharedtypes.Params](cache.WithNewBlockCacheClearing),   // leaf
+		config.NewSupplyParamsCacheFn[apptypes.Params](cache.WithNewBlockCacheClearing),      // leaf
+		config.NewSupplyParamsCacheFn[sessiontypes.Params](cache.WithNewBlockCacheClearing),  // leaf
+		config.NewSupplyParamsCacheFn[prooftypes.Params](cache.WithNewBlockCacheClearing),    // leaf
+		config.NewSupplyParamsCacheFn[servicetypes.Params](cache.WithNewBlockCacheClearing),  // leaf
+		config.NewSupplyParamsCacheFn[suppliertypes.Params](cache.WithNewBlockCacheClearing), // leaf
 
 		// Setup the key-value caches for pocket types and configure them to clear on new blocks.
 		config.NewSupplyKeyValueCacheFn[sharedtypes.Service](cache.WithNewBlockCacheClearing),                // leaf

@@ -2,6 +2,7 @@ package query
 
 import (
 	"context"
+	"sync"
 
 	"cosmossdk.io/depinject"
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
@@ -27,6 +28,9 @@ type accQuerier struct {
 
 	// accountsCache caches accountQueryClient.Account requests
 	accountsCache cache.KeyValueCache[types.AccountI]
+
+	// Mutex to protect cache access
+	accountsMutex sync.Mutex
 }
 
 // NewAccountQuerier returns a new instance of a client.AccountQueryClient by
@@ -61,6 +65,16 @@ func (aq *accQuerier) GetAccount(
 	// Check if the account is present in the cache.
 	if account, found := aq.accountsCache.Get(address); found {
 		logger.Debug().Msgf("cache hit for account address key: %s", address)
+		return account, nil
+	}
+
+	// Use mutex to prevent multiple concurrent cache updates
+	aq.accountsMutex.Lock()
+	defer aq.accountsMutex.Unlock()
+
+	// Double-check cache after acquiring lock
+	if account, found := aq.accountsCache.Get(address); found {
+		logger.Debug().Msgf("cache hit for account address key after lock: %s", address)
 		return account, nil
 	}
 
