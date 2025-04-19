@@ -1,6 +1,6 @@
 ---
 title: Migration FAQ
-sidebar_position: 5
+sidebar_position: 9
 ---
 
 :::warning Coming soon...

@@ -16,8 +16,9 @@ import (
 // and ONLY by an authorized account (i.e. PNF).
 func (k msgServer) ImportMorseClaimableAccounts(ctx context.Context, msg *migrationtypes.MsgImportMorseClaimableAccounts) (*migrationtypes.MsgImportMorseClaimableAccountsResponse, error) {
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
-	logger := sdkCtx.Logger().With("method", "CreateMorseAccountState")
+	logger := sdkCtx.Logger().With("method", "ImportMorseClaimableAccounts")
 
+	// Validate the authority.
 	if msg.GetAuthority() != k.GetAuthority() {
 		err := migrationtypes.ErrInvalidSigner.Wrapf("invalid authority address (%s)", msg.GetAuthority())
 		return nil, status.Error(codes.PermissionDenied, err.Error())
