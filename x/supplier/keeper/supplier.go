@@ -2,7 +2,9 @@ package keeper
 
 import (
 	"context"
+	"fmt"
 
+	"cosmossdk.io/log"
 	"cosmossdk.io/store/prefix"
 	storetypes "cosmossdk.io/store/types"
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -37,7 +39,7 @@ func (k Keeper) GetSupplier(
 
 	k.cdc.MustUnmarshal(supplierBz, &supplier)
 
-	initializeNilSupplierFields(&supplier)
+	initializeNilSupplierFields(k.logger, &supplier)
 	return supplier, true
 }
 
@@ -60,30 +62,38 @@ func (k Keeper) GetAllSuppliers(ctx context.Context) (suppliers []sharedtypes.Su
 		var supplier sharedtypes.Supplier
 		k.cdc.MustUnmarshal(iterator.Value(), &supplier)
 
-		initializeNilSupplierFields(&supplier)
+		initializeNilSupplierFields(k.logger, &supplier)
 		suppliers = append(suppliers, supplier)
 	}
 
 	return
 }
 
-// initializeNilSupplierFields initializes any nil fields in the supplier object
-// to their default values.
-// Adding `(gogoproto.nullable)=false` to the repeated proto fields
-// acts on the underlying type and not the slice or map type. This means that the
-// slice or map will be nil if no values are provided in the proto message.
-// This function ensures that the supplier object has all fields initialized
-// to their default values.
-// TODO_TECHDEBT: This function is a workaround for the CosmosSDK codec treating
-// empty slices and maps as nil. We should investigate how we can make the codec
-// treat empty slices and maps as empty instead of nil.
-// Refer to the following discussion for more context:
-// https://github.com/pokt-network/poktroll/pull/1103#discussion_r1992258822
-func initializeNilSupplierFields(supplier *sharedtypes.Supplier) {
+// GetAllSuppliersIterator returns a RecordIterator over all Supplier records.
+func (k Keeper) GetAllSuppliersIterator(ctx context.Context) sharedtypes.RecordIterator[*sharedtypes.Supplier] {
+	storeAdapter := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
+	store := prefix.NewStore(storeAdapter, types.KeyPrefix(types.SupplierKeyOperatorPrefix))
+	supplierIterator := storetypes.KVStorePrefixIterator(store, []byte{})
+
+	supplierUnmarshallerFn := getSupplierAccessorFn(k.logger, k.cdc)
+	return sharedtypes.NewRecordIterator(supplierIterator, supplierUnmarshallerFn)
+}
+
+// initializeNilSupplierFields initializes any nil fields in the supplier object to their default values.
+// - Adding `(gogoproto.nullable)=false` to repeated proto fields acts on the underlying type, not the slice or map type.
+// - As a result, slices or maps will be nil if no values are provided in the proto message.
+// - This function ensures that the supplier object has all fields initialized to their default values.
+//
+// TODO_TECHDEBT: This function is a workaround for the CosmosSDK codec treating empty slices and maps as nil.
+// - We should investigate how to make the codec treat empty slices and maps as empty instead of nil.
+// - For more context, see: https://github.com/pokt-network/poktroll/pull/1103#discussion_r1992258822
+func initializeNilSupplierFields(keeperLogger log.Logger, supplier *sharedtypes.Supplier) {
+	logger := keeperLogger.With("module", "supplier").With("method", "initializeNilSupplierFields")
 	// The CosmosSDK codec treats empty slices and maps as nil, so we need to
 	// ensure that they are initialized as empty.
 	if supplier.Services == nil {
 		supplier.Services = make([]*sharedtypes.SupplierServiceConfig, 0)
+		logger.Warn(fmt.Sprintf("should never happen: supplier.Services was nil, initializing to empty slice for operator %s and owner %s", supplier.OperatorAddress, supplier.OwnerAddress))
 	}
 
 	// Ensure that the supplier has at least one service config history entry.
@@ -98,16 +108,6 @@ func initializeNilSupplierFields(supplier *sharedtypes.Supplier) {
 	}
 }
 
-// GetAllSuppliersIterator returns a RecordIterator over all Supplier records.
-func (k Keeper) GetAllSuppliersIterator(ctx context.Context) sharedtypes.RecordIterator[*sharedtypes.Supplier] {
-	storeAdapter := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
-	store := prefix.NewStore(storeAdapter, types.KeyPrefix(types.SupplierKeyOperatorPrefix))
-	supplierIterator := storetypes.KVStorePrefixIterator(store, []byte{})
-
-	supplierUnmarshallerFn := getSupplierAccessorFn(k.cdc)
-	return sharedtypes.NewRecordIterator(supplierIterator, supplierUnmarshallerFn)
-}
-
 // TODO_IMPROVE: Index suppliers by service ID
 //func (k Keeper) GetAllSuppliersByServiceIDIterator(ctx, sdkContext, serviceId string) (suppliers []*sharedtypes.Supplier) {}
 
@@ -118,6 +118,7 @@ func (k Keeper) GetAllSuppliersIterator(ctx context.Context) sharedtypes.RecordI
 // Returns:
 // - A Supplier object and an error
 func getSupplierAccessorFn(
+	logger log.Logger,
 	cdc codec.BinaryCodec,
 ) sharedtypes.DataRecordAccessor[*sharedtypes.Supplier] {
 	return func(supplierBz []byte) (*sharedtypes.Supplier, error) {
@@ -127,7 +128,7 @@ func getSupplierAccessorFn(
 
 		var supplier sharedtypes.Supplier
 		cdc.MustUnmarshal(supplierBz, &supplier)
-		initializeNilSupplierFields(&supplier)
+		initializeNilSupplierFields(logger, &supplier)
 		return &supplier, nil
 	}
 }
