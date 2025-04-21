@@ -25,14 +25,12 @@ type supplierQuerier struct {
 
 	// suppliersCache caches supplierQueryClient.Supplier requests
 	suppliersCache cache.KeyValueCache[sharedtypes.Supplier]
-
-	// Mutex to protect cache access patterns
+	// suppliersMutex to protect cache access patterns for suppliers
 	suppliersMutex sync.Mutex
 
 	// paramsCache caches supplier module parameters
 	paramsCache client.ParamsCache[suppliertypes.Params]
-
-	// Mutex to protect cache access patterns for params
+	// paramsMutex to protect cache access patterns for params
 	paramsMutex sync.Mutex
 }
 
@@ -70,7 +68,7 @@ func (supq *supplierQuerier) GetSupplier(
 
 	// Check if the supplier is present in the cache.
 	if supplier, found := supq.suppliersCache.Get(operatorAddress); found {
-		logger.Debug().Msgf("cache hit for operator address key: %s", operatorAddress)
+		logger.Debug().Msgf("cache HIT for operator address key: %s", operatorAddress)
 		return supplier, nil
 	}
 
@@ -78,13 +76,13 @@ func (supq *supplierQuerier) GetSupplier(
 	supq.suppliersMutex.Lock()
 	defer supq.suppliersMutex.Unlock()
 
-	// Double-check cache after acquiring lock
+	// Double-check cache after acquiring lock (follows standard double-checked locking pattern)
 	if supplier, found := supq.suppliersCache.Get(operatorAddress); found {
-		logger.Debug().Msgf("cache hit for operator address key after lock: %s", operatorAddress)
+		logger.Debug().Msgf("cache HIT for operator address key after lock: %s", operatorAddress)
 		return supplier, nil
 	}
 
-	logger.Debug().Msgf("cache miss for operator address key: %s", operatorAddress)
+	logger.Debug().Msgf("cache MISS for operator address key: %s", operatorAddress)
 
 	req := &suppliertypes.QueryGetSupplierRequest{OperatorAddress: operatorAddress}
 	res, err := retry.Call(ctx, func() (*suppliertypes.QueryGetSupplierResponse, error) {
@@ -105,7 +103,7 @@ func (supq *supplierQuerier) GetParams(ctx context.Context) (*suppliertypes.Para
 
 	// Check if the supplier module parameters are present in the cache.
 	if params, found := supq.paramsCache.Get(); found {
-		logger.Debug().Msg("cache hit for supplier params")
+		logger.Debug().Msg("cache HIT for supplier params")
 		return &params, nil
 	}
 
@@ -113,13 +111,13 @@ func (supq *supplierQuerier) GetParams(ctx context.Context) (*suppliertypes.Para
 	supq.paramsMutex.Lock()
 	defer supq.paramsMutex.Unlock()
 
-	// Double-check cache after acquiring lock
+	// Double-check cache after acquiring lock (follows standard double-checked locking pattern)
 	if params, found := supq.paramsCache.Get(); found {
-		logger.Debug().Msg("cache hit for supplier params after lock")
+		logger.Debug().Msg("cache HIT for supplier params after lock")
 		return &params, nil
 	}
 
-	logger.Debug().Msg("cache miss for supplier params")
+	logger.Debug().Msg("cache MISS for supplier params")
 
 	req := suppliertypes.QueryParamsRequest{}
 	res, err := retry.Call(ctx, func() (*suppliertypes.QueryParamsResponse, error) {

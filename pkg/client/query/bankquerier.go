@@ -27,8 +27,7 @@ type bankQuerier struct {
 
 	// balancesCache caches bankQueryClient.GetBalance requests
 	balancesCache cache.KeyValueCache[Balance]
-
-	// Mutex to protect cache access
+	// Mutex to protect balancesCache access
 	balancesMutex sync.Mutex
 }
 
@@ -65,7 +64,7 @@ func (bq *bankQuerier) GetBalance(
 
 	// Check if the account balance is present in the cache.
 	if balance, found := bq.balancesCache.Get(address); found {
-		logger.Debug().Msgf("cache hit for account address key: %s", address)
+		logger.Debug().Msgf("cache HIT for account balance with address: %s", address)
 		return balance, nil
 	}
 
@@ -73,13 +72,13 @@ func (bq *bankQuerier) GetBalance(
 	bq.balancesMutex.Lock()
 	defer bq.balancesMutex.Unlock()
 
-	// Double-check cache after acquiring lock
+	// Double-check cache after acquiring lock (follows standard double-checked locking pattern)
 	if balance, found := bq.balancesCache.Get(address); found {
-		logger.Debug().Msgf("cache hit for account address key after lock: %s", address)
+		logger.Debug().Msgf("cache HIT for account balance with address after lock: %s", address)
 		return balance, nil
 	}
 
-	logger.Debug().Msgf("cache miss for account address key: %s", address)
+	logger.Debug().Msgf("cache MISS for account balance with address: %s", address)
 
 	// Query the blockchain for the balance record
 	req := &banktypes.QueryBalanceRequest{Address: address, Denom: volatile.DenomuPOKT}

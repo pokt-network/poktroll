@@ -29,12 +29,13 @@ type serviceQuerier struct {
 	servicesCache cache.KeyValueCache[sharedtypes.Service]
 	// relayMiningDifficultyCache caches serviceQueryClient.RelayMiningDifficulty query requests
 	relayMiningDifficultyCache cache.KeyValueCache[servicetypes.RelayMiningDifficulty]
+	// servicesMutex to protect cache access patterns for services and relay mining difficulties
+	servicesMutex sync.Mutex
+
 	// paramsCache caches serviceQueryClient.Params query requests
 	paramsCache client.ParamsCache[servicetypes.Params]
-
-	// Mutex to protect cache access patterns
-	servicesMutex sync.Mutex
-	paramsMutex   sync.Mutex
+	// paramsMutex to protect cache access patterns for params
+	paramsMutex sync.Mutex
 }
 
 // NewServiceQuerier returns a new instance of a client.ServiceQueryClient by
@@ -82,7 +83,7 @@ func (servq *serviceQuerier) GetService(
 	servq.servicesMutex.Lock()
 	defer servq.servicesMutex.Unlock()
 
-	// Double-check cache after acquiring lock
+	// Double-check cache after acquiring lock (follows standard double-checked locking pattern)
 	if service, found := servq.servicesCache.Get(serviceId); found {
 		logger.Debug().Msgf("service cache hit for service id key after lock: %s", serviceId)
 		return service, nil
@@ -126,7 +127,7 @@ func (servq *serviceQuerier) GetServiceRelayDifficulty(
 	servq.servicesMutex.Lock()
 	defer servq.servicesMutex.Unlock()
 
-	// Double-check cache after acquiring lock
+	// Double-check cache after acquiring lock (follows standard double-checked locking pattern)
 	if relayMiningDifficulty, found := servq.relayMiningDifficultyCache.Get(serviceId); found {
 		logger.Debug().Msgf("relay mining difficulty cache hit for service id key after lock: %s", serviceId)
 		return relayMiningDifficulty, nil
@@ -155,7 +156,7 @@ func (servq *serviceQuerier) GetParams(ctx context.Context) (*servicetypes.Param
 
 	// Check if the service module parameters are present in the cache.
 	if params, found := servq.paramsCache.Get(); found {
-		logger.Debug().Msg("cache hit for service params")
+		logger.Debug().Msg("cache HIT for service params")
 		return &params, nil
 	}
 
@@ -163,13 +164,13 @@ func (servq *serviceQuerier) GetParams(ctx context.Context) (*servicetypes.Param
 	servq.paramsMutex.Lock()
 	defer servq.paramsMutex.Unlock()
 
-	// Double-check cache after acquiring lock
+	// Double-check cache after acquiring lock (follows standard double-checked locking pattern)
 	if params, found := servq.paramsCache.Get(); found {
-		logger.Debug().Msg("cache hit for service params after lock")
+		logger.Debug().Msg("cache HIT for service params after lock")
 		return &params, nil
 	}
 
-	logger.Debug().Msg("cache miss for service params")
+	logger.Debug().Msg("cache MISS for service params")
 
 	req := servicetypes.QueryParamsRequest{}
 	res, err := retry.Call(ctx, func() (*servicetypes.QueryParamsResponse, error) {

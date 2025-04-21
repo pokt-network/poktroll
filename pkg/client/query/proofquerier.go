@@ -24,13 +24,13 @@ type proofQuerier struct {
 
 	// paramsCache caches proofQuerier.Params requests
 	paramsCache client.ParamsCache[prooftypes.Params]
+	// paramsMutex to protect cache access patterns for params
+	paramsMutex sync.Mutex
 
 	// claimsCache caches proofQuerier.Claim requests
 	// It keys the Claims by sessionId and supplierOperatorAddress
 	claimsCache cache.KeyValueCache[prooftypes.Claim]
-
-	// Mutexes to protect cache access patterns
-	paramsMutex sync.Mutex
+	// claimsMutex to protect cache access patterns for claims
 	claimsMutex sync.Mutex
 }
 
@@ -68,7 +68,7 @@ func (pq *proofQuerier) GetParams(
 
 	// Get the params from the cache if they exist.
 	if params, found := pq.paramsCache.Get(); found {
-		logger.Debug().Msg("cache hit for proof params")
+		logger.Debug().Msg("cache HIT for proof params")
 		return &params, nil
 	}
 
@@ -76,13 +76,13 @@ func (pq *proofQuerier) GetParams(
 	pq.paramsMutex.Lock()
 	defer pq.paramsMutex.Unlock()
 
-	// Double-check cache after acquiring lock
+	// Double-check cache after acquiring lock (follows standard double-checked locking pattern)
 	if params, found := pq.paramsCache.Get(); found {
-		logger.Debug().Msg("cache hit for proof params after lock")
+		logger.Debug().Msg("cache HIT for proof params after lock")
 		return &params, nil
 	}
 
-	logger.Debug().Msg("cache miss for proof params")
+	logger.Debug().Msg("cache MISS for proof params")
 
 	req := &prooftypes.QueryParamsRequest{}
 	res, err := retry.Call(ctx, func() (*prooftypes.QueryParamsResponse, error) {
@@ -117,7 +117,7 @@ func (pq *proofQuerier) GetClaim(
 	pq.claimsMutex.Lock()
 	defer pq.claimsMutex.Unlock()
 
-	// Double-check cache after acquiring lock
+	// Double-check cache after acquiring lock (follows standard double-checked locking pattern)
 	if claim, found := pq.claimsCache.Get(claimCacheKey); found {
 		logger.Debug().Msgf("claim cache HIT for claim with sessionId %q after lock", sessionId)
 		return &claim, nil

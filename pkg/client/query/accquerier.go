@@ -28,8 +28,7 @@ type accQuerier struct {
 
 	// accountsCache caches accountQueryClient.Account requests
 	accountsCache cache.KeyValueCache[types.AccountI]
-
-	// Mutex to protect cache access
+	// Mutex to protect accountsCache access
 	accountsMutex sync.Mutex
 }
 
@@ -64,7 +63,7 @@ func (aq *accQuerier) GetAccount(
 
 	// Check if the account is present in the cache.
 	if account, found := aq.accountsCache.Get(address); found {
-		logger.Debug().Msgf("cache hit for account address key: %s", address)
+		logger.Debug().Msgf("cache HIT for account with address: %s", address)
 		return account, nil
 	}
 
@@ -72,13 +71,13 @@ func (aq *accQuerier) GetAccount(
 	aq.accountsMutex.Lock()
 	defer aq.accountsMutex.Unlock()
 
-	// Double-check cache after acquiring lock
+	// Double-check cache after acquiring lock (follows standard double-checked locking pattern)
 	if account, found := aq.accountsCache.Get(address); found {
-		logger.Debug().Msgf("cache hit for account address key after lock: %s", address)
+		logger.Debug().Msgf("cache HIT for account with address after lock: %s", address)
 		return account, nil
 	}
 
-	logger.Debug().Msgf("cache miss for account address key: %s", address)
+	logger.Debug().Msgf("cache MISS for account with address: %s", address)
 
 	// Query the blockchain for the account record
 	req := &accounttypes.QueryAccountRequest{Address: address}

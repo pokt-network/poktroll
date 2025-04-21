@@ -29,12 +29,13 @@ type sessionQuerier struct {
 
 	// sessionsCache caches sessionQueryClient.GetSession requests
 	sessionsCache cache.KeyValueCache[*sessiontypes.Session]
+	// sessionsMutex to protect cache access patterns for sessions
+	sessionsMutex sync.Mutex
+
 	// paramsCache caches sessionQueryClient.Params requests
 	paramsCache client.ParamsCache[sessiontypes.Params]
-
-	// Mutex to protect cache access patterns
-	sessionsMutex sync.Mutex
-	paramsMutex   sync.Mutex
+	// paramsMutex to protect cache access patterns for params
+	paramsMutex sync.Mutex
 }
 
 // NewSessionQuerier returns a new instance of a client.SessionQueryClient by
@@ -81,7 +82,7 @@ func (sessq *sessionQuerier) GetSession(
 
 	// Check if the session is present in the cache.
 	if session, found := sessq.sessionsCache.Get(sessionCacheKey); found {
-		logger.Debug().Msgf("cache hit for session key (appAddress/serviceId/sessionStartHeight): %s", sessionCacheKey)
+		logger.Debug().Msgf("cache HIT for session key (appAddress/serviceId/sessionStartHeight): %s", sessionCacheKey)
 		return session, nil
 	}
 
@@ -91,11 +92,11 @@ func (sessq *sessionQuerier) GetSession(
 
 	// Double-check the cache after acquiring the lock
 	if session, found := sessq.sessionsCache.Get(sessionCacheKey); found {
-		logger.Debug().Msgf("cache hit for session key after lock (appAddress/serviceId/sessionStartHeight): %s", sessionCacheKey)
+		logger.Debug().Msgf("cache HIT for session key after lock (appAddress/serviceId/sessionStartHeight): %s", sessionCacheKey)
 		return session, nil
 	}
 
-	logger.Debug().Msgf("cache miss for session key (appAddress/serviceId/sessionStartHeight): %s", sessionCacheKey)
+	logger.Debug().Msgf("cache MISS for session key (appAddress/serviceId/sessionStartHeight): %s", sessionCacheKey)
 
 	req := &sessiontypes.QueryGetSessionRequest{
 		ApplicationAddress: appAddress,
@@ -123,7 +124,7 @@ func (sessq *sessionQuerier) GetParams(ctx context.Context) (*sessiontypes.Param
 
 	// Check if the params are present in the cache.
 	if params, found := sessq.paramsCache.Get(); found {
-		logger.Debug().Msg("cache hit for session params")
+		logger.Debug().Msg("cache HIT for session params")
 		return &params, nil
 	}
 
@@ -131,13 +132,13 @@ func (sessq *sessionQuerier) GetParams(ctx context.Context) (*sessiontypes.Param
 	sessq.paramsMutex.Lock()
 	defer sessq.paramsMutex.Unlock()
 
-	// Double-check cache after acquiring lock
+	// Double-check cache after acquiring lock (follows standard double-checked locking pattern)
 	if params, found := sessq.paramsCache.Get(); found {
-		logger.Debug().Msg("cache hit for session params after lock")
+		logger.Debug().Msg("cache HIT for session params after lock")
 		return &params, nil
 	}
 
-	logger.Debug().Msg("cache miss for session params")
+	logger.Debug().Msg("cache MISS for session params")
 
 	req := &sessiontypes.QueryParamsRequest{}
 	res, err := retry.Call(ctx, func() (*sessiontypes.QueryParamsResponse, error) {

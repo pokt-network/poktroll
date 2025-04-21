@@ -29,12 +29,13 @@ type sharedQuerier struct {
 
 	// blockHashCache caches blockQuerier.Block requests
 	blockHashCache cache.KeyValueCache[BlockHash]
+	// blockHashMutex to protect cache access patterns for block hashes
+	blockHashMutex sync.Mutex
+
 	// paramsCache caches sharedQueryClient.Params requests
 	paramsCache client.ParamsCache[sharedtypes.Params]
-
-	// Mutexes to protect cache access patterns
-	paramsMutex    sync.Mutex
-	blockHashMutex sync.Mutex
+	// paramsMutex to protect cache access patterns for params
+	paramsMutex sync.Mutex
 }
 
 // NewSharedQuerier returns a new instance of a client.SharedQueryClient by
@@ -72,7 +73,7 @@ func (sq *sharedQuerier) GetParams(ctx context.Context) (*sharedtypes.Params, er
 
 	// Get the params from the cache if they exist.
 	if params, found := sq.paramsCache.Get(); found {
-		logger.Debug().Msg("cache hit for shared params")
+		logger.Debug().Msg("cache HIT for shared params")
 		return &params, nil
 	}
 
@@ -82,11 +83,11 @@ func (sq *sharedQuerier) GetParams(ctx context.Context) (*sharedtypes.Params, er
 
 	// Double-check the cache after acquiring the lock
 	if params, found := sq.paramsCache.Get(); found {
-		logger.Debug().Msg("cache hit for shared params after lock")
+		logger.Debug().Msg("cache HIT for shared params after lock")
 		return &params, nil
 	}
 
-	logger.Debug().Msg("cache miss for shared params")
+	logger.Debug().Msg("cache MISS for shared params")
 
 	req := &sharedtypes.QueryParamsRequest{}
 	res, err := retry.Call(ctx, func() (*sharedtypes.QueryParamsResponse, error) {
@@ -183,12 +184,12 @@ func (sq *sharedQuerier) GetEarliestSupplierClaimCommitHeight(ctx context.Contex
 		sq.blockHashMutex.Lock()
 		defer sq.blockHashMutex.Unlock()
 
-		// Double-check cache after acquiring lock
+		// Double-check cache after acquiring lock (follows standard double-checked locking pattern)
 		claimWindowOpenBlockHash, found = sq.blockHashCache.Get(blockHashCacheKey)
 		if found {
-			logger.Debug().Msgf("cache hit for blockHeight after lock: %s", blockHashCacheKey)
+			logger.Debug().Msgf("cache HIT for blockHeight after lock: %s", blockHashCacheKey)
 		} else {
-			logger.Debug().Msgf("cache miss for blockHeight: %s", blockHashCacheKey)
+			logger.Debug().Msgf("cache MISS for blockHeight: %s", blockHashCacheKey)
 
 			claimWindowOpenBlock, err := retry.Call(ctx, func() (*cometrpctypes.ResultBlock, error) {
 				return sq.blockQuerier.Block(ctx, &claimWindowOpenHeight)
@@ -203,7 +204,7 @@ func (sq *sharedQuerier) GetEarliestSupplierClaimCommitHeight(ctx context.Contex
 			sq.blockHashCache.Set(blockHashCacheKey, claimWindowOpenBlockHash)
 		}
 	} else {
-		logger.Debug().Msgf("cache hit for blockHeight: %s", blockHashCacheKey)
+		logger.Debug().Msgf("cache HIT for blockHeight: %s", blockHashCacheKey)
 	}
 
 	return sharedtypes.GetEarliestSupplierClaimCommitHeight(
@@ -242,12 +243,12 @@ func (sq *sharedQuerier) GetEarliestSupplierProofCommitHeight(ctx context.Contex
 		sq.blockHashMutex.Lock()
 		defer sq.blockHashMutex.Unlock()
 
-		// Double-check cache after acquiring lock
+		// Double-check cache after acquiring lock (follows standard double-checked locking pattern)
 		proofWindowOpenBlockHash, found = sq.blockHashCache.Get(blockHashCacheKey)
 		if found {
-			logger.Debug().Msgf("cache hit for blockHeight after lock: %s", blockHashCacheKey)
+			logger.Debug().Msgf("cache HIT for blockHeight after lock: %s", blockHashCacheKey)
 		} else {
-			logger.Debug().Msgf("cache miss for blockHeight: %s", blockHashCacheKey)
+			logger.Debug().Msgf("cache MISS for blockHeight: %s", blockHashCacheKey)
 
 			proofWindowOpenBlock, err := retry.Call(ctx, func() (*cometrpctypes.ResultBlock, error) {
 				return sq.blockQuerier.Block(ctx, &proofWindowOpenHeight)
@@ -261,7 +262,7 @@ func (sq *sharedQuerier) GetEarliestSupplierProofCommitHeight(ctx context.Contex
 			sq.blockHashCache.Set(blockHashCacheKey, proofWindowOpenBlockHash)
 		}
 	} else {
-		logger.Debug().Msgf("cache hit for blockHeight: %s", blockHashCacheKey)
+		logger.Debug().Msgf("cache HIT for blockHeight: %s", blockHashCacheKey)
 	}
 
 	return sharedtypes.GetEarliestSupplierProofCommitHeight(
