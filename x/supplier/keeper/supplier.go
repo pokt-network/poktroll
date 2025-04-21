@@ -98,23 +98,26 @@ func initializeNilSupplierFields(supplier *sharedtypes.Supplier) {
 	}
 }
 
-// GetAllSuppliersIterator returns an iterator over all supplier records.
+// GetAllSuppliersIterator returns a RecordIterator over all Supplier records.
 func (k Keeper) GetAllSuppliersIterator(ctx context.Context) sharedtypes.RecordIterator[*sharedtypes.Supplier] {
 	storeAdapter := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
 	store := prefix.NewStore(storeAdapter, types.KeyPrefix(types.SupplierKeyOperatorPrefix))
-	iterator := storetypes.KVStorePrefixIterator(store, []byte{})
+	supplierIterator := storetypes.KVStorePrefixIterator(store, []byte{})
 
-	supplierRetriever := getSupplierFromPrimaryStoreIteratorFn(k.cdc)
-	return sharedtypes.NewRecordIterator(iterator, supplierRetriever)
+	supplierUnmarshallerFn := getSupplierAccessorFn(k.cdc)
+	return sharedtypes.NewRecordIterator(supplierIterator, supplierUnmarshallerFn)
 }
 
 // TODO_IMPROVE: Index suppliers by service ID
 //func (k Keeper) GetAllSuppliersByServiceIDIterator(ctx, sdkContext, serviceId string) (suppliers []*sharedtypes.Supplier) {}
 
-// getSupplierFromPrimaryStoreIteratorFn is a helper function that constructs
-// a IteratorRecordRetriever function which receives a Supplier value bytes and
-// unmarshals it into a Supplier object.
-func getSupplierFromPrimaryStoreIteratorFn(
+// getSupplierAccessorFn constructions a DataRecordAccessor function which:
+// 1. Receives a serialized Supplier value bytes
+// 2. Unmarshals it into a Supplier object
+// 3. Initializes any nil fields in the Supplier object
+// Returns:
+// - A Supplier object and an error
+func getSupplierAccessorFn(
 	cdc codec.BinaryCodec,
 ) sharedtypes.DataRecordAccessor[*sharedtypes.Supplier] {
 	return func(supplierBz []byte) (*sharedtypes.Supplier, error) {

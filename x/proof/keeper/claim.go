@@ -83,14 +83,14 @@ func (k Keeper) GetSessionEndHeightClaimsIterator(
 ) sharedtypes.RecordIterator[*types.Claim] {
 	storeAdapter := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
 
-	primaryStore := prefix.NewStore(storeAdapter, types.KeyPrefix(types.ClaimPrimaryKeyPrefix))
+	claimPrimaryStore := prefix.NewStore(storeAdapter, types.KeyPrefix(types.ClaimPrimaryKeyPrefix))
 	sessionEndHeightStore := prefix.NewStore(storeAdapter, types.KeyPrefix(types.ClaimSessionEndHeightPrefix))
 
 	sessionEndHeightPrefix := types.ClaimSupplierEndSessionHeightKey(sessionEndHeight, []byte{})
 	iterator := storetypes.KVStorePrefixIterator(sessionEndHeightStore, sessionEndHeightPrefix)
 
-	claimRetriever := getClaimFromSessionEndHeightStoreIteratorKeysFn(primaryStore, k.cdc)
-	return sharedtypes.NewRecordIterator(iterator, claimRetriever)
+	claimRetrieverFn := getClaimAccessorFn(claimPrimaryStore, k.cdc)
+	return sharedtypes.NewRecordIterator(iterator, claimRetrieverFn)
 }
 
 // GetAllClaims returns all claim
@@ -128,15 +128,23 @@ func (k Keeper) getClaimByPrimaryKey(ctx context.Context, primaryKey []byte) (cl
 // getClaimFromSessionEndHeightStoreIteratorKeysFn is a helper function that constructs
 // a IteratorRecordRetriever function which receives a session end height
 // iterator key and retrieves the corresponding Claim from the primary store.
-func getClaimFromSessionEndHeightStoreIteratorKeysFn(
-	primaryStore prefix.Store,
+
+// getClaimAccessorFn constructions a DataRecordAccessor function which:
+// 1. Receives a key pointing to a Claim in the primary store
+// 2. Retrieves the corresponding Claim from the primary store
+// 3. Unmarshals it into a Claim object
+// 4. Initializes any nil fields in the Claim object
+// Returns:
+// - A Claim object and an error
+func getClaimAccessorFn(
+	claimPrimaryStore prefix.Store,
 	cdc codec.BinaryCodec,
 ) sharedtypes.DataRecordAccessor[*types.Claim] {
-	return func(key []byte) (*types.Claim, error) {
-		claimBz := primaryStore.Get(key)
+	return func(claimKey []byte) (*types.Claim, error) {
+		claimBz := claimPrimaryStore.Get(claimKey)
 		var claim types.Claim
 		if claimBz == nil {
-			return nil, fmt.Errorf("claim not found for key: %v", key)
+			return nil, fmt.Errorf("claim not found for key: %v", claimKey)
 		}
 		cdc.MustUnmarshal(claimBz, &claim)
 		return &claim, nil
