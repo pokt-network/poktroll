@@ -5,11 +5,16 @@ import (
 )
 
 // RecordIterator is an interface for iterating over generic records.
+//
 // It provides methods to:
-// * Navigate through records
-// * Access current record data
-// * Check iterator validity
-// * Clean up resources
+// - Navigate through records
+// - Access current record data
+// - Check iterator validity
+// - Clean up resources
+//
+// DEV_NOTE: This was great as a supplement to the native Cosmos SDK Iterator
+// to embed hidden functionality such as unmarshalling records from bytes.
+// Ref: https://docs.cosmos.network/main/learn/advanced/store
 type RecordIterator[T any] interface {
 	// Next advances the iterator to the next record.
 	Next()
@@ -18,8 +23,8 @@ type RecordIterator[T any] interface {
 	Value() (T, error)
 	// Valid checks if the iterator can still be used.
 	// Returns false when:
-	// * Iterator has been exhausted
-	// * Iterator has been closed
+	// - Iterator has been exhausted
+	// - Iterator has been closed
 	Valid() bool
 	// Key retrieves the current byte key.
 	Key() []byte
@@ -31,12 +36,13 @@ type RecordIterator[T any] interface {
 // It takes a byte slice as input and returns a typed object of type T and an error.
 type DataRecordAccessor[T any] func(data []byte) (T, error)
 
+// Enforce that recordIterator implements RecordIterator
 var _ RecordIterator[any] = (*recordIterator[any])(nil)
 
 // recordIterator implements RecordIterator for blockchain state records.
 // It combines:
-// * A low-level store iterator
-// * A function to convert raw bytes into typed objects
+// - A low-level Cosmos SDK store iterator
+// - A function to convert raw bytes into typed objects
 type recordIterator[T any] struct {
 	storeIter         storetypes.Iterator
 	deserializeRecord DataRecordAccessor[T]
@@ -75,10 +81,10 @@ func (ri *recordIterator[T]) Valid() bool {
 
 // NewRecordIterator creates a new RecordIterator instance.
 // Parameters:
-// * storeIter: The underlying store iterator
-// * deserializeRecord: Function to convert byte data to typed objects
+// - storeIter: The underlying store iterator
+// - deserializeRecord: Function to convert byte data to typed objects
 // Returns:
-// * A configured recordIterator instance
+// - A configured recordIterator instance
 func NewRecordIterator[T any](
 	storeIter storetypes.Iterator,
 	deserializeRecord DataRecordAccessor[T],
