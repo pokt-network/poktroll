@@ -325,45 +325,45 @@ func (k Keeper) ExecutePendingExpiredResults(ctx cosmostypes.Context, expiredRes
 // to settling the offending claim.
 func (k Keeper) ExecutePendingSettledResults(ctx cosmostypes.Context, settledResults tlm.ClaimSettlementResults) error {
 	logger := k.logger.With("method", "ExecutePendingSettledResults")
-	logger.Info(fmt.Sprintf("begin executing %d pending settlement results", len(settledResults)))
+	logger.Debug(fmt.Sprintf("begin executing %d pending settlement results", len(settledResults)))
 
 	for _, settledResult := range settledResults {
 		sessionLogger := logger.With("session_id", settledResult.GetSessionId())
-		sessionLogger.Info("begin executing pending settlement result")
+		sessionLogger.Debug("begin executing pending settlement result")
 
-		sessionLogger.Info(fmt.Sprintf("begin executing %d pending mints", len(settledResult.GetMints())))
+		sessionLogger.Debug(fmt.Sprintf("begin executing %d pending mints", len(settledResult.GetMints())))
 		if err := k.executePendingModuleMints(ctx, sessionLogger, settledResult.GetMints()); err != nil {
 			return err
 		}
-		sessionLogger.Info("done executing pending mints")
+		sessionLogger.Debug("done executing pending mints")
 
-		sessionLogger.Info(fmt.Sprintf("begin executing %d pending module to module transfers", len(settledResult.GetModToModTransfers())))
+		sessionLogger.Debug(fmt.Sprintf("begin executing %d pending module to module transfers", len(settledResult.GetModToModTransfers())))
 		if err := k.executePendingModToModTransfers(ctx, sessionLogger, settledResult.GetModToModTransfers()); err != nil {
 			return err
 		}
-		sessionLogger.Info("done executing pending module account to module account transfers")
+		sessionLogger.Debug("done executing pending module account to module account transfers")
 
-		sessionLogger.Info(fmt.Sprintf("begin executing %d pending module to account transfers", len(settledResult.GetModToAcctTransfers())))
+		sessionLogger.Debug(fmt.Sprintf("begin executing %d pending module to account transfers", len(settledResult.GetModToAcctTransfers())))
 		if err := k.executePendingModToAcctTransfers(ctx, sessionLogger, settledResult.GetModToAcctTransfers()); err != nil {
 			return err
 		}
-		sessionLogger.Info("done executing pending module to account transfers")
+		sessionLogger.Debug("done executing pending module to account transfers")
 
-		sessionLogger.Info(fmt.Sprintf("begin executing %d pending burns", len(settledResult.GetBurns())))
+		sessionLogger.Debug(fmt.Sprintf("begin executing %d pending burns", len(settledResult.GetBurns())))
 		if err := k.executePendingModuleBurns(ctx, sessionLogger, settledResult.GetBurns()); err != nil {
 			return err
 		}
-		sessionLogger.Info("done executing pending burns")
+		sessionLogger.Debug("done executing pending burns")
 
-		sessionLogger.Info("done executing pending settlement result")
+		sessionLogger.Debug("done executing pending settlement result")
 
-		sessionLogger.Info(fmt.Sprintf(
+		sessionLogger.Debug(fmt.Sprintf(
 			"done applying settled results for session %q",
 			settledResult.Claim.GetSessionHeader().GetSessionId(),
 		))
 	}
 
-	logger.Info("done executing pending settlement results")
+	logger.Debug("done executing pending settlement results")
 
 	return nil
 }

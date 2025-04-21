@@ -160,7 +160,7 @@ func (am AppModule) EndBlock(ctx context.Context) error {
 	// EndBlock is preferred over BeginBlock to avoid wasting resources if the block
 	// does not get committed.
 	am.keeper.StoreBlockHash(ctx)
-	logger.Info(fmt.Sprintf("Stored block hash at height %d", blockHeight))
+	logger.Debug(fmt.Sprintf("Stored block hash at height %d", blockHeight))
 	return nil
 }
 

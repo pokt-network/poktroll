@@ -49,7 +49,7 @@ func EndBlocker(ctx sdk.Context, k keeper.Keeper) (err error) {
 		logger.Error(fmt.Sprintf("could not update relay mining difficulty due to error %v", err))
 		return err
 	}
-	logger.Info(fmt.Sprintf(
+	logger.Debug(fmt.Sprintf(
 		"successfully updated the relay mining difficulty for %d services",
 		len(settledResults.GetServiceIds()),
 	))

@@ -68,7 +68,7 @@ func BeginBlocker(ctx sdk.Context, k keeper.Keeper) error {
 		return err
 	}
 
-	logger.Info(fmt.Sprintf("activated services for %d suppliers", numSuppliersWithActivatedServices))
+	logger.Debug(fmt.Sprintf("activated services for %d suppliers", numSuppliersWithActivatedServices))
 
 	return nil
 }

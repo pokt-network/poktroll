@@ -45,7 +45,7 @@ func init() {
 func (k Keeper) ValidateSubmittedProofs(ctx sdk.Context) (numValidProofs, numInvalidProofs uint64, err error) {
 	logger := k.Logger().With("method", "ValidateSubmittedProofs")
 
-	logger.Info(fmt.Sprintf("Number of CPU cores used for parallel proof validation: %d\n", numCPU))
+	logger.Debug(fmt.Sprintf("Number of CPU cores used for parallel proof validation: %d", numCPU))
 
 	// Iterate over proofs using an iterator to prevent OOM issues caused by bulk fetching.
 	proofIterator := k.GetAllProofsIterator(ctx)
@@ -81,11 +81,11 @@ func (k Keeper) ValidateSubmittedProofs(ctx sdk.Context) (numValidProofs, numInv
 	proofIterator.Close()
 
 	// Delete all the processed proofs from the store since they are no longer needed.
-	logger.Info("removing processed proofs from the store")
+	logger.Debug("removing processed proofs from the store")
 	for supplierOperatorAddr, processedProofs := range proofValidationCoordinator.processedProofs {
 		for _, sessionId := range processedProofs {
 			k.RemoveProof(ctx, sessionId, supplierOperatorAddr)
-			logger.Info(fmt.Sprintf(
+			logger.Debug(fmt.Sprintf(
 				"removing proof for supplier %s with session ID %s",
 				supplierOperatorAddr,
 				sessionId,
@@ -162,7 +162,7 @@ func (k Keeper) validateProof(
 
 		logger.Info(fmt.Sprintf("invalid proof due to error: %v", err))
 	}
-	logger.Info(fmt.Sprintf("proof checked, validation result: %s", proofStatus))
+	logger.Debug(fmt.Sprintf("proof checked, validation result: %s", proofStatus))
 
 	// Create and emit an event for the proof validation result.
 	eventProofValidityChecked := types.EventProofValidityChecked{
