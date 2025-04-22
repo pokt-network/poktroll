@@ -71,7 +71,7 @@ func (k Keeper) EnsureWellFormedProof(ctx context.Context, proof *types.Proof) e
 	if err != nil {
 		return err
 	}
-	logger.Info("queried and validated the session header")
+	logger.Debug("queried and validated the session header")
 
 	// Re-hydrate message session header with the onchain session header.
 	// This corrects for discrepancies between unvalidated fields in the session

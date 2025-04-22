@@ -28,7 +28,7 @@ func (k Keeper) BeginBlockerActivateSupplierServices(
 		return numSuppliersWithServicesActivation, nil
 	}
 
-	logger.Info(fmt.Sprintf(
+	logger.Debug(fmt.Sprintf(
 		"starting session %d, about to activate services for suppliers",
 		sharedtypes.GetSessionNumber(&sharedParams, currentBlockHeight),
 	))
@@ -47,7 +47,7 @@ func (k Keeper) BeginBlockerActivateSupplierServices(
 		// Check if this supplier has service config scheduled to activate at current height.
 		latestConfig := supplier.ServiceConfigHistory[lastConfigIdx]
 		if latestConfig.EffectiveBlockHeight == uint64(currentBlockHeight) {
-			logger.Info(fmt.Sprintf(
+			logger.Debug(fmt.Sprintf(
 				"activating services for supplier with operator address %q",
 				supplier.OperatorAddress,
 			))

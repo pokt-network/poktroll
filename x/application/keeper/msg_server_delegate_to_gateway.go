@@ -25,17 +25,17 @@ func (k msgServer) DelegateToGateway(ctx context.Context, msg *apptypes.MsgDeleg
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 
 	logger := k.Logger().With("method", "DelegateToGateway")
-	logger.Info(fmt.Sprintf("About to delegate application to gateway with msg: %+v", msg))
+	logger.Debug(fmt.Sprintf("About to delegate application to gateway with msg: %+v", msg))
 
 	if err := msg.ValidateBasic(); err != nil {
-		logger.Info(fmt.Sprintf("Delegation Message failed basic validation: %s", err))
+		logger.Debug(fmt.Sprintf("Delegation Message failed basic validation: %s", err))
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
 	// Retrieve the application from the store
 	app, found := k.GetApplication(ctx, msg.GetAppAddress())
 	if !found {
-		logger.Info(fmt.Sprintf("Application not found with address [%s]", msg.AppAddress))
+		logger.Debug(fmt.Sprintf("Application not found with address [%s]", msg.AppAddress))
 		return nil, status.Error(
 			codes.NotFound,
 			apptypes.ErrAppNotFound.Wrapf(
@@ -43,12 +43,12 @@ func (k msgServer) DelegateToGateway(ctx context.Context, msg *apptypes.MsgDeleg
 			).Error(),
 		)
 	}
-	logger.Info(fmt.Sprintf("Application found with address [%s]", msg.AppAddress))
+	logger.Debug(fmt.Sprintf("Application found with address [%s]", msg.AppAddress))
 
 	// Check if the gateway is staked
 	gateway, gatewayFound := k.gatewayKeeper.GetGateway(ctx, msg.GetGatewayAddress())
 	if !gatewayFound {
-		logger.Info(fmt.Sprintf("Gateway not found with address [%s]", msg.GetGatewayAddress()))
+		logger.Debug(fmt.Sprintf("Gateway not found with address [%s]", msg.GetGatewayAddress()))
 		return nil, status.Error(
 			codes.NotFound,
 			apptypes.ErrAppGatewayNotFound.Wrapf(
@@ -60,7 +60,7 @@ func (k msgServer) DelegateToGateway(ctx context.Context, msg *apptypes.MsgDeleg
 	// Ensure the application is not already delegated to the maximum number of gateways
 	maxDelegatedParam := k.GetParams(ctx).MaxDelegatedGateways
 	if uint64(len(app.DelegateeGatewayAddresses)) >= maxDelegatedParam {
-		logger.Info(fmt.Sprintf("Application already delegated to maximum number of gateways: %d", maxDelegatedParam))
+		logger.Debug(fmt.Sprintf("Application already delegated to maximum number of gateways: %d", maxDelegatedParam))
 		return nil, status.Error(
 			codes.FailedPrecondition,
 			apptypes.ErrAppMaxDelegatedGateways.Wrapf(
@@ -73,7 +73,7 @@ func (k msgServer) DelegateToGateway(ctx context.Context, msg *apptypes.MsgDeleg
 	currentHeight := sdkCtx.BlockHeight()
 	// Ensure that the gateway is still active
 	if !gateway.IsActive(currentHeight) {
-		logger.Info(fmt.Sprintf("Gateway with address [%s] is unbonding and no longer active", msg.GetGatewayAddress()))
+		logger.Debug(fmt.Sprintf("Gateway with address [%s] is unbonding and no longer active", msg.GetGatewayAddress()))
 		return nil, status.Error(
 			codes.FailedPrecondition,
 			gatewaytypes.ErrGatewayIsInactive.Wrapf(
@@ -85,7 +85,7 @@ func (k msgServer) DelegateToGateway(ctx context.Context, msg *apptypes.MsgDeleg
 	// Check if the application is already delegated to the gateway
 	for _, gatewayAddr := range app.DelegateeGatewayAddresses {
 		if gatewayAddr == msg.GetGatewayAddress() {
-			logger.Info(fmt.Sprintf("Application already delegated to gateway with address [%s]", msg.GatewayAddress))
+			logger.Debug(fmt.Sprintf("Application already delegated to gateway with address [%s]", msg.GatewayAddress))
 			return nil, status.Error(
 				codes.AlreadyExists,
 				apptypes.ErrAppAlreadyDelegated.Wrapf(
@@ -98,11 +98,11 @@ func (k msgServer) DelegateToGateway(ctx context.Context, msg *apptypes.MsgDeleg
 
 	// Update the application with the new delegatee public key
 	app.DelegateeGatewayAddresses = append(app.DelegateeGatewayAddresses, msg.GetGatewayAddress())
-	logger.Info("Successfully added delegatee public key to application")
+	logger.Debug("Successfully added delegatee public key to application")
 
 	// Update the application store with the new delegation
 	k.SetApplication(ctx, app)
-	logger.Info(fmt.Sprintf("Successfully delegated application to gateway for app: %+v", app))
+	logger.Debug(fmt.Sprintf("Successfully delegated application to gateway for app: %+v", app))
 
 	// Emit the application redelegation event
 	sharedParams := k.sharedKeeper.GetParams(ctx)
@@ -111,7 +111,7 @@ func (k msgServer) DelegateToGateway(ctx context.Context, msg *apptypes.MsgDeleg
 		Application:      &app,
 		SessionEndHeight: sessionEndHeight,
 	}
-	logger.Info(fmt.Sprintf("Emitting application redelegation event %+v", event))
+	logger.Debug(fmt.Sprintf("Emitting application redelegation event %+v", event))
 
 	if err := sdkCtx.EventManager().EmitTypedEvent(event); err != nil {
 		err = fmt.Errorf("failed to emit application redelegation event: %w", err)

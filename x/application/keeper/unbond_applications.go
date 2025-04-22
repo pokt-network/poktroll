@@ -95,7 +95,7 @@ func (k Keeper) UnbondApplication(ctx context.Context, app *apptypes.Application
 
 	// Remove the Application from the store.
 	k.RemoveApplication(ctx, app.GetAddress())
-	logger.Info(fmt.Sprintf("Successfully removed the application: %+v", app))
+	logger.Debug(fmt.Sprintf("Successfully removed the application: %+v", app))
 
 	return nil
 }

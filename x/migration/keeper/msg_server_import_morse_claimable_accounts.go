@@ -26,7 +26,7 @@ func (k msgServer) ImportMorseClaimableAccounts(ctx context.Context, msg *migrat
 
 	// Validate the import message.
 	if err := msg.ValidateBasic(); err != nil {
-		logger.Info(err.Error())
+		logger.Debug(err.Error())
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
@@ -35,16 +35,16 @@ func (k msgServer) ImportMorseClaimableAccounts(ctx context.Context, msg *migrat
 	// efficiently test for the existence of ANY MorseClaimableAccounts.
 	if morseClaimableAccounts := k.GetAllMorseClaimableAccounts(sdkCtx); len(morseClaimableAccounts) > 0 {
 		err := migrationtypes.ErrMorseAccountsImport.Wrap("Morse claimable accounts already imported")
-		logger.Info(err.Error())
+		logger.Debug(err.Error())
 		return nil, status.Error(codes.FailedPrecondition, err.Error())
 	}
 
-	logger.Info("beginning importing morse claimable accounts...")
+	logger.Debug("beginning importing morse claimable accounts...")
 
 	// Import MorseClaimableAccounts.
 	k.ImportFromMorseAccountState(sdkCtx, &msg.MorseAccountState)
 
-	logger.Info("done importing morse claimable accounts!")
+	logger.Debug("done importing morse claimable accounts!")
 
 	// Emit the corresponding event.
 	if err := sdkCtx.EventManager().EmitTypedEvent(

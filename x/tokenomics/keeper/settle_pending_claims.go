@@ -172,7 +172,7 @@ func (k Keeper) SettlePendingClaims(ctx cosmostypes.Context) (
 					return settledResults, expiredResults, err
 				}
 
-				logger.Info(fmt.Sprintf(
+				logger.Debug(fmt.Sprintf(
 					"claim expired due to %s",
 					tokenomicstypes.ClaimExpirationReason_name[int32(expirationReason)]),
 				)
@@ -242,7 +242,7 @@ func (k Keeper) SettlePendingClaims(ctx cosmostypes.Context) (
 			return settledResults, expiredResults, err
 		}
 
-		logger.Info("claim settled")
+		logger.Debug("claim settled")
 
 		// The claim & proof are no longer necessary, so there's no need for them
 		// to take up onchain space.
@@ -262,7 +262,7 @@ func (k Keeper) SettlePendingClaims(ctx cosmostypes.Context) (
 		)
 	}
 
-	logger.Info(fmt.Sprintf("found %d expiring claims at block height %d", numExpiringClaims, blockHeight))
+	logger.Debug(fmt.Sprintf("found %d expiring claims at block height %d", numExpiringClaims, blockHeight))
 
 	// Execute all the pending mint, burn, and transfer operations.
 	if err = k.ExecutePendingSettledResults(ctx, settledResults); err != nil {
@@ -274,7 +274,7 @@ func (k Keeper) SettlePendingClaims(ctx cosmostypes.Context) (
 		return settledResults, expiredResults, err
 	}
 
-	logger.Info(fmt.Sprintf(
+	logger.Debug(fmt.Sprintf(
 		"settled %d and expired %d claims at block height %d",
 		settledResults.GetNumClaims(),
 		expiredResults.GetNumClaims(),
@@ -385,7 +385,7 @@ func (k Keeper) executePendingModuleMints(
 			)
 		}
 
-		logger.Info(fmt.Sprintf(
+		logger.Debug(fmt.Sprintf(
 			"executing operation: minting %s coins to the %q module account, reason: %q",
 			mint.Coin, mint.DestinationModule, mint.OpReason.String(),
 		))
@@ -411,7 +411,7 @@ func (k Keeper) executePendingModuleBurns(
 			)
 		}
 
-		logger.Info(fmt.Sprintf(
+		logger.Debug(fmt.Sprintf(
 			"executing operation: burning %s coins from the %q module account, reason: %q",
 			burn.Coin, burn.DestinationModule, burn.OpReason.String(),
 		))
@@ -442,7 +442,7 @@ func (k Keeper) executePendingModToModTransfers(
 			)
 		}
 
-		logger.Info(fmt.Sprintf(
+		logger.Debug(fmt.Sprintf(
 			"executing operation: transfering %s coins from the %q module account to the %q module account, reason: %q",
 			transfer.Coin, transfer.SenderModule, transfer.RecipientModule, transfer.OpReason.String(),
 		))
@@ -489,7 +489,7 @@ func (k Keeper) executePendingModToAcctTransfers(
 			)
 		}
 
-		logger.Info(fmt.Sprintf(
+		logger.Debug(fmt.Sprintf(
 			"executing operation: transfering %s coins from the %q module account to account address %q, reason: %q",
 			transfer.Coin, transfer.SenderModule, transfer.RecipientAddress, transfer.OpReason.String(),
 		))
@@ -596,7 +596,7 @@ func (k Keeper) slashSupplierStake(
 
 	supplierToSlash.Stake = &remainingStakeCoin
 
-	logger.Info(fmt.Sprintf(
+	logger.Debug(fmt.Sprintf(
 		"queueing operation: slash supplier owner with address %q operated by %q by %s, remaining stake: %s",
 		supplierToSlash.GetOwnerAddress(),
 		supplierToSlash.GetOperatorAddress(),

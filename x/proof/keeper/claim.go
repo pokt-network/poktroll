@@ -22,20 +22,20 @@ func (k Keeper) UpsertClaim(ctx context.Context, claim types.Claim) {
 	sessionId := claim.GetSessionHeader().GetSessionId()
 	primaryKey := types.ClaimPrimaryKey(sessionId, claim.SupplierOperatorAddress)
 	primaryStore.Set(primaryKey, claimBz)
-	logger.Info(fmt.Sprintf("upserted claim for supplier %s with primaryKey %s", claim.SupplierOperatorAddress, primaryKey))
+	logger.Debug(fmt.Sprintf("upserted claim for supplier %s with primaryKey %s", claim.SupplierOperatorAddress, primaryKey))
 
 	// Update the address index: supplierOperatorAddress -> [ClaimPrimaryKey]
 	supplierOperatorAddrStore := prefix.NewStore(storeAdapter, types.KeyPrefix(types.ClaimSupplierOperatorAddressPrefix))
 	supplierOperatorAddrKey := types.ClaimSupplierOperatorAddressKey(claim.SupplierOperatorAddress, primaryKey)
 	supplierOperatorAddrStore.Set(supplierOperatorAddrKey, primaryKey)
-	logger.Info(fmt.Sprintf("indexed claim for supplier %s with primaryKey %s", claim.SupplierOperatorAddress, primaryKey))
+	logger.Debug(fmt.Sprintf("indexed claim for supplier %s with primaryKey %s", claim.SupplierOperatorAddress, primaryKey))
 
 	// Update the session end height index: sessionEndHeight -> [ClaimPrimaryKey]
 	sessionEndHeightStore := prefix.NewStore(storeAdapter, types.KeyPrefix(types.ClaimSessionEndHeightPrefix))
 	sessionEndHeight := claim.GetSessionHeader().GetSessionEndBlockHeight()
 	sessionEndHeightKey := types.ClaimSupplierEndSessionHeightKey(sessionEndHeight, primaryKey)
 	sessionEndHeightStore.Set(sessionEndHeightKey, primaryKey)
-	logger.Info(fmt.Sprintf("indexed claim for supplier %s at session ending height %d", claim.SupplierOperatorAddress, sessionEndHeight))
+	logger.Debug(fmt.Sprintf("indexed claim for supplier %s at session ending height %d", claim.SupplierOperatorAddress, sessionEndHeight))
 }
 
 // GetClaim returns a claim from its index
@@ -71,7 +71,7 @@ func (k Keeper) RemoveClaim(ctx context.Context, sessionId, supplierOperatorAddr
 	supplierOperatorAddrStore.Delete(supplierOperatorAddrKey)
 	sessionEndHeightStore.Delete(sessionEndHeightKey)
 
-	logger.Info(fmt.Sprintf("deleted claim with primary key %s for supplier %s and session %s", primaryKey, supplierOperatorAddr, sessionId))
+	logger.Debug(fmt.Sprintf("deleted claim with primary key %s for supplier %s and session %s", primaryKey, supplierOperatorAddr, sessionId))
 }
 
 // GetSessionEndHeightClaimsIterator returns an iterator over all claims corresponding

@@ -190,7 +190,7 @@ func (k Keeper) ProcessTokenLogicModules(
 		return err
 	}
 	logger = logger.With("actual_settlement_upokt", actualSettlementCoin)
-	logger.Info(fmt.Sprintf("About to start processing TLMs for (%d) compute units, equal to (%s) claimed", numClaimComputeUnits, actualSettlementCoin))
+	logger.Debug(fmt.Sprintf("About to start processing TLMs for (%d) compute units, equal to (%s) claimed", numClaimComputeUnits, actualSettlementCoin))
 
 	if actualSettlementCoin.Amount.IsZero() {
 		logger.Warn(fmt.Sprintf(
@@ -214,13 +214,13 @@ func (k Keeper) ProcessTokenLogicModules(
 	// Execute all the token logic modules processors
 	for _, tokenLogicModule := range k.tokenLogicModules {
 		tlmName := tokenLogicModule.GetId().String()
-		logger.Info(fmt.Sprintf("Starting processing TLM: %q", tlmName))
+		logger.Debug(fmt.Sprintf("Starting processing TLM: %q", tlmName))
 
 		if err = tokenLogicModule.Process(ctx, logger, tlmCtx); err != nil {
 			return tokenomicstypes.ErrTokenomicsProcessingTLM.Wrapf("TLM %q: %s", tlmName, err)
 		}
 
-		logger.Info(fmt.Sprintf("Finished processing TLM: %q", tlmName))
+		logger.Debug(fmt.Sprintf("Finished processing TLM: %q", tlmName))
 	}
 
 	// Unbond the application if it has less than the minimum stake.
@@ -247,7 +247,7 @@ func (k Keeper) ProcessTokenLogicModules(
 
 	// State mutation: update the application's onchain record.
 	k.applicationKeeper.SetApplication(ctx, application)
-	logger.Info(fmt.Sprintf("updated onchain application record with address %q", application.Address))
+	logger.Debug(fmt.Sprintf("updated onchain application record with address %q", application.Address))
 
 	// TODO_MAINNET_MIGRATION(@bryanchriswhite): If the application stake has dropped to (near?) zero:
 	// - Unstake it
@@ -257,7 +257,7 @@ func (k Keeper) ProcessTokenLogicModules(
 
 	// State mutation: Update the suppliers's onchain record
 	k.supplierKeeper.SetSupplier(ctx, supplier)
-	logger.Info(fmt.Sprintf("updated onchain supplier record with address %q", supplier.OperatorAddress))
+	logger.Debug(fmt.Sprintf("updated onchain supplier record with address %q", supplier.OperatorAddress))
 
 	// Update isSuccessful to true for telemetry
 	isSuccessful = true
@@ -334,7 +334,7 @@ func (k Keeper) ensureClaimAmountLimits(
 
 	// Nominal case: The claimable amount is within the limits set by Relay Mining.
 	if claimSettlementCoin.Amount.LTE(maxClaimSettlementAmt) {
-		logger.Info(fmt.Sprintf("claim by supplier %s IS WITHIN LIMITS of servicing application %s. Max claimable amount >= claim amount: %v >= %v",
+		logger.Debug(fmt.Sprintf("claim by supplier %s IS WITHIN LIMITS of servicing application %s. Max claimable amount >= claim amount: %v >= %v",
 			supplier.GetOperatorAddress(), application.GetAddress(), maxClaimSettlementAmt, claimSettlementCoin.Amount))
 		return claimSettlementCoin, nil
 	}

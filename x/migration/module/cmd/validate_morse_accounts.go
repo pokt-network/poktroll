@@ -234,7 +234,7 @@ func runValidateMorseAccounts(_ *cobra.Command, args []string) error {
 		if err != nil {
 			return err
 		}
-		logger.Logger.Info().Msgf(
+		logger.Logger.Debug().Msgf(
 			"Found MorseClaimableAccount %s %s",
 			strings.ToUpper(targetMorseAddress),
 			string(morseClaimableAccountJSONBz),

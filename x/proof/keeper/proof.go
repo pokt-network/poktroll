@@ -23,7 +23,7 @@ func (k Keeper) UpsertProof(ctx context.Context, proof types.Proof) {
 	primaryKey := types.ProofPrimaryKey(sessionId, proof.GetSupplierOperatorAddress())
 	primaryStore.Set(primaryKey, proofBz)
 
-	logger.Info(
+	logger.Debug(
 		fmt.Sprintf("upserted proof for supplier %s with primaryKey %s", proof.GetSupplierOperatorAddress(), primaryKey),
 	)
 
@@ -32,7 +32,7 @@ func (k Keeper) UpsertProof(ctx context.Context, proof types.Proof) {
 	supplierOperatorAddrKey := types.ProofSupplierOperatorAddressKey(proof.GetSupplierOperatorAddress(), primaryKey)
 	supplierOperatorAddrStore.Set(supplierOperatorAddrKey, primaryKey)
 
-	logger.Info(fmt.Sprintf("indexed Proof for supplier %s with primaryKey %s", proof.GetSupplierOperatorAddress(), primaryKey))
+	logger.Debug(fmt.Sprintf("indexed Proof for supplier %s with primaryKey %s", proof.GetSupplierOperatorAddress(), primaryKey))
 
 	// Update the session end height index: sessionEndHeight -> [ProofPrimaryKey]
 	sessionEndHeightStore := prefix.NewStore(storeAdapter, types.KeyPrefix(types.ProofSessionEndHeightPrefix))
@@ -81,7 +81,7 @@ func (k Keeper) RemoveProof(ctx context.Context, sessionId, supplierOperatorAddr
 	supplierOperatorAddrStore.Delete(supplierOperatorAddrKey)
 	sessionEndHeightStore.Delete(sessionEndHeightKey)
 
-	logger.Info(
+	logger.Debug(
 		fmt.Sprintf(
 			"deleted proof with primary key %s for supplier %s and session %s",
 			primaryKey,

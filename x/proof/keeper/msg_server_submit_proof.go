@@ -47,7 +47,7 @@ func (k msgServer) SubmitProof(
 	)
 
 	logger := k.Logger().With("method", "SubmitProof")
-	logger.Info("About to start submitting proof")
+	logger.Debug("About to start submitting proof")
 
 	// Basic validation of the SubmitProof message.
 	if err = msg.ValidateBasic(); err != nil {
@@ -65,7 +65,7 @@ func (k msgServer) SubmitProof(
 		"session_end_height", sessionHeader.GetSessionEndBlockHeight(),
 		"supplier_operator_address", supplierOperatorAddress,
 	)
-	logger.Info("validated the submitProof message")
+	logger.Debug("validated the submitProof message")
 
 	// Defer telemetry calls so that they reference the final values the relevant variables.
 	defer k.finalizeSubmitProofTelemetry(sessionHeader, msg, isExistingProof, numRelays, numClaimComputeUnits, err)
@@ -82,7 +82,7 @@ func (k msgServer) SubmitProof(
 		logger.Error(fmt.Sprintf("failed to ensure well-formed proof: %v", err))
 		return nil, status.Error(codes.FailedPrecondition, err.Error())
 	}
-	logger.Info("ensured the proof is well-formed")
+	logger.Debug("ensured the proof is well-formed")
 
 	// Retrieve the claim associated with the proof.
 	// The claim should ALWAYS exist since the proof validation in EnsureWellFormedProof
@@ -135,7 +135,7 @@ func (k msgServer) SubmitProof(
 
 	// Upsert the proof
 	k.UpsertProof(ctx, *proof)
-	logger.Info("successfully upserted the proof")
+	logger.Debug("successfully upserted the proof")
 
 	// Emit the appropriate event based on whether the claim was created or updated.
 	var proofUpsertEvent proto.Message
@@ -249,7 +249,7 @@ func (k Keeper) ProofRequirementForClaim(ctx context.Context, claim *types.Claim
 	if claimeduPOKT.Amount.GTE(proofParams.GetProofRequirementThreshold().Amount) {
 		requirementReason = types.ProofRequirementReason_THRESHOLD
 
-		logger.Info(fmt.Sprintf(
+		logger.Debug(fmt.Sprintf(
 			"claim requires proof due to claimed tokens (%s) exceeding threshold (%s)",
 			claimeduPOKT,
 			proofParams.GetProofRequirementThreshold(),
@@ -275,7 +275,7 @@ func (k Keeper) ProofRequirementForClaim(ctx context.Context, claim *types.Claim
 	if proofRequirementSampleValue <= proofParams.GetProofRequestProbability() {
 		requirementReason = types.ProofRequirementReason_PROBABILISTIC
 
-		logger.Info(fmt.Sprintf(
+		logger.Debug(fmt.Sprintf(
 			"claim requires proof due to random sample (%.2f) being less than or equal to probability (%.2f)",
 			proofRequirementSampleValue,
 			proofParams.GetProofRequestProbability(),
@@ -283,7 +283,7 @@ func (k Keeper) ProofRequirementForClaim(ctx context.Context, claim *types.Claim
 		return requirementReason, nil
 	}
 
-	logger.Info(fmt.Sprintf(
+	logger.Debug(fmt.Sprintf(
 		"claim does not require proof due to claimed amount (%s) being less than the threshold (%s) and random sample (%.2f) being greater than probability (%.2f)",
 		claimeduPOKT,
 		proofParams.GetProofRequirementThreshold(),

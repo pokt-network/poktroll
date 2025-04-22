@@ -50,7 +50,7 @@ func (tlm tlmRelayBurnEqualsMint) Process(
 		Coin:              tlmCtx.SettlementCoin,
 	})
 
-	logger.Info(fmt.Sprintf("operation queued: mint (%v) coins in the supplier module", tlmCtx.SettlementCoin))
+	logger.Debug(fmt.Sprintf("operation queued: mint (%v) coins in the supplier module", tlmCtx.SettlementCoin))
 
 	// Update telemetry information
 	if tlmCtx.SettlementCoin.Amount.IsInt64() {
@@ -72,7 +72,7 @@ func (tlm tlmRelayBurnEqualsMint) Process(
 			err,
 		)
 	}
-	logger.Info(fmt.Sprintf("operation queued: send (%v) from the supplier module to the supplier account with address %q", tlmCtx.SettlementCoin, tlmCtx.Supplier.OperatorAddress))
+	logger.Debug(fmt.Sprintf("operation queued: send (%v) from the supplier module to the supplier account with address %q", tlmCtx.SettlementCoin, tlmCtx.Supplier.OperatorAddress))
 
 	// Burn uPOKT from the application module account which was held in escrow
 	// on behalf of the application account.
@@ -81,7 +81,7 @@ func (tlm tlmRelayBurnEqualsMint) Process(
 		DestinationModule: apptypes.ModuleName,
 		Coin:              tlmCtx.SettlementCoin,
 	})
-	logger.Info(fmt.Sprintf("operation queued: burn (%v) from the application module account", tlmCtx.SettlementCoin))
+	logger.Debug(fmt.Sprintf("operation queued: burn (%v) from the application module account", tlmCtx.SettlementCoin))
 
 	// Update telemetry information
 	if tlmCtx.SettlementCoin.Amount.IsInt64() {
@@ -98,7 +98,7 @@ func (tlm tlmRelayBurnEqualsMint) Process(
 		return tokenomicstypes.ErrTokenomicsApplicationNewStakeInvalid.Wrapf("application %q stake cannot be reduced to a negative amount %v", tlmCtx.Application.Address, newAppStake)
 	}
 	tlmCtx.Application.Stake = &newAppStake
-	logger.Info(fmt.Sprintf("operation scheduled: update application %q stake to %v", tlmCtx.Application.Address, newAppStake))
+	logger.Debug(fmt.Sprintf("operation scheduled: update application %q stake to %v", tlmCtx.Application.Address, newAppStake))
 
 	return nil
 }

@@ -158,5 +158,5 @@ func logRewardOperation(logger log.Logger, msg string, reward *cosmostypes.Coin)
 	} else {
 		opMsgPrefix = "operation queued:"
 	}
-	logger.Info(fmt.Sprintf("%s: %s", opMsgPrefix, msg))
+	logger.Debug(fmt.Sprintf("%s: %s", opMsgPrefix, msg))
 }
