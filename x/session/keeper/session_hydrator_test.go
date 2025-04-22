@@ -124,11 +124,11 @@ func TestSession_HydrateSession_Metadata(t *testing.T) {
 
 	appAddr := keepertest.TestApp1Address
 	serviceId := keepertest.TestServiceId1
-	sessionKeeper, ctx := keepertest.SessionKeeper(t, sharedParamsOpt)
-	ctx = sdk.UnwrapSDKContext(ctx).WithBlockHeight(100) // provide a sufficiently large block height to avoid errors
-
 	for _, test := range tests {
 		t.Run(test.desc, func(t *testing.T) {
+			sessionKeeper, ctx := keepertest.SessionKeeper(t, sharedParamsOpt)
+			ctx = sdk.UnwrapSDKContext(ctx).WithBlockHeight(100) // provide a sufficiently large block height to avoid errors
+
 			sessionHydrator := keeper.NewSessionHydrator(appAddr, serviceId, test.blockHeight)
 			session, err := sessionKeeper.HydrateSession(ctx, sessionHydrator)
 
@@ -211,11 +211,11 @@ func TestSession_HydrateSession_SessionId(t *testing.T) {
 		},
 	}
 
-	sessionKeeper, ctx := keepertest.SessionKeeper(t, sharedParamsOpt)
-	ctx = sdk.UnwrapSDKContext(ctx).WithBlockHeight(100) // provide a sufficiently large block height to avoid errors
-
 	for _, test := range tests {
 		t.Run(test.desc, func(t *testing.T) {
+			sessionKeeper, ctx := keepertest.SessionKeeper(t, sharedParamsOpt)
+			ctx = sdk.UnwrapSDKContext(ctx).WithBlockHeight(100) // provide a sufficiently large block height to avoid errors
+
 			sessionHydrator1 := keeper.NewSessionHydrator(test.appAddr1, test.serviceId1, test.blockHeight1)
 			session1, err := sessionKeeper.HydrateSession(ctx, sessionHydrator1)
 			require.NoError(t, err)
@@ -282,11 +282,11 @@ func TestSession_HydrateSession_Application(t *testing.T) {
 	}
 
 	blockHeight := int64(10)
-	sessionKeeper, ctx := keepertest.SessionKeeper(t, sharedParamsOpt)
-	ctx = sdk.UnwrapSDKContext(ctx).WithBlockHeight(100) // provide a sufficiently large block height to avoid errors
-
 	for _, test := range tests {
 		t.Run(test.desc, func(t *testing.T) {
+			sessionKeeper, ctx := keepertest.SessionKeeper(t, sharedParamsOpt)
+			ctx = sdk.UnwrapSDKContext(ctx).WithBlockHeight(100) // provide a sufficiently large block height to avoid errors
+
 			sessionHydrator := keeper.NewSessionHydrator(test.appAddr, test.serviceId, blockHeight)
 			_, err := sessionKeeper.HydrateSession(ctx, sessionHydrator)
 			if test.expectedErr != nil {

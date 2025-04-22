@@ -2,9 +2,11 @@ package keeper
 
 import (
 	"context"
+	"fmt"
 
 	"cosmossdk.io/store/prefix"
 	storetypes "cosmossdk.io/store/types"
+	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/runtime"
 
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
@@ -97,5 +99,36 @@ func initializeNilSupplierFields(supplier *sharedtypes.Supplier) {
 	}
 }
 
+// GetAllSuppliersIterator returns a RecordIterator over all Supplier records.
+func (k Keeper) GetAllSuppliersIterator(ctx context.Context) sharedtypes.RecordIterator[sharedtypes.Supplier] {
+	storeAdapter := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
+	store := prefix.NewStore(storeAdapter, types.KeyPrefix(types.SupplierKeyOperatorPrefix))
+	supplierIterator := storetypes.KVStorePrefixIterator(store, []byte{})
+
+	supplierUnmarshallerFn := getSupplierAccessorFn(k.cdc)
+	return sharedtypes.NewRecordIterator(supplierIterator, supplierUnmarshallerFn)
+}
+
 // TODO_IMPROVE: Index suppliers by service ID
-// func (k Keeper) GetAllSuppliers(ctx, sdkContext, serviceId string) (suppliers []sharedtypes.Supplier) {}
+//func (k Keeper) GetAllSuppliersByServiceIDIterator(ctx, sdkContext, serviceId string) (suppliers []*sharedtypes.Supplier) {}
+
+// getSupplierAccessorFn constructions a DataRecordAccessor function which:
+// 1. Receives a serialized Supplier value bytes
+// 2. Unmarshals it into a Supplier object
+// 3. Initializes any nil fields in the Supplier object
+// Returns:
+// - A Supplier object and an error
+func getSupplierAccessorFn(
+	cdc codec.BinaryCodec,
+) sharedtypes.DataRecordAccessor[sharedtypes.Supplier] {
+	return func(supplierBz []byte) (sharedtypes.Supplier, error) {
+		if supplierBz == nil {
+			return sharedtypes.Supplier{}, fmt.Errorf("expecting supplier bytes to be non-nil")
+		}
+
+		var supplier sharedtypes.Supplier
+		cdc.MustUnmarshal(supplierBz, &supplier)
+		initializeNilSupplierFields(&supplier)
+		return supplier, nil
+	}
+}
