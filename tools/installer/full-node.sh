@@ -437,9 +437,16 @@ setup_cosmovisor() {
         exit 1
     fi
 
-    # Using Cosmovisor v1.6.0 instead of newer v1.7.1 due to a bug in ListenFinalizeBock
-    # that prevents pocketd nodes from properly processing upgrades when syncing from genesis.
-    # For more details, see: https://github.com/cosmos/cosmos-sdk/issues/24005
+    # We're using Cosmovisor version 1.6.0 instead of the newer version 1.7.1
+    # This is because of a bug in the ListenFinalizeBock function that affects
+    # pocketd nodes when they're syncing from genesis. The bug prevents proper
+    # processing of blockchain upgrades.
+    #
+    # We'll update to the latest version once this fix is released:
+    # https://github.com/cosmos/cosmos-sdk/pull/23879
+    #
+    # For more details about this issue, see:
+    # https://github.com/cosmos/cosmos-sdk/issues/24005
     COSMOVISOR_VERSION="v1.6.0"
     # Note that cosmosorvisor only support linux, which is why OS_TYPE is not used in the URL.
     COSMOVISOR_URL="https://github.com/cosmos/cosmos-sdk/releases/download/cosmovisor%2F${COSMOVISOR_VERSION}/cosmovisor-${COSMOVISOR_VERSION}-linux-${ARCH}.tar.gz"
