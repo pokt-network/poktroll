@@ -34,17 +34,13 @@ func (k Keeper) EndBlockerUnbondSuppliers(ctx context.Context) (numUnbondedSuppl
 			logger.Error(fmt.Sprintf("could not get supplier from iterator: %v", err))
 			return numUnbondedSuppliers, err
 		}
-		if supplier == nil {
-			logger.Error(fmt.Sprintf("unexpected nil supplier in iterator at %s", allSuppliersIterator.Key()))
-			continue
-		}
 
 		// Ignore suppliers that have not initiated the unbonding action.
 		if !supplier.IsUnbonding() {
 			continue
 		}
 
-		unbondingEndHeight := sharedtypes.GetSupplierUnbondingEndHeight(&sharedParams, supplier)
+		unbondingEndHeight := sharedtypes.GetSupplierUnbondingEndHeight(&sharedParams, &supplier)
 
 		// If the unbonding height is ahead of the current height, the supplier
 		// stays in the unbonding state.
@@ -94,7 +90,7 @@ func (k Keeper) EndBlockerUnbondSuppliers(ctx context.Context) (numUnbondedSuppl
 		// Emit an event which signals that the supplier has sucessfully unbonded.
 		sessionEndHeight := sharedtypes.GetSessionEndHeight(&sharedParams, currentHeight)
 		unbondingEndEvent := &suppliertypes.EventSupplierUnbondingEnd{
-			Supplier:           supplier,
+			Supplier:           &supplier,
 			Reason:             unbondingReason,
 			SessionEndHeight:   sessionEndHeight,
 			UnbondingEndHeight: unbondingEndHeight,

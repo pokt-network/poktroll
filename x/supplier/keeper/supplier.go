@@ -70,7 +70,7 @@ func (k Keeper) GetAllSuppliers(ctx context.Context) (suppliers []sharedtypes.Su
 }
 
 // GetAllSuppliersIterator returns a RecordIterator over all Supplier records.
-func (k Keeper) GetAllSuppliersIterator(ctx context.Context) sharedtypes.RecordIterator[*sharedtypes.Supplier] {
+func (k Keeper) GetAllSuppliersIterator(ctx context.Context) sharedtypes.RecordIterator[sharedtypes.Supplier] {
 	storeAdapter := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
 	store := prefix.NewStore(storeAdapter, types.KeyPrefix(types.SupplierKeyOperatorPrefix))
 	supplierIterator := storetypes.KVStorePrefixIterator(store, []byte{})
@@ -120,15 +120,15 @@ func initializeNilSupplierFields(keeperLogger log.Logger, supplier *sharedtypes.
 func getSupplierAccessorFn(
 	logger log.Logger,
 	cdc codec.BinaryCodec,
-) sharedtypes.DataRecordAccessor[*sharedtypes.Supplier] {
-	return func(supplierBz []byte) (*sharedtypes.Supplier, error) {
+) sharedtypes.DataRecordAccessor[sharedtypes.Supplier] {
+	return func(supplierBz []byte) (sharedtypes.Supplier, error) {
 		if supplierBz == nil {
-			return nil, nil
+			return sharedtypes.Supplier{}, fmt.Errorf("expecting supplier bytes to be non-nil")
 		}
 
 		var supplier sharedtypes.Supplier
 		cdc.MustUnmarshal(supplierBz, &supplier)
 		initializeNilSupplierFields(logger, &supplier)
-		return &supplier, nil
+		return supplier, nil
 	}
 }

@@ -199,19 +199,15 @@ func (k Keeper) hydrateSessionSuppliers(ctx context.Context, sh *sessionHydrator
 			logger.Error(fmt.Sprintf("could not get supplier from iterator: %v", err))
 			return err
 		}
-		if supplier == nil {
-			logger.Error(fmt.Sprintf("unexpected nil supplier in iterator at %s", allSuppliersIterator.Key()))
-			continue
-		}
 
 		// Check if supplier is authorized to serve this service at query block height.
 		if supplier.IsActive(uint64(sh.blockHeight), sh.sessionHeader.ServiceId) {
 			// Do not check if sessionServiceConfigIdx is -1 since IsActive is already doing that.
-			sessionServiceConfigIdx := getSupplierServiceConfigIdx(supplier, sh.sessionHeader.ServiceId)
+			sessionServiceConfigIdx := getSupplierServiceConfigIdx(&supplier, sh.sessionHeader.ServiceId)
 			// Reduce the size of the Supplier object for performance reasons.
-			dehydrateSupplierServiceConfigs(supplier, sessionServiceConfigIdx)
+			dehydrateSupplierServiceConfigs(&supplier, sessionServiceConfigIdx)
 			// Add the supplier to the candidate list.
-			candidateSuppliers = append(candidateSuppliers, supplier)
+			candidateSuppliers = append(candidateSuppliers, &supplier)
 		}
 	}
 
