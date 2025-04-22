@@ -65,12 +65,15 @@ func (k Keeper) EndBlockerPruneSupplierServiceConfigHistory(
 		supplier.ServiceConfigHistory = retainedServiceConfigs
 
 		k.SetSupplier(ctx, supplier)
-		logger.Debug(fmt.Sprintf(
-			"pruned %d out of %d service config history entries for supplier %s",
-			originalHistoryLength-len(retainedServiceConfigs),
-			originalHistoryLength,
-			supplier.OperatorAddress,
-		))
+		prunedConfigs := originalHistoryLength - len(retainedServiceConfigs)
+		if prunedConfigs > 0 {
+			logger.Debug(fmt.Sprintf(
+				"pruned %d out of %d service config history entries for supplier %s",
+				prunedConfigs,
+				originalHistoryLength,
+				supplier.OperatorAddress,
+			))
+		}
 
 		numSuppliersWithPrunedHistory += 1
 	}

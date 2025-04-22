@@ -23,7 +23,9 @@ func EndBlocker(ctx sdk.Context, k keeper.Keeper) error {
 		return err
 	}
 
-	k.Logger().Info(fmt.Sprintf("unbonded %d suppliers", numUnbondedSuppliers))
+	if numUnbondedSuppliers > 0 {
+		k.Logger().Debug(fmt.Sprintf("unbonded %d suppliers", numUnbondedSuppliers))
+	}
 
 	numSuppliersWithPrunedHistory, err := k.EndBlockerPruneSupplierServiceConfigHistory(ctx)
 	if err != nil {
@@ -31,7 +33,9 @@ func EndBlocker(ctx sdk.Context, k keeper.Keeper) error {
 		return err
 	}
 
-	k.Logger().Info(fmt.Sprintf("pruned service config history for %d suppliers", numSuppliersWithPrunedHistory))
+	if numSuppliersWithPrunedHistory > 0 {
+		k.Logger().Debug(fmt.Sprintf("pruned service config history for %d suppliers", numSuppliersWithPrunedHistory))
+	}
 
 	return nil
 }
@@ -68,7 +72,9 @@ func BeginBlocker(ctx sdk.Context, k keeper.Keeper) error {
 		return err
 	}
 
-	logger.Debug(fmt.Sprintf("activated services for %d suppliers", numSuppliersWithActivatedServices))
+	if numSuppliersWithActivatedServices > 0 {
+		logger.Debug(fmt.Sprintf("activated services for %d suppliers", numSuppliersWithActivatedServices))
+	}
 
 	return nil
 }
