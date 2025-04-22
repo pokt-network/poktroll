@@ -249,9 +249,9 @@ func defaultSupplierKeeperMock(t testing.TB) types.SupplierKeeper {
 
 	mockSupplierKeeper := mocks.NewMockSupplierKeeper(ctrl)
 	mockSupplierKeeper.EXPECT().GetAllSuppliersIterator(gomock.Any()).
-		DoAndReturn(func(ctx context.Context) sharedtypes.RecordIterator[*sharedtypes.Supplier] {
+		DoAndReturn(func(ctx context.Context) sharedtypes.RecordIterator[sharedtypes.Supplier] {
 			testSupplier := TestSupplier
-			allSuppliers := []*sharedtypes.Supplier{&testSupplier}
+			allSuppliers := []sharedtypes.Supplier{testSupplier}
 
 			return sharedmocks.NewMockRecordIterator(allSuppliers)
 		}).AnyTimes()

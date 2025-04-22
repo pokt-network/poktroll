@@ -58,7 +58,7 @@ func (k Keeper) SettlePendingClaims(ctx cosmostypes.Context) (
 		// - Use a consistent reference value for all claims involving this application.
 		// - Prevent accounting issues that would occur if we used the continuously changing stake value
 		//   during the settlement process.
-		if err = k.cacheApplicationInitialStake(ctx, applicationInitialStakeMap, claim); err != nil {
+		if err = k.cacheApplicationInitialStake(ctx, applicationInitialStakeMap, &claim); err != nil {
 			return settledResults, expiredResults, err
 		}
 
@@ -119,7 +119,7 @@ func (k Keeper) SettlePendingClaims(ctx cosmostypes.Context) (
 
 		// Using the probabilistic proofs approach, determine if this expiring
 		// claim required an onchain proof
-		proofRequirement, err = k.proofKeeper.ProofRequirementForClaim(ctx, claim)
+		proofRequirement, err = k.proofKeeper.ProofRequirementForClaim(ctx, &claim)
 		if err != nil {
 			return settledResults, expiredResults, err
 		}
@@ -135,7 +135,7 @@ func (k Keeper) SettlePendingClaims(ctx cosmostypes.Context) (
 		)
 
 		// Initialize a claimSettlementResult to accumulate the results prior to executing state transitions.
-		claimSettlementResult := tlm.NewClaimSettlementResult(*claim)
+		claimSettlementResult := tlm.NewClaimSettlementResult(claim)
 
 		proofIsRequired := proofRequirement != prooftypes.ProofRequirementReason_NOT_REQUIRED
 		if proofIsRequired {
@@ -164,7 +164,7 @@ func (k Keeper) SettlePendingClaims(ctx cosmostypes.Context) (
 				// Proof was required but is invalid or not found.
 				// Emit an event that a claim has expired and being removed without being settled.
 				claimExpiredEvent := tokenomicstypes.EventClaimExpired{
-					Claim:                    claim,
+					Claim:                    &claim,
 					ExpirationReason:         expirationReason,
 					NumRelays:                numClaimRelays,
 					NumClaimedComputeUnits:   numClaimComputeUnits,
@@ -232,7 +232,7 @@ func (k Keeper) SettlePendingClaims(ctx cosmostypes.Context) (
 		settledResults.Append(claimSettlementResult)
 
 		claimSettledEvent := tokenomicstypes.EventClaimSettled{
-			Claim:                    claim,
+			Claim:                    &claim,
 			NumRelays:                numClaimRelays,
 			NumClaimedComputeUnits:   numClaimComputeUnits,
 			NumEstimatedComputeUnits: numEstimatedComputeUnits,
@@ -505,7 +505,7 @@ func (k Keeper) executePendingModToAcctTransfers(
 // If the proof window closes and a proof IS NOT required -> settle the claim.
 // If the proof window closes and a proof IS required -> only settle it if a proof is available.
 // DEV_NOTE: It is exported for testing purposes.
-func (k Keeper) GetExpiringClaimsIterator(ctx cosmostypes.Context) (expiringClaimsIterator sharedtypes.RecordIterator[*prooftypes.Claim]) {
+func (k Keeper) GetExpiringClaimsIterator(ctx cosmostypes.Context) (expiringClaimsIterator sharedtypes.RecordIterator[prooftypes.Claim]) {
 	// TODO_IMPROVE(@bryanchriswhite):
 	//   1. Move height logic up to SettlePendingClaims.
 	//   2. Ensure that claims are only settled or expired on a session end height.

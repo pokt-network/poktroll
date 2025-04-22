@@ -85,6 +85,8 @@ func (ri *recordIterator[T]) Valid() bool {
 // - deserializeRecord: Function to convert byte data to typed objects
 // Returns:
 // - A configured recordIterator instance
+// TODO_CONSIDERATION: Add the possibility to configure a filter function such that
+// the iterator can skip certain records based on custom logic.
 func NewRecordIterator[T any](
 	storeIter storetypes.Iterator,
 	deserializeRecord DataRecordAccessor[T],

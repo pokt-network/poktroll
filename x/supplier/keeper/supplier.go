@@ -2,6 +2,7 @@ package keeper
 
 import (
 	"context"
+	"fmt"
 
 	"cosmossdk.io/store/prefix"
 	storetypes "cosmossdk.io/store/types"
@@ -99,7 +100,7 @@ func initializeNilSupplierFields(supplier *sharedtypes.Supplier) {
 }
 
 // GetAllSuppliersIterator returns a RecordIterator over all Supplier records.
-func (k Keeper) GetAllSuppliersIterator(ctx context.Context) sharedtypes.RecordIterator[*sharedtypes.Supplier] {
+func (k Keeper) GetAllSuppliersIterator(ctx context.Context) sharedtypes.RecordIterator[sharedtypes.Supplier] {
 	storeAdapter := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
 	store := prefix.NewStore(storeAdapter, types.KeyPrefix(types.SupplierKeyOperatorPrefix))
 	supplierIterator := storetypes.KVStorePrefixIterator(store, []byte{})
@@ -119,15 +120,15 @@ func (k Keeper) GetAllSuppliersIterator(ctx context.Context) sharedtypes.RecordI
 // - A Supplier object and an error
 func getSupplierAccessorFn(
 	cdc codec.BinaryCodec,
-) sharedtypes.DataRecordAccessor[*sharedtypes.Supplier] {
-	return func(supplierBz []byte) (*sharedtypes.Supplier, error) {
+) sharedtypes.DataRecordAccessor[sharedtypes.Supplier] {
+	return func(supplierBz []byte) (sharedtypes.Supplier, error) {
 		if supplierBz == nil {
-			return nil, nil
+			return sharedtypes.Supplier{}, fmt.Errorf("expecting supplier bytes to be non-nil")
 		}
 
 		var supplier sharedtypes.Supplier
 		cdc.MustUnmarshal(supplierBz, &supplier)
 		initializeNilSupplierFields(&supplier)
-		return &supplier, nil
+		return supplier, nil
 	}
 }

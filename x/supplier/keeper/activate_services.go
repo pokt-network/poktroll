@@ -47,11 +47,6 @@ func (k Keeper) BeginBlockerActivateSupplierServices(
 			return 0, err
 		}
 
-		if supplier == nil {
-			logger.Error(fmt.Sprintf("unexpected nil supplier in iterator at %s", allSuppliersIterator.Key()))
-			continue
-		}
-
 		// supplier.ServiceConfigHistory is guaranteed to contain at least one entry.
 		// This is necessary for the session hydration process that relies on the
 		// service config history to determine the current active service configuration.
@@ -70,12 +65,12 @@ func (k Keeper) BeginBlockerActivateSupplierServices(
 			supplier.Services = latestConfig.Services
 
 			// Save the updated supplier.
-			k.SetSupplier(ctx, *supplier)
+			k.SetSupplier(ctx, supplier)
 			numSuppliersWithServicesActivation += 1
 
 			// Collect the event for the activated service configuration.
 			event := &suppliertypes.EventSupplierServiceConfigActivated{
-				Supplier:         supplier,
+				Supplier:         &supplier,
 				ActivationHeight: currentBlockHeight,
 			}
 			events = append(events, event)

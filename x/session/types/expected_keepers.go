@@ -28,7 +28,7 @@ type ApplicationKeeper interface {
 
 // SupplierKeeper defines the expected interface needed to retrieve suppliers
 type SupplierKeeper interface {
-	GetAllSuppliersIterator(ctx context.Context) sharedtypes.RecordIterator[*sharedtypes.Supplier]
+	GetAllSuppliersIterator(ctx context.Context) sharedtypes.RecordIterator[sharedtypes.Supplier]
 }
 
 // SharedKeeper defines the expected interface needed to retrieve shared parameters

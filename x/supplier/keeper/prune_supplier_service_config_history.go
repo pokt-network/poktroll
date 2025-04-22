@@ -34,10 +34,6 @@ func (k Keeper) EndBlockerPruneSupplierServiceConfigHistory(
 			logger.Error(fmt.Sprintf("could not get supplier from iterator: %v", err))
 			return 0, err
 		}
-		if supplier == nil {
-			logger.Error(fmt.Sprintf("unexpected nil supplier in iterator at %s", allSuppliersIterator.Key()))
-			continue
-		}
 
 		// Store the original number of historical service configs.
 		originalHistoryLength := len(supplier.ServiceConfigHistory)
@@ -77,7 +73,7 @@ func (k Keeper) EndBlockerPruneSupplierServiceConfigHistory(
 		// Update the supplier's service config history with the pruned list.
 		supplier.ServiceConfigHistory = retainedServiceConfigs
 
-		k.SetSupplier(ctx, *supplier)
+		k.SetSupplier(ctx, supplier)
 		logger.Info(fmt.Sprintf(
 			"pruned %d out of %d service config history entries for supplier %s",
 			originalHistoryLength-len(retainedServiceConfigs),

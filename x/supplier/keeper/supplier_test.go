@@ -110,7 +110,7 @@ func TestSupplier_GetAllSuppliersIterator(t *testing.T) {
 	for ; iterator.Valid(); iterator.Next() {
 		supplier, err := iterator.Value()
 		require.NoError(t, err)
-		retrievedSuppliers = append(retrievedSuppliers, *supplier)
+		retrievedSuppliers = append(retrievedSuppliers, supplier)
 	}
 	require.ElementsMatch(t,
 		nullify.Fill(suppliers),

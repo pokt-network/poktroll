@@ -80,7 +80,7 @@ func (k Keeper) RemoveClaim(ctx context.Context, sessionId, supplierOperatorAddr
 // to the given session end height.
 func (k Keeper) GetSessionEndHeightClaimsIterator(
 	ctx context.Context, sessionEndHeight int64,
-) sharedtypes.RecordIterator[*types.Claim] {
+) sharedtypes.RecordIterator[types.Claim] {
 	storeAdapter := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
 
 	claimPrimaryStore := prefix.NewStore(storeAdapter, types.KeyPrefix(types.ClaimPrimaryKeyPrefix))
@@ -139,14 +139,14 @@ func (k Keeper) getClaimByPrimaryKey(ctx context.Context, primaryKey []byte) (cl
 func getClaimAccessorFn(
 	claimPrimaryStore prefix.Store,
 	cdc codec.BinaryCodec,
-) sharedtypes.DataRecordAccessor[*types.Claim] {
-	return func(claimKey []byte) (*types.Claim, error) {
+) sharedtypes.DataRecordAccessor[types.Claim] {
+	return func(claimKey []byte) (types.Claim, error) {
 		claimBz := claimPrimaryStore.Get(claimKey)
 		var claim types.Claim
 		if claimBz == nil {
-			return nil, fmt.Errorf("claim not found for key: %v", claimKey)
+			return types.Claim{}, fmt.Errorf("claim not found for key: %v", claimKey)
 		}
 		cdc.MustUnmarshal(claimBz, &claim)
-		return &claim, nil
+		return claim, nil
 	}
 }

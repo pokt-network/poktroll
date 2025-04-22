@@ -56,7 +56,7 @@ type ProofKeeper interface {
 	GetProof(ctx context.Context, sessionId, supplierOperatorAddr string) (proof prooftypes.Proof, isProofFound bool)
 	RemoveProof(ctx context.Context, sessionId, supplierOperatorAddr string)
 
-	GetSessionEndHeightClaimsIterator(ctx context.Context, sessionEndHeight int64) sharedtypes.RecordIterator[*prooftypes.Claim]
+	GetSessionEndHeightClaimsIterator(ctx context.Context, sessionEndHeight int64) sharedtypes.RecordIterator[prooftypes.Claim]
 	ProofRequirementForClaim(ctx context.Context, claim *prooftypes.Claim) (prooftypes.ProofRequirementReason, error)
 
 	// Only used for testing & simulation
