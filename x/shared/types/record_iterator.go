@@ -87,6 +87,11 @@ func (ri *recordIterator[T]) Valid() bool {
 // - A configured recordIterator instance
 // TODO_CONSIDERATION: Add the possibility to configure a filter function such that
 // the iterator can skip certain records based on custom logic.
+// This could be useful to encapsulate logic such as:
+// - Skipping nil records
+// - Filtering by a specific field
+// Refer to the following discussion for more context:
+// https://github.com/pokt-network/poktroll/pull/1226#discussion_r2052961278
 func NewRecordIterator[T any](
 	storeIter storetypes.Iterator,
 	deserializeRecord DataRecordAccessor[T],
