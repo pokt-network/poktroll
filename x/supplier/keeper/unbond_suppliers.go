@@ -26,7 +26,15 @@ func (k Keeper) EndBlockerUnbondSuppliers(ctx context.Context) (numUnbondedSuppl
 	// Iterate over all suppliers and unbond suppliers that have finished the unbonding period.
 	// TODO_POST_MAINNET(@red-0ne): Use an index to iterate over suppliers that have initiated the
 	// unbonding action instead of iterating over all suppliers.
-	for _, supplier := range k.GetAllSuppliers(ctx) {
+	allSuppliersIterator := k.GetAllSuppliersIterator(ctx)
+	defer allSuppliersIterator.Close()
+	for ; allSuppliersIterator.Valid(); allSuppliersIterator.Next() {
+		supplier, err := allSuppliersIterator.Value()
+		if err != nil {
+			logger.Error(fmt.Sprintf("could not get supplier from iterator: %v", err))
+			return numUnbondedSuppliers, err
+		}
+
 		// Ignore suppliers that have not initiated the unbonding action.
 		if !supplier.IsUnbonding() {
 			continue
