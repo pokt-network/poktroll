@@ -135,7 +135,6 @@ func TestMsgAddService_ValidateBasic(t *testing.T) {
 		t.Run(test.desc, func(t *testing.T) {
 			err := test.msg.ValidateBasic()
 			if test.expectedErr != nil {
-				// require.ErrorIs(t, err, test.expectedErr)
 				require.ErrorContains(t, err, test.expectedErr.Error())
 				return
 			}

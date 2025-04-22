@@ -85,7 +85,7 @@ func IsValidServiceId(serviceId string) error {
 func IsValidServiceName(serviceName string) error {
 	// ServiceName CAN be empty
 	if len(serviceName) == 0 {
-		return ErrSharedInvalidServiceName.Wrapf("empty service name")
+		return nil
 	}
 
 	if len(serviceName) > maxServiceNameLength {
