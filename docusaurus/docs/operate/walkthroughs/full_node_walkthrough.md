@@ -134,7 +134,7 @@ Cosmovisor manages the binary upgrades for your node. Use the commands below to 
 
 ```bash
 mkdir -p $HOME/.local/bin
-COSMOVISOR_VERSION="v1.7.1"
+COSMOVISOR_VERSION="v1.6.0"
 ARCH=$(uname -m)
 if [ "$ARCH" = "x86_64" ]; then
     ARCH="amd64"
