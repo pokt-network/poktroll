@@ -16,8 +16,15 @@ const (
 	// Should we revisit all uint64 and convert them to BigInts?
 	ComputeUnitsPerRelayMax uint64 = 2 ^ 16 // 65536
 
-	maxServiceIdLength = 16 // Limiting all serviceIds to 16 characters
-	maxServiceIdName   = 42 // Limit the name of the service name to 42 characters
+	// TODO_IMPROVE: Consider making these configurable via governance parameters.
+	// The current values were selected arbitrarily simply to avoid excessive onchain bloat.
+
+	// Limiting all serviceIds to 42 characters
+	maxServiceIdLength = 42
+
+	// Limit the name of the service to 169 characters
+	// TODO_TECHDEBT: Rename "service name" to "service description"
+	maxServiceNameLength = 169
 
 	regexServiceId   = "^[a-zA-Z0-9_-]+$"  // Define the regex pattern to match allowed characters
 	regexServiceName = "^[a-zA-Z0-9-_ ]+$" // Define the regex pattern to match allowed characters (allows spaces)
@@ -36,12 +43,12 @@ func init() {
 
 // ValidateBasic performs basic stateless validation of a Service.
 func (s *Service) ValidateBasic() error {
-	if !IsValidServiceId(s.Id) {
-		return ErrSharedInvalidService.Wrapf("invalid service ID: %q", s.Id)
+	if err := IsValidServiceId(s.Id); err != nil {
+		return err
 	}
 
-	if !IsValidServiceName(s.Name) {
-		return ErrSharedInvalidService.Wrapf("invalid service name: %q", s.Name)
+	if err := IsValidServiceName(s.Name); err != nil {
+		return err
 	}
 
 	if _, err := sdk.AccAddressFromBech32(s.OwnerAddress); err != nil {
@@ -56,33 +63,41 @@ func (s *Service) ValidateBasic() error {
 }
 
 // IsValidServiceId checks if the input string is a valid serviceId
-func IsValidServiceId(serviceId string) bool {
+func IsValidServiceId(serviceId string) error {
 	// ServiceId CANNOT be empty
 	if len(serviceId) == 0 {
-		return false
+		return ErrSharedInvalidServiceId.Wrap("empty service ID")
 	}
 
 	if len(serviceId) > maxServiceIdLength {
-		return false
+		return ErrSharedInvalidServiceId.Wrapf("service ID '%s' exceeds maximum length: %d", serviceId, maxServiceIdLength)
 	}
 
 	// Use the regex to match against the input string
-	return regexExprServiceId.MatchString(serviceId)
+	if !regexExprServiceId.MatchString(serviceId) {
+		return ErrSharedInvalidServiceId.Wrapf("service ID '%s' contains invalid characters", serviceId)
+	}
+
+	return nil
 }
 
 // IsValidServiceName checks if the input string is a valid serviceName
-func IsValidServiceName(serviceName string) bool {
+func IsValidServiceName(serviceName string) error {
 	// ServiceName CAN be empty
 	if len(serviceName) == 0 {
-		return true
+		return ErrSharedInvalidServiceName.Wrapf("empty service name")
 	}
 
-	if len(serviceName) > maxServiceIdName {
-		return false
+	if len(serviceName) > maxServiceNameLength {
+		return ErrSharedInvalidServiceName.Wrapf("service name '%s' exceeds maximum length: %d", serviceName, maxServiceNameLength)
 	}
 
 	// Use the regex to match against the input string
-	return regexExprServiceName.MatchString(serviceName)
+	if !regexExprServiceName.MatchString(serviceName) {
+		return ErrSharedInvalidServiceName.Wrapf("service name '%s' contains invalid characters", serviceName)
+	}
+
+	return nil
 }
 
 // IsValidEndpointUrl checks if the provided string is a valid URL.
