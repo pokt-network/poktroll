@@ -37,17 +37,12 @@ func (k Keeper) EndBlockerUnbondApplications(ctx context.Context) error {
 			return err
 		}
 
-		if application == nil {
-			logger.Error(fmt.Sprintf("unexpected nil application in iterator at %s", allApplicationsIterator.Key()))
-			continue
-		}
-
 		// Ignore applications that have not initiated the unbonding action.
 		if !application.IsUnbonding() {
 			continue
 		}
 
-		unbondingEndHeight := apptypes.GetApplicationUnbondingHeight(&sharedParams, application)
+		unbondingEndHeight := apptypes.GetApplicationUnbondingHeight(&sharedParams, &application)
 
 		// If the unbonding height is ahead of the current height, the application
 		// stays in the unbonding state.
@@ -55,7 +50,7 @@ func (k Keeper) EndBlockerUnbondApplications(ctx context.Context) error {
 			continue
 		}
 
-		if err := k.UnbondApplication(ctx, application); err != nil {
+		if err := k.UnbondApplication(ctx, &application); err != nil {
 			return err
 		}
 
@@ -68,7 +63,7 @@ func (k Keeper) EndBlockerUnbondApplications(ctx context.Context) error {
 
 		sessionEndHeight := sharedtypes.GetSessionEndHeight(&sharedParams, currentHeight)
 		unbondingEndEvent := &apptypes.EventApplicationUnbondingEnd{
-			Application:        application,
+			Application:        &application,
 			Reason:             unbondingReason,
 			SessionEndHeight:   sessionEndHeight,
 			UnbondingEndHeight: unbondingEndHeight,

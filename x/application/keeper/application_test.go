@@ -100,7 +100,7 @@ func TestApplicationGetAllIterator(t *testing.T) {
 	for ; allAppsIterator.Valid(); allAppsIterator.Next() {
 		app, err := allAppsIterator.Value()
 		require.NoError(t, err)
-		retrievedApps = append(retrievedApps, *app)
+		retrievedApps = append(retrievedApps, app)
 	}
 
 	require.ElementsMatch(t,

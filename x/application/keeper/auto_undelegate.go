@@ -33,11 +33,6 @@ func (k Keeper) EndBlockerAutoUndelegateFromUnbondingGateways(ctx cosmostypes.Co
 			return err
 		}
 
-		if application == nil {
-			logger.Error(fmt.Sprintf("unexpected nil application in iterator at %s", allApplicationsIterator.Key()))
-			continue
-		}
-
 		for _, unbondingGateway := range unbondingGateways {
 			gwIdx := slices.Index(application.DelegateeGatewayAddresses, unbondingGateway.GetAddress())
 			if gwIdx >= 0 {
@@ -47,11 +42,11 @@ func (k Keeper) EndBlockerAutoUndelegateFromUnbondingGateways(ctx cosmostypes.Co
 				)
 				// Record the pending undelegation for the application to allow any upcoming
 				// proofs to get the application's ring signatures.
-				k.recordPendingUndelegation(ctx, application, unbondingGateway.GetAddress(), currentHeight)
+				k.recordPendingUndelegation(ctx, &application, unbondingGateway.GetAddress(), currentHeight)
 			}
 		}
 
-		k.SetApplication(ctx, *application)
+		k.SetApplication(ctx, application)
 	}
 
 	return nil

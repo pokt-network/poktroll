@@ -43,11 +43,6 @@ func (k Keeper) EndBlockerPruneAppToGatewayPendingUndelegation(ctx sdk.Context) 
 			return err
 		}
 
-		if application == nil {
-			logger.Error(fmt.Sprintf("unexpected nil application in iterator at %s", allApplicationsIterator.Key()))
-			continue
-		}
-
 		for undelegationSessionEndHeight := range application.PendingUndelegations {
 			if undelegationSessionEndHeight < earliestUnprunedUndelegationHeight {
 				// prune undelegations
@@ -55,7 +50,7 @@ func (k Keeper) EndBlockerPruneAppToGatewayPendingUndelegation(ctx sdk.Context) 
 			}
 		}
 
-		k.SetApplication(ctx, *application)
+		k.SetApplication(ctx, application)
 	}
 
 	return nil

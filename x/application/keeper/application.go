@@ -85,12 +85,12 @@ func (k Keeper) GetAllApplications(ctx context.Context) (apps []types.Applicatio
 
 // GetAllApplicationsIterator returns an iterator over all application records.
 // GetAllApplicationsIterator returns a RecordIterator over all Application records.
-func (k Keeper) GetAllApplicationsIterator(ctx context.Context) sharedtypes.RecordIterator[*types.Application] {
+func (k Keeper) GetAllApplicationsIterator(ctx context.Context) sharedtypes.RecordIterator[types.Application] {
 	storeAdapter := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
 	store := prefix.NewStore(storeAdapter, types.KeyPrefix(types.ApplicationKeyPrefix))
 	applicationIterator := storetypes.KVStorePrefixIterator(store, []byte{})
 
-	applicationUnmarshallerFn := getApplicationAccessorFn(k.cdc)
+	applicationUnmarshallerFn := getApplicationAccessorFn(k.cdc, k.logger)
 	return sharedtypes.NewRecordIterator(applicationIterator, applicationUnmarshallerFn)
 }
 
@@ -102,16 +102,17 @@ func (k Keeper) GetAllApplicationsIterator(ctx context.Context) sharedtypes.Reco
 // - An Application object and an error
 func getApplicationAccessorFn(
 	cdc codec.BinaryCodec,
-) sharedtypes.DataRecordAccessor[*types.Application] {
-	return func(applicationBz []byte) (*types.Application, error) {
+	logger log.Logger,
+) sharedtypes.DataRecordAccessor[types.Application] {
+	return func(applicationBz []byte) (types.Application, error) {
 		if applicationBz == nil {
-			return nil, nil
+			return types.Application{}, fmt.Errorf("expecting application bytes to be non-nil")
 		}
 
 		var application types.Application
 		cdc.MustUnmarshal(applicationBz, &application)
-		initializeNilApplicationFields(k.logger, &application)
-		return &application, nil
+		initializeNilApplicationFields(logger, &application)
+		return application, nil
 	}
 }
 
