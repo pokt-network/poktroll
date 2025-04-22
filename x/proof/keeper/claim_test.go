@@ -35,6 +35,29 @@ func createNClaims(keeper keeper.Keeper, ctx context.Context, n int) []types.Cla
 	return claims
 }
 
+// createNClaimsWithSessionEndHeight creates n claims with a specific session end height
+// and stores them in the keeper.
+func createNClaimsWithSessionEndHeight(
+	keeper keeper.Keeper,
+	ctx context.Context,
+	n int,
+	sessionEndHeight int64,
+) []types.Claim {
+	claims := make([]types.Claim, n)
+
+	for i := range claims {
+		claims[i].SupplierOperatorAddress = sample.AccAddress()
+		claims[i].SessionHeader = &sessiontypes.SessionHeader{
+			SessionId:             fmt.Sprintf("session-%d", i),
+			SessionEndBlockHeight: sessionEndHeight,
+		}
+		claims[i].RootHash = []byte(fmt.Sprintf("rootHash-%d", i))
+		keeper.UpsertClaim(ctx, claims[i])
+	}
+
+	return claims
+}
+
 func TestClaimGet(t *testing.T) {
 	keeper, ctx := keepertest.ProofKeeper(t)
 	claims := createNClaims(keeper, ctx, 10)
@@ -73,5 +96,23 @@ func TestClaimGetAll(t *testing.T) {
 	require.ElementsMatch(t,
 		nullify.Fill(claims),
 		nullify.Fill(allFoundClaims),
+	)
+}
+
+func TestClaim_GetAllClaimsIterator(t *testing.T) {
+	keeper, ctx := keepertest.ProofKeeper(t)
+	claims := createNClaimsWithSessionEndHeight(keeper, ctx, 10, 1)
+	iterator := keeper.GetSessionEndHeightClaimsIterator(ctx, 1)
+	defer iterator.Close()
+
+	sessionEndHeightFoundClaims := make([]types.Claim, 0)
+	for ; iterator.Valid(); iterator.Next() {
+		claim, err := iterator.Value()
+		require.NoError(t, err)
+		sessionEndHeightFoundClaims = append(sessionEndHeightFoundClaims, claim)
+	}
+	require.ElementsMatch(t,
+		nullify.Fill(claims),
+		nullify.Fill(sessionEndHeightFoundClaims),
 	)
 }
