@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # This script installs the pocketd binary if not already installed.
-# Use with -u or --upgrade flag to force reinstallation of the latest version.
+# Use with -u or --upgrade flag to force reinstallation of the latest version by removing the existing binary first.
 
 # Example Usage:
 # curl -sSL https://raw.githubusercontent.com/pokt-network/poktroll/main/scripts/install.sh | bash
