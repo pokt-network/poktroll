@@ -25,7 +25,16 @@ func (k Keeper) EndBlockerPruneSupplierServiceConfigHistory(
 
 	logger := k.Logger().With("method", "PruneSupplierServiceConfigHistory")
 
-	for _, supplier := range k.GetAllSuppliers(ctx) {
+	allSuppliersIterator := k.GetAllSuppliersIterator(ctx)
+	defer allSuppliersIterator.Close()
+
+	for ; allSuppliersIterator.Valid(); allSuppliersIterator.Next() {
+		supplier, err := allSuppliersIterator.Value()
+		if err != nil {
+			logger.Error(fmt.Sprintf("could not get supplier from iterator: %v", err))
+			return 0, err
+		}
+
 		// Store the original number of historical service configs.
 		originalHistoryLength := len(supplier.ServiceConfigHistory)
 

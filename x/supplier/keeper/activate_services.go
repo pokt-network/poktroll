@@ -37,7 +37,16 @@ func (k Keeper) BeginBlockerActivateSupplierServices(
 
 	// Iterate through all suppliers to check for pending service activations.
 	// TODO_POST_MAINNET(@red-0ne): Optimize by using an index to track suppliers with pending activations.
-	for _, supplier := range k.GetAllSuppliers(ctx) {
+	allSuppliersIterator := k.GetAllSuppliersIterator(ctx)
+	defer allSuppliersIterator.Close()
+
+	for ; allSuppliersIterator.Valid(); allSuppliersIterator.Next() {
+		supplier, err := allSuppliersIterator.Value()
+		if err != nil {
+			logger.Error(fmt.Sprintf("could not get supplier from iterator: %v", err))
+			return 0, err
+		}
+
 		// supplier.ServiceConfigHistory is guaranteed to contain at least one entry.
 		// This is necessary for the session hydration process that relies on the
 		// service config history to determine the current active service configuration.

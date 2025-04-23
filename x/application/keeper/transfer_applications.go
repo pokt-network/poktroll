@@ -43,7 +43,16 @@ func (k Keeper) EndBlockerTransferApplication(ctx context.Context) error {
 	// Iterate over all applications and transfer the ones that have finished the transfer period.
 	// TODO_MAINNET(@bryanchriswhite, #854): Use an index to iterate over the applications that have initiated
 	// the transfer action instead of iterating over all of them.
-	for _, srcApp := range k.GetAllApplications(ctx) {
+	allApplicationsIterator := k.GetAllApplicationsIterator(ctx)
+	defer allApplicationsIterator.Close()
+
+	for ; allApplicationsIterator.Valid(); allApplicationsIterator.Next() {
+		srcApp, err := allApplicationsIterator.Value()
+		if err != nil {
+			logger.Error(fmt.Sprintf("could not get application from iterator: %v", err))
+			return err
+		}
+
 		// Ignore applications that have not initiated the transfer action.
 		if !srcApp.HasPendingTransfer() {
 			continue
