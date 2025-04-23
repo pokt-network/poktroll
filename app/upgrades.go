@@ -39,7 +39,10 @@ var allUpgrades = []upgrades.Upgrade{
 	// upgrades.Upgrade_0_1_4,
 
 	// v0.1.5 - upgrade to reduce memory footprint when iterating over Suppliers and Applications.
-	upgrades.Upgrade_0_1_5,
+	// upgrades.Upgrade_0_1_5,
+
+	// v0.1.6 - upgrade to mint and distribute Morse Account Claimer Tokens.
+	upgrades.Upgrade_0_1_6,
 }
 
 // setUpgrades sets upgrade handlers for all upgrades and executes KVStore migration if an upgrade plan file exists.
