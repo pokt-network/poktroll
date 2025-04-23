@@ -69,7 +69,7 @@ var (
 	keyRingFlag      = "--keyring-backend=test"
 	chainIdFlag      = "--chain-id=pocket"
 	// pathUrl points to a local gateway using the PATH framework in centralized mode.
-	pathUrl = "http://localhost:3000/v1" // localhost is kept as the default to streamline local development & testing.
+	pathUrl = "http://localhost:3069/v1" // localhost is kept as the default to streamline local development & testing.
 
 	// allFeaturesTags is a tag expression that filters out features (i.e. E2E tests)
 	// which SHOULD NOT be included in a wildcard/glob of feature files.
