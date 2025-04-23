@@ -81,7 +81,7 @@ func newPocketAnteHandler(opts pocketAnteHandlerOptions) (cosmostypes.AnteHandle
 
 // autoCreateAccountDecorator creates an empty BaseAccount for every signer that is unknown to x/auth.
 // It **must** run *before* SetPubKeyDecorator.
-type autoCreateAccountDecorator struct{ ak authkeeper.AccountKeeper }
+type autoCreateAccountDecorator struct{ ak authkeeper.AccountKeeperI }
 
 // Pocket‑specific AnteHandler builder (fork of SDK default)
 // Embeds the cosmos sdk default options with the required options
