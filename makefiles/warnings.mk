@@ -3,7 +3,7 @@
 ########################
 
 .PHONY: warn_message_acc_initialize_pubkeys
-warn_message_acc_initialize_pubkeys: ## Print a warning message about the need to run `make acc_initialize_pubkeys`
+warn_message_acc_initialize_pubkeys: ## Print a warning message about the need to run 'make acc_initialize_pubkeys'
 	@echo "+---------------------------------------------------------------------------------------+"
 	@echo "|                                                                                       |"
 	@echo "| 🚨 IMPORTANT: Please run the following make command after the network has started: 🚨 |"

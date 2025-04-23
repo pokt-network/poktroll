@@ -28,13 +28,12 @@ func (k msgServer) ClaimMorseSupplier(
 ) (*migrationtypes.MsgClaimMorseSupplierResponse, error) {
 	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
 	logger := k.Logger().With("method", "ClaimMorseSupplier")
+	waiveMorseClaimGasFees := k.GetParams(sdkCtx).WaiveMorseClaimGasFees
 
 	// Ensure that gas fees are NOT waived if one of the following is true:
 	// - The claim is invalid
 	// - Morse account has already been claimed
 	// Claiming gas fees in the cases above ensures that we prevent spamming.
-	//
-	// TODO_MAINNET_MIGRATION(@bryanchriswhite): Make this conditional once the WaiveMorseClaimGasFees param is available.
 	//
 	// Rationale:
 	// 1. Morse claim txs MAY be signed by Shannon accounts which have 0upokt balances.
@@ -53,7 +52,7 @@ func (k msgServer) ClaimMorseSupplier(
 		isFound, isValid, isAlreadyClaimed bool
 	)
 	defer func() {
-		if !isFound || !isValid || isAlreadyClaimed {
+		if waiveMorseClaimGasFees && (!isFound || !isValid || isAlreadyClaimed) {
 			// Attempt to charge the waived gas fee for invalid claims.
 			sdkCtx.GasMeter()
 			// DEV_NOTE: Assuming that the tx containing this message was signed

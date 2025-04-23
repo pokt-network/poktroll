@@ -2,7 +2,7 @@
 ### Claims ###
 ##############
 
-# These encoded values were generated using the `encodeSessionHeader` helpers in `query_claim_test.go` as dummy values.
+# These encoded values were generated using the 'encodeSessionHeader' helpers in 'query_claim_test.go' as dummy values.
 ENCODED_SESSION_HEADER = "eyJhcHBsaWNhdGlvbl9hZGRyZXNzIjoicG9rdDFleXJuNDUwa3JoZnpycmVyemd0djd2c3J4bDA5NDN0dXN4azRhayIsInNlcnZpY2UiOnsiaWQiOiJhbnZpbCIsIm5hbWUiOiIifSwic2Vzc2lvbl9zdGFydF9ibG9ja19oZWlnaHQiOiI1Iiwic2Vzc2lvbl9pZCI6InNlc3Npb25faWQxIiwic2Vzc2lvbl9lbmRfYmxvY2tfaGVpZ2h0IjoiOSJ9"
 ENCODED_ROOT_HASH = "cm9vdF9oYXNo"
 .PHONY: claim_create_dummy
