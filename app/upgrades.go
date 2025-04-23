@@ -36,7 +36,10 @@ var allUpgrades = []upgrades.Upgrade{
 	// upgrades.Upgrade_0_1_3,
 
 	// v0.1.4 - upgrade to reduce network and memory footprint of session suppliers
-	upgrades.Upgrade_0_1_4,
+	// upgrades.Upgrade_0_1_4,
+
+	// v0.1.5 - upgrade to reduce memory footprint when iterating over Suppliers and Applications.
+	upgrades.Upgrade_0_1_5,
 }
 
 // setUpgrades sets upgrade handlers for all upgrades and executes KVStore migration if an upgrade plan file exists.
