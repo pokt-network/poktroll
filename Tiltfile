@@ -114,7 +114,10 @@ chart_prefix = "pokt-network/"
 if localnet_config["helm_chart_local_repo"]["enabled"]:
     helm_chart_local_repo = localnet_config["helm_chart_local_repo"]["path"]
     # Build dependencies for the POKT chart
-    local("cd " + helm_chart_local_repo + "/charts/pokt && helm dependency update")
+    # TODO_TECHDEBT(@okdas): Find a way to make this cleaner & performant w/ selective builds.
+    local("cd " + helm_chart_local_repo + "/charts/pocketd && helm dependency update")
+    local("cd " + helm_chart_local_repo + "/charts/pocket-validator && helm dependency update")
+    local("cd " + helm_chart_local_repo + "/charts/relayminer && helm dependency update")
     hot_reload_dirs.append(helm_chart_local_repo)
     print("Using local helm chart repo " + helm_chart_local_repo)
     # TODO_IMPROVE: Use os.path.join to make this more OS-agnostic.
