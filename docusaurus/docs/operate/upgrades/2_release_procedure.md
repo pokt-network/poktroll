@@ -264,6 +264,17 @@ This step is parameterized so you can use it for any network (Alpha, Beta, or Ma
 1. Get the RPC endpoint for `NETWORK`. Example for Alpha [here](https://dev.poktroll.com/tools/tools/shannon_alpha).
 2. Update the `height` in your upgrade transaction JSON ():
 
+   :::tip Export `UPGRADE_TX_JSON`, `RPC_ENDPOINT`, `NETWORK`, and `FROM_ACCOUNT`
+
+   ```bash
+   export RPC_ENDPOINT=https://shannon-testnet-grove-rpc.alpha.poktroll.com
+   export UPGRADE_TX_JSON="tools/scripts/upgrades/upgrade_tx_v0.1.2_alpha.json"
+   export NETWORK=pocket-alpha
+   export FROM_ACCOUNT=pnf_alpha
+   ```
+
+   :::
+
    ```bash
    # Get the current height
    CURRENT_HEIGHT=$(pocketd status --node ${RPC_ENDPOINT} | jq '.sync_info.latest_block_height' | tr -d '"')
@@ -274,15 +285,6 @@ This step is parameterized so you can use it for any network (Alpha, Beta, or Ma
    # Cat the output file
    cat ${UPGRADE_TX_JSON}
    ```
-
-   :::tip Export `UPGRADE_TX_JSON` and `RPC_ENDPOINT` first
-
-   ```bash
-   export RPC_ENDPOINT=https://shannon-testnet-grove-rpc.alpha.poktroll.com
-   export UPGRADE_TX_JSON="tools/scripts/upgrades/upgrade_tx_v0.1.4_alpha.json"
-   ```
-
-   :::
 
 3. Submit the transaction:
 
@@ -331,7 +333,7 @@ This step is parameterized so you can use it for any network (Alpha, Beta, or Ma
 
 :::
 
-**⚠️ DO NOT PROCEED until the changes from step (2) are merged assuming the upgrade suceeded⚠️**
+**⚠️ DO NOT PROCEED until the changes from step (2) are merged assuming the upgrade succeeded ⚠️**
 
 ---
 
@@ -371,12 +373,13 @@ See [pocketd CLI docs](../../tools/user_guide/pocketd_cli.md) for more info.
 Repeat [Step 7: Submit the Upgrade Onchain](#7-submit-the-upgrade-on-alpha-testnet) with the appropriate parameters for Beta and MainNet:
 
 - Use the correct `<RPC_ENDPOINT>` for Beta or MainNet
+- Use the correct `<NETWORK>`, (`pocket-beta` for Beta or `pocket` for MainNet)
 - Use the correct `<UPGRADE_TX_JSON>` (e.g., `upgrade_tx_v0.1.2_beta.json` or `upgrade_tx_v0.1.2_main.json`)
 - Use the correct sender account for each network
 
 This ensures a single, copy-pasta-friendly process for all networks.
 
-**⚠️ DO NOT PROCEED until the changes from step (2) are merged assuming the upgrade succeeded⚠️**
+**⚠️ DO NOT PROCEED until the changes from step (2) are merged assuming the upgrade succeeded ⚠️**
 
 :::tip Grove Employees 🌿
 

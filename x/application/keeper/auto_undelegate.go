@@ -1,6 +1,7 @@
 package keeper
 
 import (
+	"fmt"
 	"slices"
 
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
@@ -11,6 +12,8 @@ import (
 // EndBlockerAutoUndelegateFromUnbondingGateways is called every block and handles
 // Application auto-undelegating from unbonding gateways that are no longer active.
 func (k Keeper) EndBlockerAutoUndelegateFromUnbondingGateways(ctx cosmostypes.Context) error {
+	logger := k.Logger().With("method", "AutoUndelegateFromUnbondingGateways")
+
 	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
 	currentHeight := sdkCtx.BlockHeight()
 
@@ -20,7 +23,16 @@ func (k Keeper) EndBlockerAutoUndelegateFromUnbondingGateways(ctx cosmostypes.Co
 	// TODO_POST_MAINNET: Once delegating applications are indexed by gateway address,
 	// this can be optimized to only check applications that have delegated to
 	// unstaked gateways.
-	for _, application := range k.GetAllApplications(ctx) {
+	allApplicationsIterator := k.GetAllApplicationsIterator(ctx)
+	defer allApplicationsIterator.Close()
+
+	for ; allApplicationsIterator.Valid(); allApplicationsIterator.Next() {
+		application, err := allApplicationsIterator.Value()
+		if err != nil {
+			logger.Error(fmt.Sprintf("could not get application from iterator: %v", err))
+			return err
+		}
+
 		for _, unbondingGateway := range unbondingGateways {
 			gwIdx := slices.Index(application.DelegateeGatewayAddresses, unbondingGateway.GetAddress())
 			if gwIdx >= 0 {

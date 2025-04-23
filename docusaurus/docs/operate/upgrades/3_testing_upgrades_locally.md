@@ -24,7 +24,7 @@ Make sure to complete steps 1–4 in [Release Procedure](./2_release_procedure.m
 
 - [0. Prerequisite Notes](#0-prerequisite-notes)
 - [1. Start node with old version](#1-start-node-with-old-version)
-- [2. Start node with new version](#2-start-node-with-new-version)
+- [2. Release and extract new version node binaries](#2-release-and-extract-new-version-node-binaries)
 - [3. Prepare the upgrade transaction](#3-prepare-the-upgrade-transaction)
 - [4. Submit \& verify the upgrade transaction](#4-submit--verify-the-upgrade-transaction)
 - [5. Observe the upgrade output](#5-observe-the-upgrade-output)
@@ -47,9 +47,9 @@ Make sure to complete steps 1–4 in [Release Procedure](./2_release_procedure.m
 ## 1. Start node with old version
 
 ```bash
-git clone git@github.com:pokt-network/poktroll.git poktroll_old
-cd poktroll_old
-gco v0.1.1
+git clone https://github.com/pokt-network/poktroll.git pocket_old
+cd pocket_old
+git checkout v0.1.1
 make go_develop ignite_release ignite_release_extract_binaries
 ./release_binaries/pocket_darwin_arm64 comet unsafe-reset-all && make localnet_regenesis
 ./release_binaries/pocket_darwin_arm64 start
@@ -57,21 +57,20 @@ make go_develop ignite_release ignite_release_extract_binaries
 
 ---
 
-## 2. Start node with new version
+## 2. Release and extract new version node binaries
 
 ```bash
-git clone git@github.com:pokt-network/poktroll.git poktroll_new
-cd poktroll_new
+git clone git@github.com:pokt-network/poktroll.git pocket_new
+cd pocket_new
 gco v0.1.2
 make go_develop ignite_release ignite_release_extract_binaries
-./release_binaries/pocket_darwin_arm64 start
 ```
 
 ---
 
 ## 3. Prepare the upgrade transaction
 
-In `poktroll_old`, the following file should already exist if you have completed the [Release Procedure](2_release_procedure.md):
+In `pocket_old`, the following file should already exist if you have completed the [Release Procedure](2_release_procedure.md):
 
 ```bash
 tools/scripts/upgrades/upgrade_tx_v0.1.2_local.json
@@ -83,7 +82,7 @@ It was created by running:
 ./tools/scripts/upgrades/prepare_upgrade_tx.sh v0.1.2
 ```
 
-Open up a second shell in `poktroll_old` and update the `height` in `tools/scripts/upgrades/upgrade_tx_v0.1.2_local.json`:
+Open up a second shell in `pocket_old` and update the `height` in `tools/scripts/upgrades/upgrade_tx_v0.1.2_local.json`:
 
 ```bash
 # Get current height, add 20 (buffer)
@@ -97,7 +96,7 @@ cat ./tools/scripts/upgrades/upgrade_tx_v0.1.2_local.json
 
 ## 4. Submit & verify the upgrade transaction
 
-In `poktroll_old`, submit the upgrade transaction:
+In `pocket_old`, submit the upgrade transaction:
 
 ```bash
 ./release_binaries/pocket_darwin_arm64 tx authz exec tools/scripts/upgrades/upgrade_tx_v0.1.2_local.json --yes --from=pnf
@@ -125,8 +124,8 @@ ERR UPGRADE "v0.1.2" NEEDED at height: <height>: ...
 
 ## 6. Stop old node & start new node
 
-- In `poktroll_old`, stop the validator (`cmd/ctrl + c` on macOS).
-- In `poktroll_new`, start the validator:
+- In `pocket_old`, stop the validator (`cmd/ctrl + c` on macOS).
+- In `pocket_new`, start the validator:
 
 ```bash
 ./release_binaries/pocket_darwin_arm64 start
