@@ -113,6 +113,8 @@ helm_repo("buildwithgrove", "https://buildwithgrove.github.io/helm-charts/")
 chart_prefix = "pokt-network/"
 if localnet_config["helm_chart_local_repo"]["enabled"]:
     helm_chart_local_repo = localnet_config["helm_chart_local_repo"]["path"]
+    # Build dependencies for the POKT chart
+    local("cd " + helm_chart_local_repo + "/charts/pokt && helm dependency update")
     hot_reload_dirs.append(helm_chart_local_repo)
     print("Using local helm chart repo " + helm_chart_local_repo)
     # TODO_IMPROVE: Use os.path.join to make this more OS-agnostic.
@@ -122,6 +124,8 @@ if localnet_config["helm_chart_local_repo"]["enabled"]:
 grove_chart_prefix = "buildwithgrove/"
 if localnet_config["grove_helm_chart_local_repo"]["enabled"]:
     grove_helm_chart_local_repo = localnet_config["grove_helm_chart_local_repo"]["path"]
+    # Build dependencies for the PATH chart
+    local("cd " + grove_helm_chart_local_repo + "/charts/path && helm dependency update")
     hot_reload_dirs.append(grove_helm_chart_local_repo)
     print("Using local grove helm chart repo " + grove_helm_chart_local_repo)
     # TODO_IMPROVE: Use os.path.join to make this more OS-agnostic.
