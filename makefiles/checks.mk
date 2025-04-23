@@ -37,7 +37,7 @@ check_act:
 	fi;
 
 .PHONY: check_pocketd
-# Internal helper target - check if `pocketd` is installed in the correct location
+# Internal helper target - check if `pocketd` is installed
 check_pocketd:
 	{ \
 	if ( ! ( command -v pocketd >/dev/null )); then \
