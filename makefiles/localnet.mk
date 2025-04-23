@@ -13,10 +13,10 @@ localnet_up_quick: check_kubectl check_docker_ps dev_up check_kind_context ## St
 .PHONY: localnet_down
 localnet_down: ## Delete resources created by localnet
 	tilt down
-	@echo "poktroll localnet shut down. To remove the kind cluster run `kind delete cluster --name kind`"
+	@echo "poktroll localnet shut down. To remove the kind cluster run 'kind delete cluster --name kind'"
 
-# DEV_NOTE: the "create namespace" commands in 'dev_up' are here to satisfy the 
-# requirements of the `path` helm charts. The requirement for these namespaces 
+# DEV_NOTE: the "create namespace" commands in 'dev_up' are here to satisfy the
+# requirements of the 'path' helm charts. The requirement for these namespaces
 # to exist may be removed in the future. For reference see repo:
 # https://github.com/buildwithgrove/helm-charts/tree/main/charts/path
 .PHONY: dev_up
@@ -34,14 +34,14 @@ dev_up: check_kind
 	fi
 
 # Optional context for 'move_poktroll_to_pocket' to answer this question:
-# https://github.com/pokt-network/poktroll/pull/1151#discussion_r2013801486 
+# https://github.com/pokt-network/poktroll/pull/1151#discussion_r2013801486
 #
 # When running 'ignite chain --help', it states:
 # > By default the validator node will be initialized in your $HOME directory in a hidden directory that matches the name of your project.
 # This DOES NOT reference: chain-id, app-id, or other "logical" things we expect it to be.
 # This DOES reference: the project name (i.e. the basename of the directory).
-# Until the `poktroll` repository is renamed to `pocket`, the following will be required.
-# TODO_TECHDEBT: Once this repository is renamed from `poktroll` to `pocket, remove the helper below.
+# Until the 'poktroll' repository is renamed to 'pocket', the following will be required.
+# TODO_TECHDEBT: Once this repository is renamed from 'poktroll' to 'pocket, remove the helper below.
 
 .PHONY: move_poktroll_to_pocket
 # Internal Helper to move the .poktroll directory to .pocket
