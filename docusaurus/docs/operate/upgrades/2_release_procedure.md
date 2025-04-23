@@ -373,7 +373,7 @@ See [pocketd CLI docs](../../tools/user_guide/pocketd_cli.md) for more info.
 Repeat [Step 7: Submit the Upgrade Onchain](#7-submit-the-upgrade-on-alpha-testnet) with the appropriate parameters for Beta and MainNet:
 
 - Use the correct `<RPC_ENDPOINT>` for Beta or MainNet
-- Use the correct `NETWORK`, (`pocket-beta` for Beta or `pocket` for MainNet)
+- Use the correct `<NETWORK>`, (`pocket-beta` for Beta or `pocket` for MainNet)
 - Use the correct `<UPGRADE_TX_JSON>` (e.g., `upgrade_tx_v0.1.2_beta.json` or `upgrade_tx_v0.1.2_main.json`)
 - Use the correct sender account for each network
 
