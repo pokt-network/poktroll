@@ -7,7 +7,7 @@ import (
 	"cosmossdk.io/math"
 	storetypes "cosmossdk.io/store/types"
 	upgradetypes "cosmossdk.io/x/upgrade/types"
-	cosmosTypes "github.com/cosmos/cosmos-sdk/types"
+	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 
 	"github.com/pokt-network/poktroll/app/keepers"
@@ -39,14 +39,14 @@ var Upgrade_0_0_12 = Upgrade{
 		)
 
 		applyNewParameters := func(ctx context.Context) (err error) {
-			logger := cosmosTypes.UnwrapSDKContext(ctx).Logger()
+			logger := cosmostypes.UnwrapSDKContext(ctx).Logger()
 			logger.Info("Starting parameter updates", "upgrade_plan_name", Upgrade_0_0_12_PlanName)
 
 			// Set supplier module staking_fee to 1000000upokt, in line with the config.yml in the repo.
 			// Verify via:
 			// $ pocketd q supplier params --node=...
 			supplierParams := keepers.SupplierKeeper.GetParams(ctx)
-			supplierParams.MinStake = &cosmosTypes.Coin{
+			supplierParams.MinStake = &cosmostypes.Coin{
 				Denom:  "upokt",
 				Amount: math.NewInt(supplierStakingFee),
 			}
@@ -87,7 +87,7 @@ var Upgrade_0_0_12 = Upgrade{
 		// This is necessary to ensure that we have that value populated before suppliers are connected.
 		//
 		updateSuppliersRevShare := func(ctx context.Context) error {
-			logger := cosmosTypes.UnwrapSDKContext(ctx).Logger()
+			logger := cosmostypes.UnwrapSDKContext(ctx).Logger()
 			suppliers := keepers.SupplierKeeper.GetAllSuppliers(ctx)
 			logger.Info("Updating (overriding) all suppliers to delegate 100% revenue share to the supplier's operator address",
 				"num_suppliers", len(suppliers))
@@ -156,7 +156,7 @@ var Upgrade_0_0_12 = Upgrade{
 
 		// Returns the upgrade handler for v0.0.12
 		return func(ctx context.Context, plan upgradetypes.Plan, vm module.VersionMap) (module.VersionMap, error) {
-			logger := cosmosTypes.UnwrapSDKContext(ctx).Logger()
+			logger := cosmostypes.UnwrapSDKContext(ctx).Logger()
 			logger.Info("Starting upgrade handler", "upgrade_plan_name", Upgrade_0_0_12_PlanName)
 
 			logger.Info("Starting parameter updates section", "upgrade_plan_name", Upgrade_0_0_12_PlanName)

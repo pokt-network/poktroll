@@ -27,7 +27,16 @@ func (k Keeper) EndBlockerUnbondApplications(ctx context.Context) error {
 	// Iterate over all applications and unbond the ones that have finished the unbonding period.
 	// TODO_POST_MAINNET: Use an index to iterate over the applications that have initiated
 	// the unbonding action instead of iterating over all of them.
-	for _, application := range k.GetAllApplications(ctx) {
+	allApplicationsIterator := k.GetAllApplicationsIterator(ctx)
+	defer allApplicationsIterator.Close()
+
+	for ; allApplicationsIterator.Valid(); allApplicationsIterator.Next() {
+		application, err := allApplicationsIterator.Value()
+		if err != nil {
+			logger.Error(fmt.Sprintf("could not get application from iterator: %v", err))
+			return err
+		}
+
 		// Ignore applications that have not initiated the unbonding action.
 		if !application.IsUnbonding() {
 			continue

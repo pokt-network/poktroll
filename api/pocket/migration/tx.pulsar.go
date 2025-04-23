@@ -6090,11 +6090,11 @@ type MsgImportMorseClaimableAccounts struct {
 
 	// authority is the address that controls the module (defaults to x/gov unless overwritten).
 	Authority string `protobuf:"bytes,1,opt,name=authority,proto3" json:"authority,omitempty"`
-	// the account state derived from the Morse state export and the `pocketd migrate collect-morse-accounts` command.
+	// the account state derived from the Morse state export and the `pocketd tx migration collect-morse-accounts` command.
 	MorseAccountState *MorseAccountState `protobuf:"bytes,2,opt,name=morse_account_state,json=morseAccountState,proto3" json:"morse_account_state,omitempty"`
 	// Additional documentation:
 	// - pocket util export-genesis-for-migration --help
-	// - pocketd migrate collect-morse-accounts --help
+	// - pocketd tx migration collect-morse-accounts --help
 	MorseAccountStateHash []byte `protobuf:"bytes,3,opt,name=morse_account_state_hash,json=morseAccountStateHash,proto3" json:"morse_account_state_hash,omitempty"`
 }
 

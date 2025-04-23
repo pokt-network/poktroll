@@ -5,8 +5,8 @@ sidebar_position: 2
 
 ## Explorers
 
-- 🪙 [StakeNode's Faucet](https://faucet.beta.testnet.pokt.network/)
-- 🗺️ [StakeNode's Explorer](https://shannon.beta.testnet.pokt.network)
+- 🪙 [StakeNodes' Faucet](https://faucet.beta.testnet.pokt.network/)
+- 🗺️ [StakeNodes' Explorer](https://explorer.pocket.network/pocket-beta)
 - 🗺️ [Soothe's Explorer](https://shannon-beta.trustsoothe.io)
 - 👨‍💻 [Soothe's GraphQL Playground](https://shannon-beta-api.trustsoothe.io/)
 

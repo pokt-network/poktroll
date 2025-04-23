@@ -24,13 +24,12 @@ import (
 func (k msgServer) ClaimMorseApplication(ctx context.Context, msg *migrationtypes.MsgClaimMorseApplication) (*migrationtypes.MsgClaimMorseApplicationResponse, error) {
 	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
 	logger := k.Logger().With("method", "ClaimMorseApplication")
+	waiveMorseClaimGasFees := k.GetParams(sdkCtx).WaiveMorseClaimGasFees
 
 	// Ensure that gas fees are NOT waived if one of the following is true:
 	// - The claim is invalid
 	// - Morse account has already been claimed
 	// Claiming gas fees in the cases above ensures that we prevent spamming.
-	//
-	// TODO_MAINNET_MIGRATION(@bryanchriswhite): Make this conditional once the WaiveMorseClaimGasFees param is available.
 	//
 	// Rationale:
 	// 1. Morse claim txs MAY be signed by Shannon accounts which have 0upokt balances.
@@ -49,7 +48,7 @@ func (k msgServer) ClaimMorseApplication(ctx context.Context, msg *migrationtype
 		isFound, isValid, isAlreadyClaimed bool
 	)
 	defer func() {
-		if !isFound || !isValid || isAlreadyClaimed {
+		if waiveMorseClaimGasFees && (!isFound || !isValid || isAlreadyClaimed) {
 			// Attempt to charge the waived gas fee for invalid claims.
 			sdkCtx.GasMeter()
 			// DEV_NOTE: Assuming that the tx containing this message was signed
@@ -106,7 +105,7 @@ func (k msgServer) ClaimMorseApplication(ctx context.Context, msg *migrationtype
 		return nil, status.Error(
 			codes.FailedPrecondition,
 			migrationtypes.ErrMorseAccountClaim.Wrapf(
-				"Morse account %q is staked as an supplier, please use `pocketd migrate claim-supplier` instead",
+				"Morse account %q is staked as an supplier, please use `pocketd tx migration claim-supplier` instead",
 				morseClaimableAccount.GetMorseSrcAddress(),
 			).Error(),
 		)
@@ -116,7 +115,7 @@ func (k msgServer) ClaimMorseApplication(ctx context.Context, msg *migrationtype
 		return nil, status.Error(
 			codes.FailedPrecondition,
 			migrationtypes.ErrMorseAccountClaim.Wrapf(
-				"Morse account %q is not staked as an application or supplier, please use `pocketd migrate claim-account` instead",
+				"Morse account %q is not staked as an application or supplier, please use `pocketd tx migration claim-account` instead",
 				morseClaimableAccount.GetMorseSrcAddress(),
 			).Error(),
 		)

@@ -64,11 +64,11 @@ In [this PR](https://github.com/pokt-network/poktroll/pull/1173/files), the foll
 In order to enable it on an already deployed network, we need to submit the following transaction:
 
 ```bash
-pocket tx authz grant \
+pocketd tx authz grant \
   pokt1eeeksh2tvkh7wzmfrljnhw4wrhs55lcuvmekkw \
   "pocket.migration.MsgUpdateParams" \
   --from pnf \
-  --expiration "2500-01-01T00:00:00Z" \
+  --expiration 16725225600 \
   --chain-id pocket \
   --gas auto
 ```

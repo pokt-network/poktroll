@@ -28,12 +28,12 @@ This will construct, sign, and broadcast a tx containing a MsgImportMorseClaimab
 
 For more help information, see:
 	$ pocket util export-genesis-for-reset -h
-	$ pocketdtx migration collect-morse-accounts
+	$ pocketd tx migration collect-morse-accounts
 
 For more documentation, refer to: https://dev.poktroll.com/operate/morse_migration/roadmap`,
-		Example: `A few examples of how to use this command:
-pocketdtx migration import-morse-accounts ./tools/scripts/morse_account_state.json --from=pnf --grpc-addr=localhost:9090
-pocketdtx migration import-morse-accounts ./tools/scripts/morse_account_state.json --from=pnf --grpc-addr=https://shannon-testnet-grove-grpc.beta.poktroll.com`,
+		Example: `
+	pocketd tx migration import-morse-accounts ./tools/scripts/morse_account_state.json --from=pnf --grpc-addr=localhost:9090 --home ./localnet/pocketd
+	pocketd tx migration import-morse-accounts ./tools/scripts/morse_account_state.json --from=pnf --grpc-addr=https://shannon-testnet-grove-grpc.beta.poktroll.com`,
 		Args:    cobra.ExactArgs(1),
 		RunE:    runImportMorseAccounts,
 		PreRunE: logger.PreRunESetup,

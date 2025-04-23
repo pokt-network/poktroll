@@ -40,8 +40,8 @@ check_act:
 # Internal helper target - check if `pocketd` is installed
 check_pocketd:
 	{ \
-	if ( ! command -v pocketd >/dev/null ); then \
-		echo "Error: \`pocketd\` was not found. Please ensure it's properly installed and available in your PATH before proceeding."; \
+	if ( ! ( command -v pocketd >/dev/null )); then \
+		echo "Error: \`pocketd\` was not found in your PATH. Please ensure it's installed before proceeding."; \
 		exit 1; \
 	fi; \
 	}

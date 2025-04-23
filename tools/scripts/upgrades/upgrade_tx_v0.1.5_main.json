@@ -1,0 +1,15 @@
+{
+  "body": {
+    "messages": [
+      {
+        "@type": "/cosmos.upgrade.v1beta1.MsgSoftwareUpgrade",
+        "authority": "pokt10d07y265gmmuvt4z0w9aw880jnsr700j8yv32t",
+        "plan": {
+          "name": "v0.1.5",
+          "height": "UPDATE_ME",
+          "info": "{\"binaries\":{\"linux/amd64\":\"https://github.com/pokt-network/poktroll/releases/download/v0.1.5/pocket_linux_amd64.tar.gz?checksum=sha256:8f7126f429565931cf2d3cf32489bdd0fd9f4141bd7f3fedd330e4edabef1b9f\",\"linux/arm64\":\"https://github.com/pokt-network/poktroll/releases/download/v0.1.5/pocket_linux_arm64.tar.gz?checksum=sha256:69060fa8b5c8e80fc7ce11a9180691da56764a50e1b132f3b59ec13cc5520b9d\",\"darwin/amd64\":\"https://github.com/pokt-network/poktroll/releases/download/v0.1.5/pocket_darwin_amd64.tar.gz?checksum=sha256:fdd7aecc86e41dcfcbe82bfb0c0234a092b239d5a68b08edb215a2af961cf2f4\",\"darwin/arm64\":\"https://github.com/pokt-network/poktroll/releases/download/v0.1.5/pocket_darwin_arm64.tar.gz?checksum=sha256:333912c080dce8824c3eeb301320a2860f1ec7fb149977bc4472de3d7b08a272\"}}"
+        }
+      }
+    ]
+  }
+}

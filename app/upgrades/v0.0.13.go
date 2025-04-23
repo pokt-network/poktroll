@@ -5,7 +5,7 @@ import (
 
 	storetypes "cosmossdk.io/store/types"
 	upgradetypes "cosmossdk.io/x/upgrade/types"
-	cosmosTypes "github.com/cosmos/cosmos-sdk/types"
+	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 
 	"github.com/pokt-network/poktroll/app/keepers"
@@ -24,7 +24,7 @@ var Upgrade_0_0_13 = Upgrade{
 		configurator module.Configurator,
 	) upgradetypes.UpgradeHandler {
 		applyNewParameters := func(ctx context.Context) (err error) {
-			logger := cosmosTypes.UnwrapSDKContext(ctx).Logger()
+			logger := cosmostypes.UnwrapSDKContext(ctx).Logger()
 			logger.Info("Starting parameter updates", "upgrade_plan_name", Upgrade_0_0_13_PlanName)
 
 			sharedParams := keepers.SharedKeeper.GetParams(ctx)
@@ -48,7 +48,7 @@ var Upgrade_0_0_13 = Upgrade{
 
 		// Returns the upgrade handler for v0.0.13
 		return func(ctx context.Context, plan upgradetypes.Plan, vm module.VersionMap) (module.VersionMap, error) {
-			logger := cosmosTypes.UnwrapSDKContext(ctx).Logger()
+			logger := cosmostypes.UnwrapSDKContext(ctx).Logger()
 			logger.Info("Starting upgrade handler", "upgrade_plan_name", Upgrade_0_0_13_PlanName)
 
 			logger.Info("Starting parameter updates section", "upgrade_plan_name", Upgrade_0_0_13_PlanName)
