@@ -6,9 +6,6 @@ import (
 	modulev1 "github.com/pokt-network/poktroll/api/pocket/migration"
 )
 
-// TODO_MAINNET(@bryanchriswhite, #1047): Make sure to document why the autocli is
-// not used for transactions requiring auth signatures.
-
 // AutoCLIOptions implements the autocli.HasAutoCLIConfig interface.
 func (am AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 	return &autocliv1.ModuleOptions{
@@ -47,8 +44,7 @@ func (am AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 					Use:            "import-morse-claimable-accounts [morse-account-state]",
 					Short:          "Send a import_morse_claimable_accounts tx",
 					PositionalArgs: []*autocliv1.PositionalArgDescriptor{{ProtoField: "morseAccountState"}},
-					// TODO_MAINNET_CRITICAL(@bryanchriswhite, #1034): Implement CLI logic.
-					Skip: true, // skipped because authority gated
+					Skip:           true, // skipped because authority gated
 				},
 				{
 					RpcMethod:      "ClaimMorseAccount",
@@ -64,15 +60,13 @@ func (am AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 					Short:          "Send a claim_morse_application tx",
 					PositionalArgs: []*autocliv1.PositionalArgDescriptor{{ProtoField: "morseSrcAddress"}, {ProtoField: "morseSignature"}, {ProtoField: "stake"}, {ProtoField: "serviceConfig"}},
 					Skip:           true, // skipped because autoCLI cannot handle loading & signing using the Morse key.
-					// TODO_MAINNET_CRITICAL(@bryanchriswhite, #1034): Add morse application claiming CLI, incl. examples (see x/supplier/module/autocli.go).
 				},
 				{
 					RpcMethod:      "ClaimMorseSupplier",
 					Use:            "claim-morse-supplier [morse-src-address] [morse-signature] [stake] [service-config]",
 					Short:          "Send a claim_morse_supplier tx",
 					PositionalArgs: []*autocliv1.PositionalArgDescriptor{{ProtoField: "morseSrcAddress"}, {ProtoField: "morseSignature"}, {ProtoField: "stake"}, {ProtoField: "serviceConfig"}},
-					Skip:           true, // skipped because autoCLI cannot handle signing
-					// TODO_MAINNET_CRITICAL(@bryanchriswhite, #1034): Add morse supplier claiming CLI, incl. examples (see x/supplier/module/autocli.go).
+					Skip:           true, // skipped because autoCLI cannot handle loading & signing using the Morse key.
 				},
 				// this line is used by ignite scaffolding # autocli/tx
 			},
