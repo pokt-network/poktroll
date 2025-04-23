@@ -4,34 +4,119 @@ import (
 	storetypes "cosmossdk.io/store/types"
 	"github.com/cosmos/cosmos-sdk/crypto/keys/secp256k1"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
+	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/cosmos/cosmos-sdk/types/tx/signing"
 	"github.com/cosmos/cosmos-sdk/x/auth/ante"
+	authkeeper "github.com/cosmos/cosmos-sdk/x/auth/keeper"
 	authsigning "github.com/cosmos/cosmos-sdk/x/auth/signing"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 
 	"github.com/pokt-network/poktroll/app/volatile"
 )
 
-// newAnteHandlerFn returns an AnteHandler that waives minimum gas/fees for transactions
-// that contain ONLY morse claim messages.
-// I.e. MsgClaimMorseAccount, MsgClaimMorseApplication and MsgClaimMorseSupplier
+// newMorseClaimGasFeesWaiverAnteHandlerFn returns an AnteHandler that
+// 1. lazily creates empty BaseAccounts
+// 2. waives minimum gas/fees for transactions that contain ONLY morse claim messages (i.e. MsgClaimMorseAccount, MsgClaimMorseApplication, and MsgClaimMorseSupplier)
 func newMorseClaimGasFeesWaiverAnteHandlerFn(app *App) cosmostypes.AnteHandler {
 	return func(sdkCtx cosmostypes.Context, tx cosmostypes.Tx, simulate bool) (cosmostypes.Context, error) {
-		anteHandlerFn, err := ante.NewAnteHandler(ante.HandlerOptions{
-			AccountKeeper:          &app.Keepers.AccountKeeper,
-			BankKeeper:             app.Keepers.BankKeeper,
-			ExtensionOptionChecker: nil,
-			FeegrantKeeper:         app.Keepers.FeeGrantKeeper,
-			SignModeHandler:        app.txConfig.SignModeHandler(),
-			SigGasConsumer:         newSigVerificationGasConsumer(sdkCtx, app, tx),
-			TxFeeChecker:           newTxFeeChecker(sdkCtx, app, tx),
+		pocketAnte, err := newPocketAnteHandler(pocketAnteHandlerOptions{
+			// Default ante handler options
+			HandlerOptions: ante.HandlerOptions{
+				AccountKeeper:          &app.Keepers.AccountKeeper,
+				BankKeeper:             app.Keepers.BankKeeper,
+				ExtensionOptionChecker: nil,
+				FeegrantKeeper:         app.Keepers.FeeGrantKeeper,
+				SignModeHandler:        app.txConfig.SignModeHandler(),
+			},
+			// Pocket-specific ante handler options
+			AuthAccountKeeper: app.Keepers.AccountKeeper,
+			SigGasConsumer:    newSigVerificationGasConsumer(sdkCtx, app, tx),
+			TxFeeChecker:      newTxFeeChecker(sdkCtx, app, tx),
 		})
 		if err != nil {
 			return sdkCtx, err
 		}
 
-		return anteHandlerFn(sdkCtx, tx, simulate)
+		return pocketAnte(sdkCtx, tx, simulate)
 	}
+}
+
+// NewPocketAnteHandler returns an AnteHandler that checks and increments sequence
+// numbers, checks signatures & account numbers, and deducts fees from the first
+// signer.
+func newPocketAnteHandler(opts pocketAnteHandlerOptions) (cosmostypes.AnteHandler, error) {
+	// basic sanity checks copied from SDK builder
+	if opts.AccountKeeper == nil {
+		return nil, sdkerrors.ErrLogic.Wrap("account keeper is required for ante builder")
+	}
+	if opts.AuthAccountKeeper == nil {
+		return nil, sdkerrors.ErrLogic.Wrap("auth account keeper is required for ante builder")
+	}
+	if opts.BankKeeper == nil {
+		return nil, sdkerrors.ErrLogic.Wrap("bank keeper is required for ante builder")
+	}
+	if opts.SignModeHandler == nil {
+		return nil, sdkerrors.ErrLogic.Wrap("sign mode handler is required for ante builder")
+	}
+
+	anteDecorators := []cosmostypes.AnteDecorator{
+		ante.NewSetUpContextDecorator(),
+		ante.NewExtensionOptionsDecorator(opts.ExtensionOptionChecker),
+		ante.NewValidateBasicDecorator(),
+		ante.NewTxTimeoutHeightDecorator(),
+		ante.NewValidateMemoDecorator(opts.AccountKeeper),
+		ante.NewConsumeGasForTxSizeDecorator(opts.AccountKeeper),
+		ante.NewDeductFeeDecorator(opts.AccountKeeper, opts.BankKeeper, opts.FeegrantKeeper, opts.TxFeeChecker),
+		// Note that we are using `AuthAccountKeeper` here instead of `AccountKeeper` to create BaseAccounts
+		autoCreateAccountDecorator{ak: opts.AuthAccountKeeper}, // autoCreateAccountDecorator must run before SetPubKeyDecorator
+		ante.NewSetPubKeyDecorator(opts.AccountKeeper),         // SetPubKeyDecorator must be called before all signature verification decorators
+		ante.NewValidateSigCountDecorator(opts.AccountKeeper),
+		ante.NewSigGasConsumeDecorator(opts.AccountKeeper, opts.SigGasConsumer),
+		ante.NewSigVerificationDecorator(opts.AccountKeeper, opts.SignModeHandler),
+		ante.NewIncrementSequenceDecorator(opts.AccountKeeper),
+	}
+
+	return cosmostypes.ChainAnteDecorators(anteDecorators...), nil
+}
+
+// autoCreateAccountDecorator creates an empty BaseAccount for every signer that is unknown to x/auth.
+// It **must** run *before* SetPubKeyDecorator.
+type autoCreateAccountDecorator struct{ ak authkeeper.AccountKeeper }
+
+// Pocket‑specific AnteHandler builder (fork of SDK default)
+// Embeds the cosmos sdk default options with the required options
+type pocketAnteHandlerOptions struct {
+	ante.HandlerOptions // embed all default options
+	// Explicitly passing in AuthAccountKeeper because the expected account keeper in HandlerOptions
+	// does not contain `NewAccountWithAddress` needed above
+	AuthAccountKeeper authkeeper.AccountKeeperI             // *required*
+	SigGasConsumer    ante.SignatureVerificationGasConsumer // *required*
+	TxFeeChecker      ante.TxFeeChecker                     // *required*
+}
+
+// AnteHandler that creates an empty BaseAccount for every signer that is unknown to x/auth.
+// It **must** run *before* SetPubKeyDecorator.
+func (d autoCreateAccountDecorator) AnteHandle(
+	ctx cosmostypes.Context, tx cosmostypes.Tx, _ bool, next cosmostypes.AnteHandler,
+) (cosmostypes.Context, error) {
+	sigTx, ok := tx.(authsigning.SigVerifiableTx)
+	if !ok {
+		return ctx, sdkerrors.ErrTxDecode.Wrapf("invalid tx type %T; expected authsigning.SigVerifiableTx", tx)
+	}
+
+	signers, err := sigTx.GetSigners()
+	if err != nil {
+		return ctx, sdkerrors.ErrTxDecode.Wrapf("failed to get signers: %s", err)
+	}
+
+	for _, addr := range signers {
+		if d.ak.GetAccount(ctx, addr) == nil {
+			acc := d.ak.NewAccountWithAddress(ctx, addr)
+			d.ak.SetAccount(ctx, acc) // seq=0, account number auto‑assigned
+		}
+	}
+
+	return next(ctx, tx, false)
 }
 
 // newSigVerificationGasConsumer returns a SignatureVerificationGasConsumer that
