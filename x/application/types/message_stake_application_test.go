@@ -1,6 +1,7 @@
 package types
 
 import (
+	"strings"
 	"testing"
 
 	"cosmossdk.io/math"
@@ -129,7 +130,7 @@ func TestMsgStakeApplication_ValidateBasic(t *testing.T) {
 				Address: sample.AccAddress(),
 				Stake:   &sdk.Coin{Denom: "upokt", Amount: math.NewInt(100)},
 				Services: []*sharedtypes.ApplicationServiceConfig{
-					{ServiceId: "TooLongId1234567890"},
+					{ServiceId: strings.Repeat("a", 43)}, // 42 is the max hardcoded in shared/types/service.go
 				},
 			},
 			expectedErr: ErrAppInvalidServiceConfigs,

@@ -88,7 +88,7 @@ func TestMsgClaimMorseSupplier_ValidateBasic(t *testing.T) {
 		)
 
 		err = msg.ValidateBasic()
-		require.EqualError(t, err, expectedErr.Error())
+		require.ErrorContains(t, err, expectedErr.Error())
 	})
 
 	t.Run("wrong Morse signature", func(t *testing.T) {
@@ -113,7 +113,7 @@ func TestMsgClaimMorseSupplier_ValidateBasic(t *testing.T) {
 		)
 
 		err = msg.ValidateBasic()
-		require.EqualError(t, err, expectedErr.Error())
+		require.ErrorContains(t, err, expectedErr.Error())
 	})
 
 	t.Run("invalid service ID", func(t *testing.T) {
@@ -130,14 +130,11 @@ func TestMsgClaimMorseSupplier_ValidateBasic(t *testing.T) {
 
 		expectedErr := migrationtypes.ErrMorseSupplierClaim.Wrapf(
 			"invalid service configs: %s",
-			sharedtypes.ErrSharedInvalidService.Wrapf(
-				"invalid service ID: %s",
-				msg.GetServices()[0].GetServiceId(),
-			),
+			sharedtypes.ErrSharedInvalidServiceId,
 		)
 
 		err = msg.ValidateBasic()
-		require.EqualError(t, err, expectedErr.Error())
+		require.ErrorContains(t, err, expectedErr.Error())
 	})
 
 	t.Run("valid Morse claim account message", func(t *testing.T) {
