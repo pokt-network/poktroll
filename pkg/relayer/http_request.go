@@ -62,6 +62,11 @@ func BuildServiceBackendRequest(
 	// Create the HTTP header for the request by converting the RelayRequest's
 	// POKTHTTPRequest.Header to an http.Header.
 	header := http.Header{}
+
+	if serviceConfig.ForwardIdentityHeaders {
+		ForwardIdentityHeaders(&header, relayRequest.Meta)
+	}
+
 	poktHTTPRequest.CopyToHTTPHeader(header)
 
 	// Basic HTTP Authentication.
