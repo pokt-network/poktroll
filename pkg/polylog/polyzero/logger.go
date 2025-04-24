@@ -2,6 +2,7 @@ package polyzero
 
 import (
 	"context"
+	"math/rand"
 	"os"
 
 	"github.com/rs/zerolog"
@@ -45,6 +46,30 @@ func NewLogger(
 // You must call Msg on the returned event in order to send the event.
 func (ze *zerologLogger) Debug() polylog.Event {
 	return newEvent(ze.Logger.Debug())
+}
+
+// ProbabilisticDebug starts a new message with either debug or info level.
+//
+// The float passed in determines the likelihood of the event being logged as debug.
+//
+// You must call Msg on the returned event in order to send the event.
+func (ze *zerologLogger) ProbabilisticDebug(p float64) polylog.Event {
+	// Validate probability is in [0.0, 1.0]
+	enforceProbRange(p)
+	// Generate a random float64 in [0.0, 1.0)
+	r := rand.Float64()
+	if r < p {
+		return newEvent(ze.Logger.Debug())
+	}
+	return newEvent(ze.Logger.Info())
+}
+
+func enforceProbRange(prob float64) {
+	if prob < 0 {
+		panic("probability cannot be less than 0")
+	} else if prob > 1 {
+		panic("probability cannot be greater than 1")
+	}
 }
 
 // Info starts a new message with info level.

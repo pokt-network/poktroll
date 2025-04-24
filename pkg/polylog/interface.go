@@ -29,6 +29,13 @@ type Logger interface {
 	// You must call Msg on the returned event in order to send the event.
 	Debug() Event
 
+	// ProbabilisticDebug starts a new log message (event) with either debug or info level.
+	//
+	// The float passed in determines the likelihood of the event being logged as debug.
+	//
+	// You must call Msg on the returned event in order to send the event.
+	ProbabilisticDebug(float64) Event
+
 	// Info starts a new log message (event) with info level.
 	//
 	// You must call Msg on the returned event in order to send the event.

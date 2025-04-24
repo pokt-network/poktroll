@@ -15,6 +15,9 @@ import (
 	"github.com/pokt-network/poktroll/x/service/types"
 )
 
+// 0.1% of the time, we want some debug logs to show up as info for visibility on the RelayMiner.
+const probabilisticDebugProb = 0.001
+
 // serveSyncRequest serves a synchronous relay request by forwarding the request
 // to the service's backend URL and returning the response to the client.
 func (server *relayMinerHTTPServer) serveSyncRequest(
@@ -24,7 +27,7 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 ) (*types.RelayRequest, error) {
 	logger := server.logger.With("relay_request_type", "synchronous")
 
-	logger.Debug().Msg("handling HTTP request")
+	logger.ProbabilisticDebug(probabilisticDebugProb).Msg("handling HTTP request")
 
 	// Extract the relay request from the request body.
 	logger.Debug().Msg("extracting relay request from request body")
@@ -193,7 +196,7 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 		return relayRequest, clientError
 	}
 
-	logger.Debug().Msg("relay request served successfully")
+	logger.ProbabilisticDebug(probabilisticDebugProb).Msg("relay request served successfully")
 
 	relayer.RelaysSuccessTotal.With("service_id", serviceId).Add(1)
 

@@ -84,7 +84,8 @@ for such operations.`,
 	cmd.Flags().Bool(cosmosflags.FlagGRPCInsecure, true, "Used to initialize the Cosmos query context with grpc security options. It can be used to override the `QueryNodeGRPCInsecure` field in the config file if specified.")
 	cmd.Flags().String(cosmosflags.FlagChainID, "pocket", "The network chain ID")
 	cmd.Flags().StringVar(&flagLogLevel, cosmosflags.FlagLogLevel, "debug", "The logging level (debug|info|warn|error)")
-	cmd.Flags().Float64(cosmosflags.FlagGasAdjustment, 1.5, "The adjustment factor to be multiplied by the gas estimate returned by the tx simulation")
+	// Transactions submitted by the RelayMiner are important (i.e. responsible for claims and proofs) that we are willing to overpay on gas fees
+	cmd.Flags().Float64(cosmosflags.FlagGasAdjustment, 1.7, "The adjustment factor to be multiplied by the gas estimate returned by the tx simulation")
 	cmd.Flags().String(cosmosflags.FlagGasPrices, "1upokt", "Set the gas unit price in upokt")
 	cmd.Flags().Bool(config.FlagQueryCaching, true, "Enable or disable onchain query caching")
 
@@ -147,7 +148,6 @@ func runRelayer(cmd *cobra.Command, _ []string) error {
 		return fmt.Errorf("failed to get query caching flag: %w", err)
 	}
 
-	// TODO_MAINNET(@red-0ne): E2E test query caching vs non-caching.
 	if queryCachingEnabled {
 		logger.Info().Msg("query caching enabled")
 	} else {
