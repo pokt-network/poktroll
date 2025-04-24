@@ -1,13 +1,5 @@
 kind: Cluster
 apiVersion: kind.x-k8s.io/v1alpha4
-nodes:
-  - role: control-plane 
-    extraPortMappings:
-    # GUARD (Envoy Gateway)
-    # Port will be patched to 30070 after install
-    - containerPort: 30070 
-      hostPort: 3070
-      protocol: TCP
 containerdConfigPatches:
   # Ensure kind can pull images from GitHub Container Registry
   - |
