@@ -240,6 +240,7 @@ var (
 		{Account: tokenomicsmoduletypes.ModuleName, Permissions: []string{authtypes.Minter, authtypes.Burner, authtypes.Staking}},
 		{Account: proofmoduletypes.ModuleName, Permissions: []string{authtypes.Minter, authtypes.Burner, authtypes.Staking}},
 		{Account: migrationmoduletypes.ModuleName, Permissions: []string{authtypes.Minter}},
+		{Account: banktypes.ModuleName, Permissions: []string{authtypes.Minter}},
 		// this line is used by starport scaffolding # stargate/app/maccPerms	}
 	}
 

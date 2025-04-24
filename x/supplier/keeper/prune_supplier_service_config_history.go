@@ -38,6 +38,14 @@ func (k Keeper) EndBlockerPruneSupplierServiceConfigHistory(
 		// Store the original number of historical service configs.
 		originalHistoryLength := len(supplier.ServiceConfigHistory)
 
+		// If there is only one service config update, it is the most recent one.
+		// In this case, we don't need to prune anything.
+		// Not skipping this case would lead to the supplier being systematically
+		// marshalled and saved to the store, even if no changes were made.
+		if originalHistoryLength == 1 {
+			continue
+		}
+
 		// Initialize a slice to retain service config updates that are still needed
 		// for pending claims settlement.
 		retainedServiceConfigs := make([]*sharedtypes.ServiceConfigUpdate, 0)
