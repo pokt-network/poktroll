@@ -222,8 +222,11 @@ go install github.com/hashicorp/go-getter/cmd/go-getter@latest
 And check all binary URLs:
 
 ```bash
-jq -r '.body.messages[0].plan.info | fromjson | .binaries[]' $PATH_TO_UPGRADE_TRANSACTION_JSON | while IFS= read -r url; do
-  go-getter "$url" .
+for file in ./tools/scripts/upgrades/upgrade_tx_v<NEW_VERSION>*; do
+  echo "Testing binary URLs in $file"
+  jq -r '.body.messages[0].plan.info | fromjson | .binaries[]' "$file" | while IFS= read -r url; do
+    go-getter "$url" .
+  done
 done
 ```
 
