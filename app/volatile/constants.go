@@ -3,4 +3,7 @@
 package volatile
 
 // TODO_TECHDEBT(@bryanchriswhite): Use this everywhere in the codebase.
-const DenomuPOKT = "upokt"
+const (
+	DenomuPOKT = "upokt"
+	DenomMACT  = "mact"
+)
