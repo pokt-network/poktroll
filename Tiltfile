@@ -113,6 +113,11 @@ helm_repo("buildwithgrove", "https://buildwithgrove.github.io/helm-charts/")
 chart_prefix = "pokt-network/"
 if localnet_config["helm_chart_local_repo"]["enabled"]:
     helm_chart_local_repo = localnet_config["helm_chart_local_repo"]["path"]
+    # Build dependencies for the POKT chart
+    # TODO_TECHDEBT(@okdas): Find a way to make this cleaner & performant w/ selective builds.
+    local("cd " + helm_chart_local_repo + "/charts/pocketd && helm dependency update")
+    local("cd " + helm_chart_local_repo + "/charts/pocket-validator && helm dependency update")
+    local("cd " + helm_chart_local_repo + "/charts/relayminer && helm dependency update")
     hot_reload_dirs.append(helm_chart_local_repo)
     print("Using local helm chart repo " + helm_chart_local_repo)
     # TODO_IMPROVE: Use os.path.join to make this more OS-agnostic.
@@ -122,6 +127,8 @@ if localnet_config["helm_chart_local_repo"]["enabled"]:
 grove_chart_prefix = "buildwithgrove/"
 if localnet_config["grove_helm_chart_local_repo"]["enabled"]:
     grove_helm_chart_local_repo = localnet_config["grove_helm_chart_local_repo"]["path"]
+    # Build dependencies for the PATH chart
+    local("cd " + grove_helm_chart_local_repo + "/charts/path && helm dependency update")
     hot_reload_dirs.append(grove_helm_chart_local_repo)
     print("Using local grove helm chart repo " + grove_helm_chart_local_repo)
     # TODO_IMPROVE: Use os.path.join to make this more OS-agnostic.
@@ -382,6 +389,11 @@ for x in range(localnet_config["path_gateways"]["count"]):
         "--set=guard.global.namespace=default", # Ensure GUARD runs in the default namespace
         "--set=guard.global.serviceName=path" + str(actor_number) + "-http", # Override the default service name
         "--set=guard.services[0].serviceId=anvil", # Ensure HTTPRoute resources are created for Anvil
+        "--set=observability.enabled=false",
+
+        # TODO_IMPROVE(@okdas): Turn on guard when we are ready for it - e2e tests currently are not setup to use it.
+        # "--set=guard.enabled=true",
+        # "--set=guard.envoyGateway.enabled=true",
     ]
 
     if localnet_config["path_local_repo"]["enabled"]:
@@ -399,20 +411,13 @@ for x in range(localnet_config["path_gateways"]["count"]):
         from_file=".config.yaml=./localnet/kubernetes/config-path-" + str(actor_number) + ".yaml"
     )
 
-    # Start a Tilt resource to patch the Envoy Gateway LoadBalancer resource
-    # to ensure it is reachable from outside the cluster at "localhost:3070".
-    local_resource(
-        "patch-envoy-gateway",
-        "./localnet/scripts/patch_envoy_gateway.sh",
-        resource_deps=["path-stack"],
-    )
-
     helm_resource(
         "path" + str(actor_number),
         grove_chart_prefix + "path",
         flags=resource_flags,
         image_deps=path_image_deps,
         image_keys=path_image_keys,
+        update_dependencies=localnet_config["path_local_repo"]["enabled"],
     )
 
     # Apply the deployment to Kubernetes using Tilt
@@ -432,9 +437,17 @@ for x in range(localnet_config["path_gateways"]["count"]):
         port_forwards=[
                 # See PATH for the default port used by the gateway. As of PR #1026, it is :3069.
                 # https://github.com/buildwithgrove/path/blob/main/config/router.go
-                str(2999 + actor_number) + ":3069"
+                str(3068 + actor_number) + ":3069"
         ],
     )
+
+    # Envoy Proxy / Gateway. Endpoint that requires authorization header (unlike 3069 - accesses path directly) 
+    # k8s_resource(
+    #     "path" + str(actor_number),
+    #     new_name="path-envoy-proxy",
+    #     extra_pod_selectors=[{"gateway.envoyproxy.io/owning-gateway-name": "guard-envoy-gateway", "app.kubernetes.io/component": "proxy"}],
+    #     port_forwards=["3070:3070"],
+    # )
 
 
 # Provision Validators

@@ -41,6 +41,9 @@ var allUpgrades = []upgrades.Upgrade{
 	// v0.1.5 - upgrade to reduce memory footprint when iterating over Suppliers and Applications.
 	// upgrades.Upgrade_0_1_5,
 
+	// v0.1.6 - upgrade to reduce the memory by avoiding unnecessary marshaling of the supplier object when iterating over the suppliers.
+	// upgrades.Upgrade_0_1_6,
+
 	// v0.1.7 - upgrade to mint and distribute Morse Account Claimer Tokens.
 	upgrades.Upgrade_0_1_7,
 }

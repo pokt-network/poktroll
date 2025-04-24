@@ -29,13 +29,7 @@ streamline development and reduce friction for any new potential contributor.
   - [Stake the `Gateway`](#stake-the-gateway)
   - [Stake the delegating `Application`](#stake-the-delegating-application)
   - [Delegate the `Application` to the `Gateway`](#delegate-the-application-to-the-gateway)
-- [`PATH` Setup](#path-setup)
-  - [`PATH` Gateway Setup](#path-gateway-setup)
-  - [Generate a `PATH Gateway` config file for the Shannon network](#generate-a-path-gateway-config-file-for-the-shannon-network)
-  - [Run the `PATH` Gateway](#run-the-path-gateway)
-    - [Build and run the `PATH` Gateway from source](#build-and-run-the-path-gateway-from-source)
-    - [\[TODO\] Run the `PATH` Gateway using Docker](#todo-run-the-path-gateway-using-docker)
-  - [Check the `PATH Gateway` is serving relays](#check-the-path-gateway-is-serving-relays)
+- [`PATH` Gateway Setup](#path-gateway-setup)
 
 ## Pre-Requisites
 
@@ -177,90 +171,10 @@ After about a minute, you can check the `Application`'s status like so:
 pocketd query application show-application $APP_ADDR $NODE_FLAGS
 ```
 
-## `PATH` Setup
+## `PATH` Gateway Setup
 
-### `PATH` Gateway Setup
+:::tip
 
-Assuming you have followed the instructions above, the following should be true:
-
-1. You have created, funded and stake a `Gateway`.
-2. You have created, funded and stake a `Application`.
-3. You have from the staked `Application` to staked the `Gateway`.
-
-Next, you can run a `PATH` Gateway.
-
-Star by following these instructions:
-
-```bash
-cd ~/workspace
-git clone https://github.com/buildwithgrove/path.git
-cd path
-```
-
-### Generate a `PATH Gateway` config file for the Shannon network
-
-:::note
-
-The instructions below show how to setup a `PATH` in `Centralized Mode` (i.e. The operator owns
-both the `Gateway` and the `Application` accounts).
-
-Refer to [PATH Gateway modes](https://path.grove.city/) for more configuration options.
-
-:::
-
-Run the following command to generate a default Shannon config `config/.config.yaml`:
-
-```bash
-# Make a copy of the default config file
-make copy_shannon_config
-
-# Replace the endpoints as needed
-sed -i "s|rpc_url: ".*"|rpc_url: $NODE|" config/.config.yaml
-sed -i "s|host_port: ".*"|host_port: shannon-testnet-grove-grpc.beta.poktroll.com:443|" config/.config.yaml
-
-# Update the gateway and application addresses
-sed -i "s|gateway_address: .*|gateway_address: $GATEWAY_ADDR|" config/.config.yaml
-sed -i "s|gateway_private_key_hex: .*|gateway_private_key_hex: $(export_priv_key_hex gateway)|" config/.config.yaml
-sed -i '/owned_apps_private_keys_hex:/!b;n;c\      - '"$(export_priv_key_hex application)" config/.config.yaml
-```
-
-When you're done, run `cat config/.config.yaml` to view the updated config file.
-
-### Run the `PATH` Gateway
-
-#### Build and run the `PATH` Gateway from source
-
-```bash
-cd cmd/ && go build -o path . && ./path
-```
-
-You should see the following output:
-
-```json
-{"level":"info","message":"Starting the cache update process."}
-{"level":"warn","message":"endpoint hydrator is disabled: no service QoS generators are specified"}
-{"level":"info","package":"router","message":"PATH gateway running on port 3000"}
-```
-
-#### [TODO] Run the `PATH` Gateway using Docker
-
-_TODO_IMPROVE(@olshansk): Add instructions for running the `PATH` Gateway using Docker._
-
-### Check the `PATH Gateway` is serving relays
-
-Check that the `PATH Gateway` is serving relays by running the following command yourself:
-
-```bash
-curl http://eth.localhost:3000/v1 \
-    -X POST \
-    -H "Content-Type: application/json" \
-    -d '{"jsonrpc": "2.0", "id": 1, "method": "eth_blockNumber" }'
-```
-
-:::warning
-
-Requests MAY hit unresponsive nodes. If that happens, keep retrying the request a few times.
-
-Once `PATH`s QoS module is mature, this will be handled automatically.
+For instructions on setting up a `PATH` Gateway, see the [Configure PATH for Shannon](https://path.grove.city/develop/path/cheatsheet_shannon#2-configure-path-for-shannon) sections of the `PATH` documentation.
 
 :::
