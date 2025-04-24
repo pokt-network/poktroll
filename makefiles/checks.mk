@@ -2,14 +2,14 @@
 ### Checks ###
 ##############
 
-# TODO_DOCUMENT: All of the `check_` helpers can be installed differently depending
+# TODO_DOCUMENT: All of the 'check_' helpers can be installed differently depending
 # on the user's OS and environment.
 # NB: For mac users, you may need to install with the proper linkers: https://github.com/golang/go/issues/65940
 
 .PHONY: check_go_version
 # Internal helper target - check go version
 check_go_version:
-	@# Extract the version number from the `go version` command.
+	@# Extract the version number from the 'go version' command.
 	@GO_VERSION=$$(go version | cut -d " " -f 3 | cut -c 3-) && \
 	MAJOR_VERSION=$$(echo $$GO_VERSION | cut -d "." -f 1) && \
 	MINOR_VERSION=$$(echo $$GO_VERSION | cut -d "." -f 2) && \
@@ -37,21 +37,21 @@ check_act:
 	fi;
 
 .PHONY: check_pocketd
-# Internal helper target - check if `pocketd` is installed in the correct location
+# Internal helper target - check if 'pocketd' is installed
 check_pocketd:
 	{ \
 	if ( ! ( command -v pocketd >/dev/null )); then \
-		echo "Error: \`pocketd\` was not found in your PATH. Please ensure it's installed before proceeding."; \
+		echo "Error: \'pocketd\' was not found in your PATH. Please ensure it's installed before proceeding."; \
 		exit 1; \
 	fi; \
 	}
 
 .PHONY: check_gh
-# Internal helper target - check if `gh` is installed
+# Internal helper target - check if 'gh' is installed
 check_gh:
 	{ \
 	if ( ! ( command -v gh >/dev/null )); then \
-		echo "Seems like you don't have `gh` installed. Please visit https://cli.github.com/ before continuing"; \
+		echo "Seems like you don't have 'gh' installed. Please visit https://cli.github.com/ before continuing"; \
 		exit 1; \
 	fi; \
 	}
@@ -131,11 +131,11 @@ check_jq:
 	}
 
 .PHONY: check_yq
-# Internal helper target - check if `yq` is installed
+# Internal helper target - check if 'yq' is installed
 check_yq:
 	{ \
 	if ( ! ( command -v yq >/dev/null )); then \
-		echo "Seems like you don't have `yq` installed. Make sure you install it before continuing"; \
+		echo "Seems like you don't have 'yq' installed. Make sure you install it before continuing"; \
 		exit 1; \
 	fi; \
 	}
@@ -151,10 +151,10 @@ check_node:
 	}
 
 .PHONY: check_proto_unstable_marshalers
-check_proto_unstable_marshalers: ## Check that all protobuf files have the `stable_marshalers_all` option set to true.
+check_proto_unstable_marshalers: ## Check that all protobuf files have the 'stable_marshalers_all' option set to true.
 	go run ./tools/scripts/protocheck/cmd unstable
 
 .PHONY: fix_proto_unstable_marshalers
-fix_proto_unstable_marshalers: ## Ensure the `stable_marshaler_all` option is present on all protobuf files.
+fix_proto_unstable_marshalers: ## Ensure the 'stable_marshaler_all' option is present on all protobuf files.
 	go run ./tools/scripts/protocheck/cmd unstable --fix
 	${MAKE} proto_regen
