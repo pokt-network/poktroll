@@ -6,10 +6,13 @@
 set -e
 
 # Prerequisites:
-# 1. This script must be run as the pocket user
+# 1. This script must be run as the specified pocket user (default: pocket)
 # 2. The pocket user must have passwordless sudo access to systemctl commands for cosmovisor service
 #    Add the following line to /etc/sudoers.d/pocket-cosmovisor (using visudo):
-#    pocket ALL=(ALL) NOPASSWD: /bin/systemctl stop cosmovisor, /bin/systemctl start cosmovisor
+#    pocket ALL=(ALL) NOPASSWD: /bin/systemctl stop SERVICE_NAME, /bin/systemctl start SERVICE_NAME
+#    alpha ALL=(ALL) NOPASSWD: /bin/systemctl stop cosmovisor-alpha, /bin/systemctl start cosmovisor-alpha
+#    beta ALL=(ALL) NOPASSWD: /bin/systemctl stop cosmovisor-beta, /bin/systemctl start cosmovisor-beta
+#    mainnet ALL=(ALL) NOPASSWD: /bin/systemctl stop cosmovisor-mainnet, /bin/systemctl start cosmovisor-mainnet
 # 3. curl must be installed (usually installed by default)
 #    If not: sudo apt-get update && sudo apt-get install -y curl
 # 4. zstd must be installed for compression
@@ -30,6 +33,10 @@ RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
+
+# Configuration - can be overridden with environment variables
+: ${POCKET_USER:="pocket"}
+: ${SERVICE_NAME:="cosmovisor"}
 
 # Replace the Vultr variables with WebDAV configuration
 WEBDAV_UPLOAD_URL="https://upload-snapshots.us-nj.poktroll.com"
@@ -52,11 +59,11 @@ print_color() {
     echo -e "${COLOR}${MESSAGE}${NC}"
 }
 
-# Check if running as pocket user
+# Check if running as the correct user
 check_user() {
-    if [[ $USER != "pocket" ]]; then
-        print_color $RED "This script must be run as the pocket user."
-        print_color $YELLOW "Please switch to the pocket user with: su - pocket"
+    if [[ $USER != "$POCKET_USER" ]]; then
+        print_color $RED "This script must be run as the $POCKET_USER user."
+        print_color $YELLOW "Please switch to the $POCKET_USER user with: su - $POCKET_USER"
         exit 1
     fi
 }
@@ -65,7 +72,7 @@ check_user() {
 stop_node() {
     # We need to stop the node before taking snapshots to ensure data consistency
     print_color $YELLOW "Stopping pocketd node..."
-    sudo systemctl stop cosmovisor
+    sudo systemctl stop $SERVICE_NAME
 
     # Important: Wait for process to fully stop to ensure clean shutdown
     while pgrep pocketd >/dev/null; do
@@ -339,7 +346,7 @@ EOF
 # Function to start the node
 start_node() {
     print_color $YELLOW "Starting pocketd node..."
-    sudo systemctl start cosmovisor
+    sudo systemctl start $SERVICE_NAME
     print_color $GREEN "Node started successfully"
 }
 
@@ -530,9 +537,25 @@ upload_snapshots() {
     fi
 }
 
+# Function to restart the node and clean up
+cleanup_and_restart() {
+    print_color $YELLOW "Restarting pocketd node..."
+    sudo systemctl start $SERVICE_NAME
+    print_color $GREEN "Node restarted successfully"
+
+    # ... existing code ...
+}
+
 # Main function
 main() {
     print_color $GREEN "Starting snapshot creation process..."
+    
+    # Print configuration information
+    print_color $YELLOW "Using configuration:"
+    print_color $YELLOW "- User: $POCKET_USER (override with POCKET_USER environment variable)"
+    print_color $YELLOW "- Service: $SERVICE_NAME (override with SERVICE_NAME environment variable)"
+    print_color $YELLOW "- Network: $NETWORK"
+    echo ""
 
     # Check requirements
     check_user
