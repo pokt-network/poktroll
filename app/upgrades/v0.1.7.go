@@ -14,18 +14,18 @@ import (
 )
 
 const (
-	Upgrade_0_1_6_PlanName = "v0.1.6"
+	Upgrade_0_1_7_PlanName = "v0.1.7"
 
 	newTokenSupplyAmount = int64(100000000000) // 100B
 )
 
-// Upgrade_0_1_6 handles the upgrade to release `v0.1.6`.
+// Upgrade_0_1_7 handles the upgrade to release `v0.1.7`.
 // This is planned to be issued on both Pocket Network's Shannon Alpha, Beta TestNets as well as MainNet.
 // It is an upgrade intended to reduce the memory footprint when iterating over Suppliers and Applications.
 // TODO_IN_THIS_COMMIT: append commit hash to the range in the following comment, once known.
-// https://github.com/pokt-network/poktroll/compare/v0.1.5..
-var Upgrade_0_1_6 = Upgrade{
-	PlanName: Upgrade_0_1_6_PlanName,
+// https://github.com/pokt-network/poktroll/compare/v0.1.6..
+var Upgrade_0_1_7 = Upgrade{
+	PlanName: Upgrade_0_1_7_PlanName,
 	// No migrations in this upgrade.
 	StoreUpgrades: storetypes.StoreUpgrades{},
 
