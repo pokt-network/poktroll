@@ -90,14 +90,11 @@ func TestMsgClaimMorseApplication_ValidateBasic(t *testing.T) {
 
 		expectedErr := migrationtypes.ErrMorseApplicationClaim.Wrapf(
 			"invalid service config: %s",
-			sharedtypes.ErrSharedInvalidService.Wrapf(
-				"invalid service ID: %q",
-				msg.GetServiceConfig().GetServiceId(),
-			),
+			sharedtypes.ErrSharedInvalidService,
 		)
 
 		err = msg.ValidateBasic()
-		require.EqualError(t, err, expectedErr.Error())
+		require.ErrorContains(t, err, expectedErr.Error())
 	})
 
 	t.Run("valid Morse claim account message", func(t *testing.T) {

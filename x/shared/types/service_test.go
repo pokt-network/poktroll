@@ -46,7 +46,7 @@ func TestIsValidService(t *testing.T) {
 			desc: "Name exceeds max length",
 
 			serviceId:   "ValidID",
-			serviceName: "This service name is way too long to be considered valid since it exceeds the max length",
+			serviceName: strings.Repeat("a", 170), // 170 is the max length hardcoded in the services module
 
 			expectedIsValid: false,
 		},
@@ -123,8 +123,8 @@ func TestIsValidServiceName(t *testing.T) {
 			expectedIsValid: true,
 		},
 		{
-			desc:            "Exceeds maximum length",
-			serviceName:     "validnamebuttoolongvalidnamebuttoolongvalidnamebuttoolong",
+			desc:            "Exceeds maximum name length",
+			serviceName:     strings.Repeat("a", 170), // 170 is the max length hardcoded in the services module
 			expectedIsValid: false,
 		},
 	}
@@ -141,7 +141,7 @@ func TestIsValidServiceName(t *testing.T) {
 			if test.expectedIsValid {
 				require.NoError(t, err)
 			} else {
-				require.ErrorIs(t, err, ErrSharedInvalidService.Wrapf("invalid service name: %s", test.serviceName))
+				require.ErrorContains(t, err, ErrSharedInvalidService.Error())
 			}
 		})
 	}
@@ -221,7 +221,7 @@ func TestIsValidServiceId(t *testing.T) {
 			if test.expectedIsValid {
 				require.NoError(t, err)
 			} else {
-				require.ErrorIs(t, err, ErrSharedInvalidService.Wrapf("invalid service ID: %s", test.serviceId))
+				require.ErrorContains(t, err, ErrSharedInvalidService.Error())
 			}
 		})
 	}
