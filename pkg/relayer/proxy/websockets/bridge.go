@@ -115,8 +115,21 @@ func NewBridge(
 	bridgeLogger := logger.With("component", "bridge")
 
 	header := make(http.Header)
+
+	// Add service-specific headers from config
 	for headerKey, headerValue := range serviceConfig.Headers {
 		header.Add(headerKey, headerValue)
+	}
+
+	// Forward identity headers from session and config
+	if session.Header != nil && serviceConfig.ForwardIdentityHeaders {
+		// Create a minimal metadata structure to reuse our header-forwarding logic
+		meta := types.RelayRequestMetadata{
+			SessionHeader:           session.Header,
+			SupplierOperatorAddress: relayAuthenticator.GetSupplierOperatorAddresses()[0],
+		}
+
+		relayer.ForwardIdentityHeaders(&header, meta)
 	}
 
 	// Connect to the service backend.
