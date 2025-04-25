@@ -172,11 +172,9 @@ type RelayMinerSupplierServiceConfig struct {
 	// authentication then this field must be populated accordingly.
 	// For example: { "Authorization": "Bearer <token>" }
 	Headers map[string]string
-	// ForwardIdentityHeaders determines if identity headers should be forwarded from the request to the relayed request.
-	// The forwarded headers are:
-	// X-Pocket-Supplier, X-Pocket-Service, X-Pocket-Session-Id, X-Pocket-Application
-	// X-Pocket-Session-Start-Height, X-Pocket-Session-End-Height
-	ForwardIdentityHeaders bool
+	// ForwardPocketHeaders toggles if headers prefixed with 'Pocket-' should be forwarded to
+	// the backend service servicing the relay requests.
+	ForwardPocketHeaders bool
 }
 
 // RelayMinerSupplierServiceAuthentication is the structure resulting from parsing
