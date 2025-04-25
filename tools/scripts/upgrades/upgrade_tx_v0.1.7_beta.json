@@ -6,7 +6,7 @@
         "authority": "pokt10d07y265gmmuvt4z0w9aw880jnsr700j8yv32t",
         "plan": {
           "name": "v0.1.7",
-          "height": "UPDATE_ME",
+          "height": "6388",
           "info": "{\"binaries\":{\"linux/amd64\":\"https://github.com/pokt-network/poktroll/releases/download/v0.1.7/pocket_linux_amd64.tar.gz?checksum=sha256:cf66a5d6307cb1686b5a671ad191f896139d28d413d2cb754c943b037064c483\",\"linux/arm64\":\"https://github.com/pokt-network/poktroll/releases/download/v0.1.7/pocket_linux_arm64.tar.gz?checksum=sha256:b6b610b31cbe929649e90d91e8f9febe5928151ec0eb92f46100eb1ffdab5156\",\"darwin/amd64\":\"https://github.com/pokt-network/poktroll/releases/download/v0.1.7/pocket_darwin_amd64.tar.gz?checksum=sha256:f2efab3f1207bb5eb4bdfd82dbd8143284a628ad18f9e35ddaffa879c0616188\",\"darwin/arm64\":\"https://github.com/pokt-network/poktroll/releases/download/v0.1.7/pocket_darwin_arm64.tar.gz?checksum=sha256:8442e441e74bf8f9d20de2accd8e82a92c335cab603040e28c1637face683c0e\"}}"
         }
       }
