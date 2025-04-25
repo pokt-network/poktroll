@@ -89,7 +89,7 @@ func TestSessionHeader_ValidateBasic(t *testing.T) {
 		t.Run(test.desc, func(t *testing.T) {
 			err := test.sessionHeader.ValidateBasic()
 			if test.expectedErr != nil {
-				require.ErrorIs(t, err, test.expectedErr)
+				require.ErrorContains(t, err, test.expectedErr.Error())
 			} else {
 				require.NoError(t, err)
 			}

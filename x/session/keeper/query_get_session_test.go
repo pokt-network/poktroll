@@ -1,6 +1,7 @@
 package keeper_test
 
 import (
+	"strings"
 	"testing"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -121,7 +122,7 @@ func TestSession_GetSession_Failure(t *testing.T) {
 			desc: "service ID is invalid",
 
 			appAddr:     keepertest.TestApp1Address,
-			serviceId:   "service_id_is_too_long_to_be_valid",
+			serviceId:   strings.Repeat("a", 43), // 42 is the max length hardcoded in the services module
 			blockHeight: 1,
 
 			expectedErrMsg: "invalid service in session",
