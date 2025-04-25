@@ -14,6 +14,7 @@ import (
 
 	session "github.com/pokt-network/poktroll/x/session/module"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 func TestCLI_GetSession(t *testing.T) {
@@ -154,7 +155,7 @@ $ go test -v -count=1 -run TestCLI_GetSession ./x/session/module/...`)
 			serviceId:   "invalidServiceId",
 			blockHeight: 0,
 
-			expectedErr: sessiontypes.ErrSessionInvalidService,
+			expectedErr: sharedtypes.ErrSharedInvalidServiceId,
 		},
 		{
 			desc:       "invalid - missing service ID",
@@ -162,7 +163,7 @@ $ go test -v -count=1 -run TestCLI_GetSession ./x/session/module/...`)
 			// serviceId explicitly omitted
 			blockHeight: 0,
 
-			expectedErr: sessiontypes.ErrSessionInvalidService,
+			expectedErr: sharedtypes.ErrSharedInvalidServiceId,
 		},
 	}
 

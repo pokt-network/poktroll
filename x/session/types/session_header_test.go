@@ -7,6 +7,7 @@ import (
 
 	"github.com/pokt-network/poktroll/testutil/sample"
 	"github.com/pokt-network/poktroll/x/session/types"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 const testServiceId = "svc_id"
@@ -48,7 +49,7 @@ func TestSessionHeader_ValidateBasic(t *testing.T) {
 				SessionStartBlockHeight: 100,
 				SessionEndBlockHeight:   101,
 			},
-			expectedErr: types.ErrSessionInvalidService,
+			expectedErr: sharedtypes.ErrSharedInvalidServiceId,
 		},
 		{
 			desc: "invalid - start block height is 0",
