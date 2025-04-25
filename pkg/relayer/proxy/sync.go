@@ -5,7 +5,6 @@ import (
 	"crypto/tls"
 	"fmt"
 	"net/http"
-	"net/url"
 	"time"
 
 	sdktypes "github.com/pokt-network/shannon-sdk/types"
@@ -43,33 +42,6 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 	meta := relayRequest.Meta
 	serviceId := meta.SessionHeader.ServiceId
 
-	originHost := request.Host
-	// When the proxy is behind a reverse proxy, or is getting its requests from
-	// a CDN or a load balancer, the host header may not contain the onchain
-	// advertized address needed to determine the service that the relay request is for.
-	// These CDNs and reverse proxies usually set the X-Forwarded-Host header
-	// to the original host.
-	// RelayMiner operators that have such a setup can set the XForwardedHostLookup
-	// option to true in the server config to enable the proxy to look up the
-	// original host from the X-Forwarded-Host header.
-	// Get the original host from X-Forwarded-Host header if specified in the supplier
-	// config and fall back to the Host header if it is not specified.
-	if server.serverConfig.XForwardedHostLookup {
-		originHost = request.Header.Get("X-Forwarded-Host")
-	}
-
-	// Extract the hostname from the request's Host header to match it with the
-	// publicly exposed endpoints of the supplier service which are hostnames
-	// (i.e. hosts without the port number).
-	// Add the http scheme to the originHost to parse it as a URL.
-	originHostUrl, err := url.Parse(fmt.Sprintf("http://%s", originHost))
-	if err != nil {
-		// If the originHost cannot be parsed, reply with an internal error so that
-		// the original error is not exposed to the client.
-		clientError := ErrRelayerProxyInternalError.Wrap(err.Error())
-		return relayRequest, clientError
-	}
-
 	var serviceConfig *config.RelayMinerSupplierServiceConfig
 
 	// Get the Service and serviceUrl corresponding to the originHost.
@@ -79,14 +51,8 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 	// by building a map at the server initialization level with originHost as the
 	// key so that we can get the service and serviceUrl in O(1) time.
 	for _, supplierServiceConfig := range server.serverConfig.SupplierConfigsMap {
-		for _, host := range supplierServiceConfig.PubliclyExposedEndpoints {
-			if host == originHostUrl.Hostname() && serviceId == supplierServiceConfig.ServiceId {
-				serviceConfig = supplierServiceConfig.ServiceConfig
-				break
-			}
-		}
-
-		if serviceConfig != nil {
+		if serviceId == supplierServiceConfig.ServiceId {
+			serviceConfig = supplierServiceConfig.ServiceConfig
 			break
 		}
 	}
