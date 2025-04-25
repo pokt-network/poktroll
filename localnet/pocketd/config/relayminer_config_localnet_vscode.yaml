@@ -30,18 +30,22 @@ suppliers:
     listen_url: http://0.0.0.0:8545
     service_config:
       backend_url: http://localhost:8547
+      forward_identity_headers: false
   - service_id: anvilws
     listen_url: http://0.0.0.0:8545
     service_config:
       backend_url: ws://localhost:8547
+      forward_identity_headers: false
   - service_id: ollama
     listen_url: http://0.0.0.0:8545
     service_config:
       backend_url: http://localhost:11434/
+      forward_identity_headers: false
   - service_id: rest
     listen_url: http://0.0.0.0:8545
     service_config:
       backend_url: http://rest:10000/
+      forward_identity_headers: false
 pprof:
   enabled: false
   addr: localhost:6070
