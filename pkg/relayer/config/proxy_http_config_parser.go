@@ -48,7 +48,7 @@ func (supplierServiceConfig *RelayMinerSupplierServiceConfig) parseSupplierBacke
 	}
 
 	supplierServiceConfig.BackendUrl = supplierServiceBackendUrl
-	supplierServiceConfig.ForwardIdentityHeaders = yamlSupplierServiceConfig.ForwardIdentityHeaders
+	supplierServiceConfig.ForwardPocketHeaders = yamlSupplierServiceConfig.ForwardIdentityHeaders
 
 	// If the Authentication section is not empty, populate the supplier service
 	// authentication fields
