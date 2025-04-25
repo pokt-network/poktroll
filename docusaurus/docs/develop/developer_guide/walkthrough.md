@@ -170,7 +170,7 @@ The `make localnet_up` command will run the `make dev_up` target, which:
 - Creates a new `kind` cluster
 - Creates all namespaces required by the PATH Helm Charts
 
-:::tip 
+:::tip
 
 To fully stop your LocalNet:
 
@@ -448,8 +448,6 @@ suppliers:
     listen_url: http://localhost:6942
     service_config:
       backend_url: http://localhost:8547
-      publicly_exposed_endpoints:
-        - localhost
 pprof:
   enabled: false
   addr: localhost:6060

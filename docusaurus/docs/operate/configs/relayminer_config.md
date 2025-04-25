@@ -231,9 +231,7 @@ to Pocket Network. It specifies exactly where those requests will be forwarded
 to by the Supplier's infrastructure.
 
 Each suppliers entry's `service_id` MUST reflect the onchain `Service.Id` the
-supplier staked for. In addition, the `publicly_exposed_endpoints` list MUST
-contain the same endpoints that the Supplier advertised onchain when staking for
-that service.
+supplier staked for.
 
 At least one supplier is required for the `RelayMiner` to be functional.
 
@@ -248,8 +246,6 @@ suppliers:
         password: <string>
       headers:
         <key>: <value>
-      publicly_exposed_endpoints:
-        - <host>
 ```
 
 ### `service_id`
@@ -277,11 +273,6 @@ _`Required`_
 
 The address on which the `RelayMiner` will start a server to listen for incoming
 requests. The server type is inferred from the URL scheme (http, https, etc...).
-
-The same `listen_url` can be used for multiple suppliers and/or different
-`publicly_exposed_endpoints`, the `RelayMiner` takes care of routing the requests
-to the correct `backend_url` based on the `service_id` and the `publicly_exposed_endpoints`
-it received a request form.
 
 ### `service_config`
 
