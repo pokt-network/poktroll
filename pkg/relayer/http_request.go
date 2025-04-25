@@ -63,7 +63,8 @@ func BuildServiceBackendRequest(
 	// POKTHTTPRequest.Header to an http.Header.
 	header := http.Header{}
 
-	if serviceConfig.ForwardIdentityHeaders {
+	// For 'Pocket-' prefixed HTTP headers.
+	if serviceConfig.ForwardPocketHeaders {
 		ForwardIdentityHeaders(&header, relayRequest.Meta)
 	}
 
