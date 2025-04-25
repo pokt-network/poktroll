@@ -122,7 +122,7 @@ func NewBridge(
 	}
 
 	// Forward identity headers from session and config
-	if session.Header != nil && serviceConfig.ForwardIdentityHeaders {
+	if session.Header != nil && serviceConfig.ForwardPocketHeaders {
 		// Create a minimal metadata structure to reuse our header-forwarding logic
 		meta := types.RelayRequestMetadata{
 			SessionHeader:           session.Header,
