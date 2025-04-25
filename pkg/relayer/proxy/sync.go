@@ -6,41 +6,15 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
-	"os"
-	"strconv"
 	"time"
 
 	sdktypes "github.com/pokt-network/shannon-sdk/types"
 
+	"github.com/pokt-network/poktroll/pkg/polylog"
 	"github.com/pokt-network/poktroll/pkg/relayer"
 	"github.com/pokt-network/poktroll/pkg/relayer/config"
 	"github.com/pokt-network/poktroll/x/service/types"
 )
-
-// 0.1% of the time, we want some debug logs to show up as info for visibility on the RelayMiner.
-const defaultProbabilisticDebugProb = 0.001
-
-// probabilisticDebugProb is the canonical value to use for probabilistic debug logging.
-var probabilisticDebugProb float64
-
-func init() {
-	// Read "LOG_PROBABILISTIC_DEBUG_PROB" from environment variable
-	// - If set, parse it as float64
-	// - If not set, use defaultProbabilisticDebugProb
-	// - Panic if not a float between [0, 1)
-	probStr := os.Getenv("LOG_PROBABILISTIC_DEBUG_PROB")
-	if probStr == "" {
-		probabilisticDebugProb = defaultProbabilisticDebugProb
-		return
-	}
-	val, err := strconv.ParseFloat(probStr, 64)
-	if err != nil || val < 0 || val >= 1 {
-		panic(fmt.Sprintf(
-			`LOG_PROBABILISTIC_DEBUG_PROB must be a float in [0, 1), got "%s"`, probStr,
-		))
-	}
-	probabilisticDebugProb = val
-}
 
 // serveSyncRequest serves a synchronous relay request by forwarding the request
 // to the service's backend URL and returning the response to the client.
@@ -51,7 +25,7 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 ) (*types.RelayRequest, error) {
 	logger := server.logger.With("relay_request_type", "synchronous")
 
-	logger.ProbabilisticDebug(probabilisticDebugProb).Msg("handling HTTP request")
+	logger.ProbabilisticDebug(polylog.ProbabilisticDebugProb).Msg("handling HTTP request")
 
 	// Extract the relay request from the request body.
 	logger.Debug().Msg("extracting relay request from request body")
@@ -220,7 +194,7 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 		return relayRequest, clientError
 	}
 
-	logger.ProbabilisticDebug(defaultProbabilisticDebugProb).Msg("relay request served successfully")
+	logger.ProbabilisticDebug(polylog.ProbabilisticDebugProb).Msg("relay request served successfully")
 
 	relayer.RelaysSuccessTotal.With("service_id", serviceId).Add(1)
 
