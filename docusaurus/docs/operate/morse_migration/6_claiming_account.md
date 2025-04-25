@@ -8,7 +8,7 @@ sidebar_position: 6
   - [0. Prerequisites](#0-prerequisites)
   - [1. Export your Morse `keyfile.json`](#1-export-your-morse-keyfilejson)
   - [2. Create a new Shannon key](#2-create-a-new-shannon-key)
-  - [3. Fund your Shannon account](#3-fund-your-shannon-account)
+  - [3. Create your onchain Shannon account](#3-fund-your-shannon-account)
   - [4. Ensure your Shannon account exists onchain](#4-ensure-your-shannon-account-exists-onchain)
   - [5. Check your claimable Morse account](#5-check-your-claimable-morse-account)
   - [6. Claim your Morse Pocket](#6-claim-your-morse-pocket)
@@ -69,9 +69,18 @@ pocket accounts import-raw <priv-key-hex>
 pocketd keys add <your_shannon_key_name>
 ```
 
-### 3. Fund your Shannon account
+### 3. Create your onchain Shannon account
 
-You need to make sure the public key exists onchain and has funding to send the claim transaction.
+If you're using a newly generated key/account, then you will need to use one of the (network-specific) community faucets to trigger onchain account creation.
+
+For testnets, you can send yourself either uPOKT or MACT ("Morse Account Claimer Token").
+**Only 1 of EITHER minimal denomination** is sufficient to create the onchain account, such that it is ready to be used for claiming.
+
+:::warning Mainnet "Faucet"
+
+The only token available via Mainnet faucet(s) is MACT.
+
+:::
 
 Use one of the following faucets:
 
@@ -87,8 +96,11 @@ If you're a Grove Employee, you can use the helpers [here](https://www.notion.so
 # Get the Shannon address
 pocketd keys show <your_shannon_key_name> -a
 
-# Fund the Shannon key
-pkd_<NETWORK>fund <your_shannon_address>
+# Fund the Shannon key with 1MPOKT
+pkd_<NETWORK>fund_pokt <your_shannon_address>
+# OR
+# Fund the Shannon key with 1MACT
+pkd_<NETWORK>fund_mact <your_shannon_address>
 ```
 
 :::
