@@ -24,7 +24,7 @@ import (
 
 	"github.com/pokt-network/poktroll/testutil/sample"
 	"github.com/pokt-network/poktroll/testutil/session/mocks"
-	sharedmocks "github.com/pokt-network/poktroll/testutil/shared"
+	sharedtest "github.com/pokt-network/poktroll/testutil/shared"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	"github.com/pokt-network/poktroll/x/session/keeper"
 	"github.com/pokt-network/poktroll/x/session/types"
@@ -113,12 +113,12 @@ var (
 		OperatorAddress: TestSupplierOperatorAddress,
 		Stake:           &sdk.Coin{Denom: "upokt", Amount: math.NewInt(100)},
 		Services:        supplierServiceConfigs,
-		ServiceConfigHistory: []*sharedtypes.ServiceConfigUpdate{
-			{
-				Services:             supplierServiceConfigs,
-				EffectiveBlockHeight: 1,
-			},
-		},
+		ServiceConfigHistory: sharedtest.CreateServiceConfigUpdateHistoryFromServiceConfigs(
+			TestSupplierOperatorAddress,
+			supplierServiceConfigs,
+			1,
+			sharedtest.NoDeactivationHeight,
+		),
 	}
 )
 
@@ -248,12 +248,35 @@ func defaultSupplierKeeperMock(t testing.TB) types.SupplierKeeper {
 	ctrl := gomock.NewController(t)
 
 	mockSupplierKeeper := mocks.NewMockSupplierKeeper(ctrl)
-	mockSupplierKeeper.EXPECT().GetAllSuppliersIterator(gomock.Any()).
-		DoAndReturn(func(ctx context.Context) sharedtypes.RecordIterator[sharedtypes.Supplier] {
-			testSupplier := TestSupplier
-			allSuppliers := []sharedtypes.Supplier{testSupplier}
 
-			return sharedmocks.NewMockRecordIterator(allSuppliers)
+	// Mocking the GetServiceConfigUpdatesIterator function to return a mock iterator for service config updates.
+	mockSupplierKeeper.EXPECT().GetServiceConfigUpdatesIterator(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(ctx context.Context, serviceId string) sharedtypes.RecordIterator[*sharedtypes.ServiceConfigUpdate] {
+			testSupplier := TestSupplier
+			allServiceConfigUpdates := make([]*sharedtypes.ServiceConfigUpdate, 0)
+			for _, serviceConfigUpdate := range testSupplier.ServiceConfigHistory {
+				if serviceConfigUpdate.Service.ServiceId != serviceId {
+					continue
+				}
+				allServiceConfigUpdates = append(allServiceConfigUpdates, serviceConfigUpdate)
+			}
+
+			return sharedtest.NewMockRecordIterator(allServiceConfigUpdates)
+		}).AnyTimes()
+
+	// Mocking the GetDehydratedSupplier function to return a mock dehydrated supplier based on the operator address.
+	mockSupplierKeeper.EXPECT().GetDehydratedSupplier(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(ctx context.Context, operatorAddress string) (sharedtypes.Supplier, bool) {
+			if operatorAddress != TestSupplierOperatorAddress {
+				return sharedtypes.Supplier{}, false
+			}
+
+			// Return a copy of the test supplier to avoid modifying the original
+			testSupplier := TestSupplier
+			testSupplier.Services = nil
+			testSupplier.ServiceConfigHistory = nil
+
+			return testSupplier, true
 		}).AnyTimes()
 
 	return mockSupplierKeeper

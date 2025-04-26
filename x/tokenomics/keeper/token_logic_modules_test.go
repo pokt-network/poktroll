@@ -27,6 +27,7 @@ import (
 	testproof "github.com/pokt-network/poktroll/testutil/proof"
 	"github.com/pokt-network/poktroll/testutil/sample"
 	testsession "github.com/pokt-network/poktroll/testutil/session"
+	sharedtest "github.com/pokt-network/poktroll/testutil/shared"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
@@ -59,6 +60,7 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_Valid(t *testing.T) {
 		testkeeper.WithService(*service),
 		testkeeper.WithDefaultModuleBalances(),
 	)
+	ctx = sdk.UnwrapSDKContext(ctx).WithBlockHeight(1)
 	keepers.SetService(ctx, *service)
 
 	// Ensure the claim is within relay mining bounds
@@ -101,6 +103,10 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_Valid(t *testing.T) {
 			RevSharePercentage: supplierRevShareRatios[i],
 		}
 	}
+	services := []*sharedtypes.SupplierServiceConfig{{
+		ServiceId: service.Id,
+		RevShare:  supplierRevShares,
+	}}
 
 	// Add a new supplier.
 	supplierStake := cosmostypes.NewCoin(volatile.DenomuPOKT, supplierInitialStake)
@@ -109,10 +115,11 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_Valid(t *testing.T) {
 		OwnerAddress:    supplierRevShares[0].Address,
 		OperatorAddress: supplierRevShares[0].Address,
 		Stake:           &supplierStake,
-		Services: []*sharedtypes.SupplierServiceConfig{{
-			ServiceId: service.Id,
-			RevShare:  supplierRevShares,
-		}},
+		Services:        services,
+		ServiceConfigHistory: sharedtest.CreateServiceConfigUpdateHistoryFromServiceConfigs(
+			supplierRevShares[0].Address,
+			services, 1, 0,
+		),
 	}
 	keepers.SetSupplier(ctx, supplier)
 
@@ -195,6 +202,7 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_Valid_SupplierExceedsMaxClai
 		testkeeper.WithService(*service),
 		testkeeper.WithDefaultModuleBalances(),
 	)
+	ctx = sdk.UnwrapSDKContext(ctx).WithBlockHeight(1)
 	keepers.SetService(ctx, *service)
 
 	// Set up the relays to exceed the max claimable amount
@@ -242,6 +250,10 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_Valid_SupplierExceedsMaxClai
 			RevSharePercentage: supplierRevShareRatios[i],
 		}
 	}
+	services := []*sharedtypes.SupplierServiceConfig{{
+		ServiceId: service.Id,
+		RevShare:  supplierRevShares,
+	}}
 
 	// Add a new supplier.
 	supplierStake := cosmostypes.NewCoin(volatile.DenomuPOKT, supplierInitialStake)
@@ -250,10 +262,11 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_Valid_SupplierExceedsMaxClai
 		OwnerAddress:    supplierRevShares[0].Address,
 		OperatorAddress: supplierRevShares[0].Address,
 		Stake:           &supplierStake,
-		Services: []*sharedtypes.SupplierServiceConfig{{
-			ServiceId: service.Id,
-			RevShare:  supplierRevShares,
-		}},
+		Services:        services,
+		ServiceConfigHistory: sharedtest.CreateServiceConfigUpdateHistoryFromServiceConfigs(
+			supplierRevShares[0].Address,
+			services, 1, 0,
+		),
 	}
 	keepers.SetSupplier(ctx, supplier)
 
@@ -360,6 +373,7 @@ func TestProcessTokenLogicModules_TLMGlobalMint_Valid_MintDistributionCorrect(t 
 		testkeeper.WithDefaultModuleBalances(),
 	}
 	keepers, ctx := testkeeper.NewTokenomicsModuleKeepers(t, nil, opts...)
+	ctx = sdk.UnwrapSDKContext(ctx).WithBlockHeight(1)
 	keepers.SetService(ctx, *service)
 
 	// Set the dao_reward_address param on the tokenomics keeper.
@@ -391,6 +405,7 @@ func TestProcessTokenLogicModules_TLMGlobalMint_Valid_MintDistributionCorrect(t 
 			RevSharePercentage: supplierRevShareRatios[i],
 		}
 	}
+	services := []*sharedtypes.SupplierServiceConfig{{ServiceId: service.Id, RevShare: supplierRevShares}}
 
 	// Add a new supplier.
 	supplierStake := cosmostypes.NewCoin(volatile.DenomuPOKT, supplierInitialStake)
@@ -399,7 +414,11 @@ func TestProcessTokenLogicModules_TLMGlobalMint_Valid_MintDistributionCorrect(t 
 		OwnerAddress:    supplierRevShares[0].Address,
 		OperatorAddress: supplierRevShares[0].Address,
 		Stake:           &supplierStake,
-		Services:        []*sharedtypes.SupplierServiceConfig{{ServiceId: service.Id, RevShare: supplierRevShares}},
+		Services:        services,
+		ServiceConfigHistory: sharedtest.CreateServiceConfigUpdateHistoryFromServiceConfigs(
+			supplierRevShares[0].Address,
+			services, 1, 0,
+		),
 	}
 	keepers.SetSupplier(ctx, supplier)
 

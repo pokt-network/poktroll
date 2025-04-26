@@ -902,68 +902,21 @@ func (x *fastReflection_Supplier) ProtoMethods() *protoiface.Methods {
 	}
 }
 
-var _ protoreflect.List = (*_ServiceConfigUpdate_1_list)(nil)
-
-type _ServiceConfigUpdate_1_list struct {
-	list *[]*SupplierServiceConfig
-}
-
-func (x *_ServiceConfigUpdate_1_list) Len() int {
-	if x.list == nil {
-		return 0
-	}
-	return len(*x.list)
-}
-
-func (x *_ServiceConfigUpdate_1_list) Get(i int) protoreflect.Value {
-	return protoreflect.ValueOfMessage((*x.list)[i].ProtoReflect())
-}
-
-func (x *_ServiceConfigUpdate_1_list) Set(i int, value protoreflect.Value) {
-	valueUnwrapped := value.Message()
-	concreteValue := valueUnwrapped.Interface().(*SupplierServiceConfig)
-	(*x.list)[i] = concreteValue
-}
-
-func (x *_ServiceConfigUpdate_1_list) Append(value protoreflect.Value) {
-	valueUnwrapped := value.Message()
-	concreteValue := valueUnwrapped.Interface().(*SupplierServiceConfig)
-	*x.list = append(*x.list, concreteValue)
-}
-
-func (x *_ServiceConfigUpdate_1_list) AppendMutable() protoreflect.Value {
-	v := new(SupplierServiceConfig)
-	*x.list = append(*x.list, v)
-	return protoreflect.ValueOfMessage(v.ProtoReflect())
-}
-
-func (x *_ServiceConfigUpdate_1_list) Truncate(n int) {
-	for i := n; i < len(*x.list); i++ {
-		(*x.list)[i] = nil
-	}
-	*x.list = (*x.list)[:n]
-}
-
-func (x *_ServiceConfigUpdate_1_list) NewElement() protoreflect.Value {
-	v := new(SupplierServiceConfig)
-	return protoreflect.ValueOfMessage(v.ProtoReflect())
-}
-
-func (x *_ServiceConfigUpdate_1_list) IsValid() bool {
-	return x.list != nil
-}
-
 var (
-	md_ServiceConfigUpdate                        protoreflect.MessageDescriptor
-	fd_ServiceConfigUpdate_services               protoreflect.FieldDescriptor
-	fd_ServiceConfigUpdate_effective_block_height protoreflect.FieldDescriptor
+	md_ServiceConfigUpdate                     protoreflect.MessageDescriptor
+	fd_ServiceConfigUpdate_operator_address    protoreflect.FieldDescriptor
+	fd_ServiceConfigUpdate_service             protoreflect.FieldDescriptor
+	fd_ServiceConfigUpdate_activation_height   protoreflect.FieldDescriptor
+	fd_ServiceConfigUpdate_deactivation_height protoreflect.FieldDescriptor
 )
 
 func init() {
 	file_pocket_shared_supplier_proto_init()
 	md_ServiceConfigUpdate = File_pocket_shared_supplier_proto.Messages().ByName("ServiceConfigUpdate")
-	fd_ServiceConfigUpdate_services = md_ServiceConfigUpdate.Fields().ByName("services")
-	fd_ServiceConfigUpdate_effective_block_height = md_ServiceConfigUpdate.Fields().ByName("effective_block_height")
+	fd_ServiceConfigUpdate_operator_address = md_ServiceConfigUpdate.Fields().ByName("operator_address")
+	fd_ServiceConfigUpdate_service = md_ServiceConfigUpdate.Fields().ByName("service")
+	fd_ServiceConfigUpdate_activation_height = md_ServiceConfigUpdate.Fields().ByName("activation_height")
+	fd_ServiceConfigUpdate_deactivation_height = md_ServiceConfigUpdate.Fields().ByName("deactivation_height")
 }
 
 var _ protoreflect.Message = (*fastReflection_ServiceConfigUpdate)(nil)
@@ -1031,15 +984,27 @@ func (x *fastReflection_ServiceConfigUpdate) Interface() protoreflect.ProtoMessa
 // While iterating, mutating operations may only be performed
 // on the current field descriptor.
 func (x *fastReflection_ServiceConfigUpdate) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
-	if len(x.Services) != 0 {
-		value := protoreflect.ValueOfList(&_ServiceConfigUpdate_1_list{list: &x.Services})
-		if !f(fd_ServiceConfigUpdate_services, value) {
+	if x.OperatorAddress != "" {
+		value := protoreflect.ValueOfString(x.OperatorAddress)
+		if !f(fd_ServiceConfigUpdate_operator_address, value) {
 			return
 		}
 	}
-	if x.EffectiveBlockHeight != uint64(0) {
-		value := protoreflect.ValueOfUint64(x.EffectiveBlockHeight)
-		if !f(fd_ServiceConfigUpdate_effective_block_height, value) {
+	if x.Service != nil {
+		value := protoreflect.ValueOfMessage(x.Service.ProtoReflect())
+		if !f(fd_ServiceConfigUpdate_service, value) {
+			return
+		}
+	}
+	if x.ActivationHeight != int64(0) {
+		value := protoreflect.ValueOfInt64(x.ActivationHeight)
+		if !f(fd_ServiceConfigUpdate_activation_height, value) {
+			return
+		}
+	}
+	if x.DeactivationHeight != int64(0) {
+		value := protoreflect.ValueOfInt64(x.DeactivationHeight)
+		if !f(fd_ServiceConfigUpdate_deactivation_height, value) {
 			return
 		}
 	}
@@ -1058,10 +1023,14 @@ func (x *fastReflection_ServiceConfigUpdate) Range(f func(protoreflect.FieldDesc
 // a repeated field is populated if it is non-empty.
 func (x *fastReflection_ServiceConfigUpdate) Has(fd protoreflect.FieldDescriptor) bool {
 	switch fd.FullName() {
-	case "pocket.shared.ServiceConfigUpdate.services":
-		return len(x.Services) != 0
-	case "pocket.shared.ServiceConfigUpdate.effective_block_height":
-		return x.EffectiveBlockHeight != uint64(0)
+	case "pocket.shared.ServiceConfigUpdate.operator_address":
+		return x.OperatorAddress != ""
+	case "pocket.shared.ServiceConfigUpdate.service":
+		return x.Service != nil
+	case "pocket.shared.ServiceConfigUpdate.activation_height":
+		return x.ActivationHeight != int64(0)
+	case "pocket.shared.ServiceConfigUpdate.deactivation_height":
+		return x.DeactivationHeight != int64(0)
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: pocket.shared.ServiceConfigUpdate"))
@@ -1078,10 +1047,14 @@ func (x *fastReflection_ServiceConfigUpdate) Has(fd protoreflect.FieldDescriptor
 // Clear is a mutating operation and unsafe for concurrent use.
 func (x *fastReflection_ServiceConfigUpdate) Clear(fd protoreflect.FieldDescriptor) {
 	switch fd.FullName() {
-	case "pocket.shared.ServiceConfigUpdate.services":
-		x.Services = nil
-	case "pocket.shared.ServiceConfigUpdate.effective_block_height":
-		x.EffectiveBlockHeight = uint64(0)
+	case "pocket.shared.ServiceConfigUpdate.operator_address":
+		x.OperatorAddress = ""
+	case "pocket.shared.ServiceConfigUpdate.service":
+		x.Service = nil
+	case "pocket.shared.ServiceConfigUpdate.activation_height":
+		x.ActivationHeight = int64(0)
+	case "pocket.shared.ServiceConfigUpdate.deactivation_height":
+		x.DeactivationHeight = int64(0)
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: pocket.shared.ServiceConfigUpdate"))
@@ -1098,15 +1071,18 @@ func (x *fastReflection_ServiceConfigUpdate) Clear(fd protoreflect.FieldDescript
 // of the value; to obtain a mutable reference, use Mutable.
 func (x *fastReflection_ServiceConfigUpdate) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
 	switch descriptor.FullName() {
-	case "pocket.shared.ServiceConfigUpdate.services":
-		if len(x.Services) == 0 {
-			return protoreflect.ValueOfList(&_ServiceConfigUpdate_1_list{})
-		}
-		listValue := &_ServiceConfigUpdate_1_list{list: &x.Services}
-		return protoreflect.ValueOfList(listValue)
-	case "pocket.shared.ServiceConfigUpdate.effective_block_height":
-		value := x.EffectiveBlockHeight
-		return protoreflect.ValueOfUint64(value)
+	case "pocket.shared.ServiceConfigUpdate.operator_address":
+		value := x.OperatorAddress
+		return protoreflect.ValueOfString(value)
+	case "pocket.shared.ServiceConfigUpdate.service":
+		value := x.Service
+		return protoreflect.ValueOfMessage(value.ProtoReflect())
+	case "pocket.shared.ServiceConfigUpdate.activation_height":
+		value := x.ActivationHeight
+		return protoreflect.ValueOfInt64(value)
+	case "pocket.shared.ServiceConfigUpdate.deactivation_height":
+		value := x.DeactivationHeight
+		return protoreflect.ValueOfInt64(value)
 	default:
 		if descriptor.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: pocket.shared.ServiceConfigUpdate"))
@@ -1127,12 +1103,14 @@ func (x *fastReflection_ServiceConfigUpdate) Get(descriptor protoreflect.FieldDe
 // Set is a mutating operation and unsafe for concurrent use.
 func (x *fastReflection_ServiceConfigUpdate) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
 	switch fd.FullName() {
-	case "pocket.shared.ServiceConfigUpdate.services":
-		lv := value.List()
-		clv := lv.(*_ServiceConfigUpdate_1_list)
-		x.Services = *clv.list
-	case "pocket.shared.ServiceConfigUpdate.effective_block_height":
-		x.EffectiveBlockHeight = value.Uint()
+	case "pocket.shared.ServiceConfigUpdate.operator_address":
+		x.OperatorAddress = value.Interface().(string)
+	case "pocket.shared.ServiceConfigUpdate.service":
+		x.Service = value.Message().Interface().(*SupplierServiceConfig)
+	case "pocket.shared.ServiceConfigUpdate.activation_height":
+		x.ActivationHeight = value.Int()
+	case "pocket.shared.ServiceConfigUpdate.deactivation_height":
+		x.DeactivationHeight = value.Int()
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: pocket.shared.ServiceConfigUpdate"))
@@ -1153,14 +1131,17 @@ func (x *fastReflection_ServiceConfigUpdate) Set(fd protoreflect.FieldDescriptor
 // Mutable is a mutating operation and unsafe for concurrent use.
 func (x *fastReflection_ServiceConfigUpdate) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
-	case "pocket.shared.ServiceConfigUpdate.services":
-		if x.Services == nil {
-			x.Services = []*SupplierServiceConfig{}
+	case "pocket.shared.ServiceConfigUpdate.service":
+		if x.Service == nil {
+			x.Service = new(SupplierServiceConfig)
 		}
-		value := &_ServiceConfigUpdate_1_list{list: &x.Services}
-		return protoreflect.ValueOfList(value)
-	case "pocket.shared.ServiceConfigUpdate.effective_block_height":
-		panic(fmt.Errorf("field effective_block_height of message pocket.shared.ServiceConfigUpdate is not mutable"))
+		return protoreflect.ValueOfMessage(x.Service.ProtoReflect())
+	case "pocket.shared.ServiceConfigUpdate.operator_address":
+		panic(fmt.Errorf("field operator_address of message pocket.shared.ServiceConfigUpdate is not mutable"))
+	case "pocket.shared.ServiceConfigUpdate.activation_height":
+		panic(fmt.Errorf("field activation_height of message pocket.shared.ServiceConfigUpdate is not mutable"))
+	case "pocket.shared.ServiceConfigUpdate.deactivation_height":
+		panic(fmt.Errorf("field deactivation_height of message pocket.shared.ServiceConfigUpdate is not mutable"))
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: pocket.shared.ServiceConfigUpdate"))
@@ -1174,11 +1155,15 @@ func (x *fastReflection_ServiceConfigUpdate) Mutable(fd protoreflect.FieldDescri
 // For lists, maps, and messages, this returns a new, empty, mutable value.
 func (x *fastReflection_ServiceConfigUpdate) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
-	case "pocket.shared.ServiceConfigUpdate.services":
-		list := []*SupplierServiceConfig{}
-		return protoreflect.ValueOfList(&_ServiceConfigUpdate_1_list{list: &list})
-	case "pocket.shared.ServiceConfigUpdate.effective_block_height":
-		return protoreflect.ValueOfUint64(uint64(0))
+	case "pocket.shared.ServiceConfigUpdate.operator_address":
+		return protoreflect.ValueOfString("")
+	case "pocket.shared.ServiceConfigUpdate.service":
+		m := new(SupplierServiceConfig)
+		return protoreflect.ValueOfMessage(m.ProtoReflect())
+	case "pocket.shared.ServiceConfigUpdate.activation_height":
+		return protoreflect.ValueOfInt64(int64(0))
+	case "pocket.shared.ServiceConfigUpdate.deactivation_height":
+		return protoreflect.ValueOfInt64(int64(0))
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: pocket.shared.ServiceConfigUpdate"))
@@ -1248,14 +1233,19 @@ func (x *fastReflection_ServiceConfigUpdate) ProtoMethods() *protoiface.Methods 
 		var n int
 		var l int
 		_ = l
-		if len(x.Services) > 0 {
-			for _, e := range x.Services {
-				l = options.Size(e)
-				n += 1 + l + runtime.Sov(uint64(l))
-			}
+		l = len(x.OperatorAddress)
+		if l > 0 {
+			n += 1 + l + runtime.Sov(uint64(l))
 		}
-		if x.EffectiveBlockHeight != 0 {
-			n += 1 + runtime.Sov(uint64(x.EffectiveBlockHeight))
+		if x.Service != nil {
+			l = options.Size(x.Service)
+			n += 1 + l + runtime.Sov(uint64(l))
+		}
+		if x.ActivationHeight != 0 {
+			n += 1 + runtime.Sov(uint64(x.ActivationHeight))
+		}
+		if x.DeactivationHeight != 0 {
+			n += 1 + runtime.Sov(uint64(x.DeactivationHeight))
 		}
 		if x.unknownFields != nil {
 			n += len(x.unknownFields)
@@ -1286,26 +1276,36 @@ func (x *fastReflection_ServiceConfigUpdate) ProtoMethods() *protoiface.Methods 
 			i -= len(x.unknownFields)
 			copy(dAtA[i:], x.unknownFields)
 		}
-		if x.EffectiveBlockHeight != 0 {
-			i = runtime.EncodeVarint(dAtA, i, uint64(x.EffectiveBlockHeight))
+		if x.DeactivationHeight != 0 {
+			i = runtime.EncodeVarint(dAtA, i, uint64(x.DeactivationHeight))
 			i--
-			dAtA[i] = 0x10
+			dAtA[i] = 0x20
 		}
-		if len(x.Services) > 0 {
-			for iNdEx := len(x.Services) - 1; iNdEx >= 0; iNdEx-- {
-				encoded, err := options.Marshal(x.Services[iNdEx])
-				if err != nil {
-					return protoiface.MarshalOutput{
-						NoUnkeyedLiterals: input.NoUnkeyedLiterals,
-						Buf:               input.Buf,
-					}, err
-				}
-				i -= len(encoded)
-				copy(dAtA[i:], encoded)
-				i = runtime.EncodeVarint(dAtA, i, uint64(len(encoded)))
-				i--
-				dAtA[i] = 0xa
+		if x.ActivationHeight != 0 {
+			i = runtime.EncodeVarint(dAtA, i, uint64(x.ActivationHeight))
+			i--
+			dAtA[i] = 0x18
+		}
+		if x.Service != nil {
+			encoded, err := options.Marshal(x.Service)
+			if err != nil {
+				return protoiface.MarshalOutput{
+					NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+					Buf:               input.Buf,
+				}, err
 			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(encoded)))
+			i--
+			dAtA[i] = 0x12
+		}
+		if len(x.OperatorAddress) > 0 {
+			i -= len(x.OperatorAddress)
+			copy(dAtA[i:], x.OperatorAddress)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.OperatorAddress)))
+			i--
+			dAtA[i] = 0xa
 		}
 		if input.Buf != nil {
 			input.Buf = append(input.Buf, dAtA...)
@@ -1358,7 +1358,39 @@ func (x *fastReflection_ServiceConfigUpdate) ProtoMethods() *protoiface.Methods 
 			switch fieldNum {
 			case 1:
 				if wireType != 2 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Services", wireType)
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field OperatorAddress", wireType)
+				}
+				var stringLen uint64
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					stringLen |= uint64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				intStringLen := int(stringLen)
+				if intStringLen < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				postIndex := iNdEx + intStringLen
+				if postIndex < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if postIndex > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				x.OperatorAddress = string(dAtA[iNdEx:postIndex])
+				iNdEx = postIndex
+			case 2:
+				if wireType != 2 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Service", wireType)
 				}
 				var msglen int
 				for shift := uint(0); ; shift += 7 {
@@ -1385,16 +1417,18 @@ func (x *fastReflection_ServiceConfigUpdate) ProtoMethods() *protoiface.Methods 
 				if postIndex > l {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
 				}
-				x.Services = append(x.Services, &SupplierServiceConfig{})
-				if err := options.Unmarshal(dAtA[iNdEx:postIndex], x.Services[len(x.Services)-1]); err != nil {
+				if x.Service == nil {
+					x.Service = &SupplierServiceConfig{}
+				}
+				if err := options.Unmarshal(dAtA[iNdEx:postIndex], x.Service); err != nil {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
 				}
 				iNdEx = postIndex
-			case 2:
+			case 3:
 				if wireType != 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field EffectiveBlockHeight", wireType)
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field ActivationHeight", wireType)
 				}
-				x.EffectiveBlockHeight = 0
+				x.ActivationHeight = 0
 				for shift := uint(0); ; shift += 7 {
 					if shift >= 64 {
 						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
@@ -1404,7 +1438,26 @@ func (x *fastReflection_ServiceConfigUpdate) ProtoMethods() *protoiface.Methods 
 					}
 					b := dAtA[iNdEx]
 					iNdEx++
-					x.EffectiveBlockHeight |= uint64(b&0x7F) << shift
+					x.ActivationHeight |= int64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+			case 4:
+				if wireType != 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field DeactivationHeight", wireType)
+				}
+				x.DeactivationHeight = 0
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					x.DeactivationHeight |= int64(b&0x7F) << shift
 					if b < 0x80 {
 						break
 					}
@@ -1545,16 +1598,20 @@ func (x *Supplier) GetServiceConfigHistory() []*ServiceConfigUpdate {
 
 // ServiceConfigUpdate tracks a change in a supplier's service configurations
 // at a specific block height, enabling tracking of configuration changes over time.
+// This record helps maintain a complete history of service configs and their availability periods.
 type ServiceConfigUpdate struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// List of service configurations after the update was applied.
-	Services []*SupplierServiceConfig `protobuf:"bytes,1,rep,name=services,proto3" json:"services,omitempty"`
-	// Block height at which this service configuration update takes effect,
-	// aligned with the session start height.
-	EffectiveBlockHeight uint64 `protobuf:"varint,2,opt,name=effective_block_height,json=effectiveBlockHeight,proto3" json:"effective_block_height,omitempty"`
+	// Operator address of the supplier corresponding to the service configuration change
+	OperatorAddress string `protobuf:"bytes,1,opt,name=operator_address,json=operatorAddress,proto3" json:"operator_address,omitempty"`
+	// The specific service configuration that was added, modified or scheduled for removal
+	Service *SupplierServiceConfig `protobuf:"bytes,2,opt,name=service,proto3" json:"service,omitempty"`
+	// Block height at which this service configuration became active in the network
+	ActivationHeight int64 `protobuf:"varint,3,opt,name=activation_height,json=activationHeight,proto3" json:"activation_height,omitempty"`
+	// Block height at which this service configuration was deactivated (0 if still active)
+	DeactivationHeight int64 `protobuf:"varint,4,opt,name=deactivation_height,json=deactivationHeight,proto3" json:"deactivation_height,omitempty"`
 }
 
 func (x *ServiceConfigUpdate) Reset() {
@@ -1577,16 +1634,30 @@ func (*ServiceConfigUpdate) Descriptor() ([]byte, []int) {
 	return file_pocket_shared_supplier_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *ServiceConfigUpdate) GetServices() []*SupplierServiceConfig {
+func (x *ServiceConfigUpdate) GetOperatorAddress() string {
 	if x != nil {
-		return x.Services
+		return x.OperatorAddress
+	}
+	return ""
+}
+
+func (x *ServiceConfigUpdate) GetService() *SupplierServiceConfig {
+	if x != nil {
+		return x.Service
 	}
 	return nil
 }
 
-func (x *ServiceConfigUpdate) GetEffectiveBlockHeight() uint64 {
+func (x *ServiceConfigUpdate) GetActivationHeight() int64 {
 	if x != nil {
-		return x.EffectiveBlockHeight
+		return x.ActivationHeight
+	}
+	return 0
+}
+
+func (x *ServiceConfigUpdate) GetDeactivationHeight() int64 {
+	if x != nil {
+		return x.DeactivationHeight
 	}
 	return 0
 }
@@ -1629,26 +1700,31 @@ var file_pocket_shared_supplier_proto_rawDesc = []byte{
 	0x6f, 0x63, 0x6b, 0x65, 0x74, 0x2e, 0x73, 0x68, 0x61, 0x72, 0x65, 0x64, 0x2e, 0x53, 0x65, 0x72,
 	0x76, 0x69, 0x63, 0x65, 0x43, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65,
 	0x52, 0x14, 0x73, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x43, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x48,
-	0x69, 0x73, 0x74, 0x6f, 0x72, 0x79, 0x22, 0x8d, 0x01, 0x0a, 0x13, 0x53, 0x65, 0x72, 0x76, 0x69,
-	0x63, 0x65, 0x43, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x12, 0x40,
-	0x0a, 0x08, 0x73, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x73, 0x18, 0x01, 0x20, 0x03, 0x28, 0x0b,
-	0x32, 0x24, 0x2e, 0x70, 0x6f, 0x63, 0x6b, 0x65, 0x74, 0x2e, 0x73, 0x68, 0x61, 0x72, 0x65, 0x64,
-	0x2e, 0x53, 0x75, 0x70, 0x70, 0x6c, 0x69, 0x65, 0x72, 0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65,
-	0x43, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x52, 0x08, 0x73, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x73,
-	0x12, 0x34, 0x0a, 0x16, 0x65, 0x66, 0x66, 0x65, 0x63, 0x74, 0x69, 0x76, 0x65, 0x5f, 0x62, 0x6c,
-	0x6f, 0x63, 0x6b, 0x5f, 0x68, 0x65, 0x69, 0x67, 0x68, 0x74, 0x18, 0x02, 0x20, 0x01, 0x28, 0x04,
-	0x52, 0x14, 0x65, 0x66, 0x66, 0x65, 0x63, 0x74, 0x69, 0x76, 0x65, 0x42, 0x6c, 0x6f, 0x63, 0x6b,
-	0x48, 0x65, 0x69, 0x67, 0x68, 0x74, 0x42, 0x9b, 0x01, 0xd8, 0xe2, 0x1e, 0x01, 0x0a, 0x11, 0x63,
-	0x6f, 0x6d, 0x2e, 0x70, 0x6f, 0x63, 0x6b, 0x65, 0x74, 0x2e, 0x73, 0x68, 0x61, 0x72, 0x65, 0x64,
-	0x42, 0x0d, 0x53, 0x75, 0x70, 0x70, 0x6c, 0x69, 0x65, 0x72, 0x50, 0x72, 0x6f, 0x74, 0x6f, 0x50,
-	0x01, 0x5a, 0x1e, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x73, 0x64, 0x6b, 0x2e, 0x69, 0x6f, 0x2f,
-	0x61, 0x70, 0x69, 0x2f, 0x70, 0x6f, 0x63, 0x6b, 0x65, 0x74, 0x2f, 0x73, 0x68, 0x61, 0x72, 0x65,
-	0x64, 0xa2, 0x02, 0x03, 0x50, 0x53, 0x58, 0xaa, 0x02, 0x0d, 0x50, 0x6f, 0x63, 0x6b, 0x65, 0x74,
-	0x2e, 0x53, 0x68, 0x61, 0x72, 0x65, 0x64, 0xca, 0x02, 0x0d, 0x50, 0x6f, 0x63, 0x6b, 0x65, 0x74,
-	0x5c, 0x53, 0x68, 0x61, 0x72, 0x65, 0x64, 0xe2, 0x02, 0x19, 0x50, 0x6f, 0x63, 0x6b, 0x65, 0x74,
-	0x5c, 0x53, 0x68, 0x61, 0x72, 0x65, 0x64, 0x5c, 0x47, 0x50, 0x42, 0x4d, 0x65, 0x74, 0x61, 0x64,
-	0x61, 0x74, 0x61, 0xea, 0x02, 0x0e, 0x50, 0x6f, 0x63, 0x6b, 0x65, 0x74, 0x3a, 0x3a, 0x53, 0x68,
-	0x61, 0x72, 0x65, 0x64, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x69, 0x73, 0x74, 0x6f, 0x72, 0x79, 0x22, 0xde, 0x01, 0x0a, 0x13, 0x53, 0x65, 0x72, 0x76, 0x69,
+	0x63, 0x65, 0x43, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x12, 0x29,
+	0x0a, 0x10, 0x6f, 0x70, 0x65, 0x72, 0x61, 0x74, 0x6f, 0x72, 0x5f, 0x61, 0x64, 0x64, 0x72, 0x65,
+	0x73, 0x73, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0f, 0x6f, 0x70, 0x65, 0x72, 0x61, 0x74,
+	0x6f, 0x72, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x12, 0x3e, 0x0a, 0x07, 0x73, 0x65, 0x72,
+	0x76, 0x69, 0x63, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x24, 0x2e, 0x70, 0x6f, 0x63,
+	0x6b, 0x65, 0x74, 0x2e, 0x73, 0x68, 0x61, 0x72, 0x65, 0x64, 0x2e, 0x53, 0x75, 0x70, 0x70, 0x6c,
+	0x69, 0x65, 0x72, 0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x43, 0x6f, 0x6e, 0x66, 0x69, 0x67,
+	0x52, 0x07, 0x73, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x12, 0x2b, 0x0a, 0x11, 0x61, 0x63, 0x74,
+	0x69, 0x76, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x5f, 0x68, 0x65, 0x69, 0x67, 0x68, 0x74, 0x18, 0x03,
+	0x20, 0x01, 0x28, 0x03, 0x52, 0x10, 0x61, 0x63, 0x74, 0x69, 0x76, 0x61, 0x74, 0x69, 0x6f, 0x6e,
+	0x48, 0x65, 0x69, 0x67, 0x68, 0x74, 0x12, 0x2f, 0x0a, 0x13, 0x64, 0x65, 0x61, 0x63, 0x74, 0x69,
+	0x76, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x5f, 0x68, 0x65, 0x69, 0x67, 0x68, 0x74, 0x18, 0x04, 0x20,
+	0x01, 0x28, 0x03, 0x52, 0x12, 0x64, 0x65, 0x61, 0x63, 0x74, 0x69, 0x76, 0x61, 0x74, 0x69, 0x6f,
+	0x6e, 0x48, 0x65, 0x69, 0x67, 0x68, 0x74, 0x42, 0x9b, 0x01, 0xd8, 0xe2, 0x1e, 0x01, 0x0a, 0x11,
+	0x63, 0x6f, 0x6d, 0x2e, 0x70, 0x6f, 0x63, 0x6b, 0x65, 0x74, 0x2e, 0x73, 0x68, 0x61, 0x72, 0x65,
+	0x64, 0x42, 0x0d, 0x53, 0x75, 0x70, 0x70, 0x6c, 0x69, 0x65, 0x72, 0x50, 0x72, 0x6f, 0x74, 0x6f,
+	0x50, 0x01, 0x5a, 0x1e, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x73, 0x64, 0x6b, 0x2e, 0x69, 0x6f,
+	0x2f, 0x61, 0x70, 0x69, 0x2f, 0x70, 0x6f, 0x63, 0x6b, 0x65, 0x74, 0x2f, 0x73, 0x68, 0x61, 0x72,
+	0x65, 0x64, 0xa2, 0x02, 0x03, 0x50, 0x53, 0x58, 0xaa, 0x02, 0x0d, 0x50, 0x6f, 0x63, 0x6b, 0x65,
+	0x74, 0x2e, 0x53, 0x68, 0x61, 0x72, 0x65, 0x64, 0xca, 0x02, 0x0d, 0x50, 0x6f, 0x63, 0x6b, 0x65,
+	0x74, 0x5c, 0x53, 0x68, 0x61, 0x72, 0x65, 0x64, 0xe2, 0x02, 0x19, 0x50, 0x6f, 0x63, 0x6b, 0x65,
+	0x74, 0x5c, 0x53, 0x68, 0x61, 0x72, 0x65, 0x64, 0x5c, 0x47, 0x50, 0x42, 0x4d, 0x65, 0x74, 0x61,
+	0x64, 0x61, 0x74, 0x61, 0xea, 0x02, 0x0e, 0x50, 0x6f, 0x63, 0x6b, 0x65, 0x74, 0x3a, 0x3a, 0x53,
+	0x68, 0x61, 0x72, 0x65, 0x64, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -1674,7 +1750,7 @@ var file_pocket_shared_supplier_proto_depIdxs = []int32{
 	2, // 0: pocket.shared.Supplier.stake:type_name -> cosmos.base.v1beta1.Coin
 	3, // 1: pocket.shared.Supplier.services:type_name -> pocket.shared.SupplierServiceConfig
 	1, // 2: pocket.shared.Supplier.service_config_history:type_name -> pocket.shared.ServiceConfigUpdate
-	3, // 3: pocket.shared.ServiceConfigUpdate.services:type_name -> pocket.shared.SupplierServiceConfig
+	3, // 3: pocket.shared.ServiceConfigUpdate.service:type_name -> pocket.shared.SupplierServiceConfig
 	4, // [4:4] is the sub-list for method output_type
 	4, // [4:4] is the sub-list for method input_type
 	4, // [4:4] is the sub-list for extension type_name

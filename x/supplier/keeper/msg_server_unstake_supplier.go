@@ -13,6 +13,13 @@ import (
 	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 )
 
+// UnstakeSupplier handles the MsgUnstakeSupplier message to begin the unbonding process for a supplier.
+// This initiates a process where:
+// - The supplier is marked as unstaking but continues to provide service until the end of the current session
+// - All service configurations are scheduled for deactivation at the next session
+// - After the unbonding period, the staked tokens will be returned to the owner's account
+//
+// This ensures a graceful exit from the network that doesn't disrupt ongoing sessions.
 func (k msgServer) UnstakeSupplier(
 	ctx context.Context,
 	msg *suppliertypes.MsgUnstakeSupplier,
@@ -43,7 +50,8 @@ func (k msgServer) UnstakeSupplier(
 		)
 	}
 
-	// Ensure the singer address matches the owner address or the operator address.
+	// Ensure the signer address matches either the owner or the operator address.
+	// Both are authorized to initiate unstaking.
 	if !supplier.HasOperator(msg.GetSigner()) && !supplier.HasOwner(msg.GetSigner()) {
 		logger.Info("only the supplier owner or operator is allowed to unstake the supplier")
 		return nil, status.Error(
@@ -59,6 +67,7 @@ func (k msgServer) UnstakeSupplier(
 	logger.Info(fmt.Sprintf("Supplier found. Unstaking supplier with operating address %s", msg.GetOperatorAddress()))
 
 	// Check if the supplier has already initiated the unstake action.
+	// A supplier cannot unstake twice while still in the unbonding period.
 	if supplier.IsUnbonding() {
 		logger.Info(fmt.Sprintf("Supplier %s still unbonding from previous unstaking", msg.GetOperatorAddress()))
 		return nil, status.Error(
@@ -79,33 +88,19 @@ func (k msgServer) UnstakeSupplier(
 	// session. I.e., onchain sessions' suppliers list MUST NOT change mid-session.
 	// Removing it right away could have undesired effects on the network
 	// (e.g. a session with less than the minimum or 0 number of suppliers,
-	// offchain actors that need to listen to session supplier's change mid-session, etc).
+	// offchain actors that need to listen to session supplier's change mid-isession, etc).
 	supplier.UnstakeSessionEndHeight = uint64(sharedtypes.GetSessionEndHeight(&sharedParams, currentHeight))
 
-	// Update the supplier's service config history with the empty service configs
-	// to indicate that the supplier is no longer providing service after the current session.
+	// Schedule all the old service configurations to be deactivated at the start of the next session
 	nextSessionStartHeight := sharedtypes.GetNextSessionStartHeight(&sharedParams, currentHeight)
-	servicesUpdate := &sharedtypes.ServiceConfigUpdate{
-		Services:             make([]*sharedtypes.SupplierServiceConfig, 0),
-		EffectiveBlockHeight: uint64(nextSessionStartHeight),
+	for _, serviceConfig := range supplier.ServiceConfigHistory {
+		serviceConfig.DeactivationHeight = nextSessionStartHeight
 	}
 
-	serviceConfigUpdateList := supplier.ServiceConfigHistory
-	serviceConfigLatestUpdateIdx := len(serviceConfigUpdateList) - 1
-	// Overwrite the latest service configuration if there is already a service
-	// config update for the same session start height.
-	// This is to avoid having duplicate service configs with the same activation
-	// height, which is useless and potentially confusing.
-	if serviceConfigLatestUpdateIdx >= 0 && serviceConfigUpdateList[serviceConfigLatestUpdateIdx].EffectiveBlockHeight == uint64(nextSessionStartHeight) {
-		supplier.ServiceConfigHistory[serviceConfigLatestUpdateIdx] = servicesUpdate
-	} else {
-		// Otherwise, append the new service configuration update.
-		supplier.ServiceConfigHistory = append(supplier.ServiceConfigHistory, servicesUpdate)
-	}
-
+	// Update the supplier record in state
 	k.SetSupplier(ctx, supplier)
 
-	// Emit an event which signals that the supplier successfully began unbonding their stake.
+	// Emit an event signaling that the supplier has begun the unbonding process
 	unbondingEndHeight := sharedtypes.GetSupplierUnbondingEndHeight(&sharedParams, &supplier)
 	event := &suppliertypes.EventSupplierUnbondingBegin{
 		Supplier:           &supplier,

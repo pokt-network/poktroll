@@ -12,7 +12,9 @@ import (
 	"google.golang.org/grpc/status"
 
 	"github.com/pokt-network/poktroll/app/volatile"
+	"github.com/pokt-network/poktroll/testutil/integration/suites"
 	"github.com/pokt-network/poktroll/testutil/sample"
+	sharedtest "github.com/pokt-network/poktroll/testutil/shared"
 	"github.com/pokt-network/poktroll/testutil/testmigration"
 	migrationtypes "github.com/pokt-network/poktroll/x/migration/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
@@ -66,12 +68,12 @@ func (s *MigrationModuleTestSuite) TestClaimMorseNewSupplier() {
 				OperatorAddress:         shannonDestAddr,
 				Stake:                   &expectedStake,
 				UnstakeSessionEndHeight: 0,
-				ServiceConfigHistory: []*sharedtypes.ServiceConfigUpdate{
-					{
-						Services:             s.supplierServices,
-						EffectiveBlockHeight: uint64(svcStartHeight),
-					},
-				},
+				ServiceConfigHistory: sharedtest.CreateServiceConfigUpdateHistoryFromServiceConfigs(
+					shannonDestAddr,
+					s.supplierServices,
+					svcStartHeight,
+					sharedtest.NoDeactivationHeight,
+				),
 			}
 			expectedSessionEndHeight := s.GetSessionEndHeight(s.T(), s.SdkCtx().BlockHeight()-1)
 			expectedClaimSupplierRes := &migrationtypes.MsgClaimMorseSupplierResponse{
@@ -100,6 +102,12 @@ func (s *MigrationModuleTestSuite) TestClaimMorseNewSupplier() {
 			s.NoError(err)
 			s.Equal(cosmostypes.NewCoin(volatile.DenomuPOKT, math.ZeroInt()), *migrationModuleBalance)
 
+			currentHeight := s.SdkCtx().BlockHeight()
+			serviceConfigs := expectedSupplier.GetActiveServiceConfigs(currentHeight)
+			if len(serviceConfigs) > 0 {
+				expectedSupplier.Services = serviceConfigs
+			}
+
 			// Assert that the supplier was staked.
 			supplier, err := supplierClient.GetSupplier(s.SdkCtx(), shannonDestAddr)
 			s.NoError(err)
@@ -117,6 +125,7 @@ func (s *MigrationModuleTestSuite) TestClaimMorseExistingSupplier() {
 	sharedClient := sharedtypes.NewQueryClient(s.GetApp().QueryHelper())
 	sharedParamsRes, err := sharedClient.Params(s.SdkCtx(), &sharedtypes.QueryParamsRequest{})
 	s.NoError(err)
+	sharedParams := sharedParamsRes.GetParams()
 
 	serviceClient := s.ServiceSuite.GetServiceQueryClient(s.T())
 	serviceParams, err := serviceClient.GetParams(s.SdkCtx())
@@ -153,6 +162,19 @@ func (s *MigrationModuleTestSuite) TestClaimMorseExistingSupplier() {
 				[]string{serviceName},
 			)
 
+			svcStartHeight := sharedtypes.GetNextSessionStartHeight(&sharedParams, s.SdkCtx().BlockHeight()-1)
+			serviceConfig := suites.SupplierServiceConfigFromServiceIdAndOperatorAddress(serviceName, shannonDestAddr)
+			expectedServiceConfigUpdateHistory := make([]*sharedtypes.ServiceConfigUpdate, 0)
+			expectedServiceConfigUpdateHistory = append(
+				expectedServiceConfigUpdateHistory,
+				sharedtest.CreateServiceConfigUpdateFromServiceConfig(
+					shannonDestAddr,
+					serviceConfig,
+					svcStartHeight,
+					0,
+				),
+			)
+
 			// Assert that the initial supplier is staked.
 			foundSupplier, err := supplierClient.GetSupplier(s.SdkCtx(), shannonDestAddr)
 			s.NoError(err)
@@ -173,6 +195,21 @@ func (s *MigrationModuleTestSuite) TestClaimMorseExistingSupplier() {
 				sample.AccAddress(),
 			)
 
+			for _, serviceConfigUpdate := range expectedServiceConfigUpdateHistory {
+				serviceConfigUpdate.DeactivationHeight = svcStartHeight
+			}
+			for _, supplierService := range s.supplierServices {
+				expectedServiceConfigUpdateHistory = append(
+					expectedServiceConfigUpdateHistory,
+					sharedtest.CreateServiceConfigUpdateFromServiceConfig(
+						shannonDestAddr,
+						supplierService,
+						svcStartHeight,
+						0,
+					),
+				)
+			}
+
 			// DEV_NOTE: If the ClaimedSupplierStake is zero, due to an optimization in big.Int,
 			// strict equality checking will fail. To work around this, we can initialize the bit.Int
 			// with a non-zero value and then set it to zero via arithmetic.
@@ -192,20 +229,20 @@ func (s *MigrationModuleTestSuite) TestClaimMorseExistingSupplier() {
 				Sub(*supplierStakingFee)
 
 			// Assert that the claim msg response is correct.
-			sharedParams := sharedParamsRes.GetParams()
-			svcStartHeight := sharedtypes.GetNextSessionStartHeight(&sharedParams, s.SdkCtx().BlockHeight()-1)
 			expectedSupplier := sharedtypes.Supplier{
-				OwnerAddress:    shannonDestAddr,
-				OperatorAddress: shannonDestAddr,
-				Stake:           &expectedFinalSupplierStake,
-				ServiceConfigHistory: []*sharedtypes.ServiceConfigUpdate{
-					{
-						Services:             s.supplierServices,
-						EffectiveBlockHeight: uint64(svcStartHeight),
-					},
-				},
+				OwnerAddress:            shannonDestAddr,
+				OperatorAddress:         shannonDestAddr,
+				Stake:                   &expectedFinalSupplierStake,
+				ServiceConfigHistory:    expectedServiceConfigUpdateHistory,
 				UnstakeSessionEndHeight: 0,
 			}
+
+			currentHeight := s.SdkCtx().BlockHeight()
+			serviceConfigs := expectedSupplier.GetActiveServiceConfigs(currentHeight)
+			if len(serviceConfigs) > 0 {
+				expectedSupplier.Services = serviceConfigs
+			}
+
 			expectedSessionEndHeight := s.GetSessionEndHeight(s.T(), s.SdkCtx().BlockHeight()-1)
 			expectedClaimSupplierRes := &migrationtypes.MsgClaimMorseSupplierResponse{
 				MorseSrcAddress:      morseSrcAddr,

@@ -54,6 +54,7 @@ import (
 	"github.com/pokt-network/poktroll/pkg/polylog/polyzero"
 	testutilevents "github.com/pokt-network/poktroll/testutil/events"
 	"github.com/pokt-network/poktroll/testutil/sample"
+	sharedtest "github.com/pokt-network/poktroll/testutil/shared"
 	"github.com/pokt-network/poktroll/testutil/testkeyring"
 	appkeeper "github.com/pokt-network/poktroll/x/application/keeper"
 	application "github.com/pokt-network/poktroll/x/application/module"
@@ -920,16 +921,11 @@ func (app *App) setupDefaultActorsState(
 		},
 	}
 	defaultSupplier := sharedtypes.Supplier{
-		OwnerAddress:    supplierOperatorAddr.String(),
-		OperatorAddress: supplierOperatorAddr.String(),
-		Stake:           &supplierStake,
-		Services:        supplierServiceConfigs,
-		ServiceConfigHistory: []*sharedtypes.ServiceConfigUpdate{
-			{
-				Services:             supplierServiceConfigs,
-				EffectiveBlockHeight: 1,
-			},
-		},
+		OwnerAddress:         supplierOperatorAddr.String(),
+		OperatorAddress:      supplierOperatorAddr.String(),
+		Stake:                &supplierStake,
+		Services:             supplierServiceConfigs,
+		ServiceConfigHistory: sharedtest.CreateServiceConfigUpdateHistoryFromServiceConfigs(supplierOperatorAddr.String(), supplierServiceConfigs, 1, 0),
 	}
 	supplierKeeper.SetSupplier(app.sdkCtx, defaultSupplier)
 	app.DefaultSupplier = &defaultSupplier

@@ -2,133 +2,136 @@ package keeper
 
 import (
 	"context"
-	"fmt"
 
-	"cosmossdk.io/log"
 	"cosmossdk.io/store/prefix"
 	storetypes "cosmossdk.io/store/types"
-	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/runtime"
+	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 	"github.com/pokt-network/poktroll/x/supplier/types"
 )
 
-// SetSupplier set a specific supplier in the store from its index
+// SetSupplier stores a supplier state and indexes its relevant attributes for efficient querying.
+// It processes the supplier's service configurations for indexing.
+//
+// The function:
+// - Indexes service config updates for efficient retrieval
+// - Indexes unstaking height (if applicable)
+// - Stores a dehydrated form of the supplier (without services and history)
 func (k Keeper) SetSupplier(ctx context.Context, supplier sharedtypes.Supplier) {
-	storeAdapter := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
-	store := prefix.NewStore(storeAdapter, types.KeyPrefix(types.SupplierKeyOperatorPrefix))
+	k.indexSupplierServiceConfigUpdates(ctx, supplier)
+	k.indexSupplierUnstakingHeight(ctx, supplier)
+
+	// Store the supplier without service details to reduce state bloat
+	// These details will be hydrated on-demand via the service config indexes
+	supplier.Services = nil
+	supplier.ServiceConfigHistory = nil
 	supplierBz := k.cdc.MustMarshal(&supplier)
-	store.Set(types.SupplierOperatorKey(
-		supplier.OperatorAddress,
-	), supplierBz)
+
+	supplierStore := k.getSupplierStore(ctx)
+	supplierKey := types.SupplierOperatorKey(supplier.OperatorAddress)
+	supplierStore.Set(supplierKey, supplierBz)
 }
 
-// GetSupplier returns a supplier from its index
-func (k Keeper) GetSupplier(
+// GetDehydratedSupplier retrieves a supplier from the store without its service
+// configurations and service config history.
+// This is more efficient when the service details aren't needed.
+func (k Keeper) GetDehydratedSupplier(
 	ctx context.Context,
 	supplierOperatorAddr string,
 ) (supplier sharedtypes.Supplier, found bool) {
-	storeAdapter := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
-	store := prefix.NewStore(storeAdapter, types.KeyPrefix(types.SupplierKeyOperatorPrefix))
+	supplierStore := k.getSupplierStore(ctx)
 
-	supplierBz := store.Get(types.SupplierOperatorKey(supplierOperatorAddr))
+	supplierKey := types.SupplierOperatorKey(supplierOperatorAddr)
+	supplierBz := supplierStore.Get(supplierKey)
 	if supplierBz == nil {
 		return supplier, false
 	}
 
 	k.cdc.MustUnmarshal(supplierBz, &supplier)
 
-	initializeNilSupplierFields(k.logger, &supplier)
 	return supplier, true
 }
 
-// RemoveSupplier removes a supplier from the store
-func (k Keeper) RemoveSupplier(ctx context.Context, supplierOperatorAddress string) {
-	storeAdapter := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
-	store := prefix.NewStore(storeAdapter, types.KeyPrefix(types.SupplierKeyOperatorPrefix))
-	store.Delete(types.SupplierOperatorKey(supplierOperatorAddress))
+// GetSupplier retrieves a fully hydrated supplier from the store, including
+// its service configurations and service config updates history.
+func (k Keeper) GetSupplier(
+	ctx context.Context,
+	supplierOperatorAddr string,
+) (supplier sharedtypes.Supplier, found bool) {
+	supplier, found = k.GetDehydratedSupplier(ctx, supplierOperatorAddr)
+	if !found {
+		return supplier, false
+	}
+
+	k.hydrateSupplierServiceConfigs(ctx, &supplier)
+
+	return supplier, true
 }
 
-// GetAllSuppliers returns all supplier
-func (k Keeper) GetAllSuppliers(ctx context.Context) (suppliers []sharedtypes.Supplier) {
-	storeAdapter := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
-	store := prefix.NewStore(storeAdapter, types.KeyPrefix(types.SupplierKeyOperatorPrefix))
-	iterator := storetypes.KVStorePrefixIterator(store, []byte{})
+// RemoveSupplier deletes a supplier from the store and removes all associated indexes
+func (k Keeper) RemoveSupplier(ctx context.Context, supplierOperatorAddress string) {
+	k.removeSupplierServiceConfigUpdateIndexes(ctx, supplierOperatorAddress)
+	k.removeSupplierUnstakingHeightIndexes(ctx, supplierOperatorAddress)
 
+	supplierStore := k.getSupplierStore(ctx)
+	supplierKey := types.SupplierOperatorKey(supplierOperatorAddress)
+	supplierStore.Delete(supplierKey)
+}
+
+// GetAllSuppliers returns all suppliers stored in the blockchain state
+// Each supplier is fully hydrated with its service configurations and history.
+func (k Keeper) GetAllSuppliers(ctx context.Context) (suppliers []sharedtypes.Supplier) {
+	supplierStore := k.getSupplierStore(ctx)
+	iterator := storetypes.KVStorePrefixIterator(supplierStore, []byte{})
 	defer iterator.Close()
 
 	for ; iterator.Valid(); iterator.Next() {
 		var supplier sharedtypes.Supplier
 		k.cdc.MustUnmarshal(iterator.Value(), &supplier)
+		k.hydrateSupplierServiceConfigs(ctx, &supplier)
 
-		initializeNilSupplierFields(k.logger, &supplier)
 		suppliers = append(suppliers, supplier)
 	}
 
-	return
+	return suppliers
 }
 
-// GetAllSuppliersIterator returns a RecordIterator over all Supplier records.
-func (k Keeper) GetAllSuppliersIterator(ctx context.Context) sharedtypes.RecordIterator[sharedtypes.Supplier] {
-	storeAdapter := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
-	store := prefix.NewStore(storeAdapter, types.KeyPrefix(types.SupplierKeyOperatorPrefix))
-	supplierIterator := storetypes.KVStorePrefixIterator(store, []byte{})
+// GetAllUnstakingSuppliersIterator returns an iterator for all suppliers that are
+// currently unstaking.
+// It is used to process suppliers that have completed their unbonding period.
+func (k Keeper) GetAllUnstakingSuppliersIterator(
+	ctx context.Context,
+) storetypes.Iterator {
+	supplierUnstakingHeightStore := k.getSupplierUnstakingHeightStore(ctx)
 
-	supplierUnmarshallerFn := getSupplierAccessorFn(k.logger, k.cdc)
-	return sharedtypes.NewRecordIterator(supplierIterator, supplierUnmarshallerFn)
+	return storetypes.KVStorePrefixIterator(supplierUnstakingHeightStore, []byte{})
 }
 
-// initializeNilSupplierFields initializes any nil fields in the supplier object to their default values.
-// - Adding `(gogoproto.nullable)=false` to repeated proto fields acts on the underlying type, not the slice or map type.
-// - As a result, slices or maps will be nil if no values are provided in the proto message.
-// - This function ensures that the supplier object has all fields initialized to their default values.
+// hydrateSupplierServiceConfigs populates a supplier with its service configurations
+// based on the current block height.
 //
-// TODO_TECHDEBT: This function is a workaround for the CosmosSDK codec treating empty slices and maps as nil.
-// - We should investigate how to make the codec treat empty slices and maps as empty instead of nil.
-// - For more context, see: https://github.com/pokt-network/poktroll/pull/1103#discussion_r1992258822
-func initializeNilSupplierFields(keeperLogger log.Logger, supplier *sharedtypes.Supplier) {
-	logger := keeperLogger.With("module", "supplier").With("method", "initializeNilSupplierFields")
-	// The CosmosSDK codec treats empty slices and maps as nil, so we need to
-	// ensure that they are initialized as empty.
-	if supplier.Services == nil {
-		supplier.Services = make([]*sharedtypes.SupplierServiceConfig, 0)
-		logger.Warn(fmt.Sprintf("should never happen: supplier.Services was nil, initializing to empty slice for operator %s and owner %s", supplier.OperatorAddress, supplier.OwnerAddress))
-	}
+// The function:
+// - Retrieves the supplier's service configuration history
+// - Determines which configurations are active at the current block height
+// - Sets the supplier's active services
+func (k Keeper) hydrateSupplierServiceConfigs(ctx context.Context, supplier *sharedtypes.Supplier) {
+	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
+	currentHeight := sdkCtx.BlockHeight()
 
-	// Ensure that the supplier has at least one service config history entry.
-	// This may be the case if the supplier was created at genesis.
-	if supplier.ServiceConfigHistory == nil {
-		supplier.ServiceConfigHistory = []*sharedtypes.ServiceConfigUpdate{
-			{
-				Services:             supplier.Services,
-				EffectiveBlockHeight: 1,
-			},
-		}
-	}
+	supplier.ServiceConfigHistory = k.getSupplierServiceConfigUpdates(ctx, supplier.OperatorAddress)
+	supplier.Services = supplier.GetActiveServiceConfigs(currentHeight)
 }
 
-// TODO_IMPROVE: Index suppliers by service ID
-//func (k Keeper) GetAllSuppliersByServiceIDIterator(ctx, sdkContext, serviceId string) (suppliers []*sharedtypes.Supplier) {}
+// getSupplierStore returns a KVStore for the supplier data
+func (k Keeper) getSupplierStore(ctx context.Context) storetypes.KVStore {
+	storeAdapter := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
+	return prefix.NewStore(storeAdapter, types.KeyPrefix(types.SupplierOperatorKeyPrefix))
+}
 
-// getSupplierAccessorFn constructions a DataRecordAccessor function which:
-// 1. Receives a serialized Supplier value bytes
-// 2. Unmarshals it into a Supplier object
-// 3. Initializes any nil fields in the Supplier object
-// Returns:
-// - A Supplier object and an error
-func getSupplierAccessorFn(
-	logger log.Logger,
-	cdc codec.BinaryCodec,
-) sharedtypes.DataRecordAccessor[sharedtypes.Supplier] {
-	return func(supplierBz []byte) (sharedtypes.Supplier, error) {
-		if supplierBz == nil {
-			return sharedtypes.Supplier{}, fmt.Errorf("expecting supplier bytes to be non-nil")
-		}
-
-		var supplier sharedtypes.Supplier
-		cdc.MustUnmarshal(supplierBz, &supplier)
-		initializeNilSupplierFields(logger, &supplier)
-		return supplier, nil
-	}
+// getSupplierUnstakingHeightStore returns a KVStore for the supplier unstaking height index
+func (k Keeper) getSupplierUnstakingHeightStore(ctx context.Context) storetypes.KVStore {
+	storeAdapter := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
+	return prefix.NewStore(storeAdapter, types.KeyPrefix(types.SupplierUnstakingHeightKeyPrefix))
 }

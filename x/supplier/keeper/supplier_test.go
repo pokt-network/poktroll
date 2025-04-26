@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"cosmossdk.io/math"
+	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/query"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
@@ -18,6 +19,7 @@ import (
 	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
 	"github.com/pokt-network/poktroll/testutil/nullify"
 	"github.com/pokt-network/poktroll/testutil/sample"
+	sharedtest "github.com/pokt-network/poktroll/testutil/shared"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 	"github.com/pokt-network/poktroll/x/supplier/keeper"
 	"github.com/pokt-network/poktroll/x/supplier/types"
@@ -50,6 +52,12 @@ func createNSuppliers(keeper keeper.Keeper, ctx context.Context, n int) []shared
 				},
 			},
 		}
+		supplier.ServiceConfigHistory = sharedtest.CreateServiceConfigUpdateHistoryFromServiceConfigs(
+			supplier.OperatorAddress,
+			supplier.Services,
+			1,
+			sharedtest.NoDeactivationHeight,
+		)
 		keeper.SetSupplier(ctx, *supplier)
 	}
 
@@ -100,22 +108,129 @@ func TestSupplier_GetAll(t *testing.T) {
 	)
 }
 
-func TestSupplier_GetAllSuppliersIterator(t *testing.T) {
+func TestSupplier_GetAllUnstakingSuppliersIterator(t *testing.T) {
 	supplierModuleKeepers, ctx := keepertest.SupplierKeeper(t)
+
+	// Create 6 suppliers with unstaking height
 	suppliers := createNSuppliers(*supplierModuleKeepers.Keeper, ctx, 10)
-	iterator := supplierModuleKeepers.GetAllSuppliersIterator(ctx)
+	for i := 2; i < 8; i++ {
+		suppliers[i].UnstakeSessionEndHeight = 100
+		supplierModuleKeepers.SetSupplier(ctx, suppliers[i])
+	}
+
+	// Get all unstaking suppliers
+	iterator := supplierModuleKeepers.GetAllUnstakingSuppliersIterator(ctx)
 	defer iterator.Close()
 
-	retrievedSuppliers := make([]sharedtypes.Supplier, 0)
+	// Count unstaking suppliers from iterator
+	unstakingCount := 0
 	for ; iterator.Valid(); iterator.Next() {
-		supplier, err := iterator.Value()
-		require.NoError(t, err)
-		retrievedSuppliers = append(retrievedSuppliers, supplier)
+		unstakingCount++
 	}
-	require.ElementsMatch(t,
-		nullify.Fill(suppliers),
-		nullify.Fill(retrievedSuppliers),
+
+	// Verify we found exactly 6 unstaking suppliers
+	require.Equal(t, 6, unstakingCount)
+}
+
+func TestServiceConfigUpdateIterators(t *testing.T) {
+	supplierModuleKeepers, ctx := keepertest.SupplierKeeper(t)
+	keeper := *supplierModuleKeepers.Keeper
+
+	// Create 100 suppliers with service config updates
+	suppliers := createNSuppliers(*supplierModuleKeepers.Keeper, ctx, 100)
+
+	// 50 of them will be for service1
+	for i := 25; i < 75; i++ {
+		suppliers[i].Services[0].ServiceId = "service1"
+		suppliers[i].ServiceConfigHistory = sharedtest.CreateServiceConfigUpdateHistoryFromServiceConfigs(
+			suppliers[i].OperatorAddress,
+			suppliers[i].Services,
+			1,
+			sharedtest.NoDeactivationHeight,
+		)
+	}
+
+	// 25 will have an activation height of 10
+	for i := 10; i < 35; i++ {
+		suppliers[i].ServiceConfigHistory[0].ActivationHeight = 10
+	}
+
+	// 12 will have a deactivation height of 21
+	for i := 0; i < 12; i++ {
+		suppliers[i].ServiceConfigHistory[0].DeactivationHeight = 21
+	}
+
+	// Supplier 100 will have 10 service configs
+	suppliers[99].Services = make([]*sharedtypes.SupplierServiceConfig, 10)
+	for i := range 10 {
+		suppliers[99].Services[i] = &sharedtypes.SupplierServiceConfig{
+			ServiceId: fmt.Sprintf("sup_svc_%d", i),
+			Endpoints: []*sharedtypes.SupplierEndpoint{
+				{
+					Url:     fmt.Sprintf("http://localhost:%d", i),
+					RpcType: sharedtypes.RPCType_JSON_RPC,
+					Configs: make([]*sharedtypes.ConfigOption, 0),
+				},
+			},
+		}
+	}
+	suppliers[99].ServiceConfigHistory = sharedtest.CreateServiceConfigUpdateHistoryFromServiceConfigs(
+		suppliers[99].OperatorAddress,
+		suppliers[99].Services,
+		1,
+		sharedtest.NoDeactivationHeight,
 	)
+
+	for _, supplier := range suppliers {
+		keeper.SetSupplier(ctx, supplier)
+	}
+
+	t.Run("GetServiceConfigUpdatesIterator", func(t *testing.T) {
+		// Test for service1 which should have 50 service config updates
+		iterator := keeper.GetServiceConfigUpdatesIterator(ctx, "service1")
+		defer iterator.Close()
+
+		numConfigUpdatesWithService1 := 0
+		for ; iterator.Valid(); iterator.Next() {
+			config, err := iterator.Value()
+			require.NoError(t, err)
+			require.Equal(t, "service1", config.Service.ServiceId)
+			numConfigUpdatesWithService1++
+		}
+		require.Equal(t, 50, numConfigUpdatesWithService1)
+	})
+
+	t.Run("GetActivatedServiceConfigUpdatesIterator", func(t *testing.T) {
+		// Test for activation height 10 which should have 25 service config updates
+		iterator := keeper.GetActivatedServiceConfigUpdatesIterator(ctx, 10)
+		defer iterator.Close()
+
+		numConfigUpdatesWithActivationHeigh10 := 0
+		for ; iterator.Valid(); iterator.Next() {
+			config, err := iterator.Value()
+			require.NoError(t, err)
+			require.Equal(t, int64(10), config.ActivationHeight)
+			numConfigUpdatesWithActivationHeigh10++
+		}
+
+		require.Equal(t, 25, numConfigUpdatesWithActivationHeigh10)
+	})
+
+	t.Run("GetDeactivatedServiceConfigUpdatesIterator", func(t *testing.T) {
+		// Test for deactivation height 21 which should have 12 service config updates
+		iterator := keeper.GetDeactivatedServiceConfigUpdatesIterator(ctx, 21)
+		defer iterator.Close()
+
+		numConfigUpdatesWithDeactivationHeight21 := 0
+		for ; iterator.Valid(); iterator.Next() {
+			config, err := iterator.Value()
+			require.NoError(t, err)
+			require.Equal(t, int64(21), config.DeactivationHeight)
+			numConfigUpdatesWithDeactivationHeight21++
+		}
+
+		require.Equal(t, 12, numConfigUpdatesWithDeactivationHeight21)
+	})
 }
 
 func TestSupplier_Query(t *testing.T) {
@@ -229,11 +344,35 @@ func TestSuppliers_QueryAll_Pagination(t *testing.T) {
 
 func TestSuppliers_QueryAll_Filters(t *testing.T) {
 	keeper, ctx := keepertest.SupplierKeeper(t)
-	suppliers := createNSuppliers(*keeper.Keeper, ctx, 5)
+	suppliers := createNSuppliers(*keeper.Keeper, ctx, 10)
+	ctx = cosmostypes.UnwrapSDKContext(ctx).WithBlockHeight(60)
+
+	serviceId := "service1"
+
+	// Update the first 7 suppliers to be staked for service1
+	for i := range 7 {
+		suppliers[i].Services[0].ServiceId = serviceId
+		suppliers[i].ServiceConfigHistory = sharedtest.CreateServiceConfigUpdateHistoryFromServiceConfigs(
+			suppliers[i].OperatorAddress,
+			suppliers[i].Services,
+			1,
+			sharedtest.NoDeactivationHeight,
+		)
+	}
+
+	// Make the 4th supplier has a past deactivation height for service1
+	suppliers[3].ServiceConfigHistory[0].DeactivationHeight = 50
+
+	// Make the 6th supplier has a future activation height for service1
+	suppliers[5].ServiceConfigHistory[0].ActivationHeight = 100
+
+	// Save all suppliers updates to the keeper
+	for _, supplier := range suppliers {
+		keeper.SetSupplier(ctx, supplier)
+	}
 
 	t.Run("Filter By ServiceId", func(t *testing.T) {
 		// Assuming the first supplier has at least one service
-		serviceId := suppliers[0].Services[0].ServiceId
 		req := &types.QueryAllSuppliersRequest{
 			Pagination: &query.PageRequest{
 				Offset: 0,
@@ -257,5 +396,9 @@ func TestSuppliers_QueryAll_Filters(t *testing.T) {
 			}
 			require.True(t, hasService, "Returned supplier does not have the specified service")
 		}
+
+		// Only 5 suppliers should be returned, as the 4th and 6th suppliers are not
+		// active for service1
+		require.Len(t, resp.Supplier, 5)
 	})
 }

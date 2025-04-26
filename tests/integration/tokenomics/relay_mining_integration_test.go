@@ -14,6 +14,7 @@ import (
 	"github.com/pokt-network/poktroll/pkg/crypto/protocol"
 	testkeeper "github.com/pokt-network/poktroll/testutil/keeper"
 	"github.com/pokt-network/poktroll/testutil/sample"
+	sharedtest "github.com/pokt-network/poktroll/testutil/shared"
 	"github.com/pokt-network/poktroll/testutil/testrelayer"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
@@ -64,16 +65,11 @@ func TestComputeNewDifficultyHash_RewardsReflectWorkCompleted(t *testing.T) {
 	}
 	supplierStake := sdk.NewInt64Coin(volatile.DenomuPOKT, 1000)
 	supplier := sharedtypes.Supplier{
-		OperatorAddress: supplierAddress,
-		OwnerAddress:    supplierAddress,
-		Stake:           &supplierStake,
-		Services:        supplierServiceConfigs,
-		ServiceConfigHistory: []*sharedtypes.ServiceConfigUpdate{
-			{
-				Services:             supplierServiceConfigs,
-				EffectiveBlockHeight: 1,
-			},
-		},
+		OperatorAddress:      supplierAddress,
+		OwnerAddress:         supplierAddress,
+		Stake:                &supplierStake,
+		Services:             supplierServiceConfigs,
+		ServiceConfigHistory: sharedtest.CreateServiceConfigUpdateHistoryFromServiceConfigs(supplierAddress, supplierServiceConfigs, 1, 0),
 	}
 
 	keepers, ctx := testkeeper.NewTokenomicsModuleKeepers(t, nil,

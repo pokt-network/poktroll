@@ -4,8 +4,10 @@ import (
 	"context"
 	"fmt"
 
+	"cosmossdk.io/log"
 	"cosmossdk.io/store/prefix"
 	"github.com/cosmos/cosmos-sdk/runtime"
+	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/query"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -14,6 +16,9 @@ import (
 	"github.com/pokt-network/poktroll/x/supplier/types"
 )
 
+// AllSuppliers returns a paginated list of all suppliers in the store.
+// If a serviceId is provided, it filters suppliers to only those starting for that service.
+// The returned suppliers are fully hydrated with their service configurations and history.
 func (k Keeper) AllSuppliers(
 	ctx context.Context,
 	req *types.QueryAllSuppliersRequest,
@@ -28,52 +33,15 @@ func (k Keeper) AllSuppliers(
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
-	// TODO_IMPROVE: Consider adding a custom onchain index (similar to proofs)
-	// based on other parameters (e.g. serviceId) if/when the performance of the
-	// flags used to filter the response becomes an issue.
-	store := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
-	supplierStore := prefix.NewStore(store, types.KeyPrefix(types.SupplierKeyOperatorPrefix))
-
-	var suppliers []sharedtypes.Supplier
-
-	pageRes, err := query.Paginate(
-		supplierStore,
-		req.Pagination,
-		func(key []byte, value []byte) error {
-			var supplier sharedtypes.Supplier
-			if err := k.cdc.Unmarshal(value, &supplier); err != nil {
-				err = fmt.Errorf("unmarshaling supplier with key (hex): %x: %+v", key, err)
-				logger.Error(err.Error())
-				return status.Error(codes.Internal, err.Error())
-			}
-
-			serviceIdFilter := req.GetServiceId()
-			if serviceIdFilter != "" {
-				hasService := false
-				for _, supplierServiceConfig := range supplier.Services {
-					if supplierServiceConfig.ServiceId == serviceIdFilter {
-						hasService = true
-						break
-					}
-				}
-				// Do not include the current supplier in the list returned.
-				if !hasService {
-					return nil
-				}
-			}
-
-			suppliers = append(suppliers, supplier)
-			return nil
-		},
-	)
-
-	if err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
+	if req.GetServiceId() == "" {
+		return k.getAllSuppliers(ctx, logger, req)
+	} else {
+		return k.getAllServiceSuppliers(ctx, logger, req)
 	}
-
-	return &types.QueryAllSuppliersResponse{Supplier: suppliers, Pagination: pageRes}, nil
 }
 
+// Supplier retrieves a specific supplier by operator address.
+// The returned supplier is fully hydrated with its service configurations and history.
 func (k Keeper) Supplier(
 	ctx context.Context,
 	req *types.QueryGetSupplierRequest,
@@ -94,4 +62,117 @@ func (k Keeper) Supplier(
 	}
 
 	return &types.QueryGetSupplierResponse{Supplier: supplier}, nil
+}
+
+// getAllSuppliers retrieves all suppliers from the store with pagination support.
+// Each supplier's service configurations are hydrated before being returned.
+func (k Keeper) getAllSuppliers(
+	ctx context.Context,
+	logger log.Logger,
+	req *types.QueryAllSuppliersRequest,
+) (*types.QueryAllSuppliersResponse, error) {
+	supplierStore := k.getSupplierStore(ctx)
+
+	var suppliers []sharedtypes.Supplier
+
+	pageRes, err := query.Paginate(
+		supplierStore,
+		req.Pagination,
+		func(key []byte, value []byte) error {
+			var supplier sharedtypes.Supplier
+			if err := k.cdc.Unmarshal(value, &supplier); err != nil {
+				err = fmt.Errorf("unmarshaling supplier with key (hex): %x: %+v", key, err)
+				logger.Error(err.Error())
+				return status.Error(codes.Internal, err.Error())
+			}
+
+			k.hydrateSupplierServiceConfigs(ctx, &supplier)
+
+			suppliers = append(suppliers, supplier)
+			return nil
+		},
+	)
+
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
+	return &types.QueryAllSuppliersResponse{Supplier: suppliers, Pagination: pageRes}, nil
+}
+
+// getAllServiceSuppliers retrieves all suppliers that are staked for specific service.
+// Only returns suppliers with active service configurations at the current block height.
+func (k Keeper) getAllServiceSuppliers(
+	ctx context.Context,
+	logger log.Logger,
+	req *types.QueryAllSuppliersRequest,
+) (*types.QueryAllSuppliersResponse, error) {
+	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
+	currentHeight := sdkCtx.BlockHeight()
+
+	storeAdapter := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
+
+	// Build the composite key for accessing service config updates
+	// Format: ServiceConfigUpdateKeyPrefix + serviceId
+	key := make([]byte, 0)
+	key = append(key, types.KeyPrefix(types.ServiceConfigUpdateKeyPrefix)...)
+	key = append(key, types.StringKey(req.GetServiceId())...)
+	serviceStore := prefix.NewStore(storeAdapter, key)
+
+	// Get the store containing all supplier information
+	supplierStore := k.getSupplierStore(ctx)
+
+	// Initialize a slice to collect suppliers
+	var suppliers []sharedtypes.Supplier
+	// Initialize a map to track which suppliers have been processed to avoid
+	// duplicate suppliers in the results
+	pickedSuppliersMap := make(map[string]struct{})
+
+	pageRes, err := query.Paginate(
+		serviceStore,
+		req.Pagination,
+		func(key []byte, serviceConfigUpdateBz []byte) error {
+			// Unmarshal the service config update from the store
+			var serviceConfigUpdate sharedtypes.ServiceConfigUpdate
+			if err := k.cdc.Unmarshal(serviceConfigUpdateBz, &serviceConfigUpdate); err != nil {
+				err = fmt.Errorf("unmarshaling service config update with key (hex): %x: %+v", key, err)
+				logger.Error(err.Error())
+				return status.Error(codes.Internal, err.Error())
+			}
+
+			// Skip service configurations that are not active at the current block height
+			if !serviceConfigUpdate.IsActive(currentHeight) {
+				return nil
+			}
+
+			// Skip suppliers that have already been added to the results
+			if _, ok := pickedSuppliersMap[serviceConfigUpdate.OperatorAddress]; ok {
+				return nil
+			}
+			pickedSuppliersMap[serviceConfigUpdate.OperatorAddress] = struct{}{}
+
+			// Retrieve the supplier data using the operator address from the service config
+			supplierKey := types.SupplierOperatorKey(serviceConfigUpdate.OperatorAddress)
+			supplierBz := supplierStore.Get(supplierKey)
+			var supplier sharedtypes.Supplier
+			if err := k.cdc.Unmarshal(supplierBz, &supplier); err != nil {
+				err = fmt.Errorf("unmarshaling supplier with key (hex): %x: %+v", key, err)
+				logger.Error(err.Error())
+				return status.Error(codes.Internal, err.Error())
+			}
+
+			// Load service configurations and history into the supplier object
+			k.hydrateSupplierServiceConfigs(ctx, &supplier)
+
+			// Add the supplier to the results
+			suppliers = append(suppliers, supplier)
+			return nil
+		},
+	)
+
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
+	return &types.QueryAllSuppliersResponse{Supplier: suppliers, Pagination: pageRes}, nil
 }
