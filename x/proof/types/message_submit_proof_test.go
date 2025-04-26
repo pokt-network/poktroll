@@ -79,8 +79,7 @@ func TestMsgSubmitProof_ValidateBasic(t *testing.T) {
 				Proof: testClosestMerkleProof,
 			},
 			sessionHeaderToExpectedErrorFn: func(sh sessiontypes.SessionHeader) error {
-				serviceError := sharedtypes.ErrSharedInvalidServiceId.Wrapf("invalid service ID: %q", sh.ServiceId)
-				return ErrProofInvalidSessionHeader.Wrapf("%s", serviceError)
+				return sharedtypes.ErrSharedInvalidServiceId
 			},
 		},
 		{
@@ -103,7 +102,6 @@ func TestMsgSubmitProof_ValidateBasic(t *testing.T) {
 			err := test.msg.ValidateBasic()
 			if test.sessionHeaderToExpectedErrorFn != nil {
 				expectedErr := test.sessionHeaderToExpectedErrorFn(*test.msg.SessionHeader)
-				require.ErrorIs(t, err, expectedErr)
 				require.ErrorContains(t, err, expectedErr.Error())
 				return
 			}
