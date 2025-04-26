@@ -88,18 +88,6 @@ check_docker_ps: check_docker
 	@echo "Checking if Docker is running..."
 	@docker ps > /dev/null 2>&1 || (echo "Docker is not running. Please start Docker and try again."; exit 1)
 
-.PHONY: check_kind_context
-## Internal helper target - checks if the kind-kind context exists and is set
-check_kind_context: check_kind
-	@if ! kubectl config get-contexts | grep -q 'kind-kind'; then \
-		echo "WARNING: kind-kind context does not exist. Please consider creating it or switch to it."; \
-		echo "WARNING: Using default cluster to deploy Localnet."; \
-	fi
-	@if ! kubectl config current-context | grep -q 'kind-kind'; then \
-		echo "WARNING: kind-kind context is not currently set. Please consider to use 'kubectl config use-context kind-kind' to set it."; \
-		echo "WARNING: Using default cluster to deploy Localnet."; \
-	fi
-
 .PHONY: check_godoc
 # Internal helper target - check if godoc is installed
 check_godoc:
@@ -149,6 +137,29 @@ check_node:
 		exit 1; \
 	fi; \
 	}
+
+.PHONY: check_path_up
+# Internal helper: Checks if PATH is running at localhost:3069
+check_path_up:
+	@if ! nc -z localhost 3069 2>/dev/null; then \
+		echo "########################################################################"; \
+		echo "ERROR: PATH is not running on port 3069"; \
+		echo "Please make sure localnet_config.yaml contains at least 1 path gateway and start localnet with:"; \
+		echo "  make localnet_up"; \
+		echo "########################################################################"; \
+		exit 1; \
+	fi
+
+.PHONY: check_relay_util
+# Internal helper: Checks if relay-util is installed locally
+check_relay_util:
+	@if ! command -v relay-util &> /dev/null; then \
+		echo "####################################################################################################"; \
+		echo "Relay Util is not installed." \
+		echo "To use any Relay Util make targets to send load testing requests please install Relay Util with:"; \
+		echo "go install github.com/commoddity/relay-util/v2@latest"; \
+		echo "####################################################################################################"; \
+	fi
 
 .PHONY: check_proto_unstable_marshalers
 check_proto_unstable_marshalers: ## Check that all protobuf files have the 'stable_marshalers_all' option set to true.

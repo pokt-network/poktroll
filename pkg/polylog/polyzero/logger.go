@@ -48,20 +48,25 @@ func (ze *zerologLogger) Debug() polylog.Event {
 	return newEvent(ze.Logger.Debug())
 }
 
-// ProbabilisticDebug starts a new message with either debug or info level.
+// ProbabilisticDebugInfo starts a new message with either debug or info level.
 //
-// The float passed in determines the likelihood of the event being logged as debug.
+// The float passed in determines the likelihood of the event being logged when
+// the logger's level is info.
 //
 // You must call Msg on the returned event in order to send the event.
-func (ze *zerologLogger) ProbabilisticDebug(p float64) polylog.Event {
+func (ze *zerologLogger) ProbabilisticDebugInfo(p float64) polylog.Event {
 	// Validate probability is in [0.0, 1.0]
 	enforceProbRange(p)
 	// Generate a random float64 in [0.0, 1.0)
 	r := rand.Float64()
+
+	// Only log info sometimes
 	if r < p {
-		return newEvent(ze.Logger.Debug())
+		// The info log will only be shown sometimes
+		return newEvent(ze.Logger.Info())
 	}
-	return newEvent(ze.Logger.Info())
+	// The debug log will always be shown
+	return newEvent(ze.Logger.Debug())
 }
 
 func enforceProbRange(prob float64) {
@@ -117,7 +122,7 @@ func (ze *zerologLogger) WithLevel(level polylog.Level) polylog.Event {
 //     will not be attached.
 //
 // TODO_TEST/TODO_COMMUNITY: add support for #UpdateContext() and update this
-// godoc to inlude example usage.
+// godoc to include example usage.
 // See: https://pkg.go.dev/github.com/rs/zerolog#Logger.WithContext.
 //
 // TODO_TEST/TODO_COMMUNITY: add coverage for `polyzero.Logger#WithContext()`.

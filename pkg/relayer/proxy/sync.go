@@ -25,7 +25,7 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 ) (*types.RelayRequest, error) {
 	logger := server.logger.With("relay_request_type", "synchronous")
 
-	logger.ProbabilisticDebug(polylog.ProbabilisticDebugProb).Msg("handling HTTP request")
+	logger.ProbabilisticDebugInfo(polylog.ProbabilisticDebugInfoProb).Msg("handling HTTP request")
 
 	// Extract the relay request from the request body.
 	logger.Debug().Msg("extracting relay request from request body")
@@ -194,7 +194,7 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 		return relayRequest, clientError
 	}
 
-	logger.ProbabilisticDebug(polylog.ProbabilisticDebugProb).Msg("relay request served successfully")
+	logger.ProbabilisticDebugInfo(polylog.ProbabilisticDebugInfoProb).Msg("OLSH2 relay request served successfully")
 
 	relayer.RelaysSuccessTotal.With("service_id", serviceId).Add(1)
 
