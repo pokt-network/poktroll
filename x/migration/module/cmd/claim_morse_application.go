@@ -75,8 +75,7 @@ func runClaimApplication(cmd *cobra.Command, args []string) error {
 
 	// Retrieve and validate the service ID based on the second argument provided.
 	serviceID := args[1]
-	err = sharedtypes.IsValidServiceId(serviceID)
-	if err != nil {
+	if err = sharedtypes.IsValidServiceId(serviceID); err != nil {
 		return ErrInvalidUsage.Wrapf("%v", err.Error())
 	}
 
