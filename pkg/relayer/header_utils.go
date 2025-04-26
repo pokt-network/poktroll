@@ -2,8 +2,9 @@ package relayer
 
 import (
 	"fmt"
-	"github.com/pokt-network/poktroll/x/service/types"
 	"net/http"
+
+	"github.com/pokt-network/poktroll/x/service/types"
 )
 
 // ForwardIdentityHeaders adds Pocket-specific identity headers from the relay metadata
