@@ -128,7 +128,7 @@ func (k Keeper) transferApplication(
 		dstApp.Address = srcApp.GetPendingTransfer().GetDestinationAddress()
 		dstApp.PendingTransfer = nil
 
-		logger.Info(fmt.Sprintf(
+		logger.Debug(fmt.Sprintf(
 			"transferring application from %q to new application %q",
 			srcApp.GetAddress(), dstApp.GetAddress(),
 		))
@@ -140,7 +140,7 @@ func (k Keeper) transferApplication(
 		mergeAppPendingUndelegations(&srcApp, &dstApp)
 		mergeAppServiceConfigs(&srcApp, &dstApp)
 
-		logger.Info(fmt.Sprintf(
+		logger.Debug(fmt.Sprintf(
 			"transferring application from %q to existing application %q",
 			srcApp.GetAddress(), dstApp.GetAddress(),
 		))
@@ -152,7 +152,7 @@ func (k Keeper) transferApplication(
 	// Add or update the dstApp in the store
 	k.SetApplication(ctx, dstApp)
 
-	logger.Info(fmt.Sprintf("Successfully transferred application stake from (%s) to (%s)", srcApp.GetAddress(), dstApp.GetAddress()))
+	logger.Debug(fmt.Sprintf("Successfully transferred application stake from (%s) to (%s)", srcApp.GetAddress(), dstApp.GetAddress()))
 
 	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
 	sharedParams := k.sharedKeeper.GetParams(sdkCtx)

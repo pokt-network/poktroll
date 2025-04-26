@@ -98,18 +98,18 @@ func (k Keeper) StakeSupplier(
 	msg *suppliertypes.MsgStakeSupplier,
 ) (*sharedtypes.Supplier, error) {
 
-	logger.Info(fmt.Sprintf("About to stake supplier with msg: %v", msg))
+	logger.Debug(fmt.Sprintf("About to stake supplier with msg: %v", msg))
 
 	// ValidateBasic also validates that the msg signer is the owner or operator of the supplier
 	if err := msg.ValidateBasic(); err != nil {
-		logger.Info(fmt.Sprintf("invalid MsgStakeSupplier: %v", msg))
+		logger.Debug(fmt.Sprintf("invalid MsgStakeSupplier: %v", msg))
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
 	// Check if the services the supplier is staking for exist
 	for _, serviceConfig := range msg.Services {
 		if _, serviceFound := k.serviceKeeper.GetService(ctx, serviceConfig.ServiceId); !serviceFound {
-			logger.Info(fmt.Sprintf("service %q does not exist", serviceConfig.ServiceId))
+			logger.Debug(fmt.Sprintf("service %q does not exist", serviceConfig.ServiceId))
 			return nil, status.Error(
 				codes.InvalidArgument,
 				suppliertypes.ErrSupplierServiceNotFound.Wrapf("service %q does not exist", serviceConfig.ServiceId).Error(),
@@ -127,10 +127,10 @@ func (k Keeper) StakeSupplier(
 
 	if !isSupplierFound {
 		supplierCurrentStake = sdk.NewInt64Coin(volatile.DenomuPOKT, 0)
-		logger.Info(fmt.Sprintf("Supplier not found. Creating new supplier for address %q", msg.OperatorAddress))
+		logger.Debug(fmt.Sprintf("Supplier not found. Creating new supplier for address %q", msg.OperatorAddress))
 		supplier = k.createSupplier(ctx, msg)
 	} else {
-		logger.Info(fmt.Sprintf("Supplier found. About to try updating supplier with address %q", msg.OperatorAddress))
+		logger.Debug(fmt.Sprintf("Supplier found. About to try updating supplier with address %q", msg.OperatorAddress))
 
 		supplierCurrentStake = *supplier.Stake
 
@@ -152,7 +152,7 @@ func (k Keeper) StakeSupplier(
 				"signer %q is not allowed to update the owner address %q",
 				msg.Signer, supplier.OwnerAddress,
 			)
-			logger.Info(fmt.Sprintf("ERROR: %s", err))
+			logger.Debug(fmt.Sprintf("ERROR: %s", err))
 
 			return nil, status.Error(codes.InvalidArgument, err.Error())
 		}
@@ -163,13 +163,13 @@ func (k Keeper) StakeSupplier(
 			err = sharedtypes.ErrSharedUnauthorizedSupplierUpdate.Wrap(
 				"updating the operator address is forbidden, unstake then re-stake with the updated operator address",
 			)
-			logger.Info(fmt.Sprintf("ERROR: %s", err))
+			logger.Debug(fmt.Sprintf("ERROR: %s", err))
 
 			return nil, status.Error(codes.InvalidArgument, err.Error())
 		}
 
 		if err = k.updateSupplier(ctx, &supplier, msg); err != nil {
-			logger.Info(fmt.Sprintf("ERROR: could not update supplier for address %q due to error %v", msg.OperatorAddress, err))
+			logger.Debug(fmt.Sprintf("ERROR: could not update supplier for address %q due to error %v", msg.OperatorAddress, err))
 			return nil, status.Error(codes.InvalidArgument, err.Error())
 		}
 
@@ -187,14 +187,14 @@ func (k Keeper) StakeSupplier(
 			"supplier with owner %q must stake at least %s",
 			msg.GetOwnerAddress(), minStake,
 		)
-		logger.Info(fmt.Sprintf("ERROR: %s", err))
+		logger.Debug(fmt.Sprintf("ERROR: %s", err))
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
 	// Retrieve the account address of the message signer
 	msgSignerAddress, err := sdk.AccAddressFromBech32(msg.Signer)
 	if err != nil {
-		logger.Info(fmt.Sprintf("ERROR: could not parse address %q", msg.Signer))
+		logger.Debug(fmt.Sprintf("ERROR: could not parse address %q", msg.Signer))
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
@@ -209,13 +209,13 @@ func (k Keeper) StakeSupplier(
 	// This is called after the stake difference is transferred to give the supplier
 	// the opportunity to have enough balance to pay the fee.
 	if err = k.bankKeeper.SendCoinsFromAccountToModule(ctx, msgSignerAddress, suppliertypes.ModuleName, sdk.NewCoins(*supplierStakingFee)); err != nil {
-		logger.Info(fmt.Sprintf("ERROR: signer %q could not pay for the staking fee %s: %s", msgSignerAddress, supplierStakingFee, err))
+		logger.Debug(fmt.Sprintf("ERROR: signer %q could not pay for the staking fee %s: %s", msgSignerAddress, supplierStakingFee, err))
 		return nil, status.Error(codes.FailedPrecondition, err.Error())
 	}
 
 	// Update the Supplier in the store
 	k.SetSupplier(ctx, supplier)
-	logger.Info(fmt.Sprintf("Successfully updated supplier stake for supplier: %+v", supplier))
+	logger.Debug(fmt.Sprintf("Successfully updated supplier stake for supplier: %+v", supplier))
 
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 	events := make([]sdk.Msg, 0)
@@ -323,6 +323,6 @@ func (k Keeper) reconcileSupplierStakeDiff(
 
 	// The supplier is not changing its stake. This can happen if the supplier
 	// is updating its service configurations or owner address but not the stake.
-	logger.Info(fmt.Sprintf("Updating supplier with address %q but stake is unchanged", signerAddr.String()))
+	logger.Debug(fmt.Sprintf("Updating supplier with address %q but stake is unchanged", signerAddr.String()))
 	return nil
 }

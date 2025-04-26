@@ -22,18 +22,18 @@ func (k msgServer) UndelegateFromGateway(ctx context.Context, msg *apptypes.MsgU
 	)
 
 	logger := k.Logger().With("method", "UndelegateFromGateway")
-	logger.Info(fmt.Sprintf("About to undelegate application from gateway with msg: %+v", msg))
+	logger.Debug(fmt.Sprintf("About to undelegate application from gateway with msg: %+v", msg))
 
 	// Basic validation of the message
 	if err := msg.ValidateBasic(); err != nil {
-		logger.Info(fmt.Sprintf("Undelegation Message failed basic validation: %s", err))
+		logger.Debug(fmt.Sprintf("Undelegation Message failed basic validation: %s", err))
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
 	// Retrieve the application from the store
 	foundApp, isAppFound := k.GetApplication(ctx, msg.GetAppAddress())
 	if !isAppFound {
-		logger.Info(fmt.Sprintf("Application not found with address [%s]", msg.GetAppAddress()))
+		logger.Debug(fmt.Sprintf("Application not found with address [%s]", msg.GetAppAddress()))
 		return nil, status.Error(
 			codes.NotFound,
 			apptypes.ErrAppNotFound.Wrapf(
@@ -41,7 +41,7 @@ func (k msgServer) UndelegateFromGateway(ctx context.Context, msg *apptypes.MsgU
 			).Error(),
 		)
 	}
-	logger.Info(fmt.Sprintf("Application found with address [%s]", msg.GetAppAddress()))
+	logger.Debug(fmt.Sprintf("Application found with address [%s]", msg.GetAppAddress()))
 
 	// Check if the application is already delegated to the gateway
 	foundIdx := -1
@@ -51,7 +51,7 @@ func (k msgServer) UndelegateFromGateway(ctx context.Context, msg *apptypes.MsgU
 		}
 	}
 	if foundIdx == -1 {
-		logger.Info(fmt.Sprintf("Application not delegated to gateway with address [%s]", msg.GetGatewayAddress()))
+		logger.Debug(fmt.Sprintf("Application not delegated to gateway with address [%s]", msg.GetGatewayAddress()))
 		return nil, status.Error(
 			codes.FailedPrecondition,
 			apptypes.ErrAppNotDelegated.Wrapf(
@@ -72,7 +72,7 @@ func (k msgServer) UndelegateFromGateway(ctx context.Context, msg *apptypes.MsgU
 
 	// Update the application store with the new delegation
 	k.SetApplication(ctx, foundApp)
-	logger.Info(fmt.Sprintf("Successfully undelegated application from gateway for app: %+v", foundApp))
+	logger.Debug(fmt.Sprintf("Successfully undelegated application from gateway for app: %+v", foundApp))
 
 	// Emit the application redelegation event
 	event := &apptypes.EventRedelegation{
@@ -84,7 +84,7 @@ func (k msgServer) UndelegateFromGateway(ctx context.Context, msg *apptypes.MsgU
 		logger.Error(err.Error())
 		return nil, status.Error(codes.Internal, err.Error())
 	}
-	logger.Info(fmt.Sprintf("Emitted application redelegation event %v", event))
+	logger.Debug(fmt.Sprintf("Emitted application redelegation event %v", event))
 
 	isSuccessful = true
 	return &apptypes.MsgUndelegateFromGatewayResponse{
@@ -111,7 +111,7 @@ func (k Keeper) recordPendingUndelegation(
 		)
 		app.PendingUndelegations[sessionEndHeight] = undelegatingGatewayListAtBlock
 	} else {
-		k.logger.Info(fmt.Sprintf(
+		k.logger.Debug(fmt.Sprintf(
 			"Application with address [%s] undelegating (again) from a gateway it's already undelegating from with address [%s]",
 			app.Address,
 			gatewayAddress,

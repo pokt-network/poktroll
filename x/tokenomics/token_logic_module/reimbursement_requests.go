@@ -68,7 +68,7 @@ func (tlm tlmGlobalMintReimbursementRequest) Process(
 		return err
 	}
 	application.Stake = &newAppStake
-	logger.Info(fmt.Sprintf("updated application %q stake to %s", application.Address, newAppStake))
+	logger.Debug(fmt.Sprintf("updated application %q stake to %s", application.Address, newAppStake))
 
 	// Send the global per claim mint inflation uPOKT from the tokenomics module
 	// account to PNF/DAO.
@@ -82,7 +82,7 @@ func (tlm tlmGlobalMintReimbursementRequest) Process(
 		RecipientModule: tokenomicstypes.ModuleName,
 		Coin:            newMintCoin,
 	})
-	logger.Info(fmt.Sprintf(
+	logger.Debug(fmt.Sprintf(
 		"operation queued: send (%s) from the application module account to the tokenomics module account",
 		newMintCoin,
 	))
@@ -96,7 +96,7 @@ func (tlm tlmGlobalMintReimbursementRequest) Process(
 		RecipientAddress: daoRewardAddress,
 		Coin:             newMintCoin,
 	})
-	logger.Info(fmt.Sprintf(
+	logger.Debug(fmt.Sprintf(
 		"operation queued: send (%s) from the tokenomics module account to the PNF/DAO account (%s)",
 		newMintCoin, daoRewardAddress,
 	))

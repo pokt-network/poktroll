@@ -26,12 +26,12 @@ func (k msgServer) UnstakeApplication(
 	)
 
 	logger := k.Logger().With("method", "UnstakeApplication")
-	logger.Info(fmt.Sprintf("About to unstake application with msg: %v", msg))
+	logger.Debug(fmt.Sprintf("About to unstake application with msg: %v", msg))
 
 	// Check if the application already exists or not.
 	foundApp, isAppFound := k.GetApplication(ctx, msg.GetAddress())
 	if !isAppFound {
-		logger.Info(fmt.Sprintf("Application not found. Cannot unstake address [%s]", msg.GetAddress()))
+		logger.Debug(fmt.Sprintf("Application not found. Cannot unstake address [%s]", msg.GetAddress()))
 		return nil, status.Error(
 			codes.NotFound,
 			apptypes.ErrAppNotFound.Wrapf(
@@ -39,11 +39,11 @@ func (k msgServer) UnstakeApplication(
 			).Error(),
 		)
 	}
-	logger.Info(fmt.Sprintf("Application found. Unstaking application for address [%s]", msg.GetAddress()))
+	logger.Debug(fmt.Sprintf("Application found. Unstaking application for address [%s]", msg.GetAddress()))
 
 	// Check if the application has already initiated the unstaking process.
 	if foundApp.IsUnbonding() {
-		logger.Info(fmt.Sprintf("Application with address [%s] is still unbonding from previous unstaking", msg.GetAddress()))
+		logger.Debug(fmt.Sprintf("Application with address [%s] is still unbonding from previous unstaking", msg.GetAddress()))
 		return nil, status.Error(
 			codes.FailedPrecondition,
 			apptypes.ErrAppIsUnstaking.Wrapf(

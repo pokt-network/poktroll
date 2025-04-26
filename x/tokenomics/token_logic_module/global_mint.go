@@ -63,7 +63,7 @@ func (tlm tlmGlobalMint) Process(
 		DestinationModule: tokenomicstypes.ModuleName,
 		Coin:              newMintCoin,
 	})
-	logger.Info(fmt.Sprintf("operation queued: mint (%s) to the tokenomics module account", newMintCoin))
+	logger.Debug(fmt.Sprintf("operation queued: mint (%s) to the tokenomics module account", newMintCoin))
 
 	mintAllocationPercentages := tlmCtx.TokenomicsParams.GetMintAllocationPercentages()
 
@@ -117,7 +117,7 @@ func (tlm tlmGlobalMint) Process(
 			err,
 		)
 	}
-	logger.Info(fmt.Sprintf("operation queued: send (%v) newley minted coins from the tokenomics module to the supplier with address %q", supplierCoin, tlmCtx.Supplier.OperatorAddress))
+	logger.Debug(fmt.Sprintf("operation queued: send (%v) newley minted coins from the tokenomics module to the supplier with address %q", supplierCoin, tlmCtx.Supplier.OperatorAddress))
 
 	// Send a portion of the rewards to the source owner
 	sourceOwnerMintAllocationRat, err := encoding.Float64ToRat(mintAllocationPercentages.SourceOwner)
@@ -198,7 +198,7 @@ func ensureMintedCoinsAreDistributed(
 			totalMintDistributedCoin, newMintCoin, appCoin, supplierCoin, daoCoin, serviceCoin, proposerCoin)
 	}
 
-	logger.Info(fmt.Sprintf("operation queued: distribute (%v) coins to the application, supplier, DAO, source owner, and proposer", totalMintDistributedCoin))
+	logger.Debug(fmt.Sprintf("operation queued: distribute (%v) coins to the application, supplier, DAO, source owner, and proposer", totalMintDistributedCoin))
 
 	return nil
 }
@@ -265,7 +265,7 @@ func sendRewardsToAccount(
 		Coin:             coinToAcc,
 	})
 
-	logger.Info(fmt.Sprintf("operation queued: send (%v) coins from the tokenomics module to the account with address %q", coinToAcc, recipientAddr))
+	logger.Debug(fmt.Sprintf("operation queued: send (%v) coins from the tokenomics module to the account with address %q", coinToAcc, recipientAddr))
 
 	return coinToAcc
 }

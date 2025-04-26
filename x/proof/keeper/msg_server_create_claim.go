@@ -29,13 +29,13 @@ func (k msgServer) CreateClaim(
 
 	logger := k.Logger().With("method", "CreateClaim")
 	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
-	logger.Info("creating claim")
+	logger.Debug("creating claim")
 
 	// Basic validation of the CreateClaim message.
 	if err = msg.ValidateBasic(); err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
-	logger.Info("validated the createClaim message")
+	logger.Debug("validated the createClaim message")
 
 	// Compare msg session header w/ onchain session header.
 	session, err := k.queryAndValidateSessionHeader(ctx, msg.GetSessionHeader(), msg.GetSupplierOperatorAddress())
@@ -109,7 +109,7 @@ func (k msgServer) CreateClaim(
 
 	// Upsert the claim
 	k.Keeper.UpsertClaim(ctx, claim)
-	logger.Info("successfully upserted the claim")
+	logger.Debug("successfully upserted the claim")
 
 	// Get the service ID relayMiningDifficulty to calculate the claimed uPOKT.
 	serviceId := session.GetHeader().GetServiceId()

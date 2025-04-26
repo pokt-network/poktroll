@@ -91,7 +91,7 @@ func (k Keeper) UnbondGateway(ctx context.Context, gateway *gatewaytypes.Gateway
 
 	// Remove the Gateway from the store.
 	k.RemoveGateway(ctx, gateway.GetAddress())
-	logger.Info(fmt.Sprintf("Successfully removed the gateway: %+v", gateway))
+	logger.Debug(fmt.Sprintf("Successfully removed the gateway: %+v", gateway))
 
 	return nil
 }

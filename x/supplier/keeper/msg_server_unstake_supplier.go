@@ -25,7 +25,7 @@ func (k msgServer) UnstakeSupplier(
 	)
 
 	logger := k.Logger().With("method", "UnstakeSupplier")
-	logger.Info(fmt.Sprintf("About to unstake supplier with msg: %v", msg))
+	logger.Debug(fmt.Sprintf("About to unstake supplier with msg: %v", msg))
 
 	if err := msg.ValidateBasic(); err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
@@ -34,7 +34,7 @@ func (k msgServer) UnstakeSupplier(
 	// Check if the supplier already exists or not
 	supplier, isSupplierFound := k.GetSupplier(ctx, msg.GetOperatorAddress())
 	if !isSupplierFound {
-		logger.Info(fmt.Sprintf("Supplier not found. Cannot unstake address %s", msg.GetOperatorAddress()))
+		logger.Debug(fmt.Sprintf("Supplier not found. Cannot unstake address %s", msg.GetOperatorAddress()))
 		return nil, status.Error(
 			codes.NotFound,
 			suppliertypes.ErrSupplierNotFound.Wrapf(
@@ -45,7 +45,7 @@ func (k msgServer) UnstakeSupplier(
 
 	// Ensure the singer address matches the owner address or the operator address.
 	if !supplier.HasOperator(msg.GetSigner()) && !supplier.HasOwner(msg.GetSigner()) {
-		logger.Info("only the supplier owner or operator is allowed to unstake the supplier")
+		logger.Debug("only the supplier owner or operator is allowed to unstake the supplier")
 		return nil, status.Error(
 			codes.PermissionDenied,
 			sharedtypes.ErrSharedUnauthorizedSupplierUpdate.Wrapf(
@@ -56,11 +56,11 @@ func (k msgServer) UnstakeSupplier(
 		)
 	}
 
-	logger.Info(fmt.Sprintf("Supplier found. Unstaking supplier with operating address %s", msg.GetOperatorAddress()))
+	logger.Debug(fmt.Sprintf("Supplier found. Unstaking supplier with operating address %s", msg.GetOperatorAddress()))
 
 	// Check if the supplier has already initiated the unstake action.
 	if supplier.IsUnbonding() {
-		logger.Info(fmt.Sprintf("Supplier %s still unbonding from previous unstaking", msg.GetOperatorAddress()))
+		logger.Debug(fmt.Sprintf("Supplier %s still unbonding from previous unstaking", msg.GetOperatorAddress()))
 		return nil, status.Error(
 			codes.FailedPrecondition,
 			suppliertypes.ErrSupplierIsUnstaking.Wrapf(

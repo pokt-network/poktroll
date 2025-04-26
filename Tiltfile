@@ -31,7 +31,7 @@ localnet_config_defaults = {
     "validator": {
         "cleanupBeforeEachStart": True,
         "logs": {
-            "level": "info",
+            "level": "debug",
             "format": "json",
         },
         "delve": {"enabled": False},

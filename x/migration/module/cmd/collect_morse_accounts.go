@@ -72,7 +72,7 @@ func runCollectMorseAccounts(_ *cobra.Command, args []string) error {
 	morseStateExportPath := args[0]
 	morseAccountStatePath := args[1]
 
-	logger.Logger.Info().
+	logger.Logger.Debug().
 		Str("morse_state_export_path", morseStateExportPath).
 		Str("morse_account_state_path", morseAccountStatePath).
 		Msg("collecting Morse accounts...")
@@ -145,19 +145,19 @@ func transformMorseState(
 	morseWorkspace *morseImportWorkspace,
 ) error {
 	// Iterate over accounts and copy the balances.
-	logger.Logger.Info().Msg("collecting account balances...")
+	logger.Logger.Debug().Msg("collecting account balances...")
 	if err := collectInputAccountBalances(inputState, morseWorkspace); err != nil {
 		return err
 	}
 
 	// Iterate over applications and add the stakes to the corresponding account balances.
-	logger.Logger.Info().Msg("collecting application stakes...")
+	logger.Logger.Debug().Msg("collecting application stakes...")
 	if err := collectInputApplicationStakes(inputState, morseWorkspace); err != nil {
 		return err
 	}
 
 	// Iterate over suppliers and add the stakes to the corresponding account balances.
-	logger.Logger.Info().Msg("collecting supplier stakes...")
+	logger.Logger.Debug().Msg("collecting supplier stakes...")
 	return collectInputSupplierStakes(inputState, morseWorkspace)
 }
 

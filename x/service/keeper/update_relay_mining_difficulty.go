@@ -110,7 +110,7 @@ func (k Keeper) UpdateRelayMiningDifficulty(
 		default:
 			logMessage = fmt.Sprintf("No change in RelayMiningDifficulty for service %s at height %d. Current difficulty: %x", serviceId, sdkCtx.BlockHeight(), newDifficulty.TargetHash)
 		}
-		logger.Info(logMessage)
+		logger.Debug(logMessage)
 
 		// Store the updated difficulty in the map for telemetry.
 		// This is done to only emit the telemetry event if all the difficulties

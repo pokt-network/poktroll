@@ -26,7 +26,7 @@ func (k msgServer) UnstakeGateway(
 	ctx := sdk.UnwrapSDKContext(goCtx)
 
 	logger := k.Logger().With("method", "UnstakeGateway")
-	logger.Info(fmt.Sprintf("About to unstake gateway with msg: %v", msg))
+	logger.Debug(fmt.Sprintf("About to unstake gateway with msg: %v", msg))
 
 	if err := msg.ValidateBasic(); err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
@@ -36,7 +36,7 @@ func (k msgServer) UnstakeGateway(
 	var err error
 	gateway, isGatewayFound := k.GetGateway(ctx, msg.Address)
 	if !isGatewayFound {
-		logger.Info(fmt.Sprintf("Gateway not found. Cannot unstake address %s", msg.Address))
+		logger.Debug(fmt.Sprintf("Gateway not found. Cannot unstake address %s", msg.Address))
 		return nil, status.Error(
 			codes.NotFound,
 			types.ErrGatewayNotFound.Wrapf(
@@ -44,11 +44,11 @@ func (k msgServer) UnstakeGateway(
 			).Error(),
 		)
 	}
-	logger.Info(fmt.Sprintf("Gateway found. Unstaking gateway for address %s", msg.Address))
+	logger.Debug(fmt.Sprintf("Gateway found. Unstaking gateway for address %s", msg.Address))
 
 	// Check if the gateway has already initiated the unstaking process.
 	if gateway.IsUnbonding() {
-		logger.Info(fmt.Sprintf("Gateway with address [%s] is still unbonding from previous unstaking", msg.GetAddress()))
+		logger.Debug(fmt.Sprintf("Gateway with address [%s] is still unbonding from previous unstaking", msg.GetAddress()))
 		return nil, status.Error(
 			codes.FailedPrecondition,
 			types.ErrGatewayIsUnstaking.Wrapf(

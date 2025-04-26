@@ -64,7 +64,7 @@ func (k msgServer) TransferApplication(ctx context.Context, msg *types.MsgTransf
 
 	// Update the srcApp in the store
 	k.SetApplication(ctx, srcApp)
-	logger.Info(fmt.Sprintf(
+	logger.Debug(fmt.Sprintf(
 		"Successfully began transfer of application stake from (%s) to (%s)",
 		srcApp.Address, msg.GetDestinationAddress(),
 	))

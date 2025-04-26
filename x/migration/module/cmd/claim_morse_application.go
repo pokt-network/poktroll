@@ -108,7 +108,7 @@ func runClaimApplication(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	logger.Logger.Info().Msgf("MsgClaimMorseApplication %s\n", string(msgClaimMorseAppJSON))
+	logger.Logger.Debug().Msgf("MsgClaimMorseApplication %s\n", string(msgClaimMorseAppJSON))
 
 	// Last chance for the user to abort.
 	skipConfirmation, err := cmd.Flags().GetBool(cosmosflags.FlagSkipConfirmation)

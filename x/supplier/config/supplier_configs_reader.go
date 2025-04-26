@@ -181,7 +181,7 @@ func (yamlStakeConfig *YAMLStakeConfig) ValidateAndNormalizeAddresses(logger pol
 	// If the operator address is not set, default it to the owner address.
 	if yamlStakeConfig.OperatorAddress == "" {
 		yamlStakeConfig.OperatorAddress = yamlStakeConfig.OwnerAddress
-		logger.Info().Msg("operator address not set, defaulting to owner address")
+		logger.Debug().Msg("operator address not set, defaulting to owner address")
 	}
 
 	// Validate operator address.

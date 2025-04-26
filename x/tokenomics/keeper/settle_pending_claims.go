@@ -175,7 +175,7 @@ func (k Keeper) SettlePendingClaims(ctx cosmostypes.Context) (
 					return settledResults, expiredResults, err
 				}
 
-				logger.Info(fmt.Sprintf(
+				logger.Debug(fmt.Sprintf(
 					"claim expired due to %s",
 					tokenomicstypes.ClaimExpirationReason_name[int32(expirationReason)]),
 				)
@@ -245,7 +245,7 @@ func (k Keeper) SettlePendingClaims(ctx cosmostypes.Context) (
 			return settledResults, expiredResults, err
 		}
 
-		logger.Info("claim settled")
+		logger.Debug("claim settled")
 
 		// The claim & proof are no longer necessary, so there's no need for them
 		// to take up onchain space.
@@ -265,7 +265,7 @@ func (k Keeper) SettlePendingClaims(ctx cosmostypes.Context) (
 		)
 	}
 
-	logger.Info(fmt.Sprintf("found %d expiring claims at block height %d", numExpiringClaims, blockHeight))
+	logger.Debug(fmt.Sprintf("found %d expiring claims at block height %d", numExpiringClaims, blockHeight))
 
 	// Execute all the pending mint, burn, and transfer operations.
 	if err = k.ExecutePendingSettledResults(ctx, settledResults); err != nil {
@@ -277,7 +277,7 @@ func (k Keeper) SettlePendingClaims(ctx cosmostypes.Context) (
 		return settledResults, expiredResults, err
 	}
 
-	logger.Info(fmt.Sprintf(
+	logger.Debug(fmt.Sprintf(
 		"settled %d and expired %d claims at block height %d",
 		settledResults.GetNumClaims(),
 		expiredResults.GetNumClaims(),
@@ -328,45 +328,45 @@ func (k Keeper) ExecutePendingExpiredResults(ctx cosmostypes.Context, expiredRes
 // to settling the offending claim.
 func (k Keeper) ExecutePendingSettledResults(ctx cosmostypes.Context, settledResults tlm.ClaimSettlementResults) error {
 	logger := k.logger.With("method", "ExecutePendingSettledResults")
-	logger.Info(fmt.Sprintf("begin executing %d pending settlement results", len(settledResults)))
+	logger.Debug(fmt.Sprintf("begin executing %d pending settlement results", len(settledResults)))
 
 	for _, settledResult := range settledResults {
 		sessionLogger := logger.With("session_id", settledResult.GetSessionId())
-		sessionLogger.Info("begin executing pending settlement result")
+		sessionLogger.Debug("begin executing pending settlement result")
 
-		sessionLogger.Info(fmt.Sprintf("begin executing %d pending mints", len(settledResult.GetMints())))
+		sessionLogger.Debug(fmt.Sprintf("begin executing %d pending mints", len(settledResult.GetMints())))
 		if err := k.executePendingModuleMints(ctx, sessionLogger, settledResult.GetMints()); err != nil {
 			return err
 		}
-		sessionLogger.Info("done executing pending mints")
+		sessionLogger.Debug("done executing pending mints")
 
-		sessionLogger.Info(fmt.Sprintf("begin executing %d pending module to module transfers", len(settledResult.GetModToModTransfers())))
+		sessionLogger.Debug(fmt.Sprintf("begin executing %d pending module to module transfers", len(settledResult.GetModToModTransfers())))
 		if err := k.executePendingModToModTransfers(ctx, sessionLogger, settledResult.GetModToModTransfers()); err != nil {
 			return err
 		}
-		sessionLogger.Info("done executing pending module account to module account transfers")
+		sessionLogger.Debug("done executing pending module account to module account transfers")
 
-		sessionLogger.Info(fmt.Sprintf("begin executing %d pending module to account transfers", len(settledResult.GetModToAcctTransfers())))
+		sessionLogger.Debug(fmt.Sprintf("begin executing %d pending module to account transfers", len(settledResult.GetModToAcctTransfers())))
 		if err := k.executePendingModToAcctTransfers(ctx, sessionLogger, settledResult.GetModToAcctTransfers()); err != nil {
 			return err
 		}
-		sessionLogger.Info("done executing pending module to account transfers")
+		sessionLogger.Debug("done executing pending module to account transfers")
 
-		sessionLogger.Info(fmt.Sprintf("begin executing %d pending burns", len(settledResult.GetBurns())))
+		sessionLogger.Debug(fmt.Sprintf("begin executing %d pending burns", len(settledResult.GetBurns())))
 		if err := k.executePendingModuleBurns(ctx, sessionLogger, settledResult.GetBurns()); err != nil {
 			return err
 		}
-		sessionLogger.Info("done executing pending burns")
+		sessionLogger.Debug("done executing pending burns")
 
-		sessionLogger.Info("done executing pending settlement result")
+		sessionLogger.Debug("done executing pending settlement result")
 
-		sessionLogger.Info(fmt.Sprintf(
+		sessionLogger.Debug(fmt.Sprintf(
 			"done applying settled results for session %q",
 			settledResult.Claim.GetSessionHeader().GetSessionId(),
 		))
 	}
 
-	logger.Info("done executing pending settlement results")
+	logger.Debug("done executing pending settlement results")
 
 	return nil
 }
@@ -388,7 +388,7 @@ func (k Keeper) executePendingModuleMints(
 			)
 		}
 
-		logger.Info(fmt.Sprintf(
+		logger.Debug(fmt.Sprintf(
 			"executing operation: minting %s coins to the %q module account, reason: %q",
 			mint.Coin, mint.DestinationModule, mint.OpReason.String(),
 		))
@@ -414,7 +414,7 @@ func (k Keeper) executePendingModuleBurns(
 			)
 		}
 
-		logger.Info(fmt.Sprintf(
+		logger.Debug(fmt.Sprintf(
 			"executing operation: burning %s coins from the %q module account, reason: %q",
 			burn.Coin, burn.DestinationModule, burn.OpReason.String(),
 		))
@@ -445,7 +445,7 @@ func (k Keeper) executePendingModToModTransfers(
 			)
 		}
 
-		logger.Info(fmt.Sprintf(
+		logger.Debug(fmt.Sprintf(
 			"executing operation: transfering %s coins from the %q module account to the %q module account, reason: %q",
 			transfer.Coin, transfer.SenderModule, transfer.RecipientModule, transfer.OpReason.String(),
 		))
@@ -492,7 +492,7 @@ func (k Keeper) executePendingModToAcctTransfers(
 			)
 		}
 
-		logger.Info(fmt.Sprintf(
+		logger.Debug(fmt.Sprintf(
 			"executing operation: transfering %s coins from the %q module account to account address %q, reason: %q",
 			transfer.Coin, transfer.SenderModule, transfer.RecipientAddress, transfer.OpReason.String(),
 		))
@@ -599,7 +599,7 @@ func (k Keeper) slashSupplierStake(
 
 	supplierToSlash.Stake = &remainingStakeCoin
 
-	logger.Info(fmt.Sprintf(
+	logger.Debug(fmt.Sprintf(
 		"queueing operation: slash supplier owner with address %q operated by %q by %s, remaining stake: %s",
 		supplierToSlash.GetOwnerAddress(),
 		supplierToSlash.GetOperatorAddress(),

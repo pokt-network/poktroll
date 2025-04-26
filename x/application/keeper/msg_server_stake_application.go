@@ -52,7 +52,7 @@ func (k Keeper) StakeApplication(
 	logger cosmoslog.Logger,
 	msg *types.MsgStakeApplication,
 ) (_ *types.Application, err error) {
-	logger.Info(fmt.Sprintf("About to stake application with msg: %v", msg))
+	logger.Debug(fmt.Sprintf("About to stake application with msg: %v", msg))
 
 	if err = msg.ValidateBasic(); err != nil {
 		logger.Error(fmt.Sprintf("invalid MsgStakeApplication: %v", err))
@@ -66,22 +66,22 @@ func (k Keeper) StakeApplication(
 	)
 	foundApp, isAppFound := k.GetApplication(ctx, msg.Address)
 	if !isAppFound {
-		logger.Info(fmt.Sprintf("Application not found. Creating new application for address %q", msg.Address))
+		logger.Debug(fmt.Sprintf("Application not found. Creating new application for address %q", msg.Address))
 		foundApp = k.createApplication(ctx, msg)
 		coinsToEscrow = *msg.Stake
 	} else {
-		logger.Info(fmt.Sprintf("Application found. About to try and update application for address %q", msg.Address))
+		logger.Debug(fmt.Sprintf("Application found. About to try and update application for address %q", msg.Address))
 		currAppStake := *foundApp.Stake
 		if err = k.updateApplication(ctx, &foundApp, msg); err != nil {
-			logger.Info(fmt.Sprintf("could not update application for address %q due to error %v", msg.Address, err))
+			logger.Debug(fmt.Sprintf("could not update application for address %q due to error %v", msg.Address, err))
 			return nil, status.Error(codes.InvalidArgument, err.Error())
 		}
 		coinsToEscrow, err = (*msg.Stake).SafeSub(currAppStake)
 		if err != nil {
-			logger.Info(fmt.Sprintf("could not calculate coins to escrow due to error %v", err))
+			logger.Debug(fmt.Sprintf("could not calculate coins to escrow due to error %v", err))
 			return nil, status.Error(codes.InvalidArgument, err.Error())
 		}
-		logger.Info(fmt.Sprintf("Application is going to escrow an additional %+v coins", coinsToEscrow))
+		logger.Debug(fmt.Sprintf("Application is going to escrow an additional %+v coins", coinsToEscrow))
 
 		// If the application has initiated an unstake action, cancel it since it is staking again.
 		if foundApp.IsUnbonding() {
@@ -107,7 +107,7 @@ func (k Keeper) StakeApplication(
 	// start checking the denom here.
 	if msg.Stake.Amount.LT(minStake.Amount) {
 		err = fmt.Errorf("application %q must stake at least %s", msg.GetAddress(), minStake)
-		logger.Info(err.Error())
+		logger.Debug(err.Error())
 		return nil, status.Error(
 			codes.InvalidArgument,
 			types.ErrAppInvalidStake.Wrapf("%s", err).Error(),
@@ -117,7 +117,7 @@ func (k Keeper) StakeApplication(
 	// Retrieve the address of the application
 	appAddress, err := sdk.AccAddressFromBech32(msg.Address)
 	if err != nil {
-		logger.Info(fmt.Sprintf("could not parse address %q", msg.Address))
+		logger.Debug(fmt.Sprintf("could not parse address %q", msg.Address))
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
@@ -127,11 +127,11 @@ func (k Keeper) StakeApplication(
 		logger.Error(fmt.Sprintf("could not send %v coins from %q to %q module account due to %v", coinsToEscrow, appAddress, types.ModuleName, err))
 		return nil, status.Error(codes.Internal, err.Error())
 	}
-	logger.Info(fmt.Sprintf("Successfully escrowed %v coins from %q to %q module account", coinsToEscrow, appAddress, types.ModuleName))
+	logger.Debug(fmt.Sprintf("Successfully escrowed %v coins from %q to %q module account", coinsToEscrow, appAddress, types.ModuleName))
 
 	// Update the Application in the store
 	k.SetApplication(ctx, foundApp)
-	logger.Info(fmt.Sprintf("Successfully updated application stake for app: %+v", foundApp))
+	logger.Debug(fmt.Sprintf("Successfully updated application stake for app: %+v", foundApp))
 
 	// Collect events for emission.
 	events := make([]sdk.Msg, 0)

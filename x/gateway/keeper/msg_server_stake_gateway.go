@@ -26,7 +26,7 @@ func (k msgServer) StakeGateway(
 	ctx := sdk.UnwrapSDKContext(goCtx)
 
 	logger := k.Logger().With("method", "StakeGateway")
-	logger.Info(fmt.Sprintf("about to stake gateway with msg: %v", msg))
+	logger.Debug(fmt.Sprintf("about to stake gateway with msg: %v", msg))
 
 	if err := msg.ValidateBasic(); err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
@@ -39,7 +39,7 @@ func (k msgServer) StakeGateway(
 	// NB: This SHOULD NEVER happen because msg.ValidateBasic() validates the address as bech32.
 	if err != nil {
 		// TODO_TECHDEBT(#384): determine whether to continue using cosmos logger for debug level.
-		logger.Info(fmt.Sprintf("ERROR: could not parse address %q", msg.Address))
+		logger.Debug(fmt.Sprintf("ERROR: could not parse address %q", msg.Address))
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
@@ -47,11 +47,11 @@ func (k msgServer) StakeGateway(
 	var coinsToEscrow sdk.Coin
 	gateway, isGatewayFound := k.GetGateway(ctx, msg.Address)
 	if !isGatewayFound {
-		logger.Info(fmt.Sprintf("gateway not found; creating new gateway for address %q", msg.Address))
+		logger.Debug(fmt.Sprintf("gateway not found; creating new gateway for address %q", msg.Address))
 		gateway = k.createGateway(ctx, msg)
 		coinsToEscrow = *msg.Stake
 	} else {
-		logger.Info(fmt.Sprintf("gateway found; about to try and update gateway for address %q", msg.Address))
+		logger.Debug(fmt.Sprintf("gateway found; about to try and update gateway for address %q", msg.Address))
 		currGatewayStake := *gateway.Stake
 		if err = k.updateGateway(ctx, &gateway, msg); err != nil {
 			logger.Error(fmt.Sprintf("could not update gateway for address %q due to error %v", msg.Address, err))
@@ -67,7 +67,7 @@ func (k msgServer) StakeGateway(
 				).Error(),
 			)
 		}
-		logger.Info(fmt.Sprintf("gateway is going to escrow an additional %+v coins", coinsToEscrow))
+		logger.Debug(fmt.Sprintf("gateway is going to escrow an additional %+v coins", coinsToEscrow))
 
 		// If the gateway has initiated an unstake action, cancel it since it is staking again.
 		if gateway.IsUnbonding() {
@@ -80,7 +80,7 @@ func (k msgServer) StakeGateway(
 	// TODO_MAINNET(#853): Consider removing the requirement above.
 	if coinsToEscrow.IsZero() {
 		err = types.ErrGatewayInvalidStake.Wrapf("gateway %q must escrow more than 0 additional coins", msg.GetAddress())
-		logger.Info(fmt.Sprintf("ERROR: %s", err))
+		logger.Debug(fmt.Sprintf("ERROR: %s", err))
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
@@ -88,7 +88,7 @@ func (k msgServer) StakeGateway(
 	minStake := k.GetParams(ctx).MinStake
 	if msg.Stake.Amount.LT(minStake.Amount) {
 		err = types.ErrGatewayInvalidStake.Wrapf("gateway %q must stake at least %s", msg.Address, minStake)
-		logger.Info(fmt.Sprintf("ERROR: %s", err))
+		logger.Debug(fmt.Sprintf("ERROR: %s", err))
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
@@ -102,7 +102,7 @@ func (k msgServer) StakeGateway(
 
 	// Update the Gateway in the store
 	k.SetGateway(ctx, gateway)
-	logger.Info(fmt.Sprintf("Successfully updated stake for gateway: %+v", gateway))
+	logger.Debug(fmt.Sprintf("Successfully updated stake for gateway: %+v", gateway))
 
 	sessionEndHeight := k.sharedKeeper.GetSessionEndHeight(ctx, sdk.UnwrapSDKContext(ctx).BlockHeight())
 	events := make([]sdk.Msg, 0)
