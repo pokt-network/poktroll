@@ -75,8 +75,8 @@ func runClaimApplication(cmd *cobra.Command, args []string) error {
 
 	// Retrieve and validate the service ID based on the second argument provided.
 	serviceID := args[1]
-	if !sharedtypes.IsValidServiceId(serviceID) {
-		return ErrInvalidUsage.Wrapf("invalid service ID: %q", serviceID)
+	if err = sharedtypes.IsValidServiceId(serviceID); err != nil {
+		return ErrInvalidUsage.Wrapf("%v", err.Error())
 	}
 
 	// Conventionally derive a cosmos-sdk client context from the cobra command.
