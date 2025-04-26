@@ -30,8 +30,10 @@ func (query *QueryAllSuppliersRequest) ValidateBasic() error {
 	switch filter := query.Filter.(type) {
 	case *QueryAllSuppliersRequest_ServiceId:
 		// If the service ID is set, check if it's valid
-		if err := sharedtypes.IsValidServiceId(filter.ServiceId); err != nil {
-			return ErrSupplierInvalidServiceId.Wrapf("%v", err.Error())
+		if filter.ServiceId != "" {
+			if err := sharedtypes.IsValidServiceId(filter.ServiceId); err != nil {
+				return ErrSupplierInvalidServiceId.Wrapf("%v", err.Error())
+			}
 		}
 
 	default:
