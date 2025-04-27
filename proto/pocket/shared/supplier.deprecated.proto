@@ -1,0 +1,29 @@
+syntax = "proto3";
+package pocket.shared;
+
+option go_package = "github.com/pokt-network/poktroll/x/shared/types";
+option (gogoproto.stable_marshaler_all) = true;
+
+import "cosmos_proto/cosmos.proto";
+import "cosmos/base/v1beta1/coin.proto";
+
+import "pocket/shared/service.proto";
+import "gogoproto/gogo.proto";
+
+// TODO_FOLLOWUP: This proto file represents the Supplier type prior to v0.1.8
+// It is used to migrate the Supplier records to an indexable representation.
+// It SHOULD be deleted the chain is upgraded to v0.1.8
+
+message SupplierDeprecated {
+  string owner_address = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+  string operator_address = 2 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+  cosmos.base.v1beta1.Coin stake = 3;
+  repeated SupplierServiceConfig services = 4;
+  uint64 unstake_session_end_height = 5;
+  repeated ServiceConfigUpdateDeprecated service_config_history = 6;
+}
+
+message ServiceConfigUpdateDeprecated {
+  repeated SupplierServiceConfig services = 1;
+  uint64 effective_block_height = 2;
+}

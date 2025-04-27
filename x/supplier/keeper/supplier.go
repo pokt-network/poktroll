@@ -135,3 +135,21 @@ func (k Keeper) getSupplierUnstakingHeightStore(ctx context.Context) storetypes.
 	storeAdapter := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
 	return prefix.NewStore(storeAdapter, types.KeyPrefix(types.SupplierUnstakingHeightKeyPrefix))
 }
+
+// GetAllDeprecatedSuppliers returns all suppliers in their deprecated form
+// (i.e. Prior to v0.1.8)
+// TODO_FOLLOWUP: Remove this function after v0.1.8 upgrade
+func (k Keeper) GetAllDeprecatedSuppliers(ctx context.Context) (suppliers []sharedtypes.SupplierDeprecated) {
+	supplierStore := k.getSupplierStore(ctx)
+	iterator := storetypes.KVStorePrefixIterator(supplierStore, []byte{})
+	defer iterator.Close()
+
+	for ; iterator.Valid(); iterator.Next() {
+		var supplier sharedtypes.SupplierDeprecated
+		k.cdc.MustUnmarshal(iterator.Value(), &supplier)
+
+		suppliers = append(suppliers, supplier)
+	}
+
+	return suppliers
+}
