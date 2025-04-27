@@ -186,8 +186,9 @@ func TestServiceConfigUpdateIterators(t *testing.T) {
 	}
 
 	t.Run("GetServiceConfigUpdatesIterator", func(t *testing.T) {
-		// Test for service1 which should have 50 service config updates
-		iterator := keeper.GetServiceConfigUpdatesIterator(ctx, "service1")
+		// Test for service1 which should have 40 active service config updates,
+		// since 10 of them are active at height 10 which after the query height
+		iterator := keeper.GetServiceConfigUpdatesIterator(ctx, "service1", 1)
 		defer iterator.Close()
 
 		numConfigUpdatesWithService1 := 0
@@ -197,7 +198,7 @@ func TestServiceConfigUpdateIterators(t *testing.T) {
 			require.Equal(t, "service1", config.Service.ServiceId)
 			numConfigUpdatesWithService1++
 		}
-		require.Equal(t, 50, numConfigUpdatesWithService1)
+		require.Equal(t, 40, numConfigUpdatesWithService1)
 	})
 
 	t.Run("GetActivatedServiceConfigUpdatesIterator", func(t *testing.T) {

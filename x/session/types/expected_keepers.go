@@ -31,6 +31,7 @@ type SupplierKeeper interface {
 	GetServiceConfigUpdatesIterator(
 		ctx context.Context,
 		serviceId string,
+		queryHeight int64,
 	) sharedtypes.RecordIterator[*sharedtypes.ServiceConfigUpdate]
 
 	GetDehydratedSupplier(

@@ -250,12 +250,15 @@ func defaultSupplierKeeperMock(t testing.TB) types.SupplierKeeper {
 	mockSupplierKeeper := mocks.NewMockSupplierKeeper(ctrl)
 
 	// Mocking the GetServiceConfigUpdatesIterator function to return a mock iterator for service config updates.
-	mockSupplierKeeper.EXPECT().GetServiceConfigUpdatesIterator(gomock.Any(), gomock.Any()).
-		DoAndReturn(func(ctx context.Context, serviceId string) sharedtypes.RecordIterator[*sharedtypes.ServiceConfigUpdate] {
+	mockSupplierKeeper.EXPECT().GetServiceConfigUpdatesIterator(gomock.Any(), gomock.Any(), gomock.Any()).
+		DoAndReturn(func(ctx context.Context, serviceId string, activationHeight int64) sharedtypes.RecordIterator[*sharedtypes.ServiceConfigUpdate] {
 			testSupplier := TestSupplier
 			allServiceConfigUpdates := make([]*sharedtypes.ServiceConfigUpdate, 0)
 			for _, serviceConfigUpdate := range testSupplier.ServiceConfigHistory {
 				if serviceConfigUpdate.Service.ServiceId != serviceId {
+					continue
+				}
+				if serviceConfigUpdate.ActivationHeight > activationHeight {
 					continue
 				}
 				allServiceConfigUpdates = append(allServiceConfigUpdates, serviceConfigUpdate)

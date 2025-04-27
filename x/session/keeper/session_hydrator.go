@@ -187,12 +187,12 @@ func (k Keeper) hydrateSessionSuppliers(ctx context.Context, sh *sessionHydrator
 	candidatesToRandomWeight := make(map[string]int)
 	candidateSupplierConfigs := make([]*sharedtypes.ServiceConfigUpdate, 0)
 
-	// Get all suppliers without service ID filtering because:
-	// - Suppliers may not be active for the session's service ID at "query height"
-	// - We cannot filter by supplier.Services which only represents current (i.e. latest) height
+	// Use the optimized iterator that only returns service configurations active at the query height
+	// This avoids unnecessary filtering during iteration and is more efficient
 	sessionSupplierServiceConfigIterator := k.supplierKeeper.GetServiceConfigUpdatesIterator(
 		ctx,
 		sh.sessionHeader.ServiceId,
+		sh.blockHeight,
 	)
 	defer sessionSupplierServiceConfigIterator.Close()
 
@@ -204,6 +204,8 @@ func (k Keeper) hydrateSessionSuppliers(ctx context.Context, sh *sessionHydrator
 		}
 
 		// Check if supplier is authorized to serve this service at query block height.
+		// This check is still necessary as the iterator only filters by activation height <= currentHeight
+		// but we also need to check deactivation height > currentHeight
 		if supplierServiceConfigUpdate.IsActive(sh.blockHeight) {
 			candidateSupplierConfigs = append(candidateSupplierConfigs, supplierServiceConfigUpdate)
 		}

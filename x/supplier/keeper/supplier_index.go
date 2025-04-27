@@ -36,7 +36,7 @@ func (k Keeper) indexSupplierServiceConfigUpdates(
 		serviceConfigBz := k.cdc.MustMarshal(serviceConfigUpdate)
 
 		// Index 1: Primary key -> service config data
-		serviceConfigPrimaryKey := types.ServiceConfigUpdatePrimaryKey(*serviceConfigUpdate)
+		serviceConfigPrimaryKey := types.ServiceConfigUpdateKey(*serviceConfigUpdate)
 		serviceConfigUpdateStore.Set(serviceConfigPrimaryKey, serviceConfigBz)
 
 		// Index 2: Supplier operator address -> primary key
@@ -86,7 +86,6 @@ func (k Keeper) indexSupplierUnstakingHeight(
 // This function uses the supplier-to-service index to efficiently find all service
 // configurations associated with the given supplier operator address, without needing
 // to scan and unmarshal the entire service configuration updates store.
-// TODO_IN_THIS_COMMIT: Add query height parameter to filter active service configs
 func (k Keeper) getSupplierServiceConfigUpdates(
 	ctx context.Context,
 	supplierOperatorAddress string,

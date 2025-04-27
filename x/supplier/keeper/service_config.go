@@ -2,6 +2,7 @@ package keeper
 
 import (
 	"context"
+	"encoding/binary"
 	"fmt"
 
 	"cosmossdk.io/store/prefix"
@@ -13,24 +14,32 @@ import (
 	"github.com/pokt-network/poktroll/x/supplier/types"
 )
 
-// GetServiceConfigUpdatesIterator returns an iterator over service configuration updates
-// for a specific service ID.
+// GetServiceConfigUpdatesIterator returns an iterator over service configuration
+// updates with activation heights less than or equal to the provided current height.
 //
-// It provides access to all service configurations across all suppliers that are
-// registered for the specified service, regardless of their activation status.
+// This function leverages the lexicographical ordering of big-endian encoded heights
+// to efficiently filter configurations that should be active at the current height.
 func (k Keeper) GetServiceConfigUpdatesIterator(
 	ctx context.Context,
 	serviceId string,
+	currentHeight int64,
 ) sharedtypes.RecordIterator[*sharedtypes.ServiceConfigUpdate] {
-	serviceConfigUpdatesStore := k.getServiceConfigUpdatesStore(ctx)
+	serviceConfigUpdateStore := k.getServiceConfigUpdatesStore(ctx)
 
-	serviceConfigUpdateIterator := storetypes.KVStorePrefixIterator(
-		serviceConfigUpdatesStore,
-		types.StringKey(serviceId),
-	)
+	startKeyBz := types.StringKey(serviceId)
 
-	serviceConfigUpdateAccessor := getServiceConfigUpdateFromBytesFn(k.cdc)
-	return sharedtypes.NewRecordIterator(serviceConfigUpdateIterator, serviceConfigUpdateAccessor)
+	endKeyBz := types.StringKey(serviceId)
+	// Append the currentHeight+1 in big endian format to create our upper bound
+	// Using currentHeight+1 makes the bound exclusive, so we get all heights <= currentHeight
+	heightBytes := make([]byte, 8)
+	binary.BigEndian.PutUint64(heightBytes, uint64(currentHeight+1))
+	endKeyBz = append(endKeyBz, heightBytes...)
+
+	// Create an iterator for the range
+	supplierServiceConfigIterator := serviceConfigUpdateStore.Iterator(startKeyBz, endKeyBz)
+
+	serviceConfigUpdateRetriever := getServiceConfigUpdateFromBytesFn(k.cdc)
+	return sharedtypes.NewRecordIterator(supplierServiceConfigIterator, serviceConfigUpdateRetriever)
 }
 
 // GetActivatedServiceConfigUpdatesIterator returns an iterator over service configurations
@@ -50,7 +59,10 @@ func (k Keeper) GetActivatedServiceConfigUpdatesIterator(
 		types.IntKey(activationHeight),
 	)
 
-	// TODO_IN_THIS_COMMIT: Add a comment explaining how getServiceConfigUpdateFromPrimaryKeyFn is used
+	// This creates a closure that will be used by the RecordIterator to:
+	// 1. Extract primary keys from the activation height index
+	// 2. Use those keys to look up the full ServiceConfigUpdate objects in the primary store
+	// 3. Return the unmarshaled ServiceConfigUpdate objects to the iterator consumer
 	serviceConfigUpdateRetriever := getServiceConfigUpdateFromPrimaryKeyFn(serviceConfigUpdateStore, k.cdc)
 	return sharedtypes.NewRecordIterator(serviceConfigUpdateIterator, serviceConfigUpdateRetriever)
 }
@@ -91,8 +103,8 @@ func (k Keeper) deleteDeactivatedServiceConfigUpdate(
 ) {
 	// Delete from primary service config store
 	serviceConfigUpdateStore := k.getServiceConfigUpdatesStore(ctx)
-	serviceConfigUpdatePrimaryKey := types.ServiceConfigUpdatePrimaryKey(serviceConfigUpdate)
-	serviceConfigUpdateStore.Delete(serviceConfigUpdatePrimaryKey)
+	serviceConfigUpdateKey := types.ServiceConfigUpdateKey(serviceConfigUpdate)
+	serviceConfigUpdateStore.Delete(serviceConfigUpdateKey)
 
 	// Delete from supplier-to-service index
 	supplierServiceConfigUpdateStore := k.getSupplierServiceConfigUpdatesStore(ctx)
