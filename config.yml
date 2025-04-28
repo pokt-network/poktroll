@@ -223,6 +223,19 @@ genesis:
       params:
         send_enabled: true
         receive_enabled: true
+    # For ref, see https://github.com/cosmos/ibc-go/blob/v8.7.0/proto/ibc/applications/interchain_accounts/genesis/v1/genesis.proto#L12
+    interchainaccounts:
+      controller_genesis_state:
+        # For ref, see https://github.com/cosmos/ibc-go/blob/v8.7.0/proto/ibc/applications/interchain_accounts/controller/v1/controller.proto#L9
+        params:
+          controller_enabled: true
+      host_genesis_state:
+        port: icahost
+        # For ref, https://github.com/cosmos/ibc-go/blob/v8.7.0/proto/ibc/applications/interchain_accounts/host/v1/host.proto#L9
+        params:
+          host_enabled: true
+          allow_messages:
+            - "*"
     # For ref, see proto/poktroll/application/params.proto
     application:
       params:
