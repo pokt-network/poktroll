@@ -1,6 +1,7 @@
 package types_test
 
 import (
+	"strings"
 	"testing"
 
 	"cosmossdk.io/math"
@@ -287,7 +288,7 @@ func TestGenesisState_Validate(t *testing.T) {
 						Address: addr1,
 						Stake:   &stake1,
 						ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{
-							{ServiceId: "TooLongId1234567890"},
+							{ServiceId: strings.Repeat("a", 43)}, // 42 is the max length hardcoded in the services module
 						},
 						DelegateeGatewayAddresses: emptyDelegatees,
 					},

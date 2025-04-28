@@ -16,5 +16,7 @@ var (
 	ErrSharedUnauthorizedSupplierUpdate  = sdkerrors.Register(ModuleName, 1105, "unauthorized supplier update")
 	ErrSharedInvalidRevShare             = sdkerrors.Register(ModuleName, 1106, "invalid revenue share configuration")
 	ErrSharedInvalidService              = sdkerrors.Register(ModuleName, 1107, "invalid service")
-	ErrSharedInvalidComputeUnitsPerRelay = sdkerrors.Register(ModuleName, 1108, "invalid compute units per relay")
+	ErrSharedInvalidServiceId            = sdkerrors.Register(ModuleName, 1108, "invalid service ID")
+	ErrSharedInvalidServiceName          = sdkerrors.Register(ModuleName, 1109, "invalid service name")
+	ErrSharedInvalidComputeUnitsPerRelay = sdkerrors.Register(ModuleName, 1110, "invalid compute units per relay")
 )

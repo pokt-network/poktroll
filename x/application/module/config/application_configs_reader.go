@@ -1,9 +1,8 @@
 package config
 
 import (
-	"gopkg.in/yaml.v2"
-
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"gopkg.in/yaml.v2"
 
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
@@ -72,8 +71,8 @@ func ParseApplicationConfigs(configContent []byte) (*ApplicationStakeConfig, err
 
 	for _, serviceId := range parsedAppConfig.ServiceIds {
 		// Validate serviceId
-		if !sharedtypes.IsValidServiceId(serviceId) {
-			return nil, ErrApplicationConfigInvalidServiceId.Wrapf("%s", serviceId)
+		if err := sharedtypes.IsValidServiceId(serviceId); err != nil {
+			return nil, ErrApplicationConfigInvalidServiceId.Wrapf("%v", err.Error())
 		}
 
 		appServiceConfig := &sharedtypes.ApplicationServiceConfig{
