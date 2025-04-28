@@ -73,7 +73,7 @@ func (k Keeper) GetSupplier(
 // RemoveSupplier deletes a supplier from the store and removes all associated indexes
 func (k Keeper) RemoveSupplier(ctx context.Context, supplierOperatorAddress string) {
 	k.removeSupplierServiceConfigUpdateIndexes(ctx, supplierOperatorAddress)
-	k.removeSupplierUnstakingHeightIndexes(ctx, supplierOperatorAddress)
+	k.removeSupplierUnstakingHeightIndex(ctx, supplierOperatorAddress)
 
 	supplierStore := k.getSupplierStore(ctx)
 	supplierKey := types.SupplierOperatorKey(supplierOperatorAddress)

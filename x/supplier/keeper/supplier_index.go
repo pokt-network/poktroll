@@ -63,8 +63,16 @@ func (k Keeper) indexSupplierServiceConfigUpdates(
 // - If the supplier is unbonding (UnstakeSessionEndHeight > 0), it's added to the index
 // - If the supplier is not unbonding, it's removed from the index
 //
-// This index enables the EndBlocker to efficiently find suppliers whose unbonding period
-// has completed without iterating over and unmarshaling all suppliers in the store.
+// DEV_NOTE: Since an unbonding supplier cannot perform successive unstaking
+// actions until it re-stakes or completes the unbonding period, we can safely
+// use the supplier's operator address as the key in the index.
+//
+// TODO_IMPROVE: Consider having an unbondingHeight/supplierOperatorAddress
+// key for even more efficient lookups.
+// This involves processing the unbonding height here in addition to the unbonding EndBlocker.
+//
+// This index enables the EndBlocker to efficiently find suppliers that are unbonding
+// without iterating over and unmarshaling all suppliers in the store.
 func (k Keeper) indexSupplierUnstakingHeight(
 	ctx context.Context,
 	supplier sharedtypes.Supplier,
@@ -175,11 +183,11 @@ func (k Keeper) removeSupplierServiceConfigUpdateIndexes(
 	}
 }
 
-// removeSupplierUnstakingHeightIndexes removes a supplier from the unstaking height index.
+// removeSupplierUnstakingHeightIndex removes a supplier from the unstaking height index.
 //
 // This function is called when a supplier is completely removed from the state or
 // when they re-stake, cancelling their unbonding period.
-func (k Keeper) removeSupplierUnstakingHeightIndexes(
+func (k Keeper) removeSupplierUnstakingHeightIndex(
 	ctx context.Context,
 	supplierOperatorAddress string,
 ) {

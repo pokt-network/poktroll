@@ -38,8 +38,8 @@ func (k Keeper) GetServiceConfigUpdatesIterator(
 	// Create an iterator for the range
 	supplierServiceConfigIterator := serviceConfigUpdateStore.Iterator(startKeyBz, endKeyBz)
 
-	serviceConfigUpdateRetriever := getServiceConfigUpdateFromBytesFn(k.cdc)
-	return sharedtypes.NewRecordIterator(supplierServiceConfigIterator, serviceConfigUpdateRetriever)
+	serviceConfigUpdateAccessor := serviceConfigUpdateAccessorFn(k.cdc)
+	return sharedtypes.NewRecordIterator(supplierServiceConfigIterator, serviceConfigUpdateAccessor)
 }
 
 // GetActivatedServiceConfigUpdatesIterator returns an iterator over service configurations
@@ -63,8 +63,8 @@ func (k Keeper) GetActivatedServiceConfigUpdatesIterator(
 	// 1. Extract primary keys from the activation height index
 	// 2. Use those keys to look up the full ServiceConfigUpdate objects in the primary store
 	// 3. Return the unmarshaled ServiceConfigUpdate objects to the iterator consumer
-	serviceConfigUpdateRetriever := getServiceConfigUpdateFromPrimaryKeyFn(serviceConfigUpdateStore, k.cdc)
-	return sharedtypes.NewRecordIterator(serviceConfigUpdateIterator, serviceConfigUpdateRetriever)
+	serviceConfigUpdateAccessor := serviceConfigUpdateFromPrimaryKeyAccessorFn(serviceConfigUpdateStore, k.cdc)
+	return sharedtypes.NewRecordIterator(serviceConfigUpdateIterator, serviceConfigUpdateAccessor)
 }
 
 // GetDeactivatedServiceConfigUpdatesIterator returns an iterator over service
@@ -84,8 +84,8 @@ func (k Keeper) GetDeactivatedServiceConfigUpdatesIterator(
 		types.IntKey(deactivationHeight),
 	)
 
-	serviceConfigRetriever := getServiceConfigUpdateFromPrimaryKeyFn(serviceConfigUpdateStore, k.cdc)
-	return sharedtypes.NewRecordIterator(serviceConfigUpdateIterator, serviceConfigRetriever)
+	serviceConfigAccessor := serviceConfigUpdateFromPrimaryKeyAccessorFn(serviceConfigUpdateStore, k.cdc)
+	return sharedtypes.NewRecordIterator(serviceConfigUpdateIterator, serviceConfigAccessor)
 }
 
 // deleteDeactivatedServiceConfigUpdate removes a deactivated service configuration
@@ -122,12 +122,12 @@ func (k Keeper) deleteDeactivatedServiceConfigUpdate(
 	deactivationHeightStore.Delete(deactivationKey)
 }
 
-// getServiceConfigUpdateFromBytesFn creates a function that unmarshals byte data
+// serviceConfigUpdateAccessorFn creates a function that unmarshals byte data
 // into ServiceConfigUpdate objects.
 //
 // This creates a closure that can be used by the RecordIterator to convert raw
 // bytes into typed ServiceConfigUpdate objects.
-func getServiceConfigUpdateFromBytesFn(
+func serviceConfigUpdateAccessorFn(
 	cdc codec.BinaryCodec,
 ) sharedtypes.DataRecordAccessor[*sharedtypes.ServiceConfigUpdate] {
 	return func(serviceConfigUpdateBz []byte) (*sharedtypes.ServiceConfigUpdate, error) {
@@ -138,12 +138,12 @@ func getServiceConfigUpdateFromBytesFn(
 	}
 }
 
-// getServiceConfigUpdateFromPrimaryKeyFn creates a function that retrieves a
+// serviceConfigUpdateFromPrimaryKeyAccessorFn creates a function that retrieves a
 // ServiceConfigUpdate from its primary key.
 //
 // This creates a closure that can be used by the RecordIterator to convert primary
 // keys into the actual ServiceConfigUpdate objects they reference.
-func getServiceConfigUpdateFromPrimaryKeyFn(
+func serviceConfigUpdateFromPrimaryKeyAccessorFn(
 	serviceConfigPrimaryStore storetypes.KVStore,
 	cdc codec.BinaryCodec,
 ) sharedtypes.DataRecordAccessor[sharedtypes.ServiceConfigUpdate] {
