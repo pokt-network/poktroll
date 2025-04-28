@@ -196,6 +196,33 @@ genesis:
           coins:
             - amount: "1000000000" # MUST BE equal to one add_service_fee below
               denom: upokt
+    # For ref, see https://github.com/cosmos/ibc-go/blob/v8.7.0/proto/ibc/core/types/v1/genesis.proto#L13
+    ibc:
+      # - https://github.com/cosmos/ibc-go/blob/v8.7.0/proto/ibc/core/client/v1/genesis.proto#L11
+      client_genesis:
+        params:
+          allowed_clients:
+            - 07-tendermint
+      # - https://github.com/cosmos/ibc-go/blob/v8.7.0/proto/ibc/core/connection/v1/connection.proto#L109
+      connection_genesis:
+        params:
+          max_expected_time_per_block: 10000000000 # (nanoseconds) 10 seconds
+      # - https://github.com/cosmos/ibc-go/blob/v8.7.0/proto/ibc/core/channel/v1/channel.proto#L184
+      channel_genesis:
+        params:
+          upgrade_timeout:
+            height:
+              revision_number: 0
+              revision_height: 0
+            timestamp: 300000000000 # (nanoseconds) 5 minutes
+    # For ref, see https://github.com/cosmos/ibc-go/blob/v8.7.0/proto/ibc/applications/transfer/v1/genesis.proto#L12
+    # and https://github.com/cosmos/ibc-go/blob/v8.7.0/proto/ibc/applications/transfer/v1/transfer.proto#L21
+    transfer:
+      port_id: transfer
+      denom_traces: [ ]
+      params:
+        send_enabled: true
+        receive_enabled: true
     # For ref, see proto/poktroll/application/params.proto
     application:
       params:
