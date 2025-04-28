@@ -15,22 +15,27 @@ import (
 )
 
 // SetApplication set a specific application in the store from its index
+// and updates all related application indexes.
 func (k Keeper) SetApplication(ctx context.Context, application types.Application) {
-	storeAdapter := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
-	store := prefix.NewStore(storeAdapter, types.KeyPrefix(types.ApplicationKeyPrefix))
+	k.indexApplicationUnstaking(ctx, application)
+	k.indexApplicationTransfer(ctx, application)
+	k.indexApplicationDelegations(ctx, application)
+	k.indexApplicationUndelegations(ctx, application)
+
+	applicationStore := k.getApplicationStore(ctx)
 	appBz := k.cdc.MustMarshal(&application)
-	store.Set(types.ApplicationKey(application.Address), appBz)
+	applicationStore.Set(types.ApplicationKey(application.Address), appBz)
 }
 
 // GetApplication returns a application from its index
+// It initializes any nil fields to empty collections when found
 func (k Keeper) GetApplication(
 	ctx context.Context,
 	appAddr string,
 ) (app types.Application, found bool) {
-	storeAdapter := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
-	store := prefix.NewStore(storeAdapter, types.KeyPrefix(types.ApplicationKeyPrefix))
+	applicationStore := k.getApplicationStore(ctx)
 
-	appBz := store.Get(types.ApplicationKey(appAddr))
+	appBz := applicationStore.Get(types.ApplicationKey(appAddr))
 	if appBz == nil {
 		return app, false
 	}
@@ -52,18 +57,24 @@ func (k Keeper) GetApplication(
 	return app, true
 }
 
-// RemoveApplication removes a application from the store
-func (k Keeper) RemoveApplication(ctx context.Context, appAddr string) {
-	storeAdapter := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
-	store := prefix.NewStore(storeAdapter, types.KeyPrefix(types.ApplicationKeyPrefix))
-	store.Delete(types.ApplicationKey(appAddr))
+// RemoveApplication removes an application from the store and all related application indexes.
+func (k Keeper) RemoveApplication(ctx context.Context, application types.Application) {
+	k.removeApplicationUnstakingIndex(ctx, application.Address)
+	k.removeApplicationTransferIndex(ctx, application.Address)
+	k.removeApplicationUndelegationIndexes(ctx, application.Address)
+
+	for _, gatewayAddress := range application.DelegateeGatewayAddresses {
+		k.removeApplicationDelegationIndex(ctx, application.Address, gatewayAddress)
+	}
+
+	applicationStore := k.getApplicationStore(ctx)
+	applicationStore.Delete(types.ApplicationKey(application.Address))
 }
 
-// GetAllApplications returns all application
+// GetAllApplications returns all applications
 func (k Keeper) GetAllApplications(ctx context.Context) (apps []types.Application) {
-	storeAdapter := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
-	store := prefix.NewStore(storeAdapter, types.KeyPrefix(types.ApplicationKeyPrefix))
-	iterator := storetypes.KVStorePrefixIterator(store, []byte{})
+	applicationStore := k.getApplicationStore(ctx)
+	iterator := storetypes.KVStorePrefixIterator(applicationStore, []byte{})
 
 	defer iterator.Close()
 
@@ -83,12 +94,148 @@ func (k Keeper) GetAllApplications(ctx context.Context) (apps []types.Applicatio
 	return
 }
 
-// GetAllApplicationsIterator returns an iterator over all application records.
+// GetAllUnstakingApplicationsIterator returns an iterator for all applications
+// that are currently unstaking.
+// It is used to process applications that have completed their unbonding period.
+func (k Keeper) GetAllUnstakingApplicationsIterator(
+	ctx context.Context,
+) sharedtypes.RecordIterator[types.Application] {
+	unstakingApplicationsStore := k.getApplicationUnstakingStore(ctx)
+	applicationStore := k.getApplicationStore(ctx)
+
+	transferringAppsIterator := storetypes.KVStorePrefixIterator(unstakingApplicationsStore, []byte{})
+
+	applicationAccessor := applicationFromPrimaryKeyAccessorFn(applicationStore, k.cdc)
+	return sharedtypes.NewRecordIterator(transferringAppsIterator, applicationAccessor)
+}
+
+// GetAllTransferringApplicationsIterator returns an iterator for all applications
+// that are currently transferring.
+// It is used to process applications that have completed their transfer period.
+func (k Keeper) GetAllTransferringApplicationsIterator(
+	ctx context.Context,
+) sharedtypes.RecordIterator[types.Application] {
+	transferApplicationsStore := k.getApplicationTransferStore(ctx)
+	applicationStore := k.getApplicationStore(ctx)
+
+	transferringAppsIterator := storetypes.KVStorePrefixIterator(transferApplicationsStore, []byte{})
+
+	applicationAccessor := applicationFromPrimaryKeyAccessorFn(applicationStore, k.cdc)
+	return sharedtypes.NewRecordIterator(transferringAppsIterator, applicationAccessor)
+}
+
+// GetDelegationsIterator returns an iterator for applications that have delegated
+// to a specific gateway.
+// It is used to find all applications delegated to a particular gateway address.
+func (k Keeper) GetDelegationsIterator(
+	ctx context.Context,
+	gatewayAddress string,
+) sharedtypes.RecordIterator[types.Application] {
+	delegationsStore := k.getDelegationStore(ctx)
+	applicationStore := k.getApplicationStore(ctx)
+
+	gatewayKey := types.StringKey(gatewayAddress)
+	delegationsIterator := storetypes.KVStorePrefixIterator(delegationsStore, gatewayKey)
+
+	delecationAccessor := applicationFromPrimaryKeyAccessorFn(applicationStore, k.cdc)
+	return sharedtypes.NewRecordIterator(delegationsIterator, delecationAccessor)
+}
+
+// GetUndelegationsIterator returns an iterator for applications that have pending undelegations.
+// If ALL_UNDELEGATIONS is passed as the application address, it will return all pending undelegations.
+func (k Keeper) GetUndelegationsIterator(
+	ctx context.Context,
+	applicationAddress string,
+) sharedtypes.RecordIterator[types.Undelegation] {
+	undelegationsStore := k.getUndelegationStore(ctx)
+
+	appKey := []byte{}
+	if applicationAddress != ALL_UNDELEGATIONS {
+		appKey = types.ApplicationKey(applicationAddress)
+	}
+
+	undelegationsIterator := storetypes.KVStorePrefixIterator(undelegationsStore, appKey)
+
+	undelegationAccessor := undelegationAccessorFn(k.cdc)
+	return sharedtypes.NewRecordIterator(undelegationsIterator, undelegationAccessor)
+}
+
+// applicationFromPrimaryKeyAccessorFn creates a function that retrieves an
+// application from its primary key.
+//
+// This creates a closure that can be used by the RecordIterator to convert primary
+// keys into the actual Application objects they reference.
+func applicationFromPrimaryKeyAccessorFn(
+	applicationStore storetypes.KVStore,
+	cdc codec.BinaryCodec,
+) sharedtypes.DataRecordAccessor[types.Application] {
+	return func(applicationKey []byte) (types.Application, error) {
+		applicationBz := applicationStore.Get(applicationKey)
+		if applicationBz == nil {
+			return types.Application{}, fmt.Errorf("expected application to exist for key: %v", applicationKey)
+		}
+
+		var application types.Application
+		cdc.MustUnmarshal(applicationBz, &application)
+
+		return application, nil
+	}
+}
+
+// undelegationAccessorFn creates a function that retrieves an undelegation record
+// from its serialized bytes
+//
+// Returns an accessor function that takes serialized undelegation bytes and returns
+// a deserialized Undelegation object
+func undelegationAccessorFn(
+	cdc codec.BinaryCodec,
+) sharedtypes.DataRecordAccessor[types.Undelegation] {
+	return func(undelegationBz []byte) (types.Undelegation, error) {
+		if undelegationBz == nil {
+			return types.Undelegation{}, fmt.Errorf("expecting undelegation bytes to be non-nil")
+		}
+
+		var undelegation types.Undelegation
+		cdc.MustUnmarshal(undelegationBz, &undelegation)
+
+		return undelegation, nil
+	}
+}
+
+// getApplicationStore returns a KVStore for the application data
+func (k Keeper) getApplicationStore(ctx context.Context) storetypes.KVStore {
+	storeAdapter := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
+	return prefix.NewStore(storeAdapter, types.KeyPrefix(types.ApplicationKeyPrefix))
+}
+
+// getDelegationStore returns a KVStore for application delegations
+func (k Keeper) getDelegationStore(ctx context.Context) storetypes.KVStore {
+	storeAdapter := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
+	return prefix.NewStore(storeAdapter, types.KeyPrefix(types.DelegationKeyPrefix))
+}
+
+// getUndelegationStore returns a KVStore for application undelegations
+func (k Keeper) getUndelegationStore(ctx context.Context) storetypes.KVStore {
+	storeAdapter := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
+	return prefix.NewStore(storeAdapter, types.KeyPrefix(types.UndelegationKeyPrefix))
+}
+
+// getApplicationUnstakingStore returns a KVStore for unstaking applications
+func (k Keeper) getApplicationUnstakingStore(ctx context.Context) storetypes.KVStore {
+	storeAdapter := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
+	return prefix.NewStore(storeAdapter, types.KeyPrefix(types.ApplicationUnstakingKeyPrefix))
+}
+
+// getApplicationTransferStore returns a KVStore for application transfers
+func (k Keeper) getApplicationTransferStore(ctx context.Context) storetypes.KVStore {
+	storeAdapter := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
+	return prefix.NewStore(storeAdapter, types.KeyPrefix(types.ApplicationTransferKeyPrefix))
+}
+
 // GetAllApplicationsIterator returns a RecordIterator over all Application records.
 func (k Keeper) GetAllApplicationsIterator(ctx context.Context) sharedtypes.RecordIterator[types.Application] {
-	storeAdapter := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
-	store := prefix.NewStore(storeAdapter, types.KeyPrefix(types.ApplicationKeyPrefix))
-	applicationIterator := storetypes.KVStorePrefixIterator(store, []byte{})
+	applicationStore := k.getApplicationStore(ctx)
+	applicationIterator := storetypes.KVStorePrefixIterator(applicationStore, []byte{})
 
 	applicationUnmarshallerFn := getApplicationAccessorFn(k.cdc, k.logger)
 	return sharedtypes.NewRecordIterator(applicationIterator, applicationUnmarshallerFn)

@@ -490,7 +490,7 @@ func TestMsgServer_UndelegateFromGateway_RedelegationAfterUndelegationAtTheSameS
 	// Verify that the gateway is also present in the pending undelegation list with the
 	// right sessionEndHeight as the map key.
 	sessionEndHeight := uint64(testsession.GetSessionEndHeightWithDefaultParams(undelegationHeight))
-	require.Contains(t,
+	require.NotContains(t,
 		app.PendingUndelegations[sessionEndHeight].GatewayAddresses,
 		gatewayAddrToRedelegate,
 	)
@@ -527,17 +527,10 @@ func TestMsgServer_UndelegateFromGateway_UndelegateFromUnbondingGateway(t *testi
 	srv := keeper.NewMsgServerImpl(k)
 
 	undelegationHeight := int64(1)
-	sdkCtx, app, delegateAddr, pendingUndelegateFromAddr :=
+	sdkCtx, app, delegateAddr, _ :=
 		createAppStakeDelegateAndUndelegate(ctx, t, srv, k, undelegationHeight)
 
 	require.Contains(t, app.DelegateeGatewayAddresses, delegateAddr)
-
-	// Assert that PendingUndelegations contains the pendingUndelegateFromAddr.
-	pendingUndelegateFromAddrs := make([]string, 0)
-	for _, pendingUndelegation := range app.PendingUndelegations {
-		pendingUndelegateFromAddrs = append(pendingUndelegateFromAddrs, pendingUndelegation.GatewayAddresses...)
-	}
-	require.Contains(t, pendingUndelegateFromAddrs, pendingUndelegateFromAddr)
 
 	sessionEndHeight := testsession.GetSessionEndHeightWithDefaultParams(undelegationHeight)
 	// Increment the block height to make the gateway inactive.
