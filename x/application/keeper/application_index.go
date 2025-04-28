@@ -25,10 +25,7 @@ const ALL_UNDELEGATIONS = ""
 //
 // This index enables the EndBlocker to efficiently find applications that are unbonding
 // without iterating over and unmarshaling all applications in the store.
-func (k Keeper) indexApplicationUnstaking(
-	ctx context.Context,
-	app types.Application,
-) error {
+func (k Keeper) indexApplicationUnstaking(ctx context.Context, app types.Application) {
 	appUnstakingHeightStore := k.getApplicationUnstakingStore(ctx)
 
 	appKey := types.ApplicationKey(app.Address)
@@ -37,8 +34,6 @@ func (k Keeper) indexApplicationUnstaking(
 	} else {
 		appUnstakingHeightStore.Delete(appKey)
 	}
-
-	return nil
 }
 
 // indexApplicationTransfer maintains an index of applications that have a
@@ -51,10 +46,7 @@ func (k Keeper) indexApplicationUnstaking(
 //
 // This index enables tracking of applications that are in the process of transferring
 // their stake to another address.
-func (k Keeper) indexApplicationTransfer(
-	ctx context.Context,
-	app types.Application,
-) error {
+func (k Keeper) indexApplicationTransfer(ctx context.Context, app types.Application) {
 	appTransferHeightStore := k.getApplicationTransferStore(ctx)
 
 	appKey := types.ApplicationKey(app.Address)
@@ -63,8 +55,6 @@ func (k Keeper) indexApplicationTransfer(
 	} else {
 		appTransferHeightStore.Delete(appKey)
 	}
-
-	return nil
 }
 
 // indexApplicationDelegations maintains an index of which applications are delegated
@@ -75,10 +65,7 @@ func (k Keeper) indexApplicationTransfer(
 //
 // The index is structured with keys that combine gateway and application addresses,
 // allowing efficient lookups for which applications are delegated to a given gateway.
-func (k Keeper) indexApplicationDelegations(
-	ctx context.Context,
-	app types.Application,
-) error {
+func (k Keeper) indexApplicationDelegations(ctx context.Context, app types.Application) {
 	appDelegationStore := k.getDelegationStore(ctx)
 
 	// Recreate the delegation index for the application
@@ -87,8 +74,6 @@ func (k Keeper) indexApplicationDelegations(
 		applicationKey := types.ApplicationKey(app.Address)
 		appDelegationStore.Set(delegationKey, applicationKey)
 	}
-
-	return nil
 }
 
 // indexApplicationUndelegations maintains an index of pending undelegations
@@ -101,10 +86,7 @@ func (k Keeper) indexApplicationDelegations(
 // The undelegation index allows efficient tracking of:
 // - Which gateways are being undelegated from by a specific application
 // - All pending undelegations across the network
-func (k Keeper) indexApplicationUndelegations(
-	ctx context.Context,
-	app types.Application,
-) error {
+func (k Keeper) indexApplicationUndelegations(ctx context.Context, app types.Application) {
 	appUndelegationStore := k.getUndelegationStore(ctx)
 	appDelegationStore := k.getDelegationStore(ctx)
 
@@ -138,8 +120,6 @@ func (k Keeper) indexApplicationUndelegations(
 			appDelegationStore.Delete(delegationKey)
 		}
 	}
-
-	return nil
 }
 
 // removeApplicationUnstakingIndex removes an application from the unstaking index.
