@@ -275,8 +275,8 @@ func (stakeConfig *YAMLStakeConfig) ValidateAndParseServiceConfigs(defaultRevSha
 	// Populate the services slice
 	for _, svc := range stakeConfig.Services {
 		// Validate the serviceId
-		if !sharedtypes.IsValidServiceId(svc.ServiceId) {
-			return nil, ErrSupplierConfigInvalidServiceId.Wrapf("%s", svc.ServiceId)
+		if err := sharedtypes.IsValidServiceId(svc.ServiceId); err != nil {
+			return nil, ErrSupplierConfigInvalidServiceId.Wrapf("%v", err.Error())
 		}
 
 		// Ensure at least one endpoint is configured

@@ -1,6 +1,7 @@
 package keeper_test
 
 import (
+	"strings"
 	"testing"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -10,6 +11,7 @@ import (
 	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
 	"github.com/pokt-network/poktroll/testutil/sample"
 	"github.com/pokt-network/poktroll/x/session/types"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 func init() {
@@ -121,10 +123,10 @@ func TestSession_GetSession_Failure(t *testing.T) {
 			desc: "service ID is invalid",
 
 			appAddr:     keepertest.TestApp1Address,
-			serviceId:   "service_id_is_too_long_to_be_valid",
+			serviceId:   strings.Repeat("a", 43), // 42 is the max length hardcoded in the services module
 			blockHeight: 1,
 
-			expectedErrMsg: "invalid service in session",
+			expectedErrMsg: sharedtypes.ErrSharedInvalidServiceId.Error(),
 		},
 		{
 			desc: "negative block height",
@@ -133,7 +135,7 @@ func TestSession_GetSession_Failure(t *testing.T) {
 			serviceId:   keepertest.TestServiceId1,
 			blockHeight: -1,
 
-			expectedErrMsg: "invalid block height for session being retrieved",
+			expectedErrMsg: types.ErrSessionInvalidBlockHeight.Error(),
 		},
 	}
 
@@ -149,7 +151,7 @@ func TestSession_GetSession_Failure(t *testing.T) {
 
 			res, err := keeper.GetSession(ctx, req)
 			require.Error(t, err)
-			require.Contains(t, err.Error(), test.expectedErrMsg)
+			require.ErrorContains(t, err, test.expectedErrMsg)
 			require.Equal(t, expectedRes, res)
 		})
 	}

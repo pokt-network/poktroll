@@ -2,6 +2,7 @@ package types_test
 
 import (
 	"fmt"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -88,7 +89,7 @@ func TestMsgClaimMorseSupplier_ValidateBasic(t *testing.T) {
 		)
 
 		err = msg.ValidateBasic()
-		require.EqualError(t, err, expectedErr.Error())
+		require.ErrorContains(t, err, expectedErr.Error())
 	})
 
 	t.Run("wrong Morse signature", func(t *testing.T) {
@@ -113,7 +114,7 @@ func TestMsgClaimMorseSupplier_ValidateBasic(t *testing.T) {
 		)
 
 		err = msg.ValidateBasic()
-		require.EqualError(t, err, expectedErr.Error())
+		require.ErrorContains(t, err, expectedErr.Error())
 	})
 
 	t.Run("invalid service ID", func(t *testing.T) {
@@ -122,22 +123,16 @@ func TestMsgClaimMorseSupplier_ValidateBasic(t *testing.T) {
 			sample.AccAddress(),
 			morsePrivKey,
 			[]*sharedtypes.SupplierServiceConfig{
-				{ServiceId: "invalid_service_id"},
+				{ServiceId: strings.Repeat("a", 43)}, // Invalid service ID because its too long
 			},
 			sample.AccAddress(),
 		)
 		require.NoError(t, err)
 
-		expectedErr := migrationtypes.ErrMorseSupplierClaim.Wrapf(
-			"invalid service configs: %s",
-			sharedtypes.ErrSharedInvalidService.Wrapf(
-				"invalid service ID: %s",
-				msg.GetServices()[0].GetServiceId(),
-			),
-		)
+		expectedErr := sharedtypes.ErrSharedInvalidServiceId
 
 		err = msg.ValidateBasic()
-		require.EqualError(t, err, expectedErr.Error())
+		require.ErrorContains(t, err, expectedErr.Error())
 	})
 
 	t.Run("valid Morse claim account message", func(t *testing.T) {
