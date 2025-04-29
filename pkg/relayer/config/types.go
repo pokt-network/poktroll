@@ -66,6 +66,7 @@ type YAMLRelayMinerSupplierServiceConfig struct {
 	BackendUrl               string                                      `yaml:"backend_url"`
 	Headers                  map[string]string                           `yaml:"headers,omitempty"`
 	PubliclyExposedEndpoints []string                                    `yaml:"publicly_exposed_endpoints"`
+	ForwardIdentityHeaders   bool                                        `yaml:"forward_identity_headers"`
 }
 
 // YAMLRelayMinerSupplierServiceAuthentication is the structure used to unmarshal
@@ -173,6 +174,9 @@ type RelayMinerSupplierServiceConfig struct {
 	// authentication then this field must be populated accordingly.
 	// For example: { "Authorization": "Bearer <token>" }
 	Headers map[string]string
+	// ForwardPocketHeaders toggles if headers prefixed with 'Pocket-' should be forwarded to
+	// the backend service servicing the relay requests.
+	ForwardPocketHeaders bool
 }
 
 // RelayMinerSupplierServiceAuthentication is the structure resulting from parsing
