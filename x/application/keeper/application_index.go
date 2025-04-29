@@ -8,10 +8,10 @@ import (
 
 const ALL_UNDELEGATIONS = ""
 
-// indexApplicationUnstakingHeight maintains an index of applications that are
+// indexApplicationUnstaking maintains an index of applications that are
 // currently in the unbonding period.
 //
-// This function either adds or removes an application from the unstaking height index
+// This function either adds or removes an application from the unstaking index
 // depending on whether the application is currently unbonding:
 // - If the application is unbonding (UnstakeSessionEndHeight > 0), it's added to the index
 // - If the application is not unbonding, it's removed from the index
@@ -26,13 +26,13 @@ const ALL_UNDELEGATIONS = ""
 // This index enables the EndBlocker to efficiently find applications that are unbonding
 // without iterating over and unmarshaling all applications in the store.
 func (k Keeper) indexApplicationUnstaking(ctx context.Context, app types.Application) {
-	appUnstakingHeightStore := k.getApplicationUnstakingStore(ctx)
+	appUnstakingStore := k.getApplicationUnstakingStore(ctx)
 
 	appKey := types.ApplicationKey(app.Address)
 	if app.IsUnbonding() {
-		appUnstakingHeightStore.Set(appKey, appKey)
+		appUnstakingStore.Set(appKey, appKey)
 	} else {
-		appUnstakingHeightStore.Delete(appKey)
+		appUnstakingStore.Delete(appKey)
 	}
 }
 
@@ -47,13 +47,13 @@ func (k Keeper) indexApplicationUnstaking(ctx context.Context, app types.Applica
 // This index enables tracking of applications that are in the process of transferring
 // their stake to another address.
 func (k Keeper) indexApplicationTransfer(ctx context.Context, app types.Application) {
-	appTransferHeightStore := k.getApplicationTransferStore(ctx)
+	appTransferStore := k.getApplicationTransferStore(ctx)
 
 	appKey := types.ApplicationKey(app.Address)
 	if app.HasPendingTransfer() {
-		appTransferHeightStore.Set(appKey, appKey)
+		appTransferStore.Set(appKey, appKey)
 	} else {
-		appTransferHeightStore.Delete(appKey)
+		appTransferStore.Delete(appKey)
 	}
 }
 
@@ -67,6 +67,16 @@ func (k Keeper) indexApplicationTransfer(ctx context.Context, app types.Applicat
 // allowing efficient lookups for which applications are delegated to a given gateway.
 func (k Keeper) indexApplicationDelegations(ctx context.Context, app types.Application) {
 	appDelegationStore := k.getDelegationStore(ctx)
+
+	// Pending undelegations list contains gateways that were previously delegated
+	// to but are now being removed.
+	// Clean up any delegation index records for these gateways.
+	for _, undelegationsAtHeight := range app.PendingUndelegations {
+		for _, undelegatedGatewayAddress := range undelegationsAtHeight.GatewayAddresses {
+			delegationKey := types.DelegationKey(undelegatedGatewayAddress, app.Address)
+			appDelegationStore.Delete(delegationKey)
+		}
+	}
 
 	// Recreate the delegation index for the application
 	for _, delegatedGatewayAddress := range app.DelegateeGatewayAddresses {
@@ -104,7 +114,7 @@ func (k Keeper) indexApplicationUndelegations(ctx context.Context, app types.App
 	}
 
 	// Recreate the undelegation index for the application by adding
-	// entries for each pending undelegation at each height
+	// entries for each pending undelegation at each undelegation height
 	for _, undelegationsAtHeight := range app.PendingUndelegations {
 		for _, undelegatedGatewayAddress := range undelegationsAtHeight.GatewayAddresses {
 			undelegationKey := types.UndelegationKey(app.Address, undelegatedGatewayAddress)
@@ -129,9 +139,9 @@ func (k Keeper) removeApplicationUnstakingIndex(
 	ctx context.Context,
 	applicationAddress string,
 ) {
-	appUnstakingHeightStore := k.getApplicationUnstakingStore(ctx)
+	appUnstakingStore := k.getApplicationUnstakingStore(ctx)
 	appKey := types.ApplicationKey(applicationAddress)
-	appUnstakingHeightStore.Delete(appKey)
+	appUnstakingStore.Delete(appKey)
 }
 
 // removeApplicationTransferIndex removes an application from the transfer index.
@@ -141,9 +151,9 @@ func (k Keeper) removeApplicationTransferIndex(
 	ctx context.Context,
 	applicationAddress string,
 ) {
-	appTransferHeightStore := k.getApplicationTransferStore(ctx)
+	appTransferStore := k.getApplicationTransferStore(ctx)
 	appKey := types.ApplicationKey(applicationAddress)
-	appTransferHeightStore.Delete(appKey)
+	appTransferStore.Delete(appKey)
 }
 
 // removeApplicationDelegationIndex removes a specific application-gateway delegation relationship

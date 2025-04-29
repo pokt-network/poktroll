@@ -96,22 +96,20 @@ func (k Keeper) GetAllApplications(ctx context.Context) (apps []types.Applicatio
 
 // GetAllUnstakingApplicationsIterator returns an iterator for all applications
 // that are currently unstaking.
-// It is used to process applications that have completed their unbonding period.
 func (k Keeper) GetAllUnstakingApplicationsIterator(
 	ctx context.Context,
 ) sharedtypes.RecordIterator[types.Application] {
 	unstakingApplicationsStore := k.getApplicationUnstakingStore(ctx)
 	applicationStore := k.getApplicationStore(ctx)
 
-	transferringAppsIterator := storetypes.KVStorePrefixIterator(unstakingApplicationsStore, []byte{})
+	unstakingAppsIterator := storetypes.KVStorePrefixIterator(unstakingApplicationsStore, []byte{})
 
 	applicationAccessor := applicationFromPrimaryKeyAccessorFn(applicationStore, k.cdc)
-	return sharedtypes.NewRecordIterator(transferringAppsIterator, applicationAccessor)
+	return sharedtypes.NewRecordIterator(unstakingAppsIterator, applicationAccessor)
 }
 
 // GetAllTransferringApplicationsIterator returns an iterator for all applications
 // that are currently transferring.
-// It is used to process applications that have completed their transfer period.
 func (k Keeper) GetAllTransferringApplicationsIterator(
 	ctx context.Context,
 ) sharedtypes.RecordIterator[types.Application] {
@@ -124,9 +122,8 @@ func (k Keeper) GetAllTransferringApplicationsIterator(
 	return sharedtypes.NewRecordIterator(transferringAppsIterator, applicationAccessor)
 }
 
-// GetDelegationsIterator returns an iterator for applications that have delegated
-// to a specific gateway.
-// It is used to find all applications delegated to a particular gateway address.
+// GetDelegationsIterator returns an iterator for applications which are currently
+// delegated to a specific gateway.
 func (k Keeper) GetDelegationsIterator(
 	ctx context.Context,
 	gatewayAddress string,
@@ -134,11 +131,14 @@ func (k Keeper) GetDelegationsIterator(
 	delegationsStore := k.getDelegationStore(ctx)
 	applicationStore := k.getApplicationStore(ctx)
 
+	// Using the gateway address as a prefix key means the iterator will only return
+	// entries whose keys begin with this gateway's address. This effectively filters
+	// the store to only return delegations related to this specific gateway.
 	gatewayKey := types.StringKey(gatewayAddress)
 	delegationsIterator := storetypes.KVStorePrefixIterator(delegationsStore, gatewayKey)
 
-	delecationAccessor := applicationFromPrimaryKeyAccessorFn(applicationStore, k.cdc)
-	return sharedtypes.NewRecordIterator(delegationsIterator, delecationAccessor)
+	delegationAccessor := applicationFromPrimaryKeyAccessorFn(applicationStore, k.cdc)
+	return sharedtypes.NewRecordIterator(delegationsIterator, delegationAccessor)
 }
 
 // GetUndelegationsIterator returns an iterator for applications that have pending undelegations.
@@ -154,6 +154,10 @@ func (k Keeper) GetUndelegationsIterator(
 		appKey = types.ApplicationKey(applicationAddress)
 	}
 
+	// Using the application address as a prefix key means the iterator will only return
+	// entries whose keys begin with this application's address. This effectively filters
+	// the store to only return undelegations related to this specific application.
+	// If ALL_UNDELEGATIONS is used, an empty prefix is passed, returning all undelegations.
 	undelegationsIterator := storetypes.KVStorePrefixIterator(undelegationsStore, appKey)
 
 	undelegationAccessor := undelegationAccessorFn(k.cdc)
