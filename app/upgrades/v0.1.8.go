@@ -21,8 +21,8 @@ const (
 // Upgrade_0_1_8 handles the upgrade to release `v0.1.8`.
 // This is planned to be issued on both Pocket Network's Shannon Alpha, Beta TestNets
 // It is an upgrade intended to enable suppliers service config indexing and more granular hydration.
-// TODO_FOLLOWUP: Update the github link from main to v0.1.8 once the upgrade is released.
-// https://github.com/pokt-network/poktroll/compare/v0.1.6..main
+// TODO_FOLLOWUP(#1230, @red-0ne): Update the github link from main to v0.1.8 once the upgrade is released.
+// https://github.com/pokt-network/poktroll/compare/v0.1.7..v0.1.8
 var Upgrade_0_1_8 = Upgrade{
 	PlanName: Upgrade_0_1_8_PlanName,
 	// No migrations in this upgrade.
@@ -49,7 +49,7 @@ var Upgrade_0_1_8 = Upgrade{
 }
 
 // indexSuppliersServiceConfigs indexes the service config updates for all suppliers.
-// It processes the deprecated service config history of each supplier, transforming
+// It processes the deprecated service config history of each supplier, converting
 // it into the new format.
 func indexSuppliersServiceConfigs(ctx context.Context, keepers *keepers.Keepers, logger log.Logger) error {
 	// Get all deprecated suppliers from the store.

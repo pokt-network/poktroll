@@ -56,7 +56,7 @@ func createNSuppliers(keeper keeper.Keeper, ctx context.Context, n int) []shared
 			supplier.OperatorAddress,
 			supplier.Services,
 			1,
-			sharedtest.NoDeactivationHeight,
+			sharedtypes.NoDeactivationHeight,
 		)
 		keeper.SetSupplier(ctx, *supplier)
 	}
@@ -146,7 +146,7 @@ func TestServiceConfigUpdateIterators(t *testing.T) {
 			suppliers[i].OperatorAddress,
 			suppliers[i].Services,
 			1,
-			sharedtest.NoDeactivationHeight,
+			sharedtypes.NoDeactivationHeight,
 		)
 	}
 
@@ -178,7 +178,7 @@ func TestServiceConfigUpdateIterators(t *testing.T) {
 		suppliers[99].OperatorAddress,
 		suppliers[99].Services,
 		1,
-		sharedtest.NoDeactivationHeight,
+		sharedtypes.NoDeactivationHeight,
 	)
 
 	for _, supplier := range suppliers {
@@ -357,7 +357,7 @@ func TestSuppliers_QueryAll_Filters(t *testing.T) {
 			suppliers[i].OperatorAddress,
 			suppliers[i].Services,
 			1,
-			sharedtest.NoDeactivationHeight,
+			sharedtypes.NoDeactivationHeight,
 		)
 	}
 

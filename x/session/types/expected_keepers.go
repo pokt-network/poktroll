@@ -28,15 +28,20 @@ type ApplicationKeeper interface {
 
 // SupplierKeeper defines the expected interface needed to retrieve suppliers
 type SupplierKeeper interface {
+	// GetServiceConfigUpdatesIterator returns an iterator over service configuration
+	// updates with activation heights less than or equal to the provided current height.
 	GetServiceConfigUpdatesIterator(
 		ctx context.Context,
 		serviceId string,
 		queryHeight int64,
 	) sharedtypes.RecordIterator[*sharedtypes.ServiceConfigUpdate]
 
+	// Returns a Supplier object with some fields omitted such as:
+	// - Services
+	// - ServiceConfigHistory
 	GetDehydratedSupplier(
 		ctx context.Context,
-		supplierOperatorAddr string,
+		operatorAddr string,
 	) (supplier sharedtypes.Supplier, found bool)
 }
 

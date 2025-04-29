@@ -1,5 +1,11 @@
 package types
 
+const (
+	// NoDeactivationHeight represents that a service configuration has no deactivation
+	// height and is considered active indefinitely.
+	NoDeactivationHeight = iota // 0
+)
+
 // IsActive checks if the ServiceConfigUpdate is active at the given block height.
 //
 // A service configuration is considered active when the following conditions are met:
@@ -17,7 +23,7 @@ func (s *ServiceConfigUpdate) IsActive(queryHeight int64) bool {
 	}
 
 	// If no deactivation is scheduled (value 0), the config is active indefinitely
-	if s.DeactivationHeight == 0 {
+	if s.DeactivationHeight == NoDeactivationHeight {
 		return true
 	}
 

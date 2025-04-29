@@ -1,5 +1,35 @@
 package keeper
 
+// ┌───────────────────────────────────────────────────────────────────────────────────────┐
+// │ 🗺️  Supplier / Service-Config Index Map                                               │
+// ├───────────────────────────────────────────────────────────────────────────────────────┤
+// │ Store (bucket)                                 Key                     → Value        │
+// │───────────────────────────────────────────────────────────────────────────────────────│
+// │ serviceConfigUpdateStore                       PK                      → cfgBz        │
+// │ supplierServiceConfigUpdateStore               SupplierAddr || PK      → PK           │
+// │ serviceConfigUpdateActivationHeightStore       ActHeight || PK         → PK           │
+// │ serviceConfigUpdateDeactivationHeightStore     DeactHeight || PK       → PK           │
+// │ supplierUnstakingHeightStore                   SupplierAddr            → []byte(addr) │
+// └───────────────────────────────────────────────────────────────────────────────────────┘
+//
+// Legend
+//   ||          : byte-level concatenation / prefix.
+//   PK         : types.ServiceConfigUpdateKey(...).
+//   cfgBz      : protobuf-marshalled sharedtypes.ServiceConfigUpdate.
+//
+// Fast-path look-ups
+//   • SupplierAddr  → supplierServiceConfigUpdateStore → [PK] → serviceConfigUpdateStore.
+//   • Height (act)  → activationHeightStore            → [PK] → serviceConfigUpdateStore.
+//   • Height (deact)→ deactivationHeightStore          → [PK] → serviceConfigUpdateStore.
+//   • Unbonding set → iterate supplierUnstakingHeightStore keys.
+//
+// Index counts
+//   ① Primary data
+//   ② By supplier
+//   ③ By act-height
+//   ④ By deact-height
+//   ⑤ Unstaking suppliers
+
 import (
 	"context"
 
@@ -31,6 +61,7 @@ func (k Keeper) indexSupplierServiceConfigUpdates(
 	serviceConfigUpdateDeactivationHeightStore := k.getServiceConfigUpdateDeactivationHeightStore(ctx)
 
 	// Index each service config update in the supplier's history
+	// TODO_IMPROVE: Consider batch processing all the `.Set` for performance.
 	for _, serviceConfigUpdate := range supplier.ServiceConfigHistory {
 		// Serialize the config update
 		serviceConfigBz := k.cdc.MustMarshal(serviceConfigUpdate)
@@ -78,7 +109,6 @@ func (k Keeper) indexSupplierUnstakingHeight(
 	supplier sharedtypes.Supplier,
 ) {
 	supplierUnstakingHeightStore := k.getSupplierUnstakingHeightStore(ctx)
-
 	supplierOperatorKey := types.SupplierOperatorKey(supplier.OperatorAddress)
 	if supplier.IsUnbonding() {
 		// Add to unstaking index if supplier is unbonding
@@ -129,7 +159,9 @@ func (k Keeper) getSupplierServiceConfigUpdates(
 // removeSupplierServiceConfigUpdateIndexes removes all service configuration indexes for a supplier.
 //
 // This function is called when a supplier is completely removed from the state,
-// typically after the unbonding period has completed. It removes:
+// typically after the unbonding period has completed.
+//
+// It removes:
 // 1. All entries from the activation height index for this supplier's services
 // 2. All entries from the deactivation height index for this supplier's services
 // 3. All primary data entries for this supplier's services
@@ -145,7 +177,7 @@ func (k Keeper) removeSupplierServiceConfigUpdateIndexes(
 	serviceConfigUpdateDeactivationHeightStore := k.getServiceConfigUpdateDeactivationHeightStore(ctx)
 
 	// Create iterator for the supplier's service configs
-	supplierServiceConfigsIterator := storetypes.KVStorePrefixIterator(
+	supplierServiceConfigsIndexIterator := storetypes.KVStorePrefixIterator(
 		supplierServiceConfigUpdateStore,
 		types.StringKey(supplierOperatorAddress),
 	)
@@ -154,12 +186,12 @@ func (k Keeper) removeSupplierServiceConfigUpdateIndexes(
 	supplierServiceConfigKeys := make([][]byte, 0)
 
 	// First pass: remove entries from activation/deactivation indices and primary store
-	for ; supplierServiceConfigsIterator.Valid(); supplierServiceConfigsIterator.Next() {
+	for ; supplierServiceConfigsIndexIterator.Valid(); supplierServiceConfigsIndexIterator.Next() {
 		// Store the key for later deletion from the supplier index
-		supplierServiceConfigKeys = append(supplierServiceConfigKeys, supplierServiceConfigsIterator.Key())
+		supplierServiceConfigKeys = append(supplierServiceConfigKeys, supplierServiceConfigsIndexIterator.Key())
 
 		// Get the service config using its primary key
-		serviceConfigPrimaryKey := supplierServiceConfigsIterator.Value()
+		serviceConfigPrimaryKey := supplierServiceConfigsIndexIterator.Value()
 		serviceConfigBz := serviceConfigUpdateStore.Get(serviceConfigPrimaryKey)
 		var serviceConfigUpdate sharedtypes.ServiceConfigUpdate
 		k.cdc.MustUnmarshal(serviceConfigBz, &serviceConfigUpdate)
@@ -175,7 +207,7 @@ func (k Keeper) removeSupplierServiceConfigUpdateIndexes(
 		// Delete from primary store
 		serviceConfigUpdateStore.Delete(serviceConfigPrimaryKey)
 	}
-	supplierServiceConfigsIterator.Close()
+	supplierServiceConfigsIndexIterator.Close()
 
 	// Second pass: remove entries from the supplier-to-service index
 	for _, supplierServiceConfigKey := range supplierServiceConfigKeys {

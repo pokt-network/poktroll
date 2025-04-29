@@ -64,12 +64,13 @@ func TestComputeNewDifficultyHash_RewardsReflectWorkCompleted(t *testing.T) {
 		},
 	}
 	supplierStake := sdk.NewInt64Coin(volatile.DenomuPOKT, 1000)
-	supplier := sharedtypes.Supplier{
+	supplierServiceConfigHistory := sharedtest.CreateServiceConfigUpdateHistoryFromServiceConfigs(supplierAddress, supplierServiceConfigs, 1, 0)
+supplier := sharedtypes.Supplier{
 		OperatorAddress:      supplierAddress,
 		OwnerAddress:         supplierAddress,
 		Stake:                &supplierStake,
 		Services:             supplierServiceConfigs,
-		ServiceConfigHistory: sharedtest.CreateServiceConfigUpdateHistoryFromServiceConfigs(supplierAddress, supplierServiceConfigs, 1, 0),
+		ServiceConfigHistory: supplierServiceConfigHistory,
 	}
 
 	keepers, ctx := testkeeper.NewTokenomicsModuleKeepers(t, nil,

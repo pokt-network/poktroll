@@ -63,17 +63,18 @@ func (s *MigrationModuleTestSuite) TestClaimMorseNewSupplier() {
 
 			sharedParams := sharedParamsRes.GetParams()
 			svcStartHeight := sharedtypes.GetNextSessionStartHeight(&sharedParams, s.SdkCtx().BlockHeight()-1)
+			serviceConfigHistory := sharedtest.CreateServiceConfigUpdateHistoryFromServiceConfigs(
+				shannonDestAddr,
+				s.supplierServices,
+				svcStartHeight,
+				sharedtypes.NoDeactivationHeight,
+			)
 			expectedSupplier := sharedtypes.Supplier{
 				OwnerAddress:            shannonDestAddr,
 				OperatorAddress:         shannonDestAddr,
 				Stake:                   &expectedStake,
 				UnstakeSessionEndHeight: 0,
-				ServiceConfigHistory: sharedtest.CreateServiceConfigUpdateHistoryFromServiceConfigs(
-					shannonDestAddr,
-					s.supplierServices,
-					svcStartHeight,
-					sharedtest.NoDeactivationHeight,
-				),
+				ServiceConfigHistory:    serviceConfigHistory,
 			}
 			expectedSessionEndHeight := s.GetSessionEndHeight(s.T(), s.SdkCtx().BlockHeight()-1)
 			expectedClaimSupplierRes := &migrationtypes.MsgClaimMorseSupplierResponse{

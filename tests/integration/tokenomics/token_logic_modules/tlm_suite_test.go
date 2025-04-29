@@ -98,12 +98,13 @@ func (s *tokenLogicModuleTestSuite) SetupTest() {
 			},
 		},
 	}
+	serviceConfigHistory := sharedtest.CreateServiceConfigUpdateHistoryFromServiceConfigs(supplierBech32, services, 1, 0)
 	s.supplier = &sharedtypes.Supplier{
 		OwnerAddress:         supplierBech32,
 		OperatorAddress:      supplierBech32,
 		Stake:                &suppliertypes.DefaultMinStake,
 		Services:             services,
-		ServiceConfigHistory: sharedtest.CreateServiceConfigUpdateHistoryFromServiceConfigs(supplierBech32, services, 1, 0),
+		ServiceConfigHistory: serviceConfigHistory,
 	}
 }
 

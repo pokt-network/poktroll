@@ -187,7 +187,7 @@ func (k Keeper) hydrateSessionSuppliers(ctx context.Context, sh *sessionHydrator
 	candidatesToRandomWeight := make(map[string]int)
 	candidateSupplierConfigs := make([]*sharedtypes.ServiceConfigUpdate, 0)
 
-	// Use the optimized iterator that only returns service configurations active at the query height
+	// Get an iterator of service configurations updates at the query height or earlier.
 	// This avoids unnecessary filtering during iteration and is more efficient
 	sessionSupplierServiceConfigIterator := k.supplierKeeper.GetServiceConfigUpdatesIterator(
 		ctx,
@@ -204,8 +204,9 @@ func (k Keeper) hydrateSessionSuppliers(ctx context.Context, sh *sessionHydrator
 		}
 
 		// Check if supplier is authorized to serve this service at query block height.
-		// This check is still necessary as the iterator only filters by activation height <= currentHeight
-		// but we also need to check deactivation height > currentHeight
+		// This check is necessary because:
+		// - The iterator filters by: activationHeight <= currentHeight (sh.blockHeight)
+		// - We also need to check if its active: deactivationHeight > currentHeight (sh.blockHeight)
 		if supplierServiceConfigUpdate.IsActive(sh.blockHeight) {
 			candidateSupplierConfigs = append(candidateSupplierConfigs, supplierServiceConfigUpdate)
 		}
@@ -260,10 +261,12 @@ func (k Keeper) getServiceConfigsSuppliers(
 	ctx context.Context,
 	candidateServiceConfigUpdates []*sharedtypes.ServiceConfigUpdate,
 ) []*sharedtypes.Supplier {
+	logger := k.Logger().With("method", "getServiceConfigsSuppliers")
 	suppliers := make([]*sharedtypes.Supplier, 0)
 	for _, serviceConfigUpdate := range candidateServiceConfigUpdates {
 		supplier, found := k.supplierKeeper.GetDehydratedSupplier(ctx, serviceConfigUpdate.OperatorAddress)
 		if !found {
+			logger.Warn(fmt.Sprintf("should not happen: supplier %s not found", serviceConfigUpdate.OperatorAddress))
 			continue
 		}
 		supplier.Services = []*sharedtypes.SupplierServiceConfig{serviceConfigUpdate.Service}

@@ -110,16 +110,17 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_Valid(t *testing.T) {
 
 	// Add a new supplier.
 	supplierStake := cosmostypes.NewCoin(volatile.DenomuPOKT, supplierInitialStake)
+	serviceConfigHistory := sharedtest.CreateServiceConfigUpdateHistoryFromServiceConfigs(
+		supplierRevShares[0].Address,
+		services, 1, 0,
+	)
 	supplier := sharedtypes.Supplier{
 		// Make the first shareholder the supplier itself.
-		OwnerAddress:    supplierRevShares[0].Address,
-		OperatorAddress: supplierRevShares[0].Address,
-		Stake:           &supplierStake,
-		Services:        services,
-		ServiceConfigHistory: sharedtest.CreateServiceConfigUpdateHistoryFromServiceConfigs(
-			supplierRevShares[0].Address,
-			services, 1, 0,
-		),
+		OwnerAddress:         supplierRevShares[0].Address,
+		OperatorAddress:      supplierRevShares[0].Address,
+		Stake:                &supplierStake,
+		Services:             services,
+		ServiceConfigHistory: serviceConfigHistory,
 	}
 	keepers.SetSupplier(ctx, supplier)
 
@@ -257,16 +258,17 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_Valid_SupplierExceedsMaxClai
 
 	// Add a new supplier.
 	supplierStake := cosmostypes.NewCoin(volatile.DenomuPOKT, supplierInitialStake)
+	serviceConfigHistory := sharedtest.CreateServiceConfigUpdateHistoryFromServiceConfigs(
+		supplierRevShares[0].Address,
+		services, 1, 0,
+	)
 	supplier := sharedtypes.Supplier{
 		// Make the first shareholder the supplier itself.
-		OwnerAddress:    supplierRevShares[0].Address,
-		OperatorAddress: supplierRevShares[0].Address,
-		Stake:           &supplierStake,
-		Services:        services,
-		ServiceConfigHistory: sharedtest.CreateServiceConfigUpdateHistoryFromServiceConfigs(
-			supplierRevShares[0].Address,
-			services, 1, 0,
-		),
+		OwnerAddress:         supplierRevShares[0].Address,
+		OperatorAddress:      supplierRevShares[0].Address,
+		Stake:                &supplierStake,
+		Services:             services,
+		ServiceConfigHistory: serviceConfigHistory,
 	}
 	keepers.SetSupplier(ctx, supplier)
 
@@ -409,16 +411,17 @@ func TestProcessTokenLogicModules_TLMGlobalMint_Valid_MintDistributionCorrect(t 
 
 	// Add a new supplier.
 	supplierStake := cosmostypes.NewCoin(volatile.DenomuPOKT, supplierInitialStake)
+	serviceConfigHistory := sharedtest.CreateServiceConfigUpdateHistoryFromServiceConfigs(
+		supplierRevShares[0].Address,
+		services, 1, 0,
+	)
 	supplier := sharedtypes.Supplier{
 		// Make the first shareholder the supplier itself.
-		OwnerAddress:    supplierRevShares[0].Address,
-		OperatorAddress: supplierRevShares[0].Address,
-		Stake:           &supplierStake,
-		Services:        services,
-		ServiceConfigHistory: sharedtest.CreateServiceConfigUpdateHistoryFromServiceConfigs(
-			supplierRevShares[0].Address,
-			services, 1, 0,
-		),
+		OwnerAddress:         supplierRevShares[0].Address,
+		OperatorAddress:      supplierRevShares[0].Address,
+		Stake:                &supplierStake,
+		Services:             services,
+		ServiceConfigHistory: serviceConfigHistory,
 	}
 	keepers.SetSupplier(ctx, supplier)
 

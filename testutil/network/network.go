@@ -152,12 +152,13 @@ func DefaultSupplierModuleGenesisState(t *testing.T, n int) *suppliertypes.Genes
 			},
 		}
 		operatorAddr := sample.AccAddress()
+		serviceConfigHistory := sharedtest.CreateServiceConfigUpdateHistoryFromServiceConfigs(operatorAddr, services, 1, 0)
 		supplier := sharedtypes.Supplier{
 			OwnerAddress:         sample.AccAddress(),
 			OperatorAddress:      operatorAddr,
 			Stake:                &stake,
 			Services:             services,
-			ServiceConfigHistory: sharedtest.CreateServiceConfigUpdateHistoryFromServiceConfigs(operatorAddr, services, 1, 0),
+			ServiceConfigHistory: serviceConfigHistory,
 		}
 		// TODO_CONSIDERATION: Evaluate whether we need `nullify.Fill` or if we should enforce `(gogoproto.nullable) = false` everywhere
 		// nullify.Fill(&supplier)
@@ -183,12 +184,13 @@ func SupplierModuleGenesisStateWithAddresses(t *testing.T, addresses []string) *
 		},
 	}
 	for _, addr := range addresses {
+		serviceConfigHistory := sharedtest.CreateServiceConfigUpdateHistoryFromServiceConfigs(addr, services, 1, 0)
 		supplier := sharedtypes.Supplier{
 			OwnerAddress:         sample.AccAddress(),
 			OperatorAddress:      addr,
 			Stake:                &sdk.Coin{Denom: "upokt", Amount: math.NewInt(10000)},
 			Services:             services,
-			ServiceConfigHistory: sharedtest.CreateServiceConfigUpdateHistoryFromServiceConfigs(addr, services, 1, 0),
+			ServiceConfigHistory: serviceConfigHistory,
 		}
 		state.SupplierList = append(state.SupplierList, supplier)
 	}

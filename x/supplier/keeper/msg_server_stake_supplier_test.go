@@ -15,7 +15,6 @@ import (
 	testevents "github.com/pokt-network/poktroll/testutil/events"
 	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
 	"github.com/pokt-network/poktroll/testutil/sample"
-	"github.com/pokt-network/poktroll/testutil/shared"
 	sharedtest "github.com/pokt-network/poktroll/testutil/shared"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 	"github.com/pokt-network/poktroll/x/supplier/keeper"
@@ -567,16 +566,17 @@ func TestMsgServer_StakeSupplier_UpStakeFromBelowMinStake(t *testing.T) {
 	stakeMsg, expectedSupplier := newSupplierStakeMsg(addr, addr, aboveMinStake.Amount.Int64(), "svcId")
 
 	// Stake (via keeper methods) a supplier with stake below min stake.
+	serviceConfigHistory := sharedtest.CreateServiceConfigUpdateHistoryFromServiceConfigs(
+		addr,
+		stakeMsg.Services,
+		11,
+		sharedtypes.NoDeactivationHeight,
+	)
 	initialSupplier := sharedtypes.Supplier{
-		OwnerAddress:    addr,
-		OperatorAddress: addr,
-		Stake:           &belowMinStake,
-		ServiceConfigHistory: sharedtest.CreateServiceConfigUpdateHistoryFromServiceConfigs(
-			addr,
-			stakeMsg.Services,
-			11,
-			sharedtest.NoDeactivationHeight,
-		),
+		OwnerAddress:         addr,
+		OperatorAddress:      addr,
+		Stake:                &belowMinStake,
+		ServiceConfigHistory: serviceConfigHistory,
 	}
 	k.SetSupplier(ctx, initialSupplier)
 
@@ -627,17 +627,18 @@ func newSupplierStakeMsg(
 		Services:        services,
 	}
 
+	serviceConfigHistory := sharedtest.CreateServiceConfigUpdateHistoryFromServiceConfigs(
+		operatorAddr,
+		services,
+		11,
+		sharedtypes.NoDeactivationHeight,
+	)
 	expectedSupplier = &sharedtypes.Supplier{
-		OwnerAddress:    ownerAddr,
-		OperatorAddress: operatorAddr,
-		Stake:           &initialStake,
-		Services:        make([]*sharedtypes.SupplierServiceConfig, 0),
-		ServiceConfigHistory: sharedtest.CreateServiceConfigUpdateHistoryFromServiceConfigs(
-			operatorAddr,
-			services,
-			11,
-			shared.NoDeactivationHeight,
-		),
+		OwnerAddress:         ownerAddr,
+		OperatorAddress:      operatorAddr,
+		Stake:                &initialStake,
+		Services:             make([]*sharedtypes.SupplierServiceConfig, 0),
+		ServiceConfigHistory: serviceConfigHistory,
 	}
 
 	return msg, expectedSupplier

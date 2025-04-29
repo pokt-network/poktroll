@@ -119,12 +119,13 @@ func (s *TestSuite) SetupTest() {
 			RevSharePercentage: 100,
 		}},
 	}}
+	supplierServiceConfigHistory := sharedtest.CreateServiceConfigUpdateHistoryFromServiceConfigs(supplierOwnerAddr, supplierServiceConfigs, 1, 0)
 	supplier := sharedtypes.Supplier{
 		OwnerAddress:         supplierOwnerAddr,
 		OperatorAddress:      supplierOwnerAddr,
 		Stake:                &supplierStake,
 		Services:             supplierServiceConfigs,
-		ServiceConfigHistory: sharedtest.CreateServiceConfigUpdateHistoryFromServiceConfigs(supplierOwnerAddr, supplierServiceConfigs, 1, 0),
+		ServiceConfigHistory: supplierServiceConfigHistory,
 	}
 	s.keepers.SetSupplier(s.ctx, supplier)
 

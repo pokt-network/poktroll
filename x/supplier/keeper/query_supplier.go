@@ -5,8 +5,6 @@ import (
 	"fmt"
 
 	"cosmossdk.io/log"
-	"cosmossdk.io/store/prefix"
-	"github.com/cosmos/cosmos-sdk/runtime"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/query"
 	"google.golang.org/grpc/codes"
@@ -52,12 +50,10 @@ func (k Keeper) Supplier(
 
 	supplier, found := k.GetSupplier(ctx, req.OperatorAddress)
 	if !found {
+		err := fmt.Sprintf("supplier with operator address: %q not found", req.GetOperatorAddress())
 		return nil, status.Error(
 			codes.NotFound,
-			types.ErrSupplierNotFound.Wrapf(
-				"supplier with operator address: %q",
-				req.GetOperatorAddress(),
-			).Error(),
+			types.ErrSupplierNotFound.Wrap(err).Error(),
 		)
 	}
 
@@ -65,7 +61,7 @@ func (k Keeper) Supplier(
 }
 
 // getAllSuppliers retrieves all suppliers from the store with pagination support.
-// Each supplier's service configurations are hydrated before being returned.
+// Each supplier's service configurations are fully hydrated before being returned.
 func (k Keeper) getAllSuppliers(
 	ctx context.Context,
 	logger log.Logger,
@@ -86,6 +82,7 @@ func (k Keeper) getAllSuppliers(
 				return status.Error(codes.Internal, err.Error())
 			}
 
+			// Hydrate all supplier fields
 			k.hydrateSupplierServiceConfigs(ctx, &supplier)
 
 			suppliers = append(suppliers, supplier)
@@ -110,26 +107,19 @@ func (k Keeper) getAllServiceSuppliers(
 	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
 	currentHeight := sdkCtx.BlockHeight()
 
-	storeAdapter := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
-
-	// Build the composite key for accessing service config updates
-	// Format: ServiceConfigUpdateKeyPrefix + serviceId
-	key := make([]byte, 0)
-	key = append(key, types.KeyPrefix(types.ServiceConfigUpdateKeyPrefix)...)
-	key = append(key, types.StringKey(req.GetServiceId())...)
-	serviceStore := prefix.NewStore(storeAdapter, key)
-
-	// Get the store containing all supplier information
+	// Prepare supplier stores
+	serviceConfigUpdateStore := k.getServiceConfigUpdatesByServiceStore(ctx, req.GetServiceId())
 	supplierStore := k.getSupplierStore(ctx)
 
 	// Initialize a slice to collect suppliers
 	var suppliers []sharedtypes.Supplier
 	// Initialize a map to track which suppliers have been processed to avoid
 	// duplicate suppliers in the results
-	pickedSuppliersMap := make(map[string]struct{})
+	selectedSuppliersMap := make(map[string]struct{})
 
+	// Iterate over all service config updates for the specified service
 	pageRes, err := query.Paginate(
-		serviceStore,
+		serviceConfigUpdateStore,
 		req.Pagination,
 		func(key []byte, serviceConfigUpdateBz []byte) error {
 			// Unmarshal the service config update from the store
@@ -146,10 +136,10 @@ func (k Keeper) getAllServiceSuppliers(
 			}
 
 			// Skip suppliers that have already been added to the results
-			if _, ok := pickedSuppliersMap[serviceConfigUpdate.OperatorAddress]; ok {
+			if _, ok := selectedSuppliersMap[serviceConfigUpdate.OperatorAddress]; ok {
 				return nil
 			}
-			pickedSuppliersMap[serviceConfigUpdate.OperatorAddress] = struct{}{}
+			selectedSuppliersMap[serviceConfigUpdate.OperatorAddress] = struct{}{}
 
 			// Retrieve the supplier data using the operator address from the service config
 			supplierKey := types.SupplierOperatorKey(serviceConfigUpdate.OperatorAddress)

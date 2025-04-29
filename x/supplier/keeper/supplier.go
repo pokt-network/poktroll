@@ -13,58 +13,60 @@ import (
 )
 
 // SetSupplier stores a supplier state and indexes its relevant attributes for efficient querying.
-// It processes the supplier's service configurations for indexing.
+// It modifies the Supplier structure onchain metadata to manage state bloat.
 //
 // The function:
 // - Indexes service config updates for efficient retrieval
 // - Indexes unstaking height (if applicable)
 // - Stores a dehydrated form of the supplier (without services and history)
 func (k Keeper) SetSupplier(ctx context.Context, supplier sharedtypes.Supplier) {
+	// Index service config updates for efficient retrieval
 	k.indexSupplierServiceConfigUpdates(ctx, supplier)
 	k.indexSupplierUnstakingHeight(ctx, supplier)
 
-	// Store the supplier without service details to reduce state bloat
-	// These details will be hydrated on-demand via the service config indexes
+	// Dehydrate the supplier to reduce state bloat.
+	// These details can be hydrated just-in-time (when queried) using the indexes.
 	supplier.Services = nil
 	supplier.ServiceConfigHistory = nil
 	supplierBz := k.cdc.MustMarshal(&supplier)
 
+	// Store the supplier without service details to reduce state bloat.
 	supplierStore := k.getSupplierStore(ctx)
 	supplierKey := types.SupplierOperatorKey(supplier.OperatorAddress)
 	supplierStore.Set(supplierKey, supplierBz)
 }
 
-// GetDehydratedSupplier retrieves a supplier from the store without its service
-// configurations and service config history.
-// This is more efficient when the service details aren't needed.
+// GetDehydratedSupplier retrieves a dehydrated supplier.
+// It omits hydrating a Supplier object with the available indexes (e.g. service config updates and unstaking height).
+// Useful and more efficient when the service details aren't needed.
 func (k Keeper) GetDehydratedSupplier(
 	ctx context.Context,
 	supplierOperatorAddr string,
 ) (supplier sharedtypes.Supplier, found bool) {
 	supplierStore := k.getSupplierStore(ctx)
-
 	supplierKey := types.SupplierOperatorKey(supplierOperatorAddr)
 	supplierBz := supplierStore.Get(supplierKey)
 	if supplierBz == nil {
 		return supplier, false
 	}
-
 	k.cdc.MustUnmarshal(supplierBz, &supplier)
-
 	return supplier, true
 }
 
 // GetSupplier retrieves a fully hydrated supplier from the store, including
 // its service configurations and service config updates history.
+// Useful when all service details are needed.
 func (k Keeper) GetSupplier(
 	ctx context.Context,
 	supplierOperatorAddr string,
 ) (supplier sharedtypes.Supplier, found bool) {
+	// Retrieve a dehydrated supplier
 	supplier, found = k.GetDehydratedSupplier(ctx, supplierOperatorAddr)
 	if !found {
 		return supplier, false
 	}
 
+	// Hydrate the supplier with service configurations
 	k.hydrateSupplierServiceConfigs(ctx, &supplier)
 
 	return supplier, true
@@ -72,9 +74,11 @@ func (k Keeper) GetSupplier(
 
 // RemoveSupplier deletes a supplier from the store and removes all associated indexes
 func (k Keeper) RemoveSupplier(ctx context.Context, supplierOperatorAddress string) {
+	// Remove all associated indexes
 	k.removeSupplierServiceConfigUpdateIndexes(ctx, supplierOperatorAddress)
 	k.removeSupplierUnstakingHeightIndex(ctx, supplierOperatorAddress)
 
+	// Delete the supplier from the store
 	supplierStore := k.getSupplierStore(ctx)
 	supplierKey := types.SupplierOperatorKey(supplierOperatorAddress)
 	supplierStore.Delete(supplierKey)
@@ -136,9 +140,8 @@ func (k Keeper) getSupplierUnstakingHeightStore(ctx context.Context) storetypes.
 	return prefix.NewStore(storeAdapter, types.KeyPrefix(types.SupplierUnstakingHeightKeyPrefix))
 }
 
-// GetAllDeprecatedSuppliers returns all suppliers in their deprecated form
-// (i.e. Prior to v0.1.8)
-// TODO_FOLLOWUP: Remove this function after v0.1.8 upgrade
+// GetAllDeprecatedSuppliers returns all suppliers in their deprecated protobuf format (i.e. Prior to v0.1.8).
+// TODO_DELETE(#1230, @red-0ne): Remove this function after v0.1.8 upgrade
 func (k Keeper) GetAllDeprecatedSuppliers(ctx context.Context) (suppliers []sharedtypes.SupplierDeprecated) {
 	supplierStore := k.getSupplierStore(ctx)
 	iterator := storetypes.KVStorePrefixIterator(supplierStore, []byte{})

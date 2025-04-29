@@ -109,16 +109,17 @@ var (
 
 	TestSupplierUrl             = "http://olshansky.info"
 	TestSupplierOperatorAddress = sample.AccAddress()
-	TestSupplier                = sharedtypes.Supplier{
-		OperatorAddress: TestSupplierOperatorAddress,
-		Stake:           &sdk.Coin{Denom: "upokt", Amount: math.NewInt(100)},
-		Services:        supplierServiceConfigs,
-		ServiceConfigHistory: sharedtest.CreateServiceConfigUpdateHistoryFromServiceConfigs(
-			TestSupplierOperatorAddress,
-			supplierServiceConfigs,
-			1,
-			sharedtest.NoDeactivationHeight,
-		),
+	serviceConfigHistory        = sharedtest.CreateServiceConfigUpdateHistoryFromServiceConfigs(
+		TestSupplierOperatorAddress,
+		supplierServiceConfigs,
+		1,
+		sharedtypes.NoDeactivationHeight,
+	)
+	TestSupplier = sharedtypes.Supplier{
+		OperatorAddress:      TestSupplierOperatorAddress,
+		Stake:                &sdk.Coin{Denom: "upokt", Amount: math.NewInt(100)},
+		Services:             supplierServiceConfigs,
+		ServiceConfigHistory: serviceConfigHistory,
 	}
 )
 

@@ -4,12 +4,6 @@ import (
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
-const (
-	// NoDeactivationHeight represents that a service configuration has no deactivation
-	// height and is considered active indefinitely.
-	NoDeactivationHeight = iota // 0
-)
-
 // CreateServiceConfigUpdateHistoryFromServiceConfigs creates a list of ServiceConfigUpdate
 // objects from a list of SupplierServiceConfig objects.
 // - This utility function is used in tests to construct the service configuration history for a supplier.
@@ -28,7 +22,6 @@ func CreateServiceConfigUpdateHistoryFromServiceConfigs(
 			activationHeight,
 			deactivationHeight,
 		)
-
 		serviceConfigHistory = append(serviceConfigHistory, serviceConfigUpdate)
 	}
 	return serviceConfigHistory

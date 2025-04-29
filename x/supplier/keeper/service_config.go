@@ -27,9 +27,9 @@ func (k Keeper) GetServiceConfigUpdatesIterator(
 	serviceConfigUpdateStore := k.getServiceConfigUpdatesStore(ctx)
 
 	startKeyBz := types.StringKey(serviceId)
-
 	endKeyBz := types.StringKey(serviceId)
-	// Append the currentHeight+1 in big endian format to create our upper bound
+
+	// Append the currentHeight+1 in big endian format to create our upper bound.
 	// Using currentHeight+1 makes the bound exclusive, so we get all heights <= currentHeight
 	heightBytes := make([]byte, 8)
 	binary.BigEndian.PutUint64(heightBytes, uint64(currentHeight+1))
@@ -191,4 +191,21 @@ func (k Keeper) getServiceConfigUpdateDeactivationHeightStore(ctx context.Contex
 func (k Keeper) getSupplierServiceConfigUpdatesStore(ctx context.Context) storetypes.KVStore {
 	storeAdapter := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
 	return prefix.NewStore(storeAdapter, types.KeyPrefix(types.SupplierServiceConfigUpdateKeyPrefix))
+}
+
+// getServiceConfigUpdatesByServiceStore returns the KVStore that indexes service
+// configuration updates by service ID.
+// This enables efficiently finding all service configurations for a specific service.
+func (k Keeper) getServiceConfigUpdatesByServiceStore(ctx context.Context, serviceId string) storetypes.KVStore {
+	// Build the composite key for accessing service config updates for a specific service
+	// Format: ServiceConfigUpdateKeyPrefix + serviceId
+	key := make([]byte, 0)
+	key = append(key, types.KeyPrefix(types.ServiceConfigUpdateKeyPrefix)...)
+	key = append(key, types.StringKey(serviceId)...)
+
+	// Prefix store for service config updates
+	storeAdapter := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
+	serviceStore := prefix.NewStore(storeAdapter, key)
+
+	return serviceStore
 }

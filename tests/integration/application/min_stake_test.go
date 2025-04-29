@@ -169,17 +169,18 @@ func (s *applicationMinStakeTestSuite) stakeSupplier() {
 			},
 		},
 	}
+	serviceConfigHistory := sharedtest.CreateServiceConfigUpdateHistoryFromServiceConfigs(
+		s.supplierBech32,
+		supplierServiceConfigs,
+		1,
+		sharedtypes.NoDeactivationHeight,
+	)
 	s.keepers.SupplierKeeper.SetSupplier(s.ctx, sharedtypes.Supplier{
-		OwnerAddress:    s.supplierBech32,
-		OperatorAddress: s.supplierBech32,
-		Stake:           &suppliertypes.DefaultMinStake,
-		Services:        supplierServiceConfigs,
-		ServiceConfigHistory: sharedtest.CreateServiceConfigUpdateHistoryFromServiceConfigs(
-			s.supplierBech32,
-			supplierServiceConfigs,
-			1,
-			sharedtest.NoDeactivationHeight,
-		),
+		OwnerAddress:         s.supplierBech32,
+		OperatorAddress:      s.supplierBech32,
+		Stake:                &suppliertypes.DefaultMinStake,
+		Services:             supplierServiceConfigs,
+		ServiceConfigHistory: serviceConfigHistory,
 	})
 }
 
