@@ -85,6 +85,7 @@ for such operations.`,
 	cmd.Flags().String(cosmosflags.FlagChainID, "pocket", "The network chain ID")
 	cmd.Flags().StringVar(&flagLogLevel, cosmosflags.FlagLogLevel, "debug", "The logging level (debug|info|warn|error)")
 	// Transactions submitted by the RelayMiner are important (i.e. responsible for claims and proofs) that we are willing to overpay on gas fees
+	// Normally, for most transactions, we default to a gas adjustment of 1.5.
 	cmd.Flags().Float64(cosmosflags.FlagGasAdjustment, 1.7, "The adjustment factor to be multiplied by the gas estimate returned by the tx simulation")
 	cmd.Flags().String(cosmosflags.FlagGasPrices, "1upokt", "Set the gas unit price in upokt")
 	cmd.Flags().Bool(config.FlagQueryCaching, true, "Enable or disable onchain query caching")
