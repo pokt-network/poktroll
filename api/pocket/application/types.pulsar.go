@@ -2166,27 +2166,27 @@ func (x *fastReflection_PendingApplicationTransfer) ProtoMethods() *protoiface.M
 }
 
 var (
-	md_Undelegation                     protoreflect.MessageDescriptor
-	fd_Undelegation_application_address protoreflect.FieldDescriptor
-	fd_Undelegation_gateway_address     protoreflect.FieldDescriptor
+	md_PendingUndelegation                     protoreflect.MessageDescriptor
+	fd_PendingUndelegation_application_address protoreflect.FieldDescriptor
+	fd_PendingUndelegation_gateway_address     protoreflect.FieldDescriptor
 )
 
 func init() {
 	file_pocket_application_types_proto_init()
-	md_Undelegation = File_pocket_application_types_proto.Messages().ByName("Undelegation")
-	fd_Undelegation_application_address = md_Undelegation.Fields().ByName("application_address")
-	fd_Undelegation_gateway_address = md_Undelegation.Fields().ByName("gateway_address")
+	md_PendingUndelegation = File_pocket_application_types_proto.Messages().ByName("PendingUndelegation")
+	fd_PendingUndelegation_application_address = md_PendingUndelegation.Fields().ByName("application_address")
+	fd_PendingUndelegation_gateway_address = md_PendingUndelegation.Fields().ByName("gateway_address")
 }
 
-var _ protoreflect.Message = (*fastReflection_Undelegation)(nil)
+var _ protoreflect.Message = (*fastReflection_PendingUndelegation)(nil)
 
-type fastReflection_Undelegation Undelegation
+type fastReflection_PendingUndelegation PendingUndelegation
 
-func (x *Undelegation) ProtoReflect() protoreflect.Message {
-	return (*fastReflection_Undelegation)(x)
+func (x *PendingUndelegation) ProtoReflect() protoreflect.Message {
+	return (*fastReflection_PendingUndelegation)(x)
 }
 
-func (x *Undelegation) slowProtoReflect() protoreflect.Message {
+func (x *PendingUndelegation) slowProtoReflect() protoreflect.Message {
 	mi := &file_pocket_application_types_proto_msgTypes[3]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -2198,43 +2198,43 @@ func (x *Undelegation) slowProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-var _fastReflection_Undelegation_messageType fastReflection_Undelegation_messageType
-var _ protoreflect.MessageType = fastReflection_Undelegation_messageType{}
+var _fastReflection_PendingUndelegation_messageType fastReflection_PendingUndelegation_messageType
+var _ protoreflect.MessageType = fastReflection_PendingUndelegation_messageType{}
 
-type fastReflection_Undelegation_messageType struct{}
+type fastReflection_PendingUndelegation_messageType struct{}
 
-func (x fastReflection_Undelegation_messageType) Zero() protoreflect.Message {
-	return (*fastReflection_Undelegation)(nil)
+func (x fastReflection_PendingUndelegation_messageType) Zero() protoreflect.Message {
+	return (*fastReflection_PendingUndelegation)(nil)
 }
-func (x fastReflection_Undelegation_messageType) New() protoreflect.Message {
-	return new(fastReflection_Undelegation)
+func (x fastReflection_PendingUndelegation_messageType) New() protoreflect.Message {
+	return new(fastReflection_PendingUndelegation)
 }
-func (x fastReflection_Undelegation_messageType) Descriptor() protoreflect.MessageDescriptor {
-	return md_Undelegation
+func (x fastReflection_PendingUndelegation_messageType) Descriptor() protoreflect.MessageDescriptor {
+	return md_PendingUndelegation
 }
 
 // Descriptor returns message descriptor, which contains only the protobuf
 // type information for the message.
-func (x *fastReflection_Undelegation) Descriptor() protoreflect.MessageDescriptor {
-	return md_Undelegation
+func (x *fastReflection_PendingUndelegation) Descriptor() protoreflect.MessageDescriptor {
+	return md_PendingUndelegation
 }
 
 // Type returns the message type, which encapsulates both Go and protobuf
 // type information. If the Go type information is not needed,
 // it is recommended that the message descriptor be used instead.
-func (x *fastReflection_Undelegation) Type() protoreflect.MessageType {
-	return _fastReflection_Undelegation_messageType
+func (x *fastReflection_PendingUndelegation) Type() protoreflect.MessageType {
+	return _fastReflection_PendingUndelegation_messageType
 }
 
 // New returns a newly allocated and mutable empty message.
-func (x *fastReflection_Undelegation) New() protoreflect.Message {
-	return new(fastReflection_Undelegation)
+func (x *fastReflection_PendingUndelegation) New() protoreflect.Message {
+	return new(fastReflection_PendingUndelegation)
 }
 
 // Interface unwraps the message reflection interface and
 // returns the underlying ProtoMessage interface.
-func (x *fastReflection_Undelegation) Interface() protoreflect.ProtoMessage {
-	return (*Undelegation)(x)
+func (x *fastReflection_PendingUndelegation) Interface() protoreflect.ProtoMessage {
+	return (*PendingUndelegation)(x)
 }
 
 // Range iterates over every populated field in an undefined order,
@@ -2242,16 +2242,16 @@ func (x *fastReflection_Undelegation) Interface() protoreflect.ProtoMessage {
 // Range returns immediately if f returns false.
 // While iterating, mutating operations may only be performed
 // on the current field descriptor.
-func (x *fastReflection_Undelegation) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
+func (x *fastReflection_PendingUndelegation) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
 	if x.ApplicationAddress != "" {
 		value := protoreflect.ValueOfString(x.ApplicationAddress)
-		if !f(fd_Undelegation_application_address, value) {
+		if !f(fd_PendingUndelegation_application_address, value) {
 			return
 		}
 	}
 	if x.GatewayAddress != "" {
 		value := protoreflect.ValueOfString(x.GatewayAddress)
-		if !f(fd_Undelegation_gateway_address, value) {
+		if !f(fd_PendingUndelegation_gateway_address, value) {
 			return
 		}
 	}
@@ -2268,17 +2268,17 @@ func (x *fastReflection_Undelegation) Range(f func(protoreflect.FieldDescriptor,
 // In other cases (aside from the nullable cases above),
 // a proto3 scalar field is populated if it contains a non-zero value, and
 // a repeated field is populated if it is non-empty.
-func (x *fastReflection_Undelegation) Has(fd protoreflect.FieldDescriptor) bool {
+func (x *fastReflection_PendingUndelegation) Has(fd protoreflect.FieldDescriptor) bool {
 	switch fd.FullName() {
-	case "pocket.application.Undelegation.application_address":
+	case "pocket.application.PendingUndelegation.application_address":
 		return x.ApplicationAddress != ""
-	case "pocket.application.Undelegation.gateway_address":
+	case "pocket.application.PendingUndelegation.gateway_address":
 		return x.GatewayAddress != ""
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: pocket.application.Undelegation"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: pocket.application.PendingUndelegation"))
 		}
-		panic(fmt.Errorf("message pocket.application.Undelegation does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message pocket.application.PendingUndelegation does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -2288,17 +2288,17 @@ func (x *fastReflection_Undelegation) Has(fd protoreflect.FieldDescriptor) bool 
 // associated with the given field number.
 //
 // Clear is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_Undelegation) Clear(fd protoreflect.FieldDescriptor) {
+func (x *fastReflection_PendingUndelegation) Clear(fd protoreflect.FieldDescriptor) {
 	switch fd.FullName() {
-	case "pocket.application.Undelegation.application_address":
+	case "pocket.application.PendingUndelegation.application_address":
 		x.ApplicationAddress = ""
-	case "pocket.application.Undelegation.gateway_address":
+	case "pocket.application.PendingUndelegation.gateway_address":
 		x.GatewayAddress = ""
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: pocket.application.Undelegation"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: pocket.application.PendingUndelegation"))
 		}
-		panic(fmt.Errorf("message pocket.application.Undelegation does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message pocket.application.PendingUndelegation does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -2308,19 +2308,19 @@ func (x *fastReflection_Undelegation) Clear(fd protoreflect.FieldDescriptor) {
 // the default value of a bytes scalar is guaranteed to be a copy.
 // For unpopulated composite types, it returns an empty, read-only view
 // of the value; to obtain a mutable reference, use Mutable.
-func (x *fastReflection_Undelegation) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_PendingUndelegation) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
 	switch descriptor.FullName() {
-	case "pocket.application.Undelegation.application_address":
+	case "pocket.application.PendingUndelegation.application_address":
 		value := x.ApplicationAddress
 		return protoreflect.ValueOfString(value)
-	case "pocket.application.Undelegation.gateway_address":
+	case "pocket.application.PendingUndelegation.gateway_address":
 		value := x.GatewayAddress
 		return protoreflect.ValueOfString(value)
 	default:
 		if descriptor.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: pocket.application.Undelegation"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: pocket.application.PendingUndelegation"))
 		}
-		panic(fmt.Errorf("message pocket.application.Undelegation does not contain field %s", descriptor.FullName()))
+		panic(fmt.Errorf("message pocket.application.PendingUndelegation does not contain field %s", descriptor.FullName()))
 	}
 }
 
@@ -2334,17 +2334,17 @@ func (x *fastReflection_Undelegation) Get(descriptor protoreflect.FieldDescripto
 // empty, read-only value, then it panics.
 //
 // Set is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_Undelegation) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
+func (x *fastReflection_PendingUndelegation) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
 	switch fd.FullName() {
-	case "pocket.application.Undelegation.application_address":
+	case "pocket.application.PendingUndelegation.application_address":
 		x.ApplicationAddress = value.Interface().(string)
-	case "pocket.application.Undelegation.gateway_address":
+	case "pocket.application.PendingUndelegation.gateway_address":
 		x.GatewayAddress = value.Interface().(string)
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: pocket.application.Undelegation"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: pocket.application.PendingUndelegation"))
 		}
-		panic(fmt.Errorf("message pocket.application.Undelegation does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message pocket.application.PendingUndelegation does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -2358,44 +2358,44 @@ func (x *fastReflection_Undelegation) Set(fd protoreflect.FieldDescriptor, value
 // It panics if the field does not contain a composite type.
 //
 // Mutable is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_Undelegation) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_PendingUndelegation) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
-	case "pocket.application.Undelegation.application_address":
-		panic(fmt.Errorf("field application_address of message pocket.application.Undelegation is not mutable"))
-	case "pocket.application.Undelegation.gateway_address":
-		panic(fmt.Errorf("field gateway_address of message pocket.application.Undelegation is not mutable"))
+	case "pocket.application.PendingUndelegation.application_address":
+		panic(fmt.Errorf("field application_address of message pocket.application.PendingUndelegation is not mutable"))
+	case "pocket.application.PendingUndelegation.gateway_address":
+		panic(fmt.Errorf("field gateway_address of message pocket.application.PendingUndelegation is not mutable"))
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: pocket.application.Undelegation"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: pocket.application.PendingUndelegation"))
 		}
-		panic(fmt.Errorf("message pocket.application.Undelegation does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message pocket.application.PendingUndelegation does not contain field %s", fd.FullName()))
 	}
 }
 
 // NewField returns a new value that is assignable to the field
 // for the given descriptor. For scalars, this returns the default value.
 // For lists, maps, and messages, this returns a new, empty, mutable value.
-func (x *fastReflection_Undelegation) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_PendingUndelegation) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
-	case "pocket.application.Undelegation.application_address":
+	case "pocket.application.PendingUndelegation.application_address":
 		return protoreflect.ValueOfString("")
-	case "pocket.application.Undelegation.gateway_address":
+	case "pocket.application.PendingUndelegation.gateway_address":
 		return protoreflect.ValueOfString("")
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: pocket.application.Undelegation"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: pocket.application.PendingUndelegation"))
 		}
-		panic(fmt.Errorf("message pocket.application.Undelegation does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message pocket.application.PendingUndelegation does not contain field %s", fd.FullName()))
 	}
 }
 
 // WhichOneof reports which field within the oneof is populated,
 // returning nil if none are populated.
 // It panics if the oneof descriptor does not belong to this message.
-func (x *fastReflection_Undelegation) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
+func (x *fastReflection_PendingUndelegation) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
 	switch d.FullName() {
 	default:
-		panic(fmt.Errorf("%s is not a oneof field in pocket.application.Undelegation", d.FullName()))
+		panic(fmt.Errorf("%s is not a oneof field in pocket.application.PendingUndelegation", d.FullName()))
 	}
 	panic("unreachable")
 }
@@ -2403,7 +2403,7 @@ func (x *fastReflection_Undelegation) WhichOneof(d protoreflect.OneofDescriptor)
 // GetUnknown retrieves the entire list of unknown fields.
 // The caller may only mutate the contents of the RawFields
 // if the mutated bytes are stored back into the message with SetUnknown.
-func (x *fastReflection_Undelegation) GetUnknown() protoreflect.RawFields {
+func (x *fastReflection_PendingUndelegation) GetUnknown() protoreflect.RawFields {
 	return x.unknownFields
 }
 
@@ -2414,7 +2414,7 @@ func (x *fastReflection_Undelegation) GetUnknown() protoreflect.RawFields {
 // An empty RawFields may be passed to clear the fields.
 //
 // SetUnknown is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_Undelegation) SetUnknown(fields protoreflect.RawFields) {
+func (x *fastReflection_PendingUndelegation) SetUnknown(fields protoreflect.RawFields) {
 	x.unknownFields = fields
 }
 
@@ -2426,7 +2426,7 @@ func (x *fastReflection_Undelegation) SetUnknown(fields protoreflect.RawFields) 
 // message type, but the details are implementation dependent.
 // Validity is not part of the protobuf data model, and may not
 // be preserved in marshaling or other operations.
-func (x *fastReflection_Undelegation) IsValid() bool {
+func (x *fastReflection_PendingUndelegation) IsValid() bool {
 	return x != nil
 }
 
@@ -2436,9 +2436,9 @@ func (x *fastReflection_Undelegation) IsValid() bool {
 // The returned methods type is identical to
 // "google.golang.org/protobuf/runtime/protoiface".Methods.
 // Consult the protoiface package documentation for details.
-func (x *fastReflection_Undelegation) ProtoMethods() *protoiface.Methods {
+func (x *fastReflection_PendingUndelegation) ProtoMethods() *protoiface.Methods {
 	size := func(input protoiface.SizeInput) protoiface.SizeOutput {
-		x := input.Message.Interface().(*Undelegation)
+		x := input.Message.Interface().(*PendingUndelegation)
 		if x == nil {
 			return protoiface.SizeOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -2468,7 +2468,7 @@ func (x *fastReflection_Undelegation) ProtoMethods() *protoiface.Methods {
 	}
 
 	marshal := func(input protoiface.MarshalInput) (protoiface.MarshalOutput, error) {
-		x := input.Message.Interface().(*Undelegation)
+		x := input.Message.Interface().(*PendingUndelegation)
 		if x == nil {
 			return protoiface.MarshalOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -2512,7 +2512,7 @@ func (x *fastReflection_Undelegation) ProtoMethods() *protoiface.Methods {
 		}, nil
 	}
 	unmarshal := func(input protoiface.UnmarshalInput) (protoiface.UnmarshalOutput, error) {
-		x := input.Message.Interface().(*Undelegation)
+		x := input.Message.Interface().(*PendingUndelegation)
 		if x == nil {
 			return protoiface.UnmarshalOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -2544,10 +2544,10 @@ func (x *fastReflection_Undelegation) ProtoMethods() *protoiface.Methods {
 			fieldNum := int32(wire >> 3)
 			wireType := int(wire & 0x7)
 			if wireType == 4 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: Undelegation: wiretype end group for non-group")
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: PendingUndelegation: wiretype end group for non-group")
 			}
 			if fieldNum <= 0 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: Undelegation: illegal tag %d (wire type %d)", fieldNum, wire)
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: PendingUndelegation: illegal tag %d (wire type %d)", fieldNum, wire)
 			}
 			switch fieldNum {
 			case 1:
@@ -2649,9 +2649,9 @@ func (x *fastReflection_Undelegation) ProtoMethods() *protoiface.Methods {
 	}
 }
 
-// TODO_AUTOMATE: Add a CI workflow which detects .proto files with incompatible names (i.e. same as the package).
-// NB: This file CANNOT be named "application.proto" due to an as of yet unidentified
-// issue in how cosmos-proto generates the pulsar plugin output go source code.
+// TODO_AUTOMATE: Add a CI workflow that automatically detects .proto files with names incompatible with the package name (e.g., files named exactly as the package, like "application.proto").
+// NB: This file CANNOT be named "application.proto" due to an unresolved issue in how cosmos-proto generates the pulsar plugin output Go source code.
+// See: https://github.com/pokt-network/poktroll/issues/XXX for tracking and future resolution.
 
 // Code generated by protoc-gen-go. DO NOT EDIT.
 // versions:
@@ -2677,21 +2677,22 @@ type Application struct {
 	// Total amount of staked uPOKT
 	Stake *v1beta1.Coin `protobuf:"bytes,2,opt,name=stake,proto3" json:"stake,omitempty"`
 	// CRITICAL: Must contain EXACTLY ONE service config
-	// This prevents applications from over-servicing.
-	// Kept as repeated field for legacy and future compatibility
-	// Refs:
+	// - Enforces a single service configuration per application to prevent over-servicing.
+	// - Field is repeated for legacy reasons and potential future compatibility.
+	// - References for rationale:
 	//   - https://github.com/pokt-network/poktroll/pull/750#discussion_r1735025033
 	//   - https://www.notion.so/buildwithgrove/Off-chain-Application-Stake-Tracking-6a8bebb107db4f7f9dc62cbe7ba555f7
 	ServiceConfigs []*shared.ApplicationServiceConfig `protobuf:"bytes,3,rep,name=service_configs,json=serviceConfigs,proto3" json:"service_configs,omitempty"`
-	// TODO_MAINNET_MIGRATION(@bryanchriswhite): Rename `delegatee_gateway_addresses` to `gateway_addresses_delegated_to`.
-	// Ensure to rename all relevant configs, comments, variables, function names, etc as well.
-	// Non-nullable list of Bech32 encoded delegatee Gateway addresses
+	// TODO_MAINNET_MIGRATION(@bryanchriswhite): Rename `delegatee_gateway_addresses` to `gateway_addresses_delegated_to` for better clarity and consistency.
+	// - Update all related configs, comments, variables, and function names throughout the codebase to reflect this change.
+	// - This field is a non-nullable list of Bech32-encoded delegatee Gateway addresses.
 	DelegateeGatewayAddresses []string `protobuf:"bytes,4,rep,name=delegatee_gateway_addresses,json=delegateeGatewayAddresses,proto3" json:"delegatee_gateway_addresses,omitempty"`
 	// Mapping of session end heights to gateways being undelegated from
-	// - Key: Height of the last block of the session when undelegation tx was committed
-	// - Value: List of gateways being undelegated from
-	// TODO_DOCUMENT(@red-0ne): Need to document the flow from this comment
-	// so its clear to everyone why this is necessary; https://github.com/pokt-network/poktroll/issues/476#issuecomment-2052639906.
+	// - Key: Height of the last block of the session when the undelegation transaction was committed
+	// - Value: List of gateways being undelegated from at that session end height
+	// TODO_DOCUMENT(@red-0ne): Document the complete flow and rationale behind this mapping.
+	// - Ensure the documentation explains why tracking pending undelegations by session end height is necessary.
+	// - See: https://github.com/pokt-network/poktroll/issues/476#issuecomment-2052639906 for context and examples.
 	PendingUndelegations map[uint64]*UndelegatingGatewayList `protobuf:"bytes,5,rep,name=pending_undelegations,json=pendingUndelegations,proto3" json:"pending_undelegations,omitempty" protobuf_key:"varint,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
 	// Session end height when application initiated unstaking (0 if not unstaking)
 	UnstakeSessionEndHeight uint64 `protobuf:"varint,6,opt,name=unstake_session_end_height,json=unstakeSessionEndHeight,proto3" json:"unstake_session_end_height,omitempty"`
@@ -2851,21 +2852,23 @@ func (x *PendingApplicationTransfer) GetSessionEndHeight() uint64 {
 }
 
 // Undelegation represents a connection between an application and a gateway that
-// is in the process of being removed. This record is stored in the undelegation index
+// is in the process of being removed.
+//
+// This record is stored in the undelegation index
 // and used to track and process pending undelegations after the unbonding period has elapsed.
-type Undelegation struct {
+type PendingUndelegation struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
 	// Address of the application that is undelegating from the gateway.
 	ApplicationAddress string `protobuf:"bytes,1,opt,name=application_address,json=applicationAddress,proto3" json:"application_address,omitempty"`
-	// Address of the gateway that the application is undelegating to.
+	// Address of the gateway that the application is undelegating from.
 	GatewayAddress string `protobuf:"bytes,2,opt,name=gateway_address,json=gatewayAddress,proto3" json:"gateway_address,omitempty"`
 }
 
-func (x *Undelegation) Reset() {
-	*x = Undelegation{}
+func (x *PendingUndelegation) Reset() {
+	*x = PendingUndelegation{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_pocket_application_types_proto_msgTypes[3]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -2873,25 +2876,25 @@ func (x *Undelegation) Reset() {
 	}
 }
 
-func (x *Undelegation) String() string {
+func (x *PendingUndelegation) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*Undelegation) ProtoMessage() {}
+func (*PendingUndelegation) ProtoMessage() {}
 
-// Deprecated: Use Undelegation.ProtoReflect.Descriptor instead.
-func (*Undelegation) Descriptor() ([]byte, []int) {
+// Deprecated: Use PendingUndelegation.ProtoReflect.Descriptor instead.
+func (*PendingUndelegation) Descriptor() ([]byte, []int) {
 	return file_pocket_application_types_proto_rawDescGZIP(), []int{3}
 }
 
-func (x *Undelegation) GetApplicationAddress() string {
+func (x *PendingUndelegation) GetApplicationAddress() string {
 	if x != nil {
 		return x.ApplicationAddress
 	}
 	return ""
 }
 
-func (x *Undelegation) GetGatewayAddress() string {
+func (x *PendingUndelegation) GetGatewayAddress() string {
 	if x != nil {
 		return x.GatewayAddress
 	}
@@ -2969,29 +2972,29 @@ var file_pocket_application_types_proto_rawDesc = []byte{
 	0x74, 0x69, 0x6f, 0x6e, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x12, 0x2c, 0x0a, 0x12, 0x73,
 	0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x5f, 0x65, 0x6e, 0x64, 0x5f, 0x68, 0x65, 0x69, 0x67, 0x68,
 	0x74, 0x18, 0x02, 0x20, 0x01, 0x28, 0x04, 0x52, 0x10, 0x73, 0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e,
-	0x45, 0x6e, 0x64, 0x48, 0x65, 0x69, 0x67, 0x68, 0x74, 0x22, 0x9c, 0x01, 0x0a, 0x0c, 0x55, 0x6e,
-	0x64, 0x65, 0x6c, 0x65, 0x67, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x12, 0x49, 0x0a, 0x13, 0x61, 0x70,
-	0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x5f, 0x61, 0x64, 0x64, 0x72, 0x65, 0x73,
-	0x73, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x42, 0x18, 0xd2, 0xb4, 0x2d, 0x14, 0x63, 0x6f, 0x73,
-	0x6d, 0x6f, 0x73, 0x2e, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x53, 0x74, 0x72, 0x69, 0x6e,
-	0x67, 0x52, 0x12, 0x61, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x41, 0x64,
-	0x64, 0x72, 0x65, 0x73, 0x73, 0x12, 0x41, 0x0a, 0x0f, 0x67, 0x61, 0x74, 0x65, 0x77, 0x61, 0x79,
-	0x5f, 0x61, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x42, 0x18,
+	0x45, 0x6e, 0x64, 0x48, 0x65, 0x69, 0x67, 0x68, 0x74, 0x22, 0xa3, 0x01, 0x0a, 0x13, 0x50, 0x65,
+	0x6e, 0x64, 0x69, 0x6e, 0x67, 0x55, 0x6e, 0x64, 0x65, 0x6c, 0x65, 0x67, 0x61, 0x74, 0x69, 0x6f,
+	0x6e, 0x12, 0x49, 0x0a, 0x13, 0x61, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e,
+	0x5f, 0x61, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x42, 0x18,
 	0xd2, 0xb4, 0x2d, 0x14, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x41, 0x64, 0x64, 0x72, 0x65,
-	0x73, 0x73, 0x53, 0x74, 0x72, 0x69, 0x6e, 0x67, 0x52, 0x0e, 0x67, 0x61, 0x74, 0x65, 0x77, 0x61,
-	0x79, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x42, 0xb6, 0x01, 0xd8, 0xe2, 0x1e, 0x01, 0x0a,
-	0x16, 0x63, 0x6f, 0x6d, 0x2e, 0x70, 0x6f, 0x63, 0x6b, 0x65, 0x74, 0x2e, 0x61, 0x70, 0x70, 0x6c,
-	0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x42, 0x0a, 0x54, 0x79, 0x70, 0x65, 0x73, 0x50, 0x72,
-	0x6f, 0x74, 0x6f, 0x50, 0x01, 0x5a, 0x23, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x73, 0x64, 0x6b,
-	0x2e, 0x69, 0x6f, 0x2f, 0x61, 0x70, 0x69, 0x2f, 0x70, 0x6f, 0x63, 0x6b, 0x65, 0x74, 0x2f, 0x61,
-	0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0xa2, 0x02, 0x03, 0x50, 0x41, 0x58,
-	0xaa, 0x02, 0x12, 0x50, 0x6f, 0x63, 0x6b, 0x65, 0x74, 0x2e, 0x41, 0x70, 0x70, 0x6c, 0x69, 0x63,
-	0x61, 0x74, 0x69, 0x6f, 0x6e, 0xca, 0x02, 0x12, 0x50, 0x6f, 0x63, 0x6b, 0x65, 0x74, 0x5c, 0x41,
-	0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0xe2, 0x02, 0x1e, 0x50, 0x6f, 0x63,
-	0x6b, 0x65, 0x74, 0x5c, 0x41, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x5c,
-	0x47, 0x50, 0x42, 0x4d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0xea, 0x02, 0x13, 0x50, 0x6f,
-	0x63, 0x6b, 0x65, 0x74, 0x3a, 0x3a, 0x41, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f,
-	0x6e, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x73, 0x73, 0x53, 0x74, 0x72, 0x69, 0x6e, 0x67, 0x52, 0x12, 0x61, 0x70, 0x70, 0x6c, 0x69, 0x63,
+	0x61, 0x74, 0x69, 0x6f, 0x6e, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x12, 0x41, 0x0a, 0x0f,
+	0x67, 0x61, 0x74, 0x65, 0x77, 0x61, 0x79, 0x5f, 0x61, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x18,
+	0x02, 0x20, 0x01, 0x28, 0x09, 0x42, 0x18, 0xd2, 0xb4, 0x2d, 0x14, 0x63, 0x6f, 0x73, 0x6d, 0x6f,
+	0x73, 0x2e, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x53, 0x74, 0x72, 0x69, 0x6e, 0x67, 0x52,
+	0x0e, 0x67, 0x61, 0x74, 0x65, 0x77, 0x61, 0x79, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x42,
+	0xb6, 0x01, 0xd8, 0xe2, 0x1e, 0x01, 0x0a, 0x16, 0x63, 0x6f, 0x6d, 0x2e, 0x70, 0x6f, 0x63, 0x6b,
+	0x65, 0x74, 0x2e, 0x61, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x42, 0x0a,
+	0x54, 0x79, 0x70, 0x65, 0x73, 0x50, 0x72, 0x6f, 0x74, 0x6f, 0x50, 0x01, 0x5a, 0x23, 0x63, 0x6f,
+	0x73, 0x6d, 0x6f, 0x73, 0x73, 0x64, 0x6b, 0x2e, 0x69, 0x6f, 0x2f, 0x61, 0x70, 0x69, 0x2f, 0x70,
+	0x6f, 0x63, 0x6b, 0x65, 0x74, 0x2f, 0x61, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f,
+	0x6e, 0xa2, 0x02, 0x03, 0x50, 0x41, 0x58, 0xaa, 0x02, 0x12, 0x50, 0x6f, 0x63, 0x6b, 0x65, 0x74,
+	0x2e, 0x41, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0xca, 0x02, 0x12, 0x50,
+	0x6f, 0x63, 0x6b, 0x65, 0x74, 0x5c, 0x41, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f,
+	0x6e, 0xe2, 0x02, 0x1e, 0x50, 0x6f, 0x63, 0x6b, 0x65, 0x74, 0x5c, 0x41, 0x70, 0x70, 0x6c, 0x69,
+	0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x5c, 0x47, 0x50, 0x42, 0x4d, 0x65, 0x74, 0x61, 0x64, 0x61,
+	0x74, 0x61, 0xea, 0x02, 0x13, 0x50, 0x6f, 0x63, 0x6b, 0x65, 0x74, 0x3a, 0x3a, 0x41, 0x70, 0x70,
+	0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -3011,7 +3014,7 @@ var file_pocket_application_types_proto_goTypes = []interface{}{
 	(*Application)(nil),                     // 0: pocket.application.Application
 	(*UndelegatingGatewayList)(nil),         // 1: pocket.application.UndelegatingGatewayList
 	(*PendingApplicationTransfer)(nil),      // 2: pocket.application.PendingApplicationTransfer
-	(*Undelegation)(nil),                    // 3: pocket.application.Undelegation
+	(*PendingUndelegation)(nil),             // 3: pocket.application.PendingUndelegation
 	nil,                                     // 4: pocket.application.Application.PendingUndelegationsEntry
 	(*v1beta1.Coin)(nil),                    // 5: cosmos.base.v1beta1.Coin
 	(*shared.ApplicationServiceConfig)(nil), // 6: pocket.shared.ApplicationServiceConfig
@@ -3072,7 +3075,7 @@ func file_pocket_application_types_proto_init() {
 			}
 		}
 		file_pocket_application_types_proto_msgTypes[3].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*Undelegation); i {
+			switch v := v.(*PendingUndelegation); i {
 			case 0:
 				return &v.state
 			case 1:

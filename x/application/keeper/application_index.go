@@ -1,5 +1,37 @@
 package keeper
 
+// ┌───────────────────────────────────────────────────────────────────────────────────────────────┐
+// │ 🗺️  Application Index Map                                                                     │
+// ├───────────────────────────────────────────────────────────────────────────────────────────────┤
+// │ Store (bucket)                              Key                              → Value          │
+// │───────────────────────────────────────────────────────────────────────────────────────────────│
+// │ applicationUnstakingStore                   AK                               → AK             │
+// │ applicationTransferStore                    AK                               → AK             │
+// │ delegationStore                             DK (GatewayAddr || AppAddr)      → AK             │
+// │ undelegationStore                           UK (AppAddr   || GatewayAddr)    → undelegationBz │
+// └───────────────────────────────────────────────────────────────────────────────────────────────┘
+//
+// Legend
+//   ||                  : byte-level concatenation / prefix.
+//   AK (ApplicationKey) : types.ApplicationKey(appAddr) = "Application/address/" || appAddr.
+//   DK (DelegationKey)  : types.DelegationKey(gatewayAddr, appAddr)
+//                         = "Application/delegation/"   || gatewayAddr || appAddr.
+//   UK (UndelegationKey): types.UndelegationKey(appAddr, gatewayAddr)
+//                         = "Application/undelegation/" || appAddr     || gatewayAddr.
+//   undelegationBz       : protobuf-marshaled types.PendingUndelegation.
+//
+// Fast-path look-ups
+//   • Unstaking set           → iterate applicationUnstakingStore keys.          (①)
+//   • Pending transfers       → iterate applicationTransferStore keys.           (②)
+//   • Delegated apps (by GW)  → delegationStore prefix-scan GatewayAddr.         (③)
+//   • Pending undelegations   → undelegationStore prefix-scan AppAddr/Gateway.   (④)
+//
+// Index counts
+//   ① Unstaking applications
+//   ② Applications with pending transfers
+//   ③ Application ↔ Gateway delegations
+//   ④ Pending undelegations
+
 import (
 	"context"
 
@@ -36,16 +68,14 @@ func (k Keeper) indexApplicationUnstaking(ctx context.Context, app types.Applica
 	}
 }
 
-// indexApplicationTransfer maintains an index of applications that have a
-// pending transfer to another address.
+// Maintains an index of applications with a pending transfer to another address.
 //
-// This function either adds or removes an application from the transfer index
-// depending on whether the application has a pending transfer:
-// - If the application has a pending transfer, it's added to the index
-// - If the application doesn't have a pending transfer, it's removed from the index
+// Behavior:
+// - Adds an application to the transfer index if it has a pending transfer
+// - Removes an application from the index if there is no pending transfer
 //
-// This index enables tracking of applications that are in the process of transferring
-// their stake to another address.
+// Purpose:
+// - Enables tracking of applications in the process of transferring their stake to another address.
 func (k Keeper) indexApplicationTransfer(ctx context.Context, app types.Application) {
 	appTransferStore := k.getApplicationTransferStore(ctx)
 
@@ -57,14 +87,15 @@ func (k Keeper) indexApplicationTransfer(ctx context.Context, app types.Applicat
 	}
 }
 
-// indexApplicationDelegations maintains an index of which applications are delegated
-// to which gateways.
+// Maintains an index of which applications are delegated to which gateways.
 //
-// This function recreates the delegation index for an application, establishing
-// relationship links between the application and all its delegated gateways.
+// Behavior:
+// - Recreates the delegation index for an application
+// - Establishes relationship links between the application and all its delegated gateways
 //
-// The index is structured with keys that combine gateway and application addresses,
-// allowing efficient lookups for which applications are delegated to a given gateway.
+// Index structure:
+// - Keys combine gateway and application addresses
+// - Allows efficient lookups for which applications are delegated to a given gateway.
 func (k Keeper) indexApplicationDelegations(ctx context.Context, app types.Application) {
 	appDelegationStore := k.getDelegationStore(ctx)
 
@@ -86,16 +117,16 @@ func (k Keeper) indexApplicationDelegations(ctx context.Context, app types.Appli
 	}
 }
 
-// indexApplicationUndelegations maintains an index of pending undelegations
-// for applications from gateways.
+// Maintains an index of pending undelegations for applications from gateways.
 //
-// This function manages the storage of undelegation records:
-// 1. First deletes any existing undelegation indexes for the application
-// 2. Then recreates the undelegation index based on the current pending undelegations
+// Behavior:
+// 1. Deletes any existing undelegation indexes for the application
+// 2. Recreates the undelegation index based on current pending undelegations
 //
-// The undelegation index allows efficient tracking of:
-// - Which gateways are being undelegated from by a specific application
-// - All pending undelegations across the network
+// Purpose:
+// - Enables efficient tracking of:
+//   - Which gateways are being undelegated from by a specific application
+//   - All pending undelegations across the network.
 func (k Keeper) indexApplicationUndelegations(ctx context.Context, app types.Application) {
 	appUndelegationStore := k.getUndelegationStore(ctx)
 	appDelegationStore := k.getDelegationStore(ctx)
@@ -105,11 +136,11 @@ func (k Keeper) indexApplicationUndelegations(ctx context.Context, app types.App
 	defer appUndelegationsIterator.Close()
 
 	// First, remove all existing undelegation indexes for this application
-	undelegationsKyes := make([][]byte, 0)
+	undelegationsKeys := make([][]byte, 0)
 	for ; appUndelegationsIterator.Valid(); appUndelegationsIterator.Next() {
-		undelegationsKyes = append(undelegationsKyes, appUndelegationsIterator.Key())
+		undelegationsKeys = append(undelegationsKeys, appUndelegationsIterator.Key())
 	}
-	for _, undelegationKey := range undelegationsKyes {
+	for _, undelegationKey := range undelegationsKeys {
 		appUndelegationStore.Delete(undelegationKey)
 	}
 
@@ -118,7 +149,7 @@ func (k Keeper) indexApplicationUndelegations(ctx context.Context, app types.App
 	for _, undelegationsAtHeight := range app.PendingUndelegations {
 		for _, undelegatedGatewayAddress := range undelegationsAtHeight.GatewayAddresses {
 			undelegationKey := types.UndelegationKey(app.Address, undelegatedGatewayAddress)
-			undelegation := &types.Undelegation{
+			undelegation := &types.PendingUndelegation{
 				ApplicationAddress: app.Address,
 				GatewayAddress:     undelegatedGatewayAddress,
 			}
@@ -132,9 +163,10 @@ func (k Keeper) indexApplicationUndelegations(ctx context.Context, app types.App
 	}
 }
 
-// removeApplicationUnstakingIndex removes an application from the unstaking index.
+// Removes an application from the unstaking index.
 //
-// Used when an application is fully removed or completes the unstaking process.
+// Usage:
+// - Call when an application is fully removed or completes the unstaking process.
 func (k Keeper) removeApplicationUnstakingIndex(
 	ctx context.Context,
 	applicationAddress string,
@@ -144,9 +176,10 @@ func (k Keeper) removeApplicationUnstakingIndex(
 	appUnstakingStore.Delete(appKey)
 }
 
-// removeApplicationTransferIndex removes an application from the transfer index.
+// Removes an application from the transfer index.
 //
-// Used when an application completes or cancels a pending transfer.
+// Usage:
+// - Call when an application completes or cancels a pending transfer.
 func (k Keeper) removeApplicationTransferIndex(
 	ctx context.Context,
 	applicationAddress string,
@@ -156,10 +189,10 @@ func (k Keeper) removeApplicationTransferIndex(
 	appTransferStore.Delete(appKey)
 }
 
-// removeApplicationDelegationIndex removes a specific application-gateway delegation relationship
-// from the delegation index.
+// Removes a specific application-gateway delegation relationship from the delegation index.
 //
-// Called when an application undelegates from a specific gateway.
+// Usage:
+// - Call when an application undelegates from a specific gateway.
 func (k Keeper) removeApplicationDelegationIndex(
 	ctx context.Context,
 	applicationAddress string,
@@ -170,10 +203,24 @@ func (k Keeper) removeApplicationDelegationIndex(
 	appDelegationStore.Delete(delegationKey)
 }
 
-// removeApplicationUndelegationIndexes removes all undelegation indexes for a specific application.
+// Removes all delegation indexes for a specific application.
 //
-// Used when cleaning up an application's data, such as when it's fully unstaked or transferred.
-// This ensures no orphaned undelegation records remain in the store.
+// Usage:
+// - Call when cleaning up an application's data (e.g. fully unstaked or transferred).
+func (k Keeper) removeApplicationDelegationsIndexes(
+	ctx context.Context,
+	application types.Application,
+) {
+	for _, gatewayAddress := range application.DelegateeGatewayAddresses {
+		k.removeApplicationDelegationIndex(ctx, application.Address, gatewayAddress)
+	}
+}
+
+// Removes all undelegation indexes for a specific application.
+//
+// Usage:
+// - Call when cleaning up an application's data (e.g. fully unstaked or transferred)
+// - Ensures no orphaned undelegation records remain in the store.
 func (k Keeper) removeApplicationUndelegationIndexes(
 	ctx context.Context,
 	applicationAddress string,
@@ -194,8 +241,7 @@ func (k Keeper) removeApplicationUndelegationIndexes(
 	}
 }
 
-// removeApplicationUndelegationIndex removes a specific undelegation record
-// from the undelegation index using its key.
+// Removes a specific undelegation record from the undelegation index using its key.
 func (k Keeper) removeApplicationUndelegationIndex(
 	ctx context.Context,
 	undelegationKey []byte,

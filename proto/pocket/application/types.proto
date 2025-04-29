@@ -1,6 +1,6 @@
-// TODO_AUTOMATE: Add a CI workflow which detects .proto files with incompatible names (i.e. same as the package).
-// NB: This file CANNOT be named "application.proto" due to an as of yet unidentified
-// issue in how cosmos-proto generates the pulsar plugin output go source code.
+// TODO_AUTOMATE: Add a CI workflow that automatically detects .proto files with names incompatible with the package name (e.g., files named exactly as the package, like "application.proto").
+// NB: This file CANNOT be named "application.proto" due to an unresolved issue in how cosmos-proto generates the pulsar plugin output Go source code.
+// See: https://github.com/pokt-network/poktroll/issues/XXX for tracking and future resolution.
 
 syntax = "proto3";
 package pocket.application;
@@ -23,23 +23,24 @@ message Application {
   cosmos.base.v1beta1.Coin stake = 2;
 
   // CRITICAL: Must contain EXACTLY ONE service config
-  // This prevents applications from over-servicing.
-  // Kept as repeated field for legacy and future compatibility
-  // Refs:
+  // - Enforces a single service configuration per application to prevent over-servicing.
+  // - Field is repeated for legacy reasons and potential future compatibility.
+  // - References for rationale:
   //   - https://github.com/pokt-network/poktroll/pull/750#discussion_r1735025033
   //   - https://www.notion.so/buildwithgrove/Off-chain-Application-Stake-Tracking-6a8bebb107db4f7f9dc62cbe7ba555f7
   repeated pocket.shared.ApplicationServiceConfig service_configs = 3;
 
-  // TODO_MAINNET_MIGRATION(@bryanchriswhite): Rename `delegatee_gateway_addresses` to `gateway_addresses_delegated_to`.
-  // Ensure to rename all relevant configs, comments, variables, function names, etc as well.
-  // Non-nullable list of Bech32 encoded delegatee Gateway addresses
+  // TODO_MAINNET_MIGRATION(@bryanchriswhite): Rename `delegatee_gateway_addresses` to `gateway_addresses_delegated_to` for better clarity and consistency.
+  // - Update all related configs, comments, variables, and function names throughout the codebase to reflect this change.
+  // - This field is a non-nullable list of Bech32-encoded delegatee Gateway addresses.
   repeated string delegatee_gateway_addresses = 4 [(cosmos_proto.scalar) = "cosmos.AddressString", (gogoproto.nullable) = false];
 
   // Mapping of session end heights to gateways being undelegated from
-  // - Key: Height of the last block of the session when undelegation tx was committed
-  // - Value: List of gateways being undelegated from
-  // TODO_DOCUMENT(@red-0ne): Need to document the flow from this comment
-  // so its clear to everyone why this is necessary; https://github.com/pokt-network/poktroll/issues/476#issuecomment-2052639906.
+  // - Key: Height of the last block of the session when the undelegation transaction was committed
+  // - Value: List of gateways being undelegated from at that session end height
+  // TODO_DOCUMENT(@red-0ne): Document the complete flow and rationale behind this mapping.
+  // - Ensure the documentation explains why tracking pending undelegations by session end height is necessary.
+  // - See: https://github.com/pokt-network/poktroll/issues/476#issuecomment-2052639906 for context and examples.
   map<uint64, UndelegatingGatewayList> pending_undelegations = 5 [(gogoproto.nullable) = false];
 
   // Session end height when application initiated unstaking (0 if not unstaking)
@@ -63,12 +64,14 @@ message PendingApplicationTransfer {
 }
 
 // Undelegation represents a connection between an application and a gateway that
-// is in the process of being removed. This record is stored in the undelegation index
+// is in the process of being removed.
+//
+// This record is stored in the undelegation index
 // and used to track and process pending undelegations after the unbonding period has elapsed.
-message Undelegation {
+message PendingUndelegation {
   // Address of the application that is undelegating from the gateway.
   string application_address = 1 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
 
-  // Address of the gateway that the application is undelegating to.
+  // Address of the gateway that the application is undelegating from.
   string gateway_address = 2 [ (cosmos_proto.scalar) = "cosmos.AddressString" ];
 }

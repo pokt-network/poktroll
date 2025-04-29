@@ -1,5 +1,24 @@
 package keeper
 
+// ┌──────────────────────────────────────────────────────────────────────────────────────────┐
+// │ 📦  Application Primary Store                                                           │
+// ├──────────────────────────────────────────────────────────────────────────────────────────┤
+// │ Store (bucket)        Key (prefix + addr)                 → Value                       │
+// │──────────────────────────────────────────────────────────────────────────────────────────│
+// │ applicationStore      AK                                  → appBz                       │
+// └──────────────────────────────────────────────────────────────────────────────────────────┘
+//
+// Legend
+//   AK (ApplicationKey) : types.ApplicationKey(appAddr)
+//                         = "Application/address/" || appAddr.
+//   appBz               : protobuf-marshaled types.Application.
+//
+// Fast-path look-up
+//   • AppAddr → applicationStore → appBz.
+//
+// Index counts
+//   ① Primary data (one record per Application)
+
 import (
 	"context"
 	"fmt"
@@ -14,21 +33,26 @@ import (
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
-// SetApplication set a specific application in the store from its index
-// and updates all related application indexes.
+// SetApplication sets an application in the store and updates all related indexes.
+// - Indexes the application in all relevant indexes
+// - Stores the application in the main application store
 func (k Keeper) SetApplication(ctx context.Context, application types.Application) {
+	// Index the application in all relevant indexes
 	k.indexApplicationUnstaking(ctx, application)
 	k.indexApplicationTransfer(ctx, application)
 	k.indexApplicationDelegations(ctx, application)
 	k.indexApplicationUndelegations(ctx, application)
 
+	// Store the application
 	applicationStore := k.getApplicationStore(ctx)
 	appBz := k.cdc.MustMarshal(&application)
 	applicationStore.Set(types.ApplicationKey(application.Address), appBz)
 }
 
-// GetApplication returns a application from its index
-// It initializes any nil fields to empty collections when found
+// GetApplication retrieves an application by address.
+// - Returns false if not found
+// - Initializes PendingUndelegations as an empty map if nil
+// - Initializes DelegateeGatewayAddresses as an empty slice if nil
 func (k Keeper) GetApplication(
 	ctx context.Context,
 	appAddr string,
@@ -57,21 +81,23 @@ func (k Keeper) GetApplication(
 	return app, true
 }
 
-// RemoveApplication removes an application from the store and all related application indexes.
+// RemoveApplication deletes an application from the store and all related indexes.
+// - Removes from unstaking, transfer, undelegation, and delegation indexes
+// - Deletes from the main application store
 func (k Keeper) RemoveApplication(ctx context.Context, application types.Application) {
+	// Remove the application from all relevant indexes
 	k.removeApplicationUnstakingIndex(ctx, application.Address)
 	k.removeApplicationTransferIndex(ctx, application.Address)
 	k.removeApplicationUndelegationIndexes(ctx, application.Address)
+	k.removeApplicationDelegationsIndexes(ctx, application)
 
-	for _, gatewayAddress := range application.DelegateeGatewayAddresses {
-		k.removeApplicationDelegationIndex(ctx, application.Address, gatewayAddress)
-	}
-
+	// Remove the application from the store
 	applicationStore := k.getApplicationStore(ctx)
 	applicationStore.Delete(types.ApplicationKey(application.Address))
 }
 
-// GetAllApplications returns all applications
+// GetAllApplications returns all applications in the store.
+// - Ensures PendingUndelegations is always initialized
 func (k Keeper) GetAllApplications(ctx context.Context) (apps []types.Application) {
 	applicationStore := k.getApplicationStore(ctx)
 	iterator := storetypes.KVStorePrefixIterator(applicationStore, []byte{})
@@ -94,8 +120,9 @@ func (k Keeper) GetAllApplications(ctx context.Context) (apps []types.Applicatio
 	return
 }
 
-// GetAllUnstakingApplicationsIterator returns an iterator for all applications
-// that are currently unstaking.
+// GetAllUnstakingApplicationsIterator returns an iterator over all unstaking applications.
+// - Uses unstaking applications store as the source of truth
+// - Accesses full application objects via primary key accessor
 func (k Keeper) GetAllUnstakingApplicationsIterator(
 	ctx context.Context,
 ) sharedtypes.RecordIterator[types.Application] {
@@ -108,8 +135,9 @@ func (k Keeper) GetAllUnstakingApplicationsIterator(
 	return sharedtypes.NewRecordIterator(unstakingAppsIterator, applicationAccessor)
 }
 
-// GetAllTransferringApplicationsIterator returns an iterator for all applications
-// that are currently transferring.
+// GetAllTransferringApplicationsIterator returns an iterator over all transferring applications.
+// - Uses transferring applications store as the source of truth
+// - Accesses full application objects via primary key accessor
 func (k Keeper) GetAllTransferringApplicationsIterator(
 	ctx context.Context,
 ) sharedtypes.RecordIterator[types.Application] {
@@ -122,8 +150,9 @@ func (k Keeper) GetAllTransferringApplicationsIterator(
 	return sharedtypes.NewRecordIterator(transferringAppsIterator, applicationAccessor)
 }
 
-// GetDelegationsIterator returns an iterator for applications which are currently
-// delegated to a specific gateway.
+// GetDelegationsIterator returns an iterator for applications delegated to a specific gateway.
+// - Filters delegations by gateway address prefix
+// - Returns only delegations related to the given gateway
 func (k Keeper) GetDelegationsIterator(
 	ctx context.Context,
 	gatewayAddress string,
@@ -141,12 +170,13 @@ func (k Keeper) GetDelegationsIterator(
 	return sharedtypes.NewRecordIterator(delegationsIterator, delegationAccessor)
 }
 
-// GetUndelegationsIterator returns an iterator for applications that have pending undelegations.
-// If ALL_UNDELEGATIONS is passed as the application address, it will return all pending undelegations.
+// GetUndelegationsIterator returns an iterator for applications with pending undelegations.
+// - If ALL_UNDELEGATIONS is passed, returns all pending undelegations
+// - Otherwise, filters by application address prefix
 func (k Keeper) GetUndelegationsIterator(
 	ctx context.Context,
 	applicationAddress string,
-) sharedtypes.RecordIterator[types.Undelegation] {
+) sharedtypes.RecordIterator[types.PendingUndelegation] {
 	undelegationsStore := k.getUndelegationStore(ctx)
 
 	appKey := []byte{}
@@ -164,11 +194,9 @@ func (k Keeper) GetUndelegationsIterator(
 	return sharedtypes.NewRecordIterator(undelegationsIterator, undelegationAccessor)
 }
 
-// applicationFromPrimaryKeyAccessorFn creates a function that retrieves an
-// application from its primary key.
-//
-// This creates a closure that can be used by the RecordIterator to convert primary
-// keys into the actual Application objects they reference.
+// applicationFromPrimaryKeyAccessorFn creates a DataRecordAccessor for Applications.
+// - Retrieves an application from its primary key in the store
+// - Returns an error if the application does not exist
 func applicationFromPrimaryKeyAccessorFn(
 	applicationStore storetypes.KVStore,
 	cdc codec.BinaryCodec,
@@ -186,57 +214,57 @@ func applicationFromPrimaryKeyAccessorFn(
 	}
 }
 
-// undelegationAccessorFn creates a function that retrieves an undelegation record
-// from its serialized bytes
-//
-// Returns an accessor function that takes serialized undelegation bytes and returns
-// a deserialized Undelegation object
+// undelegationAccessorFn creates a DataRecordAccessor for Undelegations.
+// - Deserializes undelegation bytes into an Undelegation object
+// - Returns an error if bytes are nil
 func undelegationAccessorFn(
 	cdc codec.BinaryCodec,
-) sharedtypes.DataRecordAccessor[types.Undelegation] {
-	return func(undelegationBz []byte) (types.Undelegation, error) {
+) sharedtypes.DataRecordAccessor[types.PendingUndelegation] {
+	return func(undelegationBz []byte) (types.PendingUndelegation, error) {
 		if undelegationBz == nil {
-			return types.Undelegation{}, fmt.Errorf("expecting undelegation bytes to be non-nil")
+			return types.PendingUndelegation{}, fmt.Errorf("expecting undelegation bytes to be non-nil")
 		}
 
-		var undelegation types.Undelegation
+		var undelegation types.PendingUndelegation
 		cdc.MustUnmarshal(undelegationBz, &undelegation)
 
 		return undelegation, nil
 	}
 }
 
-// getApplicationStore returns a KVStore for the application data
+// getApplicationStore returns a prefixed KVStore for application data.
 func (k Keeper) getApplicationStore(ctx context.Context) storetypes.KVStore {
 	storeAdapter := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
 	return prefix.NewStore(storeAdapter, types.KeyPrefix(types.ApplicationKeyPrefix))
 }
 
-// getDelegationStore returns a KVStore for application delegations
+// getDelegationStore returns a prefixed KVStore for application delegations.
 func (k Keeper) getDelegationStore(ctx context.Context) storetypes.KVStore {
 	storeAdapter := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
 	return prefix.NewStore(storeAdapter, types.KeyPrefix(types.DelegationKeyPrefix))
 }
 
-// getUndelegationStore returns a KVStore for application undelegations
+// getUndelegationStore returns a prefixed KVStore for application undelegations.
 func (k Keeper) getUndelegationStore(ctx context.Context) storetypes.KVStore {
 	storeAdapter := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
 	return prefix.NewStore(storeAdapter, types.KeyPrefix(types.UndelegationKeyPrefix))
 }
 
-// getApplicationUnstakingStore returns a KVStore for unstaking applications
+// getApplicationUnstakingStore returns a prefixed KVStore for unstaking applications.
 func (k Keeper) getApplicationUnstakingStore(ctx context.Context) storetypes.KVStore {
 	storeAdapter := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
 	return prefix.NewStore(storeAdapter, types.KeyPrefix(types.ApplicationUnstakingKeyPrefix))
 }
 
-// getApplicationTransferStore returns a KVStore for application transfers
+// getApplicationTransferStore returns a prefixed KVStore for application transfers.
 func (k Keeper) getApplicationTransferStore(ctx context.Context) storetypes.KVStore {
 	storeAdapter := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
 	return prefix.NewStore(storeAdapter, types.KeyPrefix(types.ApplicationTransferKeyPrefix))
 }
 
 // GetAllApplicationsIterator returns a RecordIterator over all Application records.
+// - Uses the main application store and unmarshals each record
+// - Initializes nil fields in each application object
 func (k Keeper) GetAllApplicationsIterator(ctx context.Context) sharedtypes.RecordIterator[types.Application] {
 	applicationStore := k.getApplicationStore(ctx)
 	applicationIterator := storetypes.KVStorePrefixIterator(applicationStore, []byte{})
@@ -245,12 +273,11 @@ func (k Keeper) GetAllApplicationsIterator(ctx context.Context) sharedtypes.Reco
 	return sharedtypes.NewRecordIterator(applicationIterator, applicationUnmarshallerFn)
 }
 
-// getApplicationAccessorFn constructs a DataRecordAccessor function which:
-// 1. Receives a serialized Application value bytes
-// 2. Unmarshals it into an Application object
-// 3. Initializes any nil fields in the Application object
-// Returns:
-// - An Application object and an error
+// getApplicationAccessorFn constructs a DataRecordAccessor for Applications.
+// - Receives serialized Application bytes
+// - Unmarshals into an Application object
+// - Initializes nil fields in the Application object
+// - Returns the Application object and an error
 func getApplicationAccessorFn(
 	cdc codec.BinaryCodec,
 	logger log.Logger,
@@ -267,14 +294,13 @@ func getApplicationAccessorFn(
 	}
 }
 
-// initializeNilApplicationFields initializes any nil fields in the application object to their default values.
-// - Adding `(gogoproto.nullable)=false` to repeated proto fields acts on the underlying type, not the slice or map type.
-// - As a result, slices or maps will be nil if no values are provided in the proto message.
-// - This function ensures that the application object has all fields initialized to their default values.
-//
-// TODO_TECHDEBT: This function is a workaround for the CosmosSDK codec treating empty slices and maps as nil.
-// - We should investigate how to make the codec treat empty slices and maps as empty instead of nil.
-// - For more context, see: https://github.com/pokt-network/poktroll/pull/1103#discussion_r1992258822
+// initializeNilApplicationFields initializes nil fields in the Application object to default values.
+// - Ensures ServiceConfigs is always a non-nil slice
+// - Ensures PendingUndelegations is always a non-nil map
+// - Logs a warning if ServiceConfigs was nil (should not happen)
+// - Workaround for CosmosSDK codec treating empty slices/maps as nil
+// - See: https://github.com/pokt-network/poktroll/pull/1103#discussion_r1992258822
+// - TODO_TECHDEBT: Investigate making the codec treat empty slices/maps as empty instead of nil
 func initializeNilApplicationFields(keeperLogger log.Logger, app *types.Application) {
 	logger := keeperLogger.With("module", "application").With("method", "initializeNilApplicationFields")
 

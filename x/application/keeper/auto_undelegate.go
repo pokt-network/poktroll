@@ -31,6 +31,7 @@ func (k Keeper) EndBlockerAutoUndelegateFromUnbondingGateways(ctx cosmostypes.Co
 				return err
 			}
 
+			// Get the index of the particular unbonding gateway from the list of gateways the app delegated to.
 			gwIdx := slices.Index(application.DelegateeGatewayAddresses, unbondingGateway.GetAddress())
 			if gwIdx < 0 {
 				// If the delegation is referencing an application that is not delegating
