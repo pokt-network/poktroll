@@ -218,7 +218,7 @@ func (k Keeper) removeSupplierServiceConfigUpdateIndexes(
 // removeSupplierUnstakingHeightIndex removes a supplier from the unstaking height index.
 //
 // This function is called when a supplier is completely removed from the state or
-// when they re-stake, cancelling their unbonding period.
+// when they re-stake, canceling their unbonding period.
 func (k Keeper) removeSupplierUnstakingHeightIndex(
 	ctx context.Context,
 	supplierOperatorAddress string,

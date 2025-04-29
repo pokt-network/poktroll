@@ -109,12 +109,30 @@ func TestSupplier_GetAll(t *testing.T) {
 }
 
 func TestSupplier_GetAllUnstakingSuppliersIterator(t *testing.T) {
+	// Test configuration constants
+	const (
+		// Total number of suppliers to create
+		totalSuppliers = 10
+
+		// Range of suppliers to mark as unstaking (inclusive start, exclusive end)
+		unstakingStartIdx = 2
+		unstakingEndIdx   = 8
+
+		// Height at which unstaking session ends
+		unstakeSessionEndHeight = 100
+
+		// Expected number of unstaking suppliers (derived from range)
+		expectedUnstakingCount = unstakingEndIdx - unstakingStartIdx // 6
+	)
+
 	supplierModuleKeepers, ctx := keepertest.SupplierKeeper(t)
 
-	// Create 6 suppliers with unstaking height
-	suppliers := createNSuppliers(*supplierModuleKeepers.Keeper, ctx, 10)
-	for i := 2; i < 8; i++ {
-		suppliers[i].UnstakeSessionEndHeight = 100
+	// Create suppliers
+	suppliers := createNSuppliers(*supplierModuleKeepers.Keeper, ctx, totalSuppliers)
+
+	// Mark suppliers as unstaking
+	for i := unstakingStartIdx; i < unstakingEndIdx; i++ {
+		suppliers[i].UnstakeSessionEndHeight = unstakeSessionEndHeight
 		supplierModuleKeepers.SetSupplier(ctx, suppliers[i])
 	}
 
@@ -128,42 +146,79 @@ func TestSupplier_GetAllUnstakingSuppliersIterator(t *testing.T) {
 		unstakingCount++
 	}
 
-	// Verify we found exactly 6 unstaking suppliers
-	require.Equal(t, 6, unstakingCount)
+	// Verify we found expected number of unstaking suppliers
+	require.Equal(t, expectedUnstakingCount, unstakingCount)
 }
 
 func TestServiceConfigUpdateIterators(t *testing.T) {
+	// Test configuration constants
+	const (
+		// Total number of suppliers to create
+		totalSuppliers = 100
+
+		// Service identifier used for testing
+		testServiceID = "service1"
+
+		// Range of suppliers that will use testServiceID (inclusive start, exclusive end)
+		service1StartIdx = 25
+		service1EndIdx   = 75
+		service1Count    = service1EndIdx - service1StartIdx // 50
+
+		// Activation height configuration
+		specificActivationHeight              = 10
+		activationStartIdx                    = 10
+		activationEndIdx                      = 35
+		suppliersWithSpecificActivationHeight = activationEndIdx - activationStartIdx // 25
+
+		// Deactivation height configuration
+		specificDeactivationHeight              = 21
+		deactivationEndIdx                      = 12                 // First 12 suppliers (0-11)
+		suppliersWithSpecificDeactivationHeight = deactivationEndIdx // 12
+
+		// Special supplier with multiple services
+		multiServiceSupplierIdx = 99
+		multiServiceCount       = 10
+
+		// Default query height used in tests
+		defaultQueryHeight = 1
+
+		// Expected active service1 configs at query height 1
+		// (service1Count minus suppliers that have activation height > query height)
+		// The overlap between service1 suppliers and those with future activation height is 10
+		expectedActiveService1Configs = service1Count - 10 // 40
+	)
+
 	supplierModuleKeepers, ctx := keepertest.SupplierKeeper(t)
 	keeper := *supplierModuleKeepers.Keeper
 
-	// Create 100 suppliers with service config updates
-	suppliers := createNSuppliers(*supplierModuleKeepers.Keeper, ctx, 100)
+	// Create suppliers with service config updates
+	suppliers := createNSuppliers(*supplierModuleKeepers.Keeper, ctx, totalSuppliers)
 
-	// 50 of them will be for service1
-	for i := 25; i < 75; i++ {
-		suppliers[i].Services[0].ServiceId = "service1"
+	// Configure suppliers for testServiceID
+	for i := service1StartIdx; i < service1EndIdx; i++ {
+		suppliers[i].Services[0].ServiceId = testServiceID
 		suppliers[i].ServiceConfigHistory = sharedtest.CreateServiceConfigUpdateHistoryFromServiceConfigs(
 			suppliers[i].OperatorAddress,
 			suppliers[i].Services,
-			1,
+			defaultQueryHeight,
 			sharedtypes.NoDeactivationHeight,
 		)
 	}
 
-	// 25 will have an activation height of 10
-	for i := 10; i < 35; i++ {
-		suppliers[i].ServiceConfigHistory[0].ActivationHeight = 10
+	// Configure suppliers with specific activation height
+	for i := activationStartIdx; i < activationEndIdx; i++ {
+		suppliers[i].ServiceConfigHistory[0].ActivationHeight = specificActivationHeight
 	}
 
-	// 12 will have a deactivation height of 21
-	for i := 0; i < 12; i++ {
-		suppliers[i].ServiceConfigHistory[0].DeactivationHeight = 21
+	// Configure suppliers with specific deactivation height
+	for i := 0; i < deactivationEndIdx; i++ {
+		suppliers[i].ServiceConfigHistory[0].DeactivationHeight = specificDeactivationHeight
 	}
 
-	// Supplier 100 will have 10 service configs
-	suppliers[99].Services = make([]*sharedtypes.SupplierServiceConfig, 10)
-	for i := range 10 {
-		suppliers[99].Services[i] = &sharedtypes.SupplierServiceConfig{
+	// Configure a supplier with multiple service configs
+	suppliers[multiServiceSupplierIdx].Services = make([]*sharedtypes.SupplierServiceConfig, multiServiceCount)
+	for i := range multiServiceCount {
+		suppliers[multiServiceSupplierIdx].Services[i] = &sharedtypes.SupplierServiceConfig{
 			ServiceId: fmt.Sprintf("sup_svc_%d", i),
 			Endpoints: []*sharedtypes.SupplierEndpoint{
 				{
@@ -174,10 +229,10 @@ func TestServiceConfigUpdateIterators(t *testing.T) {
 			},
 		}
 	}
-	suppliers[99].ServiceConfigHistory = sharedtest.CreateServiceConfigUpdateHistoryFromServiceConfigs(
-		suppliers[99].OperatorAddress,
-		suppliers[99].Services,
-		1,
+	suppliers[multiServiceSupplierIdx].ServiceConfigHistory = sharedtest.CreateServiceConfigUpdateHistoryFromServiceConfigs(
+		suppliers[multiServiceSupplierIdx].OperatorAddress,
+		suppliers[multiServiceSupplierIdx].Services,
+		defaultQueryHeight,
 		sharedtypes.NoDeactivationHeight,
 	)
 
@@ -186,51 +241,50 @@ func TestServiceConfigUpdateIterators(t *testing.T) {
 	}
 
 	t.Run("GetServiceConfigUpdatesIterator", func(t *testing.T) {
-		// Test for service1 which should have 40 active service config updates,
-		// since 10 of them are active at height 10 which after the query height
-		iterator := keeper.GetServiceConfigUpdatesIterator(ctx, "service1", 1)
+		// Test for testServiceID which should have expected number of active service config updates
+		iterator := keeper.GetServiceConfigUpdatesIterator(ctx, testServiceID, defaultQueryHeight)
 		defer iterator.Close()
 
 		numConfigUpdatesWithService1 := 0
 		for ; iterator.Valid(); iterator.Next() {
 			config, err := iterator.Value()
 			require.NoError(t, err)
-			require.Equal(t, "service1", config.Service.ServiceId)
+			require.Equal(t, testServiceID, config.Service.ServiceId)
 			numConfigUpdatesWithService1++
 		}
-		require.Equal(t, 40, numConfigUpdatesWithService1)
+		require.Equal(t, expectedActiveService1Configs, numConfigUpdatesWithService1)
 	})
 
 	t.Run("GetActivatedServiceConfigUpdatesIterator", func(t *testing.T) {
-		// Test for activation height 10 which should have 25 service config updates
-		iterator := keeper.GetActivatedServiceConfigUpdatesIterator(ctx, 10)
+		// Test for specific activation height
+		iterator := keeper.GetActivatedServiceConfigUpdatesIterator(ctx, specificActivationHeight)
 		defer iterator.Close()
 
-		numConfigUpdatesWithActivationHeigh10 := 0
+		numConfigUpdatesWithActivationHeight := 0
 		for ; iterator.Valid(); iterator.Next() {
 			config, err := iterator.Value()
 			require.NoError(t, err)
-			require.Equal(t, int64(10), config.ActivationHeight)
-			numConfigUpdatesWithActivationHeigh10++
+			require.Equal(t, int64(specificActivationHeight), config.ActivationHeight)
+			numConfigUpdatesWithActivationHeight++
 		}
 
-		require.Equal(t, 25, numConfigUpdatesWithActivationHeigh10)
+		require.Equal(t, suppliersWithSpecificActivationHeight, numConfigUpdatesWithActivationHeight)
 	})
 
 	t.Run("GetDeactivatedServiceConfigUpdatesIterator", func(t *testing.T) {
-		// Test for deactivation height 21 which should have 12 service config updates
-		iterator := keeper.GetDeactivatedServiceConfigUpdatesIterator(ctx, 21)
+		// Test for specific deactivation height
+		iterator := keeper.GetDeactivatedServiceConfigUpdatesIterator(ctx, specificDeactivationHeight)
 		defer iterator.Close()
 
-		numConfigUpdatesWithDeactivationHeight21 := 0
+		numConfigUpdatesWithDeactivationHeight := 0
 		for ; iterator.Valid(); iterator.Next() {
 			config, err := iterator.Value()
 			require.NoError(t, err)
-			require.Equal(t, int64(21), config.DeactivationHeight)
-			numConfigUpdatesWithDeactivationHeight21++
+			require.Equal(t, int64(specificDeactivationHeight), config.DeactivationHeight)
+			numConfigUpdatesWithDeactivationHeight++
 		}
 
-		require.Equal(t, 12, numConfigUpdatesWithDeactivationHeight21)
+		require.Equal(t, suppliersWithSpecificDeactivationHeight, numConfigUpdatesWithDeactivationHeight)
 	})
 }
 

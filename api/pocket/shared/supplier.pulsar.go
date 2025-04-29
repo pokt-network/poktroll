@@ -1611,6 +1611,11 @@ type ServiceConfigUpdate struct {
 	// Block height at which this service configuration became active in the network
 	ActivationHeight int64 `protobuf:"varint,3,opt,name=activation_height,json=activationHeight,proto3" json:"activation_height,omitempty"`
 	// Block height at which this service configuration was deactivated (0 if still active)
+	// For service configs scheduled for deactivation:
+	//   - This field stores the block height when deactivation will occur
+	//   - After deactivation, the config remains in history only as needed for claim settlement
+	//   - Once no longer required for settlement, the config is automatically removed by
+	//     the EndBlockerPruneSupplierServiceConfigHistory process
 	DeactivationHeight int64 `protobuf:"varint,4,opt,name=deactivation_height,json=deactivationHeight,proto3" json:"deactivation_height,omitempty"`
 }
 
