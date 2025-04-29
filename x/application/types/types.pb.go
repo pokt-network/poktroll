@@ -37,26 +37,20 @@ type Application struct {
 	// This prevents applications from over-servicing.
 	// Kept as repeated field for legacy and future compatibility
 	// Refs:
-	//   -
-	//   https://github.com/pokt-network/poktroll/pull/750#discussion_r1735025033
-	//   -
-	//   https://www.notion.so/buildwithgrove/Off-chain-Application-Stake-Tracking-6a8bebb107db4f7f9dc62cbe7ba555f7
+	//   - https://github.com/pokt-network/poktroll/pull/750#discussion_r1735025033
+	//   - https://www.notion.so/buildwithgrove/Off-chain-Application-Stake-Tracking-6a8bebb107db4f7f9dc62cbe7ba555f7
 	ServiceConfigs []*types1.ApplicationServiceConfig `protobuf:"bytes,3,rep,name=service_configs,json=serviceConfigs,proto3" json:"service_configs,omitempty"`
-	// TODO_MAINNET_MIGRATION(@bryanchriswhite): Rename
-	// `delegatee_gateway_addresses` to `gateway_addresses_delegated_to`. Ensure
-	// to rename all relevant configs, comments, variables, function names, etc as
-	// well. Non-nullable list of Bech32 encoded delegatee Gateway addresses
+	// TODO_MAINNET_MIGRATION(@bryanchriswhite): Rename `delegatee_gateway_addresses` to `gateway_addresses_delegated_to`.
+	// Ensure to rename all relevant configs, comments, variables, function names, etc as well.
+	// Non-nullable list of Bech32 encoded delegatee Gateway addresses
 	DelegateeGatewayAddresses []string `protobuf:"bytes,4,rep,name=delegatee_gateway_addresses,json=delegateeGatewayAddresses,proto3" json:"delegatee_gateway_addresses,omitempty"`
 	// Mapping of session end heights to gateways being undelegated from
-	// - Key: Height of the last block of the session when undelegation tx was
-	// committed
+	// - Key: Height of the last block of the session when undelegation tx was committed
 	// - Value: List of gateways being undelegated from
 	// TODO_DOCUMENT(@red-0ne): Need to document the flow from this comment
-	// so its clear to everyone why this is necessary;
-	// https://github.com/pokt-network/poktroll/issues/476#issuecomment-2052639906.
+	// so its clear to everyone why this is necessary; https://github.com/pokt-network/poktroll/issues/476#issuecomment-2052639906.
 	PendingUndelegations map[uint64]UndelegatingGatewayList `protobuf:"bytes,5,rep,name=pending_undelegations,json=pendingUndelegations,proto3" json:"pending_undelegations" protobuf_key:"varint,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
-	// Session end height when application initiated unstaking (0 if not
-	// unstaking)
+	// Session end height when application initiated unstaking (0 if not unstaking)
 	UnstakeSessionEndHeight uint64 `protobuf:"varint,6,opt,name=unstake_session_end_height,json=unstakeSessionEndHeight,proto3" json:"unstake_session_end_height,omitempty"`
 	// Information about pending application transfers
 	PendingTransfer *PendingApplicationTransfer `protobuf:"bytes,7,opt,name=pending_transfer,json=pendingTransfer,proto3" json:"pending_transfer,omitempty"`
