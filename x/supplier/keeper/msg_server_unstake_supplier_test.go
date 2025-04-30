@@ -134,6 +134,9 @@ func TestMsgServer_UnstakeSupplier_Success(t *testing.T) {
 	events = cosmostypes.UnwrapSDKContext(ctx).EventManager().Events()
 	require.Equalf(t, 1, len(events), "expected exactly 2 event")
 
+	// The supplier returned by the UnbondSupplier process is dehydrated
+	foundSupplier.Services = nil
+	foundSupplier.ServiceConfigHistory = nil
 	sessionEndHeight = sharedtypes.GetSessionEndHeight(&sharedParams, cosmostypes.UnwrapSDKContext(ctx).BlockHeight())
 	expectedEvent, err = cosmostypes.TypedEventToEvent(
 		&suppliertypes.EventSupplierUnbondingEnd{
@@ -399,6 +402,9 @@ func TestMsgServer_UnstakeSupplier_OperatorCanUnstake(t *testing.T) {
 	// Assert that the MsgUnstakeSupplierResponse contains the unstaking supplier.
 	require.Equal(t, expectedSupplier.OperatorAddress, responseSupplier.OperatorAddress)
 
+	// The supplier returned by the UnbondSupplier process is dehydrated
+	responseSupplier.Services = nil
+	responseSupplier.ServiceConfigHistory = nil
 	// Assert that the EventSupplierUnbondingBegin event is emitted.
 	unbondingEndHeight := sharedtypes.GetSupplierUnbondingEndHeight(&sharedParams, expectedSupplier)
 	expectedEvent, err = cosmostypes.TypedEventToEvent(&suppliertypes.EventSupplierUnbondingBegin{

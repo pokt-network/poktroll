@@ -20,22 +20,22 @@ func (k Keeper) BeginBlockerActivateSupplierServices(
 
 	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
 	sharedParams := k.sharedKeeper.GetParams(ctx)
-	currentBlockHeight := sdkCtx.BlockHeight()
+	currentHeight := sdkCtx.BlockHeight()
 
 	// Only activate supplier services at the start of a session.
-	if !sharedtypes.IsSessionStartHeight(&sharedParams, currentBlockHeight) {
+	if !sharedtypes.IsSessionStartHeight(&sharedParams, currentHeight) {
 		return numSuppliersWithServicesActivation, nil
 	}
 
 	logger.Info(fmt.Sprintf(
 		"starting session %d, about to activate services for suppliers",
-		sharedtypes.GetSessionNumber(&sharedParams, currentBlockHeight),
+		sharedtypes.GetSessionNumber(&sharedParams, currentHeight),
 	))
 
 	activatedConfigsSuppliers := make(map[string]struct{})
 
 	// Iterate through all suppliers to check for pending service activations.
-	activatedServiceConfigsIterator := k.GetActivatedServiceConfigUpdatesIterator(ctx, currentBlockHeight)
+	activatedServiceConfigsIterator := k.GetActivatedServiceConfigUpdatesIterator(ctx, currentHeight)
 	defer activatedServiceConfigsIterator.Close()
 
 	for ; activatedServiceConfigsIterator.Valid(); activatedServiceConfigsIterator.Next() {
@@ -57,7 +57,7 @@ func (k Keeper) BeginBlockerActivateSupplierServices(
 
 		event := &suppliertypes.EventSupplierServiceConfigActivated{
 			Supplier:         &supplier,
-			ActivationHeight: currentBlockHeight,
+			ActivationHeight: currentHeight,
 		}
 		// Emit service activation events.
 		if err := sdkCtx.EventManager().EmitTypedEvent(event); err != nil {
