@@ -179,9 +179,9 @@ If you're encountering weird issues and just need to start over, follow these st
 
 ```bash
 make localnet_down
-kind delete cluster
+kind delete cluster --name pocket-localnet
 make docker_wipe
 make go_develop_and_test
-kind create cluster
+kind create cluster --name pocket-localnet
 make localnet_up
 ```

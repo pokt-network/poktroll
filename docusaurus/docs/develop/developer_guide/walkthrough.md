@@ -165,9 +165,9 @@ make localnet_up
 
 :::info
 
-The `make localnet_up` command will run the `make dev_up` target, which:
+The `make localnet_up` command will run the `make k8s_kind_up` target, which:
 
-- Creates a new `kind` cluster
+- Creates a new `kind` cluster name `kind-pocket-localnet`
 - Creates all namespaces required by the PATH Helm Charts
 
 :::tip
@@ -176,7 +176,7 @@ To fully stop your LocalNet:
 
 - Exit the Tilt shell by pressing `Ctrl+C`
 - Run `make localnet_down` to stop Tilt
-- Run `kind delete cluster` to delete the `kind` cluster
+- Run `kind delete cluster --name pocket-localnet` to delete the `kind` cluster named `kind-pocket-localnet`
 
 :::
 
