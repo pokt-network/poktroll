@@ -1,0 +1,6 @@
+# TODO_IN_THIS_COMMIT: rename
+prefix: "daemon"
+kind: "Deployment"
+command:
+  - /root/.hermes/entrypoint.sh
+  - start

@@ -1,0 +1,58 @@
+kind: {{ .Values.kind | default "Deployment" }}
+apiVersion: {{ if eq (.Values.kind | default "Deployment") "Job" }}batch/v1{{ else }}apps/v1{{ end }}
+metadata:
+  name: {{ .Release.Name }}
+  labels:
+    app: {{ .Release.Name }}
+spec:
+  replicas: 1
+  {{- if eq .Values.kind "Deployment" }}
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}
+  {{- end }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Release.Name }}
+    spec:
+      restartPolicy: {{ if eq .Values.kind "Job" }}Never{{ else }}Always{{ end }}
+      containers:
+        - name: ibc-relayer
+          image: ibc-relayer
+          command: {{- toYaml (
+            ternary
+              (concat
+                .Values.command
+                (list
+                  (printf "--a-chain=%s" .Values.chain_a_id)
+                  (printf "--b-chain=%s" .Values.chain_b_id)
+                )
+                (default list .Values.extraArgs)
+              )
+              .Values.command
+              (eq .Values.kind "Job")
+          ) | nindent 12 }}
+          volumeMounts:
+            - name: {{ .Values.prefix }}-ibc-relayer-configs
+              mountPath: /root/.hermes/entrypoint.sh
+              subPath: entrypoint.sh
+              readOnly: true
+            - name: {{ .Values.prefix }}-ibc-relayer-configs
+              mountPath: /root/.hermes/config.toml
+              subPath: config.toml
+              readOnly: true
+            - name: {{ .Values.prefix }}-ibc-relayer-configs
+              mountPath: /root/.hermes/pocket.mnemonic
+              subPath: pocket.mnemonic
+              readOnly: true
+            - name: {{ .Values.prefix }}-ibc-relayer-configs
+              mountPath: /root/.hermes/foreigner.mnemonic
+              subPath: foreigner.mnemonic
+              readOnly: true
+
+      volumes:
+        - name: {{ .Values.prefix }}-ibc-relayer-configs
+          configMap:
+            name: {{ .Values.prefix }}-ibc-relayer-configs
+            defaultMode: 0755
