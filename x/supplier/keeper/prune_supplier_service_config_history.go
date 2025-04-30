@@ -5,8 +5,6 @@ import (
 	"fmt"
 
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
-
-	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 // EndBlockerPruneSupplierServiceConfigHistory prunes the service config history of existing suppliers.
@@ -15,82 +13,32 @@ import (
 // This helps reduce onchain state bloat and avoid diverting attention from non-actionable metadata.
 func (k Keeper) EndBlockerPruneSupplierServiceConfigHistory(
 	ctx context.Context,
-) (numSuppliersWithPrunedHistory uint64, err error) {
+) (numSuppliersWithPrunedHistory int, err error) {
 	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
-	sharedParams := k.sharedKeeper.GetParams(ctx)
 	currentHeight := sdkCtx.BlockHeight()
-	// The number of blocks from the end of a session to the end of the proof window close.
-	// It is needed to determine how long to retain service config updates for pending claims settlement.
-	sessionEndToProofWindowCloseNumBlocks := sharedtypes.GetSessionEndToProofWindowCloseBlocks(&sharedParams)
 
 	logger := k.Logger().With("method", "PruneSupplierServiceConfigHistory")
 
-	allSuppliersIterator := k.GetAllSuppliersIterator(ctx)
-	defer allSuppliersIterator.Close()
+	// Track unique suppliers whose configurations were pruned
+	deactivatedConfigsSuppliers := make(map[string]bool)
 
-	for ; allSuppliersIterator.Valid(); allSuppliersIterator.Next() {
-		supplier, err := allSuppliersIterator.Value()
+	// Retrieve all service configurations that should be deactivated at the current height
+	deactivatedServiceConfigsIterator := k.GetDeactivatedServiceConfigUpdatesIterator(ctx, currentHeight)
+	defer deactivatedServiceConfigsIterator.Close()
+
+	for ; deactivatedServiceConfigsIterator.Valid(); deactivatedServiceConfigsIterator.Next() {
+		serviceConfigUpdate, err := deactivatedServiceConfigsIterator.Value()
 		if err != nil {
-			logger.Error(fmt.Sprintf("could not get supplier from iterator: %v", err))
+			logger.Error(fmt.Sprintf("could not get service config update from iterator: %v", err))
 			return 0, err
 		}
 
-		// Store the original number of historical service configs.
-		originalHistoryLength := len(supplier.ServiceConfigHistory)
+		// Delete the deactivated service config and all its indexes
+		k.deleteDeactivatedServiceConfigUpdate(ctx, serviceConfigUpdate)
 
-		// If there is only one service config update, it is the most recent one.
-		// In this case, we don't need to prune anything.
-		// Not skipping this case would lead to the supplier being systematically
-		// marshalled and saved to the store, even if no changes were made.
-		if originalHistoryLength == 1 {
-			continue
-		}
-
-		// Initialize a slice to retain service config updates that are still needed
-		// for pending claims settlement.
-		retainedServiceConfigs := make([]*sharedtypes.ServiceConfigUpdate, 0)
-
-		// Iterate through each service config update to check if it is still be needed.
-		for _, configUpdate := range supplier.ServiceConfigHistory {
-			// Calculate the block height when the session corresponding to this service config update ends.
-			sessionEndBlockHeight := sharedtypes.GetSessionEndHeight(&sharedParams, int64(configUpdate.EffectiveBlockHeight))
-
-			// Calculate the final block height until which this config update needs to be retained.
-			// This includes the proof window close period after the session ends.
-			configRetentionBlockHeight := sessionEndBlockHeight + sessionEndToProofWindowCloseNumBlocks
-
-			// Keep the config update if we haven't passed its retention period.
-			if currentHeight <= configRetentionBlockHeight {
-				retainedServiceConfigs = append(retainedServiceConfigs, configUpdate)
-			}
-		}
-
-		// Skip if no pruning is needed (all configs are still needed).
-		if len(retainedServiceConfigs) == originalHistoryLength {
-			continue
-		}
-
-		// Special case: if all service historical service config updates would be pruned,
-		// retain the most recent one.
-		// This is necessary for the session hydration process that relies on the
-		// service config history to determine the current active service configuration.
-		if len(retainedServiceConfigs) == 0 {
-			retainedServiceConfigs = supplier.ServiceConfigHistory[:1]
-		}
-
-		// Update the supplier's service config history with the pruned list.
-		supplier.ServiceConfigHistory = retainedServiceConfigs
-
-		k.SetSupplier(ctx, supplier)
-		logger.Info(fmt.Sprintf(
-			"pruned %d out of %d service config history entries for supplier %s",
-			originalHistoryLength-len(retainedServiceConfigs),
-			originalHistoryLength,
-			supplier.OperatorAddress,
-		))
-
-		numSuppliersWithPrunedHistory += 1
+		// Record that this supplier had configurations pruned
+		deactivatedConfigsSuppliers[serviceConfigUpdate.OperatorAddress] = true
 	}
 
-	return numSuppliersWithPrunedHistory, nil
+	return len(deactivatedConfigsSuppliers), nil
 }
