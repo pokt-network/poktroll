@@ -92,6 +92,13 @@ localnet_config_defaults = {
 
     "faucet": {
         "enabled": True,
+    },
+
+    "ibc": {
+        "enabled": False,
+        "relay_pairs_enabled": {
+            "pocket-agoric": False,
+        }
     }
 }
 
@@ -543,3 +550,8 @@ if localnet_config["faucet"]["enabled"]:
             "8080:8080",
         ],
     )
+
+
+### IBC relayer(s) & alt-chain node(s)
+load("./tiltfiles/ibc.tilt", "check_and_load_ibc")
+check_and_load_ibc(localnet_config["ibc"])
