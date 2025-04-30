@@ -921,13 +921,14 @@ func (app *App) setupDefaultActorsState(
 		},
 	}
 	serviceConfigHistory := sharedtest.CreateServiceConfigUpdateHistoryFromServiceConfigs(supplierOperatorAddr.String(), supplierServiceConfigs, 1, 0)
-	deprecatedSupplier := sharedtypes.Supplier{
+	defaultSupplier := sharedtypes.Supplier{
 		OperatorAddress:      supplierOperatorAddr.String(),
 		Stake:                &supplierStake,
 		Services:             supplierServiceConfigs,
 		ServiceConfigHistory: serviceConfigHistory,
 	}
-	supplierKeeper.SetSupplier(app.sdkCtx, deprecatedSupplier)
+	app.DefaultSupplier = &defaultSupplier
+	supplierKeeper.SetSupplier(app.sdkCtx, defaultSupplier)
 
 	// Create an application account with the corresponding keys in the keyring for the application.
 	app.DefaultApplicationKeyringUid = "application"
