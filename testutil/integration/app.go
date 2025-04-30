@@ -54,6 +54,7 @@ import (
 	"github.com/pokt-network/poktroll/pkg/polylog/polyzero"
 	testutilevents "github.com/pokt-network/poktroll/testutil/events"
 	"github.com/pokt-network/poktroll/testutil/sample"
+	sharedtest "github.com/pokt-network/poktroll/testutil/shared"
 	"github.com/pokt-network/poktroll/testutil/testkeyring"
 	appkeeper "github.com/pokt-network/poktroll/x/application/keeper"
 	application "github.com/pokt-network/poktroll/x/application/module"
@@ -919,20 +920,15 @@ func (app *App) setupDefaultActorsState(
 			ServiceId: defaultService.Id,
 		},
 	}
+	serviceConfigHistory := sharedtest.CreateServiceConfigUpdateHistoryFromServiceConfigs(supplierOperatorAddr.String(), supplierServiceConfigs, 1, 0)
 	defaultSupplier := sharedtypes.Supplier{
-		OwnerAddress:    supplierOperatorAddr.String(),
-		OperatorAddress: supplierOperatorAddr.String(),
-		Stake:           &supplierStake,
-		Services:        supplierServiceConfigs,
-		ServiceConfigHistory: []*sharedtypes.ServiceConfigUpdate{
-			{
-				Services:             supplierServiceConfigs,
-				EffectiveBlockHeight: 1,
-			},
-		},
+		OperatorAddress:      supplierOperatorAddr.String(),
+		Stake:                &supplierStake,
+		Services:             supplierServiceConfigs,
+		ServiceConfigHistory: serviceConfigHistory,
 	}
-	supplierKeeper.SetSupplier(app.sdkCtx, defaultSupplier)
 	app.DefaultSupplier = &defaultSupplier
+	supplierKeeper.SetSupplier(app.sdkCtx, defaultSupplier)
 
 	// Create an application account with the corresponding keys in the keyring for the application.
 	app.DefaultApplicationKeyringUid = "application"

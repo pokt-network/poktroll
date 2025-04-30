@@ -15,139 +15,139 @@ import (
 	sync "sync"
 )
 
-var _ protoreflect.List = (*_Supplier_4_list)(nil)
+var _ protoreflect.List = (*_SupplierDeprecated_4_list)(nil)
 
-type _Supplier_4_list struct {
+type _SupplierDeprecated_4_list struct {
 	list *[]*SupplierServiceConfig
 }
 
-func (x *_Supplier_4_list) Len() int {
+func (x *_SupplierDeprecated_4_list) Len() int {
 	if x.list == nil {
 		return 0
 	}
 	return len(*x.list)
 }
 
-func (x *_Supplier_4_list) Get(i int) protoreflect.Value {
+func (x *_SupplierDeprecated_4_list) Get(i int) protoreflect.Value {
 	return protoreflect.ValueOfMessage((*x.list)[i].ProtoReflect())
 }
 
-func (x *_Supplier_4_list) Set(i int, value protoreflect.Value) {
+func (x *_SupplierDeprecated_4_list) Set(i int, value protoreflect.Value) {
 	valueUnwrapped := value.Message()
 	concreteValue := valueUnwrapped.Interface().(*SupplierServiceConfig)
 	(*x.list)[i] = concreteValue
 }
 
-func (x *_Supplier_4_list) Append(value protoreflect.Value) {
+func (x *_SupplierDeprecated_4_list) Append(value protoreflect.Value) {
 	valueUnwrapped := value.Message()
 	concreteValue := valueUnwrapped.Interface().(*SupplierServiceConfig)
 	*x.list = append(*x.list, concreteValue)
 }
 
-func (x *_Supplier_4_list) AppendMutable() protoreflect.Value {
+func (x *_SupplierDeprecated_4_list) AppendMutable() protoreflect.Value {
 	v := new(SupplierServiceConfig)
 	*x.list = append(*x.list, v)
 	return protoreflect.ValueOfMessage(v.ProtoReflect())
 }
 
-func (x *_Supplier_4_list) Truncate(n int) {
+func (x *_SupplierDeprecated_4_list) Truncate(n int) {
 	for i := n; i < len(*x.list); i++ {
 		(*x.list)[i] = nil
 	}
 	*x.list = (*x.list)[:n]
 }
 
-func (x *_Supplier_4_list) NewElement() protoreflect.Value {
+func (x *_SupplierDeprecated_4_list) NewElement() protoreflect.Value {
 	v := new(SupplierServiceConfig)
 	return protoreflect.ValueOfMessage(v.ProtoReflect())
 }
 
-func (x *_Supplier_4_list) IsValid() bool {
+func (x *_SupplierDeprecated_4_list) IsValid() bool {
 	return x.list != nil
 }
 
-var _ protoreflect.List = (*_Supplier_6_list)(nil)
+var _ protoreflect.List = (*_SupplierDeprecated_6_list)(nil)
 
-type _Supplier_6_list struct {
-	list *[]*ServiceConfigUpdate
+type _SupplierDeprecated_6_list struct {
+	list *[]*ServiceConfigUpdateDeprecated
 }
 
-func (x *_Supplier_6_list) Len() int {
+func (x *_SupplierDeprecated_6_list) Len() int {
 	if x.list == nil {
 		return 0
 	}
 	return len(*x.list)
 }
 
-func (x *_Supplier_6_list) Get(i int) protoreflect.Value {
+func (x *_SupplierDeprecated_6_list) Get(i int) protoreflect.Value {
 	return protoreflect.ValueOfMessage((*x.list)[i].ProtoReflect())
 }
 
-func (x *_Supplier_6_list) Set(i int, value protoreflect.Value) {
+func (x *_SupplierDeprecated_6_list) Set(i int, value protoreflect.Value) {
 	valueUnwrapped := value.Message()
-	concreteValue := valueUnwrapped.Interface().(*ServiceConfigUpdate)
+	concreteValue := valueUnwrapped.Interface().(*ServiceConfigUpdateDeprecated)
 	(*x.list)[i] = concreteValue
 }
 
-func (x *_Supplier_6_list) Append(value protoreflect.Value) {
+func (x *_SupplierDeprecated_6_list) Append(value protoreflect.Value) {
 	valueUnwrapped := value.Message()
-	concreteValue := valueUnwrapped.Interface().(*ServiceConfigUpdate)
+	concreteValue := valueUnwrapped.Interface().(*ServiceConfigUpdateDeprecated)
 	*x.list = append(*x.list, concreteValue)
 }
 
-func (x *_Supplier_6_list) AppendMutable() protoreflect.Value {
-	v := new(ServiceConfigUpdate)
+func (x *_SupplierDeprecated_6_list) AppendMutable() protoreflect.Value {
+	v := new(ServiceConfigUpdateDeprecated)
 	*x.list = append(*x.list, v)
 	return protoreflect.ValueOfMessage(v.ProtoReflect())
 }
 
-func (x *_Supplier_6_list) Truncate(n int) {
+func (x *_SupplierDeprecated_6_list) Truncate(n int) {
 	for i := n; i < len(*x.list); i++ {
 		(*x.list)[i] = nil
 	}
 	*x.list = (*x.list)[:n]
 }
 
-func (x *_Supplier_6_list) NewElement() protoreflect.Value {
-	v := new(ServiceConfigUpdate)
+func (x *_SupplierDeprecated_6_list) NewElement() protoreflect.Value {
+	v := new(ServiceConfigUpdateDeprecated)
 	return protoreflect.ValueOfMessage(v.ProtoReflect())
 }
 
-func (x *_Supplier_6_list) IsValid() bool {
+func (x *_SupplierDeprecated_6_list) IsValid() bool {
 	return x.list != nil
 }
 
 var (
-	md_Supplier                            protoreflect.MessageDescriptor
-	fd_Supplier_owner_address              protoreflect.FieldDescriptor
-	fd_Supplier_operator_address           protoreflect.FieldDescriptor
-	fd_Supplier_stake                      protoreflect.FieldDescriptor
-	fd_Supplier_services                   protoreflect.FieldDescriptor
-	fd_Supplier_unstake_session_end_height protoreflect.FieldDescriptor
-	fd_Supplier_service_config_history     protoreflect.FieldDescriptor
+	md_SupplierDeprecated                            protoreflect.MessageDescriptor
+	fd_SupplierDeprecated_owner_address              protoreflect.FieldDescriptor
+	fd_SupplierDeprecated_operator_address           protoreflect.FieldDescriptor
+	fd_SupplierDeprecated_stake                      protoreflect.FieldDescriptor
+	fd_SupplierDeprecated_services                   protoreflect.FieldDescriptor
+	fd_SupplierDeprecated_unstake_session_end_height protoreflect.FieldDescriptor
+	fd_SupplierDeprecated_service_config_history     protoreflect.FieldDescriptor
 )
 
 func init() {
-	file_pocket_shared_supplier_proto_init()
-	md_Supplier = File_pocket_shared_supplier_proto.Messages().ByName("Supplier")
-	fd_Supplier_owner_address = md_Supplier.Fields().ByName("owner_address")
-	fd_Supplier_operator_address = md_Supplier.Fields().ByName("operator_address")
-	fd_Supplier_stake = md_Supplier.Fields().ByName("stake")
-	fd_Supplier_services = md_Supplier.Fields().ByName("services")
-	fd_Supplier_unstake_session_end_height = md_Supplier.Fields().ByName("unstake_session_end_height")
-	fd_Supplier_service_config_history = md_Supplier.Fields().ByName("service_config_history")
+	file_pocket_shared_supplier_deprecated_proto_init()
+	md_SupplierDeprecated = File_pocket_shared_supplier_deprecated_proto.Messages().ByName("SupplierDeprecated")
+	fd_SupplierDeprecated_owner_address = md_SupplierDeprecated.Fields().ByName("owner_address")
+	fd_SupplierDeprecated_operator_address = md_SupplierDeprecated.Fields().ByName("operator_address")
+	fd_SupplierDeprecated_stake = md_SupplierDeprecated.Fields().ByName("stake")
+	fd_SupplierDeprecated_services = md_SupplierDeprecated.Fields().ByName("services")
+	fd_SupplierDeprecated_unstake_session_end_height = md_SupplierDeprecated.Fields().ByName("unstake_session_end_height")
+	fd_SupplierDeprecated_service_config_history = md_SupplierDeprecated.Fields().ByName("service_config_history")
 }
 
-var _ protoreflect.Message = (*fastReflection_Supplier)(nil)
+var _ protoreflect.Message = (*fastReflection_SupplierDeprecated)(nil)
 
-type fastReflection_Supplier Supplier
+type fastReflection_SupplierDeprecated SupplierDeprecated
 
-func (x *Supplier) ProtoReflect() protoreflect.Message {
-	return (*fastReflection_Supplier)(x)
+func (x *SupplierDeprecated) ProtoReflect() protoreflect.Message {
+	return (*fastReflection_SupplierDeprecated)(x)
 }
 
-func (x *Supplier) slowProtoReflect() protoreflect.Message {
-	mi := &file_pocket_shared_supplier_proto_msgTypes[0]
+func (x *SupplierDeprecated) slowProtoReflect() protoreflect.Message {
+	mi := &file_pocket_shared_supplier_deprecated_proto_msgTypes[0]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -158,43 +158,43 @@ func (x *Supplier) slowProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-var _fastReflection_Supplier_messageType fastReflection_Supplier_messageType
-var _ protoreflect.MessageType = fastReflection_Supplier_messageType{}
+var _fastReflection_SupplierDeprecated_messageType fastReflection_SupplierDeprecated_messageType
+var _ protoreflect.MessageType = fastReflection_SupplierDeprecated_messageType{}
 
-type fastReflection_Supplier_messageType struct{}
+type fastReflection_SupplierDeprecated_messageType struct{}
 
-func (x fastReflection_Supplier_messageType) Zero() protoreflect.Message {
-	return (*fastReflection_Supplier)(nil)
+func (x fastReflection_SupplierDeprecated_messageType) Zero() protoreflect.Message {
+	return (*fastReflection_SupplierDeprecated)(nil)
 }
-func (x fastReflection_Supplier_messageType) New() protoreflect.Message {
-	return new(fastReflection_Supplier)
+func (x fastReflection_SupplierDeprecated_messageType) New() protoreflect.Message {
+	return new(fastReflection_SupplierDeprecated)
 }
-func (x fastReflection_Supplier_messageType) Descriptor() protoreflect.MessageDescriptor {
-	return md_Supplier
+func (x fastReflection_SupplierDeprecated_messageType) Descriptor() protoreflect.MessageDescriptor {
+	return md_SupplierDeprecated
 }
 
 // Descriptor returns message descriptor, which contains only the protobuf
 // type information for the message.
-func (x *fastReflection_Supplier) Descriptor() protoreflect.MessageDescriptor {
-	return md_Supplier
+func (x *fastReflection_SupplierDeprecated) Descriptor() protoreflect.MessageDescriptor {
+	return md_SupplierDeprecated
 }
 
 // Type returns the message type, which encapsulates both Go and protobuf
 // type information. If the Go type information is not needed,
 // it is recommended that the message descriptor be used instead.
-func (x *fastReflection_Supplier) Type() protoreflect.MessageType {
-	return _fastReflection_Supplier_messageType
+func (x *fastReflection_SupplierDeprecated) Type() protoreflect.MessageType {
+	return _fastReflection_SupplierDeprecated_messageType
 }
 
 // New returns a newly allocated and mutable empty message.
-func (x *fastReflection_Supplier) New() protoreflect.Message {
-	return new(fastReflection_Supplier)
+func (x *fastReflection_SupplierDeprecated) New() protoreflect.Message {
+	return new(fastReflection_SupplierDeprecated)
 }
 
 // Interface unwraps the message reflection interface and
 // returns the underlying ProtoMessage interface.
-func (x *fastReflection_Supplier) Interface() protoreflect.ProtoMessage {
-	return (*Supplier)(x)
+func (x *fastReflection_SupplierDeprecated) Interface() protoreflect.ProtoMessage {
+	return (*SupplierDeprecated)(x)
 }
 
 // Range iterates over every populated field in an undefined order,
@@ -202,40 +202,40 @@ func (x *fastReflection_Supplier) Interface() protoreflect.ProtoMessage {
 // Range returns immediately if f returns false.
 // While iterating, mutating operations may only be performed
 // on the current field descriptor.
-func (x *fastReflection_Supplier) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
+func (x *fastReflection_SupplierDeprecated) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
 	if x.OwnerAddress != "" {
 		value := protoreflect.ValueOfString(x.OwnerAddress)
-		if !f(fd_Supplier_owner_address, value) {
+		if !f(fd_SupplierDeprecated_owner_address, value) {
 			return
 		}
 	}
 	if x.OperatorAddress != "" {
 		value := protoreflect.ValueOfString(x.OperatorAddress)
-		if !f(fd_Supplier_operator_address, value) {
+		if !f(fd_SupplierDeprecated_operator_address, value) {
 			return
 		}
 	}
 	if x.Stake != nil {
 		value := protoreflect.ValueOfMessage(x.Stake.ProtoReflect())
-		if !f(fd_Supplier_stake, value) {
+		if !f(fd_SupplierDeprecated_stake, value) {
 			return
 		}
 	}
 	if len(x.Services) != 0 {
-		value := protoreflect.ValueOfList(&_Supplier_4_list{list: &x.Services})
-		if !f(fd_Supplier_services, value) {
+		value := protoreflect.ValueOfList(&_SupplierDeprecated_4_list{list: &x.Services})
+		if !f(fd_SupplierDeprecated_services, value) {
 			return
 		}
 	}
 	if x.UnstakeSessionEndHeight != uint64(0) {
 		value := protoreflect.ValueOfUint64(x.UnstakeSessionEndHeight)
-		if !f(fd_Supplier_unstake_session_end_height, value) {
+		if !f(fd_SupplierDeprecated_unstake_session_end_height, value) {
 			return
 		}
 	}
 	if len(x.ServiceConfigHistory) != 0 {
-		value := protoreflect.ValueOfList(&_Supplier_6_list{list: &x.ServiceConfigHistory})
-		if !f(fd_Supplier_service_config_history, value) {
+		value := protoreflect.ValueOfList(&_SupplierDeprecated_6_list{list: &x.ServiceConfigHistory})
+		if !f(fd_SupplierDeprecated_service_config_history, value) {
 			return
 		}
 	}
@@ -252,25 +252,25 @@ func (x *fastReflection_Supplier) Range(f func(protoreflect.FieldDescriptor, pro
 // In other cases (aside from the nullable cases above),
 // a proto3 scalar field is populated if it contains a non-zero value, and
 // a repeated field is populated if it is non-empty.
-func (x *fastReflection_Supplier) Has(fd protoreflect.FieldDescriptor) bool {
+func (x *fastReflection_SupplierDeprecated) Has(fd protoreflect.FieldDescriptor) bool {
 	switch fd.FullName() {
-	case "pocket.shared.Supplier.owner_address":
+	case "pocket.shared.SupplierDeprecated.owner_address":
 		return x.OwnerAddress != ""
-	case "pocket.shared.Supplier.operator_address":
+	case "pocket.shared.SupplierDeprecated.operator_address":
 		return x.OperatorAddress != ""
-	case "pocket.shared.Supplier.stake":
+	case "pocket.shared.SupplierDeprecated.stake":
 		return x.Stake != nil
-	case "pocket.shared.Supplier.services":
+	case "pocket.shared.SupplierDeprecated.services":
 		return len(x.Services) != 0
-	case "pocket.shared.Supplier.unstake_session_end_height":
+	case "pocket.shared.SupplierDeprecated.unstake_session_end_height":
 		return x.UnstakeSessionEndHeight != uint64(0)
-	case "pocket.shared.Supplier.service_config_history":
+	case "pocket.shared.SupplierDeprecated.service_config_history":
 		return len(x.ServiceConfigHistory) != 0
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: pocket.shared.Supplier"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: pocket.shared.SupplierDeprecated"))
 		}
-		panic(fmt.Errorf("message pocket.shared.Supplier does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message pocket.shared.SupplierDeprecated does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -280,25 +280,25 @@ func (x *fastReflection_Supplier) Has(fd protoreflect.FieldDescriptor) bool {
 // associated with the given field number.
 //
 // Clear is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_Supplier) Clear(fd protoreflect.FieldDescriptor) {
+func (x *fastReflection_SupplierDeprecated) Clear(fd protoreflect.FieldDescriptor) {
 	switch fd.FullName() {
-	case "pocket.shared.Supplier.owner_address":
+	case "pocket.shared.SupplierDeprecated.owner_address":
 		x.OwnerAddress = ""
-	case "pocket.shared.Supplier.operator_address":
+	case "pocket.shared.SupplierDeprecated.operator_address":
 		x.OperatorAddress = ""
-	case "pocket.shared.Supplier.stake":
+	case "pocket.shared.SupplierDeprecated.stake":
 		x.Stake = nil
-	case "pocket.shared.Supplier.services":
+	case "pocket.shared.SupplierDeprecated.services":
 		x.Services = nil
-	case "pocket.shared.Supplier.unstake_session_end_height":
+	case "pocket.shared.SupplierDeprecated.unstake_session_end_height":
 		x.UnstakeSessionEndHeight = uint64(0)
-	case "pocket.shared.Supplier.service_config_history":
+	case "pocket.shared.SupplierDeprecated.service_config_history":
 		x.ServiceConfigHistory = nil
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: pocket.shared.Supplier"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: pocket.shared.SupplierDeprecated"))
 		}
-		panic(fmt.Errorf("message pocket.shared.Supplier does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message pocket.shared.SupplierDeprecated does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -308,37 +308,37 @@ func (x *fastReflection_Supplier) Clear(fd protoreflect.FieldDescriptor) {
 // the default value of a bytes scalar is guaranteed to be a copy.
 // For unpopulated composite types, it returns an empty, read-only view
 // of the value; to obtain a mutable reference, use Mutable.
-func (x *fastReflection_Supplier) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_SupplierDeprecated) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
 	switch descriptor.FullName() {
-	case "pocket.shared.Supplier.owner_address":
+	case "pocket.shared.SupplierDeprecated.owner_address":
 		value := x.OwnerAddress
 		return protoreflect.ValueOfString(value)
-	case "pocket.shared.Supplier.operator_address":
+	case "pocket.shared.SupplierDeprecated.operator_address":
 		value := x.OperatorAddress
 		return protoreflect.ValueOfString(value)
-	case "pocket.shared.Supplier.stake":
+	case "pocket.shared.SupplierDeprecated.stake":
 		value := x.Stake
 		return protoreflect.ValueOfMessage(value.ProtoReflect())
-	case "pocket.shared.Supplier.services":
+	case "pocket.shared.SupplierDeprecated.services":
 		if len(x.Services) == 0 {
-			return protoreflect.ValueOfList(&_Supplier_4_list{})
+			return protoreflect.ValueOfList(&_SupplierDeprecated_4_list{})
 		}
-		listValue := &_Supplier_4_list{list: &x.Services}
+		listValue := &_SupplierDeprecated_4_list{list: &x.Services}
 		return protoreflect.ValueOfList(listValue)
-	case "pocket.shared.Supplier.unstake_session_end_height":
+	case "pocket.shared.SupplierDeprecated.unstake_session_end_height":
 		value := x.UnstakeSessionEndHeight
 		return protoreflect.ValueOfUint64(value)
-	case "pocket.shared.Supplier.service_config_history":
+	case "pocket.shared.SupplierDeprecated.service_config_history":
 		if len(x.ServiceConfigHistory) == 0 {
-			return protoreflect.ValueOfList(&_Supplier_6_list{})
+			return protoreflect.ValueOfList(&_SupplierDeprecated_6_list{})
 		}
-		listValue := &_Supplier_6_list{list: &x.ServiceConfigHistory}
+		listValue := &_SupplierDeprecated_6_list{list: &x.ServiceConfigHistory}
 		return protoreflect.ValueOfList(listValue)
 	default:
 		if descriptor.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: pocket.shared.Supplier"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: pocket.shared.SupplierDeprecated"))
 		}
-		panic(fmt.Errorf("message pocket.shared.Supplier does not contain field %s", descriptor.FullName()))
+		panic(fmt.Errorf("message pocket.shared.SupplierDeprecated does not contain field %s", descriptor.FullName()))
 	}
 }
 
@@ -352,29 +352,29 @@ func (x *fastReflection_Supplier) Get(descriptor protoreflect.FieldDescriptor) p
 // empty, read-only value, then it panics.
 //
 // Set is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_Supplier) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
+func (x *fastReflection_SupplierDeprecated) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
 	switch fd.FullName() {
-	case "pocket.shared.Supplier.owner_address":
+	case "pocket.shared.SupplierDeprecated.owner_address":
 		x.OwnerAddress = value.Interface().(string)
-	case "pocket.shared.Supplier.operator_address":
+	case "pocket.shared.SupplierDeprecated.operator_address":
 		x.OperatorAddress = value.Interface().(string)
-	case "pocket.shared.Supplier.stake":
+	case "pocket.shared.SupplierDeprecated.stake":
 		x.Stake = value.Message().Interface().(*v1beta1.Coin)
-	case "pocket.shared.Supplier.services":
+	case "pocket.shared.SupplierDeprecated.services":
 		lv := value.List()
-		clv := lv.(*_Supplier_4_list)
+		clv := lv.(*_SupplierDeprecated_4_list)
 		x.Services = *clv.list
-	case "pocket.shared.Supplier.unstake_session_end_height":
+	case "pocket.shared.SupplierDeprecated.unstake_session_end_height":
 		x.UnstakeSessionEndHeight = value.Uint()
-	case "pocket.shared.Supplier.service_config_history":
+	case "pocket.shared.SupplierDeprecated.service_config_history":
 		lv := value.List()
-		clv := lv.(*_Supplier_6_list)
+		clv := lv.(*_SupplierDeprecated_6_list)
 		x.ServiceConfigHistory = *clv.list
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: pocket.shared.Supplier"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: pocket.shared.SupplierDeprecated"))
 		}
-		panic(fmt.Errorf("message pocket.shared.Supplier does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message pocket.shared.SupplierDeprecated does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -388,74 +388,74 @@ func (x *fastReflection_Supplier) Set(fd protoreflect.FieldDescriptor, value pro
 // It panics if the field does not contain a composite type.
 //
 // Mutable is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_Supplier) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_SupplierDeprecated) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
-	case "pocket.shared.Supplier.stake":
+	case "pocket.shared.SupplierDeprecated.stake":
 		if x.Stake == nil {
 			x.Stake = new(v1beta1.Coin)
 		}
 		return protoreflect.ValueOfMessage(x.Stake.ProtoReflect())
-	case "pocket.shared.Supplier.services":
+	case "pocket.shared.SupplierDeprecated.services":
 		if x.Services == nil {
 			x.Services = []*SupplierServiceConfig{}
 		}
-		value := &_Supplier_4_list{list: &x.Services}
+		value := &_SupplierDeprecated_4_list{list: &x.Services}
 		return protoreflect.ValueOfList(value)
-	case "pocket.shared.Supplier.service_config_history":
+	case "pocket.shared.SupplierDeprecated.service_config_history":
 		if x.ServiceConfigHistory == nil {
-			x.ServiceConfigHistory = []*ServiceConfigUpdate{}
+			x.ServiceConfigHistory = []*ServiceConfigUpdateDeprecated{}
 		}
-		value := &_Supplier_6_list{list: &x.ServiceConfigHistory}
+		value := &_SupplierDeprecated_6_list{list: &x.ServiceConfigHistory}
 		return protoreflect.ValueOfList(value)
-	case "pocket.shared.Supplier.owner_address":
-		panic(fmt.Errorf("field owner_address of message pocket.shared.Supplier is not mutable"))
-	case "pocket.shared.Supplier.operator_address":
-		panic(fmt.Errorf("field operator_address of message pocket.shared.Supplier is not mutable"))
-	case "pocket.shared.Supplier.unstake_session_end_height":
-		panic(fmt.Errorf("field unstake_session_end_height of message pocket.shared.Supplier is not mutable"))
+	case "pocket.shared.SupplierDeprecated.owner_address":
+		panic(fmt.Errorf("field owner_address of message pocket.shared.SupplierDeprecated is not mutable"))
+	case "pocket.shared.SupplierDeprecated.operator_address":
+		panic(fmt.Errorf("field operator_address of message pocket.shared.SupplierDeprecated is not mutable"))
+	case "pocket.shared.SupplierDeprecated.unstake_session_end_height":
+		panic(fmt.Errorf("field unstake_session_end_height of message pocket.shared.SupplierDeprecated is not mutable"))
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: pocket.shared.Supplier"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: pocket.shared.SupplierDeprecated"))
 		}
-		panic(fmt.Errorf("message pocket.shared.Supplier does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message pocket.shared.SupplierDeprecated does not contain field %s", fd.FullName()))
 	}
 }
 
 // NewField returns a new value that is assignable to the field
 // for the given descriptor. For scalars, this returns the default value.
 // For lists, maps, and messages, this returns a new, empty, mutable value.
-func (x *fastReflection_Supplier) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_SupplierDeprecated) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
-	case "pocket.shared.Supplier.owner_address":
+	case "pocket.shared.SupplierDeprecated.owner_address":
 		return protoreflect.ValueOfString("")
-	case "pocket.shared.Supplier.operator_address":
+	case "pocket.shared.SupplierDeprecated.operator_address":
 		return protoreflect.ValueOfString("")
-	case "pocket.shared.Supplier.stake":
+	case "pocket.shared.SupplierDeprecated.stake":
 		m := new(v1beta1.Coin)
 		return protoreflect.ValueOfMessage(m.ProtoReflect())
-	case "pocket.shared.Supplier.services":
+	case "pocket.shared.SupplierDeprecated.services":
 		list := []*SupplierServiceConfig{}
-		return protoreflect.ValueOfList(&_Supplier_4_list{list: &list})
-	case "pocket.shared.Supplier.unstake_session_end_height":
+		return protoreflect.ValueOfList(&_SupplierDeprecated_4_list{list: &list})
+	case "pocket.shared.SupplierDeprecated.unstake_session_end_height":
 		return protoreflect.ValueOfUint64(uint64(0))
-	case "pocket.shared.Supplier.service_config_history":
-		list := []*ServiceConfigUpdate{}
-		return protoreflect.ValueOfList(&_Supplier_6_list{list: &list})
+	case "pocket.shared.SupplierDeprecated.service_config_history":
+		list := []*ServiceConfigUpdateDeprecated{}
+		return protoreflect.ValueOfList(&_SupplierDeprecated_6_list{list: &list})
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: pocket.shared.Supplier"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: pocket.shared.SupplierDeprecated"))
 		}
-		panic(fmt.Errorf("message pocket.shared.Supplier does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message pocket.shared.SupplierDeprecated does not contain field %s", fd.FullName()))
 	}
 }
 
 // WhichOneof reports which field within the oneof is populated,
 // returning nil if none are populated.
 // It panics if the oneof descriptor does not belong to this message.
-func (x *fastReflection_Supplier) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
+func (x *fastReflection_SupplierDeprecated) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
 	switch d.FullName() {
 	default:
-		panic(fmt.Errorf("%s is not a oneof field in pocket.shared.Supplier", d.FullName()))
+		panic(fmt.Errorf("%s is not a oneof field in pocket.shared.SupplierDeprecated", d.FullName()))
 	}
 	panic("unreachable")
 }
@@ -463,7 +463,7 @@ func (x *fastReflection_Supplier) WhichOneof(d protoreflect.OneofDescriptor) pro
 // GetUnknown retrieves the entire list of unknown fields.
 // The caller may only mutate the contents of the RawFields
 // if the mutated bytes are stored back into the message with SetUnknown.
-func (x *fastReflection_Supplier) GetUnknown() protoreflect.RawFields {
+func (x *fastReflection_SupplierDeprecated) GetUnknown() protoreflect.RawFields {
 	return x.unknownFields
 }
 
@@ -474,7 +474,7 @@ func (x *fastReflection_Supplier) GetUnknown() protoreflect.RawFields {
 // An empty RawFields may be passed to clear the fields.
 //
 // SetUnknown is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_Supplier) SetUnknown(fields protoreflect.RawFields) {
+func (x *fastReflection_SupplierDeprecated) SetUnknown(fields protoreflect.RawFields) {
 	x.unknownFields = fields
 }
 
@@ -486,7 +486,7 @@ func (x *fastReflection_Supplier) SetUnknown(fields protoreflect.RawFields) {
 // message type, but the details are implementation dependent.
 // Validity is not part of the protobuf data model, and may not
 // be preserved in marshaling or other operations.
-func (x *fastReflection_Supplier) IsValid() bool {
+func (x *fastReflection_SupplierDeprecated) IsValid() bool {
 	return x != nil
 }
 
@@ -496,9 +496,9 @@ func (x *fastReflection_Supplier) IsValid() bool {
 // The returned methods type is identical to
 // "google.golang.org/protobuf/runtime/protoiface".Methods.
 // Consult the protoiface package documentation for details.
-func (x *fastReflection_Supplier) ProtoMethods() *protoiface.Methods {
+func (x *fastReflection_SupplierDeprecated) ProtoMethods() *protoiface.Methods {
 	size := func(input protoiface.SizeInput) protoiface.SizeOutput {
-		x := input.Message.Interface().(*Supplier)
+		x := input.Message.Interface().(*SupplierDeprecated)
 		if x == nil {
 			return protoiface.SizeOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -547,7 +547,7 @@ func (x *fastReflection_Supplier) ProtoMethods() *protoiface.Methods {
 	}
 
 	marshal := func(input protoiface.MarshalInput) (protoiface.MarshalOutput, error) {
-		x := input.Message.Interface().(*Supplier)
+		x := input.Message.Interface().(*SupplierDeprecated)
 		if x == nil {
 			return protoiface.MarshalOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -642,7 +642,7 @@ func (x *fastReflection_Supplier) ProtoMethods() *protoiface.Methods {
 		}, nil
 	}
 	unmarshal := func(input protoiface.UnmarshalInput) (protoiface.UnmarshalOutput, error) {
-		x := input.Message.Interface().(*Supplier)
+		x := input.Message.Interface().(*SupplierDeprecated)
 		if x == nil {
 			return protoiface.UnmarshalOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -674,10 +674,10 @@ func (x *fastReflection_Supplier) ProtoMethods() *protoiface.Methods {
 			fieldNum := int32(wire >> 3)
 			wireType := int(wire & 0x7)
 			if wireType == 4 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: Supplier: wiretype end group for non-group")
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: SupplierDeprecated: wiretype end group for non-group")
 			}
 			if fieldNum <= 0 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: Supplier: illegal tag %d (wire type %d)", fieldNum, wire)
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: SupplierDeprecated: illegal tag %d (wire type %d)", fieldNum, wire)
 			}
 			switch fieldNum {
 			case 1:
@@ -862,7 +862,7 @@ func (x *fastReflection_Supplier) ProtoMethods() *protoiface.Methods {
 				if postIndex > l {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
 				}
-				x.ServiceConfigHistory = append(x.ServiceConfigHistory, &ServiceConfigUpdate{})
+				x.ServiceConfigHistory = append(x.ServiceConfigHistory, &ServiceConfigUpdateDeprecated{})
 				if err := options.Unmarshal(dAtA[iNdEx:postIndex], x.ServiceConfigHistory[len(x.ServiceConfigHistory)-1]); err != nil {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
 				}
@@ -902,33 +902,80 @@ func (x *fastReflection_Supplier) ProtoMethods() *protoiface.Methods {
 	}
 }
 
+var _ protoreflect.List = (*_ServiceConfigUpdateDeprecated_1_list)(nil)
+
+type _ServiceConfigUpdateDeprecated_1_list struct {
+	list *[]*SupplierServiceConfig
+}
+
+func (x *_ServiceConfigUpdateDeprecated_1_list) Len() int {
+	if x.list == nil {
+		return 0
+	}
+	return len(*x.list)
+}
+
+func (x *_ServiceConfigUpdateDeprecated_1_list) Get(i int) protoreflect.Value {
+	return protoreflect.ValueOfMessage((*x.list)[i].ProtoReflect())
+}
+
+func (x *_ServiceConfigUpdateDeprecated_1_list) Set(i int, value protoreflect.Value) {
+	valueUnwrapped := value.Message()
+	concreteValue := valueUnwrapped.Interface().(*SupplierServiceConfig)
+	(*x.list)[i] = concreteValue
+}
+
+func (x *_ServiceConfigUpdateDeprecated_1_list) Append(value protoreflect.Value) {
+	valueUnwrapped := value.Message()
+	concreteValue := valueUnwrapped.Interface().(*SupplierServiceConfig)
+	*x.list = append(*x.list, concreteValue)
+}
+
+func (x *_ServiceConfigUpdateDeprecated_1_list) AppendMutable() protoreflect.Value {
+	v := new(SupplierServiceConfig)
+	*x.list = append(*x.list, v)
+	return protoreflect.ValueOfMessage(v.ProtoReflect())
+}
+
+func (x *_ServiceConfigUpdateDeprecated_1_list) Truncate(n int) {
+	for i := n; i < len(*x.list); i++ {
+		(*x.list)[i] = nil
+	}
+	*x.list = (*x.list)[:n]
+}
+
+func (x *_ServiceConfigUpdateDeprecated_1_list) NewElement() protoreflect.Value {
+	v := new(SupplierServiceConfig)
+	return protoreflect.ValueOfMessage(v.ProtoReflect())
+}
+
+func (x *_ServiceConfigUpdateDeprecated_1_list) IsValid() bool {
+	return x.list != nil
+}
+
 var (
-	md_ServiceConfigUpdate                     protoreflect.MessageDescriptor
-	fd_ServiceConfigUpdate_operator_address    protoreflect.FieldDescriptor
-	fd_ServiceConfigUpdate_service             protoreflect.FieldDescriptor
-	fd_ServiceConfigUpdate_activation_height   protoreflect.FieldDescriptor
-	fd_ServiceConfigUpdate_deactivation_height protoreflect.FieldDescriptor
+	md_ServiceConfigUpdateDeprecated                        protoreflect.MessageDescriptor
+	fd_ServiceConfigUpdateDeprecated_services               protoreflect.FieldDescriptor
+	fd_ServiceConfigUpdateDeprecated_effective_block_height protoreflect.FieldDescriptor
 )
 
 func init() {
-	file_pocket_shared_supplier_proto_init()
-	md_ServiceConfigUpdate = File_pocket_shared_supplier_proto.Messages().ByName("ServiceConfigUpdate")
-	fd_ServiceConfigUpdate_operator_address = md_ServiceConfigUpdate.Fields().ByName("operator_address")
-	fd_ServiceConfigUpdate_service = md_ServiceConfigUpdate.Fields().ByName("service")
-	fd_ServiceConfigUpdate_activation_height = md_ServiceConfigUpdate.Fields().ByName("activation_height")
-	fd_ServiceConfigUpdate_deactivation_height = md_ServiceConfigUpdate.Fields().ByName("deactivation_height")
+	file_pocket_shared_supplier_deprecated_proto_init()
+	md_ServiceConfigUpdateDeprecated = File_pocket_shared_supplier_deprecated_proto.Messages().ByName("ServiceConfigUpdateDeprecated")
+	fd_ServiceConfigUpdateDeprecated_services = md_ServiceConfigUpdateDeprecated.Fields().ByName("services")
+	fd_ServiceConfigUpdateDeprecated_effective_block_height = md_ServiceConfigUpdateDeprecated.Fields().ByName("effective_block_height")
 }
 
-var _ protoreflect.Message = (*fastReflection_ServiceConfigUpdate)(nil)
+var _ protoreflect.Message = (*fastReflection_ServiceConfigUpdateDeprecated)(nil)
 
-type fastReflection_ServiceConfigUpdate ServiceConfigUpdate
+type fastReflection_ServiceConfigUpdateDeprecated ServiceConfigUpdateDeprecated
 
-func (x *ServiceConfigUpdate) ProtoReflect() protoreflect.Message {
-	return (*fastReflection_ServiceConfigUpdate)(x)
+func (x *ServiceConfigUpdateDeprecated) ProtoReflect() protoreflect.Message {
+	return (*fastReflection_ServiceConfigUpdateDeprecated)(x)
 }
 
-func (x *ServiceConfigUpdate) slowProtoReflect() protoreflect.Message {
-	mi := &file_pocket_shared_supplier_proto_msgTypes[1]
+func (x *ServiceConfigUpdateDeprecated) slowProtoReflect() protoreflect.Message {
+	mi := &file_pocket_shared_supplier_deprecated_proto_msgTypes[1]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -939,43 +986,43 @@ func (x *ServiceConfigUpdate) slowProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-var _fastReflection_ServiceConfigUpdate_messageType fastReflection_ServiceConfigUpdate_messageType
-var _ protoreflect.MessageType = fastReflection_ServiceConfigUpdate_messageType{}
+var _fastReflection_ServiceConfigUpdateDeprecated_messageType fastReflection_ServiceConfigUpdateDeprecated_messageType
+var _ protoreflect.MessageType = fastReflection_ServiceConfigUpdateDeprecated_messageType{}
 
-type fastReflection_ServiceConfigUpdate_messageType struct{}
+type fastReflection_ServiceConfigUpdateDeprecated_messageType struct{}
 
-func (x fastReflection_ServiceConfigUpdate_messageType) Zero() protoreflect.Message {
-	return (*fastReflection_ServiceConfigUpdate)(nil)
+func (x fastReflection_ServiceConfigUpdateDeprecated_messageType) Zero() protoreflect.Message {
+	return (*fastReflection_ServiceConfigUpdateDeprecated)(nil)
 }
-func (x fastReflection_ServiceConfigUpdate_messageType) New() protoreflect.Message {
-	return new(fastReflection_ServiceConfigUpdate)
+func (x fastReflection_ServiceConfigUpdateDeprecated_messageType) New() protoreflect.Message {
+	return new(fastReflection_ServiceConfigUpdateDeprecated)
 }
-func (x fastReflection_ServiceConfigUpdate_messageType) Descriptor() protoreflect.MessageDescriptor {
-	return md_ServiceConfigUpdate
+func (x fastReflection_ServiceConfigUpdateDeprecated_messageType) Descriptor() protoreflect.MessageDescriptor {
+	return md_ServiceConfigUpdateDeprecated
 }
 
 // Descriptor returns message descriptor, which contains only the protobuf
 // type information for the message.
-func (x *fastReflection_ServiceConfigUpdate) Descriptor() protoreflect.MessageDescriptor {
-	return md_ServiceConfigUpdate
+func (x *fastReflection_ServiceConfigUpdateDeprecated) Descriptor() protoreflect.MessageDescriptor {
+	return md_ServiceConfigUpdateDeprecated
 }
 
 // Type returns the message type, which encapsulates both Go and protobuf
 // type information. If the Go type information is not needed,
 // it is recommended that the message descriptor be used instead.
-func (x *fastReflection_ServiceConfigUpdate) Type() protoreflect.MessageType {
-	return _fastReflection_ServiceConfigUpdate_messageType
+func (x *fastReflection_ServiceConfigUpdateDeprecated) Type() protoreflect.MessageType {
+	return _fastReflection_ServiceConfigUpdateDeprecated_messageType
 }
 
 // New returns a newly allocated and mutable empty message.
-func (x *fastReflection_ServiceConfigUpdate) New() protoreflect.Message {
-	return new(fastReflection_ServiceConfigUpdate)
+func (x *fastReflection_ServiceConfigUpdateDeprecated) New() protoreflect.Message {
+	return new(fastReflection_ServiceConfigUpdateDeprecated)
 }
 
 // Interface unwraps the message reflection interface and
 // returns the underlying ProtoMessage interface.
-func (x *fastReflection_ServiceConfigUpdate) Interface() protoreflect.ProtoMessage {
-	return (*ServiceConfigUpdate)(x)
+func (x *fastReflection_ServiceConfigUpdateDeprecated) Interface() protoreflect.ProtoMessage {
+	return (*ServiceConfigUpdateDeprecated)(x)
 }
 
 // Range iterates over every populated field in an undefined order,
@@ -983,28 +1030,16 @@ func (x *fastReflection_ServiceConfigUpdate) Interface() protoreflect.ProtoMessa
 // Range returns immediately if f returns false.
 // While iterating, mutating operations may only be performed
 // on the current field descriptor.
-func (x *fastReflection_ServiceConfigUpdate) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
-	if x.OperatorAddress != "" {
-		value := protoreflect.ValueOfString(x.OperatorAddress)
-		if !f(fd_ServiceConfigUpdate_operator_address, value) {
+func (x *fastReflection_ServiceConfigUpdateDeprecated) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
+	if len(x.Services) != 0 {
+		value := protoreflect.ValueOfList(&_ServiceConfigUpdateDeprecated_1_list{list: &x.Services})
+		if !f(fd_ServiceConfigUpdateDeprecated_services, value) {
 			return
 		}
 	}
-	if x.Service != nil {
-		value := protoreflect.ValueOfMessage(x.Service.ProtoReflect())
-		if !f(fd_ServiceConfigUpdate_service, value) {
-			return
-		}
-	}
-	if x.ActivationHeight != int64(0) {
-		value := protoreflect.ValueOfInt64(x.ActivationHeight)
-		if !f(fd_ServiceConfigUpdate_activation_height, value) {
-			return
-		}
-	}
-	if x.DeactivationHeight != int64(0) {
-		value := protoreflect.ValueOfInt64(x.DeactivationHeight)
-		if !f(fd_ServiceConfigUpdate_deactivation_height, value) {
+	if x.EffectiveBlockHeight != uint64(0) {
+		value := protoreflect.ValueOfUint64(x.EffectiveBlockHeight)
+		if !f(fd_ServiceConfigUpdateDeprecated_effective_block_height, value) {
 			return
 		}
 	}
@@ -1021,21 +1056,17 @@ func (x *fastReflection_ServiceConfigUpdate) Range(f func(protoreflect.FieldDesc
 // In other cases (aside from the nullable cases above),
 // a proto3 scalar field is populated if it contains a non-zero value, and
 // a repeated field is populated if it is non-empty.
-func (x *fastReflection_ServiceConfigUpdate) Has(fd protoreflect.FieldDescriptor) bool {
+func (x *fastReflection_ServiceConfigUpdateDeprecated) Has(fd protoreflect.FieldDescriptor) bool {
 	switch fd.FullName() {
-	case "pocket.shared.ServiceConfigUpdate.operator_address":
-		return x.OperatorAddress != ""
-	case "pocket.shared.ServiceConfigUpdate.service":
-		return x.Service != nil
-	case "pocket.shared.ServiceConfigUpdate.activation_height":
-		return x.ActivationHeight != int64(0)
-	case "pocket.shared.ServiceConfigUpdate.deactivation_height":
-		return x.DeactivationHeight != int64(0)
+	case "pocket.shared.ServiceConfigUpdateDeprecated.services":
+		return len(x.Services) != 0
+	case "pocket.shared.ServiceConfigUpdateDeprecated.effective_block_height":
+		return x.EffectiveBlockHeight != uint64(0)
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: pocket.shared.ServiceConfigUpdate"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: pocket.shared.ServiceConfigUpdateDeprecated"))
 		}
-		panic(fmt.Errorf("message pocket.shared.ServiceConfigUpdate does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message pocket.shared.ServiceConfigUpdateDeprecated does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -1045,21 +1076,17 @@ func (x *fastReflection_ServiceConfigUpdate) Has(fd protoreflect.FieldDescriptor
 // associated with the given field number.
 //
 // Clear is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_ServiceConfigUpdate) Clear(fd protoreflect.FieldDescriptor) {
+func (x *fastReflection_ServiceConfigUpdateDeprecated) Clear(fd protoreflect.FieldDescriptor) {
 	switch fd.FullName() {
-	case "pocket.shared.ServiceConfigUpdate.operator_address":
-		x.OperatorAddress = ""
-	case "pocket.shared.ServiceConfigUpdate.service":
-		x.Service = nil
-	case "pocket.shared.ServiceConfigUpdate.activation_height":
-		x.ActivationHeight = int64(0)
-	case "pocket.shared.ServiceConfigUpdate.deactivation_height":
-		x.DeactivationHeight = int64(0)
+	case "pocket.shared.ServiceConfigUpdateDeprecated.services":
+		x.Services = nil
+	case "pocket.shared.ServiceConfigUpdateDeprecated.effective_block_height":
+		x.EffectiveBlockHeight = uint64(0)
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: pocket.shared.ServiceConfigUpdate"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: pocket.shared.ServiceConfigUpdateDeprecated"))
 		}
-		panic(fmt.Errorf("message pocket.shared.ServiceConfigUpdate does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message pocket.shared.ServiceConfigUpdateDeprecated does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -1069,25 +1096,22 @@ func (x *fastReflection_ServiceConfigUpdate) Clear(fd protoreflect.FieldDescript
 // the default value of a bytes scalar is guaranteed to be a copy.
 // For unpopulated composite types, it returns an empty, read-only view
 // of the value; to obtain a mutable reference, use Mutable.
-func (x *fastReflection_ServiceConfigUpdate) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_ServiceConfigUpdateDeprecated) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
 	switch descriptor.FullName() {
-	case "pocket.shared.ServiceConfigUpdate.operator_address":
-		value := x.OperatorAddress
-		return protoreflect.ValueOfString(value)
-	case "pocket.shared.ServiceConfigUpdate.service":
-		value := x.Service
-		return protoreflect.ValueOfMessage(value.ProtoReflect())
-	case "pocket.shared.ServiceConfigUpdate.activation_height":
-		value := x.ActivationHeight
-		return protoreflect.ValueOfInt64(value)
-	case "pocket.shared.ServiceConfigUpdate.deactivation_height":
-		value := x.DeactivationHeight
-		return protoreflect.ValueOfInt64(value)
+	case "pocket.shared.ServiceConfigUpdateDeprecated.services":
+		if len(x.Services) == 0 {
+			return protoreflect.ValueOfList(&_ServiceConfigUpdateDeprecated_1_list{})
+		}
+		listValue := &_ServiceConfigUpdateDeprecated_1_list{list: &x.Services}
+		return protoreflect.ValueOfList(listValue)
+	case "pocket.shared.ServiceConfigUpdateDeprecated.effective_block_height":
+		value := x.EffectiveBlockHeight
+		return protoreflect.ValueOfUint64(value)
 	default:
 		if descriptor.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: pocket.shared.ServiceConfigUpdate"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: pocket.shared.ServiceConfigUpdateDeprecated"))
 		}
-		panic(fmt.Errorf("message pocket.shared.ServiceConfigUpdate does not contain field %s", descriptor.FullName()))
+		panic(fmt.Errorf("message pocket.shared.ServiceConfigUpdateDeprecated does not contain field %s", descriptor.FullName()))
 	}
 }
 
@@ -1101,21 +1125,19 @@ func (x *fastReflection_ServiceConfigUpdate) Get(descriptor protoreflect.FieldDe
 // empty, read-only value, then it panics.
 //
 // Set is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_ServiceConfigUpdate) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
+func (x *fastReflection_ServiceConfigUpdateDeprecated) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
 	switch fd.FullName() {
-	case "pocket.shared.ServiceConfigUpdate.operator_address":
-		x.OperatorAddress = value.Interface().(string)
-	case "pocket.shared.ServiceConfigUpdate.service":
-		x.Service = value.Message().Interface().(*SupplierServiceConfig)
-	case "pocket.shared.ServiceConfigUpdate.activation_height":
-		x.ActivationHeight = value.Int()
-	case "pocket.shared.ServiceConfigUpdate.deactivation_height":
-		x.DeactivationHeight = value.Int()
+	case "pocket.shared.ServiceConfigUpdateDeprecated.services":
+		lv := value.List()
+		clv := lv.(*_ServiceConfigUpdateDeprecated_1_list)
+		x.Services = *clv.list
+	case "pocket.shared.ServiceConfigUpdateDeprecated.effective_block_height":
+		x.EffectiveBlockHeight = value.Uint()
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: pocket.shared.ServiceConfigUpdate"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: pocket.shared.ServiceConfigUpdateDeprecated"))
 		}
-		panic(fmt.Errorf("message pocket.shared.ServiceConfigUpdate does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message pocket.shared.ServiceConfigUpdateDeprecated does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -1129,56 +1151,49 @@ func (x *fastReflection_ServiceConfigUpdate) Set(fd protoreflect.FieldDescriptor
 // It panics if the field does not contain a composite type.
 //
 // Mutable is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_ServiceConfigUpdate) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_ServiceConfigUpdateDeprecated) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
-	case "pocket.shared.ServiceConfigUpdate.service":
-		if x.Service == nil {
-			x.Service = new(SupplierServiceConfig)
+	case "pocket.shared.ServiceConfigUpdateDeprecated.services":
+		if x.Services == nil {
+			x.Services = []*SupplierServiceConfig{}
 		}
-		return protoreflect.ValueOfMessage(x.Service.ProtoReflect())
-	case "pocket.shared.ServiceConfigUpdate.operator_address":
-		panic(fmt.Errorf("field operator_address of message pocket.shared.ServiceConfigUpdate is not mutable"))
-	case "pocket.shared.ServiceConfigUpdate.activation_height":
-		panic(fmt.Errorf("field activation_height of message pocket.shared.ServiceConfigUpdate is not mutable"))
-	case "pocket.shared.ServiceConfigUpdate.deactivation_height":
-		panic(fmt.Errorf("field deactivation_height of message pocket.shared.ServiceConfigUpdate is not mutable"))
+		value := &_ServiceConfigUpdateDeprecated_1_list{list: &x.Services}
+		return protoreflect.ValueOfList(value)
+	case "pocket.shared.ServiceConfigUpdateDeprecated.effective_block_height":
+		panic(fmt.Errorf("field effective_block_height of message pocket.shared.ServiceConfigUpdateDeprecated is not mutable"))
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: pocket.shared.ServiceConfigUpdate"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: pocket.shared.ServiceConfigUpdateDeprecated"))
 		}
-		panic(fmt.Errorf("message pocket.shared.ServiceConfigUpdate does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message pocket.shared.ServiceConfigUpdateDeprecated does not contain field %s", fd.FullName()))
 	}
 }
 
 // NewField returns a new value that is assignable to the field
 // for the given descriptor. For scalars, this returns the default value.
 // For lists, maps, and messages, this returns a new, empty, mutable value.
-func (x *fastReflection_ServiceConfigUpdate) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_ServiceConfigUpdateDeprecated) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
-	case "pocket.shared.ServiceConfigUpdate.operator_address":
-		return protoreflect.ValueOfString("")
-	case "pocket.shared.ServiceConfigUpdate.service":
-		m := new(SupplierServiceConfig)
-		return protoreflect.ValueOfMessage(m.ProtoReflect())
-	case "pocket.shared.ServiceConfigUpdate.activation_height":
-		return protoreflect.ValueOfInt64(int64(0))
-	case "pocket.shared.ServiceConfigUpdate.deactivation_height":
-		return protoreflect.ValueOfInt64(int64(0))
+	case "pocket.shared.ServiceConfigUpdateDeprecated.services":
+		list := []*SupplierServiceConfig{}
+		return protoreflect.ValueOfList(&_ServiceConfigUpdateDeprecated_1_list{list: &list})
+	case "pocket.shared.ServiceConfigUpdateDeprecated.effective_block_height":
+		return protoreflect.ValueOfUint64(uint64(0))
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: pocket.shared.ServiceConfigUpdate"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: pocket.shared.ServiceConfigUpdateDeprecated"))
 		}
-		panic(fmt.Errorf("message pocket.shared.ServiceConfigUpdate does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message pocket.shared.ServiceConfigUpdateDeprecated does not contain field %s", fd.FullName()))
 	}
 }
 
 // WhichOneof reports which field within the oneof is populated,
 // returning nil if none are populated.
 // It panics if the oneof descriptor does not belong to this message.
-func (x *fastReflection_ServiceConfigUpdate) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
+func (x *fastReflection_ServiceConfigUpdateDeprecated) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
 	switch d.FullName() {
 	default:
-		panic(fmt.Errorf("%s is not a oneof field in pocket.shared.ServiceConfigUpdate", d.FullName()))
+		panic(fmt.Errorf("%s is not a oneof field in pocket.shared.ServiceConfigUpdateDeprecated", d.FullName()))
 	}
 	panic("unreachable")
 }
@@ -1186,7 +1201,7 @@ func (x *fastReflection_ServiceConfigUpdate) WhichOneof(d protoreflect.OneofDesc
 // GetUnknown retrieves the entire list of unknown fields.
 // The caller may only mutate the contents of the RawFields
 // if the mutated bytes are stored back into the message with SetUnknown.
-func (x *fastReflection_ServiceConfigUpdate) GetUnknown() protoreflect.RawFields {
+func (x *fastReflection_ServiceConfigUpdateDeprecated) GetUnknown() protoreflect.RawFields {
 	return x.unknownFields
 }
 
@@ -1197,7 +1212,7 @@ func (x *fastReflection_ServiceConfigUpdate) GetUnknown() protoreflect.RawFields
 // An empty RawFields may be passed to clear the fields.
 //
 // SetUnknown is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_ServiceConfigUpdate) SetUnknown(fields protoreflect.RawFields) {
+func (x *fastReflection_ServiceConfigUpdateDeprecated) SetUnknown(fields protoreflect.RawFields) {
 	x.unknownFields = fields
 }
 
@@ -1209,7 +1224,7 @@ func (x *fastReflection_ServiceConfigUpdate) SetUnknown(fields protoreflect.RawF
 // message type, but the details are implementation dependent.
 // Validity is not part of the protobuf data model, and may not
 // be preserved in marshaling or other operations.
-func (x *fastReflection_ServiceConfigUpdate) IsValid() bool {
+func (x *fastReflection_ServiceConfigUpdateDeprecated) IsValid() bool {
 	return x != nil
 }
 
@@ -1219,9 +1234,9 @@ func (x *fastReflection_ServiceConfigUpdate) IsValid() bool {
 // The returned methods type is identical to
 // "google.golang.org/protobuf/runtime/protoiface".Methods.
 // Consult the protoiface package documentation for details.
-func (x *fastReflection_ServiceConfigUpdate) ProtoMethods() *protoiface.Methods {
+func (x *fastReflection_ServiceConfigUpdateDeprecated) ProtoMethods() *protoiface.Methods {
 	size := func(input protoiface.SizeInput) protoiface.SizeOutput {
-		x := input.Message.Interface().(*ServiceConfigUpdate)
+		x := input.Message.Interface().(*ServiceConfigUpdateDeprecated)
 		if x == nil {
 			return protoiface.SizeOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -1233,19 +1248,14 @@ func (x *fastReflection_ServiceConfigUpdate) ProtoMethods() *protoiface.Methods 
 		var n int
 		var l int
 		_ = l
-		l = len(x.OperatorAddress)
-		if l > 0 {
-			n += 1 + l + runtime.Sov(uint64(l))
+		if len(x.Services) > 0 {
+			for _, e := range x.Services {
+				l = options.Size(e)
+				n += 1 + l + runtime.Sov(uint64(l))
+			}
 		}
-		if x.Service != nil {
-			l = options.Size(x.Service)
-			n += 1 + l + runtime.Sov(uint64(l))
-		}
-		if x.ActivationHeight != 0 {
-			n += 1 + runtime.Sov(uint64(x.ActivationHeight))
-		}
-		if x.DeactivationHeight != 0 {
-			n += 1 + runtime.Sov(uint64(x.DeactivationHeight))
+		if x.EffectiveBlockHeight != 0 {
+			n += 1 + runtime.Sov(uint64(x.EffectiveBlockHeight))
 		}
 		if x.unknownFields != nil {
 			n += len(x.unknownFields)
@@ -1257,7 +1267,7 @@ func (x *fastReflection_ServiceConfigUpdate) ProtoMethods() *protoiface.Methods 
 	}
 
 	marshal := func(input protoiface.MarshalInput) (protoiface.MarshalOutput, error) {
-		x := input.Message.Interface().(*ServiceConfigUpdate)
+		x := input.Message.Interface().(*ServiceConfigUpdateDeprecated)
 		if x == nil {
 			return protoiface.MarshalOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -1276,36 +1286,26 @@ func (x *fastReflection_ServiceConfigUpdate) ProtoMethods() *protoiface.Methods 
 			i -= len(x.unknownFields)
 			copy(dAtA[i:], x.unknownFields)
 		}
-		if x.DeactivationHeight != 0 {
-			i = runtime.EncodeVarint(dAtA, i, uint64(x.DeactivationHeight))
+		if x.EffectiveBlockHeight != 0 {
+			i = runtime.EncodeVarint(dAtA, i, uint64(x.EffectiveBlockHeight))
 			i--
-			dAtA[i] = 0x20
+			dAtA[i] = 0x10
 		}
-		if x.ActivationHeight != 0 {
-			i = runtime.EncodeVarint(dAtA, i, uint64(x.ActivationHeight))
-			i--
-			dAtA[i] = 0x18
-		}
-		if x.Service != nil {
-			encoded, err := options.Marshal(x.Service)
-			if err != nil {
-				return protoiface.MarshalOutput{
-					NoUnkeyedLiterals: input.NoUnkeyedLiterals,
-					Buf:               input.Buf,
-				}, err
+		if len(x.Services) > 0 {
+			for iNdEx := len(x.Services) - 1; iNdEx >= 0; iNdEx-- {
+				encoded, err := options.Marshal(x.Services[iNdEx])
+				if err != nil {
+					return protoiface.MarshalOutput{
+						NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+						Buf:               input.Buf,
+					}, err
+				}
+				i -= len(encoded)
+				copy(dAtA[i:], encoded)
+				i = runtime.EncodeVarint(dAtA, i, uint64(len(encoded)))
+				i--
+				dAtA[i] = 0xa
 			}
-			i -= len(encoded)
-			copy(dAtA[i:], encoded)
-			i = runtime.EncodeVarint(dAtA, i, uint64(len(encoded)))
-			i--
-			dAtA[i] = 0x12
-		}
-		if len(x.OperatorAddress) > 0 {
-			i -= len(x.OperatorAddress)
-			copy(dAtA[i:], x.OperatorAddress)
-			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.OperatorAddress)))
-			i--
-			dAtA[i] = 0xa
 		}
 		if input.Buf != nil {
 			input.Buf = append(input.Buf, dAtA...)
@@ -1318,7 +1318,7 @@ func (x *fastReflection_ServiceConfigUpdate) ProtoMethods() *protoiface.Methods 
 		}, nil
 	}
 	unmarshal := func(input protoiface.UnmarshalInput) (protoiface.UnmarshalOutput, error) {
-		x := input.Message.Interface().(*ServiceConfigUpdate)
+		x := input.Message.Interface().(*ServiceConfigUpdateDeprecated)
 		if x == nil {
 			return protoiface.UnmarshalOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -1350,47 +1350,15 @@ func (x *fastReflection_ServiceConfigUpdate) ProtoMethods() *protoiface.Methods 
 			fieldNum := int32(wire >> 3)
 			wireType := int(wire & 0x7)
 			if wireType == 4 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: ServiceConfigUpdate: wiretype end group for non-group")
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: ServiceConfigUpdateDeprecated: wiretype end group for non-group")
 			}
 			if fieldNum <= 0 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: ServiceConfigUpdate: illegal tag %d (wire type %d)", fieldNum, wire)
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: ServiceConfigUpdateDeprecated: illegal tag %d (wire type %d)", fieldNum, wire)
 			}
 			switch fieldNum {
 			case 1:
 				if wireType != 2 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field OperatorAddress", wireType)
-				}
-				var stringLen uint64
-				for shift := uint(0); ; shift += 7 {
-					if shift >= 64 {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
-					}
-					if iNdEx >= l {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-					}
-					b := dAtA[iNdEx]
-					iNdEx++
-					stringLen |= uint64(b&0x7F) << shift
-					if b < 0x80 {
-						break
-					}
-				}
-				intStringLen := int(stringLen)
-				if intStringLen < 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
-				}
-				postIndex := iNdEx + intStringLen
-				if postIndex < 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
-				}
-				if postIndex > l {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-				}
-				x.OperatorAddress = string(dAtA[iNdEx:postIndex])
-				iNdEx = postIndex
-			case 2:
-				if wireType != 2 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Service", wireType)
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Services", wireType)
 				}
 				var msglen int
 				for shift := uint(0); ; shift += 7 {
@@ -1417,18 +1385,16 @@ func (x *fastReflection_ServiceConfigUpdate) ProtoMethods() *protoiface.Methods 
 				if postIndex > l {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
 				}
-				if x.Service == nil {
-					x.Service = &SupplierServiceConfig{}
-				}
-				if err := options.Unmarshal(dAtA[iNdEx:postIndex], x.Service); err != nil {
+				x.Services = append(x.Services, &SupplierServiceConfig{})
+				if err := options.Unmarshal(dAtA[iNdEx:postIndex], x.Services[len(x.Services)-1]); err != nil {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
 				}
 				iNdEx = postIndex
-			case 3:
+			case 2:
 				if wireType != 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field ActivationHeight", wireType)
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field EffectiveBlockHeight", wireType)
 				}
-				x.ActivationHeight = 0
+				x.EffectiveBlockHeight = 0
 				for shift := uint(0); ; shift += 7 {
 					if shift >= 64 {
 						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
@@ -1438,26 +1404,7 @@ func (x *fastReflection_ServiceConfigUpdate) ProtoMethods() *protoiface.Methods 
 					}
 					b := dAtA[iNdEx]
 					iNdEx++
-					x.ActivationHeight |= int64(b&0x7F) << shift
-					if b < 0x80 {
-						break
-					}
-				}
-			case 4:
-				if wireType != 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field DeactivationHeight", wireType)
-				}
-				x.DeactivationHeight = 0
-				for shift := uint(0); ; shift += 7 {
-					if shift >= 64 {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
-					}
-					if iNdEx >= l {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-					}
-					b := dAtA[iNdEx]
-					iNdEx++
-					x.DeactivationHeight |= int64(b&0x7F) << shift
+					x.EffectiveBlockHeight |= uint64(b&0x7F) << shift
 					if b < 0x80 {
 						break
 					}
@@ -1501,7 +1448,7 @@ func (x *fastReflection_ServiceConfigUpdate) ProtoMethods() *protoiface.Methods 
 // versions:
 // 	protoc-gen-go v1.27.0
 // 	protoc        (unknown)
-// source: pocket/shared/supplier.proto
+// source: pocket/shared/supplier.deprecated.proto
 
 const (
 	// Verify that this generated code is sufficiently up-to-date.
@@ -1510,252 +1457,211 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-// Supplier represents an actor in Pocket Network that provides RPC services
-type Supplier struct {
+type SupplierDeprecated struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Owner address that controls the staked funds and receives rewards by default
-	// Cannot be updated by the operator
-	OwnerAddress string `protobuf:"bytes,1,opt,name=owner_address,json=ownerAddress,proto3" json:"owner_address,omitempty"`
-	// Operator address managing the offchain server
-	// Immutable for supplier's lifespan - requires unstake/re-stake to change.
-	// Can update supplier configs except for owner address.
-	OperatorAddress string `protobuf:"bytes,2,opt,name=operator_address,json=operatorAddress,proto3" json:"operator_address,omitempty"`
-	// Total amount of staked uPOKT
-	Stake *v1beta1.Coin `protobuf:"bytes,3,opt,name=stake,proto3" json:"stake,omitempty"`
-	// List of service configurations supported by this supplier
-	Services []*SupplierServiceConfig `protobuf:"bytes,4,rep,name=services,proto3" json:"services,omitempty"`
-	// Session end height when supplier initiated unstaking (0 if not unstaking)
-	UnstakeSessionEndHeight uint64 `protobuf:"varint,5,opt,name=unstake_session_end_height,json=unstakeSessionEndHeight,proto3" json:"unstake_session_end_height,omitempty"`
-	// List of historical service configuration updates, tracking the suppliers
-	// services update and corresponding activation heights.
-	ServiceConfigHistory []*ServiceConfigUpdate `protobuf:"bytes,6,rep,name=service_config_history,json=serviceConfigHistory,proto3" json:"service_config_history,omitempty"`
+	OwnerAddress            string                           `protobuf:"bytes,1,opt,name=owner_address,json=ownerAddress,proto3" json:"owner_address,omitempty"`
+	OperatorAddress         string                           `protobuf:"bytes,2,opt,name=operator_address,json=operatorAddress,proto3" json:"operator_address,omitempty"`
+	Stake                   *v1beta1.Coin                    `protobuf:"bytes,3,opt,name=stake,proto3" json:"stake,omitempty"`
+	Services                []*SupplierServiceConfig         `protobuf:"bytes,4,rep,name=services,proto3" json:"services,omitempty"`
+	UnstakeSessionEndHeight uint64                           `protobuf:"varint,5,opt,name=unstake_session_end_height,json=unstakeSessionEndHeight,proto3" json:"unstake_session_end_height,omitempty"`
+	ServiceConfigHistory    []*ServiceConfigUpdateDeprecated `protobuf:"bytes,6,rep,name=service_config_history,json=serviceConfigHistory,proto3" json:"service_config_history,omitempty"`
 }
 
-func (x *Supplier) Reset() {
-	*x = Supplier{}
+func (x *SupplierDeprecated) Reset() {
+	*x = SupplierDeprecated{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pocket_shared_supplier_proto_msgTypes[0]
+		mi := &file_pocket_shared_supplier_deprecated_proto_msgTypes[0]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
 }
 
-func (x *Supplier) String() string {
+func (x *SupplierDeprecated) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*Supplier) ProtoMessage() {}
+func (*SupplierDeprecated) ProtoMessage() {}
 
-// Deprecated: Use Supplier.ProtoReflect.Descriptor instead.
-func (*Supplier) Descriptor() ([]byte, []int) {
-	return file_pocket_shared_supplier_proto_rawDescGZIP(), []int{0}
+// Deprecated: Use SupplierDeprecated.ProtoReflect.Descriptor instead.
+func (*SupplierDeprecated) Descriptor() ([]byte, []int) {
+	return file_pocket_shared_supplier_deprecated_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *Supplier) GetOwnerAddress() string {
+func (x *SupplierDeprecated) GetOwnerAddress() string {
 	if x != nil {
 		return x.OwnerAddress
 	}
 	return ""
 }
 
-func (x *Supplier) GetOperatorAddress() string {
+func (x *SupplierDeprecated) GetOperatorAddress() string {
 	if x != nil {
 		return x.OperatorAddress
 	}
 	return ""
 }
 
-func (x *Supplier) GetStake() *v1beta1.Coin {
+func (x *SupplierDeprecated) GetStake() *v1beta1.Coin {
 	if x != nil {
 		return x.Stake
 	}
 	return nil
 }
 
-func (x *Supplier) GetServices() []*SupplierServiceConfig {
+func (x *SupplierDeprecated) GetServices() []*SupplierServiceConfig {
 	if x != nil {
 		return x.Services
 	}
 	return nil
 }
 
-func (x *Supplier) GetUnstakeSessionEndHeight() uint64 {
+func (x *SupplierDeprecated) GetUnstakeSessionEndHeight() uint64 {
 	if x != nil {
 		return x.UnstakeSessionEndHeight
 	}
 	return 0
 }
 
-func (x *Supplier) GetServiceConfigHistory() []*ServiceConfigUpdate {
+func (x *SupplierDeprecated) GetServiceConfigHistory() []*ServiceConfigUpdateDeprecated {
 	if x != nil {
 		return x.ServiceConfigHistory
 	}
 	return nil
 }
 
-// ServiceConfigUpdate tracks a change in a supplier's service configurations
-// at a specific block height, enabling tracking of configuration changes over time.
-// This record helps maintain a complete history of service configs and their availability periods.
-type ServiceConfigUpdate struct {
+type ServiceConfigUpdateDeprecated struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Operator address of the supplier corresponding to the service configuration change
-	OperatorAddress string `protobuf:"bytes,1,opt,name=operator_address,json=operatorAddress,proto3" json:"operator_address,omitempty"`
-	// The specific service configuration that was added, modified or scheduled for removal
-	Service *SupplierServiceConfig `protobuf:"bytes,2,opt,name=service,proto3" json:"service,omitempty"`
-	// Block height at which this service configuration became active in the network
-	ActivationHeight int64 `protobuf:"varint,3,opt,name=activation_height,json=activationHeight,proto3" json:"activation_height,omitempty"`
-	// Block height at which this service configuration was deactivated (0 if still active)
-	// For service configs scheduled for deactivation:
-	//   - This field stores the block height when deactivation will occur
-	//   - After deactivation, the config remains in history only as needed for claim settlement
-	//   - Once no longer required for settlement, the config is automatically removed by
-	//     the EndBlockerPruneSupplierServiceConfigHistory process
-	DeactivationHeight int64 `protobuf:"varint,4,opt,name=deactivation_height,json=deactivationHeight,proto3" json:"deactivation_height,omitempty"`
+	Services             []*SupplierServiceConfig `protobuf:"bytes,1,rep,name=services,proto3" json:"services,omitempty"`
+	EffectiveBlockHeight uint64                   `protobuf:"varint,2,opt,name=effective_block_height,json=effectiveBlockHeight,proto3" json:"effective_block_height,omitempty"`
 }
 
-func (x *ServiceConfigUpdate) Reset() {
-	*x = ServiceConfigUpdate{}
+func (x *ServiceConfigUpdateDeprecated) Reset() {
+	*x = ServiceConfigUpdateDeprecated{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pocket_shared_supplier_proto_msgTypes[1]
+		mi := &file_pocket_shared_supplier_deprecated_proto_msgTypes[1]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
 }
 
-func (x *ServiceConfigUpdate) String() string {
+func (x *ServiceConfigUpdateDeprecated) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*ServiceConfigUpdate) ProtoMessage() {}
+func (*ServiceConfigUpdateDeprecated) ProtoMessage() {}
 
-// Deprecated: Use ServiceConfigUpdate.ProtoReflect.Descriptor instead.
-func (*ServiceConfigUpdate) Descriptor() ([]byte, []int) {
-	return file_pocket_shared_supplier_proto_rawDescGZIP(), []int{1}
+// Deprecated: Use ServiceConfigUpdateDeprecated.ProtoReflect.Descriptor instead.
+func (*ServiceConfigUpdateDeprecated) Descriptor() ([]byte, []int) {
+	return file_pocket_shared_supplier_deprecated_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *ServiceConfigUpdate) GetOperatorAddress() string {
+func (x *ServiceConfigUpdateDeprecated) GetServices() []*SupplierServiceConfig {
 	if x != nil {
-		return x.OperatorAddress
-	}
-	return ""
-}
-
-func (x *ServiceConfigUpdate) GetService() *SupplierServiceConfig {
-	if x != nil {
-		return x.Service
+		return x.Services
 	}
 	return nil
 }
 
-func (x *ServiceConfigUpdate) GetActivationHeight() int64 {
+func (x *ServiceConfigUpdateDeprecated) GetEffectiveBlockHeight() uint64 {
 	if x != nil {
-		return x.ActivationHeight
+		return x.EffectiveBlockHeight
 	}
 	return 0
 }
 
-func (x *ServiceConfigUpdate) GetDeactivationHeight() int64 {
-	if x != nil {
-		return x.DeactivationHeight
-	}
-	return 0
-}
+var File_pocket_shared_supplier_deprecated_proto protoreflect.FileDescriptor
 
-var File_pocket_shared_supplier_proto protoreflect.FileDescriptor
-
-var file_pocket_shared_supplier_proto_rawDesc = []byte{
-	0x0a, 0x1c, 0x70, 0x6f, 0x63, 0x6b, 0x65, 0x74, 0x2f, 0x73, 0x68, 0x61, 0x72, 0x65, 0x64, 0x2f,
-	0x73, 0x75, 0x70, 0x70, 0x6c, 0x69, 0x65, 0x72, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x12, 0x0d,
-	0x70, 0x6f, 0x63, 0x6b, 0x65, 0x74, 0x2e, 0x73, 0x68, 0x61, 0x72, 0x65, 0x64, 0x1a, 0x19, 0x63,
-	0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x5f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2f, 0x63, 0x6f, 0x73, 0x6d,
-	0x6f, 0x73, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x1a, 0x1e, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73,
-	0x2f, 0x62, 0x61, 0x73, 0x65, 0x2f, 0x76, 0x31, 0x62, 0x65, 0x74, 0x61, 0x31, 0x2f, 0x63, 0x6f,
-	0x69, 0x6e, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x1a, 0x1b, 0x70, 0x6f, 0x63, 0x6b, 0x65, 0x74,
-	0x2f, 0x73, 0x68, 0x61, 0x72, 0x65, 0x64, 0x2f, 0x73, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x2e,
-	0x70, 0x72, 0x6f, 0x74, 0x6f, 0x1a, 0x14, 0x67, 0x6f, 0x67, 0x6f, 0x70, 0x72, 0x6f, 0x74, 0x6f,
-	0x2f, 0x67, 0x6f, 0x67, 0x6f, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x22, 0x98, 0x03, 0x0a, 0x08,
-	0x53, 0x75, 0x70, 0x70, 0x6c, 0x69, 0x65, 0x72, 0x12, 0x3d, 0x0a, 0x0d, 0x6f, 0x77, 0x6e, 0x65,
-	0x72, 0x5f, 0x61, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x42,
-	0x18, 0xd2, 0xb4, 0x2d, 0x14, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x41, 0x64, 0x64, 0x72,
-	0x65, 0x73, 0x73, 0x53, 0x74, 0x72, 0x69, 0x6e, 0x67, 0x52, 0x0c, 0x6f, 0x77, 0x6e, 0x65, 0x72,
-	0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x12, 0x43, 0x0a, 0x10, 0x6f, 0x70, 0x65, 0x72, 0x61,
-	0x74, 0x6f, 0x72, 0x5f, 0x61, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x18, 0x02, 0x20, 0x01, 0x28,
-	0x09, 0x42, 0x18, 0xd2, 0xb4, 0x2d, 0x14, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x41, 0x64,
-	0x64, 0x72, 0x65, 0x73, 0x73, 0x53, 0x74, 0x72, 0x69, 0x6e, 0x67, 0x52, 0x0f, 0x6f, 0x70, 0x65,
-	0x72, 0x61, 0x74, 0x6f, 0x72, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x12, 0x2f, 0x0a, 0x05,
-	0x73, 0x74, 0x61, 0x6b, 0x65, 0x18, 0x03, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x19, 0x2e, 0x63, 0x6f,
-	0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x62, 0x61, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x62, 0x65, 0x74, 0x61,
-	0x31, 0x2e, 0x43, 0x6f, 0x69, 0x6e, 0x52, 0x05, 0x73, 0x74, 0x61, 0x6b, 0x65, 0x12, 0x40, 0x0a,
-	0x08, 0x73, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x73, 0x18, 0x04, 0x20, 0x03, 0x28, 0x0b, 0x32,
-	0x24, 0x2e, 0x70, 0x6f, 0x63, 0x6b, 0x65, 0x74, 0x2e, 0x73, 0x68, 0x61, 0x72, 0x65, 0x64, 0x2e,
-	0x53, 0x75, 0x70, 0x70, 0x6c, 0x69, 0x65, 0x72, 0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x43,
-	0x6f, 0x6e, 0x66, 0x69, 0x67, 0x52, 0x08, 0x73, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x73, 0x12,
-	0x3b, 0x0a, 0x1a, 0x75, 0x6e, 0x73, 0x74, 0x61, 0x6b, 0x65, 0x5f, 0x73, 0x65, 0x73, 0x73, 0x69,
-	0x6f, 0x6e, 0x5f, 0x65, 0x6e, 0x64, 0x5f, 0x68, 0x65, 0x69, 0x67, 0x68, 0x74, 0x18, 0x05, 0x20,
-	0x01, 0x28, 0x04, 0x52, 0x17, 0x75, 0x6e, 0x73, 0x74, 0x61, 0x6b, 0x65, 0x53, 0x65, 0x73, 0x73,
-	0x69, 0x6f, 0x6e, 0x45, 0x6e, 0x64, 0x48, 0x65, 0x69, 0x67, 0x68, 0x74, 0x12, 0x58, 0x0a, 0x16,
-	0x73, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x5f, 0x63, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x5f, 0x68,
-	0x69, 0x73, 0x74, 0x6f, 0x72, 0x79, 0x18, 0x06, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x22, 0x2e, 0x70,
-	0x6f, 0x63, 0x6b, 0x65, 0x74, 0x2e, 0x73, 0x68, 0x61, 0x72, 0x65, 0x64, 0x2e, 0x53, 0x65, 0x72,
-	0x76, 0x69, 0x63, 0x65, 0x43, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65,
-	0x52, 0x14, 0x73, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x43, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x48,
-	0x69, 0x73, 0x74, 0x6f, 0x72, 0x79, 0x22, 0xde, 0x01, 0x0a, 0x13, 0x53, 0x65, 0x72, 0x76, 0x69,
-	0x63, 0x65, 0x43, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x12, 0x29,
-	0x0a, 0x10, 0x6f, 0x70, 0x65, 0x72, 0x61, 0x74, 0x6f, 0x72, 0x5f, 0x61, 0x64, 0x64, 0x72, 0x65,
-	0x73, 0x73, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0f, 0x6f, 0x70, 0x65, 0x72, 0x61, 0x74,
-	0x6f, 0x72, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x12, 0x3e, 0x0a, 0x07, 0x73, 0x65, 0x72,
-	0x76, 0x69, 0x63, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x24, 0x2e, 0x70, 0x6f, 0x63,
-	0x6b, 0x65, 0x74, 0x2e, 0x73, 0x68, 0x61, 0x72, 0x65, 0x64, 0x2e, 0x53, 0x75, 0x70, 0x70, 0x6c,
-	0x69, 0x65, 0x72, 0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x43, 0x6f, 0x6e, 0x66, 0x69, 0x67,
-	0x52, 0x07, 0x73, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x12, 0x2b, 0x0a, 0x11, 0x61, 0x63, 0x74,
-	0x69, 0x76, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x5f, 0x68, 0x65, 0x69, 0x67, 0x68, 0x74, 0x18, 0x03,
-	0x20, 0x01, 0x28, 0x03, 0x52, 0x10, 0x61, 0x63, 0x74, 0x69, 0x76, 0x61, 0x74, 0x69, 0x6f, 0x6e,
-	0x48, 0x65, 0x69, 0x67, 0x68, 0x74, 0x12, 0x2f, 0x0a, 0x13, 0x64, 0x65, 0x61, 0x63, 0x74, 0x69,
-	0x76, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x5f, 0x68, 0x65, 0x69, 0x67, 0x68, 0x74, 0x18, 0x04, 0x20,
-	0x01, 0x28, 0x03, 0x52, 0x12, 0x64, 0x65, 0x61, 0x63, 0x74, 0x69, 0x76, 0x61, 0x74, 0x69, 0x6f,
-	0x6e, 0x48, 0x65, 0x69, 0x67, 0x68, 0x74, 0x42, 0x9b, 0x01, 0xd8, 0xe2, 0x1e, 0x01, 0x0a, 0x11,
-	0x63, 0x6f, 0x6d, 0x2e, 0x70, 0x6f, 0x63, 0x6b, 0x65, 0x74, 0x2e, 0x73, 0x68, 0x61, 0x72, 0x65,
-	0x64, 0x42, 0x0d, 0x53, 0x75, 0x70, 0x70, 0x6c, 0x69, 0x65, 0x72, 0x50, 0x72, 0x6f, 0x74, 0x6f,
-	0x50, 0x01, 0x5a, 0x1e, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x73, 0x64, 0x6b, 0x2e, 0x69, 0x6f,
-	0x2f, 0x61, 0x70, 0x69, 0x2f, 0x70, 0x6f, 0x63, 0x6b, 0x65, 0x74, 0x2f, 0x73, 0x68, 0x61, 0x72,
-	0x65, 0x64, 0xa2, 0x02, 0x03, 0x50, 0x53, 0x58, 0xaa, 0x02, 0x0d, 0x50, 0x6f, 0x63, 0x6b, 0x65,
-	0x74, 0x2e, 0x53, 0x68, 0x61, 0x72, 0x65, 0x64, 0xca, 0x02, 0x0d, 0x50, 0x6f, 0x63, 0x6b, 0x65,
-	0x74, 0x5c, 0x53, 0x68, 0x61, 0x72, 0x65, 0x64, 0xe2, 0x02, 0x19, 0x50, 0x6f, 0x63, 0x6b, 0x65,
-	0x74, 0x5c, 0x53, 0x68, 0x61, 0x72, 0x65, 0x64, 0x5c, 0x47, 0x50, 0x42, 0x4d, 0x65, 0x74, 0x61,
-	0x64, 0x61, 0x74, 0x61, 0xea, 0x02, 0x0e, 0x50, 0x6f, 0x63, 0x6b, 0x65, 0x74, 0x3a, 0x3a, 0x53,
-	0x68, 0x61, 0x72, 0x65, 0x64, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+var file_pocket_shared_supplier_deprecated_proto_rawDesc = []byte{
+	0x0a, 0x27, 0x70, 0x6f, 0x63, 0x6b, 0x65, 0x74, 0x2f, 0x73, 0x68, 0x61, 0x72, 0x65, 0x64, 0x2f,
+	0x73, 0x75, 0x70, 0x70, 0x6c, 0x69, 0x65, 0x72, 0x2e, 0x64, 0x65, 0x70, 0x72, 0x65, 0x63, 0x61,
+	0x74, 0x65, 0x64, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x12, 0x0d, 0x70, 0x6f, 0x63, 0x6b, 0x65,
+	0x74, 0x2e, 0x73, 0x68, 0x61, 0x72, 0x65, 0x64, 0x1a, 0x19, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73,
+	0x5f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2f, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x70, 0x72,
+	0x6f, 0x74, 0x6f, 0x1a, 0x1e, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2f, 0x62, 0x61, 0x73, 0x65,
+	0x2f, 0x76, 0x31, 0x62, 0x65, 0x74, 0x61, 0x31, 0x2f, 0x63, 0x6f, 0x69, 0x6e, 0x2e, 0x70, 0x72,
+	0x6f, 0x74, 0x6f, 0x1a, 0x1b, 0x70, 0x6f, 0x63, 0x6b, 0x65, 0x74, 0x2f, 0x73, 0x68, 0x61, 0x72,
+	0x65, 0x64, 0x2f, 0x73, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f,
+	0x1a, 0x14, 0x67, 0x6f, 0x67, 0x6f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2f, 0x67, 0x6f, 0x67, 0x6f,
+	0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x22, 0xac, 0x03, 0x0a, 0x12, 0x53, 0x75, 0x70, 0x70, 0x6c,
+	0x69, 0x65, 0x72, 0x44, 0x65, 0x70, 0x72, 0x65, 0x63, 0x61, 0x74, 0x65, 0x64, 0x12, 0x3d, 0x0a,
+	0x0d, 0x6f, 0x77, 0x6e, 0x65, 0x72, 0x5f, 0x61, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x18, 0x01,
+	0x20, 0x01, 0x28, 0x09, 0x42, 0x18, 0xd2, 0xb4, 0x2d, 0x14, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73,
+	0x2e, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x53, 0x74, 0x72, 0x69, 0x6e, 0x67, 0x52, 0x0c,
+	0x6f, 0x77, 0x6e, 0x65, 0x72, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x12, 0x43, 0x0a, 0x10,
+	0x6f, 0x70, 0x65, 0x72, 0x61, 0x74, 0x6f, 0x72, 0x5f, 0x61, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73,
+	0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x42, 0x18, 0xd2, 0xb4, 0x2d, 0x14, 0x63, 0x6f, 0x73, 0x6d,
+	0x6f, 0x73, 0x2e, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x53, 0x74, 0x72, 0x69, 0x6e, 0x67,
+	0x52, 0x0f, 0x6f, 0x70, 0x65, 0x72, 0x61, 0x74, 0x6f, 0x72, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73,
+	0x73, 0x12, 0x2f, 0x0a, 0x05, 0x73, 0x74, 0x61, 0x6b, 0x65, 0x18, 0x03, 0x20, 0x01, 0x28, 0x0b,
+	0x32, 0x19, 0x2e, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x62, 0x61, 0x73, 0x65, 0x2e, 0x76,
+	0x31, 0x62, 0x65, 0x74, 0x61, 0x31, 0x2e, 0x43, 0x6f, 0x69, 0x6e, 0x52, 0x05, 0x73, 0x74, 0x61,
+	0x6b, 0x65, 0x12, 0x40, 0x0a, 0x08, 0x73, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x73, 0x18, 0x04,
+	0x20, 0x03, 0x28, 0x0b, 0x32, 0x24, 0x2e, 0x70, 0x6f, 0x63, 0x6b, 0x65, 0x74, 0x2e, 0x73, 0x68,
+	0x61, 0x72, 0x65, 0x64, 0x2e, 0x53, 0x75, 0x70, 0x70, 0x6c, 0x69, 0x65, 0x72, 0x53, 0x65, 0x72,
+	0x76, 0x69, 0x63, 0x65, 0x43, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x52, 0x08, 0x73, 0x65, 0x72, 0x76,
+	0x69, 0x63, 0x65, 0x73, 0x12, 0x3b, 0x0a, 0x1a, 0x75, 0x6e, 0x73, 0x74, 0x61, 0x6b, 0x65, 0x5f,
+	0x73, 0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x5f, 0x65, 0x6e, 0x64, 0x5f, 0x68, 0x65, 0x69, 0x67,
+	0x68, 0x74, 0x18, 0x05, 0x20, 0x01, 0x28, 0x04, 0x52, 0x17, 0x75, 0x6e, 0x73, 0x74, 0x61, 0x6b,
+	0x65, 0x53, 0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x45, 0x6e, 0x64, 0x48, 0x65, 0x69, 0x67, 0x68,
+	0x74, 0x12, 0x62, 0x0a, 0x16, 0x73, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x5f, 0x63, 0x6f, 0x6e,
+	0x66, 0x69, 0x67, 0x5f, 0x68, 0x69, 0x73, 0x74, 0x6f, 0x72, 0x79, 0x18, 0x06, 0x20, 0x03, 0x28,
+	0x0b, 0x32, 0x2c, 0x2e, 0x70, 0x6f, 0x63, 0x6b, 0x65, 0x74, 0x2e, 0x73, 0x68, 0x61, 0x72, 0x65,
+	0x64, 0x2e, 0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x43, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x55,
+	0x70, 0x64, 0x61, 0x74, 0x65, 0x44, 0x65, 0x70, 0x72, 0x65, 0x63, 0x61, 0x74, 0x65, 0x64, 0x52,
+	0x14, 0x73, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x43, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x48, 0x69,
+	0x73, 0x74, 0x6f, 0x72, 0x79, 0x22, 0x97, 0x01, 0x0a, 0x1d, 0x53, 0x65, 0x72, 0x76, 0x69, 0x63,
+	0x65, 0x43, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x44, 0x65, 0x70,
+	0x72, 0x65, 0x63, 0x61, 0x74, 0x65, 0x64, 0x12, 0x40, 0x0a, 0x08, 0x73, 0x65, 0x72, 0x76, 0x69,
+	0x63, 0x65, 0x73, 0x18, 0x01, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x24, 0x2e, 0x70, 0x6f, 0x63, 0x6b,
+	0x65, 0x74, 0x2e, 0x73, 0x68, 0x61, 0x72, 0x65, 0x64, 0x2e, 0x53, 0x75, 0x70, 0x70, 0x6c, 0x69,
+	0x65, 0x72, 0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x43, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x52,
+	0x08, 0x73, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x73, 0x12, 0x34, 0x0a, 0x16, 0x65, 0x66, 0x66,
+	0x65, 0x63, 0x74, 0x69, 0x76, 0x65, 0x5f, 0x62, 0x6c, 0x6f, 0x63, 0x6b, 0x5f, 0x68, 0x65, 0x69,
+	0x67, 0x68, 0x74, 0x18, 0x02, 0x20, 0x01, 0x28, 0x04, 0x52, 0x14, 0x65, 0x66, 0x66, 0x65, 0x63,
+	0x74, 0x69, 0x76, 0x65, 0x42, 0x6c, 0x6f, 0x63, 0x6b, 0x48, 0x65, 0x69, 0x67, 0x68, 0x74, 0x42,
+	0xa5, 0x01, 0xd8, 0xe2, 0x1e, 0x01, 0x0a, 0x11, 0x63, 0x6f, 0x6d, 0x2e, 0x70, 0x6f, 0x63, 0x6b,
+	0x65, 0x74, 0x2e, 0x73, 0x68, 0x61, 0x72, 0x65, 0x64, 0x42, 0x17, 0x53, 0x75, 0x70, 0x70, 0x6c,
+	0x69, 0x65, 0x72, 0x44, 0x65, 0x70, 0x72, 0x65, 0x63, 0x61, 0x74, 0x65, 0x64, 0x50, 0x72, 0x6f,
+	0x74, 0x6f, 0x50, 0x01, 0x5a, 0x1e, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x73, 0x64, 0x6b, 0x2e,
+	0x69, 0x6f, 0x2f, 0x61, 0x70, 0x69, 0x2f, 0x70, 0x6f, 0x63, 0x6b, 0x65, 0x74, 0x2f, 0x73, 0x68,
+	0x61, 0x72, 0x65, 0x64, 0xa2, 0x02, 0x03, 0x50, 0x53, 0x58, 0xaa, 0x02, 0x0d, 0x50, 0x6f, 0x63,
+	0x6b, 0x65, 0x74, 0x2e, 0x53, 0x68, 0x61, 0x72, 0x65, 0x64, 0xca, 0x02, 0x0d, 0x50, 0x6f, 0x63,
+	0x6b, 0x65, 0x74, 0x5c, 0x53, 0x68, 0x61, 0x72, 0x65, 0x64, 0xe2, 0x02, 0x19, 0x50, 0x6f, 0x63,
+	0x6b, 0x65, 0x74, 0x5c, 0x53, 0x68, 0x61, 0x72, 0x65, 0x64, 0x5c, 0x47, 0x50, 0x42, 0x4d, 0x65,
+	0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0xea, 0x02, 0x0e, 0x50, 0x6f, 0x63, 0x6b, 0x65, 0x74, 0x3a,
+	0x3a, 0x53, 0x68, 0x61, 0x72, 0x65, 0x64, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
-	file_pocket_shared_supplier_proto_rawDescOnce sync.Once
-	file_pocket_shared_supplier_proto_rawDescData = file_pocket_shared_supplier_proto_rawDesc
+	file_pocket_shared_supplier_deprecated_proto_rawDescOnce sync.Once
+	file_pocket_shared_supplier_deprecated_proto_rawDescData = file_pocket_shared_supplier_deprecated_proto_rawDesc
 )
 
-func file_pocket_shared_supplier_proto_rawDescGZIP() []byte {
-	file_pocket_shared_supplier_proto_rawDescOnce.Do(func() {
-		file_pocket_shared_supplier_proto_rawDescData = protoimpl.X.CompressGZIP(file_pocket_shared_supplier_proto_rawDescData)
+func file_pocket_shared_supplier_deprecated_proto_rawDescGZIP() []byte {
+	file_pocket_shared_supplier_deprecated_proto_rawDescOnce.Do(func() {
+		file_pocket_shared_supplier_deprecated_proto_rawDescData = protoimpl.X.CompressGZIP(file_pocket_shared_supplier_deprecated_proto_rawDescData)
 	})
-	return file_pocket_shared_supplier_proto_rawDescData
+	return file_pocket_shared_supplier_deprecated_proto_rawDescData
 }
 
-var file_pocket_shared_supplier_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
-var file_pocket_shared_supplier_proto_goTypes = []interface{}{
-	(*Supplier)(nil),              // 0: pocket.shared.Supplier
-	(*ServiceConfigUpdate)(nil),   // 1: pocket.shared.ServiceConfigUpdate
-	(*v1beta1.Coin)(nil),          // 2: cosmos.base.v1beta1.Coin
-	(*SupplierServiceConfig)(nil), // 3: pocket.shared.SupplierServiceConfig
+var file_pocket_shared_supplier_deprecated_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
+var file_pocket_shared_supplier_deprecated_proto_goTypes = []interface{}{
+	(*SupplierDeprecated)(nil),            // 0: pocket.shared.SupplierDeprecated
+	(*ServiceConfigUpdateDeprecated)(nil), // 1: pocket.shared.ServiceConfigUpdateDeprecated
+	(*v1beta1.Coin)(nil),                  // 2: cosmos.base.v1beta1.Coin
+	(*SupplierServiceConfig)(nil),         // 3: pocket.shared.SupplierServiceConfig
 }
-var file_pocket_shared_supplier_proto_depIdxs = []int32{
-	2, // 0: pocket.shared.Supplier.stake:type_name -> cosmos.base.v1beta1.Coin
-	3, // 1: pocket.shared.Supplier.services:type_name -> pocket.shared.SupplierServiceConfig
-	1, // 2: pocket.shared.Supplier.service_config_history:type_name -> pocket.shared.ServiceConfigUpdate
-	3, // 3: pocket.shared.ServiceConfigUpdate.service:type_name -> pocket.shared.SupplierServiceConfig
+var file_pocket_shared_supplier_deprecated_proto_depIdxs = []int32{
+	2, // 0: pocket.shared.SupplierDeprecated.stake:type_name -> cosmos.base.v1beta1.Coin
+	3, // 1: pocket.shared.SupplierDeprecated.services:type_name -> pocket.shared.SupplierServiceConfig
+	1, // 2: pocket.shared.SupplierDeprecated.service_config_history:type_name -> pocket.shared.ServiceConfigUpdateDeprecated
+	3, // 3: pocket.shared.ServiceConfigUpdateDeprecated.services:type_name -> pocket.shared.SupplierServiceConfig
 	4, // [4:4] is the sub-list for method output_type
 	4, // [4:4] is the sub-list for method input_type
 	4, // [4:4] is the sub-list for extension type_name
@@ -1763,15 +1669,15 @@ var file_pocket_shared_supplier_proto_depIdxs = []int32{
 	0, // [0:4] is the sub-list for field type_name
 }
 
-func init() { file_pocket_shared_supplier_proto_init() }
-func file_pocket_shared_supplier_proto_init() {
-	if File_pocket_shared_supplier_proto != nil {
+func init() { file_pocket_shared_supplier_deprecated_proto_init() }
+func file_pocket_shared_supplier_deprecated_proto_init() {
+	if File_pocket_shared_supplier_deprecated_proto != nil {
 		return
 	}
 	file_pocket_shared_service_proto_init()
 	if !protoimpl.UnsafeEnabled {
-		file_pocket_shared_supplier_proto_msgTypes[0].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*Supplier); i {
+		file_pocket_shared_supplier_deprecated_proto_msgTypes[0].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*SupplierDeprecated); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -1782,8 +1688,8 @@ func file_pocket_shared_supplier_proto_init() {
 				return nil
 			}
 		}
-		file_pocket_shared_supplier_proto_msgTypes[1].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ServiceConfigUpdate); i {
+		file_pocket_shared_supplier_deprecated_proto_msgTypes[1].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*ServiceConfigUpdateDeprecated); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -1799,18 +1705,18 @@ func file_pocket_shared_supplier_proto_init() {
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: file_pocket_shared_supplier_proto_rawDesc,
+			RawDescriptor: file_pocket_shared_supplier_deprecated_proto_rawDesc,
 			NumEnums:      0,
 			NumMessages:   2,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
-		GoTypes:           file_pocket_shared_supplier_proto_goTypes,
-		DependencyIndexes: file_pocket_shared_supplier_proto_depIdxs,
-		MessageInfos:      file_pocket_shared_supplier_proto_msgTypes,
+		GoTypes:           file_pocket_shared_supplier_deprecated_proto_goTypes,
+		DependencyIndexes: file_pocket_shared_supplier_deprecated_proto_depIdxs,
+		MessageInfos:      file_pocket_shared_supplier_deprecated_proto_msgTypes,
 	}.Build()
-	File_pocket_shared_supplier_proto = out.File
-	file_pocket_shared_supplier_proto_rawDesc = nil
-	file_pocket_shared_supplier_proto_goTypes = nil
-	file_pocket_shared_supplier_proto_depIdxs = nil
+	File_pocket_shared_supplier_deprecated_proto = out.File
+	file_pocket_shared_supplier_deprecated_proto_rawDesc = nil
+	file_pocket_shared_supplier_deprecated_proto_goTypes = nil
+	file_pocket_shared_supplier_deprecated_proto_depIdxs = nil
 }
