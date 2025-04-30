@@ -29,6 +29,7 @@ import (
 
 	"github.com/pokt-network/poktroll/app"
 	"github.com/pokt-network/poktroll/testutil/proof/mocks"
+	sharedtest "github.com/pokt-network/poktroll/testutil/shared"
 	appkeeper "github.com/pokt-network/poktroll/x/application/keeper"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	gatewaykeeper "github.com/pokt-network/poktroll/x/gateway/keeper"
@@ -302,19 +303,14 @@ func (keepers *ProofModuleKeepers) AddServiceActors(
 ) {
 	t.Helper()
 
+	supplierServices := []*sharedtypes.SupplierServiceConfig{
+		{ServiceId: service.Id},
+	}
+	serviceConfigHistory := sharedtest.CreateServiceConfigUpdateHistoryFromServiceConfigs(supplierOperatorAddr, supplierServices, 1, 0)
 	keepers.SetSupplier(ctx, sharedtypes.Supplier{
-		OperatorAddress: supplierOperatorAddr,
-		Services: []*sharedtypes.SupplierServiceConfig{
-			{ServiceId: service.Id},
-		},
-		ServiceConfigHistory: []*sharedtypes.ServiceConfigUpdate{
-			{
-				Services: []*sharedtypes.SupplierServiceConfig{
-					{ServiceId: service.Id},
-				},
-				EffectiveBlockHeight: 1,
-			},
-		},
+		OperatorAddress:      supplierOperatorAddr,
+		Services:             supplierServices,
+		ServiceConfigHistory: serviceConfigHistory,
 	})
 
 	keepers.SetApplication(ctx, apptypes.Application{

@@ -23,20 +23,30 @@ func (k Keeper) EndBlockerUnbondSuppliers(ctx context.Context) (numUnbondedSuppl
 
 	logger := k.Logger().With("method", "UnbondSupplier")
 
-	// Iterate over all suppliers and unbond suppliers that have finished the unbonding period.
-	// TODO_POST_MAINNET(@red-0ne): Use an index to iterate over suppliers that have initiated the
-	// unbonding action instead of iterating over all suppliers.
-	allSuppliersIterator := k.GetAllSuppliersIterator(ctx)
-	defer allSuppliersIterator.Close()
-	for ; allSuppliersIterator.Valid(); allSuppliersIterator.Next() {
-		supplier, err := allSuppliersIterator.Value()
-		if err != nil {
-			logger.Error(fmt.Sprintf("could not get supplier from iterator: %v", err))
+	// Iterate over all unstaking suppliers and unbond suppliers that have finished the unbonding period.
+	allUnstakingSuppliersIterator := k.GetAllUnstakingSuppliersIterator(ctx)
+	defer allUnstakingSuppliersIterator.Close()
+
+	for ; allUnstakingSuppliersIterator.Valid(); allUnstakingSuppliersIterator.Next() {
+		supplierAddress := allUnstakingSuppliersIterator.Value()
+		// Get dehydrated supplier from the store to avoid unmarshalling all the supplier service configs.
+		supplier, found := k.GetDehydratedSupplier(ctx, string(supplierAddress))
+		if !found {
+			// We should be able to find the supplier if it is in the iterator.
+			err := fmt.Errorf("should never happen: could not find unbonding supplier %s", supplierAddress)
+			logger.Error(err.Error())
 			return numUnbondedSuppliers, err
 		}
 
-		// Ignore suppliers that have not initiated the unbonding action.
+		// Ignore suppliers that have not initiated the unbonding action
+		// because this function is only responsible for unbonding.
 		if !supplier.IsUnbonding() {
+			// If we are getting the supplier from the unbonding store and it is not
+			// unbonding, this means that there is a dangling entry in the index.
+			// Log the error, remove the index entry but continue to the next supplier.
+			err := fmt.Errorf("should never happen: found supplier %s in unbonding store but it is not unbonding", supplierAddress)
+			logger.Error(err.Error())
+			k.removeSupplierUnstakingHeightIndex(ctx, supplier.OperatorAddress)
 			continue
 		}
 
@@ -78,6 +88,11 @@ func (k Keeper) EndBlockerUnbondSuppliers(ctx context.Context) (numUnbondedSuppl
 			}
 		}
 
+		// TODO_CONSIDERATION: Should we hydrate the supplier service configurations
+		// to expose the full supplier information to the event?
+		// This can result in a lot of state bloat.
+		// k.hydrateSupplierServiceConfigs(ctx, &supplier)
+
 		// Remove the supplier from the store.
 		k.RemoveSupplier(ctx, supplierOperatorAddress.String())
 		logger.Info(fmt.Sprintf("Successfully removed the supplier: %+v", supplier))
@@ -87,7 +102,7 @@ func (k Keeper) EndBlockerUnbondSuppliers(ctx context.Context) (numUnbondedSuppl
 			unbondingReason = suppliertypes.SupplierUnbondingReason_SUPPLIER_UNBONDING_REASON_BELOW_MIN_STAKE
 		}
 
-		// Emit an event which signals that the supplier has sucessfully unbonded.
+		// Emit an event which signals that the supplier has successfully unbonded.
 		sessionEndHeight := sharedtypes.GetSessionEndHeight(&sharedParams, currentHeight)
 		unbondingEndEvent := &suppliertypes.EventSupplierUnbondingEnd{
 			Supplier:           &supplier,

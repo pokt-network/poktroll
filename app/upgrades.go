@@ -45,7 +45,10 @@ var allUpgrades = []upgrades.Upgrade{
 	// upgrades.Upgrade_0_1_6,
 
 	// v0.1.7 - upgrade to mint and distribute Morse Account Claimer Tokens.
-	upgrades.Upgrade_0_1_7,
+	// upgrades.Upgrade_0_1_7,
+
+	// v0.1.8 - upgrade to enable suppliers service config indexing and more granular hydration
+	upgrades.Upgrade_0_1_8,
 }
 
 // setUpgrades sets upgrade handlers for all upgrades and executes KVStore migration if an upgrade plan file exists.

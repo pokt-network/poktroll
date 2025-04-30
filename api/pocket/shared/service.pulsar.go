@@ -3396,11 +3396,11 @@ type Service struct {
 
 	// For example, what if we want to request a session for a certain service but with some additional configs that identify it?
 	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"` // Unique identifier for the service
-	// TODO_MAINNET_MIGRATION(@bryanchriswhite): Either remove this or rename it to alias.
-	Name string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"` // (Optional) Semantic human readable name for the service
+	// TODO_POST_MAINNET: Rename service.name to service.description
+	Name string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"` // (Optional) Human readable description of the service
 	// The cost of a single relay for this service in terms of compute units.
-	// Must be used alongside the global 'compute_units_to_tokens_multipler' to calculate the cost of a relay for this service.
-	// cost_per_relay_for_specific_service = compute_units_per_relay_for_specific_service * compute_units_to_tokens_multipler_global_value
+	// Must be used alongside the global 'compute_units_to_tokens_multiplier' to calculate the cost of a relay for this service.
+	// cost_per_relay_for_specific_service = compute_units_per_relay_for_specific_service * compute_units_to_tokens_multiplier_global_value
 	ComputeUnitsPerRelay uint64 `protobuf:"varint,3,opt,name=compute_units_per_relay,json=computeUnitsPerRelay,proto3" json:"compute_units_per_relay,omitempty"` // Compute units required per relay for this service
 	// The owner address that created the service.
 	// It is the address that receives rewards based on the Service's onchain usage

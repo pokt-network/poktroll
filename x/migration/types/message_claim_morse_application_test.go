@@ -2,6 +2,7 @@ package types_test
 
 import (
 	"fmt"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -83,21 +84,14 @@ func TestMsgClaimMorseApplication_ValidateBasic(t *testing.T) {
 		msg, err := migrationtypes.NewMsgClaimMorseApplication(
 			sample.AccAddress(),
 			morsePrivKey,
-			&sharedtypes.ApplicationServiceConfig{ServiceId: "invalid_service_id"},
+			&sharedtypes.ApplicationServiceConfig{ServiceId: strings.Repeat("a", 43)},
 			sample.AccAddress(),
 		)
 		require.NoError(t, err)
 
-		expectedErr := migrationtypes.ErrMorseApplicationClaim.Wrapf(
-			"invalid service config: %s",
-			sharedtypes.ErrSharedInvalidService.Wrapf(
-				"invalid service ID: %q",
-				msg.GetServiceConfig().GetServiceId(),
-			),
-		)
-
+		expectedErr := sharedtypes.ErrSharedInvalidServiceId
 		err = msg.ValidateBasic()
-		require.EqualError(t, err, expectedErr.Error())
+		require.ErrorContains(t, err, expectedErr.Error())
 	})
 
 	t.Run("valid Morse claim account message", func(t *testing.T) {

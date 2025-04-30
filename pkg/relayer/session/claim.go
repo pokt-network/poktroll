@@ -20,12 +20,12 @@ import (
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
-// The cumulative fees of creating a single claim, followed by submitting a single proof.
-// The value was obtained empirically by observing logs during load testing and observing
-// the claim & proof lifecycle.
-// The gas price at the time of observance was 0.01uPOKT.
-// The value is subject to change as the network parameters change.
-var ClamAndProofGasCost = sdktypes.NewInt64Coin(volatile.DenomuPOKT, 50000)
+// Cumulative (observed) gas fees for creating a single claim and submitting a single proof:
+// - Gas price at time of observance: 0.01uPOKT
+// - Value obtained empirically by observing logs during load testing
+// - Value may change as network parameters change
+// - This value is a function of the claim & proof message sizes
+var ClamAndProofGasCost = sdktypes.NewInt64Coin(volatile.DenomuPOKT, 100_000)
 
 // createClaims maps over the sessionsToClaimObs observable. For each claim batch, it:
 // 1. Calculates the earliest block height at which it is safe to CreateClaims
@@ -275,9 +275,9 @@ func (rs *relayerSessionsManager) payableProofsSessionTrees(
 	ctx context.Context,
 	sessionTrees []relayer.SessionTree,
 ) ([]relayer.SessionTree, error) {
-	supplierOpeartorAddress := sessionTrees[0].GetSupplierOperatorAddress()
+	supplierOperatorAddress := sessionTrees[0].GetSupplierOperatorAddress()
 	logger := rs.logger.With(
-		"supplier_operator_address", supplierOpeartorAddress,
+		"supplier_operator_address", supplierOperatorAddress,
 	)
 
 	proofParams, err := rs.proofQueryClient.GetParams(ctx)
@@ -285,13 +285,14 @@ func (rs *relayerSessionsManager) payableProofsSessionTrees(
 		return nil, err
 	}
 
-	// Account for the gas cost of creating a claim and submitting a proof in addition
-	// to the ProofSubmissionFee.
-	claimAndProofSubmissionCost := proofParams.GetProofSubmissionFee().Add(ClamAndProofGasCost)
+	// Account for the gas cost of creating a claim and submitting a proof.
+	// This accounts for onchain fees (pocket specific) and gas costs (network wide).
+	proofSubmissionFee := proofParams.GetProofSubmissionFee()
+	claimAndProofSubmissionCost := proofSubmissionFee.Add(ClamAndProofGasCost)
 
 	supplierOperatorBalanceCoin, err := rs.bankQueryClient.GetBalance(
 		ctx,
-		sessionTrees[0].GetSupplierOperatorAddress(),
+		supplierOperatorAddress,
 	)
 	if err != nil {
 		return nil, err
@@ -326,8 +327,8 @@ func (rs *relayerSessionsManager) payableProofsSessionTrees(
 
 	claimableSessionTrees := []relayer.SessionTree{}
 	for _, sessionTree := range sessionTrees {
-		// If the supplier operator can afford to claim the session, add it to the
-		// claimableSessionTrees slice.
+		// Supplier CAN afford to claim the session.
+		// Add it to the claimableSessionTrees slice.
 		supplierCanAffordClaimAndProofFees := supplierOperatorBalanceCoin.IsGTE(claimAndProofSubmissionCost)
 		if supplierCanAffordClaimAndProofFees {
 			claimableSessionTrees = append(claimableSessionTrees, sessionTree)
@@ -336,7 +337,7 @@ func (rs *relayerSessionsManager) payableProofsSessionTrees(
 			continue
 		}
 
-		// At this point supplierCanAffordClaimAndProofFees is false.
+		// Supplier CANNOT afford to claim the session.
 		// Delete the session tree from the relayer sessions and the KVStore since
 		// it won't be claimed due to insufficient funds.
 		rs.removeFromRelayerSessions(sessionTree)
@@ -350,14 +351,15 @@ func (rs *relayerSessionsManager) payableProofsSessionTrees(
 		logger.With(
 			"session_id", sessionTree.GetSessionHeader().GetSessionId(),
 			"supplier_operator_balance", supplierOperatorBalanceCoin,
-			"proof_submission_fee", claimAndProofSubmissionCost,
+			"proof_submission_fee", proofSubmissionFee,
+			"claim_and_proof_gas_cost", ClamAndProofGasCost,
 		).Warn().Msg("supplier operator cannot afford to submit proof for claim, deleting session tree")
 	}
 
 	if len(claimableSessionTrees) < len(sessionTrees) {
 		logger.Warn().Msgf(
 			"Supplier operator %q can only afford %d out of %d claims",
-			supplierOpeartorAddress, len(claimableSessionTrees), len(sessionTrees),
+			supplierOperatorAddress, len(claimableSessionTrees), len(sessionTrees),
 		)
 	}
 
