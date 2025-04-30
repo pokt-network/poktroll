@@ -8,14 +8,14 @@ sidebar_position: 5
 This guide covers the process of sending tokens from one account to another on
 Pocket Network using the `pocketd` command-line interface (CLI).
 
-- [Pre-requisites](#pre-requisites)
+- [Prerequisites](#prerequisites)
 - [Step 1: Preparing a Node Endpoint](#step-1-preparing-a-node-endpoint)
 - [Step 2: Sending Tokens](#step-2-sending-tokens)
 - [Step 3: Confirming the Transaction](#step-3-confirming-the-transaction)
 - [Step 4: Transaction Completion](#step-4-transaction-completion)
 - [Additional Flags](#additional-flags)
 
-## Pre-requisites
+## Prerequisites
 
 1. `pocketd` is installed on your system; see the [installation guide](./pocketd_cli.md) for more details
 2. You have access to your wallet with sufficient tokens for the transaction and fees

@@ -19,7 +19,7 @@ See the [Full Node Walkthrough](../walkthroughs/full_node_walkthrough.md) if you
 
 ## Table of Contents <!-- omit in toc -->
 
-- [Pre-Requisites \& Requirements](#pre-requisites--requirements)
+- [Pre-Requisites \& Requirements](#prerequisites--requirements)
 - [10 Minute Video Walkthrough](#10-minute-video-walkthrough)
 - [Install and Run a Full Node using Cosmovisor](#install-and-run-a-full-node-using-cosmovisor)
   - [Verify successful installation using `curl`](#verify-successful-installation-using-curl)

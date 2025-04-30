@@ -14,7 +14,7 @@ See the [Validator Cheat Sheet](../cheat_sheets/validator_cheatsheet.md) if you 
 :::
 
 - [Introduction](#introduction)
-- [Pre-Requisites \& Requirements](#pre-requisites--requirements)
+- [Pre-Requisites \& Requirements](#prerequisites--requirements)
 - [2. Account Setup](#2-account-setup)
   - [2.1. Create the Validator Account](#21-create-the-validator-account)
   - [2.2. Prepare your environment](#22-prepare-your-environment)

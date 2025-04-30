@@ -16,12 +16,12 @@ before proceeding.
 Losing access to your wallet can be stressful, but if you've backed up your mnemonic
 seed phrase, recovering your account is straightforward!
 
-- [Pre-requisites](#pre-requisites)
+- [Prerequisites](#prerequisites)
 - [Step 1: Prepare to Recover Your Wallet](#step-1-prepare-to-recover-your-wallet)
 - [Step 2: Recovering the Wallet](#step-2-recovering-the-wallet)
 - [Step 3: Verify Wallet Recovery](#step-3-verify-wallet-recovery)
 
-## Pre-requisites
+## Prerequisites
 
 - You have the mnemonic seed phrase of the wallet you wish to recover
 - `pocketd` is installed on your system; see the [installation guide](./pocketd_cli.md) for more details

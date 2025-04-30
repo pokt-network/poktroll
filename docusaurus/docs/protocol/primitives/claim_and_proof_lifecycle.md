@@ -16,7 +16,7 @@ to all readers.
 
 - [Introduction](#introduction)
 - [Session Windows \& Onchain Parameters](#session-windows--onchain-parameters)
-    - [References:](#references)
+  - [References:](#references)
   - [Claim Expiration](#claim-expiration)
 - [Session](#session)
   - [Session Duration](#session-duration)
@@ -154,7 +154,7 @@ Claims MUST expire (and therefore the proof window MUST close) for the following
 
 ## Session
 
-A session is a necessary pre-requisite for the `Claim & Proof` lifecycle to work.
+A session is a necessary prerequisite for the `Claim & Proof` lifecycle to work.
 See [Session](./session.md) for more details.
 
 ### Session Duration
@@ -207,8 +207,8 @@ that were necessary to service that request.
 
 ### Protobuf Types
 
-| Type                                                                                                 | Description                                             |
-| ---------------------------------------------------------------------------------------------------- | ------------------------------------------------------- |
+| Type                                                                                               | Description                                            |
+| -------------------------------------------------------------------------------------------------- | ------------------------------------------------------ |
 | [`Claim`](https://github.com/pokt-network/poktroll/blob/main/proto/pocket/proof/claim.proto)       | A serialized version of the `Claim` is stored onchain. |
 | [`MsgCreateClaim`](https://github.com/pokt-network/poktroll/blob/main/proto/pocket/proof/tx.proto) | Submitted by a `Supplier` to store a claim `onchain`.  |
 
@@ -281,8 +281,8 @@ rewarded for the work done.
 
 ### Protobuf Types
 
-| Type                                                                                                 | Description                                                                                                                                                                  |
-| ---------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Type                                                                                               | Description                                                                                                                                                                 |
+| -------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | [`Proof`](https://github.com/pokt-network/poktroll/blob/main/proto/pocket/proof/proof.proto)       | A serialized version of the `Proof` is stored onchain.                                                                                                                      |
 | [`MsgSubmitProof`](https://github.com/pokt-network/poktroll/blob/main/proto/pocket/proof/tx.proto) | Submitted by a `Supplier` to store a proof `onchain`. If the `Proof` is invalid, or if there is no corresponding `Claim` for the `Proof`, the transaction will be rejected. |
 

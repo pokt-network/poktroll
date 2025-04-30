@@ -20,7 +20,7 @@ curl -sSL https://raw.githubusercontent.com/pokt-network/poktroll/main/scripts/i
 - [3. Alternative Methods](#3-alternative-methods)
   - [Using release binaries](#using-release-binaries)
   - [From Source (danger zone)](#from-source-danger-zone)
-    - [Installing dependencies](#installing-dependencies)
+    - [Installation dependencies](#installation-dependencies)
     - [Build from source](#build-from-source)
 - [4. Windows (why!?)](#4-windows-why)
 
@@ -28,14 +28,13 @@ curl -sSL https://raw.githubusercontent.com/pokt-network/poktroll/main/scripts/i
 
 ## 1. Install Script (Linux & MacOS)
 
-- Works on both Linux and MacOS.
-- Easiest, fastest way to get started.
+Easiest, fastest way to get started that works on both Linux and MacOS.
 
 ```bash
 curl -sSL https://raw.githubusercontent.com/pokt-network/poktroll/main/scripts/install.sh | bash
 ```
 
-**Verify installation:**
+Verify installation:
 
 ```bash
 pocketd version
@@ -46,10 +45,7 @@ pocketd --help
 
 ## 2. Homebrew (MacOS)
 
-- For MacOS users who prefer Homebrew.
-
-**Prerequisite:**
-Make sure you have [Homebrew](https://brew.sh/) installed.
+For MacOS users who prefer [Homebrew](https://brew.sh/).
 
 ```bash
 brew tap pokt-network/poktroll
@@ -58,14 +54,14 @@ brew install pocketd
 
 ### Troubleshooting Homebrew
 
-- If you have problems installing or upgrading `pocketd` via Homebrew:
+If you have problems installing or upgrading `pocketd` via Homebrew:
 
 ```bash
 brew update
 brew upgrade pocketd
 ```
 
-- If still not working, try:
+If it's still not working, try:
 
 ```bash
 brew tap --repair
@@ -75,7 +71,7 @@ brew tap pokt-network/poktroll
 brew install pocketd
 ```
 
-- Source code for the Homebrew formula: [homebrew-pocket](https://github.com/pokt-network/homebrew-pocket)
+The source code for the Homebrew formula can be found at [homebrew-pocket](https://github.com/pokt-network/homebrew-pocket).
 
 ---
 
@@ -105,6 +101,8 @@ sudo chmod +x /usr/local/bin/pocketd
 pocketd version
 ```
 
+Additional references and links:
+
 - Pre-built binaries: [releases page](https://github.com/pokt-network/poktroll/releases)
 - Latest release: [here](https://github.com/pokt-network/poktroll/releases/latest)
 
@@ -118,7 +116,7 @@ Do not continue unless you're a 🚀👨‍💻💎
 For **ADVANCED** users only. Requires developer tools.
 :::
 
-#### Installing dependencies
+#### Installation dependencies
 
 - [Go](https://go.dev/doc/install) (v1.23+)
 - [Make](https://www.gnu.org/software/make/)

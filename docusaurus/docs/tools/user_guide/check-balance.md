@@ -19,12 +19,12 @@ Knowing your account's balance is crucial for effective transaction management
 on Pocket Network. This guide provides the necessary steps to check your wallet's
 balance using the `pocketd` command-line interface (CLI).
 
-- [Pre-requisites](#pre-requisites)
+- [Prerequisites](#prerequisites)
 - [Step 1: Preparing the Query](#step-1-preparing-the-query)
 - [Step 2: Viewing the Balance](#step-2-viewing-the-balance)
 - [Accessing non-local environments](#accessing-non-local-environments)
 
-## Pre-requisites
+## Prerequisites
 
 1. `pocketd` is installed on your system; see the [installation guide](./pocketd_cli.md) for more details
 2. You have the address of the wallet you wish to check

@@ -23,7 +23,7 @@ streamline development and reduce friction for any new potential contributor.
 :::
 
 - [System Requirements](#system-requirements)
-- [Pre-Requisites](#pre-requisites)
+- [Pre-Requisites](#prerequisites)
   - [Context](#context)
 - [Video Walkthrough](#20-minute-video-walkthrough)
 - [Account Setup](#account-setup)

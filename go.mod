@@ -85,6 +85,7 @@ require (
 	github.com/foxcpp/go-mockdns v1.1.0
 	github.com/jhump/protoreflect v1.16.0
 	github.com/mitchellh/mapstructure v1.5.0
+	github.com/noot/ring-go v0.0.0-20240617213643-1a8bebebd522
 	go.uber.org/mock v0.5.0
 	golang.org/x/term v0.29.0
 )

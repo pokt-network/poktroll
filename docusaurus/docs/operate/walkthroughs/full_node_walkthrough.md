@@ -23,7 +23,7 @@ See the [Full Node Cheat Sheet](../cheat_sheets/full_node_cheatsheet.md) if you 
 ## Table of Contents <!-- omit in toc -->
 
 - [Why run a Full Node?](#why-run-a-full-node)
-- [Pre-Requisites \& Requirements](#pre-requisites--requirements)
+- [Pre-Requisites \& Requirements](#prerequisites--requirements)
 - [Instructions](#instructions)
   - [1. Install Dependencies](#1-install-dependencies)
   - [2. Create a New User](#2-create-a-new-user)

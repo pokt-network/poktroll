@@ -3,11 +3,11 @@ title: Create a New Wallet
 sidebar_position: 2
 ---
 
-# Create a New Wallet <!-- omit in toc -->
+## Create a New Wallet <!-- omit in toc -->
 
-:::warning
+:::tip TL;DR
 
-tl;dr IFF you know what you're doing.
+**If you know what you're doing and need one new address::**
 
 ```bash
 # Add a new wallet
@@ -19,6 +19,8 @@ pocketd keys show $USER -a
 Use the `address` and go to the [Beta TestNet Faucet](https://faucet.beta.testnet.pokt.network/) to fund your account.
 
 :::
+
+## Table of Contents <!-- omit in toc -->
 
 This guide will walk you through creating a new wallet on the Pocket Network.
 

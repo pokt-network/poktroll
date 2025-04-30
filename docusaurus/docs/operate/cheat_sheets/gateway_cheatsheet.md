@@ -20,7 +20,7 @@ streamline development and reduce friction for any new potential contributor.
 
 :::
 
-- [Pre-Requisites](#pre-requisites)
+- [Pre-Requisites](#prerequisites)
 - [Account Setup](#account-setup)
   - [Create and fund the `Gateway` and `Application` accounts](#create-and-fund-the-gateway-and-application-accounts)
   - [Prepare your environment](#prepare-your-environment)
