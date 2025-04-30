@@ -443,6 +443,9 @@ func TestMsgServer_UnstakeSupplier_OperatorCanUnstake(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, uint64(1), numUnbondedSuppliers)
 
+	// The supplier returned by the UnbondSupplier process is dehydrated
+	foundSupplier.Services = nil
+	foundSupplier.ServiceConfigHistory = nil
 	// Assert that the EventSupplierUnbondingEnd event is emitted.
 	expectedEvent, err = cosmostypes.TypedEventToEvent(&suppliertypes.EventSupplierUnbondingEnd{
 		Supplier:           &foundSupplier,

@@ -100,6 +100,10 @@ func (k msgServer) UnstakeSupplier(
 	// Update the supplier record in state
 	k.SetSupplier(ctx, supplier)
 
+	// dehydrate the supplier to avoid sending the entire object
+	supplier.Services = nil
+	supplier.ServiceConfigHistory = nil
+
 	// Emit an event signaling that the supplier has begun the unbonding process
 	unbondingEndHeight := sharedtypes.GetSupplierUnbondingEndHeight(&sharedParams, &supplier)
 	event := &suppliertypes.EventSupplierUnbondingBegin{
