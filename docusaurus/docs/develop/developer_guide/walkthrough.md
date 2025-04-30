@@ -448,8 +448,6 @@ suppliers:
     listen_url: http://localhost:6942
     service_config:
       backend_url: http://localhost:8547
-      publicly_exposed_endpoints:
-        - localhost
 pprof:
   enabled: false
   addr: localhost:6060
