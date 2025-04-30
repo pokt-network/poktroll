@@ -1,4 +1,4 @@
-package mocks
+package shared
 
 // DEV_NOTE: This file was manually implemented (rather than using mockgen)
 // to provide a common default behaviour in tests.

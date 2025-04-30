@@ -36,8 +36,6 @@ You can find a fully featured example configuration at [relayminer_config_full_e
     - [`backend_url`](#backend_url)
     - [`authentication`](#authentication)
     - [`headers`](#headers)
-    - [`publicly_exposed_endpoints`](#publicly_exposed_endpoints)
-      - [Why should one supplier have multiple `publicly_exposed_endpoints`?](#why-should-one-supplier-have-multiple-publicly_exposed_endpoints)
 - [Configuring Signing Keys](#configuring-signing-keys)
   - [Example Configuration](#example-configuration)
 - [Supported server types](#supported-server-types)
@@ -233,9 +231,7 @@ to Pocket Network. It specifies exactly where those requests will be forwarded
 to by the Supplier's infrastructure.
 
 Each suppliers entry's `service_id` MUST reflect the onchain `Service.Id` the
-supplier staked for. In addition, the `publicly_exposed_endpoints` list MUST
-contain the same endpoints that the Supplier advertised onchain when staking for
-that service.
+supplier staked for.
 
 At least one supplier is required for the `RelayMiner` to be functional.
 
@@ -250,8 +246,6 @@ suppliers:
         password: <string>
       headers:
         <key>: <value>
-      publicly_exposed_endpoints:
-        - <host>
 ```
 
 ### `service_id`
@@ -279,11 +273,6 @@ _`Required`_
 
 The address on which the `RelayMiner` will start a server to listen for incoming
 requests. The server type is inferred from the URL scheme (http, https, etc...).
-
-The same `listen_url` can be used for multiple suppliers and/or different
-`publicly_exposed_endpoints`, the `RelayMiner` takes care of routing the requests
-to the correct `backend_url` based on the `service_id` and the `publicly_exposed_endpoints`
-it received a request form.
 
 ### `service_config`
 
@@ -317,40 +306,6 @@ The `headers` section of the supplier configuration is a set of key-value pairs
 that will be added to the request headers when the `RelayMiner` forwards the
 requests to the service. It can be used to add additional headers like
 `Authorization: Bearer <TOKEN>` for example.
-
-#### `publicly_exposed_endpoints`
-
-_`Required`_, _`Unique` within the supplier's `publicly_exposed_endpoints` list_
-
-The `publicly_exposed_endpoints` section of the supplier configuration is a list
-of hosts that the `RelayMiner` will accept requests from. It MUST be a valid host
-that reflects the onchain supplier staking service endpoints.
-
-It is used to determine if the incoming request is allowed to be processed by
-the server listening on `listen_url` host address as well as to check if the
-request's RPC-Type matches the onchain endpoint's RPC-Type.
-
-:::note
-
-The `service_id` of the supplier is automatically added to the
-`publicly_exposed_endpoints` list as it may help troubleshooting the `RelayMiner`
-and/or send requests internally from a k8s cluster for example.
-
-:::
-
-##### Why should one supplier have multiple `publicly_exposed_endpoints`?
-
-There are various reasons to having multiple `publicly_exposed_endpoints`
-for the same supplier service.
-
-- The onchain Supplier may provide the same Service on multiple domains
-  (e.g. for different regions).
-- The operator may want to route requests of different RPC types to
-  the same server
-- Migrating from one domain to another. Where the operator could still
-  accept requests on the old domain while the new domain is being propagated.
-- The operator may want to have a different domain for internal requests.
-- The onchain Service configuration accepts multiple endpoints.
 
 ## Configuring Signing Keys
 

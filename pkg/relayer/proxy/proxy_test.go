@@ -91,18 +91,16 @@ func init() {
 			ListenAddress: defaultRelayMinerServer,
 			SupplierConfigsMap: map[string]*config.RelayMinerSupplierConfig{
 				defaultService: {
-					ServiceId:                defaultService,
-					ServerType:               config.RelayMinerServerTypeHTTP,
-					PubliclyExposedEndpoints: []string{"supplier"},
+					ServiceId:  defaultService,
+					ServerType: config.RelayMinerServerTypeHTTP,
 					ServiceConfig: &config.RelayMinerSupplierServiceConfig{
 						BackendUrl: &url.URL{Scheme: "http", Host: "127.0.0.1:8545", Path: "/"},
 					},
 					SigningKeyNames: []string{supplierOperatorKeyName},
 				},
 				secondaryService: {
-					ServiceId:                secondaryService,
-					ServerType:               config.RelayMinerServerTypeHTTP,
-					PubliclyExposedEndpoints: []string{"supplier1"},
+					ServiceId:  secondaryService,
+					ServerType: config.RelayMinerServerTypeHTTP,
 					ServiceConfig: &config.RelayMinerSupplierServiceConfig{
 						BackendUrl: &url.URL{Scheme: "http", Host: "127.0.0.1:8546", Path: "/"},
 					},
@@ -115,9 +113,8 @@ func init() {
 			ListenAddress: secondaryRelayMinerServer,
 			SupplierConfigsMap: map[string]*config.RelayMinerSupplierConfig{
 				thirdService: {
-					ServiceId:                thirdService,
-					ServerType:               config.RelayMinerServerTypeHTTP,
-					PubliclyExposedEndpoints: []string{"supplier2"},
+					ServiceId:  thirdService,
+					ServerType: config.RelayMinerServerTypeHTTP,
 					ServiceConfig: &config.RelayMinerSupplierServiceConfig{
 						BackendUrl: &url.URL{Scheme: "http", Host: "127.0.0.1:8547", Path: "/"},
 					},
@@ -250,8 +247,7 @@ func TestRelayerProxy_UnsupportedTransportType(t *testing.T) {
 				defaultService: {
 					ServiceId: defaultService,
 					// The proxy is configured with an unsupported transport type
-					ServerType:               config.RelayMinerServerType(100),
-					PubliclyExposedEndpoints: []string{"supplier"},
+					ServerType: config.RelayMinerServerType(100),
 					ServiceConfig: &config.RelayMinerSupplierServiceConfig{
 						BackendUrl: &url.URL{Scheme: "http", Host: "127.0.0.1:8545", Path: "/"},
 					},
@@ -293,9 +289,8 @@ func TestRelayerProxy_NonConfiguredSupplierServices(t *testing.T) {
 			ListenAddress: defaultRelayMinerServer,
 			SupplierConfigsMap: map[string]*config.RelayMinerSupplierConfig{
 				defaultService: {
-					ServiceId:                defaultService,
-					ServerType:               config.RelayMinerServerTypeHTTP,
-					PubliclyExposedEndpoints: []string{"supplier"},
+					ServiceId:  defaultService,
+					ServerType: config.RelayMinerServerTypeHTTP,
 					ServiceConfig: &config.RelayMinerSupplierServiceConfig{
 						BackendUrl: &url.URL{Scheme: "http", Host: "127.0.0.1:8545", Path: "/"},
 					},
@@ -572,9 +567,6 @@ func (t *RelayProxyPingAllSuite) SetupSuite() {
 							Path:   "/",
 						},
 					},
-					PubliclyExposedEndpoints: []string{
-						"supplier1pingall",
-					},
 				},
 			},
 		},
@@ -666,9 +658,6 @@ func (t *RelayProxyPingAllSuite) TestOKPingAllWithMultipleRelayServers() {
 							Path:   "/",
 						},
 					},
-					PubliclyExposedEndpoints: []string{
-						"firstservice",
-					},
 				},
 			},
 		},
@@ -685,9 +674,6 @@ func (t *RelayProxyPingAllSuite) TestOKPingAllWithMultipleRelayServers() {
 							Host:   "127.0.0.1:8647",
 							Path:   "/",
 						},
-					},
-					PubliclyExposedEndpoints: []string{
-						"secondservice",
 					},
 				},
 			},
@@ -761,9 +747,6 @@ func (t *RelayProxyPingAllSuite) TestNOKPingAllWithPartialFailureAtStartup() {
 							Path:   "/",
 						},
 					},
-					PubliclyExposedEndpoints: []string{
-						"failingservice",
-					},
 				},
 			},
 		},
@@ -834,9 +817,6 @@ func (t *RelayProxyPingAllSuite) TestNOKPingAllWithPartialFailureAfterStartup() 
 							Host:   "127.0.0.1:8648",
 							Path:   "/",
 						},
-					},
-					PubliclyExposedEndpoints: []string{
-						"failingservice",
 					},
 				},
 			},
@@ -939,9 +919,6 @@ func (t *RelayProxyPingAllSuite) TestOKPingAllDifferentEndpoint() {
 							Path:   "/",
 						},
 					},
-					PubliclyExposedEndpoints: []string{
-						"exampleservice.org",
-					},
 				},
 			},
 		},
@@ -958,9 +935,6 @@ func (t *RelayProxyPingAllSuite) TestOKPingAllDifferentEndpoint() {
 							Host:   "[::1]:8650",
 							Path:   "/",
 						},
-					},
-					PubliclyExposedEndpoints: []string{
-						"ipv6service",
 					},
 				},
 			},
