@@ -73,6 +73,10 @@ pocketd keys add <your_shannon_key_name>
 
 If you're using a newly generated key/account, then you will need to use one of the (network-specific) community faucets to trigger onchain account creation.
 
+:::TODO_MAINNET
+Add a link once available!
+:::
+
 For testnets, you can send yourself either uPOKT or MACT ("Morse Account Claimer Token").
 **Only 1 of EITHER minimal denomination** is sufficient to create the onchain account, such that it is ready to be used for claiming.
 
@@ -81,6 +85,53 @@ For testnets, you can send yourself either uPOKT or MACT ("Morse Account Claimer
 The only token available via Mainnet faucet(s) is MACT.
 
 :::
+
+<details>
+<summary>Why do we need MACT?</summary>
+
+MACT is needed to enable users to claim their Morse accounts using new Shannon accounts.
+These new accounts must exist onchain before they can be used, which requires a transaction to create them.
+MACT provides a simple and dedicated way to do this.
+A public faucet will distribute MACT so users can prepare their accounts without relying on other tokens, making the claiming process smooth and accessible.
+
+```mermaid
+---
+title: Design Constraint / Effect Causal Flowchart
+---
+flowchart
+
+nka(new key algo):::constraint
+nacc(**user** MUST generate new account):::effect
+nasn(no initial onchain account sequence number):::constraint
+noregen(can't use regensis):::constraint
+
+claim(MUST claim Morse accounts):::effect
+
+nka --> nacc
+nacc -->|user-initiated == cannot be predicted/pre-computed| noregen
+
+noregen --> claim
+noregen --> nasn
+
+cacc("MUST 'create' onchain account (additional Tx)"):::effect
+
+nasn --> cacc
+
+nt("new 'Morse Account Claimer Token' (MACT)")
+f(MACT faucet)
+
+cacc --> nt
+cacc --> f
+f -.-> nt
+
+mac(Morse account/actor claim protocol)
+
+claim --> mac
+
+classDef constraint color:#f00,stroke:#f00
+classDef effect color:#f80,stroke:#f80
+```
+</details>
 
 Use one of the following faucets:
 
