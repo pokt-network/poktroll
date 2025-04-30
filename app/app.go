@@ -1,6 +1,8 @@
 package app
 
 import (
+	"encoding/json"
+	"fmt"
 	// this line is used by starport scaffolding # stargate/app/moduleImport
 	"io"
 	"os"
@@ -9,6 +11,7 @@ import (
 	"cosmossdk.io/depinject"
 	"cosmossdk.io/log"
 	storetypes "cosmossdk.io/store/types"
+	abci "github.com/cometbft/cometbft/abci/types"
 	dbm "github.com/cosmos/cosmos-db"
 	"github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/client"
@@ -33,6 +36,7 @@ import (
 	paramsclient "github.com/cosmos/cosmos-sdk/x/params/client"
 	paramstypes "github.com/cosmos/cosmos-sdk/x/params/types"
 	capabilitykeeper "github.com/cosmos/ibc-go/modules/capability/keeper"
+	icahosttypes "github.com/cosmos/ibc-go/v8/modules/apps/27-interchain-accounts/host/types"
 	ibckeeper "github.com/cosmos/ibc-go/v8/modules/core/keeper"
 
 	"github.com/pokt-network/poktroll/app/keepers"
@@ -309,6 +313,23 @@ func New(
 	// 	app.UpgradeKeeper.SetModuleVersionMap(ctx, app.ModuleManager.GetVersionMap())
 	// 	return app.App.InitChainer(ctx, req)
 	// })
+
+	app.SetInitChainer(func(ctx sdk.Context, req *abci.RequestInitChain) (*abci.ResponseInitChain, error) {
+		var genesisState map[string]json.RawMessage
+		if err := json.Unmarshal(req.AppStateBytes, &genesisState); err != nil {
+			return nil, fmt.Errorf("failed to unmarshal genesis state: %w", err)
+		}
+
+		res, err := app.ModuleManager.InitGenesis(ctx, app.appCodec, genesisState)
+		if err != nil {
+			return nil, fmt.Errorf("failed to init genesis: %w", err)
+		}
+		if !app.Keepers.IBCKeeper.PortKeeper.IsBound(ctx, icahosttypes.SubModuleName) {
+			_ = app.Keepers.IBCKeeper.PortKeeper.BindPort(ctx, icahosttypes.SubModuleName)
+		}
+
+		return res, nil
+	})
 
 	if err := app.setUpgrades(); err != nil {
 		return nil, err
