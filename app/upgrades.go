@@ -47,7 +47,9 @@ var allUpgrades = []upgrades.Upgrade{
 	// v0.1.7 - upgrade to mint and distribute Morse Account Claimer Tokens.
 	// upgrades.Upgrade_0_1_7,
 
-	// v0.1.8 - upgrade to enable application indexing
+	// v0.1.8 - upgrade to enable:
+	// - Application indexing
+	// - Suppliers service config indexing and more granular hydration
 	upgrades.Upgrade_0_1_8,
 }
 

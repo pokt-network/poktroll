@@ -18,6 +18,7 @@ import (
 	"github.com/pokt-network/poktroll/testutil/keeper"
 	testproof "github.com/pokt-network/poktroll/testutil/proof"
 	"github.com/pokt-network/poktroll/testutil/sample"
+	sharedtest "github.com/pokt-network/poktroll/testutil/shared"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 	servicekeeper "github.com/pokt-network/poktroll/x/service/keeper"
@@ -168,17 +169,18 @@ func (s *applicationMinStakeTestSuite) stakeSupplier() {
 			},
 		},
 	}
+	serviceConfigHistory := sharedtest.CreateServiceConfigUpdateHistoryFromServiceConfigs(
+		s.supplierBech32,
+		supplierServiceConfigs,
+		1,
+		sharedtypes.NoDeactivationHeight,
+	)
 	s.keepers.SupplierKeeper.SetSupplier(s.ctx, sharedtypes.Supplier{
-		OwnerAddress:    s.supplierBech32,
-		OperatorAddress: s.supplierBech32,
-		Stake:           &suppliertypes.DefaultMinStake,
-		Services:        supplierServiceConfigs,
-		ServiceConfigHistory: []*sharedtypes.ServiceConfigUpdate{
-			{
-				Services:             supplierServiceConfigs,
-				EffectiveBlockHeight: 1,
-			},
-		},
+		OwnerAddress:         s.supplierBech32,
+		OperatorAddress:      s.supplierBech32,
+		Stake:                &suppliertypes.DefaultMinStake,
+		Services:             supplierServiceConfigs,
+		ServiceConfigHistory: serviceConfigHistory,
 	})
 }
 
