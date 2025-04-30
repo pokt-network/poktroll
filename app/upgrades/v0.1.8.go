@@ -2,6 +2,7 @@ package upgrades
 
 import (
 	"context"
+	"fmt"
 	"slices"
 
 	"cosmossdk.io/log"
@@ -20,7 +21,9 @@ const (
 
 // Upgrade_0_1_8 handles the upgrade to release `v0.1.8`.
 // This is planned to be issued on both Pocket Network's Shannon Alpha, Beta TestNets
-// It is an upgrade intended to enable suppliers service config indexing and more granular hydration.
+// It is an upgrade intended to enable:
+// - Suppliers service config indexing and more granular hydration.
+// - Application indexing
 // TODO_FOLLOWUP(#1230, @red-0ne): Update the github link from main to v0.1.8 once the upgrade is released.
 // https://github.com/pokt-network/poktroll/compare/v0.1.7..v0.1.8
 var Upgrade_0_1_8 = Upgrade{
@@ -38,6 +41,11 @@ var Upgrade_0_1_8 = Upgrade{
 			logger := cosmostypes.UnwrapSDKContext(ctx).Logger().With("upgrade_plan_name", Upgrade_0_1_8_PlanName)
 			logger.Info("Starting upgrade handler")
 
+			logger.Info("Indexing applications")
+			if err := indexApplications(ctx, keepers, logger); err != nil {
+				return vm, err
+			}
+
 			logger.Info("Indexing suppliers service configs")
 			if err := indexSuppliersServiceConfigs(ctx, keepers, logger); err != nil {
 				return vm, err
@@ -46,6 +54,27 @@ var Upgrade_0_1_8 = Upgrade{
 			return vm, nil
 		}
 	},
+}
+
+// indexApplications triggers application indexing.
+// It iterates over all applications in the store and re-stores them to trigger the indexer.
+func indexApplications(ctx context.Context, keepers *keepers.Keepers, logger log.Logger) error {
+	// Get all deprecated suppliers from the store.
+	applicationsIterator := keepers.ApplicationKeeper.GetAllApplicationsIterator(ctx)
+	defer applicationsIterator.Close()
+
+	for ; applicationsIterator.Valid(); applicationsIterator.Next() {
+		application, err := applicationsIterator.Value()
+		if err != nil {
+			logger.Error(fmt.Sprintf("Failed to get application with key %s from iterator: %v", string(applicationsIterator.Key()), err))
+			return err
+		}
+
+		// Re-store the application to trigger the indexer.
+		keepers.ApplicationKeeper.SetApplication(ctx, application)
+	}
+
+	return nil
 }
 
 // indexSuppliersServiceConfigs indexes the service config updates for all suppliers.

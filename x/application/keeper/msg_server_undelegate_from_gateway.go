@@ -101,15 +101,15 @@ func (k Keeper) recordPendingUndelegation(
 	currentBlockHeight int64,
 ) {
 	sessionEndHeight := uint64(k.sharedKeeper.GetSessionEndHeight(ctx, currentBlockHeight))
-	undelegatingGatewayListAtBlock := app.PendingUndelegations[sessionEndHeight]
+	undelegatingGatewayListAtHeight := app.PendingUndelegations[sessionEndHeight]
 
 	// Add the gateway address to the undelegated gateways list if it's not already there.
-	if !slices.Contains(undelegatingGatewayListAtBlock.GatewayAddresses, gatewayAddress) {
-		undelegatingGatewayListAtBlock.GatewayAddresses = append(
-			undelegatingGatewayListAtBlock.GatewayAddresses,
+	if !slices.Contains(undelegatingGatewayListAtHeight.GatewayAddresses, gatewayAddress) {
+		undelegatingGatewayListAtHeight.GatewayAddresses = append(
+			undelegatingGatewayListAtHeight.GatewayAddresses,
 			gatewayAddress,
 		)
-		app.PendingUndelegations[sessionEndHeight] = undelegatingGatewayListAtBlock
+		app.PendingUndelegations[sessionEndHeight] = undelegatingGatewayListAtHeight
 	} else {
 		k.logger.Info(fmt.Sprintf(
 			"Application with address [%s] undelegating (again) from a gateway it's already undelegating from with address [%s]",
