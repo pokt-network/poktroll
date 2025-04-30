@@ -89,6 +89,13 @@ localnet_config_defaults = {
         "enabled": False,
         "clone_if_not_present": False,
     },
+
+    "ibc": {
+        "enabled": False,
+        "relay_pairs_enabled": {
+            "pocket-agoric": False,
+        }
+    }
 }
 
 # Initial empty config
@@ -510,3 +517,7 @@ load("./tiltfiles/pocketdex.tilt", "check_and_load_pocketdex")
 #   -- OR --
 #   2. Prints a message if true or false
 check_and_load_pocketdex(localnet_config["indexer"])
+
+### IBC relayer(s) & alt-chain node(s)
+load("./tiltfiles/ibc.tilt", "check_and_load_ibc")
+check_and_load_ibc(localnet_config["ibc"])
