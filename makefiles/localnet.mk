@@ -3,34 +3,47 @@
 ########################
 
 .PHONY: localnet_up
-localnet_up: check_pocketd check_kubectl check_docker_ps proto_regen localnet_regenesis dev_up check_kind_context warn_message_acc_initialize_pubkeys ## Starts up a clean localnet
+localnet_up: check_pocketd check_kubectl check_docker_ps proto_regen localnet_regenesis k8s_kind_up warn_message_acc_initialize_pubkeys ## Starts up a clean localnet
 	tilt up
 
 .PHONY: localnet_up_quick
-localnet_up_quick: check_kubectl check_docker_ps dev_up check_kind_context ## Starts up a localnet without regenerating fixtures
+localnet_up_quick: check_pocketd check_kubectl check_docker_ps k8s_kind_up ## Starts up a localnet without regenerating fixtures
 	tilt up
 
 .PHONY: localnet_down
 localnet_down: ## Delete resources created by localnet
 	tilt down
-	@echo "poktroll localnet shut down. To remove the kind cluster run 'kind delete cluster --name kind'"
+	@echo "poktroll localnet shut down. To remove the kind cluster run 'kind delete cluster --name pocket-localnet'"
 
-# DEV_NOTE: the "create namespace" commands in 'dev_up' are here to satisfy the
+# DEV_NOTE: the "create namespace" commands in 'k8s_kind_up' are here to satisfy the
 # requirements of the 'path' helm charts. The requirement for these namespaces
 # to exist may be removed in the future. For reference see repo:
 # https://github.com/buildwithgrove/helm-charts/tree/main/charts/path
-.PHONY: dev_up
-# Internal helper: Spins up Kind cluster if it doesn't already exist
-dev_up: check_kind
-	@if ! kind get clusters | grep -q "^kind$$"; then \
-		echo "[INFO] Creating kind cluster..."; \
-		kind create cluster --config ./localnet/kubernetes/kind-config.yaml; \
-		kubectl config use-context kind-kind; \
+.PHONY: k8s_kind_up
+
+# Spins up Kind cluster if it doesn't already exist
+# - Checks if Docker is running
+# - Creates 'kind-pocket-localnet' cluster if not present
+# - Switches context and creates required namespaces
+k8s_kind_up: check_kind
+	@echo '[INFO] Checking if Docker is running...'
+	@if ! docker info > /dev/null 2>&1; then \
+		echo '[ERROR] Docker is not running. Please start Docker and try again.'; \
+		exit 1; \
+	fi
+	@echo '[INFO] Checking if kind-pocket-localnet cluster exists...'
+	@if ! kind get clusters | grep -q "pocket-localnet"; then \
+		echo '[INFO] Creating pocket-localnet cluster...'; \
+		kind create cluster --name pocket-localnet; \
+		echo '[INFO] Switching to pocket-localnet cluster...'; \
+		kubectl config use-context pocket-localnet; \
+		echo '[INFO] Creating required namespaces for PATH...'; \
 		kubectl create namespace path; \
 		kubectl create namespace monitoring; \
 		kubectl create namespace middleware; \
 	else \
-		echo "[INFO] Kind cluster already exists. Skipping creation."; \
+		echo '[INFO] Kind cluster already exists. Skipping creation and switching to kind-pocket-localnet...'; \
+		kubectl config use-context kind-pocket-localnet; \
 	fi
 
 # Optional context for 'move_poktroll_to_pocket' to answer this question:
