@@ -1,0 +1,32 @@
+image:
+  repository: alpine/socat
+  pullPolicy: IfNotPresent
+  tag: "latest"
+
+# Reverse proxy configuration
+proxy:
+  # NOTE: Provide your LAN IP here for best results.
+  hostIP: ""  # Empty by default, will try to auto-detect
+  ports:
+    - target: 36657
+      proxy: 36657
+    - target: 10090
+      proxy: 10090
+
+# Service configuration
+service:
+  type: ClusterIP
+  ports:
+    - port: 36657
+      targetPort: 36657
+      protocol: TCP
+      name: rpc
+    - port: 10090
+      targetPort: 10090
+      protocol: TCP
+      name: grpc
+
+# Additional environment variables if needed
+extraEnv: []
+  # - name: EXAMPLE_ENV
+  #   value: "example-value"

@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}
+  labels:
+    app: host-proxy
+spec:
+  selector:
+    matchLabels:
+      app: host-proxy
+  template:
+    metadata:
+      labels:
+        app: host-proxy
+    spec:
+      containers:
+        - name: proxy
+          image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command: ["/bin/sh", "/scripts/proxy.sh"]
+          env:
+            - name: HOST_IP
+              value: {{ .Values.proxy.hostIP | quote }}
+        {{- if .Values.extraEnv }}
+        {{- toYaml .Values.extraEnv | nindent 8 }}
+        {{- end }}
+          ports:
+            {{- range .Values.service.ports }}
+            - containerPort: {{ .targetPort }}
+            {{- end }}
+          volumeMounts:
+            - name: proxy-script
+              mountPath: /scripts
+      volumes:
+        - name: proxy-script
+          configMap:
+            name: {{ .Release.Name }}-proxy-script
+            defaultMode: 0777

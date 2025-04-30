@@ -1,0 +1,95 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-proxy-script
+  labels:
+    app: host-proxy
+data:
+  proxy.sh: |
+    #!/bin/sh
+    set -e
+
+    echo "Starting socat tunnels to host for reverse proxy..."
+
+    HOST_IP=""
+    echo "Trying to determine host IP..."
+
+    # Method 0: Host IP from environment
+    if [ ! -z "$HOST_IP" ]; then
+      echo "Using host IP from environment: $HOST_IP"
+    fi
+
+    # Method 1: host.docker.internal
+    if [ -z "$HOST_IP" ]; then
+      echo "Method 1: Trying host.docker.internal..."
+      HOST_IP=$(getent hosts host.docker.internal | awk '{ print $1 }')
+      if [ ! -z "$HOST_IP" ]; then
+        echo "Found host.docker.internal: $HOST_IP"
+      fi
+    fi
+
+    # Method 2: Default gateway
+    if [ -z "$HOST_IP" ]; then
+      echo "Method 2: Trying default gateway..."
+      GATEWAY_IP=$(ip route | grep default | awk '{print $3}')
+      if [ ! -z "$GATEWAY_IP" ]; then
+        echo "Found default gateway: $GATEWAY_IP"
+        HOST_IP=$GATEWAY_IP
+      fi
+    fi
+
+    # Method 3: Scanning network interfaces
+    if [ -z "$HOST_IP" ]; then
+      echo "Method 3: Scanning network interfaces..."
+      for subnet in "192.168." "10." "172."; do
+        for ip in $(ip -4 addr | grep -oP "$subnet\d+\.\d+" | uniq); do
+          if [ "$ip" != "127.0.0.1" ] && [ "$ip" != "10.244.0.1" ]; then
+            first_octet=$(echo $ip | cut -d. -f1)
+            if [ "$first_octet" = "10" ] || [ "$first_octet" = "172" ] || [ "$first_octet" = "192" ]; then
+              {{- range .Values.proxy.ports }}
+              echo "Testing connection to $ip:{{ .proxy }}..."
+              if nc -z -w2 $ip {{ .proxy }}; then
+                echo "Found working connection to $ip:{{ .proxy }}"
+                HOST_IP=$ip
+                break 3
+              fi
+              {{- end }}
+            fi
+          fi
+        done
+      done
+    fi
+
+    # Fallback
+    if [ -z "$HOST_IP" ]; then
+      echo "ERROR: Could not determine host IP. Falling back to pod IP."
+      HOST_IP=$(hostname -i)
+    fi
+
+    echo "Using host IP: $HOST_IP"
+
+    # Final network debug
+    echo "Testing connections to proxied services..."
+    SUCCESS=0
+    {{- range .Values.proxy.ports }}
+    if nc -z -w5 $HOST_IP {{ .proxy }}; then
+      echo "Successfully connected to $HOST_IP:{{ .proxy }}"
+      SUCCESS=1
+    else
+      echo "WARNING: Cannot connect to $HOST_IP:{{ .proxy }}"
+    fi
+    {{- end }}
+
+    if [ "$SUCCESS" -ne 1 ]; then
+      echo "No ports responded successfully. Continuing anyway, but things may not work."
+    fi
+
+    # Start socat tunnels
+    echo "Starting socat tunnels..."
+    {{- range .Values.proxy.ports }}
+    echo "Starting socat tunnel: TCP-LISTEN:{{ .target }},fork TCP:$HOST_IP:{{ .proxy }}"
+    socat -d -d TCP-LISTEN:{{ .target }},fork TCP:$HOST_IP:{{ .proxy }} &
+    {{- end }}
+
+    # Wait for all socat processes
+    wait
