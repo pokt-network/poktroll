@@ -62,10 +62,9 @@ type YAMLRelayMinerSupplierConfig struct {
 // YAMLRelayMinerSupplierServiceConfig is the structure used to unmarshal the supplier
 // service sub-section of the RelayMiner config file.
 type YAMLRelayMinerSupplierServiceConfig struct {
-	Authentication           YAMLRelayMinerSupplierServiceAuthentication `yaml:"authentication,omitempty"`
-	BackendUrl               string                                      `yaml:"backend_url"`
-	Headers                  map[string]string                           `yaml:"headers,omitempty"`
-	PubliclyExposedEndpoints []string                                    `yaml:"publicly_exposed_endpoints"`
+	Authentication YAMLRelayMinerSupplierServiceAuthentication `yaml:"authentication,omitempty"`
+	BackendUrl     string                                      `yaml:"backend_url"`
+	Headers        map[string]string                           `yaml:"headers,omitempty"`
 }
 
 // YAMLRelayMinerSupplierServiceAuthentication is the structure used to unmarshal
@@ -144,10 +143,8 @@ type RelayMinerSupplierConfig struct {
 	ServiceId string
 	// ServerType is the transport protocol used by the supplier, it must match the
 	// type of the relay miner server it is associated with.
+
 	ServerType RelayMinerServerType
-	// PubliclyExposedEndpoints is a list of hosts advertised onchain by the supplier,
-	// the corresponding relay miner server will accept relay requests for these hosts.
-	PubliclyExposedEndpoints []string
 	// ServiceConfig is the config of the service that relays will be proxied to.
 	// Other supplier types may embed other fields in the future. eg. "https" may
 	// embed a TLS config.
