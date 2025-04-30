@@ -1,0 +1,47 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Release.Name }}
+    spec:
+      containers:
+        - name: agd
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            {{- range $_, $port := .Values.service.ports }}
+            - containerPort: {{ $port }}
+            {{- end }}
+          env:
+            {{- range $key, $value := .Values.env }}
+            - name: {{ $key }}
+              value: "{{ $value }}"
+            {{- end }}
+          command: {{- toYaml .Values.command | nindent 12 }}
+          volumeMounts:
+            - name: agoric-scripts-volume
+              mountPath: /usr/src/upgrade-test-scripts/entrypoint.sh
+              subPath: entrypoint.sh
+              readOnly: true
+            - name: agoric-scripts-volume
+              mountPath: /usr/src/upgrade-test-scripts/start_agd_delve.sh
+              subPath: start_agd_delve.sh
+              readOnly: true
+            - name: agoric-scripts-volume
+              mountPath: /usr/src/upgrade-test-scripts/foreigner.mnemonic
+              subPath: foreigner.mnemonic
+              readOnly: true
+      volumes:
+        - name: agoric-scripts-volume
+          configMap:
+            name: {{ .Release.Name }}-scripts
+            defaultMode: 0755
+
