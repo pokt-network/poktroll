@@ -89,7 +89,7 @@ func TestMsgServer_UnstakeSupplier_Success(t *testing.T) {
 	unbondingEndHeight := sharedtypes.GetSupplierUnbondingEndHeight(&sharedParams, expectedSupplier)
 
 	// Make sure the supplier entered the unbonding period
-	foundSupplier, isSupplierFound = supplierModuleKeepers.GetSupplier(ctx, unstakingSupplierOperatorAddr)
+	foundSupplier, isSupplierFound = supplierModuleKeepers.GetDehydratedSupplier(ctx, unstakingSupplierOperatorAddr)
 	require.True(t, isSupplierFound)
 	require.True(t, foundSupplier.IsUnbonding())
 
@@ -115,7 +115,7 @@ func TestMsgServer_UnstakeSupplier_Success(t *testing.T) {
 	// Services for both suppliers are activated at the start of the session.
 	require.Equal(t, 2, numSuppliersWithServicesActivation)
 
-	foundSupplier, isSupplierFound = supplierModuleKeepers.GetSupplier(ctx, unstakingSupplierOperatorAddr)
+	foundSupplier, isSupplierFound = supplierModuleKeepers.GetDehydratedSupplier(ctx, unstakingSupplierOperatorAddr)
 	require.True(t, isSupplierFound)
 	require.Len(t, foundSupplier.Services, 0)
 
@@ -134,9 +134,6 @@ func TestMsgServer_UnstakeSupplier_Success(t *testing.T) {
 	events = cosmostypes.UnwrapSDKContext(ctx).EventManager().Events()
 	require.Equalf(t, 1, len(events), "expected exactly 2 event")
 
-	// The supplier returned by the UnbondSupplier process is dehydrated
-	foundSupplier.Services = nil
-	foundSupplier.ServiceConfigHistory = nil
 	sessionEndHeight = sharedtypes.GetSessionEndHeight(&sharedParams, cosmostypes.UnwrapSDKContext(ctx).BlockHeight())
 	expectedEvent, err = cosmostypes.TypedEventToEvent(
 		&suppliertypes.EventSupplierUnbondingEnd{
@@ -206,7 +203,7 @@ func TestMsgServer_UnstakeSupplier_CancelUnbondingIfRestaked(t *testing.T) {
 	require.NoError(t, err)
 
 	// Verify that the supplier exists and is in the unbonding period
-	foundSupplier, isSupplierFound = supplierModuleKeepers.GetSupplier(ctx, supplierOperatorAddr)
+	foundSupplier, isSupplierFound = supplierModuleKeepers.GetDehydratedSupplier(ctx, supplierOperatorAddr)
 	require.True(t, isSupplierFound)
 	require.True(t, foundSupplier.IsUnbonding())
 
@@ -423,7 +420,7 @@ func TestMsgServer_UnstakeSupplier_OperatorCanUnstake(t *testing.T) {
 	ctx, _ = testevents.ResetEventManager(ctx)
 
 	// Make sure the supplier entered the unbonding period
-	foundSupplier, isSupplierFound := supplierModuleKeepers.GetSupplier(ctx, supplierOperatorAddr)
+	foundSupplier, isSupplierFound := supplierModuleKeepers.GetDehydratedSupplier(ctx, supplierOperatorAddr)
 	require.True(t, isSupplierFound)
 	require.True(t, foundSupplier.IsUnbonding())
 
@@ -443,9 +440,6 @@ func TestMsgServer_UnstakeSupplier_OperatorCanUnstake(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, uint64(1), numUnbondedSuppliers)
 
-	// The supplier returned by the UnbondSupplier process is dehydrated
-	foundSupplier.Services = nil
-	foundSupplier.ServiceConfigHistory = nil
 	// Assert that the EventSupplierUnbondingEnd event is emitted.
 	expectedEvent, err = cosmostypes.TypedEventToEvent(&suppliertypes.EventSupplierUnbondingEnd{
 		Supplier:           &foundSupplier,
