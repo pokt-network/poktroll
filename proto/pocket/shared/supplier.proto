@@ -37,11 +37,22 @@ message Supplier {
 
 // ServiceConfigUpdate tracks a change in a supplier's service configurations
 // at a specific block height, enabling tracking of configuration changes over time.
+// This record helps maintain a complete history of service configs and their availability periods.
 message ServiceConfigUpdate {
-  // List of service configurations after the update was applied.
-  repeated SupplierServiceConfig services = 1;
+  // Operator address of the supplier corresponding to the service configuration change
+  string operator_address = 1;
 
-  // Block height at which this service configuration update takes effect,
-  // aligned with the session start height.
-  uint64 effective_block_height = 2;
+  // The specific service configuration that was added, modified or scheduled for removal
+  SupplierServiceConfig service = 2;
+
+  // Block height at which this service configuration became active in the network
+  int64 activation_height = 3;
+
+  // Block height at which this service configuration was deactivated (0 if still active)
+  // For service configs scheduled for deactivation:
+  // - This field stores the block height when deactivation will occur
+  // - After deactivation, the config remains in history only as needed for claim settlement
+  // - Once no longer required for settlement, the config is automatically removed by
+  //   the EndBlockerPruneSupplierServiceConfigHistory process
+  int64 deactivation_height = 4;
 }

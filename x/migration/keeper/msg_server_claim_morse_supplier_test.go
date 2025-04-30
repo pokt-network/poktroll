@@ -17,6 +17,7 @@ import (
 	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
 	"github.com/pokt-network/poktroll/testutil/migration/mocks"
 	"github.com/pokt-network/poktroll/testutil/sample"
+	sharedtest "github.com/pokt-network/poktroll/testutil/shared"
 	"github.com/pokt-network/poktroll/testutil/testmigration"
 	"github.com/pokt-network/poktroll/x/migration/keeper"
 	migrationtypes "github.com/pokt-network/poktroll/x/migration/types"
@@ -67,16 +68,11 @@ func TestMsgServer_ClaimMorseSupplier_SuccessNewSupplier(t *testing.T) {
 		Services:        testSupplierServices,
 	}
 	expectedSupplier := sharedtypes.Supplier{
-		OwnerAddress:    shannonDestAddr,
-		OperatorAddress: shannonDestAddr,
-		Stake:           &supplierStake,
-		Services:        testSupplierServices,
-		ServiceConfigHistory: []*sharedtypes.ServiceConfigUpdate{
-			{
-				Services:             testSupplierServices,
-				EffectiveBlockHeight: 1,
-			},
-		},
+		OwnerAddress:            shannonDestAddr,
+		OperatorAddress:         shannonDestAddr,
+		Stake:                   &supplierStake,
+		Services:                testSupplierServices,
+		ServiceConfigHistory:    sharedtest.CreateServiceConfigUpdateHistoryFromServiceConfigs(shannonDestAddr, testSupplierServices, 1, 0),
 		UnstakeSessionEndHeight: 0,
 	}
 

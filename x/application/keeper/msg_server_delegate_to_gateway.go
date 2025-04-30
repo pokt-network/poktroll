@@ -3,7 +3,9 @@ package keeper
 import (
 	"context"
 	"fmt"
+	"slices"
 
+	"cosmossdk.io/log"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -14,6 +16,8 @@ import (
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
+// DelegateToGateway processes a message to delegate an application to a gateway.
+// This enables the application to use the gateway's services for relaying.
 func (k msgServer) DelegateToGateway(ctx context.Context, msg *apptypes.MsgDelegateToGateway) (*apptypes.MsgDelegateToGatewayResponse, error) {
 	isSuccessful := false
 	defer telemetry.EventSuccessCounter(
@@ -100,6 +104,9 @@ func (k msgServer) DelegateToGateway(ctx context.Context, msg *apptypes.MsgDeleg
 	app.DelegateeGatewayAddresses = append(app.DelegateeGatewayAddresses, msg.GetGatewayAddress())
 	logger.Info("Successfully added delegatee public key to application")
 
+	// Remove any pending undelegations for the application to the gateway
+	k.updatePendingUndelegations(ctx, &app, msg.GetGatewayAddress(), logger)
+
 	// Update the application store with the new delegation
 	k.SetApplication(ctx, app)
 	logger.Info(fmt.Sprintf("Successfully delegated application to gateway for app: %+v", app))
@@ -123,4 +130,35 @@ func (k msgServer) DelegateToGateway(ctx context.Context, msg *apptypes.MsgDeleg
 	return &apptypes.MsgDelegateToGatewayResponse{
 		Application: &app,
 	}, nil
+}
+
+// updatePendingUndelegations removes the given gateway address from the application's
+// pending undelegations list.
+func (k Keeper) updatePendingUndelegations(
+	ctx context.Context,
+	app *apptypes.Application,
+	gatewayAddress string,
+	logger log.Logger,
+) {
+	// Check if the application has any pending undelegations
+	if len(app.PendingUndelegations) == 0 {
+		return
+	}
+
+	for height, pendingUndelegations := range app.PendingUndelegations {
+		if gwIdx := slices.Index(pendingUndelegations.GatewayAddresses, gatewayAddress); gwIdx >= 0 {
+			// Remove the gateway address from the pending undelegations
+			pendingUndelegations.GatewayAddresses = append(
+				pendingUndelegations.GatewayAddresses[:gwIdx],
+				pendingUndelegations.GatewayAddresses[gwIdx+1:]...,
+			)
+			logger.Info(fmt.Sprintf("Removed pending undelegation for re-delegated gateway with address [%s]", gatewayAddress))
+		}
+		app.PendingUndelegations[height] = pendingUndelegations
+
+		if len(app.PendingUndelegations[height].GatewayAddresses) == 0 {
+			// If there are no more pending undelegations for this height, remove it from the application
+			delete(app.PendingUndelegations, height)
+		}
+	}
 }

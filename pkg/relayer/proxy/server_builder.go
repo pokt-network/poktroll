@@ -3,8 +3,6 @@ package proxy
 import (
 	"context"
 	"fmt"
-	"net/url"
-	"slices"
 	"time"
 
 	"github.com/pokt-network/poktroll/pkg/relayer"
@@ -56,17 +54,11 @@ func (rp *relayerProxy) BuildProvidedServices(ctx context.Context) error {
 		// service's endpoint
 		for _, service := range supplier.Services {
 			for _, endpoint := range service.Endpoints {
-				endpointUrl, urlErr := url.Parse(endpoint.Url)
-				if urlErr != nil {
-					return urlErr
-				}
 				found := false
 				// Iterate over the server configs and check if `endpointUrl` is present
 				// in any of the server config's suppliers' service's PubliclyExposedEndpoints
 				for _, serverConfig := range rp.serverConfigs {
-					supplierService, ok := serverConfig.SupplierConfigsMap[service.ServiceId]
-					hostname := endpointUrl.Hostname()
-					if ok && slices.Contains(supplierService.PubliclyExposedEndpoints, hostname) {
+					if _, ok := serverConfig.SupplierConfigsMap[service.ServiceId]; ok {
 						found = true
 						break
 					}

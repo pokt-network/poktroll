@@ -51,21 +51,7 @@ func (s *SupplierModuleSuite) StakeSupplier(
 
 	serviceConfigs := make([]*sharedtypes.SupplierServiceConfig, len(serviceIds))
 	for serviceIdx, serviceId := range serviceIds {
-		serviceConfigs[serviceIdx] = &sharedtypes.SupplierServiceConfig{
-			ServiceId: serviceId,
-			Endpoints: []*sharedtypes.SupplierEndpoint{
-				{
-					Url:     "http://test.example:1234",
-					RpcType: sharedtypes.RPCType_JSON_RPC,
-				},
-			},
-			RevShare: []*sharedtypes.ServiceRevenueShare{
-				{
-					Address:            supplierAddress,
-					RevSharePercentage: 100,
-				},
-			},
-		}
+		serviceConfigs[serviceIdx] = SupplierServiceConfigFromServiceIdAndOperatorAddress(serviceId, supplierAddress)
 	}
 
 	stakeSupplierMsg := suppliertypes.NewMsgStakeSupplier(
@@ -80,4 +66,26 @@ func (s *SupplierModuleSuite) StakeSupplier(
 	require.NoError(t, err)
 
 	return txMsgRes.(*suppliertypes.MsgStakeSupplierResponse)
+}
+
+// SupplierServiceConfigFromServiceIdAndOperatorAddress creates a SupplierServiceConfig instance
+// using the provided service ID and supplier address.
+func SupplierServiceConfigFromServiceIdAndOperatorAddress(
+	serviceId, supplierAddress string,
+) *sharedtypes.SupplierServiceConfig {
+	return &sharedtypes.SupplierServiceConfig{
+		ServiceId: serviceId,
+		Endpoints: []*sharedtypes.SupplierEndpoint{
+			{
+				Url:     "http://test.example:1234",
+				RpcType: sharedtypes.RPCType_JSON_RPC,
+			},
+		},
+		RevShare: []*sharedtypes.ServiceRevenueShare{
+			{
+				Address:            supplierAddress,
+				RevSharePercentage: 100,
+			},
+		},
+	}
 }

@@ -639,11 +639,11 @@ func (k Keeper) slashSupplierStake(
 
 		// Deactivate the supplier's services so they can no longer be selected to
 		// service relays in the next session.
-		serviceConfigsUpdate := &sharedtypes.ServiceConfigUpdate{
-			Services:             make([]*sharedtypes.SupplierServiceConfig, 0),
-			EffectiveBlockHeight: uint64(unstakeSessionEndHeight + 1),
+		for _, serviceConfig := range supplierToSlash.ServiceConfigHistory {
+			serviceConfig.DeactivationHeight = unstakeSessionEndHeight
 		}
-		supplierToSlash.ServiceConfigHistory = append(supplierToSlash.ServiceConfigHistory, serviceConfigsUpdate)
+		// Update the slashed supplier services to reflect the deactivation.
+		supplierToSlash.Services = supplierToSlash.GetActiveServiceConfigs(currentHeight)
 
 		events = append(events, &suppliertypes.EventSupplierUnbondingBegin{
 			Supplier:         &supplierToSlash,

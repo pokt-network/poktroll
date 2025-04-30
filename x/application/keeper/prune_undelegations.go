@@ -26,21 +26,37 @@ func (k Keeper) EndBlockerPruneAppToGatewayPendingUndelegation(ctx sdk.Context) 
 
 	// Calculate the block height at which undelegations should be pruned
 	numBlocksUndelegationRetention := k.GetNumBlocksUndelegationRetention(ctx)
+	// Skip pruning when current height is less than retention pTargeteriod to prevent
+	// looking up negative or zero block heights.
 	if currentHeight <= numBlocksUndelegationRetention {
 		return nil
 	}
 	earliestUnprunedUndelegationHeight := uint64(currentHeight - numBlocksUndelegationRetention)
 
-	// Iterate over all applications and prune undelegations that are older than
-	// the retention period.
-	allApplicationsIterator := k.GetAllApplicationsIterator(ctx)
-	defer allApplicationsIterator.Close()
+	// Iterate over all applications that have pending undelegations and prune
+	// undelegations that are older than the retention period.
+	// ALL_UNDELEGATIONS is passed to retrieve all undelegations instead of
+	// targeting a specific application.
+	allUndelegationsIterator := k.GetUndelegationsIterator(ctx, ALL_UNDELEGATIONS)
+	defer allUndelegationsIterator.Close()
 
-	for ; allApplicationsIterator.Valid(); allApplicationsIterator.Next() {
-		application, err := allApplicationsIterator.Value()
+	for ; allUndelegationsIterator.Valid(); allUndelegationsIterator.Next() {
+		undelegation, err := allUndelegationsIterator.Value()
 		if err != nil {
-			logger.Error(fmt.Sprintf("could not get application from iterator: %v", err))
 			return err
+		}
+
+		application, found := k.GetApplication(ctx, undelegation.ApplicationAddress)
+		if !found {
+			// If the undelegation is referencing an application that is not
+			// found in the store, log the error, remove the index entry but continue
+			// to the next undelegation.
+			logger.Error(fmt.Sprintf(
+				"application with address %s not found but is referenced in undelegation index",
+				undelegation.ApplicationAddress,
+			))
+			k.removeApplicationUndelegationIndex(ctx, allUndelegationsIterator.Key())
+			continue
 		}
 
 		for undelegationSessionEndHeight := range application.PendingUndelegations {

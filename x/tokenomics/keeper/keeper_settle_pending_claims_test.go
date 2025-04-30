@@ -25,6 +25,7 @@ import (
 	testproof "github.com/pokt-network/poktroll/testutil/proof"
 	testutilproof "github.com/pokt-network/poktroll/testutil/proof"
 	"github.com/pokt-network/poktroll/testutil/sample"
+	sharedtest "github.com/pokt-network/poktroll/testutil/shared"
 	"github.com/pokt-network/poktroll/testutil/testkeyring"
 	"github.com/pokt-network/poktroll/testutil/testtree"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
@@ -118,15 +119,13 @@ func (s *TestSuite) SetupTest() {
 			RevSharePercentage: 100,
 		}},
 	}}
+	supplierServiceConfigHistory := sharedtest.CreateServiceConfigUpdateHistoryFromServiceConfigs(supplierOwnerAddr, supplierServiceConfigs, 1, 0)
 	supplier := sharedtypes.Supplier{
-		OwnerAddress:    supplierOwnerAddr,
-		OperatorAddress: supplierOwnerAddr,
-		Stake:           &supplierStake,
-		Services:        supplierServiceConfigs,
-		ServiceConfigHistory: []*sharedtypes.ServiceConfigUpdate{{
-			Services:             supplierServiceConfigs,
-			EffectiveBlockHeight: 1,
-		}},
+		OwnerAddress:         supplierOwnerAddr,
+		OperatorAddress:      supplierOwnerAddr,
+		Stake:                &supplierStake,
+		Services:             supplierServiceConfigs,
+		ServiceConfigHistory: supplierServiceConfigHistory,
 	}
 	s.keepers.SetSupplier(s.ctx, supplier)
 
@@ -839,19 +838,20 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimExpired_SupplierUnstaked() {
 	require.Equal(t, 1, len(unbondingBeginEvents))
 
 	// Validate the EventSupplierUnbondingBegin event.
-	for i := range slashedSupplier.GetServices() {
-		slashedSupplier.Services[i].Endpoints = make([]*sharedtypes.SupplierEndpoint, 0)
-		slashedSupplier.ServiceConfigHistory[0].Services[i].Endpoints = make([]*sharedtypes.SupplierEndpoint, 0)
+	for i := range slashedSupplier.ServiceConfigHistory {
+		slashedSupplier.ServiceConfigHistory[i].DeactivationHeight = upcomingSessionEndHeight
+		if slashedSupplier.ServiceConfigHistory[i].Service.Endpoints == nil {
+			slashedSupplier.ServiceConfigHistory[i].Service.Endpoints = []*sharedtypes.SupplierEndpoint{}
+		}
 	}
-	emptyServiceConfig := make([]*sharedtypes.SupplierServiceConfig, 0)
-	slashedSupplier.ServiceConfigHistory[1].Services = emptyServiceConfig
+	slashedSupplier.Services = slashedSupplier.GetActiveServiceConfigs(sdkCtx.BlockHeight())
 	expectedUnbondingBeginEvent := &suppliertypes.EventSupplierUnbondingBegin{
 		Supplier:           &slashedSupplier,
 		Reason:             suppliertypes.SupplierUnbondingReason_SUPPLIER_UNBONDING_REASON_BELOW_MIN_STAKE,
 		SessionEndHeight:   upcomingSessionEndHeight,
 		UnbondingEndHeight: upcomingSessionEndHeight,
 	}
-	// A signle unbonding begin event corresponding to the slashed supplier should be
+	// A single unbonding begin event corresponding to the slashed supplier should be
 	// emitted for all expired claims.
 	require.Len(t, unbondingBeginEvents, 1)
 	require.EqualValues(t, expectedUnbondingBeginEvent, unbondingBeginEvents[0])

@@ -49,9 +49,6 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				        username: user
 				        password: pwd
 				      headers: {}
-							publicly_exposed_endpoints:
-								- ethereum.devnet1.poktroll.com
-								- ethereum
 				`,
 
 			expectedErr: nil,
@@ -80,10 +77,6 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 									},
 									Headers: map[string]string{},
 								},
-								PubliclyExposedEndpoints: []string{
-									"ethereum.devnet1.poktroll.com",
-									"ethereum",
-								},
 							},
 						},
 					},
@@ -109,9 +102,6 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
                         username: user
                         password: pwd
                       headers: {}
-                      publicly_exposed_endpoints:
-                        - ethereum.devnet1.poktroll.com
-                        - ethereum
                 `,
 
 			expectedErr: nil,
@@ -138,10 +128,6 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 										Password: "pwd",
 									},
 									Headers: map[string]string{},
-								},
-								PubliclyExposedEndpoints: []string{
-									"ethereum.devnet1.poktroll.com",
-									"ethereum",
 								},
 								SigningKeyNames: []string{"supplier1"},
 							},
@@ -170,9 +156,6 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 						username: user
 						password: pwd
 					headers: {}
-					publicly_exposed_endpoints:
-						- ethereum.devnet1.poktroll.com
-						- ethereum
 			- service_id: ollama
 				listen_url: http://127.0.0.1:8080
 				signing_key_names: [supplier2]
@@ -182,9 +165,6 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 						username: user
 						password: pwd
 					headers: {}
-					publicly_exposed_endpoints:
-						- ollama.devnet1.poktroll.com
-						- ollama
                 `,
 
 			expectedErr: nil,
@@ -213,10 +193,6 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 									},
 									Headers: map[string]string{},
 								},
-								PubliclyExposedEndpoints: []string{
-									"ethereum.devnet1.poktroll.com",
-									"ethereum",
-								},
 								// Note the supplier is missing in the yaml, but it is populated from
 								// the global `default_signing_key_names`
 								SigningKeyNames: []string{"supplier1"},
@@ -231,10 +207,6 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 										Password: "pwd",
 									},
 									Headers: map[string]string{},
-								},
-								PubliclyExposedEndpoints: []string{
-									"ollama.devnet1.poktroll.com",
-									"ollama",
 								},
 								SigningKeyNames: []string{"supplier2"},
 							},
@@ -262,16 +234,10 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				        username: user
 				        password: pwd
 				      headers: {}
-							publicly_exposed_endpoints:
-								- ethereum.devnet1.poktroll.com
 				  - service_id: 7b-llm-model
 				    listen_url: http://127.0.0.1:8080
 				    service_config:
 				      backend_url: http://llama-endpoint
-							publicly_exposed_endpoints:
-								- 7b-llm-model.devnet1.poktroll.com
-								- 7b-llm-model
-
 				`,
 
 			expectedErr: nil,
@@ -300,20 +266,12 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 									},
 									Headers: map[string]string{},
 								},
-								PubliclyExposedEndpoints: []string{
-									"ethereum.devnet1.poktroll.com",
-									"ethereum",
-								},
 							},
 							"7b-llm-model": {
 								ServiceId:  "7b-llm-model",
 								ServerType: config.RelayMinerServerTypeHTTP,
 								ServiceConfig: &config.RelayMinerSupplierServiceConfig{
 									BackendUrl: &url.URL{Scheme: "http", Host: "llama-endpoint"},
-								},
-								PubliclyExposedEndpoints: []string{
-									"7b-llm-model.devnet1.poktroll.com",
-									"7b-llm-model",
 								},
 							},
 						},
@@ -335,10 +293,6 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				    listen_url: http://127.0.0.1:8080
 				    service_config:
 				      backend_url: http://anvil.servicer:8545
-							publicly_exposed_endpoints:
-								- ethereum.devnet1.poktroll.com
-								- ethereum
-
 				`,
 
 			expectedErr: nil,
@@ -362,10 +316,6 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 								ServiceConfig: &config.RelayMinerSupplierServiceConfig{
 									BackendUrl: &url.URL{Scheme: "http", Host: "anvil.servicer:8545"},
 								},
-								PubliclyExposedEndpoints: []string{
-									"ethereum.devnet1.poktroll.com",
-									"ethereum",
-								},
 							},
 						},
 					},
@@ -388,8 +338,6 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				    listen_url: http://127.0.0.1:8080
 				    service_config:
 				      backend_url: http://anvil.servicer:8545
-							publicly_exposed_endpoints:
-								- ethereum.devnet1.poktroll.com
 				`,
 
 			expectedErr: nil,
@@ -413,10 +361,6 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 								ServiceConfig: &config.RelayMinerSupplierServiceConfig{
 									BackendUrl: &url.URL{Scheme: "http", Host: "anvil.servicer:8545"},
 								},
-								PubliclyExposedEndpoints: []string{
-									"ethereum.devnet1.poktroll.com",
-									"ethereum",
-								},
 							},
 						},
 					},
@@ -439,8 +383,6 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				    listen_url: http://127.0.0.1:8080
 				    service_config:
 				      backend_url: http://anvil.servicer:8545
-							publicly_exposed_endpoints:
-								- ethereum.devnet1.poktroll.com
 				`,
 
 			expectedErr: config.ErrRelayMinerConfigInvalidNodeUrl,
@@ -459,8 +401,6 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				  - service_id: ethereum
 				    service_config:
 				      backend_url: http://anvil.servicer:8545
-							publicly_exposed_endpoints:
-								- ethereum.devnet1.poktroll.com
 				`,
 
 			expectedErr: config.ErrRelayMinerConfigInvalidNodeUrl,
@@ -480,9 +420,6 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				    listen_url: http://127.0.0.1:8080
 				    service_config:
 				      backend_url: http://anvil.servicer:8545
-							publicly_exposed_endpoints:
-								- ethereum.devnet1.poktroll.com
-
 				`,
 
 			expectedErr: config.ErrRelayMinerConfigInvalidNodeUrl,
@@ -502,9 +439,6 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				    listen_url: http://127.0.0.1:8080
 				    service_config:
 				      backend_url: http://anvil.servicer:8545
-							publicly_exposed_endpoints:
-								- ethereum.devnet1.poktroll.com
-
 				`,
 
 			expectedErr: config.ErrRelayMinerConfigInvalidNodeUrl,
@@ -524,9 +458,6 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				    listen_url: http://127.0.0.1:8080
 				    service_config:
 				      backend_url: http://anvil.servicer:8545
-							publicly_exposed_endpoints:
-								- ethereum.devnet1.poktroll.com
-
 				`,
 
 			expectedErr: config.ErrRelayMinerConfigInvalidNodeUrl,
@@ -546,9 +477,6 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				    listen_url: http://127.0.0.1:8080
 				    service_config:
 				      backend_url: http://anvil.servicer:8545
-							publicly_exposed_endpoints:
-								- ethereum.devnet1.poktroll.com
-
 				`,
 
 			expectedErr: config.ErrRelayMinerConfigInvalidSigningKeyName,
@@ -568,9 +496,6 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				    listen_url: http://127.0.0.1:8080
 				    service_config:
 				      backend_url: http://anvil.servicer:8545
-							publicly_exposed_endpoints:
-								- ethereum.devnet1.poktroll.com
-
 				`,
 
 			expectedErr: config.ErrRelayMinerConfigInvalidSmtStorePath,
@@ -590,9 +515,6 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				    listen_url: http:// # explicitly empty listen url
 				    service_config:
 				      backend_url: http://anvil.servicer:8545
-							publicly_exposed_endpoints:
-								- ethereum.devnet1.poktroll.com
-
 				`,
 
 			expectedErr: config.ErrRelayMinerConfigInvalidServer,
@@ -612,8 +534,6 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				    listen_url: unsupported://127.0.0.1:8080
 				    service_config:
 				      backend_url: http://anvil.servicer:8545
-							publicly_exposed_endpoints:
-								- ethereum.devnet1.poktroll.com
 				`,
 
 			expectedErr: config.ErrRelayMinerConfigInvalidServer,
@@ -633,8 +553,6 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				    # explicitly missing supplier name
 				    service_config:
 				      backend_url: http://anvil.servicer:8545
-							publicly_exposed_endpoints:
-								- ethereum.devnet1.poktroll.com
 				`,
 
 			expectedErr: config.ErrRelayMinerConfigInvalidSupplier,
@@ -654,9 +572,6 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				    listen_url: http://127.0.0.1:8080
 				    service_config:
 				      backend_url: http://anvil.servicer:8545
-							publicly_exposed_endpoints:
-								- ethereum.devnet1.poktroll.com
-
 				`,
 
 			expectedErr: config.ErrRelayMinerConfigInvalidSupplier,
@@ -676,9 +591,6 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				    listen_url: http://127.0.0.1:8080
 				    service_config:
 				      backend_url: &http://anvil.servicer:8545
-							publicly_exposed_endpoints:
-								- ethereum.devnet1.poktroll.com
-
 				`,
 
 			expectedErr: config.ErrRelayMinerConfigInvalidSupplier,
@@ -698,9 +610,6 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				    listen_url: http://127.0.0.1:8080
 				    service_config:
 				      backend_url: # explicitly empty supplier service config backend url
-							publicly_exposed_endpoints:
-								- ethereum.devnet1.poktroll.com
-
 				`,
 
 			expectedErr: config.ErrRelayMinerConfigInvalidSupplier,
@@ -719,30 +628,6 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				  - service_id: ethereum
 				    listen_url: http://127.0.0.1:8080
 				    service_config:
-					  publicly_exposed_endpoints:
-						- ethereum.devnet1.poktroll.com
-					  # explicitly missing supplier service config backend url
-				`,
-
-			expectedErr: config.ErrRelayMinerConfigInvalidSupplier,
-		},
-		{
-			desc: "invalid: blank supplier exposed endpoint",
-
-			inputConfigYAML: `
-				pocket_node:
-				  query_node_rpc_url: tcp://127.0.0.1:26657
-				  query_node_grpc_url: tcp://127.0.0.1:9090
-				  tx_node_rpc_url: tcp://127.0.0.1:36659
-				default_signing_key_names: [ supplier1 ]
-				smt_store_path: smt_stores
-				suppliers:
-				  - service_id: ethereum
-				    listen_url: http://127.0.0.1:8080
-				    service_config:
-				      backend_url: http://anvil.servicer:8545
-				      publicly_exposed_endpoints:
-				        - # explicitly blank supplier host
 				`,
 
 			expectedErr: config.ErrRelayMinerConfigInvalidSupplier,
@@ -863,14 +748,6 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 							t,
 							headerValue,
 							config.Servers[listenAddress].SupplierConfigsMap[supplierOperatorName].ServiceConfig.Headers[headerKey],
-						)
-					}
-
-					for i, host := range supplier.PubliclyExposedEndpoints {
-						require.Contains(
-							t,
-							host,
-							config.Servers[listenAddress].SupplierConfigsMap[supplierOperatorName].PubliclyExposedEndpoints[i],
 						)
 					}
 				}

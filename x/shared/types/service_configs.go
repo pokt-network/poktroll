@@ -32,6 +32,8 @@ func ValidateSupplierServiceConfigs(services []*SupplierServiceConfig) error {
 	if len(services) == 0 {
 		return fmt.Errorf("no services provided for supplier: %v", services)
 	}
+
+	serviceExists := make(map[string]struct{})
 	for _, serviceConfig := range services {
 		if serviceConfig == nil {
 			return fmt.Errorf("serviceConfig cannot be nil: %v", services)
@@ -41,6 +43,12 @@ func ValidateSupplierServiceConfigs(services []*SupplierServiceConfig) error {
 		if err := IsValidServiceId(serviceConfig.GetServiceId()); err != nil {
 			return err
 		}
+
+		// Check the Service ID uniqueness
+		if _, ok := serviceExists[serviceConfig.ServiceId]; ok {
+			return fmt.Errorf("duplicate service ID: %s", serviceConfig.ServiceId)
+		}
+		serviceExists[serviceConfig.ServiceId] = struct{}{}
 
 		// Check the Endpoints
 		if serviceConfig.Endpoints == nil {

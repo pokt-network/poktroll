@@ -205,7 +205,7 @@ func (s *suite) TheClaimCreatedBySupplierForServiceForApplicationShouldBeSuccess
 		require.Equal(s, supplier.OperatorAddress, claim.SupplierOperatorAddress)
 		require.Equal(s, serviceId, claim.SessionHeader.ServiceId)
 		require.Greater(s, claimSettledEvent.NumClaimedComputeUnits, uint64(0), "claimed compute units should be greater than 0")
-		// TODO_FOLLOWUP: Add NumEstimatedComputeUnits and ClaimedAmountUpokt
+		// TODO_IMPROVE: Add NumEstimatedComputeUnits and ClaimedAmountUpokt
 		return true
 	}
 

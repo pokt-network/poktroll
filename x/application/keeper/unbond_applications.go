@@ -24,21 +24,30 @@ func (k Keeper) EndBlockerUnbondApplications(ctx context.Context) error {
 		return nil
 	}
 
-	// Iterate over all applications and unbond the ones that have finished the unbonding period.
-	// TODO_POST_MAINNET: Use an index to iterate over the applications that have initiated
-	// the unbonding action instead of iterating over all of them.
-	allApplicationsIterator := k.GetAllApplicationsIterator(ctx)
-	defer allApplicationsIterator.Close()
+	// Iterate over all unstaking applications and unbond the ones that have finished the unbonding period.
+	// This iterator retrieves all applications that are in the unbonding state regardless of
+	// whether their unbonding period has ended or not.
+	// TODO_IMPROVE: Make this iterator more efficient by only retrieving applications
+	// that have their unbonding period ended.
+	allUnstakingApplicationsIterator := k.GetAllUnstakingApplicationsIterator(ctx)
+	defer allUnstakingApplicationsIterator.Close()
 
-	for ; allApplicationsIterator.Valid(); allApplicationsIterator.Next() {
-		application, err := allApplicationsIterator.Value()
+	for ; allUnstakingApplicationsIterator.Valid(); allUnstakingApplicationsIterator.Next() {
+		application, err := allUnstakingApplicationsIterator.Value()
 		if err != nil {
-			logger.Error(fmt.Sprintf("could not get application from iterator: %v", err))
 			return err
 		}
 
 		// Ignore applications that have not initiated the unbonding action.
 		if !application.IsUnbonding() {
+			// If we are getting the application from the unbonding store and it is not
+			// unbonding, this means that there is a dangling entry in the index.
+			// log the error, remove the index entry but continue to the next supplier.
+			logger.Error(fmt.Sprintf(
+				"found application %s in unbonding store but it is not unbonding, removing index entry",
+				application.Address,
+			))
+			k.removeApplicationUnstakingIndex(ctx, application.Address)
 			continue
 		}
 
@@ -103,7 +112,7 @@ func (k Keeper) UnbondApplication(ctx context.Context, app *apptypes.Application
 	}
 
 	// Remove the Application from the store.
-	k.RemoveApplication(ctx, app.GetAddress())
+	k.RemoveApplication(ctx, *app)
 	logger.Info(fmt.Sprintf("Successfully removed the application: %+v", app))
 
 	return nil

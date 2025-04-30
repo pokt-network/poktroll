@@ -15,7 +15,7 @@ Feature: Loading gateway server with relays
       | supplier    | 1                | 10             | 3          |
     When a load of concurrent relay requests are sent from the applications
     Then the number of failed relay requests is "0"
-    # TODO_FOLLOWUP(@red-0ne): Implement the following steps
+    # TODO_IMPROVE(@red-0ne): Implement the following steps
     # Then "0" over servicing events are observed
     # And "0" slashing events are observed
     # And "0" expired claim events are observed

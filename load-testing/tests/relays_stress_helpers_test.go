@@ -1406,7 +1406,7 @@ func (s *relaysSuite) forEachSettlement(ctx context.Context) {
 		s.ctx,
 		typedEventsObs,
 		func(_ context.Context, _ []proto.Message) {
-			// TODO_FOLLOWUP(@red-0ne): Capture all settlement related events and use
+			// TODO_IMPROVE(@red-0ne): Capture all settlement related events and use
 			// them to calculate the expected actor balances.
 		},
 	)

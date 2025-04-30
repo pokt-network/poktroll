@@ -713,8 +713,15 @@ func (s *suite) TheSessionForApplicationAndServiceDoesNotContain(appName, servic
 
 func (s *suite) TheUserWaitsForSupplierToBecomeActiveForService(supplierOperatorName, serviceId string) {
 	supplier := s.getSupplierInfo(supplierOperatorName)
-	lastServiceConfigHistory := supplier.ServiceConfigHistory[len(supplier.ServiceConfigHistory)-1]
-	s.waitForBlockHeight(int64(lastServiceConfigHistory.EffectiveBlockHeight))
+	// Get the latest activation height from the supplier's service config history
+	// and wait for the block height to be reached.
+	latestConfigUpdate := int64(0)
+	for _, serviceConfigUpdate := range supplier.ServiceConfigHistory {
+		if latestConfigUpdate < serviceConfigUpdate.ActivationHeight {
+			latestConfigUpdate = serviceConfigUpdate.ActivationHeight
+		}
+	}
+	s.waitForBlockHeight(latestConfigUpdate)
 }
 
 func (s *suite) buildAddrMap() {
