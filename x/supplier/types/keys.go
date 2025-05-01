@@ -85,7 +85,9 @@ const (
 
 // SupplierOperatorKey returns the store key to retrieve a Supplier from the index fields
 func SupplierOperatorKey(supplierOperatorAddr string) []byte {
-	// TODO_IN_THIS_PR: Is this techdebt or a bug?
+	// TODO_MAINNET_MIGRATION(@red-0ne): Is this techdebt or a bug?
+	// Feels like we've been using the wrong key all along.
+	//
 	// var key []byte
 	// key = append(key, SupplierOperatorKeyPrefix...)
 	// key = append(key, StringKey(supplierOperatorAddr)...)

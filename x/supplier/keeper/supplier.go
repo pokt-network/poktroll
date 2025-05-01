@@ -143,7 +143,7 @@ func (k Keeper) hydrateSupplierServiceConfigs(ctx context.Context, supplier *sha
 	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
 	currentHeight := sdkCtx.BlockHeight()
 
-	supplier.ServiceConfigHistory = k.getSupplierServiceConfigUpdates(ctx, supplier.OperatorAddress, ALL_SERVICES)
+	supplier.ServiceConfigHistory = k.getSupplierServiceConfigUpdates(ctx, supplier.OperatorAddress, "")
 	supplier.Services = supplier.GetActiveServiceConfigs(currentHeight)
 }
 

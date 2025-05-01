@@ -51,7 +51,7 @@ func (k Keeper) SettlePendingClaims(ctx cosmostypes.Context) (
 		}
 		numExpiringClaims++
 
-		if err = settlementContext.AddClaim(ctx, &claim); err != nil {
+		if err = settlementContext.ClaimCacheWarmUp(ctx, &claim); err != nil {
 			return settledResults, expiredResults, err
 		}
 
@@ -146,7 +146,7 @@ func (k Keeper) SettlePendingClaims(ctx cosmostypes.Context) (
 			}
 
 			if claim.ProofValidationStatus != prooftypes.ClaimProofStatus_VALIDATED {
-				// TODO_MAINNET_MIGRATION_MIGRATION(@red-0ne): Slash the supplier in proportion to their stake.
+				// TODO_MAINNET_MIGRATION(@red-0ne): Slash the supplier in proportion to their stake.
 				// TODO_POST_MAINNET: Consider allowing suppliers to RemoveClaim via a new message in case it was sent by accident
 
 				// Proof was required but is invalid or not found.

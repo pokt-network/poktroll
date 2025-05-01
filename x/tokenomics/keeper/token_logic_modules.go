@@ -81,7 +81,7 @@ func (k Keeper) ProcessTokenLogicModules(
 	if err != nil {
 		return tokenomicstypes.ErrTokenomicsRootHashInvalid.Wrapf("failed to retrieve numClaimComputeUnits: %s", err)
 	}
-	// TODO_MAINNET_MIGRATION_MIGRATION(@bryanchriswhite, @red-0ne): Fix the low-volume exploit here.
+	// TODO_MAINNET_MIGRATION(@bryanchriswhite, @red-0ne): Fix the low-volume exploit here.
 	// https://www.notion.so/buildwithgrove/RelayMiningDifficulty-and-low-volume-7aab3edf6f324786933af369c2fa5f01?pvs=4
 	if numClaimComputeUnits == 0 {
 		return tokenomicstypes.ErrTokenomicsRootHashInvalid.Wrap("root hash has zero relays")
@@ -106,6 +106,7 @@ func (k Keeper) ProcessTokenLogicModules(
 	*/
 
 	sharedParams := settlementContext.GetSharedParams()
+	tokenomicsParams := settlementContext.GetTokenomicsParams()
 
 	service, err := settlementContext.GetService(sessionHeader.ServiceId)
 	if err != nil {
@@ -164,9 +165,9 @@ func (k Keeper) ProcessTokenLogicModules(
 
 	// Ensure the claim amount is within the limits set by Relay Mining.
 	// If not, update the settlement amount and emit relevant events.
-	// TODO_MAINNET_MIGRATION_MIGRATION(@red-0ne): Consider pulling this out of Keeper#ProcessTokenLogicModules
+	// TODO_MAINNET_MIGRATION(@red-0ne): Consider pulling this out of Keeper#ProcessTokenLogicModules
 	// and ensure claim amount limits are enforced before TLM processing.
-	actualSettlementCoin, err := k.ensureClaimAmountLimits(ctx, logger, &sharedParams, application, supplier, claimSettlementCoin, applicationInitialStake)
+	actualSettlementCoin, err := k.ensureClaimAmountLimits(ctx, logger, &sharedParams, &tokenomicsParams, application, supplier, claimSettlementCoin, applicationInitialStake)
 	if err != nil {
 		return err
 	}
@@ -182,7 +183,7 @@ func (k Keeper) ProcessTokenLogicModules(
 	}
 
 	tlmCtx := tlm.TLMContext{
-		TokenomicsParams:      k.GetParams(ctx),
+		TokenomicsParams:      tokenomicsParams,
 		SettlementCoin:        actualSettlementCoin,
 		SessionHeader:         pendingResult.Claim.GetSessionHeader(),
 		Result:                pendingResult,
@@ -248,6 +249,7 @@ func (k Keeper) ensureClaimAmountLimits(
 	ctx context.Context,
 	logger log.Logger,
 	sharedParams *sharedtypes.Params,
+	tokenomicsParams *tokenomicstypes.Params,
 	application *apptypes.Application,
 	supplier *sharedtypes.Supplier,
 	claimSettlementCoin cosmostypes.Coin,
@@ -258,14 +260,14 @@ func (k Keeper) ensureClaimAmountLimits(
 ) {
 	logger = logger.With("helper", "ensureClaimAmountLimits")
 
-	// Note that this also incorporates MintPerClaimGlobalInflation since applications
+	// Note that this also incorporates MintP	erClaimGlobalInflation since applications
 	// are being overcharged by that amount and the funds are sent to the DAO/PNF
 	// before being reimbursed to the application in the future.
 	appStake := initialApplicationStake
 
 	// The application should have enough stake to cover for the global mint reimbursement.
 	// This amount is deducted from the maximum claimable amount.
-	globalInflationPerClaim := k.GetParams(ctx).GlobalInflationPerClaim
+	globalInflationPerClaim := tokenomicsParams.GlobalInflationPerClaim
 	globalInflationPerClaimRat, err := encoding.Float64ToRat(globalInflationPerClaim)
 	if err != nil {
 		logger.Error(fmt.Sprintf("error calculating claim amount limits due to: %v", err))

@@ -139,7 +139,7 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_Valid(t *testing.T) {
 		keepers.Keeper.Logger(),
 	)
 
-	err = settlementContext.AddClaim(ctx, &claim)
+	err = settlementContext.ClaimCacheWarmUp(ctx, &claim)
 	require.NoError(t, err)
 
 	// Process the token logic modules
@@ -299,7 +299,7 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_Valid_SupplierExceedsMaxClai
 		keepers.Keeper.Logger(),
 	)
 
-	err = settlementContext.AddClaim(ctx, &claim)
+	err = settlementContext.ClaimCacheWarmUp(ctx, &claim)
 	require.NoError(t, err)
 
 	// Process the token logic modules
@@ -474,7 +474,7 @@ func TestProcessTokenLogicModules_TLMGlobalMint_Valid_MintDistributionCorrect(t 
 		keepers.Keeper.Logger(),
 	)
 
-	err = settlementContext.AddClaim(ctx, &claim)
+	err = settlementContext.ClaimCacheWarmUp(ctx, &claim)
 	require.NoError(t, err)
 
 	// Process the token logic modules
@@ -595,9 +595,9 @@ func TestProcessTokenLogicModules_AppNotFound(t *testing.T) {
 
 	settlementContext := tokenomicskeeper.NewSettlementContext(ctx, &keeper, keeper.Logger())
 
-	// Ignoring the error from AddClaim as it will short-circuit the test
+	// Ignoring the error from ClaimCacheWarmUp as it will short-circuit the test
 	// and we want to test the error from ProcessTokenLogicModules.
-	_ = settlementContext.AddClaim(ctx, &claim)
+	_ = settlementContext.ClaimCacheWarmUp(ctx, &claim)
 
 	// Process the token logic modules
 	err := keeper.ProcessTokenLogicModules(ctx, settlementContext, pendingResult)
@@ -625,9 +625,9 @@ func TestProcessTokenLogicModules_ServiceNotFound(t *testing.T) {
 
 	settlementContext := tokenomicskeeper.NewSettlementContext(ctx, &keeper, keeper.Logger())
 
-	// Ignoring the error from AddClaim as it will short-circuit the test
+	// Ignoring the error from ClaimCacheWarmUp as it will short-circuit the test
 	// and we want to test the error from ProcessTokenLogicModules.
-	_ = settlementContext.AddClaim(ctx, &claim)
+	_ = settlementContext.ClaimCacheWarmUp(ctx, &claim)
 
 	// Execute test function
 	err := keeper.ProcessTokenLogicModules(ctx, settlementContext, pendingResult)
@@ -701,9 +701,9 @@ func TestProcessTokenLogicModules_InvalidRoot(t *testing.T) {
 
 			settlementContext := tokenomicskeeper.NewSettlementContext(ctx, &keeper, keeper.Logger())
 
-			// Ignoring the error from AddClaim as it will short-circuit the test
+			// Ignoring the error from ClaimCacheWarmUp as it will short-circuit the test
 			// and we want to test the error from ProcessTokenLogicModules.
-			_ = settlementContext.AddClaim(ctx, &claim)
+			_ = settlementContext.ClaimCacheWarmUp(ctx, &claim)
 
 			// Execute test function
 			err := keeper.ProcessTokenLogicModules(ctx, settlementContext, pendingResult)
@@ -794,9 +794,9 @@ func TestProcessTokenLogicModules_InvalidClaim(t *testing.T) {
 
 				settlementContext := tokenomicskeeper.NewSettlementContext(ctx, &keeper, keeper.Logger())
 
-				// Ignoring the error from AddClaim as it will short-circuit the test
+				// Ignoring the error from ClaimCacheWarmUp as it will short-circuit the test
 				// and we want to test the error from ProcessTokenLogicModules.
-				_ = settlementContext.AddClaim(ctx, &test.claim)
+				_ = settlementContext.ClaimCacheWarmUp(ctx, &test.claim)
 				return keeper.ProcessTokenLogicModules(ctx, settlementContext, pendingResult)
 			}()
 

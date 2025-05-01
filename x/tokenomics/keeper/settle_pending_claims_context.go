@@ -44,8 +44,10 @@ type settlementContext struct {
 	serviceMap               map[string]*sharedtypes.Service
 	relayMiningDifficultyMap map[string]servicetypes.RelayMiningDifficulty
 
-	// Cache of shared parameters used during the settlement process to prevent repeated KV store lookups.
-	sharedParams sharedtypes.Params
+	// Cache of parameters used during the settlement process to prevent repeated KV store lookups.
+	sharedParams     sharedtypes.Params
+	tokenomicsParams tokenomicstypes.Params
+	// TODO_IN_THIS_PR
 }
 
 // NewSettlementContext creates a new settlement context with all necessary caches initialized.
@@ -70,6 +72,7 @@ func NewSettlementContext(
 		serviceMap:               make(map[string]*sharedtypes.Service),
 		relayMiningDifficultyMap: make(map[string]servicetypes.RelayMiningDifficulty),
 		sharedParams:             tokenomicsKeeper.sharedKeeper.GetParams(ctx),
+		tokenomicsParams:         tokenomicsKeeper.GetParams(ctx),
 	}
 }
 
@@ -81,38 +84,41 @@ func NewSettlementContext(
 //   - Avoids repeated KV store operations for applications and suppliers involved in multiple claims
 func (sctx *settlementContext) FlushAllActorsToStore() {
 	logger := sctx.logger.With("method", "FlushAllActorsToStore")
+
+	// Flush all Application records to the store
 	for _, application := range sctx.settledApplications {
-		// State mutation: update the application's onchain record.
 		sctx.keeper.applicationKeeper.SetApplication(context.Background(), *application)
 		logger.Info(fmt.Sprintf("updated onchain application record with address %q", application.Address))
 	}
 	logger.Info(fmt.Sprintf("updated %d onchain application records", len(sctx.settledApplications)))
 
+	// Flush all Supplier records to the store
 	for _, supplier := range sctx.settledSuppliers {
-		// State mutation: Update the suppliers's onchain record.
 		sctx.keeper.supplierKeeper.SetDehydratedSupplier(context.Background(), *supplier)
 		logger.Info(fmt.Sprintf("updated onchain supplier record with address %q", supplier.OperatorAddress))
 	}
 	logger.Info(fmt.Sprintf("updated %d onchain supplier records", len(sctx.settledSuppliers)))
 }
 
-// AddClaim processes a proof claim and populates the settlement context with all
-// required data for claim settlement.
-func (sctx *settlementContext) AddClaim(ctx context.Context, claim *prooftypes.Claim) error {
+// ClaimCacheWarmUp warms up the settlement context's cache by based on the claim's properties.
+func (sctx *settlementContext) ClaimCacheWarmUp(ctx context.Context, claim *prooftypes.Claim) error {
 	if claim.SessionHeader == nil {
 		return tokenomicstypes.ErrTokenomicsSessionHeaderNil
 	}
 
+	// Cache service and difficulty
 	serviceId := claim.SessionHeader.ServiceId
 	if err := sctx.cacheServiceAndDifficulty(ctx, serviceId); err != nil {
 		return err
 	}
 
+	// Cache application
 	applicationAddress := claim.SessionHeader.ApplicationAddress
 	if err := sctx.cacheApplication(ctx, applicationAddress); err != nil {
 		return err
 	}
 
+	// Cache supplier
 	supplierOperatorAddress := claim.SupplierOperatorAddress
 	if err := sctx.cacheSupplier(ctx, supplierOperatorAddress, serviceId); err != nil {
 		return err
@@ -123,8 +129,6 @@ func (sctx *settlementContext) AddClaim(ctx context.Context, claim *prooftypes.C
 
 // GetApplicationInitialStake retrieves the initial stake of an application at the
 // beginning of the settlement process.
-// This method returns the cached value to ensure consistent stake calculations across
-// multiple claims involving the same application during a single settlement execution.
 func (sctx *settlementContext) GetApplicationInitialStake(appAddress string) (cosmostypes.Coin, error) {
 	if stake, ok := sctx.applicationInitialStakeMap[appAddress]; ok {
 		return stake, nil
@@ -165,8 +169,12 @@ func (sctx *settlementContext) GetSharedParams() sharedtypes.Params {
 	return sctx.sharedParams
 }
 
+// GetTokenomicsParams returns the cached tokenomics parameters used during the settlement process.
+func (sctx *settlementContext) GetTokenomicsParams() tokenomicstypes.Params {
+	return sctx.tokenomicsParams
+}
+
 // GetApplication retrieves a cached application by its address.
-// Using the cached application prevents redundant store lookups.
 func (sctx *settlementContext) GetApplication(appAddress string) (*apptypes.Application, error) {
 	if idx, ok := sctx.applicationMap[appAddress]; ok {
 		return sctx.settledApplications[idx], nil
@@ -178,7 +186,6 @@ func (sctx *settlementContext) GetApplication(appAddress string) (*apptypes.Appl
 }
 
 // GetSupplier retrieves a cached supplier by its operator address.
-// Using the cached supplier prevents redundant store lookups.
 func (sctx *settlementContext) GetSupplier(supplierOperatorAddress string) (*sharedtypes.Supplier, error) {
 	if idx, ok := sctx.supplierMap[supplierOperatorAddress]; ok {
 		return sctx.settledSuppliers[idx], nil
@@ -191,18 +198,21 @@ func (sctx *settlementContext) GetSupplier(supplierOperatorAddress string) (*sha
 }
 
 // GetSettledApplications returns all applications that have been modified during the settlement process.
+//
 // These applications will returned in the order they were added to the settlement context.
 func (sctx *settlementContext) GetSettledApplications() []*apptypes.Application {
 	return sctx.settledApplications
 }
 
 // GetSettledSuppliers returns all suppliers that have been modified during the settlement process.
+//
 // These suppliers will returned in the order they were added to the settlement context.
 func (sctx *settlementContext) GetSettledSuppliers() []*sharedtypes.Supplier {
 	return sctx.settledSuppliers
 }
 
 // cacheSupplier ensures the supplier for a claim is cached in the settlement context.
+//
 // This prevents repeated KV store lookups for the same supplier across multiple claims.
 func (sctx *settlementContext) cacheSupplier(
 	ctx context.Context,
@@ -235,6 +245,7 @@ func (sctx *settlementContext) cacheSupplier(
 }
 
 // cacheApplication ensures the application for a claim is cached in the settlement context.
+//
 // This prevents repeated KV store lookups for the same application across multiple claims.
 func (sctx *settlementContext) cacheApplication(ctx context.Context, appAddress string) error {
 	if _, ok := sctx.applicationMap[appAddress]; ok {
@@ -263,9 +274,9 @@ func (sctx *settlementContext) cacheApplication(ctx context.Context, appAddress 
 	return nil
 }
 
-// cacheServiceAndDifficulty ensures the service and its relay mining difficulty are cached
-// in the settlement context. This prevents repeated KV store lookups across multiple claims
-// targeting the same service.
+// cacheServiceAndDifficulty ensures the service and its relay mining difficulty are cached in the settlement context.
+//
+// This prevents repeated KV store lookups across multiple claims targeting the same service.
 func (sctx *settlementContext) cacheServiceAndDifficulty(ctx context.Context, serviceId string) error {
 	if _, ok := sctx.serviceMap[serviceId]; ok {
 		return nil // Service already cached
