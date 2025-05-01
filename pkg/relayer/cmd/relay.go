@@ -14,7 +14,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/crypto/keys/secp256k1"
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	"github.com/cosmos/cosmos-sdk/types/bech32"
-	"github.com/noot/ring-go"
+	ring "github.com/pokt-network/ring-go"
 	"github.com/spf13/cobra"
 
 	"github.com/pokt-network/poktroll/pkg/signer"
@@ -114,7 +114,7 @@ func GetApplicationRingSignature(
 	// At least two points are required to create a ring signer so we are reusing
 	// the same key for it
 	points := []ringtypes.Point{point, point}
-	var pointsRing ringtypes.PointRing
+	var pointsRing *ring.Ring
 	pointsRing, err = ring.NewFixedKeyRingFromPublicKeys(curve, points)
 	if err != nil {
 		return nil

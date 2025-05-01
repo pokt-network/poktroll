@@ -3,6 +3,12 @@ title: Claiming Morse Accounts
 sidebar_position: 6
 ---
 
+:::tip
+
+TODO_IN_THIS_PR: Link to keplr, etc...
+
+:::
+
 - [Account Definition](#account-definition)
 - [How do I claim my Morse POKT?](#how-do-i-claim-my-morse-pokt)
   - [0. Prerequisites](#0-prerequisites)
