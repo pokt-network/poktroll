@@ -152,9 +152,9 @@ func indexSuppliersServiceConfigs(ctx context.Context, keepers *keepers.Keepers,
 	// 		UnstakeSessionEndHeight: deprecatedSupplier.UnstakeSessionEndHeight,
 	// 	}
 
-	// 	// SetSupplier will automatically index the supplier service configs using
+	// 	// SetAndIndexDehydratedSupplier will automatically index the supplier service configs using
 	// 	// the new ServiceConfigHistory.
-	// 	keepers.SupplierKeeper.SetSupplier(ctx, supplier)
+	// 	keepers.SupplierKeeper.SetAndIndexDehydratedSupplier(ctx, supplier)
 	// }
 	return nil
 }

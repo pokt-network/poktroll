@@ -175,7 +175,7 @@ func (s *applicationMinStakeTestSuite) stakeSupplier() {
 		1,
 		sharedtypes.NoDeactivationHeight,
 	)
-	s.keepers.SupplierKeeper.SetSupplier(s.ctx, sharedtypes.Supplier{
+	s.keepers.SupplierKeeper.SetAndIndexDehydratedSupplier(s.ctx, sharedtypes.Supplier{
 		OwnerAddress:         s.supplierBech32,
 		OperatorAddress:      s.supplierBech32,
 		Stake:                &suppliertypes.DefaultMinStake,

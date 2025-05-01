@@ -229,7 +229,7 @@ func (k Keeper) StakeSupplier(
 	}
 
 	// Update the Supplier in the store
-	k.SetSupplier(ctx, supplier)
+	k.SetAndIndexDehydratedSupplier(ctx, supplier)
 	logger.Info(fmt.Sprintf("Successfully updated supplier stake for supplier: %+v", supplier))
 
 	sdkCtx := sdk.UnwrapSDKContext(ctx)

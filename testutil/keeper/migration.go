@@ -152,7 +152,7 @@ func defaultConfigWithMocks(ctrl *gomock.Controller) *MigrationKeeperConfig {
 		GetSupplier(gomock.Any(), gomock.Any()).
 		AnyTimes()
 	mockSupplierKeeper.EXPECT().
-		SetSupplier(gomock.Any(), gomock.Any()).
+		SetAndIndexDehydratedSupplier(gomock.Any(), gomock.Any()).
 		AnyTimes()
 
 	return &MigrationKeeperConfig{

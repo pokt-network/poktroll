@@ -122,7 +122,7 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_Valid(t *testing.T) {
 		Services:             services,
 		ServiceConfigHistory: serviceConfigHistory,
 	}
-	keepers.SetSupplier(ctx, supplier)
+	keepers.SetAndIndexDehydratedSupplier(ctx, supplier)
 
 	// Query the account and module start balances
 	appStartBalance := getBalance(t, ctx, keepers, app.GetAddress())
@@ -282,7 +282,7 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_Valid_SupplierExceedsMaxClai
 		Services:             services,
 		ServiceConfigHistory: serviceConfigHistory,
 	}
-	keepers.SetSupplier(ctx, supplier)
+	keepers.SetAndIndexDehydratedSupplier(ctx, supplier)
 
 	// Query the account and module start balances
 	appStartBalance := getBalance(t, ctx, keepers, app.GetAddress())
@@ -447,7 +447,7 @@ func TestProcessTokenLogicModules_TLMGlobalMint_Valid_MintDistributionCorrect(t 
 		Services:             services,
 		ServiceConfigHistory: serviceConfigHistory,
 	}
-	keepers.SetSupplier(ctx, supplier)
+	keepers.SetAndIndexDehydratedSupplier(ctx, supplier)
 
 	// Prepare the claim for which the supplier did work for the application
 	claim := prepareTestClaim(numRelays, service, &app, &supplier)

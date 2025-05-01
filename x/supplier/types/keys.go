@@ -85,7 +85,26 @@ const (
 
 // SupplierOperatorKey returns the store key to retrieve a Supplier from the index fields
 func SupplierOperatorKey(supplierOperatorAddr string) []byte {
+	// TODO_IN_THIS_PR: Is this techdebt or a bug?
+	// var key []byte
+	// key = append(key, SupplierOperatorKeyPrefix...)
+	// key = append(key, StringKey(supplierOperatorAddr)...)
+	// return key
 	return StringKey(supplierOperatorAddr)
+}
+
+// SupplierOperatorServiceKey returns the store key to retrieve a Supplier from the index fields
+// The key is composed of supplier operator address and service ID
+func SupplierOperatorServiceKey(supplierOperatorAddr string, serviceId string) []byte {
+	var key []byte
+
+	supplierOperatorAddressKey := StringKey(supplierOperatorAddr)
+	key = append(key, supplierOperatorAddressKey...)
+
+	serviceIdKey := StringKey(serviceId)
+	key = append(key, serviceIdKey...)
+
+	return key
 }
 
 // ServiceConfigUpdateKey returns the store key to retrieve a ServiceConfig from the index fields
@@ -116,15 +135,11 @@ func SupplierServiceConfigUpdateKey(serviceConfigUpdate sharedtypes.ServiceConfi
 	supplierOperatorAddressKey := StringKey(serviceConfigUpdate.OperatorAddress)
 	key = append(key, supplierOperatorAddressKey...)
 
-	if serviceConfigUpdate.Service.ServiceId != "" {
-		serviceIdKey := StringKey(serviceConfigUpdate.Service.ServiceId)
-		key = append(key, serviceIdKey...)
-	}
+	serviceIdKey := StringKey(serviceConfigUpdate.Service.ServiceId)
+	key = append(key, serviceIdKey...)
 
-	if serviceConfigUpdate.ActivationHeight != 0 {
-		activationHeightKey := IntKey(serviceConfigUpdate.ActivationHeight)
-		key = append(key, activationHeightKey...)
-	}
+	activationHeightKey := IntKey(serviceConfigUpdate.ActivationHeight)
+	key = append(key, activationHeightKey...)
 
 	return key
 }

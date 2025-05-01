@@ -578,7 +578,7 @@ func TestMsgServer_StakeSupplier_UpStakeFromBelowMinStake(t *testing.T) {
 		Stake:                &belowMinStake,
 		ServiceConfigHistory: serviceConfigHistory,
 	}
-	k.SetSupplier(ctx, initialSupplier)
+	k.SetAndIndexDehydratedSupplier(ctx, initialSupplier)
 
 	// Attempt to upstake the supplier with stake above min stake.
 	_, err := srv.StakeSupplier(ctx, stakeMsg)

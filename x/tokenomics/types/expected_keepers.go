@@ -97,14 +97,10 @@ type SupplierKeeper interface {
 	GetParams(ctx context.Context) suppliertypes.Params
 	GetSupplier(ctx context.Context, supplierOperatorAddr string) (supplier sharedtypes.Supplier, found bool)
 	GetDehydratedSupplier(ctx context.Context, supplierOperatorAddr string) (supplier sharedtypes.Supplier, found bool)
-	GetSupplierActiveServiceConfig(
-		ctx context.Context,
-		supplier *sharedtypes.Supplier,
-		serviceId string,
-	) (activeServiceConfigs []*sharedtypes.SupplierServiceConfig)
+	GetSupplierActiveServiceConfig(ctx context.Context, supplier *sharedtypes.Supplier, serviceId string) (activeServiceConfigs []*sharedtypes.SupplierServiceConfig)
 
 	// Setters
-	SetSupplier(ctx context.Context, supplier sharedtypes.Supplier)
+	SetAndIndexDehydratedSupplier(ctx context.Context, supplier sharedtypes.Supplier)
 	SetDehydratedSupplier(ctx context.Context, supplier sharedtypes.Supplier)
 }
 

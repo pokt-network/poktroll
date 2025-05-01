@@ -127,7 +127,7 @@ func (s *TestSuite) SetupTest() {
 		Services:             supplierServiceConfigs,
 		ServiceConfigHistory: supplierServiceConfigHistory,
 	}
-	s.keepers.SetSupplier(s.ctx, supplier)
+	s.keepers.SetAndIndexDehydratedSupplier(s.ctx, supplier)
 
 	appStake := types.NewCoin("upokt", math.NewInt(1000000))
 	app := apptypes.Application{
@@ -847,10 +847,8 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimExpired_SupplierUnstaked() {
 	// Get the active service configs at the time of the claimed session end height.
 	slashedSupplier.Services = slashedSupplier.GetActiveServiceConfigs(sessionEndHeight)
 
-	// The slasing flow skips populating all the supplier's history for performance
-	// reasons.
-	// The slashed supplier Services property alredy has the relevant active service
-	// configs at the time of the claimed session end height.
+	// DEV_NOTE: The slashing flow skips populating all the supplier's history for performance reasons.
+	// The slashed supplier Services property already has the relevant active service configs at the time of the claimed session end height.
 	slashedSupplier.ServiceConfigHistory = []*sharedtypes.ServiceConfigUpdate{}
 	expectedUnbondingBeginEvent := &suppliertypes.EventSupplierUnbondingBegin{
 		Supplier:           &slashedSupplier,

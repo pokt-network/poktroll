@@ -12,18 +12,30 @@ import (
 	"github.com/pokt-network/poktroll/x/supplier/types"
 )
 
-// SetSupplier stores a supplier state and indexes its relevant attributes for efficient querying.
+// SetSupplier stores a supplier record and indexes its relevant attributes for efficient querying.
+//
+// The function:
+// - Indexes service config updates for efficient retrieval
+// - Indexes unstaking height (if applicable)
+// - Stores the provided supplier record as is
+func (k Keeper) SetSupplier(ctx context.Context, supplier sharedtypes.Supplier) {
+	// Index service config updates for efficient retrieval
+	k.indexSupplierServiceConfigUpdates(ctx, supplier)
+	k.indexSupplierUnstakingHeight(ctx, supplier)
+	k.storeSupplier(ctx, &supplier)
+}
+
+// SetAndIndexDehydratedSupplier stores a supplier record and indexes its relevant attributes for efficient querying.
 // It modifies the Supplier structure onchain metadata to manage state bloat.
 //
 // The function:
 // - Indexes service config updates for efficient retrieval
 // - Indexes unstaking height (if applicable)
 // - Stores a dehydrated form of the supplier (without services and history)
-func (k Keeper) SetSupplier(ctx context.Context, supplier sharedtypes.Supplier) {
+func (k Keeper) SetAndIndexDehydratedSupplier(ctx context.Context, supplier sharedtypes.Supplier) {
 	// Index service config updates for efficient retrieval
 	k.indexSupplierServiceConfigUpdates(ctx, supplier)
 	k.indexSupplierUnstakingHeight(ctx, supplier)
-
 	// Store the supplier in a dehydrated form to reduce state bloat
 	k.SetDehydratedSupplier(ctx, supplier)
 }
@@ -39,17 +51,13 @@ func (k Keeper) SetDehydratedSupplier(
 	// These details can be hydrated just-in-time (when queried) using the indexes.
 	supplier.Services = nil
 	supplier.ServiceConfigHistory = nil
-	supplierBz := k.cdc.MustMarshal(&supplier)
-
-	// Store the supplier without service details to reduce state bloat.
-	supplierStore := k.getSupplierStore(ctx)
-	supplierKey := types.SupplierOperatorKey(supplier.OperatorAddress)
-	supplierStore.Set(supplierKey, supplierBz)
+	k.storeSupplier(ctx, &supplier)
 }
 
 // GetDehydratedSupplier retrieves a dehydrated supplier.
 // It omits hydrating a Supplier object with the available indexes (e.g. service config updates and unstaking height).
 // Useful and more efficient when the service details aren't needed.
+// storeSupplier marshals and stores the supplier record in the supplier store.
 func (k Keeper) GetDehydratedSupplier(
 	ctx context.Context,
 	supplierOperatorAddr string,
@@ -154,8 +162,8 @@ func (k Keeper) GetSupplierActiveServiceConfig(
 	currentHeight := sdkCtx.BlockHeight()
 
 	// Retrieve the supplier's service configuration history for the specified service ID.
-	// Determine which update is active at the current block height.
 	serviceConfigHistory := k.getSupplierServiceConfigUpdates(ctx, supplier.OperatorAddress, serviceId)
+	// Determine which update is active at the current block height.
 	return sharedtypes.GetActiveServiceConfigsFromHistory(serviceConfigHistory, currentHeight)
 }
 
@@ -169,4 +177,12 @@ func (k Keeper) getSupplierStore(ctx context.Context) storetypes.KVStore {
 func (k Keeper) getSupplierUnstakingHeightStore(ctx context.Context) storetypes.KVStore {
 	storeAdapter := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
 	return prefix.NewStore(storeAdapter, types.KeyPrefix(types.SupplierUnstakingHeightKeyPrefix))
+}
+
+// storeSupplier marshals and stores the supplier record in the supplier store.
+func (k Keeper) storeSupplier(ctx context.Context, supplier *sharedtypes.Supplier) {
+	supplierBz := k.cdc.MustMarshal(supplier)
+	supplierStore := k.getSupplierStore(ctx)
+	supplierKey := types.SupplierOperatorKey(supplier.OperatorAddress)
+	supplierStore.Set(supplierKey, supplierBz)
 }

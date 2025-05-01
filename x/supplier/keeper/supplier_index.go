@@ -39,8 +39,6 @@ import (
 	"github.com/pokt-network/poktroll/x/supplier/types"
 )
 
-const ALL_SERVICES = ""
-
 // indexSupplierServiceConfigUpdates maintains multiple indices for efficient
 // lookups of service configuration updates.
 //
@@ -124,11 +122,11 @@ func (k Keeper) indexSupplierUnstakingHeight(
 // getSupplierServiceConfigUpdates retrieves all service configuration updates for a specific supplier.
 //
 // This function uses the supplier-to-service index to efficiently find all service
-// configurations associated with the given supplier operator address, without needing
-// to scan and unmarshal the entire service configuration updates store.
+// configurations associated with the given supplier operator address and service ID,
+// without needing to scan and unmarshal the entire service configuration updates store.
 //
-// - If ALL_SERVICES is passed, returns all service configurations of the given supplier
-// - Otherwise, filters them by supplier operator address and service ID
+// - If an empty serviceId ("") is passed, returns all service configurations of the given supplier
+// - Otherwise, filters service configurations by both the operator address and service ID
 func (k Keeper) getSupplierServiceConfigUpdates(
 	ctx context.Context,
 	supplierOperatorAddress string,
@@ -138,12 +136,15 @@ func (k Keeper) getSupplierServiceConfigUpdates(
 	supplierServiceConfigUpdateStore := k.getSupplierServiceConfigUpdatesStore(ctx)
 	serviceConfigUpdateStore := k.getServiceConfigUpdatesStore(ctx)
 
-	// Create iterator for the supplier's service configs
-	serviceConfigUpdateFilter := sharedtypes.ServiceConfigUpdate{
-		OperatorAddress: supplierOperatorAddress,
-		Service:         &sharedtypes.SupplierServiceConfig{ServiceId: serviceId},
+	// Determine the key for the iterator based on the service ID
+	var supplierServiceConfigUpdateKey []byte
+	if serviceId == "" {
+		supplierServiceConfigUpdateKey = types.SupplierOperatorKey(supplierOperatorAddress)
+	} else {
+		supplierServiceConfigUpdateKey = types.SupplierOperatorServiceKey(supplierOperatorAddress, serviceId)
 	}
-	supplierServiceConfigUpdateKey := types.SupplierServiceConfigUpdateKey(serviceConfigUpdateFilter)
+
+	// Create iterator for the supplier's service configs
 	supplierServiceConfigIterator := storetypes.KVStorePrefixIterator(
 		supplierServiceConfigUpdateStore,
 		supplierServiceConfigUpdateKey,

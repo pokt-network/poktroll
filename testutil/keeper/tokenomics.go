@@ -195,9 +195,9 @@ func TokenomicsKeeperWithActorAddrs(t testing.TB) (
 
 	// Mock the supplier keeper.
 	mockSupplierKeeper := mocks.NewMockSupplierKeeper(ctrl)
-	// Mock SetSupplier.
+	// Mock SetAndIndexDehydratedSupplier.
 	mockSupplierKeeper.EXPECT().
-		SetSupplier(gomock.Any(), gomock.Any()).
+		SetAndIndexDehydratedSupplier(gomock.Any(), gomock.Any()).
 		AnyTimes()
 	mockSupplierKeeper.EXPECT().
 		SetDehydratedSupplier(gomock.Any(), gomock.Any()).
@@ -622,7 +622,7 @@ func WithApplication(applicaion apptypes.Application) TokenomicsModuleKeepersOpt
 // WithSupplier is an option to set the supplier in the tokenomics module keepers.
 func WithSupplier(supplier sharedtypes.Supplier) TokenomicsModuleKeepersOptFn {
 	setSupplier := func(ctx context.Context, keepers *TokenomicsModuleKeepers) context.Context {
-		keepers.SetSupplier(ctx, supplier)
+		keepers.SetAndIndexDehydratedSupplier(ctx, supplier)
 		return ctx
 	}
 	return func(cfg *tokenomicsModuleKeepersConfig) {
