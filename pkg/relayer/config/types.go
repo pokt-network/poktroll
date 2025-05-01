@@ -175,7 +175,9 @@ type RelayMinerSupplierServiceConfig struct {
 	// For example: { "Authorization": "Bearer <token>" }
 	Headers map[string]string
 	// ForwardPocketHeaders toggles if headers prefixed with 'Pocket-' should be forwarded to
-	// the backend service servicing the relay requests.
+	// the backend service (e.g. ETH blockchain node) servicing the relay requests.
+	// This is useful in cases where the operator wants to distinguish and handle pocket-specific
+	// requests differently.
 	ForwardPocketHeaders bool
 }
 

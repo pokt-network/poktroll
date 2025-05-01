@@ -325,13 +325,16 @@ requests to the service. It can be used to add additional headers like
 _`Optional`_
 
 When `forward_identity_headers` is enabled, the following Pocket-specific headers are automatically added
-to every request sent to your backend service. 
+to every request, which are forwarded to the operator's backend service. 
+
 These headers help identify the Supplier, the Service, and the Application within the Pocket Network context.
+
+It is useful in cases where the operator wants to distinguish and apply custom logic.
 
 | Header                      | Description                                                          |
 |-----------------------------|----------------------------------------------------------------------|
 | Pocket-Supplier             | The address of the Supplier operator that is forwarding the request. |
-| Pocket-Service              | The on-chain Service Id for which the Supplier is staked.            |
+| Pocket-Service              | The onchain Service Id for which the Supplier is staked.            |
 | Pocket-Session-Id           | The unique Session Id associated with the current relay session.     |
 | Pocket-Application          | The address of the Application making the request.                   |
 | Pocket-Session-Start-Height | The block height at which the current session began.                 |
