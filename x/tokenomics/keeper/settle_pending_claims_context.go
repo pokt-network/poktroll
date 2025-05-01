@@ -81,19 +81,19 @@ func NewSettlementContext(
 // This optimization:
 //   - Reduces redundant writes to state storage by updating each record only once.
 //   - Avoids repeated KV store operations for applications and suppliers involved in multiple claims
-func (sctx *settlementContext) FlushAllActorsToStore() {
+func (sctx *settlementContext) FlushAllActorsToStore(ctx context.Context) {
 	logger := sctx.logger.With("method", "FlushAllActorsToStore")
 
 	// Flush all Application records to the store
 	for _, application := range sctx.settledApplications {
-		sctx.keeper.applicationKeeper.SetApplication(context.Background(), *application)
+		sctx.keeper.applicationKeeper.SetApplication(ctx, *application)
 		logger.Info(fmt.Sprintf("updated onchain application record with address %q", application.Address))
 	}
 	logger.Info(fmt.Sprintf("updated %d onchain application records", len(sctx.settledApplications)))
 
 	// Flush all Supplier records to the store
 	for _, supplier := range sctx.settledSuppliers {
-		sctx.keeper.supplierKeeper.SetDehydratedSupplier(context.Background(), *supplier)
+		sctx.keeper.supplierKeeper.SetDehydratedSupplier(ctx, *supplier)
 		logger.Info(fmt.Sprintf("updated onchain supplier record with address %q", supplier.OperatorAddress))
 	}
 	logger.Info(fmt.Sprintf("updated %d onchain supplier records", len(sctx.settledSuppliers)))

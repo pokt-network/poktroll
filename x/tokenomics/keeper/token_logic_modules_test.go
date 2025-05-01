@@ -153,7 +153,7 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_Valid(t *testing.T) {
 	require.NoError(t, err)
 
 	// Persist the actors state
-	settlementContext.FlushAllActorsToStore()
+	settlementContext.FlushAllActorsToStore(ctx)
 
 	// Assert that `applicationAddress` account balance is *unchanged*
 	appEndBalance := getBalance(t, ctx, keepers, app.GetAddress())
@@ -313,7 +313,7 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_Valid_SupplierExceedsMaxClai
 	require.NoError(t, err)
 
 	// Persist the actors state
-	settlementContext.FlushAllActorsToStore()
+	settlementContext.FlushAllActorsToStore(ctx)
 
 	// Assert that `applicationAddress` account balance is *unchanged*
 	appEndBalance := getBalance(t, ctx, keepers, app.GetAddress())
@@ -482,7 +482,7 @@ func TestProcessTokenLogicModules_TLMGlobalMint_Valid_MintDistributionCorrect(t 
 	require.NoError(t, err)
 
 	// Persist the actors state
-	settlementContext.FlushAllActorsToStore()
+	settlementContext.FlushAllActorsToStore(ctx)
 
 	// Execute the pending results
 	pendingResults := make(tlm.ClaimSettlementResults, 0)

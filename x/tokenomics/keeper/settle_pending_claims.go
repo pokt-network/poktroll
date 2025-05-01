@@ -244,7 +244,7 @@ func (k Keeper) SettlePendingClaims(ctx cosmostypes.Context) (
 
 	// Persist the state of all the applications and suppliers involved in the claims.
 	// This is done in a single batch to reduce the number of writes to state storage.
-	settlementContext.FlushAllActorsToStore()
+	settlementContext.FlushAllActorsToStore(ctx)
 
 	logger.Info(fmt.Sprintf("found %d expiring claims at block height %d", numExpiringClaims, blockHeight))
 
