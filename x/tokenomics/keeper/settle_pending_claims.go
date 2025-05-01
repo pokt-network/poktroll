@@ -449,7 +449,7 @@ func (k Keeper) executePendingModToAcctTransfers(
 			return err
 		}
 
-		recepientAddr, err := cosmostypes.AccAddressFromBech32(transfer.RecipientAddress)
+		recipientAddr, err := cosmostypes.AccAddressFromBech32(transfer.RecipientAddress)
 		if err != nil {
 			return tokenomicstypes.ErrTokenomicsSettlementTransfer.Wrapf(
 				"sender module %q to recipient address %q transferring %s (reason %q): %s",
@@ -464,7 +464,7 @@ func (k Keeper) executePendingModToAcctTransfers(
 		if err = k.bankKeeper.SendCoinsFromModuleToAccount(
 			ctx,
 			transfer.SenderModule,
-			recepientAddr,
+			recipientAddr,
 			cosmostypes.NewCoins(transfer.Coin),
 		); err != nil {
 			return tokenomicstypes.ErrTokenomicsSettlementTransfer.Wrapf(
@@ -478,7 +478,7 @@ func (k Keeper) executePendingModToAcctTransfers(
 		}
 
 		logger.Info(fmt.Sprintf(
-			"executing operation: transfering %s coins from the %q module account to account address %q, reason: %q",
+			"executing operation: transferring %s coins from the %q module account to account address %q, reason: %q",
 			transfer.Coin, transfer.SenderModule, transfer.RecipientAddress, transfer.OpReason.String(),
 		))
 	}
