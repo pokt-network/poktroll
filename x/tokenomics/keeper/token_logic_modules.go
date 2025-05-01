@@ -93,14 +93,16 @@ func (k Keeper) ProcessTokenLogicModules(
 	}
 
 	/*
-		TODO_POST_MAINNET: Because of how things have evolved, we are now using
-		root.Count (numRelays) instead of root.Sum (numComputeUnits) to determine
-		the amount of work done. This is because the compute_units_per_relay is
-		a service specific (not request specific) parameter that will be maintained
-		by the service owner to capture the average amount of resources (i.e.
-		compute, storage, bandwidth, electricity, etc...) per request. Modifying
-		this on a per request basis has been deemed too complex and not a mainnet
-		blocker.
+		TODO_POST_MAINNET(@olshansk): Fix the roo.Count and root.Sum confusion.
+
+		Because of how things have evolved, we are now using root.Count (numRelays)
+		instead of root.Sum (numComputeUnits) to determine the amount of work done.
+
+		This is because the compute_units_per_relay is a service specific (not request specific)
+		parameter that will be maintained by the service owner to capture the average amount of
+		resources (i.e. compute, storage, bandwidth, electricity, etc...) per request.
+
+		Modifying this on a per request basis has been deemed too complex and not a mainnet blocker.
 	*/
 
 	sharedParams := settlementContext.GetSharedParams()

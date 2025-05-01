@@ -6,6 +6,7 @@ import (
 
 	cosmoslog "cosmossdk.io/log"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
+
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 	servicekeeper "github.com/pokt-network/poktroll/x/service/keeper"
@@ -15,7 +16,7 @@ import (
 )
 
 // settlementContext maintains a cache of all entities involved in the claim settlement process.
-// This structure optimizes claim processing performance by eliminating redundant KV store.
+// This structure optimizes claim processing performance by eliminating redundant KV store operations.
 type settlementContext struct {
 	logger cosmoslog.Logger
 	keeper *Keeper
@@ -38,10 +39,13 @@ type settlementContext struct {
 	applicationInitialStakeMap map[string]cosmostypes.Coin
 
 	// Cache of services and relay mining difficulties encountered during settlement.
-	// Each service is only fetched once from the store and reused for all related claims
+	// Each service is only fetched once from the store and reused for all related claims.
+	// The service ID is used as the key for the maps
 	serviceMap               map[string]*sharedtypes.Service
 	relayMiningDifficultyMap map[string]servicetypes.RelayMiningDifficulty
-	sharedParams             sharedtypes.Params
+
+	// Cache of shared parameters used during the settlement process to prevent repeated KV store lookups.
+	sharedParams sharedtypes.Params
 }
 
 // NewSettlementContext creates a new settlement context with all necessary caches initialized.
@@ -67,6 +71,29 @@ func NewSettlementContext(
 		relayMiningDifficultyMap: make(map[string]servicetypes.RelayMiningDifficulty),
 		sharedParams:             tokenomicsKeeper.sharedKeeper.GetParams(ctx),
 	}
+}
+
+// FlushAllActorsToStore batch save all accumulated applications and suppliers to the store.
+// It is intended to be called after all claims have been processed.
+
+// This optimization:
+//   - Reduces redundant writes to state storage by updating each record only once.
+//   - Avoids repeated KV store operations for applications and suppliers involved in multiple claims
+func (sctx *settlementContext) FlushAllActorsToStore() {
+	logger := sctx.logger.With("method", "FlushAllActorsToStore")
+	for _, application := range sctx.settledApplications {
+		// State mutation: update the application's onchain record.
+		sctx.keeper.applicationKeeper.SetApplication(context.Background(), *application)
+		logger.Info(fmt.Sprintf("updated onchain application record with address %q", application.Address))
+	}
+	logger.Info(fmt.Sprintf("updated %d onchain application records", len(sctx.settledApplications)))
+
+	for _, supplier := range sctx.settledSuppliers {
+		// State mutation: Update the suppliers's onchain record.
+		sctx.keeper.supplierKeeper.SetDehydratedSupplier(context.Background(), *supplier)
+		logger.Info(fmt.Sprintf("updated onchain supplier record with address %q", supplier.OperatorAddress))
+	}
+	logger.Info(fmt.Sprintf("updated %d onchain supplier records", len(sctx.settledSuppliers)))
 }
 
 // AddClaim processes a proof claim and populates the settlement context with all

@@ -1,7 +1,6 @@
 package keeper
 
 import (
-	"context"
 	"fmt"
 
 	cosmoslog "cosmossdk.io/log"
@@ -245,7 +244,7 @@ func (k Keeper) SettlePendingClaims(ctx cosmostypes.Context) (
 
 	// Persist the state of all the applications and suppliers involved in the claims.
 	// This is done in a single batch to reduce the number of writes to state storage.
-	k.PersistActorsState(ctx, settlementContext)
+	settlementContext.FlushAllActorsToStore()
 
 	logger.Info(fmt.Sprintf("found %d expiring claims at block height %d", numExpiringClaims, blockHeight))
 
@@ -355,33 +354,6 @@ func (k Keeper) ExecutePendingSettledResults(ctx cosmostypes.Context, settledRes
 	logger.Info("done executing pending settlement results")
 
 	return nil
-}
-
-// PersistActorsState batch save all accumulated applications and suppliers
-// after processing all claims.
-// This optimization:
-//   - Reduces redundant writes to state storage by updating each record only once
-//   - Avoids repeated KV store operations for applications and suppliers involved
-//     in multiple claims
-//
-// DEV_NOTE: This function is exported for testing purposes.
-func (k Keeper) PersistActorsState(
-	ctx context.Context,
-	settlementContext *settlementContext,
-) {
-	logger := k.logger.With("method", "PersistActorsState")
-	for _, application := range settlementContext.GetSettledApplications() {
-		// State mutation: update the application's onchain record.
-		k.applicationKeeper.SetApplication(ctx, *application)
-		logger.Info(fmt.Sprintf("updated onchain application record with address %q", application.Address))
-	}
-
-	for _, supplier := range settlementContext.GetSettledSuppliers() {
-		// State mutation: Update the suppliers's onchain record
-		k.supplierKeeper.SetDehydratedSupplier(ctx, *supplier)
-		logger.Info(fmt.Sprintf("updated onchain supplier record with address %q", supplier.OperatorAddress))
-	}
-
 }
 
 // executePendingModuleMints executes all pending mint operations.
