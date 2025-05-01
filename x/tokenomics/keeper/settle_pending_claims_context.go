@@ -47,7 +47,6 @@ type settlementContext struct {
 	// Cache of parameters used during the settlement process to prevent repeated KV store lookups.
 	sharedParams     sharedtypes.Params
 	tokenomicsParams tokenomicstypes.Params
-	// TODO_IN_THIS_PR
 }
 
 // NewSettlementContext creates a new settlement context with all necessary caches initialized.
