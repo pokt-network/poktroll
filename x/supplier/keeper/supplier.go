@@ -24,6 +24,17 @@ func (k Keeper) SetSupplier(ctx context.Context, supplier sharedtypes.Supplier) 
 	k.indexSupplierServiceConfigUpdates(ctx, supplier)
 	k.indexSupplierUnstakingHeight(ctx, supplier)
 
+	// Store the supplier in a dehydrated form to reduce state bloat
+	k.SetDehydratedSupplier(ctx, supplier)
+}
+
+// SetDehydratedSupplier stores a dehydrated supplier in the store.
+// It omits service details and history to reduce state bloat.
+// This is useful when the service details are not needed for the current operation.
+func (k Keeper) SetDehydratedSupplier(
+	ctx context.Context,
+	supplier sharedtypes.Supplier,
+) {
 	// Dehydrate the supplier to reduce state bloat.
 	// These details can be hydrated just-in-time (when queried) using the indexes.
 	supplier.Services = nil
@@ -124,8 +135,28 @@ func (k Keeper) hydrateSupplierServiceConfigs(ctx context.Context, supplier *sha
 	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
 	currentHeight := sdkCtx.BlockHeight()
 
-	supplier.ServiceConfigHistory = k.getSupplierServiceConfigUpdates(ctx, supplier.OperatorAddress)
+	supplier.ServiceConfigHistory = k.getSupplierServiceConfigUpdates(ctx, supplier.OperatorAddress, ALL_SERVICES)
 	supplier.Services = supplier.GetActiveServiceConfigs(currentHeight)
+}
+
+// GetSupplierActiveServiceConfig retrieves a supplier's active service configuration
+// update for a specific service ID based on the current block height.
+
+// The function:
+// - Retrieves the supplier's service configuration history for the specified service ID
+// - Returns the configuration that is active at the current block height
+func (k Keeper) GetSupplierActiveServiceConfig(
+	ctx context.Context,
+	supplier *sharedtypes.Supplier,
+	serviceId string,
+) []*sharedtypes.SupplierServiceConfig {
+	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
+	currentHeight := sdkCtx.BlockHeight()
+
+	// Retrieve the supplier's service configuration history for the specified service ID.
+	// Determine which update is active at the current block height.
+	serviceConfigHistory := k.getSupplierServiceConfigUpdates(ctx, supplier.OperatorAddress, serviceId)
+	return sharedtypes.GetActiveServiceConfigsFromHistory(serviceConfigHistory, currentHeight)
 }
 
 // getSupplierStore returns a KVStore for the supplier data
@@ -138,21 +169,4 @@ func (k Keeper) getSupplierStore(ctx context.Context) storetypes.KVStore {
 func (k Keeper) getSupplierUnstakingHeightStore(ctx context.Context) storetypes.KVStore {
 	storeAdapter := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
 	return prefix.NewStore(storeAdapter, types.KeyPrefix(types.SupplierUnstakingHeightKeyPrefix))
-}
-
-// GetAllDeprecatedSuppliers returns all suppliers in their deprecated protobuf format (i.e. Prior to v0.1.8).
-// TODO_DELETE(#1230, @red-0ne): Remove this function after v0.1.8 upgrade
-func (k Keeper) GetAllDeprecatedSuppliers(ctx context.Context) (suppliers []sharedtypes.SupplierDeprecated) {
-	supplierStore := k.getSupplierStore(ctx)
-	iterator := storetypes.KVStorePrefixIterator(supplierStore, []byte{})
-	defer iterator.Close()
-
-	for ; iterator.Valid(); iterator.Next() {
-		var supplier sharedtypes.SupplierDeprecated
-		k.cdc.MustUnmarshal(iterator.Value(), &supplier)
-
-		suppliers = append(suppliers, supplier)
-	}
-
-	return suppliers
 }

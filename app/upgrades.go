@@ -50,7 +50,10 @@ var allUpgrades = []upgrades.Upgrade{
 	// v0.1.8 - upgrade to enable:
 	// - Application indexing
 	// - Suppliers service config indexing and more granular hydration
-	upgrades.Upgrade_0_1_8,
+	// upgrades.Upgrade_0_1_8,
+
+	// v0.1.9 - upgrade to cache claim settlement context
+	upgrades.Upgrade_0_1_9,
 }
 
 // setUpgrades sets upgrade handlers for all upgrades and executes KVStore migration if an upgrade plan file exists.

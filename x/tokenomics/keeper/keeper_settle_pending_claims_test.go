@@ -844,7 +844,14 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimExpired_SupplierUnstaked() {
 			slashedSupplier.ServiceConfigHistory[i].Service.Endpoints = []*sharedtypes.SupplierEndpoint{}
 		}
 	}
-	slashedSupplier.Services = slashedSupplier.GetActiveServiceConfigs(sdkCtx.BlockHeight())
+	// Get the active service configs at the time of the claimed session end height.
+	slashedSupplier.Services = slashedSupplier.GetActiveServiceConfigs(sessionEndHeight)
+
+	// The slasing flow skips populating all the supplier's history for performance
+	// reasons.
+	// The slashed supplier Services property alredy has the relevant active service
+	// configs at the time of the claimed session end height.
+	slashedSupplier.ServiceConfigHistory = []*sharedtypes.ServiceConfigUpdate{}
 	expectedUnbondingBeginEvent := &suppliertypes.EventSupplierUnbondingBegin{
 		Supplier:           &slashedSupplier,
 		Reason:             suppliertypes.SupplierUnbondingReason_SUPPLIER_UNBONDING_REASON_BELOW_MIN_STAKE,

@@ -18,8 +18,8 @@ package types
 // │                                                                                    │
 // │ SupplierServiceConfigUpdateKey()         ServiceConfigUpdate/operator_address/     │
 // │                                         └── <SupplierAddr>/                        │
-// │                                             <ActHeight>/                           │
 // │                                             <ServiceID>/                           │
+// │                                             <ActHeight>/                           │
 // │                                                                                    │
 // │ ServiceConfigUpdateActivationHeightKey() ServiceConfigUpdate/activation_height/    │
 // │                                         └── <ActHeight>/                           │
@@ -107,20 +107,24 @@ func ServiceConfigUpdateKey(serviceConfigUpdate sharedtypes.ServiceConfigUpdate)
 }
 
 // SupplierServiceConfigUpdateKey returns the store key to retrieve a ServiceConfig from the index fields
-// The key is composed of supplier operator address, activation height, and service ID
+// The key is composed of supplier operator address, service ID, and activation height
 // This ordering allows efficient range queries for configurations by supplier operator
-// address and activation height
+// address and service ID
 func SupplierServiceConfigUpdateKey(serviceConfigUpdate sharedtypes.ServiceConfigUpdate) []byte {
 	var key []byte
 
 	supplierOperatorAddressKey := StringKey(serviceConfigUpdate.OperatorAddress)
 	key = append(key, supplierOperatorAddressKey...)
 
-	activationHeightKey := IntKey(serviceConfigUpdate.ActivationHeight)
-	key = append(key, activationHeightKey...)
+	if serviceConfigUpdate.Service.ServiceId != "" {
+		serviceIdKey := StringKey(serviceConfigUpdate.Service.ServiceId)
+		key = append(key, serviceIdKey...)
+	}
 
-	serviceIdKey := StringKey(serviceConfigUpdate.Service.ServiceId)
-	key = append(key, serviceIdKey...)
+	if serviceConfigUpdate.ActivationHeight != 0 {
+		activationHeightKey := IntKey(serviceConfigUpdate.ActivationHeight)
+		key = append(key, activationHeightKey...)
+	}
 
 	return key
 }

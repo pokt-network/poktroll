@@ -137,23 +137,26 @@ func TokenomicsKeeperWithActorAddrs(t testing.TB) (
 		ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{{ServiceId: service.Id}},
 	}
 
-	// Prepare the test supplier.
 	supplierOwnerAddr := sample.AccAddress()
+
+	// The list of services that the supplier is staking for.
+	services := []*sharedtypes.SupplierServiceConfig{
+		{
+			ServiceId: service.Id,
+			RevShare: []*sharedtypes.ServiceRevenueShare{
+				{
+					Address:            supplierOwnerAddr,
+					RevSharePercentage: uint64(100),
+				},
+			},
+		},
+	}
+	// Prepare the test supplier.
 	supplier := sharedtypes.Supplier{
 		OwnerAddress:    supplierOwnerAddr,
 		OperatorAddress: supplierOwnerAddr,
 		Stake:           &cosmostypes.Coin{Denom: "upokt", Amount: cosmosmath.NewInt(100000)},
-		Services: []*sharedtypes.SupplierServiceConfig{
-			{
-				ServiceId: service.Id,
-				RevShare: []*sharedtypes.ServiceRevenueShare{
-					{
-						Address:            supplierOwnerAddr,
-						RevSharePercentage: uint64(100),
-					},
-				},
-			},
-		},
+		Services:        services,
 	}
 
 	sdkCtx := cosmostypes.NewContext(stateStore, cmtproto.Header{}, false, log.NewNopLogger())
@@ -196,11 +199,35 @@ func TokenomicsKeeperWithActorAddrs(t testing.TB) (
 	mockSupplierKeeper.EXPECT().
 		SetSupplier(gomock.Any(), gomock.Any()).
 		AnyTimes()
+	mockSupplierKeeper.EXPECT().
+		SetDehydratedSupplier(gomock.Any(), gomock.Any()).
+		AnyTimes()
 
 	// Get test supplier if the address matches.
 	mockSupplierKeeper.EXPECT().
 		GetSupplier(gomock.Any(), gomock.Eq(supplier.OperatorAddress)).
 		Return(supplier, true).
+		AnyTimes()
+	mockSupplierKeeper.EXPECT().
+		GetDehydratedSupplier(gomock.Any(), gomock.Eq(supplier.OperatorAddress)).
+		Return(supplier, true).
+		AnyTimes()
+	mockSupplierKeeper.EXPECT().
+		GetDehydratedSupplier(gomock.Any(), gomock.Not(supplier.OperatorAddress)).
+		Return(sharedtypes.Supplier{}, false).
+		AnyTimes()
+	mockSupplierKeeper.EXPECT().
+		GetSupplierActiveServiceConfig(gomock.Any(), gomock.Any(), gomock.Any()).
+		DoAndReturn(func(ctx context.Context, supplierInstance *sharedtypes.Supplier, serviceId string) []*sharedtypes.SupplierServiceConfig {
+			if supplier.OperatorAddress != supplierInstance.OperatorAddress {
+				return []*sharedtypes.SupplierServiceConfig{}
+			}
+			if serviceId != service.Id {
+				return []*sharedtypes.SupplierServiceConfig{}
+			}
+
+			return services
+		}).
 		AnyTimes()
 
 	// Mock the bank keeper.

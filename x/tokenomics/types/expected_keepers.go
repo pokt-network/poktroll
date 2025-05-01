@@ -86,7 +86,14 @@ type SessionKeeper interface {
 type SupplierKeeper interface {
 	GetParams(ctx context.Context) suppliertypes.Params
 	GetSupplier(ctx context.Context, supplierOperatorAddr string) (supplier sharedtypes.Supplier, found bool)
+	GetDehydratedSupplier(ctx context.Context, supplierOperatorAddr string) (supplier sharedtypes.Supplier, found bool)
+	GetSupplierActiveServiceConfig(
+		ctx context.Context,
+		supplier *sharedtypes.Supplier,
+		serviceId string,
+	) (activeServiceConfigs []*sharedtypes.SupplierServiceConfig)
 	SetSupplier(ctx context.Context, supplier sharedtypes.Supplier)
+	SetDehydratedSupplier(ctx context.Context, supplier sharedtypes.Supplier)
 }
 
 type ServiceKeeper interface {

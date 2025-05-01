@@ -16,7 +16,6 @@ import (
 	"github.com/pokt-network/poktroll/pkg/encoding"
 	"github.com/pokt-network/poktroll/telemetry"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
-	servicekeeper "github.com/pokt-network/poktroll/x/service/keeper"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 	tlm "github.com/pokt-network/poktroll/x/tokenomics/token_logic_module"
 	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
@@ -33,8 +32,8 @@ import (
 // IMPORTANT: It is assumed that the proof for the claim has been validated BEFORE calling this function.
 func (k Keeper) ProcessTokenLogicModules(
 	ctx context.Context,
+	settlementContext *settlementContext,
 	pendingResult *tokenomicstypes.ClaimSettlementResult,
-	applicationInitialStake cosmostypes.Coin,
 ) error {
 	logger := k.Logger().With("method", "ProcessTokenLogicModules")
 
@@ -104,37 +103,31 @@ func (k Keeper) ProcessTokenLogicModules(
 		blocker.
 	*/
 
-	// Retrieve the application address that is being charged; getting services and paying tokens.
-	applicationAddress, err := cosmostypes.AccAddressFromBech32(sessionHeader.GetApplicationAddress())
-	if err != nil || applicationAddress == nil {
-		return tokenomicstypes.ErrTokenomicsApplicationAddressInvalid.Wrapf("address (%q)", sessionHeader.GetApplicationAddress())
+	sharedParams := settlementContext.GetSharedParams()
+
+	service, err := settlementContext.GetService(sessionHeader.ServiceId)
+	if err != nil {
+		return err
 	}
 
-	// Retrieve the onchain staked application record
-	application, isAppFound := k.applicationKeeper.GetApplication(ctx, applicationAddress.String())
-	if !isAppFound {
-		logger.Warn(fmt.Sprintf("application for claim with address %q not found", applicationAddress))
-		return tokenomicstypes.ErrTokenomicsApplicationNotFound
+	relayMiningDifficulty, err := settlementContext.GetRelayMiningDifficulty(sessionHeader.ServiceId)
+	if err != nil {
+		return err
 	}
 
-	// Retrieve the supplier operator address that will be getting rewarded; providing services and earning tokens
-	supplierOperatorAddr, err := cosmostypes.AccAddressFromBech32(pendingResult.Claim.GetSupplierOperatorAddress())
-	if err != nil || supplierOperatorAddr == nil {
-		return tokenomicstypes.ErrTokenomicsSupplierOperatorAddressInvalid.Wrapf(
-			"address (%q)", pendingResult.Claim.GetSupplierOperatorAddress(),
-		)
+	application, err := settlementContext.GetApplication(sessionHeader.ApplicationAddress)
+	if err != nil {
+		return err
 	}
 
-	// Retrieve the onchain staked supplier record
-	supplier, isSupplierFound := k.supplierKeeper.GetSupplier(ctx, supplierOperatorAddr.String())
-	if !isSupplierFound {
-		logger.Warn(fmt.Sprintf("supplier for claim with address %q not found", supplierOperatorAddr))
-		return tokenomicstypes.ErrTokenomicsSupplierNotFound
+	supplier, err := settlementContext.GetSupplier(pendingResult.Claim.GetSupplierOperatorAddress())
+	if err != nil {
+		return err
 	}
 
-	service, isServiceFound := k.serviceKeeper.GetService(ctx, sessionHeader.ServiceId)
-	if !isServiceFound {
-		return tokenomicstypes.ErrTokenomicsServiceNotFound.Wrapf("service with ID %q not found", sessionHeader.ServiceId)
+	applicationInitialStake, err := settlementContext.GetApplicationInitialStake(sessionHeader.ApplicationAddress)
+	if err != nil {
+		return err
 	}
 
 	// Ensure the number of compute units claimed is equal to the number of relays * CUPR
@@ -147,20 +140,6 @@ func (k Keeper) ProcessTokenLogicModules(
 			service.ComputeUnitsPerRelay,
 		)
 	}
-
-	// Retrieving the relay mining difficulty for service.
-	relayMiningDifficulty, found := k.serviceKeeper.GetRelayMiningDifficulty(ctx, service.Id)
-	if !found {
-		targetNumRelays := k.serviceKeeper.GetParams(ctx).TargetNumRelays
-		relayMiningDifficulty = servicekeeper.NewDefaultRelayMiningDifficulty(
-			ctx,
-			logger,
-			service.Id,
-			targetNumRelays,
-			targetNumRelays,
-		)
-	}
-	sharedParams := k.sharedKeeper.GetParams(ctx)
 
 	// Determine the total number of tokens being claimed (i.e. for the work completed)
 	// by the supplier for the amount of work they did to service the application
@@ -185,7 +164,7 @@ func (k Keeper) ProcessTokenLogicModules(
 	// If not, update the settlement amount and emit relevant events.
 	// TODO_MAINNET_MIGRATION_MIGRATION(@red-0ne): Consider pulling this out of Keeper#ProcessTokenLogicModules
 	// and ensure claim amount limits are enforced before TLM processing.
-	actualSettlementCoin, err := k.ensureClaimAmountLimits(ctx, logger, &sharedParams, &application, &supplier, claimSettlementCoin, applicationInitialStake)
+	actualSettlementCoin, err := k.ensureClaimAmountLimits(ctx, logger, &sharedParams, application, supplier, claimSettlementCoin, applicationInitialStake)
 	if err != nil {
 		return err
 	}
@@ -205,9 +184,9 @@ func (k Keeper) ProcessTokenLogicModules(
 		SettlementCoin:        actualSettlementCoin,
 		SessionHeader:         pendingResult.Claim.GetSessionHeader(),
 		Result:                pendingResult,
-		Service:               &service,
-		Application:           &application,
-		Supplier:              &supplier,
+		Service:               service,
+		Application:           application,
+		Supplier:              supplier,
 		RelayMiningDifficulty: &relayMiningDifficulty,
 	}
 
@@ -228,10 +207,10 @@ func (k Keeper) ProcessTokenLogicModules(
 	if application.Stake.Amount.LT(apptypes.DefaultMinStake.Amount) {
 		// Mark the application as unbonding if it has less than the minimum stake.
 		application.UnstakeSessionEndHeight = uint64(sessionEndHeight)
-		unbondingEndHeight := apptypes.GetApplicationUnbondingHeight(&sharedParams, &application)
+		unbondingEndHeight := apptypes.GetApplicationUnbondingHeight(&sharedParams, application)
 
 		appUnbondingBeginEvent := &apptypes.EventApplicationUnbondingBegin{
-			Application:        &application,
+			Application:        application,
 			Reason:             apptypes.ApplicationUnbondingReason_APPLICATION_UNBONDING_REASON_BELOW_MIN_STAKE,
 			SessionEndHeight:   sessionEndHeight,
 			UnbondingEndHeight: unbondingEndHeight,
@@ -245,19 +224,11 @@ func (k Keeper) ProcessTokenLogicModules(
 		}
 	}
 
-	// State mutation: update the application's onchain record.
-	k.applicationKeeper.SetApplication(ctx, application)
-	logger.Info(fmt.Sprintf("updated onchain application record with address %q", application.Address))
-
 	// TODO_MAINNET_MIGRATION(@bryanchriswhite): If the application stake has dropped to (near?) zero:
 	// - Unstake it
 	// - Emit an event
 	// - Ensure this doesn't happen
 	// - Document the decision
-
-	// State mutation: Update the suppliers's onchain record
-	k.supplierKeeper.SetSupplier(ctx, supplier)
-	logger.Info(fmt.Sprintf("updated onchain supplier record with address %q", supplier.OperatorAddress))
 
 	// Update isSuccessful to true for telemetry
 	isSuccessful = true
