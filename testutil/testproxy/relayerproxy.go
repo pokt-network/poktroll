@@ -348,13 +348,6 @@ func MarshalAndSend(
 		require.FailNow(test.t, "unsupported server type")
 	}
 
-	// originHost is the endpoint that the client will retrieve from the onchain supplier record.
-	// The supplier may have multiple endpoints (e.g. for load geo-balancing, host failover, etc.).
-	// In the current test setup, we only have one endpoint per supplier, which is why we are accessing `[0]`.
-	// In a real-world scenario, the publicly exposed endpoint would reach a load balancer
-	// or a reverse proxy that would route the request to the address specified by ListenAddress.
-	originHost := servicesConfigMap[serviceEndpoint].SupplierConfigsMap[serviceId].PubliclyExposedEndpoints[0]
-
 	reqBz, err := request.Marshal()
 	require.NoError(test.t, err)
 	reader := io.NopCloser(bytes.NewReader(reqBz))
@@ -364,7 +357,6 @@ func MarshalAndSend(
 			"Content-Type": []string{"application/json"},
 		},
 		URL:  &url.URL{Scheme: scheme, Host: servicesConfigMap[serviceEndpoint].ListenAddress},
-		Host: originHost,
 		Body: reader,
 	}
 	res, err := http.DefaultClient.Do(req)

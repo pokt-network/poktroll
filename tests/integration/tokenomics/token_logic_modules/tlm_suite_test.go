@@ -14,6 +14,7 @@ import (
 	testkeeper "github.com/pokt-network/poktroll/testutil/keeper"
 	"github.com/pokt-network/poktroll/testutil/proof"
 	"github.com/pokt-network/poktroll/testutil/sample"
+	sharedtest "github.com/pokt-network/poktroll/testutil/shared"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
@@ -97,17 +98,13 @@ func (s *tokenLogicModuleTestSuite) SetupTest() {
 			},
 		},
 	}
+	serviceConfigHistory := sharedtest.CreateServiceConfigUpdateHistoryFromServiceConfigs(supplierBech32, services, 1, 0)
 	s.supplier = &sharedtypes.Supplier{
-		OwnerAddress:    supplierBech32,
-		OperatorAddress: supplierBech32,
-		Stake:           &suppliertypes.DefaultMinStake,
-		Services:        services,
-		ServiceConfigHistory: []*sharedtypes.ServiceConfigUpdate{
-			{
-				Services:             services,
-				EffectiveBlockHeight: 0,
-			},
-		},
+		OwnerAddress:         supplierBech32,
+		OperatorAddress:      supplierBech32,
+		Stake:                &suppliertypes.DefaultMinStake,
+		Services:             services,
+		ServiceConfigHistory: serviceConfigHistory,
 	}
 }
 

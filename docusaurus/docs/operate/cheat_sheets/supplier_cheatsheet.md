@@ -23,9 +23,9 @@ streamline development and reduce friction for any new potential contributor.
 :::
 
 - [System Requirements](#system-requirements)
-- [Pre-Requisites](#prerequisites)
+- [20 Minute Video Walkthrough](#20-minute-video-walkthrough)
+- [Pre-Requisites](#pre-requisites)
   - [Context](#context)
-- [Video Walkthrough](#20-minute-video-walkthrough)
 - [Account Setup](#account-setup)
   - [Create the `Supplier` account](#create-the-supplier-account)
   - [Prepare your environment](#prepare-your-environment)
@@ -211,8 +211,6 @@ suppliers:
   - service_id: "morse"
     service_config:
       backend_url: "https://pocket-rpc.liquify.com"
-      publicly_exposed_endpoints:
-        - $EXTERNAL_IP
     listen_url: http://0.0.0.0:8545
 metrics:
   enabled: false
