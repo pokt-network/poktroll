@@ -11,6 +11,7 @@ import (
 	"github.com/pokt-network/poktroll/app/volatile"
 	"github.com/pokt-network/poktroll/telemetry"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
+	servicetypes "github.com/pokt-network/poktroll/x/service/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 	tlm "github.com/pokt-network/poktroll/x/tokenomics/token_logic_module"
@@ -51,7 +52,7 @@ func (k Keeper) SettlePendingClaims(ctx cosmostypes.Context) (
 		}
 		numExpiringClaims++
 
-		if err := settlementContext.AddClaim(ctx, &claim); err != nil {
+		if err = settlementContext.AddClaim(ctx, &claim); err != nil {
 			return settledResults, expiredResults, err
 		}
 
@@ -82,7 +83,8 @@ func (k Keeper) SettlePendingClaims(ctx cosmostypes.Context) (
 
 		// Get the relay mining difficulty for the service that this claim is for.
 		serviceId := claim.GetSessionHeader().GetServiceId()
-		relayMiningDifficulty, err := settlementContext.GetRelayMiningDifficulty(serviceId)
+		var relayMiningDifficulty servicetypes.RelayMiningDifficulty
+		relayMiningDifficulty, err = settlementContext.GetRelayMiningDifficulty(serviceId)
 		if err != nil {
 			return settledResults, expiredResults, err
 		}
