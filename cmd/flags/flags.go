@@ -5,13 +5,14 @@ const (
 	// In most cases, this forces the user to specify the flag value to avoid unintended behavior.
 	OmittedDefaultFlagValue = "intentionally omitting default"
 
-	DefaultLogOutput = "-"
-
 	FlagLogLevel      = "log-level"
 	FlagLogLevelUsage = "The logging level (debug|info|warn|error)"
 
+	DefaultLogLevel = "info"
+
 	FlagLogOutput      = "log-output"
 	FlagLogOutputUsage = "The logging output (file path); defaults to stdout"
+	DefaultLogOutput   = "-"
 
 	FlagPassphrase      = "passphrase"
 	FlagPassphraseShort = "p"
