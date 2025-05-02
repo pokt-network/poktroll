@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"math"
 	"math/big"
 	"testing"
 
@@ -33,6 +32,7 @@ import (
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
+	tokenomicskeeper "github.com/pokt-network/poktroll/x/tokenomics/keeper"
 	tlm "github.com/pokt-network/poktroll/x/tokenomics/token_logic_module"
 	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
 )
@@ -122,7 +122,7 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_Valid(t *testing.T) {
 		Services:             services,
 		ServiceConfigHistory: serviceConfigHistory,
 	}
-	keepers.SetSupplier(ctx, supplier)
+	keepers.SetAndIndexDehydratedSupplier(ctx, supplier)
 
 	// Query the account and module start balances
 	appStartBalance := getBalance(t, ctx, keepers, app.GetAddress())
@@ -133,8 +133,17 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_Valid(t *testing.T) {
 	claim := prepareTestClaim(numRelays, service, &app, &supplier)
 	pendingResult := tlm.NewClaimSettlementResult(claim)
 
+	settlementContext := tokenomicskeeper.NewSettlementContext(
+		ctx,
+		keepers.Keeper,
+		keepers.Keeper.Logger(),
+	)
+
+	err = settlementContext.ClaimCacheWarmUp(ctx, &claim)
+	require.NoError(t, err)
+
 	// Process the token logic modules
-	err = keepers.ProcessTokenLogicModules(ctx, pendingResult, appStake)
+	err = keepers.ProcessTokenLogicModules(ctx, settlementContext, pendingResult)
 	require.NoError(t, err)
 
 	// Execute the pending results
@@ -142,6 +151,9 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_Valid(t *testing.T) {
 	pendingResults.Append(pendingResult)
 	err = keepers.ExecutePendingSettledResults(cosmostypes.UnwrapSDKContext(ctx), pendingResults)
 	require.NoError(t, err)
+
+	// Persist the actors state
+	settlementContext.FlushAllActorsToStore(ctx)
 
 	// Assert that `applicationAddress` account balance is *unchanged*
 	appEndBalance := getBalance(t, ctx, keepers, app.GetAddress())
@@ -270,7 +282,7 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_Valid_SupplierExceedsMaxClai
 		Services:             services,
 		ServiceConfigHistory: serviceConfigHistory,
 	}
-	keepers.SetSupplier(ctx, supplier)
+	keepers.SetAndIndexDehydratedSupplier(ctx, supplier)
 
 	// Query the account and module start balances
 	appStartBalance := getBalance(t, ctx, keepers, app.GetAddress())
@@ -281,8 +293,17 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_Valid_SupplierExceedsMaxClai
 	claim := prepareTestClaim(numRelays, service, &app, &supplier)
 	pendingResult := tlm.NewClaimSettlementResult(claim)
 
+	settlementContext := tokenomicskeeper.NewSettlementContext(
+		ctx,
+		keepers.Keeper,
+		keepers.Keeper.Logger(),
+	)
+
+	err = settlementContext.ClaimCacheWarmUp(ctx, &claim)
+	require.NoError(t, err)
+
 	// Process the token logic modules
-	err = keepers.ProcessTokenLogicModules(ctx, pendingResult, appStake)
+	err = keepers.ProcessTokenLogicModules(ctx, settlementContext, pendingResult)
 	require.NoError(t, err)
 
 	// Execute the pending results
@@ -290,6 +311,9 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_Valid_SupplierExceedsMaxClai
 	pendingResults.Append(pendingResult)
 	err = keepers.ExecutePendingSettledResults(cosmostypes.UnwrapSDKContext(ctx), pendingResults)
 	require.NoError(t, err)
+
+	// Persist the actors state
+	settlementContext.FlushAllActorsToStore(ctx)
 
 	// Assert that `applicationAddress` account balance is *unchanged*
 	appEndBalance := getBalance(t, ctx, keepers, app.GetAddress())
@@ -423,7 +447,7 @@ func TestProcessTokenLogicModules_TLMGlobalMint_Valid_MintDistributionCorrect(t 
 		Services:             services,
 		ServiceConfigHistory: serviceConfigHistory,
 	}
-	keepers.SetSupplier(ctx, supplier)
+	keepers.SetAndIndexDehydratedSupplier(ctx, supplier)
 
 	// Prepare the claim for which the supplier did work for the application
 	claim := prepareTestClaim(numRelays, service, &app, &supplier)
@@ -444,9 +468,21 @@ func TestProcessTokenLogicModules_TLMGlobalMint_Valid_MintDistributionCorrect(t 
 		supplierShareholderBalancesBeforeSettlementMap[addr] = getBalance(t, ctx, keepers, addr)
 	}
 
-	// Process the token logic modules
-	err = keepers.ProcessTokenLogicModules(ctx, pendingResult, appStake)
+	settlementContext := tokenomicskeeper.NewSettlementContext(
+		ctx,
+		keepers.Keeper,
+		keepers.Keeper.Logger(),
+	)
+
+	err = settlementContext.ClaimCacheWarmUp(ctx, &claim)
 	require.NoError(t, err)
+
+	// Process the token logic modules
+	err = keepers.ProcessTokenLogicModules(ctx, settlementContext, pendingResult)
+	require.NoError(t, err)
+
+	// Persist the actors state
+	settlementContext.FlushAllActorsToStore(ctx)
 
 	// Execute the pending results
 	pendingResults := make(tlm.ClaimSettlementResults, 0)
@@ -557,8 +593,14 @@ func TestProcessTokenLogicModules_AppNotFound(t *testing.T) {
 	}
 	pendingResult := tlm.NewClaimSettlementResult(claim)
 
+	settlementContext := tokenomicskeeper.NewSettlementContext(ctx, &keeper, keeper.Logger())
+
+	// Ignoring the error from ClaimCacheWarmUp as it will short-circuit the test
+	// and we want to test the error from ProcessTokenLogicModules.
+	_ = settlementContext.ClaimCacheWarmUp(ctx, &claim)
+
 	// Process the token logic modules
-	err := keeper.ProcessTokenLogicModules(ctx, pendingResult, uPOKTCoin(math.MaxInt))
+	err := keeper.ProcessTokenLogicModules(ctx, settlementContext, pendingResult)
 	require.Error(t, err)
 	require.ErrorIs(t, err, tokenomicstypes.ErrTokenomicsApplicationNotFound)
 }
@@ -581,9 +623,14 @@ func TestProcessTokenLogicModules_ServiceNotFound(t *testing.T) {
 	}
 	pendingResult := tlm.NewClaimSettlementResult(claim)
 
-	// Execute test function
-	err := keeper.ProcessTokenLogicModules(ctx, pendingResult, uPOKTCoin(math.MaxInt))
+	settlementContext := tokenomicskeeper.NewSettlementContext(ctx, &keeper, keeper.Logger())
 
+	// Ignoring the error from ClaimCacheWarmUp as it will short-circuit the test
+	// and we want to test the error from ProcessTokenLogicModules.
+	_ = settlementContext.ClaimCacheWarmUp(ctx, &claim)
+
+	// Execute test function
+	err := keeper.ProcessTokenLogicModules(ctx, settlementContext, pendingResult)
 	require.Error(t, err)
 	require.ErrorIs(t, err, tokenomicstypes.ErrTokenomicsServiceNotFound)
 }
@@ -652,8 +699,14 @@ func TestProcessTokenLogicModules_InvalidRoot(t *testing.T) {
 			claim.RootHash = smt.MerkleRoot(test.root[:])
 			pendingResult := tlm.NewClaimSettlementResult(claim)
 
+			settlementContext := tokenomicskeeper.NewSettlementContext(ctx, &keeper, keeper.Logger())
+
+			// Ignoring the error from ClaimCacheWarmUp as it will short-circuit the test
+			// and we want to test the error from ProcessTokenLogicModules.
+			_ = settlementContext.ClaimCacheWarmUp(ctx, &claim)
+
 			// Execute test function
-			err := keeper.ProcessTokenLogicModules(ctx, pendingResult, uPOKTCoin(math.MaxInt))
+			err := keeper.ProcessTokenLogicModules(ctx, settlementContext, pendingResult)
 
 			// Assert the error
 			if test.errExpected {
@@ -723,7 +776,7 @@ func TestProcessTokenLogicModules_InvalidClaim(t *testing.T) {
 				return claim
 			}(),
 			errExpected: true,
-			expectErr:   tokenomicstypes.ErrTokenomicsSupplierOperatorAddressInvalid,
+			expectErr:   tokenomicstypes.ErrTokenomicsSupplierNotFound,
 		},
 	}
 
@@ -738,7 +791,13 @@ func TestProcessTokenLogicModules_InvalidClaim(t *testing.T) {
 					}
 				}()
 				pendingResult := tlm.NewClaimSettlementResult(test.claim)
-				return keeper.ProcessTokenLogicModules(ctx, pendingResult, uPOKTCoin(math.MaxInt))
+
+				settlementContext := tokenomicskeeper.NewSettlementContext(ctx, &keeper, keeper.Logger())
+
+				// Ignoring the error from ClaimCacheWarmUp as it will short-circuit the test
+				// and we want to test the error from ProcessTokenLogicModules.
+				_ = settlementContext.ClaimCacheWarmUp(ctx, &test.claim)
+				return keeper.ProcessTokenLogicModules(ctx, settlementContext, pendingResult)
 			}()
 
 			// Assert the error

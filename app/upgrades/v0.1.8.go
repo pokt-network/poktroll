@@ -3,7 +3,6 @@ package upgrades
 import (
 	"context"
 	"fmt"
-	"slices"
 
 	"cosmossdk.io/log"
 	storetypes "cosmossdk.io/store/types"
@@ -12,7 +11,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/types/module"
 
 	"github.com/pokt-network/poktroll/app/keepers"
-	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 const (
@@ -81,74 +79,82 @@ func indexApplications(ctx context.Context, keepers *keepers.Keepers, logger log
 // It processes the deprecated service config history of each supplier, converting
 // it into the new format.
 func indexSuppliersServiceConfigs(ctx context.Context, keepers *keepers.Keepers, logger log.Logger) error {
-	// Get all deprecated suppliers from the store.
-	deprecatedSuppliers := keepers.SupplierKeeper.GetAllDeprecatedSuppliers(ctx)
-	for _, deprecatedSupplier := range deprecatedSuppliers {
-		logger.Info("Indexing supplier", "operator_address", deprecatedSupplier.OperatorAddress)
 
-		// serviceConfigUpdates is a slice of service config updates that will be
-		// assigned to the supplier after the migration.
-		serviceConfigUpdates := make([]*sharedtypes.ServiceConfigUpdate, 0)
+	//***************************************************************************//
+	//                                                                           //
+	// DEV_NOTE: Commenting out the migration code since the SupplierDeprecated  //
+	// struct has been removed from the protobufs and has now no generated code. //
+	//                                                                           //
+	//***************************************************************************//
 
-		// latestServiceConfigUpdateIndex is a map that keeps track of the latest
-		// service config update index for each service.
-		// This is used to mark the previous service config update as deactivated
-		// when a new one is found.
-		latestServiceConfigUpdateIndex := make(map[string]int)
+	// // Get all deprecated suppliers from the store.
+	// deprecatedSuppliers := keepers.SupplierKeeper.GetAllDeprecatedSuppliers(ctx)
+	// for _, deprecatedSupplier := range deprecatedSuppliers {
+	// 	logger.Info("Indexing supplier", "operator_address", deprecatedSupplier.OperatorAddress)
 
-		serviceConfigHistory := deprecatedSupplier.ServiceConfigHistory
-		slices.SortFunc(serviceConfigHistory, func(i, j *sharedtypes.ServiceConfigUpdateDeprecated) int {
-			return int(i.EffectiveBlockHeight - j.EffectiveBlockHeight)
-		})
+	// 	// serviceConfigUpdates is a slice of service config updates that will be
+	// 	// assigned to the supplier after the migration.
+	// 	serviceConfigUpdates := make([]*sharedtypes.ServiceConfigUpdate, 0)
 
-		for i, deprecatedServiceConfigUpdates := range serviceConfigHistory {
-			// In the deprecated service config history, the effective block height is
-			// global for all services in the update.
-			// In the new service config history, the effective block height is per service
-			// which allows for more granular updates.
-			effectiveBlockHeight := int64(deprecatedServiceConfigUpdates.EffectiveBlockHeight)
+	// 	// latestServiceConfigUpdateIndex is a map that keeps track of the latest
+	// 	// service config update index for each service.
+	// 	// This is used to mark the previous service config update as deactivated
+	// 	// when a new one is found.
+	// 	latestServiceConfigUpdateIndex := make(map[string]int)
 
-			for _, service := range deprecatedServiceConfigUpdates.Services {
-				// Ensure that the most recently active service config update is the only one
-				// active for each service.
-				if idx, ok := latestServiceConfigUpdateIndex[service.ServiceId]; ok {
-					if effectiveBlockHeight >= serviceConfigUpdates[idx].ActivationHeight {
-						// The previous service config update is now superceded by the new one.
-						// Mark it as deactivated.
-						serviceConfigUpdates[idx].DeactivationHeight = effectiveBlockHeight
-					}
-				}
+	// 	serviceConfigHistory := deprecatedSupplier.ServiceConfigHistory
+	// 	slices.SortFunc(serviceConfigHistory, func(i, j *sharedtypes.ServiceConfigUpdateDeprecated) int {
+	// 		return int(i.EffectiveBlockHeight - j.EffectiveBlockHeight)
+	// 	})
 
-				// Create a new service config update object with the effective block height
-				serviceConfigUpdate := &sharedtypes.ServiceConfigUpdate{
-					OperatorAddress:  deprecatedSupplier.OperatorAddress,
-					Service:          service,
-					ActivationHeight: effectiveBlockHeight,
-				}
-				serviceConfigUpdates = append(serviceConfigUpdates, serviceConfigUpdate)
+	// 	for i, deprecatedServiceConfigUpdates := range serviceConfigHistory {
+	// 		// In the deprecated service config history, the effective block height is
+	// 		// global for all services in the update.
+	// 		// In the new service config history, the effective block height is per service
+	// 		// which allows for more granular updates.
+	// 		effectiveBlockHeight := int64(deprecatedServiceConfigUpdates.EffectiveBlockHeight)
 
-				// Update the latest service config update index for this service
-				// so it can be marked as deactivated if a newer one is found.
-				latestServiceConfigUpdateIndex[service.ServiceId] = i
-			}
-		}
+	// 		for _, service := range deprecatedServiceConfigUpdates.Services {
+	// 			// Ensure that the most recently active service config update is the only one
+	// 			// active for each service.
+	// 			if idx, ok := latestServiceConfigUpdateIndex[service.ServiceId]; ok {
+	// 				if effectiveBlockHeight >= serviceConfigUpdates[idx].ActivationHeight {
+	// 					// The previous service config update is now superceded by the new one.
+	// 					// Mark it as deactivated.
+	// 					serviceConfigUpdates[idx].DeactivationHeight = effectiveBlockHeight
+	// 				}
+	// 			}
 
-		// Create a new supplier object with the updated service config history
-		supplier := sharedtypes.Supplier{
-			ServiceConfigHistory: serviceConfigUpdates,
+	// 			// Create a new service config update object with the effective block height
+	// 			serviceConfigUpdate := &sharedtypes.ServiceConfigUpdate{
+	// 				OperatorAddress:  deprecatedSupplier.OperatorAddress,
+	// 				Service:          service,
+	// 				ActivationHeight: effectiveBlockHeight,
+	// 			}
+	// 			serviceConfigUpdates = append(serviceConfigUpdates, serviceConfigUpdate)
 
-			// The rest of the supplier fields remain unchanged.
-			// They are copied from the deprecated supplier object.
-			OperatorAddress:         deprecatedSupplier.OperatorAddress,
-			OwnerAddress:            deprecatedSupplier.OwnerAddress,
-			Stake:                   deprecatedSupplier.Stake,
-			Services:                deprecatedSupplier.Services,
-			UnstakeSessionEndHeight: deprecatedSupplier.UnstakeSessionEndHeight,
-		}
+	// 			// Update the latest service config update index for this service
+	// 			// so it can be marked as deactivated if a newer one is found.
+	// 			latestServiceConfigUpdateIndex[service.ServiceId] = i
+	// 		}
+	// 	}
 
-		// SetSupplier will automatically index the supplier service configs using
-		// the new ServiceConfigHistory.
-		keepers.SupplierKeeper.SetSupplier(ctx, supplier)
-	}
+	// 	// Create a new supplier object with the updated service config history
+	// 	supplier := sharedtypes.Supplier{
+	// 		ServiceConfigHistory: serviceConfigUpdates,
+
+	// 		// The rest of the supplier fields remain unchanged.
+	// 		// They are copied from the deprecated supplier object.
+	// 		OperatorAddress:         deprecatedSupplier.OperatorAddress,
+	// 		OwnerAddress:            deprecatedSupplier.OwnerAddress,
+	// 		Stake:                   deprecatedSupplier.Stake,
+	// 		Services:                deprecatedSupplier.Services,
+	// 		UnstakeSessionEndHeight: deprecatedSupplier.UnstakeSessionEndHeight,
+	// 	}
+
+	// 	// SetAndIndexDehydratedSupplier will automatically index the supplier service configs using
+	// 	// the new ServiceConfigHistory.
+	// 	keepers.SupplierKeeper.SetAndIndexDehydratedSupplier(ctx, supplier)
+	// }
 	return nil
 }

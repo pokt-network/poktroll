@@ -18,8 +18,8 @@ package types
 // │                                                                                    │
 // │ SupplierServiceConfigUpdateKey()         ServiceConfigUpdate/operator_address/     │
 // │                                         └── <SupplierAddr>/                        │
-// │                                             <ActHeight>/                           │
 // │                                             <ServiceID>/                           │
+// │                                             <ActHeight>/                           │
 // │                                                                                    │
 // │ ServiceConfigUpdateActivationHeightKey() ServiceConfigUpdate/activation_height/    │
 // │                                         └── <ActHeight>/                           │
@@ -88,6 +88,20 @@ func SupplierOperatorKey(supplierOperatorAddr string) []byte {
 	return StringKey(supplierOperatorAddr)
 }
 
+// SupplierOperatorServiceKey returns the store key to retrieve a Supplier from the index fields
+// The key is composed of supplier operator address and service ID
+func SupplierOperatorServiceKey(supplierOperatorAddr string, serviceId string) []byte {
+	var key []byte
+
+	supplierOperatorAddressKey := StringKey(supplierOperatorAddr)
+	key = append(key, supplierOperatorAddressKey...)
+
+	serviceIdKey := StringKey(serviceId)
+	key = append(key, serviceIdKey...)
+
+	return key
+}
+
 // ServiceConfigUpdateKey returns the store key to retrieve a ServiceConfig from the index fields
 // The key is composed of service ID, activation height, and supplier operator address
 // This ordering allows efficient range queries for configurations by service ID and activation height
@@ -107,20 +121,20 @@ func ServiceConfigUpdateKey(serviceConfigUpdate sharedtypes.ServiceConfigUpdate)
 }
 
 // SupplierServiceConfigUpdateKey returns the store key to retrieve a ServiceConfig from the index fields
-// The key is composed of supplier operator address, activation height, and service ID
+// The key is composed of supplier operator address, service ID, and activation height
 // This ordering allows efficient range queries for configurations by supplier operator
-// address and activation height
+// address and service ID
 func SupplierServiceConfigUpdateKey(serviceConfigUpdate sharedtypes.ServiceConfigUpdate) []byte {
 	var key []byte
 
 	supplierOperatorAddressKey := StringKey(serviceConfigUpdate.OperatorAddress)
 	key = append(key, supplierOperatorAddressKey...)
 
-	activationHeightKey := IntKey(serviceConfigUpdate.ActivationHeight)
-	key = append(key, activationHeightKey...)
-
 	serviceIdKey := StringKey(serviceConfigUpdate.Service.ServiceId)
 	key = append(key, serviceIdKey...)
+
+	activationHeightKey := IntKey(serviceConfigUpdate.ActivationHeight)
+	key = append(key, activationHeightKey...)
 
 	return key
 }

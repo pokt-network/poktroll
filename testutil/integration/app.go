@@ -928,7 +928,7 @@ func (app *App) setupDefaultActorsState(
 		ServiceConfigHistory: serviceConfigHistory,
 	}
 	app.DefaultSupplier = &defaultSupplier
-	supplierKeeper.SetSupplier(app.sdkCtx, defaultSupplier)
+	supplierKeeper.SetAndIndexDehydratedSupplier(app.sdkCtx, defaultSupplier)
 
 	// Create an application account with the corresponding keys in the keyring for the application.
 	app.DefaultApplicationKeyringUid = "application"

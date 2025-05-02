@@ -11,7 +11,7 @@ import (
 )
 
 // AddPaginationFlagsToCmd adds common pagination flags to cmd
-func AddClaimFilterFlags(cmd *cobra.Command) {
+func ClaimCacheWarmUpFilterFlags(cmd *cobra.Command) {
 	cmd.Flags().Uint64(FlagSessionEndHeight, 0, "claims whose session ends at this height will be returned")
 	cmd.Flags().String(FlagSessionId, "", "claims matching this session id will be returned")
 	cmd.Flags().String(FlagSupplierOperatorAddress, "", "claims submitted by suppliers matching this operator address will be returned")
@@ -61,7 +61,7 @@ $ pocketd q claim list-claims --supplier-operator-address <supplier_operator_add
 		},
 	}
 
-	AddClaimFilterFlags(cmd)
+	ClaimCacheWarmUpFilterFlags(cmd)
 	flags.AddPaginationFlagsToCmd(cmd, cmd.Use)
 	flags.AddQueryFlagsToCmd(cmd)
 

@@ -50,13 +50,7 @@ func (s *Supplier) IsActive(queryHeight int64, serviceId string) bool {
 func (s *Supplier) GetActiveServiceConfigs(
 	queryHeight int64,
 ) []*SupplierServiceConfig {
-	activeServiceConfigs := make([]*SupplierServiceConfig, 0)
-	for _, serviceConfigUpdate := range s.ServiceConfigHistory {
-		if serviceConfigUpdate.IsActive(queryHeight) {
-			activeServiceConfigs = append(activeServiceConfigs, serviceConfigUpdate.Service)
-		}
-	}
-	return activeServiceConfigs
+	return GetActiveServiceConfigsFromHistory(s.ServiceConfigHistory, queryHeight)
 }
 
 // HasOwner returns whether the given address is the supplier's owner address.
@@ -84,4 +78,20 @@ func GetSupplierUnbondingEndHeight(
 
 	// Add the unbonding period to the session end height to get the final unbonding height
 	return int64(supplier.GetUnstakeSessionEndHeight() + supplierUnbondingPeriodBlocks)
+}
+
+// GetActiveServiceConfigsFromHistory filters the service configuration history
+// to find all configurations that are active at the specified block height.
+func GetActiveServiceConfigsFromHistory(
+	serviceConfigHistory []*ServiceConfigUpdate,
+	queryHeight int64,
+) []*SupplierServiceConfig {
+	activeServiceConfigs := make([]*SupplierServiceConfig, 0)
+	for _, serviceConfigUpdate := range serviceConfigHistory {
+		if serviceConfigUpdate.IsActive(queryHeight) {
+			activeServiceConfigs = append(activeServiceConfigs, serviceConfigUpdate.Service)
+		}
+	}
+
+	return activeServiceConfigs
 }
