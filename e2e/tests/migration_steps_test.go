@@ -3,6 +3,7 @@
 package e2e
 
 import (
+	"encoding/base64"
 	"fmt"
 	"math/rand"
 	"net/url"
@@ -601,7 +602,10 @@ func (s *migrationSuite) AMorseaccountstateWithAccountsInADistributionHasSuccess
 		s.Fatalf("unknown morse account distribution: %q", distributionString)
 	}
 
-	morseStateExportBz, _, err := testmigration.NewMorseStateExportAndAccountStateBytes(s.expectedNumAccounts, distributionFn)
+	morseStateExport, morseAccountState, err := testmigration.NewMorseStateExportAndAccountState(s.expectedNumAccounts, distributionFn)
+	require.NoError(s, err)
+
+	morseStateExportBz, err := cmtjson.Marshal(morseStateExport)
 	require.NoError(s, err)
 
 	err = os.WriteFile("morse_state_export.json", morseStateExportBz, 0644)
@@ -617,10 +621,15 @@ func (s *migrationSuite) AMorseaccountstateWithAccountsInADistributionHasSuccess
 	s.ThePocketdBinaryShouldExitWithoutError()
 	s.AMorseaccountstateIsWrittenTo(defaultMorseAccountStateJSONFilename)
 
+	morseAccountStateHash, err := morseAccountState.GetHash()
+	require.NoError(s, err)
+
+	morseAccountStateHashBase64 := base64.StdEncoding.EncodeToString(morseAccountStateHash)
 	importMorseAccountsCmdString := strings.Join([]string{
 		"poktrolld", "tx",
 		"migration", "import-morse-accounts",
 		defaultMorseAccountStateJSONFilename,
+		morseAccountStateHashBase64,
 	}, " ")
 	s.TheAuthorityExecutes(importMorseAccountsCmdString)
 	s.ThePocketdBinaryShouldExitWithoutError()
