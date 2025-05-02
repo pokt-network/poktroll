@@ -12,19 +12,6 @@ import (
 	"github.com/pokt-network/poktroll/x/supplier/types"
 )
 
-// SetSupplier stores a supplier record and indexes its relevant attributes for efficient querying.
-//
-// The function:
-// - Indexes service config updates for efficient retrieval
-// - Indexes unstaking height (if applicable)
-// - Stores the provided supplier record as is
-func (k Keeper) SetSupplier(ctx context.Context, supplier sharedtypes.Supplier) {
-	// Index service config updates for efficient retrieval
-	k.indexSupplierServiceConfigUpdates(ctx, supplier)
-	k.indexSupplierUnstakingHeight(ctx, supplier)
-	k.storeSupplier(ctx, &supplier)
-}
-
 // SetAndIndexDehydratedSupplier stores a supplier record and indexes its relevant attributes for efficient querying.
 // It modifies the Supplier structure onchain metadata to manage state bloat.
 //
@@ -57,7 +44,6 @@ func (k Keeper) SetDehydratedSupplier(
 // GetDehydratedSupplier retrieves a dehydrated supplier.
 // It omits hydrating a Supplier object with the available indexes (e.g. service config updates and unstaking height).
 // Useful and more efficient when the service details aren't needed.
-// storeSupplier marshals and stores the supplier record in the supplier store.
 func (k Keeper) GetDehydratedSupplier(
 	ctx context.Context,
 	supplierOperatorAddr string,
