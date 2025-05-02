@@ -219,6 +219,12 @@ func (sctx *settlementContext) cacheSupplier(
 	supplierOperatorAddress string,
 	serviceId string,
 ) error {
+	// Supplier service configuration handling:
+	// - Suppliers are hydrated with service configurations on demand (lazily)
+	// - Each new service ID in a claim is added to the supplier's configuration only once
+	// - This prevents unnecessary duplicate service configurations in memory
+	// - In the worst case, a supplier will have all its service configurations loaded
+	//   if claims are processed for all services the supplier supports
 	if idx, ok := sctx.supplierMap[supplierOperatorAddress]; ok {
 		cachedSupplier := sctx.settledSuppliers[idx]
 
@@ -229,8 +235,11 @@ func (sctx *settlementContext) cacheSupplier(
 		return nil // Supplier already cached
 	}
 
-	// Retrieve the onchain staked dehydrated supplier record since other service
-	// configurations are not needed for the claim settlement.
+	// Retrieve the onchain staked dehydrated supplier record:
+	// - We only fetch the dehydrated supplier (without all service configs)
+	// - This fetch happens only once - when we process the first claim from this supplier
+	// - Additional service configs will be hydrated on demand as needed
+	// - This optimizes memory usage and reduces redundant store lookups
 	supplier, isSupplierFound := sctx.keeper.supplierKeeper.GetDehydratedSupplier(ctx, supplierOperatorAddress)
 	if !isSupplierFound {
 		sctx.logger.Warn(fmt.Sprintf("supplier for claim with address %q not found", supplierOperatorAddress))
