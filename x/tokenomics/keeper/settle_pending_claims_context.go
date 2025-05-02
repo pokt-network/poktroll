@@ -261,8 +261,8 @@ func (sctx *settlementContext) cacheSupplierServiceConfig(
 		return s.ServiceId == serviceId
 	})
 
+	// Service configuration already cached, no need to update
 	if serviceConfigIdx >= 0 {
-		// Service configuration already cached, no need to update
 		return
 	}
 

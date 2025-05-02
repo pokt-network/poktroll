@@ -18,6 +18,7 @@ import (
 
 	"github.com/pokt-network/poktroll/app/volatile"
 	"github.com/pokt-network/poktroll/cmd/pocketd/cmd"
+	"github.com/pokt-network/poktroll/pkg/crypto"
 	"github.com/pokt-network/poktroll/pkg/crypto/protocol"
 	"github.com/pokt-network/poktroll/pkg/crypto/rings"
 	"github.com/pokt-network/poktroll/pkg/polylog/polyzero"
@@ -89,19 +90,6 @@ func (s *TestSuite) SetupTest() {
 	// Construct a keyring to hold the keypairs for the accounts used in the test.
 	keyRing := keyring.NewInMemory(s.keepers.Codec)
 
-	// Create a pre-generated account iterator to create accounts for the test.
-	preGeneratedAccts := testkeyring.PreGeneratedAccounts()
-
-	// Create accounts in the account keeper with corresponding keys in the keyring
-	// // for the applications and suppliers used in the tests.
-	supplierOwnerAddr := testkeyring.CreateOnChainAccount(
-		sdkCtx, t,
-		"supplier",
-		keyRing,
-		s.keepers.AccountKeeper,
-		preGeneratedAccts,
-	).String()
-
 	// Construct a ringClient to get the application's ring & verify the relay
 	// request signature.
 	ringClient, err := rings.NewRingClient(depinject.Supply(
@@ -112,139 +100,13 @@ func (s *TestSuite) SetupTest() {
 	))
 	require.NoError(t, err)
 
-	appStake := types.NewCoin("upokt", math.NewInt(1000000))
+	// Create a supplier and applications onchain accounts.
+	appAddresses, supplierOwnerAddr := s.createTestActors(t, sdkCtx, keyRing)
 
-	// Setup the test for each service:
-	// - Create and store the service in the service keeper.
-	// - Create and store an application staked to the service.
-	// - Create a supplier service config for the service.
-	supplierServiceConfigs := make([]*sharedtypes.SupplierServiceConfig, 0, len(testServiceIds))
-	appAddresses := make([]string, 0, len(testServiceIds))
-	for i, serviceId := range testServiceIds {
-		service := sharedtypes.Service{
-			Id:                   serviceId,
-			ComputeUnitsPerRelay: computeUnitsPerRelay,
-			OwnerAddress:         sample.AccAddress(),
-		}
-		s.keepers.SetService(s.ctx, service)
+	s.claims, s.proofs = s.createTestClaimsAndProofs(
+		t, sdkCtx, appAddresses, supplierOwnerAddr, keyRing, ringClient,
+	)
 
-		supplierServiceConfigs = append(
-			supplierServiceConfigs,
-			&sharedtypes.SupplierServiceConfig{
-				ServiceId: serviceId,
-				RevShare: []*sharedtypes.ServiceRevenueShare{{
-					Address:            supplierOwnerAddr,
-					RevSharePercentage: 100,
-				}},
-			},
-		)
-
-		appAddr := testkeyring.CreateOnChainAccount(
-			sdkCtx, t,
-			fmt.Sprintf("app%d", i),
-			keyRing,
-			s.keepers.AccountKeeper,
-			preGeneratedAccts,
-		).String()
-		appAddresses = append(appAddresses, appAddr)
-
-		app := apptypes.Application{
-			Address:        appAddr,
-			Stake:          &appStake,
-			ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{{ServiceId: serviceId}},
-		}
-		s.keepers.SetApplication(s.ctx, app)
-	}
-
-	// Make the supplier staked for each tested service.
-	supplierStake := types.NewCoin("upokt", math.NewInt(supplierStakeAmt))
-	supplierServiceConfigHistory := sharedtest.CreateServiceConfigUpdateHistoryFromServiceConfigs(supplierOwnerAddr, supplierServiceConfigs, 1, 0)
-	supplier := sharedtypes.Supplier{
-		OwnerAddress:         supplierOwnerAddr,
-		OperatorAddress:      supplierOwnerAddr,
-		Stake:                &supplierStake,
-		Services:             supplierServiceConfigs,
-		ServiceConfigHistory: supplierServiceConfigHistory,
-	}
-	s.keepers.SetAndIndexDehydratedSupplier(s.ctx, supplier)
-
-	// Create a claim and proof for each service.
-	s.relayMiningDifficulties = make([]servicetypes.RelayMiningDifficulty, 0, len(testServiceIds))
-	for i, serviceId := range testServiceIds {
-		appAddress := appAddresses[i]
-		// Get the session for the application/supplier pair which is expected
-		// to be claimed and for which a valid proof would be accepted.
-		sessionReq := &sessiontypes.QueryGetSessionRequest{
-			ApplicationAddress: appAddress,
-			ServiceId:          serviceId,
-			BlockHeight:        1,
-		}
-		sessionRes, err := s.keepers.GetSession(sdkCtx, sessionReq)
-		require.NoError(t, err)
-		sessionHeader := sessionRes.Session.Header
-
-		// Construct a valid session tree with 100 relays.
-		s.numRelays = uint64(100)
-		sessionTree := testtree.NewFilledSessionTree(
-			sdkCtx, t,
-			s.numRelays, computeUnitsPerRelay,
-			"supplier", supplierOwnerAddr,
-			sessionHeader, sessionHeader, sessionHeader,
-			keyRing,
-			ringClient,
-		)
-
-		// Calculate the number of claimed compute units.
-		s.numClaimedComputeUnits = s.numRelays * computeUnitsPerRelay
-
-		targetNumRelays := s.keepers.ServiceKeeper.GetParams(sdkCtx).TargetNumRelays
-		relayMiningDifficulty := servicekeeper.NewDefaultRelayMiningDifficulty(
-			sdkCtx,
-			s.keepers.Logger(),
-			serviceId,
-			targetNumRelays,
-			targetNumRelays,
-		)
-
-		s.relayMiningDifficulties = append(
-			s.relayMiningDifficulties,
-			relayMiningDifficulty,
-		)
-
-		// Calculate the number of estimated compute units.
-		s.numEstimatedComputeUnits = getEstimatedComputeUnits(s.numClaimedComputeUnits, relayMiningDifficulty)
-
-		// Calculate the claimed amount in uPOKT.
-		sharedParams := s.keepers.SharedKeeper.GetParams(sdkCtx)
-		s.claimedUpokt = getClaimedUpokt(sharedParams, s.numEstimatedComputeUnits, relayMiningDifficulty)
-
-		blockHeaderHash := make([]byte, 0)
-		expectedMerkleProofPath := protocol.GetPathForProof(blockHeaderHash, sessionHeader.SessionId)
-
-		// Advance the block height to the earliest claim commit height.
-		claimMsgHeight := sharedtypes.GetEarliestSupplierClaimCommitHeight(
-			&sharedParams,
-			sessionHeader.GetSessionEndBlockHeight(),
-			blockHeaderHash,
-			supplierOwnerAddr,
-		)
-		sdkCtx = sdkCtx.WithBlockHeight(claimMsgHeight).WithHeaderHash(blockHeaderHash)
-		s.ctx = sdkCtx
-
-		merkleRootBz, err := sessionTree.Flush()
-		require.NoError(t, err)
-
-		// Prepare a claim that can be inserted
-		s.claims = append(
-			s.claims,
-			*testtree.NewClaim(t, supplierOwnerAddr, sessionHeader, merkleRootBz),
-		)
-
-		s.proofs = append(
-			s.proofs,
-			*testtree.NewProof(t, supplierOwnerAddr, sessionHeader, sessionTree, expectedMerkleProofPath),
-		)
-	}
 }
 
 // TestSettlePendingClaims tests the claim settlement process.
@@ -1056,4 +918,184 @@ func getClaimedUpokt(
 // uPOKTCoin returns a uPOKT coin with the given amount.
 func uPOKTCoin(amount int64) cosmostypes.Coin {
 	return cosmostypes.NewCoin(volatile.DenomuPOKT, math.NewInt(amount))
+}
+
+// createTestActors sets up the necessary test actors (applications and a supplier) with
+// the specified services and stakes in the respective keepers.
+//
+// - It creates a supplier with a stake amount significantly more than the minimum
+// - Creates applications for each service ID defined in testServiceIds
+// - Each application is staked to its respective service.
+// - The function returns the application addresses and the supplier's owner address.
+func (s *TestSuite) createTestActors(
+	t *testing.T,
+	ctx cosmostypes.Context,
+	keyRing keyring.Keyring,
+) (appAddresses []string, supplierOwnerAddr string) {
+	// Create a pre-generated account iterator to create accounts for the test.
+	preGeneratedAccts := testkeyring.PreGeneratedAccounts()
+
+	// Create accounts in the account keeper with corresponding keys in the keyring
+	// // for the applications and suppliers used in the tests.
+	supplierOwnerAddr = testkeyring.CreateOnChainAccount(
+		ctx, t,
+		"supplier",
+		keyRing,
+		s.keepers.AccountKeeper,
+		preGeneratedAccts,
+	).String()
+
+	appStake := types.NewCoin("upokt", math.NewInt(1000000))
+
+	// Setup the test for each service:
+	// - Create and store the service in the service keeper.
+	// - Create and store an application staked to the service.
+	// - Create a supplier service config for the service.
+	supplierServiceConfigs := make([]*sharedtypes.SupplierServiceConfig, 0, len(testServiceIds))
+	appAddresses = make([]string, 0, len(testServiceIds))
+	for i, serviceId := range testServiceIds {
+		service := sharedtypes.Service{
+			Id:                   serviceId,
+			ComputeUnitsPerRelay: computeUnitsPerRelay,
+			OwnerAddress:         sample.AccAddress(),
+		}
+		s.keepers.SetService(s.ctx, service)
+
+		supplierServiceConfigs = append(
+			supplierServiceConfigs,
+			&sharedtypes.SupplierServiceConfig{
+				ServiceId: serviceId,
+				RevShare: []*sharedtypes.ServiceRevenueShare{{
+					Address:            supplierOwnerAddr,
+					RevSharePercentage: 100,
+				}},
+			},
+		)
+
+		appAddr := testkeyring.CreateOnChainAccount(
+			ctx, t,
+			fmt.Sprintf("app%d", i),
+			keyRing,
+			s.keepers.AccountKeeper,
+			preGeneratedAccts,
+		).String()
+		appAddresses = append(appAddresses, appAddr)
+
+		app := apptypes.Application{
+			Address:        appAddr,
+			Stake:          &appStake,
+			ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{{ServiceId: serviceId}},
+		}
+		s.keepers.SetApplication(s.ctx, app)
+	}
+
+	// Make the supplier staked for each tested service.
+	supplierStake := types.NewCoin("upokt", math.NewInt(supplierStakeAmt))
+	supplierServiceConfigHistory := sharedtest.CreateServiceConfigUpdateHistoryFromServiceConfigs(supplierOwnerAddr, supplierServiceConfigs, 1, 0)
+	supplier := sharedtypes.Supplier{
+		OwnerAddress:         supplierOwnerAddr,
+		OperatorAddress:      supplierOwnerAddr,
+		Stake:                &supplierStake,
+		Services:             supplierServiceConfigs,
+		ServiceConfigHistory: supplierServiceConfigHistory,
+	}
+	s.keepers.SetAndIndexDehydratedSupplier(s.ctx, supplier)
+
+	return appAddresses, supplierOwnerAddr
+}
+
+// createTestClaimsAndProofs generates test claims and corresponding proofs for session.
+//
+// For each service in testServiceIds, it:
+// 1. Retrieves the session for the application/supplier pair
+// 2. Creates a session tree with the specified number of relays
+// 3. Calculates the claimed and estimated compute units
+// 4. Prepares the claims and proofs with proper merkle roots and paths
+func (s *TestSuite) createTestClaimsAndProofs(
+	t *testing.T,
+	ctx cosmostypes.Context,
+	appAddresses []string,
+	supplierOwnerAddr string,
+	keyRing keyring.Keyring,
+	ringClient crypto.RingClient,
+) (claims []prooftypes.Claim, proofs []prooftypes.Proof) {
+	// Create a claim and proof for each service.
+	s.relayMiningDifficulties = make([]servicetypes.RelayMiningDifficulty, 0, len(testServiceIds))
+	for i, serviceId := range testServiceIds {
+		appAddress := appAddresses[i]
+		// Get the session for the application/supplier pair which is expected
+		// to be claimed and for which a valid proof would be accepted.
+		sessionReq := &sessiontypes.QueryGetSessionRequest{
+			ApplicationAddress: appAddress,
+			ServiceId:          serviceId,
+			BlockHeight:        1,
+		}
+		sessionRes, err := s.keepers.GetSession(ctx, sessionReq)
+		require.NoError(t, err)
+		sessionHeader := sessionRes.Session.Header
+
+		// Construct a valid session tree with 100 relays.
+		s.numRelays = uint64(100)
+		sessionTree := testtree.NewFilledSessionTree(
+			ctx, t,
+			s.numRelays, computeUnitsPerRelay,
+			"supplier", supplierOwnerAddr,
+			sessionHeader, sessionHeader, sessionHeader,
+			keyRing,
+			ringClient,
+		)
+
+		// Calculate the number of claimed compute units.
+		s.numClaimedComputeUnits = s.numRelays * computeUnitsPerRelay
+
+		targetNumRelays := s.keepers.ServiceKeeper.GetParams(ctx).TargetNumRelays
+		relayMiningDifficulty := servicekeeper.NewDefaultRelayMiningDifficulty(
+			ctx,
+			s.keepers.Logger(),
+			serviceId,
+			targetNumRelays,
+			targetNumRelays,
+		)
+
+		s.relayMiningDifficulties = append(
+			s.relayMiningDifficulties,
+			relayMiningDifficulty,
+		)
+
+		// Calculate the number of estimated compute units.
+		s.numEstimatedComputeUnits = getEstimatedComputeUnits(s.numClaimedComputeUnits, relayMiningDifficulty)
+
+		// Calculate the claimed amount in uPOKT.
+		sharedParams := s.keepers.SharedKeeper.GetParams(ctx)
+		s.claimedUpokt = getClaimedUpokt(sharedParams, s.numEstimatedComputeUnits, relayMiningDifficulty)
+
+		blockHeaderHash := make([]byte, 0)
+		expectedMerkleProofPath := protocol.GetPathForProof(blockHeaderHash, sessionHeader.SessionId)
+
+		// Advance the block height to the earliest claim commit height.
+		claimMsgHeight := sharedtypes.GetEarliestSupplierClaimCommitHeight(
+			&sharedParams,
+			sessionHeader.GetSessionEndBlockHeight(),
+			blockHeaderHash,
+			supplierOwnerAddr,
+		)
+		ctx = ctx.WithBlockHeight(claimMsgHeight).WithHeaderHash(blockHeaderHash)
+		s.ctx = ctx
+
+		merkleRootBz, err := sessionTree.Flush()
+		require.NoError(t, err)
+
+		// Prepare a claim that can be inserted
+		claims = append(
+			claims,
+			*testtree.NewClaim(t, supplierOwnerAddr, sessionHeader, merkleRootBz),
+		)
+
+		proofs = append(
+			proofs,
+			*testtree.NewProof(t, supplierOwnerAddr, sessionHeader, sessionTree, expectedMerkleProofPath),
+		)
+	}
+
+	return claims, proofs
 }
