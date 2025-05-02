@@ -3,6 +3,7 @@ package keeper
 import (
 	"context"
 	"fmt"
+	"slices"
 
 	cosmoslog "cosmossdk.io/log"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
@@ -218,7 +219,13 @@ func (sctx *settlementContext) cacheSupplier(
 	supplierOperatorAddress string,
 	serviceId string,
 ) error {
-	if _, ok := sctx.supplierMap[supplierOperatorAddress]; ok {
+	if idx, ok := sctx.supplierMap[supplierOperatorAddress]; ok {
+		cachedSupplier := sctx.settledSuppliers[idx]
+
+		// Supplier is cached, ensure that it has a service configuration corresponding
+		// to the claim's service ID.
+		sctx.cacheSupplierServiceConfig(ctx, cachedSupplier, serviceId)
+
 		return nil // Supplier already cached
 	}
 
@@ -241,6 +248,31 @@ func (sctx *settlementContext) cacheSupplier(
 	sctx.settledSuppliers = append(sctx.settledSuppliers, &supplier)
 
 	return nil
+}
+
+// cacheSupplierServiceConfig ensures the supplier service configuration for a claim
+// is cached in the settlement context.
+func (sctx *settlementContext) cacheSupplierServiceConfig(
+	ctx context.Context,
+	supplier *sharedtypes.Supplier,
+	serviceId string,
+) {
+	serviceConfigIdx := slices.IndexFunc(supplier.Services, func(s *sharedtypes.SupplierServiceConfig) bool {
+		return s.ServiceId == serviceId
+	})
+
+	if serviceConfigIdx < 0 {
+		// Service configuration already cached, no need to update
+		return
+	}
+
+	// Hydrate the supplier service configuration with the claim's service ID.
+	// This is needed to ensure the dehydrated supplier has the correct service
+	// revenue share configuration for the claim settlement.
+	supplier.Services = append(
+		supplier.Services,
+		sctx.keeper.supplierKeeper.GetSupplierActiveServiceConfig(ctx, supplier, serviceId)...,
+	)
 }
 
 // cacheApplication ensures the application for a claim is cached in the settlement context.
