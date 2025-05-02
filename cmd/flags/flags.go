@@ -7,8 +7,7 @@ const (
 
 	FlagLogLevel      = "log-level"
 	FlagLogLevelUsage = "The logging level (debug|info|warn|error)"
-
-	DefaultLogLevel = "info"
+	DefaultLogLevel   = "info"
 
 	FlagLogOutput      = "log-output"
 	FlagLogOutputUsage = "The logging output (file path); defaults to stdout"
