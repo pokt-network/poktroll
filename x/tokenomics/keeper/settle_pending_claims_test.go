@@ -901,7 +901,14 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimExpired_SupplierUnstaked() {
 	require.Equal(t, 1, len(unbondingBeginEvents))
 
 	// Validate the EventSupplierUnbondingBegin event.
-	for i := range slashedSupplier.ServiceConfigHistory {
+	for i := len(slashedSupplier.ServiceConfigHistory) - 1; i >= 0; i-- {
+		if slashedSupplier.ServiceConfigHistory[i].Service.ServiceId != serviceId {
+			slashedSupplier.ServiceConfigHistory = append(
+				slashedSupplier.ServiceConfigHistory[:i],
+				slashedSupplier.ServiceConfigHistory[i+1:]...,
+			)
+			continue
+		}
 		slashedSupplier.ServiceConfigHistory[i].DeactivationHeight = upcomingSessionEndHeight
 		if slashedSupplier.ServiceConfigHistory[i].Service.Endpoints == nil {
 			slashedSupplier.ServiceConfigHistory[i].Service.Endpoints = []*sharedtypes.SupplierEndpoint{}
