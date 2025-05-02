@@ -3,7 +3,6 @@
 package e2e
 
 import (
-	"encoding/base64"
 	"fmt"
 	"math/rand"
 	"net/url"
@@ -31,9 +30,9 @@ const (
 	// to determine whether it was unsuccessful, despite returning a zero exit code.
 	cmdUsagePattern = `--help" for more`
 
-	defaultMorseStateExportJSONFilename    = "morse_state_export.json"
-	defaultMorseAccountStateJSONFilename   = "morse_account_state.json"
-	defaultSupplierStakeConfigYAMLFileName = "supplier_stake_config.yaml"
+	defaultMorseStateExportJSONFilename                = "morse_state_export.json"
+	defaultMsgImportMorseClaimableAccountsJSONFilename = "msg_import_morse_accounts.json"
+	defaultSupplierStakeConfigYAMLFileName             = "supplier_stake_config.yaml"
 )
 
 var (
@@ -602,7 +601,7 @@ func (s *migrationSuite) AMorseaccountstateWithAccountsInADistributionHasSuccess
 		s.Fatalf("unknown morse account distribution: %q", distributionString)
 	}
 
-	morseStateExport, morseAccountState, err := testmigration.NewMorseStateExportAndAccountState(s.expectedNumAccounts, distributionFn)
+	morseStateExport, _, err := testmigration.NewMorseStateExportAndAccountState(s.expectedNumAccounts, distributionFn)
 	require.NoError(s, err)
 
 	morseStateExportBz, err := cmtjson.Marshal(morseStateExport)
@@ -615,21 +614,16 @@ func (s *migrationSuite) AMorseaccountstateWithAccountsInADistributionHasSuccess
 		"poktrolld", "tx",
 		"migration", "collect-morse-accounts",
 		defaultMorseStateExportJSONFilename,
-		defaultMorseAccountStateJSONFilename,
+		defaultMsgImportMorseClaimableAccountsJSONFilename,
 	}, " ")
 	s.TheAuthorityExecutes(collectMorseAccountsCmdString)
 	s.ThePocketdBinaryShouldExitWithoutError()
-	s.AMorseaccountstateIsWrittenTo(defaultMorseAccountStateJSONFilename)
+	s.AMorseaccountstateIsWrittenTo(defaultMsgImportMorseClaimableAccountsJSONFilename)
 
-	morseAccountStateHash, err := morseAccountState.GetHash()
-	require.NoError(s, err)
-
-	morseAccountStateHashBase64 := base64.StdEncoding.EncodeToString(morseAccountStateHash)
 	importMorseAccountsCmdString := strings.Join([]string{
 		"poktrolld", "tx",
 		"migration", "import-morse-accounts",
-		defaultMorseAccountStateJSONFilename,
-		morseAccountStateHashBase64,
+		defaultMsgImportMorseClaimableAccountsJSONFilename,
 	}, " ")
 	s.TheAuthorityExecutes(importMorseAccountsCmdString)
 	s.ThePocketdBinaryShouldExitWithoutError()
