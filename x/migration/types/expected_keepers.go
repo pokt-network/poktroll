@@ -36,7 +36,7 @@ type ApplicationKeeper interface {
 }
 type SupplierKeeper interface {
 	GetSupplier(ctx context.Context, supplierOperatorAddr string) (supplier sharedtypes.Supplier, found bool)
-	SetSupplier(ctx context.Context, supplier sharedtypes.Supplier)
+	SetAndIndexDehydratedSupplier(ctx context.Context, supplier sharedtypes.Supplier)
 	StakeSupplier(ctx context.Context, logger cosmoslog.Logger, msg *suppliertypes.MsgStakeSupplier) (*sharedtypes.Supplier, error)
 }
 

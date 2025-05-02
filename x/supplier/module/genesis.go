@@ -26,7 +26,7 @@ func InitGenesis(ctx context.Context, k keeper.Keeper, genState types.GenesisSta
 			}
 		}
 
-		k.SetSupplier(ctx, supplier)
+		k.SetAndIndexDehydratedSupplier(ctx, supplier)
 	}
 	// this line is used by starport scaffolding # genesis/module/init
 	if err := k.SetParams(ctx, genState.Params); err != nil {
