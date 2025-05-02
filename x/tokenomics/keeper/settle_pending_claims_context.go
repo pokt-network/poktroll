@@ -3,6 +3,7 @@ package keeper
 import (
 	"context"
 	"fmt"
+	"slices"
 
 	cosmoslog "cosmossdk.io/log"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
@@ -218,12 +219,27 @@ func (sctx *settlementContext) cacheSupplier(
 	supplierOperatorAddress string,
 	serviceId string,
 ) error {
-	if _, ok := sctx.supplierMap[supplierOperatorAddress]; ok {
+	// Supplier service configuration handling:
+	// - Suppliers are hydrated with service configurations on demand (lazily)
+	// - Each new service ID in a claim is added to the supplier's configuration only once
+	// - This prevents unnecessary duplicate service configurations in memory
+	// - In the worst case, a supplier will have all its service configurations loaded
+	//   if claims are processed for all services the supplier supports
+	if idx, ok := sctx.supplierMap[supplierOperatorAddress]; ok {
+		cachedSupplier := sctx.settledSuppliers[idx]
+
+		// Supplier is cached, ensure that it has a service configuration corresponding
+		// to the claim's service ID.
+		sctx.cacheSupplierServiceConfig(ctx, cachedSupplier, serviceId)
+
 		return nil // Supplier already cached
 	}
 
-	// Retrieve the onchain staked dehydrated supplier record since other service
-	// configurations are not needed for the claim settlement.
+	// Retrieve the onchain staked dehydrated supplier record:
+	// - We only fetch the dehydrated supplier (without all service configs)
+	// - This fetch happens only once - when we process the first claim from this supplier
+	// - Additional service configs will be hydrated on demand as needed
+	// - This optimizes memory usage and reduces redundant store lookups
 	supplier, isSupplierFound := sctx.keeper.supplierKeeper.GetDehydratedSupplier(ctx, supplierOperatorAddress)
 	if !isSupplierFound {
 		sctx.logger.Warn(fmt.Sprintf("supplier for claim with address %q not found", supplierOperatorAddress))
@@ -241,6 +257,31 @@ func (sctx *settlementContext) cacheSupplier(
 	sctx.settledSuppliers = append(sctx.settledSuppliers, &supplier)
 
 	return nil
+}
+
+// cacheSupplierServiceConfig ensures the supplier service configuration for a claim
+// is cached in the settlement context.
+func (sctx *settlementContext) cacheSupplierServiceConfig(
+	ctx context.Context,
+	supplier *sharedtypes.Supplier,
+	serviceId string,
+) {
+	serviceConfigIdx := slices.IndexFunc(supplier.Services, func(s *sharedtypes.SupplierServiceConfig) bool {
+		return s.ServiceId == serviceId
+	})
+
+	// Service configuration already cached, no need to update
+	if serviceConfigIdx >= 0 {
+		return
+	}
+
+	// Hydrate the supplier service configuration with the claim's service ID.
+	// This is needed to ensure the dehydrated supplier has the correct service
+	// revenue share configuration for the claim settlement.
+	supplier.Services = append(
+		supplier.Services,
+		sctx.keeper.supplierKeeper.GetSupplierActiveServiceConfig(ctx, supplier, serviceId)...,
+	)
 }
 
 // cacheApplication ensures the application for a claim is cached in the settlement context.
