@@ -9,12 +9,12 @@ sidebar_position: 4
 
 :::warning This is an in-depth walkthrough
 
-See the [Validator Cheat Sheet](../cheat_sheets/validator_cheatsheet.md) if you want to just copy-pasta a few commands.
+See the [Validator Cheat Sheet](../cheat_sheets/3_validator_cheatsheet.md) if you want to just copy-pasta a few commands.
 
 :::
 
 - [Introduction](#introduction)
-- [Pre-Requisites \& Requirements](#prerequisites--requirements)
+- [Prerequisites \& Requirements](#prerequisites--requirements)
 - [2. Account Setup](#2-account-setup)
   - [2.1. Create the Validator Account](#21-create-the-validator-account)
   - [2.2. Prepare your environment](#22-prepare-your-environment)
@@ -30,7 +30,7 @@ This guide will help you stake and run a Validator node on Pocket Network.
 
 As a Validator, you'll be participating in the consensus of the network, validating transactions, and securing the blockchain.
 
-## Pre-Requisites & Requirements
+## Prerequisites & Requirements
 
 1. **CLI**: Make sure to [install the `pocketd` CLI](../../tools/user_guide/pocketd_cli.md).
 2. **Synched Full Node**: Ensure you have followed the [Full Node Walkthrough](./full_node_walkthrough.md) to install and run a Full Node. Your node must be fully synced with the network before proceeding.

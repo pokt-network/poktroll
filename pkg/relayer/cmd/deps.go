@@ -6,6 +6,7 @@ import (
 	"net/url"
 
 	"cosmossdk.io/depinject"
+	cosmosclient "github.com/cosmos/cosmos-sdk/client"
 	cosmosflags "github.com/cosmos/cosmos-sdk/client/flags"
 	cosmostx "github.com/cosmos/cosmos-sdk/client/tx"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"

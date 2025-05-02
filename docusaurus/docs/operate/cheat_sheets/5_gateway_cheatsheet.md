@@ -1,5 +1,5 @@
 ---
-sidebar_position: 6
+sidebar_position: 5
 title: App & PATH Gateway (~30 min)
 ---
 
@@ -20,7 +20,7 @@ streamline development and reduce friction for any new potential contributor.
 
 :::
 
-- [Pre-Requisites](#prerequisites)
+- [Prerequisites](#prerequisites)
 - [Account Setup](#account-setup)
   - [Create and fund the `Gateway` and `Application` accounts](#create-and-fund-the-gateway-and-application-accounts)
   - [Prepare your environment](#prepare-your-environment)
@@ -31,7 +31,7 @@ streamline development and reduce friction for any new potential contributor.
   - [Delegate the `Application` to the `Gateway`](#delegate-the-application-to-the-gateway)
 - [`PATH` Gateway Setup](#path-gateway-setup)
 
-## Pre-Requisites
+## Prerequisites
 
 1. Make sure to [install the `pocketd` CLI](../../tools/user_guide/pocketd_cli.md).
 2. Make sure you know how to [create and fund a new account](../../tools/user_guide/create-new-wallet.md).

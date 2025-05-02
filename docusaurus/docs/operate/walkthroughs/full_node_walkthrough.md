@@ -12,7 +12,7 @@ import TabItem from '@theme/TabItem';
 
 :::warning recommended for advanced linux users only
 
-See the [Full Node Cheat Sheet](../cheat_sheets/full_node_cheatsheet.md) if you want to just copy-pasta a few commands.
+See the [Full Node Cheat Sheet](../cheat_sheets/2_full_node_cheatsheet.md) if you want to just copy-pasta a few commands.
 
 **These instructions are intended for Debian-based systems.**
 
@@ -23,7 +23,7 @@ See the [Full Node Cheat Sheet](../cheat_sheets/full_node_cheatsheet.md) if you 
 ## Table of Contents <!-- omit in toc -->
 
 - [Why run a Full Node?](#why-run-a-full-node)
-- [Pre-Requisites \& Requirements](#prerequisites--requirements)
+- [Prerequisites \& Requirements](#prerequisites--requirements)
 - [Instructions](#instructions)
   - [1. Install Dependencies](#1-install-dependencies)
   - [2. Create a New User](#2-create-a-new-user)
@@ -49,7 +49,7 @@ Running a Full Node is the first step toward becoming a Validator, Supplier, or 
 The instructions outlined here use [Cosmovisor](https://docs.cosmos.network/v0.45/run-node/cosmovisor.html)
 to enable automatic binary upgrades.
 
-## Pre-Requisites & Requirements
+## Prerequisites & Requirements
 
 1. **Linux-based System**: Preferably Debian-based distributions (Ubuntu, Debian).
 2. **Hardware Requirements**: See the [hardware requirements doc](../configs/hardware_requirements.md)

@@ -11,11 +11,25 @@ We are continuously evaluating the hardware requirements as we work on the next 
 TODO_MAINNET: Update this document prior to MainNet release
 :::
 
+- [Recommended Environment](#recommended-environment)
 - [Validator / Full Node](#validator--full-node)
 - [RPC Node](#rpc-node)
 - [RelayMiner](#relayminer)
 - [PATH Gateway](#path-gateway)
 - [Additional Considerations](#additional-considerations)
+
+### Recommended Environment
+
+1. **Linux-based System**: Preferably Debian-based distributions (Ubuntu, Debian).
+2. **Architecture Support**: Both x86_64 (amd64) and ARM64 architectures are supported.
+3. **Root or Sudo Access**: Administrative privileges are required.
+4. **Dedicated Server or Virtual Machine**: Any provider is acceptable.
+
+:::tip Vultr Playbook
+
+If you are using [Vultr](https://www.vultr.com/) for your deployment, you can following the [CLI Playbook we put together here](../../tools/playbooks/vultr.md) to speed things up.
+
+:::
 
 ### Validator / Full Node
 

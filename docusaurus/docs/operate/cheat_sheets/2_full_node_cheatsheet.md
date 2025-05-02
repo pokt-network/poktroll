@@ -19,14 +19,14 @@ See the [Full Node Walkthrough](../walkthroughs/full_node_walkthrough.md) if you
 
 ## Table of Contents <!-- omit in toc -->
 
-- [Pre-Requisites \& Requirements](#prerequisites--requirements)
+- [Prerequisites \& Requirements](#prerequisites--requirements)
 - [10 Minute Video Walkthrough](#10-minute-video-walkthrough)
 - [Install and Run a Full Node using Cosmovisor](#install-and-run-a-full-node-using-cosmovisor)
   - [Verify successful installation using `curl`](#verify-successful-installation-using-curl)
   - [How are automatic upgrades handled out of the box?](#how-are-automatic-upgrades-handled-out-of-the-box)
 - [Do you care to know what just happened?](#do-you-care-to-know-what-just-happened)
 
-## Pre-Requisites & Requirements
+## Prerequisites & Requirements
 
 1. **Linux-based System**: Preferably Debian-based distributions (Ubuntu, Debian).
 2. **Hardware Requirements**: See the [hardware requirements doc](../configs/hardware_requirements.md)

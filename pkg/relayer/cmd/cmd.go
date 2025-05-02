@@ -10,8 +10,11 @@ import (
 func RelayerCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "relayminer",
-		Short: "RelayMiner CLI",
-		Long:  "RelayMiner CLI for running the relay miner and testing relays.",
+		Short: "RelayMiner Subcommands (i.e. Supplier Operation)",
+		Long: `RelayMiner Subcommands to start, test and operate a RelayMiner.
+
+A Supplier is just an onchain record advertising to provide a service.
+A RelayMiner is the coprocessor that runs offchain to handle relays, provide a service and earn rewards.`,
 		Run: func(cmd *cobra.Command, args []string) {
 			_ = cmd.Help()
 		},

@@ -404,7 +404,7 @@ commands on how `v0.1.3` was submitted on Alpha & Beta.
 
 1. Follow [Protocol Upgrade Procedure](3_testing_upgrades_locally.md)
 2. Update the [Upgrade List](./4_upgrade_list.md)
-3. Deploy a full node on TestNet and verify sync (see [Full Node Quickstart Guide](../cheat_sheets/full_node_cheatsheet.md))
+3. Deploy a full node on TestNet and verify sync (see [Full Node Quickstart Guide](../cheat_sheets/2_full_node_cheatsheet.md))
 
 ---
 

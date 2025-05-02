@@ -22,10 +22,11 @@ import (
 // startCmd is the subcommand for running the relay miner (was root logic).
 func startCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "start",
+		Use:   "start --config <path>",
 		Short: "Start a RelayMiner",
-		Long: `
-- Run a RelayMiner (offchain middleware for Supplier staked services)
+		Long: `Start a RelayMiner Process
+
+A RelayMiner is the coprocessor that runs offchain to handle relays, provide a service and earn rewards. It:
 - Handles incoming relay requests, validates, proxies, signs, and returns responses
 - Hashes/computes relay difficulty; eligible relays are persisted for rewards
 - Monitors block height, submits claim/proof messages as sessions are eligible
@@ -34,6 +35,7 @@ func startCmd() *cobra.Command {
 	}
 	// Custom flags
 	cmd.Flags().StringVar(&flagRelayMinerConfig, "config", "", "The path to the relayminer config file")
+	cmd.Flags().Bool(config.FlagQueryCaching, true, "Enable or disable onchain query caching")
 
 	// Cosmos flags
 	// TODO_TECHDEBT(#256): Remove unneeded cosmos flags.
@@ -45,7 +47,6 @@ func startCmd() *cobra.Command {
 	cmd.Flags().StringVar(&flagLogLevel, cosmosflags.FlagLogLevel, "debug", "The logging level (debug|info|warn|error)")
 	cmd.Flags().Float64(cosmosflags.FlagGasAdjustment, 1.7, "The adjustment factor to be multiplied by the gas estimate returned by the tx simulation")
 	cmd.Flags().String(cosmosflags.FlagGasPrices, "1upokt", "Set the gas unit price in upokt")
-	cmd.Flags().Bool(config.FlagQueryCaching, true, "Enable or disable onchain query caching")
 
 	return cmd
 }

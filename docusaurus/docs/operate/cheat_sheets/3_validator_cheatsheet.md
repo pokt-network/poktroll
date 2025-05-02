@@ -29,11 +29,11 @@ See the [Validator Walkthrough](../walkthroughs/validator_walkthrough.md) if you
 ## Prerequisites
 
 1. **CLI**: Make sure to [install the `pocketd` CLI](../../tools/user_guide/pocketd_cli.md).
-2. **Full Node**: Make sure you have followed the [Full Node Cheat Sheet](./full_node_cheatsheet.md) to install and run a Full Node first.
+2. **Full Node**: Make sure you have followed the [Full Node Cheat Sheet](2_full_node_cheatsheet.md) to install and run a Full Node first.
 
 :::tip `pocket` user
 
-If you followed [Full Node Cheat Sheet](./full_node_cheatsheet.md), you can switch
+If you followed [Full Node Cheat Sheet](2_full_node_cheatsheet.md), you can switch
 to user running the full node (which has `pocketd` installed) like so:
 
 ```bash
