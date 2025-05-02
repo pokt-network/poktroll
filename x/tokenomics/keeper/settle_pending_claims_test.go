@@ -113,6 +113,11 @@ func (s *TestSuite) SetupTest() {
 	require.NoError(t, err)
 
 	appStake := types.NewCoin("upokt", math.NewInt(1000000))
+
+	// Setup the test for each service:
+	// - Create and store the service in the service keeper.
+	// - Create and store an application staked to the service.
+	// - Create a supplier service config for the service.
 	supplierServiceConfigs := make([]*sharedtypes.SupplierServiceConfig, 0, len(testServiceIds))
 	appAddresses := make([]string, 0, len(testServiceIds))
 	for i, serviceId := range testServiceIds {
@@ -151,6 +156,7 @@ func (s *TestSuite) SetupTest() {
 		s.keepers.SetApplication(s.ctx, app)
 	}
 
+	// Make the supplier staked for each tested service.
 	supplierStake := types.NewCoin("upokt", math.NewInt(supplierStakeAmt))
 	supplierServiceConfigHistory := sharedtest.CreateServiceConfigUpdateHistoryFromServiceConfigs(supplierOwnerAddr, supplierServiceConfigs, 1, 0)
 	supplier := sharedtypes.Supplier{
@@ -162,6 +168,7 @@ func (s *TestSuite) SetupTest() {
 	}
 	s.keepers.SetAndIndexDehydratedSupplier(s.ctx, supplier)
 
+	// Create a claim and proof for each service.
 	s.relayMiningDifficulties = make([]servicetypes.RelayMiningDifficulty, 0, len(testServiceIds))
 	for i, serviceId := range testServiceIds {
 		appAddress := appAddresses[i]
