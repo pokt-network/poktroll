@@ -5,10 +5,15 @@ sidebar_position: 2
 
 ## Explorers
 
+- 🚰 Coming Soon: MACT Faucet
 - 🪙 [StakeNodes' Faucet](https://faucet.beta.testnet.pokt.network/)
 - 🗺️ [StakeNodes' Explorer](https://explorer.pocket.network/pocket-beta)
 - 🗺️ [Soothe's Explorer](https://shannon-beta.trustsoothe.io)
 - 👨‍💻 [Soothe's GraphQL Playground](https://shannon-beta-api.trustsoothe.io/)
+
+:::note TODO
+@bryanchriswhite: Add a link to the MACT Faucet once it's live.
+:::
 
 ## RPC Endpoints
 
