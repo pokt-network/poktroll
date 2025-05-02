@@ -601,10 +601,7 @@ func (s *migrationSuite) AMorseaccountstateWithAccountsInADistributionHasSuccess
 		s.Fatalf("unknown morse account distribution: %q", distributionString)
 	}
 
-	morseStateExport, _, err := testmigration.NewMorseStateExportAndAccountState(s.expectedNumAccounts, distributionFn)
-	require.NoError(s, err)
-
-	morseStateExportBz, err := cmtjson.Marshal(morseStateExport)
+	morseStateExportBz, _, err := testmigration.NewMorseStateExportAndAccountStateBytes(s.expectedNumAccounts, distributionFn)
 	require.NoError(s, err)
 
 	err = os.WriteFile("morse_state_export.json", morseStateExportBz, 0644)

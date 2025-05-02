@@ -76,7 +76,8 @@ func runImportMorseAccounts(cmd *cobra.Command, args []string) error {
 
 	// Deserialize the MsgImportMorseAccountState message.
 	msgImportMorseClaimableAccounts := new(migrationtypes.MsgImportMorseClaimableAccounts)
-	if err := cmtjson.Unmarshal(msgImportMorseClaimableAccountsJSONBz, msgImportMorseClaimableAccounts); err != nil {
+	err = cmtjson.Unmarshal(msgImportMorseClaimableAccountsJSONBz, msgImportMorseClaimableAccounts)
+	if err != nil {
 		return err
 	}
 
