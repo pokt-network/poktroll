@@ -2,6 +2,7 @@ package keeper_test
 
 import (
 	"context"
+	"fmt"
 	"math/big"
 	"testing"
 
@@ -38,9 +39,13 @@ import (
 	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
 )
 
-const testServiceId = "svc1"
+const computeUnitsPerRelay = 1
 
-var supplierStakeAmt = 2 * suppliertypes.DefaultMinStake.Amount.Int64()
+var (
+	// Test settlements with claims from multiple services
+	testServiceIds   = []string{"svc1", "svc2", "svc3"}
+	supplierStakeAmt = 2 * suppliertypes.DefaultMinStake.Amount.Int64()
+)
 
 func init() {
 	cmd.InitSDKConfig()
@@ -52,14 +57,14 @@ type TestSuite struct {
 
 	ctx     context.Context
 	keepers keepertest.TokenomicsModuleKeepers
-	claim   prooftypes.Claim
-	proof   prooftypes.Proof
+	claims  []prooftypes.Claim
+	proofs  []prooftypes.Proof
 
 	numRelays                uint64
 	numClaimedComputeUnits   uint64
 	numEstimatedComputeUnits uint64
 	claimedUpokt             cosmostypes.Coin
-	relayMiningDifficulty    servicetypes.RelayMiningDifficulty
+	relayMiningDifficulties  []servicetypes.RelayMiningDifficulty
 }
 
 // SetupTest creates the following and stores them in the suite:
@@ -96,57 +101,6 @@ func (s *TestSuite) SetupTest() {
 		s.keepers.AccountKeeper,
 		preGeneratedAccts,
 	).String()
-	appAddr := testkeyring.CreateOnChainAccount(
-		sdkCtx, t,
-		"app",
-		keyRing,
-		s.keepers.AccountKeeper,
-		preGeneratedAccts,
-	).String()
-
-	service := sharedtypes.Service{
-		Id:                   testServiceId,
-		ComputeUnitsPerRelay: 1,
-		OwnerAddress:         sample.AccAddress(),
-	}
-	s.keepers.SetService(s.ctx, service)
-
-	supplierStake := types.NewCoin("upokt", math.NewInt(supplierStakeAmt))
-	supplierServiceConfigs := []*sharedtypes.SupplierServiceConfig{{
-		ServiceId: testServiceId,
-		RevShare: []*sharedtypes.ServiceRevenueShare{{
-			Address:            supplierOwnerAddr,
-			RevSharePercentage: 100,
-		}},
-	}}
-	supplierServiceConfigHistory := sharedtest.CreateServiceConfigUpdateHistoryFromServiceConfigs(supplierOwnerAddr, supplierServiceConfigs, 1, 0)
-	supplier := sharedtypes.Supplier{
-		OwnerAddress:         supplierOwnerAddr,
-		OperatorAddress:      supplierOwnerAddr,
-		Stake:                &supplierStake,
-		Services:             supplierServiceConfigs,
-		ServiceConfigHistory: supplierServiceConfigHistory,
-	}
-	s.keepers.SetAndIndexDehydratedSupplier(s.ctx, supplier)
-
-	appStake := types.NewCoin("upokt", math.NewInt(1000000))
-	app := apptypes.Application{
-		Address:        appAddr,
-		Stake:          &appStake,
-		ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{{ServiceId: testServiceId}},
-	}
-	s.keepers.SetApplication(s.ctx, app)
-
-	// Get the session for the application/supplier pair which is expected
-	// to be claimed and for which a valid proof would be accepted.
-	sessionReq := &sessiontypes.QueryGetSessionRequest{
-		ApplicationAddress: appAddr,
-		ServiceId:          testServiceId,
-		BlockHeight:        1,
-	}
-	sessionRes, err := s.keepers.GetSession(sdkCtx, sessionReq)
-	require.NoError(t, err)
-	sessionHeader := sessionRes.Session.Header
 
 	// Construct a ringClient to get the application's ring & verify the relay
 	// request signature.
@@ -158,55 +112,132 @@ func (s *TestSuite) SetupTest() {
 	))
 	require.NoError(t, err)
 
-	// Construct a valid session tree with 100 relays.
-	s.numRelays = uint64(100)
-	sessionTree := testtree.NewFilledSessionTree(
-		sdkCtx, t,
-		s.numRelays, service.ComputeUnitsPerRelay,
-		"supplier", supplierOwnerAddr,
-		sessionHeader, sessionHeader, sessionHeader,
-		keyRing,
-		ringClient,
-	)
+	appStake := types.NewCoin("upokt", math.NewInt(1000000))
+	supplierServiceConfigs := make([]*sharedtypes.SupplierServiceConfig, 0, len(testServiceIds))
+	appAddresses := make([]string, 0, len(testServiceIds))
+	for i, serviceId := range testServiceIds {
+		service := sharedtypes.Service{
+			Id:                   serviceId,
+			ComputeUnitsPerRelay: computeUnitsPerRelay,
+			OwnerAddress:         sample.AccAddress(),
+		}
+		s.keepers.SetService(s.ctx, service)
 
-	// Calculate the number of claimed compute units.
-	s.numClaimedComputeUnits = s.numRelays * service.ComputeUnitsPerRelay
+		supplierServiceConfigs = append(
+			supplierServiceConfigs,
+			&sharedtypes.SupplierServiceConfig{
+				ServiceId: serviceId,
+				RevShare: []*sharedtypes.ServiceRevenueShare{{
+					Address:            supplierOwnerAddr,
+					RevSharePercentage: 100,
+				}},
+			},
+		)
 
-	targetNumRelays := s.keepers.ServiceKeeper.GetParams(sdkCtx).TargetNumRelays
-	s.relayMiningDifficulty = servicekeeper.NewDefaultRelayMiningDifficulty(
-		sdkCtx,
-		s.keepers.Logger(),
-		testServiceId,
-		targetNumRelays,
-		targetNumRelays,
-	)
+		appAddr := testkeyring.CreateOnChainAccount(
+			sdkCtx, t,
+			fmt.Sprintf("app%d", i),
+			keyRing,
+			s.keepers.AccountKeeper,
+			preGeneratedAccts,
+		).String()
+		appAddresses = append(appAddresses, appAddr)
 
-	// Calculate the number of estimated compute units.
-	s.numEstimatedComputeUnits = getEstimatedComputeUnits(s.numClaimedComputeUnits, s.relayMiningDifficulty)
+		app := apptypes.Application{
+			Address:        appAddr,
+			Stake:          &appStake,
+			ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{{ServiceId: serviceId}},
+		}
+		s.keepers.SetApplication(s.ctx, app)
+	}
 
-	// Calculate the claimed amount in uPOKT.
-	sharedParams := s.keepers.SharedKeeper.GetParams(sdkCtx)
-	s.claimedUpokt = getClaimedUpokt(sharedParams, s.numEstimatedComputeUnits, s.relayMiningDifficulty)
+	supplierStake := types.NewCoin("upokt", math.NewInt(supplierStakeAmt))
+	supplierServiceConfigHistory := sharedtest.CreateServiceConfigUpdateHistoryFromServiceConfigs(supplierOwnerAddr, supplierServiceConfigs, 1, 0)
+	supplier := sharedtypes.Supplier{
+		OwnerAddress:         supplierOwnerAddr,
+		OperatorAddress:      supplierOwnerAddr,
+		Stake:                &supplierStake,
+		Services:             supplierServiceConfigs,
+		ServiceConfigHistory: supplierServiceConfigHistory,
+	}
+	s.keepers.SetAndIndexDehydratedSupplier(s.ctx, supplier)
 
-	blockHeaderHash := make([]byte, 0)
-	expectedMerkleProofPath := protocol.GetPathForProof(blockHeaderHash, sessionHeader.SessionId)
+	s.relayMiningDifficulties = make([]servicetypes.RelayMiningDifficulty, 0, len(testServiceIds))
+	for i, serviceId := range testServiceIds {
+		appAddress := appAddresses[i]
+		// Get the session for the application/supplier pair which is expected
+		// to be claimed and for which a valid proof would be accepted.
+		sessionReq := &sessiontypes.QueryGetSessionRequest{
+			ApplicationAddress: appAddress,
+			ServiceId:          serviceId,
+			BlockHeight:        1,
+		}
+		sessionRes, err := s.keepers.GetSession(sdkCtx, sessionReq)
+		require.NoError(t, err)
+		sessionHeader := sessionRes.Session.Header
 
-	// Advance the block height to the earliest claim commit height.
-	claimMsgHeight := sharedtypes.GetEarliestSupplierClaimCommitHeight(
-		&sharedParams,
-		sessionHeader.GetSessionEndBlockHeight(),
-		blockHeaderHash,
-		supplierOwnerAddr,
-	)
-	sdkCtx = sdkCtx.WithBlockHeight(claimMsgHeight).WithHeaderHash(blockHeaderHash)
-	s.ctx = sdkCtx
+		// Construct a valid session tree with 100 relays.
+		s.numRelays = uint64(100)
+		sessionTree := testtree.NewFilledSessionTree(
+			sdkCtx, t,
+			s.numRelays, computeUnitsPerRelay,
+			"supplier", supplierOwnerAddr,
+			sessionHeader, sessionHeader, sessionHeader,
+			keyRing,
+			ringClient,
+		)
 
-	merkleRootBz, err := sessionTree.Flush()
-	require.NoError(t, err)
+		// Calculate the number of claimed compute units.
+		s.numClaimedComputeUnits = s.numRelays * computeUnitsPerRelay
 
-	// Prepare a claim that can be inserted
-	s.claim = *testtree.NewClaim(t, supplierOwnerAddr, sessionHeader, merkleRootBz)
-	s.proof = *testtree.NewProof(t, supplierOwnerAddr, sessionHeader, sessionTree, expectedMerkleProofPath)
+		targetNumRelays := s.keepers.ServiceKeeper.GetParams(sdkCtx).TargetNumRelays
+		relayMiningDifficulty := servicekeeper.NewDefaultRelayMiningDifficulty(
+			sdkCtx,
+			s.keepers.Logger(),
+			serviceId,
+			targetNumRelays,
+			targetNumRelays,
+		)
+
+		s.relayMiningDifficulties = append(
+			s.relayMiningDifficulties,
+			relayMiningDifficulty,
+		)
+
+		// Calculate the number of estimated compute units.
+		s.numEstimatedComputeUnits = getEstimatedComputeUnits(s.numClaimedComputeUnits, relayMiningDifficulty)
+
+		// Calculate the claimed amount in uPOKT.
+		sharedParams := s.keepers.SharedKeeper.GetParams(sdkCtx)
+		s.claimedUpokt = getClaimedUpokt(sharedParams, s.numEstimatedComputeUnits, relayMiningDifficulty)
+
+		blockHeaderHash := make([]byte, 0)
+		expectedMerkleProofPath := protocol.GetPathForProof(blockHeaderHash, sessionHeader.SessionId)
+
+		// Advance the block height to the earliest claim commit height.
+		claimMsgHeight := sharedtypes.GetEarliestSupplierClaimCommitHeight(
+			&sharedParams,
+			sessionHeader.GetSessionEndBlockHeight(),
+			blockHeaderHash,
+			supplierOwnerAddr,
+		)
+		sdkCtx = sdkCtx.WithBlockHeight(claimMsgHeight).WithHeaderHash(blockHeaderHash)
+		s.ctx = sdkCtx
+
+		merkleRootBz, err := sessionTree.Flush()
+		require.NoError(t, err)
+
+		// Prepare a claim that can be inserted
+		s.claims = append(
+			s.claims,
+			*testtree.NewClaim(t, supplierOwnerAddr, sessionHeader, merkleRootBz),
+		)
+
+		s.proofs = append(
+			s.proofs,
+			*testtree.NewProof(t, supplierOwnerAddr, sessionHeader, sessionTree, expectedMerkleProofPath),
+		)
+	}
 }
 
 // TestSettlePendingClaims tests the claim settlement process.
@@ -221,13 +252,14 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimPendingBeforeSettlement() {
 	t := s.T()
 	ctx := s.ctx
 	sharedParams := s.keepers.SharedKeeper.GetParams(ctx)
+	// Use a single claim for this test
+	claim := s.claims[0]
 
-	// Upsert the claim only
-	s.keepers.UpsertClaim(ctx, s.claim)
+	s.keepers.UpsertClaim(ctx, claim)
 
 	// Settle pending claims while the session is still active.
 	// Expectations: No claims should be settled because the session is still ongoing
-	blockHeight := s.claim.SessionHeader.SessionEndBlockHeight - 2 // session is still active
+	blockHeight := claim.SessionHeader.SessionEndBlockHeight - 2 // session is still active
 	sdkCtx := cosmostypes.UnwrapSDKContext(ctx).WithBlockHeight(blockHeight)
 	settledResults, expiredResults, err := s.keepers.SettlePendingClaims(sdkCtx)
 	require.NoError(t, err)
@@ -246,10 +278,10 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimPendingBeforeSettlement() {
 
 	// Calculate a block height which is within the proof window.
 	proofWindowOpenHeight := sharedtypes.GetProofWindowOpenHeight(
-		&sharedParams, s.claim.SessionHeader.SessionEndBlockHeight,
+		&sharedParams, claim.SessionHeader.SessionEndBlockHeight,
 	)
 	proofWindowCloseHeight := sharedtypes.GetProofWindowCloseHeight(
-		&sharedParams, s.claim.SessionHeader.SessionEndBlockHeight,
+		&sharedParams, claim.SessionHeader.SessionEndBlockHeight,
 	)
 	blockHeight = (proofWindowCloseHeight - proofWindowOpenHeight) / 2
 
@@ -273,8 +305,11 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimExpired_ProofRequiredAndNotProv
 	t := s.T()
 	ctx := s.ctx
 	sharedParams := s.keepers.SharedKeeper.GetParams(ctx)
+	// Use a single claim for this test
+	claim := s.claims[0]
+	relayMiningDifficulty := s.relayMiningDifficulties[0]
 
-	proofRequirementThreshold, err := s.claim.GetClaimeduPOKT(sharedParams, s.relayMiningDifficulty)
+	proofRequirementThreshold, err := claim.GetClaimeduPOKT(sharedParams, relayMiningDifficulty)
 	require.NoError(t, err)
 
 	// -1 to push threshold below s.claim's compute units
@@ -295,12 +330,12 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimExpired_ProofRequiredAndNotProv
 	require.NoError(t, err)
 
 	// Upsert the claim ONLY
-	s.keepers.UpsertClaim(ctx, s.claim)
+	s.keepers.UpsertClaim(ctx, claim)
 
 	// Settle pending claims after proof window closes
 	// Expectation: All (1) claims should be expired.
 	// NB: proofs should be rejected when the current height equals the proof window close height.
-	sessionEndHeight := s.claim.SessionHeader.SessionEndBlockHeight
+	sessionEndHeight := claim.SessionHeader.SessionEndBlockHeight
 	blockHeight := sharedtypes.GetProofWindowCloseHeight(&sharedParams, sessionEndHeight)
 	sdkCtx := cosmostypes.UnwrapSDKContext(ctx).WithBlockHeight(blockHeight)
 	settledResults, expiredResults, err := s.keepers.SettlePendingClaims(sdkCtx)
@@ -318,7 +353,7 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimExpired_ProofRequiredAndNotProv
 	// The supplier is not unstaked because it got slashed by an amount that is
 	// half its stake (i.e. missing proof penalty == stake / 2), resulting in a
 	// remaining stake that is above the minimum stake (i.e. new_stake == prev_stake / 2).
-	slashedSupplier, supplierFound := s.keepers.GetSupplier(sdkCtx, s.claim.SupplierOperatorAddress)
+	slashedSupplier, supplierFound := s.keepers.GetSupplier(sdkCtx, claim.SupplierOperatorAddress)
 	require.True(t, supplierFound)
 	require.Equal(t, supplierStakeAmt/2, slashedSupplier.Stake.Amount.Int64())
 	require.Equal(t, uint64(0), slashedSupplier.UnstakeSessionEndHeight)
@@ -369,8 +404,12 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimSettled_ProofRequiredAndProvide
 	t := s.T()
 	ctx := s.ctx
 	sharedParams := s.keepers.SharedKeeper.GetParams(ctx)
+	// Use a single claim and proof for this test
+	claim := s.claims[0]
+	proof := s.proofs[0]
+	relayMiningDifficulty := s.relayMiningDifficulties[0]
 
-	proofRequirementThreshold, err := s.claim.GetClaimeduPOKT(sharedParams, s.relayMiningDifficulty)
+	proofRequirementThreshold, err := claim.GetClaimeduPOKT(sharedParams, relayMiningDifficulty)
 	require.NoError(t, err)
 
 	// -1 to push threshold below s.claim's compute units
@@ -386,8 +425,8 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimSettled_ProofRequiredAndProvide
 	require.NoError(t, err)
 
 	// Upsert the claim & proof
-	s.keepers.UpsertClaim(ctx, s.claim)
-	s.keepers.UpsertProof(ctx, s.proof)
+	s.keepers.UpsertClaim(ctx, claim)
+	s.keepers.UpsertProof(ctx, proof)
 
 	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
 	s.keepers.ValidateSubmittedProofs(sdkCtx)
@@ -395,7 +434,7 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimSettled_ProofRequiredAndProvide
 	// Settle pending claims after proof window closes
 	// Expectation: All (1) claims should be claimed.
 	// NB: proofs should be rejected when the current height equals the proof window close height.
-	sessionEndHeight := s.claim.SessionHeader.SessionEndBlockHeight
+	sessionEndHeight := claim.SessionHeader.SessionEndBlockHeight
 	blockHeight := sharedtypes.GetProofWindowCloseHeight(&sharedParams, sessionEndHeight)
 	sdkCtx = cosmostypes.UnwrapSDKContext(ctx).WithBlockHeight(blockHeight)
 	settledResult, expiredResult, err := s.keepers.SettlePendingClaims(sdkCtx)
@@ -429,6 +468,10 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimExpired_ProofRequired_InvalidOn
 	ctx := s.ctx
 	sharedParams := s.keepers.SharedKeeper.GetParams(ctx)
 
+	// Use a single claim and proof for this test
+	claim := s.claims[0]
+	proof := s.proofs[0]
+
 	proofParams := s.keepers.ProofKeeper.GetParams(ctx)
 	// Set the proof parameters such that s.claim DOES NOT require a proof because:
 	// - proof_request_probability is 100%
@@ -441,11 +484,10 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimExpired_ProofRequired_InvalidOn
 	require.NoError(t, err)
 
 	// Create a claim that requires a proof and an invalid proof
-	proof := s.proof
 	proof.ClosestMerkleProof = []byte("invalid_proof")
 
 	// Upsert the proof & claim
-	s.keepers.UpsertClaim(ctx, s.claim)
+	s.keepers.UpsertClaim(ctx, claim)
 	s.keepers.UpsertProof(ctx, proof)
 
 	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
@@ -454,7 +496,7 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimExpired_ProofRequired_InvalidOn
 	// Settle pending claims after proof window closes
 	// Expectation: All (1) claims should be expired.
 	// NB: proofs should be rejected when the current height equals the proof window close height.
-	sessionEndHeight := s.claim.SessionHeader.SessionEndBlockHeight
+	sessionEndHeight := claim.SessionHeader.SessionEndBlockHeight
 	blockHeight := sharedtypes.GetProofWindowCloseHeight(&sharedParams, sessionEndHeight)
 	sdkCtx = sdkCtx.WithBlockHeight(blockHeight)
 	settledResults, expiredResults, err := s.keepers.SettlePendingClaims(sdkCtx)
@@ -473,7 +515,7 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimExpired_ProofRequired_InvalidOn
 	require.Equal(t, 0, len(proofs))
 
 	// Slashing should have occurred without unstaking the supplier.
-	slashedSupplier, supplierFound := s.keepers.GetSupplier(sdkCtx, s.claim.SupplierOperatorAddress)
+	slashedSupplier, supplierFound := s.keepers.GetSupplier(sdkCtx, claim.SupplierOperatorAddress)
 	require.True(t, supplierFound)
 	require.Equal(t, math.NewInt(supplierStakeAmt/2), slashedSupplier.Stake.Amount)
 	require.Equal(t, uint64(0), slashedSupplier.UnstakeSessionEndHeight)
@@ -515,8 +557,12 @@ func (s *TestSuite) TestClaimSettlement_ClaimSettled_ProofRequiredAndProvided_Vi
 	t := s.T()
 	ctx := s.ctx
 	sharedParams := s.keepers.SharedKeeper.GetParams(ctx)
+	// Use a single claim and proof for this test
+	claim := s.claims[0]
+	proof := s.proofs[0]
+	relayMiningDifficulty := s.relayMiningDifficulties[0]
 
-	proofRequirementThreshold, err := s.claim.GetClaimeduPOKT(sharedParams, s.relayMiningDifficulty)
+	proofRequirementThreshold, err := claim.GetClaimeduPOKT(sharedParams, relayMiningDifficulty)
 	require.NoError(t, err)
 
 	// +1 so it's not required via probability
@@ -532,8 +578,8 @@ func (s *TestSuite) TestClaimSettlement_ClaimSettled_ProofRequiredAndProvided_Vi
 	require.NoError(t, err)
 
 	// Upsert the claim & proof
-	s.keepers.UpsertClaim(ctx, s.claim)
-	s.keepers.UpsertProof(ctx, s.proof)
+	s.keepers.UpsertClaim(ctx, claim)
+	s.keepers.UpsertProof(ctx, proof)
 
 	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
 	s.keepers.ValidateSubmittedProofs(sdkCtx)
@@ -541,7 +587,7 @@ func (s *TestSuite) TestClaimSettlement_ClaimSettled_ProofRequiredAndProvided_Vi
 	// Settle pending claims after proof window closes
 	// Expectation: All (1) claims should be claimed.
 	// NB: proof window has definitely closed at this point
-	sessionEndHeight := s.claim.SessionHeader.SessionEndBlockHeight
+	sessionEndHeight := claim.SessionHeader.SessionEndBlockHeight
 	blockHeight := sharedtypes.GetProofWindowCloseHeight(&sharedParams, sessionEndHeight)
 	sdkCtx = cosmostypes.UnwrapSDKContext(ctx).WithBlockHeight(blockHeight)
 	settledResults, expiredResults, err := s.keepers.SettlePendingClaims(sdkCtx)
@@ -574,8 +620,11 @@ func (s *TestSuite) TestSettlePendingClaims_Settles_WhenAProofIsNotRequired() {
 	t := s.T()
 	ctx := s.ctx
 	sharedParams := s.keepers.SharedKeeper.GetParams(ctx)
+	// Use a single claim for this test
+	claim := s.claims[0]
+	relayMiningDifficulty := s.relayMiningDifficulties[0]
 
-	proofRequirementThreshold, err := s.claim.GetClaimeduPOKT(sharedParams, s.relayMiningDifficulty)
+	proofRequirementThreshold, err := claim.GetClaimeduPOKT(sharedParams, relayMiningDifficulty)
 	require.NoError(t, err)
 
 	// +1 to push threshold above s.claim's compute units
@@ -591,7 +640,7 @@ func (s *TestSuite) TestSettlePendingClaims_Settles_WhenAProofIsNotRequired() {
 	require.NoError(t, err)
 
 	// Upsert the claim only (not the proof)
-	s.keepers.UpsertClaim(ctx, s.claim)
+	s.keepers.UpsertClaim(ctx, claim)
 
 	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
 	s.keepers.ValidateSubmittedProofs(sdkCtx)
@@ -599,7 +648,7 @@ func (s *TestSuite) TestSettlePendingClaims_Settles_WhenAProofIsNotRequired() {
 	// Settle pending claims after proof window closes
 	// Expectation: All (1) claims should be claimed.
 	// NB: proofs should be rejected when the current height equals the proof window close height.
-	sessionEndHeight := s.claim.SessionHeader.SessionEndBlockHeight
+	sessionEndHeight := claim.SessionHeader.SessionEndBlockHeight
 	blockHeight := sharedtypes.GetProofWindowCloseHeight(&sharedParams, sessionEndHeight)
 	sdkCtx = cosmostypes.UnwrapSDKContext(ctx).WithBlockHeight(blockHeight)
 	settledResults, expiredResults, err := s.keepers.SettlePendingClaims(sdkCtx)
@@ -649,8 +698,11 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimPendingAfterSettlement() {
 	ctx := s.ctx
 	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
 	sharedParams := s.keepers.SharedKeeper.GetParams(ctx)
+	// Use a single claim for this test
+	claim := s.claims[0]
+	relayMiningDifficulty := s.relayMiningDifficulties[0]
 
-	proofRequirementThreshold, err := s.claim.GetClaimeduPOKT(sharedParams, s.relayMiningDifficulty)
+	proofRequirementThreshold, err := claim.GetClaimeduPOKT(sharedParams, relayMiningDifficulty)
 	require.NoError(t, err)
 
 	// +1 to push threshold above s.claim's compute units
@@ -666,7 +718,7 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimPendingAfterSettlement() {
 	require.NoError(t, err)
 
 	// 0. Add the claims & verify they exists
-	sessionOneClaim := s.claim
+	sessionOneClaim := claim
 	s.keepers.UpsertClaim(ctx, sessionOneClaim)
 
 	sessionOneEndHeight := sessionOneClaim.GetSessionHeader().GetSessionEndBlockHeight()
@@ -685,7 +737,7 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimPendingAfterSettlement() {
 
 	sessionTwoClaim.SessionHeader = &sessiontypes.SessionHeader{
 		ApplicationAddress:      sessionOneClaim.GetSessionHeader().GetApplicationAddress(),
-		ServiceId:               s.claim.GetSessionHeader().GetServiceId(),
+		ServiceId:               claim.GetSessionHeader().GetServiceId(),
 		SessionId:               "session_two_id",
 		SessionStartBlockHeight: sessionTwoStartHeight,
 		SessionEndBlockHeight:   sharedtypes.GetSessionEndHeight(&sharedParams, sessionTwoStartHeight),
@@ -739,8 +791,12 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimExpired_SupplierUnstaked() {
 	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
 	sdkCtx = sdkCtx.WithBlockHeight(1)
 	sharedParams := s.keepers.SharedKeeper.GetParams(ctx)
+	// Use a single claim for this test
+	claim := s.claims[0]
+	serviceId := claim.GetSessionHeader().GetServiceId()
+	relayMiningDifficulty := s.relayMiningDifficulties[0]
 
-	proofRequirementThreshold, err := s.claim.GetClaimeduPOKT(sharedParams, s.relayMiningDifficulty)
+	proofRequirementThreshold, err := claim.GetClaimeduPOKT(sharedParams, relayMiningDifficulty)
 	require.NoError(t, err)
 
 	// -1 to push threshold below s.claim's compute units
@@ -770,7 +826,7 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimExpired_SupplierUnstaked() {
 		app := apptypes.Application{
 			Address:        appAddr,
 			Stake:          &appStake,
-			ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{{ServiceId: testServiceId}},
+			ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{{ServiceId: serviceId}},
 		}
 		s.keepers.SetApplication(s.ctx, app)
 
@@ -778,7 +834,7 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimExpired_SupplierUnstaked() {
 		// to be claimed and for which a valid proof would be accepted.
 		sessionReq := &sessiontypes.QueryGetSessionRequest{
 			ApplicationAddress: appAddr,
-			ServiceId:          testServiceId,
+			ServiceId:          serviceId,
 			BlockHeight:        1,
 		}
 		sessionRes, sessionErr := s.keepers.GetSession(sdkCtx, sessionReq)
@@ -786,7 +842,7 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimExpired_SupplierUnstaked() {
 
 		sessionHeader := sessionRes.Session.Header
 		merkleRoot := testproof.SmstRootWithSumAndCount(1000, 1000)
-		claim := testtree.NewClaim(t, s.claim.SupplierOperatorAddress, sessionHeader, merkleRoot)
+		claim := testtree.NewClaim(t, claim.SupplierOperatorAddress, sessionHeader, merkleRoot)
 		expiredClaimsMap[sessionHeader.SessionId] = claim
 		s.keepers.UpsertClaim(ctx, *claim)
 	}
@@ -794,7 +850,7 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimExpired_SupplierUnstaked() {
 	// Settle pending claims after proof window closes
 	// Expectation: All (1) claims should expire.
 	// NB: proofs should be rejected when the current height equals the proof window close height.
-	sessionEndHeight := s.claim.SessionHeader.SessionEndBlockHeight
+	sessionEndHeight := claim.SessionHeader.SessionEndBlockHeight
 	sessionProofWindowCloseHeight := sharedtypes.GetProofWindowCloseHeight(&sharedParams, sessionEndHeight)
 	sdkCtx = sdkCtx.WithBlockHeight(sessionProofWindowCloseHeight)
 	_, _, err = s.keepers.SettlePendingClaims(sdkCtx)
@@ -803,7 +859,7 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimExpired_SupplierUnstaked() {
 	upcomingSessionEndHeight := sharedtypes.GetNextSessionStartHeight(&sharedParams, sessionProofWindowCloseHeight) - 1
 
 	// Slashing should have occurred and the supplier is unstaked but still unbonding.
-	slashedSupplier, supplierFound := s.keepers.GetSupplier(sdkCtx, s.claim.SupplierOperatorAddress)
+	slashedSupplier, supplierFound := s.keepers.GetSupplier(sdkCtx, claim.SupplierOperatorAddress)
 	require.True(t, supplierFound)
 	require.Equal(t, math.NewInt(0), slashedSupplier.Stake.Amount)
 	require.Equal(t, uint64(upcomingSessionEndHeight), slashedSupplier.UnstakeSessionEndHeight)
@@ -880,6 +936,74 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimExpired_SupplierUnstaked() {
 	// emitted for all expired claims.
 	require.Len(t, unbondingEndEvents, 1)
 	require.EqualValues(t, expectedUnbondingEndEvent, unbondingEndEvents[0])
+}
+
+func (s *TestSuite) TestSettlePendingClaims_MultipleClaimsFromDifferentServices() {
+	// Retrieve default values
+	t := s.T()
+	ctx := s.ctx
+	sharedParams := s.keepers.SharedKeeper.GetParams(ctx)
+
+	// All claims have the same session end height, use the first one
+	sessionEndHeight := s.claims[0].SessionHeader.SessionEndBlockHeight
+	blockHeight := sharedtypes.GetProofWindowCloseHeight(&sharedParams, sessionEndHeight)
+	sdkCtx := cosmostypes.UnwrapSDKContext(ctx).WithBlockHeight(blockHeight)
+
+	// All claims have the same proof requirement threshold, pick the first one
+	proofRequirementThreshold, err := s.claims[0].GetClaimeduPOKT(sharedParams, s.relayMiningDifficulties[0])
+	require.NoError(t, err)
+
+	// -1 to push threshold below s.claim's compute units
+	proofRequirementThreshold = proofRequirementThreshold.Sub(uPOKTCoin(1))
+
+	// Set the proof parameters such that s.claim requires a proof because:
+	// - proof_request_probability is 0%
+	// - proof_requirement_threshold is below the claim (i.e. claim is above threshold)
+	err = s.keepers.ProofKeeper.SetParams(ctx, prooftypes.Params{
+		ProofRequestProbability:   0,
+		ProofRequirementThreshold: &proofRequirementThreshold,
+	})
+	require.NoError(t, err)
+
+	// Upsert the claims
+	for _, claim := range s.claims {
+		s.keepers.UpsertClaim(ctx, claim)
+	}
+
+	// Upsert the proofs
+	for _, proof := range s.proofs {
+		s.keepers.UpsertProof(ctx, proof)
+	}
+
+	s.keepers.ValidateSubmittedProofs(sdkCtx)
+
+	// Settle pending claims after proof window closes
+	// Expectation: All claims should be claimed.
+	// NB: proofs should be rejected when the current height equals the proof window close height.
+	settledResult, expiredResult, err := s.keepers.SettlePendingClaims(sdkCtx)
+	require.NoError(t, err)
+
+	// Validate claim settlement results
+	require.Equal(t, uint64(len(s.claims)), settledResult.GetNumClaims())
+	require.Equal(t, uint64(0), expiredResult.GetNumClaims())
+
+	// Validate that no claims remain.
+	claims := s.keepers.GetAllClaims(ctx)
+	require.Equal(t, 0, len(claims))
+
+	// Confirm settlement events were emitted
+	events := sdkCtx.EventManager().Events()
+	expectedEvents := testutilevents.FilterEvents[*tokenomicstypes.EventClaimSettled](t, events)
+	require.Equal(t, len(s.claims), len(expectedEvents))
+
+	// Validate the events
+	for _, expectedEvent := range expectedEvents {
+		require.Equal(t, prooftypes.ProofRequirementReason_THRESHOLD, expectedEvent.GetProofRequirement())
+		require.Equal(t, s.numRelays, expectedEvent.GetNumRelays())
+		require.Equal(t, s.numClaimedComputeUnits, expectedEvent.GetNumClaimedComputeUnits())
+		require.Equal(t, s.numEstimatedComputeUnits, expectedEvent.GetNumEstimatedComputeUnits())
+		require.Equal(t, s.claimedUpokt, *expectedEvent.GetClaimedUpokt())
+	}
 }
 
 // getEstimatedComputeUnits returns the estimated number of compute units given
