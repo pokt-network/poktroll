@@ -26,7 +26,7 @@ type sortDirection int
 
 func ValidateMorseAccountsCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:     "validate-morse-accounts [msg_import_morse_claimable_accounts_json_path] [morse_src_address_to_check, ...]",
+		Use:     "validate-morse-accounts [msg_import_morse_claimable_accounts_path] [morse_src_address_to_check, ...]",
 		Args:    cobra.MinimumNArgs(1),
 		PreRunE: logger.PreRunESetup,
 		RunE:    runValidateMorseAccounts,
