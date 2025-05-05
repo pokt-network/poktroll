@@ -53,7 +53,10 @@ var allUpgrades = []upgrades.Upgrade{
 	// upgrades.Upgrade_0_1_8,
 
 	// v0.1.9 - upgrade to cache claim settlement context
-	upgrades.Upgrade_0_1_9,
+	// upgrades.Upgrade_0_1_9,
+
+	// v0.1.10 - upgrade to fix chain halts caused by the previous upgrade.
+	upgrades.Upgrade_0_1_10,
 }
 
 // setUpgrades sets upgrade handlers for all upgrades and executes KVStore migration if an upgrade plan file exists.
