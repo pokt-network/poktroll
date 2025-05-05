@@ -245,7 +245,7 @@ message MsgClaimMorseSupplier {
 // - The session end height in which the claim was committed
 // - The staked supplier
 message MsgClaimMorseSupplierResponse {
-  
+
   // The hex-encoded address of the Morse account whose balance was claimed.
   // E.g.: 00f9900606fa3d5c9179fc0c8513078a53a2073e
   string morse_src_address = 1 [(gogoproto.jsontag) = "morse_src_address"];
@@ -265,14 +265,33 @@ message MsgClaimMorseSupplierResponse {
 
 message MsgRecoverMorseAccount {
   option (cosmos.msg.v1.signer) = "authority";
-  string authority          = 1;
-  string shannonDestAddress = 2;
-  string morseSrcAddress    = 3;
+
+  // The bech32-encoded address of the migration module authority account ("gov" module address by default).
+  // ONLY the authority, or its delegates, MAY recover Morse recoverable accounts.
+  string authority = 1 [(cosmos_proto.scalar) = "cosmos.AddressString", (gogoproto.jsontag) = "authority"];
+
+  // The bech32-encoded address of the Shannon account to which the Morse account's stake(s) and/or
+  // balance(s) will be minted (recovered).
+  string shannon_dest_address = 2 [(cosmos_proto.scalar) = "cosmos.AddressString", (gogoproto.jsontag) = "shannon_dest_address"];
+
+  // The hex-encoded address of the recoverable Morse account whose stake(s) and/or balance(s) will be recovered.
+  // E.g.: 00f9900606fa3d5c9179fc0c8513078a53a2073e
+  string morse_src_address = 3 [(gogoproto.jsontag) = "morse_src_address"];
+
+  // Next free index: 4
 }
 
 message MsgRecoverMorseAccountResponse {
-  string morseSrcAddress  = 1;
-  string claimedBalance   = 2;
-  int32  sessionEndHeight = 3;
+  // The hex-encoded address of the Morse account whose balance was claimed.
+  // E.g.: 00f9900606fa3d5c9179fc0c8513078a53a2073e
+  string morse_src_address = 1 [(gogoproto.jsontag) = "morse_src_address"];
+
+  // The sum of any unstaked and staked balances which were claimed.
+  cosmos.base.v1beta1.Coin claimed_balance = 2 [(gogoproto.nullable) = false, (gogoproto.jsontag) = "claimed_balance"];
+
+  // The session end height (on Shannon) in which the claim was committed (i.e. claimed).
+  int64 session_end_height = 4 [(gogoproto.jsontag) = "session_end_height"];
+
+  // Next free index: 4
 }
 
