@@ -1,21 +1,30 @@
 #!/bin/bash
 
 cat <<EOF
-This script runs the full node using cosmovisor and performs an upgrade after the upgrade plan is submitted on chain.
-It simulates a real network upgrade. For consensus-breaking changes, ensure the 'old' binary doesn't have these changes.
+Cosmovisor Full Node Upgrade Script
 
-Pre-requisites:
-1. 'Old' binary
-2. 'New' binary
-3. Cosmovisor (Install: 'go install cosmossdk.io/tools/cosmovisor/cmd/cosmovisor@v1.6.0')
-   Documentation: https://docs.cosmos.network/main/build/tooling/cosmovisor
-4. \`upgrade.Upgrade\` with matching \`POCKETD_UPGRADE_PLAN_NAME\` created and included in the new version
-5. LocalNet turned off
+- Runs the full node using cosmovisor
+- Performs an upgrade after the upgrade plan is submitted on-chain
+- Simulates a real network upgrade
+
+IMPORTANT for consensus-breaking changes:
+   - Ensure the 'old' binary does NOT include these changes
+
+Prerequisites:
+   - 'Old' binary
+   - 'New' binary
+   - Cosmovisor
+       - Install: go install cosmossdk.io/tools/cosmovisor/cmd/cosmovisor@v1.6.0
+       - Docs: https://docs.cosmos.network/main/build/tooling/cosmovisor
+       - TODO_TECHDEBT(@olshansk): Upgrade up from v1.6.0 once we are confident a newer version is stable (v1.7.x is not)
+   - upgrade.Upgrade with matching POCKETD_UPGRADE_PLAN_NAME created and included in the new version
+   - LocalNet turned off
 EOF
 
 # Define paths and upgrade name
 POCKETD_OLD_BINARY_PATH=$HOME/pocket/pocket-for-releases/pocketd
 POCKETD_NEW_BINARY_PATH=$HOME/pocket/pocket/pocketd
+# TODO_IN_THIS_PR: Should this be updated?
 POCKETD_UPGRADE_PLAN_NAME=v0.0.4
 
 cat <<EOF

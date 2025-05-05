@@ -84,10 +84,12 @@ install_ci_deps: ## Installs `golangci-lint` and other go tools
 	go install golang.org/x/tools/cmd/goimports@latest
 	go install github.com/mikefarah/yq/v4@latest
 
+# TODO_TECHDEBT(@olshansk, #1285): Upgrade up from v1.6.0 IFF we are confident its stable.
 .PHONY: install_cosmovisor
 install_cosmovisor: ## Installs `cosmovisor`
 	go install cosmossdk.io/tools/cosmovisor/cmd/cosmovisor@v1.6.0 && cosmovisor version --cosmovisor-only
 
+# TODO_TECHDEBT(@olshansk, #1285): Upgrade up from v1.6.0 IFF we are confident its stable.
 .PHONY: cosmovisor_cross_compile
 cosmovisor_cross_compile: # Installs multiple cosmovisor binaries for different platforms (used by Dockerfile.release)
 	@COSMOVISOR_VERSION="v1.6.0"; \
