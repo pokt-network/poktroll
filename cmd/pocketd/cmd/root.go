@@ -2,8 +2,10 @@ package cmd
 
 import (
 	"errors"
+	"fmt"
 	"log"
 	"os"
+	"strings"
 
 	"cosmossdk.io/client/v2/autocli"
 	clientv2keyring "cosmossdk.io/client/v2/autocli/keyring"
@@ -26,6 +28,7 @@ import (
 	"github.com/spf13/pflag"
 
 	"github.com/pokt-network/poktroll/app"
+	flags2 "github.com/pokt-network/poktroll/cmd/flags"
 	relayercmd "github.com/pokt-network/poktroll/pkg/relayer/cmd"
 )
 
@@ -111,7 +114,36 @@ For additional documentation, see https://dev.poktroll.com/tools/user_guide/pock
 			customAppTemplate, customAppConfig := initAppConfig()
 			customCMTConfig := initCometBFTConfig()
 
-			return server.InterceptConfigsPreRunHandler(cmd, customAppTemplate, customAppConfig, customCMTConfig)
+			if err := server.InterceptConfigsPreRunHandler(cmd, customAppTemplate, customAppConfig, customCMTConfig); err != nil {
+				return err
+			}
+
+			// TODO_IN_THIS_COMMIT: extract...
+			networkStr, err := cmd.PersistentFlags().GetString(flags2.FlagNetwork)
+			if err != nil {
+				return err
+			}
+
+			switch networkStr {
+			case "":
+				// No network flag was provided, so we don't need to set any flags.
+			case flags2.AlphaNetworkName:
+			case flags2.BetaNetworkName:
+				// TODO_IN_THIS_COMMIT: consider extracting... value, isRegistered, err := flags2.GetStringFlag(cmd, flagName)
+				_, isFlagNodeRegistered, err := cmd.Flags().GetString(flags.FlagNode)
+				if err != nil {
+					return err
+				}
+				// TODO_IN_THIS_COMMIT: consider extracting... flags2.SetStringFlag(cmd, flagName, value)
+				if err := cmd.Flags().Set(flags.FlagNode, flags2.BetaNetworkRPCURL); err != nil {
+					return err
+				}
+			case flags2.MainNetworkName:
+			default:
+				return fmt.Errorf("unknown --network specified %q", networkStr)
+			}
+
+			return nil
 		},
 	}
 
@@ -139,6 +171,8 @@ For additional documentation, see https://dev.poktroll.com/tools/user_guide/pock
 	rootCmd.AddCommand(
 		relayercmd.RelayerCmd(),
 	)
+
+	rootCmd.PersistentFlags().String(flags2.FlagNetwork, flags2.DefaultNetwork, flags2.FlagNetworkUsage)
 
 	return rootCmd
 }
