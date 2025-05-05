@@ -73,6 +73,7 @@ func (am AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 					Use:            "recover-morse-account [shannon-dest-address] [morse-src-address]",
 					Short:          "Send a recover_morse_account tx",
 					PositionalArgs: []*autocliv1.PositionalArgDescriptor{{ProtoField: "shannonDestAddress"}, {ProtoField: "morseSrcAddress"}},
+					Skip:           true, // skipped because authority gated
 				},
 				// this line is used by ignite scaffolding # autocli/tx
 			},
