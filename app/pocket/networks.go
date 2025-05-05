@@ -5,6 +5,7 @@ import (
 )
 
 const (
+	LocalNetChainId     = "pocket"
 	AlphaTestNetChainId = "pocket-alpha"
 	BetaTestNetChainId  = "pocket-beta"
 	MainNetChainId      = "pocket"
@@ -35,4 +36,16 @@ const (
 	AlphaTestNetEstimatedBlockDuration = time.Minute
 	BetaTestNetEstimatedBlockDuration  = 5 * time.Minute
 	MainNetEstimatedBlockDuration      = time.Minute
+)
+
+const (
+	LocalNetRPCURL     = "http://localhost:26657"
+	AlphaTestNetRPCURL = "https://shannon-testnet-grove-rpc.alpha.poktroll.com"
+	BetaTestNetRPCURL  = "https://shannon-testnet-grove-rpc.beta.poktroll.com"
+	MainNetRPCURL      = "https://shannon-grove-rpc.mainnet.poktroll.com"
+
+	LocalNetGRPCAddr = "localhost:9090"
+	AlphaNetGRPCAddr = "shannon-testnet-grove-rrpc.alpha.poktroll.com:443"
+	BetaNetGRPCAddr  = "shannon-testnet-grove-grpc.beta.poktroll.com:443"
+	MainNetGRPCAddr  = "shannon-grove-rpc.mainnet.poktroll.com:443"
 )

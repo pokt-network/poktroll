@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"errors"
+	"fmt"
 	"log"
 	"os"
 
@@ -12,7 +13,7 @@ import (
 	cosmoslog "cosmossdk.io/log"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/config"
-	"github.com/cosmos/cosmos-sdk/client/flags"
+	cosmosflags "github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/codec"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
@@ -26,6 +27,8 @@ import (
 	"github.com/spf13/pflag"
 
 	"github.com/pokt-network/poktroll/app"
+	"github.com/pokt-network/poktroll/app/pocket"
+	"github.com/pokt-network/poktroll/cmd/flags"
 	relayercmd "github.com/pokt-network/poktroll/pkg/relayer/cmd"
 )
 
@@ -74,6 +77,11 @@ For additional documentation, see https://dev.poktroll.com/tools/user_guide/pock
 			cmd.SetOut(cmd.OutOrStdout())
 			cmd.SetErr(cmd.ErrOrStderr())
 
+			// Parse the --network flag. If set, update related flags (e.g. --chain-id, --node, --grpc-addr).
+			if err = parseAndSetNetworkRelatedFlags(cmd); err != nil {
+				return err
+			}
+
 			clientCtx = clientCtx.WithCmdContext(cmd.Context())
 			clientCtx, err = client.ReadPersistentCommandFlags(clientCtx, cmd.Flags())
 			if err != nil {
@@ -98,6 +106,7 @@ For additional documentation, see https://dev.poktroll.com/tools/user_guide/pock
 			}
 
 			clientCtx = clientCtx.WithTxConfig(txConfigWithTextual)
+
 			if err = client.SetCmdClientContextHandler(clientCtx, cmd); err != nil {
 				return err
 			}
@@ -111,7 +120,11 @@ For additional documentation, see https://dev.poktroll.com/tools/user_guide/pock
 			customAppTemplate, customAppConfig := initAppConfig()
 			customCMTConfig := initCometBFTConfig()
 
-			return server.InterceptConfigsPreRunHandler(cmd, customAppTemplate, customAppConfig, customCMTConfig)
+			if err = server.InterceptConfigsPreRunHandler(cmd, customAppTemplate, customAppConfig, customCMTConfig); err != nil {
+				return err
+			}
+
+			return nil
 		},
 	}
 
@@ -125,8 +138,8 @@ For additional documentation, see https://dev.poktroll.com/tools/user_guide/pock
 	initRootCmd(rootCmd, clientCtx.TxConfig, clientCtx.InterfaceRegistry, clientCtx.Codec, moduleBasicManager)
 
 	if err := overwriteFlagDefaults(rootCmd, map[string]string{
-		flags.FlagChainID:        DefaultChainID,
-		flags.FlagKeyringBackend: "test",
+		cosmosflags.FlagChainID:        DefaultChainID,
+		cosmosflags.FlagKeyringBackend: "test",
 	}); err != nil {
 		log.Fatal(err)
 	}
@@ -140,7 +153,61 @@ For additional documentation, see https://dev.poktroll.com/tools/user_guide/pock
 		relayercmd.RelayerCmd(),
 	)
 
+	rootCmd.PersistentFlags().String(flags.FlagNetwork, flags.DefaultNetwork, flags.FlagNetworkUsage)
+
 	return rootCmd
+}
+
+// parseAndSetNetworkRelatedFlags checks if the --network flag is set (i.e. not empty-string).
+// If so, set the following flags according to their hard-coded network-specific values:
+// * --chain-id
+// * --node
+// * --grpc-addr
+func parseAndSetNetworkRelatedFlags(cmd *cobra.Command) error {
+	networkStr, err := cmd.Flags().GetString(flags.FlagNetwork)
+	if err != nil {
+		return err
+	}
+
+	switch networkStr {
+	case "":
+	// No network flag was provided, so we don't need to set any flags.
+	case flags.LocalNetworkName:
+		return setNetworkRelatedFlags(cmd, pocket.LocalNetChainId, pocket.LocalNetRPCURL, pocket.LocalNetGRPCAddr)
+	case flags.AlphaNetworkName:
+		return setNetworkRelatedFlags(cmd, pocket.AlphaTestNetChainId, pocket.AlphaTestNetRPCURL, pocket.AlphaNetGRPCAddr)
+	case flags.BetaNetworkName:
+		return setNetworkRelatedFlags(cmd, pocket.BetaTestNetChainId, pocket.BetaTestNetRPCURL, pocket.BetaNetGRPCAddr)
+	case flags.MainNetworkName:
+		return setNetworkRelatedFlags(cmd, pocket.MainNetChainId, pocket.MainNetRPCURL, pocket.MainNetGRPCAddr)
+	default:
+		return fmt.Errorf("unknown --network specified %q", networkStr)
+	}
+
+	return nil
+}
+
+// setNetworkRelatedFlags sets the following flags according to the given arguments:
+// * --chain-id
+// * --node
+// * --grpc-addr
+func setNetworkRelatedFlags(cmd *cobra.Command, chainId, nodeUrl, grpcAddr string) error {
+	if err := cmd.Flags().Set(cosmosflags.FlagChainID, chainId); err != nil {
+		return err
+	}
+
+	if err := cmd.Flags().Set(cosmosflags.FlagNode, nodeUrl); err != nil {
+		return err
+	}
+
+	// ONLY set --grpc-addr flag if it is registered on cmd.
+	if grpcFlag := cmd.Flags().Lookup(cosmosflags.FlagGRPC); grpcFlag != nil {
+		if err := cmd.Flags().Set(cosmosflags.FlagGRPC, grpcAddr); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func overwriteFlagDefaults(c *cobra.Command, defaults map[string]string) (err error) {

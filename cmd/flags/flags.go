@@ -19,4 +19,13 @@ const (
 
 	FlagNoPassphrase      = "no-passphrase"
 	FlagNoPassphraseUsage = "attempt to use an empty passphrase to decrypt the exported Morse key file for signing"
+
+	FlagNetwork      = "network"
+	FlagNetworkUsage = "Sets the --node, --grpc-addr, and --chain-id flags (if applicable) based on the given network moniker (e.g. alpha, beta, main)"
+	DefaultNetwork   = ""
+
+	LocalNetworkName = "local"
+	AlphaNetworkName = "alpha"
+	BetaNetworkName  = "beta"
+	MainNetworkName  = "main"
 )
