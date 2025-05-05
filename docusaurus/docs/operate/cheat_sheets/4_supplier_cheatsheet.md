@@ -3,6 +3,44 @@ sidebar_position: 4
 title: Supplier & RelayMiner (~20 min)
 ---
 
+```mermaid
+flowchart TD
+    %% Set default styling for all nodes
+    classDef default fill:#f9f9f9,stroke:#333,stroke-width:1px,color:black;
+
+    %% Define custom classes
+    classDef userClass fill:#e1f5fe,stroke:#01579b,stroke-width:2px,color:black;
+    classDef blockchainClass fill:#e8f5e9,stroke:#2e7d32,stroke-width:2px,color:black;
+    classDef relayMinerClass fill:#fff8e1,stroke:#ff8f00,stroke-width:2px,color:black;
+    classDef databaseClass fill:#f3e5f5,stroke:#6a1b9a,stroke-width:2px,color:black;
+
+    User([User]):::userClass
+
+    subgraph RelayMiner["RelayMiner (Offchain)"]
+        CP["Co-processor"]
+        BS[("Backend Server (DB)")]:::databaseClass
+    end
+
+    subgraph Blockchain["Blockchain (Onchain)"]
+        DB[("Database - 'Suppliers'")]:::databaseClass
+        SC["Supplier Config"]
+    end
+
+    %% User flow starting from top
+    User -->|1. Sends Request| CP
+    CP -->|2. Forwards Request| BS
+    BS -->|3. Sends Response| CP
+    CP -->|4. Forwards Response| User
+
+    %% Connection between RelayMiner and Blockchain
+    CP -.-> SC
+    DB --- SC
+
+    %% Apply classes to subgraphs
+    class Blockchain blockchainClass;
+    class RelayMiner relayMinerClass;
+```
+
 import ReactPlayer from "react-player";
 
 ## Supplier & RelayMiner Cheat Sheet <!-- omit in toc -->
