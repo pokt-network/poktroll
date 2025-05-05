@@ -1,5 +1,23 @@
 module github.com/pokt-network/poktroll
 
+// TODO_TECHDEBT: Remove the following comments and workflow once the go module
+// has been renamed to github.com/pokt-network/pocket.
+//
+// DEV_NOTE: In order to use `ignite scaffold ...` you MUST *temporarily* rename
+// this go module by commenting out the `module` directive above, and uncommenting
+// the `module` and `replace` directives below.
+//
+// 1. Commment above / uncomment below...
+// 2. go mod tidy
+// 3. ignite scaffold ...
+// 4. make proto_fix_self_import && make proto_regen
+// 5. Uncomment above / comment below...
+// 6. go mod tidy
+// 7. ignite chain build --skip-proto # and/or (re)start/build localnet
+
+//module github.com/pokt-network/pocket
+//replace github.com/pokt-network/poktroll => .
+
 go 1.23.0
 
 // replace (
