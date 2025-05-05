@@ -26,6 +26,7 @@ import (
 	"github.com/spf13/pflag"
 
 	"github.com/pokt-network/poktroll/app"
+	flags2 "github.com/pokt-network/poktroll/cmd/flags"
 	relayercmd "github.com/pokt-network/poktroll/pkg/relayer/cmd"
 )
 
@@ -111,7 +112,11 @@ For additional documentation, see https://dev.poktroll.com/tools/user_guide/pock
 			customAppTemplate, customAppConfig := initAppConfig()
 			customCMTConfig := initCometBFTConfig()
 
-			return server.InterceptConfigsPreRunHandler(cmd, customAppTemplate, customAppConfig, customCMTConfig)
+			if err := server.InterceptConfigsPreRunHandler(cmd, customAppTemplate, customAppConfig, customCMTConfig); err != nil {
+				return err
+			}
+
+			return flags2.CheckAutoSequenceFlag(cmd, clientCtx)
 		},
 	}
 
@@ -139,6 +144,8 @@ For additional documentation, see https://dev.poktroll.com/tools/user_guide/pock
 	rootCmd.AddCommand(
 		relayercmd.RelayerCmd(),
 	)
+
+	rootCmd.PersistentFlags().Bool(flags2.FlagAutoSequence, flags2.DefaultAutoSequence, flags2.FlagAutoSequenceUsage)
 
 	return rootCmd
 }
