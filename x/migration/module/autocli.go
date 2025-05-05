@@ -68,6 +68,12 @@ func (am AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 					PositionalArgs: []*autocliv1.PositionalArgDescriptor{{ProtoField: "morseSrcAddress"}, {ProtoField: "morseSignature"}, {ProtoField: "stake"}, {ProtoField: "serviceConfig"}},
 					Skip:           true, // skipped because autoCLI cannot handle loading & signing using the Morse key.
 				},
+				{
+					RpcMethod:      "RecoverMorseAccount",
+					Use:            "recover-morse-account [shannon-dest-address] [morse-src-address]",
+					Short:          "Send a recover_morse_account tx",
+					PositionalArgs: []*autocliv1.PositionalArgDescriptor{{ProtoField: "shannonDestAddress"}, {ProtoField: "morseSrcAddress"}},
+				},
 				// this line is used by ignite scaffolding # autocli/tx
 			},
 		},
