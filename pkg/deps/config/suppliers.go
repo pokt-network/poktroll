@@ -541,6 +541,8 @@ func NewSupplyParamsCacheFn[T any](opts ...querycache.CacheOption[client.ParamsC
 			return depinject.Configs(deps, depinject.Supply(noopParamsCache)), nil
 		}
 
+		// TODO_TECHDEBT(red-0ne) Set ttl to block time + some buffer time when we
+		// switch to event-driven cache warming.
 		paramsCache, err := querycache.NewParamsCache[T](memory.WithTTL(math.MaxInt64))
 		if err != nil {
 			return nil, err
