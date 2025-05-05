@@ -6,7 +6,7 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 )
 
-var _ sdk.Msg = &MsgRecoverMorseAccount{}
+var _ sdk.Msg = (*MsgRecoverMorseAccount)(nil)
 
 func NewMsgRecoverMorseAccount(authority string, shannonDestAddress string, morseSrcAddress string) *MsgRecoverMorseAccount {
 	return &MsgRecoverMorseAccount{
