@@ -14,7 +14,7 @@ TODO_IN_THIS_PR: Link to keplr, etc...
   - [0. Prerequisites](#0-prerequisites)
   - [1. Export your Morse `keyfile.json`](#1-export-your-morse-keyfilejson)
   - [2. Create a new Shannon key](#2-create-a-new-shannon-key)
-  - [3. Fund your Shannon account](#3-fund-your-shannon-account)
+  - [3. Create your onchain Shannon account](#3-fund-your-shannon-account)
   - [4. Ensure your Shannon account exists onchain](#4-ensure-your-shannon-account-exists-onchain)
   - [5. Check your claimable Morse account](#5-check-your-claimable-morse-account)
   - [6. Claim your Morse Pocket](#6-claim-your-morse-pocket)
@@ -75,9 +75,69 @@ pocket accounts import-raw <priv-key-hex>
 pocketd keys add <your_shannon_key_name>
 ```
 
-### 3. Fund your Shannon account
+### 3. Create your onchain Shannon account
 
-You need to make sure the public key exists onchain and has funding to send the claim transaction.
+If you're using a newly generated key/account, then you will need to use one of the (network-specific) community faucets to trigger onchain account creation.
+
+:::TODO_MAINNET
+Add a link once available!
+:::
+
+For testnets, you can send yourself either uPOKT or MACT ("Morse Account Claimer Token").
+**Only 1 of EITHER minimal denomination** is sufficient to create the onchain account, such that it is ready to be used for claiming.
+
+:::warning Mainnet "Faucet"
+
+The only token available via Mainnet faucet(s) is MACT.
+
+:::
+
+<details>
+<summary>Why do we need MACT?</summary>
+
+MACT is needed to enable users to claim their Morse accounts using new Shannon accounts.
+These new accounts must exist onchain before they can be used, which requires a transaction to create them.
+MACT provides a simple and dedicated way to do this.
+A public faucet will distribute MACT so users can prepare their accounts without relying on other tokens, making the claiming process smooth and accessible.
+
+```mermaid
+---
+title: Design Constraint / Effect Causal Flowchart
+---
+flowchart
+
+nka(new key algo):::constraint
+nacc(**user** MUST generate new account):::effect
+nasn(no initial onchain account sequence number):::constraint
+noregen(can't use regensis):::constraint
+
+claim(MUST claim Morse accounts):::effect
+
+nka --> nacc
+nacc -->|user-initiated == cannot be predicted/pre-computed| noregen
+
+noregen --> claim
+noregen --> nasn
+
+cacc("MUST 'create' onchain account (additional Tx)"):::effect
+
+nasn --> cacc
+
+nt("new 'Morse Account Claimer Token' (MACT)")
+f(MACT faucet)
+
+cacc --> nt
+cacc --> f
+f -.-> nt
+
+mac(Morse account/actor claim protocol)
+
+claim --> mac
+
+classDef constraint color:#f00,stroke:#f00
+classDef effect color:#f80,stroke:#f80
+```
+</details>
 
 Use one of the following faucets:
 
@@ -93,8 +153,11 @@ If you're a Grove Employee, you can use the helpers [here](https://www.notion.so
 # Get the Shannon address
 pocketd keys show <your_shannon_key_name> -a
 
-# Fund the Shannon key
-pkd_<NETWORK>fund <your_shannon_address>
+# Fund the Shannon key with 1MPOKT
+pkd_<NETWORK>fund_pokt <your_shannon_address>
+# OR
+# Fund the Shannon key with 1MACT
+pkd_<NETWORK>fund_mact <your_shannon_address>
 ```
 
 :::

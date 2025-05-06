@@ -58,7 +58,7 @@ func createNSuppliers(keeper keeper.Keeper, ctx context.Context, n int) []shared
 			1,
 			sharedtypes.NoDeactivationHeight,
 		)
-		keeper.SetSupplier(ctx, *supplier)
+		keeper.SetAndIndexDehydratedSupplier(ctx, *supplier)
 	}
 
 	return suppliers
@@ -133,7 +133,7 @@ func TestSupplier_GetAllUnstakingSuppliersIterator(t *testing.T) {
 	// Mark suppliers as unstaking
 	for i := unstakingStartIdx; i < unstakingEndIdx; i++ {
 		suppliers[i].UnstakeSessionEndHeight = unstakeSessionEndHeight
-		supplierModuleKeepers.SetSupplier(ctx, suppliers[i])
+		supplierModuleKeepers.SetAndIndexDehydratedSupplier(ctx, suppliers[i])
 	}
 
 	// Get all unstaking suppliers
@@ -237,7 +237,7 @@ func TestServiceConfigUpdateIterators(t *testing.T) {
 	)
 
 	for _, supplier := range suppliers {
-		keeper.SetSupplier(ctx, supplier)
+		keeper.SetAndIndexDehydratedSupplier(ctx, supplier)
 	}
 
 	t.Run("GetServiceConfigUpdatesIterator", func(t *testing.T) {
@@ -423,7 +423,7 @@ func TestSuppliers_QueryAll_Filters(t *testing.T) {
 
 	// Save all suppliers updates to the keeper
 	for _, supplier := range suppliers {
-		keeper.SetSupplier(ctx, supplier)
+		keeper.SetAndIndexDehydratedSupplier(ctx, supplier)
 	}
 
 	t.Run("Filter By ServiceId", func(t *testing.T) {

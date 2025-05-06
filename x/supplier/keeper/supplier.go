@@ -12,28 +12,33 @@ import (
 	"github.com/pokt-network/poktroll/x/supplier/types"
 )
 
-// SetSupplier stores a supplier state and indexes its relevant attributes for efficient querying.
+// SetAndIndexDehydratedSupplier stores a supplier record and indexes its relevant attributes for efficient querying.
 // It modifies the Supplier structure onchain metadata to manage state bloat.
 //
 // The function:
 // - Indexes service config updates for efficient retrieval
 // - Indexes unstaking height (if applicable)
 // - Stores a dehydrated form of the supplier (without services and history)
-func (k Keeper) SetSupplier(ctx context.Context, supplier sharedtypes.Supplier) {
+func (k Keeper) SetAndIndexDehydratedSupplier(ctx context.Context, supplier sharedtypes.Supplier) {
 	// Index service config updates for efficient retrieval
 	k.indexSupplierServiceConfigUpdates(ctx, supplier)
 	k.indexSupplierUnstakingHeight(ctx, supplier)
+	// Store the supplier in a dehydrated form to reduce state bloat
+	k.SetDehydratedSupplier(ctx, supplier)
+}
 
+// SetDehydratedSupplier stores a dehydrated supplier in the store.
+// It omits service details and history to reduce state bloat.
+// This is useful when the service details are not needed for the current operation.
+func (k Keeper) SetDehydratedSupplier(
+	ctx context.Context,
+	supplier sharedtypes.Supplier,
+) {
 	// Dehydrate the supplier to reduce state bloat.
 	// These details can be hydrated just-in-time (when queried) using the indexes.
 	supplier.Services = nil
 	supplier.ServiceConfigHistory = nil
-	supplierBz := k.cdc.MustMarshal(&supplier)
-
-	// Store the supplier without service details to reduce state bloat.
-	supplierStore := k.getSupplierStore(ctx)
-	supplierKey := types.SupplierOperatorKey(supplier.OperatorAddress)
-	supplierStore.Set(supplierKey, supplierBz)
+	k.storeSupplier(ctx, &supplier)
 }
 
 // GetDehydratedSupplier retrieves a dehydrated supplier.
@@ -124,8 +129,28 @@ func (k Keeper) hydrateSupplierServiceConfigs(ctx context.Context, supplier *sha
 	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
 	currentHeight := sdkCtx.BlockHeight()
 
-	supplier.ServiceConfigHistory = k.getSupplierServiceConfigUpdates(ctx, supplier.OperatorAddress)
+	supplier.ServiceConfigHistory = k.getSupplierServiceConfigUpdates(ctx, supplier.OperatorAddress, "")
 	supplier.Services = supplier.GetActiveServiceConfigs(currentHeight)
+}
+
+// GetSupplierActiveServiceConfig retrieves a supplier's active service configuration
+// update for a specific service ID based on the current block height.
+
+// The function:
+// - Retrieves the supplier's service configuration history for the specified service ID
+// - Returns the configuration that is active at the current block height
+func (k Keeper) GetSupplierActiveServiceConfig(
+	ctx context.Context,
+	supplier *sharedtypes.Supplier,
+	serviceId string,
+) []*sharedtypes.SupplierServiceConfig {
+	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
+	currentHeight := sdkCtx.BlockHeight()
+
+	// Retrieve the supplier's service configuration history for the specified service ID.
+	serviceConfigHistory := k.getSupplierServiceConfigUpdates(ctx, supplier.OperatorAddress, serviceId)
+	// Determine which update is active at the current block height.
+	return sharedtypes.GetActiveServiceConfigsFromHistory(serviceConfigHistory, currentHeight)
 }
 
 // getSupplierStore returns a KVStore for the supplier data
@@ -140,19 +165,10 @@ func (k Keeper) getSupplierUnstakingHeightStore(ctx context.Context) storetypes.
 	return prefix.NewStore(storeAdapter, types.KeyPrefix(types.SupplierUnstakingHeightKeyPrefix))
 }
 
-// GetAllDeprecatedSuppliers returns all suppliers in their deprecated protobuf format (i.e. Prior to v0.1.8).
-// TODO_DELETE(#1230, @red-0ne): Remove this function after v0.1.8 upgrade
-func (k Keeper) GetAllDeprecatedSuppliers(ctx context.Context) (suppliers []sharedtypes.SupplierDeprecated) {
+// storeSupplier marshals and stores the supplier record in the supplier store.
+func (k Keeper) storeSupplier(ctx context.Context, supplier *sharedtypes.Supplier) {
+	supplierBz := k.cdc.MustMarshal(supplier)
 	supplierStore := k.getSupplierStore(ctx)
-	iterator := storetypes.KVStorePrefixIterator(supplierStore, []byte{})
-	defer iterator.Close()
-
-	for ; iterator.Valid(); iterator.Next() {
-		var supplier sharedtypes.SupplierDeprecated
-		k.cdc.MustUnmarshal(iterator.Value(), &supplier)
-
-		suppliers = append(suppliers, supplier)
-	}
-
-	return suppliers
+	supplierKey := types.SupplierOperatorKey(supplier.OperatorAddress)
+	supplierStore.Set(supplierKey, supplierBz)
 }
