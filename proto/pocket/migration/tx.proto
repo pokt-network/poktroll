@@ -290,7 +290,7 @@ message MsgRecoverMorseAccountResponse {
   cosmos.base.v1beta1.Coin claimed_balance = 2 [(gogoproto.nullable) = false, (gogoproto.jsontag) = "claimed_balance"];
 
   // The session end height (on Shannon) in which the claim was committed (i.e. claimed).
-  int64 session_end_height = 4 [(gogoproto.jsontag) = "session_end_height"];
+  int64 session_end_height = 3 [(gogoproto.jsontag) = "session_end_height"];
 
   // Next free index: 4
 }
