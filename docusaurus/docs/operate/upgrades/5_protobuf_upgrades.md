@@ -133,7 +133,7 @@ CreateUpgradeHandler: func(
             }
 
             // Update the supplier with the migrated data
-            supplierKeeper.SetSupplier(ctx, supplier)
+            supplierKeeper.SetAndIndexDehydratedSupplier(ctx, supplier)
 
             logger.Info(
                 "Successfully migrated supplier data",

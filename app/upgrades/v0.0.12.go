@@ -146,7 +146,7 @@ var Upgrade_0_0_12 = Upgrade{
 						)
 					}
 				}
-				keepers.SupplierKeeper.SetSupplier(ctx, supplier)
+				keepers.SupplierKeeper.SetAndIndexDehydratedSupplier(ctx, supplier)
 				logger.Info("Updated supplier",
 					"supplier_operator", supplier.OperatorAddress,
 					"supplier_owner", supplier.OwnerAddress)

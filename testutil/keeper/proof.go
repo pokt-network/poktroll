@@ -307,7 +307,7 @@ func (keepers *ProofModuleKeepers) AddServiceActors(
 		{ServiceId: service.Id},
 	}
 	serviceConfigHistory := sharedtest.CreateServiceConfigUpdateHistoryFromServiceConfigs(supplierOperatorAddr, supplierServices, 1, 0)
-	keepers.SetSupplier(ctx, sharedtypes.Supplier{
+	keepers.SetAndIndexDehydratedSupplier(ctx, sharedtypes.Supplier{
 		OperatorAddress:      supplierOperatorAddr,
 		Services:             supplierServices,
 		ServiceConfigHistory: serviceConfigHistory,

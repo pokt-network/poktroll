@@ -122,20 +122,32 @@ func (k Keeper) indexSupplierUnstakingHeight(
 // getSupplierServiceConfigUpdates retrieves all service configuration updates for a specific supplier.
 //
 // This function uses the supplier-to-service index to efficiently find all service
-// configurations associated with the given supplier operator address, without needing
-// to scan and unmarshal the entire service configuration updates store.
+// configurations associated with the given supplier operator address and service ID,
+// without needing to scan and unmarshal the entire service configuration updates store.
+//
+// - If an empty serviceId ("") is passed, returns all service configurations of the given supplier
+// - Otherwise, filters service configurations by both the operator address and service ID
 func (k Keeper) getSupplierServiceConfigUpdates(
 	ctx context.Context,
 	supplierOperatorAddress string,
+	serviceId string,
 ) []*sharedtypes.ServiceConfigUpdate {
 	// Get the necessary stores
 	supplierServiceConfigUpdateStore := k.getSupplierServiceConfigUpdatesStore(ctx)
 	serviceConfigUpdateStore := k.getServiceConfigUpdatesStore(ctx)
 
+	// Determine the key for the iterator based on the service ID
+	var supplierServiceConfigUpdateKey []byte
+	if serviceId == "" {
+		supplierServiceConfigUpdateKey = types.SupplierOperatorKey(supplierOperatorAddress)
+	} else {
+		supplierServiceConfigUpdateKey = types.SupplierOperatorServiceKey(supplierOperatorAddress, serviceId)
+	}
+
 	// Create iterator for the supplier's service configs
 	supplierServiceConfigIterator := storetypes.KVStorePrefixIterator(
 		supplierServiceConfigUpdateStore,
-		types.StringKey(supplierOperatorAddress),
+		supplierServiceConfigUpdateKey,
 	)
 	defer supplierServiceConfigIterator.Close()
 
@@ -227,4 +239,51 @@ func (k Keeper) removeSupplierUnstakingHeightIndex(
 
 	supplierUnstakeKey := types.SupplierOperatorKey(supplierOperatorAddress)
 	supplierUnstakingHeightStore.Delete(supplierUnstakeKey)
+}
+
+// MigrateSupplierServiceConfigIndexes migrates the supplier service config indexes
+// for all suppliers:
+// - From the deprecated format: supplierAddress/ActivationHeight/ServiceId
+// - To the new format: supplierAddress/ServiceId/ActivationHeight
+//
+// This is necessary to ensure that the new index format is used for all suppliers
+// and their service configurations.
+// TODO_DELETE(@red-0ne): Remove this function after v0.1.9 upgrade
+func (k Keeper) MigrateSupplierServiceConfigIndexes(ctx context.Context) {
+	// Get the necessary stores
+	supplierServiceConfigUpdateStore := k.getSupplierServiceConfigUpdatesStore(ctx)
+	serviceConfigUpdateStore := k.getServiceConfigUpdatesStore(ctx)
+
+	supplierServiceConfigIterator := storetypes.KVStorePrefixIterator(
+		supplierServiceConfigUpdateStore,
+		[]byte{},
+	)
+	defer supplierServiceConfigIterator.Close()
+
+	keysToDelete := make([][]byte, 0)
+	for ; supplierServiceConfigIterator.Valid(); supplierServiceConfigIterator.Next() {
+		// Store the supplier service config key for later deletion
+		keysToDelete = append(keysToDelete, supplierServiceConfigIterator.Key())
+
+		// Get the primary key from the supplier index
+		serviceConfigPrimaryKey := supplierServiceConfigIterator.Value()
+
+		// Use the primary key to get the actual service config data which will be
+		// used to create the new index
+		serviceConfigBz := serviceConfigUpdateStore.Get(serviceConfigPrimaryKey)
+
+		// Unmarshal the service config
+		var serviceConfig sharedtypes.ServiceConfigUpdate
+		k.cdc.MustUnmarshal(serviceConfigBz, &serviceConfig)
+
+		// Create the new index key using the new format implemented in the
+		// SupplierServiceConfigUpdateKey function.
+		supplierServiceConfigKey := types.SupplierServiceConfigUpdateKey(serviceConfig)
+		supplierServiceConfigUpdateStore.Set(supplierServiceConfigKey, serviceConfigPrimaryKey)
+	}
+
+	// Delete the old keys from the supplier service config index
+	for _, key := range keysToDelete {
+		supplierServiceConfigUpdateStore.Delete(key)
+	}
 }

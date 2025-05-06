@@ -98,7 +98,7 @@ func (k msgServer) UnstakeSupplier(
 	}
 
 	// Update the supplier record in state
-	k.SetSupplier(ctx, supplier)
+	k.SetAndIndexDehydratedSupplier(ctx, supplier)
 
 	// dehydrate the supplier to avoid sending the entire object
 	supplier.Services = nil

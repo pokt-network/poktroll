@@ -3,9 +3,14 @@ title: MainNet
 sidebar_position: 1
 ---
 
+- 🚰 Coming Soon: MACT Faucet
 - 🗺️ [TODO: StakeNodes' Explorer](https://explorer.pocket.network)
 - 🗺️ [Soothe's Explorer](https://shannon-mainnet.trustsoothe.io)
 - 👨‍💻 [Soothe's GraphQL Playground](https://shannon-mainnet-api.trustsoothe.io)
+
+:::note TODO
+@bryanchriswhite: Add a link to the MACT Faucet once it's live.
+:::
 
 ## RPC Endpoints
 

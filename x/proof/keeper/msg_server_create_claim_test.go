@@ -111,7 +111,7 @@ func TestMsgServer_CreateClaim_Success(t *testing.T) {
 				{ServiceId: service.Id},
 			}
 			serviceConfigHistory := sharedtest.CreateServiceConfigUpdateHistoryFromServiceConfigs(supplierOperatorAddr, supplierServices, 1, 0)
-			keepers.SetSupplier(ctx, sharedtypes.Supplier{
+			keepers.SetAndIndexDehydratedSupplier(ctx, sharedtypes.Supplier{
 				OperatorAddress:      supplierOperatorAddr,
 				Services:             supplierServices,
 				ServiceConfigHistory: serviceConfigHistory,
@@ -227,7 +227,7 @@ func TestMsgServer_CreateClaim_Error_OutsideOfWindow(t *testing.T) {
 		{ServiceId: service.Id},
 	}
 	supplierServiceConfigHistory := sharedtest.CreateServiceConfigUpdateHistoryFromServiceConfigs(supplierOperatorAddr, supplierServices, 1, 0)
-	keepers.SetSupplier(ctx, sharedtypes.Supplier{
+	keepers.SetAndIndexDehydratedSupplier(ctx, sharedtypes.Supplier{
 		OperatorAddress:      supplierOperatorAddr,
 		Services:             supplierServices,
 		ServiceConfigHistory: supplierServiceConfigHistory,
@@ -368,7 +368,7 @@ func TestMsgServer_CreateClaim_Error(t *testing.T) {
 		{ServiceId: service.Id},
 	}
 	supplierServiceConfigHistory := sharedtest.CreateServiceConfigUpdateHistoryFromServiceConfigs(supplierOperatorAddr, supplierServices, 1, 0)
-	supplierKeeper.SetSupplier(ctx, sharedtypes.Supplier{
+	supplierKeeper.SetAndIndexDehydratedSupplier(ctx, sharedtypes.Supplier{
 		OperatorAddress:      supplierOperatorAddr,
 		Services:             supplierServices,
 		ServiceConfigHistory: supplierServiceConfigHistory,
@@ -379,7 +379,7 @@ func TestMsgServer_CreateClaim_Error(t *testing.T) {
 		{ServiceId: "nosvc1"},
 	}
 	wrongSupplierServiceConfigHistory := sharedtest.CreateServiceConfigUpdateHistoryFromServiceConfigs(wrongSupplierOperatorAddr, otherServices, 1, 0)
-	supplierKeeper.SetSupplier(ctx, sharedtypes.Supplier{
+	supplierKeeper.SetAndIndexDehydratedSupplier(ctx, sharedtypes.Supplier{
 		OperatorAddress:      wrongSupplierOperatorAddr,
 		Services:             otherServices,
 		ServiceConfigHistory: wrongSupplierServiceConfigHistory,
@@ -579,7 +579,7 @@ func TestMsgServer_CreateClaim_Error_ComputeUnitsMismatch(t *testing.T) {
 		{ServiceId: service.Id},
 	}
 	serviceConfigHistory := sharedtest.CreateServiceConfigUpdateHistoryFromServiceConfigs(supplierAddr, supplierServices, 1, 0)
-	supplierKeeper.SetSupplier(ctx, sharedtypes.Supplier{
+	supplierKeeper.SetAndIndexDehydratedSupplier(ctx, sharedtypes.Supplier{
 		OperatorAddress:      supplierAddr,
 		Services:             supplierServices,
 		ServiceConfigHistory: serviceConfigHistory,
