@@ -2,6 +2,7 @@ package config
 
 import (
 	"context"
+	"math"
 	"net/url"
 
 	"cosmossdk.io/depinject"
@@ -504,7 +505,7 @@ func NewSupplyKeyValueCacheFn[T any](opts ...querycache.CacheOption[cache.KeyVal
 			return depinject.Configs(deps, depinject.Supply(noopParamsCache)), nil
 		}
 
-		kvCache, err := memory.NewKeyValueCache[T](memory.WithTTL(0))
+		kvCache, err := memory.NewKeyValueCache[T](memory.WithTTL(math.MaxInt64))
 		if err != nil {
 			return nil, err
 		}
@@ -540,7 +541,9 @@ func NewSupplyParamsCacheFn[T any](opts ...querycache.CacheOption[client.ParamsC
 			return depinject.Configs(deps, depinject.Supply(noopParamsCache)), nil
 		}
 
-		paramsCache, err := querycache.NewParamsCache[T](memory.WithTTL(0))
+		// TODO_TECHDEBT(red-0ne) Set ttl to block time + some buffer time when we
+		// switch to event-driven cache warming.
+		paramsCache, err := querycache.NewParamsCache[T](memory.WithTTL(math.MaxInt64))
 		if err != nil {
 			return nil, err
 		}
