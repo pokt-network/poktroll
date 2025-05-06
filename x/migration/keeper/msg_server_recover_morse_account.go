@@ -8,11 +8,11 @@ import (
 	"github.com/pokt-network/poktroll/x/migration/types"
 )
 
-func (k msgServer) RecoverMorseAccount(goCtx context.Context, msg *types.MsgRecoverMorseAccount) (*types.MsgRecoverMorseAccountResponse, error) {
-	ctx := sdk.UnwrapSDKContext(goCtx)
+func (k msgServer) RecoverMorseAccount(ctx context.Context, msg *types.MsgRecoverMorseAccount) (*types.MsgRecoverMorseAccountResponse, error) {
+	sdkCtx := sdk.UnwrapSDKContext(ctx)
 
-	// TODO: Handling the message
-	_ = ctx
+	// TODO_MAINNET_MIGRATION(@bryanchriswhite): Implement MsgRecoverMorseAccount handler...
+	_ = sdkCtx
 
 	return &types.MsgRecoverMorseAccountResponse{}, nil
 }

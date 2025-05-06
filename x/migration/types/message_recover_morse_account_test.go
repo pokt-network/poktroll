@@ -27,6 +27,10 @@ func TestMsgRecoverMorseAccount_ValidateBasic(t *testing.T) {
 				Authority: sample.AccAddress(),
 			},
 		},
+
+		// TODO_MAINNET_MIGRATION(@bryanchriswhite): Add coverage for the following cases:
+		// - MorseSrcAddress is not a valid address
+		// - ShannonDestAddress is not a valid address
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
