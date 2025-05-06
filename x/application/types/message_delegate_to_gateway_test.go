@@ -3,8 +3,9 @@ package types
 import (
 	"testing"
 
-	"github.com/pokt-network/poktroll/testutil/sample"
 	"github.com/stretchr/testify/require"
+
+	"github.com/pokt-network/poktroll/testutil/sample"
 )
 
 func TestMsgDelegateToGateway_ValidateBasic(t *testing.T) {
