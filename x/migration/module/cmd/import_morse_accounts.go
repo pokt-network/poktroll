@@ -88,6 +88,8 @@ func runImportMorseAccounts(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
+	// DEV_NOTE: This check is not strictly necessary but it is prudent to add.
+	// It is an additional sanity check to ensure that the morse account state is valid.
 	if !bytes.Equal(expectedMorseAccountStateHash, actualMorseAccountStateHash) {
 		actualMorseAccountStateHashBase64 := base64.StdEncoding.EncodeToString(actualMorseAccountStateHash)
 		expectedMorseAccountStateHashBase64 := base64.StdEncoding.EncodeToString(expectedMorseAccountStateHash)

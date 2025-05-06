@@ -9,8 +9,8 @@ This page is intended for the Foundation (Authority) or whoever is managing the 
 
 - [1. Retrieve a Pruned Morse Snapshot](#1-retrieve-a-pruned-morse-snapshot)
 - [2. Export Morse Snapshot State](#2-export-morse-snapshot-state)
-- [3. Transform Morse Export to a Canonical Account State](#3-transform-morse-export-to-a-canonical-account-state)
-- [4. Distribute Canonical Account State](#4-distribute-canonical-account-state)
+- [3. Transform Morse Export to a Canonical Account State Import Message](#3-transform-morse-export-to-a-canonical-account-state-import-message)
+- [4. Distribute Canonical Account State Import Message](#4-distribute-canonical-account-state-import-message)
 - [5. Align on Account State via Social Consensus](#5-align-on-account-state-via-social-consensus)
 - [6. Import Canonical State into Shannon](#6-import-canonical-state-into-shannon)
 - [7. Query Canonical State in Shannon](#7-query-canonical-state-in-shannon)
@@ -40,9 +40,11 @@ cd $HOME/morse-snapshot
 ```
 
 :::warning Note the height and date of the snapshot
+
 The height and date are encoded in the snapshot file name.
 
 For example, the snapshot file name `pruned-166819-166919-2025-04-29.tar` has a max height of `166918` and a date of `2025-04-29`; the end-height is exclusive.
+
 :::
 
 ## 2. Export Morse Snapshot State
@@ -50,8 +52,8 @@ For example, the snapshot file name `pruned-166819-166919-2025-04-29.tar` has a 
 Choose the snapshot height, which must be less than or equal to the snapshot height retrieved above. **This will be the published canonical export height.**
 
 ```bash
-export SNAPSHOT_HEIGHT="<HEIGHT>"
-export SNAPSHOT_DATE="<DATE>"
+export SNAPSHOT_HEIGHT="<HEIGHT>" # E.g. "166918"
+export SNAPSHOT_DATE="<DATE>" # E.g. "2025-04-29"
 export MORSE_STATE_EXPORT_PATH="./morse_state_export_${SNAPSHOT_HEIGHT}_${SNAPSHOT_DATE}.json"
 pocket --datadir="$HOME/morse-snapshot" util export-genesis-for-reset "$SNAPSHOT_HEIGHT" pocket > "$MORSE_STATE_EXPORT_PATH"
 ```
