@@ -8,6 +8,8 @@ import (
 	cosmosmath "cosmossdk.io/math"
 	cmtjson "github.com/cometbft/cometbft/libs/json"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
+	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
+	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 	"github.com/spf13/cobra"
 
 	"github.com/pokt-network/poktroll/app/volatile"
@@ -36,20 +38,21 @@ var numAccountsPerDebugLog int
 // - Does not interact with the network directly
 func CollectMorseAccountsCmd() *cobra.Command {
 	collectMorseAcctsCmd := &cobra.Command{
-		Use:   "collect-morse-accounts [morse-state-export-path] [morse-account-state-path]",
+		Use:   "collect-morse-accounts [morse-state-export-path] [msg-import-morse-claimable-accounts-path]",
 		Args:  cobra.ExactArgs(2),
-		Short: "Collect account balances and stakes from [morse-state-export-path] JSON file and output to [morse-account-state-path] as JSON",
+		Short: "Collect account balances and stakes from [morse-state-export-path] JSON file and output to [msg-import-morse-claimable-accounts-path] as JSON",
 		Long: `Processes Morse state for Shannon migration.
 
 This process involves:
 	- Reads MorseStateExport JSON from [morse-state-export-path]
 	- Contains account balances and associated stakes
-	- Outputs MorseAccountState JSON to [morse-account-state-path]
-	- Integrates with Shannon's MsgUploadMorseState
+	- Outputs MsgMorseImportClaimableAccount JSON to [msg-import-morse-claimable-accounts-path]
 
 The required input MUST be generated via the Morse CLI like so:
 
 	pocket util export-genesis-for-reset [height] pocket > morse-state-export.json
+
+See: https://dev.poktroll.com/operate/morse_migration/state_transfer_playbook
 `,
 		RunE:    runCollectMorseAccounts,
 		PreRunE: logger.PreRunESetup,
@@ -70,14 +73,14 @@ The required input MUST be generated via the Morse CLI like so:
 func runCollectMorseAccounts(_ *cobra.Command, args []string) error {
 	// DEV_NOTE: No need to check args length due to cobra.ExactArgs(2).
 	morseStateExportPath := args[0]
-	morseAccountStatePath := args[1]
+	msgImportMorseClaimableAccountsPath := args[1]
 
 	logger.Logger.Info().
 		Str("morse_state_export_path", morseStateExportPath).
-		Str("morse_account_state_path", morseAccountStatePath).
+		Str("msg_import_morse_claimable_accounts_path", msgImportMorseClaimableAccountsPath).
 		Msg("collecting Morse accounts...")
 
-	morseWorkspace, err := collectMorseAccounts(morseStateExportPath, morseAccountStatePath)
+	morseWorkspace, err := collectMorseAccounts(morseStateExportPath, msgImportMorseClaimableAccountsPath)
 	if err != nil {
 		return err
 	}
@@ -89,7 +92,7 @@ func runCollectMorseAccounts(_ *cobra.Command, args []string) error {
 // - Reads a MorseStateExport JSON file from morseStateExportPath
 // - Transforms it into a MorseAccountState
 // - Writes the resulting JSON to morseAccountStatePath
-func collectMorseAccounts(morseStateExportPath, morseAccountStatePath string) (*morseImportWorkspace, error) {
+func collectMorseAccounts(morseStateExportPath, msgImportMorseClaimableAccountsPath string) (*morseImportWorkspace, error) {
 	if err := validatePathIsFile(morseStateExportPath); err != nil {
 		return nil, err
 	}
@@ -109,12 +112,20 @@ func collectMorseAccounts(morseStateExportPath, morseAccountStatePath string) (*
 		return nil, err
 	}
 
-	outputStateJSONBz, err := cmtjson.Marshal(morseWorkspace.accountState)
+	msgImportMorseClaimableAccounts, err := migrationtypes.NewMsgImportMorseClaimableAccounts(
+		authtypes.NewModuleAddress(govtypes.ModuleName).String(),
+		*morseWorkspace.accountState,
+	)
 	if err != nil {
 		return nil, err
 	}
 
-	if err = os.WriteFile(morseAccountStatePath, outputStateJSONBz, 0644); err != nil {
+	msgImportMorseClaimableAccountsJSONBz, err := cmtjson.MarshalIndent(msgImportMorseClaimableAccounts, "", "  ")
+	if err != nil {
+		return nil, err
+	}
+
+	if err = os.WriteFile(msgImportMorseClaimableAccountsPath, msgImportMorseClaimableAccountsJSONBz, 0644); err != nil {
 		return nil, err
 	}
 
