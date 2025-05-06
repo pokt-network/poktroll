@@ -10,6 +10,7 @@ import (
 	"cosmossdk.io/core/address"
 	"cosmossdk.io/depinject"
 	cosmoslog "cosmossdk.io/log"
+	cosmostypes "cosmossdk.io/store/types"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/config"
 	"github.com/cosmos/cosmos-sdk/client/flags"
@@ -28,6 +29,7 @@ import (
 	"github.com/pokt-network/poktroll/app"
 	flags2 "github.com/pokt-network/poktroll/cmd/flags"
 	relayercmd "github.com/pokt-network/poktroll/pkg/relayer/cmd"
+	"github.com/pokt-network/poktroll/pkg/store"
 )
 
 // TODO_MAINNET: adjust chain ID to `pocket`, `pokt` or `shannon`
@@ -61,6 +63,9 @@ func NewRootCmd() *cobra.Command {
 	); err != nil {
 		panic(err)
 	}
+
+	// TODO_IN_THIS_COMMIT: godoc...
+	cleanupFns := make([]func() error, 0)
 
 	rootCmd := &cobra.Command{
 		Use:   app.Name + "d",
@@ -116,7 +121,49 @@ For additional documentation, see https://dev.poktroll.com/tools/user_guide/pock
 				return err
 			}
 
-			return flags2.CheckAutoSequenceFlag(cmd, clientCtx)
+			// TODO_IN_THIS_COMMIT: godoc & consider extracting...
+			offchainMultiStorePath, err := cmd.Flags().GetString(flags2.FlagOffchainMultiStorePath)
+			if err != nil {
+				return err
+			}
+
+			// TODO_IN_THIS_COMMIT: extract to somewhere...
+			storeTypesByStoreKey := map[cosmostypes.StoreKey]cosmostypes.StoreType{
+				// TODO_IN_THIS_COMMIT: extract to a const.
+				cosmostypes.NewKVStoreKey("account_sequence_cache"): cosmostypes.StoreTypeDB,
+			}
+
+			offchainMultiStore, closeDB, err := store.NewMultiStore(offchainMultiStorePath, storeTypesByStoreKey)
+			if err != nil {
+				return err
+			}
+			// --- END extract ---
+
+			// Initially set the cleanupFns to only close the DB.
+			cleanupFns = append(cleanupFns, closeDB)
+			accountSequenceCacheStore := offchainMultiStore.GetKVStore(cosmostypes.NewKVStoreKey("account_sequence_cache"))
+
+			return flags2.CheckAutoSequenceFlag(
+				cmd, clientCtx,
+				accountSequenceCacheStore,
+				func(updateAccountSequenceCache func() error) {
+					cleanupFns = append(cleanupFns, updateAccountSequenceCache)
+				},
+			)
+		},
+		// TODO_IN_THIS_COMMIT: godoc...
+		PersistentPostRunE: func(cmd *cobra.Command, _ []string) error {
+			// Collect any errors from all cleanupFns;
+			// i.e. ALL cleanup fns are ALWAYS called.
+			errs := make([]error, 0)
+			if len(cleanupFns) > 0 {
+				for _, cleanupFn := range cleanupFns {
+					if err := cleanupFn(); err != nil {
+						errs = append(errs, err)
+					}
+				}
+			}
+			return errors.Join(errs...)
 		},
 	}
 

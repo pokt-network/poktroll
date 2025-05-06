@@ -1,6 +1,7 @@
 package flags
 
 import (
+	"encoding/binary"
 	"fmt"
 
 	"cosmossdk.io/depinject"
@@ -10,6 +11,7 @@ import (
 
 	cmd2 "github.com/pokt-network/poktroll/cmd"
 	"github.com/pokt-network/poktroll/pkg/client/query"
+	"github.com/pokt-network/poktroll/pkg/store"
 )
 
 const (
@@ -35,10 +37,21 @@ const (
 	FlagAutoSequence      = "auto-sequence"
 	FlagAutoSequenceUsage = "Sets the --offline, --account-number, and --sequence flags based on cached and/or onchain account state for the given --from address"
 	DefaultAutoSequence   = false
+
+	FlagOffchainMultiStorePath = "multistore-path"
+	// TODO_IN_THIS_COMMIT: update once it's clear whether this is a directory or a file.
+	FlagOffchainMultiStorePathUsage = "The path to the offchain multistore root"
+	// TODO_IN_THIS_COMMIT: consider how best to align this with the "home dir"...
+	DefaultFlagOffchainMultiStorePath = ""
 )
 
 // TODO_IN_THIS_COMMIT: godoc..
-func CheckAutoSequenceFlag(cmd *cobra.Command, clientCtx cosmosclient.Context) error {
+func CheckAutoSequenceFlag(
+	cmd *cobra.Command,
+	clientCtx cosmosclient.Context,
+	accountSequenceCacheStore store.KeyValueStore,
+	registerCleanupFn func(func() error),
+) error {
 	shouldAutoSequence, err := cmd.PersistentFlags().GetBool(FlagAutoSequence)
 	if err != nil {
 		return cmd2.ErrAutoSequence.Wrapf("%s", err)
@@ -67,11 +80,6 @@ func CheckAutoSequenceFlag(cmd *cobra.Command, clientCtx cosmosclient.Context) e
 			return cmd2.ErrAutoSequence.Wrap("cannot set --auto-sequence flag when --offline or --sequence flags are already set")
 		}
 
-		// Set --offline flag to true so that the tx client doesn't query for the account state.
-		if err := cmd.Flags().Set(flags.FlagOffline, "true"); err != nil {
-			return cmd2.ErrAutoSequence.Wrapf("%s", err)
-		}
-
 		// Construct an account query client.
 		authClient, err := query.NewAccountQuerier(depinject.Supply(clientCtx))
 		if err != nil {
@@ -89,6 +97,9 @@ func CheckAutoSequenceFlag(cmd *cobra.Command, clientCtx cosmosclient.Context) e
 			return cmd2.ErrAutoSequence.Wrapf("unable to get account with address %s: %s", fromAddress, err)
 		}
 
+		// Default the sequence number to the onchain query result.
+		sequenceNumber = account.GetSequence()
+
 		switch {
 		// If the --account-number flag is not set, apply the account number from the query result.
 		// DEV_NOTE: 0 is the default value for --account-number flag.
@@ -105,15 +116,44 @@ func CheckAutoSequenceFlag(cmd *cobra.Command, clientCtx cosmosclient.Context) e
 		default:
 		}
 
-		// Set the --sequence flag to the sequence number from the query result.
-		if err := cmd.Flags().Set(flags.FlagSequence, fmt.Sprintf("%d", account.GetSequence())); err != nil {
+		// TODO_IN_THIS_COMMIT: extract...
+		accountKey := []byte(account.GetAddress())
+		cachedLastSequenceBz := accountSequenceCacheStore.Get(accountKey)
+		cachedLastSequence := binary.BigEndian.Uint64(cachedLastSequenceBz)
+		// --- END extract ---
+		if cachedLastSequenceBz != nil {
+			// If the cached sequence number is greater than the onchain sequence number,
+			// use the cached sequence number.
+			if cachedLastSequence > sequenceNumber {
+				sequenceNumber = cachedLastSequence
+			}
+		}
+
+		// Set --offline flag to true so that the tx client doesn't query for the account state.
+		if err := cmd.Flags().Set(flags.FlagOffline, "true"); err != nil {
 			return cmd2.ErrAutoSequence.Wrapf("%s", err)
 		}
 
-		// TODO_IN_THIS_COMMIT: add and check a cache for the account sequence number.
-		// TODO_IN_THIS_COMMIT: add and check a cache for the account sequence number.
-		// TODO_IN_THIS_COMMIT: add and check a cache for the account sequence number.
-	}
+		// Set the --account-number flag.
+		if err := cmd.Flags().Set(flags.FlagAccountNumber, fmt.Sprintf("%d", sequenceNumber)); err != nil {
+			return cmd2.ErrAutoSequence.Wrapf("%s", err)
+		}
 
+		// Set the --sequence flag.
+		if err := cmd.Flags().Set(flags.FlagSequence, fmt.Sprintf("%d", sequenceNumber)); err != nil {
+			return cmd2.ErrAutoSequence.Wrapf("%s", err)
+		}
+
+		// TODO_IN_THIS_COMMIT: comment... update cache...
+		updateAccountSequenceCache := func() error {
+			// TDOO_IN_THIS_COMMIT: extract...
+			lastSequenceBz := make([]byte, 8)
+			binary.BigEndian.PutUint64(lastSequenceBz, sequenceNumber)
+			// --- END extract ---
+			accountSequenceCacheStore.Set(accountKey, lastSequenceBz)
+			return nil
+		}
+		registerCleanupFn(updateAccountSequenceCache)
+	}
 	return nil
 }
