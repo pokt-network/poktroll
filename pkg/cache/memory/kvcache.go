@@ -59,9 +59,8 @@ func (c *keyValueCache[T]) Get(key string) (T, bool) {
 		return zero, false
 	}
 
-	isTTLEnabled := c.config.ttl > 0
 	isCacheValueExpired := time.Since(cachedValue.cachedAt) > c.config.ttl
-	if !isTTLEnabled || isCacheValueExpired {
+	if isCacheValueExpired {
 		// DEV_NOTE: Not pruning here to optimize concurrent speed:
 		// - Read lock alone would be insufficient for pruning
 		// - Next Set() call will overwrite the value
