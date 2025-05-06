@@ -42,7 +42,7 @@ cd $HOME/morse-snapshot
 :::warning Note the height and date of the snapshot
 The height and date are encoded in the snapshot file name.
 
-For example, the snapshot file name `pruned-166819-166919-2025-04-29.tar` has a max height of `166918` (NOTE: the end-height is exclusive) and a date of `2025-04-29`.
+For example, the snapshot file name `pruned-166819-166919-2025-04-29.tar` has a max height of `166918` and a date of `2025-04-29`; the end-height is exclusive.
 :::
 
 ## 2. Export Morse Snapshot State
