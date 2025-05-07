@@ -89,11 +89,7 @@ func (s *MigrationModuleTestSuite) ResetTestApp(
 	s.SupplierSuite.SetApp(s.GetApp())
 	s.ParamsSuite.SetApp(s.GetApp())
 
-	// TODO_IMPROVE: Find a better alternative to integration suite inheritance/embedding.
-	// DEV_NOTE: We MUST assign the ParamsSuite embedded BaseIntegration to the
-	// current one so that s.GetPocketModuleNames() (and therefore s.RunUpdateParams())
-	// can reference properly populate unexported fields of BaseIntegrationSuite.
-	//s.ParamsSuite.BaseIntegrationSuite = s.BaseIntegrationSuite
+	// Set up authz accounts and grants
 	s.ParamsSuite.SetupTestAuthzAccounts(s.T())
 	s.ParamsSuite.SetupTestAuthzGrants(s.T())
 }
