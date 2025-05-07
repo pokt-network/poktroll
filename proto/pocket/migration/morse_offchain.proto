@@ -74,7 +74,14 @@ message MorseAuth {
 // * Avoids pb.Any serialization since only external accounts needed for migration
 message MorseAuthAccount {
   string type = 1 [(gogoproto.jsontag) = "type"];
-  MorseAccount value = 2 [(gogoproto.jsontag) = "value"];
+
+  // MorseAccount value = 2 [(gogoproto.jsontag) = "value"];
+  reserved 2;
+
+  oneof value {
+    MorseAccount morse_account = 3 [(gogoproto.jsontag) = "morse_account"];
+    MorseModuleAccount morse_module_account = 4 [(gogoproto.jsontag) = "morse_module_account"];
+  }
 }
 
 // A wrapper around the list of Morse suppliers (aka "validators", "nodes", of "servicers").
@@ -149,4 +156,13 @@ message MorseAccount {
 // NB: All Morse account public keys will be ed25519 keys by definition.
 message MorsePublicKey {
   bytes value = 2 [(gogoproto.casttype) = "crypto/ed25519.PublicKey"];
+}
+
+// MorseModuleAccount is the module account type for Morse, it:
+// - Wraps a MorseAccount which NEVER has an address
+// - Has a unique name as an identifier instead
+message MorseModuleAccount {
+  MorseAccount base_account = 1 [(gogoproto.nullable) = false, (gogoproto.embed) = true, (gogoproto.jsontag) = "base_account", (gogoproto.moretags) = "yaml:\"base_account\""];
+  string name = 2 [(gogoproto.jsontag) = "name", (gogoproto.moretags) = "yaml:\"name\""];
+  repeated string permissions = 3 [(gogoproto.jsontag) = "permissions", (gogoproto.moretags) = "yaml:\"permissions\""];
 }
