@@ -1,3 +1,7 @@
+// Package cmd provides the command-line interface for the RelayMiner.
+//
+// - Contains subcommands for starting, testing, and operating a RelayMiner
+// - Entry point for the relayminer CLI
 package cmd
 
 import (
@@ -5,16 +9,21 @@ import (
 )
 
 // RelayerCmd returns the Cobra root command for the relayminer CLI.
+//
+// - Root for all RelayMiner subcommands
+// - Use 'relayminer --help' for more info
 func RelayerCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "relayminer",
-		Short: "RelayMiner Subcommands (i.e. Supplier Operation)",
-		Long: `RelayMiner Subcommands to start, test and operate a RelayMiner.
+		Short: "RelayMiner Subcommands (Supplier Operation)",
+		Long: `RelayMiner CLI - Start, test, and operate a RelayMiner.
 
-A Supplier is an **onchain record** advertising a service (e.g. API to access ETH data).
-A RelayMiner is an **offchain coprocessor** that provides a service, proxies requests, validates relays, and ensures the Supplier earns rewards.
+RelayMiner architecture:
 
-Relay flow overview:
+- Supplier: Onchain record advertising a service (e.g., ETH API)
+- RelayMiner: Offchain coprocessor providing the service, proxying requests, validating relays, and ensuring rewards
+
+Relay flow:
 
     +------+      +--------------+      +-----------------+
     | User | <--> |  RelayMiner  | <--> |   Backend API   |
@@ -26,16 +35,18 @@ Relay flow overview:
                 | (onchain rec.) |
                 +----------------+
 
-1. **User** sends a relay request
-2. **RelayMiner** proxies, validates, signs, and forwards the request
-3. **Backend API** is the actual service (e.g. ETH node)
-4. **Supplier** is the onchain record that the RelayMiner is operating for
+Steps:
+- User sends a relay request
+- RelayMiner proxies, validates, signs, and forwards the request
+- Backend API is the actual service (e.g., ETH node)
+- Supplier is the onchain record the RelayMiner operates for
 
-This structure allows:
+Benefits:
 - Secure, auditable, and rewardable relays
 - Clear separation between onchain identity (Supplier) and offchain execution (RelayMiner)
 
-For more info, run 'relayminer --help'.`,
+For help, run: relayminer --help
+`,
 		Run: func(cmd *cobra.Command, args []string) {
 			_ = cmd.Help()
 		},

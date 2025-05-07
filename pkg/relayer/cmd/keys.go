@@ -1,3 +1,4 @@
+// Package cmd provides keyring utilities for the relayminer CLI.
 package cmd
 
 import (
@@ -12,7 +13,15 @@ import (
 	relayerconfig "github.com/pokt-network/poktroll/pkg/relayer/config"
 )
 
-// getPrivateKeyHexFromKeyring takes a key name and returns the private key in hex format
+// getPrivateKeyHexFromKeyring returns the private key in hex format for a given key name from the keyring.
+//
+// Steps:
+// - Looks up the Cosmos address in the keyring
+// - Exports the armored private key
+// - Unarmors and decrypts the private key
+// - Converts to secp256k1 and encodes as hex
+//
+// Returns the hex-encoded private key or error.
 func getPrivateKeyHexFromKeyring(kr keyring.Keyring, address string) (string, error) {
 	cosmosAddr := cosmostypes.MustAccAddressFromBech32(address)
 	armoredPrivKey, err := kr.ExportPrivKeyArmorByAddress(cosmosAddr, "") // Empty passphrase
@@ -38,6 +47,10 @@ func getPrivateKeyHexFromKeyring(kr keyring.Keyring, address string) (string, er
 }
 
 // uniqueSigningKeyNames returns a list of unique operator signing key names from the RelayMiner config.
+//
+// - Iterates through all servers and suppliers
+// - Collects all unique signing key names
+// - Returns a slice of unique key names
 func uniqueSigningKeyNames(relayMinerConfig *relayerconfig.RelayMinerConfig) []string {
 	uniqueKeyMap := make(map[string]bool)
 	for _, server := range relayMinerConfig.Servers {

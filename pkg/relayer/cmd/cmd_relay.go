@@ -1,3 +1,4 @@
+// Package cmd contains the relayminer CLI commands and utilities.
 package cmd
 
 import (
@@ -20,29 +21,33 @@ import (
 )
 
 // TODO_IMPROVE(@olshansk): Add the following configurations & flags to make testing easier and more extensible:
-// --dry-run
-// --specific-endpoint
-// -- don't validate
-// -- what if I'm not staked?
-// -- what if supplier is not staked?
-// -- Both unstaked, one of unstaked
-// -- One validates, no one valides
+// - --dry-run
+// - --specific-endpoint
+// - --don't validate
+// - What if I'm not staked?
+// - What if supplier is not staked?
+// - Both unstaked, one of unstaked
+// - One validates, no one validates
 
 var (
-	// Custom flags - dedicated for 'pocketd relayminer relay' subcommand
-	flagRelayApp                       string
-	flagRelaySupplier                  string
-	flagRelayPayload                   string
-	flagServiceID                      string
-	flagSupplierPublicEndpointOverride string
+	// Custom flags for 'pocketd relayminer relay' subcommand
+	flagRelayApp                       string // Application address
+	flagRelaySupplier                  string // Supplier address
+	flagRelayPayload                   string // Relay payload
+	flagServiceID                      string // Service ID
+	flagSupplierPublicEndpointOverride string // Optional endpoint override
 
-	// Cosmos flags - dedicated for 'pocketd relayminer relay' subcommand
+	// Cosmos flags for 'pocketd relayminer relay' subcommand
 	flagNodeRPCURLRelay       string
 	flagNodeGRPCURLRelay      string
 	flagNodeGRPCInsecureRelay bool
 )
 
 // relayCmd defines the `relay` subcommand for sending a relay as an application.
+//
+// - Sends a test relay to a Supplier's RelayMiner from a staked Application
+// - Useful for local testing, debugging, and verifying Supplier setup
+// - See TODO_IMPROVE for planned enhancements
 func relayCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "relay",
@@ -90,6 +95,18 @@ For more info, run 'relay --help'.
 	return cmd
 }
 
+// runRelay executes the relay command logic.
+//
+// Steps:
+// - Initializes gRPC connection
+// - Fetches node status and application details
+// - Builds application ring for signing
+// - Gets latest block height and current session
+// - Selects the correct endpoint for the supplier
+// - Optionally overrides endpoint URL for local testing
+// - Sends a relay request and prints results
+//
+// Returns error if any step fails.
 func runRelay(cmd *cobra.Command, args []string) error {
 	fmt.Printf("About to send a relay to %s for app %s and service ID %s\n", flagRelaySupplier, flagRelayApp, flagServiceID)
 

@@ -19,7 +19,14 @@ import (
 	relayerconfig "github.com/pokt-network/poktroll/pkg/relayer/config"
 )
 
-// startCmd is the subcommand for running the relay miner (was root logic).
+// startCmd returns the Cobra subcommand for running the relay miner.
+//
+// Responsibilities of a RelayMiner include:
+// - Handling incoming relay requests: Validate, proxy, sign, return response, etc.
+// - Computing relay difficulty: Determining reward eligible vs reward ineligible relays
+// - Monitoring block height: Submitting claim/proof messages as sessions are eligible
+// - Caching of various sorts
+// - Rate limiting incoming requests
 func startCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "start --config <path-to-relay-miner-config-file>",
@@ -28,12 +35,12 @@ func startCmd() *cobra.Command {
 
 A RelayMiner is an offchain coprocessor that provides a service.
 
-It is responsible for various tasks including but not limited to:
-- Handling incoming relay requests: Validate, proxy, sign, return response, etc...
-- Computing relay difficulty: determining reward eligible vs reward ineligible relays
-- Monitoring block height: submitting claim/proof messages as sessions are eligible
-- Caching of various sorts
-- Rate limiting incoming requests
+Responsibilities:
+- Handle incoming relay requests: Validate, proxy, sign, return response, etc.
+- Compute relay difficulty: Determine reward eligible vs reward ineligible relays
+- Monitor block height: Submit claim/proof messages as sessions are eligible
+- Cache various data
+- Rate limit incoming requests
 `,
 		RunE: runRelayer,
 	}
@@ -56,6 +63,11 @@ It is responsible for various tasks including but not limited to:
 }
 
 // runRelayer starts the relay miner with the provided configuration and context.
+//
+// - Handles signal interruptions
+// - Loads and parses configuration
+// - Sets up logger and dependencies
+// - Initializes and starts the relay miner
 func runRelayer(cmd *cobra.Command, _ []string) error {
 	ctx, cancelCtx := context.WithCancel(cmd.Context())
 	defer cancelCtx() // Ensure context cancellation

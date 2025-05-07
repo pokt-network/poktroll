@@ -1,3 +1,4 @@
+// Package cmd provides gRPC connection utilities for the relayminer CLI.
 package cmd
 
 import (
@@ -9,6 +10,17 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 )
 
+// GRPCConfig holds configuration options for establishing a gRPC connection.
+//
+// Fields:
+// - HostPort: gRPC host:port string
+// - Insecure: Use insecure credentials
+// - BackoffBaseDelay: Base delay for backoff
+// - BackoffMaxDelay: Max delay for backoff
+// - MinConnectTimeout: Minimum connection timeout
+// - KeepAliveTime: Keepalive interval
+// - KeepAliveTimeout: Keepalive timeout
+//
 type GRPCConfig struct {
 	HostPort          string        `yaml:"host_port"`
 	Insecure          bool          `yaml:"insecure"`
@@ -19,6 +31,10 @@ type GRPCConfig struct {
 	KeepAliveTimeout  time.Duration `yaml:"keep_alive_timeout"`
 }
 
+// connectGRPC establishes a gRPC client connection using the provided GRPCConfig.
+//
+// - Returns a grpc.ClientConn or error
+// - Uses insecure credentials if config.Insecure is true
 func connectGRPC(config GRPCConfig) (*grpc.ClientConn, error) {
 	if config.Insecure {
 		transport := grpc.WithTransportCredentials(insecure.NewCredentials())

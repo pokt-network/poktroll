@@ -32,8 +32,9 @@ import (
 )
 
 // setupRelayerDependencies builds and returns the dependency tree for the relay miner.
+//
 // - Builds from leaves up, incrementally supplying each component to depinject.Config
-// - Sets up the following dependencies:
+// - Sets up dependencies for:
 //   - Miner
 //   - EventsQueryClient
 //   - BlockClient
@@ -44,6 +45,10 @@ import (
 //   - SupplierClient
 //   - RelayerProxy
 //   - RelayerSessionsManager
+//
+// Returns:
+//   - deps: The dependency injection config
+//   - err: Error if setup fails
 func setupRelayerDependencies(
 	ctx context.Context,
 	cmd *cobra.Command,
@@ -134,6 +139,18 @@ func setupRelayerDependencies(
 }
 
 // supplyMiner constructs a Miner instance and returns a new depinject.Config with it supplied.
+//
+// - Supplies Miner to the dependency injection config
+// - Returns updated config and error if any
+//
+// Parameters:
+//   - ctx: Context for the function
+//   - deps: Dependency injection config
+//   - cmd: Cobra command
+//
+// Returns:
+//   - depinject.Config: Updated dependency injection config
+//   - error: Error if setup fails
 func supplyMiner(
 	_ context.Context,
 	deps depinject.Config,
@@ -148,6 +165,18 @@ func supplyMiner(
 }
 
 // supplyRelayMeter constructs a RelayMeter instance and returns a new depinject.Config with it supplied.
+//
+// - Supplies RelayMeter to the dependency injection config
+// - Returns updated config and error if any
+//
+// Parameters:
+//   - ctx: Context for the function
+//   - deps: Dependency injection config
+//   - cmd: Cobra command
+//
+// Returns:
+//   - depinject.Config: Updated dependency injection config
+//   - error: Error if setup fails
 func supplyRelayMeter(
 	_ context.Context,
 	deps depinject.Config,
@@ -162,6 +191,18 @@ func supplyRelayMeter(
 }
 
 // supplyTxFactory constructs a cosmostx.Factory instance and returns a new depinject.Config with it supplied.
+//
+// - Supplies TxFactory to the dependency injection config
+// - Returns updated config and error if any
+//
+// Parameters:
+//   - ctx: Context for the function
+//   - deps: Dependency injection config
+//   - cmd: Cobra command
+//
+// Returns:
+//   - depinject.Config: Updated dependency injection config
+//   - error: Error if setup fails
 func supplyTxFactory(
 	_ context.Context,
 	deps depinject.Config,
@@ -181,6 +222,19 @@ func supplyTxFactory(
 	return depinject.Configs(deps, depinject.Supply(clientFactory)), nil
 }
 
+// supplyTxContext constructs a transaction context and returns a new depinject.Config with it supplied.
+//
+// - Supplies TxContext to the dependency injection config
+// - Returns updated config and error if any
+//
+// Parameters:
+//   - ctx: Context for the function
+//   - deps: Dependency injection config
+//   - cmd: Cobra command
+//
+// Returns:
+//   - depinject.Config: Updated dependency injection config
+//   - error: Error if setup fails
 func supplyTxContext(
 	_ context.Context,
 	deps depinject.Config,
@@ -195,6 +249,15 @@ func supplyTxContext(
 }
 
 // newSupplyRelayAuthenticatorFn returns a function which constructs a RelayAuthenticator and returns a new depinject.Config with it supplied.
+//
+// - Accepts signingKeyNames for authenticator setup
+// - Returns a SupplierFn for dependency injection
+//
+// Parameters:
+//   - signingKeyNames: List of signing key names
+//
+// Returns:
+//   - config.SupplierFn: Supplier function for dependency injection
 func newSupplyRelayAuthenticatorFn(
 	signingKeyNames []string,
 ) config.SupplierFn {
@@ -216,6 +279,15 @@ func newSupplyRelayAuthenticatorFn(
 }
 
 // newSupplyRelayerProxyFn returns a function which constructs a RelayerProxy and returns a new depinject.Config with it supplied.
+//
+// - Accepts servicesConfigMap for proxy setup
+// - Returns a SupplierFn for dependency injection
+//
+// Parameters:
+//   - servicesConfigMap: Map of services configuration
+//
+// Returns:
+//   - config.SupplierFn: Supplier function for dependency injection
 func newSupplyRelayerProxyFn(
 	servicesConfigMap map[string]*relayerconfig.RelayMinerServerConfig,
 ) config.SupplierFn {
@@ -237,6 +309,15 @@ func newSupplyRelayerProxyFn(
 }
 
 // newSupplyRelayerSessionsManagerFn returns a function which constructs a RelayerSessionsManager and returns a new depinject.Config with it supplied.
+//
+// - Accepts smtStorePath for sessions manager setup
+// - Returns a SupplierFn for dependency injection
+//
+// Parameters:
+//   - smtStorePath: Path to the sessions store
+//
+// Returns:
+//   - config.SupplierFn: Supplier function for dependency injection
 func newSupplyRelayerSessionsManagerFn(smtStorePath string) config.SupplierFn {
 	return func(
 		ctx context.Context,

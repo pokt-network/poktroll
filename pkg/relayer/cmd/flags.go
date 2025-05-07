@@ -1,14 +1,18 @@
+// Package cmd holds CLI flag variables for the relayminer commands.
+//
+// - Used by subcommands to configure runtime behavior
+// - Values are set via CLI flags
 package cmd
 
 var (
-	// Relay miner config file path from `--config` flag.
+	// flagRelayMinerConfig is the relay miner config file path from `--config` flag.
 	flagRelayMinerConfig string
-	// Cosmos node RPC URL flag value.
+	// flagNodeRPCURL is the Cosmos node RPC URL flag value.
 	flagNodeRPCURL string
-	// Cosmos node GRPC URL flag value.
+	// flagNodeGRPCURL is the Cosmos node GRPC URL flag value.
 	flagNodeGRPCURL string
-	// Log level variable (used by cosmos and polylog).
+	// flagLogLevel is the log level variable (used by cosmos and polylog).
 	flagLogLevel string
-	// Query caching flag value.
+	// flagQueryCaching is the query caching flag value.
 	flagQueryCaching bool
 )
