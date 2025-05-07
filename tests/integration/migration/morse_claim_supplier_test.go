@@ -198,9 +198,6 @@ func (s *MigrationModuleTestSuite) TestClaimMorseExistingSupplier() {
 				sample.AccAddress(),
 			)
 
-			// TODO_IN_THIS_COMMIT: comment ...
-			//s.GetApp().NextBlock(s.T())
-
 			for _, serviceConfigUpdate := range expectedServiceConfigUpdateHistory {
 				serviceConfigUpdate.DeactivationHeight = svcStartHeight
 			}
