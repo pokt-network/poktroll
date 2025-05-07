@@ -529,9 +529,8 @@ func (m *MorsePublicKey) GetValue() crypto_ed25519.PublicKey {
 	return nil
 }
 
-// MorseModuleAccount is the module account type for Morse, it:
-// - Wraps a MorseAccount which NEVER has an address
-// - Has a unique name as an identifier instead
+// MorseModuleAccount is the module account type for Morse, it wraps a MorseAccount
+// and has a unique name, which is used instead of the address.
 type MorseModuleAccount struct {
 	MorseAccount `protobuf:"bytes,1,opt,name=base_account,json=baseAccount,proto3,embedded=base_account" json:"base_account" yaml:"base_account"`
 	Name         string   `protobuf:"bytes,2,opt,name=name,proto3" json:"name" yaml:"name"`

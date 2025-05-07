@@ -156,9 +156,8 @@ message MorsePublicKey {
   bytes value = 2 [(gogoproto.casttype) = "crypto/ed25519.PublicKey"];
 }
 
-// MorseModuleAccount is the module account type for Morse, it:
-// - Wraps a MorseAccount which NEVER has an address
-// - Has a unique name as an identifier instead
+// MorseModuleAccount is the module account type for Morse, it wraps a MorseAccount
+// and has a unique name, which is used instead of the address.
 message MorseModuleAccount {
   MorseAccount base_account = 1 [(gogoproto.nullable) = false, (gogoproto.embed) = true, (gogoproto.jsontag) = "base_account", (gogoproto.moretags) = "yaml:\"base_account\""];
   string name = 2 [(gogoproto.jsontag) = "name", (gogoproto.moretags) = "yaml:\"name\""];

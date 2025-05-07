@@ -209,8 +209,8 @@ func collectInputAccountBalances(inputState *migrationtypes.MorseStateExport, mo
 			return fmt.Errorf("failed to marshal export account: %w", err)
 		}
 
-		// DEV_NOTE: Since MorseModuleAccounts do not have an address,
-		// use the module account name as the MorseClaimableAccount address.
+		// DEV_NOTE: Use the module account name as the MorseClaimableAccount address
+		// to make it easier to identify downstream.
 		var (
 			exportAccount *migrationtypes.MorseAccount
 			accountAddr   string
