@@ -29,6 +29,9 @@ func TxCommands() *cobra.Command {
 		Short: "Transactions commands for the migration module",
 	}
 
+	// TODO_MAINNET_MIGRATION(@bryanchriswhite): Add `recover-morse-account` migration module tx command.
+	// Be sure to include comprehensive `Long` and `Example` cobra.Command fields!
+
 	migrateCmd.AddCommand(cmd.CollectMorseAccountsCmd())
 	migrateCmd.AddCommand(cmd.ClaimAccountCmd())
 	migrateCmd.AddCommand(cmd.ClaimApplicationCmd())

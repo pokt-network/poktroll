@@ -1,7 +1,8 @@
 module github.com/pokt-network/poktroll
 
-// TODO_TECHDEBT: Remove the following comments and workflow once the go module
+// TODO_TECHDEBT(@bryanchriswhite): Remove the following comments and workflow once the go module
 // has been renamed to github.com/pokt-network/pocket.
+// Once this is complete, also remove the warning in docusaurus/docs/develop/developer_guide/adding_params.md.
 //
 // DEV_NOTE: In order to use `ignite scaffold ...` you MUST *temporarily* rename
 // this go module by commenting out the `module` directive above, and uncommenting
