@@ -123,6 +123,7 @@ func (s *MigrationModuleTestSuite) TestClaimMorseExistingSupplier() {
 	// Generate and import Morse claimable accounts.
 	s.GenerateMorseAccountState(s.T(), s.numMorseClaimableAccounts, testmigration.AllSupplierMorseAccountActorType)
 	_, err := s.ImportMorseClaimableAccounts(s.T())
+	require.NoError(s.T(), err)
 
 	sharedClient := sharedtypes.NewQueryClient(s.GetApp().QueryHelper())
 	sharedParamsRes, err := sharedClient.Params(s.SdkCtx(), &sharedtypes.QueryParamsRequest{})
@@ -292,6 +293,7 @@ func (s *MigrationModuleTestSuite) TestClaimMorseSupplier_ErrorMinStake() {
 	s.ResetTestApp(1, minStake)
 	s.GenerateMorseAccountState(s.T(), 1, testmigration.AllSupplierMorseAccountActorType)
 	_, err := s.ImportMorseClaimableAccounts(s.T())
+	require.NoError(s.T(), err)
 
 	shannonDestAddr := sample.AccAddress()
 	bankClient := s.GetBankQueryClient(s.T())
