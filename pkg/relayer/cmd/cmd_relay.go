@@ -16,7 +16,9 @@ import (
 	"github.com/cosmos/cosmos-sdk/crypto"
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	"github.com/cosmos/cosmos-sdk/crypto/keys/secp256k1"
+	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	sdk "github.com/pokt-network/shannon-sdk"
+	sdktypes "github.com/pokt-network/shannon-sdk/types"
 	"github.com/spf13/cobra"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -30,31 +32,49 @@ var (
 	flagRelaySupplier string
 	flagRelayPayload  string
 	flagServiceID     string
+
+	flagNodeRPCURLRelay       string
+	flagNodeGRPCURLRelay      string
+	flagNodeGRPCInsecureRelay bool
 )
+
+// TODO_IN_THIS_PR: Revisit these ideas
+// --dry-run
+// --specific-endpoint
+// -- don't validate
+// -- what if I'm not staked?
+// -- what if supplier is not staked?
+// -- Both unstaked, one of unstaked
+// -- One validates, no one valides
 
 // relayCmd defines the `relay` subcommand for sending a relay as an application.
 func relayCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "relay",
-		Short: "Send a relay",
-		Long:  `Send a test relay to an actively staked Application and its RelayMiner from a staked application.`,
-		RunE:  runRelay,
+		Short: "Send a relay as an application to a particular supplier",
+		// TODO_IN_THIS_PR: Add a long description and add examples
+		Long: "Send a test relay to an actively staked Application and its RelayMiner from a staked application.",
+		RunE: runRelay,
 	}
 
 	// Cosmos flags
-	cmd.Flags().StringVar(&flagNodeRPCURL, cosmosflags.FlagNode, "https://shannon-testnet-grove-rpc.beta.poktroll.com", "Cosmos node RPC URL (required)")
-	cmd.Flags().StringVar(&flagNodeGRPCURL, cosmosflags.FlagGRPC, "shannon-testnet-grove-grpc.beta.poktroll.com:443", "Cosmos node GRPC URL (required)")
-	cmd.Flags().BoolVar(&flagNodeGRPCInsecure, cosmosflags.FlagGRPCInsecure, false, "Used to initialize the Cosmos query context with grpc security options.")
+	// cmd.Flags().StringVar(&flagNodeRPCURLRelay, cosmosflags.FlagNode, "https://shannon-testnet-grove-rpc.beta.poktroll.com", "Cosmos node RPC URL (required)")
+	// cmd.Flags().StringVar(&flagNodeGRPCURLRelay, cosmosflags.FlagGRPC, "shannon-testnet-grove-grpc.beta.poktroll.com:443", "Cosmos node GRPC URL (required)")
+	cmd.Flags().StringVar(&flagNodeRPCURLRelay, cosmosflags.FlagNode, "tcp://127.0.0.1:26657", "Cosmos node RPC URL (required)")
+	cmd.Flags().StringVar(&flagNodeGRPCURLRelay, cosmosflags.FlagGRPC, "localhost:9090", "Cosmos node GRPC URL (required)")
+	cmd.Flags().BoolVar(&flagNodeGRPCInsecureRelay, cosmosflags.FlagGRPCInsecure, true, "Used to initialize the Cosmos query context with grpc security options.")
 
-	// Relayer flags
-	// --dry-run
-	// --specific-endpoint
-	cmd.Flags().StringVar(&flagRelayApp, "app", "supplier", "Name of the staked application key (required)")
+	// Custom Flags
+	// app1 - pokt1mrqt5f7qh8uxs27cjm9t7v9e74a9vvdnq5jva4
+	// supplier1 - pokt19a3t4yunp0dlpfjrp7qwnzwlrzd5fzs2gjaaaj
+	cmd.Flags().StringVar(&flagRelayApp, "app", "application", "Name of the staked application key (required)")
 	cmd.Flags().StringVar(&flagRelaySupplier, "supplier", "supplier", "Supplier endpoint URL (e.g. http://localhost:8081/relay)")
-	cmd.Flags().StringVar(&flagRelayPayload, "payload", "{\"jsonrpc\": \"2.0\", \"id\": 1, \"method\": \"eth_blockNumber\", \"params\": []}", "Relay payload (hex encoded)")
 	cmd.Flags().StringVar(&flagServiceID, "service-id", "anvil", "Service ID (required)")
-	// _ = cmd.MarkFlagRequired("app")
-	// _ = cmd.MarkFlagRequired("supplier")
+	cmd.Flags().StringVar(&flagRelayPayload, "payload", "{\"jsonrpc\": \"2.0\", \"id\": 1, \"method\": \"eth_blockNumber\", \"params\": []}", "Relay payload")
+
+	_ = cmd.MarkFlagRequired("app")
+	_ = cmd.MarkFlagRequired("supplier")
+	// TODO_IN_THIS_PR: Uncomment this.
 	// _ = cmd.MarkFlagRequired("payload")
 	// _ = cmd.MarkFlagRequired("service-id")
 
@@ -62,154 +82,184 @@ func relayCmd() *cobra.Command {
 }
 
 func runRelay(cmd *cobra.Command, args []string) error {
-	fmt.Println("Running relay...")
+	fmt.Printf("About to send a relay to %s for app %s and service ID %s\n", flagRelaySupplier, flagRelayApp, flagServiceID)
+
 	// Initialize gRPC connection
 	grpcConn, err := connectGRPC(GRPCConfig{
-		HostPort: flagNodeGRPCURL,
-		Insecure: flagNodeGRPCInsecure,
+		HostPort: flagNodeGRPCURLRelay,
+		Insecure: flagNodeGRPCInsecureRelay,
 	})
 	if err != nil {
 		return err
 	}
 	defer grpcConn.Close()
-	fmt.Println("\n\ngRPC connection initialized")
+	fmt.Printf("✅ gRPC connection initialized\n")
 
-	// 1. Create a connection to the POKT full node
-	nodeStatusFetcher, err := sdk.NewPoktNodeStatusFetcher(flagNodeRPCURL)
+	// Create an account client for fetching public keys
+	accountClient := sdk.AccountClient{
+		PoktNodeAccountFetcher: sdk.NewPoktNodeAccountFetcher(grpcConn),
+	}
+	fmt.Printf("✅ Account client initialized: %v\n", accountClient)
+
+	// Create an application client to get application details
+	appClient := sdk.ApplicationClient{
+		QueryClient: apptypes.NewQueryClient(grpcConn),
+	}
+	app, err := appClient.GetApplication(context.Background(), flagRelayApp)
 	if err != nil {
-		fmt.Printf("Error fetching block height: %v\n", err)
+		fmt.Printf("❌ Error fetching application: %v\n", err)
 		return err
 	}
-	fmt.Println("\n\nNode status fetcher initialized")
+	fmt.Printf("✅ Application fetched: %v\n", app)
 
-	// 2. Get the latest block height
+	// Create an application ring for signing
+	ring := sdk.ApplicationRing{
+		Application:      app,
+		PublicKeyFetcher: &accountClient,
+	}
+	fmt.Printf("✅ Application ring created: %v\n", ring)
+
+	// Create a connection to the POKT full node
+	nodeStatusFetcher, err := sdk.NewPoktNodeStatusFetcher(flagNodeRPCURLRelay)
+	if err != nil {
+		fmt.Printf("❌ Error fetching block height: %v\n", err)
+		return err
+	}
+	fmt.Printf("✅ Node status fetcher initialized\n")
+
+	// Get the latest block height
 	blockClient := sdk.BlockClient{
 		PoktNodeStatusFetcher: nodeStatusFetcher,
 	}
 	blockHeight, err := blockClient.LatestBlockHeight(context.Background())
 	if err != nil {
-		fmt.Printf("Error fetching block height: %v\n", err)
+		fmt.Printf("❌ Error fetching block height: %v\n", err)
 		return err
 	}
-	fmt.Println("\n\nBlock height: ", blockHeight)
+	fmt.Printf("✅ Block height retrieved: %d\n", blockHeight)
 
-	// 3. Get the current session
+	// Get the current session
 	sessionClient := sdk.SessionClient{
 		PoktNodeSessionFetcher: sdk.NewPoktNodeSessionFetcher(grpcConn),
 	}
 	session, err := sessionClient.GetSession(
 		context.Background(),
-		flagRelayApp,
+		app.Address,
 		flagServiceID,
 		blockHeight,
 	)
 	if err != nil {
-		fmt.Printf("Error fetching session for app %s and service ID %s: %v\n", flagRelayApp, flagServiceID, err)
+		fmt.Printf("❌ Error fetching session for app %s and service ID %s: %v\n", app.Address, flagServiceID, err)
 		return err
 	}
-	fmt.Println("\n\nSession fetched:", session)
+	fmt.Printf("✅ Session fetched: %v\n", session)
 
-	// 4. Select an endpoint from the session
+	// Select an endpoint from the session
 	sessionFilter := sdk.SessionFilter{
 		Session:         session,
 		EndpointFilters: []sdk.EndpointFilter{},
 	}
 	endpoints, err := sessionFilter.FilteredEndpoints()
 	if err != nil {
-		fmt.Printf("Error filtering endpoints: %v\n", err)
+		fmt.Printf("❌ Error filtering endpoints: %v\n", err)
 		return err
 	}
 	if len(endpoints) == 0 {
-		fmt.Println("No endpoints available")
+		fmt.Println("❌ No endpoints available")
 		return err
 	}
-	fmt.Println("\n\nEndpoints fetched:", endpoints)
+	fmt.Printf("✅ Endpoints fetched: %v\n", endpoints)
 
-	// 5. Build a relay request
-	relayReq, err := sdk.BuildRelayRequest(endpoints[0], []byte(flagRelayPayload))
+	var endpoint sdk.Endpoint
+	for _, e := range endpoints {
+		if string(e.Supplier()) == flagRelaySupplier {
+			endpoint = e
+			break
+		}
+	}
+	if endpoint == nil {
+		fmt.Printf("❌ No endpoint found for supplier %s in the current session\n", flagRelaySupplier)
+		return err
+	}
+	fmt.Printf("✅ Endpoint selected: %v\n", endpoint)
+
+	// Prepare the JSON-RPC request payload
+	endpointUrl := endpoint.Endpoint().Url
+	body := io.NopCloser(bytes.NewReader([]byte(flagRelayPayload)))
+	jsonRpcServiceReq, err := http.NewRequest(http.MethodPost, endpointUrl, body)
 	if err != nil {
-		fmt.Printf("Error building relay request: %v\n", err)
-		return err
+		return fmt.Errorf("failed to create a new HTTP request for url %s: %w", endpointUrl, err)
 	}
-	fmt.Println("\n\nRelay request built:", relayReq)
-
-	// 6. Create an account client for fetching public keys
-	accountClient := sdk.AccountClient{
-		PoktNodeAccountFetcher: sdk.NewPoktNodeAccountFetcher(grpcConn),
-	}
-	fmt.Println("\n\nAccount client initialized")
-
-	// 7. Create an application client to get application details
-	appClient := sdk.ApplicationClient{
-		QueryClient: apptypes.NewQueryClient(grpcConn),
-	}
-	app, err := appClient.GetApplication(context.Background(), flagRelayApp)
+	jsonRpcServiceReq.Header.Set("Content-Type", "application/json")
+	_, payloadBz, err := sdktypes.SerializeHTTPRequest(jsonRpcServiceReq)
 	if err != nil {
-		fmt.Printf("Error fetching application: %v\n", err)
+		return fmt.Errorf("failed to Serialize HTTP Request for URL %s: %w", endpointUrl, err)
+	}
+	fmt.Printf("✅ JSON-RPC request payload serialized.\n")
+
+	// Build a relay request
+	relayReq, err := sdk.BuildRelayRequest(endpoint, payloadBz)
+	if err != nil {
+		fmt.Printf("❌ Error building relay request: %v\n", err)
 		return err
 	}
-	fmt.Println("\n\nApplication fetched:", app)
+	fmt.Printf("✅ Relay request built.\n")
 
-	// 8. Create an application ring for signing
-	ring := sdk.ApplicationRing{
-		Application:      app,
-		PublicKeyFetcher: &accountClient,
-	}
-	fmt.Println("\n\nApplication ring created:", ring)
-
-	// 9. Sign the relay request
+	// Sign the relay request
 	clientCtx := client.GetClientContextFromCmd(cmd)
-	privateKeyHex, err := getPrivateKeyHexFromKeyring(clientCtx.Keyring, "supplier")
+	appPrivateKeyHex, err := getPrivateKeyHexFromKeyring(clientCtx.Keyring, app.Address)
 	if err != nil {
-		fmt.Printf("Error getting private key: %v\n", err)
+		fmt.Printf("❌ Error getting private key: %v\n", err)
 		return err
 	}
-	signer := sdk.Signer{PrivateKeyHex: privateKeyHex}
-	signedRelayReq, err := signer.Sign(context.Background(), relayReq, ring)
+	appSigner := sdk.Signer{PrivateKeyHex: appPrivateKeyHex}
+	signedRelayReq, err := appSigner.Sign(context.Background(), relayReq, ring)
 	if err != nil {
-		fmt.Printf("Error signing relay request: %v\n", err)
+		fmt.Printf("❌ Error signing relay request: %v\n", err)
 		return err
 	}
-	fmt.Println("\n\nRelay request signed:", signedRelayReq)
+	fmt.Printf("✅ Relay request signed.\n")
 
-	// 10. Send the relay request to the endpoint
+	// Marshal the signed relay request
 	relayReqBz, err := signedRelayReq.Marshal()
 	if err != nil {
-		fmt.Printf("Error marshaling relay request: %v\n", err)
+		fmt.Printf("❌ Error marshaling relay request: %v\n", err)
 		return err
 	}
-	fmt.Println("\n\nRelay request marshaled:", relayReqBz)
+	fmt.Printf("✅ Relay request marshaled.\n")
 
-	reqUrl, err := url.Parse(endpoints[0].Endpoint().Url)
+	// Parse the endpoint URL
+	reqUrl, err := url.Parse(endpointUrl)
 	if err != nil {
-		fmt.Printf("Error parsing endpoint URL: %v\n", err)
+		fmt.Printf("❌ Error parsing endpoint URL: %v\n", err)
 		return err
 	}
-	fmt.Println("\n\nEndpoint URL parsed:", reqUrl)
+	fmt.Printf("✅ Endpoint URL parsed: %v\n", reqUrl)
 
+	// Create the HTTP request with the relay request body
 	httpReq := &http.Request{
 		Method: http.MethodPost,
 		URL:    reqUrl,
 		Body:   io.NopCloser(bytes.NewReader(relayReqBz)),
 	}
 
-	// Send the request
+	// Send the request HTTP request containing the signed relay request
 	httpResp, err := http.DefaultClient.Do(httpReq)
 	if err != nil {
-		fmt.Printf("Error sending relay request: %v\n", err)
+		fmt.Printf("❌ Error sending relay request: %v\n", err)
 		return err
 	}
 	defer httpResp.Body.Close()
 
-	// 11. Read the response
+	// Read the response
 	respBz, err := io.ReadAll(httpResp.Body)
 	if err != nil {
-		fmt.Printf("Error reading response: %v\n", err)
+		fmt.Printf("❌ Error reading response: %v\n", err)
 		return err
 	}
-	fmt.Println("Response read:", respBz)
+	fmt.Printf("✅ Response read: %v\n", respBz)
 
-	// 12. Validate the relay response
+	// Validate the relay response
 	validatedResp, err := sdk.ValidateRelayResponse(
 		context.Background(),
 		sdk.SupplierAddress(signedRelayReq.Meta.SupplierOperatorAddress),
@@ -217,11 +267,11 @@ func runRelay(cmd *cobra.Command, args []string) error {
 		&accountClient,
 	)
 	if err != nil {
-		fmt.Printf("Error validating response: %v\n", err)
+		fmt.Printf("❌ Error validating response: %v\n", err)
 		return err
 	}
 
-	fmt.Printf("Relay successful: %v\n", validatedResp)
+	fmt.Printf("✅ Relay successful: %v\n", validatedResp)
 
 	return nil
 }
@@ -253,18 +303,12 @@ func connectGRPC(config GRPCConfig) (*grpc.ClientConn, error) {
 }
 
 // getPrivateKeyHexFromKeyring takes a key name and returns the private key in hex format
-func getPrivateKeyHexFromKeyring(kr keyring.Keyring, keyName string) (string, error) {
-	// Get the key info from the keyring
-	// key, err := kr.Key(keyName)
-	// if err != nil {
-	// 	return "", fmt.Errorf("failed to get key: %w", err)
-	// }
-
-	// Get the address from the public key
-	// address := key.GetAddress()
-
+// func getPrivateKeyHexFromKeyring(kr keyring.Keyring, keyName string) (string, error) {
+func getPrivateKeyHexFromKeyring(kr keyring.Keyring, address string) (string, error) {
 	// Export the private key in armored format
-	armoredPrivKey, err := kr.ExportPrivKeyArmor(keyName, "") // Empty passphrase
+	// armoredPrivKey, err := kr.ExportPrivKeyArmor(keyName, "") // Empty passphrase
+	cosmosAddr := cosmostypes.MustAccAddressFromBech32(address)
+	armoredPrivKey, err := kr.ExportPrivKeyArmorByAddress(cosmosAddr, "") // Empty passphrase
 	if err != nil {
 		return "", fmt.Errorf("failed to export armored private key: %w", err)
 	}
@@ -278,10 +322,22 @@ func getPrivateKeyHexFromKeyring(kr keyring.Keyring, keyName string) (string, er
 	// Convert to secp256k1 private key
 	secpPrivKey, ok := privKey.(*secp256k1.PrivKey)
 	if !ok {
-		return "", fmt.Errorf("key %s is not a secp256k1 key", keyName)
+		return "", fmt.Errorf("key %s is not a secp256k1 key", address)
 	}
 
 	// Convert to hex
 	hexKey := hex.EncodeToString(secpPrivKey.Key)
 	return hexKey, nil
 }
+
+// TODO_IN_THIS_PR: Cleanup the code blow
+// The code below was copied from the PATH SDK.
+// sdk.BuildRelayRequest was not sufficient and hard to use.
+// PATH doesn't even use sdk.BuildRelayRequest
+// Need to understand why/how we got here and consolidate.
+// Considering:
+// - Moving the code below into the shannon-sdk
+// - Updating this relay cmd
+// - Updating PATH
+// - Make everything easier.
+// Look at buildUnsignedRelayRequest et al

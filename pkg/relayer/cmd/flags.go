@@ -11,4 +11,6 @@ var (
 	flagNodeGRPCInsecure bool
 	// Log level variable (used by cosmos and polylog).
 	flagLogLevel string
+	// Query caching flag value.
+	flagQueryCaching bool
 )

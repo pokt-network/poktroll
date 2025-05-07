@@ -13,8 +13,10 @@ func RelayerCmd() *cobra.Command {
 		Short: "RelayMiner Subcommands (i.e. Supplier Operation)",
 		Long: `RelayMiner Subcommands to start, test and operate a RelayMiner.
 
-A Supplier is just an onchain record advertising to provide a service.
-A RelayMiner is the coprocessor that runs offchain to handle relays, provide a service and earn rewards.`,
+A Supplier is an onchain record advertising a service (e.g. API to access ETH data).
+
+A RelayMiner is an offchain coprocessor that provides a service.
+It handles proxying, validating, etc relays and is responsible for ensuring the Supplier earns rewards.`,
 		Run: func(cmd *cobra.Command, args []string) {
 			_ = cmd.Help()
 		},
