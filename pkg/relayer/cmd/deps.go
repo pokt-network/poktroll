@@ -33,7 +33,17 @@ import (
 
 // setupRelayerDependencies builds and returns the dependency tree for the relay miner.
 // - Builds from leaves up, incrementally supplying each component to depinject.Config
-// - Sets up: Miner, EventsQueryClient, BlockClient, cosmosclient.Context, TxFactory, TxContext, TxClient, SupplierClient, RelayerProxy, RelayerSessionsManager
+// - Sets up the following dependencies:
+//   - Miner
+//   - EventsQueryClient
+//   - BlockClient
+//   - cosmosclient.Context
+//   - TxFactory
+//   - TxContext
+//   - TxClient
+//   - SupplierClient
+//   - RelayerProxy
+//   - RelayerSessionsManager
 func setupRelayerDependencies(
 	ctx context.Context,
 	cmd *cobra.Command,

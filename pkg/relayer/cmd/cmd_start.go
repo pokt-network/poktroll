@@ -91,17 +91,7 @@ func runRelayer(cmd *cobra.Command, _ []string) error {
 		logger.Info().Msg("query caching DISABLED")
 	}
 
-	// Sets up dependencies:
-	// - Miner
-	// - EventsQueryClient
-	// - BlockClient
-	// - cosmosclient.Context
-	// - TxFactory
-	// - TxContext
-	// - TxClient
-	// - SupplierClient
-	// - RelayerProxy
-	// - RelayerSessionsManager
+	// Sets up dependencies
 	deps, err := setupRelayerDependencies(ctx, cmd, relayMinerConfig)
 	if err != nil {
 		return err

@@ -2,8 +2,6 @@ package cmd
 
 import (
 	"github.com/spf13/cobra"
-
-	relayerconfig "github.com/pokt-network/poktroll/pkg/relayer/config"
 )
 
 // RelayerCmd returns the Cobra root command for the relayminer CLI.
@@ -28,17 +26,16 @@ Relay flow overview:
                 | (onchain rec.) |
                 +----------------+
 
-- **User** sends a relay request
-- **RelayMiner** proxies, validates, signs, and forwards the request
-- **Backend API** is the actual service (e.g. ETH node)
-- **Supplier** is the onchain record that the RelayMiner is operating for
+1. **User** sends a relay request
+2. **RelayMiner** proxies, validates, signs, and forwards the request
+3. **Backend API** is the actual service (e.g. ETH node)
+4. **Supplier** is the onchain record that the RelayMiner is operating for
 
 This structure allows:
 - Secure, auditable, and rewardable relays
 - Clear separation between onchain identity (Supplier) and offchain execution (RelayMiner)
 
-For more info, run 'relayminer --help'.`
-,
+For more info, run 'relayminer --help'.`,
 		Run: func(cmd *cobra.Command, args []string) {
 			_ = cmd.Help()
 		},
@@ -47,23 +44,4 @@ For more info, run 'relayminer --help'.`
 	cmd.AddCommand(startCmd())
 	cmd.AddCommand(relayCmd())
 	return cmd
-}
-
-// uniqueSigningKeyNames returns a list of unique operator signing key names from the RelayMiner config.
-func uniqueSigningKeyNames(relayMinerConfig *relayerconfig.RelayMinerConfig) []string {
-	uniqueKeyMap := make(map[string]bool)
-	for _, server := range relayMinerConfig.Servers {
-		for _, supplier := range server.SupplierConfigsMap {
-			for _, signingKeyName := range supplier.SigningKeyNames {
-				uniqueKeyMap[signingKeyName] = true
-			}
-		}
-	}
-
-	uniqueKeyNames := make([]string, 0, len(uniqueKeyMap))
-	for key := range uniqueKeyMap {
-		uniqueKeyNames = append(uniqueKeyNames, key)
-	}
-
-	return uniqueKeyNames
 }

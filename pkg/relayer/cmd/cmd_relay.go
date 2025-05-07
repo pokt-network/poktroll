@@ -19,20 +19,6 @@ import (
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 )
 
-var (
-	flagRelayApp                       string
-	flagRelaySupplier                  string
-	flagRelayPayload                   string
-	flagServiceID                      string
-	flagSupplierPublicEndpointOverride string
-
-	// Cosmos flags
-	// We're adding a copy
-	flagNodeRPCURLRelay       string
-	flagNodeGRPCURLRelay      string
-	flagNodeGRPCInsecureRelay bool
-)
-
 // TODO_IMPROVE(@olshansk): Add the following configurations & flags to make testing easier and more extensible:
 // --dry-run
 // --specific-endpoint
@@ -41,6 +27,20 @@ var (
 // -- what if supplier is not staked?
 // -- Both unstaked, one of unstaked
 // -- One validates, no one valides
+
+var (
+	// Custom flags - dedicated for 'pocketd relayminer relay' subcommand
+	flagRelayApp                       string
+	flagRelaySupplier                  string
+	flagRelayPayload                   string
+	flagServiceID                      string
+	flagSupplierPublicEndpointOverride string
+
+	// Cosmos flags - dedicated for 'pocketd relayminer relay' subcommand
+	flagNodeRPCURLRelay       string
+	flagNodeGRPCURLRelay      string
+	flagNodeGRPCInsecureRelay bool
+)
 
 // relayCmd defines the `relay` subcommand for sending a relay as an application.
 func relayCmd() *cobra.Command {
@@ -76,21 +76,16 @@ For more info, run 'relay --help'.
 	}
 
 	// Cosmos flags
-	cmd.Flags().StringVar(&flagNodeRPCURLRelay, cosmosflags.FlagNode, "tcp://127.0.0.1:26657", "Cosmos node RPC URL (required)")
-	cmd.Flags().StringVar(&flagNodeGRPCURLRelay, cosmosflags.FlagGRPC, "localhost:9090", "Cosmos node GRPC URL (required)")
-	cmd.Flags().BoolVar(&flagNodeGRPCInsecureRelay, cosmosflags.FlagGRPCInsecure, true, "Used to initialize the Cosmos query context with grpc security options.")
+	cmd.Flags().StringVar(&flagNodeRPCURLRelay, cosmosflags.FlagNode, "tcp://127.0.0.1:26657", "Cosmos node RPC URL (defaults to LocalNet)")
+	cmd.Flags().StringVar(&flagNodeGRPCURLRelay, cosmosflags.FlagGRPC, "localhost:9090", "Cosmos node GRPC URL (defaults to LocalNet)")
+	cmd.Flags().BoolVar(&flagNodeGRPCInsecureRelay, cosmosflags.FlagGRPCInsecure, true, "Used to initialize the Cosmos query context with grpc security options (defaults to true for LocalNet)")
 
 	// Custom Flags
-	cmd.Flags().StringVar(&flagRelayApp, "app", "pokt1mrqt5f7qh8uxs27cjm9t7v9e74a9vvdnq5jva4", "Name of the staked application key (required)")
-	cmd.Flags().StringVar(&flagRelaySupplier, "supplier", "pokt19a3t4yunp0dlpfjrp7qwnzwlrzd5fzs2gjaaaj", "Supplier endpoint URL (e.g. http://localhost:8081/relay)")
-	cmd.Flags().StringVar(&flagServiceID, "service-id", "anvil", "Service ID (required)")
-	cmd.Flags().StringVar(&flagRelayPayload, "payload", "{\"jsonrpc\": \"2.0\", \"id\": 1, \"method\": \"eth_blockNumber\", \"params\": []}", "Relay payload")
-	cmd.Flags().StringVar(&flagSupplierPublicEndpointOverride, "supplier-public-endpoint-override", "http://localhost:8085", "Override the supplier public endpoint. Useful for local testing.")
-
-	_ = cmd.MarkFlagRequired("app")
-	_ = cmd.MarkFlagRequired("supplier")
-	_ = cmd.MarkFlagRequired("payload")
-	_ = cmd.MarkFlagRequired("service-id")
+	cmd.Flags().StringVar(&flagRelayApp, "app", "pokt1mrqt5f7qh8uxs27cjm9t7v9e74a9vvdnq5jva4", "Staked application address (defaults to app1 in LocalNet)")
+	cmd.Flags().StringVar(&flagRelaySupplier, "supplier", "pokt19a3t4yunp0dlpfjrp7qwnzwlrzd5fzs2gjaaaj", "Staked Supplier address (defaults to supplier1 in LocalNet)")
+	cmd.Flags().StringVar(&flagServiceID, "service-id", "anvil", "Service ID (defaults to anvil in LocalNet)")
+	cmd.Flags().StringVar(&flagRelayPayload, "payload", "{\"jsonrpc\": \"2.0\", \"id\": 1, \"method\": \"eth_blockNumber\", \"params\": []}", "Payload (defaults to anvil eth_blockNumber JSON-RPC payload for LocalNet testing)")
+	cmd.Flags().StringVar(&flagSupplierPublicEndpointOverride, "supplier-public-endpoint-override", "http://localhost:8085", "(Optional) Override the publically exposed endpoint of the Supplier (useful for LocalNet testing)")
 
 	return cmd
 }
@@ -319,7 +314,7 @@ func runRelay(cmd *cobra.Command, args []string) error {
 		fmt.Printf("❌ Error deserializing response payload: %v\n", err)
 		return err
 	}
-	fmt.Printf("✅ Deserialized JSON map: %+v\n", jsonMap)
+	fmt.Printf("✅ Deserialized response body as JSON map: %+v\n", jsonMap)
 
 	// If "jsonrpc" key exists, try to further deserialize "result"
 	if _, ok := jsonMap["jsonrpc"]; ok {
