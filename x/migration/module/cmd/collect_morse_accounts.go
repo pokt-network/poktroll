@@ -21,11 +21,18 @@ import (
 const (
 	flagNumAccountsPerDebugLog      = "num-accounts-per-debug-log"
 	flagNumAccountsPerDebugLogUsage = "The number of accounts to iterate over for every debug log message that's printed."
+
+	flagExtraMorseStateExportPath      = "extra-state"
+	flagExtraMorseStateExportPathUsage = "The path to an additional file containing a JSON serialized MorseStateExport object. Used to merge two state export objects (e.g. Morse MainNet and TestNet) for use in Shannon TestNet(s)."
 )
 
-// A global variable to control the number of accounts to iterate over for every debug log message.
-// Used to prevent excessive logging during the account collection process.
-var numAccountsPerDebugLog int
+var (
+	// A global variable to control the number of accounts to iterate over for every debug log message.
+	// Used to prevent excessive logging during the account collection process.
+	numAccountsPerDebugLog int
+
+	extraMorseStateExportPath string
+)
 
 // DEV_NOTE: AutoCLI does not apply here because there is no gRPC service, message, or query.
 //
@@ -65,6 +72,12 @@ See: https://dev.poktroll.com/operate/morse_migration/state_transfer_playbook
 		flagNumAccountsPerDebugLogUsage,
 	)
 
+	collectMorseAcctsCmd.Flags().StringVar(
+		&extraMorseStateExportPath,
+		flagExtraMorseStateExportPath, "",
+		flagExtraMorseStateExportPathUsage,
+	)
+
 	return collectMorseAcctsCmd
 }
 
@@ -97,19 +110,34 @@ func collectMorseAccounts(morseStateExportPath, msgImportMorseClaimableAccountsP
 		return nil, err
 	}
 
-	inputStateJSON, err := os.ReadFile(morseStateExportPath)
+	// Check if the extra state export path is set and valid.
+	if extraMorseStateExportPath != "" {
+		if err := validatePathIsFile(extraMorseStateExportPath); err != nil {
+			return nil, err
+		}
+	}
+
+	morseStateExport, err := loadMorseState(morseStateExportPath)
 	if err != nil {
 		return nil, err
 	}
 
-	inputState := new(migrationtypes.MorseStateExport)
-	if err = cmtjson.Unmarshal(inputStateJSON, inputState); err != nil {
+	morseWorkspace := newMorseImportWorkspace()
+	if err = transformAndIncludeMorseState(morseStateExport, morseWorkspace); err != nil {
 		return nil, err
 	}
 
-	morseWorkspace := newMorseImportWorkspace()
-	if err = transformMorseState(inputState, morseWorkspace); err != nil {
-		return nil, err
+	// If an extra state export path is provided, include it in the output MorseAccountState.
+	if extraMorseStateExportPath != "" {
+		var extraMorseStateExport *migrationtypes.MorseStateExport
+		extraMorseStateExport, err = loadMorseState(extraMorseStateExportPath)
+		if err != nil {
+			return nil, err
+		}
+
+		if err = transformAndIncludeMorseState(extraMorseStateExport, morseWorkspace); err != nil {
+			return nil, err
+		}
 	}
 
 	msgImportMorseClaimableAccounts, err := migrationtypes.NewMsgImportMorseClaimableAccounts(
@@ -145,13 +173,13 @@ func validatePathIsFile(path string) error {
 	return nil
 }
 
-// transformMorseState consolidates the Morse account balance, application stake,
+// transformAndIncludeMorseState consolidates the Morse account balance, application stake,
 // and supplier stake for each account as an entry in the resulting MorseAccountState.
 // NOTE: In Shannon terms, a "supplier" is equivalent to all of the following in Morse terms:
 // - "validator"
 // - "node"
 // - "servicer"
-func transformMorseState(
+func transformAndIncludeMorseState(
 	inputState *migrationtypes.MorseStateExport,
 	morseWorkspace *morseImportWorkspace,
 ) error {
@@ -175,29 +203,40 @@ func transformMorseState(
 // collectInputAccountBalances iterates over the accounts in the inputState and
 // adds the balances to the corresponding account balances in the morseWorkspace.
 func collectInputAccountBalances(inputState *migrationtypes.MorseStateExport, morseWorkspace *morseImportWorkspace) error {
-	for exportAccountIdx, exportAccount := range inputState.AppState.Auth.Accounts {
-		exportAccountValueJSONBz, err := json.MarshalIndent(exportAccount.Value, "", "  ")
+	for exportAccountIdx, exportAuthAccount := range inputState.AppState.Auth.Accounts {
+		exportAuthAccountJSONBz, err := json.MarshalIndent(exportAuthAccount.Value, "", "  ")
 		if err != nil {
 			return fmt.Errorf("failed to marshal export account: %w", err)
 		}
 
-		// DEV_NOTE: Ignore module accounts.
-		// TODO_MAINNET_MIGRATION(@olshansky): Revisit this business logic to ensure that no tokens go missing from Morse to Shannon.
-		// See: https://github.com/pokt-network/poktroll/issues/1066 regarding supply validation.
-		if exportAccount.Type != "posmint/Account" {
+		var exportAccount *migrationtypes.MorseAccount
+		switch exportAuthAccount.Type {
+		case migrationtypes.MorseExternallyOwnedAccountType:
+			exportAccount = exportAuthAccount.GetMorseAccount()
+		case migrationtypes.MorseModuleAccountType:
+			exportModuleAccount := exportAuthAccount.GetMorseModuleAccount()
+			exportAccount = &exportModuleAccount.MorseAccount
+
+			// Exclude stake pool module accounts from the MorseAccountState.
+			switch exportModuleAccount.GetName() {
+			case migrationtypes.MorseModuleAccountNameApplicationStakeTokensPool,
+				migrationtypes.MorseModuleAccountNameStakedTokensPool:
+				continue
+			}
+		default:
 			logger.Logger.Warn().
-				Str("type", exportAccount.Type).
-				Str("account_json", string(exportAccountValueJSONBz)).
-				Msg("ignoring non-EOA account")
+				Str("type", exportAuthAccount.Type).
+				Str("account_json", string(exportAuthAccountJSONBz)).
+				Msg("ignoring unknown account type")
 			continue
 		}
 
-		accountAddr := exportAccount.Value.Address.String()
-		if _, _, err := morseWorkspace.addAccount(accountAddr, exportAccount); err != nil {
+		accountAddr := exportAccount.Address.String()
+		if _, _, err = morseWorkspace.addAccount(accountAddr, exportAuthAccount); err != nil {
 			return err
 		}
 
-		coins := exportAccount.Value.Coins
+		coins := exportAccount.Coins
 
 		// If, for whatever reason, the account has no coins, skip it.
 		// DEV_NOTE: This is NEVER expected to happen, but is technically possible.
@@ -264,10 +303,12 @@ func collectInputApplicationStakes(inputState *migrationtypes.MorseStateExport, 
 
 			// DEV_NOTE: If no auth account was found for this application, create a new one.
 			newMorseAppAuthAccount := &migrationtypes.MorseAuthAccount{
-				Type: "posmint/Account",
-				Value: &migrationtypes.MorseAccount{
-					Address: exportApplication.Address,
-					Coins:   []cosmostypes.Coin{},
+				Type: migrationtypes.MorseExternallyOwnedAccountType,
+				Value: &migrationtypes.MorseAuthAccount_MorseAccount{
+					MorseAccount: &migrationtypes.MorseAccount{
+						Address: exportApplication.Address,
+						Coins:   []cosmostypes.Coin{},
+					},
 				},
 			}
 			if _, _, err := morseWorkspace.addAccount(appAddr, newMorseAppAuthAccount); err != nil {
@@ -339,10 +380,12 @@ func collectInputSupplierStakes(inputState *migrationtypes.MorseStateExport, mor
 
 			// DEV_NOTE: If no auth account was found for this supplier, create a new one.
 			newSupplierAccount := &migrationtypes.MorseAuthAccount{
-				Type: "posmint/Account",
-				Value: &migrationtypes.MorseAccount{
-					Address: exportSupplier.Address,
-					Coins:   []cosmostypes.Coin{},
+				Type: migrationtypes.MorseExternallyOwnedAccountType,
+				Value: &migrationtypes.MorseAuthAccount_MorseAccount{
+					MorseAccount: &migrationtypes.MorseAccount{
+						Address: exportSupplier.Address,
+						Coins:   []cosmostypes.Coin{},
+					},
 				},
 			}
 			if _, _, err := morseWorkspace.addAccount(supplierAddr, newSupplierAccount); err != nil {
@@ -392,4 +435,19 @@ func collectInputSupplierStakes(inputState *migrationtypes.MorseStateExport, mor
 		}
 	}
 	return nil
+}
+
+// loadMorseState loads the MorseStateExport from the given path and deserializes it.
+func loadMorseState(morseStateExportPath string) (*migrationtypes.MorseStateExport, error) {
+	morseStateExportJSONBz, err := os.ReadFile(morseStateExportPath)
+	if err != nil {
+		return nil, err
+	}
+
+	morseStateExport := new(migrationtypes.MorseStateExport)
+	if err = cmtjson.Unmarshal(morseStateExportJSONBz, morseStateExport); err != nil {
+		return nil, err
+	}
+
+	return morseStateExport, nil
 }

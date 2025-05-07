@@ -1,12 +1,16 @@
 package testmigration
 
 import (
+	"bytes"
 	"encoding/binary"
+	"encoding/hex"
 	"fmt"
+	"testing"
 
 	cometcrypto "github.com/cometbft/cometbft/crypto/ed25519"
 	cmtjson "github.com/cometbft/cometbft/libs/json"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
+	"github.com/stretchr/testify/require"
 
 	"github.com/pokt-network/poktroll/app/volatile"
 	migrationtypes "github.com/pokt-network/poktroll/x/migration/types"
@@ -35,6 +39,32 @@ type MorseAccountActorTypeDistributionFn func(index uint64) MorseAccountActorTyp
 // It is used to map a test account index to the test actor that's generated.
 func RoundRobinAllMorseAccountActorTypes(index uint64) MorseAccountActorType {
 	return MorseAccountActorType(index % uint64(NumMorseAccountActorTypes))
+}
+
+// NewRoundRobinClusteredAllMorseAccountActorTypes returns a function which returns a MorseAccountActorType
+// for every index, cyclically returning "clusters" of each MorseAccountActorType; i.e. continuous account types of clusterSize.
+// E.g. if clusterSize is 2, then the resulting actor type sequence would be:
+// - 0: MorseUnstakedActor
+// - 1: MorseUnstakedActor
+// - 2: MorseApplicationActor
+// - 3: MorseApplicationActor
+// - 4: MorseSupplierActor
+// - 5: MorseSupplierActor
+func NewRoundRobinClusteredAllMorseAccountActorTypes(clusterSize uint64) func(index uint64) MorseAccountActorType {
+	index := uint64(0)
+	actorTypeIndex := uint64(0)
+	return func(_ uint64) MorseAccountActorType {
+		if index >= clusterSize {
+			index = 0
+			actorTypeIndex++
+		}
+
+		if actorTypeIndex >= uint64(NumMorseAccountActorTypes) {
+			actorTypeIndex = 0
+		}
+
+		return MorseAccountActorType(index % clusterSize)
+	}
 }
 
 // AllUnstakedMorseAccountActorType returns MorseUnstakedActor for every index.
@@ -150,8 +180,10 @@ func NewMorseStateExportAndAccountState(
 		morseStateExport.AppState.Auth.Accounts = append(
 			morseStateExport.AppState.Auth.Accounts,
 			&migrationtypes.MorseAuthAccount{
-				Type:  "posmint/Account",
-				Value: GenMorseAccount(uint64(i)),
+				Type: migrationtypes.MorseExternallyOwnedAccountType,
+				Value: &migrationtypes.MorseAuthAccount_MorseAccount{
+					MorseAccount: GenMorseAccount(uint64(i)),
+				},
 			},
 		)
 
@@ -299,4 +331,119 @@ func GenMorseClaimableAccount(
 		// ShannonDestAddress: (intentionally omitted).
 		// ClaimedAtHeight:    (intentionally omitted)
 	}, nil
+}
+
+const (
+	invalidMorseAddrTooShortFmt = "FFFFFFFF00%.8x"
+	invalidMorseAddrTooLongFmt  = "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF00%.8x"
+	invalidMorseAddrNonHexFmt   = "invalidhex_%x"
+)
+
+// GenerateInvalidAddressMorseStateExportAndAccountState generates a MorseStateExport and MorseAccountState
+// with invalid addresses for the following cases, and for each actor type (i.e. unstaked, app, suppler):
+// - invalid hex
+// - too short
+// - too long
+func GenerateInvalidAddressMorseStateExportAndAccountState(t *testing.T) (*migrationtypes.MorseStateExport, *migrationtypes.MorseAccountState) {
+	t.Helper()
+
+	invalidAddrMorseStateExport, invalidAddrMorseAccountState, err := NewMorseStateExportAndAccountState(
+		9, NewRoundRobinClusteredAllMorseAccountActorTypes(3))
+	require.NoError(t, err)
+
+	for i, morseAuthAccount := range invalidAddrMorseStateExport.AppState.Auth.Accounts {
+		// There should be no module accounts.
+		require.NotEqual(t, migrationtypes.MorseModuleAccountType, morseAuthAccount.GetType())
+
+		morseAccount := morseAuthAccount.GetMorseAccount()
+		originalAddr := morseAccount.Address
+		switch i % 3 {
+		case 0:
+			// invalid hex
+			morseAuthAccount.SetAddress([]byte(fmt.Sprintf(invalidMorseAddrNonHexFmt, i)))
+		case 1:
+			// too short
+			hexAddress, err := hex.DecodeString(fmt.Sprintf(invalidMorseAddrTooShortFmt, i))
+			require.NoError(t, err)
+
+			morseAuthAccount.SetAddress(hexAddress)
+		case 2:
+			// too long
+			hexAddress, err := hex.DecodeString(fmt.Sprintf(invalidMorseAddrTooLongFmt, i))
+			require.NoError(t, err)
+
+			morseAuthAccount.SetAddress(hexAddress)
+		}
+
+		// Search for apps or suppliers corresponding to originalAddr and replace the addresses
+		for _, app := range invalidAddrMorseStateExport.AppState.Application.Applications {
+			if bytes.Equal(app.Address.Bytes(), originalAddr) {
+				app.Address = morseAccount.Address
+				break
+			}
+		}
+
+		for _, supplier := range invalidAddrMorseStateExport.AppState.Pos.Validators {
+			if bytes.Equal(supplier.Address.Bytes(), originalAddr) {
+				supplier.Address = morseAccount.Address
+				break
+			}
+		}
+
+		// Search for MorseClaimableAccounts in MorseAccountState corresponding to originalAddr and replace the addresses
+		for _, morseClaimableAccount := range invalidAddrMorseAccountState.Accounts {
+			if morseClaimableAccount.GetMorseSrcAddress() == originalAddr.String() {
+				morseClaimableAccount.MorseSrcAddress = morseAccount.Address.String()
+				break
+			}
+		}
+	}
+
+	return invalidAddrMorseStateExport, invalidAddrMorseAccountState
+}
+
+// GenerateModuleAddressMorseStateExportAndAccountState generates a MorseStateExport and MorseAccountState
+// with the following module addresses, and ONLY as a liquid account:
+// - dao
+// - fee_collector
+// - application_stake_tokens_pool
+// - staked_tokens_pool
+func GenerateModuleAddressMorseStateExportAndAccountState(t *testing.T, moduleAccountNames []string) (*migrationtypes.MorseStateExport, *migrationtypes.MorseAccountState) {
+	t.Helper()
+
+	moduleAddrMorseStateExport, moduleAddrMorseAccountState, err := NewMorseStateExportAndAccountState(
+		len(moduleAccountNames), NewRoundRobinClusteredAllMorseAccountActorTypes(3))
+	require.NoError(t, err)
+
+	for i, morseAuthAccount := range moduleAddrMorseStateExport.AppState.Auth.Accounts {
+		require.NotEqual(t, migrationtypes.MorseModuleAccountType, morseAuthAccount.GetType())
+
+		morseModuleAccountName := moduleAccountNames[i]
+
+		// Omit stake pool module accounts from the MorseAccountState.
+		shouldIncludeInMorseAccountState := true
+		for _, skippedModuleAccountName := range migrationtypes.MorseStakePoolModuleAccountNames {
+			if morseModuleAccountName == skippedModuleAccountName {
+				shouldIncludeInMorseAccountState = false
+				break
+			}
+		}
+		if !shouldIncludeInMorseAccountState {
+			continue
+		}
+
+		// Promote MorseAccounts to MorseModuleAccounts in MorseStateExport.
+		morseAuthAccount.Type = migrationtypes.MorseModuleAccountType
+		morseAuthAccount.Value = &migrationtypes.MorseAuthAccount_MorseModuleAccount{
+			MorseModuleAccount: &migrationtypes.MorseModuleAccount{
+				Name:         morseModuleAccountName,
+				MorseAccount: *morseAuthAccount.GetMorseAccount(),
+			},
+		}
+
+		// Update MorseAccountState to hold module account names for each MorseClaimableAccount's address.
+		moduleAddrMorseAccountState.Accounts[i].MorseSrcAddress = moduleAccountNames[i]
+	}
+
+	return moduleAddrMorseStateExport, moduleAddrMorseAccountState
 }
