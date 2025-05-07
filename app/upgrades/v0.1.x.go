@@ -71,8 +71,52 @@ var Upgrade_0_1_x = Upgrade{
 			return
 		}
 
+		// Add new parameters by:
+		// 1. Inspecting the diff between v0.1.x...abc123
+		// 2. Manually inspect changes in ignite's config.yml
+		// 3. Update the upgrade handler here accordingly
+		// Ref: https://github.com/pokt-network/poktroll/compare/v0.1.x...abc123
+		applyNewParameters := func(ctx context.Context) (err error) {
+			logger := cosmostypes.UnwrapSDKContext(ctx).Logger()
+			logger.Info("Starting parameter updates", "upgrade_plan_name", Upgrade_0_1_x_PlanName)
+
+			// Get the current migration module params
+			migrationParams := keepers.MigrationKeeper.GetParams(ctx)
+
+			// Set allow_morse_account_import_overwrite to:
+			// - True for Alpha and Beta TestNets
+			// - False for ALL other chain IDs (e.g. MainNet)
+			switch cosmostypes.UnwrapSDKContext(ctx).ChainID() {
+			case AlphaTestNetChainId, BetaTestNetChainId:
+				migrationParams.AllowMorseAccountImportOverwrite = true
+			default:
+				migrationParams.AllowMorseAccountImportOverwrite = false
+			}
+
+			// Ensure that the new parameters are valid
+			if err = migrationParams.Validate(); err != nil {
+				logger.Error("Failed to validate migration params", "error", err)
+				return err
+			}
+
+			// ALL parameters in the migration module must be specified when
+			// setting parameters, even if just one is being CRUDed.
+			err = keepers.MigrationKeeper.SetParams(ctx, migrationParams)
+			if err != nil {
+				logger.Error("Failed to set migration params", "error", err)
+				return err
+			}
+			logger.Info("Successfully updated migration params", "new_params", migrationParams)
+
+			return nil
+		}
+
 		return func(ctx context.Context, plan upgradetypes.Plan, vm module.VersionMap) (module.VersionMap, error) {
 			if err := applyNewAuthorizations(ctx); err != nil {
+				return vm, err
+			}
+
+			if err := applyNewParameters(ctx); err != nil {
 				return vm, err
 			}
 
