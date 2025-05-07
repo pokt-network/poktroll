@@ -119,3 +119,8 @@ morse_state_export.json
 
 # GitHub
 .secrets
+
+# Local pocketd build
+# ignite chain build --skip-proto --debug -v -o .
+pocketd
+

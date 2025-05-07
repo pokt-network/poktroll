@@ -3,28 +3,18 @@ package cmd
 import (
 	"bytes"
 	"context"
-	"crypto/tls"
-	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
 	"net/http"
 	"net/url"
-	"time"
 
 	"github.com/cosmos/cosmos-sdk/client"
 	cosmosflags "github.com/cosmos/cosmos-sdk/client/flags"
-	"github.com/cosmos/cosmos-sdk/crypto"
-	"github.com/cosmos/cosmos-sdk/crypto/keyring"
-	"github.com/cosmos/cosmos-sdk/crypto/keys/secp256k1"
-	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	sdk "github.com/pokt-network/shannon-sdk"
 	sdktypes "github.com/pokt-network/shannon-sdk/types"
 	"github.com/spf13/cobra"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials"
-	"google.golang.org/grpc/credentials/insecure"
 
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 )
@@ -36,12 +26,14 @@ var (
 	flagServiceID                      string
 	flagSupplierPublicEndpointOverride string
 
+	// Cosmos flags
+	// We're adding a copy
 	flagNodeRPCURLRelay       string
 	flagNodeGRPCURLRelay      string
 	flagNodeGRPCInsecureRelay bool
 )
 
-// TODO_IN_THIS_PR: Revisit these ideas
+// TODO_IMPROVE(@olshansk): Add the following configurations & flags to make testing easier and more extensible:
 // --dry-run
 // --specific-endpoint
 // -- don't validate
@@ -55,32 +47,50 @@ func relayCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "relay",
 		Short: "Send a relay as an application to a particular supplier",
-		// TODO_IN_THIS_PR: Add a long description and add examples
-		Long: "Send a test relay to an actively staked Application and its RelayMiner from a staked application.",
+		Long: `Send a test relay to a Supplier's RelayMiner from a staked Application.
+
+RelayMiner relays simulate real-world requests and responses between a staked Application and a Supplier. Useful for local testing, debugging, and verifying that your Supplier is correctly set up.
+
+Key actions performed:
+- Sends a JSON-RPC relay from a staked Application to a Supplier
+- Signs the relay using the Application's private key
+- Validates the Supplier's response and signature
+- Prints the backend response and relay status
+
+Example usage:
+
+  ./pocketd relayminer relay \
+    --app=pokt1mrqt5f7qh8uxs27cjm9t7v9e74a9vvdnq5jva4 \
+    --supplier=pokt19a3t4yunp0dlpfjrp7qwnzwlrzd5fzs2gjaaaj \
+    --service-id=anvil \
+    --node=tcp://127.0.0.1:26657
+
+Callouts:
+- Make sure both the Application and Supplier are staked before running relays.
+- Use the '--supplier-public-endpoint-override' flag to test against a local endpoint.
+- See TODO_IMPROVE in code for planned enhancements (dry-run, custom endpoint, etc).
+
+For more info, run 'relay --help'.
+`,
 		RunE: runRelay,
 	}
 
 	// Cosmos flags
-	// cmd.Flags().StringVar(&flagNodeRPCURLRelay, cosmosflags.FlagNode, "https://shannon-testnet-grove-rpc.beta.poktroll.com", "Cosmos node RPC URL (required)")
-	// cmd.Flags().StringVar(&flagNodeGRPCURLRelay, cosmosflags.FlagGRPC, "shannon-testnet-grove-grpc.beta.poktroll.com:443", "Cosmos node GRPC URL (required)")
 	cmd.Flags().StringVar(&flagNodeRPCURLRelay, cosmosflags.FlagNode, "tcp://127.0.0.1:26657", "Cosmos node RPC URL (required)")
 	cmd.Flags().StringVar(&flagNodeGRPCURLRelay, cosmosflags.FlagGRPC, "localhost:9090", "Cosmos node GRPC URL (required)")
 	cmd.Flags().BoolVar(&flagNodeGRPCInsecureRelay, cosmosflags.FlagGRPCInsecure, true, "Used to initialize the Cosmos query context with grpc security options.")
 
 	// Custom Flags
-	// app1 - pokt1mrqt5f7qh8uxs27cjm9t7v9e74a9vvdnq5jva4
-	// supplier1 - pokt19a3t4yunp0dlpfjrp7qwnzwlrzd5fzs2gjaaaj
-	cmd.Flags().StringVar(&flagRelayApp, "app", "application", "Name of the staked application key (required)")
-	cmd.Flags().StringVar(&flagRelaySupplier, "supplier", "supplier", "Supplier endpoint URL (e.g. http://localhost:8081/relay)")
+	cmd.Flags().StringVar(&flagRelayApp, "app", "pokt1mrqt5f7qh8uxs27cjm9t7v9e74a9vvdnq5jva4", "Name of the staked application key (required)")
+	cmd.Flags().StringVar(&flagRelaySupplier, "supplier", "pokt19a3t4yunp0dlpfjrp7qwnzwlrzd5fzs2gjaaaj", "Supplier endpoint URL (e.g. http://localhost:8081/relay)")
 	cmd.Flags().StringVar(&flagServiceID, "service-id", "anvil", "Service ID (required)")
 	cmd.Flags().StringVar(&flagRelayPayload, "payload", "{\"jsonrpc\": \"2.0\", \"id\": 1, \"method\": \"eth_blockNumber\", \"params\": []}", "Relay payload")
 	cmd.Flags().StringVar(&flagSupplierPublicEndpointOverride, "supplier-public-endpoint-override", "http://localhost:8085", "Override the supplier public endpoint. Useful for local testing.")
 
 	_ = cmd.MarkFlagRequired("app")
 	_ = cmd.MarkFlagRequired("supplier")
-	// TODO_IN_THIS_PR: Uncomment this.
-	// _ = cmd.MarkFlagRequired("payload")
-	// _ = cmd.MarkFlagRequired("service-id")
+	_ = cmd.MarkFlagRequired("payload")
+	_ = cmd.MarkFlagRequired("service-id")
 
 	return cmd
 }
@@ -332,69 +342,3 @@ func runRelay(cmd *cobra.Command, args []string) error {
 
 	return nil
 }
-
-type GRPCConfig struct {
-	HostPort          string        `yaml:"host_port"`
-	Insecure          bool          `yaml:"insecure"`
-	BackoffBaseDelay  time.Duration `yaml:"backoff_base_delay"`
-	BackoffMaxDelay   time.Duration `yaml:"backoff_max_delay"`
-	MinConnectTimeout time.Duration `yaml:"min_connect_timeout"`
-	KeepAliveTime     time.Duration `yaml:"keep_alive_time"`
-	KeepAliveTimeout  time.Duration `yaml:"keep_alive_timeout"`
-}
-
-func connectGRPC(config GRPCConfig) (*grpc.ClientConn, error) {
-	if config.Insecure {
-		transport := grpc.WithTransportCredentials(insecure.NewCredentials())
-		dialOptions := []grpc.DialOption{transport}
-		return grpc.NewClient(
-			config.HostPort,
-			dialOptions...,
-		)
-	}
-
-	return grpc.NewClient(
-		config.HostPort,
-		grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{})),
-	)
-}
-
-// getPrivateKeyHexFromKeyring takes a key name and returns the private key in hex format
-// func getPrivateKeyHexFromKeyring(kr keyring.Keyring, keyName string) (string, error) {
-func getPrivateKeyHexFromKeyring(kr keyring.Keyring, address string) (string, error) {
-	// Export the private key in armored format
-	// armoredPrivKey, err := kr.ExportPrivKeyArmor(keyName, "") // Empty passphrase
-	cosmosAddr := cosmostypes.MustAccAddressFromBech32(address)
-	armoredPrivKey, err := kr.ExportPrivKeyArmorByAddress(cosmosAddr, "") // Empty passphrase
-	if err != nil {
-		return "", fmt.Errorf("failed to export armored private key: %w", err)
-	}
-
-	// Unarmor the private key
-	privKey, _, err := crypto.UnarmorDecryptPrivKey(armoredPrivKey, "") // Empty passphrase
-	if err != nil {
-		return "", fmt.Errorf("failed to unarmor private key: %w", err)
-	}
-
-	// Convert to secp256k1 private key
-	secpPrivKey, ok := privKey.(*secp256k1.PrivKey)
-	if !ok {
-		return "", fmt.Errorf("key %s is not a secp256k1 key", address)
-	}
-
-	// Convert to hex
-	hexKey := hex.EncodeToString(secpPrivKey.Key)
-	return hexKey, nil
-}
-
-// TODO_IN_THIS_PR: Cleanup the code blow
-// The code below was copied from the PATH SDK.
-// sdk.BuildRelayRequest was not sufficient and hard to use.
-// PATH doesn't even use sdk.BuildRelayRequest
-// Need to understand why/how we got here and consolidate.
-// Considering:
-// - Moving the code below into the shannon-sdk
-// - Updating this relay cmd
-// - Updating PATH
-// - Make everything easier.
-// Look at buildUnsignedRelayRequest et al
