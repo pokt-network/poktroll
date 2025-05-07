@@ -17,7 +17,9 @@ var _ IntegrationSuite = (*MigrationModuleSuite)(nil)
 // MigrationModuleSuite is a test suite which abstracts common migration module
 // functionality. It is intended to be embedded in dependent integration test suites.
 type MigrationModuleSuite struct {
-	BaseIntegrationSuite
+	// DEV_NOTE: ParamsSuite MUST be embedded so long as it references BaseIntegrationSuite#pocketModuleNames to set up authz grants.
+	// I.e. BaseIntegrationSuite#pocketModuleNames will be nil.
+	ParamsSuite
 	AppSuite      ApplicationModuleSuite
 	SupplierSuite SupplierModuleSuite
 	ServiceSuite  ServiceModuleSuite
@@ -46,7 +48,7 @@ func (s *MigrationModuleSuite) GetAccountState(t *testing.T) *migrationtypes.Mor
 
 // ImportMorseClaimableAccounts imports the MorseClaimableAccounts from the suite's
 // #accountState field by running a MsgImportMorseClaimableAccounts message.
-func (s *MigrationModuleSuite) ImportMorseClaimableAccounts(t *testing.T) *migrationtypes.MsgImportMorseClaimableAccountsResponse {
+func (s *MigrationModuleSuite) ImportMorseClaimableAccounts(t *testing.T) (*migrationtypes.MsgImportMorseClaimableAccountsResponse, error) {
 	msgImport, err := migrationtypes.NewMsgImportMorseClaimableAccounts(
 		authtypes.NewModuleAddress(govtypes.ModuleName).String(),
 		*s.accountState,
@@ -55,12 +57,14 @@ func (s *MigrationModuleSuite) ImportMorseClaimableAccounts(t *testing.T) *migra
 
 	// Import Morse claimable accounts.
 	resAny, err := s.GetApp().RunMsg(t, msgImport)
-	require.NoError(t, err)
+	if err != nil {
+		return nil, err
+	}
 
 	msgImportRes, ok := resAny.(*migrationtypes.MsgImportMorseClaimableAccountsResponse)
 	require.True(t, ok)
 
-	return msgImportRes
+	return msgImportRes, nil
 }
 
 // ClaimMorseAccount claims the given MorseClaimableAccount by running a MsgClaimMorseAccount message.
@@ -132,6 +136,12 @@ func (s *MigrationModuleSuite) QueryAllMorseClaimableAccounts(t *testing.T) []mi
 	return morseClaimableAcctRes.MorseClaimableAccount
 }
 
+// HasAnyMorseClaimableAccounts returns true if there are any morse claimable accounts in the store.
+func (s *MigrationModuleSuite) HasAnyMorseClaimableAccounts(t *testing.T) bool {
+	morseClaimableAccounts := s.QueryAllMorseClaimableAccounts(t)
+	return len(morseClaimableAccounts) > 0
+}
+
 // GetSharedParams returns the shared module params.
 func (s *MigrationModuleSuite) GetSharedParams(t *testing.T) sharedtypes.Params {
 	sharedClient := sharedtypes.NewQueryClient(s.GetApp().QueryHelper())
@@ -139,6 +149,15 @@ func (s *MigrationModuleSuite) GetSharedParams(t *testing.T) sharedtypes.Params 
 	require.NoError(t, err)
 
 	return sharedParamsRes.Params
+}
+
+// GetMigrationParams returns the migration module params.
+func (s *MigrationModuleSuite) GetMigrationParams(t *testing.T) migrationtypes.Params {
+	migrationClient := migrationtypes.NewQueryClient(s.GetApp().QueryHelper())
+	migrationParamsRes, err := migrationClient.Params(s.SdkCtx(), &migrationtypes.QueryParamsRequest{})
+	require.NoError(t, err)
+
+	return migrationParamsRes.Params
 }
 
 // GetSessionEndHeight returns the session end height for the given query height.

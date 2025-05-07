@@ -32,17 +32,27 @@ func (k msgServer) ImportMorseClaimableAccounts(ctx context.Context, msg *migrat
 
 	// Check if MorseClaimableAccounts have already been imported.
 	if k.HasAnyMorseClaimableAccounts(sdkCtx) {
-		err := migrationtypes.ErrMorseAccountsImport.Wrap("Morse claimable accounts already imported")
-		logger.Info(err.Error())
-		return nil, status.Error(codes.FailedPrecondition, err.Error())
+		// Check if allow_morse_accounts_import_overwrite is enabled and return an error if not.
+		shouldOverwrite := k.GetParams(sdkCtx).AllowMorseAccountImportOverwrite
+		if !shouldOverwrite {
+			err := migrationtypes.ErrMorseAccountsImport.Wrap("Morse claimable accounts already imported and import overwrite is disabled")
+			logger.Info(err.Error())
+			return nil, status.Error(codes.FailedPrecondition, err.Error())
+		}
 	}
 
-	logger.Info("beginning importing morse claimable accounts...")
+	// Mitigate confusing log duplication.
+	if !sdkCtx.IsCheckTx() {
+		logger.Info("beginning importing morse claimable accounts...")
+	}
 
 	// Import MorseClaimableAccounts.
 	k.ImportFromMorseAccountState(sdkCtx, &msg.MorseAccountState)
 
-	logger.Info("done importing morse claimable accounts!")
+	// Mitigate confusing log duplication.
+	if !sdkCtx.IsCheckTx() {
+		logger.Info("done importing morse claimable accounts!")
+	}
 
 	// Emit the corresponding event.
 	if err := sdkCtx.EventManager().EmitTypedEvent(

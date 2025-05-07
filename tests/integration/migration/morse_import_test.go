@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 
 	"github.com/pokt-network/poktroll/app/volatile"
@@ -86,6 +87,15 @@ func (s *MigrationModuleTestSuite) ResetTestApp(
 	s.ServiceSuite.SetApp(s.GetApp())
 	s.AppSuite.SetApp(s.GetApp())
 	s.SupplierSuite.SetApp(s.GetApp())
+	s.ParamsSuite.SetApp(s.GetApp())
+
+	// TODO_IMPROVE: Find a better alternative to integration suite inheritance/embedding.
+	// DEV_NOTE: We MUST assign the ParamsSuite embedded BaseIntegration to the
+	// current one so that s.GetPocketModuleNames() (and therefore s.RunUpdateParams())
+	// can reference properly populate unexported fields of BaseIntegrationSuite.
+	//s.ParamsSuite.BaseIntegrationSuite = s.BaseIntegrationSuite
+	s.ParamsSuite.SetupTestAuthzAccounts(s.T())
+	s.ParamsSuite.SetupTestAuthzGrants(s.T())
 }
 
 func TestMigrationModuleSuite(t *testing.T) {
@@ -95,7 +105,9 @@ func TestMigrationModuleSuite(t *testing.T) {
 // TestImportMorseClaimableAccounts exercises importing and persistence of morse claimable accounts.
 func (s *MigrationModuleTestSuite) TestImportMorseClaimableAccounts() {
 	s.GenerateMorseAccountState(s.T(), s.numMorseClaimableAccounts, testmigration.RoundRobinAllMorseAccountActorTypes)
-	msgImportRes := s.ImportMorseClaimableAccounts(s.T())
+	msgImportRes, err := s.ImportMorseClaimableAccounts(s.T())
+	require.NoError(s.T(), err)
+
 	morseAccountState := s.GetAccountState(s.T())
 	morseAccountStateHash, err := morseAccountState.GetHash()
 	s.NoError(err)
@@ -159,4 +171,47 @@ func (s *MigrationModuleTestSuite) TestImportMorseClaimableAccounts_ErrorInvalid
 
 	expectedErr := migrationtypes.ErrMorseAccountsImport.Wrapf("invalid MorseAccountStateHash size")
 	s.ErrorContains(err, expectedErr.Error())
+}
+
+// TestImportMorseClaimableAccounts_Overwrite exercises the overwriting of morse claimable accounts.
+func (s *MigrationModuleTestSuite) TestImportMorseClaimableAccounts_Overwrite() {
+	// Assert that there are initially no morse claimable accounts.
+	require.False(s.T(), s.HasAnyMorseClaimableAccounts(s.T()))
+
+	// Generate and import an initial set of morse claimable accounts.
+	s.GenerateMorseAccountState(s.T(), s.numMorseClaimableAccounts, testmigration.RoundRobinAllMorseAccountActorTypes)
+	_, err := s.ImportMorseClaimableAccounts(s.T())
+	require.NoError(s.T(), err)
+	require.True(s.T(), s.HasAnyMorseClaimableAccounts(s.T()))
+
+	// Generate a new set of morse claimable accounts.
+	s.GenerateMorseAccountState(s.T(), 3, testmigration.AllUnstakedMorseAccountActorType)
+
+	// Ensure that allow_morse_account_import_overwrite is initially false.
+	params := s.GetMigrationParams(s.T())
+	require.False(s.T(), params.AllowMorseAccountImportOverwrite)
+
+	s.Run("does NOT overwrite when allow_morse_account_import_overwrite is false", func() {
+		_, err = s.ImportMorseClaimableAccounts(s.T())
+		expectedErr := migrationtypes.ErrMorseAccountsImport.Wrap("Morse claimable accounts already imported and import overwrite is disabled")
+		require.ErrorContains(s.T(), err, expectedErr.Error())
+	})
+
+	// Set allow_morse_account_import_overwrite to true.
+	params.AllowMorseAccountImportOverwrite = true
+	msgUpdateParams := &migrationtypes.MsgUpdateParams{
+		Authority: s.ParamsSuite.AuthorityAddr.String(),
+		Params:    params,
+	}
+	_, err = s.ParamsSuite.RunUpdateParams(s.T(), msgUpdateParams)
+	require.NoError(s.T(), err)
+
+	// Ensure that allow_morse_account_import_overwrite was updated to true.
+	params = s.GetMigrationParams(s.T())
+	require.True(s.T(), params.AllowMorseAccountImportOverwrite)
+
+	s.Run("overwrites when allow_morse_account_import_overwrite is true", func() {
+		_, err = s.ImportMorseClaimableAccounts(s.T())
+		require.NoError(s.T(), err)
+	})
 }
