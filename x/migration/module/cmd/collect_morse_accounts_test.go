@@ -25,9 +25,6 @@ import (
 func init() {
 	logger.Logger = polyzero.NewLogger(polyzero.WithLevel(polyzero.DebugLevel))
 	numAccountsPerDebugLog = 1
-
-	cmtjson.RegisterType(&migrationtypes.MorseAuthAccount_MorseAccount{}, migrationtypes.MorseExternallyOwnedAccountType)
-	cmtjson.RegisterType(&migrationtypes.MorseAuthAccount_MorseModuleAccount{}, migrationtypes.MorseModuleAccountType)
 }
 
 func TestCollectMorseAccounts(t *testing.T) {

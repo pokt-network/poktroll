@@ -177,13 +177,16 @@ func NewMorseStateExportAndAccountState(
 
 		// Add an account (regardless of whether it is staked or not).
 		// All MorseClaimableAccount fixtures get an unstaked balance.
+		morseAccountJSONBz, err := cmtjson.Marshal(GenMorseAccount(uint64(i)))
+		if err != nil {
+			return nil, nil, err
+		}
+
 		morseStateExport.AppState.Auth.Accounts = append(
 			morseStateExport.AppState.Auth.Accounts,
 			&migrationtypes.MorseAuthAccount{
-				Type: migrationtypes.MorseExternallyOwnedAccountType,
-				Value: &migrationtypes.MorseAuthAccount_MorseAccount{
-					MorseAccount: GenMorseAccount(uint64(i)),
-				},
+				Type:  migrationtypes.MorseExternallyOwnedAccountType,
+				Value: morseAccountJSONBz,
 			},
 		)
 
@@ -355,25 +358,30 @@ func GenerateInvalidAddressMorseStateExportAndAccountState(t *testing.T) (*migra
 		// There should be no module accounts.
 		require.NotEqual(t, migrationtypes.MorseModuleAccountType, morseAuthAccount.GetType())
 
-		morseAccount := morseAuthAccount.GetMorseAccount()
+		morseAccount, err := morseAuthAccount.AsMorseAccount()
+		require.NoError(t, err)
+
 		originalAddr := morseAccount.Address
 		switch i % 3 {
 		case 0:
 			// invalid hex
-			morseAuthAccount.SetAddress([]byte(fmt.Sprintf(invalidMorseAddrNonHexFmt, i)))
+			morseAccount.Address = []byte(fmt.Sprintf(invalidMorseAddrNonHexFmt, i))
 		case 1:
 			// too short
 			hexAddress, err := hex.DecodeString(fmt.Sprintf(invalidMorseAddrTooShortFmt, i))
 			require.NoError(t, err)
 
-			morseAuthAccount.SetAddress(hexAddress)
+			morseAccount.Address = hexAddress
 		case 2:
 			// too long
 			hexAddress, err := hex.DecodeString(fmt.Sprintf(invalidMorseAddrTooLongFmt, i))
 			require.NoError(t, err)
 
-			morseAuthAccount.SetAddress(hexAddress)
+			morseAccount.Address = hexAddress
 		}
+
+		err = morseAuthAccount.SetAddress(morseAccount.Address)
+		require.NoError(t, err)
 
 		// Search for apps or suppliers corresponding to originalAddr and replace the addresses
 		for _, app := range invalidAddrMorseStateExport.AppState.Application.Applications {
@@ -433,13 +441,19 @@ func GenerateModuleAddressMorseStateExportAndAccountState(t *testing.T, moduleAc
 		}
 
 		// Promote MorseAccounts to MorseModuleAccounts in MorseStateExport.
-		morseAuthAccount.Type = migrationtypes.MorseModuleAccountType
-		morseAuthAccount.Value = &migrationtypes.MorseAuthAccount_MorseModuleAccount{
-			MorseModuleAccount: &migrationtypes.MorseModuleAccount{
-				Name:         morseModuleAccountName,
-				MorseAccount: *morseAuthAccount.GetMorseAccount(),
-			},
+		morseAccount, err := morseAuthAccount.AsMorseAccount()
+		require.NoError(t, err)
+
+		morseModuleAccount := &migrationtypes.MorseModuleAccount{
+			Name:         morseModuleAccountName,
+			MorseAccount: *morseAccount,
 		}
+
+		morseModuleAccountJSONBz, err := cmtjson.Marshal(morseModuleAccount)
+		require.NoError(t, err)
+
+		morseAuthAccount.Type = migrationtypes.MorseModuleAccountType
+		morseAuthAccount.Value = morseModuleAccountJSONBz
 
 		// Update MorseAccountState to hold module account names for each MorseClaimableAccount's address.
 		moduleAddrMorseAccountState.Accounts[i].MorseSrcAddress = moduleAccountNames[i]

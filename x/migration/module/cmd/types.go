@@ -128,9 +128,19 @@ func (miw *morseImportWorkspace) addAccount(
 	var exportAccountAddressStr string
 	switch exportAuthAccount.GetType() {
 	case migrationtypes.MorseExternallyOwnedAccountType:
-		exportAccountAddressStr = exportAuthAccount.GetMorseAccount().Address.String()
+		exportMorseAccount, morseAcctErr := exportAuthAccount.AsMorseAccount()
+		if morseAcctErr != nil {
+			return 0, cosmostypes.Coin{}, morseAcctErr
+		}
+
+		exportAccountAddressStr = exportMorseAccount.Address.String()
 	case migrationtypes.MorseModuleAccountType:
-		exportAccountAddressStr = exportAuthAccount.GetMorseModuleAccount().Name
+		exportModuleAccount, moduleAcctErr := exportAuthAccount.AsMorseModuleAccount()
+		if moduleAcctErr != nil {
+			return 0, cosmostypes.Coin{}, moduleAcctErr
+		}
+	
+		exportAccountAddressStr = exportModuleAccount.Name
 	}
 
 	accountIdx = miw.nextIdx()
