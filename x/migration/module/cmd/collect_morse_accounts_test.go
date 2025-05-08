@@ -8,6 +8,8 @@ import (
 	"testing"
 
 	cmtjson "github.com/cometbft/cometbft/libs/json"
+	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
+	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 	"github.com/stretchr/testify/require"
 
 	"github.com/pokt-network/poktroll/cmd/logger"
@@ -32,8 +34,11 @@ func TestCollectMorseAccounts(t *testing.T) {
 	require.NoError(t, err)
 
 	// Generate and write the MorseStateExport input JSON file.
-	morseStateExportBz, morseAccountStateBz, err := testmigration.NewMorseStateExportAndAccountStateBytes(
+	morseStateExport, morseAccountState, err := testmigration.NewMorseStateExportAndAccountState(
 		10, testmigration.RoundRobinAllMorseAccountActorTypes)
+	require.NoError(t, err)
+
+	morseStateExportBz, err := cmtjson.MarshalIndent(morseStateExport, "", "  ")
 	require.NoError(t, err)
 
 	_, err = inputFile.Write(morseStateExportBz)
@@ -50,18 +55,20 @@ func TestCollectMorseAccounts(t *testing.T) {
 	require.NoError(t, err)
 
 	var (
-		expectedMorseAccountState,
-		actualMorseAccountState *migrationtypes.MorseAccountState
+		actualMsgImportMorseClaimableAccounts *migrationtypes.MsgImportMorseClaimableAccounts
 	)
 
-	err = cmtjson.Unmarshal(morseAccountStateBz, &expectedMorseAccountState)
+	expectedMsgImportMorseClaimableAccounts, err := migrationtypes.NewMsgImportMorseClaimableAccounts(
+		authtypes.NewModuleAddress(govtypes.ModuleName).String(),
+		*morseAccountState,
+	)
 	require.NoError(t, err)
 
-	err = cmtjson.Unmarshal(outputJSON, &actualMorseAccountState)
+	err = cmtjson.Unmarshal(outputJSON, &actualMsgImportMorseClaimableAccounts)
 	require.NoError(t, err)
 
 	require.NoError(t, err)
-	require.Equal(t, expectedMorseAccountState, actualMorseAccountState)
+	require.Equal(t, expectedMsgImportMorseClaimableAccounts, actualMsgImportMorseClaimableAccounts)
 }
 
 // TestNewTestMorseStateExport exercises the NewTestMorseStateExport testutil function.

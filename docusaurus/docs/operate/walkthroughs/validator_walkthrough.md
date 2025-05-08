@@ -76,10 +76,11 @@ the process of interacting with the Shannon network:
 We recommend you put these in your `~/.bashrc` file:
 
 ```bash
-export NODE="https://shannon-testnet-grove-rpc.beta.poktroll.com"
-export NODE_FLAGS="--node=https://shannon-testnet-grove-rpc.beta.poktroll.com"
-export TX_PARAM_FLAGS="--gas=auto --gas-prices=1upokt --gas-adjustment=1.5 --chain-id=pocket-beta --yes"
-export VALIDATOR_ADDR=$(pocketd keys show validator -a)
+export BETA_NODE="https://shannon-testnet-grove-rpc.beta.poktroll.com"
+export BETA_NODE_FLAGS="--node=https://shannon-testnet-grove-rpc.beta.poktroll.com"
+export TX_PARAM_FLAGS="--fees 200000upokt --chain-id=<CHAIN_ID>" # pocket_beta, pocket
+export ADDR=$(pocketd keys show validator -a)
+export VALIDATOR_ADDR=$(pocketd keys show validator -a --bech val)
 ```
 
 :::tip
@@ -104,12 +105,18 @@ Run the following command to get the `Validator`:
 echo "Validator address: $VALIDATOR_ADDR"
 ```
 
-Then use the [Shannon Beta TestNet faucet](https://faucet.beta.testnet.pokt.network/) to fund the validator account.
+If you are using Beta Testnet, use the [Shannon Beta TestNet faucet](https://faucet.beta.testnet.pokt.network/) to fund the validator account.
+
+If you are on **Mainnet** you'll need to transfer funds to the account:
+
+```bash
+pocketd tx bank send <SOURCE ADDRESS> $ADDR <AMOUNT_TO_STAKE>upokt $TX_PARAM_FLAGS
+```
 
 Afterwards, you can query the balance using the following command:
 
 ```bash
-pocketd query bank balances $VALIDATOR_ADDR $NODE_FLAGS
+pocketd query bank balances $ADDR $NODE_FLAGS
 ```
 
 :::tip
@@ -118,7 +125,7 @@ If you know someone at [Grove](https://grove.city) who maintains Beta TestNet, y
 can ask them to run this command:
 
 ```bash
-pkd_beta_tx tx bank send faucet_beta $VALIDATOR_ADDR 6900000000042upokt
+pkd_beta_tx tx bank send faucet_beta $ADDR 6900000000042upokt
 ```
 
 :::
@@ -174,7 +181,7 @@ EOF
 Run the following command to create the validator:
 
 ```bash
-pocketd tx staking create-validator ./validator.json --from=validator $TX_PARAM_FLAGS $NODE_FLAGS
+pocketd tx staking create-validator ./validator.json --from=validator $TX_PARAM_FLAGS
 ```
 
 This command uses the `validator.json` file to submit the `create-validator` transaction.
@@ -182,17 +189,15 @@ This command uses the `validator.json` file to submit the `create-validator` tra
 Example with all parameters specified:
 
 ```bash
-pocketd tx staking create-validator ~/validator.json --from=validator --chain-id=pocket-beta --gas=auto --gas-adjustment=1.5 --gas-prices=1upokt
+pocketd tx staking create-validator ~/validator.json --from=validator --chain-id=<CHAIN_ID> --fees 200000upokt
 ```
 
 Some of the parameters you can configure include:
 
 - `~/validator.json`: The path to your validator JSON file.
 - `--from=validator`: Specifies the local key to sign the transaction.
-- `--chain-id=<your-chain-id>`: Replace `<your-chain-id>` with the chain ID of the network you are joining (e.g., `pocket-beta` for testnet).
-- `--gas=auto`: Automatically estimate gas required for the transaction.
-- `--gas-adjustment=1.5`: Adjust the estimated gas by a factor (can help prevent out-of-gas errors).
-- `--gas-prices=1upokt`: Set the gas price; adjust as needed based on network conditions.
+- `--chain-id=<your-chain-id>`: Replace `<your-chain-id>` with the chain ID of the network you are joining (e.g., `pocket-beta` for testnet, `pocket` for mainnet).
+- `--fees 20000upokt`: Transaction fees currently configured on both beta and mainnet.
 
 After running the command, you should see a transaction confirmation with an output hash.
 
@@ -206,4 +211,4 @@ pocketd query staking validator $VALIDATOR_ADDR
 
 This command displays information about your Validator, including status, tokens staked, commission rates, and more.
 
-Ensure that the `status` field indicates that your Validator is active.
+Ensure that the `status` field indicates that your Validator is active: `status: BOND_STATUS_BONDED`.

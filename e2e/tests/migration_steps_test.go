@@ -30,9 +30,9 @@ const (
 	// to determine whether it was unsuccessful, despite returning a zero exit code.
 	cmdUsagePattern = `--help" for more`
 
-	defaultMorseStateExportJSONFilename    = "morse_state_export.json"
-	defaultMorseAccountStateJSONFilename   = "morse_account_state.json"
-	defaultSupplierStakeConfigYAMLFileName = "supplier_stake_config.yaml"
+	defaultMorseStateExportJSONFilename                = "morse_state_export.json"
+	defaultMsgImportMorseClaimableAccountsJSONFilename = "msg_import_morse_accounts.json"
+	defaultSupplierStakeConfigYAMLFileName             = "supplier_stake_config.yaml"
 )
 
 var (
@@ -611,16 +611,16 @@ func (s *migrationSuite) AMorseaccountstateWithAccountsInADistributionHasSuccess
 		"poktrolld", "tx",
 		"migration", "collect-morse-accounts",
 		defaultMorseStateExportJSONFilename,
-		defaultMorseAccountStateJSONFilename,
+		defaultMsgImportMorseClaimableAccountsJSONFilename,
 	}, " ")
 	s.TheAuthorityExecutes(collectMorseAccountsCmdString)
 	s.ThePocketdBinaryShouldExitWithoutError()
-	s.AMorseaccountstateIsWrittenTo(defaultMorseAccountStateJSONFilename)
+	s.AMorseaccountstateIsWrittenTo(defaultMsgImportMorseClaimableAccountsJSONFilename)
 
 	importMorseAccountsCmdString := strings.Join([]string{
 		"poktrolld", "tx",
 		"migration", "import-morse-accounts",
-		defaultMorseAccountStateJSONFilename,
+		defaultMsgImportMorseClaimableAccountsJSONFilename,
 	}, " ")
 	s.TheAuthorityExecutes(importMorseAccountsCmdString)
 	s.ThePocketdBinaryShouldExitWithoutError()

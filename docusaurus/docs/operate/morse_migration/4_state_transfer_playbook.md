@@ -9,8 +9,8 @@ This page is intended for the Foundation (Authority) or whoever is managing the 
 
 - [1. Retrieve a Pruned Morse Snapshot](#1-retrieve-a-pruned-morse-snapshot)
 - [2. Export Morse Snapshot State](#2-export-morse-snapshot-state)
-- [3. Transform Morse Export to a Canonical Account State](#3-transform-morse-export-to-a-canonical-account-state)
-- [4. Distribute Canonical Account State](#4-distribute-canonical-account-state)
+- [3. Transform Morse Export to a Canonical Account State Import Message](#3-transform-morse-export-to-a-canonical-account-state-import-message)
+- [4. Distribute Canonical Account State Import Message](#4-distribute-canonical-account-state-import-message)
 - [5. Align on Account State via Social Consensus](#5-align-on-account-state-via-social-consensus)
 - [6. Import Canonical State into Shannon](#6-import-canonical-state-into-shannon)
 - [7. Query Canonical State in Shannon](#7-query-canonical-state-in-shannon)
@@ -36,32 +36,38 @@ mkdir -p $HOME/morse-snapshot
 # 1. Untar the snapshot file
 tar -xvf <snapshot-file>.tar -C $HOME/morse-snapshot
 # 2. Change directory to the extracted snapshot folder
-$HOME/morse-snapshot
-# 3. Create the data directory
-mkdir data
-# 4. Move all *.db files to the data directory
-mv *.db data
+cd $HOME/morse-snapshot
 ```
 
-**⚠️ Note the height and date of the snapshot⚠️**
+:::warning Note the height and date of the snapshot
+
+The height and date are encoded in the snapshot file name.
+
+For example, the snapshot file name `pruned-166819-166919-2025-04-29.tar` has a max height of `166918` and a date of `2025-04-29`; the end-height is exclusive.
+
+:::
 
 ## 2. Export Morse Snapshot State
 
 Choose the snapshot height, which must be less than or equal to the snapshot height retrieved above. **This will be the published canonical export height.**
 
 ```bash
-pocket util export-genesis-for-reset <HEIGHT> pocket --datadir $HOME/morse-snapshot > morse_state_export.json
+export SNAPSHOT_HEIGHT="<HEIGHT>" # E.g. "166918"
+export SNAPSHOT_DATE="<DATE>" # E.g. "2025-04-29"
+export MORSE_STATE_EXPORT_PATH="./morse_state_export_${SNAPSHOT_HEIGHT}_${SNAPSHOT_DATE}.json"
+pocket --datadir="$HOME/morse-snapshot" util export-genesis-for-reset "$SNAPSHOT_HEIGHT" pocket > "$MORSE_STATE_EXPORT_PATH"
 ```
 
-## 3. Transform Morse Export to a Canonical Account State
+## 3. Transform Morse Export to a Canonical Account State Import Message
 
 ```bash
-pocketd tx migration collect-morse-accounts morse_state_export.json morse_account_state.json
+export MSG_IMPORT_MORSE_ACCOUNTS_PATH="./msg_import_morse_accounts_${SNAPSHOT_HEIGHT}_${SNAPSHOT_DATE}.json"
+pocketd tx migration collect-morse-accounts "$MORSE_STATE_EXPORT_PATH" "$MSG_IMPORT_MORSE_ACCOUNTS_PATH"
 ```
 
-## 4. Distribute Canonical Account State
+## 4. Distribute Canonical Account State Import Message
 
-Distribute the `morse_account_state.json` and its hash for public verification by Morse account/stake-holders.
+Distribute the `msg_import_morse_accounts_${SNAPSHOT_HEIGHT}_${SNAPSHOT_DATE}.json` and its hash for public verification by Morse account/stake-holders.
 
 ## 5. Align on Account State via Social Consensus
 
@@ -79,13 +85,13 @@ This can **ONLY BE DONE ONCE** per network.
 The following `import-morse-accounts` command can be used to import the canonical account state into Shannon:
 
 ```bash
-pocketd tx migration \
-  import-morse-accounts morse_account_state.json \
+pocketd tx migration import-morse-accounts \
+  "$MSG_IMPORT_MORSE_ACCOUNTS_PATH" \
   --from <authorized-key-name> \
   --grpc-addr=<shannon-network-grpc-endpoint> \
   --home <shannon-home-directory> \
   --chain-id=<shannon-chain-id> \
-  --gas=auto --gas-prices=1upokt --gas-adjustment=1.5
+  --gas=auto --gas-adjustment=1.5
 ```
 
 <details>
@@ -93,16 +99,16 @@ pocketd tx migration \
 
 ```bash
 # LocalNet
-pocketd tx migration import-morse-accounts morse_account_state.json --from pnf --grpc-addr=localhost:9090 --home=./localnet/pocketd --chain-id=pocket --gas=auto --gas-prices=1upokt --gas-adjustment=1.5
+pocketd tx migration import-morse-accounts "$MSG_IMPORT_MORSE_ACCOUNTS_PATH" --from pnf --grpc-addr=localhost:9090 --home=./localnet/pocketd --chain-id=pocket --gas=auto --gas-prices=1upokt --gas-adjustment=1.5
 
 # Alpha TestNet
-pocketd tx migration import-morse-accounts morse_account_state.json --from pokt1r6ja6rz6rpae58njfrsgs5n5sp3r36r2q9j04h --home=~/.pocket_prod --chain-id=pocket-alpha --gas=auto --gas-prices=1upokt --gas-adjustment=1.5 --node=http://shannon-grove-rpc.alpha.poktroll.com --grpc-addr=https://shannon-grove-grpc.alpha.poktroll.com
+pocketd tx migration import-morse-accounts "$MSG_IMPORT_MORSE_ACCOUNTS_PATH" --from pokt1r6ja6rz6rpae58njfrsgs5n5sp3r36r2q9j04h --home=~/.pocket_prod --chain-id=pocket-alpha --gas=auto --gas-prices=1upokt --gas-adjustment=1.5 --node=http://shannon-grove-rpc.alpha.poktroll.com --grpc-addr=https://shannon-grove-grpc.alpha.poktroll.com
 
 # Beta TestNet
-  pocketd tx migration import-morse-accounts morse_account_state.json --from pokt1f0c9y7mahf2ya8tymy8g4rr75ezh3pkklu4c3e --home=~/.pocket_prod --chain-id=pocket-beta --gas=auto --gas-prices=1upokt --gas-adjustment=1.5 --node=http://shannon-grove-rpc.beta.poktroll.com --grpc-addr=https://shannon-grove-grpc.beta.poktroll.com
+pocketd tx migration import-morse-accounts "$MSG_IMPORT_MORSE_ACCOUNTS_PATH" --from pokt1f0c9y7mahf2ya8tymy8g4rr75ezh3pkklu4c3e --home=~/.pocket_prod --chain-id=pocket-beta --gas=auto --gas-prices=1upokt --gas-adjustment=1.5 --node=http://shannon-grove-rpc.beta.poktroll.com --grpc-addr=https://shannon-grove-grpc.beta.poktroll.com
 
 # MainNet
-pocketd tx migration import-morse-accounts morse_account_state.json --from pokt18808wvw0h4t450t06uvauny8lvscsxjfyua7vh --home=~/.pocket_prod --chain-id=pocket-mainnet --gas=auto --gas-prices=1upokt --gas-adjustment=1.5 --node=http://shannon-grove-rpc.mainnet.poktroll.com --grpc-addr=https://shannon-grove-grpc.mainnet.poktroll.com
+pocketd tx migration import-morse-accounts "$MSG_IMPORT_MORSE_ACCOUNTS_PATH" --from pokt18808wvw0h4t450t06uvauny8lvscsxjfyua7vh --home=~/.pocket_prod --chain-id=pocket-mainnet --gas=auto --gas-prices=1upokt --gas-adjustment=1.5 --node=http://shannon-grove-rpc.mainnet.poktroll.com --grpc-addr=https://shannon-grove-grpc.mainnet.poktroll.com
 ```
 
 </details>
@@ -142,12 +148,6 @@ pocketd query migration list-morse-claimable-account --node https://shannon-grov
 
 ## State Validation: Morse Account Holders
 
-:::warning TODO(@bryanchriswhite): Incomplete
-
-Show how to generate `msg_import_morse_claimable_accounts.json`.
-
-:::
-
 :::info Fun Analogy 👯
 
 - It's like making sure you and your friends (your accounts) are on "the list" before it gets printed out and handed to the crypto-club bouncer.
@@ -157,7 +157,7 @@ Show how to generate `msg_import_morse_claimable_accounts.json`.
 
 ### Why Validate?
 
-**The output in `morse_account_state.json` MUST be validated before step 6.**
+**The output in `msg_morse_import_accounts_${SNAPSHOT_HEIGHT}_${DATE}.json` MUST be validated before step 6.**
 
 The [State Transfer Overview](3_state_transfer_overview.md) process determines the _official_ set of claimable Morse accounts (balances/stakes) on Shannon.
 
@@ -165,12 +165,12 @@ It's **critical** for Morse account/stake-holders to confirm their account(s) ar
 
 ### How to Validate
 
-Firstly, **Retrieve** the latest proposed `msg_import_morse_claimable_accounts.json` (contains both the state and its hash).
+Firstly, **Retrieve** the latest proposed `msg_morse_import_accounts_${SNAPSHOT_HEIGHT}_${DATE}.json` (contains both the state and its hash).
 
 Then, **Validate** using the Shannon CLI like so:
 
 ```bash
-pocketd tx migration validate-morse-accounts ./msg_import_morse_claimable_accounts.json [morse_hex_address1, ...]
+pocketd tx migration validate-morse-accounts ./msg_import_morse_accounts_<SNAPSHOT_HEIGHT>_<SNAPSHOT_DATE>.json [morse_hex_address1, ...]
 ```
 
 - You can pass multiple Morse addresses to the command
