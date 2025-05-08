@@ -20,14 +20,10 @@ import (
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 )
 
-// TODO_IMPROVE(@olshansk): Add the following configurations & flags to make testing easier and more extensible:
-// - --dry-run
-// - --specific-endpoint
-// - --don't validate
-// - What if I'm not staked?
-// - What if supplier is not staked?
-// - Both unstaked, one of unstaked
-// - One validates, no one validates
+// TODO_IMPROVE(@olshansk): Add more configurations & flags to make testing easier and more extensible:
+// --dry-run avoid sending the relay
+// --dont-validate to avoid requiring a valid signature
+// --bypass-session to avoid requiring a valid session and going straight to the supplier
 
 var (
 	// Custom flags for 'pocketd relayminer relay' subcommand
@@ -50,11 +46,11 @@ var (
 // - See TODO_IMPROVE for planned enhancements
 func relayCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "relay",
+		Use:   "relay --app <app> --supplier <supplier> --service-id <service-id> --payload <payload> [--supplier-public-endpoint-override <url>]",
 		Short: "Send a relay as an application to a particular supplier",
 		Long: `Send a test relay to a Supplier's RelayMiner from a staked Application.
 
-RelayMiner relays simulate real-world requests and responses between a staked Application and a Supplier. Useful for local testing, debugging, and verifying that your Supplier is correctly set up.
+RelayMiner relays simulate real-world requests and responses between a staked Application and a Supplier.
 
 Key actions performed:
 - Sends a JSON-RPC relay from a staked Application to a Supplier
@@ -62,21 +58,21 @@ Key actions performed:
 - Validates the Supplier's response and signature
 - Prints the backend response and relay status
 
-Example usage:
+Callouts:
+- Make sure both the Application and Supplier are staked before running relays.
+- Use the '--supplier-public-endpoint-override' flag to test against a local endpoint.
 
+For more info, run 'relay --help'.`,
+		Example: `
   ./pocketd relayminer relay \
     --app=pokt1mrqt5f7qh8uxs27cjm9t7v9e74a9vvdnq5jva4 \
     --supplier=pokt19a3t4yunp0dlpfjrp7qwnzwlrzd5fzs2gjaaaj \
     --service-id=anvil \
-    --node=tcp://127.0.0.1:26657
-
-Callouts:
-- Make sure both the Application and Supplier are staked before running relays.
-- Use the '--supplier-public-endpoint-override' flag to test against a local endpoint.
-- See TODO_IMPROVE in code for planned enhancements (dry-run, custom endpoint, etc).
-
-For more info, run 'relay --help'.
-`,
+    --node=tcp://127.0.0.1:26657 \
+    --grpc-addr=localhost:9090 \
+    --grpc-insecure=true \
+    --payload="{\"jsonrpc\": \"2.0\", \"id\": 1, \"method\": \"eth_blockNumber\", \"params\": []}" \
+    --supplier-public-endpoint-override=http://localhost:8085`,
 		RunE: runRelay,
 	}
 
@@ -86,11 +82,16 @@ For more info, run 'relay --help'.
 	cmd.Flags().BoolVar(&flagNodeGRPCInsecureRelay, cosmosflags.FlagGRPCInsecure, true, "Used to initialize the Cosmos query context with grpc security options (defaults to true for LocalNet)")
 
 	// Custom Flags
-	cmd.Flags().StringVar(&flagRelayApp, "app", "pokt1mrqt5f7qh8uxs27cjm9t7v9e74a9vvdnq5jva4", "Staked application address (defaults to app1 in LocalNet)")
-	cmd.Flags().StringVar(&flagRelaySupplier, "supplier", "pokt19a3t4yunp0dlpfjrp7qwnzwlrzd5fzs2gjaaaj", "Staked Supplier address (defaults to supplier1 in LocalNet)")
-	cmd.Flags().StringVar(&flagServiceID, "service-id", "anvil", "Service ID (defaults to anvil in LocalNet)")
-	cmd.Flags().StringVar(&flagRelayPayload, "payload", "{\"jsonrpc\": \"2.0\", \"id\": 1, \"method\": \"eth_blockNumber\", \"params\": []}", "Payload (defaults to anvil eth_blockNumber JSON-RPC payload for LocalNet testing)")
+	cmd.Flags().StringVar(&flagRelayApp, "app", "", "(Required) Staked application address")
+	cmd.Flags().StringVar(&flagRelaySupplier, "supplier", "", "(Required) Staked Supplier address")
+	cmd.Flags().StringVar(&flagServiceID, "service-id", "", "(Required) Service ID")
+	cmd.Flags().StringVar(&flagRelayPayload, "payload", "", "(Required) JSON-RPC payload")
 	cmd.Flags().StringVar(&flagSupplierPublicEndpointOverride, "supplier-public-endpoint-override", "http://localhost:8085", "(Optional) Override the publically exposed endpoint of the Supplier (useful for LocalNet testing)")
+
+	_ = cmd.MarkFlagRequired("app")
+	_ = cmd.MarkFlagRequired("supplier")
+	_ = cmd.MarkFlagRequired("service-id")
+	_ = cmd.MarkFlagRequired("payload")
 
 	return cmd
 }

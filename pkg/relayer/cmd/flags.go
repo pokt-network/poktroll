@@ -11,6 +11,8 @@ var (
 	flagNodeRPCURL string
 	// flagNodeGRPCURL is the Cosmos node GRPC URL flag value.
 	flagNodeGRPCURL string
+	// flagNodeGRPCInsecure is the Cosmos node GRPC insecure flag value.
+	flagNodeGRPCInsecure bool
 	// flagLogLevel is the log level variable (used by cosmos and polylog).
 	flagLogLevel string
 	// flagQueryCaching is the query caching flag value.

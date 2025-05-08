@@ -46,13 +46,13 @@ Responsibilities:
 	}
 
 	// Custom flags
-	cmd.Flags().StringVar(&flagRelayMinerConfig, "config", "", "The path to the relayminer config file")
+	cmd.Flags().StringVar(&flagRelayMinerConfig, "config", "", "(Required) The path to the relayminer config file")
+	cmd.Flags().BoolVar(&flagQueryCaching, config.FlagQueryCaching, true, "(Optional) Enable or disable onchain query caching")
+
+	// Cosmos flags
 	cmd.Flags().StringVar(&flagNodeRPCURL, cosmosflags.FlagNode, flags.OmittedDefaultFlagValue, "Register the default Cosmos node flag, which is needed to initialize the Cosmos query and tx contexts correctly. It can be used to override the `QueryNodeRPCURL` and `TxNodeRPCURL` fields in the config file if specified.")
 	cmd.Flags().StringVar(&flagNodeGRPCURL, cosmosflags.FlagGRPC, flags.OmittedDefaultFlagValue, "Register the default Cosmos node grpc flag, which is needed to initialize the Cosmos query context with grpc correctly. It can be used to override the `QueryNodeGRPCURL` field in the config file if specified.")
 	cmd.Flags().StringVar(&flagLogLevel, cosmosflags.FlagLogLevel, "debug", "The logging level (debug|info|warn|error)")
-	cmd.Flags().BoolVar(&flagQueryCaching, config.FlagQueryCaching, true, "Enable or disable onchain query caching")
-
-	// Cosmos flags
 	cmd.Flags().String(cosmosflags.FlagKeyringBackend, "", "Select keyring's backend (os|file|kwallet|pass|test)")
 	cmd.Flags().Bool(cosmosflags.FlagGRPCInsecure, true, "Used to initialize the Cosmos query context with grpc security options. It can be used to override the `QueryNodeGRPCInsecure` field in the config file if specified.")
 	cmd.Flags().String(cosmosflags.FlagChainID, "pocket", "The network chain ID")
@@ -60,6 +60,14 @@ Responsibilities:
 	cmd.Flags().String(cosmosflags.FlagGasPrices, "1upokt", "Set the gas unit price in upokt")
 
 	return cmd
+}
+
+// TODO_TECHDEBT(@olshansk): Move flags into the startCmd function above.
+// This is necessary for backwards compatibility with old config files so "start"
+// is the default if not subcommand is specified.
+func startCmdFlags(cmd *cobra.Command) {
+	cmd.PersistentFlags().StringVar(&flagRelayMinerConfig, "config", "", "(Required) The path to the relayminer config file")
+	cmd.PersistentFlags().BoolVar(&flagQueryCaching, config.FlagQueryCaching, true, "(Optional) Enable or disable onchain query caching")
 }
 
 // runRelayer starts the relay miner with the provided configuration and context.
@@ -77,12 +85,14 @@ func runRelayer(cmd *cobra.Command, _ []string) error {
 
 	configContent, err := os.ReadFile(flagRelayMinerConfig)
 	if err != nil {
+		fmt.Printf("Could not read config file from: %s\n", flagRelayMinerConfig)
 		return err
 	}
 
 	// TODO_IMPROVE: Add logger level/output options to config.
 	relayMinerConfig, err := relayerconfig.ParseRelayMinerConfigs(configContent)
 	if err != nil {
+		fmt.Printf("Could not parse config file from: %s\n", flagRelayMinerConfig)
 		return err
 	}
 
@@ -106,12 +116,14 @@ func runRelayer(cmd *cobra.Command, _ []string) error {
 	// Sets up dependencies
 	deps, err := setupRelayerDependencies(ctx, cmd, relayMinerConfig)
 	if err != nil {
+		fmt.Printf("Could not setup dependencies: %v\n", err)
 		return err
 	}
 
 	// Initialize the relay miner.
 	relayMiner, err := relayer.NewRelayMiner(ctx, deps)
 	if err != nil {
+		fmt.Printf("Could not initialize relay miner: %v\n", err)
 		return err
 	}
 
@@ -119,7 +131,8 @@ func runRelayer(cmd *cobra.Command, _ []string) error {
 	if relayMinerConfig.Metrics.Enabled {
 		err = relayMiner.ServeMetrics(relayMinerConfig.Metrics.Addr)
 		if err != nil {
-			return fmt.Errorf("failed to start metrics endpoint: %w", err)
+			fmt.Printf("Could not start metrics endpoint: %v\n", err)
+			return err
 		}
 	}
 
@@ -127,14 +140,16 @@ func runRelayer(cmd *cobra.Command, _ []string) error {
 	if relayMinerConfig.Pprof.Enabled {
 		err = relayMiner.ServePprof(ctx, relayMinerConfig.Pprof.Addr)
 		if err != nil {
-			return fmt.Errorf("failed to start pprof endpoint: %w", err)
+			fmt.Printf("Could not start pprof endpoint: %v\n", err)
+			return err
 		}
 	}
 
 	// Serve ping if enabled.
 	if relayMinerConfig.Ping.Enabled {
 		if err = relayMiner.ServePing(ctx, "tcp", relayMinerConfig.Ping.Addr); err != nil {
-			return fmt.Errorf("failed to start ping endpoint: %w", err)
+			fmt.Printf("Could not start ping endpoint: %v\n", err)
+			return err
 		}
 	}
 
@@ -142,10 +157,11 @@ func runRelayer(cmd *cobra.Command, _ []string) error {
 	logger.Info().Msg("Starting relay miner...")
 	err = relayMiner.Start(ctx)
 	if err != nil && !errors.Is(err, http.ErrServerClosed) {
-		return fmt.Errorf("failed to start relay miner: %w", err)
+		fmt.Printf("Could not start relay miner: %v\n", err)
+		return err
 	}
 	if errors.Is(err, http.ErrServerClosed) {
-		logger.Error().Err(err).Msg("Relay miner stopped; exiting")
+		fmt.Printf("Relay miner stopped; exiting\n")
 		return err
 	}
 	return nil
