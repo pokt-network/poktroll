@@ -1,5 +1,5 @@
 ---
-title: pocketd Installation
+title: pocketd CLI Installation
 sidebar_position: 1
 ---
 
@@ -15,7 +15,7 @@ curl -sSL https://raw.githubusercontent.com/pokt-network/poktroll/main/scripts/i
 ## Table of Contents <!-- omit in toc -->
 
 - [1. Install Script (Linux \& MacOS)](#1-install-script-linux--macos)
-- [2. Homebrew (MacOS)](#2-homebrew-macos)
+- [2. Homebrew (MacOS only)](#2-homebrew-macos-only)
   - [Troubleshooting Homebrew](#troubleshooting-homebrew)
 - [3. Alternative Methods](#3-alternative-methods)
   - [Using release binaries](#using-release-binaries)
@@ -43,7 +43,7 @@ pocketd --help
 
 ---
 
-## 2. Homebrew (MacOS)
+## 2. Homebrew (MacOS only)
 
 For MacOS users who prefer [Homebrew](https://brew.sh/).
 
@@ -71,7 +71,7 @@ brew tap pokt-network/poktroll
 brew install pocketd
 ```
 
-The source code for the Homebrew formula can be found at [homebrew-pocket](https://github.com/pokt-network/homebrew-pocket).
+The source code for the Homebrew formula can be found at [homebrew-pocketd](https://github.com/pokt-network/homebrew-pocketd).
 
 ---
 
@@ -103,8 +103,8 @@ pocketd version
 
 Additional references and links:
 
-- Pre-built binaries: [releases page](https://github.com/pokt-network/poktroll/releases)
-- Latest release: [here](https://github.com/pokt-network/poktroll/releases/latest)
+- Pre-built binaries can be found on the [releases page](https://github.com/pokt-network/poktroll/releases)
+- Latest release can be found [here](https://github.com/pokt-network/poktroll/releases/latest)
 
 ---
 

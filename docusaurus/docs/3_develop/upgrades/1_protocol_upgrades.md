@@ -13,7 +13,7 @@ Pocket Network is continuously evolving through regular protocol upgrades.
 
 The DAO leads offchain governance and comes to agreement on upgrades through social consensus.
 
-Validators support onchain `consensus-breaking` changes that were agreed on by the DAO offchain and triggered by PNF onchain. These upgrades can be automatically applied when using [Cosmovisor](../walkthroughs/full_node_walkthrough.md), or manually if not using `cosmovisor`.
+Validators support onchain `consensus-breaking` changes that were agreed on by the DAO offchain and triggered by PNF onchain. These upgrades can be automatically applied when using [Cosmovisor](../../1_operate/walkthroughs/full_node_walkthrough.md), or manually if not using `cosmovisor`.
 
 ## Table of Contents <!-- omit in toc -->
 
@@ -67,7 +67,7 @@ This process involves several key steps:
 2. **Implementation**: The proposed changes are implemented in the codebase.
 3. **Testing**: Thorough testing of the proposed changes is conducted in devnet and testnet environments before mainnet deployment.
 4. **Announcement**: Upon successful testing, we announce the upgrade through our social media channels and community forums.
-5. **Deployment**: An upgrade transaction is sent to the network, allowing node operators using [Cosmovisor](../walkthroughs/full_node_walkthrough.md) to automatically upgrade their nodes at the specified block height.
+5. **Deployment**: An upgrade transaction is sent to the network, allowing node operators using [Cosmovisor](../../1_operate/walkthroughs/full_node_walkthrough.md) to automatically upgrade their nodes at the specified block height.
 6. **Monitoring**: Post-deployment, we closely monitor the network to ensure everything functions as expected.
 
 ## Types of Upgrades
