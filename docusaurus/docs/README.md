@@ -30,27 +30,49 @@ slug: /
   <a href="https://github.com/tools/godep" ><img src="https://img.shields.io/badge/godep-dependency-71a3d9.svg"/></a>
 </div>
 
-## TL;DR - The Universal API Layer
+## The Crypto-Native API Layer
 
-Pocket Network is a permissionless network of API providers for open-source services and data sources.
+Welcome to Web3's missing Crypto-Native API layer.
 
-PATH by Grove is a framework for building Gateways with Smart QoS on top of Pocket.
+Building upon the learnings of a _Decentralized RPC_ network that launched on MainNet in 2020,
+this upgrade to Pocket Network is a major evolution of the protocol.
 
-The Shannon upgrade is a major evolution of the Pocket Network protocol.
+### What does all of this enable?
 
----
+Leveraging the nature of distributed ledger, we enable anyone (developers, enterprises, agents) to be able
+to access any public canonical data source (e.g. geospatial data, blockchains) or any open-source-service (e.g. LLMS, data feeds, etc.).
 
-## Welcome to the Pocket Network Shannon Technical Docs
+This is achieved by:
 
-This documentation is your entry point to the Shannon upgrade for Pocket Network. Here you'll find everything you need to run nodes, build applications, or contribute to the protocol.
+1. **Creating** a permissionless **registry** of public API for any open-source-service or data-source
+2. **Incentivizing** anyone to become an **operator** supporting the APIs above
+3. **Using** a cryptographically verifiable **API counter** (i.e. Rate limiter) to reward and penalize actors appropriately
+4. **Providing** a Gateway Framework (PATH) that ensures enterprise-grade **Quality-of-Service (QoS)** layer on top of a set of permissionless operators and penalizes bad actors
 
-**poktroll** is the source code and core implementation for the Shannon upgrade. The main binary, `pocketd`, is built using the [Cosmos SDK](https://docs.cosmos.network), [CometBFT](https://cometbft.com/), and [Ignite CLI](https://ignite.com/cli).
+![PATH USP](../static/img/pokt-path-usp.png)
 
-### Where do I get started?
+### What is it built on top of?
+
+Pocket network is built on top of [Cosmos SDK](https://docs.cosmos.network), [CometBFT](https://cometbft.com/), and [Ignite CLI](https://ignite.com/cli).
+
+## Where do I get Started?
 
 Set aside 1-3 hours to go through the [Operator Cheat Sheets](../category/cheat-sheets-to-stake--deploy-intermediate). These guides will help you set up Accounts, Services, Full Nodes, Validators, Suppliers, Gateways, or Applications—depending on your role in the network.
 
-### What is PATH?
+- User
+- Morse
+- Investor
+- Developer
+- Operator
+
+### How is this documentation organized?
+
+- ⚙️ **[Infrastructure Operators](../category/cheat-sheets-to-stake--deploy-intermediate):** Cheat sheets, guides and configs for operators, node runners and infrastructure operators.
+- 🗺️ **[Users & Explorers](../category/pocketd-cli):** Explorers, wallets, faucets, CLIs and other resources to interact with the network.
+- 🧑 **[Core Developers](../category/developer-guide):** Guides and onboarding docs for contributing to the core protocol or SDK.
+- 🧠 **[Protocol Researchers](../category/protocol-actors):** Learn more about tokenomics design and protocol architecture.
+
+## What is PATH?
 
 [PATH](https://path.grove.city/) (Path API & Toolkit Harness) is an open source Gateway framework that streamlines access to the permissionless API operators on Pocket Network without sacrificing enterprise-grade SLAs.
 
@@ -60,34 +82,14 @@ Pocket Network is the directory of API providers, and PATH is the toolkit for bu
 
 :::
 
-![PATH USP](../static/img/pokt-path-usp.png)
-
-### Roadmaps
-
-- **PATH Roadmap:** [Github project](https://github.com/orgs/buildwithgrove/projects/1) (developed by [Grove](https://grove.city/))
-- **Shannon Roadmap:** [Github project](https://github.com/orgs/pokt-network/projects/144)
-
----
-
-## Documentation Available
-
-- ⚙️ **[Guides & Deployment](../category/cheat-sheets-to-stake--deploy-intermediate):** Cheat sheets and config overviews for node runners, infrastructure operators, and CLI users.
-- 🗺️ **[Tools & Explorers](../category/pocketd-cli):** Explorers, wallets, faucets, and other resources to interact with the network.
-- 🧑 **[Core Developers](../category/developer-guide):** Guides and walkthroughs for core or external developers looking to contribute to the core protocol or SDK.
-- 🧠 **[Protocol Specification](../category/protocol-actors):** Learn more about tokenomics design and protocol architecture.
-
----
-
-## GoDoc Documentation
-
-Find the Go API reference at [pkg.go.dev/github.com/pokt-network/poktroll](https://pkg.go.dev/github.com/pokt-network/poktroll).
-
 ---
 
 ## Need Help?
 
 - Join our [Discord](https://discord.gg/pokt) for real-time support and community discussion.
 - Open an issue on [GitHub](https://github.com/pokt-network/poktroll/issues) if you spot a bug or need help.
+
+<!-- TODO(@olshansky): Add other ways to reach out -->
 
 ---
 
