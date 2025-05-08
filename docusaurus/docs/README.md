@@ -57,13 +57,12 @@ Pocket network is built on top of [Cosmos SDK](https://docs.cosmos.network), [Co
 
 ## Where do I get Started?
 
-Set aside 1-3 hours to go through the [Operator Cheat Sheets](../category/cheat-sheets-to-stake--deploy-intermediate). These guides will help you set up Accounts, Services, Full Nodes, Validators, Suppliers, Gateways, or Applications—depending on your role in the network.
+### Most Common Starting Points
 
-- User
-- Morse
-- Investor
-- Developer
-- Operator
+- **Affected by the Migration**: Check out [this page](../category/cheat-sheets-to-stake--deploy-intermediate) to install the CLI.
+- **Casual User**: Check [this page](./2_explore/user_guide/create-new-wallet.md) to create a new wallet.
+- **Technical User**: Visit [this page](./2_explore/user_guide/pocketd_cli.md) to install the CLI.
+- **Operator**: Visit one of the following pages to deploy a [Full Node](./1_operate/cheat_sheets/2_full_node_cheatsheet.md), [Validator](./1_operate/cheat_sheets/3_validator_cheatsheet.md), [Supplier](./1_operate/cheat_sheets/4_supplier_cheatsheet.md), or [Gateway](./1_operate/cheat_sheets/5_gateway_cheatsheet.md).
 
 ### How is this documentation organized?
 
@@ -76,11 +75,7 @@ Set aside 1-3 hours to go through the [Operator Cheat Sheets](../category/cheat-
 
 [PATH](https://path.grove.city/) (Path API & Toolkit Harness) is an open source Gateway framework that streamlines access to the permissionless API operators on Pocket Network without sacrificing enterprise-grade SLAs.
 
-:::note Analogy
-
-Pocket Network is the directory of API providers, and PATH is the toolkit for building Gateways that ensure high quality of service on top of Pocket using Smart QoS.
-
-:::
+You can think of Pocket Network as the directory of API providers, and PATH is the toolkit for building Gateways that ensure high quality of service on top of Pocket using Smart QoS.
 
 ---
 
