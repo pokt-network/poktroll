@@ -66,10 +66,10 @@ Pocket network is built on top of [Cosmos SDK](https://docs.cosmos.network), [Co
 
 ### How is this documentation organized?
 
-- ⚙️ **[Infrastructure Operators](../category/cheat-sheets-to-stake--deploy-intermediate):** Cheat sheets, guides and configs for operators, node runners and infrastructure operators.
-- 🗺️ **[Users & Explorers](../category/pocketd-cli):** Explorers, wallets, faucets, CLIs and other resources to interact with the network.
-- 🧑 **[Core Developers](../category/developer-guide):** Guides and onboarding docs for contributing to the core protocol or SDK.
-- 🧠 **[Protocol Researchers](../category/protocol-actors):** Learn more about tokenomics design and protocol architecture.
+- ⚙️ **[Infrastructure Operators](../operate):** Cheat sheets, guides and configs for operators, node runners and infrastructure operators.
+- 🗺️ **[Users & Explorers](../explore):** Explorers, wallets, faucets, CLIs and other resources to interact with the network.
+- 🧑 **[Core Developers](../develop):** Guides and onboarding docs for contributing to the core protocol or SDK.
+- 🧠 **[Protocol Researchers](../protocol):** Learn more about tokenomics design and protocol architecture.
 
 ## What is PATH?
 

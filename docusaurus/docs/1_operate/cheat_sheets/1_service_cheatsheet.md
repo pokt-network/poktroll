@@ -14,7 +14,7 @@ title: Service Creation (~ 5 min)
 
 This page will walk you through creating an onchain Service.
 
-To learn more about what a Service is, or how it works, see the [Protocol Documentation](../../4_protocol/protocol.md).
+To learn more about what a Service is, or how it works, see the [Protocol Documentation](../../4_protocol/actors/actors.md).
 
 <!--
 
@@ -49,7 +49,7 @@ pocketd query service --help
 pocketd tx service --help
 ```
 
-Visit the [Service FAQ](../../faq/1_service_faq.md) for more information about interacting with Services.
+Visit the [Service FAQ](../faq/1_service_faq.md) for more information about interacting with Services.
 
 ## How do I create a new service?
 

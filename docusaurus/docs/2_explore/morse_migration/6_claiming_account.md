@@ -14,7 +14,7 @@ TODO_IN_THIS_PR: Link to keplr, etc...
   - [0. Prerequisites](#0-prerequisites)
   - [1. Export your Morse `keyfile.json`](#1-export-your-morse-keyfilejson)
   - [2. Create a new Shannon key](#2-create-a-new-shannon-key)
-  - [3. Create your onchain Shannon account](#3-fund-your-shannon-account)
+  - [3. Create your onchain Shannon account](#3-create-your-onchain-shannon-account)
   - [4. Ensure your Shannon account exists onchain](#4-ensure-your-shannon-account-exists-onchain)
   - [5. Check your claimable Morse account](#5-check-your-claimable-morse-account)
   - [6. Claim your Morse Pocket](#6-claim-your-morse-pocket)
@@ -79,9 +79,7 @@ pocketd keys add <your_shannon_key_name>
 
 If you're using a newly generated key/account, then you will need to use one of the (network-specific) community faucets to trigger onchain account creation.
 
-:::TODO_MAINNET
-Add a link once available!
-:::
+<!-- TODO(@bryanchriswhite): Add a link once available! -->
 
 For testnets, you can send yourself either uPOKT or MACT ("Morse Account Claimer Token").
 **Only 1 of EITHER minimal denomination** is sufficient to create the onchain account, such that it is ready to be used for claiming.
@@ -137,6 +135,7 @@ claim --> mac
 classDef constraint color:#f00,stroke:#f00
 classDef effect color:#f80,stroke:#f80
 ```
+
 </details>
 
 Use one of the following faucets:

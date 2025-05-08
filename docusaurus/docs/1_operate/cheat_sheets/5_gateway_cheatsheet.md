@@ -105,9 +105,9 @@ pocketd query bank balances $GATEWAY_ADDR $NODE_FLAGS
 pocketd query bank balances $APP_ADDR $NODE_FLAGS
 ```
 
-:::tip
+:::tip Tools & Explorers
 
-You can find all the explorers, faucets and tools at the [tools page](../../tools/tools/source_code.md).
+You can find all the explorers, faucets and tools at the [tools page](../../2_explore/tools/).
 
 :::
 

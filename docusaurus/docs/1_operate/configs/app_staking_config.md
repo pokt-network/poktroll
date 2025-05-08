@@ -78,7 +78,7 @@ The current protocol requires the `service_ids` list to contain **EXACTLY ONE** 
 to prevent `Application`s from over-servicing.
 
 A detailed explanation of why this is the case can be found in
-[Tokenomis/TLM](protocol/tokenomics/token_logic_modules.md#tlm-pre-processing).
+[Tokenomics/TLM](../../4_protocol/tokenomics/token_logic_modules.md).
 
 :::
 
