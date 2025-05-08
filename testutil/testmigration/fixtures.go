@@ -368,14 +368,14 @@ func GenerateInvalidAddressMorseStateExportAndAccountState(t *testing.T) (*migra
 			morseAccount.Address = []byte(fmt.Sprintf(invalidMorseAddrNonHexFmt, i))
 		case 1:
 			// too short
-			hexAddress, err := hex.DecodeString(fmt.Sprintf(invalidMorseAddrTooShortFmt, i))
-			require.NoError(t, err)
+			hexAddress, addrErr := hex.DecodeString(fmt.Sprintf(invalidMorseAddrTooShortFmt, i))
+			require.NoError(t, addrErr)
 
 			morseAccount.Address = hexAddress
 		case 2:
 			// too long
-			hexAddress, err := hex.DecodeString(fmt.Sprintf(invalidMorseAddrTooLongFmt, i))
-			require.NoError(t, err)
+			hexAddress, addrErr := hex.DecodeString(fmt.Sprintf(invalidMorseAddrTooLongFmt, i))
+			require.NoError(t, addrErr)
 
 			morseAccount.Address = hexAddress
 		}
