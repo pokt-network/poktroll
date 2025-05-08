@@ -7,7 +7,6 @@ import (
 
 	cosmosmath "cosmossdk.io/math"
 	cmtjson "github.com/cometbft/cometbft/libs/json"
-	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 	"github.com/spf13/cobra"
@@ -221,10 +220,7 @@ func collectInputAccountBalances(inputState *migrationtypes.MorseStateExport, mo
 			if err != nil {
 				return err
 			}
-			if exportAccount == nil {
-				logger.Logger.Warn().Msgf("!!!!! Skipping nil account !!!!!")
-				continue
-			}
+
 			accountAddr = exportAccount.Address.String()
 		case migrationtypes.MorseModuleAccountType:
 			// Exclude stake pool module accounts from the MorseAccountState.
@@ -239,7 +235,7 @@ func collectInputAccountBalances(inputState *migrationtypes.MorseStateExport, mo
 			}
 
 			exportAccount = &exportModuleAccount.MorseAccount
-			accountAddr = exportModuleAccount.Name
+			accountAddr = exportModuleAccount.GetName()
 		default:
 			logger.Logger.Warn().
 				Str("type", exportAuthAccount.Type).
@@ -248,7 +244,7 @@ func collectInputAccountBalances(inputState *migrationtypes.MorseStateExport, mo
 			continue
 		}
 
-		if _, _, err = morseWorkspace.addAccount(accountAddr, exportAuthAccount); err != nil {
+		if _, _, err = morseWorkspace.addAccount(accountAddr); err != nil {
 			return err
 		}
 
@@ -318,20 +314,7 @@ func collectInputApplicationStakes(inputState *migrationtypes.MorseStateExport, 
 				Msg("no account found for application")
 
 			// DEV_NOTE: If no auth account was found for this application, create a new one.
-			newMorseAccount := &migrationtypes.MorseAccount{
-				Address: exportApplication.Address,
-				Coins:   []cosmostypes.Coin{},
-			}
-			newMorseAccountJSONBz, err := cmtjson.Marshal(newMorseAccount)
-			if err != nil {
-				return err
-			}
-
-			newMorseAppAuthAccount := &migrationtypes.MorseAuthAccount{
-				Type:  migrationtypes.MorseExternallyOwnedAccountType,
-				Value: newMorseAccountJSONBz,
-			}
-			if _, _, err := morseWorkspace.addAccount(appAddr, newMorseAppAuthAccount); err != nil {
+			if _, _, err := morseWorkspace.addAccount(appAddr); err != nil {
 				return fmt.Errorf(
 					"adding application account to account balance of address %q: %w",
 					appAddr, err,
@@ -399,20 +382,7 @@ func collectInputSupplierStakes(inputState *migrationtypes.MorseStateExport, mor
 				Msg("no account found for supplier")
 
 			// DEV_NOTE: If no auth account was found for this supplier, create a new one.
-			newMorseAccount := &migrationtypes.MorseAccount{
-				Address: exportSupplier.Address,
-				Coins:   []cosmostypes.Coin{},
-			}
-			newMorseAccountJSONBz, err := cmtjson.Marshal(newMorseAccount)
-			if err != nil {
-				return err
-			}
-
-			newSupplierAccount := &migrationtypes.MorseAuthAccount{
-				Type:  migrationtypes.MorseExternallyOwnedAccountType,
-				Value: newMorseAccountJSONBz,
-			}
-			if _, _, err := morseWorkspace.addAccount(supplierAddr, newSupplierAccount); err != nil {
+			if _, _, err := morseWorkspace.addAccount(supplierAddr); err != nil {
 				return fmt.Errorf(
 					"adding supplier account to account balance of address %q: %w",
 					supplierAddr, err,

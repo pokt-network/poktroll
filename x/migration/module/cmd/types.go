@@ -111,10 +111,7 @@ func (miw *morseImportWorkspace) accumulatedTotalsSum() cosmosmath.Int {
 // slice and its corresponding address is in the accountIdxByAddress map.
 // - If the Morse account is a module account, the module account name is used as the MorseClaimableAccount address
 // - If the address is already present, an error is returned
-func (miw *morseImportWorkspace) addAccount(
-	addr string,
-	exportAuthAccount *migrationtypes.MorseAuthAccount,
-) (accountIdx int64, balance cosmostypes.Coin, err error) {
+func (miw *morseImportWorkspace) addAccount(addr string) (accountIdx int64, balance cosmostypes.Coin, err error) {
 	// Initialize balance to zero.
 	// DEV_NOTE: This guarantees that all accounts tracked by the morseWorkspace have the upokt denom.
 	balance = cosmostypes.NewCoin(volatile.DenomuPOKT, cosmosmath.ZeroInt())
@@ -125,27 +122,9 @@ func (miw *morseImportWorkspace) addAccount(
 		)
 	}
 
-	var exportAccountAddressStr string
-	switch exportAuthAccount.GetType() {
-	case migrationtypes.MorseExternallyOwnedAccountType:
-		exportMorseAccount, morseAcctErr := exportAuthAccount.AsMorseAccount()
-		if morseAcctErr != nil {
-			return 0, cosmostypes.Coin{}, morseAcctErr
-		}
-
-		exportAccountAddressStr = exportMorseAccount.Address.String()
-	case migrationtypes.MorseModuleAccountType:
-		exportModuleAccount, moduleAcctErr := exportAuthAccount.AsMorseModuleAccount()
-		if moduleAcctErr != nil {
-			return 0, cosmostypes.Coin{}, moduleAcctErr
-		}
-	
-		exportAccountAddressStr = exportModuleAccount.Name
-	}
-
 	accountIdx = miw.nextIdx()
 	importAccount := &migrationtypes.MorseClaimableAccount{
-		MorseSrcAddress:  exportAccountAddressStr,
+		MorseSrcAddress:  addr,
 		UnstakedBalance:  cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 0),
 		SupplierStake:    cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 0),
 		ApplicationStake: cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 0),

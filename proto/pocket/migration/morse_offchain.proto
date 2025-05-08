@@ -159,7 +159,7 @@ message MorsePublicKey {
 // MorseModuleAccount is the module account type for Morse, it wraps a MorseAccount
 // and has a unique name, which is used instead of the address.
 message MorseModuleAccount {
-  MorseAccount base_account = 1 [(gogoproto.nullable) = false, (gogoproto.embed) = true, (gogoproto.jsontag) = "base_account", (gogoproto.moretags) = "yaml:\"base_account\""];
+  MorseAccount base_account = 1 [(gogoproto.nullable) = false, (gogoproto.embed) = true, (gogoproto.jsontag) = "BaseAccount"];
   string name = 2 [(gogoproto.jsontag) = "name", (gogoproto.moretags) = "yaml:\"name\""];
   repeated string permissions = 3 [(gogoproto.jsontag) = "permissions", (gogoproto.moretags) = "yaml:\"permissions\""];
 }
