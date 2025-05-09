@@ -203,6 +203,12 @@ MsgClaimMorseAccount {
 Confirm MsgClaimMorseAccount: y/[n]:
 ```
 
+:::tip Be patient. Don't Panic!
+
+This step may sit in your terminal for a minute or so. Be patient and don't panic, it is working!
+
+:::
+
 ### 7. Verify your Shannon balance
 
 ```bash
