@@ -60,7 +60,7 @@ var allUpgrades = []upgrades.Upgrade{
 
 	// TODO_MAINNET_MIGRATION(@bryanchriswhite): Update the upgrade version number.
 	// v0.1.x - upgrade to fix chain halts caused by the previous upgrade.
-	upgrades.Upgrade_0_1_x,
+	upgrades.Upgrade_0_1_11,
 }
 
 // setUpgrades sets upgrade handlers for all upgrades and executes KVStore migration if an upgrade plan file exists.
