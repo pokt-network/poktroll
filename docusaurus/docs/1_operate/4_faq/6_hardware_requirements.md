@@ -27,7 +27,7 @@ TODO_MAINNET: Update this document prior to MainNet release
 
 :::tip Vultr Playbook
 
-If you are using [Vultr](https://www.vultr.com/) for your deployment, you can following the [CLI Playbook we put together here](../walkthroughs/playbooks/vultr.md) to speed things up.
+If you are using [Vultr](https://www.vultr.com/) for your deployment, you can following the [CLI Playbook we put together here](../5_playbooks/1_vultr.md) to speed things up.
 
 :::
 

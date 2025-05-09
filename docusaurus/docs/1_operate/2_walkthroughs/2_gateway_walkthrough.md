@@ -22,10 +22,10 @@ A PATH Gateway requires the following:
 
 1. A staked onchain [Application](../../3_protocol/actors/2_application.md) to pay for services.
 2. An optional onchain [Gateway](../../3_protocol/actors/3_gateway.md) to optionally proxy services.
-3. A connection to a [Full Node](2_full_node_docker.md) to interact with the blockchain.
+3. A connection to a [Full Node](./../1_cheat_sheets/2_full_node_cheatsheet.md) to interact with the blockchain.
 
 :::tip
-It is crucial to deploy a [Full Node](2_full_node_docker.md) prior to setting up a RelayMiner.
+It is crucial to deploy a [Full Node](./../1_cheat_sheets/2_full_node_cheatsheet.md) prior to setting up a RelayMiner.
 This ensures the necessary infrastructure for blockchain communication is in place.
 :::
 
