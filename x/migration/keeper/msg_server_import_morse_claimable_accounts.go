@@ -41,7 +41,8 @@ func (k msgServer) ImportMorseClaimableAccounts(ctx context.Context, msg *migrat
 		}
 	}
 
-	// Mitigate confusing log duplication.
+	// Message handlers run during both CheckTx and DeliverTx.
+	// To reduce noise and confusion, only log during DeliverTx.
 	if !sdkCtx.IsCheckTx() {
 		logger.Info("beginning importing morse claimable accounts...")
 	}
@@ -49,7 +50,8 @@ func (k msgServer) ImportMorseClaimableAccounts(ctx context.Context, msg *migrat
 	// Import MorseClaimableAccounts.
 	k.ImportFromMorseAccountState(sdkCtx, &msg.MorseAccountState)
 
-	// Mitigate confusing log duplication.
+	// Message handlers run during both CheckTx and DeliverTx.
+	// To reduce noise and confusion, only log during DeliverTx.
 	if !sdkCtx.IsCheckTx() {
 		logger.Info("done importing morse claimable accounts!")
 	}

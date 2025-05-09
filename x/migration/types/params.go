@@ -7,9 +7,12 @@ import (
 var (
 	_ paramtypes.ParamSet = (*Params)(nil)
 
+	// WaiveMorseClaimGasFees	
 	KeyWaiveMorseClaimGasFees               = []byte("WaiveMorseClaimGasFees")
 	ParamWaiveMorseClaimGasFees             = "waive_morse_claim_gas_fees"
 	DefaultWaiveMorseClaimGasFees           = false
+
+	// AllowMorseAccountImportOverwrite
 	KeyAllowMorseAccountImportOverwrite     = []byte("AllowMorseAccountImportOverwrite")
 	ParamAllowMorseAccountImportOverwrite   = "allow_morse_account_import_overwrite"
 	DefaultAllowMorseAccountImportOverwrite = false
