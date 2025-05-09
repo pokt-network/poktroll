@@ -70,8 +70,7 @@ message MorseAuth {
 
 // MorseAccount:
 // * Wraps MorseAuthAccount information to conform to Morse genesis structure
-// * Represents only externally owned accounts (not module accounts)
-// * Avoids pb.Any serialization since only external accounts needed for migration
+// * Can represent EITHER an externally owned account OR a module account
 message MorseAuthAccount {
   string type = 1 [(gogoproto.jsontag) = "type"];
 
@@ -159,7 +158,7 @@ message MorsePublicKey {
 // MorseModuleAccount is the module account type for Morse, it wraps a MorseAccount
 // and has a unique name, which is used instead of the address.
 message MorseModuleAccount {
-  MorseAccount base_account = 1 [(gogoproto.nullable) = false, (gogoproto.embed) = true, (gogoproto.jsontag) = "BaseAccount"];
+  // DEV_NOTE: the JSON tag is intentionally cased contrary to convention to match the real-world Morse state export.
+  MorseAccount base_account = 1 [(gogoproto.nullable) = false, (gogoproto.jsontag) = "BaseAccount"];
   string name = 2 [(gogoproto.jsontag) = "name", (gogoproto.moretags) = "yaml:\"name\""];
-  repeated string permissions = 3 [(gogoproto.jsontag) = "permissions", (gogoproto.moretags) = "yaml:\"permissions\""];
 }

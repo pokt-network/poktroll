@@ -131,10 +131,9 @@ func collectMorseAccounts(morseStateExportPath, msgImportMorseClaimableAccountsP
 
 	// If an extra state export path is provided, include it in the output MorseAccountState.
 	if extraMorseStateExportPath != "" {
-		var extraMorseStateExport *migrationtypes.MorseStateExport
-		extraMorseStateExport, err = loadMorseState(extraMorseStateExportPath)
-		if err != nil {
-			return nil, err
+		extraMorseStateExport, loadErr := loadMorseState(extraMorseStateExportPath)
+		if loadErr != nil {
+			return nil, loadErr
 		}
 
 		if err = transformAndIncludeMorseState(extraMorseStateExport, morseWorkspace); err != nil {
@@ -237,7 +236,7 @@ func collectInputAccountBalances(inputState *migrationtypes.MorseStateExport, mo
 				continue
 			}
 
-			exportAccount = &exportModuleAccount.MorseAccount
+			exportAccount = &exportModuleAccount.BaseAccount
 			accountAddr = exportModuleAccount.GetName()
 		default:
 			logger.Logger.Warn().
