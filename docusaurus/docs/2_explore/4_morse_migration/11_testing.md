@@ -48,8 +48,9 @@ On **Shannon TestNet only** will the snapshot contain both Morse MainNet and Tes
 
 Use the links below to download the snapshot:
 
-| Snapshot                                                                                                                                                      | Height | Date       | Size   |
-| ------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ | ---------- | ------ |
+| Snapshot                                                                                                                                                        | Height | Date       | Size |
+|-----------------------------------------------------------------------------------------------------------------------------------------------------------------|--------|------------|------|
+| [morse-testnet-176966-2025-05-09.txz](https://link.storjshare.io/raw/ju4zrcq46yp6ft2hm7o4xwlkts3q/pocket-network-snapshots/morse-testnet-176966-2025-05-09.txz) | 176966 | 2025-05-09 | ~7GB |
 
 **Extract the snapshot by cop-pasting the following commands**:
 
@@ -60,26 +61,20 @@ tar -xvf <testnet-snapshot-file>.tar -C $HOME/morse-testnet-snapshot
 cd $HOME/morse-testnet-snapshot
 ```
 
-:::warning Where to find the snapshot file?
-
-This is a manual process that requires reaching out to Breezy (i.e. SakeNodes).
-
-:::
-
 ### 2. Export Morse TestNet State
 
 **Set the snapshot height and date** (replace with actual values):
 
 ```bash
-export TESTNET_SNAPSHOT_HEIGHT="176681"
-export TESTNET_SNAPSHOT_DATE="2025-05-07"
+export TESTNET_SNAPSHOT_HEIGHT="176966"
+export TESTNET_SNAPSHOT_DATE="2025-05-09"
 export MORSE_TESTNET_STATE_EXPORT_PATH="./morse_state_export_${TESTNET_SNAPSHOT_HEIGHT}_${TESTNET_SNAPSHOT_DATE}.json"
 ```
 
 **Export the state** (update `--datadir` if your snapshot path is different):
 
 ```bash
-pocket --datadir="$HOME/morse-snapshot" util export-genesis-for-reset "$TESTNET_SNAPSHOT_HEIGHT" pocket > "$MORSE_TESTNET_STATE_EXPORT_PATH"
+pocket --datadir="$HOME/morse-testnet-snapshot" util export-genesis-for-reset "$TESTNET_SNAPSHOT_HEIGHT" pocket > "$MORSE_TESTNET_STATE_EXPORT_PATH"
 ```
 
 ### 3. Export Morse MainNet State
