@@ -7,13 +7,15 @@ This page is intended for the Foundation (Authority) or whoever is managing the 
 
 ## Table of Contents <!-- omit in toc -->
 
-- [1. Retrieve a Pruned Morse Snapshot](#1-retrieve-a-pruned-morse-snapshot)
-- [2. Export Morse Snapshot State](#2-export-morse-snapshot-state)
-- [3. Transform Morse Export to a Canonical Account State Import Message](#3-transform-morse-export-to-a-canonical-account-state-import-message)
-- [4. Distribute Canonical Account State Import Message](#4-distribute-canonical-account-state-import-message)
-- [5. Align on Account State via Social Consensus](#5-align-on-account-state-via-social-consensus)
-- [6. Import Canonical State into Shannon](#6-import-canonical-state-into-shannon)
-- [7. Query Canonical State in Shannon](#7-query-canonical-state-in-shannon)
+- [Step by Step Instructions for Protocol Maintainer](#step-by-step-instructions-for-protocol-maintainer)
+  - [1. Retrieve a Pruned Morse Snapshot](#1-retrieve-a-pruned-morse-snapshot)
+  - [2. Export Morse Snapshot State](#2-export-morse-snapshot-state)
+  - [3. Transform Morse Export to a Canonical Account State Import Message](#3-transform-morse-export-to-a-canonical-account-state-import-message)
+  - [4. Distribute Canonical Account State Import Message](#4-distribute-canonical-account-state-import-message)
+  - [5. Align on Account State via Social Consensus](#5-align-on-account-state-via-social-consensus)
+  - [6. Import Canonical State into Shannon](#6-import-canonical-state-into-shannon)
+  - [7. Query Canonical State in Shannon](#7-query-canonical-state-in-shannon)
+  - [8. Cleanup \& Documentation](#8-cleanup--documentation)
 - [State Validation: Morse Account Holders](#state-validation-morse-account-holders)
   - [Why Validate?](#why-validate)
   - [How to Validate](#how-to-validate)
@@ -25,18 +27,29 @@ This page is intended for the Foundation (Authority) or whoever is managing the 
 
 ---
 
-## 1. Retrieve a Pruned Morse Snapshot
+## Step by Step Instructions for Protocol Maintainer
+
+### 1. Retrieve a Pruned Morse Snapshot
 
 Go to [Liquify's Snapshot Explorer](https://pocket-snapshot-uk.liquify.com/#/pruned/) and download the latest pruned snapshot.
+
+:::warning
+
+If you're reproducing the Morse state migration process, for validation purposes, you MUST use the **same snapshot height** in order to guarantee deterministic and correct results.
+
+See the table in [Migration Artifacts](https://github.com/pokt-network/poktroll/tree/main/tools/scripts/migration) to
+ensure the correct snapshot heights are used.
+
+:::
 
 Export the snapshot into a new directory on your local machine.
 
 ```bash
-mkdir -p $HOME/morse-snapshot
+mkdir -p $HOME/morse-mainnet-snapshot
 # 1. Untar the snapshot file
-tar -xvf <snapshot-file>.tar -C $HOME/morse-snapshot
+tar -xvf <snapshot-file>.tar -C $HOME/morse-mainnet-snapshot
 # 2. Change directory to the extracted snapshot folder
-cd $HOME/morse-snapshot
+cd $HOME/morse-mainnet-snapshot
 ```
 
 :::warning Note the height and date of the snapshot
@@ -47,38 +60,47 @@ For example, the snapshot file name `pruned-166819-166919-2025-04-29.tar` has a 
 
 :::
 
-## 2. Export Morse Snapshot State
+### 2. Export Morse Snapshot State
 
 Choose the snapshot height, which must be less than or equal to the snapshot height retrieved above. **This will be the published canonical export height.**
 
 ```bash
-export SNAPSHOT_HEIGHT="<HEIGHT>" # E.g. "166918"
-export SNAPSHOT_DATE="<DATE>" # E.g. "2025-04-29"
-export MORSE_STATE_EXPORT_PATH="./morse_state_export_${SNAPSHOT_HEIGHT}_${SNAPSHOT_DATE}.json"
-pocket --datadir="$HOME/morse-snapshot" util export-genesis-for-reset "$SNAPSHOT_HEIGHT" pocket > "$MORSE_STATE_EXPORT_PATH"
+export MAINNET_SNAPSHOT_HEIGHT="<HEIGHT>" # E.g. "166918"
+export MAINNET_SNAPSHOT_DATE="<DATE>" # E.g. "2025-04-29"
+export MORSE_MAINNET_STATE_EXPORT_PATH="./morse_state_export_${MAINNET_SNAPSHOT_HEIGHT}_${MAINNET_SNAPSHOT_DATE}.json"
+pocket --datadir="$HOME/morse-mainnet-snapshot" util export-genesis-for-reset "$MAINNET_SNAPSHOT_HEIGHT" pocket > "$MORSE_MAINNET_STATE_EXPORT_PATH"
 ```
 
-## 3. Transform Morse Export to a Canonical Account State Import Message
+### 3. Transform Morse Export to a Canonical Account State Import Message
+
+:::info Testing on Shannon TestNet?
+
+`MorseClaimableAccount`s imported to Shannon TestNet(s) are a merge of the Morse MainNet and TestNet state exports, for developer convenience.
+
+See [Migration Testing](./11_testing.md) for additional instructions.
+Follow the steps there, and resume **from the next step (i.e. skip this step)**.
+
+:::
 
 ```bash
-export MSG_IMPORT_MORSE_ACCOUNTS_PATH="./msg_import_morse_accounts_${SNAPSHOT_HEIGHT}_${SNAPSHOT_DATE}.json"
+export MSG_IMPORT_MORSE_ACCOUNTS_PATH="./msg_import_morse_accounts_${MAINNET_SNAPSHOT_HEIGHT}_${MAINNET_SNAPSHOT_DATE}.json"
 pocketd tx migration collect-morse-accounts "$MORSE_STATE_EXPORT_PATH" "$MSG_IMPORT_MORSE_ACCOUNTS_PATH"
 ```
 
-## 4. Distribute Canonical Account State Import Message
+### 4. Distribute Canonical Account State Import Message
 
 Distribute the `msg_import_morse_accounts_${SNAPSHOT_HEIGHT}_${SNAPSHOT_DATE}.json` and its hash for public verification by Morse account/stake-holders.
 
-## 5. Align on Account State via Social Consensus
+### 5. Align on Account State via Social Consensus
 
 - Wait for consensus (offchain, time-bounded).
 - React to feedback as needed.
 
-## 6. Import Canonical State into Shannon
+### 6. Import Canonical State into Shannon
 
 :::danger
 
-This can **ONLY BE DONE ONCE** per network.
+This can **ONLY BE DONE ONCE** on networks with the `allow_morse_import_overwrite` param disabled (e.g. MainNet).
 
 :::
 
@@ -113,7 +135,7 @@ pocketd tx migration import-morse-accounts "$MSG_IMPORT_MORSE_ACCOUNTS_PATH" --f
 
 </details>
 
-## 7. Query Canonical State in Shannon
+### 7. Query Canonical State in Shannon
 
 The list of all claimable Morse accounts (balances/stakes) on Shannon can be retrieved using the following command:
 
@@ -145,6 +167,10 @@ pocketd query migration list-morse-claimable-account --node https://shannon-grov
 ```
 
 </details>
+
+### 8. Cleanup & Documentation
+
+Document the details of the snapshot upload in [tools/scripts/migration/README.md](https://github.com/pokt-network/poktroll/blob/main/tools/scripts/migration/README.md)/.
 
 ## State Validation: Morse Account Holders
 
