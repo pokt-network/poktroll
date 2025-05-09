@@ -95,7 +95,7 @@ pocketd query bank balances $APP_ADDR $NODE_FLAGS
 
 :::tip Tools & Explorers
 
-You can find all the explorers, faucets and tools at the [tools page](./../2_explore/1_tools/).
+You can find all the explorers, faucets and tools at the [tools page](./../../2_explore/1_tools/).
 
 :::
 
