@@ -76,6 +76,20 @@ If the module doesn't already support this message, it will need to be added.
 Use `ignite` to scaffold a new `MsgUpdateParam` message for the module.
 Additional flags are used for convenience:
 
+:::warning 🏗️ Temporary Workaround Required 🚧
+
+Until the [go module](https://github.com/pokt-network/poktroll/blob/main/go.mod#L1) is renamed to `github.com/pokt-network/pocket`, the following workaround is required in order to use `ignite scaffold ...`:
+
+1. Rename the local go module in go.mod (see related comments there)
+2. `go mod tidy`
+3. `ignite scaffold ...`
+4. `make proto_fix_self_import && make proto_regen`
+5. Restore the original go.mod
+6. `go mod tidy`
+7. `ignite chain build --skip-proto` and/or (re)start/build localnet
+
+:::
+
 ```bash
 ignite scaffold message update-param --module examplemod --signer authority name as_type --response params
 ```

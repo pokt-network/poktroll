@@ -257,7 +257,8 @@ var (
 			QueryParamsResponse:     migrationtypes.QueryParamsResponse{},
 		},
 		ValidParams: migrationtypes.Params{
-			WaiveMorseClaimGasFees: true,
+			WaiveMorseClaimGasFees:           true,
+			AllowMorseAccountImportOverwrite: false,
 		},
 		DefaultParams:    migrationtypes.DefaultParams(),
 		NewParamClientFn: migrationtypes.NewQueryClient,

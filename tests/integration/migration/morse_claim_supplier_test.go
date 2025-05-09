@@ -24,7 +24,8 @@ import (
 // TestClaimMorseSupplier exercises claiming of a MorseClaimableAccount as a new staked supplier.
 func (s *MigrationModuleTestSuite) TestClaimMorseNewSupplier() {
 	s.GenerateMorseAccountState(s.T(), s.numMorseClaimableAccounts, testmigration.AllSupplierMorseAccountActorType)
-	s.ImportMorseClaimableAccounts(s.T())
+	_, err := s.ImportMorseClaimableAccounts(s.T())
+	require.NoError(s.T(), err)
 
 	for morseAccountIdx, _ := range s.GetAccountState(s.T()).Accounts {
 		testDesc := fmt.Sprintf("morse account %d", morseAccountIdx)
@@ -121,7 +122,8 @@ func (s *MigrationModuleTestSuite) TestClaimMorseNewSupplier() {
 func (s *MigrationModuleTestSuite) TestClaimMorseExistingSupplier() {
 	// Generate and import Morse claimable accounts.
 	s.GenerateMorseAccountState(s.T(), s.numMorseClaimableAccounts, testmigration.AllSupplierMorseAccountActorType)
-	s.ImportMorseClaimableAccounts(s.T())
+	_, err := s.ImportMorseClaimableAccounts(s.T())
+	require.NoError(s.T(), err)
 
 	sharedClient := sharedtypes.NewQueryClient(s.GetApp().QueryHelper())
 	sharedParamsRes, err := sharedClient.Params(s.SdkCtx(), &sharedtypes.QueryParamsRequest{})
@@ -236,12 +238,8 @@ func (s *MigrationModuleTestSuite) TestClaimMorseExistingSupplier() {
 				Stake:                   &expectedFinalSupplierStake,
 				ServiceConfigHistory:    expectedServiceConfigUpdateHistory,
 				UnstakeSessionEndHeight: 0,
-			}
-
-			currentHeight := s.SdkCtx().BlockHeight()
-			serviceConfigs := expectedSupplier.GetActiveServiceConfigs(currentHeight)
-			if len(serviceConfigs) > 0 {
-				expectedSupplier.Services = serviceConfigs
+				// Services:             Intentionally omitted because it will be
+				//                       dehydrated from the MsgStakeSupplierResponse.
 			}
 
 			expectedSessionEndHeight := s.GetSessionEndHeight(s.T(), s.SdkCtx().BlockHeight()-1)
@@ -271,6 +269,13 @@ func (s *MigrationModuleTestSuite) TestClaimMorseExistingSupplier() {
 			s.NoError(err)
 			s.Equal(cosmostypes.NewCoin(volatile.DenomuPOKT, math.ZeroInt()), *migrationModuleBalance)
 
+			// Restore active services to the dehydrated expected Supplier.
+			currentHeight := s.SdkCtx().BlockHeight()
+			serviceConfigs := expectedSupplier.GetActiveServiceConfigs(currentHeight)
+			if len(serviceConfigs) > 0 {
+				expectedSupplier.Services = serviceConfigs
+			}
+
 			// Assert that the supplier was updated.
 			supplier, err := supplierClient.GetSupplier(s.SdkCtx(), shannonDestAddr)
 			s.NoError(err)
@@ -284,7 +289,8 @@ func (s *MigrationModuleTestSuite) TestClaimMorseSupplier_ErrorMinStake() {
 	minStake := cosmostypes.NewInt64Coin(volatile.DenomuPOKT, testmigration.GenMorseSupplierStakeAmount(uint64(0))+1)
 	s.ResetTestApp(1, minStake)
 	s.GenerateMorseAccountState(s.T(), 1, testmigration.AllSupplierMorseAccountActorType)
-	s.ImportMorseClaimableAccounts(s.T())
+	_, err := s.ImportMorseClaimableAccounts(s.T())
+	require.NoError(s.T(), err)
 
 	shannonDestAddr := sample.AccAddress()
 	bankClient := s.GetBankQueryClient(s.T())

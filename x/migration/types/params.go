@@ -7,9 +7,15 @@ import (
 var (
 	_ paramtypes.ParamSet = (*Params)(nil)
 
+	// WaiveMorseClaimGasFees
 	KeyWaiveMorseClaimGasFees     = []byte("WaiveMorseClaimGasFees")
 	ParamWaiveMorseClaimGasFees   = "waive_morse_claim_gas_fees"
 	DefaultWaiveMorseClaimGasFees = false
+
+	// AllowMorseAccountImportOverwrite
+	KeyAllowMorseAccountImportOverwrite     = []byte("AllowMorseAccountImportOverwrite")
+	ParamAllowMorseAccountImportOverwrite   = "allow_morse_account_import_overwrite"
+	DefaultAllowMorseAccountImportOverwrite = false
 )
 
 // ParamKeyTable the param key table for launch module
@@ -20,9 +26,11 @@ func ParamKeyTable() paramtypes.KeyTable {
 // NewParams creates a new Params instance
 func NewParams(
 	waiveMorseClaimGasFees bool,
+	allowMorseAccountImportOverwrite bool,
 ) Params {
 	return Params{
-		WaiveMorseClaimGasFees: waiveMorseClaimGasFees,
+		WaiveMorseClaimGasFees:           waiveMorseClaimGasFees,
+		AllowMorseAccountImportOverwrite: allowMorseAccountImportOverwrite,
 	}
 }
 
@@ -30,6 +38,7 @@ func NewParams(
 func DefaultParams() Params {
 	return NewParams(
 		DefaultWaiveMorseClaimGasFees,
+		DefaultAllowMorseAccountImportOverwrite,
 	)
 }
 
@@ -39,23 +48,33 @@ func (p *Params) ParamSetPairs() paramtypes.ParamSetPairs {
 		paramtypes.NewParamSetPair(
 			KeyWaiveMorseClaimGasFees,
 			&p.WaiveMorseClaimGasFees,
-			ValidateWaiveMorseClaimGasFees,
+			ValidateParamIsBool,
+		),
+		paramtypes.NewParamSetPair(
+			KeyAllowMorseAccountImportOverwrite,
+			&p.AllowMorseAccountImportOverwrite,
+			ValidateParamIsBool,
 		),
 	}
 }
 
 // Validate validates the set of params
 func (p Params) Validate() error {
-	if err := ValidateWaiveMorseClaimGasFees(p.WaiveMorseClaimGasFees); err != nil {
+	if err := ValidateParamIsBool(p.WaiveMorseClaimGasFees); err != nil {
 		return err
 	}
+
+	if err := ValidateParamIsBool(p.AllowMorseAccountImportOverwrite); err != nil {
+		return err
+	}
+
 	return nil
 }
 
-// ValidateWaiveMorseClaimGasFees validates the WaiveMorseClaimGasFees param.
-func ValidateWaiveMorseClaimGasFees(waiveMorseClaimGasFeesAny any) error {
-	if _, ok := waiveMorseClaimGasFeesAny.(bool); !ok {
-		return ErrMigrationParamInvalid.Wrapf("invalid parameter type: %T", waiveMorseClaimGasFeesAny)
+// ValidateParamIsBool validates that the param is a boolean type.
+func ValidateParamIsBool(paramAny any) error {
+	if _, ok := paramAny.(bool); !ok {
+		return ErrMigrationParamInvalid.Wrapf("invalid parameter type: %T", paramAny)
 	}
 	return nil
 }

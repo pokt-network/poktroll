@@ -39,6 +39,10 @@ const (
 	// TODO: Determine the simulation weight value
 	defaultWeightMsgClaimMorseSupplier int = 100
 
+	opWeightMsgRecoverMorseAccount = "op_weight_msg_recover_morse_account"
+	// TODO: Determine the simulation weight value
+	defaultWeightMsgRecoverMorseAccount int = 100
+
 	// this line is used by starport scaffolding # simapp/module/const
 )
 
@@ -106,6 +110,17 @@ func (am AppModule) WeightedOperations(simState module.SimulationState) []simtyp
 		migrationsimulation.SimulateMsgClaimMorseSupplier(am.accountKeeper, am.bankKeeper, am.keeper),
 	))
 
+	var weightMsgRecoverMorseAccount int
+	simState.AppParams.GetOrGenerate(opWeightMsgRecoverMorseAccount, &weightMsgRecoverMorseAccount, nil,
+		func(_ *rand.Rand) {
+			weightMsgRecoverMorseAccount = defaultWeightMsgRecoverMorseAccount
+		},
+	)
+	operations = append(operations, simulation.NewWeightedOperation(
+		weightMsgRecoverMorseAccount,
+		migrationsimulation.SimulateMsgRecoverMorseAccount(am.accountKeeper, am.bankKeeper, am.keeper),
+	))
+
 	// this line is used by starport scaffolding # simapp/module/operation
 
 	return operations
@@ -143,6 +158,14 @@ func (am AppModule) ProposalMsgs(simState module.SimulationState) []simtypes.Wei
 			defaultWeightMsgClaimMorseSupplier,
 			func(r *rand.Rand, ctx sdk.Context, accs []simtypes.Account) sdk.Msg {
 				migrationsimulation.SimulateMsgClaimMorseSupplier(am.accountKeeper, am.bankKeeper, am.keeper)
+				return nil
+			},
+		),
+		simulation.NewWeightedProposalMsg(
+			opWeightMsgRecoverMorseAccount,
+			defaultWeightMsgRecoverMorseAccount,
+			func(r *rand.Rand, ctx sdk.Context, accs []simtypes.Account) sdk.Msg {
+				migrationsimulation.SimulateMsgRecoverMorseAccount(am.accountKeeper, am.bankKeeper, am.keeper)
 				return nil
 			},
 		),
