@@ -61,8 +61,7 @@ Merge the Morse MainNet and TestNet state exports into a single
 `msg_import_morse_acccounts_m<MAINNET_SNAPSHOT_HEIGHT>_t<TESTNET_SNAPSHOT_HEIGHT>.json` file:
 
 ```bash
-export MSG_IMPORT_MORSE_ACCOUNTS_PATH="./msg_import_morse_accounts_m${SNAPSHOT_HEIGHT}_t${TESTNET_SNAPSHOT_HEIGHT}.json"
-export MORSE_TESTNET_STATE_EXPORT_PATH="./morse_testnet_state_export${TESTNET_SNAPSHOT_HEIGHT}_${TESTNET_SNAPSHOT_DATE}.json"
-pocketd tx migration collect-morse-accounts "$MORSE_STATE_EXPORT_PATH" "$MSG_IMPORT_MORSE_ACCOUNTS_PATH" \
+export MSG_IMPORT_MORSE_ACCOUNTS_PATH="./msg_import_morse_accounts_m${MAINNET_SNAPSHOT_HEIGHT}_t${TESTNET_SNAPSHOT_HEIGHT}.json"
+pocketd tx migration collect-morse-accounts "$MORSE_MAINNET_STATE_EXPORT_PATH" "$MSG_IMPORT_MORSE_ACCOUNTS_PATH" \
   --merge-state="$MORSE_TESTNET_STATE_EXPORT_PATH"
 ```

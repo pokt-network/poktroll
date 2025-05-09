@@ -41,11 +41,11 @@ ensure the correct snapshot heights are used.
 Export the snapshot into a new directory on your local machine.
 
 ```bash
-mkdir -p $HOME/morse-snapshot
+mkdir -p $HOME/morse-mainnet-snapshot
 # 1. Untar the snapshot file
-tar -xvf <snapshot-file>.tar -C $HOME/morse-snapshot
+tar -xvf <snapshot-file>.tar -C $HOME/morse-mainnet-snapshot
 # 2. Change directory to the extracted snapshot folder
-cd $HOME/morse-snapshot
+cd $HOME/morse-mainnet-snapshot
 ```
 
 :::warning Note the height and date of the snapshot
@@ -61,10 +61,10 @@ For example, the snapshot file name `pruned-166819-166919-2025-04-29.tar` has a 
 Choose the snapshot height, which must be less than or equal to the snapshot height retrieved above. **This will be the published canonical export height.**
 
 ```bash
-export SNAPSHOT_HEIGHT="<HEIGHT>" # E.g. "166918"
-export SNAPSHOT_DATE="<DATE>" # E.g. "2025-04-29"
-export MORSE_STATE_EXPORT_PATH="./morse_state_export_${SNAPSHOT_HEIGHT}_${SNAPSHOT_DATE}.json"
-pocket --datadir="$HOME/morse-snapshot" util export-genesis-for-reset "$SNAPSHOT_HEIGHT" pocket > "$MORSE_STATE_EXPORT_PATH"
+export MAINNET_SNAPSHOT_HEIGHT="<HEIGHT>" # E.g. "166918"
+export MAINNET_SNAPSHOT_DATE="<DATE>" # E.g. "2025-04-29"
+export MORSE_MAINNET_STATE_EXPORT_PATH="./morse_state_export_${MAINNET_SNAPSHOT_HEIGHT}_${MAINNET_SNAPSHOT_DATE}.json"
+pocket --datadir="$HOME/morse-mainnet-snapshot" util export-genesis-for-reset "$MAINNET_SNAPSHOT_HEIGHT" pocket > "$MORSE_MAINNET_STATE_EXPORT_PATH"
 ```
 
 ## 3. Transform Morse Export to a Canonical Account State Import Message
@@ -80,7 +80,7 @@ Follow the steps there, and resume **from the next step (i.e. skip this step)**.
 
 
 ```bash
-export MSG_IMPORT_MORSE_ACCOUNTS_PATH="./msg_import_morse_accounts_${SNAPSHOT_HEIGHT}_${SNAPSHOT_DATE}.json"
+export MSG_IMPORT_MORSE_ACCOUNTS_PATH="./msg_import_morse_accounts_${MAINNET_SNAPSHOT_HEIGHT}_${MAINNET_SNAPSHOT_DATE}.json"
 pocketd tx migration collect-morse-accounts "$MORSE_STATE_EXPORT_PATH" "$MSG_IMPORT_MORSE_ACCOUNTS_PATH"
 ```
 
