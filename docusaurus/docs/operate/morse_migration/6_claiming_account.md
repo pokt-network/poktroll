@@ -53,13 +53,19 @@ Or specify a custom path:
 pocket accounts export <morse-address> --path <custom-path>.json
 ```
 
-:::tip Import it first
+:::tip Import your Morse account first
 
-If you have your private key hex and want to import it first, you can do it like so
+If you have your private key hex and want to import your Morse account first, you can do it like so
 
 ```bash
 pocket accounts import-raw <priv-key-hex>
 ```
+
+:::
+
+:::warning Remember your Encrypt Passphrase
+
+When exporting the account, you will be prompted with `Enter Encrypt Passphrase`. Please be sure to remember or write it down!
 
 :::
 
@@ -72,10 +78,6 @@ pocketd keys add <your_shannon_key_name>
 ### 3. Create your onchain Shannon account
 
 If you're using a newly generated key/account, then you will need to use one of the (network-specific) community faucets to trigger onchain account creation.
-
-:::TODO_MAINNET
-Add a link once available!
-:::
 
 For testnets, you can send yourself either uPOKT or MACT ("Morse Account Claimer Token").
 **Only 1 of EITHER minimal denomination** is sufficient to create the onchain account, such that it is ready to be used for claiming.
@@ -133,6 +135,7 @@ classDef effect color:#f80,stroke:#f80
 ```
 </details>
 
+<!--TODO_MAINNET : add mainnet MACT faucet link-->
 Use one of the following faucets:
 
 - [Alpha Testnet](https://faucet.alpha.testnet.pokt.network/)
@@ -159,14 +162,21 @@ pkd_<NETWORK>fund_mact <your_shannon_address>
 ### 4. Ensure your Shannon account exists onchain
 
 ```bash
-pocketd query account <shannon-dest-address> --node=${RPC_ENDPOINT}
+# Ensure this returns a nonzero balance
+pocketd query bank balances <your_shannon_key_name> --node=${RPC_ENDPOINT}
 ```
 
 ### 5. Check your claimable Morse account
 
+:::tip Ensure your Morse Address is ALL CAPS
+
+For this next step, you will need to convert your Morse address from lower case to ALL CAPS. You can ask an AI to perform this for you.
+
+:::
+
 ```bash
 pocketd query migration show-morse-claimable-account \
-  <morse-address-all-caps> \
+  <morse-address-ALL-CAPS> \
   --node=${RPC_ENDPOINT}
 ```
 
@@ -177,13 +187,11 @@ Running the following command:
 ```bash
 pocketd tx migration claim-account \
   pocket-account-<morse-keyfile-export>.json \
-  --from=<your_shannon_address> \
-  --node=${RPC_ENDPOINT} --chain-id=pocket-<network> \
-  --home=~/.pocketd --keyring-backend=test --no-passphrase
-  # --gas=auto --gas-prices=1upokt --gas-adjustment=1.5
+  --from=<your_shannon_key_name> \
+  --node=${RPC_ENDPOINT} --chain-id <chain-id>
 ```
 
-Should prompt for a passphrase and produce output similar to the following:
+The above will prompt for your generated Morse Encrypt Passphrase and produce output similar to the following:
 
 ```bash
 Enter Decrypt Passphrase:
@@ -195,10 +203,16 @@ MsgClaimMorseAccount {
 Confirm MsgClaimMorseAccount: y/[n]:
 ```
 
+:::tip Be patient. Don't Panic!
+
+This step may sit in your terminal for a minute or so. Be patient and don't panic, it is working!
+
+:::
+
 ### 7. Verify your Shannon balance
 
 ```bash
-pocketd query bank balances <shannon-dest-address> --node=${RPC_ENDPOINT}
+pocketd query bank balances <your_shannon_address> --node=${RPC_ENDPOINT}
 ```
 
 ## Troubleshooting
