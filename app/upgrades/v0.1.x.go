@@ -25,7 +25,7 @@ const (
 // It is an upgrade intended to reduce the memory footprint when iterating over Suppliers and Applications.
 // https://github.com/pokt-network/poktroll/compare/v0.1.x..abc123
 var Upgrade_0_1_x = Upgrade{
-	PlanName: Upgrade_0_1_7_PlanName,
+	PlanName: Upgrade_0_1_x_PlanName,
 	// No migrations in this upgrade.
 	StoreUpgrades: storetypes.StoreUpgrades{},
 
