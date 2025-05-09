@@ -133,6 +133,7 @@ Cosmovisor manages the binary upgrades for your node. Use the commands below to 
 **Determine your architecture**:
 
 ```bash
+# TODO_TECHDEBT(@olshansk, #1285): Upgrade up from v1.6.0 IFF we are confident its stable.
 mkdir -p $HOME/.local/bin
 COSMOVISOR_VERSION="v1.6.0"
 ARCH=$(uname -m)
