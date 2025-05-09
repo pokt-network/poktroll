@@ -50,7 +50,6 @@ Use the links below to download the snapshot:
 
 | Snapshot                                                                                                                                                      | Height | Date       | Size   |
 | ------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ | ---------- | ------ |
-| [morse-tesnet-176681-2025-05-07.txz](https://link.storjshare.io/raw/jwndx6se4o6tdwpeqhxm7imiam6a/pocket-network-snapshots/morse-tesnet-176681-2025-05-07.txz) | 176681 | 2025-05-07 | 7.37GB |
 
 **Extract the snapshot by cop-pasting the following commands**:
 
