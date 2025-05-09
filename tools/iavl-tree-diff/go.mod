@@ -1,6 +1,6 @@
 module github.com/pokt-network/poktroll/tools/iavl-tree-diff
 
-go 1.23
+go 1.24
 
 require github.com/cosmos/iavl v0.0.0-20240827134643-70519d07c07e
 
