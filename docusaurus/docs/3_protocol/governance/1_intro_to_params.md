@@ -16,7 +16,7 @@ sidebar_position: 1
 
 ### Adding new Parameters
 
-Visit [this page](../../3_develop/developer_guide/adding_params.md) for implementation details on how to add new parameters.
+Visit [this page](../../4_develop/developer_guide/adding_params.md) for implementation details on how to add new parameters.
 
 ### MsgUpdateParams vs MsgUpdateParam
 

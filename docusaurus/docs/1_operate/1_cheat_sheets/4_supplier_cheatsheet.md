@@ -3,44 +3,6 @@ sidebar_position: 4
 title: Supplier & RelayMiner Cheat Sheet
 ---
 
-```mermaid
-flowchart TD
-    %% Set default styling for all nodes
-    classDef default fill:#f9f9f9,stroke:#333,stroke-width:1px,color:black;
-
-    %% Define custom classes
-    classDef userClass fill:#e1f5fe,stroke:#01579b,stroke-width:2px,color:black;
-    classDef blockchainClass fill:#e8f5e9,stroke:#2e7d32,stroke-width:2px,color:black;
-    classDef relayMinerClass fill:#fff8e1,stroke:#ff8f00,stroke-width:2px,color:black;
-    classDef databaseClass fill:#f3e5f5,stroke:#6a1b9a,stroke-width:2px,color:black;
-
-    User([User]):::userClass
-
-    subgraph RelayMiner["RelayMiner (Offchain)"]
-        CP["Co-processor"]
-        BS[("Backend Server (DB)")]:::databaseClass
-    end
-
-    subgraph Blockchain["Blockchain (Onchain)"]
-        DB[("Database - 'Suppliers'")]:::databaseClass
-        SC["Supplier Config"]
-    end
-
-    %% User flow starting from top
-    User -->|1. Sends Request| CP
-    CP -->|2. Forwards Request| BS
-    BS -->|3. Sends Response| CP
-    CP -->|4. Forwards Response| User
-
-    %% Connection between RelayMiner and Blockchain
-    CP -.-> SC
-    DB --- SC
-
-    %% Apply classes to subgraphs
-    class Blockchain blockchainClass;
-    class RelayMiner relayMinerClass;
-```
-
 import ReactPlayer from "react-player";
 
 **🖨 🍝 Quickstart: Run a `RelayMiner` after staking a `Supplier` on Pocket Network**
@@ -55,6 +17,7 @@ TODO(@olshansk): Add a Supplier walkthrough.
 
 ## Table of Contents <!-- omit in toc -->
 
+- [High Level Diagram: Supplier \& RelayMiner](#high-level-diagram-supplier--relayminer)
 - [Video Walkthrough](#video-walkthrough)
 - [Prerequisites](#prerequisites)
   - [What will you do?](#what-will-you-do)
@@ -70,6 +33,60 @@ TODO(@olshansk): Add a Supplier walkthrough.
   - [(Optional) Start the anvil node](#optional-start-the-anvil-node)
   - [1. Configure the RelayMiner](#1-configure-the-relayminer)
   - [2. Start the RelayMiner](#2-start-the-relayminer)
+
+## High Level Diagram: Supplier & RelayMiner
+
+```mermaid
+flowchart TB
+    %% Set default styling for all nodes
+    classDef default fill:#f9f9f9,stroke:#333,stroke-width:1px,color:black;
+
+    %% Define custom classes
+    classDef userClass fill:#e1f5fe,stroke:#01579b,stroke-width:2px,color:black;
+    classDef blockchainClass fill:#e1f5fe,stroke:#01579b,stroke-width:2px,color:black;
+    classDef relayMinerClass fill:#fff8e1,stroke:#ff8f00,stroke-width:2px,color:black;
+    classDef databaseClass fill:#f3e5f5,stroke:#6a1b9a,stroke-width:2px,color:black;
+    classDef supplierRecordsClass fill:#bbdefb,stroke:#1976d2,stroke-width:2px,color:black;
+
+    %% Position User at top
+    User([User]):::userClass
+
+    %% Position RelayMiner on left and Blockchain on right
+    subgraph Operator["Operator (Offchain)"]
+        direction TB
+        CP["RelayMiner<br>Co-processor"]
+        subgraph BS["Backend Data or Service Server"]
+            SRV["Server"]
+            DB2[(Database)]:::databaseClass
+        end
+    end
+
+
+    %% User flow
+    User -->|"Signed Relay<br>Request"| CP
+    CP -->|"Data/Service<br>Request"| SRV
+    SRV --> DB2
+    DB2 --> SRV
+    SRV -->|"Data/Service<br>Response"| CP
+    CP -->|"Signed Relay<br>Response"| User
+
+    %% Connection between RelayMiner and Blockchain
+    CP <-..-> SC
+    DB --- SC
+    DB --- SCN
+
+
+    subgraph Blockchain["Pocket Network (Onchain)"]
+        direction TB
+        DB[(All Supplier Records)]:::supplierRecordsClass
+        SCN[["Supplier Config N"]]
+        SC[["Supplier Config 1"]]
+    end
+
+    %% Apply classes to subgraphs
+    class Blockchain blockchainClass;
+    class Operator relayMinerClass;
+```
 
 ## Video Walkthrough
 

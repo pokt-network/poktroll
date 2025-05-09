@@ -3,8 +3,6 @@ title: Application staking config
 sidebar_position: 1
 ---
 
-## Application staking config <!-- omit in toc -->
-
 This document describes the configuration file used by the `Application` actor
 to submit a `stake` transaction, **which is a prerequisite** for it to use the
 Pocket Network's RPC services.
@@ -78,7 +76,7 @@ The current protocol requires the `service_ids` list to contain **EXACTLY ONE** 
 to prevent `Application`s from over-servicing.
 
 A detailed explanation of why this is the case can be found in
-[Tokenomics/TLM](../../4_protocol/tokenomics/token_logic_modules.md).
+[Tokenomics/TLM](../../3_protocol/tokenomics/token_logic_modules.md).
 
 :::
 

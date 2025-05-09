@@ -3,8 +3,6 @@ title: Validator (~30 min)
 sidebar_position: 3
 ---
 
-## Validator Walkthrough <!-- omit in toc -->
-
 **🧑‍🔬 detailed step-by-step instructions to get you up and running with a `Validator` on Pocket Network ✅**
 
 :::warning This is an in-depth walkthrough
@@ -12,6 +10,8 @@ sidebar_position: 3
 See the [Validator Cheat Sheet](../1_cheat_sheets/3_validator_cheatsheet.md) if you want to just copy-pasta a few commands.
 
 :::
+
+## Table of Contents <!-- omit in toc -->
 
 - [Introduction](#introduction)
 - [Prerequisites \& Requirements](#prerequisites--requirements)

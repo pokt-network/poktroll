@@ -3,16 +3,6 @@ sidebar_position: 4
 title: Supplier FAQ
 ---
 
-## What is the different between a RelayMiner & Supplier
-
-TODO: Add onchain / offchain diagram
-
-https://medium.com/decentralized-infrastructure/exploring-paths-capabilities-with-pocket-network-s-shannon-upgrade-and-deepseek-part-two-a5e38766fd71
-
-## What happens if you go below the Min stake?
-
-## What is the maximum stake?
-
 ### What Supplier operations are available?
 
 ```bash
@@ -66,3 +56,9 @@ must be omitted if it is not.
 You can replace both `http` and `https` with `tcp` and it should work the same way.
 
 :::
+
+## What is the different between a RelayMiner & Supplier
+
+## What happens if you go below the Min stake?
+
+## What is the maximum stake?

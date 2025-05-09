@@ -3,22 +3,10 @@ sidebar_position: 5
 title: Gateway & Application (~30 min)
 ---
 
-## Gateway & Application Cheat Sheet <!-- omit in toc -->
-
 This guide provides quick reference commands for setting up and running a **Gateway**
 on Pocket Network.
 
-For detailed instructions, troubleshooting, and observability setup, see the
-[Gateway Walkthrough](../2_walkthroughs/2_gateway_walkthrough.md).
-
-:::note
-
-These instructions are intended to run on a Linux machine.
-
-TODO_TECHDEBT(@olshansky): Adapt instructions to be macOS friendly in order to
-streamline development and reduce friction for any new potential contributor.
-
-:::
+## Table of Contents <!-- omit in toc -->
 
 - [Prerequisites](#prerequisites)
 - [Account Setup](#account-setup)

@@ -3,7 +3,9 @@ title: Application Stake Transfer
 sidebar_position: 4
 ---
 
-## Transferring an Application <!-- omit in toc -->
+Instructions on how to transfer an application stake.
+
+## Table of Contents <!-- omit in toc -->
 
 - [How to Transfer an Application](#how-to-transfer-an-application)
 - [How it Works](#how-it-works)

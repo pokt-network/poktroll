@@ -3,8 +3,6 @@ title: RelayMiner config
 sidebar_position: 4
 ---
 
-## RelayMiner config <!-- omit in toc -->
-
 This document describes the configuration options for the `RelayMiner`, a `Supplier`
 co-processor/sidecar that acts as the real server for querying request, building
 claims and submitting proofs.
@@ -170,7 +168,7 @@ pprof:
   addr: localhost:6060
 ```
 
-You can learn how to use that endpoint on the [Performance Troubleshooting](../../3_develop/developer_guide/performance_troubleshooting.md) page.
+You can learn how to use that endpoint on the [Performance Troubleshooting](../../4_develop/developer_guide/performance_troubleshooting.md) page.
 
 ### `ping`
 

@@ -3,8 +3,6 @@ title: Gateway staking config
 sidebar_position: 2
 ---
 
-## Gateway staking config <!-- omit in toc -->
-
 This document describes the configuration file used by the `Gateway` actor
 to submit a `stake` transaction, **which is a prerequisite** for it proxy relays
 on behalf of `Application`s.

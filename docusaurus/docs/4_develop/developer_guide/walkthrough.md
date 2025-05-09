@@ -108,7 +108,7 @@ the tutorial so you have visibility into the types of onchain and offchain
 actors. In practice, you should be using [localnet](../networks/localnet.md)
 to dynamically scale your actors.
 
-To learn more about the different actors type, see the docs [here](../../4_protocol/actors/1_actors.md).
+To learn more about the different actors type, see the docs [here](../../3_protocol/actors/1_actors.md).
 
 It should look something like this once you're past the first section:
 
@@ -341,7 +341,7 @@ make acc_balance_query ACC=$SHANNON_APPLICATION
 ## 3. Manually Stake a Supplier & Deploy a RelayMiner
 
 As we mentioned earlier, if you want to understand the different onchain actors
-and offchain operators in POKT Network, look at the docs [here](../../4_protocol/actors/1_actors.md).
+and offchain operators in POKT Network, look at the docs [here](../../3_protocol/actors/1_actors.md).
 
 If you just want to follow instructions to make things work and get your hands
 dirty, keep reading.

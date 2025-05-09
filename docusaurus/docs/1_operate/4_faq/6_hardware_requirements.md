@@ -54,7 +54,7 @@ If the Full Node will serve as the RPC endpoint for Gateways and RelayMiners und
 
 ### RelayMiner
 
-See the [RelayMiner](../../4_protocol/actors/5_relay_miner.md) documentation for more
+See the [RelayMiner](../../3_protocol/actors/5_relay_miner.md) documentation for more
 information on what a RelayMiner is.
 
 | Component   | Minimum | Recommended |

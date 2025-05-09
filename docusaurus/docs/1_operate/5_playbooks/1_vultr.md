@@ -3,9 +3,9 @@ title: Vultr Deployment Playbook
 sidebar_position: 1
 ---
 
-## Vultr Deployment Playbook <!-- omit in toc -->
-
 This guide demonstrates common Vultr API operations for managing virtual machine instances via the [Vultr API](https://www.vultr.com/api).
+
+## Table of Contents <!-- omit in toc -->
 
 - [Prerequisites](#prerequisites)
   - [Whitelist your IP](#whitelist-your-ip)
