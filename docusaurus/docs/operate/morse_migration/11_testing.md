@@ -20,18 +20,14 @@ TestNet(s) are **a merge of both a Morse MainNet and a Morse TestNet state expor
 
 ## 1. Retrieve a Morse TestNet Snapshot
 
-Morse state exports are derived from snapshots. Since Morse TestNet snapshots are not automated, like Morse MainNet
-snapshots are, Morse TestNet snapshots are taken manually and distributed via STORJ network.
+Morse state exports are derived from snapshots. Since TestNet snapshots are not automated, like MainNet, TestNet snapshots are taken manually and distributed via STORJ network.
 Links are provided here for convenience:
 
 | Snapshot                                                                                                                                                      | Height | Date       | Size   | 
 |---------------------------------------------------------------------------------------------------------------------------------------------------------------|--------|------------|--------|
 | [morse-tesnet-176681-2025-05-07.txz](https://link.storjshare.io/raw/jwndx6se4o6tdwpeqhxm7imiam6a/pocket-network-snapshots/morse-tesnet-176681-2025-05-07.txz) | 176681 | 2025-05-07 | 7.37GB |
 
-In order to generate or reproduce the canonical merged Morse export state, the snapshot heights for used then
-reproducing MUST match what those used when generating the canonical state.
-See the table in [Migration Artifacts](https://github.com/pokt-network/poktroll/tree/main/tools/scripts/migration) to
-ensure the correctness of snapshot heights.
+In order to generate or reproduce the canonical merged Morse export state, the snapshot heights MUST match those used when generating the canonical state, as per the [Migration Artifacts](https://github.com/pokt-network/poktroll/tree/main/tools/scripts/migration) table.
 
 Export the snapshot into a new directory on your local machine.
 
@@ -62,7 +58,7 @@ in [State Transfer Playbook](./4_state_transfer_playbook.md).
 ## 3. Transform & Merge Morse Exports to a Canonical Account State Import Message
 
 Merge the Morse MainNet and TestNet state exports into a single
-`msg_import_morse_acccounts_m<SNAPSHOT_HEIGHT>_t<TESTNET_SNAPSHOT_HEIGHT>.json` file:
+`msg_import_morse_acccounts_m<MAINNET_SNAPSHOT_HEIGHT>_t<TESTNET_SNAPSHOT_HEIGHT>.json` file:
 
 ```bash
 export MSG_IMPORT_MORSE_ACCOUNTS_PATH="./msg_import_morse_accounts_m${SNAPSHOT_HEIGHT}_t${TESTNET_SNAPSHOT_HEIGHT}.json"
