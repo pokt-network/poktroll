@@ -6160,7 +6160,7 @@ func (x *MorseAuth) GetAccounts() []*MorseAuthAccount {
 	return nil
 }
 
-// MorseAccount:
+// MorseAuthAccount:
 // * Wraps MorseAuthAccount information to conform to Morse genesis structure
 // * Can represent EITHER an externally owned account OR a module account
 type MorseAuthAccount struct {
