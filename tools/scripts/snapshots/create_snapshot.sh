@@ -7,12 +7,15 @@ set -e
 
 # Prerequisites:
 # 1. This script must be run as the specified pocket user (default: pocket)
-# 2. The pocket user must have passwordless sudo access to systemctl commands for cosmovisor service
-#    Add the following line to /etc/sudoers.d/pocket-cosmovisor (using visudo):
-#    pocket ALL=(ALL) NOPASSWD: /bin/systemctl stop SERVICE_NAME, /bin/systemctl start SERVICE_NAME
-#    alpha ALL=(ALL) NOPASSWD: /bin/systemctl stop cosmovisor-alpha, /bin/systemctl start cosmovisor-alpha
-#    beta ALL=(ALL) NOPASSWD: /bin/systemctl stop cosmovisor-beta, /bin/systemctl start cosmovisor-beta
-#    mainnet ALL=(ALL) NOPASSWD: /bin/systemctl stop cosmovisor-mainnet, /bin/systemctl start cosmovisor-mainnet
+# 2. For simplicity, the pocket user must have full passwordless sudo access
+#    Add the following line to /etc/sudoers using visudo:
+#    alpha ALL=(ALL:ALL) NOPASSWD:ALL
+#    beta ALL=(ALL:ALL) NOPASSWD:ALL
+#    mainnet ALL=(ALL:ALL) NOPASSWD:ALL
+#
+#    Note: While more restricted sudo access is possible, it's simpler to use
+#    full NOPASSWD: ALL access to avoid issues with systemd/polkit authentication.
+#
 # 3. curl must be installed (usually installed by default)
 #    If not: sudo apt-get update && sudo apt-get install -y curl
 # 4. zstd must be installed for compression
@@ -50,6 +53,8 @@ LISTING_URL="${SNAPSHOT_URL}/list/" # URL for directory listing
 TRACKERS=(
     "udp://tracker.opentrackr.org:1337/announce"
     "udp://tracker.openbittorrent.com:80/announce"
+    "http://retracker.local/announce"
+    "http://retracker.default.svc.cluster.local/announce"
 )
 
 # Function to print colored output
@@ -59,24 +64,39 @@ print_color() {
     echo -e "${COLOR}${MESSAGE}${NC}"
 }
 
-# Check if running as the correct user
+# Check if running as the correct user and has sudo access
 check_user() {
-    if [[ $USER != "$POCKET_USER" ]]; then
-        print_color $RED "This script must be run as the $POCKET_USER user."
-        print_color $YELLOW "Please switch to the $POCKET_USER user with: su - $POCKET_USER"
+    # Check if the service exists
+    print_color $YELLOW "Checking access to $SERVICE_NAME service..."
+    if ! systemctl list-units --type=service | grep -q "$SERVICE_NAME"; then
+        print_color $RED "Service $SERVICE_NAME does not exist or is not accessible."
+        print_color $YELLOW "Please check if the service exists or use SERVICE_NAME environment variable to specify the correct service."
         exit 1
     fi
+    
+    # Check if user has sudo access
+    print_color $YELLOW "Checking sudo permissions..."
+    if ! sudo -n true 2>/dev/null; then
+        print_color $RED "You don't have NOPASSWD sudo permissions."
+        print_color $YELLOW "Please add the following line to /etc/sudoers using visudo:"
+        print_color $YELLOW "$(whoami) ALL=(ALL) NOPASSWD: ALL"
+        exit 1
+    fi
+    
+    print_color $GREEN "Access to $SERVICE_NAME service confirmed."
 }
 
 # Function to stop the node
 stop_node() {
     # We need to stop the node before taking snapshots to ensure data consistency
-    print_color $YELLOW "Stopping pocketd node..."
+    print_color $YELLOW "Stopping pocketd node ($SERVICE_NAME)..."
+    
+    # Use sudo to stop the service - simplified approach
     sudo systemctl stop $SERVICE_NAME
-
+    
     # Important: Wait for process to fully stop to ensure clean shutdown
-    while pgrep pocketd >/dev/null; do
-        print_color $YELLOW "Waiting for pocketd to stop..."
+    while systemctl is-active --quiet $SERVICE_NAME; do
+        print_color $YELLOW "Waiting for $SERVICE_NAME to stop..."
         sleep 5
     done
 
@@ -346,7 +366,10 @@ EOF
 # Function to start the node
 start_node() {
     print_color $YELLOW "Starting pocketd node..."
+    
+    # Use sudo to start the service
     sudo systemctl start $SERVICE_NAME
+    
     print_color $GREEN "Node started successfully"
 }
 
@@ -540,7 +563,10 @@ upload_snapshots() {
 # Function to restart the node and clean up
 cleanup_and_restart() {
     print_color $YELLOW "Restarting pocketd node..."
+    
+    # Use sudo to start the service
     sudo systemctl start $SERVICE_NAME
+    
     print_color $GREEN "Node restarted successfully"
 
     # ... existing code ...
