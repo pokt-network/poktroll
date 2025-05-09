@@ -174,6 +174,21 @@ For example, running:
 ./tools/scripts/upgrades/prepare_upgrade_tx.sh v0.1.2
 ```
 
+:::note 😎 Keep Calm and Wait for CI 😅
+
+If you see an error message like this:
+
+```bash
+$ ./tools/scripts/upgrades/prepare_upgrade_tx.sh v0.1.11
+Downloading checksum file from https://github.com/pokt-network/poktroll/releases/download/v0.1.11/release_checksum...
+Error: Failed to download checksum file
+```
+
+This means that CI is still building the release artifacts.
+You can check the status of CI by looking for a run corresponding to the new release/tag on [the actions page](https://github.com/pokt-network/poktroll/actions).
+
+:::
+
 Will create:
 
 ```bash
@@ -222,8 +237,12 @@ go install github.com/hashicorp/go-getter/cmd/go-getter@latest
 And check all binary URLs:
 
 ```bash
-jq -r '.body.messages[0].plan.info | fromjson | .binaries[]' $PATH_TO_UPGRADE_TRANSACTION_JSON | while IFS= read -r url; do
-  go-getter "$url" .
+RELEASE_VERSION=<VERSION> # E.g. "v0.1.11"
+for file in ./tools/scripts/upgrades/upgrade_tx_${RELEASE_VERSION}*; do
+  echo "Processing $file"
+  jq -r '.body.messages[0].plan.info | fromjson | .binaries[]' "$file" | while IFS= read -r url; do
+    go-getter "$url" .
+  done
 done
 ```
 
