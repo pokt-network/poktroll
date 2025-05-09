@@ -71,6 +71,17 @@ func (k Keeper) GetAllMorseClaimableAccounts(ctx context.Context) (list []migrat
 	return
 }
 
+// HasAnyMorseClaimableAccounts returns true if there are any MorseClaimableAccounts in the store.
+func (k Keeper) HasAnyMorseClaimableAccounts(ctx context.Context) bool {
+	storeAdapter := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
+	store := prefix.NewStore(storeAdapter, migrationtypes.KeyPrefix(migrationtypes.MorseClaimableAccountKeyPrefix))
+	iterator := storetypes.KVStorePrefixIterator(store, []byte{})
+
+	defer iterator.Close()
+
+	return iterator.Valid()
+}
+
 // ImportFromMorseAccountState imports the MorseClaimableAccounts from the given MorseAccountState.
 // DEV_NOTE: It assumes that the MorseAccountState has already been validated.
 func (k Keeper) ImportFromMorseAccountState(

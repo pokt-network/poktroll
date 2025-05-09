@@ -43,13 +43,13 @@ func (s *AuthzIntegrationSuite) RunAuthzGrantMsgForPocketModules(
 		s.RunAuthzGrantMsg(t, granterAddr, granteeAddr, authorization)
 
 		// Query for the created grant to assert that they were created.
-		authzQueryClient := authz.NewQueryClient(s.app.QueryHelper())
+		authzQueryClient := authz.NewQueryClient(s.GetApp().QueryHelper())
 		queryGrantsReq := &authz.QueryGrantsRequest{
 			Granter:    granterAddr.String(),
 			Grantee:    granteeAddr.String(),
 			MsgTypeUrl: msgType,
 		}
-		queryGrantsRes, err := authzQueryClient.Grants(s.app.GetSdkCtx(), queryGrantsReq)
+		queryGrantsRes, err := authzQueryClient.Grants(s.GetApp().GetSdkCtx(), queryGrantsReq)
 		require.NoError(t, err)
 		require.NotNil(t, queryGrantsRes)
 
@@ -78,7 +78,7 @@ func (s *AuthzIntegrationSuite) RunAuthzGrantMsg(
 	grantMsg, err := authz.NewMsgGrant(granterAddr, granteeAddr, authorization, &defaultAuthzGrantExpiration)
 	require.NoError(t, err)
 
-	grantResAny, err := s.app.RunMsg(t, grantMsg)
+	grantResAny, err := s.GetApp().RunMsg(t, grantMsg)
 	require.NoError(t, err)
 	require.NotNil(t, grantResAny)
 }
