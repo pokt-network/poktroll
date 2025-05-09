@@ -100,7 +100,7 @@ Distribute the `msg_import_morse_accounts_${SNAPSHOT_HEIGHT}_${SNAPSHOT_DATE}.js
 
 :::danger
 
-This can **ONLY BE DONE ONCE** on networks with the `allow_morse_import_overwrite` param disabled (e.g. MainNet).
+This can **ONLY BE DONE ONCE** on networks with the `allow_morse_account_import_overwrite` param disabled (e.g. MainNet).
 
 :::
 
