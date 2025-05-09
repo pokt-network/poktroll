@@ -58,9 +58,8 @@ var allUpgrades = []upgrades.Upgrade{
 	// v0.1.10 - upgrade to fix chain halts caused by the previous upgrade.
 	// upgrades.Upgrade_0_1_10,
 
-	// TODO_MAINNET_MIGRATION(@bryanchriswhite): Update the upgrade version number.
-	// v0.1.x - upgrade to fix chain halts caused by the previous upgrade.
-	upgrades.Upgrade_0_1_x,
+	// v0.1.11 - upgrade to add allow_morse_account_import_overwrite param.
+	upgrades.Upgrade_0_1_11,
 }
 
 // setUpgrades sets upgrade handlers for all upgrades and executes KVStore migration if an upgrade plan file exists.
