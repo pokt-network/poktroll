@@ -59,17 +59,17 @@ Pocket network is built on top of [Cosmos SDK](https://docs.cosmos.network), [Co
 
 ### Most Common Starting Points
 
-- **Affected by the Migration**: Check out [this page](../category/cheat-sheets-to-stake--deploy-intermediate) to install the CLI.
-- **Casual User**: Check [this page](2_explore/2_account_management/2_create_new_account_cli.md) to create a new wallet.
-- **Technical User**: Visit [this page](2_explore/2_account_management/1_pocketd_cli.md) to install the CLI.
-- **Operator**: Visit one of the following pages to deploy a [Full Node](1_operate/1_cheat_sheets/2_full_node_cheatsheet.md), [Validator](1_operate/1_cheat_sheets/3_validator_cheatsheet.md), [Supplier](1_operate/1_cheat_sheets/4_supplier_cheatsheet.md), or [Gateway](1_operate/1_cheat_sheets/5_gateway_cheatsheet.md).
+- **Affected by the Migration**: Check out [this page](./category/morse---shannon-migration) to start getting acquainted with the migration process.
+- **Technical User**: Visit [this page](./explore/account_management/create_new_account_cli) to install the CLI.
+- **Operator**: Visit one of the following pages to deploy a [Full Node](./operate/cheat_sheets/full_node_cheatsheet), [Validator](./operate/cheat_sheets/validator_cheatsheet), [Supplier](./operate/cheat_sheets/supplier_cheatsheet), or [Gateway](./operate/cheat_sheets/gateway_cheatsheet).
+- [Coming soon]: **Casual User**: Check [this page](./explore/account_management/create_new_account_wallet) to create a new wallet.
 
 ### How is this documentation organized?
 
-- ⚙️ **[Infrastructure Operators](../operate):** Cheat sheets, guides and configs for operators, node runners and infrastructure operators.
-- 🗺️ **[Users & Explorers](../explore):** Explorers, wallets, faucets, CLIs and other resources to interact with the network.
-- 🧑 **[Core Developers](../develop):** Guides and onboarding docs for contributing to the core protocol or SDK.
-- 🧠 **[Protocol Specifications](../protocol):** Learn more about tokenomics design and protocol architecture.
+- ⚙️ **[Infrastructure Operators](./operate):** Cheat sheets, guides and configs for operators, node runners and infrastructure operators.
+- 🗺️ **[Users & Explorers](./explore):** Explorers, wallets, faucets, CLIs and other resources to interact with the network.
+- 🧑 **[Core Developers](./develop):** Guides and onboarding docs for contributing to the core protocol or SDK.
+- 🧠 **[Protocol Specifications](./protocol):** Learn more about tokenomics design and protocol architecture.
 
 ## What is PATH?
 
