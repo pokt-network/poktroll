@@ -244,7 +244,7 @@ func collectInputAccountBalances(inputState *migrationtypes.MorseStateExport, mo
 			continue
 		}
 
-		if _, _, err = morseWorkspace.addAccount(accountAddr); err != nil {
+		if err = morseWorkspace.addAccount(accountAddr); err != nil {
 			return err
 		}
 
@@ -314,7 +314,7 @@ func collectInputApplicationStakes(inputState *migrationtypes.MorseStateExport, 
 				Msg("no account found for application")
 
 			// DEV_NOTE: If no auth account was found for this application, create a new one.
-			if _, _, err := morseWorkspace.addAccount(appAddr); err != nil {
+			if err := morseWorkspace.addAccount(appAddr); err != nil {
 				return fmt.Errorf(
 					"adding application account to account balance of address %q: %w",
 					appAddr, err,
@@ -382,7 +382,7 @@ func collectInputSupplierStakes(inputState *migrationtypes.MorseStateExport, mor
 				Msg("no account found for supplier")
 
 			// DEV_NOTE: If no auth account was found for this supplier, create a new one.
-			if _, _, err := morseWorkspace.addAccount(supplierAddr); err != nil {
+			if err := morseWorkspace.addAccount(supplierAddr); err != nil {
 				return fmt.Errorf(
 					"adding supplier account to account balance of address %q: %w",
 					supplierAddr, err,

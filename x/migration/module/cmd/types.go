@@ -111,18 +111,15 @@ func (miw *morseImportWorkspace) accumulatedTotalsSum() cosmosmath.Int {
 // slice and its corresponding address is in the accountIdxByAddress map.
 // - If the Morse account is a module account, the module account name is used as the MorseClaimableAccount address
 // - If the address is already present, an error is returned
-func (miw *morseImportWorkspace) addAccount(addr string) (accountIdx int64, balance cosmostypes.Coin, err error) {
-	// Initialize balance to zero.
-	// DEV_NOTE: This guarantees that all accounts tracked by the morseWorkspace have the upokt denom.
-	balance = cosmostypes.NewCoin(volatile.DenomuPOKT, cosmosmath.ZeroInt())
-
-	if _, err = miw.getAccount(addr); err == nil {
-		return 0, cosmostypes.Coin{}, ErrMorseStateTransform.Wrapf(
-			"unexpected workspace state: account already exists (%s)", addr,
-		)
+func (miw *morseImportWorkspace) addAccount(addr string) error {
+	if _, err := miw.getAccount(addr); err == nil {
+		logger.Logger.Warn().
+			Str("address", addr).
+			Msg("account already exists, stakes and balances will be summed")
+		return nil
 	}
 
-	accountIdx = miw.nextIdx()
+	accountIdx := miw.nextIdx()
 	importAccount := &migrationtypes.MorseClaimableAccount{
 		MorseSrcAddress:  addr,
 		UnstakedBalance:  cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 0),
@@ -132,7 +129,7 @@ func (miw *morseImportWorkspace) addAccount(addr string) (accountIdx int64, bala
 	miw.accountState.Accounts = append(miw.accountState.Accounts, importAccount)
 	miw.accountIdxByAddress[addr] = uint64(accountIdx)
 
-	return accountIdx, balance, nil
+	return nil
 }
 
 // addUnstakedBalance adds the given amount to the corresponding Morse account balances in the morseWorkspace.
