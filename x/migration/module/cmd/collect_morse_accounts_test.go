@@ -71,11 +71,70 @@ func TestCollectMorseAccounts(t *testing.T) {
 	require.Equal(t, expectedMsgImportMorseClaimableAccounts, actualMsgImportMorseClaimableAccounts)
 }
 
+func TestCollectMorseAccounts_InvalidAndModuleAddresses(t *testing.T) {
+	tmpDir := t.TempDir()
+	outputPath := filepath.Join(tmpDir, "morse-state-output.json")
+	inputFile, err := os.CreateTemp(tmpDir, "morse-state-input.json")
+	require.NoError(t, err)
+
+	// Generate MorseExportStates and MorseAccountStates with invalid and module addresses.
+	invalidAddrMorseStateExport, expectedInvalidAddrMorseAccountState := testmigration.GenerateInvalidAddressMorseStateExportAndAccountState(t)
+	moduleAddrMorseStateExport, moduleAddrMorseAccountState := testmigration.GenerateModuleAddressMorseStateExportAndAccountState(t, migrationtypes.MorseModuleAccountNames)
+
+	// DEV_NOTE: This is a shallow copy, solely for improving readability via naming.
+	mergedMorseStateExport := invalidAddrMorseStateExport
+	expectedMergedMorseAccountState := expectedInvalidAddrMorseAccountState
+
+	// Merge MorseStateExport accounts
+	mergedMorseStateExport.AppState.Auth.Accounts = append(
+		mergedMorseStateExport.AppState.Auth.Accounts,
+		moduleAddrMorseStateExport.AppState.Auth.Accounts...,
+	)
+
+	// Merge MorseAccountState accounts
+	expectedMergedMorseAccountState.Accounts = append(
+		expectedMergedMorseAccountState.Accounts,
+		moduleAddrMorseAccountState.Accounts...,
+	)
+
+	morseStateExportBz, err := cmtjson.MarshalIndent(mergedMorseStateExport, "", "  ")
+	require.NoError(t, err)
+
+	_, err = inputFile.Write(morseStateExportBz)
+	require.NoError(t, err)
+
+	err = inputFile.Close()
+	require.NoError(t, err)
+
+	// Call the function under test.
+	_, err = collectMorseAccounts(inputFile.Name(), outputPath)
+	require.NoError(t, err)
+
+	outputJSON, err := os.ReadFile(outputPath)
+	require.NoError(t, err)
+
+	var (
+		actualMsgImportMorseClaimableAccounts *migrationtypes.MsgImportMorseClaimableAccounts
+	)
+
+	expectedMsgImportMorseClaimableAccounts, err := migrationtypes.NewMsgImportMorseClaimableAccounts(
+		authtypes.NewModuleAddress(govtypes.ModuleName).String(),
+		*expectedMergedMorseAccountState,
+	)
+	require.NoError(t, err)
+
+	err = cmtjson.Unmarshal(outputJSON, &actualMsgImportMorseClaimableAccounts)
+	require.NoError(t, err)
+
+	require.NoError(t, err)
+	require.Equal(t, expectedMsgImportMorseClaimableAccounts, actualMsgImportMorseClaimableAccounts)
+}
+
 // TestNewTestMorseStateExport exercises the NewTestMorseStateExport testutil function.
 // It generates MorseStateExport instances with an increasing number of accounts, then verifies:
 //   - The correct number of accounts in each export
 //   - The total balances in each export
-//   - The total stakes in each export (via transformMorseState)
+//   - The total stakes in each export (via transformAndIncludeMorseState)
 func TestNewTestMorseStateExport(t *testing.T) {
 	for numAccounts := 1; numAccounts <= 10; numAccounts++ {
 		t.Run(fmt.Sprintf("num_accounts=%d", numAccounts), func(t *testing.T) {
@@ -91,7 +150,7 @@ func TestNewTestMorseStateExport(t *testing.T) {
 			require.Equal(t, numAccounts, len(exportAccounts))
 
 			morseWorkspace := newMorseImportWorkspace()
-			err = transformMorseState(morseStateExport, morseWorkspace)
+			err = transformAndIncludeMorseState(morseStateExport, morseWorkspace)
 			require.NoError(t, err)
 
 			// Construct account number expectations based on equal distribution of unstaked, app, and supplier accounts.
@@ -153,7 +212,7 @@ func BenchmarkTransformMorseState(b *testing.B) {
 			// Call the function under test.
 			b.ResetTimer()
 			for i := 0; i < b.N; i++ {
-				err = transformMorseState(morseStateExport, morseWorkspace)
+				err = transformAndIncludeMorseState(morseStateExport, morseWorkspace)
 				require.NoError(b, err)
 			}
 		})
