@@ -21,8 +21,8 @@ const (
 	flagNumAccountsPerDebugLog      = "num-accounts-per-debug-log"
 	flagNumAccountsPerDebugLogUsage = "The number of accounts to iterate over for every debug log message that's printed."
 
-	flagExtraMorseStateExportPath      = "extra-state"
-	flagExtraMorseStateExportPathUsage = "The path to an additional file containing a JSON serialized MorseStateExport object. Used to merge two state export objects (e.g. Morse MainNet and TestNet) for use in Shannon TestNet(s)."
+	flagMergeMorseStateExportPath      = "merge-state"
+	flagMergeMorseStateExportPathUsage = "The path to an additional file containing a JSON serialized MorseStateExport object. Used to merge two state export objects (e.g. Morse MainNet and TestNet); useful for testing in Shannon TestNet(s)."
 )
 
 var (
@@ -60,6 +60,9 @@ The required input MUST be generated via the Morse CLI like so:
 
 See: https://dev.poktroll.com/operate/morse_migration/state_transfer_playbook
 `,
+		Example: `pocketd tx migration collect-morse-accounts "$MORSE_STATE_EXPORT_PATH" "$MSG_IMPORT_MORSE_ACCOUNTS_PATH"
+pocketd tx migration collect-morse-accounts "$MORSE_STATE_EXPORT_PATH" "$MSG_IMPORT_MORSE_ACCOUNTS_PATH" --merge-state="$MORSE_TESTNET_STATE_EXPORT_PATH"
+`,
 		RunE:    runCollectMorseAccounts,
 		PreRunE: logger.PreRunESetup,
 		PostRun: signals.ExitWithCodeIfNonZero,
@@ -73,8 +76,8 @@ See: https://dev.poktroll.com/operate/morse_migration/state_transfer_playbook
 
 	collectMorseAcctsCmd.Flags().StringVar(
 		&extraMorseStateExportPath,
-		flagExtraMorseStateExportPath, "",
-		flagExtraMorseStateExportPathUsage,
+		flagMergeMorseStateExportPath, "",
+		flagMergeMorseStateExportPathUsage,
 	)
 
 	return collectMorseAcctsCmd
