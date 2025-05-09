@@ -1,12 +1,9 @@
 # Morse -> Shannon Migration
 
-## Alpha
+## Migration Artifacts
 
-The following snapshot was used on Alpha TestNet: `snapshot-pruned-165398-165498-2025-04-15.tar`
+| Shannon Network | Morse MainNet Snapshot                                                                                                      | Morse TestNet Snapshot                                                                                                                                        | State Export(s)                                                                                                                                                                                    | `MsgImportMorseClaimableAccounts`                                                                            |
+|-----------------|-----------------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------| 
+| Alpha TestNet   | pruned-165398-165498-2025-04-15.tar                                                                                         | N/A                                                                                                                                                           | [morse_account_state_alpha.json](./morse_account_state_alpha.json)                                                                                                                                 | [msg_import_morse_accounts_alpha.json](./msg_import_morse_accounts_alpha.json)                               |
+| Beta TestNet    | [pruned-167540-167640-2025-05-06.tar](https://pocket-snapshot.liquify.com/files/pruned/pruned-167540-167640-2025-05-06.tar) | [morse-tesnet-176681-2025-05-07.txz](https://link.storjshare.io/raw/jwndx6se4o6tdwpeqhxm7imiam6a/pocket-network-snapshots/morse-tesnet-176681-2025-05-07.txz) | [morse_state_export_167639_2025-05-06.json](./morse_state_export_167639_2025-05-06.json), [morse_testnet_state_export_176681_2025-05-07.json](./morse_testnet_state_export_176681_2025-05-07.json) | [msg_import_morse_accounts_m167639_t176681_beta.json](./msg_import_morse_accounts_m167639_t176681_beta.json) |
 
-The corresponding files can be found here:
-
-```bash
-./tools/scripts/migration/morse_state_export_alpha.json
-./tools/scripts/migration/morse_account_state_alpha.json
-```

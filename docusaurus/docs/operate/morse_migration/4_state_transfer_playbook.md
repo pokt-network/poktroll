@@ -29,6 +29,15 @@ This page is intended for the Foundation (Authority) or whoever is managing the 
 
 Go to [Liquify's Snapshot Explorer](https://pocket-snapshot-uk.liquify.com/#/pruned/) and download the latest pruned snapshot.
 
+:::warn
+
+If you're reproducing the Morse state migration process, for validation purposes, you MUST use the **same snapshot height** in order to guarantee deterministic and correct results.
+
+See the table in [Migration Artifacts](https://github.com/pokt-network/poktroll/tree/main/tools/scripts/migration) to
+ensure the correct snapshot heights are used.
+
+:::
+
 Export the snapshot into a new directory on your local machine.
 
 ```bash
@@ -60,6 +69,16 @@ pocket --datadir="$HOME/morse-snapshot" util export-genesis-for-reset "$SNAPSHOT
 
 ## 3. Transform Morse Export to a Canonical Account State Import Message
 
+:::info Testing on Shannon TestNet?
+
+`MorseClaimableAccount`s imported to Shannon TestNet(s) are a merge of the Morse MainNet and TestNet state exports, for developer convenience.
+
+See [Migration Testing](./11_testing.md) for additional instructions.
+Follow the steps there, and resume **from the next step (i.e. skip this step)**.
+
+:::
+
+
 ```bash
 export MSG_IMPORT_MORSE_ACCOUNTS_PATH="./msg_import_morse_accounts_${SNAPSHOT_HEIGHT}_${SNAPSHOT_DATE}.json"
 pocketd tx migration collect-morse-accounts "$MORSE_STATE_EXPORT_PATH" "$MSG_IMPORT_MORSE_ACCOUNTS_PATH"
@@ -78,7 +97,7 @@ Distribute the `msg_import_morse_accounts_${SNAPSHOT_HEIGHT}_${SNAPSHOT_DATE}.js
 
 :::danger
 
-This can **ONLY BE DONE ONCE** per network.
+This can **ONLY BE DONE ONCE** on networks with the `allow_morse_import_overwrite` param disabled (e.g. MainNet).
 
 :::
 
