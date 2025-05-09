@@ -2,7 +2,6 @@ package upgrades
 
 import (
 	"context"
-	"fmt"
 
 	cosmoslog "cosmossdk.io/log"
 	storetypes "cosmossdk.io/store/types"
