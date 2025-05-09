@@ -116,7 +116,7 @@ cat /home/pocket/.pocket/config/config.toml
 curl -s ${POCKET_RPC_ENDPONT}/abci_info | jq '.result.response.version'
 ```
 
-For example, for Beta TestNet, we got the RPC endpoint from [here](../../2_explore/tools/2_shannon_beta.md) and ran:
+For example, for Beta TestNet, we got the RPC endpoint from [here](../../2_explore/1_tools/2_shannon_beta.md) and ran:
 
 ```bash
 curl -s https://shannon-testnet-grove-rpc.beta.poktroll.com/abci_info | jq '.result.response.version'

@@ -27,7 +27,7 @@ sidebar_position: 3
 
 ## Prerequisites
 
-- [Install the `pocketd` CLI](../../2_explore/user_guide/1_pocketd_cli.md)
+- [Install the `pocketd` CLI](../../2_explore/2_account_management/1_pocketd_cli.md)
 - [Set up and run a Full Node](2_full_node_cheatsheet.md) first
 
 :::tip `pocket` user

@@ -364,7 +364,7 @@ brew tap pocket-network/homebrew-pocketd
 brew install pocketd
 ```
 
-See [pocketd CLI docs](../../2_explore/user_guide/1_pocketd_cli.md) for more info.
+See [pocketd CLI docs](../../2_explore/2_account_management/1_pocketd_cli.md) for more info.
 
 ---
 

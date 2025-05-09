@@ -47,7 +47,7 @@ You will need:
 
 :::tip Shannon CLI
 
-You can find more details about the Shannon CLI [here](../user_guide/1_pocketd_cli.md).
+You can find more details about the Shannon CLI [here](../2_account_management/1_pocketd_cli.md).
 
 :::
 

@@ -1,9 +1,9 @@
 ---
 title: Mnemonic Seed Phrase Recovery
-sidebar_position: 3
+sidebar_position: 5
 ---
 
-# Recovering an Account from a Mnemonic Seed Phrase <!-- omit in toc -->
+## Recovering an Account from a Mnemonic Seed Phrase <!-- omit in toc -->
 
 :::warning Security Notice
 

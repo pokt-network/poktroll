@@ -48,7 +48,7 @@ import ReactPlayer from "react-player";
 :::warning
 This is copy-paste scripting. No deep explanations here.
 
-See [Supplier Walkthrough](../walkthroughs/supplier_walkthrough.md) for details.
+TODO(@olshansk): Add a Supplier walkthrough.
 :::
 
 ---
@@ -57,9 +57,19 @@ See [Supplier Walkthrough](../walkthroughs/supplier_walkthrough.md) for details.
 
 - [Video Walkthrough](#video-walkthrough)
 - [Prerequisites](#prerequisites)
+  - [What will you do?](#what-will-you-do)
 - [Account Setup](#account-setup)
-- [Supplier Config](#supplier-configuration)
-- [RelayMiner Config](#relayminer-configuration)
+  - [1. Create Supplier account](#1-create-supplier-account)
+  - [2. Prepare your environment](#2-prepare-your-environment)
+  - [3. Fund the Supplier account](#3-fund-the-supplier-account)
+- [Supplier Configuration](#supplier-configuration)
+  - [1. Get your public URL](#1-get-your-public-url)
+  - [2. Configure your Supplier](#2-configure-your-supplier)
+  - [3. Stake your Supplier](#3-stake-your-supplier)
+- [RelayMiner Configuration](#relayminer-configuration)
+  - [(Optional) Start the anvil node](#optional-start-the-anvil-node)
+  - [1. Configure the RelayMiner](#1-configure-the-relayminer)
+  - [2. Start the RelayMiner](#2-start-the-relayminer)
 
 ## Video Walkthrough
 
@@ -73,8 +83,8 @@ See [Supplier Walkthrough](../walkthroughs/supplier_walkthrough.md) for details.
 
 ## Prerequisites
 
-- [Install `pocketd` CLI](../../2_explore/user_guide/1_pocketd_cli.md)
-- [Create/fund account](../../2_explore/user_guide/2_create_new_account_cli.md)
+- [Install `pocketd` CLI](../../2_explore/2_account_management/1_pocketd_cli.md)
+- [Create/fund account](../../2_explore/2_account_management/2_create_new_account_cli.md)
 - [Stake or find a `service`](1_service_cheatsheet.md)
 - [Check hardware requirements](../4_faq/6_hardware_requirements.md)
 
@@ -87,11 +97,13 @@ See [Supplier Walkthrough](../walkthroughs/supplier_walkthrough.md) for details.
 ## Account Setup
 
 ### 1. Create Supplier account
+
 ```bash
 pocketd keys add supplier
 ```
 
 ### 2. Prepare your environment
+
 ```bash
 cat > ~/.pocketrc << 'EOF'
 export SUPPLIER_ADDR=$(pocketd keys show supplier -a)
@@ -101,26 +113,32 @@ export BETA_RPC_URL="https://shannon-testnet-grove-rpc.beta.poktroll.com"
 export BETA_GRPC_URL="https://shannon-testnet-grove-grpc.beta.poktroll.com:443"
 EOF
 ```
+
 ```bash
 echo "source ~/.pocketrc" >> ~/.profile
 source ~/.profile
 ```
 
 ### 3. Fund the Supplier account
+
 ```bash
 echo "Supplier address: $SUPPLIER_ADDR"
 ```
+
 - Go to [Shannon Beta TestNet faucet](https://faucet.beta.testnet.pokt.network/) and fund your account.
 
 Check balance:
+
 ```bash
 pocketd query bank balances $SUPPLIER_ADDR $BETA_NODE_FLAGS
 ```
 
 :::tip watch and wait
+
 ```bash
 watch -n 5 "pocketd query bank balances $SUPPLIER_ADDR $BETA_NODE_FLAGS"
 ```
+
 :::
 
 ## Supplier Configuration
@@ -128,13 +146,17 @@ watch -n 5 "pocketd query bank balances $SUPPLIER_ADDR $BETA_NODE_FLAGS"
 See [Supplier config docs](../3_configs/3_supplier_staking_config.md) for all options.
 
 ### 1. Get your public URL
+
 ```bash
 EXTERNAL_IP=$(curl -4 ifconfig.me/ip)
 ```
+
 - Pick a public port (e.g. 8545) and open it:
+
 ```bash
 sudo ufw allow 8545/tcp
 ```
+
 - Your public URL: `http://$EXTERNAL_IP:8545`
 
 ### 2. Configure your Supplier
@@ -160,12 +182,15 @@ services:
 ```
 
 ### 3. Stake your Supplier
+
 ```bash
 pocketd tx supplier stake-supplier \
   --config /tmp/stake_supplier_config.yaml \
   --from=$SUPPLIER_ADDR $TX_PARAM_FLAGS $BETA_NODE_FLAGS
 ```
+
 Check status:
+
 ```bash
 pocketd query supplier show-supplier $SUPPLIER_ADDR $BETA_NODE_FLAGS
 ```
@@ -175,7 +200,9 @@ pocketd query supplier show-supplier $SUPPLIER_ADDR $BETA_NODE_FLAGS
 See [RelayMiner config docs](../3_configs/4_relayminer_config.md) for all options.
 
 ### (Optional) Start the anvil node
+
 If using `service_id: anvil`, run a local Anvil node:
+
 <details>
 <summary>How to run Anvil</summary>
 
@@ -185,15 +212,19 @@ source ~/.foundry/bin
 foundryup
 anvil --port 8546
 ```
+
 Test:
+
 ```bash
 curl -X POST http://127.0.0.1:8546 \
   -H "Content-Type: application/json" \
   -d '{"jsonrpc": "2.0", "id": 1, "method": "eth_blockNumber", "params": []}'
 ```
+
 </details>
 
 ### 1. Configure the RelayMiner
+
 ```bash
 cat <<🚀 > /tmp/relayminer_config.yaml
 default_signing_key_names:
@@ -218,6 +249,7 @@ pprof:
 ```
 
 ### 2. Start the RelayMiner
+
 ```bash
 pocketd \
   relayminer \

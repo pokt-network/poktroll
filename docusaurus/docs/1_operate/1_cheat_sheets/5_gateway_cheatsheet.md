@@ -33,8 +33,8 @@ streamline development and reduce friction for any new potential contributor.
 
 ## Prerequisites
 
-1. Make sure to [install the `pocketd` CLI](../../2_explore/user_guide/1_pocketd_cli.md).
-2. Make sure you know how to [create and fund a new account](../../2_explore/user_guide/2_create_new_account_cli.md).
+1. Make sure to [install the `pocketd` CLI](../../2_explore/2_account_management/1_pocketd_cli.md).
+2. Make sure you know how to [create and fund a new account](../../2_explore/2_account_management/2_create_new_account_cli.md).
 
 :::warning
 
@@ -107,7 +107,7 @@ pocketd query bank balances $APP_ADDR $NODE_FLAGS
 
 :::tip Tools & Explorers
 
-You can find all the explorers, faucets and tools at the [tools page](../../2_explore/tools/).
+You can find all the explorers, faucets and tools at the [tools page](../../2_explore/1_tools).
 
 :::
 

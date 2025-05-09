@@ -3,7 +3,7 @@ title: Balance check
 sidebar_position: 4
 ---
 
-# Checking Your Wallet Account Balance <!-- omit in toc -->
+## Checking Your Wallet Account Balance <!-- omit in toc -->
 
 :::note Usage requirements
 

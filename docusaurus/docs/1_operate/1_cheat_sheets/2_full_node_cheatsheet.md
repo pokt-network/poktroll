@@ -28,7 +28,7 @@ Some steps are scripted/automated. For full details, see the [Full Node Walkthro
 
 :::tip Vultr Playbook
 
-Using [Vultr](https://www.vultr.com/)? Use our [CLI Playbook](../5_playbooks/vultr.md) for faster setup.
+Using [Vultr](https://www.vultr.com/)? Use our [CLI Playbook](../5_playbooks/1_vultr.md) for faster setup.
 
 :::
 

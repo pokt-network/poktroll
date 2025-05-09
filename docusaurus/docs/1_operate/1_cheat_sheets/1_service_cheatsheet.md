@@ -34,8 +34,8 @@ To learn more about what a Service is, or how it works, see the [Protocol Docume
 
 ## Prerequisites
 
-1. Install the [pocketd CLI](../../2_explore/user_guide/1_pocketd_cli.md).
-2. [Create and fund a new account](../../2_explore/user_guide/2_create_new_account_cli.md) before you begin.
+1. Install the [pocketd CLI](../../2_explore/2_account_management/1_pocketd_cli.md).
+2. [Create and fund a new account](../../2_explore/2_account_management/2_create_new_account_cli.md) before you begin.
 
 ## How do I create a new service?
 
@@ -81,6 +81,4 @@ pocketd query service show-service "svc-$USER" \
 
 ### 3. What do I do next?
 
-Coming soon...
-
-<!-- TODO(@olshansk) Finish this part -->
+_TODO(@olshansk): Coming soon..._

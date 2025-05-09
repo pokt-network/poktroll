@@ -60,8 +60,8 @@ Pocket network is built on top of [Cosmos SDK](https://docs.cosmos.network), [Co
 ### Most Common Starting Points
 
 - **Affected by the Migration**: Check out [this page](../category/cheat-sheets-to-stake--deploy-intermediate) to install the CLI.
-- **Casual User**: Check [this page](2_explore/user_guide/2_create_new_account_cli.md) to create a new wallet.
-- **Technical User**: Visit [this page](2_explore/user_guide/1_pocketd_cli.md) to install the CLI.
+- **Casual User**: Check [this page](2_explore/2_account_management/2_create_new_account_cli.md) to create a new wallet.
+- **Technical User**: Visit [this page](2_explore/2_account_management/1_pocketd_cli.md) to install the CLI.
 - **Operator**: Visit one of the following pages to deploy a [Full Node](1_operate/1_cheat_sheets/2_full_node_cheatsheet.md), [Validator](1_operate/1_cheat_sheets/3_validator_cheatsheet.md), [Supplier](1_operate/1_cheat_sheets/4_supplier_cheatsheet.md), or [Gateway](1_operate/1_cheat_sheets/5_gateway_cheatsheet.md).
 
 ### How is this documentation organized?

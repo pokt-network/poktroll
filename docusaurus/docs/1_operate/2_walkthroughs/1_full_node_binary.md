@@ -74,7 +74,7 @@ A Full Node is _not_ responsible for:
 ### Pocket Network Full Nodes
 
 - Full Nodes are essential for Node Runners in Pocket Network
-- Required for offchain entities like [RelayMiners (Suppliers)](./supplier_walkthrough.md) and [Gateways](2_gateway_walkthrough.md)
+- Required for offchain entities like RelayMiners & Gateways
 - These entities rely on Full Nodes for full functionality
 
 ---

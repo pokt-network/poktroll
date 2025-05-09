@@ -32,7 +32,7 @@ As a Validator, you'll be participating in the consensus of the network, validat
 
 ## Prerequisites & Requirements
 
-1. **CLI**: Make sure to [install the `pocketd` CLI](../../2_explore/user_guide/1_pocketd_cli.md).
+1. **CLI**: Make sure to [install the `pocketd` CLI](../../2_explore/2_account_management/1_pocketd_cli.md).
 2. **Synched Full Node**: Ensure you have followed the [Full Node Walkthrough](1_full_node_binary.md) to install and run a Full Node. Your node must be fully synced with the network before proceeding.
 
 Ensure your node is running and fully synchronized with the network. You can check the synchronization status by running:

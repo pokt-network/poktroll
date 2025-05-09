@@ -1,6 +1,6 @@
 ---
 title: Password-less Keyring
-sidebar_position: 6
+sidebar_position: 7
 ---
 
 ## Setting up a password-less `pocketd` <!-- omit in toc -->

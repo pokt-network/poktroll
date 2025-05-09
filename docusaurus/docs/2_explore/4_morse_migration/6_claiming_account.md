@@ -150,7 +150,7 @@ Use one of the following faucets:
 
 - [Alpha Testnet](https://faucet.alpha.testnet.pokt.network/)
 - [Beta Testnet](https://faucet.beta.testnet.pokt.network/)
-- Mainnet: Coming soon.
+- Mainnet: _TODO(@olshansk): Coming soon..._
 
 :::tip Grove Employees 🌿
 
