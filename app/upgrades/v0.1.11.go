@@ -17,8 +17,13 @@ const (
 )
 
 // Upgrade_0_1_11 handles the upgrade to release `v0.1.11`.
-// This is planned to be issued on both Pocket Network's Shannon Alpha, Beta TestNets as well as MainNet.
-// It is an upgrade intended to reduce the memory footprint when iterating over Suppliers and Applications.
+// This upgrade adds:
+// - the `allow_morse_account_import_overwrite` migration module param
+//   - Set to `false` by default
+//   - Set to `true` on Alpha and Beta TestNets
+//
+// - a corresponding authz grant
+// - new `MsgRecoverMorseAccount` message with empty message handlers (scaffolding)
 // https://github.com/pokt-network/poktroll/compare/v0.1.10..v0.1.11
 var Upgrade_0_1_11 = Upgrade{
 	PlanName: Upgrade_0_1_11_PlanName,
