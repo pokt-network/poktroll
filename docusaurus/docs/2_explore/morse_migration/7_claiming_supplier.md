@@ -20,7 +20,7 @@ sidebar_position: 7
 
 - Claim your Morse Supplier as a Shannon Supplier
 - This is like staking a new Shannon Supplier, but you **don't specify `stake_amount`**
-- All config is the same as [staking a supplier](../../1_operate/configs/supplier_staking_config.md) **except** omit `stake_amount`
+- All config is the same as [staking a supplier](../../1_operate/3_configs/3_supplier_staking_config.md) **except** omit `stake_amount`
 
 ## How do I claim my Morse Supplier as a Shannon Supplier?
 
@@ -31,7 +31,7 @@ sidebar_position: 7
 - You have installed the Shannon `pocketd` CLI
 - You have imported your Morse key into a keyring
 - You have a valid RPC endpoint
-- You are familiar with how to stake a native Shannon Supplier (see [supplier staking config](../../1_operate/configs/supplier_staking_config.md))
+- You are familiar with how to stake a native Shannon Supplier (see [supplier staking config](../../1_operate/3_configs/3_supplier_staking_config.md))
 
 ### 1. Prepare your Morse and Shannon Keys and Accounts
 
@@ -39,7 +39,7 @@ Follow steps 1-5 from [Claiming Morse Account](./6_claiming_account.md)
 
 ### 2. Prepare your supplier config
 
-Use the same format as for staking a supplier. See [Supplier staking config](../../1_operate/configs/supplier_staking_config.md) for details.
+Use the same format as for staking a supplier. See [Supplier staking config](../../1_operate/3_configs/3_supplier_staking_config.md) for details.
 
 Make sure to **omit `stake_amount`**.
 
@@ -54,7 +54,7 @@ Make sure to **omit `stake_amount`**.
 
 - You **can** specify different `owner` and `operator` addresses in your config
 - `operator` signs claims/proofs, `owner` controls stake/rewards
-- See: [Supplier staking config > Staking types](../../1_operate/configs/supplier_staking_config.md#staking-types)
+- See: [Supplier staking config > Staking types](../../1_operate/3_configs/3_supplier_staking_config.md#staking-types)
 
 :::
 

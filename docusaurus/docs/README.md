@@ -44,10 +44,10 @@ to access any public canonical data source (e.g. geospatial data, blockchains) o
 
 This is achieved by:
 
-1. **Creating** a permissionless **registry** of public API for any open-source-service or data-source
-2. **Incentivizing** anyone to become an **operator** supporting the APIs above
-3. **Using** a cryptographically verifiable **API counter** (i.e. Rate limiter) to reward and penalize actors appropriately
-4. **Providing** a Gateway Framework (PATH) that ensures enterprise-grade **Quality-of-Service (QoS)** layer on top of a set of permissionless operators and penalizes bad actors
+1. **Creating** a permissionless **registry** of public APIs for any open-source-service or data-source
+2. **Incentivizing** anyone to become an **operator** supporting the APIs above.
+3. **Using** a cryptographically verifiable **API counter** (i.e. rate limiter) to reward and penalize actors appropriately
+4. **Providing** a Gateway Framework (PATH) that ensures enterprise-grade **Quality-of-Service (QoS) and Service Level Agreements (SLAs)** atop of a set of permissionless operators and penalizes bad actors.
 
 ![PATH USP](../static/img/pokt-path-usp.png)
 
@@ -60,9 +60,9 @@ Pocket network is built on top of [Cosmos SDK](https://docs.cosmos.network), [Co
 ### Most Common Starting Points
 
 - **Affected by the Migration**: Check out [this page](../category/cheat-sheets-to-stake--deploy-intermediate) to install the CLI.
-- **Casual User**: Check [this page](./2_explore/user_guide/create-new-wallet.md) to create a new wallet.
-- **Technical User**: Visit [this page](./2_explore/user_guide/pocketd_cli.md) to install the CLI.
-- **Operator**: Visit one of the following pages to deploy a [Full Node](./1_operate/cheat_sheets/2_full_node_cheatsheet.md), [Validator](./1_operate/cheat_sheets/3_validator_cheatsheet.md), [Supplier](./1_operate/cheat_sheets/4_supplier_cheatsheet.md), or [Gateway](./1_operate/cheat_sheets/5_gateway_cheatsheet.md).
+- **Casual User**: Check [this page](2_explore/user_guide/2_create_new_account_cli.md) to create a new wallet.
+- **Technical User**: Visit [this page](2_explore/user_guide/1_pocketd_cli.md) to install the CLI.
+- **Operator**: Visit one of the following pages to deploy a [Full Node](1_operate/1_cheat_sheets/2_full_node_cheatsheet.md), [Validator](1_operate/1_cheat_sheets/3_validator_cheatsheet.md), [Supplier](1_operate/1_cheat_sheets/4_supplier_cheatsheet.md), or [Gateway](1_operate/1_cheat_sheets/5_gateway_cheatsheet.md).
 
 ### How is this documentation organized?
 

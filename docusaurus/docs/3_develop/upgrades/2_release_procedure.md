@@ -364,7 +364,7 @@ brew tap pocket-network/homebrew-pocketd
 brew install pocketd
 ```
 
-See [pocketd CLI docs](../../2_explore/user_guide/pocketd_cli.md) for more info.
+See [pocketd CLI docs](../../2_explore/user_guide/1_pocketd_cli.md) for more info.
 
 ---
 
@@ -404,7 +404,7 @@ commands on how `v0.1.3` was submitted on Alpha & Beta.
 
 1. Follow [Protocol Upgrade Procedure](3_testing_upgrades_locally.md)
 2. Update the [Upgrade List](./4_upgrade_list.md)
-3. Deploy a full node on TestNet and verify sync (see [Full Node Quickstart Guide](../../1_operate/cheat_sheets/2_full_node_cheatsheet.md))
+3. Deploy a full node on TestNet and verify sync (see [Full Node Quickstart Guide](../../1_operate/1_cheat_sheets/2_full_node_cheatsheet.md))
 
 ---
 

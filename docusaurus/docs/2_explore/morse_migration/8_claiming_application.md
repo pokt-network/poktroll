@@ -20,7 +20,7 @@ sidebar_position: 8
 
 - Claim your Morse Application as a Shannon Application
 - This is like staking a new Shannon Application, but you **don't specify `stake_amount`**
-- All config is the same as [staking an application](../../1_operate/configs/app_staking_config.md) **except** omit `stake_amount`
+- All config is the same as [staking an application](../../1_operate/3_configs/1_app_staking_config.md) **except** omit `stake_amount`
 
 ## How do I claim my Morse Application as a Shannon Application?
 
@@ -31,7 +31,7 @@ sidebar_position: 8
 - You have installed the Shannon `pocketd` CLI
 - You have imported your Morse key into a keyring
 - You have a valid RPC endpoint
-- You are familiar with how to stake a native Shannon Application (see [application staking config](../../1_operate/configs/app_staking_config.md))
+- You are familiar with how to stake a native Shannon Application (see [application staking config](../../1_operate/3_configs/1_app_staking_config.md))
 
 ### 1. Prepare your Morse and Shannon Keys and Accounts
 
@@ -39,7 +39,7 @@ Follow steps 1-5 from [Claiming Morse Account](./6_claiming_account.md)
 
 ### 2. Prepare your application config
 
-Use the same format as for staking an application. See [Application staking config](../../1_operate/configs/app_staking_config.md) for details.
+Use the same format as for staking an application. See [Application staking config](../../1_operate/3_configs/1_app_staking_config.md) for details.
 
 Make sure to **omit `stake_amount`**.
 

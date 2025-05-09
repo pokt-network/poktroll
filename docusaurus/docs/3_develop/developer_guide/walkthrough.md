@@ -108,7 +108,7 @@ the tutorial so you have visibility into the types of onchain and offchain
 actors. In practice, you should be using [localnet](../networks/localnet.md)
 to dynamically scale your actors.
 
-To learn more about the different actors type, see the docs [here](../../4_protocol/actors/actors.md).
+To learn more about the different actors type, see the docs [here](../../4_protocol/actors/1_actors.md).
 
 It should look something like this once you're past the first section:
 
@@ -341,7 +341,7 @@ make acc_balance_query ACC=$SHANNON_APPLICATION
 ## 3. Manually Stake a Supplier & Deploy a RelayMiner
 
 As we mentioned earlier, if you want to understand the different onchain actors
-and offchain operators in POKT Network, look at the docs [here](../../4_protocol/actors/actors.md).
+and offchain operators in POKT Network, look at the docs [here](../../4_protocol/actors/1_actors.md).
 
 If you just want to follow instructions to make things work and get your hands
 dirty, keep reading.
@@ -386,7 +386,7 @@ you can provision one at [grove.city](https://www.grove.city) and use it below.
 
 ### 3.3 Create a Supplier configuration
 
-You can learn more about our [supplier configs here](../../1_operate/configs/supplier_staking_config.md).
+You can learn more about our [supplier configs here](../../1_operate/3_configs/3_supplier_staking_config.md).
 
 The following is an example config to get you started:
 
@@ -428,7 +428,7 @@ pocketd query supplier show-supplier $SHANNON_SUPPLIER --node tcp://127.0.0.1:26
 
 Next, we need to prepare a RelayMiner to operate on behalf of the Supplier.
 
-You can learn more about our [relay miner configs here](../../1_operate/configs/relayminer_config.md).
+You can learn more about our [relay miner configs here](../../1_operate/3_configs/4_relayminer_config.md).
 
 The following is an example config to get you started:
 
@@ -496,7 +496,7 @@ make app_list
 
 ### 4.2 Create an Application configuration
 
-You can learn more about our [application configs here](../../1_operate/configs/app_staking_config.md).
+You can learn more about our [application configs here](../../1_operate/3_configs/1_app_staking_config.md).
 
 The following example should get you started:
 

@@ -26,7 +26,7 @@ to all readers.
 
 ## Introduction
 
-The [Gateway Actor](../actors/gateway.md) section covers what a Gateway is.
+The [Gateway Actor](../actors/3_gateway.md) section covers what a Gateway is.
 Recall that it is a permissionless protocol actor to whom the Application can
 **optionally** delegate onchain trust in order to perform offchain operations.
 
