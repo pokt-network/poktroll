@@ -445,8 +445,8 @@ func GenerateModuleAddressMorseStateExportAndAccountState(t *testing.T, moduleAc
 		require.NoError(t, err)
 
 		morseModuleAccount := &migrationtypes.MorseModuleAccount{
-			Name:         morseModuleAccountName,
-			MorseAccount: *morseAccount,
+			Name:        morseModuleAccountName,
+			BaseAccount: *morseAccount,
 		}
 
 		morseModuleAccountJSONBz, err := cmtjson.Marshal(morseModuleAccount)

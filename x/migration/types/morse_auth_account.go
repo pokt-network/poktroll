@@ -8,6 +8,7 @@ import (
 )
 
 // SetAddress is a convenience method for setting the address of a MorseAuthAccount.
+// It is intended for use in tests.
 func (morseAuthAcct *MorseAuthAccount) SetAddress(address crypto.Address) error {
 	morseAccount, err := morseAuthAcct.AsMorseAccount()
 	if err != nil {
