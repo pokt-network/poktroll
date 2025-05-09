@@ -3,13 +3,12 @@ package upgrades
 import (
 	"context"
 	"fmt"
-	"time"
 
+	cosmoslog "cosmossdk.io/log"
 	storetypes "cosmossdk.io/store/types"
 	upgradetypes "cosmossdk.io/x/upgrade/types"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
-	"github.com/cosmos/cosmos-sdk/x/authz"
 
 	"github.com/pokt-network/poktroll/app/keepers"
 )
@@ -33,49 +32,12 @@ var Upgrade_0_1_11 = Upgrade{
 		keepers *keepers.Keepers,
 		configurator module.Configurator,
 	) upgradetypes.UpgradeHandler {
-		// Adds new authz authorizations from the diff:
-		// https://github.com/pokt-network/poktroll/compare/v0.1.10...v0.1.11
-		applyNewAuthorizations := func(ctx context.Context) (err error) {
-			// Validate before/after with:
-			// 	pocketd q authz grants-by-granter pokt10d07y265gmmuvt4z0w9aw880jnsr700j8yv32t --node=<network_rpc_url>
-			// Find a network RPC URL here: https://dev.poktroll.com/category/explorers-faucets-wallets-and-more
-			grantAuthorizationMessages := []string{
-				"/pocket.migration.MsgRecoverMorseAccount",
-			}
-
-			expiration, err := time.Parse(time.RFC3339, "2500-01-01T00:00:00Z")
-			if err != nil {
-				return fmt.Errorf("failed to parse time: %w", err)
-			}
-
-			// Get the granter address of the migration module (i.e. authority)
-			granterAddr := keepers.MigrationKeeper.GetAuthority()
-
-			// Get the grantee address for the current network (i.e. pnf or grove)
-			granteeAddr := NetworkAuthzGranteeAddress[cosmostypes.UnwrapSDKContext(ctx).ChainID()]
-
-			for _, msg := range grantAuthorizationMessages {
-				err = keepers.AuthzKeeper.SaveGrant(
-					ctx,
-					cosmostypes.AccAddress(granteeAddr),
-					cosmostypes.AccAddress(granterAddr),
-					authz.NewGenericAuthorization(msg),
-					&expiration,
-				)
-				if err != nil {
-					return fmt.Errorf("failed to save grant for message %s: %w", msg, err)
-				}
-			}
-			return
-		}
-
 		// Add new parameters by:
 		// 1. Inspecting the diff between v0.1.10...v0.1.11
 		// 2. Manually inspect changes in ignite's config.yml
 		// 3. Update the upgrade handler here accordingly
 		// Ref: https://github.com/pokt-network/poktroll/compare/v0.1.10...v0.1.11
-		applyNewParameters := func(ctx context.Context) (err error) {
-			logger := cosmostypes.UnwrapSDKContext(ctx).Logger()
+		applyNewParameters := func(ctx context.Context, logger cosmoslog.Logger) (err error) {
 			logger.Info("Starting parameter updates", "upgrade_plan_name", Upgrade_0_1_11_PlanName)
 
 			// Get the current migration module params
@@ -110,11 +72,16 @@ var Upgrade_0_1_11 = Upgrade{
 		}
 
 		return func(ctx context.Context, plan upgradetypes.Plan, vm module.VersionMap) (module.VersionMap, error) {
-			if err := applyNewAuthorizations(ctx); err != nil {
+			logger := cosmostypes.UnwrapSDKContext(ctx).Logger()
+
+			// Adds new authz authorizations from the diff:
+			// https://github.com/pokt-network/poktroll/compare/v0.1.10...v0.1.11
+			grantAuthorizationMessages := []string{"/pocket.migration.MsgRecoverMorseAccount"}
+			if err := applyNewAuthorizations(ctx, keepers, logger, grantAuthorizationMessages); err != nil {
 				return vm, err
 			}
 
-			if err := applyNewParameters(ctx); err != nil {
+			if err := applyNewParameters(ctx, logger); err != nil {
 				return vm, err
 			}
 
