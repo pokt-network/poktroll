@@ -267,6 +267,16 @@ func New(
 
 	app.App = appBuilder.Build(db, traceStore, baseAppOptions...)
 
+	// Set the order of the modules to be executed in the pre-blocker phase.
+	app.ModuleManager.SetOrderPreBlockers(
+		// upgrade module should go first:
+		// https://github.com/cosmos/cosmos-sdk/commit/4c083c6f2313680c99fbc06f1ed73087bb855657#diff-8d1ca8086ee74e8f0490825ba21e7435be4753922192ff691311483aa3e71a0a
+		upgradetypes.ModuleName,
+		// since v0.53.0, auth module must be registered with SetOrderPreBlockers
+		// https://github.com/cosmos/cosmos-sdk/blob/v0.53.0/UPGRADING.md#app-wiring-changes
+		authtypes.ModuleName,
+	)
+
 	// Set a custom ante handler to waive minimum gas/fees for transactions
 	// IF the migration module's `waive_morse_claim_gas_fees` param is true.
 	// The ante handler waives fees for txs which contain ONLY morse claim
@@ -311,16 +321,6 @@ func New(
 	// 	app.UpgradeKeeper.SetModuleVersionMap(ctx, app.ModuleManager.GetVersionMap())
 	// 	return app.App.InitChainer(ctx, req)
 	// })
-
-	// Set the order of the modules to be executed in the pre-blocker phase.
-	app.ModuleManager.SetOrderPreBlockers(
-		// upgrade module should go first:
-		// https://github.com/cosmos/cosmos-sdk/commit/4c083c6f2313680c99fbc06f1ed73087bb855657#diff-8d1ca8086ee74e8f0490825ba21e7435be4753922192ff691311483aa3e71a0a
-		upgradetypes.ModuleName,
-		// since v0.53.0, auth module must be registered with SetOrderPreBlockers
-		// https://github.com/cosmos/cosmos-sdk/blob/v0.53.0/UPGRADING.md#app-wiring-changes
-		authtypes.ModuleName,
-	)
 
 	if err := app.setUpgrades(); err != nil {
 		return nil, err
