@@ -4,13 +4,20 @@ import (
 	"context"
 	"fmt"
 
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 	"github.com/pokt-network/poktroll/x/tokenomics/types"
 )
 
-func (k msgServer) UpdateParams(ctx context.Context, msg *types.MsgUpdateParams) (*types.MsgUpdateParamsResponse, error) {
+// UpdateParams schedules a params update for the next session start height.
+// It does not update the params immediately.
+func (k msgServer) UpdateParams(
+	goCtx context.Context,
+	msg *types.MsgUpdateParams,
+) (*types.MsgUpdateParamsResponse, error) {
 	logger := k.Logger()
 
 	if err := msg.ValidateBasic(); err != nil {
@@ -28,17 +35,55 @@ func (k msgServer) UpdateParams(ctx context.Context, msg *types.MsgUpdateParams)
 		)
 	}
 
-	logger.Info(fmt.Sprintf("About to update params from [%v] to [%v]", k.GetParams(ctx), msg.Params))
+	ctx := sdk.UnwrapSDKContext(goCtx)
+	currentHeight := ctx.BlockHeight()
 
-	if err := k.SetParams(ctx, msg.Params); err != nil {
-		err = fmt.Errorf("unable to set params: %w", err)
+	sharedParamsUpdates := k.sharedKeeper.GetParamsUpdates(ctx)
+	nextSessionStartHeight := sharedtypes.GetNextSessionStartHeight(sharedParamsUpdates, currentHeight)
+
+	logger.Info(fmt.Sprintf(
+		"About to schedule params update from [%v] to [%v] to be effective at block height %d",
+		k.GetParams(ctx),
+		msg.Params,
+		nextSessionStartHeight,
+	))
+
+	// If it is the first params are updated, then create a genesis params update
+	// record with an effective block height of 1.
+	// This is to keep track of the genesis params in history and as of when they
+	// no longer became effective.
+	paramsUpdates := k.GetParamsUpdates(ctx)
+	if len(paramsUpdates) == 1 {
+		params := k.GetParams(ctx)
+		genesisParamsUpdate := types.ParamsUpdate{
+			Params:               params,
+			EffectiveBlockHeight: 1,
+		}
+
+		if err := k.SetParamsUpdate(ctx, genesisParamsUpdate); err != nil {
+			err = types.ErrTokenomicsParamInvalid.Wrapf("unable to set params: %v", err)
+			logger.Error(err.Error())
+			return nil, status.Error(codes.Internal, err.Error())
+		}
+	}
+
+	// Do not directly update the params, instead, create a new params update object
+	// and set it in the store. This will allow the new params to take effect at the
+	// next session start height when the BeginBlockerActivateTokenomicsParams method is called.
+	paramsUpdate := types.ParamsUpdate{
+		Params:               msg.Params,
+		EffectiveBlockHeight: uint64(nextSessionStartHeight),
+	}
+
+	// Store the params update but leave the params unchanged.
+	if err := k.SetParamsUpdate(ctx, paramsUpdate); err != nil {
+		err = types.ErrTokenomicsParamInvalid.Wrapf("unable to set params: %v", err)
 		logger.Error(err.Error())
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
-	logger.Info("Done updating params")
-
 	return &types.MsgUpdateParamsResponse{
-		Params: &msg.Params,
+		Params:               paramsUpdate.Params,
+		EffectiveBlockHeight: paramsUpdate.EffectiveBlockHeight,
 	}, nil
 }

@@ -70,10 +70,13 @@ func (s *Supplier) HasOperator(address string) bool {
 // completes by adding the configured unbonding period (in sessions) to the supplier's
 // unstake session end height.
 func GetSupplierUnbondingEndHeight(
-	sharedParams *Params,
+	sharedParamsUpdates []*ParamsUpdate,
 	supplier *Supplier,
 ) int64 {
 	// Calculate the number of blocks in the unbonding period
+	sharedParamsUpdate := GetEffectiveParamsUpdate(sharedParamsUpdates, int64(supplier.UnstakeSessionEndHeight))
+	sharedParams := sharedParamsUpdate.Params
+
 	supplierUnbondingPeriodBlocks := sharedParams.GetSupplierUnbondingPeriodSessions() * sharedParams.GetNumBlocksPerSession()
 
 	// Add the unbonding period to the session end height to get the final unbonding height

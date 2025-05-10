@@ -127,8 +127,8 @@ func (k msgServer) ClaimMorseAccount(ctx context.Context, msg *migrationtypes.Ms
 	}
 
 	// Emit an event which signals that the morse account has been claimed.
-	sharedParams := k.sharedKeeper.GetParams(ctx)
-	sessionEndHeight := sharedtypes.GetSessionEndHeight(&sharedParams, sdkCtx.BlockHeight())
+	sharedParamsUpdates := k.sharedKeeper.GetParamsUpdates(ctx)
+	sessionEndHeight := sharedtypes.GetSessionEndHeight(sharedParamsUpdates, sdkCtx.BlockHeight())
 	event := migrationtypes.EventMorseAccountClaimed{
 		SessionEndHeight:   sessionEndHeight,
 		ShannonDestAddress: msg.ShannonDestAddress,

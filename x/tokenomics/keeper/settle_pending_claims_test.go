@@ -120,7 +120,7 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimPendingBeforeSettlement() {
 	// Retrieve default values
 	t := s.T()
 	ctx := s.ctx
-	sharedParams := s.keepers.SharedKeeper.GetParams(ctx)
+	sharedParamsUpdates := s.keepers.SharedKeeper.GetParamsUpdates(ctx)
 	// Use a single claim for this test
 	claim := s.claims[0]
 
@@ -147,10 +147,10 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimPendingBeforeSettlement() {
 
 	// Calculate a block height which is within the proof window.
 	proofWindowOpenHeight := sharedtypes.GetProofWindowOpenHeight(
-		&sharedParams, claim.SessionHeader.SessionEndBlockHeight,
+		sharedParamsUpdates, claim.SessionHeader.SessionEndBlockHeight,
 	)
 	proofWindowCloseHeight := sharedtypes.GetProofWindowCloseHeight(
-		&sharedParams, claim.SessionHeader.SessionEndBlockHeight,
+		sharedParamsUpdates, claim.SessionHeader.SessionEndBlockHeight,
 	)
 	blockHeight = (proofWindowCloseHeight - proofWindowOpenHeight) / 2
 
@@ -173,12 +173,15 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimExpired_ProofRequiredAndNotProv
 	// Retrieve default values
 	t := s.T()
 	ctx := s.ctx
-	sharedParams := s.keepers.SharedKeeper.GetParams(ctx)
+
 	// Use a single claim for this test
 	claim := s.claims[0]
 	relayMiningDifficulty := s.relayMiningDifficulties[0]
 
-	proofRequirementThreshold, err := claim.GetClaimeduPOKT(sharedParams, relayMiningDifficulty)
+	sharedParamsUpdates := s.keepers.SharedKeeper.GetParamsUpdates(ctx)
+	sharedParamsUpdate := sharedtypes.GetEffectiveParamsUpdate(sharedParamsUpdates, claim.SessionHeader.SessionEndBlockHeight)
+
+	proofRequirementThreshold, err := claim.GetClaimeduPOKT(sharedParamsUpdate.Params, relayMiningDifficulty)
 	require.NoError(t, err)
 
 	// -1 to push threshold below s.claim's compute units
@@ -205,7 +208,7 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimExpired_ProofRequiredAndNotProv
 	// Expectation: All (1) claims should be expired.
 	// NB: proofs should be rejected when the current height equals the proof window close height.
 	sessionEndHeight := claim.SessionHeader.SessionEndBlockHeight
-	blockHeight := sharedtypes.GetProofWindowCloseHeight(&sharedParams, sessionEndHeight)
+	blockHeight := sharedtypes.GetProofWindowCloseHeight(sharedParamsUpdates, sessionEndHeight)
 	sdkCtx := cosmostypes.UnwrapSDKContext(ctx).WithBlockHeight(blockHeight)
 	settledResults, expiredResults, err := s.keepers.SettlePendingClaims(sdkCtx)
 	require.NoError(t, err)
@@ -272,13 +275,15 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimSettled_ProofRequiredAndProvide
 	// Retrieve default values
 	t := s.T()
 	ctx := s.ctx
-	sharedParams := s.keepers.SharedKeeper.GetParams(ctx)
 	// Use a single claim and proof for this test
 	claim := s.claims[0]
 	proof := s.proofs[0]
 	relayMiningDifficulty := s.relayMiningDifficulties[0]
 
-	proofRequirementThreshold, err := claim.GetClaimeduPOKT(sharedParams, relayMiningDifficulty)
+	sharedParamsUpdates := s.keepers.SharedKeeper.GetParamsUpdates(ctx)
+	sharedParamsUpdate := sharedtypes.GetEffectiveParamsUpdate(sharedParamsUpdates, claim.SessionHeader.SessionEndBlockHeight)
+
+	proofRequirementThreshold, err := claim.GetClaimeduPOKT(sharedParamsUpdate.Params, relayMiningDifficulty)
 	require.NoError(t, err)
 
 	// -1 to push threshold below s.claim's compute units
@@ -304,7 +309,7 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimSettled_ProofRequiredAndProvide
 	// Expectation: All (1) claims should be claimed.
 	// NB: proofs should be rejected when the current height equals the proof window close height.
 	sessionEndHeight := claim.SessionHeader.SessionEndBlockHeight
-	blockHeight := sharedtypes.GetProofWindowCloseHeight(&sharedParams, sessionEndHeight)
+	blockHeight := sharedtypes.GetProofWindowCloseHeight(sharedParamsUpdates, sessionEndHeight)
 	sdkCtx = cosmostypes.UnwrapSDKContext(ctx).WithBlockHeight(blockHeight)
 	settledResult, expiredResult, err := s.keepers.SettlePendingClaims(sdkCtx)
 	require.NoError(t, err)
@@ -335,7 +340,7 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimExpired_ProofRequired_InvalidOn
 	// Retrieve default values
 	t := s.T()
 	ctx := s.ctx
-	sharedParams := s.keepers.SharedKeeper.GetParams(ctx)
+	sharedParamsUpdates := s.keepers.SharedKeeper.GetParamsUpdates(ctx)
 
 	// Use a single claim and proof for this test
 	claim := s.claims[0]
@@ -366,7 +371,7 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimExpired_ProofRequired_InvalidOn
 	// Expectation: All (1) claims should be expired.
 	// NB: proofs should be rejected when the current height equals the proof window close height.
 	sessionEndHeight := claim.SessionHeader.SessionEndBlockHeight
-	blockHeight := sharedtypes.GetProofWindowCloseHeight(&sharedParams, sessionEndHeight)
+	blockHeight := sharedtypes.GetProofWindowCloseHeight(sharedParamsUpdates, sessionEndHeight)
 	sdkCtx = sdkCtx.WithBlockHeight(blockHeight)
 	settledResults, expiredResults, err := s.keepers.SettlePendingClaims(sdkCtx)
 	require.NoError(t, err)
@@ -425,13 +430,16 @@ func (s *TestSuite) TestClaimSettlement_ClaimSettled_ProofRequiredAndProvided_Vi
 	// Retrieve default values
 	t := s.T()
 	ctx := s.ctx
-	sharedParams := s.keepers.SharedKeeper.GetParams(ctx)
+
 	// Use a single claim and proof for this test
 	claim := s.claims[0]
 	proof := s.proofs[0]
 	relayMiningDifficulty := s.relayMiningDifficulties[0]
 
-	proofRequirementThreshold, err := claim.GetClaimeduPOKT(sharedParams, relayMiningDifficulty)
+	sharedParamsUpdates := s.keepers.SharedKeeper.GetParamsUpdates(ctx)
+	sharedParamsUpdate := sharedtypes.GetEffectiveParamsUpdate(sharedParamsUpdates, claim.SessionHeader.SessionEndBlockHeight)
+
+	proofRequirementThreshold, err := claim.GetClaimeduPOKT(sharedParamsUpdate.Params, relayMiningDifficulty)
 	require.NoError(t, err)
 
 	// +1 so it's not required via probability
@@ -457,7 +465,7 @@ func (s *TestSuite) TestClaimSettlement_ClaimSettled_ProofRequiredAndProvided_Vi
 	// Expectation: All (1) claims should be claimed.
 	// NB: proof window has definitely closed at this point
 	sessionEndHeight := claim.SessionHeader.SessionEndBlockHeight
-	blockHeight := sharedtypes.GetProofWindowCloseHeight(&sharedParams, sessionEndHeight)
+	blockHeight := sharedtypes.GetProofWindowCloseHeight(sharedParamsUpdates, sessionEndHeight)
 	sdkCtx = cosmostypes.UnwrapSDKContext(ctx).WithBlockHeight(blockHeight)
 	settledResults, expiredResults, err := s.keepers.SettlePendingClaims(sdkCtx)
 	require.NoError(t, err)
@@ -488,12 +496,15 @@ func (s *TestSuite) TestSettlePendingClaims_Settles_WhenAProofIsNotRequired() {
 	// Retrieve default values
 	t := s.T()
 	ctx := s.ctx
-	sharedParams := s.keepers.SharedKeeper.GetParams(ctx)
+
 	// Use a single claim for this test
 	claim := s.claims[0]
 	relayMiningDifficulty := s.relayMiningDifficulties[0]
 
-	proofRequirementThreshold, err := claim.GetClaimeduPOKT(sharedParams, relayMiningDifficulty)
+	sharedParamsUpdates := s.keepers.SharedKeeper.GetParamsUpdates(ctx)
+	sharedParamsUpdate := sharedtypes.GetEffectiveParamsUpdate(sharedParamsUpdates, claim.SessionHeader.SessionEndBlockHeight)
+
+	proofRequirementThreshold, err := claim.GetClaimeduPOKT(sharedParamsUpdate.Params, relayMiningDifficulty)
 	require.NoError(t, err)
 
 	// +1 to push threshold above s.claim's compute units
@@ -518,7 +529,7 @@ func (s *TestSuite) TestSettlePendingClaims_Settles_WhenAProofIsNotRequired() {
 	// Expectation: All (1) claims should be claimed.
 	// NB: proofs should be rejected when the current height equals the proof window close height.
 	sessionEndHeight := claim.SessionHeader.SessionEndBlockHeight
-	blockHeight := sharedtypes.GetProofWindowCloseHeight(&sharedParams, sessionEndHeight)
+	blockHeight := sharedtypes.GetProofWindowCloseHeight(sharedParamsUpdates, sessionEndHeight)
 	sdkCtx = cosmostypes.UnwrapSDKContext(ctx).WithBlockHeight(blockHeight)
 	settledResults, expiredResults, err := s.keepers.SettlePendingClaims(sdkCtx)
 	require.NoError(t, err)
@@ -566,12 +577,15 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimPendingAfterSettlement() {
 	t := s.T()
 	ctx := s.ctx
 	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
-	sharedParams := s.keepers.SharedKeeper.GetParams(ctx)
+
 	// Use a single claim for this test
 	claim := s.claims[0]
 	relayMiningDifficulty := s.relayMiningDifficulties[0]
 
-	proofRequirementThreshold, err := claim.GetClaimeduPOKT(sharedParams, relayMiningDifficulty)
+	sharedParamsUpdates := s.keepers.SharedKeeper.GetParamsUpdates(ctx)
+	sharedParamsUpdate := sharedtypes.GetEffectiveParamsUpdate(sharedParamsUpdates, claim.SessionHeader.SessionEndBlockHeight)
+
+	proofRequirementThreshold, err := claim.GetClaimeduPOKT(sharedParamsUpdate.Params, relayMiningDifficulty)
 	require.NoError(t, err)
 
 	// +1 to push threshold above s.claim's compute units
@@ -600,16 +614,16 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimPendingAfterSettlement() {
 		s.numRelays,
 	)
 
-	sessionOneProofWindowCloseHeight := sharedtypes.GetProofWindowCloseHeight(&sharedParams, sessionOneEndHeight)
-	sessionTwoStartHeight := sharedtypes.GetSessionStartHeight(&sharedParams, sessionOneProofWindowCloseHeight+1)
-	sessionTwoProofWindowCloseHeight := sharedtypes.GetProofWindowCloseHeight(&sharedParams, sessionTwoStartHeight)
+	sessionOneProofWindowCloseHeight := sharedtypes.GetProofWindowCloseHeight(sharedParamsUpdates, sessionOneEndHeight)
+	sessionTwoStartHeight := sharedtypes.GetSessionStartHeight(sharedParamsUpdates, sessionOneProofWindowCloseHeight+1)
+	sessionTwoProofWindowCloseHeight := sharedtypes.GetProofWindowCloseHeight(sharedParamsUpdates, sessionTwoStartHeight)
 
 	sessionTwoClaim.SessionHeader = &sessiontypes.SessionHeader{
 		ApplicationAddress:      sessionOneClaim.GetSessionHeader().GetApplicationAddress(),
 		ServiceId:               claim.GetSessionHeader().GetServiceId(),
 		SessionId:               "session_two_id",
 		SessionStartBlockHeight: sessionTwoStartHeight,
-		SessionEndBlockHeight:   sharedtypes.GetSessionEndHeight(&sharedParams, sessionTwoStartHeight),
+		SessionEndBlockHeight:   sharedtypes.GetSessionEndHeight(sharedParamsUpdates, sessionTwoStartHeight),
 	}
 	s.keepers.UpsertClaim(ctx, sessionTwoClaim)
 
@@ -618,7 +632,7 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimPendingAfterSettlement() {
 
 	// 1. Settle pending claims while the session is still active.
 	// Expectations: No claims should be settled because the session is still ongoing
-	blockHeight := sharedtypes.GetProofWindowCloseHeight(&sharedParams, sessionOneEndHeight)
+	blockHeight := sharedtypes.GetProofWindowCloseHeight(sharedParamsUpdates, sessionOneEndHeight)
 	sdkCtx = sdkCtx.WithBlockHeight(blockHeight)
 	settledResults, expiredResults, err := s.keepers.SettlePendingClaims(sdkCtx)
 	require.NoError(t, err)
@@ -659,13 +673,16 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimExpired_SupplierUnstaked() {
 	ctx := s.ctx
 	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
 	sdkCtx = sdkCtx.WithBlockHeight(1)
-	sharedParams := s.keepers.SharedKeeper.GetParams(ctx)
+
 	// Use a single claim for this test
 	claim := s.claims[0]
 	serviceId := claim.GetSessionHeader().GetServiceId()
 	relayMiningDifficulty := s.relayMiningDifficulties[0]
 
-	proofRequirementThreshold, err := claim.GetClaimeduPOKT(sharedParams, relayMiningDifficulty)
+	sharedParamsUpdates := s.keepers.SharedKeeper.GetParamsUpdates(ctx)
+	sharedParamsUpdate := sharedtypes.GetEffectiveParamsUpdate(sharedParamsUpdates, claim.SessionHeader.SessionEndBlockHeight)
+
+	proofRequirementThreshold, err := claim.GetClaimeduPOKT(sharedParamsUpdate.Params, relayMiningDifficulty)
 	require.NoError(t, err)
 
 	// -1 to push threshold below s.claim's compute units
@@ -720,12 +737,12 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimExpired_SupplierUnstaked() {
 	// Expectation: All (1) claims should expire.
 	// NB: proofs should be rejected when the current height equals the proof window close height.
 	sessionEndHeight := claim.SessionHeader.SessionEndBlockHeight
-	sessionProofWindowCloseHeight := sharedtypes.GetProofWindowCloseHeight(&sharedParams, sessionEndHeight)
+	sessionProofWindowCloseHeight := sharedtypes.GetProofWindowCloseHeight(sharedParamsUpdates, sessionEndHeight)
 	sdkCtx = sdkCtx.WithBlockHeight(sessionProofWindowCloseHeight)
 	_, _, err = s.keepers.SettlePendingClaims(sdkCtx)
 	require.NoError(t, err)
 
-	upcomingSessionEndHeight := sharedtypes.GetNextSessionStartHeight(&sharedParams, sessionProofWindowCloseHeight) - 1
+	upcomingSessionEndHeight := sharedtypes.GetNextSessionStartHeight(sharedParamsUpdates, sessionProofWindowCloseHeight) - 1
 
 	// Slashing should have occurred and the supplier is unstaked but still unbonding.
 	slashedSupplier, supplierFound := s.keepers.GetSupplier(sdkCtx, claim.SupplierOperatorAddress)
@@ -794,7 +811,7 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimExpired_SupplierUnstaked() {
 	require.EqualValues(t, expectedUnbondingBeginEvent, unbondingBeginEvents[0])
 
 	// Advance the block height to the settlement session end height.
-	settlementHeight := sharedtypes.GetSettlementSessionEndHeight(&sharedParams, sdkCtx.BlockHeight())
+	settlementHeight := sharedtypes.GetSettlementSessionEndHeight(sharedParamsUpdates, sdkCtx.BlockHeight())
 	sdkCtx.WithBlockHeight(settlementHeight)
 
 	// Assert that the EventSupplierUnbondingEnd event is emitted.
@@ -818,15 +835,21 @@ func (s *TestSuite) TestSettlePendingClaims_MultipleClaimsFromDifferentServices(
 	// Retrieve default values
 	t := s.T()
 	ctx := s.ctx
-	sharedParams := s.keepers.SharedKeeper.GetParams(ctx)
+
+	// Use a single claim for this test
+	claim := s.claims[0]
+	relayMiningDifficulty := s.relayMiningDifficulties[0]
+
+	sharedParamsUpdates := s.keepers.SharedKeeper.GetParamsUpdates(ctx)
+	sharedParamsUpdate := sharedtypes.GetEffectiveParamsUpdate(sharedParamsUpdates, claim.SessionHeader.SessionEndBlockHeight)
 
 	// All claims have the same session end height, use the first one
 	sessionEndHeight := s.claims[0].SessionHeader.SessionEndBlockHeight
-	blockHeight := sharedtypes.GetProofWindowCloseHeight(&sharedParams, sessionEndHeight)
+	blockHeight := sharedtypes.GetProofWindowCloseHeight(sharedParamsUpdates, sessionEndHeight)
 	sdkCtx := cosmostypes.UnwrapSDKContext(ctx).WithBlockHeight(blockHeight)
 
 	// All claims have the same proof requirement threshold, pick the first one
-	proofRequirementThreshold, err := s.claims[0].GetClaimeduPOKT(sharedParams, s.relayMiningDifficulties[0])
+	proofRequirementThreshold, err := s.claims[0].GetClaimeduPOKT(sharedParamsUpdate.Params, relayMiningDifficulty)
 	require.NoError(t, err)
 
 	// -1 to push threshold below s.claim's compute units
@@ -1066,15 +1089,16 @@ func (s *TestSuite) createTestClaimsAndProofs(
 		s.numEstimatedComputeUnits = getEstimatedComputeUnits(s.numClaimedComputeUnits, relayMiningDifficulty)
 
 		// Calculate the claimed amount in uPOKT.
-		sharedParams := s.keepers.SharedKeeper.GetParams(ctx)
-		s.claimedUpokt = getClaimedUpokt(sharedParams, s.numEstimatedComputeUnits, relayMiningDifficulty)
+		sharedParamsUpdates := s.keepers.SharedKeeper.GetParamsUpdates(ctx)
+		sharedParamUpdate := sharedtypes.GetEffectiveParamsUpdate(sharedParamsUpdates, sessionHeader.SessionEndBlockHeight)
+		s.claimedUpokt = getClaimedUpokt(sharedParamUpdate.Params, s.numEstimatedComputeUnits, relayMiningDifficulty)
 
 		blockHeaderHash := make([]byte, 0)
 		expectedMerkleProofPath := protocol.GetPathForProof(blockHeaderHash, sessionHeader.SessionId)
 
 		// Advance the block height to the earliest claim commit height.
 		claimMsgHeight := sharedtypes.GetEarliestSupplierClaimCommitHeight(
-			&sharedParams,
+			sharedParamsUpdates,
 			sessionHeader.GetSessionEndBlockHeight(),
 			blockHeaderHash,
 			supplierOwnerAddr,

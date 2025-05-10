@@ -100,6 +100,21 @@ func NewApplicationModuleKeepers(t testing.TB) (ApplicationModuleKeepers, contex
 			return sharedtypes.DefaultParams()
 		}).
 		AnyTimes()
+	mockSharedKeeper.EXPECT().GetParamsUpdates(gomock.Any()).
+		DoAndReturn(func(_ context.Context) []*sharedtypes.ParamsUpdate {
+			return []*sharedtypes.ParamsUpdate{
+				{
+					Params:               sharedtypes.DefaultParams(),
+					EffectiveBlockHeight: 1,
+				},
+			}
+		}).
+		AnyTimes()
+	mockSharedKeeper.EXPECT().GetParamsAtHeight(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, height int64) sharedtypes.Params {
+			return sharedtypes.DefaultParams()
+		}).
+		AnyTimes()
 	mockSharedKeeper.EXPECT().GetSessionEndHeight(gomock.Any(), gomock.Any()).
 		DoAndReturn(func(_ context.Context, queryHeight int64) int64 {
 			return testsession.GetSessionEndHeightWithDefaultParams(queryHeight)

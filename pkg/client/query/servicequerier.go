@@ -155,7 +155,7 @@ func (servq *serviceQuerier) GetParams(ctx context.Context) (*servicetypes.Param
 	logger := servq.logger.With("query_client", "service", "method", "GetParams")
 
 	// Check if the service module parameters are present in the cache.
-	if params, found := servq.paramsCache.Get(); found {
+	if params, found := servq.paramsCache.GetLatest(); found {
 		logger.Debug().Msg("cache HIT for service params")
 		return &params, nil
 	}
@@ -165,7 +165,7 @@ func (servq *serviceQuerier) GetParams(ctx context.Context) (*servicetypes.Param
 	defer servq.paramsMutex.Unlock()
 
 	// Double-check cache after acquiring lock (follows standard double-checked locking pattern)
-	if params, found := servq.paramsCache.Get(); found {
+	if params, found := servq.paramsCache.GetLatest(); found {
 		logger.Debug().Msg("cache HIT for service params after lock")
 		return &params, nil
 	}
@@ -181,6 +181,6 @@ func (servq *serviceQuerier) GetParams(ctx context.Context) (*servicetypes.Param
 	}
 
 	// Cache the parameters for future queries.
-	servq.paramsCache.Set(res.Params)
+	servq.paramsCache.SetAtHeight(res.Params, int64(res.EffectiveBlockHeight))
 	return &res.Params, nil
 }

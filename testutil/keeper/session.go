@@ -299,5 +299,14 @@ func defaultSharedKeeperMock(t testing.TB, params *sharedtypes.Params) types.Sha
 	mockSharedKeeper.EXPECT().GetParams(gomock.Any()).
 		Return(*params).
 		AnyTimes()
+	mockSharedKeeper.EXPECT().GetParamsUpdates(gomock.Any()).
+		Return([]*sharedtypes.ParamsUpdate{
+			{
+				Params:               *params,
+				EffectiveBlockHeight: 1,
+			},
+		}).
+		AnyTimes()
+
 	return mockSharedKeeper
 }

@@ -11,41 +11,41 @@ var _ client.ParamsCache[any] = (*paramsCache[any])(nil)
 // singleValueCache is the key used to store the value in the cache.
 const singleValueCache = ""
 
-// paramsCache is a simple in-memory cache implementation for query parameters.
+// paramsCache is a simple in-memory historical cache implementation for query parameters.
 // It does not involve key-value pairs, but only stores a single value.
 type paramsCache[T any] struct {
-	keyValueCache cache.KeyValueCache[T]
+	historicalKeyValueCache cache.HistoricalKeyValueCache[T]
 }
 
 // NewParamsCache returns a new instance of a ParamsCache.
 func NewParamsCache[T any](opts ...memory.KeyValueCacheOptionFn) (*paramsCache[T], error) {
-	keyValueCache, err := memory.NewKeyValueCache[T](opts...)
+	historicalKeyValueCache, err := memory.NewHistoricalKeyValueCache[T](opts...)
 	if err != nil {
 		return nil, err
 	}
 
 	return &paramsCache[T]{
-		keyValueCache,
+		historicalKeyValueCache,
 	}, nil
 }
 
-// Get returns the value stored in the cache.
+// GetLatest returns the latest value stored in the cache.
 // A boolean is returned as the second value to indicate if the value was found in the cache.
-func (c *paramsCache[T]) Get() (value T, found bool) {
-	return c.keyValueCache.Get(singleValueCache)
+func (c *paramsCache[T]) GetLatest() (value T, found bool) {
+	return c.historicalKeyValueCache.GetLatestVersion(singleValueCache)
 }
 
-// Set stores a value in the cache.
-func (c *paramsCache[T]) Set(value T) {
-	c.keyValueCache.Set(singleValueCache, value)
+// GetAtHeight returns the value stored in the cache at the given height.
+func (c *paramsCache[T]) GetAtHeight(height int64) (value T, found bool) {
+	return c.historicalKeyValueCache.GetVersionLTE(singleValueCache, height)
 }
 
-// Delete removes the value from the cache.
-func (c *paramsCache[T]) Delete() {
-	c.keyValueCache.Delete(singleValueCache)
+// Set stores a value in the cache at the given height.
+func (c *paramsCache[T]) SetAtHeight(value T, height int64) {
+	c.historicalKeyValueCache.SetVersion(singleValueCache, value, height)
 }
 
-// Clear empties the cache.
-func (c *paramsCache[T]) Clear() {
-	c.keyValueCache.Delete(singleValueCache)
+// Get all versions of a value stored in the cache.
+func (c *paramsCache[T]) GetAllUpdates() (cache.CacheValueHistory[T], bool) {
+	return c.historicalKeyValueCache.GetAllVersions(singleValueCache)
 }

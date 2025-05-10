@@ -5,8 +5,11 @@ option go_package = "github.com/pokt-network/poktroll/x/proof/types";
 option (gogoproto.stable_marshaler_all) = true;
 
 import "cosmos/base/v1beta1/coin.proto";
+import "amino/amino.proto";
 import "gogoproto/gogo.proto";
+
 import "pocket/proof/types.proto";
+import "pocket/proof/params.proto";
 
 message EventClaimCreated {
   pocket.proof.Claim claim = 1 [(gogoproto.jsontag) = "claim"];
@@ -53,4 +56,15 @@ message EventProofValidityChecked {
   // reason is the string representation of the error that led to the proof being
   // marked as invalid (e.g. "invalid closest merkle proof", "invalid relay request signature")
   string failure_reason = 4 [(gogoproto.jsontag) = "failure_reason"];
+}
+
+// EventParamsUpdate is emitted when the module params update becomes effective.
+message EventParamsUpdated {
+  pocket.proof.Params params = 1 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true,
+    (gogoproto.jsontag) = "params"
+  ];
+  // The start height of the session at which the param is activated.
+  uint64 effective_block_height = 2 [(gogoproto.jsontag) = "effective_block_height"];
 }

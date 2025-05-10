@@ -10,7 +10,7 @@ test_e2e_env: warn_message_acc_initialize_pubkeys ## Setup the default env vars 
 
 .PHONY: test_e2e
 test_e2e: test_e2e_env ## Run all E2E tests
-	go test -count=1 -v ./e2e/tests/... -tags=e2e,test
+	go test -count=1 -v ./e2e/tests/... -tags=e2e,test -timeout=15m
 
 .PHONY: test_e2e_verbose
 test_e2e_verbose: test_e2e_env ## Run all E2E tests with verbose debug output

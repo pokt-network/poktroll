@@ -86,11 +86,11 @@ func (s *appTransferTestSuite) SetupTest() {
 }
 
 func (s *appTransferTestSuite) TestSingleSourceToNonexistentDestinationSucceeds() {
-	sharedParamsAny, err := s.paramsSuite.QueryModuleParams(s.T(), sharedtypes.ModuleName)
+	sharedParamsAny, err := s.paramsSuite.QueryModuleParamsUpdates(s.T(), sharedtypes.ModuleName)
 	require.NoError(s.T(), err)
 
-	sharedParams := sharedParamsAny.(sharedtypes.Params)
-	sessionEndHeight := sharedtypes.GetSessionEndHeight(&sharedParams, s.SdkCtx().BlockHeight())
+	sharedParamsUpdates := sharedParamsAny.([]*sharedtypes.ParamsUpdate)
+	sessionEndHeight := sharedtypes.GetSessionEndHeight(sharedParamsUpdates, s.SdkCtx().BlockHeight())
 
 	transferBeginHeight := s.SdkCtx().BlockHeight()
 
@@ -123,7 +123,7 @@ func (s *appTransferTestSuite) TestSingleSourceToNonexistentDestinationSucceeds(
 	s.shouldObserveTransferBeginEvent(&foundApp1, s.app3)
 
 	// Continue until transfer end commit height - 1.
-	transferEndHeight := apptypes.GetApplicationTransferHeight(&sharedParams, &foundApp1)
+	transferEndHeight := apptypes.GetApplicationTransferHeight(sharedParamsUpdates, &foundApp1)
 	blocksUntilTransferEndHeight := transferEndHeight - transferBeginHeight
 	s.GetApp().NextBlocks(s.T(), int(blocksUntilTransferEndHeight)-1)
 
@@ -179,12 +179,12 @@ func (s *appTransferTestSuite) TestSingleSourceToNonexistentDestinationSucceeds(
 }
 
 func (s *appTransferTestSuite) TestMultipleSourceToSameNonexistentDestinationMergesSources() {
-	sharedParamsAny, err := s.paramsSuite.QueryModuleParams(s.T(), sharedtypes.ModuleName)
+	sharedParamsAny, err := s.paramsSuite.QueryModuleParamsUpdates(s.T(), sharedtypes.ModuleName)
 	require.NoError(s.T(), err)
 
-	sharedParams := sharedParamsAny.(sharedtypes.Params)
+	sharedParamsUpdates := sharedParamsAny.([]*sharedtypes.ParamsUpdate)
 	msgTransferAppTypeURL := cosmostypes.MsgTypeURL(&apptypes.MsgTransferApplication{})
-	sessionEndHeight := sharedtypes.GetSessionEndHeight(&sharedParams, s.SdkCtx().BlockHeight())
+	sessionEndHeight := sharedtypes.GetSessionEndHeight(sharedParamsUpdates, s.SdkCtx().BlockHeight())
 
 	transferBeginHeight := s.SdkCtx().BlockHeight()
 
@@ -236,7 +236,7 @@ func (s *appTransferTestSuite) TestMultipleSourceToSameNonexistentDestinationMer
 		// Assert that the transfer begin event (tx result event) is observed.
 		s.shouldObserveTransferBeginEvent(&foundSrcApp, expectedDstBech32)
 
-		nextTransferEndHeight := apptypes.GetApplicationTransferHeight(&sharedParams, &foundSrcApp)
+		nextTransferEndHeight := apptypes.GetApplicationTransferHeight(sharedParamsUpdates, &foundSrcApp)
 		if transferEndHeight != 0 {
 			require.Equal(s.T(), transferEndHeight, nextTransferEndHeight)
 		}

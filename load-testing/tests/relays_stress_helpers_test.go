@@ -206,9 +206,9 @@ func (s *relaysSuite) mapSessionInfoForLoadTestDurationFn(
 
 		sessionInfo := &sessionInfoNotif{
 			blockHeight:             blockHeight,
-			sessionNumber:           sharedtypes.GetSessionNumber(s.sharedParams, blockHeight),
-			sessionStartBlockHeight: sharedtypes.GetSessionStartHeight(s.sharedParams, blockHeight),
-			sessionEndBlockHeight:   sharedtypes.GetSessionEndHeight(s.sharedParams, blockHeight),
+			sessionNumber:           sharedtypes.GetSessionNumber(s.sharedParamsUpdates, blockHeight),
+			sessionStartBlockHeight: sharedtypes.GetSessionStartHeight(s.sharedParamsUpdates, blockHeight),
+			sessionEndBlockHeight:   sharedtypes.GetSessionEndHeight(s.sharedParamsUpdates, blockHeight),
 		}
 
 		infoLogger := logger.Info().
@@ -238,7 +238,7 @@ func (s *relaysSuite) mapSessionInfoForLoadTestDurationFn(
 			// Mark the test as started.
 			waitingForFirstSession = false
 			// Calculate the end block height of the test.
-			s.testEndHeight = s.testStartHeight + s.plans.totalDurationBlocks(s.sharedParams, blockHeight)
+			s.testEndHeight = s.testStartHeight + s.plans.totalDurationBlocks(s.sharedParamsUpdates, blockHeight)
 
 			logger.Info().Msgf("Test starting at block height: %d", s.testStartHeight)
 		}
@@ -306,7 +306,7 @@ func (s *relaysSuite) validateActorLoadTestIncrementPlans(plans *actorLoadTestIn
 	}
 
 	plans.validateAppSupplierPermutations(s)
-	plans.validateIncrementRates(s, s.sharedParams)
+	plans.validateIncrementRates(s, s.sharedParamsUpdates)
 	plans.validateMaxAmounts(s)
 
 	require.Truef(s,
@@ -367,9 +367,10 @@ func (plans *actorLoadTestIncrementPlans) validateAppSupplierPermutations(t gocu
 // Otherwise, the expected baseline for several metrics will be periodically skewed.
 func (plans *actorLoadTestIncrementPlans) validateIncrementRates(
 	t gocuke.TestingT,
-	sharedParams *sharedtypes.Params,
+	sharedParamsUpdates []*sharedtypes.ParamsUpdate,
 ) {
-	numBlocksPerSession := int64(sharedParams.GetNumBlocksPerSession())
+	sharedParamsUpdate := sharedtypes.GetEffectiveParamsUpdate(sharedParamsUpdates, 1)
+	numBlocksPerSession := int64(sharedParamsUpdate.Params.GetNumBlocksPerSession())
 
 	require.Truef(t,
 		plans.gateways.blocksPerIncrement%numBlocksPerSession == 0,
@@ -407,15 +408,15 @@ func (plans *actorLoadTestIncrementPlans) validateMaxAmounts(t gocuke.TestingT) 
 // proof corresponding to the session in which the maxActorCount for the given actor
 // has been committed.
 func (plans *actorLoadTestIncrementPlans) totalDurationBlocks(
-	sharedParams *sharedtypes.Params,
+	sharedParamsUpdates []*sharedtypes.ParamsUpdate,
 	currentHeight int64,
 ) int64 {
 	// The last block of the last session SHOULD align with the last block of the
 	// last increment duration (i.e. **after** maxActorCount actors are activated).
 	blocksToFinalSessionEnd := plans.maxActorBlocksToFinalIncrementEnd()
-	finalSessionEndHeight := sharedtypes.GetSessionEndHeight(sharedParams, currentHeight+blocksToFinalSessionEnd)
+	finalSessionEndHeight := sharedtypes.GetSessionEndHeight(sharedParamsUpdates, currentHeight+blocksToFinalSessionEnd)
 
-	return sharedtypes.GetProofWindowCloseHeight(sharedParams, finalSessionEndHeight) - currentHeight
+	return sharedtypes.GetProofWindowCloseHeight(sharedParamsUpdates, finalSessionEndHeight) - currentHeight
 }
 
 // blocksToFinalIncrementStart returns the number of blocks that will have
@@ -456,19 +457,19 @@ func (s *relaysSuite) mapSessionInfoWhenStakingNewSuppliersAndGatewaysFn() chann
 		// available for the beginning of the next one.
 		// This is because the suppliers involvement is out of control of the test
 		// suite and is driven by the Gateway's endpoint selection.
-		if suppliersPlan.shouldIncrementSupplierCount(s.sharedParams, notif, activeSuppliers, s.testStartHeight) {
+		if suppliersPlan.shouldIncrementSupplierCount(s.sharedParamsUpdates, notif, activeSuppliers, s.testStartHeight) {
 			newSuppliers = s.sendStakeSuppliersTxs(notif, &suppliersPlan)
 		}
 
 		var newGateways []*accountInfo
 		activeGateways := int64(len(s.activeGateways))
-		if gatewaysPlan.shouldIncrementActorCount(s.sharedParams, notif, activeGateways, s.testStartHeight) {
+		if gatewaysPlan.shouldIncrementActorCount(s.sharedParamsUpdates, notif, activeGateways, s.testStartHeight) {
 			newGateways = s.sendStakeGatewaysTxs(notif, &gatewaysPlan)
 		}
 
 		var newApps []*accountInfo
 		activeApps := int64(len(s.activeApplications))
-		if appsPlan.shouldIncrementActorCount(s.sharedParams, notif, activeApps, s.testStartHeight) {
+		if appsPlan.shouldIncrementActorCount(s.sharedParamsUpdates, notif, activeApps, s.testStartHeight) {
 			newApps = s.sendFundNewAppsTx(notif, &appsPlan)
 		}
 
@@ -752,7 +753,7 @@ func (s *relaysSuite) sendDelegateInitialAppsTxs(apps, gateways []*accountInfo) 
 //
 // TODO_TECHDEBT(@bryanchriswhite): move to a new file.
 func (plan *actorLoadTestIncrementPlan) shouldIncrementActorCount(
-	sharedParams *sharedtypes.Params,
+	sharedParamsUpdates []*sharedtypes.ParamsUpdate,
 	sessionInfo *sessionInfoNotif,
 	actorCount int64,
 	startBlockHeight int64,
@@ -762,8 +763,9 @@ func (plan *actorLoadTestIncrementPlan) shouldIncrementActorCount(
 		return false
 	}
 
-	initialSessionNumber := sharedtypes.GetSessionNumber(sharedParams, startBlockHeight)
-	actorSessionIncRate := plan.blocksPerIncrement / int64(sharedParams.GetNumBlocksPerSession())
+	initialSessionNumber := sharedtypes.GetSessionNumber(sharedParamsUpdates, startBlockHeight)
+	sharedParamsUpdate := sharedtypes.GetEffectiveParamsUpdate(sharedParamsUpdates, startBlockHeight)
+	actorSessionIncRate := plan.blocksPerIncrement / int64(sharedParamsUpdate.Params.GetNumBlocksPerSession())
 	nextSessionNumber := sessionInfo.sessionNumber + 1 - initialSessionNumber
 	isSessionStartHeight := sessionInfo.blockHeight == sessionInfo.sessionStartBlockHeight
 	isActorIncrementHeight := nextSessionNumber%actorSessionIncRate == 0
@@ -778,7 +780,7 @@ func (plan *actorLoadTestIncrementPlan) shouldIncrementActorCount(
 // Suppliers stake transactions are sent at the end of the session so they are
 // available for the beginning of the next one.
 func (plan *actorLoadTestIncrementPlan) shouldIncrementSupplierCount(
-	sharedParams *sharedtypes.Params,
+	sharedParamsUpdates []*sharedtypes.ParamsUpdate,
 	sessionInfo *sessionInfoNotif,
 	actorCount int64,
 	startBlockHeight int64,
@@ -788,8 +790,9 @@ func (plan *actorLoadTestIncrementPlan) shouldIncrementSupplierCount(
 		return false
 	}
 
-	initialSessionNumber := sharedtypes.GetSessionNumber(sharedParams, startBlockHeight)
-	supplierSessionIncRate := plan.blocksPerIncrement / int64(sharedParams.GetNumBlocksPerSession())
+	initialSessionNumber := sharedtypes.GetSessionNumber(sharedParamsUpdates, startBlockHeight)
+	sharedParamsUpdate := sharedtypes.GetEffectiveParamsUpdate(sharedParamsUpdates, startBlockHeight)
+	supplierSessionIncRate := plan.blocksPerIncrement / int64(sharedParamsUpdate.Params.GetNumBlocksPerSession())
 	nextSessionNumber := sessionInfo.sessionNumber + 1 - initialSessionNumber
 	isSessionEndHeight := sessionInfo.blockHeight == sessionInfo.sessionEndBlockHeight
 	isActorIncrementHeight := nextSessionNumber%supplierSessionIncRate == 0
@@ -1254,7 +1257,9 @@ func allAppsDelegatedToAllGateways(
 
 // getRelayCost fetches the relay cost from the tokenomics module.
 func (s *relaysSuite) getRelayCost() int64 {
-	relayCost := s.testedService.ComputeUnitsPerRelay * s.sharedParams.ComputeUnitsToTokensMultiplier
+	lastBlock := s.latestBlock.Height()
+	sharedParamsUpdate := sharedtypes.GetEffectiveParamsUpdate(s.sharedParamsUpdates, lastBlock)
+	relayCost := s.testedService.ComputeUnitsPerRelay * sharedParamsUpdate.Params.ComputeUnitsToTokensMultiplier
 
 	return int64(relayCost)
 }
@@ -1434,10 +1439,10 @@ func (s *relaysSuite) querySharedParams(queryNodeRPCURL string) {
 	sharedQueryClient, err := query.NewSharedQuerier(deps)
 	require.NoError(s, err)
 
-	sharedParams, err := sharedQueryClient.GetParams(s.ctx)
+	sharedParamsUpdates, err := sharedQueryClient.GetParamsUpdates(s.ctx)
 	require.NoError(s, err)
 
-	s.sharedParams = sharedParams
+	s.sharedParamsUpdates = sharedParamsUpdates
 }
 
 // queryAppParams queries the current onchain application module parameters for use

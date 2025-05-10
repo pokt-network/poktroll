@@ -100,7 +100,7 @@ func (s *MigrationModuleTestSuite) TestClaimMorseExistingApplication() {
 	s.GenerateMorseAccountState(s.T(), s.numMorseClaimableAccounts, testmigration.AllApplicationMorseAccountActorType)
 	s.ImportMorseClaimableAccounts(s.T())
 
-	for morseAccountIdx, _ := range s.GetAccountState(s.T()).Accounts {
+	for morseAccountIdx := range s.GetAccountState(s.T()).Accounts {
 		testDesc := fmt.Sprintf("morse account %d", morseAccountIdx)
 		s.Run(testDesc, func() {
 			// Stake an initial application.

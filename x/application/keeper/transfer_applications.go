@@ -27,8 +27,8 @@ func (k Keeper) EndBlockerTransferApplication(ctx context.Context) error {
 
 	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
 	currentHeight := sdkCtx.BlockHeight()
-	sharedParams := k.sharedKeeper.GetParams(ctx)
-	sessionEndHeight := sharedtypes.GetSessionEndHeight(&sharedParams, currentHeight)
+	sharedParamsUpdates := k.sharedKeeper.GetParamsUpdates(ctx)
+	sessionEndHeight := sharedtypes.GetSessionEndHeight(sharedParamsUpdates, currentHeight)
 	logger := k.Logger().
 		With("method", "EndBlockerTransferApplication").
 		With("current_height", currentHeight).
@@ -36,7 +36,7 @@ func (k Keeper) EndBlockerTransferApplication(ctx context.Context) error {
 
 	// Only process application transfers at the end of the session in
 	// order to avoid inconsistent/unpredictable mid-session behavior.
-	if !sharedtypes.IsSessionEndHeight(&sharedParams, currentHeight) {
+	if !sharedtypes.IsSessionEndHeight(sharedParamsUpdates, currentHeight) {
 		return nil
 	}
 
@@ -67,7 +67,7 @@ func (k Keeper) EndBlockerTransferApplication(ctx context.Context) error {
 		// Ignore applications that have initiated a transfer but still active.
 		// This spans the period from the end of the session in which the transfer
 		// began to the end of settlement for that session.
-		transferEndHeight := apptypes.GetApplicationTransferHeight(&sharedParams, &srcApp)
+		transferEndHeight := apptypes.GetApplicationTransferHeight(sharedParamsUpdates, &srcApp)
 		if currentHeight < transferEndHeight {
 			continue
 		}
@@ -161,9 +161,9 @@ func (k Keeper) transferApplication(
 	logger.Info(fmt.Sprintf("Successfully transferred application stake from (%s) to (%s)", srcApp.GetAddress(), dstApp.GetAddress()))
 
 	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
-	sharedParams := k.sharedKeeper.GetParams(sdkCtx)
-	sessionEndHeight := sharedtypes.GetSessionEndHeight(&sharedParams, sdkCtx.BlockHeight())
-	transferEndHeight := apptypes.GetApplicationTransferHeight(&sharedParams, &srcApp)
+	sharedParamsUpdates := k.sharedKeeper.GetParamsUpdates(sdkCtx)
+	sessionEndHeight := sharedtypes.GetSessionEndHeight(sharedParamsUpdates, sdkCtx.BlockHeight())
+	transferEndHeight := apptypes.GetApplicationTransferHeight(sharedParamsUpdates, &srcApp)
 	transferEndEvent := &apptypes.EventTransferEnd{
 		SourceAddress:          srcApp.GetAddress(),
 		DestinationAddress:     dstApp.GetAddress(),

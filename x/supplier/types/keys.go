@@ -55,6 +55,10 @@ const (
 
 	// MemStoreKey defines the in-memory store key
 	MemStoreKey = "mem_supplier"
+
+	// ParamsUpdateKeyPrefix defines the prefix for params updates.
+	// This is used to store params updates at a specific height.
+	ParamsUpdateKeyPrefix = "supplier_params_update/effective_height/"
 )
 
 var ParamsKey = []byte("p_supplier")
