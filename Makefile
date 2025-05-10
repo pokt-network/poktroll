@@ -80,7 +80,7 @@ endif
 # TODO_TECHDEBT(@okdas): Add other dependencies (ignite, docker, k8s, etc) here
 .PHONY: install_ci_deps
 install_ci_deps: ## Installs `golangci-lint` and other go tools
-	go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.60.3 && golangci-lint --version
+	go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.64.8 && golangci-lint --version
 	go install golang.org/x/tools/cmd/goimports@latest
 	go install github.com/mikefarah/yq/v4@latest
 
