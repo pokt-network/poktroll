@@ -1,0 +1,31 @@
+=============== May 11, 2025 (EDT) ===============
+21:40:55.470325 log@legend F·NumFile S·FileSize N·Entry C·BadEntry B·BadBlock Ke·KeyError D·DroppedEntry L·Level Q·SeqNum T·TimeElapsed
+21:40:55.491895 db@open opening
+21:40:55.493113 version@stat F·[] S·0B[] Sc·[]
+21:40:55.504132 db@janitor F·2 G·0
+21:40:55.504223 db@open done T·12.265458ms
+21:40:55.587307 db@close closing
+21:40:55.587376 db@close done T·67.125µs
+=============== May 11, 2025 (EDT) ===============
+22:21:18.011310 log@legend F·NumFile S·FileSize N·Entry C·BadEntry B·BadBlock Ke·KeyError D·DroppedEntry L·Level Q·SeqNum T·TimeElapsed
+22:21:18.012015 version@stat F·[] S·0B[] Sc·[]
+22:21:18.012051 db@open opening
+22:21:18.012094 journal@recovery F·1
+22:21:18.012525 journal@recovery recovering @1
+22:21:18.018006 memdb@flush created L0@2 N·1 S·500B "2e2..823,v1":"2e2..823,v1"
+22:21:18.018131 version@stat F·[1] S·500B[500B] Sc·[0.25]
+22:21:18.043737 db@janitor F·3 G·0
+22:21:18.043785 db@open done T·31.724625ms
+22:21:18.043884 db@close closing
+22:21:18.044080 db@close done T·194.875µs
+=============== May 11, 2025 (EDT) ===============
+22:21:18.044169 log@legend F·NumFile S·FileSize N·Entry C·BadEntry B·BadBlock Ke·KeyError D·DroppedEntry L·Level Q·SeqNum T·TimeElapsed
+22:21:18.044266 version@stat F·[1] S·500B[500B] Sc·[0.25]
+22:21:18.044277 db@open opening
+22:21:18.044317 journal@recovery F·1
+22:21:18.044354 journal@recovery recovering @3
+22:21:18.044496 version@stat F·[1] S·500B[500B] Sc·[0.25]
+22:21:18.065237 db@janitor F·3 G·0
+22:21:18.065255 db@open done T·20.972541ms
+22:21:18.065305 db@close closing
+22:21:18.065335 db@close done T·27.333µs
