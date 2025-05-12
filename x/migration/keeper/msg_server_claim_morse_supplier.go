@@ -131,6 +131,23 @@ func (k msgServer) ClaimMorseSupplier(
 		)
 	}
 
+	// TODO_IN_THIS_COMMIT:
+	// OPERATOR_CLAIM:
+	// - [x] Retrieve the MorseClaimableAccount corresponding to the morse_public_key address
+	//   If it has a morse_output_address:
+	//     - [ ] Retrieve the MorseClaimableAccount for the morse_output_address ("output account")
+	//     - [ ] Ensure that the claim shannon_owner_address matches the output account shannon_dest_address
+	//       If the output account is not claimed or does not match, return an error.
+	// OWNER_CLAIM (w/o operator):
+	//   Otherwise:
+	//     - [x] Assume morse_public_key is an "owner account"
+	//     - [x] Use the existing supplier claim logic
+	//  OWNER_CLAIM (w/ operator):
+	// - [ ] Query for a MorseClaimableAccount with morse_output_address matching the morse_public_key address
+	//   If it exists:
+	//     - ... check if it's a supplier - use as the morseClaimableAccount var in this logic...
+	//     - [x] Use the existing supplier claim logic
+
 	// Mint the totalTokens to the shannonDestAddress account balance.
 	// The Supplier stake is subsequently escrowed from the shannonDestAddress account balance.
 	// NOTE: The current supplier module's staking fee parameter will subsequently be deducted
