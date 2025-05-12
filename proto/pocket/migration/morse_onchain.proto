@@ -54,5 +54,8 @@ message MorseClaimableAccount {
   // The Shannon height at which the account was claimed.
   // This field is intended to remain empty until the account has been claimed.
   int64 claimed_at_height = 8 [(gogoproto.nullable) = true, (gogoproto.jsontag) = "claimed_at_height", (gogoproto.moretags) = "yaml:\"claimed_at_height\""];
+
+  // TODO_IN_THIS_COMMIT: comment...
+  bytes morse_output_address = 9 [(gogoproto.casttype) = "github.com/cometbft/cometbft/crypto.Address", (gogoproto.jsontag) = "morse_output_address,omitempty", (gogoproto.moretags) = "yaml:\"morse_output_address\""];
 }
 
