@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	cosmosmath "cosmossdk.io/math"
+	cometcrypto "github.com/cometbft/cometbft/crypto"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/pokt-network/poktroll/app/volatile"
@@ -144,12 +145,17 @@ func (miw *morseImportWorkspace) addUnstakedBalance(addr string, amount cosmosma
 }
 
 // addSupplierStake adds the given amount to the corresponding Morse account balances in the morseWorkspace.
-func (miw *morseImportWorkspace) addSupplierStake(addr string, amount cosmosmath.Int) error {
+func (miw *morseImportWorkspace) addSupplierStake(
+	addr string,
+	amount cosmosmath.Int,
+	outputAddr cometcrypto.Address,
+) error {
 	account, err := miw.getAccount(addr)
 	if err != nil {
 		return err
 	}
 
+	account.MorseOutputAddress = outputAddr.String()
 	account.SupplierStake.Amount = account.SupplierStake.Amount.Add(amount)
 	return nil
 }

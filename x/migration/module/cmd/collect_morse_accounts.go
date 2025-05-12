@@ -398,7 +398,11 @@ func collectInputSupplierStakes(inputState *migrationtypes.MorseStateExport, mor
 				return ErrMorseExportState.Wrapf("failed to parse supplier stake amount %q", exportSupplier.StakedTokens)
 			}
 
-			if err := morseWorkspace.addSupplierStake(supplierAddr, supplierStakeAmtUpokt); err != nil {
+			if err := morseWorkspace.addSupplierStake(
+				supplierAddr,
+				supplierStakeAmtUpokt,
+				exportSupplier.OutputAddress,
+			); err != nil {
 				return fmt.Errorf(
 					"adding supplier stake amount to account balance of address %q: %w",
 					supplierAddr, err,
