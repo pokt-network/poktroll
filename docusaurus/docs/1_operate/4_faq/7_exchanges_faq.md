@@ -28,7 +28,7 @@ This migration will require exchanges to:
   - A 1:1 migration of liquidity and state from the snapshot will migrate over to the new version of Pocket Network (Shannon).
 - Tokenomics:
   - At the end of April 2025, [we launched a mint = burn tokenomics model for Pocket Network](https://forum.pokt.network/t/protocol-economics-parameters-for-the-shannon-upgrade/5490). This requires manual burning of $POKT on a weekly basis, which can be tracked at [https://pokt.money](https://pokt.money).
-  - After the migration, the new network will burn tokens in real time.
+  - After the migration, the new version of Pocket Network (Shannon) will burn tokens in real time.
 
 ## What **IS** changing? (And what you must do to prepare)
 
