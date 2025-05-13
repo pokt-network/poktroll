@@ -4,10 +4,10 @@ cat <<EOF
 This script runs the full node using cosmovisor and performs an upgrade after the upgrade plan is submitted on chain.
 It simulates a real network upgrade. For consensus-breaking changes, ensure the 'old' binary doesn't have these changes.
 
-Pre-requisites:
+Prerequisites:
 1. 'Old' binary
 2. 'New' binary
-3. Cosmovisor (Install: 'go install cosmossdk.io/tools/cosmovisor/cmd/cosmovisor@v1.5.0')
+3. Cosmovisor (Install: 'go install cosmossdk.io/tools/cosmovisor/cmd/cosmovisor@v1.6.0')
    Documentation: https://docs.cosmos.network/main/build/tooling/cosmovisor
 4. \`upgrade.Upgrade\` with matching \`POCKETD_UPGRADE_PLAN_NAME\` created and included in the new version
 5. LocalNet turned off

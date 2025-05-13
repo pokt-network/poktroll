@@ -40,6 +40,7 @@ func (s *MigrationModuleTestSuite) TestClaimMorseNewApplication() {
 				s.T(), uint64(morseAccountIdx),
 				shannonDestAddr,
 				s.appServiceConfig,
+				sample.AccAddress(),
 			)
 
 			// Assert that the MorseClaimableAccount was updated on-chain.
@@ -128,6 +129,7 @@ func (s *MigrationModuleTestSuite) TestClaimMorseExistingApplication() {
 				s.T(), uint64(morseAccountIdx),
 				shannonDestAddr,
 				s.appServiceConfig,
+				sample.AccAddress(),
 			)
 
 			// Assert that the MorseClaimableAccount was updated on-chain.
@@ -193,7 +195,7 @@ func (s *MigrationModuleTestSuite) TestClaimMorseApplication_ErrorMinStake() {
 	s.Equal(int64(0), shannonDestBalance.Amount.Int64())
 
 	// Attempt to claim a Morse claimable account with a stake below the minimum.
-	morsePrivateKey := testmigration.GenMorsePrivateKey(s.T(), 0)
+	morsePrivateKey := testmigration.GenMorsePrivateKey(0)
 	expectedMorseSrcAddr := morsePrivateKey.PubKey().Address().String()
 	require.Equal(s.T(),
 		expectedMorseSrcAddr,
@@ -202,9 +204,9 @@ func (s *MigrationModuleTestSuite) TestClaimMorseApplication_ErrorMinStake() {
 
 	morseClaimMsg, err := migrationtypes.NewMsgClaimMorseApplication(
 		shannonDestAddr,
-		expectedMorseSrcAddr,
 		morsePrivateKey,
 		s.appServiceConfig,
+		sample.AccAddress(),
 	)
 	s.NoError(err)
 

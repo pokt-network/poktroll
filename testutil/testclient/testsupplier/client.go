@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"cosmossdk.io/depinject"
-	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 
@@ -54,15 +53,15 @@ func NewClaimProofSupplierClientMap(
 	ctrl := gomock.NewController(t)
 	supplierClientMock := mockclient.NewMockSupplierClient(ctrl)
 
-	supplierOperatorAccAddress := cosmostypes.MustAccAddressFromBech32(supplierOperatorAddress)
 	supplierClientMock.EXPECT().
 		OperatorAddress().
-		Return(&supplierOperatorAccAddress).
+		Return(supplierOperatorAddress).
 		AnyTimes()
 
 	supplierClientMock.EXPECT().
 		CreateClaims(
 			gomock.Eq(ctx),
+			gomock.Any(),
 			gomock.AssignableToTypeOf(([]client.MsgCreateClaim)(nil)),
 		).
 		Return(nil).
@@ -71,6 +70,7 @@ func NewClaimProofSupplierClientMap(
 	supplierClientMock.EXPECT().
 		SubmitProofs(
 			gomock.Eq(ctx),
+			gomock.Any(),
 			gomock.AssignableToTypeOf(([]client.MsgSubmitProof)(nil)),
 		).
 		Return(nil).

@@ -305,6 +305,8 @@ func (s *suite) fundAddress(addr string, coin cosmostypes.Coin) {
 		pnfKeyName,
 		addr,
 		coin.String(),
+		keyRingFlag,
+		chainIdFlag,
 		"--yes",
 	}
 
@@ -449,12 +451,14 @@ func (s *suite) assertExpectedModuleParamsUpdated(moduleName string) {
 			},
 		)
 	case apptypes.ModuleName:
-		maxDelegatedGateways := uint64(s.expectedModuleParams[moduleName][apptypes.ParamMaxDelegatedGateways].value.(int64))
+		maxDelegatedGateways := s.expectedModuleParams[moduleName][apptypes.ParamMaxDelegatedGateways].value.(uint64)
+		minStake := s.expectedModuleParams[moduleName][apptypes.ParamMinStake].value.(*cosmostypes.Coin)
 		assertUpdatedParams(s,
 			[]byte(res.Stdout),
 			&apptypes.QueryParamsResponse{
 				Params: apptypes.Params{
 					MaxDelegatedGateways: maxDelegatedGateways,
+					MinStake:             minStake,
 				},
 			},
 		)
@@ -465,6 +469,18 @@ func (s *suite) assertExpectedModuleParamsUpdated(moduleName string) {
 			&servicetypes.QueryParamsResponse{
 				Params: servicetypes.Params{
 					AddServiceFee: addServiceFee,
+				},
+			},
+		)
+	case suppliertypes.ModuleName:
+		minStake := s.expectedModuleParams[moduleName][suppliertypes.ParamMinStake].value.(*cosmostypes.Coin)
+		stakingFee := s.expectedModuleParams[moduleName][suppliertypes.ParamStakingFee].value.(*cosmostypes.Coin)
+		assertUpdatedParams(s,
+			[]byte(res.Stdout),
+			&suppliertypes.QueryParamsResponse{
+				Params: suppliertypes.Params{
+					MinStake:   minStake,
+					StakingFee: stakingFee,
 				},
 			},
 		)

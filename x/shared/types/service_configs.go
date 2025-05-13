@@ -20,8 +20,8 @@ func ValidateAppServiceConfigs(services []*ApplicationServiceConfig) error {
 			return fmt.Errorf("serviceConfig cannot be nil: %v", services)
 		}
 		// Check the Service ID
-		if !IsValidServiceId(serviceConfig.GetServiceId()) {
-			return ErrSharedInvalidService.Wrapf("invalid service ID: %q", serviceConfig.GetServiceId())
+		if err := IsValidServiceId(serviceConfig.GetServiceId()); err != nil {
+			return err
 		}
 	}
 	return nil
@@ -32,15 +32,23 @@ func ValidateSupplierServiceConfigs(services []*SupplierServiceConfig) error {
 	if len(services) == 0 {
 		return fmt.Errorf("no services provided for supplier: %v", services)
 	}
+
+	serviceExists := make(map[string]struct{})
 	for _, serviceConfig := range services {
 		if serviceConfig == nil {
 			return fmt.Errorf("serviceConfig cannot be nil: %v", services)
 		}
 
 		// Check the Service ID
-		if !IsValidServiceId(serviceConfig.GetServiceId()) {
-			return ErrSharedInvalidService.Wrapf("invalid service ID: %s", serviceConfig.GetServiceId())
+		if err := IsValidServiceId(serviceConfig.GetServiceId()); err != nil {
+			return err
 		}
+
+		// Check the Service ID uniqueness
+		if _, ok := serviceExists[serviceConfig.ServiceId]; ok {
+			return fmt.Errorf("duplicate service ID: %s", serviceConfig.ServiceId)
+		}
+		serviceExists[serviceConfig.ServiceId] = struct{}{}
 
 		// Check the Endpoints
 		if serviceConfig.Endpoints == nil {
@@ -72,7 +80,7 @@ func ValidateSupplierServiceConfigs(services []*SupplierServiceConfig) error {
 				return fmt.Errorf("endpoint.RpcType is not a valid RPCType: %v", serviceConfig)
 			}
 
-			// TODO_MAINNET(@okdas): Either add validation for `endpoint.Configs` (can be a part of
+			// TODO_POST_MAINNET(@okdas): Either add validation for `endpoint.Configs` (can be a part of
 			// `parseEndpointConfigs`), or change the config structure to be more clear about what is expected here
 			// as currently, this is just a map[string]string, when values can be other types.
 			// if endpoint.Configs == nil {

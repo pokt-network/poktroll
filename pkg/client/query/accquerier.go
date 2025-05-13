@@ -2,6 +2,7 @@ package query
 
 import (
 	"context"
+	"sync"
 
 	"cosmossdk.io/depinject"
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
@@ -12,6 +13,7 @@ import (
 	"github.com/pokt-network/poktroll/pkg/cache"
 	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/polylog"
+	"github.com/pokt-network/poktroll/pkg/retry"
 )
 
 var _ client.AccountQueryClient = (*accQuerier)(nil)
@@ -26,10 +28,12 @@ type accQuerier struct {
 
 	// accountsCache caches accountQueryClient.Account requests
 	accountsCache cache.KeyValueCache[types.AccountI]
+	// Mutex to protect accountsCache access
+	accountsMutex sync.Mutex
 }
 
 // NewAccountQuerier returns a new instance of a client.AccountQueryClient by
-// injecting the dependecies provided by the depinject.Config.
+// injecting the dependencies provided by the depinject.Config.
 //
 // Required dependencies:
 // - clientCtx
@@ -59,15 +63,27 @@ func (aq *accQuerier) GetAccount(
 
 	// Check if the account is present in the cache.
 	if account, found := aq.accountsCache.Get(address); found {
-		logger.Debug().Msgf("cache hit for account address key: %s", address)
+		logger.Debug().Msgf("cache HIT for account with address: %s", address)
 		return account, nil
 	}
 
-	logger.Debug().Msgf("cache miss for account address key: %s", address)
+	// Use mutex to prevent multiple concurrent cache updates
+	aq.accountsMutex.Lock()
+	defer aq.accountsMutex.Unlock()
+
+	// Double-check cache after acquiring lock (follows standard double-checked locking pattern)
+	if account, found := aq.accountsCache.Get(address); found {
+		logger.Debug().Msgf("cache HIT for account with address after lock: %s", address)
+		return account, nil
+	}
+
+	logger.Debug().Msgf("cache MISS for account with address: %s", address)
 
 	// Query the blockchain for the account record
 	req := &accounttypes.QueryAccountRequest{Address: address}
-	res, err := aq.accountQuerier.Account(ctx, req)
+	res, err := retry.Call(ctx, func() (*accounttypes.QueryAccountResponse, error) {
+		return aq.accountQuerier.Account(ctx, req)
+	}, retry.GetStrategy(ctx))
 	if err != nil {
 		return nil, ErrQueryAccountNotFound.Wrapf("address: %s [%v]", address, err)
 	}

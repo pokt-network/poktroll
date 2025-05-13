@@ -64,7 +64,11 @@ func TestSession_HydrateSession_Success_BaseCase(t *testing.T) {
 
 	supplier := suppliers[0]
 	require.Equal(t, keepertest.TestSupplierOperatorAddress, supplier.OperatorAddress)
-	require.Len(t, supplier.Services, 3)
+
+	// supplier.Services should only contain the service corresponding to the
+	// session's serviceId
+	require.Len(t, supplier.Services, 1)
+	require.Equal(t, keepertest.TestServiceId1, supplier.Services[0].ServiceId)
 }
 
 func TestSession_HydrateSession_Metadata(t *testing.T) {
@@ -120,11 +124,11 @@ func TestSession_HydrateSession_Metadata(t *testing.T) {
 
 	appAddr := keepertest.TestApp1Address
 	serviceId := keepertest.TestServiceId1
-	sessionKeeper, ctx := keepertest.SessionKeeper(t, sharedParamsOpt)
-	ctx = sdk.UnwrapSDKContext(ctx).WithBlockHeight(100) // provide a sufficiently large block height to avoid errors
-
 	for _, test := range tests {
 		t.Run(test.desc, func(t *testing.T) {
+			sessionKeeper, ctx := keepertest.SessionKeeper(t, sharedParamsOpt)
+			ctx = sdk.UnwrapSDKContext(ctx).WithBlockHeight(100) // provide a sufficiently large block height to avoid errors
+
 			sessionHydrator := keeper.NewSessionHydrator(appAddr, serviceId, test.blockHeight)
 			session, err := sessionKeeper.HydrateSession(ctx, sessionHydrator)
 
@@ -207,11 +211,11 @@ func TestSession_HydrateSession_SessionId(t *testing.T) {
 		},
 	}
 
-	sessionKeeper, ctx := keepertest.SessionKeeper(t, sharedParamsOpt)
-	ctx = sdk.UnwrapSDKContext(ctx).WithBlockHeight(100) // provide a sufficiently large block height to avoid errors
-
 	for _, test := range tests {
 		t.Run(test.desc, func(t *testing.T) {
+			sessionKeeper, ctx := keepertest.SessionKeeper(t, sharedParamsOpt)
+			ctx = sdk.UnwrapSDKContext(ctx).WithBlockHeight(100) // provide a sufficiently large block height to avoid errors
+
 			sessionHydrator1 := keeper.NewSessionHydrator(test.appAddr1, test.serviceId1, test.blockHeight1)
 			session1, err := sessionKeeper.HydrateSession(ctx, sessionHydrator1)
 			require.NoError(t, err)
@@ -278,11 +282,11 @@ func TestSession_HydrateSession_Application(t *testing.T) {
 	}
 
 	blockHeight := int64(10)
-	sessionKeeper, ctx := keepertest.SessionKeeper(t, sharedParamsOpt)
-	ctx = sdk.UnwrapSDKContext(ctx).WithBlockHeight(100) // provide a sufficiently large block height to avoid errors
-
 	for _, test := range tests {
 		t.Run(test.desc, func(t *testing.T) {
+			sessionKeeper, ctx := keepertest.SessionKeeper(t, sharedParamsOpt)
+			ctx = sdk.UnwrapSDKContext(ctx).WithBlockHeight(100) // provide a sufficiently large block height to avoid errors
+
 			sessionHydrator := keeper.NewSessionHydrator(test.appAddr, test.serviceId, blockHeight)
 			_, err := sessionKeeper.HydrateSession(ctx, sessionHydrator)
 			if test.expectedErr != nil {
@@ -294,9 +298,9 @@ func TestSession_HydrateSession_Application(t *testing.T) {
 	}
 }
 
-// TODO_TEST: Expand these tests to account for supplier joining/leaving the network at different heights as well changing the services they support
+// TODO_MAINNET_MIGRATION(@red-0ne): Expand these tests to account for supplier joining/leaving the network at different heights as well changing the services they support
 func TestSession_HydrateSession_Suppliers(t *testing.T) {
-	// TODO_BETA(@bryanchriswhite): Extend these tests once `NumBlocksPerSession` is configurable.
+	// TODO_MAINNET_MIGRATION(@red-0ne, #543): Extend these tests once `NumBlocksPerSession` is configurable.
 	// Currently assumes NumSupplierPerSession=15
 	tests := []struct {
 		// Description

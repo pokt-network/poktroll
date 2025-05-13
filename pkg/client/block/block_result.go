@@ -5,19 +5,19 @@ import (
 	"github.com/cometbft/cometbft/types"
 )
 
-// cometBlockResult is a non-alias of the comet ResultBlock type that implements
+// CometBlockResult is a non-alias of the comet ResultBlock type that implements
 // the client.Block interface. It is used across the codebase to standardize the access
 // to a block's height and hash across different block clients.
-type cometBlockResult coretypes.ResultBlock
+type CometBlockResult coretypes.ResultBlock
 
-func (cbr *cometBlockResult) Height() int64 {
+func (cbr *CometBlockResult) Height() int64 {
 	return cbr.Block.Header.Height
 }
 
-func (cbr *cometBlockResult) Hash() []byte {
+func (cbr *CometBlockResult) Hash() []byte {
 	return cbr.BlockID.Hash
 }
 
-func (cbr *cometBlockResult) Txs() []types.Tx {
+func (cbr *CometBlockResult) Txs() []types.Tx {
 	return cbr.Block.Data.Txs
 }

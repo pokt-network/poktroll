@@ -63,3 +63,16 @@ func TestMorseClaimableAccountGetAll(t *testing.T) {
 		nullify.Fill(keeper.GetAllMorseClaimableAccounts(ctx)),
 	)
 }
+
+func TestHasAnyMorseClaimableAccounts(t *testing.T) {
+	keeper, ctx := keepertest.MigrationKeeper(t)
+
+	// Keeper state should initially be empty (i.e. no MorseClaimableAccounts).
+	require.False(t, keeper.HasAnyMorseClaimableAccounts(ctx))
+
+	// Populate the keeper state with EXACTLY 1 MorseClaimableAccounts.
+	_ = createNMorseClaimableAccount(keeper, ctx, 1)
+
+	// Keeper state should cause HasAnyMorseClaimableAccounts to return true.
+	require.True(t, keeper.HasAnyMorseClaimableAccounts(ctx))
+}

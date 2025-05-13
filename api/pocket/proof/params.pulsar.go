@@ -678,18 +678,18 @@ type Params struct {
 	// is equal to or above the threshold. This is in contrast to the this requirement
 	// being determined probabilistically via ProofRequestProbability.
 	//
-	// TODO_MAINNET: Consider renaming this to `proof_requirement_threshold_upokt`.
+	// TODO_MAINNET_MIGRATION: Consider renaming this to `proof_requirement_threshold_upokt`.
 	ProofRequirementThreshold *v1beta1.Coin `protobuf:"bytes,3,opt,name=proof_requirement_threshold,json=proofRequirementThreshold,proto3" json:"proof_requirement_threshold,omitempty"`
 	// proof_missing_penalty is the number of tokens (uPOKT) which should be slashed from a supplier
 	// when a proof is required (either via proof_requirement_threshold or proof_missing_penalty)
 	// but is not provided.
-	// TODO_MAINNET: Consider renaming this to `proof_missing_penalty_upokt`.
+	// TODO_MAINNET_MIGRATION: Consider renaming this to `proof_missing_penalty_upokt`.
 	ProofMissingPenalty *v1beta1.Coin `protobuf:"bytes,4,opt,name=proof_missing_penalty,json=proofMissingPenalty,proto3" json:"proof_missing_penalty,omitempty"`
 	// proof_submission_fee is the number of tokens (uPOKT) which should be paid by
 	// the supplier operator when submitting a proof.
 	// This is needed to account for the cost of storing proofs onchain and prevent
 	// spamming (i.e. sybil bloat attacks) the network with non-required proofs.
-	// TODO_MAINNET: Consider renaming this to `proof_submission_fee_upokt`.
+	// TODO_MAINNET_MIGRATION: Consider renaming this to `proof_submission_fee_upokt`.
 	ProofSubmissionFee *v1beta1.Coin `protobuf:"bytes,5,opt,name=proof_submission_fee,json=proofSubmissionFee,proto3" json:"proof_submission_fee,omitempty"`
 }
 

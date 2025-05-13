@@ -14,14 +14,6 @@ slug: /
   </a>
 </div>
 
-:::note Pocket Network Project Documentation
-
-This is the living technical documentation for the protocol design, implementation,
-and operation. If you're looking for general documentation related to Pocket Network,
-please visit [docs.pokt.network](https://docs.pokt.network).
-
-:::
-
 <div>
   <a href="https://discord.gg/pokt"><img src="https://img.shields.io/discord/553741558869131266"/></a>
   <a  href="https://github.com/pokt-network/poktroll/releases"><img src="https://img.shields.io/github/release-pre/pokt-network/pocket.svg"/></a>
@@ -38,65 +30,64 @@ please visit [docs.pokt.network](https://docs.pokt.network).
   <a href="https://github.com/tools/godep" ><img src="https://img.shields.io/badge/godep-dependency-71a3d9.svg"/></a>
 </div>
 
-## Pocket Network Shannon Technical Docs (aka pocket) <!-- omit in toc -->
+## The Crypto-Native API Layer
 
-**pocket** is the source code and core implementation of the [Shannon upgrade](https://docs.pokt.network/pokt-protocol/the-shannon-upgrade) for [Pocket Network](https://pokt.network/).
+Welcome to Web3's missing Crypto-Native API layer.
 
-`pocket` is built using the [Cosmos SDK](https://docs.cosmos.network), [CometBFT](https://cometbft.com/) and [Ignite CLI](https://ignite.com/cli).
+Building upon the learnings of a _Decentralized RPC_ network that launched on MainNet in 2020,
+this upgrade to Pocket Network is a major evolution of the protocol.
 
-## What is Pocket Network? <!-- omit in toc -->
+### What does all of this enable?
 
-:::note 🚧 Under Construction 🚧
+Leveraging the nature of distributed ledger, we enable anyone (developers, enterprises, agents) to be able
+to access any public canonical data source (e.g. geospatial data, blockchains) or any open-source-service (e.g. LLMS, data feeds, etc.).
 
-This documentation is not intended to answer this question as of 02/2025
+This is achieved by:
 
-Consider reading [this post from 02/2025](https://medium.com/decentralized-infrastructure/an-update-from-grove-on-shannon-beta-testnet-path-the-past-the-future-5bf7ec2a9acf) by @olshansk
-to get some understanding of why you need Pocket & Grove.
+1. **Creating** a permissionless **registry** of public APIs for any open-source-service or data-source
+2. **Incentivizing** anyone to become an **operator** supporting the APIs above.
+3. **Using** a cryptographically verifiable **API counter** (i.e. rate limiter) to reward and penalize actors appropriately
+4. **Providing** a Gateway Framework (PATH) that ensures enterprise-grade **Quality-of-Service (QoS) and Service Level Agreements (SLAs)** atop of a set of permissionless operators and penalizes bad actors.
 
-:::
+![PATH USP](../static/img/pokt-path-usp.png)
+
+### What is it built on top of?
+
+Pocket network is built on top of [Cosmos SDK](https://docs.cosmos.network), [CometBFT](https://cometbft.com/), and [Ignite CLI](https://ignite.com/cli).
+
+## Where do I get Started?
+
+### Most Common Starting Points
+
+- **Affected by the Migration**: Check out [this page](./category/morse---shannon-migration) to start getting acquainted with the migration process.
+- **Technical User**: Visit [this page](./explore/account_management/create_new_account_cli) to install the CLI.
+- **Operator**: Visit one of the following pages to deploy a [Full Node](./operate/cheat_sheets/full_node_cheatsheet), [Validator](./operate/cheat_sheets/validator_cheatsheet), [Supplier](./operate/cheat_sheets/supplier_cheatsheet), or [Gateway](./operate/cheat_sheets/gateway_cheatsheet).
+- [Coming soon]: **Casual User**: Check [this page](./explore/account_management/create_new_account_wallet) to create a new wallet.
+
+### How is this documentation organized?
+
+- ⚙️ **[Infrastructure Operators](./operate):** Cheat sheets, guides and configs for operators, node runners and infrastructure operators.
+- 🗺️ **[Users & Explorers](./explore):** Explorers, wallets, faucets, CLIs and other resources to interact with the network.
+- 🧑 **[Core Developers](./develop):** Guides and onboarding docs for contributing to the core protocol or SDK.
+- 🧠 **[Protocol Specifications](./protocol):** Learn more about tokenomics design and protocol architecture.
+
+## What is PATH?
+
+[PATH](https://path.grove.city/) (Path API & Toolkit Harness) is an open source Gateway framework that streamlines access to the permissionless API operators on Pocket Network without sacrificing enterprise-grade SLAs.
+
+You can think of Pocket Network as the directory of API providers, and PATH is the toolkit for building Gateways that ensure high quality of service on top of Pocket using Smart QoS.
 
 ---
 
-## Table of Contents <!-- omit in toc -->
+## Need Help?
 
-- [Where do I start?](#where-do-i-start)
-- [Shannon Roadmap](#shannon-roadmap)
-- [PATH for Gateways](#path-for-gateways)
-- [GoDoc Documentation](#godoc-documentation)
-- [License](#license)
+- Join our [Discord](https://discord.gg/pokt) for real-time support and community discussion.
+- Open an issue on [GitHub](https://github.com/pokt-network/poktroll/issues) if you spot a bug or need help.
 
-## Where do I start?
-
-1. [Guides & Deployment](./operate/cheat_sheets/full_node_cheatsheet.md): Deployment cheat sheets and config overviews for node runners, infrastructure operators and CLI users.
-2. [Tools & Explorers](./tools/user_guide/pocketd_cli.md): Explorers, wallets, faucets and other resources to interact with the network.
-3. [Core Developers](./develop/developer_guide/walkthrough.md): Guides & walkthroughs for core or external developers looking to contribute to the core protocol or SDK.
-4. [Protocol Design](./protocol/actors/actors.md): Learn more about tokenomics design & protocol architecture.
-
-:::note 🚧 Under Construction 🚧
-
-As of 02/2025, this documentation is under construction and does not have a clear
-user journey. Different parts are intended to serve as references one can link to
-or jump to/from when needed.
-
-:::
-
-## Shannon Roadmap
-
-The Shannon Roadmap, along with all past, active and future work is tracked via [this Github project](https://github.com/orgs/pokt-network/projects/144).
-
-## PATH for Gateways
-
-[Grove](https://grove.city/) is developing [PATH](https://path.grove.city/) for
-anyone who aims to deploy a Pocket Network gateway. Visit the docs to get started.
-
-The PATH Roadmap, along with all past, active and future work is tracked via [this Github project](https://github.com/orgs/buildwithgrove/projects/1).
-
-## GoDoc Documentation
-
-The Godoc for the source code can be found at [pkg.go.dev/github.com/pokt-network/pocket](https://pkg.go.dev/github.com/pokt-network/pocket).
+<!-- TODO(@olshansky): Add other ways to reach out -->
 
 ---
 
 ## License
 
-This project is licensed under the MIT License; see the [LICENSE](https://github.com/pokt-network/poktroll/blob/main/LICENSE) file for details.
+This project is licensed under the MIT License. See the [LICENSE](https://github.com/pokt-network/poktroll/blob/main/LICENSE) file for details.

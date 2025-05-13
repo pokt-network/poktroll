@@ -19,6 +19,7 @@ import (
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 	servicetypes "github.com/pokt-network/poktroll/x/service/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
+	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
 )
 
@@ -56,6 +57,8 @@ func (s *suite) parseParam(table gocuke.DataTable, rowIdx int) paramAny {
 		paramValue = table.Cell(rowIdx, paramValueColIdx).String()
 	case "int64":
 		paramValue = table.Cell(rowIdx, paramValueColIdx).Int64()
+	case "uint64":
+		paramValue = uint64(table.Cell(rowIdx, paramValueColIdx).Int64())
 	case "bytes":
 		paramValue = []byte(table.Cell(rowIdx, paramValueColIdx).String())
 	case "float":
@@ -94,7 +97,8 @@ func (s *suite) paramsMapToMsgUpdateParams(moduleName string, paramsMap paramsAn
 		msgUpdateParams = s.newAppMsgUpdateParams(paramsMap)
 	case servicetypes.ModuleName:
 		msgUpdateParams = s.newServiceMsgUpdateParams(paramsMap)
-	// NB: supplier module currently has no parameters
+	case suppliertypes.ModuleName:
+		msgUpdateParams = s.newSupplierMsgUpdateParams(paramsMap)
 	default:
 		err := fmt.Errorf("ERROR: unexpected module name %q", moduleName)
 		s.Fatal(err)
@@ -195,7 +199,9 @@ func (s *suite) newAppMsgUpdateParams(params paramsAnyMap) cosmostypes.Msg {
 		s.Logf("paramName: %s, value: %v", paramName, paramValue.value)
 		switch paramName {
 		case apptypes.ParamMaxDelegatedGateways:
-			msgUpdateParams.Params.MaxDelegatedGateways = uint64(paramValue.value.(int64))
+			msgUpdateParams.Params.MaxDelegatedGateways = paramValue.value.(uint64)
+		case apptypes.ParamMinStake:
+			msgUpdateParams.Params.MinStake = paramValue.value.(*cosmostypes.Coin)
 		default:
 			s.Fatalf("ERROR: unexpected %q type param name %q", paramValue.typeStr, paramName)
 		}
@@ -223,6 +229,28 @@ func (s *suite) newServiceMsgUpdateParams(params paramsAnyMap) cosmostypes.Msg {
 	return proto.Message(msgUpdateParams)
 }
 
+func (s *suite) newSupplierMsgUpdateParams(params map[string]paramAny) cosmostypes.Msg {
+	authority := authtypes.NewModuleAddress(s.granterName).String()
+
+	msgUpdateParams := &suppliertypes.MsgUpdateParams{
+		Authority: authority,
+		Params:    suppliertypes.Params{},
+	}
+
+	for paramName, paramValue := range params {
+		s.Logf("paramName: %s, value: %v", paramName, paramValue.value)
+		switch paramName {
+		case suppliertypes.ParamMinStake:
+			msgUpdateParams.Params.MinStake = paramValue.value.(*cosmostypes.Coin)
+		case suppliertypes.ParamStakingFee:
+			msgUpdateParams.Params.StakingFee = paramValue.value.(*cosmostypes.Coin)
+		default:
+			s.Fatalf("ERROR: unexpected %q type param name %q", paramValue.typeStr, paramName)
+		}
+	}
+	return proto.Message(msgUpdateParams)
+}
+
 // newMsgUpdateParam returns a MsgUpdateParam for the given module name, param name,
 // and param type/value.
 func (s *suite) newMsgUpdateParam(
@@ -242,6 +270,8 @@ func (s *suite) newMsgUpdateParam(
 		msg = s.newSharedMsgUpdateParam(authority, param)
 	case servicetypes.ModuleName:
 		msg = s.newServiceMsgUpdateParam(authority, param)
+	case suppliertypes.ModuleName:
+		msg = s.newSupplierMsgUpdateParam(authority, param)
 	default:
 		err := fmt.Errorf("ERROR: unexpected module name %q", moduleName)
 		s.Fatal(err)
@@ -369,6 +399,23 @@ func (s *suite) newGatewayMsgUpdateParam(authority string, param paramAny) (msg 
 		})
 	default:
 		s.Fatalf("unexpected param type %q for %s module", param.typeStr, tokenomicstypes.ModuleName)
+	}
+
+	return msg
+}
+
+func (s *suite) newSupplierMsgUpdateParam(authority string, param paramAny) (msg proto.Message) {
+	switch param.typeStr {
+	case "coin":
+		msg = proto.Message(&suppliertypes.MsgUpdateParam{
+			Authority: authority,
+			Name:      param.name,
+			AsType: &suppliertypes.MsgUpdateParam_AsCoin{
+				AsCoin: param.value.(*cosmostypes.Coin),
+			},
+		})
+	default:
+		s.Fatalf("unexpected param type %q for %s module", param.typeStr, suppliertypes.ModuleName)
 	}
 
 	return msg

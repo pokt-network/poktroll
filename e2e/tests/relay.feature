@@ -11,7 +11,7 @@ Feature: Relay Namespace
         # request's claim settlement.
         And a "tokenomics" module "ClaimSettled" end block event is broadcast
 
-    # TODO_MAINNET(@red-0ne): Enable this test once PATH Gateway supports REST.
+    # TODO_MAINNET_MIGRATION(@red-0ne): Enable this test once PATH Gateway supports REST.
     # See https://github.com/buildwithgrove/path/issues/87
     # Scenario: App can send a REST relay to Supplier
     #     Given the user has the pocketd binary installed

@@ -27,7 +27,39 @@ var allUpgrades = []upgrades.Upgrade{
 	// upgrades.Upgrade_0_0_13,
 
 	// v0.0.14 - upgrade to release latest features on TestNets to perform more load testing prior to MainNet launch.
-	upgrades.Upgrade_0_0_14,
+	// upgrades.Upgrade_0_0_14,
+
+	// v0.1.2 - upgrade to release morse migration capabilities
+	// upgrades.Upgrade_0_1_2,
+
+	// v0.1.3 - upgrade to reduce network and memory footprint of session suppliers
+	// upgrades.Upgrade_0_1_3,
+
+	// v0.1.4 - upgrade to reduce network and memory footprint of session suppliers
+	// upgrades.Upgrade_0_1_4,
+
+	// v0.1.5 - upgrade to reduce memory footprint when iterating over Suppliers and Applications.
+	// upgrades.Upgrade_0_1_5,
+
+	// v0.1.6 - upgrade to reduce the memory by avoiding unnecessary marshaling of the supplier object when iterating over the suppliers.
+	// upgrades.Upgrade_0_1_6,
+
+	// v0.1.7 - upgrade to mint and distribute Morse Account Claimer Tokens.
+	// upgrades.Upgrade_0_1_7,
+
+	// v0.1.8 - upgrade to enable:
+	// - Application indexing
+	// - Suppliers service config indexing and more granular hydration
+	// upgrades.Upgrade_0_1_8,
+
+	// v0.1.9 - upgrade to cache claim settlement context
+	// upgrades.Upgrade_0_1_9,
+
+	// v0.1.10 - upgrade to fix chain halts caused by the previous upgrade.
+	// upgrades.Upgrade_0_1_10,
+
+	// v0.1.11 - upgrade to add allow_morse_account_import_overwrite param.
+	upgrades.Upgrade_0_1_11,
 }
 
 // setUpgrades sets upgrade handlers for all upgrades and executes KVStore migration if an upgrade plan file exists.

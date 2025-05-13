@@ -20,7 +20,7 @@ type SessionKeeper interface {
 }
 
 type SupplierKeeper interface {
-	SetSupplier(context.Context, sharedtypes.Supplier)
+	SetAndIndexDehydratedSupplier(context.Context, sharedtypes.Supplier)
 }
 
 // AccountKeeper defines the expected interface for the Account module.

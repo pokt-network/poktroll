@@ -16,6 +16,15 @@ import (
 	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 )
 
+// StakeSupplier processes a MsgStakeSupplier message from a supplier who wants to stake tokens
+// and offer services on the network. This function handles both initial staking and updates
+// to an existing supplier's configuration.
+//
+// Important notes:
+// - Service configuration changes take effect at the start of the next session
+// - Stake changes are processed immediately with appropriate token transfers
+// - The supplier staking fee is charged for each staking operation
+//
 // TODO_POST_MAINNET(@red-0ne): Update supplier staking documentation to remove the upstaking requirement and introduce the staking fee.
 func (k msgServer) StakeSupplier(
 	ctx context.Context,
@@ -41,7 +50,9 @@ func (k msgServer) StakeSupplier(
 	}, nil
 }
 
-// createSupplier creates a new supplier from the given message.
+// createSupplier creates a new supplier entity from the given message.
+// The new supplier will be active starting from the next session to ensure
+// deterministic supplier selection for sessions.
 func (k Keeper) createSupplier(
 	ctx context.Context,
 	msg *suppliertypes.MsgStakeSupplier,
@@ -63,18 +74,22 @@ func (k Keeper) createSupplier(
 		// Note: This differs from applications, which are part of the session existence
 		// (i.e. a session doesn't exist until its corresponding application is created).
 		// Which is not the case for suppliers.
-		Services:             make([]*sharedtypes.SupplierServiceConfig, 0),
-		ServiceConfigHistory: make([]*sharedtypes.ServiceConfigUpdate, 0),
+		Services:                make([]*sharedtypes.SupplierServiceConfig, 0),
+		ServiceConfigHistory:    make([]*sharedtypes.ServiceConfigUpdate, 0),
+		UnstakeSessionEndHeight: sharedtypes.SupplierNotUnstaking,
 	}
 
 	// Store the service configurations details of the newly created supplier.
 	// They will take effect at the start of the next session.
-	servicesUpdate := &sharedtypes.ServiceConfigUpdate{
-		Services: msg.Services,
-		// The effective block height is the start of the next session.
-		EffectiveBlockHeight: uint64(nextSessionStartHeight),
+	for _, serviceConfig := range msg.Services {
+		servicesUpdate := &sharedtypes.ServiceConfigUpdate{
+			OperatorAddress: msg.OperatorAddress,
+			Service:         serviceConfig,
+			// The effective block height is the start of the next session.
+			ActivationHeight: nextSessionStartHeight,
+		}
+		supplier.ServiceConfigHistory = append(supplier.ServiceConfigHistory, servicesUpdate)
 	}
-	supplier.ServiceConfigHistory = append(supplier.ServiceConfigHistory, servicesUpdate)
 
 	return supplier
 }
@@ -214,7 +229,7 @@ func (k Keeper) StakeSupplier(
 	}
 
 	// Update the Supplier in the store
-	k.SetSupplier(ctx, supplier)
+	k.SetAndIndexDehydratedSupplier(ctx, supplier)
 	logger.Info(fmt.Sprintf("Successfully updated supplier stake for supplier: %+v", supplier))
 
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
@@ -243,7 +258,11 @@ func (k Keeper) StakeSupplier(
 	return &supplier, nil
 }
 
-// updateSupplier updates the given supplier with the given message.
+// updateSupplier updates an existing supplier with new configuration from the stake message.
+// This includes updating the stake amount, owner address, and service configurations.
+//
+// Service configuration changes are scheduled to take effect at the next session start
+// to ensure that current sessions remain stable and deterministic.
 func (k Keeper) updateSupplier(
 	ctx context.Context,
 	supplier *sharedtypes.Supplier,
@@ -262,24 +281,24 @@ func (k Keeper) updateSupplier(
 	currentHeight := sdkCtx.BlockHeight()
 	nextSessionStartHeight := sharedtypes.GetNextSessionStartHeight(&sharedParams, currentHeight)
 
-	// Store the details of the supplier's new service configurations.
-	servicesUpdate := &sharedtypes.ServiceConfigUpdate{
-		Services: msg.Services,
-		// The effective block height is the start of the next session.
-		EffectiveBlockHeight: uint64(nextSessionStartHeight),
+	// Mark all the supplier's service configurations as to be deactivated at the
+	// start of the next session.
+	for _, oldServiceConfigUpdate := range supplier.ServiceConfigHistory {
+		oldServiceConfigUpdate.DeactivationHeight = nextSessionStartHeight
 	}
 
-	configUpdateLog := supplier.ServiceConfigHistory
-	latestUpdateIdx := len(configUpdateLog) - 1
-	// Overwrite the latest service configuration if there is already a service
-	// config update for the same session start height.
-	if latestUpdateIdx >= 0 && configUpdateLog[latestUpdateIdx].EffectiveBlockHeight == uint64(nextSessionStartHeight) {
-		supplier.ServiceConfigHistory[latestUpdateIdx] = servicesUpdate
-		return nil
+	// Initialize the supplier's service configurations with the new ones from the msg.
+	// These will take effect at the start of the next session.
+	for _, newServiceConfig := range msg.Services {
+		newServiceConfigUpdate := &sharedtypes.ServiceConfigUpdate{
+			OperatorAddress: msg.OperatorAddress,
+			Service:         newServiceConfig,
+			// The effective block height is the start of the next session.
+			ActivationHeight: nextSessionStartHeight,
+		}
+		supplier.ServiceConfigHistory = append(supplier.ServiceConfigHistory, newServiceConfigUpdate)
 	}
 
-	// Otherwise, append the new service configuration update.
-	supplier.ServiceConfigHistory = append(supplier.ServiceConfigHistory, servicesUpdate)
 	return nil
 }
 

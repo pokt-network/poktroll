@@ -1,7 +1,5 @@
 package types
 
-import "slices"
-
 // SupplierNotUnstaking is the value of `unstake_session_end_height` if the
 // supplier is not actively in the unbonding period.
 const SupplierNotUnstaking uint64 = iota
@@ -15,34 +13,44 @@ func (s *Supplier) IsUnbonding() bool {
 
 // IsActive checks if the supplier is authorized to serve requests for a specific service
 // at the given block height.
-func (s *Supplier) IsActive(queryHeight uint64, serviceId string) bool {
-	// Keep track of the most recent set of service configs that were active
-	// before the query height.
-	var activeServicesAtHeight []*SupplierServiceConfig
-
-	// Iterate through the service config history chronologically
+//
+// This method examines the supplier's service configuration history to determine
+// if they have an active configuration for the requested service ID at the
+// specified block height. A supplier is considered "active" for a service when:
+//  1. They have a ServiceConfigUpdate for this service ID
+//  2. That configuration is active at the given block height
+//     (activation height <= queryHeight < deactivation height)
+func (s *Supplier) IsActive(queryHeight int64, serviceId string) bool {
+	// Examine each service configuration update in the history
 	for _, serviceUpdate := range s.ServiceConfigHistory {
-		// If this update takes effect after our query height, stop looking.
-		// We want the last update that was active before the query height.
-		if serviceUpdate.EffectiveBlockHeight > queryHeight {
-			break
+		// Skip configurations for other services
+		if serviceUpdate.Service.ServiceId != serviceId {
+			continue
 		}
-		// Keep updating our services list as we move forward in time.
-		activeServicesAtHeight = serviceUpdate.Services
+
+		if serviceUpdate.IsActive(queryHeight) {
+			return true
+		}
 	}
 
-	// If we found no service configurations active at this height, supplier is not active.
-	if activeServicesAtHeight == nil {
-		return false
-	}
+	// No active configuration was found for this service at the given height
+	return false
+}
 
-	// Define a helper function to check if a service config matches our target service ID.
-	matchesServiceIdFn := func(config *SupplierServiceConfig) bool {
-		return config.ServiceId == serviceId
-	}
-
-	// Check if any of the active services match our target service ID
-	return slices.ContainsFunc(activeServicesAtHeight, matchesServiceIdFn)
+// GetActiveServiceConfigs returns a list of all service configurations that are active
+// at the specified block height.
+//
+// This method examines the supplier's service configuration history to collect
+// all service configurations that:
+//  1. Have an activation height less than or equal to the query height
+//  2. Either have no deactivation height (0) or a deactivation height greater than the query height
+//
+// The returned configurations represent all services the supplier is authorized to provide
+// at the given block height, with their corresponding endpoints and revenue share settings.
+func (s *Supplier) GetActiveServiceConfigs(
+	queryHeight int64,
+) []*SupplierServiceConfig {
+	return GetActiveServiceConfigsFromHistory(s.ServiceConfigHistory, queryHeight)
 }
 
 // HasOwner returns whether the given address is the supplier's owner address.
@@ -57,11 +65,33 @@ func (s *Supplier) HasOperator(address string) bool {
 
 // GetSupplierUnbondingEndHeight returns the session end height at which the given
 // supplier finishes unbonding.
+//
+// This calculates the absolute block height at which the supplier's unbonding period
+// completes by adding the configured unbonding period (in sessions) to the supplier's
+// unstake session end height.
 func GetSupplierUnbondingEndHeight(
 	sharedParams *Params,
 	supplier *Supplier,
 ) int64 {
+	// Calculate the number of blocks in the unbonding period
 	supplierUnbondingPeriodBlocks := sharedParams.GetSupplierUnbondingPeriodSessions() * sharedParams.GetNumBlocksPerSession()
 
+	// Add the unbonding period to the session end height to get the final unbonding height
 	return int64(supplier.GetUnstakeSessionEndHeight() + supplierUnbondingPeriodBlocks)
+}
+
+// GetActiveServiceConfigsFromHistory filters the service configuration history
+// to find all configurations that are active at the specified block height.
+func GetActiveServiceConfigsFromHistory(
+	serviceConfigHistory []*ServiceConfigUpdate,
+	queryHeight int64,
+) []*SupplierServiceConfig {
+	activeServiceConfigs := make([]*SupplierServiceConfig, 0)
+	for _, serviceConfigUpdate := range serviceConfigHistory {
+		if serviceConfigUpdate.IsActive(queryHeight) {
+			activeServiceConfigs = append(activeServiceConfigs, serviceConfigUpdate.Service)
+		}
+	}
+
+	return activeServiceConfigs
 }

@@ -23,8 +23,10 @@ const (
 	ParamApplicationUnbondingPeriodSessions   = "application_unbonding_period_sessions"
 	DefaultGatewayUnbondingPeriodSessions     = 1 // 1 session
 	ParamGatewayUnbondingPeriodSessions       = "gateway_unbonding_period_sessions"
-	DefaultComputeUnitsToTokensMultiplier     = 42 // TODO_MAINNET: Determine the default value.
-	ParamComputeUnitsToTokensMultiplier       = "compute_units_to_tokens_multiplier"
+
+	// TODO_MAINNET_MIGRATION(@olshansk): Determine the default value.
+	DefaultComputeUnitsToTokensMultiplier = 42
+	ParamComputeUnitsToTokensMultiplier   = "compute_units_to_tokens_multiplier"
 )
 
 var (
@@ -181,7 +183,7 @@ func (params *Params) ValidateBasic() error {
 		return err
 	}
 
-	// TODO_MAINNET(@bryanchriswhite): Add validation which ensures that
+	// TODO_MAINNET_MIGRATION(@bryanchriswhite): Add validation which ensures that
 	// SessionEndToProofWindowCloseBlocks is a multiple of NumBlocksPerSession.
 
 	return nil

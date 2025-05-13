@@ -1,8 +1,3 @@
 package types
 
-const (
-	MorseAddressLengthBytes   = 20
-	MorseSignatureLengthBytes = 64
-
-	MorseAddressHexLengthBytes = MorseAddressLengthBytes * 2
-)
+// This file is in place to declare the package for dynamically generated protobufs

@@ -40,7 +40,7 @@ func distributeSupplierRewardsToShareHolders(
 	// This should theoretically never happen because the following validation
 	// is done during staking: MsgStakeSupplier.ValidateBasic() -> ValidateSupplierServiceConfigs() -> ValidateServiceRevShare().
 	// The check is here just for redundancy.
-	// TODO_MAINNET(@red-0ne): Double check this doesn't happen.
+	// TODO_MAINNET_MIGRATION(@red-0ne): Double check this doesn't happen.
 	if serviceRevShares == nil {
 		return tokenomicstypes.ErrTokenomicsConstraint.Wrapf(
 			"service %q not found for supplier %v",

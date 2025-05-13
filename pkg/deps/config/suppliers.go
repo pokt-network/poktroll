@@ -2,17 +2,15 @@ package config
 
 import (
 	"context"
-	"fmt"
+	"math"
 	"net/url"
 
 	"cosmossdk.io/depinject"
 	sdkclient "github.com/cosmos/cosmos-sdk/client"
 	cosmosflags "github.com/cosmos/cosmos-sdk/client/flags"
-	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/gogoproto/grpc"
 	"github.com/spf13/cobra"
 
-	"github.com/pokt-network/poktroll/app/volatile"
 	"github.com/pokt-network/poktroll/pkg/cache"
 	"github.com/pokt-network/poktroll/pkg/cache/memory"
 	"github.com/pokt-network/poktroll/pkg/client"
@@ -333,27 +331,31 @@ func NewSupplyRingClientFn() SupplierFn {
 // NewSupplySupplierClientsFn returns a function which constructs a
 // SupplierClientMap and returns a new depinject.Config which is
 // supplied with the given deps and the new SupplierClientMap.
-// - signingKeyNames is a list of operators signing key name corresponding to
-// the staked suppliers operator addresess.
-func NewSupplySupplierClientsFn(signingKeyNames []string) SupplierFn {
+//   - signingKeyNames is a list of operators signing key name corresponding to
+//     the staked suppliers operator addresses.
+//   - gasSettingStr is the gas setting to use for the tx client.
+//     Options are "auto", "<integer>", or "".
+//     See: config.GetTxClientGasAndFeesOptionsFromFlags.
+func NewSupplySupplierClientsFn(signingKeyNames []string, gasSettingStr string) SupplierFn {
 	return func(
 		ctx context.Context,
 		deps depinject.Config,
 		cmd *cobra.Command,
 	) (depinject.Config, error) {
-		gasPriceStr, err := cmd.Flags().GetString(cosmosflags.FlagGasPrices)
-		if err != nil {
-			return nil, err
-		}
-
-		gasPrices, err := cosmostypes.ParseDecCoins(gasPriceStr)
+		// Set up the tx client options for the suppliers.
+		txClientOptions, err := GetTxClientGasAndFeesOptionsFromFlags(cmd, gasSettingStr)
 		if err != nil {
 			return nil, err
 		}
 
 		suppliers := supplier.NewSupplierClientMap()
 		for _, signingKeyName := range signingKeyNames {
-			txClientDepinjectConfig, err := newSupplyTxClientsFn(ctx, deps, signingKeyName, gasPrices)
+			txClientOptions = append(txClientOptions, tx.WithSigningKeyName(signingKeyName))
+			txClientDepinjectConfig, err := newSupplyTxClientsFn(
+				ctx,
+				deps,
+				txClientOptions...,
+			)
 			if err != nil {
 				return nil, err
 			}
@@ -367,7 +369,7 @@ func NewSupplySupplierClientsFn(signingKeyNames []string) SupplierFn {
 			}
 
 			// Making sure we use addresses as keys.
-			suppliers.SupplierClients[supplierClient.OperatorAddress().String()] = supplierClient
+			suppliers.SupplierClients[supplierClient.OperatorAddress()] = supplierClient
 		}
 		return depinject.Configs(deps, depinject.Supply(suppliers)), nil
 	}
@@ -468,24 +470,13 @@ func NewSupplyBankQuerierFn() SupplierFn {
 func newSupplyTxClientsFn(
 	ctx context.Context,
 	deps depinject.Config,
-	signingKeyName string,
-	gasPrices cosmostypes.DecCoins,
+	txClientOptions ...client.TxClientOption,
 ) (depinject.Config, error) {
-	// Ensure that the gas prices include upokt
-	for _, gasPrice := range gasPrices {
-		if gasPrice.Denom != volatile.DenomuPOKT {
-			// TODO_TECHDEBT(red-0ne): Allow other gas prices denominations once supported (e.g. mPOKT, POKT)
-			// See https://docs.cosmos.network/main/build/architecture/adr-024-coin-metadata#decision
-			return nil, fmt.Errorf("only gas prices with %s denom are supported", volatile.DenomuPOKT)
-		}
-	}
 
 	txClient, err := tx.NewTxClient(
 		ctx,
 		deps,
-		tx.WithSigningKeyName(signingKeyName),
-		tx.WithCommitTimeoutBlocks(tx.DefaultCommitTimeoutHeightOffset),
-		tx.WithGasPrices(gasPrices),
+		txClientOptions...,
 	)
 	if err != nil {
 		return nil, err
@@ -514,7 +505,7 @@ func NewSupplyKeyValueCacheFn[T any](opts ...querycache.CacheOption[cache.KeyVal
 			return depinject.Configs(deps, depinject.Supply(noopParamsCache)), nil
 		}
 
-		kvCache, err := memory.NewKeyValueCache[T](memory.WithTTL(0))
+		kvCache, err := memory.NewKeyValueCache[T](memory.WithTTL(math.MaxInt64))
 		if err != nil {
 			return nil, err
 		}
@@ -550,7 +541,9 @@ func NewSupplyParamsCacheFn[T any](opts ...querycache.CacheOption[client.ParamsC
 			return depinject.Configs(deps, depinject.Supply(noopParamsCache)), nil
 		}
 
-		paramsCache, err := querycache.NewParamsCache[T](memory.WithTTL(0))
+		// TODO_TECHDEBT(red-0ne) Set ttl to block time + some buffer time when we
+		// switch to event-driven cache warming.
+		paramsCache, err := querycache.NewParamsCache[T](memory.WithTTL(math.MaxInt64))
 		if err != nil {
 			return nil, err
 		}

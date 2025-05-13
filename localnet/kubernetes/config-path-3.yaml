@@ -9,7 +9,3 @@ shannon_config:
     gateway_mode: delegated
     gateway_address: pokt1zhmkkd0rh788mc9prfq0m2h88t9ge0j83gnxya # gateway3
     gateway_private_key_hex: f73b6f7f0b9c99603c7eeddbf1c419c6f6bbc241f3798e3e4c8da9769ca81c26
-
-services:
-  anvil:
-    alias: anvil

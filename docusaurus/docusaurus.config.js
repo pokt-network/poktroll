@@ -59,12 +59,10 @@ const config = {
 
   presets: [
     [
-      // "classic",
-      "@docusaurus/preset-classic",
+      "classic",
       /** @type {import('@docusaurus/preset-classic').Options} */
       ({
         docs: {
-          // path: "docs",
           routeBasePath: "/",
           sidebarPath: "./sidebars.js",
           sidebarCollapsible: false,
@@ -100,25 +98,29 @@ const config = {
             type: "docSidebar",
             position: "left",
             sidebarId: "operateSidebar",
-            label: "⚙️ Guides & Deployment",
+            label: "⚙️ Infra Operators",
+            to: "/1_operate/",
           },
           {
             type: "docSidebar",
             position: "left",
             sidebarId: "toolsSidebar",
-            label: "🗺 Tools & Explorers",
+            label: "🗺 Users & Explorers",
+            to: "/2_explore/user_guide/create-new-wallet",
+          },
+          {
+            type: "docSidebar",
+            position: "left",
+            sidebarId: "protocolSidebar",
+            label: "🧠 Protocol Specifications",
+            to: "/3_protocol/",
           },
           {
             type: "docSidebar",
             position: "left",
             sidebarId: "developSidebar",
             label: "🧑‍💻️ Core Developers",
-          },
-          {
-            type: "docSidebar",
-            position: "left",
-            sidebarId: "protocolSidebar",
-            label: "🧠 Protocol Specification",
+            to: "/4_develop/",
           },
         ],
       },

@@ -15,6 +15,7 @@
 //go:generate go run go.uber.org/mock/mockgen -destination=../../testutil/mockclient/cosmos_client_mock.go -package=mockclient github.com/cosmos/cosmos-sdk/client AccountRetriever
 //go:generate go run go.uber.org/mock/mockgen -destination=../../testutil/mockclient/comet_rpc_client_mock.go -package=mockclient github.com/cosmos/cosmos-sdk/client CometRPC
 //go:generate go run go.uber.org/mock/mockgen -destination=../../testutil/mockclient/grpc_client_conn_mock.go -package=mockclient github.com/cosmos/gogoproto/grpc ClientConn
+//go:generate go run go.uber.org/mock/mockgen -destination=../../testutil/mockclient/signing_tx.go -package=mockclient github.com/cosmos/cosmos-sdk/x/auth/signing Tx
 
 package client
 
@@ -59,31 +60,45 @@ type MsgSubmitProof interface {
 // able to construct blockchain transactions from pocket protocol-specific messages
 // related to its role.
 type SupplierClient interface {
-	// CreateClaims sends claim messages which creates an onchain commitment by
-	// calling supplier to the given smt.SparseMerkleSumTree root hash of the given
-	// session's mined relays.
+	// CreateClaims sends claim messages which creates an onchain commitment by calling supplier
+	// to the given smt.SparseMerkleSumTree root hash of the given session's mined relays.
+	//
+	// A timeoutHeight is provided to ensure that the claim is not created after the claim
+	// window has closed.
 	CreateClaims(
 		ctx context.Context,
+		timeoutHeight int64,
 		claimMsgs ...MsgCreateClaim,
 	) error
+
 	// SubmitProof sends proof messages which contain the smt.SparseCompactMerkleClosestProof,
 	// corresponding to some previously created claim for the same session.
 	// The proof is validated onchain as part of the pocket protocol.
+	//
+	// A timeoutHeight is provided to ensure that the proof is not submitted after
+	// the proof window has closed.
 	SubmitProofs(
 		ctx context.Context,
+		timeoutHeight int64,
 		sessionProofs ...MsgSubmitProof,
 	) error
-	// Address returns the operator address of the SupplierClient that will be submitting proofs & claims.
-	OperatorAddress() *cosmostypes.AccAddress
+	// OperatorAddress returns the bech32 string representation of the supplier operator address.
+	OperatorAddress() string
 }
 
 // TxClient provides a synchronous interface initiating and waiting for transactions
 // derived from cosmos-sdk messages, in a cosmos-sdk based blockchain network.
 type TxClient interface {
+	SignAndBroadcastWithTimeoutHeight(
+		ctx context.Context,
+		timeoutHeight int64,
+		msgs ...cosmostypes.Msg,
+	) (txResponse *cosmostypes.TxResponse, eitherErr either.AsyncError)
+
 	SignAndBroadcast(
 		ctx context.Context,
 		msgs ...cosmostypes.Msg,
-	) either.AsyncError
+	) (txResponse *cosmostypes.TxResponse, eitherErr either.AsyncError)
 }
 
 // TxContext provides an interface which consolidates the operational dependencies
@@ -321,9 +336,8 @@ type BlockQueryClient interface {
 	Block(ctx context.Context, height *int64) (*cometrpctypes.ResultBlock, error)
 }
 
-// ProofParams is a go interface type which corresponds to the pocket.proof.Params
-// protobuf message. Since the generated go types don't include interface types, this
-// is necessary to prevent dependency cycles.
+// ProofParams is a go interface type reflecting the pocket.proof.Params protobuf.
+// This is necessary since to prevent dependency cycles since generated go types don't interface types.
 type ProofParams interface {
 	GetProofRequestProbability() float64
 	GetProofRequirementThreshold() *cosmostypes.Coin
@@ -331,11 +345,22 @@ type ProofParams interface {
 	GetProofSubmissionFee() *cosmostypes.Coin
 }
 
+// Claim is a go interface type reflecting the pocket.proof.Claim protobuf.
+// This is necessary since to prevent dependency cycles since generated go types don't interface types.
+type Claim interface {
+	GetSupplierOperatorAddress() string
+	GetSessionHeader() *sessiontypes.SessionHeader
+	GetRootHash() []byte
+}
+
 // ProofQueryClient defines an interface that enables the querying of the
 // onchain proof module params.
 type ProofQueryClient interface {
 	// GetParams queries the chain for the current proof module parameters.
 	GetParams(ctx context.Context) (ProofParams, error)
+
+	// GetClaim queries the chain for the full claim associatd with the (supplier, sessionId).
+	GetClaim(ctx context.Context, supplierOperatorAddress string, sessionId string) (Claim, error)
 }
 
 // ServiceQueryClient defines an interface that enables the querying of the

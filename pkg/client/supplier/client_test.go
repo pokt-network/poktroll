@@ -115,7 +115,7 @@ func TestSupplierClient_CreateClaim(t *testing.T) {
 	}
 
 	go func() {
-		err = supplierClient.CreateClaims(ctx, msgClaim)
+		err = supplierClient.CreateClaims(ctx, 0, msgClaim)
 		require.NoError(t, err)
 		close(doneCh)
 	}()
@@ -189,7 +189,7 @@ func TestSupplierClient_SubmitProof(t *testing.T) {
 	}
 
 	go func() {
-		err = supplierClient.SubmitProofs(ctx, msgProof)
+		err = supplierClient.SubmitProofs(ctx, 0, msgProof)
 		require.NoError(t, err)
 		close(doneCh)
 	}()

@@ -1,19 +1,16 @@
 package keeper
 
 import (
-	"context"
 	"fmt"
 
 	cosmoslog "cosmossdk.io/log"
 	"cosmossdk.io/math"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/types/query"
 
 	"github.com/pokt-network/poktroll/app/volatile"
 	"github.com/pokt-network/poktroll/telemetry"
-	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
-	servicekeeper "github.com/pokt-network/poktroll/x/service/keeper"
+	servicetypes "github.com/pokt-network/poktroll/x/service/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 	tlm "github.com/pokt-network/poktroll/x/tokenomics/token_logic_module"
@@ -33,30 +30,31 @@ func (k Keeper) SettlePendingClaims(ctx cosmostypes.Context) (
 ) {
 	logger := k.Logger().With("method", "SettlePendingClaims")
 
-	expiringClaims, err := k.GetExpiringClaims(ctx)
-	if err != nil {
-		return settledResults, expiredResults, err
-	}
-
-	// Capture the applications initial stake which will be used to calculate the
-	// max share any claim could burn from the application stake.
-	// This ensures that each supplier can calculate the maximum amount it can take
-	// from an application's stake.
-	applicationInitialStakeMap, err := k.getApplicationInitialStakeMap(ctx, expiringClaims)
-	if err != nil {
-		return settledResults, expiredResults, err
-	}
+	// Retrieve all expiring claims as an iterator.
+	// DEV_NOTE: This previously retrieve a list but has been change to account for large claim counts.
+	expiringClaimsIterator := k.GetExpiringClaimsIterator(ctx)
+	defer expiringClaimsIterator.Close()
 
 	blockHeight := ctx.BlockHeight()
-
-	logger.Info(fmt.Sprintf("found %d expiring claims at block height %d", len(expiringClaims), blockHeight))
 
 	// Initialize results structs.
 	settledResults = make(tlm.ClaimSettlementResults, 0)
 	expiredResults = make(tlm.ClaimSettlementResults, 0)
+	settlementContext := NewSettlementContext(ctx, &k, logger)
 
 	logger.Debug("settling expiring claims")
-	for _, claim := range expiringClaims {
+	numExpiringClaims := 0
+	for ; expiringClaimsIterator.Valid(); expiringClaimsIterator.Next() {
+		claim, iterErr := expiringClaimsIterator.Value()
+		if iterErr != nil {
+			return settledResults, expiredResults, iterErr
+		}
+		numExpiringClaims++
+
+		if err = settlementContext.ClaimCacheWarmUp(ctx, &claim); err != nil {
+			return settledResults, expiredResults, err
+		}
+
 		var (
 			proofRequirement prooftypes.ProofRequirementReason
 			claimeduPOKT     cosmostypes.Coin
@@ -84,17 +82,12 @@ func (k Keeper) SettlePendingClaims(ctx cosmostypes.Context) (
 
 		// Get the relay mining difficulty for the service that this claim is for.
 		serviceId := claim.GetSessionHeader().GetServiceId()
-		relayMiningDifficulty, found := k.serviceKeeper.GetRelayMiningDifficulty(ctx, serviceId)
-		if !found {
-			targetNumRelays := k.serviceKeeper.GetParams(ctx).TargetNumRelays
-			relayMiningDifficulty = servicekeeper.NewDefaultRelayMiningDifficulty(
-				ctx,
-				logger,
-				serviceId,
-				targetNumRelays,
-				targetNumRelays,
-			)
+		var relayMiningDifficulty servicetypes.RelayMiningDifficulty
+		relayMiningDifficulty, err = settlementContext.GetRelayMiningDifficulty(serviceId)
+		if err != nil {
+			return settledResults, expiredResults, err
 		}
+
 		// numEstimatedComputeUnits is the probabilistic estimation of the offchain
 		// work done by the relay miner in this session. It is derived from the claimed
 		// work and the relay mining difficulty.
@@ -103,7 +96,7 @@ func (k Keeper) SettlePendingClaims(ctx cosmostypes.Context) (
 			return settledResults, expiredResults, err
 		}
 
-		sharedParams := k.sharedKeeper.GetParams(ctx)
+		sharedParams := settlementContext.GetSharedParams()
 		// claimeduPOKT is the amount of uPOKT that the supplier would receive if the
 		// claim is settled. It is derived from the claimed number of relays, the current
 		// service mining difficulty and the global network parameters.
@@ -129,8 +122,8 @@ func (k Keeper) SettlePendingClaims(ctx cosmostypes.Context) (
 			"proof_requirement", proofRequirement,
 		)
 
-		// Initialize a ClaimSettlementResult to accumulate the results prior to executing state transitions.
-		ClaimSettlementResult := tlm.NewClaimSettlementResult(claim)
+		// Initialize a claimSettlementResult to accumulate the results prior to executing state transitions.
+		claimSettlementResult := tlm.NewClaimSettlementResult(claim)
 
 		proofIsRequired := proofRequirement != prooftypes.ProofRequirementReason_NOT_REQUIRED
 		if proofIsRequired {
@@ -153,9 +146,8 @@ func (k Keeper) SettlePendingClaims(ctx cosmostypes.Context) (
 			}
 
 			if claim.ProofValidationStatus != prooftypes.ClaimProofStatus_VALIDATED {
-				// TODO_BETA(@red-0ne): Slash the supplier in proportion to their stake.
-				// TODO_POST_MAINNET: Consider allowing suppliers to RemoveClaim via a new
-				// message in case it was sent by accident
+				// TODO_MAINNET_MIGRATION(@red-0ne): Slash the supplier in proportion to their stake.
+				// TODO_POST_MAINNET: Consider allowing suppliers to RemoveClaim via a new message in case it was sent by accident
 
 				// Proof was required but is invalid or not found.
 				// Emit an event that a claim has expired and being removed without being settled.
@@ -186,7 +178,7 @@ func (k Keeper) SettlePendingClaims(ctx cosmostypes.Context) (
 				k.proofKeeper.RemoveClaim(ctx, sessionId, claim.SupplierOperatorAddress)
 
 				// Append the settlement result to the expired results.
-				expiredResults.Append(ClaimSettlementResult)
+				expiredResults.Append(claimSettlementResult)
 
 				// Telemetry - defer telemetry calls so that they reference the final values the relevant variables.
 				defer k.finalizeTelemetry(
@@ -207,25 +199,14 @@ func (k Keeper) SettlePendingClaims(ctx cosmostypes.Context) (
 		// 1. The claim does not require a proof.
 		// 2. The claim requires a proof and a valid proof was found.
 
-		appAddress := claim.GetSessionHeader().GetApplicationAddress()
-		applicationInitialStake := applicationInitialStakeMap[appAddress]
-
-		// TODO_MAINNET(@red-0ne): Add tests to ensure that a zero application stake
-		// is handled correctly.
-		if applicationInitialStake.IsZero() {
-			logger.Error(fmt.Sprintf("application %q has a zero initial stake", appAddress))
-
-			continue
-		}
-
 		// Manage the mint & burn accounting for the claim.
-		if err = k.ProcessTokenLogicModules(ctx, ClaimSettlementResult, applicationInitialStake); err != nil {
+		if err = k.ProcessTokenLogicModules(ctx, settlementContext, claimSettlementResult); err != nil {
 			logger.Error(fmt.Sprintf("error processing token logic modules for claim %q: %v", claim.SessionHeader.SessionId, err))
 			return settledResults, expiredResults, err
 		}
 
 		// Append the token logic module processing ClaimSettlementResult to the settled results.
-		settledResults.Append(ClaimSettlementResult)
+		settledResults.Append(claimSettlementResult)
 
 		claimSettledEvent := tokenomicstypes.EventClaimSettled{
 			Claim:                    &claim,
@@ -234,7 +215,7 @@ func (k Keeper) SettlePendingClaims(ctx cosmostypes.Context) (
 			NumEstimatedComputeUnits: numEstimatedComputeUnits,
 			ClaimedUpokt:             &claimeduPOKT,
 			ProofRequirement:         proofRequirement,
-			SettlementResult:         *ClaimSettlementResult,
+			SettlementResult:         *claimSettlementResult,
 		}
 
 		if err = ctx.EventManager().EmitTypedEvent(&claimSettledEvent); err != nil {
@@ -260,13 +241,20 @@ func (k Keeper) SettlePendingClaims(ctx cosmostypes.Context) (
 			err,
 		)
 	}
+
+	// Persist the state of all the applications and suppliers involved in the claims.
+	// This is done in a single batch to reduce the number of writes to state storage.
+	settlementContext.FlushAllActorsToStore(ctx)
+
+	logger.Info(fmt.Sprintf("found %d expiring claims at block height %d", numExpiringClaims, blockHeight))
+
 	// Execute all the pending mint, burn, and transfer operations.
 	if err = k.ExecutePendingSettledResults(ctx, settledResults); err != nil {
 		return settledResults, expiredResults, err
 	}
 
 	// Slash all suppliers who failed to submit a required proof.
-	if err = k.ExecutePendingExpiredResults(ctx, expiredResults); err != nil {
+	if err = k.ExecutePendingExpiredResults(ctx, settlementContext, expiredResults); err != nil {
 		return settledResults, expiredResults, err
 	}
 
@@ -284,12 +272,16 @@ func (k Keeper) SettlePendingClaims(ctx cosmostypes.Context) (
 // IMPORTANT: If the execution of any such operation fails, the chain will halt.
 // In this case, the state is left how it was immediately prior to the execution of
 // the operation which failed.
-func (k Keeper) ExecutePendingExpiredResults(ctx cosmostypes.Context, expiredResults tlm.ClaimSettlementResults) error {
+func (k Keeper) ExecutePendingExpiredResults(
+	ctx cosmostypes.Context,
+	settlementContext *settlementContext,
+	expiredResults tlm.ClaimSettlementResults,
+) error {
 	logger := k.logger.With("method", "ExecutePendingExpiredResults")
 
 	// Slash any supplier(s) which failed to submit a required proof, per-claim.
 	for _, expiredResult := range expiredResults {
-		if err := k.slashSupplierStake(ctx, expiredResult); err != nil {
+		if err := k.slashSupplierStake(ctx, settlementContext, expiredResult); err != nil {
 			logger.Error(fmt.Sprintf("error slashing supplier %s: %s", expiredResult.GetSupplierOperatorAddr(), err))
 
 			proofRequirement, requirementErr := k.proofKeeper.ProofRequirementForClaim(ctx, &expiredResult.Claim)
@@ -317,7 +309,7 @@ func (k Keeper) ExecutePendingExpiredResults(ctx cosmostypes.Context, expiredRes
 // IMPORTANT: If the execution of any pending operation fails, the chain will halt.
 // In this case, the state is left how it was immediately prior to the execution of
 // the operation which failed.
-// TODO_MAINNET(@bryanchriswhite): Make this more "atomic", such that it reverts the state back to just prior
+// TODO_MAINNET_MIGRATION(@bryanchriswhite): Make this more "atomic", such that it reverts the state back to just prior
 // to settling the offending claim.
 func (k Keeper) ExecutePendingSettledResults(ctx cosmostypes.Context, settledResults tlm.ClaimSettlementResults) error {
 	logger := k.logger.With("method", "ExecutePendingSettledResults")
@@ -457,7 +449,7 @@ func (k Keeper) executePendingModToAcctTransfers(
 			return err
 		}
 
-		recepientAddr, err := cosmostypes.AccAddressFromBech32(transfer.RecipientAddress)
+		recipientAddr, err := cosmostypes.AccAddressFromBech32(transfer.RecipientAddress)
 		if err != nil {
 			return tokenomicstypes.ErrTokenomicsSettlementTransfer.Wrapf(
 				"sender module %q to recipient address %q transferring %s (reason %q): %s",
@@ -472,7 +464,7 @@ func (k Keeper) executePendingModToAcctTransfers(
 		if err = k.bankKeeper.SendCoinsFromModuleToAccount(
 			ctx,
 			transfer.SenderModule,
-			recepientAddr,
+			recipientAddr,
 			cosmostypes.NewCoins(transfer.Coin),
 		); err != nil {
 			return tokenomicstypes.ErrTokenomicsSettlementTransfer.Wrapf(
@@ -486,19 +478,19 @@ func (k Keeper) executePendingModToAcctTransfers(
 		}
 
 		logger.Info(fmt.Sprintf(
-			"executing operation: transfering %s coins from the %q module account to account address %q, reason: %q",
+			"executing operation: transferring %s coins from the %q module account to account address %q, reason: %q",
 			transfer.Coin, transfer.SenderModule, transfer.RecipientAddress, transfer.OpReason.String(),
 		))
 	}
 	return nil
 }
 
-// GetExpiringClaims returns all claims that are expiring at the current block height.
+// GetExpiringClaimsIterator returns an iterator of all claims expiring at the current (i.e the context's) block height.
 // This is the height at which the proof window closes.
 // If the proof window closes and a proof IS NOT required -> settle the claim.
 // If the proof window closes and a proof IS required -> only settle it if a proof is available.
 // DEV_NOTE: It is exported for testing purposes.
-func (k Keeper) GetExpiringClaims(ctx cosmostypes.Context) (expiringClaims []prooftypes.Claim, _ error) {
+func (k Keeper) GetExpiringClaimsIterator(ctx cosmostypes.Context) (expiringClaimsIterator sharedtypes.RecordIterator[prooftypes.Claim]) {
 	// TODO_IMPROVE(@bryanchriswhite):
 	//   1. Move height logic up to SettlePendingClaims.
 	//   2. Ensure that claims are only settled or expired on a session end height.
@@ -513,39 +505,14 @@ func (k Keeper) GetExpiringClaims(ctx cosmostypes.Context) (expiringClaims []pro
 	sessionEndToProofWindowCloseNumBlocks := sharedtypes.GetSessionEndToProofWindowCloseBlocks(sharedParams)
 	expiringSessionEndHeight := blockHeight - (sessionEndToProofWindowCloseNumBlocks + 1)
 
-	var nextKey []byte
-	for {
-		claimsRes, err := k.proofKeeper.AllClaims(ctx, &prooftypes.QueryAllClaimsRequest{
-			Pagination: &query.PageRequest{
-				Key: nextKey,
-			},
-			Filter: &prooftypes.QueryAllClaimsRequest_SessionEndHeight{
-				SessionEndHeight: uint64(expiringSessionEndHeight),
-			},
-		})
-		if err != nil {
-			return nil, err
-		}
-
-		expiringClaims = append(expiringClaims, claimsRes.GetClaims()...)
-
-		// Continue if there are more claims to fetch.
-		nextKey = claimsRes.Pagination.GetNextKey()
-		if nextKey != nil {
-			continue
-		}
-
-		break
-	}
-
-	// Return the actually expiring claims
-	return expiringClaims, nil
+	return k.proofKeeper.GetSessionEndHeightClaimsIterator(ctx, expiringSessionEndHeight)
 }
 
 // slashSupplierStake slashes the stake of a supplier and transfers the total
 // slashing amount from the supplier bank module to the tokenomics module account.
 func (k Keeper) slashSupplierStake(
 	ctx cosmostypes.Context,
+	settlementContext *settlementContext,
 	ClaimSettlementResult *tokenomicstypes.ClaimSettlementResult,
 ) error {
 	logger := k.logger.With("method", "slashSupplierStake")
@@ -554,12 +521,9 @@ func (k Keeper) slashSupplierStake(
 	proofParams := k.proofKeeper.GetParams(ctx)
 	slashingCoin := *proofParams.GetProofMissingPenalty()
 
-	supplierToSlash, isSupplierFound := k.supplierKeeper.GetSupplier(ctx, supplierOperatorAddress)
-	if !isSupplierFound {
-		return tokenomicstypes.ErrTokenomicsSupplierNotFound.Wrapf(
-			"cannot slash supplier with operator address: %q",
-			supplierOperatorAddress,
-		)
+	supplierToSlash, err := settlementContext.GetSupplier(supplierOperatorAddress)
+	if err != nil {
+		return err
 	}
 
 	slashedSupplierInitialStakeCoin := supplierToSlash.GetStake()
@@ -568,7 +532,7 @@ func (k Keeper) slashSupplierStake(
 	if slashedSupplierInitialStakeCoin.IsGTE(slashingCoin) {
 		remainingStakeCoin = slashedSupplierInitialStakeCoin.Sub(slashingCoin)
 	} else {
-		// TODO_MAINNET: Consider emitting an event for this case.
+		// TODO_MAINNET_MIGRATION: Consider emitting an event for this case.
 		logger.Warn(fmt.Sprintf(
 			"total slashing amount (%s) is greater than supplier %q stake (%s)",
 			slashingCoin,
@@ -630,7 +594,7 @@ func (k Keeper) slashSupplierStake(
 
 	// Check if the supplier's stake is below the minimum and unstake it if necessary.
 	minSupplierStakeCoin := k.supplierKeeper.GetParams(ctx).MinStake
-	// TODO_MAINNET(@red-0ne): SettlePendingClaims is called at the end of every block,
+	// TODO_MAINNET_MIGRATION(@red-0ne): SettlePendingClaims is called at the end of every block,
 	// but not every block corresponds to the end of a session. This may lead to a situation
 	// where a force unstaked supplier may still be able to interact with a Gateway or Application.
 	// However, claims are only processed when sessions end.
@@ -638,7 +602,7 @@ func (k Keeper) slashSupplierStake(
 	// at all and fixed only if it does.
 	// Ensure that a slashed supplier going below min stake is unbonded only once.
 	if supplierToSlash.GetStake().IsLT(*minSupplierStakeCoin) && !supplierToSlash.IsUnbonding() {
-		sharedParams := k.sharedKeeper.GetParams(ctx)
+		sharedParams := settlementContext.GetSharedParams()
 		sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
 		currentHeight := sdkCtx.BlockHeight()
 		unstakeSessionEndHeight := sharedtypes.GetSessionEndHeight(&sharedParams, currentHeight)
@@ -651,21 +615,19 @@ func (k Keeper) slashSupplierStake(
 			minSupplierStakeCoin,
 		))
 
-		// TODO_MAINNET: Should we just remove the supplier if the stake is
+		// TODO_MAINNET_MIGRATION: Should we just remove the supplier if the stake is
 		// below the minimum, at the risk of making the offchain actors have an
 		// inconsistent session supplier list? See the comment above for more details.
 		supplierToSlash.UnstakeSessionEndHeight = uint64(unstakeSessionEndHeight)
 
 		// Deactivate the supplier's services so they can no longer be selected to
 		// service relays in the next session.
-		serviceConfigsUpdate := &sharedtypes.ServiceConfigUpdate{
-			Services:             make([]*sharedtypes.SupplierServiceConfig, 0),
-			EffectiveBlockHeight: uint64(unstakeSessionEndHeight + 1),
+		for _, serviceConfig := range supplierToSlash.ServiceConfigHistory {
+			serviceConfig.DeactivationHeight = unstakeSessionEndHeight
 		}
-		supplierToSlash.ServiceConfigHistory = append(supplierToSlash.ServiceConfigHistory, serviceConfigsUpdate)
 
 		events = append(events, &suppliertypes.EventSupplierUnbondingBegin{
-			Supplier:         &supplierToSlash,
+			Supplier:         supplierToSlash,
 			Reason:           suppliertypes.SupplierUnbondingReason_SUPPLIER_UNBONDING_REASON_BELOW_MIN_STAKE,
 			SessionEndHeight: unstakeSessionEndHeight,
 			// Handling unbonding for slashed suppliers:
@@ -677,7 +639,8 @@ func (k Keeper) slashSupplierStake(
 		})
 	}
 
-	k.supplierKeeper.SetSupplier(ctx, supplierToSlash)
+	// Only update the dehydrated supplier, since the service config will remain unchanged.
+	k.supplierKeeper.SetDehydratedSupplier(ctx, *supplierToSlash)
 
 	claim := ClaimSettlementResult.GetClaim()
 
@@ -696,37 +659,6 @@ func (k Keeper) slashSupplierStake(
 	// amount from the supplier's owner or operator balances.
 
 	return nil
-}
-
-// getApplicationInitialStakeMap returns a map from an application address to the
-// initial stake of the application. This is used to calculate the maximum share
-// any claim could burn from the application stake.
-func (k Keeper) getApplicationInitialStakeMap(
-	ctx context.Context,
-	expiringClaims []prooftypes.Claim,
-) (applicationInitialStakeMap map[string]cosmostypes.Coin, err error) {
-	applicationInitialStakeMap = make(map[string]cosmostypes.Coin)
-	for _, claim := range expiringClaims {
-		appAddress := claim.SessionHeader.ApplicationAddress
-		// The same application is participating in other claims being settled,
-		// so we already capture its initial stake.
-		if _, isAppFound := applicationInitialStakeMap[appAddress]; isAppFound {
-			continue
-		}
-
-		app, isAppFound := k.applicationKeeper.GetApplication(ctx, appAddress)
-		if !isAppFound {
-			err := apptypes.ErrAppNotFound.Wrapf(
-				"trying to settle a claim for an application that does not exist (which should never happen) with address: %q",
-				appAddress,
-			)
-			return nil, err
-		}
-
-		applicationInitialStakeMap[appAddress] = *app.GetStake()
-	}
-
-	return applicationInitialStakeMap, nil
 }
 
 // finalizeTelemetry logs telemetry metrics for a claim based on its stage (e.g., EXPIRED, SETTLED).

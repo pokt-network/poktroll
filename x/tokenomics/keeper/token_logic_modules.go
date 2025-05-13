@@ -16,7 +16,6 @@ import (
 	"github.com/pokt-network/poktroll/pkg/encoding"
 	"github.com/pokt-network/poktroll/telemetry"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
-	servicekeeper "github.com/pokt-network/poktroll/x/service/keeper"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 	tlm "github.com/pokt-network/poktroll/x/tokenomics/token_logic_module"
 	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
@@ -33,8 +32,8 @@ import (
 // IMPORTANT: It is assumed that the proof for the claim has been validated BEFORE calling this function.
 func (k Keeper) ProcessTokenLogicModules(
 	ctx context.Context,
+	settlementContext *settlementContext,
 	pendingResult *tokenomicstypes.ClaimSettlementResult,
-	applicationInitialStake cosmostypes.Coin,
 ) error {
 	logger := k.Logger().With("method", "ProcessTokenLogicModules")
 
@@ -82,7 +81,7 @@ func (k Keeper) ProcessTokenLogicModules(
 	if err != nil {
 		return tokenomicstypes.ErrTokenomicsRootHashInvalid.Wrapf("failed to retrieve numClaimComputeUnits: %s", err)
 	}
-	// TODO_MAINNET(@bryanchriswhite, @red-0ne): Fix the low-volume exploit here.
+	// TODO_MAINNET_MIGRATION(@bryanchriswhite, @red-0ne): Fix the low-volume exploit here.
 	// https://www.notion.so/buildwithgrove/RelayMiningDifficulty-and-low-volume-7aab3edf6f324786933af369c2fa5f01?pvs=4
 	if numClaimComputeUnits == 0 {
 		return tokenomicstypes.ErrTokenomicsRootHashInvalid.Wrap("root hash has zero relays")
@@ -94,47 +93,44 @@ func (k Keeper) ProcessTokenLogicModules(
 	}
 
 	/*
-		TODO_POST_MAINNET: Because of how things have evolved, we are now using
-		root.Count (numRelays) instead of root.Sum (numComputeUnits) to determine
-		the amount of work done. This is because the compute_units_per_relay is
-		a service specific (not request specific) parameter that will be maintained
-		by the service owner to capture the average amount of resources (i.e.
-		compute, storage, bandwidth, electricity, etc...) per request. Modifying
-		this on a per request basis has been deemed too complex and not a mainnet
-		blocker.
+		TODO_POST_MAINNET(@olshansk): Fix the roo.Count and root.Sum confusion.
+
+		Because of how things have evolved, we are now using root.Count (numRelays)
+		instead of root.Sum (numComputeUnits) to determine the amount of work done.
+
+		This is because the compute_units_per_relay is a service specific (not request specific)
+		parameter that will be maintained by the service owner to capture the average amount of
+		resources (i.e. compute, storage, bandwidth, electricity, etc...) per request.
+
+		Modifying this on a per request basis has been deemed too complex and not a mainnet blocker.
 	*/
 
-	// Retrieve the application address that is being charged; getting services and paying tokens.
-	applicationAddress, err := cosmostypes.AccAddressFromBech32(sessionHeader.GetApplicationAddress())
-	if err != nil || applicationAddress == nil {
-		return tokenomicstypes.ErrTokenomicsApplicationAddressInvalid.Wrapf("address (%q)", sessionHeader.GetApplicationAddress())
+	sharedParams := settlementContext.GetSharedParams()
+	tokenomicsParams := settlementContext.GetTokenomicsParams()
+
+	service, err := settlementContext.GetService(sessionHeader.ServiceId)
+	if err != nil {
+		return err
 	}
 
-	// Retrieve the onchain staked application record
-	application, isAppFound := k.applicationKeeper.GetApplication(ctx, applicationAddress.String())
-	if !isAppFound {
-		logger.Warn(fmt.Sprintf("application for claim with address %q not found", applicationAddress))
-		return tokenomicstypes.ErrTokenomicsApplicationNotFound
+	relayMiningDifficulty, err := settlementContext.GetRelayMiningDifficulty(sessionHeader.ServiceId)
+	if err != nil {
+		return err
 	}
 
-	// Retrieve the supplier operator address that will be getting rewarded; providing services and earning tokens
-	supplierOperatorAddr, err := cosmostypes.AccAddressFromBech32(pendingResult.Claim.GetSupplierOperatorAddress())
-	if err != nil || supplierOperatorAddr == nil {
-		return tokenomicstypes.ErrTokenomicsSupplierOperatorAddressInvalid.Wrapf(
-			"address (%q)", pendingResult.Claim.GetSupplierOperatorAddress(),
-		)
+	application, err := settlementContext.GetApplication(sessionHeader.ApplicationAddress)
+	if err != nil {
+		return err
 	}
 
-	// Retrieve the onchain staked supplier record
-	supplier, isSupplierFound := k.supplierKeeper.GetSupplier(ctx, supplierOperatorAddr.String())
-	if !isSupplierFound {
-		logger.Warn(fmt.Sprintf("supplier for claim with address %q not found", supplierOperatorAddr))
-		return tokenomicstypes.ErrTokenomicsSupplierNotFound
+	supplier, err := settlementContext.GetSupplier(pendingResult.Claim.GetSupplierOperatorAddress())
+	if err != nil {
+		return err
 	}
 
-	service, isServiceFound := k.serviceKeeper.GetService(ctx, sessionHeader.ServiceId)
-	if !isServiceFound {
-		return tokenomicstypes.ErrTokenomicsServiceNotFound.Wrapf("service with ID %q not found", sessionHeader.ServiceId)
+	applicationInitialStake, err := settlementContext.GetApplicationInitialStake(sessionHeader.ApplicationAddress)
+	if err != nil {
+		return err
 	}
 
 	// Ensure the number of compute units claimed is equal to the number of relays * CUPR
@@ -147,20 +143,6 @@ func (k Keeper) ProcessTokenLogicModules(
 			service.ComputeUnitsPerRelay,
 		)
 	}
-
-	// Retrieving the relay mining difficulty for service.
-	relayMiningDifficulty, found := k.serviceKeeper.GetRelayMiningDifficulty(ctx, service.Id)
-	if !found {
-		targetNumRelays := k.serviceKeeper.GetParams(ctx).TargetNumRelays
-		relayMiningDifficulty = servicekeeper.NewDefaultRelayMiningDifficulty(
-			ctx,
-			logger,
-			service.Id,
-			targetNumRelays,
-			targetNumRelays,
-		)
-	}
-	sharedParams := k.sharedKeeper.GetParams(ctx)
 
 	// Determine the total number of tokens being claimed (i.e. for the work completed)
 	// by the supplier for the amount of work they did to service the application
@@ -183,17 +165,15 @@ func (k Keeper) ProcessTokenLogicModules(
 
 	// Ensure the claim amount is within the limits set by Relay Mining.
 	// If not, update the settlement amount and emit relevant events.
-	// TODO_MAINNET(@red-0ne): Consider pulling this out of Keeper#ProcessTokenLogicModules
+	// TODO_MAINNET_MIGRATION(@red-0ne): Consider pulling this out of Keeper#ProcessTokenLogicModules
 	// and ensure claim amount limits are enforced before TLM processing.
-	actualSettlementCoin, err := k.ensureClaimAmountLimits(ctx, logger, &sharedParams, &application, &supplier, claimSettlementCoin, applicationInitialStake)
+	actualSettlementCoin, err := k.ensureClaimAmountLimits(ctx, logger, &sharedParams, &tokenomicsParams, application, supplier, claimSettlementCoin, applicationInitialStake)
 	if err != nil {
 		return err
 	}
 	logger = logger.With("actual_settlement_upokt", actualSettlementCoin)
 	logger.Info(fmt.Sprintf("About to start processing TLMs for (%d) compute units, equal to (%s) claimed", numClaimComputeUnits, actualSettlementCoin))
 
-	// TODO_MAINNET(@red-0ne): Add tests to ensure that a zero settlement coin
-	// due to integer division rounding is handled correctly.
 	if actualSettlementCoin.Amount.IsZero() {
 		logger.Warn(fmt.Sprintf(
 			"actual settlement coin is zero, skipping TLM processing, application %q stake %s",
@@ -203,13 +183,13 @@ func (k Keeper) ProcessTokenLogicModules(
 	}
 
 	tlmCtx := tlm.TLMContext{
-		TokenomicsParams:      k.GetParams(ctx),
+		TokenomicsParams:      tokenomicsParams,
 		SettlementCoin:        actualSettlementCoin,
 		SessionHeader:         pendingResult.Claim.GetSessionHeader(),
 		Result:                pendingResult,
-		Service:               &service,
-		Application:           &application,
-		Supplier:              &supplier,
+		Service:               service,
+		Application:           application,
+		Supplier:              supplier,
 		RelayMiningDifficulty: &relayMiningDifficulty,
 	}
 
@@ -225,15 +205,15 @@ func (k Keeper) ProcessTokenLogicModules(
 		logger.Info(fmt.Sprintf("Finished processing TLM: %q", tlmName))
 	}
 
-	// TODO_POST_MAINNET: If we support multiple native tokens, we will need to start checking the denom here.
+	// Unbond the application if it has less than the minimum stake.
 	sessionEndHeight := sharedtypes.GetSessionEndHeight(&sharedParams, cosmostypes.UnwrapSDKContext(ctx).BlockHeight())
 	if application.Stake.Amount.LT(apptypes.DefaultMinStake.Amount) {
 		// Mark the application as unbonding if it has less than the minimum stake.
 		application.UnstakeSessionEndHeight = uint64(sessionEndHeight)
-		unbondingEndHeight := apptypes.GetApplicationUnbondingHeight(&sharedParams, &application)
+		unbondingEndHeight := apptypes.GetApplicationUnbondingHeight(&sharedParams, application)
 
 		appUnbondingBeginEvent := &apptypes.EventApplicationUnbondingBegin{
-			Application:        &application,
+			Application:        application,
 			Reason:             apptypes.ApplicationUnbondingReason_APPLICATION_UNBONDING_REASON_BELOW_MIN_STAKE,
 			SessionEndHeight:   sessionEndHeight,
 			UnbondingEndHeight: unbondingEndHeight,
@@ -247,19 +227,11 @@ func (k Keeper) ProcessTokenLogicModules(
 		}
 	}
 
-	// State mutation: update the application's onchain record.
-	k.applicationKeeper.SetApplication(ctx, application)
-	logger.Info(fmt.Sprintf("updated onchain application record with address %q", application.Address))
-
-	// TODO_MAINNET(@bryanchriswhite): If the application stake has dropped to (near?) zero:
+	// TODO_MAINNET_MIGRATION(@bryanchriswhite): If the application stake has dropped to (near?) zero:
 	// - Unstake it
 	// - Emit an event
 	// - Ensure this doesn't happen
 	// - Document the decision
-
-	// State mutation: Update the suppliers's onchain record
-	k.supplierKeeper.SetSupplier(ctx, supplier)
-	logger.Info(fmt.Sprintf("updated onchain supplier record with address %q", supplier.OperatorAddress))
 
 	// Update isSuccessful to true for telemetry
 	isSuccessful = true
@@ -277,6 +249,7 @@ func (k Keeper) ensureClaimAmountLimits(
 	ctx context.Context,
 	logger log.Logger,
 	sharedParams *sharedtypes.Params,
+	tokenomicsParams *tokenomicstypes.Params,
 	application *apptypes.Application,
 	supplier *sharedtypes.Supplier,
 	claimSettlementCoin cosmostypes.Coin,
@@ -287,14 +260,14 @@ func (k Keeper) ensureClaimAmountLimits(
 ) {
 	logger = logger.With("helper", "ensureClaimAmountLimits")
 
-	// Note that this also incorporates MintPerClaimGlobalInflation since applications
+	// Note that this also incorporates MintP	erClaimGlobalInflation since applications
 	// are being overcharged by that amount and the funds are sent to the DAO/PNF
 	// before being reimbursed to the application in the future.
 	appStake := initialApplicationStake
 
 	// The application should have enough stake to cover for the global mint reimbursement.
 	// This amount is deducted from the maximum claimable amount.
-	globalInflationPerClaim := k.GetParams(ctx).GlobalInflationPerClaim
+	globalInflationPerClaim := tokenomicsParams.GlobalInflationPerClaim
 	globalInflationPerClaimRat, err := encoding.Float64ToRat(globalInflationPerClaim)
 	if err != nil {
 		logger.Error(fmt.Sprintf("error calculating claim amount limits due to: %v", err))

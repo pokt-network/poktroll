@@ -210,7 +210,7 @@ get_user_input() {
     echo "Which network would you like to install?"
     echo "1) testnet-alpha (unstable)"
     echo "2) testnet-beta (recommended)"
-    echo "3) mainnet (not launched yet)"
+    echo "3) mainnet (soft launched as of 03/2028)"
     read -p "Enter your choice (1-3): " network_choice
 
     case $network_choice in
@@ -437,7 +437,17 @@ setup_cosmovisor() {
         exit 1
     fi
 
-    COSMOVISOR_VERSION="v1.7.1"
+    # We're using Cosmovisor version 1.6.0 instead of the newer version 1.7.1
+    # This is because of a bug in the ListenFinalizeBock function that affects
+    # pocketd nodes when they're syncing from genesis. The bug prevents proper
+    # processing of blockchain upgrades.
+    #
+    # TODO_TECHDEBT: We'll update to the latest version once this fix is released:
+    # https://github.com/cosmos/cosmos-sdk/pull/23879
+    #
+    # For more details about this issue, see:
+    # https://github.com/cosmos/cosmos-sdk/issues/24005
+    COSMOVISOR_VERSION="v1.6.0"
     # Note that cosmosorvisor only support linux, which is why OS_TYPE is not used in the URL.
     COSMOVISOR_URL="https://github.com/cosmos/cosmos-sdk/releases/download/cosmovisor%2F${COSMOVISOR_VERSION}/cosmovisor-${COSMOVISOR_VERSION}-linux-${ARCH}.tar.gz"
     print_color $YELLOW "Attempting to download from: $COSMOVISOR_URL"
@@ -784,6 +794,7 @@ main() {
     fi
     print_color $YELLOW "You can check the status of your node with: sudo systemctl status $SERVICE_NAME.service"
     print_color $YELLOW "View logs with: sudo journalctl -u $SERVICE_NAME.service -f"
+    print_color $YELLOW "Visit the Full Node FAQ here: https://dev.poktroll.com/operate/faq/full_node_faq"
 }
 
 main

@@ -219,7 +219,7 @@ func (k Keeper) deductProofSubmissionFee(ctx context.Context, supplierOperatorAd
 // ProofRequirementForClaim checks if a proof is required for a claim.
 // If it is not, the claim will be settled without a proof.
 // If it is, the claim will only be settled if a valid proof is available.
-// TODO_BETA(@olshansk): Document safety assumptions of the probabilistic proofs mechanism.
+// TODO_POST_MAINNET(@olshansk): Document safety assumptions of the probabilistic proofs mechanism.
 func (k Keeper) ProofRequirementForClaim(ctx context.Context, claim *types.Claim) (_ types.ProofRequirementReason, err error) {
 	logger := k.logger.With("method", "proofRequirementForClaim")
 
@@ -243,8 +243,8 @@ func (k Keeper) ProofRequirementForClaim(ctx context.Context, claim *types.Claim
 	}
 
 	// Require a proof if the claim's compute units meets or exceeds the threshold.
-	// TODO_BETA(@olshansk): Should the threshold be dependant on the stake as well so we slash proportional to the compute units?
-	// TODO_BETA(@red-0ne): It might make sense to include whether there was a proof
+	// TODO_MAINNET_MIGRATION(@olshansk): Should the threshold be dependant on the stake as well so we slash proportional to the compute units?
+	// TODO_POST_MAINNET(@red-0ne): It might make sense to include whether there was a proof
 	// submission error downstream from here. This would require a more comprehensive metrics API.
 	if claimeduPOKT.Amount.GTE(proofParams.GetProofRequirementThreshold().Amount) {
 		requirementReason = types.ProofRequirementReason_THRESHOLD

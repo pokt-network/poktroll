@@ -11,7 +11,7 @@ func GetSessionStartHeight(sharedParams *Params, queryHeight int64) int64 {
 
 	numBlocksPerSession := int64(sharedParams.GetNumBlocksPerSession())
 
-	// TODO_BETA(@bryanchriswhite, #543): If the num_blocks_per_session param has ever been changed,
+	// TODO_MAINNET_CRITICAL(@red-0ne, #543): If the num_blocks_per_session param has ever been changed,
 	// this function may cause unexpected behavior.
 	return queryHeight - ((queryHeight - 1) % numBlocksPerSession)
 }
@@ -44,7 +44,7 @@ func GetSessionNumber(sharedParams *Params, queryHeight int64) int64 {
 
 	numBlocksPerSession := int64(sharedParams.GetNumBlocksPerSession())
 
-	// TODO_MAINNET(@bryanchriswhite, #543): If the num_blocks_per_session param has ever been changed,
+	// TODO_MAINNET_MIGRATION(@red-0ne, #543): If the num_blocks_per_session param has ever been changed,
 	// this function may cause unexpected behavior.
 	return ((queryHeight - 1) / numBlocksPerSession) + 1
 }

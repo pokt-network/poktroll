@@ -277,3 +277,34 @@ func NewAnyTimesTxTxContext(
 
 	return txCtxMock, txCtx
 }
+
+// NewMockTxBuilder creates a new mock TxBuilder for testing purposes.
+// This mock can be used to verify transaction building operations.
+func NewMockTxBuilder(ctrl *gomock.Controller) *mockclient.MockTxBuilder {
+	txBuilder := mockclient.NewMockTxBuilder(ctrl)
+
+	// Create a var to store the fee for validation
+	var storedFee cosmostypes.Coins
+
+	// Setup necessary mock methods for tx building
+	txBuilder.EXPECT().SetMsgs(gomock.Any()).Return(nil).AnyTimes()
+
+	// When SetFeeAmount is called, store the fee
+	txBuilder.EXPECT().SetFeeAmount(gomock.Any()).DoAndReturn(func(fee cosmostypes.Coins) {
+		storedFee = fee
+	}).AnyTimes()
+
+	// When GetTx is called, return a mock with the stored fee
+	txBuilder.EXPECT().GetTx().DoAndReturn(func() cosmostypes.Tx {
+		mockTx := mockclient.NewMockTx(ctrl)
+		mockTx.EXPECT().GetFee().Return(storedFee).AnyTimes()
+		mockTx.EXPECT().ValidateBasic().Return(nil).AnyTimes()
+
+		return mockTx
+	}).AnyTimes()
+
+	txBuilder.EXPECT().SetTimeoutHeight(gomock.Any()).AnyTimes()
+	txBuilder.EXPECT().SetGasLimit(gomock.Any()).AnyTimes()
+
+	return txBuilder
+}

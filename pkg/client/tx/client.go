@@ -13,7 +13,10 @@ import (
 	"github.com/cometbft/cometbft/libs/json"
 	rpctypes "github.com/cometbft/cometbft/rpc/jsonrpc/types"
 	comettypes "github.com/cometbft/cometbft/types"
+	cosmosclient "github.com/cosmos/cosmos-sdk/client"
+	"github.com/cosmos/cosmos-sdk/client/flags"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
+	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"go.uber.org/multierr"
 
 	"github.com/pokt-network/poktroll/app/volatile"
@@ -22,6 +25,7 @@ import (
 	"github.com/pokt-network/poktroll/pkg/client/keyring"
 	"github.com/pokt-network/poktroll/pkg/either"
 	"github.com/pokt-network/poktroll/pkg/encoding"
+	"github.com/pokt-network/poktroll/pkg/retry"
 )
 
 const (
@@ -63,16 +67,18 @@ type CometTxEvent struct {
 	} `json:"data"`
 }
 
-// txClient orchestrates building, signing, broadcasting, and querying of
-// transactions. It maintains a single events query subscription to its own
-// transactions (via the EventsQueryClient) in order to receive notifications
-// regarding their status.
-// It also depends on the BlockClient as a timer, synchronized to block height,
-// to facilitate transaction timeout logic. If a transaction doesn't appear to
-// have been committed by commitTimeoutHeightOffset number of blocks have elapsed,
-// it is considered as timed out. Upon timeout, the client queries the network for
-// the last status of the transaction, which is used to derive the asynchronous
-// error that's populated in the either.AsyncError.
+// txClient orchestrates building, signing, broadcasting, and querying of transactions.
+//
+// It maintains a single events query subscription to its own transactions (via the
+// EventsQueryClient) to receive status notifications.
+//
+// Dependencies:
+// - Uses BlockClient as a synchronized block-height timer for transaction timeout logic
+// - If a transaction isn't committed by timeoutHeight, it's considered timed out
+//
+// Timeout handling:
+// - Upon timeout, the client queries the network for the transaction's last status
+// - This status is used to derive the asynchronous error populated in either.AsyncError
 type txClient struct {
 	// TODO_TECHDEBT: this should be configurable & integrated w/ viper, flags, etc.
 	// commitTimeoutHeightOffset is the number of blocks after the latest block
@@ -92,7 +98,7 @@ type txClient struct {
 	// to transactions which it has constructed, signed, and broadcast.
 	eventsReplayClient client.EventsReplayClient[*abci.TxResult]
 	// blockClient is the client used to query for the latest block height.
-	// It is used to implement timout logic for transactions which weren't committed.
+	// It is used to implement timeout logic for transactions which weren't committed.
 	blockClient client.BlockClient
 
 	// txsMutex protects txErrorChans and txTimeoutPool maps.
@@ -106,7 +112,16 @@ type txClient struct {
 	txTimeoutPool txTimeoutPool
 
 	// gasPrices is the gas unit prices used for sending transactions.
-	gasPrices cosmostypes.DecCoins
+	gasPrices *cosmostypes.DecCoins
+
+	// gasAdjustment is the gas adjustment factor used for sending transactions.
+	gasAdjustment float64
+
+	// gasSetting is the gas setting used for sending transactions.
+	gasSetting *flags.GasSetting
+
+	// feeAmount is the fee amount used for sending transactions.
+	feeAmount *cosmostypes.DecCoins
 
 	// connRetryLimit is the number of times the underlying replay client
 	// should retry in the event that it encounters an error or its connection is interrupted.
@@ -125,8 +140,9 @@ type (
 // and options.
 //
 // It performs the following steps:
-//  1. Initializes a default txClient with the default commit timeout height
-//     offset, an empty error channel map, and an empty transaction timeout pool.
+//  1. Initializes a default txClient with:
+//     - An empty error channel map
+//     - An empty transaction timeout pool
 //  2. Injects the necessary dependencies using depinject.
 //  3. Applies any provided options to customize the client.
 //  4. Validates and sets any missing default configurations using the
@@ -141,7 +157,8 @@ type (
 //
 // Available options:
 //   - WithSigningKeyName
-//   - WithCommitTimeoutHeightOffset
+//   - WithConnRetryLimit
+//   - WithGasPrices
 func NewTxClient(
 	ctx context.Context,
 	deps depinject.Config,
@@ -197,13 +214,108 @@ func NewTxClient(
 	return txnClient, nil
 }
 
-// SignAndBroadcast signs a set of Cosmos SDK messages, constructs a transaction,
-// and broadcasts it to the network. The function performs several steps to
-// ensure the messages and the resultant transaction are valid:
+// SignAndBroadcastWithTimeoutHeight signs a set of Cosmos SDK messages, constructs
+// a transaction, and broadcasts it to the network. The function performs several
+// steps to ensure the messages and the resultant transaction are valid:
 //
 //  1. Validates each message in the provided set.
 //  2. Constructs the transaction using the Cosmos SDK's transaction builder.
-//  3. Calculates and sets the transaction's timeout height.
+//  3. Sets the transaction's timeout height.
+//  4. Sets a default gas limit (note: this will be made configurable in the future).
+//  5. Signs the transaction.
+//  6. Validates the constructed transaction.
+//  7. Serializes and broadcasts the transaction.
+//  8. Checks the broadcast response for errors.
+//  9. If all the above steps are successful, the function registers the
+//     transaction as pending.
+//
+// If any step encounters an error, it returns an either.AsyncError populated with
+// the synchronous error. If the function completes successfully, it returns an
+// either.AsyncError populated with the error channel which will receive if the
+// transaction results in an asynchronous error or times out.
+func (txnClient *txClient) SignAndBroadcastWithTimeoutHeight(
+	ctx context.Context,
+	timeoutHeight int64,
+	msgs ...cosmostypes.Msg,
+) (txResponse *cosmostypes.TxResponse, eitherErr either.AsyncError) {
+	var validationErrs error
+	for i, msg := range msgs {
+		validatableMsg, ok := msg.(cosmostypes.HasValidateBasic)
+		if ok {
+			if err := validatableMsg.ValidateBasic(); err != nil {
+				validationErr := ErrInvalidMsg.Wrapf("in msg with index %d: %s", i, err)
+				validationErrs = multierr.Append(validationErrs, validationErr)
+			}
+		}
+	}
+	if validationErrs != nil {
+		return nil, either.SyncErr(validationErrs)
+	}
+
+	// Construct the transactions using cosmos' transactions builder.
+	txBuilder := txnClient.txCtx.NewTxBuilder()
+	if err := txBuilder.SetMsgs(msgs...); err != nil {
+		// return synchronous error
+		return nil, either.SyncErr(err)
+	}
+
+	feeAmount, err := txnClient.getFeeAmount(ctx, txBuilder, msgs...)
+	if err != nil {
+		return nil, either.SyncErr(err)
+	}
+	txBuilder.SetFeeAmount(feeAmount)
+
+	txBuilder.SetTimeoutHeight(uint64(timeoutHeight))
+
+	// sign transactions
+	err = txnClient.txCtx.SignTx(
+		txnClient.signingKeyName,
+		txBuilder,
+		false, false,
+	)
+	if err != nil {
+		return nil, either.SyncErr(err)
+	}
+
+	// ensure transactions is valid
+	// NOTE: this makes the transactions valid; i.e. it is *REQUIRED*
+	if err = txBuilder.GetTx().ValidateBasic(); err != nil {
+		return nil, either.SyncErr(err)
+	}
+
+	// serialize transactions
+	txBz, err := txnClient.txCtx.EncodeTx(txBuilder)
+	if err != nil {
+		return nil, either.SyncErr(err)
+	}
+
+	txResponse, err = retry.Call(ctx, func() (*cosmostypes.TxResponse, error) {
+		response, txErr := txnClient.txCtx.BroadcastTx(txBz)
+		// Wrap timeout height error to make it non-retryable.
+		if txErr != nil && sdkerrors.ErrTxTimeoutHeight.Is(txErr) {
+			txErr = retry.ErrNonRetryable.Wrap(txErr.Error())
+		}
+
+		return response, txErr
+	}, retry.GetStrategy(ctx))
+	if err != nil {
+		return nil, either.SyncErr(err)
+	}
+
+	if txResponse.Code != 0 {
+		return txResponse, either.SyncErr(ErrCheckTx.Wrapf("%s", txResponse.RawLog))
+	}
+
+	return txResponse, txnClient.addPendingTransactions(encoding.NormalizeTxHashHex(txResponse.TxHash), timeoutHeight)
+}
+
+// SignAndBroadcast signs a set of Cosmos SDK messages, constructs a transaction,
+// and broadcasts it to the network. The function performs several steps to ensure
+// the messages and the resultant transaction are valid:
+//
+//  1. Validates each message in the provided set.
+//  2. Constructs the transaction using the Cosmos SDK's transaction builder.
+//  3. Sets the transaction's timeout to the DefaultCommitTimeoutHeightOffset
 //  4. Sets a default gas limit (note: this will be made configurable in the future).
 //  5. Signs the transaction.
 //  6. Validates the constructed transaction.
@@ -219,87 +331,15 @@ func NewTxClient(
 func (txnClient *txClient) SignAndBroadcast(
 	ctx context.Context,
 	msgs ...cosmostypes.Msg,
-) either.AsyncError {
-	var validationErrs error
-	for i, msg := range msgs {
-		validatableMsg, ok := msg.(cosmostypes.HasValidateBasic)
-		if ok {
-			if err := validatableMsg.ValidateBasic(); err != nil {
-				validationErr := ErrInvalidMsg.Wrapf("in msg with index %d: %s", i, err)
-				validationErrs = multierr.Append(validationErrs, validationErr)
-			}
-		}
-	}
-	if validationErrs != nil {
-		return either.SyncErr(validationErrs)
-	}
-
-	// Simulate the transaction to calculate the gas limit.
-	gasLimit, simErr := txnClient.txCtx.GetSimulatedTxGas(ctx, txnClient.signingKeyName, msgs...)
-	if simErr != nil {
-		return either.SyncErr(simErr)
-	}
-
-	// Construct the transactions using cosmos' transactions builder.
-	txBuilder := txnClient.txCtx.NewTxBuilder()
-	if err := txBuilder.SetMsgs(msgs...); err != nil {
-		// return synchronous error
-		return either.SyncErr(err)
-	}
-
-	// Calculate timeout height
+) (txResponse *cosmostypes.TxResponse, eitherErr either.AsyncError) {
 	timeoutHeight := txnClient.blockClient.LastBlock(ctx).
 		Height() + txnClient.commitTimeoutHeightOffset
 
-	txBuilder.SetGasLimit(gasLimit)
-
-	gasLimitDec := math.LegacyNewDec(int64(gasLimit))
-	feeAmountDec := txnClient.gasPrices.MulDec(gasLimitDec)
-
-	feeCoins, changeCoins := feeAmountDec.TruncateDecimal()
-	// Ensure that any decimal remainder is added to the corresponding coin as a
-	// whole number.
-	// Since changeCoins is the result of DecCoins#TruncateDecimal, it will always
-	// be less than 1 unit of the feeCoins.
-	if !changeCoins.IsZero() {
-		feeCoins = feeCoins.Add(cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 1))
-	}
-	txBuilder.SetFeeAmount(feeCoins)
-
-	txBuilder.SetTimeoutHeight(uint64(timeoutHeight))
-
-	// sign transactions
-	err := txnClient.txCtx.SignTx(
-		txnClient.signingKeyName,
-		txBuilder,
-		false, false,
+	return txnClient.SignAndBroadcastWithTimeoutHeight(
+		ctx,
+		timeoutHeight,
+		msgs...,
 	)
-	if err != nil {
-		return either.SyncErr(err)
-	}
-
-	// ensure transactions is valid
-	// NOTE: this makes the transactions valid; i.e. it is *REQUIRED*
-	if err = txBuilder.GetTx().ValidateBasic(); err != nil {
-		return either.SyncErr(err)
-	}
-
-	// serialize transactions
-	txBz, err := txnClient.txCtx.EncodeTx(txBuilder)
-	if err != nil {
-		return either.SyncErr(err)
-	}
-
-	txResponse, err := txnClient.txCtx.BroadcastTx(txBz)
-	if err != nil {
-		return either.SyncErr(err)
-	}
-
-	if txResponse.Code != 0 {
-		return either.SyncErr(ErrCheckTx.Wrapf("%s", txResponse.RawLog))
-	}
-
-	return txnClient.addPendingTransactions(encoding.NormalizeTxHashHex(txResponse.TxHash), timeoutHeight)
 }
 
 // validateConfigAndSetDefaults ensures that the necessary configurations for the
@@ -309,8 +349,6 @@ func (txnClient *txClient) SignAndBroadcast(
 //  2. It then retrieves the key record from the keyring using the signing key name
 //     and checks its existence.
 //  3. The address of the signing key is computed and assigned to txClient#signgingAddr.
-//  4. Lastly, it ensures that commitTimeoutHeightOffset has a valid value, setting
-//     it to DefaultCommitTimeoutHeightOffset if it's zero or negative.
 //
 // Returns:
 // - ErrEmptySigningKeyName if the signing key name is not provided.
@@ -326,11 +364,34 @@ func (txnClient *txClient) validateConfigAndSetDefaults() error {
 		return err
 	}
 
+	hasGasSettings := txnClient.gasSetting != nil || txnClient.gasPrices != nil || txnClient.gasAdjustment != 0
+	if txnClient.feeAmount != nil && hasGasSettings {
+		return fmt.Errorf("cannot set both fee amount and gas settings")
+	}
+
+	// Validate gas-related parameters
+	if txnClient.feeAmount == nil {
+		// If no fee amount is explicitly configured, we need valid gas settings
+		if txnClient.gasSetting == nil {
+			// Create default gas settings if not provided
+			txnClient.gasSetting = &flags.GasSetting{
+				Gas:      flags.DefaultGasLimit, // Default gas limit
+				Simulate: false,                 // Don't simulate by default
+			}
+		}
+
+		if txnClient.gasPrices == nil {
+			return fmt.Errorf("gas prices must be set when fee amount is not provided")
+		}
+
+		// Set the default gas adjustment if simulation is enabled
+		if txnClient.gasSetting.Simulate && txnClient.gasAdjustment <= 0 {
+			txnClient.gasAdjustment = flags.DefaultGasAdjustment // Common default value
+		}
+	}
+
 	txnClient.signingAddr = signingAddr
 
-	if txnClient.commitTimeoutHeightOffset <= 0 {
-		txnClient.commitTimeoutHeightOffset = DefaultCommitTimeoutHeightOffset
-	}
 	return nil
 }
 
@@ -537,6 +598,68 @@ func (txnClient *txClient) getTxTimeoutError(ctx context.Context, txHashHex stri
 
 	// Return a timeout error with details about the transaction.
 	return ErrTxTimeout.Wrapf("with hash %s: %s", txHashHex, txResponse.TxResult.Log)
+}
+
+// getFeeAmount calculates the transaction fee amount based on client settings.
+//
+// This method determines the transaction fee using one of two approaches:
+// 1. If a fee amount is explicitly set on the client (txnClient.feeAmount), it uses that amount.
+// 2. Otherwise, it calculates the fee based on gas limit and gas prices, where:
+//   - If simulation is enabled, it estimates gas by simulating the transaction and applies the gas adjustment.
+//   - If simulation is disabled, it uses the predefined gas limit from the gas settings.
+func (txnClient *txClient) getFeeAmount(
+	ctx context.Context,
+	txBuilder cosmosclient.TxBuilder,
+	msgs ...cosmostypes.Msg,
+) (cosmostypes.Coins, error) {
+	if ctx.Err() != nil {
+		return nil, ctx.Err()
+	}
+
+	if txnClient.feeAmount != nil {
+		// Set the fee amount if provided.
+		feeCoins, changeCoins := txnClient.feeAmount.TruncateDecimal()
+
+		// Ensure that any decimal remainder is added to the corresponding coin as an
+		// integer amount of the minimal denomination (1upokt).
+		// Since changeCoins is the result of DecCoins#TruncateDecimal, it will always
+		// be less than 1 unit of the feeCoins.
+		if !changeCoins.IsZero() {
+			feeCoins = feeCoins.Add(cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 1))
+		}
+
+		return feeCoins, nil
+	}
+
+	var gasLimit uint64
+	if txnClient.gasSetting.Simulate {
+		// If the gas setting is set to simulate, we need to calculate the gas limit
+		// based on the messages.
+		simulatedGas, err := txnClient.txCtx.GetSimulatedTxGas(ctx, txnClient.signingKeyName, msgs...)
+		if err != nil {
+			return nil, err
+		}
+		gasLimit = uint64(float64(simulatedGas) * txnClient.gasAdjustment)
+	} else {
+		// Otherwise, we use the gas limit from the gas setting.
+		gasLimit = txnClient.gasSetting.Gas
+	}
+
+	txBuilder.SetGasLimit(gasLimit)
+
+	gasLimitDec := math.LegacyNewDec(int64(gasLimit))
+	feeAmountDec := txnClient.gasPrices.MulDec(gasLimitDec)
+
+	feeCoins, changeCoins := feeAmountDec.TruncateDecimal()
+	// Ensure that any decimal remainder is added to the corresponding coin as an
+	// integer amount of the minimal denomination (1upokt).
+	// Since changeCoins is the result of DecCoins#TruncateDecimal, it will always
+	// be less than 1 unit of the feeCoins.
+	if !changeCoins.IsZero() {
+		feeCoins = feeCoins.Add(cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 1))
+	}
+
+	return feeCoins, nil
 }
 
 // UnmarshalTxResult attempts to deserialize a slice of bytes into a TxResult

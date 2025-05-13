@@ -16,8 +16,9 @@ import (
 // and ONLY by an authorized account (i.e. PNF).
 func (k msgServer) ImportMorseClaimableAccounts(ctx context.Context, msg *migrationtypes.MsgImportMorseClaimableAccounts) (*migrationtypes.MsgImportMorseClaimableAccountsResponse, error) {
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
-	logger := sdkCtx.Logger().With("method", "CreateMorseAccountState")
+	logger := sdkCtx.Logger().With("method", "ImportMorseClaimableAccounts")
 
+	// Validate the authority.
 	if msg.GetAuthority() != k.GetAuthority() {
 		err := migrationtypes.ErrInvalidSigner.Wrapf("invalid authority address (%s)", msg.GetAuthority())
 		return nil, status.Error(codes.PermissionDenied, err.Error())
@@ -30,16 +31,30 @@ func (k msgServer) ImportMorseClaimableAccounts(ctx context.Context, msg *migrat
 	}
 
 	// Check if MorseClaimableAccounts have already been imported.
-	// TODO_MAINNET(@bryanchriswhite): Use the MultiStore more directly to more
-	// efficiently test for the existence of ANY MorseClaimableAccounts.
-	if morseClaimableAccounts := k.GetAllMorseClaimableAccounts(sdkCtx); len(morseClaimableAccounts) > 0 {
-		err := migrationtypes.ErrMorseAccountsImport.Wrap("Morse claimable accounts already imported")
-		logger.Info(err.Error())
-		return nil, status.Error(codes.FailedPrecondition, err.Error())
+	if k.HasAnyMorseClaimableAccounts(sdkCtx) {
+		// Check if allow_morse_accounts_import_overwrite is enabled and return an error if not.
+		shouldOverwrite := k.GetParams(sdkCtx).AllowMorseAccountImportOverwrite
+		if !shouldOverwrite {
+			err := migrationtypes.ErrMorseAccountsImport.Wrap("Morse claimable accounts already imported and import overwrite is disabled")
+			logger.Info(err.Error())
+			return nil, status.Error(codes.FailedPrecondition, err.Error())
+		}
+	}
+
+	// Message handlers run during both CheckTx and DeliverTx.
+	// To reduce noise and confusion, only log during DeliverTx.
+	if !sdkCtx.IsCheckTx() {
+		logger.Info("beginning importing morse claimable accounts...")
 	}
 
 	// Import MorseClaimableAccounts.
 	k.ImportFromMorseAccountState(sdkCtx, &msg.MorseAccountState)
+
+	// Message handlers run during both CheckTx and DeliverTx.
+	// To reduce noise and confusion, only log during DeliverTx.
+	if !sdkCtx.IsCheckTx() {
+		logger.Info("done importing morse claimable accounts!")
+	}
 
 	// Emit the corresponding event.
 	if err := sdkCtx.EventManager().EmitTypedEvent(

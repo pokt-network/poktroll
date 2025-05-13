@@ -6,9 +6,11 @@ import (
 
 	"cosmossdk.io/store/prefix"
 	storetypes "cosmossdk.io/store/types"
+	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/runtime"
 
 	"github.com/pokt-network/poktroll/x/proof/types"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 // UpsertClaim set a specific claim in the store from its index
@@ -74,6 +76,23 @@ func (k Keeper) RemoveClaim(ctx context.Context, sessionId, supplierOperatorAddr
 	logger.Info(fmt.Sprintf("deleted claim with primary key %s for supplier %s and session %s", primaryKey, supplierOperatorAddr, sessionId))
 }
 
+// GetSessionEndHeightClaimsIterator returns an iterator over all claims corresponding
+// to the given session end height.
+func (k Keeper) GetSessionEndHeightClaimsIterator(
+	ctx context.Context, sessionEndHeight int64,
+) sharedtypes.RecordIterator[types.Claim] {
+	storeAdapter := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
+
+	claimPrimaryStore := prefix.NewStore(storeAdapter, types.KeyPrefix(types.ClaimPrimaryKeyPrefix))
+	sessionEndHeightStore := prefix.NewStore(storeAdapter, types.KeyPrefix(types.ClaimSessionEndHeightPrefix))
+
+	sessionEndHeightPrefix := types.ClaimSupplierEndSessionHeightKey(sessionEndHeight, []byte{})
+	iterator := storetypes.KVStorePrefixIterator(sessionEndHeightStore, sessionEndHeightPrefix)
+
+	claimRetrieverFn := getClaimAccessorFn(claimPrimaryStore, k.cdc)
+	return sharedtypes.NewRecordIterator(iterator, claimRetrieverFn)
+}
+
 // GetAllClaims returns all claim
 func (k Keeper) GetAllClaims(ctx context.Context) (claims []types.Claim) {
 	storeAdapter := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
@@ -104,4 +123,30 @@ func (k Keeper) getClaimByPrimaryKey(ctx context.Context, primaryKey []byte) (cl
 	k.cdc.MustUnmarshal(claimBz, &claim)
 
 	return claim, true
+}
+
+// getClaimFromSessionEndHeightStoreIteratorKeysFn is a helper function that constructs
+// a IteratorRecordRetriever function which receives a session end height
+// iterator key and retrieves the corresponding Claim from the primary store.
+
+// getClaimAccessorFn constructions a DataRecordAccessor function which:
+// 1. Receives a key pointing to a Claim in the primary store
+// 2. Retrieves the corresponding Claim from the primary store
+// 3. Unmarshals it into a Claim object
+// 4. Initializes any nil fields in the Claim object
+// Returns:
+// - A Claim object and an error
+func getClaimAccessorFn(
+	claimPrimaryStore prefix.Store,
+	cdc codec.BinaryCodec,
+) sharedtypes.DataRecordAccessor[types.Claim] {
+	return func(claimKey []byte) (types.Claim, error) {
+		claimBz := claimPrimaryStore.Get(claimKey)
+		var claim types.Claim
+		if claimBz == nil {
+			return types.Claim{}, fmt.Errorf("claim not found for key: %v", claimKey)
+		}
+		cdc.MustUnmarshal(claimBz, &claim)
+		return claim, nil
+	}
 }

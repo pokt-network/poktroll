@@ -45,8 +45,6 @@ func (rs *relayerSessionsManager) submitProofs(
 		rs.newMapProveSessionsFn(supplierClient, failedSubmitProofsSessionsPublishCh),
 	)
 
-	// TODO_TECHDEBT: pass failed submit proof sessions to some retry mechanism.
-	_ = failedSubmitProofsSessionsObs
 	logging.LogErrors(ctx, filter.EitherError(ctx, eitherProvenSessionsObs))
 
 	// Delete expired session trees so they don't get proven again.
@@ -176,8 +174,23 @@ func (rs *relayerSessionsManager) newMapProveSessionsFn(
 			}
 		}
 
+		// All session trees in the batch share the same sessionEndHeight, so we
+		// can use the first one to calculate the proof window close height.
+		//
+		// TODO_REFACTOR(@red-0ne): Pass a richer type to the function instead of []SessionTrees to:
+		// - Avoid making assumptions about shared properties
+		// - Eliminate constant queries for sharedParams
+		sessionEndHeight := sessionTrees[0].GetSessionHeader().GetSessionEndBlockHeight()
+		sharedParams, err := rs.sharedQueryClient.GetParams(ctx)
+		if err != nil {
+			failedSubmitProofSessionsCh <- sessionTrees
+			rs.logger.Error().Err(err).Msg("failed to get shared params")
+			return either.Error[[]relayer.SessionTree](err), false
+		}
+		proofWindowCloseHeight := sharedtypes.GetProofWindowCloseHeight(sharedParams, sessionEndHeight)
+
 		// Submit proofs for each supplier operator address in `sessionTrees`.
-		if err := supplierClient.SubmitProofs(ctx, proofMsgs...); err != nil {
+		if err := supplierClient.SubmitProofs(ctx, proofWindowCloseHeight, proofMsgs...); err != nil {
 			failedSubmitProofSessionsCh <- sessionTrees
 			rs.logger.Error().Err(err).Msg("failed to submit proofs")
 			return either.Error[[]relayer.SessionTree](err), false

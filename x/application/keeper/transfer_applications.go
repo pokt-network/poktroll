@@ -40,12 +40,27 @@ func (k Keeper) EndBlockerTransferApplication(ctx context.Context) error {
 		return nil
 	}
 
-	// Iterate over all applications and transfer the ones that have finished the transfer period.
-	// TODO_MAINNET(@bryanchriswhite, #854): Use an index to iterate over the applications that have initiated
-	// the transfer action instead of iterating over all of them.
-	for _, srcApp := range k.GetAllApplications(ctx) {
+	// Iterate over all applications that have a pending transfer.
+	// Transfer the ones that have finished the transfer period.
+	allTransferringApplicationsIterator := k.GetAllTransferringApplicationsIterator(ctx)
+	defer allTransferringApplicationsIterator.Close()
+
+	for ; allTransferringApplicationsIterator.Valid(); allTransferringApplicationsIterator.Next() {
+		srcApp, err := allTransferringApplicationsIterator.Value()
+		if err != nil {
+			return err
+		}
+
 		// Ignore applications that have not initiated the transfer action.
 		if !srcApp.HasPendingTransfer() {
+			// If we are getting the application from the transfer store and it is not
+			// transferring, this means that there is a dangling entry in the index.
+			// log the error, remove the index entry but continue to the next application.
+			logger.Error(fmt.Sprintf(
+				"found application %s in transfer store but it is not transferring, removing index entry",
+				srcApp.Address,
+			))
+			k.removeApplicationTransferIndex(ctx, srcApp.Address)
 			continue
 		}
 
@@ -138,7 +153,7 @@ func (k Keeper) transferApplication(
 	}
 
 	// Remove srcApp from the store
-	k.RemoveApplication(ctx, srcApp.GetAddress())
+	k.RemoveApplication(ctx, srcApp)
 
 	// Add or update the dstApp in the store
 	k.SetApplication(ctx, dstApp)

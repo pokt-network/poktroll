@@ -97,7 +97,7 @@ func (k Keeper) hydrateSessionMetadata(ctx context.Context, sh *sessionHydrator)
 		)
 	}
 
-	// TODO_MAINNET(@bryanchriswhite, #543): If the num_blocks_per_session param
+	// TODO_MAINNET_MIGRATION(@red-0ne, #543): If the num_blocks_per_session param
 	// has ever been changed, this function may cause unexpected behavior for historical sessions.
 	sharedParams := k.sharedKeeper.GetParams(ctx)
 	sh.session.NumBlocksPerSession = int64(sharedParams.NumBlocksPerSession)
@@ -112,11 +112,11 @@ func (k Keeper) hydrateSessionMetadata(ctx context.Context, sh *sessionHydrator)
 func (k Keeper) hydrateSessionID(ctx context.Context, sh *sessionHydrator) error {
 	prevHashBz := k.GetBlockHash(ctx, sh.sessionHeader.SessionStartBlockHeight)
 
-	// TODO_MAINNET: In the future, we will need to validate that the Service is
+	// TODO_TECHDEBT: In the future, we will need to validate that the Service is
 	// a valid service depending on whether or not its permissioned or permissionless
 
-	if !sharedtypes.IsValidServiceId(sh.sessionHeader.ServiceId) {
-		return types.ErrSessionHydration.Wrapf("invalid service ID: %s", sh.sessionHeader.ServiceId)
+	if err := sharedtypes.IsValidServiceId(sh.sessionHeader.ServiceId); err != nil {
+		return types.ErrSessionHydration.Wrapf("%v", err.Error())
 	}
 
 	sh.sessionHeader.SessionId, sh.sessionIDBz = k.GetSessionId(
@@ -180,28 +180,41 @@ func (k Keeper) hydrateSessionSuppliers(ctx context.Context, sh *sessionHydrator
 	// https://github.com/pokt-network/poktroll/pull/1103#discussion_r1992214953
 	numSuppliersPerSession := int(k.GetParams(ctx).NumSuppliersPerSession)
 
-	// Get all suppliers without service ID filtering because:
-	// - Suppliers may not be active for the session's service ID at "query height"
-	// - We cannot filter by supplier.Services which only represents current (i.e. latest) height
-	suppliers := k.supplierKeeper.GetAllSuppliers(ctx)
-
 	// Map supplier operator addresses to random weights for deterministic sorting.
 	// This ensures fair distribution when:
 	// - NumCandidateSuppliers exceeds NumSuppliersPerSession
 	// - We need to randomly but fairly determine which suppliers can serve Applications
 	candidatesToRandomWeight := make(map[string]int)
-	candidateSuppliers := make([]*sharedtypes.Supplier, 0)
+	candidateSupplierConfigs := make([]*sharedtypes.ServiceConfigUpdate, 0)
 
-	for _, supplier := range suppliers {
+	// Get an iterator of service configurations updates at the query height or earlier.
+	// This avoids unnecessary filtering during iteration and is more efficient
+	sessionSupplierServiceConfigIterator := k.supplierKeeper.GetServiceConfigUpdatesIterator(
+		ctx,
+		sh.sessionHeader.ServiceId,
+		sh.blockHeight,
+	)
+	defer sessionSupplierServiceConfigIterator.Close()
+
+	for ; sessionSupplierServiceConfigIterator.Valid(); sessionSupplierServiceConfigIterator.Next() {
+		supplierServiceConfigUpdate, err := sessionSupplierServiceConfigIterator.Value()
+		if err != nil {
+			logger.Error(fmt.Sprintf("could not get supplier service config from iterator: %v", err))
+			return err
+		}
+
 		// Check if supplier is authorized to serve this service at query block height.
-		if supplier.IsActive(uint64(sh.blockHeight), sh.sessionHeader.ServiceId) {
-			candidateSuppliers = append(candidateSuppliers, &supplier)
+		// This check is necessary because:
+		// - The iterator filters by: activationHeight <= currentHeight (sh.blockHeight)
+		// - We also need to check if its active: deactivationHeight > currentHeight (sh.blockHeight)
+		if supplierServiceConfigUpdate.IsActive(sh.blockHeight) {
+			candidateSupplierConfigs = append(candidateSupplierConfigs, supplierServiceConfigUpdate)
 		}
 	}
 
-	defer telemetry.SessionSuppliersGauge(len(candidateSuppliers), numSuppliersPerSession, sh.sessionHeader.ServiceId)
+	defer telemetry.SessionSuppliersGauge(len(candidateSupplierConfigs), numSuppliersPerSession, sh.sessionHeader.ServiceId)
 
-	if len(candidateSuppliers) == 0 {
+	if len(candidateSupplierConfigs) == 0 {
 		logger.Error("[ERROR] no suppliers found for session")
 		return types.ErrSessionSuppliersNotFound.Wrapf(
 			"could not find suppliers for service %s at height %d",
@@ -212,36 +225,65 @@ func (k Keeper) hydrateSessionSuppliers(ctx context.Context, sh *sessionHydrator
 
 	// If the number of available suppliers is less than the maximum number of
 	// possible suppliers per session, use all available suppliers.
-	if len(candidateSuppliers) < numSuppliersPerSession {
+	if len(candidateSupplierConfigs) < numSuppliersPerSession {
 		logger.Debug(fmt.Sprintf(
 			"Number of available suppliers (%d) is less than the maximum number of possible suppliers per session (%d)",
-			len(candidateSuppliers),
+			len(candidateSupplierConfigs),
 			numSuppliersPerSession,
 		))
-		sh.session.Suppliers = candidateSuppliers
+		suppliers := k.getServiceConfigsSuppliers(ctx, candidateSupplierConfigs)
+		sh.session.Suppliers = suppliers
 
 		return nil
 	}
 
-	for _, supplier := range candidateSuppliers {
-		candidatesToRandomWeight[supplier.OperatorAddress] = generateSupplierRandomWeight(supplier, sh.sessionIDBz)
+	for _, serviceConfigUpdate := range candidateSupplierConfigs {
+		supplierOperatorAddress := serviceConfigUpdate.OperatorAddress
+		candidatesToRandomWeight[supplierOperatorAddress] = generateSupplierRandomWeight(supplierOperatorAddress, sh.sessionIDBz)
 	}
 
-	sortedCandidates := sortCandidateSuppliersByHeight(candidateSuppliers, candidatesToRandomWeight)
-	sh.session.Suppliers = sortedCandidates[:numSuppliersPerSession]
+	sortedCandidates := sortCandidateSupplierConfigsBySupplierWeight(candidateSupplierConfigs, candidatesToRandomWeight)
+	suppliers := k.getServiceConfigsSuppliers(ctx, sortedCandidates[:numSuppliersPerSession])
+	sh.session.Suppliers = suppliers
 
 	return nil
+}
+
+// getServiceConfigsSuppliers retrieves Supplier objects for the given service config updates.
+// It takes a list of service configuration updates and resolves them to their corresponding
+// supplier objects.
+//
+// For each service config update it:
+// - Fetches the corresponding dehydrated supplier from the supplier keeper
+// - Attaches only the relevant service configuration
+// - Includes the supplier in the returned list.
+func (k Keeper) getServiceConfigsSuppliers(
+	ctx context.Context,
+	candidateServiceConfigUpdates []*sharedtypes.ServiceConfigUpdate,
+) []*sharedtypes.Supplier {
+	logger := k.Logger().With("method", "getServiceConfigsSuppliers")
+	suppliers := make([]*sharedtypes.Supplier, 0)
+	for _, serviceConfigUpdate := range candidateServiceConfigUpdates {
+		supplier, found := k.supplierKeeper.GetDehydratedSupplier(ctx, serviceConfigUpdate.OperatorAddress)
+		if !found {
+			logger.Warn(fmt.Sprintf("should not happen: supplier %s not found", serviceConfigUpdate.OperatorAddress))
+			continue
+		}
+		supplier.Services = []*sharedtypes.SupplierServiceConfig{serviceConfigUpdate.Service}
+		suppliers = append(suppliers, &supplier)
+	}
+	return suppliers
 }
 
 // Generate deterministic random weight for supplier:
 // 1. Combine session ID and supplier's operator address to create unique seed
 // 2. Hash the seed using SHA3-256
 // 3. Take first 8 bytes of hash as random weight
-func generateSupplierRandomWeight(supplier *sharedtypes.Supplier, sessionIDBz []byte) int {
+func generateSupplierRandomWeight(supplierOperatorAddress string, sessionIDBz []byte) int {
 	candidateSeed := concatWithDelimiter(
 		sessionIDComponentDelimiter,
 		sessionIDBz,
-		[]byte(supplier.OperatorAddress),
+		[]byte(supplierOperatorAddress),
 	)
 	candidateSeedHash := sha3Hash(candidateSeed)
 	return int(binary.BigEndian.Uint64(candidateSeedHash[:8]))
@@ -307,18 +349,18 @@ func getSessionStartBlockHeightBz(sharedParams *sharedtypes.Params, blockHeight 
 	return sessionStartBlockHeightBz
 }
 
-// sortCandidateSuppliersByHeight sorts the given supplier list by the provided
-// random weights map.
-func sortCandidateSuppliersByHeight(
-	candidateSuppliers []*sharedtypes.Supplier,
+// sortCandidateSupplierConfigsBySupplierWeight sorts the given service config
+// list by their corresponding suppliers addresses using the provided random weights map.
+func sortCandidateSupplierConfigsBySupplierWeight(
+	candidateSuppliers []*sharedtypes.ServiceConfigUpdate,
 	candidatesToRandomWeight map[string]int,
-) []*sharedtypes.Supplier {
-	// Sort suppliers deterministically based on their random weights.
+) []*sharedtypes.ServiceConfigUpdate {
+	// Sort suppliers operator addresses deterministically based on their random weights.
 	// If weights are equal, sort by operator address to ensure consistent ordering.
-	weightedSupplierSortFn := func(supplierA, supplierB *sharedtypes.Supplier) int {
+	weightedSupplierSortFn := func(serviceConfigUpdateA, serviceConfigUpdateB *sharedtypes.ServiceConfigUpdate) int {
 		// Get the pre-calculated random weights for both suppliers
-		weightA := candidatesToRandomWeight[supplierA.OperatorAddress]
-		weightB := candidatesToRandomWeight[supplierB.OperatorAddress]
+		weightA := candidatesToRandomWeight[serviceConfigUpdateA.OperatorAddress]
+		weightB := candidatesToRandomWeight[serviceConfigUpdateB.OperatorAddress]
 
 		// Calculate the difference between weights.
 		weightDiff := weightA - weightB
@@ -326,7 +368,10 @@ func sortCandidateSuppliersByHeight(
 		// If weights are equal, use operator addresses as a tiebreaker
 		// to ensure deterministic ordering.
 		if weightDiff == 0 {
-			return bytes.Compare([]byte(supplierA.OperatorAddress), []byte(supplierB.OperatorAddress))
+			return bytes.Compare(
+				[]byte(serviceConfigUpdateA.OperatorAddress),
+				[]byte(serviceConfigUpdateB.OperatorAddress),
+			)
 		}
 
 		// Sort based on weight difference

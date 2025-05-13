@@ -29,6 +29,7 @@ import (
 	servicetypes "github.com/pokt-network/poktroll/x/service/types"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
+	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 )
 
 const numCalls = 4
@@ -502,6 +503,15 @@ func supplyCacheDeps(t *testing.T) depinject.Config {
 	blockHashCache, err := memory.NewKeyValueCache[query.BlockHash](opts)
 	require.NoError(t, err)
 
+	claimsCache, err := memory.NewKeyValueCache[prooftypes.Claim](opts)
+	require.NoError(t, err)
+
+	supplierParamsCache, err := querycache.NewParamsCache[suppliertypes.Params](opts)
+	require.NoError(t, err)
+
+	serviceParamsCache, err := querycache.NewParamsCache[servicetypes.Params](opts)
+	require.NoError(t, err)
+
 	sharedParamsCache, err := querycache.NewParamsCache[sharedtypes.Params](opts)
 	require.NoError(t, err)
 
@@ -525,7 +535,10 @@ func supplyCacheDeps(t *testing.T) depinject.Config {
 		sessionCache,
 		balanceCache,
 		blockHashCache,
+		claimsCache,
 
+		serviceParamsCache,
+		supplierParamsCache,
 		sharedParamsCache,
 		appParamsCache,
 		sessionParamsCache,

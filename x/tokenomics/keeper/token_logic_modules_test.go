@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"math"
 	"math/big"
 	"testing"
 
@@ -27,11 +26,13 @@ import (
 	testproof "github.com/pokt-network/poktroll/testutil/proof"
 	"github.com/pokt-network/poktroll/testutil/sample"
 	testsession "github.com/pokt-network/poktroll/testutil/session"
+	sharedtest "github.com/pokt-network/poktroll/testutil/shared"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
+	tokenomicskeeper "github.com/pokt-network/poktroll/x/tokenomics/keeper"
 	tlm "github.com/pokt-network/poktroll/x/tokenomics/token_logic_module"
 	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
 )
@@ -59,6 +60,7 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_Valid(t *testing.T) {
 		testkeeper.WithService(*service),
 		testkeeper.WithDefaultModuleBalances(),
 	)
+	ctx = sdk.UnwrapSDKContext(ctx).WithBlockHeight(1)
 	keepers.SetService(ctx, *service)
 
 	// Ensure the claim is within relay mining bounds
@@ -101,20 +103,26 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_Valid(t *testing.T) {
 			RevSharePercentage: supplierRevShareRatios[i],
 		}
 	}
+	services := []*sharedtypes.SupplierServiceConfig{{
+		ServiceId: service.Id,
+		RevShare:  supplierRevShares,
+	}}
 
 	// Add a new supplier.
 	supplierStake := cosmostypes.NewCoin(volatile.DenomuPOKT, supplierInitialStake)
+	serviceConfigHistory := sharedtest.CreateServiceConfigUpdateHistoryFromServiceConfigs(
+		supplierRevShares[0].Address,
+		services, 1, 0,
+	)
 	supplier := sharedtypes.Supplier{
 		// Make the first shareholder the supplier itself.
-		OwnerAddress:    supplierRevShares[0].Address,
-		OperatorAddress: supplierRevShares[0].Address,
-		Stake:           &supplierStake,
-		Services: []*sharedtypes.SupplierServiceConfig{{
-			ServiceId: service.Id,
-			RevShare:  supplierRevShares,
-		}},
+		OwnerAddress:         supplierRevShares[0].Address,
+		OperatorAddress:      supplierRevShares[0].Address,
+		Stake:                &supplierStake,
+		Services:             services,
+		ServiceConfigHistory: serviceConfigHistory,
 	}
-	keepers.SetSupplier(ctx, supplier)
+	keepers.SetAndIndexDehydratedSupplier(ctx, supplier)
 
 	// Query the account and module start balances
 	appStartBalance := getBalance(t, ctx, keepers, app.GetAddress())
@@ -125,8 +133,17 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_Valid(t *testing.T) {
 	claim := prepareTestClaim(numRelays, service, &app, &supplier)
 	pendingResult := tlm.NewClaimSettlementResult(claim)
 
+	settlementContext := tokenomicskeeper.NewSettlementContext(
+		ctx,
+		keepers.Keeper,
+		keepers.Keeper.Logger(),
+	)
+
+	err = settlementContext.ClaimCacheWarmUp(ctx, &claim)
+	require.NoError(t, err)
+
 	// Process the token logic modules
-	err = keepers.ProcessTokenLogicModules(ctx, pendingResult, appStake)
+	err = keepers.ProcessTokenLogicModules(ctx, settlementContext, pendingResult)
 	require.NoError(t, err)
 
 	// Execute the pending results
@@ -134,6 +151,9 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_Valid(t *testing.T) {
 	pendingResults.Append(pendingResult)
 	err = keepers.ExecutePendingSettledResults(cosmostypes.UnwrapSDKContext(ctx), pendingResults)
 	require.NoError(t, err)
+
+	// Persist the actors state
+	settlementContext.FlushAllActorsToStore(ctx)
 
 	// Assert that `applicationAddress` account balance is *unchanged*
 	appEndBalance := getBalance(t, ctx, keepers, app.GetAddress())
@@ -195,6 +215,7 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_Valid_SupplierExceedsMaxClai
 		testkeeper.WithService(*service),
 		testkeeper.WithDefaultModuleBalances(),
 	)
+	ctx = sdk.UnwrapSDKContext(ctx).WithBlockHeight(1)
 	keepers.SetService(ctx, *service)
 
 	// Set up the relays to exceed the max claimable amount
@@ -242,20 +263,26 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_Valid_SupplierExceedsMaxClai
 			RevSharePercentage: supplierRevShareRatios[i],
 		}
 	}
+	services := []*sharedtypes.SupplierServiceConfig{{
+		ServiceId: service.Id,
+		RevShare:  supplierRevShares,
+	}}
 
 	// Add a new supplier.
 	supplierStake := cosmostypes.NewCoin(volatile.DenomuPOKT, supplierInitialStake)
+	serviceConfigHistory := sharedtest.CreateServiceConfigUpdateHistoryFromServiceConfigs(
+		supplierRevShares[0].Address,
+		services, 1, 0,
+	)
 	supplier := sharedtypes.Supplier{
 		// Make the first shareholder the supplier itself.
-		OwnerAddress:    supplierRevShares[0].Address,
-		OperatorAddress: supplierRevShares[0].Address,
-		Stake:           &supplierStake,
-		Services: []*sharedtypes.SupplierServiceConfig{{
-			ServiceId: service.Id,
-			RevShare:  supplierRevShares,
-		}},
+		OwnerAddress:         supplierRevShares[0].Address,
+		OperatorAddress:      supplierRevShares[0].Address,
+		Stake:                &supplierStake,
+		Services:             services,
+		ServiceConfigHistory: serviceConfigHistory,
 	}
-	keepers.SetSupplier(ctx, supplier)
+	keepers.SetAndIndexDehydratedSupplier(ctx, supplier)
 
 	// Query the account and module start balances
 	appStartBalance := getBalance(t, ctx, keepers, app.GetAddress())
@@ -266,8 +293,17 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_Valid_SupplierExceedsMaxClai
 	claim := prepareTestClaim(numRelays, service, &app, &supplier)
 	pendingResult := tlm.NewClaimSettlementResult(claim)
 
+	settlementContext := tokenomicskeeper.NewSettlementContext(
+		ctx,
+		keepers.Keeper,
+		keepers.Keeper.Logger(),
+	)
+
+	err = settlementContext.ClaimCacheWarmUp(ctx, &claim)
+	require.NoError(t, err)
+
 	// Process the token logic modules
-	err = keepers.ProcessTokenLogicModules(ctx, pendingResult, appStake)
+	err = keepers.ProcessTokenLogicModules(ctx, settlementContext, pendingResult)
 	require.NoError(t, err)
 
 	// Execute the pending results
@@ -275,6 +311,9 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_Valid_SupplierExceedsMaxClai
 	pendingResults.Append(pendingResult)
 	err = keepers.ExecutePendingSettledResults(cosmostypes.UnwrapSDKContext(ctx), pendingResults)
 	require.NoError(t, err)
+
+	// Persist the actors state
+	settlementContext.FlushAllActorsToStore(ctx)
 
 	// Assert that `applicationAddress` account balance is *unchanged*
 	appEndBalance := getBalance(t, ctx, keepers, app.GetAddress())
@@ -360,6 +399,7 @@ func TestProcessTokenLogicModules_TLMGlobalMint_Valid_MintDistributionCorrect(t 
 		testkeeper.WithDefaultModuleBalances(),
 	}
 	keepers, ctx := testkeeper.NewTokenomicsModuleKeepers(t, nil, opts...)
+	ctx = sdk.UnwrapSDKContext(ctx).WithBlockHeight(1)
 	keepers.SetService(ctx, *service)
 
 	// Set the dao_reward_address param on the tokenomics keeper.
@@ -391,17 +431,23 @@ func TestProcessTokenLogicModules_TLMGlobalMint_Valid_MintDistributionCorrect(t 
 			RevSharePercentage: supplierRevShareRatios[i],
 		}
 	}
+	services := []*sharedtypes.SupplierServiceConfig{{ServiceId: service.Id, RevShare: supplierRevShares}}
 
 	// Add a new supplier.
 	supplierStake := cosmostypes.NewCoin(volatile.DenomuPOKT, supplierInitialStake)
+	serviceConfigHistory := sharedtest.CreateServiceConfigUpdateHistoryFromServiceConfigs(
+		supplierRevShares[0].Address,
+		services, 1, 0,
+	)
 	supplier := sharedtypes.Supplier{
 		// Make the first shareholder the supplier itself.
-		OwnerAddress:    supplierRevShares[0].Address,
-		OperatorAddress: supplierRevShares[0].Address,
-		Stake:           &supplierStake,
-		Services:        []*sharedtypes.SupplierServiceConfig{{ServiceId: service.Id, RevShare: supplierRevShares}},
+		OwnerAddress:         supplierRevShares[0].Address,
+		OperatorAddress:      supplierRevShares[0].Address,
+		Stake:                &supplierStake,
+		Services:             services,
+		ServiceConfigHistory: serviceConfigHistory,
 	}
-	keepers.SetSupplier(ctx, supplier)
+	keepers.SetAndIndexDehydratedSupplier(ctx, supplier)
 
 	// Prepare the claim for which the supplier did work for the application
 	claim := prepareTestClaim(numRelays, service, &app, &supplier)
@@ -422,9 +468,21 @@ func TestProcessTokenLogicModules_TLMGlobalMint_Valid_MintDistributionCorrect(t 
 		supplierShareholderBalancesBeforeSettlementMap[addr] = getBalance(t, ctx, keepers, addr)
 	}
 
-	// Process the token logic modules
-	err = keepers.ProcessTokenLogicModules(ctx, pendingResult, appStake)
+	settlementContext := tokenomicskeeper.NewSettlementContext(
+		ctx,
+		keepers.Keeper,
+		keepers.Keeper.Logger(),
+	)
+
+	err = settlementContext.ClaimCacheWarmUp(ctx, &claim)
 	require.NoError(t, err)
+
+	// Process the token logic modules
+	err = keepers.ProcessTokenLogicModules(ctx, settlementContext, pendingResult)
+	require.NoError(t, err)
+
+	// Persist the actors state
+	settlementContext.FlushAllActorsToStore(ctx)
 
 	// Execute the pending results
 	pendingResults := make(tlm.ClaimSettlementResults, 0)
@@ -535,8 +593,14 @@ func TestProcessTokenLogicModules_AppNotFound(t *testing.T) {
 	}
 	pendingResult := tlm.NewClaimSettlementResult(claim)
 
+	settlementContext := tokenomicskeeper.NewSettlementContext(ctx, &keeper, keeper.Logger())
+
+	// Ignoring the error from ClaimCacheWarmUp as it will short-circuit the test
+	// and we want to test the error from ProcessTokenLogicModules.
+	_ = settlementContext.ClaimCacheWarmUp(ctx, &claim)
+
 	// Process the token logic modules
-	err := keeper.ProcessTokenLogicModules(ctx, pendingResult, uPOKTCoin(math.MaxInt))
+	err := keeper.ProcessTokenLogicModules(ctx, settlementContext, pendingResult)
 	require.Error(t, err)
 	require.ErrorIs(t, err, tokenomicstypes.ErrTokenomicsApplicationNotFound)
 }
@@ -559,9 +623,14 @@ func TestProcessTokenLogicModules_ServiceNotFound(t *testing.T) {
 	}
 	pendingResult := tlm.NewClaimSettlementResult(claim)
 
-	// Execute test function
-	err := keeper.ProcessTokenLogicModules(ctx, pendingResult, uPOKTCoin(math.MaxInt))
+	settlementContext := tokenomicskeeper.NewSettlementContext(ctx, &keeper, keeper.Logger())
 
+	// Ignoring the error from ClaimCacheWarmUp as it will short-circuit the test
+	// and we want to test the error from ProcessTokenLogicModules.
+	_ = settlementContext.ClaimCacheWarmUp(ctx, &claim)
+
+	// Execute test function
+	err := keeper.ProcessTokenLogicModules(ctx, settlementContext, pendingResult)
 	require.Error(t, err)
 	require.ErrorIs(t, err, tokenomicstypes.ErrTokenomicsServiceNotFound)
 }
@@ -630,8 +699,14 @@ func TestProcessTokenLogicModules_InvalidRoot(t *testing.T) {
 			claim.RootHash = smt.MerkleRoot(test.root[:])
 			pendingResult := tlm.NewClaimSettlementResult(claim)
 
+			settlementContext := tokenomicskeeper.NewSettlementContext(ctx, &keeper, keeper.Logger())
+
+			// Ignoring the error from ClaimCacheWarmUp as it will short-circuit the test
+			// and we want to test the error from ProcessTokenLogicModules.
+			_ = settlementContext.ClaimCacheWarmUp(ctx, &claim)
+
 			// Execute test function
-			err := keeper.ProcessTokenLogicModules(ctx, pendingResult, uPOKTCoin(math.MaxInt))
+			err := keeper.ProcessTokenLogicModules(ctx, settlementContext, pendingResult)
 
 			// Assert the error
 			if test.errExpected {
@@ -701,7 +776,7 @@ func TestProcessTokenLogicModules_InvalidClaim(t *testing.T) {
 				return claim
 			}(),
 			errExpected: true,
-			expectErr:   tokenomicstypes.ErrTokenomicsSupplierOperatorAddressInvalid,
+			expectErr:   tokenomicstypes.ErrTokenomicsSupplierNotFound,
 		},
 	}
 
@@ -716,7 +791,13 @@ func TestProcessTokenLogicModules_InvalidClaim(t *testing.T) {
 					}
 				}()
 				pendingResult := tlm.NewClaimSettlementResult(test.claim)
-				return keeper.ProcessTokenLogicModules(ctx, pendingResult, uPOKTCoin(math.MaxInt))
+
+				settlementContext := tokenomicskeeper.NewSettlementContext(ctx, &keeper, keeper.Logger())
+
+				// Ignoring the error from ClaimCacheWarmUp as it will short-circuit the test
+				// and we want to test the error from ProcessTokenLogicModules.
+				_ = settlementContext.ClaimCacheWarmUp(ctx, &test.claim)
+				return keeper.ProcessTokenLogicModules(ctx, settlementContext, pendingResult)
 			}()
 
 			// Assert the error
@@ -731,15 +812,15 @@ func TestProcessTokenLogicModules_InvalidClaim(t *testing.T) {
 }
 
 func TestProcessTokenLogicModules_AppStakeInsufficientToCoverGlobalInflationAmount(t *testing.T) {
-	t.Skip("TODO_MAINNET(@red-0ne): Test application stake that is insufficient to cover the global inflation amount, for reimbursment and the max claim should scale down proportionally")
+	t.Skip("TODO_MAINNET_MIGRATION(@red-0ne): Test application stake that is insufficient to cover the global inflation amount, for reimbursment and the max claim should scale down proportionally")
 }
 
 func TestProcessTokenLogicModules_AppStakeTooLowRoundingToZero(t *testing.T) {
-	t.Skip("TODO_MAINNET(@red-0ne): Test application stake that is too low which results in stake/num_suppliers rounding down to zero")
+	t.Skip("TODO_MAINNET_MIGRATION(@red-0ne): Test application stake that is too low which results in stake/num_suppliers rounding down to zero")
 }
 
 func TestProcessTokenLogicModules_AppStakeDropsBelowMinStakeAfterSession(t *testing.T) {
-	t.Skip("TODO_MAINNET(@red-0ne): Test that application stake being auto-unbonding after the stake drops below the required minimum when settling session accounting")
+	t.Skip("TODO_MAINNET_MIGRATION(@red-0ne): Test that application stake being auto-unbonding after the stake drops below the required minimum when settling session accounting")
 }
 
 // prepareTestClaim uses the given number of relays and compute unit per relay in the

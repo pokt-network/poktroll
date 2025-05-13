@@ -14,6 +14,7 @@ import (
 	"github.com/pokt-network/poktroll/pkg/crypto/protocol"
 	testkeeper "github.com/pokt-network/poktroll/testutil/keeper"
 	"github.com/pokt-network/poktroll/testutil/sample"
+	sharedtest "github.com/pokt-network/poktroll/testutil/shared"
 	"github.com/pokt-network/poktroll/testutil/testrelayer"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
@@ -63,17 +64,13 @@ func TestComputeNewDifficultyHash_RewardsReflectWorkCompleted(t *testing.T) {
 		},
 	}
 	supplierStake := sdk.NewInt64Coin(volatile.DenomuPOKT, 1000)
+	supplierServiceConfigHistory := sharedtest.CreateServiceConfigUpdateHistoryFromServiceConfigs(supplierAddress, supplierServiceConfigs, 1, 0)
 	supplier := sharedtypes.Supplier{
-		OperatorAddress: supplierAddress,
-		OwnerAddress:    supplierAddress,
-		Stake:           &supplierStake,
-		Services:        supplierServiceConfigs,
-		ServiceConfigHistory: []*sharedtypes.ServiceConfigUpdate{
-			{
-				Services:             supplierServiceConfigs,
-				EffectiveBlockHeight: 1,
-			},
-		},
+		OperatorAddress:      supplierAddress,
+		OwnerAddress:         supplierAddress,
+		Stake:                &supplierStake,
+		Services:             supplierServiceConfigs,
+		ServiceConfigHistory: supplierServiceConfigHistory,
 	}
 
 	keepers, ctx := testkeeper.NewTokenomicsModuleKeepers(t, nil,
@@ -228,7 +225,7 @@ func prepareRealClaim(
 		// DEV_NOTE: Unsigned relays are mined instead of signed relays to avoid calling
 		// the application querier and signature logic which make the test very slow
 		// given the large number of iterations involved.
-		minedRelay := testrelayer.NewUnsignedMinedRelay(t, session, supplierAddress)
+		minedRelay := testrelayer.NewUnsignedMinedRelay(t, session.Header, supplierAddress)
 		// Ensure that the relay is applicable to the relay mining difficulty
 		if protocol.IsRelayVolumeApplicable(minedRelay.Hash, relayMiningDifficulty.TargetHash) {
 			err = trie.Update(minedRelay.Hash, minedRelay.Bytes, service.ComputeUnitsPerRelay)

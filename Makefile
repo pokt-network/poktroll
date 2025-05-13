@@ -4,6 +4,7 @@ SHELL = /bin/sh
 
 POCKETD_HOME ?= ./localnet/pocketd
 POCKET_NODE ?= tcp://127.0.0.1:26657 # The pocket node (validator in the localnet context)
+DEFAULT_POCKET_NODE_GRPC_ADDR ?= "localhost:9090"
 TESTNET_RPC ?= https://testnet-validated-validator-rpc.poktroll.com/ # TestNet RPC endpoint for validator maintained by Grove. Needs to be update if there's another "primary" testnet.
 PATH_URL ?= http://localhost:3000
 POCKET_ADDR_PREFIX = pokt
@@ -76,7 +77,7 @@ endif
 ### Dependencies ###
 ####################
 
-# TODO_IMPROVE(@okdas): Add other dependencies (ignite, docker, k8s, etc) here
+# TODO_TECHDEBT(@okdas): Add other dependencies (ignite, docker, k8s, etc) here
 .PHONY: install_ci_deps
 install_ci_deps: ## Installs `golangci-lint` and other go tools
 	go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.60.3 && golangci-lint --version
@@ -85,11 +86,11 @@ install_ci_deps: ## Installs `golangci-lint` and other go tools
 
 .PHONY: install_cosmovisor
 install_cosmovisor: ## Installs `cosmovisor`
-	go install cosmossdk.io/tools/cosmovisor/cmd/cosmovisor@v1.7.1 && cosmovisor version --cosmovisor-only
+	go install cosmossdk.io/tools/cosmovisor/cmd/cosmovisor@v1.6.0 && cosmovisor version --cosmovisor-only
 
 .PHONY: cosmovisor_cross_compile
 cosmovisor_cross_compile: # Installs multiple cosmovisor binaries for different platforms (used by Dockerfile.release)
-	@COSMOVISOR_VERSION="v1.7.1"; \
+	@COSMOVISOR_VERSION="v1.6.0"; \
 	PLATFORMS="linux/amd64 linux/arm64"; \
 	mkdir -p ./tmp; \
 	echo "Fetching Cosmovisor source..."; \
@@ -256,9 +257,7 @@ acc_balance_total_supply: ## Query the total supply of the network
 # that also did not solve this problem because the account itself must sign the
 # transaction for its public key to be populated in the account keeper. As such,
 # the solution is to send funds from every account in genesis to some address
-# (PNF was selected ambigously) to make sure their public keys are populated.
-# TODO_TECHDEBT: One of the accounts involved in this command always errors
-# so we need to understand why and fix it.
+# (PNF was selected ambiguously) to make sure their public keys are populated.
 .PHONY: acc_initialize_pubkeys
 acc_initialize_pubkeys: ## Make sure the account keeper has public keys for all available accounts
 	$(eval ADDRESSES=$(shell make -s ignite_acc_list | grep pokt | awk '{printf "%s ", $$2}' | sed 's/.$$//'))
@@ -328,47 +327,9 @@ ignite_install: ## Install ignite. Used by CI and heighliner.
 	rm ignite_28.3.0_$(OS)_$(ARCH).tar.gz; \
 	ignite version
 
-.PHONY: ignite_update_ldflags
-## Artifact release helper - sets version/datetime of the build
-ignite_update_ldflags:
-	yq eval '.build.ldflags = ["-X main.Version=$(VERSION)", "-X main.Date=$(shell date -u +%Y-%m-%dT%H:%M:%SZ)"]' -i config.yml
-
-.PHONY: ignite_release
-ignite_release: ## Builds production binaries
-	ignite chain build --release -t linux:amd64 -t linux:arm64 -t darwin:amd64 -t darwin:arm64
-	cd release && for f in poktroll_*.tar.gz; do mv "$$f" "pocket_$${f#poktroll_}"; done
-
-.PHONY: ignite_release_extract_binaries
-ignite_release_extract_binaries: ## Extracts binaries from the release archives
-	mkdir -p release_binaries
-
-	for archive in release/*.tar.gz; do \
-		binary_name=$$(basename "$$archive" .tar.gz); \
-		tar -zxvf "$$archive" -C release_binaries "pocketd"; \
-		mv release_binaries/pocketd "release_binaries/$$binary_name"; \
-	done
-
-#####################
-### Documentation ###
-#####################
-
-.PHONY: go_docs
-go_docs: check_godoc ## Generate documentation for the project
-	echo "Visit http://localhost:6060/pkg/github.com/pokt-network/poktroll/"
-	godoc -http=:6060
-
-.PHONY: docusaurus_start
-docusaurus_start: check_yarn check_node ## Start the Docusaurus server
-	(cd docusaurus && yarn install && yarn start)
-
-.PHONY: docs_update_gov_params_page
-docs_update_gov_params_page: ## Update the page in Docusaurus documenting all the governance parameters
-	go run tools/scripts/docusaurus/generate_docs_params.go
-
 #######################
 ### Keyring Helpers ###
 #######################
-
 
 .PHONY: pocketd_addr
 pocketd_addr: ## Retrieve the address for an account by ACC_NAME
@@ -405,35 +366,6 @@ act_reviewdog: check_act check_gh ## Run the reviewdog workflow locally like so:
 	$(eval CONTAINER_ARCH := $(shell make -s detect_arch))
 	@echo "Detected architecture: $(CONTAINER_ARCH)"
 	act -v -s GITHUB_TOKEN=$(GITHUB_TOKEN) -W .github/workflows/reviewdog.yml --container-architecture $(CONTAINER_ARCH)
-
-###########################
-###   Release Helpers   ###
-###########################
-
-# List tags: git tag
-# Delete tag locally: git tag -d v1.2.3
-# Delete tag remotely: git push --delete origin v1.2.3
-
-.PHONY: release_tag_bug_fix
-release_tag_bug_fix: ## Tag a new bug fix release (e.g. v1.0.1 -> v1.0.2)
-	@$(eval LATEST_TAG=$(shell git tag --sort=-v:refname | head -n 1))
-	@$(eval NEW_TAG=$(shell echo $(LATEST_TAG) | awk -F. -v OFS=. '{ $$NF = sprintf("%d", $$NF + 1); print }'))
-	@git tag $(NEW_TAG)
-	@echo "New bug fix version tagged: $(NEW_TAG)"
-	@echo "Run the following commands to push the new tag:"
-	@echo "  git push origin $(NEW_TAG)"
-	@echo "And draft a new release at https://github.com/pokt-network/poktroll/releases/new"
-
-
-.PHONY: release_tag_minor_release
-release_tag_minor_release: ## Tag a new minor release (e.g. v1.0.0 -> v1.1.0)
-	@$(eval LATEST_TAG=$(shell git tag --sort=-v:refname | head -n 1))
-	@$(eval NEW_TAG=$(shell echo $(LATEST_TAG) | awk -F. '{$$2 += 1; $$3 = 0; print $$1 "." $$2 "." $$3}'))
-	@git tag $(NEW_TAG)
-	@echo "New minor release version tagged: $(NEW_TAG)"
-	@echo "Run the following commands to push the new tag:"
-	@echo "  git push origin $(NEW_TAG)"
-	@echo "And draft a new release at https://github.com/pokt-network/poktroll/releases/new"
 
 ############################
 ### Grove Portal Helpers ###
@@ -473,3 +405,7 @@ include ./makefiles/session.mk
 include ./makefiles/claims.mk
 include ./makefiles/relay.mk
 include ./makefiles/ping.mk
+include ./makefiles/migrate.mk
+include ./makefiles/claudesync.mk
+include ./makefiles/docs.mk
+include ./makefiles/release.mk
