@@ -324,7 +324,7 @@
           "address": "028026796df1d8450410eab29c710a5944eef8dd",
           "chains": [],
           "jailed": false,
-          "output_address": "1fa385948bff6856765a048bc9f1920354ef87fd",
+          "output_address": null,
           "public_key": "1863a5205b7d61a994a87186bd992f28634b93858bd3f81b6f123e69d5f1d04f",
           "reward_delegators": null,
           "service_url": "https://411.episode.one:443",
