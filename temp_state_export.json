@@ -19,7 +19,33 @@
         {
           "type": "posmint/Account",
           "value": {
-            "address": "2e2624762bcfee4a44001543adddce0e4f4cc823",
+            "address": "028026796df1d8450410eab29c710a5944eef8dd",
+            "coins": [
+              {
+                "amount": "20000000000000",
+                "denom": "upokt"
+              }
+            ],
+            "public_key": null
+          }
+        },
+        {
+          "type": "posmint/Account",
+          "value": {
+            "address": "2E2624762BCFEE4A44001543ADDDCE0E4F4CC823",
+            "coins": [
+              {
+                "amount": "20000000000000",
+                "denom": "upokt"
+              }
+            ],
+            "public_key": null
+          }
+        },
+        {
+          "type": "posmint/Account",
+          "value": {
+            "address": "80E3058D66EE75578B07472650483DA0035FEBE6",
             "coins": [
               {
                 "amount": "20000000000000",
@@ -51,170 +77,170 @@
         "acl": [
           {
             "acl_key": "application/ApplicationStakeMinimum",
-            "address": "2e2624762bcfee4a44001543adddce0e4f4cc823"
+            "address": "028026796df1d8450410eab29c710a5944eef8dd"
           },
           {
             "acl_key": "application/AppUnstakingTime",
-            "address": "2e2624762bcfee4a44001543adddce0e4f4cc823"
+            "address": "028026796df1d8450410eab29c710a5944eef8dd"
           },
           {
             "acl_key": "application/BaseRelaysPerPOKT",
-            "address": "2e2624762bcfee4a44001543adddce0e4f4cc823"
+            "address": "028026796df1d8450410eab29c710a5944eef8dd"
           },
           {
             "acl_key": "application/MaxApplications",
-            "address": "2e2624762bcfee4a44001543adddce0e4f4cc823"
+            "address": "028026796df1d8450410eab29c710a5944eef8dd"
           },
           {
             "acl_key": "application/MaximumChains",
-            "address": "2e2624762bcfee4a44001543adddce0e4f4cc823"
+            "address": "028026796df1d8450410eab29c710a5944eef8dd"
           },
           {
             "acl_key": "application/ParticipationRateOn",
-            "address": "2e2624762bcfee4a44001543adddce0e4f4cc823"
+            "address": "028026796df1d8450410eab29c710a5944eef8dd"
           },
           {
             "acl_key": "application/StabilityAdjustment",
-            "address": "2e2624762bcfee4a44001543adddce0e4f4cc823"
+            "address": "028026796df1d8450410eab29c710a5944eef8dd"
           },
           {
             "acl_key": "auth/MaxMemoCharacters",
-            "address": "2e2624762bcfee4a44001543adddce0e4f4cc823"
+            "address": "028026796df1d8450410eab29c710a5944eef8dd"
           },
           {
             "acl_key": "auth/TxSigLimit",
-            "address": "2e2624762bcfee4a44001543adddce0e4f4cc823"
+            "address": "028026796df1d8450410eab29c710a5944eef8dd"
           },
           {
             "acl_key": "gov/acl",
-            "address": "2e2624762bcfee4a44001543adddce0e4f4cc823"
+            "address": "028026796df1d8450410eab29c710a5944eef8dd"
           },
           {
             "acl_key": "gov/daoOwner",
-            "address": "2e2624762bcfee4a44001543adddce0e4f4cc823"
+            "address": "028026796df1d8450410eab29c710a5944eef8dd"
           },
           {
             "acl_key": "gov/upgrade",
-            "address": "2e2624762bcfee4a44001543adddce0e4f4cc823"
+            "address": "028026796df1d8450410eab29c710a5944eef8dd"
           },
           {
             "acl_key": "pocketcore/ClaimExpiration",
-            "address": "2e2624762bcfee4a44001543adddce0e4f4cc823"
+            "address": "028026796df1d8450410eab29c710a5944eef8dd"
           },
           {
             "acl_key": "auth/FeeMultipliers",
-            "address": "2e2624762bcfee4a44001543adddce0e4f4cc823"
+            "address": "028026796df1d8450410eab29c710a5944eef8dd"
           },
           {
             "acl_key": "pocketcore/ReplayAttackBurnMultiplier",
-            "address": "2e2624762bcfee4a44001543adddce0e4f4cc823"
+            "address": "028026796df1d8450410eab29c710a5944eef8dd"
           },
           {
             "acl_key": "pos/ProposerPercentage",
-            "address": "2e2624762bcfee4a44001543adddce0e4f4cc823"
+            "address": "028026796df1d8450410eab29c710a5944eef8dd"
           },
           {
             "acl_key": "pocketcore/ClaimSubmissionWindow",
-            "address": "2e2624762bcfee4a44001543adddce0e4f4cc823"
+            "address": "028026796df1d8450410eab29c710a5944eef8dd"
           },
           {
             "acl_key": "pocketcore/MinimumNumberOfProofs",
-            "address": "2e2624762bcfee4a44001543adddce0e4f4cc823"
+            "address": "028026796df1d8450410eab29c710a5944eef8dd"
           },
           {
             "acl_key": "pocketcore/SessionNodeCount",
-            "address": "2e2624762bcfee4a44001543adddce0e4f4cc823"
+            "address": "028026796df1d8450410eab29c710a5944eef8dd"
           },
           {
             "acl_key": "pocketcore/SupportedBlockchains",
-            "address": "2e2624762bcfee4a44001543adddce0e4f4cc823"
+            "address": "028026796df1d8450410eab29c710a5944eef8dd"
           },
           {
             "acl_key": "pos/BlocksPerSession",
-            "address": "2e2624762bcfee4a44001543adddce0e4f4cc823"
+            "address": "028026796df1d8450410eab29c710a5944eef8dd"
           },
           {
             "acl_key": "pos/DAOAllocation",
-            "address": "2e2624762bcfee4a44001543adddce0e4f4cc823"
+            "address": "028026796df1d8450410eab29c710a5944eef8dd"
           },
           {
             "acl_key": "pos/DowntimeJailDuration",
-            "address": "2e2624762bcfee4a44001543adddce0e4f4cc823"
+            "address": "028026796df1d8450410eab29c710a5944eef8dd"
           },
           {
             "acl_key": "pos/MaxEvidenceAge",
-            "address": "2e2624762bcfee4a44001543adddce0e4f4cc823"
+            "address": "028026796df1d8450410eab29c710a5944eef8dd"
           },
           {
             "acl_key": "pos/MaximumChains",
-            "address": "2e2624762bcfee4a44001543adddce0e4f4cc823"
+            "address": "028026796df1d8450410eab29c710a5944eef8dd"
           },
           {
             "acl_key": "pos/MaxJailedBlocks",
-            "address": "2e2624762bcfee4a44001543adddce0e4f4cc823"
+            "address": "028026796df1d8450410eab29c710a5944eef8dd"
           },
           {
             "acl_key": "pos/MaxValidators",
-            "address": "2e2624762bcfee4a44001543adddce0e4f4cc823"
+            "address": "028026796df1d8450410eab29c710a5944eef8dd"
           },
           {
             "acl_key": "pos/MinSignedPerWindow",
-            "address": "2e2624762bcfee4a44001543adddce0e4f4cc823"
+            "address": "028026796df1d8450410eab29c710a5944eef8dd"
           },
           {
             "acl_key": "pos/RelaysToTokensMultiplier",
-            "address": "2e2624762bcfee4a44001543adddce0e4f4cc823"
+            "address": "028026796df1d8450410eab29c710a5944eef8dd"
           },
           {
             "acl_key": "pos/SignedBlocksWindow",
-            "address": "2e2624762bcfee4a44001543adddce0e4f4cc823"
+            "address": "028026796df1d8450410eab29c710a5944eef8dd"
           },
           {
             "acl_key": "pos/SlashFractionDoubleSign",
-            "address": "2e2624762bcfee4a44001543adddce0e4f4cc823"
+            "address": "028026796df1d8450410eab29c710a5944eef8dd"
           },
           {
             "acl_key": "pos/SlashFractionDowntime",
-            "address": "2e2624762bcfee4a44001543adddce0e4f4cc823"
+            "address": "028026796df1d8450410eab29c710a5944eef8dd"
           },
           {
             "acl_key": "pos/StakeDenom",
-            "address": "2e2624762bcfee4a44001543adddce0e4f4cc823"
+            "address": "028026796df1d8450410eab29c710a5944eef8dd"
           },
           {
             "acl_key": "pos/StakeMinimum",
-            "address": "2e2624762bcfee4a44001543adddce0e4f4cc823"
+            "address": "028026796df1d8450410eab29c710a5944eef8dd"
           },
           {
             "acl_key": "pos/UnstakingTime",
-            "address": "2e2624762bcfee4a44001543adddce0e4f4cc823"
+            "address": "028026796df1d8450410eab29c710a5944eef8dd"
           },
           {
             "acl_key": "pos/ServicerStakeFloorMultiplier",
-            "address": "2e2624762bcfee4a44001543adddce0e4f4cc823"
+            "address": "028026796df1d8450410eab29c710a5944eef8dd"
           },
           {
             "acl_key": "pos/ServicerStakeWeightMultiplier",
-            "address": "2e2624762bcfee4a44001543adddce0e4f4cc823"
+            "address": "028026796df1d8450410eab29c710a5944eef8dd"
           },
           {
             "acl_key": "pos/ServicerStakeWeightCeiling",
-            "address": "2e2624762bcfee4a44001543adddce0e4f4cc823"
+            "address": "028026796df1d8450410eab29c710a5944eef8dd"
           },
           {
             "acl_key": "pos/ServicerStakeFloorMultiplierExponent",
-            "address": "2e2624762bcfee4a44001543adddce0e4f4cc823"
+            "address": "028026796df1d8450410eab29c710a5944eef8dd"
           },
           {
             "acl_key": "pocketcore/BlockByteSize",
-            "address": "2e2624762bcfee4a44001543adddce0e4f4cc823"
+            "address": "028026796df1d8450410eab29c710a5944eef8dd"
           },
           {
             "acl_key": "pos/RelaysToTokensMultiplierMap",
-            "address": "2e2624762bcfee4a44001543adddce0e4f4cc823"
+            "address": "028026796df1d8450410eab29c710a5944eef8dd"
           }
         ],
-        "dao_owner": "2e2624762bcfee4a44001543adddce0e4f4cc823",
+        "dao_owner": "028026796df1d8450410eab29c710a5944eef8dd",
         "upgrade": {
           "Features": [
             "AppTransfer:128738",
@@ -278,14 +304,14 @@
       "prevState_total_power": "2952991914",
       "prevState_validator_powers": [
         {
-          "Address": "2e2624762bcfee4a44001543adddce0e4f4cc823",
+          "Address": "028026796df1d8450410eab29c710a5944eef8dd",
           "Power": "902999097"
         }
       ],
-      "previous_proposer": "77e608d8ae4cd7b812f122dc82537e79dd3565cb",
+      "previous_proposer": "028026796df1d8450410eab29c710a5944eef8dd",
       "signing_infos": {
-        "2e2624762bcfee4a44001543adddce0e4f4cc823": {
-          "address": "2e2624762bcfee4a44001543adddce0e4f4cc823",
+        "028026796df1d8450410eab29c710a5944eef8dd": {
+          "address": "028026796df1d8450410eab29c710a5944eef8dd",
           "index_offset": "0",
           "jailed_blocks_counter": "0",
           "jailed_until": "0001-01-01T00:00:00Z",
@@ -295,11 +321,35 @@
       },
       "validators": [
         {
+          "address": "028026796df1d8450410eab29c710a5944eef8dd",
+          "chains": [],
+          "jailed": false,
+          "output_address": "1fa385948bff6856765a048bc9f1920354ef87fd",
+          "public_key": "1863a5205b7d61a994a87186bd992f28634b93858bd3f81b6f123e69d5f1d04f",
+          "reward_delegators": null,
+          "service_url": "https://411.episode.one:443",
+          "status": 2,
+          "tokens": "60000000000",
+          "unstaking_time": "0001-01-01T00:00:00Z"
+        },
+        {
           "address": "2e2624762bcfee4a44001543adddce0e4f4cc823",
           "chains": ["F029"],
           "jailed": false,
-          "output_address": "1fa385948bff6856765a048bc9f1920354ef87fd",
-          "public_key": "96fde4b2be488925ec40bfe14aa0596181897673edc6b624a2b05e79d2e2d2eb",
+          "output_address": null,
+          "public_key": "b6af045ab4647cf2c4c592320438c6b14fd7909b0960f7f24f9ad79918051c81",
+          "reward_delegators": null,
+          "service_url": "https://411.episode.one:443",
+          "status": 2,
+          "tokens": "60000000000",
+          "unstaking_time": "0001-01-01T00:00:00Z"
+        },
+        {
+          "address": "80e3058d66ee75578b07472650483da0035febe6",
+          "chains": ["F029"],
+          "jailed": false,
+          "output_address": "f9f5335adfe2f7c4e49ef5cf5856eded1c5d3c58",
+          "public_key": "ce818229aa7380a745836af1e541230c916b60f7f4ba879707bba03342455d4e",
           "reward_delegators": null,
           "service_url": "https://411.episode.one:443",
           "status": 2,
