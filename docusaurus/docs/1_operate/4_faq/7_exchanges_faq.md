@@ -57,8 +57,10 @@ This migration will require exchanges to:
   - CLI Claiming
     - Claiming using the [pocketd CLI tool](https://dev.poktroll.com/explore/morse_migration/claiming_account)
   - UI Claiming
-    - Online Claiming using a Website (TODO)
-    - Offline Claiming using a Website (TODO)
+    - Online Claiming using a Website
+      - Coming Soon.
+    - Offline Claiming using a Website
+      - Coming Soon.
 
 ## Timeline
 
