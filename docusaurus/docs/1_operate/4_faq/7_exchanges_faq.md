@@ -24,8 +24,8 @@ This migration will require exchanges to:
 - The name: **Pocket Network**
 - The ticker: **$POKT**
 - Liquidity and State:
-  - A snapshot of the current state of Pocket Network will occur within a 14-day migration window.
-  - A 1:1 migration of liquidity and state from the snapshot will migrate over to the new network.
+  - A snapshot of the state of the current version of Pocket Network (Morse) will occur within a 14-day migration window.
+  - A 1:1 migration of liquidity and state from the snapshot will migrate over to the new version of Pocket Network (Shannon).
 - Tokenomics:
   - At the end of April 2025, [we launched a mint = burn tokenomics model for Pocket Network](https://forum.pokt.network/t/protocol-economics-parameters-for-the-shannon-upgrade/5490). This requires manual burning of $POKT on a weekly basis, which can be tracked at [https://pokt.money](https://pokt.money).
   - After the migration, the new network will burn tokens in real time.
