@@ -45,12 +45,12 @@ This migration will require exchanges to:
 
 ## Actions exchanges must take prior to the migration
 
-- Accounts/Wallets
+- **Accounts/Wallets**
   - A new wallet must be created to interact with Pocket Network after the migration. Multiple options are available:
     - [poktrolld CLI tool](https://dev.poktroll.com/explore/account_management/create_new_account_cli)
     - [Keplr Wallet](https://www.keplr.app/)
     - [Soothe Vault](https://trustsoothe.io/)
-- Integrate with the new Pocket Network client by using:
+- **Integrate with the new Pocket Network client**
   - The [Full Node Cheatsheet](https://dev.poktroll.com/operate/cheat_sheets/full_node_cheatsheet) to launch your own node.
   - Obtaining a Foundation-sponsored RPC endpoint to the new network from [Grove](https://grove.city) by reaching out to Jinx or Arthur in your shared telegram group.
 - Claiming Tokens
