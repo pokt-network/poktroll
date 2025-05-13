@@ -148,7 +148,7 @@ func TestMsgServer_ClaimMorseMultiSigAccount_Error(t *testing.T) {
 		expectedErr := status.Error(
 			codes.InvalidArgument,
 			migrationtypes.ErrMorseSignature.Wrapf(
-				"multisig signature length mismatch",
+				"signature verification failed",
 			).Error(),
 		)
 

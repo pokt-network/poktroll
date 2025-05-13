@@ -8,7 +8,8 @@ import (
 	"math/rand"
 	"testing"
 
-	cometcrypto "github.com/cometbft/cometbft/crypto/ed25519"
+	cometcrypto "github.com/cometbft/cometbft/crypto"
+	cometed "github.com/cometbft/cometbft/crypto/ed25519"
 	cmtjson "github.com/cometbft/cometbft/libs/json"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
@@ -125,21 +126,15 @@ func NewMorseStateExportAndAccountStateBytes(
 		return nil, nil, err
 	}
 
-	fmt.Printf("created state successfully\n")
-
 	morseStateExportBz, err = cmtjson.Marshal(morseStateExport)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	fmt.Printf("created state export successfully\n")
-
 	morseAccountStateBz, err = cmtjson.Marshal(morseAccountState)
 	if err != nil {
 		return nil, nil, err
 	}
-
-	fmt.Printf("created account state successfully\n")
 
 	return morseStateExportBz, morseAccountStateBz, nil
 }
@@ -169,8 +164,7 @@ func NewMorseStateExportAndAccountState(
 	for i := 0; i < numAccounts; i++ {
 		morseAccountType := distributionFn(uint64(i))
 		switch morseAccountType {
-		case MorseUnstakedActor:
-		case MorseUnstakedMultiSigActor:
+		case MorseUnstakedActor, MorseUnstakedMultiSigActor:
 			// No-op; no staked actor to generate.
 		case MorseApplicationActor:
 			// Add an application.
@@ -192,30 +186,25 @@ func NewMorseStateExportAndAccountState(
 
 		// Add an account (regardless of whether it is staked or not).
 		// All MorseClaimableAccount fixtures get an unstaked balance.
-		var account *migrationtypes.MorseAuthAccount
+
+		var morseAccount *migrationtypes.MorseAccount
 		if morseAccountType == MorseUnstakedMultiSigActor {
-			morseAccountJSONBz, err := cmtjson.Marshal(GenMorseMultiSigAccount(uint64(i)))
-			if err != nil {
-				return nil, nil, err
-			}
-			account = &migrationtypes.MorseAuthAccount{
-				Type:  migrationtypes.MorseMultiSigAccountType,
-				Value: morseAccountJSONBz,
-			}
+			morseAccount = GenMorseMultiSigAccount(uint64(i))
 		} else {
-			morseAccountJSONBz, err := cmtjson.Marshal(GenMorseAccount(uint64(i)))
-			if err != nil {
-				return nil, nil, err
-			}
-			account = &migrationtypes.MorseAuthAccount{
-				Type:  migrationtypes.MorseExternallyOwnedAccountType,
-				Value: morseAccountJSONBz,
-			}
+			morseAccount = GenMorseAccount(uint64(i))
+		}
+
+		morseAccountJSONBz, err := cmtjson.Marshal(morseAccount)
+		if err != nil {
+			return nil, nil, err
 		}
 
 		morseStateExport.AppState.Auth.Accounts = append(
 			morseStateExport.AppState.Auth.Accounts,
-			account,
+			&migrationtypes.MorseAuthAccount{
+				Type:  migrationtypes.MorseExternallyOwnedAccountType,
+				Value: morseAccountJSONBz,
+			},
 		)
 
 		// Add the account to the morseAccountState.
@@ -231,11 +220,11 @@ func NewMorseStateExportAndAccountState(
 }
 
 // GenMorsePrivateKey creates a new ed25519 private key from the given seed.
-func GenMorsePrivateKey(seed uint64) cometcrypto.PrivKey {
+func GenMorsePrivateKey(seed uint64) cometed.PrivKey {
 	seedBz := make([]byte, 8)
 	binary.LittleEndian.PutUint64(seedBz, seed)
 
-	return cometcrypto.GenPrivKeyFromSecret(seedBz)
+	return cometed.GenPrivKeyFromSecret(seedBz)
 }
 
 // GenMorseUnstakedBalanceAmount returns an amount by applying the given index to
@@ -296,7 +285,7 @@ func GenMorsePrivateKeysForMultiSig(index uint64) []cometcrypto.PrivKey {
 
 	privKeys := make([]cometcrypto.PrivKey, numKeys)
 	for i := 0; i < numKeys; i++ {
-		privKeys[i] = GenMorsePrivateKey(r.Uint64())
+		privKeys[i] = cometcrypto.PrivKey(GenMorsePrivateKey(r.Uint64()))
 	}
 	return privKeys
 }
@@ -307,7 +296,7 @@ func GenMorsePublicKeyMultiSignature(index uint64) *morsecrypto.PublicKeyMultiSi
 
 	pubKeys := make([]morsecrypto.PublicKey, numKeys)
 	for i := 0; i < numKeys; i++ {
-		pubKeys[i] = morsecrypto.Ed25519PublicKey(cometcrypto.PubKey(privKeys[i].PubKey().Bytes()))
+		pubKeys[i] = morsecrypto.Ed25519PublicKey(cometed.PubKey(privKeys[i].PubKey().Bytes()))
 	}
 
 	pms := &morsecrypto.PublicKeyMultiSignature{

@@ -50,7 +50,7 @@ func NewMsgClaimMorseMultiSigAccount(
 // ValidateBasic performs basic checks: valid bech32 address, valid public keys, and signature.
 func (msg *MsgClaimMorseMultiSigAccount) ValidateBasic() error {
 	if _, err := sdk.AccAddressFromBech32(msg.ShannonDestAddress); err != nil {
-		return sdkerrors.ErrInvalidAddress.Wrapf("invalid Shannon destination address (%s): %s", msg.ShannonDestAddress, err)
+		return sdkerrors.ErrInvalidAddress.Wrapf("invalid shannonDestAddress address (%s): %s", msg.ShannonDestAddress, err)
 	}
 
 	return msg.ValidateMorseSignature()
@@ -63,17 +63,19 @@ func (msg *MsgClaimMorseMultiSigAccount) SignMsgClaimMorseMultiSigAccount(privKe
 		return ErrMorseSignature.Wrapf("unable to get signing bytes: %s", err)
 	}
 
-	var sigs [][]byte
-	for _, priv := range privKeys {
+	// sign using multisignature structure
+	var ms = morsecrypto.MultiSig(morsecrypto.MultiSignature{})
+	ms = ms.NewMultiSignature()
+
+	for i, priv := range privKeys {
 		sig, err := priv.Sign(signBytes)
 		if err != nil {
 			return ErrMorseSignature.Wrapf("unable to sign with one of the keys: %s", err)
 		}
-		sigs = append(sigs, sig)
+		ms = ms.AddSignatureByIndex(sig, i)
 	}
 
-	// Concatenate all sigs (CometBFT old-style multisig expects all keys to sign)
-	msg.MorseSignature = combineMultiSigSigs(sigs)
+	msg.MorseSignature = ms.Marshal()
 	return nil
 }
 
@@ -84,22 +86,12 @@ func (msg *MsgClaimMorseMultiSigAccount) ValidateMorseSignature() error {
 		return ErrMorseSignature.Wrapf("failed to marshal for signature check: %s", err)
 	}
 
-	sig := msg.GetMorseSignature()
+	pms := msg.GetPublicKeyMultiSignature()
+	succuss := pms.VerifySignature(signBytes, msg.GetMorseSignature())
 
-	expectedCount := len(msg.GetMorsePublicKeys())
-
-	if len(sig) != expectedCount*MorseSignatureLengthBytes {
-		return ErrMorseSignature.Wrap("multisig signature length mismatch")
+	if !succuss {
+		return ErrMorseSignature.Wrapf("signature verification failed")
 	}
-
-	for i, pub := range msg.GetMorsePublicKeys() {
-		start := i * MorseSignatureLengthBytes
-		end := start + MorseSignatureLengthBytes
-		if !pub.VerifySignature(signBytes, sig[start:end]) {
-			return ErrMorseSignature.Wrapf("invalid signature for key #%d", i)
-		}
-	}
-
 	return nil
 }
 
@@ -134,13 +126,4 @@ func (msg *MsgClaimMorseMultiSigAccount) GetMorseSrcAddress() string {
 // GetMorsePublicKeyBz returns the Amino-encoded public key of the given message.
 func (msg *MsgClaimMorseMultiSigAccount) GetMorsePublicKeyBz() []byte {
 	return msg.GetPublicKeyMultiSignature().Bytes()
-}
-
-func combineMultiSigSigs(sigs [][]byte) []byte {
-	// naive: just concatenate in order
-	var combined []byte
-	for _, sig := range sigs {
-		combined = append(combined, sig...)
-	}
-	return combined
 }

@@ -218,7 +218,6 @@ func collectInputAccountBalances(inputState *migrationtypes.MorseStateExport, mo
 		)
 		switch exportAuthAccount.Type {
 		case migrationtypes.MorseExternallyOwnedAccountType:
-		case migrationtypes.MorseMultisigAccountType:
 			exportAccount, err = exportAuthAccount.AsMorseAccount()
 			if err != nil {
 				return err

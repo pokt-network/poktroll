@@ -3,7 +3,6 @@ package types
 const (
 	// MorseExternallyOwnedAccountType is the type string of an externally owned account in the Morse state export.
 	MorseExternallyOwnedAccountType = "posmint/Account"
-	MorseMultiSigAccountType        = "posmint/MultiSigAccount"
 	// MorseModuleAccountType is the type string of a module account in the Morse state export.
 	MorseModuleAccountType = "posmint/ModuleAccount"
 )

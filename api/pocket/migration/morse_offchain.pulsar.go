@@ -5734,7 +5734,7 @@ type MorseAuthAccount struct {
 	unknownFields protoimpl.UnknownFields
 
 	Type_ string `protobuf:"bytes,1,opt,name=type,proto3" json:"type,omitempty"`
-	// value is a EITHER a JSON-encoded MorseAccount or a MorseModuleAccount
+	// value is a EITHER a JSON-encoded MorseAccount or a MorseModuleAccount.
 	Value []byte `protobuf:"bytes,3,opt,name=value,proto3" json:"value,omitempty"`
 }
 

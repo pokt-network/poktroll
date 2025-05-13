@@ -257,7 +257,7 @@ func (m *MorseAuth) GetAccounts() []*MorseAuthAccount {
 // * Can represent EITHER an externally owned account OR a module account
 type MorseAuthAccount struct {
 	Type string `protobuf:"bytes,1,opt,name=type,proto3" json:"type"`
-	// value is a EITHER a JSON-encoded MorseAccount or a MorseModuleAccount
+	// value is a EITHER a JSON-encoded MorseAccount or a MorseModuleAccount.
 	Value encoding_json.RawMessage `protobuf:"bytes,3,opt,name=value,proto3,casttype=encoding/json.RawMessage" json:"value"`
 }
 
