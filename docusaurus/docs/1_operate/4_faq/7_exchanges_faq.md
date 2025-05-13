@@ -52,7 +52,7 @@ This migration will require exchanges to:
     - [Soothe Vault](https://trustsoothe.io/)
 - **Integrate with the new Pocket Network client**
   - The [Full Node Cheatsheet](https://dev.poktroll.com/operate/cheat_sheets/full_node_cheatsheet) to launch your own node.
-  - Obtaining a Foundation-sponsored RPC endpoint to the new network from [Grove](https://grove.city) by reaching out to Jinx or Arthur in your shared telegram group.
+  - Obtaining a Foundation-sponsored RPC endpoint to the new network from [Grove](https://portal.grove.city) by reaching out to Jinx or Arthur in your shared telegram group.
 - Claiming Tokens
   - CLI Claiming
     - Claiming using the [pocketd CLI tool](https://dev.poktroll.com/explore/morse_migration/claiming_account)
