@@ -4,8 +4,8 @@ title: Exchanges FAQ
 ---
 ## Terminology
 
-- **Morse**: The current version of Pocket Network with which your exchange has an integration.
-- **Shannon**: The next version of Pocket Network that your exchange is integrating.
+- **Morse**: The *current* version of Pocket Network that your exchange is integrated with.
+- **Shannon**: The *upcoming* version of Pocket Network that will replace Morse and become the new version of the chain.
 - **Foundation**: The Pocket Network Foundation, which is responsible for the migration from an operational perspective.
 - **Grove**: The official labs team for Pocket Network that is responsible for the migration from a technical perspective.
 
