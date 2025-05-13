@@ -10,6 +10,8 @@ import (
 	"github.com/pokt-network/poktroll/testutil/testmigration"
 	migrationtypes "github.com/pokt-network/poktroll/x/migration/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
+
+	cometcrypto "github.com/cometbft/cometbft/crypto"
 )
 
 var _ IntegrationSuite = (*MigrationModuleSuite)(nil)
@@ -84,6 +86,44 @@ func (s *MigrationModuleSuite) ClaimMorseAccount(
 	morseClaimMsg, err := migrationtypes.NewMsgClaimMorseAccount(
 		shannonDestAddr,
 		morsePrivateKey,
+		signerAddr,
+	)
+	require.NoError(t, err)
+
+	// Claim a Morse claimable account.
+	resAny, err := s.GetApp().RunMsg(t, morseClaimMsg)
+	require.NoError(t, err)
+
+	claimAccountRes, ok := resAny.(*migrationtypes.MsgClaimMorseAccountResponse)
+	require.True(t, ok)
+
+	return expectedMorseSrcAddr, claimAccountRes
+}
+
+// ClaimMorseMultiSigAccount claims the given MorseClaimableAccount by running a MsgClaimMorseMultiSigAccount message.
+// It returns the expected Morse source address and the MsgClaimMorseAccountResponse.
+func (s *MigrationModuleSuite) ClaimMorseMultiSigAccount(
+	t *testing.T,
+	morseAccountIdx uint64,
+	shannonDestAddr string,
+	signerAddr string,
+) (expectedMorseSrcAddr string, _ *migrationtypes.MsgClaimMorseAccountResponse) {
+	t.Helper()
+
+	morsePrivateKeys := testmigration.GenMorsePrivateKeysForMultiSig(morseAccountIdx)
+	cometPrivKeys := make([]cometcrypto.PrivKey, len(morsePrivateKeys))
+	for i, priv := range morsePrivateKeys {
+		cometPrivKeys[i] = cometcrypto.PrivKey(priv)
+	}
+
+	morseMultiSigAccount := testmigration.GenMorseMultiSigAccount(morseAccountIdx)
+
+	expectedMorseSrcAddr = morseMultiSigAccount.Address.String()
+	require.Equal(t, expectedMorseSrcAddr, s.accountState.Accounts[morseAccountIdx].MorseSrcAddress)
+
+	morseClaimMsg, err := migrationtypes.NewMsgClaimMorseMultiSigAccount(
+		shannonDestAddr,
+		cometPrivKeys,
 		signerAddr,
 	)
 	require.NoError(t, err)

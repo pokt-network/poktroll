@@ -22,7 +22,7 @@ const (
 	Msg_UpdateParams_FullMethodName                 = "/pocket.migration.Msg/UpdateParams"
 	Msg_ImportMorseClaimableAccounts_FullMethodName = "/pocket.migration.Msg/ImportMorseClaimableAccounts"
 	Msg_ClaimMorseAccount_FullMethodName            = "/pocket.migration.Msg/ClaimMorseAccount"
-	Msg_ClaimMorseMultisigAccount_FullMethodName    = "/pocket.migration.Msg/ClaimMorseMultisigAccount"
+	Msg_ClaimMorseMultiSigAccount_FullMethodName    = "/pocket.migration.Msg/ClaimMorseMultiSigAccount"
 	Msg_ClaimMorseApplication_FullMethodName        = "/pocket.migration.Msg/ClaimMorseApplication"
 	Msg_ClaimMorseSupplier_FullMethodName           = "/pocket.migration.Msg/ClaimMorseSupplier"
 	Msg_RecoverMorseAccount_FullMethodName          = "/pocket.migration.Msg/RecoverMorseAccount"
@@ -39,7 +39,7 @@ type MsgClient interface {
 	UpdateParams(ctx context.Context, in *MsgUpdateParams, opts ...grpc.CallOption) (*MsgUpdateParamsResponse, error)
 	ImportMorseClaimableAccounts(ctx context.Context, in *MsgImportMorseClaimableAccounts, opts ...grpc.CallOption) (*MsgImportMorseClaimableAccountsResponse, error)
 	ClaimMorseAccount(ctx context.Context, in *MsgClaimMorseAccount, opts ...grpc.CallOption) (*MsgClaimMorseAccountResponse, error)
-	ClaimMorseMultisigAccount(ctx context.Context, in *MsgClaimMorseMultisigAccount, opts ...grpc.CallOption) (*MsgClaimMorseAccountResponse, error)
+	ClaimMorseMultiSigAccount(ctx context.Context, in *MsgClaimMorseMultiSigAccount, opts ...grpc.CallOption) (*MsgClaimMorseAccountResponse, error)
 	ClaimMorseApplication(ctx context.Context, in *MsgClaimMorseApplication, opts ...grpc.CallOption) (*MsgClaimMorseApplicationResponse, error)
 	ClaimMorseSupplier(ctx context.Context, in *MsgClaimMorseSupplier, opts ...grpc.CallOption) (*MsgClaimMorseSupplierResponse, error)
 	RecoverMorseAccount(ctx context.Context, in *MsgRecoverMorseAccount, opts ...grpc.CallOption) (*MsgRecoverMorseAccountResponse, error)
@@ -83,10 +83,10 @@ func (c *msgClient) ClaimMorseAccount(ctx context.Context, in *MsgClaimMorseAcco
 	return out, nil
 }
 
-func (c *msgClient) ClaimMorseMultisigAccount(ctx context.Context, in *MsgClaimMorseMultisigAccount, opts ...grpc.CallOption) (*MsgClaimMorseAccountResponse, error) {
+func (c *msgClient) ClaimMorseMultiSigAccount(ctx context.Context, in *MsgClaimMorseMultiSigAccount, opts ...grpc.CallOption) (*MsgClaimMorseAccountResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(MsgClaimMorseAccountResponse)
-	err := c.cc.Invoke(ctx, Msg_ClaimMorseMultisigAccount_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, Msg_ClaimMorseMultiSigAccount_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -134,7 +134,7 @@ type MsgServer interface {
 	UpdateParams(context.Context, *MsgUpdateParams) (*MsgUpdateParamsResponse, error)
 	ImportMorseClaimableAccounts(context.Context, *MsgImportMorseClaimableAccounts) (*MsgImportMorseClaimableAccountsResponse, error)
 	ClaimMorseAccount(context.Context, *MsgClaimMorseAccount) (*MsgClaimMorseAccountResponse, error)
-	ClaimMorseMultisigAccount(context.Context, *MsgClaimMorseMultisigAccount) (*MsgClaimMorseAccountResponse, error)
+	ClaimMorseMultiSigAccount(context.Context, *MsgClaimMorseMultiSigAccount) (*MsgClaimMorseAccountResponse, error)
 	ClaimMorseApplication(context.Context, *MsgClaimMorseApplication) (*MsgClaimMorseApplicationResponse, error)
 	ClaimMorseSupplier(context.Context, *MsgClaimMorseSupplier) (*MsgClaimMorseSupplierResponse, error)
 	RecoverMorseAccount(context.Context, *MsgRecoverMorseAccount) (*MsgRecoverMorseAccountResponse, error)
@@ -154,8 +154,8 @@ func (UnimplementedMsgServer) ImportMorseClaimableAccounts(context.Context, *Msg
 func (UnimplementedMsgServer) ClaimMorseAccount(context.Context, *MsgClaimMorseAccount) (*MsgClaimMorseAccountResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ClaimMorseAccount not implemented")
 }
-func (UnimplementedMsgServer) ClaimMorseMultisigAccount(context.Context, *MsgClaimMorseMultisigAccount) (*MsgClaimMorseAccountResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method ClaimMorseMultisigAccount not implemented")
+func (UnimplementedMsgServer) ClaimMorseMultiSigAccount(context.Context, *MsgClaimMorseMultiSigAccount) (*MsgClaimMorseAccountResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ClaimMorseMultiSigAccount not implemented")
 }
 func (UnimplementedMsgServer) ClaimMorseApplication(context.Context, *MsgClaimMorseApplication) (*MsgClaimMorseApplicationResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ClaimMorseApplication not implemented")
@@ -233,20 +233,20 @@ func _Msg_ClaimMorseAccount_Handler(srv interface{}, ctx context.Context, dec fu
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Msg_ClaimMorseMultisigAccount_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(MsgClaimMorseMultisigAccount)
+func _Msg_ClaimMorseMultiSigAccount_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(MsgClaimMorseMultiSigAccount)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(MsgServer).ClaimMorseMultisigAccount(ctx, in)
+		return srv.(MsgServer).ClaimMorseMultiSigAccount(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: Msg_ClaimMorseMultisigAccount_FullMethodName,
+		FullMethod: Msg_ClaimMorseMultiSigAccount_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(MsgServer).ClaimMorseMultisigAccount(ctx, req.(*MsgClaimMorseMultisigAccount))
+		return srv.(MsgServer).ClaimMorseMultiSigAccount(ctx, req.(*MsgClaimMorseMultiSigAccount))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -325,8 +325,8 @@ var Msg_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _Msg_ClaimMorseAccount_Handler,
 		},
 		{
-			MethodName: "ClaimMorseMultisigAccount",
-			Handler:    _Msg_ClaimMorseMultisigAccount_Handler,
+			MethodName: "ClaimMorseMultiSigAccount",
+			Handler:    _Msg_ClaimMorseMultiSigAccount_Handler,
 		},
 		{
 			MethodName: "ClaimMorseApplication",

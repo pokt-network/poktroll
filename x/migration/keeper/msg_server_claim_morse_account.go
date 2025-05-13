@@ -12,6 +12,10 @@ import (
 )
 
 func (k msgServer) ClaimMorseAccount(ctx context.Context, msg *migrationtypes.MsgClaimMorseAccount) (*migrationtypes.MsgClaimMorseAccountResponse, error) {
+	return k.ClaimMorseAccountMessage(ctx, msg)
+}
+
+func (k msgServer) ClaimMorseAccountMessage(ctx context.Context, msg migrationtypes.MorseClaimMessage) (*migrationtypes.MsgClaimMorseAccountResponse, error) {
 	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
 	waiveMorseClaimGasFees := k.GetParams(sdkCtx).WaiveMorseClaimGasFees
 
@@ -55,7 +59,7 @@ func (k msgServer) ClaimMorseAccount(ctx context.Context, msg *migrationtypes.Ms
 
 	// DEV_NOTE: It is safe to use MustAccAddressFromBech32 here because the
 	// shannonDestAddress is validated in MsgClaimMorseAccount#ValidateBasic().
-	shannonAccAddr := cosmostypes.MustAccAddressFromBech32(msg.ShannonDestAddress)
+	shannonAccAddr := cosmostypes.MustAccAddressFromBech32(msg.GetShannonDestAddress())
 
 	// Ensure that a MorseClaimableAccount exists for the given morseSrcAddress.
 	morseClaimableAccount, isFound = k.GetMorseClaimableAccount(
@@ -131,7 +135,7 @@ func (k msgServer) ClaimMorseAccount(ctx context.Context, msg *migrationtypes.Ms
 	sessionEndHeight := sharedtypes.GetSessionEndHeight(&sharedParams, sdkCtx.BlockHeight())
 	event := migrationtypes.EventMorseAccountClaimed{
 		SessionEndHeight:   sessionEndHeight,
-		ShannonDestAddress: msg.ShannonDestAddress,
+		ShannonDestAddress: msg.GetShannonDestAddress(),
 		MorseSrcAddress:    msg.GetMorseSrcAddress(),
 		ClaimedBalance:     unstakedBalance,
 	}

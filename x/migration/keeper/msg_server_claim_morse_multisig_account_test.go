@@ -18,18 +18,20 @@ import (
 	"github.com/pokt-network/poktroll/x/migration/keeper"
 	migrationtypes "github.com/pokt-network/poktroll/x/migration/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
+
+	crypto "github.com/cometbft/cometbft/crypto"
 )
 
 // Prevent strconv unused error
 var _ = strconv.IntSize
 
-func TestMsgServer_ClaimMorseAccount_Success(t *testing.T) {
+func TestMsgServer_ClaimMorseMultiSigAccount_Success(t *testing.T) {
 	k, ctx := keepertest.MigrationKeeper(t)
 	srv := keeper.NewMsgServerImpl(k)
 
 	// Generate and import Morse claimable accounts.
 	numAccounts := 6
-	_, accountState, err := testmigration.NewMorseStateExportAndAccountState(numAccounts, testmigration.AllUnstakedMorseAccountActorType)
+	_, accountState, err := testmigration.NewMorseStateExportAndAccountState(numAccounts, testmigration.AllUnstakedMorseMultiSigAccountActorType)
 	require.NoError(t, err)
 
 	accountStateHash, err := accountState.GetHash()
@@ -45,17 +47,21 @@ func TestMsgServer_ClaimMorseAccount_Success(t *testing.T) {
 	// Claim each MorseClaimableAccount (all of which SHOULD NOT be staked as onchain actor).
 	for morseAccountIdx, morseAccount := range accountState.Accounts {
 		// Generate the corresponding morse private key using the account slice index as a seed.
-		morsePrivKey := testmigration.GenMorsePrivateKey(uint64(morseAccountIdx))
+		morsePrivKeys := testmigration.GenMorsePrivateKeysForMultiSig(uint64(morseAccountIdx))
+		pKeys := make([]crypto.PrivKey, len(morsePrivKeys))
+		for i, priv := range morsePrivKeys {
+			pKeys[i] = priv
+		}
 
 		// Claim the MorseClaimableAccount.
-		msgClaim, err := migrationtypes.NewMsgClaimMorseAccount(
+		msgClaim, err := migrationtypes.NewMsgClaimMorseMultiSigAccount(
 			sample.AccAddress(),
-			morsePrivKey,
+			pKeys,
 			sample.AccAddress(),
 		)
 		require.NoError(t, err)
 
-		msgClaimRes, err := srv.ClaimMorseAccount(ctx, msgClaim)
+		msgClaimRes, err := srv.ClaimMorseMultiSigAccount(ctx, msgClaim)
 		require.NoError(t, err)
 
 		// Construct and assert the expected response.
@@ -95,7 +101,7 @@ func TestMsgServer_ClaimMorseAccount_Success(t *testing.T) {
 	}
 }
 
-func TestMsgServer_ClaimMorseAccount_Error(t *testing.T) {
+func TestMsgServer_ClaimMorseMultiSigAccount_Error(t *testing.T) {
 	k, ctx := keepertest.MigrationKeeper(t)
 	srv := keeper.NewMsgServerImpl(k)
 
@@ -119,12 +125,17 @@ func TestMsgServer_ClaimMorseAccount_Error(t *testing.T) {
 	require.NoError(t, err)
 
 	// Generate the corresponding morse private key using the account slice index as a seed.
-	morsePrivKey := testmigration.GenMorsePrivateKey(0)
+	morsePrivKeys := testmigration.GenMorsePrivateKeysForMultiSig(1)
+
+	pKeys := make([]crypto.PrivKey, len(morsePrivKeys))
+	for i, priv := range morsePrivKeys {
+		pKeys[i] = priv
+	}
 
 	// Claim the MorseClaimableAccount with a random Shannon address.
-	msgClaim, err := migrationtypes.NewMsgClaimMorseAccount(
+	msgClaim, err := migrationtypes.NewMsgClaimMorseMultiSigAccount(
 		sample.AccAddress(),
-		morsePrivKey,
+		pKeys,
 		sample.AccAddress(),
 	)
 	require.NoError(t, err)
@@ -137,23 +148,25 @@ func TestMsgServer_ClaimMorseAccount_Error(t *testing.T) {
 		expectedErr := status.Error(
 			codes.InvalidArgument,
 			migrationtypes.ErrMorseSignature.Wrapf(
-				"invalid morse signature length; expected %d, got %d",
-				migrationtypes.MorseSignatureLengthBytes, 0,
+				"multisig signature length mismatch",
 			).Error(),
 		)
 
-		_, err = srv.ClaimMorseAccount(ctx, &invalidMsgClaim)
+		_, err = srv.ClaimMorseMultiSigAccount(ctx, &invalidMsgClaim)
 		require.EqualError(t, err, expectedErr.Error())
 	})
 
 	t.Run("account not found", func(t *testing.T) {
 		wrongMorsePrivKey := testmigration.GenMorsePrivateKey(99)
 
+		pKeys := make([]crypto.PrivKey, 1)
+		pKeys[0] = wrongMorsePrivKey
+
 		// Generate a Morse account claim message for the same Shannon
 		// address with a nonexistent Morse source account.
-		invalidMsgClaim, claimErr := migrationtypes.NewMsgClaimMorseAccount(
+		invalidMsgClaim, claimErr := migrationtypes.NewMsgClaimMorseMultiSigAccount(
 			msgClaim.GetShannonDestAddress(),
-			wrongMorsePrivKey,
+			pKeys,
 			sample.AccAddress(),
 		)
 		require.NoError(t, claimErr)
@@ -166,13 +179,13 @@ func TestMsgServer_ClaimMorseAccount_Error(t *testing.T) {
 			).Error(),
 		)
 
-		_, err = srv.ClaimMorseAccount(ctx, invalidMsgClaim)
+		_, err = srv.ClaimMorseMultiSigAccount(ctx, invalidMsgClaim)
 		require.EqualError(t, err, expectedErr.Error())
 	})
 
 	t.Run("account already claimed (non-zero claimed_at_height)", func(t *testing.T) {
 		// Set the claimed at height BUT NOT the Shannon destination address.
-		morseClaimableAccount := *accountState.Accounts[0]
+		morseClaimableAccount := *accountState.Accounts[1]
 		morseClaimableAccount.ClaimedAtHeight = 10
 		k.SetMorseClaimableAccount(ctx, morseClaimableAccount)
 
@@ -180,19 +193,19 @@ func TestMsgServer_ClaimMorseAccount_Error(t *testing.T) {
 			codes.FailedPrecondition,
 			migrationtypes.ErrMorseAccountClaim.Wrapf(
 				"morse address %q has already been claimed at height %d by shannon address %q",
-				accountState.Accounts[0].GetMorseSrcAddress(),
+				accountState.Accounts[1].GetMorseSrcAddress(),
 				10,
-				accountState.Accounts[0].GetShannonDestAddress(),
+				accountState.Accounts[1].GetShannonDestAddress(),
 			).Error(),
 		)
 
-		_, err = srv.ClaimMorseAccount(ctx, msgClaim)
+		_, err = srv.ClaimMorseMultiSigAccount(ctx, msgClaim)
 		require.EqualError(t, err, expectedErr.Error())
 	})
 
 	t.Run("account already claimed (non-empty shannon_dest_address)", func(t *testing.T) {
 		// Set the Shannon destination address BUT NOT the claimed at height.
-		morseClaimableAccount := *accountState.Accounts[0]
+		morseClaimableAccount := *accountState.Accounts[1]
 		morseClaimableAccount.ClaimedAtHeight = 0
 		morseClaimableAccount.ShannonDestAddress = sample.AccAddress()
 		k.SetMorseClaimableAccount(ctx, morseClaimableAccount)
@@ -201,69 +214,14 @@ func TestMsgServer_ClaimMorseAccount_Error(t *testing.T) {
 			codes.FailedPrecondition,
 			migrationtypes.ErrMorseAccountClaim.Wrapf(
 				"morse address %q has already been claimed at height %d by shannon address %q",
-				accountState.Accounts[0].GetMorseSrcAddress(),
+				accountState.Accounts[1].GetMorseSrcAddress(),
 				0,
 				morseClaimableAccount.ShannonDestAddress,
 			).Error(),
 		)
 
-		_, err = srv.ClaimMorseAccount(ctx, msgClaim)
+		_, err = srv.ClaimMorseMultiSigAccount(ctx, msgClaim)
 		require.EqualError(t, err, expectedErr.Error())
 	})
 
-	t.Run("account is staked as an application", func(t *testing.T) {
-		morseAccountStakedAppIdx := uint64(2)
-		morseAccount := accountState.Accounts[morseAccountStakedAppIdx]
-		morseSrcAddress := morseAccount.GetMorseSrcAddress()
-
-		// Generate a key which corresponds to the first account which is staked as an application.
-		morsePrivKey = testmigration.GenMorsePrivateKey(morseAccountStakedAppIdx)
-		require.False(t, morseAccount.ApplicationStake.IsZero())
-
-		msgClaim, err = migrationtypes.NewMsgClaimMorseAccount(
-			sample.AccAddress(),
-			morsePrivKey,
-			sample.AccAddress(),
-		)
-		require.NoError(t, err)
-
-		expectedErr := status.Error(
-			codes.FailedPrecondition,
-			migrationtypes.ErrMorseAccountClaim.Wrapf(
-				"Morse account %q is staked as an application, please use `pocketd tx migration claim-application` instead",
-				morseSrcAddress,
-			).Error(),
-		)
-
-		_, err = srv.ClaimMorseAccount(ctx, msgClaim)
-		require.EqualError(t, err, expectedErr.Error())
-	})
-
-	t.Run("account is staked as a supplier", func(t *testing.T) {
-		morseAccountStakedSupplierIdx := uint64(3)
-		morseAccount := accountState.Accounts[morseAccountStakedSupplierIdx]
-		morseSrcAddress := morseAccount.GetMorseSrcAddress()
-
-		// Generate a key which corresponds to the first account which is staked as a supplier.
-		morsePrivKey = testmigration.GenMorsePrivateKey(morseAccountStakedSupplierIdx)
-		require.False(t, morseAccount.SupplierStake.IsZero())
-
-		msgClaim, err = migrationtypes.NewMsgClaimMorseAccount(
-			sample.AccAddress(),
-			morsePrivKey,
-			sample.AccAddress(),
-		)
-		require.NoError(t, err)
-
-		expectedErr := status.Error(
-			codes.FailedPrecondition,
-			migrationtypes.ErrMorseAccountClaim.Wrapf(
-				"Morse account %q is staked as an supplier, please use `pocketd tx migration claim-supplier` instead",
-				morseSrcAddress,
-			).Error(),
-		)
-
-		_, err := srv.ClaimMorseAccount(ctx, msgClaim)
-		require.EqualError(t, err, expectedErr.Error())
-	})
 }

@@ -154,12 +154,13 @@ func TestNewTestMorseStateExport(t *testing.T) {
 			require.NoError(t, err)
 
 			// Construct account number expectations based on equal distribution of unstaked, app, and supplier accounts.
-			expectedNumSuppliers := numAccounts / 3
-			expectedNumApps := numAccounts / 3
-			expectedActorType := testmigration.RoundRobinAllMorseAccountActorTypes(uint64(numAccounts - 1))
-			if expectedActorType == testmigration.MorseApplicationActor {
+			expectedNumSuppliers := numAccounts / 4
+			expectedNumApps := numAccounts / 4
+
+			if numAccounts%4 == 3 {
 				expectedNumApps++
 			}
+
 			t.Logf("numAccounts: %d; expectedNumApps: %d; expectedNumSuppliers: %d", numAccounts, expectedNumApps, expectedNumSuppliers)
 
 			// Assert the number of accounts and staked actors matches expectations.
@@ -178,6 +179,7 @@ func TestNewTestMorseStateExport(t *testing.T) {
 				morseAccountType := testmigration.RoundRobinAllMorseAccountActorTypes(uint64(i))
 				switch morseAccountType {
 				case testmigration.MorseUnstakedActor:
+				case testmigration.MorseUnstakedMultiSigActor:
 					// No-op.
 				case testmigration.MorseApplicationActor:
 					expectedShannonTotalAppStake += testmigration.GenMorseApplicationStakeAmount(uint64(i))

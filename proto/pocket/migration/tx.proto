@@ -25,7 +25,7 @@ service Msg {
   rpc UpdateParams                 (MsgUpdateParams                ) returns (MsgUpdateParamsResponse                );
   rpc ImportMorseClaimableAccounts (MsgImportMorseClaimableAccounts) returns (MsgImportMorseClaimableAccountsResponse);
   rpc ClaimMorseAccount            (MsgClaimMorseAccount           ) returns (MsgClaimMorseAccountResponse           );
-  rpc ClaimMorseMultisigAccount    (MsgClaimMorseMultisigAccount   ) returns (MsgClaimMorseAccountResponse           );
+  rpc ClaimMorseMultiSigAccount    (MsgClaimMorseMultiSigAccount   ) returns (MsgClaimMorseAccountResponse           );
   rpc ClaimMorseApplication        (MsgClaimMorseApplication       ) returns (MsgClaimMorseApplicationResponse       );
   rpc ClaimMorseSupplier           (MsgClaimMorseSupplier          ) returns (MsgClaimMorseSupplierResponse          );
   rpc RecoverMorseAccount          (MsgRecoverMorseAccount         ) returns (MsgRecoverMorseAccountResponse         );
@@ -135,14 +135,14 @@ message MsgClaimMorseAccountResponse {
   int64 session_end_height = 3 [(gogoproto.jsontag) = "session_end_height"];
 }
 
-// MsgClaimMorseMultisigAccount is used to execute a claim (one-time minting of tokens on Shannon),
+// MsgClaimMorseMultiSigAccount is used to execute a claim (one-time minting of tokens on Shannon),
 // of the balance of the given Morse multisig account, according to the on-chain MorseClaimableAccounts,
 // to the balance of the given Shannon account.
 //
 // NOTE:
 // - The Shannon account specified must be the message signer
 // - Authz grants MAY be used to delegate claiming authority to other Shannon accounts
-message MsgClaimMorseMultisigAccount {
+message MsgClaimMorseMultiSigAccount {
   option (cosmos.msg.v1.signer) = "shannon_signing_address";
 
   // The bech32-encoded address of the Shannon account to which the claimed balance will be minted.
@@ -152,16 +152,16 @@ message MsgClaimMorseMultisigAccount {
   reserved 2;
 
   // The hex-encoded signature, by the Morse multisig account, of this message (excluding this field).
-  // I.e.: morse_signature = multisig.sign(marshal(MsgClaimMorseMultisigAccount{morse_signature: nil, ...}))
+  // I.e.: morse_signature = multisig.sign(marshal(MsgClaimMorseMultiSigAccount{morse_signature: nil, ...}))
   bytes morse_signature = 3 [(gogoproto.jsontag) = "morse_signature"];
 
   // The bech32-encoded address of the Shannon account which is signing for this message.
   string shannon_signing_address = 4 [(cosmos_proto.scalar) = "cosmos.AddressString", (gogoproto.jsontag) = "shannon_signing_address"];
 
   // The ordered list of ed25519 public keys of the Morse multisig account.
-  repeated bytes morse_multisig_public_keys = 5 [
+  repeated bytes morse_public_keys = 5 [
     (gogoproto.casttype) = "github.com/cometbft/cometbft/crypto/ed25519.PubKey",
-    (gogoproto.jsontag) = "morse_multisig_public_keys"
+    (gogoproto.jsontag) = "morse_public_keys"
   ];
 
   // Next free index: 6

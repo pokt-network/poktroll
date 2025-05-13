@@ -77,7 +77,7 @@ message MorseAuthAccount {
   // MorseAccount value = 2 [(gogoproto.jsontag) = "value"];
   reserved 2;
 
-  // value is a EITHER a JSON-encoded MorseAccount or a MorseModuleAccount.
+  // value is a EITHER a JSON-encoded MorseAccount or a MorseModuleAccount
   bytes value = 3 [(gogoproto.jsontag) = "value", (gogoproto.casttype) = "encoding/json.RawMessage"];
 }
 
@@ -142,17 +142,11 @@ message MorseAccount {
   // A hex-encoded representation of the address corresponding to a Morse application's ed25519 public key.
   bytes address = 1 [(gogoproto.jsontag) = "address", (gogoproto.casttype) = "github.com/cometbft/cometbft/crypto.Address"];
 
-  // The ed25519 public key of the account.
-  MorsePublicKey pub_key = 2 [(gogoproto.jsontag) = "public_key", (gogoproto.moretags) = "yaml:\"public_key\""];
+  // The binary representation of a Morse ed25519 public key or Morse multisig public key.
+  bytes pub_key = 2 [(gogoproto.jsontag) = "public_key", (gogoproto.moretags) = "yaml:\"public_key\""];
 
   // The account balance; this does not include any actor stakes.
   repeated cosmos.base.v1beta1.Coin coins = 3 [(gogoproto.nullable) = false, (gogoproto.jsontag) = "coins"];
-}
-
-// MorsePublicKey is required to conform to the encoding of the Morse state export.
-// NB: All Morse account public keys will be ed25519 keys by definition.
-message MorsePublicKey {
-  bytes value = 2 [(gogoproto.casttype) = "crypto/ed25519.PublicKey"];
 }
 
 // MorseModuleAccount is the module account type for Morse, it wraps a MorseAccount

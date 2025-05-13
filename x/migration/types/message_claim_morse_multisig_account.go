@@ -1,26 +1,25 @@
 package types
 
 import (
-	"encoding/hex"
 	cometcrypto "github.com/cometbft/cometbft/crypto"
 	cometed "github.com/cometbft/cometbft/crypto/ed25519"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/cosmos/gogoproto/proto"
-	amino "github.com/tendermint/go-amino"
+	morsecrypto "github.com/pokt-network/poktroll/x/migration/types/morsecrypto"
 )
 
 var (
-	_ sdk.Msg                   = (*MsgClaimMorseMultisigAccount)(nil)
-	_ morseMultisigClaimMessage = (*MsgClaimMorseMultisigAccount)(nil)
+	_ sdk.Msg           = (*MsgClaimMorseMultiSigAccount)(nil)
+	_ MorseClaimMessage = (*MsgClaimMorseMultiSigAccount)(nil)
 )
 
-// NewMsgClaimMorseMultisigAccount constructs a new MsgClaimMorseMultisigAccount and signs it if privKeys are provided.
-func NewMsgClaimMorseMultisigAccount(
+// NewMsgClaimMorseMultiSigAccount constructs a new MsgClaimMorseMultiSigAccount and signs it if privKeys are provided.
+func NewMsgClaimMorseMultiSigAccount(
 	shannonDestAddr string,
 	morsePrivKeys []cometcrypto.PrivKey,
 	shannonSignerAddr string,
-) (*MsgClaimMorseMultisigAccount, error) {
+) (*MsgClaimMorseMultiSigAccount, error) {
 
 	if len(morsePrivKeys) == 0 {
 		return nil, sdkerrors.ErrInvalidPubKey.Wrap("morse multisig must have at least one key")
@@ -35,13 +34,13 @@ func NewMsgClaimMorseMultisigAccount(
 		}
 	}
 
-	msg := &MsgClaimMorseMultisigAccount{
-		ShannonDestAddress:      shannonDestAddr,
-		ShannonSigningAddress:   shannonSignerAddr,
-		MorseMultisigPublicKeys: pubKeys,
+	msg := &MsgClaimMorseMultiSigAccount{
+		ShannonDestAddress:    shannonDestAddr,
+		ShannonSigningAddress: shannonSignerAddr,
+		MorsePublicKeys:       pubKeys,
 	}
 
-	if err := msg.SignMsgClaimMorseMultisigAccount(morsePrivKeys); err != nil {
+	if err := msg.SignMsgClaimMorseMultiSigAccount(morsePrivKeys); err != nil {
 		return nil, sdkerrors.ErrInvalidPubKey.Wrapf("failed to sign morse multisig: %s", err)
 	}
 
@@ -49,7 +48,7 @@ func NewMsgClaimMorseMultisigAccount(
 }
 
 // ValidateBasic performs basic checks: valid bech32 address, valid public keys, and signature.
-func (msg *MsgClaimMorseMultisigAccount) ValidateBasic() error {
+func (msg *MsgClaimMorseMultiSigAccount) ValidateBasic() error {
 	if _, err := sdk.AccAddressFromBech32(msg.ShannonDestAddress); err != nil {
 		return sdkerrors.ErrInvalidAddress.Wrapf("invalid Shannon destination address (%s): %s", msg.ShannonDestAddress, err)
 	}
@@ -57,8 +56,8 @@ func (msg *MsgClaimMorseMultisigAccount) ValidateBasic() error {
 	return msg.ValidateMorseSignature()
 }
 
-// signWithMorseMultisigKeys signs the message with all provided private keys and merges into one signature.
-func (msg *MsgClaimMorseMultisigAccount) SignMsgClaimMorseMultisigAccount(privKeys []cometcrypto.PrivKey) error {
+// signWithMorseMultiSigKeys signs the message with all provided private keys and merges into one signature.
+func (msg *MsgClaimMorseMultiSigAccount) SignMsgClaimMorseMultiSigAccount(privKeys []cometcrypto.PrivKey) error {
 	signBytes, err := msg.getSigningBytes()
 	if err != nil {
 		return ErrMorseSignature.Wrapf("unable to get signing bytes: %s", err)
@@ -74,158 +73,74 @@ func (msg *MsgClaimMorseMultisigAccount) SignMsgClaimMorseMultisigAccount(privKe
 	}
 
 	// Concatenate all sigs (CometBFT old-style multisig expects all keys to sign)
-	msg.MorseSignature = combineMultisigSigs(sigs)
+	msg.MorseSignature = combineMultiSigSigs(sigs)
 	return nil
 }
 
-// validateMorseMultisigSignature verifies all public keys match and the message was signed correctly.
-func (msg *MsgClaimMorseMultisigAccount) ValidateMorseSignature() error {
-	return validateMorseMultisigSignature(msg)
-}
-
-// getSigningBytes returns the deterministic byte encoding of the message with signature removed.
-func (msg *MsgClaimMorseMultisigAccount) getSigningBytes() ([]byte, error) {
-	copyMsg := *msg
-	copyMsg.MorseSignature = nil
-	return proto.Marshal(&copyMsg)
-}
-
-// GetMorseSrcAddress returns the derived address of the multisig keyset (usually hash of pubkeys).
-func (msg *MsgClaimMorseMultisigAccount) GetMorseSrcAddress() string {
-	return deriveMultisigAddress(msg.MorseMultisigPublicKeys)
-}
-
-func combineMultisigSigs(sigs [][]byte) []byte {
-	// naive: just concatenate in order
-	var combined []byte
-	for _, sig := range sigs {
-		combined = append(combined, sig...)
-	}
-	return combined
-}
-
-func validateMorseMultisigSignature(msg morseMultisigClaimMessage) error {
+// validateMorseMultiSigSignature verifies all public keys match and the message was signed correctly.
+func (msg *MsgClaimMorseMultiSigAccount) ValidateMorseSignature() error {
 	signBytes, err := msg.getSigningBytes()
 	if err != nil {
-		return sdkerrors.ErrUnauthorized.Wrapf("failed to marshal for signature check: %s", err)
+		return ErrMorseSignature.Wrapf("failed to marshal for signature check: %s", err)
 	}
 
 	sig := msg.GetMorseSignature()
-	expectedCount := len(msg.GetMorseMultisigPublicKeys())
+
+	expectedCount := len(msg.GetMorsePublicKeys())
 
 	if len(sig) != expectedCount*MorseSignatureLengthBytes {
-		return sdkerrors.ErrUnauthorized.Wrap("multisig signature length mismatch")
+		return ErrMorseSignature.Wrap("multisig signature length mismatch")
 	}
 
-	for i, pub := range msg.GetMorseMultisigPublicKeys() {
+	for i, pub := range msg.GetMorsePublicKeys() {
 		start := i * MorseSignatureLengthBytes
 		end := start + MorseSignatureLengthBytes
 		if !pub.VerifySignature(signBytes, sig[start:end]) {
-			return sdkerrors.ErrUnauthorized.Wrapf("invalid signature for key #%d", i)
+			return ErrMorseSignature.Wrapf("invalid signature for key #%d", i)
 		}
 	}
 
 	return nil
 }
 
-type PublicKey interface {
-	PubKey() cometcrypto.PubKey
-	Bytes() []byte
-	RawBytes() []byte
-	String() string
-	RawString() string
-	Address() cometcrypto.Address
-	Equals(other cometcrypto.PubKey) bool
-	VerifyBytes(msg []byte, sig []byte) bool
-	PubKeyToPublicKey(cometcrypto.PubKey) PublicKey
-	Size() int
+// getSigningBytes returns the deterministic byte encoding of the message with signature removed.
+func (msg *MsgClaimMorseMultiSigAccount) getSigningBytes() ([]byte, error) {
+	copyMsg := *msg
+	copyMsg.MorseSignature = nil
+	return proto.Marshal(&copyMsg)
 }
 
-// Minimal copy of PublicKeyMultiSignature
-type PublicKeyMultiSignature struct {
-	PublicKeys []PublicKey `json:"keys"`
-}
-
-var multisigCodec = func() *amino.Codec {
-	cdc := amino.NewCodec()
-	cdc.RegisterInterface((*PublicKey)(nil), nil)
-	cdc.RegisterConcrete(PublicKeyMultiSignature{}, "crypto/public_key_multi_signature", nil)
-	cdc.RegisterConcrete(Ed25519PublicKey{}, "crypto/ed25519_public_key", nil)
-	return cdc
-}()
-
-func deriveMultisigAddress(pks []cometed.PubKey) string {
-	newKeys := make([]PublicKey, len(pks))
+func (msg *MsgClaimMorseMultiSigAccount) GetPublicKeyMultiSignature() *morsecrypto.PublicKeyMultiSignature {
+	pks := msg.GetMorsePublicKeys()
+	newKeys := make([]morsecrypto.PublicKey, len(pks))
 	for i, pk := range pks {
-		newKeys[i] = Ed25519PublicKey(pk)
+		// Note: Support for secp256k1 is not yet implemented
+		newKey, err := morsecrypto.Ed25519PublicKey{}.NewPublicKey(pk.Bytes())
+		if err != nil {
+			panic(err)
+		}
+		newKeys[i] = newKey
 	}
 
-	pms := PublicKeyMultiSignature{PublicKeys: newKeys}
-	encoded, err := multisigCodec.MarshalBinaryBare(pms)
-	if err != nil {
-		panic(sdkerrors.ErrInvalidPubKey.Wrapf("failed to encode PublicKeyMultiSignature: %s", err))
+	pms := &morsecrypto.PublicKeyMultiSignature{PublicKeys: newKeys}
+	return pms
+}
+
+// GetMorseSrcAddress returns the derived address of the multisig keyset (usually hash of pubkeys).
+func (msg *MsgClaimMorseMultiSigAccount) GetMorseSrcAddress() string {
+	return msg.GetPublicKeyMultiSignature().Address().String()
+}
+
+// GetMorsePublicKeyBz returns the Amino-encoded public key of the given message.
+func (msg *MsgClaimMorseMultiSigAccount) GetMorsePublicKeyBz() []byte {
+	return msg.GetPublicKeyMultiSignature().Bytes()
+}
+
+func combineMultiSigSigs(sigs [][]byte) []byte {
+	// naive: just concatenate in order
+	var combined []byte
+	for _, sig := range sigs {
+		combined = append(combined, sig...)
 	}
-
-	return cometcrypto.AddressHash(encoded).String()
-}
-
-type (
-	Ed25519PublicKey cometed.PubKey
-)
-
-var (
-	_ PublicKey = Ed25519PublicKey{}
-)
-
-const (
-	Ed25519PubKeySize = cometed.PubKeySize
-)
-
-func (Ed25519PublicKey) FromBytes(b []byte) (PublicKey, error) {
-	return Ed25519PublicKey(cometed.PubKey(b)), nil
-}
-
-func (Ed25519PublicKey) PubKeyToPublicKey(key cometcrypto.PubKey) PublicKey {
-	return Ed25519PublicKey(key.(cometed.PubKey))
-}
-
-func (pub Ed25519PublicKey) PubKey() cometcrypto.PubKey {
-	return cometed.PubKey(pub)
-}
-
-func (pub Ed25519PublicKey) Bytes() []byte {
-	bz, err := multisigCodec.MarshalBinaryBare(pub)
-	if err != nil {
-		panic(err)
-	}
-	return bz
-}
-
-func (pub Ed25519PublicKey) RawBytes() []byte {
-	pkBytes := [Ed25519PubKeySize]byte(pub)
-	return pkBytes[:]
-}
-
-func (pub Ed25519PublicKey) String() string {
-	return hex.EncodeToString(pub.Bytes())
-}
-
-func (pub Ed25519PublicKey) RawString() string {
-	return hex.EncodeToString(pub.RawBytes())
-}
-
-func (pub Ed25519PublicKey) Address() cometcrypto.Address {
-	return cometed.PubKey(pub).Address()
-}
-
-func (pub Ed25519PublicKey) VerifyBytes(msg []byte, sig []byte) bool {
-	return cometed.PubKey(pub).VerifySignature(msg, sig)
-}
-
-func (pub Ed25519PublicKey) Equals(other cometcrypto.PubKey) bool {
-	return cometed.PubKey(pub).Equals(other)
-}
-
-func (pub Ed25519PublicKey) Size() int {
-	return Ed25519PubKeySize
+	return combined
 }

@@ -30,7 +30,7 @@ func ClaimAccountCmd() *cobra.Command {
 The unstaked balance amount of the onchain MorseClaimableAccount will be minted to the Shannon account specified by the --from flag.
 This will construct, sign, and broadcast a tx containing a MsgClaimMorseAccount message.
 
-For more information, see: https://dev.poktroll.com/operate/morse_migration/claiming`,
+For more information, see: https://dev.poktroll.com/explore/morse_migration/claiming`,
 		// Example: TODO_MAINNET_CRITICAL(@bryanchriswhite): Add a few examples,
 		RunE:    runClaimAccount,
 		PreRunE: logger.PreRunESetup,

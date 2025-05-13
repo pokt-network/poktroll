@@ -92,6 +92,11 @@ test_all_with_integration_and_flaky: check_go_version ## Run all go tests, inclu
 test_integration: check_go_version ## Run only the in-memory integration "unit" tests
 	go test -count=1 -v -race -tags test,integration ./tests/integration/...
 
+.PHONY: test_migration
+test_migration: check_go_version ## Run only the in-memory migration "unit" tests
+	go test -count=1 -v -race ./x/migration/...
+	go test -count=1 -v -race ./tests/integration/migration/...
+
 .PHONY: itest
 itest: check_go_version ## Run tests iteratively (see usage for more)
 	./tools/scripts/itest.sh $(filter-out $@,$(MAKECMDGOALS))

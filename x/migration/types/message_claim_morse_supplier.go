@@ -11,7 +11,7 @@ import (
 
 var (
 	_ sdk.Msg           = (*MsgClaimMorseSupplier)(nil)
-	_ morseClaimMessage = (*MsgClaimMorseSupplier)(nil)
+	_ MorseClaimMessage = (*MsgClaimMorseSupplier)(nil)
 )
 
 // NewMsgClaimMorseSupplier creates a new MsgClaimMorseSupplier.
@@ -93,7 +93,25 @@ func (msg *MsgClaimMorseSupplier) SignMorseSignature(morsePrivKey cometcrypto.Pr
 // ValidateMorseSignature validates the signature of the given MsgClaimMorseSupplier
 // matches the given Morse public key.
 func (msg *MsgClaimMorseSupplier) ValidateMorseSignature() error {
-	return validateMorseSignature(msg)
+	if len(msg.GetMorseSignature()) != MorseSignatureLengthBytes {
+		return ErrMorseSignature.Wrapf(
+			"invalid morse signature length; expected %d, got %d",
+			MorseSignatureLengthBytes, len(msg.GetMorseSignature()),
+		)
+	}
+	signingBz, err := msg.getSigningBytes()
+	if err != nil {
+		return err
+	}
+
+	if !msg.GetMorsePublicKey().VerifySignature(signingBz, msg.GetMorseSignature()) {
+		return ErrMorseSignature.Wrapf(
+			"morseSignature (%x) is invalid for Morse address (%s)",
+			msg.GetMorseSignature(),
+			msg.GetMorseSrcAddress(),
+		)
+	}
+	return nil
 }
 
 // getSigningBytes returns the canonical byte representation of the MsgClaimMorseSupplier
@@ -111,4 +129,15 @@ func (msg *MsgClaimMorseSupplier) getSigningBytes() ([]byte, error) {
 // the Morse public key of the given message.
 func (msg *MsgClaimMorseSupplier) GetMorseSrcAddress() string {
 	return msg.GetMorsePublicKey().Address().String()
+}
+
+// GetMorsePublicKeyBz returns the Amino-encoded public key of the given message.
+func (msg *MsgClaimMorseSupplier) GetMorsePublicKeyBz() []byte {
+	return msg.GetMorsePublicKey()
+}
+
+// GetShannonDestAddress returns the shannon destination address associated with
+// the shannon public key of the given message.
+func (msg *MsgClaimMorseSupplier) GetShannonDestAddress() string {
+	return msg.GetShannonOperatorAddress()
 }
