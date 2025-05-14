@@ -113,7 +113,7 @@ Have ideas for other improvements? Please open an issue [here](https://github.co
 **Before Migration Window:**
 
 - Disable deposits/withdrawals until migration is complete.
-- Integrate with new client (see above).
+- Integrate with the pocket client (see above).
 - Notify the Foundation in the shared when these actions have been taken.
 
 **After Migration:**
