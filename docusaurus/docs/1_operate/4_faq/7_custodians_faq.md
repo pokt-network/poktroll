@@ -92,11 +92,12 @@ This document was last updated on 05/14/2025.
 | --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | **Create New Wallet** | - [pocketd CLI tool](https://dev.poktroll.com/explore/account_management/create_new_account_cli) <br/> - [Keplr Wallet](https://www.keplr.app/) <br/> - [Soothe Vault](https://trustsoothe.io/)        |
 | **Integrate Node**    | - [Full Node Cheatsheet](https://dev.poktroll.com/operate/cheat_sheets/full_node_cheatsheet) <br/> Or get Foundation RPC endpoint from [Grove](https://portal.grove.city) (DM Jinx/Arthur in Telegram) |
-| **Claim Tokens**      | - CLI: [pocketd CLI tool](https://dev.poktroll.com/explore/morse_migration/claiming_account) <br/> - UI: Website (Coming Soon)                                                                         |
+| **Claim Tokens**      | - CLI: [pocketd CLI tool](https://dev.poktroll.com/explore/morse_migration/claiming_account) <br/> - UI: Website with offline signing support (Coming Soon)                                                                         |
 
 :::warning TODO(Grove): Coming Soon
 
 - Pocket specific tutorial on using the Keplr wallet
+- Pocket specific tutorial on using the Soothe wallet
 - Pocket specific tutorial on using the Cosmos multisig wallets
 - Video tutorial on claiming tokens
 
@@ -114,13 +115,13 @@ Have ideas for other improvements? Please open an issue [here](https://github.co
 
 - Disable deposits/withdrawals until migration is complete.
 - Integrate with the pocket client (see above).
-- Notify the Foundation in the shared when these actions have been taken.
+- Notify the Foundation in the shared Telegram group when these actions have been taken.
 
 **After Migration:**
 
-- Claim tokens on new network (see above).
+- Claim the tokens on the new network (see above).
 - Re-enable deposits/withdrawals.
-- Notify Foundation when complete.
+- Notify the Foundation in the shared Telegram group when these actions have been taken.
 
 ---
 
