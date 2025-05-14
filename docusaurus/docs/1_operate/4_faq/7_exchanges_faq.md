@@ -71,7 +71,7 @@ This document was last updated on 05/14/2025.
 ### Accounts/Wallets
 
 - Shannon uses the [Cosmos Cryptographic Key Scheme](https://docs.cosmos.network/main/learn/beginner/accounts).
-- New wallet required; manual claiming of tokens needed.
+- New wallet required and manual claiming of tokens needed.
 
 ### Token Minting on Morse
 
