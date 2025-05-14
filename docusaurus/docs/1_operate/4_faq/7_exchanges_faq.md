@@ -133,6 +133,6 @@ Got ideas for other improvements? Please open an issue [here](https://github.com
 
 Our assumption is that if you're reading this, you're already in touch with the Foundation team.
 
-If not, please reach out to the community via discord at [discord.gg/pokt](https://discord.gg/pokt).
+If not, please reach out to the community via discord at [https://discord.gg/pocket-network](https://discord.gg/pocket-network).
 
 :::
