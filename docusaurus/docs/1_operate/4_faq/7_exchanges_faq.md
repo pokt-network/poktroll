@@ -94,6 +94,16 @@ This document was last updated on 05/14/2025.
 | **Integrate Node**    | - [Full Node Cheatsheet](https://dev.poktroll.com/operate/cheat_sheets/full_node_cheatsheet)<br>- Or get Foundation RPC endpoint from [Grove](https://portal.grove.city) (DM Jinx/Arthur in Telegram) |
 | **Claim Tokens**      | - CLI: [pocketd CLI tool](https://dev.poktroll.com/explore/morse_migration/claiming_account)<br>- UI: Website (Coming Soon)                                                                           |
 
+:::warning TODO(Grove): Coming Soon
+
+- Pocket specific tutorial on using the Keplr wallet
+- Pocket specific tutorial on using the Cosmos multisig wallets
+- Video tutorial on claiming tokens
+
+Got ideas for other improvements? Please open an issue [here](https://github.com/pokt-network/poktroll/issues/new?template=issue.md).
+
+:::
+
 ---
 
 ## Timeline
@@ -118,3 +128,11 @@ This document was last updated on 05/14/2025.
 
 - Each exchange has a Telegram group with Foundation & Grove personnel (US-East timezone).
 - Use your group to ask questions or update on progress.
+
+:::note Where to reach out?
+
+Our assumption is that if you're reading this, you're already in touch with the Foundation team.
+
+If not, please reach out to the community via discord at [discord.gg/pokt](https://discord.gg/pokt).
+
+:::
