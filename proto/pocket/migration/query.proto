@@ -33,7 +33,7 @@ service Query {
   
   // Queries a list of MorseClaimableAccountsByShannonAddress items.
   rpc MorseClaimableAccountsByShannonAddress (QueryMorseClaimableAccountsByShannonAddressRequest) returns (QueryMorseClaimableAccountsByShannonAddressResponse) {
-    option (google.api.http).get = "/pokt-network/pocket/migration/morse_claimable_accounts_by_shannon_address/{shannonAddress}";
+    option (google.api.http).get = "/pokt-network/poktroll/migration/morse_claimable_accounts_by_shannon_address/{shannon_address}";
   
   }
 }
@@ -65,10 +65,15 @@ message QueryAllMorseClaimableAccountResponse {
 }
 
 message QueryMorseClaimableAccountsByShannonAddressRequest {
-  string shannonAddress = 1;
+  // The bech32-encoded address of the Shannon account to which one or more Morse accounts were claimed.
+  string shannon_address = 1;
+
+  cosmos.base.query.v1beta1.PageRequest pagination = 2;
 }
 
 message QueryMorseClaimableAccountsByShannonAddressResponse {
-  string morseClaimableAccounts = 1;
+  // The list of MorseClaimableAccounts which where claimed by the Shannon address given in the query.
+  repeated MorseClaimableAccount morse_claimable_accounts = 1 [(gogoproto.nullable) = false, (gogoproto.jsontag) = "morse_claimable_accounts"];
+  cosmos.base.query.v1beta1.PageResponse pagination       = 2;
 }
 
