@@ -3,83 +3,118 @@ sidebar_position: 7
 title: Exchanges FAQ
 ---
 
+:::important
+
+This document was last updated on 05/14/2025.
+
+:::
+
+:::info Who is this for?
+**Target Audience:**
+
+- Centralized exchanges and custodians integrating with Pocket Network
+- Anyone responsible for $POKT custody, integration, or liquidity management
+- Technical and operational teams preparing for the Morse → Shannon migration
+
+:::
+
+## Table of Contents <!-- omit in toc -->
+
+- [Terminology](#terminology)
+- [Background and Action Items for Exchanges](#background-and-action-items-for-exchanges)
+- [What **IS NOT** Changing?](#what-is-not-changing)
+- [What **IS** Changing? (What You Must Do)](#what-is-changing-what-you-must-do)
+  - [Accounts/Wallets](#accountswallets)
+  - [Token Minting on Morse](#token-minting-on-morse)
+  - [Full Node Integration](#full-node-integration)
+- [Actions Exchanges Must Take (Pre-Migration)](#actions-exchanges-must-take-pre-migration)
+- [Timeline](#timeline)
+  - [14-Day Migration Window](#14-day-migration-window)
+- [Communication](#communication)
+
 ## Terminology
 
-- **Morse**: The _current_ version of Pocket Network that your exchange is integrated with.
-- **Shannon**: The _upcoming_ version of Pocket Network that will replace Morse and become the new version of the chain.
-- **Foundation**: The Pocket Network Foundation, which is responsible for the migration from an operational perspective.
-- **Grove**: The official labs team for Pocket Network that is responsible for the migration from a technical perspective.
+| Term           | Meaning                                                              |
+| -------------- | -------------------------------------------------------------------- |
+| **Morse**      | _Current_ version of Pocket Network your exchange is integrated with |
+| **Shannon**    | _Upcoming_ version of Pocket Network (will replace Morse)            |
+| **Foundation** | Pocket Network Foundation (operational migration lead)               |
+| **Grove**      | Official labs team (technical migration lead)                        |
 
-## Background
+---
 
-[Pocket Network](https://pocket.network) will undergo a major, consensus-breaking, non-backwards-compatible migration from Morse to Shannon before the end of Q2.
+## Background and Action Items for Exchanges
 
-This migration will require exchanges to:
+[Pocket Network](https://pocket.network) is migrating from Morse to Shannon (consensus-breaking, non-backwards-compatible upgrade) before end of Q2.
 
-- Update their integrations to the new version of Pocket Network, which is billed in an upgrade, but technically and cryptographically, it is a hard fork.
-- Maintain a full-node to the new network or use a Foundation-vendored RPC endpoint.
-- Claim their current liquidiy of $POKT tokens on the new network.
+**Exchanges must:**
 
-## What **IS NOT** changing?
+- Update integrations to the new version (hard fork).
+- Maintain a full-node to the new network _OR_ use a Foundation-vendored RPC endpoint.
+- Claim current `$POKT` token liquidity on the new network.
 
-- The name: **Pocket Network**
-- The ticker: **$POKT**
-- Liquidity and State:
-  - A snapshot of the state of the current version of Pocket Network (Morse) will occur within a 14-day migration window.
-  - A 1:1 migration of liquidity and state from the snapshot will migrate over to the new version of Pocket Network (Shannon).
-- Tokenomics:
-  - At the end of April 2025, [we launched a mint = burn tokenomics model for Pocket Network](https://forum.pokt.network/t/protocol-economics-parameters-for-the-shannon-upgrade/5490). This requires manual burning of $POKT on a weekly basis, which can be tracked at [https://pokt.money](https://pokt.money).
-  - After the migration, the new version of Pocket Network (Shannon) will burn tokens in real time.
+---
 
-## What **IS** changing? (And what you must do to prepare)
+## What **IS NOT** Changing?
 
-- **Accounts/Wallets**
-  - Pocket Network's Shannon upgrade is switching to using the [Cosmos Cryptographic Key Scheme](https://docs.cosmos.network/main/learn/beginner/accounts).
-  - This is different from the current key scheme used by Pocket Network and a new wallet must be created and manual claiming of tokens must occur.
-- **Token Minting on Morse**
-  - In the same block a snapshot is taken of liquidity and state on Morse, a governance transaction will be run to turn off minting of $POKT on Morse. This is to ensure accurate state preservation between Morse and Shannon.
-  - Due to the lack of new token minting, the incentive to keep validators up to process Morse requests will be reduced and Morse will stop functioning.
-- **Full Node Integration**
-  - Integrate with the new Pocket Network client by using:
-    - The [Full Node Cheatsheet](https://dev.poktroll.com/operate/cheat_sheets/full_node_cheatsheet).
-    - Obtaining a Foundation-sponsored RPC endpoint to the new network from [Grove](https://portal.grove.city).
+| Category          | Details                                                                                                                                                                                                                                                      |
+| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Network Name      | **Pocket Network**                                                                                                                                                                                                                                           |
+| Chain Ticker      | **$POKT**                                                                                                                                                                                                                                                    |
+| Liquidity & State | - Snapshot of Morse state during a 14-day migration window<br>- 1:1 migration to Shannon                                                                                                                                                                     |
+| Tokenomics        | - [Mint = Burn model launched April 2025](https://forum.pokt.network/t/protocol-economics-parameters-for-the-shannon-upgrade/5490)<br>- Weekly manual burning (track at [pokt.money](https://pokt.money))<br>- After migration, burning will be in real time |
 
-## Actions exchanges must take prior to the migration
+---
 
-- **Accounts/Wallets**
-  - A new wallet must be created to interact with Pocket Network after the migration. Multiple options are available:
-    - [pocketd CLI tool](https://dev.poktroll.com/explore/account_management/create_new_account_cli)
-    - [Keplr Wallet](https://www.keplr.app/)
-    - [Soothe Vault](https://trustsoothe.io/)
-- **Integrate with the new Pocket Network client**
-  - The [Full Node Cheatsheet](https://dev.poktroll.com/operate/cheat_sheets/full_node_cheatsheet) to launch your own node.
-  - Obtaining a Foundation-sponsored RPC endpoint to the new network from [Grove](https://portal.grove.city) by reaching out to Jinx or Arthur in your shared telegram group.
-- Claiming Tokens
-  - CLI Claiming
-    - Claiming using the [pocketd CLI tool](https://dev.poktroll.com/explore/morse_migration/claiming_account)
-  - UI Claiming
-    - Online Claiming using a Website
-      - Coming Soon.
-    - Offline Claiming using a Website
-      - Coming Soon.
+## What **IS** Changing? (What You Must Do)
+
+### Accounts/Wallets
+
+- Shannon uses [Cosmos Cryptographic Key Scheme](https://docs.cosmos.network/main/learn/beginner/accounts).
+- New wallet required; manual claiming of tokens needed.
+
+### Token Minting on Morse
+
+- Snapshot block disables $POKT minting on Morse via governance transaction.
+- Morse will stop functioning (no incentive for validators).
+
+### Full Node Integration
+
+- Integrate with new client:
+  - [Full Node Cheatsheet](https://dev.poktroll.com/operate/cheat_sheets/full_node_cheatsheet)
+  - Or get a Foundation-sponsored RPC endpoint from [Grove](https://portal.grove.city)
+
+---
+
+## Actions Exchanges Must Take (Pre-Migration)
+
+| Action                | How-To / Links                                                                                                                                                                                        |
+| --------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Create New Wallet** | - [pocketd CLI tool](https://dev.poktroll.com/explore/account_management/create_new_account_cli)<br>- [Keplr Wallet](https://www.keplr.app/)<br>- [Soothe Vault](https://trustsoothe.io/)             |
+| **Integrate Node**    | - [Full Node Cheatsheet](https://dev.poktroll.com/operate/cheat_sheets/full_node_cheatsheet)<br>- Or get Foundation RPC endpoint from [Grove](https://portal.grove.city) (DM Jinx/Arthur in Telegram) |
+| **Claim Tokens**      | - CLI: [pocketd CLI tool](https://dev.poktroll.com/explore/morse_migration/claiming_account)<br>- UI: Website (Coming Soon)                                                                           |
+
+---
 
 ## Timeline
 
-There will be a 14-day window prior to the migration where exchanges will need to do a handful of items.
+### 14-Day Migration Window
 
-### Before the Migration Window
+**Before Migration Window:**
 
-- Disable deposits and withdrawals until the migration is complete.
-- Integrate with the new Pocket Network client (see Actions section above).
-- Notify the Foundation that you are prepared to migrate.
+- Disable deposits/withdrawals until migration is complete.
+- Integrate with new client (see above).
+- Notify Foundation when ready.
 
-### After the Migration
+**After Migration:**
 
-- Claim tokens on the new network (see Claims Actions section above).
-- Re-enable deposits and withdrawals.
-- Notify the Foundation that you have completed the migration.
+- Claim tokens on new network (see above).
+- Re-enable deposits/withdrawals.
+- Notify Foundation when complete.
+
+---
 
 ## Communication
 
-- We have a telegram group with each exchange and all relevant Foundation and Grove personnel are in the US-East time zone.
-- Please reach out in our respective telegram group to ask questions or to notify us of your progress.
+- Each exchange has a Telegram group with Foundation & Grove personnel (US-East timezone).
+- Use your group to ask questions or update on progress.
