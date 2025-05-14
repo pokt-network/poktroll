@@ -49,7 +49,7 @@ This document was last updated on 05/14/2025.
 
 **Exchanges must:**
 
-- Update integrations to the new version (hard fork).
+- Update their integrations to the new version (hard fork).
 - Maintain a full-node to the new network _OR_ use a Foundation-vendored RPC endpoint.
 - Claim current `$POKT` token liquidity on the new network.
 
