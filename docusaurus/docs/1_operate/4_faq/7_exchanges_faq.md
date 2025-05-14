@@ -114,7 +114,7 @@ Have ideas for other improvements? Please open an issue [here](https://github.co
 
 - Disable deposits/withdrawals until migration is complete.
 - Integrate with new client (see above).
-- Notify Foundation when ready.
+- Notify the Foundation in the shared when these actions have been taken.
 
 **After Migration:**
 
