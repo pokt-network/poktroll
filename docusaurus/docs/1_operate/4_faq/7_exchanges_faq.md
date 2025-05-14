@@ -126,7 +126,8 @@ Have ideas for other improvements? Please open an issue [here](https://github.co
 
 ## Communication
 
-- Each exchange has a Telegram group with Foundation & Grove personnel (US-East timezone).
+- Each custodian should already have a Telegram group with Foundation & Grove personnel
+- For reference, these personnel are located in the US-East timezone, and may therefor have a delayed response time.
 - Use your group to ask questions or update on progress.
 
 :::note Where to reach out?
