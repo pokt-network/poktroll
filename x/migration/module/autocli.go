@@ -28,6 +28,13 @@ func (am AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 					Short:          "Shows a morse_claimable_account",
 					PositionalArgs: []*autocliv1.PositionalArgDescriptor{{ProtoField: "address"}},
 				},
+				{
+					RpcMethod:      "MorseClaimableAccountsByShannonAddress",
+					Use:            "morse-claimable-accounts-by-shannon-address [shannon-address]",
+					Short:          "Query MorseClaimableAccountsByShannonAddress",
+					PositionalArgs: []*autocliv1.PositionalArgDescriptor{{ProtoField: "shannonAddress"}},
+				},
+
 				// this line is used by ignite scaffolding # autocli/query
 			},
 		},

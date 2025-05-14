@@ -22,12 +22,18 @@ service Query {
   }
   
   // Queries a list of MorseClaimableAccount items.
-  rpc MorseClaimableAccount    (QueryMorseClaimableAccountRequest) returns (QueryMorseClaimableAccountResponse) {
+  rpc MorseClaimableAccount    (QueryMorseClaimableAccountRequest   ) returns (QueryMorseClaimableAccountResponse   ) {
     option (google.api.http).get = "/pokt-network/poktroll/migration/morse_claimable_account/{address}";
   
   }
   rpc MorseClaimableAccountAll (QueryAllMorseClaimableAccountRequest) returns (QueryAllMorseClaimableAccountResponse) {
     option (google.api.http).get = "/pokt-network/poktroll/migration/morse_claimable_account";
+  
+  }
+  
+  // Queries a list of MorseClaimableAccountsByShannonAddress items.
+  rpc MorseClaimableAccountsByShannonAddress (QueryMorseClaimableAccountsByShannonAddressRequest) returns (QueryMorseClaimableAccountsByShannonAddressResponse) {
+    option (google.api.http).get = "/pokt-network/pocket/migration/morse_claimable_accounts_by_shannon_address/{shannonAddress}";
   
   }
 }
@@ -56,5 +62,13 @@ message QueryAllMorseClaimableAccountRequest {
 message QueryAllMorseClaimableAccountResponse {
   repeated MorseClaimableAccount                  morseClaimableAccount = 1 [(gogoproto.nullable) = false];
            cosmos.base.query.v1beta1.PageResponse pagination            = 2;
+}
+
+message QueryMorseClaimableAccountsByShannonAddressRequest {
+  string shannonAddress = 1;
+}
+
+message QueryMorseClaimableAccountsByShannonAddressResponse {
+  string morseClaimableAccounts = 1;
 }
 

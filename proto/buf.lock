@@ -9,8 +9,8 @@ deps:
   - remote: buf.build
     owner: cosmos
     repository: cosmos-sdk
-    commit: 05419252bcc241ea8023acf1ed4cadc5
-    digest: shake256:1e54a48c19a8b59d35e0a7efa76402939f515f2d8005df099856f24c37c20a52800308f025abb8cffcd014d437b49707388aaca4865d9d063d8f25d5d4eb77d5
+    commit: 34ac2e8322d44db08830e553ad21b93c
+    digest: shake256:b0dd0de5ef770147002e290a9e9f8de8cc8727cbf932628892fbb9027d5ebec5c2a63c0e340e4ef7af72369ecdf51221dcc385ce2137afaa72532228f6999d74
   - remote: buf.build
     owner: cosmos
     repository: gogo-proto
@@ -36,8 +36,3 @@ deps:
     repository: wellknowntypes
     commit: 7727a3b7399540398e5736b9916f0faa
     digest: shake256:74c046f009811965d227acd11bb2c6259bf387759d4230b95405e402a2ed4212d6f4babab690407d07bc81095c3917c4ae9144195ddfb081525c9aec58e51173
-  - remote: buf.build
-    owner: tendermint
-    repository: tendermint
-    commit: 33ed361a90514289beabf3189e1d7665
-    digest: shake256:038267e06294714fd883610626554b04a127b576b4e253befb4206cb72d5d3c1eeccacd4b9ec8e3fb891f7c14e1cb0f770c077d2989638995b0a61c85afedb1d
