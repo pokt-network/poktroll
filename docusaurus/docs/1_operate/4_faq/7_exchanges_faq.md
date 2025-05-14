@@ -1,6 +1,6 @@
 ---
 sidebar_position: 7
-title: Exchanges FAQ
+title: Third-Party Custodians FAQ
 ---
 
 :::important
