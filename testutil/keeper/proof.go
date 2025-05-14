@@ -100,10 +100,13 @@ func ProofKeeper(t testing.TB) (keeper.Keeper, context.Context) {
 			},
 		).AnyTimes()
 
+	sharedParamsHistory := sharedtypes.InitialParamsHistory(sharedtypes.DefaultParams())
+	mockSharedKeeper := mocks.NewMockSharedKeeper(ctrl)
+	mockSharedKeeper.EXPECT().GetParamsUpdates(gomock.Any()).Return(sharedParamsHistory).AnyTimes()
+
 	mockSessionKeeper := mocks.NewMockSessionKeeper(ctrl)
 	mockAppKeeper := mocks.NewMockApplicationKeeper(ctrl)
 	mockAccountKeeper := mocks.NewMockAccountKeeper(ctrl)
-	mockSharedKeeper := mocks.NewMockSharedKeeper(ctrl)
 	mockServiceKeeper := mocks.NewMockServiceKeeper(ctrl)
 
 	k := keeper.NewKeeper(
@@ -119,7 +122,10 @@ func ProofKeeper(t testing.TB) (keeper.Keeper, context.Context) {
 		mockServiceKeeper,
 	)
 
-	ctx := sdk.NewContext(stateStore, cmtproto.Header{}, false, log.NewNopLogger())
+	sdkCtx := sdk.NewContext(stateStore, cmtproto.Header{}, false, log.NewNopLogger())
+
+	// Move block height to 1 to get a non zero session end height
+	ctx := SetBlockHeight(sdkCtx, 1)
 
 	return k, ctx
 }
@@ -191,7 +197,7 @@ func NewProofModuleKeepers(t testing.TB, opts ...ProofKeepersOpt) (_ *ProofModul
 		logger,
 		authority.String(),
 	)
-	require.NoError(t, sharedKeeper.SetParams(ctx, sharedtypes.DefaultParams()))
+	require.NoError(t, sharedKeeper.SetInitialParams(ctx, sharedtypes.DefaultParams()))
 
 	// Construct gateway keeper with a mocked bank keeper.
 	gatewayKeeper := gatewaykeeper.NewKeeper(
@@ -202,7 +208,7 @@ func NewProofModuleKeepers(t testing.TB, opts ...ProofKeepersOpt) (_ *ProofModul
 		bankKeeper,
 		sharedKeeper,
 	)
-	require.NoError(t, gatewayKeeper.SetParams(ctx, gatewaytypes.DefaultParams()))
+	require.NoError(t, gatewayKeeper.SetInitialParams(ctx, gatewaytypes.DefaultParams()))
 
 	// Construct an application keeper to add apps to sessions.
 	appKeeper := appkeeper.NewKeeper(
@@ -215,7 +221,7 @@ func NewProofModuleKeepers(t testing.TB, opts ...ProofKeepersOpt) (_ *ProofModul
 		gatewayKeeper,
 		sharedKeeper,
 	)
-	require.NoError(t, appKeeper.SetParams(ctx, apptypes.DefaultParams()))
+	require.NoError(t, appKeeper.SetInitialParams(ctx, apptypes.DefaultParams()))
 
 	// Construct a service keeper need by the supplier keeper.
 	serviceKeeper := servicekeeper.NewKeeper(
@@ -223,8 +229,10 @@ func NewProofModuleKeepers(t testing.TB, opts ...ProofKeepersOpt) (_ *ProofModul
 		runtime.NewKVStoreService(keys[types.StoreKey]),
 		log.NewNopLogger(),
 		authority.String(),
+		sharedKeeper,
 		bankKeeper,
 	)
+	require.NoError(t, serviceKeeper.SetInitialParams(ctx, servicetypes.DefaultParams()))
 
 	// Construct a real supplier keeper to add suppliers to sessions.
 	supplierKeeper := supplierkeeper.NewKeeper(
@@ -236,7 +244,7 @@ func NewProofModuleKeepers(t testing.TB, opts ...ProofKeepersOpt) (_ *ProofModul
 		sharedKeeper,
 		serviceKeeper,
 	)
-	require.NoError(t, supplierKeeper.SetParams(ctx, suppliertypes.DefaultParams()))
+	require.NoError(t, supplierKeeper.SetInitialParams(ctx, suppliertypes.DefaultParams()))
 
 	// Construct a real session keeper so that sessions can be queried.
 	sessionKeeper := sessionkeeper.NewKeeper(
@@ -250,7 +258,7 @@ func NewProofModuleKeepers(t testing.TB, opts ...ProofKeepersOpt) (_ *ProofModul
 		supplierKeeper,
 		sharedKeeper,
 	)
-	require.NoError(t, sessionKeeper.SetParams(ctx, sessiontypes.DefaultParams()))
+	require.NoError(t, sessionKeeper.SetInitialParams(ctx, sessiontypes.DefaultParams()))
 
 	// Construct a real proof keeper so that claims & proofs can be created.
 	proofKeeper := keeper.NewKeeper(
@@ -265,7 +273,7 @@ func NewProofModuleKeepers(t testing.TB, opts ...ProofKeepersOpt) (_ *ProofModul
 		sharedKeeper,
 		serviceKeeper,
 	)
-	require.NoError(t, proofKeeper.SetParams(ctx, types.DefaultParams()))
+	require.NoError(t, proofKeeper.SetInitialParams(ctx, types.DefaultParams()))
 
 	keepers := &ProofModuleKeepers{
 		Keeper:            &proofKeeper,

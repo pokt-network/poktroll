@@ -64,8 +64,8 @@ type SessionPersistenceTestSuite struct {
 	minedRelaysPublishCh chan<- *relayer.MinedRelay
 	minedRelaysObs       relayer.MinedRelaysObservable
 
-	sharedParams sharedtypes.Params
-	proofParams  prooftypes.Params
+	sharedParamsHistory sharedtypes.ParamsHistory
+	proofParams         prooftypes.Params
 
 	logger polylog.Logger
 }
@@ -84,11 +84,13 @@ func (s *SessionPersistenceTestSuite) SetupTest() {
 
 	// Initialize test data and state
 	s.service = sharedtypes.Service{Id: "svc", ComputeUnitsPerRelay: 2}
-	s.sharedParams = sharedtypes.DefaultParams()
 	s.proofParams = prooftypes.DefaultParams()
 	s.proofParams.ProofRequirementThreshold = uPOKTCoin(1)
 	s.supplierOperatorAddress = sample.AccAddress()
 	s.emptyBlockHash = make([]byte, 32)
+	s.sharedParamsHistory = sharedtypes.InitialParamsHistory(sharedtypes.DefaultParams())
+
+	sharedParams := s.sharedParamsHistory.GetParamsAtHeight(1)
 
 	// Reset counters and state for each test
 	s.createClaimCallCount = 0
@@ -110,7 +112,7 @@ func (s *SessionPersistenceTestSuite) SetupTest() {
 	// Create a session header for testing
 	s.activeSessionHeader = &sessiontypes.SessionHeader{
 		SessionStartBlockHeight: 1,
-		SessionEndBlockHeight:   int64(s.sharedParams.NumBlocksPerSession),
+		SessionEndBlockHeight:   int64(sharedParams.NumBlocksPerSession),
 		ServiceId:               s.service.Id,
 		SessionId:               "sessionId",
 	}
@@ -201,7 +203,7 @@ func (s *SessionPersistenceTestSuite) TestRestartAfterClaimWindowOpen() {
 	sessionEndHeight := s.activeSessionHeader.GetSessionEndBlockHeight()
 
 	// Calculate when the claim window opens for this session
-	claimWindowOpenHeight := sharedtypes.GetClaimWindowOpenHeight(&s.sharedParams, sessionEndHeight)
+	claimWindowOpenHeight := sharedtypes.GetClaimWindowOpenHeight(s.sharedParamsHistory, sessionEndHeight)
 	// Move to one block before the claim window opens
 	s.advanceToBlock(claimWindowOpenHeight - 1)
 
@@ -249,7 +251,7 @@ func (s *SessionPersistenceTestSuite) TestRestartAfterClaimSubmitted() {
 	sessionEndHeight := s.activeSessionHeader.GetSessionEndBlockHeight()
 
 	// Calculate when the claim window opens for this session
-	claimWindowOpenHeight := sharedtypes.GetClaimWindowOpenHeight(&s.sharedParams, sessionEndHeight)
+	claimWindowOpenHeight := sharedtypes.GetClaimWindowOpenHeight(s.sharedParamsHistory, sessionEndHeight)
 	// Move to the block where the claim window opens (which should trigger claim creation)
 	s.advanceToBlock(claimWindowOpenHeight)
 
@@ -284,7 +286,7 @@ func (s *SessionPersistenceTestSuite) TestRestartAfterClaimSubmitted() {
 	require.Equal(s.T(), 0, s.submitProofCallCount)
 
 	// Calculate when the proof window closes for this session
-	proofWindowOpenHeight := sharedtypes.GetProofWindowCloseHeight(&s.sharedParams, sessionEndHeight)
+	proofWindowOpenHeight := sharedtypes.GetProofWindowCloseHeight(s.sharedParamsHistory, sessionEndHeight)
 	// Move to one block before the proof window closes (which should trigger proof submission)
 	s.advanceToBlock(proofWindowOpenHeight)
 
@@ -301,7 +303,7 @@ func (s *SessionPersistenceTestSuite) TestRestartAfterClaimWindowClose() {
 	sessionEndHeight := s.activeSessionHeader.GetSessionEndBlockHeight()
 
 	// Calculate when the claim window opens for this session
-	claimWindowOpenHeight := sharedtypes.GetClaimWindowOpenHeight(&s.sharedParams, sessionEndHeight)
+	claimWindowOpenHeight := sharedtypes.GetClaimWindowOpenHeight(s.sharedParamsHistory, sessionEndHeight)
 	// Move to one block before the claim window opens
 	s.advanceToBlock(claimWindowOpenHeight - 1)
 
@@ -314,7 +316,7 @@ func (s *SessionPersistenceTestSuite) TestRestartAfterClaimWindowClose() {
 	s.relayerSessionsManager = s.setupNewRelayerSessionsManager()
 
 	// Calculate when the claim window closes for this session
-	claimWindowCloseHeight := sharedtypes.GetClaimWindowCloseHeight(&s.sharedParams, sessionEndHeight)
+	claimWindowCloseHeight := sharedtypes.GetClaimWindowCloseHeight(s.sharedParamsHistory, sessionEndHeight)
 	// Move past the claim window close height
 	s.advanceToBlock(claimWindowCloseHeight + 1)
 
@@ -337,7 +339,7 @@ func (s *SessionPersistenceTestSuite) TestRestartAfterProofWindowClosed() {
 	sessionEndHeight := s.activeSessionHeader.GetSessionEndBlockHeight()
 
 	// Calculate when the claim window closes for this session
-	claimWindowCloseHeight := sharedtypes.GetClaimWindowCloseHeight(&s.sharedParams, sessionEndHeight)
+	claimWindowCloseHeight := sharedtypes.GetClaimWindowCloseHeight(s.sharedParamsHistory, sessionEndHeight)
 	// Move to one block before the claim window closes (a claim should be created)
 	s.advanceToBlock(claimWindowCloseHeight - 1)
 
@@ -352,7 +354,7 @@ func (s *SessionPersistenceTestSuite) TestRestartAfterProofWindowClosed() {
 	s.relayerSessionsManager = s.setupNewRelayerSessionsManager()
 
 	// Calculate when the proof window closes for this session
-	proofWinodwCloseHeight := sharedtypes.GetProofWindowCloseHeight(&s.sharedParams, sessionEndHeight)
+	proofWinodwCloseHeight := sharedtypes.GetProofWindowCloseHeight(s.sharedParamsHistory, sessionEndHeight)
 	// Move past the proof window close height
 	s.advanceToBlock(proofWinodwCloseHeight + 1)
 
@@ -536,6 +538,10 @@ func (s *SessionPersistenceTestSuite) setupMockProofQueryClient(ctrl *gomock.Con
 	proofQueryClientMock := mockclient.NewMockProofQueryClient(ctrl)
 	proofQueryClientMock.EXPECT().
 		GetParams(gomock.Any()).
+		Return(&s.proofParams, nil).
+		AnyTimes()
+	proofQueryClientMock.EXPECT().
+		GetParamsAtHeight(gomock.Any(), gomock.Any()).
 		Return(&s.proofParams, nil).
 		AnyTimes()
 	proofQueryClientMock.EXPECT().

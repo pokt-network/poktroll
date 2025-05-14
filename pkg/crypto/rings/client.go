@@ -269,16 +269,11 @@ func (rc *ringClient) GetRingAddressesAtBlock(
 	app *apptypes.Application,
 	blockHeight int64,
 ) ([]string, error) {
-	// TODO_MAINNET(#543): We don't really want to have to query the params for every method call.
-	// Once `ModuleParamsClient` is implemented, use its replay observable's `#Last` method
-	// to get the most recently (asynchronously) observed (and cached) value.
-	// TODO_MAINNET(@red-0ne, #543): We also don't really want to use the current value of the params.
-	// Instead, we should be using the value that the params had for the session given by blockHeight.
-	sharedParams, err := rc.sharedQuerier.GetParams(ctx)
+	sharedParamsHistory, err := rc.sharedQuerier.GetParamsUpdates(ctx)
 	if err != nil {
 		return nil, err
 	}
-	return GetRingAddressesAtBlock(sharedParams, app, blockHeight), nil
+	return GetRingAddressesAtBlock(sharedParamsHistory, app, blockHeight), nil
 }
 
 // GetRingAddressesAtBlock returns the active gateway addresses that need to be
@@ -288,14 +283,14 @@ func (rc *ringClient) GetRingAddressesAtBlock(
 // The ring addresses slice is reconstructed by adding back the past delegated
 // gateways that have been undelegated after the target session end height.
 func GetRingAddressesAtBlock(
-	sharedParams *sharedtypes.Params,
+	sharedParamsHistory sharedtypes.ParamsHistory,
 	app *apptypes.Application,
 	blockHeight int64,
 ) []string {
 	// Get the target session end height at which we want to get the active delegations.
-	targetSessionEndHeight := uint64(sharedtypes.GetSessionEndHeight(sharedParams, blockHeight))
+	targetSessionEndHeight := sharedParamsHistory.GetSessionEndHeight(blockHeight)
 
-	return GetRingAddressesAtSessionEndHeight(app, targetSessionEndHeight)
+	return GetRingAddressesAtSessionEndHeight(app, uint64(targetSessionEndHeight))
 }
 
 // GetRingAddressesAtSessionEndHeight returns the active gateway addresses that need to be

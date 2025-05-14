@@ -26,6 +26,15 @@ func (s *suite) resetAllModuleParamsToDefaults() {
 	msgUpdateParamsAnys := s.allModulesMsgUpdateParamsToDefaultsAny()
 	resetTxJSONFile := s.newTempTxJSONFile(msgUpdateParamsAnys)
 	s.sendAuthzExecTx(s.granteeName, resetTxJSONFile.Name())
+
+	// Wait for the next session start height to let the params update take effect.
+	// This is necessary since params the changes are not applied until the next session starts.
+	currentHeight := s.getCurrentBlockHeight()
+	sharedParamsUpdates := s.getSharedParamsUpdates()
+	nextSessionStart := sharedtypes.GetNextSessionStartHeight(sharedParamsUpdates, currentHeight+1)
+	s.Logf("waiting for next session start height %d", nextSessionStart)
+
+	s.waitForBlockHeight(nextSessionStart)
 }
 
 // allModulesMsgUpdateParamsToDefaultsAny returns a slice of Any messages, each corresponding

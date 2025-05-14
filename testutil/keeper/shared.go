@@ -12,6 +12,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	"github.com/cosmos/cosmos-sdk/runtime"
+	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
@@ -40,11 +41,15 @@ func SharedKeeper(t testing.TB) (keeper.Keeper, sdk.Context) {
 		authority.String(),
 	)
 
-	ctx := sdk.NewContext(stateStore, cmtproto.Header{}, false, log.NewNopLogger())
+	sdkCtx := sdk.NewContext(stateStore, cmtproto.Header{}, false, log.NewNopLogger())
+
+	// Move block height to 1 to get a non zero session end height
+	ctx := SetBlockHeight(sdkCtx, 1)
+	sdkCtx = cosmostypes.UnwrapSDKContext(ctx)
 
 	// Initialize params
-	err := k.SetParams(ctx, types.DefaultParams())
+	err := k.SetInitialParams(sdkCtx, types.DefaultParams())
 	require.NoError(t, err)
 
-	return k, ctx
+	return k, sdkCtx
 }

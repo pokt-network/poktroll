@@ -230,17 +230,15 @@ func (s *suite) TheApplicationEstablishesAWebsocketsConnectionForService(appName
 	require.True(s, ok, "application %s not found", appName)
 
 	// Get shared parameters for the current test environment
-	sharedParams := s.getSharedParams()
+	sharedParamsUpdates := s.getSharedParamsUpdates()
 
 	// Calculate the next session start height and wait for that block
 	currentHeight := s.getCurrentBlockHeight()
-	nextSessionStartHeight := sharedtypes.GetNextSessionStartHeight(&sharedParams, currentHeight)
+	nextSessionStartHeight := sharedtypes.GetNextSessionStartHeight(sharedParamsUpdates, currentHeight)
 	s.waitForBlockHeight(nextSessionStartHeight)
 
 	// Set WebSocket close height just before the claim window opens
-	// TODO_TECHDEBT(@red-0ne): Re-evaluate if the -1 is needed here or not.
-	// See the discussion here: https://github.com/pokt-network/poktroll/pull/1133/files#r2016150360
-	s.wsCloseHeight = sharedtypes.GetClaimWindowOpenHeight(&sharedParams, nextSessionStartHeight) - 1
+	s.wsCloseHeight = sharedtypes.GetClaimWindowOpenHeight(sharedParamsUpdates, nextSessionStartHeight) - 1
 
 	// Prepare HTTP headers with application address and target service ID
 	header := http.Header{}

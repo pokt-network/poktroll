@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"reflect"
 	"strings"
-	"time"
 
 	cometcli "github.com/cometbft/cometbft/libs/cli"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
@@ -221,12 +220,19 @@ func (s *suite) TheAccountSendsAnAuthzExecMessageToUpdateAllModuleParams(account
 	s.sendAuthzExecToUpdateAllModuleParams(accountName, moduleName, paramsTableMap)
 }
 
-// AllModuleParamsShouldBeUpdated asserts that all module params have been updated as expected.
-func (s *suite) AllModuleParamsShouldBeUpdated(moduleName string) {
+// AllModuleParamsShouldBeUpdatedAtTheNextSessionStart waits for the next session
+// start height then asserts that all module params were updated.
+func (s *suite) AllModuleParamsShouldBeUpdatedAtTheNextSessionStart(moduleName string) {
 	_, ok := s.expectedModuleParams[moduleName]
 	require.True(s, ok, "module %q params expectation not set on the test suite", moduleName)
 
-	s.assertExpectedModuleParamsUpdated(moduleName)
+	currentHeight := s.getCurrentBlockHeight()
+	sharedParamsUpdates := s.getSharedParamsUpdates()
+	nextSessionStart := sharedtypes.GetNextSessionStartHeight(sharedParamsUpdates, currentHeight+1)
+	s.Logf("waiting for next session start height %d", nextSessionStart)
+
+	s.waitForBlockHeight(nextSessionStart)
+	s.assertExpectedModuleParamsUpdatedAtHeight(moduleName, nextSessionStart)
 }
 
 // TheAccountSendsAnAuthzExecMessageToUpdateTheModuleParam sends an authz exec message to update a single module param.
@@ -248,23 +254,6 @@ func (s *suite) TheAccountSendsAnAuthzExecMessageToUpdateTheModuleParam(accountN
 	s.sendAuthzExecTx(accountName, txJSONFile.Name())
 }
 
-// TheModuleParamShouldBeUpdated asserts that the module param has been updated as expected.
-func (s *suite) TheModuleParamShouldBeUpdated(moduleName, paramName string) {
-	moduleParamsMap, ok := s.expectedModuleParams[moduleName]
-	require.True(s, ok, "module %q params expectation not set on the test suite", moduleName)
-
-	var foundExpectedParam bool
-	for expectedParamName := range moduleParamsMap {
-		if paramName == expectedParamName {
-			foundExpectedParam = true
-			break
-		}
-	}
-	require.True(s, foundExpectedParam, "param %q expectation not set on the test suite", paramName)
-
-	s.assertExpectedModuleParamsUpdated(moduleName)
-}
-
 // AllModuleParamsShouldBeSetToTheirDefaultValues ensures that all module params are set to their default values.
 func (s *suite) AllModuleParamsAreResetToTheirDefaultValues() {
 	s.resetAllModuleParamsToDefaults()
@@ -278,45 +267,6 @@ func (s *suite) TheModuleParamShouldBeSetToItsDefaultValue(moduleName, paramName
 	// all modules have their params set to their respective defaults.
 	_ = paramName
 	s.AllModuleParamsShouldBeSetToTheirDefaultValues(moduleName)
-}
-
-// ensureAccountForKeyName ensures that an account exists for the given key name in the keychain.
-func (s *suite) ensureAccountForKeyName(keyName string) {
-	s.Helper()
-
-	// Get the address of the key.
-	addr := s.getKeyAddress(keyName)
-
-	// Fund the account with minimal tokens to ensure it can afford tx fees.
-	coin, err := cosmostypes.ParseCoinNormalized(txFeesCoinStr)
-	require.NoError(s, err)
-	s.fundAddress(addr, coin)
-}
-
-// fundAddress sends the given amount & demon of tokens to the given address.
-func (s *suite) fundAddress(addr string, coin cosmostypes.Coin) {
-	s.Helper()
-
-	// pocketd tx bank send <from> <to> <amount> --keyring-backend test --chain-id <chain_id> --yes
-	argsAndFlags := []string{
-		"tx",
-		"bank",
-		"send",
-		pnfKeyName,
-		addr,
-		coin.String(),
-		keyRingFlag,
-		chainIdFlag,
-		"--yes",
-	}
-
-	_, err := s.pocketd.RunCommandOnHost("", argsAndFlags...)
-	require.NoError(s, err)
-
-	// TODO_IMPROVE: wait for the tx to be committed using an events query client
-	// instead of sleeping for a specific amount of time.
-	s.Logf("waiting %d seconds for the funding tx to be committed...", txDelaySeconds)
-	time.Sleep(txDelaySeconds * time.Second)
 }
 
 // getKeyAddress uses the `keys show` CLI subcommand to get the address of a key.
@@ -340,7 +290,9 @@ func (s *suite) getKeyAddress(keyName string) string {
 	return keyListRes["address"].(string)
 }
 
-func (s *suite) assertExpectedModuleParamsUpdated(moduleName string) {
+// assertExpectedModuleParamsUpdatedAtHeight asserts that the module params for the given
+// moduleName were updated at the given activationHeight.
+func (s *suite) assertExpectedModuleParamsUpdatedAtHeight(moduleName string, activationHeight int64) {
 	s.Helper()
 
 	argsAndFlags := []string{
@@ -357,7 +309,8 @@ func (s *suite) assertExpectedModuleParamsUpdated(moduleName string) {
 		assertUpdatedParams(s,
 			[]byte(res.Stdout),
 			&tokenomicstypes.QueryParamsResponse{
-				Params: tokenomicstypes.Params{},
+				Params:           tokenomicstypes.Params{},
+				ActivationHeight: activationHeight,
 			},
 		)
 	case prooftypes.ModuleName:
@@ -387,7 +340,8 @@ func (s *suite) assertExpectedModuleParamsUpdated(moduleName string) {
 		assertUpdatedParams(s,
 			[]byte(res.Stdout),
 			&prooftypes.QueryParamsResponse{
-				Params: params,
+				Params:           params,
+				ActivationHeight: activationHeight,
 			},
 		)
 	case sharedtypes.ModuleName:
@@ -447,7 +401,8 @@ func (s *suite) assertExpectedModuleParamsUpdated(moduleName string) {
 		assertUpdatedParams(s,
 			[]byte(res.Stdout),
 			&sharedtypes.QueryParamsResponse{
-				Params: params,
+				Params:           params,
+				ActivationHeight: activationHeight,
 			},
 		)
 	case apptypes.ModuleName:
@@ -460,6 +415,7 @@ func (s *suite) assertExpectedModuleParamsUpdated(moduleName string) {
 					MaxDelegatedGateways: maxDelegatedGateways,
 					MinStake:             minStake,
 				},
+				ActivationHeight: activationHeight,
 			},
 		)
 	case servicetypes.ModuleName:
@@ -470,6 +426,7 @@ func (s *suite) assertExpectedModuleParamsUpdated(moduleName string) {
 				Params: servicetypes.Params{
 					AddServiceFee: addServiceFee,
 				},
+				ActivationHeight: activationHeight,
 			},
 		)
 	case suppliertypes.ModuleName:
@@ -482,6 +439,7 @@ func (s *suite) assertExpectedModuleParamsUpdated(moduleName string) {
 					MinStake:   minStake,
 					StakingFee: stakingFee,
 				},
+				ActivationHeight: activationHeight,
 			},
 		)
 	default:
@@ -492,9 +450,16 @@ func (s *suite) assertExpectedModuleParamsUpdated(moduleName string) {
 // sendAuthzExecToUpdateAllModuleParams constructs and sends an authz exec
 // tx to update all params for moduleName the given params.
 func (s *suite) sendAuthzExecToUpdateAllModuleParams(accountName, moduleName string, params paramsAnyMap) {
+	fullParams := s.currentParamsToAnyMap(moduleName)
+	for paramKey := range fullParams {
+		if paramValue, ok := params[paramKey]; ok {
+			fullParams[paramKey] = paramValue
+		}
+	}
+
 	// NB: set s#moduleParamsMap for later assertion.
 	s.expectedModuleParams = moduleParamsMap{
-		moduleName: params,
+		moduleName: fullParams,
 	}
 
 	// Use the map of params to populate a tx JSON template & write it to a file.
@@ -502,6 +467,121 @@ func (s *suite) sendAuthzExecToUpdateAllModuleParams(accountName, moduleName str
 
 	// Send the authz exec tx to update all module params.
 	s.sendAuthzExecTx(accountName, txJSONFile.Name())
+}
+
+// currentParamsToAnyMap queries the module params and returns a paramsAnyMap
+// with their names as keys and their values as values
+func (s *suite) currentParamsToAnyMap(moduleName string) paramsAnyMap {
+	argsAndFlags := []string{
+		"query",
+		moduleName,
+		"params",
+		fmt.Sprintf("--%s=json", cometcli.OutputFlag),
+	}
+	res, err := s.pocketd.RunCommandOnHostWithRetry("", numQueryRetries, argsAndFlags...)
+	require.NoError(s, err)
+
+	paramsAnyMap := make(paramsAnyMap)
+
+	var moduleParamsRes struct {
+		Params               map[string]any `json:"params"`
+		EffectiveBlockHeight string         `json:"effective_block_height,omitempty"`
+	}
+	err = json.Unmarshal([]byte(res.Stdout), &moduleParamsRes)
+	require.NoError(s, err)
+
+	params := moduleParamsRes.Params
+	for paramName, paramValue := range params {
+		typeStr := typeOf(moduleName, paramName)
+		paramsAnyMap[paramName] = paramAny{
+			name:    paramName,
+			typeStr: typeStr,
+			value:   s.parseParamValue(typeStr, paramValue),
+		}
+	}
+
+	return paramsAnyMap
+}
+
+// typeOf returns the type of the given param for the given module.
+func typeOf(moduleName, paramName string) string {
+	switch moduleName {
+	case tokenomicstypes.ModuleName:
+		switch paramName {
+		case tokenomicstypes.ParamDaoRewardAddress:
+			return "float"
+		case tokenomicstypes.ParamMintAllocationPercentages:
+			return "float"
+		case tokenomicstypes.ParamGlobalInflationPerClaim:
+			return "float"
+		}
+	case prooftypes.ModuleName:
+		switch paramName {
+		case prooftypes.ParamProofRequestProbability:
+			return "float"
+		case prooftypes.ParamProofRequirementThreshold:
+			return "coin"
+		case prooftypes.ParamProofMissingPenalty:
+			return "coin"
+		case prooftypes.ParamProofSubmissionFee:
+			return "coin"
+		}
+	case sharedtypes.ModuleName:
+		switch paramName {
+		case sharedtypes.ParamNumBlocksPerSession:
+			return "int64"
+		case sharedtypes.ParamGracePeriodEndOffsetBlocks:
+			return "int64"
+		case sharedtypes.ParamClaimWindowOpenOffsetBlocks:
+			return "int64"
+		case sharedtypes.ParamClaimWindowCloseOffsetBlocks:
+			return "int64"
+		case sharedtypes.ParamProofWindowOpenOffsetBlocks:
+			return "int64"
+		case sharedtypes.ParamProofWindowCloseOffsetBlocks:
+			return "int64"
+		case sharedtypes.ParamSupplierUnbondingPeriodSessions:
+			return "int64"
+		case sharedtypes.ParamApplicationUnbondingPeriodSessions:
+			return "int64"
+		case sharedtypes.ParamGatewayUnbondingPeriodSessions:
+			return "int64"
+		case sharedtypes.ParamComputeUnitsToTokensMultiplier:
+			return "int64"
+		}
+	case apptypes.ModuleName:
+		switch paramName {
+		case apptypes.ParamMaxDelegatedGateways:
+			return "uint64"
+		case apptypes.ParamMinStake:
+			return "coin"
+		}
+	case servicetypes.ModuleName:
+		switch paramName {
+		case servicetypes.ParamAddServiceFee:
+			return "coin"
+		case servicetypes.ParamTargetNumRelays:
+			return "int64"
+		}
+	case suppliertypes.ModuleName:
+		switch paramName {
+		case suppliertypes.ParamMinStake:
+			return "coin"
+		case suppliertypes.ParamStakingFee:
+			return "coin"
+		}
+	case gatewaytypes.ModuleName:
+		switch paramName {
+		case gatewaytypes.ParamMinStake:
+			return "coin"
+		}
+	case sessiontypes.ModuleName:
+		switch paramName {
+		case sessiontypes.ParamNumSuppliersPerSession:
+			return "int64"
+		}
+	}
+	return ""
 }
 
 // assertUpdatedParams deserializes the param query response JSON into a

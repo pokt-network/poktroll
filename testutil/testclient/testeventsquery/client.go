@@ -8,6 +8,7 @@ import (
 	"time"
 
 	cosmoskeyring "github.com/cosmos/cosmos-sdk/crypto/keyring"
+	proto "github.com/cosmos/gogoproto/proto"
 	"github.com/regen-network/gocuke"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
@@ -122,4 +123,19 @@ func NewAnyTimesEventsBytesEventsQueryClient(
 		AnyTimes()
 
 	return eventsQueryClient
+}
+
+func NewAnyTimesEventsParamsActivationClient(t *testing.T) client.EventsParamsActivationClient {
+	t.Helper()
+
+	obs, _ := channel.NewObservable[proto.Message]()
+
+	ctrl := gomock.NewController(t)
+	eventsParamsActivationClient := mockclient.NewMockEventsParamsActivationClient(ctrl)
+	eventsParamsActivationClient.EXPECT().
+		LatestParamsUpdate().
+		Return(obs).
+		AnyTimes()
+
+	return eventsParamsActivationClient
 }

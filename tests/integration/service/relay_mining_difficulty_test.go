@@ -37,9 +37,8 @@ func TestUpdateRelayMiningDifficulty_NewServiceSeenForTheFirstTime(t *testing.T)
 	// Move forward a few blocks to move away from the genesis block
 	integrationApp.NextBlocks(t, 3)
 
-	// Get the current session and shared params
-	session := getSession(t, integrationApp)
-	sharedParams := getSharedParams(t, integrationApp)
+	// Get the proof and shared params
+	sharedParamsUpdates := getSharedParamsHistory(t, integrationApp)
 	proofParams := getProofParams(t, integrationApp)
 
 	// Update the proof parameters to never require a proof, since this test is not
@@ -55,28 +54,34 @@ func TestUpdateRelayMiningDifficulty_NewServiceSeenForTheFirstTime(t *testing.T)
 	_, err := integrationApp.RunMsg(t, &msgProofParams)
 	require.NoError(t, err)
 
+	currentBlockHeight := integrationApp.LastBlockHeight()
+	nextSessionStartHeight := sharedtypes.GetNextSessionStartHeight(sharedParamsUpdates, currentBlockHeight)
+	blocksToNextSessionStartHeight := nextSessionStartHeight - currentBlockHeight
+	integrationApp.NextBlocks(t, int(blocksToNextSessionStartHeight))
+
 	// Prepare the trie with several mined relays
+	session := getSession(t, integrationApp)
 	expectedNumRelays := uint64(100)
 	trie := prepareSMST(t, sdkCtx, integrationApp, session, expectedNumRelays)
 
 	// Compute the number of blocks to wait between different events
 	sessionEndHeight := session.Header.SessionEndBlockHeight
 	earliestSupplierClaimCommitHeight := sharedtypes.GetEarliestSupplierClaimCommitHeight(
-		&sharedParams,
+		sharedParamsUpdates,
 		sessionEndHeight,
 		claimWindowOpenBlockHash,
 		integrationApp.DefaultSupplier.GetOperatorAddress(),
 	)
 	earliestSupplierProofCommitHeight := sharedtypes.GetEarliestSupplierProofCommitHeight(
-		&sharedParams,
+		sharedParamsUpdates,
 		sessionEndHeight,
 		proofWindowOpenBlockHash,
 		integrationApp.DefaultSupplier.GetOperatorAddress(),
 	)
-	proofWindowCloseHeight := sharedtypes.GetProofWindowCloseHeight(&sharedParams, sessionEndHeight)
+	proofWindowCloseHeight := sharedtypes.GetProofWindowCloseHeight(sharedParamsUpdates, sessionEndHeight)
 
 	// Wait until the earliest claim commit height.
-	currentBlockHeight := sdkCtx.BlockHeight()
+	currentBlockHeight = integrationApp.LastBlockHeight()
 	numBlocksUntilClaimWindowOpenHeight := earliestSupplierClaimCommitHeight - currentBlockHeight
 	require.Greater(t, numBlocksUntilClaimWindowOpenHeight, int64(0), "unexpected non-positive number of blocks until the earliest claim commit height")
 	integrationApp.NextBlocks(t, int(numBlocksUntilClaimWindowOpenHeight))
@@ -92,18 +97,17 @@ func TestUpdateRelayMiningDifficulty_NewServiceSeenForTheFirstTime(t *testing.T)
 	require.NotNil(t, result, "unexpected nil result when submitting a MsgCreateClaim tx")
 
 	// Wait until the proof window is open
-	currentBlockHeight = sdkCtx.BlockHeight()
+	currentBlockHeight = integrationApp.LastBlockHeight()
 	numBlocksUntilProofWindowOpenHeight := earliestSupplierProofCommitHeight - currentBlockHeight
 	require.Greater(t, numBlocksUntilProofWindowOpenHeight, int64(0), "unexpected non-positive number of blocks until the earliest proof commit height")
 	integrationApp.NextBlocks(t, int(numBlocksUntilProofWindowOpenHeight))
 
 	// Wait until the proof window is closed
-	currentBlockHeight = sdkCtx.BlockHeight()
+	currentBlockHeight = integrationApp.LastBlockHeight()
 	numBlocksUntilProofWindowCloseHeight := proofWindowCloseHeight - currentBlockHeight
 	require.Greater(t, numBlocksUntilProofWindowOpenHeight, int64(0), "unexpected non-positive number of blocks until the earliest proof commit height")
 
-	// TODO_TECHDEBT(@bryanchriswhite): Olshansky is unsure why the +1 is necessary here but it was required to pass the test.
-	integrationApp.NextBlocks(t, int(numBlocksUntilProofWindowCloseHeight)+1)
+	integrationApp.NextBlocks(t, int(numBlocksUntilProofWindowCloseHeight))
 
 	// Check that the expected events are emitted
 	events := sdkCtx.EventManager().Events()
@@ -137,19 +141,19 @@ func UpdateRelayMiningDifficulty_UpdateServiceIsDecreasing(t *testing.T) {
 	t.Skip("TODO_TEST: Implement this test")
 }
 
-// getSharedParams returns the shared parameters for the current block height.
-func getSharedParams(t *testing.T, integrationApp *testutil.App) sharedtypes.Params {
+// getSharedParamsHistory returns the shared parameters history for the current block height.
+func getSharedParamsHistory(t *testing.T, integrationApp *testutil.App) sharedtypes.ParamsHistory {
 	t.Helper()
 
 	sdkCtx := integrationApp.GetSdkCtx()
 
 	sharedQueryClient := sharedtypes.NewQueryClient(integrationApp.QueryHelper())
-	sharedParamsReq := sharedtypes.QueryParamsRequest{}
+	sharedParamsUpdatesReq := sharedtypes.QueryParamsUpdatesRequest{}
 
-	sharedQueryRes, err := sharedQueryClient.Params(sdkCtx, &sharedParamsReq)
+	sharedQueryRes, err := sharedQueryClient.ParamsUpdates(sdkCtx, &sharedParamsUpdatesReq)
 	require.NoError(t, err)
 
-	return sharedQueryRes.Params
+	return sharedQueryRes.ParamsUpdates
 }
 
 // getProofParams returns the proof parameters for the current block height.

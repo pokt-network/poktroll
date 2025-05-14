@@ -48,4 +48,6 @@ type SupplierKeeper interface {
 // SharedKeeper defines the expected interface needed to retrieve shared parameters
 type SharedKeeper interface {
 	GetParams(ctx context.Context) (params sharedtypes.Params)
+	GetParamsAtHeight(ctx context.Context, queryHeight int64) sharedtypes.Params
+	GetParamsUpdates(ctx context.Context) sharedtypes.ParamsHistory
 }

@@ -143,12 +143,12 @@ func (s *MigrationModuleSuite) HasAnyMorseClaimableAccounts(t *testing.T) bool {
 }
 
 // GetSharedParams returns the shared module params.
-func (s *MigrationModuleSuite) GetSharedParams(t *testing.T) sharedtypes.Params {
+func (s *MigrationModuleSuite) GetSharedParamsUpdates(t *testing.T) sharedtypes.ParamsHistory {
 	sharedClient := sharedtypes.NewQueryClient(s.GetApp().QueryHelper())
-	sharedParamsRes, err := sharedClient.Params(s.SdkCtx(), &sharedtypes.QueryParamsRequest{})
+	sharedParamsUpdatesRes, err := sharedClient.ParamsUpdates(s.SdkCtx(), &sharedtypes.QueryParamsUpdatesRequest{})
 	require.NoError(t, err)
 
-	return sharedParamsRes.Params
+	return sharedParamsUpdatesRes.ParamsUpdates
 }
 
 // GetMigrationParams returns the migration module params.
@@ -162,8 +162,8 @@ func (s *MigrationModuleSuite) GetMigrationParams(t *testing.T) migrationtypes.P
 
 // GetSessionEndHeight returns the session end height for the given query height.
 func (s *MigrationModuleSuite) GetSessionEndHeight(t *testing.T, queryHeight int64) int64 {
-	sharedParams := s.GetSharedParams(t)
-	return sharedtypes.GetSessionEndHeight(&sharedParams, queryHeight)
+	sharedParamsUpdates := s.GetSharedParamsUpdates(t)
+	return sharedParamsUpdates.GetSessionEndHeight(queryHeight)
 }
 
 // ClaimMorseApplication claims the given MorseClaimableAccount as a staked application

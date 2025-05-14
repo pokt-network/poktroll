@@ -86,13 +86,13 @@ func (k Keeper) validateClaimWindow(
 	supplierOperatorAddr string,
 ) error {
 	logger := k.Logger().With("method", "validateClaimWindow")
-	sharedParams := k.sharedKeeper.GetParams(ctx)
 
+	sharedParamsUpdates := k.sharedKeeper.GetParamsUpdates(ctx)
 	sessionEndHeight := sessionHeader.GetSessionEndBlockHeight()
 
 	// Get the claim window open and close heights for the given session header.
-	claimWindowOpenHeight := sharedtypes.GetClaimWindowOpenHeight(&sharedParams, sessionEndHeight)
-	claimWindowCloseHeight := sharedtypes.GetClaimWindowCloseHeight(&sharedParams, sessionEndHeight)
+	claimWindowOpenHeight := sharedtypes.GetClaimWindowOpenHeight(sharedParamsUpdates, sessionEndHeight)
+	claimWindowCloseHeight := sharedtypes.GetClaimWindowCloseHeight(sharedParamsUpdates, sessionEndHeight)
 
 	// Get the earliest claim commit height for the given supplier.
 	earliestClaimCommitHeight, err := k.sharedQuerier.GetEarliestSupplierClaimCommitHeight(
@@ -155,12 +155,12 @@ func (k Keeper) validateProofWindow(
 ) error {
 	logger := k.Logger().With("method", "validateProofWindow")
 
-	sharedParams := k.sharedKeeper.GetParams(ctx)
+	sharedParamsUpdates := k.sharedKeeper.GetParamsUpdates(ctx)
 	sessionEndHeight := sessionHeader.GetSessionEndBlockHeight()
 
 	// Get the proof window open and close heights for the given session header.
-	proofWindowOpenHeight := sharedtypes.GetProofWindowOpenHeight(&sharedParams, sessionEndHeight)
-	proofWindowCloseHeight := sharedtypes.GetProofWindowCloseHeight(&sharedParams, sessionEndHeight)
+	proofWindowOpenHeight := sharedtypes.GetProofWindowOpenHeight(sharedParamsUpdates, sessionEndHeight)
+	proofWindowCloseHeight := sharedtypes.GetProofWindowCloseHeight(sharedParamsUpdates, sessionEndHeight)
 
 	// Get the earliest proof commit height for the given supplier.
 	earliestProofCommitHeight, err := k.sharedQuerier.GetEarliestSupplierProofCommitHeight(

@@ -10,6 +10,27 @@ import (
 	"github.com/pokt-network/poktroll/x/proof/types"
 )
 
+// BeginBlocker is called every block and handles proof params related updates that
+// need to be effective at the start of the block.
+func BeginBlocker(ctx sdk.Context, k keeper.Keeper) error {
+	// Telemetry: measure the begin-block execution time following standard cosmos-sdk practices.
+	defer cosmostelemetry.ModuleMeasureSince(types.ModuleName, cosmostelemetry.Now(), cosmostelemetry.MetricKeyBeginBlocker)
+
+	logger := k.Logger().With("method", "BeginBlocker")
+
+	effectiveParams, err := k.BeginBlockerActivateProofParams(ctx)
+	if err != nil {
+		logger.Error(fmt.Sprintf("could not activate proof params due to error %v", err))
+		return err
+	}
+
+	if effectiveParams != nil {
+		logger.Info(fmt.Sprintf("activated new proof params %v", effectiveParams))
+	}
+
+	return nil
+}
+
 // EndBlocker is called at every block and handles proof-related operations.
 func EndBlocker(ctx sdk.Context, k keeper.Keeper) (err error) {
 	// Telemetry: measure the end-block execution time following standard cosmos-sdk practices.

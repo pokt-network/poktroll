@@ -10,54 +10,36 @@ import (
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 )
 
-func (k msgServer) UpdateParam(ctx context.Context, msg *apptypes.MsgUpdateParam) (*apptypes.MsgUpdateParamResponse, error) {
+// UpdateParam updates a single parameter in the application module and returns
+// all active parameters.
+// * Validates the request message and authority permissions
+// * Updates the specific parameter based on its name
+// * Delegates to UpdateParams to handle validation and persistence
+// * Returns both the current parameters and the scheduled parameter update
+func (k msgServer) UpdateParam(
+	ctx context.Context,
+	msg *apptypes.MsgUpdateParam,
+) (*apptypes.MsgUpdateParamResponse, error) {
 	logger := k.logger.With(
 		"method", "UpdateParam",
 		"param_name", msg.Name,
 	)
 
+	// Validate basic message structure and constraints
 	if err := msg.ValidateBasic(); err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
-	if k.GetAuthority() != msg.Authority {
-		return nil, status.Error(
-			codes.PermissionDenied,
-			apptypes.ErrAppInvalidSigner.Wrapf(
-				"invalid authority; expected %s, got %s",
-				k.GetAuthority(), msg.Authority,
-			).Error(),
-		)
-	}
-
+	// Get current parameters to apply the single parameter update
 	params := k.GetParams(ctx)
 
+	// Update the specific parameter based on its name
 	switch msg.Name {
 	case apptypes.ParamMaxDelegatedGateways:
-		logger = logger.With("param_value", msg.GetAsUint64())
-
+		logger = logger.With("max_delegated_gateways", msg.GetAsUint64())
 		params.MaxDelegatedGateways = msg.GetAsUint64()
-		if _, ok := msg.AsType.(*apptypes.MsgUpdateParam_AsUint64); !ok {
-			return nil, status.Error(
-				codes.InvalidArgument,
-				apptypes.ErrAppParamInvalid.Wrapf(
-					"unsupported value type for %s param: %T", msg.Name, msg.AsType,
-				).Error(),
-			)
-		}
-		maxDelegatedGateways := msg.GetAsUint64()
-
-		if err := apptypes.ValidateMaxDelegatedGateways(maxDelegatedGateways); err != nil {
-			return nil, status.Error(
-				codes.InvalidArgument,
-				apptypes.ErrAppParamInvalid.Wrapf(
-					"max_delegegated_gateways (%d): %s", maxDelegatedGateways, err,
-				).Error(),
-			)
-		}
-		params.MaxDelegatedGateways = maxDelegatedGateways
 	case apptypes.ParamMinStake:
-		logger = logger.With("param_value", msg.GetAsCoin())
+		logger = logger.With("min_stake", msg.GetAsCoin())
 		params.MinStake = msg.GetAsCoin()
 	default:
 		return nil, status.Error(
@@ -66,22 +48,24 @@ func (k msgServer) UpdateParam(ctx context.Context, msg *apptypes.MsgUpdateParam
 		)
 	}
 
-	// Perform a global validation on all params, which includes the updated param.
-	// This is needed to ensure that the updated param is valid in the context of all other params.
-	if err := params.Validate(); err != nil {
-		return nil, status.Error(codes.InvalidArgument, err.Error())
-
+	// Create a full params update message and delegate to UpdateParams
+	// This ensures:
+	// * Authority validation
+	// * Parameter constraints validation
+	msgUpdateParams := &apptypes.MsgUpdateParams{
+		Authority: k.GetAuthority(),
+		Params:    params,
+	}
+	response, err := k.UpdateParams(ctx, msgUpdateParams)
+	if err != nil {
+		logger.Error(fmt.Sprintf("ERROR: %s", err))
+		return nil, err
 	}
 
-	if err := k.SetParams(ctx, params); err != nil {
-		err = fmt.Errorf("unable to set params: %w", err)
-		logger.Error(err.Error())
-		return nil, status.Error(codes.Internal, err.Error())
-	}
-
-	updatedParams := k.GetParams(ctx)
-
+	// Return a response with both the current parameters and the scheduled update
+	// This allows the caller to see the current state and the scheduled change
 	return &apptypes.MsgUpdateParamResponse{
-		Params: &updatedParams,
+		Params:       response.Params,
+		ParamsUpdate: response.ParamsUpdate,
 	}, nil
 }

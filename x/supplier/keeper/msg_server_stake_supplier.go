@@ -57,10 +57,10 @@ func (k Keeper) createSupplier(
 	ctx context.Context,
 	msg *suppliertypes.MsgStakeSupplier,
 ) sharedtypes.Supplier {
-	sharedParams := k.sharedKeeper.GetParams(ctx)
+	sharedParamsUpdates := k.sharedKeeper.GetParamsUpdates(ctx)
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 	currentHeight := sdkCtx.BlockHeight()
-	nextSessionStartHeight := sharedtypes.GetNextSessionStartHeight(&sharedParams, currentHeight)
+	nextSessionStartHeight := sharedtypes.GetNextSessionStartHeight(sharedParamsUpdates, currentHeight)
 
 	supplier := sharedtypes.Supplier{
 		OwnerAddress:    msg.OwnerAddress,
@@ -276,10 +276,10 @@ func (k Keeper) updateSupplier(
 	supplier.Stake = msg.Stake
 	supplier.OwnerAddress = msg.OwnerAddress
 
-	sharedParams := k.sharedKeeper.GetParams(ctx)
+	sharedParamsUpdates := k.sharedKeeper.GetParamsUpdates(ctx)
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 	currentHeight := sdkCtx.BlockHeight()
-	nextSessionStartHeight := sharedtypes.GetNextSessionStartHeight(&sharedParams, currentHeight)
+	nextSessionStartHeight := sharedtypes.GetNextSessionStartHeight(sharedParamsUpdates, currentHeight)
 
 	// Mark all the supplier's service configurations as to be deactivated at the
 	// start of the next session.

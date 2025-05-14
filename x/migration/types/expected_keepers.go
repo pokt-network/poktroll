@@ -48,4 +48,5 @@ type ParamSubspace interface {
 
 type SharedKeeper interface {
 	GetParams(ctx context.Context) sharedtypes.Params
+	GetParamsUpdates(ctx context.Context) sharedtypes.ParamsHistory
 }

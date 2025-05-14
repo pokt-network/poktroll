@@ -42,6 +42,10 @@ const (
 	// MemStoreKey defines the in-memory store key
 	// - Used for volatile/in-memory storage
 	MemStoreKey = "mem_application"
+
+	// ParamsUpdateKeyPrefix defines the prefix for params updates.
+	// This is used to store params updates at a specific height.
+	ParamsUpdateKeyPrefix = "application_params_update/effective_height/"
 )
 
 // ParamsKey is the key for module parameters
@@ -126,6 +130,19 @@ func StringKey(strIndex string) []byte {
 
 	strIndexBz := []byte(strIndex)
 	key = append(key, strIndexBz...)
+	key = append(key, []byte("/")...)
+
+	return key
+}
+
+// IntKey converts an integer value to a byte slice for use in store keys
+// Appends a '/' separator to the end of the key for consistent prefix scanning
+func IntKey(intIndex int64) []byte {
+	var key []byte
+
+	heightBz := make([]byte, 8)
+	binary.BigEndian.PutUint64(heightBz, uint64(intIndex))
+	key = append(key, heightBz...)
 	key = append(key, []byte("/")...)
 
 	return key

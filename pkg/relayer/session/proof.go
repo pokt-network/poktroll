@@ -87,19 +87,14 @@ func (rs *relayerSessionsManager) waitForEarliestSubmitProofsHeightAndGeneratePr
 
 	logger := rs.logger.With("session_end_height", sessionEndHeight)
 
-	// TODO_MAINNET(#543): We don't really want to have to query the params for every method call.
-	// Once `ModuleParamsClient` is implemented, use its replay observable's `#Last()` method
-	// to get the most recently (asynchronously) observed (and cached) value.
-	// TODO_MAINNET(@bryanchriswhite,#543): We also don't really want to use the current value of the params. Instead,
-	// we should be using the value that the params had for the session which includes queryHeight.
-	sharedParams, err := rs.sharedQueryClient.GetParams(ctx)
+	sharedParamsUpdates, err := rs.sharedQueryClient.GetParamsUpdates(ctx)
 	if err != nil {
 		logger.Error().Err(err).Msg("failed to get shared params")
 		failedSubmitProofsSessionsCh <- sessionTrees
 		return nil
 	}
 
-	proofWindowOpenHeight := sharedtypes.GetProofWindowOpenHeight(sharedParams, sessionEndHeight)
+	proofWindowOpenHeight := sharedtypes.GetProofWindowOpenHeight(sharedParamsUpdates, sessionEndHeight)
 
 	// we wait for proofWindowOpenHeight to be received before proceeding since we need
 	// its hash to seed the pseudo-random number generator for the proof submission
@@ -125,7 +120,7 @@ func (rs *relayerSessionsManager) waitForEarliestSubmitProofsHeightAndGeneratePr
 	// Get the earliest proof commit height for this supplier.
 	supplierOperatorAddr := sessionTrees[0].GetSupplierOperatorAddress()
 	earliestSupplierProofsCommitHeight := sharedtypes.GetEarliestSupplierProofCommitHeight(
-		sharedParams,
+		sharedParamsUpdates,
 		sessionEndHeight,
 		proofsWindowOpenBlock.Hash(),
 		supplierOperatorAddr,
@@ -181,13 +176,13 @@ func (rs *relayerSessionsManager) newMapProveSessionsFn(
 		// - Avoid making assumptions about shared properties
 		// - Eliminate constant queries for sharedParams
 		sessionEndHeight := sessionTrees[0].GetSessionHeader().GetSessionEndBlockHeight()
-		sharedParams, err := rs.sharedQueryClient.GetParams(ctx)
+		sharedParamsUpdates, err := rs.sharedQueryClient.GetParamsUpdates(ctx)
 		if err != nil {
 			failedSubmitProofSessionsCh <- sessionTrees
 			rs.logger.Error().Err(err).Msg("failed to get shared params")
 			return either.Error[[]relayer.SessionTree](err), false
 		}
-		proofWindowCloseHeight := sharedtypes.GetProofWindowCloseHeight(sharedParams, sessionEndHeight)
+		proofWindowCloseHeight := sharedtypes.GetProofWindowCloseHeight(sharedParamsUpdates, sessionEndHeight)
 
 		// Submit proofs for each supplier operator address in `sessionTrees`.
 		if err := supplierClient.SubmitProofs(ctx, proofWindowCloseHeight, proofMsgs...); err != nil {
@@ -295,12 +290,13 @@ func (rs *relayerSessionsManager) isProofRequired(
 	// Create the claim object and use its methods to determine if a proof is required.
 	claim := claimFromSessionTree(sessionTree)
 
-	proofParams, err := rs.proofQueryClient.GetParams(ctx)
+	sessionEndHeight := claim.GetSessionHeader().GetSessionEndBlockHeight()
+	proofParams, err := rs.proofQueryClient.GetParamsAtHeight(ctx, sessionEndHeight)
 	if err != nil {
 		return false, err
 	}
 
-	sharedParams, err := rs.sharedQueryClient.GetParams(ctx)
+	sharedParams, err := rs.sharedQueryClient.GetParamsAtHeight(ctx, sessionEndHeight)
 	if err != nil {
 		return false, err
 	}

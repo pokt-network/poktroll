@@ -24,8 +24,8 @@ func TestClaim_Show(t *testing.T) {
 	numSuppliers := 3
 	numApps := 3
 
-	sharedParams := sharedtypes.DefaultParams()
-	net, claims, clientCtx := networkWithClaimObjects(t, numSessions, numApps, numSuppliers, &sharedParams)
+	sharedParamsHistory := sharedtypes.InitialParamsHistory(sharedtypes.DefaultParams())
+	net, claims, clientCtx := networkWithClaimObjects(t, numSessions, numApps, numSuppliers, sharedParamsHistory)
 
 	commonArgs := []string{
 		fmt.Sprintf("--%s=json", cometcli.OutputFlag),
@@ -137,6 +137,8 @@ func TestClaim_List(t *testing.T) {
 		ComputeUnitsToTokensMultiplier:     42,
 	}
 
+	sharedParamsHistory := sharedtypes.InitialParamsHistory(*sharedParams)
+
 	// TODO_HACK(@Olshansk): Due to the bug found in `networkWithClaimObjects`, this
 	// is a temporary workaround instead of setting numSessions to its own
 	// independent constant, which requires us to temporarily align the
@@ -160,7 +162,7 @@ func TestClaim_List(t *testing.T) {
 			t.Errorf("Test panicked: %s", r)
 		}
 	}()
-	net, claims, clientCtx := networkWithClaimObjects(t, numSessions, numSuppliers, numApps, sharedParams)
+	net, claims, clientCtx := networkWithClaimObjects(t, numSessions, numSuppliers, numApps, sharedParamsHistory)
 
 	prepareArgs := func(next []byte, offset, limit uint64, total bool) []string {
 		args := []string{

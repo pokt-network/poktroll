@@ -81,6 +81,59 @@ func (s *suite) parseParam(table gocuke.DataTable, rowIdx int) paramAny {
 	}
 }
 
+// parseParamValue parses a param value based on its type string.
+// It returns the parsed value as an interface{}.
+func (s *suite) parseParamValue(typeStr string, value any) any {
+	s.Helper()
+
+	switch typeStr {
+	case "string":
+		return value.(string)
+	case "int64":
+		if intValue, ok := value.(int64); ok {
+			return intValue
+		}
+		if strValue, ok := value.(string); ok {
+			intValue, err := strconv.ParseInt(strValue, 10, 64)
+			require.NoError(s, err, "failed to parse string to int64")
+			return intValue
+		}
+	case "uint64":
+		if uintValue, ok := value.(uint64); ok {
+			return uintValue
+		}
+		if strValue, ok := value.(string); ok {
+			uintValue, err := strconv.ParseUint(strValue, 10, 64)
+			require.NoError(s, err, "failed to parse string to uint64")
+			return uintValue
+		}
+	case "bytes":
+		return []byte(value.(string))
+	case "float":
+		if floatValue, ok := value.(float64); ok {
+			return floatValue
+		}
+		if strValue, ok := value.(string); ok {
+			floatValue, err := strconv.ParseFloat(strValue, 64)
+			require.NoError(s, err, "failed to parse string to float64")
+			return floatValue
+		}
+	case "coin":
+		coinAny, ok := value.(map[string]any)
+		require.True(s, ok, "expected map[string]any value")
+		amountStr, ok := coinAny["amount"].(string)
+		require.True(s, ok, "expected string amount value")
+		amount, err := strconv.ParseInt(amountStr, 10, 64)
+		require.NoError(s, err, "failed to parse amount string to int64")
+		coin := cosmostypes.NewCoin(volatile.DenomuPOKT, math.NewInt(amount))
+		return &coin
+	default:
+		s.Fatalf("ERROR: unexpected param type %q", typeStr)
+	}
+
+	return nil
+}
+
 // paramsMapToMsgUpdateParams converts a paramsAnyMap into a MsgUpdateParams, which
 // it returns as a proto.Message/cosmostypes.Msg interface type.
 func (s *suite) paramsMapToMsgUpdateParams(moduleName string, paramsMap paramsAnyMap) (msgUpdateParams cosmostypes.Msg) {

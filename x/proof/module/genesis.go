@@ -18,7 +18,7 @@ func InitGenesis(ctx context.Context, k keeper.Keeper, genState types.GenesisSta
 		k.UpsertProof(ctx, proof)
 	}
 	// this line is used by starport scaffolding # genesis/module/init
-	if err := k.SetParams(ctx, genState.Params); err != nil {
+	if err := k.SetInitialParams(ctx, genState.Params); err != nil {
 		panic(err)
 	}
 }

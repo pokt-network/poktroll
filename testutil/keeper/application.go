@@ -94,10 +94,21 @@ func NewApplicationModuleKeepers(t testing.TB) (ApplicationModuleKeepers, contex
 		},
 	).AnyTimes()
 
+	sharedParamsHistory := sharedtypes.InitialParamsHistory(sharedtypes.DefaultParams())
 	mockSharedKeeper := mocks.NewMockSharedKeeper(ctrl)
 	mockSharedKeeper.EXPECT().GetParams(gomock.Any()).
-		DoAndReturn(func(_ context.Context) sharedtypes.Params {
-			return sharedtypes.DefaultParams()
+		DoAndReturn(func(ctx context.Context) sharedtypes.Params {
+			sdkCtx := sdk.UnwrapSDKContext(ctx)
+			currentHeight := sdkCtx.BlockHeight()
+			return sharedParamsHistory.GetParamsAtHeight(currentHeight)
+		}).
+		AnyTimes()
+	mockSharedKeeper.EXPECT().GetParamsUpdates(gomock.Any()).
+		Return(sharedParamsHistory).
+		AnyTimes()
+	mockSharedKeeper.EXPECT().GetParamsAtHeight(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, queryHeight int64) sharedtypes.Params {
+			return sharedParamsHistory.GetParamsAtHeight(queryHeight)
 		}).
 		AnyTimes()
 	mockSharedKeeper.EXPECT().GetSessionEndHeight(gomock.Any(), gomock.Any()).
@@ -117,14 +128,14 @@ func NewApplicationModuleKeepers(t testing.TB) (ApplicationModuleKeepers, contex
 		mockSharedKeeper,
 	)
 
-	ctx := sdk.NewContext(stateStore, cmtproto.Header{}, false, log.NewNopLogger())
-
-	// Initialize params
-	require.NoError(t, appKeeper.SetParams(ctx, types.DefaultParams()))
+	sdkCtx := sdk.NewContext(stateStore, cmtproto.Header{}, false, log.NewNopLogger())
 
 	// Move block height to 1 to get a non zero session end height
-	sdkCtx := sdk.UnwrapSDKContext(ctx)
-	ctx = sdkCtx.WithBlockHeight(1)
+	ctx := sdkCtx.WithBlockHeight(1)
+
+	// Initialize params
+	appParams := types.DefaultParams()
+	require.NoError(t, appKeeper.SetInitialParams(ctx, appParams))
 
 	applicationModuleKeepers := ApplicationModuleKeepers{
 		Keeper:       &appKeeper,

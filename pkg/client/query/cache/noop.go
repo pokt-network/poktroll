@@ -17,23 +17,25 @@ func NewNoOpParamsCache[T any]() *noOpParamsCache[T] {
 	return &noOpParamsCache[T]{}
 }
 
-// Get returns the value stored in the cache.
+// GetLatest returns the latest value stored in the cache.
 // A boolean is returned as the second value to indicate if the value was found in the cache.
-func (c *noOpParamsCache[T]) Get() (value T, found bool) {
+func (c *noOpParamsCache[T]) GetLatest() (value T, found bool) {
 	var zeroValue T
 	return zeroValue, false
 }
 
-// Set stores a value in the cache.
-func (c *noOpParamsCache[T]) Set(_ T) {
+func (c *noOpParamsCache[T]) GetAllUpdates() (valueHistory cache.CacheValueHistory[T], found bool) {
+	return nil, false
 }
 
-// Delete removes the value from the cache.
-func (c *noOpParamsCache[T]) Delete() {
+// GetAtHeight returns the value stored in the cache at the given height.
+func (c *noOpParamsCache[T]) GetAtHeight(height int64) (value T, found bool) {
+	var zeroValue T
+	return zeroValue, false
 }
 
-// Clear empties the cache.
-func (c *noOpParamsCache[T]) Clear() {
+// Set stores a value in the cache at the given height.
+func (c *noOpParamsCache[T]) SetAtHeight(value T, height int64) {
 }
 
 // noOpKeyValueCache is a no-op implementation of a KeyValueCache.

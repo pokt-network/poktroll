@@ -50,6 +50,7 @@ type ApplicationKeeper interface {
 	SetApplication(ctx context.Context, app apptypes.Application)
 	UnbondApplication(ctx context.Context, app *apptypes.Application) error
 	EndBlockerUnbondApplications(ctx context.Context) error
+	GetParamsAtHeight(ctx context.Context, queryHeight int64) apptypes.Params
 }
 
 type ProofKeeper interface {
@@ -60,6 +61,7 @@ type ProofKeeper interface {
 	ProofRequirementForClaim(ctx context.Context, claim *prooftypes.Claim) (prooftypes.ProofRequirementReason, error)
 	GetAllProofs(ctx context.Context) []prooftypes.Proof
 	GetParams(ctx context.Context) prooftypes.Params
+	GetParamsAtHeight(ctx context.Context, queryHeight int64) prooftypes.Params
 
 	// Setters
 	RemoveClaim(ctx context.Context, sessionId, supplierOperatorAddr string)
@@ -70,16 +72,22 @@ type ProofKeeper interface {
 
 	// Only used for testing & simulation
 	ValidateSubmittedProofs(ctx cosmostypes.Context) (numValidProofs, numInvalidProofs uint64, err error)
+	SetInitialParams(ctx context.Context, params prooftypes.Params) error
 }
 
 type SharedKeeper interface {
 	// Getters
 	GetParams(ctx context.Context) sharedtypes.Params
+	GetParamsAtHeight(ctx context.Context, queryHeight int64) sharedtypes.Params
+	GetParamsUpdates(ctx context.Context) sharedtypes.ParamsHistory
 	GetSessionEndHeight(ctx context.Context, queryHeight int64) int64
 	GetProofWindowCloseHeight(ctx context.Context, queryHeight int64) int64
 
 	// Setters
 	SetParams(ctx context.Context, params sharedtypes.Params) error
+
+	// Only used for testing & simulation
+	SetInitialParams(ctx context.Context, params sharedtypes.Params) error
 }
 
 type SessionKeeper interface {
@@ -87,6 +95,7 @@ type SessionKeeper interface {
 	GetSession(context.Context, *sessiontypes.QueryGetSessionRequest) (*sessiontypes.QueryGetSessionResponse, error)
 	GetBlockHash(ctx context.Context, height int64) []byte
 	GetParams(ctx context.Context) sessiontypes.Params
+	GetParamsAtHeight(ctx context.Context, queryHeight int64) sessiontypes.Params
 
 	// Setters
 	StoreBlockHash(ctx context.Context)
@@ -95,6 +104,7 @@ type SessionKeeper interface {
 type SupplierKeeper interface {
 	// Getters
 	GetParams(ctx context.Context) suppliertypes.Params
+	GetParamsAtHeight(ctx context.Context, queryHeight int64) suppliertypes.Params
 	GetSupplier(ctx context.Context, supplierOperatorAddr string) (supplier sharedtypes.Supplier, found bool)
 	GetDehydratedSupplier(ctx context.Context, supplierOperatorAddr string) (supplier sharedtypes.Supplier, found bool)
 	GetSupplierActiveServiceConfig(ctx context.Context, supplier *sharedtypes.Supplier, serviceId string) (activeServiceConfigs []*sharedtypes.SupplierServiceConfig)
@@ -109,11 +119,15 @@ type ServiceKeeper interface {
 	GetService(ctx context.Context, serviceID string) (sharedtypes.Service, bool)
 	GetRelayMiningDifficulty(ctx context.Context, serviceID string) (servicetypes.RelayMiningDifficulty, bool)
 	GetParams(ctx context.Context) servicetypes.Params
+	GetParamsAtHeight(ctx context.Context, queryHeight int64) servicetypes.Params
 
 	// Setters
 	UpdateRelayMiningDifficulty(ctx context.Context, relaysPerServiceMap map[string]uint64) (map[string]servicetypes.RelayMiningDifficulty, error)
 	SetService(ctx context.Context, service sharedtypes.Service)
 	SetParams(ctx context.Context, params servicetypes.Params) error
+
+	// Only used for testing & simulation
+	SetInitialParams(ctx context.Context, params servicetypes.Params) error
 }
 
 type MigrationKeeper interface {

@@ -19,9 +19,11 @@ import (
 const _ = grpc.SupportPackageIsVersion8
 
 const (
-	Query_Params_FullMethodName       = "/pocket.supplier.Query/Params"
-	Query_Supplier_FullMethodName     = "/pocket.supplier.Query/Supplier"
-	Query_AllSuppliers_FullMethodName = "/pocket.supplier.Query/AllSuppliers"
+	Query_Params_FullMethodName         = "/pocket.supplier.Query/Params"
+	Query_ParamsAtHeight_FullMethodName = "/pocket.supplier.Query/ParamsAtHeight"
+	Query_ParamsUpdates_FullMethodName  = "/pocket.supplier.Query/ParamsUpdates"
+	Query_Supplier_FullMethodName       = "/pocket.supplier.Query/Supplier"
+	Query_AllSuppliers_FullMethodName   = "/pocket.supplier.Query/AllSuppliers"
 )
 
 // QueryClient is the client API for Query service.
@@ -30,8 +32,12 @@ const (
 //
 // Query defines the gRPC querier service.
 type QueryClient interface {
-	// Parameters queries the parameters of the module.
+	// Params queries the parameters of the module.
 	Params(ctx context.Context, in *QueryParamsRequest, opts ...grpc.CallOption) (*QueryParamsResponse, error)
+	// ParamsAtHeight queries the parameters of the module at a given height.
+	ParamsAtHeight(ctx context.Context, in *QueryParamsAtHeightRequest, opts ...grpc.CallOption) (*QueryParamsResponse, error)
+	// ParamsUpdates queries the parameters history of the module.
+	ParamsUpdates(ctx context.Context, in *QueryParamsUpdatesRequest, opts ...grpc.CallOption) (*QueryParamsUpdatesResponse, error)
 	// Queries a list of Supplier items.
 	Supplier(ctx context.Context, in *QueryGetSupplierRequest, opts ...grpc.CallOption) (*QueryGetSupplierResponse, error)
 	AllSuppliers(ctx context.Context, in *QueryAllSuppliersRequest, opts ...grpc.CallOption) (*QueryAllSuppliersResponse, error)
@@ -49,6 +55,26 @@ func (c *queryClient) Params(ctx context.Context, in *QueryParamsRequest, opts .
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(QueryParamsResponse)
 	err := c.cc.Invoke(ctx, Query_Params_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *queryClient) ParamsAtHeight(ctx context.Context, in *QueryParamsAtHeightRequest, opts ...grpc.CallOption) (*QueryParamsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(QueryParamsResponse)
+	err := c.cc.Invoke(ctx, Query_ParamsAtHeight_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *queryClient) ParamsUpdates(ctx context.Context, in *QueryParamsUpdatesRequest, opts ...grpc.CallOption) (*QueryParamsUpdatesResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(QueryParamsUpdatesResponse)
+	err := c.cc.Invoke(ctx, Query_ParamsUpdates_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -81,8 +107,12 @@ func (c *queryClient) AllSuppliers(ctx context.Context, in *QueryAllSuppliersReq
 //
 // Query defines the gRPC querier service.
 type QueryServer interface {
-	// Parameters queries the parameters of the module.
+	// Params queries the parameters of the module.
 	Params(context.Context, *QueryParamsRequest) (*QueryParamsResponse, error)
+	// ParamsAtHeight queries the parameters of the module at a given height.
+	ParamsAtHeight(context.Context, *QueryParamsAtHeightRequest) (*QueryParamsResponse, error)
+	// ParamsUpdates queries the parameters history of the module.
+	ParamsUpdates(context.Context, *QueryParamsUpdatesRequest) (*QueryParamsUpdatesResponse, error)
 	// Queries a list of Supplier items.
 	Supplier(context.Context, *QueryGetSupplierRequest) (*QueryGetSupplierResponse, error)
 	AllSuppliers(context.Context, *QueryAllSuppliersRequest) (*QueryAllSuppliersResponse, error)
@@ -95,6 +125,12 @@ type UnimplementedQueryServer struct {
 
 func (UnimplementedQueryServer) Params(context.Context, *QueryParamsRequest) (*QueryParamsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Params not implemented")
+}
+func (UnimplementedQueryServer) ParamsAtHeight(context.Context, *QueryParamsAtHeightRequest) (*QueryParamsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ParamsAtHeight not implemented")
+}
+func (UnimplementedQueryServer) ParamsUpdates(context.Context, *QueryParamsUpdatesRequest) (*QueryParamsUpdatesResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ParamsUpdates not implemented")
 }
 func (UnimplementedQueryServer) Supplier(context.Context, *QueryGetSupplierRequest) (*QueryGetSupplierResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Supplier not implemented")
@@ -129,6 +165,42 @@ func _Query_Params_Handler(srv interface{}, ctx context.Context, dec func(interf
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(QueryServer).Params(ctx, req.(*QueryParamsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Query_ParamsAtHeight_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(QueryParamsAtHeightRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(QueryServer).ParamsAtHeight(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Query_ParamsAtHeight_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(QueryServer).ParamsAtHeight(ctx, req.(*QueryParamsAtHeightRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Query_ParamsUpdates_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(QueryParamsUpdatesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(QueryServer).ParamsUpdates(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Query_ParamsUpdates_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(QueryServer).ParamsUpdates(ctx, req.(*QueryParamsUpdatesRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -179,6 +251,14 @@ var Query_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Params",
 			Handler:    _Query_Params_Handler,
+		},
+		{
+			MethodName: "ParamsAtHeight",
+			Handler:    _Query_ParamsAtHeight_Handler,
+		},
+		{
+			MethodName: "ParamsUpdates",
+			Handler:    _Query_ParamsUpdates_Handler,
 		},
 		{
 			MethodName: "Supplier",

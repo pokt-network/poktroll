@@ -131,9 +131,9 @@ func TestEnsureValidProof_Error(t *testing.T) {
 	)
 
 	// Advance the block height to the earliest claim commit height.
-	sharedParams := keepers.SharedKeeper.GetParams(ctx)
+	sharedParamsUpdates := keepers.SharedKeeper.GetParamsUpdates(ctx)
 	claimMsgHeight := sharedtypes.GetEarliestSupplierClaimCommitHeight(
-		&sharedParams,
+		sharedParamsUpdates,
 		validSessionHeader.GetSessionEndBlockHeight(),
 		blockHeaderHash,
 		supplierOperatorAddr,
@@ -759,7 +759,7 @@ func TestEnsureValidProof_Error(t *testing.T) {
 
 			// Advance the block height to the proof path seed height.
 			earliestSupplierProofCommitHeight := sharedtypes.GetEarliestSupplierProofCommitHeight(
-				&sharedParams,
+				sharedParamsUpdates,
 				proof.GetSessionHeader().GetSessionEndBlockHeight(),
 				blockHeaderHash,
 				proof.GetSupplierOperatorAddress(),

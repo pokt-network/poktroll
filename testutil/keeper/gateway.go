@@ -43,8 +43,10 @@ func GatewayKeeper(t testing.TB) (keeper.Keeper, context.Context) {
 	mockBankKeeper.EXPECT().SendCoinsFromAccountToModule(gomock.Any(), gomock.Any(), types.ModuleName, gomock.Any()).AnyTimes()
 	mockBankKeeper.EXPECT().SendCoinsFromModuleToAccount(gomock.Any(), types.ModuleName, gomock.Any(), gomock.Any()).AnyTimes()
 
+	sharedParamsHistory := sharedtypes.InitialParamsHistory(sharedtypes.DefaultParams())
 	mockSharedKeeper := mocks.NewMockSharedKeeper(ctrl)
-	mockSharedKeeper.EXPECT().GetParams(gomock.Any()).Return(sharedtypes.DefaultParams()).AnyTimes()
+	mockSharedKeeper.EXPECT().GetParams(gomock.Any()).Return(sharedParamsHistory.GetCurrentParams()).AnyTimes()
+	mockSharedKeeper.EXPECT().GetParamsUpdates(gomock.Any()).Return(sharedParamsHistory).AnyTimes()
 	mockSharedKeeper.EXPECT().GetSessionEndHeight(gomock.Any(), gomock.Any()).Return(int64(sharedtypes.DefaultNumBlocksPerSession)).AnyTimes()
 
 	k := keeper.NewKeeper(
@@ -56,10 +58,13 @@ func GatewayKeeper(t testing.TB) (keeper.Keeper, context.Context) {
 		mockSharedKeeper,
 	)
 
-	ctx := sdk.NewContext(stateStore, cmtproto.Header{}, false, log.NewNopLogger())
+	sdkCtx := sdk.NewContext(stateStore, cmtproto.Header{}, false, log.NewNopLogger())
+
+	// Move block height to 1 to get a non zero session end height
+	ctx := SetBlockHeight(sdkCtx, 1)
 
 	// Initialize params
-	require.NoError(t, k.SetParams(ctx, types.DefaultParams()))
+	require.NoError(t, k.SetInitialParams(ctx, types.DefaultParams()))
 
 	return k, ctx
 }
