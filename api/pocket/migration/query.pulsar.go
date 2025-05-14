@@ -3819,13 +3819,10 @@ func (x *QueryParamsResponse) GetParams() *Params {
 	return nil
 }
 
-// QueryMorseClaimableAccountRequest is used to query for MorseClaimableAccounts.
+// QueryMorseClaimableAccountRequest is used to query for MorseClaimableAccounts by Morse address.
 // If the shannon_address (or claimed_at_height) for any given MorseClaimableAccount
-// is empty, it has not been claimed. MorseClaimableAccounts can be thought of as a
-// join table between Morse accounts and Shannon accounts, where all Morse accounts
-// (at the time of import to Shannon) are used to pre-populate the join records.
-// See this mermaid entity relationship diagram for a conceptual representation:
-// https://mermaid.live/edit#pako:eNqdUl1rgzAU_SvhPm1gRWv9aF439lIGg70NYaTmTt1MUpII69T_vqhdH1rsw0IIuTcn55yb3A4KxREooH6sWamZyCVxQyht8J0VhWqlNaSbs-MwVteyJIxzjcaQl918NORy3piKSankv-7OqkXDasH2zU39k8ET09PuCnD2cQG5EDtL9P1q1ffLFijJYY-NkqUhVuWwUO1E092mqZghgskjuat99MmEQn4_ci5Y833VXWuNXEqiszPTfapaEltp1ZbVooMcwAOBWrCau3-fXjYHW6HAHEZGzvTXaGVwONZa9XqUBVCrW_SgPXBm8dQpQD9YY1z2wOSbUuIP5EKgHXwDXQeRH2XZOg2SJM1it3pwBJpFfhYEbiabbRyn23Dw4GciCPzU5eMoTdIkC8N1mHmAvLZKP89tOnWrB1OJZ_1Sj6WcAo2So34YawW6jTfDL5bm9Is
+// is empty, it has not been claimed.
+// See the comments for MorseClaimableAccount for more context.
 type QueryMorseClaimableAccountRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -3896,6 +3893,10 @@ func (x *QueryMorseClaimableAccountResponse) GetMorseClaimableAccount() *MorseCl
 	return nil
 }
 
+// QueryAllMorseClaimableAccountsRequest is used to query for ALL MorseClaimableAccounts (paginated.
+// If the shannon_address (or claimed_at_height) for any given MorseClaimableAccount
+// is empty, it has not been claimed.
+// See the comments for MorseClaimableAccount for more context.
 type QueryAllMorseClaimableAccountRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -3974,6 +3975,10 @@ func (x *QueryAllMorseClaimableAccountResponse) GetPagination() *v1beta1.PageRes
 	return nil
 }
 
+// QueryMorseClaimableAccountRequest is used to query for MorseClaimableAccounts by Morse address.
+// If the shannon_address (or claimed_at_height) for any given MorseClaimableAccount
+// is empty, it has not been claimed.
+// See the comments for MorseClaimableAccount for more context.
 type QueryMorseClaimableAccountsByShannonAddressRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache

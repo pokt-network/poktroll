@@ -1334,6 +1334,12 @@ func (x *MorseAccountState) GetAccounts() []*MorseClaimableAccount {
 // They are intended to be created during MorseAccountState import (see: MsgImportMorseClaimableAccount).
 // It is created ONLY ONCE and NEVER deleted (per morse_src_address per network / re-genesis).
 // It is updated ONLY ONCE, when it is claimed (per morse_src_address per network / re-genesis).
+//
+// The MorseClaimableAccounts onchain list can be thought of as a join table between Morse accounts and
+// Shannon accounts, where all Morse accounts (at the time of import to Shannon) are used to pre-populate
+// the join records.
+// See this mermaid entity relationship diagram for a conceptual representation:
+// https://mermaid.live/edit#pako:eNqdUstqwzAQ_BWxpxYcY8eNH7q29BIKhd6KISjW1nZrSUGSoantf69sJzk0OIcuQmhXo5lZsR0UiiNQQP1Us1IzkUviQihtcMeKQrXSGtLN1TGM1bUsCeNcozHkdTtfDbmcD6ZiUir5r7ezatGwWrB9c1N_hhpd7M5sz9sr0NkLR2OvcH9UL1p9v1r1_bIXSnLYY6NkaYhVOSy0PdF0t2kqZohg8kjuah99MqGQ34-cC9Z8X3XXWiOXkujszHSfqpbEVlq1ZbXoIAfwQKAWrOZuAKYvzsFWKDCHkZEz_TVaGRyOtVa9HWUB1OoWPWgPnFk8jQzQD9YYVz0w-a6UOINcCrSDb6DrIPKjNF0nQRwn6cbtHhyBppGfBoFb8UO22SRZOHjwMxEEfuLqmyiJkzgNw3WYeoC8tkq_zPM6ja0HU4sX_VKPrZwSjZKjfhx7BZplwfALwlb4QQ
 type MorseClaimableAccount struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
