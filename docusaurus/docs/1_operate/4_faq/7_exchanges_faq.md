@@ -2,10 +2,11 @@
 sidebar_position: 7
 title: Exchanges FAQ
 ---
+
 ## Terminology
 
-- **Morse**: The *current* version of Pocket Network that your exchange is integrated with.
-- **Shannon**: The *upcoming* version of Pocket Network that will replace Morse and become the new version of the chain.
+- **Morse**: The _current_ version of Pocket Network that your exchange is integrated with.
+- **Shannon**: The _upcoming_ version of Pocket Network that will replace Morse and become the new version of the chain.
 - **Foundation**: The Pocket Network Foundation, which is responsible for the migration from an operational perspective.
 - **Grove**: The official labs team for Pocket Network that is responsible for the migration from a technical perspective.
 
@@ -79,5 +80,6 @@ There will be a 14-day window prior to the migration where exchanges will need t
 - Notify the Foundation that you have completed the migration.
 
 ## Communication
-- We have a telegram group with each exchange and all relevant Foundation and Grove personnel are in the US-East time zone. 
+
+- We have a telegram group with each exchange and all relevant Foundation and Grove personnel are in the US-East time zone.
 - Please reach out in our respective telegram group to ask questions or to notify us of your progress.
