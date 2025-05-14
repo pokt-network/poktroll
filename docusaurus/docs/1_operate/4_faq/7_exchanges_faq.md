@@ -57,12 +57,12 @@ This document was last updated on 05/14/2025.
 
 ## What **IS NOT** Changing?
 
-| Category          | Details                                                                                                                                                                                                                                                      |
-| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Network Name      | **Pocket Network**                                                                                                                                                                                                                                           |
-| Chain Ticker      | **$POKT**                                                                                                                                                                                                                                                    |
-| Liquidity & State | - Snapshot of Morse state during a 14-day migration window<br>- 1:1 migration to Shannon                                                                                                                                                                     |
-| Tokenomics        | - [Mint = Burn model launched April 2025](https://forum.pokt.network/t/protocol-economics-parameters-for-the-shannon-upgrade/5490)<br>- Weekly manual burning (track at [pokt.money](https://pokt.money))<br>- After migration, burning will be in real time |
+| Category          | Details                                                                                                                                                                                                                                                            |
+| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Network Name      | **Pocket Network**                                                                                                                                                                                                                                                 |
+| Chain Ticker      | **$POKT**                                                                                                                                                                                                                                                          |
+| Liquidity & State | - Snapshot of Morse state during a 14-day migration window <br/> - 1:1 migration to Shannon                                                                                                                                                                        |
+| Tokenomics        | - [Mint = Burn model launched April 2025](https://forum.pokt.network/t/protocol-economics-parameters-for-the-shannon-upgrade/5490) <br/> - Weekly manual burning (track at [pokt.money](https://pokt.money)) <br/> - After migration, burning will be in real time |
 
 ---
 
@@ -88,11 +88,11 @@ This document was last updated on 05/14/2025.
 
 ## Actions Exchanges Must Take (Pre-Migration)
 
-| Action                | How-To / Links                                                                                                                                                                                        |
-| --------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Create New Wallet** | - [pocketd CLI tool](https://dev.poktroll.com/explore/account_management/create_new_account_cli)<br>- [Keplr Wallet](https://www.keplr.app/)<br>- [Soothe Vault](https://trustsoothe.io/)             |
-| **Integrate Node**    | - [Full Node Cheatsheet](https://dev.poktroll.com/operate/cheat_sheets/full_node_cheatsheet)<br>- Or get Foundation RPC endpoint from [Grove](https://portal.grove.city) (DM Jinx/Arthur in Telegram) |
-| **Claim Tokens**      | - CLI: [pocketd CLI tool](https://dev.poktroll.com/explore/morse_migration/claiming_account)<br>- UI: Website (Coming Soon)                                                                           |
+| Action                | How-To / Links                                                                                                                                                                                         |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Create New Wallet** | - [pocketd CLI tool](https://dev.poktroll.com/explore/account_management/create_new_account_cli) <br/> - [Keplr Wallet](https://www.keplr.app/) <br/> - [Soothe Vault](https://trustsoothe.io/)        |
+| **Integrate Node**    | - [Full Node Cheatsheet](https://dev.poktroll.com/operate/cheat_sheets/full_node_cheatsheet) <br/> Or get Foundation RPC endpoint from [Grove](https://portal.grove.city) (DM Jinx/Arthur in Telegram) |
+| **Claim Tokens**      | - CLI: [pocketd CLI tool](https://dev.poktroll.com/explore/morse_migration/claiming_account) <br/> - UI: Website (Coming Soon)                                                                         |
 
 :::warning TODO(Grove): Coming Soon
 
