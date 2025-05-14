@@ -54,7 +54,7 @@ func (k Keeper) MorseClaimableAccount(
 
 	morseClaimableAccount, found := k.GetMorseClaimableAccount(
 		ctx,
-		req.Address,
+		req.MorseAddress,
 	)
 	if !found {
 		return nil, status.Error(codes.NotFound, "not found")

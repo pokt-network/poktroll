@@ -114,7 +114,7 @@ func (s *MigrationModuleSuite) QueryMorseClaimableAccount(
 	morseClaimableAcctRes, err := morseAccountQuerier.MorseClaimableAccount(
 		s.SdkCtx(),
 		&migrationtypes.QueryMorseClaimableAccountRequest{
-			Address: morseSrcAddr,
+			MorseAddress: morseSrcAddr,
 		},
 	)
 	require.NoError(t, err)
