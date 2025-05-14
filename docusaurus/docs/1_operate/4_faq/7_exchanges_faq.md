@@ -62,7 +62,7 @@ This document was last updated on 05/14/2025.
 | Network Name      | **Pocket Network**                                                                                                                                                                                                                                                 |
 | Chain Ticker      | **$POKT**                                                                                                                                                                                                                                                          |
 | Liquidity & State | - Snapshot of Morse state during a 14-day migration window <br/> - 1:1 migration to Shannon                                                                                                                                                                        |
-| Tokenomics        | - [Mint = Burn model launched April 2025](https://forum.pokt.network/t/protocol-economics-parameters-for-the-shannon-upgrade/5490) <br/> - Weekly manual burning (track at [pokt.money](https://pokt.money)) <br/> - After migration, burning will be in real time |
+| Tokenomics        | - [Mint = Burn model launched April 2025](https://forum.pokt.network/t/protocol-economics-parameters-for-the-shannon-upgrade/5490) <br/> - Weekly manual burning (track at [pokt.money](https://pokt.money)) <br/> - After migration, burning will occur in real time |
 
 ---
 
