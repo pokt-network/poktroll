@@ -45,7 +45,7 @@ This document was last updated on 05/14/2025.
 
 ## Background and Action Items for Exchanges
 
-[Pocket Network](https://pocket.network) is migrating from Morse to Shannon (consensus-breaking, non-backwards-compatible upgrade) before end of Q2.
+[Pocket Network](https://pocket.network) is migrating from Morse to Shannon (consensus-breaking, non-backwards-compatible upgrade) before the end of Q2.
 
 **Exchanges must:**
 
