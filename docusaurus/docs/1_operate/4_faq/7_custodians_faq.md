@@ -66,7 +66,7 @@ This document was last updated on 05/14/2025.
 
 ---
 
-## What **IS** Changing? (What You Must Do)
+## What **IS** Changing?
 
 ### Accounts/Wallets
 
