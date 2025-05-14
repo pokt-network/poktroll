@@ -100,7 +100,7 @@ This document was last updated on 05/14/2025.
 - Pocket specific tutorial on using the Cosmos multisig wallets
 - Video tutorial on claiming tokens
 
-Got ideas for other improvements? Please open an issue [here](https://github.com/pokt-network/poktroll/issues/new?template=issue.md).
+Have ideas for other improvements? Please open an issue [here](https://github.com/pokt-network/poktroll/issues/new?template=issue.md).
 
 :::
 
