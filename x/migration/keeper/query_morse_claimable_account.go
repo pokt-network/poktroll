@@ -2,9 +2,8 @@ package keeper
 
 import (
 	"context"
+	"fmt"
 
-	"cosmossdk.io/store/prefix"
-	"github.com/cosmos/cosmos-sdk/runtime"
 	"github.com/cosmos/cosmos-sdk/types/query"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -23,13 +22,11 @@ func (k Keeper) MorseClaimableAccountAll(
 
 	var morseClaimableAccounts []types.MorseClaimableAccount
 
-	store := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
-	morseClaimableAccountStore := prefix.NewStore(store, types.KeyPrefix(types.MorseClaimableAccountKeyPrefix))
-
-	pageRes, err := query.Paginate(morseClaimableAccountStore, req.Pagination, func(key []byte, value []byte) error {
+	macStore := k.getMorseClaimableAccountStore(ctx)
+	pageRes, err := query.Paginate(macStore, req.Pagination, func(key []byte, value []byte) error {
 		var morseClaimableAccount types.MorseClaimableAccount
 		if err := k.cdc.Unmarshal(value, &morseClaimableAccount); err != nil {
-			return err
+			return fmt.Errorf("unmarshalling: %w", err)
 		}
 
 		morseClaimableAccounts = append(morseClaimableAccounts, morseClaimableAccount)
@@ -37,7 +34,7 @@ func (k Keeper) MorseClaimableAccountAll(
 	})
 
 	if err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
+		return nil, status.Error(codes.Internal, fmt.Errorf("other: %w", err).Error())
 	}
 
 	return &types.QueryAllMorseClaimableAccountResponse{MorseClaimableAccount: morseClaimableAccounts, Pagination: pageRes}, nil
