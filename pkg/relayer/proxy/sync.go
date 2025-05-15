@@ -43,6 +43,51 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 	meta := relayRequest.Meta
 	serviceId := meta.SessionHeader.ServiceId
 
+	// Track whether the relay completes successfully to handle reward management
+	successfulRelay := false
+
+	// Define a cleanup function to handle reward management for failed relays
+	unclaimFailedRelayReward := func() {
+		if !successfulRelay {
+			// If the relay was not successful, revert any accumulated rewards.
+			// This handles several failure scenarios such as:
+			// - Request validation failures
+			// - Backend connection errors
+			// - Backend 5xx errors
+			if err := server.relayMeter.SetNonApplicableRelayReward(ctx, relayRequest.Meta); err != nil {
+				logger.Error().Err(err).Msg("failed to unclaim relay UPOKT")
+			}
+		}
+	}
+
+	// Register the cleanup function to run when this function exits.
+	// This ensures reward management happens regardless of how the function returns
+	// (regular return or error).
+	defer unclaimFailedRelayReward()
+
+	// Use an optimistic relay reward accumulation (before serving) for two critical reasons:
+	//
+	// 1. Rate Limiting:
+	//    - Prevents concurrent requests from bypassing rate limits
+	//    - Ensures proper accounting when multiple requests arrive simultaneously
+	//
+	// 2. Stake Verification:
+	//    - Immediately rejects relays if the application has insufficient stake
+	//    - Avoids wasting resources on requests that can't be properly rewarded
+	//
+	// Reward accumulation is reverted automatically when:
+	//    - The relay isn't successfully completed
+	//    - The relay isn't eligible for rewards
+	//
+	// This approach prioritizes accurate accounting over optimistic processing.
+	//
+	// TODO_CONSIDERATION: Consider implementing a delay queue instead of rejecting
+	// requests when application stake is insufficient. This would allow processing
+	// once earlier requests complete and free up stake.
+	if err = server.relayMeter.AccumulateRelayReward(ctx, meta); err != nil {
+		return relayRequest, err
+	}
+
 	var serviceConfig *config.RelayMinerSupplierServiceConfig
 
 	// Get the Service and serviceUrl corresponding to the originHost.
@@ -88,14 +133,6 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 
 	// Verify the relay request signature and session.
 	if err = server.relayAuthenticator.VerifyRelayRequest(ctx, relayRequest, serviceId); err != nil {
-		return relayRequest, err
-	}
-
-	// Optimistically accumulate the relay reward before actually serving the relay.
-	// The relay price will be deducted from the application's stake before the relay is served.
-	// If the relay comes out to be not reward / volume applicable, the miner will refund the
-	// claimed price back to the application.
-	if err = server.relayMeter.AccumulateRelayReward(ctx, meta); err != nil {
 		return relayRequest, err
 	}
 
@@ -164,12 +201,14 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 
 	relayer.RelaysSuccessTotal.With("service_id", serviceId).Add(1)
 
-	relayer.RelayResponseSizeBytes.With("service_id", serviceId).
-		Observe(float64(relay.Res.Size()))
+	relayer.RelayResponseSizeBytes.With("service_id", serviceId).Observe(float64(relay.Res.Size()))
 
 	// Emit the relay to the servedRelays observable.
 	server.servedRelaysProducer <- relay
 
+	// Mark the relay as successful. This prevents the deferred reward management
+	// function from reverting the accumulated rewards.
+	successfulRelay = true
 	return relayRequest, nil
 }
 
