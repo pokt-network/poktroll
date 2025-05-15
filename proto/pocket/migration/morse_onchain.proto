@@ -59,3 +59,9 @@ message MorseClaimableAccount {
   string morse_output_address = 9 [ (gogoproto.jsontag) = "morse_output_address,omitempty", (gogoproto.moretags) = "yaml:\"morse_output_address\""];
 }
 
+enum MorseSupplierClaimSignerType {
+  MORSE_SUPPLIER_CLAIM_SIGNER_TYPE_UNSPECIFIED = 0;
+  MORSE_SUPPLIER_CLAIM_SIGNER_TYPE_OPERATOR = 1;
+  MORSE_SUPPLIER_CLAIM_SIGNER_TYPE_OPERATOR_NON_CUSTODIAL = 2;
+  MORSE_SUPPLIER_CLAIM_SIGNER_TYPE_OWNER_NON_CUSTODIAL = 3;
+}

@@ -219,16 +219,22 @@ message MsgClaimMorseSupplier {
   // If empty, the shannon_owner_address will be used.
   // See: https://dev.poktroll.com/operate/configs/supplier_staking_config#staking-types.
   string shannon_operator_address = 2 [(cosmos_proto.scalar) = "cosmos.AddressString", (gogoproto.jsontag) = "shannon_operator_address"];
-  
-  // The ed25519 public key of the morse account with morse_src_address.
-  bytes morse_public_key = 7 [(gogoproto.casttype) = "github.com/cometbft/cometbft/crypto/ed25519.PubKey"];
 
-  reserved 3;
+  // TODO_IN_THIS_COMMIT: update...
+  // The ed25519 public key of EITHER the Morse node/supplier operator OR owner account.
+  // If the node/supplier is non-custodial the owner/output account MUST be claimed PRIOR TO
+  // claiming ANY corresponding Morse nodes/suppliers.
+  bytes morse_signer_public_key = 7 [(gogoproto.casttype) = "github.com/cometbft/cometbft/crypto/ed25519.PubKey", (gogoproto.jsontag) = "morse_signer_public_key"];
 
+  // TODO_IN_THIS_COMMIT: update...
+  // The hex-encoded address of the Morse account whose balance will be claimed.
+  // E.g.: 00f9900606fa3d5c9179fc0c8513078a53a2073e
+  string morse_operator_address = 3 [(gogoproto.jsontag) = "morse_operator_address"];
+
+  // TODO_IN_THIS_COMMIT: update...
   // The hex-encoded signature, by the Morse account, of this message (where this field is nil).
   // I.e.: morse_signature = private_key.sign(marshal(MsgClaimMorseAccount{morse_signature: nil, ...}))
-  
-  // TODO_MAINNET(@bryanchriswhite, #1126): Rename to `morse_src_owner_signature`.
+  // The signature of EITHER the Morse supplier operator OR owner account, matching the public key used.
   bytes morse_signature = 4 [(gogoproto.jsontag) = "morse_signature"];
   
   // The services this supplier is staked to provide service for.
@@ -242,12 +248,22 @@ message MsgClaimMorseSupplier {
 // - The session end height in which the claim was committed
 // - The staked supplier
 message MsgClaimMorseSupplierResponse {
-  // Next free index: 6
+  // Next free index: 9
 
+  // TODO_IN_THIS_COMMIT: rename to morse_operator_address...
   // The hex-encoded address of the Morse account whose balance was claimed.
   // E.g.: 00f9900606fa3d5c9179fc0c8513078a53a2073e
-  string morse_src_address = 1 [(gogoproto.jsontag) = "morse_src_address"];
-  
+  string morse_operator_address = 1 [(gogoproto.jsontag) = "morse_operator_address"];
+
+  // TODO_IN_THIS_COMMIT: update...
+  // TODO_IN_THIS_COMMIT: use in msg handler!
+  string morse_singer_address = 8 [(gogoproto.jsontag) = "morse_singer_address"];
+
+  // TODO_IN_THIS_COMMIT: add and use:
+  // - morse_signer_address
+  // - claim_signer_type
+  MorseSupplierClaimSignerType claim_signer_type = 7 [(gogoproto.jsontag) = "claim_signer_type"];
+
   // The unstaked balance which was claimed.
   cosmos.base.v1beta1.Coin claimed_balance        = 2 [(gogoproto.nullable) = false, (gogoproto.jsontag) = "claimed_balance"       ];
   cosmos.base.v1beta1.Coin claimed_supplier_stake = 3 [(gogoproto.nullable) = false, (gogoproto.jsontag) = "claimed_supplier_stake"];
