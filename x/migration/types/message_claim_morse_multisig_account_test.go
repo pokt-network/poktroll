@@ -6,19 +6,22 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	cometed "github.com/cometbft/cometbft/crypto/ed25519"
 	"github.com/pokt-network/poktroll/testutil/sample"
 	"github.com/pokt-network/poktroll/testutil/testmigration"
 	migrationtypes "github.com/pokt-network/poktroll/x/migration/types"
 )
 
-func TestMsgClaimMorseAccount_ValidateBasic(t *testing.T) {
-	morsePrivKey := testmigration.GenMorsePrivateKey(0)
-	wrongMorsePrivKey := testmigration.GenMorsePrivateKey(99)
+func TestMsgClaimMorseMultiSigAccount_ValidateBasic(t *testing.T) {
+
+	morsePrivKeys := testmigration.GenMorsePrivateKeysForMultiSig(0)
+
+	wrongMorsePrivKeys := testmigration.GenMorsePrivateKeysForMultiSig(99)
 
 	t.Run("invalid Shannon destination address", func(t *testing.T) {
-		msg, err := migrationtypes.NewMsgClaimMorseAccount(
+		msg, err := migrationtypes.NewMsgClaimMorseMultiSigAccount(
 			"invalid_shannon_address",
-			morsePrivKey,
+			morsePrivKeys,
 			sample.AccAddress(),
 		)
 		require.NoError(t, err)
@@ -28,9 +31,9 @@ func TestMsgClaimMorseAccount_ValidateBasic(t *testing.T) {
 	})
 
 	t.Run("invalid Morse signature", func(t *testing.T) {
-		msg, err := migrationtypes.NewMsgClaimMorseAccount(
+		msg, err := migrationtypes.NewMsgClaimMorseMultiSigAccount(
 			sample.AccAddress(),
-			morsePrivKey,
+			morsePrivKeys,
 			sample.AccAddress(),
 		)
 		require.NoError(t, err)
@@ -39,9 +42,7 @@ func TestMsgClaimMorseAccount_ValidateBasic(t *testing.T) {
 		msg.MorseSignature = []byte("invalid_signature")
 
 		expectedErr := migrationtypes.ErrMorseSignature.Wrapf(
-			"invalid morse signature length; expected %d, got %d",
-			migrationtypes.MorseSignatureLengthBytes,
-			len(msg.GetMorseSignature()),
+			"signature verification failed",
 		)
 
 		err = msg.ValidateBasic()
@@ -49,22 +50,25 @@ func TestMsgClaimMorseAccount_ValidateBasic(t *testing.T) {
 	})
 
 	t.Run("wrong Morse signature", func(t *testing.T) {
-		// Construct a valid MsgClaimMorseAccount message using the "wrong" Morse
+		// Construct a valid MsgClaimMorseMultiSigAccount message using the "wrong" Morse
 		// private key. This populates the signature with a valid signature, but
 		// corresponding to the wrong key and address.
-		msg, err := migrationtypes.NewMsgClaimMorseAccount(
+		msg, err := migrationtypes.NewMsgClaimMorseMultiSigAccount(
 			sample.AccAddress(),
-			wrongMorsePrivKey,
+			wrongMorsePrivKeys,
 			sample.AccAddress(),
 		)
 		require.NoError(t, err)
 
+		var pubKeys []cometed.PubKey
+		for _, priv := range morsePrivKeys {
+			edPub, _ := priv.PubKey().(cometed.PubKey)
+			pubKeys = append(pubKeys, edPub)
+		}
 		// Reset the morsePublicKey fields, leaving the "wrong" signature in place.
-		msg.MorsePublicKey = morsePrivKey.PubKey().Bytes()
+		msg.MorsePublicKeys = pubKeys
 		expectedErr := migrationtypes.ErrMorseSignature.Wrapf(
-			"morseSignature (%x) is invalid for Morse address (%s)",
-			msg.GetMorseSignature(),
-			msg.GetMorseSrcAddress(),
+			"signature verification failed",
 		)
 
 		err = msg.ValidateBasic()
@@ -72,9 +76,9 @@ func TestMsgClaimMorseAccount_ValidateBasic(t *testing.T) {
 	})
 
 	t.Run("valid Morse claim account message", func(t *testing.T) {
-		msg, err := migrationtypes.NewMsgClaimMorseAccount(
+		msg, err := migrationtypes.NewMsgClaimMorseMultiSigAccount(
 			sample.AccAddress(),
-			morsePrivKey,
+			morsePrivKeys,
 			sample.AccAddress(),
 		)
 		require.NoError(t, err)

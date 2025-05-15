@@ -5,15 +5,18 @@ import (
 	"encoding/binary"
 	"encoding/hex"
 	"fmt"
+	"math/rand"
 	"testing"
 
-	cometcrypto "github.com/cometbft/cometbft/crypto/ed25519"
+	cometcrypto "github.com/cometbft/cometbft/crypto"
+	cometed "github.com/cometbft/cometbft/crypto/ed25519"
 	cmtjson "github.com/cometbft/cometbft/libs/json"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 
 	"github.com/pokt-network/poktroll/app/volatile"
 	migrationtypes "github.com/pokt-network/poktroll/x/migration/types"
+	morsecrypto "github.com/pokt-network/poktroll/x/migration/types/morsecrypto"
 )
 
 // MorseAccountActorType is an enum which represents all possible staked and
@@ -22,6 +25,7 @@ type MorseAccountActorType int
 
 const (
 	MorseUnstakedActor = MorseAccountActorType(iota)
+	MorseUnstakedMultiSigActor
 	MorseApplicationActor
 	MorseSupplierActor
 
@@ -70,6 +74,11 @@ func NewRoundRobinClusteredAllMorseAccountActorTypes(clusterSize uint64) func(in
 // AllUnstakedMorseAccountActorType returns MorseUnstakedActor for every index.
 func AllUnstakedMorseAccountActorType(index uint64) MorseAccountActorType {
 	return NewSingleMorseAccountActorTypeFn(MorseUnstakedActor)(index)
+}
+
+// AllUnstakedMorseMultiSigAccountActorType returns MorseUnstakedMultiSigActor for every index.
+func AllUnstakedMorseMultiSigAccountActorType(index uint64) MorseAccountActorType {
+	return NewSingleMorseAccountActorTypeFn(MorseUnstakedMultiSigActor)(index)
 }
 
 // AllApplicationMorseAccountActorType returns MorseApplicationActor for every index.
@@ -155,7 +164,7 @@ func NewMorseStateExportAndAccountState(
 	for i := 0; i < numAccounts; i++ {
 		morseAccountType := distributionFn(uint64(i))
 		switch morseAccountType {
-		case MorseUnstakedActor:
+		case MorseUnstakedActor, MorseUnstakedMultiSigActor:
 			// No-op; no staked actor to generate.
 		case MorseApplicationActor:
 			// Add an application.
@@ -177,7 +186,15 @@ func NewMorseStateExportAndAccountState(
 
 		// Add an account (regardless of whether it is staked or not).
 		// All MorseClaimableAccount fixtures get an unstaked balance.
-		morseAccountJSONBz, err := cmtjson.Marshal(GenMorseAccount(uint64(i)))
+
+		var morseAccount *migrationtypes.MorseAccount
+		if morseAccountType == MorseUnstakedMultiSigActor {
+			morseAccount = GenMorseMultiSigAccount(uint64(i))
+		} else {
+			morseAccount = GenMorseAccount(uint64(i))
+		}
+
+		morseAccountJSONBz, err := cmtjson.Marshal(morseAccount)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -203,11 +220,11 @@ func NewMorseStateExportAndAccountState(
 }
 
 // GenMorsePrivateKey creates a new ed25519 private key from the given seed.
-func GenMorsePrivateKey(seed uint64) cometcrypto.PrivKey {
+func GenMorsePrivateKey(seed uint64) cometed.PrivKey {
 	seedBz := make([]byte, 8)
 	binary.LittleEndian.PutUint64(seedBz, seed)
 
-	return cometcrypto.GenPrivKeyFromSecret(seedBz)
+	return cometed.GenPrivKeyFromSecret(seedBz)
 }
 
 // GenMorseUnstakedBalanceAmount returns an amount by applying the given index to
@@ -257,9 +274,50 @@ func GenMorseAccount(index uint64) *migrationtypes.MorseAccount {
 	return &migrationtypes.MorseAccount{
 		Address: pubKey.Address(),
 		Coins:   cosmostypes.NewCoins(unstakedBalance),
-		PubKey: &migrationtypes.MorsePublicKey{
-			Value: pubKey.Bytes(),
-		},
+		PubKey:  pubKey.Bytes(),
+	}
+}
+
+func GenMorsePrivateKeysForMultiSig(index uint64) []cometcrypto.PrivKey {
+	// generate random number of private keys using index as the seed
+	r := rand.New(rand.NewSource(int64(index)))
+	numKeys := r.Intn(10) + 1
+
+	privKeys := make([]cometcrypto.PrivKey, numKeys)
+	for i := 0; i < numKeys; i++ {
+		privKeys[i] = cometcrypto.PrivKey(GenMorsePrivateKey(r.Uint64()))
+	}
+	return privKeys
+}
+
+func GenMorsePublicKeyMultiSignature(index uint64) *morsecrypto.PublicKeyMultiSignature {
+	privKeys := GenMorsePrivateKeysForMultiSig(index)
+	numKeys := len(privKeys)
+
+	pubKeys := make([]morsecrypto.PublicKey, numKeys)
+	for i := 0; i < numKeys; i++ {
+		pubKeys[i] = morsecrypto.Ed25519PublicKey(cometed.PubKey(privKeys[i].PubKey().Bytes()))
+	}
+
+	pms := &morsecrypto.PublicKeyMultiSignature{
+		PublicKeys: pubKeys,
+	}
+
+	return pms
+}
+
+// GenMorseMultiSigAccount returns a new MorseMultiSigAccount fixture. The given index is used
+// to deterministically generate the account's address and staked tokens.
+func GenMorseMultiSigAccount(index uint64) *migrationtypes.MorseAccount {
+	pms := GenMorsePublicKeyMultiSignature(index)
+
+	unstakedBalanceAmount := GenMorseUnstakedBalanceAmount(index)
+	unstakedBalance := cosmostypes.NewInt64Coin(volatile.DenomuPOKT, unstakedBalanceAmount)
+
+	return &migrationtypes.MorseAccount{
+		Address: pms.Address(),
+		Coins:   cosmostypes.NewCoins(unstakedBalance),
+		PubKey:  pms.Bytes(),
 	}
 }
 
@@ -306,14 +364,23 @@ func GenMorseClaimableAccount(
 		return nil, fmt.Errorf("distributionFn cannot be nil")
 	}
 
-	var appStakeAmount,
-		supplierStakeAmount int64
-	privKey := GenMorsePrivateKey(index)
-	pubKey := privKey.PubKey()
+	var appStakeAmount, supplierStakeAmount int64
 
 	morseAccountActorType := distributionFn(index)
+
+	var morseSrcAddress string
+	if morseAccountActorType == MorseUnstakedMultiSigActor {
+		pms := GenMorsePublicKeyMultiSignature(index)
+		morseSrcAddress = pms.Address().String()
+	} else {
+		privKey := GenMorsePrivateKey(index)
+		pubKey := privKey.PubKey()
+		morseSrcAddress = pubKey.Address().String()
+	}
+
 	switch morseAccountActorType {
 	case MorseUnstakedActor:
+	case MorseUnstakedMultiSigActor:
 		// No-op.
 	case MorseApplicationActor:
 		appStakeAmount = GenMorseApplicationStakeAmount(index)
@@ -327,7 +394,7 @@ func GenMorseClaimableAccount(
 	unstakedBalanceAmount := GenMorseUnstakedBalanceAmount(index)
 
 	return &migrationtypes.MorseClaimableAccount{
-		MorseSrcAddress:  pubKey.Address().String(),
+		MorseSrcAddress:  morseSrcAddress,
 		UnstakedBalance:  cosmostypes.NewInt64Coin(volatile.DenomuPOKT, unstakedBalanceAmount),
 		SupplierStake:    cosmostypes.NewInt64Coin(volatile.DenomuPOKT, supplierStakeAmount),
 		ApplicationStake: cosmostypes.NewInt64Coin(volatile.DenomuPOKT, appStakeAmount),
