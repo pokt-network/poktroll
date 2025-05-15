@@ -1,0 +1,377 @@
+{
+  "app_hash": "",
+  "app_state": {
+    "application": {
+      "applications": [],
+      "exported": true,
+      "params": {
+        "app_stake_minimum": "1000000",
+        "base_relays_per_pokt": "170",
+        "max_applications": "9223372036854775807",
+        "maximum_chains": "15",
+        "participation_rate_on": false,
+        "stability_adjustment": "0",
+        "unstaking_time": "3600000000000"
+      }
+    },
+    "auth": {
+      "accounts": [
+        {
+          "type": "posmint/Account",
+          "value": {
+            "address": "028026796df1d8450410eab29c710a5944eef8dd",
+            "coins": [
+              {
+                "amount": "20000000000000",
+                "denom": "upokt"
+              }
+            ],
+            "public_key": null
+          }
+        },
+        {
+          "type": "posmint/Account",
+          "value": {
+            "address": "2E2624762BCFEE4A44001543ADDDCE0E4F4CC823",
+            "coins": [
+              {
+                "amount": "20000000000000",
+                "denom": "upokt"
+              }
+            ],
+            "public_key": null
+          }
+        },
+        {
+          "type": "posmint/Account",
+          "value": {
+            "address": "80E3058D66EE75578B07472650483DA0035FEBE6",
+            "coins": [
+              {
+                "amount": "20000000000000",
+                "denom": "upokt"
+              }
+            ],
+            "public_key": null
+          }
+        }
+      ],
+      "params": {
+        "fee_multipliers": {
+          "default": "1",
+          "fee_multiplier": null
+        },
+        "max_memo_characters": "75",
+        "tx_sig_limit": "8"
+      },
+      "supply": [
+        {
+          "amount": "147576951550267926499",
+          "denom": "upokt"
+        }
+      ]
+    },
+    "gov": {
+      "DAO_Tokens": "50023194072932",
+      "params": {
+        "acl": [
+          {
+            "acl_key": "application/ApplicationStakeMinimum",
+            "address": "028026796df1d8450410eab29c710a5944eef8dd"
+          },
+          {
+            "acl_key": "application/AppUnstakingTime",
+            "address": "028026796df1d8450410eab29c710a5944eef8dd"
+          },
+          {
+            "acl_key": "application/BaseRelaysPerPOKT",
+            "address": "028026796df1d8450410eab29c710a5944eef8dd"
+          },
+          {
+            "acl_key": "application/MaxApplications",
+            "address": "028026796df1d8450410eab29c710a5944eef8dd"
+          },
+          {
+            "acl_key": "application/MaximumChains",
+            "address": "028026796df1d8450410eab29c710a5944eef8dd"
+          },
+          {
+            "acl_key": "application/ParticipationRateOn",
+            "address": "028026796df1d8450410eab29c710a5944eef8dd"
+          },
+          {
+            "acl_key": "application/StabilityAdjustment",
+            "address": "028026796df1d8450410eab29c710a5944eef8dd"
+          },
+          {
+            "acl_key": "auth/MaxMemoCharacters",
+            "address": "028026796df1d8450410eab29c710a5944eef8dd"
+          },
+          {
+            "acl_key": "auth/TxSigLimit",
+            "address": "028026796df1d8450410eab29c710a5944eef8dd"
+          },
+          {
+            "acl_key": "gov/acl",
+            "address": "028026796df1d8450410eab29c710a5944eef8dd"
+          },
+          {
+            "acl_key": "gov/daoOwner",
+            "address": "028026796df1d8450410eab29c710a5944eef8dd"
+          },
+          {
+            "acl_key": "gov/upgrade",
+            "address": "028026796df1d8450410eab29c710a5944eef8dd"
+          },
+          {
+            "acl_key": "pocketcore/ClaimExpiration",
+            "address": "028026796df1d8450410eab29c710a5944eef8dd"
+          },
+          {
+            "acl_key": "auth/FeeMultipliers",
+            "address": "028026796df1d8450410eab29c710a5944eef8dd"
+          },
+          {
+            "acl_key": "pocketcore/ReplayAttackBurnMultiplier",
+            "address": "028026796df1d8450410eab29c710a5944eef8dd"
+          },
+          {
+            "acl_key": "pos/ProposerPercentage",
+            "address": "028026796df1d8450410eab29c710a5944eef8dd"
+          },
+          {
+            "acl_key": "pocketcore/ClaimSubmissionWindow",
+            "address": "028026796df1d8450410eab29c710a5944eef8dd"
+          },
+          {
+            "acl_key": "pocketcore/MinimumNumberOfProofs",
+            "address": "028026796df1d8450410eab29c710a5944eef8dd"
+          },
+          {
+            "acl_key": "pocketcore/SessionNodeCount",
+            "address": "028026796df1d8450410eab29c710a5944eef8dd"
+          },
+          {
+            "acl_key": "pocketcore/SupportedBlockchains",
+            "address": "028026796df1d8450410eab29c710a5944eef8dd"
+          },
+          {
+            "acl_key": "pos/BlocksPerSession",
+            "address": "028026796df1d8450410eab29c710a5944eef8dd"
+          },
+          {
+            "acl_key": "pos/DAOAllocation",
+            "address": "028026796df1d8450410eab29c710a5944eef8dd"
+          },
+          {
+            "acl_key": "pos/DowntimeJailDuration",
+            "address": "028026796df1d8450410eab29c710a5944eef8dd"
+          },
+          {
+            "acl_key": "pos/MaxEvidenceAge",
+            "address": "028026796df1d8450410eab29c710a5944eef8dd"
+          },
+          {
+            "acl_key": "pos/MaximumChains",
+            "address": "028026796df1d8450410eab29c710a5944eef8dd"
+          },
+          {
+            "acl_key": "pos/MaxJailedBlocks",
+            "address": "028026796df1d8450410eab29c710a5944eef8dd"
+          },
+          {
+            "acl_key": "pos/MaxValidators",
+            "address": "028026796df1d8450410eab29c710a5944eef8dd"
+          },
+          {
+            "acl_key": "pos/MinSignedPerWindow",
+            "address": "028026796df1d8450410eab29c710a5944eef8dd"
+          },
+          {
+            "acl_key": "pos/RelaysToTokensMultiplier",
+            "address": "028026796df1d8450410eab29c710a5944eef8dd"
+          },
+          {
+            "acl_key": "pos/SignedBlocksWindow",
+            "address": "028026796df1d8450410eab29c710a5944eef8dd"
+          },
+          {
+            "acl_key": "pos/SlashFractionDoubleSign",
+            "address": "028026796df1d8450410eab29c710a5944eef8dd"
+          },
+          {
+            "acl_key": "pos/SlashFractionDowntime",
+            "address": "028026796df1d8450410eab29c710a5944eef8dd"
+          },
+          {
+            "acl_key": "pos/StakeDenom",
+            "address": "028026796df1d8450410eab29c710a5944eef8dd"
+          },
+          {
+            "acl_key": "pos/StakeMinimum",
+            "address": "028026796df1d8450410eab29c710a5944eef8dd"
+          },
+          {
+            "acl_key": "pos/UnstakingTime",
+            "address": "028026796df1d8450410eab29c710a5944eef8dd"
+          },
+          {
+            "acl_key": "pos/ServicerStakeFloorMultiplier",
+            "address": "028026796df1d8450410eab29c710a5944eef8dd"
+          },
+          {
+            "acl_key": "pos/ServicerStakeWeightMultiplier",
+            "address": "028026796df1d8450410eab29c710a5944eef8dd"
+          },
+          {
+            "acl_key": "pos/ServicerStakeWeightCeiling",
+            "address": "028026796df1d8450410eab29c710a5944eef8dd"
+          },
+          {
+            "acl_key": "pos/ServicerStakeFloorMultiplierExponent",
+            "address": "028026796df1d8450410eab29c710a5944eef8dd"
+          },
+          {
+            "acl_key": "pocketcore/BlockByteSize",
+            "address": "028026796df1d8450410eab29c710a5944eef8dd"
+          },
+          {
+            "acl_key": "pos/RelaysToTokensMultiplierMap",
+            "address": "028026796df1d8450410eab29c710a5944eef8dd"
+          }
+        ],
+        "dao_owner": "028026796df1d8450410eab29c710a5944eef8dd",
+        "upgrade": {
+          "Features": [
+            "AppTransfer:128738",
+            "BLOCK:108982",
+            "CRVAL:108897",
+            "MAXCH:128738",
+            "MREL:82533",
+            "NCUST:70315",
+            "OEDIT:108973",
+            "PerChainRTTM:157695",
+            "REDUP:70315",
+            "RSCAL:82533",
+            "RewardDelegators:128738"
+          ],
+          "Height": "157178",
+          "OldUpgradeHeight": "128733",
+          "Version": "0.12.0"
+        }
+      }
+    },
+    "pocketcore": {
+      "claims": null,
+      "params": {
+        "block_byte_size": "12000000",
+        "claim_expiration": "120",
+        "minimum_number_of_proofs": "10",
+        "proof_waiting_period": "3",
+        "replay_attack_burn_multiplier": "3",
+        "session_node_count": "1",
+        "supported_blockchains": ["F029"]
+      }
+    },
+    "pos": {
+      "exported": true,
+      "missed_blocks": {},
+      "params": {
+        "dao_allocation": "8",
+        "downtime_jail_duration": "3600000000000",
+        "max_evidence_age": "120000000000",
+        "max_jailed_blocks": "37960",
+        "max_validators": "5",
+        "maximum_chains": "15",
+        "min_signed_per_window": "0.600000000000000000",
+        "proposer_allocation": "14",
+        "relays_to_tokens_multiplier": "37",
+        "relays_to_tokens_multiplier_map": {
+          "F029": "118"
+        },
+        "servicer_stake_floor_multipler": "15000000000",
+        "servicer_stake_floor_multiplier_exponent": "1.000000000000000000",
+        "servicer_stake_weight_ceiling": "60000000000",
+        "servicer_stake_weight_multipler": "3.032000000000000000",
+        "session_block_frequency": "4",
+        "signed_blocks_window": "10",
+        "slash_fraction_double_sign": "0.050000000000000000",
+        "slash_fraction_downtime": "0.000001000000000000",
+        "stake_denom": "upokt",
+        "stake_minimum": "15000000000",
+        "unstaking_time": "3600000000000"
+      },
+      "prevState_total_power": "2952991914",
+      "prevState_validator_powers": [
+        {
+          "Address": "028026796df1d8450410eab29c710a5944eef8dd",
+          "Power": "902999097"
+        }
+      ],
+      "previous_proposer": "028026796df1d8450410eab29c710a5944eef8dd",
+      "signing_infos": {
+        "028026796df1d8450410eab29c710a5944eef8dd": {
+          "address": "028026796df1d8450410eab29c710a5944eef8dd",
+          "index_offset": "0",
+          "jailed_blocks_counter": "0",
+          "jailed_until": "0001-01-01T00:00:00Z",
+          "missed_blocks_counter": "0",
+          "start_height": "176964"
+        }
+      },
+      "validators": [
+        {
+          "address": "028026796df1d8450410eab29c710a5944eef8dd",
+          "chains": [],
+          "jailed": false,
+          "output_address": null,
+          "public_key": "1863a5205b7d61a994a87186bd992f28634b93858bd3f81b6f123e69d5f1d04f",
+          "reward_delegators": null,
+          "service_url": "https://411.episode.one:443",
+          "status": 2,
+          "tokens": "60000000000",
+          "unstaking_time": "0001-01-01T00:00:00Z"
+        },
+        {
+          "address": "2e2624762bcfee4a44001543adddce0e4f4cc823",
+          "chains": ["F029"],
+          "jailed": false,
+          "output_address": null,
+          "public_key": "b6af045ab4647cf2c4c592320438c6b14fd7909b0960f7f24f9ad79918051c81",
+          "reward_delegators": null,
+          "service_url": "https://411.episode.one:443",
+          "status": 2,
+          "tokens": "60000000000",
+          "unstaking_time": "0001-01-01T00:00:00Z"
+        },
+        {
+          "address": "80e3058d66ee75578b07472650483da0035febe6",
+          "chains": ["F029"],
+          "jailed": false,
+          "output_address": "f9f5335adfe2f7c4e49ef5cf5856eded1c5d3c58",
+          "public_key": "ce818229aa7380a745836af1e541230c916b60f7f4ba879707bba03342455d4e",
+          "reward_delegators": null,
+          "service_url": "https://411.episode.one:443",
+          "status": 2,
+          "tokens": "60000000000",
+          "unstaking_time": "0001-01-01T00:00:00Z"
+        }
+      ]
+    }
+  },
+  "chain_id": "pocket",
+  "consensus_params": {
+    "block": {
+      "max_bytes": "12000000",
+      "max_gas": "-1",
+      "time_iota_ms": "1"
+    },
+    "evidence": {
+      "max_age": "1000000"
+    },
+    "validator": {
+      "pub_key_types": ["ed25519"]
+    }
+  },
+  "genesis_time": "0001-01-01T00:00:00Z"
+}

@@ -3,7 +3,7 @@
 ########################
 
 .PHONY: localnet_up
-localnet_up: check_pocketd check_kubectl check_docker_ps proto_regen localnet_regenesis k8s_kind_up warn_message_acc_initialize_pubkeys ## Starts up a clean localnet
+localnet_up: check_kubectl check_docker_ps proto_regen localnet_regenesis k8s_kind_up warn_message_acc_initialize_pubkeys ## Starts up a clean localnet
 	tilt up
 
 .PHONY: localnet_up_quick

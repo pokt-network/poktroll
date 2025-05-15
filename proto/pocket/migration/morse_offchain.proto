@@ -127,7 +127,11 @@ message MorseValidator {
   int32 status = 4 [(gogoproto.jsontag) = "status"];
   // The string representation of the BigInt amount of upokt.
   string staked_tokens = 7 [(gogoproto.jsontag) = "tokens"];
+
+  // May be nill
+  string output_address = 8 [(gogoproto.jsontag) = "output_address"];
 }
+
 
 // MorseAccount is an analog of the Morse ProtoBaseAccount type.
 // It encapsulates the minimum information required to import accounts.
