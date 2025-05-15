@@ -54,7 +54,7 @@ func (server *relayMinerHTTPServer) serveSyncRequest(
 			// - Request validation failures
 			// - Backend connection errors
 			// - Backend 5xx errors
-			if err := server.relayMeter.SetNonApplicableRelayReward(ctx, relayRequest.Meta); err != nil {
+			if err = server.relayMeter.SetNonApplicableRelayReward(ctx, relayRequest.Meta); err != nil {
 				logger.Error().Err(err).Msg("failed to unclaim relay UPOKT")
 			}
 		}
