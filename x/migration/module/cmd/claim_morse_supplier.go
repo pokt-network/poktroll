@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"bufio"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -19,8 +20,8 @@ import (
 
 func ClaimSupplierCmd() *cobra.Command {
 	claimSupplierCmd := &cobra.Command{
-		Use:   "claim-supplier [morse_key_export_path] [path_to_supplier_stake_config] --from [shannon_dest_key_name]",
-		Args:  cobra.ExactArgs(2),
+		Use:   "claim-supplier [morse_operator_address] [morse_signer_key_export_path] [path_to_supplier_stake_config] --from [shannon_dest_key_name]",
+		Args:  cobra.ExactArgs(3),
 		Short: "Claim an onchain MorseClaimableAccount as a staked supplier account",
 		Long: `Claim an onchain MorseClaimableAccount as a staked supplier account.
 
@@ -65,9 +66,14 @@ For more information, see: https://dev.poktroll.com/operate/morse_migration/clai
 func runClaimSupplier(cmd *cobra.Command, args []string) error {
 	ctx := cmd.Context()
 
-	// Retrieve and validate the morse key based on the first argument provided.
-	morseKeyExportPath := args[0]
-	morsePrivKey, err := LoadMorsePrivateKey(morseKeyExportPath, morseKeyfileDecryptPassphrase, noPassphrase)
+	morseOperatorAddr := args[0]
+	if _, err := hex.DecodeString(morseOperatorAddr); err != nil {
+		return fmt.Errorf("expected morse operating address to be hex-encoded, got: %q", morseOperatorAddr)
+	}
+
+	// Retrieve and validate the morse key based on the provided argument.
+	morseKeyExportPath := args[1]
+	morseSignerPrivKey, err := LoadMorsePrivateKey(morseKeyExportPath, morseKeyfileDecryptPassphrase, noPassphrase)
 	if err != nil {
 		return err
 	}
@@ -87,24 +93,25 @@ func runClaimSupplier(cmd *cobra.Command, args []string) error {
 
 	// Check and warn if the signing account doesn't match either the configured owner or operator address.
 	shannonSigningAddr := clientCtx.GetFromAddress().String()
-	ownerAddr := supplierStakeConfig.OwnerAddress
-	operatorAddr := supplierStakeConfig.OperatorAddress
+	shannonOwnerAddr := supplierStakeConfig.OwnerAddress
+	shannonOperatorAddr := supplierStakeConfig.OperatorAddress
 	switch shannonSigningAddr {
-	case ownerAddr, operatorAddr:
+	case shannonOwnerAddr, shannonOperatorAddr:
 		// All good.
 	default:
 		logger.Logger.Warn().
 			Str("signer_address", shannonSigningAddr).
-			Str("owner_address", ownerAddr).
-			Str("operator_address", operatorAddr).
+			Str("owner_address", shannonOwnerAddr).
+			Str("operator_address", shannonOperatorAddr).
 			Msg("signer address matches NEITHER owner NOR operator address")
 	}
 
 	// Construct a MsgClaimMorseSupplier message.
 	msgClaimMorseSupplier, err := types.NewMsgClaimMorseSupplier(
-		ownerAddr,
-		operatorAddr,
-		morsePrivKey,
+		shannonOwnerAddr,
+		shannonOperatorAddr,
+		morseOperatorAddr,
+		morseSignerPrivKey,
 		supplierStakeConfig.Services,
 		shannonSigningAddr,
 	)
