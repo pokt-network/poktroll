@@ -124,13 +124,13 @@ pocketd tx migration import-morse-accounts \
 pocketd tx migration import-morse-accounts "$MSG_IMPORT_MORSE_ACCOUNTS_PATH" --from pnf --grpc-addr=localhost:9090 --home=./localnet/pocketd --chain-id=pocket --gas=auto --gas-prices=1upokt --gas-adjustment=1.5
 
 # Alpha TestNet
-pocketd tx migration import-morse-accounts "$MSG_IMPORT_MORSE_ACCOUNTS_PATH" --from pokt1r6ja6rz6rpae58njfrsgs5n5sp3r36r2q9j04h --home=~/.pocket_prod --chain-id=pocket-alpha --gas=auto --gas-prices=1upokt --gas-adjustment=1.5 --node=http://shannon-grove-rpc.alpha.poktroll.com --grpc-addr=https://shannon-grove-grpc.alpha.poktroll.com
+pocketd tx migration import-morse-accounts "$MSG_IMPORT_MORSE_ACCOUNTS_PATH" --from pokt1r6ja6rz6rpae58njfrsgs5n5sp3r36r2q9j04h --home=~/.pocket_prod --chain-id=pocket-alpha --gas=auto --gas-prices=1upokt --gas-adjustment=1.5 --node=http://shannon-testnet-grove-rpc.alpha.poktroll.com --grpc-addr=shannon-grove-grpc.alpha.poktroll.com:443 --grpc-insecure
 
 # Beta TestNet
-pocketd tx migration import-morse-accounts "$MSG_IMPORT_MORSE_ACCOUNTS_PATH" --from pokt1f0c9y7mahf2ya8tymy8g4rr75ezh3pkklu4c3e --home=~/.pocket_prod --chain-id=pocket-beta --gas=auto --gas-prices=1upokt --gas-adjustment=1.5 --node=http://shannon-grove-rpc.beta.poktroll.com --grpc-addr=https://shannon-grove-grpc.beta.poktroll.com
+pocketd tx migration import-morse-accounts "$MSG_IMPORT_MORSE_ACCOUNTS_PATH" --from pokt1f0c9y7mahf2ya8tymy8g4rr75ezh3pkklu4c3e --home=~/.pocket_prod --chain-id=pocket-beta --gas=auto --gas-prices=1upokt --gas-adjustment=1.5 --node=http://shannon-testnet-grove-rpc.beta.poktroll.com --grpc-addr=shannon-testnet-grove-grpc.beta.poktroll.com:443 --grpc-insecure
 
 # MainNet
-pocketd tx migration import-morse-accounts "$MSG_IMPORT_MORSE_ACCOUNTS_PATH" --from pokt18808wvw0h4t450t06uvauny8lvscsxjfyua7vh --home=~/.pocket_prod --chain-id=pocket-mainnet --gas=auto --gas-prices=1upokt --gas-adjustment=1.5 --node=http://shannon-grove-rpc.mainnet.poktroll.com --grpc-addr=https://shannon-grove-grpc.mainnet.poktroll.com
+pocketd tx migration import-morse-accounts "$MSG_IMPORT_MORSE_ACCOUNTS_PATH" --from pokt18808wvw0h4t450t06uvauny8lvscsxjfyua7vh --home=~/.pocket_prod --chain-id=pocket-mainnet --gas=auto --gas-prices=1upokt --gas-adjustment=1.5 --node=http://shannon-grove-rpc.mainnet.poktroll.com --grpc-addr=shannon-grove-grpc.mainnet.poktroll.com:443 --grpc-insecure
 ```
 
 </details>
