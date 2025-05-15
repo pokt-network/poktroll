@@ -26,8 +26,8 @@ func (k Keeper) GetServiceConfigUpdatesIterator(
 ) sharedtypes.RecordIterator[*sharedtypes.ServiceConfigUpdate] {
 	serviceConfigUpdateStore := k.getServiceConfigUpdatesStore(ctx)
 
-	startKeyBz := types.StringKey(serviceId)
-	endKeyBz := types.StringKey(serviceId)
+	startKeyBz := sharedtypes.StringKey(serviceId)
+	endKeyBz := sharedtypes.StringKey(serviceId)
 
 	// Append the currentHeight+1 in big endian format to create our upper bound.
 	// Using currentHeight+1 makes the bound exclusive, so we get all heights <= currentHeight
@@ -56,7 +56,7 @@ func (k Keeper) GetActivatedServiceConfigUpdatesIterator(
 
 	serviceConfigUpdateIterator := storetypes.KVStorePrefixIterator(
 		activationHeightStore,
-		types.IntKey(activationHeight),
+		sharedtypes.IntKey(activationHeight),
 	)
 
 	// This creates a closure that will be used by the RecordIterator to:
@@ -81,7 +81,7 @@ func (k Keeper) GetDeactivatedServiceConfigUpdatesIterator(
 
 	serviceConfigUpdateIterator := storetypes.KVStorePrefixIterator(
 		deactivationHeightStore,
-		types.IntKey(deactivationHeight),
+		sharedtypes.IntKey(deactivationHeight),
 	)
 
 	serviceConfigAccessor := serviceConfigUpdateFromPrimaryKeyAccessorFn(serviceConfigUpdateStore, k.cdc)
@@ -201,7 +201,7 @@ func (k Keeper) getServiceConfigUpdatesByServiceStore(ctx context.Context, servi
 	// Format: ServiceConfigUpdateKeyPrefix + serviceId
 	key := make([]byte, 0)
 	key = append(key, types.KeyPrefix(types.ServiceConfigUpdateKeyPrefix)...)
-	key = append(key, types.StringKey(serviceId)...)
+	key = append(key, sharedtypes.StringKey(serviceId)...)
 
 	// Prefix store for service config updates
 	storeAdapter := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))

@@ -85,7 +85,7 @@ const (
 
 // SupplierOperatorKey returns the store key to retrieve a Supplier from the index fields
 func SupplierOperatorKey(supplierOperatorAddr string) []byte {
-	return StringKey(supplierOperatorAddr)
+	return sharedtypes.StringKey(supplierOperatorAddr)
 }
 
 // SupplierOperatorServiceKey returns the store key to retrieve a Supplier from the index fields
@@ -93,10 +93,10 @@ func SupplierOperatorKey(supplierOperatorAddr string) []byte {
 func SupplierOperatorServiceKey(supplierOperatorAddr string, serviceId string) []byte {
 	var key []byte
 
-	supplierOperatorAddressKey := StringKey(supplierOperatorAddr)
+	supplierOperatorAddressKey := sharedtypes.StringKey(supplierOperatorAddr)
 	key = append(key, supplierOperatorAddressKey...)
 
-	serviceIdKey := StringKey(serviceId)
+	serviceIdKey := sharedtypes.StringKey(serviceId)
 	key = append(key, serviceIdKey...)
 
 	return key
@@ -108,13 +108,13 @@ func SupplierOperatorServiceKey(supplierOperatorAddr string, serviceId string) [
 func ServiceConfigUpdateKey(serviceConfigUpdate sharedtypes.ServiceConfigUpdate) []byte {
 	var key []byte
 
-	serviceIdKey := StringKey(serviceConfigUpdate.Service.ServiceId)
+	serviceIdKey := sharedtypes.StringKey(serviceConfigUpdate.Service.ServiceId)
 	key = append(key, serviceIdKey...)
 
-	activationHeightKey := IntKey(serviceConfigUpdate.ActivationHeight)
+	activationHeightKey := sharedtypes.IntKey(serviceConfigUpdate.ActivationHeight)
 	key = append(key, activationHeightKey...)
 
-	supplierOperatorAddressKey := StringKey(serviceConfigUpdate.OperatorAddress)
+	supplierOperatorAddressKey := sharedtypes.StringKey(serviceConfigUpdate.OperatorAddress)
 	key = append(key, supplierOperatorAddressKey...)
 
 	return key
@@ -127,13 +127,13 @@ func ServiceConfigUpdateKey(serviceConfigUpdate sharedtypes.ServiceConfigUpdate)
 func SupplierServiceConfigUpdateKey(serviceConfigUpdate sharedtypes.ServiceConfigUpdate) []byte {
 	var key []byte
 
-	supplierOperatorAddressKey := StringKey(serviceConfigUpdate.OperatorAddress)
+	supplierOperatorAddressKey := sharedtypes.StringKey(serviceConfigUpdate.OperatorAddress)
 	key = append(key, supplierOperatorAddressKey...)
 
-	serviceIdKey := StringKey(serviceConfigUpdate.Service.ServiceId)
+	serviceIdKey := sharedtypes.StringKey(serviceConfigUpdate.Service.ServiceId)
 	key = append(key, serviceIdKey...)
 
-	activationHeightKey := IntKey(serviceConfigUpdate.ActivationHeight)
+	activationHeightKey := sharedtypes.IntKey(serviceConfigUpdate.ActivationHeight)
 	key = append(key, activationHeightKey...)
 
 	return key
@@ -144,13 +144,13 @@ func SupplierServiceConfigUpdateKey(serviceConfigUpdate sharedtypes.ServiceConfi
 func ServiceConfigUpdateActivationHeightKey(serviceConfigUpdate sharedtypes.ServiceConfigUpdate) []byte {
 	var key []byte
 
-	activationHeightKey := IntKey(serviceConfigUpdate.ActivationHeight)
+	activationHeightKey := sharedtypes.IntKey(serviceConfigUpdate.ActivationHeight)
 	key = append(key, activationHeightKey...)
 
-	serviceIdKey := StringKey(serviceConfigUpdate.Service.ServiceId)
+	serviceIdKey := sharedtypes.StringKey(serviceConfigUpdate.Service.ServiceId)
 	key = append(key, serviceIdKey...)
 
-	supplierOperatorAddressKey := StringKey(serviceConfigUpdate.OperatorAddress)
+	supplierOperatorAddressKey := sharedtypes.StringKey(serviceConfigUpdate.OperatorAddress)
 	key = append(key, supplierOperatorAddressKey...)
 
 	return key
@@ -161,42 +161,17 @@ func ServiceConfigUpdateActivationHeightKey(serviceConfigUpdate sharedtypes.Serv
 func ServiceConfigUpdateDeactivationHeightKey(serviceConfigUpdate sharedtypes.ServiceConfigUpdate) []byte {
 	var key []byte
 
-	deactivationHeightKey := IntKey(serviceConfigUpdate.DeactivationHeight)
+	deactivationHeightKey := sharedtypes.IntKey(serviceConfigUpdate.DeactivationHeight)
 	key = append(key, deactivationHeightKey...)
 
-	serviceIdKey := StringKey(serviceConfigUpdate.Service.ServiceId)
+	serviceIdKey := sharedtypes.StringKey(serviceConfigUpdate.Service.ServiceId)
 	key = append(key, serviceIdKey...)
 
-	supplierOperatorAddressKey := StringKey(serviceConfigUpdate.OperatorAddress)
+	supplierOperatorAddressKey := sharedtypes.StringKey(serviceConfigUpdate.OperatorAddress)
 	key = append(key, supplierOperatorAddressKey...)
 
-	activationHeightKey := IntKey(serviceConfigUpdate.ActivationHeight)
+	activationHeightKey := sharedtypes.IntKey(serviceConfigUpdate.ActivationHeight)
 	key = append(key, activationHeightKey...)
-
-	return key
-}
-
-// IntKey converts an integer value to a byte slice for use in store keys
-// Appends a '/' separator to the end of the key for consistent prefix scanning
-func IntKey(intIndex int64) []byte {
-	var key []byte
-
-	heightBz := make([]byte, 8)
-	binary.BigEndian.PutUint64(heightBz, uint64(intIndex))
-	key = append(key, heightBz...)
-	key = append(key, []byte("/")...)
-
-	return key
-}
-
-// StringKey converts a string value to a byte slice for use in store keys
-// Appends a '/' separator to the end of the key for consistent prefix scanning
-func StringKey(strIndex string) []byte {
-	var key []byte
-
-	strIndexBz := []byte(strIndex)
-	key = append(key, strIndexBz...)
-	key = append(key, []byte("/")...)
 
 	return key
 }
