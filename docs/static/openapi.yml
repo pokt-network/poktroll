@@ -19,7 +19,7 @@ paths:
       summary: |-
         UpdateParams defines a (governance) operation for updating the x/auth module
         parameters. The authority defaults to the x/gov module account.
-      operationId: UpgradeMsg_UpdateParams
+      operationId: EvidenceMsg_UpdateParams
       parameters:
         - description: |-
             MsgUpdateParams is the Msg/UpdateParams request type.
@@ -47,7 +47,7 @@ paths:
         Exec attempts to execute the provided messages using
         authorizations granted to the grantee. Each message should have only
         one signer corresponding to the granter of the authorization.
-      operationId: UpgradeMsg_Exec
+      operationId: EvidenceMsg_Exec
       parameters:
         - description: |-
             MsgExec attempts to execute the provided messages using
@@ -76,7 +76,7 @@ paths:
         account with the provided expiration time. If there is already a grant
         for the given (granter, grantee, Authorization) triple, then the grant
         will be overwritten.
-      operationId: UpgradeMsg_Grant
+      operationId: EvidenceMsg_Grant
       parameters:
         - description: |-
             MsgGrant is a request type for Grant method. It declares authorization to the grantee
@@ -102,7 +102,7 @@ paths:
       summary: |-
         Revoke revokes any authorization corresponding to the provided method name on the
         granter's account that has been granted to the grantee.
-      operationId: UpgradeMsg_Revoke
+      operationId: EvidenceMsg_Revoke
       parameters:
         - description: |-
             MsgRevoke revokes any authorization with the provided sdk.Msg type on the
@@ -126,7 +126,7 @@ paths:
       tags:
         - Query
       summary: AppOptions returns the autocli options for all of the modules in an app.
-      operationId: UpgradeQuery_AppOptions
+      operationId: EvidenceQuery_AppOptions
       parameters:
         - description: AppOptionsRequest is the RemoteInfoService/AppOptions request type.
           name: body
@@ -148,7 +148,7 @@ paths:
       tags:
         - Msg
       summary: MultiSend defines a method for sending coins from some accounts to other accounts.
-      operationId: UpgradeMsg_MultiSend
+      operationId: EvidenceMsg_MultiSend
       parameters:
         - description: MsgMultiSend represents an arbitrary multi-in, multi-out send message.
           name: body
@@ -170,7 +170,7 @@ paths:
       tags:
         - Msg
       summary: Send defines a method for sending coins from one account to another account.
-      operationId: UpgradeMsg_Send
+      operationId: EvidenceMsg_Send
       parameters:
         - description: MsgSend represents a message to send coins from one account to another.
           name: body
@@ -197,7 +197,7 @@ paths:
         on any number of Denoms. Only the entries to add or update should be
         included. Entries that already exist in the store, but that aren't
         included in this message, will be left unchanged.
-      operationId: UpgradeMsg_SetSendEnabled
+      operationId: EvidenceMsg_SetSendEnabled
       parameters:
         - description: |-
             MsgSetSendEnabled is the Msg/SetSendEnabled request type.
@@ -229,7 +229,7 @@ paths:
       summary: |-
         UpdateParams defines a governance operation for updating the x/bank module parameters.
         The authority is defined in the keeper.
-      operationId: UpgradeMsg_UpdateParamsMixin70
+      operationId: EvidenceMsg_UpdateParamsMixin70
       parameters:
         - description: |-
             MsgUpdateParams is the Msg/UpdateParams request type.
@@ -256,7 +256,7 @@ paths:
       summary: |-
         AuthorizeCircuitBreaker allows a super-admin to grant (or revoke) another
         account's circuit breaker permissions.
-      operationId: UpgradeMsg_AuthorizeCircuitBreaker
+      operationId: EvidenceMsg_AuthorizeCircuitBreaker
       parameters:
         - description: MsgAuthorizeCircuitBreaker defines the Msg/AuthorizeCircuitBreaker request type.
           name: body
@@ -280,7 +280,7 @@ paths:
       summary: |-
         ResetCircuitBreaker resumes processing of Msg's in the state machine that
         have been been paused using TripCircuitBreaker.
-      operationId: UpgradeMsg_ResetCircuitBreaker
+      operationId: EvidenceMsg_ResetCircuitBreaker
       parameters:
         - description: MsgResetCircuitBreaker defines the Msg/ResetCircuitBreaker request type.
           name: body
@@ -302,7 +302,7 @@ paths:
       tags:
         - Msg
       summary: TripCircuitBreaker pauses processing of Msg's in the state machine.
-      operationId: UpgradeMsg_TripCircuitBreaker
+      operationId: EvidenceMsg_TripCircuitBreaker
       parameters:
         - description: MsgTripCircuitBreaker defines the Msg/TripCircuitBreaker request type.
           name: body
@@ -327,7 +327,7 @@ paths:
       summary: |-
         UpdateParams defines a governance operation for updating the x/consensus module parameters.
         The authority is defined in the keeper.
-      operationId: UpgradeMsg_UpdateParamsMixin83
+      operationId: EvidenceMsg_UpdateParamsMixin83
       parameters:
         - description: MsgUpdateParams is the Msg/UpdateParams request type.
           name: body
@@ -352,7 +352,7 @@ paths:
       summary: |-
         UpdateParams defines a governance operation for updating the x/crisis module
         parameters. The authority is defined in the keeper.
-      operationId: UpgradeMsg_UpdateParamsMixin85
+      operationId: EvidenceMsg_UpdateParamsMixin85
       parameters:
         - description: |-
             MsgUpdateParams is the Msg/UpdateParams request type.
@@ -377,7 +377,7 @@ paths:
       tags:
         - Msg
       summary: VerifyInvariant defines a method to verify a particular invariant.
-      operationId: UpgradeMsg_VerifyInvariant
+      operationId: EvidenceMsg_VerifyInvariant
       parameters:
         - description: MsgVerifyInvariant represents a message to verify a particular invariance.
           name: body
@@ -404,7 +404,7 @@ paths:
         the community pool in the x/distribution module to another account, which
         could be the governance module itself. The authority is defined in the
         keeper.
-      operationId: UpgradeMsg_CommunityPoolSpend
+      operationId: EvidenceMsg_CommunityPoolSpend
       parameters:
         - description: |-
             MsgCommunityPoolSpend defines a message for sending tokens from the community
@@ -434,7 +434,7 @@ paths:
       summary: |-
         DepositValidatorRewardsPool defines a method to provide additional rewards
         to delegators to a specific validator.
-      operationId: UpgradeMsg_DepositValidatorRewardsPool
+      operationId: EvidenceMsg_DepositValidatorRewardsPool
       parameters:
         - description: |-
             DepositValidatorRewardsPool defines the request structure to provide
@@ -462,7 +462,7 @@ paths:
       summary: |-
         FundCommunityPool defines a method to allow an account to directly
         fund the community pool.
-      operationId: UpgradeMsg_FundCommunityPool
+      operationId: EvidenceMsg_FundCommunityPool
       parameters:
         - description: |-
             MsgFundCommunityPool allows an account to directly
@@ -488,7 +488,7 @@ paths:
       summary: |-
         SetWithdrawAddress defines a method to change the withdraw address
         for a delegator (or validator self-delegation).
-      operationId: UpgradeMsg_SetWithdrawAddress
+      operationId: EvidenceMsg_SetWithdrawAddress
       parameters:
         - description: |-
             MsgSetWithdrawAddress sets the withdraw address for
@@ -515,7 +515,7 @@ paths:
       summary: |-
         UpdateParams defines a governance operation for updating the x/distribution
         module parameters. The authority is defined in the keeper.
-      operationId: UpgradeMsg_UpdateParamsMixin96
+      operationId: EvidenceMsg_UpdateParamsMixin96
       parameters:
         - description: |-
             MsgUpdateParams is the Msg/UpdateParams request type.
@@ -542,7 +542,7 @@ paths:
       summary: |-
         WithdrawDelegatorReward defines a method to withdraw rewards of delegator
         from a single validator.
-      operationId: UpgradeMsg_WithdrawDelegatorReward
+      operationId: EvidenceMsg_WithdrawDelegatorReward
       parameters:
         - description: |-
             MsgWithdrawDelegatorReward represents delegation withdrawal to a delegator
@@ -568,7 +568,7 @@ paths:
       summary: |-
         WithdrawValidatorCommission defines a method to withdraw the
         full commission to the validator address.
-      operationId: UpgradeMsg_WithdrawValidatorCommission
+      operationId: EvidenceMsg_WithdrawValidatorCommission
       parameters:
         - description: |-
             MsgWithdrawValidatorCommission withdraws the full commission to the validator
@@ -594,7 +594,7 @@ paths:
       summary: |-
         SubmitEvidence submits an arbitrary Evidence of misbehavior such as equivocation or
         counterfactual signing.
-      operationId: UpgradeMsg_SubmitEvidence
+      operationId: EvidenceMsg_SubmitEvidence
       parameters:
         - description: |-
             MsgSubmitEvidence represents a message that supports submitting arbitrary
@@ -620,7 +620,7 @@ paths:
       summary: |-
         GrantAllowance grants fee allowance to the grantee on the granter's
         account with the provided expiration time.
-      operationId: UpgradeMsg_GrantAllowance
+      operationId: EvidenceMsg_GrantAllowance
       parameters:
         - description: |-
             MsgGrantAllowance adds permission for Grantee to spend up to Allowance
@@ -645,7 +645,7 @@ paths:
       tags:
         - Msg
       summary: PruneAllowances prunes expired fee allowances, currently up to 75 at a time.
-      operationId: UpgradeMsg_PruneAllowances
+      operationId: EvidenceMsg_PruneAllowances
       parameters:
         - description: |-
             MsgPruneAllowances prunes expired fee allowances.
@@ -672,7 +672,7 @@ paths:
       summary: |-
         RevokeAllowance revokes any fee allowance of granter's account that
         has been granted to the grantee.
-      operationId: UpgradeMsg_RevokeAllowance
+      operationId: EvidenceMsg_RevokeAllowance
       parameters:
         - description: MsgRevokeAllowance removes any existing Allowance from Granter to Grantee.
           name: body
@@ -695,7 +695,7 @@ paths:
       tags:
         - Msg
       summary: CancelProposal defines a method to cancel governance proposal
-      operationId: UpgradeMsg_CancelProposal
+      operationId: EvidenceMsg_CancelProposal
       parameters:
         - description: |-
             MsgCancelProposal is the Msg/CancelProposal request type.
@@ -720,7 +720,7 @@ paths:
       tags:
         - Msg
       summary: Deposit defines a method to add deposit on a specific proposal.
-      operationId: UpgradeMsg_Deposit
+      operationId: EvidenceMsg_Deposit
       parameters:
         - description: MsgDeposit defines a message to submit a deposit to an existing proposal.
           name: body
@@ -744,7 +744,7 @@ paths:
       summary: |-
         ExecLegacyContent defines a Msg to be in included in a MsgSubmitProposal
         to execute a legacy content-based proposal.
-      operationId: UpgradeMsg_ExecLegacyContent
+      operationId: EvidenceMsg_ExecLegacyContent
       parameters:
         - description: |-
             MsgExecLegacyContent is used to wrap the legacy content field into a message.
@@ -768,7 +768,7 @@ paths:
       tags:
         - Msg
       summary: SubmitProposal defines a method to create new proposal given the messages.
-      operationId: UpgradeMsg_SubmitProposal
+      operationId: EvidenceMsg_SubmitProposal
       parameters:
         - description: |-
             MsgSubmitProposal defines an sdk.Msg type that supports submitting arbitrary
@@ -795,7 +795,7 @@ paths:
       summary: |-
         UpdateParams defines a governance operation for updating the x/gov module
         parameters. The authority is defined in the keeper.
-      operationId: UpgradeMsg_UpdateParamsMixin109
+      operationId: EvidenceMsg_UpdateParamsMixin109
       parameters:
         - description: |-
             MsgUpdateParams is the Msg/UpdateParams request type.
@@ -820,7 +820,7 @@ paths:
       tags:
         - Msg
       summary: Vote defines a method to add a vote on a specific proposal.
-      operationId: UpgradeMsg_Vote
+      operationId: EvidenceMsg_Vote
       parameters:
         - description: MsgVote defines a message to cast a vote.
           name: body
@@ -842,7 +842,7 @@ paths:
       tags:
         - Msg
       summary: VoteWeighted defines a method to add a weighted vote on a specific proposal.
-      operationId: UpgradeMsg_VoteWeighted
+      operationId: EvidenceMsg_VoteWeighted
       parameters:
         - description: MsgVoteWeighted defines a message to cast a vote.
           name: body
@@ -864,7 +864,7 @@ paths:
       tags:
         - Msg
       summary: Deposit defines a method to add deposit on a specific proposal.
-      operationId: UpgradeMsg_DepositMixin113
+      operationId: EvidenceMsg_DepositMixin113
       parameters:
         - description: MsgDeposit defines a message to submit a deposit to an existing proposal.
           name: body
@@ -886,7 +886,7 @@ paths:
       tags:
         - Msg
       summary: SubmitProposal defines a method to create new proposal given a content.
-      operationId: UpgradeMsg_SubmitProposalMixin113
+      operationId: EvidenceMsg_SubmitProposalMixin113
       parameters:
         - description: |-
             MsgSubmitProposal defines an sdk.Msg type that supports submitting arbitrary
@@ -910,7 +910,7 @@ paths:
       tags:
         - Msg
       summary: Vote defines a method to add a vote on a specific proposal.
-      operationId: UpgradeMsg_VoteMixin113
+      operationId: EvidenceMsg_VoteMixin113
       parameters:
         - description: MsgVote defines a message to cast a vote.
           name: body
@@ -933,7 +933,7 @@ paths:
       tags:
         - Msg
       summary: VoteWeighted defines a method to add a weighted vote on a specific proposal.
-      operationId: UpgradeMsg_VoteWeightedMixin113
+      operationId: EvidenceMsg_VoteWeightedMixin113
       parameters:
         - description: |-
             MsgVoteWeighted defines a message to cast a vote.
@@ -958,7 +958,7 @@ paths:
       tags:
         - Msg
       summary: CreateGroup creates a new group with an admin account address, a list of members and some optional metadata.
-      operationId: UpgradeMsg_CreateGroup
+      operationId: EvidenceMsg_CreateGroup
       parameters:
         - description: MsgCreateGroup is the Msg/CreateGroup request type.
           name: body
@@ -980,7 +980,7 @@ paths:
       tags:
         - Msg
       summary: CreateGroupPolicy creates a new group policy using given DecisionPolicy.
-      operationId: UpgradeMsg_CreateGroupPolicy
+      operationId: EvidenceMsg_CreateGroupPolicy
       parameters:
         - description: MsgCreateGroupPolicy is the Msg/CreateGroupPolicy request type.
           name: body
@@ -1002,7 +1002,7 @@ paths:
       tags:
         - Msg
       summary: CreateGroupWithPolicy creates a new group with policy.
-      operationId: UpgradeMsg_CreateGroupWithPolicy
+      operationId: EvidenceMsg_CreateGroupWithPolicy
       parameters:
         - description: MsgCreateGroupWithPolicy is the Msg/CreateGroupWithPolicy request type.
           name: body
@@ -1024,7 +1024,7 @@ paths:
       tags:
         - Msg
       summary: Exec executes a proposal.
-      operationId: UpgradeMsg_ExecMixin117
+      operationId: EvidenceMsg_ExecMixin117
       parameters:
         - description: MsgExec is the Msg/Exec request type.
           name: body
@@ -1046,7 +1046,7 @@ paths:
       tags:
         - Msg
       summary: LeaveGroup allows a group member to leave the group.
-      operationId: UpgradeMsg_LeaveGroup
+      operationId: EvidenceMsg_LeaveGroup
       parameters:
         - description: MsgLeaveGroup is the Msg/LeaveGroup request type.
           name: body
@@ -1068,7 +1068,7 @@ paths:
       tags:
         - Msg
       summary: SubmitProposal submits a new proposal.
-      operationId: UpgradeMsg_SubmitProposalMixin117
+      operationId: EvidenceMsg_SubmitProposalMixin117
       parameters:
         - description: MsgSubmitProposal is the Msg/SubmitProposal request type.
           name: body
@@ -1090,7 +1090,7 @@ paths:
       tags:
         - Msg
       summary: UpdateGroupAdmin updates the group admin with given group id and previous admin address.
-      operationId: UpgradeMsg_UpdateGroupAdmin
+      operationId: EvidenceMsg_UpdateGroupAdmin
       parameters:
         - description: MsgUpdateGroupAdmin is the Msg/UpdateGroupAdmin request type.
           name: body
@@ -1112,7 +1112,7 @@ paths:
       tags:
         - Msg
       summary: UpdateGroupMembers updates the group members with given group id and admin address.
-      operationId: UpgradeMsg_UpdateGroupMembers
+      operationId: EvidenceMsg_UpdateGroupMembers
       parameters:
         - description: MsgUpdateGroupMembers is the Msg/UpdateGroupMembers request type.
           name: body
@@ -1134,7 +1134,7 @@ paths:
       tags:
         - Msg
       summary: UpdateGroupMetadata updates the group metadata with given group id and admin address.
-      operationId: UpgradeMsg_UpdateGroupMetadata
+      operationId: EvidenceMsg_UpdateGroupMetadata
       parameters:
         - description: MsgUpdateGroupMetadata is the Msg/UpdateGroupMetadata request type.
           name: body
@@ -1156,7 +1156,7 @@ paths:
       tags:
         - Msg
       summary: UpdateGroupPolicyAdmin updates a group policy admin.
-      operationId: UpgradeMsg_UpdateGroupPolicyAdmin
+      operationId: EvidenceMsg_UpdateGroupPolicyAdmin
       parameters:
         - description: MsgUpdateGroupPolicyAdmin is the Msg/UpdateGroupPolicyAdmin request type.
           name: body
@@ -1178,7 +1178,7 @@ paths:
       tags:
         - Msg
       summary: UpdateGroupPolicyDecisionPolicy allows a group policy's decision policy to be updated.
-      operationId: UpgradeMsg_UpdateGroupPolicyDecisionPolicy
+      operationId: EvidenceMsg_UpdateGroupPolicyDecisionPolicy
       parameters:
         - description: MsgUpdateGroupPolicyDecisionPolicy is the Msg/UpdateGroupPolicyDecisionPolicy request type.
           name: body
@@ -1200,7 +1200,7 @@ paths:
       tags:
         - Msg
       summary: UpdateGroupPolicyMetadata updates a group policy metadata.
-      operationId: UpgradeMsg_UpdateGroupPolicyMetadata
+      operationId: EvidenceMsg_UpdateGroupPolicyMetadata
       parameters:
         - description: MsgUpdateGroupPolicyMetadata is the Msg/UpdateGroupPolicyMetadata request type.
           name: body
@@ -1222,7 +1222,7 @@ paths:
       tags:
         - Msg
       summary: Vote allows a voter to vote on a proposal.
-      operationId: UpgradeMsg_VoteMixin117
+      operationId: EvidenceMsg_VoteMixin117
       parameters:
         - description: MsgVote is the Msg/Vote request type.
           name: body
@@ -1244,7 +1244,7 @@ paths:
       tags:
         - Msg
       summary: WithdrawProposal withdraws a proposal.
-      operationId: UpgradeMsg_WithdrawProposal
+      operationId: EvidenceMsg_WithdrawProposal
       parameters:
         - description: MsgWithdrawProposal is the Msg/WithdrawProposal request type.
           name: body
@@ -1269,7 +1269,7 @@ paths:
       summary: |-
         UpdateParams defines a governance operation for updating the x/mint module
         parameters. The authority is defaults to the x/gov module account.
-      operationId: UpgradeMsg_UpdateParamsMixin122
+      operationId: EvidenceMsg_UpdateParamsMixin122
       parameters:
         - description: |-
             MsgUpdateParams is the Msg/UpdateParams request type.
@@ -1294,7 +1294,7 @@ paths:
       tags:
         - Msg
       summary: Send defines a method to send a nft from one account to another account.
-      operationId: UpgradeMsg_SendMixin128
+      operationId: EvidenceMsg_SendMixin128
       parameters:
         - description: MsgSend represents a message to send a nft from one account to another account.
           name: body
@@ -1319,7 +1319,7 @@ paths:
         Unjail defines a method for unjailing a jailed validator, thus returning
         them into the bonded validator set, so they can begin receiving provisions
         and rewards again.
-      operationId: UpgradeMsg_Unjail
+      operationId: EvidenceMsg_Unjail
       parameters:
         - name: body
           in: body
@@ -1343,7 +1343,7 @@ paths:
       summary: |-
         UpdateParams defines a governance operation for updating the x/slashing module
         parameters. The authority defaults to the x/gov module account.
-      operationId: UpgradeMsg_UpdateParamsMixin135
+      operationId: EvidenceMsg_UpdateParamsMixin135
       parameters:
         - description: |-
             MsgUpdateParams is the Msg/UpdateParams request type.
@@ -1370,7 +1370,7 @@ paths:
       summary: |-
         BeginRedelegate defines a method for performing a redelegation
         of coins from a delegator and source validator to a destination validator.
-      operationId: UpgradeMsg_BeginRedelegate
+      operationId: EvidenceMsg_BeginRedelegate
       parameters:
         - description: |-
             MsgBeginRedelegate defines a SDK message for performing a redelegation
@@ -1397,7 +1397,7 @@ paths:
       summary: |-
         CancelUnbondingDelegation defines a method for performing canceling the unbonding delegation
         and delegate back to previous validator.
-      operationId: UpgradeMsg_CancelUnbondingDelegation
+      operationId: EvidenceMsg_CancelUnbondingDelegation
       parameters:
         - description: 'Since: cosmos-sdk 0.46'
           name: body
@@ -1419,7 +1419,7 @@ paths:
       tags:
         - Msg
       summary: CreateValidator defines a method for creating a new validator.
-      operationId: UpgradeMsg_CreateValidator
+      operationId: EvidenceMsg_CreateValidator
       parameters:
         - description: MsgCreateValidator defines a SDK message for creating a new validator.
           name: body
@@ -1443,7 +1443,7 @@ paths:
       summary: |-
         Delegate defines a method for performing a delegation of coins
         from a delegator to a validator.
-      operationId: UpgradeMsg_Delegate
+      operationId: EvidenceMsg_Delegate
       parameters:
         - description: |-
             MsgDelegate defines a SDK message for performing a delegation of coins
@@ -1467,7 +1467,7 @@ paths:
       tags:
         - Msg
       summary: EditValidator defines a method for editing an existing validator.
-      operationId: UpgradeMsg_EditValidator
+      operationId: EvidenceMsg_EditValidator
       parameters:
         - description: MsgEditValidator defines a SDK message for editing an existing validator.
           name: body
@@ -1491,7 +1491,7 @@ paths:
       summary: |-
         Undelegate defines a method for performing an undelegation from a
         delegate and a validator.
-      operationId: UpgradeMsg_Undelegate
+      operationId: EvidenceMsg_Undelegate
       parameters:
         - description: |-
             MsgUndelegate defines a SDK message for performing an undelegation from a
@@ -1518,7 +1518,7 @@ paths:
         UpdateParams defines an operation for updating the x/staking module
         parameters.
         Since: cosmos-sdk 0.47
-      operationId: UpgradeMsg_UpdateParamsMixin140
+      operationId: EvidenceMsg_UpdateParamsMixin140
       parameters:
         - description: |-
             MsgUpdateParams is the Msg/UpdateParams request type.
@@ -1543,7 +1543,7 @@ paths:
       tags:
         - ABCIListenerService
       summary: ListenCommit is the corresponding endpoint for ABCIListener.ListenCommit
-      operationId: UpgradeABCIListenerService_ListenCommit
+      operationId: EvidenceABCIListenerService_ListenCommit
       parameters:
         - name: body
           in: body
@@ -1564,7 +1564,7 @@ paths:
       tags:
         - ABCIListenerService
       summary: ListenFinalizeBlock is the corresponding endpoint for ABCIListener.ListenEndBlock
-      operationId: UpgradeABCIListenerService_ListenFinalizeBlock
+      operationId: EvidenceABCIListenerService_ListenFinalizeBlock
       parameters:
         - name: body
           in: body
@@ -1588,7 +1588,7 @@ paths:
       summary: |-
         CancelUpgrade is a governance operation for cancelling a previously
         approved software upgrade.
-      operationId: UpgradeMsg_CancelUpgrade
+      operationId: EvidenceMsg_CancelUpgrade
       parameters:
         - description: |-
             MsgCancelUpgrade is the Msg/CancelUpgrade request type.
@@ -1614,7 +1614,7 @@ paths:
       tags:
         - Msg
       summary: SoftwareUpgrade is a governance operation for initiating a software upgrade.
-      operationId: UpgradeMsg_SoftwareUpgrade
+      operationId: EvidenceMsg_SoftwareUpgrade
       parameters:
         - description: |-
             MsgSoftwareUpgrade is the Msg/SoftwareUpgrade request type.
@@ -1642,7 +1642,7 @@ paths:
       summary: |-
         CreatePeriodicVestingAccount defines a method that enables creating a
         periodic vesting account.
-      operationId: UpgradeMsg_CreatePeriodicVestingAccount
+      operationId: EvidenceMsg_CreatePeriodicVestingAccount
       parameters:
         - description: |-
             MsgCreateVestingAccount defines a message that enables creating a vesting
@@ -1671,7 +1671,7 @@ paths:
       summary: |-
         CreatePermanentLockedAccount defines a method that enables creating a permanent
         locked account.
-      operationId: UpgradeMsg_CreatePermanentLockedAccount
+      operationId: EvidenceMsg_CreatePermanentLockedAccount
       parameters:
         - description: |-
             MsgCreatePermanentLockedAccount defines a message that enables creating a permanent
@@ -1699,7 +1699,7 @@ paths:
       summary: |-
         CreateVestingAccount defines a method that enables creating a vesting
         account.
-      operationId: UpgradeMsg_CreateVestingAccount
+      operationId: EvidenceMsg_CreateVestingAccount
       parameters:
         - description: |-
             MsgCreateVestingAccount defines a message that enables creating a vesting
@@ -1724,7 +1724,7 @@ paths:
       tags:
         - Query
       summary: AccountInfo queries account info which is common to all account types.
-      operationId: UpgradeQuery_AccountInfo
+      operationId: EvidenceQuery_AccountInfo
       parameters:
         - type: string
           description: address is the account address string.
@@ -1750,7 +1750,7 @@ paths:
       tags:
         - Query
       summary: Accounts returns all the existing accounts.
-      operationId: UpgradeQuery_Accounts
+      operationId: EvidenceQuery_Accounts
       parameters:
         - type: string
           format: byte
@@ -1804,7 +1804,7 @@ paths:
       tags:
         - Query
       summary: Account returns account details based on address.
-      operationId: UpgradeQuery_Account
+      operationId: EvidenceQuery_Account
       parameters:
         - type: string
           description: address defines the address to query for.
@@ -1826,7 +1826,7 @@ paths:
       tags:
         - Query
       summary: AccountAddressByID returns account address based on account number.
-      operationId: UpgradeQuery_AccountAddressByID
+      operationId: EvidenceQuery_AccountAddressByID
       parameters:
         - type: string
           format: int64
@@ -1862,7 +1862,7 @@ paths:
       tags:
         - Query
       summary: Bech32Prefix queries bech32Prefix
-      operationId: UpgradeQuery_Bech32Prefix
+      operationId: EvidenceQuery_Bech32Prefix
       responses:
         "200":
           description: A successful response.
@@ -1878,7 +1878,7 @@ paths:
       tags:
         - Query
       summary: AddressBytesToString converts Account Address bytes to string
-      operationId: UpgradeQuery_AddressBytesToString
+      operationId: EvidenceQuery_AddressBytesToString
       parameters:
         - type: string
           format: byte
@@ -1900,7 +1900,7 @@ paths:
       tags:
         - Query
       summary: AddressStringToBytes converts Address string to bytes
-      operationId: UpgradeQuery_AddressStringToBytes
+      operationId: EvidenceQuery_AddressStringToBytes
       parameters:
         - type: string
           name: address_string
@@ -1921,7 +1921,7 @@ paths:
       tags:
         - Query
       summary: ModuleAccounts returns all the existing module accounts.
-      operationId: UpgradeQuery_ModuleAccounts
+      operationId: EvidenceQuery_ModuleAccounts
       responses:
         "200":
           description: A successful response.
@@ -1936,7 +1936,7 @@ paths:
       tags:
         - Query
       summary: ModuleAccountByName returns the module account info by module name
-      operationId: UpgradeQuery_ModuleAccountByName
+      operationId: EvidenceQuery_ModuleAccountByName
       parameters:
         - type: string
           name: name
@@ -1956,7 +1956,7 @@ paths:
       tags:
         - Query
       summary: Params queries all parameters.
-      operationId: UpgradeQuery_Params
+      operationId: EvidenceQuery_Params
       responses:
         "200":
           description: A successful response.
@@ -1971,7 +1971,7 @@ paths:
       tags:
         - Query
       summary: Returns list of `Authorization`, granted to the grantee by the granter.
-      operationId: UpgradeQuery_Grants
+      operationId: EvidenceQuery_Grants
       parameters:
         - type: string
           name: granter
@@ -2036,7 +2036,7 @@ paths:
       tags:
         - Query
       summary: GranteeGrants returns a list of `GrantAuthorization` by grantee.
-      operationId: UpgradeQuery_GranteeGrants
+      operationId: EvidenceQuery_GranteeGrants
       parameters:
         - type: string
           name: grantee
@@ -2095,7 +2095,7 @@ paths:
       tags:
         - Query
       summary: GranterGrants returns list of `GrantAuthorization`, granted by granter.
-      operationId: UpgradeQuery_GranterGrants
+      operationId: EvidenceQuery_GranterGrants
       parameters:
         - type: string
           name: granter
@@ -2156,7 +2156,7 @@ paths:
       tags:
         - Query
       summary: AllBalances queries the balance of all coins for a single account.
-      operationId: UpgradeQuery_AllBalances
+      operationId: EvidenceQuery_AllBalances
       parameters:
         - type: string
           description: address is the address to query balances for.
@@ -2222,7 +2222,7 @@ paths:
       tags:
         - Query
       summary: Balance queries the balance of a single coin for a single account.
-      operationId: UpgradeQuery_Balance
+      operationId: EvidenceQuery_Balance
       parameters:
         - type: string
           description: address is the address to query balances for.
@@ -2254,7 +2254,7 @@ paths:
       summary: |-
         DenomOwners queries for all account addresses that own a particular token
         denomination.
-      operationId: UpgradeQuery_DenomOwners
+      operationId: EvidenceQuery_DenomOwners
       parameters:
         - type: string
           description: denom defines the coin denomination to query all account holders for.
@@ -2316,7 +2316,7 @@ paths:
       summary: |-
         DenomOwnersByQuery queries for all account addresses that own a particular token
         denomination.
-      operationId: UpgradeQuery_DenomOwnersByQuery
+      operationId: EvidenceQuery_DenomOwnersByQuery
       parameters:
         - type: string
           description: denom defines the coin denomination to query all account holders for.
@@ -2376,7 +2376,7 @@ paths:
       summary: |-
         DenomsMetadata queries the client metadata for all registered coin
         denominations.
-      operationId: UpgradeQuery_DenomsMetadata
+      operationId: EvidenceQuery_DenomsMetadata
       parameters:
         - type: string
           format: byte
@@ -2430,7 +2430,7 @@ paths:
       tags:
         - Query
       summary: DenomMetadata queries the client metadata of a given coin denomination.
-      operationId: UpgradeQuery_DenomMetadata
+      operationId: EvidenceQuery_DenomMetadata
       parameters:
         - type: string
           description: denom is the coin denom to query the metadata for.
@@ -2451,7 +2451,7 @@ paths:
       tags:
         - Query
       summary: DenomMetadataByQueryString queries the client metadata of a given coin denomination.
-      operationId: UpgradeQuery_DenomMetadataByQueryString
+      operationId: EvidenceQuery_DenomMetadataByQueryString
       parameters:
         - type: string
           description: denom is the coin denom to query the metadata for.
@@ -2471,7 +2471,7 @@ paths:
       tags:
         - Query
       summary: Params queries the parameters of x/bank module.
-      operationId: UpgradeQuery_ParamsMixin69
+      operationId: EvidenceQuery_ParamsMixin69
       responses:
         "200":
           description: A successful response.
@@ -2492,7 +2492,7 @@ paths:
       tags:
         - Query
       summary: SendEnabled queries for SendEnabled entries.
-      operationId: UpgradeQuery_SendEnabled
+      operationId: EvidenceQuery_SendEnabled
       parameters:
         - type: array
           items:
@@ -2560,7 +2560,7 @@ paths:
       summary: |-
         SpendableBalances queries the spendable balance of all coins for a single
         account.
-      operationId: UpgradeQuery_SpendableBalances
+      operationId: EvidenceQuery_SpendableBalances
       parameters:
         - type: string
           description: address is the address to query spendable balances for.
@@ -2626,7 +2626,7 @@ paths:
       summary: |-
         SpendableBalanceByDenom queries the spendable balance of a single denom for
         a single account.
-      operationId: UpgradeQuery_SpendableBalanceByDenom
+      operationId: EvidenceQuery_SpendableBalanceByDenom
       parameters:
         - type: string
           description: address is the address to query balances for.
@@ -2654,7 +2654,7 @@ paths:
       tags:
         - Query
       summary: TotalSupply queries the total supply of all coins.
-      operationId: UpgradeQuery_TotalSupply
+      operationId: EvidenceQuery_TotalSupply
       parameters:
         - type: string
           format: byte
@@ -2711,7 +2711,7 @@ paths:
       tags:
         - Query
       summary: SupplyOf queries the supply of a single coin.
-      operationId: UpgradeQuery_SupplyOf
+      operationId: EvidenceQuery_SupplyOf
       parameters:
         - type: string
           description: denom is the coin denom to query balances for.
@@ -2731,7 +2731,7 @@ paths:
       tags:
         - Service
       summary: Config queries for the operator configuration.
-      operationId: UpgradeService_Config
+      operationId: EvidenceService_Config
       responses:
         "200":
           description: A successful response.
@@ -2746,7 +2746,7 @@ paths:
       tags:
         - Service
       summary: Status queries for the node status.
-      operationId: UpgradeService_Status
+      operationId: EvidenceService_Status
       responses:
         "200":
           description: A successful response.
@@ -2764,7 +2764,7 @@ paths:
         GetAuthnDescriptor returns information on how to authenticate transactions in the application
         NOTE: this RPC is still experimental and might be subject to breaking changes or removal in
         future releases of the cosmos-sdk.
-      operationId: UpgradeReflectionService_GetAuthnDescriptor
+      operationId: EvidenceReflectionService_GetAuthnDescriptor
       responses:
         "200":
           description: A successful response.
@@ -2779,7 +2779,7 @@ paths:
       tags:
         - ReflectionService
       summary: GetChainDescriptor returns the description of the chain
-      operationId: UpgradeReflectionService_GetChainDescriptor
+      operationId: EvidenceReflectionService_GetChainDescriptor
       responses:
         "200":
           description: A successful response.
@@ -2794,7 +2794,7 @@ paths:
       tags:
         - ReflectionService
       summary: GetCodecDescriptor returns the descriptor of the codec of the application
-      operationId: UpgradeReflectionService_GetCodecDescriptor
+      operationId: EvidenceReflectionService_GetCodecDescriptor
       responses:
         "200":
           description: A successful response.
@@ -2809,7 +2809,7 @@ paths:
       tags:
         - ReflectionService
       summary: GetConfigurationDescriptor returns the descriptor for the sdk.Config of the application
-      operationId: UpgradeReflectionService_GetConfigurationDescriptor
+      operationId: EvidenceReflectionService_GetConfigurationDescriptor
       responses:
         "200":
           description: A successful response.
@@ -2824,7 +2824,7 @@ paths:
       tags:
         - ReflectionService
       summary: GetQueryServicesDescriptor returns the available gRPC queryable services of the application
-      operationId: UpgradeReflectionService_GetQueryServicesDescriptor
+      operationId: EvidenceReflectionService_GetQueryServicesDescriptor
       responses:
         "200":
           description: A successful response.
@@ -2839,7 +2839,7 @@ paths:
       tags:
         - ReflectionService
       summary: GetTxDescriptor returns information on the used transaction object and available msgs that can be used
-      operationId: UpgradeReflectionService_GetTxDescriptor
+      operationId: EvidenceReflectionService_GetTxDescriptor
       responses:
         "200":
           description: A successful response.
@@ -2856,7 +2856,7 @@ paths:
       summary: |-
         ListAllInterfaces lists all the interfaces registered in the interface
         registry.
-      operationId: UpgradeReflectionService_ListAllInterfaces
+      operationId: EvidenceReflectionService_ListAllInterfaces
       responses:
         "200":
           description: A successful response.
@@ -2873,7 +2873,7 @@ paths:
       summary: |-
         ListImplementations list all the concrete types that implement a given
         interface.
-      operationId: UpgradeReflectionService_ListImplementations
+      operationId: EvidenceReflectionService_ListImplementations
       parameters:
         - type: string
           description: interface_name defines the interface to query the implementations for.
@@ -2898,7 +2898,7 @@ paths:
         ABCIQuery defines a query handler that supports ABCI queries directly to the
         application, bypassing Tendermint completely. The ABCI query must contain
         a valid and supported path, including app, custom, p2p, and store.
-      operationId: UpgradeService_ABCIQuery
+      operationId: EvidenceService_ABCIQuery
       parameters:
         - type: string
           format: byte
@@ -2928,7 +2928,7 @@ paths:
       tags:
         - Service
       summary: GetLatestBlock returns the latest block.
-      operationId: UpgradeService_GetLatestBlock
+      operationId: EvidenceService_GetLatestBlock
       responses:
         "200":
           description: A successful response.
@@ -2943,7 +2943,7 @@ paths:
       tags:
         - Service
       summary: GetBlockByHeight queries block for given height.
-      operationId: UpgradeService_GetBlockByHeight
+      operationId: EvidenceService_GetBlockByHeight
       parameters:
         - type: string
           format: int64
@@ -2964,7 +2964,7 @@ paths:
       tags:
         - Service
       summary: GetNodeInfo queries the current node info.
-      operationId: UpgradeService_GetNodeInfo
+      operationId: EvidenceService_GetNodeInfo
       responses:
         "200":
           description: A successful response.
@@ -2979,7 +2979,7 @@ paths:
       tags:
         - Service
       summary: GetSyncing queries node syncing.
-      operationId: UpgradeService_GetSyncing
+      operationId: EvidenceService_GetSyncing
       responses:
         "200":
           description: A successful response.
@@ -2994,7 +2994,7 @@ paths:
       tags:
         - Service
       summary: GetLatestValidatorSet queries latest validator-set.
-      operationId: UpgradeService_GetLatestValidatorSet
+      operationId: EvidenceService_GetLatestValidatorSet
       parameters:
         - type: string
           format: byte
@@ -3048,7 +3048,7 @@ paths:
       tags:
         - Service
       summary: GetValidatorSetByHeight queries validator-set at a given height.
-      operationId: UpgradeService_GetValidatorSetByHeight
+      operationId: EvidenceService_GetValidatorSetByHeight
       parameters:
         - type: string
           format: int64
@@ -3107,7 +3107,7 @@ paths:
       tags:
         - Query
       summary: Account returns account permissions.
-      operationId: UpgradeQuery_AccountsMixin79
+      operationId: EvidenceQuery_AccountsMixin79
       parameters:
         - type: string
           format: byte
@@ -3161,7 +3161,7 @@ paths:
       tags:
         - Query
       summary: Account returns account permissions.
-      operationId: UpgradeQuery_AccountMixin79
+      operationId: EvidenceQuery_AccountMixin79
       parameters:
         - type: string
           name: address
@@ -3181,7 +3181,7 @@ paths:
       tags:
         - Query
       summary: DisabledList returns a list of disabled message urls
-      operationId: UpgradeQuery_DisabledList
+      operationId: EvidenceQuery_DisabledList
       responses:
         "200":
           description: A successful response.
@@ -3196,7 +3196,7 @@ paths:
       tags:
         - Query
       summary: Params queries the parameters of x/consensus module.
-      operationId: UpgradeQuery_ParamsMixin82
+      operationId: EvidenceQuery_ParamsMixin82
       responses:
         "200":
           description: A successful response.
@@ -3211,7 +3211,7 @@ paths:
       tags:
         - Query
       summary: CommunityPool queries the community pool coins.
-      operationId: UpgradeQuery_CommunityPool
+      operationId: EvidenceQuery_CommunityPool
       responses:
         "200":
           description: A successful response.
@@ -3228,7 +3228,7 @@ paths:
       summary: |-
         DelegationTotalRewards queries the total rewards accrued by each
         validator.
-      operationId: UpgradeQuery_DelegationTotalRewards
+      operationId: EvidenceQuery_DelegationTotalRewards
       parameters:
         - type: string
           description: delegator_address defines the delegator address to query for.
@@ -3249,7 +3249,7 @@ paths:
       tags:
         - Query
       summary: DelegationRewards queries the total rewards accrued by a delegation.
-      operationId: UpgradeQuery_DelegationRewards
+      operationId: EvidenceQuery_DelegationRewards
       parameters:
         - type: string
           description: delegator_address defines the delegator address to query for.
@@ -3275,7 +3275,7 @@ paths:
       tags:
         - Query
       summary: DelegatorValidators queries the validators of a delegator.
-      operationId: UpgradeQuery_DelegatorValidators
+      operationId: EvidenceQuery_DelegatorValidators
       parameters:
         - type: string
           description: delegator_address defines the delegator address to query for.
@@ -3296,7 +3296,7 @@ paths:
       tags:
         - Query
       summary: DelegatorWithdrawAddress queries withdraw address of a delegator.
-      operationId: UpgradeQuery_DelegatorWithdrawAddress
+      operationId: EvidenceQuery_DelegatorWithdrawAddress
       parameters:
         - type: string
           description: delegator_address defines the delegator address to query for.
@@ -3317,7 +3317,7 @@ paths:
       tags:
         - Query
       summary: Params queries params of the distribution module.
-      operationId: UpgradeQuery_ParamsMixin95
+      operationId: EvidenceQuery_ParamsMixin95
       responses:
         "200":
           description: A successful response.
@@ -3332,7 +3332,7 @@ paths:
       tags:
         - Query
       summary: ValidatorDistributionInfo queries validator commission and self-delegation rewards for validator
-      operationId: UpgradeQuery_ValidatorDistributionInfo
+      operationId: EvidenceQuery_ValidatorDistributionInfo
       parameters:
         - type: string
           description: validator_address defines the validator address to query for.
@@ -3353,7 +3353,7 @@ paths:
       tags:
         - Query
       summary: ValidatorCommission queries accumulated commission for a validator.
-      operationId: UpgradeQuery_ValidatorCommission
+      operationId: EvidenceQuery_ValidatorCommission
       parameters:
         - type: string
           description: validator_address defines the validator address to query for.
@@ -3374,7 +3374,7 @@ paths:
       tags:
         - Query
       summary: ValidatorOutstandingRewards queries rewards of a validator address.
-      operationId: UpgradeQuery_ValidatorOutstandingRewards
+      operationId: EvidenceQuery_ValidatorOutstandingRewards
       parameters:
         - type: string
           description: validator_address defines the validator address to query for.
@@ -3395,7 +3395,7 @@ paths:
       tags:
         - Query
       summary: ValidatorSlashes queries slash events of a validator.
-      operationId: UpgradeQuery_ValidatorSlashes
+      operationId: EvidenceQuery_ValidatorSlashes
       parameters:
         - type: string
           description: validator_address defines the validator address to query for.
@@ -3464,7 +3464,7 @@ paths:
       tags:
         - Query
       summary: AllEvidence queries all evidence.
-      operationId: UpgradeQuery_AllEvidence
+      operationId: EvidenceQuery_AllEvidence
       parameters:
         - type: string
           format: byte
@@ -3518,7 +3518,7 @@ paths:
       tags:
         - Query
       summary: Evidence queries evidence based on evidence hash.
-      operationId: UpgradeQuery_Evidence
+      operationId: EvidenceQuery_Evidence
       parameters:
         - type: string
           description: |-
@@ -3549,7 +3549,7 @@ paths:
       tags:
         - Query
       summary: Allowance returns granted allwance to the grantee by the granter.
-      operationId: UpgradeQuery_Allowance
+      operationId: EvidenceQuery_Allowance
       parameters:
         - type: string
           description: granter is the address of the user granting an allowance of their funds.
@@ -3575,7 +3575,7 @@ paths:
       tags:
         - Query
       summary: Allowances returns all the grants for the given grantee address.
-      operationId: UpgradeQuery_Allowances
+      operationId: EvidenceQuery_Allowances
       parameters:
         - type: string
           name: grantee
@@ -3634,7 +3634,7 @@ paths:
       tags:
         - Query
       summary: AllowancesByGranter returns all the grants given by an address
-      operationId: UpgradeQuery_AllowancesByGranter
+      operationId: EvidenceQuery_AllowancesByGranter
       parameters:
         - type: string
           name: granter
@@ -3692,7 +3692,7 @@ paths:
       tags:
         - Query
       summary: Constitution queries the chain's constitution.
-      operationId: UpgradeQuery_Constitution
+      operationId: EvidenceQuery_Constitution
       responses:
         "200":
           description: A successful response.
@@ -3707,7 +3707,7 @@ paths:
       tags:
         - Query
       summary: Params queries all parameters of the gov module.
-      operationId: UpgradeQuery_ParamsMixin108
+      operationId: EvidenceQuery_ParamsMixin108
       parameters:
         - type: string
           description: |-
@@ -3730,7 +3730,7 @@ paths:
       tags:
         - Query
       summary: Proposals queries all proposals based on given status.
-      operationId: UpgradeQuery_Proposals
+      operationId: EvidenceQuery_Proposals
       parameters:
         - enum:
             - PROPOSAL_STATUS_UNSPECIFIED
@@ -3817,7 +3817,7 @@ paths:
       tags:
         - Query
       summary: Proposal queries proposal details based on ProposalID.
-      operationId: UpgradeQuery_Proposal
+      operationId: EvidenceQuery_Proposal
       parameters:
         - type: string
           format: uint64
@@ -3839,7 +3839,7 @@ paths:
       tags:
         - Query
       summary: Deposits queries all deposits of a single proposal.
-      operationId: UpgradeQuery_Deposits
+      operationId: EvidenceQuery_Deposits
       parameters:
         - type: string
           format: uint64
@@ -3899,7 +3899,7 @@ paths:
       tags:
         - Query
       summary: Deposit queries single deposit information based on proposalID, depositAddr.
-      operationId: UpgradeQuery_Deposit
+      operationId: EvidenceQuery_Deposit
       parameters:
         - type: string
           format: uint64
@@ -3926,7 +3926,7 @@ paths:
       tags:
         - Query
       summary: TallyResult queries the tally of a proposal vote.
-      operationId: UpgradeQuery_TallyResult
+      operationId: EvidenceQuery_TallyResult
       parameters:
         - type: string
           format: uint64
@@ -3948,7 +3948,7 @@ paths:
       tags:
         - Query
       summary: Votes queries votes of a given proposal.
-      operationId: UpgradeQuery_Votes
+      operationId: EvidenceQuery_Votes
       parameters:
         - type: string
           format: uint64
@@ -4008,7 +4008,7 @@ paths:
       tags:
         - Query
       summary: Vote queries voted information based on proposalID, voterAddr.
-      operationId: UpgradeQuery_Vote
+      operationId: EvidenceQuery_Vote
       parameters:
         - type: string
           format: uint64
@@ -4035,7 +4035,7 @@ paths:
       tags:
         - Query
       summary: Params queries all parameters of the gov module.
-      operationId: UpgradeQuery_ParamsMixin112
+      operationId: EvidenceQuery_ParamsMixin112
       parameters:
         - type: string
           description: |-
@@ -4058,7 +4058,7 @@ paths:
       tags:
         - Query
       summary: Proposals queries all proposals based on given status.
-      operationId: UpgradeQuery_ProposalsMixin112
+      operationId: EvidenceQuery_ProposalsMixin112
       parameters:
         - enum:
             - PROPOSAL_STATUS_UNSPECIFIED
@@ -4145,7 +4145,7 @@ paths:
       tags:
         - Query
       summary: Proposal queries proposal details based on ProposalID.
-      operationId: UpgradeQuery_ProposalMixin112
+      operationId: EvidenceQuery_ProposalMixin112
       parameters:
         - type: string
           format: uint64
@@ -4167,7 +4167,7 @@ paths:
       tags:
         - Query
       summary: Deposits queries all deposits of a single proposal.
-      operationId: UpgradeQuery_DepositsMixin112
+      operationId: EvidenceQuery_DepositsMixin112
       parameters:
         - type: string
           format: uint64
@@ -4227,7 +4227,7 @@ paths:
       tags:
         - Query
       summary: Deposit queries single deposit information based on proposalID, depositor address.
-      operationId: UpgradeQuery_DepositMixin112
+      operationId: EvidenceQuery_DepositMixin112
       parameters:
         - type: string
           format: uint64
@@ -4254,7 +4254,7 @@ paths:
       tags:
         - Query
       summary: TallyResult queries the tally of a proposal vote.
-      operationId: UpgradeQuery_TallyResultMixin112
+      operationId: EvidenceQuery_TallyResultMixin112
       parameters:
         - type: string
           format: uint64
@@ -4276,7 +4276,7 @@ paths:
       tags:
         - Query
       summary: Votes queries votes of a given proposal.
-      operationId: UpgradeQuery_VotesMixin112
+      operationId: EvidenceQuery_VotesMixin112
       parameters:
         - type: string
           format: uint64
@@ -4336,7 +4336,7 @@ paths:
       tags:
         - Query
       summary: Vote queries voted information based on proposalID, voterAddr.
-      operationId: UpgradeQuery_VoteMixin112
+      operationId: EvidenceQuery_VoteMixin112
       parameters:
         - type: string
           format: uint64
@@ -4363,7 +4363,7 @@ paths:
       tags:
         - Query
       summary: GroupInfo queries group info based on group id.
-      operationId: UpgradeQuery_GroupInfo
+      operationId: EvidenceQuery_GroupInfo
       parameters:
         - type: string
           format: uint64
@@ -4385,7 +4385,7 @@ paths:
       tags:
         - Query
       summary: GroupMembers queries members of a group by group id.
-      operationId: UpgradeQuery_GroupMembers
+      operationId: EvidenceQuery_GroupMembers
       parameters:
         - type: string
           format: uint64
@@ -4445,7 +4445,7 @@ paths:
       tags:
         - Query
       summary: GroupPoliciesByAdmin queries group policies by admin address.
-      operationId: UpgradeQuery_GroupPoliciesByAdmin
+      operationId: EvidenceQuery_GroupPoliciesByAdmin
       parameters:
         - type: string
           description: admin is the admin address of the group policy.
@@ -4504,7 +4504,7 @@ paths:
       tags:
         - Query
       summary: GroupPoliciesByGroup queries group policies by group id.
-      operationId: UpgradeQuery_GroupPoliciesByGroup
+      operationId: EvidenceQuery_GroupPoliciesByGroup
       parameters:
         - type: string
           format: uint64
@@ -4564,7 +4564,7 @@ paths:
       tags:
         - Query
       summary: GroupPolicyInfo queries group policy info based on account address of group policy.
-      operationId: UpgradeQuery_GroupPolicyInfo
+      operationId: EvidenceQuery_GroupPolicyInfo
       parameters:
         - type: string
           description: address is the account address of the group policy.
@@ -4586,7 +4586,7 @@ paths:
       tags:
         - Query
       summary: Groups queries all groups in state.
-      operationId: UpgradeQuery_Groups
+      operationId: EvidenceQuery_Groups
       parameters:
         - type: string
           format: byte
@@ -4640,7 +4640,7 @@ paths:
       tags:
         - Query
       summary: GroupsByAdmin queries groups by admin address.
-      operationId: UpgradeQuery_GroupsByAdmin
+      operationId: EvidenceQuery_GroupsByAdmin
       parameters:
         - type: string
           description: admin is the account address of a group's admin.
@@ -4699,7 +4699,7 @@ paths:
       tags:
         - Query
       summary: GroupsByMember queries groups by member address.
-      operationId: UpgradeQuery_GroupsByMember
+      operationId: EvidenceQuery_GroupsByMember
       parameters:
         - type: string
           description: address is the group member address.
@@ -4758,7 +4758,7 @@ paths:
       tags:
         - Query
       summary: Proposal queries a proposal based on proposal id.
-      operationId: UpgradeQuery_ProposalMixin116
+      operationId: EvidenceQuery_ProposalMixin116
       parameters:
         - type: string
           format: uint64
@@ -4785,7 +4785,7 @@ paths:
         which might not be final. On the other hand, if the proposal is final,
         then it simply returns the `final_tally_result` state stored in the
         proposal itself.
-      operationId: UpgradeQuery_TallyResultMixin116
+      operationId: EvidenceQuery_TallyResultMixin116
       parameters:
         - type: string
           format: uint64
@@ -4807,7 +4807,7 @@ paths:
       tags:
         - Query
       summary: ProposalsByGroupPolicy queries proposals based on account address of group policy.
-      operationId: UpgradeQuery_ProposalsByGroupPolicy
+      operationId: EvidenceQuery_ProposalsByGroupPolicy
       parameters:
         - type: string
           description: address is the account address of the group policy related to proposals.
@@ -4866,7 +4866,7 @@ paths:
       tags:
         - Query
       summary: VoteByProposalVoter queries a vote by proposal id and voter.
-      operationId: UpgradeQuery_VoteByProposalVoter
+      operationId: EvidenceQuery_VoteByProposalVoter
       parameters:
         - type: string
           format: uint64
@@ -4893,7 +4893,7 @@ paths:
       tags:
         - Query
       summary: VotesByProposal queries a vote by proposal id.
-      operationId: UpgradeQuery_VotesByProposal
+      operationId: EvidenceQuery_VotesByProposal
       parameters:
         - type: string
           format: uint64
@@ -4953,7 +4953,7 @@ paths:
       tags:
         - Query
       summary: VotesByVoter queries a vote by voter.
-      operationId: UpgradeQuery_VotesByVoter
+      operationId: EvidenceQuery_VotesByVoter
       parameters:
         - type: string
           description: voter is a proposal voter account address.
@@ -5012,7 +5012,7 @@ paths:
       tags:
         - Query
       summary: AnnualProvisions current minting annual provisions value.
-      operationId: UpgradeQuery_AnnualProvisions
+      operationId: EvidenceQuery_AnnualProvisions
       responses:
         "200":
           description: A successful response.
@@ -5027,7 +5027,7 @@ paths:
       tags:
         - Query
       summary: Inflation returns the current minting inflation value.
-      operationId: UpgradeQuery_Inflation
+      operationId: EvidenceQuery_Inflation
       responses:
         "200":
           description: A successful response.
@@ -5042,7 +5042,7 @@ paths:
       tags:
         - Query
       summary: Params returns the total set of minting parameters.
-      operationId: UpgradeQuery_ParamsMixin121
+      operationId: EvidenceQuery_ParamsMixin121
       responses:
         "200":
           description: A successful response.
@@ -5057,7 +5057,7 @@ paths:
       tags:
         - Query
       summary: Balance queries the number of NFTs of a given class owned by the owner, same as balanceOf in ERC721
-      operationId: UpgradeQuery_BalanceMixin127
+      operationId: EvidenceQuery_BalanceMixin127
       parameters:
         - type: string
           description: owner is the owner address of the nft
@@ -5083,7 +5083,7 @@ paths:
       tags:
         - Query
       summary: Classes queries all NFT classes
-      operationId: UpgradeQuery_Classes
+      operationId: EvidenceQuery_Classes
       parameters:
         - type: string
           format: byte
@@ -5137,7 +5137,7 @@ paths:
       tags:
         - Query
       summary: Class queries an NFT class based on its id
-      operationId: UpgradeQuery_Class
+      operationId: EvidenceQuery_Class
       parameters:
         - type: string
           description: class_id associated with the nft
@@ -5160,7 +5160,7 @@ paths:
       summary: |-
         NFTs queries all NFTs of a given class or owner,choose at least one of the two, similar to tokenByIndex in
         ERC721Enumerable
-      operationId: UpgradeQuery_NFTs
+      operationId: EvidenceQuery_NFTs
       parameters:
         - type: string
           description: class_id associated with the nft
@@ -5222,7 +5222,7 @@ paths:
       tags:
         - Query
       summary: NFT queries an NFT based on its class and id.
-      operationId: UpgradeQuery_NFT
+      operationId: EvidenceQuery_NFT
       parameters:
         - type: string
           description: class_id associated with the nft
@@ -5248,7 +5248,7 @@ paths:
       tags:
         - Query
       summary: Owner queries the owner of the NFT based on its class and id, same as ownerOf in ERC721
-      operationId: UpgradeQuery_Owner
+      operationId: EvidenceQuery_Owner
       parameters:
         - type: string
           description: class_id associated with the nft
@@ -5274,7 +5274,7 @@ paths:
       tags:
         - Query
       summary: Supply queries the number of NFTs from the given class, same as totalSupply of ERC721.
-      operationId: UpgradeQuery_Supply
+      operationId: EvidenceQuery_Supply
       parameters:
         - type: string
           description: class_id associated with the nft
@@ -5297,7 +5297,7 @@ paths:
       summary: |-
         Params queries a specific parameter of a module, given its subspace and
         key.
-      operationId: UpgradeQuery_ParamsMixin130
+      operationId: EvidenceQuery_ParamsMixin130
       parameters:
         - type: string
           description: subspace defines the module to query the parameter for.
@@ -5322,7 +5322,7 @@ paths:
       tags:
         - Query
       summary: Subspaces queries for all registered subspaces and all keys for a subspace.
-      operationId: UpgradeQuery_Subspaces
+      operationId: EvidenceQuery_Subspaces
       responses:
         "200":
           description: A successful response.
@@ -5337,7 +5337,7 @@ paths:
       tags:
         - Query
       summary: Params queries the parameters of slashing module
-      operationId: UpgradeQuery_ParamsMixin133
+      operationId: EvidenceQuery_ParamsMixin133
       responses:
         "200":
           description: A successful response.
@@ -5352,7 +5352,7 @@ paths:
       tags:
         - Query
       summary: SigningInfos queries signing info of all validators
-      operationId: UpgradeQuery_SigningInfos
+      operationId: EvidenceQuery_SigningInfos
       parameters:
         - type: string
           format: byte
@@ -5406,7 +5406,7 @@ paths:
       tags:
         - Query
       summary: SigningInfo queries the signing info of given cons address
-      operationId: UpgradeQuery_SigningInfo
+      operationId: EvidenceQuery_SigningInfo
       parameters:
         - type: string
           description: cons_address is the address to query signing info of
@@ -5430,7 +5430,7 @@ paths:
       tags:
         - Query
       summary: DelegatorDelegations queries all delegations of a given delegator address.
-      operationId: UpgradeQuery_DelegatorDelegations
+      operationId: EvidenceQuery_DelegatorDelegations
       parameters:
         - type: string
           description: delegator_addr defines the delegator address to query for.
@@ -5492,7 +5492,7 @@ paths:
       tags:
         - Query
       summary: Redelegations queries redelegations of given address.
-      operationId: UpgradeQuery_Redelegations
+      operationId: EvidenceQuery_Redelegations
       parameters:
         - type: string
           description: delegator_addr defines the delegator address to query for.
@@ -5564,7 +5564,7 @@ paths:
       summary: |-
         DelegatorUnbondingDelegations queries all unbonding delegations of a given
         delegator address.
-      operationId: UpgradeQuery_DelegatorUnbondingDelegations
+      operationId: EvidenceQuery_DelegatorUnbondingDelegations
       parameters:
         - type: string
           description: delegator_addr defines the delegator address to query for.
@@ -5628,7 +5628,7 @@ paths:
       summary: |-
         DelegatorValidators queries all validators info for given delegator
         address.
-      operationId: UpgradeQuery_DelegatorValidatorsMixin138
+      operationId: EvidenceQuery_DelegatorValidatorsMixin138
       parameters:
         - type: string
           description: delegator_addr defines the delegator address to query for.
@@ -5689,7 +5689,7 @@ paths:
       summary: |-
         DelegatorValidator queries validator info for given delegator validator
         pair.
-      operationId: UpgradeQuery_DelegatorValidator
+      operationId: EvidenceQuery_DelegatorValidator
       parameters:
         - type: string
           description: delegator_addr defines the delegator address to query for.
@@ -5715,7 +5715,7 @@ paths:
       tags:
         - Query
       summary: HistoricalInfo queries the historical info for given height.
-      operationId: UpgradeQuery_HistoricalInfo
+      operationId: EvidenceQuery_HistoricalInfo
       parameters:
         - type: string
           format: int64
@@ -5737,7 +5737,7 @@ paths:
       tags:
         - Query
       summary: Parameters queries the staking parameters.
-      operationId: UpgradeQuery_ParamsMixin138
+      operationId: EvidenceQuery_ParamsMixin138
       responses:
         "200":
           description: A successful response.
@@ -5752,7 +5752,7 @@ paths:
       tags:
         - Query
       summary: Pool queries the pool info.
-      operationId: UpgradeQuery_Pool
+      operationId: EvidenceQuery_Pool
       responses:
         "200":
           description: A successful response.
@@ -5770,7 +5770,7 @@ paths:
       tags:
         - Query
       summary: Validators queries all validators that match the given status.
-      operationId: UpgradeQuery_Validators
+      operationId: EvidenceQuery_Validators
       parameters:
         - type: string
           description: status enables to query for validators matching a given status.
@@ -5828,7 +5828,7 @@ paths:
       tags:
         - Query
       summary: Validator queries validator info for given validator address.
-      operationId: UpgradeQuery_Validator
+      operationId: EvidenceQuery_Validator
       parameters:
         - type: string
           description: validator_addr defines the validator address to query for.
@@ -5852,7 +5852,7 @@ paths:
       tags:
         - Query
       summary: ValidatorDelegations queries delegate info for given validator.
-      operationId: UpgradeQuery_ValidatorDelegations
+      operationId: EvidenceQuery_ValidatorDelegations
       parameters:
         - type: string
           description: validator_addr defines the validator address to query for.
@@ -5911,7 +5911,7 @@ paths:
       tags:
         - Query
       summary: Delegation queries delegate info for given validator delegator pair.
-      operationId: UpgradeQuery_Delegation
+      operationId: EvidenceQuery_Delegation
       parameters:
         - type: string
           description: validator_addr defines the validator address to query for.
@@ -5939,7 +5939,7 @@ paths:
       summary: |-
         UnbondingDelegation queries unbonding info for given validator delegator
         pair.
-      operationId: UpgradeQuery_UnbondingDelegation
+      operationId: EvidenceQuery_UnbondingDelegation
       parameters:
         - type: string
           description: validator_addr defines the validator address to query for.
@@ -5968,7 +5968,7 @@ paths:
       tags:
         - Query
       summary: ValidatorUnbondingDelegations queries unbonding delegations of a validator.
-      operationId: UpgradeQuery_ValidatorUnbondingDelegations
+      operationId: EvidenceQuery_ValidatorUnbondingDelegations
       parameters:
         - type: string
           description: validator_addr defines the validator address to query for.
@@ -6028,7 +6028,7 @@ paths:
       tags:
         - Service
       summary: TxDecode decodes the transaction.
-      operationId: UpgradeService_TxDecode
+      operationId: EvidenceService_TxDecode
       parameters:
         - description: |-
             TxDecodeRequest is the request type for the Service.TxDecode
@@ -6055,7 +6055,7 @@ paths:
       tags:
         - Service
       summary: TxDecodeAmino decodes an Amino transaction from encoded bytes to JSON.
-      operationId: UpgradeService_TxDecodeAmino
+      operationId: EvidenceService_TxDecodeAmino
       parameters:
         - description: |-
             TxDecodeAminoRequest is the request type for the Service.TxDecodeAmino
@@ -6082,7 +6082,7 @@ paths:
       tags:
         - Service
       summary: TxEncode encodes the transaction.
-      operationId: UpgradeService_TxEncode
+      operationId: EvidenceService_TxEncode
       parameters:
         - description: |-
             TxEncodeRequest is the request type for the Service.TxEncode
@@ -6109,7 +6109,7 @@ paths:
       tags:
         - Service
       summary: TxEncodeAmino encodes an Amino transaction from JSON to encoded bytes.
-      operationId: UpgradeService_TxEncodeAmino
+      operationId: EvidenceService_TxEncodeAmino
       parameters:
         - description: |-
             TxEncodeAminoRequest is the request type for the Service.TxEncodeAmino
@@ -6135,7 +6135,7 @@ paths:
       tags:
         - Service
       summary: Simulate simulates executing a transaction for estimating gas usage.
-      operationId: UpgradeService_Simulate
+      operationId: EvidenceService_Simulate
       parameters:
         - description: |-
             SimulateRequest is the request type for the Service.Simulate
@@ -6159,7 +6159,7 @@ paths:
       tags:
         - Service
       summary: GetTxsEvent fetches txs by event.
-      operationId: UpgradeService_GetTxsEvent
+      operationId: EvidenceService_GetTxsEvent
       parameters:
         - type: array
           items:
@@ -6257,7 +6257,7 @@ paths:
       tags:
         - Service
       summary: BroadcastTx broadcast transaction.
-      operationId: UpgradeService_BroadcastTx
+      operationId: EvidenceService_BroadcastTx
       parameters:
         - description: |-
             BroadcastTxRequest is the request type for the Service.BroadcastTxRequest
@@ -6282,7 +6282,7 @@ paths:
       tags:
         - Service
       summary: GetBlockWithTxs fetches a block with decoded txs.
-      operationId: UpgradeService_GetBlockWithTxs
+      operationId: EvidenceService_GetBlockWithTxs
       parameters:
         - type: string
           format: int64
@@ -6342,7 +6342,7 @@ paths:
       tags:
         - Service
       summary: GetTx fetches a tx by hash.
-      operationId: UpgradeService_GetTx
+      operationId: EvidenceService_GetTx
       parameters:
         - type: string
           description: hash is the tx hash to query, encoded as a hex string.
@@ -6363,7 +6363,7 @@ paths:
       tags:
         - Query
       summary: AppliedPlan queries a previously applied upgrade plan by its name.
-      operationId: UpgradeQuery_AppliedPlan
+      operationId: EvidenceQuery_AppliedPlan
       parameters:
         - type: string
           description: name is the name of the applied plan to query for.
@@ -6385,7 +6385,7 @@ paths:
       tags:
         - Query
       summary: Returns the account with authority to conduct upgrades
-      operationId: UpgradeQuery_Authority
+      operationId: EvidenceQuery_Authority
       responses:
         "200":
           description: A successful response.
@@ -6400,7 +6400,7 @@ paths:
       tags:
         - Query
       summary: CurrentPlan queries the current upgrade plan.
-      operationId: UpgradeQuery_CurrentPlan
+      operationId: EvidenceQuery_CurrentPlan
       responses:
         "200":
           description: A successful response.
@@ -6416,7 +6416,7 @@ paths:
       tags:
         - Query
       summary: ModuleVersions queries the list of module versions from state.
-      operationId: UpgradeQuery_ModuleVersions
+      operationId: EvidenceQuery_ModuleVersions
       parameters:
         - type: string
           description: |-
@@ -6445,7 +6445,7 @@ paths:
         UpgradedConsensusState RPC not supported with legacy querier
         This rpc is deprecated now that IBC has its own replacement
         (https://github.com/cosmos/ibc-go/blob/2c880a22e9f9cc75f62b527ca94aa75ce1106001/proto/ibc/core/client/v1/query.proto#L54)
-      operationId: UpgradeQuery_UpgradedConsensusState
+      operationId: EvidenceQuery_UpgradedConsensusState
       parameters:
         - type: string
           format: int64
@@ -10859,7 +10859,7 @@ paths:
     post:
       tags:
         - ABCI
-      operationId: UpgradeABCI_ApplySnapshotChunk
+      operationId: EvidenceABCI_ApplySnapshotChunk
       parameters:
         - name: body
           in: body
@@ -10879,7 +10879,7 @@ paths:
     post:
       tags:
         - ABCI
-      operationId: UpgradeABCI_CheckTx
+      operationId: EvidenceABCI_CheckTx
       parameters:
         - name: body
           in: body
@@ -10899,7 +10899,7 @@ paths:
     post:
       tags:
         - ABCI
-      operationId: UpgradeABCI_Commit
+      operationId: EvidenceABCI_Commit
       parameters:
         - name: body
           in: body
@@ -10919,7 +10919,7 @@ paths:
     post:
       tags:
         - ABCI
-      operationId: UpgradeABCI_Echo
+      operationId: EvidenceABCI_Echo
       parameters:
         - name: body
           in: body
@@ -10939,7 +10939,7 @@ paths:
     post:
       tags:
         - ABCI
-      operationId: UpgradeABCI_ExtendVote
+      operationId: EvidenceABCI_ExtendVote
       parameters:
         - name: body
           in: body
@@ -10959,7 +10959,7 @@ paths:
     post:
       tags:
         - ABCI
-      operationId: UpgradeABCI_FinalizeBlock
+      operationId: EvidenceABCI_FinalizeBlock
       parameters:
         - name: body
           in: body
@@ -10979,7 +10979,7 @@ paths:
     post:
       tags:
         - ABCI
-      operationId: UpgradeABCI_Flush
+      operationId: EvidenceABCI_Flush
       parameters:
         - name: body
           in: body
@@ -10999,7 +10999,7 @@ paths:
     post:
       tags:
         - ABCI
-      operationId: UpgradeABCI_Info
+      operationId: EvidenceABCI_Info
       parameters:
         - name: body
           in: body
@@ -11019,7 +11019,7 @@ paths:
     post:
       tags:
         - ABCI
-      operationId: UpgradeABCI_InitChain
+      operationId: EvidenceABCI_InitChain
       parameters:
         - name: body
           in: body
@@ -11039,7 +11039,7 @@ paths:
     post:
       tags:
         - ABCI
-      operationId: UpgradeABCI_ListSnapshots
+      operationId: EvidenceABCI_ListSnapshots
       parameters:
         - name: body
           in: body
@@ -11059,7 +11059,7 @@ paths:
     post:
       tags:
         - ABCI
-      operationId: UpgradeABCI_LoadSnapshotChunk
+      operationId: EvidenceABCI_LoadSnapshotChunk
       parameters:
         - name: body
           in: body
@@ -11079,7 +11079,7 @@ paths:
     post:
       tags:
         - ABCI
-      operationId: UpgradeABCI_OfferSnapshot
+      operationId: EvidenceABCI_OfferSnapshot
       parameters:
         - name: body
           in: body
@@ -11099,7 +11099,7 @@ paths:
     post:
       tags:
         - ABCI
-      operationId: UpgradeABCI_PrepareProposal
+      operationId: EvidenceABCI_PrepareProposal
       parameters:
         - name: body
           in: body
@@ -11119,7 +11119,7 @@ paths:
     post:
       tags:
         - ABCI
-      operationId: UpgradeABCI_ProcessProposal
+      operationId: EvidenceABCI_ProcessProposal
       parameters:
         - name: body
           in: body
@@ -11139,7 +11139,7 @@ paths:
     post:
       tags:
         - ABCI
-      operationId: UpgradeABCI_Query
+      operationId: EvidenceABCI_Query
       parameters:
         - name: body
           in: body
@@ -11159,7 +11159,7 @@ paths:
     post:
       tags:
         - ABCI
-      operationId: UpgradeABCI_VerifyVoteExtension
+      operationId: EvidenceABCI_VerifyVoteExtension
       parameters:
         - name: body
           in: body
@@ -19985,9 +19985,22 @@ definitions:
       MsgUpdateParams message.
     type: object
   pocket.migration.Params:
-    description: Params defines the parameters for the module.
+    description: |-
+      Params defines the parameters for the module.
+
+      Next free index: 3
     type: object
     properties:
+      allow_morse_account_import_overwrite:
+        description: |-
+          allow_morse_account_import_overwrite is a feature flag which is used to enable/disable
+          the re-importing of Morse claimable accounts by the authority.
+          Such a re-import will:
+          - Ignore (i.e. leave) ALL claimed destination Shannon accounts/actors
+          - Delete ALL existing onchain MorseClaimableAccounts
+          - Import the new set of MorseClaimableAccounts from the provided MsgImportMorseClaimableAccounts
+          This is useful for testing purposes, but should be disabled in production.
+        type: boolean
       waive_morse_claim_gas_fees:
         type: boolean
         title: |-

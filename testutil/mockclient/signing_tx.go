@@ -11,6 +11,7 @@ package mockclient
 
 import (
 	reflect "reflect"
+	time "time"
 
 	types "github.com/cosmos/cosmos-sdk/crypto/types"
 	types0 "github.com/cosmos/cosmos-sdk/types"
@@ -199,6 +200,34 @@ func (m *MockTx) GetTimeoutHeight() uint64 {
 func (mr *MockTxMockRecorder) GetTimeoutHeight() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTimeoutHeight", reflect.TypeOf((*MockTx)(nil).GetTimeoutHeight))
+}
+
+// GetTimeoutTimeStamp mocks base method.
+func (m *MockTx) GetTimeoutTimeStamp() time.Time {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetTimeoutTimeStamp")
+	ret0, _ := ret[0].(time.Time)
+	return ret0
+}
+
+// GetTimeoutTimeStamp indicates an expected call of GetTimeoutTimeStamp.
+func (mr *MockTxMockRecorder) GetTimeoutTimeStamp() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTimeoutTimeStamp", reflect.TypeOf((*MockTx)(nil).GetTimeoutTimeStamp))
+}
+
+// GetUnordered mocks base method.
+func (m *MockTx) GetUnordered() bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetUnordered")
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// GetUnordered indicates an expected call of GetUnordered.
+func (mr *MockTxMockRecorder) GetUnordered() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUnordered", reflect.TypeOf((*MockTx)(nil).GetUnordered))
 }
 
 // ValidateBasic mocks base method.

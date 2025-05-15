@@ -283,6 +283,7 @@ func New(
 
 	/****  Module Options ****/
 
+	// TODO_TECHDEBT: RegisterInvariants is deprecated.
 	app.ModuleManager.RegisterInvariants(app.Keepers.CrisisKeeper)
 
 	// add test gRPC service for testing gRPC queries in isolation
